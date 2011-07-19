@@ -1,7 +1,7 @@
 //
-// macros.h
+// gto.h
 //
-// Copyright (C) 2007 Edward Valeev
+// Copyright (C) 2011 Edward Valeev
 //
 // Author: Edward Valeev <evaleev@vt.edu>
 // Maintainer: EV
@@ -25,15 +25,44 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <libint2/libint2.h>
+#ifdef __GNUG__
+#pragma interface
+#endif
 
-// see libint2's configure for the hardwired values
-# if LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_STANDARD
-#  include <chemistry/cca/int/macros.h>
-# elif LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_INTV3
-#  include <chemistry/qc/intv3/macros.h>
-# elif LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_GAMESS
-#  include <chemistry/qc/libint2/macros_gamess.h>
-# else
-#  error "This version of Libint2 uses unsupported ordering of functions in shells"
-# endif
+#ifndef _mpqc_src_lib_chemistry_qc_libint2_gto_h
+#define _mpqc_src_lib_chemistry_qc_libint2_gto_h
+
+#include <libint2_config.h>
+#include <vector>
+
+namespace sc {
+
+  /// Provides precomputed information about Gaussian basis functions
+  class GTOInfo : public RefCount {
+    public:
+    static const Ref<GTOInfo>& instance();
+    ~GTOInfo();
+
+    const double* norm(unsigned int l);
+    const double* fp1();
+
+    private:
+      static Ref<GTOInfo> instance_;
+      static const unsigned int lmax_ = LIBINT_MAX_AM;
+
+      GTOInfo();
+
+      std::vector< std::vector<double> > norm_;
+      std::vector<double> df_; // double factorials
+      std::vector<double> fp1_; // vector of 1.0s
+  };
+
+} // end of namespace sc
+
+#endif // end of header guard
+
+
+// Local Variables:
+// mode: c++
+// c-file-style: "CLJ-CONDENSED"
+// End:

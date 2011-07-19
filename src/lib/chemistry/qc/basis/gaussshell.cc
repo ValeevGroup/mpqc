@@ -96,6 +96,21 @@ GaussianShell::GaussianShell(
   normalize_shell();
 }
 
+GaussianShell::GaussianShell(const GaussianShell & other) :
+  nprim(other.nprim), ncon(other.ncon)
+{
+  l = new int[ncon];  std::copy(other.l, other.l + ncon, l);
+  puream = new int[ncon];  std::copy(other.puream, other.puream + ncon, puream);
+  exp = new double[nprim];  std::copy(other.exp, other.exp + nprim, exp);
+  coef = new double*[ncon];
+  for(int c=0; c<ncon; ++c) {
+    coef[c] = new double[nprim];
+    std::copy(other.coef[c], other.coef[c] + nprim, coef[c]);
+  }
+
+  init_computed_data();
+}
+
 GaussianShell::GaussianShell(const Ref<KeyVal>&keyval)
 {
   // read in the shell
@@ -255,6 +270,7 @@ GaussianShell::init_computed_data()
   int nc = 0;
   int nf = 0;
   has_pure_ = 0;
+  has_cartesian_ = 0;
   contr_to_func_ = new int[ncontraction()];
   for (int i=0; i<ncontraction(); i++) {
       int maxi = l[i];
@@ -269,6 +285,7 @@ GaussianShell::init_computed_data()
       nf += nfunction(i);
 
       if (is_pure(i)) has_pure_ = 1;
+      else has_cartesian_ = 1;
     }
   max_am_ = max;
   min_am_ = min;

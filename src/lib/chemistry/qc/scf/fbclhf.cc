@@ -283,7 +283,6 @@ DFCLHF::ao_fock(double accuracy)
 
   // F = H+G
   cl_fock_.result_noupdate().assign(hcore_);
-  gmat_.print("G");
   cl_fock_.result_noupdate().accumulate(gmat_);
   accumddh_->accum(cl_fock_.result_noupdate());
   cl_fock_.computed()=1;
@@ -301,4 +300,9 @@ DFCLHF::print(std::ostream&o) const
 {
   CLHF::print(o);
   dfinfo_->print(o);
+}
+
+Ref<DensityFittingInfo>
+DFCLHF::dfinfo() const {
+  return dfinfo_;
 }

@@ -95,7 +95,7 @@ namespace sc {
         SavableState::save_state(wfn_.pointer(), so);
       }
 
-      void obsolete() {
+      virtual void obsolete() {
         wfn_->obsolete();
         for(int s=0; s<__nspincases<R>::value; ++s)
           scmat_[s] = 0;
@@ -103,7 +103,7 @@ namespace sc {
 
       /// the corresponding Wavefunction
       Ref<Wavefunction> wfn() const { return wfn_; }
-      void compute() {
+      virtual void compute() {
         const double energy = wfn_->value();
       }
       /// the orbital space of spincase s in which the density is reported
@@ -182,7 +182,7 @@ namespace sc {
       /// the corresponding Density
       Ref<density_type> density() const { return density_; }
       /// bra/ket dimension
-      size_t ndim(spincase spincase) const { return density->ndim(); }
+      size_t ndim(spincase spincase) const { return density_->ndim(); }
       /// returns the ket block for the given bra index
       virtual const double* obtain_block(spincase spin,  size_t bra) const {
         throw ProgrammingError("RDMCumulant<R>::obtain_block() is not yet implemented",
@@ -239,7 +239,7 @@ namespace sc {
       OBWfnRDMTwo(const Ref<KeyVal>& kv);
       OBWfnRDMTwo(StateIn& si);
       OBWfnRDMTwo(const Ref<OneBodyWavefunction>& wfn);
-      ~OBWfnRDMTwo();
+      virtual ~OBWfnRDMTwo();
       void save_data_state(StateOut& so);
 
       Ref<OneBodyWavefunction> wfn() const { return wfn_; }
@@ -261,7 +261,7 @@ namespace sc {
     public:
       OBWfnRDMCumulantTwo(const Ref<OBWfnRDMTwo>& density);
       OBWfnRDMCumulantTwo(StateIn& si);
-      ~OBWfnRDMCumulantTwo();
+      virtual ~OBWfnRDMCumulantTwo();
       void save_data_state(StateOut& so);
 
       void compute();
@@ -355,7 +355,7 @@ namespace sc {
       OBWfnRDMOne(const Ref<KeyVal>& kv);
       OBWfnRDMOne(StateIn& si);
       OBWfnRDMOne(const Ref<OneBodyWavefunction>& wfn);
-      ~OBWfnRDMOne();
+      virtual ~OBWfnRDMOne();
       void save_data_state(StateOut& so);
 
       Ref<OneBodyWavefunction> wfn() const { return wfn_; }

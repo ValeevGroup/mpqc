@@ -59,6 +59,8 @@
 #  include <chemistry/cca/int/cartit.h>
 # elif LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_INTV3
 #  include <chemistry/qc/intv3/cartitv3.h>
+# elif LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_GAMESS
+#  include <chemistry/qc/libint2/cartit_gamess.h>
 # else
 #  error "This version of Libint2 uses unsupported ordering of functions in shells"
 # endif
@@ -121,6 +123,8 @@ IntegralLibint2::cartesian_ordering() const
   return Integral::CCACartesianOrdering;
 # elif LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_INTV3
   return Integral::IntV3CartesianOrdering;
+# elif LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_GAMESS
+  return Integral::GAMESSCartesianOrdering;
 # else
 #  error "This version of Libint2 uses unsupported ordering of functions in shells"
 # endif
@@ -198,6 +202,8 @@ IntegralLibint2::new_cartesian_iter(int l)
   typedef CartesianIterCCA iter;
 # elif LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_INTV3
   typedef CartesianIterV3 iter;
+# elif LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_GAMESS
+  typedef CartesianIterGAMESS iter;
 # else
 #  error "This version of Libint2 uses unsupported ordering of functions in shells"
 # endif
@@ -212,6 +218,8 @@ IntegralLibint2::new_redundant_cartesian_iter(int l)
   typedef RedundantCartesianIterCCA iter;
 # elif LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_INTV3
   typedef RedundantCartesianIterV3 iter;
+# elif LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_GAMESS
+  typedef RedundantCartesianIterGAMESS iter;
 # else
 #  error "This version of Libint2 uses unsupported ordering of functions in shells"
 # endif
@@ -226,6 +234,8 @@ IntegralLibint2::new_redundant_cartesian_sub_iter(int l)
   typedef RedundantCartesianSubIterCCA iter;
 # elif LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_INTV3
   typedef RedundantCartesianSubIterV3 iter;
+# elif LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_GAMESS
+  typedef RedundantCartesianSubIterGAMESS iter;
 # else
 #  error "This version of Libint2 uses unsupported ordering of functions in shells"
 # endif

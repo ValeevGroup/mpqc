@@ -281,6 +281,11 @@ PsiSCF_RefWavefunction::init_spaces_unrestricted()
   }
 }
 
+Ref<DensityFittingInfo>
+PsiSCF_RefWavefunction::dfinfo() const {
+  return 0;
+}
+
 ///////////////////////////////////////////////////////////////////
 
 ClassDesc
@@ -311,11 +316,6 @@ PsiRASCI_RefWavefunction::PsiRASCI_RefWavefunction(const Ref<WavefunctionWorld>&
   if (wfn_->spin_polarized() == false) spin_restricted_ = true;
   // if omit_uocc is true, nfzv should be 0
   if (omit_uocc) nfzv = 0;
-#if 0
-  // make sure that FockBuildRuntime uses same densities as the reference wavefunction
-  const double eref = wfn_->energy();
-  world->fockbuild_runtime()->set_densities(this->ordm(Alpha), this->ordm(Beta));
-#endif
 }
 
 PsiRASCI_RefWavefunction::PsiRASCI_RefWavefunction(StateIn& si) : RefWavefunction(si) {
@@ -455,6 +455,11 @@ PsiRASCI_RefWavefunction::ordm(SpinCase1 spin) const
   P_ao.assign(0.0);
   P_ao.accumulate_transform(C_ao, P);
   return P_ao;
+}
+
+Ref<DensityFittingInfo>
+PsiRASCI_RefWavefunction::dfinfo() const {
+  return 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////

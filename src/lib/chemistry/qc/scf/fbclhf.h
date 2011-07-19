@@ -70,6 +70,7 @@ class DFCLHF: public CLHF {
     ~DFCLHF();
     void save_data_state(StateOut&);
     void print(std::ostream&o=ExEnv::out0()) const;
+    Ref<DensityFittingInfo> dfinfo() const;
   private:
     RefSymmSCMatrix gmat_;
     Ref<DensityFittingInfo> dfinfo_;

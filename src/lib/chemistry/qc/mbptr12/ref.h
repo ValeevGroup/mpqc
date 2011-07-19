@@ -196,6 +196,8 @@ namespace sc {
     double& occ_thres() {return occ_thres_;}
     Ref<PopulatedOrbitalSpace> & get_poporbspace(SpinCase1 spin = Alpha) {return spinspaces_[spin];}
     Ref<PopulatedOrbitalSpace>& get_screened_poporbspace(SpinCase1 spin = Alpha) {return screened_spinspaces_[spin];}
+    /// which DensityFittingRuntime used to compute this reference wave function
+    virtual Ref<DensityFittingInfo> dfinfo() const =0;
 
 
     private:
@@ -273,6 +275,7 @@ namespace sc {
       unsigned int nfzc() const { return nfzc_; }
       unsigned int nfzv() const { return nfzv_; }
       RefSymmSCMatrix ordm(SpinCase1 spin) const;
+      Ref<DensityFittingInfo> dfinfo() const;
     private:
       Ref<OneBodyWavefunction> obwfn_;
       Ref<OrbitalSpace> vir_space_;
@@ -285,12 +288,14 @@ namespace sc {
       void _set_desired_value_accuracy(double eps) { obwfn_->set_desired_value_accuracy(eps); }
   };
 
-  /// RefWavefunction specialization for a general multiconfiguration wave function specified by its rank-1 reduced density matrices
+  /// RefWavefunction specialization for a general wave function specified by its rank-1 reduced density matrices
   class ORDM_RefWavefunction : public RefWavefunction {
     public:
-      /// ORDM_RefWavefunction is specified by the basis and AO-basis 1-RDM for each spin case
+      /// Constructs ORDM_RefWavefunction using the AO-basis 1-RDMs for each spin case.
+      /// Will compute natural orbitals from the 1-RDMs.
       /// @param world The WavefunctionWorld in which this objects lives.
       /// @param basis The basis set
+      /// @param integral The integral object that determines the ordering of basis functions in shells
       /// @param alpha_1rdm The alpha-spin density matrix in AO basis
       /// @param beta_1rdm The beta-spin density matrix in AO basis (assuming that if alpha and beta densities are
       ///        identical then alpha_1rdm and beta_1rdm will point to the SAME object).
@@ -308,7 +313,7 @@ namespace sc {
                   unsigned int nfzc = 0,
                   bool omit_uocc = false);
       ORDM_RefWavefunction(StateIn&);
-      ~ORDM_RefWavefunction();
+      virtual ~ORDM_RefWavefunction();
       void save_data_state(StateOut&);
       RefSymmSCMatrix ordm(SpinCase1 spin) const { return rdm_[spin]; }
 
@@ -318,7 +323,7 @@ namespace sc {
       double energy() { return 0.0; }
       double actual_value_accuracy () const { return DBL_EPSILON; }
       double desired_value_accuracy() const { return DBL_EPSILON; }
-      bool spin_polarized() const { return rdm_[Alpha] == rdm_[Beta]; }
+      bool spin_polarized() const { return rdm_[Alpha] != rdm_[Beta]; }
       bool spin_restricted() const { return spin_restricted_; }
       /// reimplements RefWavefunction::dk(). Currently only nonrelativistic references are supported.
       int dk() const { return 0; }
@@ -339,6 +344,73 @@ namespace sc {
       void _set_desired_value_accuracy(double eps) {
         // do nothing
       }
+
+      Ref<DensityFittingInfo> dfinfo() const;
+  };
+
+  /// RefWavefunction specialization for a general wave function specified by its orbitals and rank-1 reduced density matrices
+  class Extern_RefWavefunction : public RefWavefunction {
+    public:
+      /// Constructs Extern_RefWavefunction using the MO-basis 1-RDMs + MO coefficients (same for alpha and beta spincase)
+      /// @param world The WavefunctionWorld in which this objects lives.
+      /// @param basis The basis set
+      /// @param integral The integral object that determines the ordering of basis functions in shells
+      /// @param orbs  The MO coefficient matrix
+      /// @param symm  Irreps of MOs
+      /// @param alpha_1rdm The alpha-spin density matrix in MO basis
+      /// @param beta_1rdm The beta-spin density matrix in MO basis (assuming if alpha_1rdm and beta_1rdm point to the SAME object
+      ///   then if alpha and beta densities are identical.
+      /// @param nocc orbitals [0,nocc) will be occupied
+      /// @param nfzc orbitals [0,nfzc) will be inactive
+      /// @param nfzv orbitals [nmo-nfzv,nmo) will be inactive
+      /// @param omit_uocc If true, omit all unoccupied orbitals (i.e. make the unoccupied space empty). N.B. This is
+      ///                      not the same as "freezing" the unoccupieds.
+      Extern_RefWavefunction(const Ref<WavefunctionWorld>& world,
+                  const Ref<GaussianBasisSet>& basis,
+                  const Ref<Integral>& integral,
+                  const RefSCMatrix& orbs,
+                  const std::vector<unsigned int>& orbsymm,
+                  const RefSymmSCMatrix& alpha_1rdm,
+                  const RefSymmSCMatrix& beta_1rdm,
+                  unsigned int nocc,
+                  unsigned int nfzc = 0,
+                  unsigned int nfzv = 0,
+                  bool omit_uocc = false);
+      Extern_RefWavefunction(StateIn&);
+      virtual ~Extern_RefWavefunction();
+      void save_data_state(StateOut&);
+      RefSymmSCMatrix ordm(SpinCase1 spin) const { return rdm_[spin]; }
+
+      void obsolete() { throw FeatureNotImplemented("cannot obsolete Extern_R12RefWavefunction",
+                                                    __FILE__, __LINE__); }
+
+      double energy() { return 0.0; }
+      double actual_value_accuracy () const { return DBL_EPSILON; }
+      double desired_value_accuracy() const { return DBL_EPSILON; }
+      bool spin_polarized() const { return rdm_[Alpha] != rdm_[Beta]; }
+      bool spin_restricted() const { return true; }
+      /// reimplements RefWavefunction::dk(). Currently only nonrelativistic references are supported.
+      int dk() const { return 0; }
+      Ref<GaussianBasisSet> momentum_basis() const { return this->basis(); }
+      RefSymmSCMatrix core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &basis,
+                                                 const Ref<GaussianBasisSet> &p_basis);
+      unsigned int nfzc() const { return nfzc_; }
+      unsigned int nfzv() const { return nfzv_; }
+      bool omit_uocc() const { return omit_uocc_; }
+    private:
+      RefSymmSCMatrix rdm_[NSpinCases1];
+      unsigned int nfzc_;
+      unsigned int nfzv_;
+      bool omit_uocc_;
+
+      void init_spaces() {}
+      void init_spaces(unsigned int nocc, const RefSCMatrix& orbs,
+                       const std::vector<unsigned int>& orbsym);
+      void _set_desired_value_accuracy(double eps) {
+        // do nothing
+      }
+
+      Ref<DensityFittingInfo> dfinfo() const;
   };
 
   /// This factory produces the RefWavefunction that corresponds to the type of ref object

@@ -251,23 +251,19 @@
 /* Define if you have the libderiv header file and library.  */
 #undef HAVE_LIBDERIV
 
-/* Define if you have the libint2 header file and library.  */
-#undef HAVE_LIBINT2
-
 /* Define if IntegralCints can be compiled.  */
 #undef HAVE_INTEGRALCINTS
-
-/* Define if IntegralLibint2 can be compiled.  */
-#undef HAVE_INTEGRALLIBINT2
 
 /* Define if you have the libint2 header file and library.  */
 #undef HAVE_LIBINT2
 
-/* Define if IntegralCints can be compiled.  */
-#undef HAVE_INTEGRALCINTS
-
 /* Define if IntegralLibint2 can be compiled.  */
 #undef HAVE_INTEGRALLIBINT2
+
+/* Define what is the normalization convention of IntegralLibint2, 1(cca) or 2(exact).  */
+#undef INTEGRALLIBINT2_NORMCONV
+#define INTEGRALLIBINT2_NORMCONV_CCA 1
+#define INTEGRALLIBINT2_NORMCONV_EXACT 2
 
 /* Define if you have the libpsio header file and library.  */
 #undef HAVE_LIBPSIO

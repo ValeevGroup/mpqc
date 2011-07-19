@@ -150,6 +150,11 @@ void Int1eLibint2::kinetic_full_general_()
   if (need_cart2sph_transform)
     transform_contrquartets_(prim_ints_,contr_doublets_);
 
+  // If not CCA-compliant normalization -- re-normalize all integrals
+#if INTEGRALLIBINT2_NORMCONV != INTEGRALLIBINT2_NORMCONV_CCA
+  norm_contrcart1_(need_cart2sph_transform ? contr_doublets_ : prim_ints_);
+#endif
+
   if (need_sort_to_shell_doublet)
     sort_contrdoublets_to_shelldoublet_(contr_doublets_,shell_doublet_);
 }

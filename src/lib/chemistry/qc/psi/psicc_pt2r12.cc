@@ -47,14 +47,13 @@ namespace {
 
 //////////////////////////////////////////////////////////////////////////
 
-static ClassDesc PsiCCSD_PT2R12_cd(typeid(PsiCCSD_PT2R12), "PsiCCSD_PT2R12", 2,
-                                   "public PsiCC", 0, create<PsiCCSD_PT2R12>,
-                                   create<PsiCCSD_PT2R12>);
+static ClassDesc PsiCC_PT2R12_cd(typeid(PsiCC_PT2R12), "PsiCC_PT2R12", 2,
+                                   "public PsiCC", 0, 0, 0);
 
-PsiCCSD_PT2R12::PsiCCSD_PT2R12(const Ref<KeyVal>&keyval) :
-  PsiCC(keyval), eccsd_(NAN), cabs_singles_energy_(0.0) {
+PsiCC_PT2R12::PsiCC_PT2R12(const Ref<KeyVal>&keyval) :
+  PsiCC(keyval), cabs_singles_energy_(0.0) {
   if (!replace_Lambda_with_T_)
-    throw FeatureNotImplemented("PsiCCSD_PT2R12::PsiCCSD_PT2R12() -- cannot properly use Lambdas yet",__FILE__,__LINE__);
+    throw FeatureNotImplemented("PsiCC_PT2R12::PsiCC_PT2R12() -- cannot properly use Lambdas yet",__FILE__,__LINE__);
 
   Ref<WavefunctionWorld> world = new WavefunctionWorld(keyval, this);
   Ref<RefWavefunction> refinfo = RefWavefunctionFactory::make(world, this->reference(), false,
@@ -74,16 +73,16 @@ PsiCCSD_PT2R12::PsiCCSD_PT2R12(const Ref<KeyVal>&keyval) :
 
   // cannot do gbc = false yet
   if (!r12tech->gbc())
-    throw FeatureNotImplemented("PsiCCSD_PT2R12::PsiCCSD_PT2R12() -- gbc = false is not yet implemented",__FILE__,__LINE__);
+    throw FeatureNotImplemented("PsiCC_PT2R12::PsiCC_PT2R12() -- gbc = false is not yet implemented",__FILE__,__LINE__);
   // cannot do coupling=true either
   if (r12tech->coupling())
-    throw FeatureNotImplemented("PsiCCSD_PT2R12::PsiCCSD_PT2R12() -- coupling = true is not yet implemented",__FILE__,__LINE__);
+    throw FeatureNotImplemented("PsiCC_PT2R12::PsiCC_PT2R12() -- coupling = true is not yet implemented",__FILE__,__LINE__);
 }
 
-PsiCCSD_PT2R12::~PsiCCSD_PT2R12() {
+PsiCC_PT2R12::~PsiCC_PT2R12() {
 }
 
-PsiCCSD_PT2R12::PsiCCSD_PT2R12(StateIn&s) :
+PsiCC_PT2R12::PsiCC_PT2R12(StateIn&s) :
   PsiCC(s) {
   if (this->class_version() < 2)
     throw ProgrammingError("cannot use archives older than version 2", __FILE__, __LINE__, class_desc());
@@ -94,20 +93,19 @@ PsiCCSD_PT2R12::PsiCCSD_PT2R12(StateIn&s) :
 
   if((r12world()->r12tech()->ansatz()->orbital_product_GG()==R12Technology::OrbProdGG_pq) ||
      (r12world()->r12tech()->ansatz()->orbital_product_gg()==R12Technology::OrbProdgg_pq)) {
-    throw InputError("PsiCCSD_PT2R12::PsiCCSD_PT2R12 -- pq Ansatz not allowed",__FILE__,__LINE__);
+    throw InputError("PsiCC_PT2R12::PsiCC_PT2R12 -- pq Ansatz not allowed",__FILE__,__LINE__);
   }
 
   int spinadapted; s.get(spinadapted); spinadapted_ = (bool)spinadapted;
   s.get(cabs_singles_);
   s.get(cabs_singles_energy_);
-  s.get(eccsd_);
 }
 
-int PsiCCSD_PT2R12::gradient_implemented() const {
+int PsiCC_PT2R12::gradient_implemented() const {
   return 0;
 }
 
-void PsiCCSD_PT2R12::save_data_state(StateOut&s) {
+void PsiCC_PT2R12::save_data_state(StateOut&s) {
   PsiCC::save_data_state(s);
   SavableState::save_state(r12eval_.pointer(),s);
   SavableState::save_state(r12world_.pointer(),s);
@@ -116,19 +114,9 @@ void PsiCCSD_PT2R12::save_data_state(StateOut&s) {
   s.put((int)spinadapted_);
   s.put(cabs_singles_);
   s.put(cabs_singles_energy_);
-  s.put(eccsd_);
 }
 
-void PsiCCSD_PT2R12::write_input(int convergence) {
-  Ref<PsiInput> input = get_psi_input();
-  input->open();
-  PsiCorrWavefunction::write_input(convergence);
-  input->write_keyword("psi:wfn", "ccsd");
-  write_basic_input(convergence);
-  input->close();
-}
-
-void PsiCCSD_PT2R12::write_basic_input(int convergence) {
+void PsiCC_PT2R12::write_basic_input(int convergence) {
   Ref<PsiInput> input = get_psi_input();
   input->write_keyword("ccenergy:convergence", convergence);
   input->write_keyword("ccenergy:maxiter", maxiter_);
@@ -137,20 +125,12 @@ void PsiCCSD_PT2R12::write_basic_input(int convergence) {
   input->write_keyword("ccenergy:pccsd_gamma", pccsd_gamma_);
 }
 
-void PsiCCSD_PT2R12::compute() {
+void PsiCC_PT2R12::compute_ept2r12() {
 
   r12world()->initialize();
 
-  // compute Psi3 CCSD wave function
+  // compute Psi3 CC wave function
   PsiCorrWavefunction::compute();
-  // read Psi3 CCSD energy
-  {
-    psi::PSIO& psio = exenv()->psio();
-    psio.open(CC_INFO, PSIO_OPEN_OLD);
-    psio.read_entry(CC_INFO, "CCSD Energy", reinterpret_cast<char*>(&eccsd_),
-                    sizeof(double));
-    psio.close(CC_INFO, 1);
-  }
 
   // to compute intermediates make sure r12eval_ is ready
   if (r12eval_.null()) {
@@ -457,24 +437,18 @@ void PsiCCSD_PT2R12::compute() {
   }
   ExEnv::out0() << indent << "E2            = "<< scprintf("%20.15lf",e2)
                 << std::endl;
-  ExEnv::out0() << indent << "ECCSD         = "<< scprintf("%20.15lf",eccsd_)
-                << std::endl;
-  ExEnv::out0() << indent << "ECCSD_PT2R12  = "<< scprintf("%20.15lf",e2 + eccsd_)
-                << std::endl;
-  ExEnv::out0() << indent << "ECCSD_PT2R12+REF  = "<< scprintf("%20.15lf", reference_energy() + e2 + eccsd_)
-                << std::endl;
 
-  set_energy(reference_energy() + e2 + eccsd_);
+  set_energy(reference_energy() + e2);
 }
 
 double
-PsiCCSD_PT2R12::cabs_singles_energy()
+PsiCC_PT2R12::cabs_singles_energy()
 {
   return cabs_singles_energy_;
 }
 
-void PsiCCSD_PT2R12::print(std::ostream&o) const {
-  o << indent << "PsiCCSD_PT2R12:" << std::endl;
+void PsiCC_PT2R12::print(std::ostream&o) const {
+  o << indent << "PsiCC_PT2R12:" << std::endl;
   o << incindent;
   o << indent << "Spin-adapted algorithm: " << (spinadapted_ ? "true" : "false") << std::endl;
   o << indent << "Include CABS singles? : " << (cabs_singles_ ? "true" : "false") << std::endl;
@@ -492,7 +466,7 @@ void PsiCCSD_PT2R12::print(std::ostream&o) const {
 }
 
 void
-PsiCCSD_PT2R12::obsolete() {
+PsiCC_PT2R12::obsolete() {
   r12eval_ = 0;
   cabs_singles_energy_ = 0.0;
   r12world_->world()->obsolete();
@@ -502,12 +476,84 @@ PsiCCSD_PT2R12::obsolete() {
 
 //////////////////////////////////////////////////////////////////////////
 
+static ClassDesc PsiCCSD_PT2R12_cd(typeid(PsiCCSD_PT2R12), "PsiCCSD_PT2R12", 1,
+                                    "public PsiCC", 0, create<PsiCCSD_PT2R12>,
+                                    create<PsiCCSD_PT2R12>);
+
+PsiCCSD_PT2R12::PsiCCSD_PT2R12(const Ref<KeyVal>&keyval) :
+  PsiCC_PT2R12(keyval), eccsd_(NAN) {
+  if (!replace_Lambda_with_T_)
+    throw FeatureNotImplemented("PsiCCSD_PT2R12::PsiCCSD_PT2R12() -- cannot properly use Lambdas yet",__FILE__,__LINE__);
+}
+
+PsiCCSD_PT2R12::~PsiCCSD_PT2R12() {
+}
+
+PsiCCSD_PT2R12::PsiCCSD_PT2R12(StateIn&s) :
+  PsiCC_PT2R12(s) {
+  s.get(eccsd_);
+}
+
+int PsiCCSD_PT2R12::gradient_implemented() const {
+  return 0;
+}
+
+void PsiCCSD_PT2R12::save_data_state(StateOut&s) {
+  PsiCC_PT2R12::save_data_state(s);
+  s.put(eccsd_);
+}
+
+void PsiCCSD_PT2R12::write_input(int convergence) {
+  Ref<PsiInput> input = get_psi_input();
+  input->open();
+  PsiCorrWavefunction::write_input(convergence);
+  input->write_keyword("psi:wfn", "ccsd");
+  // make sure Psi uses semicanonical orbitals for ROHF-CCSD (normally it would use spin-restricted orbitals)
+  const bool openshell_ref = this->reference()->spin_polarized();
+  if (openshell_ref)
+    input->write_keyword("psi:semicanonical", "true");
+  PsiCC_PT2R12::write_basic_input(convergence);
+  input->close();
+}
+
+void PsiCCSD_PT2R12::compute() {
+  PsiCC_PT2R12::compute_ept2r12();
+
+  // read Psi3 CCSD energy
+  {
+    psi::PSIO& psio = exenv()->psio();
+    psio.open(CC_INFO, PSIO_OPEN_OLD);
+    psio.read_entry(CC_INFO, "CCSD Energy", reinterpret_cast<char*>(&eccsd_),
+                    sizeof(double));
+    psio.close(CC_INFO, 1);
+  }
+
+  const double e2 = value() - reference_energy();
+  ExEnv::out0() << indent << "ECCSD         = "<< scprintf("%20.15lf",eccsd_)
+                << std::endl;
+  ExEnv::out0() << indent << "ECCSD_PT2R12  = "<< scprintf("%20.15lf",e2 + eccsd_)
+                << std::endl;
+  ExEnv::out0() << indent << "ECCSD_PT2R12+REF  = "<< scprintf("%20.15lf", reference_energy() + e2 + eccsd_)
+                << std::endl;
+
+  set_energy(eccsd_ + value());
+}
+
+void PsiCCSD_PT2R12::print(std::ostream&o) const {
+  o << indent << "PsiCCSD_PT2R12:" << std::endl;
+  o << incindent;
+  PsiCC_PT2R12::print(o);
+  o << decindent;
+}
+
+//////////////////////////////////////////////////////////////////////////
+
 static ClassDesc PsiCCSD_PT2R12T_cd(typeid(PsiCCSD_PT2R12T), "PsiCCSD_PT2R12T", 1,
-                                    "public PsiCC", 0, create<PsiCCSD_PT2R12T>,
+                                    "public PsiCC_PT2R12", 0, create<PsiCCSD_PT2R12T>,
                                     create<PsiCCSD_PT2R12T>);
 
 PsiCCSD_PT2R12T::PsiCCSD_PT2R12T(const Ref<KeyVal>&keyval) :
-  PsiCCSD_PT2R12(keyval), e_t_(NAN) {
+  PsiCC_PT2R12(keyval), eccsd_(NAN), e_t_(NAN) {
   if (!replace_Lambda_with_T_)
     throw FeatureNotImplemented("PsiCCSD_PT2R12T::PsiCCSD_PT2R12T() -- cannot properly use Lambdas yet",__FILE__,__LINE__);
 }
@@ -516,7 +562,8 @@ PsiCCSD_PT2R12T::~PsiCCSD_PT2R12T() {
 }
 
 PsiCCSD_PT2R12T::PsiCCSD_PT2R12T(StateIn&s) :
-  PsiCCSD_PT2R12(s) {
+  PsiCC_PT2R12(s) {
+  s.get(eccsd_);
   s.get(e_t_);
 }
 
@@ -525,7 +572,8 @@ int PsiCCSD_PT2R12T::gradient_implemented() const {
 }
 
 void PsiCCSD_PT2R12T::save_data_state(StateOut&s) {
-  PsiCCSD_PT2R12::save_data_state(s);
+  PsiCC_PT2R12::save_data_state(s);
+  s.put(eccsd_);
   s.put(e_t_);
 }
 
@@ -534,27 +582,103 @@ void PsiCCSD_PT2R12T::write_input(int convergence) {
   input->open();
   PsiCorrWavefunction::write_input(convergence);
   input->write_keyword("psi:wfn", "ccsd_t");
-  PsiCCSD_PT2R12::write_basic_input(convergence);
+  PsiCC_PT2R12::write_basic_input(convergence);
   input->close();
 }
 
 void PsiCCSD_PT2R12T::compute() {
-  PsiCCSD_PT2R12::compute();
-  const double e_ccsd_pt2r12 = value() - reference_energy();
-  e_t_ = exenv()->chkpt().rd_e_t();
-  const double e_ccsd_pt2r12t = e_ccsd_pt2r12 + e_t_;
+  PsiCC_PT2R12::compute_ept2r12();
+  const double e2 = value() - reference_energy();
+  // read Psi3 CCSD energy
+  {
+    psi::PSIO& psio = exenv()->psio();
+    psio.open(CC_INFO, PSIO_OPEN_OLD);
+    psio.read_entry(CC_INFO, "CCSD Energy", reinterpret_cast<char*>(&eccsd_),
+                    sizeof(double));
+    psio.close(CC_INFO, 1);
+    e_t_ = exenv()->chkpt().rd_e_t();
+  }
+
+  ExEnv::out0() << indent << "ECCSD         = "<< scprintf("%20.15lf",eccsd_)
+                << std::endl;
+  ExEnv::out0() << indent << "ECCSD_PT2R12  = "<< scprintf("%20.15lf",e2 + eccsd_)
+                << std::endl;
   ExEnv::out0() << indent << "E(T)          = " << scprintf("%20.15lf",e_t_) << std::endl;
-  ExEnv::out0() << indent << "ECCSD_PT2R12T = " << scprintf("%20.15lf",e_ccsd_pt2r12t)
+  ExEnv::out0() << indent << "ECCSD_PT2R12T = " << scprintf("%20.15lf",e_t_ + e2 + eccsd_)
                 << std::endl;
-  ExEnv::out0() << indent << "ECCSD_PT2R12T+REF = "<< scprintf("%20.15lf", reference_energy() + e_ccsd_pt2r12t)
+  ExEnv::out0() << indent << "ECCSD_PT2R12T+REF = "<< scprintf("%20.15lf", reference_energy() + e_t_ + e2 + eccsd_)
                 << std::endl;
-  set_energy(e_ccsd_pt2r12t + reference_energy());
+  set_energy(e_t_ + e2 + eccsd_ + reference_energy());
 }
 
 void PsiCCSD_PT2R12T::print(std::ostream&o) const {
   o << indent << "PsiCCSD_PT2R12T:" << std::endl;
   o << incindent;
-  PsiCCSD_PT2R12::print(o);
+  PsiCC_PT2R12::print(o);
+  o << decindent;
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+static ClassDesc PsiCC3_PT2R12_cd(typeid(PsiCC3_PT2R12), "PsiCC3_PT2R12", 1,
+                                  "public PsiCC", 0, create<PsiCC3_PT2R12>,
+                                  create<PsiCC3_PT2R12>);
+
+PsiCC3_PT2R12::PsiCC3_PT2R12(const Ref<KeyVal>&keyval) :
+  PsiCC_PT2R12(keyval), ecc3_(NAN) {
+  if (!replace_Lambda_with_T_)
+    throw FeatureNotImplemented("PsiCC3_PT2R12::PsiCC3_PT2R12() -- cannot properly use Lambdas yet",__FILE__,__LINE__);
+}
+
+PsiCC3_PT2R12::~PsiCC3_PT2R12() {
+}
+
+PsiCC3_PT2R12::PsiCC3_PT2R12(StateIn&s) :
+  PsiCC_PT2R12(s) {
+  s.get(ecc3_);
+}
+
+int PsiCC3_PT2R12::gradient_implemented() const {
+  return 0;
+}
+
+void PsiCC3_PT2R12::save_data_state(StateOut&s) {
+  PsiCC_PT2R12::save_data_state(s);
+  s.put(ecc3_);
+}
+
+void PsiCC3_PT2R12::write_input(int convergence) {
+  Ref<PsiInput> input = get_psi_input();
+  input->open();
+  PsiCorrWavefunction::write_input(convergence);
+  input->write_keyword("psi:wfn", "cc3");
+  PsiCC_PT2R12::write_basic_input(convergence);
+  input->close();
+}
+
+void PsiCC3_PT2R12::compute() {
+  PsiCC_PT2R12::compute_ept2r12();
+  const double e2 = value() - reference_energy();
+  // read Psi3 CC3 energy
+  {
+    psi::PSIO& psio = exenv()->psio();
+    psio.open(CC_INFO, PSIO_OPEN_OLD);
+    psio.read_entry(CC_INFO, "CC3 Energy", reinterpret_cast<char*>(&ecc3_),
+                    sizeof(double));
+    psio.close(CC_INFO, 1);
+  }
+
+  ExEnv::out0() << indent << "ECC3_PT2R12   = " << scprintf("%20.15lf",e2 + ecc3_)
+                << std::endl;
+  ExEnv::out0() << indent << "ECC3_PT2R12+REF = "<< scprintf("%20.15lf", ecc3_ + value())
+                << std::endl;
+  set_energy(ecc3_ + value());
+}
+
+void PsiCC3_PT2R12::print(std::ostream&o) const {
+  o << indent << "PsiCC3_PT2R12:" << std::endl;
+  o << incindent;
+  PsiCC_PT2R12::print(o);
   o << decindent;
 }
 

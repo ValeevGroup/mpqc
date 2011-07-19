@@ -284,6 +284,48 @@ GaussianBasisSet::save_data_state(StateOut&s)
     }
 }
 
+GaussianBasisSet&
+GaussianBasisSet::operator=(const GaussianBasisSet& gbs) {
+  molecule_ = gbs.molecule_;
+  matrixkit_ = gbs.matrixkit_;
+  basisdim_ = gbs.basisdim_;
+  ncenter_ = gbs.ncenter_;
+  nshell_ = gbs.nshell_;
+  name_ = gbs.name_;
+  label_ = gbs.label_;
+  center_to_nshell_ = gbs.center_to_nshell_;
+
+  shell_ = new GaussianShell*[nshell_];
+  for (int i=0; i<nshell_; i++) {
+      const GaussianShell& gsi = gbs(i);
+
+      int nc=gsi.ncontraction();
+      int np=gsi.nprimitive();
+
+      int *ams = new int[nc];
+      int *pure = new int[nc];
+      double *exps = new double[np];
+      double **coefs = new double*[nc];
+
+      for (int j=0; j < nc; j++) {
+          ams[j] = gsi.am(j);
+          pure[j] = gsi.is_pure(j);
+          coefs[j] = new double[np];
+          for (int k=0; k < np; k++)
+              coefs[j][k] = gsi.coefficient_unnorm(j,k);
+        }
+
+      for (int j=0; j < np; j++)
+          exps[j] = gsi.exponent(j);
+
+      shell_[i] = new GaussianShell(nc, np, exps, ams, pure, coefs,
+                                   GaussianShell::Unnormalized);
+    }
+
+  init2();
+  return *this;
+}
+
 void
 GaussianBasisSet::init(Ref<Molecule>&molecule,
                        Ref<KeyVal>&keyval,

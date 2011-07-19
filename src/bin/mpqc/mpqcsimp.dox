@@ -114,6 +114,10 @@ The accepted keywords are:
                 (<tt>RCCSD(T)_R12</tt> and <tt>UCCSD(T)_R12</tt> are also allowed)
                 An auxiliary basis should be specified for this method (see <tt>auxbasis</tt> keyword).
                 No gradient, optimization, or frequencies are possible.
+     <dt><tt>CC3(2)_R12</tt><dd> The explicitly-correlated (ground-state) CC3 method
+                (<tt>RCC3(2)_R12</tt> and <tt>UCC3(2)_R12</tt> are also allowed).
+                An auxiliary basis should be specified for this method (see <tt>auxbasis</tt> keyword).
+                No gradient, optimization, or frequencies are possible.
    </dl>
 
    The following options are valid with the <tt>KS</tt>, <tt>RKS</tt>, and

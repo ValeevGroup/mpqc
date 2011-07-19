@@ -143,6 +143,10 @@ namespace sc {
 
   };
 
+   inline bool operator==(const DensityFittingParams& A, const DensityFittingParams& B) {
+    return A.basis()->equiv(B.basis()) && A.kernel() == B.kernel() && A.solver() == B.solver();
+  }
+
   /// this class encapsulates objects needed to perform density fitting of a 4-center integral
   struct DensityFittingInfo : virtual public SavableState {
     public:
@@ -169,6 +173,11 @@ namespace sc {
 
       static ClassDesc class_desc_;
   };
+
+  inline bool operator==(const DensityFittingInfo& A, const DensityFittingInfo& B) {
+    // dfinfo objects are equivalent if they use equivalent params and same runtime object
+    return (*A.params() == *B.params()) && A.runtime() == B.runtime();
+  }
 
 
 } // end of namespace sc

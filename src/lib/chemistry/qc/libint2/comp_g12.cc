@@ -561,6 +561,13 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
     if (need_cart2sph_transform)
     transform_contrquartets_(prim_ints_[te_type],contr_quartets_[te_type]);
 
+    //
+    // If not CCA-compliant normalization -- re-normalize all integrals to 1
+    //
+#if INTEGRALLIBINT2_NORMCONV != INTEGRALLIBINT2_NORMCONV_CCA
+    norm_contrcart1_(need_cart2sph_transform ? contr_quartets_[te_type] : prim_ints_[te_type]);
+#endif
+
     /*----------------------------------------------
      Resort integrals from by-contraction-quartets
      into shell-quartet order if needed

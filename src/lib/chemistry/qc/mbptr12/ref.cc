@@ -646,6 +646,17 @@ RefWavefunction::init() const
     // make sure it's computed first
     const double e = this_nonconst->energy();
     this_nonconst->init_spaces();//should pay great attention to this!
+
+    // make sure that FockBuildRuntime uses same density fitting info as this reference
+    // currently, if this-> has non-null dfinfo (i.e. uses density fitting) it does not use same WavefunctionWorld as other wave functions
+    // this means that other wave functions cannot simply use its dfinfo (some spaces may have been added to their registries, etc.)
+    // TODO: Wavefunctions to properly initialize and share WavafunctionWorld. Reference wave function should be made part of the world of the
+    // wave function that uses it
+    if (this->dfinfo().nonnull()) throw FeatureNotImplemented("DF-based references cannot be currently used in correlated computations yet",
+                                                              __FILE__, __LINE__,
+                                                              this->class_desc());
+    world_->fockbuild_runtime()->dfinfo(this->dfinfo());
+
     // make sure that FockBuildRuntime uses same densities as the reference wavefunction
     if(force_average_AB_rdm1_ == false) // the densites are in AO basis
         world_->fockbuild_runtime()->set_densities(this->ordm(Alpha), this->ordm(Beta));//her computes ordm
@@ -1134,11 +1145,18 @@ SD_RefWavefunction::init_spaces_unrestricted()
   }
 }
 
+Ref<DensityFittingInfo>
+SD_RefWavefunction::dfinfo() const {
+  Ref<SCF> scf_ptr; scf_ptr << this->obwfn();
+  if (scf_ptr.nonnull())
+    return scf_ptr->dfinfo();
+  return 0;
+}
 
 ///////////////////////////////////////////////////////////////////
 
 static ClassDesc ORDM_R12RefWavefunction_cd(
-  typeid(ORDM_RefWavefunction),"ORDM_R12RefWavefunction",1,"public R12RefWavefunction",
+  typeid(ORDM_RefWavefunction),"ORDM_RefWavefunction",1,"public RefWavefunction",
   0, 0, create<ORDM_RefWavefunction>);
 
 ORDM_RefWavefunction::ORDM_RefWavefunction(const Ref<WavefunctionWorld>& world,
@@ -1406,6 +1424,172 @@ ORDM_RefWavefunction::init_spaces_unrestricted() {
     }
 #endif
   } // end of spincase1 loop
+}
+
+Ref<DensityFittingInfo>
+ORDM_RefWavefunction::dfinfo() const {
+  return 0;
+}
+
+///////////////////////////////////////////////////////////////////
+
+static ClassDesc Extern_RefWavefunction_cd(
+  typeid(Extern_RefWavefunction),"Extern_RefWavefunction",1,"public RefWavefunction",
+  0, 0, create<Extern_RefWavefunction>);
+
+Extern_RefWavefunction::Extern_RefWavefunction(const Ref<WavefunctionWorld>& world,
+                         const Ref<GaussianBasisSet>& basis,
+                         const Ref<Integral>& integral,
+                         const RefSCMatrix& orbs,
+                         const std::vector<unsigned int>& orbsym,
+                         const RefSymmSCMatrix& alpha_1rdm,
+                         const RefSymmSCMatrix& beta_1rdm,
+                         unsigned int nocc,
+                         unsigned int nfzc,
+                         unsigned int nfzv,
+                         bool omit_uocc) :
+                         RefWavefunction(world, basis, integral),
+                         nfzc_(nfzc),
+                         nfzv_(nfzv),
+                         omit_uocc_(omit_uocc)
+{
+  const unsigned int norbs = orbs.coldim().n();
+  assert(nocc >= nfzc);
+  assert(norbs - nocc >= nfzv);
+
+  rdm_[Alpha] = alpha_1rdm;
+  rdm_[Beta] = beta_1rdm;
+
+  // this object will never become obsolete, so can compute it right now
+  init_spaces(nocc, orbs, orbsym);
+}
+
+Extern_RefWavefunction::Extern_RefWavefunction(StateIn& si) : RefWavefunction(si) {
+  int c = 0;
+  detail::FromStateIn<RefSymmSCMatrix>::get(rdm_[Alpha], si, c);
+  detail::FromStateIn<RefSymmSCMatrix>::get(rdm_[Beta], si, c);
+  si.get(nfzc_);
+  si.get(nfzv_);
+  si.get(omit_uocc_);
+}
+
+Extern_RefWavefunction::~Extern_RefWavefunction() {
+}
+
+void
+Extern_RefWavefunction::save_data_state(StateOut& so) {
+  int c = 0;
+  detail::ToStateOut<RefSymmSCMatrix>::put(rdm_[Alpha], so, c);
+  detail::ToStateOut<RefSymmSCMatrix>::put(rdm_[Alpha], so, c);
+  so.put(nfzc_);
+  so.put(nfzv_);
+  so.put(omit_uocc_);
+}
+
+RefSymmSCMatrix
+Extern_RefWavefunction::core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &basis,
+                                                    const Ref<GaussianBasisSet> &p_basis) {
+  const Ref<OrbitalSpace>& aox = this->world()->tfactory()->ao_registry()->value(basis);
+  const std::string nonrel_hkey =
+    ParsedOneBodyIntKey::key(aox->id(), aox->id(),
+                             std::string("H"));
+  RefSCMatrix Hnr = world()->fockbuild_runtime()->get(nonrel_hkey);
+
+  RefSymmSCMatrix Hnr_symm = Hnr.kit()->symmmatrix(Hnr.rowdim());
+  const int n = Hnr_symm.n();
+  Hnr_symm->assign_subblock(Hnr.pointer(), 0, n-1, 0, n-1);
+  return Hnr_symm;
+}
+
+void
+Extern_RefWavefunction::init_spaces(unsigned int nocc,
+                                    const RefSCMatrix& coefs,
+                                    const std::vector<unsigned int>& orbsyms) {
+
+  const unsigned int nmo = coefs.coldim().n();
+  // block orbitals by symmetry
+  Ref<OrbitalSpace> pspace_ao;
+  {
+    const std::string id = ParsedOrbitalSpaceKey::key("p", AnySpinCase1);
+    const std::string name("MOs blocked by symmetry");
+    RefDiagSCMatrix evals = coefs.kit()->diagmatrix(coefs.coldim());
+    // will set eigenvalues as follows:
+    // frozen occupied orbitals to -2.0
+    // active occupied orbitals to -1.0
+    // active virtual orbitals to 1.0
+    // frozen virtual orbitals to 2.0
+    // this will help to determine occupation numbers later
+    evals.assign(0.0);
+    for(int i=0; i<nfzc_; ++i) evals.set_element(i, -2.0);
+    for(int i=nfzc_; i<nocc; ++i) evals.set_element(i, -1.0);
+    for(int i=nocc; i<nmo-nfzv_; ++i) evals.set_element(i, 1.0);
+    for(int i=nmo-nfzv_; i<nmo; ++i) evals.set_element(i, 2.0);
+    RefDiagSCMatrix occnums = evals.clone();
+    occnums.assign(0.0);  for(int i=0; i<nocc; ++i) occnums.set_element(i, 1.0);
+    const unsigned int nirreps =
+        basis()->molecule()->point_group()->char_table().order();
+    pspace_ao = new OrderedOrbitalSpace<SymmetryMOOrder>(
+        id, name, basis(), integral(), coefs, evals, occnums, orbsyms,
+        SymmetryMOOrder(nirreps));
+  }
+  RefSCMatrix C_ao = pspace_ao->coefs();
+  RefDiagSCMatrix evals = pspace_ao->evals();
+  // compute occupancies from evals (see the trick above)
+  std::vector<double> occnums(nmo);
+  for(unsigned int i=0; i<nmo; ++i)
+    occnums[i] = evals(i) > 0.0 ? 0.0 : 1.0;
+
+  // transform orbitals to SO basis
+  Ref<PetiteList> plist = integral()->petite_list();
+  RefSCMatrix C_so = plist->evecs_to_SO_basis(C_ao);
+
+  // compute overlap in SO basis
+  RefSymmSCMatrix S_so = compute_onebody_matrix<&Integral::overlap>(plist);
+
+  // transform to MO basis, verify orthonormality of MOs
+  RefSymmSCMatrix S_mo = S_so.kit()->symmmatrix(C_so.coldim());
+  S_mo.assign(0.0);
+  S_mo->accumulate_transform(C_so, S_so, SCMatrix::TransposeTransform);
+  S_mo.print("MO metric");
+
+  // compute active orbital mask
+  // from frozen-core
+  typedef MolecularOrbitalMask<double, RefDiagSCMatrix, std::less<double> > FZCMask;
+  FZCMask fzcmask(nfzc(), evals);
+  std::vector<bool> cmask = fzcmask.mask();
+  // and frozen-virtuals
+  typedef MolecularOrbitalMask<double, RefDiagSCMatrix, std::greater<double> > FZVMask;
+  FZVMask fzvmask(nfzv(), evals);
+  std::vector<bool> vmask = fzvmask.mask();
+  std::vector<bool> actmask(nmo);
+  std::transform(cmask.begin(), cmask.end(), vmask.begin(), actmask.begin(), std::logical_and<bool>() );
+
+  Ref<OrbitalSpaceRegistry> oreg = this->world()->tfactory()->orbital_registry();
+
+  if (spin_polarized() == false) { // closed-shell
+    spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, AnySpinCase1, basis(), integral(), C_ao,
+                                                   occnums, actmask, evals);
+    spinspaces_[Beta] = spinspaces_[Alpha];
+#if 0
+    spinspaces_[Alpha]->occ_sb()->print_detail();
+    spinspaces_[Alpha]->occ_act_sb()->print_detail();
+    spinspaces_[Alpha]->uocc_sb()->print_detail();
+    spinspaces_[Alpha]->uocc_act_sb()->print_detail();
+    spinspaces_[Alpha]->occ()->print_detail();
+    spinspaces_[Alpha]->occ_act()->print_detail();
+#endif
+  }
+  else { // spin-restricted open-shell
+    spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, Alpha, basis(), integral(), C_ao,
+                                                   occnums, actmask, evals);
+    spinspaces_[Beta] = new PopulatedOrbitalSpace(oreg, Beta, basis(), integral(), C_ao,
+                                                  occnums, actmask, evals);
+  }
+}
+
+Ref<DensityFittingInfo>
+Extern_RefWavefunction::dfinfo() const {
+  return 0;
 }
 
 ///////////////////////////////////////////////////////////////////

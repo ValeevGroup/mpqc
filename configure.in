@@ -1744,7 +1744,25 @@ AC_CHECK_HEADERS(libint2/libint2.h,
       )
     fi
     if test X$libint2_cgshell_ordering = Xnone; then
+      dnl -- else try gamess --
+      AC_COMPILE_IFELSE(
+        AC_LANG_PROGRAM(
+          [[#include <libint2/libint2.h>
+            #if LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_GAMESS
+            void present_if_defined() {}
+            #endif
+          ]],
+          [[
+            present_if_defined();
+          ]]
+        ),
+        [libint2_cgshell_ordering=gamess
+         AC_MSG_RESULT(gamess)]
+      )
+    fi
+    if test X$libint2_cgshell_ordering = Xnone; then
       AC_MSG_RESULT([could not determine (this libint2 library is too old or uses an unsupported ordering)])
+      AC_MSG_RESULT([[libint2 API is not compatible with MPQC]])
     else
       HAVE_LIBINT2=yes
       AC_DEFINE(HAVE_LIBINT2)
@@ -1881,8 +1899,39 @@ if test X$HAVE_LIBINT2 != Xyes; then
   HAVE_INTEGRALLIBINT2=no
   EXCLUDED_DIRS="-x SRC_LIB_CHEMISTRY_QC_LIBINT2 $EXCLUDED_DIRS"
 else
+  HAVE_INTEGRALLIBINT2=yes
   AC_DEFINE(HAVE_INTEGRALLIBINT2)
   AC_SUBST(HAVE_INTEGRALLIBINT2)
+  
+  # IntegralLibint2's normalization convention can be configured to
+  # cca (e.g., in d shell only dxx, dyy, and dzz are normalized to unity) or exact
+  AC_ARG_WITH(integrallibint2-normconv,
+    [  --with-integrallibint2-normconv  Specifies the normalization convention for IntegralLibint2 (cca or exact).],
+    [
+      normconv=$withval
+    ],
+    [
+      normconv=cca
+    ]
+  )
+  normconv_cca=1
+  normconv_exact=2
+  case $normconv in
+  cca)
+    INTEGRALLIBINT2_NORMCONV=$normconv_cca
+    echo Using IntegralLibint2 normalization convention: cca
+  ;;
+  exact)
+    INTEGRALLIBINT2_NORMCONV=$normconv_exact
+    echo Using IntegralLibint2 normalization convention: exact
+  ;;
+  *)
+    AC_MSG_NOTICE([Invalid value for --enable-integrallibint2-normconv ($normconv), using cca])
+    INTEGRALLIBINT2_NORMCONV=$normconv_cca
+    echo Using IntegralLibint2 normalization convention: cca
+  ;;
+  esac
+  AC_DEFINE(INTEGRALLIBINT2_NORMCONV, $INTEGRALLIBINT2_NORMCONV)
 fi
 
 dnl ----------- make sure we have everything for mbptr12 ----------
@@ -1958,6 +2007,18 @@ AC_CHECK_HEADERS(psiconfig.h,
   )
 )
 AC_LANG_RESTORE
+
+dnl ---- if IntegralLibint2 uses non-cca normalization, will not use Psi!
+
+if test X$HAVE_COMPATIBLE_PSI = Xyes -a X$HAVE_INTEGRALLIBINT2 = Xyes; then
+  AC_MSG_CHECKING([if Psi can be used with IntegralLibint2])
+  if test X$INTEGRALLIBINT2_NORMCONV = X$normconv_cca; then
+    AC_MSG_RESULT([yes])
+  else
+    AC_MSG_RESULT([no])
+    HAVE_COMPATIBLE_PSI=no
+  fi
+fi
 
 dnl ----------- libpsio library checks --------------
 
@@ -2215,7 +2276,7 @@ AC_SUBST(ENABLESHARED)
 
 dnl --------- CCA component configuration ---------
 
-if test $components == "yes"; then
+if test "$components" == "yes"; then
 
   if test -z $CCA_CHEM_CONFIG && ! test -x $CCA_CHEM_CONFIG; then
     AC_MSG_ERROR([cca-chem-config is required to build CCA component code])

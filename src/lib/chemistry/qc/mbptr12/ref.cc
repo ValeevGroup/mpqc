@@ -31,6 +31,8 @@
 #include <chemistry/qc/scf/hsosscf.h>
 #include <chemistry/qc/basis/obintfactory.h>
 #include <chemistry/qc/wfn/orbitalspace_utils.h>
+#include <chemistry/qc/lmp2/pop_local.h>
+#include <chemistry/qc/lcao/fockbuilder.h>
 
 using namespace sc;
 
@@ -126,8 +128,9 @@ sc::compute_canonvir_space(const Ref<FockBuildRuntime>& fb_rtime,
                                                    spin);
   RefSCMatrix F = fb_rtime->get(key);
   RefSymmSCMatrix Fs = F.kit()->symmmatrix(F.rowdim());
-  const int n = Fs.n();
-  Fs->assign_subblock(F.pointer(), 0, n-1, 0, n-1);
+  Fs.assign(0.0);
+  Fs.accumulate_symmetric_sum(F);
+  Fs.scale(0.5);
 
   Ref<OrbitalSpace> result = new OrbitalSpace("e(sym)", "canonical symmetry-blocked VBS",
                                               vir_space->coefs()*Fs.eigvecs(),
@@ -336,8 +339,9 @@ static ClassDesc R12RefWavefunction_cd(
 RefWavefunction::RefWavefunction(const Ref<WavefunctionWorld>& world,
                                        const Ref<GaussianBasisSet>& basis,
                                        const Ref<Integral>& integral) :
-  world_(world), basis_(basis), integral_(integral), omit_uocc_(true), force_average_AB_rdm1_(false) {
+  world_(world), basis_(basis), integral_(integral->clone()), omit_uocc_(true), force_average_AB_rdm1_(false) {
   for(int spin=0; spin<NSpinCases1; ++spin) spinspaces_[spin] = 0;
+  integral_->set_basis(basis, basis, basis, basis);
 }
 
 RefWavefunction::RefWavefunction(StateIn& si) :
@@ -394,14 +398,7 @@ RefWavefunction::init() const
     this_nonconst->init_spaces();
 
     // make sure that FockBuildRuntime uses same density fitting info as this reference
-    // currently, if this-> has non-null dfinfo (i.e. uses density fitting) it does not use same WavefunctionWorld as other wave functions
-    // this means that other wave functions cannot simply use its dfinfo (some spaces may have been added to their registries, etc.)
-    // TODO: Wavefunctions to properly initialize and share WavafunctionWorld. Reference wave function should be made part of the world of the
-    // wave function that uses it
-    if (this->dfinfo().nonnull()) throw FeatureNotImplemented("DF-based references cannot be currently used in correlated computations yet",
-                                                              __FILE__, __LINE__,
-                                                              this->class_desc());
-    world_->fockbuild_runtime()->dfinfo(this->dfinfo());
+    assert(world_->fockbuild_runtime()->dfinfo() == this->dfinfo());
 
     // make sure that FockBuildRuntime uses same densities as the reference wavefunction
     if(force_average_AB_rdm1_ == false)
@@ -557,7 +554,8 @@ SD_RefWavefunction::SD_RefWavefunction(const Ref<WavefunctionWorld>& world,
                                              bool spin_restricted,
                                              unsigned int nfzc,
                                              unsigned int nfzv,
-                                             Ref<OrbitalSpace> vir_space) :
+                                             Ref<OrbitalSpace> vir_space,
+                                             std::string occ_orbitals) :
                                              RefWavefunction(world,
                                                                 obwfn->basis(),
                                                                 obwfn->integral()),
@@ -565,7 +563,9 @@ SD_RefWavefunction::SD_RefWavefunction(const Ref<WavefunctionWorld>& world,
                                              spin_restricted_(spin_restricted),
                                              nfzc_(nfzc),
                                              nfzv_(nfzv),
-                                             vir_space_(vir_space) {
+                                             vir_space_(vir_space),
+                                             occ_orbitals_(occ_orbitals)
+{
   // spin_restricted is a recommendation only -> make sure it is realizable
   if (obwfn_->spin_polarized() == false) spin_restricted_ = true;
   if (obwfn_->spin_unrestricted() == true) spin_restricted_ = false;
@@ -609,7 +609,7 @@ SD_RefWavefunction::ordm(SpinCase1 s) const {
 
 RefSymmSCMatrix
 SD_RefWavefunction::core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &basis,
-                                                  const Ref<GaussianBasisSet> &p_basis) {
+                                               const Ref<GaussianBasisSet> &p_basis) {
   return obwfn()->core_hamiltonian_for_basis(basis, p_basis);
 }
 
@@ -627,6 +627,8 @@ SD_RefWavefunction::init_spaces_restricted()
 {
   const bool moorder = true;   // order orbitals in the order of increasing energies
   Ref<FockBuildRuntime> fbrun = this->world()->fockbuild_runtime();
+  RefSymmSCMatrix P_ao = obwfn()->ao_density(); P_ao.scale(0.5);
+  fbrun->set_densities(P_ao, P_ao);
   const Ref<GaussianBasisSet> bs = obwfn()->basis();
   RefSCMatrix evecs_so = obwfn()->eigenvectors();
   RefDiagSCMatrix evals = obwfn()->eigenvalues();
@@ -634,6 +636,40 @@ SD_RefWavefunction::init_spaces_restricted()
   Ref<PetiteList> plist = integral->petite_list();
   RefSCMatrix evecs_ao = plist->evecs_to_AO_basis(evecs_so);
   int nmo = evecs_ao.coldim().n();
+
+  // optionally, localize the occupied orbitals
+  if (occ_orbitals_ == "pipek-mezey") {
+    RefSymmSCMatrix S_ao = detail::overlap(bs, integral);
+    PipekMezeyLocalization localizer(obwfn(), nfzc_, S_ao);
+    evecs_ao.print("Orbitals before localization");
+    RefSCMatrix evecs_occ_ao = localizer.compute_orbitals();
+    const int nocc_act = evecs_occ_ao.ncol();
+    const int nocc = nocc_act + nfzc_;
+    evecs_occ_ao.print("Active occupied orbitals after localization");
+    evecs_ao.assign_subblock(evecs_occ_ao,
+                             0, evecs_occ_ao.nrow()-1,
+                             nfzc_, nocc - 1);
+    evecs_ao.print("Orbitals after localization");
+
+    // let's test them now!
+#if 0
+    { // metric
+      RefSymmSCMatrix S_mo = evecs_ao.kit()->symmmatrix(evecs_ao.coldim());
+      S_mo.assign(0.0);
+      S_mo.accumulate_transform(evecs_ao, S_ao, SCMatrix::TransposeTransform);
+      S_mo.print("MO overlap");
+    }
+#endif
+    { // recompute the Fock matrix and pick the diagonal elements as the eigenvalues for the localized orbitals
+      Ref<FockBuildRuntime> fbrun = this->world()->fockbuild_runtime();
+      Ref<OrbitalSpace> aospace = this->world()->tfactory()->orbital_registry()->value("mu");
+      std::string F_ao_key = ParsedOneBodyIntKey::key(aospace->id(), aospace->id(), "F", AnySpinCase1);
+      RefSCMatrix F_ao_rect = fbrun->get(F_ao_key);
+      RefSCMatrix F_mo = evecs_ao.t() * F_ao_rect * evecs_ao;
+      for(int o=nfzc_; o<nocc; ++o)
+        evals(o) = F_mo.get_element(o,o);
+    }
+  }
 
   using std::vector;
   vector<double> aoccs(nmo);
@@ -777,9 +813,28 @@ SD_RefWavefunction::init_spaces_unrestricted()
 Ref<DensityFittingInfo>
 SD_RefWavefunction::dfinfo() const {
   Ref<SCF> scf_ptr; scf_ptr << this->obwfn();
-  if (scf_ptr.nonnull())
-    return scf_ptr->dfinfo();
-  return 0;
+  Ref<DensityFittingInfo> result = (scf_ptr.nonnull()) ? scf_ptr->dfinfo() : 0;
+  return result;
+}
+
+namespace {
+  void add_ao_space(const Ref<GaussianBasisSet>& bs,
+                    const Ref<Integral>& ints,
+                    const Ref<AOSpaceRegistry>& aoreg,
+                    const Ref<OrbitalSpaceRegistry> oreg) {
+    Ref<Integral> localints = ints->clone();
+    const std::string unique_id = new_unique_key(oreg);
+    Ref<OrbitalSpace> mu = new AtomicOrbitalSpace(unique_id, std::string(bs->label()) + "(AO)", bs, localints);
+    oreg->add(make_keyspace_pair(mu));
+    aoreg->add(mu->basis(),mu);
+  }
+  void remove_ao_space(const Ref<GaussianBasisSet>& bs,
+                       const Ref<AOSpaceRegistry>& aoreg,
+                       const Ref<OrbitalSpaceRegistry> oreg) {
+    Ref<OrbitalSpace> aospace = aoreg->value(bs);
+    aoreg->remove(bs);
+    oreg->remove(aospace->id());
+  }
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -834,7 +889,14 @@ ORDM_RefWavefunction::save_data_state(StateOut& so) {
 
 RefSymmSCMatrix
 ORDM_RefWavefunction::core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &basis,
-                                                    const Ref<GaussianBasisSet> &p_basis) {
+                                                 const Ref<GaussianBasisSet> &p_basis) {
+  assert(p_basis == 0); // can only do nonrelativistic Hamiltonians now
+  Ref<OrbitalSpaceRegistry> oreg = this->world()->tfactory()->orbital_registry();
+  Ref<AOSpaceRegistry> aoreg = this->world()->tfactory()->ao_registry();
+  const bool need_to_add_aospace_temporarily = !aoreg->key_exists(basis);
+  if (need_to_add_aospace_temporarily)
+    add_ao_space(basis, integral(), aoreg, oreg);
+
   const Ref<OrbitalSpace>& aox = this->world()->tfactory()->ao_registry()->value(basis);
   const std::string nonrel_hkey =
     ParsedOneBodyIntKey::key(aox->id(), aox->id(),
@@ -842,8 +904,13 @@ ORDM_RefWavefunction::core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &ba
   RefSCMatrix Hnr = world()->fockbuild_runtime()->get(nonrel_hkey);
 
   RefSymmSCMatrix Hnr_symm = Hnr.kit()->symmmatrix(Hnr.rowdim());
-  const int n = Hnr_symm.n();
-  Hnr_symm->assign_subblock(Hnr.pointer(), 0, n-1, 0, n-1);
+  Hnr_symm.assign(0.0);
+  Hnr_symm.accumulate_symmetric_sum(Hnr);
+  Hnr_symm.scale(0.5);
+
+  if (need_to_add_aospace_temporarily)
+    remove_ao_space(basis, aoreg, oreg);
+
   return Hnr_symm;
 }
 
@@ -1086,8 +1153,47 @@ Extern_RefWavefunction::Extern_RefWavefunction(const Ref<WavefunctionWorld>& wor
   assert(nocc >= nfzc);
   assert(norbs - nocc >= nfzv);
 
-  rdm_[Alpha] = alpha_1rdm;
-  rdm_[Beta] = beta_1rdm;
+  // are densities idempotent?
+  ordm_idempotent_ = true;
+  {
+    RefSymmSCMatrix Pa_2 = alpha_1rdm.kit()->symmmatrix(alpha_1rdm.dim());
+    RefSymmSCMatrix I = alpha_1rdm.kit()->symmmatrix(alpha_1rdm.dim());
+    Pa_2.assign(0.0);
+    I.assign(0.0); I->shift_diagonal(1.0);
+    Pa_2.accumulate_transform(alpha_1rdm, I);
+    Ref<SCElementKNorm> op = new SCElementKNorm;
+    (Pa_2 - alpha_1rdm)->element_op(op.pointer());
+    if (op->result() > DBL_EPSILON)
+      ordm_idempotent_ = false;
+    if (beta_1rdm == alpha_1rdm && ordm_idempotent_ == true) {
+      RefSymmSCMatrix Pb_2 = beta_1rdm.kit()->symmmatrix(beta_1rdm.dim());
+      RefSymmSCMatrix I = beta_1rdm.kit()->symmmatrix(beta_1rdm.dim());
+      Pb_2.assign(0.0);
+      I.assign(0.0); I->shift_diagonal(1.0);
+      Pb_2.accumulate_transform(beta_1rdm, I);
+      Ref<SCElementKNorm> op = new SCElementKNorm;
+      (Pb_2 - beta_1rdm)->element_op(op.pointer());
+      if (op->result() > DBL_EPSILON)
+        ordm_idempotent_ = false;
+    }
+  }
+
+  // convert densities to AO basis
+  { // Alpha spin
+    RefSymmSCMatrix alpha_1rdm_ao = orbs.kit()->symmmatrix(orbs->rowdim());
+    alpha_1rdm_ao.assign(0.0);
+    alpha_1rdm_ao.accumulate_transform(orbs, alpha_1rdm);
+    rdm_[Alpha] = alpha_1rdm_ao;
+  }
+  if (alpha_1rdm == beta_1rdm)
+    rdm_[Beta] = rdm_[Alpha];
+  else {
+    // Beta spin
+    RefSymmSCMatrix beta_1rdm_ao = orbs.kit()->symmmatrix(orbs->rowdim());
+    beta_1rdm_ao.assign(0.0);
+    beta_1rdm_ao.accumulate_transform(orbs, beta_1rdm);
+    rdm_[Beta] = beta_1rdm_ao;
+  }
 
   // this object will never become obsolete, so can compute it right now
   init_spaces(nocc, orbs, orbsym);
@@ -1100,6 +1206,7 @@ Extern_RefWavefunction::Extern_RefWavefunction(StateIn& si) : RefWavefunction(si
   si.get(nfzc_);
   si.get(nfzv_);
   si.get(omit_uocc_);
+  si.get(ordm_idempotent_);
 }
 
 Extern_RefWavefunction::~Extern_RefWavefunction() {
@@ -1113,20 +1220,33 @@ Extern_RefWavefunction::save_data_state(StateOut& so) {
   so.put(nfzc_);
   so.put(nfzv_);
   so.put(omit_uocc_);
+  so.put(ordm_idempotent_);
 }
 
 RefSymmSCMatrix
 Extern_RefWavefunction::core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &basis,
-                                                    const Ref<GaussianBasisSet> &p_basis) {
-  const Ref<OrbitalSpace>& aox = this->world()->tfactory()->ao_registry()->value(basis);
+                                                   const Ref<GaussianBasisSet> &p_basis) {
+  assert(p_basis == 0); // can only do nonrelativistic Hamiltonians now
+  Ref<OrbitalSpaceRegistry> oreg = this->world()->tfactory()->orbital_registry();
+  Ref<AOSpaceRegistry> aoreg = this->world()->tfactory()->ao_registry();
+  const bool need_to_add_aospace_temporarily = !aoreg->key_exists(basis);
+  if (need_to_add_aospace_temporarily)
+    add_ao_space(basis, integral(), aoreg, oreg);
+
+  const Ref<OrbitalSpace>& aox = aoreg->value(basis);
   const std::string nonrel_hkey =
     ParsedOneBodyIntKey::key(aox->id(), aox->id(),
                              std::string("H"));
   RefSCMatrix Hnr = world()->fockbuild_runtime()->get(nonrel_hkey);
 
   RefSymmSCMatrix Hnr_symm = Hnr.kit()->symmmatrix(Hnr.rowdim());
-  const int n = Hnr_symm.n();
-  Hnr_symm->assign_subblock(Hnr.pointer(), 0, n-1, 0, n-1);
+  Hnr_symm.assign(0.0);
+  Hnr_symm.accumulate_symmetric_sum(Hnr);
+  Hnr_symm.scale(0.5);
+
+  if (need_to_add_aospace_temporarily)
+    remove_ao_space(basis, aoreg, oreg);
+
   return Hnr_symm;
 }
 
@@ -1139,7 +1259,8 @@ Extern_RefWavefunction::init_spaces(unsigned int nocc,
   // block orbitals by symmetry
   Ref<OrbitalSpace> pspace_ao;
   {
-    const std::string id = ParsedOrbitalSpaceKey::key("p", AnySpinCase1);
+    const std::string unique_id = new_unique_key(this->world()->tfactory()->orbital_registry());
+    const std::string id = ParsedOrbitalSpaceKey::key(unique_id, AnySpinCase1);
     const std::string name("MOs blocked by symmetry");
     RefDiagSCMatrix evals = coefs.kit()->diagmatrix(coefs.coldim());
     // will set eigenvalues as follows:
@@ -1192,6 +1313,36 @@ Extern_RefWavefunction::init_spaces(unsigned int nocc,
   std::vector<bool> vmask = fzvmask.mask();
   std::vector<bool> actmask(nmo);
   std::transform(cmask.begin(), cmask.end(), vmask.begin(), actmask.begin(), std::logical_and<bool>() );
+
+  // compute "real" orbital eigenvalues as diagonal elements of the Fock matrix
+#if 1
+  {
+    Ref<OrbitalSpaceRegistry> oreg = this->world()->tfactory()->orbital_registry();
+    const bool need_to_add_pspace_temporarily = !oreg->key_exists(pspace_ao->id());
+    if (need_to_add_pspace_temporarily)
+      oreg->add(pspace_ao->id(), pspace_ao);
+    Ref<AOSpaceRegistry> aoreg = this->world()->tfactory()->ao_registry();
+    const bool need_to_add_aospace_temporarily = !aoreg->key_exists(basis());
+    if (need_to_add_aospace_temporarily)
+      add_ao_space(basis(), integral(), aoreg, oreg);
+
+    const std::string fkey =
+      ParsedOneBodyIntKey::key(pspace_ao->id(), pspace_ao->id(),
+                               std::string("F"));
+    RefSCMatrix F = world()->fockbuild_runtime()->get(fkey);
+    for(int o=0; o<nmo; ++o)
+      evals.set_element(o, F(o,o));
+    F.print("orbital Fock matrix");
+    evals.print("orbital eigenvalues");
+
+    if (need_to_add_pspace_temporarily)
+      oreg->remove(pspace_ao->id());
+    if (need_to_add_aospace_temporarily)
+      remove_ao_space(basis(), aoreg, oreg);
+
+    //this->world()->obsolete();
+  }
+#endif
 
   Ref<OrbitalSpaceRegistry> oreg = this->world()->tfactory()->orbital_registry();
 

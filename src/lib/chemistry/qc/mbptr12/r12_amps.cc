@@ -140,7 +140,7 @@ R12Amplitudes::compute_(SpinCase2 spincase2)
   Foo_[s] = kit->matrix(dim_f12,dim_oo);  Foo_[s].assign(0.0);
   Fov_[s] = kit->matrix(dim_f12,dim_ov);  Fov_[s].assign(0.0);
   Fox_[s] = kit->matrix(dim_f12,dim_ox);  Fox_[s].assign(0.0);
-  if (p1_neq_p2) {
+  if (true) {
     Fvo_[s] = kit->matrix(dim_f12,dim_vo);  Fvo_[s].assign(0.0);
     Fxo_[s] = kit->matrix(dim_f12,dim_xo);  Fxo_[s].assign(0.0);
   }
@@ -202,7 +202,7 @@ R12Amplitudes::compute_(SpinCase2 spincase2)
   if (!antisymm) {
     r12eval_->compute_F12_(Fov_[s],xspace1,occ1,xspace2,vir2_act,antisymm,tform_pp_keys);
     r12eval_->compute_F12_(Fox_[s],xspace1,occ1,xspace2,cabs2,antisymm,tform_mx_keys);
-    if (p1_neq_p2) {
+    if (true) {
       Fvo_[s] = kit->matrix(dim_f12,dim_vo);
       Fxo_[s] = kit->matrix(dim_f12,dim_xo);
       r12eval_->compute_F12_(Fvo_[s],xspace1,vir1_act,xspace2,occ2,antisymm,tform_pp_keys);

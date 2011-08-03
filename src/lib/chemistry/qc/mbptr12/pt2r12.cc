@@ -277,7 +277,14 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
   // this may update the accuracy of reference_ object
   this->set_desired_value_accuracy(desired_value_accuracy());
 
-  Ref<WavefunctionWorld> world = new WavefunctionWorld(keyval, this);
+  // if world not given, make this the center of a new World
+  Ref<WavefunctionWorld> world; world << keyval->describedclassvalue("world", KeyValValueRefDescribedClass(0));
+  if (world.null())
+    world = new WavefunctionWorld(keyval);
+  if (world.null())
+    throw InputError("PT2R12 requires a WavefunctionWorld", __FILE__, __LINE__, "world");
+  if (world->wfn() == 0) world->set_wfn(this);
+
   const bool spin_restricted = true;  // always use spin-restricted spaces
   // if omit_uocc is true, need to make an empty virtual space
   Ref<OrbitalSpace> virspace = 0;
@@ -877,8 +884,7 @@ RefSCMatrix PT2R12::C(SpinCase2 S) {
   if(S==AlphaBeta) {
     SpinMOPairIter OW_iter(r12eval_->GGspace(Alpha)->rank(), r12eval_->GGspace(Beta)->rank(), S );
     SpinMOPairIter PQ_iter(r12eval_->ggspace(Alpha)->rank(), r12eval_->ggspace(Beta)->rank(), S );
-    Ref<R12Technology::GeminalDescriptor> geminaldesc = r12world()->r12tech()->corrfactor()->geminaldescriptor();
-    CuspConsistentGeminalCoefficient coeff_gen(S,geminaldesc);
+    CuspConsistentGeminalCoefficient coeff_gen(S);
     for(OW_iter.start(); int(OW_iter); OW_iter.next()) {
       for(PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {
         unsigned int O = OW_iter.i();
@@ -895,8 +901,7 @@ RefSCMatrix PT2R12::C(SpinCase2 S) {
     SpinCase1 spin = (S==AlphaAlpha) ? Alpha : Beta;
     SpinMOPairIter OW_iter(r12eval_->GGspace(spin)->rank(), r12eval_->GGspace(spin)->rank(), S );
     SpinMOPairIter PQ_iter(r12eval_->ggspace(spin)->rank(), r12eval_->ggspace(spin)->rank(), S );
-    Ref<R12Technology::GeminalDescriptor> geminaldesc = r12world()->r12tech()->corrfactor()->geminaldescriptor();
-    CuspConsistentGeminalCoefficient coeff_gen(S,geminaldesc);
+    CuspConsistentGeminalCoefficient coeff_gen(S);
     for(OW_iter.start(); int(OW_iter); OW_iter.next()) {
       for(PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {
         unsigned int O = OW_iter.i();

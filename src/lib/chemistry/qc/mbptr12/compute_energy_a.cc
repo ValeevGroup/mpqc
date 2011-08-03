@@ -183,7 +183,6 @@ MBPT2_R12::compute_energy_()
   }
 #endif
 
-
   return;
 }
 

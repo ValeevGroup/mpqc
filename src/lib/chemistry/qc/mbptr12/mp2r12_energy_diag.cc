@@ -642,20 +642,9 @@ void MP2R12Energy_Diag::compute_ef12() {
   } // end of CC amplitudes
 
   //
-  // compute coefficients
-  double C_0;  // singlet
-  double C_1;  // triplet
-  if (R12Technology::STG(corrfactor->geminaldescriptor())) {
-    const double gamma = R12Technology::single_slater_exponent(corrfactor->geminaldescriptor());
-    C_0=-1.0/(2.0*gamma);
-    C_1=-1.0/(4.0*gamma);
-  }
-  else if (R12Technology::R12(corrfactor->geminaldescriptor())) {
-    C_0=1.0/2.0;
-    C_1=1.0/4.0;
-  } else {
-    throw ProgrammingError("firstorder_cusp_coefficients -- geminal coefficients can be only determined for STG or R12 geminals",__FILE__,__LINE__);
-  }
+  // geminal coefficients
+  const double C_0=1.0/2.0;
+  const double C_1=1.0/4.0;
 
   //
   // Compute the MP2-R12 part
@@ -750,8 +739,26 @@ void MP2R12Energy_Diag::compute_ef12() {
     const unsigned int f12t1f12_idx = descr_f12f12->intset(f12t1f12_type);
 
     // Get eigenvalues of Fock matrix
+#define COMPUTE_ORBITALSPACE_EIGENVALUES 0
+#if COMPUTE_ORBITALSPACE_EIGENVALUES
+    RefDiagSCMatrix evals_i1;
+    RefDiagSCMatrix evals_i2;
+    {
+      RefSCMatrix F_ii_1 = r12eval()->fock(occ1_act, occ1_act, spin1);
+      evals_i1 = F_ii_1.kit()->diagmatrix(F_ii_1.rowdim());
+      for(unsigned int o=0; o<nocc1_act; ++o) evals_i1.set_element(o, F_ii_1(o, o));
+    }
+    if (occ1_act != occ2_act){
+      RefSCMatrix F_ii_2 = r12eval()->fock(occ2_act, occ2_act, spin2);
+      evals_i2 = F_ii_2.kit()->diagmatrix(F_ii_2.rowdim());
+      for(unsigned int o=0; o<nocc2_act; ++o) evals_i2.set_element(o, F_ii_2(o, o));
+    }
+    else
+      evals_i2 = evals_i1;
+#else
     const RefDiagSCMatrix evals_i1 = occ1_act->evals();
     const RefDiagSCMatrix evals_i2 = occ2_act->evals();
+#endif
 
     //
     // Compute the V intermediate matrix: V^ij_ij and V^ij_ji
@@ -895,10 +902,28 @@ void MP2R12Energy_Diag::compute_ef12() {
       fill_n(Vij_ji_coupling, nocc12, 0.0);
 
       // Get eigenvalues of Fock matrix
+#if COMPUTE_ORBITALSPACE_EIGENVALUES
+    RefDiagSCMatrix evals_a1;
+    RefDiagSCMatrix evals_a2;
+    {
+      RefSCMatrix F_aa_1 = r12eval()->fock(vir1_act, vir1_act, spin1);
+      evals_a1 = F_aa_1.kit()->diagmatrix(F_aa_1.rowdim());
+      for(unsigned int o=0; o<nvir1_act; ++o) evals_a1.set_element(o, F_aa_1(o, o));
+    }
+    if (vir1_act != vir2_act){
+      RefSCMatrix F_aa_2 = r12eval()->fock(vir2_act, vir2_act, spin2);
+      evals_a2 = F_aa_2.kit()->diagmatrix(F_aa_2.rowdim());
+      for(unsigned int o=0; o<nvir2_act; ++o) evals_a2.set_element(o, F_aa_2(o, o));
+    }
+    else
+      evals_a2 = evals_a1;
+#else
       const RefDiagSCMatrix evals_a1 = vir1_act->evals();
       const RefDiagSCMatrix evals_a2 = vir2_act->evals();
+#endif
 
       // Print out all the eigenvalues
+#if 1
       if (debug_ >= DefaultPrintThresholds::mostN2) {
         ExEnv::out0() << endl << indent << "evals_i1: " << endl;
         for(int i1=0; i1<nocc1_act; ++i1) {
@@ -920,6 +945,7 @@ void MP2R12Energy_Diag::compute_ef12() {
           ExEnv::out0() << indent << evals_a2(a2) << endl;
         }
       }
+#endif
 
       // Initialize all the integrals needed
       // Vij_ij_coupling: R^ij_aa' f^a'_b T^ab_ij

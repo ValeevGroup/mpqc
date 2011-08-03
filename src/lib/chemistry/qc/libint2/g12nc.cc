@@ -31,8 +31,6 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/libint2/g12nc.h>
 
-#if LIBINT2_SUPPORT_G12 && !LIBINT2_SUPPORT_T1G12
-
 #define STORE_PAIR_DATA 1
 
 using namespace std;
@@ -62,9 +60,9 @@ G12NCLibint2::G12NCLibint2(Integral *integral,
   int l3 = bs3_->max_angular_momentum();
   int l4 = bs4_->max_angular_momentum();
   int lmax = max(max(l1,l2),max(l3,l4));
-  if (lmax > LIBINT2_MAX_AM_R12kG12) {
+  if (lmax > LIBINT2_MAX_AM_ERI) {
     throw LimitExceeded<int>("G12Libint2::G12Libint2() -- maxam of the basis is too high,\
- not supported by this libint2 library. Recompile libint2.",__FILE__,__LINE__,LIBINT2_MAX_AM_R12kG12,lmax);
+ not supported by this libint2 library. Recompile libint2.",__FILE__,__LINE__,LIBINT2_MAX_AM_ERI,lmax);
   }
 
   /*--- Initialize storage ---*/
@@ -88,8 +86,8 @@ G12NCLibint2::G12NCLibint2(Integral *integral,
   const int max_target_size = bs1_->max_nfunction_in_shell()*bs2_->max_nfunction_in_shell()*
     bs3_->max_nfunction_in_shell()*bs4_->max_nfunction_in_shell();
 
-  size_t storage_needed = LIBINT2_PREFIXED_NAME(libint2_need_memory_r12kg12)(lmax) * sizeof(LIBINT2_REALTYPE);
-  LIBINT2_PREFIXED_NAME(libint2_init_r12kg12)(&Libint_[0],lmax,0);
+  size_t storage_needed = LIBINT2_PREFIXED_NAME(libint2_need_memory_eri)(lmax) * sizeof(LIBINT2_REALTYPE);
+  LIBINT2_PREFIXED_NAME(libint2_init_eri)(&Libint_[0],lmax,0);
   manage_array(Libint_[0].stack, storage_needed/sizeof(LIBINT2_REALTYPE));
 
   target_ints_buffer_[0]= allocate<double>(num_te_types_*max_target_size);
@@ -144,7 +142,7 @@ G12NCLibint2::G12NCLibint2(Integral *integral,
 G12NCLibint2::~G12NCLibint2()
 { 
   unmanage_array(Libint_[0].stack);
-  LIBINT2_PREFIXED_NAME(libint2_cleanup_r12kg12)(&Libint_[0]);
+  LIBINT2_PREFIXED_NAME(libint2_cleanup_eri)(&Libint_[0]);
   ConsumableResources::get_default_instance()->release_memory(Libint_.size() * sizeof(Libint_[0]));
   deallocate(target_ints_buffer_[0]);
   deallocate(cart_ints_[0]);
@@ -198,7 +196,7 @@ G12NCLibint2::storage_required(const Ref<GaussianBasisSet>& b1,
   const int max_target_size = bs1->max_nfunction_in_shell()*bs2->max_nfunction_in_shell()*
     bs3->max_nfunction_in_shell()*bs4->max_nfunction_in_shell();
 
-  storage_required += LIBINT2_PREFIXED_NAME(libint2_need_memory_r12kg12)(lmax) * sizeof(LIBINT2_REALTYPE);
+  storage_required += LIBINT2_PREFIXED_NAME(libint2_need_memory_eri)(lmax) * sizeof(LIBINT2_REALTYPE);
 
   if (bs1->has_pure() || bs2->has_pure() || bs3->has_pure() || bs4->has_pure() ||
       bs1->max_ncontraction() != 1 || bs2->max_ncontraction() != 1 ||
@@ -222,7 +220,7 @@ G12NCLibint2::storage_required(const Ref<GaussianBasisSet>& b1,
 
 G12NCLibint2::ExpensiveMath::ExpensiveMath()
 {
-  const unsigned int imax = 4*LIBINT2_MAX_AM_R12kG12;
+  const unsigned int imax = 4*LIBINT2_MAX_AM_ERI;
   fac[0] = 1.0;
   for(int i=1; i<=imax; i++) {
     fac[i] = i*fac[i-1];
@@ -233,8 +231,6 @@ G12NCLibint2::ExpensiveMath::ExpensiveMath()
       }
     }
 }
-
-#endif // if LIBINT2_SUPPORT_G12
 
 /////////////////////////////////////////////////////////////////////////////
 

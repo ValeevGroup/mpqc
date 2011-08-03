@@ -37,15 +37,16 @@
 namespace sc {
 
 /**
- * A class that returns fixed coefficients determined
- * according to the cusp conditions for Slater type geminal functions
+ * Computes fixed coefficients determined
+ * according to the cusp conditions for
+ * geminal (r12-dependent) functions that have been
+ * normalized so that coefficient of r12 in Taylor expansion around r12=0 is 1
  */
 class CuspConsistentGeminalCoefficient : virtual public RefCount {
   private:
     SpinCase2 pairspin_;
-    Ref<R12Technology::GeminalDescriptor> geminal_;
   public:
-    CuspConsistentGeminalCoefficient(SpinCase2 pairspin, const Ref<R12Technology::GeminalDescriptor> &geminal);
+    CuspConsistentGeminalCoefficient(SpinCase2 pairspin);
     ~CuspConsistentGeminalCoefficient(){}
     /**
      * OW: Indices of geminal generating space

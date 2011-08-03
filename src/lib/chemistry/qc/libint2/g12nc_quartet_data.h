@@ -42,8 +42,8 @@ namespace sc {
   r12_2_g12_pfac is the prefactor by which the r12^2 * g12 integrals are scaled
   it's necessary to produce [g12,[T1,g12]]
  --------------------------------------------------------------------------------*/
-inline void G12NCLibint2::g12nc_quartet_data_(prim_data *Data, double scale, double gamma, double r12_2_g12_pfac,
-                                              bool eri_only)
+inline void G12NCLibint2::g12nc_quartet_data_(prim_data *Data, double scale, OperType otype,
+                                              const ContractedGeminal* gbra, const ContractedGeminal* gket)
 {
 #define STATIC_OO2NP1
 #include "static.h"
@@ -52,17 +52,17 @@ inline void G12NCLibint2::g12nc_quartet_data_(prim_data *Data, double scale, dou
     Local variables
    ----------------*/
   double P[3], Q[3], PQ[3], W[3];
-  double small_T = 1E-15;       /*--- Use only one term in Taylor expansion of Fj(T) if T < small_T ---*/
+  const double small_T = 1E-15;       /*--- Use only one term in Taylor expansion of Fj(T) if T < small_T ---*/
 
-  int p1 = quartet_info_.p1;
-  int p2 = quartet_info_.p2;
-  int p3 = quartet_info_.p3;
-  int p4 = quartet_info_.p4;
+  const int p1 = quartet_info_.p1;
+  const int p2 = quartet_info_.p2;
+  const int p3 = quartet_info_.p3;
+  const int p4 = quartet_info_.p4;
   
-  double a1 = int_shell1_->exponent(quartet_info_.p1);
-  double a2 = int_shell2_->exponent(quartet_info_.p2);
-  double a3 = int_shell3_->exponent(quartet_info_.p3);
-  double a4 = int_shell4_->exponent(quartet_info_.p4);
+  const double a1 = int_shell1_->exponent(quartet_info_.p1);
+  const double a2 = int_shell2_->exponent(quartet_info_.p2);
+  const double a3 = int_shell3_->exponent(quartet_info_.p3);
+  const double a4 = int_shell4_->exponent(quartet_info_.p4);
 
   prim_pair_t* pair12;
   prim_pair_t* pair34;
@@ -76,57 +76,19 @@ inline void G12NCLibint2::g12nc_quartet_data_(prim_data *Data, double scale, dou
   }
 
   //
-  // prefactors for (ab|-1|cd) are same as for OSRR, only (00|-1|00)^m are different
+  // prefactors for OSRR do not depend on the integral kernel
   //
-  double zeta = pair12->gamma;
-  double eta = pair34->gamma;
-  double ooz = 1.0/zeta;
-  double ooe = 1.0/eta;
-  double ooze = 1.0/(zeta+eta);
+  const double zeta = pair12->gamma;
+  const double eta = pair34->gamma;
+  const double ooz = 1.0/zeta;
+  const double ooe = 1.0/eta;
+  const double ooze = 1.0/(zeta+eta);
+#if LIBINT2_DEFINED(eri,roz)
   Data->roz[0] = eta*ooze;
   double rho = zeta*Data->roz[0];
-  double rhog = rho + gamma;
-  double oorhog = 1.0/rhog;
-  double rho2 = rho*rho;
-
-  P[0] = pair12->P[0];
-  P[1] = pair12->P[1];
-  P[2] = pair12->P[2];
-  Q[0] = pair34->P[0];
-  Q[1] = pair34->P[1];
-  Q[2] = pair34->P[2];
-
-  Data->oo2ze[0] = 0.5*ooze;
-  Data->roe[0] = zeta*ooze;
-  Data->oo2z[0] = 0.5 * ooz;
-  Data->oo2e[0] = 0.5 * ooe;
-  W[0] = (zeta*P[0] + eta*Q[0])*ooze;
-  W[1] = (zeta*P[1] + eta*Q[1])*ooze;
-  W[2] = (zeta*P[2] + eta*Q[2])*ooze;
-
-  /* PA */
-  Data->PA_x[0] = P[0] - quartet_info_.A[0];
-  Data->PA_y[0] = P[1] - quartet_info_.A[1];
-  Data->PA_z[0] = P[2] - quartet_info_.A[2];
-  /* QC */
-  Data->QC_x[0] = Q[0] - quartet_info_.C[0];
-  Data->QC_y[0] = Q[1] - quartet_info_.C[1];
-  Data->QC_z[0] = Q[2] - quartet_info_.C[2];
-  /* WP */
-  Data->WP_x[0] = W[0] - P[0];
-  Data->WP_y[0] = W[1] - P[1];
-  Data->WP_z[0] = W[2] - P[2];
-  /* WQ */
-  Data->WQ_x[0] = W[0] - Q[0];
-  Data->WQ_y[0] = W[1] - Q[1];
-  Data->WQ_z[0] = W[2] - Q[2];
-
-  PQ[0] = P[0] - Q[0];
-  PQ[1] = P[1] - Q[1];
-  PQ[2] = P[2] - Q[2];
-  double PQ2 = PQ[0]*PQ[0];
-  PQ2 += PQ[1]*PQ[1];
-  PQ2 += PQ[2]*PQ[2];
+#else
+  double rho = zeta * eta * ooze;
+#endif
 
   const double pfac_norm = int_shell1_->coefficient_unnorm(quartet_info_.gc1,p1)*
                            int_shell2_->coefficient_unnorm(quartet_info_.gc2,p2)*
@@ -134,127 +96,272 @@ inline void G12NCLibint2::g12nc_quartet_data_(prim_data *Data, double scale, dou
                            int_shell4_->coefficient_unnorm(quartet_info_.gc4,p4);
   const double pfac_normovlp = pfac_norm * pair12->ovlp * pair34->ovlp * scale;
 
-  if (eri_only) {
-      double T = rho*PQ2;
-      double pfac = 2.0*sqrt(rho*M_1_PI)*pfac_normovlp;
-      if(T < small_T){
-          assign_FjT(Data,quartet_info_.am,oo2np1,pfac);
-        }
-      else {
-          double *fjttable = Fm_Eval_->values(quartet_info_.am,T);
-          assign_FjT(Data,quartet_info_.am,fjttable,pfac);
-        }
-      return;
+
+  P[0] = pair12->P[0];
+  P[1] = pair12->P[1];
+  P[2] = pair12->P[2];
+  Q[0] = pair34->P[0];
+  Q[1] = pair34->P[1];
+  Q[2] = pair34->P[2];
+  PQ[0] = P[0] - Q[0];
+  PQ[1] = P[1] - Q[1];
+  PQ[2] = P[2] - Q[2];
+  const double PQ2 = PQ[0]*PQ[0] + PQ[1]*PQ[1] + PQ[2]*PQ[2];
+  const double T = rho*PQ2;
+
+  // Coulomb integral
+  if (otype == coulomb) {
+    double pfac = 2.0*sqrt(rho*M_1_PI)*pfac_normovlp;
+    if(T < small_T){
+      assign_FjT(Data,quartet_info_.am,oo2np1,pfac);
     }
-
-  // else, if need other integrals
-  double T = rho2 * oorhog * PQ2;
-
-  //
-  // (00|0|00) and (00|2|00) need to start recursion for (ab|0|cd), (ab|2|cd)
-  //
-  const double rorg = rho * oorhog;
-  const double sqrt_rorg = sqrt(rorg);
-  Data->LIBINT_T_SS_K0G12_SS_0[0] = rorg * sqrt_rorg * exp(-gamma*rorg*PQ2) * pfac_normovlp;
-  Data->LIBINT_T_SS_K2G12_SS_0[0] = (1.5 + T) * Data->LIBINT_T_SS_K0G12_SS_0[0] * oorhog;
-
-  //
-  // compute (00|-1|00)^m from Fj(x)
-  //
-  double pfac = 2.0 * sqrt(rhog*M_1_PI) * Data->LIBINT_T_SS_K0G12_SS_0[0];
-
-  const double *F;
-  if(T < small_T){ 
-    F = oo2np1;
+    else {
+      double *fjttable = Fm_Eval_->values(quartet_info_.am,T);
+      assign_FjT(Data,quartet_info_.am,fjttable,pfac);
+    }
   }
   else {
-    F = Fm_Eval_->values(quartet_info_.am,T);
+
+    // this stores (ss|Oper|ss)^(m) integrals
+    double ss_oper_ss[4*LIBINT2_MAX_AM_ERI+1];
+    std::fill(ss_oper_ss, ss_oper_ss + quartet_info_.am + 1, 0.0);
+
+    // f12_coulomb and f12 integrals
+    if (otype == f12 || otype == f12_coulomb) {
+
+      assert(gbra != 0);
+      const size_t ngbra = gbra->size();
+      for(size_t ig=0; ig<ngbra; ++ig) {
+        const PrimitiveGeminal& gbra_i = gbra->operator[](ig);
+        const double gamma = gbra_i.first;
+        const double gcoef = gbra_i.second;
+        const double rhog = rho + gamma;
+        const double oorhog = 1.0/rhog;
+        const double rho2 = rho*rho;
+
+        const double gorg = gamma * oorhog;
+        const double rorg = rho * oorhog;
+        const double sqrt_rorg = sqrt(rorg);
+        /// (ss|g12|ss)
+        const double SS_K0G12_SS = rorg * sqrt_rorg * exp(-gorg*T) * pfac_normovlp;
+
+        if (otype == f12_coulomb) {
+          const double rorgT = rorg * T;
+          double pfac = 2.0 * sqrt(rhog*M_1_PI) * SS_K0G12_SS;
+
+          const double *F;
+          if(rorgT < small_T){
+            F = oo2np1;
+          }
+          else {
+            F = Fm_Eval_->values(quartet_info_.am,rorgT);
+          }
+
+          double g_i[4*LIBINT2_MAX_AM_ERI+1];
+          double r_i[4*LIBINT2_MAX_AM_ERI+1];
+          double oorhog_i[4*LIBINT2_MAX_AM_ERI+1];
+          g_i[0] = 1.0;
+          r_i[0] = 1.0;
+          oorhog_i[0] = 1.0;
+          for(int i=1; i<=quartet_info_.am; i++) {
+            g_i[i] = g_i[i-1] * gamma;
+            r_i[i] = r_i[i-1] * rho;
+            oorhog_i[i] = oorhog_i[i-1] * oorhog;
+          }
+          for(int m=0; m<=quartet_info_.am; m++) {
+            double ssss = 0.0;
+            for(int k=0; k<=m; k++) {
+              ssss += ExpMath_.bc[m][k] * r_i[k] * g_i[m-k] * F[k];
+            }
+            ss_oper_ss[m] += gcoef * pfac * ssss * oorhog_i[m];
+          }
+
+        }
+
+        if (otype == f12) {
+
+          double ss_oper_ss_m = SS_K0G12_SS * gcoef;
+          ss_oper_ss[0] += ss_oper_ss_m;
+          for(int m=1; m<=quartet_info_.am; ++m) {
+            ss_oper_ss_m *= gorg;
+            ss_oper_ss[m] += ss_oper_ss_m;
+          }
+
+        }
+
+      } // loop over gaussian geminals
+    } // one correlation factor involved
+
+    // f12_2 and f12_T1_f12 integrals
+    if (otype == f12_2 || otype == f12_T1_f12) {
+
+      assert(gbra != 0);
+      assert(gket != 0);
+      const size_t ngbra = gbra->size();
+      const size_t ngket = gket->size();
+      for(size_t igbra=0; igbra<ngbra; ++igbra) {
+        const PrimitiveGeminal& gbra_i = gbra->operator[](igbra);
+        const double gamma_bra = gbra_i.first;
+        const double gcoef_bra = gbra_i.second;
+        for(size_t igket=0; igket<ngket; ++igket) {
+          const PrimitiveGeminal& gket_i = gket->operator[](igket);
+          const double gamma_ket = gket_i.first;
+          const double gcoef_ket = gket_i.second;
+
+          const double gamma = gamma_bra + gamma_ket;
+          const double gcoef = gcoef_bra * gcoef_ket;
+
+          const double rhog = rho + gamma;
+          const double oorhog = 1.0/rhog;
+          const double rho2 = rho*rho;
+
+          const double gorg = gamma * oorhog;
+          const double rorg = rho * oorhog;
+          const double sqrt_rorg = sqrt(rorg);
+          /// (ss|g12|ss)
+          const double SS_K0G12_SS = rorg * sqrt_rorg * exp(-gorg*T) * pfac_normovlp;
+          const double rorgT = rorg * T;
+          /// (ss|g12*r12^2|ss)
+          const double SS_K2G12_SS_0 = (1.5 + rorgT) * (SS_K0G12_SS * oorhog);
+          const double SS_K2G12_SS_m1 = rorg * (SS_K0G12_SS * oorhog);
+
+          if (otype == f12_2) {
+
+            double ss_oper_ss_m = SS_K0G12_SS * gcoef;
+            ss_oper_ss[0] += ss_oper_ss_m;
+            for(int m=1; m<=quartet_info_.am; ++m) {
+              ss_oper_ss_m *= gorg;
+              ss_oper_ss[m] += ss_oper_ss_m;
+            }
+
+          }
+
+          if (otype == f12_T1_f12) {
+
+            double SS_K2G12_SS_gorg_m = SS_K2G12_SS_0 * (gcoef * 4.0 * gamma_bra * gamma_ket);
+            double SS_K2G12_SS_gorg_m1 = SS_K2G12_SS_m1 * (gcoef * 4.0 * gamma_bra * gamma_ket);
+            ss_oper_ss[0] += SS_K2G12_SS_gorg_m;
+            for(int m=1; m<=quartet_info_.am; ++m) {
+              SS_K2G12_SS_gorg_m *= gorg;
+              ss_oper_ss[m] += SS_K2G12_SS_gorg_m - m * SS_K2G12_SS_gorg_m1;
+              SS_K2G12_SS_gorg_m1 *= gorg;
+            }
+
+          }
+
+        }
+
+      } // loop over gaussian geminals
+    } // two correlation factors involved
+
+    assign_FjT(Data,quartet_info_.am,ss_oper_ss,1.0);
+
   }
 
-  double ss_m1_ss[4*LIBINT2_MAX_AM_R12kG12+1];
-  double g_i[4*LIBINT2_MAX_AM_R12kG12+1];
-  double r_i[4*LIBINT2_MAX_AM_R12kG12+1];
-  double oorhog_i[4*LIBINT2_MAX_AM_R12kG12+1];
-  g_i[0] = 1.0;
-  r_i[0] = 1.0;
-  oorhog_i[0] = 1.0;
-  for(int i=1; i<=quartet_info_.am; i++) {
-      g_i[i] = g_i[i-1] * gamma;
-      r_i[i] = r_i[i-1] * rho;
-      oorhog_i[i] = oorhog_i[i-1] * oorhog;
-    }
-  for(int m=0; m<=quartet_info_.am; m++) {
-      double ssss = 0.0;
-      for(int k=0; k<=m; k++) {
-          ssss += ExpMath_.bc[m][k] * r_i[k] * g_i[m-k] * F[k];
-        }
-      ss_m1_ss[m] = ssss * oorhog_i[m];
-    }
-  
-  assign_ss_r12m1g12_ss(Data,quartet_info_.am,ss_m1_ss,pfac);
+  // these prefactors only necessary if angular momenta != 0
+  if (quartet_info_.am != 0) {
+#if LIBINT2_DEFINED(eri,oo2ze)
+    Data->oo2ze[0] = 0.5 * ooze;
+#endif
+#if LIBINT2_DEFINED(eri,roe)
+    Data->roe[0] = zeta * ooze;
+#endif
+#if LIBINT2_DEFINED(eri,oo2z)
+    Data->oo2z[0] = 0.5 * ooz;
+#endif
+#if LIBINT2_DEFINED(eri,oo2e)
+    Data->oo2e[0] = 0.5 * ooe;
+#endif
+    W[0] = (zeta * P[0] + eta * Q[0]) * ooze;
+    W[1] = (zeta * P[1] + eta * Q[1]) * ooze;
+    W[2] = (zeta * P[2] + eta * Q[2]) * ooze;
 
+    /* PA */
+#if LIBINT2_DEFINED(eri,PA_x)
+    Data->PA_x[0] = P[0] - quartet_info_.A[0];
+#endif
+#if LIBINT2_DEFINED(eri,PA_y)
+    Data->PA_y[0] = P[1] - quartet_info_.A[1];
+#endif
+#if LIBINT2_DEFINED(eri,PA_z)
+    Data->PA_z[0] = P[2] - quartet_info_.A[2];
+#endif
+    /* QC */
+#if LIBINT2_DEFINED(eri,QC_x)
+    Data->QC_x[0] = Q[0] - quartet_info_.C[0];
+#endif
+#if LIBINT2_DEFINED(eri,QC_y)
+    Data->QC_y[0] = Q[1] - quartet_info_.C[1];
+#endif
+#if LIBINT2_DEFINED(eri,QC_z)
+    Data->QC_z[0] = Q[2] - quartet_info_.C[2];
+#endif
+    /* WP */
+#if LIBINT2_DEFINED(eri,WP_x)
+    Data->WP_x[0] = W[0] - P[0];
+#endif
+#if LIBINT2_DEFINED(eri,WP_y)
+    Data->WP_y[0] = W[1] - P[1];
+#endif
+#if LIBINT2_DEFINED(eri,WP_z)
+    Data->WP_z[0] = W[2] - P[2];
+#endif
+    /* WQ */
+#if LIBINT2_DEFINED(eri,WQ_x)
+    Data->WQ_x[0] = W[0] - Q[0];
+#endif
+#if LIBINT2_DEFINED(eri,WQ_y)
+    Data->WQ_y[0] = W[1] - Q[1];
+#endif
+#if LIBINT2_DEFINED(eri,WQ_z)
+    Data->WQ_z[0] = W[2] - Q[2];
+#endif
 
-  //
-  // prefactors for (a0|k|c0) (k!=-1) VRR
-  //
-  {
-    double u0 = 0.5/(zeta*eta + gamma*(zeta+eta));
+    // using ITR?
+#if LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_0_0_x)
+    Data->TwoPRepITR_pfac0_0_0_x[0] = - (a2*(quartet_info_.A[0]-quartet_info_.B[0]) + a4*(quartet_info_.C[0]-quartet_info_.D[0]))/zeta;
+#endif
+#if LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_0_0_y)
+    Data->TwoPRepITR_pfac0_0_0_y[0] = - (a2*(quartet_info_.A[1]-quartet_info_.B[1]) + a4*(quartet_info_.C[1]-quartet_info_.D[1]))/zeta;
+#endif
+#if LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_0_0_z)
+    Data->TwoPRepITR_pfac0_0_0_z[0] = - (a2*(quartet_info_.A[2]-quartet_info_.B[2]) + a4*(quartet_info_.C[2]-quartet_info_.D[2]))/zeta;
+#endif
+#if LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_1_0_x)
+    Data->TwoPRepITR_pfac0_1_0_x[0] = - (a2*(quartet_info_.A[0]-quartet_info_.B[0]) + a4*(quartet_info_.C[0]-quartet_info_.D[0]))/eta;
+#endif
+#if LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_1_0_y)
+    Data->TwoPRepITR_pfac0_1_0_y[0] = - (a2*(quartet_info_.A[1]-quartet_info_.B[1]) + a4*(quartet_info_.C[1]-quartet_info_.D[1]))/eta;
+#endif
+#if LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_1_0_z)
+    Data->TwoPRepITR_pfac0_1_0_z[0] = - (a2*(quartet_info_.A[2]-quartet_info_.B[2]) + a4*(quartet_info_.C[2]-quartet_info_.D[2]))/eta;
+#endif
+#if LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_0_1_x)
+    Data->TwoPRepITR_pfac0_0_1_x[0] = (a1*(quartet_info_.A[0]-quartet_info_.B[0]) + a3*(quartet_info_.C[0]-quartet_info_.D[0]))/zeta;
+#endif
+#if LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_0_1_y)
+    Data->TwoPRepITR_pfac0_0_1_y[0] = (a1*(quartet_info_.A[1]-quartet_info_.B[1]) + a3*(quartet_info_.C[1]-quartet_info_.D[1]))/zeta;
+#endif
+#if LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_0_1_z)
+    Data->TwoPRepITR_pfac0_0_1_z[0] = (a1*(quartet_info_.A[2]-quartet_info_.B[2]) + a3*(quartet_info_.C[2]-quartet_info_.D[2]))/zeta;
+#endif
+#if LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_1_1_x)
+    Data->TwoPRepITR_pfac0_1_1_x[0] = (a1*(quartet_info_.A[0]-quartet_info_.B[0]) + a3*(quartet_info_.C[0]-quartet_info_.D[0]))/eta;
+#endif
+#if LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_1_1_y)
+    Data->TwoPRepITR_pfac0_1_1_y[0] = (a1*(quartet_info_.A[1]-quartet_info_.B[1]) + a3*(quartet_info_.C[1]-quartet_info_.D[1]))/eta;
+#endif
+#if LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_1_1_z)
+    Data->TwoPRepITR_pfac0_1_1_z[0] = (a1*(quartet_info_.A[2]-quartet_info_.B[2]) + a3*(quartet_info_.C[2]-quartet_info_.D[2]))/eta;
+#endif
+#if LIBINT2_DEFINED(eri,eoz)
+    Data->eoz[0] = eta * ooz;
+#endif
+#if LIBINT2_DEFINED(eri,zoe)
+    Data->zoe[0] = zeta * ooe;
+#endif
 
-    {
-      double t00 = a2*(eta + gamma);
-      double t01 = gamma*a4;
-      double t02 = gamma*eta;
-      double T[3];
-      for(int w=0;w<3; w++) {
-          T[w] = -2.0 * u0 * (t00*(quartet_info_.A[w]-quartet_info_.B[w]) +
-                              t01*(quartet_info_.C[w]-quartet_info_.D[w]) +
-                              t02*(quartet_info_.A[w]-quartet_info_.C[w]));
-        }
-      Data->R12kG12_pfac0_0_x[0] = T[0];
-      Data->R12kG12_pfac0_0_y[0] = T[1];
-      Data->R12kG12_pfac0_0_z[0] = T[2];
-    }
-    {
-      double t00 = a4*(zeta + gamma);
-      double t01 = gamma*a2;
-      double t02 = gamma*zeta;
-      double T[3];
-      for(int w=0;w<3; w++) {
-          T[w] = -2.0 * u0 * (t00*(quartet_info_.C[w]-quartet_info_.D[w]) +
-                              t01*(quartet_info_.A[w]-quartet_info_.B[w]) +
-                              t02*(quartet_info_.C[w]-quartet_info_.A[w]));
-        }
-      Data->R12kG12_pfac0_1_x[0] = T[0];
-      Data->R12kG12_pfac0_1_y[0] = T[1];
-      Data->R12kG12_pfac0_1_z[0] = T[2];
-    }
-    {
-      Data->R12kG12_pfac1_0[0] = u0 * (eta + gamma);
-      Data->R12kG12_pfac1_1[0] = u0 * (zeta + gamma);
-    }
-    {
-      Data->R12kG12_pfac2[0] = u0 * gamma;
-    }
-    {
-      Data->R12kG12_pfac3_0[0] = eta*u0;
-      Data->R12kG12_pfac3_1[0] = zeta*u0;
-    }
-    {
-      double T[3];
-      for(int w=0;w<3; w++) {
-          T[w] = quartet_info_.A[w]-quartet_info_.C[w];
-        }
-      Data->R12kG12_pfac4_0_x[0] = T[0];
-      Data->R12kG12_pfac4_0_y[0] = T[1];
-      Data->R12kG12_pfac4_0_z[0] = T[2];
-      Data->R12kG12_pfac4_1_x[0] = -T[0];
-      Data->R12kG12_pfac4_1_y[0] = -T[1];
-      Data->R12kG12_pfac4_1_z[0] = -T[2];
-    }
   }
-
-  // scale r12^2*g12 integrals by 4 * gamma_bra * gamma_ket to obtain [g12,[t1,g12]]
-  Data->R12_2_G12_scale_to_G12T1G12[0] = r12_2_g12_pfac;
 
   return;
 }

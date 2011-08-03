@@ -29,11 +29,8 @@
 
 namespace sc {
   
-  CuspConsistentGeminalCoefficient::CuspConsistentGeminalCoefficient(SpinCase2 pairspin,
-                                                                     const Ref<R12Technology::GeminalDescriptor> &geminal)
-    : pairspin_(pairspin),
-      geminal_(geminal) {
-  }
+  CuspConsistentGeminalCoefficient::CuspConsistentGeminalCoefficient(SpinCase2 pairspin)
+    : pairspin_(pairspin) { }
   
   double CuspConsistentGeminalCoefficient::C(unsigned int O, unsigned int W,
                                              unsigned int P, unsigned int Q) {
@@ -43,20 +40,9 @@ namespace sc {
       return(0.0);
     }
 
-    // cusp conditions are the same, but different correlation factors need different coefficients
-    double Cp_ij_ij, Cm_ij_ij;
-    if (geminal_->type() == "STG") {
-      double gamma = R12Technology::single_slater_exponent(geminal_);
-      Cp_ij_ij=-1.0/(2.0*gamma);  // singlet
-      Cm_ij_ij=-1.0/(4.0*gamma);  // triplet
-    }
-    else if (geminal_->type() == "R12") {
-      Cp_ij_ij = 1.0/2.0;
-      Cm_ij_ij = 1.0/4.0;
-    }
-    else {
-      throw ProgrammingError("CuspConsistentGeminalCoefficient::C -- only defined for STG or R12 correlation factor.",__FILE__,__LINE__);
-    }
+    // cusp conditions are the same depend on spin
+    const double Cp_ij_ij = 1.0/2.0;
+    const double Cm_ij_ij = 1.0/4.0;
     
     if (pairspin_ != AlphaBeta) // AlphaAlpha or BetaBeta -> this is a pure triplet
       return Cm_ij_ij;

@@ -49,6 +49,8 @@ public:
     /** KeyVal constructor uses the following keywords
         <dl>
 
+    <dt><tt>wfn</tt><dd> This specifies the Wavefunction that is in charge of the World. There is no default.
+
     <dt><tt>store_ints</tt><dd> This specifies how to store transformed MO integrals.
     Valid values are:
 
@@ -108,8 +110,7 @@ public:
 
         </dl>
     */
-  WavefunctionWorld(const Ref<KeyVal>& keyval,
-                    Wavefunction* wfn);
+  WavefunctionWorld(const Ref<KeyVal>& keyval);
   ~WavefunctionWorld();
 
   void save_data_state(StateOut&);
@@ -133,6 +134,7 @@ public:
   void ints_file(const std::string& filename) { ints_file_ = filename; };
 
   Wavefunction* wfn() const { return wfn_; }
+  void set_wfn(Wavefunction* w);
 
   const Ref<GaussianBasisSet>& basis_df() const { return bs_df_; };
 

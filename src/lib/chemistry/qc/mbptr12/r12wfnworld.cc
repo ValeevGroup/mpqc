@@ -83,7 +83,6 @@ R12WavefunctionWorld::R12WavefunctionWorld(StateIn& si) : SavableState(si)
   bs_ri_ << SavableState::restore_state(si);
 
   si.get(spinadapted_);
-
   abs_space_ << SavableState::restore_state(si);
   ribs_space_ << SavableState::restore_state(si);
 }
@@ -206,10 +205,15 @@ R12WavefunctionWorld::sdref() const {
 
 #define ALWAYS_USE_GENREF_ALGORITHM 0
 #if !ALWAYS_USE_GENREF_ALGORITHM
-  // only references based on OneBodyWavefunction are detected as single-determinant references!
+  // references based on OneBodyWavefunction are single-determinant references!
   {
     Ref<SD_RefWavefunction> sd; sd << ref();
     if (sd.nonnull()) return true;
+  }
+  // references based on Extern_RefWavefunction are single-determinant references IF their densities are idempotent
+  {
+    Ref<Extern_RefWavefunction> ext; ext << ref();
+    if (ext.nonnull()) return ext->ordm_idempotent();
   }
 #if HAVE_PSIMPQCIFACE
   {

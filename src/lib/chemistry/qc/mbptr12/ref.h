@@ -217,6 +217,8 @@ namespace sc {
       /// @param nfzv The number of highest-energy unoccupied orbitals to be kept inactive
       /// @param vir_space The space describing the unoccupied orbitals. Default is 0, which
       ///        means use unoccupied orbitals from obwfn.
+      /// @param occ_orbs The method used to provide the occupied orbitals. This can
+      /// be "pipek-mezey or "canonical".
       ///
       /// N.B. This will feed the FockBuildRuntime in world with the density matrices from obwfn!
       SD_RefWavefunction(const Ref<WavefunctionWorld>& world,
@@ -224,7 +226,8 @@ namespace sc {
                             bool spin_restricted = true,
                             unsigned int nfzc = 0,
                             unsigned int nfzv = 0,
-                            Ref<OrbitalSpace> vir_space = 0);
+                            Ref<OrbitalSpace> vir_space = 0,
+                            std::string occ_orbs = std::string("canonical"));
       SD_RefWavefunction(StateIn&);
       ~SD_RefWavefunction();
       void save_data_state(StateOut&);
@@ -251,10 +254,12 @@ namespace sc {
       unsigned int nfzv() const { return nfzv_; }
       RefSymmSCMatrix ordm(SpinCase1 spin) const;
       Ref<DensityFittingInfo> dfinfo() const;
+      const std::string& occ_orbitals() const { return occ_orbitals_; }
     private:
       Ref<OneBodyWavefunction> obwfn_;
       Ref<OrbitalSpace> vir_space_;
       bool spin_restricted_;
+      std::string occ_orbitals_;
       unsigned int nfzc_;
       unsigned int nfzv_;
       void init_spaces();
@@ -302,7 +307,7 @@ namespace sc {
       bool spin_restricted() const { return spin_restricted_; }
       /// reimplements RefWavefunction::dk(). Currently only nonrelativistic references are supported.
       int dk() const { return 0; }
-      Ref<GaussianBasisSet> momentum_basis() const { return this->basis(); }
+      Ref<GaussianBasisSet> momentum_basis() const { return 0; }
       RefSymmSCMatrix core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &basis,
                                                  const Ref<GaussianBasisSet> &p_basis);
       unsigned int nfzc() const { return nfzc_; }
@@ -356,8 +361,10 @@ namespace sc {
       void save_data_state(StateOut&);
       RefSymmSCMatrix ordm(SpinCase1 spin) const { return rdm_[spin]; }
 
-      void obsolete() { throw FeatureNotImplemented("cannot obsolete Extern_R12RefWavefunction",
-                                                    __FILE__, __LINE__); }
+      void obsolete() {
+//        throw FeatureNotImplemented("cannot obsolete Extern_R12RefWavefunction",
+//                                                    __FILE__, __LINE__);
+      }
 
       double energy() { return 0.0; }
       double actual_value_accuracy () const { return DBL_EPSILON; }
@@ -366,17 +373,19 @@ namespace sc {
       bool spin_restricted() const { return true; }
       /// reimplements RefWavefunction::dk(). Currently only nonrelativistic references are supported.
       int dk() const { return 0; }
-      Ref<GaussianBasisSet> momentum_basis() const { return this->basis(); }
+      Ref<GaussianBasisSet> momentum_basis() const { return 0; }
       RefSymmSCMatrix core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &basis,
                                                  const Ref<GaussianBasisSet> &p_basis);
       unsigned int nfzc() const { return nfzc_; }
       unsigned int nfzv() const { return nfzv_; }
       bool omit_uocc() const { return omit_uocc_; }
+      bool ordm_idempotent() const { return ordm_idempotent_; }
     private:
       RefSymmSCMatrix rdm_[NSpinCases1];
       unsigned int nfzc_;
       unsigned int nfzv_;
       bool omit_uocc_;
+      bool ordm_idempotent_;
 
       void init_spaces() {}
       void init_spaces(unsigned int nocc, const RefSCMatrix& orbs,

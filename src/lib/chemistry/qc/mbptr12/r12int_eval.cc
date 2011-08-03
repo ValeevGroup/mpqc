@@ -157,8 +157,7 @@ R12IntEval::R12IntEval(const Ref<R12WavefunctionWorld>& r12w) :
       emp2pair_[s] = local_matrix_kit->vector(dim_gg_[s]);
       const SpinCase2 pairspin = static_cast<SpinCase2>(s);
       cuspconsistentgeminalcoefficient_[s] =
-          new CuspConsistentGeminalCoefficient(pairspin,
-                                               r12w->r12tech()->corrfactor()->geminaldescriptor());
+          new CuspConsistentGeminalCoefficient(pairspin);
     }
   }
   // if spin-orbital, but non-spin-polarized allocate AlphaBeta and AlphaAlpha (AlphaAlpha equiv to BetaBeta)
@@ -182,6 +181,8 @@ R12IntEval::R12IntEval(const Ref<R12WavefunctionWorld>& r12w) :
   if (r12world()->ints_method() != R12WavefunctionWorld::StoreMethod::posix && !mp2_only)
     throw InputError("R12IntEval::R12IntEval() -- the only supported storage method is posix");
 #endif
+
+  ordm_[Alpha] = ordm_[Beta] = 0;
 }
 
 R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
@@ -216,7 +217,7 @@ R12IntEval::R12IntEval(StateIn& si) : SavableState(si)
       }
       emp2pair_[s] = local_matrix_kit->vector(dim_vv_[s]);
       const SpinCase2 pairspin = static_cast<SpinCase2>(s);
-      cuspconsistentgeminalcoefficient_[s] = new CuspConsistentGeminalCoefficient(pairspin,r12world()->r12tech()->corrfactor()->geminaldescriptor());
+      cuspconsistentgeminalcoefficient_[s] = new CuspConsistentGeminalCoefficient(pairspin);
 
       V_[s].restore(si);
       X_[s].restore(si);

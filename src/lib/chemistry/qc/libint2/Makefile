@@ -44,12 +44,11 @@ CXXSRC = libint2.cc obintlibint2.cc tbintlibint2.cc tform.cc int2e.cc bounds.cc 
 	hcore.cc obosrr.cc edipole.cc equadrupole.cc p4.cc gto.cc
 ifeq ($(HAVE_LIBINT2_ERI),yes)
   CXXSRC += eri.cc comp_eri.cc
+  CXXSRC += g12nc.cc comp_g12nc.cc
 endif
 ifeq ($(HAVE_LIBINT2_G12),yes)
   ifeq ($(HAVE_LIBINT2_G12_T1G12),yes)
     CXXSRC += g12.cc comp_g12.cc
-  else
-    CXXSRC += g12nc.cc comp_g12nc.cc
   endif
 endif
 ifeq ($(HAVE_LIBINT2_GENG12),yes)

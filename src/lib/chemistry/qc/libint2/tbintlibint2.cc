@@ -36,12 +36,11 @@
 #include <chemistry/qc/libint2/bounds.timpl.h>
 #if LIBINT2_SUPPORT_ERI
 #  include <chemistry/qc/libint2/eri.h>
+#  include <chemistry/qc/libint2/g12nc.h>
 #endif
 #if LIBINT2_SUPPORT_G12
 # if LIBINT2_SUPPORT_T1G12
 #  include <chemistry/qc/libint2/g12.h>
-# else
-#  include <chemistry/qc/libint2/g12nc.h>
 # endif
 #endif
 #if LIBINT2_SUPPORT_GENG12
@@ -82,6 +81,20 @@ namespace sc {
 	{
 	    return new EriLibint2(integral,b1,b2,b3,b4,storage);
 	}
+    template<>
+    Ref<G12NCLibint2>
+    create_int2e(Integral*integral,
+             const Ref<GaussianBasisSet>& b1,
+             const Ref<GaussianBasisSet>& b2,
+             const Ref<GaussianBasisSet>& b3,
+             const Ref<GaussianBasisSet>& b4,
+             size_t storage,
+             const Ref<IntParams>& params)
+    {
+        typedef IntParamsG12 IPType;
+        Ref<IPType> params_cast = util::require_dynamic_cast<IPType,IntParams>(params);
+        return new G12NCLibint2(integral,b1,b2,b3,b4,storage,params_cast->bra(),params_cast->ket());
+    }
 #endif
 
 #if LIBINT2_SUPPORT_G12
@@ -99,21 +112,6 @@ namespace sc {
 	    typedef IntParamsG12 IPType;
 	    Ref<IPType> params_cast = util::require_dynamic_cast<IPType,IntParams>(params);
 	    return new G12Libint2(integral,b1,b2,b3,b4,storage,params_cast->bra(),params_cast->ket());
-	}
-# else
-	template<>
-	Ref<G12NCLibint2>
-	create_int2e(Integral*integral,
-		     const Ref<GaussianBasisSet>& b1,
-		     const Ref<GaussianBasisSet>& b2,
-		     const Ref<GaussianBasisSet>& b3,
-		     const Ref<GaussianBasisSet>& b4,
-		     size_t storage,
-		     const Ref<IntParams>& params)
-	{
-	    typedef IntParamsG12 IPType;
-	    Ref<IPType> params_cast = util::require_dynamic_cast<IPType,IntParams>(params);
-	    return new G12NCLibint2(integral,b1,b2,b3,b4,storage,params_cast->bra(),params_cast->ket());
 	}
 # endif
 #endif
@@ -178,15 +176,6 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
     int2elibint2_->bounds(bounds);
     break;
   }
-#endif
-#if LIBINT2_SUPPORT_G12
-# if LIBINT2_SUPPORT_T1G12
-  case TwoBodyOperSet::G12:
-  {
-    int2elibint2_ = create_int2e<G12Libint2>(integral,b1,b2,b3,b4,storage,params);
-    break;
-  }
-# else
   case TwoBodyOperSet::G12NC:
   {
     typedef G12NCLibint2 Int2e;
@@ -194,6 +183,14 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
     Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
     int2elibint2_ = create_int2e<G12NCLibint2>(integral,b1,b2,b3,b4,storage,params);
     int2elibint2_->bounds(bounds);
+    break;
+  }
+#endif
+#if LIBINT2_SUPPORT_G12
+# if LIBINT2_SUPPORT_T1G12
+  case TwoBodyOperSet::G12:
+  {
+    int2elibint2_ = create_int2e<G12Libint2>(integral,b1,b2,b3,b4,storage,params);
     break;
   }
 # endif
@@ -273,15 +270,6 @@ TwoBodyThreeCenterIntLibint2::TwoBodyThreeCenterIntLibint2(Integral*integral,
     int2elibint2_->bounds(bounds);
     break;
   }
-#endif
-#if LIBINT2_SUPPORT_G12
-# if LIBINT2_SUPPORT_T1G12
-  case TwoBodyOperSet::G12:
-  {
-    int2elibint2_ = create_int2e<G12Libint2>(integral,b1,b2,b3,b4,storage,params);
-    break;
-  }
-# else
   case TwoBodyOperSet::G12NC:
   {
     typedef G12NCLibint2 Int2e;
@@ -289,6 +277,14 @@ TwoBodyThreeCenterIntLibint2::TwoBodyThreeCenterIntLibint2(Integral*integral,
     Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
     int2elibint2_ = create_int2e<G12NCLibint2>(integral,b1,b2,b3,b4,storage,params);
     int2elibint2_->bounds(bounds);
+    break;
+  }
+#endif
+#if LIBINT2_SUPPORT_G12
+# if LIBINT2_SUPPORT_T1G12
+  case TwoBodyOperSet::G12:
+  {
+    int2elibint2_ = create_int2e<G12Libint2>(integral,b1,b2,b3,b4,storage,params);
     break;
   }
 # endif
@@ -368,15 +364,6 @@ TwoBodyTwoCenterIntLibint2::TwoBodyTwoCenterIntLibint2(Integral*integral,
     int2elibint2_->bounds(bounds);
     break;
   }
-#endif
-#if LIBINT2_SUPPORT_G12
-# if LIBINT2_SUPPORT_T1G12
-  case TwoBodyOperSet::G12:
-  {
-    int2elibint2_ = create_int2e<G12Libint2>(integral,b1,b2,b3,b4,storage,params);
-    break;
-  }
-# else
   case TwoBodyOperSet::G12NC:
   {
     typedef G12NCLibint2 Int2e;
@@ -384,6 +371,14 @@ TwoBodyTwoCenterIntLibint2::TwoBodyTwoCenterIntLibint2(Integral*integral,
     Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
     int2elibint2_ = create_int2e<G12NCLibint2>(integral,b1,b2,b3,b4,storage,params);
     int2elibint2_->bounds(bounds);
+    break;
+  }
+#endif
+#if LIBINT2_SUPPORT_G12
+# if LIBINT2_SUPPORT_T1G12
+  case TwoBodyOperSet::G12:
+  {
+    int2elibint2_ = create_int2e<G12Libint2>(integral,b1,b2,b3,b4,storage,params);
     break;
   }
 # endif

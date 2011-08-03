@@ -61,7 +61,14 @@ CCR12::CCR12(const Ref<KeyVal>& keyval): Wavefunction(keyval), ccr12_info_(0) {
   mem_ = MemoryGrp::get_default_memorygrp();
   timer_ = new RegionTimer();
 
-  Ref<WavefunctionWorld> world = new WavefunctionWorld(keyval, this);
+  // if world not given, make this the center of a new World
+  Ref<WavefunctionWorld> world; world << keyval->describedclassvalue("world", KeyValValueRefDescribedClass(0));
+  if (world.null())
+    world = new WavefunctionWorld(keyval);
+  if (world.null())
+    throw InputError("PT2R12 requires a WavefunctionWorld", __FILE__, __LINE__, "world");
+  if (world->wfn() == 0) world->set_wfn(this);
+
   const bool spin_restricted = false;   // do not use spin-restricted orbitals -> for ROHF use semicanonical orbitals
   Ref<OrbitalSpace> vbs;
 

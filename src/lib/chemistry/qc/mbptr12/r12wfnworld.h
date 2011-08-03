@@ -58,11 +58,18 @@ public:
   R12WavefunctionWorld(StateIn&);
     /** KeyVal constructor uses keywords of R12Technology and the following keywords:
 
-    <dt><tt>spinadapted</tt><dd> This boolean specifies whether to use spin-adapted (or spin-free)
+
+        <table border="1">
+
+        <tr><td><b>%Keyword</b><td><b>Type</b><td><b>Default</b><td><b>Description</b>
+
+        <tr><td><tt>spinadapted</tt><td>boolean<td>false<td>This boolean specifies whether to use spin-adapted (or spin-free)
     algorithm for the R12 computation. Spin-free algorithm is only implemented for some R12 methods.
     Hence the default value is false, i.e. to use the spin-orbital algorithm. Note that the ``owner'' Wavefunction
     may override the default.
-        </dl>
+
+        </table>
+
     */
   R12WavefunctionWorld(const Ref<KeyVal>& keyval,
                        const Ref<RefWavefunction>& ref);
@@ -72,6 +79,8 @@ public:
 
   /// Return the RefWavefunction object
   const Ref<RefWavefunction>& ref() const { return ref_; }
+  /// Resets the RefWavefunction object
+  void ref(const Ref<RefWavefunction>& r) { if (ref_ != r) { this->obsolete(); ref_ = r; } }
   const Ref<WavefunctionWorld>& world() const { return ref()->world(); }
   Wavefunction* wfn() const { return world()->wfn(); }
   Ref<R12Technology> r12tech() const { return r12tech_; }

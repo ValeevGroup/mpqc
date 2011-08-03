@@ -1236,7 +1236,8 @@ std::string sc::new_unique_key(const Ref<OrbitalSpaceRegistry> & oreg)
   do {
     ++index;
     found_in_registry = false;
-    for(SpinCase1 spin=AnySpinCase1; spin!=InvalidSpinCase1; ++spin) {
+    for(int s=AnySpinCase1; s!=InvalidSpinCase1; ++s) {
+      const SpinCase1 spin = static_cast<SpinCase1>(s);
       std::ostringstream oss;
       oss << id << index;
       const std::string trial_key = ParsedOrbitalSpaceKey::key(oss.str(), spin);

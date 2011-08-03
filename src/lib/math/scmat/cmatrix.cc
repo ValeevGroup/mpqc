@@ -584,8 +584,8 @@ cmat_symmetric_mxm(double**a,int na, /* a is (na,na) */
           double*bi=b[i];
           double*bj=b[j];
           double tmp;
-          if (add) tmp = 0.0;
-          else tmp = ai[j];
+          if (add) tmp = ai[j];
+          else tmp = 0.0;
           for (k=nb; k; k--,bi++,bj++) {
               tmp += *bi * *bj;
             }

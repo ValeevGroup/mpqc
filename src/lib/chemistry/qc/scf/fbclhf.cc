@@ -185,12 +185,12 @@ DFCLHF::DFCLHF(const Ref<KeyVal>& keyval) :
   dens_reset_freq_ = 1;
 
   // if world not given, make this the center of a new World
-  Ref<WavefunctionWorld> world; world << keyval->describedclassvalue("world", KeyValValueRefDescribedClass(0));
-  if (world.null())
-    world = new WavefunctionWorld(keyval);
-  if (world.null())
+  world_ << keyval->describedclassvalue("world", KeyValValueRefDescribedClass(0));
+  if (world_.null())
+    world_ = new WavefunctionWorld(keyval);
+  if (world_.null())
     throw InputError("PT2R12 requires a WavefunctionWorld", __FILE__, __LINE__, "world");
-  if (world->wfn() == 0) world->set_wfn(this);
+  if (world_->wfn() == 0) world_->set_wfn(this);
 
   // need a nonblocked cl_gmat_ in this method
   Ref<PetiteList> pl = integral()->petite_list();

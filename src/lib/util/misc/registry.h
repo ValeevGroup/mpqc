@@ -146,9 +146,9 @@ namespace sc {
 
         void print(std::ostream& os) const;
 
-        class not_found : public std::runtime_error {
+        class not_found : public std::logic_error {
           public:
-            not_found(const char* what) : std::runtime_error(what) {}
+            not_found(const char* what) : std::logic_error(what) {}
         };
 
       private:

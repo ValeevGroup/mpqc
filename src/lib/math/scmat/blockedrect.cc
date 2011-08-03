@@ -362,7 +362,7 @@ BlockedSCMatrix::accumulate_product_rr(SCMatrix*a,SCMatrix*b)
 {
   int i, zero = 0;
 
-  const char* name = "BlockedSCMatrix::accumulate_product";
+  const char* name = "BlockedSCMatrix::accumulate_product_rr";
   // make sure that the arguments are of the correct type
   BlockedSCMatrix* la = require_dynamic_cast<BlockedSCMatrix*>(a,name);
   BlockedSCMatrix* lb = require_dynamic_cast<BlockedSCMatrix*>(b,name);
@@ -406,7 +406,7 @@ BlockedSCMatrix::accumulate_product_rs(SCMatrix*a,SymmSCMatrix*b)
 {
   int i, zero=0;
 
-  const char* name = "BlockedSCMatrix::accumulate_product";
+  const char* name = "BlockedSCMatrix::accumulate_product_rs";
   // make sure that the arguments are of the correct type
   BlockedSCMatrix* la = require_dynamic_cast<BlockedSCMatrix*>(a,name);
   BlockedSymmSCMatrix* lb = require_dynamic_cast<BlockedSymmSCMatrix*>(b,name);
@@ -440,7 +440,7 @@ BlockedSCMatrix::accumulate_product_rd(SCMatrix*a,DiagSCMatrix*b)
 {
   int i, zero=0;
 
-  const char* name = "BlockedSCMatrix::accumulate_product";
+  const char* name = "BlockedSCMatrix::accumulate_product_rd";
   // make sure that the arguments are of the correct type
   BlockedSCMatrix* la = require_dynamic_cast<BlockedSCMatrix*>(a,name);
   BlockedDiagSCMatrix* lb = require_dynamic_cast<BlockedDiagSCMatrix*>(b,name);

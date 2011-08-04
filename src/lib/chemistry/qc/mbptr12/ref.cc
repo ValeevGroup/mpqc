@@ -392,7 +392,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const double occ_thres, RefSymmSCMa
     VV.print(prepend_spincase(AlphaBeta, "poporbitals: VV").c_str());
     (UU*UU.t()).print(prepend_spincase(AlphaBeta, "poporbitals: UU prod").c_str());
 #endif
-#if 0
+#if 1
     for (int xx = 0; xx < num_occ_act; ++xx)
     {
       int indd = occ_act_orb_inds[xx];
@@ -455,6 +455,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const double occ_thres, RefSymmSCMa
                                         eorder_increasing);
   }
 #if 1
+   ExEnv::out0() << __FILE__ << ": " << __LINE__ << "\n";
    orbs_->coefs().print(prepend_spincase(AlphaBeta, "poporbitals: orbs_").c_str());
 #endif
   {

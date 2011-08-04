@@ -175,8 +175,7 @@ namespace sc {
                                             const Ref<OrbitalSpace> b2space,
                                             const Ref<OrbitalSpace> k1space,
                                             const Ref<OrbitalSpace> k2space);
-      /// check the G1 * G2 temrs for RHF case; every element should sum up to zero.
-      void check_sf_r12_rdm();
+
 
 
       /** compute CABS singles correction using Fock operator as H0 */

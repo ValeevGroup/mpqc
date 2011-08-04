@@ -1058,7 +1058,8 @@ RefSCMatrix PT2R12::V_genref_projector2() {
   RefSCMatrix tpdm = rdm2_sf_4spaces(gg_space, gg_space, gg_space, gg_space);
   V_genref.accumulate(V_intermed * tpdm);
 
-#if 0
+#if 1
+  ExEnv::out0() << __FILE__ << __LINE__ << "\n";
   SpinCase2 pairspin = AlphaBeta;
   V_intermed.print(prepend_spincase(pairspin, "V(in PT2R12::V_genref_projector2)").c_str());
   tpdm.print(prepend_spincase(pairspin, "gamma(in PT2R12::V_genref_projector2)").c_str());
@@ -1485,16 +1486,17 @@ double PT2R12::energy_PT2R12_projector2(SpinCase2 pairspin) {
 double PT2R12::energy_PT2R12_projector2_spinfree() {
 
   // 2*V*T constribution
-  const bool print_all = false;// for debugging
+  const bool print_all = true;// for debugging
   RefSCMatrix V_genref = V_genref_projector2(); //(GG, gg)
   RefSCMatrix T = C(AlphaBeta);   // C() is of dimension (GG, gg)
   RefSCMatrix V_t_T = 2.0*T.t()*V_genref;
   RefSCMatrix HylleraasMatrix = V_t_T.copy(); // (gg, gg)
   if (this->debug_ >=  DefaultPrintThresholds::mostO4 || print_all) {
-    V_t_T.print(prepend_spincase(AlphaBeta,"V_t_T").c_str());
+    ExEnv::out0() << __FILE__ << __LINE__ << "\n";
+    T.print(prepend_spincase(AlphaBeta,"T").c_str());
+    V_genref.print(prepend_spincase(AlphaBeta,"V_genref").c_str());
     HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:V_t_T").c_str());
   }
-
 
   // X contributions
   RefSCMatrix TGFT = X_term_Gamma_F_T(); //(GG, GG)
@@ -1544,6 +1546,11 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
     const double R12min = - E_V_t_T*E_V_t_T/(4 * Btotal);
     const double deviation = 1- E_total/R12min;
     ExEnv::out0() << std::endl << std::endl;
+    if(debug_ == 1){
+      HylleraasMatrix.assign(0.0);
+      HylleraasMatrix.accumulate(V_t_T);
+      ExEnv::out0() << indent << "Now only V term computed; others zeroed" << std::endl;
+    }
     ExEnv::out0() << indent << "individual contributions::" << std::endl;
     ExEnv::out0() << indent << scprintf("V:                        %17.12lf", E_V_t_T) << std::endl;
     ExEnv::out0() << indent << scprintf("B'(0):                    %17.12lf", E_TBTG) << std::endl;

@@ -327,6 +327,7 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_spinfree_() {
     throw InputError("R12IntEval::contrib_to_VX_GenRefansatz2_spinfree_() -- this routine works only in combination with R12Technology::Projector_2.",__FILE__,__LINE__);
   }
 
+    const bool debug_print = true;
     const Ref<OrbitalSpace>& gg_space = ggspace(Alpha);
     const Ref<OrbitalSpace>& orbs = this->orbs(Alpha);
     const Ref<OrbitalSpace>& GG_space = GGspace(Alpha);
@@ -346,6 +347,10 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_spinfree_() {
     /// computing intermediate V
     Timer Vtimer("General reference spin-free V intermediate evaluator");
 
+    if (debug_ >= DefaultPrintThresholds::O4 || debug_print) {
+       ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
+       V_[AlphaBeta].print("orig V contribution");
+     }
     //
     // "OBS" term:
     // V_{p_2 p_3}^{r s} -= g^{q_2 q_3}_{p_2 p_3} r^{r s}_{q_2 q_3}
@@ -375,7 +380,7 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_spinfree_() {
            gg_space, gg_space, orbs, orbs,
            false, tforms_f12, tforms);
     }
-    if (debug_ >= DefaultPrintThresholds::O4) {
+    if (debug_ >= DefaultPrintThresholds::O4 || debug_print) {
       ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
       V_[AlphaBeta].print("V(diag+OBS) contribution");
     }
@@ -414,7 +419,7 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_spinfree_() {
     }
 
     symmetrize<false>(V_[AlphaBeta],V_[AlphaBeta],GG_space,gg_space);
-    if (debug_ >= DefaultPrintThresholds::O4)
+    if (debug_ >= DefaultPrintThresholds::O4 || debug_print)
       ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
       V_[AlphaBeta].print("V(diag+OBS+ABS) contribution");
 

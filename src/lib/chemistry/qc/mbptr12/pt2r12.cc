@@ -251,7 +251,7 @@ namespace {
 
   RefSCMatrix transform_one_ind(RefSCMatrix AA, RefSCMatrix BB, int whichindex, int onedim) // transform one index. A is a two-index tensor;
   {                       // B is a 4-ind tensor; whichindex tells which to transform; onedim (1-4) tells the dimension of one ind; the second ind of A is the dummy
-#if 1
+#if 0
     ExEnv::out0() << "test transform_one_ind:\n";
     ExEnv::out0() << (onedim*onedim)<< ", " << BB->nrow() << ", "<< BB->ncol() << "\n";
     AA.print(prepend_spincase(AlphaBeta, "transform_one_ind: AA").c_str());
@@ -329,7 +329,7 @@ namespace {
         }
       }
     }
-    res.print(prepend_spincase(AlphaBeta, "transform_one_ind: res").c_str());
+    //res.print(prepend_spincase(AlphaBeta, "transform_one_ind: res").c_str());
     return res;
   }
 
@@ -1500,21 +1500,6 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
   RefSCMatrix TGFT = X_term_Gamma_F_T(); //(GG, GG)
   TGFT.scale(-1.0);
   RefSCMatrix Xpart = TGFT * r12eval_->X() * T;
-#if 0
-  ExEnv::out0() << "test some X terms\n";
-  RefSCMatrix XX = T->clone();
-  XX.assign(0.0);
-  const int n = T->nrow();
-  for (int x1 = 0; x1 < n; ++x1)
-  {
-    for (int x2 = 0; x2 < n; ++x2)
-    {
-      double yy = (x1 == x2)?x1: 0; //make a delta matrix
-      XX->set_element(x1,x2,yy);
-    }
-  }
-  RefSCMatrix Xpart = TGFT * XX * T;
-#endif
   HylleraasMatrix.accumulate(Xpart);//(gg, gg)
   if (this->debug_ >=  DefaultPrintThresholds::mostO4 || print_all) {
     Xpart.print(prepend_spincase(AlphaBeta,"Xpart").c_str());
@@ -1836,7 +1821,7 @@ RefSymmSCMatrix sc::PT2R12::rdm1_sf()
 #endif
 #if 0
     ExEnv::out0()<<__FILE__ << ": " << __LINE__ << "\n";
-    ExEnv::out0() << "rdm2_sf: try this way\n";
+    ExEnv::out0() << "rdm1_sf: try this way\n";
     if(true) return r12world()->ref()->ordm_occ_sb(Alpha);
 #endif
     return final;
@@ -1921,18 +1906,7 @@ RefSymmSCMatrix sc::PT2R12::rdm2_sf()
          sf_rdm(upp_pair->ij(), low_pair->ij()) = rdmelement;
      }
   }
-#if 0
-    ExEnv::out0() << "reset 2rdm_sf:\n";
-    const int dd = sf_rdm->n();
-    for (int x1 = 0; x1 < dd; ++x1)
-    {
-      for (int x2 = 0; x2 < dd; ++x2)
-      {
-        double xx = (x1 == x2)?1:0;
-        sf_rdm->set_element(x1,x2,xx);
-      }
-    }
-#endif
+
   if(r12world_->spinadapted() and fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
   {
     RefSymmSCMatrix res = sf_rdm->clone();
@@ -1942,12 +1916,6 @@ RefSymmSCMatrix sc::PT2R12::rdm2_sf()
     RefSCMatrix RefSCrdm = sf_rdm->kit()->matrix(sf_rdm->dim(), sf_rdm->dim());//get a RefSCMatrix instead of RefSymm..
     RefSCrdm->assign(0.0);
     RefSCrdm->accumulate(sf_rdm);
-#if 1
-    ExEnv::out0() << "test 2rdm_sf:\n";
-    ExEnv::out0() << RefSCrdm->nrow() << ", "<< RefSCrdm->ncol() << "\n";
-    RefSCrdm.print(prepend_spincase(AlphaBeta, "rdm2_sf: orginal 2rdm").c_str());
-    transMO.print(prepend_spincase(AlphaBeta, "rdm2_sf: transMO").c_str());
-#endif
     RefSCMatrix one = transform_one_ind(transMO, RefSCrdm, 1, n);
     one.print(prepend_spincase(AlphaBeta, "rdm2_sf: one").c_str());
     RefSCMatrix two = transform_one_ind(transMO, one, 2, n);
@@ -1957,66 +1925,10 @@ RefSymmSCMatrix sc::PT2R12::rdm2_sf()
     RefSCMatrix four = transform_one_ind(transMO, three, 4, n);
     four.print(prepend_spincase(AlphaBeta, "rdm2_sf: four").c_str());
     res.copyRefSCMatrix(four);
-#if 0
-    for (int x1 = 0; x1 < n*n; ++x1)
-    {
-      for (int x2 = 0; x2 < n*n; ++x2)
-      {
-        double xx = RefSCrdm->get_element(x1,x2),yy=res->get_element(x1,x2);
-        if(fabs(xx-yy) > 1e-12)
-        {ExEnv::out0() << "rdm2s differ! " << x1 << ", " << x2 << ", " << xx << ", " << yy << "\n";
-         abort();}
-      }
-    }
-#endif
-#if 0
-    ExEnv::out0() << "rdm1_sf: an alternative way of getting 2RDM\n";
-    RefSCMatrix DoubleT = four->clone();
-    DoubleT.assign(0.0);
-    for (int x1 = 0; x1 < n; ++x1)
-    {
-      for (int x2 = 0; x2 < n; ++x2)
-      {
-        for (int x3 = 0; x3 < n; ++x3)
-        {
-          for (int x4 = 0; x4 < n; ++x4)
-          {
-            int row = x1 *n + x2;
-            int col = x3 * n + x4;
-            DoubleT->set_element(row, col, transMO->get_element(x1,x3) *transMO->get_element(x2,x4));
-          }
-        }
-      }
-    }
-    RefSCMatrix res2 = (DoubleT*RefSCrdm)*(DoubleT.t());
-    ExEnv::out0() << "rdm2_sf: simple check\n";
-    for (int xxx = 0; xxx < n*n; ++xxx)
-    {
-      for (int yyy = 0; yyy < n*n; ++yyy)
-      {
-        double aa = res2->get_element(xxx,yyy);
-        double bb = res2->get_element(yyy,xxx);
-        if(fabs(aa-bb)>1e-12)
-          ExEnv::out0() << "difference: " << xxx << ", " << yyy << ", " <<aa << ", " << bb << "\n";
-      }
-    }
-    res.copyRefSCMatrix(res2);
-#endif
-#if 1
-    res.print(prepend_spincase(AlphaBeta, "rdm2_sf: transformed 2rdm").c_str());
-#endif
-#if 0
-    ExEnv::out0() << "zero 2rdm " << __FILE__ << "\n";
-    res.assign(0.0);
-#endif
     return res;
   }
   else
     {
-#if 0
-    ExEnv::out0() << "zero 2rdm " << __FILE__ << "\n";
-    sf_rdm.assign(0.0);
-#endif
     return sf_rdm;}
 }
 
@@ -2051,25 +1963,31 @@ RefSCMatrix sc::PT2R12::rdm2_sf_4spaces(const Ref<OrbitalSpace> b1space, const R
   {
     // first test 1rdm, which shall be diagonal in our test case
     RefSymmSCMatrix ABX = rdm1_sf();
+    ExEnv::out0() << __FILE__ << ": " << __LINE__ << "\n";
     ExEnv::out0() << "ordm dimension: " << ABX->n() << "\n";
     ABX.print(prepend_spincase(AlphaBeta, "trans ordm").c_str());
 
     RefSCMatrix old_mocoef = r12world()->ref()->get_poporbspace()->orbs()->coefs();
+    ExEnv::out0() << __FILE__ << ": " << __LINE__ << "\n";
     ExEnv::out0() << "print old Mo coefs of dimension: " << old_mocoef->ncol() << " (AO dimensin: )" << old_mocoef->nrow() << "\n";
     old_mocoef.print(prepend_spincase(AlphaBeta, "old mo").c_str());
 
     RefSCMatrix old_mocoef2 = r12world()->ref()->get_poporbspace()->orbs_sb()->coefs();
+    ExEnv::out0() << __FILE__ << ": " << __LINE__ << "\n";
     ExEnv::out0() << "print old symmetry-block Mo coefs of dimension: " << old_mocoef2->ncol() << " (AO dimensin: )" << old_mocoef2->nrow() << "\n";
     old_mocoef2.print(prepend_spincase(AlphaBeta, "symm old mo").c_str());
 
     RefSCMatrix new_mocoef = r12world()->ref()->get_screened_poporbspace()->orbs()->coefs();
+    ExEnv::out0() << __FILE__ << ": " << __LINE__ << "\n";
     ExEnv::out0() << "print new Mo coefs of dimension: " << new_mocoef->ncol() << " (AO dimensin: )" << new_mocoef->nrow() << "\n";
     new_mocoef.print(prepend_spincase(AlphaBeta, "new mo").c_str());
 
     RefSCMatrix new_mocoef2 = r12world()->ref()->get_screened_poporbspace()->orbs_sb()->coefs();
+    ExEnv::out0() << __FILE__ << ": " << __LINE__ << "\n";
     ExEnv::out0() << "print new symmetry-block Mo coefs of dimension: " << new_mocoef2->ncol() << " (AO dimensin: )" << new_mocoef2->nrow() << "\n";
     new_mocoef2.print(prepend_spincase(AlphaBeta, "symm new mo").c_str());
 
+    ExEnv::out0() << __FILE__ << ": " << __LINE__ << "\n";
     ExEnv::out0() << "print b1space of dimension: " << b1space->coefs()->ncol() << " (AO dimensin: )" << b1space->coefs()->nrow() << "\n";
     b1space->coefs().print(prepend_spincase(AlphaBeta, "b1space").c_str());
     ExEnv::out0() << "\n\nprint pdmspace of dimension: " << pdmspace->coefs()->ncol() << " (AO dimensin: )" << pdmspace->coefs()->nrow() << "\n";
@@ -2218,46 +2136,6 @@ RefSCMatrix sc::PT2R12::rdm2_sf_4spaces_int_permu(RefSCMatrix rdm2_4space_int,
 
 
 
-void PT2R12::check_sf_r12_rdm()
-{
-  RefSCMatrix rdm1sf = rdm1_sf().convert2RefSCMat();
-  RefSCMatrix rdm2sf = rdm2_sf().convert2RefSCMat();
-  const int norbs = rdm1_->orbs(Alpha)->rank();
-  double summ = 0.0;
-  for (int s = 0; s < norbs; ++s)
-  {
-    for (int v = 0; v < norbs; ++v)
-    {
-      for (int x = 0; x < norbs; ++x)
-      {
-        for (int r = 0; r < norbs; ++r)
-        {
-          for (int y = 0; y < norbs; ++y)
-          {
-            for (int w = 0; w < norbs; ++w)
-            {
-              summ += rdm1sf(s, v) * (-0.5 * rdm2sf(x * norbs + r, w *norbs + y)
-                                             + 0.5 *rdm1sf(x, w) * rdm1sf(r,y) - 0.5 * rdm1sf(r,w) * rdm1sf(x,y));
-              summ += rdm1sf(s, w) * (-0.5 * rdm2sf(x * norbs + r, y *norbs + v)
-                                                           + 1.0 *rdm1sf(r,v) * rdm1sf(x,y) - 0.25 * rdm1sf(r,y) * rdm1sf(x,v));
-              summ += rdm1sf(r, v) * (1.0 * rdm2sf(x * norbs + s, w *norbs + y)
-                                                                         - 1.0 *rdm1sf(s,y) * rdm1sf(x,w));
-              summ += rdm1sf(r, w) * (-0.5 * rdm2sf(x * norbs + s, v *norbs + y)
-                                                                         + 0.5 *rdm1sf(s,y) * rdm1sf(x,v));
-              if(fabs(summ) > 1.0e-12)
-              {
-                ExEnv::out0() << "s, v, x, r, y, w: "  << std::endl;
-                ExEnv::out0() << s << ", " << v << ", " << x << ", " << r << ", " << y << ", " << w << std::endl;
-                ExEnv::out0() << summ << std::endl;
-
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
 
 namespace {
   RefSymmSCMatrix convert_to_local_kit(const RefSymmSCMatrix& A) {

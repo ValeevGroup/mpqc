@@ -1498,9 +1498,9 @@ const Ref<OrbitalSpace>&
 R12IntEval::gammaFgamma_p_p() {
   assert(r12world()->spinadapted());
   if (gammaFgamma_p_p_[Alpha].null()) {
-    const Ref<OrbitalSpace>& extspace = this->orbs(S);
-    const Ref<OrbitalSpace>& intspace = this->orbs(S);
-    RefSCMatrix F_i_e = fock(intspace,extspace,S,1.0,1.0);
+    const Ref<OrbitalSpace>& extspace = this->orbs(Alpha);
+    const Ref<OrbitalSpace>& intspace = this->orbs(Alpha);
+    RefSCMatrix F_i_e = fock(intspace,extspace,Alpha,1.0,1.0);
     std::string id = extspace->id();  id += "_gFg";
     id += "(";  id += intspace->id();  id += ")";
     std::string name = "gammaFgamma-weighted space";

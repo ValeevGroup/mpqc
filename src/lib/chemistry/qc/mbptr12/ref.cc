@@ -392,11 +392,12 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const double occ_thres, RefSymmSCMa
     VV.print(prepend_spincase(AlphaBeta, "poporbitals: VV").c_str());
     (UU*UU.t()).print(prepend_spincase(AlphaBeta, "poporbitals: UU prod").c_str());
 #endif
-#if 1
+#if 0
     for (int xx = 0; xx < num_occ_act; ++xx)
     {
       int indd = occ_act_orb_inds[xx];
-      active[indd] = (DD->get_element(xx) > occ_thres)? true:false;
+      if(active[indd]) //without this check, core orbitals will be made active
+        active[indd] = (DD->get_element(xx) > occ_thres)? true:false;
     } // use eigenvalue to modify 'active', which is a vector to mask/select 'active' orbitals (in practice, the occ_act part defines gg/GG)
 #endif
     for (int i2 = 0; i2 < num_occ_act; ++i2) //i2: the new MO index

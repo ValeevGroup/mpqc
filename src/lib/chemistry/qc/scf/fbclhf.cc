@@ -238,8 +238,11 @@ DFCLHF::ao_fock(double accuracy)
     assert(oreg->key_exists(aospace_id) == false); // should be ensured by using new_unique_key
     oreg->add(make_keyspace_pair(aospace));
   }
+  // feed the spin densities to the builder, cl_dens_diff_ includes total density right now, so halve it
   Ref<FockBuildRuntime> fb_rtime = world_->fockbuild_runtime();
-  fb_rtime->set_densities(cl_dens_diff_,cl_dens_diff_);
+  RefSymmSCMatrix Pa = cl_dens_diff_.copy(); Pa.scale(0.5);
+  RefSymmSCMatrix Pb = Pa;
+  fb_rtime->set_densities(Pa, Pb);
 
   step_tim.change("build");
   Ref<OrbitalSpace> aospace = aoreg->value(basis());
@@ -247,14 +250,13 @@ DFCLHF::ao_fock(double accuracy)
   {
     const std::string jkey = ParsedOneBodyIntKey::key(aospace->id(),aospace->id(),std::string("J"));
     RefSCMatrix J = fb_rtime->get(jkey);
-    G = J;
+    G = J.copy();
   }
   {
     const std::string kkey = ParsedOneBodyIntKey::key(aospace->id(),aospace->id(),std::string("K"),AnySpinCase1);
     RefSCMatrix K = fb_rtime->get(kkey);
     G.accumulate( -1.0 * K);
   }
-  G.scale(0.5); // includes alpha and beta contributions -- need to halve it now
   Ref<SCElementOp> accum_G_op = new SCElementAccumulateSCMatrix(G.pointer());
   RefSymmSCMatrix G_symm = G.kit()->symmmatrix(G.coldim()); G_symm.assign(0.0);
   G_symm.element_op(accum_G_op); G = 0;

@@ -1434,6 +1434,7 @@ R12IntEval::h_P_P(SpinCase1 spin)
 
 const Ref<OrbitalSpace>&
 R12IntEval::gamma_p_p(SpinCase1 S) {
+  assert(!r12world()->spinadapted());
   if (!spin_polarized() && S == Beta)
     return gamma_p_p(Alpha);
 
@@ -1458,7 +1459,6 @@ R12IntEval::gamma_p_p(SpinCase1 S) {
 const Ref<OrbitalSpace>&
 R12IntEval::gamma_p_p_av() {
   assert(r12world()->spinadapted());
-
   if (gamma_p_p_[Alpha].null()) {
     const Ref<OrbitalSpace>& extspace = this->orbs(Alpha);
     const Ref<OrbitalSpace>& intspace = this->orbs(Alpha);
@@ -1474,6 +1474,7 @@ R12IntEval::gamma_p_p_av() {
 
 const Ref<OrbitalSpace>&
 R12IntEval::gammaFgamma_p_p(SpinCase1 S) {
+  assert(!r12world()->spinadapted());
   if (!spin_polarized() && S == Beta)
     return gammaFgamma_p_p(Alpha);
 
@@ -1494,7 +1495,25 @@ R12IntEval::gammaFgamma_p_p(SpinCase1 S) {
 }
 
 const Ref<OrbitalSpace>&
+R12IntEval::gammaFgamma_p_p() {
+  assert(r12world()->spinadapted());
+  if (gammaFgamma_p_p_[Alpha].null()) {
+    const Ref<OrbitalSpace>& extspace = this->orbs(S);
+    const Ref<OrbitalSpace>& intspace = this->orbs(S);
+    RefSCMatrix F_i_e = fock(intspace,extspace,S,1.0,1.0);
+    std::string id = extspace->id();  id += "_gFg";
+    id += "(";  id += intspace->id();  id += ")";
+    std::string name = "gammaFgamma-weighted space";
+    gammaFgamma_p_p_[Alpha] = new OrbitalSpace(id, name, extspace, intspace->coefs() * this->ordm_av() * F_i_e * this->ordm_av(),
+                                           intspace->basis());
+    this->orbital_registry()->add(make_keyspace_pair(gammaFgamma_p_p_[Alpha]));
+  }
+  return gammaFgamma_p_p_[Alpha];
+}
+
+const Ref<OrbitalSpace>&
 R12IntEval::Fgamma_p_P(SpinCase1 S) {
+  assert(!r12world()->spinadapted());
   if (!spin_polarized() && S == Beta)
     return(Fgamma_p_P(Alpha));
   if(Fgamma_p_P_[S].null()) {
@@ -1516,6 +1535,7 @@ R12IntEval::Fgamma_p_P(SpinCase1 S) {
 
 const Ref<OrbitalSpace>&
 R12IntEval::Fgamma_p_P() {
+  assert(r12world()->spinadapted());
   if(Fgamma_p_P_[Alpha].null()) {
     const Ref<OrbitalSpace>& extspace = this->orbs(Alpha);
     const Ref<OrbitalSpace>& intspace = r12world()->ribs_space();
@@ -1528,6 +1548,8 @@ R12IntEval::Fgamma_p_P() {
   }
   return Fgamma_p_P_[Alpha];
 }
+
+
 
 Ref<OrbitalSpace> R12IntEval::obtensor_p_A(const RefSCMatrix &obtensor,SpinCase1 S) {
   const Ref<OrbitalSpace>& extspace = this->orbs(S);

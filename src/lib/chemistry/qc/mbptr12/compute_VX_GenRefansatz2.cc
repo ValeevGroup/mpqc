@@ -123,6 +123,7 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_() {
 //      if (!antisymmetrize && part1_equiv_part2) {
 //          symmetrize<false>(V_[s],V_[s],GG1_space,gg1_space);
 //      }
+      ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
       V_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"V(diag+OBS) contribution").c_str());
     }
 
@@ -194,6 +195,7 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_() {
         symmetrize<false>(V_[s],V_[s],GG1_space,gg1_space);
     }
     if (debug_ >= DefaultPrintThresholds::O4) {
+        ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
         V_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"V(diag+OBS+ABS) contribution").c_str());
     }
 
@@ -224,6 +226,7 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_() {
 //        if (!antisymmetrize && part1_equiv_part2) {
 //            symmetrize<false>(X_[s],X_[s],GG1_space,GG1_space);
 //        }
+        ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
         X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag+OBS) contribution 1").c_str());
       }
     }
@@ -261,6 +264,7 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_() {
            spincase2!=AlphaBeta,tforms_bra_f12,tforms_ket_f12
            );
       if (s == AlphaBeta && (debug_ >= DefaultPrintThresholds::O4)) {
+          ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
           X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag+OBS+ABS) final contribution").c_str());
       }
       if(spincase2==AlphaBeta) {
@@ -297,6 +301,7 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_() {
         symmetrize<false>(X_[s],X_[s],GG1_space,GG1_space);
     }
     if (s == AlphaBeta && (debug_ >= DefaultPrintThresholds::O4)) {
+        ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
         X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag+OBS+ABS) final contribution").c_str());
     }
 
@@ -371,6 +376,7 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_spinfree_() {
            false, tforms_f12, tforms);
     }
     if (debug_ >= DefaultPrintThresholds::O4) {
+      ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
       V_[AlphaBeta].print("V(diag+OBS) contribution");
     }
 
@@ -409,6 +415,7 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_spinfree_() {
 
     symmetrize<false>(V_[AlphaBeta],V_[AlphaBeta],GG_space,gg_space);
     if (debug_ >= DefaultPrintThresholds::O4)
+      ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
       V_[AlphaBeta].print("V(diag+OBS+ABS) contribution");
 
     Vtimer.exit();
@@ -440,6 +447,7 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_spinfree_() {
         //      if (!antisymmetrize && part1_equiv_part2) {
         //          symmetrize<false>(X_[s],X_[s],GG1_space,GG1_space);
         //      }
+        ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
         X_[AlphaBeta].print(prepend_spincase(AlphaBeta,"X(diag+OBS) contribution 1").c_str());
       }
     }
@@ -476,6 +484,7 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_spinfree_() {
              );
         if (debug_ >= DefaultPrintThresholds::O4 )
         {
+            ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
             X_[AlphaBeta].print(prepend_spincase(AlphaBeta,"X(diag+OBS+ABS) final contribution").c_str());
         }
     }
@@ -516,7 +525,8 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_spinfree_() {
 
     if (debug_ >= DefaultPrintThresholds::O4)
     {
-        X_[AlphaBeta].print(prepend_spincase(AlphaBeta,"X(diag+OBS+ABS) final contribution").c_str());
+      ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
+      X_[AlphaBeta].print(prepend_spincase(AlphaBeta,"X(diag+OBS+ABS) final contribution").c_str());
     }
 
     Xtimer.exit();

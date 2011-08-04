@@ -270,7 +270,7 @@ std::vector<unsigned int> OrbitalSpace::frozen_to_blockinfo(unsigned int nfzc,
   offsets.resize(nb);
   for (unsigned int b = 0; b < nb; b++) {
     block_sizes_[b] = evals.dim()->blocks()->size(b);
-    offsets[b] = 0;
+    offsets[b] = 0;//initialize offsets vector
   }
 
   // Get the energies of the orbitals in this space
@@ -282,19 +282,19 @@ std::vector<unsigned int> OrbitalSpace::frozen_to_blockinfo(unsigned int nfzc,
   for (unsigned int b = 0; b < nb; b++) {
     for (unsigned int i = 0; i < block_sizes_[b]; i++, ii++) {
       energy[ii] = evals.get_element(i + offset);
-      blocked_index_to_irrep[ii] = b;
+      blocked_index_to_irrep[ii] = b; //therefore evals are ordered according to symmetry
     }
     offset += block_sizes_[b];
   }
 
   // Do the sort
-  dquicksort(energy, index_map, rank);
+  dquicksort(energy, index_map, rank);//index_map contains the orbital indices in energy ordering
   delete[] energy;
 
   // Get rid of nfzc lowest orbitals
   for (unsigned int i = 0; i < nfzc; i++) {
     unsigned int b = blocked_index_to_irrep[index_map[i]];
-    ++offsets[b];
+    ++offsets[b];    //tells the starting orbital in each irrep, excluding fzc; makes sense if the orbitals in each sym block are already in energy ordering
     --block_sizes_[b];
   }
 
@@ -318,7 +318,7 @@ void OrbitalSpace::full_coefs_to_coefs(const RefSCMatrix& full_coefs,
        p != block_sizes_.end();
        ++p) {
     rank += *p;
-  }
+  }//rank equals # of active orbitals
 
   orbsym_.resize(rank);
   RefSCDimension modim = full_coefs.coldim(); // the dimension of the full space
@@ -344,12 +344,12 @@ void OrbitalSpace::full_coefs_to_coefs(const RefSCMatrix& full_coefs,
     // The sorted->blocked reordering array is trivial when no resorting is done
     for (unsigned int i = 0; i < rank; i++) {
       index_map[i] = i;
-    }
+    }//it will change for energy ordering
 
     unsigned int ii = 0; // blocked index to this space
     unsigned int offset = 0;
     for (unsigned int b = 0; b < nb; b++) {
-      for (unsigned int i = 0; i < block_sizes_[b]; i++, ii++) {
+      for (unsigned int i = 0; i < block_sizes_[b]; i++, ii++) { //only active (non-virtual) orbs are considered (due to block_sizes_, see frozen_to_blockinfo())
         blocked_subindex_to_full_index[ii] = i + offsets[b] + offset;
         blocked_subindex_to_irrep[ii] = b;
       }
@@ -366,7 +366,7 @@ void OrbitalSpace::full_coefs_to_coefs(const RefSCMatrix& full_coefs,
     unsigned int ii = 0; // blocked index to this space
     unsigned int offset = 0;
     for (unsigned int b = 0; b < nb; b++) {
-      for (unsigned int i = 0; i < block_sizes_[b]; i++, ii++) {
+      for (unsigned int i = 0; i < block_sizes_[b]; i++, ii++) {//only active (non-virtual) orbs are considered (due to block_sizes_, see frozen_to_blockinfo())
         energy[ii] = evals.get_element(i + offsets[b] + offset);
         blocked_subindex_to_full_index[ii] = i + offsets[b] + offset;
         blocked_subindex_to_irrep[ii] = b;
@@ -375,13 +375,13 @@ void OrbitalSpace::full_coefs_to_coefs(const RefSCMatrix& full_coefs,
     }
 
     // Do the sort
-    dquicksort(energy, index_map, rank);
+    dquicksort(energy, index_map, rank);//index_map is for active orbitals
 
     // coefs_ has 1 block
     int* nfunc_per_block = new int[1];
     nfunc_per_block[0] = rank;
     dim_ = new SCDimension(rank, 1, nfunc_per_block,
-                           ("MO(" + name_ + ")").c_str());
+                           ("MO(" + name_ + ")").c_str());//one block
     if (rank)
       dim_->blocks()->set_subdim(0, new SCDimension(nfunc_per_block[0]));
 

@@ -140,6 +140,7 @@ void R12IntEval::compute_BC_GenRefansatz2_() {
 
     if (debug_ >= DefaultPrintThresholds::mostO4) {
       std::string label = prepend_spincase(spincase2, "Q(C) contribution");
+      ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
       Q.print(label.c_str());
     }
     B_[s].accumulate(Q);
@@ -322,8 +323,9 @@ void R12IntEval::compute_BC_GenRefansatz2_() {
 
 
 
-    if (debug_ >= DefaultPrintThresholds::mostO4 || true) {
+    if (debug_ >= DefaultPrintThresholds::mostO4) {
       std::string label = prepend_spincase(spincase2, "P(C) contribution");
+      ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
       P.print(label.c_str());
     }
 
@@ -436,6 +438,7 @@ void R12IntEval::compute_BC_GenRefansatz2_spinfree() {
 
     if (debug_ >= DefaultPrintThresholds::mostO4) {
       std::string label = prepend_spincase(spincase2, "Q(C) contribution");
+      ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
       Q.print(label.c_str());
     }
     B_[s].accumulate(Q);
@@ -512,24 +515,7 @@ void R12IntEval::compute_BC_GenRefansatz2_spinfree() {
     }
 #endif  /* INCLUDE_P_pFA */
 
-#if 0 // this is the term not appearing in spin-free method, since it comes from approximating 4-rdm, which is not present in SF-[2]R12
-    {
-      RefSCMatrix Ptmp;
-      Ptmp = P.clone();
-      Ptmp.assign(0.0);
-      Ref<OrbitalSpace> gammafgamma_p_p1;
-      Ref<OrbitalSpace> gammafgamma_p_p2;
-      gammafgamma_p_p1 = gammaFgamma_p_p(spin1);
-      gammafgamma_p_p2 = gammaFgamma_p_p(spin2);
-      compute_FxF_(Ptmp, spincase2, GG1space, GG2space, GG1space, GG2space,
-                   cabs1, cabs2, orbs1, orbs2, gammafgamma_p_p1,
-                   gammafgamma_p_p2);
-      P.accumulate(Ptmp);
-      if (debug_ >= DefaultPrintThresholds::allO4)
-        Ptmp.print(
-                   "contribution = bar{r}^{p_3 alpha}_{v w} gamma^{q_3}_{p_3} f^{q_2}_{q_3} gamma^{p_2}_{q_2} bar{r}^{r s}_{p_2 alpha}");
-    }
-#endif  /* INCLUDE_P_pgammaFgammap */
+
 
 
 #if INCLUDE_P_gammaF_p_A  // in Liguo notation, this is term 5
@@ -622,8 +608,9 @@ void R12IntEval::compute_BC_GenRefansatz2_spinfree() {
     }
 #endif  /* INCLUDE_P_Fgamma_P_p */
 
-    if (debug_ >= DefaultPrintThresholds::mostO4 || true) {
+    if (debug_ >= DefaultPrintThresholds::mostO4) {
       std::string label = prepend_spincase(spincase2, "P(C) contribution");
+      ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
       P.print(label.c_str());
     }
 

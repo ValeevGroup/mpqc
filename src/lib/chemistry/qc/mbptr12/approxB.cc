@@ -158,6 +158,7 @@ R12IntEval::compute_BB_()
     tim_Q.exit();
 
     if (debug_ >= DefaultPrintThresholds::mostO4) {
+      ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
       std::string label = prepend_spincase(spincase2,"B(Q) contribution");
       Q.print(label.c_str());
     }

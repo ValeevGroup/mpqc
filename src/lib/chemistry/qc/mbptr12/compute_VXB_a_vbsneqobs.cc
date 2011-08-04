@@ -383,6 +383,7 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
       }
 
       if (debug_ >= DefaultPrintThresholds::O4) {
+      ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
 	  V_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"V(diag+OBS+ABS) contribution").c_str());
 	  X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag+OBS+ABS) contribution").c_str());
 	  if (compute_B)

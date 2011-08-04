@@ -295,6 +295,7 @@ R12IntEval::compute_BC_()
 	if (debug_ >= DefaultPrintThresholds::mostO4 || DEBUG_PRINT_ALL_B_CONTRIBUTIONS) {
 	  globally_sum_intermeds_();
 	  std::string label = prepend_spincase(spincase2,"Q(C) contribution");
+	  ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
       Q.print(label.c_str());
 	}
 	B_[s].accumulate(Q); Q = 0;
@@ -608,6 +609,7 @@ R12IntEval::compute_BC_()
 
 	    if (debug_ >= DefaultPrintThresholds::mostO4 || DEBUG_PRINT_ALL_B_CONTRIBUTIONS) {
 	      std::string label = prepend_spincase(spincase2,"P(C) contribution");
+	      ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
           P.print(label.c_str());
         }
 

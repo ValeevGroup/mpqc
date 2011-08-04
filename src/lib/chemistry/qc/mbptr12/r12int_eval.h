@@ -864,6 +864,7 @@ public:
     const Ref<OrbitalSpace>& gamma_p_p_av();
   /// Form <p|gammaFgamma|p> space
   const Ref<OrbitalSpace>& gammaFgamma_p_p(SpinCase1 S);
+  const Ref<OrbitalSpace>& gammaFgamma_p_p();
   /// Form <P|Fgamma|p> space
   const Ref<OrbitalSpace>& Fgamma_p_P(SpinCase1 S);
   /// Form <P|Fgamma|p> space using spin-average rdm1

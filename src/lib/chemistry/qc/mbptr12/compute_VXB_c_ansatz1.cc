@@ -202,6 +202,7 @@ void R12IntEval::contrib_to_VXB_c_ansatz1_() {
         symmetrize<false>(V_[s],V_[s],GG1_space,gg1_space);
     }
     if (debug_ >= DefaultPrintThresholds::O4) {
+        ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
         V_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"V(diag+OBS+ABS) contribution").c_str());
     }
 

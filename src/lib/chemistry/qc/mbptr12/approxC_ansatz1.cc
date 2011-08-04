@@ -138,6 +138,7 @@ void R12IntEval::compute_BC_ansatz1_() {
         {
 #endif
           std::string label = prepend_spincase(spincase2,"Q(C) contribution");
+          ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
           Q.print(label.c_str());
         }
         B_[s].accumulate(Q); Q = 0;
@@ -228,6 +229,7 @@ void R12IntEval::compute_BC_ansatz1_() {
         {
 #endif
           std::string label = prepend_spincase(spincase2,"P(C) contribution");
+          ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
           P.print(label.c_str());
         }
 #endif  /* INCLUDE_P */

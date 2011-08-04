@@ -163,6 +163,7 @@ R12IntEval::compute_B_fX_()
 
     if (debug_ >= DefaultPrintThresholds::mostO4) {
       std::string label = prepend_spincase(spincase2, "B(fX) contribution");
+      ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
       Q.print(label.c_str());
     }
     B_[s].accumulate(Q);

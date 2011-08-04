@@ -409,7 +409,9 @@ R12IntEval::contrib_to_VXB_abs_()
 
       if (debug_ >= DefaultPrintThresholds::O4) {
           globally_sum_intermeds_();
+          ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
           V_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"V(diag+OBS+ABS) contribution").c_str());
+          ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
           X_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"X(diag+OBS+ABS) contribution").c_str());
           if (compute_B)
           B_[s].print(prepend_spincase(static_cast<SpinCase2>(s),"B(diag+OBS+ABS) contribution").c_str());

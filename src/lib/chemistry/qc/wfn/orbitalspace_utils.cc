@@ -81,7 +81,7 @@ namespace sc {
       throw ProgrammingError("Two OrbitalSpaces use incompatible Integral factories");
     // Both spaces must have same blocking
     if (space1->nblocks() != space2->nblocks())
-      throw std::runtime_error("R12WavefunctionWorld::orthog_comp() -- space1 and space2 have incompatible blocking");
+      throw std::runtime_error("sc::orthog_comp() -- space1 and space2 have incompatible blocking");
 
     ExEnv::out0() << indent
                   << "SVD-projecting out " << space1->name() << " out of " << space2->name()

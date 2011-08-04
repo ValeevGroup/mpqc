@@ -1788,6 +1788,7 @@ RefSCMatrix sc::PT2R12::transform_MO() //transformation matrix between occupied 
     UU.print(prepend_spincase(AlphaBeta, "transform_MO: UU").c_str());
     DD.print(prepend_spincase(AlphaBeta, "transform_MO: DD").c_str());
     VV.print(prepend_spincase(AlphaBeta, "transform_MO: VV").c_str());
+    (UU*UU.t()).print(prepend_spincase(AlphaBeta, "transform_MO: UU prod").c_str());
 #endif
     for (int i2 = 0; i2 < num_occ_act; ++i2)
     {
@@ -1830,9 +1831,11 @@ RefSymmSCMatrix sc::PT2R12::rdm1_sf()
     final->assign(0.0);
     final.copyRefSCMatrix(res);// convert a symmscmatrix
 #if 1
+    ExEnv::out0()<<__FILE__ << ": " << __LINE__ << "\n";
     final.print(prepend_spincase(AlphaBeta, "one SF rdm").c_str());
 #endif
 #if 0
+    ExEnv::out0()<<__FILE__ << ": " << __LINE__ << "\n";
     ExEnv::out0() << "rdm2_sf: try this way\n";
     if(true) return r12world()->ref()->ordm_occ_sb(Alpha);
 #endif
@@ -2003,7 +2006,7 @@ RefSymmSCMatrix sc::PT2R12::rdm2_sf()
     res.print(prepend_spincase(AlphaBeta, "rdm2_sf: transformed 2rdm").c_str());
 #endif
 #if 0
-    ExEnv::out0() << "zero 2rdm\n";
+    ExEnv::out0() << "zero 2rdm " << __FILE__ << "\n";
     res.assign(0.0);
 #endif
     return res;
@@ -2011,6 +2014,7 @@ RefSymmSCMatrix sc::PT2R12::rdm2_sf()
   else
     {
 #if 0
+    ExEnv::out0() << "zero 2rdm " << __FILE__ << "\n";
     sf_rdm.assign(0.0);
 #endif
     return sf_rdm;}

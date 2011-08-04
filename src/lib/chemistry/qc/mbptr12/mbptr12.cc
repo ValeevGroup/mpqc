@@ -227,7 +227,7 @@ MBPT2_R12::print(ostream&o) const
   o << indent << "Occupied orbitals     : " << occ_orbs_ << endl;
   o << indent << "Unoccupied orbitals   : " << uocc_orbs_;
   if (uocc_orbs_ == "pno" || uocc_orbs_ == "pno-r12") {
-    o << " (truncate_threshold = " << scprintf("%10.5e",uocc_orbs_pno_truncate_threshold_);
+    o << " (truncate_threshold = " << scprintf("%10.5e",uocc_orbs_pno_truncate_threshold_) << ")";
   }
   o << endl;
 
@@ -341,6 +341,7 @@ MBPT2_R12::compute()
 
         // reinitialize R12WavefunctionWorld
         this->obsolete();
+        r12world_->world()->initialize_ao_spaces();
         Ref<RefWavefunction> refwfn = new Extern_RefWavefunction(this->r12world()->world(), this->basis(), this->integral(),
                                                                  C, orbsym, Pa, Pb, nocc,
                                                                  this->nfzcore(), this->nfzvirt(), false);

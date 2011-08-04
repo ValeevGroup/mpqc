@@ -398,14 +398,14 @@ RefWavefunction::init() const
     this_nonconst->init_spaces();
 
     // make sure that FockBuildRuntime uses same density fitting info as this reference
-    assert(world_->fockbuild_runtime()->dfinfo() == this->dfinfo());
+    world_->fockbuild_runtime()->dfinfo(this->dfinfo());
 
     // make sure that FockBuildRuntime uses same densities as the reference wavefunction
     if(force_average_AB_rdm1_ == false)
         world_->fockbuild_runtime()->set_densities(this->ordm(Alpha), this->ordm(Beta));
     else
     {
-        RefSymmSCMatrix av_rdm = this->ordm(Alpha);
+        RefSymmSCMatrix av_rdm = this->ordm(Alpha).copy();
         av_rdm.accumulate(this->ordm(Beta));
         av_rdm.scale(0.5);
         world_->fockbuild_runtime()->set_densities(av_rdm, av_rdm);
@@ -641,15 +641,15 @@ SD_RefWavefunction::init_spaces_restricted()
   if (occ_orbitals_ == "pipek-mezey") {
     RefSymmSCMatrix S_ao = detail::overlap(bs, integral);
     PipekMezeyLocalization localizer(obwfn(), nfzc_, S_ao);
-    evecs_ao.print("Orbitals before localization");
+    //evecs_ao.print("Orbitals before localization");
     RefSCMatrix evecs_occ_ao = localizer.compute_orbitals();
     const int nocc_act = evecs_occ_ao.ncol();
     const int nocc = nocc_act + nfzc_;
-    evecs_occ_ao.print("Active occupied orbitals after localization");
+    //evecs_occ_ao.print("Active occupied orbitals after localization");
     evecs_ao.assign_subblock(evecs_occ_ao,
                              0, evecs_occ_ao.nrow()-1,
                              nfzc_, nocc - 1);
-    evecs_ao.print("Orbitals after localization");
+    //evecs_ao.print("Orbitals after localization");
 
     // let's test them now!
 #if 0
@@ -1300,7 +1300,8 @@ Extern_RefWavefunction::init_spaces(unsigned int nocc,
   RefSymmSCMatrix S_mo = S_so.kit()->symmmatrix(C_so.coldim());
   S_mo.assign(0.0);
   S_mo->accumulate_transform(C_so, S_so, SCMatrix::TransposeTransform);
-  S_mo.print("MO metric");
+  //S_mo.print("MO metric");
+  pspace_ao->print_detail();
 
   // compute active orbital mask
   // from frozen-core
@@ -1332,8 +1333,11 @@ Extern_RefWavefunction::init_spaces(unsigned int nocc,
     RefSCMatrix F = world()->fockbuild_runtime()->get(fkey);
     for(int o=0; o<nmo; ++o)
       evals.set_element(o, F(o,o));
-    F.print("orbital Fock matrix");
-    evals.print("orbital eigenvalues");
+    //F.print("orbital Fock matrix");
+    //evals.print("orbital eigenvalues");
+    RefSymmSCMatrix P = world()->fockbuild_runtime()->P();
+    RefSymmSCMatrix P_mo = P.kit()->symmmatrix(C_ao.coldim()); P_mo.assign(0.0);
+    P_mo.accumulate_transform(C_ao, P, SCMatrix::TransposeTransform);
 
     if (need_to_add_pspace_temporarily)
       oreg->remove(pspace_ao->id());

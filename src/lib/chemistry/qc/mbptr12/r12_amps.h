@@ -53,10 +53,8 @@ class R12Amplitudes : public RefCount {
   const RefSCMatrix& Foo(SpinCase2 S);
   const RefSCMatrix& Fov(SpinCase2 S);
   const RefSCMatrix& Fox(SpinCase2 S);
-  const RefSCMatrix& Fvx(SpinCase2 S);
   const RefSCMatrix& Fvo(SpinCase2 S);
   const RefSCMatrix& Fxo(SpinCase2 S);
-  const RefSCMatrix& Fxv(SpinCase2 S);
 
   private:
   Ref<R12IntEval> r12eval_;
@@ -65,10 +63,8 @@ class R12Amplitudes : public RefCount {
   RefSCMatrix Foo_[NSpinCases2];
   RefSCMatrix Fov_[NSpinCases2];
   RefSCMatrix Fox_[NSpinCases2];
-  RefSCMatrix Fvx_[NSpinCases2];
   RefSCMatrix Fvo_[NSpinCases2];
   RefSCMatrix Fxo_[NSpinCases2];
-  RefSCMatrix Fxv_[NSpinCases2];
   
   void compute_(SpinCase2 sc2);
 

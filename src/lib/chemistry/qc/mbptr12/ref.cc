@@ -1301,7 +1301,6 @@ Extern_RefWavefunction::init_spaces(unsigned int nocc,
   S_mo.assign(0.0);
   S_mo->accumulate_transform(C_so, S_so, SCMatrix::TransposeTransform);
   //S_mo.print("MO metric");
-  pspace_ao->print_detail();
 
   // compute active orbital mask
   // from frozen-core

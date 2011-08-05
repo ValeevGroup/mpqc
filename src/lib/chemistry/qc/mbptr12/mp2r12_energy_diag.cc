@@ -789,41 +789,8 @@ void MP2R12Energy_Diag::compute_ef12() {
                   orbs1->id(), orbs2->id(),
                   descr_f12_key, moints4_rtime,
                   i1i2p1p2_ints);
-#define DECOMPOSE_PQ_CONTRIBUTION 1
-#if !DECOMPOSE_PQ_CONTRIBUTION
     f12_ij_ints.push_back(i1i2p1p2_ints);
     VX_output.push_back("diag-pq contribution");
-#else
-    // V^ij_ij -= (g^ij_pq f^pq_ij = g^ij_mn f^mn_ij + g^ij_ma f^ma_ij + g^ij_am f^am_ij + g^ij_ab f^ab_ij)
-    Ref<DistArray4> i1i2m1m2_ints;
-    activate_ints(occ1_act->id(), occ2_act->id(),
-                  occ1->id(), occ2->id(),
-                  descr_f12_key, moints4_rtime,
-                  i1i2m1m2_ints);
-    f12_ij_ints.push_back(i1i2m1m2_ints);
-    VX_output.push_back("diag-mn contribution");
-    Ref<DistArray4> i1i2m1a2_ints;
-    activate_ints(occ1_act->id(), occ2_act->id(),
-                  occ1->id(), vir2->id(),
-                  descr_f12_key, moints4_rtime,
-                  i1i2m1a2_ints);
-    f12_ij_ints.push_back(i1i2m1a2_ints);
-    VX_output.push_back("diag-mn-ma contribution");
-    Ref<DistArray4> i1i2a1m2_ints;
-    activate_ints(occ1_act->id(), occ2_act->id(),
-                  vir1->id(), occ2->id(),
-                  descr_f12_key, moints4_rtime,
-                  i1i2a1m2_ints);
-    f12_ij_ints.push_back(i1i2a1m2_ints);
-    VX_output.push_back("diag-mn-ma-am contribution");
-    Ref<DistArray4> i1i2a1a2_ints;
-    activate_ints(occ1_act->id(), occ2_act->id(),
-                  vir1->id(), vir2->id(),
-                  descr_f12_key, moints4_rtime,
-                  i1i2a1a2_ints);
-    f12_ij_ints.push_back(i1i2a1a2_ints);
-    VX_output.push_back("diag-mn-ma-am-ab = diag-pq contribution");
-#endif
 
     // V^ij_ij -= g^ij_ma' f^ma'_ij
     Ref<DistArray4> i1i2i1a2_ints;
@@ -864,12 +831,6 @@ void MP2R12Energy_Diag::compute_ef12() {
 
     // V^ij_ji -= g^ij_pq f^pq_ji
     Ref<DistArray4> i2i1p1p2_ints;
-#if DECOMPOSE_PQ_CONTRIBUTION
-    Ref<DistArray4> i2i1m1m2_ints;
-    Ref<DistArray4> i2i1m1a2_ints;
-    Ref<DistArray4> i2i1a1m2_ints;
-    Ref<DistArray4> i2i1a1a2_ints;
-#endif
 
     // V^ij_ji -= r^ij_ma' f^ma'_ji
     Ref<DistArray4> i2i1i1a2_ints;
@@ -900,25 +861,12 @@ void MP2R12Energy_Diag::compute_ef12() {
     } else {
       i1i2i2i1_ints = i1i2i1i2_ints;
       i2i1p1p2_ints = i1i2p1p2_ints;
-#if DECOMPOSE_PQ_CONTRIBUTION
-      i2i1m1m2_ints = i1i2m1m2_ints;
-      i2i1m1a2_ints = i1i2m1a2_ints;
-      i2i1a1m2_ints = i1i2a1m2_ints;
-      i2i1a1a2_ints = i1i2a1a2_ints;
-#endif
       i2i1i1a2_ints = i1i2i1a2_ints;
       i2i1a1i2_ints = i1i2a1i2_ints;
     }
 
     std::vector<Ref<DistArray4> > f12_ji_ints;
-#if !DECOMPOSE_PQ_CONTRIBUTION
     f12_ji_ints.push_back(i2i1p1p2_ints);
-#else
-    f12_ji_ints.push_back(i2i1m1m2_ints);
-    f12_ji_ints.push_back(i2i1m1a2_ints);
-    f12_ji_ints.push_back(i2i1a1m2_ints);
-    f12_ji_ints.push_back(i2i1a1a2_ints);
-#endif
     f12_ji_ints.push_back(i2i1i1a2_ints);
     f12_ji_ints.push_back(i2i1a1i2_ints);
 

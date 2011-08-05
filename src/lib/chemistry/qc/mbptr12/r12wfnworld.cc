@@ -146,7 +146,7 @@ R12WavefunctionWorld::initialize()
   }
 
   nlindep_ri_ = nlindep_aux_ = -1;
-  obs_eq_vbs_ = basis()->equiv(basis_vir());
+  obs_eq_vbs_ = basis_vir().null() || basis()->equiv(basis_vir());
   bs_ri_ = 0;
   ribs_space_ = 0;
   cabs_space_[Alpha] = cabs_space_[Beta] = 0;

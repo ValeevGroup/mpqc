@@ -285,7 +285,7 @@ MBPT2_R12::compute()
       throw ex;
     }
 */
-  compute_energy_();
+  //compute_energy_();
 
 #define TESTING_PSV 1
 #if TESTING_PSV
@@ -294,6 +294,14 @@ MBPT2_R12::compute()
 
     std::vector<double> r12_pair_energies[NSpinCases2];
     std::vector<double> mp2_pair_energies[NSpinCases2];
+
+    r12world_->initialize();
+    if (r12eval_.null()) {
+      // since r12intevalinfo uses this class' KeyVal to initialize, dynamic is set automatically
+      r12world_->world()->print_percent(print_percent_);
+      r12eval_ = new R12IntEval(r12world_);
+      r12eval_->debug(debug_);
+    }
 
     for(int s=0; s<2; ++s) {
       SpinCase2 S = static_cast<SpinCase2>(s);
@@ -660,6 +668,8 @@ MBPT2_R12::mp1_pno(SpinCase2 spin,
     const Ref<OrbitalSpace>& occ2_act = r12eval()->occ_act(spin2);
     const Ref<OrbitalSpace>& occ1 = r12eval()->occ(spin1);
     const Ref<OrbitalSpace>& occ2 = r12eval()->occ(spin2);
+    const Ref<OrbitalSpace>& cabs1 = r12world()->cabs_space(spin1);
+    const Ref<OrbitalSpace>& cabs2 = r12world()->cabs_space(spin2);
     const Ref<OrbitalSpace>& uocc1_act = r12world()->ref()->uocc_act(spin1);
     const Ref<OrbitalSpace>& uocc2_act = r12world()->ref()->uocc_act(spin2);
     assert(uocc1_act == uocc2_act); // not ready to handle UHF yet
@@ -676,12 +686,16 @@ MBPT2_R12::mp1_pno(SpinCase2 spin,
     RefSCMatrix Fvv = amps->Fvv(spincase2);
     RefSCMatrix Fov = amps->Fov(spincase2);
     RefSCMatrix Fvo = amps->Fvo(spincase2);
+    RefSCMatrix Fxv = amps->Fxv(spincase2);
+    RefSCMatrix Fvx = amps->Fvx(spincase2);
     assert(this->r12world()->r12tech()->ansatz()->diag() == true);  // assuming diagonal ansatz
     RefSCMatrix Tg = Fvv.kit()->matrix(Fvv.rowdim(),Fvv.rowdim()); Tg.assign(0.0);
     firstorder_cusp_coefficients(spincase2, Tg, occ1_act, occ2_act, this->r12world()->r12tech()->corrfactor());
     Fvv = Tg * Fvv;   // to obtain amplitudes we need to contract in cusp coefficients
     Fov = Tg * Fov;   // to obtain amplitudes we need to contract in cusp coefficients
     Fvo = Tg * Fvo;   // to obtain amplitudes we need to contract in cusp coefficients
+    Fxv = Tg * Fxv;   // to obtain amplitudes we need to contract in cusp coefficients
+    Fvx = Tg * Fvx;   // to obtain amplitudes we need to contract in cusp coefficients
     //Fvv.print("R12 geminal amplitudes in vv space");
 
     // compute the AO basis Fock matrix so that PSV sets can be canonicalized
@@ -729,20 +743,63 @@ MBPT2_R12::mp1_pno(SpinCase2 spin,
         vector_to_matrix(Fvv_ij, Fvv_ij_vec, spincase2);
         //Fvv_ij.print((std::string("R12 geminal amplitudes in vv space ") + oss.str()).c_str());
 
-        RefSCVector Fov_ij_vec = Fov.get_row(ij);
-        RefSCMatrix Fov_ij = Fov_ij_vec.kit()->matrix(occ1->dim(), uocc2_act->dim());
-        vector_to_matrix(Fov_ij, Fov_ij_vec, AlphaBeta);
-        RefSCVector Fvo_ij_vec = Fvo.get_row(ij);
-        RefSCMatrix Fvo_ij = Fvo_ij_vec.kit()->matrix(uocc1_act->dim(), occ2->dim());
-        vector_to_matrix(Fvo_ij, Fvo_ij_vec, AlphaBeta);
-
+        // deflate T2 amplitudes by the geminal amplitudes in vv block
         RefSymmSCMatrix gamma1ab_ij_sansr12 = T2_ij.kit()->symmmatrix(T2_ij.rowdim()); gamma1ab_ij_sansr12.assign(0.0);
         T2_ij_eff = T2_ij - Fvv_ij;
+#define DEFLATE_AMPLITUDES 1
+#if DEFLATE_AMPLITUDES
         gamma1ab_ij_sansr12.accumulate_symmetric_product(T2_ij_eff);
         gamma1ab_ij_sansr12.accumulate_symmetric_product(T2_ij_eff.t());
-        gamma1ab_ij_sansr12.accumulate_symmetric_product(Fvo_ij);
-        gamma1ab_ij_sansr12.accumulate_symmetric_product(Fov_ij.t());
-        //gamma1ab_ij_sansr12.print("pair density (sans R12)");
+        //gamma1ab_ij_sansr12.eigvals().print("pair density (sans R12 vv) eigenvalues");
+#else
+        gamma1ab_ij_sansr12.accumulate_symmetric_product(Fvv_ij);
+        gamma1ab_ij_sansr12.accumulate_symmetric_product(Fvv_ij.t());
+        gamma1ab_ij_sansr12.scale(-1.0);
+        gamma1ab_ij_sansr12.accumulate_symmetric_product(T2_ij);
+        gamma1ab_ij_sansr12.accumulate_symmetric_product(T2_ij.t());
+        gamma1ab_ij_sansr12.eigvals().print("pair density (sans R12 vv) eigenvalues");
+#endif
+        // to ensure that the projector is presented well in this virtual space
+        // add ov contribution
+        if (0) {
+          RefSCVector Fov_ij_vec = Fov.get_row(ij);
+          RefSCMatrix Fov_ij = Fov_ij_vec.kit()->matrix(occ1->dim(),
+                                                        uocc2_act->dim());
+          vector_to_matrix(Fov_ij, Fov_ij_vec, AlphaBeta);
+          RefSCVector Fvo_ij_vec = Fvo.get_row(ij);
+          RefSCMatrix Fvo_ij = Fvo_ij_vec.kit()->matrix(uocc1_act->dim(),
+                                                        occ2->dim());
+          vector_to_matrix(Fvo_ij, Fvo_ij_vec, AlphaBeta);
+
+          RefSymmSCMatrix gamma1ab_ij_r12_ov = gamma1ab_ij_sansr12.clone();
+          gamma1ab_ij_r12_ov.assign(0.0);
+          gamma1ab_ij_r12_ov.accumulate_symmetric_product(Fvo_ij);
+          gamma1ab_ij_r12_ov.accumulate_symmetric_product(Fov_ij.t());
+          gamma1ab_ij_r12_ov.eigvals().print(
+              "pair density from R12 ov eigenvalues");
+          gamma1ab_ij_sansr12.accumulate(gamma1ab_ij_r12_ov);
+        }
+
+        // to ensure that the projector is presented well in this virtual space
+        // add xv contribution
+        if (0) {
+          RefSCVector Fxv_ij_vec = Fxv.get_row(ij);
+          RefSCMatrix Fxv_ij = Fxv_ij_vec.kit()->matrix(cabs1->dim(),
+                                                        uocc2_act->dim());
+          vector_to_matrix(Fxv_ij, Fxv_ij_vec, AlphaBeta);
+          RefSCVector Fvx_ij_vec = Fvx.get_row(ij);
+          RefSCMatrix Fvx_ij = Fvx_ij_vec.kit()->matrix(uocc1_act->dim(),
+                                                        cabs1->dim());
+          vector_to_matrix(Fvx_ij, Fvx_ij_vec, AlphaBeta);
+
+          RefSymmSCMatrix gamma1ab_ij_r12_xv = gamma1ab_ij_sansr12.clone();
+          gamma1ab_ij_r12_xv.assign(0.0);
+          gamma1ab_ij_r12_xv.accumulate_symmetric_product(Fvx_ij);
+          gamma1ab_ij_r12_xv.accumulate_symmetric_product(Fxv_ij.t());
+          gamma1ab_ij_r12_xv.eigvals().print(
+              "pair density from R12 xv eigenvalues");
+          gamma1ab_ij_sansr12.accumulate(gamma1ab_ij_r12_xv);
+        }
 
         // pass it outside this scope
         gamma1ab_ij = gamma1ab_ij_sansr12;
@@ -761,7 +818,7 @@ MBPT2_R12::mp1_pno(SpinCase2 spin,
       }
 
       // SVD the amplitudes
-      {
+      if (0) {
         RefDiagSCMatrix T2_ij_svals = T2_ij.kit()->diagmatrix(T2_ij.rowdim());
         RefSCMatrix T2_ij_svecs_U = T2_ij.clone();
         RefSCMatrix T2_ij_svecs_V = T2_ij.clone();

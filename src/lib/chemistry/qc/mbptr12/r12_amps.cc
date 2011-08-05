@@ -99,6 +99,22 @@ R12Amplitudes::Fxo(SpinCase2 S)
   return Fxo_[S];
 }
 
+const RefSCMatrix&
+R12Amplitudes::Fxv(SpinCase2 S)
+{
+  if (Fxv_[S].null())
+    compute_(S);
+  return Fxv_[S];
+}
+
+const RefSCMatrix&
+R12Amplitudes::Fvx(SpinCase2 S)
+{
+  if (Fvx_[S].null())
+    compute_(S);
+  return Fvx_[S];
+}
+
 void
 R12Amplitudes::compute_(SpinCase2 spincase2)
 {
@@ -132,17 +148,21 @@ R12Amplitudes::compute_(SpinCase2 spincase2)
   RefSCDimension dim_vv = r12eval_->dim_vv(spincase2);
   RefSCDimension dim_ov = new SCDimension(occ1->rank() * vir2_act->rank());
   RefSCDimension dim_ox = new SCDimension(occ1->rank() * cabs2->rank());
+  RefSCDimension dim_vx = new SCDimension(vir1_act->rank() * cabs2->rank());
   RefSCDimension dim_vo = new SCDimension(occ2->rank() * vir1_act->rank());
   RefSCDimension dim_xo = new SCDimension(occ2->rank() * cabs1->rank());
+  RefSCDimension dim_xv = new SCDimension(vir2_act->rank() * cabs1->rank());
   Ref<SCMatrixKit> kit = new LocalSCMatrixKit;
   T2_[s] = kit->matrix(dim_aa,dim_vv);  T2_[s].assign(0.0);
   Fvv_[s] = kit->matrix(dim_f12,dim_vv);  Fvv_[s].assign(0.0);
   Foo_[s] = kit->matrix(dim_f12,dim_oo);  Foo_[s].assign(0.0);
   Fov_[s] = kit->matrix(dim_f12,dim_ov);  Fov_[s].assign(0.0);
   Fox_[s] = kit->matrix(dim_f12,dim_ox);  Fox_[s].assign(0.0);
+  Fvx_[s] = kit->matrix(dim_f12,dim_vx);  Fvx_[s].assign(0.0);
   if (true) {
     Fvo_[s] = kit->matrix(dim_f12,dim_vo);  Fvo_[s].assign(0.0);
     Fxo_[s] = kit->matrix(dim_f12,dim_xo);  Fxo_[s].assign(0.0);
+    Fxv_[s] = kit->matrix(dim_f12,dim_xv);  Fxv_[s].assign(0.0);
   }
   // If no active orbital pairs for this spin case -- leave
   if (dim_f12.n() == 0) return;
@@ -151,6 +171,8 @@ R12Amplitudes::compute_(SpinCase2 spincase2)
   std::vector<std::string> tform_pp_keys;
   std::vector<std::string> tform_mx_keys;
   std::vector<std::string> tform_xm_keys;
+  std::vector<std::string> tform_ax_keys;
+  std::vector<std::string> tform_xa_keys;
 
   // if OBS == VBS then use (ip|ip) and (imjx) integrals
   if (obs_eq_vbs) {
@@ -190,6 +212,26 @@ R12Amplitudes::compute_(SpinCase2 spincase2)
         true);
         fill_container(tformkey_creator,tform_xm_keys);
     }
+    {
+      R12TwoBodyIntKeyCreator tform_creator(r12world->world()->moints_runtime4(),
+        xspace1,
+        vir1_act,
+        xspace2,
+        cabs2,
+        r12world->r12tech()->corrfactor(),
+        true);
+        fill_container(tform_creator,tform_ax_keys);
+    }
+    {
+      R12TwoBodyIntKeyCreator tform_creator(r12world->world()->moints_runtime4(),
+        xspace1,
+        cabs1,
+        xspace2,
+        vir2_act,
+        r12world->r12tech()->corrfactor(),
+        true);
+        fill_container(tform_creator,tform_xa_keys);
+    }
   }
   // else the needed transforms already exist
 
@@ -202,11 +244,13 @@ R12Amplitudes::compute_(SpinCase2 spincase2)
   if (!antisymm) {
     r12eval_->compute_F12_(Fov_[s],xspace1,occ1,xspace2,vir2_act,antisymm,tform_pp_keys);
     r12eval_->compute_F12_(Fox_[s],xspace1,occ1,xspace2,cabs2,antisymm,tform_mx_keys);
+    r12eval_->compute_F12_(Fvx_[s],xspace1,vir1_act,xspace2,cabs2,antisymm,tform_ax_keys);
     if (true) {
       Fvo_[s] = kit->matrix(dim_f12,dim_vo);
       Fxo_[s] = kit->matrix(dim_f12,dim_xo);
       r12eval_->compute_F12_(Fvo_[s],xspace1,vir1_act,xspace2,occ2,antisymm,tform_pp_keys);
       r12eval_->compute_F12_(Fxo_[s],xspace1,cabs1,xspace2,occ2,antisymm,tform_xm_keys);
+      r12eval_->compute_F12_(Fxv_[s],xspace1,cabs1,xspace2,vir2_act,antisymm,tform_xa_keys);
     }
   }
 

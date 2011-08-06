@@ -96,17 +96,9 @@ void R12IntEval::contrib_to_VXB_c_ansatz1_() {
     const R12Technology::ABSMethod absmethod = r12world()->r12tech()->abs_method();
     tpcontract = new CABS_OBS_Contraction(orbs1->rank());
 
-    const bool cabs_method = (absmethod ==  R12Technology::ABS_CABS ||
-                    absmethod == R12Technology::ABS_CABSPlus);
-
     Ref<OrbitalSpace> rispace1, rispace2;
-    if (cabs_method) {
-      rispace1 = r12world()->ribs_space();
-      rispace2 = r12world()->ribs_space();
-    }
-    else {
-      throw InputError("R12IntEval::contrib_to_VXB_c_ansatz1 -- Ansatz 1 only implemented with CABS type methods.",__FILE__,__LINE__);
-    }
+    rispace1 = r12world()->ribs_space();
+    rispace2 = r12world()->ribs_space();
 
     /// computing intermediate V
     { /// OBS term

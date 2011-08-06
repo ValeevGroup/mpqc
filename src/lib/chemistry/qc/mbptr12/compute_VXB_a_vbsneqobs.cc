@@ -55,10 +55,6 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
       throw ProgrammingError("R12IntEval::contrib_to_VXB_a_vbsneqobs_() -- can't use this builder if OBS == VBS",__FILE__,__LINE__);
 
   const R12Technology::ABSMethod absmethod = r12world()->r12tech()->abs_method();
-  // Can only use CABS/CABS+
-  if (absmethod == R12Technology::ABS_ABS ||
-      absmethod == R12Technology::ABS_ABSPlus)
-      throw ProgrammingError("R12IntEval::contrib_to_VXB_a_vbsneqobs_() -- can't use this builder if absmethod != CABS/CABS+",__FILE__,__LINE__);
 
   Timer tim("mp2-f12a intermeds (tensor contract)");
 

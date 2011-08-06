@@ -337,8 +337,8 @@ static ClassDesc R12RefWavefunction_cd(
   0, 0, 0);
 
 RefWavefunction::RefWavefunction(const Ref<WavefunctionWorld>& world,
-                                       const Ref<GaussianBasisSet>& basis,
-                                       const Ref<Integral>& integral) :
+                                 const Ref<GaussianBasisSet>& basis,
+                                 const Ref<Integral>& integral) :
   world_(world), basis_(basis), integral_(integral->clone()), omit_uocc_(true), force_average_AB_rdm1_(false) {
   for(int spin=0; spin<NSpinCases1; ++spin) spinspaces_[spin] = 0;
   integral_->set_basis(basis, basis, basis, basis);

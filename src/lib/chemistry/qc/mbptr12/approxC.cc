@@ -302,14 +302,6 @@ R12IntEval::compute_BC_()
 
 #if INCLUDE_P
 	    // compute P
-	    // WARNING implemented only using CABS/CABS+ approach when OBS!=ABS
-
-	    const R12Technology::ABSMethod absmethod = r12world()->r12tech()->abs_method();
-	    if (!abs_eq_obs &&
-		absmethod != R12Technology::ABS_CABS &&
-		absmethod != R12Technology::ABS_CABSPlus) {
-		throw FeatureNotImplemented("R12IntEval::compute_BC_() -- approximation C must be used with absmethod=cabs/cabs+ if OBS!=ABS",__FILE__,__LINE__);
-	    }
 
 	    std::string Plabel = prepend_spincase(spincase2,"P(C) intermediate");
 	    Timer tim_P(Plabel);

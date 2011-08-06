@@ -89,9 +89,10 @@ class MBPT2_R12: public MBPT2 {
     /// @param deflate_geminal whether to subtract the geminal contribution from the MP1 density; this also causes to add
     ///        the occupied-virtual geminal contribution
     /// @param truncate_threshold omit all PNOs with eigenvalues below this number
-    /// @return vector of coefficient matrices for the MP1 PNOs; the number of entries is the number of active orbital pairs
-    ///         for this spincase; columns of each matrix are the coefficients of PNOs in the AO basis
-    std::vector<RefSCMatrix>
+    /// @return vector of pairs, each pair contains a coefficient matrix for the MP1 PNOs and the coefficient matrix for the CABS space;
+    ///         the number of entries is the number of active orbital pairs
+    ///         for this spincase; columns of each matrix are the coefficients of PNO/CABS in the corresponding AO basis
+    std::vector< std::pair<RefSCMatrix,RefSCMatrix> >
     mp1_pno(SpinCase2 spin,
             bool deflate_geminal,
             double truncate_threshold = 1e-8);

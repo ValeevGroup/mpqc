@@ -2150,8 +2150,6 @@ R12IntEval::compute()
   const bool obs_eq_vbs = r12world()->obs_eq_vbs();
   const bool obs_eq_ribs = r12world()->obs_eq_ribs();
   const R12Technology::ABSMethod absmethod = r12world()->r12tech()->abs_method();
-  const bool cabs_method = (absmethod ==  R12Technology::ABS_CABS ||
-			    absmethod == R12Technology::ABS_CABSPlus);
   // is CABS space empty?
   const bool cabs_empty = obs_eq_vbs && obs_eq_ribs;
   const bool vir_empty = vir(Alpha)->rank()==0 || vir(Beta)->rank()==0;

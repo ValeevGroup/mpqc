@@ -43,11 +43,6 @@ R12IntEval::contrib_to_VXB_a_()
   if (evaluated_)
     return;
 
-  const R12Technology::ABSMethod absmethod = r12world()->r12tech()->abs_method();
-  const bool cabs_method = (absmethod ==  R12Technology::ABS_CABS ||
-      absmethod == R12Technology::ABS_CABSPlus);
-  assert(cabs_method == true);
-
   const bool obs_eq_vbs = r12world()->obs_eq_vbs();
   const bool obs_eq_ribs = r12world()->obs_eq_ribs();
   // commutators only appear in A', A'', and B

@@ -301,7 +301,7 @@ MBPT2_R12::compute()
 
       // make PSVs
       const bool geminal_project = (uocc_orbs_ == "pno-r12");
-      std::vector<RefSCMatrix> psv_set = this->mp1_pno(S, geminal_project, uocc_orbs_pno_truncate_threshold_);
+      std::vector< std::pair<RefSCMatrix,RefSCMatrix> > psv_set = this->mp1_pno(S, geminal_project, uocc_orbs_pno_truncate_threshold_);
 
       // for each pair feed the PSV orbitals to R12WavefunctionWorld, compute, and extract only this pair's contribution
       SpinMOPairIter iter_ij(occ1_act->rank(),occ2_act->rank(),S);
@@ -314,7 +314,7 @@ MBPT2_R12::compute()
 
         // orbital set for this pair = occ orbitals + PSVs
         RefSCMatrix C_occ = occ1->coefs();
-        RefSCMatrix C_psv = psv_set[ij];
+        RefSCMatrix C_psv = psv_set[ij].first;
         //RefSCMatrix C_psv = r12world()->ref()->uocc(spin1)->coefs();
         RefSCDimension aodim = C_occ.rowdim();
         RefSCDimension modim = new SCDimension(C_occ.ncol() + C_psv.ncol(), 1);
@@ -631,12 +631,13 @@ namespace {
 
 }
 
-std::vector<RefSCMatrix>
+std::vector< std::pair<RefSCMatrix,RefSCMatrix> >
 MBPT2_R12::mp1_pno(SpinCase2 spin,
                    bool deflate_geminal,
                    double truncate_threshold)
 {
-  std::vector<RefSCMatrix> result;
+  typedef std::vector< std::pair<RefSCMatrix,RefSCMatrix> > result_type;
+  result_type result;
 
   ExEnv::out0() << indent << "Computing PNOs (spin=" << to_string(spin) << ",r12=" << (deflate_geminal?"yes":"no") << ")"
                           << endl;
@@ -667,10 +668,14 @@ MBPT2_R12::mp1_pno(SpinCase2 spin,
     //T2.print("MP1 T2 amplitudes");
 
     RefSCMatrix Fvv = amps->Fvv(spincase2);
+    RefSCMatrix Fox = amps->Fox(spincase2);
+    RefSCMatrix Fxo = amps->Fxo(spincase2);
     assert(this->r12world()->r12tech()->ansatz()->diag() == true);  // assuming diagonal ansatz
     RefSCMatrix Tg = Fvv.kit()->matrix(Fvv.rowdim(),Fvv.rowdim()); Tg.assign(0.0);
     firstorder_cusp_coefficients(spincase2, Tg, occ1_act, occ2_act, this->r12world()->r12tech()->corrfactor());
     Fvv = Tg * Fvv;   // to obtain amplitudes we need to contract in cusp coefficients
+    Fox = Tg * Fox;   // to obtain amplitudes we need to contract in cusp coefficients
+    Fxo = Tg * Fxo;   // to obtain amplitudes we need to contract in cusp coefficients
     //Fvv.print("R12 geminal amplitudes in vv space");
 
     // compute the AO basis Fock matrix so that PSV sets can be canonicalized
@@ -688,6 +693,8 @@ MBPT2_R12::mp1_pno(SpinCase2 spin,
       const unsigned int j = ij_iter.j();
       std::ostringstream oss; oss << "act occ pair " << i << "," << j;
 
+      std::pair<RefSCMatrix, RefSCMatrix> result_ij; // pno,cabs coefficient pair
+
       RefSCVector T2_ij_vec = T2.get_row(ij);
       RefSCMatrix T2_ij = T2_ij_vec.kit()->matrix(uocc1_act->dim(), uocc2_act->dim());
       vector_to_matrix(T2_ij, T2_ij_vec, spincase2);
@@ -699,6 +706,8 @@ MBPT2_R12::mp1_pno(SpinCase2 spin,
       RefSymmSCMatrix gamma1ab_ij = T2_ij.kit()->symmmatrix(T2_ij.rowdim()); gamma1ab_ij.assign(0.0);
       RefDiagSCMatrix gamma1ab_ij_evals;
       RefSCMatrix gamma1ab_ij_evecs;
+      RefDiagSCMatrix gamma1_xx_evals;
+      RefSCMatrix gamma1_xx_evecs;
       if (deflate_geminal == false) { // use standard MP1 pair densities
         gamma1ab_ij.accumulate_symmetric_product(T2_ij);
         gamma1ab_ij.accumulate_symmetric_product(T2_ij.t());
@@ -740,16 +749,44 @@ MBPT2_R12::mp1_pno(SpinCase2 spin,
 
         gamma1ab_ij_evals = gamma1ab_ij_sansr12.eigvals();
         gamma1ab_ij_evals.print("pair density (sans R12) eigenvalues");
+
+        // compute the "natural" CABS space
+        if (1) {
+          RefSCVector Fox_ij_vec = Fox.get_row(ij);
+          RefSCMatrix Fox_ij = Fox_ij_vec.kit()->matrix(occ1->dim(),
+                                                        cabs2->dim());
+          vector_to_matrix(Fox_ij, Fox_ij_vec, AlphaBeta);
+          RefSCVector Fxo_ij_vec = Fxo.get_row(ij);
+          RefSCMatrix Fxo_ij = Fxo_ij_vec.kit()->matrix(cabs1->dim(),
+                                                        occ2->dim());
+          vector_to_matrix(Fxo_ij, Fxo_ij_vec, AlphaBeta);
+
+          RefSymmSCMatrix gamma1_xx = gamma1ab_ij.kit()->symmmatrix(cabs1->dim());
+          gamma1_xx.assign(0.0);
+          gamma1_xx.accumulate_symmetric_product(Fxo_ij);
+          gamma1_xx.accumulate_symmetric_product(Fox_ij.t());
+          gamma1_xx_evals = gamma1_xx.eigvals();
+          gamma1_xx_evals.print("eigenvalues of cabs/cabs pair density");
+          gamma1_xx_evecs = gamma1_xx.eigvecs();
+        }
+
       }
       gamma1ab_ij_evecs = gamma1ab_ij.eigvecs();
 
-      // eigenvectors should use blocked dimensions for using with OrbitalSpace
+      // coefficient matrices should use blocked dimensions for using with OrbitalSpace
       {
         RefSCMatrix gamma1ab_ij_evecs_blk = uocc1_act->coefs()->kit()->matrix(uocc1_act->dim(),
                                                                               uocc1_act->dim());
         gamma1ab_ij_evecs_blk.assign(0.0);
         gamma1ab_ij_evecs_blk->convert_accumulate(gamma1ab_ij_evecs);
         gamma1ab_ij_evecs = gamma1ab_ij_evecs_blk;
+      }
+      {
+        RefSCMatrix gamma1_xx_evecs_blk = uocc1_act->coefs()->kit()->matrix(cabs1->dim(),
+                                                                            cabs1->dim());
+        gamma1_xx_evecs_blk.assign(0.0);
+        gamma1_xx_evecs_blk->convert_accumulate(gamma1_xx_evecs);
+        gamma1_xx_evecs = gamma1_xx_evecs_blk;
       }
 
       // SVD the amplitudes
@@ -812,6 +849,38 @@ MBPT2_R12::mp1_pno(SpinCase2 spin,
         pno_coefs_ao = uocc1_act->coefs() * gamma1ab_ij_evecs_screened;
       }
 
+      // truncate CABS
+      RefSCMatrix cabs_coefs_ao;
+      {
+        const unsigned int ncabs = cabs1->rank();
+        long double sum_of_omitted_evals = 0.0;
+        unsigned int a;
+        for (a = 0; a < ncabs; ++a) {
+          const double eval = std::fabs((long double) gamma1_xx_evals(a));
+          if (eval + DBL_EPSILON < 1e-12)
+            sum_of_omitted_evals += eval;
+          else
+            break;
+        }
+        const unsigned int nomitted = a;
+        ExEnv::out0() << oss.str() << ": omitted " << nomitted
+            << " CABS vectors (sum of omitted evals = " << sum_of_omitted_evals
+            << ")" << std::endl;
+        if (ncabs > nomitted) {
+          RefSCDimension cabs_screened_dim = new SCDimension(ncabs - nomitted);
+          cabs_screened_dim->blocks()->set_subdim(
+              0, new SCDimension(cabs_screened_dim.n()));
+          RefSCMatrix gamma1_xx_evecs_screened = gamma1_xx_evecs.kit()->matrix(
+              gamma1_xx_evecs.rowdim(), cabs_screened_dim);
+          gamma1_xx_evecs_screened.assign_subblock(gamma1_xx_evecs, 0,
+                                                   gamma1_xx_evecs.nrow() - 1,
+                                                   0, cabs_screened_dim.n() - 1,
+                                                   0, nomitted);
+          cabs_coefs_ao = cabs1->coefs() * gamma1_xx_evecs_screened;
+        }
+      }
+      result_ij.second = cabs_coefs_ao;
+
       // canonicalize the resulting PNOs
       {
         RefSymmSCMatrix F_pno = F_ao.kit()->symmmatrix(pno_coefs_ao.coldim()); F_pno.assign(0.0);
@@ -821,9 +890,10 @@ MBPT2_R12::mp1_pno(SpinCase2 spin,
         RefSCMatrix pno_coefs_canonical_ao = pno_coefs_ao * U;
 
         // and finally, save the result
-        result.push_back(pno_coefs_canonical_ao);
+        result_ij.first = pno_coefs_canonical_ao;
       }
 
+      result.push_back(result_ij);
     } // loop over act occ pairs
 
   } // spincase block

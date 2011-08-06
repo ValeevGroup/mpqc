@@ -59,9 +59,7 @@ class R12Technology: virtual public SavableState {
     StdApprox_C = 4,
     StdApprox_Cp = 5
     };
-  enum ABSMethod {ABS_ABS = 0,
-    ABS_ABSPlus = 1,
-    ABS_CABS = 2,
+  enum ABSMethod {ABS_CABS = 2,
     ABS_CABSPlus = 3};
 
   /// geminal generating space
@@ -738,9 +736,8 @@ class R12Technology: virtual public SavableState {
         Valid values are 1 or 2. The default is 2 except for R12/A'' method.
 
         <dt><tt>abs_method</tt><dd> This string specifies the method by which the RI is applied to
-        the many-electron integrals of the R12 theory. The valid choices are "CABS+", "CABS", "ABS+", and "ABS"
-        (see Valeev, Chem. Phys. Lett. 395, 190 (2004);
-        ABS and ABS+ are only implemented for certain legacy methods).
+        the many-electron integrals of the R12 theory. The valid choices are "CABS+" and "CABS"
+        (see Valeev, Chem. Phys. Lett. 395, 190 (2004))
         The default is "CABS+".
 
         <dt><tt>abs_lindep_tol</tt><dd> The tolerance used to detect linearly

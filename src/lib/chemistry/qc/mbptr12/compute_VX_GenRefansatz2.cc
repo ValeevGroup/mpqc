@@ -80,10 +80,6 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_() {
     // for now it's always true since can only use pq products to generate geminals
     const bool gg12_in_GG12 = true;
 
-    const R12Technology::ABSMethod absmethod = r12world()->r12tech()->abs_method();
-    const bool cabs_method = (absmethod ==  R12Technology::ABS_CABS ||
-                    absmethod == R12Technology::ABS_CABSPlus);
-
     Ref<OrbitalSpace> rispace1 = r12world()->ribs_space();
     Ref<OrbitalSpace> rispace2 = r12world()->ribs_space();
 
@@ -331,10 +327,6 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_spinfree_() {
     // some transforms can be skipped if gg is a subset of GG
     // for now it's always true since can only use pq products to generate geminals
     const bool gg_in_GG = true;
-
-    const R12Technology::ABSMethod absmethod = r12world()->r12tech()->abs_method();
-    const bool cabs_method = (absmethod ==  R12Technology::ABS_CABS ||
-                    absmethod == R12Technology::ABS_CABSPlus);
 
     Ref<OrbitalSpace> rispace = r12world()->ribs_space();
 

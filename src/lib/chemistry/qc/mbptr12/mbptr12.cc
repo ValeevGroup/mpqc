@@ -27,6 +27,8 @@
 
 #include <stdexcept>
 #include <sstream>
+#include <numeric>
+#include <cmath>
 #include <util/misc/string.h>
 #include <util/class/scexception.h>
 #include <util/misc/formio.h>
@@ -34,6 +36,7 @@
 #include <util/state/stateio.h>
 #include <math/scmat/blocked.h>
 #include <chemistry/qc/mbptr12/mbptr12.h>
+#include <chemistry/qc/mbptr12/r12_amps.h>
 #include <util/misc/print.h>
 #include <chemistry/qc/scf/clscf.h>
 #include <chemistry/qc/scf/hsosscf.h>
@@ -76,6 +79,9 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
   s.get(mp2_corr_energy_);
   s.get(cabs_singles_);
   s.get(cabs_singles_energy_);
+  s.get(occ_orbs_);
+  s.get(uocc_orbs_);
+  s.get(uocc_orbs_pno_truncate_threshold_);
 
   twopdm_grid_ << SavableState::restore_state(s);
   s.get(plot_pair_function_[0]);
@@ -99,11 +105,52 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
                         nlindep_vir);
   }
 
-  Ref<WavefunctionWorld> world = new WavefunctionWorld(keyval, this);
+  KeyValValuestring def_occ_orbitals("canonical");
+  occ_orbs_ = keyval->stringvalue("occ_orbitals", def_occ_orbitals);
+  if (occ_orbs_ != "pipek-mezey"
+      && occ_orbs_ != "canonical") {
+      throw InputError("invalid keyword value",
+                       __FILE__, __LINE__, "occ_orbitals", occ_orbs_.c_str(),
+                       this->class_desc());
+    }
+  if (occ_orbs_ != "canonical" && this->ref()->molecule()->point_group()->order() != 1)
+    throw InputError("localized orbitals can only be used in C1 symmetry",
+                     __FILE__, __LINE__, "occ_orbitals", occ_orbs_.c_str(), this->class_desc());
+  if (occ_orbs_ != "canonical" && this->ref()->spin_polarized() == true)
+    throw InputError("localized occupied orbitals can only be used for closed-shell molecules",
+                     __FILE__, __LINE__, "occ_orbitals", occ_orbs_.c_str(), this->class_desc());
+
+  KeyValValuestring def_uocc_orbitals("canonical");
+  uocc_orbs_ = keyval->stringvalue("uocc_orbitals", def_uocc_orbitals);
+  if (uocc_orbs_ != "pno"
+      && uocc_orbs_ != "pno-r12"
+      && uocc_orbs_ != "canonical") {
+      throw InputError("invalid keyword value",
+                       __FILE__, __LINE__, "uocc_orbitals", uocc_orbs_.c_str(),
+                       this->class_desc());
+    }
+  if (uocc_orbs_ != "canonical" && this->ref()->molecule()->point_group()->order() != 1)
+    throw InputError("non-canonical unoccupied orbitals can only be used in C1 symmetry",
+                     __FILE__, __LINE__, "uocc_orbitals", uocc_orbs_.c_str(), this->class_desc());
+  if (uocc_orbs_ != "canonical" && this->ref()->spin_polarized() == true)
+    throw InputError("non-canonical unoccupied orbitals can only be used for closed-shell molecules",
+                     __FILE__, __LINE__, "uocc_orbitals", uocc_orbs_.c_str(), this->class_desc());
+  if (uocc_orbs_ == "pno" || uocc_orbs_ == "pno-r12") {
+    uocc_orbs_pno_truncate_threshold_ = keyval->doublevalue("pno_truncate_threshold", KeyValValuedouble(1e-10));
+  }
+
+  // if world not given, make this the center of a new World
+  Ref<WavefunctionWorld> world; world << keyval->describedclassvalue("world", KeyValValueRefDescribedClass(0));
+  if (world.null())
+    world = new WavefunctionWorld(keyval);
+  if (world.null())
+    throw InputError("PT2R12 requires a WavefunctionWorld", __FILE__, __LINE__, "world");
+  if (world->wfn() == 0) world->set_wfn(this);
+
   const bool spin_restricted = false;   // do not use spin-restricted orbitals -> for ROHF use semicanonical orbitals
   Ref<RefWavefunction> refinfo = new SD_RefWavefunction(world, ref(), spin_restricted,
                                                         nfzcore(), nfzvirt(),
-                                                        vbs);
+                                                        vbs, occ_orbs_);
   r12world_ = new R12WavefunctionWorld(keyval, refinfo);
   Ref<R12Technology> r12tech = r12world_->r12tech();
 
@@ -162,6 +209,9 @@ MBPT2_R12::save_data_state(StateOut& s)
   s.put(mp2_corr_energy_);
   s.put(cabs_singles_);
   s.put(cabs_singles_energy_);
+  s.put(occ_orbs_);
+  s.put(uocc_orbs_);
+  s.put(uocc_orbs_pno_truncate_threshold_);
 
   SavableState::save_state(twopdm_grid_.pointer(),s);
   s.put((int)plot_pair_function_[0]);
@@ -173,6 +223,13 @@ MBPT2_R12::print(ostream&o) const
 {
   o << indent << "MBPT2_R12:" << endl;
   o << incindent;
+
+  o << indent << "Occupied orbitals     : " << occ_orbs_ << endl;
+  o << indent << "Unoccupied orbitals   : " << uocc_orbs_;
+  if (uocc_orbs_ == "pno" || uocc_orbs_ == "pno-r12") {
+    o << " (truncate_threshold = " << scprintf("%10.5e",uocc_orbs_pno_truncate_threshold_) << ")";
+  }
+  o << endl;
 
   o << indent << "Include CABS singles? : " << (cabs_singles_ ? "true" : "false") << endl;
   if (cabs_singles_) {
@@ -214,21 +271,147 @@ MBPT2_R12::compute()
 {
   ExEnv::out0() << "switched off integral check in mbptr12.cc/compute" << endl;
 
-/*  if (std::string(reference_->integral()->class_name()) != integral()->class_name()) {
-      FeatureNotImplemented ex(
-          "cannot use a reference with a different Integral specialization",
-          __FILE__, __LINE__, class_desc());
-      try {
-          ex.elaborate()
-              << "reference uses " << reference_->integral()->class_name()
-              << " but this object uses " << integral()->class_name()
-              << std::endl;
-        }
-      catch (...) {}
-      throw ex;
-    }
-*/
   compute_energy_();
+
+#define TESTING_PSV 1
+#if TESTING_PSV
+  if (uocc_orbs_ == "pno" ||
+      uocc_orbs_ == "pno-r12") {
+
+    std::vector<double> r12_pair_energies[NSpinCases2];
+    std::vector<double> mp2_pair_energies[NSpinCases2];
+
+//    r12world_->initialize();
+//    if (r12eval_.null()) {
+//      // since r12intevalinfo uses this class' KeyVal to initialize, dynamic is set automatically
+//      r12world_->world()->print_percent(print_percent_);
+//      r12eval_ = new R12IntEval(r12world_);
+//      r12eval_->debug(debug_);
+//    }
+
+    for(int s=0; s<2; ++s) {
+      SpinCase2 S = static_cast<SpinCase2>(s);
+      SpinCase1 spin1 = case1(S);
+      SpinCase1 spin2 = case2(S);
+      Ref<OrbitalSpace> occ1 = r12world()->ref()->occ(spin1);
+      Ref<OrbitalSpace> occ2 = r12world()->ref()->occ(spin2);
+      Ref<OrbitalSpace> occ1_act = r12eval()->ggspace(spin1);
+      Ref<OrbitalSpace> occ2_act = r12eval()->ggspace(spin2);
+      const unsigned int nocc = occ1->rank();  // assuming RHF at the moment
+
+      // make PSVs
+      const bool geminal_project = (uocc_orbs_ == "pno-r12");
+      std::vector<RefSCMatrix> psv_set = this->mp1_pno(S, geminal_project, uocc_orbs_pno_truncate_threshold_);
+
+      // for each pair feed the PSV orbitals to R12WavefunctionWorld, compute, and extract only this pair's contribution
+      SpinMOPairIter iter_ij(occ1_act->rank(),occ2_act->rank(),S);
+      const unsigned int nij = iter_ij.nij();
+      unsigned int ij = 0;
+      for(iter_ij.start(); iter_ij; iter_ij.next(), ++ij) {
+
+        const unsigned int i = iter_ij.i();
+        const unsigned int j = iter_ij.j();
+
+        // orbital set for this pair = occ orbitals + PSVs
+        RefSCMatrix C_occ = occ1->coefs();
+        RefSCMatrix C_psv = psv_set[ij];
+        //RefSCMatrix C_psv = r12world()->ref()->uocc(spin1)->coefs();
+        RefSCDimension aodim = C_occ.rowdim();
+        RefSCDimension modim = new SCDimension(C_occ.ncol() + C_psv.ncol(), 1);
+        modim->blocks()->set_subdim(0, new SCDimension(modim.n()));
+        RefSCMatrix C = C_occ.kit()->matrix(C_occ.rowdim(),
+                                            modim);
+        C.assign_subblock(C_occ,
+                          0, aodim.n()-1,
+                          0, C_occ.ncol()-1);
+        C.assign_subblock(C_psv,
+                          0, aodim.n()-1,
+                          C_occ.ncol(), modim.n()-1);
+        std::vector<unsigned int> orbsym(C.ncol(), 0); // assuming C1 symmetry!
+        RefSymmSCMatrix Pa = C.kit()->symmmatrix(modim); Pa.assign(0.0);
+        for(unsigned int o=0; o<nocc; ++o)
+          Pa.set_element(o, o, 1.0);
+        RefSymmSCMatrix Pb = Pa; // RHF only at the moment
+
+        // reinitialize R12WavefunctionWorld
+        this->obsolete();
+        r12world_->world()->initialize_ao_spaces();
+        Ref<RefWavefunction> refwfn = new Extern_RefWavefunction(this->r12world()->world(), this->basis(), this->integral(),
+                                                                 C, orbsym, Pa, Pb, nocc,
+                                                                 this->nfzcore(), this->nfzvirt(), false);
+        r12world_->ref(refwfn);
+
+        // compute
+        this->compute_energy_();
+
+        // extract particular pair energy
+        RefSCVector er12 = r12c_energy_->ef12(S);
+        RefSCVector emp2r12 = r12c_energy_->emp2f12(S);
+        const double er12_ij = er12(ij);
+        const double emp2_ij = emp2r12(ij) - er12_ij;
+        r12_pair_energies[S].push_back(er12_ij);
+        mp2_pair_energies[S].push_back(emp2_ij);
+
+      } // end of ij loop
+    } // end of spincase2 loop
+
+
+    std::ostream& so = ExEnv::out0();
+    so << indent << "DONE w PSV MP2-R12 !!!!!" << std::endl;
+    // print out pair energies
+    for(int s=0; s<2; ++s) {
+      SpinCase2 S = static_cast<SpinCase2>(s);
+      SpinCase1 spin1 = case1(S);
+      SpinCase1 spin2 = case2(S);
+      Ref<OrbitalSpace> occ1_act = r12eval()->ggspace(spin1);
+      Ref<OrbitalSpace> occ2_act = r12eval()->ggspace(spin2);
+
+      so << std::endl << indent << prepend_spincase(S,"MBPT2-R12/C") << " pair energies:" << std::endl;
+      so << indent << scprintf("    i       j        mp2(ij)        f12(ij)      mp2-f12(ij)") << endl;
+      so << indent << scprintf("  -----   -----   ------------   ------------   ------------") << endl;
+      SpinMOPairIter ij_iter(occ1_act->rank(),occ2_act->rank(),S);
+      for (ij_iter.start(); ij_iter; ij_iter.next()) {
+        const int i = ij_iter.i();
+        const int j = ij_iter.j();
+        const int ij = ij_iter.ij();
+        const double ep_f12 = r12_pair_energies[S][ij];
+        const double ep_mp2 = mp2_pair_energies[S][ij];
+        const double ep_mp2f12 = ep_f12 + ep_mp2;
+        so
+            << indent
+            << scprintf("  %3d     %3d     %12.9lf   %12.9lf   %12.9lf", i + 1,
+                        j + 1, ep_mp2, ep_f12, ep_mp2f12) << std::endl;
+      }
+
+    }
+    // print out total energies
+    double er12 = 2.0 * std::accumulate(r12_pair_energies[AlphaAlpha].begin(),
+                                        r12_pair_energies[AlphaAlpha].end(),
+                                        0.0);
+    er12 = std::accumulate(r12_pair_energies[AlphaBeta].begin(),
+                           r12_pair_energies[AlphaBeta].end(),
+                           er12);
+    double emp2 = 2.0 * std::accumulate(mp2_pair_energies[AlphaAlpha].begin(),
+                                        mp2_pair_energies[AlphaAlpha].end(),
+                                        0.0);
+    emp2 = std::accumulate(mp2_pair_energies[AlphaBeta].begin(),
+                           mp2_pair_energies[AlphaBeta].end(),
+                           emp2);
+    const double etotal = emp2 + er12 + this->ref_energy();
+    so <<endl<<indent
+       <<scprintf("RHF energy [au]:                               %17.12lf\n", this->ref_energy());
+    so <<indent
+       <<scprintf("MP2 correlation energy [au]:                   %17.12lf\n", emp2);
+    so <<indent
+       <<scprintf("(MBPT2)-R12/C   correlation energy [au]:       %17.12lf\n", er12);
+    so <<indent
+       <<scprintf("MBPT2-R12/C   correlation energy [au]:         %17.12lf\n", emp2+er12);
+    so <<indent
+       <<scprintf("MBPT2-R12/C   energy [au]:                     %17.12lf\n", etotal) << endl;
+
+  }
+#endif
+
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -304,6 +487,351 @@ MBPT2_R12::cabs_singles_energy()
 }
 
 /////////////////////////////////////////////////////////////////////////////
+
+namespace {
+
+  int triang_half_INDEX_ordered(int i, int j) {
+    return(i*(i+1)/2+j);
+  }
+
+  int triang_half_INDEX(int i, int j) {
+    return((i>j) ? triang_half_INDEX_ordered(i,j) : triang_half_INDEX_ordered(j,i));
+  }
+
+  int ordinary_INDEX(int i, int j, int coldim) {
+    return(i*coldim+j);
+  }
+
+  /// tpdm_index and init_ioff: for indexing of density matrices.
+  int tpdm_index(int i, int j, int k, int l,int coldim){
+    //int ind_half1=triang_half_INDEX(i,j);
+    //int ind_half2=triang_half_INDEX(k,l);
+    int ind_half1=ordinary_INDEX(i,j,coldim);
+    int ind_half2=ordinary_INDEX(k,l,coldim);
+    return(triang_half_INDEX(ind_half1,ind_half2));
+  }
+
+  void vector_to_symmmatrix(RefSymmSCMatrix &matrix, const RefSCVector &vector) {
+    int dim = matrix.dim().n();
+    for(int i=0; i<dim; i++){
+      for(int j=0; j<=i; j++) {
+        matrix.set_element(i,j,vector.get_element(triang_half_INDEX(i,j)));
+      }
+    }
+  }
+
+  void symmmatrix_to_vector(RefSCVector &vector, const RefSymmSCMatrix &matrix) {
+    int dim = matrix.dim().n();
+    for(int i=0; i<dim; i++){
+      for(int j=0; j<=i; j++) {
+        vector.set_element(triang_half_INDEX(i,j),matrix.get_element(i,j));
+      }
+    }
+  }
+
+  void vector_to_matrix(RefSCMatrix &matrix, const RefSCVector &vector) {
+    int dim1 = matrix.rowdim().n();
+    int dim2 = matrix.coldim().n();
+    for(int i=0; i<dim1; i++) {
+      for(int j=0; j<dim2; j++) {
+        matrix.set_element(i,j,vector.get_element(ordinary_INDEX(i,j,dim2)));
+      }
+    }
+  }
+
+  int lowerupper_index(int p, int q);
+
+  void vector_to_matrix(RefSCMatrix &matrix,const RefSCVector &vector,const SpinCase2 &pairspin) {
+    int dim1 = matrix.rowdim().n();
+    int dim2 = matrix.coldim().n();
+    if(pairspin==AlphaBeta) {
+      for(int i=0; i<dim1; i++) {
+        for(int j=0; j<dim2; j++) {
+          matrix.set_element(i,j,vector.get_element(ordinary_INDEX(i,j,dim2)));
+        }
+      }
+    }
+    else {  // pairspin==AlphaAlpha || pairspin==BetaBeta
+      matrix->assign(0.0);
+      for(int i=0; i<dim1; i++) {
+        for(int j=0; j<i; j++) {
+          const double value = vector.get_element(lowerupper_index(i,j));
+          matrix.set_element(i,j,value);
+          matrix.set_element(j,i,-value);
+        }
+      }
+    }
+  }
+
+  void matrix_to_vector(RefSCVector &vector, const RefSCMatrix &matrix) {
+    int dim1 = matrix.rowdim().n();
+    int dim2 = matrix.coldim().n();
+    for(int i=0; i<dim1; i++) {
+      for(int j=0; j<dim2; j++) {
+        vector.set_element(ordinary_INDEX(i,j,dim2),matrix.get_element(i,j));
+      }
+    }
+  }
+
+  void matrix_to_vector(RefSCVector &vector, const RefSCMatrix &matrix,const SpinCase2 &pairspin) {
+    int dim1 = matrix.rowdim().n();
+    int dim2 = matrix.coldim().n();
+    if(pairspin==AlphaBeta) {
+      for(int i=0; i<dim1; i++) {
+        for(int j=0; j<dim2; j++) {
+          vector.set_element(ordinary_INDEX(i,j,dim2),matrix.get_element(i,j));
+        }
+      }
+    }
+    else {  // pairspin==AlphaAlpha || pairspin==BetaBeta
+      for(int i=0; i<dim1; i++) {
+        for(int j=0; j<i; j++) {
+          vector.set_element(lowerupper_index(i,j),matrix.get_element(i,j));
+        }
+      }
+    }
+  }
+
+  int lowertriang_index(int p,int q) {
+    if(q>=p){
+      throw ProgrammingError("lowertriang_index(p,q) -- q must be smaller than p.",__FILE__,__LINE__);
+    }
+    int index=p*(p+1)/2+q-p;
+    return(index);
+  }
+
+  int lowerupper_index(int p, int q) {
+    if(p>q) {
+      return(lowertriang_index(p,q));
+    }
+    else if(q>p) {
+      return(lowertriang_index(q,p));
+    }
+    else {
+      throw ProgrammingError("lowerupper_index(p,q) -- p and q are not allowed to be equal.",__FILE__,__LINE__);
+    }
+  }
+  double indexsizeorder_sign(int p,int q) {
+    if(p>q) {
+      return(1.0);
+    }
+    else if(q>p) {
+      return(-1.0);
+    }
+    else {
+      return(0.0);
+    }
+  }
+
+  int antisym_pairindex(int i, int j) {
+    int max_ij = std::max(i, j);
+    int min_ij = std::min(i, j);
+    return (max_ij -1)* max_ij/2 + min_ij;
+  }
+
+}
+
+std::vector<RefSCMatrix>
+MBPT2_R12::mp1_pno(SpinCase2 spin,
+                   bool deflate_geminal,
+                   double truncate_threshold)
+{
+  std::vector<RefSCMatrix> result;
+
+  ExEnv::out0() << indent << "Computing PNOs (spin=" << to_string(spin) << ",r12=" << (deflate_geminal?"yes":"no") << ")"
+                          << endl;
+
+  Ref<R12Amplitudes> amps = r12eval()->amps();
+  {
+    const SpinCase2 spincase2 = static_cast<SpinCase2>(spin);
+    const SpinCase1 spin1 = case1(spincase2);
+    const SpinCase1 spin2 = case2(spincase2);
+
+    const Ref<OrbitalSpace>& occ1_act = r12eval()->occ_act(spin1);
+    const Ref<OrbitalSpace>& occ2_act = r12eval()->occ_act(spin2);
+    const Ref<OrbitalSpace>& occ1 = r12eval()->occ(spin1);
+    const Ref<OrbitalSpace>& occ2 = r12eval()->occ(spin2);
+    const Ref<OrbitalSpace>& cabs1 = r12world()->cabs_space(spin1);
+    const Ref<OrbitalSpace>& cabs2 = r12world()->cabs_space(spin2);
+    const Ref<OrbitalSpace>& uocc1_act = r12world()->ref()->uocc_act(spin1);
+    const Ref<OrbitalSpace>& uocc2_act = r12world()->ref()->uocc_act(spin2);
+    assert(uocc1_act == uocc2_act); // not ready to handle UHF yet
+
+    // compute the vv block of MP1 (not MP2-R12) 1-RDM for each ij
+    // \gamma_a^b = T^ij_ac T_ij^bc
+
+    SpinMOPairIter ij_iter( occ1_act->rank(), occ2_act->rank(), spincase2);
+    SpinMOPairIter ab_iter(uocc1_act->rank(),uocc2_act->rank(), spincase2);
+
+    RefSCMatrix T2 = amps->T2(spincase2);
+    //T2.print("MP1 T2 amplitudes");
+
+    RefSCMatrix Fvv = amps->Fvv(spincase2);
+    assert(this->r12world()->r12tech()->ansatz()->diag() == true);  // assuming diagonal ansatz
+    RefSCMatrix Tg = Fvv.kit()->matrix(Fvv.rowdim(),Fvv.rowdim()); Tg.assign(0.0);
+    firstorder_cusp_coefficients(spincase2, Tg, occ1_act, occ2_act, this->r12world()->r12tech()->corrfactor());
+    Fvv = Tg * Fvv;   // to obtain amplitudes we need to contract in cusp coefficients
+    //Fvv.print("R12 geminal amplitudes in vv space");
+
+    // compute the AO basis Fock matrix so that PSV sets can be canonicalized
+    RefSymmSCMatrix F_ao;
+    {
+      Ref<OrbitalSpace> obs_ao_space = this->r12world()->world()->tfactory()->orbital_registry()->value("mu");
+      RefSCMatrix F_ao_rect = r12eval()->fock(obs_ao_space, obs_ao_space, AnySpinCase1);
+      F_ao = F_ao_rect.kit()->symmmatrix(F_ao_rect.rowdim()); F_ao.assign(0.0);
+      F_ao.accumulate_symmetric_sum(F_ao_rect); F_ao.scale(0.5);
+    }
+
+    for(ij_iter.start(); ij_iter; ij_iter.next()) {
+      const int ij = ij_iter.ij();
+      const unsigned int i = ij_iter.i();
+      const unsigned int j = ij_iter.j();
+      std::ostringstream oss; oss << "act occ pair " << i << "," << j;
+
+      RefSCVector T2_ij_vec = T2.get_row(ij);
+      RefSCMatrix T2_ij = T2_ij_vec.kit()->matrix(uocc1_act->dim(), uocc2_act->dim());
+      vector_to_matrix(T2_ij, T2_ij_vec, spincase2);
+      //T2_ij.print((std::string("MP1 T2 amplitudes ") + oss.str()).c_str());
+
+      RefSCMatrix T2_ij_eff = T2_ij;
+
+      // compute the pair density and eigendecompose it
+      RefSymmSCMatrix gamma1ab_ij = T2_ij.kit()->symmmatrix(T2_ij.rowdim()); gamma1ab_ij.assign(0.0);
+      RefDiagSCMatrix gamma1ab_ij_evals;
+      RefSCMatrix gamma1ab_ij_evecs;
+      if (deflate_geminal == false) { // use standard MP1 pair densities
+        gamma1ab_ij.accumulate_symmetric_product(T2_ij);
+        gamma1ab_ij.accumulate_symmetric_product(T2_ij.t());
+        //gamma1ab_ij.print("pair density");
+
+//        RefSCMatrix gamma1ab_ij_rect = T2_ij * T2_ij.t() + T2_ij.t() * T2_ij;
+//        gamma1ab_ij.assign(0.0);  gamma1ab_ij.accumulate_symmetric_sum(gamma1ab_ij_rect); gamma1ab_ij.scale(0.5);
+//        gamma1ab_ij_rect.print("pair density?");
+//        gamma1ab_ij.print("pair density???");
+
+        gamma1ab_ij_evals = gamma1ab_ij.eigvals();
+        gamma1ab_ij_evals.print("pair density eigenvalues");
+      }
+      else { // use densities deflated by the geminal contributions
+        RefSCVector Fvv_ij_vec = Fvv.get_row(ij);
+        RefSCMatrix Fvv_ij = Fvv_ij_vec.kit()->matrix(uocc1_act->dim(), uocc2_act->dim());
+        vector_to_matrix(Fvv_ij, Fvv_ij_vec, spincase2);
+        //Fvv_ij.print((std::string("R12 geminal amplitudes in vv space ") + oss.str()).c_str());
+
+        // deflate T2 amplitudes by the geminal amplitudes in vv block
+        RefSymmSCMatrix gamma1ab_ij_sansr12 = T2_ij.kit()->symmmatrix(T2_ij.rowdim()); gamma1ab_ij_sansr12.assign(0.0);
+        T2_ij_eff = T2_ij - Fvv_ij;
+#define DEFLATE_AMPLITUDES 1
+#if DEFLATE_AMPLITUDES
+        gamma1ab_ij_sansr12.accumulate_symmetric_product(T2_ij_eff);
+        gamma1ab_ij_sansr12.accumulate_symmetric_product(T2_ij_eff.t());
+        //gamma1ab_ij_sansr12.eigvals().print("pair density (sans R12 vv) eigenvalues");
+#else
+        gamma1ab_ij_sansr12.accumulate_symmetric_product(Fvv_ij);
+        gamma1ab_ij_sansr12.accumulate_symmetric_product(Fvv_ij.t());
+        gamma1ab_ij_sansr12.scale(-1.0);
+        gamma1ab_ij_sansr12.accumulate_symmetric_product(T2_ij);
+        gamma1ab_ij_sansr12.accumulate_symmetric_product(T2_ij.t());
+        gamma1ab_ij_sansr12.eigvals().print("pair density (sans R12 vv) eigenvalues");
+#endif
+
+        // pass it outside this scope
+        gamma1ab_ij = gamma1ab_ij_sansr12;
+
+        gamma1ab_ij_evals = gamma1ab_ij_sansr12.eigvals();
+        gamma1ab_ij_evals.print("pair density (sans R12) eigenvalues");
+      }
+      gamma1ab_ij_evecs = gamma1ab_ij.eigvecs();
+
+      // eigenvectors should use blocked dimensions for using with OrbitalSpace
+      {
+        RefSCMatrix gamma1ab_ij_evecs_blk = uocc1_act->coefs()->kit()->matrix(uocc1_act->dim(),
+                                                                              uocc1_act->dim());
+        gamma1ab_ij_evecs_blk.assign(0.0);
+        gamma1ab_ij_evecs_blk->convert_accumulate(gamma1ab_ij_evecs);
+        gamma1ab_ij_evecs = gamma1ab_ij_evecs_blk;
+      }
+
+      // SVD the amplitudes
+      if (0) {
+        RefDiagSCMatrix T2_ij_svals = T2_ij.kit()->diagmatrix(T2_ij.rowdim());
+        RefSCMatrix T2_ij_svecs_U = T2_ij.clone();
+        RefSCMatrix T2_ij_svecs_V = T2_ij.clone();
+        T2_ij_eff.svd(T2_ij_svecs_U, T2_ij_svals, T2_ij_svecs_V);
+        T2_ij_svals.print("T2(eff) singular values");
+//        T2_ij_svecs_U.print("T2(eff) singular vectors U");
+//        T2_ij_svecs_V.print("T2(eff) singular vectors V");
+        RefSCMatrix T2_ij_svecs_U_blk = uocc1_act->coefs()->kit()->matrix(T2_ij_svecs_U.rowdim(),
+                                                                          T2_ij_svecs_U.coldim());
+        T2_ij_svecs_U_blk.assign(0.0);
+        T2_ij_svecs_U_blk->convert_accumulate(T2_ij_svecs_U);
+        RefSCMatrix T2_ij_svecs_V_blk = uocc1_act->coefs()->kit()->matrix(T2_ij_svecs_V.rowdim(),
+                                                                          T2_ij_svecs_V.coldim());
+        T2_ij_svecs_V_blk.assign(0.0);
+        T2_ij_svecs_V_blk->convert_accumulate(T2_ij_svecs_V);
+//        (uocc1_act->coefs() * T2_ij_svecs_U_blk).print("T2(eff) singular vectors U in AO basis");
+//        (uocc1_act->coefs() * T2_ij_svecs_V_blk).print("T2(eff) singular vectors V in AO basis");
+      }
+
+//      // canonicalize the PSV set before truncation, purely to be able to compare with the "after" scenario
+//      {
+//        RefSCMatrix psv_coefs_ao = uocc1_act->coefs() * gamma1ab_ij_evecs;
+//        RefSymmSCMatrix F_pno = F_ao.kit()->symmmatrix(pno_coefs_ao.coldim()); F_pno.assign(0.0);
+//        F_pno.accumulate_transform(pno_coefs_ao, F_ao, SCMatrix::TransposeTransform);
+//        RefSCMatrix U = F_pno.eigvecs();
+//        F_pno.eigvals().print("PNO orbital energies (before truncation)");
+//      }
+//
+      // truncate the PNO sets according to their eigenvalues ("occupation numbers")
+      RefSCMatrix pno_coefs_ao;
+      {
+        const unsigned int nuocc_act = uocc1_act->rank();
+        long double sum_of_omitted_evals = 0.0;
+        unsigned int a;
+        for (a = 0; a < nuocc_act; ++a) {
+          const double eval = std::fabs((long double) gamma1ab_ij_evals(a));
+          if (eval + DBL_EPSILON < truncate_threshold)
+            sum_of_omitted_evals += eval;
+          else
+            break;
+        }
+        const unsigned int nomitted = a;
+        ExEnv::out0() << oss.str() << ": omitted " << nomitted
+            << " eigenpairs (sum of omitted evals = " << sum_of_omitted_evals
+            << ")" << std::endl;
+        RefSCDimension pno_screened_dim = new SCDimension(nuocc_act - nomitted);
+        pno_screened_dim->blocks()->set_subdim(
+            0, new SCDimension(pno_screened_dim.n()));
+        RefSCMatrix gamma1ab_ij_evecs_screened =
+            gamma1ab_ij_evecs.kit()->matrix(gamma1ab_ij_evecs.rowdim(),
+                                            pno_screened_dim);
+        gamma1ab_ij_evecs_screened.assign_subblock(gamma1ab_ij_evecs,
+                                                   0, gamma1ab_ij_evecs.nrow() - 1,
+                                                   0, pno_screened_dim.n() - 1,
+                                                   0, nomitted);
+        pno_coefs_ao = uocc1_act->coefs() * gamma1ab_ij_evecs_screened;
+      }
+
+      // canonicalize the resulting PNOs
+      {
+        RefSymmSCMatrix F_pno = F_ao.kit()->symmmatrix(pno_coefs_ao.coldim()); F_pno.assign(0.0);
+        F_pno.accumulate_transform(pno_coefs_ao, F_ao, SCMatrix::TransposeTransform);
+        RefSCMatrix U = F_pno.eigvecs();
+        F_pno.eigvals().print("PNO orbital energies (after truncation)");
+        RefSCMatrix pno_coefs_canonical_ao = pno_coefs_ao * U;
+
+        // and finally, save the result
+        result.push_back(pno_coefs_canonical_ao);
+      }
+
+    } // loop over act occ pairs
+
+  } // spincase block
+
+  return result;
+}
+
+//////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:
 // mode: c++

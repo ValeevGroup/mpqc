@@ -33,7 +33,6 @@
 #include <chemistry/qc/mbptr12/creator.h>
 #include <chemistry/qc/mbptr12/container.h>
 
-
 using namespace std;
 using namespace sc;
 
@@ -988,8 +987,7 @@ RefSCMatrix PT2R12::C(SpinCase2 S) {
   if(S==AlphaBeta) {
     SpinMOPairIter OW_iter(r12eval_->GGspace(Alpha)->rank(), r12eval_->GGspace(Beta)->rank(), S );
     SpinMOPairIter PQ_iter(r12eval_->ggspace(Alpha)->rank(), r12eval_->ggspace(Beta)->rank(), S );
-    Ref<R12Technology::GeminalDescriptor> geminaldesc = r12world()->r12tech()->corrfactor()->geminaldescriptor();
-    CuspConsistentGeminalCoefficient coeff_gen(S,geminaldesc);
+    CuspConsistentGeminalCoefficient coeff_gen(S);
     for(OW_iter.start(); int(OW_iter); OW_iter.next()) {
       for(PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {
         unsigned int O = OW_iter.i();
@@ -1006,8 +1004,7 @@ RefSCMatrix PT2R12::C(SpinCase2 S) {
     SpinCase1 spin = (S==AlphaAlpha) ? Alpha : Beta;
     SpinMOPairIter OW_iter(r12eval_->GGspace(spin)->rank(), r12eval_->GGspace(spin)->rank(), S );
     SpinMOPairIter PQ_iter(r12eval_->ggspace(spin)->rank(), r12eval_->ggspace(spin)->rank(), S );
-    Ref<R12Technology::GeminalDescriptor> geminaldesc = r12world()->r12tech()->corrfactor()->geminaldescriptor();
-    CuspConsistentGeminalCoefficient coeff_gen(S,geminaldesc);
+    CuspConsistentGeminalCoefficient coeff_gen(S);
     for(OW_iter.start(); int(OW_iter); OW_iter.next()) {
       for(PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {
         unsigned int O = OW_iter.i();

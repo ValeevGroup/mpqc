@@ -155,7 +155,7 @@ R12WavefunctionWorld::initialize()
   }
 
   nlindep_ri_ = nlindep_aux_ = -1;
-  obs_eq_vbs_ = basis()->equiv(basis_vir());
+  obs_eq_vbs_ = basis_vir().null() || basis()->equiv(basis_vir());
   bs_ri_ = 0;
   ribs_space_ = 0;
   cabs_space_[Alpha] = cabs_space_[Beta] = 0;
@@ -218,6 +218,11 @@ R12WavefunctionWorld::sdref() const {
   {
     Ref<SD_RefWavefunction> sd; sd << ref();
     if (sd.nonnull()) return true;
+  }
+  // references based on Extern_RefWavefunction are single-determinant references IF their densities are idempotent
+  {
+    Ref<Extern_RefWavefunction> ext; ext << ref();
+    if (ext.nonnull()) return ext->ordm_idempotent();
   }
 #if HAVE_PSIMPQCIFACE
   {

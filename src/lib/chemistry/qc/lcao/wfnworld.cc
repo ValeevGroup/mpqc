@@ -39,19 +39,18 @@ using namespace sc;
  ---------------*/
 static ClassDesc WavefunctionWorld_cd(
   typeid(WavefunctionWorld),"WavefunctionWorld",11,"virtual public SavableState",
-  0, 0, create<WavefunctionWorld>);
+  0, create<WavefunctionWorld>, create<WavefunctionWorld>);
 
-WavefunctionWorld::WavefunctionWorld(
-    const Ref<KeyVal>& keyval,
-    Wavefunction* wfn) :
-    wfn_(wfn)
+WavefunctionWorld::WavefunctionWorld(const Ref<KeyVal>& keyval)
 {
   debug_ = 0;
   print_percent_ = 10.0;
 
+  wfn_ = dynamic_cast<Wavefunction*>(keyval->describedclassvalue("wfn").pointer());
+
   bs_df_ = require_dynamic_cast<GaussianBasisSet*>(
       keyval->describedclassvalue("df_basis").pointer(),
-      "R12Technology::R12Technology\n"
+      "WavefunctionWorld::WavefunctionWorld\n"
       );
   if (bs_df_.nonnull()) {
     df_kernel_ = keyval->stringvalue("df_kernel", KeyValValuestring("coulomb"));
@@ -124,9 +123,11 @@ WavefunctionWorld::WavefunctionWorld(
   mem_ = MemoryGrp::get_default_memorygrp();
   msg_ = MessageGrp::get_default_messagegrp();
   thr_ = ThreadGrp::get_default_threadgrp();
-  integral()->set_basis(wfn_->basis());
 
-  initialize();
+  if (wfn_ != 0) {
+    integral()->set_basis(wfn_->basis());
+    initialize();
+  }
 }
 
 WavefunctionWorld::WavefunctionWorld(StateIn& si) : SavableState(si)
@@ -173,6 +174,21 @@ void WavefunctionWorld::save_data_state(StateOut& so)
 }
 
 void
+WavefunctionWorld::set_wfn(Wavefunction* w) {
+  if (w != wfn_) {
+    wfn_ = w;
+    if (this->tfactory_.null()) { // if it had not been initialized previosuly, initialize
+      integral()->set_basis(wfn_->basis());
+      initialize();
+    }
+    else { // otherwise complain
+      throw ProgrammingError("should not call reset wfn of a WavefunctionWorld",
+                             __FILE__, __LINE__, this->class_desc());
+    }
+  }
+}
+
+void
 WavefunctionWorld::initialize()
 {
   tfactory_ = new MOIntsTransformFactory(integral());
@@ -196,6 +212,7 @@ WavefunctionWorld::initialize()
       dfparams = new DensityFittingParams(bs_df_, df_kernel_, df_solver_);
     }
     moints_runtime_ = new MOIntsRuntime(tfactory_, dfparams);
+    tfactory_->df_info( const_cast<DensityFittingInfo*>(moints_runtime_->runtime_4c()->params()) );
 
     // to boot Fock build runtime we need densities
     // make zero densities to start with

@@ -665,6 +665,9 @@ namespace sc {
   /// helper function to form a key/space pair from a OrbitalSpace
   std::pair<std::string, Ref<OrbitalSpace> > make_keyspace_pair(const Ref<
       OrbitalSpace>& space, SpinCase1 spin = AnySpinCase1);
+  /// helper function to create a key basename (i.e. without the spin label)
+  /// that is guaranteed for any spin to not be found in this OrbitalSpaceRegistry
+  std::string new_unique_key(const Ref<OrbitalSpaceRegistry>& oreg);
 
   /// registry of globally-known OrbitalSpace objects that describe AO basis spaces
   typedef Registry<Ref<GaussianBasisSet>, Ref<OrbitalSpace>,

@@ -183,6 +183,8 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
       }
       accum->release_pair_block(ii,jj,corrfactor()->tbint_type_eri());
       emp2pair.set_element(ij,emp2);
+      if (debug_ >= DefaultPrintThresholds::mostO4)
+        ExEnv::outn() << indent << "emp2 = " << emp2 << endl;
     }
   }
 

@@ -33,11 +33,6 @@
 #include <chemistry/qc/libint2/g12nc.h>
 #include <chemistry/qc/libint2/tform.h>
 
-#if LIBINT2_SUPPORT_G12 && !LIBINT2_SUPPORT_T1G12
-
-// Set to 0 to not include antisymmetric conributions to g12 t g12'
-#define NONSYMMETRIC_G12TG12 0
-
 using namespace std;
 using namespace sc;
 
@@ -86,9 +81,9 @@ G12NCLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
   GaussianBasisSet *pbs3=bs3_.pointer();
   GaussianBasisSet *pbs4=bs4_.pointer();
   int int_expweight1; // For exponent weighted contractions.
-  int int_expweight2; // For exponent weighted contractions.
-  int int_expweight3; // For exponent weighted contractions.
-  int int_expweight4; // For exponent weighted contractions.
+  int int_expweight2;// For exponent weighted contractions.
+  int int_expweight3;// For exponent weighted contractions.
+  int int_expweight4;// For exponent weighted contractions.
   int size;
   int ii;
   int size1, size2, size3, size4;
@@ -110,19 +105,19 @@ G12NCLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
   int
   heapstate = dmalloc_verify(target_ints_buffer_);
   if (heapstate == DMALLOC_VERIFY_ERROR)
-    fail();
+  fail();
   heapstate = dmalloc_verify(cart_ints_);
   if (heapstate == DMALLOC_VERIFY_ERROR)
-    fail();
+  fail();
   heapstate = dmalloc_verify(sphharm_ints_);
   if (heapstate == DMALLOC_VERIFY_ERROR)
-    fail();
+  fail();
   heapstate = dmalloc_verify(perm_ints_);
   if (heapstate == DMALLOC_VERIFY_ERROR)
-    fail();
+  fail();
   heapstate = dmalloc_verify(tformbuf_);
   if (heapstate == DMALLOC_VERIFY_ERROR)
-    fail();
+  fail();
 #endif
 
   osh1 = sh1 = *psh1;
@@ -131,16 +126,16 @@ G12NCLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
   osh4 = sh4 = *psh4;
 
   /* Test the arguments to make sure that they are sensible. */
-  if (   sh1 < 0 || sh1 >= bs1_->nbasis()
+  if ( sh1 < 0 || sh1 >= bs1_->nbasis()
       || sh2 < 0 || sh2 >= bs2_->nbasis()
       || sh3 < 0 || sh3 >= bs3_->nbasis()
       || sh4 < 0 || sh4 >= bs4_->nbasis() ) {
     ExEnv::errn() << scprintf("compute_erep has been incorrectly used\n");
     ExEnv::errn() << scprintf("shells (bounds): %d (%d), %d (%d), %d (%d), %d (%d)\n",
-                              sh1,bs1_->nbasis()-1,
-                              sh2,bs2_->nbasis()-1,
-                              sh3,bs3_->nbasis()-1,
-                              sh4,bs4_->nbasis()-1);
+        sh1,bs1_->nbasis()-1,
+        sh2,bs2_->nbasis()-1,
+        sh3,bs3_->nbasis()-1,
+        sh4,bs4_->nbasis()-1);
     fail();
   }
 
@@ -180,40 +175,38 @@ G12NCLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
       int_shell2_->has_pure() ||
       int_shell3_->has_pure() ||
       int_shell4_->has_pure())
-    need_cart2sph_transform = true;
-
+  need_cart2sph_transform = true;
 
   /* See if contraction quartets need to be resorted into a shell quartet */
   bool need_sort_to_shell_quartet = false;
   int num_gen_shells = 0;
   if (int_shell1_->ncontraction() > 1)
-    num_gen_shells++;
+  num_gen_shells++;
   if (int_shell2_->ncontraction() > 1)
-    num_gen_shells++;
+  num_gen_shells++;
   if (int_shell3_->ncontraction() > 1)
-    num_gen_shells++;
+  num_gen_shells++;
   if (int_shell4_->ncontraction() > 1)
-    num_gen_shells++;
+  num_gen_shells++;
   if (am12+am34 && num_gen_shells >= 1)
-    need_sort_to_shell_quartet = true;
+  need_sort_to_shell_quartet = true;
 
   /* Unique integrals are needed only ?*/
   bool need_unique_ints_only = false;
   if (!redundant_) {
     e12 = 0;
     if (int_shell1_ == int_shell2_ && int_shell1_->nfunction()>1)
-      e12 = 1;
+    e12 = 1;
     e34 = 0;
     if (int_shell3_ == int_shell4_ && int_shell3_->nfunction()>1)
-      e34 = 1;
+    e34 = 1;
     e13e24 = 0;
     if (int_shell1_ == int_shell3_ && int_shell2_ == int_shell4_ && int_shell1_->nfunction()*int_shell2_->nfunction()>1)
-      e13e24 = 1;
+    e13e24 = 1;
 
     if ( e12 || e34 || e13e24 )
-      need_unique_ints_only = true;
+    need_unique_ints_only = true;
   }
-
 
 #ifdef EREP_TIMING
   sprintf(section,"erep am=%02d",am12+am34);
@@ -292,26 +285,26 @@ G12NCLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
     quartet_info_.C[i] = pbs3->r(ctr3,i);
     quartet_info_.D[i] = pbs4->r(ctr4,i);
   }
-  quartet_info_.AB2  = libint0.AB_x[0]*libint0.AB_x[0];
+  quartet_info_.AB2 = libint0.AB_x[0]*libint0.AB_x[0];
   quartet_info_.AB2 += libint0.AB_y[0]*libint0.AB_y[0];
   quartet_info_.AB2 += libint0.AB_z[0]*libint0.AB_z[0];
-  quartet_info_.CD2  = libint0.CD_x[0]*libint0.CD_x[0];
+  quartet_info_.CD2 = libint0.CD_x[0]*libint0.CD_x[0];
   quartet_info_.CD2 += libint0.CD_y[0]*libint0.CD_y[0];
   quartet_info_.CD2 += libint0.CD_z[0]*libint0.CD_z[0];
 
   /* Set up pointers to the current shell pairs. */
   quartet_info_.shell_pair12 = shell_pairs12_->shell_pair(osh1,osh2);
   quartet_info_.shell_pair34 = shell_pairs34_->shell_pair(osh3,osh4);
-  
+
   /* Remember how permuted - will need to access shell pairs in grt_quartet_data_() using the original
-     primitive indices */
+   primitive indices */
   quartet_info_.p12 = p12;
   quartet_info_.p34 = p34;
   quartet_info_.p13p24 = p13p24;
-  
+
   /* Remember the original primitive indices to access shell pair data
-     Note the reverse order of switching, p13p24 first,
-     then p12 and p34 - because we need the inverse mapping! */
+   Note the reverse order of switching, p13p24 first,
+   then p12 and p34 - because we need the inverse mapping! */
   quartet_info_.op1 = &quartet_info_.p1;
   quartet_info_.op2 = &quartet_info_.p2;
   quartet_info_.op3 = &quartet_info_.p3;
@@ -321,65 +314,65 @@ G12NCLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
     pswtch((void **)&quartet_info_.op2,(void **)&quartet_info_.op4);
   }
   if (p12)
-    pswtch((void **)&quartet_info_.op1,(void **)&quartet_info_.op2);
+  pswtch((void **)&quartet_info_.op1,(void **)&quartet_info_.op2);
   if (p34)
-    pswtch((void **)&quartet_info_.op3,(void **)&quartet_info_.op4);
+  pswtch((void **)&quartet_info_.op3,(void **)&quartet_info_.op4);
 
   /* Determine where integrals need to go at each stage */
   if (shells_were_permuted)
-    if (need_sort_to_shell_quartet) {
-      for(int te_type=0; te_type<num_te_types_; te_type++)
-        prim_ints_[te_type] = cart_ints_[te_type];
-      if (need_cart2sph_transform)
-        for(int te_type=0; te_type<num_te_types_; te_type++)
-          contr_quartets_[te_type] = sphharm_ints_;
-      else
-        for(int te_type=0; te_type<num_te_types_; te_type++)
-          contr_quartets_[te_type] = cart_ints_[te_type];
-      for(int te_type=0; te_type<num_te_types_; te_type++)
-        shell_quartet_[te_type] = perm_ints_;
-    }
-    else {
-      for(int te_type=0; te_type<num_te_types_; te_type++)
-        prim_ints_[te_type] = cart_ints_[te_type];
-      if (need_cart2sph_transform) {
-        for(int te_type=0; te_type<num_te_types_; te_type++) {
-          contr_quartets_[te_type] = sphharm_ints_;
-          shell_quartet_[te_type] = contr_quartets_[te_type];
-        }
+  if (need_sort_to_shell_quartet) {
+    for(int te_type=0; te_type<num_te_types_; te_type++)
+    prim_ints_[te_type] = cart_ints_[te_type];
+    if (need_cart2sph_transform)
+    for(int te_type=0; te_type<num_te_types_; te_type++)
+    contr_quartets_[te_type] = sphharm_ints_;
+    else
+    for(int te_type=0; te_type<num_te_types_; te_type++)
+    contr_quartets_[te_type] = cart_ints_[te_type];
+    for(int te_type=0; te_type<num_te_types_; te_type++)
+    shell_quartet_[te_type] = perm_ints_;
+  }
+  else {
+    for(int te_type=0; te_type<num_te_types_; te_type++)
+    prim_ints_[te_type] = cart_ints_[te_type];
+    if (need_cart2sph_transform) {
+      for(int te_type=0; te_type<num_te_types_; te_type++) {
+        contr_quartets_[te_type] = sphharm_ints_;
+        shell_quartet_[te_type] = contr_quartets_[te_type];
       }
-      else
-        for(int te_type=0; te_type<num_te_types_; te_type++)
-          shell_quartet_[te_type] = cart_ints_[te_type];
     }
+    else
+    for(int te_type=0; te_type<num_te_types_; te_type++)
+    shell_quartet_[te_type] = cart_ints_[te_type];
+  }
   else
-    if (need_sort_to_shell_quartet) {
-      for(int te_type=0; te_type<num_te_types_; te_type++)
+  if (need_sort_to_shell_quartet) {
+    for(int te_type=0; te_type<num_te_types_; te_type++)
+    prim_ints_[te_type] = cart_ints_[te_type];
+    if (need_cart2sph_transform)
+    for(int te_type=0; te_type<num_te_types_; te_type++)
+    contr_quartets_[te_type] = sphharm_ints_;
+    else
+    for(int te_type=0; te_type<num_te_types_; te_type++)
+    contr_quartets_[te_type] = cart_ints_[te_type];
+    for(int te_type=0; te_type<num_te_types_; te_type++)
+    shell_quartet_[te_type] = target_ints_buffer_[te_type];
+  }
+  else {
+    if (need_cart2sph_transform) {
+      for(int te_type=0; te_type<num_te_types_; te_type++) {
         prim_ints_[te_type] = cart_ints_[te_type];
-      if (need_cart2sph_transform)
-        for(int te_type=0; te_type<num_te_types_; te_type++)
-          contr_quartets_[te_type] = sphharm_ints_;
-      else
-        for(int te_type=0; te_type<num_te_types_; te_type++)
-          contr_quartets_[te_type] = cart_ints_[te_type];
-      for(int te_type=0; te_type<num_te_types_; te_type++)
+        contr_quartets_[te_type] = target_ints_buffer_[te_type];
         shell_quartet_[te_type] = target_ints_buffer_[te_type];
+      }
     }
     else {
-      if (need_cart2sph_transform) {
-        for(int te_type=0; te_type<num_te_types_; te_type++) {
-          prim_ints_[te_type] = cart_ints_[te_type];
-          contr_quartets_[te_type] = target_ints_buffer_[te_type];
-          shell_quartet_[te_type] = target_ints_buffer_[te_type];
-        }
-      }
-      else {
-        for(int te_type=0; te_type<num_te_types_; te_type++) {
-          prim_ints_[te_type] = target_ints_buffer_[te_type];
-          shell_quartet_[te_type] = target_ints_buffer_[te_type];
-        }
+      for(int te_type=0; te_type<num_te_types_; te_type++) {
+        prim_ints_[te_type] = target_ints_buffer_[te_type];
+        shell_quartet_[te_type] = target_ints_buffer_[te_type];
       }
     }
+  }
 
   //
   // Need to distinguish 1-geminal and 2-geminal cases, hence don't use geminal_xxx_ directly, via references only
@@ -389,153 +382,53 @@ G12NCLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
   const ContractedGeminal& gket = braonly ? IntParamsG12::zero_exponent_geminal : geminal_ket_;
   const int nbra_geminal_prims = gbra.size();
   const int nket_geminal_prims = gket.size();
-  
-  /* Begin loops over generalized contractions. */
-  int buffer_offset = 0;
-  for (gci=0; gci<int_shell1_->ncontraction(); gci++) {
-    tam1 = int_shell1_->am(gci);
-    int tsize1 = INT_NCART_NN(tam1);
-    quartet_info_.gc1 = gci;
-    for (gcj=0; gcj<int_shell2_->ncontraction(); gcj++) {
-      tam2 = int_shell2_->am(gcj);
-      int tsize2 = INT_NCART_NN(tam2);
-      quartet_info_.gc2 = gcj;
-      for (gck=0; gck<int_shell3_->ncontraction(); gck++) {
-        tam3 = int_shell3_->am(gck);
-        int tsize3 = INT_NCART_NN(tam3);
-        quartet_info_.gc3 = gck;
-        for (gcl=0; gcl<int_shell4_->ncontraction(); gcl++) {
-          tam4 = int_shell4_->am(gcl);
-          int tsize4 = INT_NCART_NN(tam4);
-          quartet_info_.gc4 = gcl;
-          quartet_info_.am = tam1 + tam2 + tam3 + tam4;
-          int size = tsize1*tsize2*tsize3*tsize4;
 
-          // zero out the contracted integrals buffer
-          for(int te_type=0; te_type < num_te_types_; te_type++)
+  // Compute integrals one type at a time
+  for(int te_type = 0; te_type < 4; te_type++) {
+
+    OperType otype;
+    switch (te_type) {
+      case 0: otype = coulomb; break;
+      case 1: otype = braonly ? f12 : f12_2; break;
+      case 2: otype = f12_coulomb; break;
+      case 3: otype = f12_T1_f12; break;
+      default: assert(false); // unreachable
+    }
+    // no need f12/r12 when have 2 geminals
+    if (otype == f12_coulomb && !braonly)
+      continue;
+    // need f12,T1,f12 only when have 2 geminals
+    if (otype == f12_T1_f12 && braonly)
+      continue;
+
+    /* Begin loops over generalized contractions. */
+    int buffer_offset = 0;
+    for (gci=0; gci<int_shell1_->ncontraction(); gci++) {
+      tam1 = int_shell1_->am(gci);
+      int tsize1 = INT_NCART_NN(tam1);
+      quartet_info_.gc1 = gci;
+      for (gcj=0; gcj<int_shell2_->ncontraction(); gcj++) {
+        tam2 = int_shell2_->am(gcj);
+        int tsize2 = INT_NCART_NN(tam2);
+        quartet_info_.gc2 = gcj;
+        for (gck=0; gck<int_shell3_->ncontraction(); gck++) {
+          tam3 = int_shell3_->am(gck);
+          int tsize3 = INT_NCART_NN(tam3);
+          quartet_info_.gc3 = gck;
+          for (gcl=0; gcl<int_shell4_->ncontraction(); gcl++) {
+            tam4 = int_shell4_->am(gcl);
+            int tsize4 = INT_NCART_NN(tam4);
+            quartet_info_.gc4 = gcl;
+            quartet_info_.am = tam1 + tam2 + tam3 + tam4;
+            const int size = tsize1*tsize2*tsize3*tsize4;
+
+            // zero out the contracted integrals buffer
             memset(&(prim_ints_[te_type][buffer_offset]),0,size*sizeof(double));
 #  if LIBINT2_ACCUM_INTS
-          // zero out targets in Libint_
-          Libint_[0].zero_out_targets = 1;
+            // zero out targets in Libint_
+            Libint_[0].zero_out_targets = 1;
 #  endif
-          
-          // Begin loop over basis function primitives
-          int num_prim_combinations = 0;
-          for (pi=0; pi<int_shell1_->nprimitive(); pi++) {
-            quartet_info_.p1 = pi;
-            for (pj=0; pj<int_shell2_->nprimitive(); pj++) {
-              quartet_info_.p2 = pj;
-              for (pk=0; pk<int_shell3_->nprimitive(); pk++) {
-                quartet_info_.p3 = pk;
-                for (pl=0; pl<int_shell4_->nprimitive(); pl++) {
-                  quartet_info_.p4 = pl;
 
-                  // Begin loop over Gaussian Geminal primitives
-                  for (int ggi=0; ggi<nbra_geminal_prims; ggi++) {
-                    const PrimitiveGeminal& gpbra = gbra[ggi];
-                    const double gamma_bra = gpbra.first;
-                    const double gpcoef_bra = gpbra.second;
-                    for (int ggj=0; ggj<nket_geminal_prims; ggj++) {
-                      const PrimitiveGeminal& gpket = gket[ggj];
-                      const double gamma_ket = gpket.first;
-                      const double gpcoef_ket = gpket.second;
-
-                      double gamma_perm_pfac = (gamma_ket - gamma_bra)/(gamma_ket + gamma_bra);
-
-                      // scale r12^2*g12 integrals by 4 * gamma_bra * gamma_ket to obtain [g12,[t1,g12]]
-                      const double g2_4 = gamma_bra*gamma_ket*4.0;
-
-                      // Compute primitive data for Libint
-                      const bool eri_only = false;
-                      g12nc_quartet_data_(&Libint_[num_prim_combinations], gpcoef_bra*gpcoef_ket, gamma_bra+gamma_ket, g2_4, eri_only);
-
-#if !LIBINT2_CONTRACTED_INTS
-                      if (quartet_info_.am != 0) {
-                        // Compute the integrals
-                        LIBINT2_PREFIXED_NAME(libint2_build_r12kg12)[tam1][tam2][tam3][tam4](&Libint_[0]);
-
-                        for(int te_type = 0; te_type < 3; te_type++) {
-                          // Copy the integrals over to prim_ints_
-                          const LIBINT2_REALTYPE* prim_ints = Libint_[0].targets[te_type];
-                          for(int ijkl=0; ijkl<size; ijkl++)
-                            prim_ints_[te_type+1][buffer_offset + ijkl] += (double) prim_ints[ijkl];
-                        }
-
-                        // If using 2 geminals and g12!=g12' generate g12g12' * (beta-alpha)/(beta+alpha) needed to compute g12[ti,g12'] - g12'[ti,g12]
-                        if (!braonly && gamma_bra != gamma_ket){
-                          const LIBINT2_REALTYPE* g12g12_ints = Libint_[0].targets[0];
-                          LIBINT2_REALTYPE* anti_g12g12_ints = prim_ints_[4];
-                          for(int ijkl=0; ijkl<size; ijkl++) {
-                            anti_g12g12_ints[buffer_offset + ijkl] += gamma_perm_pfac * g12g12_ints[ijkl];
-                          }
-                        }
-
-                      }
-#endif
-                      if (quartet_info_.am == 0) {
-                        prim_ints_[2][buffer_offset] += Libint_[num_prim_combinations].LIBINT_T_SS_Km1G12_SS(0)[0];
-                        prim_ints_[1][buffer_offset] += Libint_[num_prim_combinations].LIBINT_T_SS_K0G12_SS_0[0];
-                        prim_ints_[3][buffer_offset] += g2_4 * Libint_[num_prim_combinations].LIBINT_T_SS_K2G12_SS_0[0];
-
-                        // If using 2 geminals and g12!=g12' instead of [ti,g12g12'] integrals generate [ti,g12g12'](beta-alpha)/(beta+alpha) = g12[ti,g12'] - g12'[ti,g12]
-                        if (!braonly && gamma_bra != gamma_ket){
-                          const double pfac = (gamma_ket - gamma_bra)/(gamma_ket + gamma_bra);
-                          prim_ints_[4][buffer_offset] += gamma_perm_pfac * Libint_[num_prim_combinations].LIBINT_T_SS_K0G12_SS_0[0];
-                        }
-                      }
-                      
-#if LIBINT2_CONTRACTED_INTS
-                  ++num_prim_combinations;
-#endif
-
-                    } // end of ket geminal primitive loop
-                  } // end of bra geminal primitive loop
-                  
-#if !LIBINT2_CONTRACTED_INTS
-                  // Compute primitive data for Libint
-                  g12nc_quartet_data_(&Libint_[0], 1.0, 0.0, 0.0, true);
-                  if (quartet_info_.am != 0) {
-                    // Compute the integrals
-                    LIBINT2_PREFIXED_NAME(libint2_build_eri)[tam1][tam2][tam3][tam4](&Libint_[0]);
-                    // Copy the integrals over to prim_ints_
-                    const LIBINT2_REALTYPE* prim_ints = Libint_.targets[0];
-                    for(int ijkl=0; ijkl<size; ijkl++)
-                      prim_ints_[0][buffer_offset + ijkl] += (double) prim_ints[ijkl];
-                  }
-                  else {
-                    prim_ints_[0][buffer_offset] += Libint_.LIBINT_T_SS_EREP_SS(0)[0];
-                  }
-#endif
-                  
-                }
-              }
-            }
-          }
-
-#if LIBINT2_CONTRACTED_INTS
-
-          // compute geminal integrals
-          if (quartet_info_.am) {
-            // Compute the integrals
-            Libint_[0].contrdepth = num_prim_combinations;
-            LIBINT2_PREFIXED_NAME(libint2_build_r12kg12)[tam1][tam2][tam3][tam4](&Libint_[0]);
-            // Copy the contracted integrals over to prim_ints_
-            for(int te_type = 0; te_type < 3; te_type++) {
-              const LIBINT2_REALTYPE* prim_ints = Libint_[0].targets[te_type];
-              for(int ijkl=0; ijkl<size; ijkl++)
-                prim_ints_[te_type+1][buffer_offset + ijkl] = (double) prim_ints[ijkl];
-            }
-            // can't compute anti_g12g12 yet with support for contractions
-            if (!braonly && gbra != gket)
-              throw FeatureNotImplemented("This version of Libint2 library does not yet support computation of antisymmetric g12*g12' integrals",
-                                          __FILE__, __LINE__);
-          }
-          else {
-            // ssss integrals were computed in the primitive loop
-          }
-
-          // and compute ERIs
-          {
             // Begin loop over basis function primitives
             int num_prim_combinations = 0;
             for (pi=0; pi<int_shell1_->nprimitive(); pi++) {
@@ -547,43 +440,41 @@ G12NCLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
                   for (pl=0; pl<int_shell4_->nprimitive(); pl++) {
                     quartet_info_.p4 = pl;
 
-                    // Compute primitive data for Libint
-                    g12nc_quartet_data_(&Libint_[num_prim_combinations], 1.0, 0.0, 0.0, true);
+                    g12nc_quartet_data_(&(Libint_[num_prim_combinations]), 1.0, otype,
+                                        &gbra, &gket);
+
+                    if (quartet_info_.am == 0) {
+                      prim_ints_[te_type][buffer_offset] += Libint_[num_prim_combinations].LIBINT_T_SS_EREP_SS(0)[0];
+                    }
 
                     ++num_prim_combinations;
                   }
                 }
               }
             }
+
+            // compute geminal integrals
             if (quartet_info_.am) {
               // Compute the integrals
               Libint_[0].contrdepth = num_prim_combinations;
               LIBINT2_PREFIXED_NAME(libint2_build_eri)[tam1][tam2][tam3][tam4](&Libint_[0]);
-              // Copy the integrals over to prim_ints_
               const LIBINT2_REALTYPE* prim_ints = Libint_[0].targets[0];
-              for(int ijkl=0; ijkl<size; ijkl++)
-                prim_ints_[0][buffer_offset + ijkl] = (double) prim_ints[ijkl];
+              std::copy(prim_ints, prim_ints+size, prim_ints_[te_type]+buffer_offset);
             }
             else {
-              double ssss = 0.0;
-              for(int p=0; p<num_prim_combinations; ++p)
-                ssss += Libint_[p].LIBINT_T_SS_EREP_SS(0)[0];
-              prim_ints_[0][buffer_offset] = ssss;
+              // ssss integrals were computed in the primitive loop
             }
-          }
-#endif
 
-
-
-          buffer_offset += size;
-        }}}}
+            buffer_offset += size;
+          }}}} // loops over contractions
+    } // loop over operator types
 
   for(int te_type=0; te_type < num_te_types_; te_type++) {
     /*-------------------------------------------
-      Transform to spherical harmonics if needed
+     Transform to spherical harmonics if needed
      -------------------------------------------*/
     if (need_cart2sph_transform)
-      transform_contrquartets_(prim_ints_[te_type],contr_quartets_[te_type]);
+    transform_contrquartets_(prim_ints_[te_type],contr_quartets_[te_type]);
 
     //
     // If not CCA-compliant normalization -- re-normalize all integrals to 1
@@ -593,14 +484,14 @@ G12NCLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
 #endif
 
     /*----------------------------------------------
-      Resort integrals from by-contraction-quartets
-      into shell-quartet order if needed
+     Resort integrals from by-contraction-quartets
+     into shell-quartet order if needed
      ----------------------------------------------*/
     if (need_sort_to_shell_quartet)
-      sort_contrquartets_to_shellquartet_(contr_quartets_[te_type],shell_quartet_[te_type]);
+    sort_contrquartets_to_shellquartet_(contr_quartets_[te_type],shell_quartet_[te_type]);
 
     /*---------------------------------
-      Permute integrals back if needed
+     Permute integrals back if needed
      ---------------------------------*/
     if ((!permute_)&&shells_were_permuted) {
       // handle integrals first
@@ -647,25 +538,23 @@ G12NCLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
   /*--- Test heap after ---*/
   heapstate = dmalloc_verify(target_ints_buffer_);
   if (heapstate == DMALLOC_VERIFY_ERROR)
-    fail();
+  fail();
   heapstate = dmalloc_verify(cart_ints_);
   if (heapstate == DMALLOC_VERIFY_ERROR)
-    fail();
+  fail();
   heapstate = dmalloc_verify(sphharm_ints_);
   if (heapstate == DMALLOC_VERIFY_ERROR)
-    fail();
+  fail();
   heapstate = dmalloc_verify(perm_ints_);
   if (heapstate == DMALLOC_VERIFY_ERROR)
-    fail();
+  fail();
   heapstate = dmalloc_verify(tformbuf_);
   if (heapstate == DMALLOC_VERIFY_ERROR)
-    fail();
+  fail();
 #endif
 
   return;
 }
-
-#endif // if LIBINT2_SUPPORT_G12
 
 /////////////////////////////////////////////////////////////////////////////
 

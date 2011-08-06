@@ -37,6 +37,13 @@
 
 #if LIBINT2_SUPPORT_ERI
 
+#if !LIBINT2_CONTRACTED_INTS
+# error "the Libint2 library must have support for contracted functions. Obtain the most recent library."
+#endif
+#if LIBINT2_ACCUM_INTS
+# error "the Libint2 library should overwrite the stack contents. Obtain the most recent library."
+#endif
+
 using namespace std;
 using namespace sc;
 
@@ -385,15 +392,6 @@ EriLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
           quartet_info_.am = tam1 + tam2 + tam3 + tam4;
           int size = tsize1*tsize2*tsize3*tsize4;
 
-#if !LIBINT2_CONTRACTED_INTS
-          // zero out the contracted integrals buffer
-          memset(&(prim_ints_[buffer_offset]),0,size*sizeof(double));
-#  if LIBINT2_ACCUM_INTS
-          // zero out targets in Libint_
-          Libint_.zero_out_targets = 1;
-#  endif
-#endif
-
           /* Begin loop over primitives. */
           int num_prim_combinations = 0;
           for (pi=0; pi<int_shell1_->nprimitive(); pi++) {
@@ -408,28 +406,9 @@ EriLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
                   // Compute primitive data for Libint
                   eri_quartet_data_(&Libint_[num_prim_combinations], 1.0);
 
-#if !LIBINT2_CONTRACTED_INTS
-                  if (quartet_info_.am) {
-                    // Compute the integrals
-                    LIBINT2_PREFIXED_NAME(libint2_build_eri)[tam1][tam2][tam3][tam4](&Libint_[0]);
-#  if !LIBINT2_ACCUM_INTS
-                    // Copy the integrals over to prim_ints_
-                    const LIBINT2_REALTYPE* prim_ints = Libint_[0].targets[0];
-                    for(int ijkl=0; ijkl<size; ijkl++)
-                      prim_ints_[buffer_offset + ijkl] += (double) prim_ints[ijkl];
-#  endif
-                  }
-                  else {
-                    prim_ints_[buffer_offset] += Libint_[0].LIBINT_T_SS_EREP_SS(0)[0];
-                  }
-#endif
-
-#if LIBINT2_CONTRACTED_INTS
                   ++num_prim_combinations;
-#endif
                 }}}}
 
-#if LIBINT2_CONTRACTED_INTS
           if (quartet_info_.am) {
             // Compute the integrals
             Libint_[0].contrdepth = num_prim_combinations;
@@ -438,6 +417,13 @@ EriLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
             const LIBINT2_REALTYPE* prim_ints = Libint_[0].targets[0];
             for(int ijkl=0; ijkl<size; ijkl++)
               prim_ints_[buffer_offset + ijkl] = (double) prim_ints[ijkl];
+
+#if 0
+            std::cout << *psh1 << " " << *psh2 << " " << *psh3 << " " << *psh4 << " " << std::endl;
+            for(int ijkl=0; ijkl<size; ijkl++) {
+              std::cout <<  "  " << prim_ints[ijkl] << std::endl;
+            }
+#endif
           }
           else {
             double ssss = 0.0;
@@ -445,14 +431,6 @@ EriLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
               ssss += Libint_[p].LIBINT_T_SS_EREP_SS(0)[0];
             prim_ints_[buffer_offset] = ssss;
           }
-#else
-#  if LIBINT2_ACCUM_INTS
-          // Copy the accumulated integrals over to prim_ints_
-          const LIBINT2_REALTYPE* prim_ints = Libint_[0].targets[0];
-          for(int ijkl=0; ijkl<size; ijkl++)
-            prim_ints_[buffer_offset + ijkl] += (double) prim_ints[ijkl];
-#  endif
-#endif
           buffer_offset += size;
         }}}}
 

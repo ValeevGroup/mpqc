@@ -1353,20 +1353,8 @@ namespace sc {
     SpinMOPairIter ij_iter(i1->rank(), i2->rank(), spincase2);
     Ref<MP2R12EnergyUtil_Diag> util = generate_MP2R12EnergyUtil_Diag(spincase2,xydim,xydim,f12dim,i2->rank());
 
-    double Cp_ij_ij;  // singlet
-    double Cm_ij_ij;  // triplet
-    if (R12Technology::STG(corrfactor->geminaldescriptor())) {
-      const double gamma = R12Technology::single_slater_exponent(corrfactor->geminaldescriptor());
-      Cp_ij_ij=-1.0/(2.0*gamma);
-      Cm_ij_ij=-1.0/(4.0*gamma);
-    }
-    else if (R12Technology::R12(corrfactor->geminaldescriptor())) {
-      Cp_ij_ij=1.0/2.0;
-      Cm_ij_ij=1.0/4.0;
-    }
-    else {
-      throw ProgrammingError("firstorder_cusp_coefficients -- geminal coefficients can be only determined for STG or R12 geminals",__FILE__,__LINE__);
-    }
+    const double Cp_ij_ij = 1.0/2.0;
+    const double Cm_ij_ij = 1.0/4.0;
 
     C.assign(0.0);
 

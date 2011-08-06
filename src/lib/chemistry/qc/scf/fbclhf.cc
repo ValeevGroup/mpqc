@@ -176,7 +176,7 @@ DFCLHF::DFCLHF(StateIn& s) :
   SavableState(s),
   CLHF(s)
 {
-  dfinfo_ << SavableState::restore_state(s);
+  world_ << SavableState::restore_state(s);
 }
 
 DFCLHF::DFCLHF(const Ref<KeyVal>& keyval) :
@@ -184,23 +184,13 @@ DFCLHF::DFCLHF(const Ref<KeyVal>& keyval) :
 {
   dens_reset_freq_ = 1;
 
-  Ref<MOIntsTransformFactory> tform_factory = new MOIntsTransformFactory(integral());
-  tform_factory->set_ints_method(MOIntsTransform::StoreMethod::posix);
-  Ref<DensityFittingRuntime::MOIntsRuntime> mo_rtime = new DensityFittingRuntime::MOIntsRuntime(tform_factory);
-  Ref<DensityFittingRuntime> df_rtime = new DensityFittingRuntime(mo_rtime);
-
-  Ref<GaussianBasisSet> df_basis; df_basis << keyval->describedclassvalue("df_basis");
-  Ref<DensityFittingParams> df_params = new DensityFittingParams(df_basis);
-  dfinfo_ = new DensityFittingInfo(df_params, df_rtime);
-
-  Ref<OrbitalSpaceRegistry> oreg = mo_rtime->factory()->orbital_registry();
-  Ref<AOSpaceRegistry> aoreg = mo_rtime->factory()->ao_registry();
-  if (aoreg->key_exists(df_basis) == false) {
-    Ref<OrbitalSpace> dfaospace = new AtomicOrbitalSpace("Mu", "DFCLHF DF AO basis set", df_basis, integral());
-    aoreg->add(df_basis, dfaospace);
-    assert(oreg->key_exists("Mu") == false);
-    oreg->add(make_keyspace_pair(dfaospace));
-  }
+  // if world not given, make this the center of a new World
+  world_ << keyval->describedclassvalue("world", KeyValValueRefDescribedClass(0));
+  if (world_.null())
+    world_ = new WavefunctionWorld(keyval);
+  if (world_.null())
+    throw InputError("PT2R12 requires a WavefunctionWorld", __FILE__, __LINE__, "world");
+  if (world_->wfn() == 0) world_->set_wfn(this);
 
   // need a nonblocked cl_gmat_ in this method
   Ref<PetiteList> pl = integral()->petite_list();
@@ -216,7 +206,7 @@ void
 DFCLHF::save_data_state(StateOut& s)
 {
   CLHF::save_data_state(s);
-  SavableState::save_state(dfinfo_.pointer(),s);
+  SavableState::save_state(world_.pointer(),s);
 }
 
 void
@@ -239,38 +229,34 @@ DFCLHF::ao_fock(double accuracy)
     cl_dens_diff_.print("cl_dens_diff before set_pmat");
   }
 
-  Ref<OrbitalSpaceRegistry> oreg = dfinfo_->runtime()->moints_runtime()->factory()->orbital_registry();
-  Ref<AOSpaceRegistry> aoreg = dfinfo_->runtime()->moints_runtime()->factory()->ao_registry();
+  Ref<OrbitalSpaceRegistry> oreg = world_->moints_runtime()->factory()->orbital_registry();
+  Ref<AOSpaceRegistry> aoreg = world_->moints_runtime()->factory()->ao_registry();
+  std::string aospace_id = new_unique_key(oreg);
   if (aoreg->key_exists(basis()) == false) {
-    Ref<OrbitalSpace> aospace = new AtomicOrbitalSpace("mu", "DFCLHF AO basis set", basis(), integral());
+    Ref<OrbitalSpace> aospace = new AtomicOrbitalSpace(aospace_id, "DFCLHF AO basis set", basis(), integral());
     aoreg->add(basis(), aospace);
-    assert(oreg->key_exists("mu") == false);
+    assert(oreg->key_exists(aospace_id) == false); // should be ensured by using new_unique_key
     oreg->add(make_keyspace_pair(aospace));
   }
-  Ref<FockBuildRuntime> fb_rtime = new FockBuildRuntime(oreg, aoreg,
-                                                        basis(),
-                                                        cl_dens_diff_,
-                                                        cl_dens_diff_,
-                                                        integral(),
-                                                        0);
-  fb_rtime->dfinfo(dfinfo_);
-  //dfinfo_->runtime()->moints_runtime()->factory()->mem()->set_localsize( ConsumableResources::get_default_instance()->memory());
-  //dfinfo_->runtime()->moints_runtime()->factory()->mem()->set_localsize( 200000000 );
+  // feed the spin densities to the builder, cl_dens_diff_ includes total density right now, so halve it
+  Ref<FockBuildRuntime> fb_rtime = world_->fockbuild_runtime();
+  RefSymmSCMatrix Pa = cl_dens_diff_.copy(); Pa.scale(0.5);
+  RefSymmSCMatrix Pb = Pa;
+  fb_rtime->set_densities(Pa, Pb);
 
   step_tim.change("build");
-  Ref<OrbitalSpace> aospace = oreg->value("mu");
+  Ref<OrbitalSpace> aospace = aoreg->value(basis());
   RefSCMatrix G;
   {
     const std::string jkey = ParsedOneBodyIntKey::key(aospace->id(),aospace->id(),std::string("J"));
     RefSCMatrix J = fb_rtime->get(jkey);
-    G = J;
+    G = J.copy();
   }
   {
     const std::string kkey = ParsedOneBodyIntKey::key(aospace->id(),aospace->id(),std::string("K"),AnySpinCase1);
     RefSCMatrix K = fb_rtime->get(kkey);
     G.accumulate( -1.0 * K);
   }
-  G.scale(0.5); // includes alpha and beta contributions -- need to halve it now
   Ref<SCElementOp> accum_G_op = new SCElementAccumulateSCMatrix(G.pointer());
   RefSymmSCMatrix G_symm = G.kit()->symmmatrix(G.coldim()); G_symm.assign(0.0);
   G_symm.element_op(accum_G_op); G = 0;
@@ -299,10 +285,11 @@ void
 DFCLHF::print(std::ostream&o) const
 {
   CLHF::print(o);
-  dfinfo_->print(o);
+  world_->print(o);
 }
 
 Ref<DensityFittingInfo>
 DFCLHF::dfinfo() const {
-  return dfinfo_;
+  Ref<DensityFittingInfo> result = const_cast<DensityFittingInfo*>(world_->tfactory()->df_info());
+  return result;
 }

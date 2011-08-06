@@ -32,7 +32,8 @@
 
 #include <chemistry/qc/scf/clhf.h>
 #include <chemistry/qc/lcao/fockbuild.h>
-#include <chemistry/qc/lcao/df_runtime.h>
+#include <chemistry/qc/lcao/wfnworld.h>
+#include <chemistry/qc/lcao/df.h>
 
 namespace sc {
 
@@ -63,17 +64,29 @@ class DFCLHF: public CLHF {
     void reset_density();
   public:
     DFCLHF(StateIn&);
-    /**
+    /** Accepts all keywords of CLHF class + the following keywords:
+        <table border="1">
+
+          <tr><td>%Keyword<td>Type<td>Default<td>Description
+
+          <tr><td><tt>world</tt><td>WavefunctionWorld<td>see notes<td>the WavefunctionWorld object that
+          this wave function belongs to. If not given, this object will live in its own WavefunctionWorld.
+          It is recommended then that correlated Wavefunction objects that use this as a reference provide their
+          own worlds to this.
+
+          </table>
+
      * N.B. <tt>density_reset_freq</tt> is ignored by this method -- full Fock matrix is always constructed.
      */
     DFCLHF(const Ref<KeyVal>&);
     ~DFCLHF();
     void save_data_state(StateOut&);
     void print(std::ostream&o=ExEnv::out0()) const;
+    const Ref<WavefunctionWorld>& world() const { return world_; }
     Ref<DensityFittingInfo> dfinfo() const;
   private:
     RefSymmSCMatrix gmat_;
-    Ref<DensityFittingInfo> dfinfo_;
+    Ref<WavefunctionWorld> world_;
     static ClassDesc cd_;
 };
 

@@ -642,20 +642,9 @@ void MP2R12Energy_Diag::compute_ef12() {
   } // end of CC amplitudes
 
   //
-  // compute coefficients
-  double C_0;  // singlet
-  double C_1;  // triplet
-  if (R12Technology::STG(corrfactor->geminaldescriptor())) {
-    const double gamma = R12Technology::single_slater_exponent(corrfactor->geminaldescriptor());
-    C_0=-1.0/(2.0*gamma);
-    C_1=-1.0/(4.0*gamma);
-  }
-  else if (R12Technology::R12(corrfactor->geminaldescriptor())) {
-    C_0=1.0/2.0;
-    C_1=1.0/4.0;
-  } else {
-    throw ProgrammingError("firstorder_cusp_coefficients -- geminal coefficients can be only determined for STG or R12 geminals",__FILE__,__LINE__);
-  }
+  // geminal coefficients
+  const double C_0=1.0/2.0;
+  const double C_1=1.0/4.0;
 
   //
   // Compute the MP2-R12 part
@@ -750,8 +739,26 @@ void MP2R12Energy_Diag::compute_ef12() {
     const unsigned int f12t1f12_idx = descr_f12f12->intset(f12t1f12_type);
 
     // Get eigenvalues of Fock matrix
+#define COMPUTE_ORBITALSPACE_EIGENVALUES 0
+#if COMPUTE_ORBITALSPACE_EIGENVALUES
+    RefDiagSCMatrix evals_i1;
+    RefDiagSCMatrix evals_i2;
+    {
+      RefSCMatrix F_ii_1 = r12eval()->fock(occ1_act, occ1_act, spin1);
+      evals_i1 = F_ii_1.kit()->diagmatrix(F_ii_1.rowdim());
+      for(unsigned int o=0; o<nocc1_act; ++o) evals_i1.set_element(o, F_ii_1(o, o));
+    }
+    if (occ1_act != occ2_act){
+      RefSCMatrix F_ii_2 = r12eval()->fock(occ2_act, occ2_act, spin2);
+      evals_i2 = F_ii_2.kit()->diagmatrix(F_ii_2.rowdim());
+      for(unsigned int o=0; o<nocc2_act; ++o) evals_i2.set_element(o, F_ii_2(o, o));
+    }
+    else
+      evals_i2 = evals_i1;
+#else
     const RefDiagSCMatrix evals_i1 = occ1_act->evals();
     const RefDiagSCMatrix evals_i2 = occ2_act->evals();
+#endif
 
     //
     // Compute the V intermediate matrix: V^ij_ij and V^ij_ji
@@ -782,7 +789,6 @@ void MP2R12Energy_Diag::compute_ef12() {
                   orbs1->id(), orbs2->id(),
                   descr_f12_key, moints4_rtime,
                   i1i2p1p2_ints);
-
     f12_ij_ints.push_back(i1i2p1p2_ints);
     VX_output.push_back("diag-pq contribution");
 
@@ -895,10 +901,28 @@ void MP2R12Energy_Diag::compute_ef12() {
       fill_n(Vij_ji_coupling, nocc12, 0.0);
 
       // Get eigenvalues of Fock matrix
+#if COMPUTE_ORBITALSPACE_EIGENVALUES
+    RefDiagSCMatrix evals_a1;
+    RefDiagSCMatrix evals_a2;
+    {
+      RefSCMatrix F_aa_1 = r12eval()->fock(vir1_act, vir1_act, spin1);
+      evals_a1 = F_aa_1.kit()->diagmatrix(F_aa_1.rowdim());
+      for(unsigned int o=0; o<nvir1_act; ++o) evals_a1.set_element(o, F_aa_1(o, o));
+    }
+    if (vir1_act != vir2_act){
+      RefSCMatrix F_aa_2 = r12eval()->fock(vir2_act, vir2_act, spin2);
+      evals_a2 = F_aa_2.kit()->diagmatrix(F_aa_2.rowdim());
+      for(unsigned int o=0; o<nvir2_act; ++o) evals_a2.set_element(o, F_aa_2(o, o));
+    }
+    else
+      evals_a2 = evals_a1;
+#else
       const RefDiagSCMatrix evals_a1 = vir1_act->evals();
       const RefDiagSCMatrix evals_a2 = vir2_act->evals();
+#endif
 
       // Print out all the eigenvalues
+#if 1
       if (debug_ >= DefaultPrintThresholds::mostN2) {
         ExEnv::out0() << endl << indent << "evals_i1: " << endl;
         for(int i1=0; i1<nocc1_act; ++i1) {
@@ -920,6 +944,7 @@ void MP2R12Energy_Diag::compute_ef12() {
           ExEnv::out0() << indent << evals_a2(a2) << endl;
         }
       }
+#endif
 
       // Initialize all the integrals needed
       // Vij_ij_coupling: R^ij_aa' f^a'_b T^ab_ij
@@ -2178,12 +2203,30 @@ void MP2R12Energy_Diag::compute_ef12() {
             double Hij_pair_energy;
             const int ij = i1 * nocc2_act + i2;
 
+            if (debug_ >= DefaultPrintThresholds::mostN2) {
+              ExEnv::out0() << indent << "Hij_pair_energy: ij = " << i1 << "," << i2 << " e(VT) = "
+                            << (2.0 * C_1 * (Vij_ij[ij] - Vij_ji[ij]))
+                            << endl;
+              ExEnv::out0() << indent << "Hij_pair_energy: ij = " << i1 << "," << i2 << " e(TBT) = "
+                            << (C_1*C_1 * (Bij_ij[ij] - Bij_ji[ij] - (evals_i1(i1) + evals_i2(i2)) * (Xij_ij[ij] - Xij_ji[ij])))
+                            << endl;
+            }
+
             Hij_pair_energy =  2.0 * C_1 * (Vij_ij[ij] - Vij_ji[ij])
                                    + C_1*C_1 * (Bij_ij[ij] - Bij_ji[ij] - (evals_i1(i1) + evals_i2(i2)) * (Xij_ij[ij] - Xij_ji[ij]));
 
             if (this->r12eval()->coupling() == true
-                || this->r12eval()->ebc() == false)
-                Hij_pair_energy += 2.0 * C_1 * ( Vij_ij_coupling[ij] - Vij_ji_coupling[ij]);
+                || this->r12eval()->ebc() == false) {
+
+              if (debug_ >= DefaultPrintThresholds::mostN2) {
+                ExEnv::out0() << indent << "Hij_pair_energy: ij = " << i1 << "," << i2 << " e(coupling) = "
+                              << (2.0 * C_1 * ( Vij_ij_coupling[ij] - Vij_ji_coupling[ij]))
+                              << endl;
+              }
+
+              Hij_pair_energy += 2.0 * C_1 * ( Vij_ij_coupling[ij] - Vij_ji_coupling[ij]);
+
+            }
 
             // Get indices for the lower triangle matrix
             // index = nrow*(nrow-1) + ncolumn
@@ -2199,6 +2242,17 @@ void MP2R12Energy_Diag::compute_ef12() {
               double Hij_pair_energy;
               int ij = i1 * nocc2_act + i2;
 
+              if (debug_ >= DefaultPrintThresholds::mostN2) {
+                ExEnv::out0() << indent << "Hij_pair_energy: ij = " << i1 << "," << i2 << " e(VT) = "
+                              << (2.0 * ( 0.5*(C_0+C_1) * Vij_ij[ij] + 0.5*(C_0-C_1) * Vij_ji[ij]))
+                              << endl;
+                ExEnv::out0() << indent << "Hij_pair_energy: ij = " << i1 << "," << i2 << " e(TBT) = "
+                              << (pow(0.5*(C_0+C_1), 2) * (Bij_ij[ij]- (evals_i1(i1) + evals_i2(i2)) * Xij_ij[ij])
+                                  + 0.25*(C_0*C_0 - C_1*C_1)*(2.0*Bij_ji[ij] - (evals_i1(i1) + evals_i2(i2)) * (Xij_ji[ij] +Xji_ij[ij]))
+                                  + pow(0.5*(C_0-C_1), 2) * (Bij_ij[ij] - (evals_i1(i1) + evals_i2(i2)) * Xji_ji[ij]))
+                              << endl;
+              }
+
               Hij_pair_energy =   2.0 * ( 0.5*(C_0+C_1) * Vij_ij[ij] + 0.5*(C_0-C_1) * Vij_ji[ij])
                                   + pow(0.5*(C_0+C_1), 2) * (Bij_ij[ij]- (evals_i1(i1) + evals_i2(i2)) * Xij_ij[ij])
                                   + 0.25*(C_0*C_0 - C_1*C_1)*(2.0*Bij_ji[ij] - (evals_i1(i1) + evals_i2(i2)) * (Xij_ji[ij] +Xji_ij[ij]))
@@ -2206,6 +2260,12 @@ void MP2R12Energy_Diag::compute_ef12() {
 
               if (this->r12eval()->coupling() == true
                   || this->r12eval()->ebc() == false) {
+                if (debug_ >= DefaultPrintThresholds::mostN2) {
+                  ExEnv::out0() << indent << "Hij_pair_energy: ij = " << i1 << "," << i2 << " e(coupling) = "
+                                << (2.0 * ( 0.5*(C_0+C_1) * Vij_ij_coupling[ij]
+                                          + 0.5*(C_0-C_1) * Vij_ji_coupling[ij]))
+                                << endl;
+                }
                   Hij_pair_energy += 2.0 * ( 0.5*(C_0+C_1) * Vij_ij_coupling[ij]
                                            + 0.5*(C_0-C_1) * Vij_ji_coupling[ij]);
               }
@@ -2229,8 +2289,8 @@ void MP2R12Energy_Diag::compute_ef12() {
 
               if (this->r12eval()->coupling() == true
                   || this->r12eval()->ebc() == false) {
-                  Hij_pair_energy += 2.0 * ( 0.5*(C_0+C_1) * Vij_ij_coupling[ij]
-                                           + 0.5*(C_0-C_1) * Vij_ji_coupling[ij]);
+                Hij_pair_energy += 2.0 * ( 0.5*(C_0+C_1) * Vij_ij_coupling[ij]
+                                         + 0.5*(C_0-C_1) * Vij_ji_coupling[ij]);
               }
 
               const int i12 = i1 * nocc2_act + i2;

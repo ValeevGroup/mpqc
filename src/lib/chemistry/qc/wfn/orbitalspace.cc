@@ -1228,6 +1228,30 @@ std::pair<std::string, Ref<OrbitalSpace> > sc::make_keyspace_pair(const Ref<
   return std::make_pair(ParsedOrbitalSpaceKey::key(space->id(), spin), space);
 }
 
+std::string sc::new_unique_key(const Ref<OrbitalSpaceRegistry> & oreg)
+{
+  static unsigned int index = 0;
+  const std::string id = "Z";
+  bool found_in_registry;
+  do {
+    ++index;
+    found_in_registry = false;
+    for(int s=AnySpinCase1; s!=InvalidSpinCase1; ++s) {
+      const SpinCase1 spin = static_cast<SpinCase1>(s);
+      std::ostringstream oss;
+      oss << id << index;
+      const std::string trial_key = ParsedOrbitalSpaceKey::key(oss.str(), spin);
+      if (oreg->key_exists(trial_key)) {
+        found_in_registry = true;
+        break;
+      }
+    }
+  } while (found_in_registry);
+  std::ostringstream oss;
+  oss << id << index;
+  return oss.str();
+}
+
 bool sc::operator==(const OrbitalSpace& space1, const OrbitalSpace& space2) {
   if (&space1 == &space2) return true;
   if (!space1.integral()->equiv(space2.integral()) || space1.rank()

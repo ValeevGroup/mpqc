@@ -522,7 +522,10 @@ class R12Technology: virtual public SavableState {
         typedef IntParamsG12::ContractedGeminal ContractedGeminal;
         ContractedGeminal geminal;
         typedef typename Gaussians::const_iterator citer;
-        for (citer g = gtgs.begin(); g != gtgs.end(); ++g) {
+        typedef typename Gaussians::iterator iter;
+        for (iter g = gtgs.begin(); g != gtgs.end(); ++g) {
+          // scale by -1/gamma
+          g->second /= -gamma;
           geminal.push_back(*g);
         }
         std::vector<ContractedGeminal> geminals(1, geminal);

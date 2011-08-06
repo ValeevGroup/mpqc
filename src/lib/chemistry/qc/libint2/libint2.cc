@@ -38,13 +38,10 @@
 #include <libint2/libint2.h>
 #if LIBINT2_SUPPORT_ERI
 #  include <chemistry/qc/libint2/eri.h>
-#endif
-#if LIBINT2_SUPPORT_G12
-# if   LIBINT2_SUPPORT_T1G12
-#  include <chemistry/qc/libint2/g12.h>
-# else
 #  include <chemistry/qc/libint2/g12nc.h>
-# endif
+#endif
+#if LIBINT2_SUPPORT_G12 && LIBINT2_SUPPORT_T1G12
+#  include <chemistry/qc/libint2/g12.h>
 #endif
 #if LIBINT2_SUPPORT_GENG12
 #  include <chemistry/qc/libint2/geng12.h>
@@ -432,33 +429,33 @@ IntegralLibint2::g12_4(const Ref<IntParamsG12>& params)
 Ref<TwoBodyInt>
 IntegralLibint2::g12nc_4(const Ref<IntParamsG12>& params)
 {
-#if LIBINT2_SUPPORT_G12 && !LIBINT2_SUPPORT_T1G12
+#if LIBINT2_SUPPORT_ERI
   return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_,
                                TwoBodyOperSet::G12NC, static_cast<IntParams*>(params.pointer()));
 #else
-  throw InputError("IntegralLibint2::g12nc_4() -- libint2 library included in this executable does not support computation of G12NC integrals",__FILE__,__LINE__);
+  throw InputError("IntegralLibint2::g12nc_4() -- libint2 library included in this executable does not support computation of ERI, and hence G12NC, integrals",__FILE__,__LINE__);
 #endif
 }
 
 Ref<TwoBodyThreeCenterInt>
 IntegralLibint2::g12nc_3(const Ref<IntParamsG12>& params)
 {
-#if LIBINT2_SUPPORT_G12 && !LIBINT2_SUPPORT_T1G12
+#if LIBINT2_SUPPORT_ERI
   return new TwoBodyThreeCenterIntLibint2(this, bs1_, bs2_, bs3_, storage_,
                                           TwoBodyOperSet::G12NC, static_cast<IntParams*>(params.pointer()));
 #else
-  throw InputError("IntegralLibint2::g12nc_3() -- libint2 library included in this executable does not support computation of G12NC integrals",__FILE__,__LINE__);
+  throw InputError("IntegralLibint2::g12nc_3() -- libint2 library included in this executable does not support computation of ERI, and hence G12NC, integrals",__FILE__,__LINE__);
 #endif
 }
 
 Ref<TwoBodyTwoCenterInt>
 IntegralLibint2::g12nc_2(const Ref<IntParamsG12>& params)
 {
-#if LIBINT2_SUPPORT_G12 && !LIBINT2_SUPPORT_T1G12
+#if LIBINT2_SUPPORT_ERI
   return new TwoBodyTwoCenterIntLibint2(this, bs1_, bs2_, storage_,
                                         TwoBodyOperSet::G12NC, static_cast<IntParams*>(params.pointer()));
 #else
-  throw InputError("IntegralLibint2::g12nc_2() -- libint2 library included in this executable does not support computation of G12NC integrals",__FILE__,__LINE__);
+  throw InputError("IntegralLibint2::g12nc_2() -- libint2 library included in this executable does not support computation of ERI, and hence G12NC, integrals",__FILE__,__LINE__);
 #endif
 }
 

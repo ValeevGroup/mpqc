@@ -55,7 +55,14 @@ PsiCC_PT2R12::PsiCC_PT2R12(const Ref<KeyVal>&keyval) :
   if (!replace_Lambda_with_T_)
     throw FeatureNotImplemented("PsiCC_PT2R12::PsiCC_PT2R12() -- cannot properly use Lambdas yet",__FILE__,__LINE__);
 
-  Ref<WavefunctionWorld> world = new WavefunctionWorld(keyval, this);
+  // if world not given, make this the center of a new World
+  Ref<WavefunctionWorld> world; world << keyval->describedclassvalue("world", KeyValValueRefDescribedClass(0));
+  if (world.null())
+    world = new WavefunctionWorld(keyval);
+  if (world.null())
+    throw InputError("PT2R12 requires a WavefunctionWorld", __FILE__, __LINE__, "world");
+  if (world->wfn() == 0) world->set_wfn(this);
+
   Ref<RefWavefunction> refinfo = RefWavefunctionFactory::make(world, this->reference(), false,
                                                               this->nfzc(), this->nfzv());
   r12world_ = new R12WavefunctionWorld(keyval, refinfo);

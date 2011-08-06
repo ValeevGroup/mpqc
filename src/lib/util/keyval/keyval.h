@@ -357,6 +357,13 @@ class AssignedKeyVal: public KeyVal {
 
     /// Erase all of the stored assignments.
     void clear();
+
+    template <typename ValueType>
+    static Ref<AssignedKeyVal> instance(const char* key, const ValueType& value) {
+      Ref<AssignedKeyVal> result;
+      result->assign(key,value);
+      return result;
+    }
 };
 
 /** StringKeyVal is a base class for KeyVal implementations

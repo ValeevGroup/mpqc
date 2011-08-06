@@ -239,7 +239,7 @@ class LMP2: public LCorr {
 
         <table border="1">
 
-        <tr><td>Keyword<td>Type<td>Default<td>Description
+        <tr><td>%Keyword<td>Type<td>Default<td>Description
 
         <tr><td><tt>reference</tt><td>object<td>none<td> Gives an object that
         specializes OneBodyWavefunction which can be used as a reference LMP2

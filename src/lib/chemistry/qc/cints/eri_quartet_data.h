@@ -143,7 +143,7 @@ inline void EriCints::eri_quartet_data_(prim_data *Data, double scale)
 
 }
 
-#endif
+#endif // header guard
 
 // Local Variables:
 // mode: c++

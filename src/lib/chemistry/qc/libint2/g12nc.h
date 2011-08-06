@@ -38,7 +38,6 @@
 #include <chemistry/qc/libint2/int2e.h>
 #include <libint2/libint2.h>
 
-#if LIBINT2_SUPPORT_G12
 #ifndef _chemistry_qc_libint2_g12nc_h
 #define _chemistry_qc_libint2_g12nc_h
 
@@ -70,6 +69,9 @@ class G12NCLibint2: public Int2eLibint2 {
     ContractedGeminal geminal_bra_;
     // the geminal in the ket (can be null)
     ContractedGeminal geminal_ket_;
+
+    // types of integrals that can be computed
+    enum OperType {coulomb, f12_coulomb, f12, f12_2, f12_T1_f12};
     
     // Storage for target integrals
     double *target_ints_buffer_[num_te_types_];
@@ -102,8 +104,12 @@ class G12NCLibint2: public Int2eLibint2 {
       int am;
     } quartet_info_;
     typedef Libint_t prim_data;
-    void g12nc_quartet_data_(prim_data *Data, double scale, double gamma, double r12_2_g12_pfac = 1.0,
-			     bool eri_only = false);
+
+    /// initializes Data for a given otype
+    /// if otype -- coulomb gbra and gket can be 0, etc.
+    void g12nc_quartet_data_(prim_data *Data, double scale, OperType otype,
+                             const ContractedGeminal* gbra,
+                             const ContractedGeminal* gket);
     /*--- Compute engines ---*/
     std::vector<Libint_t> Libint_;
     Ref<Fjt> Fm_Eval_;
@@ -111,8 +117,8 @@ class G12NCLibint2: public Int2eLibint2 {
     class ExpensiveMath {
     public:
       ExpensiveMath();
-      double fac[4*LIBINT2_MAX_AM_R12kG12+1];
-      double bc[4*LIBINT2_MAX_AM_R12kG12+1][4*LIBINT2_MAX_AM_R12kG12+1];
+      double fac[4*LIBINT2_MAX_AM_ERI+1];
+      double bc[4*LIBINT2_MAX_AM_ERI+1][4*LIBINT2_MAX_AM_ERI+1];
     };
     ExpensiveMath ExpMath_;
   
@@ -147,7 +153,6 @@ class G12NCLibint2: public Int2eLibint2 {
 #include <chemistry/qc/libint2/g12nc_quartet_data.h>
 
 #endif // header guard
-#endif // if LIBINT2_SUPPORT_G12
 
 // Local Variables:
 // mode: c++

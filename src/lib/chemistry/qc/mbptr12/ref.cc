@@ -323,12 +323,16 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const bool doscreen, const double o
   std::vector<bool> uocc_act_mask(nmo, false);
   std::vector<bool> active = old_active;
   RefSCMatrix coefs = old_coefs->copy();
-#if 1
-  OBS_mo_ordm.print(prepend_spincase(AlphaBeta, "poporbitals: OBS_mo_ordm").c_str());
-  old_coefs.print(prepend_spincase(AlphaBeta, "poporbitals: old_coefs").c_str());
-  coefs.print(prepend_spincase(AlphaBeta, "poporbitals: copied coefs").c_str());
-  energies.print(prepend_spincase(AlphaBeta, "poporbitals: energies").c_str());
-#endif
+  const bool debugprint = false;
+
+  ExEnv::out0() << "Enterted constructor for screened orbital space\n\n";
+  if(debugprint)
+  {
+    OBS_mo_ordm.print(prepend_spincase(AlphaBeta, "poporbitals: OBS_mo_ordm").c_str());
+    old_coefs.print(prepend_spincase(AlphaBeta, "poporbitals: old_coefs").c_str());
+    coefs.print(prepend_spincase(AlphaBeta, "poporbitals: copied coefs").c_str());
+    energies.print(prepend_spincase(AlphaBeta, "poporbitals: energies").c_str());
+  }
   const int num_ao = coefs.coldim().n();
   Ref<SCBlockInfo> blockinfo = coefs.coldim()->blocks();
   assert(nmo == blockinfo->nelem());
@@ -387,13 +391,14 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const bool doscreen, const double o
     RefSCMatrix VV = occ_act_blockmat->clone();
     RefDiagSCMatrix DD = local_kit->diagmatrix(dim); // the matrix is a postive-semidefinite matrix, do SVD
     occ_act_blockmat->svd_this(UU,DD,VV);
-#if 1
-    ExEnv::out0() << "block number: " << i << "\n";
-    UU.print(prepend_spincase(AlphaBeta, "poporbitals: UU").c_str());
-    DD.print(prepend_spincase(AlphaBeta, "poporbitals: DD").c_str());
-    VV.print(prepend_spincase(AlphaBeta, "poporbitals: VV").c_str());
-    (UU*UU.t()).print(prepend_spincase(AlphaBeta, "poporbitals: UU prod").c_str());
-#endif
+    if(debugprint)
+    {
+      ExEnv::out0() << "block number: " << i << "\n";
+      UU.print(prepend_spincase(AlphaBeta, "poporbitals: UU").c_str());
+      DD.print(prepend_spincase(AlphaBeta, "poporbitals: DD").c_str());
+      VV.print(prepend_spincase(AlphaBeta, "poporbitals: VV").c_str());
+      (UU*UU.t()).print(prepend_spincase(AlphaBeta, "poporbitals: UU prod").c_str());
+    }
     if(doscreen)
     {
       for (int xx = 0; xx < num_occ_act; ++xx)
@@ -424,10 +429,11 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const bool doscreen, const double o
     } // one block done
   }//done constructing the new AO-MO coefs
 
-#if 1
-    ExEnv::out0() << __FILE__ << ": " << __LINE__ << "\n";
-    coefs.print(prepend_spincase(AlphaBeta, "poporbitals: coefs").c_str());
-#endif
+  if(debugprint)
+  {
+      ExEnv::out0() << __FILE__ << ": " << __LINE__ << "\n";
+      coefs.print(std::string("poporbitals: coefs").c_str());
+  }
   //here we can not simply call the previous constructor, since the orbital registry will complain ('id' conflicts)
   // so, we simply add '-' to each id to distinguish
   // with updated 'active', we reset occ_act_mask, which is responsible for ggspace, etc
@@ -554,6 +560,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const bool doscreen, const double o
   occ_sb_->print_detail();
   uocc_sb_->print_detail();
 #endif
+  ExEnv::out0() << "Exited constructor for screened orbital space\n";
 }
 
 PopulatedOrbitalSpace::PopulatedOrbitalSpace(StateIn& si) : SavableState(si) {

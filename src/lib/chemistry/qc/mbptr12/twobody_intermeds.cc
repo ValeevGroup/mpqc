@@ -346,8 +346,9 @@ R12IntEval::V_genref_spinfree(const Ref<OrbitalSpace>& p1,
                    const Ref<OrbitalSpace>& p2)
 {
   assert(r12world()->spinadapted());
+  ExEnv::out0() << std::endl << std::endl << indent << "Entered V_genref_spinfree\n\n";
 
-  const bool debugprint = true;
+  const bool debugprint = false;
   Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
 
   const bool p1_eq_p2 = (p1 == p2);
@@ -433,6 +434,7 @@ R12IntEval::V_genref_spinfree(const Ref<OrbitalSpace>& p1,
   if(p1_eq_p2) symmetrize<false>(V,V,GG1, p1);
   tim.exit();
   if (debug_ >= DefaultPrintThresholds::O4 || debugprint) V.print(prepend_spincase(AlphaBeta,"Vpqxy genref spinfree: diag+OBS+CABS contribution").c_str());
+  ExEnv::out0() << "\n\n" << indent << "Exited V_genref_spinfree\n\n";
   return V;
 }
 

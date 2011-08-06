@@ -71,7 +71,7 @@ namespace sc {
                             Ref<OrbitalSpace> vbs = 0,
                             Ref<FockBuildRuntime> fbrun = 0
                            );
-      PopulatedOrbitalSpace(const double occ_thres, RefSymmSCMatrix OBS_mo_ordm, const Ref<OrbitalSpaceRegistry>& oreg,
+      PopulatedOrbitalSpace(const bool doscreen, const double occ_thres, RefSymmSCMatrix OBS_mo_ordm, const Ref<OrbitalSpaceRegistry>& oreg,
                                   SpinCase1 spin, const Ref<GaussianBasisSet>& bs,
                                   const Ref<Integral>& integral,
                                   RefSCMatrix& coefs,
@@ -89,6 +89,7 @@ namespace sc {
       const Ref<OrbitalSpace>& orbs() const { return orbs_; }
       const Ref<OrbitalSpace>& occ_sb() const { return occ_sb_; }
       const Ref<OrbitalSpace>& occ_act_sb() const { return occ_act_sb_; }
+      const Ref<OrbitalSpace>& unscreen_occ_act_sb() const { return unscreen_occ_act_sb_; }
       const Ref<OrbitalSpace>& occ() const { return occ_; }
       const Ref<OrbitalSpace>& occ_act() const { return occ_act_; }
       const Ref<OrbitalSpace>& uocc_sb() const { return uocc_sb_; }
@@ -102,6 +103,7 @@ namespace sc {
       Ref<OrbitalSpace> orbs_;
       Ref<OrbitalSpace> occ_sb_;
       Ref<OrbitalSpace> occ_act_sb_;
+      Ref<OrbitalSpace> unscreen_occ_act_sb_; // we keep the unscreened (but rotated) orbitals to use when transformation RDM
       Ref<OrbitalSpace> occ_;
       Ref<OrbitalSpace> occ_act_;
       Ref<OrbitalSpace> uocc_sb_;
@@ -177,6 +179,8 @@ namespace sc {
     const Ref<OrbitalSpace>& occ_sb(SpinCase1 spin = AnySpinCase1) const;
     /// Return the space of symmery-blocked active occupied MOs of the given spin
     const Ref<OrbitalSpace>& occ_act_sb(SpinCase1 spin = AnySpinCase1) const;
+    /// Return the space of symmery-blocked active occupied MOs of the given spin, (orbs rotated but not screened)
+    const Ref<OrbitalSpace>& unscreen_occ_act_sb(SpinCase1 spin = AnySpinCase1) const;
     /// Return the space of occupied MOs of the given spin
     const Ref<OrbitalSpace>& occ(SpinCase1 spin = AnySpinCase1) const;
     /// Return the space of active occupied MOs of the given spin
@@ -194,6 +198,9 @@ namespace sc {
     const Ref<OrbitalSpace>& orig_orbs_sb(SpinCase1 spin = AnySpinCase1) const;
 
     double& occ_thres() {return occ_thres_;}
+    void set_occ_thres(double vv) {occ_thres_ = vv;}
+    bool& do_screen() {return do_screen_;}
+    void set_do_screen(bool screenornot) {do_screen_ = screenornot;}
     Ref<PopulatedOrbitalSpace> & get_poporbspace(SpinCase1 spin = Alpha) {return spinspaces_[spin];}
     Ref<PopulatedOrbitalSpace>& get_screened_poporbspace(SpinCase1 spin = Alpha) {return screened_spinspaces_[spin];}
     /// which DensityFittingRuntime used to compute this reference wave function
@@ -209,6 +216,7 @@ namespace sc {
     bool force_average_AB_rdm1_;
     double occ_thres_; // this parameter is in fact assigned to the value of correlate_min_occ_ of R12WavefunctionWorld, where is a logical
                         // place to define such a variable, since it more belong to the R12 world. However, we need it to control RefWavefunction too.
+    bool do_screen_;
 
 
     /// used to implement set_desired_value_accuracy()

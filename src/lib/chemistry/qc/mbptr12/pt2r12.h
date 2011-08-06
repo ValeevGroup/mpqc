@@ -73,7 +73,6 @@ namespace sc {
       void compute();
       void print(std::ostream& os =ExEnv::out0()) const;
       RefSymmSCMatrix density();
-      int nelectron();
       int spin_polarized();
       int value_implemented() const { return 1; }
       void set_desired_value_accuracy(double acc);
@@ -87,6 +86,7 @@ namespace sc {
                                   // can be done (since ggspace etc already use rotated and screened orbitals).
 
       void obsolete();
+      int nelectron();
 
     private:
 

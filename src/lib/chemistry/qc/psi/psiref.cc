@@ -406,7 +406,7 @@ PsiRASCI_RefWavefunction::init_spaces()
   if((! screened_space_init_ed_) and fabs(occ_thres()) > sc::PT2R12::zero_occupation)
   {  // must get spin-free RDM and orbital space coefficients in the original MO basis, since we are constructing new ones.
     RefSymmSCMatrix OBS_mo_ordm = this->orig_ordm_orbs_sb(Alpha) + this->orig_ordm_orbs_sb(Beta);
-    screened_spinspaces_[Alpha] = new PopulatedOrbitalSpace(occ_thres(), OBS_mo_ordm, oreg, AnySpinCase1, bs, integral, evecs_ao,
+    screened_spinspaces_[Alpha] = new PopulatedOrbitalSpace(do_screen(), occ_thres(), OBS_mo_ordm, oreg, AnySpinCase1, bs, integral, evecs_ao,
                                                             occs, actmask, evals, moorder);
     screened_spinspaces_[Beta] = screened_spinspaces_[Alpha];
     screened_space_init_ed_ = true;

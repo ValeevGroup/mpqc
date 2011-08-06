@@ -1471,6 +1471,20 @@ R12IntEval::gamma_p_p_av() {
   return gamma_p_p_[Alpha];
 }
 
+const Ref<OrbitalSpace>&
+R12IntEval::gamma_m_m_av() {
+  assert(r12world()->spinadapted());
+  if (gamma_m_m_[Alpha].null()) {
+    const Ref<OrbitalSpace>& extspace = this->occ(Alpha);
+    const Ref<OrbitalSpace>& intspace = this->occ(Alpha);
+    std::string id = extspace->id();  id += "_gamma(";  id += intspace->id();  id += ")";
+    std::string name = "gamma-weighted space";
+    gamma_m_m_[Alpha] = new OrbitalSpace(id, name, extspace, intspace->coefs() * this->ordm_occ_av(),
+                                     intspace->basis());
+    this->orbital_registry()->add(make_keyspace_pair(gamma_m_m_[Alpha]));
+  }
+  return gamma_m_m_[Alpha];
+}
 
 const Ref<OrbitalSpace>&
 R12IntEval::gammaFgamma_p_p(SpinCase1 S) {
@@ -2494,6 +2508,14 @@ R12IntEval::ordm_av() const {
 //  return ordm_[Alpha] ;
 }
 
+RefSymmSCMatrix
+R12IntEval::ordm_occ_av() const {
+  assert(r12world()->spinadapted());
+  RefSymmSCMatrix ordm_av = r12world()->ref()->ordm_occ_sb(Alpha).copy();
+  ordm_av.accumulate(r12world()->ref()->ordm_occ_sb(Beta));
+  ordm_av.scale(0.5);
+  return ordm_av;
+}
 
 bool
 R12IntEval::bc() const {

@@ -159,6 +159,7 @@ class R12IntEval : virtual public SavableState {
   Ref<OrbitalSpace> F_A_A_[NSpinCases1];
   Ref<OrbitalSpace> F_p_P_[NSpinCases1];
   Ref<OrbitalSpace> gamma_p_p_[NSpinCases1];
+  Ref<OrbitalSpace> gamma_m_m_[NSpinCases1];
   Ref<OrbitalSpace> gammaFgamma_p_p_[NSpinCases1];
   Ref<OrbitalSpace> Fgamma_p_P_[NSpinCases1];
 
@@ -706,7 +707,7 @@ public:
   /// Returns the OBS space for spin case S
   const Ref<OrbitalSpace>& DEPRECATED orbs(SpinCase1 S) const;
   // same as GGspace()
-  const Ref<OrbitalSpace>& DEPRECATED xspace(SpinCase1 S) const;
+  const Ref<OrbitalSpace>&  DEPRECATED xspace(SpinCase1 S) const;
   /// Returns the geminal-generating orbital space for spin case S
   const Ref<OrbitalSpace>& GGspace(SpinCase1 S) const;
   /// Returns the space for spin case S from which geminal-generating substitutions are allowed
@@ -717,6 +718,7 @@ public:
   RefSymmSCMatrix ordm() const;
   /// Returns the average 1-RDM in the ``MO'' basis (i.e. that provided by orbs() ): (alpha-rdm1 + beta-rdm2)/2
   RefSymmSCMatrix ordm_av() const;
+  RefSymmSCMatrix ordm_occ_av() const;
   /// Form <P|h+J|x> space
   const Ref<OrbitalSpace>& hj_x_P(SpinCase1 S);
   /// Form <A|h+J|x> space
@@ -862,6 +864,7 @@ public:
   const Ref<OrbitalSpace>& gamma_p_p(SpinCase1 S);
   /// Form spin-average <p|gamma|p> space using average (instead of total) rdm.
     const Ref<OrbitalSpace>& gamma_p_p_av();
+    const Ref<OrbitalSpace>& gamma_m_m_av();
   /// Form <p|gammaFgamma|p> space
   const Ref<OrbitalSpace>& gammaFgamma_p_p(SpinCase1 S);
   const Ref<OrbitalSpace>& gammaFgamma_p_p();
@@ -931,13 +934,14 @@ public:
                    // leave at default to use R12Technology's pauli flag, else set to 0 or 1
                    int override_pauli = -1);
 
-  /** Compute V using ABS/ABS+ approach */
-  RefSCMatrix V_abs(SpinCase2 spincase2,
-                    const Ref<OrbitalSpace>& p,
-                    const Ref<OrbitalSpace>& q);
-  /** Compute V using CABS/CABS+ approach */
+
+  /** Compute V intermediates using CABS/CABS+ approach */
   RefSCMatrix V_cabs(SpinCase2 spincase2,
                      const Ref<OrbitalSpace>& p,
+                     const Ref<OrbitalSpace>& q);
+
+  /** Compute V intermediates in SF-[2]R12 */
+  RefSCMatrix V_genref_spinfree(const Ref<OrbitalSpace>& p,
                      const Ref<OrbitalSpace>& q);
 
   /// returns the OrbitalSpaceRegistry object

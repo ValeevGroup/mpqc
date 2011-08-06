@@ -76,7 +76,9 @@ R12WavefunctionWorld::R12WavefunctionWorld(
   // Make sure can use the integral factory for R12 calcs
   r12tech_->check_integral_factory(integral());
   correlate_min_occ_ = keyval->doublevalue("correlate_min_occ", KeyValValuedouble(0.0));
-  ref_->occ_thres() = correlate_min_occ_; // somewhat awkward ...
+  ref_->set_occ_thres(correlate_min_occ_);
+  do_screen_ = keyval->booleanvalue("do_screen",KeyValValueboolean(true));
+  ref_->set_do_screen(do_screen_);
 }
 
 R12WavefunctionWorld::R12WavefunctionWorld(StateIn& si) : SavableState(si)

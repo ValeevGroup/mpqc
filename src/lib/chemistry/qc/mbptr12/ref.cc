@@ -302,7 +302,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
 
 
 
-PopulatedOrbitalSpace::PopulatedOrbitalSpace(const double occ_thres, RefSymmSCMatrix OBS_mo_ordm,
+PopulatedOrbitalSpace::PopulatedOrbitalSpace(const bool doscreen, const double occ_thres, RefSymmSCMatrix OBS_mo_ordm,
                                              const Ref<OrbitalSpaceRegistry>& oreg,
                                              SpinCase1 spin,
                                              const Ref<GaussianBasisSet>& bs,
@@ -344,6 +344,8 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const double occ_thres, RefSymmSCMa
       uocc_act_mask[i] = active[i];
     }
   }
+
+  std::vector<bool> unscreen_occ_act_mask = occ_act_mask;
 
   // if VBS is given, recompute the masks for the virtuals
   if (vbs.nonnull())
@@ -392,14 +394,15 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const double occ_thres, RefSymmSCMa
     VV.print(prepend_spincase(AlphaBeta, "poporbitals: VV").c_str());
     (UU*UU.t()).print(prepend_spincase(AlphaBeta, "poporbitals: UU prod").c_str());
 #endif
-#if 1
-    for (int xx = 0; xx < num_occ_act; ++xx)
+    if(doscreen)
     {
-      int indd = occ_act_orb_inds[xx];
-      if(active[indd]) //without this check, core orbitals will be made active
-        active[indd] = (DD->get_element(xx) > occ_thres)? true:false;
-    } // use eigenvalue to modify 'active', which is a vector to mask/select 'active' orbitals (in practice, the occ_act part defines gg/GG)
-#endif
+      for (int xx = 0; xx < num_occ_act; ++xx)
+      {
+        int indd = occ_act_orb_inds[xx];
+        if(active[indd]) //without this check, core orbitals will be made active
+          active[indd] = (DD->get_element(xx) > occ_thres)? true:false;
+      } // use eigenvalue to modify 'active', which is a vector to mask/select 'active' orbitals (in practice, the occ_act part defines gg/GG)
+    }
     for (int i2 = 0; i2 < num_occ_act; ++i2) //i2: the new MO index
     {
       for (int j2 = 0; j2 < num_ao; ++j2) //j2: the new AO index
@@ -454,10 +457,6 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const double occ_thres, RefSymmSCMa
                                         orbs_sb_,
                                         eorder_increasing);
   }
-#if 1
-   ExEnv::out0() << __FILE__ << ": " << __LINE__ << "\n";
-   orbs_->coefs().print(prepend_spincase(AlphaBeta, "poporbitals: orbs_").c_str());
-#endif
   {
     ostringstream oss;
     oss << prefix << " occupied symmetry-blocked MOs";
@@ -478,7 +477,12 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const double occ_thres, RefSymmSCMa
     std::string id = ParsedOrbitalSpaceKey::key(std::string("-i(sym)"),spin);
     occ_act_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, occ_act_mask);
   }
-
+  {
+    ostringstream oss;
+    oss << prefix << " unscreened active occupied symmetry-blocked MOs";
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("-i(sym)"),spin);
+    unscreen_occ_act_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, unscreen_occ_act_mask);
+  }
   {
     ostringstream oss;
     oss << prefix << " active occupied MOs";
@@ -815,6 +819,21 @@ RefWavefunction::occ_act_sb(SpinCase1 s) const
   }
   else
     return spinspaces_[s]->occ_act_sb();
+}
+
+const Ref<OrbitalSpace>&
+RefWavefunction::unscreen_occ_act_sb(SpinCase1 s) const
+{
+  init();
+  s = valid_spincase(s);
+  if(occ_thres_ >sc::PT2R12::zero_occupation)
+  {
+    if(screened_space_init_ed_) return screened_spinspaces_[s]->unscreen_occ_act_sb();
+    else
+      throw ProgrammingError("screened orb space should have not been built", __FILE__,__LINE__);
+  }
+  else
+    throw ProgrammingError("this function should be called only if doing screening", __FILE__,__LINE__);
 }
 
 const Ref<OrbitalSpace>&

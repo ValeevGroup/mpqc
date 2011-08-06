@@ -1051,19 +1051,20 @@ RefSCMatrix PT2R12::V_genref_projector2() {
   RefSCMatrix V_genref = localkit->matrix(r12eval_->dim_GG(AlphaBeta),r12eval_->dim_gg(AlphaBeta));
   V_genref.assign(0.0);
 
+  Ref<OrbitalSpace> occspace = r12world()->ref()->occ(Alpha);
   Ref<OrbitalSpace> gg_space = r12eval_->ggspace(Alpha);
 
-  RefSCMatrix V_intermed = r12eval_->V(); // V_intermed(GG, gg)
+
+  RefSCMatrix V_intermed = r12eval_->V_genref_spinfree(occspace, occspace);
   V_intermed.scale(0.5);
-  RefSCMatrix tpdm = rdm2_sf_4spaces(gg_space, gg_space, gg_space, gg_space);
+  RefSCMatrix tpdm = rdm2_sf_4spaces(occspace, occspace, gg_space, gg_space);
   V_genref.accumulate(V_intermed * tpdm);
 
 #if 1
   ExEnv::out0() << __FILE__ << __LINE__ << "\n";
-  SpinCase2 pairspin = AlphaBeta;
-  V_intermed.print(prepend_spincase(pairspin, "V(in PT2R12::V_genref_projector2)").c_str());
-  tpdm.print(prepend_spincase(pairspin, "gamma(in PT2R12::V_genref_projector2)").c_str());
-  V_genref.print(prepend_spincase(pairspin, "V.gamma(in PT2R12::V_genref_projector2)").c_str());
+  V_intermed.print(prepend_spincase(AlphaBeta, "V(in PT2R12::V_genref_projector2)").c_str());
+  tpdm.print(std::string("gamma(in PT2R12::V_genref_projector2)").c_str());
+  V_genref.print(prepend_spincase(AlphaBeta, "V.gamma(in PT2R12::V_genref_projector2)").c_str());
 #endif
 
   return(V_genref);
@@ -1546,25 +1547,35 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
     const double R12min = - E_V_t_T*E_V_t_T/(4 * Btotal);
     const double deviation = 1- E_total/R12min;
     ExEnv::out0() << std::endl << std::endl;
-    if(debug_ == 1){
+#define only_include_V false //for debugging
+#if only_include_V
       HylleraasMatrix.assign(0.0);
       HylleraasMatrix.accumulate(V_t_T);
-      ExEnv::out0() << indent << "Now only V term computed; others zeroed" << std::endl;
-    }
+      ExEnv::out0() << indent << "Now only V term computed; others zeroed" << std::endl << std::endl;
+#endif
     ExEnv::out0() << indent << "individual contributions::" << std::endl;
     ExEnv::out0() << indent << scprintf("V:                        %17.12lf", E_V_t_T) << std::endl;
     ExEnv::out0() << indent << scprintf("B'(0):                    %17.12lf", E_TBTG) << std::endl;
     ExEnv::out0() << indent << scprintf("B'(X):                    %17.12lf", E_Xpart) << std::endl;
     ExEnv::out0() << indent << scprintf("B remain:                 %17.12lf", E_others) << std::endl;
-    ExEnv::out0() << indent << scprintf("VBratio remain:           %17.12lf", VBratio) << std::endl;
-    ExEnv::out0() << indent << scprintf("R12 min:                  %17.12lf", R12min) << std::endl;
-    ExEnv::out0() << indent << scprintf("Spin Free Hylleraas:      %17.12lf", E_total) << std::endl;
+    ExEnv::out0() << indent << scprintf("VBratio remain:           %17.12lf", VBratio) << std::endl << std::endl;
+    ExEnv::out0() << indent << scprintf("quadratic min:            %17.12lf", R12min) << std::endl;
+    ExEnv::out0() << indent << scprintf("Hylleraas:                %17.12lf", E_total) << std::endl;
     ExEnv::out0() << indent << scprintf("deviation percentage:     %17.12lf", deviation) << std::endl << std::endl << std::endl;
   }
-
-//#if 0
-//  HylleraasMatrix.assign(0.0)
-//#endif
+  if(fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation and r12world()->ref()->do_screen())
+  {
+    const int total_active_occ = r12world()->ref()->unscreen_occ_act_sb(Alpha)->rank();
+    const int survive_active_occ = r12world()->ref()->occ_act_sb(Alpha)->rank();
+    const double kept = double(survive_active_occ)/double(survive_active_occ);
+    const double filter = 1 -kept;
+    ExEnv::out0() << std::endl << std::endl;
+    ExEnv::out0() << indent << "ORB SCREENING INFO:" << std::endl;
+    ExEnv::out0() << indent << scprintf("total corre orbs:         %12d", total_active_occ) << std::endl;
+    ExEnv::out0() << indent << scprintf("screen corre orbs:        %12d", survive_active_occ) << std::endl;
+    ExEnv::out0() << indent << scprintf("ratio of kept:            %17.12lf", kept) << std::endl;
+    ExEnv::out0() << indent << scprintf("ratio of filter:          %17.12lf", filter) << std::endl;
+  }
 
   const double energy = compute_energy(HylleraasMatrix, AlphaBeta);
   return energy;
@@ -1707,15 +1718,14 @@ RefSCMatrix sc::PT2R12::transform_MO() //transformation matrix between occupied 
 #if 1
   mo_density.print(prepend_spincase(AlphaBeta, "transform_MO: mo_density (occ)").c_str());
 #endif
-  Ref<PopulatedOrbitalSpace> t_orbs = r12world()->ref()->get_screened_poporbspace(Alpha);
-  Ref<OrbitalSpace> occ_act = t_orbs->occ_act_sb();
-  Ref<OrbitalSpace> occ = t_orbs->occ_sb();
-  std::vector<int> map1 = map(*occ, *occ_act);
+  Ref<OrbitalSpace> unscreen_occ_act = r12world()->ref()->unscreen_occ_act_sb();
+  Ref<OrbitalSpace> occ = r12world()->ref()->occ_sb();
+  std::vector<int> map1 = map(*occ, *unscreen_occ_act);
 #if 1
   occ->coefs().print(prepend_spincase(AlphaBeta, "transform_MO: occ coeffients").c_str());
-  occ_act->coefs().print(prepend_spincase(AlphaBeta, "transform_MO: occ_act coeffients").c_str());
+  unscreen_occ_act->coefs().print(prepend_spincase(AlphaBeta, "transform_MO: unscreened occ_act coeffients").c_str());
 #endif
-  int num_occ_act = occ_act->rank();
+  int num_occ_act = unscreen_occ_act->rank();
   int num_occ = occ->rank();
   int rdmdim = mo_density->n();
   assert(rdmdim == num_occ);
@@ -1852,9 +1862,7 @@ RefSCMatrix sc::PT2R12::rdm1_sf_2spaces(const Ref<OrbitalSpace> b1space, const R
   // 1. to avoid potential problems and for cleanness, all orb spaces should be accessed through r12eval_->r12world_->ref_->spinspaces_ (or screened_spinspaces_);
   // 2. take care of screening
   Ref<OrbitalSpace> pdmspace;
-  const bool screen = (get_r12eval()->r12world()->correlate_min_occ_ > 0);
-  if(screen) pdmspace = get_r12eval()->r12world()->ref()->get_screened_poporbspace()->orbs_sb();
-  else pdmspace = get_r12eval()->r12world()->ref()->get_poporbspace()->orbs_sb();
+  pdmspace = get_r12eval()->r12world()->ref()->orbs_sb();
 
   const unsigned int n_pdmspace = pdmspace->rank();
 
@@ -1965,31 +1973,21 @@ RefSCMatrix sc::PT2R12::rdm2_sf_4spaces(const Ref<OrbitalSpace> b1space, const R
 
   const unsigned int n_pdmspace = pdmspace->rank();
 
-#if 1
-  if(r12world_->spinadapted() and fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
+#if 0
+  if(fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
   {
     // first test 1rdm, which shall be diagonal in our test case
     RefSymmSCMatrix ABX = rdm1_sf();
     ExEnv::out0() << __FILE__ << ": " << __LINE__ << "\n";
     ExEnv::out0() << "ordm dimension: " << ABX->n() << "\n";
-    ABX.print(prepend_spincase(AlphaBeta, "trans ordm").c_str());
-
-    RefSCMatrix old_mocoef = r12world()->ref()->get_poporbspace()->orbs()->coefs();
-    ExEnv::out0() << __FILE__ << ": " << __LINE__ << "\n";
-    ExEnv::out0() << "print old Mo coefs of dimension: " << old_mocoef->ncol() << " (AO dimensin: )" << old_mocoef->nrow() << "\n";
-    old_mocoef.print(prepend_spincase(AlphaBeta, "old mo").c_str());
+    ABX.print(prepend_spincase(AlphaBeta, "ordm").c_str());
 
     RefSCMatrix old_mocoef2 = r12world()->ref()->get_poporbspace()->orbs_sb()->coefs();
     ExEnv::out0() << __FILE__ << ": " << __LINE__ << "\n";
     ExEnv::out0() << "print old symmetry-block Mo coefs of dimension: " << old_mocoef2->ncol() << " (AO dimensin: )" << old_mocoef2->nrow() << "\n";
     old_mocoef2.print(prepend_spincase(AlphaBeta, "symm old mo").c_str());
 
-    RefSCMatrix new_mocoef = r12world()->ref()->get_screened_poporbspace()->orbs()->coefs();
-    ExEnv::out0() << __FILE__ << ": " << __LINE__ << "\n";
-    ExEnv::out0() << "print new Mo coefs of dimension: " << new_mocoef->ncol() << " (AO dimensin: )" << new_mocoef->nrow() << "\n";
-    new_mocoef.print(prepend_spincase(AlphaBeta, "new mo").c_str());
-
-    RefSCMatrix new_mocoef2 = r12world()->ref()->get_screened_poporbspace()->orbs_sb()->coefs();
+    RefSCMatrix new_mocoef2 = r12world()->ref()->orbs_sb()->coefs();
     ExEnv::out0() << __FILE__ << ": " << __LINE__ << "\n";
     ExEnv::out0() << "print new symmetry-block Mo coefs of dimension: " << new_mocoef2->ncol() << " (AO dimensin: )" << new_mocoef2->nrow() << "\n";
     new_mocoef2.print(prepend_spincase(AlphaBeta, "symm new mo").c_str());
@@ -2176,162 +2174,7 @@ RefSymmSCMatrix sc::PT2R12::rdm2(SpinCase2 spin)
   return convert_to_local_kit(rdm2_->scmat(spin));
 }
 
-RefSymmSCMatrix sc::PT2R12::lambda2(SpinCase2 spin)
-{
-  if(r12world_->spinadapted() and fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
-     throw ProgrammingError("this function hasn't been examined to take care of the screening; at least 'orbs' should be specified using r12int_eval_...", __FILE__,__LINE__);
-  // since LocalSCMatrixKit is used everywhere, convert to Local kit
-  return convert_to_local_kit(rdm2_->cumulant()->scmat(spin));
-}
 
-RefSymmSCMatrix sc::PT2R12::rdm1_gg(SpinCase1 spin)
-{
-  if(r12world_->spinadapted() and fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
-    throw ProgrammingError("this function hasn't been examined to take care of the screening; at least 'orbs' should be specified using r12int_eval_...", __FILE__,__LINE__);
-  RefSymmSCMatrix rdm = this->rdm1(spin);
-  Ref<OrbitalSpace> orbs = rdm1_->orbs(spin);
-  Ref<OrbitalSpace> gspace = r12eval_->ggspace(spin);
-  // if density is already in required spaces?
-  if (*orbs == *gspace)
-    return rdm;
-
-  Ref<LocalSCMatrixKit> local_kit = new LocalSCMatrixKit;
-  RefSymmSCMatrix result = local_kit->symmmatrix(gspace->dim());
-  result.assign(0.0);
-  // it's possible for gspace to be a superset of orbs
-  std::vector<int> omap = map(*orbs, *gspace);
-  const int ng = gspace->rank();
-  
-  for(int R=0; R<ng; ++R)
-    for(int C=0; C<=R; ++C) {
-      const int rr = omap[R];
-      const int cc = omap[C];
-      if (rr == -1 || cc == -1) continue;
-      const double rdm_R_C = rdm.get_element(rr, cc);
-      result.set_element(R, C, rdm_R_C);
-    }
-
-  return result;
-}
-
-RefSymmSCMatrix sc::PT2R12::rdm2_gg(SpinCase2 spin)
-{
-  if(r12world_->spinadapted() and fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
-     throw ProgrammingError("this function hasn't been examined to take care of the screening; at least 'orbs' should be specified using r12int_eval_...", __FILE__,__LINE__);
-  RefSymmSCMatrix rdm = this->rdm2(spin);
-  return this->_rdm2_to_gg(spin, rdm);
-}
-
-RefSymmSCMatrix sc::PT2R12::lambda2_gg(SpinCase2 spin)
-{
-  RefSymmSCMatrix lambda = this->lambda2(spin);
-  return this->_rdm2_to_gg(spin, lambda);
-}
-
-RefSymmSCMatrix sc::PT2R12::phi_gg(SpinCase2 spin)
-{
-  RefSymmSCMatrix phi = this->phi_cumulant(spin);
-  return this->_rdm2_to_gg(spin, phi);
-}
-
-RefSymmSCMatrix sc::PT2R12::_rdm2_to_gg(SpinCase2 spin,
-                                        RefSymmSCMatrix rdm)
-{
-  if(r12world_->spinadapted() and fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
-     throw ProgrammingError("this function hasn't been examined to take care of the screening; at least 'orbs1/2' should be specified using r12int_eval_...", __FILE__,__LINE__);
-  const SpinCase1 spin1 = case1(spin);
-  const SpinCase1 spin2 = case2(spin);
-  Ref<OrbitalSpace> orbs1 = rdm2_->orbs(spin1);
-  Ref<OrbitalSpace> orbs2 = rdm2_->orbs(spin2);
-  Ref<OrbitalSpace> gspace1 = r12eval_->ggspace(spin1);
-  Ref<OrbitalSpace> gspace2 = r12eval_->ggspace(spin2);
-  // if density is already in required spaces?
-  if (*orbs1 == *gspace1 && *orbs2 == *gspace2)
-    return rdm;
-
-  Ref<LocalSCMatrixKit> local_kit = new LocalSCMatrixKit;
-  RefSymmSCMatrix result = local_kit->symmmatrix(r12eval_->dim_gg(spin));
-  result.assign(0.0);
-  // it's possible for gspace to be a superset of orbs
-  std::vector<int> map1 = map(*orbs1, *gspace1);
-  std::vector<int> map2 = map(*orbs2, *gspace2);
-  SpinMOPairIter UV_iter(gspace1->rank(),gspace2->rank(),spin);
-  SpinMOPairIter PQ_iter(gspace1->rank(),gspace2->rank(),spin);
-  const int nmo = orbs1->rank();
-
-  for(PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {
-    const int P = PQ_iter.i();
-    const int Q = PQ_iter.j();
-    const int PQ = PQ_iter.ij();
-    const int pp = map1[P];
-    const int qq = map2[Q];
-    if (pp == -1 || qq == -1) continue;   // skip if these indices are not in the source rdm2
-    int pq;
-    double pfac_pq = 1.0;
-    switch(spin) {
-      case AlphaBeta: pq = pp * nmo + qq; break;
-      case AlphaAlpha:
-      case BetaBeta:
-        if (pp > qq) {
-          pq = (pp * (pp-1)/2 + qq);
-        }
-        else {
-          pq = (qq * (qq-1)/2 + pp);
-          pfac_pq = -1.0;
-        }
-    }
-
-    for(UV_iter.start(); int(UV_iter); UV_iter.next()) {
-      const int U = UV_iter.i();
-      const int V = UV_iter.j();
-      const int UV = UV_iter.ij();
-      const int uu = map1[U];
-      const int vv = map2[V];
-      if (uu == -1 || vv == -1) continue;   // skip if these indices are not in the source rdm2
-      int uv;
-      double pfac_uv = 1.0;
-      switch(spin) {
-        case AlphaBeta: uv = uu * nmo + vv; break;
-        case AlphaAlpha:
-        case BetaBeta:
-          if (uu > vv) {
-            uv = (uu * (uu-1)/2 + vv);
-          }
-          else {
-            uv = (vv * (vv-1)/2 + uu);
-            pfac_uv = -1.0;
-          }
-      }
-
-      const double rdm_PQ_UV = pfac_pq * pfac_uv * rdm.get_element(pq, uv);
-      result.set_element(PQ, UV, rdm_PQ_UV);
-    }
-  }
-
-#if 0
-  rdm.print(prepend_spincase(spin, "2-rdm (full)").c_str());
-  result.print(prepend_spincase(spin, "2-rdm (occ)").c_str());
-#endif
-
-  return result;
-}
-
-RefSymmSCMatrix sc::PT2R12::density()
-{
-  throw FeatureNotImplemented("PT2R12::density() not yet implemented");
-}
-
-void sc::PT2R12::print(std::ostream & os) const
-{
-  os << indent << "PT2R12:" << endl;
-  os << incindent;
-  os << indent << "nfzc = " << nfzc_ << std::endl;
-  os << indent << "omit_uocc = " << (omit_uocc_ ? "true" : "false") << std::endl;
-  reference_->print(os);
-  r12world()->print(os);
-  Wavefunction::print(os);
-  os << decindent;
-}
 
 void sc::PT2R12::compute()
 {
@@ -2358,6 +2201,8 @@ void sc::PT2R12::compute()
     }
     else // use spin-orbital version
     {
+      if(fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
+         throw ProgrammingError("Due to issue with V_, spin orbital PT2R12 needs to be corrected to work for screening", __FILE__,__LINE__);
       for(int i=0; i<NSpinCases2; i++) // may comment out this part for pure cas
       {
         SpinCase2 pairspin = static_cast<SpinCase2>(i);
@@ -2404,8 +2249,7 @@ void sc::PT2R12::compute()
                                       reference_->energy() + cabs_singles_corre_2b_H0) << endl;
   }
 
-  if(r12world_->spinadapted())
-    {energy_correction_r12 = energy_pt2r12_sf;}
+  if(r12world_->spinadapted()) energy_correction_r12 = energy_pt2r12_sf;
   else
   {
     if (!spin_polarized)
@@ -2463,17 +2307,6 @@ void sc::PT2R12::compute()
   set_energy(energy);
 }
 
-
-int sc::PT2R12::nelectron()
-{
-  return reference_->nelectron();
-}
-
-int sc::PT2R12::spin_polarized()
-{
-  return reference_->spin_polarized();
-}
-
 double sc::PT2R12::compute_energy(const RefSCMatrix &hmat,
                               SpinCase2 pairspin,
                               bool print_pair_energies,
@@ -2509,6 +2342,14 @@ double sc::PT2R12::compute_energy(const RefSCMatrix &hmat,
 #endif
   return energy;
 }
+
+
+int sc::PT2R12::spin_polarized()
+{
+  return reference_->spin_polarized();
+}
+
+
 
 double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
 {
@@ -3067,6 +2908,10 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
   return E_cabs_singles;
 }
 
+RefSymmSCMatrix sc::PT2R12::density()
+{
+  throw FeatureNotImplemented("PT2R12::density() not yet implemented");
+}
 
 void PT2R12::brillouin_matrix() {
   RefSCMatrix fmat[NSpinCases1];
@@ -3234,7 +3079,163 @@ void PT2R12::brillouin_matrix() {
   }
 }
 
+void sc::PT2R12::print(std::ostream & os) const
+{
+  os << indent << "PT2R12:" << endl;
+  os << incindent;
+  os << indent << "nfzc = " << nfzc_ << std::endl;
+  os << indent << "omit_uocc = " << (omit_uocc_ ? "true" : "false") << std::endl;
+  reference_->print(os);
+  r12world()->print(os);
+  Wavefunction::print(os);
+  os << decindent;
+}
 
+RefSymmSCMatrix sc::PT2R12::_rdm2_to_gg(SpinCase2 spin,
+                                        RefSymmSCMatrix rdm)
+{
+  if(r12world_->spinadapted() and fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
+     throw ProgrammingError("this function hasn't been examined to take care of the screening; at least 'orbs1/2' should be specified using r12int_eval_...", __FILE__,__LINE__);
+  const SpinCase1 spin1 = case1(spin);
+  const SpinCase1 spin2 = case2(spin);
+  Ref<OrbitalSpace> orbs1 = rdm2_->orbs(spin1);
+  Ref<OrbitalSpace> orbs2 = rdm2_->orbs(spin2);
+  Ref<OrbitalSpace> gspace1 = r12eval_->ggspace(spin1);
+  Ref<OrbitalSpace> gspace2 = r12eval_->ggspace(spin2);
+  // if density is already in required spaces?
+  if (*orbs1 == *gspace1 && *orbs2 == *gspace2)
+    return rdm;
+
+  Ref<LocalSCMatrixKit> local_kit = new LocalSCMatrixKit;
+  RefSymmSCMatrix result = local_kit->symmmatrix(r12eval_->dim_gg(spin));
+  result.assign(0.0);
+  // it's possible for gspace to be a superset of orbs
+  std::vector<int> map1 = map(*orbs1, *gspace1);
+  std::vector<int> map2 = map(*orbs2, *gspace2);
+  SpinMOPairIter UV_iter(gspace1->rank(),gspace2->rank(),spin);
+  SpinMOPairIter PQ_iter(gspace1->rank(),gspace2->rank(),spin);
+  const int nmo = orbs1->rank();
+
+  for(PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {
+    const int P = PQ_iter.i();
+    const int Q = PQ_iter.j();
+    const int PQ = PQ_iter.ij();
+    const int pp = map1[P];
+    const int qq = map2[Q];
+    if (pp == -1 || qq == -1) continue;   // skip if these indices are not in the source rdm2
+    int pq;
+    double pfac_pq = 1.0;
+    switch(spin) {
+      case AlphaBeta: pq = pp * nmo + qq; break;
+      case AlphaAlpha:
+      case BetaBeta:
+        if (pp > qq) {
+          pq = (pp * (pp-1)/2 + qq);
+        }
+        else {
+          pq = (qq * (qq-1)/2 + pp);
+          pfac_pq = -1.0;
+        }
+    }
+
+    for(UV_iter.start(); int(UV_iter); UV_iter.next()) {
+      const int U = UV_iter.i();
+      const int V = UV_iter.j();
+      const int UV = UV_iter.ij();
+      const int uu = map1[U];
+      const int vv = map2[V];
+      if (uu == -1 || vv == -1) continue;   // skip if these indices are not in the source rdm2
+      int uv;
+      double pfac_uv = 1.0;
+      switch(spin) {
+        case AlphaBeta: uv = uu * nmo + vv; break;
+        case AlphaAlpha:
+        case BetaBeta:
+          if (uu > vv) {
+            uv = (uu * (uu-1)/2 + vv);
+          }
+          else {
+            uv = (vv * (vv-1)/2 + uu);
+            pfac_uv = -1.0;
+          }
+      }
+
+      const double rdm_PQ_UV = pfac_pq * pfac_uv * rdm.get_element(pq, uv);
+      result.set_element(PQ, UV, rdm_PQ_UV);
+    }
+  }
+
+#if 0
+  rdm.print(prepend_spincase(spin, "2-rdm (full)").c_str());
+  result.print(prepend_spincase(spin, "2-rdm (occ)").c_str());
+#endif
+
+  return result;
+}
+
+RefSymmSCMatrix sc::PT2R12::phi_gg(SpinCase2 spin)
+{
+  RefSymmSCMatrix phi = this->phi_cumulant(spin);
+  return this->_rdm2_to_gg(spin, phi);
+}
+
+RefSymmSCMatrix sc::PT2R12::lambda2_gg(SpinCase2 spin)
+{
+  RefSymmSCMatrix lambda = this->lambda2(spin);
+  return this->_rdm2_to_gg(spin, lambda);
+}
+
+RefSymmSCMatrix sc::PT2R12::rdm1_gg(SpinCase1 spin)
+{
+  if(r12world_->spinadapted() and fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
+    throw ProgrammingError("this function hasn't been examined to take care of the screening; at least 'orbs' should be specified using r12int_eval_...", __FILE__,__LINE__);
+  RefSymmSCMatrix rdm = this->rdm1(spin);
+  Ref<OrbitalSpace> orbs = rdm1_->orbs(spin);
+  Ref<OrbitalSpace> gspace = r12eval_->ggspace(spin);
+  // if density is already in required spaces?
+  if (*orbs == *gspace)
+    return rdm;
+
+  Ref<LocalSCMatrixKit> local_kit = new LocalSCMatrixKit;
+  RefSymmSCMatrix result = local_kit->symmmatrix(gspace->dim());
+  result.assign(0.0);
+  // it's possible for gspace to be a superset of orbs
+  std::vector<int> omap = map(*orbs, *gspace);
+  const int ng = gspace->rank();
+
+  for(int R=0; R<ng; ++R)
+    for(int C=0; C<=R; ++C) {
+      const int rr = omap[R];
+      const int cc = omap[C];
+      if (rr == -1 || cc == -1) continue;
+      const double rdm_R_C = rdm.get_element(rr, cc);
+      result.set_element(R, C, rdm_R_C);
+    }
+
+  return result;
+}
+
+RefSymmSCMatrix sc::PT2R12::rdm2_gg(SpinCase2 spin)
+{
+  if(r12world_->spinadapted() and fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
+     throw ProgrammingError("this function hasn't been examined to take care of the screening; at least 'orbs' should be specified using r12int_eval_...", __FILE__,__LINE__);
+  RefSymmSCMatrix rdm = this->rdm2(spin);
+  return this->_rdm2_to_gg(spin, rdm);
+}
+
+RefSymmSCMatrix sc::PT2R12::lambda2(SpinCase2 spin)
+{
+  if(r12world_->spinadapted() and fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
+     throw ProgrammingError("this function hasn't been examined to take care of the screening; at least 'orbs' should be specified using r12int_eval_...", __FILE__,__LINE__);
+  // since LocalSCMatrixKit is used everywhere, convert to Local kit
+  return convert_to_local_kit(rdm2_->cumulant()->scmat(spin));
+}
+
+
+int sc::PT2R12::nelectron()
+{
+  return reference_->nelectron();
+}
 
 double
 PT2R12::energy_recomputed_from_densities() {

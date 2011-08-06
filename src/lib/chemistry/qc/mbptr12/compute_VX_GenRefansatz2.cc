@@ -323,10 +323,10 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_spinfree_() {
   Ref<R12IntEval> thisref(this);
   Timer timer("General reference spin-free VX intermediate evaluator");
 
-  if(r12world()->r12tech()->ansatz()->projector() != R12Technology::Projector_2) {
+  if(r12world()->r12tech()->ansatz()->projector() != R12Technology::Projector_2)
+  {
     throw InputError("R12IntEval::contrib_to_VX_GenRefansatz2_spinfree_() -- this routine works only in combination with R12Technology::Projector_2.",__FILE__,__LINE__);
   }
-
     const bool debug_print = true;
     const Ref<OrbitalSpace>& gg_space = ggspace(Alpha);
     const Ref<OrbitalSpace>& orbs = this->orbs(Alpha);
@@ -338,16 +338,11 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_spinfree_() {
     // for now it's always true since can only use pq products to generate geminals
     const bool gg_in_GG = true;
 
-    const R12Technology::ABSMethod absmethod = r12world()->r12tech()->abs_method();
-    const bool cabs_method = (absmethod ==  R12Technology::ABS_CABS ||
-                    absmethod == R12Technology::ABS_CABSPlus);
-
-    Ref<OrbitalSpace> rispace = r12world()->ribs_space();
-
     /// computing intermediate V
     Timer Vtimer("General reference spin-free V intermediate evaluator");
 
-    if (debug_ >= DefaultPrintThresholds::O4 || debug_print) {
+    if (debug_ >= DefaultPrintThresholds::O4 || debug_print)
+    {
        ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
        V_[AlphaBeta].print("orig V contribution");
      }
@@ -377,10 +372,11 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_spinfree_() {
           (V_[AlphaBeta], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
            -1.0,
            GG_space, GG_space, orbs, orbs,
-           gg_space, gg_space, orbs, orbs,
+           gg_space, gg_space, orbs, orbs, //gg_space should change to occ
            false, tforms_f12, tforms);
     }
-    if (debug_ >= DefaultPrintThresholds::O4 || debug_print) {
+    if (debug_ >= DefaultPrintThresholds::O4 || debug_print)
+    {
       ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
       V_[AlphaBeta].print("V(diag+OBS) contribution");
     }
@@ -420,9 +416,10 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_spinfree_() {
 
     symmetrize<false>(V_[AlphaBeta],V_[AlphaBeta],GG_space,gg_space);
     if (debug_ >= DefaultPrintThresholds::O4 || debug_print)
+    {
       ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
       V_[AlphaBeta].print("V(diag+OBS+ABS) contribution");
-
+    }
     Vtimer.exit();
 
 

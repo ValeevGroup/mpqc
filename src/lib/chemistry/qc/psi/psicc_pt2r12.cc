@@ -60,7 +60,8 @@ PsiCC_PT2R12::PsiCC_PT2R12(const Ref<KeyVal>&keyval) :
   if (world.null())
     world = new WavefunctionWorld(keyval);
   if (world.null())
-    throw InputError("PT2R12 requires a WavefunctionWorld", __FILE__, __LINE__, "world");
+    throw InputError("PsiCC_PT2R12 requires a WavefunctionWorld; input did not specify it, neither could it be constructed",
+                     __FILE__, __LINE__, "world");
   if (world->wfn() == 0) world->set_wfn(this);
 
   Ref<RefWavefunction> refinfo = RefWavefunctionFactory::make(world, this->reference(), false,

@@ -387,7 +387,15 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
   // this may update the accuracy of reference_ object
   this->set_desired_value_accuracy(desired_value_accuracy());
 
-  Ref<WavefunctionWorld> world = new WavefunctionWorld(keyval);
+  // if world not given, make this the center of a new World
+  Ref<WavefunctionWorld> world; world << keyval->describedclassvalue("world", KeyValValueRefDescribedClass(0));
+  if (world.null())
+    world = new WavefunctionWorld(keyval);
+  if (world.null())
+    throw InputError("PT2R12 requires a WavefunctionWorld; input did not specify it, neither could it be constructed",
+                     __FILE__, __LINE__, "world");
+  if (world->wfn() == 0) world->set_wfn(this);
+
   const bool spin_restricted = true;  // always use spin-restricted spaces
   // if omit_uocc is true, need to make an empty virtual space
   Ref<OrbitalSpace> virspace = 0;

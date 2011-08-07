@@ -66,7 +66,8 @@ CCR12::CCR12(const Ref<KeyVal>& keyval): Wavefunction(keyval), ccr12_info_(0) {
   if (world.null())
     world = new WavefunctionWorld(keyval);
   if (world.null())
-    throw InputError("PT2R12 requires a WavefunctionWorld", __FILE__, __LINE__, "world");
+    throw InputError("CCR12 requires a WavefunctionWorld; input did not specify it, neither could it be constructed",
+                     __FILE__, __LINE__, "world");
   if (world->wfn() == 0) world->set_wfn(this);
 
   const bool spin_restricted = false;   // do not use spin-restricted orbitals -> for ROHF use semicanonical orbitals

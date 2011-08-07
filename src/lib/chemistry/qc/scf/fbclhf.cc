@@ -189,7 +189,8 @@ DFCLHF::DFCLHF(const Ref<KeyVal>& keyval) :
   if (world_.null())
     world_ = new WavefunctionWorld(keyval);
   if (world_.null())
-    throw InputError("PT2R12 requires a WavefunctionWorld", __FILE__, __LINE__, "world");
+    throw InputError("DFCLHF requires a WavefunctionWorld; input did not specify it, neither could it be constructed",
+                     __FILE__, __LINE__, "world");
   if (world_->wfn() == 0) world_->set_wfn(this);
 
   // need a nonblocked cl_gmat_ in this method

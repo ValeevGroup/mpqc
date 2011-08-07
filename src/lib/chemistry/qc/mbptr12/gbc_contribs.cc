@@ -64,9 +64,6 @@ using namespace sc;
 void
 R12IntEval::compute_B_gbc_()
 {
-  if (abs_method() == R12Technology::ABS_ABS || abs_method() == R12Technology::ABS_ABSPlus)
-    throw std::runtime_error("R12IntEval::compute_B_gbc_1_() -- B(GBC1) term can only be computed using a CABS (or CABS+) approach");
-
   if (evaluated_)
     return;
 

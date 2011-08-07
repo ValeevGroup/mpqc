@@ -47,16 +47,7 @@ R12IntEval::V(SpinCase2 spincase2,
               const Ref<OrbitalSpace>& p1,
               const Ref<OrbitalSpace>& p2)
 {
-  const R12Technology::ABSMethod absmethod = r12world()->r12tech()->abs_method();
-  const bool obs_eq_ribs = r12world()->obs_eq_ribs();
-  // "ABS"-type contraction is used for projector 2 ABS/ABS+ method when OBS != RIBS
-  // it involves this term +O1O2-V1V2
-  if ((absmethod == R12Technology::ABS_ABS ||
-       absmethod == R12Technology::ABS_ABSPlus) && !obs_eq_ribs &&
-      ansatz()->projector() == R12Technology::Projector_2)
-    throw ProgrammingError("Only CABS supported now", __FILE__,__LINE__);
-  else
-    return this->V_cabs(spincase2, p1, p2);
+  return this->V_cabs(spincase2, p1, p2);
 }
 
 
@@ -444,18 +435,7 @@ std::vector<Ref<DistArray4> > R12IntEval::V_distarray4(
                                                        const Ref<OrbitalSpace>& p1,
                                                        const Ref<OrbitalSpace>& p2) {
 
-  const R12Technology::ABSMethod absmethod =
-      r12world()->r12tech()->abs_method();
   const bool obs_eq_ribs = r12world()->obs_eq_ribs();
-  // "ABS"-type contraction is used for projector 2 ABS/ABS+ method when OBS != RIBS
-  // it involves this term +O1O2-V1V2
-  if ((absmethod == R12Technology::ABS_ABS || absmethod
-      == R12Technology::ABS_ABSPlus) && !obs_eq_ribs && ansatz()->projector()
-      == R12Technology::Projector_2)
-    throw FeatureNotImplemented(
-                                 "V_distarray4() not implemented for ABS/ABS+ RI method",
-                                 __FILE__, __LINE__, class_desc());
-
   const bool obs_eq_vbs = r12world()->obs_eq_vbs();
 
   const bool p1_eq_p2 = (p1 == p2);
@@ -669,18 +649,7 @@ R12IntEval::U_distarray4(
     const Ref<OrbitalSpace>& p1,
     const Ref<OrbitalSpace>& p2) {
 
-  const R12Technology::ABSMethod absmethod =
-      r12world()->r12tech()->abs_method();
   const bool obs_eq_ribs = r12world()->obs_eq_ribs();
-  // "ABS"-type contraction is used for projector 2 ABS/ABS+ method when OBS != RIBS
-  // it involves this term +O1O2-V1V2
-  if ((absmethod == R12Technology::ABS_ABS || absmethod
-      == R12Technology::ABS_ABSPlus) && !obs_eq_ribs && ansatz()->projector()
-      == R12Technology::Projector_2)
-    throw FeatureNotImplemented(
-                                 "U_distarray4() not implemented for ABS/ABS+ RI method",
-                                 __FILE__, __LINE__, class_desc());
-
   const bool obs_eq_vbs = r12world()->obs_eq_vbs();
 
   const bool p1_eq_p2 = (p1 == p2);
@@ -913,10 +882,6 @@ R12IntEval::P(SpinCase2 spincase2)
   const Ref<OrbitalSpace>& orbs2 = orbs(spin2);
   const Ref<OrbitalSpace>& occ1 = occ(spin1);
   const Ref<OrbitalSpace>& occ2 = occ(spin2);
-  const R12Technology::ABSMethod absmethod = r12world()->r12tech()->abs_method();
-  if (absmethod == R12Technology::ABS_ABS ||
-      absmethod == R12Technology::ABS_ABSPlus)
-    throw InputError("R12IntEval::P() -- cannot use if abs_method = abs/abs+. Try cabs or cabs+.");
   const Ref<OrbitalSpace>& cabs1 = r12world()->cabs_space(spin1);
   const Ref<OrbitalSpace>& cabs2 = r12world()->cabs_space(spin2);
   const RefSCDimension dimf12 = dim_f12(spincase2);

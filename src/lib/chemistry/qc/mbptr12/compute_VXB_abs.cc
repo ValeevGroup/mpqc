@@ -92,17 +92,7 @@ R12IntEval::contrib_to_VXB_abs_()
 
       Ref<TwoParticleContraction> tpcontract;
       const ABSMethod absmethod = r12world()->abs_method();
-      // "ABS"-type contraction is used for projector 2 ABS/ABS+ method when OBS != RIBS
-      // it involves this term +O1O2-V1V2
-      if ((absmethod == R12Technology::ABS_ABS ||
-       absmethod == R12Technology::ABS_ABSPlus) && !obs_eq_ribs &&
-      ansatz()->projector() == R12Technology::Projector_2)
-          tpcontract = new ABS_OBS_Contraction(orbs1->rank(),
-                                               occ1->rank(),
-                                               occ2->rank());
-      else
-      // involves this term -P1P2
-          tpcontract = new CABS_OBS_Contraction(orbs1->rank());
+      tpcontract = new CABS_OBS_Contraction(orbs1->rank());
 
       std::vector<std::string> tforms;
       std::vector<std::string> tforms_f12;
@@ -202,17 +192,9 @@ R12IntEval::contrib_to_VXB_abs_()
       // These terms only contribute if Projector=2
       if (!obs_eq_ribs && ansatz()->projector() == R12Technology::Projector_2) {
 
-      const bool cabs_method = (absmethod ==  R12Technology::ABS_CABS ||
-                    absmethod == R12Technology::ABS_CABSPlus);
       Ref<OrbitalSpace> rispace1, rispace2;
-      if (cabs_method) {
-        rispace1 = r12world()->ribs_space(spin1);
-        rispace2 = r12world()->ribs_space(spin2);
-      }
-      else {
-        rispace1 = r12world()->ribs_space();
-        rispace2 = r12world()->ribs_space();
-      }
+      rispace1 = r12world()->ribs_space(spin1);
+      rispace2 = r12world()->ribs_space(spin2);
       // If particles are equivalent, <ij|Pm> = <ji|mP>, hence in the same set of integrals.
       // Can then skip <ij|Pm>, simply add 2<ij|mP> and (anti)symmetrize
           Ref<TwoParticleContraction> tpcontract =

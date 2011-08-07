@@ -36,8 +36,6 @@
 #include <chemistry/qc/lmp2/pop_local.h>
 #include <chemistry/qc/lcao/fockbuilder.h>
 
-
-
 using namespace sc;
 
 /////////////
@@ -605,9 +603,9 @@ static ClassDesc R12RefWavefunction_cd(
   0, 0, 0);
 
 RefWavefunction::RefWavefunction(const Ref<WavefunctionWorld>& world,
-                                       const Ref<GaussianBasisSet>& basis,
-                                       const Ref<Integral>& integral) :
-  world_(world), basis_(basis), integral_(integral), omit_uocc_(true),
+                                 const Ref<GaussianBasisSet>& basis,
+                                 const Ref<Integral>& integral) :
+  world_(world), basis_(basis),  integral_(integral->clone()), omit_uocc_(true),
   force_average_AB_rdm1_(false), screened_space_init_ed_(false),
   orig_space_init_ed_(false), occ_thres_(0.0), do_screen_(true)
 {

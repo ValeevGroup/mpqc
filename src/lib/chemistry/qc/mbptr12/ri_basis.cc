@@ -59,20 +59,10 @@ R12WavefunctionWorld::construct_ri_basis_(bool safe)
 
     switch(r12tech()->abs_method()) {
 
-      case R12Technology::ABS_ABS:
-        bs_ri_ = bs_aux_;
-        if (!abs_spans_obs_()) {
-          ExEnv::out0() << endl << indent << "WARNING: the auxiliary basis is not safe to use with the given orbital basis" << endl << endl;
-          if (safe)
-            throw std::runtime_error("R12WavefunctionWorld::construct_ri_basis_abs_ -- auxiliary basis is not safe to use with the given orbital basis");
-        }
-        break;
-
       case R12Technology::ABS_CABS:
         bs_ri_ = bs_aux_;
         break;
 
-      case R12Technology::ABS_ABSPlus:
       case R12Technology::ABS_CABSPlus:
       {
         bs_ri_ = bs_aux_ + obs;
@@ -110,11 +100,7 @@ R12WavefunctionWorld::construct_cabs_()
   construct_ri_basis_(r12tech()->safety_check());
 
   Ref<GaussianBasisSet> obs = ref()->basis();
-  if (bs_ri_->equiv(obs) &&
-      (r12tech()->abs_method() == R12Technology::ABS_CABS ||
-          r12tech()->abs_method() == R12Technology::ABS_CABSPlus
-      )
-  )
+  if (bs_ri_->equiv(obs))
     throw std::logic_error("R12WavefunctionWorld::construct_cabs_ -- CABS and CABS+ methods can only be used when ABS != OBS");
 
   ref_acc_for_cabs_space_ = ref()->desired_value_accuracy();

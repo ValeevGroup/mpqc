@@ -68,11 +68,22 @@ public:
     Hence the default value is false, i.e. to use the spin-orbital algorithm. Note that the ``owner'' Wavefunction
     may override the default.
 
+        <tr><td><tt>aux_basis</tt><td>GaussianBasisSet<td>orbital basis<td>This keyword specifies the
+        auxiliary basis which will be used to construct complement to the orbital space ("Complementary Auxiliary BasisSet",
+        CABS for short) and the resolution-of-the-identity basis (RIBS)
+
         </table>
+
+        @param keyval KeyVal object used to initialize this object
+        @param ref RefWavefunction object that the R12 Wavefunction who owns this object uses
+        @param ribs_space the OrbitalSpace object that approximates the RI space used to evaluate the many-electron integrals
+               of R12 methods; this SHOULD NOT be given unless you know what you doing -- it's really just a hack to test
+               the pair-specific RI approximation
 
     */
   R12WavefunctionWorld(const Ref<KeyVal>& keyval,
-                       const Ref<RefWavefunction>& ref);
+                       const Ref<RefWavefunction>& ref,
+                       Ref<OrbitalSpace> ri_space = Ref<OrbitalSpace>());
   ~R12WavefunctionWorld();
 
   void save_data_state(StateOut&);
@@ -135,6 +146,7 @@ private:
 
   Ref<OrbitalSpace> abs_space_;  // ABS space
   Ref<OrbitalSpace> ribs_space_; // RIBS basis
+  bool ribs_space_given_;        // true if ribs_space was given in the constructor, only used to detect
   mutable Ref<OrbitalSpace> cabs_space_[NSpinCases1]; // CABS spaces
   double ref_acc_for_cabs_space_; // CABS space depends on reference. this keeps track of the accuracy of reference used to compute cabs_space_
   bool do_screen_; // this is introduced for debugging purpose; if false, orbitals are rotated, by screening is not done (no orbs dropped)

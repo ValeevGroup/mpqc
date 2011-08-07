@@ -58,19 +58,26 @@ static ClassDesc R12WavefunctionWorld_cd(
 
 R12WavefunctionWorld::R12WavefunctionWorld(
     const Ref<KeyVal>& keyval,
-    const Ref<RefWavefunction>& ref) :
-    ref_(ref), ref_acc_for_cabs_space_(DBL_MAX)
+    const Ref<RefWavefunction>& ref,
+    Ref<OrbitalSpace> ri_space) :
+    ref_(ref), ref_acc_for_cabs_space_(DBL_MAX),
+    ribs_space_(ri_space), ribs_space_given_(ribs_space_.nonnull())
 {
   // by default use spin-orbital algorithm
   spinadapted_ = keyval->booleanvalue("spinadapted",KeyValValueboolean(false));
   ref_->set_spinfree(spinadapted_);
 
-  bs_aux_ = require_dynamic_cast<GaussianBasisSet*>(
-      keyval->describedclassvalue("aux_basis").pointer(),
-      "R12Technology::R12Technology\n"
-      );
-  if (bs_aux_.pointer() == NULL)
+  if (ribs_space_.null()) {
+    bs_aux_ = require_dynamic_cast<GaussianBasisSet*>(
+        keyval->describedclassvalue("aux_basis").pointer(),
+        "R12Technology::R12Technology\n"
+        );
+    if (bs_aux_.pointer() == NULL)
       bs_aux_ = ref->basis();
+  }
+  else {
+    bs_ri_ = bs_aux_ = ribs_space_->basis();
+  }
 
   r12tech_ = new R12Technology(keyval,ref->basis(),ref->uocc_basis(),bs_aux_);
   // Make sure can use the integral factory for R12 calcs
@@ -108,6 +115,7 @@ void R12WavefunctionWorld::save_data_state(StateOut& so)
   so.put(correlate_min_occ_);
   SavableState::save_state(abs_space_.pointer(),so);
   SavableState::save_state(ribs_space_.pointer(),so);
+  so.put(ribs_space_given_);
 }
 
 void
@@ -156,8 +164,10 @@ R12WavefunctionWorld::initialize()
 
   nlindep_ri_ = nlindep_aux_ = -1;
   obs_eq_vbs_ = basis_vir().null() || basis()->equiv(basis_vir());
-  bs_ri_ = 0;
-  ribs_space_ = 0;
+  if (ribs_space_given_ == false) {
+    bs_ri_ = 0;
+    ribs_space_ = 0;
+  }
   cabs_space_[Alpha] = cabs_space_[Beta] = 0;
 }
 
@@ -165,11 +175,14 @@ void
 R12WavefunctionWorld::obsolete() {
   ref_->obsolete();
   abs_space_ = 0;
-  ribs_space_ = 0;
   cabs_space_[Alpha] = 0;
   cabs_space_[Beta] = 0;
-  nlindep_ri_ = nlindep_aux_ = -1;
-  bs_ri_ = 0;
+
+  if (ribs_space_given_ == false) {
+    nlindep_ri_ = nlindep_aux_ = -1;
+    ribs_space_ = 0;
+    bs_ri_ = 0;
+  }
 
 //  this->initialize();   // can't initialize because there is no guarantee we are ready to compute again
 }
@@ -193,20 +206,15 @@ R12WavefunctionWorld::obs_eq_ribs() const {
 const Ref<OrbitalSpace>&
 R12WavefunctionWorld::cabs_space(const SpinCase1& S) const
 {
-  if (r12tech()->abs_method() == R12Technology::ABS_CABS ||
-      r12tech()->abs_method() == R12Technology::ABS_CABSPlus) {
-    if (ref_acc_for_cabs_space_ > ref()->desired_value_accuracy()) { // recompute if accuracy of reference has increased
-      cabs_space_[Alpha] = 0;
-      cabs_space_[Beta] = 0;
-    }
-    if (cabs_space_[S].null()) { // compute if needed
-      R12WavefunctionWorld* this_nonconst_ptr = const_cast<R12WavefunctionWorld*>(this);
-      this_nonconst_ptr->construct_cabs_();
-    }
-    return cabs_space_[S];
+  if (ref_acc_for_cabs_space_ > ref()->desired_value_accuracy()) { // recompute if accuracy of reference has increased
+    cabs_space_[Alpha] = 0;
+    cabs_space_[Beta] = 0;
   }
-  else
-    throw ProgrammingError("CABS space requested by abs_method set to ABS/ABS+",__FILE__,__LINE__);
+  if (cabs_space_[S].null()) { // compute if needed
+    R12WavefunctionWorld* this_nonconst_ptr = const_cast<R12WavefunctionWorld*>(this);
+    this_nonconst_ptr->construct_cabs_();
+  }
+  return cabs_space_[S];
 }
 
 bool

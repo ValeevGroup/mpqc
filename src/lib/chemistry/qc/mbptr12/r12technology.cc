@@ -1356,28 +1356,12 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
   omit_P_ = keyval->booleanvalue("omit_P",KeyValValueboolean((int)false));
 
   std::string abs_method_str = keyval->stringvalue("abs_method",KeyValValuestring("CABS+"));
-  if ( abs_method_str == "KS" ||
-       abs_method_str == "ks" ||
-       abs_method_str == "ABS" ||
-       abs_method_str == "abs" ) {
-    abs_method_ = ABS_ABS;
-  }
-  else if ( abs_method_str == "KS+" ||
-	    abs_method_str == "ks+" ||
-            abs_method_str == "ABS+" ||
-	    abs_method_str == "abs+" ) {
-    abs_method_ = ABS_ABSPlus;
-  }
-  else if ( abs_method_str == "EV" ||
-	    abs_method_str == "ev" ||
-            abs_method_str == "CABS" ||
-	    abs_method_str == "cabs" ) {
+  if ( abs_method_str == "CABS" ||
+	   abs_method_str == "cabs" ) {
     abs_method_ = ABS_CABS;
   }
-  else if ( abs_method_str == "EV+" ||
-	    abs_method_str == "ev+" ||
-            abs_method_str == "CABS+" ||
-	    abs_method_str == "cabs+" ) {
+  else if ( abs_method_str == "CABS+" ||
+      abs_method_str == "cabs+" ) {
     abs_method_ = ABS_CABSPlus;
   }
   else {
@@ -1473,19 +1457,6 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
     }
   }
 
-  // Klopper and Samson's ABS method is only implemented for certain "old" methods
-  // Make sure that the ABS method is available for the requested MP2-R12 energy
-  const bool must_use_cabs = (!gbc_ ||
-			      !ebc_ || !coupling_ ||
-			      (stdapprox_ == StdApprox_B && !abs_eq_obs_) ||
-			      (stdapprox_ == StdApprox_C && !abs_eq_obs_) ||
-			      (stdapprox_ == StdApprox_Cp && !abs_eq_obs_) ||
-			      (stdapprox_ == StdApprox_App && !abs_eq_obs_) ||
-                              !vbs_eq_obs_);
-  if (must_use_cabs &&
-      (abs_method_ == ABS_ABS || abs_method_ == ABS_ABSPlus))
-    throw std::runtime_error("R12Technology::R12Technology() -- abs_method must be set to cabs or cabs+ for this MP2-R12 method");
-
   //
   // Relativistic features are only implemented for certain approximations
   //
@@ -1549,17 +1520,11 @@ R12Technology::print(ostream&o) const
     o << indent << "Intermediate P is omitted" << endl;
   }
   switch(abs_method_) {
-  case ABS_ABS :
-    o << indent << "ABS method variant: ABS  (Klopper and Samson)" << endl;
-    break;
-  case ABS_ABSPlus :
-    o << indent << "ABS method variant: ABS+ (Klopper and Samson using the union of OBS and ABS for RI)" << endl;
-    break;
   case ABS_CABS :
-    o << indent << "ABS method variant: CABS  (Valeev)" << endl;
+    o << indent << "RI method for many-elecron integrals: CABS" << endl;
     break;
   case ABS_CABSPlus :
-    o << indent << "ABS method variant: CABS+ (Valeev using the union of OBS and ABS for RI)" << endl;
+    o << indent << "RI method for many-elecron integrals: CABS+ (CABS using the union of OBS and ABS for RI)" << endl;
     break;
   }
   if (!this->abs_eq_obs_) {

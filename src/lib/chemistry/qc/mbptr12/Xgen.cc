@@ -107,11 +107,6 @@ R12IntEval::compute_X_(RefSCMatrix& X,
     const unsigned int nabs = max(nabs_in_bra,nabs_in_ket);
     // check if RI needs to be done in ABS
     const bool do_ri_in_abs = !abs_eq_obs && (maxnabs - nabs > 0);
-    // and check if the ABS method is available for this combination of basis sets
-    const R12Technology::ABSMethod absmethod = r12world()->r12tech()->abs_method();
-    if ((absmethod == R12Technology::ABS_ABS ||
-	 absmethod == R12Technology::ABS_ABSPlus) && do_ri_in_abs && !vbs_eq_obs)
-	throw  FeatureNotImplemented("R12IntEval::compute_X_() -- cabs and cabs+ methods must be used ",__FILE__,__LINE__);
 
     ////////////////////////////////
     // Game begins
@@ -220,15 +215,7 @@ R12IntEval::compute_X_(RefSCMatrix& X,
 
 	if (vbs_eq_obs) {
 
-	    // ABS and CABS method differ by the TwoParticleContraction
-	    Ref<TwoParticleContraction> contract_pp;
-	    if ((absmethod == R12Technology::ABS_ABS ||
-		 absmethod == R12Technology::ABS_ABSPlus) && do_ri_in_abs)
-		contract_pp = new ABS_OBS_Contraction(nobs,
-						      occ1->rank(),
-						      occ2->rank());
-	    else
-		contract_pp = new CABS_OBS_Contraction(nobs);
+	    Ref<TwoParticleContraction> contract_pp = new CABS_OBS_Contraction(nobs);
 
 	    // (i p |j p) tforms
 	    std::vector<std::string> tforms_ipjp;

@@ -609,7 +609,7 @@ RefWavefunction::RefWavefunction(const Ref<WavefunctionWorld>& world,
                                        const Ref<Integral>& integral) :
   world_(world), basis_(basis), integral_(integral), omit_uocc_(true),
   force_average_AB_rdm1_(false), screened_space_init_ed_(false),
-  orig_space_init_ed_(false), occ_thres_(0.0)
+  orig_space_init_ed_(false), occ_thres_(0.0), do_screen_(true)
 {
   for(int spin=0; spin<NSpinCases1; ++spin) spinspaces_[spin] = 0;
   integral_->set_basis(basis, basis, basis, basis);

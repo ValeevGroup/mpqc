@@ -348,6 +348,7 @@ PsiRASCI_RefWavefunction::init_spaces()
   // RAS3 are occupied if ras3_max > 0
   using std::vector;
   vector<double> occs(nmo, 0.0);
+  vector<double> rasscf_occs(nmo, 0.0); //to get rasscf orbitals (excluding external virtual orbs)
   vector<bool> occmask(nmo, false);
   const vector<unsigned int> mopi = wfn()->reference()->mopi();
   const vector<unsigned int> frzcpi = wfn()->frozen_docc();
@@ -364,10 +365,14 @@ PsiRASCI_RefWavefunction::init_spaces()
                               ras1[h] +
                               ras2[h] +
                               (ras3_max > 0 ? ras3[h] : 0);
+    const unsigned int rasscf_nocc = frzcpi[h] +
+                              ras1[h] +
+                              ras2[h];
     for(int i=0; i<nocc; ++i, ++mo)
     {
       occs[mo] = 1.0;
       occmask[mo] = true;
+      rasscf_occs[mo] = (i<rasscf_nocc)?1.0:0.0;
     }
     mo += nmo - nocc;
   }
@@ -399,8 +404,12 @@ PsiRASCI_RefWavefunction::init_spaces()
   Ref<OrbitalSpaceRegistry> oreg = this->world()->tfactory()->orbital_registry();
 
   // alpha and beta orbitals are the same
-  spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, AnySpinCase1, bs, integral, evecs_ao,
-                                                 occs, actmask, evals, moorder);
+  if(force_rasscf())
+    spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, AnySpinCase1, bs, integral, evecs_ao,
+                                                 occs, actmask, evals, moorder,0,0,rasscf_occs);
+  else
+    spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, AnySpinCase1, bs, integral, evecs_ao,
+                                                     occs, actmask, evals, moorder);
   spinspaces_[Beta] = spinspaces_[Alpha];
   orig_space_init_ed_ = true;
   if((! screened_space_init_ed_) and fabs(occ_thres()) > sc::PT2R12::zero_occupation)
@@ -411,7 +420,6 @@ PsiRASCI_RefWavefunction::init_spaces()
     screened_spinspaces_[Beta] = screened_spinspaces_[Alpha];
     screened_space_init_ed_ = true;
   }
-
 }
 
 RefSymmSCMatrix

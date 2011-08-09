@@ -69,8 +69,11 @@ namespace sc {
                             const RefDiagSCMatrix& energies,
                             bool eorder_increasing = true,
                             Ref<OrbitalSpace> vbs = 0,
-                            Ref<FockBuildRuntime> fbrun = 0
-                           );
+                            Ref<FockBuildRuntime> fbrun = 0,
+                            const std::vector<double>& rasscf_occs=std::vector<double>(1,-1.0)
+                           );//if rasscf_occs is specified, uses rasscf_occs instead of occs to construct occ_act_mask,
+                            //eventually to construct occ_act_sb_ differently->force GG/gg space to be ras1+ras2 orbs
+
       PopulatedOrbitalSpace(const bool doscreen, const double occ_thres, RefSymmSCMatrix OBS_mo_ordm, const Ref<OrbitalSpaceRegistry>& oreg,
                                   SpinCase1 spin, const Ref<GaussianBasisSet>& bs,
                                   const Ref<Integral>& integral,
@@ -199,6 +202,8 @@ namespace sc {
 
     double& occ_thres() {return occ_thres_;}
     void set_occ_thres(double vv) {occ_thres_ = vv;}
+    bool& force_rasscf(){return force_correlate_rasscf_;}
+    void set_force_correlate_rasscf(const bool force) {force_correlate_rasscf_ = force;}
     bool& do_screen() {return do_screen_;}
     void set_do_screen(bool screenornot) {do_screen_ = screenornot;}
     Ref<PopulatedOrbitalSpace> & get_poporbspace(SpinCase1 spin = Alpha) {return spinspaces_[spin];}
@@ -214,6 +219,7 @@ namespace sc {
     bool omit_uocc_;
     /// For spin-free algorithms, if this is true, we would set both alpha/beta 1-rdm to the average of them; defaults to false
     bool force_average_AB_rdm1_;
+    bool force_correlate_rasscf_;
     double occ_thres_; // this parameter is in fact assigned to the value of correlate_min_occ_ of R12WavefunctionWorld, where is a logical
                         // place to define such a variable, since it more belong to the R12 world. However, we need it to control RefWavefunction too.
     bool do_screen_;

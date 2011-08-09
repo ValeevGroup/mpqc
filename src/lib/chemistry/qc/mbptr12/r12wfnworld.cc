@@ -40,6 +40,7 @@
 #include <chemistry/qc/lcao/transform_factory.h>
 #include <util/misc/registry.timpl.h>
 #include <chemistry/qc/mbptr12/ref.h>
+#include <chemistry/qc/mbptr12/pt2r12.h>
 #if HAVE_PSIMPQCIFACE
 # include <chemistry/qc/psi/psiref.h>
 #endif
@@ -86,6 +87,11 @@ R12WavefunctionWorld::R12WavefunctionWorld(
   ref_->set_occ_thres(correlate_min_occ_);
   do_screen_ = keyval->booleanvalue("do_screen",KeyValValueboolean(true));
   ref_->set_do_screen(do_screen_);
+  const bool force_rasscf_ = keyval->booleanvalue("force_correlate_rasscf",KeyValValueboolean(false));
+  ref_->set_force_correlate_rasscf(force_rasscf_);
+  if(force_rasscf_)
+    if(fabs(correlate_min_occ_) > sc::PT2R12::zero_occupation)
+      ProgrammingError("The option of force_rasscf is only implemented for unscreened non-rotated basis", __FILE__,__LINE__);
 }
 
 R12WavefunctionWorld::R12WavefunctionWorld(StateIn& si) : SavableState(si)

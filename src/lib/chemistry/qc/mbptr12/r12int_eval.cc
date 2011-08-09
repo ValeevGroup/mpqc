@@ -2494,7 +2494,7 @@ R12IntEval::ordm() const {
 
 
 RefSymmSCMatrix
-R12IntEval::ordm_av() const {
+R12IntEval::ordm_av() const { // get spin averaged 1-RDM in OBS(!) space, computed from RDM in AO space and OBS MO coefficients
   assert(r12world()->spinadapted());
   RefSymmSCMatrix ordm_av = r12world()->ref()->ordm_orbs_sb(Alpha).copy();
   ordm_av.accumulate(r12world()->ref()->ordm_orbs_sb(Beta));

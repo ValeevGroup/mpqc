@@ -484,12 +484,12 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const bool doscreen, const double o
     std::string id = ParsedOrbitalSpaceKey::key(std::string("-i(sym)"),spin);
     occ_act_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, occ_act_mask);
   }
-  {
-    ostringstream oss;
-    oss << prefix << " unscreened active occupied symmetry-blocked MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("-i(sym)"),spin);
-    unscreen_occ_act_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, unscreen_occ_act_mask);
-  }
+//  {
+//    ostringstream oss;
+//    oss << prefix << " unscreened active occupied symmetry-blocked MOs";
+//    std::string id = ParsedOrbitalSpaceKey::key(std::string("-i(sym)"),spin);
+//    unscreen_occ_act_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, unscreen_occ_act_mask);
+//  }
   {
     ostringstream oss;
     oss << prefix << " active occupied MOs";
@@ -837,7 +837,10 @@ RefWavefunction::unscreen_occ_act_sb(SpinCase1 s) const
   s = valid_spincase(s);
   if(occ_thres_ >sc::PT2R12::zero_occupation)
   {
-    if(screened_space_init_ed_) return screened_spinspaces_[s]->unscreen_occ_act_sb();
+    if(screened_space_init_ed_)
+    {
+      throw ProgrammingError("Maybe you can use get_poporbspace() instead?\n Otherwise uncomment relevant part in the constructor and return 'screened_spinspaces_[s]->unscreen_occ_act_sb()'", __FILE__,__LINE__);
+    }
     else
       throw ProgrammingError("screened orb space should have not been built", __FILE__,__LINE__);
   }

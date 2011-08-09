@@ -156,6 +156,7 @@ namespace sc {
       // TODO reimplement using native spin-free densities from Psi3
       RefSCMatrix rdm1_gg_sf();  // return spin-free 1/2 rdm
       RefSymmSCMatrix rdm1_sf();
+      RefSymmSCMatrix rdm1_sf_transform();
       RefSCMatrix rdm1_sf_2spaces(const Ref<OrbitalSpace> bspace, const Ref<OrbitalSpace> kspace);
 
       RefSymmSCMatrix rdm2_sf();

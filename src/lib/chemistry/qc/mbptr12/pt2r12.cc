@@ -32,6 +32,8 @@
 #include <chemistry/qc/mbptr12/compute_tbint_tensor.h>
 #include <chemistry/qc/mbptr12/creator.h>
 #include <chemistry/qc/mbptr12/container.h>
+#include <algorithm>
+#include <numeric>
 
 using namespace std;
 using namespace sc;
@@ -1294,9 +1296,9 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
     ExEnv::out0() << indent << scprintf("Hylleraas:                %17.12lf", E_total) << std::endl;
     ExEnv::out0() << indent << scprintf("deviation percentage:     %17.12lf", deviation) << std::endl << std::endl << std::endl;
   }
-  if(fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation and r12world()->ref()->do_screen())
+  if(fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
   {
-    const int total_active_occ = r12world()->ref()->unscreen_occ_act_sb(Alpha)->rank();
+    const int total_active_occ = r12world()->ref()->get_poporbspace(Alpha)->occ_act_sb()->rank();
     const int survive_active_occ = r12world()->ref()->occ_act_sb(Alpha)->rank();
     const double kept = double(survive_active_occ)/double(total_active_occ);
     const double filter = 1 -kept;
@@ -1321,14 +1323,9 @@ RefSCMatrix sc::PT2R12::transform_MO() //transformation matrix between occupied 
   const bool debugprint = false;
   RefSymmSCMatrix mo_density =  rdm1(Alpha) + rdm1(Beta);//this will eventually read the checkpoint file. I assume they are of the dimension of occ orb space
 //  mo_density.print(std::string("transform_MO: mo_density (occ)").c_str());
-  Ref<OrbitalSpace> unscreen_occ_act = r12world()->ref()->unscreen_occ_act_sb();
-  Ref<OrbitalSpace> occ = r12world()->ref()->occ_sb();
+  Ref<OrbitalSpace> unscreen_occ_act = r12world()->ref()->get_poporbspace(Alpha)->occ_act_sb();
+  Ref<OrbitalSpace> occ = r12world()->ref()->get_poporbspace(Alpha)->occ_sb();
   std::vector<int> map1 = map(*occ, *unscreen_occ_act);
-  if(debugprint)
-  {
-    occ->coefs().print(prepend_spincase(AlphaBeta, "transform_MO: occ coeffients").c_str());
-    unscreen_occ_act->coefs().print(prepend_spincase(AlphaBeta, "transform_MO: unscreened occ_act coeffients").c_str());
-  }
   int num_occ_act = unscreen_occ_act->rank();
   int num_occ = occ->rank();
   int rdmdim = mo_density->n();
@@ -1347,7 +1344,6 @@ RefSCMatrix sc::PT2R12::transform_MO() //transformation matrix between occupied 
   }
 
   RefSCDimension mo_dim = occ->coefs()->coldim();
-  assert(mo_dim->n() == num_occ);
   RefSCMatrix TransformMat = occ->coefs()->kit()->matrix(mo_dim, mo_dim);
   TransformMat.assign(0.0);
   for (int kk = 0; kk < num_occ; ++kk)
@@ -1411,35 +1407,28 @@ RefSCMatrix sc::PT2R12::transform_MO() //transformation matrix between occupied 
    return TransformMat;
 }
 
-RefSCMatrix sc::PT2R12::rdm1_gg_sf()
-{
-      Ref<OrbitalSpace> ggspace = r12eval_->ggspace(Alpha);
-      return rdm1_sf_2spaces(ggspace, ggspace);
-}
-
-
-RefSymmSCMatrix sc::PT2R12::rdm1_sf()
+RefSymmSCMatrix sc::PT2R12::rdm1_sf_transform()
 {
   static bool printed = false;
   RefSymmSCMatrix sf_opdm = rdm1(Alpha) + rdm1(Beta);//converted to local
 #if 0
   RefSymmSCMatrix sf_opdm2 = r12world()->ref()->ordm_occ_sb(Alpha)+r12world()->ref()->ordm_occ_sb(Beta);
 #endif
-  if(r12world_->spinadapted() and fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
-  {
-    RefSCMatrix transMO_nonlocal = this->transform_MO();
-    assert((sf_opdm->n() == transMO_nonlocal->coldim()->n()) and (sf_opdm->n()==r12eval_->occ(Alpha)->rank()));//should be the dimension of occ space
-    RefSCMatrix transMO = convert_RefSC_to_local_kit(transMO_nonlocal);//sf_opdm is converted to local, so transMO needs to do so too; otherwise aborts.
+  RefSCMatrix transMO_nonlocal = this->transform_MO();
+  assert((sf_opdm->n() == transMO_nonlocal->coldim()->n()) and (sf_opdm->n()==r12eval_->occ(Alpha)->rank()));//should be the dimension of occ space
+  RefSCMatrix transMO = convert_RefSC_to_local_kit(transMO_nonlocal);//sf_opdm is converted to local, so transMO needs to do so too; otherwise aborts.
 #if 0
     sf_opdm.print(prepend_spincase(AlphaBeta, "rdm1_sf: rdm before transformation").c_str());
     transMO.print(prepend_spincase(AlphaBeta, "rdm1_sf: transMO").c_str());
 #endif
-    RefSCMatrix res = (transMO*sf_opdm)*(transMO.t());
-    RefSymmSCMatrix final = sf_opdm->clone();
-    final->assign(0.0);
-    final.copyRefSCMatrix(res);// convert a symmscmatrix
+  RefSCMatrix res = (transMO*sf_opdm)*(transMO.t());
+  RefSymmSCMatrix final = sf_opdm->clone();
+  final->assign(0.0);
+  final.copyRefSCMatrix(res);// convert a symmscmatrix
 
-    //print occ numbers in rotates basis
+  //print occ numbers in rotates basis
+  if(not printed)
+  {
     std::vector<double> vec_RDM;
     RefDiagSCMatrix RDMdiag = transMO->kit()->diagmatrix(final->dim());
     for (int x = 0; x < final->n(); ++x)
@@ -1451,24 +1440,63 @@ RefSymmSCMatrix sc::PT2R12::rdm1_sf()
      {
        RDMdiag->set_element(y, vec_RDM[y]);
      }
-
-     if(not printed)
+     RefDiagSCMatrix RDMratio = RDMdiag.clone();
+     RDMratio.assign(0.0);
+     const double tot = std::accumulate(vec_RDM.begin(), vec_RDM.end(), 0.0);
+     std::vector<double>::iterator itt = vec_RDM.begin();
+     itt++;
+     for (int y = 0; y < final->n(); ++y, ++itt)
      {
-       ExEnv::out0() << std::endl << std::endl;
-       RDMdiag.print(std::string("PT2R12::rdm1_sf(): ordered occ number").c_str());
-       printed = true;
+       double sofar = std::accumulate(vec_RDM.begin(), itt, 0.0);
+       RDMratio->set_element(y, sofar/tot);
      }
-#if 0
-    ExEnv::out0()<<__FILE__ << ": " << __LINE__ << "\n";
-    final.print(std::string("one SF rdm").c_str());
-#endif
-    return final;
-  }
-  else
-    return(sf_opdm);
+     RDMdiag.print(std::string("PT2R12 1-RDM: occ number").c_str());
+     RDMratio.print(std::string("PT2R12 1-RDM: accumulated occ number percentage").c_str());
+     printed = true;
+   }
+  return final;
 }
 
 
+
+
+RefSymmSCMatrix sc::PT2R12::rdm1_sf()
+{
+  static bool printed = false;
+  RefSymmSCMatrix sf_opdm = rdm1(Alpha) + rdm1(Beta);//converted to local
+  if(r12world_->spinadapted() and fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
+  {
+    if (not printed) // force print out natural orb occ, just once
+    {
+      ExEnv::out0() << std::endl << std::endl;
+      printed = true;
+    }
+    return rdm1_sf_transform();
+  }
+  else
+  {
+    if (not printed) // force print out natural orb occ, just once
+    {
+      ExEnv::out0() << std::endl << std::endl;
+      ExEnv::out0() << indent << "Info in rotated basis to faciliate screening." << std::endl;
+      RefSymmSCMatrix helpmat = rdm1_sf_transform();
+      printed = true;
+    }
+    return(sf_opdm);
+  }
+}
+
+
+
+
+
+
+
+RefSCMatrix sc::PT2R12::rdm1_gg_sf()
+{
+      Ref<OrbitalSpace> ggspace = r12eval_->ggspace(Alpha);
+      return rdm1_sf_2spaces(ggspace, ggspace);
+}
 
 RefSCMatrix sc::PT2R12::rdm1_sf_2spaces(const Ref<OrbitalSpace> b1space, const Ref<OrbitalSpace> k1space)
 {

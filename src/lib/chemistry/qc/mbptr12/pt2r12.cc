@@ -1425,7 +1425,6 @@ RefSCMatrix sc::PT2R12::transform_MO() //transformation matrix between occupied 
 
 RefSymmSCMatrix sc::PT2R12::rdm1_sf_transform()
 {
-  ExEnv::out0() << "\n\n" <<indent  << "Enter rdm1_sf_transform\n\n";
   static bool printed = false;
   RefSymmSCMatrix sf_opdm = rdm1(Alpha) + rdm1(Beta);//converted to local
 #if 0
@@ -1495,7 +1494,7 @@ RefSymmSCMatrix sc::PT2R12::rdm1_sf()
     if (not printed) // force print out natural orb occ, just once
     {
       ExEnv::out0() << std::endl << std::endl;
-      ExEnv::out0() << indent << "Info in rotated basis to faciliate screening." << std::endl;
+      ExEnv::out0() << indent << "Info in rotated basis to faciliate screening.\n";
       RefSymmSCMatrix helpmat = rdm1_sf_transform();
       printed = true;
     }

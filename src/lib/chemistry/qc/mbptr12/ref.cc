@@ -333,7 +333,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const bool doscreen, const double o
   RefSCMatrix coefs = old_coefs->copy();
   const bool debugprint = false;
 
-  ExEnv::out0() << "Enterted constructor for screened orbital space\n\n";
+  ExEnv::out0() << "\n" << "Enterted constructor for screened orbital space\n\n";
   if(debugprint)
   {
     OBS_mo_ordm.print(prepend_spincase(AlphaBeta, "poporbitals: OBS_mo_ordm").c_str());
@@ -569,7 +569,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const bool doscreen, const double o
   occ_sb_->print_detail();
   uocc_sb_->print_detail();
 #endif
-  ExEnv::out0() << "Exited constructor for screened orbital space\n";
+  ExEnv::out0() << indent <<  "Exited constructor for screened orbital space\n";
 }
 
 PopulatedOrbitalSpace::PopulatedOrbitalSpace(StateIn& si) : SavableState(si) {

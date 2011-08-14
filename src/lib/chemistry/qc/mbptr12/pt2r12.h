@@ -184,9 +184,7 @@ namespace sc {
       /// compute CABS singles correction using two-body operators in H0
       double energy_cabs_singles_twobody_H0();
 
-      /// Returns Hcore in MO basis
-      RefSymmSCMatrix hcore_mo();
-      RefSymmSCMatrix hcore_mo(SpinCase1 spin);
+
       /// molecular integrals in chemist's notation
       RefSymmSCMatrix moints();  // closed shell case
       RefSCMatrix moints(SpinCase2 pairspin);

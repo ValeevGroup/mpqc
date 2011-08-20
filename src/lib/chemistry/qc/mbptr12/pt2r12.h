@@ -186,8 +186,7 @@ namespace sc {
 
 
       /// molecular integrals in chemist's notation
-      RefSymmSCMatrix moints();  // closed shell case
-      RefSCMatrix moints(SpinCase2 pairspin);
+      RefSCMatrix moints(SpinCase2 pairspin = AlphaBeta);
       /// This returns <space1 space2 || space1 space2>
       RefSCMatrix g(SpinCase2 pairspin,
                     const Ref<OrbitalSpace>& space1,

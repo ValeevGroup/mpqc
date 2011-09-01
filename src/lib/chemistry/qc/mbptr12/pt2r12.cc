@@ -370,6 +370,7 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
   cabs_singles_ = keyval->booleanvalue("cabs_singles", KeyValValueboolean(false));
   cabs_singles_coupling_ = keyval->booleanvalue("cabs_singles_coupling", KeyValValueboolean(true));
   rotate_core_ = keyval->booleanvalue("rotate_core", KeyValValueboolean(true));
+  calc_davidson_ = keyval->booleanvalue("calc_davidson", KeyValValueboolean(false));
 
 
   reference_ = require_dynamic_cast<Wavefunction*>(
@@ -1666,8 +1667,7 @@ void sc::PT2R12::compute()
     }
   }
 
-  const bool print_davison_coeff = true;
-  if(print_davison_coeff and r12world()->spinadapted())
+  if(calc_davidson_ and r12world()->spinadapted())
   {
     ExEnv::out0() << indent << "Davidson coefficient for size-extensivity correction (for MRCI): \n";
     Ref<OrbitalSpace> conv_vir = r12world()->ref()->conv_uocc_sb();

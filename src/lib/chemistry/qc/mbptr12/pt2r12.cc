@@ -1634,6 +1634,18 @@ void sc::PT2R12::compute()
   const bool spin_polarized = r12world()->ref()->spin_polarized();
 
 
+  if(calc_davidson_ and r12world()->spinadapted())
+  {
+    if(not r12world()->ref()->force_rasscf())
+      throw ProgrammingError("To calc Davidson correction, must set force_correlate_rasscf_ to true to enable proper initialization of conventional virtual orbital space.", __FILE__,__LINE__);
+    Ref<OrbitalSpace> conv_vir = r12world()->ref()->conv_uocc_sb();
+    RefSCMatrix opdm_vv = rdm1_sf_2spaces(conv_vir, conv_vir);
+    const double vir_percentage = opdm_vv->trace()/nelectron();
+    ExEnv::out0() << indent << "virtual contribution: " << vir_percentage << "\n";
+    const double davidson = 1/(1 - vir_percentage) - 1;
+    ExEnv::out0() << std::endl << std::endl << indent << scprintf("Davidson correction coef:              %17.12lf",
+                                            davidson) << std::endl << std::endl;
+  }
 
   if (pt2_correction_)
   {
@@ -1667,16 +1679,7 @@ void sc::PT2R12::compute()
     }
   }
 
-  if(calc_davidson_ and r12world()->spinadapted())
-  {
-    ExEnv::out0() << indent << "Davidson coefficient for size-extensivity correction (for MRCI): \n";
-    Ref<OrbitalSpace> conv_vir = r12world()->ref()->conv_uocc_sb();
-    RefSCMatrix opdm_vv = rdm1_sf_2spaces(conv_vir, conv_vir);
-    const double vir_percentage = opdm_vv->trace();
-    const double davidson = 1/(1 - vir_percentage) - 1;
-    ExEnv::out0() << std::endl << std::endl << indent << scprintf("Davidson correction coef:              %17.12lf",
-                                            davidson) << std::endl << std::endl;
-  }
+
   if(cabs_singles_)
   {
     //calculate basis set incompleteness error (BSIE) with two choices of H0

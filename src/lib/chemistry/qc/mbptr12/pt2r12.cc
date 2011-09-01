@@ -1232,7 +1232,7 @@ RefSymmSCMatrix sc::PT2R12::rdm1_sf_transform()
   if(not printed)
   {
     std::vector<double> vec_RDM;
-    RefDiagSCMatrix RDMdiag = transMO->kit()->diagmatrix(final->dim());
+    RefDiagSCMatrix RDMdiag = transMO->kit()->diagmatrix(final->dim());//dimenstion (obs, obs)
     for (int x = 0; x < final->n(); ++x)
      {
        vec_RDM.push_back(final.get_element(x,x));
@@ -1277,7 +1277,7 @@ RefSymmSCMatrix sc::PT2R12::rdm1_sf()
   }
   else
   {
-    if (not printed) // force print out natural orb occ, just once
+    if (false and not printed) // force print out natural orb occ, just once
     {
       ExEnv::out0() << std::endl << std::endl;
       ExEnv::out0() << indent << "Info in rotated basis to faciliate screening.\n";
@@ -1666,7 +1666,17 @@ void sc::PT2R12::compute()
     }
   }
 
-
+  const bool print_davison_coeff = true;
+  if(print_davison_coeff and r12world()->spinadapted())
+  {
+    ExEnv::out0() << indent << "Davidson coefficient for size-extensivity correction (for MRCI): \n";
+    Ref<OrbitalSpace> conv_vir = r12world()->ref()->conv_uocc_sb();
+    RefSCMatrix opdm_vv = rdm1_sf_2spaces(conv_vir, conv_vir);
+    const double vir_percentage = opdm_vv->trace();
+    const double davidson = 1/(1 - vir_percentage) - 1;
+    ExEnv::out0() << std::endl << std::endl << indent << scprintf("Davidson correction coef:              %17.12lf",
+                                            davidson) << std::endl << std::endl;
+  }
   if(cabs_singles_)
   {
     //calculate basis set incompleteness error (BSIE) with two choices of H0
@@ -1715,12 +1725,13 @@ void sc::PT2R12::compute()
 
   ExEnv::out0() <<indent << scprintf("Reference energy [au]:                 %17.12lf",
                                       reference_->energy()) << endl;
-  #if 1
+  if(cabs_singles_ or pt2_correction_)
+  {
     const double recomp_ref_energy = this->energy_recomputed_from_densities();
     ExEnv::out0() <<  std::endl << std::endl << indent << scprintf("Reference energy (%9s) [au]:     %17.12lf",
                                         (this->r12world()->world()->basis_df().null() ? "   recomp" : "recomp+DF"),
                                         recomp_ref_energy) << endl;
-  #endif
+  }
 
   if (r12world_->spinadapted() == false) // if true, use spinadapted algorithm, then spin component contributions are not separated.
   {

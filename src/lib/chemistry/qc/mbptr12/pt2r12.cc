@@ -1639,9 +1639,13 @@ void sc::PT2R12::compute()
     if(not r12world()->ref()->force_rasscf())
       throw ProgrammingError("To calc Davidson correction, must set force_correlate_rasscf_ to true to enable proper initialization of conventional virtual orbital space.", __FILE__,__LINE__);
     Ref<OrbitalSpace> conv_vir = r12world()->ref()->conv_uocc_sb();
+    Ref<OrbitalSpace> conv_occ = r12world()->ref()->conv_occ_sb();
     RefSCMatrix opdm_vv = rdm1_sf_2spaces(conv_vir, conv_vir);
+    RefSCMatrix opdm_ii = rdm1_sf_2spaces(conv_occ, conv_occ);
     const double vir_percentage = opdm_vv->trace()/nelectron();
+    const double occ_percentage = opdm_ii->trace()/nelectron();
     ExEnv::out0() << indent <<scprintf("uoccupied occ num:                     %17.12lf",vir_percentage) << "\n";
+    ExEnv::out0() << indent <<scprintf("occupied occ num:                      %17.12lf",occ_percentage) << "\n";
     const double davidson = 1/(1 - vir_percentage) - 1;
     ExEnv::out0()  << indent << scprintf("Davidson correction coef:              %17.12lf",
                                             davidson) << std::endl << std::endl;

@@ -97,6 +97,7 @@ namespace sc {
       const Ref<OrbitalSpace>& occ_act() const { return occ_act_; }
       const Ref<OrbitalSpace>& uocc_sb() const { return uocc_sb_; }
       const Ref<OrbitalSpace>& conv_uocc_sb() const { return conv_uocc_sb_; }
+      const Ref<OrbitalSpace>& conv_occ_sb() const { return conv_occ_sb_; }
       const Ref<OrbitalSpace>& uocc_act_sb() const { return uocc_act_sb_; }
       const Ref<OrbitalSpace>& uocc() const { return uocc_; }
       const Ref<OrbitalSpace>& uocc_act() const { return uocc_act_; }
@@ -117,6 +118,7 @@ namespace sc {
       Ref<OrbitalSpace> conv_uocc_;//this denotes the virtual orb space in the conventional sense,e.g. in MRCI, they are orbs other than
                                    // core and active occupied ones
       Ref<OrbitalSpace> conv_uocc_sb_;
+      Ref<OrbitalSpace> conv_occ_sb_;
   };
 
   /**
@@ -195,6 +197,7 @@ namespace sc {
     /// Return the space of symmetry-blocked unoccupied (virtual) MOs of the given spin
     const Ref<OrbitalSpace>& uocc_sb(SpinCase1 spin = AnySpinCase1) const;
     const Ref<OrbitalSpace>& conv_uocc_sb(SpinCase1 spin = AnySpinCase1) const;
+    const Ref<OrbitalSpace>& conv_occ_sb(SpinCase1 spin = AnySpinCase1) const;
     /// Return the space of symmetry-blocked active unoccupied (virtual) MOs of the given spin
     const Ref<OrbitalSpace>& uocc_act_sb(SpinCase1 spin = AnySpinCase1) const;
     /// Return the space of unoccupied (virtual) MOs of the given spin

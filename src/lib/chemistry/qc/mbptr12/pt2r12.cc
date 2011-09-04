@@ -1641,9 +1641,9 @@ void sc::PT2R12::compute()
     Ref<OrbitalSpace> conv_vir = r12world()->ref()->conv_uocc_sb();
     RefSCMatrix opdm_vv = rdm1_sf_2spaces(conv_vir, conv_vir);
     const double vir_percentage = opdm_vv->trace()/nelectron();
-    ExEnv::out0() << indent << "virtual contribution: " << vir_percentage << "\n";
+    ExEnv::out0() << indent <<scprintf("uoccupied occ num:                     %17.12lf",vir_percentage) << "\n";
     const double davidson = 1/(1 - vir_percentage) - 1;
-    ExEnv::out0() << std::endl << std::endl << indent << scprintf("Davidson correction coef:              %17.12lf",
+    ExEnv::out0()  << indent << scprintf("Davidson correction coef:              %17.12lf",
                                             davidson) << std::endl << std::endl;
   }
 

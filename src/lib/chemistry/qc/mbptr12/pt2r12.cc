@@ -1278,7 +1278,7 @@ RefSymmSCMatrix sc::PT2R12::rdm1_sf()
   }
   else
   {
-    if (false and not printed) // force print out natural orb occ, just once
+    if (not printed) // force print out natural orb occ, just once
     {
       ExEnv::out0() << std::endl << std::endl;
       ExEnv::out0() << indent << "Info in rotated basis to faciliate screening.\n";

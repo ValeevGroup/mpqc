@@ -453,8 +453,8 @@ namespace sc {
     convergence_ = keyval->intvalue("convergence",KeyValValueint(energy_convergence_-2));
     maxiter_ = keyval->intvalue("maxiter",KeyValValueint(100));
 
-    scf_levelshift_ = keyval->doublevalue("scf_levelshift",KeyValValuedouble(0.1));
-    scf_stop_levelshift_ = keyval->intvalue("scf_stop_levelshift",KeyValValueint(100));
+    scf_levelshift_ = keyval->doublevalue("scf_levelshift",KeyValValuedouble(1.0));
+    scf_stop_levelshift_ = keyval->intvalue("scf_stop_levelshift",KeyValValueint(10));
 
   }
 

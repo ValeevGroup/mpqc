@@ -152,8 +152,12 @@ namespace sc {
     void set_desired_value_accuracy(double);
     /// Return the accuracy with which the value has been computed. @sa Function::actual_value_accuracy()
     virtual double actual_value_accuracy () const =0;
-    /// @sa Return the accuracy with which the value is to be computed. Function::desired_value_accuracy()
+    /// @sa Return the accuracy with which the value is to be computed. @sa Function::desired_value_accuracy()
     virtual double desired_value_accuracy() const =0;
+    /// @sa Return true if the accuracy was set to default. @sa Function::desired_value_accuracy_set_to_default()
+    virtual bool desired_value_accuracy_set_to_default() const;
+    /// @sa Wavefunction::nelectron()
+    virtual int nelectron() const =0;
     /// @sa Wavefunction::spin_polarized()
     virtual bool spin_polarized() const =0;
     /// @sa Wavefunction::dk()
@@ -197,9 +201,9 @@ namespace sc {
     // 'original' orbs_sb: without transformation to the screened orbital space
     const Ref<OrbitalSpace>& orig_orbs_sb(SpinCase1 spin = AnySpinCase1) const;
 
-    double& occ_thres() {return occ_thres_;}
+    double occ_thres() {return occ_thres_;}
     void set_occ_thres(double vv) {occ_thres_ = vv;}
-    bool& do_screen() {return do_screen_;}
+    bool do_screen() {return do_screen_;}
     void set_do_screen(bool screenornot) {do_screen_ = screenornot;}
     Ref<PopulatedOrbitalSpace> & get_poporbspace(SpinCase1 spin = Alpha) {return spinspaces_[spin];}
     Ref<PopulatedOrbitalSpace>& get_screened_poporbspace(SpinCase1 spin = Alpha) {return screened_spinspaces_[spin];}
@@ -277,6 +281,8 @@ namespace sc {
       double energy() { return obwfn()->energy(); }
       double actual_value_accuracy () const { return obwfn()->actual_value_accuracy(); }
       double desired_value_accuracy() const { return obwfn()->desired_value_accuracy(); }
+      bool desired_value_accuracy_set_to_default() const { return obwfn()->desired_value_accuracy_set_to_default(); }
+      int nelectron() const { return obwfn()->nelectron(); }
       bool spin_polarized() const { return obwfn_->spin_polarized(); }
       bool spin_restricted() const { return spin_restricted_; }
       int dk() const { return obwfn()->dk(); }
@@ -299,66 +305,6 @@ namespace sc {
       void init_spaces_restricted();
       void init_spaces_unrestricted();
       void _set_desired_value_accuracy(double eps) { obwfn_->set_desired_value_accuracy(eps); }
-  };
-
-  /// RefWavefunction specialization for a general wave function specified by its rank-1 reduced density matrices
-  class ORDM_RefWavefunction : public RefWavefunction {
-    public:
-      /// Constructs ORDM_RefWavefunction using the AO-basis 1-RDMs for each spin case.
-      /// Will compute natural orbitals from the 1-RDMs.
-      /// @param world The WavefunctionWorld in which this objects lives.
-      /// @param basis The basis set
-      /// @param integral The integral object that determines the ordering of basis functions in shells
-      /// @param alpha_1rdm The alpha-spin density matrix in AO basis
-      /// @param beta_1rdm The beta-spin density matrix in AO basis (assuming that if alpha and beta densities are
-      ///        identical then alpha_1rdm and beta_1rdm will point to the SAME object).
-      /// @param spin_restricted If true, will use the natural orbitals of the total density, hence the orbitals
-      ///        will be same for Alpha and Beta spin cases. If false, and alpha_1rdm != beta_1rdm then will break spin symmetry.
-      /// @param nfzc The number of lowest-occupancy occupied orbitals to be kept inactive
-      /// @param omit_uocc If true, omit all unoccupied orbitals (i.e. make the unoccupied space empty). N.B. This is
-      ///                      not the same as "freezing" the unoccupieds.
-      ORDM_RefWavefunction(const Ref<WavefunctionWorld>& world,
-                  const Ref<GaussianBasisSet>& basis,
-                  const Ref<Integral>& integral,
-                  const RefSymmSCMatrix& alpha_1rdm,
-                  const RefSymmSCMatrix& beta_1rdm,
-                  bool spin_restricted = true,
-                  unsigned int nfzc = 0,
-                  bool omit_uocc = false);
-      ORDM_RefWavefunction(StateIn&);
-      virtual ~ORDM_RefWavefunction();
-      void save_data_state(StateOut&);
-      RefSymmSCMatrix ordm(SpinCase1 spin) const { return rdm_[spin]; }
-
-      void obsolete() { throw FeatureNotImplemented("cannot obsolete ORDM_R12RefWavefunction",
-                                                    __FILE__, __LINE__); }
-
-      double energy() { return 0.0; }
-      double actual_value_accuracy () const { return DBL_EPSILON; }
-      double desired_value_accuracy() const { return DBL_EPSILON; }
-      bool spin_polarized() const { return rdm_[Alpha] != rdm_[Beta]; }
-      bool spin_restricted() const { return spin_restricted_; }
-      /// reimplements RefWavefunction::dk(). Currently only nonrelativistic references are supported.
-      int dk() const { return 0; }
-      Ref<GaussianBasisSet> momentum_basis() const { return 0; }
-      RefSymmSCMatrix core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &basis,
-                                                 const Ref<GaussianBasisSet> &p_basis);
-      unsigned int nfzc() const { return nfzc_; }
-      bool omit_uocc() const { return omit_uocc_; }
-    private:
-      RefSymmSCMatrix rdm_[NSpinCases1];
-      bool spin_restricted_;
-      unsigned int nfzc_;
-      bool omit_uocc_;
-
-      void init_spaces();
-      void init_spaces_restricted();
-      void init_spaces_unrestricted();
-      void _set_desired_value_accuracy(double eps) {
-        // do nothing
-      }
-
-      Ref<DensityFittingInfo> dfinfo() const;
   };
 
   /// RefWavefunction specialization for a general wave function specified by its orbitals and rank-1 reduced density matrices
@@ -402,6 +348,7 @@ namespace sc {
       double energy() { return 0.0; }
       double actual_value_accuracy () const { return DBL_EPSILON; }
       double desired_value_accuracy() const { return DBL_EPSILON; }
+      int nelectron() const { return nelectron_; }
       bool spin_polarized() const { return rdm_[Alpha] != rdm_[Beta]; }
       bool spin_restricted() const { return true; }
       /// reimplements RefWavefunction::dk(). Currently only nonrelativistic references are supported.
@@ -417,6 +364,7 @@ namespace sc {
       RefSymmSCMatrix rdm_[NSpinCases1];
       unsigned int nfzc_;
       unsigned int nfzv_;
+      unsigned int nelectron_;
       bool omit_uocc_;
       bool ordm_idempotent_;
 

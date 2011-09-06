@@ -41,10 +41,10 @@ void CCR12_Info::compute_corr_space() {
   const std::string label("Active reference spin-orbitals in correlated order");
 
   // Prepare OrbitalSpace that corresponds to the CorrelatedMOOrder assumed by SMITH
-  Ref<OrbitalSpace> occs_a = r12world()->ref()->occ_sb(Alpha);
-  Ref<OrbitalSpace> occs_b = r12world()->ref()->occ_sb(Beta);
-  Ref<OrbitalSpace> orbs_a = r12world()->ref()->orbs_sb(Alpha);
-  Ref<OrbitalSpace> orbs_b = r12world()->ref()->orbs_sb(Beta);
+  Ref<OrbitalSpace> occs_a = r12world()->refwfn()->occ_sb(Alpha);
+  Ref<OrbitalSpace> occs_b = r12world()->refwfn()->occ_sb(Beta);
+  Ref<OrbitalSpace> orbs_a = r12world()->refwfn()->orbs_sb(Alpha);
+  Ref<OrbitalSpace> orbs_b = r12world()->refwfn()->orbs_sb(Beta);
   const size_t norbs = orbs_a->rank();
   RefDiagSCMatrix occnums_a = orbs_a->evals().clone();
   occnums_a.assign(0.0);
@@ -204,9 +204,9 @@ void
 CCR12_Info::compute_source_integrals_rhf_r12() {
   assert(need_w1());
 
-  Ref<OrbitalSpace> occs = r12world()->ref()->occ_sb();
-  Ref<OrbitalSpace> orbs = r12world()->ref()->orbs_sb();
-  Ref<OrbitalSpace> cabs = r12world()->ref()->orbs_sb();
+  Ref<OrbitalSpace> occs = r12world()->refwfn()->occ_sb();
+  Ref<OrbitalSpace> orbs = r12world()->refwfn()->orbs_sb();
+  Ref<OrbitalSpace> cabs = r12world()->refwfn()->orbs_sb();
 
   abort();
 }
@@ -215,7 +215,7 @@ void
 CCR12_Info::compute_source_integrals_rhf() {
 
   // this function should only be called for rhf
-  if (r12world()->ref()->spin_polarized())
+  if (r12world()->refwfn()->spin_polarized())
     throw ProgrammingError("CCR12_Info::compute_source_integrals_rhf -- reference wfn is spin-polarized",
                            __FILE__,__LINE__);
 
@@ -226,7 +226,7 @@ CCR12_Info::compute_source_integrals_rhf() {
                                     __FILE__,__LINE__);
 
   // compute Fock matrices in pitzer-order spaces because their occ-virtual blocks may be nonzero
-  Ref<OrbitalSpace> aobs_space = r12world()->ref()->orbs_sb(Alpha);
+  Ref<OrbitalSpace> aobs_space = r12world()->refwfn()->orbs_sb(Alpha);
   Ref<FockBuildRuntime> fb_rtime = r12world()->world()->fockbuild_runtime();
   const std::string fkey = ParsedOneBodyIntKey::key(aobs_space->id(),aobs_space->id(),std::string("F"));
   RefSCMatrix F = fb_rtime->get(fkey);
@@ -285,8 +285,8 @@ CCR12_Info::compute_source_integrals_rhf() {
     Ref<TwoBodyIntDescr> tbdescr = corrfactor->tbintdescr(r12world()->integral(),0);
     const std::string descr_key = r12world()->world()->moints_runtime4()->descr_key(tbdescr);
     {
-      Ref<OrbitalSpace> aocc_space = r12world()->ref()->occ_act_sb(Alpha);
-      Ref<OrbitalSpace> avir_space = r12world()->ref()->uocc_act_sb(Alpha);
+      Ref<OrbitalSpace> aocc_space = r12world()->refwfn()->occ_act_sb(Alpha);
+      Ref<OrbitalSpace> avir_space = r12world()->refwfn()->uocc_act_sb(Alpha);
       const std::string
         tkey = ParsedTwoBodyFourCenterIntKey::key(aocc_space->id(), aocc_space->id(),
                                                   avir_space->id(), cabs_space->id(),
@@ -307,7 +307,7 @@ CCR12_Info::compute_source_integrals_uhf() {
   assert(false);
 
   // this function should only be called for rohf or uhf
-  if (!r12world()->ref()->spin_polarized())
+  if (!r12world()->refwfn()->spin_polarized())
     throw ProgrammingError("CCR12_Info::compute_source_integrals_uhf -- reference wfn is not spin-polarized",
                            __FILE__,__LINE__);
 
@@ -319,10 +319,10 @@ CCR12_Info::compute_source_integrals_uhf() {
 
   // Prepare OrbitalSpace that corresponds to the CorrelatedMOOrder assumed by SMITH
 
-  Ref<OrbitalSpace> occs_a = r12world()->ref()->occ_sb(Alpha);
-  Ref<OrbitalSpace> occs_b = r12world()->ref()->occ_sb(Beta);
-  Ref<OrbitalSpace> orbs_a = r12world()->ref()->orbs_sb(Alpha);
-  Ref<OrbitalSpace> orbs_b = r12world()->ref()->orbs_sb(Beta);
+  Ref<OrbitalSpace> occs_a = r12world()->refwfn()->occ_sb(Alpha);
+  Ref<OrbitalSpace> occs_b = r12world()->refwfn()->occ_sb(Beta);
+  Ref<OrbitalSpace> orbs_a = r12world()->refwfn()->orbs_sb(Alpha);
+  Ref<OrbitalSpace> orbs_b = r12world()->refwfn()->orbs_sb(Beta);
   const size_t norbs = orbs_a->rank();
   RefDiagSCMatrix occnums_a = orbs_a->evals().clone();
   occnums_a.assign(0.0);
@@ -494,8 +494,8 @@ CCR12_Info::compute_source_integrals_uhf() {
 
 void CCR12_Info::fill_in_f1(){
 
-  Ref<OrbitalSpace> aobs_space = r12world()->ref()->orbs_sb(Alpha);
-  Ref<OrbitalSpace> bobs_space = r12world()->ref()->orbs_sb(Beta);
+  Ref<OrbitalSpace> aobs_space = r12world()->refwfn()->orbs_sb(Alpha);
+  Ref<OrbitalSpace> bobs_space = r12world()->refwfn()->orbs_sb(Beta);
 
   // compute map from indices in full spin-orbital space to indices in the respective spin spaces
   vector<long> amap;

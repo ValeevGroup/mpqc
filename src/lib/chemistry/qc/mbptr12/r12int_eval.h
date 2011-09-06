@@ -596,13 +596,13 @@ public:
 
   void debug(int d) { debug_ = d; }
 
-  int dk() const { return r12world()->ref()->dk(); }
+  int dk() const { return r12world()->refwfn()->dk(); }
 
 #if 1
   const Ref<R12Technology::CorrelationFactor>& corrfactor() const { return r12world()->r12tech()->corrfactor(); }
   R12Technology::ABSMethod abs_method() const { return r12world()->r12tech()->abs_method(); }
   const Ref<R12Technology::R12Ansatz>& ansatz() const { return r12world()->r12tech()->ansatz(); }
-  bool spin_polarized() const { return r12world()->ref()->spin_polarized(); }
+  bool spin_polarized() const { return r12world()->refwfn()->spin_polarized(); }
   bool gbc() const { return r12world()->r12tech()->gbc(); }
   bool ebc() const { return r12world()->r12tech()->ebc(); }
   bool coupling() const { return r12world()->r12tech()->coupling(); }
@@ -634,12 +634,12 @@ public:
   /// Returns the number of unique spin cases
   int nspincases1() const {
     if (r12world()->spinadapted()) return 1;
-    return ::sc::nspincases1(r12world()->ref()->spin_polarized());
+    return ::sc::nspincases1(r12world()->refwfn()->spin_polarized());
   }
   /// Returns the number of unique combinations of 2 spin cases
   int nspincases2() const {
     if (r12world()->spinadapted()) return 1;
-    return ::sc::nspincases2(r12world()->ref()->spin_polarized());
+    return ::sc::nspincases2(r12world()->refwfn()->spin_polarized());
   }
 
   /// This function causes the intermediate matrices to be computed.

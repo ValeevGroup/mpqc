@@ -105,8 +105,8 @@ void CCSDT::compute(){
     ccsdt_t3->compute_amp(r3);
 
     energy=ccr12_info_->get_e(e0) + ccr12_info_->t1()->ddot(r1)
-                                  + ccr12_info_->enengy_lagrangian_r2(r2)
-                                  + ccr12_info_->enengy_lagrangian_r3(r3);
+                                  + ccr12_info_->energy_lagrangian_r2(r2)
+                                  + ccr12_info_->energy_lagrangian_r3(r3);
 
     // compute new amplitudes from the residuals
     Ref<Tensor> t1_old = info()->t1()->copy();

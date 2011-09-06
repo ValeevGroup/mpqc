@@ -361,7 +361,7 @@ void CCR12_Info::guess_glambda2(Ref<Tensor>& d_glambda2_){
 }
 
 
-double CCR12_Info::enengy_lagrangian_r2(const Ref<Tensor>& r2) const { 
+double CCR12_Info::energy_lagrangian_r2(const Ref<Tensor>& r2) const { 
   double result = 0.0;
   const int unit = 1;
   for (long h3b=0L;h3b<noab();++h3b) { 
@@ -398,7 +398,7 @@ double CCR12_Info::enengy_lagrangian_r2(const Ref<Tensor>& r2) const {
   return result;
 } 
 
-double CCR12_Info::enengy_lagrangian_r3(const Ref<Tensor>& r3) const { 
+double CCR12_Info::energy_lagrangian_r3(const Ref<Tensor>& r3) const { 
   double result = 0.0;
   const int unit = 1;
   for (long h3b=0L;h3b<noab();++h3b) { 

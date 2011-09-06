@@ -68,7 +68,7 @@ R12IntEval::R12IntEval(const Ref<R12WavefunctionWorld>& r12w) :
   int naocc_a, naocc_b;
   int navir_a, navir_b;
   int nall_a, nall_b;
-  Ref<RefWavefunction> refinfo = r12world()->ref();
+  Ref<RefWavefunction> refinfo = r12world()->refwfn();
 
   const bool nalpha_eq_nbeta = r12world()->spinadapted() || (spin_polarized() == false && r12world()->spinadapted() == false);
 
@@ -85,8 +85,8 @@ R12IntEval::R12IntEval(const Ref<R12WavefunctionWorld>& r12w) :
     naocc_b = occ_act(Beta)->rank();
     navir_a = vir_act(Alpha)->rank();
     navir_b = vir_act(Beta)->rank();
-    nall_a = r12world()->ref()->orbs(Alpha)->rank();
-    nall_b = r12world()->ref()->orbs(Beta)->rank();
+    nall_a = r12world()->refwfn()->orbs(Alpha)->rank();
+    nall_b = r12world()->refwfn()->orbs(Beta)->rank();
   }
 
   dim_oo_[AlphaAlpha] = new SCDimension((naocc_a*(naocc_a-1))/2);
@@ -1317,7 +1317,7 @@ R12IntEval::K_P_P(SpinCase1 spin)
 #if TEST_FOCKBUILD_RUNTIME
   {
     Ref<FockBuildRuntime> fb_rtime = fockbuild_runtime();
-    const SpinCase1 realspin = r12world()->ref()->ref()->spin_polarized() ? spin : AnySpinCase1;
+    const SpinCase1 realspin = r12world()->refwfn()->refwfn()->spin_polarized() ? spin : AnySpinCase1;
 
     // get AO basis matrix
     const Ref<OrbitalSpace>& ribs = intspace;
@@ -2412,31 +2412,31 @@ R12IntEval::globally_sum_intermeds_(bool to_all_tasks)
 const Ref<OrbitalSpace>&
 R12IntEval::occ_act(SpinCase1 S) const
 {
-  return r12world()->ref()->occ_act_sb(S);
+  return r12world()->refwfn()->occ_act_sb(S);
 }
 
 const Ref<OrbitalSpace>&
 R12IntEval::occ(SpinCase1 S) const
 {
-  return r12world()->ref()->occ_sb(S);
+  return r12world()->refwfn()->occ_sb(S);
 }
 
 const Ref<OrbitalSpace>&
 R12IntEval::vir_act(SpinCase1 S) const
 {
-  return r12world()->ref()->uocc_act_sb(S);
+  return r12world()->refwfn()->uocc_act_sb(S);
 }
 
 const Ref<OrbitalSpace>&
 R12IntEval::vir(SpinCase1 S) const
 {
-  return r12world()->ref()->uocc_sb(S);
+  return r12world()->refwfn()->uocc_sb(S);
 }
 
 const Ref<OrbitalSpace>&
 R12IntEval::orbs(SpinCase1 S) const
 {
-  return r12world()->ref()->orbs_sb(S);
+  return r12world()->refwfn()->orbs_sb(S);
 }
 
 
@@ -2471,12 +2471,12 @@ const Ref<OrbitalSpace>& R12IntEval::ggspace(SpinCase1 S) const {
 
 RefSymmSCMatrix
 R12IntEval::ordm(SpinCase1 S) const {
-  if (r12world()->ref()->spin_polarized() == false && S == Beta)
+  if (r12world()->refwfn()->spin_polarized() == false && S == Beta)
     return ordm(Alpha);
   if (ordm_[S].nonnull())
     return ordm_[S];
 
-  ordm_[S] = r12world()->ref()->ordm_orbs_sb(S);
+  ordm_[S] = r12world()->refwfn()->ordm_orbs_sb(S);
   return ordm_[S];
 }
 
@@ -2486,8 +2486,8 @@ R12IntEval::ordm() const {
   if (ordm_[Alpha].nonnull())
     return ordm_[Alpha];
 
-  ordm_[Alpha] = r12world()->ref()->ordm_orbs_sb(Alpha);
-  ordm_[Alpha].accumulate(r12world()->ref()->ordm_orbs_sb(Beta));
+  ordm_[Alpha] = r12world()->refwfn()->ordm_orbs_sb(Alpha);
+  ordm_[Alpha].accumulate(r12world()->refwfn()->ordm_orbs_sb(Beta));
   return ordm_[Alpha];
 }
 
@@ -2496,12 +2496,12 @@ R12IntEval::ordm() const {
 RefSymmSCMatrix
 R12IntEval::ordm_av() const {
   assert(r12world()->spinadapted());
-  RefSymmSCMatrix ordm_av = r12world()->ref()->ordm_orbs_sb(Alpha).copy();
-  ordm_av.accumulate(r12world()->ref()->ordm_orbs_sb(Beta));
+  RefSymmSCMatrix ordm_av = r12world()->refwfn()->ordm_orbs_sb(Alpha).copy();
+  ordm_av.accumulate(r12world()->refwfn()->ordm_orbs_sb(Beta));
   ordm_av.scale(0.5);
   return ordm_av;
-//  RefSymmSCMatrix adm = r12world()->ref()->ordm_orbs_sb(Alpha);
-//  adm.accumulate(r12world()->ref()->ordm_orbs_sb(Beta));
+//  RefSymmSCMatrix adm = r12world()->refwfn()->ordm_orbs_sb(Alpha);
+//  adm.accumulate(r12world()->refwfn()->ordm_orbs_sb(Beta));
 //  adm.scale(0.5);
 //  ordm_[Alpha] = adm;
 //  return ordm_[Alpha] ;
@@ -2510,15 +2510,15 @@ R12IntEval::ordm_av() const {
 RefSymmSCMatrix
 R12IntEval::ordm_occ_av() const {
   assert(r12world()->spinadapted());
-  RefSymmSCMatrix ordm_av = r12world()->ref()->ordm_occ_sb(Alpha).copy();
-  ordm_av.accumulate(r12world()->ref()->ordm_occ_sb(Beta));
+  RefSymmSCMatrix ordm_av = r12world()->refwfn()->ordm_occ_sb(Alpha).copy();
+  ordm_av.accumulate(r12world()->refwfn()->ordm_occ_sb(Beta));
   ordm_av.scale(0.5);
   return ordm_av;
 }
 
 bool
 R12IntEval::bc() const {
-  Ref<SD_RefWavefunction> sdptr; sdptr << r12world()->ref();
+  Ref<SD_RefWavefunction> sdptr; sdptr << r12world()->refwfn();
   if (sdptr.nonnull()) {
     if (!sdptr->obwfn()->spin_unrestricted() && sdptr->spin_polarized())
       return false; // ROHF

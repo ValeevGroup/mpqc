@@ -294,8 +294,8 @@ MBPT2_R12::compute()
       SpinCase2 S = static_cast<SpinCase2>(s);
       SpinCase1 spin1 = case1(S);
       SpinCase1 spin2 = case2(S);
-      Ref<OrbitalSpace> occ1 = r12world()->ref()->occ(spin1);
-      Ref<OrbitalSpace> occ2 = r12world()->ref()->occ(spin2);
+      Ref<OrbitalSpace> occ1 = r12world()->refwfn()->occ(spin1);
+      Ref<OrbitalSpace> occ2 = r12world()->refwfn()->occ(spin2);
       Ref<OrbitalSpace> occ1_act = r12eval()->ggspace(spin1);
       Ref<OrbitalSpace> occ2_act = r12eval()->ggspace(spin2);
       const unsigned int nocc = occ1->rank();  // assuming RHF at the moment
@@ -316,7 +316,7 @@ MBPT2_R12::compute()
         // orbital set for this pair = occ orbitals + PSVs
         RefSCMatrix C_occ = occ1->coefs();
         RefSCMatrix C_psv = psv_set[ij].first;
-        //RefSCMatrix C_psv = r12world()->ref()->uocc(spin1)->coefs();
+        //RefSCMatrix C_psv = r12world()->refwfn()->uocc(spin1)->coefs();
         RefSCDimension aodim = C_occ.rowdim();
         RefSCDimension modim = new SCDimension(C_occ.ncol() + C_psv.ncol(), 1);
         modim->blocks()->set_subdim(0, new SCDimension(modim.n()));
@@ -340,7 +340,7 @@ MBPT2_R12::compute()
         Ref<RefWavefunction> refwfn = new Extern_RefWavefunction(this->r12world()->world(), this->basis(), this->integral(),
                                                                  C, orbsym, Pa, Pb, nocc,
                                                                  this->nfzcore(), this->nfzvirt(), false);
-        r12world_->ref(refwfn);
+        r12world_->refwfn(refwfn);
 
         // compute
         this->compute_energy_();
@@ -655,8 +655,8 @@ MBPT2_R12::mp1_pno(SpinCase2 spin,
     const Ref<OrbitalSpace>& occ2 = r12eval()->occ(spin2);
     const Ref<OrbitalSpace>& cabs1 = r12world()->cabs_space(spin1);
     const Ref<OrbitalSpace>& cabs2 = r12world()->cabs_space(spin2);
-    const Ref<OrbitalSpace>& uocc1_act = r12world()->ref()->uocc_act(spin1);
-    const Ref<OrbitalSpace>& uocc2_act = r12world()->ref()->uocc_act(spin2);
+    const Ref<OrbitalSpace>& uocc1_act = r12world()->refwfn()->uocc_act(spin1);
+    const Ref<OrbitalSpace>& uocc2_act = r12world()->refwfn()->uocc_act(spin2);
     assert(uocc1_act == uocc2_act); // not ready to handle UHF yet
 
     // compute the vv block of MP1 (not MP2-R12) 1-RDM for each ij

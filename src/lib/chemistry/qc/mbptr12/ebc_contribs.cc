@@ -77,7 +77,7 @@ void R12IntEval::compute_A() {
     const Ref<OrbitalSpace>& GG1space = GGspace(spin1);
     const Ref<OrbitalSpace>& GG2space = GGspace(spin2);
 
-    const Ref<RefWavefunction> refinfo = r12world()->ref();
+    const Ref<RefWavefunction> refinfo = r12world()->refwfn();
 
     A_[s] = local_matrix_kit->matrix(dim_f12_[s],dim_vv_[s]);
     A_[s].assign(0.0);

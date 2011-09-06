@@ -39,7 +39,7 @@ using namespace std;
 void CCR12_Info::prediagon(RefDiagSCMatrix& eigvals, RefSCMatrix& eigvecs) {
 	// CCR12_Info::B_ and CCR12_Info::X_ required.
 	// B_ and X_ are RefSymmSCMatrix objects.
-	assert(B_.nonnull() && X_.nonnull());
+    assert(B_.nonnull() && X_.nonnull());
 
     Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
 

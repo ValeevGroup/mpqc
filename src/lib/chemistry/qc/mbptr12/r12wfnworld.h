@@ -75,7 +75,7 @@ public:
         </table>
 
         @param keyval KeyVal object used to initialize this object
-        @param ref RefWavefunction object that the R12 Wavefunction who owns this object uses
+        @param refwfn RefWavefunction object that the R12 Wavefunction who owns this object uses
         @param ribs_space the OrbitalSpace object that approximates the RI space used to evaluate the many-electron integrals
                of R12 methods; this SHOULD NOT be given unless you know what you doing -- it's really just a hack to test
                the pair-specific RI approximation
@@ -89,18 +89,18 @@ public:
   void save_data_state(StateOut&);
 
   /// Return the RefWavefunction object
-  const Ref<RefWavefunction>& ref() const { return ref_; }
+  const Ref<RefWavefunction>& refwfn() const { return refwfn_; }
   /// Resets the RefWavefunction object
-  void ref(const Ref<RefWavefunction>& r) { if (ref_ != r) { this->obsolete(); ref_ = r; } }
-  const Ref<WavefunctionWorld>& world() const { return ref()->world(); }
+  void refwfn(const Ref<RefWavefunction>& r) { if (refwfn_ != r) { this->obsolete(); refwfn_ = r; } }
+  const Ref<WavefunctionWorld>& world() const { return refwfn()->world(); }
   Wavefunction* wfn() const { return world()->wfn(); }
   Ref<R12Technology> r12tech() const { return r12tech_; }
   /// Returns the orbital basis set (OBS) object
-  const Ref<GaussianBasisSet>& basis() const { return ref()->basis(); }
+  const Ref<GaussianBasisSet>& basis() const { return refwfn()->basis(); }
   /// Returns the resolution-of-the-identity basis set (RIBS) object
   const Ref<GaussianBasisSet>& basis_ri() const { return bs_ri_; }
   /// Returns the virtuals basis set (VBS) object
-  const Ref<GaussianBasisSet>& basis_vir() const { return ref()->uocc_basis(); }
+  const Ref<GaussianBasisSet>& basis_vir() const { return refwfn()->uocc_basis(); }
   /// Returns true if VBS is equivalent to OBS
   bool obs_eq_vbs() const { return obs_eq_vbs_; }
   /// Returns true if RIBS is equivalent to OBS
@@ -134,7 +134,7 @@ public:
 
 private:
 
-  Ref<RefWavefunction> ref_;   //!< describes the reference wavefunction
+  Ref<RefWavefunction> refwfn_;   //!< describes the reference wavefunction
   Ref<R12Technology> r12tech_;    //!< describes the R12 technology
   Ref<GaussianBasisSet> bs_aux_;  //!< the auxiliary basis used for computing the RI basis used in R12
   Ref<GaussianBasisSet> bs_ri_;   //!< the RI basis used in R12

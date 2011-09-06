@@ -5,6 +5,9 @@
 // Force linkages:
 #include <util/group/linkage.h>
 #include <chemistry/qc/basis/linkage.h>
+#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_PSI
+#include <chemistry/qc/psi/linkage.h>
+#endif
 #include <chemistry/qc/wfn/linkage.h>
 #include <chemistry/qc/scf/linkage.h>
 #ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12

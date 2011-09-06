@@ -115,7 +115,7 @@ void R12IntEval::compute_B_DKH_() {
   // Compute kinetic energy integrals and obtain geminal-generator spaces transformed with them
   //
   Ref<OrbitalSpace> t_x_P[NSpinCases1];
-  Ref<OrbitalSpace> rispace = (maxnabs < 1) ? r12world()->ref()->orbs() : r12world()->ribs_space();
+  Ref<OrbitalSpace> rispace = (maxnabs < 1) ? r12world()->refwfn()->orbs() : r12world()->ribs_space();
   for(int s=0; s<NSpinCases1; ++s) {
     
     const SpinCase1 spin = static_cast<SpinCase1>(s);
@@ -131,7 +131,7 @@ void R12IntEval::compute_B_DKH_() {
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
-    Ref<RefWavefunction> ref = r12world()->ref();
+    Ref<RefWavefunction> ref = r12world()->refwfn();
 
     const Ref<OrbitalSpace>& xspace1 = xspace(spin1);
     const Ref<OrbitalSpace>& xspace2 = xspace(spin2);
@@ -295,7 +295,7 @@ void R12IntEval::contrib_to_B_DKH_a_() {
     const SpinCase1 spin = static_cast<SpinCase1>(s);
     Ref<OrbitalSpace> x = xspace(spin);
     Ref<OrbitalSpace> m = occ(spin);
-    Ref<OrbitalSpace> obs = r12world()->ref()->orbs(spin);
+    Ref<OrbitalSpace> obs = r12world()->refwfn()->orbs(spin);
     Ref<OrbitalSpace> ribs = r12world()->ribs_space();
     Ref<OrbitalSpace> cabs = r12world()->cabs_space(spin);
 
@@ -324,7 +324,7 @@ void R12IntEval::contrib_to_B_DKH_a_() {
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
-    Ref<RefWavefunction> ref = r12world()->ref();
+    Ref<RefWavefunction> ref = r12world()->refwfn();
 
     const Ref<OrbitalSpace>& xspace1 = xspace(spin1);
     const Ref<OrbitalSpace>& xspace2 = xspace(spin2);

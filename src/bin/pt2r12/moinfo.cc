@@ -40,36 +40,181 @@ ExternReadMOInfo::ExternReadMOInfo(const std::string & filename)
 {
   std::ifstream in(filename.c_str());
 
+  //////
+  // parse molecular geometry
+  //////
   Ref<Molecule> molecule = new Molecule;
   bool have_atoms = true;
   while (have_atoms) {
     double charge, x, y, z;
     in >> charge >> x >> y >> z;
     if (charge != -1.0) {
+      x /= 0.529177249;
+      y /= 0.529177249;
+      z /= 0.529177249;
       molecule->add_atom(charge, x, y, z);
     }
-    else
+    else {
       have_atoms = false;
+      // to use getline after now skip EOL
+      const size_t nline = 256;
+      char linebuf[nline];
+      in.getline(linebuf, nline);
+    }
   }
   //molecule->set_point_group(new PointGroup("d2h"));
   molecule->print();
 
-  // initialize basis set given a hardwired name
+  //////
+  // parse basis set
+  //////
   {
     Ref<AssignedKeyVal> tmpkv = new AssignedKeyVal;
-    tmpkv->assign("name", "mod6-31Gs");
-    tmpkv->assign("basisdir", "./");
+    // add molecule
     tmpkv->assign("molecule", molecule.pointer());
+    const unsigned int num_atoms = molecule->natom();
+    bool have_gencon = false;
+
+    // make name for atomic basis sets
+    for (unsigned int a = 0; a < num_atoms; ++a) {
+      std::ostringstream oss1, oss2;
+      oss1 << "basis:" << a;
+      oss2 << "custom" << a;
+      tmpkv->assign(oss1.str().c_str(), oss2.str().c_str());
+    }
+
+    // read in first line
+    std::string buffer;
+    const size_t nline = 256;
+    char linebuf[nline];
+    in.getline(linebuf, nline);
+    buffer = linebuf;
+
+    // read shells for each atom
+    int current_shell_index = -1;
+    bool have_more_shells;
+    bool have_more_prims;
+    std::map<int, int> current_shell_index_on_atom;
+    std::string shell_prefix;
+    std::string am;
+    int puream = 0;
+
+    do { // shell loop
+      int current_primitive_index = -1;
+      do { // primitive loop
+
+        const size_t first_not_whitespace = buffer.find_first_not_of(" ");
+        const char first_char = buffer[first_not_whitespace];
+        if (first_char == '-') { // done with the basis set specification
+          have_more_shells = false;
+          have_more_prims = false;
+        } else { // have new shell or primitive? parse further
+          const size_t first_whitespace = buffer.find_first_of(
+              " ", first_not_whitespace);
+          const size_t first_not_whitespace = buffer.find_first_not_of(
+              " ", first_whitespace);
+          const char first_char = buffer[first_not_whitespace];
+
+          if (isalpha(first_char) == true) { // start of new shell
+            have_more_shells = true;
+            have_more_prims = false;
+          } else { // have a primitive
+            have_more_shells = false;
+            have_more_prims = true;
+            ++current_primitive_index;
+          }
+        }
+
+        std::istringstream iss(buffer);
+
+        // have new shell?
+        if (have_more_shells) {
+
+          int current_atom_index;
+          iss >> current_atom_index >> am;
+          --current_atom_index;
+          if (current_shell_index_on_atom.find(current_atom_index)
+              == current_shell_index_on_atom.end())
+            current_shell_index_on_atom[current_atom_index] = -1;
+          current_shell_index =
+              ++current_shell_index_on_atom[current_atom_index];
+          std::ostringstream oss;
+          oss << ":basis:" << molecule->atom_name(current_atom_index)
+              << ":custom" << current_atom_index << ":" << current_shell_index;
+          shell_prefix = oss.str();
+
+          if (am == "SP") {
+            have_gencon = true;
+          } else if (am[0] != 'S' && am[0] != 'P') {
+            iss >> puream;
+          }
+
+          tmpkv->assign((shell_prefix + ":type:0:am").c_str(),
+                        std::string(1, am[0]));
+          if (puream)
+            tmpkv->assign((shell_prefix + ":type:0:puream").c_str(),
+                          std::string("true"));
+          if (am == "SP") {
+            tmpkv->assign((shell_prefix + ":type:1:am").c_str(),
+                          std::string(1, am[1]));
+          }
+
+        }
+
+        // have new primitive?
+        if (have_more_prims) {
+          double exponent, coef0, coef1;
+          iss >> exponent >> coef0;
+          if (am == "SP") {
+            have_gencon = true;
+            iss >> coef1;
+          }
+          { // exponent
+            std::ostringstream oss;
+            oss << shell_prefix << ":exp:" << current_primitive_index;
+            tmpkv->assign(oss.str().c_str(), exponent);
+          }
+          { // coef 0
+            std::ostringstream oss;
+            oss << shell_prefix << ":coef:0:" << current_primitive_index;
+            tmpkv->assign(oss.str().c_str(), coef0);
+          }
+          if (am == "SP") { // coef 1
+            std::ostringstream oss;
+            oss << shell_prefix << ":coef:1:" << current_primitive_index;
+            tmpkv->assign(oss.str().c_str(), coef1);
+          }
+
+        } // done with the current primitive
+
+        // read next line
+        if (have_more_prims || have_more_shells) {
+          const size_t nline = 256;
+          char linebuf[nline];
+          in.getline(linebuf, nline);
+          buffer = linebuf;
+        }
+
+      } while (have_more_prims); // loop over prims in this shell
+
+    } while (have_more_shells); // loop over shells on this atom
     Ref<KeyVal> kv = tmpkv;
     Ref<GaussianBasisSet> basis = new GaussianBasisSet(kv);
 
 #if 0
-    // split generally contracted shells -- IntegralLibint2 can't handle such shells
-    Ref<AssignedKeyVal> tmpkv1 = new AssignedKeyVal;
-    tmpkv1->assign("basis", basis.pointer());
-    kv = tmpkv1;
-    basis_ = new SplitBasisSet(kv);
+    tmpkv = new AssignedKeyVal;
+    tmpkv->assign("name", "6-31G*");
+    tmpkv->assign("puream", "true");
+    tmpkv->assign("molecule", molecule.pointer());
+    kv = tmpkv;
+    basis = new GaussianBasisSet(kv);
 #endif
+
+    if (have_gencon) { // if have general contractions like SP shells in Pople-style basis sets split them so that IntegralLibint2 can handle them
+      Ref<GaussianBasisSet> split_basis = new SplitBasisSet(basis);
+      basis = split_basis;
+    }
+
     basis_ = basis;
   }
   basis_->print();
@@ -223,7 +368,7 @@ sc::ExternReadRDMTwo::ExternReadRDMTwo(const std::string & filename, const Ref<O
   while (have_coefs) {
     int bra1, bra2, ket1, ket2;
     double value;
-    in >> bra1 >> ket1 >> ket2 >> bra2 >> value;
+    in >> bra1 >> bra2 >> ket1 >> ket2 >> value;
     if (bra1 != -1) {
       --bra1;
       --bra2;
@@ -231,8 +376,8 @@ sc::ExternReadRDMTwo::ExternReadRDMTwo(const std::string & filename, const Ref<O
       --ket2;
       
       // this is specific to Luke's early RDM2 files produced from GAMESS
-      value *= 4.0;
-      if (bra1 == bra2 && ket1 == ket2 && bra1 == ket1) value *= 2.0;
+      //value *= 8.0;
+      //if (bra1 == bra2 && ket1 == ket2 && bra1 == ket1) value *= 2.0;
       //
       
       rdm_.set_element(bra1 * norbs + bra2, ket1 * norbs + ket2, value);

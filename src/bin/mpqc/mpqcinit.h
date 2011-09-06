@@ -33,20 +33,26 @@ namespace sc {
     /// Return the initial KeyVal object.
     sc::Ref<sc::KeyVal> init_keyval(const sc::Ref<sc::MessageGrp> &grp,
                                     const std::string &filename);
+
+    /// @defgroup init These members initialize MPQC defaults (such as ThreadGrp, Integral, etc.)
+    /// All try environment first, then @a keyval (which may be null), to initialize the corresponding default object
+    /// @{
     /// Return the initial ThreadGrp.
     sc::Ref<sc::ThreadGrp>
-      init_threadgrp(const sc::Ref<sc::KeyVal>&keyval);
+      init_threadgrp(Ref<sc::KeyVal> keyval = Ref<KeyVal>());
     /// Return the initial MemoryGrp.
     sc::Ref<sc::MemoryGrp>
-      init_memorygrp(sc::Ref<sc::KeyVal> &keyval);
+      init_memorygrp(Ref<sc::KeyVal> keyval = Ref<KeyVal>());
+    /// Initialize the default integral factory.
+    void init_integrals(Ref<KeyVal> keyval = Ref<KeyVal>());
+    /// Initialize the default ConsumableResources object.
+    void init_resources(Ref<KeyVal> keyval = Ref<KeyVal>());
+    /// Initialize the default region timer.
+    void init_timer(const Ref<MessageGrp> &grp, Ref<KeyVal> keyval = Ref<KeyVal>());
+    /// @}
+
     /// Initialize formatted I/O.
     void init_io(const sc::Ref<sc::MessageGrp> &grp);
-    /// Initialize the default integral factory.
-    void init_integrals(const Ref<KeyVal> &keyval);
-    /// Initialize the default ConsumableResources object.
-    void init_resources(const Ref<KeyVal> &keyval);
-    /// Initialize the default region timer.
-    void init_timer(const Ref<MessageGrp> &grp, const Ref<KeyVal>&keyval);
     /// Initialize the name used to construct data file names.
     void init_basename(const std::string &input_filename,
                        const std::string &output_filename = "");

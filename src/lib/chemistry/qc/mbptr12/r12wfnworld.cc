@@ -60,12 +60,12 @@ R12WavefunctionWorld::R12WavefunctionWorld(
     const Ref<KeyVal>& keyval,
     const Ref<RefWavefunction>& ref,
     Ref<OrbitalSpace> ri_space) :
-    ref_(ref), ref_acc_for_cabs_space_(DBL_MAX),
+    refwfn_(ref), ref_acc_for_cabs_space_(DBL_MAX),
     ribs_space_(ri_space), ribs_space_given_(ribs_space_.nonnull())
 {
   // by default use spin-orbital algorithm
   spinadapted_ = keyval->booleanvalue("spinadapted",KeyValValueboolean(false));
-  ref_->set_spinfree(spinadapted_);
+  refwfn_->set_spinfree(spinadapted_);
 
   if (ribs_space_.null()) {
     bs_aux_ = require_dynamic_cast<GaussianBasisSet*>(
@@ -83,14 +83,14 @@ R12WavefunctionWorld::R12WavefunctionWorld(
   // Make sure can use the integral factory for R12 calcs
   r12tech_->check_integral_factory(integral());
   correlate_min_occ_ = keyval->doublevalue("correlate_min_occ", KeyValValuedouble(0.0));
-  ref_->set_occ_thres(correlate_min_occ_);
+  refwfn_->set_occ_thres(correlate_min_occ_);
   do_screen_ = keyval->booleanvalue("do_screen",KeyValValueboolean(true));
-  ref_->set_do_screen(do_screen_);
+  refwfn_->set_do_screen(do_screen_);
 }
 
 R12WavefunctionWorld::R12WavefunctionWorld(StateIn& si) : SavableState(si)
 {
-  ref_ << SavableState::restore_state(si);
+  refwfn_ << SavableState::restore_state(si);
   bs_aux_ << SavableState::restore_state(si);
   bs_ri_ << SavableState::restore_state(si);
 
@@ -108,7 +108,7 @@ R12WavefunctionWorld::~R12WavefunctionWorld()
 
 void R12WavefunctionWorld::save_data_state(StateOut& so)
 {
-  SavableState::save_state(ref_.pointer(),so);
+  SavableState::save_state(refwfn_.pointer(),so);
   SavableState::save_state(bs_aux_.pointer(),so);
   SavableState::save_state(bs_ri_.pointer(),so);
   so.put(spinadapted_);
@@ -150,7 +150,7 @@ R12WavefunctionWorld::initialize()
     }
   }
 
-  ref_->world()->initialize_ao_spaces();
+  refwfn_->world()->initialize_ao_spaces();
   // provide hints to the factory about the likely use of transforms
   {
     // 1) if stdapprox is A' or A'' most transforms will never be reused
@@ -173,7 +173,7 @@ R12WavefunctionWorld::initialize()
 
 void
 R12WavefunctionWorld::obsolete() {
-  ref_->obsolete();
+  refwfn_->obsolete();
   abs_space_ = 0;
   cabs_space_[Alpha] = 0;
   cabs_space_[Beta] = 0;
@@ -206,7 +206,7 @@ R12WavefunctionWorld::obs_eq_ribs() const {
 const Ref<OrbitalSpace>&
 R12WavefunctionWorld::cabs_space(const SpinCase1& S) const
 {
-  if (ref_acc_for_cabs_space_ > ref()->desired_value_accuracy()) { // recompute if accuracy of reference has increased
+  if (ref_acc_for_cabs_space_ > refwfn()->desired_value_accuracy()) { // recompute if accuracy of reference has increased
     cabs_space_[Alpha] = 0;
     cabs_space_[Beta] = 0;
   }
@@ -224,17 +224,17 @@ R12WavefunctionWorld::sdref() const {
 #if !ALWAYS_USE_GENREF_ALGORITHM
   // only references based on OneBodyWavefunction are detected as single-determinant references!
   {
-    Ref<SD_RefWavefunction> sd; sd << ref();
+    Ref<SD_RefWavefunction> sd; sd << refwfn();
     if (sd.nonnull()) return true;
   }
   // references based on Extern_RefWavefunction are single-determinant references IF their densities are idempotent
   {
-    Ref<Extern_RefWavefunction> ext; ext << ref();
+    Ref<Extern_RefWavefunction> ext; ext << refwfn();
     if (ext.nonnull()) return ext->ordm_idempotent();
   }
 #if HAVE_PSIMPQCIFACE
   {
-    Ref<PsiSCF_RefWavefunction> sd; sd << ref();
+    Ref<PsiSCF_RefWavefunction> sd; sd << refwfn();
     if (sd.nonnull()) return true;
   }
 #endif
@@ -249,6 +249,7 @@ R12WavefunctionWorld::print(std::ostream& o) const {
   o << incindent;
 
   this->world()->print(o);
+  this->refwfn()->print(o);
 
   if (!bs_aux_->equiv(basis())) {
       o << indent << "Auxiliary Basis Set (ABS):" << endl;

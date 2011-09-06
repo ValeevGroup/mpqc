@@ -329,8 +329,8 @@ class CCR12_Info : virtual public RefCount {
     void jacobi_l4(Ref<Tensor>&,Ref<Tensor>&); */
 
     /// Functions for ddot of the tensors in an accurate way (used for energy evaluation).
-    double enengy_lagrangian_r2(const Ref<Tensor>&) const;
-    double enengy_lagrangian_r3(const Ref<Tensor>&) const;
+    double energy_lagrangian_r2(const Ref<Tensor>&) const;
+    double energy_lagrangian_r3(const Ref<Tensor>&) const;
 
 
     //// DIIS utilities // could not locate in tensor.h..

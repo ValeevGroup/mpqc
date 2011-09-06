@@ -140,6 +140,27 @@ AssignedKeyVal::clear()
   _map.clear();
 }
 
+void
+AssignedKeyVal::print(std::ostream & os) const
+{
+  // sort keys
+  typedef std::set<std::string> keys_t;
+  typedef keys_t::const_iterator keys_iter;
+  keys_t keys;
+  typedef _map_t::const_iterator mapiter;
+  for(mapiter i = _map.begin(); i != _map.end(); ++i)
+    keys.insert(i->first);
+
+  // print
+  os << indent << "AssignedKeyVal = (" << incindent << std::endl;
+  for(keys_iter ki = keys.begin(); ki != keys.end(); ++ki) {
+    os << indent << *ki << " = ";
+    _map.find(*ki)->second->print(os);
+    os << std::endl;
+  }
+  os << decindent << indent << ")" << std::endl;
+}
+
 #ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 template class EAVLMMapNode<std::string, AVLMapNode<std::string,Ref<KeyValValue> > >;
 template class EAVLMMap<std::string, AVLMapNode<std::string,Ref<KeyValValue> > >;

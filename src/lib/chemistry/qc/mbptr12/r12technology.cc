@@ -784,7 +784,7 @@ R12Technology::G12CorrelationFactor::print_params(std::ostream& os, unsigned int
   const int nprim = nprimitives(f);
   for(int p=0; p<nprim; p++) {
     const PrimitiveGeminal& prim = primitive(f,p);
-    os << "[" << prim.first << " " << prim.second << "] ";
+    os << scprintf("[ %18.12lf %18.12lf ] ", prim.first, prim.second);
   }
   os << " ]" << endl;
 }
@@ -904,7 +904,7 @@ R12Technology::G12NCCorrelationFactor::print_params(std::ostream& os, unsigned i
   const int nprim = nprimitives(f);
   for(int p=0; p<nprim; p++) {
     const PrimitiveGeminal& prim = primitive(f,p);
-    os << "[" << prim.first << " " << prim.second << "] ";
+    os << scprintf("[ %18.12lf %18.12lf ] ", prim.first, prim.second);
   }
   os << " ]" << endl;
 }

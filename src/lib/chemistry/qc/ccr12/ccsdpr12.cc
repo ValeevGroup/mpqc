@@ -125,7 +125,7 @@ void CCSDPR12::compute(){
     if (fullopt) ccsdpr12_c->compute_amp(gr2);
 
     energy = ccr12_info_->get_e(e0) + ccr12_info_->t1()->ddot(r1)
-                                    + ccr12_info_->enengy_lagrangian_r2(r2);
+                                    + ccr12_info_->energy_lagrangian_r2(r2);
     if (fullopt) {
       e0->zero();
       Ref<Tensor> gt2tmp = ccr12_info_->gt2();

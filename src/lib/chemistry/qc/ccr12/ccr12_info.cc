@@ -53,16 +53,16 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
 
   needs();
 
-  set_naocc(r12world_->ref()->occ_act_sb(Alpha)->rank(),
-            r12world_->ref()->occ_act_sb(Beta )->rank());
+  set_naocc(r12world_->refwfn()->occ_act_sb(Alpha)->rank(),
+            r12world_->refwfn()->occ_act_sb(Beta )->rank());
 
 //assert(r12world_->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_fullopt);
   assert(r12world_->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_scaledfixed);
   set_fixed(r12world_->r12tech()->ansatz()->amplitudes() == R12Technology::GeminalAmplitudeAnsatz_fixed);
-  set_navir(r12world_->ref()->orbs(Alpha)->rank() - naoa() - nfzc() - nfzv(),
-            r12world_->ref()->orbs(Beta )->rank() - naob() - nfzc() - nfzv());
-  set_mosym(r12world_->ref()->orbs(Alpha)->orbsym(),
-            r12world_->ref()->orbs(Beta )->orbsym());
+  set_navir(r12world_->refwfn()->orbs(Alpha)->rank() - naoa() - nfzc() - nfzv(),
+            r12world_->refwfn()->orbs(Beta )->rank() - naob() - nfzc() - nfzv());
+  set_mosym(r12world_->refwfn()->orbs(Alpha)->orbsym(),
+            r12world_->refwfn()->orbs(Beta )->orbsym());
 
   if (need_w1_) {
     set_ncabs(r12world_->cabs_space(Alpha)->rank(),
@@ -284,6 +284,7 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
   // prediagonalization set-up for certain class of methods.
   // EFV: 06/19/2011 seem to need this even in CCSD(R12)?
 //  if (need_w1() && theory_ != "CCSD(R12)") {
+  if (need_w1())
     prediagon(bdiag_, lmatrix_);
 //  }
 
@@ -510,8 +511,8 @@ void CCR12_Info::print(ostream& o){
 
 void CCR12_Info::orbital_energies(){
 
-  Ref<OrbitalSpace> aobs_space = r12world()->ref()->orbs_sb(Alpha);
-  Ref<OrbitalSpace> bobs_space = r12world()->ref()->orbs_sb(Beta);
+  Ref<OrbitalSpace> aobs_space = r12world()->refwfn()->orbs_sb(Alpha);
+  Ref<OrbitalSpace> bobs_space = r12world()->refwfn()->orbs_sb(Beta);
 
   // compute map from indices in full spin-orbital space to indices in the respective spin spaces
   vector<long> amap;

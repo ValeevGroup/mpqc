@@ -82,7 +82,7 @@ R12WavefunctionWorld::construct_ri_basis_(bool safe)
     // also create AO space for RI basis
     Ref<OrbitalSpaceRegistry> idxreg = world()->tfactory()->orbital_registry();
     Ref<AOSpaceRegistry> aoidxreg = world()->tfactory()->ao_registry();
-    Ref<Integral> localints = ref()->integral()->clone();
+    Ref<Integral> localints = refwfn()->integral()->clone();
     if (!obs_eq_ribs()) { // RI-BS
       Ref<OrbitalSpace> mu = new AtomicOrbitalSpace("mu'", "RIBS(AO)", basis_ri(), localints);
       idxreg->add(make_keyspace_pair(mu));
@@ -99,11 +99,11 @@ R12WavefunctionWorld::construct_cabs_()
 
   construct_ri_basis_(r12tech()->safety_check());
 
-  Ref<GaussianBasisSet> obs = ref()->basis();
+  Ref<GaussianBasisSet> obs = refwfn()->basis();
   if (bs_ri_->equiv(obs))
     throw std::logic_error("R12WavefunctionWorld::construct_cabs_ -- CABS and CABS+ methods can only be used when ABS != OBS");
 
-  ref_acc_for_cabs_space_ = ref()->desired_value_accuracy();
+  ref_acc_for_cabs_space_ = refwfn()->desired_value_accuracy();
   construct_ortho_comp_svd_();
 }
 
@@ -160,7 +160,7 @@ R12WavefunctionWorld::abs_spans_obs_()
 
   // Compute the bumber of linear dependencies in OBS+ABS
   GaussianBasisSet& abs = *(bs_aux_.pointer());
-  Ref<GaussianBasisSet> ri_basis = abs + ref()->basis();
+  Ref<GaussianBasisSet> ri_basis = abs + refwfn()->basis();
   int nlindep_ri = 0;
   if (bs_ri_.nonnull() && ri_basis->equiv(bs_ri_)) {
     construct_orthog_ri_();
@@ -170,7 +170,7 @@ R12WavefunctionWorld::abs_spans_obs_()
     Ref<OrbitalSpace> ribs_space = orthogonalize("p+p'","OBS+ABS", ri_basis, integral(), orthog_method(), r12tech()->abs_lindep_tol(), nlindep_ri);
   }
 
-  const int obs_rank = ref()->orbs(Alpha)->rank();
+  const int obs_rank = refwfn()->orbs(Alpha)->rank();
   if (nlindep_ri - nlindep_aux_ - obs_rank == 0)
     return true;
   else
@@ -185,21 +185,21 @@ R12WavefunctionWorld::construct_ortho_comp_svd_()
   const Ref<OrbitalSpaceRegistry> idxreg = this->world()->tfactory()->orbital_registry();
 
   const double tol = r12tech()->abs_lindep_tol();
-  if (!ref()->spin_polarized()) {
-    Ref<OrbitalSpace> tmp = orthog_comp(ref()->occ_sb(Alpha), ribs_space_, "p'-m", "CABS", tol);
-    tmp = orthog_comp(ref()->uocc_sb(Alpha), tmp, "a'", "CABS", tol);
+  if (!refwfn()->spin_polarized()) {
+    Ref<OrbitalSpace> tmp = orthog_comp(refwfn()->occ_sb(Alpha), ribs_space_, "p'-m", "CABS", tol);
+    tmp = orthog_comp(refwfn()->uocc_sb(Alpha), tmp, "a'", "CABS", tol);
     cabs_space_[Alpha] = tmp;
     cabs_space_[Beta] = cabs_space_[Alpha];
     idxreg->add(make_keyspace_pair(cabs_space_[Alpha]));
   }
   else {
-    Ref<OrbitalSpace> tmp_a = orthog_comp(ref()->occ_sb(Alpha), ribs_space_, "P'-M", "CABS (Alpha)", tol);
-    Ref<OrbitalSpace> tmp_b = orthog_comp(ref()->occ_sb(Beta), ribs_space_, "p'-m", "CABS (Beta)", tol);
+    Ref<OrbitalSpace> tmp_a = orthog_comp(refwfn()->occ_sb(Alpha), ribs_space_, "P'-M", "CABS (Alpha)", tol);
+    Ref<OrbitalSpace> tmp_b = orthog_comp(refwfn()->occ_sb(Beta), ribs_space_, "p'-m", "CABS (Beta)", tol);
     if (USE_NEW_ORBITALSPACE_KEYS) {
       const std::string key_a = ParsedOrbitalSpaceKey::key(std::string("a'"),Alpha);
       const std::string key_b = ParsedOrbitalSpaceKey::key(std::string("a'"),Beta);
-      cabs_space_[Alpha] = orthog_comp(ref()->uocc_sb(Alpha), tmp_a, key_a, "CABS (Alpha)", tol);
-      cabs_space_[Beta] = orthog_comp(ref()->uocc_sb(Beta), tmp_b, key_b, "CABS (Beta)", tol);
+      cabs_space_[Alpha] = orthog_comp(refwfn()->uocc_sb(Alpha), tmp_a, key_a, "CABS (Alpha)", tol);
+      cabs_space_[Beta] = orthog_comp(refwfn()->uocc_sb(Beta), tmp_b, key_b, "CABS (Beta)", tol);
     }
     else // old orbitalspace key no longer supported
       assert(false);

@@ -149,7 +149,7 @@ MPQCInit::init_keyval(const Ref<MessageGrp> &grp,const std::string &filename)
 }
 
 Ref<ThreadGrp>
-MPQCInit::init_threadgrp(const Ref<KeyVal>&keyval)
+MPQCInit::init_threadgrp(Ref<KeyVal> keyval)
 {
   // get the thread group.  first try the commandline and environment
   Ref<ThreadGrp> thread = ThreadGrp::initial_threadgrp(argc_, argv_);
@@ -169,7 +169,7 @@ MPQCInit::init_threadgrp(const Ref<KeyVal>&keyval)
 }
 
 Ref<MemoryGrp>
-MPQCInit::init_memorygrp(Ref<KeyVal> &keyval)
+MPQCInit::init_memorygrp(Ref<KeyVal> keyval)
 {
   // get the memory group.  first try the commandline and environment
   Ref<MemoryGrp> memory = MemoryGrp::initial_memorygrp(argc_, argv_);
@@ -200,14 +200,14 @@ MPQCInit::init_io(const Ref<MessageGrp> &grp)
 }
 
 void
-MPQCInit::init_integrals(const Ref<KeyVal> &keyval)
+MPQCInit::init_integrals(Ref<KeyVal> keyval)
 {
   // get the integral factory. first try commandline and environment
   Ref<Integral> integral = Integral::initial_integral(argc_, argv_);
 
   // if we still don't have a integral, try reading the integral
   // from the input
-  if (integral.null()) {
+  if (integral.null() && keyval.nonnull()) {
     integral << keyval->describedclassvalue("integrals");
   }
 
@@ -220,13 +220,13 @@ MPQCInit::init_integrals(const Ref<KeyVal> &keyval)
 }
 
 void
-MPQCInit::init_resources(const Ref<KeyVal> &keyval)
+MPQCInit::init_resources(Ref<KeyVal> keyval)
 {
   // get the resources object. first try commandline and environment
   Ref<ConsumableResources> inst = ConsumableResources::initial_instance(argc_, argv_);
 
   // if we still don't have one reading from the input
-  if (inst.null()) {
+  if (inst.null() && keyval.nonnull()) {
     inst << keyval->describedclassvalue("resources");
   }
 
@@ -239,11 +239,11 @@ MPQCInit::init_resources(const Ref<KeyVal> &keyval)
 }
 
 void
-MPQCInit::init_timer(const Ref<MessageGrp> &grp, const Ref<KeyVal>&keyval)
+MPQCInit::init_timer(const Ref<MessageGrp> &grp, Ref<KeyVal> keyval)
 {
   grp->sync(); // make sure nodes are sync'ed before starting timings
   Ref<RegionTimer> tim;
-  if (keyval->exists("timer")) tim << keyval->describedclassvalue("timer");
+  if (keyval.nonnull()) { if (keyval->exists("timer")) tim << keyval->describedclassvalue("timer"); }
   else                         tim = new ParallelRegionTimer(grp,"mpqc",1,1);
   RegionTimer::set_default_regiontimer(tim);
 }

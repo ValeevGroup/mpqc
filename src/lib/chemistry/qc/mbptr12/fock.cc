@@ -80,7 +80,7 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
     RefSCDimension aodim2 = vec2.rowdim();
     Ref<SCMatrixKit> sokit = bs1->so_matrixkit();
 
-    Ref<RefWavefunction> reference = r12world()->ref();
+    Ref<RefWavefunction> reference = r12world()->refwfn();
     // Form the DK correction in the current basis using the momentum
     // basis of the reference wavefunction.  The momentum basis in the
     // reference should be a superset of hcore_basis
@@ -206,7 +206,7 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
         F.accumulate(J*scale_J);
       }
       if (scale_K != 0.0) {
-        const SpinCase1 realspin = r12world()->ref()->spin_polarized() ? spin : AnySpinCase1;
+        const SpinCase1 realspin = r12world()->refwfn()->spin_polarized() ? spin : AnySpinCase1;
         const std::string kkey = ParsedOneBodyIntKey::key(bra_space->id(),ket_space->id(),std::string("K"),realspin);
         RefSCMatrix K = fb_rtime->get(kkey);
         F.accumulate( (-scale_K) * K);
@@ -251,7 +251,7 @@ R12IntEval::Delta_DKH_(const Ref<OrbitalSpace>& bra_space,
   }
 #endif
 
-  Ref<SCF> ref = r12world()->ref()->ref();
+  Ref<SCF> refwfn = r12world()->refwfn()->refwfn();
 
   Ref<GaussianBasisSet> hcore_basis = (bs1_eq_bs2) ? bs1 : bs1 + bs2;
 
@@ -260,12 +260,12 @@ R12IntEval::Delta_DKH_(const Ref<OrbitalSpace>& bra_space,
   // reference should be a superset of hcore_basis
 
   // be precise, it's a critical step
-  //  Ref<GaussianBasisSet> uncontract_p = new UncontractedBasisSet(ref->momentum_basis());
-  Ref<GaussianBasisSet> uncontract_p = ref->momentum_basis(); // for consistency
+  //  Ref<GaussianBasisSet> uncontract_p = new UncontractedBasisSet(refwfn->momentum_basis());
+  Ref<GaussianBasisSet> uncontract_p = refwfn->momentum_basis(); // for consistency
   Ref<GaussianBasisSet> p_basis = uncontract_p+hcore_basis;
 
   // compute the relativistic core Hamiltonian
-  RefSymmSCMatrix hsymm = ref->core_hamiltonian_for_basis(hcore_basis,p_basis);
+  RefSymmSCMatrix hsymm = refwfn->core_hamiltonian_for_basis(hcore_basis,p_basis);
 
   // the whole Darwin/mass_velocity block can be replaced by a call of pauli
   // I'll leave it for now for testing purposes.

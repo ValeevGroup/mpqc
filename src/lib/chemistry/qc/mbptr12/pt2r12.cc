@@ -25,6 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <fstream>
 #include <chemistry/qc/mbptr12/pt2r12.h>
 #include <util/misc/print.h>
 #include <chemistry/qc/wfn/orbitalspace_utils.h>
@@ -369,11 +370,6 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
   cabs_singles_coupling_ = keyval->booleanvalue("cabs_singles_coupling", KeyValValueboolean(true));
   rotate_core_ = keyval->booleanvalue("rotate_core", KeyValValueboolean(true));
 
-
-  reference_ = require_dynamic_cast<Wavefunction*>(
-        keyval->describedclassvalue("reference").pointer(), "PT2R12::PT2R12\n");
-  if (reference_.null()) throw InputError("missing reference", __FILE__, __LINE__,
-                                          "reference", 0,this->class_desc());
   rdm2_ = require_dynamic_cast<RDM<Two>*>(
         keyval->describedclassvalue("rdm2").pointer(),
         "PT2R12::PT2R12\n"
@@ -381,11 +377,7 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
   if (rdm2_.null()) throw InputError("missing rdm2", __FILE__, __LINE__,
                                     "rdm2", 0,
                                     this->class_desc());
-  assert(reference_ == rdm2_->wfn());
   rdm1_ = rdm2_->rdm_m_1();
-
-  // this may update the accuracy of reference_ object
-  this->set_desired_value_accuracy(desired_value_accuracy());
 
   // if world not given, make this the center of a new World
   Ref<WavefunctionWorld> world; world << keyval->describedclassvalue("world", KeyValValueRefDescribedClass(0));
@@ -402,12 +394,22 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
   if (omit_uocc_) {
     virspace = new EmptyOrbitalSpace("", "", basis(), integral(), OrbitalSpace::symmetry);
   }
-  Ref<RefWavefunction> ref = RefWavefunctionFactory::make(world,
-                                                          reference_,
-                                                          spin_restricted,
-                                                          nfzc_,
-                                                          0,
-                                                          virspace);
+
+  Ref<RefWavefunction> ref;
+  {
+    Ref<Wavefunction> reference;
+    reference << keyval->describedclassvalue("reference");
+    if (reference.nonnull()) {
+      assert(reference == rdm2_->wfn());
+      ref = RefWavefunctionFactory::make(world, reference, spin_restricted,
+                                         nfzc_, 0, virspace);
+    }
+    else  {
+      ref << keyval->describedclassvalue("refwfn").pointer();
+      if (ref.null() && reference.null()) throw InputError("missing reference", __FILE__, __LINE__,
+                                                           "reference", 0,this->class_desc());
+    }
+  }
 
   // some defaults need to be overridden for R12WavefunctionWorld
   // spinadapted should by default be false
@@ -424,10 +426,11 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
 
   debug_ = keyval->intvalue("debug", KeyValValueint(0));
   r12eval_->debug(debug_);
+  // this may update the accuracy of reference_ object
+  this->set_desired_value_accuracy(desired_value_accuracy());
 }
 
 PT2R12::PT2R12(StateIn &s) : Wavefunction(s) {
-  reference_ << SavableState::restore_state(s);
   rdm2_ << SavableState::restore_state(s);
   rdm1_ << SavableState::restore_state(s);
   r12world_ << SavableState::restore_state(s);
@@ -444,7 +447,6 @@ PT2R12::~PT2R12() {
 
 void PT2R12::save_data_state(StateOut &s) {
   Wavefunction::save_data_state(s);
-  SavableState::save_state(reference_, s);
   SavableState::save_state(rdm2_, s);
   SavableState::save_state(rdm1_, s);
   SavableState::save_state(r12world_, s);
@@ -457,7 +459,6 @@ void PT2R12::save_data_state(StateOut &s) {
 
 void
 PT2R12::obsolete() {
-  reference_->obsolete();
   r12eval_->obsolete();
   rdm1_->obsolete();
   rdm2_->obsolete();
@@ -470,10 +471,11 @@ void
 PT2R12::set_desired_value_accuracy(double acc)
 {
   Function::set_desired_value_accuracy(acc);
-  if (reference_->desired_value_accuracy_set_to_default()) {
+  Ref<RefWavefunction> refwfn = r12world()->refwfn();
+  if (refwfn->desired_value_accuracy_set_to_default()) {
     // reference should be computed to higher accuracy
     const double ref_acc = acc * ref_to_pt2r12_acc();
-    reference_->set_desired_value_accuracy(ref_acc);
+    refwfn->set_desired_value_accuracy(ref_acc);
   }
 }
 
@@ -1033,7 +1035,7 @@ RefSCMatrix PT2R12::V_genref_projector2() {
   RefSCMatrix V_genref = localkit->matrix(r12eval_->dim_GG(AlphaBeta),r12eval_->dim_gg(AlphaBeta));
   V_genref.assign(0.0);
 
-  Ref<OrbitalSpace> occspace = r12world()->ref()->occ(Alpha);
+  Ref<OrbitalSpace> occspace = r12world()->refwfn()->occ(Alpha);
   Ref<OrbitalSpace> gg_space = r12eval_->ggspace(Alpha);
 
 
@@ -1294,10 +1296,10 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
     ExEnv::out0() << indent << scprintf("Hylleraas:                %17.12lf", E_total) << std::endl;
     ExEnv::out0() << indent << scprintf("deviation percentage:     %17.12lf", deviation) << std::endl << std::endl << std::endl;
   }
-  if(fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation and r12world()->ref()->do_screen())
+  if(fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupation and r12world()->refwfn()->do_screen())
   {
-    const int total_active_occ = r12world()->ref()->unscreen_occ_act_sb(Alpha)->rank();
-    const int survive_active_occ = r12world()->ref()->occ_act_sb(Alpha)->rank();
+    const int total_active_occ = r12world()->refwfn()->unscreen_occ_act_sb(Alpha)->rank();
+    const int survive_active_occ = r12world()->refwfn()->occ_act_sb(Alpha)->rank();
     const double kept = double(survive_active_occ)/double(total_active_occ);
     const double filter = 1 -kept;
     ExEnv::out0() << std::endl << std::endl;
@@ -1321,8 +1323,8 @@ RefSCMatrix sc::PT2R12::transform_MO() //transformation matrix between occupied 
   const bool debugprint = false;
   RefSymmSCMatrix mo_density =  rdm1(Alpha) + rdm1(Beta);//this will eventually read the checkpoint file. I assume they are of the dimension of occ orb space
 //  mo_density.print(std::string("transform_MO: mo_density (occ)").c_str());
-  Ref<OrbitalSpace> unscreen_occ_act = r12world()->ref()->unscreen_occ_act_sb();
-  Ref<OrbitalSpace> occ = r12world()->ref()->occ_sb();
+  Ref<OrbitalSpace> unscreen_occ_act = r12world()->refwfn()->unscreen_occ_act_sb();
+  Ref<OrbitalSpace> occ = r12world()->refwfn()->occ_sb();
   std::vector<int> map1 = map(*occ, *unscreen_occ_act);
   if(debugprint)
   {
@@ -1361,7 +1363,7 @@ RefSCMatrix sc::PT2R12::transform_MO() //transformation matrix between occupied 
 
   Ref<LocalSCMatrixKit> local_kit = new LocalSCMatrixKit();
 
-  //the following code is copied from ref.cc: PopulatedOrbitalSpace(...)
+  //the following code is copied from refwfn.cc: PopulatedOrbitalSpace(...)
   std::vector<unsigned int> blocks = occ->block_sizes();
   int nblocks = occ->nblocks();
   int blockoffset = 0;
@@ -1423,9 +1425,9 @@ RefSymmSCMatrix sc::PT2R12::rdm1_sf()
   static bool printed = false;
   RefSymmSCMatrix sf_opdm = rdm1(Alpha) + rdm1(Beta);//converted to local
 #if 0
-  RefSymmSCMatrix sf_opdm2 = r12world()->ref()->ordm_occ_sb(Alpha)+r12world()->ref()->ordm_occ_sb(Beta);
+  RefSymmSCMatrix sf_opdm2 = r12world()->refwfn()->ordm_occ_sb(Alpha)+r12world()->refwfn()->ordm_occ_sb(Beta);
 #endif
-  if(r12world_->spinadapted() and fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
+  if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupation)
   {
     RefSCMatrix transMO_nonlocal = this->transform_MO();
     assert((sf_opdm->n() == transMO_nonlocal->coldim()->n()) and (sf_opdm->n()==r12eval_->occ(Alpha)->rank()));//should be the dimension of occ space
@@ -1483,7 +1485,7 @@ RefSCMatrix sc::PT2R12::rdm1_sf_2spaces(const Ref<OrbitalSpace> b1space, const R
   // 1. to avoid potential problems and for cleanness, all orb spaces should be accessed through r12eval_->r12world_->ref_->spinspaces_ (or screened_spinspaces_);
   // 2. take care of screening
   Ref<OrbitalSpace> pdmspace;
-  pdmspace = get_r12eval()->r12world()->ref()->orbs_sb();
+  pdmspace = get_r12eval()->r12world()->refwfn()->orbs_sb();
 
   const unsigned int n_pdmspace = pdmspace->rank();
 
@@ -1541,7 +1543,7 @@ RefSymmSCMatrix sc::PT2R12::rdm2_sf()
      }
   }
 
-  if(r12world_->spinadapted() and fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
+  if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupation)
   {
     const bool printdebug = false;
     RefSymmSCMatrix res = sf_rdm->clone();
@@ -1587,15 +1589,15 @@ RefSCMatrix sc::PT2R12::rdm2_sf_4spaces(const Ref<OrbitalSpace> b1space, const R
   // 1. to avoid potential problems and for cleanness, all orb spaces should be accessed through r12eval_->r12world_->ref_->spinspaces_ (or screened_spinspaces_);
   // 2. take care of screening
   Ref<OrbitalSpace> pdmspace;
-  if(r12world_->spinadapted() and fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
-    pdmspace = get_r12eval()->r12world()->ref()->get_screened_poporbspace()->occ_sb();
+  if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupation)
+    pdmspace = get_r12eval()->r12world()->refwfn()->get_screened_poporbspace()->occ_sb();
   else
-    pdmspace = get_r12eval()->r12world()->ref()->get_poporbspace()->occ_sb();
+    pdmspace = get_r12eval()->r12world()->refwfn()->get_poporbspace()->occ_sb();
 
   const unsigned int n_pdmspace = pdmspace->rank();
 
 #if 0
-  if(fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
+  if(fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupation)
   {
     // first test 1rdm, which shall be diagonal in our test case
     RefSymmSCMatrix ABX = rdm1_sf();
@@ -1603,12 +1605,12 @@ RefSCMatrix sc::PT2R12::rdm2_sf_4spaces(const Ref<OrbitalSpace> b1space, const R
     ExEnv::out0() << "ordm dimension: " << ABX->n() << "\n";
     ABX.print(prepend_spincase(AlphaBeta, "ordm").c_str());
 
-    RefSCMatrix old_mocoef2 = r12world()->ref()->get_poporbspace()->orbs_sb()->coefs();
+    RefSCMatrix old_mocoef2 = r12world()->refwfn()->get_poporbspace()->orbs_sb()->coefs();
     ExEnv::out0() << __FILE__ << ": " << __LINE__ << "\n";
     ExEnv::out0() << "print old symmetry-block Mo coefs of dimension: " << old_mocoef2->ncol() << " (AO dimensin: )" << old_mocoef2->nrow() << "\n";
     old_mocoef2.print(prepend_spincase(AlphaBeta, "symm old mo").c_str());
 
-    RefSCMatrix new_mocoef2 = r12world()->ref()->orbs_sb()->coefs();
+    RefSCMatrix new_mocoef2 = r12world()->refwfn()->orbs_sb()->coefs();
     ExEnv::out0() << __FILE__ << ": " << __LINE__ << "\n";
     ExEnv::out0() << "print new symmetry-block Mo coefs of dimension: " << new_mocoef2->ncol() << " (AO dimensin: )" << new_mocoef2->nrow() << "\n";
     new_mocoef2.print(prepend_spincase(AlphaBeta, "symm new mo").c_str());
@@ -1786,6 +1788,7 @@ void sc::PT2R12::compute()
 {
   r12world()->initialize();
 
+  const double energy_ref = r12world()->refwfn()->energy();
   double energy_correction_r12 = 0.0;
   double energy_pt2r12[NSpinCases2];
   double B_so = 0.0;
@@ -1793,21 +1796,26 @@ void sc::PT2R12::compute()
   double X_so = 0.0; // these 3 varialbes store the final values for B, V, X
   double energy_pt2r12_sf = 0.0;
   double cabs_singles_corre_2b_H0 = 0.0;
-  const bool spin_polarized = r12world()->ref()->spin_polarized();
+  const bool spin_polarized = r12world()->refwfn()->spin_polarized();
 
-
+#if 1
+  const double recomp_ref_energy = this->energy_recomputed_from_densities();
+  ExEnv::out0() <<  std::endl << std::endl << indent << scprintf("Reference energy (%9s) [au]:     %17.12lf",
+                                      (this->r12world()->world()->basis_df().null() ? "   recomp" : "recomp+DF"),
+                                      recomp_ref_energy) << endl;
+#endif
 
   if (pt2_correction_)
   {
     if(r12world_->spinadapted())
     {
-      r12world()->ref()->set_spinfree(true);
+      r12world()->refwfn()->set_spinfree(true);
       assert(r12world()->r12tech()->ansatz()->projector() == R12Technology::Projector_2);
       energy_pt2r12_sf = energy_PT2R12_projector2_spinfree();
     }
     else // use spin-orbital version
     {
-      if(fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
+      if(fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupation)
          throw ProgrammingError("Due to issue with V_, spin orbital PT2R12 needs to be corrected to work for screening", __FILE__,__LINE__);
       for(int i=0; i<NSpinCases2; i++) // may comment out this part for pure cas
       {
@@ -1847,12 +1855,12 @@ void sc::PT2R12::compute()
       ExEnv::out0() << indent << scprintf("CABS singles energy correction:        %17.12lf",
                                         cabs_singles_corre) << endl;
       ExEnv::out0() << indent << scprintf("RASSCF+CABS singles correction:        %17.12lf",
-                                        reference_->energy() + cabs_singles_corre) << endl;
+                                          energy_ref + cabs_singles_corre) << endl;
     }
     ExEnv::out0() << indent << scprintf("CABS correction (twobody H0):          %17.12lf",
                                       cabs_singles_corre_2b_H0) << endl;
     ExEnv::out0() << indent << scprintf("RASSCF+CABS (twobody H0):              %17.12lf",
-                                      reference_->energy() + cabs_singles_corre_2b_H0) << endl;
+                                        energy_ref + cabs_singles_corre_2b_H0) << endl;
   }
 
   if(r12world_->spinadapted()) energy_correction_r12 = energy_pt2r12_sf;
@@ -1874,11 +1882,11 @@ void sc::PT2R12::compute()
     }
   }
 
-  const double energy = reference_->energy() + energy_correction_r12 + cabs_singles_corre_2b_H0; //total energy with R12 and CABS singles correction
+  const double energy = energy_ref + energy_correction_r12 + cabs_singles_corre_2b_H0; //total energy with R12 and CABS singles correction
 
   ExEnv::out0() <<indent << scprintf("Reference energy [au]:                 %17.12lf",
-                                      reference_->energy()) << endl;
-  #if 1
+                                     energy_ref) << endl;
+  #if 0
     const double recomp_ref_energy = this->energy_recomputed_from_densities();
     ExEnv::out0() <<  std::endl << std::endl << indent << scprintf("Reference energy (%9s) [au]:     %17.12lf",
                                         (this->r12world()->world()->basis_df().null() ? "   recomp" : "recomp+DF"),
@@ -1951,7 +1959,7 @@ double sc::PT2R12::compute_energy(const RefSCMatrix &hmat,
 
 int sc::PT2R12::spin_polarized()
 {
-  return reference_->spin_polarized();
+  return r12world()->refwfn()->spin_polarized();
 }
 
 
@@ -1960,9 +1968,9 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
 {
   # define  printout false
 
-  Ref<OrbitalSpace> activespace = this->r12world()->ref()->occ_act_sb();
+  Ref<OrbitalSpace> activespace = this->r12world()->refwfn()->occ_act_sb();
   Ref<OrbitalSpace> pspace = rdm1_->orbs(spin);
-  Ref<OrbitalSpace> vspace = this->r12world()->ref()->uocc_act_sb(spin);
+  Ref<OrbitalSpace> vspace = this->r12world()->refwfn()->uocc_act_sb(spin);
   Ref<OrbitalSpace> cabsspace = this->r12world()->cabs_space(spin);
 
   Ref<OrbitalSpaceRegistry> oreg = this->r12world()->world()->tfactory()->orbital_registry();
@@ -2199,9 +2207,9 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
   # define DEBUGG false
 
   const SpinCase1 spin = Alpha;
-  Ref<OrbitalSpace> activespace = this->r12world()->ref()->occ_act_sb();
+  Ref<OrbitalSpace> activespace = this->r12world()->refwfn()->occ_act_sb();
   Ref<OrbitalSpace> pspace = rdm1_->orbs(spin);
-  Ref<OrbitalSpace> vspace = this->r12world()->ref()->uocc_act_sb(spin);
+  Ref<OrbitalSpace> vspace = this->r12world()->refwfn()->uocc_act_sb(spin);
   Ref<OrbitalSpace> cabsspace = this->r12world()->cabs_space(spin);
 
   Ref<OrbitalSpaceRegistry> oreg = this->r12world()->world()->tfactory()->orbital_registry();
@@ -2535,7 +2543,7 @@ void PT2R12::brillouin_matrix() {
     Ref<OrbitalSpace> ospace = rdm1_->orbs(spin);
     if (spin == Alpha) oreg->add(make_keyspace_pair(ospace)); // for some reason this space has not been added
 
-    pspace[s] = this->r12world()->ref()->orbs_sb(spin);
+    pspace[s] = this->r12world()->refwfn()->orbs_sb(spin);
     if (!oreg->value_exists(pspace[s])) {
       oreg->add(make_keyspace_pair(pspace[s]));
     }
@@ -2544,7 +2552,7 @@ void PT2R12::brillouin_matrix() {
       pspace[s] = oreg->value(key);
     }
 
-    mspace[s] = this->r12world()->ref()->occ_sb(spin);
+    mspace[s] = this->r12world()->refwfn()->occ_sb(spin);
     if (!oreg->value_exists(mspace[s])) {
       oreg->add(make_keyspace_pair(mspace[s]));
     }
@@ -2690,7 +2698,6 @@ void sc::PT2R12::print(std::ostream & os) const
   os << incindent;
   os << indent << "nfzc = " << nfzc_ << std::endl;
   os << indent << "omit_uocc = " << (omit_uocc_ ? "true" : "false") << std::endl;
-  reference_->print(os);
   r12world()->print(os);
   Wavefunction::print(os);
   os << decindent;
@@ -2699,7 +2706,7 @@ void sc::PT2R12::print(std::ostream & os) const
 RefSymmSCMatrix sc::PT2R12::_rdm2_to_gg(SpinCase2 spin,
                                         RefSymmSCMatrix rdm)
 {
-  if(r12world_->spinadapted() and fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
+  if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupation)
      throw ProgrammingError("this function hasn't been examined to take care of the screening; at least 'orbs1/2' should be specified using r12int_eval_...", __FILE__,__LINE__);
   const SpinCase1 spin1 = case1(spin);
   const SpinCase1 spin2 = case2(spin);
@@ -2792,7 +2799,7 @@ RefSymmSCMatrix sc::PT2R12::lambda2_gg(SpinCase2 spin)
 
 RefSymmSCMatrix sc::PT2R12::rdm1_gg(SpinCase1 spin)
 {
-  if(r12world_->spinadapted() and fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
+  if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupation)
     throw ProgrammingError("this function hasn't been examined to take care of the screening; at least 'orbs' should be specified using r12int_eval_...", __FILE__,__LINE__);
   RefSymmSCMatrix rdm = this->rdm1(spin);
   Ref<OrbitalSpace> orbs = rdm1_->orbs(spin);
@@ -2822,7 +2829,7 @@ RefSymmSCMatrix sc::PT2R12::rdm1_gg(SpinCase1 spin)
 
 RefSymmSCMatrix sc::PT2R12::rdm2_gg(SpinCase2 spin)
 {
-  if(r12world_->spinadapted() and fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
+  if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupation)
      throw ProgrammingError("this function hasn't been examined to take care of the screening; at least 'orbs' should be specified using r12int_eval_...", __FILE__,__LINE__);
   RefSymmSCMatrix rdm = this->rdm2(spin);
   return this->_rdm2_to_gg(spin, rdm);
@@ -2830,14 +2837,14 @@ RefSymmSCMatrix sc::PT2R12::rdm2_gg(SpinCase2 spin)
 
 RefSymmSCMatrix sc::PT2R12::lambda2(SpinCase2 spin)
 {
-  if(r12world_->spinadapted() and fabs(r12world_->ref()->occ_thres()) > PT2R12::zero_occupation)
+  if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupation)
      throw ProgrammingError("this function hasn't been examined to take care of the screening; at least 'orbs' should be specified using r12int_eval_...", __FILE__,__LINE__);
   // since LocalSCMatrixKit is used everywhere, convert to Local kit
   return convert_to_local_kit(rdm2_->cumulant()->scmat(spin));
 }
 
 double PT2R12::energy_PT2R12_projector1(SpinCase2 pairspin) {
-  const int nelectron = reference_->nelectron();
+  const int nelectron = r12world()->refwfn()->nelectron();
   SpinCase1 spin1 = case1(pairspin);
   SpinCase1 spin2 = case2(pairspin);
   Ref<OrbitalSpace> gg1space = r12eval_->ggspace(spin1);
@@ -2865,7 +2872,7 @@ double PT2R12::energy_PT2R12_projector1(SpinCase2 pairspin) {
 
 int sc::PT2R12::nelectron()
 {
-  return reference_->nelectron();
+  return r12world()->refwfn()->nelectron();
 }
 
 RefSCMatrix PT2R12::V_transformed_by_C(SpinCase2 pairspin) {
@@ -3294,7 +3301,7 @@ PT2R12::energy_recomputed_from_densities() {
     oneparticle_energy[Beta] = oneparticle_energy[Alpha];
   }
 
-#define ENERGY_CONVENTIONAL_PRINT_CONTRIBUTIONS 0
+#define ENERGY_CONVENTIONAL_PRINT_CONTRIBUTIONS 1
 
   double energy_hcore = 0.0;
   for(int i=0; i<NSpinCases1; i++) {
@@ -3329,8 +3336,136 @@ PT2R12::energy_recomputed_from_densities() {
   ExEnv::out0() << "two-electron energy: " << setprecision(12) << energy_twoelec << endl;
 #endif
   double energy = energy_hcore + energy_twoelec;
-  energy += this->reference_->nuclear_repulsion_energy();
+  energy += this->r12world()->refwfn()->basis()->molecule()->nuclear_repulsion_energy();
   ExEnv::out0() << std::endl<< indent << "Exited energy_recomputed_from_densities" << std::endl << std::endl << std::endl;
+
+#define DUMP_SPINFREE_DENSITIES 1
+#if DUMP_SPINFREE_DENSITIES
+  {
+    RefSymmSCMatrix rdm1 = rdm1_sf();
+    rdm1.print("Spin-free 1-RDM");
+    rdm1.eigvals().print("Eigenvalues of spin-free 1-RDM");
+    {
+      std::ofstream os("R12_RDM1_PSI.TXT");
+      const unsigned int nmo = rdm1.n();
+      for (unsigned int b1 = 0; b1 < nmo; ++b1) {
+        for (unsigned int k1 = 0; k1 <= b1; ++k1) {
+          const double value = rdm1.get_element(b1, k1);
+          os << scprintf("%8d%8d%23.17lf",
+                         b1 + 1, k1 + 1, value) << std::endl;
+        }
+      }
+      os << scprintf("%8d%8d%23.17lf",
+                 -1,-1,-1.0) << std::endl;
+      os.close();
+    }
+
+    std::ofstream os("R12_RDM2_PSI.TXT");
+    RefSymmSCMatrix rdm2 = rdm2_sf();
+    const unsigned int nmo = rdm1_->orbs(Alpha)->rank();
+    for(unsigned int b1=0; b1<nmo; ++b1) {
+      for(unsigned int k1=0; k1<=b1; ++k1) {
+        for(unsigned int k2=0; k2<=b1; ++k2) {
+          const unsigned int b2_max = (k2 == b1) ? k1 : k2;
+          for(unsigned int b2=0; b2<=b2_max; ++b2) {
+            const unsigned int b12 = b1*nmo + b2;
+            const unsigned int k12 = k1*nmo + k2;
+            const double value = rdm2.get_element(b12, k12);
+            os << scprintf("%8d%8d%8d%8d%23.17lf",
+                           b1+1, b2+1, k1+1, k2+1,
+                           value) << std::endl;
+          }
+        }
+      }
+    }
+    os << scprintf("%8d%8d%8d%8d%23.17lf",
+                   -1,-1,-1,-1,-1.0) << std::endl;
+    os.close();
+
+    { // re-compute the energy using the spin-free density
+      const RefSymmSCMatrix H = compute_obints<&Integral::hcore>(rdm1_->orbs(Alpha));
+      // H and opdm might use different SCMatrixKits -> copy H into another matrix with the same kit as opdm
+      RefSymmSCMatrix hh = rdm1.clone();
+      hh->convert(H);
+      hh.print("1e Hamiltonian");
+      rdm1_->orbs(Alpha)->coefs().print("Density is expressed in these orbitals");
+      hh->element_op(new SCElementScaleDiagonal(0.5));
+
+      Ref<SCElementScalarProduct> trace_op = new SCElementScalarProduct;
+      hh->element_op(trace_op, rdm1);
+      const double e1 = trace_op->result();
+
+      const Ref<OrbitalSpace>& space1 = rdm2_->orbs(Alpha);
+      const Ref<OrbitalSpace>& space2 = rdm2_->orbs(Alpha);
+
+      RefSCMatrix G = g(AlphaBeta, space1, space2);
+      // G and opdm might use different SCMatrixKits -> copy G into another matrix with the same kit as opdm
+      RefSymmSCMatrix gg = rdm2.clone();  gg.assign(0.0);
+      gg->accumulate_subblock(G.pointer(), 0, G.nrow()-1, 0, G.ncol() - 1);  // his automatically scales off diagonal elements by 2
+                                                                             // no need to scale the diagonal when taking scalar product
+
+      { // dump the integrals
+        std::ofstream os("R12_ERI_PSI.TXT");
+        const unsigned int nmo = space1->rank();
+        double twoel_energy = 0.0;
+        for (unsigned int b1 = 0; b1 < nmo; ++b1) {
+          for (unsigned int k1 = 0; k1 <= b1; ++k1) {
+            for (unsigned int k2 = 0; k2 <= b1; ++k2) {
+              const unsigned int b2_max = (k2 == b1) ? k1 : k2;
+              for (unsigned int b2 = 0; b2 <= b2_max; ++b2) {
+                const unsigned int b12 = b1 * nmo + b2;
+                const unsigned int k12 = k1 * nmo + k2;
+                const double value = G.get_element(b12, k12);
+                os
+                    << scprintf("%8d%8d%8d%8d%23.17lf", b1 + 1, b2 + 1, k1 + 1,
+                                k2 + 1, value) << std::endl;
+              }
+            }
+          }
+        }
+        os << scprintf("%8d%8d%8d%8d%23.17lf", -1, -1, -1, -1, -1.0)
+            << std::endl;
+        os.close();
+      }
+      { // dump the integrals * RDM
+        std::ofstream os("R12_ERIRDM_PSI.TXT");
+        const unsigned int nmo = space1->rank();
+        double twoel_energy = 0.0;
+        for (unsigned int b1 = 0; b1 < nmo; ++b1) {
+          for (unsigned int b2 = 0; b2 < nmo; ++b2) {
+            const unsigned int b12 = b1 * nmo + b2;
+            for (unsigned int k1 = 0; k1 < nmo; ++k1) {
+              for (unsigned int k2 = 0; k2 < nmo; ++k2) {
+                const unsigned int k12 = k1 * nmo + k2;
+                const double value = G.get_element(b12, k12);
+                const double rdm_value = rdm2.get_element(b12,k12);
+                twoel_energy += value * rdm_value;
+                os
+                    << scprintf("%8d%8d%8d%8d%23.17lf * %23.17lf +-> %23.17f", b1 + 1, b2 + 1, k1 + 1,
+                                k2 + 1, value, rdm_value, twoel_energy) << std::endl;
+
+              }
+            }
+          }
+        }
+        os << scprintf("%8d%8d%8d%8d%23.17lf", -1, -1, -1, -1, -1.0)
+            << std::endl;
+        os.close();
+      }
+
+      G = 0;
+
+      trace_op = new SCElementScalarProduct;
+      gg->element_op(trace_op, rdm2);
+      const double e2 = trace_op->result();
+
+      ExEnv::out0() << "one-electron energy (from spin-free RDM): " << setprecision(12) << e1 << endl;
+      ExEnv::out0() << "two-electron energy (from spin-free RDM): " << setprecision(12) << e2 << endl;
+      ExEnv::out0() << "total energy (from spin-free RDM): " << setprecision(12) << e1+e2 << endl;
+    }
+
+  }
+#endif
 
   return(energy);
 }

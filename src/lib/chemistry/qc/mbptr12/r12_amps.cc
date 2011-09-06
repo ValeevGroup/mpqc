@@ -103,7 +103,7 @@ void
 R12Amplitudes::compute_(SpinCase2 spincase2)
 {
   Ref<R12WavefunctionWorld> r12world = r12eval_->r12world();
-  Ref<RefWavefunction> ref = r12world->ref();
+  Ref<RefWavefunction> ref = r12world->refwfn();
   const bool obs_eq_vbs = r12world->obs_eq_vbs();
   const bool spin_polarized = ref->spin_polarized();
 

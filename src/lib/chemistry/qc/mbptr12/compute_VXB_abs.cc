@@ -60,7 +60,7 @@ R12IntEval::contrib_to_VXB_abs_()
       const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
       const SpinCase1 spin1 = case1(spincase2);
       const SpinCase1 spin2 = case2(spincase2);
-      Ref<SingleRefInfo> refinfo = r12world()->ref();
+      Ref<SingleRefInfo> refinfo = r12world()->refwfn();
 
       if (dim_oo(spincase2).n() == 0)
         continue;

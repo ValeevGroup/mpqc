@@ -266,7 +266,7 @@ void PsiCC_PT2R12::compute_ept2r12() {
 #endif
 
       // Vai[AlphaBeta] is also needed if spin-polarized reference is used
-      if (spincase2 == AlphaBeta && r12world()->ref()->spin_polarized())
+      if (spincase2 == AlphaBeta && r12world()->refwfn()->spin_polarized())
         map(Vpq, x1, x2, p1, p2, Vai[s], x1, x2, v1, o2);
 
 #if 0

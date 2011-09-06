@@ -954,6 +954,34 @@ void MP2R12Energy_Diag::compute_ef12() {
                     descr_f12_key, moints4_rtime,
                     i1i2a1AF2_ints);
 
+#if 0
+      /// print C, the bare coupling matrix
+      {
+
+        RefSCMatrix abF_mat = SCMatrixKit::default_matrixkit()->matrix(new SCDimension(nvir1_act),
+                                                                       new SCDimension(nvir2_act));
+        RefSCMatrix bFa_mat = SCMatrixKit::default_matrixkit()->matrix(new SCDimension(nvir2_act),
+                                                                       new SCDimension(nvir1_act));
+        for(int i1=0; i1<nocc1_act; ++i1) {
+          for(int i2=0; i2<nocc2_act; ++i2) {
+            const double* abF_blk = i1i2a1AF2_ints->retrieve_pair_block(i1, i2, f12_idx);
+            const double* bFa_blk = i1i2a1AF2_ints->retrieve_pair_block(i2, i1, f12_idx);
+            abF_mat.assign(abF_blk);
+            bFa_mat.assign(bFa_blk);
+
+            std::ostringstream oss;
+            oss << "<i j | a b_F> + <i j | b_F a> integral (i = " << i1 << ", j = " << i2 << ")" << std::endl;
+            (abF_mat + bFa_mat.t()).print(oss.str().c_str());
+
+            i1i2a1AF2_ints->release_pair_block(i1, i2, f12_idx);
+            i1i2a1AF2_ints->release_pair_block(i2, i1, f12_idx);
+          }
+        }
+
+        i1i2a1a2_ints->deactivate();
+      }
+#endif
+
       // Vji_ji_coupling: R^ij_a'b f^a'_a T^ab_ij
       Ref<DistArray4> i1i2AF1a2_ints = NULL;
       if (spin1 != spin2) {
@@ -2567,7 +2595,7 @@ void MP2R12Energy_Diag::compute_ef12() {
   } // end of CC V contribution
 
   // Set beta-beta energies to alpha-alpha for closed-shell
-  if (!r12world->ref()->spin_polarized()) {
+  if (!r12world->refwfn()->spin_polarized()) {
     C_[BetaBeta] = C_[AlphaAlpha];
     emp2f12_[BetaBeta] = emp2f12_[AlphaAlpha];
     ef12_[BetaBeta] = ef12_[AlphaAlpha];

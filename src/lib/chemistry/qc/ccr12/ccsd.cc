@@ -123,17 +123,22 @@ void CCSD::compute(){
     ccsd_t2->compute_amp(r2);
     ccsd_e->compute_amp(e0);
 
-    energy = ccr12_info_->get_e(e0) + ccr12_info_->enengy_lagrangian_r2(r2)
+#define PRINT_CCSD_ENERGY_ONLY 1
+#if PRINT_CCSD_ENERGY_ONLY
+    energy = ccr12_info_->get_e(e0);
+#else
+    energy = ccr12_info_->get_e(e0) + ccr12_info_->energy_lagrangian_r2(r2)
                                     + ccr12_info_->t1()->ddot(r1);
+#endif
 
     // compute new amplitudes from the residuals
     Ref<Tensor> t1_old = info()->t1()->copy();
     Ref<Tensor> t2_old = info()->t2()->copy();
-    ccr12_info_->jacobi_t1(r1);
+    //ccr12_info_->jacobi_t1(r1);
     ccr12_info_->jacobi_t2(r2);
     // compute errors
-    Ref<Tensor> t1_err = t1_old;
-    Ref<Tensor> t2_err = t2_old;
+    Ref<Tensor> t1_err = t1_old->copy();
+    Ref<Tensor> t2_err = t2_old->copy();
     t1_err->daxpy(info()->t1(), -1.0);
     t2_err->daxpy(info()->t2(), -1.0);
 
@@ -143,6 +148,11 @@ void CCSD::compute(){
 
     iter_end = timer_->get_wall_time();
     print_iteration(iter, energy, rnorm, iter_start, iter_end);
+
+#if 0
+    ExEnv::out0() << scprintf("t1norm = %20.15lf t2norm = %20.15lf", t1_old->norm(), t2_old->norm()) << std::endl;
+    ExEnv::out0() << scprintf("r1norm = %20.15lf r2norm = %20.15lf", r1norm, r2norm) << std::endl;
+#endif
 
     // done? break free
     if (rnorm < ccthresh_) break;

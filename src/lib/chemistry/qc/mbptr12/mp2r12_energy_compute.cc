@@ -580,7 +580,7 @@ void MP2R12Energy_SpinOrbital::compute_ef12() {
   } // end of spincase loop
 
   // Set beta-beta energies to alpha-alpha for closed-shell
-  if (!r12world->ref()->spin_polarized()) {
+  if (!r12world->refwfn()->spin_polarized()) {
     C_[BetaBeta] = C_[AlphaAlpha];
     emp2f12_[BetaBeta] = emp2f12_[AlphaAlpha];
     ef12_[BetaBeta] = ef12_[AlphaAlpha];

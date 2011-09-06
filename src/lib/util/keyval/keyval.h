@@ -328,7 +328,8 @@ class KeyVal: public RefCount {
     rather than determined by an external file. */
 class AssignedKeyVal: public KeyVal {
   private:
-    std::map<std::string,Ref<KeyValValue> > _map;
+    typedef std::map<std::string,Ref<KeyValValue> > _map_t;
+    _map_t _map;
     // do not allow a copy constructor or assignment
     AssignedKeyVal(const AssignedKeyVal&);
     void operator=(const AssignedKeyVal&);
@@ -357,6 +358,10 @@ class AssignedKeyVal: public KeyVal {
 
     /// Erase all of the stored assignments.
     void clear();
+
+    /// @param os output stream object
+    /// Prints contents to @a os
+    void print(std::ostream& os = ExEnv::out0()) const;
 
     template <typename ValueType>
     static Ref<AssignedKeyVal> instance(const char* key, const ValueType& value) {

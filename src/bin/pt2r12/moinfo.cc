@@ -368,17 +368,13 @@ sc::ExternReadRDMTwo::ExternReadRDMTwo(const std::string & filename, const Ref<O
   while (have_coefs) {
     int bra1, bra2, ket1, ket2;
     double value;
-    in >> bra1 >> bra2 >> ket1 >> ket2 >> value;
+    //in >> bra1 >> bra2 >> ket1 >> ket2 >> value;
+    in >> bra1 >> ket2 >> ket1 >> bra2 >> value;
     if (bra1 != -1) {
       --bra1;
       --bra2;
       --ket1;
       --ket2;
-      
-      // this is specific to Luke's early RDM2 files produced from GAMESS
-      //value *= 8.0;
-      //if (bra1 == bra2 && ket1 == ket2 && bra1 == ket1) value *= 2.0;
-      //
       
       rdm_.set_element(bra1 * norbs + bra2, ket1 * norbs + ket2, value);
       rdm_.set_element(bra2 * norbs + bra1, ket2 * norbs + ket1, value);
@@ -419,7 +415,12 @@ ExternReadRDMTwo::rdm_m_1() const
   if (have_rdm1_file == false) {
     RefSymmSCMatrix rdm1 = orbs_->coefs().kit()->symmmatrix(orbs_->coefs().coldim());
     rdm1.assign(0.0);
+#if 0
     const unsigned int norbs = rdm1.n();
+#else
+    // temporarily hardwire for testing
+    const unsigned int norbs = 10;
+#endif
     for(unsigned int b1=0; b1<norbs; ++b1) {
       const unsigned b12_offset = b1 * norbs;
       for(unsigned int k1=0; k1<=b1; ++k1) {

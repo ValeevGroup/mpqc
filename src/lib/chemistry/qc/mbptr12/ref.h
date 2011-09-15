@@ -69,8 +69,10 @@ namespace sc {
                             const RefDiagSCMatrix& energies,
                             bool eorder_increasing = true,
                             Ref<OrbitalSpace> vbs = 0,
-                            Ref<FockBuildRuntime> fbrun = 0
-                           );
+                            Ref<FockBuildRuntime> fbrun = 0,
+                            const std::vector<double>& rasscf_occs=std::vector<double>(1,-1.0)
+                           ); //if rasscf_occs is specified, uses rasscf_occs instead of occs to construct occ_act_mask,
+                              //eventually to construct occ_act_sb_ differently->force GG/gg space to be ras1+ras2 orbs
       PopulatedOrbitalSpace(const bool doscreen, const double occ_thres, RefSymmSCMatrix OBS_mo_ordm, const Ref<OrbitalSpaceRegistry>& oreg,
                                   SpinCase1 spin, const Ref<GaussianBasisSet>& bs,
                                   const Ref<Integral>& integral,
@@ -93,6 +95,8 @@ namespace sc {
       const Ref<OrbitalSpace>& occ() const { return occ_; }
       const Ref<OrbitalSpace>& occ_act() const { return occ_act_; }
       const Ref<OrbitalSpace>& uocc_sb() const { return uocc_sb_; }
+      const Ref<OrbitalSpace>& conv_uocc_sb() const { return conv_uocc_sb_; }
+      const Ref<OrbitalSpace>& conv_occ_sb() const { return conv_occ_sb_; }
       const Ref<OrbitalSpace>& uocc_act_sb() const { return uocc_act_sb_; }
       const Ref<OrbitalSpace>& uocc() const { return uocc_; }
       const Ref<OrbitalSpace>& uocc_act() const { return uocc_act_; }
@@ -110,6 +114,10 @@ namespace sc {
       Ref<OrbitalSpace> uocc_act_sb_;
       Ref<OrbitalSpace> uocc_;
       Ref<OrbitalSpace> uocc_act_;
+      Ref<OrbitalSpace> conv_uocc_;//this denotes the virtual orb space in the conventional sense,e.g. in MRCI, they are orbs other than
+                                   // core and active occupied ones
+      Ref<OrbitalSpace> conv_uocc_sb_;
+      Ref<OrbitalSpace> conv_occ_sb_;
   };
 
   /**
@@ -191,6 +199,8 @@ namespace sc {
     const Ref<OrbitalSpace>& occ_act(SpinCase1 spin = AnySpinCase1) const;
     /// Return the space of symmetry-blocked unoccupied (virtual) MOs of the given spin
     const Ref<OrbitalSpace>& uocc_sb(SpinCase1 spin = AnySpinCase1) const;
+    const Ref<OrbitalSpace>& conv_uocc_sb(SpinCase1 spin = AnySpinCase1) const;
+    const Ref<OrbitalSpace>& conv_occ_sb(SpinCase1 spin = AnySpinCase1) const;
     /// Return the space of symmetry-blocked active unoccupied (virtual) MOs of the given spin
     const Ref<OrbitalSpace>& uocc_act_sb(SpinCase1 spin = AnySpinCase1) const;
     /// Return the space of unoccupied (virtual) MOs of the given spin
@@ -203,6 +213,8 @@ namespace sc {
 
     double occ_thres() {return occ_thres_;}
     void set_occ_thres(double vv) {occ_thres_ = vv;}
+    bool force_rasscf(){return force_correlate_rasscf_;}
+    void set_force_correlate_rasscf(const bool force) {force_correlate_rasscf_ = force;}
     bool do_screen() {return do_screen_;}
     void set_do_screen(bool screenornot) {do_screen_ = screenornot;}
     Ref<PopulatedOrbitalSpace> & get_poporbspace(SpinCase1 spin = Alpha) {return spinspaces_[spin];}
@@ -218,6 +230,7 @@ namespace sc {
     bool omit_uocc_;
     /// For spin-free algorithms, if this is true, we would set both alpha/beta 1-rdm to the average of them; defaults to false
     bool force_average_AB_rdm1_;
+    bool force_correlate_rasscf_;
     double occ_thres_; // this parameter is in fact assigned to the value of correlate_min_occ_ of R12WavefunctionWorld, where is a logical
                         // place to define such a variable, since it more belong to the R12 world. However, we need it to control RefWavefunction too.
     bool do_screen_;

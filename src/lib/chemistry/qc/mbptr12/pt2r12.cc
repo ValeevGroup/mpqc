@@ -26,6 +26,7 @@
 //
 
 #include <fstream>
+#include <numeric>
 #include <chemistry/qc/mbptr12/pt2r12.h>
 #include <util/misc/print.h>
 #include <chemistry/qc/wfn/orbitalspace_utils.h>
@@ -369,6 +370,7 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
   cabs_singles_ = keyval->booleanvalue("cabs_singles", KeyValValueboolean(false));
   cabs_singles_coupling_ = keyval->booleanvalue("cabs_singles_coupling", KeyValValueboolean(true));
   rotate_core_ = keyval->booleanvalue("rotate_core", KeyValValueboolean(true));
+  calc_davidson_ = keyval->booleanvalue("calc_davidson", KeyValValueboolean(false));
 
   rdm2_ = require_dynamic_cast<RDM<Two>*>(
         keyval->describedclassvalue("rdm2").pointer(),
@@ -440,6 +442,7 @@ PT2R12::PT2R12(StateIn &s) : Wavefunction(s) {
   s.get(cabs_singles_);
   s.get(cabs_singles_coupling_);
   s.get(debug_);
+  s.get(calc_davidson_);
 }
 
 PT2R12::~PT2R12() {
@@ -455,6 +458,7 @@ void PT2R12::save_data_state(StateOut &s) {
   s.put(omit_uocc_);
   s.put(cabs_singles_coupling_);
   s.put(debug_);
+  s.put(calc_davidson_);
 }
 
 void
@@ -584,6 +588,7 @@ RefSymmSCMatrix PT2R12::hcore_mo(SpinCase1 spin) {
   return(Hcore_mo);
 }
 
+#if 0
 RefSymmSCMatrix PT2R12::moints() {
   Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
   Ref<OrbitalSpace> space = r12eval_->orbs(Alpha);
@@ -694,6 +699,7 @@ RefSymmSCMatrix PT2R12::moints() {
 
   return(moints_PQRS);
 }
+#endif
 
 RefSCMatrix PT2R12::moints(SpinCase2 pairspin) {
   Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
@@ -1038,11 +1044,12 @@ RefSCMatrix PT2R12::V_genref_projector2() {
   Ref<OrbitalSpace> occspace = r12world()->refwfn()->occ(Alpha);
   Ref<OrbitalSpace> gg_space = r12eval_->ggspace(Alpha);
 
-
+  ExEnv::out0() << "\n\n" << indent << "Started PT2R12::V_genref_projector2\n";
   RefSCMatrix V_intermed = r12eval_->V_genref_spinfree(occspace, occspace);
   V_intermed.scale(0.5);
   RefSCMatrix tpdm = rdm2_sf_4spaces(occspace, occspace, gg_space, gg_space);
   V_genref.accumulate(V_intermed * tpdm);
+  ExEnv::out0() << "\n\n" <<indent << "Exited PT2R12::V_genref_projector2\n\n";
 
 #if 0
   ExEnv::out0() << __FILE__ << __LINE__ << "\n";
@@ -1057,6 +1064,7 @@ RefSCMatrix PT2R12::V_genref_projector2() {
 //
 RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
 {
+  ExEnv::out0() << "\n\n" << indent << "Started PT2R12::sf_B_others\n\n";
   Ref<OrbitalSpace> cabs = r12world_->cabs_space(Alpha);
   Ref<OrbitalSpace> occ_space = r12eval_->occ(Alpha);
   Ref<OrbitalSpace> GG_space = r12eval_->GGspace(Alpha);
@@ -1126,6 +1134,7 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
         contract34_DA4_RefMat(RTgamma1, 1.0, pI1, 0, rdm2inter, occ_dim, gg_dim);
         RTgamma1 = permute23(RTgamma1);
         RTgamma = RTgamma1;
+        ExEnv::out0() << "\n\n" << indent << indent << "Finished 1st group\n";
       }
       //the second set
       {
@@ -1138,6 +1147,7 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
         contract34_DA4_RefMat(RTgamma2, 1.0, I_Aw_yr, 0, rdm2inter, occ_dim, gg_dim);
         RTgamma2 = permute34(permute23(RTgamma2));
         axpy(RTgamma2, 1.0, RTgamma, 1.0);
+        ExEnv::out0() << "\n\n" << indent << indent << "Finished 2nd group\n";
       }
     } // 1st and 2nd sets done
 
@@ -1154,6 +1164,7 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
          contract34_DA4_RefMat(RTgamma3, 1.0, permute23(I2), 0, rdm2inter, occ_dim, gg_dim);
          RTgamma3 = permute23(RTgamma3);
          axpy(RTgamma3, 1.0, RTgamma, 1.0);
+         ExEnv::out0() << "\n\n" << indent << indent << "Finished 3rd group\n";
        }
        //the fourth set
        {
@@ -1164,6 +1175,7 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
          contract_DA4_RefMat_k2b2_34(RTgamma4, 1.0, I2, 0, rdm2inter, occ_dim, gg_dim); //RTgamma is initialized
          RTgamma4 = permute34(RTgamma4);
          axpy(RTgamma4, 1.0, RTgamma, 1.0);
+         ExEnv::out0() << "\n\n" << indent << indent << "Finished 4th group\n";
        }
      } // 3rd and 4th sets done
 
@@ -1174,7 +1186,7 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
 #endif
   contract34(wholeproduct, 1.0, permute23(permute34(permute12(permute23(RFtimesT)))), 0,
                                 permute23(permute34(permute12(permute23(RTgamma)))), 0); //(gg, gg)
-
+  ExEnv::out0() << "\n\n" << indent << "Finished PT2R12::sf_B_others\n\n";
   RefSCMatrix TotalMat = copy_to_RefSCMat(wholeproduct,0);
   return TotalMat;
 }
@@ -1223,10 +1235,16 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
 
   // 2*V*T constribution
   const bool print_all = false;// for debugging
+  ExEnv::out0() << std::endl << std::endl << indent << "Entered PT2R12::energy_PT2R12_projector2_spinfree\n\n";
+
+  ExEnv::out0() << "\n" << indent << "Started V_genref\n";
   RefSCMatrix V_genref = V_genref_projector2(); //(GG, gg)
+  ExEnv::out0() << "\n\n" << indent << "Finished V_genref\n\n";
+
   RefSCMatrix T = C(AlphaBeta);   // C() is of dimension (GG, gg)
   RefSCMatrix V_t_T = 2.0*T.t()*V_genref;
   RefSCMatrix HylleraasMatrix = V_t_T.copy(); // (gg, gg)
+  ExEnv::out0() << "\n\n" << indent << "Finished V_t_T\n\n";
   if (this->debug_ >=  DefaultPrintThresholds::mostO4 || print_all)
   {
     ExEnv::out0() << __FILE__ << __LINE__ << "\n";
@@ -1237,8 +1255,10 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
 
   // X contributions
   RefSCMatrix TGFT = X_term_Gamma_F_T(); //(GG, GG)
+  ExEnv::out0() << "\n\n" << indent << "Finished TGFT\n\n";
   TGFT.scale(-1.0);
   RefSCMatrix Xpart = TGFT * r12eval_->X() * T;
+  ExEnv::out0() << "\n\n" << indent << "Finished Xpart\n\n";
   HylleraasMatrix.accumulate(Xpart);//(gg, gg)
   if (this->debug_ >=  DefaultPrintThresholds::mostO4 || print_all)
   {
@@ -1250,6 +1270,7 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
   // B' contribution
   Ref<OrbitalSpace> gg_space = r12eval_->ggspace(Alpha);
   RefSCMatrix TBTG =  T.t() * r12eval_->B() * T  * rdm2_sf_4spaces(gg_space, gg_space, gg_space, gg_space);//(gg,gg)
+  ExEnv::out0() << "\n\n" << indent << "Finished TBTG\n\n";
   TBTG.scale(0.5);
   HylleraasMatrix.accumulate(TBTG);
   if (this->debug_ >=  DefaultPrintThresholds::mostO4 || print_all)
@@ -1268,6 +1289,7 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
       HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:+others").c_str());
   }
 
+  ExEnv::out0() << std::endl << std::endl << indent << "Exited PT2R12::energy_PT2R12_projector2_spinfree\n\n";
 
   {
     const double E_V_t_T = V_t_T.trace();
@@ -1296,9 +1318,9 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
     ExEnv::out0() << indent << scprintf("Hylleraas:                %17.12lf", E_total) << std::endl;
     ExEnv::out0() << indent << scprintf("deviation percentage:     %17.12lf", deviation) << std::endl << std::endl << std::endl;
   }
-  if(fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupation and r12world()->refwfn()->do_screen())
+  if(fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupation)
   {
-    const int total_active_occ = r12world()->refwfn()->unscreen_occ_act_sb(Alpha)->rank();
+    const int total_active_occ = r12world()->refwfn()->get_poporbspace(Alpha)->occ_act_sb()->rank();
     const int survive_active_occ = r12world()->refwfn()->occ_act_sb(Alpha)->rank();
     const double kept = double(survive_active_occ)/double(total_active_occ);
     const double filter = 1 -kept;
@@ -1323,14 +1345,10 @@ RefSCMatrix sc::PT2R12::transform_MO() //transformation matrix between occupied 
   const bool debugprint = false;
   RefSymmSCMatrix mo_density =  rdm1(Alpha) + rdm1(Beta);//this will eventually read the checkpoint file. I assume they are of the dimension of occ orb space
 //  mo_density.print(std::string("transform_MO: mo_density (occ)").c_str());
-  Ref<OrbitalSpace> unscreen_occ_act = r12world()->refwfn()->unscreen_occ_act_sb();
-  Ref<OrbitalSpace> occ = r12world()->refwfn()->occ_sb();
+  Ref<OrbitalSpace> unscreen_occ_act = r12world()->refwfn()->get_poporbspace(Alpha)->occ_act_sb();
+  Ref<OrbitalSpace> occ = r12world()->refwfn()->get_poporbspace(Alpha)->occ_sb();
   std::vector<int> map1 = map(*occ, *unscreen_occ_act);
-  if(debugprint)
-  {
-    occ->coefs().print(prepend_spincase(AlphaBeta, "transform_MO: occ coeffients").c_str());
-    unscreen_occ_act->coefs().print(prepend_spincase(AlphaBeta, "transform_MO: unscreened occ_act coeffients").c_str());
-  }
+
   int num_occ_act = unscreen_occ_act->rank();
   int num_occ = occ->rank();
   int rdmdim = mo_density->n();
@@ -1349,7 +1367,6 @@ RefSCMatrix sc::PT2R12::transform_MO() //transformation matrix between occupied 
   }
 
   RefSCDimension mo_dim = occ->coefs()->coldim();
-  assert(mo_dim->n() == num_occ);
   RefSCMatrix TransformMat = occ->coefs()->kit()->matrix(mo_dim, mo_dim);
   TransformMat.assign(0.0);
   for (int kk = 0; kk < num_occ; ++kk)
@@ -1413,37 +1430,30 @@ RefSCMatrix sc::PT2R12::transform_MO() //transformation matrix between occupied 
    return TransformMat;
 }
 
-RefSCMatrix sc::PT2R12::rdm1_gg_sf()
-{
-      Ref<OrbitalSpace> ggspace = r12eval_->ggspace(Alpha);
-      return rdm1_sf_2spaces(ggspace, ggspace);
-}
-
-
-RefSymmSCMatrix sc::PT2R12::rdm1_sf()
+RefSymmSCMatrix sc::PT2R12::rdm1_sf_transform()
 {
   static bool printed = false;
   RefSymmSCMatrix sf_opdm = rdm1(Alpha) + rdm1(Beta);//converted to local
 #if 0
   RefSymmSCMatrix sf_opdm2 = r12world()->refwfn()->ordm_occ_sb(Alpha)+r12world()->refwfn()->ordm_occ_sb(Beta);
 #endif
-  if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupation)
-  {
-    RefSCMatrix transMO_nonlocal = this->transform_MO();
-    assert((sf_opdm->n() == transMO_nonlocal->coldim()->n()) and (sf_opdm->n()==r12eval_->occ(Alpha)->rank()));//should be the dimension of occ space
-    RefSCMatrix transMO = convert_RefSC_to_local_kit(transMO_nonlocal);//sf_opdm is converted to local, so transMO needs to do so too; otherwise aborts.
+  RefSCMatrix transMO_nonlocal = this->transform_MO();
+  assert((sf_opdm->n() == transMO_nonlocal->coldim()->n()) and (sf_opdm->n()==r12eval_->occ(Alpha)->rank()));//should be the dimension of occ space
+  RefSCMatrix transMO = convert_RefSC_to_local_kit(transMO_nonlocal);//sf_opdm is converted to local, so transMO needs to do so too; otherwise aborts.
 #if 0
     sf_opdm.print(prepend_spincase(AlphaBeta, "rdm1_sf: rdm before transformation").c_str());
     transMO.print(prepend_spincase(AlphaBeta, "rdm1_sf: transMO").c_str());
 #endif
-    RefSCMatrix res = (transMO*sf_opdm)*(transMO.t());
-    RefSymmSCMatrix final = sf_opdm->clone();
-    final->assign(0.0);
-    final.copyRefSCMatrix(res);// convert a symmscmatrix
+  RefSCMatrix res = (transMO*sf_opdm)*(transMO.t());
+  RefSymmSCMatrix final = sf_opdm->clone();
+  final->assign(0.0);
+  final.copyRefSCMatrix(res);// convert a symmscmatrix
 
-    //print occ numbers in rotates basis
+  //print occ numbers in rotates basis
+  if(not printed)
+  {
     std::vector<double> vec_RDM;
-    RefDiagSCMatrix RDMdiag = transMO->kit()->diagmatrix(final->dim());
+    RefDiagSCMatrix RDMdiag = transMO->kit()->diagmatrix(final->dim());//dimenstion (obs, obs)
     for (int x = 0; x < final->n(); ++x)
      {
        vec_RDM.push_back(final.get_element(x,x));
@@ -1453,24 +1463,54 @@ RefSymmSCMatrix sc::PT2R12::rdm1_sf()
      {
        RDMdiag->set_element(y, vec_RDM[y]);
      }
-
-     if(not printed)
+     RefDiagSCMatrix RDMratio = RDMdiag.clone();
+     RDMratio.assign(0.0);
+     const double tot = std::accumulate(vec_RDM.begin(), vec_RDM.end(), 0.0);
+     std::vector<double>::iterator itt = vec_RDM.begin();
+     itt++;
+     for (int y = 0; y < final->n(); ++y, ++itt)
      {
-       ExEnv::out0() << std::endl << std::endl;
-       RDMdiag.print(std::string("PT2R12::rdm1_sf(): ordered occ number").c_str());
-       printed = true;
+       double sofar = std::accumulate(vec_RDM.begin(), itt, 0.0);
+       RDMratio->set_element(y, sofar/tot);
      }
-#if 0
-    ExEnv::out0()<<__FILE__ << ": " << __LINE__ << "\n";
-    final.print(std::string("one SF rdm").c_str());
-#endif
-    return final;
-  }
-  else
-    return(sf_opdm);
+     RDMdiag.print(std::string("PT2R12 1-RDM: occ number").c_str());
+     RDMratio.print(std::string("PT2R12 1-RDM: accumulated occ number percentage").c_str());
+     printed = true;
+   }
+  return final;
 }
 
+RefSymmSCMatrix sc::PT2R12::rdm1_sf()
+{
+  static bool printed = false;
+  RefSymmSCMatrix sf_opdm = rdm1(Alpha) + rdm1(Beta);//converted to local
+  if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupation)
+  {
+    if (not printed) // force print out natural orb occ, just once
+    {
+      ExEnv::out0() << std::endl << std::endl;
+      printed = true;
+    }
+    return rdm1_sf_transform();
+  }
+  else
+  {
+    if (not printed) // force print out natural orb occ, just once
+    {
+      ExEnv::out0() << std::endl << std::endl;
+      ExEnv::out0() << indent << "Info in rotated basis to faciliate screening.\n";
+      RefSymmSCMatrix helpmat = rdm1_sf_transform();
+      printed = true;
+    }
+    return(sf_opdm);
+  }
+}
 
+RefSCMatrix sc::PT2R12::rdm1_gg_sf()
+{
+      Ref<OrbitalSpace> ggspace = r12eval_->ggspace(Alpha);
+      return rdm1_sf_2spaces(ggspace, ggspace);
+}
 
 RefSCMatrix sc::PT2R12::rdm1_sf_2spaces(const Ref<OrbitalSpace> b1space, const Ref<OrbitalSpace> k1space)
 {
@@ -1798,12 +1838,22 @@ void sc::PT2R12::compute()
   double cabs_singles_corre_2b_H0 = 0.0;
   const bool spin_polarized = r12world()->refwfn()->spin_polarized();
 
-#if 1
-  const double recomp_ref_energy = this->energy_recomputed_from_densities();
-  ExEnv::out0() <<  std::endl << std::endl << indent << scprintf("Reference energy (%9s) [au]:     %17.12lf",
-                                      (this->r12world()->world()->basis_df().null() ? "   recomp" : "recomp+DF"),
-                                      recomp_ref_energy) << endl;
-#endif
+  if(calc_davidson_ and r12world()->spinadapted())
+  {
+    if(not r12world()->refwfn()->force_rasscf())
+      throw ProgrammingError("To calc Davidson correction, must set force_correlate_rasscf_ to true to enable proper initialization of conventional virtual orbital space.", __FILE__,__LINE__);
+    Ref<OrbitalSpace> conv_vir = r12world()->refwfn()->conv_uocc_sb();
+    Ref<OrbitalSpace> conv_occ = r12world()->refwfn()->conv_occ_sb();
+    RefSCMatrix opdm_vv = rdm1_sf_2spaces(conv_vir, conv_vir);
+    RefSCMatrix opdm_ii = rdm1_sf_2spaces(conv_occ, conv_occ);
+    const double vir_percentage = opdm_vv->trace()/nelectron();
+    const double occ_percentage = opdm_ii->trace()/nelectron();
+    ExEnv::out0() << indent <<scprintf("uoccupied occ num:                     %17.12lf",vir_percentage) << "\n";
+    ExEnv::out0() << indent <<scprintf("occupied occ num:                      %17.12lf",occ_percentage) << "\n";
+    const double davidson = 1/(1 - vir_percentage) - 1;
+    ExEnv::out0()  << indent << scprintf("Davidson correction coef:              %17.12lf",
+                                            davidson) << std::endl << std::endl;
+  }
 
   if (pt2_correction_)
   {
@@ -3429,7 +3479,8 @@ PT2R12::energy_recomputed_from_densities() {
       }
       { // dump the integrals * RDM
         std::ofstream os("R12_ERIRDM_PSI.TXT");
-        const unsigned int nmo = space1->rank();
+        //const unsigned int nmo = space1->rank();
+        const unsigned int nmo = 10;
         double twoel_energy = 0.0;
         for (unsigned int b1 = 0; b1 < nmo; ++b1) {
           for (unsigned int b2 = 0; b2 < nmo; ++b2) {
@@ -3438,7 +3489,7 @@ PT2R12::energy_recomputed_from_densities() {
               for (unsigned int k2 = 0; k2 < nmo; ++k2) {
                 const unsigned int k12 = k1 * nmo + k2;
                 const double value = G.get_element(b12, k12);
-                const double rdm_value = rdm2.get_element(b12,k12);
+                const double rdm_value = rdm2.get_element(b12,k12) / 2.0;
                 twoel_energy += value * rdm_value;
                 os
                     << scprintf("%8d%8d%8d%8d%23.17lf * %23.17lf +-> %23.17f", b1 + 1, b2 + 1, k1 + 1,

@@ -100,6 +100,7 @@ namespace sc {
       bool omit_uocc_;
       bool pt2_correction_;          // for testing purposes only, set to false to skip the [2]_R12 computation
       bool cabs_singles_;
+      bool calc_davidson_;           // print out Davidson correction coefficient or not. Defaults to false.
       bool cabs_singles_coupling_; // if set to true, we include the coupling between cabs and OBS virtual orbitals. This should be preferred choice,
                                    // as explained in the paper.
       bool rotate_core_; // if set to false, when doing rasscf cabs_singles correction, don't include excitation from core orbitals to cabs orbitals in
@@ -155,6 +156,7 @@ namespace sc {
       // TODO reimplement using native spin-free densities from Psi3
       RefSCMatrix rdm1_gg_sf();  // return spin-free 1/2 rdm
       RefSymmSCMatrix rdm1_sf();
+      RefSymmSCMatrix rdm1_sf_transform();
       RefSCMatrix rdm1_sf_2spaces(const Ref<OrbitalSpace> bspace, const Ref<OrbitalSpace> kspace);
 
       RefSymmSCMatrix rdm2_sf();
@@ -186,8 +188,7 @@ namespace sc {
       RefSymmSCMatrix hcore_mo();
       RefSymmSCMatrix hcore_mo(SpinCase1 spin);
       /// molecular integrals in chemist's notation
-      RefSymmSCMatrix moints();  // closed shell case
-      RefSCMatrix moints(SpinCase2 pairspin);
+      RefSCMatrix moints(SpinCase2 pairspin = AlphaBeta);
       /// This returns <space1 space2 || space1 space2>
       RefSCMatrix g(SpinCase2 pairspin,
                     const Ref<OrbitalSpace>& space1,

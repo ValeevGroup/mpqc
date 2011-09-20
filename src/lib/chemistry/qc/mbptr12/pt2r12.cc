@@ -370,7 +370,12 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
   cabs_singles_ = keyval->booleanvalue("cabs_singles", KeyValValueboolean(false));
   cabs_singles_coupling_ = keyval->booleanvalue("cabs_singles_coupling", KeyValValueboolean(true));
   rotate_core_ = keyval->booleanvalue("rotate_core", KeyValValueboolean(true));
-  calc_davidson_ = keyval->booleanvalue("calc_davidson", KeyValValueboolean(false));
+  const bool force_rasscf = keyval->booleanvalue("force_correlate_rasscf",KeyValValueboolean(false));
+  if(force_rasscf)  // when correlating RAS-CI, we always do compute davidson correciton
+                    // coefficient due to its marginal additional cost
+      calc_davidson_ = true;
+  else
+      calc_davidson_ = false;
 
   rdm2_ = require_dynamic_cast<RDM<Two>*>(
         keyval->describedclassvalue("rdm2").pointer(),
@@ -1846,11 +1851,8 @@ void sc::PT2R12::compute()
     Ref<OrbitalSpace> conv_occ = r12world()->refwfn()->conv_occ_sb();
     RefSCMatrix opdm_vv = rdm1_sf_2spaces(conv_vir, conv_vir);
     RefSCMatrix tpdm_vvvv = rdm2_sf_4spaces(conv_vir, conv_vir, conv_vir, conv_vir);
-    //    RefSCMatrix opdm_ii = rdm1_sf_2spaces(conv_occ, conv_occ);
     const double vir_percentage = opdm_vv->trace()-0.5 * tpdm_vvvv->trace();
-    //    const double occ_percentage = opdm_ii->trace()/nelectron();
     ExEnv::out0() << indent <<scprintf("unoccupied occ num:                     %17.12lf",vir_percentage) << "\n";
-    //ExEnv::out0() << indent <<scprintf("occupied occ num:                      %17.12lf",occ_percentage) << "\n";
     const double davidson = 1/(1 - vir_percentage) - 1;
     ExEnv::out0()  << indent << scprintf("Davidson correction coef:              %17.12lf",
                                             davidson) << std::endl << std::endl;

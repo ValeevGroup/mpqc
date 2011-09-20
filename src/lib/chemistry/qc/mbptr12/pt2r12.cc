@@ -371,10 +371,11 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
   cabs_singles_coupling_ = keyval->booleanvalue("cabs_singles_coupling", KeyValValueboolean(true));
   rotate_core_ = keyval->booleanvalue("rotate_core", KeyValValueboolean(true));
   const bool force_rasscf = keyval->booleanvalue("force_correlate_rasscf",KeyValValueboolean(false));
-  calc_davidson_ = keyval->booleanvalue("calc_davidson",KeyValValueboolean(false));
-  if(force_rasscf)  // when correlating RAS-CI, we always do compute davidson correciton
-                    // coefficient due to its marginal additional cost
+  if(force_rasscf)  // Only when correlating RAS-CI, we have the necessary orbital spaces
+                    // to compute Davidson correction.
       calc_davidson_ = true;
+  else
+      calc_davidson_ = false;
 
   rdm2_ = require_dynamic_cast<RDM<Two>*>(
         keyval->describedclassvalue("rdm2").pointer(),

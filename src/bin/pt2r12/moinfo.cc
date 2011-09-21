@@ -415,12 +415,7 @@ ExternReadRDMTwo::rdm_m_1() const
   if (have_rdm1_file == false) {
     RefSymmSCMatrix rdm1 = orbs_->coefs().kit()->symmmatrix(orbs_->coefs().coldim());
     rdm1.assign(0.0);
-#if 0
     const unsigned int norbs = rdm1.n();
-#else
-    // temporarily hardwire for testing
-    const unsigned int norbs = 10;
-#endif
     for(unsigned int b1=0; b1<norbs; ++b1) {
       const unsigned b12_offset = b1 * norbs;
       for(unsigned int k1=0; k1<=b1; ++k1) {

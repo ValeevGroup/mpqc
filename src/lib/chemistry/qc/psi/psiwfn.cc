@@ -2044,7 +2044,7 @@ namespace sc {
     for (int i = 1; i<ioff_dim; i++) {
       ioff[i] = ioff[i-1] + i;
     }
-    const string outputname = string("psiout_tpdm_")+pairspin_str;
+
     int TPDM_FILE;
     switch (pairspin) {
       case AlphaBeta:  TPDM_FILE = PSIF_MO_AB_TPDM; break;
@@ -2052,18 +2052,14 @@ namespace sc {
       case BetaBeta:   TPDM_FILE = PSIF_MO_BB_TPDM; break;
       default: assert(false);
     }
-    //outfile = fopen("psiout_tpdm","w");
-    FILE* outfile = fopen(outputname.c_str(),"w");
     iwl_buf_init(&tpdm_buf,TPDM_FILE,0.0,1,1);
     if(pairspin==AlphaBeta) {
-      iwl_buf_rd_all2(&tpdm_buf,tpdm_arr2,ioff_nonsymm,ioff_nonsymm,1,ioff_nonsymm_pair,1,outfile);
+      iwl_buf_rd_all2(&tpdm_buf,tpdm_arr2,ioff_nonsymm,ioff_nonsymm,1,ioff_nonsymm_pair,0, NULL);
     }
     else {
-      iwl_buf_rd_all( &tpdm_buf,tpdm_arr ,ioff_nonsymm,ioff_nonsymm,1,ioff,             1,outfile);
+      iwl_buf_rd_all( &tpdm_buf,tpdm_arr ,ioff_nonsymm,ioff_nonsymm,1,ioff,             0, NULL);
     }
     iwl_buf_close(&tpdm_buf,1);
-    fclose(outfile);
-    //free(ioff_nonsymm);
     delete [] ioff_nonsymm;
     delete [] ioff_nonsymm_pair;
     delete [] ioff;
@@ -2254,11 +2250,9 @@ namespace sc {
     for (int i = 1; i<ioff_dim; i++) {
       ioff[i] = ioff[i-1] + i;
     }
-    outfile = fopen("psiout_tpdm","w");
     iwl_buf_init(&tpdm_buf,PSIF_MO_TPDM,0.0,1,1);
-    iwl_buf_rd_all(&tpdm_buf,tpdm_arr,ioff_nonsymm,ioff_nonsymm,1,ioff,1,outfile);
+    iwl_buf_rd_all(&tpdm_buf,tpdm_arr,ioff_nonsymm,ioff_nonsymm,1,ioff,0,NULL);
     iwl_buf_close(&tpdm_buf,1);
-    fclose(outfile);
     free(ioff_nonsymm);
     //ExEnv::out0() << "tpdm_arr:" << endl;
     //for(int i=0; i<nmo*nmo*nmo*nmo; i++) {
@@ -2343,12 +2337,9 @@ namespace sc {
     for (int i = 1; i<ioff_dim; i++) {
       ioff[i] = ioff[i-1] + i;
     }
-    outfile = fopen("psiout_tpdm","w");
     iwl_buf_init(&tpdm_buf,PSIF_MO_TPDM,0.0,1,1);
-    iwl_buf_rd_all(&tpdm_buf,tpdm_arr,ioff_nonsymm,ioff_nonsymm,1,ioff,1,outfile);
+    iwl_buf_rd_all(&tpdm_buf,tpdm_arr,ioff_nonsymm,ioff_nonsymm,1,ioff,0,NULL);
     iwl_buf_close(&tpdm_buf,1);
-    fclose(outfile);
-    //free(ioff_nonsymm);
     delete [] ioff_nonsymm;
     delete [] ioff;
 

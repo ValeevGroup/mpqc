@@ -1500,13 +1500,6 @@ RefSymmSCMatrix sc::PT2R12::rdm1_sf()
   }
   else
   {
-    if (correlate_rasscf_ and not printed) // force print out natural orb occ, just once;
-    {
-      ExEnv::out0() << std::endl << std::endl;
-      ExEnv::out0() << indent << "Info in rotated basis to faciliate screening.\n";
-      RefSymmSCMatrix helpmat = rdm1_sf_transform();
-      printed = true;
-    }
     return(sf_opdm);
   }
 }

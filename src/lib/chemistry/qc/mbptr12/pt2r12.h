@@ -100,6 +100,7 @@ namespace sc {
       bool omit_uocc_;
       bool pt2_correction_;          // for testing purposes only, set to false to skip the [2]_R12 computation
       bool cabs_singles_;
+      bool correlate_rasscf_;         // correlate active orbitals when using MRCI as reference.
       bool calc_davidson_;           // print out Davidson correction coefficient or not. Defaults to false.
       bool cabs_singles_coupling_; // if set to true, we include the coupling between cabs and OBS virtual orbitals. This should be preferred choice,
                                    // as explained in the paper.

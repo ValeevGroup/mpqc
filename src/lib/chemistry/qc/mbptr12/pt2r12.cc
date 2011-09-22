@@ -370,8 +370,8 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
   cabs_singles_ = keyval->booleanvalue("cabs_singles", KeyValValueboolean(false));
   cabs_singles_coupling_ = keyval->booleanvalue("cabs_singles_coupling", KeyValValueboolean(true));
   rotate_core_ = keyval->booleanvalue("rotate_core", KeyValValueboolean(true));
-  const bool force_rasscf = keyval->booleanvalue("force_correlate_rasscf",KeyValValueboolean(false));
-  if(force_rasscf)  // Only when correlating RAS-CI, we have the necessary orbital spaces
+  correlate_rasscf_ = keyval->booleanvalue("force_correlate_rasscf",KeyValValueboolean(false));
+  if(correlate_rasscf_)  // Only when correlating RAS-CI, we have the necessary orbital spaces
                     // to compute Davidson correction.
       calc_davidson_ = true;
   else
@@ -1500,7 +1500,7 @@ RefSymmSCMatrix sc::PT2R12::rdm1_sf()
   }
   else
   {
-    if (not printed) // force print out natural orb occ, just once
+    if (correlate_rasscf_ and not printed) // force print out natural orb occ, just once;
     {
       ExEnv::out0() << std::endl << std::endl;
       ExEnv::out0() << indent << "Info in rotated basis to faciliate screening.\n";
@@ -1530,7 +1530,7 @@ RefSCMatrix sc::PT2R12::rdm1_sf_2spaces(const Ref<OrbitalSpace> b1space, const R
   // 1. to avoid potential problems and for cleanness, all orb spaces should be accessed through r12eval_->r12world_->ref_->spinspaces_ (or screened_spinspaces_);
   // 2. take care of screening
   Ref<OrbitalSpace> pdmspace;
-  pdmspace = get_r12eval()->r12world()->refwfn()->orbs_sb();
+  pdmspace = get_r12eval()->r12world()->refwfn()->occ_sb();
 
   const unsigned int n_pdmspace = pdmspace->rank();
 

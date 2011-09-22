@@ -370,8 +370,8 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
   cabs_singles_ = keyval->booleanvalue("cabs_singles", KeyValValueboolean(false));
   cabs_singles_coupling_ = keyval->booleanvalue("cabs_singles_coupling", KeyValValueboolean(true));
   rotate_core_ = keyval->booleanvalue("rotate_core", KeyValValueboolean(true));
-  correlate_rasscf_ = keyval->booleanvalue("force_correlate_rasscf",KeyValValueboolean(false));
-  if(correlate_rasscf_)  // Only when correlating RAS-CI, we have the necessary orbital spaces
+  bool correlate_rasscf = keyval->booleanvalue("force_correlate_rasscf",KeyValValueboolean(false));
+  if(correlate_rasscf)  // Only when correlating RAS-CI, we have the necessary orbital spaces
                     // to compute Davidson correction.
       calc_davidson_ = true;
   else
@@ -1296,6 +1296,8 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
 
   ExEnv::out0() << std::endl << std::endl << indent << "Exited PT2R12::energy_PT2R12_projector2_spinfree\n\n";
 
+  bool print_component = false;
+  if(print_component)
   {
     const double E_V_t_T = V_t_T.trace();
     const double E_Xpart = Xpart.trace();

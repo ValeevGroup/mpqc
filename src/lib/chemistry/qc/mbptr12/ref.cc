@@ -146,9 +146,6 @@ sc::compute_canonvir_space(const Ref<FockBuildRuntime>& fb_rtime,
 
 /////////////
 
-const double
-PopulatedOrbitalSpace::zero_occupation = 1e-6;
-
 static ClassDesc PopulatedOrbitalSpace_cd(
   typeid(PopulatedOrbitalSpace),"PopulatedOrbitalSpace",1,"virtual public SavableState",
   0, 0, create<PopulatedOrbitalSpace>);
@@ -177,18 +174,18 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
   std::vector<bool> uocc_act_mask(nmo, false);
   const bool force_use_rasscf = (rasscf_occs[0] != -1.0); //force occ_act_mask to only select active rasscf (instead of rasci) orbs
   for(int i=0; i<nmo; i++) {
-    if (fabs(occs[i]) > PopulatedOrbitalSpace::zero_occupation) {
+    if (fabs(occs[i]) > PopulatedOrbitalSpace::zero_occupancy()) {
       occ_mask[i] = true;
       if(not force_use_rasscf)
         occ_act_mask[i] = active[i];
       else
-        occ_act_mask[i] = active[i] and (fabs(rasscf_occs[i]) > PopulatedOrbitalSpace::zero_occupation);
+        occ_act_mask[i] = active[i] and (fabs(rasscf_occs[i]) > PopulatedOrbitalSpace::zero_occupancy());
     }
     else {
       uocc_mask[i] = true;
       uocc_act_mask[i] = active[i];
     }
-    if (fabs(rasscf_occs[i]) < PopulatedOrbitalSpace::zero_occupation)
+    if (fabs(rasscf_occs[i]) < PopulatedOrbitalSpace::zero_occupancy())
       conv_uocc_mask[i] = true;
     else
       conv_occ_mask[i] = true;
@@ -378,7 +375,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const bool doscreen, const double o
   const int nblocks = blockinfo->nblock();
 
   for(int i=0; i<nmo; i++) {
-    if (fabs(occs[i]) > PopulatedOrbitalSpace::zero_occupation) {
+    if (fabs(occs[i]) > PopulatedOrbitalSpace::zero_occupancy()) {
       occ_mask[i] = true;
       occ_act_mask[i] = active[i];
     }
@@ -478,7 +475,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const bool doscreen, const double o
   // with updated 'active', we reset occ_act_mask, which is responsible for ggspace, etc
   for(int i=0; i<nmo; i++)
   {
-    if (fabs(occs[i]) > PopulatedOrbitalSpace::zero_occupation)
+    if (fabs(occs[i]) > PopulatedOrbitalSpace::zero_occupancy())
     {
       if (occ_act_mask[i] == true) occ_act_mask[i] = active[i]; //reset occ_act_mask based the updated active
     }
@@ -834,7 +831,7 @@ RefWavefunction::orbs_sb(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  if(occ_thres_ >sc::PT2R12::zero_occupation)
+  if(occ_thres_ >sc::PopulatedOrbitalSpace::zero_occupancy())
   {
     if(screened_space_init_ed_) return screened_spinspaces_[s]->orbs_sb();
     else
@@ -850,7 +847,7 @@ RefWavefunction::occ_sb(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  if(occ_thres_ > sc::PT2R12::zero_occupation)
+  if(occ_thres_ > sc::PopulatedOrbitalSpace::zero_occupancy())
   {
     if(screened_space_init_ed_) return screened_spinspaces_[s]->occ_sb();
     else
@@ -865,7 +862,7 @@ RefWavefunction::occ_act_sb(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  if(occ_thres_ >sc::PT2R12::zero_occupation)
+  if(occ_thres_ >sc::PopulatedOrbitalSpace::zero_occupancy())
   {
     if(screened_space_init_ed_) return screened_spinspaces_[s]->occ_act_sb();
     else
@@ -880,7 +877,7 @@ RefWavefunction::unscreen_occ_act_sb(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  if(occ_thres_ >sc::PT2R12::zero_occupation)
+  if(occ_thres_ >sc::PopulatedOrbitalSpace::zero_occupancy())
   {
     if(screened_space_init_ed_)
     {
@@ -898,7 +895,7 @@ RefWavefunction::uocc_sb(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  if(occ_thres_ >sc::PT2R12::zero_occupation)
+  if(occ_thres_ >sc::PopulatedOrbitalSpace::zero_occupancy())
   {
     if(screened_space_init_ed_) return screened_spinspaces_[s]->uocc_sb();
     else
@@ -913,7 +910,7 @@ RefWavefunction::conv_uocc_sb(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  if((not force_average_AB_rdm1_) or occ_thres_ >sc::PT2R12::zero_occupation)
+  if((not force_average_AB_rdm1_) or occ_thres_ >sc::PopulatedOrbitalSpace::zero_occupancy())
   /* not intended for use with spin orbital pt2r12 or screening calcs yet,
    since our main interest is spin adapted methods and so far correlating RAS orbs seems sufficient */
   {
@@ -928,7 +925,7 @@ RefWavefunction::conv_occ_sb(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  if((not force_average_AB_rdm1_) or occ_thres_ >sc::PT2R12::zero_occupation)
+  if((not force_average_AB_rdm1_) or occ_thres_ >sc::PopulatedOrbitalSpace::zero_occupancy())
   /* not intended for use with spin orbital pt2r12 or screening calcs yet,
    since our main interest is spin adapted methods and so far correlating RAS orbs seems sufficient */
   {
@@ -943,7 +940,7 @@ RefWavefunction::uocc_act_sb(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  if(occ_thres_ >sc::PT2R12::zero_occupation)
+  if(occ_thres_ >sc::PopulatedOrbitalSpace::zero_occupancy())
   {
     if(screened_space_init_ed_) return screened_spinspaces_[s]->uocc_act_sb();
     else
@@ -961,7 +958,7 @@ RefWavefunction::orbs(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  if(occ_thres_ > sc::PT2R12::zero_occupation)
+  if(occ_thres_ > sc::PopulatedOrbitalSpace::zero_occupancy())
   {
     if(screened_space_init_ed_) return screened_spinspaces_[s]->orbs();
     else
@@ -975,7 +972,7 @@ RefWavefunction::occ(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  if(occ_thres_ >sc::PT2R12::zero_occupation)
+  if(occ_thres_ >sc::PopulatedOrbitalSpace::zero_occupancy())
   {
     if(screened_space_init_ed_) return screened_spinspaces_[s]->occ();
     else
@@ -990,7 +987,7 @@ RefWavefunction::occ_act(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  if(occ_thres_ >sc::PT2R12::zero_occupation)
+  if(occ_thres_ >sc::PopulatedOrbitalSpace::zero_occupancy())
   {
     if(screened_space_init_ed_) return screened_spinspaces_[s]->occ_act();
     else
@@ -1007,7 +1004,7 @@ RefWavefunction::uocc(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  if(occ_thres_ >sc::PT2R12::zero_occupation)
+  if(occ_thres_ >sc::PopulatedOrbitalSpace::zero_occupancy())
   {
     if(screened_space_init_ed_) return screened_spinspaces_[s]->uocc();
     else
@@ -1025,7 +1022,7 @@ RefWavefunction::uocc_act(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  if(occ_thres_ > sc::PT2R12::zero_occupation)
+  if(occ_thres_ > sc::PopulatedOrbitalSpace::zero_occupancy())
   {
     if(screened_space_init_ed_) return screened_spinspaces_[s]->uocc_act();
     else

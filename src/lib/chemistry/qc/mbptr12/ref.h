@@ -43,9 +43,6 @@ namespace sc {
   /// for example, corresponding to various occupancies.
   class PopulatedOrbitalSpace : virtual public SavableState {
     public:
-    /// an orbital is occupied if its occupancy is greater than this
-    static const double zero_occupation;
-
     /**
      * @param oreg an OrbitalSpaceRegistry object that will know of the computed spaces
      * @param spin spin-case that will be used to compute labels of OrbitalSpace objects
@@ -86,6 +83,9 @@ namespace sc {
       PopulatedOrbitalSpace(StateIn& si);
       ~PopulatedOrbitalSpace();
       void save_data_state(StateOut& so);
+
+      /// an orbital is occupied if its occupancy is greater than this
+      static double zero_occupancy() { return 1e-12; }
 
       const Ref<OrbitalSpace>& orbs_sb() const { return orbs_sb_; }
       const Ref<OrbitalSpace>& orbs() const { return orbs_; }

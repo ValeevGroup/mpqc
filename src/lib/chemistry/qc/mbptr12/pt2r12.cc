@@ -1883,6 +1883,26 @@ void sc::PT2R12::compute()
         }
       }
     }
+
+    if(r12world_->spinadapted())
+      energy_correction_r12 = energy_pt2r12_sf;
+    else
+    {
+      if (!spin_polarized)
+      {
+        energy_pt2r12[BetaBeta] = energy_pt2r12[AlphaAlpha];
+        B_.push_back(B_[AlphaAlpha]);
+        V_.push_back(V_[AlphaAlpha]);
+        X_.push_back(X_[AlphaAlpha]);
+      }
+      for(int i=0; i<NSpinCases2; i++)
+      {
+           energy_correction_r12 +=  energy_pt2r12[i];
+           B_so += B_[i];
+           V_so += V_[i];
+           X_so += X_[i];
+      }
+    }
   }
 
 
@@ -1911,24 +1931,7 @@ void sc::PT2R12::compute()
                                         energy_ref + cabs_singles_corre_2b_H0) << endl;
   }
 
-  if(r12world_->spinadapted()) energy_correction_r12 = energy_pt2r12_sf;
-  else
-  {
-    if (!spin_polarized)
-    {
-      energy_pt2r12[BetaBeta] = energy_pt2r12[AlphaAlpha];
-      B_.push_back(B_[AlphaAlpha]);
-      V_.push_back(V_[AlphaAlpha]);
-      X_.push_back(X_[AlphaAlpha]);
-    }
-    for(int i=0; i<NSpinCases2; i++)
-    {
-         energy_correction_r12 +=  energy_pt2r12[i];
-         B_so += B_[i];
-         V_so += V_[i];
-         X_so += X_[i];
-    }
-  }
+
 
   const double energy = energy_ref + energy_correction_r12 + cabs_singles_corre_2b_H0; //total energy with R12 and CABS singles correction
 
@@ -2256,12 +2259,13 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
 
   const SpinCase1 spin = Alpha;
   Ref<OrbitalSpace> activespace = this->r12world()->refwfn()->occ_act_sb();
-  Ref<OrbitalSpace> pspace = rdm1_->orbs(spin);
+  Ref<OrbitalSpace> pspace = rdm1_->orbs(spin); // occupied orbs, determined by rdm1
   Ref<OrbitalSpace> vspace = this->r12world()->refwfn()->uocc_act_sb(spin);
   Ref<OrbitalSpace> cabsspace = this->r12world()->cabs_space(spin);
 
   Ref<OrbitalSpaceRegistry> oreg = this->r12world()->world()->tfactory()->orbital_registry();
-  if (!oreg->value_exists(pspace)) oreg->add(make_keyspace_pair(pspace));
+  if (!oreg->value_exists(pspace))
+    oreg->add(make_keyspace_pair(pspace));
   const std::string key = oreg->key(pspace);
   pspace = oreg->value(key);
 
@@ -2274,31 +2278,32 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
     all_virtual_space = oreg->value(AAkey);
   }
 
-  Ref<OrbitalSpace> orbital_and_cabs_virtual_space;
   Ref<OrbitalSpace> Aspace;
-  if (cabs_singles_coupling_)  Aspace = all_virtual_space;
-  else                         Aspace = cabsspace;
+  if (cabs_singles_coupling_)
+    Aspace = all_virtual_space;
+  else
+    Aspace = cabsspace;
 
-  const unsigned int num_blocks = vspace->nblocks();// since the two spaces have the same blocksizes, we only need to define one
-  const std::vector<unsigned int>& p_block_sizes = pspace->block_sizes(); // for debugging purposes
+  const unsigned int num_blocks = vspace->nblocks();
+  const std::vector<unsigned int>& p_block_sizes = pspace->block_sizes();
   const std::vector<unsigned int>& v_block_sizes = vspace->block_sizes();
   const std::vector<unsigned int>& cabs_block_sizes = cabsspace->block_sizes();
-  const std::vector<unsigned int>& A_block_sizes = Aspace->block_sizes(); // for debugging purposes
+  const std::vector<unsigned int>& A_block_sizes = Aspace->block_sizes();
 
   // get the fock matrices
   RefSCMatrix F_pA_alpha  = r12eval_->fock(pspace,Aspace,spin);
   RefSCMatrix F_pA_beta   = r12eval_->fock(pspace,Aspace,other(spin));
   RefSCMatrix F_AA_alpha  = r12eval_->fock(Aspace,Aspace,spin);
-  RefSCMatrix F_AA_beta   = r12eval_->fock(Aspace,Aspace,other(spin)); // for fock operator, the alpha and beta are not necessarily the same
+  RefSCMatrix F_AA_beta   = r12eval_->fock(Aspace,Aspace,other(spin));
   RefSCMatrix F_pp_alpha  = this->f(spin);
   RefSCMatrix F_pp_beta   = this->f(other(spin));
 
   // RDMs
   RefSymmSCMatrix gamma1_alpha = rdm1_->scmat(spin);
   RefSymmSCMatrix gamma1_beta = rdm1_->scmat(other(spin));
-  RefSymmSCMatrix gamma2_aa = this->rdm2( case12(spin,spin) );
-  RefSymmSCMatrix gamma2_bb = this->rdm2( case12(other(spin),other(spin)) );
-  RefSymmSCMatrix gamma2_ab = this->rdm2( case12(spin,other(spin)) );
+  RefSymmSCMatrix gamma2_aa = this->rdm2(case12(spin,spin));
+  RefSymmSCMatrix gamma2_bb = this->rdm2(case12(other(spin),other(spin)));
+  RefSymmSCMatrix gamma2_ab = this->rdm2(case12(spin,other(spin)));
 
   // define H0 and necessary vectors
   const int no = pspace->rank();
@@ -2311,7 +2316,7 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
   RefSCDimension dim_X  = new SCDimension(2 * nX);
   RefSymmSCMatrix B = gamma2_aa->kit()->symmmatrix(dim_oX);
   B.assign(0.0);
-  RefSCMatrix Ixy = gamma2_aa->kit()->matrix(dim_o, dim_o);//using a vector does save some space, but not so much
+  RefSCMatrix Ixy = gamma2_aa->kit()->matrix(dim_o, dim_o);
   Ixy.assign(0.0);
   RefSCVector rhs_vector = gamma2_aa->kit()->vector(dim_oX);
   rhs_vector->assign(0.0);
@@ -2350,7 +2355,7 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
    }
 
   std::vector<int> map_1_to_2 = map(*activespace, *pspace);
-  if(!rotate_core_) // if forbit rotating core orbitals
+  if(!rotate_core_) // if forbit rotating core orbitals; default is 'rotate core orbs'
   {
     ExEnv::out0()  << indent << "forbid exciting core orbitals" << std::endl << std::endl;
     for (int row_ind = 0; row_ind < no; ++row_ind)
@@ -2385,7 +2390,7 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
   }
 
 
-  // compute H0; x1/x2 etc denote difference spins; H0 corresponds to the B matrix from the notes
+  // compute H0; x1/x2 etc denote different spins; H0 corresponds to the B matrix from the notes
 
   {                                         // calculate Ixy: the first two term
     int x1, y1, i1,  j1, j2, k1, k2;        //the overall minus sign is taken into account when multiplied by delta to calculate B
@@ -2467,7 +2472,8 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
   }
 
 
-  // When dealing with unrelaxed core orbitals, Brillouin condition may not be satisfied, and thus we can not assume <| a^core_active H > = 0
+  // When dealing with unrelaxed core orbitals, Brillouin condition may not be satisfied;
+  // thus we can not assume <| a^core_active H > = 0
   // in this case, our formulas still hold for (x, y) == (active, core);
   // since Ixy should be symmetric, we can calculate Ixy(active, core) for Ixy(core, active)
   // this works whether core orbital are relaxed or not

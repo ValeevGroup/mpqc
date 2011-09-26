@@ -40,14 +40,17 @@ using namespace sc;
 
 namespace {
 
+  /// return the one-d offset for the index (i,j) of a triangle matrix
   int triang_half_INDEX_ordered(int i, int j) {
     return(i*(i+1)/2+j);
   }
 
+  /// return the one-d offset for the index (i,j) of a triangle matrix
   int triang_half_INDEX(int i, int j) {
     return((i>j) ? triang_half_INDEX_ordered(i,j) : triang_half_INDEX_ordered(j,i));
   }
 
+  /// return the one-d offset for the index (i,j) of a matrix
   int ordinary_INDEX(int i, int j, int coldim) {
     return(i*coldim+j);
   }
@@ -61,6 +64,7 @@ namespace {
     return(triang_half_INDEX(ind_half1,ind_half2));
   }
 
+  /// unpack a vector to a symmetric matrix; element-wise
   void vector_to_symmmatrix(RefSymmSCMatrix &matrix, const RefSCVector &vector) {
     int dim = matrix.dim().n();
     for(int i=0; i<dim; i++){
@@ -70,6 +74,7 @@ namespace {
     }
   }
 
+  /// pack a symmetric matrix to a vector
   void symmmatrix_to_vector(RefSCVector &vector, const RefSymmSCMatrix &matrix) {
     int dim = matrix.dim().n();
     for(int i=0; i<dim; i++){
@@ -79,6 +84,7 @@ namespace {
     }
   }
 
+  /// unpack a vector to a matrix
   void vector_to_matrix(RefSCMatrix &matrix, const RefSCVector &vector) {
     int dim1 = matrix.rowdim().n();
     int dim2 = matrix.coldim().n();
@@ -91,6 +97,7 @@ namespace {
 
   int lowerupper_index(int p, int q);
 
+  /// unpack a vector a matrix, depending on SpinCase2
   void vector_to_matrix(RefSCMatrix &matrix,const RefSCVector &vector,const SpinCase2 &pairspin) {
     int dim1 = matrix.rowdim().n();
     int dim2 = matrix.coldim().n();
@@ -113,6 +120,7 @@ namespace {
     }
   }
 
+  /// pack a matrix to a vector
   void matrix_to_vector(RefSCVector &vector, const RefSCMatrix &matrix) {
     int dim1 = matrix.rowdim().n();
     int dim2 = matrix.coldim().n();
@@ -123,6 +131,7 @@ namespace {
     }
   }
 
+  /// pack a matrix to a vector depending on SpinCase2
   void matrix_to_vector(RefSCVector &vector, const RefSCMatrix &matrix,const SpinCase2 &pairspin) {
     int dim1 = matrix.rowdim().n();
     int dim2 = matrix.coldim().n();
@@ -141,6 +150,7 @@ namespace {
       }
     }
   }
+
 
   int lowertriang_index(int p,int q) {
     if(q>=p){
@@ -179,10 +189,12 @@ namespace {
     return (max_ij -1)* max_ij/2 + min_ij;
   }
 
-  /** this is a wrapper method so that we can get elements from 4-index antisymmetric matrix just as other matrices;
+  /** this is a wrapper method so that we can get elements from 4-index antisymmetric
+      matrix just as other matrices;
       as long as MM supports the method get_element */
   template <typename MatrixType>
-  double get_4ind_antisym_matelement(MatrixType & MM, const int & U1, const int & U2, const int & L1, const int & L2)
+  double get_4ind_antisym_matelement(MatrixType & MM, const int & U1, const int & U2,
+                                                      const int & L1, const int & L2)
   {
       if(U1 == U2 || L1 == L2) return 0.0;
       else
@@ -194,44 +206,16 @@ namespace {
       }
   }
 
-  /** this is a wrapper method so that we can easily retrieve elements from 4-index matrix; as long as MM supports the method get_element */
+  /** this is a wrapper method so that we can easily retrieve elements
+      from 4-index matrix; as long as MM supports the method get_element */
   template <typename MatrixType>
-  double get_4ind_matelement(MatrixType & MM, const int & U1, const int & U2, const int & L1, const int & L2, const int & UppDim, const int & LowDim)
+  double get_4ind_matelement(MatrixType & MM, const int & U1, const int & U2,
+                                              const int & L1, const int & L2,
+                                              const int & UppDim, const int & LowDim)
   {
       int uppind = U1 * UppDim + U2;
       int lowind = L1 * LowDim + L2;
       return MM.get_element(uppind, lowind);
-  }
-
-
-  template <typename MMatrix> // print out the elements from the two matrices which differ by more than thres
-  void compare_element_diff(MMatrix & M1, MMatrix & M2, bool symmetry, unsigned int rowdim, unsigned int coldim, double thres)
-  {
-    for (int row = 0; row < rowdim; ++row)
-    {
-      if(!symmetry)
-      {
-        for (int col = 0; col < coldim; ++col)
-        {
-          if(fabs(M1(row, col) - M2(row, col)) > thres)
-          {
-            ExEnv::out0() << indent << "row, col, M1, M2, diff: " << row << ", " << col << ", " << M1(row, col) << ", " << M2(row, col) << std::endl
-                          << indent << "                        " << M1(row, col) - M2(row, col) << std::endl;
-          }
-        }
-      }
-      else
-      {
-        for (int col = 0; col < row; ++col)
-        {
-          if(fabs(M1(row, col) - M2(row, col)) > thres)
-          {
-            ExEnv::out0() << indent << "row, col, M1, M2, diff: " << row << ", " << col << ", " << M1(row, col) << ", " << M2(row, col) << std::endl
-                          << indent << "                        " << M1(row, col) - M2(row, col) << std::endl;
-          }
-        }
-      }
-    }
   }
 
   RefSCMatrix convert_RefSC_to_local_kit(const RefSCMatrix& A)
@@ -263,18 +247,6 @@ namespace {
     res.assign(0.0);
     int ext_ind, int_ind, row, col, Ap, Bp, Cp, Dp, A, B, C, D, a, b, c, d, f;
     ext_ind = int_ind = row = col = Ap = Bp = Cp = Dp = A = B = C = D = a = b = c = d = f = 0;
-//#if 1
-    //check symmetry; this is wrong, since after the first index transformation, BB is not symmetric anymore
-//    const int nn = onedim*onedim;
-//    for (int xxx = 0; xxx < nn; ++xxx)
-//    {
-//      for (int yyy = 0; yyy < nn; ++yyy)
-//      {
-//        if(fabs(BB->get_element(xxx,yyy) -BB->get_element(yyy,xxx)) > 1e-10)
-//          ExEnv::out0() << "symmetry broken: (row, col) and vlaue: " << xxx << ", " << yyy << ", " << BB->get_element(xxx,yyy) << ", " << BB->get_element(yyy,xxx) << "\n";
-//      }
-//    }
-//#endif
     double xx = 0;
     for (a = 0; a < onedim; ++a) // the external index of A
     {
@@ -366,6 +338,7 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
   pt2_correction_ = keyval->booleanvalue("pt2_correction", KeyValValueboolean(true));
   omit_uocc_ = keyval->booleanvalue("omit_uocc", KeyValValueboolean(false));
   cabs_singles_ = keyval->booleanvalue("cabs_singles", KeyValValueboolean(false));
+  cabs_singles_h0_ = keyval->stringvalue("cabs_singles_h0", KeyValValuestring(std::string("dyall")));
   cabs_singles_coupling_ = keyval->booleanvalue("cabs_singles_coupling", KeyValValueboolean(true));
   rotate_core_ = keyval->booleanvalue("rotate_core", KeyValValueboolean(true));
   bool correlate_rasscf = keyval->booleanvalue("force_correlate_rasscf",KeyValValueboolean(false));
@@ -1131,8 +1104,8 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
       {
         Ref<DistArray4> RTgamma1;
         RefSCMatrix rdm2inter = rdm2_sf_4spaces_int(-0.5, 0.5, -0.5, occ_space, gg_space, gg_space, occ_space);
-        rdm2inter = rdm2_sf_4spaces_int_permu<Permute23>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
-        rdm2inter = rdm2_sf_4spaces_int_permu<Permute34>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
+        rdm2inter = RefSCMAT4_permu<Permute23>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
+        rdm2inter = RefSCMAT4_permu<Permute34>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
         Ref<DistArray4> pI1 = permute23(permute34(I1));
         contract34_DA4_RefMat(RTgamma1, 1.0, pI1, 0, rdm2inter, occ_dim, gg_dim);
         RTgamma1 = permute23(RTgamma1);
@@ -1143,9 +1116,9 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
       {
         Ref<DistArray4> RTgamma2;
         RefSCMatrix rdm2inter = rdm2_sf_4spaces_int(-0.5, 1.0, -0.25, occ_space, gg_space, occ_space, gg_space);
-        rdm2inter = rdm2_sf_4spaces_int_permu<Permute34>(rdm2inter, occ_space, gg_space, occ_space, gg_space);
-        rdm2inter = rdm2_sf_4spaces_int_permu<Permute23>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
-        rdm2inter = rdm2_sf_4spaces_int_permu<Permute34>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
+        rdm2inter = RefSCMAT4_permu<Permute34>(rdm2inter, occ_space, gg_space, occ_space, gg_space);
+        rdm2inter = RefSCMAT4_permu<Permute23>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
+        rdm2inter = RefSCMAT4_permu<Permute34>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
         Ref<DistArray4> I_Aw_yr = permute23(permute34(I1));
         contract34_DA4_RefMat(RTgamma2, 1.0, I_Aw_yr, 0, rdm2inter, occ_dim, gg_dim);
         RTgamma2 = permute34(permute23(RTgamma2));
@@ -1162,8 +1135,8 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
        {
          Ref<DistArray4> RTgamma3;
          RefSCMatrix rdm2inter = rdm2_sf_4spaces_int(1.0, -1.0, 0.0, occ_space, gg_space, gg_space, occ_space);
-         rdm2inter = rdm2_sf_4spaces_int_permu<Permute23>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
-         rdm2inter = rdm2_sf_4spaces_int_permu<Permute34>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
+         rdm2inter = RefSCMAT4_permu<Permute23>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
+         rdm2inter = RefSCMAT4_permu<Permute34>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
          contract34_DA4_RefMat(RTgamma3, 1.0, permute23(I2), 0, rdm2inter, occ_dim, gg_dim);
          RTgamma3 = permute23(RTgamma3);
          axpy(RTgamma3, 1.0, RTgamma, 1.0);
@@ -1173,8 +1146,8 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
        {
          Ref<DistArray4> RTgamma4;
          RefSCMatrix rdm2inter = rdm2_sf_4spaces_int(-0.5, 0.5, 0.0, occ_space, gg_space, gg_space, occ_space);
-         rdm2inter = rdm2_sf_4spaces_int_permu<Permute23>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
-         rdm2inter = rdm2_sf_4spaces_int_permu<Permute34>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
+         rdm2inter = RefSCMAT4_permu<Permute23>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
+         rdm2inter = RefSCMAT4_permu<Permute34>(rdm2inter, occ_space, gg_space, gg_space, occ_space);
          contract_DA4_RefMat_k2b2_34(RTgamma4, 1.0, I2, 0, rdm2inter, occ_dim, gg_dim); //RTgamma is initialized
          RTgamma4 = permute34(RTgamma4);
          axpy(RTgamma4, 1.0, RTgamma, 1.0);
@@ -1749,7 +1722,7 @@ RefSCMatrix sc::PT2R12::rdm2_sf_4spaces_int(const double a, const double b, doub
 
 
 template<sc::PT2R12::Tensor4_Permute HowPermute>
-RefSCMatrix sc::PT2R12::rdm2_sf_4spaces_int_permu(RefSCMatrix rdm2_4space_int,
+RefSCMatrix sc::PT2R12::RefSCMAT4_permu(RefSCMatrix rdm2_4space_int,
                                       const Ref<OrbitalSpace> b1space,
                                       const Ref<OrbitalSpace> b2space,
                                       const Ref<OrbitalSpace> k1space,
@@ -1779,8 +1752,20 @@ RefSCMatrix sc::PT2R12::rdm2_sf_4spaces_int_permu(RefSCMatrix rdm2_4space_int,
     upp_pair = new SpinMOPairIter(b1dim, k1dim, AlphaBeta);
     low_pair = new SpinMOPairIter(b2dim, k2dim, AlphaBeta);
   }
+  else if(HowPermute == Permute14)
+  {
+      const unsigned int upp_dim = k2dim * b2dim;
+      const unsigned int low_dim = k1dim * b1dim;
+      RefSCDimension upp_scdim = new SCDimension(upp_dim);
+      RefSCDimension low_scdim = new SCDimension(low_dim);
+      result = rdm2_4space_int->kit()->matrix(upp_scdim, low_scdim);
+      result.assign(0.0);
+      upp_pair = new SpinMOPairIter(k2dim, b2dim, AlphaBeta);
+      low_pair = new SpinMOPairIter(k1dim, b1dim, AlphaBeta);
+    }
 
 
+  double oneelement;
   for(upp_pair->start(); *upp_pair; upp_pair->next())   // add BetaAlpha/AlphaAlpha/BetaBeta contribution to sf_rdm
   {
     for(low_pair->start(); *low_pair; low_pair->next())
@@ -1789,11 +1774,14 @@ RefSCMatrix sc::PT2R12::rdm2_sf_4spaces_int_permu(RefSCMatrix rdm2_4space_int,
          const int U2 = upp_pair->j();
          const int L1 = low_pair->i();
          const int L2 = low_pair->j();
-         double oneelement;
          if(HowPermute == Permute34)
              oneelement = rdm2_4space_int.get_element(upp_pair->ij(), L2* k2dim + L1);
          else if(HowPermute == Permute23)
              oneelement = rdm2_4space_int.get_element(U1 * b2dim + L1, U2* k2dim + L2);
+         else if(HowPermute == Permute14)
+             oneelement = rdm2_4space_int.get_element(L2 * b2dim + U2, L1* k2dim + U1);
+         else
+             abort();
          result(upp_pair->ij(), low_pair->ij()) = oneelement;
       }
   }
@@ -1833,7 +1821,7 @@ void sc::PT2R12::compute()
   double V_so = 0.0;
   double X_so = 0.0; // these 3 varialbes store the final values for B, V, X
   double energy_pt2r12_sf = 0.0;
-  double cabs_singles_corre_2b_H0 = 0.0;
+  double cabs_singles_e = 0.0;
   const bool spin_polarized = r12world()->refwfn()->spin_polarized();
 
   if(calc_davidson_ and r12world()->spinadapted())
@@ -1906,30 +1894,31 @@ void sc::PT2R12::compute()
 
   if(cabs_singles_)
   {
-    //calculate basis set incompleteness error (BSIE) with two choices of H0
     double alpha_corre = 0.0, beta_corre = 0.0, cabs_singles_corre = 0.0;
-    cabs_singles_corre_2b_H0 = this->energy_cabs_singles_twobody_H0();
-    const bool keep_Fock_result = false; // if false, only do [2]_S with Dyall Hamiltonian
-    if(keep_Fock_result)
+    if(cabs_singles_h0_ == std::string("fock"))
     {
       alpha_corre = this->energy_cabs_singles(Alpha);
       if (spin_polarized)
         beta_corre =  this->energy_cabs_singles(Beta);
       else
         beta_corre = alpha_corre;
-      cabs_singles_corre = alpha_corre + beta_corre;
-      ExEnv::out0() << indent << scprintf("CABS singles energy correction:        %17.12lf",
-                                        cabs_singles_corre) << endl;
+      cabs_singles_e = alpha_corre + beta_corre;
+      ExEnv::out0() << indent << scprintf("CABS singles correction (Fock):        %17.12lf",
+                                        cabs_singles_e) << endl;
       ExEnv::out0() << indent << scprintf("RASSCF+CABS singles correction:        %17.12lf",
-                                          energy_ref + cabs_singles_corre) << endl;
+                                          energy_ref + cabs_singles_e) << endl << endl;
     }
-    ExEnv::out0() << indent << scprintf("CABS correction (twobody H0):          %17.12lf",
-                                      cabs_singles_corre_2b_H0) << endl;
-    ExEnv::out0() << indent << scprintf("RASSCF+CABS (twobody H0):              %17.12lf",
-                                        energy_ref + cabs_singles_corre_2b_H0) << endl;
+    else if(cabs_singles_h0_ == std::string("dyall"))
+    {
+      cabs_singles_e = energy_cabs_singles_twobody_H0();
+      ExEnv::out0() << indent << scprintf("CABS singles correction (Dyall):       %17.12lf",
+                                      cabs_singles_e) << endl;
+      ExEnv::out0() << indent << scprintf("RASSCF+CABS (twobody H0):              %17.12lf",
+                                        energy_ref + cabs_singles_e) << endl<< endl;
+    }
   }
 
-  const double energy = energy_ref + energy_correction_r12 + cabs_singles_corre_2b_H0; //total energy with R12 and CABS singles correction
+  const double energy = energy_ref + energy_correction_r12 + cabs_singles_e;
 
   ExEnv::out0() <<indent << scprintf("Reference energy [au]:                 %17.12lf",
                                      energy_ref) << endl;

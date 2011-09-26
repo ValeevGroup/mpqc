@@ -88,7 +88,7 @@ namespace sc {
       static double zero_occupancy() { return sc::PopulatedOrbitalSpace::zero_occupancy(); }
 
     private:
-
+      enum Tensor4_Permute {Permute23 =1, Permute34 = 2, Permute14 = 3};
       static double ref_to_pt2r12_acc() { return 0.01; }
 
       Ref< RDM<Two> > rdm2_;
@@ -111,8 +111,8 @@ namespace sc {
       std::vector<double> V_; // store the values for different spins
 
 
-      /// this is to help combine similar functions to one
-      enum Tensor4_Permute {Permute23 =1, Permute34 = 2};
+      std::string cabs_singles_h0_; // specify zeroth order H
+
 
       /// 1-RDM as provided by the rdm1_ object
       RefSymmSCMatrix rdm1(SpinCase1 spin);
@@ -168,9 +168,9 @@ namespace sc {
                                                   const Ref<OrbitalSpace> k1space,
                                                   const Ref<OrbitalSpace> k2space);
 
-      ///permute a 2rdm matrix specified by 4 orbital spaces
+      ///permute indices of a matrix specified by 4 orbital spaces
       template<Tensor4_Permute HowPermute>
-      RefSCMatrix rdm2_sf_4spaces_int_permu(RefSCMatrix rdm2_4space_int,
+      RefSCMatrix RefSCMAT4_permu(RefSCMatrix rdm2_4space_int,
                                             const Ref<OrbitalSpace> b1space,
                                             const Ref<OrbitalSpace> b2space,
                                             const Ref<OrbitalSpace> k1space,

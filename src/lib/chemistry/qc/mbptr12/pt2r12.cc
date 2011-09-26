@@ -355,8 +355,6 @@ namespace {
 static ClassDesc PT2R12_cd(typeid(PT2R12),"PT2R12",
                            1,"public Wavefunction",0,create<PT2R12>,create<PT2R12>);
 
-const double PT2R12::zero_occupation = 1e-12;
-
 PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_()
 {
   ///* comment out the following to test cabs singles correction
@@ -1325,7 +1323,7 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
     ExEnv::out0() << indent << scprintf("Hylleraas:                %17.12lf", E_total) << std::endl;
     ExEnv::out0() << indent << scprintf("deviation percentage:     %17.12lf", deviation) << std::endl << std::endl << std::endl;
   }
-  if(fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupation)
+  if(fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupancy())
   {
     const int total_active_occ = r12world()->refwfn()->get_poporbspace(Alpha)->occ_act_sb()->rank();
     const int survive_active_occ = r12world()->refwfn()->occ_act_sb(Alpha)->rank();
@@ -1491,7 +1489,7 @@ RefSymmSCMatrix sc::PT2R12::rdm1_sf()
 {
   static bool printed = false;
   RefSymmSCMatrix sf_opdm = rdm1(Alpha) + rdm1(Beta);//converted to local
-  if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupation)
+  if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupancy())
   {
     if (not printed) // force print out natural orb occ, just once
     {
@@ -1583,7 +1581,7 @@ RefSymmSCMatrix sc::PT2R12::rdm2_sf()
      }
   }
 
-  if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupation)
+  if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupancy())
   {
     const bool printdebug = false;
     RefSymmSCMatrix res = sf_rdm->clone();
@@ -1629,7 +1627,7 @@ RefSCMatrix sc::PT2R12::rdm2_sf_4spaces(const Ref<OrbitalSpace> b1space, const R
   // 1. to avoid potential problems and for cleanness, all orb spaces should be accessed through r12eval_->r12world_->ref_->spinspaces_ (or screened_spinspaces_);
   // 2. take care of screening
   Ref<OrbitalSpace> pdmspace;
-  if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupation)
+  if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupancy())
     pdmspace = get_r12eval()->r12world()->refwfn()->get_screened_poporbspace()->occ_sb();
   else
     pdmspace = get_r12eval()->r12world()->refwfn()->get_poporbspace()->occ_sb();
@@ -1637,7 +1635,7 @@ RefSCMatrix sc::PT2R12::rdm2_sf_4spaces(const Ref<OrbitalSpace> b1space, const R
   const unsigned int n_pdmspace = pdmspace->rank();
 
 #if 0
-  if(fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupation)
+  if(fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupancy())
   {
     // first test 1rdm, which shall be diagonal in our test case
     RefSymmSCMatrix ABX = rdm1_sf();
@@ -1863,7 +1861,7 @@ void sc::PT2R12::compute()
     }
     else // use spin-orbital version
     {
-      if(fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupation)
+      if(fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupancy())
          throw ProgrammingError("Due to issue with V_, spin orbital PT2R12 needs to be corrected to work for screening", __FILE__,__LINE__);
       for(int i=0; i<NSpinCases2; i++) // may comment out this part for pure cas
       {
@@ -1930,8 +1928,6 @@ void sc::PT2R12::compute()
     ExEnv::out0() << indent << scprintf("RASSCF+CABS (twobody H0):              %17.12lf",
                                         energy_ref + cabs_singles_corre_2b_H0) << endl;
   }
-
-
 
   const double energy = energy_ref + energy_correction_r12 + cabs_singles_corre_2b_H0; //total energy with R12 and CABS singles correction
 
@@ -2039,6 +2035,16 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
     if (!oreg->value_exists(all_virtual_space)) oreg->add(make_keyspace_pair(all_virtual_space));
     const std::string AAkey = oreg->key(all_virtual_space);
     all_virtual_space = oreg->value(AAkey);
+
+    { // make sure that the AO space that supports all_virtual_space is known
+      Ref<AOSpaceRegistry> aoreg = this->r12world()->world()->tfactory()->ao_registry();
+      if (aoreg->key_exists(all_virtual_space->basis()) == false) {
+        Ref<Integral> localints = this->integral()->clone();
+        Ref<OrbitalSpace> mu = new AtomicOrbitalSpace("mu''", "CABS(AO)+VBS(AO)", all_virtual_space->basis(), localints);
+        oreg->add(make_keyspace_pair(mu));
+        aoreg->add(mu->basis(),mu);
+      }
+    }
   }
 
   Ref<OrbitalSpace> Aspace;
@@ -2276,6 +2282,16 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
     if (!oreg->value_exists(all_virtual_space)) oreg->add(make_keyspace_pair(all_virtual_space));
     const std::string AAkey = oreg->key(all_virtual_space);
     all_virtual_space = oreg->value(AAkey);
+
+    { // make sure that the AO space that supports all_virtual_space is known
+      Ref<AOSpaceRegistry> aoreg = this->r12world()->world()->tfactory()->ao_registry();
+      if (aoreg->key_exists(all_virtual_space->basis()) == false) {
+        Ref<Integral> localints = this->integral()->clone();
+        Ref<OrbitalSpace> mu = new AtomicOrbitalSpace("mu''", "CABS(AO)+VBS(AO)", all_virtual_space->basis(), localints);
+        oreg->add(make_keyspace_pair(mu));
+        aoreg->add(mu->basis(),mu);
+      }
+    }
   }
 
   Ref<OrbitalSpace> Aspace;
@@ -2760,7 +2776,7 @@ void sc::PT2R12::print(std::ostream & os) const
 RefSymmSCMatrix sc::PT2R12::_rdm2_to_gg(SpinCase2 spin,
                                         RefSymmSCMatrix rdm)
 {
-  if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupation)
+  if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupancy())
      throw ProgrammingError("this function hasn't been examined to take care of the screening; at least 'orbs1/2' should be specified using r12int_eval_...", __FILE__,__LINE__);
   const SpinCase1 spin1 = case1(spin);
   const SpinCase1 spin2 = case2(spin);
@@ -2853,7 +2869,7 @@ RefSymmSCMatrix sc::PT2R12::lambda2_gg(SpinCase2 spin)
 
 RefSymmSCMatrix sc::PT2R12::rdm1_gg(SpinCase1 spin)
 {
-  if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupation)
+  if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupancy())
     throw ProgrammingError("this function hasn't been examined to take care of the screening; at least 'orbs' should be specified using r12int_eval_...", __FILE__,__LINE__);
   RefSymmSCMatrix rdm = this->rdm1(spin);
   Ref<OrbitalSpace> orbs = rdm1_->orbs(spin);
@@ -2883,7 +2899,7 @@ RefSymmSCMatrix sc::PT2R12::rdm1_gg(SpinCase1 spin)
 
 RefSymmSCMatrix sc::PT2R12::rdm2_gg(SpinCase2 spin)
 {
-  if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupation)
+  if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupancy())
      throw ProgrammingError("this function hasn't been examined to take care of the screening; at least 'orbs' should be specified using r12int_eval_...", __FILE__,__LINE__);
   RefSymmSCMatrix rdm = this->rdm2(spin);
   return this->_rdm2_to_gg(spin, rdm);
@@ -2891,7 +2907,7 @@ RefSymmSCMatrix sc::PT2R12::rdm2_gg(SpinCase2 spin)
 
 RefSymmSCMatrix sc::PT2R12::lambda2(SpinCase2 spin)
 {
-  if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupation)
+  if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupancy())
      throw ProgrammingError("this function hasn't been examined to take care of the screening; at least 'orbs' should be specified using r12int_eval_...", __FILE__,__LINE__);
   // since LocalSCMatrixKit is used everywhere, convert to Local kit
   return convert_to_local_kit(rdm2_->cumulant()->scmat(spin));
@@ -3393,7 +3409,7 @@ PT2R12::energy_recomputed_from_densities() {
   energy += this->r12world()->refwfn()->basis()->molecule()->nuclear_repulsion_energy();
   ExEnv::out0() << std::endl<< indent << "Exited energy_recomputed_from_densities" << std::endl << std::endl << std::endl;
 
-#define DUMP_SPINFREE_DENSITIES 1
+#define DUMP_SPINFREE_DENSITIES 0
 #if DUMP_SPINFREE_DENSITIES
   {
     RefSymmSCMatrix rdm1 = rdm1_sf();
@@ -3414,27 +3430,50 @@ PT2R12::energy_recomputed_from_densities() {
       os.close();
     }
 
-    std::ofstream os("R12_RDM2_PSI.TXT");
-    RefSymmSCMatrix rdm2 = rdm2_sf();
-    const unsigned int nmo = rdm1_->orbs(Alpha)->rank();
-    for(unsigned int b1=0; b1<nmo; ++b1) {
-      for(unsigned int k1=0; k1<=b1; ++k1) {
-        for(unsigned int k2=0; k2<=b1; ++k2) {
-          const unsigned int b2_max = (k2 == b1) ? k1 : k2;
-          for(unsigned int b2=0; b2<=b2_max; ++b2) {
-            const unsigned int b12 = b1*nmo + b2;
-            const unsigned int k12 = k1*nmo + k2;
-            const double value = rdm2.get_element(b12, k12);
-            os << scprintf("%8d%8d%8d%8d%23.17lf",
-                           b1+1, b2+1, k1+1, k2+1,
-                           value) << std::endl;
+    RefSymmSCMatrix rdm2;
+    if (0) {
+      std::ofstream os("R12_RDM2_PSI.TXT");
+      rdm2 = rdm2_sf();
+      const unsigned int nmo = rdm1_->orbs(Alpha)->rank();
+      for (unsigned int b1 = 0; b1 < nmo; ++b1) {
+        for (unsigned int k1 = 0; k1 <= b1; ++k1) {
+          for (unsigned int k2 = 0; k2 <= b1; ++k2) {
+            const unsigned int b2_max = (k2 == b1) ? k1 : k2;
+            for (unsigned int b2 = 0; b2 <= b2_max; ++b2) {
+              const unsigned int b12 = b1 * nmo + b2;
+              const unsigned int k12 = k1 * nmo + k2;
+              const double value = rdm2.get_element(b12, k12);
+              os
+                  << scprintf("%8d%8d%8d%8d%23.17lf", b1 + 1, b2 + 1, k1 + 1,
+                              k2 + 1, value) << std::endl;
+            }
           }
         }
       }
+      os << scprintf("%8d%8d%8d%8d%23.17lf", -1, -1, -1, -1, -1.0) << std::endl;
+      os.close();
     }
-    os << scprintf("%8d%8d%8d%8d%23.17lf",
-                   -1,-1,-1,-1,-1.0) << std::endl;
-    os.close();
+    else {
+      std::ofstream os("R12_RDM2_PSI.TXT");
+      rdm2 = rdm2_sf();
+      const unsigned int nmo = rdm1_->orbs(Alpha)->rank();
+      for (unsigned int b1 = 0; b1 < nmo; ++b1) {
+        for (unsigned int b2 = 0; b2 < nmo; ++b2) {
+          for (unsigned int k1 = 0; k1 < nmo; ++k1) {
+            for (unsigned int k2 = 0; k2 < nmo; ++k2) {
+              const unsigned int b12 = b1 * nmo + b2;
+              const unsigned int k12 = k1 * nmo + k2;
+              const double value = rdm2.get_element(b12, k12);
+              os
+                  << scprintf("%8d%8d%8d%8d%23.17lf", b1 + 1, b2 + 1, k1 + 1,
+                              k2 + 1, value) << std::endl;
+            }
+          }
+        }
+      }
+      os << scprintf("%8d%8d%8d%8d%23.17lf", -1, -1, -1, -1, -1.0) << std::endl;
+      os.close();
+    }
 
     { // re-compute the energy using the spin-free density
       const RefSymmSCMatrix H = compute_obints<&Integral::hcore>(rdm1_->orbs(Alpha));
@@ -3458,15 +3497,38 @@ PT2R12::energy_recomputed_from_densities() {
       gg->accumulate_subblock(G.pointer(), 0, G.nrow()-1, 0, G.ncol() - 1);  // his automatically scales off diagonal elements by 2
                                                                              // no need to scale the diagonal when taking scalar product
 
+//      { // dump the integrals
+//        std::ofstream os("R12_ERI_PSI.TXT");
+//        const unsigned int nmo = space1->rank();
+//        double twoel_energy = 0.0;
+//        for (unsigned int b1 = 0; b1 < nmo; ++b1) {
+//          for (unsigned int k1 = 0; k1 <= b1; ++k1) {
+//            for (unsigned int k2 = 0; k2 <= b1; ++k2) {
+//              const unsigned int b2_max = (k2 == b1) ? k1 : k2;
+//              for (unsigned int b2 = 0; b2 <= b2_max; ++b2) {
+//                const unsigned int b12 = b1 * nmo + b2;
+//                const unsigned int k12 = k1 * nmo + k2;
+//                const double value = G.get_element(b12, k12);
+//                os
+//                    << scprintf("%8d%8d%8d%8d%23.17lf", b1 + 1, b2 + 1, k1 + 1,
+//                                k2 + 1, value) << std::endl;
+//              }
+//            }
+//          }
+//        }
+//        os << scprintf("%8d%8d%8d%8d%23.17lf", -1, -1, -1, -1, -1.0)
+//            << std::endl;
+//        os.close();
+//      }
       { // dump the integrals
         std::ofstream os("R12_ERI_PSI.TXT");
         const unsigned int nmo = space1->rank();
+        const unsigned int nmo_rep = 10;
         double twoel_energy = 0.0;
-        for (unsigned int b1 = 0; b1 < nmo; ++b1) {
-          for (unsigned int k1 = 0; k1 <= b1; ++k1) {
-            for (unsigned int k2 = 0; k2 <= b1; ++k2) {
-              const unsigned int b2_max = (k2 == b1) ? k1 : k2;
-              for (unsigned int b2 = 0; b2 <= b2_max; ++b2) {
+        for (unsigned int b1 = 0; b1 < nmo_rep; ++b1) {
+          for (unsigned int b2 = 0; b2 < nmo_rep; ++b2) {
+            for (unsigned int k1 = 0; k1 < nmo_rep; ++k1) {
+              for (unsigned int k2 = 0; k2 < nmo_rep; ++k2) {
                 const unsigned int b12 = b1 * nmo + b2;
                 const unsigned int k12 = k1 * nmo + k2;
                 const double value = G.get_element(b12, k12);
@@ -3483,17 +3545,17 @@ PT2R12::energy_recomputed_from_densities() {
       }
       { // dump the integrals * RDM
         std::ofstream os("R12_ERIRDM_PSI.TXT");
-        //const unsigned int nmo = space1->rank();
-        const unsigned int nmo = 10;
+        const unsigned int nmo = space1->rank();
+        const unsigned int nmo_rep = 10;
         double twoel_energy = 0.0;
-        for (unsigned int b1 = 0; b1 < nmo; ++b1) {
-          for (unsigned int b2 = 0; b2 < nmo; ++b2) {
+        for (unsigned int b1 = 0; b1 < nmo_rep; ++b1) {
+          for (unsigned int b2 = 0; b2 < nmo_rep; ++b2) {
             const unsigned int b12 = b1 * nmo + b2;
-            for (unsigned int k1 = 0; k1 < nmo; ++k1) {
-              for (unsigned int k2 = 0; k2 < nmo; ++k2) {
+            for (unsigned int k1 = 0; k1 < nmo_rep; ++k1) {
+              for (unsigned int k2 = 0; k2 < nmo_rep; ++k2) {
                 const unsigned int k12 = k1 * nmo + k2;
                 const double value = G.get_element(b12, k12);
-                const double rdm_value = rdm2.get_element(b12,k12) / 2.0;
+                const double rdm_value = rdm2.get_element(b12,k12);
                 twoel_energy += value * rdm_value;
                 os
                     << scprintf("%8d%8d%8d%8d%23.17lf * %23.17lf +-> %23.17f", b1 + 1, b2 + 1, k1 + 1,
@@ -3512,7 +3574,7 @@ PT2R12::energy_recomputed_from_densities() {
 
       trace_op = new SCElementScalarProduct;
       gg->element_op(trace_op, rdm2);
-      const double e2 = trace_op->result();
+      const double e2 = 0.5 * trace_op->result();
 
       ExEnv::out0() << "one-electron energy (from spin-free RDM): " << setprecision(12) << e1 << endl;
       ExEnv::out0() << "two-electron energy (from spin-free RDM): " << setprecision(12) << e2 << endl;

@@ -63,8 +63,6 @@ namespace sc {
 
           </table>
        */
-
-      static const double zero_occupation;
       PT2R12(const Ref<KeyVal> &keyval);
       PT2R12(StateIn &s);
       ~PT2R12();
@@ -90,6 +88,7 @@ namespace sc {
 
     private:
 
+      static double zero_occupancy() { return sc::PopulatedOrbitalSpace::zero_occupancy(); }
       static double ref_to_pt2r12_acc() { return 0.01; }
 
       Ref< RDM<Two> > rdm2_;

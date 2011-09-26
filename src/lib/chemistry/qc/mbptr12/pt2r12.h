@@ -85,10 +85,10 @@ namespace sc {
 
       void obsolete();
       int nelectron();
+      static double zero_occupancy() { return sc::PopulatedOrbitalSpace::zero_occupancy(); }
 
     private:
 
-      static double zero_occupancy() { return sc::PopulatedOrbitalSpace::zero_occupancy(); }
       static double ref_to_pt2r12_acc() { return 0.01; }
 
       Ref< RDM<Two> > rdm2_;

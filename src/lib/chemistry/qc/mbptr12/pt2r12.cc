@@ -2624,10 +2624,10 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
 
 double sc::PT2R12::spin_free_cabs_singles()
 {
-  # define DEBUGG false
+# define DEBUGG false
+# define test_dyall false
 
   const SpinCase1 spin = Alpha;
-  Ref<OrbitalSpace> activespace = this->r12world()->refwfn()->occ_act_sb();
   Ref<OrbitalSpace> pspace = this->r12world()->refwfn()->occ_sb();
   Ref<OrbitalSpace> vspace = this->r12world()->refwfn()->uocc_act_sb(spin);
   Ref<OrbitalSpace> cabsspace = this->r12world()->cabs_space(spin);
@@ -2684,12 +2684,22 @@ double sc::PT2R12::spin_free_cabs_singles()
   RefSCVector vec_ii = local_kit->vector(dimii);
 
   // matrices
-  RefSCMatrix hcore_AA_block = r12eval_->fock(Aspace, Aspace, spin, 0.0, 0.0);
   RefSCMatrix hcore_ii_block = r12eval_->fock(pspace, pspace, spin, 0.0, 0.0);
+#if test_dyall
+  RefSCMatrix hcore_AA_block = r12eval_->fock(Aspace, Aspace, spin);
+  RefSCMatrix hcore_iA_block = r12eval_->fock(pspace, Aspace, spin);
+#else
+  RefSCMatrix hcore_AA_block = r12eval_->fock(Aspace, Aspace, spin, 0.0, 0.0);
   RefSCMatrix hcore_iA_block = r12eval_->fock(pspace, Aspace, spin, 0.0, 0.0);
+#endif
   RefSCMatrix hcore_AA = local_kit->matrix(dimA, dimA);
   RefSCMatrix hcore_ii = local_kit->matrix(dimi, dimi);
   RefSCMatrix hcore_iA = local_kit->matrix(dimi, dimA);
+#if DEBUGG
+  hcore_AA.print(std::string("core AA").c_str());
+  hcore_ii.print(std::string("core ii").c_str());
+  hcore_iA.print(std::string("core iA").c_str());
+#endif
   RefSCMatrix delta_AA = hcore_AA->clone();
   delta_AA->assign(0.0);
   for (int i = 0; i < nA; ++i)
@@ -2719,8 +2729,8 @@ double sc::PT2R12::spin_free_cabs_singles()
   {
     RefSCMatrix gbar_imkl = g(AlphaBeta, pspace, pspace, pspace, pspace);
     RefSCMatrix g_i_mkl = RefSCMAT_combine234(gbar_imkl, ni, ni, ni, ni);
-    RefSCMatrix dbar_j_mkl = RefSCMAT_combine234(gamma2, ni, ni, ni, ni).t();
-    RefSCMatrix gd = g_i_mkl * dbar_j_mkl;
+    RefSCMatrix dbar_mkl_j = RefSCMAT_combine234(gamma2, ni, ni, ni, ni).t();
+    RefSCMatrix gd = g_i_mkl * dbar_mkl_j;
     gd->scale(-1.0);
     matrix_to_vector(vec_AA, delta_AA);
     matrix_to_vector(vec_ii, gd);
@@ -2736,6 +2746,7 @@ double sc::PT2R12::spin_free_cabs_singles()
     B_bar->accumulate_outer_product(vec_AA, vec_ii);
   }
 
+#if not test_dyall
   // Term4: +g(alpha k, beta l) *gamma(ki, lj)
   {
     RefSCMatrix gg = g(AlphaBeta, Aspace, pspace, Aspace, pspace);
@@ -2753,22 +2764,29 @@ double sc::PT2R12::spin_free_cabs_singles()
     RefSCMatrix permu_d2 = RefSCMAT4_permu<Permute23>(gamma2, pspace, pspace, pspace, pspace);
     B_bar->accumulate(permu_gg2*permu_d2);
   } // finish computing B
+#endif
 
   //compute b_bar
   // - gamma(j,k) * h(k, beta) - gamma(jm,kl)*g(beta m, kl)
   {
      b_bar->accumulate(gamma1* hcore_iA);
+#if DEBUGG
      gamma1.print(std::string("gamma1").c_str());
      hcore_iA.print(std::string("hcore iA").c_str());
      b_bar.print(std::string("b_bar term1").c_str());
+#endif
+#if not test_dyall
      RefSCMatrix dd = RefSCMAT_combine234(gamma2, ni, ni, ni, ni);
      RefSCMatrix gg1 = g(AlphaBeta, Aspace, pspace, pspace, pspace);
      RefSCMatrix gg2 = RefSCMAT_combine234(gg1, nA, ni, ni, ni).t();
      b_bar->accumulate(dd*gg2);
      b_bar.print(std::string("b_bar +term2").c_str());
+#endif
      b_bar->scale(-1.0);
   }
+#if DEBUGG
   b_bar.print(std::string("b_bar before zero").c_str());
+#endif
 
   if (cabs_singles_coupling_) // zero Fock matrix component f^i_a
   {
@@ -2786,15 +2804,21 @@ double sc::PT2R12::spin_free_cabs_singles()
     }
   }
 
+#if DEBUGG
   b_bar.print(std::string("b_bar after zero").c_str());
+#endif
   matrix_to_vector(b, b_bar);
 
   RefSCMatrix B = RefSCMAT4_permu<Permute14>(B_bar, Aspace, Aspace, pspace, pspace);
 
   RefSCVector bcopy = b->copy();
+#if DEBUGG
   b.print(ExEnv::out0());
+#endif
   B.solve_lin(b);
+#if DEBUGG
   b.print(std::string("b").c_str());
+#endif
 
   double E = -1.0 * (b.dot(bcopy));
   return E;

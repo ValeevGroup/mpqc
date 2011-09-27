@@ -320,6 +320,36 @@ namespace {
      return result;
    }
 
+  /// mat corresponds to a 4 ind tensor (b1 b2, k1 k2). Return a reshaped matrix (b1, b2k1k2)
+  RefSCMatrix RefSCMAT_combine234(RefSCMatrix mat, const int b1, const int b2,
+                                  const int k1, const int k2)
+  {
+    const int ncol = b2 * k1 * k2;
+    RefSCDimension rowdim = new SCDimension(b1);
+    RefSCDimension coldim = new SCDimension(b2*k1*k2);
+    RefSCMatrix res = mat->kit()->matrix(rowdim, coldim);
+    res->assign(0.0);
+    const int num_e = k2*k1;
+
+    for (int I1 = 0; I1 < b1; ++I1)
+    {
+      for (int I2 = 0; I2 < b2; ++I2)
+      {
+        const int mat_row = I1 * b2 + I2;
+        const int blockbegin = I2*num_e;
+        const int blockend = blockbegin + num_e - 1;
+
+//        RefSCVector k1k2row = mat->get_row(mat_row);
+//        RefSCMatrix temp_mat = mat->kit()->matrix(new SCDimension(1), mat->coldim());
+//        temp_mat->assign_row(k1k2row, 0);
+//        res->assign_subblock(temp_mat, I1, I1, blockbegin, blockend);
+        res->assign_subblock(mat, I1, I1, blockbegin, blockend, mat_row, 0);
+      }
+    }
+    return res;
+  }
+
+
 }
 
 ////////////////////
@@ -511,6 +541,8 @@ RefSymmSCMatrix PT2R12::hcore_mo() {
 
   return(Hcore_mo);
 }
+
+
 
 RefSymmSCMatrix PT2R12::hcore_mo(SpinCase1 spin) {
   const Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
@@ -1204,9 +1236,6 @@ RefSCMatrix PT2R12::X_term_Gamma_F_T() {
 }
 
 
-
-
-
 double PT2R12::energy_PT2R12_projector2_spinfree() {
 
   // 2*V*T constribution
@@ -1522,6 +1551,7 @@ RefSCMatrix sc::PT2R12::rdm1_sf_2spaces(const Ref<OrbitalSpace> b1space, const R
       result(nb1, nk1) = rdmelement;
     }
   }
+//  result.print(std::string("rdm1_sf_2spaces").c_str());
   return result;
 }
 
@@ -1903,17 +1933,25 @@ void sc::PT2R12::compute()
       else
         beta_corre = alpha_corre;
       cabs_singles_e = alpha_corre + beta_corre;
-      ExEnv::out0() << indent << scprintf("CABS singles correction (Fock):        %17.12lf",
+      ExEnv::out0() << indent << scprintf("CABS singles (Fock):                   %17.12lf",
                                         cabs_singles_e) << endl;
-      ExEnv::out0() << indent << scprintf("RASSCF+CABS singles correction:        %17.12lf",
+      ExEnv::out0() << indent << scprintf("RASSCF+CABS singles:                   %17.12lf",
                                           energy_ref + cabs_singles_e) << endl << endl;
     }
     else if(cabs_singles_h0_ == std::string("dyall"))
     {
       cabs_singles_e = energy_cabs_singles_twobody_H0();
-      ExEnv::out0() << indent << scprintf("CABS singles correction (Dyall):       %17.12lf",
+      ExEnv::out0() << indent << scprintf("CABS singles (Dyall):                  %17.12lf",
                                       cabs_singles_e) << endl;
-      ExEnv::out0() << indent << scprintf("RASSCF+CABS (twobody H0):              %17.12lf",
+      ExEnv::out0() << indent << scprintf("RASSCF+CABS singles:                   %17.12lf",
+                                        energy_ref + cabs_singles_e) << endl<< endl;
+    }
+    else if(cabs_singles_h0_ == std::string("complete"))
+    {
+      cabs_singles_e = spin_free_cabs_singles();
+      ExEnv::out0() << indent << scprintf("CABS singles(full):                    %17.12lf",
+                                      cabs_singles_e) << endl;
+      ExEnv::out0() << indent << scprintf("RASSCF+CABS singles:                   %17.12lf",
                                         energy_ref + cabs_singles_e) << endl<< endl;
     }
   }
@@ -1929,23 +1967,26 @@ void sc::PT2R12::compute()
                                         recomp_ref_energy) << endl;
   #endif
 
-  if (r12world_->spinadapted() == false) // if true, use spinadapted algorithm, then spin component contributions are not separated.
+  if(pt2_correction_)
   {
-    ExEnv::out0() << indent << scprintf("Alpha-beta [2]_R12 energy [au]:        %17.12lf",
-                                        energy_pt2r12[AlphaBeta]) << endl;
-    ExEnv::out0() << indent << scprintf("Alpha-alpha [2]_R12 energy [au]:       %17.12lf",
-                                        energy_pt2r12[AlphaAlpha]) << endl;
-    if (spin_polarized)
+    if (r12world_->spinadapted() == false) // if true, use spinadapted algorithm, then spin component contributions are not separated.
     {
-      ExEnv::out0() << indent << scprintf("Beta-beta [2]_R12 energy [au]:       %17.12lf",
-                                          energy_pt2r12[BetaBeta]) << endl;
-    }
-    else // if not polarized, then BebaBeta contribution == AlaphAlpha contribution
-    {
-      ExEnv::out0() << indent << scprintf("Singlet [2]_R12 energy [au]:           %17.12lf",
-                                          energy_pt2r12[AlphaBeta] - energy_pt2r12[AlphaAlpha]) << endl;
-      ExEnv::out0() << indent << scprintf("Triplet [2]_R12 energy [au]:           %17.12lf",
-                                          3.0*energy_pt2r12[AlphaAlpha]) << endl;
+      ExEnv::out0() << indent << scprintf("Alpha-beta [2]_R12 energy [au]:        %17.12lf",
+                                          energy_pt2r12[AlphaBeta]) << endl;
+      ExEnv::out0() << indent << scprintf("Alpha-alpha [2]_R12 energy [au]:       %17.12lf",
+                                          energy_pt2r12[AlphaAlpha]) << endl;
+      if (spin_polarized)
+      {
+        ExEnv::out0() << indent << scprintf("Beta-beta [2]_R12 energy [au]:       %17.12lf",
+                                            energy_pt2r12[BetaBeta]) << endl;
+      }
+      else // if not polarized, then BebaBeta contribution == AlaphAlpha contribution
+      {
+        ExEnv::out0() << indent << scprintf("Singlet [2]_R12 energy [au]:           %17.12lf",
+                                            energy_pt2r12[AlphaBeta] - energy_pt2r12[AlphaAlpha]) << endl;
+        ExEnv::out0() << indent << scprintf("Triplet [2]_R12 energy [au]:           %17.12lf",
+                                            3.0*energy_pt2r12[AlphaAlpha]) << endl;
+      }
     }
   }
 
@@ -2578,6 +2619,185 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
 
 
   return E_cabs_singles;
+}
+
+
+double sc::PT2R12::spin_free_cabs_singles()
+{
+  # define DEBUGG false
+
+  const SpinCase1 spin = Alpha;
+  Ref<OrbitalSpace> activespace = this->r12world()->refwfn()->occ_act_sb();
+  Ref<OrbitalSpace> pspace = this->r12world()->refwfn()->occ_sb();
+  Ref<OrbitalSpace> vspace = this->r12world()->refwfn()->uocc_act_sb(spin);
+  Ref<OrbitalSpace> cabsspace = this->r12world()->cabs_space(spin);
+
+  Ref<OrbitalSpaceRegistry> oreg = this->r12world()->world()->tfactory()->orbital_registry();
+  if (!oreg->value_exists(pspace))
+    oreg->add(make_keyspace_pair(pspace));
+  const std::string key = oreg->key(pspace);
+  pspace = oreg->value(key);
+
+  Ref<OrbitalSpace> all_virtual_space;
+  if (cabs_singles_coupling_)
+  {
+    all_virtual_space = new OrbitalSpaceUnion("AA", "all virtuals", *vspace, *cabsspace, true);
+    if (!oreg->value_exists(all_virtual_space)) oreg->add(make_keyspace_pair(all_virtual_space));
+    const std::string AAkey = oreg->key(all_virtual_space);
+    all_virtual_space = oreg->value(AAkey);
+
+    { // make sure that the AO space that supports all_virtual_space is known
+      Ref<AOSpaceRegistry> aoreg = this->r12world()->world()->tfactory()->ao_registry();
+      if (aoreg->key_exists(all_virtual_space->basis()) == false) {
+        Ref<Integral> localints = this->integral()->clone();
+        Ref<OrbitalSpace> mu = new AtomicOrbitalSpace("mu''", "CABS(AO)+VBS(AO)", all_virtual_space->basis(), localints);
+        oreg->add(make_keyspace_pair(mu));
+        aoreg->add(mu->basis(),mu);
+      }
+    }
+  }
+
+  Ref<OrbitalSpace> Aspace;
+  if (cabs_singles_coupling_)
+    Aspace = all_virtual_space;
+  else
+    Aspace = cabsspace;
+
+  // block size
+  const unsigned int num_blocks = vspace->nblocks();
+  const std::vector<unsigned int>& p_block_sizes = pspace->block_sizes();
+  const std::vector<unsigned int>& v_block_sizes = vspace->block_sizes();
+  const std::vector<unsigned int>& cabs_block_sizes = cabsspace->block_sizes();
+  const std::vector<unsigned int>& A_block_sizes = Aspace->block_sizes();
+
+  Ref<LocalSCMatrixKit> local_kit = new LocalSCMatrixKit;
+
+  // dimension
+  const int nA = Aspace->rank();
+  const int ni = pspace->rank();
+  RefSCDimension dimAA = new SCDimension(nA*nA);
+  RefSCDimension dimii = new SCDimension(ni*ni);
+  RefSCDimension dimiA = new SCDimension(ni*nA);
+  RefSCDimension dimi = new SCDimension(ni);
+  RefSCDimension dimA = new SCDimension(nA);
+  RefSCVector vec_AA = local_kit->vector(dimAA);
+  RefSCVector vec_ii = local_kit->vector(dimii);
+
+  // matrices
+  RefSCMatrix hcore_AA_block = r12eval_->fock(Aspace, Aspace, spin, 0.0, 0.0);
+  RefSCMatrix hcore_ii_block = r12eval_->fock(pspace, pspace, spin, 0.0, 0.0);
+  RefSCMatrix hcore_iA_block = r12eval_->fock(pspace, Aspace, spin, 0.0, 0.0);
+  RefSCMatrix hcore_AA = local_kit->matrix(dimA, dimA);
+  RefSCMatrix hcore_ii = local_kit->matrix(dimi, dimi);
+  RefSCMatrix hcore_iA = local_kit->matrix(dimi, dimA);
+  RefSCMatrix delta_AA = hcore_AA->clone();
+  delta_AA->assign(0.0);
+  for (int i = 0; i < nA; ++i)
+  {
+    delta_AA->set_element(i,i, 1.0);
+  }
+
+  RefSCMatrix gamma1 = rdm1_sf_2spaces(pspace, pspace);
+  RefSCMatrix gamma2 = rdm2_sf_4spaces(pspace, pspace, pspace, pspace);
+  RefSCMatrix B_bar = local_kit->matrix(dimAA, dimii); // intermediate mat
+//  RefSCMatrix B = local_kit->matrix(dimiA, dimiA);
+  B_bar->assign(0.0);
+  RefSCMatrix b_bar = local_kit->matrix(dimi, dimA);
+  b_bar->assign(0.0);
+  RefSCVector b = local_kit->vector(dimiA); // RHS
+
+
+  // Compute B
+  // Term1: h(alpha, beta)* gamma(i,j)
+  {
+    matrix_to_vector(vec_AA, hcore_AA);
+    matrix_to_vector(vec_ii, gamma1);
+    B_bar->accumulate_outer_product(vec_AA, vec_ii);
+  }
+
+  // Term2: -delta(alpha, beta)*(g(im,kl) * gamma(jm,kl) )
+  {
+    RefSCMatrix gbar_imkl = g(AlphaBeta, pspace, pspace, pspace, pspace);
+    RefSCMatrix g_i_mkl = RefSCMAT_combine234(gbar_imkl, ni, ni, ni, ni);
+    RefSCMatrix dbar_j_mkl = RefSCMAT_combine234(gamma2, ni, ni, ni, ni).t();
+    RefSCMatrix gd = g_i_mkl * dbar_j_mkl;
+    gd->scale(-1.0);
+    matrix_to_vector(vec_AA, delta_AA);
+    matrix_to_vector(vec_ii, gd);
+    B_bar->accumulate_outer_product(vec_AA, vec_ii);
+  }
+
+  // Term3: -delta(alpha, beta)*( h(i,k) * gamma(k,j) )
+  {
+    RefSCMatrix hd = hcore_ii*gamma1;
+    hd->scale(-1.0);
+    matrix_to_vector(vec_AA, delta_AA);
+    matrix_to_vector(vec_ii,hd);
+    B_bar->accumulate_outer_product(vec_AA, vec_ii);
+  }
+
+  // Term4: +g(alpha k, beta l) *gamma(ki, lj)
+  {
+    RefSCMatrix gg = g(AlphaBeta, Aspace, pspace, Aspace, pspace);
+    RefSCMatrix permu_gg = RefSCMAT4_permu<Permute23>(gg, Aspace, pspace, Aspace, pspace);
+    RefSCMatrix permu_d = RefSCMAT4_permu<Permute23>(gamma2, pspace, pspace, pspace, pspace);
+    B_bar->accumulate(permu_gg*permu_d);
+  }
+
+  // Term5: +g(alpha k, l beta) *gamma(ki, jl)
+  {
+    RefSCMatrix gg = g(AlphaBeta, Aspace, pspace, pspace, Aspace);
+    RefSCMatrix permu_gg1 = RefSCMAT4_permu<Permute34>(gg, Aspace, pspace, pspace, Aspace);
+    RefSCMatrix permu_gg2 = RefSCMAT4_permu<Permute23>(permu_gg1, Aspace, pspace, Aspace, pspace);
+    RefSCMatrix permu_d1 = RefSCMAT4_permu<Permute34>(gamma2, pspace, pspace, pspace, pspace);
+    RefSCMatrix permu_d2 = RefSCMAT4_permu<Permute23>(gamma2, pspace, pspace, pspace, pspace);
+    B_bar->accumulate(permu_gg2*permu_d2);
+  } // finish computing B
+
+  //compute b_bar
+  // - gamma(j,k) * h(k, beta) - gamma(jm,kl)*g(beta m, kl)
+  {
+     b_bar->accumulate(gamma1* hcore_iA);
+     gamma1.print(std::string("gamma1").c_str());
+     hcore_iA.print(std::string("hcore iA").c_str());
+     b_bar.print(std::string("b_bar term1").c_str());
+     RefSCMatrix dd = RefSCMAT_combine234(gamma2, ni, ni, ni, ni);
+     RefSCMatrix gg1 = g(AlphaBeta, Aspace, pspace, pspace, pspace);
+     RefSCMatrix gg2 = RefSCMAT_combine234(gg1, nA, ni, ni, ni).t();
+     b_bar->accumulate(dd*gg2);
+     b_bar.print(std::string("b_bar +term2").c_str());
+     b_bar->scale(-1.0);
+  }
+  b_bar.print(std::string("b_bar before zero").c_str());
+
+  if (cabs_singles_coupling_) // zero Fock matrix component f^i_a
+  {
+    unsigned int offset1 = 0;
+    int block_counter1, row_ind, v_ind;
+    for (block_counter1 = 0; block_counter1 < num_blocks; ++block_counter1)
+    {
+      for (v_ind = 0; v_ind < v_block_sizes[block_counter1]; ++v_ind)
+      {
+        const unsigned int b_v_ind =  offset1 + v_ind;
+        for (row_ind = 0; row_ind < ni; ++row_ind)
+          b_bar.set_element(row_ind, b_v_ind, 0.0);
+      }
+      offset1 += A_block_sizes[block_counter1];
+    }
+  }
+
+  b_bar.print(std::string("b_bar after zero").c_str());
+  matrix_to_vector(b, b_bar);
+
+  RefSCMatrix B = RefSCMAT4_permu<Permute14>(B_bar, Aspace, Aspace, pspace, pspace);
+
+  RefSCVector bcopy = b->copy();
+  b.print(ExEnv::out0());
+  B.solve_lin(b);
+  b.print(std::string("b").c_str());
+
+  double E = -1.0 * (b.dot(bcopy));
+  return E;
 }
 
 RefSymmSCMatrix sc::PT2R12::density()

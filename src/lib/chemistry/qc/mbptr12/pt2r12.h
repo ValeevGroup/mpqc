@@ -111,7 +111,7 @@ namespace sc {
       std::vector<double> V_; // store the values for different spins
 
 
-      std::string cabs_singles_h0_; // specify zeroth order H
+      std::string cabs_singles_h0_; // specify zeroth order H; options: 'fock', 'dyall', 'complete'
 
 
       /// 1-RDM as provided by the rdm1_ object
@@ -182,6 +182,8 @@ namespace sc {
       double energy_cabs_singles(SpinCase1 spin);
       /// compute CABS singles correction using two-body operators in H0
       double energy_cabs_singles_twobody_H0();
+      /// compute CABS singles correction in the most complete way
+      double spin_free_cabs_singles();
 
       /// Returns Hcore in MO basis
       RefSymmSCMatrix hcore_mo();

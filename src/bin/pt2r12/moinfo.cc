@@ -368,8 +368,13 @@ sc::ExternReadRDMTwo::ExternReadRDMTwo(const std::string & filename, const Ref<O
   while (have_coefs) {
     int bra1, bra2, ket1, ket2;
     double value;
-    //in >> bra1 >> bra2 >> ket1 >> ket2 >> value;
-    in >> bra1 >> ket2 >> ket1 >> bra2 >> value;
+    in >> bra1 >> bra2 >> ket1 >> ket2 >> value;
+    // these index orderings are hard to distinguish! Both give the same energy
+    // can only distinguish if ALL elements are given, then for the above ordering
+    // element 1 2 3 4 will be equivalent to 3 4 1 2, 4 3 2 1, and 2 1 4 3
+    // for the ordering below same element will be equivalent to
+    // 3 4 1 2, 4 3 2 1, and 2 3 4 1 !!!
+    // in >> bra1 >> ket2 >> ket1 >> bra2 >> value;
     if (bra1 != -1) {
       --bra1;
       --bra2;

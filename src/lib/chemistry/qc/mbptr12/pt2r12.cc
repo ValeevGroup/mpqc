@@ -1956,7 +1956,7 @@ void sc::PT2R12::compute()
     }
     else if(cabs_singles_h0_ == std::string("complete_test"))
     {
-      cabs_singles_e = spin_free_cabs_singles();
+      cabs_singles_e = spin_free_cabs_singles_test();
       ExEnv::out0() << indent << scprintf("CABS singles(test):                    %17.12lf",
                                       cabs_singles_e) << endl;
       ExEnv::out0() << indent << scprintf("RASSCF+CABS singles:                   %17.12lf",
@@ -2598,6 +2598,9 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
   }
 
 
+#if true
+  rhs_vector.print(ExEnv::out0());
+#endif
   B.solve_lin(rhs_vector); // now rhs_vector stores the first-order wavefunction coefficients after solving the equation
 
 #if (DEBUGG)
@@ -2831,6 +2834,9 @@ double sc::PT2R12::spin_free_cabs_singles()
   matrix_to_vector(b, b_bar);
 
   RefSCMatrix B = RefSCMAT4_permu<Permute14>(B_bar, Aspace, Aspace, pspace, pspace);
+  // symmetrize B
+  B.accumulate(B.t());
+  B.scale(0.5);
 
   RefSCVector bcopy = b->copy();
 
@@ -3027,7 +3033,7 @@ double sc::PT2R12::spin_free_cabs_singles_test()
   RefSCMatrix B = RefSCMAT4_permu<Permute14>(B_bar, Aspace, Aspace, pspace, pspace);
 
   RefSCVector bcopy = b->copy();
-#if DEBUGG
+#if true
   b.print(ExEnv::out0());
 #endif
   B.solve_lin(b);

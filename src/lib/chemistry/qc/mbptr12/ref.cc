@@ -615,6 +615,20 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(StateIn& si) : SavableState(si) {
 }
 
 PopulatedOrbitalSpace::~PopulatedOrbitalSpace() {
+  purge();
+}
+
+void PopulatedOrbitalSpace::purge() {
+  oreg_->remove(orbs_sb_->id());
+  oreg_->remove(orbs_->id());
+  oreg_->remove(occ_sb_->id());
+  oreg_->remove(occ_->id());
+  oreg_->remove(occ_act_sb_->id());
+  oreg_->remove(occ_act_->id());
+  oreg_->remove(uocc_sb_->id());
+  oreg_->remove(uocc_->id());
+  oreg_->remove(uocc_act_sb_->id());
+  oreg_->remove(uocc_act_->id());
 }
 
 void
@@ -1401,6 +1415,7 @@ Extern_RefWavefunction::Extern_RefWavefunction(const Ref<WavefunctionWorld>& wor
 
   // this object will never become obsolete, so can compute it right now
   init_spaces(nocc, orbs, orbsym);
+  force_average_AB_rdm1_ = true; // this is meant to always be used with spin-free algorithms
 }
 
 Extern_RefWavefunction::Extern_RefWavefunction(StateIn& si) : RefWavefunction(si) {

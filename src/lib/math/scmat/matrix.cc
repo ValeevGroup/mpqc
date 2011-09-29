@@ -1501,6 +1501,7 @@ RefDiagSCMatrix::operator *(double a) const
   return r;
 }
 
+
 RefDiagSCMatrix
 operator *(double a, const RefDiagSCMatrix& v)
 {

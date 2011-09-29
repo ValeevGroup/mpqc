@@ -184,6 +184,8 @@ namespace sc {
       double energy_cabs_singles_twobody_H0();
       /// compute CABS singles correction in the most complete way
       double spin_free_cabs_singles();
+      /** the following should reproduce energy_cabs_singles_twobody_H0();
+          for test purpose; to be removed in near future**/
       double spin_free_cabs_singles_test();
 
       /// Returns Hcore in MO basis

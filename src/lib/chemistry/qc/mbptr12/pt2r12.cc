@@ -1935,33 +1935,36 @@ void sc::PT2R12::compute()
       cabs_singles_e = alpha_corre + beta_corre;
       ExEnv::out0() << indent << scprintf("CABS singles (Fock):                   %17.12lf",
                                         cabs_singles_e) << endl;
-      ExEnv::out0() << indent << scprintf("RASSCF+CABS singles:                   %17.12lf",
-                                          energy_ref + cabs_singles_e) << endl << endl;
+
     }
     else if(cabs_singles_h0_ == std::string("dyall"))
     {
       cabs_singles_e = energy_cabs_singles_twobody_H0();
       ExEnv::out0() << indent << scprintf("CABS singles (Dyall):                  %17.12lf",
                                       cabs_singles_e) << endl;
-      ExEnv::out0() << indent << scprintf("RASSCF+CABS singles:                   %17.12lf",
-                                        energy_ref + cabs_singles_e) << endl<< endl;
     }
     else if(cabs_singles_h0_ == std::string("complete"))
     {
       cabs_singles_e = spin_free_cabs_singles();
       ExEnv::out0() << indent << scprintf("CABS singles(full):                    %17.12lf",
                                       cabs_singles_e) << endl;
-      ExEnv::out0() << indent << scprintf("RASSCF+CABS singles:                   %17.12lf",
-                                        energy_ref + cabs_singles_e) << endl<< endl;
     }
     else if(cabs_singles_h0_ == std::string("complete_test"))
     {
       cabs_singles_e = spin_free_cabs_singles_test();
       ExEnv::out0() << indent << scprintf("CABS singles(test):                    %17.12lf",
                                       cabs_singles_e) << endl;
-      ExEnv::out0() << indent << scprintf("RASSCF+CABS singles:                   %17.12lf",
-                                        energy_ref + cabs_singles_e) << endl<< endl;
     }
+    else if(cabs_singles_h0_ == std::string("CI"))
+    {
+      cabs_singles_e = spin_free_cabs_singles();
+      ExEnv::out0() << indent << scprintf("CABS singles(CI):                      %17.12lf",
+                                      cabs_singles_e) << endl;
+    }
+    else
+      abort();
+    ExEnv::out0() << indent << scprintf("RASSCF+CABS singles:                   %17.12lf",
+                                              energy_ref + cabs_singles_e) << endl << endl;
   }
 
   const double energy = energy_ref + energy_correction_r12 + cabs_singles_e;
@@ -2688,6 +2691,7 @@ double sc::PT2R12::spin_free_cabs_singles()
   RefSCDimension dimAA = new SCDimension(nA*nA);
   RefSCDimension dimii = new SCDimension(ni*ni);
   RefSCDimension dimiA = new SCDimension(ni*nA);
+  RefSCDimension dimH = new SCDimension(ni*nA+1);
   RefSCDimension dimi = new SCDimension(ni);
   RefSCDimension dimA = new SCDimension(nA);
   RefSCVector vec_AA = local_kit->vector(dimAA);
@@ -2734,6 +2738,7 @@ double sc::PT2R12::spin_free_cabs_singles()
   }
 
   RefSCMatrix gamma1 = rdm1_sf_2spaces(pspace, pspace);
+  gamma1.print(std::string("CABS singles: gamma1").c_str());
   RefSCMatrix gamma2 = rdm2_sf_4spaces(pspace, pspace, pspace, pspace);
   RefSCMatrix B_bar = local_kit->matrix(dimAA, dimii); // intermediate mat
 //  RefSCMatrix B = local_kit->matrix(dimiA, dimiA);
@@ -2741,6 +2746,7 @@ double sc::PT2R12::spin_free_cabs_singles()
   RefSCMatrix b_bar = local_kit->matrix(dimi, dimA);
   b_bar->assign(0.0);
   RefSCVector b = local_kit->vector(dimiA); // RHS
+  RefSCVector b0 = local_kit->vector(dimH); // RHS
 
 
   // Compute B
@@ -2826,7 +2832,7 @@ double sc::PT2R12::spin_free_cabs_singles()
       }
       offset1 += A_block_sizes[block_counter1];
     }
-  }
+  } // finish RHS construction
 
 #if DEBUGG
   b_bar.print(std::string("b_bar after zero").c_str());
@@ -2838,21 +2844,47 @@ double sc::PT2R12::spin_free_cabs_singles()
   B.accumulate(B.t());
   B.scale(0.5);
 
-  RefSCVector bcopy = b->copy();
-
-#if DEBUGG
-  b.print(ExEnv::out0());
+  double E;
+  if(cabs_singles_h0_ == std::string("CI"))
+  {
+    RefSCMatrix H = local_kit->matrix(dimH, dimH);
+    H.assign(0.0);
+    H.assign_subblock(B, 1, ni*nA, 1, ni*nA);
+#if false
+    B.print(std::string("B").c_str());
+    H.print(std::string("H").c_str());
 #endif
-
-  B.solve_lin(b);
-
-#if DEBUGG
-  b.print(std::string("b").c_str());
+    for(int i = 1; i < dimH.n(); ++i)
+    {
+      b0.set_element(i, b.get_element(i-1));
+    }
+    H.assign_column(b0, 0);
+    H.assign_row(b0,0);
+#if false
+    H.print(std::string("H with b").c_str());
 #endif
-
-  double E = -1.0 * (b.dot(bcopy));
+    RefSCMatrix U = H.clone();
+    RefSCMatrix V = H.clone();
+    RefDiagSCMatrix S = local_kit->diagmatrix(dimH);
+    H.svd(U,S,V);
+    S.print(std::string("SVD").c_str());
+    E = -1.0 * S.get_element(ni*nA); // seems the roots are sorted in descending order
+  }
+  else if(cabs_singles_h0_ == std::string("complete"))
+  {
+    RefSCVector bcopy = b->copy();
+  #if DEBUGG
+    b.print(ExEnv::out0());
+  #endif
+    B.solve_lin(b);
+  #if DEBUGG
+    b.print(std::string("b").c_str());
+  #endif
+    E = -1.0 * (b.dot(bcopy));
+  }
   return E;
 }
+
 
 double sc::PT2R12::spin_free_cabs_singles_test()
 {

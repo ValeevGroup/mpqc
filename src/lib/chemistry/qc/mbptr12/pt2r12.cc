@@ -1053,12 +1053,12 @@ RefSCMatrix PT2R12::V_genref_projector2() {
   Ref<OrbitalSpace> occspace = r12world()->refwfn()->occ(Alpha);
   Ref<OrbitalSpace> gg_space = r12eval_->ggspace(Alpha);
 
-  ExEnv::out0() << "\n\n" << indent << "Started PT2R12::V_genref_projector2\n";
+//  ExEnv::out0() << "\n\n" << indent << "Started PT2R12::V_genref_projector2\n";
   RefSCMatrix V_intermed = r12eval_->V_genref_spinfree(occspace, occspace);
   V_intermed.scale(0.5);
   RefSCMatrix tpdm = rdm2_sf_4spaces(occspace, occspace, gg_space, gg_space);
   V_genref.accumulate(V_intermed * tpdm);
-  ExEnv::out0() << "\n\n" <<indent << "Exited PT2R12::V_genref_projector2\n\n";
+//  ExEnv::out0() << "\n\n" <<indent << "Exited PT2R12::V_genref_projector2\n\n";
 
 #if 0
   ExEnv::out0() << __FILE__ << __LINE__ << "\n";
@@ -1073,7 +1073,7 @@ RefSCMatrix PT2R12::V_genref_projector2() {
 //
 RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
 {
-  ExEnv::out0() << "\n\n" << indent << "Started PT2R12::sf_B_others\n\n";
+//  ExEnv::out0() << "\n\n" << indent << "Started PT2R12::sf_B_others\n\n";
   Ref<OrbitalSpace> cabs = r12world_->cabs_space(Alpha);
   Ref<OrbitalSpace> occ_space = r12eval_->occ(Alpha);
   Ref<OrbitalSpace> GG_space = r12eval_->GGspace(Alpha);
@@ -1143,7 +1143,7 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
         contract34_DA4_RefMat(RTgamma1, 1.0, pI1, 0, rdm2inter, occ_dim, gg_dim);
         RTgamma1 = permute23(RTgamma1);
         RTgamma = RTgamma1;
-        ExEnv::out0() << "\n\n" << indent << indent << "Finished 1st group\n";
+//        ExEnv::out0() << "\n\n" << indent << indent << "Finished 1st group\n";
       }
       //the second set
       {
@@ -1156,7 +1156,7 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
         contract34_DA4_RefMat(RTgamma2, 1.0, I_Aw_yr, 0, rdm2inter, occ_dim, gg_dim);
         RTgamma2 = permute34(permute23(RTgamma2));
         axpy(RTgamma2, 1.0, RTgamma, 1.0);
-        ExEnv::out0() << "\n\n" << indent << indent << "Finished 2nd group\n";
+//        ExEnv::out0() << "\n\n" << indent << indent << "Finished 2nd group\n";
       }
     } // 1st and 2nd sets done
 
@@ -1173,7 +1173,7 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
          contract34_DA4_RefMat(RTgamma3, 1.0, permute23(I2), 0, rdm2inter, occ_dim, gg_dim);
          RTgamma3 = permute23(RTgamma3);
          axpy(RTgamma3, 1.0, RTgamma, 1.0);
-         ExEnv::out0() << "\n\n" << indent << indent << "Finished 3rd group\n";
+//         ExEnv::out0() << "\n\n" << indent << indent << "Finished 3rd group\n";
        }
        //the fourth set
        {
@@ -1184,7 +1184,7 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
          contract_DA4_RefMat_k2b2_34(RTgamma4, 1.0, I2, 0, rdm2inter, occ_dim, gg_dim); //RTgamma is initialized
          RTgamma4 = permute34(RTgamma4);
          axpy(RTgamma4, 1.0, RTgamma, 1.0);
-         ExEnv::out0() << "\n\n" << indent << indent << "Finished 4th group\n";
+//         ExEnv::out0() << "\n\n" << indent << indent << "Finished 4th group\n";
        }
      } // 3rd and 4th sets done
 
@@ -1195,7 +1195,7 @@ RefSCMatrix sc::PT2R12::sf_B_others() // the terms in B other than B' and X0
 #endif
   contract34(wholeproduct, 1.0, permute23(permute34(permute12(permute23(RFtimesT)))), 0,
                                 permute23(permute34(permute12(permute23(RTgamma)))), 0); //(gg, gg)
-  ExEnv::out0() << "\n\n" << indent << "Finished PT2R12::sf_B_others\n\n";
+//  ExEnv::out0() << "\n\n" << indent << "Finished PT2R12::sf_B_others\n\n";
   RefSCMatrix TotalMat = copy_to_RefSCMat(wholeproduct,0);
   return TotalMat;
 }
@@ -1240,18 +1240,22 @@ RefSCMatrix PT2R12::X_term_Gamma_F_T() {
 double PT2R12::energy_PT2R12_projector2_spinfree() {
 
   // 2*V*T constribution
-  const bool print_all = false;// for debugging
-  ExEnv::out0() << std::endl << std::endl << indent << "Entered PT2R12::energy_PT2R12_projector2_spinfree\n\n";
+  const bool print_all = false;
+  if(print_all)
+    ExEnv::out0() << std::endl << std::endl << indent << "Entered PT2R12::energy_PT2R12_projector2_spinfree\n\n";
 
-  ExEnv::out0() << "\n" << indent << "Started V_genref\n";
+  if(print_all)
+    ExEnv::out0() << "\n" << indent << "Started V_genref\n";
   RefSCMatrix V_genref = V_genref_projector2(); //(GG, gg)
-  ExEnv::out0() << "\n\n" << indent << "Finished V_genref\n\n";
+  if(print_all)
+    ExEnv::out0() << "\n\n" << indent << "Finished V_genref\n\n";
 
   RefSCMatrix T = C(AlphaBeta);   // C() is of dimension (GG, gg)
   RefSCMatrix V_t_T = 2.0*T.t()*V_genref;
   RefSCMatrix HylleraasMatrix = V_t_T.copy(); // (gg, gg)
-  ExEnv::out0() << "\n\n" << indent << "Finished V_t_T\n\n";
-  if (this->debug_ >=  DefaultPrintThresholds::mostO4 || print_all)
+  if(print_all)
+    ExEnv::out0() << "\n\n" << indent << "Finished V_t_T\n\n";
+  if (this->debug_ >=  DefaultPrintThresholds::mostO4)
   {
     ExEnv::out0() << __FILE__ << __LINE__ << "\n";
     T.print(std::string("T").c_str());
@@ -1261,12 +1265,14 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
 
   // X contributions
   RefSCMatrix TGFT = X_term_Gamma_F_T(); //(GG, GG)
-  ExEnv::out0() << "\n\n" << indent << "Finished TGFT\n\n";
+  if(print_all)
+    ExEnv::out0() << "\n\n" << indent << "Finished TGFT\n\n";
   TGFT.scale(-1.0);
   RefSCMatrix Xpart = TGFT * r12eval_->X() * T;
-  ExEnv::out0() << "\n\n" << indent << "Finished Xpart\n\n";
+  if(print_all)
+    ExEnv::out0() << "\n\n" << indent << "Finished Xpart\n\n";
   HylleraasMatrix.accumulate(Xpart);//(gg, gg)
-  if (this->debug_ >=  DefaultPrintThresholds::mostO4 || print_all)
+  if (this->debug_ >=  DefaultPrintThresholds::mostO4)
   {
     Xpart.print(std::string("Xpart").c_str());
     HylleraasMatrix.print(std::string("Hy:+X").c_str());
@@ -1276,10 +1282,11 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
   // B' contribution
   Ref<OrbitalSpace> gg_space = r12eval_->ggspace(Alpha);
   RefSCMatrix TBTG =  T.t() * r12eval_->B() * T  * rdm2_sf_4spaces(gg_space, gg_space, gg_space, gg_space);//(gg,gg)
-  ExEnv::out0() << "\n\n" << indent << "Finished TBTG\n\n";
+  if(print_all)
+    ExEnv::out0() << "\n\n" << indent << "Finished TBTG\n\n";
   TBTG.scale(0.5);
   HylleraasMatrix.accumulate(TBTG);
-  if (this->debug_ >=  DefaultPrintThresholds::mostO4 || print_all)
+  if (this->debug_ >=  DefaultPrintThresholds::mostO4)
   {
     TBTG.print(std::string("TBTG").c_str());
     HylleraasMatrix.print(std::string("Hy:+TBTG").c_str());
@@ -1289,13 +1296,14 @@ double PT2R12::energy_PT2R12_projector2_spinfree() {
   // the last messy term
   RefSCMatrix others = sf_B_others(); //(gg, gg)
   HylleraasMatrix.accumulate(others);
-  if (this->debug_ >=  DefaultPrintThresholds::mostO4 || print_all)
+  if (this->debug_ >=  DefaultPrintThresholds::mostO4)
   {
       others.print(std::string("others").c_str());
       HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:+others").c_str());
   }
 
-  ExEnv::out0() << std::endl << std::endl << indent << "Exited PT2R12::energy_PT2R12_projector2_spinfree\n\n";
+  if(print_all)
+    ExEnv::out0() << std::endl << std::endl << indent << "Exited PT2R12::energy_PT2R12_projector2_spinfree\n\n";
 
   bool print_component = false;
   if(print_component)
@@ -1864,7 +1872,7 @@ void sc::PT2R12::compute()
     RefSCMatrix opdm_vv = rdm1_sf_2spaces(conv_vir, conv_vir);
     RefSCMatrix tpdm_vvvv = rdm2_sf_4spaces(conv_vir, conv_vir, conv_vir, conv_vir);
     const double vir_percentage = opdm_vv->trace()-0.5 * tpdm_vvvv->trace();
-    ExEnv::out0() << indent <<scprintf("unoccupied occ num:                     %17.12lf",vir_percentage) << "\n";
+    ExEnv::out0() << std::endl << std::endl << indent <<scprintf("unoccupied occ num:                     %17.12lf",vir_percentage) << "\n";
     const double davidson = 1/(1 - vir_percentage) - 1;
     ExEnv::out0()  << indent << scprintf("Davidson correction coef:              %17.12lf",
                                             davidson) << std::endl << std::endl;

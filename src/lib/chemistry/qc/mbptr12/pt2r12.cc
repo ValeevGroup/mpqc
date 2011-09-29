@@ -31,6 +31,7 @@
 #include <util/misc/print.h>
 #include <chemistry/qc/wfn/orbitalspace_utils.h>
 #include <math/scmat/local.h>
+#include <math/scmat/svd.h>
 #include <chemistry/qc/mbptr12/compute_tbint_tensor.h>
 #include <chemistry/qc/mbptr12/creator.h>
 #include <chemistry/qc/mbptr12/container.h>
@@ -2237,7 +2238,10 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
   }
 
 
-  H0.solve_lin(rhs_vector); // now rhs_vector stores the first-order wavefunction coefficients after solving the equation
+//  H0.solve_lin(rhs_vector);
+  RefSCVector X = rhs_vector.clone();
+  X.assign(0.0);
+  lapack_linsolv_symmnondef(H0, X, rhs_vector);
 
 #if printout
     RefDiagSCMatrix eigenmatrix_gamma1 = gamma1.eigvals();
@@ -2280,7 +2284,6 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
     eigenmatrix.print("(one-body H0) B eigenvalue");
 #endif
 
-
   double E_cabs_singles_one_spin = 0.0;
   for (int i = 0; i < no; ++i)
   {
@@ -2289,7 +2292,7 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
       const double gamma_ij = gamma1(i,j);
       for (int A = 0; A < nX; ++A)
       {
-        E_cabs_singles_one_spin += F_pA(i,A) * gamma_ij * rhs_vector->get_element(j * nX + A);
+        E_cabs_singles_one_spin += F_pA(i,A) * gamma_ij * X->get_element(j * nX + A);
       }
     }
   }
@@ -2600,11 +2603,10 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
     }
   }
 
-
-#if true
-  rhs_vector.print(ExEnv::out0());
-#endif
-  B.solve_lin(rhs_vector); // now rhs_vector stores the first-order wavefunction coefficients after solving the equation
+//  B.solve_lin(rhs_vector);
+  RefSCVector X = rhs_vector.clone();
+  X.assign(0.0);
+  lapack_linsolv_symmnondef(B, X, rhs_vector);
 
 #if (DEBUGG)
     RefDiagSCMatrix eigenmatrix = B.eigvals();
@@ -2625,12 +2627,11 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
       const double gamma_ij_beta = gamma1_beta(i,j);
       for (int A = 0; A < nX; ++A)
       {
-        E_cabs_singles += F_pA_alpha(i,A) * gamma_ij_alpha * rhs_vector->get_element(j * nX + A);
-        E_cabs_singles += F_pA_beta(i,A) * gamma_ij_beta * rhs_vector->get_element(noX + j * nX + A);
+        E_cabs_singles += F_pA_alpha(i,A) * gamma_ij_alpha * X->get_element(j * nX + A);
+        E_cabs_singles += F_pA_beta(i,A) * gamma_ij_beta * X->get_element(noX + j * nX + A);
       }
     }
   }
-
 
   return E_cabs_singles;
 }
@@ -2867,20 +2868,25 @@ double sc::PT2R12::spin_free_cabs_singles()
     RefSCMatrix V = H.clone();
     RefDiagSCMatrix S = local_kit->diagmatrix(dimH);
     H.svd(U,S,V);
-    S.print(std::string("SVD").c_str());
+//    S.print(std::string("SVD").c_str());
     E = -1.0 * S.get_element(ni*nA); // seems the roots are sorted in descending order
   }
   else if(cabs_singles_h0_ == std::string("complete"))
   {
-    RefSCVector bcopy = b->copy();
+//    RefSCVector bcopy = b->copy();
+    RefSCVector X = b->clone();
+    X.assign(0.0);
   #if DEBUGG
     b.print(ExEnv::out0());
   #endif
-    B.solve_lin(b);
+    RefSymmSCMatrix Bsymm = B.kit()->symmmatrix(dimiA);
+    Bsymm.assign_subblock(B, 0, ni*nA-1, 0, ni*nA-1);
+    lapack_linsolv_symmnondef(Bsymm, X, b);
+//    B.solve_lin(b);
   #if DEBUGG
     b.print(std::string("b").c_str());
   #endif
-    E = -1.0 * (b.dot(bcopy));
+    E = -1.0 * (X.dot(b));
   }
   return E;
 }
@@ -3065,9 +3071,7 @@ double sc::PT2R12::spin_free_cabs_singles_test()
   RefSCMatrix B = RefSCMAT4_permu<Permute14>(B_bar, Aspace, Aspace, pspace, pspace);
 
   RefSCVector bcopy = b->copy();
-#if true
-  b.print(ExEnv::out0());
-#endif
+//  b.print(ExEnv::out0());
   B.solve_lin(b);
 #if DEBUGG
   b.print(std::string("b").c_str());

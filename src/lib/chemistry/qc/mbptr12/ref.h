@@ -87,6 +87,8 @@ namespace sc {
       /// an orbital is occupied if its occupancy is greater than this
       static double zero_occupancy() { return 1e-12; }
 
+      const Ref<OrbitalSpaceRegistry>& orbital_registry() const { return oreg_; }
+
       const Ref<OrbitalSpace>& orbs_sb() const { return orbs_sb_; }
       const Ref<OrbitalSpace>& orbs() const { return orbs_; }
       const Ref<OrbitalSpace>& occ_sb() const { return occ_sb_; }
@@ -101,7 +103,7 @@ namespace sc {
       const Ref<OrbitalSpace>& uocc() const { return uocc_; }
       const Ref<OrbitalSpace>& uocc_act() const { return uocc_act_; }
 
-    protected:
+    private:
       Ref<OrbitalSpaceRegistry> oreg_;
       Ref<OrbitalSpace> orbs_sb_;
       Ref<OrbitalSpace> orbs_;
@@ -118,6 +120,9 @@ namespace sc {
                                    // core and active occupied ones
       Ref<OrbitalSpace> conv_uocc_sb_;
       Ref<OrbitalSpace> conv_occ_sb_;
+
+      /// purges the spaces from the registry
+      void purge();
   };
 
   /**
@@ -222,14 +227,15 @@ namespace sc {
     /// which DensityFittingRuntime used to compute this reference wave function
     virtual Ref<DensityFittingInfo> dfinfo() const =0;
 
+    protected:
+    /// For spin-free algorithms, if this is true, we would set both alpha/beta 1-rdm to the average of them; defaults to false
+    bool force_average_AB_rdm1_;
 
     private:
     Ref<WavefunctionWorld> world_;   // who owns this?
     Ref<GaussianBasisSet> basis_;
     Ref<Integral> integral_;
     bool omit_uocc_;
-    /// For spin-free algorithms, if this is true, we would set both alpha/beta 1-rdm to the average of them; defaults to false
-    bool force_average_AB_rdm1_;
     bool force_correlate_rasscf_;
     double occ_thres_; // this parameter is in fact assigned to the value of correlate_min_occ_ of R12WavefunctionWorld, where is a logical
                         // place to define such a variable, since it more belong to the R12 world. However, we need it to control RefWavefunction too.

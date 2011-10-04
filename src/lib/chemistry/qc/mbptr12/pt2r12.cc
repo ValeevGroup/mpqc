@@ -2245,51 +2245,19 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
     }
   }
 
+// the old way, kept for testing
+  ExEnv::out0()  << indent << "old solver (comment out when done testing)" << std::endl;
+  H0.solve_lin(rhs_vector);
+  RefSCVector X = rhs_vector.copy();
 
-//  H0.solve_lin(rhs_vector);
-  RefSCVector X = rhs_vector.clone();
-  X.assign(0.0);
-  lapack_linsolv_symmnondef(H0, X, rhs_vector);
+  // more stable solver
+//  RefSCVector X = rhs_vector.clone();
+//  X.assign(0.0);
+//  lapack_linsolv_symmnondef(H0, X, rhs_vector);
 
-#if printout
-    RefDiagSCMatrix eigenmatrix_gamma1 = gamma1.eigvals();
-    eigenmatrix_gamma1.print("Orbital Occupation Number");
-
-    RefSymmSCMatrix F_pp_copy = gamma2_ss->kit()->symmmatrix(dim_o); //
-    F_pp_copy.assign(0.0);
-    for (int ind1 = 0; ind1 < no; ++ind1)
-    {
-      for (int ind2 = 0; ind2 < no; ++ind2)
-     {
-        F_pp_copy.set_element(ind1, ind2, F_pp.get_element(ind1, ind2));
-      }
-    }
-    RefDiagSCMatrix eigenmatrix_F_pp = F_pp_copy.eigvals();
-    eigenmatrix_F_pp.print("pspace Fock matrix eigenvalue");
-#endif
-
-#if printout
-    RefSymmSCMatrix F_AA_copy = gamma2_ss->kit()->symmmatrix(dim_X);
-    F_AA_copy.assign(0.0);
-    for (int ind1 = 0; ind1 < nX; ++ind1)
-    {
-      for (int ind2 = 0; ind2 < nX; ++ind2)
-      {
-        F_AA_copy.set_element(ind1, ind2, F_AA.get_element(ind1, ind2));
-      }
-    }
-    RefDiagSCMatrix eigenmatrix_F_AA = F_AA_copy.eigvals();
-    eigenmatrix_F_AA.print("Aspace Fock matrix eigenvalue");
-#endif
 
 #if false
-    RefDiagSCMatrix eigenmatrix = H0.eigvals();
-    int BeigDimen = int(eigenmatrix.dim());
-    for (int i = 0; i < BeigDimen; ++i)
-    {
-      if(eigenmatrix.get_element(i) < 0) ExEnv::out0() << indent << "negative eigenvalue!" << std::endl;
-    }
-    eigenmatrix.print("(one-body H0) B eigenvalue");
+    H0.eigvals().print("B eigenvalue");
 #endif
 
   double E_cabs_singles_one_spin = 0.0;

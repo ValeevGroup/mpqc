@@ -2123,7 +2123,7 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
   RefSymmSCMatrix gamma2_os = this->rdm2( case12(spin,other(spin)) );//os: opposite spin
 
 #if true
-  gamma1.print("gamma1");
+  gamma1.print("CABS singles: spin 1-RDM");
 #endif
 #if false
   gamma2_os.print("gamma2");
@@ -2154,7 +2154,6 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
     {
       if(map_1_to_2[row_ind] < 0)  // row_ind is a core-orbital index
       {
-//        ExEnv::out0()  << "row_ind, DM: " << row_ind << ", " << gamma1(row_ind, row_ind) << std::endl;
         for (int A1 = 0; A1 < nX; ++A1)
         {
           F_pA.set_element(row_ind, A1, 0.0);
@@ -2191,10 +2190,8 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
     }
   }
 
-
   //compute trace(f * gamma1) = f^p_q  gamma^q_p; this is an element needed to compute H0
   const double F_Gamma1_product = (F_pp * gamma1).trace() + (F_pp_otherspin * gamma1_otherspin).trace();
-
 
   // compute H0; x1/x2 etc denote difference spins; H0 corresponds to the B matrix from the notes
 
@@ -2262,7 +2259,7 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
             h0_xB_yA += -1.0 *gamma_xy * F_Gamma1_product + Ixy_xy;
           }
           H0(xB, yA) = h0_xB_yA;
-          ExEnv::out0() << "x, y, B, A, xByA: " << x << ", " << y << ", " << B << ", " << A << ", "<< h0_xB_yA << endl;
+//          ExEnv::out0() << "x, y, B, A, xByA: " << x << ", " << y << ", " << B << ", " << A << ", "<< h0_xB_yA << endl;
         }
       }
     }

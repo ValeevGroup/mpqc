@@ -2063,7 +2063,7 @@ int sc::PT2R12::spin_polarized()
 
 double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
 {
-  # define  printout false
+  # define printout false
 
   Ref<OrbitalSpace> activespace = this->r12world()->refwfn()->occ_act_sb();
   Ref<OrbitalSpace> pspace = rdm1_->orbs(spin);
@@ -2082,7 +2082,8 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
   if (cabs_singles_coupling_)
   {
     all_virtual_space = new OrbitalSpaceUnion("AA", "all virtuals", *vspace, *cabsspace, true);
-    if (!oreg->value_exists(all_virtual_space)) oreg->add(make_keyspace_pair(all_virtual_space));
+    if (!oreg->value_exists(all_virtual_space))
+      oreg->add(make_keyspace_pair(all_virtual_space));
     const std::string AAkey = oreg->key(all_virtual_space);
     all_virtual_space = oreg->value(AAkey);
 
@@ -2098,8 +2099,10 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
   }
 
   Ref<OrbitalSpace> Aspace;
-  if (cabs_singles_coupling_)  Aspace = all_virtual_space;
-  else                         Aspace = cabsspace;
+  if (cabs_singles_coupling_)
+    Aspace = all_virtual_space;
+  else
+    Aspace = cabsspace;
 
   const unsigned int num_blocks = vspace->nblocks();// since the two spaces have the same blocksizes, we only need to define one
   const std::vector<unsigned int>& v_block_sizes = vspace->block_sizes();
@@ -2107,27 +2110,17 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
   const std::vector<unsigned int>& p_block_sizes = pspace->block_sizes(); // for debugging purposes
   const std::vector<unsigned int>& A_block_sizes = Aspace->block_sizes(); // for debugging purposes
 
-
-  // get the fock matrices
+  // fock matrices
   RefSCMatrix F_pA = r12eval_->fock(pspace,Aspace,spin);
   RefSCMatrix F_AA = r12eval_->fock(Aspace,Aspace,spin);
   RefSCMatrix F_pp = this->f(spin);
-  RefSCMatrix F_pp_otherspin = this->f(other(spin));
+  RefSCMatrix F_pp_os = this->f(other(spin));
 
   // RDMs
-  //RefSymmSCMatrix gamma1 = this->rdm1(spin);
-  //RefSymmSCMatrix gamma1_otherspin = this->rdm1(other(spin));
   RefSymmSCMatrix gamma1 = rdm1_->scmat(spin);
   RefSymmSCMatrix gamma1_otherspin = rdm1_->scmat(other(spin));
   RefSymmSCMatrix gamma2_ss = this->rdm2( case12(spin,spin) ); //ss: same spin
-  RefSymmSCMatrix gamma2_os = this->rdm2( case12(spin,other(spin)) );//os: opposite spin
-
-#if true
-  gamma1.print("CABS singles: spin 1-RDM");
-#endif
-#if false
-  gamma2_os.print("gamma2");
-#endif
+  RefSymmSCMatrix gamma2_ba = this->rdm2( case12(spin,other(spin)) );//os: opposite spin
 
   // define H0 and necessary vectors
   const int no = pspace->rank();
@@ -2148,7 +2141,6 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
 
   if(!rotate_core_) // if forbit rotating core orbitals
   {
-    ExEnv::out0()  << indent << "forbid exciting core orbitals" << std::endl << std::endl;
     std::vector<int> map_1_to_2 = map(*activespace, *pspace);
     for (int row_ind = 0; row_ind < no; ++row_ind)
     {
@@ -2160,38 +2152,33 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
         }
       }
     }
-    ExEnv::out0()  << indent << "end eliminating exciting core orbitals" << std::endl << std::endl;
   }
 
   if (cabs_singles_coupling_) // when using the combined space, the Fock matrix component f^i_a must be zeroed since it belongs to zeroth order Hamiltonian;
    {
-    //ExEnv::out0()  << "  zero out the Fock matrix element F^i_a" << endl << endl;
     unsigned int offset1 = 0;
     for (int block_counter1 = 0; block_counter1 < num_blocks; ++block_counter1)
     { for (int v_ind = 0; v_ind < v_block_sizes[block_counter1]; ++v_ind) // in each symmetry block, the OBS virtual indices are put before CABS indices
       { const unsigned int F_pA_v_ind =  offset1 + v_ind;
-        for (int row_ind = 0; row_ind < no; ++row_ind)  F_pA.set_element(row_ind, F_pA_v_ind, 0.0);
+        for (int row_ind = 0; row_ind < no; ++row_ind)
+          F_pA.set_element(row_ind, F_pA_v_ind, 0.0);
       }
       offset1 += A_block_sizes[block_counter1];
     }
    }
 
   // compute the Right-Hand vector
-  for(int x=0; x<no; ++x)
-  {
-    for(int B=0; B<nX; ++B)
+    RefSCMatrix GF = gamma1*F_pA;
+    for(int x=0; x<no; ++x)
     {
-      double rhs_vector_xB = 0.0;
-      for (int j = 0; j < no; ++j)
+      for(int B=0; B<nX; ++B)
       {
-        rhs_vector_xB += -1.0 *  gamma1(x, j) * F_pA(j, B);
+        rhs_vector->set_element(x * nX + B, -1.0*GF.get_element(x,B));
       }
-      rhs_vector->set_element(x * nX + B, rhs_vector_xB);
     }
-  }
 
   //compute trace(f * gamma1) = f^p_q  gamma^q_p; this is an element needed to compute H0
-  const double F_Gamma1_product = (F_pp * gamma1).trace() + (F_pp_otherspin * gamma1_otherspin).trace();
+  const double FtG = (F_pp * gamma1).trace() + (F_pp_os * gamma1_otherspin).trace();
 
   // compute H0; x1/x2 etc denote difference spins; H0 corresponds to the B matrix from the notes
 
@@ -2205,40 +2192,22 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
             for (int p = 0; p < no; ++p)
             {
               for (int q = 0; q < no; ++q)
-              {
-                // based on wrong assumption: 2-rdm of different spins arranged in the order of alpha-beta (beta runs faster)
-                // in fact, it is the opposite
-//                const int x1p2 = (spin == Alpha)? (x * no + p):(p * no + x);
-//                const int y1q2 = (spin == Alpha)? (y * no + q):(q * no + y);
-                const int x1p2 = (spin == Alpha)? (p * no + x):(x * no + p);
-                const int y1q2 = (spin == Alpha)? (q * no + y):(y * no + q);
-                if(x==2 and y==2 and false)
-                {
-                  ExEnv::out0() << "F_pp, g2_os: " << x1p2 << ", " << y1q2 << ", " << F_pp_otherspin(q, p) << ", " << gamma2_os(x1p2, y1q2) << endl;
-                }
-                Ixy_xy += F_pp_otherspin(q, p) * gamma2_os(x1p2, y1q2);
+              {// 2-rdm of different spins: arranged in the order of beta-alpha (alpha runs faster)
+                const int x1p2 = (spin == Alpha)? (p*no + x):(x*no + p);
+                const int y1q2 = (spin == Alpha)? (q*no + y):(y*no + q);
+                Ixy_xy += F_pp_os(q, p) * gamma2_ba(x1p2, y1q2);
                 if((x != p) && (y != q))  // contribution from gamma2_ss
                 {
-                  const int upp_ind_same_spin = antisym_pairindex(x,p);
-                  const int low_ind_same_spin = antisym_pairindex(y,q);
-                  Ixy_xy += indexsizeorder_sign(x,p) * indexsizeorder_sign(y, q) * F_pp(q, p) * gamma2_ss(upp_ind_same_spin, low_ind_same_spin);
-//                  ExEnv::out0() << "g2_ss: " << low_ind_same_spin << ", " << upp_ind_same_spin << ", " << ", " << gamma2_ss(upp_ind_same_spin, low_ind_same_spin) << endl;
+                  const int u_ss = antisym_pairindex(x,p);
+                  const int l_ss = antisym_pairindex(y,q);
+                  Ixy_xy += indexsizeorder_sign(x,p) * indexsizeorder_sign(y,q) * F_pp(q,p) * gamma2_ss(u_ss, l_ss);
                 }
               }
             }
           }
-#if false
-      ExEnv::out0() << "x,y, Ixy: " << x << ", " << y << ", " << Ixy_xy << endl;
-#endif
       Ixy(x,y) = Ixy_xy;
     }
   }
-
-#if false
-  Ixy.print("Ixy");
-  gamma1.print("gamma1");
-#endif
-
 
   for(int x=0; x<no; ++x)
   {
@@ -2248,27 +2217,21 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
       const double Ixy_xy = Ixy(x, y);
       for(int B=0; B<nX; ++B)
       {
-        const int xB = x*nX + B;              // calculate the row index
+        const int xB = x*nX + B; // calculate the row index
         for(int A=0; A<nX; ++A)
         {
-          const int yA = y*nX + A;            //calculate the column index
+          const int yA = y*nX + A; // calculate the column index
           double h0_xB_yA = 0.0;
           h0_xB_yA += gamma_xy * F_AA(A,B);
-          if(A == B)                          // corresponds to a Kronecker delta
+          if(A == B) // a Kronecker delta
           {
-            h0_xB_yA += -1.0 *gamma_xy * F_Gamma1_product + Ixy_xy;
+            h0_xB_yA += -1.0*gamma_xy * FtG + Ixy_xy;
           }
           H0(xB, yA) = h0_xB_yA;
-//          ExEnv::out0() << "x, y, B, A, xByA: " << x << ", " << y << ", " << B << ", " << A << ", "<< h0_xB_yA << endl;
         }
       }
     }
   }
-
-#if false
-  H0.print("H0");
-  H0.eigvals().print("Fock: B eigenvalue");
-#endif
 
 // the old way, kept for testing
 //  ExEnv::out0()  << indent << "old solver (comment out when done testing)" << std::endl;
@@ -2280,25 +2243,16 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
   X.assign(0.0);
   lapack_linsolv_symmnondef(H0, X, rhs_vector);
 
-
-
-  double E_cabs_singles_one_spin = 0.0;
-  for (int i = 0; i < no; ++i)
+  double E_spin = 0.0;
+  for (int j = 0; j < no; ++j)
   {
-    for (int j = 0; j < no; ++j)
+    for (int A = 0; A < nX; ++A)
     {
-      const double gamma_ij = gamma1(i,j);
-      for (int A = 0; A < nX; ++A)
-      {
-        E_cabs_singles_one_spin += F_pA(i,A) * gamma_ij * X->get_element(j * nX + A);
-      }
+      E_spin += GF.get_element(j,A) * X->get_element(j * nX + A);
     }
   }
-
-  return E_cabs_singles_one_spin;
-
+  return E_spin;
 }
-
 
 
 double sc::PT2R12::energy_cabs_singles_twobody_H0()

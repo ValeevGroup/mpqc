@@ -2122,6 +2122,10 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
   RefSymmSCMatrix gamma2_ss = this->rdm2( case12(spin,spin) ); //ss: same spin
   RefSymmSCMatrix gamma2_os = this->rdm2( case12(spin,other(spin)) );//os: opposite spin
 
+#if true
+  gamma1.print("gamma1");
+#endif
+
   // define H0 and necessary vectors
   const int no = pspace->rank();
   const int nX = Aspace->rank();
@@ -2258,6 +2262,7 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
 
 #if true
     H0.eigvals().print("Fock: B eigenvalue");
+    H0.print("H0");
 #endif
 
   double E_cabs_singles_one_spin = 0.0;

@@ -2249,7 +2249,7 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
             h0_xB_yA += -1.0 *gamma_xy * F_Gamma1_product + Ixy_xy;
           }
           H0(xB, yA) = h0_xB_yA;
-          ExEnv::out0() << 'x, y, B, A, xByA: ' << x << ", " << y << ", " << B << ", " << A << ", "<< h0_xB_yA << endl;
+          ExEnv::out0() << "x, y, B, A, xByA: " << x << ", " << y << ", " << B << ", " << A << ", "<< h0_xB_yA << endl;
         }
       }
     }

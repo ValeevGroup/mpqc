@@ -2256,8 +2256,8 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
 //  lapack_linsolv_symmnondef(H0, X, rhs_vector);
 
 
-#if false
-    H0.eigvals().print("B eigenvalue");
+#if true
+    H0.eigvals().print("Fock: B eigenvalue");
 #endif
 
   double E_cabs_singles_one_spin = 0.0;

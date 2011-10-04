@@ -2224,6 +2224,11 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
     }
   }
 
+#if true
+  Ixy.print("Ixy");
+  gamma1.print("gamma1");
+#endif
+
 
   for(int x=0; x<no; ++x)
   {
@@ -2244,10 +2249,16 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
             h0_xB_yA += -1.0 *gamma_xy * F_Gamma1_product + Ixy_xy;
           }
           H0(xB, yA) = h0_xB_yA;
+          ExEnv::out0() << 'x, y, B, A, xByA: ' << x << ", " << y << ", " << B << ", " << A << ", "<< h0_xB_yA << endl;
         }
       }
     }
   }
+
+#if true
+  H0.print("H0");
+  H0.eigvals().print("Fock: B eigenvalue");
+#endif
 
 // the old way, kept for testing
   ExEnv::out0()  << indent << "old solver (comment out when done testing)" << std::endl;
@@ -2260,10 +2271,6 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
 //  lapack_linsolv_symmnondef(H0, X, rhs_vector);
 
 
-#if true
-    H0.eigvals().print("Fock: B eigenvalue");
-    H0.print("H0");
-#endif
 
   double E_cabs_singles_one_spin = 0.0;
   for (int i = 0; i < no; ++i)

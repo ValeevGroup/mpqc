@@ -2346,6 +2346,11 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
   RefSymmSCMatrix gamma2_bb = this->rdm2(case12(other(spin),other(spin)));
   RefSymmSCMatrix gamma2_ab = this->rdm2(case12(spin,other(spin)));
 
+#if true
+  gamma1_alpha.print("gamma1: alpha");
+  gamma1_betaa.print("gamma1: beta");
+#endif
+
   // define H0 and necessary vectors
   const int no = pspace->rank();
   const int nv = vspace->rank();
@@ -2588,6 +2593,10 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
   RefSCVector X = rhs_vector.clone();
   X.assign(0.0);
   lapack_linsolv_symmnondef(B, X, rhs_vector);
+
+#if true
+    B.print("H0");
+#endif
 
 #if (DEBUGG)
     RefDiagSCMatrix eigenmatrix = B.eigvals();

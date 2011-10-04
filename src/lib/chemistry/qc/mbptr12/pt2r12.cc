@@ -2348,7 +2348,7 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
 
 #if true
   gamma1_alpha.print("gamma1: alpha");
-  gamma1_betaa.print("gamma1: beta");
+  gamma1_beta.print("gamma1: beta");
 #endif
 
   // define H0 and necessary vectors

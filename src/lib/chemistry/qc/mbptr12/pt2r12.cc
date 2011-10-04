@@ -1936,11 +1936,11 @@ void sc::PT2R12::compute()
     double alpha_corre = 0.0, beta_corre = 0.0, cabs_singles_corre = 0.0;
     if(cabs_singles_h0_ == std::string("fock"))
     {
-      alpha_corre = this->energy_cabs_singles(Alpha);
+      beta_corre =  this->energy_cabs_singles(Beta);
       if (spin_polarized)
-        beta_corre =  this->energy_cabs_singles(Beta);
+        alpha_corre = this->energy_cabs_singles(Alpha);
       else
-        beta_corre = alpha_corre;
+        alpha_corre = beta_corre;
       cabs_singles_e = alpha_corre + beta_corre;
       ExEnv::out0() << indent << scprintf("CABS singles (Fock):                   %17.12lf",
                                         cabs_singles_e) << endl;
@@ -2125,6 +2125,9 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
 #if true
   gamma1.print("gamma1");
 #endif
+#if false
+  gamma2_os.print("gamma2");
+#endif
 
   // define H0 and necessary vectors
   const int no = pspace->rank();
@@ -2205,26 +2208,36 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
             for (int p = 0; p < no; ++p)
             {
               for (int q = 0; q < no; ++q)
-              {                    // firstly contribution from different spin terms; we differentiate alpha and beta spins because for 2-particle gamma of different
-                                  // spins, for both upper and lower indices, the alpha-spin index is always before the beta-spin one
-                const int x1p2 = (spin == Alpha)? (x * no + p):(p * no + x);
-                const int y1q2 = (spin == Alpha)? (y * no + q):(q * no + y);
+              {
+                // based on wrong assumption: 2-rdm of different spins arranged in the order of alpha-beta (beta runs faster)
+                // in fact, it is the opposite
+//                const int x1p2 = (spin == Alpha)? (x * no + p):(p * no + x);
+//                const int y1q2 = (spin == Alpha)? (y * no + q):(q * no + y);
+                const int x1p2 = (spin == Alpha)? (p * no + x):(x * no + p);
+                const int y1q2 = (spin == Alpha)? (q * no + y):(y * no + q);
+                if(x==2 and y==2 and false)
+                {
+                  ExEnv::out0() << "F_pp, g2_os: " << x1p2 << ", " << y1q2 << ", " << F_pp_otherspin(q, p) << ", " << gamma2_os(x1p2, y1q2) << endl;
+                }
                 Ixy_xy += F_pp_otherspin(q, p) * gamma2_os(x1p2, y1q2);
                 if((x != p) && (y != q))  // contribution from gamma2_ss
                 {
                   const int upp_ind_same_spin = antisym_pairindex(x,p);
                   const int low_ind_same_spin = antisym_pairindex(y,q);
                   Ixy_xy += indexsizeorder_sign(x,p) * indexsizeorder_sign(y, q) * F_pp(q, p) * gamma2_ss(upp_ind_same_spin, low_ind_same_spin);
-                  //  contribution from same spin terms; the "?:" takes care of antisymmetry; for gamma^xp_..., only x<p portion stored
+//                  ExEnv::out0() << "g2_ss: " << low_ind_same_spin << ", " << upp_ind_same_spin << ", " << ", " << gamma2_ss(upp_ind_same_spin, low_ind_same_spin) << endl;
                 }
               }
             }
           }
+#if false
+      ExEnv::out0() << "x,y, Ixy: " << x << ", " << y << ", " << Ixy_xy << endl;
+#endif
       Ixy(x,y) = Ixy_xy;
     }
   }
 
-#if true
+#if false
   Ixy.print("Ixy");
   gamma1.print("gamma1");
 #endif
@@ -2255,20 +2268,20 @@ double sc::PT2R12::energy_cabs_singles(SpinCase1 spin)
     }
   }
 
-#if true
+#if false
   H0.print("H0");
   H0.eigvals().print("Fock: B eigenvalue");
 #endif
 
 // the old way, kept for testing
-  ExEnv::out0()  << indent << "old solver (comment out when done testing)" << std::endl;
-  H0.solve_lin(rhs_vector);
-  RefSCVector X = rhs_vector.copy();
+//  ExEnv::out0()  << indent << "old solver (comment out when done testing)" << std::endl;
+//  H0.solve_lin(rhs_vector);
+//  RefSCVector X = rhs_vector.copy();
 
   // more stable solver
-//  RefSCVector X = rhs_vector.clone();
-//  X.assign(0.0);
-//  lapack_linsolv_symmnondef(H0, X, rhs_vector);
+  RefSCVector X = rhs_vector.clone();
+  X.assign(0.0);
+  lapack_linsolv_symmnondef(H0, X, rhs_vector);
 
 
 
@@ -2466,8 +2479,14 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
                     for (k2 = 0; k2 < no; ++k2)
                     {
                         const double v_i1j2y1k2 = g_pppp_ab(i1* no + j2, y1 * no + k2);
-                        const double cumu_x1k2i1j2_aa = gamma2_ab.get_element(x1 * no + k2, i1 * no + j2) - gamma1_alpha.get_element(x1, i1) * gamma1_beta.get_element(k2, j2);
-                        const double cumu_x1k2i1j2_bb = gamma2_ab.get_element(k2 * no + x1, j2 * no + i1) - gamma1_beta.get_element(x1, i1) * gamma1_alpha.get_element(k2, j2);
+//                        const double cumu_x1k2i1j2_aa = gamma2_ab.get_element(x1 * no + k2, i1 * no + j2)
+//                            - gamma1_alpha.get_element(x1, i1) * gamma1_beta.get_element(k2, j2);
+//                        const double cumu_x1k2i1j2_bb = gamma2_ab.get_element(k2 * no + x1, j2 * no + i1)
+//                                                - gamma1_beta.get_element(x1, i1) * gamma1_alpha.get_element(k2, j2);
+                        const double cumu_x1k2i1j2_aa = gamma2_ab.get_element(k2*no + x1, j2*no + i1)
+                            - gamma1_alpha.get_element(x1, i1) * gamma1_beta.get_element(k2, j2);
+                        const double cumu_x1k2i1j2_bb = gamma2_ab.get_element(x1*k2 + x1, i1*no + j2)
+                                                - gamma1_beta.get_element(x1, i1) * gamma1_alpha.get_element(k2, j2);
                         I_aa +=  v_i1j2y1k2 * cumu_x1k2i1j2_aa;
                         I_bb +=  v_i1j2y1k2 * cumu_x1k2i1j2_bb;
                     }

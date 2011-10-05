@@ -2447,7 +2447,7 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
       }
     }
   }
-  Ixy.print("Ixy");
+//  Ixy.print("Ixy");
 
   {                                       // calculate Ixy: the last term
       int x1, y1, i1,  j1, j2, k1, k2;
@@ -2571,7 +2571,7 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
   X.assign(0.0);
   lapack_linsolv_symmnondef(B, X, rhs_vector);
 
-#if true
+#if false
     B.print("H0");
 #endif
 

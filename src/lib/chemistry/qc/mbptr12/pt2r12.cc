@@ -2315,7 +2315,7 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
   RefSymmSCMatrix gamma1_beta = rdm1_->scmat(other(spin));
   RefSymmSCMatrix gamma2_aa = this->rdm2(case12(spin,spin));
   RefSymmSCMatrix gamma2_bb = this->rdm2(case12(other(spin),other(spin)));
-  RefSymmSCMatrix gamma2_ab = this->rdm2(case12(spin,other(spin)));
+  RefSymmSCMatrix gamma2_ba = this->rdm2(case12(spin,other(spin)));
 
 #if true
   gamma1_alpha.print("gamma1: alpha");
@@ -2338,7 +2338,6 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
   RefSCVector rhs_vector = gamma2_aa->kit()->vector(dim_oX);
   rhs_vector->assign(0.0);
 
-
 #if 0
   ExEnv::out0()  << "  primary, virtual and cabs space dimensions: " << no << ", " << nv << ", " << n_cabs << endl;
   ExEnv::out0()  << "  block dimensions of pspace, vspace, cabsspace: " << endl << "  ";
@@ -2353,17 +2352,17 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
     ExEnv::out0() << endl;}
 #endif
 
-
   if (cabs_singles_coupling_) // when using the combined space, the Fock matrix component f^i_a must be zeroed since it belongs to zeroth order Hamiltonian;
    {
-    //ExEnv::out0()  << "  zero out the Fock matrix element F^i_a" << endl << endl;
     unsigned int offset1 = 0;
     for (int block_counter1 = 0; block_counter1 < num_blocks; ++block_counter1)
-    {
-      for (int v_ind = 0; v_ind < v_block_sizes[block_counter1]; ++v_ind) // in each symmetry block, the OBS virtual indices are put before CABS indices
-      { const unsigned int F_pA_v_ind =  offset1 + v_ind;
+    { // in each symmetry block, the OBS virtual indices are put before CABS indices
+      for (int v_ind = 0; v_ind < v_block_sizes[block_counter1]; ++v_ind)
+      {
+        const unsigned int F_pA_v_ind =  offset1 + v_ind;
         for (int row_ind = 0; row_ind < no; ++row_ind)
-        { F_pA_alpha.set_element(row_ind, F_pA_v_ind, 0.0);
+        {
+          F_pA_alpha.set_element(row_ind, F_pA_v_ind, 0.0);
           F_pA_beta.set_element(row_ind, F_pA_v_ind, 0.0);
         }
       }
@@ -2374,7 +2373,6 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
   std::vector<int> map_1_to_2 = map(*activespace, *pspace);
   if(!rotate_core_) // if forbit rotating core orbitals; default is 'rotate core orbs'
   {
-    ExEnv::out0()  << indent << "forbid exciting core orbitals" << std::endl << std::endl;
     for (int row_ind = 0; row_ind < no; ++row_ind)
     {
       if(map_1_to_2[row_ind] < 0)  // row_ind is a core-orbital index
@@ -2386,68 +2384,70 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
         }
       }
     }
-    ExEnv::out0()  << indent << "end eliminating exciting core orbitals" << std::endl << std::endl;
   }
 
   // compute the Right-Hand vector
-  for(int x1 = 0; x1<no; ++x1)
   {
-    for(int B1=0; B1<nX; ++B1)
+    for(int x1 = 0; x1<no; ++x1)
     {
-      double rhs_vector_x1B1_alpha = 0.0;
-      double rhs_vector_x1B1_beta = 0.0;
-      for (int j1 = 0; j1 < no; ++j1)
+      for(int B1=0; B1<nX; ++B1)
       {
-        rhs_vector_x1B1_alpha += -1.0 *  gamma1_alpha(x1, j1) * F_pA_alpha(j1, B1);
-        rhs_vector_x1B1_beta += -1.0 *  gamma1_beta(x1, j1) * F_pA_beta(j1, B1);
+        double x1B1_alpha = 0.0;
+        double x1B1_beta = 0.0;
+        for (int j1 = 0; j1 < no; ++j1)
+        {
+          x1B1_alpha -= gamma1_alpha(x1, j1) * F_pA_alpha(j1, B1);
+          x1B1_beta  -= gamma1_beta(x1, j1) * F_pA_beta(j1, B1);
+        }
+        rhs_vector->set_element(x1 * nX + B1, x1B1_alpha);
+        rhs_vector->set_element(x1 * nX + B1 + noX, x1B1_beta);
       }
-      rhs_vector->set_element(x1 * nX + B1, rhs_vector_x1B1_alpha);
-      rhs_vector->set_element(x1 * nX + B1 + noX, rhs_vector_x1B1_beta); // first calculate alpha component, then beta component of RHS vector
     }
   }
-
 
   // compute H0; x1/x2 etc denote different spins; H0 corresponds to the B matrix from the notes
 
-  {                                         // calculate Ixy: the first two term
-    int x1, y1, i1,  j1, j2, k1, k2;        //the overall minus sign is taken into account when multiplied by delta to calculate B
-    RefSCMatrix   g_pppp_ab   = this->g(case12(spin, other(spin)), pspace, pspace, pspace, pspace);
+  { // calculate Ixy: the first two term;
+    // the overall minus sign is taken into account when multiplied by delta to calculate B
+    int x1, y1, i1,  j1, j2, k1, k2;
+    RefSCMatrix g_pppp_ab   = this->g(case12(spin, other(spin)), pspace, pspace, pspace, pspace);
     for(x1=0; x1<no; ++x1)
     {
-        for(y1=0; y1 < no; ++y1)
+      for(y1=0; y1 < no; ++y1)
+      {
+        double I_aa = 0.0;
+        double I_bb = 0.0;
+        for (i1 = 0; i1 < no; ++i1)  // one contribution to Ixy: f^i1_y1 * gamma^x1_i1
         {
-            double I_aa = 0.0;
-            double I_bb = 0.0;
-              for (i1 = 0; i1 < no; ++i1) //one contribution to Ixy: f^i1_y1 * gamma^x1_i1
-              {
-                I_aa += gamma1_alpha(x1, i1) * F_pp_alpha(i1, y1);
-                I_bb += gamma1_beta(x1, i1) * F_pp_beta(i1, y1);
-              }
-            for (i1 = 0; i1 < no; ++i1)    // v^i1j2_y1k2 * (gamma^x1k2_i1j2 - gamma^x1_i1 * gamma^k2_j2)
+          I_aa += gamma1_alpha.get_element(x1, i1)*F_pp_alpha.get_element(i1,y1);
+          I_bb += gamma1_beta.get_element(x1, i1)*F_pp_beta.get_element(i1,y1);
+        }
+        for (i1 = 0; i1 < no; ++i1)    // v^i1j2_y1k2 * (gamma^x1k2_i1j2 - gamma^x1_i1 * gamma^k2_j2)
+        {
+            for (j2 = 0; j2 < no; ++j2)
             {
-                for (j2 = 0; j2 < no; ++j2)
+                for (k2 = 0; k2 < no; ++k2)
                 {
-                    for (k2 = 0; k2 < no; ++k2)
-                    {
-                        const double v_i1j2y1k2 = g_pppp_ab(i1* no + j2, y1 * no + k2);
-//                        const double cumu_x1k2i1j2_aa = gamma2_ab.get_element(x1 * no + k2, i1 * no + j2)
+                    const double v_i1j2y1k2 = g_pppp_ab(i1* no + j2, y1 * no + k2);
+//                        const double cumu_x1k2i1j2_aa = gamma2_ba.get_element(x1 * no + k2, i1 * no + j2)
 //                            - gamma1_alpha.get_element(x1, i1) * gamma1_beta.get_element(k2, j2);
-//                        const double cumu_x1k2i1j2_bb = gamma2_ab.get_element(k2 * no + x1, j2 * no + i1)
+//                        const double cumu_x1k2i1j2_bb = gamma2_ba.get_element(k2 * no + x1, j2 * no + i1)
 //                                                - gamma1_beta.get_element(x1, i1) * gamma1_alpha.get_element(k2, j2);
-                        const double cumu_x1k2i1j2_aa = gamma2_ab.get_element(k2*no + x1, j2*no + i1)
-                            - gamma1_alpha.get_element(x1, i1) * gamma1_beta.get_element(k2, j2);
-                        const double cumu_x1k2i1j2_bb = gamma2_ab.get_element(x1*k2 + x1, i1*no + j2)
-                                                - gamma1_beta.get_element(x1, i1) * gamma1_alpha.get_element(k2, j2);
-                        I_aa +=  v_i1j2y1k2 * cumu_x1k2i1j2_aa;
-                        I_bb +=  v_i1j2y1k2 * cumu_x1k2i1j2_bb;
-                    }
+                    const double cumu_x1k2i1j2_aa = gamma2_ba.get_element(k2*no + x1, j2*no + i1)
+                        - gamma1_alpha.get_element(x1, i1) * gamma1_beta.get_element(k2, j2);
+                    const double cumu_x1k2i1j2_bb = gamma2_ba.get_element(x1*no + k2, i1*no + j2)
+                                            - gamma1_beta.get_element(x1, i1) * gamma1_alpha.get_element(k2, j2);
+                    I_aa +=  v_i1j2y1k2 * cumu_x1k2i1j2_aa;
+                    I_bb +=  v_i1j2y1k2 * cumu_x1k2i1j2_bb;
                 }
             }
-            Ixy(x1, y1) =  I_aa;
-            Ixy(no+ x1, no + y1) =  I_bb;
         }
+        Ixy(x1,y1) = I_aa;
+        Ixy(no+x1, no+y1) = I_bb;
+      }
     }
   }
+  Ixy.print("Ixy");
 
   {                                       // calculate Ixy: the last term
       int x1, y1, i1,  j1, j2, k1, k2;
@@ -2489,7 +2489,7 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
                   }
               }
               Ixy(x1, y1) =  Ixy(x1, y1) + I_aa;
-              Ixy(no+ x1, no + y1) =   Ixy(no+ x1, no + y1) + I_bb;
+              Ixy(no+ x1, no + y1) =  Ixy(no+ x1, no + y1) + I_bb;
           }
       } // finsh calculating Ixy
   }

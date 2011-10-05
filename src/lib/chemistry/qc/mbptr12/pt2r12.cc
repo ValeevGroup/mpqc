@@ -2317,7 +2317,7 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
   RefSymmSCMatrix gamma2_bb = this->rdm2(case12(other(spin),other(spin)));
   RefSymmSCMatrix gamma2_ba = this->rdm2(case12(spin,other(spin)));
 
-#if true
+#if false
   gamma1_alpha.print("gamma1: alpha");
   gamma1_beta.print("gamma1: beta");
 #endif

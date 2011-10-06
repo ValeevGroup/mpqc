@@ -2569,7 +2569,9 @@ double sc::PT2R12::energy_cabs_singles_twobody_H0()
 //  B.solve_lin(rhs_vector);
   RefSCVector X = rhs_vector.clone();
   X.assign(0.0);
-  lapack_linsolv_symmnondef(B, X, rhs_vector);
+  const double rcond = lapack_linsolv_symmnondef(B, X, rhs_vector);
+  if (rcond < 1e-8)
+    ExEnv::out0() << indent << "[1]_S wfn eqs rcond = " << std::setprecision(12) << rcond << std::endl;
 
 #if false
     B.print("H0");

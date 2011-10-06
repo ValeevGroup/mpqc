@@ -113,8 +113,8 @@ namespace sc {
 
   /** Uses LAPACK's DSPSVX to solve symmetric non-definite linear system AX = B, where B is a RefSCVector
    */
-  void lapack_linsolv_symmnondef(const RefSymmSCMatrix& A, RefSCVector& X,
-                                 const RefSCVector& B) {
+  double lapack_linsolv_symmnondef(const RefSymmSCMatrix& A, RefSCVector& X,
+                                   const RefSCVector& B) {
     int n = A.n();
     if (n != B.n())
       throw std::runtime_error(
@@ -180,13 +180,14 @@ namespace sc {
       delete[] BB;
       delete[] XX;
     }
+    return rcond;
   }
 
   /** Uses LAPACK's DSPSVX to solve symmetric non-definite linear system AX = B, where B is a RefSCMatrix.
    Dimensions of X and B must match.
    */
-  void lapack_linsolv_symmnondef(const RefSymmSCMatrix& A, RefSCMatrix& X,
-                                 const RefSCMatrix& B) {
+  double lapack_linsolv_symmnondef(const RefSymmSCMatrix& A, RefSCMatrix& X,
+                                   const RefSCMatrix& B) {
     int n = A.n();
     int nrhs = B.ncol();
     if (n != B.nrow())
@@ -258,14 +259,15 @@ namespace sc {
       delete[] BB;
       delete[] XX;
     }
+    return rcond;
   }
 
   /** Same as above, except uses C-style arrays already.
    A is in packed upper-triangular form, nA is the dimension of A,
    X and B are matrices with ncolB rows and nA columns.
    */
-  void lapack_linsolv_symmnondef(const double* AP, int nA, double* Xt,
-                                 const double* Bt, int ncolB) {
+  double lapack_linsolv_symmnondef(const double* AP, int nA, double* Xt,
+                                   const double* Bt, int ncolB) {
     const int n = nA;
     const int nrhs = ncolB;
 
@@ -305,6 +307,8 @@ namespace sc {
         throw std::runtime_error(
                                  "lapack_linsolv_symmnondef() -- one of the arguments to F77_DSPSVX is invalid");
     }
+
+    return rcond;
   }
 
   /** Computed eigenvalues of A and returns how many are below threshold. Uses LAPACK's DSYEVD.

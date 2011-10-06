@@ -102,7 +102,7 @@ namespace sc {
       void print(std::ostream&o=ExEnv::out0()) const;
       int nirrep() const { return nirrep_; }
 
-      RefSymmSCMatrix density();
+      virtual RefSymmSCMatrix density();
       /// Returns the MO basis density (blocked by symmetry)
       virtual RefSymmSCMatrix mo_density(SpinCase1 spin = AnySpinCase1) =0;
 
@@ -201,6 +201,8 @@ namespace sc {
       void compute(); // compute is overloaded because reference object needs to be marked computed
       void obsolete();
       void symmetry_changed();
+      /// reimplementation of PsiWavefunction::density()
+      RefSymmSCMatrix density();
 
       const Ref<PsiSCF>& reference() const;
       /// Number of electrons

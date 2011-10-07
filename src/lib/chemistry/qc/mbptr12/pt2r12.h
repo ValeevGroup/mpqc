@@ -179,14 +179,18 @@ namespace sc {
 
 
       /** compute CABS singles correction using Fock operator as H0 */
-      double energy_cabs_singles(SpinCase1 spin);
+      double cabs_singles_Fock_so(SpinCase1 spin);
       /// compute CABS singles correction using two-body operators in H0
-      double energy_cabs_singles_twobody_H0();
-      /// compute CABS singles correction in the most complete way
-      double spin_free_cabs_singles();
-      /** the following should reproduce energy_cabs_singles_twobody_H0();
-          for test purpose; to be removed in near future**/
-      double spin_free_cabs_singles_test();
+      double cabs_singles_Dyall_so();
+      /// compute CABS singles correction in the most complete way; in addition, a CI version is coded here too.
+      double cabs_singles_Complete_sf();
+      /** the following 2 methods are from modification of cabs_singles_Complete_sf()**/
+      double cabs_singles_Dyall_sf();
+      /** use the commutator formulation, then replace Dyall by Fock; 'c' denotes 'commutator'
+       * to distinguish from the original formulation as published.
+       * @return
+       */
+      double cabs_singles_Fock_sf_c();
 
       /// Returns Hcore in MO basis
       RefSymmSCMatrix hcore_mo();

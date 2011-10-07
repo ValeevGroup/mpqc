@@ -3043,14 +3043,12 @@ double sc::PT2R12::cabs_singles_Dyall_sf()
 
   RefSCMatrix B = RefSCMAT4_permu<Permute14>(B_bar, Aspace, Aspace, pspace, pspace);
 
-  RefSCVector bcopy = b->copy();
-//  b.print(ExEnv::out0());
-  B.solve_lin(b);
-#if DEBUGG
-  b.print(std::string("b").c_str());
-#endif
-
-  double E = -1.0 * (b.dot(bcopy));
+  RefSCVector X = b->clone();
+  X.assign(0.0);
+  RefSymmSCMatrix Bsymm = B.kit()->symmmatrix(dimiA);
+  Bsymm.assign_subblock(B, 0, ni*nA-1, 0, ni*nA-1);
+  lapack_linsolv_symmnondef(Bsymm, X, b);
+  double E = -1.0 * (X.dot(b));
   return E;
 }
 

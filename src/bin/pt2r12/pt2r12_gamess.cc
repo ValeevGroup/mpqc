@@ -302,6 +302,7 @@ int main_gamess(int argc, char **argv)
       Ref<GaussianBasisSet> aux_basis = new GaussianBasisSet(kv);
       kva->assign("aux_basis", aux_basis.pointer());
     }
+    kva->assignboolean("spinadapted", 1);
     Ref<KeyVal> kv = kva;
 
     pt2r12 = new PT2R12(kv);

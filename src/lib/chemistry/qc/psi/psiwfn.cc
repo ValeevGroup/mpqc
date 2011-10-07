@@ -362,7 +362,8 @@ namespace sc {
   }
 
   RefSymmSCMatrix PsiWavefunction::density() {
-    abort();
+    throw FeatureNotImplemented("densities not implemented for Psi-based Wavefunctions",
+                                __FILE__, __LINE__, this->class_desc());
     return 0;
   }
 
@@ -1713,6 +1714,13 @@ namespace sc {
     if (reference()->desired_value_accuracy_set_to_default())
       reference()->set_desired_value_accuracy( acc /
                                                valacc_to_refacc() );
+  }
+
+  RefSymmSCMatrix PsiCorrWavefunction::density() {
+    // read correlated density from Psi3
+    throw FeatureNotImplemented("densities not implemented for Psi-based correlated Wavefunctions",
+                                __FILE__, __LINE__, this->class_desc());
+    return 0;
   }
 
   void PsiCorrWavefunction::write_input(int convergence) {

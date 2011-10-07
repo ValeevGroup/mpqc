@@ -39,23 +39,26 @@ namespace sc {
                   RefSCMatrix& V);
 
   /** Uses LAPACK's DSPSVX to solve symmetric non-definite linear system AX = B, where
-   B is a single vector
+      B is a single vector
+      @return The estimate of the reciprocal condition number of the matrix A.
    */
-  void lapack_linsolv_symmnondef(const RefSymmSCMatrix& A, RefSCVector& X,
-                                 const RefSCVector& B);
+  double lapack_linsolv_symmnondef(const RefSymmSCMatrix& A, RefSCVector& X,
+                                   const RefSCVector& B);
 
   /** Uses LAPACK's DSPSVX to solve symmetric non-definite linear system AX = B, where
    B is a set of vectors
+      @return The estimate of the reciprocal condition number of the matrix A.
    */
-  void lapack_linsolv_symmnondef(const RefSymmSCMatrix& A, RefSCMatrix& X,
-                                 const RefSCMatrix& B);
+  double lapack_linsolv_symmnondef(const RefSymmSCMatrix& A, RefSCMatrix& X,
+                                   const RefSCMatrix& B);
 
   /** Same as above, except uses C-style arrays already.
    A is in packed upper-triangular form, nA is the dimension of A,
    X and B are matrices with ncolB rows and nA columns.
+      @return The estimate of the reciprocal condition number of the matrix A.
    */
-  void lapack_linsolv_symmnondef(const double* AP, int nA, double* Xt,
-                                 const double* Bt, int ncolB);
+  double lapack_linsolv_symmnondef(const double* AP, int nA, double* Xt,
+                                   const double* Bt, int ncolB);
 
   /** invert symmetric non-definite matrix using DSPTRF LAPACK routine
    that implements the Bunch-Kaufman diagonal pivoting method.

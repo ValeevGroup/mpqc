@@ -58,6 +58,9 @@ namespace sc {
 
           <tr><td><tt>cabs_singles</tt><td>boolean<td>true<td>if set to true, compute 2nd-order
           CABS singes correction.
+
+          <tr><td><tt>cabs_singles_h0</tt><td>string<td>dyall<td>
+
           <tr><td><tt>cabs_singles_coupling</tt><td>boolean<td>true<td>if set to true, include coupling between CABS and OBS virtuals;
               this is the preferred choice and it corresponds to the CABS singles correction without assuming EBC in single reference limit.
 

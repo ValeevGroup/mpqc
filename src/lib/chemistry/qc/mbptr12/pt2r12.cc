@@ -2581,16 +2581,6 @@ double sc::PT2R12::cabs_singles_Dyall_so()
     B.print("H0");
 #endif
 
-#if (DEBUGG)
-    RefDiagSCMatrix eigenmatrix = B.eigvals();
-    int BeigDimen = int(eigenmatrix.dim());
-    for (int i = 0; i < BeigDimen; ++i)
-    {
-      if(eigenmatrix.get_element(i) < 0) ExEnv::out0() << indent << "negative eigenvalue!" << std::endl;
-    }
-    eigenmatrix.print("(two-body H0) B eigenvalues");
-#endif
-
   double E_cabs_singles = 0.0;
   for (int i = 0; i < no; ++i)
   {
@@ -3041,8 +3031,10 @@ double sc::PT2R12::cabs_singles_Dyall_sf()
 #endif
   matrix_to_vector(b, b_bar);
 
-  RefSCMatrix B = RefSCMAT4_permu<Permute14>(B_bar, Aspace, Aspace, pspace, pspace);
-
+  RefSCMatrix B1 = RefSCMAT4_permu<Permute14>(B_bar, Aspace, Aspace, pspace, pspace);
+  RefSCMatrix B2 = B1.copy().t();
+  RefSCMatrix B = B1 + B2;
+  B.scale(0.5);
   RefSCVector X = b->clone();
   X.assign(0.0);
   RefSymmSCMatrix Bsymm = B.kit()->symmmatrix(dimiA);

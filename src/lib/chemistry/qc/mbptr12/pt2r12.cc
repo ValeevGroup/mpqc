@@ -2858,6 +2858,7 @@ double sc::PT2R12::cabs_singles_Complete_sf()
 double sc::PT2R12::cabs_singles_Dyall_sf()
 {
 # define DEBUGG false
+# define test_dyall true
 
   const SpinCase1 spin = Alpha;
   Ref<OrbitalSpace> pspace = this->r12world()->refwfn()->occ_sb();
@@ -2917,22 +2918,16 @@ double sc::PT2R12::cabs_singles_Dyall_sf()
 
   // matrices
   RefSCMatrix hcore_ii_block = r12eval_->fock(pspace, pspace, spin, 0.0, 0.0);
-  RefSCMatrix fock_AA_block_a = r12eval_->fock(Aspace, Aspace, Alpha);
-  RefSCMatrix fock_AA_block_b = r12eval_->fock(Aspace, Aspace, Beta);
-  RefSCMatrix fock_AA_block = fock_AA_block_a + fock_AA_block_b;
-  fock_AA_block.scale(0.5);
-  RefSCMatrix fock_iA_block_a = r12eval_->fock(pspace, Aspace, Alpha);
-  RefSCMatrix fock_iA_block_b = r12eval_->fock(pspace, Aspace, Beta);
-  RefSCMatrix fock_iA_block = fock_iA_block_a + fock_iA_block_b;
-  fock_iA_block.scale(0.5);
-  RefSCMatrix fock_AA = local_kit->matrix(dimA, dimA);
+  RefSCMatrix hcore_AA_block = r12eval_->fock(Aspace, Aspace, spin);
+  RefSCMatrix hcore_iA_block = r12eval_->fock(pspace, Aspace, spin);
+  RefSCMatrix hcore_AA = local_kit->matrix(dimA, dimA);
   RefSCMatrix hcore_ii = local_kit->matrix(dimi, dimi);
-  RefSCMatrix fock_iA = local_kit->matrix(dimi, dimA);
+  RefSCMatrix hcore_iA = local_kit->matrix(dimi, dimA);
   for (int aa = 0; aa < nA; ++aa) // can't use accumulate
   {
     for (int bb = 0; bb < nA; ++bb)
     {
-      fock_AA->set_element(aa,bb, fock_AA_block->get_element(aa,bb));
+      hcore_AA->set_element(aa,bb, hcore_AA_block->get_element(aa,bb));
     }
   }
   for (int ii = 0; ii < ni; ++ii)
@@ -2946,10 +2941,15 @@ double sc::PT2R12::cabs_singles_Dyall_sf()
   {
     for (int aa = 0; aa < nA; ++aa)
     {
-      fock_iA->set_element(ii,aa, fock_iA_block->get_element(ii,aa));
+      hcore_iA->set_element(ii,aa, hcore_iA_block->get_element(ii,aa));
     }
   }
-  RefSCMatrix delta_AA = fock_AA->clone();
+#if DEBUGG
+  hcore_AA.print(std::string("core AA").c_str());
+  hcore_ii.print(std::string("core ii").c_str());
+  hcore_iA.print(std::string("core iA").c_str());
+#endif
+  RefSCMatrix delta_AA = hcore_AA->clone();
   delta_AA->assign(0.0);
   for (int i = 0; i < nA; ++i)
   {
@@ -2967,9 +2967,9 @@ double sc::PT2R12::cabs_singles_Dyall_sf()
 
 
   // Compute B
-  // Term1: fock(alpha, beta)* gamma(i,j)
+  // Term1: h(alpha, beta)* gamma(i,j)
   {
-    matrix_to_vector(vec_AA, fock_AA);
+    matrix_to_vector(vec_AA, hcore_AA);
     matrix_to_vector(vec_ii, gamma1);
     B_bar->accumulate_outer_product(vec_AA, vec_ii);
   }
@@ -2998,7 +2998,7 @@ double sc::PT2R12::cabs_singles_Dyall_sf()
   //compute b_bar
   // - gamma(j,k) * h(k, beta) - gamma(jm,kl)*g(beta m, kl)
   {
-     b_bar->accumulate(gamma1* fock_iA);
+     b_bar->accumulate(gamma1* hcore_iA);
 #if DEBUGG
      gamma1.print(std::string("gamma1").c_str());
      hcore_iA.print(std::string("hcore iA").c_str());
@@ -3031,18 +3031,205 @@ double sc::PT2R12::cabs_singles_Dyall_sf()
 #endif
   matrix_to_vector(b, b_bar);
 
-  RefSCMatrix B1 = RefSCMAT4_permu<Permute14>(B_bar, Aspace, Aspace, pspace, pspace);
-  RefSCMatrix B2 = B1.copy().t();
-  RefSCMatrix B = B1 + B2;
-  B.scale(0.5);
-  RefSCVector X = b->clone();
-  X.assign(0.0);
-  RefSymmSCMatrix Bsymm = B.kit()->symmmatrix(dimiA);
-  Bsymm.assign_subblock(B, 0, ni*nA-1, 0, ni*nA-1);
-  lapack_linsolv_symmnondef(Bsymm, X, b);
-  double E = -1.0 * (X.dot(b));
+  RefSCMatrix B = RefSCMAT4_permu<Permute14>(B_bar, Aspace, Aspace, pspace, pspace);
+
+  RefSCVector bcopy = b->copy();
+//  b.print(ExEnv::out0());
+  B.solve_lin(b);
+#if DEBUGG
+  b.print(std::string("b").c_str());
+#endif
+
+  double E = -1.0 * (b.dot(bcopy));
   return E;
 }
+//{
+//# define DEBUGG false
+//
+//  const SpinCase1 spin = Alpha;
+//  Ref<OrbitalSpace> pspace = this->r12world()->refwfn()->occ_sb();
+//  Ref<OrbitalSpace> vspace = this->r12world()->refwfn()->uocc_act_sb(spin);
+//  Ref<OrbitalSpace> cabsspace = this->r12world()->cabs_space(spin);
+//
+//  Ref<OrbitalSpaceRegistry> oreg = this->r12world()->world()->tfactory()->orbital_registry();
+//  if (!oreg->value_exists(pspace))
+//    oreg->add(make_keyspace_pair(pspace));
+//  const std::string key = oreg->key(pspace);
+//  pspace = oreg->value(key);
+//
+//  Ref<OrbitalSpace> all_virtual_space;
+//  if (cabs_singles_coupling_)
+//  {
+//    all_virtual_space = new OrbitalSpaceUnion("AA", "all virtuals", *vspace, *cabsspace, true);
+//    if (!oreg->value_exists(all_virtual_space)) oreg->add(make_keyspace_pair(all_virtual_space));
+//    const std::string AAkey = oreg->key(all_virtual_space);
+//    all_virtual_space = oreg->value(AAkey);
+//
+//    { // make sure that the AO space that supports all_virtual_space is known
+//      Ref<AOSpaceRegistry> aoreg = this->r12world()->world()->tfactory()->ao_registry();
+//      if (aoreg->key_exists(all_virtual_space->basis()) == false) {
+//        Ref<Integral> localints = this->integral()->clone();
+//        Ref<OrbitalSpace> mu = new AtomicOrbitalSpace("mu''", "CABS(AO)+VBS(AO)", all_virtual_space->basis(), localints);
+//        oreg->add(make_keyspace_pair(mu));
+//        aoreg->add(mu->basis(),mu);
+//      }
+//    }
+//  }
+//
+//  Ref<OrbitalSpace> Aspace;
+//  if (cabs_singles_coupling_)
+//    Aspace = all_virtual_space;
+//  else
+//    Aspace = cabsspace;
+//
+//  // block size
+//  const unsigned int num_blocks = vspace->nblocks();
+//  const std::vector<unsigned int>& p_block_sizes = pspace->block_sizes();
+//  const std::vector<unsigned int>& v_block_sizes = vspace->block_sizes();
+//  const std::vector<unsigned int>& cabs_block_sizes = cabsspace->block_sizes();
+//  const std::vector<unsigned int>& A_block_sizes = Aspace->block_sizes();
+//
+//  Ref<LocalSCMatrixKit> local_kit = new LocalSCMatrixKit;
+//
+//  // dimension
+//  const int nA = Aspace->rank();
+//  const int ni = pspace->rank();
+//  RefSCDimension dimAA = new SCDimension(nA*nA);
+//  RefSCDimension dimii = new SCDimension(ni*ni);
+//  RefSCDimension dimiA = new SCDimension(ni*nA);
+//  RefSCDimension dimi = new SCDimension(ni);
+//  RefSCDimension dimA = new SCDimension(nA);
+//  RefSCVector vec_AA = local_kit->vector(dimAA);
+//  RefSCVector vec_ii = local_kit->vector(dimii);
+//
+//  // matrices
+//  RefSCMatrix hcore_ii_block = r12eval_->fock(pspace, pspace, spin, 0.0, 0.0);
+//  RefSCMatrix fock_AA_block_a = r12eval_->fock(Aspace, Aspace, Alpha);
+//  RefSCMatrix fock_AA_block_b = r12eval_->fock(Aspace, Aspace, Beta);
+//  RefSCMatrix fock_AA_block = fock_AA_block_a + fock_AA_block_b;
+//  fock_AA_block.scale(0.5);
+//  RefSCMatrix fock_iA_block_a = r12eval_->fock(pspace, Aspace, Alpha);
+//  RefSCMatrix fock_iA_block_b = r12eval_->fock(pspace, Aspace, Beta);
+//  RefSCMatrix fock_iA_block = fock_iA_block_a + fock_iA_block_b;
+//  fock_iA_block.scale(0.5);
+//  RefSCMatrix fock_AA = local_kit->matrix(dimA, dimA);
+//  RefSCMatrix hcore_ii = local_kit->matrix(dimi, dimi);
+//  RefSCMatrix fock_iA = local_kit->matrix(dimi, dimA);
+//  for (int aa = 0; aa < nA; ++aa) // can't use accumulate
+//  {
+//    for (int bb = 0; bb < nA; ++bb)
+//    {
+//      fock_AA->set_element(aa,bb, fock_AA_block->get_element(aa,bb));
+//    }
+//  }
+//  for (int ii = 0; ii < ni; ++ii)
+//  {
+//    for (int jj = 0; jj < ni; ++jj)
+//    {
+//      hcore_ii->set_element(ii,jj, hcore_ii_block->get_element(ii,jj));
+//    }
+//  }
+//  for (int ii = 0; ii < ni; ++ii)
+//  {
+//    for (int aa = 0; aa < nA; ++aa)
+//    {
+//      fock_iA->set_element(ii,aa, fock_iA_block->get_element(ii,aa));
+//    }
+//  }
+//  RefSCMatrix delta_AA = fock_AA->clone();
+//  delta_AA->assign(0.0);
+//  for (int i = 0; i < nA; ++i)
+//  {
+//    delta_AA->set_element(i,i, 1.0);
+//  }
+//
+//  RefSCMatrix gamma1 = rdm1_sf_2spaces(pspace, pspace);
+//  RefSCMatrix gamma2 = rdm2_sf_4spaces(pspace, pspace, pspace, pspace);
+//  RefSCMatrix B_bar = local_kit->matrix(dimAA, dimii); // intermediate mat
+////  RefSCMatrix B = local_kit->matrix(dimiA, dimiA);
+//  B_bar->assign(0.0);
+//  RefSCMatrix b_bar = local_kit->matrix(dimi, dimA);
+//  b_bar->assign(0.0);
+//  RefSCVector b = local_kit->vector(dimiA); // RHS
+//
+//
+//  // Compute B
+//  // Term1: fock(alpha, beta)* gamma(i,j)
+//  {
+//    matrix_to_vector(vec_AA, fock_AA);
+//    matrix_to_vector(vec_ii, gamma1);
+//    B_bar->accumulate_outer_product(vec_AA, vec_ii);
+//  }
+//
+//  // Term2: -delta(alpha, beta)*(g(im,kl) * gamma(jm,kl) )
+//  {
+//    RefSCMatrix gbar_imkl = g(AlphaBeta, pspace, pspace, pspace, pspace);
+//    RefSCMatrix g_i_mkl = RefSCMAT_combine234(gbar_imkl, ni, ni, ni, ni);
+//    RefSCMatrix dbar_mkl_j = RefSCMAT_combine234(gamma2, ni, ni, ni, ni).t();
+//    RefSCMatrix gd = g_i_mkl * dbar_mkl_j;
+//    gd->scale(-1.0);
+//    matrix_to_vector(vec_AA, delta_AA);
+//    matrix_to_vector(vec_ii, gd);
+//    B_bar->accumulate_outer_product(vec_AA, vec_ii);
+//  }
+//
+//  // Term3: -delta(alpha, beta)*( h(i,k) * gamma(k,j) )
+//  {
+//    RefSCMatrix hd = hcore_ii*gamma1;
+//    hd->scale(-1.0);
+//    matrix_to_vector(vec_AA, delta_AA);
+//    matrix_to_vector(vec_ii,hd);
+//    B_bar->accumulate_outer_product(vec_AA, vec_ii);
+//  }
+//
+//  //compute b_bar
+//  // - gamma(j,k) * h(k, beta) - gamma(jm,kl)*g(beta m, kl)
+//  {
+//     b_bar->accumulate(gamma1* fock_iA);
+//#if DEBUGG
+//     gamma1.print(std::string("gamma1").c_str());
+//     hcore_iA.print(std::string("hcore iA").c_str());
+//     b_bar.print(std::string("b_bar term1").c_str());
+//#endif
+//     b_bar->scale(-1.0);
+//  }
+//#if DEBUGG
+//  b_bar.print(std::string("b_bar before zero").c_str());
+//#endif
+//
+//  if (cabs_singles_coupling_) // zero Fock matrix component f^i_a
+//  {
+//    unsigned int offset1 = 0;
+//    int block_counter1, row_ind, v_ind;
+//    for (block_counter1 = 0; block_counter1 < num_blocks; ++block_counter1)
+//    {
+//      for (v_ind = 0; v_ind < v_block_sizes[block_counter1]; ++v_ind)
+//      {
+//        const unsigned int b_v_ind =  offset1 + v_ind;
+//        for (row_ind = 0; row_ind < ni; ++row_ind)
+//          b_bar.set_element(row_ind, b_v_ind, 0.0);
+//      }
+//      offset1 += A_block_sizes[block_counter1];
+//    }
+//  }
+//
+//#if DEBUGG
+//  b_bar.print(std::string("b_bar after zero").c_str());
+//#endif
+//  matrix_to_vector(b, b_bar);
+//
+//  RefSCMatrix B1 = RefSCMAT4_permu<Permute14>(B_bar, Aspace, Aspace, pspace, pspace);
+//  RefSCMatrix B2 = B1.copy().t();
+//  RefSCMatrix B = B1 + B2;
+//  B.scale(0.5);
+//  RefSCVector X = b->clone();
+//  X.assign(0.0);
+//  RefSymmSCMatrix Bsymm = B.kit()->symmmatrix(dimiA);
+//  Bsymm.assign_subblock(B, 0, ni*nA-1, 0, ni*nA-1);
+//  lapack_linsolv_symmnondef(Bsymm, X, b);
+//  double E = -1.0 * (X.dot(b));
+//  return E;
+//}
 
 
 double sc::PT2R12::cabs_singles_Fock_sf_c()

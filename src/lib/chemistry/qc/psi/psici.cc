@@ -860,8 +860,7 @@ namespace sc {
     // reset some defaults for the RASCI class
     energy_convergence_ = keyval->intvalue("energy_convergence",KeyValValueint(rasscf_energy_convergence_+2));
     convergence_ = keyval->intvalue("convergence",KeyValValueint(rasscf_convergence_+2));
-    if (keyval->exists("max_step"))
-      max_step_ = keyval->doublevalue("max_step",KeyValValuedouble(0.30));
+    max_step_ = keyval->doublevalue("max_step",KeyValValuedouble(0.30));
     if (keyval->exists("ras3") == false)
       std::fill(ras3_.begin(), ras3_.end(), 0);
 

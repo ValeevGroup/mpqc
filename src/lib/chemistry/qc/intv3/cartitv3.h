@@ -70,15 +70,21 @@ class RedundantCartesianIterV3 : public RedundantCartesianIter {
 };
 
 class RedundantCartesianSubIterV3 : public RedundantCartesianSubIter {
+
+    int bfn_;
+
   public:
     RedundantCartesianSubIterV3(int l) : RedundantCartesianSubIter(l) {}
 
-    int bfn() {
+    void start(int aa, int bb, int cc) {
+      RedundantCartesianSubIter::start(aa, bb, cc);
       int i = a();
       int j = b();
       int am = l();
-      return (((((((am)+1)<<1)-(i))*((i)+1))>>1)-(j)-1);
+      bfn_ = (((((((am)+1)<<1)-(i))*((i)+1))>>1)-(j)-1);
     }
+
+    int bfn() const { return bfn_; }
 };
 
 }

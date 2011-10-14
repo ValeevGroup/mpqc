@@ -29,11 +29,15 @@
 #define _chemistry_qc_libint2_cartitgamess_h
 
 #include <chemistry/qc/basis/cartiter.h>
+#include <cgshellinfo.h>
+#include <chemistry/qc/libint2/macros_gamess.h>
 
 namespace sc {
 
   class CartesianIterGAMESS: public CartesianIter {
-      int *avec, *bvec, *cvec;
+
+      static const int lmax = LIBINT2_CARTGAUSS_MAX_AM;
+      static ::libint2::CGShellInfo< ::libint2::CGShellOrderingData< ::libint2::CGShellOrdering_GAMESS,lmax> > ordering_data_;
 
     public:
       CartesianIterGAMESS(int l) :
@@ -41,68 +45,56 @@ namespace sc {
       }
 
       void start() {
-        assert(false); // not implemented yet
-        bfn_ = b_ = c_ = 0;
-        a_ = l_;
+        bfn_ = 0;
+        ordering_data_.cartindex_to_ijk(l_, bfn_, a_, b_, c_);
       }
 
       void next() {
-        assert(false); // not implemented yet
-        if (c_ < l_ - a_) {
-          b_--;
-          c_++;
-        } else {
-          a_--;
-          c_ = 0;
-          b_ = l_ - a_;
-        }
-        bfn_++;
+        ++bfn_;
+        if (bfn_ >= INT_NCART(l_)) // if iterated over all basis functions
+          a_ = -1; // set a_ to an invalid value
+        else
+          ordering_data_.cartindex_to_ijk(l_, bfn_, a_, b_, c_);
       }
 
       operator int() {
-        assert(false); // not implemented yet
-        return (a_ >= 0);
+        return (a_ >= 0); // check that a_ is valid
       }
   };
 
   class RedundantCartesianIterGAMESS: public RedundantCartesianIter {
+
+      static const int lmax = LIBINT2_CARTGAUSS_MAX_AM;
+      static ::libint2::CGShellInfo< ::libint2::CGShellOrderingData< ::libint2::CGShellOrdering_GAMESS,lmax> > ordering_data_;
+
     public:
       RedundantCartesianIterGAMESS(int l) :
         RedundantCartesianIter(l) {
       }
 
       int bfn() {
-        assert(false); // not implemented yet
-        int i = a();
-        int am = l();
-        if (am == i)
-          return 0;
-        else {
-          int j = b();
-          int c = am - i;
-          return ((((c + 1) * c) >> 1) + c - j);
-        }
+        return ordering_data_.cartindex(l(), a(), b());
       }
   };
 
   class RedundantCartesianSubIterGAMESS: public RedundantCartesianSubIter {
+
+      static const int lmax = LIBINT2_CARTGAUSS_MAX_AM;
+      static ::libint2::CGShellInfo< ::libint2::CGShellOrderingData< ::libint2::CGShellOrdering_GAMESS,lmax> > ordering_data_;
+
+      int bfn_;
+
     public:
       RedundantCartesianSubIterGAMESS(int l) :
         RedundantCartesianSubIter(l) {
       }
 
-      int bfn() {
-        assert(false); // not implemented yet
-        int i = a();
-        int am = l();
-        if (am == i)
-          return 0;
-        else {
-          int j = b();
-          int c = am - i;
-          return ((((c + 1) * c) >> 1) + c - j);
-        }
+      void start(int aa, int bb, int cc) {
+        RedundantCartesianSubIter::start(aa, bb, cc);
+        bfn_ = ordering_data_.cartindex(l(), a(), b());
       }
+
+      int bfn() const { return bfn_; }
   };
 
 }

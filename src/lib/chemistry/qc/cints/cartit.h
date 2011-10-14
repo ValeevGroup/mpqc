@@ -33,7 +33,6 @@
 namespace sc {
 
 class CartesianIterCints : public CartesianIter {
-  int *avec, *bvec, *cvec;
 
   public:
     CartesianIterCints(int l) : CartesianIter(l) {}

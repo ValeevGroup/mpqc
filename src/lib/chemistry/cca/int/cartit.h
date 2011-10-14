@@ -33,7 +33,6 @@
 namespace sc {
 
 class CartesianIterCCA : public CartesianIter {
-  int *avec, *bvec, *cvec;
 
   public:
     CartesianIterCCA(int l) : CartesianIter(l) {}
@@ -79,20 +78,26 @@ class RedundantCartesianIterCCA : public RedundantCartesianIter {
 };
 
 class RedundantCartesianSubIterCCA : public RedundantCartesianSubIter {
+
+    int bfn_;
+
   public:
     RedundantCartesianSubIterCCA(int l) : RedundantCartesianSubIter(l) {}
 
-    int bfn() {
+    void start(int aa, int bb, int cc) {
+      RedundantCartesianSubIter::start(aa, bb, cc);
       int i = a();
       int am = l();
       if (am == i)
-	return 0;
+        bfn_ = 0;
       else {
-	int j = b();
-	int c = am - i;
-	return ((((c+1)*c)>>1)+c-j);
+        int j = b();
+        int c = am - i;
+        bfn_ = ((((c + 1) * c) >> 1) + c - j);
       }
     }
+
+    int bfn() const { return bfn_; }
 };
 
 }

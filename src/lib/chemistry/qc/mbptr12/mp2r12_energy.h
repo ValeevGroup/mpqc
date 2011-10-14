@@ -239,6 +239,8 @@ class MP2R12Energy_SpinOrbital_new : public MP2R12Energy
 class MP2R12Energy_Diag : public MP2R12Energy
 {
     void compute_ef12();
+    /// this computes correct alpha-beta energies for open-shell cases
+    void compute_ef12_10132011();
     void activate_ints(const std::string&, const std::string&,
                        const std::string&, const std::string&,
                        const std::string&, Ref<TwoBodyFourCenterMOIntsRuntime>&,

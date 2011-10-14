@@ -718,13 +718,6 @@ RefWavefunction::init() const
     this_nonconst->init_spaces();//should pay great attention to this!
 
     // make sure that FockBuildRuntime uses same density fitting info as this reference
-    // currently, if this-> has non-null dfinfo (i.e. uses density fitting) it does not use same WavefunctionWorld as other wave functions
-    // this means that other wave functions cannot simply use its dfinfo (some spaces may have been added to their registries, etc.)
-    // TODO: Wavefunctions to properly initialize and share WavafunctionWorld. Reference wave function should be made part of the world of the
-    // wave function that uses it
-    if (this->dfinfo().nonnull()) throw FeatureNotImplemented("DF-based references cannot be currently used in correlated computations yet",
-                                                              __FILE__, __LINE__,
-                                                              this->class_desc());
     world_->fockbuild_runtime()->dfinfo(this->dfinfo());
 
     // make sure that FockBuildRuntime uses same densities as the reference wavefunction
@@ -1315,9 +1308,15 @@ SD_RefWavefunction::init_spaces_unrestricted()
 
 Ref<DensityFittingInfo>
 SD_RefWavefunction::dfinfo() const {
+#define FORCE_DENSITYFITTING_FOCKBUILD 0
+#if FORCE_DENSITYFITTING_FOCKBUILD
+  Ref<DensityFittingInfo> result = const_cast<DensityFittingInfo*>(world()->tfactory()->df_info());
+  return result;
+#else
   Ref<SCF> scf_ptr; scf_ptr << this->obwfn();
   Ref<DensityFittingInfo> result = (scf_ptr.nonnull()) ? scf_ptr->dfinfo() : 0;
   return result;
+#endif
 }
 
 namespace {

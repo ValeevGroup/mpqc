@@ -127,9 +127,9 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
     ExEnv::out0() << indent << "#n of spin1(active) = " << nalpha
         << ";  #n of spin2(active) = " << nbeta << endl;
 
-#if 0 // TODO check if safe to throw away
   // Obtain the larger number between alpha an beta electron: N
   // The dimension of all the intermediate matrixes is: NxN
+  // This is needed for the computation of coupled cluster V contribution
   if (nalpha >= nbeta)
   nocc_max = nalpha;
   else
@@ -151,7 +151,6 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
 
   if (nijij == 0)
   ExEnv::out0() << indent << "error: no electron" << endl;
-#endif
 
   //
   // Obtain CC amplitudes from Psi

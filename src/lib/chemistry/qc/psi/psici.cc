@@ -955,7 +955,6 @@ namespace sc {
       input->write_keyword("detcas:diis_start", diis_start_);
     if(max_step_ != 0.3)
       input->write_keyword("detcas:max_step", max_step_);
-    input->write_keyword("detci:maxiter",rasscf_maxiter_);
 
     if (rasscf_target_sym_ != -1)
       input->write_keyword("detci:ref_sym",rasscf_target_sym_);

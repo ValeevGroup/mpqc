@@ -70,7 +70,13 @@ class CartesianIter {
 };
 
 /** RedundantCartesianIter objects loop through all possible combinations
-    of a given number of axes.  This is used to compute the transformation
+    of a given number of axes. The difference between this class and
+    CartesianIter is that the latter considers quanta equivalent, e.g.
+    xy and yx are the same, whereas this class considers quanta unique
+    (xy != yx). Thus CartesianIter(2) loops over 6 values, whereas
+    RedundantCartesianIter(2) loops over 9, etc.
+
+    This class is used to compute the transformation
     matrices that maps a set of Cartesian functions to another set of
     Cartesian functions in a rotated coordinate system. */
 class RedundantCartesianIter {
@@ -182,12 +188,13 @@ class RedundantCartesianSubIter {
     RedundantCartesianSubIter(int l);
     virtual ~RedundantCartesianSubIter();
 
-    /// Return the current Cartesian basis function number.
-    virtual int bfn() =0;
+    /// Return the current Cartesian basis function number. Since Cartesian basis function index is constant on the iteration range of this
+    /// object, this is a const function. @sa RedundantCartesianIter for more information
+    virtual int bfn() const =0;
 
     /** Initialize the iterator.  The constraints on a, b, and c are
         given as arguments. */
-    void start(int a, int b, int c);
+    virtual void start(int a, int b, int c);
     /// Move to the next combination of axes.
     void next();
     /// Returns nonzero if the iterator currently hold valid data.

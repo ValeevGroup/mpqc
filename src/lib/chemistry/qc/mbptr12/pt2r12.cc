@@ -2247,7 +2247,9 @@ double sc::PT2R12::cabs_singles_Fock_so(SpinCase1 spin)
   // more stable solver
   RefSCVector X = rhs_vector.clone();
   X.assign(0.0);
-  lapack_linsolv_symmnondef(H0, X, rhs_vector);
+  const double rcond = lapack_linsolv_symmnondef(H0, X, rhs_vector);
+  if (rcond < 1e-8)
+    ExEnv::out0() << indent << "[1]_S wfn eqs rcond = " << std::setprecision(12) << rcond << std::endl;
 
   double E_spin = 0.0;
   for (int j = 0; j < no; ++j)
@@ -2575,7 +2577,9 @@ double sc::PT2R12::cabs_singles_Dyall_so()
 //  B.solve_lin(rhs_vector);
   RefSCVector X = rhs_vector.clone();
   X.assign(0.0);
-  lapack_linsolv_symmnondef(B, X, rhs_vector);
+  const double rcond = lapack_linsolv_symmnondef(B, X, rhs_vector);
+  if (rcond < 1e-8)
+    ExEnv::out0() << indent << "[1]_S wfn eqs rcond = " << std::setprecision(12) << rcond << std::endl;
 
 #if false
     B.print("H0");
@@ -2844,7 +2848,9 @@ double sc::PT2R12::cabs_singles_Complete_sf()
   #endif
     RefSymmSCMatrix Bsymm = B.kit()->symmmatrix(dimiA);
     Bsymm.assign_subblock(B, 0, ni*nA-1, 0, ni*nA-1);
-    lapack_linsolv_symmnondef(Bsymm, X, b);
+    const double rcond = lapack_linsolv_symmnondef(Bsymm, X, b);
+    if (rcond < 1e-8)
+      ExEnv::out0() << indent << "[1]_S wfn eqs rcond = " << std::setprecision(12) << rcond << std::endl;
 //    B.solve_lin(b);
   #if DEBUGG
     b.print(std::string("b").c_str());

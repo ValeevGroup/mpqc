@@ -508,6 +508,9 @@ void MP2R12Energy_Diag::contract_VT1(const Ref<DistArray4>& V,
 
 
 void MP2R12Energy_Diag::compute_ef12() {
+  // switch to new implementation that should work correctly for alpha-beta contributions in open-shell molecules
+  return this->compute_ef12_10132011();
+
   if (evaluated_)
     return;
 
@@ -2017,16 +2020,16 @@ void MP2R12Energy_Diag::compute_ef12() {
 #endif
 
             // B^ij_ij = B^ij_ij - P + Q
-          for(int i1=0; i1<nocc2_act; ++i1) {
-            for(int i2=0; i2<nocc1_act; ++i2) {
-              const int i1i2 = i1 * nocc1_act + i2;
-              const int i2i1 = i2 * nocc2_act + i1;
-              Bij_ij_beta[i1i2] += - Pij_ij_beta[i1i2] + Qij_ij[i2i1];
+          for(int i2=0; i2<nocc2_act; ++i2) {
+            for(int i1=0; i1<nocc1_act; ++i1) {
+              const int i2i1 = i2 * nocc1_act + i1;
+              const int i1i2 = i1 * nocc2_act + i2;
+              Bij_ij_beta[i2i1] += - Pij_ij_beta[i2i1] + Qij_ij[i1i2];
             }
           }
           if (debug_ >= DefaultPrintThresholds::mostN2
               || (debug_ == DefaultPrintThresholds::N2 && spin1 != spin2))
-            print_intermediate(spincase,"Bij_ij (beta alpha case):",Bij_ij_beta,nocc1_act,nocc2_act);
+            print_intermediate(spincase,"Bij_ij (beta alpha case):",Bij_ij_beta,nocc2_act,nocc1_act);
 
             delete[] Pij_ij_beta;
             Pij_ij_beta = NULL;
@@ -2140,16 +2143,16 @@ void MP2R12Energy_Diag::compute_ef12() {
 #endif
 
             // B^ij_ji = B^ij_ji - P^ij_ji + Q^ij_ji
-            for(int i1=0; i1<nocc2_act; ++i1) {
-              for(int i2=0; i2<nocc1_act; ++i2) {
-                const int i1i2 = i1 * nocc1_act + i2;
-                const int i2i1 = i2 * nocc2_act + i1;
-                Bij_ji_beta[i1i2] += - Pij_ji_beta[i1i2] + Qij_ji[i2i1];
+            for(int i2=0; i2<nocc2_act; ++i2) {
+              for(int i1=0; i1<nocc1_act; ++i1) {
+                const int i2i1 = i2 * nocc1_act + i1;
+                const int i1i2 = i1 * nocc2_act + i2;
+                Bij_ji_beta[i2i1] += - Pij_ji_beta[i2i1] + Qij_ji[i1i2];
               }
             }
             if (debug_ >= DefaultPrintThresholds::mostN2
                 || (debug_ == DefaultPrintThresholds::N2 && spin1 != spin2))
-              print_intermediate(spincase,"Bij_ji (beta alpha case):",Bij_ji_beta,nocc1_act,nocc2_act);
+              print_intermediate(spincase,"Bij_ji (beta alpha case):",Bij_ji_beta,nocc2_act,nocc1_act);
 
             delete[] Pij_ji_beta;
             Pij_ji_beta = NULL;
@@ -2310,6 +2313,16 @@ void MP2R12Energy_Diag::compute_ef12() {
               int ij = i1 * nocc2_act + i2;
               int ji = i2 * nocc1_act + i1;
 
+              if (debug_ >= DefaultPrintThresholds::mostN2) {
+                ExEnv::out0() << indent << "Hij_pair_energy: ij = " << i1 << "," << i2 << " e(VT) = "
+                    << (2.0 * ( 0.5*(C_0+C_1) * Vij_ij[ij] + 0.5*(C_0-C_1) * Vij_ji[ij]))
+                    << endl;
+                ExEnv::out0() << indent << "Hij_pair_energy: ij = " << i1 << "," << i2 << " e(TBT) = "
+                    << (pow(0.5*(C_0+C_1), 2) * ((Bij_ij[ij] +Bij_ij_beta[ji])*0.5 - (evals_i1(i1) + evals_i2(i2)) * Xij_ij[ij])
+                        + 0.25*(C_0*C_0 - C_1*C_1)*((Bij_ji[ij] +Bij_ji_beta[ji]) - (evals_i1(i1) + evals_i2(i2)) * (Xij_ji[ij] +Xji_ij[ij]))
+                        + pow(0.5*(C_0-C_1), 2) * ((Bij_ij[ij] +Bij_ij_beta[ji])*0.5 - (evals_i1(i1) + evals_i2(i2)) * Xji_ji[ij]))
+                        << endl;
+              }
               Hij_pair_energy =   2.0 * ( 0.5*(C_0+C_1) * Vij_ij[ij] + 0.5*(C_0-C_1) * Vij_ji[ij])
                                 + pow(0.5*(C_0+C_1), 2) * ((Bij_ij[ij] +Bij_ij_beta[ji])*0.5 - (evals_i1(i1) + evals_i2(i2)) * Xij_ij[ij])
                                 + 0.25*(C_0*C_0 - C_1*C_1)*((Bij_ji[ij] +Bij_ji_beta[ji]) - (evals_i1(i1) + evals_i2(i2)) * (Xij_ji[ij] +Xji_ij[ij]))
@@ -2317,6 +2330,12 @@ void MP2R12Energy_Diag::compute_ef12() {
 
               if (this->r12eval()->coupling() == true
                   || this->r12eval()->ebc() == false) {
+                if (debug_ >= DefaultPrintThresholds::mostN2) {
+                  ExEnv::out0() << indent << "Hij_pair_energy: ij = " << i1 << "," << i2 << " e(coupling) = "
+                      << (2.0 * ( 0.5*(C_0+C_1) * Vij_ij_coupling[ij]
+                                + 0.5*(C_0-C_1) * Vij_ji_coupling[ij]))
+                      << endl;
+                }
                 Hij_pair_energy += 2.0 * ( 0.5*(C_0+C_1) * Vij_ij_coupling[ij]
                                          + 0.5*(C_0-C_1) * Vij_ji_coupling[ij]);
               }

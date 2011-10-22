@@ -2315,6 +2315,10 @@ double sc::PT2R12::cabs_singles_Dyall_so()
   RefSCMatrix F_pA_beta   = r12eval_->fock(pspace,Aspace,other(spin));
   RefSCMatrix F_AA_alpha  = r12eval_->fock(Aspace,Aspace,spin);
   RefSCMatrix F_AA_beta   = r12eval_->fock(Aspace,Aspace,other(spin));
+  //debug
+  F_AA_alpha.scale(0.0);
+  F_AA_beta.scale(0.0);
+
   RefSCMatrix F_pp_alpha  = this->f(spin);
   RefSCMatrix F_pp_beta   = this->f(other(spin));
 
@@ -2927,6 +2931,8 @@ double sc::PT2R12::cabs_singles_Dyall_sf()
   RefSCMatrix fock_AA_block_b = r12eval_->fock(Aspace, Aspace, Beta);
   RefSCMatrix fock_AA_block = fock_AA_block_a + fock_AA_block_b;
   fock_AA_block.scale(0.5);
+  // debugging
+  fock_AA_block.scale(0.0);
   RefSCMatrix fock_iA_block_a = r12eval_->fock(pspace, Aspace, Alpha);
   RefSCMatrix fock_iA_block_b = r12eval_->fock(pspace, Aspace, Beta);
   RefSCMatrix fock_iA_block = fock_iA_block_a + fock_iA_block_b;
@@ -2962,7 +2968,7 @@ double sc::PT2R12::cabs_singles_Dyall_sf()
     delta_AA->set_element(i,i, 1.0);
   }
 
-  RefSCMatrix gamma1 = rdm1_sf_2spaces(pspace, pspace);
+  RefSCMatrix Gamma1 = rdm1_sf_2spaces(pspace, pspace);
   RefSCMatrix gamma2 = rdm2_sf_4spaces(pspace, pspace, pspace, pspace);
   RefSCMatrix B_bar = local_kit->matrix(dimAA, dimii); // intermediate mat
 //  RefSCMatrix B = local_kit->matrix(dimiA, dimiA);
@@ -2976,7 +2982,7 @@ double sc::PT2R12::cabs_singles_Dyall_sf()
   // Term1: fock(alpha, beta)* gamma(i,j)
   {
     matrix_to_vector(vec_AA, fock_AA);
-    matrix_to_vector(vec_ii, gamma1);
+    matrix_to_vector(vec_ii, Gamma1);
     B_bar->accumulate_outer_product(vec_AA, vec_ii);
   }
 
@@ -2994,7 +3000,7 @@ double sc::PT2R12::cabs_singles_Dyall_sf()
 
   // Term3: -delta(alpha, beta)*( h(i,k) * gamma(k,j) )
   {
-    RefSCMatrix hd = hcore_ii*gamma1;
+    RefSCMatrix hd = hcore_ii*Gamma1;
     hd->scale(-1.0);
     matrix_to_vector(vec_AA, delta_AA);
     matrix_to_vector(vec_ii,hd);
@@ -3002,9 +3008,9 @@ double sc::PT2R12::cabs_singles_Dyall_sf()
   }
 
   //compute b_bar
-  // - gamma(j,k) * h(k, beta) - gamma(jm,kl)*g(beta m, kl)
+  // - \Gamma^j_k F^k_beta
   {
-     b_bar->accumulate(gamma1* fock_iA);
+     b_bar->accumulate(Gamma1* fock_iA);
 #if DEBUGG
      gamma1.print(std::string("gamma1").c_str());
      hcore_iA.print(std::string("hcore iA").c_str());

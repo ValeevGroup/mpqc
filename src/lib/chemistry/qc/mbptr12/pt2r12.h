@@ -114,7 +114,11 @@ namespace sc {
       std::vector<double> V_; // store the values for different spins
 
 
-      std::string cabs_singles_h0_; // specify zeroth order H; options: 'fock', 'dyall', 'complete'
+      std::string cabs_singles_h0_; // specify zeroth order H; options: 'fock',
+                                    // 'dyall_sf', 'dyall_so' 'complete'; now for 'dyall_sf', we
+                                    // have 2 options: 'dyall_sf_1' and 'dyall_sf_2', '1' and '2'
+                                    // representing whether use 1-body Fock or including 2-b op
+                                    // in H(1).
 
 
       /// 1-RDM as provided by the rdm1_ object

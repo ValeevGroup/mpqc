@@ -369,7 +369,7 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
   pt2_correction_ = keyval->booleanvalue("pt2_correction", KeyValValueboolean(true));
   omit_uocc_ = keyval->booleanvalue("omit_uocc", KeyValValueboolean(false));
   cabs_singles_ = keyval->booleanvalue("cabs_singles", KeyValValueboolean(false));
-  cabs_singles_h0_ = keyval->stringvalue("cabs_singles_h0", KeyValValuestring(std::string("dyall_so")));
+  cabs_singles_h0_ = keyval->stringvalue("cabs_singles_h0", KeyValValuestring(std::string("dyall_sf_1")));
   cabs_singles_coupling_ = keyval->booleanvalue("cabs_singles_coupling", KeyValValueboolean(true));
   rotate_core_ = keyval->booleanvalue("rotate_core", KeyValValueboolean(true));
   bool correlate_rasscf = keyval->booleanvalue("force_correlate_rasscf",KeyValValueboolean(false));
@@ -1964,7 +1964,7 @@ void sc::PT2R12::compute()
       ExEnv::out0() << indent << scprintf("CABS singles(CI):                      %17.12lf",
                                       cabs_singles_e) << endl;
     }
-    else if(cabs_singles_h0_ == std::string("dyall_sf"))
+    else if(cabs_singles_h0_ == std::string("dyall_sf_1") or cabs_singles_h0_ == std::string("dyall_sf_2"))
     {
       cabs_singles_e = cabs_singles_Dyall_sf();
       ExEnv::out0() << indent << scprintf("CABS singles(Dyall_sf):                %17.12lf",
@@ -2315,9 +2315,6 @@ double sc::PT2R12::cabs_singles_Dyall_so()
   RefSCMatrix F_pA_beta   = r12eval_->fock(pspace,Aspace,other(spin));
   RefSCMatrix F_AA_alpha  = r12eval_->fock(Aspace,Aspace,spin);
   RefSCMatrix F_AA_beta   = r12eval_->fock(Aspace,Aspace,other(spin));
-  //debug
-  F_AA_alpha.scale(0.0);
-  F_AA_beta.scale(0.0);
 
   RefSCMatrix F_pp_alpha  = this->f(spin);
   RefSCMatrix F_pp_beta   = this->f(other(spin));
@@ -2931,15 +2928,15 @@ double sc::PT2R12::cabs_singles_Dyall_sf()
   RefSCMatrix fock_AA_block_b = r12eval_->fock(Aspace, Aspace, Beta);
   RefSCMatrix fock_AA_block = fock_AA_block_a + fock_AA_block_b;
   fock_AA_block.scale(0.5);
-  // debugging
-  fock_AA_block.scale(0.0);
   RefSCMatrix fock_iA_block_a = r12eval_->fock(pspace, Aspace, Alpha);
   RefSCMatrix fock_iA_block_b = r12eval_->fock(pspace, Aspace, Beta);
   RefSCMatrix fock_iA_block = fock_iA_block_a + fock_iA_block_b;
   fock_iA_block.scale(0.5);
+  RefSCMatrix hcore_iA_block = r12eval_->fock(pspace, Aspace, spin, 0.0, 0.0);
   RefSCMatrix fock_AA = local_kit->matrix(dimA, dimA);
   RefSCMatrix hcore_ii = local_kit->matrix(dimi, dimi);
   RefSCMatrix fock_iA = local_kit->matrix(dimi, dimA);
+  RefSCMatrix hcore_iA = local_kit->matrix(dimi, dimA);
   for (int aa = 0; aa < nA; ++aa) // can't use accumulate
   {
     for (int bb = 0; bb < nA; ++bb)
@@ -2959,6 +2956,13 @@ double sc::PT2R12::cabs_singles_Dyall_sf()
     for (int aa = 0; aa < nA; ++aa)
     {
       fock_iA->set_element(ii,aa, fock_iA_block->get_element(ii,aa));
+    }
+  }
+  for (int ii = 0; ii < ni; ++ii)
+  {
+    for (int aa = 0; aa < nA; ++aa)
+    {
+      hcore_iA->set_element(ii,aa, hcore_iA_block->get_element(ii,aa));
     }
   }
   RefSCMatrix delta_AA = fock_AA->clone();
@@ -3009,6 +3013,7 @@ double sc::PT2R12::cabs_singles_Dyall_sf()
 
   //compute b_bar
   // - \Gamma^j_k F^k_beta
+  if(cabs_singles_h0_ == std::string("dyall_sf_1"))
   {
      b_bar->accumulate(Gamma1* fock_iA);
 #if DEBUGG
@@ -3017,6 +3022,15 @@ double sc::PT2R12::cabs_singles_Dyall_sf()
      b_bar.print(std::string("b_bar term1").c_str());
 #endif
      b_bar->scale(-1.0);
+  }
+  if(cabs_singles_h0_ == std::string("dyall_sf_2"))
+  {
+    b_bar->accumulate(Gamma1* hcore_iA);
+    RefSCMatrix dd = RefSCMAT_combine234(gamma2, ni, ni, ni, ni);
+    RefSCMatrix gg1 = g(AlphaBeta, Aspace, pspace, pspace, pspace);
+    RefSCMatrix gg2 = RefSCMAT_combine234(gg1, nA, ni, ni, ni).t();
+    b_bar->accumulate(dd*gg2);
+    b_bar->scale(-1.0);
   }
 #if DEBUGG
   b_bar.print(std::string("b_bar before zero").c_str());
@@ -3050,7 +3064,7 @@ double sc::PT2R12::cabs_singles_Dyall_sf()
   RefSCVector X = b->clone();
   X.assign(0.0);
   RefSymmSCMatrix Bsymm = B.kit()->symmmatrix(dimiA);
-  Bsymm.assign_subblock(B, 0, ni*nA-1, 0, ni*nA-1);
+  Bsymm.assign_subblock(B, 0, ni*nA-1, 0, ni*nA-1); // the dimension is correct
   lapack_linsolv_symmnondef(Bsymm, X, b);
   double E = -1.0 * (X.dot(b));
   return E;

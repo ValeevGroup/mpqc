@@ -210,6 +210,70 @@ RDMCumulant<Two>::scmat(SpinCase2 spin) const {
   return scmat_[spin];
 }
 
+//////////////////////
+
+template<>
+size_t
+SpinFreeRDM<One>::ndim() const {
+  return this->orbs()->rank();
+}
+
+template<>
+Ref< SpinFreeRDM<Zero> >
+SpinFreeRDM<One>::rdm_m_1() const {
+  throw ProgrammingError("SpinFreeRDM<One>::rdm_m_1() called",
+                         __FILE__, __LINE__);
+}
+
+template<>
+RefSymmSCMatrix
+SpinFreeRDM<One>::scmat() const {
+  if (scmat_.nonnull()) return scmat_;
+
+  // need to transform density from AO basis to orbs basis
+  // P' = C^t S P S C
+  Ref<OrbitalSpace> orbs = this->orbs();
+  RefSCMatrix C = orbs->coefs();
+  RefSymmSCMatrix P_ao = wfn()->alpha_ao_density() + wfn()->beta_ao_density();
+
+  Ref<PetiteList> plist = wfn()->integral()->petite_list();
+  RefSymmSCMatrix S_so = compute_onebody_matrix<&Integral::overlap>(plist);
+  RefSymmSCMatrix S_ao = plist->to_AO_basis(S_so);
+  S_so = 0;
+  RefSymmSCMatrix SPS_ao = P_ao.kit()->symmmatrix(S_ao.dim()); SPS_ao.assign(0.0);
+  SPS_ao.accumulate_transform(S_ao, P_ao);
+
+  scmat_ = C.kit()->symmmatrix(C.coldim());
+  scmat_.assign(0.0);
+  scmat_.accumulate_transform(C, SPS_ao, SCMatrix::TransposeTransform);
+
+  return scmat_;
+}
+
+////////////////////////
+
+template<>
+size_t
+SpinFreeRDM<Two>::ndim() const {
+  const int n = this->orbs()->rank();
+  return n * n;
+}
+
+template<>
+RefSymmSCMatrix
+SpinFreeRDM<Two>::scmat() const {
+  throw ProgrammingError("SpinFreeRDM<Two>::scmat is called",
+                         __FILE__,
+                         __LINE__);
+}
+
+template<>
+Ref< SpinFreeRDM<One> >
+SpinFreeRDM<Two>::rdm_m_1() const {
+  throw ProgrammingError("SpinFreeRDM<Two>::rdm_m_1 is called",
+                         __FILE__,
+                         __LINE__);
+}
 
 } // end of namespace sc
 

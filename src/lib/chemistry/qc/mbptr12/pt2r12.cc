@@ -3023,7 +3023,7 @@ double sc::PT2R12::cabs_singles_Dyall_sf()
 #endif
      b_bar->scale(-1.0);
   }
-  if(cabs_singles_h0_ == std::string("dyall_sf_2"))
+  else if(cabs_singles_h0_ == std::string("dyall_sf_2"))
   {
     b_bar->accumulate(Gamma1* hcore_iA);
     RefSCMatrix dd = RefSCMAT_combine234(gamma2, ni, ni, ni, ni);

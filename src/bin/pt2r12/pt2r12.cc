@@ -3,6 +3,7 @@
 #include <exception>
 
 // Force linkages:
+#include <scdirlist.h>
 #include <util/group/linkage.h>
 #include <chemistry/qc/basis/linkage.h>
 #ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_PSI
@@ -28,12 +29,14 @@ using std::cout;
 using std::endl;
 
 extern int main_gamess(int argc, char *argv[]);
+extern int main_molcas(int argc, char *argv[]);
 
 int
 main(int argc, char *argv[])
 {
   try {
-    main_gamess(argc, argv);
+    //main_gamess(argc, argv);
+    main_molcas(argc, argv);
   }
   catch (std::bad_alloc &e) {
       cout << argv[0] << ": ERROR: MEMORY ALLOCATION FAILED:" << endl

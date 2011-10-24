@@ -41,85 +41,122 @@
 namespace sc {
 
   /// Reads MO information from a text file
-  class ExternReadMOInfo {
+  /// Note that the MO ordering in the external file may not be the same as in MPQC
+  /// For example, irreducible representations may be ordered differently in different programs
+  /// Thus MOs will be reordered to be consistent with MPQC rules, and a map from the native
+  /// to MPQC representation will be provided so that other files produced by the external program
+  /// can be interpreted
+  class ExternMOInfo {
     public:
-      ExternReadMOInfo(const std::string& filename);
-      ~ExternReadMOInfo() {}
-      Ref<GaussianBasisSet> basis() const;
-      RefSCMatrix coefs() const;
-      unsigned int nfzc() const;
-      unsigned int nfzv() const;
-      unsigned int nocc() const;
-      std::vector<unsigned int> orbsym() const;
+      ExternMOInfo(const std::string& filename,
+                   const Ref<Integral>& integral);
+      ~ExternMOInfo() {}
+
+      /** this map converts the MO indices assumed by the contents of the data file
+          to the MO indices in the order provided by this object */
+      const std::vector<unsigned int>& indexmap() const;
+      /** same as @c indexmap(), except for occupied (fzc+incact+act) orbitals only
+          (maps to the full MO range) */
+      const std::vector<unsigned int>& occindexmap() const;
+
+      typedef OrderedOrbitalSpace<SymmetryMOOrder> OrdOrbitalSpace;
+      const Ref<OrdOrbitalSpace>& orbs() const { return orbs_; }
+//      Ref<GaussianBasisSet> basis() const;
+//      RefSCMatrix coefs() const;
+//      unsigned int nfzc() const;
+//      unsigned int nfzv() const;
+//      unsigned int nocc() const;
+//      std::vector<unsigned int> orbsym() const;
+//      const std::vector<unsigned int>& mopi() const;
+      const std::vector<unsigned int>& fzcpi() const;
+      const std::vector<unsigned int>& fzvpi() const;
+      const std::vector<unsigned int>& inactpi() const;
+      const std::vector<unsigned int>& actpi() const;
 
     private:
-      Ref<GaussianBasisSet> basis_;
-      RefSCMatrix coefs_;
-      std::vector<unsigned int> orbsym_;
-      unsigned int nocc_;
-      unsigned int nfzc_;
-      unsigned int nfzv_;
+      std::vector<unsigned int> indexmap_; //< file order -> mpqc order
+      std::vector<unsigned int> occindexmap_;
+
+      Ref<OrdOrbitalSpace> orbs_;
+//      std::vector<unsigned int> orbsym_;
+      std::vector<unsigned int> mopi_;
+      std::vector<unsigned int> fzcpi_;
+      std::vector<unsigned int> fzvpi_;
+      std::vector<unsigned int> inactpi_;
+      std::vector<unsigned int> actpi_;
+//      unsigned int nocc_;
+//      unsigned int nfzc_;
+//      unsigned int nfzv_;
+//      std::string pointgroup_symbol_;
   };
 
   /// Reads 1-RDM from a text file
-  class ExternReadRDMOne : public RDM<One>{
+  class ExternSpinFreeRDMOne : public SpinFreeRDM<One>{
     public:
       /// reads 1-rdm from filename
       /// assumes that 1-rdm is expressed in orbs
-      ExternReadRDMOne(const std::string& filename,
-                       const Ref<OrbitalSpace>& orbs);
+
+      /**
+       * reads 1-rdm from filename, assumes that 1-rdm is expressed in orbs,
+       * indices in file are mapped to orbs via indexmap
+       *
+       * @param filename file that contains an ASCII text specification of 1-RDM.
+       *                 the file contains 3 columns: row index, column index, value.
+       * @param indexmap maps the indices assumed in the file to orbs
+       * @param orbs
+       */
+      ExternSpinFreeRDMOne(const std::string& filename,
+                           const std::vector<unsigned int>& indexmap,
+                           const Ref<OrbitalSpace>& orbs);
       /// receives 1-rdm as a constructor argument
       /// assumes that 1-rdm is expressed in orbs
-      ExternReadRDMOne(const RefSymmSCMatrix& rdm,
-                       const Ref<OrbitalSpace>& orbs);
-      virtual ~ExternReadRDMOne();
+      ExternSpinFreeRDMOne(const RefSymmSCMatrix& rdm,
+                           const Ref<OrbitalSpace>& orbs);
+      virtual ~ExternSpinFreeRDMOne();
 
       /// cannot be obsoleted
       void obsolete() {}
       /// already computed
       void compute() {}
-      /// the orbital space of spincase s in which the density is reported
-      Ref<OrbitalSpace> orbs(SpinCase1 s) const { return orbs_; }
+      /// the orbital space in which the density is reported
+      Ref<OrbitalSpace> orbs() const { return orbs_; }
       /// density matrix
-      RefSymmSCMatrix scmat(SpinCase1 spin) const { return rdm_; }
+      RefSymmSCMatrix scmat() const { return rdm_; }
 
     private:
       static ClassDesc class_desc_;
 
     private:
       Ref<OrbitalSpace> orbs_;
-      // spin-independent
       RefSymmSCMatrix rdm_;
   };
 
   /// Reads 2-RDM from a text file
-  class ExternReadRDMTwo : public RDM<Two>{
+  class ExternSpinFreeRDMTwo : public SpinFreeRDM<Two>{
     public:
-      typedef RDMCumulant<Two> cumulant_type;
-
       /// reads 2-rdm from filename
       /// assumes that 2-rdm is expressed in orbs
-      ExternReadRDMTwo(const std::string& filename,
-                       const Ref<OrbitalSpace>& orbs);
-      virtual ~ExternReadRDMTwo();
+      /// indexmap maps the indices assumed in the file to orbs
+      ExternSpinFreeRDMTwo(const std::string& filename,
+                           const std::vector<unsigned int>& indexmap,
+                           const Ref<OrbitalSpace>& orbs);
+      virtual ~ExternSpinFreeRDMTwo();
 
       /// cannot be obsoleted
       void obsolete() {}
       /// already computed
       void compute() {}
       /// the orbital space of spincase s in which the density is reported
-      Ref<OrbitalSpace> orbs(SpinCase1 s) const { return orbs_; }
+      Ref<OrbitalSpace> orbs() const { return orbs_; }
       /// density matrix
-      RefSymmSCMatrix scmat(SpinCase2 spin) const { return rdm_; }
-      Ref<cumulant_type> cumulant() const;
-      Ref< RDM<One> > rdm_m_1() const;
+      RefSymmSCMatrix scmat() const { return rdm_; }
+      Ref< SpinFreeRDM<One> > rdm_m_1() const;
 
     private:
       static ClassDesc class_desc_;
 
     private:
       Ref<OrbitalSpace> orbs_;
-      // spin-independent
       RefSymmSCMatrix rdm_;
       std::string filename_; // filename from which this was constructed -- may be useful to find rdm1 file
   };

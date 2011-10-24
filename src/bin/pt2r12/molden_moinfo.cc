@@ -32,7 +32,6 @@
 #include <molden_moinfo.h>
 #include <iostream>
 #include <map>
-#include <ctype>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/basis/split.h>
 

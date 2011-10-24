@@ -31,14 +31,91 @@
 
 #include <moinfo.h>
 #include <iostream>
+#include <numeric>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/basis/split.h>
 
 using namespace sc;
 
-ExternReadMOInfo::ExternReadMOInfo(const std::string & filename)
+namespace {
+  /// pop off str from beginning up to first apperance of separator sep
+  /// the string plus ALL following instances of sep are erased from str
+  std::string pop_till_sep(std::string& str, char sep) {
+    while (!str.empty() && *(str.begin()) == sep) {
+      str.erase(str.begin());
+    }
+    const size_t next_sep_pos = str.find_first_of(sep);
+    std::string result;
+    if (next_sep_pos != std::string::npos) {
+      result = str.substr(0, next_sep_pos);
+      str.erase(0, next_sep_pos + 1);
+    } else {
+      result = str;
+      str.clear();
+    }
+    while (!str.empty() && *(str.begin()) == sep) {
+      str.erase(str.begin());
+    }
+    return result;
+  }
+
+  /// converts str's characters to lowercase
+  void tolower(std::string& str) {
+    for(std::string::iterator i=str.begin();
+        i!=str.end(); ++i)
+      *i = std::tolower(*i);
+  }
+
+  /// splits str into a set of tokens, separated by one or more consecutive separator characters sep
+  std::vector<std::string> split(std::string str,
+                                 char sep) {
+    std::vector<std::string> result;
+    while (str.empty() == false) {
+      std::string token = pop_till_sep(str, ' ');
+      result.push_back(token);
+    }
+    return result;
+  }
+
+  /// parses str as a set of T
+  template <typename T>
+  std::vector<T> parse(std::string str) {
+    std::istringstream iss(str);
+    std::vector<T> result;
+    while(!iss.eof()) {
+      T t; iss >> t; result.push_back(t);
+    }
+    return result;
+  }
+
+  /// maps indices
+  template <typename T, typename Index>
+  std::vector<T> remap(const std::vector<T>& orig,
+                              const std::vector<Index>& indexmap) {
+    std::vector<T> result(orig.size());
+    for(size_t i=0; i<orig.size(); ++i)
+      result[indexmap[i]] = orig[i];
+    return result;
+  }
+
+  /// read a line into std::string
+  std::string readline(std::istream& in) {
+    const size_t nline = 256;
+    char linebuf[nline];
+    in.getline(linebuf, nline);
+    return linebuf;
+  }
+  /// skip EOL
+  void skipeol(std::istream& in) {
+    readline(in);
+  }
+}
+
+ExternMOInfo::ExternMOInfo(const std::string & filename,
+                           const Ref<Integral>& integral)
 {
   std::ifstream in(filename.c_str());
+  std::string strjunk;
 
   //////
   // parse molecular geometry
@@ -49,9 +126,9 @@ ExternReadMOInfo::ExternReadMOInfo(const std::string & filename)
     double charge, x, y, z;
     in >> charge >> x >> y >> z;
     if (charge != -1.0) {
-      x /= 0.529177249;
-      y /= 0.529177249;
-      z /= 0.529177249;
+      //x /= 0.529177249;
+      //y /= 0.529177249;
+      //z /= 0.529177249;
       molecule->add_atom(charge, x, y, z);
     }
     else {
@@ -62,12 +139,49 @@ ExternReadMOInfo::ExternReadMOInfo(const std::string & filename)
       in.getline(linebuf, nline);
     }
   }
-  //molecule->set_point_group(new PointGroup("d2h"));
+
+  //////
+  // parse the point group info
+  //////
+  // read the Schoenflies symbol
+  std::string pointgroup_symbol; in >> pointgroup_symbol;
+  Ref<PointGroup> pg = new PointGroup(pointgroup_symbol.c_str());
+  molecule->set_point_group(pg);
   molecule->print();
+  // first map MPQC irrep label to irrep index
+  const unsigned int nirrep = pg->order();
+  std::map<std::string, unsigned int> irreplabel_to_index;
+  for(unsigned int g=0; g<nirrep; ++g) {
+    std::string glabel = pg->char_table().gamma(g).symbol();
+    tolower(glabel);
+    irreplabel_to_index[glabel] = g;
+    std::cout << "irrep " << g << " " << glabel << std::endl;
+  }
+  // now get irrep labels and determine mapping from extern irrep index to mpqc irrep index
+  std::vector<unsigned int> extern_to_mpqc_irrep_map;
+  skipeol(in);
+  std::string irrep_labels = readline(in);
+  std::cout << "irrep_labels = " << irrep_labels << std::endl;
+  if (irrep_labels != "-1") { // unless -1 follows the point group symbol, the irrep labels are given next
+                              // map them to the MPQC labels
+    while (irrep_labels.empty() == false) {
+      std::string irreplabel = pop_till_sep(irrep_labels, ' ');
+      tolower(irreplabel);
+      extern_to_mpqc_irrep_map.push_back(irreplabel_to_index[irreplabel]);
+      std::cout << "irreplabel = " << irreplabel << " (first char = '" << irreplabel[0] << "') irrep_labels = " << irrep_labels << std::endl;
+    }
+    assert(extern_to_mpqc_irrep_map.size() == nirrep);
+    in >> strjunk;
+    std::cout << strjunk << std::endl;
+  } else { // irrep labels are not given? assume everything same as in MPQC
+    for(int g=0; g<pg->order(); ++g)
+      extern_to_mpqc_irrep_map.push_back(g);
+  }
 
   //////
   // parse basis set
   //////
+  Ref<GaussianBasisSet> basis;
   {
     Ref<AssignedKeyVal> tmpkv = new AssignedKeyVal;
     // add molecule
@@ -131,7 +245,8 @@ ExternReadMOInfo::ExternReadMOInfo(const std::string & filename)
         if (have_more_shells) {
 
           int current_atom_index;
-          iss >> current_atom_index >> am;
+          iss >> current_atom_index >> am >> puream;
+          tolower(am);
           --current_atom_index;
           if (current_shell_index_on_atom.find(current_atom_index)
               == current_shell_index_on_atom.end())
@@ -143,11 +258,11 @@ ExternReadMOInfo::ExternReadMOInfo(const std::string & filename)
               << ":custom" << current_atom_index << ":" << current_shell_index;
           shell_prefix = oss.str();
 
-          if (am == "SP") {
-            have_gencon = true;
-          } else if (am[0] != 'S' && am[0] != 'P') {
-            iss >> puream;
-          }
+//          if (am == "SP") {
+//            have_gencon = true;
+//          } else if (am[0] != 'S' && am[0] != 'P') {
+//            iss >> puream;
+//          }
 
           tmpkv->assign((shell_prefix + ":type:0:am").c_str(),
                         std::string(1, am[0]));
@@ -199,49 +314,56 @@ ExternReadMOInfo::ExternReadMOInfo(const std::string & filename)
 
     } while (have_more_shells); // loop over shells on this atom
     Ref<KeyVal> kv = tmpkv;
-    Ref<GaussianBasisSet> basis = new GaussianBasisSet(kv);
-
-#if 0
-    tmpkv = new AssignedKeyVal;
-    tmpkv->assign("name", "6-31G*");
-    tmpkv->assign("puream", "true");
-    tmpkv->assign("molecule", molecule.pointer());
-    kv = tmpkv;
     basis = new GaussianBasisSet(kv);
-#endif
 
     if (have_gencon) { // if have general contractions like SP shells in Pople-style basis sets split them so that IntegralLibint2 can handle them
       Ref<GaussianBasisSet> split_basis = new SplitBasisSet(basis);
       basis = split_basis;
     }
-
-    basis_ = basis;
   }
-  basis_->print();
+  basis->print();
 
+#if 0
   unsigned int nmo;  in >> nmo;
   unsigned int nao;  in >> nao;
   unsigned int ncore; in >> ncore;
-  in >> nfzc_;
+  nfzc_ = ncore;
+  in >> nfzv_;
   unsigned int nact; in >> nact;
   nocc_ = nact + ncore;
-  // for now assume no frozen virtuals
-  nfzv_ = 0;
+#endif
 
+  ////////////////////////////////////////////////
+  // read the number of MOs and the coefficients
+  ////////////////////////////////////////////////
+  unsigned int nmo;
+  in >> nmo;
+
+#if 0
   orbsym_.resize(nmo);
-  for(int o=0; o<nmo; ++o) {
-    unsigned int irrep; in >> irrep;
-    --irrep;
-    orbsym_[o] = irrep;
+  { // compute orbital symmetries from irrep labels
+    for(int o=0; o<nmo; ++o) {
+  //    unsigned int irrep; in >> irrep;
+  //    --irrep;
+      std::string irreplabel;
+      in >> irreplabel;
+      // convert irrep_label to irrep index
+      orbsym_[o] = irreplabel_to_index[irreplabel];
+      std::cout << "mo " << o << " " << irreplabel << " " << orbsym_[o] << std::endl;
+    }
   }
-  unsigned int junk; in >> junk;
+#endif
 
-  RefSCDimension aodim = new SCDimension(nao, 1);
-  aodim->blocks()->set_subdim(0, new SCDimension(nao));
+  // use properly blocked AO dimension
+  Ref<Integral> localints = integral->clone();
+  localints->set_basis(basis);
+  RefSCDimension aodim = localints->petite_list()->AO_basisdim();
+
+  // make a dummy MO dimension for now -- it will be recreated by OrderedOrbitalSpace
   RefSCDimension modim = new SCDimension(nmo, 1);
   modim->blocks()->set_subdim(0, new SCDimension(nmo));
-  coefs_ = basis_->so_matrixkit()->matrix(aodim, modim);
-  coefs_.assign(0.0);
+  RefSCMatrix coefs_extern = basis->so_matrixkit()->matrix(aodim, modim);
+  coefs_extern.assign(0.0);
   bool have_coefs = true;
   while(have_coefs) {
     int row, col;
@@ -249,66 +371,194 @@ ExternReadMOInfo::ExternReadMOInfo(const std::string & filename)
     in >> row >> col >> value;
     if (row != -1) {
       --row;  --col;
-      coefs_.set_element(col,row,value);
+      coefs_extern.set_element(row,col,value);
     }
     else
       have_coefs = false;
   }
 
-  coefs_.print("ExternReadMOInfo:: MO coefficients");
+  ////////////////////////////////////////////
+  // read the orbital info
+  ////////////////////////////////////////////
+  skipeol(in);
+  std::string token = readline(in);
+  std::vector<unsigned int> mopi = parse<unsigned int>(token);  assert(mopi.size() == pg->order());
+  token = readline(in);
+  fzcpi_ = parse<unsigned int>(token);  assert(fzcpi_.size() == pg->order());
+  token = readline(in);
+  fzvpi_ = parse<unsigned int>(token);  assert(fzvpi_.size() == pg->order());
+  token = readline(in);
+  inactpi_ = parse<unsigned int>(token);  assert(inactpi_.size() == pg->order());
+  token = readline(in);
+  actpi_ = parse<unsigned int>(token);  assert(actpi_.size() == pg->order());
+  assert(std::accumulate(mopi.begin(), mopi.end(), 0) == nmo);
+  unsigned int junk; in >> junk;
+
+  ////////////////////////////////////////////
+  // remap the coefficients and orbital info
+  ////////////////////////////////////////////
+  // pseudo occupation numbers -- frozen core and inactive are 2.0, active are 1.0, the rest are 0.0
+  RefDiagSCMatrix pseudo_occnums = coefs_extern.kit()->diagmatrix(coefs_extern.coldim());
+  pseudo_occnums.assign(0.0);
+  unsigned int mo = 0;
+  for(unsigned int irrep=0; irrep<pg->order(); ++irrep) {
+    unsigned int mo_in_irrep = 0;
+    for(unsigned i=0; i<fzcpi_[irrep]; ++i, ++mo, ++mo_in_irrep)
+      pseudo_occnums.set_element(i, 2.0);
+    for(unsigned i=0; i<inactpi_[irrep]; ++i, ++mo, ++mo_in_irrep)
+      pseudo_occnums.set_element(i, 2.0);
+    for(unsigned i=0; i<actpi_[irrep]; ++i, ++mo, ++mo_in_irrep)
+      pseudo_occnums.set_element(i, 1.0);
+    mo += mopi[irrep] - mo_in_irrep; // skip the rest of the orbitals in this block
+  }
+
+  // pseudo eigenvalues are the occupation numbers with changed sign
+  RefDiagSCMatrix pseudo_evals = pseudo_occnums.copy();
+  pseudo_evals.scale(-1.0);
+
+  // compute map from MO to the mpqc irrep
+  std::vector<unsigned int> orbsym;
+  {
+    for (unsigned int g = 0; g < mopi.size(); ++g) {
+      const unsigned int g_mpqc = extern_to_mpqc_irrep_map[g];
+      for (unsigned int mo_g = 0; mo_g < mopi[g]; ++mo_g)
+        orbsym.push_back(g_mpqc);
+    }
+  }
+
+  orbs_ = new OrdOrbitalSpace(
+      std::string("p"), std::string("MOInfo orbitals"),
+      basis, integral, coefs_extern, pseudo_evals,
+      pseudo_occnums, orbsym, SymmetryMOOrder(pg->order()) );
+
+  // remap all orbitals to MPQC irreps
+  fzcpi_ = remap(fzcpi_, extern_to_mpqc_irrep_map);
+  inactpi_ = remap(inactpi_, extern_to_mpqc_irrep_map);
+  actpi_ = remap(actpi_, extern_to_mpqc_irrep_map);
+  fzvpi_ = remap(fzvpi_, extern_to_mpqc_irrep_map);
+
+  //////////////////////////////////////////////////////////////////////////////////
+  // lastly determine the index maps from extern MO indices to the MPQC MO indices
+  //////////////////////////////////////////////////////////////////////////////////
+  {
+    assert(indexmap_.empty());
+    // use blockinfo to get MO offets for orbitals in MPQC order
+    Ref<SCBlockInfo> blkinfo = orbs_->coefs()->coldim()->blocks();
+    for (unsigned int g = 0; g < pg->order(); ++g) {
+      const unsigned int g_mpqc = extern_to_mpqc_irrep_map[g];
+      const unsigned int mpqc_mo_offset = blkinfo->start(g_mpqc);
+      const unsigned int nmo_g = mopi[g];
+      for (unsigned int mo_g = 0; mo_g < nmo_g; ++mo_g)
+        indexmap_.push_back( mpqc_mo_offset + mo_g );
+    }
+  }
+  {
+    assert(occindexmap_.empty());
+    // use blockinfo to get MO offets for orbitals in MPQC order
+    Ref<SCBlockInfo> blkinfo = orbs_->coefs()->coldim()->blocks();
+    for (unsigned int g = 0; g < pg->order(); ++g) {
+      const unsigned int g_mpqc = extern_to_mpqc_irrep_map[g];
+      const unsigned int mpqc_mo_offset = blkinfo->start(g_mpqc);
+      const unsigned int nmo_g = fzcpi_[g] + inactpi_[g] + actpi_[g];
+      for (unsigned int mo_g = 0; mo_g < nmo_g; ++mo_g)
+        occindexmap_.push_back( mpqc_mo_offset + mo_g );
+    }
+  }
+
+  coefs_extern.print("ExternMOInfo:: extern MO coefficients");
+  orbs_->coefs().print("ExternMOInfo:: reordered MO coefficients");
 
   in.close();
 }
 
-
-Ref<GaussianBasisSet> ExternReadMOInfo::basis() const
+const std::vector<unsigned int>& ExternMOInfo::indexmap() const
 {
-    return basis_;
+  return indexmap_;
 }
 
-RefSCMatrix ExternReadMOInfo::coefs() const
+const std::vector<unsigned int>& ExternMOInfo::occindexmap() const
 {
-    return coefs_;
+  return occindexmap_;
 }
 
-unsigned int ExternReadMOInfo::nfzc() const
+//Ref<GaussianBasisSet> ExternMOInfo::basis() const
+//{
+//    return basis_;
+//}
+//
+//RefSCMatrix ExternMOInfo::coefs() const
+//{
+//    return coefs_;
+//}
+//
+//unsigned int ExternMOInfo::nfzc() const
+//{
+//  // return nfzc_;
+//  return 0;
+//}
+//
+//unsigned int ExternMOInfo::nfzv() const
+//{
+//  //return nfzv_;
+//  return 0;
+//}
+//
+//unsigned int ExternMOInfo::nocc() const
+//{
+//  //return nocc_;
+//  return 7;
+//}
+
+//const std::vector<unsigned int>& ExternMOInfo::mopi() const
+//{
+//  return mopi_;
+//}
+//
+const std::vector<unsigned int>& ExternMOInfo::fzcpi() const
 {
-    return nfzc_;
+  return fzcpi_;
 }
 
-unsigned int ExternReadMOInfo::nfzv() const
+const std::vector<unsigned int>& ExternMOInfo::fzvpi() const
 {
-    return nfzv_;
+  return fzvpi_;
 }
 
-unsigned int ExternReadMOInfo::nocc() const
+const std::vector<unsigned int>& ExternMOInfo::actpi() const
 {
-    return nocc_;
+  return actpi_;
 }
 
-std::vector<unsigned int> ExternReadMOInfo::orbsym() const
+const std::vector<unsigned int>& ExternMOInfo::inactpi() const
 {
-    return orbsym_;
+  return inactpi_;
 }
 
+//std::vector<unsigned int> ExternMOInfo::orbsym() const
+//{
+//  return orbsym;
+//}
+//
 /////////////////////////////////////////////////////////////////////////////
 
-ClassDesc ExternReadRDMOne::class_desc_(typeid(ExternReadRDMOne),
-                                        "ExternReadRDMOne",
+ClassDesc ExternSpinFreeRDMOne::class_desc_(typeid(ExternSpinFreeRDMOne),
+                                        "ExternSpinFreeRDMOne",
                                         1,               // version
-                                        "public RDM<One>", // must match parent
+                                        "public SpinFreeRDM<One>", // must match parent
                                         0,               // not DefaultConstructible
                                         0,               // not KeyValConstructible
                                         0                // not StateInConstructible
                                         );
 
-ExternReadRDMOne::ExternReadRDMOne(const std::string & filename, const Ref<OrbitalSpace>& orbs) :
-  RDM<One>(Ref<Wavefunction>()), orbs_(orbs)
+ExternSpinFreeRDMOne::ExternSpinFreeRDMOne(const std::string & filename,
+                                           const std::vector<unsigned int>& indexmap,
+                                           const Ref<OrbitalSpace>& orbs) :
+  SpinFreeRDM<One>(Ref<Wavefunction>()), orbs_(orbs)
 {
   std::ifstream in(filename.c_str());
   if (in.is_open() == false) {
     std::ostringstream oss;
-    oss << "ExternReadRDMOne: could not open file " << filename;
+    oss << "ExternSpinFreeRDMOne: could not open file " << filename;
     throw std::runtime_error(oss.str().c_str());
   }
   rdm_ = orbs->coefs().kit()->symmmatrix(orbs->coefs().coldim()); rdm_.assign(0.0);
@@ -319,44 +569,48 @@ ExternReadRDMOne::ExternReadRDMOne(const std::string & filename, const Ref<Orbit
     in >> row >> col >> value;
     if (row != -1) {
       --row;  --col;
-      rdm_.set_element(row,col,value);
+      const unsigned int mbra = indexmap[row];
+      const unsigned int mket = indexmap[col];
+      rdm_.set_element(mbra, mket, value);
     }
     else
       have_coefs = false;
   }
   in.close();
 
-  rdm_.print("ExternReadRDMOne:: MO density");
+  rdm_.print("ExternSpinFreeRDMOne:: MO density");
 }
 
-ExternReadRDMOne::ExternReadRDMOne(const RefSymmSCMatrix& rdm, const Ref<OrbitalSpace>& orbs) :
-  RDM<One>(Ref<Wavefunction>()), rdm_(rdm), orbs_(orbs)
+ExternSpinFreeRDMOne::ExternSpinFreeRDMOne(const RefSymmSCMatrix& rdm, const Ref<OrbitalSpace>& orbs) :
+  SpinFreeRDM<One>(Ref<Wavefunction>()), rdm_(rdm), orbs_(orbs)
 {
-  rdm_.print("ExternReadRDMOne:: MO density");
+  rdm_.print("ExternSpinFreeRDMOne:: MO density");
 }
 
-ExternReadRDMOne::~ExternReadRDMOne()
+ExternSpinFreeRDMOne::~ExternSpinFreeRDMOne()
 {
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
-ClassDesc ExternReadRDMTwo::class_desc_(typeid(ExternReadRDMTwo),
-                                        "ExternReadRDMTwo",
+ClassDesc ExternSpinFreeRDMTwo::class_desc_(typeid(ExternSpinFreeRDMTwo),
+                                        "ExternSpinFreeRDMTwo",
                                         1,               // version
-                                        "public RDM<Two>", // must match parent
+                                        "public SpinFreeRDM<Two>", // must match parent
                                         0,               // not DefaultConstructible
                                         0,               // not KeyValConstructible
                                         0                // not StateInConstructible
                                         );
 
-sc::ExternReadRDMTwo::ExternReadRDMTwo(const std::string & filename, const Ref<OrbitalSpace> & orbs) :
-    RDM<Two>(Ref<Wavefunction>()), filename_(filename), orbs_(orbs)
+sc::ExternSpinFreeRDMTwo::ExternSpinFreeRDMTwo(const std::string & filename,
+                                               const std::vector<unsigned int>& indexmap,
+                                               const Ref<OrbitalSpace> & orbs) :
+    SpinFreeRDM<Two>(Ref<Wavefunction>()), filename_(filename), orbs_(orbs)
 {
   std::ifstream in(filename_.c_str());
   if (in.is_open() == false) {
     std::ostringstream oss;
-    oss << "ExternReadRDMTwo: could not open file " << filename_;
+    oss << "ExternSpinFreeRDMTwo: could not open file " << filename_;
     throw std::runtime_error(oss.str().c_str());
   }
   const unsigned int norbs = orbs->coefs().coldim().n();
@@ -381,68 +635,51 @@ sc::ExternReadRDMTwo::ExternReadRDMTwo(const std::string & filename, const Ref<O
       --ket1;
       --ket2;
       
-      rdm_.set_element(bra1 * norbs + bra2, ket1 * norbs + ket2, value);
-      rdm_.set_element(bra2 * norbs + bra1, ket2 * norbs + ket1, value);
+      const unsigned int mbra1 = indexmap[bra1];
+      const unsigned int mbra2 = indexmap[bra2];
+      const unsigned int mket1 = indexmap[ket1];
+      const unsigned int mket2 = indexmap[ket2];
+
+      rdm_.set_element(mbra1 * norbs + mbra2, mket1 * norbs + mket2, value);
+      rdm_.set_element(mbra2 * norbs + mbra1, mket2 * norbs + mket1, value);
     } else
       have_coefs = false;
   }
   in.close();
 
-  //rdm_.print("ExternReadRDMTwo:: MO density");
+  //rdm_.print("ExternSpinFreeRDMTwo:: MO density");
 }
 
-ExternReadRDMTwo::~ExternReadRDMTwo()
+ExternSpinFreeRDMTwo::~ExternSpinFreeRDMTwo()
 {
 }
 
-Ref<ExternReadRDMTwo::cumulant_type>
-ExternReadRDMTwo::cumulant() const
+Ref< SpinFreeRDM<One> >
+ExternSpinFreeRDMTwo::rdm_m_1() const
 {
-  return new RDMCumulant<Two>(const_cast<ExternReadRDMTwo*>(this));
-}
-
-Ref< RDM<One> >
-ExternReadRDMTwo::rdm_m_1() const
-{
-  Ref<ExternReadRDMOne> result;
-  bool have_rdm1_file = true;
-  try {
-    std::string rdm1_filename(filename_);
-    // compute filename for rdm1
-    // hardwire for now
-    rdm1_filename = "crap.txt";
-    result = new ExternReadRDMOne(rdm1_filename, orbs_);
-  }
-  catch (...) {
-    have_rdm1_file = false;
-  }
-  // if could not find the rdm1 in a file, compute it
-  if (have_rdm1_file == false) {
-    RefSymmSCMatrix rdm1 = orbs_->coefs().kit()->symmmatrix(orbs_->coefs().coldim());
-    rdm1.assign(0.0);
-    const unsigned int norbs = rdm1.n();
-    for(unsigned int b1=0; b1<norbs; ++b1) {
-      const unsigned b12_offset = b1 * norbs;
-      for(unsigned int k1=0; k1<=b1; ++k1) {
-        const unsigned k12_offset = k1 * norbs;
-        double value = 0.0;
-        for(unsigned int i2=0; i2<norbs; ++i2) {
-          value += rdm_.get_element(b12_offset + i2, k12_offset + i2);
-        }
-        rdm1.set_element(b1, k1, value);
+  RefSymmSCMatrix rdm1 = orbs_->coefs().kit()->symmmatrix(orbs_->coefs().coldim());
+  rdm1.assign(0.0);
+  const unsigned int norbs = rdm1.n();
+  for (unsigned int b1 = 0; b1 < norbs; ++b1) {
+    const unsigned b12_offset = b1 * norbs;
+    for (unsigned int k1 = 0; k1 <= b1; ++k1) {
+      const unsigned k12_offset = k1 * norbs;
+      double value = 0.0;
+      for (unsigned int i2 = 0; i2 < norbs; ++i2) {
+        value += rdm_.get_element(b12_offset + i2, k12_offset + i2);
       }
+      rdm1.set_element(b1, k1, value);
     }
-
-    // compute the number of electrons and scale 1-rdm:
-    // trace of the 2-rdm is n(n-1)
-    // trace of the 1-rdm should be n
-    const double trace_2rdm = rdm1.trace();
-    const double nelectron = (1.0 + std::sqrt(1.0 + 4.0 * trace_2rdm)) / 2.0;
-    rdm1.scale(1.0 / (nelectron - 1.0));
-
-    result = new ExternReadRDMOne(rdm1, orbs_);
   }
 
+  // compute the number of electrons and scale 1-rdm:
+  // trace of the 2-rdm is n(n-1)
+  // trace of the 1-rdm should be n
+  const double trace_2rdm = rdm1.trace();
+  const double nelectron = (1.0 + std::sqrt(1.0 + 4.0 * trace_2rdm)) / 2.0;
+  rdm1.scale(1.0 / (nelectron - 1.0));
+
+  Ref < SpinFreeRDM<One> > result = new ExternSpinFreeRDMOne(rdm1, orbs_);
   return result;
 }
 

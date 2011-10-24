@@ -74,7 +74,7 @@ namespace sc {
 
           <tr><td>%Keyword<td>Type<td>Default<td>Description
 
-          <tr><td><tt>psiwfn</tt><td>Wavefunction<td>none<td>the Wavefunction object
+          <tr><td><tt>wfn</tt><td>Wavefunction<td>none<td>the Wavefunction object
 
           </table>
        */
@@ -214,6 +214,95 @@ namespace sc {
 			       std::string(">")
 			      ).c_str(), 1,
 			      "virtual public SavableState", 0, 0, 0 );
+
+
+  /// SpinFreeRDM<R> is a spin-free reduced density matrix of rank R
+  /// @tparam R Rank of the density
+  template <Rank R>
+  class SpinFreeRDM : public Compute, virtual public SavableState {
+      typedef SpinFreeRDM<R> this_type;
+      typedef typename __spincase<R>::type spincase;
+    public:
+      /** A KeyVal constructor is used to generate a SpinFreeRDM<R>
+          object from the input. The full list of keywords
+          that are accepted is below.
+
+          <table border="1">
+
+          <tr><td>%Keyword<td>Type<td>Default<td>Description
+
+          <tr><td><tt>wfn</tt><td>Wavefunction<td>none<td>the Wavefunction object
+
+          </table>
+       */
+      SpinFreeRDM(const Ref<KeyVal>& kv) {
+        wfn_ = require_dynamic_cast<Wavefunction*>(
+              kv->describedclassvalue("wfn").pointer(),
+              "RDM<R>::RDM\n"
+              );
+      }
+      SpinFreeRDM(StateIn& si) : SavableState(si) {
+        wfn_ << SavableState::restore_state(si);
+      }
+      SpinFreeRDM(const Ref<Wavefunction>& wfn) : wfn_(wfn) {
+      }
+      ~SpinFreeRDM() {
+      }
+      void save_data_state(StateOut& so) {
+        SavableState::save_state(wfn_.pointer(), so);
+      }
+
+      virtual void obsolete() {
+        wfn_->obsolete();
+        scmat_ = 0;
+      }
+
+      /// the corresponding Wavefunction
+      Ref<Wavefunction> wfn() const { return wfn_; }
+      virtual void compute() {
+        const double energy = wfn_->value();
+      }
+      /// the orbital space of spincase s in which the density is reported
+      virtual Ref<OrbitalSpace> orbs() const =0;
+      /// bra/ket dimension
+      virtual size_t ndim() const;
+      /// returns the ket block for the given bra index
+      virtual const double* obtain_block(spincase spin,  size_t bra) const {
+        throw ProgrammingError("SpinFreeRDM<R>::obtain_block() is not yet implemented",
+                               __FILE__,
+                               __LINE__);
+      }
+      /// releases the ket block
+      virtual void release_block(spincase spin, size_t bra, double*) const {
+        throw ProgrammingError("SpinFreeRDM<R>::release_block() is not yet implemented",
+                               __FILE__,
+                               __LINE__);
+      }
+      /// full density matrix
+      virtual RefSymmSCMatrix scmat() const;
+
+      /// RDM of rank decreased by 1
+      virtual Ref< SpinFreeRDM< static_cast<Rank>(R-1) > > rdm_m_1() const;
+
+    private:
+      static ClassDesc class_desc_;
+      Ref<Wavefunction> wfn_;
+
+    protected:
+      mutable RefSymmSCMatrix scmat_;
+  };
+
+  template <Rank R>
+  ClassDesc
+  SpinFreeRDM<R>::class_desc_(typeid(this_type),
+                      (std::string("SpinFreeRDM<") +
+                       char('1' + R - 1) +
+                       std::string(">")
+                      ).c_str(), 1,
+                      "virtual public SavableState", 0, 0, 0 );
+
+  /// this specialization is needed to make SpinFreeRDM<R>::rdm_m_1() work
+  template <> class SpinFreeRDM<Zero> : public RefCount {};
 
   ///////////////
 

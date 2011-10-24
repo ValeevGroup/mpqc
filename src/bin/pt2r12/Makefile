@@ -14,7 +14,11 @@ INCLUDE += -I. -I$(SRCDIR) -I$(SRCTOPDIR)/src/bin/mpqc
 CXXINCLUDE += -I. -I$(SRCDIR)
 
 TARGET_TO_MAKE = pt2r12
-CXXSRC = pt2r12.cc pt2r12_gamess.cc moinfo.cc
+CXXSRC = pt2r12.cc moinfo.cc \
+pt2r12_molcas.cc \
+#pt2r12_gamess.cc \
+ 
+
 INC =
 DEPENDINCLUDE = $(INC)
 

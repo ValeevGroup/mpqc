@@ -32,7 +32,6 @@
 #include <molden_moinfo.h>
 #include <iostream>
 #include <map>
-#include <ctype>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/basis/split.h>
 
@@ -58,7 +57,8 @@ MOLDEN_ExternReadMOInfo::MOLDEN_ExternReadMOInfo(const std::string & filename)
 
   { // the third line; make sure the unit is bohr
     std::string temp1, temp2;
-    in >> temp1 >> temp2;
+    in >> temp1;
+    in >> temp2;
     if(temp2 != "(AU)")
       throw SCException("Unexpected MOLDEN input");
   }

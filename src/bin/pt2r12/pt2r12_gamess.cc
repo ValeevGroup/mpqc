@@ -282,8 +282,8 @@ int main_gamess(int argc, char **argv)
                                                             P_mo, P_mo,
                                                             nocc, nfzc, nfzv);
 
-  // create PT2R12 object
-  Ref<PT2R12> pt2r12;
+  // create SpinOrbitalPT2R12 object
+  Ref<SpinOrbitalPT2R12> pt2r12;
   {
     Ref<AssignedKeyVal> kva = new AssignedKeyVal;
     kva->assign("molecule", basis->molecule().pointer());
@@ -305,7 +305,7 @@ int main_gamess(int argc, char **argv)
     kva->assignboolean("spinadapted", 1);
     Ref<KeyVal> kv = kva;
 
-    pt2r12 = new PT2R12(kv);
+    pt2r12 = new SpinOrbitalPT2R12(kv);
     const double ept2r12 = pt2r12->value();
   }
 

@@ -737,7 +737,7 @@ RefSCMatrix SpinOrbitalPT2R12::C(SpinCase2 S) {
   return(Cmat);
 }
 
-RefSCMatrix sc::SpinOrbitalPT2R12::transform_MO() //transformation matrix between occupied orbitals (this also defines the matrix dimension); row: new MO, column: old MO
+RefSCMatrix SpinOrbitalPT2R12::transform_MO() //transformation matrix between occupied orbitals (this also defines the matrix dimension); row: new MO, column: old MO
 {                                       // assume mo_density is of the same ordering as occ_sb()
   const bool debugprint = false;
   RefSymmSCMatrix mo_density =  rdm1(Alpha) + rdm1(Beta);//this will eventually read the checkpoint file. I assume they are of the dimension of occ orb space
@@ -827,8 +827,8 @@ RefSCMatrix sc::SpinOrbitalPT2R12::transform_MO() //transformation matrix betwee
    return TransformMat;
 }
 
-template<sc::SpinOrbitalPT2R12::Tensor4_Permute HowPermute>
-RefSCMatrix sc::SpinOrbitalPT2R12::RefSCMAT4_permu(RefSCMatrix rdm2_4space_int,
+template<SpinOrbitalPT2R12::Tensor4_Permute HowPermute>
+RefSCMatrix SpinOrbitalPT2R12::RefSCMAT4_permu(RefSCMatrix rdm2_4space_int,
                                       const Ref<OrbitalSpace> b1space,
                                       const Ref<OrbitalSpace> b2space,
                                       const Ref<OrbitalSpace> k1space,
@@ -901,14 +901,14 @@ RefSCMatrix sc::SpinOrbitalPT2R12::RefSCMAT4_permu(RefSCMatrix rdm2_4space_int,
 
 
 
-RefSymmSCMatrix sc::SpinOrbitalPT2R12::rdm1(SpinCase1 spin)
+RefSymmSCMatrix SpinOrbitalPT2R12::rdm1(SpinCase1 spin)
 {
   return convert_to_local_kit(rdm1_->scmat(spin));
 }
 
 
 
-RefSymmSCMatrix sc::SpinOrbitalPT2R12::rdm2(SpinCase2 spin)
+RefSymmSCMatrix SpinOrbitalPT2R12::rdm2(SpinCase2 spin)
 {
   // since LocalSCMatrixKit is used everywhere, convert to Local kit
   return convert_to_local_kit(rdm2_->scmat(spin));
@@ -916,7 +916,7 @@ RefSymmSCMatrix sc::SpinOrbitalPT2R12::rdm2(SpinCase2 spin)
 
 
 
-void sc::SpinOrbitalPT2R12::compute()
+void SpinOrbitalPT2R12::compute()
 {
   r12world()->initialize();
 
@@ -977,22 +977,22 @@ void sc::SpinOrbitalPT2R12::compute()
   if(cabs_singles_)
   {
     double alpha_corre = 0.0, beta_corre = 0.0, cabs_singles_corre = 0.0;
-    if(cabs_singles_h0_ == std::string("fock_so"))
+    if(cabs_singles_h0_ == std::string("fock"))
     {
-      beta_corre =  this->cabs_singles_Fock_so(Beta);
+      beta_corre =  this->cabs_singles_Fock(Beta);
       if (spin_polarized)
-        alpha_corre = this->cabs_singles_Fock_so(Alpha);
+        alpha_corre = this->cabs_singles_Fock(Alpha);
       else
         alpha_corre = beta_corre;
       cabs_singles_e = alpha_corre + beta_corre;
-      ExEnv::out0() << indent << scprintf("CABS singles (Fock_so):                %17.12lf",
+      ExEnv::out0() << indent << scprintf("CABS singles (Fock):                   %17.12lf",
                                         cabs_singles_e) << endl;
 
     }
-    else if(cabs_singles_h0_ == std::string("dyall_so"))
+    else if(cabs_singles_h0_ == std::string("dyall"))
     {
-      cabs_singles_e = cabs_singles_Dyall_so();
-      ExEnv::out0() << indent << scprintf("CABS singles (Dyall_so):               %17.12lf",
+      cabs_singles_e = cabs_singles_Dyall();
+      ExEnv::out0() << indent << scprintf("CABS singles (Dyall):                  %17.12lf",
                                       cabs_singles_e) << endl;
     }
     else
@@ -1042,7 +1042,7 @@ void sc::SpinOrbitalPT2R12::compute()
   set_energy(energy);
 }
 
-double sc::SpinOrbitalPT2R12::compute_energy(const RefSCMatrix &hmat,
+double SpinOrbitalPT2R12::compute_energy(const RefSCMatrix &hmat,
                               SpinCase2 pairspin,
                               bool print_pair_energies,
                               std::ostream& os) {
@@ -1079,14 +1079,14 @@ double sc::SpinOrbitalPT2R12::compute_energy(const RefSCMatrix &hmat,
 }
 
 
-int sc::SpinOrbitalPT2R12::spin_polarized()
+int SpinOrbitalPT2R12::spin_polarized()
 {
   return r12world()->refwfn()->spin_polarized();
 }
 
 
 
-double sc::SpinOrbitalPT2R12::cabs_singles_Fock_so(SpinCase1 spin)
+double SpinOrbitalPT2R12::cabs_singles_Fock(SpinCase1 spin)
 {
   # define printout false
 
@@ -1282,7 +1282,7 @@ double sc::SpinOrbitalPT2R12::cabs_singles_Fock_so(SpinCase1 spin)
 }
 
 
-double sc::SpinOrbitalPT2R12::cabs_singles_Dyall_so()
+double SpinOrbitalPT2R12::cabs_singles_Dyall()
 {
   # define DEBUGG false
 
@@ -1622,7 +1622,7 @@ double sc::SpinOrbitalPT2R12::cabs_singles_Dyall_so()
   return E_cabs_singles;
 }
 
-RefSymmSCMatrix sc::SpinOrbitalPT2R12::density()
+RefSymmSCMatrix SpinOrbitalPT2R12::density()
 {
   throw FeatureNotImplemented("SpinOrbitalPT2R12::density() not yet implemented");
 }
@@ -1793,7 +1793,7 @@ void SpinOrbitalPT2R12::brillouin_matrix() {
   }
 }
 
-void sc::SpinOrbitalPT2R12::print(std::ostream & os) const
+void SpinOrbitalPT2R12::print(std::ostream & os) const
 {
   os << indent << "SpinOrbitalPT2R12:" << endl;
   os << incindent;
@@ -1804,7 +1804,7 @@ void sc::SpinOrbitalPT2R12::print(std::ostream & os) const
   os << decindent;
 }
 
-RefSymmSCMatrix sc::SpinOrbitalPT2R12::_rdm2_to_gg(SpinCase2 spin,
+RefSymmSCMatrix SpinOrbitalPT2R12::_rdm2_to_gg(SpinCase2 spin,
                                         RefSymmSCMatrix rdm)
 {
   if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > SpinOrbitalPT2R12::zero_occupancy())
@@ -1886,19 +1886,19 @@ RefSymmSCMatrix sc::SpinOrbitalPT2R12::_rdm2_to_gg(SpinCase2 spin,
   return result;
 }
 
-RefSymmSCMatrix sc::SpinOrbitalPT2R12::phi_gg(SpinCase2 spin)
+RefSymmSCMatrix SpinOrbitalPT2R12::phi_gg(SpinCase2 spin)
 {
   RefSymmSCMatrix phi = this->phi_cumulant(spin);
   return this->_rdm2_to_gg(spin, phi);
 }
 
-RefSymmSCMatrix sc::SpinOrbitalPT2R12::lambda2_gg(SpinCase2 spin)
+RefSymmSCMatrix SpinOrbitalPT2R12::lambda2_gg(SpinCase2 spin)
 {
   RefSymmSCMatrix lambda = this->lambda2(spin);
   return this->_rdm2_to_gg(spin, lambda);
 }
 
-RefSymmSCMatrix sc::SpinOrbitalPT2R12::rdm1_gg(SpinCase1 spin)
+RefSymmSCMatrix SpinOrbitalPT2R12::rdm1_gg(SpinCase1 spin)
 {
   if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > SpinOrbitalPT2R12::zero_occupancy())
     throw ProgrammingError("this function hasn't been examined to take care of the screening; at least 'orbs' should be specified using r12int_eval_...", __FILE__,__LINE__);
@@ -1928,7 +1928,7 @@ RefSymmSCMatrix sc::SpinOrbitalPT2R12::rdm1_gg(SpinCase1 spin)
   return result;
 }
 
-RefSymmSCMatrix sc::SpinOrbitalPT2R12::rdm2_gg(SpinCase2 spin)
+RefSymmSCMatrix SpinOrbitalPT2R12::rdm2_gg(SpinCase2 spin)
 {
   if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > SpinOrbitalPT2R12::zero_occupancy())
      throw ProgrammingError("this function hasn't been examined to take care of the screening; at least 'orbs' should be specified using r12int_eval_...", __FILE__,__LINE__);
@@ -1936,7 +1936,7 @@ RefSymmSCMatrix sc::SpinOrbitalPT2R12::rdm2_gg(SpinCase2 spin)
   return this->_rdm2_to_gg(spin, rdm);
 }
 
-RefSymmSCMatrix sc::SpinOrbitalPT2R12::lambda2(SpinCase2 spin)
+RefSymmSCMatrix SpinOrbitalPT2R12::lambda2(SpinCase2 spin)
 {
   if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > SpinOrbitalPT2R12::zero_occupancy())
      throw ProgrammingError("this function hasn't been examined to take care of the screening; at least 'orbs' should be specified using r12int_eval_...", __FILE__,__LINE__);
@@ -1971,7 +1971,7 @@ double SpinOrbitalPT2R12::energy_PT2R12_projector1(SpinCase2 pairspin) {
   return(energy);
 }
 
-int sc::SpinOrbitalPT2R12::nelectron()
+int SpinOrbitalPT2R12::nelectron()
 {
   return r12world()->refwfn()->nelectron();
 }

@@ -162,9 +162,9 @@ namespace sc {
 
 
       /** compute CABS singles correction using Fock operator as H0 */
-      double cabs_singles_Fock_so(SpinCase1 spin);
+      double cabs_singles_Fock(SpinCase1 spin);
       /// compute CABS singles correction using two-body operators in H0
-      double cabs_singles_Dyall_so();
+      double cabs_singles_Dyall();
 
       /// Returns Hcore in MO basis
       RefSymmSCMatrix hcore_mo();
@@ -280,6 +280,11 @@ namespace sc {
       bool omit_uocc_;
       bool pt2_correction_;          // for testing purposes only, set to false to skip the [2]_R12 computation
       bool cabs_singles_;
+      std::string cabs_singles_h0_; // specify zeroth order H; options: 'CI'
+                                     // 'dyall_1', 'dyall_2', 'complete'; '1' and '2'
+                                     // in dyall_sf options
+                                     // represent whether use 1-body Fock or including 2-b op
+                                     // in H(1).
       bool calc_davidson_;           // print out Davidson correction coefficient or not. Defaults to false.
       bool cabs_singles_coupling_; // if set to true, we include the coupling between cabs and OBS virtual orbitals. This should be preferred choice,
                                    // as explained in the paper.
@@ -292,11 +297,6 @@ namespace sc {
       std::vector<double> V_; // store the values for different spins
 
 
-      std::string cabs_singles_h0_; // specify zeroth order H; options: 'fock_sf_c', 'CI'
-                                    // 'dyall_sf_1', 'dyall_sf_2', 'complete'; '1' and '2'
-                                    // in dyall_sf options
-                                    // represent whether use 1-body Fock or including 2-b op
-                                    // in H(1).
 
 
       /// 1-RDM as provided by the rdm1_ object
@@ -317,12 +317,12 @@ namespace sc {
       double compute_DC_energy_GenRefansatz2();
 
       /** methods for spin-free algorithm */
-      double energy_PT2R12_projector2_spinfree();
+      double energy_PT2R12_projector2();
       RefSCMatrix V_genref_projector2();
       /** computes t^pq_rs * Gamma^rs_vx * f^x_w * t^vw_tu; */
       RefSCMatrix X_term_Gamma_F_T();
       RefSymmSCMatrix X_transformed_by_C();
-      RefSCMatrix sf_B_others();
+      RefSCMatrix B_others();
 
       // TODO reimplement using native spin-free densities from Psi3
       RefSCMatrix rdm1_gg_sf();  // return spin-free 1/2 rdm
@@ -351,14 +351,14 @@ namespace sc {
 
 
       /// compute CABS singles correction in the most complete way; in addition, a CI version is coded here too.
-      double cabs_singles_Complete_sf();
+      double cabs_singles_Complete();
       /** the following 2 methods are from modification of cabs_singles_Complete_sf()**/
-      double cabs_singles_Dyall_sf();
+      double cabs_singles_Dyall();
       /** use the commutator formulation, then replace Dyall by Fock; 'c' denotes 'commutator'
        * to distinguish from the original formulation as published.
        * @return
        */
-      double cabs_singles_Fock_sf_c();
+      double cabs_singles_Fock_c();
 
       /// Returns Hcore in MO basis
       RefSymmSCMatrix hcore_mo();

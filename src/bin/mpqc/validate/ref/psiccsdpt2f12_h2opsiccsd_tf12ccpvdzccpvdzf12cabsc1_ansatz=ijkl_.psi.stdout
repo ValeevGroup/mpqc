@@ -1,0 +1,24 @@
+
+
+ The PSI3 Execution Driver 
+
+PSI3 will perform a RHF CCSD_T energy computation.
+
+The following programs will be executed:
+
+ input
+ cints
+ cscf
+ transqt2
+ ccsort
+ ccenergy
+ cctriples
+
+input
+cints
+cscf
+transqt2
+ccsort
+ccenergy
+cctriples
+

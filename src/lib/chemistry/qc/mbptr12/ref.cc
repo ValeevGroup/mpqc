@@ -1308,15 +1308,14 @@ SD_RefWavefunction::init_spaces_unrestricted()
 
 Ref<DensityFittingInfo>
 SD_RefWavefunction::dfinfo() const {
-#define FORCE_DENSITYFITTING_FOCKBUILD 0
-#if FORCE_DENSITYFITTING_FOCKBUILD
-  Ref<DensityFittingInfo> result = const_cast<DensityFittingInfo*>(world()->tfactory()->df_info());
+  Ref<DensityFittingInfo> result;
+  if (use_world_dfinfo())
+    result = const_cast<DensityFittingInfo*>(world()->tfactory()->df_info());
+  else {
+    Ref<SCF> scf_ptr; scf_ptr << this->obwfn();
+    result = (scf_ptr.nonnull()) ? scf_ptr->dfinfo() : 0;
+  }
   return result;
-#else
-  Ref<SCF> scf_ptr; scf_ptr << this->obwfn();
-  Ref<DensityFittingInfo> result = (scf_ptr.nonnull()) ? scf_ptr->dfinfo() : 0;
-  return result;
-#endif
 }
 
 namespace {
@@ -1590,7 +1589,7 @@ Extern_RefWavefunction::init_spaces(unsigned int nocc,
 
 Ref<DensityFittingInfo>
 Extern_RefWavefunction::dfinfo() const {
-  return 0;
+  return use_world_dfinfo() ? const_cast<DensityFittingInfo*>(world()->tfactory()->df_info()) : 0;
 }
 
 ///////////////////////////////////////////////////////////////////

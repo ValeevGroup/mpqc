@@ -283,7 +283,7 @@ PsiSCF_RefWavefunction::init_spaces_unrestricted()
 
 Ref<DensityFittingInfo>
 PsiSCF_RefWavefunction::dfinfo() const {
-  return 0;
+  return use_world_dfinfo() ? const_cast<DensityFittingInfo*>(world()->tfactory()->df_info()) : 0;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -468,7 +468,7 @@ PsiRASCI_RefWavefunction::ordm(SpinCase1 spin) const
 
 Ref<DensityFittingInfo>
 PsiRASCI_RefWavefunction::dfinfo() const {
-  return 0;
+  return use_world_dfinfo() ? const_cast<DensityFittingInfo*>(world()->tfactory()->df_info()) : 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////

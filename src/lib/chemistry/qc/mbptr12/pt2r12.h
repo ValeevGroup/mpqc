@@ -208,7 +208,7 @@ namespace sc {
 
   };
 
-  /// PT2R12: a universal second-order R12 correction
+  /// PT2R12: a universal spin-free second-order R12 correction
   class PT2R12 : public Wavefunction {
     public:
       /** A KeyVal constructor is used to generate a PT2R12

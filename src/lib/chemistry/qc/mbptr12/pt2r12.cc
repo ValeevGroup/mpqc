@@ -58,7 +58,7 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
   pt2_correction_ = keyval->booleanvalue("pt2_correction", KeyValValueboolean(true));
   omit_uocc_ = keyval->booleanvalue("omit_uocc", KeyValValueboolean(false));
   cabs_singles_ = keyval->booleanvalue("cabs_singles", KeyValValueboolean(false));
-  cabs_singles_h0_ = keyval->stringvalue("cabs_singles_h0", KeyValValuestring(string("dyall_sf_1")));
+  cabs_singles_h0_ = keyval->stringvalue("cabs_singles_h0", KeyValValuestring(string("dyall_1")));
   cabs_singles_coupling_ = keyval->booleanvalue("cabs_singles_coupling", KeyValValueboolean(true));
   rotate_core_ = keyval->booleanvalue("rotate_core", KeyValValueboolean(true));
   bool correlate_rasscf = keyval->booleanvalue("force_correlate_rasscf",KeyValValueboolean(false));
@@ -1235,12 +1235,6 @@ void PT2R12::compute()
       ExEnv::out0() << indent << scprintf("CABS singles(Dyall):                   %17.12lf",
                                       cabs_singles_e) << endl;
     }
-    else if(cabs_singles_h0_ == string("fock_c"))
-    {
-      cabs_singles_e = cabs_singles_Fock_c();
-      ExEnv::out0() << indent << scprintf("CABS singles(fock_c):                    %17.12lf",
-                                      cabs_singles_e) << endl;
-    }
     else
       abort();
     ExEnv::out0() << indent << scprintf("RASSCF+CABS singles:                   %17.12lf",
@@ -1677,7 +1671,7 @@ double PT2R12::cabs_singles_Dyall()
   }
 
   //compute b_bar
-  if(cabs_singles_h0_ == string("dyall_sf_1"))
+  if(cabs_singles_h0_ == string("dyall_1"))
   {
      // - \Gamma^j_k F^k_beta
      b_bar->accumulate(gamma1* fock_iA);
@@ -1688,7 +1682,7 @@ double PT2R12::cabs_singles_Dyall()
 #endif
      b_bar->scale(-1.0);
   }
-  if(cabs_singles_h0_ == string("dyall_sf_2"))
+  if(cabs_singles_h0_ == string("dyall_2"))
   {
     // - gamma(j,k) * h(k, beta) - gamma(jm,kl)*g(beta m, kl)
     b_bar->accumulate(gamma1* hcore_iA);

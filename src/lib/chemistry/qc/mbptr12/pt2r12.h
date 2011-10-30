@@ -59,7 +59,7 @@ namespace sc {
           <tr><td><tt>cabs_singles</tt><td>boolean<td>true<td>if set to true, compute 2nd-order
           CABS singes correction.
 
-          <tr><td><tt>cabs_singles_h0</tt><td>string<td>dyall_so<td>
+          <tr><td><tt>cabs_singles_h0</tt><td>string<td>dyall<td> The other option is 'fock'.
 
           <tr><td><tt>cabs_singles_coupling</tt><td>boolean<td>true<td>if set to true, include coupling between CABS and OBS virtuals;
               this is the preferred choice and it corresponds to the CABS singles correction without assuming EBC in single reference limit.
@@ -102,6 +102,8 @@ namespace sc {
       bool omit_uocc_;
       bool pt2_correction_;          // for testing purposes only, set to false to skip the [2]_R12 computation
       bool cabs_singles_;
+      std::string cabs_singles_h0_; // specify zeroth order H; options: 'fock',
+                                    // 'dyall'
       bool calc_davidson_;           // print out Davidson correction coefficient or not. Defaults to false.
       bool cabs_singles_coupling_; // if set to true, we include the coupling between cabs and OBS virtual orbitals. This should be preferred choice,
                                    // as explained in the paper.
@@ -112,14 +114,6 @@ namespace sc {
       std::vector<double> B_;
       std::vector<double> X_;
       std::vector<double> V_; // store the values for different spins
-
-
-      std::string cabs_singles_h0_; // specify zeroth order H; options: 'fock',
-                                    // 'dyall_sf', 'dyall_so' 'complete'; now for 'dyall_sf', we
-                                    // have 2 options: 'dyall_sf_1' and 'dyall_sf_2', '1' and '2'
-                                    // representing whether use 1-body Fock or including 2-b op
-                                    // in H(1).
-
 
       /// 1-RDM as provided by the rdm1_ object
       RefSymmSCMatrix rdm1(SpinCase1 spin);
@@ -237,7 +231,11 @@ namespace sc {
           <tr><td><tt>cabs_singles</tt><td>boolean<td>true<td>if set to true, compute 2nd-order
           CABS singes correction.
 
-          <tr><td><tt>cabs_singles_h0</tt><td>string<td>dyall_sf_1<td>
+          <tr><td><tt>cabs_singles_h0</tt><td>string<td>dyall_1<td> the other options include dyall_2/complete/CI.
+          dyall_1 uses Fock operator as H(1); dyall_2 includes both 1- and 2-particle operator in H(1), thus
+          more complete; 'complete' refers to the partition that all operators inducing (real and pesudo) one-partilce
+          occ->CABS transition are taken as H(1) while the other operators are classified as H(0); CI refers
+          to a CI diagonalization procedure to account basis incompleteness (for one state).
 
           <tr><td><tt>cabs_singles_coupling</tt><td>boolean<td>true<td>if set to true, include coupling between CABS and OBS virtuals;
               this is the preferred choice and it corresponds to the CABS singles correction without assuming EBC in single reference limit.
@@ -354,11 +352,6 @@ namespace sc {
       double cabs_singles_Complete();
       /** the following 2 methods are from modification of cabs_singles_Complete_sf()**/
       double cabs_singles_Dyall();
-      /** use the commutator formulation, then replace Dyall by Fock; 'c' denotes 'commutator'
-       * to distinguish from the original formulation as published.
-       * @return
-       */
-      double cabs_singles_Fock_c();
 
       /// Returns Hcore in MO basis
       RefSymmSCMatrix hcore_mo();

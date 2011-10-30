@@ -53,7 +53,7 @@ static ClassDesc SpinOrbitalPT2R12_cd(typeid(SpinOrbitalPT2R12),
 SpinOrbitalPT2R12::SpinOrbitalPT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_()
 {
   ///* comment out the following to test cabs singles correction
-  std::string nfzc_str = keyval->stringvalue("nfzc",KeyValValuestring("0"));
+  string nfzc_str = keyval->stringvalue("nfzc",KeyValValuestring("0"));
   if (nfzc_str == "auto")  nfzc_ = molecule()->n_core_electrons()/2;
   else if (nfzc_str == "no" || nfzc_str == "false") nfzc_ = 0;
   else nfzc_ = atoi(nfzc_str.c_str());
@@ -61,7 +61,7 @@ SpinOrbitalPT2R12::SpinOrbitalPT2R12(const Ref<KeyVal> &keyval) : Wavefunction(k
   pt2_correction_ = keyval->booleanvalue("pt2_correction", KeyValValueboolean(true));
   omit_uocc_ = keyval->booleanvalue("omit_uocc", KeyValValueboolean(false));
   cabs_singles_ = keyval->booleanvalue("cabs_singles", KeyValValueboolean(false));
-  cabs_singles_h0_ = keyval->stringvalue("cabs_singles_h0", KeyValValuestring(std::string("dyall_so")));
+  cabs_singles_h0_ = keyval->stringvalue("cabs_singles_h0", KeyValValuestring(string("dyall")));
   cabs_singles_coupling_ = keyval->booleanvalue("cabs_singles_coupling", KeyValValueboolean(true));
   rotate_core_ = keyval->booleanvalue("rotate_core", KeyValValueboolean(true));
   bool correlate_rasscf = keyval->booleanvalue("force_correlate_rasscf",KeyValValueboolean(false));
@@ -558,18 +558,18 @@ RefSCMatrix SpinOrbitalPT2R12::g(SpinCase2 pairspin,
     oreg->add(make_keyspace_pair(space2));
     registered_space2 = true;
   }
-  const std::string key1 = oreg->key(space1);
+  const string key1 = oreg->key(space1);
   Ref<OrbitalSpace> s1 = oreg->value(key1);
-  const std::string key2 = oreg->key(space2);
+  const string key2 = oreg->key(space2);
   Ref<OrbitalSpace> s2 = oreg->value(key2);
 
   const bool antisymmetrize = (pairspin==AlphaBeta) ? false : true;
-  std::vector<std::string> tforms;
+  std::vector<string> tforms;
   {
-    const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(s1->id(),s2->id(),
+    const string tform_key = ParsedTwoBodyFourCenterIntKey::key(s1->id(),s2->id(),
                                                                      s1->id(),s2->id(),
-                                                                     std::string("ERI"),
-                                                                     std::string(TwoBodyIntLayout::b1b2_k1k2));
+                                                                     string("ERI"),
+                                                                     string(TwoBodyIntLayout::b1b2_k1k2));
     tforms.push_back(tform_key);
   }
 
@@ -612,10 +612,10 @@ RefSCMatrix SpinOrbitalPT2R12::g(SpinCase2 pairspin,
       // compute (bra1 ket1 | bra2 ket2)
       Ref<DistArray4> da4_b1k1_b2k2;
       {
-        const std::string tform_b1k1_b2k2_key = ParsedTwoBodyFourCenterIntKey::key(bra1->id(),bra2->id(),
+        const string tform_b1k1_b2k2_key = ParsedTwoBodyFourCenterIntKey::key(bra1->id(),bra2->id(),
                                                                                    ket1->id(),ket2->id(),
-                                                                                   std::string("ERI"),
-                                                                                   std::string(TwoBodyIntLayout::b1b2_k1k2));
+                                                                                   string("ERI"),
+                                                                                   string(TwoBodyIntLayout::b1b2_k1k2));
         Ref<TwoBodyMOIntsTransform> tform_b1k1_b2k2 = this->r12world()->world()->moints_runtime4()->get( tform_b1k1_b2k2_key );
         tform_b1k1_b2k2->compute();
         da4_b1k1_b2k2 = tform_b1k1_b2k2->ints_distarray4();
@@ -627,10 +627,10 @@ RefSCMatrix SpinOrbitalPT2R12::g(SpinCase2 pairspin,
       const bool need_b2k1_b1k2 = !bra1_eq_bra2 && !ket1_eq_ket2 && antisymmetrize; // if(...) then essentially there is no interchangablility since the index pair are
       if (need_b2k1_b1k2)                                                           // in different spaces;
       { // compute (bra2 ket1 | bra1 ket2)
-        const std::string tform_b2k1_b1k2_key = ParsedTwoBodyFourCenterIntKey::key(bra2->id(),bra1->id(),
+        const string tform_b2k1_b1k2_key = ParsedTwoBodyFourCenterIntKey::key(bra2->id(),bra1->id(),
                                                                                    ket1->id(),ket2->id(),
-                                                                                   std::string("ERI"),
-                                                                                   std::string(TwoBodyIntLayout::b1b2_k1k2));
+                                                                                   string("ERI"),
+                                                                                   string(TwoBodyIntLayout::b1b2_k1k2));
         Ref<TwoBodyMOIntsTransform> tform_b2k1_b1k2 = this->r12world()->world()->moints_runtime4()->get( tform_b2k1_b1k2_key );
         tform_b2k1_b1k2->compute();
         da4_b2k1_b1k2 = tform_b2k1_b1k2->ints_distarray4();
@@ -689,7 +689,7 @@ RefSCMatrix SpinOrbitalPT2R12::f(SpinCase1 spin) {
   if (!oreg->value_exists(space)) {
     oreg->add(make_keyspace_pair(space));
   }
-  const std::string key = oreg->key(space);
+  const string key = oreg->key(space);
   space = oreg->value(key);
   RefSCMatrix fmat = r12eval_->fock(space,space,spin);
 
@@ -741,7 +741,7 @@ RefSCMatrix SpinOrbitalPT2R12::transform_MO() //transformation matrix between oc
 {                                       // assume mo_density is of the same ordering as occ_sb()
   const bool debugprint = false;
   RefSymmSCMatrix mo_density =  rdm1(Alpha) + rdm1(Beta);//this will eventually read the checkpoint file. I assume they are of the dimension of occ orb space
-//  mo_density.print(std::string("transform_MO: mo_density (occ)").c_str());
+//  mo_density.print(string("transform_MO: mo_density (occ)").c_str());
   Ref<OrbitalSpace> unscreen_occ_act = r12world()->refwfn()->get_poporbspace(Alpha)->occ_act_sb();
   Ref<OrbitalSpace> occ = r12world()->refwfn()->get_poporbspace(Alpha)->occ_sb();
   std::vector<int> map1 = map(*occ, *unscreen_occ_act);
@@ -808,9 +808,9 @@ RefSCMatrix SpinOrbitalPT2R12::transform_MO() //transformation matrix between oc
     occ_act_blockmat->svd_this(UU,DD,VV);
 #if 0
     occ_act_blockmat.print(prepend_spincase(AlphaBeta, "transform_MO: occ_act_block").c_str());
-    UU.print(std::string("transform_MO: UU").c_str());
-    DD.print(std::string("transform_MO: DD").c_str());
-    VV.print(std::string("transform_MO: VV").c_str());
+    UU.print(string("transform_MO: UU").c_str());
+    DD.print(string("transform_MO: DD").c_str());
+    VV.print(string("transform_MO: VV").c_str());
 #endif
     for (int i2 = 0; i2 < num_occ_act; ++i2)
     {
@@ -821,7 +821,7 @@ RefSCMatrix SpinOrbitalPT2R12::transform_MO() //transformation matrix between oc
     }// finish building MO transform matrix in the block
   }
 #if 0
-    TransformMat.print(std::string("transform_MO: final TransformMat").c_str());
+    TransformMat.print(string("transform_MO: final TransformMat").c_str());
 #endif
 
    return TransformMat;
@@ -977,7 +977,7 @@ void SpinOrbitalPT2R12::compute()
   if(cabs_singles_)
   {
     double alpha_corre = 0.0, beta_corre = 0.0, cabs_singles_corre = 0.0;
-    if(cabs_singles_h0_ == std::string("fock"))
+    if(cabs_singles_h0_ == string("fock"))
     {
       beta_corre =  this->cabs_singles_Fock(Beta);
       if (spin_polarized)
@@ -985,14 +985,14 @@ void SpinOrbitalPT2R12::compute()
       else
         alpha_corre = beta_corre;
       cabs_singles_e = alpha_corre + beta_corre;
-      ExEnv::out0() << indent << scprintf("CABS singles (Fock):                   %17.12lf",
+      ExEnv::out0() << indent << scprintf("CABS singles (fock):                   %17.12lf",
                                         cabs_singles_e) << endl;
 
     }
-    else if(cabs_singles_h0_ == std::string("dyall"))
+    else if(cabs_singles_h0_ == string("dyall"))
     {
       cabs_singles_e = cabs_singles_Dyall();
-      ExEnv::out0() << indent << scprintf("CABS singles (Dyall):                  %17.12lf",
+      ExEnv::out0() << indent << scprintf("CABS singles (dyall):                  %17.12lf",
                                       cabs_singles_e) << endl;
     }
     else
@@ -1100,7 +1100,7 @@ double SpinOrbitalPT2R12::cabs_singles_Fock(SpinCase1 spin)
   {
     oreg->add(make_keyspace_pair(pspace));
   }
-  const std::string key = oreg->key(pspace);
+  const string key = oreg->key(pspace);
   pspace = oreg->value(key);
 
   Ref<OrbitalSpace> all_virtual_space;
@@ -1109,7 +1109,7 @@ double SpinOrbitalPT2R12::cabs_singles_Fock(SpinCase1 spin)
     all_virtual_space = new OrbitalSpaceUnion("AA", "all virtuals", *vspace, *cabsspace, true);
     if (!oreg->value_exists(all_virtual_space))
       oreg->add(make_keyspace_pair(all_virtual_space));
-    const std::string AAkey = oreg->key(all_virtual_space);
+    const string AAkey = oreg->key(all_virtual_space);
     all_virtual_space = oreg->value(AAkey);
 
     { // make sure that the AO space that supports all_virtual_space is known
@@ -1295,7 +1295,7 @@ double SpinOrbitalPT2R12::cabs_singles_Dyall()
   Ref<OrbitalSpaceRegistry> oreg = this->r12world()->world()->tfactory()->orbital_registry();
   if (!oreg->value_exists(pspace))
     oreg->add(make_keyspace_pair(pspace));
-  const std::string key = oreg->key(pspace);
+  const string key = oreg->key(pspace);
   pspace = oreg->value(key);
 
   Ref<OrbitalSpace> all_virtual_space;
@@ -1303,7 +1303,7 @@ double SpinOrbitalPT2R12::cabs_singles_Dyall()
   {
     all_virtual_space = new OrbitalSpaceUnion("AA", "all virtuals", *vspace, *cabsspace, true);
     if (!oreg->value_exists(all_virtual_space)) oreg->add(make_keyspace_pair(all_virtual_space));
-    const std::string AAkey = oreg->key(all_virtual_space);
+    const string AAkey = oreg->key(all_virtual_space);
     all_virtual_space = oreg->value(AAkey);
 
     { // make sure that the AO space that supports all_virtual_space is known
@@ -1649,7 +1649,7 @@ void SpinOrbitalPT2R12::brillouin_matrix() {
       oreg->add(make_keyspace_pair(pspace[s]));
     }
     {
-      const std::string key = oreg->key(pspace[s]);
+      const string key = oreg->key(pspace[s]);
       pspace[s] = oreg->value(key);
     }
 
@@ -1658,7 +1658,7 @@ void SpinOrbitalPT2R12::brillouin_matrix() {
       oreg->add(make_keyspace_pair(mspace[s]));
     }
     {
-      const std::string key = oreg->key(mspace[s]);
+      const string key = oreg->key(mspace[s]);
       mspace[s] = oreg->value(key);
     }
 

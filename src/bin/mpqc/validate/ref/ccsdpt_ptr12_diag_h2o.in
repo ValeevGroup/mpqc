@@ -4,18 +4,26 @@ mol<Molecule>: (
   symmetry = auto
   unit = bohr
   { atoms geometry } = {
-    Ne [0.0 0.0 0.0]
+    O [     0.000000000000     0.000000000000     0.369372944000 ]
+    H [     0.783975899000     0.000000000000    -0.184686472000 ]
+    H [    -0.783975899000     0.000000000000    -0.184686472000 ]
   }
 )
 molecule = $:mol
 
 basis<GaussianBasisSet>: (
-  name = cc-pVDZ
+  name = "DZ (Dunning)"
   puream = true
   molecule = $:molecule
 )
 
 abasis<GaussianBasisSet>: (
+  name = cc-pVTZ
+  puream = true
+  molecule = $:molecule
+)
+
+dbasis<GaussianBasisSet>: (
   name = cc-pVTZ
   puream = true
   molecule = $:molecule
@@ -28,6 +36,7 @@ mole<CCSD>: (
   molecule = $:molecule
   basis = $:basis
   aux_basis = $:abasis
+  df_basis = $:dbasis
   corr_factor = stg-3g
   corr_param = 1.5
   stdapprox = "C"
@@ -39,7 +48,7 @@ mole<CCSD>: (
   workmemory = 100000000
   store_ints = posix
   nfzc = auto
-  ansatz<R12Ansatz> : ( diag = false )
+  ansatz<R12Ansatz> : ( diag = true )
   reference<CLHF>: (
     integrals = $:integral
     molecule = $:molecule

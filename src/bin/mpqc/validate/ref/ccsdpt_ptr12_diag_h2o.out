@@ -4,7 +4,7 @@
 
   Machine:    i386-apple-darwin11.1.0
   User:       evaleev@EdBookPro.local
-  Start Time: Tue Nov  1 10:48:25 2011
+  Start Time: Tue Nov  1 10:34:39 2011
 
   Using ProcMessageGrp for message passing (number of nodes = 1).
   Using PthreadThreadGrp for threading (number of threads = 1).
@@ -29,7 +29,7 @@
   docc = [ 3 0 1 1 ]
   nbasis = 14
   Reading file /Users/evaleev/Development/workspace/install/mpqc-gcc/share/mpqc/3.0.0-alpha/basis/cc-pvtz.kv.
-  ints_file = ./ccsdpt_ptr12_h2o.moints
+  ints_file = ./ccsdpt_ptr12_diag_h2o.moints
   CCR12: auto-freezing 1 core orbitals
   Reading file /Users/evaleev/Development/workspace/install/mpqc-gcc/share/mpqc/3.0.0-alpha/basis/cc-pvtz.kv.
 
@@ -46,8 +46,8 @@
 
   MPQC options:
     matrixkit       = <ReplSCMatrixKit>
-    filename        = ccsdpt_ptr12_h2o
-    restart_file    = ccsdpt_ptr12_h2o.ckpt
+    filename        = ccsdpt_ptr12_diag_h2o
+    restart_file    = ccsdpt_ptr12_diag_h2o.ckpt
     restart         = yes
     checkpoint      = no
     savestate       = no
@@ -288,30 +288,35 @@
   Built TransformedDensityFitting: name = (i(sym) a(sym)|DF|Mu)
   Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|a(sym) >
   Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|a(sym) a'>(b1 b2|k1 k2)
-  f1 file  :   ./ccsdpt_ptr12_h2o.smith.f1
+  f1 file  :   ./ccsdpt_ptr12_diag_h2o.smith.f1
   size     :        571 doubles
 
-  v2 file  :   ./ccsdpt_ptr12_h2o.smith.v2
+  v2 file  :   ./ccsdpt_ptr12_diag_h2o.smith.v2
   size     :     204192 doubles
 
-  t1 file  :   ./ccsdpt_ptr12_h2o.smith.t1
+  t1 file  :   ./ccsdpt_ptr12_diag_h2o.smith.t1
   size     :         14 doubles
 
-  t2 file  :   ./ccsdpt_ptr12_h2o.smith.t2
+  gt2 file :   ./ccsdpt_ptr12_diag_h2o.smith.gt2
+  size     :        117 doubles
+
+  t2 file  :   ./ccsdpt_ptr12_diag_h2o.smith.t2
   size     :        635 doubles
 
-  vr file  :   ./ccsdpt_ptr12_h2o.smith.vr2
+  vr file  :   ./ccsdpt_ptr12_diag_h2o.smith.vr2
   size     :       1204 doubles
 
-  vd file  :   ./ccsdpt_ptr12_h2o.smith.vd2
+  vd file  :   ./ccsdpt_ptr12_diag_h2o.smith.vd2
   size     :       1204 doubles
 
-  gt2 file :   ./ccsdpt_ptr12_h2o.smith.xs2
+  gt2 file :   ./ccsdpt_ptr12_diag_h2o.smith.xs2
   size     :        117 doubles
 
-  gt2 file :   ./ccsdpt_ptr12_h2o.smith.bs2
+  gt2 file :   ./ccsdpt_ptr12_diag_h2o.smith.bs2
   size     :        117 doubles
 
+SpinCase2 = 0
+generate_MP2R12EnergyUtil_Diag -- generate object of type MP2R12EnergyUtil_Diag_DifferentSpin.
   Using symmetric orthogonalization.
   n(basis):            16
   Maximum orthogonalization residual = 0.00632974
@@ -328,35 +333,35 @@
   CCSD iterations:
   iter      corr energy        residual RMS        Wall 
   ======================================================
-     0    -0.0812340559284     0.0012479462661      0.12
+     0    -0.0812340559284     0.0012479462661      0.13
      1    -0.0830216172346     0.0001723879180      0.12
      2    -0.0831692797197     0.0000717681565      0.12
-     3    -0.0831911770339     0.0000152857224      0.12
+     3    -0.0831911770339     0.0000152857224      0.13
      4    -0.0831905065065     0.0000054886754      0.13
-     5    -0.0831904527868     0.0000026337448      0.12
-     6    -0.0831904203147     0.0000002441383      0.12
-     7    -0.0831904310785     0.0000001697208      0.12
-     8    -0.0831904350836     0.0000000740960      0.12
+     5    -0.0831904527868     0.0000026337448      0.14
+     6    -0.0831904203147     0.0000002441383      0.13
+     7    -0.0831904310785     0.0000001697208      0.13
+     8    -0.0831904350836     0.0000000740960      0.13
      9    -0.0831904373313     0.0000000100008      0.12
-    10    -0.0831904370729     0.0000000059901      0.13
-    11    -0.0831904371007     0.0000000028693      0.13
-    12    -0.0831904371255     0.0000000001769      0.13
-    13    -0.0831904371343     0.0000000000668      0.12
+    10    -0.0831904370729     0.0000000059901      0.12
+    11    -0.0831904371007     0.0000000028693      0.12
+    12    -0.0831904371255     0.0000000001769      0.12
+    13    -0.0831904371343     0.0000000000668      0.13
   ======================================================
 
-  R12 doubles correction: -0.1780616976
-  R12 doubles energy    : -0.2612521347
+  R12 doubles correction: -0.1617876032
+  R12 doubles energy    : -0.2449780403
 
-  Elapsed time [ R12 doubles correction ]:       0.02
+  Elapsed time [ R12 doubles correction ]:       0.03
 
 
   CCSD(T) correction: -0.0009589030
-  CCSD(T) energy    : -0.2622110377
+  CCSD(T) energy    : -0.2459369433
 
   Elapsed time [ (T) correction ]:       0.03
 
 
-  Value of the MolecularEnergy:  -74.7794465517
+  Value of the MolecularEnergy:  -74.7631724573
 
   Function Parameters:
     value_accuracy    = 0.000000e+00 (1.000000e-06) (computed)
@@ -389,7 +394,7 @@
     memory = 256MB ( max used: 250MB )
     disk = [./ 0B] ( max used: 0B )
   )
-  WARNING: 620784 bytes managed by ConsumableResources was not explicitly deallocated!
+  WARNING: 621976 bytes managed by ConsumableResources was not explicitly deallocated!
 
-  End Time: Tue Nov  1 10:48:36 2011
+  End Time: Tue Nov  1 10:34:50 2011
 

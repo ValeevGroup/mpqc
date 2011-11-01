@@ -778,7 +778,7 @@ Value of the MolecularEnergy: -128.7905683688
           Geminal orbital Product Space: ij
           Space of orbital products from which geminal substitutions are allowed: ij
           Projector: 2  , i.e. (1-O1)(1-O2)-V1V2
-          Ansatz: diagonal with fixed amplitudes
+          Ansatz: orbital-invariant with optimized amplitudes
           WOF: false
         H0_dk_approx_pauli: false
         Max # ABS indices: 2

@@ -2,9 +2,9 @@
                     MPQC: Massively Parallel Quantum Chemistry
                                 Version 3.0.0-alpha
 
-  Machine:    i386-apple-darwin10.2.0
-  User:       evaleev@ThinAir.local
-  Start Time: Mon Dec 28 09:32:21 2009
+  Machine:    i386-apple-darwin11.1.0
+  User:       evaleev@EdBookPro.local
+  Start Time: Sun Oct 30 18:01:06 2011
 
   Using ProcMessageGrp for message passing (number of nodes = 1).
   Using PthreadThreadGrp for threading (number of threads = 1).
@@ -12,302 +12,571 @@
   Total number of processors = 1
 
   Using IntegralLibint2 by default for molecular integrals evaluation
+  Given resources: ConsumableResources: ( memory = 256MB disk = [./ 0B] )
 
-  Reading file /Users/evaleev/Development/workspace/mpqc-install-icc/share/mpqc/3.0.0-alpha/atominfo.kv.
-  Reading file /Users/evaleev/Development/workspace/mpqc-install-icc/share/mpqc/3.0.0-alpha/basis/cc-pvdz.kv.
-  Reading file /Users/evaleev/Development/workspace/mpqc-install-icc/share/mpqc/3.0.0-alpha/basis/cc-pvtz-ri.kv.
-  ints_file = psipt2f12_scfc11ccpvdzaugccpvdzc2v.moints
+  Reading file /Users/evaleev/Development/workspace/install/mpqc-gcc/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /Users/evaleev/Development/workspace/install/mpqc-gcc/share/mpqc/3.0.0-alpha/basis/cc-pvdz.kv.
+  Reading file /Users/evaleev/Development/workspace/install/mpqc-gcc/share/mpqc/3.0.0-alpha/basis/cc-pvtz-ri.kv.
+  ints_file = ./psipt2f12_scfc11ccpvdzaugccpvdzc2v.moints
+  Reading file /Users/evaleev/Development/workspace/install/mpqc-gcc/share/mpqc/3.0.0-alpha/basis/aug-cc-pvdz.kv.
   Using symmetric orthogonalization.
   n(basis):            11     2     7     4
   Maximum orthogonalization residual = 3.66509
   Minimum orthogonalization residual = 0.0352018
-  Reading file /Users/evaleev/Development/workspace/mpqc-install-icc/share/mpqc/3.0.0-alpha/basis/aug-cc-pvdz.kv.
+
+  Molecular formula H2O
+
+  The following keywords in "/Users/evaleev/Development/workspace/mpqc/src/bin/mpqc/validate/ref/psipt2f12_scfc11ccpvdzaugccpvdzc2v.in" were ignored:
+    mpqc:optimize
+    mpqc:mole:memory
+    mpqc:integrals
+
+  MPQC options:
+    matrixkit       = <ReplSCMatrixKit>
+    filename        = psipt2f12_scfc11ccpvdzaugccpvdzc2v
+    restart_file    = psipt2f12_scfc11ccpvdzaugccpvdzc2v.ckpt
+    restart         = no
+    checkpoint      = no
+    savestate       = no
+    do_energy       = yes
+    do_gradient     = no
+    do_freq         = no
+    optimize        = no
+    write_pdb       = no
+    print_mole      = yes
+    print_timings   = yes
+    print_resources = yes
   Orthogonalizing basis for space RIBS:
+    WARNING: 12 basis functions ignored in symmetric orthogonalization.
     Using symmetric orthogonalization.
-    n(basis):            18     4    12     7
-    Maximum orthogonalization residual = 5.65442
-    Minimum orthogonalization residual = 0.00288355
-  Orthogonalizing basis for space RIBS:
-    WARNING: 24 basis functions ignored in symmetric orthogonalization.
-    Using symmetric orthogonalization.
-    n(basis):            29     6    19    11
-    Maximum orthogonalization residual = 9.13819
-    Minimum orthogonalization residual = 0.00397789
+    n(basis):            22     5    16    10
+    Maximum orthogonalization residual = 6.08288
+    Minimum orthogonalization residual = 0.00298315
+
+  Entered G12 diagonal intermediates evaluator
+
+    Entered generic tensor (<i(sym) i(sym)|i(sym) i(sym)>) evaluator
+      Built TwoBodyMOIntsTransform_ijR: name = <i(sym) Mu|ERI|mu >
+      Built DensityFitting: name = (i(sym) mu|DF|Mu)
+      Built TransformedDensityFitting: name = (i(sym) i(sym)|DF|Mu)
+      Built TwoBodyMOIntsTransform_ijR: name = <i(sym) Mu|G12'[0]|mu >
+      Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|i(sym) >
+      Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|i(sym) i(sym)>(b1 b2|k1 k2)
+    Exited generic tensor (<i(sym) i(sym)|i(sym) i(sym)>) evaluator
+
+    Entered generic tensor (<i(sym) i(sym)|i(sym) i(sym)>) evaluator
+      Built TwoBodyMOIntsTransform_ijR: name = <i(sym) Mu|G12'[0,0]|mu >
+      Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0,0]|i(sym) >
+      Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0,0]|i(sym) i(sym)>(b1 b2|k1 k2)
+    Exited generic tensor (<i(sym) i(sym)|i(sym) i(sym)>) evaluator
+
+    Entered generic tensor (<i(sym) i(sym)|i(sym) i(sym)>) evaluator
+    Exited generic tensor (<i(sym) i(sym)|i(sym) i(sym)>) evaluator
+  Exited G12 diagonal intermediates evaluator
+  Built TransformedDensityFitting: name = (i(sym) p(sym)|DF|Mu)
+  Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|p(sym) >
+  Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|p(sym) p(sym)>(b1 b2|k1 k2)
+
+  Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym) p(sym)> . <i(sym) i(sym)|p(sym) p(sym)>^T)
+  Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym) p(sym)> . <i(sym) i(sym)|p(sym) p(sym)>^T)
+
+  Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym) p(sym)> . <i(sym) i(sym)|p(sym) p(sym)>^T)
+  Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym) p(sym)> . <i(sym) i(sym)|p(sym) p(sym)>^T)
   SVD-projecting out  occupied symmetry-blocked MOs out of RIBS to obtain space CABS
     5 basis functions projected out of RIBS.
-    n(basis):            26     6    18    10
+    n(basis):            19     5    15     9
     Maximum singular value = 1
     Minimum singular value = 1
-  SVD-projecting out  out of CABS to obtain space CABS
+  SVD-projecting out  unoccupied symmetry-blocked MOs out of CABS to obtain space CABS
+    Built TransformedDensityFitting: name = (i(sym) m(sym)|DF|Mu)
+    Built TwoBodyMOIntsTransform_ijR: name = <i(sym) Mu|ERI|mu' >
+    Built DensityFitting: name = (i(sym) mu'|DF|Mu)
+    Built TransformedDensityFitting: name = (i(sym) a'|DF|Mu)
+    Built TwoBodyMOIntsTransform_ijR: name = <i(sym) Mu|G12'[0]|mu' >
+    Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|a' >
+    Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|m(sym) >
+    Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|m(sym) a'>(b1 b2|k1 k2)
 
-    Molecular formula H2O
+    Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|m(sym) a'> . <i(sym) i(sym)|m(sym) a'>^T)
+    Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|m(sym) a'> . <i(sym) i(sym)|m(sym) a'>^T)
 
-    MPQC options:
-      matrixkit     = <ReplSCMatrixKit>
-      filename      = psipt2f12_scfc11ccpvdzaugccpvdzc2v
-      restart_file  = psipt2f12_scfc11ccpvdzaugccpvdzc2v.ckpt
-      restart       = no
-      checkpoint    = no
-      savestate     = no
-      do_energy     = yes
-      do_gradient   = no
-      optimize      = no
-      write_pdb     = no
-      print_mole    = yes
-      print_timings = yes
+    Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|m(sym) a'> . <i(sym) i(sym)|m(sym) a'>^T)
+    Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|m(sym) a'> . <i(sym) i(sym)|m(sym) a'>^T)
 
-    
-    Entered G12 diagonal intermediates evaluator
+    Entered B(app. C) intermediate evaluator
 
-      Entered generic tensor (<i(sym) i(sym)|i(sym) i(sym)>) evaluator
-        Built TwoBodyMOIntsTransform_ijR: name = <i(sym) Mu|ERI|mu >
-        Built DensityFitting: name = (i(sym) mu|DF|Mu)
-        Built TransformedDensityFitting: name = (i(sym) i(sym)|DF|Mu)
-        Built TwoBodyMOIntsTransform_ijR: name = <i(sym) Mu|G12'[p16807]|mu >
-        Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[p16807]|i(sym) >
-        Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[p16807]|i(sym) i(sym)>(b1 b2|k1 k2)
-      Exited generic tensor (<i(sym) i(sym)|i(sym) i(sym)>) evaluator
-
-      Entered generic tensor (<i(sym) i(sym)|i(sym) i(sym)>) evaluator
-        Built TwoBodyMOIntsTransform_ijR: name = <i(sym) Mu|G12'[p282475249]|mu >
-        Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[p282475249]|i(sym) >
-        Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[p282475249]|i(sym) i(sym)>(b1 b2|k1 k2)
-      Exited generic tensor (<i(sym) i(sym)|i(sym) i(sym)>) evaluator
-
-      Entered generic tensor (<i(sym) i(sym)|i(sym) i(sym)>) evaluator
-      Exited generic tensor (<i(sym) i(sym)|i(sym) i(sym)>) evaluator
-    Exited G12 diagonal intermediates evaluator
-part1_equiv_part2 = true
-
-    Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym) p(sym)> . <i(sym) i(sym)|p(sym) p(sym)>^T)
-      Built TransformedDensityFitting: name = (i(sym) p(sym)|DF|Mu)
-      Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[p16807]|p(sym) >
-      Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[p16807]|p(sym) p(sym)>(b1 b2|k1 k2)
-      Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|ERI|p(sym) >
-      Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|ERI|p(sym) p(sym)>(b1 b2|k1 k2)
-    Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym) p(sym)> . <i(sym) i(sym)|p(sym) p(sym)>^T)
-
-    Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym)_gamma(p(sym)) a'> . <i(sym) i(sym)|p(sym) a'>^T)
-      Built TransformedDensityFitting: name = (i(sym) p(sym)_gamma(p(sym))|DF|Mu)
-      Built TwoBodyMOIntsTransform_ijR: name = <i(sym) Mu|ERI|mu' >
-      Built DensityFitting: name = (i(sym) mu'|DF|Mu)
-      Built TransformedDensityFitting: name = (i(sym) a'|DF|Mu)
-      Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[p16807]|p(sym)_gamma(p(sym)) >
-      Built TwoBodyMOIntsTransform_ijR: name = <i(sym) Mu|G12'[p16807]|mu' >
-      Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[p16807]|a' >
-      Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[p16807]|p(sym)_gamma(p(sym)) a'>(b1 b2|k1 k2)
-      Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|ERI|a' >
-      Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|ERI|p(sym) a'>(b1 b2|k1 k2)
-    Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym)_gamma(p(sym)) a'> . <i(sym) i(sym)|p(sym) a'>^T)
-
-    Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|a' p(sym)_gamma(p(sym))> . <i(sym) i(sym)|a' p(sym)>^T)
-      Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[p16807]|a' p(sym)_gamma(p(sym))>(b1 b2|k1 k2)
-      Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|ERI|a' p(sym)>(b1 b2|k1 k2)
-    Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|a' p(sym)_gamma(p(sym))> . <i(sym) i(sym)|a' p(sym)>^T)
-
-    Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym) p(sym)> . <i(sym) i(sym)|p(sym) p(sym)>^T)
-    Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym) p(sym)> . <i(sym) i(sym)|p(sym) p(sym)>^T)
-
-    Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym)_gamma(p(sym)) a'> . <i(sym) i(sym)|p(sym) a'>^T)
-      Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[p16807]|p(sym) a'>(b1 b2|k1 k2)
-    Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym)_gamma(p(sym)) a'> . <i(sym) i(sym)|p(sym) a'>^T)
-
-    Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|a' p(sym)_gamma(p(sym))> . <i(sym) i(sym)|a' p(sym)>^T)
-      Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[p16807]|a' p(sym)>(b1 b2|k1 k2)
-    Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|a' p(sym)_gamma(p(sym))> . <i(sym) i(sym)|a' p(sym)>^T)
-
-    Entered B(app. C) general reference Ansatz2 intermediate evaluator
-
-      Entered Coulomb(DF) matrix evaluator
-        Begin computation of Coulomb(DF) matrix
-        Built TwoBodyMOIntsTransform_ijR: name = <mu Mu|ERI|mu >
-        Built DensityFitting: name = (mu mu|DF|Mu)
-        Built TwoBodyMOIntsTransform_ijR: name = <mu' Mu|ERI|mu >
-        End of computation of Coulomb(DF) matrix
-      Exited Coulomb(DF) matrix evaluator
-
-      Entered Alpha-beta Q(C) Ansatz 2 intermediate evaluator
+      Entered Alpha-beta Q(C) intermediate evaluator
         Entered generic X intermediate evaluator
 
           Entered generic tensor (<i(sym) i(sym)|i(sym) i(sym)_hJ(p')[A]>) evaluator
             Built TransformedDensityFitting: name = (i(sym) i(sym)_hJ(p')[A]|DF|Mu)
-            Built TwoBodyMOIntsTransform_ijR: name = <i(sym) Mu|G12'[p282475249]|mu' >
-            Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[p282475249]|i(sym)_hJ(p')[A] >
-            Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[p282475249]|i(sym) i(sym)_hJ(p')[A]>(b1 b2|k1 k2)
+            Built TwoBodyMOIntsTransform_ijR: name = <i(sym) Mu|G12'[0,0]|mu' >
+            Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0,0]|i(sym)_hJ(p')[A] >
+            Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0,0]|i(sym) i(sym)_hJ(p')[A]>(b1 b2|k1 k2)
           Exited generic tensor (<i(sym) i(sym)|i(sym) i(sym)_hJ(p')[A]>) evaluator
         Exited generic X intermediate evaluator
-      Exited Alpha-beta Q(C) Ansatz 2 intermediate evaluator
+      Exited Alpha-beta Q(C) intermediate evaluator
 
-      Entered Alpha-beta P(C) Ansatz 2 intermediate evaluator
-
-        Entered exchange(DF) matrix evaluator
-          Begin computation of exchange(DF) matrix
-          Built TwoBodyMOIntsTransform_ijR: name = <dd Mu|ERI|mu' >
-          Built DensityFitting: name = (dd mu'|DF|Mu)
-          Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <mu' Mu|ERI|dd >
-          End of computation of exchange(DF) matrix
-        Exited exchange(DF) matrix evaluator
-
-        Entered Coulomb(DF) matrix evaluator
-          Begin computation of Coulomb(DF) matrix
-          Built TwoBodyMOIntsTransform_ijR: name = <mu' Mu|ERI|mu' >
-          End of computation of Coulomb(DF) matrix
-        Exited Coulomb(DF) matrix evaluator
+      Entered Alpha-beta P(C) intermediate evaluator
         Entered generic FxF intermediate evaluator
+          Built TransformedDensityFitting: name = (i(sym) p'_K(p')[A]|DF|Mu)
+          Built TransformedDensityFitting: name = (i(sym) p'|DF|Mu)
+          Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|p' >
+          Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|p'_K(p')[A] >
+          Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|p'_K(p')[A] p'>(b1 b2|k1 k2)
 
           Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p'_K(p')[A] p'> . <i(sym) i(sym)|p' p'>^T)
-            Built TransformedDensityFitting: name = (i(sym) p'_K(p')[A]|DF|Mu)
-            Built TransformedDensityFitting: name = (i(sym) p'|DF|Mu)
-            Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[p16807]|p'_K(p')[A] >
-            Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[p16807]|p' >
-            Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[p16807]|p'_K(p')[A] p'>(b1 b2|k1 k2)
-            Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[p16807]|p' p'>(b1 b2|k1 k2)
+            Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|p' p'>(b1 b2|k1 k2)
           Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p'_K(p')[A] p'> . <i(sym) i(sym)|p' p'>^T)
         Exited generic FxF intermediate evaluator
-
-        Entered Coulomb(DF) matrix evaluator
-          Begin computation of Coulomb(DF) matrix
-          End of computation of Coulomb(DF) matrix
-        Exited Coulomb(DF) matrix evaluator
-
-        Entered exchange(DF) matrix evaluator
-          Begin computation of exchange(DF) matrix
-          Built TransformedDensityFitting: name = (mu dd|DF|Mu)
-          Built PermutedDensityFitting: name = (dd mu|DF|Mu)
-          Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <mu Mu|ERI|dd >
-          End of computation of exchange(DF) matrix
-        Exited exchange(DF) matrix evaluator
         Entered generic FxF intermediate evaluator
+          Built TransformedDensityFitting: name = (i(sym) p'_F(p')[A]|DF|Mu)
+          Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|p'_F(p')[A] >
+          Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|m(sym) p'_F(p')[A]>(b1 b2|k1 k2)
 
-          Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym)_F(p(sym))[A] p(sym)> . <i(sym) i(sym)|p(sym) p(sym)>^T)
-            Built TransformedDensityFitting: name = (i(sym) p(sym)_F(p(sym))[A]|DF|Mu)
-            Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[p16807]|p(sym)_F(p(sym))[A] >
-            Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[p16807]|p(sym)_F(p(sym))[A] p(sym)>(b1 b2|k1 k2)
-          Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym)_F(p(sym))[A] p(sym)> . <i(sym) i(sym)|p(sym) p(sym)>^T)
-        Exited generic FxF intermediate evaluator
-
-        Entered exchange(DF) matrix evaluator
-          Begin computation of exchange(DF) matrix
-          End of computation of exchange(DF) matrix
-        Exited exchange(DF) matrix evaluator
-        Entered generic FxF intermediate evaluator
-
-          Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym) p(sym)_F(a')[A]> . <i(sym) i(sym)|p(sym) p(sym)>^T)
-            Built TransformedDensityFitting: name = (i(sym) p(sym)_F(a')[A]|DF|Mu)
-            Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[p16807]|p(sym)_F(a')[A] >
-            Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[p16807]|p(sym) p(sym)_F(a')[A]>(b1 b2|k1 k2)
-          Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym) p(sym)_F(a')[A]> . <i(sym) i(sym)|p(sym) p(sym)>^T)
+          Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|m(sym) p'_F(p')[A]> . <i(sym) i(sym)|m(sym) p'>^T)
+            Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|m(sym) p'>(b1 b2|k1 k2)
+          Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|m(sym) p'_F(p')[A]> . <i(sym) i(sym)|m(sym) p'>^T)
         Exited generic FxF intermediate evaluator
         Entered generic FxF intermediate evaluator
+          Built TransformedDensityFitting: name = (i(sym) m(sym)_F(p')[A]|DF|Mu)
+          Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|m(sym)_F(p')[A] >
+          Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|m(sym)_F(p')[A] a'>(b1 b2|k1 k2)
 
-          Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym)_gFg(p(sym)) a'> . <i(sym) i(sym)|p(sym) a'>^T)
-            Built TransformedDensityFitting: name = (i(sym) p(sym)_gFg(p(sym))|DF|Mu)
-            Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[p16807]|p(sym)_gFg(p(sym)) >
-            Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[p16807]|p(sym)_gFg(p(sym)) a'>(b1 b2|k1 k2)
-          Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym)_gFg(p(sym)) a'> . <i(sym) i(sym)|p(sym) a'>^T)
+          Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|m(sym)_F(p')[A] a'> . <i(sym) i(sym)|m(sym) a'>^T)
+          Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|m(sym)_F(p')[A] a'> . <i(sym) i(sym)|m(sym) a'>^T)
         Exited generic FxF intermediate evaluator
-
-        Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym)_gamma(p(sym)) a'> . <i(sym) i(sym)|p(sym) a'_F(a')[A]>^T)
-          Built TransformedDensityFitting: name = (i(sym) a'_F(a')[A]|DF|Mu)
-          Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[p16807]|a'_F(a')[A] >
-          Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[p16807]|p(sym) a'_F(a')[A]>(b1 b2|k1 k2)
-        Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym)_gamma(p(sym)) a'> . <i(sym) i(sym)|p(sym) a'_F(a')[A]>^T)
-
-        Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|a' p(sym)_gamma(p(sym))> . <i(sym) i(sym)|a'_F(a')[A] p(sym)>^T)
-          Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[p16807]|a'_F(a')[A] p(sym)>(b1 b2|k1 k2)
-        Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|a' p(sym)_gamma(p(sym))> . <i(sym) i(sym)|a'_F(a')[A] p(sym)>^T)
         Entered generic FxF intermediate evaluator
+          Built TransformedDensityFitting: name = (i(sym) m(sym)_F(m(sym))[A]|DF|Mu)
+          Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[0]|m(sym)_F(m(sym))[A] >
+          Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|m(sym)_F(m(sym))[A] a'>(b1 b2|k1 k2)
 
-          Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym)_Fg(p') a'> . <i(sym) i(sym)|p(sym) a'>^T)
-            Built TransformedDensityFitting: name = (i(sym) p(sym)_Fg(p')|DF|Mu)
-            Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <i(sym) Mu|G12'[p16807]|p(sym)_Fg(p') >
-            Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[p16807]|p(sym)_Fg(p') a'>(b1 b2|k1 k2)
-          Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|p(sym)_Fg(p') a'> . <i(sym) i(sym)|p(sym) a'>^T)
+          Entered generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|m(sym)_F(m(sym))[A] a'> . <i(sym) i(sym)|m(sym) a'>^T)
+          Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|m(sym)_F(m(sym))[A] a'> . <i(sym) i(sym)|m(sym) a'>^T)
         Exited generic FxF intermediate evaluator
-      Exited Alpha-beta P(C) Ansatz 2 intermediate evaluator
+      Exited Alpha-beta P(C) intermediate evaluator
+    Exited B(app. C) intermediate evaluator
 
-    Exited B(app. C) general reference Ansatz2 intermediate evaluator
+    Alpha-beta V (in SpinOrbitalPT2R12::V_genref_projector2)
+                   1               2               3
+        1   -0.0193799498    0.0022496921    0.0000000000
+        2    0.0023570822   -0.0145562954   -0.0000000000
+        3   -0.0000000000   -0.0000000000   -0.0158172651
+        4   -0.0000000000    0.0000000000    0.0000000000
+        5    0.0023570822   -0.0090630446   -0.0000000000
+        6   -0.0124753317   -0.0035850927   -0.0000000000
+        7    0.0000000000   -0.0000000000    0.0026061490
+        8   -0.0000000000   -0.0000000000    0.0000000000
+        9   -0.0000000000    0.0000000000   -0.0110605324
+       10    0.0000000000   -0.0000000000    0.0022815155
+       11   -0.0145268592    0.0016609826    0.0000000000
+       12   -0.0000000000   -0.0000000000   -0.0000000000
+       13   -0.0000000000    0.0000000000    0.0000000000
+       14   -0.0000000000   -0.0000000000    0.0000000000
+       15   -0.0000000000    0.0000000000   -0.0000000000
+       16   -0.0125388733   -0.0023332567   -0.0000000000
+
+                   4               5               6
+        1   -0.0000000000    0.0022496921   -0.0117591988
+        2    0.0000000000   -0.0090630446   -0.0033171909
+        3    0.0000000000    0.0000000000    0.0000000000
+        4   -0.0158371318    0.0000000000   -0.0000000000
+        5    0.0000000000   -0.0145562954   -0.0033171909
+        6   -0.0000000000   -0.0035850927   -0.0282208785
+        7   -0.0000000000   -0.0000000000   -0.0000000000
+        8   -0.0014627814   -0.0000000000   -0.0000000000
+        9    0.0000000000   -0.0000000000    0.0000000000
+       10   -0.0000000000   -0.0000000000   -0.0000000000
+       11   -0.0000000000    0.0016609826   -0.0083030553
+       12   -0.0000000000    0.0000000000   -0.0000000000
+       13   -0.0095351479    0.0000000000   -0.0000000000
+       14   -0.0017174821   -0.0000000000   -0.0000000000
+       15   -0.0000000000   -0.0000000000   -0.0000000000
+       16   -0.0000000000   -0.0023332567   -0.0079265703
+
+                   7               8               9
+        1   -0.0000000000    0.0000000000    0.0000000000
+        2   -0.0000000000   -0.0000000000   -0.0000000000
+        3    0.0025676032   -0.0000000000   -0.0110605324
+        4   -0.0000000000   -0.0014679835    0.0000000000
+        5    0.0000000000   -0.0000000000   -0.0000000000
+        6    0.0000000000   -0.0000000000   -0.0000000000
+        7   -0.0140880250    0.0000000000    0.0022815155
+        8    0.0000000000   -0.0165291070    0.0000000000
+        9    0.0022750997   -0.0000000000   -0.0158172651
+       10   -0.0050066341    0.0000000000    0.0026061490
+       11   -0.0000000000    0.0000000000    0.0000000000
+       12    0.0000000000   -0.0000000000   -0.0000000000
+       13   -0.0000000000   -0.0016869617    0.0000000000
+       14    0.0000000000   -0.0052395838    0.0000000000
+       15    0.0000000000    0.0000000000   -0.0000000000
+       16   -0.0000000000   -0.0000000000   -0.0000000000
+
+                  10              11              12
+        1   -0.0000000000   -0.0138623233    0.0000000000
+        2    0.0000000000    0.0018842817   -0.0000000000
+        3    0.0022750997    0.0000000000   -0.0000000000
+        4   -0.0000000000   -0.0000000000    0.0000000000
+        5   -0.0000000000    0.0018842817   -0.0000000000
+        6    0.0000000000   -0.0081942181    0.0000000000
+        7   -0.0050066341    0.0000000000    0.0000000000
+        8    0.0000000000   -0.0000000000   -0.0000000000
+        9    0.0025676032    0.0000000000   -0.0000000000
+       10   -0.0140880250    0.0000000000    0.0000000000
+       11   -0.0000000000   -0.0253306080    0.0000000000
+       12    0.0000000000    0.0000000000   -0.0139072713
+       13   -0.0000000000   -0.0000000000   -0.0000000000
+       14    0.0000000000   -0.0000000000    0.0000000000
+       15    0.0000000000    0.0000000000   -0.0038386056
+       16   -0.0000000000   -0.0067957156   -0.0000000000
+
+                  13              14              15
+        1   -0.0000000000    0.0000000000    0.0000000000
+        2    0.0000000000   -0.0000000000   -0.0000000000
+        3    0.0000000000   -0.0000000000   -0.0000000000
+        4   -0.0095351479   -0.0016869617   -0.0000000000
+        5    0.0000000000   -0.0000000000   -0.0000000000
+        6   -0.0000000000   -0.0000000000    0.0000000000
+        7   -0.0000000000    0.0000000000    0.0000000000
+        8   -0.0017174821   -0.0052395838    0.0000000000
+        9    0.0000000000   -0.0000000000   -0.0000000000
+       10   -0.0000000000    0.0000000000    0.0000000000
+       11   -0.0000000000    0.0000000000    0.0000000000
+       12   -0.0000000000    0.0000000000   -0.0038386056
+       13   -0.0158371318   -0.0014679835    0.0000000000
+       14   -0.0014627814   -0.0165291070   -0.0000000000
+       15   -0.0000000000   -0.0000000000   -0.0139072713
+       16   -0.0000000000   -0.0000000000   -0.0000000000
+
+                  16
+        1   -0.0117491407
+        2   -0.0020389176
+        3    0.0000000000
+        4   -0.0000000000
+        5   -0.0020389176
+        6   -0.0079187288
+        7   -0.0000000000
+        8   -0.0000000000
+        9    0.0000000000
+       10   -0.0000000000
+       11   -0.0069429895
+       12   -0.0000000000
+       13   -0.0000000000
+       14   -0.0000000000
+       15   -0.0000000000
+       16   -0.0308952655
+
+
+    Alpha-beta gamma(in SpinOrbitalPT2R12::V_genref_projector2)
+                  1              2              3
+        1   1.0000000000
+        2   0.0000000000   1.0000000000
+        3   0.0000000000   0.0000000000   1.0000000000
+        4   0.0000000000   0.0000000000   0.0000000000
+        5   0.0000000000   0.0000000000   0.0000000000
+        6   0.0000000000   0.0000000000   0.0000000000
+        7   0.0000000000   0.0000000000   0.0000000000
+        8   0.0000000000   0.0000000000   0.0000000000
+        9   0.0000000000   0.0000000000   0.0000000000
+       10   0.0000000000   0.0000000000   0.0000000000
+       11   0.0000000000   0.0000000000   0.0000000000
+       12   0.0000000000   0.0000000000   0.0000000000
+       13   0.0000000000   0.0000000000   0.0000000000
+       14   0.0000000000   0.0000000000   0.0000000000
+       15   0.0000000000   0.0000000000   0.0000000000
+       16   0.0000000000   0.0000000000   0.0000000000
+
+                  4              5              6
+        4   1.0000000000
+        5   0.0000000000   1.0000000000
+        6   0.0000000000   0.0000000000   1.0000000000
+        7   0.0000000000   0.0000000000   0.0000000000
+        8   0.0000000000   0.0000000000   0.0000000000
+        9   0.0000000000   0.0000000000   0.0000000000
+       10   0.0000000000   0.0000000000   0.0000000000
+       11   0.0000000000   0.0000000000   0.0000000000
+       12   0.0000000000   0.0000000000   0.0000000000
+       13   0.0000000000   0.0000000000   0.0000000000
+       14   0.0000000000   0.0000000000   0.0000000000
+       15   0.0000000000   0.0000000000   0.0000000000
+       16   0.0000000000   0.0000000000   0.0000000000
+
+                  7              8              9
+        7   1.0000000000
+        8   0.0000000000   1.0000000000
+        9   0.0000000000   0.0000000000   1.0000000000
+       10   0.0000000000   0.0000000000   0.0000000000
+       11   0.0000000000   0.0000000000   0.0000000000
+       12   0.0000000000   0.0000000000   0.0000000000
+       13   0.0000000000   0.0000000000   0.0000000000
+       14   0.0000000000   0.0000000000   0.0000000000
+       15   0.0000000000   0.0000000000   0.0000000000
+       16   0.0000000000   0.0000000000   0.0000000000
+
+                 10             11             12
+       10   1.0000000000
+       11   0.0000000000   1.0000000000
+       12   0.0000000000   0.0000000000   1.0000000000
+       13   0.0000000000   0.0000000000   0.0000000000
+       14   0.0000000000   0.0000000000   0.0000000000
+       15   0.0000000000   0.0000000000   0.0000000000
+       16   0.0000000000   0.0000000000   0.0000000000
+
+                 13             14             15
+       13   1.0000000000
+       14   0.0000000000   1.0000000000
+       15   0.0000000000   0.0000000000   1.0000000000
+       16   0.0000000000   0.0000000000   0.0000000000
+
+                 16
+       16   1.0000000000
+
+
+    Alpha-beta V.gamma(in SpinOrbitalPT2R12::V_genref_projector2)
+                   1               2               3
+        1   -0.0193799498    0.0022496921    0.0000000000
+        2    0.0023570822   -0.0145562954   -0.0000000000
+        3   -0.0000000000   -0.0000000000   -0.0158172651
+        4   -0.0000000000    0.0000000000    0.0000000000
+        5    0.0023570822   -0.0090630446   -0.0000000000
+        6   -0.0124753317   -0.0035850927   -0.0000000000
+        7    0.0000000000   -0.0000000000    0.0026061490
+        8   -0.0000000000   -0.0000000000    0.0000000000
+        9   -0.0000000000    0.0000000000   -0.0110605324
+       10    0.0000000000   -0.0000000000    0.0022815155
+       11   -0.0145268592    0.0016609826    0.0000000000
+       12   -0.0000000000   -0.0000000000   -0.0000000000
+       13   -0.0000000000    0.0000000000    0.0000000000
+       14   -0.0000000000   -0.0000000000    0.0000000000
+       15   -0.0000000000    0.0000000000   -0.0000000000
+       16   -0.0125388733   -0.0023332567   -0.0000000000
+
+                   4               5               6
+        1   -0.0000000000    0.0022496921   -0.0117591988
+        2    0.0000000000   -0.0090630446   -0.0033171909
+        3    0.0000000000    0.0000000000    0.0000000000
+        4   -0.0158371318    0.0000000000   -0.0000000000
+        5    0.0000000000   -0.0145562954   -0.0033171909
+        6   -0.0000000000   -0.0035850927   -0.0282208785
+        7   -0.0000000000   -0.0000000000   -0.0000000000
+        8   -0.0014627814   -0.0000000000   -0.0000000000
+        9    0.0000000000   -0.0000000000    0.0000000000
+       10   -0.0000000000   -0.0000000000   -0.0000000000
+       11   -0.0000000000    0.0016609826   -0.0083030553
+       12   -0.0000000000    0.0000000000   -0.0000000000
+       13   -0.0095351479    0.0000000000   -0.0000000000
+       14   -0.0017174821   -0.0000000000   -0.0000000000
+       15   -0.0000000000   -0.0000000000   -0.0000000000
+       16   -0.0000000000   -0.0023332567   -0.0079265703
+
+                   7               8               9
+        1   -0.0000000000    0.0000000000    0.0000000000
+        2   -0.0000000000   -0.0000000000   -0.0000000000
+        3    0.0025676032   -0.0000000000   -0.0110605324
+        4   -0.0000000000   -0.0014679835    0.0000000000
+        5    0.0000000000   -0.0000000000   -0.0000000000
+        6    0.0000000000   -0.0000000000   -0.0000000000
+        7   -0.0140880250    0.0000000000    0.0022815155
+        8    0.0000000000   -0.0165291070    0.0000000000
+        9    0.0022750997   -0.0000000000   -0.0158172651
+       10   -0.0050066341    0.0000000000    0.0026061490
+       11   -0.0000000000    0.0000000000    0.0000000000
+       12    0.0000000000   -0.0000000000   -0.0000000000
+       13   -0.0000000000   -0.0016869617    0.0000000000
+       14    0.0000000000   -0.0052395838    0.0000000000
+       15    0.0000000000    0.0000000000   -0.0000000000
+       16   -0.0000000000   -0.0000000000   -0.0000000000
+
+                  10              11              12
+        1   -0.0000000000   -0.0138623233    0.0000000000
+        2    0.0000000000    0.0018842817   -0.0000000000
+        3    0.0022750997    0.0000000000   -0.0000000000
+        4   -0.0000000000   -0.0000000000    0.0000000000
+        5   -0.0000000000    0.0018842817   -0.0000000000
+        6    0.0000000000   -0.0081942181    0.0000000000
+        7   -0.0050066341    0.0000000000    0.0000000000
+        8    0.0000000000   -0.0000000000   -0.0000000000
+        9    0.0025676032    0.0000000000   -0.0000000000
+       10   -0.0140880250    0.0000000000    0.0000000000
+       11   -0.0000000000   -0.0253306080    0.0000000000
+       12    0.0000000000    0.0000000000   -0.0139072713
+       13   -0.0000000000   -0.0000000000   -0.0000000000
+       14    0.0000000000   -0.0000000000    0.0000000000
+       15    0.0000000000    0.0000000000   -0.0038386056
+       16   -0.0000000000   -0.0067957156   -0.0000000000
+
+                  13              14              15
+        1   -0.0000000000    0.0000000000    0.0000000000
+        2    0.0000000000   -0.0000000000   -0.0000000000
+        3    0.0000000000   -0.0000000000   -0.0000000000
+        4   -0.0095351479   -0.0016869617   -0.0000000000
+        5    0.0000000000   -0.0000000000   -0.0000000000
+        6   -0.0000000000   -0.0000000000    0.0000000000
+        7   -0.0000000000    0.0000000000    0.0000000000
+        8   -0.0017174821   -0.0052395838    0.0000000000
+        9    0.0000000000   -0.0000000000   -0.0000000000
+       10   -0.0000000000    0.0000000000    0.0000000000
+       11   -0.0000000000    0.0000000000    0.0000000000
+       12   -0.0000000000    0.0000000000   -0.0038386056
+       13   -0.0158371318   -0.0014679835    0.0000000000
+       14   -0.0014627814   -0.0165291070   -0.0000000000
+       15   -0.0000000000   -0.0000000000   -0.0139072713
+       16   -0.0000000000   -0.0000000000   -0.0000000000
+
+                  16
+        1   -0.0117491407
+        2   -0.0020389176
+        3    0.0000000000
+        4   -0.0000000000
+        5   -0.0020389176
+        6   -0.0079187288
+        7   -0.0000000000
+        8   -0.0000000000
+        9    0.0000000000
+       10   -0.0000000000
+       11   -0.0069429895
+       12   -0.0000000000
+       13   -0.0000000000
+       14   -0.0000000000
+       15   -0.0000000000
+       16   -0.0308952655
+
     Alpha-beta [2]_R12 pair energies:
         i       j        e (ij)   
       -----   -----   ------------
-        1       1     -0.011397699
-        1       2     -0.008270746
-        1       3     -0.009433477
-        1       4     -0.008921374
-        2       1     -0.008270746
-        2       2     -0.018770063
-        2       3     -0.008231327
-        2       4     -0.009259691
-        3       1     -0.009433477
-        3       2     -0.008231327
-        3       3     -0.017556755
-        3       4     -0.007825870
-        4       1     -0.008921374
-        4       2     -0.009259691
-        4       3     -0.007825870
-        4       4     -0.020339191
+        1       1     -0.011397749
+        1       2     -0.008270779
+        1       3     -0.009433513
+        1       4     -0.008921409
+        2       1     -0.008270779
+        2       2     -0.018770158
+        2       3     -0.008231367
+        2       4     -0.009259734
+        3       1     -0.009433513
+        3       2     -0.008231367
+        3       3     -0.017556827
+        3       4     -0.007825909
+        4       1     -0.008921409
+        4       2     -0.009259734
+        4       3     -0.007825909
+        4       4     -0.020339316
     
+
+    Alpha-alpha V (in SpinOrbitalPT2R12::V_genref_projector2)
+                   1               2               3
+        1   -0.0054932508    0.0000000000   -0.0000000000
+        2   -0.0000000000   -0.0047567327    0.0002925035
+        3    0.0000000000    0.0003246335   -0.0090813910
+        4    0.0000000000    0.0000000000    0.0000000000
+        5    0.0000000000   -0.0000000000    0.0000000000
+        6   -0.0000000000    0.0000000000   -0.0000000000
+
+                   4               5               6
+        1   -0.0000000000    0.0000000000   -0.0000000000
+        2    0.0000000000   -0.0000000000   -0.0000000000
+        3    0.0000000000    0.0000000000   -0.0000000000
+        4   -0.0063019839    0.0002189782    0.0000000000
+        5    0.0002547007   -0.0112895232   -0.0000000000
+        6   -0.0000000000   -0.0000000000   -0.0100686657
+
+
+    Alpha-alpha gamma(in SpinOrbitalPT2R12::V_genref_projector2)
+                  1              2              3
+        1   1.0000000000
+        2   0.0000000000   1.0000000000
+        3   0.0000000000   0.0000000000   1.0000000000
+        4   0.0000000000   0.0000000000   0.0000000000
+        5   0.0000000000   0.0000000000   0.0000000000
+        6   0.0000000000   0.0000000000   0.0000000000
+
+                  4              5              6
+        4   1.0000000000
+        5   0.0000000000   1.0000000000
+        6   0.0000000000   0.0000000000   1.0000000000
+
+
+    Alpha-alpha V.gamma(in SpinOrbitalPT2R12::V_genref_projector2)
+                   1               2               3
+        1   -0.0054932508    0.0000000000   -0.0000000000
+        2   -0.0000000000   -0.0047567327    0.0002925035
+        3    0.0000000000    0.0003246335   -0.0090813910
+        4    0.0000000000    0.0000000000    0.0000000000
+        5    0.0000000000   -0.0000000000    0.0000000000
+        6   -0.0000000000    0.0000000000   -0.0000000000
+
+                   4               5               6
+        1   -0.0000000000    0.0000000000   -0.0000000000
+        2    0.0000000000   -0.0000000000   -0.0000000000
+        3    0.0000000000    0.0000000000   -0.0000000000
+        4   -0.0063019839    0.0002189782    0.0000000000
+        5    0.0002547007   -0.0112895232   -0.0000000000
+        6   -0.0000000000   -0.0000000000   -0.0100686657
+
     Alpha-alpha [2]_R12 pair energies:
         i       j        e (ij)   
       -----   -----   ------------
-        2       1     -0.001947218
-        3       1     -0.001723590
-        3       2     -0.003574633
-        4       1     -0.002221382
-        4       2     -0.004354523
-        4       3     -0.003946351
+        2       1     -0.001947222
+        3       1     -0.001723594
+        3       2     -0.003574646
+        4       1     -0.002221388
+        4       2     -0.004354540
+        4       3     -0.003946365
     
     Reference energy [au]:                  -76.025888240258
-    Alpha-beta [2]_R12 energy [au]:          -0.171948676103
-    Alpha-alpha [2]_R12 energy [au]:         -0.035535394790
-    Singlet [2]_R12 energy [au]:             -0.136413281313
-    Triplet [2]_R12 energy [au]:             -0.106606184369
-    [2]_R12 energy [au]:                     -0.207484070892
-    Total [2]_R12 energy [au]:              -76.233372311150
-Value of the MolecularEnergy:  -76.2333723112
 
-    PT2R12:
+    Entered energy_recomputed_from_densities
+
+    Entered generic tensor (<pp(sym)[A] pp(sym)[A]|pp(sym)[A] pp(sym)[A]>) evaluator
+      Built TwoBodyMOIntsTransform_ijR: name = <pp(sym)[A] Mu|ERI|mu >
+      Built DensityFitting: name = (pp(sym)[A] mu|DF|Mu)
+      Built TransformedDensityFitting: name = (pp(sym)[A] pp(sym)[A]|DF|Mu)
+      Built TwoBodyMOIntsTransform_ijR_from_iqR: name = <pp(sym)[A] Mu|ERI|pp(sym)[A] >
+      Built TwoBodyMOIntsTransform_ixjy_df: name = <pp(sym)[A] pp(sym)[A]|ERI|pp(sym)[A] pp(sym)[A]>(b1 b2|k1 k2)
+    Exited generic tensor (<pp(sym)[A] pp(sym)[A]|pp(sym)[A] pp(sym)[A]>) evaluator
+
+    Entered generic tensor (<pp(sym)[A] pp(sym)[A]||pp(sym)[A] pp(sym)[A]>) evaluator
+    Exited generic tensor (<pp(sym)[A] pp(sym)[A]||pp(sym)[A] pp(sym)[A]>) evaluator
+Alpha hcore energy: -61.5497672495
+Beta hcore energy: -61.5497672495
+hcore energy: -123.099534499
+pairspin AlphaBeta energy: 23.4451497307
+pairspin AlphaAlpha energy: 7.23569634543
+pairspin BetaBeta energy: 7.23569634543
+two-electron energy: 37.9165424215
+
+    Exited energy_recomputed_from_densities
+
+
+
+
+    Reference energy (recomp+DF) [au]:      -76.025875618793
+    Alpha-beta [2]_R12 energy [au]:          -0.171949469564
+    Alpha-alpha [2]_R12 energy [au]:         -0.017767755766
+    Singlet [2]_R12 energy [au]:             -0.154181713798
+    Triplet [2]_R12 energy [au]:             -0.053303267298
+    [2]_R12 energy [au]:                     -0.207484981096
+    Total [2]_R12 energy [au]:              -76.233373221354
+
+    Value of the MolecularEnergy:  -76.2333732214
+
+    SpinOrbitalPT2R12:
       nfzc = 1
       omit_uocc = true
-      PsiCLHF:
-        total_charge = 0
-        docc = [ 3 0 1 1 ]
-        Function Parameters:
-          value_accuracy    = 1.000000e-11 (1.000000e-11) (computed)
-          gradient_accuracy = 0.000000e+00 (1.000000e-06)
-          hessian_accuracy  = 0.000000e+00 (1.000000e-04)
-
-        Molecule:
-          Molecular formula: H2O
-          molecule<Molecule>: (
-            symmetry = c2v
-            unit = "angstrom"
-            {  n atoms                        geometry                     }={
-               1     O [    0.0000000000     0.0000000000     0.3693729440]
-               2     H [    0.7839758990     0.0000000000    -0.1846864720]
-               3     H [   -0.7839758990    -0.0000000000    -0.1846864720]
-            }
-          )
-          Atomic Masses:
-             15.99491    1.00783    1.00783
-          Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
-
-        Electronic basis:
-          GaussianBasisSet:
-            nbasis = 24
-            nshell = 11
-            nprim  = 24
-            name = "cc-pVDZ"
-
-        PsiExEnv:
-          Location of Psi: /Users/evaleev/Development/workspace/psi3-install/bin
-          Current Psi Working Directory: .
-          Current Psi File Prefix: psipt2f12_scfc11ccpvdzaugccpvdzc2v.psi
-          Number of Scratch Groups: 1
-          Scratch Group 0: .
-
-
       R12WavefunctionWorld:
+        WavefunctionWorld:
+          Density-Fitting Parameters:
+            basis set:
+              GaussianBasisSet:
+                nbasis = 141
+                nshell = 43
+                nprim  = 43
+                name = "cc-pVTZ-RI"
+            kernel = coulomb
+            solver = Bunch-Kaufman (refine)
+          How to Store Transformed Integrals: posix
+          Transformed Integrals file suffix: ./psipt2f12_scfc11ccpvdzaugccpvdzc2v.moints
+
+        Object of type PsiSCF_R12RefWavefunction
         Auxiliary Basis Set (ABS):
           GaussianBasisSet:
             nbasis = 41
@@ -316,19 +585,18 @@ Value of the MolecularEnergy:  -76.2333723112
             name = "aug-cc-pVDZ"
 
         R12Technology:
-          CorrelationFactor:
-            Function 0:
-              Functional form: G12
-              [ Exponent Coefficient] = [ [0.549916 0.360094] [3.13186 0.346982] [20.611 0.198984]  ]
+          CorrelationFactor: STG-3G[1.5]
+            [ Exponent Coefficient] = [ [     0.549916472902    -0.240062725132 ] [     3.131856778874    -0.231321126340 ] [    20.611027685628    -0.132656190969 ]  ]
 
           Coupling included: false
           GBC assumed: true
           EBC assumed: true
           EBC-free method: Valeev
           Enforce positive definiteness of B, but not ~B(ij)
-          ABS method variant: CABS+ (Valeev using the union of OBS and ABS for RI)
+          RI method for many-elecron integrals: CABS+ (CABS using the union of OBS and ABS for RI)
+          ABS linear depenendence tolerance = 1e-08
           Standard Approximation: C
-          LinearR12Ansatz:
+          R12Ansatz:
             Geminal orbital Product Space: ij
             Space of orbital products from which geminal substitutions are allowed: ij
             Projector: 2  , i.e. (1-O1)(1-O2)-V1V2
@@ -337,122 +605,39 @@ Value of the MolecularEnergy:  -76.2333723112
           H0_dk_approx_pauli: false
           Max # ABS indices: 2
         Spin-adapted algorithm: false
-        Function Parameters:
-          value_accuracy    = 0.000000e+00 (1.000000e-11) (computed)
-          gradient_accuracy = 0.000000e+00 (1.000000e-06)
-          hessian_accuracy  = 0.000000e+00 (1.000000e-04)
 
-        Molecule:
-          Molecular formula: H2O
-          molecule<Molecule>: (
-            symmetry = c2v
-            unit = "angstrom"
-            {  n atoms                        geometry                     }={
-               1     O [    0.0000000000     0.0000000000     0.3693729440]
-               2     H [    0.7839758990     0.0000000000    -0.1846864720]
-               3     H [   -0.7839758990    -0.0000000000    -0.1846864720]
-            }
-          )
-          Atomic Masses:
-             15.99491    1.00783    1.00783
-          Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
+      Function Parameters:
+        value_accuracy    = 0.000000e+00 (1.000000e-11) (computed)
+        gradient_accuracy = 0.000000e+00 (1.000000e-06)
+        hessian_accuracy  = 0.000000e+00 (1.000000e-04)
 
-        Electronic basis:
-          GaussianBasisSet:
-            nbasis = 24
-            nshell = 11
-            nprim  = 24
-            name = "cc-pVDZ"
-                                                                                                           CPU   Wall
-mpqc:                                                                                                   118.01 123.74
-  calc:                                                                                                  12.37  16.20
-    "diagonal" part of G12 intermediates:                                                                 2.69   2.96
-      Generic tensor:                                                                                     2.69   2.96
-        MO ints retrieve:                                                                                 0.00   0.00
-        tbint_tform_ixjy_df <i(sym) i(sym)|G12'[p16807]|i(sym) i(sym)>(b1 b2|k1 k2):                      1.29   1.54
-          DensityFitting (i(sym) mu|DF|Mu):                                                               0.67   0.68
-            tbint_tform_ijR <i(sym) Mu|ERI|mu >:                                                          0.39   0.40
-          TransformedDensityFitting (i(sym) i(sym)|DF|Mu):                                                0.00   0.00
-          tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[p16807]|i(sym) >:                                     0.54   0.77
-            tbint_tform_ijR <i(sym) Mu|G12'[p16807]|mu >:                                                 0.54   0.54
-        tbint_tform_ixjy_df <i(sym) i(sym)|G12'[p282475249]|i(sym) i(sym)>(b1 b2|k1 k2):                  1.39   1.42
-          tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[p282475249]|i(sym) >:                                 1.30   1.32
-            tbint_tform_ijR <i(sym) Mu|G12'[p282475249]|mu >:                                             1.29   1.31
-    B(app. C) general reference Ansatz2 intermediate:                                                     7.32   9.76
-      Alpha-beta Q(C) Ansatz 2 intermediate:                                                              3.00   3.30
-        generic X intermediate:                                                                           3.00   3.30
-          Generic tensor:                                                                                 3.00   3.30
-            MO ints retrieve:                                                                             0.00   0.00
-            tbint_tform_ixjy_df <i(sym) i(sym)|G12'[p282475249]|i(sym) i(sym)_hJ(p')[A]>(b1 b2|k1 k2):    3.00   3.29
-              TransformedDensityFitting (i(sym) i(sym)_hJ(p')[A]|DF|Mu):                                  0.00   0.00
-              tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[p282475249]|i(sym)_hJ(p')[A] >:                   2.89   3.19
-                tbint_tform_ijR <i(sym) Mu|G12'[p282475249]|mu' >:                                        2.88   2.91
-      Generic tensor contract:                                                                            0.21   0.50
-        MO ints retrieve:                                                                                 0.00   0.01
-        tbint_tform_ixjy_df <i(sym) i(sym)|G12'[p16807]|a'_F(a')[A] p(sym)>(b1 b2|k1 k2):                 0.10   0.14
-        tbint_tform_ixjy_df <i(sym) i(sym)|G12'[p16807]|p(sym) a'_F(a')[A]>(b1 b2|k1 k2):                 0.11   0.35
-          TransformedDensityFitting (i(sym) a'_F(a')[A]|DF|Mu):                                           0.01   0.24
-          tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[p16807]|a'_F(a')[A] >:                                0.02   0.02
-      coulomb(DF):                                                                                        2.21   3.40
-        DensityFitting (mu mu|DF|Mu):                                                                     0.94   0.97
-          tbint_tform_ijR <mu Mu|ERI|mu >:                                                                0.30   0.30
-        tbint_tform_ijR <mu' Mu|ERI|mu >:                                                                 0.42   0.47
-        tbint_tform_ijR <mu' Mu|ERI|mu' >:                                                                0.82   0.89
-      exchange(DF):                                                                                       0.87   0.90
-        DensityFitting (dd mu'|DF|Mu):                                                                    0.78   0.79
-          tbint_tform_ijR <dd Mu|ERI|mu' >:                                                               0.40   0.40
-        PermutedDensityFitting (dd mu|DF|Mu):                                                             0.00   0.00
-        TransformedDensityFitting (mu dd|DF|Mu):                                                          0.00   0.00
-        tbint_tform_ijR_using_iqR <mu Mu|ERI|dd >:                                                        0.00   0.00
-        tbint_tform_ijR_using_iqR <mu' Mu|ERI|dd >:                                                       0.00   0.01
-      generic FxF intermediate:                                                                           0.77   1.39
-        Generic tensor contract:                                                                          0.76   1.39
-          MO ints retrieve:                                                                               0.00   0.03
-          tbint_tform_ixjy_df <i(sym) i(sym)|G12'[p16807]|p' p'>(b1 b2|k1 k2):                            0.18   0.71
-          tbint_tform_ixjy_df <i(sym) i(sym)|G12'[p16807]|p'_K(p')[A] p'>(b1 b2|k1 k2):                   0.25   0.26
-            TransformedDensityFitting (i(sym) p'_K(p')[A]|DF|Mu):                                         0.01   0.01
-            TransformedDensityFitting (i(sym) p'|DF|Mu):                                                  0.01   0.01
-            tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[p16807]|p' >:                                       0.02   0.02
-            tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[p16807]|p'_K(p')[A] >:                              0.02   0.02
-          tbint_tform_ixjy_df <i(sym) i(sym)|G12'[p16807]|p(sym) p(sym)_F(a')[A]>(b1 b2|k1 k2):           0.08   0.08
-            TransformedDensityFitting (i(sym) p(sym)_F(a')[A]|DF|Mu):                                     0.00   0.00
-            tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[p16807]|p(sym)_F(a')[A] >:                          0.00   0.00
-          tbint_tform_ixjy_df <i(sym) i(sym)|G12'[p16807]|p(sym)_F(p(sym))[A] p(sym)>(b1 b2|k1 k2):       0.07   0.08
-            TransformedDensityFitting (i(sym) p(sym)_F(p(sym))[A]|DF|Mu):                                 0.00   0.00
-            tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[p16807]|p(sym)_F(p(sym))[A] >:                      0.00   0.00
-          tbint_tform_ixjy_df <i(sym) i(sym)|G12'[p16807]|p(sym)_Fg(p') a'>(b1 b2|k1 k2):                 0.09   0.09
-            TransformedDensityFitting (i(sym) p(sym)_Fg(p')|DF|Mu):                                       0.00   0.00
-            tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[p16807]|p(sym)_Fg(p') >:                            0.00   0.00
-          tbint_tform_ixjy_df <i(sym) i(sym)|G12'[p16807]|p(sym)_gFg(p(sym)) a'>(b1 b2|k1 k2):            0.09   0.14
-            TransformedDensityFitting (i(sym) p(sym)_gFg(p(sym))|DF|Mu):                                  0.00   0.00
-            tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[p16807]|p(sym)_gFg(p(sym)) >:                       0.00   0.00
-    General reference VXB intermediate evaluator:                                                         2.36   3.48
-      General reference V intermediate evaluator:                                                         2.18   3.00
-        Generic tensor contract:                                                                          2.16   2.99
-          MO ints retrieve:                                                                               0.00   0.00
-          tbint_tform_ixjy_df <i(sym) i(sym)|ERI|a' p(sym)>(b1 b2|k1 k2):                                 0.00   0.00
-          tbint_tform_ixjy_df <i(sym) i(sym)|ERI|p(sym) a'>(b1 b2|k1 k2):                                 0.01   0.27
-            tbint_tform_ijR_using_iqR <i(sym) Mu|ERI|a' >:                                                0.01   0.01
-          tbint_tform_ixjy_df <i(sym) i(sym)|ERI|p(sym) p(sym)>(b1 b2|k1 k2):                             0.00   0.00
-            tbint_tform_ijR_using_iqR <i(sym) Mu|ERI|p(sym) >:                                            0.00   0.00
-          tbint_tform_ixjy_df <i(sym) i(sym)|G12'[p16807]|a' p(sym)_gamma(p(sym))>(b1 b2|k1 k2):          0.10   0.39
-          tbint_tform_ixjy_df <i(sym) i(sym)|G12'[p16807]|p(sym) p(sym)>(b1 b2|k1 k2):                    0.07   0.08
-            TransformedDensityFitting (i(sym) p(sym)|DF|Mu):                                              0.00   0.00
-            tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[p16807]|p(sym) >:                                   0.00   0.00
-          tbint_tform_ixjy_df <i(sym) i(sym)|G12'[p16807]|p(sym)_gamma(p(sym)) a'>(b1 b2|k1 k2):          1.97   2.25
-            DensityFitting (i(sym) mu'|DF|Mu):                                                            0.69   0.72
-              tbint_tform_ijR <i(sym) Mu|ERI|mu' >:                                                       0.39   0.40
-            TransformedDensityFitting (i(sym) a'|DF|Mu):                                                  0.01   0.24
-            TransformedDensityFitting (i(sym) p(sym)_gamma(p(sym))|DF|Mu):                                0.00   0.00
-            tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[p16807]|a' >:                                       1.19   1.21
-              tbint_tform_ijR <i(sym) Mu|G12'[p16807]|mu' >:                                              1.17   1.17
-            tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[p16807]|p(sym)_gamma(p(sym)) >:                     0.00   0.00
-      General reference X intermediate evaluator:                                                         0.18   0.48
-        Generic tensor contract:                                                                          0.18   0.48
-          MO ints retrieve:                                                                               0.00   0.00
-          tbint_tform_ixjy_df <i(sym) i(sym)|G12'[p16807]|a' p(sym)>(b1 b2|k1 k2):                        0.10   0.38
-          tbint_tform_ixjy_df <i(sym) i(sym)|G12'[p16807]|p(sym) a'>(b1 b2|k1 k2):                        0.08   0.09
-  input:                                                                                                  0.39   0.66
+      Molecule:
+        Molecular formula: H2O
+        molecule<Molecule>: (
+          symmetry = c2v
+          unit = "angstrom"
+          {  n atoms                        geometry                     }={
+             1     O [    0.0000000000     0.0000000000     0.3693729440]
+             2     H [    0.7839758990     0.0000000000    -0.1846864720]
+             3     H [   -0.7839758990    -0.0000000000    -0.1846864720]
+          }
+        )
+        Atomic Masses:
+           15.99491    1.00783    1.00783
+        Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
 
-      End Time: Mon Dec 28 09:34:25 2009
+      Electronic basis:
+        GaussianBasisSet:
+          nbasis = 24
+          nshell = 11
+          nprim  = 24
+          name = "cc-pVDZ"
+
+    ConsumableResources: (
+      memory = 256MB ( max used: 19.7MB )
+      disk = [./ 0B] ( max used: 0B )
+    )
+    WARNING: 1353480 bytes managed by ConsumableResources was not explicitly deallocated!
+
+    End Time: Sun Oct 30 18:02:15 2011
 

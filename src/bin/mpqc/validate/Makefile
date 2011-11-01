@@ -113,11 +113,11 @@ ifeq ($(RUN_MBPTF12),yes)
   PT2F12INPUTS= pt2f12_scfc00ccpvdzaugccpvdzc2v.in \
     pt2f12_scfc01ccpvdzaugccpvdzc2v.in \
     pt2f12_scfc10ccpvdzaugccpvdzc2v.in \
-    pt2f12_scfc11ccpvdzaugccpvdzc2v.in \
-    pt2f12sf_scfc00ccpvdzaugccpvdzc2v.in \
-    pt2f12sf_scfc01ccpvdzaugccpvdzc2v.in \
-    pt2f12sf_scfc10ccpvdzaugccpvdzc2v.in \
-    pt2f12sf_scfc11ccpvdzaugccpvdzc2v.in
+    pt2f12_scfc11ccpvdzaugccpvdzc2v.in 
+#    pt2f12sf_scfc00ccpvdzaugccpvdzc2v.in \
+#    pt2f12sf_scfc01ccpvdzaugccpvdzc2v.in \
+#    pt2f12sf_scfc10ccpvdzaugccpvdzc2v.in \
+#    pt2f12sf_scfc11ccpvdzaugccpvdzc2v.in
   PT2F12INPUTS := $(PT2F12INPUTS:%=$(INP)/%)
 endif
 PT2F12OUTPUTS = $(PT2F12INPUTS:%.$(INSUF)=%.out)
@@ -166,17 +166,17 @@ ifeq ($(RUN_MBPTF12),yes)
       psipt2f12_casscfc10ccpvdzaugccpvdzc2v.in \
       psipt2f12_casscfc11ccpvdzaugccpvdzc2v.in \
       psipt2f12_mrcic00ccpvdzaugccpvdzc2v.in \
-      psipt2f12_mrcic10ccpvdzaugccpvdzc2v.in \
-      psipt2f12sf_scfc00ccpvdzaugccpvdzc2v.in \
-      psipt2f12sf_scfc01ccpvdzaugccpvdzc2v.in \
-      psipt2f12sf_scfc10ccpvdzaugccpvdzc2v.in \
-      psipt2f12sf_scfc11ccpvdzaugccpvdzc2v.in \
-      psipt2f12sf_casscfc00ccpvdzaugccpvdzc2v.in \
-      psipt2f12sf_casscfc01ccpvdzaugccpvdzc2v.in \
-      psipt2f12sf_casscfc10ccpvdzaugccpvdzc2v.in \
-      psipt2f12sf_casscfc11ccpvdzaugccpvdzc2v.in \
-      psipt2f12sf_mrcic00ccpvdzaugccpvdzc2v.in \
-      psipt2f12sf_mrcic10ccpvdzaugccpvdzc2v.in
+      psipt2f12_mrcic10ccpvdzaugccpvdzc2v.in 
+#      psipt2f12sf_scfc00ccpvdzaugccpvdzc2v.in \
+#      psipt2f12sf_scfc01ccpvdzaugccpvdzc2v.in \
+#      psipt2f12sf_scfc10ccpvdzaugccpvdzc2v.in \
+#      psipt2f12sf_scfc11ccpvdzaugccpvdzc2v.in \
+#      psipt2f12sf_casscfc00ccpvdzaugccpvdzc2v.in \
+#      psipt2f12sf_casscfc01ccpvdzaugccpvdzc2v.in \
+#      psipt2f12sf_casscfc10ccpvdzaugccpvdzc2v.in \
+#      psipt2f12sf_casscfc11ccpvdzaugccpvdzc2v.in \
+#      psipt2f12sf_mrcic00ccpvdzaugccpvdzc2v.in \
+#      psipt2f12sf_mrcic10ccpvdzaugccpvdzc2v.in
     PSIPT2F12INPUTS := $(PSIPT2F12INPUTS:%=$(INP)/%)
   endif
 endif

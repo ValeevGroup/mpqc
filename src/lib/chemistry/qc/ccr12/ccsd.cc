@@ -123,13 +123,12 @@ void CCSD::compute(){
     ccsd_t2->compute_amp(r2);
     ccsd_e->compute_amp(e0);
 
-    energy = ccr12_info_->get_e(e0) + ccr12_info_->energy_lagrangian_r2(r2)
-                                    + ccr12_info_->t1()->ddot(r1);
+    energy = ccr12_info_->get_e(e0) + ccr12_info_->t1()->ddot(r1) + ccr12_info_->energy_lagrangian_r2(r2);
 
     // compute new amplitudes from the residuals
     Ref<Tensor> t1_old = info()->t1()->copy();
     Ref<Tensor> t2_old = info()->t2()->copy();
-    //ccr12_info_->jacobi_t1(r1);
+    ccr12_info_->jacobi_t1(r1);
     ccr12_info_->jacobi_t2(r2);
     // compute errors
     Ref<Tensor> t1_err = t1_old->copy();

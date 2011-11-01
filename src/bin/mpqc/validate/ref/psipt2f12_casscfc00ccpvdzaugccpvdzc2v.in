@@ -39,7 +39,7 @@ mpqc: (
   do_energy = yes
   do_gradient = no
   % method for computing the molecule's energy
-  mole<PT2R12>: (
+  mole<SpinOrbitalPT2R12>: (
     value_accuracy = 1e-11
     molecule = $:molecule
     basis = $:basis

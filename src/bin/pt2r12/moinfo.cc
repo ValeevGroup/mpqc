@@ -464,6 +464,39 @@ ExternMOInfo::ExternMOInfo(const std::string & filename,
         occindexmap_.push_back( mpqc_mo_offset + mo_g );
     }
   }
+  {
+    assert(actindexmap_.empty());
+    // use blockinfo to get MO offets for orbitals in MPQC order
+    Ref<SCBlockInfo> blkinfo = orbs_->coefs()->coldim()->blocks();
+    for (unsigned int g = 0; g < pg->order(); ++g) {
+      const unsigned int g_mpqc = extern_to_mpqc_irrep_map[g];
+      const unsigned int mpqc_mo_offset = blkinfo->start(g_mpqc);
+      const unsigned int mo_g_offset = fzcpi_[g] + inactpi_[g];
+      const unsigned int nmo_g = actpi_[g];
+      for (unsigned int mo_g = 0; mo_g < nmo_g; ++mo_g)
+        actindexmap_.push_back( mpqc_mo_offset + mo_g_offset + mo_g );
+    }
+  }
+  {
+    // compute irrep offsets in occupied MPQC MO space
+    std::vector<unsigned int> mpqc_occ_offset(pg->order(), 0u);
+    for (unsigned int g = 1; g < pg->order(); ++g) {
+      const unsigned int nocc_g = fzcpi_[g] + inactpi_[g] + actpi_[g];
+      mpqc_occ_offset[g] = mpqc_occ_offset[g-1] + nocc_g;
+    }
+
+    assert(actindexmap_occ_.empty());
+    // use blockinfo to get MO offets for orbitals in MPQC order
+    Ref<SCBlockInfo> blkinfo = orbs_->coefs()->coldim()->blocks();
+    for (unsigned int g = 0; g < pg->order(); ++g) {
+      const unsigned int g_mpqc = extern_to_mpqc_irrep_map[g];
+      const unsigned int mpqc_mo_offset = mpqc_occ_offset[g_mpqc];
+      const unsigned int ninact_g = fzcpi_[g] + inactpi_[g];
+      const unsigned int nact_g = actpi_[g];
+      for (unsigned int mo_g = 0; mo_g < nact_g; ++mo_g)
+        actindexmap_occ_.push_back( mpqc_mo_offset + ninact_g + mo_g );
+    }
+  }
 
   coefs_extern.print("ExternMOInfo:: extern MO coefficients");
   orbs_->coefs().print("ExternMOInfo:: reordered MO coefficients");
@@ -479,6 +512,16 @@ const std::vector<unsigned int>& ExternMOInfo::indexmap() const
 const std::vector<unsigned int>& ExternMOInfo::occindexmap() const
 {
   return occindexmap_;
+}
+
+const std::vector<unsigned int>& ExternMOInfo::actindexmap() const
+{
+  return actindexmap_;
+}
+
+const std::vector<unsigned int>& ExternMOInfo::actindexmap_occ() const
+{
+  return actindexmap_occ_;
 }
 
 //Ref<GaussianBasisSet> ExternMOInfo::basis() const
@@ -602,7 +645,7 @@ ClassDesc ExternSpinFreeRDMTwo::class_desc_(typeid(ExternSpinFreeRDMTwo),
                                         0                // not StateInConstructible
                                         );
 
-ExternSpinFreeRDMTwo::ExternSpinFreeRDMTwo(const std::string & filename,
+sc::ExternSpinFreeRDMTwo::ExternSpinFreeRDMTwo(const std::string & filename,
                                                const std::vector<unsigned int>& indexmap,
                                                const Ref<OrbitalSpace> & orbs) :
     SpinFreeRDM<Two>(Ref<Wavefunction>()), filename_(filename), orbs_(orbs)
@@ -614,10 +657,16 @@ ExternSpinFreeRDMTwo::ExternSpinFreeRDMTwo(const std::string & filename,
     throw std::runtime_error(oss.str().c_str());
   }
   const unsigned int norbs = orbs->coefs().coldim().n();
-  RefSCDimension dim = new SCDimension(norbs * norbs);// -> symmetry not used when constructing rdm_
+  RefSCDimension dim = new SCDimension(norbs * norbs);
   dim->blocks()->set_subdim(0, new SCDimension(dim->n()));
   rdm_ = orbs->coefs().kit()->symmmatrix(dim);
   rdm_.assign(0.0);
+  // compute single-determinant 2-RDM here, it will be (partially) overwritten by
+  // the contents of the external file. This allows, for example, only active 2-RDM to be
+  // reported in the external file.
+  // TODO Liguo will implement SD 2-RDM
+  assert(false);
+
   bool have_coefs = true;
   while (have_coefs) {
     int bra1, bra2, ket1, ket2;

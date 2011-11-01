@@ -135,6 +135,14 @@ namespace sc {
   */
   class RefWavefunction : virtual public SavableState {
     protected:
+
+      /// return true to override density fitting settings of RefWavefunction objects to
+      /// those of WavefunctionWorld in which they live. This should only be used for testing
+      /// as it may produce Fock matrices that will differ from those of the original reference.
+      static bool use_world_dfinfo() {
+        return false;
+      }
+
       RefWavefunction(StateIn&);
       /// @param world WavefunctionWorld to which this object belongs
       /// @param basis The basis set supporting the reference wave function

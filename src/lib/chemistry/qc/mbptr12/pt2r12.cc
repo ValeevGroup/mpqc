@@ -1236,7 +1236,10 @@ void PT2R12::compute()
                                       cabs_singles_e) << endl;
     }
     else
-      abort();
+      throw InputError("invalid value for keyword cabs_singles_h0",
+                       __FILE__, __LINE__,
+                       "cabs_singles_h0", cabs_singles_h0_.c_str(),
+                       this->class_desc());
     ExEnv::out0() << indent << scprintf("RASSCF+CABS singles:                   %17.12lf",
                                               energy_ref + cabs_singles_e) << endl << endl;
   }

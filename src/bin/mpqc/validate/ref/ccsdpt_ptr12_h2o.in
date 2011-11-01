@@ -48,7 +48,7 @@ mole<CCSD>: (
   workmemory = 100000000
   store_ints = posix
   nfzc = auto
-  ansatz<R12Ansatz> : ( diag = true )
+  ansatz<R12Ansatz> : ( diag = false )
   reference<CLHF>: (
     integrals = $:integral
     molecule = $:molecule

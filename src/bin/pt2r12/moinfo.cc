@@ -602,7 +602,7 @@ ClassDesc ExternSpinFreeRDMTwo::class_desc_(typeid(ExternSpinFreeRDMTwo),
                                         0                // not StateInConstructible
                                         );
 
-sc::ExternSpinFreeRDMTwo::ExternSpinFreeRDMTwo(const std::string & filename,
+ExternSpinFreeRDMTwo::ExternSpinFreeRDMTwo(const std::string & filename,
                                                const std::vector<unsigned int>& indexmap,
                                                const Ref<OrbitalSpace> & orbs) :
     SpinFreeRDM<Two>(Ref<Wavefunction>()), filename_(filename), orbs_(orbs)
@@ -614,7 +614,7 @@ sc::ExternSpinFreeRDMTwo::ExternSpinFreeRDMTwo(const std::string & filename,
     throw std::runtime_error(oss.str().c_str());
   }
   const unsigned int norbs = orbs->coefs().coldim().n();
-  RefSCDimension dim = new SCDimension(norbs * norbs);
+  RefSCDimension dim = new SCDimension(norbs * norbs);// -> symmetry not used when constructing rdm_
   dim->blocks()->set_subdim(0, new SCDimension(dim->n()));
   rdm_ = orbs->coefs().kit()->symmmatrix(dim);
   rdm_.assign(0.0);

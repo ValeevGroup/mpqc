@@ -43,11 +43,12 @@ int main_molcas(int argc, char **argv)
     return 1;
   }
   // must receive prefix
-  const std::string filename_prefix = opt.retrieve("prefix");
-  if (filename_prefix.empty()) {
+  const char* filename_prefix_cstr = opt.retrieve("prefix");
+  if (filename_prefix_cstr == 0) {
     opt.usage(std::cout);
     return 1;
   }
+  const std::string filename_prefix(filename_prefix_cstr);
   init.init_integrals();
 
   // print environment
@@ -118,10 +119,26 @@ int main_molcas(int argc, char **argv)
   // Read 2-RDM
   /////////////////////////////////////////////
 
-  // molcas reports 2-RDM in terms of occupied orbitals only, indexed occording to molcas convention
-  // thus use the map from molcas occupied orbitals to MPQC full orbital range
+  // molcas reports 2-RDM in terms of active occupied orbitals only, indexed occording to molcas convention
+  // thus use the map from molcas active occupied orbitals to MPQC occupied range
+  // first make an OrbitalSpace for MPQC occupied orbitals
+  std::vector<bool> occ_mask(orbs->rank(), false);
+  const unsigned int nirrep = basis->molecule()->point_group()->order();
+  for(unsigned int g=0; g<nirrep; ++g) {
+    unsigned int mo = C_ao.coldim()->blocks()->start(g);
+    const unsigned int nocc_g = fzcpi[g] + inactpi[g] + actpi[g];
+    for(int i=0; i<nocc_g; i++, ++mo)
+      occ_mask[mo] = true;
+  }
+  Ref<OrbitalSpace> occ_orbs = new MaskedOrbitalSpace(std::string("p"), std::string("MOInfo orbitals"), orbs,
+                                                      occ_mask);
+#if 1
+  occ_orbs->print_detail();
+  orbs->print_detail();
+#endif
+
   Ref<ExternSpinFreeRDMTwo> rdrdm2 = new ExternSpinFreeRDMTwo(filename_prefix + ".pt2r12.rdm2.dat",
-                                                              rdorbs.occindexmap(), orbs);
+                                                              rdorbs.actindexmap_occ(), occ_orbs);
   Ref<SpinFreeRDM<One> > rdrdm1 = rdrdm2->rdm_m_1();
   RefSymmSCMatrix P1_mo = rdrdm1->scmat().copy();
   RefSymmSCMatrix P2_mo = rdrdm2->scmat();
@@ -213,7 +230,7 @@ int main_molcas(int argc, char **argv)
       kva->assign("aux_basis", aux_basis.pointer());
     }
     kva->assignboolean("spinadapted", 1);
-    kva->assignboolean("pt2_correction", 0);
+    kva->assignboolean("pt2_correction", 1);
     Ref<KeyVal> kv = kva;
 
     pt2r12 = new PT2R12(kv);

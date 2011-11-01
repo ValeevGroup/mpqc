@@ -58,6 +58,12 @@ namespace sc {
       /** same as @c indexmap(), except for occupied (fzc+incact+act) orbitals only
           (maps to the full MO range) */
       const std::vector<unsigned int>& occindexmap() const;
+      /** same as @c indexmap(), except for active (act) orbitals only
+          (maps to the full MO range) */
+      const std::vector<unsigned int>& actindexmap() const;
+
+      /** same as @c actindexmap(), except it maps to the occupied MOs only */
+      const std::vector<unsigned int>& actindexmap_occ() const;
 
       typedef OrderedOrbitalSpace<SymmetryMOOrder> OrdOrbitalSpace;
       const Ref<OrdOrbitalSpace>& orbs() const { return orbs_; }
@@ -75,7 +81,10 @@ namespace sc {
 
     private:
       std::vector<unsigned int> indexmap_; //< file order -> mpqc order
-      std::vector<unsigned int> occindexmap_;
+      std::vector<unsigned int> actindexmap_; //< same as indexmap_, but only for active orbitals
+      std::vector<unsigned int> occindexmap_; //< same as indexmap_, but only for all occupied orbitals
+
+      std::vector<unsigned int> actindexmap_occ_;
 
       Ref<OrdOrbitalSpace> orbs_;
 //      std::vector<unsigned int> orbsym_;

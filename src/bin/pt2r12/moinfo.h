@@ -64,6 +64,8 @@ namespace sc {
 
       /** same as @c actindexmap(), except it maps to the occupied MOs only */
       const std::vector<unsigned int>& actindexmap_occ() const;
+      /** same as @c actindexmap(), except it maps to the active MOs only */
+      const std::vector<unsigned int>& actindexmap_act() const;
 
       typedef OrderedOrbitalSpace<SymmetryMOOrder> OrdOrbitalSpace;
       const Ref<OrdOrbitalSpace>& orbs() const { return orbs_; }
@@ -85,6 +87,7 @@ namespace sc {
       std::vector<unsigned int> occindexmap_; //< same as indexmap_, but only for all occupied orbitals
 
       std::vector<unsigned int> actindexmap_occ_;
+      std::vector<unsigned int> actindexmap_act_;
 
       Ref<OrdOrbitalSpace> orbs_;
 //      std::vector<unsigned int> orbsym_;
@@ -144,10 +147,14 @@ namespace sc {
   class ExternSpinFreeRDMTwo : public SpinFreeRDM<Two>{
     public:
       /// reads 2-rdm from filename
-      /// assumes that 2-rdm is expressed in orbs
+      /// assumes that 2-rdm is expressed in orbs and the file only reports 2-rdm in active space.
       /// indexmap maps the indices assumed in the file to orbs
+      /// actpi (active orbitals per irrep) is necessary to build the complete 2-rdm
+      /// act->act indexmap is needed to build 2-rdm in active space, which will then be used to build the complete 2-rdm
       ExternSpinFreeRDMTwo(const std::string& filename,
-                           const std::vector<unsigned int>& indexmap,
+                           const std::vector<unsigned int>& act_occ_indexmap,
+                           const std::vector<unsigned int>& act_act_indexmap,
+                           const std::vector<unsigned int>& actpi,
                            const Ref<OrbitalSpace>& orbs);
       virtual ~ExternSpinFreeRDMTwo();
 

@@ -403,12 +403,15 @@ ExternMOInfo::ExternMOInfo(const std::string & filename,
   unsigned int mo = 0;
   for(unsigned int irrep=0; irrep<pg->order(); ++irrep) {
     unsigned int mo_in_irrep = 0;
-    for(unsigned i=0; i<fzcpi_[irrep]; ++i, ++mo, ++mo_in_irrep)
-      pseudo_occnums.set_element(i, 2.0);
-    for(unsigned i=0; i<inactpi_[irrep]; ++i, ++mo, ++mo_in_irrep)
-      pseudo_occnums.set_element(i, 2.0);
-    for(unsigned i=0; i<actpi_[irrep]; ++i, ++mo, ++mo_in_irrep)
-      pseudo_occnums.set_element(i, 1.0);
+    for(unsigned i=0; i<fzcpi_[irrep]; ++i,++mo_in_irrep)
+      pseudo_occnums.set_element(mo+i, 2.0);
+    mo += fzcpi_[irrep];
+    for(unsigned i=0; i<inactpi_[irrep]; ++i, ++mo_in_irrep)
+      pseudo_occnums.set_element(mo + i, 2.0);
+    mo += inactpi_[irrep];
+    for(unsigned i=0; i<actpi_[irrep]; ++i, ++mo_in_irrep)
+      pseudo_occnums.set_element(mo +i, 1.0);
+    mo += actpi_[irrep];
     mo += mopi[irrep] - mo_in_irrep; // skip the rest of the orbitals in this block
   }
 
@@ -440,7 +443,9 @@ ExternMOInfo::ExternMOInfo(const std::string & filename,
   //////////////////////////////////////////////////////////////////////////////////
   // lastly determine the index maps from extern MO indices to the MPQC MO indices
   //////////////////////////////////////////////////////////////////////////////////
+
   {
+    // map extern OBS to MPQC OBS
     assert(indexmap_.empty());
     // use blockinfo to get MO offets for orbitals in MPQC order
     Ref<SCBlockInfo> blkinfo = orbs_->coefs()->coldim()->blocks();
@@ -453,20 +458,20 @@ ExternMOInfo::ExternMOInfo(const std::string & filename,
     }
   }
   {
+    // map extern occupied to MPQC OBS
     assert(occindexmap_.empty());
-    // use blockinfo to get MO offets for orbitals in MPQC order
     Ref<SCBlockInfo> blkinfo = orbs_->coefs()->coldim()->blocks();
     for (unsigned int g = 0; g < pg->order(); ++g) {
       const unsigned int g_mpqc = extern_to_mpqc_irrep_map[g];
       const unsigned int mpqc_mo_offset = blkinfo->start(g_mpqc);
       const unsigned int nmo_g = fzcpi_[g] + inactpi_[g] + actpi_[g];
       for (unsigned int mo_g = 0; mo_g < nmo_g; ++mo_g)
-        occindexmap_.push_back( mpqc_mo_offset + mo_g );
+        occindexmap_.push_back(mpqc_mo_offset + mo_g );
     }
   }
   {
+    // map extern active to MPQC OBS
     assert(actindexmap_.empty());
-    // use blockinfo to get MO offets for orbitals in MPQC order
     Ref<SCBlockInfo> blkinfo = orbs_->coefs()->coldim()->blocks();
     for (unsigned int g = 0; g < pg->order(); ++g) {
       const unsigned int g_mpqc = extern_to_mpqc_irrep_map[g];
@@ -474,19 +479,18 @@ ExternMOInfo::ExternMOInfo(const std::string & filename,
       const unsigned int mo_g_offset = fzcpi_[g] + inactpi_[g];
       const unsigned int nmo_g = actpi_[g];
       for (unsigned int mo_g = 0; mo_g < nmo_g; ++mo_g)
-        actindexmap_.push_back( mpqc_mo_offset + mo_g_offset + mo_g );
+        actindexmap_.push_back(mpqc_mo_offset + mo_g_offset + mo_g);
     }
   }
-  {
     // compute irrep offsets in occupied MPQC MO space
     std::vector<unsigned int> mpqc_occ_offset(pg->order(), 0u);
     for (unsigned int g = 1; g < pg->order(); ++g) {
       const unsigned int nocc_g = fzcpi_[g] + inactpi_[g] + actpi_[g];
       mpqc_occ_offset[g] = mpqc_occ_offset[g-1] + nocc_g;
     }
-
+ {
+    // map extern active to MPQC occupied
     assert(actindexmap_occ_.empty());
-    // use blockinfo to get MO offets for orbitals in MPQC order
     Ref<SCBlockInfo> blkinfo = orbs_->coefs()->coldim()->blocks();
     for (unsigned int g = 0; g < pg->order(); ++g) {
       const unsigned int g_mpqc = extern_to_mpqc_irrep_map[g];
@@ -494,10 +498,26 @@ ExternMOInfo::ExternMOInfo(const std::string & filename,
       const unsigned int ninact_g = fzcpi_[g] + inactpi_[g];
       const unsigned int nact_g = actpi_[g];
       for (unsigned int mo_g = 0; mo_g < nact_g; ++mo_g)
-        actindexmap_occ_.push_back( mpqc_mo_offset + ninact_g + mo_g );
+        actindexmap_occ_.push_back(mpqc_mo_offset + ninact_g + mo_g );
     }
   }
+  {
+    // compute irrep offsets in occupied MPQC MO space
+    std::vector<unsigned int> mpqc_act_offset(pg->order(), 0u);
+    for (unsigned int g = 1; g < pg->order(); ++g) {
+      mpqc_act_offset[g] = mpqc_occ_offset[g-1] + actpi_[g];
+    }
 
+    assert(actindexmap_act_.empty());
+    Ref<SCBlockInfo> blkinfo = orbs_->coefs()->coldim()->blocks();
+    for (unsigned int g = 0; g < pg->order(); ++g) {
+      const unsigned int g_mpqc = extern_to_mpqc_irrep_map[g];
+      const unsigned int mpqc_mo_offset = mpqc_act_offset[g_mpqc];
+      const unsigned int nact_g = actpi_[g];
+      for (unsigned int mo_g = 0; mo_g < nact_g; ++mo_g)
+        actindexmap_act_.push_back(mpqc_mo_offset + mo_g );
+    }
+  }
   coefs_extern.print("ExternMOInfo:: extern MO coefficients");
   orbs_->coefs().print("ExternMOInfo:: reordered MO coefficients");
 
@@ -524,6 +544,10 @@ const std::vector<unsigned int>& ExternMOInfo::actindexmap_occ() const
   return actindexmap_occ_;
 }
 
+const std::vector<unsigned int>& ExternMOInfo::actindexmap_act() const
+{
+  return actindexmap_act_;
+}
 //Ref<GaussianBasisSet> ExternMOInfo::basis() const
 //{
 //    return basis_;
@@ -645,28 +669,69 @@ ClassDesc ExternSpinFreeRDMTwo::class_desc_(typeid(ExternSpinFreeRDMTwo),
                                         0                // not StateInConstructible
                                         );
 
-sc::ExternSpinFreeRDMTwo::ExternSpinFreeRDMTwo(const std::string & filename,
-                                               const std::vector<unsigned int>& indexmap,
-                                               const Ref<OrbitalSpace> & orbs) :
-    SpinFreeRDM<Two>(Ref<Wavefunction>()), filename_(filename), orbs_(orbs)
+ExternSpinFreeRDMTwo::ExternSpinFreeRDMTwo(const std::string & filename,
+                                           const std::vector<unsigned int>& act_occ_indexmap,
+                                           const std::vector<unsigned int>& act_act_indexmap,
+                                           const std::vector<unsigned int>& actpi,
+                                           const Ref<OrbitalSpace> & occ_orbs):
+    SpinFreeRDM<Two>(Ref<Wavefunction>()), filename_(filename), orbs_(occ_orbs)
 {
+  // goal: build 2-rdm in occupied space
+  // the logic: build 1-rdm prototype -> build active space 2-rdm from reading file
+  // -> build active space 1-rdm (from active space 2-rdm)
+  // -> finish building 1-rdm in occupied space
+  // -> build occupied space 2-rdm prototype by using 1-rdm
+  // -> rectify the active section (all 4 indices are active) of 2-rdm by active space 2-rdm
   std::ifstream in(filename_.c_str());
   if (in.is_open() == false) {
     std::ostringstream oss;
     oss << "ExternSpinFreeRDMTwo: could not open file " << filename_;
     throw std::runtime_error(oss.str().c_str());
   }
-  const unsigned int norbs = orbs->coefs().coldim().n();
-  RefSCDimension dim = new SCDimension(norbs * norbs);
-  dim->blocks()->set_subdim(0, new SCDimension(dim->n()));
-  rdm_ = orbs->coefs().kit()->symmmatrix(dim);
-  rdm_.assign(0.0);
-  // compute single-determinant 2-RDM here, it will be (partially) overwritten by
-  // the contents of the external file. This allows, for example, only active 2-RDM to be
-  // reported in the external file.
-  // TODO Liguo will implement SD 2-RDM
-  assert(false);
+  const unsigned int nocc = occ_orbs->coefs().coldim().n();
+  const unsigned int nact = act_occ_indexmap.size(); // # of active orbitals
 
+  RefSCDimension dim = new SCDimension(nocc * nocc);
+  RefSCDimension dim1 = new SCDimension(nocc);
+  dim->blocks()->set_subdim(0, new SCDimension(dim->n()));
+  dim1->blocks()->set_subdim(0, new SCDimension(dim1->n()));
+  rdm_ = occ_orbs->coefs().kit()->symmmatrix(dim);
+  rdm_.assign(0.0);
+  RefSymmSCMatrix  rdm1 = occ_orbs->coefs().kit()->symmmatrix(dim1); // to store 1-rdm in obs
+  rdm1.assign(0.0);
+
+  // first fill "spin-free 1-rdm" with a diagonal mat ('2': alpha + beta)
+  // the active block will be overwritten later.
+  for (int i = 0; i < nocc; ++i)
+  {
+    rdm1.set_element(i,i, 2.0);
+  }
+
+  // construct a map from mpqc act to mpqc occ index
+   std::vector<unsigned int> mpqc_act_occ_indexmap;
+   const unsigned int nirrep = orbs_->nblocks();
+   const std::vector<unsigned int> occpi = orbs_->block_sizes();
+   Ref<SCBlockInfo> blkinfo = orbs_->coefs()->coldim()->blocks();
+   for (int i = 0; i < nirrep; ++i)
+   {
+     const unsigned int ndocc = occpi[i]-actpi[i];
+     const unsigned int mpqc_occ_offset = blkinfo->start(i);
+     for (int j = 0; j < ndocc; ++j)
+     {
+       mpqc_act_occ_indexmap.push_back(mpqc_occ_offset + ndocc + j);
+     }
+   }
+
+
+  // now we construct 2-rdm in 'active' space.
+  RefSCDimension act_dim2 = new SCDimension(nact * nact);
+  act_dim2->blocks()->set_subdim(0, new SCDimension(act_dim2->n()));
+  RefSymmSCMatrix act_rdm2 = occ_orbs->coefs().kit()->symmmatrix(act_dim2);
+  RefSCDimension act_dim1 = new SCDimension(nact);
+  act_dim1->blocks()->set_subdim(0, new SCDimension(act_dim1->n()));
+  RefSymmSCMatrix act_rdm1 = occ_orbs->coefs().kit()->symmmatrix(act_dim1);
+  act_rdm2.assign(0.0);
+  act_rdm1.assign(0.0);
   bool have_coefs = true;
   while (have_coefs) {
     int bra1, bra2, ket1, ket2;
@@ -683,19 +748,82 @@ sc::ExternSpinFreeRDMTwo::ExternSpinFreeRDMTwo(const std::string & filename,
       --bra2;
       --ket1;
       --ket2;
-      
-      const unsigned int mbra1 = indexmap[bra1];
-      const unsigned int mbra2 = indexmap[bra2];
-      const unsigned int mket1 = indexmap[ket1];
-      const unsigned int mket2 = indexmap[ket2];
+      const unsigned int mbra1 = act_act_indexmap[bra1];
+      const unsigned int mbra2 = act_act_indexmap[bra2];
+      const unsigned int mket1 = act_act_indexmap[ket1];
+      const unsigned int mket2 = act_act_indexmap[ket2];
 
-      rdm_.set_element(mbra1 * norbs + mbra2, mket1 * norbs + mket2, value);
-      rdm_.set_element(mbra2 * norbs + mbra1, mket2 * norbs + mket1, value);
+      act_rdm2.set_element(mbra1 * nact + mbra2, mket1 * nact + mket2, value);
+      act_rdm2.set_element(mbra2 * nact + mbra1, mket2 * nact + mket1, value);
     } else
       have_coefs = false;
   }
   in.close();
 
+  const double trace_act2 = act_rdm2.trace(); // = n_act (n_act -1)
+  const double nact_particle = (1.0 + std::sqrt(1.0 + 4.0 * trace_act2)) / 2.0;
+
+  // build active space 1-rdm from partial trace of 2-rdm in active space.
+  for (unsigned int b1 = 0; b1 < nact; ++b1) {
+    const unsigned b12_offset = b1 * nact;
+    for (unsigned int k1 = 0; k1 <= b1; ++k1) {
+      const unsigned k12_offset = k1 * nact;
+      double value = 0.0;
+      for (unsigned int i2 = 0; i2 < nact; ++i2) {
+        value += act_rdm2.get_element(b12_offset + i2, k12_offset + i2);
+      }
+      act_rdm1.set_element(b1, k1, value);
+    }
+  }
+  act_rdm1.scale(1.0 /(nact_particle-1.0));
+
+  // overwrite the active block of orignial 1-rdm in occupied space
+  for (int i = 0; i < nact; ++i)
+  {
+    for (int j = 0; j < nact; ++j)
+    {
+      rdm1.set_element(mpqc_act_occ_indexmap[i], mpqc_act_occ_indexmap[j], act_rdm1.get_element(i,j));
+    }
+  } // finish constructing rdm1 mat. It will be used to build rdm2
+
+
+  // To build 2-rdm in occupied space: the trick is that unless all 4 indices are active,
+  // any 2-rdm element Gamma^pq_rs can be decomposed as Gamma^p_r * Gamma^q_s - 0.5*Gamma^p_s * Gamma^q_r.
+  // We use this to construct the 2-rdm and then overwrite the 'all active' section with act_rdm2
+  for (int p = 0; p < nocc; ++p)
+  {
+    for (int q = 0; q < nocc; ++q)
+    {
+      for (int r = 0; r < nocc; ++r)
+      {
+        for (int s = 0; s < nocc; ++s)
+        {
+          const unsigned int uppind = p*nocc + q;
+          const unsigned int lowind = r*nocc + s;
+          if(uppind>=lowind)
+            rdm_.set_element(uppind,lowind, rdm1.get_element(p,r)*rdm1.get_element(q,s)
+                                            -0.5*rdm1.get_element(p,s)*rdm1.get_element(q,r));
+        }
+      }
+    }
+  }
+  for (int p = 0; p < nact; ++p)
+  {
+    for (int q = 0; q < nact; ++q)
+    {
+      for (int r = 0; r < nact; ++r)
+      {
+        for (int s = 0; s < nact; ++s)
+        {
+          const unsigned int indp = mpqc_act_occ_indexmap[p];
+          const unsigned int indq = mpqc_act_occ_indexmap[q];
+          const unsigned int indr = mpqc_act_occ_indexmap[r];
+          const unsigned int inds = mpqc_act_occ_indexmap[s];
+          rdm_.set_element(indp *nocc + indq, indr *nocc+inds, act_rdm2.get_element(p*nact+q, r*nact+s));
+        }
+      }
+    }
+  }
   //rdm_.print("ExternSpinFreeRDMTwo:: MO density");
 }
 

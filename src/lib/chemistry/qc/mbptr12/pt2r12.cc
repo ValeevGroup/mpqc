@@ -118,6 +118,13 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
       akeyval->assignboolean("spinadapted", true);
       r12world_keyval = new AggregateKeyVal(keyval, akeyval);
     }
+    else //doubly check
+    {
+      bool adapted = keyval->booleanvalue("spinadapted");
+      if(not adapted)
+        throw InputError("spinadapted must be true for spin-free PT2R12 (the default is correct)",
+                         __FILE__, __LINE__, "PT2R12");
+    }
     r12world_ = new R12WavefunctionWorld(r12world_keyval, ref);
   }
   r12eval_ = new R12IntEval(r12world_);

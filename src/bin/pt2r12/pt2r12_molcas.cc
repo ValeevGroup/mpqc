@@ -66,7 +66,7 @@ int main_molcas(int argc, char **argv)
   //
   // Read molecule, basis, and orbitals
   //
-  ExternMOInfo rdorbs(filename_prefix + ".pt2r12.dat", integral);
+  ExternMOInfo rdorbs(filename_prefix + ".pt2r12.dat", integral); // all MO info is contained in rdorbs
   Ref<GaussianBasisSet> basis = rdorbs.orbs()->basis();
   RefSCMatrix C_ao = rdorbs.orbs()->coefs();
   const std::vector<unsigned int>& fzcpi = rdorbs.fzcpi();
@@ -130,7 +130,9 @@ int main_molcas(int argc, char **argv)
     for(int i=0; i<nocc_g; i++, ++mo)
       occ_mask[mo] = true;
   }
-  Ref<OrbitalSpace> occ_orbs = new MaskedOrbitalSpace(std::string("p"), std::string("MOInfo orbitals"), orbs,
+  // construct occupied MO space
+  Ref<OrbitalSpace> occ_orbs = new MaskedOrbitalSpace(std::string("p"),
+                                    std::string("MOInfo orbitals"), orbs,
                                                       occ_mask);
 #if 1
   occ_orbs->print_detail();
@@ -138,7 +140,10 @@ int main_molcas(int argc, char **argv)
 #endif
 
   Ref<ExternSpinFreeRDMTwo> rdrdm2 = new ExternSpinFreeRDMTwo(filename_prefix + ".pt2r12.rdm2.dat",
-                                                              rdorbs.actindexmap_occ(), occ_orbs);
+                                                              rdorbs.actindexmap_occ(),
+                                                              rdorbs.actindexmap_act(),
+                                                              actpi,
+                                                              occ_orbs);
   Ref<SpinFreeRDM<One> > rdrdm1 = rdrdm2->rdm_m_1();
   RefSymmSCMatrix P1_mo = rdrdm1->scmat().copy();
   RefSymmSCMatrix P2_mo = rdrdm2->scmat();
@@ -202,10 +207,11 @@ int main_molcas(int argc, char **argv)
   // use its orbitals to initialize Extern_RefWavefunction
   P1_mo.scale(0.5);
   integral->set_basis(basis);
+  unsigned int ndoub_occ = nfzc+ninact;
   Ref<RefWavefunction> ref_wfn = new Extern_RefWavefunction(world, basis, integral,
                                                             C_ao, orbsym,
                                                             P1_mo, P1_mo,
-                                                            nfzc+ninact+nact,
+                                                            ndoub_occ+nact,
                                                             nfzc,
                                                             nfzv);
 

@@ -55,9 +55,11 @@ default:: $(DEPENDINCLUDE)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-mpqc: $(BINOBJ) $(LIBS)
+mpqc:: $(BINOBJ) $(LIBS)
 	echo "$(LISTLIBS) $(INCLUDE) $(DEFINES) $(XDEF) $(SRCDIR)/LIBS.h"
 	$(LTLINK) $(LD) $(LDFLAGS) -o $@ $^ $(XLIBS) $(SYSLIBS) $(LTLINKBINOPTS)
+
+default:: $(TOPDIR)/lib/libmpqc.$(LIBSUF) $(TOPDIR)/lib/libmpqcinit.$(LIBSUF)
 
 $(TOPDIR)/lib/libmpqc.a: $(BINOBJ)
 	/bin/rm -f $@

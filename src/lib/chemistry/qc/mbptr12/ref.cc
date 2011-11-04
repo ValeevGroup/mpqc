@@ -1370,8 +1370,9 @@ Extern_RefWavefunction::Extern_RefWavefunction(const Ref<WavefunctionWorld>& wor
     RefSymmSCMatrix Pa_2 = alpha_1rdm.kit()->symmmatrix(alpha_1rdm.dim());
     RefSymmSCMatrix I = alpha_1rdm.kit()->symmmatrix(alpha_1rdm.dim());
     Pa_2.assign(0.0);
-    I.assign(0.0); I->shift_diagonal(1.0);
-    Pa_2.accumulate_transform(alpha_1rdm, I);
+    I.assign(0.0);
+    I->shift_diagonal(1.0);
+    Pa_2.accumulate_transform(alpha_1rdm, I); // ?
     Ref<SCElementKNorm> op = new SCElementKNorm;
     (Pa_2 - alpha_1rdm)->element_op(op.pointer());
     if (op->result() > DBL_EPSILON)
@@ -1492,12 +1493,14 @@ Extern_RefWavefunction::init_spaces(unsigned int nocc,
     for(int i=nocc; i<nmo-nfzv_; ++i) evals.set_element(i, 1.0);
     for(int i=nmo-nfzv_; i<nmo; ++i) evals.set_element(i, 2.0);
     RefDiagSCMatrix occnums = evals.clone();
-    occnums.assign(0.0);  for(int i=0; i<nocc; ++i) occnums.set_element(i, 1.0);
+    occnums.assign(0.0);
+    for(int i=0; i<nocc; ++i)
+      occnums.set_element(i, 1.0);
     const unsigned int nirreps =
         basis()->molecule()->point_group()->char_table().order();
     pspace_ao = new OrderedOrbitalSpace<SymmetryMOOrder>(
         id, name, basis(), integral(), coefs, evals, occnums, orbsyms,
-        SymmetryMOOrder(nirreps));
+        SymmetryMOOrder(nirreps)); // evals/occnums has no symmetry info, while coefs are in symmetry order
   }
   RefSCMatrix C_ao = pspace_ao->coefs();
   RefDiagSCMatrix evals = pspace_ao->evals();

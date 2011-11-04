@@ -692,7 +692,7 @@ SymmSCMatrix::accumulate_transform(SCMatrix *a, SymmSCMatrix *b,
 
   RefSCMatrix res;
 
-  if (t == SCMatrix::TransposeTransform) {
+  if (t == SCMatrix::TransposeTransform) { // return A^T*B*A
       RefSCMatrix at = a->copy();
       at->transpose_this();
 
@@ -707,7 +707,7 @@ SymmSCMatrix::accumulate_transform(SCMatrix *a, SymmSCMatrix *b,
       res->assign(0.0);
       res->accumulate_product(tmp.pointer(), a);
     }
-  else {
+  else { // return A *B* A^T
       RefSCMatrix tmp = a->clone();
       tmp->assign(0.0);
 

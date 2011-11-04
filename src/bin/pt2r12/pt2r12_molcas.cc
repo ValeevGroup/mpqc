@@ -76,6 +76,7 @@ int main_molcas(int argc, char **argv)
   const unsigned int nfzc = std::accumulate(fzcpi.begin(), fzcpi.end(), 0.0);
   const unsigned int ninact = std::accumulate(inactpi.begin(), inactpi.end(), 0.0);
   const unsigned int nact = std::accumulate(actpi.begin(), actpi.end(), 0.0);
+  const unsigned int nocc = nfzc + ninact + nact;
   const unsigned int nfzv = std::accumulate(fzvpi.begin(), fzvpi.end(), 0.0);
   const unsigned int nmo = rdorbs.orbs()->rank();
 
@@ -145,8 +146,24 @@ int main_molcas(int argc, char **argv)
                                                               actpi,
                                                               occ_orbs);
   Ref<SpinFreeRDM<One> > rdrdm1 = rdrdm2->rdm_m_1();
-  RefSymmSCMatrix P1_mo = rdrdm1->scmat().copy();
-  RefSymmSCMatrix P2_mo = rdrdm2->scmat();
+  RefSymmSCMatrix P1_occ_mo = rdrdm1->scmat().copy();
+//  RefSCDimension dim1 = new SCDimension(nmo);
+//  dim1->blocks()->set_subdim(0, new SCDimension(dim1->n()));
+//  RefSymmSCMatrix  P1_mo = orbs->coefs().kit()->symmmatrix(dim1); // to store 1-rdm in obs
+  RefSCDimension dim1 = C_ao->coldim();
+  RefSymmSCMatrix  P1_mo = C_ao.kit()->symmmatrix(dim1); // to store 1-rdm in obs
+  P1_mo.assign(0.0);
+  P1_mo.print("P1_mo");
+  P1_occ_mo.print("P1_occ_mo");
+  for (int i = 0; i < nocc; ++i)
+  {
+    for (int j = 0; j < nocc; ++j)
+    {
+      P1_mo.set_element(rdorbs.occindexmap()[i], rdorbs.occindexmap()[j], P1_occ_mo.get_element(i,j));
+    }
+  } // convert to 1-rdm in occ to obs
+  P1_mo.print("P1_mo done");
+
 
   //
   // Test orbs and 1-rdm
@@ -208,6 +225,7 @@ int main_molcas(int argc, char **argv)
   P1_mo.scale(0.5);
   integral->set_basis(basis);
   unsigned int ndoub_occ = nfzc+ninact;
+  C_ao.print("C_ao before building refwfn");
   Ref<RefWavefunction> ref_wfn = new Extern_RefWavefunction(world, basis, integral,
                                                             C_ao, orbsym,
                                                             P1_mo, P1_mo,

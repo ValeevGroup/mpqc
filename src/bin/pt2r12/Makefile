@@ -13,11 +13,15 @@ include $(TOPDIR)/lib/Makedirlist
 INCLUDE += -I. -I$(SRCDIR) -I$(SRCTOPDIR)/src/bin/mpqc
 CXXINCLUDE += -I. -I$(SRCDIR)
 
+CXXSRC = pt2r12.cc moinfo.cc
+
 TARGET_TO_MAKE = pt2r12
-CXXSRC = pt2r12.cc moinfo.cc \
-pt2r12_molcas.cc \
-#pt2r12_gamess.cc \
- 
+default:: $(TARGET_TO_MAKE)
+
+.PHONY: gamess
+gamess : $(TARGET_TO_MAKE)
+gamess : CPPFLAGS += -DPT2R12GAMESS
+#default:: gamess
 
 INC =
 DEPENDINCLUDE = $(INC)
@@ -25,8 +29,6 @@ DEPENDINCLUDE = $(INC)
 BINOBJ = $(CXXSRC:%.cc=%.$(OBJSUF))
 
 DISTFILES = $(CXXSRC) $(CSRC) $(INC) Makefile LIBS.h
-
-default:: $(TARGET_TO_MAKE)
 
 LIBS :=  $(TOPDIR)/lib/libmpqcinit.a $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
 
@@ -39,7 +41,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 $(TARGET_TO_MAKE): $(BINOBJ) $(LIBS)
 	echo "$(LISTLIBS) $(INCLUDE) $(DEFINES) $(XDEF) $(SRCDIR)/LIBS.h"
 	$(LTLINK) $(LD) $(LDFLAGS) -o $@ $^ $(XLIBS) $(SYSLIBS) $(LTLINKBINOPTS)
-
+	
 ifeq ($(ENABLE_DEPLIBS),yes)
 MPQCLTDEPLIBS=$(LIBS)
 MPQCLTSYSLIBS=$(SYSLIBS)
@@ -59,9 +61,9 @@ distclean:: clean
 
 #################################################################
 
-$(BINOBJ:.$(OBJSUF)=.d): $(DEPENDINCLUDE)
+$(CXXSRC:.cc=.d): $(DEPENDINCLUDE)
 ifneq ($(DODEPEND),no)
-include $(BINOBJ:.$(OBJSUF)=.d)
+include $(CXXSRC:.cc=.d)
 endif
 
 endif

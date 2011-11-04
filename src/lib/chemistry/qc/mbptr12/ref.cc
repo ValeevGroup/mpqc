@@ -1465,7 +1465,12 @@ Extern_RefWavefunction::core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &
   if (need_to_add_aospace_temporarily)
     remove_ao_space(basis, aoreg, oreg);
 
-  return Hnr_symm;
+  Ref<Integral> localints = integral()->clone();
+  localints->set_basis(basis);
+  Ref<PetiteList> pl = localints->petite_list();
+  RefSymmSCMatrix Hnr_symm_so = pl->to_SO_basis(Hnr_symm);
+
+  return Hnr_symm_so;
 }
 
 void

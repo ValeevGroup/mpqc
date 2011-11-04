@@ -185,7 +185,10 @@ namespace sc {
     virtual int dk() const =0;
     /// @sa Wavefunction::momentum_basis()
     virtual Ref<GaussianBasisSet> momentum_basis() const =0;
-    /// @sa Wavefunction::core_hamiltonian_for_basis()
+    /** Returns the SO core Hamiltonian in the given basis and momentum
+        basis.  The momentum basis is not needed if no Douglas-Kroll
+        correction is being performed.
+    @sa Wavefunction::core_hamiltonian_for_basis()  */
     virtual RefSymmSCMatrix core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &basis,
                                                        const Ref<GaussianBasisSet> &p_basis) =0;
     /// return the AO basis density

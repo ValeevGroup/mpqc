@@ -150,9 +150,7 @@ int main_molcas(int argc, char **argv)
 #endif
 
   Ref<ExternSpinFreeRDMTwo> rdrdm2 = new ExternSpinFreeRDMTwo(filename_prefix + ".pt2r12.rdm2.dat",
-                                                              rdorbs.actindexmap_occ(),
-                                                              rdorbs.actindexmap_act(),
-                                                              actpi,
+                                                              rdorbs.actindexmap_occ_sb(),
                                                               occ_orbs);
   Ref<SpinFreeRDM<One> > rdrdm1 = rdrdm2->rdm_m_1();
   RefSymmSCMatrix P1_occ_mo = rdrdm1->scmat().copy();
@@ -165,7 +163,7 @@ int main_molcas(int argc, char **argv)
   {
     for (int j = 0; j < nocc; ++j)
     {
-      P1_mo.set_element(rdorbs.occindexmap()[i], rdorbs.occindexmap()[j], P1_occ_mo.get_element(i,j));
+      P1_mo.set_element(rdorbs.occindexmap_sb()[i], rdorbs.occindexmap_sb()[j], P1_occ_mo.get_element(i,j));
     }
   } // convert to 1-rdm in occ to obs
   P1_mo.print("P1_mo done");

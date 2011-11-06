@@ -54,20 +54,20 @@ namespace sc {
 
       /** this map converts the MO indices assumed by the contents of the data file
           to the MO indices in the order provided by this object */
-      const std::vector<unsigned int>& indexmap() const;
-      /** same as @c indexmap(), except for occupied (fzc+incact+act) orbitals only
+      const std::vector<unsigned int>& indexmap_sb() const;
+      /** same as @c indexmap_sb(), except for occupied (fzc+incact+act) orbitals only
           (maps to the full MO range) */
-      const std::vector<unsigned int>& occindexmap() const;
-      /** same as @c indexmap(), except for active (act) orbitals only
+      const std::vector<unsigned int>& occindexmap_sb() const;
+      /** same as @c indexmap_sb(), except for active (act) orbitals only
           (maps to the full MO range) */
-      const std::vector<unsigned int>& actindexmap() const;
+      const std::vector<unsigned int>& actindexmap_sb() const;
 
-      /** same as @c occindexmap(), except it maps to the occupied MOs only */
-      const std::vector<unsigned int>& occindexmap_occ() const;
-      /** same as @c actindexmap(), except it maps to the occupied MOs only */
+      /** same as @c occindexmap_sb(), except it maps to the occupied MOs only */
+      const std::vector<unsigned int>& occindexmap_occ_sb() const;
+      /** same as @c actindexmap_sb(), except it maps to the occupied MOs only */
+      const std::vector<unsigned int>& actindexmap_occ_sb() const;
+      /** same as @c actindexmap_occ_sb(), except it maps to the occupied MOs in corr/energy-order */
       const std::vector<unsigned int>& actindexmap_occ() const;
-      /** same as @c actindexmap(), except it maps to the active MOs only */
-      const std::vector<unsigned int>& actindexmap_act() const;
 
       typedef OrderedOrbitalSpace<SymmetryMOOrder> SymmOrbitalSpace;
       typedef OrderedOrbitalSpace<EnergyMOOrder<std::less<double> > > CorrOrbitalSpace;
@@ -81,21 +81,22 @@ namespace sc {
       const Ref<CorrOrbitalSpace>& orbs() const { return orbs_; }
 
     private:
-      std::vector<unsigned int> indexmap_; //< file order -> mpqc order
-      std::vector<unsigned int> actindexmap_; //< same as indexmap_, but only for active orbitals
-      std::vector<unsigned int> occindexmap_; //< same as indexmap_, but only for all occupied orbitals
+      std::vector<unsigned int> indexmap_sb_; //< file order -> mpqc order
+      std::vector<unsigned int> actindexmap_sb_; //< same as indexmap_sb_, but only for active orbitals
+      std::vector<unsigned int> occindexmap_sb_; //< same as indexmap_sb_, but only for all occupied orbitals
 
-      std::vector<unsigned int> occindexmap_occ_;
-      std::vector<unsigned int> actindexmap_occ_;
-      std::vector<unsigned int> actindexmap_act_;
+      std::vector<unsigned int> occindexmap_occ_sb_;
+      std::vector<unsigned int> actindexmap_occ_sb_;
+
+      std::vector<unsigned int> actindexmap_occ_; // map external act orbs to orbs_
 
       Ref<SymmOrbitalSpace> orbs_sb_;
+      Ref<CorrOrbitalSpace> orbs_;
       std::vector<unsigned int> mopi_;
       std::vector<unsigned int> fzcpi_;
       std::vector<unsigned int> fzvpi_;
       std::vector<unsigned int> inactpi_;
       std::vector<unsigned int> actpi_;
-      Ref<CorrOrbitalSpace> orbs_;
   };
 
   /// Reads 1-RDM from a text file
@@ -145,7 +146,7 @@ namespace sc {
       /// this assumes that the file reports 2-rdm in the entire occupied space.
       /// act_occ_indexmap maps the indices assumed in the file to occupied MPQC orbs
       ExternSpinFreeRDMTwo(const std::string& filename,
-                           const std::vector<unsigned int>& act_occ_indexmap,
+                           const std::vector<unsigned int>& indexmap,
                            const Ref<OrbitalSpace>& occ_orbs);
       virtual ~ExternSpinFreeRDMTwo();
 

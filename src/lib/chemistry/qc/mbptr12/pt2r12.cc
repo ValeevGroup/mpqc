@@ -1255,7 +1255,7 @@ void PT2R12::compute()
 
   ExEnv::out0() <<indent << scprintf("Reference energy [au]:                 %17.12lf",
                                      energy_ref) << endl;
-  #if 1
+  #if 0
     const double recomp_ref_energy = this->energy_recomputed_from_densities();
     ExEnv::out0() <<  std::endl << std::endl << indent << scprintf("Reference energy (%9s) [au]:     %17.12lf",
                                         (this->r12world()->world()->basis_df().null() ? "   recomp" : "recomp+DF"),

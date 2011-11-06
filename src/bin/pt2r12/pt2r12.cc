@@ -119,8 +119,10 @@ int try_main(int argc, char **argv)
   // Read molecule, basis, and orbitals
   //
   ExternMOInfo rdorbs(filename_prefix + ".pt2r12.dat", integral); // all MO info is contained in rdorbs
-  Ref<GaussianBasisSet> basis = rdorbs.orbs_sb()->basis();
-  RefSCMatrix C_ao = rdorbs.orbs_sb()->coefs();
+  Ref<OrbitalSpace> orbs_sb = rdorbs.orbs_sb();
+  Ref<OrbitalSpace> orbs = rdorbs.orbs(); // pseudo-'energy' ordered.
+  Ref<GaussianBasisSet> basis = orbs_sb->basis();
+  RefSCMatrix C_ao = orbs_sb->coefs();
   const std::vector<unsigned int>& fzcpi = rdorbs.fzcpi();
   const std::vector<unsigned int>& inactpi = rdorbs.inactpi();
   const std::vector<unsigned int>& actpi = rdorbs.actpi();
@@ -131,7 +133,6 @@ int try_main(int argc, char **argv)
   const unsigned int nfzv = std::accumulate(fzvpi.begin(), fzvpi.end(), 0.0);
   const unsigned int nmo = rdorbs.orbs_sb()->rank();
 
-  Ref<OrbitalSpace> orbs_sb = rdorbs.orbs_sb();
   { // test the metric
     Ref<Integral> localints = integral->clone();
     RefSymmSCMatrix S_so = sc::detail::overlap(basis, localints);
@@ -147,6 +148,21 @@ int try_main(int argc, char **argv)
     S_mo.print("MO overlap matrix");
   }
 
+  // will use this parameter to determine whether to use symm ordered orbs or pseudo-energy ordered ones.
+  bool USE_SYMMETRY_ORDER = true;
+#if not PT2R12GAMESS
+  USE_SYMMETRY_ORDER = false;
+#endif
+  Ref<OrbitalSpace> mpqc_orbs;
+  if(not USE_SYMMETRY_ORDER) // for clarity and safety
+    mpqc_orbs = orbs;
+  else
+    mpqc_orbs = orbs_sb;
+  basis = mpqc_orbs->basis();
+  C_ao = mpqc_orbs->coefs();
+
+
+
   /////////////////////////////////////////////
   // Read 2-RDM
   /////////////////////////////////////////////
@@ -154,33 +170,57 @@ int try_main(int argc, char **argv)
   // molcas reports 2-RDM in terms of active occupied orbitals only, indexed occording to molcas convention
   // thus use the map from molcas active occupied orbitals to MPQC occupied range
   // first make an OrbitalSpace for MPQC occupied orbitals
-  std::vector<bool> occ_mask(orbs_sb->rank(), false);
-  const unsigned int nirrep = basis->molecule()->point_group()->order();
-  for(unsigned int g=0; g<nirrep; ++g) {
-    unsigned int mo = C_ao.coldim()->blocks()->start(g);
-    const unsigned int nocc_g = fzcpi[g] + inactpi[g] + actpi[g];
-    for(int i=0; i<nocc_g; i++, ++mo)
-      occ_mask[mo] = true;
+  Ref<OrbitalSpace> occ_orbs;
+  if(USE_SYMMETRY_ORDER)
+  {
+    std::vector<bool> occ_mask(orbs->rank(), false);
+    const unsigned int nirrep = basis->molecule()->point_group()->order();
+    for(unsigned int g=0; g<nirrep; ++g) {
+      unsigned int mo = C_ao.coldim()->blocks()->start(g);
+      const unsigned int nocc_g = fzcpi[g] + inactpi[g] + actpi[g];
+      for(int i=0; i<nocc_g; i++, ++mo)
+        occ_mask[mo] = true;
+    }
+    // construct occupied MO space
+    occ_orbs = new MaskedOrbitalSpace(std::string("i(sym)"),
+                                      std::string("occupied MOInfo orbitals"), mpqc_orbs,
+                                      occ_mask);
   }
-  // construct occupied MO space
-  Ref<OrbitalSpace> occ_orbs = new MaskedOrbitalSpace(std::string("i(sym)"),
-                                                      std::string("occupied MOInfo orbitals"), orbs_sb,
-                                                      occ_mask);
+  else
+  {
+    std::vector<bool> occ_mask(orbs->rank(), false);
+    const unsigned int nocc = nfzc + ninact + nact;
+    for (int i = 0; i < nocc; ++i)
+    {
+      occ_mask[i] = true;
+    }
+    // construct occupied MO space
+    occ_orbs = new MaskedOrbitalSpace(std::string("p"),
+                                      std::string("MOInfo orbitals"), mpqc_orbs,
+                                      occ_mask);
+  }
+
 #if 1
   occ_orbs->print_detail();
-  orbs_sb->print_detail();
+  mpqc_orbs->print_detail();
 #endif
 
+  Ref<ExternSpinFreeRDMTwo> rdrdm2;
 #if PT2R12GAMESS
-  // GAMESS only reports the density in occupied orbitals
-  Ref<ExternSpinFreeRDMTwo> rdrdm2 = new ExternSpinFreeRDMTwo(filename_prefix + ".pt2r12.rdm2.dat",
-                                                              rdorbs.occindexmap_occ(),
-                                                              occ_orbs);
+  // GAMESS reports the density in occupied orbitals
+  rdrdm2 = new ExternSpinFreeRDMTwo(filename_prefix + ".pt2r12.rdm2.dat",
+                                    rdorbs.occindexmap_occ_sb(),
+                                    occ_orbs);
 #else
-  // MOLCAS only reports the density in active orbitals
-  Ref<ExternSpinFreeRDMTwo> rdrdm2 = new ExternSpinFreeRDMTwo(filename_prefix + ".pt2r12.rdm2.dat",
-                                                              rdorbs.actindexmap_occ(),
-                                                              occ_orbs);
+  // MOLCAS reports the density in active orbitals
+  if(USE_SYMMETRY_ORDER)
+    rdrdm2 = new ExternSpinFreeRDMTwo(filename_prefix + ".pt2r12.rdm2.dat",
+                                      rdorbs.actindexmap_occ_sb(),
+                                      occ_orbs);
+  else
+    rdrdm2 = new ExternSpinFreeRDMTwo(filename_prefix + ".pt2r12.rdm2.dat",
+                                      rdorbs.actindexmap_occ(),
+                                      occ_orbs);
 #endif
 
   //
@@ -227,14 +267,14 @@ int try_main(int argc, char **argv)
   world->set_wfn(clhf.pointer());
 
   // to construct Extern_RefWavefunction we need an energy/correlation-ordered orbitals
-  Ref<OrbitalSpace> orbs = rdorbs.orbs();
   // make 1-RDM to the full MO space
   RefSymmSCMatrix P1_mo;
   {
     Ref<SpinFreeRDM<One> > rdrdm1 = rdrdm2->rdm_m_1();
     RefSymmSCMatrix P1_mo_occ = rdrdm1->scmat();
-    std::vector<unsigned int> occ_to_orbs_indexmap; occ_to_orbs_indexmap = (*orbs) << *(rdrdm1->orbs());
-    P1_mo = P1_mo_occ.kit()->symmmatrix(orbs->dim());
+    std::vector<unsigned int> occ_to_orbs_indexmap;
+    occ_to_orbs_indexmap = (*mpqc_orbs) << *(rdrdm1->orbs());
+    P1_mo = P1_mo_occ.kit()->symmmatrix(mpqc_orbs->dim());
     P1_mo.assign(0.0);
     const unsigned int nocc = P1_mo_occ.n();
     for(unsigned int i1=0; i1<nocc; ++i1) {
@@ -249,11 +289,10 @@ int try_main(int argc, char **argv)
 
   // use its orbitals to initialize Extern_RefWavefunction
   integral->set_basis(basis);
-  unsigned int ndoub_occ = nfzc+ninact;
   Ref<RefWavefunction> ref_wfn = new Extern_RefWavefunction(world, basis, integral,
-                                                            orbs->coefs(), orbs->orbsym(),
+                                                            mpqc_orbs->coefs(), mpqc_orbs->orbsym(),
                                                             P1_mo, P1_mo,
-                                                            ndoub_occ+nact,
+                                                            nfzc+ninact+nact,
                                                             nfzc,
                                                             nfzv);
 

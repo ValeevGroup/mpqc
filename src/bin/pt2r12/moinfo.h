@@ -52,43 +52,27 @@ namespace sc {
                    const Ref<Integral>& integral);
       ~ExternMOInfo() {}
 
-      /** this map converts the MO indices assumed by the contents of the data file
-          to the MO indices in the order provided by this object */
-      const std::vector<unsigned int>& indexmap_sb() const;
-      /** same as @c indexmap_sb(), except for occupied (fzc+incact+act) orbitals only
-          (maps to the full MO range) */
-      const std::vector<unsigned int>& occindexmap_sb() const;
-      /** same as @c indexmap_sb(), except for active (act) orbitals only
-          (maps to the full MO range) */
-      const std::vector<unsigned int>& actindexmap_sb() const;
-
-      /** same as @c occindexmap_sb(), except it maps to the occupied MOs only */
-      const std::vector<unsigned int>& occindexmap_occ_sb() const;
-      /** same as @c actindexmap_sb(), except it maps to the occupied MOs only */
-      const std::vector<unsigned int>& actindexmap_occ_sb() const;
-      /** same as @c actindexmap_occ_sb(), except it maps to the occupied MOs in corr/energy-order */
-      const std::vector<unsigned int>& actindexmap_occ() const;
-
       typedef OrderedOrbitalSpace<SymmetryMOOrder> SymmOrbitalSpace;
       typedef OrderedOrbitalSpace<EnergyMOOrder<std::less<double> > > CorrOrbitalSpace;
-      /// symmetry-blocked orbitals
-      const Ref<SymmOrbitalSpace>& orbs_sb() const { return orbs_sb_; }
+      /// This object reports orbitals in symmetry-blocked order
+      const Ref<SymmOrbitalSpace>& orbs() const { return orbs_sb_; }
+      /** maps the MO indices assumed by the contents of the data file
+          to that of orbs() */
+      const std::vector<unsigned int>& indexmap() const;
+      /** same as @c occindexmap_sb(), except it maps to the occupied subset of orbs only */
+      const std::vector<unsigned int>& occindexmap_occ() const;
+      /** same as @c actindexmap_sb(), except it maps to the occupied subset of orbs only */
+      const std::vector<unsigned int>& actindexmap_occ() const;
+
       const std::vector<unsigned int>& fzcpi() const;
       const std::vector<unsigned int>& fzvpi() const;
       const std::vector<unsigned int>& inactpi() const;
       const std::vector<unsigned int>& actpi() const;
-      /// correlation/energy-ordered orbitals
-      const Ref<CorrOrbitalSpace>& orbs() const { return orbs_; }
 
     private:
-      std::vector<unsigned int> indexmap_sb_; //< file order -> mpqc order
-      std::vector<unsigned int> actindexmap_sb_; //< same as indexmap_sb_, but only for active orbitals
-      std::vector<unsigned int> occindexmap_sb_; //< same as indexmap_sb_, but only for all occupied orbitals
-
-      std::vector<unsigned int> occindexmap_occ_sb_;
-      std::vector<unsigned int> actindexmap_occ_sb_;
-
-      std::vector<unsigned int> actindexmap_occ_; // map external act orbs to orbs_
+      std::vector<unsigned int> indexmap_; //< file order -> mpqc order
+      std::vector<unsigned int> occindexmap_occ_;
+      std::vector<unsigned int> actindexmap_occ_;
 
       Ref<SymmOrbitalSpace> orbs_sb_;
       Ref<CorrOrbitalSpace> orbs_;
@@ -167,6 +151,12 @@ namespace sc {
       Ref<OrbitalSpace> orbs_;
       RefSymmSCMatrix rdm_;
       std::string filename_; // filename from which this was constructed -- may be useful to find rdm1 file
+
+      void init_from_rdm2_occspace(const std::vector<unsigned int>& indexmap,
+                                   const Ref<OrbitalSpace> & occ_orbs);
+      void init_from_rdm2_actspace(const std::vector<unsigned int>& indexmap,
+                                   const Ref<OrbitalSpace> & occ_orbs);
+
   };
 
 } // end of namespace sc

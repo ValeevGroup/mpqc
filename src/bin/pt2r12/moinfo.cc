@@ -158,7 +158,8 @@ ExternMOInfo::ExternMOInfo(const std::string & filename,
     irreplabel_to_index[glabel] = g;
     std::cout << "irrep " << g << " " << glabel << std::endl;
   }
-  // now get irrep labels and determine mapping from extern irrep index to mpqc irrep index
+  // some peculiar programs ... cough MOLCAS cough ... may use non-standard (i.e. non-Cotton) irrep orderings
+  // if so, pick up extern irrep labels and determine mapping from extern irrep index to mpqc irrep index
   std::vector<unsigned int> extern_to_mpqc_irrep_map;
   skipeol(in);
   std::string irrep_labels = readline(in);
@@ -335,7 +336,7 @@ ExternMOInfo::ExternMOInfo(const std::string & filename,
 
   // read coefficients
   RefSCMatrix coefs_extern = basis->so_matrixkit()->matrix(aodim, modim);
-  // some strange programs ... cough GAMESS cough ... report MO coefficients in *cartesian* basis always
+  // some wicked programs ... cough GAMESS cough ... report MO coefficients in *cartesian* basis always
 #ifdef PT2R12GAMESS
   Ref<GaussianBasisSet> cbasis;
   if (basis->has_pure()) {
@@ -365,7 +366,7 @@ ExternMOInfo::ExternMOInfo(const std::string & filename,
       have_coefs = false;
   }
 
-  // some strange programs ... cough GAMESS cough ... report MO coefficients in *cartesian* basis always
+  // some wicked programs ... cough GAMESS cough ... report MO coefficients in *cartesian* basis always
 #ifdef PT2R12GAMESS
   // if yes, may need to transform to the "real" basis?
   if (basis->has_pure()) {
@@ -402,27 +403,65 @@ ExternMOInfo::ExternMOInfo(const std::string & filename,
   ////////////////////////////////////////////
   // read the orbital info
   ////////////////////////////////////////////
+#if PT2R12GAMESS // GAMESS reports orbitals in energy order
+
+  skipeol(in);
+  std::string token = readline(in);
+  std::vector<unsigned int> orbsym = parse<unsigned int>(token);  assert(orbsym.size() == nmo);
+  // irrep indicies for MOs start from 1, make them start from 0
+  for(std::vector<unsigned int>::iterator i=orbsym.begin();
+      i!=orbsym.end();
+      ++i)
+    --(*i);
+
+  unsigned int nfzc;    in >> nfzc;
+  unsigned int ninact;  in >> ninact;
+  unsigned int nact;    in >> nact;
+  unsigned int nfzv;    in >> nfzv;
+  const unsigned int nuocc = nmo - nfzc - ninact - nact - nfzv;
+  fzcpi_.resize(pg->order());    std::fill(fzcpi_.begin(), fzcpi_.end(), 0u);
+  inactpi_.resize(pg->order());  std::fill(inactpi_.begin(), inactpi_.end(), 0u);
+  actpi_.resize(pg->order());    std::fill(actpi_.begin(), actpi_.end(), 0u);
+  fzvpi_.resize(pg->order());    std::fill(fzvpi_.begin(), fzvpi_.end(), 0u);
+
+  RefDiagSCMatrix pseudo_occnums = coefs_extern.kit()->diagmatrix(coefs_extern.coldim());
+  pseudo_occnums.assign(0.0);
+
+  unsigned int mo = 0;
+  for(unsigned int i=0; i<nfzc;   ++i, ++mo)  { ++fzcpi_[orbsym[mo]];   pseudo_occnums.set_element(mo, 2.0); }
+  for(unsigned int i=0; i<ninact; ++i, ++mo)  { ++inactpi_[orbsym[mo]]; pseudo_occnums.set_element(mo, 2.0); }
+  for(unsigned int i=0; i<nact;   ++i, ++mo)  { ++actpi_[orbsym[mo]];   pseudo_occnums.set_element(mo, 1.0); }
+  mo += nuocc;
+  for(unsigned int i=0; i<nfzv;   ++i, ++mo)  { ++fzvpi_[orbsym[mo]];                                        }
+
+#else // the default is to report orbitals in symmetry order
+
   skipeol(in);
   std::string token = readline(in);
   std::vector<unsigned int> mopi = parse<unsigned int>(token);  assert(mopi.size() == pg->order());
-  token = readline(in);
-  fzcpi_ = parse<unsigned int>(token);
-  assert(fzcpi_.size() == pg->order());
-  token = readline(in);
-  inactpi_ = parse<unsigned int>(token);
-  assert(inactpi_.size() == pg->order());
-  token = readline(in);
-  actpi_ = parse<unsigned int>(token);
-  assert(actpi_.size() == pg->order());
-  token = readline(in);
-  fzvpi_ = parse<unsigned int>(token);
-  assert(fzvpi_.size() == pg->order());
+  token = readline(in);  fzcpi_   = parse<unsigned int>(token); assert(fzcpi_.size() == pg->order());
+  token = readline(in);  inactpi_ = parse<unsigned int>(token); assert(inactpi_.size() == pg->order());
+  token = readline(in);  actpi_   = parse<unsigned int>(token); assert(actpi_.size() == pg->order());
+  token = readline(in);  fzvpi_   = parse<unsigned int>(token); assert(fzvpi_.size() == pg->order());
   assert(std::accumulate(mopi.begin(), mopi.end(), 0) == nmo);
   unsigned int junk; in >> junk; // fzcpi_ etc are in molcas symmetry order
 
-  ////////////////////////////////////////////
-  // remap the coefficients and orbital info
-  ////////////////////////////////////////////
+  const unsigned int nfzc   = std::accumulate(fzcpi_.begin(),   fzcpi_.end(),   0u);
+  const unsigned int ninact = std::accumulate(inactpi_.begin(), inactpi_.end(), 0u);
+  const unsigned int nact   = std::accumulate(actpi_.begin(),   actpi_.end(),   0u);
+  const unsigned int nfzv   = std::accumulate(fzvpi_.begin(),   fzvpi_.end(),   0u);
+  const unsigned int nuocc = nmo - nfzc - ninact - nact - nfzv;
+
+  // compute MPQC irrep indices of the extern MOs
+  std::vector<unsigned int> orbsym;
+  {
+    for (unsigned int g = 0; g < mopi.size(); ++g) {
+      const unsigned int g_mpqc = extern_to_mpqc_irrep_map[g];
+      for (unsigned int mo_g = 0; mo_g < mopi[g]; ++mo_g)
+        orbsym.push_back(g_mpqc);
+    }
+  }
+
   // pseudo occupation numbers -- frozen core and inactive are 2.0, active are 1.0, the rest are 0.0
   RefDiagSCMatrix pseudo_occnums = coefs_extern.kit()->diagmatrix(coefs_extern.coldim());
   pseudo_occnums.assign(0.0);
@@ -441,19 +480,17 @@ ExternMOInfo::ExternMOInfo(const std::string & filename,
     mo += mopi[irrep] - mo_in_irrep; // skip the rest of the orbitals in this block
   }
 
+#endif
+
+  in.close();
+
   // pseudo eigenvalues are the occupation numbers with changed sign
   RefDiagSCMatrix pseudo_evals = pseudo_occnums.copy();
   pseudo_evals.scale(-1.0);
 
-  // compute orbital symmetry irrep map from molcas MO to the mpqc irrep
-  std::vector<unsigned int> orbsym;
-  {
-    for (unsigned int g = 0; g < mopi.size(); ++g) {
-      const unsigned int g_mpqc = extern_to_mpqc_irrep_map[g];
-      for (unsigned int mo_g = 0; mo_g < mopi[g]; ++mo_g)
-        orbsym.push_back(g_mpqc);
-    }
-  }
+  ////////////////////////////////////////////
+  // remap the coefficients and orbital info
+  ////////////////////////////////////////////
 
   orbs_sb_ = new SymmOrbitalSpace(
       std::string("p(sym)"), std::string("symmetry-ordered MOInfo orbitals"),
@@ -464,8 +501,8 @@ ExternMOInfo::ExternMOInfo(const std::string & filename,
       basis, integral, coefs_extern, pseudo_evals,
       pseudo_occnums, orbsym, EnergyMOOrder<std::less<double> >() );
 
-  // for consistency, remap all orbitals to MPQC irreps
-  // after remapping, we can use MPQC irrep
+  // right now irrep->#oforbs arrays still use extern irrep ordering
+  // remap irrep->#oforbs arrays to MPQC irrep ordering
   fzcpi_ = remap(fzcpi_, extern_to_mpqc_irrep_map);
   inactpi_ = remap(inactpi_, extern_to_mpqc_irrep_map);
   actpi_ = remap(actpi_, extern_to_mpqc_irrep_map);
@@ -475,122 +512,53 @@ ExternMOInfo::ExternMOInfo(const std::string & filename,
   // lastly determine the index maps from extern MO indices to the MPQC MO indices
   //////////////////////////////////////////////////////////////////////////////////
 
-  {
-    // map extern OBS to MPQC OBS
-    assert(indexmap_sb_.empty());
-    // use blockinfo to get MO offets for orbitals in MPQC order
-    Ref<SCBlockInfo> blkinfo = orbs_sb_->coefs()->coldim()->blocks();
-    for (unsigned int g = 0; g < pg->order(); ++g) {
-      const unsigned int g_mpqc = extern_to_mpqc_irrep_map[g];
-      const unsigned int mpqc_mo_offset = blkinfo->start(g_mpqc);
-      const unsigned int nmo_g = mopi[g];
-      for (unsigned int mo_g = 0; mo_g < nmo_g; ++mo_g)
-        indexmap_sb_.push_back( mpqc_mo_offset + mo_g );
-    }
-  }
-  {
-    // map extern occupied to MPQC OBS
-    assert(occindexmap_sb_.empty());
-    Ref<SCBlockInfo> blkinfo = orbs_sb_->coefs()->coldim()->blocks();
-    for (unsigned int g = 0; g < pg->order(); ++g) {
-      const unsigned int g_mpqc = extern_to_mpqc_irrep_map[g];
-      const unsigned int mpqc_mo_offset = blkinfo->start(g_mpqc);
-      const unsigned int nmo_g = fzcpi_[g] + inactpi_[g] + actpi_[g];
-      for (unsigned int mo_g = 0; mo_g < nmo_g; ++mo_g)
-        occindexmap_sb_.push_back(mpqc_mo_offset + mo_g );
-    }
-  }
-  {
-    // map extern active to MPQC OBS
-    assert(actindexmap_sb_.empty());
-    Ref<SCBlockInfo> blkinfo = orbs_sb_->coefs()->coldim()->blocks();
-    for (unsigned int g = 0; g < pg->order(); ++g) {
-      const unsigned int g_mpqc = extern_to_mpqc_irrep_map[g];
-      const unsigned int mpqc_mo_offset = blkinfo->start(g_mpqc);
-      const unsigned int mo_g_offset = fzcpi_[g] + inactpi_[g];
-      const unsigned int nmo_g = actpi_[g];
-      for (unsigned int mo_g = 0; mo_g < nmo_g; ++mo_g)
-        actindexmap_sb_.push_back(mpqc_mo_offset + mo_g_offset + mo_g);
-    }
-  }
-  
-  {
-    // compute irrep offsets in occupied MPQC MO space
-    std::vector<unsigned int> mpqc_occ_offset(pg->order(), 0u);
-    for (unsigned int g = 1; g < pg->order(); ++g)
-    {
-      const unsigned int nocc_g = fzcpi_[g - 1] + inactpi_[g - 1]
-          + actpi_[g - 1];
-      mpqc_occ_offset[g] = mpqc_occ_offset[g - 1] + nocc_g;
-    }
-    // map extern active to MPQC occupied
-    assert(actindexmap_occ_sb_.empty());
-    Ref<SCBlockInfo> blkinfo = orbs_sb_->coefs()->coldim()->blocks();
-    for (unsigned int g = 0; g < pg->order(); ++g)
-    {
-      const unsigned int g_mpqc = extern_to_mpqc_irrep_map[g];
-      const unsigned int mpqc_mo_offset = mpqc_occ_offset[g_mpqc];
-      const unsigned int ninact_g = fzcpi_[g] + inactpi_[g];
-      const unsigned int nact_g = actpi_[g];
-      for (unsigned int mo_g = 0; mo_g < nact_g; ++mo_g)
-        actindexmap_occ_sb_.push_back(mpqc_mo_offset + ninact_g + mo_g);
-    }
+  // compute the maps using standard OrbitalSpace operators
+  // first, compute extern spaces: full, active, and occupied
+  // the goal is to keep the ordering, hence we'll just assign all orbitals to irrep 0
+  std::vector<unsigned int> dummy_orbsym(nmo, 0u);
+  Ref<OrbitalSpace> orbs_extern = new CorrOrbitalSpace(
+      std::string("p(ext)"), std::string("extern MOInfo orbitals"),
+      basis, integral, coefs_extern, pseudo_evals,
+      pseudo_occnums, dummy_orbsym, EnergyMOOrder<std::less<double> >() );
+  Ref<OrbitalSpace> orbs_occ_extern = new OrbitalSpace(std::string("i(ext)"), std::string("extern occupied MOInfo orbitals"),
+                                                       orbs_extern->coefs(),
+                                                       orbs_extern->basis(),
+                                                       orbs_extern->integral(), orbs_extern->evals(),
+                                                       0, nuocc + nfzv);
+  Ref<OrbitalSpace> orbs_act_extern = new OrbitalSpace(std::string("m(ext)"),
+                                                       std::string("extern active MOInfo orbitals"),
+                                                       orbs_extern->coefs(),
+                                                       orbs_extern->basis(),
+                                                       orbs_extern->integral(), orbs_extern->evals(),
+                                                       nfzc + ninact, nuocc + nfzv);
 
-    assert(actindexmap_occ_.empty());
-    const unsigned int nfzc = std::accumulate(fzcpi_.begin(), fzcpi_.end(), 0.0);
-    const unsigned int ninact = std::accumulate(inactpi_.begin(), inactpi_.end(), 0.0);
-    const unsigned int ndocc = nfzc + ninact;
-    int act_count = 0;
-    for (unsigned int g = 0; g < pg->order(); ++g)
-    {
-      const unsigned int g_mpqc = extern_to_mpqc_irrep_map[g];
-      const unsigned int nact_g = actpi_[g];
-      for (unsigned int mo_g = 0; mo_g < nact_g; ++mo_g, ++act_count)
-        actindexmap_occ_.push_back(ndocc + act_count);
-    }
+  // second, compute MPQC spaces: active, and occupied
+  Ref<OrbitalSpace> orbs_sb_occ = new OrbitalSpace(std::string("i(sym)"),
+                                                   std::string("symmetry-ordered occupied MOInfo orbitals"),
+                                                   orbs_sb_->coefs(),
+                                                   orbs_sb_->basis(),
+                                                   orbs_sb_->integral(), orbs_sb_->evals(),
+                                                   0, nuocc + nfzv,
+                                                   OrbitalSpace::symmetry);
 
-    // map extern occupied to MPQC occupied
-    assert(occindexmap_occ_sb_.empty());
-    for (unsigned int g = 0; g < pg->order(); ++g)
-    {
-      const unsigned int g_mpqc = extern_to_mpqc_irrep_map[g];
-      const unsigned int mpqc_mo_offset = mpqc_occ_offset[g_mpqc];
-      const unsigned int nocc_g = fzcpi_[g] + inactpi_[g] + actpi_[g];
-      for (unsigned int mo_g = 0; mo_g < nocc_g; ++mo_g)
-        occindexmap_occ_sb_.push_back(mpqc_mo_offset + mo_g);
-    }
-  }
+  indexmap_ =    (*orbs_sb_) << (*orbs_extern);
+  actindexmap_occ_ = (*orbs_sb_occ) << (*orbs_act_extern);
+  occindexmap_occ_ = (*orbs_sb_occ) << (*orbs_occ_extern);
+
   coefs_extern.print("ExternMOInfo:: extern MO coefficients");
   orbs_sb_->coefs().print("ExternMOInfo:: reordered MO coefficients");
-  orbs_->coefs().print("ExternMOInfo::    E-ordered MO coefficients"); // compare with C1 symmetry orbs
-
-  in.close();
 }
 
-const std::vector<unsigned int>& ExternMOInfo::indexmap_sb() const
+const std::vector<unsigned int>& ExternMOInfo::indexmap() const
 {
-  return indexmap_sb_;
+  return indexmap_;
 }
 
-const std::vector<unsigned int>& ExternMOInfo::occindexmap_sb() const
+const std::vector<unsigned int>& ExternMOInfo::occindexmap_occ() const
 {
-  return occindexmap_sb_;
+  return occindexmap_occ_;
 }
 
-const std::vector<unsigned int>& ExternMOInfo::actindexmap_sb() const
-{
-  return actindexmap_sb_;
-}
-
-const std::vector<unsigned int>& ExternMOInfo::occindexmap_occ_sb() const
-{
-  return occindexmap_occ_sb_;
-}
-
-const std::vector<unsigned int>& ExternMOInfo::actindexmap_occ_sb() const
-{
-  return actindexmap_occ_sb_;
-}
 const std::vector<unsigned int>& ExternMOInfo::actindexmap_occ() const
 {
   return actindexmap_occ_;
@@ -683,6 +651,17 @@ ExternSpinFreeRDMTwo::ExternSpinFreeRDMTwo(const std::string & filename,
                                            const std::vector<unsigned int>& indexmap,
                                            const Ref<OrbitalSpace> & occ_orbs):
     SpinFreeRDM<Two>(Ref<Wavefunction>()), filename_(filename), orbs_(occ_orbs)
+{
+  // if the file reports all occupied indices
+  if (occ_orbs->rank() == indexmap.size())
+    this->init_from_rdm2_occspace(indexmap,occ_orbs);
+  else // more complicated -- only active density is reported, need special handling
+    this->init_from_rdm2_actspace(indexmap,occ_orbs);
+}
+
+void
+ExternSpinFreeRDMTwo::init_from_rdm2_actspace(const std::vector<unsigned int>& indexmap,
+                                              const Ref<OrbitalSpace> & occ_orbs)
 {
   // goal: build 2-rdm in occupied space
   // the logic: build 1-rdm prototype -> build active space 2-rdm from reading file
@@ -814,6 +793,52 @@ ExternSpinFreeRDMTwo::ExternSpinFreeRDMTwo(const std::string & filename,
   //rdm_.print("ExternSpinFreeRDMTwo:: MO density");
 }
 
+void
+ExternSpinFreeRDMTwo::init_from_rdm2_occspace(const std::vector<unsigned int>& indexmap,
+                                              const Ref<OrbitalSpace> & occ_orbs)
+{
+  std::ifstream in(filename_.c_str());
+  if (in.is_open() == false) {
+    std::ostringstream oss;
+    oss << "ExternSpinFreeRDMTwo: could not open file " << filename_;
+    throw std::runtime_error(oss.str().c_str());
+  }
+
+  const unsigned int norbs = occ_orbs->coefs().coldim().n();
+  RefSCDimension dim = new SCDimension(norbs * norbs);
+  dim->blocks()->set_subdim(0, new SCDimension(dim->n()));
+  rdm_ = occ_orbs->coefs().kit()->symmmatrix(dim);
+  rdm_.assign(0.0);
+  bool have_coefs = true;
+  while (have_coefs) {
+    int bra1, bra2, ket1, ket2;
+    double value;
+    in >> bra1 >> bra2 >> ket1 >> ket2 >> value;
+    // these index orderings are hard to distinguish! Both give the same energy
+    // can only distinguish if ALL elements are given, then for the above ordering
+    // element 1 2 3 4 will be equivalent to 3 4 1 2, 4 3 2 1, and 2 1 4 3
+    // for the ordering below same element will be equivalent to
+    // 3 4 1 2, 4 3 2 1, and 2 3 4 1 !!!
+    //in >> bra1 >> ket2 >> ket1 >> bra2 >> value;
+    if (bra1 != -1) {
+      --bra1;
+      --bra2;
+      --ket1;
+      --ket2;
+      const unsigned int mbra1 = indexmap[bra1];
+      const unsigned int mbra2 = indexmap[bra2];
+      const unsigned int mket1 = indexmap[ket1];
+      const unsigned int mket2 = indexmap[ket2];
+
+      rdm_.set_element(mbra1 * norbs + mbra2, mket1 * norbs + mket2, value);
+      rdm_.set_element(mbra2 * norbs + mbra1, mket2 * norbs + mket1, value);
+    } else
+      have_coefs = false;
+  }
+  in.close();
+
+  //rdm_.print("ExternReadRDMTwo:: MO density");
+}
 
 ExternSpinFreeRDMTwo::~ExternSpinFreeRDMTwo()
 {

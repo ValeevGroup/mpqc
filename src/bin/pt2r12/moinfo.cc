@@ -124,7 +124,8 @@ ExternMOInfo::ExternMOInfo(const std::string & filename,
   //////
   Ref<Molecule> molecule = new Molecule;
   bool have_atoms = true;
-  while (have_atoms) {
+  while (have_atoms)
+  {
     double charge, x, y, z;
     in >> charge >> x >> y >> z;
     if (charge != -1.0) {
@@ -566,6 +567,7 @@ ExternMOInfo::ExternMOInfo(const std::string & filename,
   }
   coefs_extern.print("ExternMOInfo:: extern MO coefficients");
   orbs_sb_->coefs().print("ExternMOInfo:: reordered MO coefficients");
+  orbs_->coefs().print("ExternMOInfo::    E-ordered MO coefficients"); // compare with C1 symmetry orbs
 
   in.close();
 }
@@ -684,8 +686,6 @@ ClassDesc ExternSpinFreeRDMTwo::class_desc_(typeid(ExternSpinFreeRDMTwo),
 
 ExternSpinFreeRDMTwo::ExternSpinFreeRDMTwo(const std::string & filename,
                                            const std::vector<unsigned int>& act_occ_indexmap,
-                                           const std::vector<unsigned int>& act_act_indexmap,
-                                           const std::vector<unsigned int>& actpi,
                                            const Ref<OrbitalSpace> & occ_orbs):
     SpinFreeRDM<Two>(Ref<Wavefunction>()), filename_(filename), orbs_(occ_orbs)
 {
@@ -723,12 +723,12 @@ ExternSpinFreeRDMTwo::ExternSpinFreeRDMTwo(const std::string & filename,
   // now we construct 2-rdm in 'active' space.
   RefSCDimension act_dim2 = new SCDimension(nact * nact);
   act_dim2->blocks()->set_subdim(0, new SCDimension(act_dim2->n()));
-  RefSymmSCMatrix act_rdm2 = occ_orbs->coefs().kit()->symmmatrix(act_dim2);
+  RefSymmSCMatrix ext_act_rdm2 = occ_orbs->coefs().kit()->symmmatrix(act_dim2);
   RefSCDimension act_dim1 = new SCDimension(nact);
   act_dim1->blocks()->set_subdim(0, new SCDimension(act_dim1->n()));
-  RefSymmSCMatrix act_rdm1 = occ_orbs->coefs().kit()->symmmatrix(act_dim1);
-  act_rdm2.assign(0.0);
-  act_rdm1.assign(0.0);
+  RefSymmSCMatrix ext_act_rdm1 = occ_orbs->coefs().kit()->symmmatrix(act_dim1);
+  ext_act_rdm2.assign(0.0);
+  ext_act_rdm1.assign(0.0);
   bool have_coefs = true;
   while (have_coefs) {
     int bra1, bra2, ket1, ket2;
@@ -745,19 +745,14 @@ ExternSpinFreeRDMTwo::ExternSpinFreeRDMTwo(const std::string & filename,
       --bra2;
       --ket1;
       --ket2;
-      const unsigned int mbra1 = act_act_indexmap[bra1];
-      const unsigned int mbra2 = act_act_indexmap[bra2];
-      const unsigned int mket1 = act_act_indexmap[ket1];
-      const unsigned int mket2 = act_act_indexmap[ket2];
-
-      act_rdm2.set_element(mbra1 * nact + mbra2, mket1 * nact + mket2, value);
-      act_rdm2.set_element(mbra2 * nact + mbra1, mket2 * nact + mket1, value);
+      ext_act_rdm2.set_element(bra1 * nact + bra2, ket1 * nact + ket2, value);
+      ext_act_rdm2.set_element(bra2 * nact + bra1, ket2 * nact + ket1, value);
     } else
       have_coefs = false;
   }
   in.close();
 
-  const double trace_act2 = act_rdm2.trace(); // = n_act (n_act -1)
+  const double trace_act2 = ext_act_rdm2.trace(); // = n_act (n_act -1)
   const double nact_particle = (1.0 + std::sqrt(1.0 + 4.0 * trace_act2)) / 2.0;
 
   // build active space 1-rdm from partial trace of 2-rdm in active space.
@@ -767,19 +762,19 @@ ExternSpinFreeRDMTwo::ExternSpinFreeRDMTwo(const std::string & filename,
       const unsigned k12_offset = k1 * nact;
       double value = 0.0;
       for (unsigned int i2 = 0; i2 < nact; ++i2) {
-        value += act_rdm2.get_element(b12_offset + i2, k12_offset + i2);
+        value += ext_act_rdm2.get_element(b12_offset + i2, k12_offset + i2);
       }
-      act_rdm1.set_element(b1, k1, value);
+      ext_act_rdm1.set_element(b1, k1, value);
     }
   }
-  act_rdm1.scale(1.0 /(nact_particle-1.0));
+  ext_act_rdm1.scale(1.0 /(nact_particle-1.0));
 
   // overwrite the active block of orignial 1-rdm in occupied space
   for (int i = 0; i < nact; ++i)
   {
     for (int j = 0; j < nact; ++j)
     {
-      rdm1.set_element(act_occ_indexmap[i], act_occ_indexmap[j], act_rdm1.get_element(i,j));
+      rdm1.set_element(act_occ_indexmap[i], act_occ_indexmap[j], ext_act_rdm1.get_element(i,j));
     }
   } // finish constructing rdm1 mat. It will be used to build rdm2
 
@@ -791,11 +786,11 @@ ExternSpinFreeRDMTwo::ExternSpinFreeRDMTwo(const std::string & filename,
   {
     for (int q = 0; q < nocc; ++q)
     {
+      const unsigned int uppind = p*nocc + q;
       for (int r = 0; r < nocc; ++r)
       {
         for (int s = 0; s < nocc; ++s)
         {
-          const unsigned int uppind = p*nocc + q;
           const unsigned int lowind = r*nocc + s;
           if(uppind>=lowind)
             rdm_.set_element(uppind,lowind, rdm1.get_element(p,r)*rdm1.get_element(q,s)
@@ -806,17 +801,17 @@ ExternSpinFreeRDMTwo::ExternSpinFreeRDMTwo(const std::string & filename,
   }
   for (int p = 0; p < nact; ++p)
   {
+    const unsigned int indp = act_occ_indexmap[p];
     for (int q = 0; q < nact; ++q)
     {
+      const unsigned int indq = act_occ_indexmap[q];
       for (int r = 0; r < nact; ++r)
       {
+        const unsigned int indr = act_occ_indexmap[r];
         for (int s = 0; s < nact; ++s)
         {
-          const unsigned int indp = act_occ_indexmap[p];
-          const unsigned int indq = act_occ_indexmap[q];
-          const unsigned int indr = act_occ_indexmap[r];
           const unsigned int inds = act_occ_indexmap[s];
-          rdm_.set_element(indp *nocc + indq, indr *nocc+inds, act_rdm2.get_element(p*nact+q, r*nact+s));
+          rdm_.set_element(indp *nocc + indq, indr *nocc+inds, ext_act_rdm2.get_element(p*nact+q, r*nact+s));
         }
       }
     }
@@ -824,53 +819,6 @@ ExternSpinFreeRDMTwo::ExternSpinFreeRDMTwo(const std::string & filename,
   //rdm_.print("ExternSpinFreeRDMTwo:: MO density");
 }
 
-ExternSpinFreeRDMTwo::ExternSpinFreeRDMTwo(const std::string & filename,
-                                           const std::vector<unsigned int>& indexmap,
-                                           const Ref<OrbitalSpace> & orbs):
-    SpinFreeRDM<Two>(Ref<Wavefunction>()), filename_(filename), orbs_(orbs)
-{
-  std::ifstream in(filename_.c_str());
-  if (in.is_open() == false) {
-    std::ostringstream oss;
-    oss << "ExternSpinFreeRDMTwo: could not open file " << filename_;
-    throw std::runtime_error(oss.str().c_str());
-  }
-
-  const unsigned int norbs = orbs->coefs().coldim().n();
-  RefSCDimension dim = new SCDimension(norbs * norbs);
-  dim->blocks()->set_subdim(0, new SCDimension(dim->n()));
-  rdm_ = orbs->coefs().kit()->symmmatrix(dim);
-  rdm_.assign(0.0);
-  bool have_coefs = true;
-  while (have_coefs) {
-    int bra1, bra2, ket1, ket2;
-    double value;
-    in >> bra1 >> bra2 >> ket1 >> ket2 >> value;
-    // these index orderings are hard to distinguish! Both give the same energy
-    // can only distinguish if ALL elements are given, then for the above ordering
-    // element 1 2 3 4 will be equivalent to 3 4 1 2, 4 3 2 1, and 2 1 4 3
-    // for the ordering below same element will be equivalent to
-    // 3 4 1 2, 4 3 2 1, and 2 3 4 1 !!!
-    //in >> bra1 >> ket2 >> ket1 >> bra2 >> value;
-    if (bra1 != -1) {
-      --bra1;
-      --bra2;
-      --ket1;
-      --ket2;
-      const unsigned int mbra1 = indexmap[bra1];
-      const unsigned int mbra2 = indexmap[bra2];
-      const unsigned int mket1 = indexmap[ket1];
-      const unsigned int mket2 = indexmap[ket2];
-
-      rdm_.set_element(mbra1 * norbs + mbra2, mket1 * norbs + mket2, value);
-      rdm_.set_element(mbra2 * norbs + mbra1, mket2 * norbs + mket1, value);
-    } else
-      have_coefs = false;
-  }
-  in.close();
-
-  //rdm_.print("ExternReadRDMTwo:: MO density");
-}
 
 ExternSpinFreeRDMTwo::~ExternSpinFreeRDMTwo()
 {

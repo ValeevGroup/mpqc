@@ -180,8 +180,6 @@ int try_main(int argc, char **argv)
   // MOLCAS only reports the density in active orbitals
   Ref<ExternSpinFreeRDMTwo> rdrdm2 = new ExternSpinFreeRDMTwo(filename_prefix + ".pt2r12.rdm2.dat",
                                                               rdorbs.actindexmap_occ(),
-                                                              rdorbs.actindexmap_act(),
-                                                              actpi,
                                                               occ_orbs);
 #endif
 

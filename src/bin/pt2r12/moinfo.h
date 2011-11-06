@@ -143,19 +143,10 @@ namespace sc {
   class ExternSpinFreeRDMTwo : public SpinFreeRDM<Two>{
     public:
       /// this assumes that the file reports 2-rdm in the entire occupied space.
-      /// indexmap maps the indices assumed in the file to orbs_sb
-      ExternSpinFreeRDMTwo(const std::string& filename,
-                           const std::vector<unsigned int>& indexmap,
-                           const Ref<OrbitalSpace>& orbs);
-      /// this assumes that the file only reports 2-rdm in active space.
-      /// indexmap maps the indices assumed in the file to orbs_sb
-      /// actpi (active orbitals per irrep) is necessary to build the complete 2-rdm
-      /// act->act indexmap is needed to build 1-rdm in active space, which will then be used to build the complete 2-rdm
+      /// act_occ_indexmap maps the indices assumed in the file to occupied MPQC orbs
       ExternSpinFreeRDMTwo(const std::string& filename,
                            const std::vector<unsigned int>& act_occ_indexmap,
-                           const std::vector<unsigned int>& act_act_indexmap,
-                           const std::vector<unsigned int>& actpi,
-                           const Ref<OrbitalSpace>& orbs);
+                           const Ref<OrbitalSpace>& occ_orbs);
       virtual ~ExternSpinFreeRDMTwo();
 
       /// cannot be obsoleted

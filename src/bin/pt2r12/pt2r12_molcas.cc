@@ -100,7 +100,7 @@ int main_molcas(int argc, char **argv)
       basis, integral, C_ao, pseudo_evals,
       pseudo_occnums, orbsym, SymmetryMOOrder() );
 #endif
-  Ref<OrbitalSpace> orbs = rdorbs.orbs();
+  Ref<OrbitalSpace> orbs = rdorbs.orbs(); // pseudo-'energy' ordered.
   { // test the metric
     Ref<Integral> localints = integral->clone();
     RefSymmSCMatrix S_so = sc::detail::overlap(basis, localints);
@@ -116,6 +116,9 @@ int main_molcas(int argc, char **argv)
     S_mo.print("MO overlap matrix");
   }
 
+  // will use this parameter to determine whether to use symm ordered orbs or pseudo-energy ordered ones.
+  const bool USE_SYMMETRY_ORDER = false;
+
   /////////////////////////////////////////////
   // Read 2-RDM
   /////////////////////////////////////////////
@@ -123,13 +126,19 @@ int main_molcas(int argc, char **argv)
   // molcas reports 2-RDM in terms of active occupied orbitals only, indexed occording to molcas convention
   // thus use the map from molcas active occupied orbitals to MPQC occupied range
   // first make an OrbitalSpace for MPQC occupied orbitals
-  std::vector<bool> occ_mask(orbs->rank(), false);
+  std::vector<bool> occ_mask_sb(orbs->rank(), false);
   const unsigned int nirrep = basis->molecule()->point_group()->order();
   for(unsigned int g=0; g<nirrep; ++g) {
     unsigned int mo = C_ao.coldim()->blocks()->start(g);
     const unsigned int nocc_g = fzcpi[g] + inactpi[g] + actpi[g];
     for(int i=0; i<nocc_g; i++, ++mo)
-      occ_mask[mo] = true;
+      occ_mask_sb[mo] = true;
+  }
+
+  std::vector<bool> occ_mask(orbs->rank(), false);
+  for (int i = 0; i < nocc; ++i)
+  {
+    occ_mask[i] = true;
   }
   // construct occupied MO space
   Ref<OrbitalSpace> occ_orbs = new MaskedOrbitalSpace(std::string("p"),
@@ -147,9 +156,6 @@ int main_molcas(int argc, char **argv)
                                                               occ_orbs);
   Ref<SpinFreeRDM<One> > rdrdm1 = rdrdm2->rdm_m_1();
   RefSymmSCMatrix P1_occ_mo = rdrdm1->scmat().copy();
-//  RefSCDimension dim1 = new SCDimension(nmo);
-//  dim1->blocks()->set_subdim(0, new SCDimension(dim1->n()));
-//  RefSymmSCMatrix  P1_mo = orbs->coefs().kit()->symmmatrix(dim1); // to store 1-rdm in obs
   RefSCDimension dim1 = C_ao->coldim();
   RefSymmSCMatrix  P1_mo = C_ao.kit()->symmmatrix(dim1); // to store 1-rdm in obs
   P1_mo.assign(0.0);

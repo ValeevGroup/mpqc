@@ -105,7 +105,7 @@ namespace sc {
   typedef DecoratedOrbital< detail::MolecularOrbitalAttributes > MolecularOrbital;
   typedef DecoratedOrbital< detail::MolecularSpinOrbitalAttributes > MolecularSpinOrbital;
 
-  /// order by symmetry first, then by energy
+  /// order by symmetry first, then by energy, then by occ num
   struct SymmetryMOOrder {
     public:
       SymmetryMOOrder(unsigned int nirreps) : nirreps_(nirreps) {}
@@ -356,7 +356,7 @@ namespace sc {
           frozen_to_blockinfo(unsigned int nfzc, unsigned int nfzv,
                               const RefDiagSCMatrix& evals);
 
-      // computes coefficient matrix from the full coefficient matrix. If moorder_ == energy
+      // computes coefficient matrix from the full coefficient matrix. If moorder == energy
       // then the MO vectors will be sorted by their eigenvalues
       void full_coefs_to_coefs(const RefSCMatrix& full_coefs,
                                const RefDiagSCMatrix& evals,

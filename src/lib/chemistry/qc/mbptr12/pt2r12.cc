@@ -550,6 +550,7 @@ RefSCMatrix PT2R12::X_term_Gamma_F_T() {
   RefSCMatrix tpdm =  rdm2_sf_4spaces(gg_space, gg_space, gg_space, gg_space);
   Ref<LocalSCMatrixKit> lmk = new LocalSCMatrixKit();
   RefSCMatrix GammaF = lmk->matrix(r12eval_->dim_gg(AlphaBeta), r12eval_->dim_gg(AlphaBeta));
+  GammaF.assign(0.0);
   for (int r = 0; r < dimg; ++r)
   {
     for (int s = 0; s < dimg; ++s)
@@ -570,6 +571,14 @@ RefSCMatrix PT2R12::X_term_Gamma_F_T() {
       }
     }
   }
+  const bool debug_pp = true;
+  if(debug_pp)
+  {
+
+    F_gg.print("debug:F_gg in X_term_Gamma_F_T");
+    tpdm.print("debug:tpdm in X_term_Gamma_F_T");
+    T.print("debug:T in X_term_Gamma_F_T");
+  }
   return GammaF*(T.t());//(gg, GG)   (Gamma^rs_vx * f^x_w) * t^vw_tu
 }
 
@@ -577,7 +586,7 @@ RefSCMatrix PT2R12::X_term_Gamma_F_T() {
 double PT2R12::energy_PT2R12_projector2() {
 
   // 2*V*T constribution
-  const bool print_all = false;
+  const bool print_all = true;
   if(print_all)
     ExEnv::out0() << std::endl << std::endl << indent << "Entered PT2R12::energy_PT2R12_projector2\n\n";
 
@@ -592,7 +601,7 @@ double PT2R12::energy_PT2R12_projector2() {
   RefSCMatrix HylleraasMatrix = V_t_T.copy(); // (gg, gg)
   if(print_all)
     ExEnv::out0() << "\n\n" << indent << "Finished V_t_T\n\n";
-  if (this->debug_ >=  DefaultPrintThresholds::mostO4)
+  if (this->debug_ >=  DefaultPrintThresholds::mostO4 or print_all)
   {
     ExEnv::out0() << __FILE__ << __LINE__ << "\n";
     T.print(string("T").c_str());
@@ -605,11 +614,18 @@ double PT2R12::energy_PT2R12_projector2() {
   if(print_all)
     ExEnv::out0() << "\n\n" << indent << "Finished TGFT\n\n";
   TGFT.scale(-1.0);
+  const bool debug_pp = true;
+  if(debug_pp)
+  {
+    TGFT.print("debug:TGFT");
+    r12eval_->X().print("debug:r12eval X");
+    T.print("debug:T");
+  }
   RefSCMatrix Xpart = TGFT * r12eval_->X() * T;
   if(print_all)
     ExEnv::out0() << "\n\n" << indent << "Finished Xpart\n\n";
   HylleraasMatrix.accumulate(Xpart);//(gg, gg)
-  if (this->debug_ >=  DefaultPrintThresholds::mostO4)
+  if (this->debug_ >=  DefaultPrintThresholds::mostO4 or print_all)
   {
     Xpart.print(string("Xpart").c_str());
     HylleraasMatrix.print(string("Hy:+X").c_str());
@@ -623,7 +639,7 @@ double PT2R12::energy_PT2R12_projector2() {
     ExEnv::out0() << "\n\n" << indent << "Finished TBTG\n\n";
   TBTG.scale(0.5);
   HylleraasMatrix.accumulate(TBTG);
-  if (this->debug_ >=  DefaultPrintThresholds::mostO4)
+  if (this->debug_ >=  DefaultPrintThresholds::mostO4 or print_all)
   {
     TBTG.print(string("TBTG").c_str());
     HylleraasMatrix.print(string("Hy:+TBTG").c_str());
@@ -633,7 +649,7 @@ double PT2R12::energy_PT2R12_projector2() {
   // the last messy term
   RefSCMatrix others = B_others(); //(gg, gg)
   HylleraasMatrix.accumulate(others);
-  if (this->debug_ >=  DefaultPrintThresholds::mostO4)
+  if (this->debug_ >=  DefaultPrintThresholds::mostO4 or print_all)
   {
       others.print(string("others").c_str());
       HylleraasMatrix.print(prepend_spincase(AlphaBeta,"Hy:+others").c_str());
@@ -1186,6 +1202,20 @@ RefSymmSCMatrix PT2R12::rdm2()
 void PT2R12::compute()
 {
   r12world()->initialize();
+  const bool debug_printing = true;
+  if(debug_printing)
+  {
+//    basis->print();
+    rdm1_sf().print("debug: rdm1_sf");
+    rdm2_sf().print("debug: rdm1_sf");
+    r12eval_->ggspace(Alpha)->print_detail();
+    r12eval_->occ(Alpha)->print_detail();
+    r12eval_->vir(Alpha)->print_detail();
+    r12eval_->orbs(Alpha)->print_detail();
+    r12world()->cabs_space(Alpha)->print_detail();
+    r12eval_->ordm(Alpha)->print("ordm-alpha");
+    r12eval_->ordm()->print("ordm");
+  }
 
   const double energy_ref = r12world()->refwfn()->energy();
   double energy_correction_r12 = 0.0;

@@ -484,7 +484,7 @@ ExternMOInfo::ExternMOInfo(const std::string & filename,
 
   in.close();
 
-  // pseudo eigenvalues are the occupation numbers with changed sign
+  // pseudo eigenvalues are the occupation numbers with changed sign; this is used to sort orbs
   RefDiagSCMatrix pseudo_evals = pseudo_occnums.copy();
   pseudo_evals.scale(-1.0);
 
@@ -492,10 +492,12 @@ ExternMOInfo::ExternMOInfo(const std::string & filename,
   // remap the coefficients and orbital info
   ////////////////////////////////////////////
 
+  // sym->E->occ order
   orbs_sb_ = new SymmOrbitalSpace(
       std::string("p(sym)"), std::string("symmetry-ordered MOInfo orbitals"),
       basis, integral, coefs_extern, pseudo_evals,
       pseudo_occnums, orbsym, SymmetryMOOrder(pg->order()) );
+  // occ->sym->E
   orbs_ = new CorrOrbitalSpace(
       std::string("p"), std::string("energy-ordered MOInfo orbitals"),
       basis, integral, coefs_extern, pseudo_evals,
@@ -728,6 +730,8 @@ ExternSpinFreeRDMTwo::init_from_rdm2_actspace(const std::vector<unsigned int>& i
 
   const double trace_act2 = ext_act_rdm2.trace(); // = n_act (n_act -1)
   const double nact_particle = (1.0 + std::sqrt(1.0 + 4.0 * trace_act2)) / 2.0;
+  if(nact_particle == 1)
+    throw AlgorithmException("The case of one-active is not dealt with properly: 1-rdm can not be cons");
 
   // build active space 1-rdm from partial trace of 2-rdm in active space.
   for (unsigned int b1 = 0; b1 < nact; ++b1) {

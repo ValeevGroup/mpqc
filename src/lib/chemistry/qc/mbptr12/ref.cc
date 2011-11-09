@@ -1505,7 +1505,7 @@ Extern_RefWavefunction::init_spaces(unsigned int nocc,
         basis()->molecule()->point_group()->char_table().order();
     pspace_ao = new OrderedOrbitalSpace<SymmetryMOOrder>(
         id, name, basis(), integral(), coefs, evals, occnums, orbsyms,
-        SymmetryMOOrder(nirreps)); // evals/occnums has no symmetry info, while coefs are in symmetry order
+        SymmetryMOOrder(nirreps));
   }
   RefSCMatrix C_ao = pspace_ao->coefs();
   RefDiagSCMatrix evals = pspace_ao->evals();

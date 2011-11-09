@@ -574,7 +574,8 @@ RefSCMatrix PT2R12::X_term_Gamma_F_T() {
   const bool debug_pp = true;
   if(debug_pp)
   {
-
+    gg_space->basis()->print();
+    gg_space->print_detail();
     F_gg.print("debug:F_gg in X_term_Gamma_F_T");
     tpdm.print("debug:tpdm in X_term_Gamma_F_T");
     T.print("debug:T in X_term_Gamma_F_T");
@@ -1207,7 +1208,7 @@ void PT2R12::compute()
   {
 //    basis->print();
     rdm1_sf().print("debug: rdm1_sf");
-    rdm2_sf().print("debug: rdm1_sf");
+    rdm2_sf().print("debug: rdm2_sf");
     r12eval_->ggspace(Alpha)->print_detail();
     r12eval_->occ(Alpha)->print_detail();
     r12eval_->vir(Alpha)->print_detail();

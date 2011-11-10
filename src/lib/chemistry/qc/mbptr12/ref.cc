@@ -721,8 +721,11 @@ RefWavefunction::init() const
     world_->fockbuild_runtime()->dfinfo(this->dfinfo());
 
     // make sure that FockBuildRuntime uses same densities as the reference wavefunction
+
+    RefSymmSCMatrix R = ordm(Alpha);
+    R.print("debug RefWavefunction::init print ordm");
     if(force_average_AB_rdm1_ == false) // the densites are in AO basis
-        world_->fockbuild_runtime()->set_densities(this->ordm(Alpha), this->ordm(Beta));//her computes ordm
+        world_->fockbuild_runtime()->set_densities(this->ordm(Alpha), this->ordm(Beta));//here computes ordm
     else
     {
         RefSymmSCMatrix av_rdm = this->ordm(Alpha).copy();
@@ -1400,6 +1403,7 @@ Extern_RefWavefunction::Extern_RefWavefunction(const Ref<WavefunctionWorld>& wor
     RefSymmSCMatrix alpha_1rdm_ao = orbs.kit()->symmmatrix(orbs->rowdim());
     alpha_1rdm_ao.assign(0.0);
     alpha_1rdm_ao.accumulate_transform(orbs, alpha_1rdm);
+    alpha_1rdm_ao.print("debug Extern_RefWavefunction::Extern_RefWavefunction");
     rdm_[Alpha] = alpha_1rdm_ao;
   }
   if (alpha_1rdm == beta_1rdm)
@@ -1413,7 +1417,7 @@ Extern_RefWavefunction::Extern_RefWavefunction(const Ref<WavefunctionWorld>& wor
   }
 
   // this object will never become obsolete, so can compute it right now
-  init_spaces(nocc, orbs, orbsym);
+//  init_spaces(nocc, orbs, orbsym); // calling it here causes issues: init() is never get run and fockbuild_runtime's AO density is not set.
   force_average_AB_rdm1_ = true; // this is meant to always be used with spin-free algorithms
 }
 
@@ -1471,6 +1475,36 @@ Extern_RefWavefunction::core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &
   RefSymmSCMatrix Hnr_symm_so = pl->to_SO_basis(Hnr_symm);
 
   return Hnr_symm_so;
+}
+
+void
+Extern_RefWavefunction::init(unsigned int nocc,
+    const RefSCMatrix& coefs,
+    const std::vector<unsigned int>& orbsyms)
+{
+  if (spinspaces_[Alpha].null()) {
+    RefWavefunction* this_nonconst = const_cast<RefWavefunction*>(this);
+    // make sure it's computed first
+    const double e = this_nonconst->energy();
+    init_spaces(nocc, coefs, orbsyms);
+
+    // make sure that FockBuildRuntime uses same density fitting info as this reference
+    world_->fockbuild_runtime()->dfinfo(this->dfinfo());
+
+    // make sure that FockBuildRuntime uses same densities as the reference wavefunction
+
+//    RefSymmSCMatrix R = ordm(Alpha);
+//    R.print("debug RefWavefunction::init print ordm");
+    if(force_average_AB_rdm1_ == false) // the densites are in AO basis
+        world_->fockbuild_runtime()->set_densities(ordm(Alpha), ordm(Beta));//here computes ordm
+    else
+    {
+        RefSymmSCMatrix av_rdm = ordm(Alpha).copy();
+        av_rdm.accumulate(ordm(Beta));
+        av_rdm.scale(0.5);
+        world_->fockbuild_runtime()->set_densities(av_rdm, av_rdm);
+    }
+  }
 }
 
 void

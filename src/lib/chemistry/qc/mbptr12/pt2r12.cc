@@ -1203,7 +1203,7 @@ RefSymmSCMatrix PT2R12::rdm2()
 void PT2R12::compute()
 {
   r12world()->initialize();
-  const bool debug_printing = true;
+  const bool debug_printing = false;
   if(debug_printing)
   {
 //    basis->print();

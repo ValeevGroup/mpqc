@@ -398,6 +398,13 @@ namespace sc {
       bool omit_uocc_;
       bool ordm_idempotent_;
 
+      /** the purpose of introducing this specialization is because logically and practically, init_spaces is called within
+       * init(), while for the derived class Extern_RefWavefunction, init_spaces(nocc, orbs, orbsym) has different signature
+       * from other derived classes, thus 'init_spaces' will not get called properly if we use the base class 'init' method.
+       * Without introducing the specialized 'init', the RefWavefunction::init() won't be called in the current design.
+       */
+      void init(unsigned int nocc, const RefSCMatrix& orbs,
+                const std::vector<unsigned int>& orbsym);
       void init_spaces() {}
       void init_spaces(unsigned int nocc, const RefSCMatrix& orbs,
                        const std::vector<unsigned int>& orbsym);

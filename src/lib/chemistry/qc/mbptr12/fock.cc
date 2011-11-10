@@ -164,6 +164,7 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
     // finally, transform
     F.accumulate(vec1t * h * vec2);
     F.scale(scale_H);
+    F.print("debug Fock: Hcore");
     if (debug_ >= DefaultPrintThresholds::allN2
         || DEBUG_PRINT_ALL_F_CONTRIBUTIONS)
       F.print("Core Hamiltonian contribution");
@@ -187,6 +188,7 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
       J.scale(J_prefactor*scale_J);
       if (debug_ >= DefaultPrintThresholds::allN2 || DEBUG_PRINT_ALL_F_CONTRIBUTIONS)
         J.print("Coulomb contribution");
+//      J.print("debug Fock no DF: Coulomb contribution");
       F.accumulate(J); J = 0;
     }
   }
@@ -195,6 +197,7 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
     K.scale(-1.0*scale_K);
     if (debug_ >= DefaultPrintThresholds::allN2 || DEBUG_PRINT_ALL_F_CONTRIBUTIONS)
       K.print("Exchange contribution");
+//    K.print("debug Fock no DF: Exchange contribution");
     F.accumulate(K); K = 0;
   }
 
@@ -203,12 +206,14 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
       if (scale_J != 0.0) {
         const std::string jkey = ParsedOneBodyIntKey::key(bra_space->id(),ket_space->id(),std::string("J"));
         RefSCMatrix J = fb_rtime->get(jkey);
+//        J.print("debug Fock DF: Coulomb contribution");
         F.accumulate(J*scale_J);
       }
       if (scale_K != 0.0) {
         const SpinCase1 realspin = r12world()->refwfn()->spin_polarized() ? spin : AnySpinCase1;
         const std::string kkey = ParsedOneBodyIntKey::key(bra_space->id(),ket_space->id(),std::string("K"),realspin);
         RefSCMatrix K = fb_rtime->get(kkey);
+//        K.print("debug Fock DF: Exchange contribution");
         F.accumulate( (-scale_K) * K);
       }
   }

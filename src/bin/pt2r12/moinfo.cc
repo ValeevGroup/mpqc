@@ -439,6 +439,7 @@ ExternMOInfo::ExternMOInfo(const std::string & filename,
   skipeol(in);
   std::string token = readline(in);
   std::vector<unsigned int> mopi = parse<unsigned int>(token);  assert(mopi.size() == pg->order());
+  mopi_ = mopi;
   token = readline(in);  fzcpi_   = parse<unsigned int>(token); assert(fzcpi_.size() == pg->order());
   token = readline(in);  inactpi_ = parse<unsigned int>(token); assert(inactpi_.size() == pg->order());
   token = readline(in);  actpi_   = parse<unsigned int>(token); assert(actpi_.size() == pg->order());
@@ -585,6 +586,11 @@ const std::vector<unsigned int>& ExternMOInfo::inactpi() const
 {
   return inactpi_;
 }
+const std::vector<unsigned int>& ExternMOInfo::mopi() const
+{
+  return mopi_;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 

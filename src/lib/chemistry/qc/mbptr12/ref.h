@@ -365,6 +365,18 @@ namespace sc {
                   unsigned int nfzc = 0,
                   unsigned int nfzv = 0,
                   bool omit_uocc = false);
+      Extern_RefWavefunction(const Ref<WavefunctionWorld>& world,
+                  const Ref<GaussianBasisSet>& basis,
+                  const Ref<Integral>& integral,
+                  const RefSCMatrix& orbs,
+                  const std::vector<unsigned int>& orbsymm,
+                  const RefSymmSCMatrix& alpha_1rdm,
+                  const RefSymmSCMatrix& beta_1rdm,
+                  std::vector<unsigned int> mopi,
+                  std::vector<unsigned int> occpi,
+                  std::vector<unsigned int> fzcpi,
+                  std::vector<unsigned int> fzvpi,
+                  bool omit_uocc = false);
       Extern_RefWavefunction(StateIn&);
       virtual ~Extern_RefWavefunction();
       void save_data_state(StateOut&);
@@ -401,9 +413,21 @@ namespace sc {
 
       void pre_init(unsigned int nocc, const RefSCMatrix& orbs,
                 const std::vector<unsigned int>& orbsym);
+      void pre_init(std::vector<unsigned int> mopi,
+                    std::vector<unsigned int> occpi,
+                    std::vector<unsigned int> fzcpi,
+                    std::vector<unsigned int> fzvpi,
+                    const RefSCMatrix& orbs,
+                const std::vector<unsigned int>& orbsym);
       void init_spaces() {throw sc::ProgrammingError("For Extern_RefWavefunction, spaces must be init-ed in constructor");}
       void init_spaces(unsigned int nocc, const RefSCMatrix& orbs,
                        const std::vector<unsigned int>& orbsym);
+      void init_spaces(std::vector<unsigned int> mopi,
+                       std::vector<unsigned int> occpi,
+                       std::vector<unsigned int> fzcpi,
+                       std::vector<unsigned int> fzvpi,
+                       const RefSCMatrix& orbs,
+                   const std::vector<unsigned int>& orbsym);
       void _set_desired_value_accuracy(double eps) {
         // do nothing
       }

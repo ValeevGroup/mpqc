@@ -121,11 +121,6 @@ int try_main(int argc, char **argv)
   //
   ExternMOInfo rdorbs(filename_prefix + ".pt2r12.dat", integral); // all MO info is contained in rdorbs
   Ref<OrbitalSpace> orbs = rdorbs.orbs();
-  if(debug_print)
-  {
-    sc::ExEnv::out0() << "debug: print orbs" << std::endl;
-    orbs->print_detail();
-  }
 
   Ref<GaussianBasisSet> basis = orbs->basis();
   RefSCMatrix C_ao = orbs->coefs();
@@ -133,6 +128,13 @@ int try_main(int argc, char **argv)
   const std::vector<unsigned int>& inactpi = rdorbs.inactpi();
   const std::vector<unsigned int>& actpi = rdorbs.actpi();
   const std::vector<unsigned int>& fzvpi = rdorbs.fzvpi();
+  const std::vector<unsigned int>& mopi = rdorbs.mopi();
+  std::vector<unsigned int> occpi;
+  const unsigned int nirrep = fzcpi.size();
+  for (int i = 0; i < nirrep; ++i)
+  {
+    occpi.push_back(fzcpi[i] + inactpi[i] + actpi[i]);
+  }
   const unsigned int nfzc = std::accumulate(fzcpi.begin(), fzcpi.end(), 0.0);
   const unsigned int ninact = std::accumulate(inactpi.begin(), inactpi.end(), 0.0);
   const unsigned int nact = std::accumulate(actpi.begin(), actpi.end(), 0.0);
@@ -192,6 +194,7 @@ int try_main(int argc, char **argv)
                                     rdorbs.actindexmap_occ(),
                                     occ_orbs);
 #endif
+
 
   //
   // Test orbs and 1-rdm
@@ -257,14 +260,30 @@ int try_main(int argc, char **argv)
     P1_mo.scale(0.5);
   }
 
+  if(debug_print)
+  {
+    sc::ExEnv::out0() << "debug:print before refwfn" << std::endl;
+    orbs->print_detail();
+    P1_mo->print("P1_mo");
+    sc::ExEnv::out0() << std::endl<<orbs->orbsym()[0] << " " << orbs->orbsym()[1] << " " << orbs->orbsym()[2] <<" "<< orbs->orbsym()[3] << std::endl;
+  }
+
   // use its orbitals to initialize Extern_RefWavefunction
   integral->set_basis(basis);
+// the following constructor doesn't work correctly
+//  Ref<RefWavefunction> ref_wfn = new Extern_RefWavefunction(world, basis, integral,
+//                                                            orbs->coefs(), orbs->orbsym(),
+//                                                            P1_mo, P1_mo,
+//                                                            nfzc+ninact+nact,
+//                                                            nfzc,
+//                                                            nfzv);
   Ref<RefWavefunction> ref_wfn = new Extern_RefWavefunction(world, basis, integral,
                                                             orbs->coefs(), orbs->orbsym(),
                                                             P1_mo, P1_mo,
-                                                            nfzc+ninact+nact,
-                                                            nfzc,
-                                                            nfzv);
+                                                            mopi,
+                                                            occpi,
+                                                            fzcpi,
+                                                            fzvpi);
   if(debug_print)
   {
     sc::ExEnv::out0() << "debug:print refwfn orbs " << std::endl;

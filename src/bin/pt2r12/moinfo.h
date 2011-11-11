@@ -68,6 +68,7 @@ namespace sc {
       const std::vector<unsigned int>& fzvpi() const;
       const std::vector<unsigned int>& inactpi() const;
       const std::vector<unsigned int>& actpi() const;
+      const std::vector<unsigned int>& mopi() const;
 
     private:
       std::vector<unsigned int> indexmap_; //< file order -> mpqc order

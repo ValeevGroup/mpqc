@@ -81,6 +81,7 @@ main(int argc, char *argv[])
 
 int try_main(int argc, char **argv)
 {
+  const bool debug_print = false;
   GetLongOpt opt;
   opt.usage("[options]");
   opt.enroll("prefix", GetLongOpt::MandatoryValue, "filename prefix for input data", 0);
@@ -120,6 +121,12 @@ int try_main(int argc, char **argv)
   //
   ExternMOInfo rdorbs(filename_prefix + ".pt2r12.dat", integral); // all MO info is contained in rdorbs
   Ref<OrbitalSpace> orbs = rdorbs.orbs();
+  if(debug_print)
+  {
+    sc::ExEnv::out0() << "debug: print orbs" << std::endl;
+    orbs->print_detail();
+  }
+
   Ref<GaussianBasisSet> basis = orbs->basis();
   RefSCMatrix C_ao = orbs->coefs();
   const std::vector<unsigned int>& fzcpi = rdorbs.fzcpi();
@@ -151,8 +158,6 @@ int try_main(int argc, char **argv)
   basis = orbs->basis();
   C_ao = orbs->coefs();
 
-
-
   /////////////////////////////////////////////
   // Read 2-RDM
   /////////////////////////////////////////////
@@ -168,6 +173,7 @@ int try_main(int argc, char **argv)
                                                 0, nuocc + nfzv,
                                                 OrbitalSpace::symmetry);
 #if 1
+  sc::ExEnv::out0() << "debug: print occ and orbs" << std::endl;
   occ_orbs->print_detail();
   orbs->print_detail();
 #endif
@@ -259,6 +265,12 @@ int try_main(int argc, char **argv)
                                                             nfzc+ninact+nact,
                                                             nfzc,
                                                             nfzv);
+  if(debug_print)
+  {
+    sc::ExEnv::out0() << "debug:print refwfn orbs " << std::endl;
+    ref_wfn->occ_act(Alpha)->print_detail();
+    ref_wfn->orbs(Alpha)->print_detail();
+  }
 
   // create PT2R12 object
   Ref<PT2R12> pt2r12;

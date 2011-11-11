@@ -571,7 +571,7 @@ RefSCMatrix PT2R12::X_term_Gamma_F_T() {
       }
     }
   }
-  const bool debug_pp = true;
+  const bool debug_pp = false;
   if(debug_pp)
   {
     gg_space->basis()->print();
@@ -587,7 +587,7 @@ RefSCMatrix PT2R12::X_term_Gamma_F_T() {
 double PT2R12::energy_PT2R12_projector2() {
 
   // 2*V*T constribution
-  const bool print_all = true;
+  const bool print_all = false;
   if(print_all)
     ExEnv::out0() << std::endl << std::endl << indent << "Entered PT2R12::energy_PT2R12_projector2\n\n";
 

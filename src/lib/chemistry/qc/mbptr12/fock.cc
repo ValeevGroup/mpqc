@@ -164,7 +164,7 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
     // finally, transform
     F.accumulate(vec1t * h * vec2);
     F.scale(scale_H);
-    F.print("debug Fock: Hcore");
+////    F.print("debug Fock: Hcore");
     if (debug_ >= DefaultPrintThresholds::allN2
         || DEBUG_PRINT_ALL_F_CONTRIBUTIONS)
       F.print("Core Hamiltonian contribution");

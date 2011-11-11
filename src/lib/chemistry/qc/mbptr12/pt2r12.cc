@@ -615,7 +615,7 @@ double PT2R12::energy_PT2R12_projector2() {
   if(print_all)
     ExEnv::out0() << "\n\n" << indent << "Finished TGFT\n\n";
   TGFT.scale(-1.0);
-  const bool debug_pp = true;
+  const bool debug_pp = false;
   if(debug_pp)
   {
     TGFT.print("debug:TGFT");

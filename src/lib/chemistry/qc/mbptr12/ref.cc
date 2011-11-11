@@ -1419,6 +1419,7 @@ Extern_RefWavefunction::Extern_RefWavefunction(const Ref<WavefunctionWorld>& wor
   // this object will never become obsolete, so can compute it right now
 //  init_spaces(nocc, orbs, orbsym); // calling it here causes issues: init() is never get run and fockbuild_runtime's AO density is not set.
   force_average_AB_rdm1_ = true; // this is meant to always be used with spin-free algorithms
+  pre_init(nocc, orbs, orbsym);
 }
 
 Extern_RefWavefunction::Extern_RefWavefunction(StateIn& si) : RefWavefunction(si) {
@@ -1478,7 +1479,7 @@ Extern_RefWavefunction::core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &
 }
 
 void
-Extern_RefWavefunction::init(unsigned int nocc,
+Extern_RefWavefunction::pre_init(unsigned int nocc,
     const RefSCMatrix& coefs,
     const std::vector<unsigned int>& orbsyms)
 {

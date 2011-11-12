@@ -439,6 +439,7 @@ void OrbitalSpace::init(const std::string& id, const std::string& name,
   integral_ = integral;
 
   const unsigned int norbs = indexmap.size();
+  const bool debug = false;
   // compute block sizes
   block_sizes_.resize(nblocks);  std::fill(block_sizes_.begin(), block_sizes_.end(), 0);
   for(int b=0; b<nblocks; ++b) {
@@ -467,13 +468,24 @@ void OrbitalSpace::init(const std::string& id, const std::string& name,
   coefs_ = so_matrixkit->matrix(aodim, dim_);
   evals_ = so_matrixkit->diagmatrix(dim_);
   orbsym_.resize(norbs);
+  if(debug)
+  {
+    coefs->print("debug orbspace: print coefs");
+    evals->print("debug orbspace: print evals");
+  }
   for (unsigned int i = 0; i < norbs; ++i) {
     const unsigned int ii = indexmap[i].index();
     orbsym_[i] = orbsyms[ii];
-    for (unsigned int j = 0; j < aodim.n(); j++) {
+    for (unsigned int j = 0; j < aodim.n(); j++)
+    {
       coefs_(j, i) = coefs(j, ii);
     }
     evals_(i) = evals(ii);
+  }
+  if(debug)
+  {
+    coefs_->print("debug orbspace: print coefs");
+    evals_->print("debug orbspace: print evals");
   }
 
   init();

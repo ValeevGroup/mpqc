@@ -510,6 +510,7 @@ ExternMOInfo::ExternMOInfo(const std::string & filename,
   inactpi_ = remap(inactpi_, extern_to_mpqc_irrep_map);
   actpi_ = remap(actpi_, extern_to_mpqc_irrep_map);
   fzvpi_ = remap(fzvpi_, extern_to_mpqc_irrep_map);
+  mopi_ = remap(mopi_, extern_to_mpqc_irrep_map);
 
   //////////////////////////////////////////////////////////////////////////////////
   // lastly determine the index maps from extern MO indices to the MPQC MO indices

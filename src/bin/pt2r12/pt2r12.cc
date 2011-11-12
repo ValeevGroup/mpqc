@@ -287,8 +287,8 @@ int try_main(int argc, char **argv)
   if(debug_print)
   {
     sc::ExEnv::out0() << "debug:print refwfn orbs " << std::endl;
-    ref_wfn->occ_act(Alpha)->print_detail();
-    ref_wfn->orbs(Alpha)->print_detail();
+    ref_wfn->occ_act_sb(Alpha)->print_detail();
+    ref_wfn->orbs_sb(Alpha)->print_detail();
   }
 
   // create PT2R12 object

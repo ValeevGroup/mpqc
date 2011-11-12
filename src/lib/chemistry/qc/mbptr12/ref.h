@@ -411,8 +411,6 @@ namespace sc {
       bool ordm_idempotent_;
 
 
-      void pre_init(unsigned int nocc, const RefSCMatrix& orbs,
-                const std::vector<unsigned int>& orbsym);
       void pre_init(std::vector<unsigned int> mopi,
                     std::vector<unsigned int> occpi,
                     std::vector<unsigned int> fzcpi,

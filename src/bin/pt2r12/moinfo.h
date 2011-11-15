@@ -46,7 +46,7 @@ namespace sc {
   /// Thus MOs will be reordered to be consistent with MPQC rules, and a map from the native
   /// to MPQC representation will be provided so that other files produced by the external program
   /// can be interpreted
-  class ExternMOInfo {
+  class ExternMOInfo : public DescribedClass {
     public:
       ExternMOInfo(const std::string& filename,
                    const Ref<Integral>& integral);
@@ -71,6 +71,8 @@ namespace sc {
       const std::vector<unsigned int>& mopi() const;
 
     private:
+      static ClassDesc class_desc_;
+
       std::vector<unsigned int> indexmap_; //< file order -> mpqc order
       std::vector<unsigned int> occindexmap_occ_;
       std::vector<unsigned int> actindexmap_occ_;

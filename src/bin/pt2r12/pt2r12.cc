@@ -23,7 +23,9 @@
 #include <util/group/memory.h>
 #include <util/group/thread.h>
 #include <mpqcinit.h>
+
 #include <moinfo.h>
+#include <extern_pt2r12.h>
 
 // Force linkages:
 #include <scdirlist.h>
@@ -51,6 +53,7 @@
 using std::cout;
 using std::endl;
 using namespace sc;
+///////////////////////
 
 extern int try_main(int argc, char *argv[]);
 
@@ -84,7 +87,11 @@ int try_main(int argc, char **argv)
   const bool debug_print = false;
   GetLongOpt opt;
   opt.usage("[options]");
-  opt.enroll("prefix", GetLongOpt::MandatoryValue, "filename prefix for input data", 0);
+  opt.enroll("prefix", GetLongOpt::MandatoryValue, "mandatory filename prefix, will look for files:\n\
+                        $val.pt2r12.dat\n                        $val.pt2r12.rdm2.dat\n                       ", 0);
+  opt.enroll("cabs", GetLongOpt::MandatoryValue, "name for CABS; default: construct CABS automatically", 0);
+  opt.enroll("dfbs", GetLongOpt::MandatoryValue, "name for DFBS; default: no density fitting", 0);
+  opt.enroll("f12exp", GetLongOpt::MandatoryValue, "f12 exponent; default: 1.0", "1.0");
   opt.enroll("verbose", GetLongOpt::NoValue, "enable extra printing", 0);
 
   MPQCInit init(opt,argc,argv);
@@ -102,6 +109,16 @@ int try_main(int argc, char **argv)
     return 1;
   }
   const std::string filename_prefix(filename_prefix_cstr);
+  // may receive CABS basis set name
+  const char* cabs_name_cstr = opt.retrieve("cabs");
+  const std::string cabs_name(cabs_name_cstr ? cabs_name_cstr : "");
+  // may receive DFBS basis set name
+  const char* dfbs_name_cstr = opt.retrieve("dfbs");
+  const std::string dfbs_name(dfbs_name_cstr ? dfbs_name_cstr : "");
+  // may receive F12 exponent
+  const char* f12exp_cstr = opt.retrieve("f12exp");
+  const std::string f12exp_str(f12exp_cstr);
+
   init.init_integrals();
 
   // print environment
@@ -119,22 +136,14 @@ int try_main(int argc, char **argv)
   //
   // Read molecule, basis, and orbitals
   //
-  ExternMOInfo rdorbs(filename_prefix + ".pt2r12.dat", integral); // all MO info is contained in rdorbs
-  Ref<OrbitalSpace> orbs = rdorbs.orbs();
-
+  Ref<ExternMOInfo> rdorbs = new ExternMOInfo(filename_prefix + ".pt2r12.dat", integral); // all MO info is contained in rdorbs
+  Ref<OrbitalSpace> orbs = rdorbs->orbs();
   Ref<GaussianBasisSet> basis = orbs->basis();
   RefSCMatrix C_ao = orbs->coefs();
-  const std::vector<unsigned int>& fzcpi = rdorbs.fzcpi();
-  const std::vector<unsigned int>& inactpi = rdorbs.inactpi();
-  const std::vector<unsigned int>& actpi = rdorbs.actpi();
-  const std::vector<unsigned int>& fzvpi = rdorbs.fzvpi();
-  const std::vector<unsigned int>& mopi = rdorbs.mopi();
-  std::vector<unsigned int> occpi;
-  const unsigned int nirrep = fzcpi.size();
-  for (int i = 0; i < nirrep; ++i)
-  {
-    occpi.push_back(fzcpi[i] + inactpi[i] + actpi[i]);
-  }
+  const std::vector<unsigned int>& fzcpi = rdorbs->fzcpi();
+  const std::vector<unsigned int>& inactpi = rdorbs->inactpi();
+  const std::vector<unsigned int>& actpi = rdorbs->actpi();
+  const std::vector<unsigned int>& fzvpi = rdorbs->fzvpi();
   const unsigned int nfzc = std::accumulate(fzcpi.begin(), fzcpi.end(), 0.0);
   const unsigned int ninact = std::accumulate(inactpi.begin(), inactpi.end(), 0.0);
   const unsigned int nact = std::accumulate(actpi.begin(), actpi.end(), 0.0);
@@ -142,7 +151,7 @@ int try_main(int argc, char **argv)
   const unsigned int nmo = orbs->rank();
   const unsigned int nuocc = nmo - nfzc - ninact - nact;
 
-  { // test the metric
+  if (0) { // test the metric
     Ref<Integral> localints = integral->clone();
     RefSymmSCMatrix S_so = sc::detail::overlap(basis, localints);
     localints->set_basis(basis);
@@ -159,6 +168,8 @@ int try_main(int argc, char **argv)
 
   basis = orbs->basis();
   C_ao = orbs->coefs();
+
+
 
   /////////////////////////////////////////////
   // Read 2-RDM
@@ -186,138 +197,52 @@ int try_main(int argc, char **argv)
 #if PT2R12GAMESS
   // GAMESS reports the density in occupied orbitals
   rdrdm2 = new ExternSpinFreeRDMTwo(filename_prefix + ".pt2r12.rdm2.dat",
-                                    rdorbs.occindexmap_occ(),
+                                    rdorbs->occindexmap_occ(),
                                     occ_orbs);
 #else
   // MOLCAS reports the density in active orbitals
   rdrdm2 = new ExternSpinFreeRDMTwo(filename_prefix + ".pt2r12.rdm2.dat",
-                                    rdorbs.actindexmap_occ(),
+                                    rdorbs->actindexmap_occ(),
                                     occ_orbs);
 #endif
 
-
-  //
-  // Test orbs and 1-rdm
-  //
-  // create CLHF object
-  Ref<CLHF> clhf;
-  {
-    Ref<AssignedKeyVal> akv = new AssignedKeyVal;
-    akv->assign("molecule", basis->molecule().pointer());
-    akv->assign("basis", basis.pointer());
-    akv->assign("value_accuracy", 1e-8);
-    Ref<KeyVal> kv = akv;
-    clhf = new CLHF(kv);
-  }
-
-  // compute CLHF object
-  sc::ExEnv::out0() << "Energy = " << clhf->energy() << std::endl;
-  if (1) { // test the metric
-    Ref<Integral> localints = integral->clone(); localints->set_basis(basis);
-    Ref<PetiteList> plist = localints->petite_list();
-
-    RefSCMatrix C_ao_clhf = plist->evecs_to_AO_basis(clhf->eigenvectors());
-    C_ao_clhf.print("MO coefficients (in AO basis) from CLHF");
-    C_ao.print("MO coefficients (in AO basis) from host program");
-
-    RefSymmSCMatrix S_so = sc::detail::overlap(basis, localints);
-    RefSymmSCMatrix S_ao = localints->petite_list()->to_AO_basis(S_so);
-    S_ao.print("AO overlap matrix");
-    RefSymmSCMatrix S_mo = C_ao_clhf.kit()->symmmatrix(C_ao_clhf.coldim());
-    S_mo.assign(0.0);
-    S_mo.accumulate_transform(C_ao_clhf, S_ao, SCMatrix::TransposeTransform);
-    S_mo.print("MO overlap matrix");
-
-    RefSCMatrix C_ao_bsdim = C_ao.kit()->matrix(S_ao.dim(), C_ao.coldim());
-    C_ao_bsdim->convert(C_ao);
-    RefSCMatrix S12 = C_ao_clhf.t() * S_ao * C_ao_bsdim;
-    S12.print("Overlap between CLHF and host program MOs");
-  }
-
   // create World in which we will compute
   // use defaults for all params
-  Ref<WavefunctionWorld> world = new WavefunctionWorld(Ref<KeyVal>(new AssignedKeyVal));
-  world->set_wfn(clhf.pointer());
-
-  // to construct Extern_RefWavefunction we need an energy/correlation-ordered orbitals
-  // make 1-RDM to the full MO space
-  RefSymmSCMatrix P1_mo;
-  {
-    Ref<SpinFreeRDM<One> > rdrdm1 = rdrdm2->rdm_m_1();
-    RefSymmSCMatrix P1_mo_occ = rdrdm1->scmat();
-    std::vector<unsigned int> occ_to_orbs_indexmap;
-    occ_to_orbs_indexmap = (*orbs) << *(rdrdm1->orbs());
-    P1_mo = P1_mo_occ.kit()->symmmatrix(orbs->dim());
-    P1_mo.assign(0.0);
-    const unsigned int nocc = P1_mo_occ.n();
-    for(unsigned int i1=0; i1<nocc; ++i1) {
-      const unsigned int ii1 = occ_to_orbs_indexmap[i1];
-      for(unsigned int i2=0; i2<=i1; ++i2) {
-        const unsigned int ii2 = occ_to_orbs_indexmap[i2];
-        P1_mo.set_element(ii1, ii2, P1_mo_occ.get_element(i1, i2));
-      }
-    }
-    P1_mo.scale(0.5);
-  }
-
-  if(debug_print)
-  {
-    sc::ExEnv::out0() << "debug:print before refwfn" << std::endl;
-    orbs->print_detail();
-    P1_mo->print("P1_mo");
-    sc::ExEnv::out0() << std::endl<<orbs->orbsym()[0] << " " << orbs->orbsym()[1] << " " << orbs->orbsym()[2] <<" "<< orbs->orbsym()[3] << std::endl;
-  }
-
-  // use its orbitals to initialize Extern_RefWavefunction
-  integral->set_basis(basis);
-// the following constructor doesn't work correctly
-//  Ref<RefWavefunction> ref_wfn = new Extern_RefWavefunction(world, basis, integral,
-//                                                            orbs->coefs(), orbs->orbsym(),
-//                                                            P1_mo, P1_mo,
-//                                                            nfzc+ninact+nact,
-//                                                            nfzc,
-//                                                            nfzv);
-  Ref<RefWavefunction> ref_wfn = new Extern_RefWavefunction(world, basis, integral,
-                                                            orbs->coefs(), orbs->orbsym(),
-                                                            P1_mo, P1_mo,
-                                                            mopi,
-                                                            occpi,
-                                                            fzcpi,
-                                                            fzvpi);
-  if(debug_print)
-  {
-    sc::ExEnv::out0() << "debug:print refwfn orbs " << std::endl;
-    ref_wfn->occ_act_sb(Alpha)->print_detail();
-    ref_wfn->orbs_sb(Alpha)->print_detail();
-  }
-
-  // create PT2R12 object
-  Ref<PT2R12> pt2r12;
+  Ref<WavefunctionWorld> world;
   {
     Ref<AssignedKeyVal> kva = new AssignedKeyVal;
-    kva->assign("molecule", basis->molecule().pointer());
-    kva->assign("basis", basis.pointer());
-    kva->assign("refwfn", ref_wfn.pointer());
-    kva->assign("world", world.pointer());
-    kva->assign("rdm2", rdrdm2.pointer());
-    kva->assign("corr_factor", "stg-6g");
-    kva->assign("corr_param", "1.0");
-    {
+    if (dfbs_name.empty() == false) {
       Ref<AssignedKeyVal> tmpkv = new AssignedKeyVal;
-      tmpkv->assign("name", "cc-pVDZ-F12-CABS");
-      tmpkv->assign("puream", "true");
+      tmpkv->assign("name", dfbs_name.c_str());
       tmpkv->assign("molecule", basis->molecule().pointer());
       Ref<KeyVal> kv = tmpkv;
-      Ref<GaussianBasisSet> aux_basis = new GaussianBasisSet(kv);
-      kva->assign("aux_basis", aux_basis.pointer());
+      Ref<GaussianBasisSet> df_basis = new GaussianBasisSet(kv);
+      kva->assign("df_basis", df_basis.pointer());
     }
-    kva->assignboolean("spinadapted", 1);
-    kva->assignboolean("pt2_correction", 1);
     Ref<KeyVal> kv = kva;
-
-    pt2r12 = new PT2R12(kv);
-    const double ept2r12 = pt2r12->value();
+    world = new WavefunctionWorld(kv);
   }
 
-  return 0;
+  Ref<ExternPT2R12> extern_pt2r12;
+  {
+    Ref<AssignedKeyVal> kva = new AssignedKeyVal;
+    kva->assign("orbs_info", rdorbs.pointer());
+    kva->assign("rdm2", rdrdm2.pointer());
+    kva->assign("world", world.pointer());
+    kva->assign("f12exp", f12exp_str);
+    kva->assign("cabs", cabs_name);
+    kva->assign("basis", orbs->basis().pointer());
+    kva->assign("molecule", orbs->basis()->molecule().pointer());
+    Ref<KeyVal> kv = kva;
+    extern_pt2r12 = new ExternPT2R12(kv);
+  }
+
+  extern_pt2r12->compute();
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// c-file-style: "CLJ-CONDENSED"
+// End:

@@ -29,7 +29,9 @@
 #include <util/state/stateout.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/orthog.h>
-#  include <chemistry/qc/intv3/intv3.h>
+#include <chemistry/qc/basis/uncontract.h>
+#include <chemistry/qc/basis/lselect.h>
+#include <chemistry/qc/intv3/intv3.h>
 #if HAVE_INTEGRALCINTS
 #  include <chemistry/qc/cints/cints.h>
 #endif
@@ -1745,6 +1747,68 @@ R12Technology::check_integral_factory(const Ref<Integral>& ints)
       throw ex;
     }
   }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+namespace {
+  std::string default_cabs_name(const std::string& bs_name) {
+    std::string cabs_name;
+    if (bs_name == "cc-pVDZ-F12")
+      cabs_name = "cc-pVDZ-F12-CABS";
+    else if (bs_name == "cc-pVTZ-F12")
+      cabs_name = "cc-pVTZ-F12-CABS";
+    else if (bs_name == "cc-pVQZ-F12")
+      cabs_name = "cc-pVQZ-F12-CABS";
+    else if (bs_name == "aug-cc-pVDZ")
+      cabs_name = "aug-cc-pVDZ-CABS";
+    else if (bs_name == "aug-cc-pVTZ")
+      cabs_name = "aug-cc-pVTZ-CABS";
+    else if (bs_name == "aug-cc-pVQZ")
+      cabs_name = "aug-cc-pVQZ-CABS";
+    return cabs_name;
+  }
+}
+
+Ref<GaussianBasisSet>
+R12Technology::make_auto_cabs(const Ref<GaussianBasisSet>& bs) {
+  Ref<GaussianBasisSet> cabs;
+
+  // if bs has a known name, use a hardwired CABS name
+  const std::string cabs_name = default_cabs_name(std::string(bs->name()));
+
+  if (cabs_name.empty()) { // no CABS in the library -- make a relatively conservative CABS
+    // default CABS = Uncontracted(aug-cc-pV5Z) limited up to 3 L_occ + 1
+    Ref<AssignedKeyVal> tmpkv = new AssignedKeyVal;
+    tmpkv->assign("name", "cc-pV5Z");
+    tmpkv->assign("puream", "true");
+    tmpkv->assign("molecule", bs->molecule().pointer());
+    Ref<KeyVal> kv = tmpkv;
+    Ref<GaussianBasisSet> cabs_core = new GaussianBasisSet(kv);
+    {
+      Ref<AssignedKeyVal> tmpkv = new AssignedKeyVal;
+      tmpkv->assign("basis", cabs_core.pointer());
+      int lmax;
+      if (bs->molecule()->max_z() <= 20) // H - Ca
+        lmax = 3;
+      else if (bs->molecule()->max_z() <= 56) // Sc - Ba
+        lmax = 6;
+      else
+        // La - higher
+        lmax = 9;
+      tmpkv->assign("lmax", lmax);
+      Ref<KeyVal> kv = tmpkv;
+      cabs = new LSelectBasisSet(kv);
+    }
+  }
+  else { // have an appropriate CABS in the library
+    Ref<AssignedKeyVal> tmpkv = new AssignedKeyVal;
+    tmpkv->assign("name", cabs_name.c_str());
+    tmpkv->assign("molecule", bs->molecule().pointer());
+    Ref<KeyVal> kv = tmpkv;
+    cabs = new GaussianBasisSet(kv);
+  }
+  return cabs;
 }
 
 /////////////////////////////////////////////////////////////////////////////

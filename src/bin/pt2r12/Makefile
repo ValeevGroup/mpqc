@@ -13,7 +13,7 @@ include $(TOPDIR)/lib/Makedirlist
 INCLUDE += -I. -I$(SRCDIR) -I$(SRCTOPDIR)/src/bin/mpqc
 CXXINCLUDE += -I. -I$(SRCDIR)
 
-CXXSRC = pt2r12.cc moinfo.cc
+CXXSRC = pt2r12.cc moinfo.cc extern_pt2r12.cc
 
 TARGET_TO_MAKE = pt2r12
 default:: $(TARGET_TO_MAKE)

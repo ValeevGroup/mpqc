@@ -113,6 +113,17 @@ namespace {
   }
 }
 
+////////////////////////////////
+ClassDesc
+ExternMOInfo::class_desc_(typeid(ExternMOInfo),
+                     "ExternMOInfo",
+                     1,               // version
+                     "public DescribedClass",
+                     0, // this class is not DefaultConstructible
+                     0, // this class is not KeyValConstructible
+                     0  // this class is not StateInConstructible
+                     );
+
 ExternMOInfo::ExternMOInfo(const std::string & filename,
                            const Ref<Integral>& integral)
 {
@@ -419,6 +430,7 @@ ExternMOInfo::ExternMOInfo(const std::string & filename,
   unsigned int nact;    in >> nact;
   unsigned int nfzv;    in >> nfzv;
   const unsigned int nuocc = nmo - nfzc - ninact - nact - nfzv;
+  mopi_.resize(pg->order());     std::fill(mopi_.begin(), mopi_.end(), 0u);
   fzcpi_.resize(pg->order());    std::fill(fzcpi_.begin(), fzcpi_.end(), 0u);
   inactpi_.resize(pg->order());  std::fill(inactpi_.begin(), inactpi_.end(), 0u);
   actpi_.resize(pg->order());    std::fill(actpi_.begin(), actpi_.end(), 0u);
@@ -433,18 +445,18 @@ ExternMOInfo::ExternMOInfo(const std::string & filename,
   for(unsigned int i=0; i<nact;   ++i, ++mo)  { ++actpi_[orbsym[mo]];   pseudo_occnums.set_element(mo, 1.0); }
   mo += nuocc;
   for(unsigned int i=0; i<nfzv;   ++i, ++mo)  { ++fzvpi_[orbsym[mo]];                                        }
+  for(unsigned int i=0; i<nmo;   ++i, ++mo)   { ++mopi_[orbsym[i]];                                          }
 
 #else // the default is to report orbitals in symmetry order
 
   skipeol(in);
-  std::string token = readline(in);
-  std::vector<unsigned int> mopi = parse<unsigned int>(token);  assert(mopi.size() == pg->order());
-  mopi_ = mopi;
+  std::string token;
+  token = readline(in);  mopi_    = parse<unsigned int>(token); assert(mopi_.size() == pg->order());
   token = readline(in);  fzcpi_   = parse<unsigned int>(token); assert(fzcpi_.size() == pg->order());
   token = readline(in);  inactpi_ = parse<unsigned int>(token); assert(inactpi_.size() == pg->order());
   token = readline(in);  actpi_   = parse<unsigned int>(token); assert(actpi_.size() == pg->order());
   token = readline(in);  fzvpi_   = parse<unsigned int>(token); assert(fzvpi_.size() == pg->order());
-  assert(std::accumulate(mopi.begin(), mopi.end(), 0) == nmo);
+  assert(std::accumulate(mopi_.begin(), mopi_.end(), 0) == nmo);
   unsigned int junk; in >> junk; // fzcpi_ etc are in molcas symmetry order
 
   const unsigned int nfzc   = std::accumulate(fzcpi_.begin(),   fzcpi_.end(),   0u);
@@ -456,9 +468,9 @@ ExternMOInfo::ExternMOInfo(const std::string & filename,
   // compute MPQC irrep indices of the extern MOs
   std::vector<unsigned int> orbsym;
   {
-    for (unsigned int g = 0; g < mopi.size(); ++g) {
+    for (unsigned int g = 0; g < mopi_.size(); ++g) {
       const unsigned int g_mpqc = extern_to_mpqc_irrep_map[g];
-      for (unsigned int mo_g = 0; mo_g < mopi[g]; ++mo_g)
+      for (unsigned int mo_g = 0; mo_g < mopi_[g]; ++mo_g)
         orbsym.push_back(g_mpqc);
     }
   }
@@ -478,7 +490,7 @@ ExternMOInfo::ExternMOInfo(const std::string & filename,
     for(unsigned i=0; i<actpi_[irrep]; ++i, ++mo_in_irrep)
       pseudo_occnums.set_element(mo +i, 1.0);
     mo += actpi_[irrep];
-    mo += mopi[irrep] - mo_in_irrep; // skip the rest of the orbitals in this block
+    mo += mopi_[irrep] - mo_in_irrep; // skip the rest of the orbitals in this block
   }
 
 #endif
@@ -549,8 +561,10 @@ ExternMOInfo::ExternMOInfo(const std::string & filename,
   actindexmap_occ_ = (*orbs_sb_occ) << (*orbs_act_extern);
   occindexmap_occ_ = (*orbs_sb_occ) << (*orbs_occ_extern);
 
-  coefs_extern.print("ExternMOInfo:: extern MO coefficients");
-  orbs_sb_->coefs().print("ExternMOInfo:: reordered MO coefficients");
+  if (0) {
+    coefs_extern.print("ExternMOInfo:: extern MO coefficients");
+    orbs_sb_->coefs().print("ExternMOInfo:: reordered MO coefficients");
+  }
 }
 
 const std::vector<unsigned int>& ExternMOInfo::indexmap() const
@@ -592,7 +606,6 @@ const std::vector<unsigned int>& ExternMOInfo::mopi() const
   return mopi_;
 }
 
-
 /////////////////////////////////////////////////////////////////////////////
 
 ClassDesc ExternSpinFreeRDMOne::class_desc_(typeid(ExternSpinFreeRDMOne),
@@ -632,13 +645,13 @@ ExternSpinFreeRDMOne::ExternSpinFreeRDMOne(const std::string & filename,
   }
   in.close();
 
-  rdm_.print("ExternSpinFreeRDMOne:: MO density");
+  //rdm_.print("ExternSpinFreeRDMOne:: MO density");
 }
 
 ExternSpinFreeRDMOne::ExternSpinFreeRDMOne(const RefSymmSCMatrix& rdm, const Ref<OrbitalSpace>& orbs) :
   SpinFreeRDM<One>(Ref<Wavefunction>()), rdm_(rdm), orbs_(orbs)
 {
-  rdm_.print("ExternSpinFreeRDMOne:: MO density");
+  //rdm_.print("ExternSpinFreeRDMOne:: MO density");
 }
 
 ExternSpinFreeRDMOne::~ExternSpinFreeRDMOne()

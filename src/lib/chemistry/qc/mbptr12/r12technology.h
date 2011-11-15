@@ -848,6 +848,8 @@ class R12Technology: virtual public SavableState {
     void check_integral_factory(const Ref<Integral>& ints);
 
     void print(std::ostream&o=ExEnv::out0()) const;
+
+    static Ref<GaussianBasisSet> make_auto_cabs(const Ref<GaussianBasisSet>& bs);
 };
 
 template <class IntParam> double R12Technology::CorrParamCompare<IntParam>::epsilon(1e-6);

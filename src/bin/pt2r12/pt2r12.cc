@@ -22,6 +22,7 @@
 #include <util/group/pregtime.h>
 #include <util/group/memory.h>
 #include <util/group/thread.h>
+#include <util/misc/consumableresources.h>
 #include <mpqcinit.h>
 
 #include <moinfo.h>
@@ -119,11 +120,16 @@ int try_main(int argc, char **argv)
   const char* f12exp_cstr = opt.retrieve("f12exp");
   const std::string f12exp_str(f12exp_cstr);
 
+  init.init_resources();
+  Ref<ConsumableResources> resources = ConsumableResources::get_default_instance();
+  ExEnv::out0() << indent
+       << "Given resources: " << resources->sprint() << endl << endl;
   init.init_integrals();
 
   // print environment
   Ref<sc::ThreadGrp> thr = sc::ThreadGrp::get_default_threadgrp();
   Ref<sc::MessageGrp> msg = sc::MessageGrp::get_default_messagegrp();
+
   Ref<sc::Integral> integral = sc::Integral::get_default_integral()->clone();
   ExEnv::out0() << indent << "Using " << integral->class_name() << " for integrals by default" << std::endl;
   if (opt.retrieve("verbose")) {
@@ -185,7 +191,7 @@ int try_main(int argc, char **argv)
                                                 orbs->integral(), orbs->evals(),
                                                 0, nuocc + nfzv,
                                                 OrbitalSpace::symmetry);
-#if 1
+#if 0
   sc::ExEnv::out0() << "debug: print occ and orbs" << std::endl;
   occ_orbs->print_detail();
   orbs->print_detail();

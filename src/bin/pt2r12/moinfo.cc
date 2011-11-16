@@ -124,8 +124,9 @@ ExternMOInfo::class_desc_(typeid(ExternMOInfo),
                      0  // this class is not StateInConstructible
                      );
 
-ExternMOInfo::ExternMOInfo(const std::string & filename,
-                           const Ref<Integral>& integral)
+ExternMOInfo::ExternMOInfo(std::string filename,
+                           Ref<Integral> integral,
+                           std::string basislabel)
 {
   std::ifstream in(filename.c_str());
   std::string strjunk;
@@ -208,6 +209,10 @@ ExternMOInfo::ExternMOInfo(const std::string & filename,
       oss1 << "basis:" << a;
       oss2 << "custom" << a;
       tmpkv->assign(oss1.str().c_str(), oss2.str().c_str());
+    }
+    // optional descriptive label may be also given for atomic basis sets
+    if (!basislabel.empty()) {
+      tmpkv->assign("name", basislabel.c_str());
     }
 
     // read in first line

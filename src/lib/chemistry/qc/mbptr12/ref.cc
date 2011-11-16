@@ -1572,17 +1572,14 @@ Extern_RefWavefunction::pre_init(std::vector<unsigned int> mopi,
 {
   if (spinspaces_[Alpha].null()) {
     Extern_RefWavefunction* this_nonconst = const_cast<Extern_RefWavefunction*>(this);
-    // make sure it's computed first
-    const double e = this_nonconst->energy();
-    init_spaces(mopi, occpi, fzcpi, fzvpi, coefs, orbsyms);
 
     // make sure that FockBuildRuntime uses same density fitting info as this reference
     world()->fockbuild_runtime()->dfinfo(dfinfo());
 
-    // make sure that FockBuildRuntime uses same densities as the reference wavefunction
+    // make spaces
+    init_spaces(mopi, occpi, fzcpi, fzvpi, coefs, orbsyms);
 
-//    RefSymmSCMatrix R = ordm(Alpha);
-//    R.print("debug RefWavefunction::init print ordm");
+    // make sure that FockBuildRuntime uses same densities as the reference wavefunction
     if(force_average_AB_rdm1_ == false) // the densites are in AO basis
         world()->fockbuild_runtime()->set_densities(ordm(Alpha), ordm(Beta));//here computes ordm
     else

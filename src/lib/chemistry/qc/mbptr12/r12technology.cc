@@ -1751,23 +1751,24 @@ R12Technology::check_integral_factory(const Ref<Integral>& ints)
 
 /////////////////////////////////////////////////////////////////////////////
 
-namespace {
-  std::string default_cabs_name(const std::string& bs_name) {
-    std::string cabs_name;
-    if (bs_name == "cc-pVDZ-F12")
-      cabs_name = "cc-pVDZ-F12-CABS";
-    else if (bs_name == "cc-pVTZ-F12")
-      cabs_name = "cc-pVTZ-F12-CABS";
-    else if (bs_name == "cc-pVQZ-F12")
-      cabs_name = "cc-pVQZ-F12-CABS";
-    else if (bs_name == "aug-cc-pVDZ")
-      cabs_name = "aug-cc-pVDZ-CABS";
-    else if (bs_name == "aug-cc-pVTZ")
-      cabs_name = "aug-cc-pVTZ-CABS";
-    else if (bs_name == "aug-cc-pVQZ")
-      cabs_name = "aug-cc-pVQZ-CABS";
-    return cabs_name;
-  }
+std::string
+R12Technology::default_cabs_name(const std::string& obs_label) {
+  std::string cabs_name;
+  if (obs_label == "cc-pVDZ-F12")
+    cabs_name = "cc-pVDZ-F12-CABS";
+  else if (obs_label == "cc-pVTZ-F12")
+    cabs_name = "cc-pVTZ-F12-CABS";
+  else if (obs_label == "cc-pVQZ-F12")
+    cabs_name = "cc-pVQZ-F12-CABS";
+  else if (obs_label == "aug-cc-pVDZ")
+    cabs_name = "aug-cc-pVDZ-CABS";
+  else if (obs_label == "aug-cc-pVTZ")
+    cabs_name = "aug-cc-pVTZ-CABS";
+  else if (obs_label == "aug-cc-pVQZ")
+    cabs_name = "aug-cc-pVQZ-CABS";
+  else if (obs_label == "aug-cc-pV5Z")
+    cabs_name = "aug-cc-pV5Z-CABS";
+  return cabs_name;
 }
 
 Ref<GaussianBasisSet>
@@ -1775,7 +1776,7 @@ R12Technology::make_auto_cabs(const Ref<GaussianBasisSet>& bs) {
   Ref<GaussianBasisSet> cabs;
 
   // if bs has a known name, use a hardwired CABS name
-  const std::string cabs_name = default_cabs_name(std::string(bs->name()));
+  const std::string cabs_name = default_cabs_name(std::string(bs->label()));
 
   if (cabs_name.empty()) { // no CABS in the library -- make a relatively conservative CABS
     // default CABS = Uncontracted(aug-cc-pV5Z) limited up to 3 L_occ + 1
@@ -1810,6 +1811,30 @@ R12Technology::make_auto_cabs(const Ref<GaussianBasisSet>& bs) {
   }
   return cabs;
 }
+
+double
+R12Technology::default_stg_exponent(const std::string & obs_label)
+{
+  double result = 0.0;
+  /// recommended values from K.A. Peterson, T.B. Adler, H.J. Werner, J. Chem. Phys. 128 (2008) 084102.
+  if (obs_label == "cc-pVDZ-F12")
+    result = 0.9;
+  else if (obs_label == "cc-pVTZ-F12")
+    result = 1.0;
+  else if (obs_label == "cc-pVQZ-F12")
+    result = 1.1;
+  else if (obs_label == "aug-cc-pVDZ")
+    result = 1.1;
+  else if (obs_label == "aug-cc-pVTZ")
+    result = 1.2;
+  else if (obs_label == "aug-cc-pVQZ")
+    result = 1.4;
+  else if (obs_label == "aug-cc-pV5Z")
+    result = 1.4;
+  return result;
+}
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 

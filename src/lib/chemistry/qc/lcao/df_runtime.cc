@@ -316,6 +316,39 @@ DensityFittingRuntime::create_result(const std::string& key)
   assert(false);  // unreachable
 }
 
+std::string
+DensityFittingRuntime::default_dfbs_name(const std::string& obs_label, int incX, bool force_aug) {
+  int X = 0;
+  bool aug = force_aug;
+  if (obs_label == "cc-pVDZ-F12")
+    X = 3;
+  else if (obs_label == "cc-pVTZ-F12")
+    X = 4;
+  else if (obs_label == "cc-pVQZ-F12")
+    X = 5;
+  else if (obs_label == "aug-cc-pVDZ")
+  { X = 3; aug = true; }
+  else if (obs_label == "aug-cc-pVTZ")
+  { X = 4; aug = true; }
+  else if (obs_label == "aug-cc-pVQZ")
+  { X = 5; aug = true; }
+  else if (obs_label == "aug-cc-pV5Z")
+  { X = 6; aug = true; }
+
+  std::string dfbs_name;
+  switch (X) {
+    case 2: dfbs_name = "cc-pVDZ-RI"; break;
+    case 3: dfbs_name = "cc-pVTZ-RI"; break;
+    case 4: dfbs_name = "cc-pVQZ-RI"; break;
+    case 5: dfbs_name = "cc-pV5Z-RI"; break;
+    case 6: dfbs_name = "cc-pV6Z-RI"; break;
+  }
+  if (aug && not dfbs_name.empty())
+    dfbs_name = std::string("aug-") + dfbs_name;
+
+  return dfbs_name;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 ClassDesc

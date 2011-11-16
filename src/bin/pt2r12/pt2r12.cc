@@ -51,6 +51,13 @@
 #include <util/group/messmpi.h>
 #endif
 
+// MUST HAVE LIBINT2
+#if HAVE_INTEGRALLIBINT2
+#  include <chemistry/qc/libint2/libint2.h>
+#else
+#  error "this copy of MPQC does not include the Libint2 library (see libint.valeyev.net) -- cannot use F12 methods"
+#endif
+
 using std::cout;
 using std::endl;
 using namespace sc;
@@ -90,8 +97,9 @@ int try_main(int argc, char **argv)
   opt.usage("[options]");
   opt.enroll("prefix", GetLongOpt::MandatoryValue, "mandatory filename prefix, will look for files:\n\
                         $val.pt2r12.dat\n                        $val.pt2r12.rdm2.dat\n                       ", 0);
+  opt.enroll("obs", GetLongOpt::MandatoryValue, "name for the orbital basis set; optional, if given will be used to set the defaults for cabs, dfbs, and f12exp", 0);
   opt.enroll("cabs", GetLongOpt::MandatoryValue, "name for CABS; default: construct CABS automatically", 0);
-  opt.enroll("dfbs", GetLongOpt::MandatoryValue, "name for DFBS; default: no density fitting", 0);
+  opt.enroll("dfbs", GetLongOpt::MandatoryValue, "name for DFBS; default: no density fitting; use \"none\" to override the default for the obs", 0);
   opt.enroll("f12exp", GetLongOpt::MandatoryValue, "f12 exponent; default: 1.0", "1.0");
   opt.enroll("verbose", GetLongOpt::NoValue, "enable extra printing", 0);
 
@@ -110,26 +118,44 @@ int try_main(int argc, char **argv)
     return 1;
   }
   const std::string filename_prefix(filename_prefix_cstr);
+  // may receive OBS basis set name
+  const char* obs_name_cstr = opt.retrieve("obs");
+  const std::string obs_name(obs_name_cstr ? obs_name_cstr : "");
   // may receive CABS basis set name
   const char* cabs_name_cstr = opt.retrieve("cabs");
   const std::string cabs_name(cabs_name_cstr ? cabs_name_cstr : "");
   // may receive DFBS basis set name
   const char* dfbs_name_cstr = opt.retrieve("dfbs");
-  const std::string dfbs_name(dfbs_name_cstr ? dfbs_name_cstr : "");
+  std::string dfbs_name(dfbs_name_cstr ? dfbs_name_cstr : "");
+  // if OBS given but DFBS is not, look up a default DFBS
+  if (dfbs_name.empty() && not obs_name.empty())
+    dfbs_name = DensityFittingRuntime::default_dfbs_name(obs_name, 1); // for OBS with cardinal number X use DFBS with cardinal number X+1
+  if (dfbs_name == "none") dfbs_name = "";
   // may receive F12 exponent
   const char* f12exp_cstr = opt.retrieve("f12exp");
-  const std::string f12exp_str(f12exp_cstr);
+  std::string f12exp_str(f12exp_cstr);
+  // if OBS given but F12 exponent is not, look up a default value
+  if (f12exp_str.empty() && not obs_name.empty()) {
+    const double f12exp_default = R12Technology::default_stg_exponent(obs_name);
+    if (f12exp_default != 0.0) {
+      std::ostringstream oss;
+      oss << f12exp_default;
+      f12exp_str = oss.str();
+    }
+  }
 
   init.init_resources();
   Ref<ConsumableResources> resources = ConsumableResources::get_default_instance();
   ExEnv::out0() << indent
        << "Given resources: " << resources->sprint() << endl << endl;
+#if HAVE_INTEGRALLIBINT2
+  Integral::set_default_integral(new IntegralLibint2);
+#endif
   init.init_integrals();
 
   // print environment
   Ref<sc::ThreadGrp> thr = sc::ThreadGrp::get_default_threadgrp();
   Ref<sc::MessageGrp> msg = sc::MessageGrp::get_default_messagegrp();
-
   Ref<sc::Integral> integral = sc::Integral::get_default_integral()->clone();
   ExEnv::out0() << indent << "Using " << integral->class_name() << " for integrals by default" << std::endl;
   if (opt.retrieve("verbose")) {
@@ -142,7 +168,9 @@ int try_main(int argc, char **argv)
   //
   // Read molecule, basis, and orbitals
   //
-  Ref<ExternMOInfo> rdorbs = new ExternMOInfo(filename_prefix + ".pt2r12.dat", integral); // all MO info is contained in rdorbs
+  Ref<ExternMOInfo> rdorbs = new ExternMOInfo(filename_prefix + ".pt2r12.dat",
+                                              integral,
+                                              obs_name); // all MO info is contained in rdorbs
   Ref<OrbitalSpace> orbs = rdorbs->orbs();
   Ref<GaussianBasisSet> basis = orbs->basis();
   RefSCMatrix C_ao = orbs->coefs();

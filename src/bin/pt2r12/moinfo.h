@@ -48,8 +48,9 @@ namespace sc {
   /// can be interpreted
   class ExternMOInfo : public DescribedClass {
     public:
-      ExternMOInfo(const std::string& filename,
-                   const Ref<Integral>& integral);
+      ExternMOInfo(std::string filename,
+                   Ref<Integral> integral = Integral::get_default_integral()->clone(),
+                   std::string basisname = std::string());
       ~ExternMOInfo() {}
 
       typedef OrderedOrbitalSpace<SymmetryMOOrder> SymmOrbitalSpace;

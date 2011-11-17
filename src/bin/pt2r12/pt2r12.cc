@@ -101,6 +101,9 @@ int try_main(int argc, char **argv)
   opt.enroll("cabs", GetLongOpt::MandatoryValue, "name for CABS; default: construct CABS automatically", 0);
   opt.enroll("dfbs", GetLongOpt::MandatoryValue, "name for DFBS; default: no density fitting; use \"none\" to override the default for the obs", 0);
   opt.enroll("f12exp", GetLongOpt::MandatoryValue, "f12 exponent; default: 1.0", "1.0");
+  opt.enroll("r12", GetLongOpt::MandatoryValue, "compute [2]_R12 correction; default: true", 0);
+  opt.enroll("singles", GetLongOpt::MandatoryValue, "compute [2]_s correction; default: false", 0);
+  opt.enroll("partitionH", GetLongOpt::MandatoryValue, "How to partition Hamiltonian in [2]_s; default: dyall_1", 0);
   opt.enroll("verbose", GetLongOpt::NoValue, "enable extra printing", 0);
 
   MPQCInit init(opt,argc,argv);
@@ -143,6 +146,13 @@ int try_main(int argc, char **argv)
       f12exp_str = oss.str();
     }
   }
+
+  const char* r12_cstr = opt.retrieve("r12");
+  std::string r12_str = r12_cstr?r12_cstr:"";
+  const char* singles_cstr = opt.retrieve("singles");
+  std::string singles_str = singles_cstr?singles_cstr:"";
+  const char* partition_cstr = opt.retrieve("partitionH");
+  std::string partition_str = partition_cstr?partition_cstr:"";
 
   init.init_resources();
   Ref<ConsumableResources> resources = ConsumableResources::get_default_instance();
@@ -267,6 +277,12 @@ int try_main(int argc, char **argv)
     kva->assign("cabs", cabs_name);
     kva->assign("basis", orbs->basis().pointer());
     kva->assign("molecule", orbs->basis()->molecule().pointer());
+    if(!r12_str.empty())
+      kva->assign("pt2_correction", r12_str);
+    if(!singles_str.empty())
+      kva->assign("cabs_singles", singles_str);
+    if(!partition_str.empty())
+      kva->assign("cabs_singles_h0", partition_str);
     Ref<KeyVal> kv = kva;
     extern_pt2r12 = new ExternPT2R12(kv);
   }

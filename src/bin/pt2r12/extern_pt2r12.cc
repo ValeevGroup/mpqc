@@ -29,7 +29,9 @@
 #pragma implementation
 #endif
 
+#include <string>
 #include <extern_pt2r12.h>
+#include <iostream>
 
 using namespace sc;
 
@@ -53,6 +55,10 @@ ExternPT2R12::ExternPT2R12(const Ref<KeyVal>& kv) :
   rdm2_ << kv->describedclassvalue("rdm2");
   cabs_name_ = kv->stringvalue("cabs", KeyValValuestring(std::string()));
   f12exp_str_ = kv->stringvalue("f12exp", KeyValValuestring(std::string()));
+
+  std::string r12_str = kv->stringvalue("pt2_correction", KeyValValuestring(""));
+  std::string singles_str = kv->stringvalue("cabs_singles", KeyValValuestring(""));
+  std::string partition_str = kv->stringvalue("cabs_singles_h0", KeyValValuestring(std::string("")));
 
   Ref<OrbitalSpace> orbs = orbs_info_->orbs();
   const std::vector<unsigned int>& fzcpi = orbs_info_->fzcpi();
@@ -122,6 +128,12 @@ ExternPT2R12::ExternPT2R12(const Ref<KeyVal>& kv) :
     kva->assign("rdm2", rdm2_.pointer());
     kva->assign("corr_factor", "stg-6g");
     kva->assign("corr_param", f12exp_str_.c_str());
+    if(!r12_str.empty())
+      kva->assign("pt2_correction", r12_str);
+    if(!singles_str.empty())
+      kva->assign("cabs_singles", singles_str);
+    if(!partition_str.empty())
+      kva->assign("cabs_singles_h0", partition_str);
     if (cabs_name_.empty() == false) {
       Ref<AssignedKeyVal> tmpkv = new AssignedKeyVal;
       tmpkv->assign("name", cabs_name_.c_str());

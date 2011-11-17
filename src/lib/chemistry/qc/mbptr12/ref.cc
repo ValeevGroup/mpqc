@@ -1486,7 +1486,6 @@ Extern_RefWavefunction::Extern_RefWavefunction(const Ref<WavefunctionWorld>& wor
     RefSymmSCMatrix alpha_1rdm_ao = orbs.kit()->symmmatrix(orbs->rowdim());
     alpha_1rdm_ao.assign(0.0);
     alpha_1rdm_ao.accumulate_transform(orbs, alpha_1rdm);
-    alpha_1rdm_ao.print("debug Extern_RefWavefunction::Extern_RefWavefunction");
     rdm_[Alpha] = alpha_1rdm_ao;
   }
   if (alpha_1rdm == beta_1rdm)

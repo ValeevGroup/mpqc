@@ -1251,52 +1251,56 @@ void PT2R12::compute()
     energy_correction_r12 = energy_pt2r12_sf;
   }
 
-
   if(cabs_singles_)
   {
     double cabs_singles_corre = 0.0;
     if(cabs_singles_h0_ == string("complete"))
-    {
       cabs_singles_e = cabs_singles_Complete();
-      ExEnv::out0() << indent << scprintf("CABS singles(full):                    %17.12lf",
-                                      cabs_singles_e) << endl;
-    }
     else if(cabs_singles_h0_ == string("CI"))
-    {
       cabs_singles_e = cabs_singles_Complete();
-      ExEnv::out0() << indent << scprintf("CABS singles(CI):                      %17.12lf",
-                                      cabs_singles_e) << endl;
-    }
-    else if(cabs_singles_h0_ == string("dyall_1") or cabs_singles_h0_ == string("dyall_2"))
-    {
+    else if(cabs_singles_h0_ == string("dyall_1"))
       cabs_singles_e = cabs_singles_Dyall();
-      ExEnv::out0() << indent << scprintf("CABS singles(Dyall):                   %17.12lf",
-                                      cabs_singles_e) << endl;
-    }
+    else if(cabs_singles_h0_ == string("dyall_2"))
+      cabs_singles_e = cabs_singles_Dyall();
     else
       throw InputError("invalid value for keyword cabs_singles_h0",
                        __FILE__, __LINE__,
                        "cabs_singles_h0", cabs_singles_h0_.c_str(),
                        this->class_desc());
-    ExEnv::out0() << indent << scprintf("RASSCF+CABS singles:                   %17.12lf",
-                                              energy_ref + cabs_singles_e) << endl << endl;
   }
 
   const double energy = energy_ref + energy_correction_r12 + cabs_singles_e;
 
-  ExEnv::out0() <<indent << scprintf("Reference energy [au]:                 %17.12lf",
-                                     energy_ref) << endl;
 #if 1
     const double recomp_ref_energy = this->energy_recomputed_from_densities();
-    ExEnv::out0() <<  std::endl << std::endl << indent << scprintf("Reference energy (%9s) [au]:     %17.12lf",
+#endif
+
+    ExEnv::out0() <<endl << indent << scprintf("Reference energy [au]:                 %17.12lf",
+                                       energy_ref) << std::endl << std::endl;
+    if(cabs_singles_)
+    {
+      std::string es = "CABS singles(" + cabs_singles_h0_ + ")";
+      const unsigned int LL = std::string("Reference energy [au]:                 ").size();
+      es.resize(LL, ' ');
+      ExEnv::out0() << indent << scprintf((es + "%17.12lf").c_str(),  cabs_singles_e) << endl;
+      ExEnv::out0() << indent << scprintf("RASSCF+CABS singles:                   %17.12lf",
+                                                energy_ref + cabs_singles_e) << endl << endl;
+    }
+
+#if 1
+    ExEnv::out0() << std::endl << std::endl << indent << scprintf("Reference energy (%9s) [au]:     %17.12lf",
                                         (this->r12world()->world()->basis_df().null() ? "   recomp" : "recomp+DF"),
                                         recomp_ref_energy) << endl;
 #endif
 
-  ExEnv::out0() << indent << scprintf("[2]_R12 energy [au]:                   %17.12lf",
-                                      energy_correction_r12) << endl;
-  ExEnv::out0() << indent << scprintf("Total [2]_R12 energy [au]:             %17.12lf",
-                                      energy) << std::endl;
+  if(pt2_correction_)
+  {
+    ExEnv::out0() << indent << scprintf("[2]_R12 energy [au]:                   %17.12lf",
+                                        energy_correction_r12) << endl;
+    ExEnv::out0() << indent << scprintf("Total [2]_R12 energy [au]:             %17.12lf",
+                                        energy) << std::endl;
+  }
+
   set_energy(energy);
 }
 
@@ -1853,7 +1857,7 @@ RefSymmSCMatrix PT2R12::X_transformed_by_C() {
 
 double
 PT2R12::energy_recomputed_from_densities() {
-  ExEnv::out0() << std::endl<< indent << "Entered energy_recomputed_from_densities" << std::endl;
+//  ExEnv::out0() << std::endl<< indent << "Entered energy_recomputed_from_densities" << std::endl;
   double twoparticle_energy;
   double oneparticle_energy;
 
@@ -1897,7 +1901,7 @@ PT2R12::energy_recomputed_from_densities() {
 #endif
   double energy = oneparticle_energy + twoparticle_energy;
   energy += this->r12world()->refwfn()->basis()->molecule()->nuclear_repulsion_energy();
-  ExEnv::out0() << std::endl<< indent << "Exited energy_recomputed_from_densities" << std::endl << std::endl << std::endl;
+//  ExEnv::out0() << std::endl<< indent << "Exited energy_recomputed_from_densities" << std::endl << std::endl << std::endl;
 
   return(energy);
 }

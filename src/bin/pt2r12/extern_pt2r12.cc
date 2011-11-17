@@ -56,9 +56,9 @@ ExternPT2R12::ExternPT2R12(const Ref<KeyVal>& kv) :
   cabs_name_ = kv->stringvalue("cabs", KeyValValuestring(std::string()));
   f12exp_str_ = kv->stringvalue("f12exp", KeyValValuestring(std::string()));
 
-  std::string r12_str = kv->stringvalue("pt2_correction", KeyValValuestring(""));
-  std::string singles_str = kv->stringvalue("cabs_singles", KeyValValuestring(""));
-  std::string partition_str = kv->stringvalue("cabs_singles_h0", KeyValValuestring(std::string("")));
+  std::string r12_str = kv->stringvalue("pt2_correction", KeyValValuestring(std::string()));
+  std::string singles_str = kv->stringvalue("cabs_singles", KeyValValuestring(std::string()));
+  std::string partition_str = kv->stringvalue("cabs_singles_h0", KeyValValuestring(std::string()));
 
   Ref<OrbitalSpace> orbs = orbs_info_->orbs();
   const std::vector<unsigned int>& fzcpi = orbs_info_->fzcpi();

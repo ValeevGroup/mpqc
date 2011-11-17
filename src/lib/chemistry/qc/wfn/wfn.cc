@@ -1194,7 +1194,6 @@ Wavefunction::core_hamiltonian_nr(const Ref<GaussianBasisSet> &bas)
 
       }
     }
-
     // now symmetrize Hso
     RefSymmSCMatrix h(pl->SO_basisdim(), bas->so_matrixkit());
     pl->symmetrize(hao,h);

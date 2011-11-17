@@ -129,6 +129,10 @@ ExternMOInfo::ExternMOInfo(std::string filename,
                            std::string basislabel)
 {
   std::ifstream in(filename.c_str());
+  if(!in.is_open())
+  {
+    throw InputError((std::string("Failed to open data file: ") + filename).c_str(), __FILE__, __LINE__);
+  }
   std::string strjunk;
 
   //////

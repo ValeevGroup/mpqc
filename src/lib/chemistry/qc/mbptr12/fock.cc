@@ -115,14 +115,6 @@ R12IntEval::fock(const Ref<OrbitalSpace>& bra_space,
     localints->set_basis(hcore_basis, hcore_basis);
     Ref<PetiteList> hcore_pl = localints->petite_list();
     RefSymmSCMatrix hsymm_ao = hcore_pl->to_AO_basis(hsymm);
-    bool debug = true;
-    if(debug)
-    {
-      hsymm->dim()->print();
-      hsymm_ao->dim()->print();
-      aodim1->print();
-      bra_space->print_detail();
-    }
     hsymm = 0;
 
     RefSCMatrix h(aodim1, aodim2, sokit);

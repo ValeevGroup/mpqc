@@ -99,13 +99,13 @@ namespace sc {
 
       /**
        * tries to translate a library basis set label to the corresponding default value for the DF basis
-       * @param obs_label orbital basis set label; to be useful must be a canonical library name
+       * @param obs_name orbital basis set name; to be useful must be a canonical library name
        * @param incX optional parameter to raise the cardinal number of the density fitting basis. This may be useful if using density-fitting
        *             slightly outside their intended area of application.
        * @param force_aug optional parameter similar to incX to force inclusion of diffuse components of the density fitting basis
        * @return canonical library name of the default density-fitting basis set; if not able to suggest the default basis, returns an empty string
        */
-      static std::string default_dfbs_name(const std::string& obs_label,
+      static std::string default_dfbs_name(const std::string& obs_name,
                                            int incX = 0,
                                            bool force_aug = false);
 

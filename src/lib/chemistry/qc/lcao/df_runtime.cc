@@ -317,22 +317,22 @@ DensityFittingRuntime::create_result(const std::string& key)
 }
 
 std::string
-DensityFittingRuntime::default_dfbs_name(const std::string& obs_label, int incX, bool force_aug) {
+DensityFittingRuntime::default_dfbs_name(const std::string& obs_name, int incX, bool force_aug) {
   int X = 0;
   bool aug = force_aug;
-  if (obs_label == "cc-pVDZ-F12")
+  if (obs_name == "cc-pVDZ-F12")
     X = 3;
-  else if (obs_label == "cc-pVTZ-F12")
+  else if (obs_name == "cc-pVTZ-F12")
     X = 4;
-  else if (obs_label == "cc-pVQZ-F12")
+  else if (obs_name == "cc-pVQZ-F12")
     X = 5;
-  else if (obs_label == "aug-cc-pVDZ")
+  else if (obs_name == "aug-cc-pVDZ")
   { X = 3; aug = true; }
-  else if (obs_label == "aug-cc-pVTZ")
+  else if (obs_name == "aug-cc-pVTZ")
   { X = 4; aug = true; }
-  else if (obs_label == "aug-cc-pVQZ")
+  else if (obs_name == "aug-cc-pVQZ")
   { X = 5; aug = true; }
-  else if (obs_label == "aug-cc-pV5Z")
+  else if (obs_name == "aug-cc-pV5Z")
   { X = 6; aug = true; }
 
   std::string dfbs_name;

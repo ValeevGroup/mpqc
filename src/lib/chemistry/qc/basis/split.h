@@ -39,7 +39,8 @@ class SplitBasisSet: public GaussianBasisSet {
 
   protected:
 
-    void split(const Ref<GaussianBasisSet>&);
+    void split(const Ref<GaussianBasisSet>&,
+               std::string name = std::string());
 
   public:
 
@@ -59,8 +60,11 @@ class SplitBasisSet: public GaussianBasisSet {
         */
     SplitBasisSet(const Ref<KeyVal>&);
 
-    /** Split the given GaussianBasisSet object. */
-    SplitBasisSet(const Ref<GaussianBasisSet>&);
+    /** Split the given GaussianBasisSet object.
+     *  @param name optional name
+     *  */
+    SplitBasisSet(const Ref<GaussianBasisSet>&,
+                  std::string name = std::string());
 
     SplitBasisSet(StateIn&);
 

@@ -1033,7 +1033,7 @@ GaussianBasisSet::print_brief(ostream& os) const
       os << indent
          << "name = \"" << name_ << "\"" << endl;
   }
-  else {
+  if (name_ != label_) {
     os << indent
        << "label = \"" << label_ << "\"" << endl;
   }

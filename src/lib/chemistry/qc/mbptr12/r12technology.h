@@ -852,15 +852,15 @@ class R12Technology: virtual public SavableState {
     static Ref<GaussianBasisSet> make_auto_cabs(const Ref<GaussianBasisSet>& bs);
     /**
      * tries to translate a library basis set label to the corresponding default value for the CABS
-     * @param obs_label orbital basis set label; to be useful must be a canonical library name
+     * @param obs_name orbital basis set name; to be useful must be a canonical library name
      * @return canonical library name of the default CABS; if not able to suggest the default basis, returns an empty string     */
-    static std::string default_cabs_name(const std::string& obs_label);
+    static std::string default_cabs_name(const std::string& obs_name);
     /**
      * tries to translate a library basis set label to the corresponding default value for the F12 exponent
-     * @param obs_label orbital basis set label; to be useful must be a canonical library name
+     * @param obs_name orbital basis set name; to be useful must be a canonical library name
      * @return the recommended value for the F12 exponent; 0.0 if not available
      */
-    static double default_stg_exponent(const std::string& obs_label);
+    static double default_stg_exponent(const std::string& obs_name);
 };
 
 template <class IntParam> double R12Technology::CorrParamCompare<IntParam>::epsilon(1e-6);

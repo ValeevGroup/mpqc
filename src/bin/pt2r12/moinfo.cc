@@ -126,7 +126,7 @@ ExternMOInfo::class_desc_(typeid(ExternMOInfo),
 
 ExternMOInfo::ExternMOInfo(std::string filename,
                            Ref<Integral> integral,
-                           std::string basislabel)
+                           std::string basisname)
 {
   std::ifstream in(filename.c_str());
   if(!in.is_open())
@@ -172,21 +172,21 @@ ExternMOInfo::ExternMOInfo(std::string filename,
     std::string glabel = pg->char_table().gamma(g).symbol();
     tolower(glabel);
     irreplabel_to_index[glabel] = g;
-    std::cout << "irrep " << g << " " << glabel << std::endl;
+    //std::cout << "irrep " << g << " " << glabel << std::endl;
   }
   // some peculiar programs ... cough MOLCAS cough ... may use non-standard (i.e. non-Cotton) irrep orderings
   // if so, pick up extern irrep labels and determine mapping from extern irrep index to mpqc irrep index
   std::vector<unsigned int> extern_to_mpqc_irrep_map;
   skipeol(in);
   std::string irrep_labels = readline(in);
-  std::cout << "irrep_labels = " << irrep_labels << std::endl;
+  //std::cout << "irrep_labels = " << irrep_labels << std::endl;
   if (irrep_labels != "-1") { // unless -1 follows the point group symbol, the irrep labels are given next
                               // map them to the MPQC labels
     while (irrep_labels.empty() == false) {
       std::string irreplabel = pop_till_sep(irrep_labels, ' ');
       tolower(irreplabel);
       extern_to_mpqc_irrep_map.push_back(irreplabel_to_index[irreplabel]);
-      std::cout << "irreplabel = " << irreplabel << " (first char = '" << irreplabel[0] << "') irrep_labels = " << irrep_labels << std::endl;
+      //std::cout << "irreplabel = " << irreplabel << " (first char = '" << irreplabel[0] << "') irrep_labels = " << irrep_labels << std::endl;
     }
     assert(extern_to_mpqc_irrep_map.size() == nirrep);
     in >> strjunk;
@@ -215,8 +215,8 @@ ExternMOInfo::ExternMOInfo(std::string filename,
       tmpkv->assign(oss1.str().c_str(), oss2.str().c_str());
     }
     // optional descriptive label may be also given for atomic basis sets
-    if (!basislabel.empty()) {
-      tmpkv->assign("name", basislabel.c_str());
+    if (!basisname.empty()) {
+      tmpkv->assign("name", basisname.c_str());
     }
 
     // read in first line
@@ -333,7 +333,7 @@ ExternMOInfo::ExternMOInfo(std::string filename,
     basis = new GaussianBasisSet(kv);
 
     if (have_gencon) { // if have general contractions like SP shells in Pople-style basis sets split them so that IntegralLibint2 can handle them
-      Ref<GaussianBasisSet> split_basis = new SplitBasisSet(basis);
+      Ref<GaussianBasisSet> split_basis = new SplitBasisSet(basis, basisname);
       basis = split_basis;
     }
   }

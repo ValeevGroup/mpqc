@@ -52,9 +52,10 @@ SplitBasisSet::SplitBasisSet(const Ref<KeyVal>&keyval)
   split(basis);
 }
 
-SplitBasisSet::SplitBasisSet(const Ref<GaussianBasisSet>&b)
+SplitBasisSet::SplitBasisSet(const Ref<GaussianBasisSet>&b,
+                             std::string name)
 {
-  split(b);
+  split(b, name);
 }
 
 SplitBasisSet::SplitBasisSet(StateIn&s):
@@ -81,7 +82,8 @@ name_conv(const char *name)
 }
 
 void
-SplitBasisSet::split(const Ref<GaussianBasisSet>&basis)
+SplitBasisSet::split(const Ref<GaussianBasisSet>&basis,
+                     std::string name)
 {
   std::vector<int> nshell_on_center(basis->ncenter());
   std::fill(nshell_on_center.begin(), nshell_on_center.end(), 0);
@@ -120,7 +122,7 @@ SplitBasisSet::split(const Ref<GaussianBasisSet>&basis)
                   exponents[iprim] = shell.exponent(iprim);
                   c[0][iprim] = shell.coefficient_unnorm(icon,iprim);
                 }
-              shells[ishellall]
+              shells[ishellall] // is hell all???
                   = new GaussianShell(1, nprim, exponents, am,
                                       pure, c,
                                       GaussianShell::Unnormalized);
@@ -128,7 +130,7 @@ SplitBasisSet::split(const Ref<GaussianBasisSet>&basis)
         }
     }
 
-  init(name_conv(basis->name()),
+  init((name.empty() ? name_conv(basis->name()) : const_cast<char*>(name.c_str())),
        name_conv(basis->label()),
        basis->molecule(),
        basis->matrixkit(),

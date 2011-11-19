@@ -7,7 +7,7 @@
 
 #include <util/keyval/keyval.h>
 #include <math/isosurf/shape.h>
-#include <chemistry/qc/wfn/solvent.h>
+#include <chemistry/qc/dft/solvent.h>
 #include <chemistry/molecule/formula.h>
 
 #ifdef USING_NAMESPACE_STD

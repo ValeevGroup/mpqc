@@ -38,7 +38,11 @@ TESTPROGS = dfttest lebedev
 
 SRCS = functional.cc integrator.cc \
        clks.cc uks.cc hsosks.cc lebedev.c \
-       tmplinst.cc am05.cc
+       tmplinst.cc am05.cc solvent.cc
+
+INC = functional.h integrator.h \
+      clks.h uks.h hsosks.h lebedev.h \
+      am05.h solvent.h
 
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 LIBOBJ:= $(LIBOBJ:%.c=%.$(OBJSUF))

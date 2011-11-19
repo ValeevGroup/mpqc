@@ -29,7 +29,7 @@
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 #include <chemistry/qc/basis/petite.h>
-#include <chemistry/qc/wfn/solvent.h>
+#include <chemistry/qc/dft/solvent.h>
 
 #include <math/isosurf/volume.h>
 #include <chemistry/qc/dft/integrator.h>

@@ -106,7 +106,7 @@ class DenFunctional: virtual public SavableState {
     DenFunctional();
     DenFunctional(const Ref<KeyVal> &);
     DenFunctional(StateIn &);
-    ~DenFunctional();
+    virtual ~DenFunctional();
     void save_data_state(StateOut &);
 
     // Set to zero if dens_alpha == dens_beta everywhere.

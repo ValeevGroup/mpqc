@@ -146,7 +146,7 @@ ExternMOInfo::ExternMOInfo(std::string filename,
     in >> charge >> x >> y >> z;
     if (charge != -1.0) {
       // geometries must be in atomic units
-      molecule->add_atom(charge, x, y, z);
+      molecule->add_atom(static_cast<int>(charge), x, y, z);
     }
     else {
       have_atoms = false;

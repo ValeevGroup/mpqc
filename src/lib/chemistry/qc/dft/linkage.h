@@ -34,6 +34,7 @@
 #include <chemistry/qc/dft/integrator.h>
 #include <chemistry/qc/dft/functional.h>
 #include <chemistry/qc/dft/am05.h>
+#include <chemistry/qc/dft/solvent.h>
 
 namespace sc {
 
@@ -63,6 +64,7 @@ static ForceLink<HSOSKS> dft_force_link_x_;
 static ForceLink<VWNLCFunctional> dft_force_link_y_;
 static ForceLink<NewP86CFunctional> dft_force_link_z_;
 static ForceLink<AM05Functional> dft_force_link_aa_;
+static ForceLink<BEMSolventH> dft_force_link_ab_;
 
 }
 

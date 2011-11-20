@@ -126,7 +126,11 @@ int try_main(int argc, char **argv)
   const std::string obs_name(obs_name_cstr ? obs_name_cstr : "");
   // may receive CABS basis set name
   const char* cabs_name_cstr = opt.retrieve("cabs");
-  const std::string cabs_name(cabs_name_cstr ? cabs_name_cstr : "");
+  std::string cabs_name(cabs_name_cstr ? cabs_name_cstr : "");
+  // if OBS given but CABS basis is not, look up a default value
+  if (cabs_name.empty() && not obs_name.empty()) {
+    cabs_name = R12Technology::default_cabs_name(obs_name);
+  }
   // may receive DFBS basis set name
   const char* dfbs_name_cstr = opt.retrieve("dfbs");
   std::string dfbs_name(dfbs_name_cstr ? dfbs_name_cstr : "");

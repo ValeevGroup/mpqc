@@ -1776,7 +1776,7 @@ R12Technology::make_auto_cabs(const Ref<GaussianBasisSet>& bs) {
   Ref<GaussianBasisSet> cabs;
 
   // if bs has a known name, use a hardwired CABS name
-  const std::string cabs_name = default_cabs_name(std::string(bs->name()));
+  const std::string cabs_name = default_cabs_name(std::string(bs->label()));
 
   if (cabs_name.empty()) { // no CABS in the library -- make a relatively conservative CABS
     // default CABS = Uncontracted(aug-cc-pV5Z) limited up to 3 L_occ + 1

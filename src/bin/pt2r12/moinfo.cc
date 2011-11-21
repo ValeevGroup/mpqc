@@ -412,7 +412,7 @@ ExternMOInfo::ExternMOInfo(std::string filename,
     RefSymmSCMatrix S_sph_sph;
     {
       localints->set_basis(basis,basis);
-      S_sph_sph = detail::onebodyint<&Integral::overlap>(basis, localints);
+      S_sph_sph = detail::onebodyint_ao<&Integral::overlap>(basis, localints);
     }
     Ref<OverlapOrthog> orthog = new OverlapOrthog(OverlapOrthog::Symmetric, S_sph_sph,
                                                   S_sph_sph.kit(), 1e-8, 0);

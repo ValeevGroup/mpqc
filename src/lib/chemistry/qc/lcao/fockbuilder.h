@@ -88,6 +88,7 @@ namespace sc {
     };
 
     typedef Ref<OneBodyInt> (Integral::*OneBodyIntCreator)();
+
     template <OneBodyIntCreator OpEval>
     RefSymmSCMatrix onebodyint(const Ref<GaussianBasisSet>& bas,
                                const Ref<Integral>& integral) {
@@ -108,6 +109,18 @@ namespace sc {
       pl->symmetrize(opmat_ao, opmat);
 
       return opmat;
+    }
+
+    template <OneBodyIntCreator OpEval>
+    RefSymmSCMatrix onebodyint_ao(const Ref<GaussianBasisSet>& bas,
+                                  const Ref<Integral>& integral) {
+      RefSymmSCMatrix opmat_so = onebodyint<OpEval>(bas, integral);
+      Ref<Integral> localints = integral->clone();
+      localints->set_basis(bas);
+      Ref<PetiteList> pl = localints->petite_list();
+
+      RefSymmSCMatrix opmat_ao = pl->to_AO_basis(opmat_so);
+      return opmat_ao;
     }
 
     template <OneBodyIntCreator OpEval>

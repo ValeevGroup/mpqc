@@ -373,11 +373,12 @@ ExternMOInfo::ExternMOInfo(std::string filename,
   while(have_coefs) {
     int row, col;
     double value;
-#ifdef PT2R12GAMESS
-    in >> col >> row >> value;
-#else
+// #ifdef PT2R12GAMESS
+//     in >> col >> row >> value;
+// #else
+//     in >> row >> col >> value;
+// #endif
     in >> row >> col >> value;
-#endif
     if (row != -1) {
       --row;  --col;
       coefs_extern.set_element(row,col,value);

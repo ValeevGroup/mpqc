@@ -239,20 +239,27 @@ int try_main(int argc, char **argv)
   orbs->print_detail();
 #endif
 
-  // Currently we support two choices for reporting 2-RDM:
-  // in active space only (MOLCAS) or in the entire occupied space (GAMESS)
+//   // Currently we support two choices for reporting 2-RDM:
+//   // in active space only (MOLCAS) or in the entire occupied space (GAMESS)
+//   Ref<ExternSpinFreeRDMTwo> rdrdm2;
+// #if PT2R12GAMESS
+//   // GAMESS reports the density in occupied orbitals
+//   rdrdm2 = new ExternSpinFreeRDMTwo(filename_prefix + ".pt2r12.rdm2.dat",
+//                                     rdorbs->occindexmap_occ(),
+//                                     occ_orbs);
+// #else
+//   // MOLCAS reports the density in active orbitals
+//   rdrdm2 = new ExternSpinFreeRDMTwo(filename_prefix + ".pt2r12.rdm2.dat",
+//                                     rdorbs->actindexmap_occ(),
+//                                     occ_orbs);
+// #endif
+
+// the 2-RDM is reported in the active space only (for both MOLCAS and GAMESS))
   Ref<ExternSpinFreeRDMTwo> rdrdm2;
-#if PT2R12GAMESS
-  // GAMESS reports the density in occupied orbitals
-  rdrdm2 = new ExternSpinFreeRDMTwo(filename_prefix + ".pt2r12.rdm2.dat",
-                                    rdorbs->occindexmap_occ(),
-                                    occ_orbs);
-#else
-  // MOLCAS reports the density in active orbitals
   rdrdm2 = new ExternSpinFreeRDMTwo(filename_prefix + ".pt2r12.rdm2.dat",
                                     rdorbs->actindexmap_occ(),
                                     occ_orbs);
-#endif
+
 
   // create World in which we will compute
   // use defaults for all params

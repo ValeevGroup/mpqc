@@ -219,10 +219,10 @@ class MemoryGrp: public DescribedClass {
     */
     double* malloc_local_double(size_t ndouble);
 
-    /** Free data that was allocated with malloc_local. */
-    virtual void free_local(void *data);
-    /** Free data that was allocated with malloc_local_double. */
-    void free_local_double(double *data);
+    /** Free data that was allocated with malloc_local, and set the pointer to 0 */
+    virtual void free_local(void * & data);
+    /** Free data that was allocated with malloc_local_double, and set the pointer to 0  */
+    void free_local_double(double * & data);
 
     /** Processes outstanding requests. Some memory group implementations
         don't have access to real shared memory or even active messages.

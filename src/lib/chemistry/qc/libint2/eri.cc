@@ -145,6 +145,7 @@ EriLibint2::~EriLibint2()
 { 
   unmanage_array(Libint_[0].stack);
   LIBINT2_PREFIXED_NAME(libint2_cleanup_eri)(&Libint_[0]);
+  Libint_[0].stack = 0;
   ConsumableResources::get_default_instance()->release_memory(Libint_.size() * sizeof(Libint_[0]));
   deallocate(target_ints_buffer_);
   deallocate(cart_ints_);

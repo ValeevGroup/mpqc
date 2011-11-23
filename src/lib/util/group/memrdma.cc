@@ -117,8 +117,9 @@ void
 RDMAMemoryGrp::set_localsize(size_t localsize)
 {
   for (int i=0; i<pools_.size(); i++) {
-      free_local(pools_[i]);
-    }
+    void* pool_i_ptr = pools_[i];
+    free_local(pool_i_ptr);
+  }
   pools_.resize(0);
 
   MsgMemoryGrp::set_localsize(localsize);

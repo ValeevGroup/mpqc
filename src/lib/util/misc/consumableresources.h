@@ -169,8 +169,11 @@ namespace sc {
           void* array_ptr = static_cast<void*>(array);
           // make sure it's NOT managed by me
           std::map<void*, std::size_t>::iterator pos = managed_arrays_.find(array_ptr);
-          if (pos != managed_arrays_.end())
-            throw ProgrammingError("ConsumableResources::manage_array() -- managed array given", __FILE__, __LINE__, class_desc());
+          if (pos != managed_arrays_.end()) {
+            std::ostringstream oss;
+            oss << "ConsumableResources::manage_array() -- given managed array (" << &(array[0]) << ")";
+            throw ProgrammingError(oss.str().c_str(), __FILE__, __LINE__, class_desc());
+          }
           consume_memory(size);
           managed_arrays_[array_ptr] = size;
         }
@@ -193,9 +196,11 @@ namespace sc {
             release_memory(size);
             managed_arrays_.erase(pos);
           }
-          else
-            throw ProgrammingError("ConsumableResources::unmanage_array() -- non-managed array given",
-                                   __FILE__, __LINE__, class_desc());
+          else {
+            std::ostringstream oss;
+            oss << "ConsumableResources::unmanage_array() -- given non-managed array (" << &(array[0]) << ")";
+            throw ProgrammingError(oss.str().c_str(), __FILE__, __LINE__, class_desc());
+          }
         }
       }
 

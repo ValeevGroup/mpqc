@@ -58,7 +58,7 @@ class ARMCIMemoryGrp: public RDMAMemoryGrp {
     void deactivate();
 
     void* malloc_local(size_t nbyte);
-    void free_local(void *data);
+    void free_local(void * & data);
 
     void print(std::ostream &o = ExEnv::out0()) const;
 };

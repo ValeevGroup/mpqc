@@ -250,8 +250,10 @@ ExternMOInfo::ExternMOInfo(std::string filename,
           const size_t first_not_whitespace = buffer.find_first_not_of(
               " ", first_whitespace);
           const char first_char = buffer[first_not_whitespace];
+          const bool first_char_is_a_letter = (first_char >= 'a' && first_char <= 'z') ||
+                                              (first_char >= 'A' && first_char <= 'Z');
 
-          if (isalpha(first_char) == true) { // start of new shell
+          if (first_char_is_a_letter) { // start of new shell
             have_more_shells = true;
             have_more_prims = false;
           } else { // have a primitive

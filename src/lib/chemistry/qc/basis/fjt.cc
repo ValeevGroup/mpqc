@@ -54,7 +54,7 @@ double Taylor_Fjt::relative_zero_(1e-6);
 Taylor_Fjt::Taylor_Fjt(unsigned int mmax, double accuracy) :
     cutoff_(accuracy), interp_order_(TAYLOR_INTERPOLATION_ORDER),
     ExpMath_(interp_order_+1,2*(mmax + interp_order_ - 1)),
-    F_(new double[mmax+1])
+    F_(allocate<double>(mmax+1))
 {
     const double sqrt_pi = std::sqrt(M_PI);
 
@@ -68,7 +68,7 @@ Taylor_Fjt::Taylor_Fjt(unsigned int mmax, double accuracy) :
   oodelT_ = 1.0/delT_;
   max_m_ = mmax + interp_order_ - 1;
 
-  T_crit_ = new double[max_m_ + 1];   /*--- m=0 is included! ---*/
+  T_crit_ = allocate<double>(max_m_ + 1);   /*--- m=0 is included! ---*/
   max_T_ = 0;
   /*--- Figure out T_crit for each m and put into the T_crit ---*/
   for(int m=max_m_; m>=0; --m) {
@@ -159,12 +159,10 @@ Taylor_Fjt::Taylor_Fjt(unsigned int mmax, double accuracy) :
 
 Taylor_Fjt::~Taylor_Fjt()
 {
-  delete[] F_;
-  delete[] T_crit_;
-  T_crit_ = 0;
+  deallocate(F_);
+  deallocate(T_crit_);
   deallocate(grid_[0]);
   deallocate(grid_);
-  grid_ = NULL;
 }
 
 /* Using the tabulated incomplete gamma function in gtable, compute
@@ -271,7 +269,7 @@ Taylor_Fjt::values(int l, double T)
 Taylor_Fjt::ExpensiveMath::ExpensiveMath(int ifac, int idf)
 {
   if (ifac >= 0) {
-      fac = new double[ifac+1];
+      fac = allocate<double>(ifac+1);
       fac[0] = 1.0;
       for(int i=1; i<=ifac; i++) {
 	  fac[i] = i*fac[i-1];
@@ -279,7 +277,7 @@ Taylor_Fjt::ExpensiveMath::ExpensiveMath(int ifac, int idf)
   }
 
   if (idf >= 0) {
-      df = new double[idf+1];
+      df = allocate<double>(idf+1);
       /* df[i] gives (i-1)!!, so that (-1)!! is defined... */
       df[0] = 1.0;
       if (idf >= 1) df[1] = 1.0;
@@ -293,8 +291,8 @@ Taylor_Fjt::ExpensiveMath::ExpensiveMath(int ifac, int idf)
 
 Taylor_Fjt::ExpensiveMath::~ExpensiveMath()
 {
-  delete[] fac;
-  delete[] df;
+  deallocate(fac);
+  deallocate(df);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -318,7 +316,7 @@ FJT::FJT(int max)
   maxj = max;
 
   /* Allocate storage for gtable and int_fjttable. */
-  int_fjttable = new double[maxj+1];
+  int_fjttable = allocate<double>(maxj+1);
   gtable = allocate<double*>(ngtable());
   for (i=0; i<ngtable(); i++) {
       gtable[i] = allocate<double>(TABLESIZE);
@@ -360,7 +358,7 @@ FJT::FJT(int max)
     }
 
   /* Form some denominators, so divisions can be eliminated below. */
-  denomarray = new double[max+1];
+  denomarray = allocate<double>(max+1);
   denomarray[0] = 0.0;
   for (i=1; i<=max; i++) {
     denomarray[i] = 1.0/(2*i - 1);
@@ -373,12 +371,12 @@ FJT::FJT(int max)
 
 FJT::~FJT()
 {
-  delete[] int_fjttable;
+  deallocate(int_fjttable);
   for (int i=0; i<maxj+7; i++) {
-      delete[] gtable[i];
-    }
-  delete[] gtable;
-  delete[] denomarray;
+    deallocate(gtable[i]);
+  }
+  deallocate(gtable);
+  deallocate(denomarray);
   }
 
 /* Using the tabulated incomplete gamma function in gtable, compute

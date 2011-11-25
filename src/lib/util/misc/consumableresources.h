@@ -40,6 +40,8 @@ namespace sc {
 
   /// ConsumableResources keeps track of consumable resources (memory, disk).
   class ConsumableResources : virtual public SavableState {
+      static int debug_class() { return 0; }
+
     public:
       /** A KeyVal constructor is used to generate a ConsumableResources
           object from the input. The full list of keywords
@@ -116,6 +118,16 @@ namespace sc {
         size *= sizeof(T);
         consume_memory(size);
         void* array_ptr = static_cast<void*>(array);
+        if (debug_class() > 0) {
+          ExEnv::out0() << indent << "ConsumableResources::allocate(size=" << size << ") => array="
+                        << array_ptr << std::endl;
+          // make sure the pointer is not managed (may happen if delete was called directly, not deallocate on a managed buffer before)
+          std::map<void*, std::size_t>::iterator pos = managed_arrays_.find(array_ptr);
+          if (pos != managed_arrays_.end()) {
+            ExEnv::out0() << indent << "WARNING: " << array_ptr << " is on the list of managed buffers. size="
+                          << managed_arrays_[array_ptr] << std::endl;
+          }
+        }
         managed_arrays_[array_ptr] = size;
         return array;
       }
@@ -139,6 +151,9 @@ namespace sc {
             if (size / sizeof(T) > 1) delete[] array;
             else delete array;
             release_memory(size);
+            if (debug_class() > 0) {
+              ExEnv::out0() << indent << "ConsumableResources::deallocate(array=" << array_ptr << "): size=" << size << std::endl;
+            }
             managed_arrays_.erase(pos);
           }
           else
@@ -171,11 +186,15 @@ namespace sc {
           std::map<void*, std::size_t>::iterator pos = managed_arrays_.find(array_ptr);
           if (pos != managed_arrays_.end()) {
             std::ostringstream oss;
-            oss << "ConsumableResources::manage_array() -- given managed array (" << &(array[0]) << ")";
+            oss << indent << "ConsumableResources::manage_array() -- given managed array (ptr="
+                << array_ptr << " size=" << size << ")";
             throw ProgrammingError(oss.str().c_str(), __FILE__, __LINE__, class_desc());
           }
           consume_memory(size);
           managed_arrays_[array_ptr] = size;
+          if (debug_class() > 0) {
+            ExEnv::out0() << indent << "ConsumableResources::manage_array(array=" << array_ptr << ", size=" << size << ")" << std::endl;
+          }
         }
       }
       /// removes array to the list of managed arrays and increments the memory counter
@@ -194,11 +213,15 @@ namespace sc {
           if (pos != managed_arrays_.end()) {
             const size_t size = pos->second;
             release_memory(size);
+            if (debug_class() > 0) {
+              ExEnv::out0() << "ConsumableResources::unmanage_array(array=" << array_ptr << ": size=" << size << ")" << std::endl;
+            }
             managed_arrays_.erase(pos);
           }
           else {
             std::ostringstream oss;
-            oss << "ConsumableResources::unmanage_array() -- given non-managed array (" << &(array[0]) << ")";
+            oss << "ConsumableResources::unmanage_array() -- given non-managed array (ptr="
+                << &(array[0]) << " size=" << pos->second << ")";
             throw ProgrammingError(oss.str().c_str(), __FILE__, __LINE__, class_desc());
           }
         }

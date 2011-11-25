@@ -248,19 +248,23 @@ MemoryGrp::malloc_local(size_t nbyte)
 void
 MemoryGrp::free_local(void * & data)
 {
-  deallocate(reinterpret_cast<char*&>(data));
+  char* data_char_ptr = static_cast<char*>(data);
+  deallocate(data_char_ptr);
+  data = 0;
 }
 
 double*
 MemoryGrp::malloc_local_double(size_t ndouble)
 {
-  return reinterpret_cast<double*>(malloc_local(ndouble*sizeof(double)));
+  return static_cast<double*>(malloc_local(ndouble*sizeof(double)));
 }
 
 void
 MemoryGrp::free_local_double(double * & data)
 {
-  free_local(reinterpret_cast<void*&>(data));
+  void* data_void_ptr = static_cast<void*>(data);
+  free_local(data_void_ptr);
+  data = 0;
 }
 
 void

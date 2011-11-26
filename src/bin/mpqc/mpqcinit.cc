@@ -243,8 +243,11 @@ MPQCInit::init_timer(const Ref<MessageGrp> &grp, Ref<KeyVal> keyval)
 {
   grp->sync(); // make sure nodes are sync'ed before starting timings
   Ref<RegionTimer> tim;
-  if (keyval.nonnull()) { if (keyval->exists("timer")) tim << keyval->describedclassvalue("timer"); }
-  else                         tim = new ParallelRegionTimer(grp,"mpqc",1,1);
+  if (keyval.nonnull())
+    if (keyval->exists("timer"))
+      tim << keyval->describedclassvalue("timer");
+  if (tim.null())
+    tim = new ParallelRegionTimer(grp,"mpqc",1,1);
   RegionTimer::set_default_regiontimer(tim);
 }
 

@@ -49,20 +49,20 @@ class.
 <dt><tt>grad</tt><dd> This keyword specifies the MolecularGradient object
         that will be used to compute nuclear forces, if they are necessary (i.e. if <tt>opt</tt>
         was given or <tt>do_grad</tt> was set to true. The only useful
-        option at the moment is FinDispMolecularGradient. There is no need
-        to specify this keyword for mole objects that have analytic gradients
-        implemented.
+        option at the moment is FinDispMolecularGradient. <b>This keyword will be ignored
+        for mole objects that have analytic gradients
+        implemented.</b>
 
 <dt><tt>freq</tt><dd> This optional keyword will be checked in frequency computations (if <tt>do_freq=true</tt>).
-        It specifies an MolecularFrequencies object. It may be necessary for testing purposes, i.e. for
+        It specifies a MolecularFrequencies object. It may be necessary for testing purposes, i.e. for
         computing frequencies in lower point groups than used for computing mole.
-        The default is to use MolecularFrequency object initialized with mole's molecule object.
+        The default is to use a MolecularFrequency object initialized with mole's molecule object.
 
 <dt><tt>hess</tt><dd> This keyword specifies the MolecularHessian object
         that will be used to compute force constants. The only useful
-        option at the moment is FinDispMolecularHessian. There is no need
-        to specify this keyword for mole objects that have analytic hessians
-        implemented.
+        option at the moment is FinDispMolecularHessian. <b>This keyword
+        will be ignored for mole objects that have analytic hessians
+        implemented.</b>
 
 <dt><tt>thread</tt><dd> This specifies an object of type ThreadGrp that can
         be used to advantage on shared-memory multiprocessor machines for
@@ -79,12 +79,12 @@ class.
 
         <ul>
 
-        <li><tt>true</tt> and optimization is to be performed <br>
+        <li><tt>true</tt> and optimization is to be performed <br />
 
         <tt>opt</tt> object will be checkpointed after each iteration.
         The checkpoint file suffix is ".ckpt".
 
-        <li><tt>true</tt> and optimization is not performed <br>
+        <li><tt>true</tt> and optimization is not performed <br />
 
         <tt>mole</tt> object will be checkpointed at intermediate points.
         The manner in which
@@ -92,6 +92,18 @@ class.
         The checkpoint file suffix is usually ".wfn", however
         in general it will depend on the particular specialization of
         <tt>MolecularEnergy</tt>.
+
+        <li><tt>true</tt> and <tt>molgrad</tt> object is used to evaluate gradient
+        numerically <br />
+
+        <tt>molgrad</tt> object will be checkpointed after each displacement.
+        The checkpoint file suffix is ".ckpt.grad".
+
+        <li><tt>true</tt> and <tt>molhess</tt> object is used to evaluate hessian
+        numerically <br />
+
+        <tt>molhess</tt> object will be checkpointed after each displacement.
+        The checkpoint file suffix is ".ckpt.hess".
 
         </ul>
 
@@ -140,7 +152,7 @@ class.
         The default is false.
 
 <dt><tt>do_cca</tt><dd> The value of this keywork is boolean.  If true
-        the cca embedded framework will be initialized.  The default is 
+        the CCA embedded framework will be initialized.  The default is 
         false.
 
 <dt><tt>cca_path</tt><dd> The value of this keyword is a string that provides
@@ -218,7 +230,7 @@ mpqc: (
   )
 )
 </pre>
-<br>
+<br />
 
 We start with a descriptive comment.  Comments begin with a <tt>%</tt>.
 Everything from the <tt>%</tt> to the end of the line is ignored.
@@ -226,7 +238,7 @@ Everything from the <tt>%</tt> to the end of the line is ignored.
 <pre>
 \% This input does a Hartree-Fock calculation on water.
 </pre>
-<br>
+<br />
 
 Now lets set up a Molecule object.  The name of the object comes first, it
 is <tt>molecule</tt>.  Then, in angle brackets, comes the type of the
@@ -238,7 +250,7 @@ that will be given to Molecule KeyVal constructor.
 <pre>
 molecule<Molecule>: (
 </pre>
-<br>
+<br />
 
 The point group of the molecule is needed.  This is done by assigning
 <tt>symmetry</tt> to a case insensitive Schoenflies symbol that is used to
@@ -247,7 +259,7 @@ initialize a PointGroup object.  An Abelian point group should be used.
 <pre>
   symmetry = C2V
 </pre>
-<br>
+<br />
 
 The default unit for the Cartesian coordinates is Bohr.  You can
 specify other units by assigned <tt>unit</tt> to a string that will be
@@ -256,7 +268,7 @@ used to initialize a Units object.
 <pre>
   unit = angstrom
 </pre>
-<br>
+<br />
 
 Finally, the atoms and coordinates are given.  This can be given in the
 shorthand table syntax shown below.  The headings of the table are the
@@ -276,7 +288,7 @@ atom.
   }
 )
 </pre>
-<br>
+<br />
 
 Next, a basis set object is given.
 
@@ -286,7 +298,7 @@ basis<GaussianBasisSet>: (
   molecule = $:molecule
 )
 </pre>
-<br>
+<br />
 
 Now we will give the main body of input.  All the subsequent
 keywords will be grouped in the <tt>mpqc</tt> section of the input
@@ -295,7 +307,7 @@ keywords will be grouped in the <tt>mpqc</tt> section of the input
 <pre>
 mpqc: (
 </pre>
-<br>
+<br />
 
 Next we give the <tt>mole</tt> keyword which provides a specialization of
 the MolecularEnergy class.  In this case we will do a closed-shell
@@ -309,7 +321,7 @@ input is included with the rest of the input for the child class.
 <pre>
   mole<CLHF>: (
 </pre>
-<br>
+<br />
 
 The next line specifies the molecule to be used.  There are two things to
 note, first that this is actually a reference to complete molecule
@@ -330,7 +342,7 @@ follow its parent classes up to MolecularEnergy, you'll find that
 <pre>
     molecule = $:molecule
 </pre>
-<br>
+<br />
 
 Just as we gave <tt>molecule</tt>, specify the basis set with the <tt>basis</tt> keyword
 as follows:
@@ -338,7 +350,7 @@ as follows:
 <pre>
     basis = $:basis
 </pre>
-<br>
+<br />
 
 Now we close off the parentheses we opened above and we are finished.
 
@@ -346,7 +358,7 @@ Now we close off the parentheses we opened above and we are finished.
   )
 )
 </pre>
-<br>
+<br />
 
 \section mpqcoosamp Sample Object-Oriented Input Files
 
@@ -407,7 +419,7 @@ mpqc: (
   )
 )
 </pre>
-<br>
+<br />
 
 \subsection mpqcoosampmp2 MP2 Energy
 
@@ -447,7 +459,7 @@ mpqc: (
   )
 )
 </pre>
-<br>
+<br />
 
 \subsection mpqcoosampmp2r12 MP2-R12 energy
 
@@ -498,7 +510,7 @@ mpqc: (
   )
 )
 </pre>
-<br>
+<br />
 
 \subsection mpqcoosamphfopt Hartree-Fock Optimization
 
@@ -550,7 +562,7 @@ mpqc: (
   )
 )
 </pre>
-<br>
+<br />
 
 \subsection mpqcoosampzapt2opt Optimization
 
@@ -616,7 +628,7 @@ mpqc: (
   )
 )
 </pre>
-<br>
+<br />
 
 \subsection mpqcoosamphessopt Optimization with a Computed Guess Hessian
 
@@ -683,7 +695,7 @@ mpqc: (
   )
 )
 </pre>
-<br>
+<br />
 
 \subsection mpqcoosampoptnewt Optimization Using Newton's Method
 
@@ -757,7 +769,7 @@ mpqc: (
   )
 )
 </pre>
-<br>
+<br />
 
 \subsection mpqcoosamphffreq Hartree-Fock Frequencies
 
@@ -795,7 +807,7 @@ mpqc: (
   
 )
 </pre>
-<br>
+<br />
 
 \subsection mpqcoosampcoor Giving Coordinates and a Guess Hessian
 
@@ -908,7 +920,7 @@ mpqc: (
   )
 )
 </pre>
-<br>
+<br />
 
 \subsection mpqcoosamphb Optimization with a Hydrogen Bond
 
@@ -967,7 +979,7 @@ mpqc: (
   )
 )
 </pre>
-<br>
+<br />
 
 \subsection mpqcoosampfixopt Fixed Coordinate Optimization
 
@@ -1041,7 +1053,7 @@ mpqc: (
   )
 )
 </pre>
-<br>
+<br />
 
 \subsection mpqcoosampts Transition State Optimization
 
@@ -1102,7 +1114,7 @@ mpqc: (
   )
 )
 </pre>
-<br>
+<br />
 
 \subsection mpqcoosamptshess Transition State Optimization with a Computed Guess Hessian
 
@@ -1178,7 +1190,7 @@ mpqc: (
   )
 )
 </pre>
-<br>
+<br />
 
 
 \subsection mpqcoosamphfckpt Hartree-Fock energy with intermediate checkpointing
@@ -1218,7 +1230,7 @@ mpqc: (
   )
 )
 </pre>
-<br>
+<br />
 
 The <tt>mole</tt> object will be saved to files named "h2o-rhf-STO3G.wfn.<iter#>.tmp"
 where <iter#> is the SCF iteration number (3, 6, etc.). Only the most recent file is kept,
@@ -1275,7 +1287,7 @@ mpqc: (
   )
 )
 </pre>
-<br>
+<br />
 
 The <tt>mole</tt> object will be saved to a file named <tt>h2o-mp2r12ap-vdz-avdz.wfn"</tt>.
 Keyword <tt>filename</tt> here is used to set the default file name prefix.
@@ -1318,7 +1330,7 @@ mpqc: (
   )
 )
 </pre>
-<br>
+<br />
 
 The second input reuses the <tt>mole</tt> object from the previous run
 to compute the gradient of the Hartree-Fock energy.
@@ -1333,7 +1345,7 @@ mpqc: (
   do_gradient = yes
 )
 </pre>
-<br>
+<br />
 
 \subsection mpqcoosampmp2usinghfwfn MP2 Energy computed using precomputed Hartree-Fock wave function
 
@@ -1375,7 +1387,7 @@ mpqc: (
   )
 )
 </pre>
-<br>
+<br />
 
 Note that now object <tt>reference</tt> is of type <tt>SavableStateProxy</tt>,
 rather than <tt>CLHF</tt>. <tt>SavableStateProxy</tt> is a special object type
@@ -1429,6 +1441,6 @@ mpqc: (
   )
 )
 </pre>
-<br>
+<br />
 
 */

@@ -2,13 +2,28 @@
 /** \page overview Overview
 
 The Scientific Computing toolkit (SC) provides C++ class libraries for
-scientific computation.  Included are classes for managing memory, saving
+scientific computation. Included are classes for managing memory, saving
 and restoring the state of objects, reading objects from an input file,
 parallel communication, matrix algebra, among others.
 
-Class libraries supporting quantum chemistry applications are provided with
-the full distribution of SC.  Also included is the Massively Parallel
-Quantum Chemistry program (MPQC) which is built upon these libraries.
+The development of SC has been driven by the development of the Massively
+Parallel Quantum Chemistry (MPQC) program, which is built on top of SC.
+Thus, class libraries supporting
+quantum chemistry applications are provided with
+the full distribution of SC.  While, currently, MPQC and SC
+are distributed together, the most of SC code is problem-domain independent.  For
+example, the utility classes provided in src/lib/util do not require the
+code in src/lib/math or src/lib/chemistry and the src/lib/math classes do
+not require src/lib/chemistry.
+
+The \ref mpqc "MPQC" program is the end-user code for practical
+application of the variety of quantum chemistry methods implemented in SC.
+Although MPQC lacks many features demanded by many mainstream users of quantum chemistry,
+it can be used by non-experts for applications of routine (Hartree-Fock, Density Functional Theory,
+MP2) as well as some unique advanced quantum chemistry methods (explicitly-correlated
+coupled-cluster and multireference methods). MPQC is also
+well-suited for learning quantum chemistry by advanced undergraduate
+and beginning graduate students.
 
 MPQC and SC are works-in-progress.  They are experimental codes that are
 used to apply new computational approaches to problems in scientific
@@ -18,15 +33,8 @@ distribution may be on the verge of obsolescence and others may be
 unfinished work that are intended to provide new functionality in later
 releases.
 
-The development of SC has been driven by the development of the Massively
-Parallel Quantum Chemistry (MPQC) program.  While, currently, MPQC and SC
-are distributed together, the SC code is problem-domain independent.  For
-example, the utility classes provided in src/lib/util do not require the
-code in src/lib/math or src/lib/chemistry and the src/lib/math classes do
-not require src/lib/chemistry.
-
-MPQC and SC run on Unix compatible workstations (Intel/Linux, SGI/IRIX IBM
-RS/6000), symmetric multi-processors (Intel/Linux, SGI/IRIX), and massively
-parallel computers (IBM SP, Intel Paragon).
+MPQC and SC run on Unix platforms of all kinds, from a laptop running
+Linux or Apple OS X to a massively-parallel distributed-memory computer such as
+IBM BlueGene/P or Cray XT/XE.
 
 */

@@ -3,9 +3,9 @@
 
    MPQC supports two input formats.  The primary input is an object
 oriented format which gives users access to all of MPQC's options.  The
-second format allows access to a subset of MPQC's capabilities, but is more
-intuitive and easier to learn.  New users are advised to start with the
-simplified format.  MPQC can be used to convert the simplified format to
+second format allows access to a <em>subset</em> of MPQC's capabilities, but is more
+intuitive and easier to learn.  <b>New users are strongly advised to start with the
+simplified format.</b>  MPQC can be used to convert the simplified format to
 the full object-oriented format with the <tt>-i</tt> option.
 
    Each of these input formats is described in the following two chapters:

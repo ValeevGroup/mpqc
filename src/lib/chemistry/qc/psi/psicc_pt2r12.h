@@ -116,7 +116,7 @@ namespace sc {
   };
 
   ///////////////////////////////////////////////////////////////////
-  /// PsiCCSD_PT2R12T is a concrete implementation of the \f$\mathrm{CCSD}(T)_{\overline{R12}\f$ method
+  /// PsiCCSD_PT2R12T is a concrete implementation of the \f$\mathrm{CCSD}(T)_{\overline{R12}}\f$ method
   class PsiCCSD_PT2R12T : public PsiCC_PT2R12 {
       double eccsd_;
       double e_t_;

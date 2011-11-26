@@ -284,7 +284,7 @@ sub process_file {
 	}
 
         if ($gradient ne "default") {
-            if ($method =~ /v[12](lb)?$/) {
+            if ($method =~ /v[12](lb)?$/i) {
                 # these methods don't support gradients
                 $parse->set_value("gradient", "no");
             }
@@ -342,7 +342,7 @@ sub process_file {
         }
 
         my $spinok = 1;
-        if (($method eq "MP2" || $method eq "LMP2" || $method =~ /MP2V/) && $mult > 1) {
+        if (($method eq "MP2" || $method eq "mp2" || $method eq "LMP2" || $method eq "lmp2" || $method =~ /MP2V/i) && $mult > 1) {
             $spinok = 0;
         }
 

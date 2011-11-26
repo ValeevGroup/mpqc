@@ -222,7 +222,8 @@ class FinDispMolecularHessian: public MolecularHessian {
 
       void set_eliminate_cubic_terms(bool e) { eliminate_cubic_terms_ = e; }
       void set_disp_pg(const Ref<PointGroup>& pg) { disp_pg_ = pg; }
-      void set_restart(bool r) { restart_ = r; }
+      void set_restart(bool r = true) { restart_ = r; }
+      void set_checkpoint(bool c = true) { checkpoint_ = c; }
 
     private:
       static ClassDesc class_desc_;

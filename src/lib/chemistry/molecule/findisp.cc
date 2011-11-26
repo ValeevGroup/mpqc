@@ -100,11 +100,9 @@ FinDispMolecularHessian::Params::Params()
   accuracy_ = 1e-8;
   energy_accuracy_ = disp_/1.e6;
   gradient_accuracy_ = disp_/1.e3;
-  //checkpoint_ = DEFAULT_CHECKPOINT,
-  checkpoint_ = 0;
+  checkpoint_ = DEFAULT_CHECKPOINT;
   checkpoint_file_ = SCFormIO::fileext_to_filename_string(".ckpt.hess");
-  //restart_ = DEFAULT_RESTART;
-  restart_ = 0;
+  restart_ = DEFAULT_RESTART;
   restart_file_ = SCFormIO::fileext_to_filename_string(".ckpt.hess");
   debug_ = 0;
 }

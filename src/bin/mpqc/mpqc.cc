@@ -801,7 +801,10 @@ try_main(int argc, char *argv[])
                mole->value_implemented()) {
         // if mole can compute energies or gradients, use finite
         // differences to compute the hessian
-        molhess = new FinDispMolecularHessian(mole);
+        Ref<FinDispMolecularHessian> fdmolhess = new FinDispMolecularHessian(mole);
+        fdmolhess->params()->set_restart(restart);
+        fdmolhess->params()->set_checkpoint(checkpoint);
+        molhess = fdmolhess;
         xhessian = molhess->cartesian_hessian();
         molhess = 0;
       }

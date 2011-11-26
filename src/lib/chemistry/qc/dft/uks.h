@@ -73,8 +73,6 @@ class UKS: public UnrestrictedSCF {
     void two_body_energy(double &ec, double &ex);
 
     int value_implemented() const;
-    int gradient_implemented() const;
-
   protected:
     double exc_;
     
@@ -85,6 +83,8 @@ class UKS: public UnrestrictedSCF {
 
     void init_vector();
     void done_vector();
+  private:
+    bool analytic_gradient_implemented() const;
 };
 
 }

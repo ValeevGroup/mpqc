@@ -247,16 +247,16 @@ TaylorMolecularEnergy::value_implemented() const
   return 1;
 }
 
-int
-TaylorMolecularEnergy::gradient_implemented() const
+bool
+TaylorMolecularEnergy::analytic_gradient_implemented() const
 {
   return coordinates_.null() && maxorder_ >= 1;
 }
 
-int
-TaylorMolecularEnergy::hessian_implemented() const
+bool
+TaylorMolecularEnergy::analytic_hessian_implemented() const
 {
-  return 0;
+  return false;
 }
 
 /////////////////////////////////////////////////////////////////////////////

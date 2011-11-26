@@ -74,10 +74,10 @@ HSOSHF::value_implemented() const
   return 1;
 }
 
-int
-HSOSHF::gradient_implemented() const
+bool
+HSOSHF::analytic_gradient_implemented() const
 {
-  return 1;
+  return true;
 }
 
 void

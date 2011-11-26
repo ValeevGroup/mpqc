@@ -86,7 +86,6 @@ namespace sc {
       PsiCC_PT2R12(StateIn&);
       ~PsiCC_PT2R12();
       void save_data_state(StateOut&);
-      int gradient_implemented() const;
 
       const Ref<R12WavefunctionWorld>& r12world() const { return r12world_; }
       const Ref<R12IntEval>& r12eval() const { return r12eval_; }
@@ -111,7 +110,6 @@ namespace sc {
       PsiCCSD_PT2R12(StateIn&);
       ~PsiCCSD_PT2R12();
       void save_data_state(StateOut&);
-      int gradient_implemented() const;
       void compute();
       /// print
       void print(std::ostream&o=ExEnv::out0()) const;
@@ -130,7 +128,6 @@ namespace sc {
       PsiCCSD_PT2R12T(StateIn&);
       ~PsiCCSD_PT2R12T();
       void save_data_state(StateOut&);
-      int gradient_implemented() const;
       void compute();
       /// print
       void print(std::ostream&o=ExEnv::out0()) const;
@@ -148,7 +145,6 @@ namespace sc {
       PsiCC3_PT2R12(StateIn&);
       ~PsiCC3_PT2R12();
       void save_data_state(StateOut&);
-      int gradient_implemented() const;
       void compute();
       /// print
       void print(std::ostream&o=ExEnv::out0()) const;

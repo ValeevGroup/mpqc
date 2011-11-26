@@ -77,7 +77,6 @@ class HSOSKS: public HSOSSCF {
     void two_body_energy(double &ec, double &ex);
 
     int value_implemented() const;
-    int gradient_implemented() const;
 
   protected:
     void ao_fock(double accuracy);
@@ -95,6 +94,9 @@ class HSOSKS: public HSOSSCF {
     
     // overload of HSOSSCF::semicanonical
     void semicanonical();
+
+  private:
+    bool analytic_gradient_implemented() const;
 };
 
 }

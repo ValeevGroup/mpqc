@@ -147,7 +147,7 @@ class MBPT2_R12: public MBPT2 {
     RefSymmSCMatrix density();
 
     void obsolete();
-    int gradient_implemented() const;
+    bool analytic_gradient_implemented() const;
     int value_implemented() const;
     void set_desired_value_accuracy(double acc);
 

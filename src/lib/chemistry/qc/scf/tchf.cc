@@ -76,10 +76,10 @@ TCHF::value_implemented() const
   return 1;
 }
 
-int
-TCHF::gradient_implemented() const
+bool
+TCHF::analytic_gradient_implemented() const
 {
-  return 1;
+  return true;
 }
 
 void

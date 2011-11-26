@@ -883,11 +883,11 @@ namespace sc {
     PsiCC(s) {
   }
 
-  int PsiCCSD::gradient_implemented() const {
-    int impl = 0;
+  bool PsiCCSD::analytic_gradient_implemented() const {
+    bool impl = false;
     PsiSCF::RefType reftype = reference_->reftype();
     if (reftype == PsiSCF::rhf || reftype == PsiSCF::hsoshf)
-      impl = 1;
+      impl = true;
     return impl;
   }
 
@@ -927,12 +927,6 @@ namespace sc {
     PsiCC(s) {
   }
 
-  int PsiCCSD_T::gradient_implemented() const {
-    int impl = 0;
-    PsiSCF::RefType reftype = reference_->reftype();
-    return impl;
-  }
-
   void PsiCCSD_T::save_data_state(StateOut&s) {
     PsiCC::save_data_state(s);
     SavableState::save_state(reference_.pointer(), s);
@@ -965,12 +959,6 @@ namespace sc {
     PsiCC(s) {
   }
 
-  int PsiCC2::gradient_implemented() const {
-    int impl = 0;
-    PsiSCF::RefType reftype = reference_->reftype();
-    return impl;
-  }
-
   void PsiCC2::save_data_state(StateOut&s) {
     PsiCC::save_data_state(s);
     SavableState::save_state(reference_.pointer(), s);
@@ -1001,12 +989,6 @@ namespace sc {
 
   PsiCC3::PsiCC3(StateIn&s) :
     PsiCC(s) {
-  }
-
-  int PsiCC3::gradient_implemented() const {
-    int impl = 0;
-    PsiSCF::RefType reftype = reference_->reftype();
-    return impl;
   }
 
   void PsiCC3::save_data_state(StateOut&s) {

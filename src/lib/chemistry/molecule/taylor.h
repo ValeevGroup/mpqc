@@ -56,6 +56,10 @@ class TaylorMolecularEnergy: public MolecularEnergy {
 
     // the maximum order derivative that can be computed
     int maxorder_;
+
+    bool analytic_gradient_implemented() const;
+    bool analytic_hessian_implemented() const;
+
   public:
     TaylorMolecularEnergy(const Ref<KeyVal>&);
     TaylorMolecularEnergy(StateIn&);
@@ -64,8 +68,6 @@ class TaylorMolecularEnergy: public MolecularEnergy {
     void print(std::ostream& = ExEnv::out0()) const;
     void compute();
     int value_implemented() const;
-    int gradient_implemented() const;
-    int hessian_implemented() const;
 };
 
 }

@@ -83,6 +83,15 @@ class MolecularEnergy: public Function {
     /// overload this in classes that support computations in nonzero electric field
     virtual bool nonzero_efield_supported() const;
 
+    /** must overload this in a derived class if analytic gradient can be computed
+     * @return true (analytic gradient is available) or false (analytic gradient is not available, default)
+     */
+    virtual bool analytic_gradient_implemented() const { return false; }
+    /** must overload this in a derived class if analytic hessian can be computed
+     * @return true (analytic hessian is available) or false (analytic hessian is not available, default)
+     */
+    virtual bool analytic_hessian_implemented() const { return false; }
+
   public:
     MolecularEnergy(const MolecularEnergy&);
     /** The KeyVal constructor.
@@ -161,15 +170,30 @@ class MolecularEnergy: public Function {
     void guess_hessian(RefSymmSCMatrix&);
     RefSymmSCMatrix inverse_hessian(RefSymmSCMatrix&);
 
-    /// if hessian_implemented() is false then calling this->hessian() will throw. Use this function to
-    /// provide MolecularHessian object that will be used to compute hessian. Call this function with null pointer to restore the state
+    /** Reports whether gradient is implemented either analytically or using MolecularGradient object.
+     * I don't see a need to reimplement this in a derived class
+     * @return 0 (gradient cannot be computed) or 1 (gradient can be computed)
+     */
+    int gradient_implemented() const;
+    /** Reports whether hessian is implemented either analytically or using MolecularHessian object.
+     * I don't see a need to reimplement this in a derived class
+     * @return 0 (hessian cannot be computed) or 1 (hessian can be computed)
+     */
+    int hessian_implemented() const;
+
+    /// Use this function to provide MolecularHessian object
+    /// that will be used to compute hessian. You can call this function with null pointer to restore the state
     /// to the original state.
-    void set_hessian(const Ref<MolecularHessian>& hess);
+    void set_molhess(const Ref<MolecularHessian>& molhess);
+    const Ref<MolecularHessian>& molhess() const;
+    /// Will throw if hessian_implemented() returns 0
     RefSymmSCMatrix hessian();
-    /// if gradient_implemented() is false then calling this->gradient() will throw. Use this function to provide MolecularGradient object
-    /// that will be used to compute gradient. Call this function with null pointer to restore the state
+    /// Use this function to provide MolecularGradient object
+    /// that will be used to compute gradient. You can call this function with null pointer to restore the state
     /// to the original state.
-    void set_gradient(const Ref<MolecularGradient>& grad);
+    void set_molgrad(const Ref<MolecularGradient>& molgrad);
+    const Ref<MolecularGradient>& molgrad() const;
+    /// Will throw if gradient_implemented() returns 0
     RefSCVector gradient();
 
     void set_x(const RefSCVector&);
@@ -209,6 +233,9 @@ class MolecularEnergy: public Function {
 
 /// linear combination of MolecularEnergy objects
 class SumMolecularEnergy: public MolecularEnergy {
+    int value_implemented() const;
+    bool analytic_gradient_implemented() const;
+    bool analytic_hessian_implemented() const;
   protected:
     int n_;
     Ref<MolecularEnergy> *mole_;
@@ -220,10 +247,6 @@ class SumMolecularEnergy: public MolecularEnergy {
     ~SumMolecularEnergy();
 
     void save_data_state(StateOut&);
-
-    int value_implemented() const;
-    int gradient_implemented() const;
-    int hessian_implemented() const;
 
     void set_x(const RefSCVector&);
 

@@ -175,18 +175,20 @@ class Function: virtual public SavableState, public Compute {
     virtual bool desired_hessian_accuracy_set_to_default() const;
     //@}
 
-    // hessian by gradients at finite displacements
-    // virtual RefSCMatrix fd1_hessian();
-
     /// Compute a quick, approximate hessian.
     virtual void guess_hessian(RefSymmSCMatrix&);
     virtual RefSymmSCMatrix inverse_hessian(RefSymmSCMatrix&);
 
-    /** Information about the availability of values, gradients,
-        and hessians. */
+    /** @name Members that check the availability of values, gradients, and hessians.
+        */
+    //@{
+    /// @return 1 (value implemented) or 0 (value not implemented, default). Must be overridden for the class to be useful.
     virtual int value_implemented() const;
+    /// @return 1 (gradient implemented, analytically or numerically) or 0 (gradient not implemented, default).
     virtual int gradient_implemented() const;
+    /// @return 1 (hessian implemented, analytically or numerically) or 0 (hessian not implemented, default).
     virtual int hessian_implemented() const;
+    //@}
 
     /// Set and retrieve the coordinate values.
     virtual void set_x(const RefSCVector&);

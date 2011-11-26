@@ -74,10 +74,10 @@ CLHF::value_implemented() const
   return 1;
 }
 
-int
-CLHF::gradient_implemented() const
+bool
+CLHF::analytic_gradient_implemented() const
 {
-  return 1;
+  return true;
 }
 
 void

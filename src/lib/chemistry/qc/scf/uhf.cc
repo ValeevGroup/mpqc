@@ -75,10 +75,10 @@ UHF::value_implemented() const
   return 1;
 }
 
-int
-UHF::gradient_implemented() const
+bool
+UHF::analytic_gradient_implemented() const
 {
-  return 1;
+  return true;
 }
 
 void

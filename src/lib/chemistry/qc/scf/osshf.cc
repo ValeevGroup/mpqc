@@ -76,10 +76,10 @@ OSSHF::value_implemented() const
   return 1;
 }
 
-int
-OSSHF::gradient_implemented() const
+bool
+OSSHF::analytic_gradient_implemented() const
 {
-  return 1;
+  return true;
 }
 
 void

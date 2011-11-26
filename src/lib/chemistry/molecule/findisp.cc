@@ -100,9 +100,11 @@ FinDispMolecularHessian::Params::Params()
   accuracy_ = 1e-8;
   energy_accuracy_ = disp_/1.e6;
   gradient_accuracy_ = disp_/1.e3;
-  checkpoint_ = DEFAULT_CHECKPOINT,
+  //checkpoint_ = DEFAULT_CHECKPOINT,
+  checkpoint_ = 0;
   checkpoint_file_ = SCFormIO::fileext_to_filename_string(".ckpt.hess");
-  restart_ = DEFAULT_RESTART;
+  //restart_ = DEFAULT_RESTART;
+  restart_ = 0;
   restart_file_ = SCFormIO::fileext_to_filename_string(".ckpt.hess");
   debug_ = 0;
 }
@@ -476,7 +478,7 @@ void
 FinDispMolecularHessian::GradientsImpl::validate_mole(const Ref<MolecularEnergy>& e)
 {
   if (e.null()) return;
-  if (e->gradient_implemented() == false)
+  if (e->gradient_implemented() == 0)
     throw ProgrammingError("FinDispMolecularHessian -- hessian from gradients requested but MolecularEnergy cannot compute gradients", __FILE__, __LINE__);
 }
 
@@ -1038,9 +1040,14 @@ FinDispMolecularGradient::FinDispMolecularGradient(const Ref<KeyVal>&keyval):
   MolecularGradient(keyval)
 {
   mole_ << keyval->describedclassvalue("energy");
+  if (mole_.null()) {
+    throw InputError("FinDispMolecularGradient KeyVal ctor: did not find a valid value for keyword energy",
+                     __FILE__, __LINE__);
+  }
 
-  debug_ = keyval->booleanvalue("debug");
+  debug_ = keyval->intvalue("debug", KeyValValueint(0));
 
+  // optional
   displacement_point_group_ << keyval->describedclassvalue("point_group");
 
   disp_ = keyval->doublevalue("displacement",KeyValValuedouble(1.0e-2));

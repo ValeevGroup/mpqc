@@ -577,7 +577,7 @@ class FinDispMolecularGradient: public MolecularGradient {
         checkpoint file exists, restart from that file.
 
         <tr><td><tt>restart_file</tt><td>string
-        <td><em>basename</em><tt>.ckpt.hess</tt><td>The name of
+        <td><em>basename</em><tt>.ckpt.grad</tt><td>The name of
         the file where checkpoint information is written to or read from.
 
         <tr><td><tt>checkpoint</tt><td>boolean<td>true<td>If true,

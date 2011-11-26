@@ -71,7 +71,6 @@ class CLKS: public CLSCF {
     void two_body_energy(double &ec, double &ex);
 
     int value_implemented() const;
-    int gradient_implemented() const;
 
     RefSymmSCMatrix density();
   protected:
@@ -86,6 +85,10 @@ class CLKS: public CLSCF {
     void done_vector();
     
     void two_body_deriv(double*);
+
+  private:
+    bool analytic_gradient_implemented() const;
+
 };
 
 }

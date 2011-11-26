@@ -60,8 +60,6 @@ class MolecularEnergyCCA: public MolecularEnergy {
     sidl::array<double> sidlx_;
     sidl::array<double> sidlg_;
     RefSCDimension scdim_;
-    bool analytic_gradient_implemented() const { return true; }
-    bool analytic_hessian_implemented() const { return true; }
     
   protected:
 

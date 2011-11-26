@@ -99,10 +99,10 @@ UKS::value_implemented() const
   return 1;
 }
 
-int
-UKS::gradient_implemented() const
+bool
+UKS::analytic_gradient_implemented() const
 {
-  return 1;
+  return true;
 }
 
 double

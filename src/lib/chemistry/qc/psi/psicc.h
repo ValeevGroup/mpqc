@@ -150,7 +150,7 @@ namespace sc {
       PsiCCSD(StateIn&);
       ~PsiCCSD();
       void save_data_state(StateOut&);
-      int gradient_implemented() const;
+      bool analytic_gradient_implemented() const;
   };
   
   ///////////////////////////////////////////////////////////////////
@@ -165,7 +165,6 @@ namespace sc {
       ~PsiCCSD_T();
 
       void save_data_state(StateOut&);
-      int gradient_implemented() const;
   };
 
   ///////////////////////////////////////////////////////////////////
@@ -179,7 +178,6 @@ namespace sc {
       ~PsiCC2();
 
       void save_data_state(StateOut&);
-      int gradient_implemented() const;
   };
   
 
@@ -194,7 +192,6 @@ namespace sc {
       ~PsiCC3();
 
       void save_data_state(StateOut&);
-      int gradient_implemented() const;
   };
 
 } // namespace

@@ -437,10 +437,14 @@ MolecularEnergy::inverse_hessian(RefSymmSCMatrix&hessian)
 }
 
 void
-MolecularEnergy::set_hessian(const Ref<MolecularHessian>& hess)
+MolecularEnergy::set_molhess(const Ref<MolecularHessian>& hess)
 {
-  if (!this->hessian_implemented())
-    hess_ = hess;
+  hess_ = hess;
+}
+
+const Ref<MolecularHessian>&
+MolecularEnergy::molhess() const {
+  return hess_;
 }
 
 RefSymmSCMatrix
@@ -460,11 +464,25 @@ MolecularEnergy::hessian()
   return hessian_.result();
 }
 
+int
+MolecularEnergy::hessian_implemented() const {
+  bool result = false;
+  if (this->analytic_hessian_implemented())
+    result = true;
+  if (hess_.nonnull())
+    result = true;
+  return result;
+}
+
 void
-MolecularEnergy::set_gradient(const Ref<MolecularGradient>& grad)
+MolecularEnergy::set_molgrad(const Ref<MolecularGradient>& grad)
 {
-  //if (!this->gradient_implemented())
-    grad_ = grad;
+  grad_ = grad;
+}
+
+const Ref<MolecularGradient>&
+MolecularEnergy::molgrad() const {
+  return grad_;
 }
 
 RefSCVector
@@ -482,6 +500,16 @@ MolecularEnergy::gradient()
   this->dereference();
   set_gradient(xgrad);
   return gradient_.result();
+}
+
+int
+MolecularEnergy::gradient_implemented() const {
+  bool result = false;
+  if (this->analytic_gradient_implemented())
+    result = true;
+  if (grad_.nonnull())
+    result = true;
+  return result;
 }
 
 void
@@ -666,22 +694,26 @@ SumMolecularEnergy::value_implemented() const
   return 1;
 }
 
-int
-SumMolecularEnergy::gradient_implemented() const
+bool
+SumMolecularEnergy::analytic_gradient_implemented() const
 {
+  // if all contributions have gradients, then compute individual gradients and sum them up (numerically, this makes more sense)
+  bool have_all_gradients = false;
   for (int i=0; i<n_; i++) {
-      if (!mole_[i]->gradient_implemented()) return 0;
-    }
-  return 1;
+    have_all_gradients &= mole_[i]->gradient_implemented();
+  }
+  return have_all_gradients ? true : false;
 }
 
-int
-SumMolecularEnergy::hessian_implemented() const
+bool
+SumMolecularEnergy::analytic_hessian_implemented() const
 {
+  // if all contributions have hessians, then compute individual hessians and sum them up (numerically, this makes more sense)
+  bool have_all_hessians = false;
   for (int i=0; i<n_; i++) {
-      if (!mole_[i]->hessian_implemented()) return 0;
-    }
-  return 1;
+    have_all_hessians &= mole_[i]->hessian_implemented();
+  }
+  return have_all_hessians ? true : false;
 }
 
 void

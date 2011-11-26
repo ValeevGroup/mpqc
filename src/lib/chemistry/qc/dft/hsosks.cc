@@ -102,10 +102,10 @@ HSOSKS::value_implemented() const
   return 1;
 }
 
-int
-HSOSKS::gradient_implemented() const
+bool
+HSOSKS::analytic_gradient_implemented() const
 {
-  return 1;
+  return true;
 }
 
 void

@@ -661,8 +661,9 @@ try_main(int argc, char *argv[])
 
     if (do_opt && opt.nonnull() && have_gradient) { // optimize geometry
 
-      if (molgrad.nonnull()) {// && !mole->gradient_implemented()) {
-        mole->set_gradient(molgrad);
+      const bool use_mpqc_molgrad = !mole->gradient_implemented() && molgrad.nonnull();
+      if (use_mpqc_molgrad) {
+        mole->set_molgrad(molgrad);
       }
 
       ExEnv::out0() << std::endl
@@ -686,8 +687,8 @@ try_main(int argc, char *argv[])
         ready_for_freq = 0;
       }
 
-      if (molgrad.nonnull()) { // && !mole->gradient_implemented()) {
-        mole->set_gradient(0);
+      if (use_mpqc_molgrad) {
+        mole->set_molgrad(0);
       }
 
     } else if (do_grad && have_gradient) { // only compute the gradient
@@ -722,9 +723,10 @@ try_main(int argc, char *argv[])
         }
       }
       else { // use molgrad
-        mole->set_gradient(molgrad);
+        assert(molgrad.nonnull());
+        mole->set_molgrad(molgrad);
         grad = mole->gradient();
-        mole->set_gradient(0);
+        mole->set_molgrad(0);
       }
 
       if (grad.nonnull()) {
@@ -786,16 +788,14 @@ try_main(int argc, char *argv[])
 
     if ((opt && ready_for_freq) || !opt) {
       RefSymmSCMatrix xhessian;
-      if (molhess.nonnull()) {
-        // if "hess" input was given, use it to compute the hessian
+      if (mole->hessian_implemented()) { // if mole can compute the hessian, use that hessian
+        xhessian = mole->get_cartesian_hessian();
+      }
+      else if (molhess.nonnull()) { // else use user-provided hessian
         const bool molhess_needs_mole = (molhess->energy() == 0);
         if (molhess_needs_mole) molhess->set_energy(mole);
         xhessian = molhess->cartesian_hessian();
         if (molhess_needs_mole) molhess->set_energy(0);
-      }
-      else if (mole->hessian_implemented()) {
-        // if mole can compute the hessian, use that hessian
-        xhessian = mole->get_cartesian_hessian();
       }
       else if (mole->gradient_implemented() ||
                mole->value_implemented()) {
@@ -806,7 +806,8 @@ try_main(int argc, char *argv[])
         molhess = 0;
       }
       else {
-        ExEnv::out0() << "mpqc: WARNING: Frequencies cannot be computed" << endl;
+        throw FeatureNotImplemented("mpqc: frequencies cannot be computed for this type of MolecularEnergy",
+                                    __FILE__, __LINE__);
       }
 
       if (xhessian.nonnull()) {

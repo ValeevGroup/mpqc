@@ -375,8 +375,8 @@ namespace sc {
       int spin_polarized() {
         return 0;
       }
-      int gradient_implemented() const {
-        return 1;
+      bool analytic_gradient_implemented() const {
+        return true;
       }
       PsiSCF::RefType reftype() const {
         return rhf;
@@ -399,8 +399,8 @@ namespace sc {
       int spin_polarized() {
         return 1;
       }
-      int gradient_implemented() const {
-        return 1;
+      bool analytic_gradient_implemented() const {
+        return true;
       }
       PsiSCF::RefType reftype() const {
         return hsoshf;
@@ -437,8 +437,8 @@ namespace sc {
       int spin_polarized() {
         return 1;
       }
-      int gradient_implemented() const {
-        return 1;
+      bool analytic_gradient_implemented() const {
+        return true;
       }
       PsiSCF::RefType reftype() const {
         return uhf;

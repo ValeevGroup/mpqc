@@ -95,10 +95,10 @@ CLKS::value_implemented() const
   return 1;
 }
 
-int
-CLKS::gradient_implemented() const
+bool
+CLKS::analytic_gradient_implemented() const
 {
-  return 1;
+  return true;
 }
 
 void

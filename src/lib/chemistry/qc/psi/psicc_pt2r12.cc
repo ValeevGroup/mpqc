@@ -109,10 +109,6 @@ PsiCC_PT2R12::PsiCC_PT2R12(StateIn&s) :
   s.get(cabs_singles_energy_);
 }
 
-int PsiCC_PT2R12::gradient_implemented() const {
-  return 0;
-}
-
 void PsiCC_PT2R12::save_data_state(StateOut&s) {
   PsiCC::save_data_state(s);
   SavableState::save_state(r12eval_.pointer(),s);
@@ -502,10 +498,6 @@ PsiCCSD_PT2R12::PsiCCSD_PT2R12(StateIn&s) :
   s.get(eccsd_);
 }
 
-int PsiCCSD_PT2R12::gradient_implemented() const {
-  return 0;
-}
-
 void PsiCCSD_PT2R12::save_data_state(StateOut&s) {
   PsiCC_PT2R12::save_data_state(s);
   s.put(eccsd_);
@@ -575,10 +567,6 @@ PsiCCSD_PT2R12T::PsiCCSD_PT2R12T(StateIn&s) :
   s.get(e_t_);
 }
 
-int PsiCCSD_PT2R12T::gradient_implemented() const {
-  return 0;
-}
-
 void PsiCCSD_PT2R12T::save_data_state(StateOut&s) {
   PsiCC_PT2R12::save_data_state(s);
   s.put(eccsd_);
@@ -644,10 +632,6 @@ PsiCC3_PT2R12::~PsiCC3_PT2R12() {
 PsiCC3_PT2R12::PsiCC3_PT2R12(StateIn&s) :
   PsiCC_PT2R12(s) {
   s.get(ecc3_);
-}
-
-int PsiCC3_PT2R12::gradient_implemented() const {
-  return 0;
 }
 
 void PsiCC3_PT2R12::save_data_state(StateOut&s) {

@@ -359,8 +359,8 @@ MBPT2::obsolete()
 
 //////////////////////////////////////////////////////////////////////////////
 
-int
-MBPT2::gradient_implemented() const
+bool
+MBPT2::analytic_gradient_implemented() const
 {
   int nb = reference_->oso_dimension()->n();
   int n = 0;
@@ -369,8 +369,8 @@ MBPT2::gradient_implemented() const
     if (reference_->occupation(i) == 1.0) n++;
     }
 
-  if (n) return 0;
-  return 1;
+  if (n) return false;
+  return true;
 }
 
 //////////////////////////////////////////////////////////////////////////////

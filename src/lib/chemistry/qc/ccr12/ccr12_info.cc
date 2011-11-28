@@ -84,7 +84,8 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
   irrep_y_ = 0L;
 
   // More to come... e.g. dipole,...
-  bool do_lambda = (perturbative_ == "(2)T" || perturbative_ == "(2)TQ" || perturbative_ == "(2)R12FULL");
+  bool do_lambda
+    = (perturbative_ == "(2)T" || perturbative_ == "(2)TQ" || perturbative_ == "(2)R12FULL" || perturbative_ == "(2)TQR12");
 
   // compute the correlated spin-orbital space used by SMITH
   compute_corr_space();
@@ -434,7 +435,7 @@ void CCR12_Info::determine_maxtilesize(double memory){
   } else if (perturbative_ == "(2)T") {
     const int p_maxtilesize = static_cast<int>(::pow(memory / 5.0, 1.0 / 6.0));
     if (p_maxtilesize < maxtilesize_) maxtilesize_ = p_maxtilesize;
-  } else if (perturbative_ == "(2)TQ") {
+  } else if (perturbative_ == "(2)TQ" || perturbative_ == "(2)TQR12") {
     const int p_maxtilesize = static_cast<int>(::pow(memory / 5.0, 1.0 / 8.0));
     if (p_maxtilesize < maxtilesize_) maxtilesize_ = p_maxtilesize;
   } else if (perturbative_ == "(2)R12" || perturbative_ == "(2)R12FULL") {
@@ -483,7 +484,7 @@ void CCR12_Info::needs(){
   }
 
   // unscreened version
-  if (perturbative_ == "(2)R12FULL") {
+  if (perturbative_ == "(2)R12FULL" || perturbative_ == "(2)TQR12") {
     need_w1_ = true;
     need_F_ = true;
   }

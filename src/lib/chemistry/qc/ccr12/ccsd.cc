@@ -70,7 +70,7 @@ CCSD::CCSD(const Ref<KeyVal>& keyval): CCR12(keyval){
   print_theory();
 
   // validate user input
-  if (perturbative_ == "(2)R12FULL" || perturbative_ == "(T)R12[DT]") {
+  if (perturbative_ == "(2)R12FULL" || perturbative_ == "(2)TQR12" || perturbative_ == "(T)R12[DT]") {
     // diagonal ansatz not implemented
     if (this->r12world()->r12tech()->ansatz()->diag())
       throw FeatureNotImplemented("diagonal ansatz for perturbative R12 corrections in SMITH-based code (use Psi-based code)",
@@ -223,7 +223,8 @@ void CCSD::compute(){
 
   bool do_lambda = false; // will be judeged by input keywords
   // more will come; e.g. dipole, etc
-  if (perturbative_ == "(2)T" || perturbative_ == "(2)TQ" || perturbative_ == "(2)R12FULL") do_lambda = true;
+  if (perturbative_ == "(2)T" || perturbative_ == "(2)TQ"
+    || perturbative_ == "(2)TQR12" || perturbative_ == "(2)R12FULL") do_lambda = true;
 
   if (do_lambda) {
     Ref<DIIS> l1diis = new DIIS(diis_start_, ndiis_, 0.005, 3, 1, 0.0);
@@ -281,7 +282,7 @@ void CCSD::compute(){
 
     print_iteration_footer_short();
 
-    if (perturbative_ == "(2)T" || perturbative_ == "(2)TQ") {
+    if (perturbative_ == "(2)T" || perturbative_ == "(2)TQ" || perturbative_ == "(2)TQR12") {
       timer_->enter("(2)T correction");
       iter_start = timer_->get_wall_time();
 
@@ -296,7 +297,7 @@ void CCSD::compute(){
 
       energy += ccsd_2t_correction;
 
-      if (perturbative_ == "(2)TQ") {
+      if (perturbative_ == "(2)TQ" || perturbative_ == "(2)TQR12") {
         timer_->enter("(2)Q correction");
         Ref<CCSD_2Q_LEFT>   eval_left_q = new CCSD_2Q_LEFT(info());
         Ref<CCSD_2Q_RIGHT> eval_right_q = new CCSD_2Q_RIGHT(info());
@@ -310,7 +311,8 @@ void CCSD::compute(){
         energy += ccsd_2q_correction;
       }
 
-    } else if (perturbative_ == "(2)R12FULL") {
+    }
+    if (perturbative_ == "(2)R12FULL" || perturbative_ == "(2)TQR12") {
 
       timer_->enter("(2)R12 correction (full)");
       iter_start = timer_->get_wall_time();

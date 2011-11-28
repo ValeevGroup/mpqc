@@ -48,16 +48,17 @@ AssignedKeyVal::key_exists(const char * key)
   if (!result) {
       // An exact match does not exist in the map. However, it is
       // possible that key is part of a longer segment that does
-      // exist. Test for this.
-      std::map<std::string,Ref<KeyValValue> >::iterator lb = _map.lower_bound(k);
-      if (lb != _map.end()) {
-          std::string lbk(lb->first);
-          if (lbk.size() > k.size()
-              && lbk[k.size()] == ':'
-              && lbk.substr(0,k.size()) == k) {
+      // exist. Test all keys that are not less than k, contain k as a substring, followed by at least one ':'
+      std::map<std::string,Ref<KeyValValue> >::iterator trial = _map.lower_bound(k);
+      while (trial != _map.end() && trial->first.find(k,0) != std::string::npos) {
+          std::string tk(trial->first);
+          if (tk.size() > k.size()
+              && tk.find(':',k.size()) != std::string::npos
+              && tk.substr(0,k.size()) == k) {
               seterror(HasNoValue);
               return 1;
           }
+          ++trial; // try next key ...
       }
       seterror(UnknownKeyword);
     }

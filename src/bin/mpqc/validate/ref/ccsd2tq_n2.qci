@@ -1,0 +1,462 @@
+
+                    MPQC: Massively Parallel Quantum Chemistry
+                                Version 3.0.0-alpha
+
+  Machine:    i386-apple-darwin10.8.0
+  User:       shiozaki@toru-shiozakis-macbook-pro.local
+  Start Time: Tue Nov 29 23:43:41 2011
+
+  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using PthreadThreadGrp for threading (number of threads = 1).
+  Using ProcMemoryGrp for distributed shared memory.
+  Total number of processors = 1
+
+  Using IntegralV3 by default for molecular integrals evaluation
+  Given resources: ConsumableResources: ( memory = 256MB disk = [./ 0B] )
+
+  Reading file /usr/local/mpqc/3.0.0-alpha/share/atominfo.kv.
+  Molecule: setting point group to d2h
+  Reading file /usr/local/mpqc/3.0.0-alpha/share/basis/cc-pvdz.kv.
+
+  CLSCF::init: total charge = 0
+
+  Starting from core Hamiltonian guess
+
+  Using symmetric orthogonalization.
+  n(basis):             7     1     3     3     1     7     3     3
+  Maximum orthogonalization residual = 3.09244
+  Minimum orthogonalization residual = 0.00646337
+  docc = [ 3 0 0 0 0 2 1 1 ]
+  nbasis = 28
+  ints_file = ./ccsd2tq_n2.moints
+  CCR12: auto-freezing 2 core orbitals
+  Reading file /usr/local/mpqc/3.0.0-alpha/share/basis/cc-pvtz.kv.
+
+  -------- CCR12 calculation --------
+  Memory size per node: 500000000
+  Work   size per node: 500000000
+
+  Theory:       CCSD
+
+  Perturbative: (2)TQ
+
+
+  Molecular formula N2
+
+  MPQC options:
+    matrixkit       = <ReplSCMatrixKit>
+    filename        = ccsd2tq_n2
+    restart_file    = ccsd2tq_n2.ckpt
+    restart         = yes
+    checkpoint      = no
+    savestate       = no
+    do_energy       = yes
+    do_gradient     = no
+    do_freq         = no
+    optimize        = no
+    write_pdb       = no
+    print_mole      = yes
+    print_timings   = yes
+    print_resources = yes
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =   23.3333333333
+
+  integral intermediate storage = 900160 bytes
+  integral cache = 1493344 bytes
+  Beginning iterations.  Basis is cc-pVDZ.
+                 51682 integrals
+  iter     1 energy = -107.0706929933 delta = 1.58719e-01
+                 51682 integrals
+  iter     2 energy = -108.9280976208 delta = 6.56995e-02
+                 51682 integrals
+  iter     3 energy = -108.9502636784 delta = 1.15474e-02
+                 51682 integrals
+  iter     4 energy = -108.9516106834 delta = 2.92130e-03
+                 51682 integrals
+  iter     5 energy = -108.9517049825 delta = 8.93316e-04
+                 51682 integrals
+  iter     6 energy = -108.9517085548 delta = 2.04295e-04
+                 51682 integrals
+  iter     7 energy = -108.9517085694 delta = 1.76635e-05
+                 51682 integrals
+  iter     8 energy = -108.9517085696 delta = 1.60504e-06
+                 51682 integrals
+  iter     9 energy = -108.9517085697 delta = 3.19229e-07
+                 51682 integrals
+  iter    10 energy = -108.9517085697 delta = 3.51173e-08
+                 51682 integrals
+  iter    11 energy = -108.9517085697 delta = 3.90031e-09
+
+  HOMO is     1 B2u =  -0.602452
+  LUMO is     1 B3g =   0.168500
+
+  total scf energy = -108.9517085697
+
+  debug RefWavefunction::init print ordm:  block 1
+                1              2              3              4
+      1   1.0022193909
+      2  -0.0009855753   0.2296542945
+      3  -0.0079035894   0.2368036922   0.3248439580
+      4   0.0000000000   0.0000000000   0.0000000000   0.1809645451
+      5   0.0053481150  -0.0423379512  -0.1966741210   0.0000000000
+      6   0.0000000000   0.0000000000   0.0000000000   0.0000000000
+      7   0.0000000000   0.0000000000   0.0000000000   0.1105727113
+      8   0.0003858792  -0.0452774814  -0.1104511418   0.0000000000
+      9   0.0000000000   0.0000000000   0.0000000000   0.0000000000
+     10   0.0000000000   0.0000000000   0.0000000000   0.0000000000
+     11   0.0000000000   0.0000000000   0.0000000000   0.0200690077
+     12   0.0011105511   0.0026634783  -0.0082297506   0.0000000000
+     13   0.0000000000   0.0000000000   0.0000000000   0.0000000000
+     14  -0.0000000000   0.0000000000   0.0000000000   0.0000000000
+     15  -0.0012330036  -0.0057779856  -0.0049115887   0.0000000000
+     16  -0.0057779856   0.0124663745  -0.0415531086   0.0000000000
+     17  -0.0049115887  -0.0415531086  -0.0319925026   0.0000000000
+     18   0.0000000000   0.0000000000   0.0000000000   0.1809645451
+     19  -0.0038159458  -0.0982139074   0.0164950061   0.0000000000
+     20   0.0000000000   0.0000000000   0.0000000000   0.0000000000
+     21   0.0000000000   0.0000000000   0.0000000000   0.1105727113
+     22  -0.0031991516  -0.0286011040   0.0157761366   0.0000000000
+     23   0.0000000000   0.0000000000   0.0000000000   0.0000000000
+     24   0.0000000000   0.0000000000   0.0000000000   0.0000000000
+     25   0.0000000000   0.0000000000   0.0000000000  -0.0200690077
+     26  -0.0004608101   0.0114390605   0.0030334576   0.0000000000
+     27   0.0000000000   0.0000000000   0.0000000000   0.0000000000
+     28   0.0000000000   0.0000000000  -0.0000000000   0.0000000000
+
+                5              6              7              8
+      5   0.2981870040
+      6   0.0000000000   0.1809645451
+      7   0.0000000000   0.0000000000   0.0675619884
+      8   0.1295283439   0.0000000000   0.0000000000   0.0601143056
+      9   0.0000000000   0.1105727113   0.0000000000   0.0000000000
+     10   0.0000000000   0.0000000000   0.0000000000   0.0000000000
+     11   0.0000000000   0.0000000000   0.0122625379   0.0000000000
+     12   0.0202705623   0.0000000000   0.0000000000   0.0079061100
+     13   0.0000000000   0.0200690077   0.0000000000   0.0000000000
+     14   0.0000000000   0.0000000000   0.0000000000   0.0000000000
+     15   0.0038159458   0.0000000000   0.0000000000   0.0031991516
+     16   0.0982139074   0.0000000000   0.0000000000   0.0286011040
+     17  -0.0164950061   0.0000000000   0.0000000000  -0.0157761366
+     18   0.0000000000   0.0000000000   0.1105727113   0.0000000000
+     19  -0.2072083143   0.0000000000   0.0000000000  -0.0817237245
+     20   0.0000000000   0.1809645451   0.0000000000   0.0000000000
+     21   0.0000000000   0.0000000000   0.0675619884   0.0000000000
+     22  -0.0817237245   0.0000000000   0.0000000000  -0.0349823905
+     23   0.0000000000   0.1105727113   0.0000000000   0.0000000000
+     24   0.0000000000   0.0000000000   0.0000000000   0.0000000000
+     25   0.0000000000   0.0000000000  -0.0122625379   0.0000000000
+     26   0.0145833461   0.0000000000   0.0000000000   0.0049230915
+     27   0.0000000000  -0.0200690077   0.0000000000   0.0000000000
+     28   0.0000000000   0.0000000000   0.0000000000   0.0000000000
+
+                9             10             11             12
+      9   0.0675619884
+     10   0.0000000000   0.0000000000
+     11   0.0000000000   0.0000000000   0.0022256574
+     12   0.0000000000   0.0000000000   0.0000000000   0.0016033387
+     13   0.0122625379   0.0000000000   0.0000000000   0.0000000000
+     14   0.0000000000   0.0000000000   0.0000000000   0.0000000000
+     15   0.0000000000   0.0000000000   0.0000000000  -0.0004608101
+     16   0.0000000000   0.0000000000   0.0000000000   0.0114390605
+     17   0.0000000000   0.0000000000   0.0000000000   0.0030334576
+     18   0.0000000000   0.0000000000   0.0200690077   0.0000000000
+     19   0.0000000000   0.0000000000   0.0000000000  -0.0145833461
+     20   0.1105727113   0.0000000000   0.0000000000   0.0000000000
+     21   0.0000000000   0.0000000000   0.0122625379   0.0000000000
+     22   0.0000000000   0.0000000000   0.0000000000  -0.0049230915
+     23   0.0675619884   0.0000000000   0.0000000000   0.0000000000
+     24   0.0000000000   0.0000000000   0.0000000000   0.0000000000
+     25   0.0000000000   0.0000000000  -0.0022256574   0.0000000000
+     26   0.0000000000   0.0000000000   0.0000000000   0.0012456523
+     27  -0.0122625379   0.0000000000   0.0000000000   0.0000000000
+     28   0.0000000000   0.0000000000   0.0000000000   0.0000000000
+
+               13             14             15             16
+     13   0.0022256574
+     14   0.0000000000   0.0000000000
+     15   0.0000000000   0.0000000000   1.0022193909
+     16   0.0000000000   0.0000000000  -0.0009855753   0.2296542945
+     17   0.0000000000  -0.0000000000  -0.0079035894   0.2368036922
+     18   0.0000000000   0.0000000000   0.0000000000   0.0000000000
+     19   0.0000000000  -0.0000000000  -0.0053481150   0.0423379512
+     20   0.0200690077   0.0000000000   0.0000000000   0.0000000000
+     21   0.0000000000   0.0000000000   0.0000000000   0.0000000000
+     22   0.0000000000  -0.0000000000  -0.0003858792   0.0452774814
+     23   0.0122625379   0.0000000000   0.0000000000   0.0000000000
+     24   0.0000000000   0.0000000000   0.0000000000   0.0000000000
+     25   0.0000000000   0.0000000000   0.0000000000   0.0000000000
+     26   0.0000000000   0.0000000000   0.0011105511   0.0026634783
+     27  -0.0022256574   0.0000000000   0.0000000000   0.0000000000
+     28   0.0000000000  -0.0000000000  -0.0000000000   0.0000000000
+
+               17             18             19             20
+     17   0.3248439580
+     18   0.0000000000   0.1809645451
+     19   0.1966741210   0.0000000000   0.2981870040
+     20   0.0000000000   0.0000000000   0.0000000000   0.1809645451
+     21   0.0000000000   0.1105727113   0.0000000000   0.0000000000
+     22   0.1104511418   0.0000000000   0.1295283439   0.0000000000
+     23   0.0000000000   0.0000000000   0.0000000000   0.1105727113
+     24   0.0000000000   0.0000000000   0.0000000000   0.0000000000
+     25   0.0000000000  -0.0200690077   0.0000000000   0.0000000000
+     26  -0.0082297506   0.0000000000  -0.0202705623   0.0000000000
+     27   0.0000000000   0.0000000000   0.0000000000  -0.0200690077
+     28   0.0000000000   0.0000000000  -0.0000000000   0.0000000000
+
+               21             22             23             24
+     21   0.0675619884
+     22   0.0000000000   0.0601143056
+     23   0.0000000000   0.0000000000   0.0675619884
+     24   0.0000000000   0.0000000000   0.0000000000   0.0000000000
+     25  -0.0122625379   0.0000000000   0.0000000000   0.0000000000
+     26   0.0000000000  -0.0079061100   0.0000000000   0.0000000000
+     27   0.0000000000   0.0000000000  -0.0122625379   0.0000000000
+     28   0.0000000000  -0.0000000000   0.0000000000   0.0000000000
+
+               25             26             27             28
+     25   0.0022256574
+     26   0.0000000000   0.0016033387
+     27   0.0000000000   0.0000000000   0.0022256574
+     28   0.0000000000   0.0000000000   0.0000000000   0.0000000000
+
+  max tile size: 7
+
+          >>>> tile infomation <<<<
+
+  ----------------------------------------
+      spin   irrep  length  offset   alpha
+         1       0       2       0       0
+         1       5       1       2       1
+         1       6       1       3       2
+         1       7       1       4       3
+         2       0       2       5       0
+         2       5       1       7       1
+         2       6       1       8       2
+         2       7       1       9       3
+         1       0       4      10       8
+         1       1       1      14       9
+         1       2       3      15      10
+         1       3       3      18      11
+         1       4       1      21      12
+         1       5       5      22      13
+         1       6       2      27      14
+         1       7       2      29      15
+         2       0       4      31       8
+         2       1       1      35       9
+         2       2       3      36      10
+         2       3       3      39      11
+         2       4       1      42      12
+         2       5       5      43      13
+         2       6       2      48      14
+         2       7       2      50      15
+  ----------------------------------------
+
+  Orthogonalizing basis for space RIBS:
+    Using symmetric orthogonalization.
+    n(basis):            20     4    10    10     4    20    10    10
+    Maximum orthogonalization residual = 7.13066
+    Minimum orthogonalization residual = 7.15133e-07
+  SVD-projecting out  occupied symmetry-blocked MOs out of RIBS to obtain space CABS
+    7 basis functions projected out of RIBS.
+    n(basis):            17     4    10    10     4    18     9     9
+    Maximum singular value = 1
+    Minimum singular value = 1
+  SVD-projecting out  unoccupied symmetry-blocked MOs out of CABS to obtain space CABS
+    21 basis functions projected out of CABS.
+    n(basis):            13     3     7     7     3    13     7     7
+    Maximum singular value = 1
+    Minimum singular value = 1
+  Entered <p(corr) p(corr)|ERI|mu mu>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
+    Memory available per node:      255607488 Bytes
+    Static memory used per node:    0 Bytes
+    Total memory used per node:     4399360 Bytes
+    Memory required for one pass:   4399360 Bytes
+    Minimum memory required:        182560 Bytes
+    Number of passes:               1
+    Batch size:                     26
+    Beginning pass 1
+    Begin loop over shells (ints, 1+2 q.t.)
+      working on shell pair (  0   0),  0.000% complete (0 of 55)
+      working on shell pair (  3   0), 10.909% complete (6 of 55)
+      working on shell pair (  4   2), 21.818% complete (12 of 55)
+      working on shell pair (  5   3), 32.727% complete (18 of 55)
+      working on shell pair (  6   3), 43.636% complete (24 of 55)
+      working on shell pair (  7   2), 54.545% complete (30 of 55)
+      working on shell pair (  8   0), 65.455% complete (36 of 55)
+      working on shell pair (  8   6), 76.364% complete (42 of 55)
+      working on shell pair (  9   3), 87.273% complete (48 of 55)
+      working on shell pair (  9   9), 98.182% complete (54 of 55)
+    End of loop over shells
+  Entered <p(corr) p(corr)|ERI|p(corr) p(corr)>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
+    Memory available per node:      255607488 Bytes
+    Static memory used per node:    0 Bytes
+    Total memory used per node:     4399360 Bytes
+    Memory required for one pass:   4399360 Bytes
+    Minimum memory required:        182560 Bytes
+    Number of passes:               1
+    Batch size:                     26
+    Beginning pass 1
+    Read half-transformed integrals
+    Begin third q.t.
+    End of third q.t.
+    Begin fourth q.t.
+    End of fourth q.t.
+  Detecting non-totally-symmetric integrals ... none
+  f1 file  :   ./ccsd2tq_n2.smith.f1
+  size     :        110 doubles
+
+  v2 file  :   ./ccsd2tq_n2.smith.v2
+  size     :      80154 doubles
+
+  t1 file  :   ./ccsd2tq_n2.smith.t1
+  size     :         17 doubles
+
+  t2 file  :   ./ccsd2tq_n2.smith.t2
+  size     :       2236 doubles
+
+  input tensors (total)    :      0 MB
+  input tensors (per node) :      0 MB
+
+  work space    (per node) :    500 MB
+
+  intermediates (total)    :      0 MB
+  intermediates (per node) :      0 MB
+
+  CCSD iterations:
+  iter      corr energy        residual RMS        Wall 
+  ======================================================
+     0    -0.2982342710055     0.0020710155805      0.37
+     1    -0.3110612350431     0.0002021710164      0.36
+     2    -0.3119649523524     0.0001789775853      0.36
+     3    -0.3122459650432     0.0000903407474      0.38
+     4    -0.3122990396796     0.0000311215224      0.43
+     5    -0.3123204603874     0.0000111437525      0.38
+     6    -0.3123226285678     0.0000046187259      0.67
+     7    -0.3123277346619     0.0000009274993      0.91
+     8    -0.3123270051270     0.0000002565125      0.64
+     9    -0.3123272908239     0.0000001115684      0.55
+    10    -0.3123272410972     0.0000000412377      0.50
+    11    -0.3123272602902     0.0000000193032      0.64
+    12    -0.3123272540173     0.0000000070229      0.65
+    13    -0.3123272585349     0.0000000012870      0.57
+    14    -0.3123272569078     0.0000000007438      0.52
+    15    -0.3123272571767     0.0000000004637      0.49
+    16    -0.3123272569577     0.0000000001696      1.46
+    17    -0.3123272570346     0.0000000000607      0.47
+  ======================================================
+
+  Lambda CCSD iterations:
+  iter      residual RMS        Wall 
+  ===================================
+     0     0.0006247115448      0.93
+     1     0.0000850845584      1.00
+     2     0.0000272217566      0.88
+     3     0.0000028686688      0.93
+     4     0.0000012775937      0.88
+     5     0.0000004570071      0.91
+     6     0.0000002149725      0.95
+     7     0.0000000305849      1.03
+     8     0.0000000154770      1.02
+     9     0.0000000068979      1.06
+    10     0.0000000034452      1.10
+    11     0.0000000012087      0.96
+    12     0.0000000008481      3.96
+    13     0.0000000001411      2.98
+    14     0.0000000000712      4.97
+  ===================================
+
+  CCSD(2)T correction: -0.0108026135
+  CCSD(2)T energy    : -0.3231298705
+
+  Elapsed time [ (2)T correction ]:       4.26
+
+  Elapsed time [ (2)Q intermediates ]:       2.77
+    o Block   8 has been processed.
+    o Block   9 has been processed.
+    o Block  10 has been processed.
+    o Block  11 has been processed.
+    o Block  12 has been processed.
+    o Block  13 has been processed.
+    o Block  14 has been processed.
+    o Block  15 has been processed.
+    o Block  16 has been processed.
+    o Block  17 has been processed.
+    o Block  18 has been processed.
+    o Block  19 has been processed.
+    o Block  20 has been processed.
+    o Block  21 has been processed.
+    o Block  22 has been processed.
+    o Block  23 has been processed.
+
+  CCSD(2)TQ correction: -0.0133516339
+  CCSD(2)TQ energy    : -0.3256788909
+
+  Elapsed time [ (2)Q correction ]:      28.75
+
+
+  Value of the MolecularEnergy: -109.2773874605
+
+  Function Parameters:
+    value_accuracy    = 0.000000e+00 (1.000000e-06) (computed)
+    gradient_accuracy = 0.000000e+00 (1.000000e-06)
+    hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+  Molecule:
+    Molecular formula: N2
+    molecule<Molecule>: (
+      symmetry = d2h
+      unit = "bohr"
+      {  n atoms                        geometry                     }={
+         1     N [    0.0000000000     0.0000000000    -1.0500000000]
+         2     N [    0.0000000000     0.0000000000     1.0500000000]
+      }
+    )
+    Atomic Masses:
+       14.00307   14.00307
+    Reference origin =  [    0.0000000000     0.0000000000    -1.0500000000]
+
+  Electronic basis:
+    GaussianBasisSet:
+      nbasis = 28
+      nshell = 10
+      nprim  = 28
+      name = "cc-pVDZ"
+
+  ConsumableResources: (
+    memory = 256MB ( max used: 9.89MB )
+    disk = [./ 0B] ( max used: 0B )
+  )
+                                                                            CPU  Wall
+mpqc:                                                                     87.89 64.74
+  calc:                                                                   87.72 64.65
+    build_only:                                                            0.11  0.07
+      FockBuildThreads:                                                    0.24  0.14
+    tbint_tform_iRjS <p(corr) p(corr)|ERI|mu mu>(b1 b2|k1 k2):             0.35  0.27
+      mp2-r12/a passes:                                                    0.22  0.20
+        MO ints store:                                                     0.01  0.02
+        ints+1qt+2qt:                                                      0.20  0.17
+    tbint_tform_ixjy <p(corr) p(corr)|ERI|p(corr) p(corr)>(b1 b2|k1 k2):   0.13  0.10
+      mp2-r12/a passes:                                                    0.06  0.03
+        3. q.t.:                                                           0.01  0.01
+        4. q.t.:                                                           0.01  0.01
+        MO ints store:                                                     0.02  0.01
+    vector:                                                                1.71  0.89
+      density:                                                             0.01  0.00
+      evals:                                                               0.01  0.00
+      extrap:                                                              0.02  0.01
+      fock:                                                                1.56  0.80
+        accum:                                                             0.00  0.00
+        ao_gmat:                                                           1.47  0.75
+          start thread:                                                    1.46  0.75
+          stop thread:                                                     0.00  0.00
+        init pmax:                                                         0.00  0.00
+        local data:                                                        0.00  0.00
+        setup:                                                             0.04  0.02
+        sum:                                                               0.00  0.00
+        symm:                                                              0.05  0.02
+  input:                                                                   0.17  0.09
+
+  End Time: Tue Nov 29 23:44:46 2011
+

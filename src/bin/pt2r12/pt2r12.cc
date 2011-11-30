@@ -197,7 +197,7 @@ int try_main(int argc, char **argv)
   const unsigned int nact = std::accumulate(actpi.begin(), actpi.end(), 0.0);
   const unsigned int nfzv = std::accumulate(fzvpi.begin(), fzvpi.end(), 0.0);
   const unsigned int nmo = orbs->rank();
-  const unsigned int nuocc = nmo - nfzc - ninact - nact;
+  const unsigned int nuocc = nmo - nfzc - ninact - nact - nfzv;
 
   if (0) { // test the metric
     Ref<Integral> localints = integral->clone();

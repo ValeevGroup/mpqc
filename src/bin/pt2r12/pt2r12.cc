@@ -93,6 +93,8 @@ main(int argc, char *argv[])
 int try_main(int argc, char **argv)
 {
   const bool debug_print = false;
+
+  // pt2r12 receives user instructions via command line
   GetLongOpt opt;
   opt.usage("[options]");
   opt.enroll("prefix", GetLongOpt::MandatoryValue, "mandatory filename prefix, will look for files:\n\
@@ -106,7 +108,22 @@ int try_main(int argc, char **argv)
   opt.enroll("partitionH", GetLongOpt::MandatoryValue, "How to partition Hamiltonian in [2]_s; default: dyall_1", 0);
   opt.enroll("verbose", GetLongOpt::NoValue, "enable extra printing", 0);
 
+  // initialize the environment
   MPQCInit init(opt,argc,argv);
+  init.init_fp();
+  init.init_limits();
+  Ref<MessageGrp> grp = init.init_messagegrp();
+  init.init_io(grp);
+  Ref<ThreadGrp> thread = init.init_threadgrp();
+  Ref<MemoryGrp> memory = init.init_memorygrp();
+#if HAVE_INTEGRALLIBINT2
+  Integral::set_default_integral(new IntegralLibint2);
+#endif
+  init.init_integrals();
+  Ref<Integral> integral = Integral::get_default_integral()->clone();
+  init.init_resources();
+  Ref<ConsumableResources> resources =
+      ConsumableResources::get_default_instance();
 
   int optind = opt.parse(argc, argv);
   // no misc command-line options allowed
@@ -158,25 +175,19 @@ int try_main(int argc, char **argv)
   const char* partition_cstr = opt.retrieve("partitionH");
   std::string partition_str = partition_cstr?partition_cstr:"";
 
-  init.init_resources();
-  Ref<ConsumableResources> resources = ConsumableResources::get_default_instance();
-  ExEnv::out0() << indent
-       << "Given resources: " << resources->sprint() << endl << endl;
-#if HAVE_INTEGRALLIBINT2
-  Integral::set_default_integral(new IntegralLibint2);
-#endif
-  init.init_integrals();
-
-  // print environment
-  Ref<sc::ThreadGrp> thr = sc::ThreadGrp::get_default_threadgrp();
-  Ref<sc::MessageGrp> msg = sc::MessageGrp::get_default_messagegrp();
-  Ref<sc::Integral> integral = sc::Integral::get_default_integral()->clone();
-  ExEnv::out0() << indent << "Using " << integral->class_name() << " for integrals by default" << std::endl;
+  ExEnv::out0() << indent << "Given resources: " << resources->sprint() << endl
+      << endl;
   if (opt.retrieve("verbose")) {
-    sc::ExEnv::out0() << indent
-                      << "nthread = " << thr->nthread() << std::endl;
-    sc::ExEnv::out0() << indent
-                      << "nnode   = " << msg->n() << std::endl;
+    ExEnv::out0() << indent << "Using " << grp->class_name()
+        << " for message passing (number of nodes = " << grp->n() << ")."
+        << endl << indent << "Using " << thread->class_name()
+        << " for threading (number of threads = " << thread->nthread() << ")."
+        << endl << indent << "Using " << memory->class_name()
+        << " for distributed shared memory." << endl << indent
+        << "Total number of processors = " << grp->n() * thread->nthread()
+        << endl;
+    ExEnv::out0() << indent << "Using " << integral->class_name()
+        << " for integrals by default" << std::endl;
   }
 
   //

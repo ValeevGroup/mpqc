@@ -493,6 +493,53 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
   // finish with the initialization steps that don't require any
   // external information
   init2(skip_ghosts,include_q);
+
+  // verify that symmetry-equivalent atoms have the same basis set
+  // this may help to squash hard-to-detect bugs due to the user providing an erroneous basis keyword
+  if (molecule_->point_group()->order() > 1) {
+    validate_point_group();
+  }
+}
+
+void
+GaussianBasisSet::validate_point_group() const {
+  // loop over all unique centers
+  // for each center that has a non-unit orbit, loop over the orbit
+  // if this center is not same as the reference center:
+  // 1) assert that the number of shells is the same
+  // 2) assert that shells on the two centers match in-order
+  const int nuniqatoms = molecule_->nunique();
+  for(int ua=0; ua<nuniqatoms; ++ua) {
+    const int a0 = molecule_->unique(ua);
+    const int nshell0 = this->nshell_on_center(a0);
+    const int nequivatoms = molecule_->nequivalent(ua);
+    if (nequivatoms > 1) {
+      for(int ea=0; ea<nequivatoms; ++ea) {
+        const int a1 = molecule_->equivalent(ua,ea);
+        if (a0 != a1) {
+          const int nshell1 = this->nshell_on_center(a1);
+          if (nshell0 == nshell1) {
+            for(int s=0; s<nshell0; ++s) {
+              const int s0 = this->shell_on_center(a0, s);
+              const int s1 = this->shell_on_center(a1, s);
+              if (this->shell(s0).equiv(this->shell(s1)) == false) {
+                std::ostringstream oss;
+                oss << "atoms " << a0 << " and " << a1 << " are symmetry-equivalent but host different basis sets\n"
+                    << "the most likely cause is invalid basis vector";
+                throw InputError(oss.str().c_str(), __FILE__, __LINE__);
+              }
+            }
+          }
+          else {
+            std::ostringstream oss;
+            oss << "atoms " << a0 << " and " << a1 << " are symmetry-equivalent but host basis sets with different number of shells\n"
+                << "the most likely cause is invalid basis vector";
+            throw InputError(oss.str().c_str(), __FILE__, __LINE__);
+          }
+        }
+      }
+    }
+  }
 }
 
 double

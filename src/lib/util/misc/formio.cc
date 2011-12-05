@@ -300,11 +300,11 @@ scprintf::scprintf(const char *fmt, ...)
   
   va_start(args, fmt);
 
-  str[0] = '\0';
+  str_[0] = '\0';
   
   // hopefully this won't overflow
   if (fmt && fmt[0]!='\0') {
-    if (vsprintf(str, fmt, args) > 1023) {
+    if (vsprintf(str_, fmt, args) > 1023) {
       ExEnv::errn() << indent << "scprintf overflow\n";
       abort();
     }
@@ -316,7 +316,7 @@ scprintf::scprintf(const char *fmt, ...)
 ostream&
 sc::operator<<(ostream& o, const scprintf& s)
 {
-  o << s.str << flush;
+  o << s.str() << flush;
   return o;
 }
 

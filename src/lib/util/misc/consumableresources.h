@@ -333,7 +333,7 @@ namespace sc {
               case 6: unit = "EB"; break;
               case 7: unit = "ZB"; break;
               case 8: unit = "YB"; break;
-              default: assert(false);
+              default: assert(false); break;
             }
 
             // compute normalized mantissa

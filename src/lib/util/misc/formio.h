@@ -96,11 +96,11 @@ std::ostream& operator<<(std::ostream&, const scprintf&);
     to an <tt>ostream</tt>. */
 class scprintf {
   private:
-    char str[1024];
+    char str_[1024];
 
   public:
     scprintf(const char*,...);
-    friend std::ostream& sc::operator<<(std::ostream&, const scprintf&);
+    const char* str() const { return str_; }
 };
 
 }

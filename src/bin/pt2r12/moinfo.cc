@@ -762,8 +762,10 @@ ExternSpinFreeRDMTwo::init_from_rdm2_actspace(const std::vector<unsigned int>& i
 
   const double trace_act2 = ext_act_rdm2.trace(); // = n_act (n_act -1)
   const double nact_particle = (1.0 + std::sqrt(1.0 + 4.0 * trace_act2)) / 2.0;
-  if(nact_particle == 1)
-    throw AlgorithmException("The case of one-active is not dealt with properly: 1-rdm can not be cons");
+  if(nact_particle == 1) // refer to the line "ext_act_rdm1.scale(1.0 /(nact_particle-1.0))"; basically for nact_particle ==1
+                         // 2-rdm elements are all zero, so we can't construct 1-rdm from 2-rdm. This exception is practially
+                         // useless, so let's just throw exception for now.
+    throw AlgorithmException("The case of one-active electron is not dealt with properly: 1-rdm can not be constructed");
 
   // build active space 1-rdm from partial trace of 2-rdm in active space.
   for (unsigned int b1 = 0; b1 < nact; ++b1) {

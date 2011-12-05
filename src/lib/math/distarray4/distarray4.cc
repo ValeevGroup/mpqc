@@ -336,12 +336,12 @@ namespace sc {
    */
   Ref<DistArray4> permute23(const Ref<DistArray4>& src) {
 
-    const int nt = src->num_te_types();
-    const int ni = src->ni();
-    const int nj = src->nj();
-    const int nx = src->nx();
-    const int ny = src->ny();
-    const int njy = nj * ny;
+    const size_t nt = src->num_te_types();
+    const size_t ni = src->ni();
+    const size_t nj = src->nj();
+    const size_t nx = src->nx();
+    const size_t ny = src->ny();
+    const size_t njy = nj * ny;
     DistArray4Dimensions result_dims(nt, ni, nx, nj, ny, DistArray4Storage_XY);
     Ref<DistArray4> result = src->clone(result_dims);
     src->activate();
@@ -350,9 +350,9 @@ namespace sc {
     // determine the size and number of x tiles
     const size_t jy_blksize = njy * sizeof(double);
     const size_t available_memory = ConsumableResources::get_default_instance()->memory();
-    int tilesize = (available_memory + jy_blksize - 1) / jy_blksize;
+    size_t tilesize = (available_memory + jy_blksize - 1) / jy_blksize;
     if (tilesize > nx)  tilesize = nx;
-    const int ntiles = (nx + tilesize - 1) / tilesize;
+    const size_t ntiles = (nx + tilesize - 1) / tilesize;
     tilesize = (nx + ntiles - 1) / ntiles;  // recompute the tile size for a given number of tiles
                                             // to make the tiles more even
 
@@ -370,7 +370,7 @@ namespace sc {
     for(int i=0; i<ni; ++i) {
       for(int t=0; t<nt; ++t) {
 
-        int xoffset = 0;
+        size_t xoffset = 0;
         for(int tile=0; tile<ntiles; ++tile, xoffset+=tilesize, ++task_id){
 
           // round-robin task allocation
@@ -614,7 +614,7 @@ namespace sc {
       throw AlgorithmException("not enough memory for a single tile, increase memory", __FILE__, __LINE__);
     }
     // try tiling nij_bra and nij_ket into nproc tiles
-    const int nproc = bra->msg()->n();
+    const size_t nproc = bra->msg()->n();
     size_t try_tile_size_bra = (nij_bra + nproc - 1) / nproc;
     size_t try_tile_size_ket = (nij_ket + nproc - 1) / nproc;
     try_tile_size_bra = std::min(try_tile_size_bra, max_tile_size);

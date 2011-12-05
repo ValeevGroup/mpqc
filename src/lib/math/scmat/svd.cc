@@ -29,6 +29,7 @@
 #include <cassert>
 #include <stdexcept>
 #include <util/misc/formio.h>
+#include <util/misc/consumableresources.h>
 #include <util/class/scexception.h>
 #include <math/scmat/lapack.h>
 #include <math/scmat/svd.h>
@@ -65,16 +66,16 @@ namespace sc {
     char jobvt = U ? 'A' : 'N';
     char jobu = V ? 'A' : 'N';
 
-    double* a_data = new double[m * n];
+    double* a_data = allocate<double>(m * n);
     A.convert(a_data);
 
     double* u_data = 0;
     if (U) {
-      u_data = new double[m * m];
+      u_data = allocate<double>(m * m);
     }
     double* v_data = 0;
     if (V) {
-      v_data = new double[n * n];
+      v_data = allocate<double>(n * n);
     }
     double* s_data = new double[nsigma];
     double *work = new double[lwork];
@@ -85,12 +86,12 @@ namespace sc {
 
     if (info != 0) {
       delete[] work;
-      delete[] a_data;
+      deallocate(a_data);
       delete[] s_data;
       if (u_data)
-        delete[] u_data;
+        deallocate(u_data);
       if (v_data)
-        delete[] v_data;
+        deallocate(v_data);
       throw std::runtime_error("lapack_svd -- call to LAPACK routine failed");
     }
 
@@ -103,12 +104,12 @@ namespace sc {
     }
 
     delete[] work;
-    delete[] a_data;
+    deallocate(a_data);
     delete[] s_data;
     if (u_data)
-      delete[] u_data;
+      deallocate(u_data);
     if (v_data)
-      delete[] v_data;
+      deallocate(v_data);
   }
 
   /** Uses LAPACK's DSPSVX to solve symmetric non-definite linear system AX = B, where B is a RefSCVector
@@ -125,9 +126,9 @@ namespace sc {
 
     // convert A to packed upper triangular form
     int ntri = n * (n + 1) / 2;
-    double* AP = new double[ntri];
+    double* AP = allocate<double>(ntri);
     A.convert(AP);
-    double* AFP = new double[ntri];
+    double* AFP = allocate<double>(ntri);
     int* ipiv = new int[n];
     double* BB = new double[n];
     B.convert(BB);
@@ -153,8 +154,8 @@ namespace sc {
       delete[] work;
       delete[] iwork;
 
-      delete[] AP;
-      delete[] AFP;
+      deallocate(AP);
+      deallocate(AFP);
       delete[] BB;
       delete[] XX;
 
@@ -175,8 +176,8 @@ namespace sc {
       delete[] work;
       delete[] iwork;
 
-      delete[] AP;
-      delete[] AFP;
+      deallocate(AP);
+      deallocate(AFP);
       delete[] BB;
       delete[] XX;
     }
@@ -202,13 +203,13 @@ namespace sc {
 
     // convert A to packed upper triangular form
     int ntri = n * (n + 1) / 2;
-    double* AP = new double[ntri];
+    double* AP = allocate<double>(ntri);
     A.convert(AP);
-    double* AFP = new double[ntri];
+    double* AFP = allocate<double>(ntri);
     int* ipiv = new int[n];
-    double* BB = new double[nrhs * n];
+    double* BB = allocate<double>(nrhs * n);
     B.t().convert(BB);
-    double* XX = new double[nrhs * n];
+    double* XX = allocate<double>(nrhs * n);
 
     char fact = 'N';
     char uplo = 'U';
@@ -229,10 +230,10 @@ namespace sc {
       delete[] work;
       delete[] iwork;
 
-      delete[] AP;
-      delete[] AFP;
-      delete[] BB;
-      delete[] XX;
+      deallocate(AP);
+      deallocate(AFP);
+      deallocate(BB);
+      deallocate(XX);
 
       if (info > 0 && info <= n)
         throw std::runtime_error(
@@ -254,10 +255,10 @@ namespace sc {
       delete[] work;
       delete[] iwork;
 
-      delete[] AP;
-      delete[] AFP;
-      delete[] BB;
-      delete[] XX;
+      deallocate(AP);
+      deallocate(AFP);
+      deallocate(BB);
+      deallocate(XX);
     }
     return rcond;
   }
@@ -273,7 +274,7 @@ namespace sc {
 
     const int ntri = n * (n + 1) / 2;
     // AFP is a scratch array
-    double* AFP = new double[ntri];
+    double* AFP = allocate<double>(ntri);
     int* ipiv = new int[n];
 
     char fact = 'N';
@@ -293,7 +294,7 @@ namespace sc {
     delete[] work;
     delete[] iwork;
 
-    delete[] AFP;
+    deallocate(AFP);
 
     if (info) {
 
@@ -316,7 +317,7 @@ namespace sc {
   int lapack_evals_less_eps(const RefSymmSCMatrix& A, double threshold) {
     int n = A.n();
     // convert A to square form
-    double* Asq = new double[n * n];
+    double* Asq = allocate<double>(n * n);
     double** Arows = new double*[n];
     int ioff = 0;
     for (int i = 0; i < n; i++, ioff += n)
@@ -340,7 +341,7 @@ namespace sc {
 
       delete[] work;
       delete[] iwork;
-      delete[] Asq;
+      deallocate(Asq);
       delete[] evals;
 
       throw sc::ProgrammingError(
@@ -356,7 +357,7 @@ namespace sc {
 
     delete[] work;
     delete[] iwork;
-    delete[] Asq;
+    deallocate(Asq);
     delete[] evals;
 
     return nevals_lessthan_threshold;

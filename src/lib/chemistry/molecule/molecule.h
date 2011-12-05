@@ -405,7 +405,11 @@ class Molecule: public SavableState
         principal axes. */
     void principal_moments_of_inertia(double *evals, double **evecs=0) const;
 
-    /// Return information about symmetry unique and equivalent atoms.
+    /**
+     * Return information about symmetry unique and equivalent atoms.
+     */
+    //@{
+    /// Returns the number of symmetry-unique atoms
     int nunique() const { return nuniq_; }
     /// Returns the overall number of the iuniq'th unique atom.
     int unique(int iuniq) const { return equiv_[iuniq][0]; }
@@ -419,6 +423,7 @@ class Molecule: public SavableState
     /** Converts an atom number to the offset of this atom in the list of
         generated atoms. The unique atom itself is allows offset 0.  */
     int atom_to_unique_offset(int iatom) const;
+    //@}
 
     /// Return the number of core electrons.
     int n_core_electrons();

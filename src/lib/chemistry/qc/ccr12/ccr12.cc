@@ -120,6 +120,7 @@ CCR12::CCR12(const Ref<KeyVal>& keyval): Wavefunction(keyval), ccr12_info_(0) {
   worksize_ = memorysize_; 
 #endif
   ExEnv::out0() << indent << "Work   size per node: " << worksize_   << endl;
+  tilesize_forced_ = keyval->intvalue("force_tilesize",KeyValValueint(0));
 }
 
 
@@ -138,7 +139,7 @@ void CCR12::compute(){
   if (ccr12_info_ != 0) delete ccr12_info_;
   ccr12_info_=new CCR12_Info(r12world(),mem_,memorysize_,ref(),nfzc_,nfzv_,
                   molecule()->point_group()->char_table().nirrep(),worksize_,memorysize_,mem_->n(),ndiis_,
-                  theory_,perturbative_);
+                  theory_,perturbative_,tilesize_forced_);
 
 }
 

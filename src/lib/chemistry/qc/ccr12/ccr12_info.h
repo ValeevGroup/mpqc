@@ -193,7 +193,7 @@ class CCR12_Info : virtual public RefCount {
   public:
     CCR12_Info(const Ref<R12WavefunctionWorld>&,const Ref<MemoryGrp>&,size_t,
                const Ref<SCF>,int,int,int,long,long,int,int,
-               std::string,std::string);
+               std::string,std::string,int);
     ~CCR12_Info();
 
     void print(std::ostream&);

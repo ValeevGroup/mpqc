@@ -484,7 +484,8 @@ public:
                   T lim,
                   T val,
                   const ClassDesc *class_desc = 0,
-                  const char *exception_type = "LimitExceeded") throw():
+                  const char *exception_type = strdup((std::string("LimitExceeded<") + std::string(typeid(T).name()) + std::string(">")).c_str())
+                 ) throw():
       SCException(description, file, line, class_desc, exception_type),
       limit_(lim), value_(val)
         {

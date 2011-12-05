@@ -1,0 +1,51 @@
+integral<IntegralLibint2>:()
+
+mol<Molecule>: (
+  symmetry = auto
+  unit = bohr
+  { atoms geometry } = {
+    N [0.0 0.0 0.0]
+    N [0.0 0.0 2.1]
+  }
+)
+molecule = $:mol
+
+basis<GaussianBasisSet>: (
+  name = cc-pVDZ
+  puream = true
+  molecule = $:molecule
+)
+abasis<GaussianBasisSet>: (
+  name = cc-pVTZ
+  puream = true
+  molecule = $:molecule
+)
+
+mole<CCSD>: (
+  perturbative = "(2)TQ"
+  integrals = $:integral
+  molecule = $:molecule
+  basis = $:basis
+  aux_basis = $:abasis
+  ccthresh  = 1.0e-10
+  corr_factor= stg-3g
+  abs_method = cabs+
+  corr_param = 1.5 
+  memory     = 500000000
+  workmemory = 100000000
+  store_ints = posix
+  nfzc = auto
+  reference<CLHF>: (
+    integrals = $:integral
+    molecule = $:molecule
+    basis = $:basis
+    memory = 2400000
+  )
+)
+
+mpqc: (
+  mole = $:mole
+  savestate = false
+  checkpoint = false
+)
+

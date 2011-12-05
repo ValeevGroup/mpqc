@@ -28,6 +28,7 @@
 #include <math.h>
 
 #include <util/misc/formio.h>
+#include <util/misc/consumableresources.h>
 #include <util/keyval/keyval.h>
 #include <math/scmat/local.h>
 #include <math/scmat/cmatrix.h>
@@ -655,9 +656,9 @@ LocalSCMatrix::svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V)
     }
 
   // form a fortran style matrix for the SVD routines
-  double *dA = new double[m*n];
-  double *dU = new double[m*m];
-  double *dV = new double[n*n];
+  double *dA = allocate<double>(m*n);
+  double *dU = allocate<double>(m*m);
+  double *dV = allocate<double>(n*n);
   double *dsigma = new double[n];
   double *w = new double[(3*p-1>m)?(3*p-1):m];
 
@@ -688,9 +689,9 @@ LocalSCMatrix::svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V)
       lsigma->block->data[i] = dsigma[i];
     }
 
-  delete[] dA;
-  delete[] dU;
-  delete[] dV;
+  deallocate(dA);
+  deallocate(dU);
+  deallocate(dV);
   delete[] dsigma;
   delete[] w;
 }

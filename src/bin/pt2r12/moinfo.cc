@@ -165,6 +165,8 @@ ExternMOInfo::ExternMOInfo(std::string filename,
   Ref<PointGroup> pg = new PointGroup(pointgroup_symbol.c_str());
   molecule->set_point_group(pg);
   molecule->print();
+  ExEnv::out0() << indent << "nuclear repulsion energy = "
+                << scprintf("%25.15f",molecule->nuclear_repulsion_energy()) << std::endl;
   // first map MPQC irrep label to irrep index
   const unsigned int nirrep = pg->order();
   std::map<std::string, unsigned int> irreplabel_to_index;
@@ -269,6 +271,7 @@ ExternMOInfo::ExternMOInfo(std::string filename,
         if (have_more_shells) {
 
           int current_atom_index;
+          puream = 0; // if puream not given, make the basis function cartesian
           iss >> current_atom_index >> am >> puream;
           tolower(am);
           --current_atom_index;
@@ -375,11 +378,6 @@ ExternMOInfo::ExternMOInfo(std::string filename,
   while(have_coefs) {
     int row, col;
     double value;
-// #ifdef PT2R12GAMESS
-//     in >> col >> row >> value;
-// #else
-//     in >> row >> col >> value;
-// #endif
     in >> row >> col >> value;
     if (row != -1) {
       --row;  --col;
@@ -885,30 +883,34 @@ ExternSpinFreeRDMTwo::~ExternSpinFreeRDMTwo()
 Ref< SpinFreeRDM<One> >
 ExternSpinFreeRDMTwo::rdm_m_1() const
 {
-  RefSymmSCMatrix rdm1 = orbs_->coefs().kit()->symmmatrix(orbs_->coefs().coldim());
-  rdm1.assign(0.0);
-  const unsigned int norbs = rdm1.n();
-  for (unsigned int b1 = 0; b1 < norbs; ++b1) {
-    const unsigned b12_offset = b1 * norbs;
-    for (unsigned int k1 = 0; k1 <= b1; ++k1) {
-      const unsigned k12_offset = k1 * norbs;
-      double value = 0.0;
-      for (unsigned int i2 = 0; i2 < norbs; ++i2) {
-        value += rdm_.get_element(b12_offset + i2, k12_offset + i2);
+  if (rdm1_.null()) {
+    RefSymmSCMatrix rdm1 = orbs_->coefs().kit()->symmmatrix(
+        orbs_->coefs().coldim());
+    rdm1.assign(0.0);
+    const unsigned int norbs = rdm1.n();
+    for (unsigned int b1 = 0; b1 < norbs; ++b1) {
+      const unsigned b12_offset = b1 * norbs;
+      for (unsigned int k1 = 0; k1 <= b1; ++k1) {
+        const unsigned k12_offset = k1 * norbs;
+        double value = 0.0;
+        for (unsigned int i2 = 0; i2 < norbs; ++i2) {
+          value += rdm_.get_element(b12_offset + i2, k12_offset + i2);
+        }
+        rdm1.set_element(b1, k1, value);
       }
-      rdm1.set_element(b1, k1, value);
     }
+
+    // compute the number of electrons and scale 1-rdm:
+    // trace of the 2-rdm is n(n-1)
+    // trace of the 1-rdm should be n
+    const double trace_2rdm = rdm1.trace();
+    const double nelectron = (1.0 + std::sqrt(1.0 + 4.0 * trace_2rdm)) / 2.0;
+    rdm1.scale(1.0 / (nelectron - 1.0));
+
+    rdm1_ = new ExternSpinFreeRDMOne(rdm1, orbs_);
   }
 
-  // compute the number of electrons and scale 1-rdm:
-  // trace of the 2-rdm is n(n-1)
-  // trace of the 1-rdm should be n
-  const double trace_2rdm = rdm1.trace();
-  const double nelectron = (1.0 + std::sqrt(1.0 + 4.0 * trace_2rdm)) / 2.0;
-  rdm1.scale(1.0 / (nelectron - 1.0));
-
-  Ref < SpinFreeRDM<One> > result = new ExternSpinFreeRDMOne(rdm1, orbs_);
-  return result;
+  return rdm1_;
 }
 
 

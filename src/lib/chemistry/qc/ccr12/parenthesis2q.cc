@@ -29,6 +29,7 @@
 #include <chemistry/qc/ccr12/parenthesis2q.h>
 
 using namespace sc;
+using namespace std;
   
 static ClassDesc Parenthesis2q_cd(
   typeid(Parenthesis2q),"Parenthesis2q",1,"public RefCount"
@@ -49,8 +50,15 @@ double Parenthesis2q::compute_energy(Ref<Parenthesis2tNum> eval_left,
  double* dummy;
 
  // precalculating the intermediates
+ Ref<RegionTimer> timer_ = new RegionTimer();
+ timer_->enter("(2)Q intermediates");
+ const double start = timer_->get_wall_time();
  eval_left->compute_amp(dummy,0L,0L,0L,0L,0L,0L,0L,0L,1L);  
  eval_right->compute_amp(dummy,0L,0L,0L,0L,0L,0L,0L,0L,1L);  
+ if (z->mem()->me()==0) {
+   ExEnv::out0() << indent << fixed    << "Elapsed time [ "<< "(2)Q intermediates" << " ]: "
+                           << setw(10) << setprecision(2)  << timer_->get_wall_time() - start << endl;
+ }
 
  long count=0L;
 
@@ -64,6 +72,7 @@ double Parenthesis2q::compute_energy(Ref<Parenthesis2tNum> eval_left,
  double* data_left_sorted=z->mem()->malloc_local_double(size_alloc);
 
  for (long t_p5b=z->noab();t_p5b<z->noab()+z->nvab();++t_p5b){
+  if (true) ExEnv::out0() << indent << indent << "o Block " << setw(3) << t_p5b << " being processed." << endl;
   for (long t_p6b=t_p5b;    t_p6b<z->noab()+z->nvab();++t_p6b){
    for (long t_p7b=t_p6b;    t_p7b<z->noab()+z->nvab();++t_p7b){
     for (long t_p8b=t_p7b;    t_p8b<z->noab()+z->nvab();++t_p8b){
@@ -86,25 +95,31 @@ double Parenthesis2q::compute_energy(Ref<Parenthesis2tNum> eval_left,
            eval_left->compute_amp( data_left, t_h1b,t_h2b,t_h3b,t_h4b,t_p5b,t_p6b,t_p7b,t_p8b,2L);  
            eval_right->compute_amp(data_right,t_p5b,t_p6b,t_p7b,t_p8b,t_h1b,t_h2b,t_h3b,t_h4b,2L);
    
+#if 0
            z->sort_indices8(data_left,data_left_sorted,z->get_range(t_h1b),z->get_range(t_h2b),z->get_range(t_h3b),z->get_range(t_h4b),
                                                        z->get_range(t_p5b),z->get_range(t_p6b),z->get_range(t_p7b),z->get_range(t_p8b),
                                                        4,5,6,7,0,1,2,3,1.0);
+#else
+           z->sort_indices2(data_left,data_left_sorted,z->get_range(t_h1b)*z->get_range(t_h2b)*z->get_range(t_h3b)*z->get_range(t_h4b),
+                                                       z->get_range(t_p5b)*z->get_range(t_p6b)*z->get_range(t_p7b)*z->get_range(t_p8b),
+                                                       1,0,1.0);
+#endif
    
            double factor=1.0;
            if (z->restricted() && z->get_spin(t_p5b)+z->get_spin(t_p6b)+z->get_spin(t_p7b)+z->get_spin(t_p8b)
                                  +z->get_spin(t_h1b)+z->get_spin(t_h2b)+z->get_spin(t_h3b)+z->get_spin(t_h4b)!=12L) factor*=2.0; 
    
-           if      (t_p5b==t_p6b && t_p6b==t_p7b && t_p7b==t_p8b) factor/=24.0; 
-           else if (t_p5b==t_p6b && t_p6b==t_p7b) factor/=6.0; 
-           else if (t_p6b==t_p7b && t_p7b==t_p8b) factor/=6.0; 
-           else if (t_p5b==t_p6b && t_p7b==t_p8b) factor/=4.0; 
-           else if (t_p5b==t_p6b || t_p6b==t_p7b || t_p7b==t_p8b) factor/=2.0; 
+           if      (t_p5b==t_p6b && t_p6b==t_p7b && t_p7b==t_p8b) factor *= (1.0/24.0);
+           else if (t_p5b==t_p6b && t_p6b==t_p7b) factor *= 0.166666666666666667;
+           else if (t_p6b==t_p7b && t_p7b==t_p8b) factor *= 0.166666666666666667;
+           else if (t_p5b==t_p6b && t_p7b==t_p8b) factor *= 0.25;
+           else if (t_p5b==t_p6b || t_p6b==t_p7b || t_p7b==t_p8b) factor *= 0.5;
    
-           if      (t_h1b==t_h2b && t_h2b==t_h3b && t_h3b==t_h4b) factor/=24.0; 
-           else if (t_h1b==t_h2b && t_h2b==t_h3b) factor/=6.0; 
-           else if (t_h2b==t_h3b && t_h3b==t_h4b) factor/=6.0; 
-           else if (t_h1b==t_h2b && t_h3b==t_h4b) factor/=4.0; 
-           else if (t_h1b==t_h2b || t_h2b==t_h3b || t_h3b==t_h4b) factor/=2.0; 
+           if      (t_h1b==t_h2b && t_h2b==t_h3b && t_h3b==t_h4b) factor *= (1.0/24.0);
+           else if (t_h1b==t_h2b && t_h2b==t_h3b) factor *= 0.166666666666666667;
+           else if (t_h2b==t_h3b && t_h3b==t_h4b) factor *= 0.166666666666666667;
+           else if (t_h1b==t_h2b && t_h3b==t_h4b) factor *= 0.25;
+           else if (t_h1b==t_h2b || t_h2b==t_h3b || t_h3b==t_h4b) factor *= 0.5;
    
            long iall=0;
            for (long p5=0;p5<z->get_range(t_p5b);++p5) {
@@ -123,14 +138,14 @@ double Parenthesis2q::compute_energy(Ref<Parenthesis2tNum> eval_left,
                  const double eh2=z->get_orb_energy(z->get_offset(t_h2b)+h2);
                  for (long h3=0;h3<z->get_range(t_h3b);++h3) {
                   const double eh3=z->get_orb_energy(z->get_offset(t_h3b)+h3);
-                  const double eh123 = eh1 + eh2 + eh3;
+                  const double eh123 = eh1 + eh2 + eh3 - eps;
 
                   long h4a = z->get_offset(t_h4b);
                   for (long h4=0;h4<z->get_range(t_h4b);++h4, ++h4a, ++iall) {
                    const double eh4=z->get_orb_energy(h4a);
   
                    const double numerator=data_left_sorted[iall]*data_right[iall]*factor;
-                   energy+=numerator/(eh123+eh4-eps);
+                   energy+=numerator/(eh123+eh4);
                   }
                  }
                 }

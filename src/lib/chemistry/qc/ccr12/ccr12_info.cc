@@ -44,9 +44,9 @@ CCR12_Info::CCR12_Info(const Ref<R12WavefunctionWorld>& r12world,
                        const Ref<MemoryGrp>& mem, size_t memorysize,
                        const Ref<SCF> reference, int nfc, int nfv, int nirr,
                        long workmem, long memsize, int nnode, int ndiis,
-                       string theory, string per):
+                       string theory, string per, int tilef):
 r12world_(r12world), mem_(mem), ref_(reference), nfzc_(nfc),
-nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_(per)
+nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_(per), maxtilesize_(tilef)
 {
   assert(r12world_->r12tech()->corrfactor()->nfunctions() == 1);
   restricted_ = !ref()->spin_polarized();
@@ -411,35 +411,39 @@ int CCR12_Info::determine_tilesize_each(int istart, int iend, int spin,
 
 void CCR12_Info::determine_maxtilesize(double memory){
 
-  string t = theory_;
- // transform(t.begin(),t.end(),t.begin(),(int (*)(int))tolower);
-
-  const double max_blocks = 7.0;
-
-  if (t == "CCSD" || t == "CCSD(R12)" || t == "CCSD-R12"){
-    maxtilesize_=static_cast<int>(::pow(memory / max_blocks, 0.25));
-  } else if (t == "CCSDT" || t == "CCSDT(R12)" || t == "CCSDT-R12") {
-    maxtilesize_ = static_cast<int>(::pow(memory / max_blocks, 1.0 / 6.0));
-  } else if (t == "CCSDTQ" || t == "CCSDTQ(R12)" || t == "CCSDTQ-R12") {
-    maxtilesize_ = static_cast<int>(::pow(memory / max_blocks, 0.125));
+  if (maxtilesize_ > 0) {
+    ExEnv::out0() << indent << ":: caution :: max tile size is manually set to " << maxtilesize_ << endl; 
   } else {
-    ExEnv::out0() << indent << "theory: " << theory_ << endl;
-   throw ProgrammingError("CCR12_Info::tilesize -- not yet implemented", __FILE__, __LINE__);
-  }
 
-  // Perturbative correction needs an additional memory area.
-  // There is a room to let tilesize larger than this by calculating explicitly the memory demands...
-  if (perturbative_ == "(T)" || perturbative_ == "(T)R12[DT]" || perturbative_ == "(T)R12"){
-    const int p_maxtilesize = static_cast<int>(::pow(memory / 5.0, 1.0 / 6.0));
-    if (p_maxtilesize < maxtilesize_) maxtilesize_ = p_maxtilesize;
-  } else if (perturbative_ == "(2)T") {
-    const int p_maxtilesize = static_cast<int>(::pow(memory / 5.0, 1.0 / 6.0));
-    if (p_maxtilesize < maxtilesize_) maxtilesize_ = p_maxtilesize;
-  } else if (perturbative_ == "(2)TQ" || perturbative_ == "(2)TQR12") {
-    const int p_maxtilesize = static_cast<int>(::pow(memory / 5.0, 1.0 / 8.0));
-    if (p_maxtilesize < maxtilesize_) maxtilesize_ = p_maxtilesize;
-  } else if (perturbative_ == "(2)R12" || perturbative_ == "(2)R12FULL") {
-    /// nothing happens
+    string t = theory_;
+    // transform(t.begin(),t.end(),t.begin(),(int (*)(int))tolower);
+    const double max_blocks = 7.0;
+
+    if (t == "CCSD" || t == "CCSD(R12)" || t == "CCSD-R12"){
+      maxtilesize_=static_cast<int>(::pow(memory / max_blocks, 0.25));
+    } else if (t == "CCSDT" || t == "CCSDT(R12)" || t == "CCSDT-R12") {
+      maxtilesize_ = static_cast<int>(::pow(memory / max_blocks, 1.0 / 6.0));
+    } else if (t == "CCSDTQ" || t == "CCSDTQ(R12)" || t == "CCSDTQ-R12") {
+      maxtilesize_ = static_cast<int>(::pow(memory / max_blocks, 0.125));
+    } else {
+      ExEnv::out0() << indent << "theory: " << theory_ << endl;
+      throw ProgrammingError("CCR12_Info::tilesize -- not yet implemented", __FILE__, __LINE__);
+    }
+
+    // Perturbative correction needs an additional memory area.
+    // There is a room to let tilesize larger than this by calculating explicitly the memory demands...
+    if (perturbative_ == "(T)" || perturbative_ == "(T)R12[DT]" || perturbative_ == "(T)R12"){
+      const int p_maxtilesize = static_cast<int>(::pow(memory / 5.0, 1.0 / 6.0));
+      if (p_maxtilesize < maxtilesize_) maxtilesize_ = p_maxtilesize;
+    } else if (perturbative_ == "(2)T") {
+      const int p_maxtilesize = static_cast<int>(::pow(memory / 5.0, 1.0 / 6.0));
+      if (p_maxtilesize < maxtilesize_) maxtilesize_ = p_maxtilesize;
+    } else if (perturbative_ == "(2)TQ" || perturbative_ == "(2)TQR12") {
+      const int p_maxtilesize = static_cast<int>(::pow(memory / 5.0, 1.0 / 8.0));
+      if (p_maxtilesize < maxtilesize_) maxtilesize_ = p_maxtilesize;
+    } else if (perturbative_ == "(2)R12" || perturbative_ == "(2)R12FULL") {
+      /// nothing happens
+    }
   }
 
 }

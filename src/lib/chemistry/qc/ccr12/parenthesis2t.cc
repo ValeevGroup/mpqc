@@ -86,9 +86,15 @@ double Parenthesis2t::compute_energy(Ref<Parenthesis2tNum> eval_left,
          eval_left->compute_amp( data_left,  t_h1b, t_h2b, t_h3b, t_p4b, t_p5b, t_p6b, 2L);  
          eval_right->compute_amp(data_right, t_p4b, t_p5b, t_p6b, t_h1b, t_h2b, t_h3b, 2L);  
  
+#if 0
          z->sort_indices6(data_left, data_left_sorted, z->get_range(t_h1b), z->get_range(t_h2b), z->get_range(t_h3b),
                                                        z->get_range(t_p4b), z->get_range(t_p5b), z->get_range(t_p6b),
                                                        3, 4, 5, 0, 1, 2, 1.0);
+#else
+         z->sort_indices2(data_left, data_left_sorted, z->get_range(t_h1b)*z->get_range(t_h2b)*z->get_range(t_h3b),
+                                                       z->get_range(t_p4b)*z->get_range(t_p5b)*z->get_range(t_p6b),
+                                                       1, 0, 1.0);
+#endif
  
          double factor = 1.0;
          if (z->restricted()) factor *= 2.0; 
@@ -106,17 +112,17 @@ double Parenthesis2t::compute_energy(Ref<Parenthesis2tNum> eval_left,
            const double ep5 = z->get_orb_energy(z->get_offset(t_p5b) + p5);
            for (long p6 = 0L; p6 < z->get_range(t_p6b); ++p6) {
             const double ep6 = z->get_orb_energy(z->get_offset(t_p6b) + p6);
-            const double eps = ep4 + ep5 + ep6;
 
             for (long h1 = 0L; h1 < z->get_range(t_h1b); ++h1) {
              const double eh1 = z->get_orb_energy(z->get_offset(t_h1b) + h1);
              for (long h2 = 0L; h2 < z->get_range(t_h2b); ++h2) {
               const double eh2 = z->get_orb_energy(z->get_offset(t_h2b) + h2);
+              const double eps = ep4 + ep5 + ep6 - eh1 - eh2;
               for (long h3 = 0L; h3 < z->get_range(t_h3b); ++h3, ++iall) {
                const double eh3 = z->get_orb_energy(z->get_offset(t_h3b) + h3);
  
                const double numerator= data_left_sorted[iall] * data_right[iall] * factor;
-               energy += numerator / (eh1 + eh2 + eh3 - eps);
+               energy += numerator / (eh3 - eps);
               }
              }
             }

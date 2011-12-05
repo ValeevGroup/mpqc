@@ -33,7 +33,7 @@
 
 using namespace sc;
 
-size_t ConsumableResources::defaults::memory = 256000000;
+size_t ConsumableResources::defaults::memory = 0; // assume infinite memory
 std::pair<std::string,size_t> ConsumableResources::defaults::disk = make_pair(std::string("./"), size_t(0));
 
 ClassDesc
@@ -47,8 +47,12 @@ ConsumableResources::class_desc_(typeid(ConsumableResources),
                      );
 
 ConsumableResources::ConsumableResources() :
-    memory_(defaults::memory), disk_(defaults::disk)
-  {}
+    memory_(defaults::memory), disk_(defaults::disk) {
+  if (memory_ == 0)
+    memory_ = rsize(std::numeric_limits<size_t>::max());
+  if (disk_.second == 0)
+    disk_.second = rsize(std::numeric_limits<size_t>::max());
+}
 
 ConsumableResources::ConsumableResources(const Ref<KeyVal>& kv) {
   memory_ = kv->sizevalue("memory", KeyValValuesize(defaults::memory));
@@ -220,18 +224,15 @@ size_t ConsumableResources::memory() const { return memory_; }
 size_t ConsumableResources::disk() const { return disk_.second; }
 
 void ConsumableResources::consume_memory(size_t value) {
-#define IGNORE_RESOURCE_OVERUSE 1
   rsize& resource = memory_;
   if (value <= resource)
     resource -= value;
-#if !IGNORE_RESOURCE_OVERUSE
   else
     throw LimitExceeded<size_t>("not enough memory",
                                 __FILE__, __LINE__,
                                 resource.max_value(),
                                 resource.max_value() - resource.value() + value,
                                 class_desc());
-#endif
 }
 void ConsumableResources::consume_disk(size_t value) {
   rsize& resource = disk_.second;

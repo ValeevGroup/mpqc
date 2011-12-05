@@ -57,6 +57,7 @@ class CCR12: public Wavefunction {
     long memorysize_;
     bool rhf_;
     int maxiter_;
+    int tilesize_forced_;
     Ref<RegionTimer> timer_;
     std::string theory_;
     std::string perturbative_;

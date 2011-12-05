@@ -161,6 +161,7 @@ namespace sc {
       void init_from_rdm2_actspace(const std::vector<unsigned int>& indexmap,
                                    const Ref<OrbitalSpace> & occ_orbs);
 
+      mutable Ref<ExternSpinFreeRDMOne> rdm1_; // cached value to avoid recomputation
   };
 
 } // end of namespace sc

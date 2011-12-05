@@ -200,6 +200,13 @@ class GaussianBasisSet: virtual public SavableState
               int pure);
     void init2(int skip_ghosts=0,bool include_q=0);
 
+    /**
+     * verifies that symmetry-equivalent atoms have the same basis set
+     * this may help to squash hard-to-detect bugs due to the user providing an erroneous basis keyword
+     * will throw InputError if the basis set does not conform with the point group
+     */
+    void validate_point_group() const;
+
   protected:
     /** This CTOR leaves it up to the derived class to completely
         initialize the basis set. */

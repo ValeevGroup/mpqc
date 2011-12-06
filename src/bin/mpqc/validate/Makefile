@@ -186,6 +186,10 @@ H2OFRQMASTER=h2ofrq.qci
 H2OFRQINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(H2OFRQMASTER))
 H2OFRQOUTPUTS = $(H2OFRQINPUTS:%.$(INSUF)=%.out)
 
+CH2FRQMASTER=ch2frq.qci
+CH2FRQINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(CH2FRQMASTER))
+CH2FRQOUTPUTS = $(CH2FRQINPUTS:%.$(INSUF)=%.out)
+
 ORTHOGMASTER=orthog.qci
 ORTHOGINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(ORTHOGMASTER))
 ORTHOGOUTPUTS = $(ORTHOGINPUTS:%.$(INSUF)=%.out)
@@ -377,7 +381,8 @@ $(INP)/mp2f12_mp2f12slashc%  $(INP)/psiccsdpt2f12% \
 $(INP)/pt2f12% $(INP)/psipt2f12% $(INP)/ccsdpt%
 endif
 
-ALLINPUTS = $(METHODSINPUTS) $(H2OINPUTS) $(H2OMP2INPUTS) $(H2OFRQINPUTS) \
+ALLINPUTS = $(METHODSINPUTS) $(H2OINPUTS) $(H2OMP2INPUTS) \
+            $(H2OFRQINPUTS) $(CH2FRQINPUTS) \
 	    $(MP2R12INPUTS) $(MP2F12INPUTS) $(CCSDR12INPUTS) \
 	    $(PT2F12INPUTS) $(PSIPT2F12INPUTS) \
 	    $(PSICCSDPT2R12INPUTS) $(PSICCSDPT2F12INPUTS) \
@@ -576,7 +581,7 @@ checkccafe_chk:
 	$(CHECKCCAOUT) --refprefix $(SRCDIR)/ref --outputprefix $(RUN) $(CCAFERESULTS)
 
 .PHONY: inputs
-inputs:: h2o h2omp2 mp2r12 mp2f12 psiccsdpt2r12 psiccsdpt2f12 h2ofrq basis1 basis2 opt optts symm1 symm2 symm3 ckpt mbpt
+inputs:: h2o h2omp2 mp2r12 mp2f12 psiccsdpt2r12 psiccsdpt2f12 h2ofrq ch2frq basis1 basis2 opt optts symm1 symm2 symm3 ckpt mbpt
 inputs:: methods clscf uscf hsosscf input dft orthog ccacints ccaintv3 ccamp2r12
 
 .PHONY: h2o
@@ -605,6 +610,9 @@ psipt2f12: stamp-psipt2f12
 
 .PHONY: h2ofrq
 h2ofrq: stamp-h2ofrq
+
+.PHONY: ch2frq
+ch2frq: stamp-ch2frq
 
 .PHONY: orthog
 orthog: stamp-orthog
@@ -702,6 +710,10 @@ stamp-h2ofrq: $(INP) $(H2OFRQMASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(INP) $(H2OFRQMASTER)
 	touch stamp-h2ofrq
 
+stamp-ch2frq: $(INP) $(CH2FRQMASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(INP) $(CH2FRQMASTER)
+	touch stamp-ch2frq
+
 stamp-orthog: $(INP) $(ORTHOGMASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -d $(INP) $(ORTHOGMASTER)
 	touch stamp-orthog
@@ -791,6 +803,16 @@ checkh2ofrq:
 	@$(CHECKOUT) $(RUN)/h2ofrq_scf6311gss{c1,c2v}optfrq.out
 	@$(CHECKOUT) $(RUN)/h2ofrq_mp2006311gss{c1,c2v}frq.out
 	@$(CHECKOUT) $(RUN)/h2ofrq_mp2006311gss{c1,c2v}optfrq.out
+
+.PHONY: checkch2frq
+checkch2frq:
+	@echo Consistency checks on ch2 frequency tests:
+	@$(CHECKOUT) $(RUN)/ch2frq_scfsto3g{c1,c2v}optfrq.out
+	@$(CHECKOUT) $(RUN)/ch2frq_ub3lypsto3g{c1,c2v}optfrq.out
+	@$(CHECKOUT) $(RUN)/ch2frq_zapt200sto3g{c1,c2v}optfrq.out
+	@$(CHECKOUT) $(RUN)/ch2frq_scf6311gss{c1,c2v}optfrq.out
+	@$(CHECKOUT) $(RUN)/ch2frq_ub3lyp6311gss{c1,c2v}optfrq.out
+	@$(CHECKOUT) $(RUN)/ch2frq_zapt2006311gss{c1,c2v}optfrq.out
 
 .PHONY: checkckpt
 checkckpt:
@@ -1001,6 +1023,12 @@ $(INP)/input_%opt.qci:
 $(INP)/input_%.qci:
 	@mkdir -p $(INP)
 	(echo "method: generic"; echo "optimize: no") > $@
+
+##############################################################################
+
+.PHONY: ch2frq_run
+ch2frq_run:
+	$(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CH2FRQINPUTS:$(INP)/%=%)
 
 ##############################################################################
 

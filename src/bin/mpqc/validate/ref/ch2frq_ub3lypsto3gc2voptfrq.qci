@@ -1,0 +1,55 @@
+fixed:
+
+r12theory:
+default
+test_symmetry:
+c1 c2v
+followed:
+
+state:
+3
+fzc:
+
+dfbasis:
+
+basis:
+STO-3G
+method:
+ub3lyp
+auxbasis:
+
+test_calc:
+optfreq
+restart:
+no
+grid:
+default
+frequencies:
+yes
+docc:
+auto
+test_basis:
+STO-3G 6-311G**
+default_package:
+MPQC.IntV3EvaluatorFactory
+checkpoint:
+no
+symmetry:
+c2v
+socc:
+auto
+test_method:
+scf uhf ub3lyp zapt2
+fzv:
+
+test_multiplicity:
+3
+label:
+methylene test series
+optimize:
+yes
+molecule:
+  C   0.000   0.000  -0.100
+  H   0.000   0.857   0.596
+  H   0.000  -0.857   0.596
+

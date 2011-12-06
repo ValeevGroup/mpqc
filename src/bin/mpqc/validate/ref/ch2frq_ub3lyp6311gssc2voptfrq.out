@@ -1,0 +1,1657 @@
+
+                    MPQC: Massively Parallel Quantum Chemistry
+                                Version 3.0.0-alpha
+
+  Machine:    i386-apple-darwin11.1.0
+  User:       evaleev@EdBookPro.local
+  Start Time: Tue Dec  6 11:28:35 2011
+
+  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using PthreadThreadGrp for threading (number of threads = 1).
+  Using ProcMemoryGrp for distributed shared memory.
+  Total number of processors = 1
+
+  Using IntegralV3 by default for molecular integrals evaluation
+  Given resources: ConsumableResources: ( memory = unlimited disk = [./ unlimited] )
+
+  Reading file /Users/evaleev/Development/workspace/install/mpqc-gcc/share/mpqc/3.0.0-alpha/atominfo.kv.
+
+  IntCoorGen: generated 3 coordinates.
+  Forming optimization coordinates:
+    SymmMolecularCoor::form_variable_coordinates()
+      expected 3 coordinates
+      found 2 variable coordinates
+      found 0 constant coordinates
+  Reading file /Users/evaleev/Development/workspace/install/mpqc-gcc/share/mpqc/3.0.0-alpha/basis/6-311gSS.kv.
+      Reading file /Users/evaleev/Development/workspace/install/mpqc-gcc/share/mpqc/3.0.0-alpha/basis/sto-3g.kv.
+
+      USCF::init: total charge = 0
+
+      Starting from core Hamiltonian guess
+
+      Using symmetric orthogonalization.
+      n(basis):             4     0     1     2
+      Maximum orthogonalization residual = 1.94235
+      Minimum orthogonalization residual = 0.275215
+      alpha = [ 3 0 1 1 ]
+      beta  = [ 2 0 0 1 ]
+
+  USCF::init: total charge = 0
+
+  Projecting guess wavefunction into the present basis set
+
+      SCF::compute: energy accuracy = 1.0000000e-06
+
+      nuclear repulsion energy =    6.0605491858
+
+      Beginning iterations.  Basis is STO-3G.
+                       565 integrals
+      iter     1 energy =  -38.1820699187 delta = 5.64824e-01
+                       565 integrals
+      iter     2 energy =  -38.4003011385 delta = 1.24674e-01
+                       565 integrals
+      iter     3 energy =  -38.4180544451 delta = 4.28738e-02
+                       565 integrals
+      iter     4 energy =  -38.4207818964 delta = 1.77645e-02
+                       565 integrals
+      iter     5 energy =  -38.4210039537 delta = 4.15403e-03
+                       565 integrals
+      iter     6 energy =  -38.4210309242 delta = 1.17802e-03
+                       565 integrals
+      iter     7 energy =  -38.4210325834 delta = 2.78023e-04
+                       565 integrals
+      iter     8 energy =  -38.4210326590 delta = 6.34829e-05
+                       565 integrals
+      iter     9 energy =  -38.4210326633 delta = 1.34588e-05
+                       565 integrals
+      iter    10 energy =  -38.4210326648 delta = 5.94892e-06
+                       565 integrals
+      iter    11 energy =  -38.4210326652 delta = 3.49557e-06
+                       565 integrals
+      iter    12 energy =  -38.4210326652 delta = 8.71612e-07
+
+      <S^2>exact = 2.000000
+      <S^2>      = 2.004930
+
+      total scf energy =  -38.4210326652
+
+      Projecting the guess density.
+
+        The number of electrons in the guess density = 5
+        Using symmetric orthogonalization.
+        n(basis):            14     2     5     9
+        Maximum orthogonalization residual = 4.53967
+        Minimum orthogonalization residual = 0.0225907
+        The number of electrons in the projected density = 4.99687
+
+      Projecting the guess density.
+
+        The number of electrons in the guess density = 3
+        The number of electrons in the projected density = 2.99893
+
+  alpha = [ 3 0 1 1 ]
+  beta  = [ 2 0 0 1 ]
+
+  Molecular formula CH2
+
+  MPQC options:
+    matrixkit       = <ReplSCMatrixKit>
+    filename        = ch2frq_ub3lyp6311gssc2voptfrq
+    restart_file    = ch2frq_ub3lyp6311gssc2voptfrq.ckpt
+    restart         = no
+    checkpoint      = no
+    savestate       = no
+    do_energy       = yes
+    do_gradient     = no
+    do_freq         = yes
+    optimize        = yes
+    write_pdb       = no
+    print_mole      = yes
+    print_timings   = yes
+    print_resources = yes
+
+  Optimizing using:
+    QNewtonOpt:
+      accuracy         = 0.0001
+      print_x          = no
+      print_hessian    = no
+      print_gradient   = no
+      linear           = no
+      restrict         = yes
+      dynamic_grad_acc = yes
+      restart          = yes
+      update           =
+        Object of type BFGSUpdate
+      lineopt          =
+        MCSearch
+      Optimize (base class of QNewtonOpt):
+        print_timings  = no
+        checkpoint     = no
+        max_iterations = 20
+        max_stepsize   = 0.6
+        convergence    = 
+          MolEnergyConvergence:
+            cartesian     = yes
+            Convergence (base class of MolEnergyConvergence):
+              The following criteria must be simultaneously satified:
+              max_disp         = 0.0001
+              max_grad         = 0.0001
+              graddisp         = 0.0001
+
+  SCF::compute: energy accuracy = 1.0000000e-06
+
+  nuclear repulsion energy =    6.0605491858
+
+  Beginning iterations.  Basis is 6-311G**.
+                 76050 integrals
+  Total integration points = 4009
+  Integrated electron density =   7.999963899887
+  iter     1 energy =  -39.0629662768 delta = 7.15245e-02
+                 76171 integrals
+  Total integration points = 11317
+  Integrated electron density =   7.999999352233
+  iter     2 energy =  -39.1402670903 delta = 1.74505e-02
+                 76162 integrals
+  Total integration points = 11317
+  Integrated electron density =   7.999998867896
+  iter     3 energy =  -39.1458298824 delta = 4.26548e-03
+                 76172 integrals
+  Total integration points = 24503
+  Integrated electron density =   7.999998862239
+  iter     4 energy =  -39.1466305410 delta = 1.53385e-03
+                 76162 integrals
+  Total integration points = 24503
+  Integrated electron density =   7.999998837946
+  iter     5 energy =  -39.1467886920 delta = 5.52596e-04
+                 76130 integrals
+  Total integration points = 24503
+  Integrated electron density =   7.999998827977
+  iter     6 energy =  -39.1468216034 delta = 2.32500e-04
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   8.000000001014
+  iter     7 energy =  -39.1468269555 delta = 8.62018e-05
+                 76161 integrals
+  Total integration points = 46071
+  Integrated electron density =   8.000000000975
+  iter     8 energy =  -39.1468279032 delta = 3.49783e-05
+                 76127 integrals
+  Total integration points = 46071
+  Integrated electron density =   8.000000000963
+  iter     9 energy =  -39.1468280292 delta = 1.25931e-05
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   8.000000001029
+  iter    10 energy =  -39.1468280449 delta = 4.52230e-06
+                 76170 integrals
+  Total integration points = 46071
+  Integrated electron density =   8.000000001028
+  iter    11 energy =  -39.1468280467 delta = 1.64667e-06
+                 76153 integrals
+  Total integration points = 46071
+  Integrated electron density =   8.000000001028
+  iter    12 energy =  -39.1468280468 delta = 4.76666e-07
+
+  <S^2>exact = 2.000000
+  <S^2>      = 2.002011
+
+  total scf energy =  -39.1468280468
+
+  SCF::compute: gradient accuracy = 1.0000000e-04
+
+  Total integration points = 46071
+  Integrated electron density =   7.999999944713
+  Total Gradient:
+       1   C   0.0000000016   0.0000000011  -0.0573281268
+       2   H  -0.0000000015  -0.0161438989   0.0286640629
+       3   H  -0.0000000001   0.0161438979   0.0286640639
+  .......................................
+  Starting line optimization.
+
+  UKS: changing atomic coordinates:
+  Molecular formula: CH2
+  molecule<Molecule>: (
+    symmetry = c2v
+    unit = "angstrom"
+    {  n atoms                        geometry                     }={
+       1     C [    0.0000000000     0.0000000000    -0.0236239026]
+       2     H [   -0.0000000000     0.9276410066     0.5578119513]
+       3     H [   -0.0000000000    -0.9276410066     0.5578119513]
+    }
+  )
+  Atomic Masses:
+     12.00000    1.00783    1.00783
+  Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
+  Completed line optimization step 1 (not converged)
+  .......................................
+
+  SCF::compute: energy accuracy = 2.7425564e-06
+
+  nuclear repulsion energy =    6.0854932810
+
+  Using symmetric orthogonalization.
+  n(basis):            14     2     5     9
+  Maximum orthogonalization residual = 4.42261
+  Minimum orthogonalization residual = 0.0249569
+  Beginning iterations.  Basis is 6-311G**.
+                 76024 integrals
+  Total integration points = 4009
+  Integrated electron density =   7.999913698156
+  iter     1 energy =  -39.1392794181 delta = 7.05891e-02
+                 76171 integrals
+  Total integration points = 11317
+  Integrated electron density =   7.999991906605
+  iter     2 energy =  -39.1588042835 delta = 1.10447e-02
+                 76141 integrals
+  Total integration points = 11317
+  Integrated electron density =   7.999991736348
+  iter     3 energy =  -39.1591922129 delta = 1.53459e-03
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999999025
+  iter     4 energy =  -39.1592264456 delta = 3.78659e-04
+                 76161 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999999064
+  iter     5 energy =  -39.1592327002 delta = 1.34046e-04
+                 76133 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999999094
+  iter     6 energy =  -39.1592341886 delta = 6.75510e-05
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999999227
+  iter     7 energy =  -39.1592344296 delta = 2.81205e-05
+                 76153 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999999230
+  iter     8 energy =  -39.1592344713 delta = 1.29731e-05
+                 76103 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999999231
+  iter     9 energy =  -39.1592344770 delta = 5.38639e-06
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999999257
+  iter    10 energy =  -39.1592344777 delta = 2.41316e-06
+
+  <S^2>exact = 2.000000
+  <S^2>      = 2.002675
+
+  total scf energy =  -39.1592344777
+
+  SCF::compute: gradient accuracy = 2.7425564e-04
+
+  Total integration points = 46071
+  Integrated electron density =   7.999999776050
+  Total Gradient:
+       1   C   0.0000000039   0.0000000033  -0.0322455345
+       2   H  -0.0000000027  -0.0048234940   0.0161227688
+       3   H  -0.0000000012   0.0048234907   0.0161227657
+  Completed line optimization step 2 (converged)
+  .......................................
+
+  Max Gradient     :   0.0573281268   0.0001000000  no
+  Max Displacement :   0.1443298962   0.0001000000  no
+  Gradient*Displace:   0.0167214112   0.0001000000  no
+  taking step of size 0.245663
+  Optimization iteration 1 complete
+  //////////////////////////////////////////////////////////////////////
+  .......................................
+  Starting line optimization.
+
+  UKS: changing atomic coordinates:
+  Molecular formula: CH2
+  molecule<Molecule>: (
+    symmetry = c2v
+    unit = "angstrom"
+    {  n atoms                        geometry                     }={
+       1     C [    0.0000000000     0.0000000000     0.0585605107]
+       2     H [   -0.0000000000     0.9778510749     0.5167197446]
+       3     H [   -0.0000000000    -0.9778510749     0.5167197446]
+    }
+  )
+  Atomic Masses:
+     12.00000    1.00783    1.00783
+  Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
+  Completed line optimization step 1 (not converged)
+  .......................................
+
+  SCF::compute: energy accuracy = 1.2999313e-06
+
+  nuclear repulsion energy =    6.1510786396
+
+  Using symmetric orthogonalization.
+  n(basis):            14     2     5     9
+  Maximum orthogonalization residual = 4.34858
+  Minimum orthogonalization residual = 0.023092
+  Beginning iterations.  Basis is 6-311G**.
+                 75958 integrals
+  Total integration points = 4009
+  Integrated electron density =   7.999921197041
+  iter     1 energy =  -39.1428880461 delta = 7.10520e-02
+                 76168 integrals
+  Total integration points = 11317
+  Integrated electron density =   7.999997978596
+  iter     2 energy =  -39.1636507396 delta = 1.16768e-02
+                 76111 integrals
+  Total integration points = 11317
+  Integrated electron density =   7.999997989289
+  iter     3 energy =  -39.1640990919 delta = 1.73930e-03
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999991803
+  iter     4 energy =  -39.1641430413 delta = 5.05219e-04
+                 76125 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999991790
+  iter     5 energy =  -39.1641527941 delta = 2.07644e-04
+                 76073 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999991824
+  iter     6 energy =  -39.1641554347 delta = 1.19647e-04
+                 75876 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999991848
+  iter     7 energy =  -39.1641558796 delta = 5.41824e-05
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999991905
+  iter     8 energy =  -39.1641559607 delta = 2.69906e-05
+                 75947 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999991912
+  iter     9 energy =  -39.1641559730 delta = 1.16436e-05
+                 75667 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999991916
+  iter    10 energy =  -39.1641559750 delta = 5.06026e-06
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999991942
+  iter    11 energy =  -39.1641559752 delta = 1.96498e-06
+                 75835 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999991943
+  iter    12 energy =  -39.1641559753 delta = 7.42131e-07
+
+  <S^2>exact = 2.000000
+  <S^2>      = 2.003661
+
+  total scf energy =  -39.1641559753
+
+  SCF::compute: gradient accuracy = 1.2999313e-04
+
+  Total integration points = 46071
+  Integrated electron density =   7.999999912431
+  Total Gradient:
+       1   C  -0.0000000003   0.0000000001  -0.0054860175
+       2   H   0.0000000002  -0.0027667777   0.0027430089
+       3   H   0.0000000001   0.0027667776   0.0027430086
+  Completed line optimization step 2 (converged)
+  .......................................
+
+  Max Gradient     :   0.0322455345   0.0001000000  no
+  Max Displacement :   0.1553060217   0.0001000000  no
+  Gradient*Displace:   0.0084272260   0.0001000000  no
+  taking step of size 0.246698
+  Optimization iteration 2 complete
+  //////////////////////////////////////////////////////////////////////
+  .......................................
+  Starting line optimization.
+
+  UKS: changing atomic coordinates:
+  Molecular formula: CH2
+  molecule<Molecule>: (
+    symmetry = c2v
+    unit = "angstrom"
+    {  n atoms                        geometry                     }={
+       1     C [    0.0000000000     0.0000000000     0.0804873137]
+       2     H [   -0.0000000000     0.9934140203     0.5057563432]
+       3     H [   -0.0000000000    -0.9934140203     0.5057563432]
+    }
+  )
+  Atomic Masses:
+     12.00000    1.00783    1.00783
+  Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
+  Completed line optimization step 1 (not converged)
+  .......................................
+
+  SCF::compute: energy accuracy = 3.7109526e-07
+
+  nuclear repulsion energy =    6.1427527756
+
+  Using symmetric orthogonalization.
+  n(basis):            14     2     5     9
+  Maximum orthogonalization residual = 4.32233
+  Minimum orthogonalization residual = 0.0232359
+  Beginning iterations.  Basis is 6-311G**.
+                 75743 integrals
+  Total integration points = 4009
+  Integrated electron density =   7.999918083401
+  iter     1 energy =  -39.1627774870 delta = 6.80452e-02
+                 76171 integrals
+  Total integration points = 24503
+  Integrated electron density =   8.000002560260
+  iter     2 energy =  -39.1644160036 delta = 2.82001e-03
+                 76081 integrals
+  Total integration points = 24503
+  Integrated electron density =   8.000002558284
+  iter     3 energy =  -39.1644521979 delta = 4.53819e-04
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999965261
+  iter     4 energy =  -39.1644543982 delta = 1.32807e-04
+                 76119 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999965265
+  iter     5 energy =  -39.1644552411 delta = 5.95221e-05
+                 76062 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999965276
+  iter     6 energy =  -39.1644554720 delta = 3.43775e-05
+                 75795 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999965286
+  iter     7 energy =  -39.1644555151 delta = 1.65583e-05
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999965413
+  iter     8 energy =  -39.1644555219 delta = 8.38020e-06
+                 75933 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999965417
+  iter     9 energy =  -39.1644555229 delta = 3.67931e-06
+                 75666 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999965418
+  iter    10 energy =  -39.1644555231 delta = 1.42422e-06
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999965424
+  iter    11 energy =  -39.1644555231 delta = 5.20940e-07
+                 75833 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999965424
+  iter    12 energy =  -39.1644555231 delta = 1.94432e-07
+
+  <S^2>exact = 2.000000
+  <S^2>      = 2.004035
+
+  total scf energy =  -39.1644555231
+
+  SCF::compute: gradient accuracy = 3.7109526e-05
+
+  Total integration points = 46071
+  Integrated electron density =   7.999999937626
+  Total Gradient:
+       1   C   0.0000000002   0.0000000001  -0.0015416365
+       2   H  -0.0000000002  -0.0000774704   0.0007708183
+       3   H  -0.0000000000   0.0000774704   0.0007708182
+  Completed line optimization step 2 (converged)
+  .......................................
+
+  Max Gradient     :   0.0054860175   0.0001000000  no
+  Max Displacement :   0.0414356493   0.0001000000  no
+  Gradient*Displace:   0.0005037153   0.0001000000  no
+  taking step of size 0.067386
+  Optimization iteration 3 complete
+  //////////////////////////////////////////////////////////////////////
+  .......................................
+  Starting line optimization.
+
+  UKS: changing atomic coordinates:
+  Molecular formula: CH2
+  molecule<Molecule>: (
+    symmetry = c2v
+    unit = "angstrom"
+    {  n atoms                        geometry                     }={
+       1     C [    0.0000000000     0.0000000000     0.0866189085]
+       2     H [   -0.0000000000     0.9963718852     0.5026905457]
+       3     H [   -0.0000000000    -0.9963718852     0.5026905457]
+    }
+  )
+  Atomic Masses:
+     12.00000    1.00783    1.00783
+  Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
+  Completed line optimization step 1 (not converged)
+  .......................................
+
+  SCF::compute: energy accuracy = 5.7374078e-08
+
+  nuclear repulsion energy =    6.1466291836
+
+  Using symmetric orthogonalization.
+  n(basis):            14     2     5     9
+  Maximum orthogonalization residual = 4.31807
+  Minimum orthogonalization residual = 0.023168
+  Beginning iterations.  Basis is 6-311G**.
+                 75743 integrals
+  Total integration points = 4009
+  Integrated electron density =   7.999917137903
+  iter     1 energy =  -39.1643050310 delta = 6.77725e-02
+                 76171 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999959202
+  iter     2 energy =  -39.1644668374 delta = 7.74467e-04
+                 76100 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999959154
+  iter     3 energy =  -39.1644697975 delta = 1.38487e-04
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999959173
+  iter     4 energy =  -39.1644701431 delta = 4.37677e-05
+                 76077 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999959173
+  iter     5 energy =  -39.1644702248 delta = 2.03356e-05
+                 76005 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999959177
+  iter     6 energy =  -39.1644702464 delta = 1.12820e-05
+                 75758 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999959181
+  iter     7 energy =  -39.1644702508 delta = 5.66131e-06
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999959226
+  iter     8 energy =  -39.1644702514 delta = 2.80112e-06
+                 75829 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999959228
+  iter     9 energy =  -39.1644702515 delta = 1.22902e-06
+                 75661 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999959228
+  iter    10 energy =  -39.1644702515 delta = 4.56676e-07
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999959227
+  iter    11 energy =  -39.1644702515 delta = 1.62255e-07
+                 75815 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999959227
+  iter    12 energy =  -39.1644702515 delta = 5.86841e-08
+                 75636 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999959227
+  iter    13 energy =  -39.1644702515 delta = 2.21350e-08
+
+  <S^2>exact = 2.000000
+  <S^2>      = 2.004136
+
+  total scf energy =  -39.1644702515
+
+  SCF::compute: gradient accuracy = 5.7374078e-06
+
+  Total integration points = 46071
+  Integrated electron density =   7.999999954880
+  Total Gradient:
+       1   C   0.0000000001  -0.0000000001  -0.0000533357
+       2   H  -0.0000000001  -0.0000947487   0.0000266679
+       3   H  -0.0000000000   0.0000947488   0.0000266679
+  Completed line optimization step 2 (converged)
+  .......................................
+
+  Max Gradient     :   0.0015416365   0.0001000000  no
+  Max Displacement :   0.0115870342   0.0001000000  no
+  Gradient*Displace:   0.0000276605   0.0001000000  yes
+  taking step of size 0.017965
+  Optimization iteration 4 complete
+  //////////////////////////////////////////////////////////////////////
+  .......................................
+  Starting line optimization.
+
+  UKS: changing atomic coordinates:
+  Molecular formula: CH2
+  molecule<Molecule>: (
+    symmetry = c2v
+    unit = "angstrom"
+    {  n atoms                        geometry                     }={
+       1     C [    0.0000000000     0.0000000000     0.0870942593]
+       2     H [   -0.0000000000     0.9967711753     0.5024528703]
+       3     H [   -0.0000000000    -0.9967711753     0.5024528703]
+    }
+  )
+  Atomic Masses:
+     12.00000    1.00783    1.00783
+  Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
+  Completed line optimization step 1 (not converged)
+  .......................................
+
+  SCF::compute: energy accuracy = 8.1208363e-09
+
+  nuclear repulsion energy =    6.1460108454
+
+  Using symmetric orthogonalization.
+  n(basis):            14     2     5     9
+  Maximum orthogonalization residual = 4.31735
+  Minimum orthogonalization residual = 0.0231801
+  Beginning iterations.  Basis is 6-311G**.
+                 75746 integrals
+  Total integration points = 4009
+  Integrated electron density =   7.999917079651
+  iter     1 energy =  -39.1644248598 delta = 6.76419e-02
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958715
+  iter     2 energy =  -39.1644703231 delta = 6.09898e-05
+                 76139 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958713
+  iter     3 energy =  -39.1644703541 delta = 1.18105e-05
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958781
+  iter     4 energy =  -39.1644703567 delta = 3.21693e-06
+                 76108 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958781
+  iter     5 energy =  -39.1644703573 delta = 1.31388e-06
+                 76017 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958781
+  iter     6 energy =  -39.1644703574 delta = 7.57800e-07
+                 75785 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958781
+  iter     7 energy =  -39.1644703575 delta = 4.04415e-07
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958780
+  iter     8 energy =  -39.1644703575 delta = 2.14504e-07
+                 75969 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958781
+  iter     9 energy =  -39.1644703575 delta = 1.01477e-07
+                 75748 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958781
+  iter    10 energy =  -39.1644703575 delta = 4.23199e-08
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958781
+  iter    11 energy =  -39.1644703575 delta = 1.26716e-08
+                 76024 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958781
+  iter    12 energy =  -39.1644703575 delta = 5.13151e-09
+
+  <S^2>exact = 2.000000
+  <S^2>      = 2.004146
+
+  total scf energy =  -39.1644703575
+
+  SCF::compute: gradient accuracy = 8.1208363e-07
+
+  Total integration points = 46071
+  Integrated electron density =   7.999999958669
+  Total Gradient:
+       1   C  -0.0000000000   0.0000000000  -0.0000087767
+       2   H   0.0000000000   0.0000097451   0.0000043883
+       3   H   0.0000000000  -0.0000097451   0.0000043883
+  Completed line optimization step 2 (converged)
+  .......................................
+
+  Max Gradient     :   0.0000947488   0.0001000000  yes
+  Max Displacement :   0.0008982827   0.0001000000  no
+  Gradient*Displace:   0.0000002149   0.0001000000  yes
+  taking step of size 0.001524
+  Optimization iteration 5 complete
+  //////////////////////////////////////////////////////////////////////
+  .......................................
+  Starting line optimization.
+
+  UKS: changing atomic coordinates:
+  Molecular formula: CH2
+  molecule<Molecule>: (
+    symmetry = c2v
+    unit = "angstrom"
+    {  n atoms                        geometry                     }={
+       1     C [    0.0000000000     0.0000000000     0.0871061146]
+       2     H [   -0.0000000000     0.9967601077     0.5024469427]
+       3     H [   -0.0000000000    -0.9967601077     0.5024469427]
+    }
+  )
+  Atomic Masses:
+     12.00000    1.00783    1.00783
+  Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
+  Completed line optimization step 1 (not converged)
+  .......................................
+
+  SCF::compute: energy accuracy = 6.7116759e-10
+
+  nuclear repulsion energy =    6.1461066775
+
+  Using symmetric orthogonalization.
+  n(basis):            14     2     5     9
+  Maximum orthogonalization residual = 4.31738
+  Minimum orthogonalization residual = 0.0231783
+  Beginning iterations.  Basis is 6-311G**.
+                 75746 integrals
+  Total integration points = 4009
+  Integrated electron density =   7.999917054429
+  iter     1 energy =  -39.1644256748 delta = 6.76395e-02
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958769
+  iter     2 energy =  -39.1644703482 delta = 5.50918e-06
+                 76152 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958769
+  iter     3 energy =  -39.1644703544 delta = 2.56380e-06
+                 76152 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958770
+  iter     4 energy =  -39.1644703574 delta = 2.55612e-06
+                 76062 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958770
+  iter     5 energy =  -39.1644703577 delta = 9.45389e-07
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958768
+  iter     6 energy =  -39.1644703578 delta = 3.15640e-07
+                 75960 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958768
+  iter     7 energy =  -39.1644703578 delta = 9.49082e-08
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958768
+  iter     8 energy =  -39.1644703578 delta = 2.89328e-08
+                 76057 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958768
+  iter     9 energy =  -39.1644703578 delta = 1.04403e-08
+                 75836 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958768
+  iter    10 energy =  -39.1644703578 delta = 3.77957e-09
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958768
+  iter    11 energy =  -39.1644703578 delta = 1.03198e-09
+                 76116 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958768
+  iter    12 energy =  -39.1644703578 delta = 4.04882e-10
+
+  <S^2>exact = 2.000000
+  <S^2>      = 2.004146
+
+  total scf energy =  -39.1644703578
+
+  SCF::compute: gradient accuracy = 6.7116759e-08
+
+  Total integration points = 46071
+  Integrated electron density =   7.999999958689
+  Total Gradient:
+       1   C  -0.0000000000   0.0000000000   0.0000006494
+       2   H   0.0000000000  -0.0000005751  -0.0000003247
+       3   H   0.0000000000   0.0000005751  -0.0000003247
+  Completed line optimization step 2 (converged)
+  .......................................
+
+  Max Gradient     :   0.0000097451   0.0001000000  yes
+  Max Displacement :   0.0000224033   0.0001000000  yes
+  Gradient*Displace:   0.0000000007   0.0001000000  yes
+
+  All convergence criteria have been met.
+  The optimization has converged.
+
+  Value of the MolecularEnergy:  -39.1644703578
+
+  IntMolecularCoor Parameters:
+    update_bmat = no
+    scale_bonds = 1
+    scale_bends = 1
+    scale_tors = 1
+    scale_outs = 1
+    symmetry_tolerance = 1.000000e-05
+    simple_tolerance = 1.000000e-03
+    coordinate_tolerance = 1.000000e-07
+    have_fixed_values = 0
+    max_update_steps = 100
+    max_update_disp = 0.500000
+    have_fixed_values = 0
+
+  Molecular formula: CH2
+  molecule<Molecule>: (
+    symmetry = c2v
+    unit = "angstrom"
+    {  n atoms                        geometry                     }={
+       1     C [    0.0000000000     0.0000000000     0.0871061146]
+       2     H [   -0.0000000000     0.9967601077     0.5024469427]
+       3     H [   -0.0000000000    -0.9967601077     0.5024469427]
+    }
+  )
+  Atomic Masses:
+     12.00000    1.00783    1.00783
+  Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
+
+  Bonds:
+    STRE       s1     1.07983    1    2         C-H
+    STRE       s2     1.07983    1    3         C-H
+  Bends:
+    BEND       b1   134.75791    2    1    3      H-C-H
+
+  SymmMolecularCoor Parameters:
+    change_coordinates = no
+    transform_hessian = yes
+    max_kappa2 = 10.000000
+
+  Computing molecular hessian by finite differences of gradients from 5 displacements:
+  Hessian options: 
+    displacement: 0.01 bohr
+    eliminate_cubic_terms: yes
+    only_totally_symmetric: no
+
+  Beginning displacement 1:
+  Molecule: setting point group to c2v
+  Displacement is A1 in c2v.  Using point group c2v for displaced molecule.
+
+  SCF::compute: energy accuracy = 1.0000000e-09
+
+  nuclear repulsion energy =    6.1475193216
+
+  Using symmetric orthogonalization.
+  n(basis):            14     2     5     9
+  Maximum orthogonalization residual = 4.31448
+  Minimum orthogonalization residual = 0.0231562
+  Beginning iterations.  Basis is 6-311G**.
+                 75746 integrals
+  Total integration points = 4009
+  Integrated electron density =   7.999916964952
+  iter     1 energy =  -39.1643762772 delta = 6.76997e-02
+                 76171 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999955339
+  iter     2 energy =  -39.1644645093 delta = 4.64515e-04
+                 76127 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999955305
+  iter     3 energy =  -39.1644656230 delta = 8.36944e-05
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999955327
+  iter     4 energy =  -39.1644657528 delta = 2.61524e-05
+                 76097 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999955327
+  iter     5 energy =  -39.1644657845 delta = 1.24237e-05
+                 76005 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999955330
+  iter     6 energy =  -39.1644657927 delta = 6.81480e-06
+                 75761 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999955332
+  iter     7 energy =  -39.1644657945 delta = 3.51877e-06
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999955357
+  iter     8 energy =  -39.1644657947 delta = 1.74724e-06
+                 75897 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999955358
+  iter     9 energy =  -39.1644657947 delta = 7.73684e-07
+                 75707 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999955358
+  iter    10 energy =  -39.1644657947 delta = 2.85838e-07
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999955358
+  iter    11 energy =  -39.1644657947 delta = 9.93892e-08
+                 75845 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999955358
+  iter    12 energy =  -39.1644657947 delta = 3.51477e-08
+                 75643 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999955358
+  iter    13 energy =  -39.1644657947 delta = 1.22977e-08
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999955358
+  iter    14 energy =  -39.1644657947 delta = 5.43819e-09
+                 75931 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999955358
+  iter    15 energy =  -39.1644657947 delta = 2.18935e-09
+                 75757 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999955358
+  iter    16 energy =  -39.1644657947 delta = 1.13464e-09
+                 75643 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999955358
+  iter    17 energy =  -39.1644657947 delta = 5.85173e-10
+
+  <S^2>exact = 2.000000
+  <S^2>      = 2.004210
+
+  total scf energy =  -39.1644657947
+
+  SCF::compute: gradient accuracy = 1.0000000e-07
+
+  Total integration points = 46071
+  Integrated electron density =   7.999999955264
+  Total Gradient:
+       1   C  -0.0000000000   0.0000000000   0.0008050902
+       2   H   0.0000000000   0.0000853649  -0.0004025451
+       3   H   0.0000000000  -0.0000853649  -0.0004025451
+
+  Beginning displacement 2:
+  Molecule: setting point group to c2v
+  Displacement is A1 in c2v.  Using point group c2v for displaced molecule.
+
+  SCF::compute: energy accuracy = 1.0000000e-09
+
+  nuclear repulsion energy =    6.1445233621
+
+  Using symmetric orthogonalization.
+  n(basis):            14     2     5     9
+  Maximum orthogonalization residual = 4.32026
+  Minimum orthogonalization residual = 0.0232046
+  Beginning iterations.  Basis is 6-311G**.
+                 75746 integrals
+  Total integration points = 4009
+  Integrated electron density =   7.999917004476
+  iter     1 energy =  -39.1642430905 delta = 6.75229e-02
+                 76171 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999962057
+  iter     2 energy =  -39.1644608074 delta = 9.21970e-04
+                 76127 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999962180
+  iter     3 energy =  -39.1644650661 delta = 1.62239e-04
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999962377
+  iter     4 energy =  -39.1644655775 delta = 5.24103e-05
+                 76097 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999962375
+  iter     5 energy =  -39.1644656878 delta = 2.43875e-05
+                 76005 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999962369
+  iter     6 energy =  -39.1644657154 delta = 1.33895e-05
+                 75759 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999962365
+  iter     7 energy =  -39.1644657202 delta = 6.22926e-06
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999962425
+  iter     8 energy =  -39.1644657212 delta = 3.03415e-06
+                 75822 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999962424
+  iter     9 energy =  -39.1644657213 delta = 1.28468e-06
+                 75617 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999962424
+  iter    10 energy =  -39.1644657213 delta = 4.87151e-07
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999962421
+  iter    11 energy =  -39.1644657213 delta = 1.81453e-07
+                 75800 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999962421
+  iter    12 energy =  -39.1644657213 delta = 6.99559e-08
+                 75670 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999962421
+  iter    13 energy =  -39.1644657213 delta = 2.77478e-08
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999962422
+  iter    14 energy =  -39.1644657213 delta = 1.13999e-08
+                 75971 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999962422
+  iter    15 energy =  -39.1644657213 delta = 5.22700e-09
+                 75762 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999962422
+  iter    16 energy =  -39.1644657213 delta = 2.09438e-09
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999962421
+  iter    17 energy =  -39.1644657213 delta = 1.12323e-09
+                 76054 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999962422
+  iter    18 energy =  -39.1644657213 delta = 6.15650e-10
+
+  <S^2>exact = 2.000000
+  <S^2>      = 2.004083
+
+  total scf energy =  -39.1644657213
+
+  SCF::compute: gradient accuracy = 1.0000000e-07
+
+  Total integration points = 46071
+  Integrated electron density =   7.999999962316
+  Total Gradient:
+       1   C  -0.0000000000   0.0000000000  -0.0008343722
+       2   H  -0.0000000000  -0.0000747379   0.0004171861
+       3   H   0.0000000000   0.0000747379   0.0004171861
+
+  Beginning displacement 3:
+  Molecule: setting point group to c2v
+  Displacement is A1 in c2v.  Using point group c2v for displaced molecule.
+
+  SCF::compute: energy accuracy = 1.0000000e-09
+
+  nuclear repulsion energy =    6.1222257940
+
+  Using symmetric orthogonalization.
+  n(basis):            14     2     5     9
+  Maximum orthogonalization residual = 4.3092
+  Minimum orthogonalization residual = 0.0236302
+  Beginning iterations.  Basis is 6-311G**.
+                 75743 integrals
+  Total integration points = 4009
+  Integrated electron density =   7.999921081133
+  iter     1 energy =  -39.1643369739 delta = 6.75445e-02
+                 76171 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999960899
+  iter     2 energy =  -39.1644465622 delta = 5.82580e-04
+                 76139 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999960885
+  iter     3 energy =  -39.1644475068 delta = 8.08120e-05
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999961008
+  iter     4 energy =  -39.1644475886 delta = 2.01506e-05
+                 76096 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999961008
+  iter     5 energy =  -39.1644476010 delta = 7.17964e-06
+                 75839 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999961008
+  iter     6 energy =  -39.1644476033 delta = 3.05040e-06
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999961027
+  iter     7 energy =  -39.1644476037 delta = 1.10849e-06
+                 76119 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999961027
+  iter     8 energy =  -39.1644476037 delta = 4.42965e-07
+                 75930 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999961027
+  iter     9 energy =  -39.1644476037 delta = 1.64590e-07
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999961026
+  iter    10 energy =  -39.1644476037 delta = 6.32973e-08
+                 75984 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999961026
+  iter    11 energy =  -39.1644476037 delta = 2.78503e-08
+                 75708 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999961026
+  iter    12 energy =  -39.1644476037 delta = 1.27601e-08
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999961026
+  iter    13 energy =  -39.1644476037 delta = 6.06286e-09
+                 75931 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999961026
+  iter    14 energy =  -39.1644476037 delta = 2.41610e-09
+                 75780 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999961026
+  iter    15 energy =  -39.1644476037 delta = 1.11761e-09
+                 75668 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999961026
+  iter    16 energy =  -39.1644476037 delta = 5.30008e-10
+
+  <S^2>exact = 2.000000
+  <S^2>      = 2.004146
+
+  total scf energy =  -39.1644476037
+
+  SCF::compute: gradient accuracy = 1.0000000e-07
+
+  Total integration points = 46071
+  Integrated electron density =   7.999999960923
+  Total Gradient:
+       1   C  -0.0000000000   0.0000000000  -0.0021953734
+       2   H  -0.0000000000   0.0025993239   0.0010976867
+       3   H   0.0000000000  -0.0025993239   0.0010976867
+
+  Beginning displacement 4:
+  Molecule: setting point group to c2v
+  Displacement is A1 in c2v.  Using point group c2v for displaced molecule.
+
+  SCF::compute: energy accuracy = 1.0000000e-09
+
+  nuclear repulsion energy =    6.1701577867
+
+  Using symmetric orthogonalization.
+  n(basis):            14     2     5     9
+  Maximum orthogonalization residual = 4.32558
+  Minimum orthogonalization residual = 0.0227346
+  Beginning iterations.  Basis is 6-311G**.
+                 75791 integrals
+  Total integration points = 4009
+  Integrated electron density =   7.999914126791
+  iter     1 energy =  -39.1641179949 delta = 6.80446e-02
+                 76171 integrals
+  Total integration points = 24503
+  Integrated electron density =   8.000002760110
+  iter     2 energy =  -39.1644434148 delta = 1.33250e-03
+                 76015 integrals
+  Total integration points = 24503
+  Integrated electron density =   8.000002759930
+  iter     3 energy =  -39.1644482141 delta = 2.37887e-04
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999956083
+  iter     4 energy =  -39.1644470635 delta = 7.79799e-05
+                 76032 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999956083
+  iter     5 energy =  -39.1644471941 delta = 3.29896e-05
+                 75889 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999956089
+  iter     6 energy =  -39.1644472256 delta = 1.70553e-05
+                 75745 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999956095
+  iter     7 energy =  -39.1644472324 delta = 8.31583e-06
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999956181
+  iter     8 energy =  -39.1644472336 delta = 3.83225e-06
+                 75868 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999956183
+  iter     9 energy =  -39.1644472338 delta = 1.72970e-06
+                 75586 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999956184
+  iter    10 energy =  -39.1644472339 delta = 7.17630e-07
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999956183
+  iter    11 energy =  -39.1644472339 delta = 2.84690e-07
+                 75818 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999956183
+  iter    12 energy =  -39.1644472339 delta = 1.10562e-07
+                 75592 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999956183
+  iter    13 energy =  -39.1644472339 delta = 4.36710e-08
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999956183
+  iter    14 energy =  -39.1644472339 delta = 1.70018e-08
+                 75969 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999956183
+  iter    15 energy =  -39.1644472339 delta = 7.82628e-09
+                 75910 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999956183
+  iter    16 energy =  -39.1644472339 delta = 3.05900e-09
+                 76172 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999956183
+  iter    17 energy =  -39.1644472339 delta = 1.61109e-09
+                 76007 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999956183
+  iter    18 energy =  -39.1644472339 delta = 8.59192e-10
+
+  <S^2>exact = 2.000000
+  <S^2>      = 2.004145
+
+  total scf energy =  -39.1644472339
+
+  SCF::compute: gradient accuracy = 1.0000000e-07
+
+  Total integration points = 46071
+  Integrated electron density =   7.999999956087
+  Total Gradient:
+       1   C  -0.0000000000   0.0000000000   0.0022319871
+       2   H  -0.0000000000  -0.0026681307  -0.0011159935
+       3   H   0.0000000000   0.0026681307  -0.0011159935
+
+  Beginning displacement 5:
+  Molecule: setting point group to cs
+  Displacement is B2 in c2v.  Using point group cs for displaced molecule.
+
+  SCF::compute: energy accuracy = 1.0000000e-09
+
+  nuclear repulsion energy =    6.1462909425
+
+  Starting from core Hamiltonian guess
+
+  Using symmetric orthogonalization.
+  n(basis):            23     7
+  Maximum orthogonalization residual = 4.31742
+  Minimum orthogonalization residual = 0.0231458
+  Beginning iterations.  Basis is 6-311G**.
+                127047 integrals
+  Total integration points = 4009
+  Integrated electron density =   7.999902586897
+  iter     1 energy =  -38.4279814365 delta = 6.01057e-02
+                127269 integrals
+  Total integration points = 11317
+  Integrated electron density =   8.000001601691
+  iter     2 energy =  -39.0943495837 delta = 2.89427e-02
+                127231 integrals
+  Total integration points = 11317
+  Integrated electron density =   8.000001891596
+  iter     3 energy =  -39.1523519537 delta = 1.93247e-02
+                127020 integrals
+  Total integration points = 11317
+  Integrated electron density =   8.000001921755
+  iter     4 energy =  -39.1628973323 delta = 4.68392e-03
+                127291 integrals
+  Total integration points = 24503
+  Integrated electron density =   8.000002687198
+  iter     5 energy =  -39.1643143311 delta = 2.20575e-03
+                126968 integrals
+  Total integration points = 24503
+  Integrated electron density =   8.000002683119
+  iter     6 energy =  -39.1644005875 delta = 7.96977e-04
+                126738 integrals
+  Total integration points = 24503
+  Integrated electron density =   8.000002684586
+  iter     7 energy =  -39.1644177376 delta = 3.63776e-04
+                127291 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958720
+  iter     8 energy =  -39.1644187542 delta = 1.65727e-04
+                126811 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958646
+  iter     9 energy =  -39.1644193468 delta = 7.74321e-05
+                126609 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958610
+  iter    10 energy =  -39.1644194473 delta = 3.33417e-05
+                127292 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958691
+  iter    11 energy =  -39.1644194665 delta = 1.44510e-05
+                127002 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958683
+  iter    12 energy =  -39.1644194705 delta = 6.48890e-06
+                126636 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958679
+  iter    13 energy =  -39.1644194713 delta = 2.76019e-06
+                127292 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958690
+  iter    14 energy =  -39.1644194714 delta = 1.11495e-06
+                126958 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958689
+  iter    15 energy =  -39.1644194714 delta = 4.70890e-07
+                126552 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958689
+  iter    16 energy =  -39.1644194714 delta = 1.94120e-07
+                127292 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958688
+  iter    17 energy =  -39.1644194714 delta = 8.20712e-08
+                126866 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958689
+  iter    18 energy =  -39.1644194714 delta = 3.66761e-08
+                126584 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958688
+  iter    19 energy =  -39.1644194714 delta = 1.67594e-08
+                127292 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958689
+  iter    20 energy =  -39.1644194714 delta = 7.64516e-09
+                126974 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958689
+  iter    21 energy =  -39.1644194714 delta = 3.11957e-09
+                126682 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958689
+  iter    22 energy =  -39.1644194714 delta = 1.34332e-09
+                126618 integrals
+  Total integration points = 46071
+  Integrated electron density =   7.999999958688
+  iter    23 energy =  -39.1644194714 delta = 5.48962e-10
+
+  <S^2>exact = 2.000000
+  <S^2>      = 2.005293
+
+  total scf energy =  -39.1644194714
+
+  SCF::compute: gradient accuracy = 1.0000000e-07
+
+  Total integration points = 46071
+  Integrated electron density =   7.999999958593
+  Total Gradient:
+       1   C  -0.0000000000  -0.0080798108   0.0000714358
+       2   H   0.0000000000   0.0039724930   0.0016478512
+       3   H   0.0000000000   0.0041073177  -0.0017192870
+  Molecule: setting point group to c2v
+
+  Frequencies (cm-1; negative is imaginary):
+  A1
+     1  3117.89
+     2  1055.48
+
+  B2
+     3  3358.76
+
+  THERMODYNAMIC ANALYSIS:
+
+  Contributions to the nonelectronic enthalpy at 298.15 K:
+                     kJ/mol       kcal/mol
+    E0vib        =   45.0521      10.7677
+    Evib(T)      =    0.0780       0.0186
+    Erot(T)      =    3.7185       0.8887
+    Etrans(T)    =    3.7185       0.8887
+    PV(T)        =    2.4790       0.5925
+    Total nonelectronic enthalpy:
+    H_nonel(T)   =   55.0460      13.1563
+
+  Contributions to the entropy at 298.15 K and 1.0 atm:
+                     J/(mol*K)    cal/(mol*K)
+    S_trans(T,P) =  141.6742      33.8610
+    S_rot(T)     =   44.0724      10.5335
+    S_vib(T)     =    0.3128       0.0747
+    S_el         =    0.0000       0.0000
+    Total entropy:
+    S_total(T,P) =  186.0594      44.4693
+  
+  Various data used for thermodynamic analysis:
+  
+  Nonlinear molecule
+  Principal moments of inertia (amu*angstrom^2): 0.29771, 2.00261, 2.30032
+  Point group: c2v
+  Order of point group: 4
+  Rotational symmetry number: 2
+  Rotational temperatures (K): 81.4695, 12.1113, 10.5439
+  Electronic degeneracy: 1
+
+  Unrestricted Kohn-Sham (UKS) Parameters:
+    Function Parameters:
+      value_accuracy    = 5.489616e-10 (1.000000e-09)
+      gradient_accuracy = 5.489616e-08 (6.711676e-08)
+      hessian_accuracy  = 0.000000e+00 (1.000000e-04) (computed)
+
+    Molecular Coordinates:
+      IntMolecularCoor Parameters:
+        update_bmat = no
+        scale_bonds = 1
+        scale_bends = 1
+        scale_tors = 1
+        scale_outs = 1
+        symmetry_tolerance = 1.000000e-05
+        simple_tolerance = 1.000000e-03
+        coordinate_tolerance = 1.000000e-07
+        have_fixed_values = 0
+        max_update_steps = 100
+        max_update_disp = 0.500000
+        have_fixed_values = 0
+
+      Molecular formula: CH2
+      molecule<Molecule>: (
+        symmetry = c2v
+        unit = "angstrom"
+        {  n atoms                        geometry                     }={
+           1     C [    0.0000000000     0.0000000000     0.0871061146]
+           2     H [   -0.0000000000     0.9967601077     0.5024469427]
+           3     H [   -0.0000000000    -0.9967601077     0.5024469427]
+        }
+      )
+      Atomic Masses:
+         12.00000    1.00783    1.00783
+      Reference origin =  [    0.0000000000     0.0062259718    -0.2774836612]
+
+      Bonds:
+        STRE       s1     1.07983    1    2         C-H
+        STRE       s2     1.07983    1    3         C-H
+      Bends:
+        BEND       b1   134.75791    2    1    3      H-C-H
+
+      SymmMolecularCoor Parameters:
+        change_coordinates = no
+        transform_hessian = yes
+        max_kappa2 = 10.000000
+
+    Electronic basis:
+      GaussianBasisSet:
+        nbasis = 30
+        nshell = 13
+        nprim  = 24
+        name = "6-311G**"
+
+    SCF::compute: energy accuracy = 1.0000000e-09
+
+    nuclear repulsion energy =    6.1461066775
+
+    Starting from core Hamiltonian guess
+
+    Using symmetric orthogonalization.
+    n(basis):            14     2     5     9
+    Maximum orthogonalization residual = 4.31738
+    Minimum orthogonalization residual = 0.0231783
+    Beginning iterations.  Basis is 6-311G**.
+                   76002 integrals
+    Total integration points = 4009
+    Integrated electron density =   7.999901776005
+    iter     1 energy =  -38.4280723175 delta = 6.01264e-02
+                   76153 integrals
+    Total integration points = 11317
+    Integrated electron density =   8.000001605841
+    iter     2 energy =  -39.0943990286 delta = 2.90448e-02
+                   76125 integrals
+    Total integration points = 11317
+    Integrated electron density =   8.000001902565
+    iter     3 energy =  -39.1523744496 delta = 1.93417e-02
+                   76002 integrals
+    Total integration points = 11317
+    Integrated electron density =   8.000001931352
+    iter     4 energy =  -39.1629466268 delta = 4.70235e-03
+                   76171 integrals
+    Total integration points = 24503
+    Integrated electron density =   8.000002685200
+    iter     5 energy =  -39.1643653286 delta = 2.21168e-03
+                   75980 integrals
+    Total integration points = 24503
+    Integrated electron density =   8.000002681270
+    iter     6 energy =  -39.1644514596 delta = 7.97130e-04
+                   75789 integrals
+    Total integration points = 24503
+    Integrated electron density =   8.000002682712
+    iter     7 energy =  -39.1644686189 delta = 3.63621e-04
+                   76171 integrals
+    Total integration points = 46071
+    Integrated electron density =   7.999999958799
+    iter     8 energy =  -39.1644696431 delta = 1.65880e-04
+                   75800 integrals
+    Total integration points = 46071
+    Integrated electron density =   7.999999958725
+    iter     9 energy =  -39.1644702334 delta = 7.75274e-05
+                   75694 integrals
+    Total integration points = 46071
+    Integrated electron density =   7.999999958688
+    iter    10 energy =  -39.1644703335 delta = 3.33988e-05
+                   76172 integrals
+    Total integration points = 46071
+    Integrated electron density =   7.999999958770
+    iter    11 energy =  -39.1644703529 delta = 1.44957e-05
+                   76001 integrals
+    Total integration points = 46071
+    Integrated electron density =   7.999999958762
+    iter    12 energy =  -39.1644703568 delta = 6.50236e-06
+                   75706 integrals
+    Total integration points = 46071
+    Integrated electron density =   7.999999958759
+    iter    13 energy =  -39.1644703576 delta = 2.76308e-06
+                   76172 integrals
+    Total integration points = 46071
+    Integrated electron density =   7.999999958769
+    iter    14 energy =  -39.1644703578 delta = 1.11501e-06
+                   75973 integrals
+    Total integration points = 46071
+    Integrated electron density =   7.999999958769
+    iter    15 energy =  -39.1644703578 delta = 4.71199e-07
+                   75666 integrals
+    Total integration points = 46071
+    Integrated electron density =   7.999999958768
+    iter    16 energy =  -39.1644703578 delta = 1.94088e-07
+                   76172 integrals
+    Total integration points = 46071
+    Integrated electron density =   7.999999958768
+    iter    17 energy =  -39.1644703578 delta = 8.26966e-08
+                   75819 integrals
+    Total integration points = 46071
+    Integrated electron density =   7.999999958768
+    iter    18 energy =  -39.1644703578 delta = 3.71127e-08
+                   75679 integrals
+    Total integration points = 46071
+    Integrated electron density =   7.999999958768
+    iter    19 energy =  -39.1644703578 delta = 1.69640e-08
+                   76172 integrals
+    Total integration points = 46071
+    Integrated electron density =   7.999999958768
+    iter    20 energy =  -39.1644703578 delta = 7.72466e-09
+                   75985 integrals
+    Total integration points = 46071
+    Integrated electron density =   7.999999958768
+    iter    21 energy =  -39.1644703578 delta = 3.08147e-09
+                   75765 integrals
+    Total integration points = 46071
+    Integrated electron density =   7.999999958768
+    iter    22 energy =  -39.1644703578 delta = 1.34535e-09
+                   75725 integrals
+    Total integration points = 46071
+    Integrated electron density =   7.999999958768
+    iter    23 energy =  -39.1644703578 delta = 5.76342e-10
+
+    <S^2>exact = 2.000000
+    <S^2>      = 2.004146
+
+    total scf energy =  -39.1644703578
+    Natural Population Analysis:
+       n   atom    charge     ne(S)     ne(P)     ne(D) 
+        1    C   -0.222322  3.303062  2.915047  0.004214
+        2    H    0.111161  0.887745  0.001094
+        3    H    0.111161  0.887745  0.001094
+
+    SCF Parameters:
+      maxiter = 100
+      density_reset_frequency = 10
+      level_shift = 0.250000
+
+    UnrestrictedSCF Parameters:
+      charge = 0
+      nalpha = 5
+      nbeta = 3
+      alpha = [ 3 0 1 1 ]
+      beta  = [ 2 0 0 1 ]
+
+    Functional:
+      Standard Density Functional: B3LYP
+      Sum of Functionals:
+        +0.2000000000000000 Hartree-Fock Exchange
+        +0.8000000000000000
+          Object of type SlaterXFunctional
+        +0.7200000000000000
+          Object of type Becke88XFunctional
+        +0.1900000000000000
+          Object of type VWN1LCFunctional
+        +0.8100000000000001
+          Object of type LYPCFunctional
+    Integrator:
+      RadialAngularIntegrator:
+        Pruned fine grid employed
+
+  ConsumableResources: (
+    memory = unlimited ( max used: 7.35MB )
+    disk = [./ unlimited] ( max used: 0B )
+  )
+                                 CPU   Wall
+mpqc:                         377.61 379.90
+  NAO:                         28.46  28.51
+    vector:                    28.43  28.48
+      density:                  0.01   0.01
+      evals:                    0.03   0.03
+      extrap:                   0.05   0.05
+      fock:                    28.23  28.29
+        integrate:             27.50  27.55
+        start thread:           0.33   0.33
+        stop thread:            0.00   0.00
+  calc:                       172.16 173.49
+    compute gradient:          58.80  59.12
+      nuc rep:                  0.00   0.00
+      one electron gradient:    0.10   0.10
+      overlap gradient:         0.04   0.04
+      two electron gradient:   58.66  58.98
+        grad:                  58.66  58.98
+          integrate:           57.16  57.47
+          two-body:             0.91   0.93
+    vector:                   113.35 114.35
+      density:                  0.05   0.05
+      evals:                    0.10   0.10
+      extrap:                   0.18   0.18
+      fock:                   112.35 113.35
+        integrate:            109.52 110.50
+        start thread:           1.34   1.35
+        stop thread:            0.00   0.00
+  hessian:                    176.85 177.76
+    compute gradient:          43.68  43.89
+      nuc rep:                  0.00   0.00
+      one electron gradient:    0.07   0.07
+      overlap gradient:         0.02   0.02
+      two electron gradient:   43.59  43.80
+        grad:                  43.58  43.80
+          integrate:           42.50  42.71
+          two-body:             0.68   0.68
+    vector:                   133.17 133.86
+      density:                  0.05   0.05
+      evals:                    0.12   0.12
+      extrap:                   0.19   0.19
+      fock:                   132.26 132.95
+        integrate:            129.18 129.84
+        start thread:           1.62   1.64
+        stop thread:            0.00   0.00
+  input:                        0.13   0.13
+    vector:                     0.06   0.06
+      density:                  0.00   0.00
+      evals:                    0.01   0.01
+      extrap:                   0.01   0.01
+      fock:                     0.03   0.03
+        start thread:           0.00   0.00
+        stop thread:            0.00   0.00
+  WARNING: 7135552 bytes managed by ConsumableResources was not explicitly deallocated!
+
+  End Time: Tue Dec  6 11:34:55 2011
+

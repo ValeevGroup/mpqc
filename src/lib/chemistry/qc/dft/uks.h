@@ -83,7 +83,7 @@ class UKS: public UnrestrictedSCF {
 
     void init_vector();
     void done_vector();
-  private:
+
     bool analytic_gradient_implemented() const;
 };
 

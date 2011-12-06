@@ -57,6 +57,7 @@ class TaylorMolecularEnergy: public MolecularEnergy {
     // the maximum order derivative that can be computed
     int maxorder_;
 
+  protected:
     bool analytic_gradient_implemented() const;
     bool analytic_hessian_implemented() const;
 

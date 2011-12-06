@@ -97,9 +97,9 @@ FinDispMolecularHessian::Params::Params()
   // default for eliminate_cubic_terms is set in FinDispMolecularHessian
   //eliminate_cubic_terms_ = true;
   do_null_displacement_ = true;
-  accuracy_ = 1e-8;
-  energy_accuracy_ = disp_/1.e6;
-  gradient_accuracy_ = disp_/1.e3;
+  accuracy_ = 1e-5;
+  energy_accuracy_ = accuracy_*disp_*disp_;
+  gradient_accuracy_ = accuracy_*disp_;
   checkpoint_ = DEFAULT_CHECKPOINT;
   checkpoint_file_ = SCFormIO::fileext_to_filename_string(".ckpt.hess");
   restart_ = DEFAULT_RESTART;
@@ -121,11 +121,11 @@ FinDispMolecularHessian::Params::Params(const Ref<KeyVal>& keyval)
   do_null_displacement_ = keyval->booleanvalue("do_null_displacement",
                                                KeyValValueboolean(true));
   accuracy_ = keyval->doublevalue("accuracy",
-                                  KeyValValuedouble(1e-8));
+                                  KeyValValuedouble(1e-5));
   energy_accuracy_ = keyval->doublevalue("energy_accuracy",
-                                           KeyValValuedouble(disp_/1e6));
+                                           KeyValValuedouble(accuracy_*disp_*disp_));
   gradient_accuracy_ = keyval->doublevalue("gradient_accuracy",
-                                           KeyValValuedouble(disp_/1000));
+                                           KeyValValuedouble(accuracy_*disp_));
 
   KeyValValueboolean def_checkpoint(DEFAULT_CHECKPOINT);
   checkpoint_ = keyval->booleanvalue("checkpoint", def_checkpoint);
@@ -909,7 +909,8 @@ FinDispMolecularHessian::FinDispMolecularHessian(const Ref<MolecularEnergy> &e) 
     user_provided_eliminate_cubic_terms_(false)
 {
   params_ = new Params;
-  init_pimpl(e);
+  //init_pimpl(e);
+  mole_init_ = e;
 }
 
 FinDispMolecularHessian::FinDispMolecularHessian(const Ref<KeyVal>&keyval):
@@ -918,7 +919,8 @@ FinDispMolecularHessian::FinDispMolecularHessian(const Ref<KeyVal>&keyval):
   Ref<MolecularEnergy> e; e << keyval->describedclassvalue("energy");
   params_ = new Params(keyval);
   user_provided_eliminate_cubic_terms_ = keyval->exists("eliminate_cubic_terms");
-  init_pimpl(e);
+  //init_pimpl(e);
+  mole_init_ = e;
 }
 
 FinDispMolecularHessian::FinDispMolecularHessian(StateIn&s):
@@ -927,11 +929,13 @@ FinDispMolecularHessian::FinDispMolecularHessian(StateIn&s):
 {
   pimpl_ << SavableState::restore_state(s);
   s.get(user_provided_eliminate_cubic_terms_);
+  mole_init_ = 0;
 }
 
 FinDispMolecularHessian::~FinDispMolecularHessian()
 {
   pimpl_ = 0;
+  mole_init_ = 0;
 }
 
 void
@@ -945,6 +949,8 @@ FinDispMolecularHessian::save_data_state(StateOut&s)
 void
 FinDispMolecularHessian::restart()
 {
+  if (pimpl_.null()) { init_pimpl(mole_init_); mole_init_ = 0; }
+
   // broadcast contents of restart file
   int statresult, statsize;
   Ref<MessageGrp> grp = MessageGrp::get_default_messagegrp();
@@ -968,6 +974,8 @@ FinDispMolecularHessian::restart()
 RefSymmSCMatrix
 FinDispMolecularHessian::cartesian_hessian()
 {
+  if (pimpl_.null()) { init_pimpl(mole_init_); mole_init_ = 0; }
+
   if (params()->restart()) restart();
   else pimpl_->init();  // initialize original_geometry etc.
 
@@ -990,7 +998,8 @@ FinDispMolecularHessian::cartesian_hessian()
 
 void
 FinDispMolecularHessian::set_energy(const Ref<MolecularEnergy>& mole) {
-  init_pimpl(mole);
+  mole_init_ = mole;
+  pimpl_ = 0;
 }
 
 void
@@ -1330,7 +1339,7 @@ FinDispMolecularGradient::compute_gradient()
   for(int d=0; d<ndisplace(); ++d) {
     int coord; double dispsize;
     get_disp(d, coord, dispsize);
-    std::cout << "disp = " << d << "  coord = " << coord << "  dispsize = " << dispsize << "  energy = " << energies_[d] << std::endl;
+    //std::cout << "disp = " << d << "  coord = " << coord << "  dispsize = " << dispsize << "  energy = " << energies_[d] << std::endl;
     double coeff = 0.0;
     if (!eliminate_cubic_terms_) {
       // 2-pt formula: f' = (f+ - f-)/(2.0 d)

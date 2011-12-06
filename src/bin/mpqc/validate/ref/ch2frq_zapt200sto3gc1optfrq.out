@@ -1,0 +1,4773 @@
+
+                    MPQC: Massively Parallel Quantum Chemistry
+                                Version 3.0.0-alpha
+
+  Machine:    i386-apple-darwin11.1.0
+  User:       evaleev@EdBookPro.local
+  Start Time: Tue Dec  6 11:37:56 2011
+
+  Using ProcMessageGrp for message passing (number of nodes = 1).
+  Using PthreadThreadGrp for threading (number of threads = 1).
+  Using ProcMemoryGrp for distributed shared memory.
+  Total number of processors = 1
+
+  Using IntegralV3 by default for molecular integrals evaluation
+  Given resources: ConsumableResources: ( memory = unlimited disk = [./ unlimited] )
+
+  Reading file /Users/evaleev/Development/workspace/install/mpqc-gcc/share/mpqc/3.0.0-alpha/atominfo.kv.
+
+  IntCoorGen: generated 3 coordinates.
+  Forming optimization coordinates:
+    SymmMolecularCoor::form_variable_coordinates()
+      expected 3 coordinates
+      found 2 variable coordinates
+      found 0 constant coordinates
+  Reading file /Users/evaleev/Development/workspace/install/mpqc-gcc/share/mpqc/3.0.0-alpha/basis/sto-3g.kv.
+      Reading file /Users/evaleev/Development/workspace/install/mpqc-gcc/share/mpqc/3.0.0-alpha/basis/sto-3g.kv.
+
+      HSOSSCF::init: total charge = 0
+
+      Starting from core Hamiltonian guess
+
+      Using symmetric orthogonalization.
+      n(basis):             7
+      Maximum orthogonalization residual = 1.94235
+      Minimum orthogonalization residual = 0.275215
+      docc = [ 3 ]
+      socc = [ 2 ]
+
+  HSOSSCF::init: total charge = 0
+
+  Projecting guess wavefunction into the present basis set
+
+      SCF::compute: energy accuracy = 1.0000000e-02
+
+      nuclear repulsion energy =    6.0605491858
+
+      Beginning iterations.  Basis is STO-3G.
+                       733 integrals
+      iter     1 energy =  -38.1820699187 delta = 5.64770e-01
+                       733 integrals
+      iter     2 energy =  -38.4083575544 delta = 1.43629e-01
+                       733 integrals
+      iter     3 energy =  -38.4168312090 delta = 3.38273e-02
+                       733 integrals
+      iter     4 energy =  -38.4175679727 delta = 8.77927e-03
+
+      HOMO is     5   A =   0.004456
+      LUMO is     6   A =   0.703097
+
+      total scf energy =  -38.4175679727
+
+      Projecting the guess density.
+
+        The number of electrons in the guess density = 8
+        Using symmetric orthogonalization.
+        n(basis):             7
+        Maximum orthogonalization residual = 1.94235
+        Minimum orthogonalization residual = 0.275215
+        The number of electrons in the projected density = 8
+
+  docc = [ 3 ]
+  socc = [ 2 ]
+
+  Molecular formula CH2
+
+  MPQC options:
+    matrixkit       = <ReplSCMatrixKit>
+    filename        = ch2frq_zapt200sto3gc1optfrq
+    restart_file    = ch2frq_zapt200sto3gc1optfrq.ckpt
+    restart         = no
+    checkpoint      = no
+    savestate       = no
+    do_energy       = yes
+    do_gradient     = no
+    do_freq         = yes
+    optimize        = yes
+    write_pdb       = no
+    print_mole      = yes
+    print_timings   = yes
+    print_resources = yes
+  WARNING: optimization or gradient requested but the given
+         MolecularEnergy object cannot do gradients.
+         Gradient will be computed numerically by finite differences.
+
+  Optimizing using:
+    QNewtonOpt:
+      accuracy         = 0.0001
+      print_x          = no
+      print_hessian    = no
+      print_gradient   = no
+      linear           = no
+      restrict         = yes
+      dynamic_grad_acc = yes
+      restart          = yes
+      update           =
+        Object of type BFGSUpdate
+      lineopt          =
+        Backtrack:
+          backtrack_factor = 0.1
+          decrease_factor  = 0.1
+          force_search     = no
+      Optimize (base class of QNewtonOpt):
+        print_timings  = no
+        checkpoint     = no
+        max_iterations = 20
+        max_stepsize   = 0.6
+        convergence    = 
+          MolEnergyConvergence:
+            cartesian     = yes
+            Convergence (base class of MolEnergyConvergence):
+              The following criteria must be simultaneously satified:
+              max_disp         = 0.0001
+              max_grad         = 0.0001
+              graddisp         = 0.0001
+  Computing molecular gradient by finite differences of energies from 6 displacements:
+  Starting at displacement: 0
+  Gradient options: 
+    displacement: 0.01 bohr
+    energy_accuracy: 1e-06 au
+    eliminate_cubic_terms: no
+
+  Beginning displacement 0:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.93796
+  Minimum orthogonalization residual = 0.277378
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0417259184
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.93796
+  Minimum orthogonalization residual = 0.277378
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4176052204 delta = 5.73884e-01
+                   733 integrals
+  iter     2 energy =  -38.4177006557 delta = 2.93532e-03
+                   733 integrals
+  iter     3 energy =  -38.4177182335 delta = 1.44689e-03
+                   733 integrals
+  iter     4 energy =  -38.4177193497 delta = 4.01633e-04
+                   733 integrals
+  iter     5 energy =  -38.4177194118 delta = 1.17510e-04
+                   733 integrals
+  iter     6 energy =  -38.4177194158 delta = 2.40964e-05
+                   733 integrals
+  iter     7 energy =  -38.4177194159 delta = 4.15212e-06
+                   733 integrals
+  iter     8 energy =  -38.4177194159 delta = 8.91034e-07
+                   733 integrals
+  iter     9 energy =  -38.4177194159 delta = 2.26263e-07
+                   733 integrals
+  iter    10 energy =  -38.4177194159 delta = 5.25981e-08
+                   733 integrals
+  iter    11 energy =  -38.4177194159 delta = 1.29614e-08
+                   733 integrals
+  iter    12 energy =  -38.4177194159 delta = 2.95712e-09
+
+  HOMO is     5   A =   0.003367
+  LUMO is     6   A =   0.701885
+
+  total scf energy =  -38.4177194159
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.417719415884
+  OPT1 energy [au]:                   -38.446486631952
+  OPT2 second order correction [au]:   -0.028006073636
+  OPT2 energy [au]:                   -38.445725489520
+  ZAPT2 correlation energy [au]:       -0.027104909547
+  ZAPT2 energy [au]:                  -38.444824325430
+
+  Beginning displacement 1:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.9406
+  Minimum orthogonalization residual = 0.276915
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0432592416
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.9406
+  Minimum orthogonalization residual = 0.276915
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4167726836 delta = 5.74528e-01
+                   733 integrals
+  iter     2 energy =  -38.4167779560 delta = 6.59991e-04
+                   733 integrals
+  iter     3 energy =  -38.4167785702 delta = 2.58470e-04
+                   733 integrals
+  iter     4 energy =  -38.4167786180 delta = 7.46007e-05
+                   733 integrals
+  iter     5 energy =  -38.4167786233 delta = 2.86380e-05
+                   733 integrals
+  iter     6 energy =  -38.4167786236 delta = 4.99080e-06
+                   733 integrals
+  iter     7 energy =  -38.4167786236 delta = 2.06679e-06
+                   733 integrals
+  iter     8 energy =  -38.4167786236 delta = 4.39214e-07
+                   733 integrals
+  iter     9 energy =  -38.4167786236 delta = 2.33621e-07
+                   733 integrals
+  iter    10 energy =  -38.4167786236 delta = 2.62543e-08
+                   733 integrals
+  iter    11 energy =  -38.4167786236 delta = 5.16631e-09
+
+  HOMO is     5   A =   0.003330
+  LUMO is     6   A =   0.699533
+
+  total scf energy =  -38.4167786236
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.416778623623
+  OPT1 energy [au]:                   -38.445605325551
+  OPT2 second order correction [au]:   -0.028060546608
+  OPT2 energy [au]:                   -38.444839170231
+  ZAPT2 correlation energy [au]:       -0.027158290067
+  ZAPT2 energy [au]:                  -38.443936913690
+
+  Beginning displacement 2:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.94346
+  Minimum orthogonalization residual = 0.274273
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0689827437
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.94346
+  Minimum orthogonalization residual = 0.274273
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4178908475 delta = 5.74506e-01
+                   733 integrals
+  iter     2 energy =  -38.4179122986 delta = 1.73203e-03
+                   733 integrals
+  iter     3 energy =  -38.4179133644 delta = 4.60726e-04
+                   733 integrals
+  iter     4 energy =  -38.4179134340 delta = 7.05871e-05
+                   733 integrals
+  iter     5 energy =  -38.4179134473 delta = 4.05435e-05
+                   733 integrals
+  iter     6 energy =  -38.4179134476 delta = 7.78983e-06
+                   733 integrals
+  iter     7 energy =  -38.4179134477 delta = 1.75503e-06
+                   733 integrals
+  iter     8 energy =  -38.4179134477 delta = 6.95251e-07
+                   733 integrals
+  iter     9 energy =  -38.4179134477 delta = 1.20107e-07
+                   733 integrals
+  iter    10 energy =  -38.4179134477 delta = 2.78952e-08
+                   733 integrals
+  iter    11 energy =  -38.4179134477 delta = 4.58575e-09
+
+  HOMO is     5   A =   0.002999
+  LUMO is     6   A =   0.705639
+
+  total scf energy =  -38.4179134477
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.417913447702
+  OPT1 energy [au]:                   -38.446477292099
+  OPT2 second order correction [au]:   -0.027815852293
+  OPT2 energy [au]:                   -38.445729299994
+  ZAPT2 correlation energy [au]:       -0.026917660283
+  ZAPT2 energy [au]:                  -38.444831107985
+
+  Beginning displacement 3:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.94676
+  Minimum orthogonalization residual = 0.273054
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0794793449
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.94676
+  Minimum orthogonalization residual = 0.273054
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4175312848 delta = 5.74171e-01
+                   733 integrals
+  iter     2 energy =  -38.4175491930 delta = 1.07267e-03
+                   733 integrals
+  iter     3 energy =  -38.4175511700 delta = 3.96868e-04
+                   733 integrals
+  iter     4 energy =  -38.4175514550 delta = 1.79518e-04
+                   733 integrals
+  iter     5 energy =  -38.4175514678 delta = 4.54962e-05
+                   733 integrals
+  iter     6 energy =  -38.4175514715 delta = 2.12960e-05
+                   733 integrals
+  iter     7 energy =  -38.4175514715 delta = 2.43000e-06
+                   733 integrals
+  iter     8 energy =  -38.4175514716 delta = 1.64630e-06
+                   733 integrals
+  iter     9 energy =  -38.4175514716 delta = 2.71742e-07
+                   733 integrals
+  iter    10 energy =  -38.4175514716 delta = 1.10532e-07
+                   733 integrals
+  iter    11 energy =  -38.4175514716 delta = 4.54246e-08
+                   733 integrals
+  iter    12 energy =  -38.4175514716 delta = 1.30697e-08
+                   733 integrals
+  iter    13 energy =  -38.4175514716 delta = 4.23793e-09
+
+  HOMO is     5   A =   0.002854
+  LUMO is     6   A =   0.706629
+
+  total scf energy =  -38.4175514716
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.417551471553
+  OPT1 energy [au]:                   -38.446070295186
+  OPT2 second order correction [au]:   -0.027773128424
+  OPT2 energy [au]:                   -38.445324599977
+  ZAPT2 correlation energy [au]:       -0.026875469254
+  ZAPT2 energy [au]:                  -38.444426940807
+
+  Beginning displacement 4:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.94408
+  Minimum orthogonalization residual = 0.273515
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0778588515
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.94408
+  Minimum orthogonalization residual = 0.273515
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4184676795 delta = 5.73926e-01
+                   733 integrals
+  iter     2 energy =  -38.4184730450 delta = 6.68215e-04
+                   733 integrals
+  iter     3 energy =  -38.4184736604 delta = 2.58703e-04
+                   733 integrals
+  iter     4 energy =  -38.4184737071 delta = 7.34286e-05
+                   733 integrals
+  iter     5 energy =  -38.4184737122 delta = 2.82825e-05
+                   733 integrals
+  iter     6 energy =  -38.4184737125 delta = 4.88528e-06
+                   733 integrals
+  iter     7 energy =  -38.4184737125 delta = 1.96382e-06
+                   733 integrals
+  iter     8 energy =  -38.4184737125 delta = 4.23191e-07
+                   733 integrals
+  iter     9 energy =  -38.4184737125 delta = 2.31915e-07
+                   733 integrals
+  iter    10 energy =  -38.4184737125 delta = 2.36995e-08
+                   733 integrals
+  iter    11 energy =  -38.4184737125 delta = 5.93523e-09
+
+  HOMO is     5   A =   0.002892
+  LUMO is     6   A =   0.708860
+
+  total scf energy =  -38.4184737125
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.418473712526
+  OPT1 energy [au]:                   -38.446936179078
+  OPT2 second order correction [au]:   -0.027721598379
+  OPT2 energy [au]:                   -38.446195310905
+  ZAPT2 correlation energy [au]:       -0.026824930992
+  ZAPT2 energy [au]:                  -38.445298643518
+
+  Beginning displacement 5:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.94129
+  Minimum orthogonalization residual = 0.275969
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0523539107
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.94129
+  Minimum orthogonalization residual = 0.275969
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4172797470 delta = 5.73958e-01
+                   733 integrals
+  iter     2 energy =  -38.4173010086 delta = 1.71133e-03
+                   733 integrals
+  iter     3 energy =  -38.4173020868 delta = 4.58719e-04
+                   733 integrals
+  iter     4 energy =  -38.4173021587 delta = 7.16226e-05
+                   733 integrals
+  iter     5 energy =  -38.4173021725 delta = 4.13155e-05
+                   733 integrals
+  iter     6 energy =  -38.4173021729 delta = 7.88385e-06
+                   733 integrals
+  iter     7 energy =  -38.4173021730 delta = 1.70167e-06
+                   733 integrals
+  iter     8 energy =  -38.4173021730 delta = 6.09353e-07
+                   733 integrals
+  iter     9 energy =  -38.4173021730 delta = 1.38369e-07
+                   733 integrals
+  iter    10 energy =  -38.4173021730 delta = 4.98727e-08
+                   733 integrals
+  iter    11 energy =  -38.4173021730 delta = 1.05622e-08
+                   733 integrals
+  iter    12 energy =  -38.4173021730 delta = 9.26708e-10
+
+  HOMO is     5   A =   0.003213
+  LUMO is     6   A =   0.701724
+
+  total scf energy =  -38.4173021730
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.417302172964
+  OPT1 energy [au]:                   -38.446026085592
+  OPT2 second order correction [au]:   -0.027964988437
+  OPT2 energy [au]:                   -38.445267161401
+  ZAPT2 correlation energy [au]:       -0.027064371020
+  ZAPT2 energy [au]:                  -38.444366543983
+
+  gradient in internal coordinates
+      1    -0.0198692312
+      2     0.0680864914
+      3    -0.0232282001
+
+
+  gradient in Cartesian coordinates
+      1     0.0000000000
+      2     0.0000217344
+      3    -0.0562842946
+      4     0.0000000000
+      5    -0.0202373640
+      6     0.0281333216
+      7     0.0000000000
+      8     0.0202156296
+      9     0.0281509730
+
+  .......................................
+  Starting "backtrack" line optimization.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.94235
+  Minimum orthogonalization residual = 0.275215
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0605491858
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.94235
+  Minimum orthogonalization residual = 0.275215
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4176399946 delta = 5.74355e-01
+                   733 integrals
+  iter     2 energy =  -38.4176544348 delta = 1.03252e-03
+                   733 integrals
+  iter     3 energy =  -38.4176558613 delta = 3.50897e-04
+                   733 integrals
+  iter     4 energy =  -38.4176560610 delta = 1.39506e-04
+                   733 integrals
+  iter     5 energy =  -38.4176560738 delta = 4.94961e-05
+                   733 integrals
+  iter     6 energy =  -38.4176560763 delta = 1.81214e-05
+                   733 integrals
+  iter     7 energy =  -38.4176560764 delta = 2.36645e-06
+                   733 integrals
+  iter     8 energy =  -38.4176560765 delta = 2.55174e-06
+                   733 integrals
+  iter     9 energy =  -38.4176560765 delta = 1.05699e-06
+                   733 integrals
+  iter    10 energy =  -38.4176560765 delta = 4.47117e-07
+                   733 integrals
+  iter    11 energy =  -38.4176560765 delta = 2.07239e-07
+                   733 integrals
+  iter    12 energy =  -38.4176560765 delta = 9.71658e-08
+                   733 integrals
+  iter    13 energy =  -38.4176560765 delta = 4.48421e-08
+                   733 integrals
+  iter    14 energy =  -38.4176560765 delta = 2.10150e-08
+                   733 integrals
+  iter    15 energy =  -38.4176560765 delta = 9.56036e-09
+
+  HOMO is     5   A =   0.003112
+  LUMO is     6   A =   0.704260
+
+  total scf energy =  -38.4176560765
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.417656076476
+  OPT1 energy [au]:                   -38.446298624451
+  OPT2 second order correction [au]:   -0.027889181220
+  OPT2 energy [au]:                   -38.445545257696
+  ZAPT2 correlation energy [au]:       -0.026989784033
+  ZAPT2 energy [au]:                  -38.444645860510
+
+  MBPT2: changing atomic coordinates:
+  Molecular formula: CH2
+  molecule<Molecule>: (
+    symmetry = c1
+    unit = "angstrom"
+    {  n atoms                        geometry                     }={
+       1     C [   -0.0000000000    -0.0000000000    -0.0205921146]
+       2     H [    0.0000000000     0.9373227346     0.5562960573]
+       3     H [    0.0000000000    -0.9373227346     0.5562960573]
+    }
+  )
+  Atomic Masses:
+     12.00000    1.00783    1.00783
+  Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.89504
+  Minimum orthogonalization residual = 0.285799
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 3.0617017e-08
+
+  nuclear repulsion energy =    6.0518494126
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.89504
+  Minimum orthogonalization residual = 0.285799
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4279670566 delta = 5.73218e-01
+                   733 integrals
+  iter     2 energy =  -38.4299105957 delta = 1.39900e-02
+                   733 integrals
+  iter     3 energy =  -38.4301053874 delta = 5.50618e-03
+                   733 integrals
+  iter     4 energy =  -38.4301139651 delta = 1.27333e-03
+                   733 integrals
+  iter     5 energy =  -38.4301148716 delta = 3.84981e-04
+                   733 integrals
+  iter     6 energy =  -38.4301149432 delta = 6.46273e-05
+                   733 integrals
+  iter     7 energy =  -38.4301149484 delta = 1.81783e-05
+                   733 integrals
+  iter     8 energy =  -38.4301149485 delta = 4.76560e-06
+                   733 integrals
+  iter     9 energy =  -38.4301149486 delta = 1.10332e-06
+                   733 integrals
+  iter    10 energy =  -38.4301149486 delta = 3.03900e-07
+                   733 integrals
+  iter    11 energy =  -38.4301149486 delta = 7.74450e-08
+                   732 integrals
+  iter    12 energy =  -38.4301149486 delta = 2.19619e-08
+
+  HOMO is     5   A =   0.004944
+  LUMO is     6   A =   0.696582
+
+  total scf energy =  -38.4301149486
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.430114948554
+  OPT1 energy [au]:                   -38.458018019904
+  OPT2 second order correction [au]:   -0.027248988433
+  OPT2 energy [au]:                   -38.457363936987
+  ZAPT2 correlation energy [au]:       -0.026338193366
+  ZAPT2 energy [au]:                  -38.456453141920
+
+  Unscaled initial step yields sufficient decrease.
+  Finished "backtrack" line optimization.
+  .......................................
+
+  Max Gradient     :   0.0562842946   0.0001000000  no
+  Max Displacement :   0.1517879591   0.0001000000  no
+  Gradient*Displace:   0.0188092370   0.0001000000  no
+  taking step of size 0.260927
+  Optimization iteration 1 complete
+  //////////////////////////////////////////////////////////////////////
+  Computing molecular gradient by finite differences of energies from 6 displacements:
+  Starting at displacement: 0
+  Gradient options: 
+    displacement: 0.01 bohr
+    energy_accuracy: 1e-06 au
+    eliminate_cubic_terms: no
+
+  Beginning displacement 0:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.89904
+  Minimum orthogonalization residual = 0.283526
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0718953869
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.89904
+  Minimum orthogonalization residual = 0.283526
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4302430197 delta = 5.71180e-01
+                   733 integrals
+  iter     2 energy =  -38.4302503955 delta = 9.30036e-04
+                   733 integrals
+  iter     3 energy =  -38.4302509068 delta = 2.72433e-04
+                   733 integrals
+  iter     4 energy =  -38.4302509594 delta = 7.19267e-05
+                   733 integrals
+  iter     5 energy =  -38.4302509658 delta = 3.39290e-05
+                   731 integrals
+  iter     6 energy =  -38.4302509749 delta = 7.58236e-06
+                   733 integrals
+  iter     7 energy =  -38.4302509662 delta = 2.62935e-06
+                   733 integrals
+  iter     8 energy =  -38.4302509662 delta = 7.27927e-07
+                   733 integrals
+  iter     9 energy =  -38.4302509662 delta = 3.19196e-07
+                   733 integrals
+  iter    10 energy =  -38.4302509662 delta = 7.73963e-08
+                   733 integrals
+  iter    11 energy =  -38.4302509662 delta = 1.45658e-08
+                   733 integrals
+  iter    12 energy =  -38.4302509662 delta = 6.13438e-09
+
+  HOMO is     5   A =   0.004635
+  LUMO is     6   A =   0.700713
+
+  total scf energy =  -38.4302509662
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.430250966199
+  OPT1 energy [au]:                   -38.458014740952
+  OPT2 second order correction [au]:   -0.027117945046
+  OPT2 energy [au]:                   -38.457368911245
+  ZAPT2 correlation energy [au]:       -0.026209065837
+  ZAPT2 energy [au]:                  -38.456460032036
+
+  Beginning displacement 1:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.89486
+  Minimum orthogonalization residual = 0.28633
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0426463478
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.89486
+  Minimum orthogonalization residual = 0.28633
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4297713151 delta = 5.70891e-01
+                   733 integrals
+  iter     2 energy =  -38.4297965942 delta = 1.85003e-03
+                   733 integrals
+  iter     3 energy =  -38.4297979419 delta = 5.17124e-04
+                   733 integrals
+  iter     4 energy =  -38.4297980250 delta = 7.86956e-05
+                   733 integrals
+  iter     5 energy =  -38.4297980395 delta = 4.50082e-05
+                   733 integrals
+  iter     6 energy =  -38.4297980400 delta = 1.03412e-05
+                   733 integrals
+  iter     7 energy =  -38.4297980400 delta = 2.35898e-06
+                   733 integrals
+  iter     8 energy =  -38.4297980400 delta = 7.09677e-07
+                   733 integrals
+  iter     9 energy =  -38.4297980400 delta = 1.69741e-07
+                   733 integrals
+  iter    10 energy =  -38.4297980400 delta = 4.60344e-08
+                   733 integrals
+  iter    11 energy =  -38.4297980400 delta = 5.91905e-09
+
+  HOMO is     5   A =   0.004964
+  LUMO is     6   A =   0.697135
+
+  total scf energy =  -38.4297980400
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.429798040048
+  OPT1 energy [au]:                   -38.457773108000
+  OPT2 second order correction [au]:   -0.027313458817
+  OPT2 energy [au]:                   -38.457111498865
+  ZAPT2 correlation energy [au]:       -0.026403747369
+  ZAPT2 energy [au]:                  -38.456201787417
+
+  Beginning displacement 2:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.89319
+  Minimum orthogonalization residual = 0.286885
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0396152245
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.89319
+  Minimum orthogonalization residual = 0.286885
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4298633740 delta = 5.71368e-01
+                   733 integrals
+  iter     2 energy =  -38.4298818530 delta = 1.04606e-03
+                   733 integrals
+  iter     3 energy =  -38.4298833815 delta = 3.30672e-04
+                   733 integrals
+  iter     4 energy =  -38.4298835944 delta = 1.40741e-04
+                   733 integrals
+  iter     5 energy =  -38.4298836073 delta = 4.74152e-05
+                   733 integrals
+  iter     6 energy =  -38.4298836102 delta = 1.88000e-05
+                   733 integrals
+  iter     7 energy =  -38.4298836102 delta = 2.06194e-06
+                   733 integrals
+  iter     8 energy =  -38.4298836102 delta = 1.43951e-06
+                   733 integrals
+  iter     9 energy =  -38.4298836102 delta = 2.26198e-07
+                   733 integrals
+  iter    10 energy =  -38.4298836102 delta = 8.60358e-08
+                   733 integrals
+  iter    11 energy =  -38.4298836102 delta = 3.11957e-08
+                   733 integrals
+  iter    12 energy =  -38.4298836102 delta = 7.12340e-09
+
+  HOMO is     5   A =   0.005083
+  LUMO is     6   A =   0.694471
+
+  total scf energy =  -38.4298836102
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.429883610193
+  OPT1 energy [au]:                   -38.457876744000
+  OPT2 second order correction [au]:   -0.027332512267
+  OPT2 energy [au]:                   -38.457216122460
+  ZAPT2 correlation energy [au]:       -0.026421242004
+  ZAPT2 energy [au]:                  -38.456304852198
+
+  Beginning displacement 3:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.89107
+  Minimum orthogonalization residual = 0.288017
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0319817015
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.89107
+  Minimum orthogonalization residual = 0.288017
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4298975861 delta = 5.71332e-01
+                   733 integrals
+  iter     2 energy =  -38.4299181980 delta = 1.09204e-03
+                   733 integrals
+  iter     3 energy =  -38.4299198869 delta = 3.46180e-04
+                   733 integrals
+  iter     4 energy =  -38.4299201322 delta = 1.51629e-04
+                   733 integrals
+  iter     5 energy =  -38.4299201452 delta = 4.95887e-05
+                   733 integrals
+  iter     6 energy =  -38.4299201486 delta = 2.13770e-05
+                   733 integrals
+  iter     7 energy =  -38.4299201487 delta = 3.34436e-06
+                   733 integrals
+  iter     8 energy =  -38.4299201487 delta = 1.58946e-06
+                   733 integrals
+  iter     9 energy =  -38.4299201487 delta = 2.76273e-07
+                   733 integrals
+  iter    10 energy =  -38.4299201487 delta = 9.11792e-08
+                   733 integrals
+  iter    11 energy =  -38.4299201487 delta = 3.07097e-08
+                   733 integrals
+  iter    12 energy =  -38.4299201487 delta = 6.01445e-09
+
+  HOMO is     5   A =   0.005244
+  LUMO is     6   A =   0.692307
+
+  total scf energy =  -38.4299201487
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.429920148684
+  OPT1 energy [au]:                   -38.457963714928
+  OPT2 second order correction [au]:   -0.027381082944
+  OPT2 energy [au]:                   -38.457301231628
+  ZAPT2 correlation energy [au]:       -0.026468360483
+  ZAPT2 energy [au]:                  -38.456388509167
+
+  Beginning displacement 4:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.89521
+  Minimum orthogonalization residual = 0.285259
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0609664606
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.89521
+  Minimum orthogonalization residual = 0.285259
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4303661376 delta = 5.71427e-01
+                   733 integrals
+  iter     2 energy =  -38.4303913381 delta = 1.86204e-03
+                   733 integrals
+  iter     3 energy =  -38.4303926820 delta = 5.21490e-04
+                   733 integrals
+  iter     4 energy =  -38.4303927620 delta = 7.74091e-05
+                   733 integrals
+  iter     5 energy =  -38.4303927758 delta = 4.39754e-05
+                   733 integrals
+  iter     6 energy =  -38.4303927762 delta = 9.97101e-06
+                   733 integrals
+  iter     7 energy =  -38.4303927763 delta = 2.21474e-06
+                   733 integrals
+  iter     8 energy =  -38.4303927763 delta = 6.48840e-07
+                   733 integrals
+  iter     9 energy =  -38.4303927763 delta = 2.22050e-07
+                   733 integrals
+  iter    10 energy =  -38.4303927763 delta = 6.85448e-08
+                   733 integrals
+  iter    11 energy =  -38.4303927763 delta = 1.24078e-08
+                   731 integrals
+  iter    12 energy =  -38.4303927763 delta = 2.03176e-09
+
+  HOMO is     5   A =   0.004926
+  LUMO is     6   A =   0.695866
+
+  total scf energy =  -38.4303927763
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.430392776272
+  OPT1 energy [au]:                   -38.458227420150
+  OPT2 second order correction [au]:   -0.027187939860
+  OPT2 energy [au]:                   -38.457580716132
+  ZAPT2 correlation energy [au]:       -0.026275879544
+  ZAPT2 energy [au]:                  -38.456668655815
+
+  Beginning displacement 5:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.89695
+  Minimum orthogonalization residual = 0.284452
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0643482465
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.89695
+  Minimum orthogonalization residual = 0.284452
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4302244010 delta = 5.70950e-01
+                   733 integrals
+  iter     2 energy =  -38.4302430484 delta = 1.04691e-03
+                   733 integrals
+  iter     3 energy =  -38.4302445646 delta = 3.30131e-04
+                   733 integrals
+  iter     4 energy =  -38.4302447725 delta = 1.39966e-04
+                   733 integrals
+  iter     5 energy =  -38.4302447850 delta = 4.62905e-05
+                   733 integrals
+  iter     6 energy =  -38.4302447877 delta = 1.81108e-05
+                   733 integrals
+  iter     7 energy =  -38.4302447877 delta = 1.97434e-06
+                   733 integrals
+  iter     8 energy =  -38.4302447877 delta = 1.32313e-06
+                   733 integrals
+  iter     9 energy =  -38.4302447877 delta = 1.93554e-07
+                   733 integrals
+  iter    10 energy =  -38.4302447877 delta = 7.30661e-08
+                   733 integrals
+  iter    11 energy =  -38.4302447877 delta = 2.58581e-08
+                   733 integrals
+  iter    12 energy =  -38.4302447877 delta = 6.79739e-09
+
+  HOMO is     5   A =   0.004791
+  LUMO is     6   A =   0.697870
+
+  total scf energy =  -38.4302447877
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.430244787719
+  OPT1 energy [au]:                   -38.458060297537
+  OPT2 second order correction [au]:   -0.027167781238
+  OPT2 energy [au]:                   -38.457412568956
+  ZAPT2 correlation energy [au]:       -0.026257435048
+  ZAPT2 energy [au]:                  -38.456502222767
+
+  gradient in internal coordinates
+      1    -0.0035761434
+      2     0.0233434199
+      3     0.0098685285
+
+
+  gradient in Cartesian coordinates
+      1     0.0000000000
+      2    -0.0000260543
+      3    -0.0207906314
+      4    -0.0000000000
+      5    -0.0018193526
+      6     0.0104033334
+      7     0.0000000000
+      8     0.0018454069
+      9     0.0103872980
+
+  .......................................
+  Starting "backtrack" line optimization.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.89504
+  Minimum orthogonalization residual = 0.285799
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 3.0617017e-08
+
+  nuclear repulsion energy =    6.0518494126
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.89504
+  Minimum orthogonalization residual = 0.285799
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4301013202 delta = 5.70952e-01
+                   733 integrals
+  iter     2 energy =  -38.4301139398 delta = 1.02553e-03
+                   733 integrals
+  iter     3 energy =  -38.4301148298 delta = 2.98728e-04
+                   733 integrals
+  iter     4 energy =  -38.4301149362 delta = 9.52511e-05
+                   733 integrals
+  iter     5 energy =  -38.4301149474 delta = 4.41282e-05
+                   733 integrals
+  iter     6 energy =  -38.4301149484 delta = 1.08909e-05
+                   733 integrals
+  iter     7 energy =  -38.4301149485 delta = 2.84533e-06
+                   733 integrals
+  iter     8 energy =  -38.4301149486 delta = 2.39479e-06
+                   733 integrals
+  iter     9 energy =  -38.4301149486 delta = 8.21406e-07
+                   733 integrals
+  iter    10 energy =  -38.4301149486 delta = 3.27623e-07
+                   733 integrals
+  iter    11 energy =  -38.4301149486 delta = 1.36184e-07
+                   733 integrals
+  iter    12 energy =  -38.4301149486 delta = 5.81805e-08
+                   733 integrals
+  iter    13 energy =  -38.4301149486 delta = 2.38216e-08
+
+  HOMO is     5   A =   0.004944
+  LUMO is     6   A =   0.696582
+
+  total scf energy =  -38.4301149486
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.430114948559
+  OPT1 energy [au]:                   -38.458018019929
+  OPT2 second order correction [au]:   -0.027248988457
+  OPT2 energy [au]:                   -38.457363937016
+  ZAPT2 correlation energy [au]:       -0.026338193387
+  ZAPT2 energy [au]:                  -38.456453141946
+
+  MBPT2: changing atomic coordinates:
+  Molecular formula: CH2
+  molecule<Molecule>: (
+    symmetry = c1
+    unit = "angstrom"
+    {  n atoms                        geometry                     }={
+       1     C [   -0.0000000000    -0.0000000000     0.0156276715]
+       2     H [   -0.0000000000     0.9583328360     0.5381861642]
+       3     H [   -0.0000000000    -0.9583328360     0.5381861642]
+    }
+  )
+  Atomic Masses:
+     12.00000    1.00783    1.00783
+  Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88712
+  Minimum orthogonalization residual = 0.286436
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 7.4960383e-09
+
+  nuclear repulsion energy =    6.0936543430
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88712
+  Minimum orthogonalization residual = 0.286436
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4311175584 delta = 5.71330e-01
+                   733 integrals
+  iter     2 energy =  -38.4315793579 delta = 7.91558e-03
+                   733 integrals
+  iter     3 energy =  -38.4316144404 delta = 2.78193e-03
+                   733 integrals
+  iter     4 energy =  -38.4316149928 delta = 4.36867e-04
+                   733 integrals
+  iter     5 energy =  -38.4316151479 delta = 1.59435e-04
+                   733 integrals
+  iter     6 energy =  -38.4316151610 delta = 3.13746e-05
+                   733 integrals
+  iter     7 energy =  -38.4316151616 delta = 8.18912e-06
+                   733 integrals
+  iter     8 energy =  -38.4316151616 delta = 2.39769e-06
+                   733 integrals
+  iter     9 energy =  -38.4316151616 delta = 5.24940e-07
+                   733 integrals
+  iter    10 energy =  -38.4316151616 delta = 1.57676e-07
+                   733 integrals
+  iter    11 energy =  -38.4316151616 delta = 4.13852e-08
+                   733 integrals
+  iter    12 energy =  -38.4316151616 delta = 1.20978e-08
+                   733 integrals
+  iter    13 energy =  -38.4316151616 delta = 3.41678e-09
+
+  HOMO is     5   A =   0.005698
+  LUMO is     6   A =   0.678314
+
+  total scf energy =  -38.4316151616
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431615161596
+  OPT1 energy [au]:                   -38.459275169270
+  OPT2 second order correction [au]:   -0.027058227669
+  OPT2 energy [au]:                   -38.458673389266
+  ZAPT2 correlation energy [au]:       -0.026121926959
+  ZAPT2 energy [au]:                  -38.457737088556
+
+  Unscaled initial step yields sufficient decrease.
+  Finished "backtrack" line optimization.
+  .......................................
+
+  Max Gradient     :   0.0207906314   0.0001000000  no
+  Max Displacement :   0.0684454711   0.0001000000  no
+  Gradient*Displace:   0.0022800400   0.0001000000  no
+  taking step of size 0.107770
+  Optimization iteration 2 complete
+  //////////////////////////////////////////////////////////////////////
+  Computing molecular gradient by finite differences of energies from 6 displacements:
+  Starting at displacement: 0
+  Gradient options: 
+    displacement: 0.01 bohr
+    energy_accuracy: 1e-06 au
+    eliminate_cubic_terms: no
+
+  Beginning displacement 0:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.89112
+  Minimum orthogonalization residual = 0.283981
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.1186082334
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.89112
+  Minimum orthogonalization residual = 0.283981
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4317013132 delta = 5.69625e-01
+                   733 integrals
+  iter     2 energy =  -38.4317132014 delta = 1.37490e-03
+                   733 integrals
+  iter     3 energy =  -38.4317138105 delta = 3.95179e-04
+                   733 integrals
+  iter     4 energy =  -38.4317138342 delta = 4.72925e-05
+                   733 integrals
+  iter     5 energy =  -38.4317138378 delta = 2.38962e-05
+                   733 integrals
+  iter     6 energy =  -38.4317138380 delta = 5.90321e-06
+                   733 integrals
+  iter     7 energy =  -38.4317138380 delta = 1.15621e-06
+                   733 integrals
+  iter     8 energy =  -38.4317138380 delta = 3.26615e-07
+                   733 integrals
+  iter     9 energy =  -38.4317138380 delta = 7.98162e-08
+                   733 integrals
+  iter    10 energy =  -38.4317138380 delta = 2.30820e-08
+                   733 integrals
+  iter    11 energy =  -38.4317138380 delta = 5.82282e-09
+
+  HOMO is     5   A =   0.005372
+  LUMO is     6   A =   0.681930
+
+  total scf energy =  -38.4317138380
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431713837960
+  OPT1 energy [au]:                   -38.459214785179
+  OPT2 second order correction [au]:   -0.026910469753
+  OPT2 energy [au]:                   -38.458624307713
+  ZAPT2 correlation energy [au]:       -0.025974233415
+  ZAPT2 energy [au]:                  -38.457688071375
+
+  Beginning displacement 1:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88843
+  Minimum orthogonalization residual = 0.285913
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0938963764
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88843
+  Minimum orthogonalization residual = 0.285913
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4315508258 delta = 5.69194e-01
+                   733 integrals
+  iter     2 energy =  -38.4315747905 delta = 1.88824e-03
+                   733 integrals
+  iter     3 energy =  -38.4315760966 delta = 5.59729e-04
+                   733 integrals
+  iter     4 energy =  -38.4315761291 delta = 4.53126e-05
+                   733 integrals
+  iter     5 energy =  -38.4315761340 delta = 2.37876e-05
+                   733 integrals
+  iter     6 energy =  -38.4315761343 delta = 4.71624e-06
+                   733 integrals
+  iter     7 energy =  -38.4315761343 delta = 1.89281e-06
+                   733 integrals
+  iter     8 energy =  -38.4315761343 delta = 3.01767e-07
+                   733 integrals
+  iter     9 energy =  -38.4315761343 delta = 6.61161e-08
+                   733 integrals
+  iter    10 energy =  -38.4315761343 delta = 3.77325e-08
+                   733 integrals
+  iter    11 energy =  -38.4315761343 delta = 3.64962e-09
+
+  HOMO is     5   A =   0.005564
+  LUMO is     6   A =   0.680529
+
+  total scf energy =  -38.4315761343
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431576134325
+  OPT1 energy [au]:                   -38.459223550478
+  OPT2 second order correction [au]:   -0.027042871514
+  OPT2 energy [au]:                   -38.458619005839
+  ZAPT2 correlation energy [au]:       -0.026109660508
+  ZAPT2 energy [au]:                  -38.457685794834
+
+  Beginning displacement 2:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88635
+  Minimum orthogonalization residual = 0.286573
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0930901109
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88635
+  Minimum orthogonalization residual = 0.286573
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4315652107 delta = 5.69697e-01
+                   733 integrals
+  iter     2 energy =  -38.4315731888 delta = 8.76510e-04
+                   733 integrals
+  iter     3 energy =  -38.4315739301 delta = 3.10579e-04
+                   733 integrals
+  iter     4 energy =  -38.4315739617 delta = 4.94323e-05
+                   733 integrals
+  iter     5 energy =  -38.4315739664 delta = 2.57416e-05
+                   733 integrals
+  iter     6 energy =  -38.4315739667 delta = 4.19287e-06
+                   733 integrals
+  iter     7 energy =  -38.4315739667 delta = 1.44733e-06
+                   733 integrals
+  iter     8 energy =  -38.4315739667 delta = 3.20390e-07
+                   733 integrals
+  iter     9 energy =  -38.4315739667 delta = 7.38021e-08
+                   733 integrals
+  iter    10 energy =  -38.4315739667 delta = 2.09930e-08
+                   733 integrals
+  iter    11 energy =  -38.4315739667 delta = 9.46772e-09
+
+  HOMO is     5   A =   0.005773
+  LUMO is     6   A =   0.676735
+
+  total scf energy =  -38.4315739667
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431573966700
+  OPT1 energy [au]:                   -38.459246182751
+  OPT2 second order correction [au]:   -0.027071614142
+  OPT2 energy [au]:                   -38.458645580841
+  ZAPT2 correlation energy [au]:       -0.026133573584
+  ZAPT2 energy [au]:                  -38.457707540284
+
+  Beginning displacement 3:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88312
+  Minimum orthogonalization residual = 0.2889
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0688723224
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88312
+  Minimum orthogonalization residual = 0.2889
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4314219414 delta = 5.69524e-01
+                   733 integrals
+  iter     2 energy =  -38.4314472963 delta = 1.74844e-03
+                   733 integrals
+  iter     3 energy =  -38.4314487529 delta = 4.99718e-04
+                   733 integrals
+  iter     4 energy =  -38.4314488474 delta = 8.58631e-05
+                   733 integrals
+  iter     5 energy =  -38.4314488619 delta = 4.64938e-05
+                   733 integrals
+  iter     6 energy =  -38.4314488624 delta = 1.17688e-05
+                   733 integrals
+  iter     7 energy =  -38.4314488626 delta = 3.16291e-06
+                   733 integrals
+  iter     8 energy =  -38.4314488626 delta = 1.37041e-06
+                   733 integrals
+  iter     9 energy =  -38.4314488626 delta = 2.21896e-07
+                   733 integrals
+  iter    10 energy =  -38.4314488626 delta = 6.53955e-08
+                   733 integrals
+  iter    11 energy =  -38.4314488626 delta = 9.38481e-09
+
+  HOMO is     5   A =   0.006016
+  LUMO is     6   A =   0.674705
+
+  total scf energy =  -38.4314488626
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431448862628
+  OPT1 energy [au]:                   -38.459270127929
+  OPT2 second order correction [au]:   -0.027207964546
+  OPT2 energy [au]:                   -38.458656827175
+  ZAPT2 correlation energy [au]:       -0.026271501782
+  ZAPT2 energy [au]:                  -38.457720364410
+
+  Beginning displacement 4:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88581
+  Minimum orthogonalization residual = 0.286868
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0933804486
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88581
+  Minimum orthogonalization residual = 0.286868
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4315880781 delta = 5.70002e-01
+                   733 integrals
+  iter     2 energy =  -38.4316117835 delta = 1.88912e-03
+                   733 integrals
+  iter     3 energy =  -38.4316130814 delta = 5.61446e-04
+                   733 integrals
+  iter     4 energy =  -38.4316131131 delta = 4.45740e-05
+                   733 integrals
+  iter     5 energy =  -38.4316131177 delta = 2.31651e-05
+                   733 integrals
+  iter     6 energy =  -38.4316131180 delta = 4.66970e-06
+                   733 integrals
+  iter     7 energy =  -38.4316131180 delta = 1.91553e-06
+                   733 integrals
+  iter     8 energy =  -38.4316131180 delta = 3.02548e-07
+                   733 integrals
+  iter     9 energy =  -38.4316131180 delta = 7.08827e-08
+                   733 integrals
+  iter    10 energy =  -38.4316131180 delta = 4.36676e-08
+                   733 integrals
+  iter    11 energy =  -38.4316131180 delta = 7.42606e-09
+
+  HOMO is     5   A =   0.005833
+  LUMO is     6   A =   0.675926
+
+  total scf energy =  -38.4316131180
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431613118020
+  OPT1 energy [au]:                   -38.459288324290
+  OPT2 second order correction [au]:   -0.027076112189
+  OPT2 energy [au]:                   -38.458689230209
+  ZAPT2 correlation energy [au]:       -0.026136587821
+  ZAPT2 energy [au]:                  -38.457749705841
+
+  Beginning displacement 5:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88795
+  Minimum orthogonalization residual = 0.285949
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0944407551
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88795
+  Minimum orthogonalization residual = 0.285949
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4315506816 delta = 5.69494e-01
+                   733 integrals
+  iter     2 energy =  -38.4315587416 delta = 8.72774e-04
+                   733 integrals
+  iter     3 energy =  -38.4315595064 delta = 3.13824e-04
+                   733 integrals
+  iter     4 energy =  -38.4315595393 delta = 5.13175e-05
+                   733 integrals
+  iter     5 energy =  -38.4315595442 delta = 2.64442e-05
+                   733 integrals
+  iter     6 energy =  -38.4315595445 delta = 4.31414e-06
+                   733 integrals
+  iter     7 energy =  -38.4315595446 delta = 1.47369e-06
+                   733 integrals
+  iter     8 energy =  -38.4315595446 delta = 3.21348e-07
+                   733 integrals
+  iter     9 energy =  -38.4315595446 delta = 7.48943e-08
+                   733 integrals
+  iter    10 energy =  -38.4315595446 delta = 2.11679e-08
+                   733 integrals
+  iter    11 energy =  -38.4315595446 delta = 9.75681e-09
+
+  HOMO is     5   A =   0.005612
+  LUMO is     6   A =   0.679397
+
+  total scf energy =  -38.4315595446
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431559544551
+  OPT1 energy [au]:                   -38.459209698384
+  OPT2 second order correction [au]:   -0.027047066273
+  OPT2 energy [au]:                   -38.458606610824
+  ZAPT2 correlation energy [au]:       -0.026112477836
+  ZAPT2 energy [au]:                  -38.457672022387
+
+  gradient in internal coordinates
+      1     0.0016146518
+      2     0.0031955504
+      3    -0.0017758948
+
+
+  gradient in Cartesian coordinates
+      1     0.0000000000
+      2     0.0000026510
+      3    -0.0012876494
+      4    -0.0000000000
+      5    -0.0025979937
+      6     0.0006431019
+      7    -0.0000000000
+      8     0.0025953427
+      9     0.0006445475
+
+  .......................................
+  Starting "backtrack" line optimization.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88712
+  Minimum orthogonalization residual = 0.286436
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 7.4960383e-09
+
+  nuclear repulsion energy =    6.0936543430
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88712
+  Minimum orthogonalization residual = 0.286436
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4316042348 delta = 5.69634e-01
+                   733 integrals
+  iter     2 energy =  -38.4316143421 delta = 7.73058e-04
+                   733 integrals
+  iter     3 energy =  -38.4316150607 delta = 2.28737e-04
+                   733 integrals
+  iter     4 energy =  -38.4316151540 delta = 9.13712e-05
+                   733 integrals
+  iter     5 energy =  -38.4316151605 delta = 3.28408e-05
+                   733 integrals
+  iter     6 energy =  -38.4316151616 delta = 1.20642e-05
+                   733 integrals
+  iter     7 energy =  -38.4316151616 delta = 1.65137e-06
+                   733 integrals
+  iter     8 energy =  -38.4316151616 delta = 9.87119e-07
+                   733 integrals
+  iter     9 energy =  -38.4316151616 delta = 1.62645e-07
+                   733 integrals
+  iter    10 energy =  -38.4316151616 delta = 5.80807e-08
+                   733 integrals
+  iter    11 energy =  -38.4316151616 delta = 1.98270e-08
+                   733 integrals
+  iter    12 energy =  -38.4316151616 delta = 5.46762e-09
+
+  HOMO is     5   A =   0.005698
+  LUMO is     6   A =   0.678314
+
+  total scf energy =  -38.4316151616
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431615161596
+  OPT1 energy [au]:                   -38.459275169266
+  OPT2 second order correction [au]:   -0.027058227667
+  OPT2 energy [au]:                   -38.458673389263
+  ZAPT2 correlation energy [au]:       -0.026121926956
+  ZAPT2 energy [au]:                  -38.457737088553
+
+  MBPT2: changing atomic coordinates:
+  Molecular formula: CH2
+  molecule<Molecule>: (
+    symmetry = c1
+    unit = "angstrom"
+    {  n atoms                        geometry                     }={
+       1     C [   -0.0000000000    -0.0000000000     0.0222014626]
+       2     H [   -0.0000000000     0.9671331469     0.5348992687]
+       3     H [   -0.0000000000    -0.9671331469     0.5348992687]
+    }
+  )
+  Atomic Masses:
+     12.00000    1.00783    1.00783
+  Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88019
+  Minimum orthogonalization residual = 0.289722
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 2.3110268e-09
+
+  nuclear repulsion energy =    6.0747657359
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88019
+  Minimum orthogonalization residual = 0.289722
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4314914503 delta = 5.69627e-01
+                   733 integrals
+  iter     2 energy =  -38.4315074989 delta = 9.61413e-04
+                   733 integrals
+  iter     3 energy =  -38.4315097970 delta = 4.59685e-04
+                   733 integrals
+  iter     4 energy =  -38.4315098977 delta = 1.08025e-04
+                   733 integrals
+  iter     5 energy =  -38.4315099091 delta = 4.45561e-05
+                   733 integrals
+  iter     6 energy =  -38.4315099094 delta = 7.45904e-06
+                   733 integrals
+  iter     7 energy =  -38.4315099094 delta = 2.23074e-06
+                   733 integrals
+  iter     8 energy =  -38.4315099094 delta = 4.61987e-07
+                   733 integrals
+  iter     9 energy =  -38.4315099094 delta = 8.50078e-08
+                   733 integrals
+  iter    10 energy =  -38.4315099094 delta = 2.10231e-08
+                   733 integrals
+  iter    11 energy =  -38.4315099094 delta = 3.85351e-09
+                   733 integrals
+  iter    12 energy =  -38.4315099094 delta = 9.15965e-10
+
+  HOMO is     5   A =   0.006360
+  LUMO is     6   A =   0.668565
+
+  total scf energy =  -38.4315099094
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431509909440
+  OPT1 energy [au]:                   -38.459334612043
+  OPT2 second order correction [au]:   -0.027223031639
+  OPT2 energy [au]:                   -38.458732941079
+  ZAPT2 correlation energy [au]:       -0.026276454003
+  ZAPT2 energy [au]:                  -38.457786363443
+
+  Unscaled initial step yields sufficient decrease.
+  Finished "backtrack" line optimization.
+  .......................................
+
+  Max Gradient     :   0.0025979937   0.0001000000  no
+  Max Displacement :   0.0166301761   0.0001000000  no
+  Gradient*Displace:   0.0001103602   0.0001000000  no
+  taking step of size 0.024916
+  Optimization iteration 3 complete
+  //////////////////////////////////////////////////////////////////////
+  Computing molecular gradient by finite differences of energies from 6 displacements:
+  Starting at displacement: 0
+  Gradient options: 
+    displacement: 0.01 bohr
+    energy_accuracy: 1e-06 au
+    eliminate_cubic_terms: no
+
+  Beginning displacement 0:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88234
+  Minimum orthogonalization residual = 0.28818
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0920264403
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88234
+  Minimum orthogonalization residual = 0.28818
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4315646871 delta = 5.69649e-01
+                   733 integrals
+  iter     2 energy =  -38.4315772901 delta = 1.29446e-03
+                   733 integrals
+  iter     3 energy =  -38.4315780075 delta = 3.77157e-04
+                   733 integrals
+  iter     4 energy =  -38.4315780414 delta = 4.97074e-05
+                   733 integrals
+  iter     5 energy =  -38.4315780466 delta = 2.67700e-05
+                   733 integrals
+  iter     6 energy =  -38.4315780468 delta = 6.14908e-06
+                   733 integrals
+  iter     7 energy =  -38.4315780468 delta = 1.89265e-06
+                   733 integrals
+  iter     8 energy =  -38.4315780468 delta = 4.76150e-07
+                   733 integrals
+  iter     9 energy =  -38.4315780468 delta = 2.28845e-07
+                   733 integrals
+  iter    10 energy =  -38.4315780468 delta = 6.02138e-08
+                   733 integrals
+  iter    11 energy =  -38.4315780468 delta = 4.04868e-09
+
+  HOMO is     5   A =   0.006209
+  LUMO is     6   A =   0.669777
+
+  total scf energy =  -38.4315780468
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431578046842
+  OPT1 energy [au]:                   -38.459302133273
+  OPT2 second order correction [au]:   -0.027131786055
+  OPT2 energy [au]:                   -38.458709832897
+  ZAPT2 correlation energy [au]:       -0.026183235275
+  ZAPT2 energy [au]:                  -38.457761282117
+
+  Beginning displacement 1:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88131
+  Minimum orthogonalization residual = 0.288755
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0847698942
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88131
+  Minimum orthogonalization residual = 0.288755
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4314937128 delta = 5.69319e-01
+                   733 integrals
+  iter     2 energy =  -38.4315175564 delta = 1.20337e-03
+                   733 integrals
+  iter     3 energy =  -38.4315191008 delta = 3.43158e-04
+                   733 integrals
+  iter     4 energy =  -38.4315193003 delta = 1.30843e-04
+                   733 integrals
+  iter     5 energy =  -38.4315193158 delta = 5.18329e-05
+                   733 integrals
+  iter     6 energy =  -38.4315193180 delta = 1.66421e-05
+                   733 integrals
+  iter     7 energy =  -38.4315193180 delta = 2.09124e-06
+                   733 integrals
+  iter     8 energy =  -38.4315193180 delta = 1.82463e-06
+                   733 integrals
+  iter     9 energy =  -38.4315193180 delta = 5.36965e-07
+                   733 integrals
+  iter    10 energy =  -38.4315193180 delta = 1.93579e-07
+                   733 integrals
+  iter    11 energy =  -38.4315193180 delta = 7.69055e-08
+                   733 integrals
+  iter    12 energy =  -38.4315193180 delta = 3.08439e-08
+                   733 integrals
+  iter    13 energy =  -38.4315193180 delta = 1.20407e-08
+                   733 integrals
+  iter    14 energy =  -38.4315193180 delta = 4.83850e-09
+
+  HOMO is     5   A =   0.006286
+  LUMO is     6   A =   0.668850
+
+  total scf energy =  -38.4315193180
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431519318048
+  OPT1 energy [au]:                   -38.459288445617
+  OPT2 second order correction [au]:   -0.027173151940
+  OPT2 energy [au]:                   -38.458692469988
+  ZAPT2 correlation energy [au]:       -0.026225046054
+  ZAPT2 energy [au]:                  -38.457744364102
+
+  Beginning displacement 2:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.8767
+  Minimum orthogonalization residual = 0.291593
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0602857000
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.8767
+  Minimum orthogonalization residual = 0.291593
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4313666566 delta = 5.69424e-01
+                   733 integrals
+  iter     2 energy =  -38.4313849290 delta = 1.32049e-03
+                   733 integrals
+  iter     3 energy =  -38.4313860960 delta = 3.80847e-04
+                   733 integrals
+  iter     4 energy =  -38.4313862189 delta = 1.08446e-04
+                   733 integrals
+  iter     5 energy =  -38.4313862332 delta = 5.07208e-05
+                   733 integrals
+  iter     6 energy =  -38.4313862341 delta = 1.18489e-05
+                   733 integrals
+  iter     7 energy =  -38.4313862342 delta = 2.98731e-06
+                   733 integrals
+  iter     8 energy =  -38.4313862342 delta = 1.73691e-06
+                   733 integrals
+  iter     9 energy =  -38.4313862342 delta = 3.94257e-07
+                   733 integrals
+  iter    10 energy =  -38.4313862342 delta = 1.56799e-07
+                   733 integrals
+  iter    11 energy =  -38.4313862342 delta = 5.68776e-08
+                   733 integrals
+  iter    12 energy =  -38.4313862342 delta = 1.74243e-08
+                   733 integrals
+  iter    13 energy =  -38.4313862342 delta = 4.89550e-09
+
+  HOMO is     5   A =   0.006674
+  LUMO is     6   A =   0.664369
+
+  total scf energy =  -38.4313862342
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431386234245
+  OPT1 energy [au]:                   -38.459319146832
+  OPT2 second order correction [au]:   -0.027327150218
+  OPT2 energy [au]:                   -38.458713384464
+  ZAPT2 correlation energy [au]:       -0.026377371104
+  ZAPT2 energy [au]:                  -38.457763605349
+
+  Beginning displacement 3:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.87806
+  Minimum orthogonalization residual = 0.291133
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0576139952
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.87806
+  Minimum orthogonalization residual = 0.291133
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4313536156 delta = 5.69724e-01
+                   733 integrals
+  iter     2 energy =  -38.4313650142 delta = 1.05599e-03
+                   733 integrals
+  iter     3 energy =  -38.4313659361 delta = 3.43462e-04
+                   733 integrals
+  iter     4 energy =  -38.4313659876 delta = 5.94493e-05
+                   733 integrals
+  iter     5 energy =  -38.4313659944 delta = 3.18410e-05
+                   733 integrals
+  iter     6 energy =  -38.4313659948 delta = 6.29936e-06
+                   733 integrals
+  iter     7 energy =  -38.4313659949 delta = 1.90384e-06
+                   733 integrals
+  iter     8 energy =  -38.4313659949 delta = 6.11494e-07
+                   733 integrals
+  iter     9 energy =  -38.4313659949 delta = 2.67084e-07
+                   733 integrals
+  iter    10 energy =  -38.4313659949 delta = 8.66095e-08
+                   733 integrals
+  iter    11 energy =  -38.4313659949 delta = 1.61755e-08
+                   733 integrals
+  iter    12 energy =  -38.4313659949 delta = 4.36357e-09
+
+  HOMO is     5   A =   0.006504
+  LUMO is     6   A =   0.667158
+
+  total scf energy =  -38.4313659949
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431365994868
+  OPT1 energy [au]:                   -38.459294656553
+  OPT2 second order correction [au]:   -0.027317430279
+  OPT2 energy [au]:                   -38.458683425147
+  ZAPT2 correlation energy [au]:       -0.026372654257
+  ZAPT2 energy [au]:                  -38.457738649125
+
+  Beginning displacement 4:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.87914
+  Minimum orthogonalization residual = 0.29035
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0649819591
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.87914
+  Minimum orthogonalization residual = 0.29035
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4313758017 delta = 5.69925e-01
+                   733 integrals
+  iter     2 energy =  -38.4313995359 delta = 1.21358e-03
+                   733 integrals
+  iter     3 energy =  -38.4314011113 delta = 3.47619e-04
+                   733 integrals
+  iter     4 energy =  -38.4314013172 delta = 1.33007e-04
+                   733 integrals
+  iter     5 energy =  -38.4314013331 delta = 5.29408e-05
+                   733 integrals
+  iter     6 energy =  -38.4314013355 delta = 1.73480e-05
+                   733 integrals
+  iter     7 energy =  -38.4314013355 delta = 2.17078e-06
+                   733 integrals
+  iter     8 energy =  -38.4314013356 delta = 1.92939e-06
+                   733 integrals
+  iter     9 energy =  -38.4314013356 delta = 5.77466e-07
+                   733 integrals
+  iter    10 energy =  -38.4314013356 delta = 2.10823e-07
+                   733 integrals
+  iter    11 energy =  -38.4314013356 delta = 8.45547e-08
+                   733 integrals
+  iter    12 energy =  -38.4314013356 delta = 3.43242e-08
+                   733 integrals
+  iter    13 energy =  -38.4314013356 delta = 1.34977e-08
+                   733 integrals
+  iter    14 energy =  -38.4314013356 delta = 5.49522e-09
+
+  HOMO is     5   A =   0.006422
+  LUMO is     6   A =   0.667869
+
+  total scf energy =  -38.4314013356
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431401335573
+  OPT1 energy [au]:                   -38.459284421044
+  OPT2 second order correction [au]:   -0.027275556184
+  OPT2 energy [au]:                   -38.458676891757
+  ZAPT2 correlation energy [au]:       -0.026330435578
+  ZAPT2 energy [au]:                  -38.457731771151
+
+  Beginning displacement 5:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88369
+  Minimum orthogonalization residual = 0.287852
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0892748317
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88369
+  Minimum orthogonalization residual = 0.287852
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4315863289 delta = 5.69812e-01
+                   733 integrals
+  iter     2 energy =  -38.4316045202 delta = 1.32641e-03
+                   733 integrals
+  iter     3 energy =  -38.4316056935 delta = 3.81848e-04
+                   733 integrals
+  iter     4 energy =  -38.4316058172 delta = 1.08343e-04
+                   733 integrals
+  iter     5 energy =  -38.4316058314 delta = 5.06185e-05
+                   733 integrals
+  iter     6 energy =  -38.4316058323 delta = 1.17774e-05
+                   733 integrals
+  iter     7 energy =  -38.4316058324 delta = 3.06118e-06
+                   733 integrals
+  iter     8 energy =  -38.4316058325 delta = 1.77023e-06
+                   733 integrals
+  iter     9 energy =  -38.4316058325 delta = 3.94843e-07
+                   733 integrals
+  iter    10 energy =  -38.4316058325 delta = 1.58899e-07
+                   733 integrals
+  iter    11 energy =  -38.4316058325 delta = 5.76004e-08
+                   733 integrals
+  iter    12 energy =  -38.4316058325 delta = 1.73403e-08
+                   733 integrals
+  iter    13 energy =  -38.4316058325 delta = 4.72032e-09
+
+  HOMO is     5   A =   0.006045
+  LUMO is     6   A =   0.672778
+
+  total scf energy =  -38.4316058325
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431605832463
+  OPT1 energy [au]:                   -38.459323346550
+  OPT2 second order correction [au]:   -0.027119865087
+  OPT2 energy [au]:                   -38.458725697550
+  ZAPT2 correlation energy [au]:       -0.026176461450
+  ZAPT2 energy [au]:                  -38.457782293913
+
+  gradient in internal coordinates
+      1    -0.0011316496
+      2    -0.0006296475
+      3     0.0009344282
+
+
+  gradient in Cartesian coordinates
+      1     0.0000000000
+      2     0.0000148097
+      3    -0.0008580434
+      4     0.0000000000
+      5     0.0008427497
+      6     0.0004250962
+      7    -0.0000000000
+      8    -0.0008575593
+      9     0.0004329472
+
+  .......................................
+  Starting "backtrack" line optimization.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88019
+  Minimum orthogonalization residual = 0.289722
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 2.3110268e-09
+
+  nuclear repulsion energy =    6.0747657359
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88019
+  Minimum orthogonalization residual = 0.289722
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4315070367 delta = 5.69481e-01
+                   733 integrals
+  iter     2 energy =  -38.4315095869 delta = 4.32572e-04
+                   733 integrals
+  iter     3 energy =  -38.4315098716 delta = 1.57386e-04
+                   733 integrals
+  iter     4 energy =  -38.4315099070 delta = 6.80056e-05
+                   733 integrals
+  iter     5 energy =  -38.4315099090 delta = 1.79590e-05
+                   733 integrals
+  iter     6 energy =  -38.4315099094 delta = 6.24842e-06
+                   733 integrals
+  iter     7 energy =  -38.4315099094 delta = 1.09540e-06
+                   733 integrals
+  iter     8 energy =  -38.4315099094 delta = 2.24288e-07
+                   733 integrals
+  iter     9 energy =  -38.4315099094 delta = 4.45535e-08
+                   733 integrals
+  iter    10 energy =  -38.4315099094 delta = 7.91757e-09
+                   733 integrals
+  iter    11 energy =  -38.4315099094 delta = 1.43201e-09
+
+  HOMO is     5   A =   0.006360
+  LUMO is     6   A =   0.668565
+
+  total scf energy =  -38.4315099094
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431509909440
+  OPT1 energy [au]:                   -38.459334612043
+  OPT2 second order correction [au]:   -0.027223031639
+  OPT2 energy [au]:                   -38.458732941079
+  ZAPT2 correlation energy [au]:       -0.026276454003
+  ZAPT2 energy [au]:                  -38.457786363443
+
+  MBPT2: changing atomic coordinates:
+  Molecular formula: CH2
+  molecule<Molecule>: (
+    symmetry = c1
+    unit = "angstrom"
+    {  n atoms                        geometry                     }={
+       1     C [   -0.0000000000    -0.0000000000     0.0227402221]
+       2     H [   -0.0000000000     0.9661510257     0.5346298890]
+       3     H [   -0.0000000000    -0.9661510257     0.5346298890]
+    }
+  )
+  Atomic Masses:
+     12.00000    1.00783    1.00783
+  Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88142
+  Minimum orthogonalization residual = 0.288993
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 5.7467049e-10
+
+  nuclear repulsion energy =    6.0816559373
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88142
+  Minimum orthogonalization residual = 0.288993
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4315536539 delta = 5.69620e-01
+                   733 integrals
+  iter     2 energy =  -38.4315543984 delta = 3.34147e-04
+                   733 integrals
+  iter     3 energy =  -38.4315544410 delta = 9.74368e-05
+                   733 integrals
+  iter     4 energy =  -38.4315544435 delta = 1.64014e-05
+                   733 integrals
+  iter     5 energy =  -38.4315544439 delta = 8.28616e-06
+                   733 integrals
+  iter     6 energy =  -38.4315544439 delta = 2.04298e-06
+                   733 integrals
+  iter     7 energy =  -38.4315544439 delta = 4.21913e-07
+                   733 integrals
+  iter     8 energy =  -38.4315544439 delta = 1.24244e-07
+                   733 integrals
+  iter     9 energy =  -38.4315544439 delta = 3.00581e-08
+                   733 integrals
+  iter    10 energy =  -38.4315544439 delta = 8.47708e-09
+                   733 integrals
+  iter    11 energy =  -38.4315544439 delta = 2.32451e-09
+                   733 integrals
+  iter    12 energy =  -38.4315544439 delta = 3.95586e-10
+
+  HOMO is     5   A =   0.006259
+  LUMO is     6   A =   0.669773
+
+  total scf energy =  -38.4315544439
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431554443934
+  OPT1 energy [au]:                   -38.459333542187
+  OPT2 second order correction [au]:   -0.027180342537
+  OPT2 energy [au]:                   -38.458734786471
+  ZAPT2 correlation energy [au]:       -0.026234061596
+  ZAPT2 energy [au]:                  -38.457788505530
+
+  Unscaled initial step yields sufficient decrease.
+  Finished "backtrack" line optimization.
+  .......................................
+
+  Max Gradient     :   0.0008580434   0.0001000000  no
+  Max Displacement :   0.0018559399   0.0001000000  no
+  Gradient*Displace:   0.0000044660   0.0001000000  yes
+  taking step of size 0.003363
+  Optimization iteration 4 complete
+  //////////////////////////////////////////////////////////////////////
+  Computing molecular gradient by finite differences of energies from 6 displacements:
+  Starting at displacement: 0
+  Gradient options: 
+    displacement: 0.01 bohr
+    energy_accuracy: 1e-06 au
+    eliminate_cubic_terms: no
+
+  Beginning displacement 0:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.87752
+  Minimum orthogonalization residual = 0.291379
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0577397854
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.87752
+  Minimum orthogonalization residual = 0.291379
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4313667578 delta = 5.69499e-01
+                   733 integrals
+  iter     2 energy =  -38.4313780949 delta = 1.31002e-03
+                   733 integrals
+  iter     3 energy =  -38.4313787071 delta = 3.82144e-04
+                   733 integrals
+  iter     4 energy =  -38.4313787351 delta = 5.11050e-05
+                   733 integrals
+  iter     5 energy =  -38.4313787396 delta = 2.65638e-05
+                   733 integrals
+  iter     6 energy =  -38.4313787397 delta = 6.45030e-06
+                   733 integrals
+  iter     7 energy =  -38.4313787398 delta = 1.60614e-06
+                   733 integrals
+  iter     8 energy =  -38.4313787398 delta = 4.10751e-07
+                   733 integrals
+  iter     9 energy =  -38.4313787398 delta = 1.48840e-07
+                   733 integrals
+  iter    10 energy =  -38.4313787398 delta = 4.15206e-08
+                   733 integrals
+  iter    11 energy =  -38.4313787398 delta = 9.53771e-09
+
+  HOMO is     5   A =   0.006565
+  LUMO is     6   A =   0.666247
+
+  total scf energy =  -38.4313787398
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431378739756
+  OPT1 energy [au]:                   -38.459312565312
+  OPT2 second order correction [au]:   -0.027323975614
+  OPT2 energy [au]:                   -38.458702715370
+  ZAPT2 correlation energy [au]:       -0.026377691509
+  ZAPT2 energy [au]:                  -38.457756431264
+
+  Beginning displacement 1:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.87979
+  Minimum orthogonalization residual = 0.289648
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0797359073
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.87979
+  Minimum orthogonalization residual = 0.289648
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4314880660 delta = 5.69921e-01
+                   733 integrals
+  iter     2 energy =  -38.4315109437 delta = 1.80961e-03
+                   733 integrals
+  iter     3 energy =  -38.4315122785 delta = 5.45852e-04
+                   733 integrals
+  iter     4 energy =  -38.4315123185 delta = 4.90176e-05
+                   733 integrals
+  iter     5 energy =  -38.4315123245 delta = 2.66750e-05
+                   733 integrals
+  iter     6 energy =  -38.4315123248 delta = 5.41750e-06
+                   733 integrals
+  iter     7 energy =  -38.4315123248 delta = 2.10746e-06
+                   733 integrals
+  iter     8 energy =  -38.4315123248 delta = 3.73821e-07
+                   733 integrals
+  iter     9 energy =  -38.4315123248 delta = 8.50779e-08
+                   733 integrals
+  iter    10 energy =  -38.4315123248 delta = 2.43917e-08
+                   733 integrals
+  iter    11 energy =  -38.4315123248 delta = 8.64401e-09
+
+  HOMO is     5   A =   0.006433
+  LUMO is     6   A =   0.667024
+
+  total scf energy =  -38.4315123248
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431512324847
+  OPT1 energy [au]:                   -38.459321707559
+  OPT2 second order correction [au]:   -0.027212788130
+  OPT2 energy [au]:                   -38.458725112977
+  ZAPT2 correlation energy [au]:       -0.026262684901
+  ZAPT2 energy [au]:                  -38.457775009747
+
+  Beginning displacement 2:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88113
+  Minimum orthogonalization residual = 0.289123
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0766066879
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88113
+  Minimum orthogonalization residual = 0.289123
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4314650810 delta = 5.69434e-01
+                   733 integrals
+  iter     2 energy =  -38.4314764583 delta = 1.08149e-03
+                   733 integrals
+  iter     3 energy =  -38.4314773895 delta = 3.58278e-04
+                   733 integrals
+  iter     4 energy =  -38.4314774343 delta = 5.46079e-05
+                   733 integrals
+  iter     5 energy =  -38.4314774406 delta = 2.99224e-05
+                   733 integrals
+  iter     6 energy =  -38.4314774410 delta = 5.51424e-06
+                   733 integrals
+  iter     7 energy =  -38.4314774410 delta = 1.70109e-06
+                   733 integrals
+  iter     8 energy =  -38.4314774410 delta = 4.63788e-07
+                   733 integrals
+  iter     9 energy =  -38.4314774410 delta = 2.19301e-07
+                   733 integrals
+  iter    10 energy =  -38.4314774410 delta = 7.12803e-08
+                   733 integrals
+  iter    11 energy =  -38.4314774410 delta = 8.94176e-09
+
+  HOMO is     5   A =   0.006262
+  LUMO is     6   A =   0.669701
+
+  total scf energy =  -38.4314774410
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431477441018
+  OPT1 energy [au]:                   -38.459284466434
+  OPT2 second order correction [au]:   -0.027204657035
+  OPT2 energy [au]:                   -38.458682098053
+  ZAPT2 correlation energy [au]:       -0.026259802115
+  ZAPT2 energy [au]:                  -38.457737243132
+
+  Beginning displacement 3:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88533
+  Minimum orthogonalization residual = 0.28659
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.1057521273
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88533
+  Minimum orthogonalization residual = 0.28659
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4316346076 delta = 5.69675e-01
+                   733 integrals
+  iter     2 energy =  -38.4316601752 delta = 1.88569e-03
+                   733 integrals
+  iter     3 energy =  -38.4316615906 delta = 5.45860e-04
+                   733 integrals
+  iter     4 energy =  -38.4316616604 delta = 7.46161e-05
+                   733 integrals
+  iter     5 energy =  -38.4316616712 delta = 3.97432e-05
+                   733 integrals
+  iter     6 energy =  -38.4316616716 delta = 9.22883e-06
+                   733 integrals
+  iter     7 energy =  -38.4316616717 delta = 2.72588e-06
+                   733 integrals
+  iter     8 energy =  -38.4316616717 delta = 5.85599e-07
+                   733 integrals
+  iter     9 energy =  -38.4316616717 delta = 2.81282e-07
+                   733 integrals
+  iter    10 energy =  -38.4316616717 delta = 6.75060e-08
+                   733 integrals
+  iter    11 energy =  -38.4316616717 delta = 1.11780e-08
+                   733 integrals
+  iter    12 energy =  -38.4316616717 delta = 3.33920e-09
+
+  HOMO is     5   A =   0.005943
+  LUMO is     6   A =   0.673280
+
+  total scf energy =  -38.4316616717
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431661671684
+  OPT1 energy [au]:                   -38.459288136511
+  OPT2 second order correction [au]:   -0.027038593852
+  OPT2 energy [au]:                   -38.458700265535
+  ZAPT2 correlation energy [au]:       -0.026092228963
+  ZAPT2 energy [au]:                  -38.457753900646
+
+  Beginning displacement 4:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88305
+  Minimum orthogonalization residual = 0.288293
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0835020068
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88305
+  Minimum orthogonalization residual = 0.288293
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4315427899 delta = 5.69133e-01
+                   733 integrals
+  iter     2 energy =  -38.4315660011 delta = 1.81222e-03
+                   733 integrals
+  iter     3 energy =  -38.4315673443 delta = 5.44291e-04
+                   733 integrals
+  iter     4 energy =  -38.4315673851 delta = 4.95844e-05
+                   733 integrals
+  iter     5 energy =  -38.4315673913 delta = 2.71786e-05
+                   733 integrals
+  iter     6 energy =  -38.4315673916 delta = 5.48006e-06
+                   733 integrals
+  iter     7 energy =  -38.4315673917 delta = 2.07742e-06
+                   733 integrals
+  iter     8 energy =  -38.4315673917 delta = 3.82857e-07
+                   733 integrals
+  iter     9 energy =  -38.4315673917 delta = 9.17850e-08
+                   733 integrals
+  iter    10 energy =  -38.4315673917 delta = 2.31364e-08
+                   733 integrals
+  iter    11 energy =  -38.4315673917 delta = 9.80386e-09
+
+  HOMO is     5   A =   0.006087
+  LUMO is     6   A =   0.672431
+
+  total scf energy =  -38.4315673917
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431567391682
+  OPT1 energy [au]:                   -38.459318689188
+  OPT2 second order correction [au]:   -0.027150319718
+  OPT2 energy [au]:                   -38.458717711400
+  ZAPT2 correlation energy [au]:       -0.026207714065
+  ZAPT2 energy [au]:                  -38.457775105747
+
+  Beginning displacement 5:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.8818
+  Minimum orthogonalization residual = 0.28846
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0869587242
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.8818
+  Minimum orthogonalization residual = 0.28846
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4315130324 delta = 5.69620e-01
+                   733 integrals
+  iter     2 energy =  -38.4315244467 delta = 1.09468e-03
+                   733 integrals
+  iter     3 energy =  -38.4315253556 delta = 3.56207e-04
+                   733 integrals
+  iter     4 energy =  -38.4315253992 delta = 5.32979e-05
+                   733 integrals
+  iter     5 energy =  -38.4315254053 delta = 2.90933e-05
+                   733 integrals
+  iter     6 energy =  -38.4315254056 delta = 5.37716e-06
+                   733 integrals
+  iter     7 energy =  -38.4315254057 delta = 1.68410e-06
+                   733 integrals
+  iter     8 energy =  -38.4315254057 delta = 4.79477e-07
+                   732 integrals
+  iter     9 energy =  -38.4315254059 delta = 2.04291e-07
+                   733 integrals
+  iter    10 energy =  -38.4315254057 delta = 6.75908e-08
+                   733 integrals
+  iter    11 energy =  -38.4315254057 delta = 9.14223e-09
+
+  HOMO is     5   A =   0.006242
+  LUMO is     6   A =   0.669365
+
+  total scf energy =  -38.4315254057
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431525405688
+  OPT1 energy [au]:                   -38.459279164498
+  OPT2 second order correction [au]:   -0.027158466022
+  OPT2 energy [au]:                   -38.458683871710
+  ZAPT2 correlation energy [au]:       -0.026210722628
+  ZAPT2 energy [au]:                  -38.457736128316
+
+  gradient in internal coordinates
+      1    -0.0001265309
+      2     0.0000048000
+      3    -0.0000557408
+
+
+  gradient in Cartesian coordinates
+      1     0.0000000000
+      2    -0.0000162250
+      3     0.0000867171
+      4    -0.0000000000
+      5    -0.0000528323
+      6    -0.0000390603
+      7     0.0000000000
+      8     0.0000690573
+      9    -0.0000476568
+
+  .......................................
+  Starting "backtrack" line optimization.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88142
+  Minimum orthogonalization residual = 0.288993
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 5.7467049e-10
+
+  nuclear repulsion energy =    6.0816559373
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88142
+  Minimum orthogonalization residual = 0.288993
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4315421530 delta = 5.69399e-01
+                   733 integrals
+  iter     2 energy =  -38.4315536039 delta = 8.91275e-04
+                   733 integrals
+  iter     3 energy =  -38.4315543484 delta = 2.53811e-04
+                   733 integrals
+  iter     4 energy =  -38.4315544349 delta = 8.61728e-05
+                   733 integrals
+  iter     5 energy =  -38.4315544430 delta = 3.64326e-05
+                   733 integrals
+  iter     6 energy =  -38.4315544439 delta = 1.06923e-05
+                   733 integrals
+  iter     7 energy =  -38.4315544439 delta = 1.73587e-06
+                   733 integrals
+  iter     8 energy =  -38.4315544439 delta = 1.35230e-06
+                   733 integrals
+  iter     9 energy =  -38.4315544439 delta = 3.44522e-07
+                   733 integrals
+  iter    10 energy =  -38.4315544439 delta = 1.22815e-07
+                   733 integrals
+  iter    11 energy =  -38.4315544439 delta = 4.53084e-08
+                   733 integrals
+  iter    12 energy =  -38.4315544439 delta = 1.72109e-08
+                   733 integrals
+  iter    13 energy =  -38.4315544439 delta = 5.88708e-09
+                   733 integrals
+  iter    14 energy =  -38.4315544439 delta = 1.97021e-09
+                   733 integrals
+  iter    15 energy =  -38.4315544439 delta = 3.85040e-10
+
+  HOMO is     5   A =   0.006259
+  LUMO is     6   A =   0.669773
+
+  total scf energy =  -38.4315544439
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431554443934
+  OPT1 energy [au]:                   -38.459333542188
+  OPT2 second order correction [au]:   -0.027180342537
+  OPT2 energy [au]:                   -38.458734786471
+  ZAPT2 correlation energy [au]:       -0.026234061597
+  ZAPT2 energy [au]:                  -38.457788505531
+
+  MBPT2: changing atomic coordinates:
+  Molecular formula: CH2
+  molecule<Molecule>: (
+    symmetry = c1
+    unit = "angstrom"
+    {  n atoms                        geometry                     }={
+       1     C [   -0.0000000000    -0.0000000000     0.0226529198]
+       2     H [   -0.0000000000     0.9661873052     0.5346735401]
+       3     H [   -0.0000000000    -0.9661873052     0.5346735401]
+    }
+  )
+  Atomic Masses:
+     12.00000    1.00783    1.00783
+  Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88135
+  Minimum orthogonalization residual = 0.289039
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 5.0536869e-11
+
+  nuclear repulsion energy =    6.0811497293
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88135
+  Minimum orthogonalization residual = 0.289039
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4315515909 delta = 5.69520e-01
+                   733 integrals
+  iter     2 energy =  -38.4315515975 delta = 3.27109e-05
+                   733 integrals
+  iter     3 energy =  -38.4315515979 delta = 9.73350e-06
+                   733 integrals
+  iter     4 energy =  -38.4315515979 delta = 7.25468e-07
+                   733 integrals
+  iter     5 energy =  -38.4315515979 delta = 3.42373e-07
+                   733 integrals
+  iter     6 energy =  -38.4315515979 delta = 8.61826e-08
+                   733 integrals
+  iter     7 energy =  -38.4315515979 delta = 2.71046e-08
+                   733 integrals
+  iter     8 energy =  -38.4315515979 delta = 3.67603e-09
+                   733 integrals
+  iter     9 energy =  -38.4315515979 delta = 1.12433e-09
+                   733 integrals
+  iter    10 energy =  -38.4315515979 delta = 3.23195e-10
+                   733 integrals
+  iter    11 energy =  -38.4315515979 delta = 1.29980e-10
+                   733 integrals
+  iter    12 energy =  -38.4315515979 delta = 5.29693e-11
+                   733 integrals
+  iter    13 energy =  -38.4315515979 delta = 2.16392e-11
+
+  HOMO is     5   A =   0.006264
+  LUMO is     6   A =   0.669722
+
+  total scf energy =  -38.4315515979
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431551597900
+  OPT1 energy [au]:                   -38.459333773846
+  OPT2 second order correction [au]:   -0.027183158990
+  OPT2 energy [au]:                   -38.458734756890
+  ZAPT2 correlation energy [au]:       -0.026236915042
+  ZAPT2 energy [au]:                  -38.457788512942
+
+  Unscaled initial step yields sufficient decrease.
+  Finished "backtrack" line optimization.
+  .......................................
+
+  Max Gradient     :   0.0000867171   0.0001000000  yes
+  Max Displacement :   0.0001649774   0.0001000000  no
+  Gradient*Displace:   0.0000000298   0.0001000000  yes
+  taking step of size 0.000308
+  Optimization iteration 5 complete
+  //////////////////////////////////////////////////////////////////////
+  Computing molecular gradient by finite differences of energies from 6 displacements:
+  Starting at displacement: 0
+  Gradient options: 
+    displacement: 0.01 bohr
+    energy_accuracy: 1e-06 au
+    eliminate_cubic_terms: no
+
+  Beginning displacement 0:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.87875
+  Minimum orthogonalization residual = 0.290825
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0604818892
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.87875
+  Minimum orthogonalization residual = 0.290825
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4313952138 delta = 5.69498e-01
+                   733 integrals
+  iter     2 energy =  -38.4314079543 delta = 1.43100e-03
+                   733 integrals
+  iter     3 energy =  -38.4314086300 delta = 4.31165e-04
+                   733 integrals
+  iter     4 energy =  -38.4314086403 delta = 2.70621e-05
+                   733 integrals
+  iter     5 energy =  -38.4314086414 delta = 1.16703e-05
+                   733 integrals
+  iter     6 energy =  -38.4314086415 delta = 2.72515e-06
+                   733 integrals
+  iter     7 energy =  -38.4314086415 delta = 1.21646e-06
+                   733 integrals
+  iter     8 energy =  -38.4314086415 delta = 1.90986e-07
+                   733 integrals
+  iter     9 energy =  -38.4314086415 delta = 4.88612e-08
+                   733 integrals
+  iter    10 energy =  -38.4314086415 delta = 1.81468e-08
+                   733 integrals
+  iter    11 energy =  -38.4314086415 delta = 3.80487e-09
+
+  HOMO is     5   A =   0.006443
+  LUMO is     6   A =   0.668091
+
+  total scf energy =  -38.4314086415
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431408641512
+  OPT1 energy [au]:                   -38.459315241690
+  OPT2 second order correction [au]:   -0.027296225171
+  OPT2 energy [au]:                   -38.458704866683
+  ZAPT2 correlation energy [au]:       -0.026352079430
+  ZAPT2 energy [au]:                  -38.457760720942
+
+  Beginning displacement 1:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88472
+  Minimum orthogonalization residual = 0.287268
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0945195698
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88472
+  Minimum orthogonalization residual = 0.287268
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4316132110 delta = 5.69916e-01
+                   733 integrals
+  iter     2 energy =  -38.4316321000 delta = 1.69916e-03
+                   733 integrals
+  iter     3 energy =  -38.4316331507 delta = 4.93242e-04
+                   733 integrals
+  iter     4 energy =  -38.4316332092 delta = 7.74805e-05
+                   733 integrals
+  iter     5 energy =  -38.4316332182 delta = 3.92848e-05
+                   733 integrals
+  iter     6 energy =  -38.4316332185 delta = 9.64159e-06
+                   733 integrals
+  iter     7 energy =  -38.4316332185 delta = 1.95461e-06
+                   733 integrals
+  iter     8 energy =  -38.4316332185 delta = 5.70247e-07
+                   733 integrals
+  iter     9 energy =  -38.4316332185 delta = 1.40669e-07
+                   733 integrals
+  iter    10 energy =  -38.4316332185 delta = 3.99490e-08
+                   733 integrals
+  iter    11 energy =  -38.4316332185 delta = 1.04974e-08
+                   733 integrals
+  iter    12 energy =  -38.4316332185 delta = 2.83055e-09
+
+  HOMO is     5   A =   0.005957
+  LUMO is     6   A =   0.673866
+
+  total scf energy =  -38.4316332185
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431633218491
+  OPT1 energy [au]:                   -38.459315145220
+  OPT2 second order correction [au]:   -0.027086261995
+  OPT2 energy [au]:                   -38.458719480486
+  ZAPT2 correlation energy [au]:       -0.026143338711
+  ZAPT2 energy [au]:                  -38.457776557202
+
+  Beginning displacement 2:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88143
+  Minimum orthogonalization residual = 0.288767
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0817328329
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88143
+  Minimum orthogonalization residual = 0.288767
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4314785643 delta = 5.69426e-01
+                   733 integrals
+  iter     2 energy =  -38.4314922185 delta = 8.69260e-04
+                   733 integrals
+  iter     3 energy =  -38.4314932546 delta = 2.68839e-04
+                   733 integrals
+  iter     4 energy =  -38.4314933954 delta = 1.16749e-04
+                   733 integrals
+  iter     5 energy =  -38.4314934032 delta = 3.67734e-05
+                   733 integrals
+  iter     6 energy =  -38.4314934050 delta = 1.40652e-05
+                   733 integrals
+  iter     7 energy =  -38.4314934051 delta = 1.96598e-06
+                   733 integrals
+  iter     8 energy =  -38.4314934051 delta = 7.32388e-07
+                   733 integrals
+  iter     9 energy =  -38.4314934051 delta = 1.13822e-07
+                   733 integrals
+  iter    10 energy =  -38.4314934051 delta = 4.23971e-08
+                   733 integrals
+  iter    11 energy =  -38.4314934051 delta = 8.39079e-09
+
+  HOMO is     5   A =   0.006255
+  LUMO is     6   A =   0.669425
+
+  total scf energy =  -38.4314934051
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431493405068
+  OPT1 energy [au]:                   -38.459274577742
+  OPT2 second order correction [au]:   -0.027182365621
+  OPT2 energy [au]:                   -38.458675770689
+  ZAPT2 correlation energy [au]:       -0.026236011927
+  ZAPT2 energy [au]:                  -38.457729416996
+
+  Beginning displacement 3:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88394
+  Minimum orthogonalization residual = 0.287272
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.1018399595
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88394
+  Minimum orthogonalization residual = 0.287272
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4316099246 delta = 5.69560e-01
+                   733 integrals
+  iter     2 energy =  -38.4316346922 delta = 1.63829e-03
+                   733 integrals
+  iter     3 energy =  -38.4316361794 delta = 4.67868e-04
+                   733 integrals
+  iter     4 energy =  -38.4316362916 delta = 9.53013e-05
+                   733 integrals
+  iter     5 energy =  -38.4316363070 delta = 4.92007e-05
+                   733 integrals
+  iter     6 energy =  -38.4316363079 delta = 1.11257e-05
+                   733 integrals
+  iter     7 energy =  -38.4316363080 delta = 4.26749e-06
+                   733 integrals
+  iter     8 energy =  -38.4316363080 delta = 8.42375e-07
+                   733 integrals
+  iter     9 energy =  -38.4316363080 delta = 2.26061e-07
+                   733 integrals
+  iter    10 energy =  -38.4316363080 delta = 5.36148e-08
+                   733 integrals
+  iter    11 energy =  -38.4316363080 delta = 1.46427e-08
+                   733 integrals
+  iter    12 energy =  -38.4316363080 delta = 2.69083e-09
+
+  HOMO is     5   A =   0.006081
+  LUMO is     6   A =   0.671314
+
+  total scf energy =  -38.4316363080
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431636307995
+  OPT1 energy [au]:                   -38.459297807260
+  OPT2 second order correction [au]:   -0.027073635007
+  OPT2 energy [au]:                   -38.458709943002
+  ZAPT2 correlation energy [au]:       -0.026125046611
+  ZAPT2 energy [au]:                  -38.457761354606
+
+  Beginning displacement 4:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.87799
+  Minimum orthogonalization residual = 0.290815
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0677876698
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.87799
+  Minimum orthogonalization residual = 0.290815
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4314248692 delta = 5.69155e-01
+                   733 integrals
+  iter     2 energy =  -38.4314437944 delta = 1.69043e-03
+                   733 integrals
+  iter     3 energy =  -38.4314448551 delta = 4.93905e-04
+                   733 integrals
+  iter     4 energy =  -38.4314449136 delta = 7.80231e-05
+                   733 integrals
+  iter     5 energy =  -38.4314449226 delta = 3.95531e-05
+                   733 integrals
+  iter     6 energy =  -38.4314449229 delta = 9.86009e-06
+                   733 integrals
+  iter     7 energy =  -38.4314449229 delta = 2.03068e-06
+                   733 integrals
+  iter     8 energy =  -38.4314449229 delta = 5.98823e-07
+                   733 integrals
+  iter     9 energy =  -38.4314449229 delta = 1.51183e-07
+                   733 integrals
+  iter    10 energy =  -38.4314449229 delta = 4.35239e-08
+                   733 integrals
+  iter    11 energy =  -38.4314449229 delta = 1.16318e-08
+                   733 integrals
+  iter    12 energy =  -38.4314449229 delta = 3.17649e-09
+
+  HOMO is     5   A =   0.006570
+  LUMO is     6   A =   0.665594
+
+  total scf energy =  -38.4314449229
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431444922932
+  OPT1 energy [au]:                   -38.459328467091
+  OPT2 second order correction [au]:   -0.027281113270
+  OPT2 energy [au]:                   -38.458726036203
+  ZAPT2 correlation energy [au]:       -0.026331509678
+  ZAPT2 energy [au]:                  -38.457776432610
+
+  Beginning displacement 5:
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88138
+  Minimum orthogonalization residual = 0.28882
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-08
+
+  nuclear repulsion energy =    6.0808959780
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88138
+  Minimum orthogonalization residual = 0.28882
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4314744812 delta = 5.69647e-01
+                   733 integrals
+  iter     2 energy =  -38.4314882798 delta = 8.83073e-04
+                   733 integrals
+  iter     3 energy =  -38.4314893275 delta = 2.73246e-04
+                   733 integrals
+  iter     4 energy =  -38.4314894684 delta = 1.17856e-04
+                   733 integrals
+  iter     5 energy =  -38.4314894761 delta = 3.65630e-05
+                   733 integrals
+  iter     6 energy =  -38.4314894779 delta = 1.39906e-05
+                   733 integrals
+  iter     7 energy =  -38.4314894779 delta = 2.02832e-06
+                   733 integrals
+  iter     8 energy =  -38.4314894779 delta = 7.38550e-07
+                   733 integrals
+  iter     9 energy =  -38.4314894779 delta = 1.20694e-07
+                   733 integrals
+  iter    10 energy =  -38.4314894779 delta = 3.71477e-08
+                   733 integrals
+  iter    11 energy =  -38.4314894779 delta = 7.47014e-09
+
+  HOMO is     5   A =   0.006256
+  LUMO is     6   A =   0.669453
+
+  total scf energy =  -38.4314894779
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431489477932
+  OPT1 energy [au]:                   -38.459274956436
+  OPT2 second order correction [au]:   -0.027186098336
+  OPT2 energy [au]:                   -38.458675576268
+  ZAPT2 correlation energy [au]:       -0.026239978890
+  ZAPT2 energy [au]:                  -38.457729456822
+
+  gradient in internal coordinates
+      1     0.0000316832
+      2    -0.0000062296
+      3     0.0000019913
+
+
+  gradient in Cartesian coordinates
+      1    -0.0000000000
+      2     0.0000022222
+      3    -0.0000233454
+      4     0.0000000000
+      5     0.0000094004
+      6     0.0000110839
+      7    -0.0000000000
+      8    -0.0000116226
+      9     0.0000122615
+
+  .......................................
+  Starting "backtrack" line optimization.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88135
+  Minimum orthogonalization residual = 0.289039
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 5.0536869e-11
+
+  nuclear repulsion energy =    6.0811497293
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88135
+  Minimum orthogonalization residual = 0.289039
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4315388122 delta = 5.69539e-01
+                   733 integrals
+  iter     2 energy =  -38.4315506956 delta = 8.14043e-04
+                   733 integrals
+  iter     3 energy =  -38.4315514824 delta = 2.34265e-04
+                   733 integrals
+  iter     4 energy =  -38.4315515897 delta = 9.57857e-05
+                   733 integrals
+  iter     5 energy =  -38.4315515965 delta = 3.62955e-05
+                   733 integrals
+  iter     6 energy =  -38.4315515978 delta = 1.47179e-05
+                   733 integrals
+  iter     7 energy =  -38.4315515979 delta = 3.01162e-06
+                   733 integrals
+  iter     8 energy =  -38.4315515979 delta = 1.11385e-06
+                   733 integrals
+  iter     9 energy =  -38.4315515979 delta = 2.75258e-07
+                   733 integrals
+  iter    10 energy =  -38.4315515979 delta = 1.03503e-07
+                   733 integrals
+  iter    11 energy =  -38.4315515979 delta = 4.02834e-08
+                   733 integrals
+  iter    12 energy =  -38.4315515979 delta = 1.47525e-08
+                   733 integrals
+  iter    13 energy =  -38.4315515979 delta = 5.65543e-09
+                   733 integrals
+  iter    14 energy =  -38.4315515979 delta = 1.95537e-09
+                   733 integrals
+  iter    15 energy =  -38.4315515979 delta = 4.06701e-10
+                   733 integrals
+  iter    16 energy =  -38.4315515979 delta = 1.47432e-10
+                   733 integrals
+  iter    17 energy =  -38.4315515979 delta = 6.05249e-11
+                   733 integrals
+  iter    18 energy =  -38.4315515979 delta = 2.58783e-11
+
+  HOMO is     5   A =   0.006264
+  LUMO is     6   A =   0.669722
+
+  total scf energy =  -38.4315515979
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431551597900
+  OPT1 energy [au]:                   -38.459333773846
+  OPT2 second order correction [au]:   -0.027183158990
+  OPT2 energy [au]:                   -38.458734756890
+  ZAPT2 correlation energy [au]:       -0.026236915042
+  ZAPT2 energy [au]:                  -38.457788512942
+
+  MBPT2: changing atomic coordinates:
+  Molecular formula: CH2
+  molecule<Molecule>: (
+    symmetry = c1
+    unit = "angstrom"
+    {  n atoms                        geometry                     }={
+       1     C [   -0.0000000000    -0.0000000000     0.0226791916]
+       2     H [   -0.0000000000     0.9661909284     0.5346604042]
+       3     H [   -0.0000000000    -0.9661909284     0.5346604042]
+    }
+  )
+  Atomic Masses:
+     12.00000    1.00783    1.00783
+  Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88136
+  Minimum orthogonalization residual = 0.289034
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.1821764e-11
+
+  nuclear repulsion energy =    6.0812296981
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88136
+  Minimum orthogonalization residual = 0.289034
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4315519829 delta = 5.69529e-01
+                   733 integrals
+  iter     2 energy =  -38.4315519833 delta = 7.46038e-06
+                   733 integrals
+  iter     3 energy =  -38.4315519833 delta = 2.39452e-06
+                   733 integrals
+  iter     4 energy =  -38.4315519833 delta = 1.82224e-07
+                   733 integrals
+  iter     5 energy =  -38.4315519833 delta = 5.37361e-08
+                   733 integrals
+  iter     6 energy =  -38.4315519833 delta = 8.48895e-09
+                   733 integrals
+  iter     7 energy =  -38.4315519833 delta = 1.71029e-09
+                   733 integrals
+  iter     8 energy =  -38.4315519833 delta = 1.82152e-10
+                   733 integrals
+  iter     9 energy =  -38.4315519833 delta = 4.22598e-11
+                   733 integrals
+  iter    10 energy =  -38.4315519833 delta = 1.14190e-11
+
+  HOMO is     5   A =   0.006263
+  LUMO is     6   A =   0.669720
+
+  total scf energy =  -38.4315519833
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431551983298
+  OPT1 energy [au]:                   -38.459333742277
+  OPT2 second order correction [au]:   -0.027182795790
+  OPT2 energy [au]:                   -38.458734779088
+  ZAPT2 correlation energy [au]:       -0.026236530673
+  ZAPT2 energy [au]:                  -38.457788513972
+
+  Unscaled initial step yields sufficient decrease.
+  Finished "backtrack" line optimization.
+  .......................................
+
+  Max Gradient     :   0.0000233454   0.0001000000  yes
+  Max Displacement :   0.0000496467   0.0001000000  yes
+  Gradient*Displace:   0.0000000016   0.0001000000  yes
+
+  All convergence criteria have been met.
+  The optimization has converged.
+
+  Value of the MolecularEnergy:  -38.4577885140
+
+  IntMolecularCoor Parameters:
+    update_bmat = no
+    scale_bonds = 1
+    scale_bends = 1
+    scale_tors = 1
+    scale_outs = 1
+    symmetry_tolerance = 1.000000e-05
+    simple_tolerance = 1.000000e-03
+    coordinate_tolerance = 1.000000e-07
+    have_fixed_values = 0
+    max_update_steps = 100
+    max_update_disp = 0.500000
+    have_fixed_values = 0
+
+  Molecular formula: CH2
+  molecule<Molecule>: (
+    symmetry = c1
+    unit = "angstrom"
+    {  n atoms                        geometry                     }={
+       1     C [   -0.0000000000    -0.0000000000     0.0226791916]
+       2     H [   -0.0000000000     0.9661909284     0.5346604042]
+       3     H [   -0.0000000000    -0.9661909284     0.5346604042]
+    }
+  )
+  Atomic Masses:
+     12.00000    1.00783    1.00783
+  Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
+
+  Bonds:
+    STRE       s1     1.09346    1    2         C-H
+    STRE       s2     1.09346    1    3         C-H
+  Bends:
+    BEND       b1   124.16208    2    1    3      H-C-H
+
+  SymmMolecularCoor Parameters:
+    change_coordinates = no
+    transform_hessian = yes
+    max_kappa2 = 10.000000
+
+  Computing molecular hessian by finite differences of energies from 13 displacements:
+  Hessian options: 
+    displacement: 0.01 bohr
+    eliminate_cubic_terms: no
+    only_totally_symmetric: no
+
+  Beginning displacement 1:
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88136
+  Minimum orthogonalization residual = 0.289034
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-11
+
+  nuclear repulsion energy =    6.0812296981
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88136
+  Minimum orthogonalization residual = 0.289034
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4315519833 delta = 5.69527e-01
+                   733 integrals
+  iter     2 energy =  -38.4315519833 delta = 3.74692e-12
+
+  HOMO is     5   A =   0.006263
+  LUMO is     6   A =   0.669720
+
+  total scf energy =  -38.4315519833
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431551983298
+  OPT1 energy [au]:                   -38.459333742277
+  OPT2 second order correction [au]:   -0.027182795790
+  OPT2 energy [au]:                   -38.458734779088
+  ZAPT2 correlation energy [au]:       -0.026236530673
+  ZAPT2 energy [au]:                  -38.457788513972
+
+  Beginning displacement 2:
+  Molecule: setting point group to c1
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88196
+  Minimum orthogonalization residual = 0.288504
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-11
+
+  nuclear repulsion energy =    6.0835694008
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88196
+  Minimum orthogonalization residual = 0.288504
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4314959045 delta = 5.69533e-01
+                   733 integrals
+  iter     2 energy =  -38.4315075625 delta = 8.06773e-04
+                   733 integrals
+  iter     3 energy =  -38.4315083382 delta = 2.32876e-04
+                   733 integrals
+  iter     4 energy =  -38.4315084439 delta = 9.54865e-05
+                   733 integrals
+  iter     5 energy =  -38.4315084506 delta = 3.57830e-05
+                   733 integrals
+  iter     6 energy =  -38.4315084518 delta = 1.45872e-05
+                   733 integrals
+  iter     7 energy =  -38.4315084519 delta = 3.04096e-06
+                   733 integrals
+  iter     8 energy =  -38.4315084519 delta = 1.10305e-06
+                   733 integrals
+  iter     9 energy =  -38.4315084519 delta = 2.84068e-07
+                   733 integrals
+  iter    10 energy =  -38.4315084519 delta = 9.96908e-08
+                   733 integrals
+  iter    11 energy =  -38.4315084519 delta = 3.81309e-08
+                   733 integrals
+  iter    12 energy =  -38.4315084519 delta = 1.07626e-08
+                   733 integrals
+  iter    13 energy =  -38.4315084519 delta = 3.76536e-09
+                   733 integrals
+  iter    14 energy =  -38.4315084519 delta = 5.74835e-10
+                   733 integrals
+  iter    15 energy =  -38.4315084519 delta = 1.69005e-10
+                   733 integrals
+  iter    16 energy =  -38.4315084519 delta = 5.72237e-11
+                   733 integrals
+  iter    17 energy =  -38.4315084519 delta = 2.10283e-11
+                   733 integrals
+  iter    18 energy =  -38.4315084519 delta = 8.12783e-12
+
+  HOMO is     5   A =   0.006205
+  LUMO is     6   A =   0.670130
+
+  total scf energy =  -38.4315084519
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431508451912
+  OPT1 energy [au]:                   -38.459274820786
+  OPT2 second order correction [au]:   -0.027167866513
+  OPT2 energy [au]:                   -38.458676318425
+  ZAPT2 correlation energy [au]:       -0.026222171740
+  ZAPT2 energy [au]:                  -38.457730623652
+
+  Beginning displacement 3:
+  Molecule: setting point group to c1
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88085
+  Minimum orthogonalization residual = 0.289086
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-11
+
+  nuclear repulsion energy =    6.0792107456
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88085
+  Minimum orthogonalization residual = 0.289086
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4314277893 delta = 5.69523e-01
+                   733 integrals
+  iter     2 energy =  -38.4314742315 delta = 1.60634e-03
+                   733 integrals
+  iter     3 energy =  -38.4314773183 delta = 4.63325e-04
+                   733 integrals
+  iter     4 energy =  -38.4314777400 delta = 1.90136e-04
+                   733 integrals
+  iter     5 energy =  -38.4314777669 delta = 7.17468e-05
+                   733 integrals
+  iter     6 energy =  -38.4314777721 delta = 2.90313e-05
+                   733 integrals
+  iter     7 energy =  -38.4314777723 delta = 5.76571e-06
+                   733 integrals
+  iter     8 energy =  -38.4314777723 delta = 2.06963e-06
+                   733 integrals
+  iter     9 energy =  -38.4314777723 delta = 5.34545e-07
+                   733 integrals
+  iter    10 energy =  -38.4314777723 delta = 1.97198e-07
+                   733 integrals
+  iter    11 energy =  -38.4314777723 delta = 7.43078e-08
+                   733 integrals
+  iter    12 energy =  -38.4314777723 delta = 2.04214e-08
+                   733 integrals
+  iter    13 energy =  -38.4314777723 delta = 6.50920e-09
+                   733 integrals
+  iter    14 energy =  -38.4314777723 delta = 1.30067e-09
+                   733 integrals
+  iter    15 energy =  -38.4314777723 delta = 4.53812e-10
+                   732 integrals
+  iter    16 energy =  -38.4314777723 delta = 1.76144e-10
+                   733 integrals
+  iter    17 energy =  -38.4314777723 delta = 7.18210e-11
+                   733 integrals
+  iter    18 energy =  -38.4314777723 delta = 2.99892e-11
+                   732 integrals
+  iter    19 energy =  -38.4314777723 delta = 1.26936e-11
+                   731 integrals
+  iter    20 energy =  -38.4314777723 delta = 5.42741e-12
+
+  HOMO is     5   A =   0.006306
+  LUMO is     6   A =   0.668760
+
+  total scf energy =  -38.4314777723
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431477772295
+  OPT1 energy [au]:                   -38.459277186651
+  OPT2 second order correction [au]:   -0.027199839619
+  OPT2 energy [au]:                   -38.458677611914
+  ZAPT2 correlation energy [au]:       -0.026253017662
+  ZAPT2 energy [au]:                  -38.457730789958
+
+  Beginning displacement 4:
+  Molecule: setting point group to c1
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88309
+  Minimum orthogonalization residual = 0.287725
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-11
+
+  nuclear repulsion energy =    6.0982401706
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88309
+  Minimum orthogonalization residual = 0.287725
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4315908420 delta = 5.69585e-01
+                   733 integrals
+  iter     2 energy =  -38.4316152343 delta = 1.62061e-03
+                   733 integrals
+  iter     3 energy =  -38.4316167111 delta = 4.64136e-04
+                   733 integrals
+  iter     4 energy =  -38.4316168213 delta = 9.39066e-05
+                   733 integrals
+  iter     5 energy =  -38.4316168364 delta = 4.85451e-05
+                   733 integrals
+  iter     6 energy =  -38.4316168373 delta = 1.09690e-05
+                   733 integrals
+  iter     7 energy =  -38.4316168374 delta = 4.20673e-06
+                   733 integrals
+  iter     8 energy =  -38.4316168374 delta = 8.33415e-07
+                   733 integrals
+  iter     9 energy =  -38.4316168374 delta = 2.35677e-07
+                   733 integrals
+  iter    10 energy =  -38.4316168374 delta = 5.26479e-08
+                   733 integrals
+  iter    11 energy =  -38.4316168374 delta = 2.24915e-08
+                   733 integrals
+  iter    12 energy =  -38.4316168374 delta = 3.41553e-09
+                   733 integrals
+  iter    13 energy =  -38.4316168374 delta = 8.18250e-10
+                   733 integrals
+  iter    14 energy =  -38.4316168374 delta = 2.86893e-10
+                   733 integrals
+  iter    15 energy =  -38.4316168374 delta = 1.17591e-10
+                   733 integrals
+  iter    16 energy =  -38.4316168374 delta = 5.06720e-11
+                   733 integrals
+  iter    17 energy =  -38.4316168374 delta = 2.24030e-11
+                   733 integrals
+  iter    18 energy =  -38.4316168374 delta = 1.00355e-11
+                   732 integrals
+  iter    19 energy =  -38.4316168374 delta = 4.52269e-12
+
+  HOMO is     5   A =   0.006158
+  LUMO is     6   A =   0.670309
+
+  total scf energy =  -38.4316168374
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431616837399
+  OPT1 energy [au]:                   -38.459304642609
+  OPT2 second order correction [au]:   -0.027098924516
+  OPT2 energy [au]:                   -38.458715761915
+  ZAPT2 correlation energy [au]:       -0.026149587021
+  ZAPT2 energy [au]:                  -38.457766424420
+
+  Beginning displacement 5:
+  Molecule: setting point group to c1
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.8796
+  Minimum orthogonalization residual = 0.290365
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-11
+
+  nuclear repulsion energy =    6.0641655017
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.8796
+  Minimum orthogonalization residual = 0.290365
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4313907889 delta = 5.69155e-01
+                   733 integrals
+  iter     2 energy =  -38.4314365150 delta = 2.69030e-03
+                   733 integrals
+  iter     3 energy =  -38.4314390842 delta = 8.32825e-04
+                   733 integrals
+  iter     4 energy =  -38.4314391109 delta = 4.90404e-05
+                   733 integrals
+  iter     5 energy =  -38.4314391134 delta = 1.58107e-05
+                   733 integrals
+  iter     6 energy =  -38.4314391135 delta = 2.57239e-06
+                   733 integrals
+  iter     7 energy =  -38.4314391136 delta = 1.59353e-06
+                   733 integrals
+  iter     8 energy =  -38.4314391136 delta = 2.56442e-07
+                   733 integrals
+  iter     9 energy =  -38.4314391136 delta = 5.34543e-08
+                   733 integrals
+  iter    10 energy =  -38.4314391136 delta = 2.64218e-08
+                   733 integrals
+  iter    11 energy =  -38.4314391136 delta = 4.26550e-09
+                   733 integrals
+  iter    12 energy =  -38.4314391136 delta = 1.57720e-09
+                   733 integrals
+  iter    13 energy =  -38.4314391136 delta = 3.44352e-10
+                   733 integrals
+  iter    14 energy =  -38.4314391136 delta = 1.33638e-10
+                   733 integrals
+  iter    15 energy =  -38.4314391136 delta = 5.76203e-11
+                   733 integrals
+  iter    16 energy =  -38.4314391136 delta = 2.55679e-11
+                   733 integrals
+  iter    17 energy =  -38.4314391136 delta = 1.14557e-11
+                   733 integrals
+  iter    18 energy =  -38.4314391136 delta = 5.15689e-12
+
+  HOMO is     5   A =   0.006369
+  LUMO is     6   A =   0.669079
+
+  total scf energy =  -38.4314391136
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431439113569
+  OPT1 energy [au]:                   -38.459318865540
+  OPT2 second order correction [au]:   -0.027270533080
+  OPT2 energy [au]:                   -38.458709646649
+  ZAPT2 correlation energy [au]:       -0.026327060099
+  ZAPT2 energy [au]:                  -38.457766173668
+
+  Beginning displacement 6:
+  Molecule: setting point group to c1
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88258
+  Minimum orthogonalization residual = 0.287792
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-11
+
+  nuclear repulsion energy =    6.0961825634
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88258
+  Minimum orthogonalization residual = 0.287792
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4314904447 delta = 5.69932e-01
+                   733 integrals
+  iter     2 energy =  -38.4315452664 delta = 2.78955e-03
+                   733 integrals
+  iter     3 energy =  -38.4315485070 delta = 8.41761e-04
+                   733 integrals
+  iter     4 energy =  -38.4315486031 delta = 7.50336e-05
+                   733 integrals
+  iter     5 energy =  -38.4315486173 delta = 4.08524e-05
+                   733 integrals
+  iter     6 energy =  -38.4315486181 delta = 8.07107e-06
+                   733 integrals
+  iter     7 energy =  -38.4315486182 delta = 3.18986e-06
+                   733 integrals
+  iter     8 energy =  -38.4315486182 delta = 5.73912e-07
+                   733 integrals
+  iter     9 energy =  -38.4315486182 delta = 1.28441e-07
+                   733 integrals
+  iter    10 energy =  -38.4315486182 delta = 4.20963e-08
+                   733 integrals
+  iter    11 energy =  -38.4315486182 delta = 1.25629e-08
+                   733 integrals
+  iter    12 energy =  -38.4315486182 delta = 2.04400e-09
+                   733 integrals
+  iter    13 energy =  -38.4315486182 delta = 4.56024e-10
+                   733 integrals
+  iter    14 energy =  -38.4315486182 delta = 1.27401e-10
+                   733 integrals
+  iter    15 energy =  -38.4315486182 delta = 4.08019e-11
+                   733 integrals
+  iter    16 energy =  -38.4315486182 delta = 1.47233e-11
+                   733 integrals
+  iter    17 energy =  -38.4315486182 delta = 5.71000e-12
+
+  HOMO is     5   A =   0.006203
+  LUMO is     6   A =   0.669373
+
+  total scf energy =  -38.4315486182
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431548618238
+  OPT1 energy [au]:                   -38.459254187182
+  OPT2 second order correction [au]:   -0.027116090168
+  OPT2 energy [au]:                   -38.458664708406
+  ZAPT2 correlation energy [au]:       -0.026166176623
+  ZAPT2 energy [au]:                  -38.457714794862
+
+  Beginning displacement 7:
+  Molecule: setting point group to c1
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.8802
+  Minimum orthogonalization residual = 0.289863
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-11
+
+  nuclear repulsion energy =    6.0664625925
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.8802
+  Minimum orthogonalization residual = 0.289863
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4313110928 delta = 5.69182e-01
+                   733 integrals
+  iter     2 energy =  -38.4313975288 delta = 3.02714e-03
+                   733 integrals
+  iter     3 energy =  -38.4314029967 delta = 8.86380e-04
+                   733 integrals
+  iter     4 energy =  -38.4314033678 delta = 1.65632e-04
+                   733 integrals
+  iter     5 energy =  -38.4314034198 delta = 8.85324e-05
+                   733 integrals
+  iter     6 energy =  -38.4314034221 delta = 2.23277e-05
+                   733 integrals
+  iter     7 energy =  -38.4314034230 delta = 6.68867e-06
+                   733 integrals
+  iter     8 energy =  -38.4314034231 delta = 3.39128e-06
+                   733 integrals
+  iter     9 energy =  -38.4314034231 delta = 5.20213e-07
+                   733 integrals
+  iter    10 energy =  -38.4314034231 delta = 2.02543e-07
+                   733 integrals
+  iter    11 energy =  -38.4314034231 delta = 4.05107e-08
+                   733 integrals
+  iter    12 energy =  -38.4314034231 delta = 1.18143e-08
+                   733 integrals
+  iter    13 energy =  -38.4314034231 delta = 3.64679e-09
+                   733 integrals
+  iter    14 energy =  -38.4314034231 delta = 9.17732e-10
+                   733 integrals
+  iter    15 energy =  -38.4314034231 delta = 2.80304e-10
+                   733 integrals
+  iter    16 energy =  -38.4314034231 delta = 9.56415e-11
+                   733 integrals
+  iter    17 energy =  -38.4314034231 delta = 3.89081e-11
+                   733 integrals
+  iter    18 energy =  -38.4314034231 delta = 1.70567e-11
+                   733 integrals
+  iter    19 energy =  -38.4314034231 delta = 7.65724e-12
+
+  HOMO is     5   A =   0.006312
+  LUMO is     6   A =   0.669500
+
+  total scf energy =  -38.4314034231
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431403423110
+  OPT1 energy [au]:                   -38.459267907682
+  OPT2 second order correction [au]:   -0.027255737618
+  OPT2 energy [au]:                   -38.458659160728
+  ZAPT2 correlation energy [au]:       -0.026312815887
+  ZAPT2 energy [au]:                  -38.457716238998
+
+  Beginning displacement 8:
+  Molecule: setting point group to c1
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.8852
+  Minimum orthogonalization residual = 0.286913
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-11
+
+  nuclear repulsion energy =    6.0989236650
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.8852
+  Minimum orthogonalization residual = 0.286913
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4316108326 delta = 5.69871e-01
+                   733 integrals
+  iter     2 energy =  -38.4316474319 delta = 2.09039e-03
+                   733 integrals
+  iter     3 energy =  -38.4316495569 delta = 5.95050e-04
+                   733 integrals
+  iter     4 energy =  -38.4316497140 delta = 1.16123e-04
+                   733 integrals
+  iter     5 energy =  -38.4316497369 delta = 6.04835e-05
+                   733 integrals
+  iter     6 energy =  -38.4316497380 delta = 1.46065e-05
+                   733 integrals
+  iter     7 energy =  -38.4316497381 delta = 4.35566e-06
+                   733 integrals
+  iter     8 energy =  -38.4316497381 delta = 1.18503e-06
+                   733 integrals
+  iter     9 energy =  -38.4316497381 delta = 5.90790e-07
+                   733 integrals
+  iter    10 energy =  -38.4316497381 delta = 1.84867e-07
+                   733 integrals
+  iter    11 energy =  -38.4316497381 delta = 4.58082e-08
+                   733 integrals
+  iter    12 energy =  -38.4316497381 delta = 1.36192e-08
+                   733 integrals
+  iter    13 energy =  -38.4316497381 delta = 2.79037e-09
+                   733 integrals
+  iter    14 energy =  -38.4316497381 delta = 5.25965e-10
+                   733 integrals
+  iter    15 energy =  -38.4316497381 delta = 1.89949e-10
+                   733 integrals
+  iter    16 energy =  -38.4316497381 delta = 7.27012e-11
+                   733 integrals
+  iter    17 energy =  -38.4316497381 delta = 2.91944e-11
+                   733 integrals
+  iter    18 energy =  -38.4316497381 delta = 1.21805e-11
+                   733 integrals
+  iter    19 energy =  -38.4316497381 delta = 5.22372e-12
+
+  HOMO is     5   A =   0.005925
+  LUMO is     6   A =   0.674069
+
+  total scf energy =  -38.4316497381
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431649738125
+  OPT1 energy [au]:                   -38.459306636847
+  OPT2 second order correction [au]:   -0.027063760192
+  OPT2 energy [au]:                   -38.458713498317
+  ZAPT2 correlation energy [au]:       -0.026120177255
+  ZAPT2 energy [au]:                  -38.457769915380
+
+  Beginning displacement 9:
+  Molecule: setting point group to c1
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.87754
+  Minimum orthogonalization residual = 0.291144
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-11
+
+  nuclear repulsion energy =    6.0636282429
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.87754
+  Minimum orthogonalization residual = 0.291144
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4313991888 delta = 5.69332e-01
+                   733 integrals
+  iter     2 energy =  -38.4314148685 delta = 1.26940e-03
+                   733 integrals
+  iter     3 energy =  -38.4314161947 delta = 4.01604e-04
+                   733 integrals
+  iter     4 energy =  -38.4314163471 delta = 1.32458e-04
+                   733 integrals
+  iter     5 energy =  -38.4314163602 delta = 5.39528e-05
+                   733 integrals
+  iter     6 energy =  -38.4314163615 delta = 1.41322e-05
+                   733 integrals
+  iter     7 energy =  -38.4314163615 delta = 2.37908e-06
+                   733 integrals
+  iter     8 energy =  -38.4314163615 delta = 7.62889e-07
+                   733 integrals
+  iter     9 energy =  -38.4314163615 delta = 1.84031e-07
+                   733 integrals
+  iter    10 energy =  -38.4314163615 delta = 7.14903e-08
+                   733 integrals
+  iter    11 energy =  -38.4314163615 delta = 1.65883e-08
+                   733 integrals
+  iter    12 energy =  -38.4314163615 delta = 3.10389e-09
+                   733 integrals
+  iter    13 energy =  -38.4314163615 delta = 9.95250e-10
+                   733 integrals
+  iter    14 energy =  -38.4314163615 delta = 3.91243e-10
+                   733 integrals
+  iter    15 energy =  -38.4314163615 delta = 1.60125e-10
+                   733 integrals
+  iter    16 energy =  -38.4314163615 delta = 6.74811e-11
+                   733 integrals
+  iter    17 energy =  -38.4314163615 delta = 2.90465e-11
+                   733 integrals
+  iter    18 energy =  -38.4314163615 delta = 1.26902e-11
+                   731 integrals
+  iter    19 energy =  -38.4314163615 delta = 5.60051e-12
+
+  HOMO is     5   A =   0.006598
+  LUMO is     6   A =   0.665385
+
+  total scf energy =  -38.4314163615
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431416361503
+  OPT1 energy [au]:                   -38.459323842006
+  OPT2 second order correction [au]:   -0.027302596263
+  OPT2 energy [au]:                   -38.458718957766
+  ZAPT2 correlation energy [au]:       -0.026353645200
+  ZAPT2 energy [au]:                  -38.457770006703
+
+  Beginning displacement 10:
+  Molecule: setting point group to c1
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.8847
+  Minimum orthogonalization residual = 0.286889
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-11
+
+  nuclear repulsion energy =    6.0969513403
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.8847
+  Minimum orthogonalization residual = 0.286889
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4315233833 delta = 5.69744e-01
+                   733 integrals
+  iter     2 energy =  -38.4315571900 delta = 1.62884e-03
+                   733 integrals
+  iter     3 energy =  -38.4315596399 delta = 4.88125e-04
+                   733 integrals
+  iter     4 energy =  -38.4315599424 delta = 1.74949e-04
+                   733 integrals
+  iter     5 energy =  -38.4315599663 delta = 6.76001e-05
+                   733 integrals
+  iter     6 energy =  -38.4315599693 delta = 1.82265e-05
+                   733 integrals
+  iter     7 energy =  -38.4315599694 delta = 2.34857e-06
+                   733 integrals
+  iter     8 energy =  -38.4315599694 delta = 1.57490e-06
+                   733 integrals
+  iter     9 energy =  -38.4315599694 delta = 3.78012e-07
+                   733 integrals
+  iter    10 energy =  -38.4315599694 delta = 1.36984e-07
+                   733 integrals
+  iter    11 energy =  -38.4315599694 delta = 3.91028e-08
+                   733 integrals
+  iter    12 energy =  -38.4315599694 delta = 8.63854e-09
+                   733 integrals
+  iter    13 energy =  -38.4315599694 delta = 2.19456e-09
+                   733 integrals
+  iter    14 energy =  -38.4315599694 delta = 8.75139e-10
+                   733 integrals
+  iter    15 energy =  -38.4315599694 delta = 3.18069e-10
+                   733 integrals
+  iter    16 energy =  -38.4315599694 delta = 1.20278e-10
+                   733 integrals
+  iter    17 energy =  -38.4315599694 delta = 4.63884e-11
+                   733 integrals
+  iter    18 energy =  -38.4315599694 delta = 1.81355e-11
+                   733 integrals
+  iter    19 energy =  -38.4315599694 delta = 7.16492e-12
+
+  HOMO is     5   A =   0.005966
+  LUMO is     6   A =   0.673005
+
+  total scf energy =  -38.4315599694
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431559969387
+  OPT1 energy [au]:                   -38.459234740920
+  OPT2 second order correction [au]:   -0.027081009851
+  OPT2 energy [au]:                   -38.458640979239
+  ZAPT2 correlation energy [au]:       -0.026136874892
+  ZAPT2 energy [au]:                  -38.457696844279
+
+  Beginning displacement 11:
+  Molecule: setting point group to c1
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.87815
+  Minimum orthogonalization residual = 0.290533
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-11
+
+  nuclear repulsion energy =    6.0660117804
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.87815
+  Minimum orthogonalization residual = 0.290533
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4312799066 delta = 5.69364e-01
+                   733 integrals
+  iter     2 energy =  -38.4313535256 delta = 2.16274e-03
+                   733 integrals
+  iter     3 energy =  -38.4313585751 delta = 6.35274e-04
+                   733 integrals
+  iter     4 energy =  -38.4313592422 delta = 2.45893e-04
+                   733 integrals
+  iter     5 energy =  -38.4313592918 delta = 9.47732e-05
+                   733 integrals
+  iter     6 energy =  -38.4313592992 delta = 2.85379e-05
+                   733 integrals
+  iter     7 energy =  -38.4313592993 delta = 3.32502e-06
+                   733 integrals
+  iter     8 energy =  -38.4313592994 delta = 2.74420e-06
+                   733 integrals
+  iter     9 energy =  -38.4313592994 delta = 8.56391e-07
+                   733 integrals
+  iter    10 energy =  -38.4313592994 delta = 3.03104e-07
+                   733 integrals
+  iter    11 energy =  -38.4313592994 delta = 1.02430e-07
+                   733 integrals
+  iter    12 energy =  -38.4313592994 delta = 3.29733e-08
+                   733 integrals
+  iter    13 energy =  -38.4313592994 delta = 1.05526e-08
+                   733 integrals
+  iter    14 energy =  -38.4313592994 delta = 3.15839e-09
+                   733 integrals
+  iter    15 energy =  -38.4313592994 delta = 6.34788e-10
+                   733 integrals
+  iter    16 energy =  -38.4313592994 delta = 2.40124e-10
+                   733 integrals
+  iter    17 energy =  -38.4313592994 delta = 9.82143e-11
+                   733 integrals
+  iter    18 energy =  -38.4313592994 delta = 4.11529e-11
+                   733 integrals
+  iter    19 energy =  -38.4313592994 delta = 1.74380e-11
+                   733 integrals
+  iter    20 energy =  -38.4313592994 delta = 7.45063e-12
+
+  HOMO is     5   A =   0.006537
+  LUMO is     6   A =   0.665710
+
+  total scf energy =  -38.4313592994
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431359299402
+  OPT1 energy [au]:                   -38.459251621930
+  OPT2 second order correction [au]:   -0.027287885294
+  OPT2 energy [au]:                   -38.458647184696
+  ZAPT2 correlation energy [au]:       -0.026339509394
+  ZAPT2 energy [au]:                  -38.457698808796
+
+  Beginning displacement 12:
+  Molecule: setting point group to c1
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88343
+  Minimum orthogonalization residual = 0.288246
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-11
+
+  nuclear repulsion energy =    6.0817094645
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.88343
+  Minimum orthogonalization residual = 0.288246
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4315280382 delta = 5.69680e-01
+                   733 integrals
+  iter     2 energy =  -38.4315576683 delta = 1.27405e-03
+                   733 integrals
+  iter     3 energy =  -38.4315602407 delta = 4.20187e-04
+                   733 integrals
+  iter     4 energy =  -38.4315605504 delta = 1.80929e-04
+                   733 integrals
+  iter     5 energy =  -38.4315605701 delta = 5.07417e-05
+                   733 integrals
+  iter     6 energy =  -38.4315605737 delta = 2.09362e-05
+                   733 integrals
+  iter     7 energy =  -38.4315605738 delta = 3.49556e-06
+                   733 integrals
+  iter     8 energy =  -38.4315605738 delta = 9.39426e-07
+                   733 integrals
+  iter     9 energy =  -38.4315605738 delta = 1.70532e-07
+                   733 integrals
+  iter    10 energy =  -38.4315605738 delta = 3.24547e-08
+                   733 integrals
+  iter    11 energy =  -38.4315605738 delta = 6.80662e-09
+                   733 integrals
+  iter    12 energy =  -38.4315605738 delta = 1.43595e-09
+                   733 integrals
+  iter    13 energy =  -38.4315605738 delta = 4.86082e-10
+                   733 integrals
+  iter    14 energy =  -38.4315605738 delta = 1.82187e-10
+                   733 integrals
+  iter    15 energy =  -38.4315605738 delta = 7.19945e-11
+                   733 integrals
+  iter    16 energy =  -38.4315605738 delta = 2.90967e-11
+                   733 integrals
+  iter    17 energy =  -38.4315605738 delta = 1.19040e-11
+                   733 integrals
+  iter    18 energy =  -38.4315605738 delta = 4.91387e-12
+
+  HOMO is     5   A =   0.006038
+  LUMO is     6   A =   0.673405
+
+  total scf energy =  -38.4315605738
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431560573768
+  OPT1 energy [au]:                   -38.459315725228
+  OPT2 second order correction [au]:   -0.027151836983
+  OPT2 energy [au]:                   -38.458712410751
+  ZAPT2 correlation energy [au]:       -0.026211005597
+  ZAPT2 energy [au]:                  -38.457771579365
+
+  Beginning displacement 13:
+  Molecule: setting point group to c1
+  Displacement is A in c1.  Using point group c1 for displaced molecule.
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.87927
+  Minimum orthogonalization residual = 0.289836
+  Just entered OPT2 program (opt2_v1)
+  nproc = 1
+  Memory available per node:      32000000 Bytes
+  Total memory used per node:     13420 Bytes
+  Memory required for one pass:   13420 Bytes
+  Minimum memory required:        4012 Bytes
+  Batch size:                     5
+   npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
+     1      0     7       4        4       3       2     4      0     0  
+
+  SCF::compute: energy accuracy = 1.0000000e-11
+
+  nuclear repulsion energy =    6.0804899760
+
+  Using symmetric orthogonalization.
+  n(basis):             7
+  Maximum orthogonalization residual = 1.87927
+  Minimum orthogonalization residual = 0.289836
+  Beginning iterations.  Basis is STO-3G.
+                   733 integrals
+  iter     1 energy =  -38.4314726596 delta = 5.69719e-01
+                   733 integrals
+  iter     2 energy =  -38.4315017135 delta = 1.76277e-03
+                   733 integrals
+  iter     3 energy =  -38.4315046543 delta = 7.13677e-04
+                   733 integrals
+  iter     4 energy =  -38.4315047269 delta = 1.27330e-04
+                   733 integrals
+  iter     5 energy =  -38.4315047442 delta = 4.90454e-05
+                   733 integrals
+  iter     6 energy =  -38.4315047452 delta = 8.91004e-06
+                   733 integrals
+  iter     7 energy =  -38.4315047453 delta = 2.82378e-06
+                   733 integrals
+  iter     8 energy =  -38.4315047453 delta = 7.58225e-07
+                   733 integrals
+  iter     9 energy =  -38.4315047453 delta = 1.77066e-07
+                   733 integrals
+  iter    10 energy =  -38.4315047453 delta = 6.25827e-08
+                   733 integrals
+  iter    11 energy =  -38.4315047453 delta = 1.35369e-08
+                   733 integrals
+  iter    12 energy =  -38.4315047453 delta = 3.90006e-09
+                   733 integrals
+  iter    13 energy =  -38.4315047453 delta = 1.60708e-09
+                   733 integrals
+  iter    14 energy =  -38.4315047453 delta = 3.73027e-10
+                   733 integrals
+  iter    15 energy =  -38.4315047453 delta = 1.32137e-10
+                   732 integrals
+  iter    16 energy =  -38.4315047453 delta = 5.40785e-11
+                   733 integrals
+  iter    17 energy =  -38.4315047453 delta = 2.33540e-11
+                   733 integrals
+  iter    18 energy =  -38.4315047453 delta = 1.02810e-11
+                   732 integrals
+  iter    19 energy =  -38.4315047453 delta = 4.56174e-12
+
+  HOMO is     5   A =   0.006500
+  LUMO is     6   A =   0.665951
+
+  total scf energy =  -38.4315047453
+  Number of shell quartets for which AO integrals would
+  have been computed without bounds checking: 100
+  Number of shell quartets for which AO integrals
+  were computed: 100
+  ROHF energy [au]:                   -38.431504745315
+  OPT1 energy [au]:                   -38.459318527560
+  OPT2 second order correction [au]:   -0.027219060794
+  OPT2 energy [au]:                   -38.458723806109
+  ZAPT2 correlation energy [au]:       -0.026266995825
+  ZAPT2 energy [au]:                  -38.457771741140
+
+  Frequencies (cm-1; negative is imaginary):
+  A
+     1  3700.35
+     2  3455.59
+     3  1435.45
+
+  THERMODYNAMIC ANALYSIS:
+
+  Contributions to the nonelectronic enthalpy at 298.15 K:
+                     kJ/mol       kcal/mol
+    E0vib        =   51.3879      12.2820
+    Evib(T)      =    0.0169       0.0040
+    Erot(T)      =    3.7185       0.8887
+    Etrans(T)    =    3.7185       0.8887
+    PV(T)        =    2.4790       0.5925
+    Total nonelectronic enthalpy:
+    H_nonel(T)   =   61.3207      14.6560
+
+  Contributions to the entropy at 298.15 K and 1.0 atm:
+                     J/(mol*K)    cal/(mol*K)
+    S_trans(T,P) =  141.6742      33.8610
+    S_rot(T)     =   51.3763      12.2792
+    S_vib(T)     =    0.0647       0.0155
+    S_el         =    0.0000       0.0000
+    Total entropy:
+    S_total(T,P) =  193.1153      46.1557
+  
+  Various data used for thermodynamic analysis:
+  
+  Nonlinear molecule
+  Principal moments of inertia (amu*angstrom^2): 0.45237, 1.88166, 2.33403
+  Point group: c1
+  Order of point group: 1
+  Rotational symmetry number: 1
+  Rotational temperatures (K): 53.6162, 12.8898, 10.3916
+  Electronic degeneracy: 1
+
+  MBPT2:
+    Function Parameters:
+      value_accuracy    = 4.561736e-10 (1.182176e-09)
+      gradient_accuracy = 0.000000e+00 (5.053687e-07)
+      hessian_accuracy  = 0.000000e+00 (1.000000e-04) (computed)
+
+    Molecular Coordinates:
+      IntMolecularCoor Parameters:
+        update_bmat = no
+        scale_bonds = 1
+        scale_bends = 1
+        scale_tors = 1
+        scale_outs = 1
+        symmetry_tolerance = 1.000000e-05
+        simple_tolerance = 1.000000e-03
+        coordinate_tolerance = 1.000000e-07
+        have_fixed_values = 0
+        max_update_steps = 100
+        max_update_disp = 0.500000
+        have_fixed_values = 0
+
+      Molecular formula: CH2
+      molecule<Molecule>: (
+        symmetry = c1
+        unit = "angstrom"
+        {  n atoms                        geometry                     }={
+           1     C [   -0.0000000000    -0.0000000000     0.0226791916]
+           2     H [   -0.0000000000     0.9661909284     0.5346604042]
+           3     H [   -0.0000000000    -0.9661909284     0.5346604042]
+        }
+      )
+      Atomic Masses:
+         12.00000    1.00783    1.00783
+      Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
+
+      Bonds:
+        STRE       s1     1.09346    1    2         C-H
+        STRE       s2     1.09346    1    3         C-H
+      Bends:
+        BEND       b1   124.16208    2    1    3      H-C-H
+
+      SymmMolecularCoor Parameters:
+        change_coordinates = no
+        transform_hessian = yes
+        max_kappa2 = 10.000000
+
+    Electronic basis:
+      GaussianBasisSet:
+        nbasis = 7
+        nshell = 4
+        nprim  = 12
+        name = "STO-3G"
+    Reference Wavefunction:
+      Function Parameters:
+        value_accuracy    = 4.561736e-12 (1.182176e-11)
+        gradient_accuracy = 0.000000e+00 (1.000000e-06)
+        hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+      Molecule:
+        Molecular formula: CH2
+        molecule<Molecule>: (
+          symmetry = c1
+          unit = "angstrom"
+          {  n atoms                        geometry                     }={
+             1     C [   -0.0000000000    -0.0000000000     0.0226791916]
+             2     H [   -0.0000000000     0.9661909284     0.5346604042]
+             3     H [   -0.0000000000    -0.9661909284     0.5346604042]
+          }
+        )
+        Atomic Masses:
+           12.00000    1.00783    1.00783
+        Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
+
+      Electronic basis:
+        GaussianBasisSet:
+          nbasis = 7
+          nshell = 4
+          nprim  = 12
+          name = "STO-3G"
+      SCF Parameters:
+        maxiter = 100
+        density_reset_frequency = 10
+        level_shift = 0.250000
+
+      HSOSSCF Parameters:
+        charge = 0
+        ndocc = 3
+        nsocc = 2
+        docc = [ 3 ]
+        socc = [ 2 ]
+
+
+
+  ConsumableResources: (
+    memory = unlimited ( max used: 57.2kB )
+    disk = [./ unlimited] ( max used: 0B )
+  )
+                                CPU Wall
+mpqc:                          2.31 2.32
+  calc:                        1.73 1.74
+    4. quart. tr.:             0.00 0.00
+      bcast0 socc_sum:         0.00 0.00
+    RS loop:                   0.07 0.07
+      2. quart. tr.:           0.00 0.00
+      3. quart. tr.:           0.00 0.00
+      PQ loop:                 0.07 0.07
+      bzerofast trans_int1:    0.00 0.00
+      bzerofast trans_int2:    0.00 0.00
+      sum int:                 0.00 0.00
+    collect:                   0.00 0.00
+    compute ecorr:             0.00 0.00
+      sum mo_int_do_so_vir:    0.00 0.00
+    gradient:                  1.29 1.30
+      4. quart. tr.:           0.00 0.00
+        bcast0 socc_sum:       0.00 0.00
+      RS loop:                 0.21 0.21
+        2. quart. tr.:         0.00 0.00
+        3. quart. tr.:         0.00 0.00
+        PQ loop:               0.20 0.20
+        bzerofast trans_int1:  0.00 0.00
+        bzerofast trans_int2:  0.00 0.00
+        sum int:               0.00 0.00
+      collect:                 0.00 0.00
+      compute ecorr:           0.00 0.00
+        sum mo_int_do_so_vir:  0.00 0.00
+      vector:                  0.94 0.94
+        density:               0.08 0.08
+        evals:                 0.11 0.11
+        extrap:                0.21 0.21
+        fock:                  0.37 0.37
+          start thread:        0.19 0.19
+          stop thread:         0.00 0.00
+    vector:                    0.32 0.32
+      density:                 0.03 0.03
+      evals:                   0.04 0.04
+      extrap:                  0.07 0.07
+      fock:                    0.13 0.13
+        start thread:          0.06 0.06
+        stop thread:           0.00 0.00
+  hessian:                     0.52 0.52
+    4. quart. tr.:             0.00 0.00
+      bcast0 socc_sum:         0.00 0.00
+    RS loop:                   0.07 0.07
+      2. quart. tr.:           0.00 0.00
+      3. quart. tr.:           0.00 0.00
+      PQ loop:                 0.07 0.07
+      bzerofast trans_int1:    0.00 0.00
+      bzerofast trans_int2:    0.00 0.00
+      sum int:                 0.00 0.00
+    collect:                   0.00 0.00
+    compute ecorr:             0.00 0.00
+      sum mo_int_do_so_vir:    0.00 0.00
+    vector:                    0.41 0.42
+      density:                 0.04 0.04
+      evals:                   0.05 0.06
+      extrap:                  0.10 0.10
+      fock:                    0.16 0.16
+        start thread:          0.07 0.07
+        stop thread:           0.00 0.00
+  input:                       0.06 0.06
+    vector:                    0.01 0.01
+      density:                 0.00 0.00
+      evals:                   0.00 0.00
+      extrap:                  0.00 0.00
+      fock:                    0.00 0.00
+        start thread:          0.00 0.00
+        stop thread:           0.00 0.00
+
+  End Time: Tue Dec  6 11:37:59 2011
+

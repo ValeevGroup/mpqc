@@ -394,13 +394,15 @@ class FinDispMolecularHessian: public MolecularHessian {
     };
 
   private:
-    Ref<Impl> pimpl_;
+    Ref<Impl> pimpl_; //<< initliazed lazily
+    Ref<MolecularEnergy> mole_init_;   //< pimpl_ is initalized lazily, so this is used to hold the MolecularEnergy object used to initialize the pimpl_
     Ref<Params> params_;
     bool user_provided_eliminate_cubic_terms_; // default for eliminate_cubic_terms depends on type of Impl ...
                                                // must know whether the default needs to vary
 
   protected:
 
+    /// initializes pimpl_, it should not be called until e is fully initalized, hence use this lazily
     void init_pimpl(const Ref<MolecularEnergy>& e);
     void restart();
 

@@ -46,6 +46,9 @@ class MolecularEnergy: public Function {
     RefSCDimension moldim_; // the number of cartesian variables
     Ref<MolecularCoor> mc_;
     Ref<Molecule> mol_;
+    /** it seems to be a bad idea to have this here -- in order to initialize hess I may need to
+        call virtual functions of this, which are not available in the constructor
+     */
     Ref<MolecularHessian> hess_;
     Ref<MolecularHessian> guesshess_;
     Ref<MolecularGradient> grad_;
@@ -86,11 +89,11 @@ class MolecularEnergy: public Function {
     /** must overload this in a derived class if analytic gradient can be computed
      * @return true (analytic gradient is available) or false (analytic gradient is not available, default)
      */
-    virtual bool analytic_gradient_implemented() const { return false; }
+    virtual bool analytic_gradient_implemented() const;
     /** must overload this in a derived class if analytic hessian can be computed
      * @return true (analytic hessian is available) or false (analytic hessian is not available, default)
      */
-    virtual bool analytic_hessian_implemented() const { return false; }
+    virtual bool analytic_hessian_implemented() const;
 
   public:
     MolecularEnergy(const MolecularEnergy&);
@@ -233,10 +236,10 @@ class MolecularEnergy: public Function {
 
 /// linear combination of MolecularEnergy objects
 class SumMolecularEnergy: public MolecularEnergy {
+  protected:
     int value_implemented() const;
     bool analytic_gradient_implemented() const;
     bool analytic_hessian_implemented() const;
-  protected:
     int n_;
     Ref<MolecularEnergy> *mole_;
     double *coef_;

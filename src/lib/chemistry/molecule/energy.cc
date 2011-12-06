@@ -467,11 +467,16 @@ MolecularEnergy::hessian()
 int
 MolecularEnergy::hessian_implemented() const {
   bool result = false;
-  if (this->analytic_hessian_implemented())
+  if (analytic_hessian_implemented())
     result = true;
   if (hess_.nonnull())
     result = true;
   return result;
+}
+
+bool
+MolecularEnergy::analytic_hessian_implemented() const {
+  return false;
 }
 
 void
@@ -505,11 +510,16 @@ MolecularEnergy::gradient()
 int
 MolecularEnergy::gradient_implemented() const {
   bool result = false;
-  if (this->analytic_gradient_implemented())
+  if (analytic_gradient_implemented())
     result = true;
   if (grad_.nonnull())
     result = true;
   return result;
+}
+
+bool
+MolecularEnergy::analytic_gradient_implemented() const {
+  return false;
 }
 
 void

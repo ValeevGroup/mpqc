@@ -950,12 +950,13 @@ sub input_string() {
 	my $mol      = "% molecule specification";
 	$mol = "$mol\nmolecule<Molecule>: (";
 	$symmetry = lc $symmetry if ( $symmetry eq "AUTO" );
-	if ( $qcinput->frequencies() ) {
-		$mol = "$mol\n  symmetry = C1";
-	}
-	else {
+	# 2011/12/05 EFV why force C1 symmetry for frequencies?
+	#if ( $qcinput->frequencies() ) {
+	#	$mol = "$mol\n  symmetry = C1";
+	#}
+	#else {
 		$mol = "$mol\n  symmetry = $symmetry";
-	}
+	#}
 	$mol = "$mol\n  unit = angstrom";
 	$mol = "$mol\n  { atoms geometry } = {";
 	printf "MPQCInputWriter: natom = %d\n", $qcinput->n_atom() if ($debug);
@@ -1266,12 +1267,14 @@ sub input_string() {
 	my $freq = "";
 	if ( $qcinput->frequencies() ) {
 		$freq = "% vibrational frequency input";
-		$freq = "$freq\n  freq<MolecularFrequencies>: (";
-		if ( $symmetry ne "C1" ) {
-			$freq = "$freq\n    point_group<PointGroup>: symmetry = $symmetry";
-		}
-		$freq = "$freq\n    molecule = \$:molecule";
-		$freq = "$freq\n  )\n";
+		$freq = "$freq\n  do_freq = yes\n";
+		# 2011/12/05 EFV no need for freq object anymore
+		#$freq = "$freq\n  freq<MolecularFrequencies>: (";
+		#if ( $symmetry ne "C1" ) {
+		#	$freq = "$freq\n    point_group<PointGroup>: symmetry = $symmetry";
+		#}
+		#$freq = "$freq\n    molecule = \$:molecule";
+		#$freq = "$freq\n  )\n";
 	}
 
 	my $mpqcstart = sprintf( "mpqc: (\n  checkpoint = %s\n",

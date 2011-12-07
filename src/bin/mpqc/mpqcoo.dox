@@ -42,9 +42,17 @@ class.
         MolecularEnergy that are most commonly used are CLKS, HSOSKS, UKS,
         CLHF, HSOSHF, UHF, and MBPT2.
 
-<dt><tt>opt</tt><dd> This keyword must be specified for optimizations.  It
+<dt><tt>opt</tt><dd> This keyword should be specified for geometry optimizations.  It
         specifies an Optimize object.  Usually, QNewtonOpt is best for
-        finding minima and EFCOpt is best for transition states.
+        finding minima and EFCOpt is best for transition states. See also <tt>optimize</tt> keyword.
+
+<dt><tt>optimize</tt><dd> The value of this keyword is boolean. If set to <tt>false</tt>
+        then a geometry optimization will not be performed, whether <tt>opt</tt> was provided
+        or not. If this keyword set to <tt>true</tt>, and <tt>opt</tt> was not provided,
+        a geometry optimization will be performed with a default QNewtonOpt object (this is
+        likely to be only useful for routinely finding minima on the potential surface).
+        The default is <tt>true</tt> if a valid value for <tt>opt</tt> was provided,
+        <tt>false</tt> otherwise.
 
 <dt><tt>grad</tt><dd> This keyword specifies the MolecularGradient object
         that will be used to compute nuclear forces, if they are necessary (i.e. if <tt>opt</tt>
@@ -163,10 +171,6 @@ class.
         a colon-separated list of sidl class names for CCA components which 
         will be instantiated from the libraries found in the path given by 
         <tt>cca_path</tt>.
-
-<dt><tt>optimize</tt><dd> The value of this keyword is boolean.  If true
-        and the opt keyword was set to a valid value, then an optimization
-        will be performed.  The default is true.
 
 <dt><tt>write_pdb</tt><dd> The value of this keyword is boolean.  If true a
         PDB file with the molecular coordinates will be written.

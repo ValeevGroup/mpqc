@@ -528,18 +528,6 @@ try_main(int argc, char *argv[])
     MolecularFormula mf(mole->molecule());
     ExEnv::out0() << endl << indent
          << "Molecular formula " << mf.formula() << endl;
-    if (checkpoint) {
-      mole->set_checkpoint();
-      if (grp->me() == 0) mole->set_checkpoint_file(mole_ckpt_file.c_str());
-      else mole->set_checkpoint_file(devnull);
-      mole->set_checkpoint_freq(checkpoint_freq);
-    }
-  }
-
-  if (checkpoint && opt.nonnull()) {
-    opt->set_checkpoint();
-    if (grp->me() == 0) opt->set_checkpoint_file(ckptfile.c_str());
-    else opt->set_checkpoint_file(devnull);
   }
 
   int check = (options.retrieve("c") != 0);
@@ -566,8 +554,6 @@ try_main(int argc, char *argv[])
 
   const int do_grad = keyval->booleanvalue("do_gradient",falsevalue);
 
-  const int do_opt = opt.null() ? 0 : keyval->booleanvalue("optimize",truevalue);
-
   const int do_freq = keyval->booleanvalue("do_freq",falsevalue);
 
   const int do_pdb = keyval->booleanvalue("write_pdb",falsevalue);
@@ -577,6 +563,15 @@ try_main(int argc, char *argv[])
   const int print_resources = keyval->booleanvalue("print_resources",truevalue);
 
   const int print_timings = keyval->booleanvalue("print_timings",truevalue);
+
+  // default value for optimize is true if opt is given, and false if it is not
+  const int do_opt = keyval->booleanvalue("optimize", (opt.null() ? falsevalue : truevalue));
+  if (do_opt && opt.null() && mole.nonnull()) { // if user requested optimization but no Optimize object given pick a default object
+    Ref<AssignedKeyVal> akv = new AssignedKeyVal;
+    akv->assign("function", mole.pointer());
+    Ref<KeyVal> kv = akv;
+    opt = new QNewtonOpt(kv);
+  }
 
   // Read in all of the runnable objects now, so we can get rid of
   // the reference to the input file.
@@ -641,6 +636,19 @@ try_main(int argc, char *argv[])
        << indent << "print_timings   = " << (print_timings ? "yes" : "no") << endl
        << indent << "print_resources = " << (print_resources ? "yes" : "no")
        << endl << decindent;
+
+  // Prepare to checkpoint the computation
+  if (checkpoint && mole.nonnull()) {
+    mole->set_checkpoint();
+    if (grp->me() == 0) mole->set_checkpoint_file(mole_ckpt_file.c_str());
+    else mole->set_checkpoint_file(devnull);
+    mole->set_checkpoint_freq(checkpoint_freq);
+  }
+  if (checkpoint && opt.nonnull()) {
+    opt->set_checkpoint();
+    if (grp->me() == 0) opt->set_checkpoint_file(ckptfile.c_str());
+    else opt->set_checkpoint_file(devnull);
+  }
 
   int ready_for_freq = 1;
   if (mole.nonnull()) {

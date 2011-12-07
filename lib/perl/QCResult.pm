@@ -239,7 +239,7 @@ sub parse_mpqc {
                 $state = "none";
             }
         }
-
+        
         if ($wante && /total scf energy =\s+$fltrx/) {
             $scfenergy = $1;
         }
@@ -415,6 +415,7 @@ sub parse_mpqc {
         }
         elsif (/The optimization has converged/) {
             $optconverged = 1;
+            $wante = 1;
         }
         elsif (/^\s*Beginning displacement/) {
             # don't grab energies for displaced geometries
@@ -476,6 +477,7 @@ sub parse_mpqc {
                 }
             }
             $havefreq = 1;
+            $wante = 1;
         }
     }
     $self->{"t1norm"} = $t1norm;
@@ -510,6 +512,9 @@ sub parse_mpqc {
         elsif ($qcinput->mult() == 1) {
             $self->{"energy"} = $zapt2energy;
         }
+    }
+    elsif ($method eq "ZAPT2") {
+    	$self->{"energy"} = $zapt2energy;
     }
     elsif ($method eq "OPT1[2]") {
         $self->{"energy"} = $opt1energy;

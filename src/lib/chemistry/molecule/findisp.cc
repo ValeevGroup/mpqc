@@ -44,7 +44,7 @@
 using namespace std;
 using namespace sc;
 
-#define DEFAULT_CHECKPOINT  1
+#define DEFAULT_CHECKPOINT  0
 #define DEFAULT_RESTART     1
 
 /////////////////////////////////////////////////////////////////

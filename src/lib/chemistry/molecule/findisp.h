@@ -437,7 +437,7 @@ class FinDispMolecularHessian: public MolecularHessian {
         <td><em>basename</em><tt>.ckpt.hess</tt><td>The name of
         the file where checkpoint information is written to or read from.
 
-        <tr><td><tt>checkpoint</tt><td>boolean<td>true<td>If true,
+        <tr><td><tt>checkpoint</tt><td>boolean<td>false<td>If true,
         checkpoint intermediate data.
 
         <tr><td><tt>only_totally_symmetric</tt><td>boolean<td>false
@@ -583,7 +583,7 @@ class FinDispMolecularGradient: public MolecularGradient {
         <td><em>basename</em><tt>.ckpt.grad</tt><td>The name of
         the file where checkpoint information is written to or read from.
 
-        <tr><td><tt>checkpoint</tt><td>boolean<td>true<td>If true,
+        <tr><td><tt>checkpoint</tt><td>boolean<td>false<td>If true,
         checkpoint intermediate data.
 
         <tr><td><tt>eliminate_cubic_terms</tt><td>boolean<td>false<td>

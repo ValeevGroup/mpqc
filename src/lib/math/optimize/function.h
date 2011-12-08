@@ -205,6 +205,8 @@ class Function: virtual public SavableState, public Compute {
 
     /// Print information about the object.
     virtual void print(std::ostream& = ExEnv::out0()) const;
+    /// similar to print(), but only prins desired accuracies
+    void print_desired_accuracy(std::ostream& = ExEnv::out0()) const;
 
     /// Overridden Compute member.
     virtual bool throw_if_tolerance_exceeded() const;

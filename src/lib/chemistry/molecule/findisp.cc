@@ -365,6 +365,7 @@ FinDispMolecularHessian::Impl::displace(const Displacement& disp)
        << " for displaced molecule."
        << endl;
   if (mole_.nonnull()) mole_->obsolete();
+  mol->print();
 }
 
 void
@@ -1314,6 +1315,7 @@ FinDispMolecularGradient::displace(int disp)
        << endl;
 
   if (mole_.nonnull()) mole_->obsolete();
+  mol_->print();
 }
 
 void
@@ -1384,7 +1386,7 @@ FinDispMolecularGradient::cartesian_gradient()
   ExEnv::out0() << indent << "Gradient options: " << endl;
   ExEnv::out0() << indent << "  displacement: " << disp_
                << " bohr" << endl;
-  ExEnv::out0() << indent << "  energy_accuracy: "
+  ExEnv::out0() << indent << "  accuracy: "
                << accuracy_ << " au" << endl;
   ExEnv::out0() << indent << "  eliminate_cubic_terms: "
                << (eliminate_cubic_terms_==0?"no":"yes") << endl;

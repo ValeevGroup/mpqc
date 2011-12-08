@@ -724,7 +724,6 @@ RefWavefunction::init() const
     // make sure that FockBuildRuntime uses same densities as the reference wavefunction
 
     RefSymmSCMatrix R = ordm(Alpha);
-    R.print("debug RefWavefunction::init print ordm");
     if(force_average_AB_rdm1_ == false) // the densites are in AO basis
         world_->fockbuild_runtime()->set_densities(this->ordm(Alpha), this->ordm(Beta));//here computes ordm
     else

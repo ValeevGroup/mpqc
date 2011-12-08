@@ -333,8 +333,8 @@ Backtrack::~Backtrack()
 int
 Backtrack::sufficient_decrease(RefSCVector& step) {
 
-  double ftarget = initial_value_ + decrease_factor_ *
-    initial_grad_.scalar_product(step);
+  const double ftarget = initial_value_ + decrease_factor_ *
+      initial_grad_.scalar_product(step);
   
   RefSCVector xnext = initial_x_ + step;
   function()->set_x(xnext);
@@ -356,6 +356,18 @@ Backtrack::update() {
   RefSCVector backtrack = -1.0 * backtrack_factor_ * search_direction_;
   RefSCVector step = search_direction_.copy();
   
+  // check if sufficient decrease is possible within the required accuracy
+  if (function()->desired_value_accuracy() >= fabs(decrease_factor_ *
+                                                   initial_grad_.scalar_product(step))) {
+    ExEnv::out0() << endl << indent <<
+      "Sufficient decrease cannot be achieved for the requested value accuracy. Skipping line search." << endl;
+    RefSCVector xnext = initial_x_ + step;
+    function()->set_x(xnext);
+    Ref<NonlinearTransform> t = function()->change_coordinates();
+    apply_transform(t);
+    return 1;
+  }
+
   // check if line search is needed
   if( sufficient_decrease(step) ) {
     ExEnv::out0() << endl << indent << 
@@ -369,42 +381,42 @@ Backtrack::update() {
     << "Initiating backtracking line search." << endl; 
 
   // perform a simple backtrack
-  values.push_back( function()->value() );  
-  for(int i=0; i<max_iterations_ && !acceptable && descent; ++i) {
+  values.push_back(function()->value());
+  for (int i = 0; i < max_iterations_ && !acceptable && descent; ++i) {
 
     step = step + backtrack;
 
-    if ( sqrt(step.scalar_product(step)) >= 0.1 * 
-	 sqrt(search_direction_.scalar_product(search_direction_)) ) {
+    if (sqrt(step.scalar_product(step))
+        >= 0.1 * sqrt(search_direction_.scalar_product(search_direction_))) {
 
-      ++took_step;    
-      if( sufficient_decrease(step) ) {
-	ExEnv::out0() << endl << indent << "Backtrack " << i+1 
-		      << " yields a sufficient decrease." << endl;
-	acceptable = 1; 
-	using_step = i+1;
+      ++took_step;
+      if (sufficient_decrease(step)) {
+        ExEnv::out0() << endl << indent << "Backtrack " << i + 1
+            << " yields a sufficient decrease." << endl;
+        acceptable = 1;
+        using_step = i + 1;
       }
-      
-      else if ( values.back() < function()->value() ) {
-	ExEnv::out0() << endl << indent << "Backtrack " << i+1 
-		      << " increases value; terminating search." << endl;
-	acceptable = 1;
-	using_step = i;
+
+      else if (values.back() < function()->value()) {
+        ExEnv::out0() << endl << indent << "Backtrack " << i + 1
+            << " increases value; terminating search." << endl;
+        acceptable = 1;
+        using_step = i;
       }
-      
+
       else {
-	ExEnv::out0() << endl << indent << "Backtrack " << i+1 
-		      << " does not yield a sufficient decrease." << endl;
-	using_step = i+1;
+        ExEnv::out0() << endl << indent << "Backtrack " << i + 1
+            << " does not yield a sufficient decrease." << endl;
+        using_step = i + 1;
       }
-
-      values.push_back( function()->value() );
+      
+      values.push_back(function()->value());
     }
 
-    else { 
-      ExEnv::out0() << indent << 
-	"Search direction does not appear to be a descent direction;" <<
-	" terminating search." << endl;
+    else {
+      ExEnv::out0() << indent
+          << "Search direction does not appear to be a descent direction;"
+          << " terminating search." << endl;
       descent = 0;
     }
   }

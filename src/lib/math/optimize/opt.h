@@ -154,17 +154,42 @@ class LineOpt: public Optimize {
     void print(std::ostream& = ExEnv::out0()) const;
 };
 
+/**
+ * Implements backtrack line search algorithm.
+ */
 class Backtrack: public LineOpt {
 
  protected:
    double decrease_factor_;
    double backtrack_factor_;
    int force_search_;
-    
+
+   /**
+    * answers the question whether a given step satisfies the sufficient decrease (Armijo) condition
+    * @param step trial step
+    * @return 1 (the condition is satisfied) or 0 (the condition is not satisfied)
+    */
    int sufficient_decrease(RefSCVector& step);
 
  public:
    Backtrack();
+   /** A KeyVal constructor is used to generate a Backtrack
+       object from the input. In addition to the keywords accepted
+       by the KeyVal constructor of LineOpt class, it accepts
+       the following keywords:
+
+       <table border="1">
+
+       <tr><td><b>%Keyword</b><td><b>Type</b><td><b>Default</b><td><b>Description</b>
+
+       <tr><td><tt>backtrack_factor</tt><td>real<td>0.1<td>backtrack factor
+
+       <tr><td><tt>decrease_factor</tt><td>real<td>0.1<td>decrease factor
+
+       <tr><td><tt>force_search</tt><td>boolean<td>false<td>set to true to force the line search
+
+       </table>
+    */
    Backtrack(const Ref<KeyVal>&);
    Backtrack(StateIn&s);
    ~Backtrack();

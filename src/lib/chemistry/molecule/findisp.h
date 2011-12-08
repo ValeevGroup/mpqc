@@ -462,8 +462,13 @@ class FinDispMolecularHessian: public MolecularHessian {
         <tr><td><tt>displacement</tt><td>double<td>1.0e-2<td>The size of
         the displacement in Bohr.
 
-        <tr><td><tt>gradient_accuracy</tt><td>double<td><tt>displacement</tt>
-        / 1000<td>The accuracy to which the gradients will be computed.
+        <tr><td><tt>accuracy</tt><td>double<td>1e-4<td>The accuracy to which the hessian will be computed.
+
+        <tr><td><tt>gradient_accuracy</tt><td>double<td><tt>accuracy</tt>
+        * <tt>displacement</tt><td>The accuracy to which the gradients will be computed.
+
+        <tr><td><tt>energy_accuracy</tt><td>double<td><tt>accuracy</tt>
+        * <tt>displacement</tt>^2<td>The accuracy to which the energies will be computed.
 
         <tr><td><tt>use_energies</tt><td>boolean<td>false<td>Setting to true will
         force computation from energies.
@@ -514,8 +519,10 @@ class FinDispMolecularGradient: public MolecularGradient {
     RefSCVector original_geometry_;
     // the cartesian displacement size in bohr
     double disp_;
-    // the accuracy for energy calculations
+    // the desired accuracy of the gradient
     double accuracy_;
+    // the accuracy of the energy computations
+    double energy_accuracy_;
     // whether or not to attempt a restart
     int restart_;
     // the name of the restart file
@@ -596,8 +603,11 @@ class FinDispMolecularGradient: public MolecularGradient {
         <tr><td><tt>displacement</tt><td>double<td>1.0e-2<td>The size of
         the displacement in Bohr.
 
-        <tr><td><tt>energy_accuracy</tt><td>double<td><tt>displacement</tt>
-        / 1000<td>The accuracy to which the energies will be computed.
+        <tr><td><tt>accuracy</tt><td>double<td>1e-4
+        <td>The accuracy to which the gradient will be computed.
+
+        <tr><td><tt>energy_accuracy</tt><td>double<td><tt>accuracy</tt> * <tt>displacement</tt>
+        <td>The accuracy to which the energies will be computed.
 
         </table>
     */

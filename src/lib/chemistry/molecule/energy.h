@@ -105,7 +105,7 @@ class MolecularEnergy: public Function {
         <dt><tt>coor</tt><dd> A MolecularCoor object that describes the
         coordinates.  If this is not given cartesian coordinates will be
         used.  For convenience, two keywords needed by the MolecularCoor
-        object are automatically provided: natom3 and matrixkit.
+        object are automatically provided: <tt>natom3</tt> and <tt>matrixkit</tt>.
 
         <dt><tt>value_accuracy</tt><dd> Sets the accuracy to which values
         are computed.  The default is 1.0e-6 atomic units.

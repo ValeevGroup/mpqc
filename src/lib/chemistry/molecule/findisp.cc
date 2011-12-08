@@ -94,10 +94,10 @@ FinDispMolecularHessian::Params::Params()
   disp_pg_ = 0;
   disp_ = 1.0e-2;
   only_totally_symmetric_ = false;
-  // default for eliminate_cubic_terms is set in FinDispMolecularHessian
-  //eliminate_cubic_terms_ = true;
+  // default for eliminate_cubic_terms is overridden by FinDispMolecularHessian
+  eliminate_cubic_terms_ = true;
   do_null_displacement_ = true;
-  accuracy_ = 1e-5;
+  accuracy_ = 1e-4;
   energy_accuracy_ = accuracy_*disp_*disp_;
   gradient_accuracy_ = accuracy_*disp_;
   checkpoint_ = DEFAULT_CHECKPOINT;
@@ -115,13 +115,13 @@ FinDispMolecularHessian::Params::Params(const Ref<KeyVal>& keyval)
   disp_ = keyval->doublevalue("displacement",KeyValValuedouble(1.0e-2));
   only_totally_symmetric_ = keyval->booleanvalue("only_totally_symmetric",
                                                  KeyValValueboolean(false));
-  // default for eliminate_cubic_terms is set in FinDispMolecularHessian
-  //eliminate_cubic_terms_ = keyval->booleanvalue("eliminate_cubic_terms",
-  //                                              KeyValValueboolean(true));
+  // default for eliminate_cubic_terms is overridden by FinDispMolecularHessian
+  eliminate_cubic_terms_ = keyval->booleanvalue("eliminate_cubic_terms",
+                                                KeyValValueboolean(true));
   do_null_displacement_ = keyval->booleanvalue("do_null_displacement",
                                                KeyValValueboolean(true));
   accuracy_ = keyval->doublevalue("accuracy",
-                                  KeyValValuedouble(1e-5));
+                                  KeyValValuedouble(1e-4));
   energy_accuracy_ = keyval->doublevalue("energy_accuracy",
                                            KeyValValuedouble(accuracy_*disp_*disp_));
   gradient_accuracy_ = keyval->doublevalue("gradient_accuracy",
@@ -1011,11 +1011,13 @@ FinDispMolecularHessian::init_pimpl(const Ref<MolecularEnergy>& mole) {
   else {
     pimpl_ = 0;
     if (mole->gradient_implemented() && !params_->use_energies()) {
+      // override the default for eliminate_cubic_terms
       if (user_provided_eliminate_cubic_terms_ == false)
         params_->set_eliminate_cubic_terms(true);
       pimpl_ = new GradientsImpl(mole, params_);
     }
     else {
+      // override the default for eliminate_cubic_terms
       if (user_provided_eliminate_cubic_terms_ == false)
         params_->set_eliminate_cubic_terms(false);
       pimpl_ = new EnergiesImpl(mole, params_);
@@ -1037,7 +1039,8 @@ FinDispMolecularGradient::FinDispMolecularGradient(const Ref<MolecularEnergy> &e
   eliminate_cubic_terms_ = 0;
   disp_ = 1.0e-2;
   debug_ = 0;
-  accuracy_ = disp_/1e4;
+  accuracy_ = 1e-4;
+  energy_accuracy_ = accuracy_ * disp_;
   restart_ = DEFAULT_RESTART;
   checkpoint_ = DEFAULT_CHECKPOINT;
   checkpoint_file_ = SCFormIO::fileext_to_filename_string(".ckpt.grad");
@@ -1074,8 +1077,10 @@ FinDispMolecularGradient::FinDispMolecularGradient(const Ref<KeyVal>&keyval):
   eliminate_cubic_terms_ = keyval->booleanvalue("eliminate_cubic_terms",
                                                 falsevalue);
 
-  accuracy_ = keyval->doublevalue("gradient_accuracy",
-                                  KeyValValuedouble(disp_/1000));
+  accuracy_ = keyval->doublevalue("accuracy",
+                                  KeyValValuedouble(1e-4));
+  energy_accuracy_ = keyval->doublevalue("energy_accuracy",
+                                  KeyValValuedouble(accuracy_ * disp_));
 
 }
 
@@ -1087,6 +1092,7 @@ FinDispMolecularGradient::FinDispMolecularGradient(StateIn&s):
   s.get(checkpoint_);
   s.get(debug_);
   s.get(accuracy_);
+  s.get(energy_accuracy_);
   s.get(checkpoint_file_);
   s.get(restart_file_);
 
@@ -1106,6 +1112,7 @@ FinDispMolecularGradient::save_data_state(StateOut&s)
   s.put(checkpoint_);
   s.put(debug_);
   s.put(accuracy_);
+  s.put(energy_accuracy_);
   s.put(checkpoint_file_);
   s.put(restart_file_);
 
@@ -1388,6 +1395,8 @@ FinDispMolecularGradient::cartesian_gradient()
                << " bohr" << endl;
   ExEnv::out0() << indent << "  accuracy: "
                << accuracy_ << " au" << endl;
+  ExEnv::out0() << indent << "  energy_accuracy: "
+               << energy_accuracy_ << " au" << endl;
   ExEnv::out0() << indent << "  eliminate_cubic_terms: "
                << (eliminate_cubic_terms_==0?"no":"yes") << endl;
 
@@ -1400,10 +1409,7 @@ FinDispMolecularGradient::cartesian_gradient()
     // mole_->obsolete(); displace() obsoleted mole
     double original_accuracy;
     original_accuracy = mole_->desired_value_accuracy();
-    if (accuracy_ > 0.0)
-      mole_->set_desired_value_accuracy(accuracy_);
-    else
-      mole_->set_desired_value_accuracy(disp_/1000.0);
+    mole_->set_desired_value_accuracy(energy_accuracy_);
     const double energy = mole_->energy();
     mole_->set_desired_value_accuracy(original_accuracy);
     energies_.push_back(energy);

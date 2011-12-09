@@ -224,6 +224,7 @@ class FinDispMolecularHessian: public MolecularHessian {
       void set_disp_pg(const Ref<PointGroup>& pg) { disp_pg_ = pg; }
       void set_restart(bool r = true) { restart_ = r; }
       void set_checkpoint(bool c = true) { checkpoint_ = c; }
+      void set_desired_accuracy(double acc);
 
     private:
       static ClassDesc class_desc_;
@@ -253,8 +254,6 @@ class FinDispMolecularHessian: public MolecularHessian {
       std::string restart_file_;
       // force computation from energies
       bool use_energies_;
-      // general accuracy (for backward compatibility only)
-      double accuracy_;
       // the accuracy for energy calculations
       double energy_accuracy_;
       // the accuracy for gradient calculations
@@ -462,8 +461,6 @@ class FinDispMolecularHessian: public MolecularHessian {
         <tr><td><tt>displacement</tt><td>double<td>1.0e-2<td>The size of
         the displacement in Bohr.
 
-        <tr><td><tt>accuracy</tt><td>double<td>1e-4<td>The accuracy to which the hessian will be computed.
-
         <tr><td><tt>gradient_accuracy</tt><td>double<td><tt>accuracy</tt>
         * <tt>displacement</tt><td>The accuracy to which the gradients will be computed.
 
@@ -488,6 +485,8 @@ class FinDispMolecularHessian: public MolecularHessian {
     MolecularEnergy* energy() const { return pimpl_.nonnull() ? pimpl_->mole().pointer() : 0; }
 
     const Ref<Params>& params() const { return params_; }
+
+    void set_desired_accuracy(double acc);
 };
 
 /** Computes the molecular gradient by finite differences of energies.
@@ -519,8 +518,6 @@ class FinDispMolecularGradient: public MolecularGradient {
     RefSCVector original_geometry_;
     // the cartesian displacement size in bohr
     double disp_;
-    // the desired accuracy of the gradient
-    double accuracy_;
     // the accuracy of the energy computations
     double energy_accuracy_;
     // whether or not to attempt a restart
@@ -603,9 +600,6 @@ class FinDispMolecularGradient: public MolecularGradient {
         <tr><td><tt>displacement</tt><td>double<td>1.0e-2<td>The size of
         the displacement in Bohr.
 
-        <tr><td><tt>accuracy</tt><td>double<td>1e-4
-        <td>The accuracy to which the gradient will be computed.
-
         <tr><td><tt>energy_accuracy</tt><td>double<td><tt>accuracy</tt> * <tt>displacement</tt>
         <td>The accuracy to which the energies will be computed.
 
@@ -631,6 +625,8 @@ class FinDispMolecularGradient: public MolecularGradient {
 
     Ref<SCMatrixKit> matrixkit() const { return mole_->matrixkit(); }
     RefSCDimension d3natom() const { return mole_->moldim(); }
+
+    void set_desired_accuracy(double acc);
 };
 
 #if 0

@@ -97,9 +97,9 @@ FinDispMolecularHessian::Params::Params()
   // default for eliminate_cubic_terms is overridden by FinDispMolecularHessian
   eliminate_cubic_terms_ = true;
   do_null_displacement_ = true;
-  accuracy_ = 1e-4;
-  energy_accuracy_ = accuracy_*disp_*disp_;
-  gradient_accuracy_ = accuracy_*disp_;
+  double desired_accuracy = 1e-4;
+  energy_accuracy_ = desired_accuracy*disp_*disp_;
+  gradient_accuracy_ = desired_accuracy*disp_;
   checkpoint_ = DEFAULT_CHECKPOINT;
   checkpoint_file_ = SCFormIO::fileext_to_filename_string(".ckpt.hess");
   restart_ = DEFAULT_RESTART;
@@ -120,12 +120,11 @@ FinDispMolecularHessian::Params::Params(const Ref<KeyVal>& keyval)
                                                 KeyValValueboolean(true));
   do_null_displacement_ = keyval->booleanvalue("do_null_displacement",
                                                KeyValValueboolean(true));
-  accuracy_ = keyval->doublevalue("accuracy",
-                                  KeyValValuedouble(1e-4));
+  const double desired_accuracy = keyval->doublevalue("accuracy", KeyValValuedouble(1e-4));
   energy_accuracy_ = keyval->doublevalue("energy_accuracy",
-                                           KeyValValuedouble(accuracy_*disp_*disp_));
+                                           KeyValValuedouble(desired_accuracy*disp_*disp_));
   gradient_accuracy_ = keyval->doublevalue("gradient_accuracy",
-                                           KeyValValuedouble(accuracy_*disp_));
+                                           KeyValValuedouble(desired_accuracy*disp_));
 
   KeyValValueboolean def_checkpoint(DEFAULT_CHECKPOINT);
   checkpoint_ = keyval->booleanvalue("checkpoint", def_checkpoint);
@@ -147,7 +146,6 @@ FinDispMolecularHessian::Params::Params(StateIn& s)
   s.get(only_totally_symmetric_);
   s.get(eliminate_cubic_terms_);
   s.get(do_null_displacement_);
-  s.get(accuracy_);
   s.get(energy_accuracy_);
   s.get(gradient_accuracy_);
   s.get(checkpoint_);
@@ -170,13 +168,18 @@ FinDispMolecularHessian::Params::save_data_state(StateOut& s)
   s.put(only_totally_symmetric_);
   s.put(eliminate_cubic_terms_);
   s.put(do_null_displacement_);
-  s.put(accuracy_);
   s.put(energy_accuracy_);
   s.put(gradient_accuracy_);
   s.put(checkpoint_);
   s.put(checkpoint_file_);
   s.put(restart_);
   s.put(restart_file_);
+}
+
+void
+FinDispMolecularHessian::Params::set_desired_accuracy(double acc) {
+  energy_accuracy_ = acc*disp_*disp_;
+  gradient_accuracy_ = acc*disp_;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -1026,6 +1029,12 @@ FinDispMolecularHessian::init_pimpl(const Ref<MolecularEnergy>& mole) {
   }
 }
 
+void
+FinDispMolecularHessian::set_desired_accuracy(double acc) {
+  MolecularHessian::set_desired_accuracy(acc);
+  params_->set_desired_accuracy(acc);
+}
+
 /////////////////////////////////////////////////////////////////
 // FinDispMolecularGradient
 
@@ -1039,8 +1048,7 @@ FinDispMolecularGradient::FinDispMolecularGradient(const Ref<MolecularEnergy> &e
   eliminate_cubic_terms_ = 0;
   disp_ = 1.0e-2;
   debug_ = 0;
-  accuracy_ = 1e-4;
-  energy_accuracy_ = accuracy_ * disp_;
+  energy_accuracy_ = MolecularGradient::desired_accuracy() * disp_;
   restart_ = DEFAULT_RESTART;
   checkpoint_ = DEFAULT_CHECKPOINT;
   checkpoint_file_ = SCFormIO::fileext_to_filename_string(".ckpt.grad");
@@ -1077,10 +1085,8 @@ FinDispMolecularGradient::FinDispMolecularGradient(const Ref<KeyVal>&keyval):
   eliminate_cubic_terms_ = keyval->booleanvalue("eliminate_cubic_terms",
                                                 falsevalue);
 
-  accuracy_ = keyval->doublevalue("accuracy",
-                                  KeyValValuedouble(1e-4));
   energy_accuracy_ = keyval->doublevalue("energy_accuracy",
-                                  KeyValValuedouble(accuracy_ * disp_));
+                                         KeyValValuedouble(MolecularGradient::desired_accuracy() * disp_));
 
 }
 
@@ -1091,7 +1097,6 @@ FinDispMolecularGradient::FinDispMolecularGradient(StateIn&s):
   mole_ << SavableState::restore_state(s);
   s.get(checkpoint_);
   s.get(debug_);
-  s.get(accuracy_);
   s.get(energy_accuracy_);
   s.get(checkpoint_file_);
   s.get(restart_file_);
@@ -1111,7 +1116,6 @@ FinDispMolecularGradient::save_data_state(StateOut&s)
   SavableState::save_state(mole_.pointer(),s);
   s.put(checkpoint_);
   s.put(debug_);
-  s.put(accuracy_);
   s.put(energy_accuracy_);
   s.put(checkpoint_file_);
   s.put(restart_file_);
@@ -1393,8 +1397,6 @@ FinDispMolecularGradient::cartesian_gradient()
   ExEnv::out0() << indent << "Gradient options: " << endl;
   ExEnv::out0() << indent << "  displacement: " << disp_
                << " bohr" << endl;
-  ExEnv::out0() << indent << "  accuracy: "
-               << accuracy_ << " au" << endl;
   ExEnv::out0() << indent << "  energy_accuracy: "
                << energy_accuracy_ << " au" << endl;
   ExEnv::out0() << indent << "  eliminate_cubic_terms: "
@@ -1431,6 +1433,12 @@ FinDispMolecularGradient::cartesian_gradient()
   tim.exit("gradient");
 
   return gradient;
+}
+
+void
+FinDispMolecularGradient::set_desired_accuracy(double acc) {
+  MolecularGradient::set_desired_accuracy(acc);
+  energy_accuracy_ = acc * disp_;
 }
 
 /////////////////////////////////////////////////////////////////////////////

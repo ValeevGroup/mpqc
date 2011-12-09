@@ -184,6 +184,15 @@ class MolecularEnergy: public Function {
      */
     int hessian_implemented() const;
 
+    /**
+     * These functions overload their Function counterparts.
+     * If hessian/gradient objects are provided, these functions will convey desired accuracy to them.
+     */
+    //@{
+    void set_desired_gradient_accuracy(double acc);
+    void set_desired_hessian_accuracy(double acc);
+    //@}
+
     /// Use this function to provide MolecularHessian object
     /// that will be used to compute hessian. You can call this function with null pointer to restore the state
     /// to the original state.

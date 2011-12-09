@@ -41,6 +41,7 @@ class MolecularEnergy;
     derivatives of the energy with respect to changes in the nuclear
     coordinates. */
 class MolecularHessian: virtual public SavableState {
+    double desired_accuracy_;
   protected:
     Ref<Molecule> mol_;
     RefSCDimension d3natom_;
@@ -54,6 +55,7 @@ class MolecularHessian: virtual public SavableState {
         <table border="1">
         <tr><td>%Keyword<td>Type<td>Default<td>Description
         <tr><td><tt>molecule</tt><td>Molecule<td>none<td>The Molecule object.
+        <tr><td><tt>accuracy</tt><td>real<td>1e-4<td>The desired accuracy of the hessian.
         </table>
     */
     MolecularHessian(const Ref<KeyVal>&);
@@ -90,6 +92,17 @@ class MolecularHessian: virtual public SavableState {
     static void read_cartesian_hessian(const char *filename,
                                        const Ref<Molecule> &m,
                                        const RefSymmSCMatrix &hess);
+
+    /**
+     * Sets the desired accuracy
+     * @param acc the desired accuracy
+     */
+    virtual void set_desired_accuracy(double acc);
+    /**
+     * Reports the desired accuracy
+     * @return the desired accuracy
+     */
+    virtual double desired_accuracy() const;
 };
 
 
@@ -183,6 +196,7 @@ class DiagMolecularHessian: public MolecularHessian {
     derivatives of the energy with respect to changes in the nuclear
     coordinates. */
 class MolecularGradient: virtual public SavableState {
+    double desired_accuracy_;
   protected:
     Ref<Molecule> mol_;
     RefSCDimension d3natom_;
@@ -196,6 +210,7 @@ class MolecularGradient: virtual public SavableState {
         <table border="1">
         <tr><td>%Keyword<td>Type<td>Default<td>Description
         <tr><td><tt>molecule</tt><td>Molecule<td>none<td>The Molecule object.
+        <tr><td><tt>accuracy</tt><td>real<td>1e-4<td>The desired accuracy of the gradient.
         </table>
     */
     MolecularGradient(const Ref<KeyVal>&);
@@ -226,6 +241,17 @@ class MolecularGradient: virtual public SavableState {
     static void read_cartesian_gradient(const char *filename,
                                         const Ref<Molecule> &m,
                                         const RefSCVector &grad);
+
+    /**
+     * Sets the desired accuracy
+     * @param acc the desired accuracy
+     */
+    virtual void set_desired_accuracy(double acc);
+    /**
+     * Reports the desired accuracy
+     * @return the desired accuracy
+     */
+    virtual double desired_accuracy() const;
 };
 
 }

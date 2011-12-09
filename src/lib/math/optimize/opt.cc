@@ -47,7 +47,7 @@ static ClassDesc Optimize_cd(
 
 Optimize::Optimize() :
   ckpt_(0), print_timings_(0), ckpt_file_("opt_ckpt.dat"),
-  max_iterations_(10), max_stepsize_(0.6), conv_(new Convergence())
+  max_iterations_(20), max_stepsize_(0.6), conv_(new Convergence())
 {
   msg_ = MessageGrp::get_default_messagegrp();
 }

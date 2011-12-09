@@ -68,7 +68,7 @@ class Optimize: virtual public SavableState {
         The name defaults to opt_ckpt.dat.
 
         <dt><tt>max_iterations</tt><dd> The maximum number of interations.
-        The default is 10.
+        The default is 20.
 
         <dt><tt>max_stepsize</tt><dd> The maximum stepsize.  The default is
         0.6.

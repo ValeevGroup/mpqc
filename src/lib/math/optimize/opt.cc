@@ -82,8 +82,7 @@ Optimize::Optimize(const Ref<KeyVal>&keyval)
     ckpt_file_ = "opt_ckpt.dat";
   }
 
-  max_iterations_ = keyval->intvalue("max_iterations");
-  if (keyval->error() != KeyVal::OK) max_iterations_ = 10;
+  max_iterations_ = keyval->intvalue("max_iterations", KeyValValueint(20));
   n_iterations_ = 0;
 
   max_stepsize_ = keyval->doublevalue("max_stepsize");

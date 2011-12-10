@@ -527,6 +527,7 @@ MolecularEnergy::set_desired_gradient_accuracy(double acc) {
   if (grad_.nonnull()) {
     grad_->set_desired_accuracy(acc);
   }
+  Function::set_desired_gradient_accuracy(acc);
 }
 
 void
@@ -534,6 +535,7 @@ MolecularEnergy::set_desired_hessian_accuracy(double acc) {
   if (hess_.nonnull()) {
     hess_->set_desired_accuracy(acc);
   }
+  Function::set_desired_hessian_accuracy(acc);
 }
 
 void

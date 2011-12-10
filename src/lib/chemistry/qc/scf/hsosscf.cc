@@ -855,7 +855,9 @@ HSOSSCF::two_body_deriv_hf(double * tbgrad, double exchange_fraction)
 
       delete[] grads[i];
       delete tblds[i];
+      tbis[i] = 0;
     }
+    delete[] tbis;
 
     scf_grp_->sum(tbgrad, na3);
   }

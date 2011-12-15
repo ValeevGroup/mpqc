@@ -1405,7 +1405,7 @@ FinDispMolecularGradient::cartesian_gradient()
   for (int i=ndisplacements_done(); i<ndisplace(); i++) {
     // This produces side-effects in mol
     ExEnv::out0() << endl << indent
-         << "Beginning displacement " << i << ":" << endl;
+         << "Beginning displacement " << i+1 << ":" << endl;
     displace(i);
 
     // mole_->obsolete(); displace() obsoleted mole

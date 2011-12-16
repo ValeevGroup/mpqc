@@ -104,20 +104,23 @@ class StateOut: public DescribedClass {
         by interpreting the character array as a character string. */
     virtual int putstring(const char*);
 
-    /// Write out a std::string object
-    virtual int put(const std::string &);
-
+    /// @name StateOut::put(datum)
     /// Write the given datum.
+    //@{
+    virtual int put(const std::string &);
     virtual int put(char r);
     virtual int put(unsigned int r);
     virtual int put(int r);
-    virtual int put(bool r);
     virtual int put(unsigned long r);
     virtual int put(long r);
+    virtual int put(bool r);
     virtual int put(float r);
     virtual int put(double r);
-    /** Write the given array data.  Size information is also saved.  The
+    //@}
+    /** @name StateOut::put(array)
+     *  Write the given array data.  Size information is also saved.  The
         data is allocated and read by the get(T*&) routines. */
+    //@{
     virtual int put(const char*,int);
     virtual int put(const unsigned int*,int);
     virtual int put(const int*,int);
@@ -125,8 +128,11 @@ class StateOut: public DescribedClass {
     virtual int put(const long*,int);
     virtual int put(const float*,int);
     virtual int put(const double*,int);
-    /** Put arrays of data.  No size information is stored.  This
+    //@}
+    /** @name StateOut::put_array()
+     *  Put arrays of data.  No size information is stored.  This
         data is read by the get_array_T routines. */
+    //@{
     virtual int put_array_char(const char*p,int size);
     virtual int put_array_uint(const unsigned int*p,int size);
     virtual int put_array_int(const int*p,int size);
@@ -134,11 +140,13 @@ class StateOut: public DescribedClass {
     virtual int put_array_long(const long*p,int size);
     virtual int put_array_float(const float*p,int size);
     virtual int put_array_double(const double*p,int size);
+    //@}
 
-    /** Write standard C++ library containers. All methods work with value (and/or key) type either a Ref to a SavableState or one of built-in types.
-      * @{
+    /** @name StateOut::put(std::container)
+     *  Write standard C++ library containers. All methods work with value (and/or key) type either a Ref to a SavableState or one of built-in types.
+      *
       */
-
+    //@{
     /// Write a Container that could be a standard (non-associative) C++ container such as std::vector or std::list.
     template <template <typename, typename> class Container, class T, class A>
     int put(const Container<T,A> &v) {
@@ -183,7 +191,7 @@ class StateOut: public DescribedClass {
       detail::ToStateOut<R>::put(v.second,*this,s);
       return s;
     }
-    ///@}
+    //@}
 
     /** Don't keep track of pointers to objects.  Calling this
         causes duplicated references to objects to be copied.

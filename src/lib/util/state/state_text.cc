@@ -198,6 +198,18 @@ StateInText::read(long&i)
 }
 
 int
+StateInText::read(bool&i)
+{
+  istream in(buf_);
+  in >> i;
+  if (in.fail()) {
+      ExEnv::errn() << "StateInText::read(bool&): failed\n" << endl;
+      abort();
+    }
+  return (sizeof(bool));
+}
+
+int
 StateInText::read(float&f)
 {
   istream in(buf_);
@@ -301,6 +313,15 @@ int StateInText::get(const ClassDesc**cd)
   return 0;
 }
 
+int StateOutText::put(const std::string& p)
+{
+  return StateOut::put(p);
+}
+int StateInText::get(std::string&r)
+{
+  return StateIn::get(r);
+}
+
 int StateOutText::put(char r)
 {
   no_array();
@@ -351,6 +372,17 @@ int StateOutText::put(long r)
   return StateOut::put(r);
 }
 int StateInText::get(long&r, const char *key)
+{
+  no_array();
+  return StateIn::get(r,key);
+}
+
+int StateOutText::put(bool r)
+{
+  no_array();
+  return StateOut::put(r);
+}
+int StateInText::get(bool&r, const char *key)
 {
   no_array();
   return StateIn::get(r,key);

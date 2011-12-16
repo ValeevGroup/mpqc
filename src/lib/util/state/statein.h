@@ -147,10 +147,10 @@ class StateIn:  public DescribedClass {
     /// This restores strings saved with StateOut::putstring.
     virtual int getstring(char*&);
 
-    /// This restores a std::string object.
-    virtual int get(std::string&);
-
+    /// @name StateIn::get(datum)
     /// These restore data saved with StateOut's put.  members.
+    //@{
+    virtual int get(std::string&);
     virtual int get(char&r, const char *keyword = 0);
     virtual int get(unsigned int&r, const char *keyword = 0);
     virtual int get(int&r, const char *keyword = 0);
@@ -159,8 +159,11 @@ class StateIn:  public DescribedClass {
     virtual int get(bool&r, const char *keyword = 0);
     virtual int get(float&r, const char *keyword = 0);
     virtual int get(double&r, const char *keyword = 0);
-    /** These restore data saved with StateOut's put.
+    //@}
+    /** @name StateIn::get(array)
+     *  These restore data saved with StateOut's put.
         members.  The data is allocated by StateIn. */
+    //@{
     virtual int get(char*&);
     virtual int get(unsigned int*&);
     virtual int get(int*&);
@@ -168,8 +171,11 @@ class StateIn:  public DescribedClass {
     virtual int get(long int*&);
     virtual int get(float*&);
     virtual int get(double*&);
-    /** These restore data saved with StateOut's put.
+    //@}
+    /** @name StateIn::get_array()
+     *  These restore data saved with StateOut's put.
         members.  The data must be preallocated by the user. */
+    //@{
     virtual int get_array_char(char*p,int size);
     virtual int get_array_uint(unsigned int*p,int size);
     virtual int get_array_int(int*p,int size);
@@ -177,8 +183,10 @@ class StateIn:  public DescribedClass {
     virtual int get_array_long(long*p,int size);
     virtual int get_array_float(float*p,int size);
     virtual int get_array_double(double*p,int size);
+    //@}
 
-    /** Read standard C++ library containers. All methods work with value (and/or key) type either a Ref to a SavableState or one of built-in types.
+    /** @name StateIn::get(std::container)
+     *  Read standard C++ library containers. All methods work with value (and/or key) type either a Ref to a SavableState or one of built-in types.
       * @{
       */
 

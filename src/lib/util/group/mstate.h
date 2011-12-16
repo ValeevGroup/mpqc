@@ -67,10 +67,12 @@ class MsgStateSend: public StateOut {
     /** I only need to override put(const ClassDesc*) but C++ will
         hide all of the other put's so I must override everything. */
     int put(const ClassDesc*);
+    int put(const std::string&);
     int put(char r);
     int put(unsigned int r);
     int put(int r);
     int put(unsigned long r);
+    int put(bool r);
     int put(long r);
     int put(float r);
     int put(double r);
@@ -139,11 +141,13 @@ class MsgStateRecv: public MsgStateBufRecv {
     /** I only need to override get(ClassDesc**) but C++ will hide
         all of the other get's so I must override everything. */
     int get(const ClassDesc**);
+    int get(std::string&);
     int get(char&r, const char *key = 0);
     int get(unsigned int&r, const char *key = 0);
     int get(int&r, const char *key = 0);
     int get(unsigned long&r, const char *key = 0);
     int get(long&r, const char *key = 0);
+    int get(bool&r, const char *key = 0);
     int get(float&r, const char *key = 0);
     int get(double&r, const char *key = 0);
     int get(char*&);

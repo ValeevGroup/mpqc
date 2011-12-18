@@ -1888,8 +1888,11 @@ Extern_RefWavefunction::init_spaces(std::vector<unsigned int> mopi,
 
   Ref<OrbitalSpaceRegistry> oreg = this->world()->tfactory()->orbital_registry();
   if(force_rasscf())
+  {
+    sc::ExEnv::out0() << "force correlate rasscf" << std::endl;
     spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, AnySpinCase1, basis(), integral(), C_ao,
                                                        occnums, actmask, evals, true, 0,0,rasscf_occs);
+  }
   else
     spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, AnySpinCase1, basis(), integral(), C_ao,
                                                    occnums, actmask, evals);

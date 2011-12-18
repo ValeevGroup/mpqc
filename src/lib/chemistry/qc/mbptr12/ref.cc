@@ -1435,12 +1435,15 @@ Extern_RefWavefunction::Extern_RefWavefunction(const Ref<WavefunctionWorld>& wor
                          const RefSymmSCMatrix& beta_1rdm,
                          std::vector<unsigned int> mopi,
                          std::vector<unsigned int> occpi,
+                         std::vector<unsigned int> corrpi,
                          std::vector<unsigned int> fzcpi,
                          std::vector<unsigned int> fzvpi,
+                         bool force_correlate_rasscf,
                          bool omit_uocc) :
                          RefWavefunction(world, basis, integral),
                          omit_uocc_(omit_uocc)
 {
+  set_force_correlate_rasscf(force_correlate_rasscf);
   const unsigned int nfzc = std::accumulate(fzcpi.begin(), fzcpi.end(), 0.0);
   const unsigned int nocc = std::accumulate(occpi.begin(), occpi.end(), 0.0);
   const unsigned int nfzv = std::accumulate(fzvpi.begin(), fzvpi.end(), 0.0);
@@ -1498,10 +1501,10 @@ Extern_RefWavefunction::Extern_RefWavefunction(const Ref<WavefunctionWorld>& wor
     rdm_[Beta] = beta_1rdm_ao;
   }
 
-  // this object will never become obsolete, so can compute it right now
+ // // this object will never become obsolete, so can compute it right now
 //  init_spaces(nocc, orbs, orbsym); // calling it here causes issues: init() is never get run and fockbuild_runtime's AO density is not set.
   force_average_AB_rdm1_ = true; // this is meant to always be used with spin-free algorithms
-  pre_init(mopi, occpi, fzcpi, fzvpi, orbs, orbsym);
+  pre_init(mopi, occpi, corrpi, fzcpi, fzvpi, orbs, orbsym);
 }
 
 
@@ -1564,6 +1567,7 @@ Extern_RefWavefunction::core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &
 void
 Extern_RefWavefunction::pre_init(std::vector<unsigned int> mopi,
                                  std::vector<unsigned int> occpi,
+                                 std::vector<unsigned int> corrpi,
                                  std::vector<unsigned int> fzcpi,
                                  std::vector<unsigned int> fzvpi,
                                  const RefSCMatrix& coefs,
@@ -1576,7 +1580,7 @@ Extern_RefWavefunction::pre_init(std::vector<unsigned int> mopi,
     world()->fockbuild_runtime()->dfinfo(dfinfo());
 
     // make spaces
-    init_spaces(mopi, occpi, fzcpi, fzvpi, coefs, orbsyms);
+    init_spaces(mopi, occpi, corrpi, fzcpi, fzvpi, coefs, orbsyms);
 
     // make sure that FockBuildRuntime uses same densities as the reference wavefunction
     if(force_average_AB_rdm1_ == false) // the densites are in AO basis
@@ -1716,6 +1720,7 @@ Extern_RefWavefunction::init_spaces(unsigned int nocc,
 void
 Extern_RefWavefunction::init_spaces(std::vector<unsigned int> mopi,
                                     std::vector<unsigned int> occpi,
+                                    std::vector<unsigned int> corrpi,
                                     std::vector<unsigned int> fzcpi,
                                     std::vector<unsigned int> fzvpi,
                                     const RefSCMatrix& coefs,
@@ -1726,6 +1731,7 @@ Extern_RefWavefunction::init_spaces(std::vector<unsigned int> mopi,
   const bool debug_version = true; // experiment with debug code
   RefSCMatrix C_ao;
   RefDiagSCMatrix evals;
+  RefDiagSCMatrix corr_evals;
   // block orbitals by symmetry
   Ref<OrbitalSpace> pspace_ao;
   {
@@ -1734,6 +1740,7 @@ Extern_RefWavefunction::init_spaces(std::vector<unsigned int> mopi,
     const std::string name("MOs blocked by symmetry");
     evals = coefs.kit()->diagmatrix(coefs.coldim());
     RefDiagSCMatrix occnums = evals.clone();
+    corr_evals = evals.clone(); // a helper mat to generate correlated orbs
     // will set eigenvalues as follows:
     // frozen occupied orbitals to -2.0
     // active occupied orbitals to -1.0
@@ -1741,6 +1748,7 @@ Extern_RefWavefunction::init_spaces(std::vector<unsigned int> mopi,
     // frozen virtual orbitals to 2.0
     // this will help to determine occupation numbers later
     occnums.assign(0.0);
+    corr_evals.assign(2.0);
     evals.assign(2.0);
     if(debug)
     {
@@ -1754,6 +1762,7 @@ Extern_RefWavefunction::init_spaces(std::vector<unsigned int> mopi,
       for (int i = 0; i < fzcpi[g]; ++i)
       {
         evals.set_element(mocount+i, -2.0);
+        corr_evals.set_element(mocount+i, -2.0);
         occnums.set_element(mocount +i, 1.0);
       }
       if(debug)
@@ -1765,6 +1774,7 @@ Extern_RefWavefunction::init_spaces(std::vector<unsigned int> mopi,
       {
         evals.set_element(mocount+j, -1.0);
         occnums.set_element(mocount+j, 1.0);
+        if(j-fzcpi[g] < corrpi[g]) corr_evals.set_element(mocount+j, -2.0);
       }
       if(debug)
       {
@@ -1807,12 +1817,16 @@ Extern_RefWavefunction::init_spaces(std::vector<unsigned int> mopi,
   }
 
   // compute occupancies from evals (see the trick above)
-  std::vector<double> occnums(nmo);
+  std::vector<double> occnums(nmo, 0.0);
   for(unsigned int i=0; i<nmo; ++i)
   {
     occnums[i] = evals(i) > 0.0 ? 0.0 : 1.0;
   }
-
+  std::vector<double> rasscf_occs(nmo, 0.0);
+  for(unsigned int i=0; i<nmo; ++i)
+  {
+    rasscf_occs[i] = corr_evals(i) > 0.0 ? 0.0 : 1.0;
+  }
 
   // transform orbitals to SO basis
   Ref<PetiteList> plist = integral()->petite_list();
@@ -1873,11 +1887,13 @@ Extern_RefWavefunction::init_spaces(std::vector<unsigned int> mopi,
 #endif
 
   Ref<OrbitalSpaceRegistry> oreg = this->world()->tfactory()->orbital_registry();
-
-  if (spin_polarized() == false) { // closed-shell
+  if(force_rasscf())
+    spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, AnySpinCase1, basis(), integral(), C_ao,
+                                                       occnums, actmask, evals, true, 0,0,rasscf_occs);
+  else
     spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, AnySpinCase1, basis(), integral(), C_ao,
                                                    occnums, actmask, evals);
-    spinspaces_[Beta] = spinspaces_[Alpha];
+  spinspaces_[Beta] = spinspaces_[Alpha];
 #if 0
     spinspaces_[Alpha]->occ_sb()->print_detail();
     spinspaces_[Alpha]->occ_act_sb()->print_detail();
@@ -1886,13 +1902,7 @@ Extern_RefWavefunction::init_spaces(std::vector<unsigned int> mopi,
     spinspaces_[Alpha]->occ()->print_detail();
     spinspaces_[Alpha]->occ_act()->print_detail();
 #endif
-  }
-  else { // spin-restricted open-shell
-    spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, Alpha, basis(), integral(), C_ao,
-                                                   occnums, actmask, evals);
-    spinspaces_[Beta] = new PopulatedOrbitalSpace(oreg, Beta, basis(), integral(), C_ao,
-                                                  occnums, actmask, evals);
-  }
+
 }
 
 

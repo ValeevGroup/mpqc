@@ -69,6 +69,7 @@ namespace sc {
       const std::vector<unsigned int>& fzvpi() const;
       const std::vector<unsigned int>& inactpi() const;
       const std::vector<unsigned int>& actpi() const;
+      const std::vector<unsigned int>& corrpi() const;
       const std::vector<unsigned int>& mopi() const;
 
     private:
@@ -85,6 +86,7 @@ namespace sc {
       std::vector<unsigned int> fzvpi_;
       std::vector<unsigned int> inactpi_;
       std::vector<unsigned int> actpi_;
+      std::vector<unsigned int> corrpi_; // explicitly corrlated orbitals
   };
 
   /// Reads 1-RDM from a text file

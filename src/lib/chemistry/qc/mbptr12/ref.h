@@ -374,8 +374,10 @@ namespace sc {
                   const RefSymmSCMatrix& beta_1rdm,
                   std::vector<unsigned int> mopi,
                   std::vector<unsigned int> occpi,
+                  std::vector<unsigned int> corrpi,
                   std::vector<unsigned int> fzcpi,
                   std::vector<unsigned int> fzvpi,
+                  bool force_correlate_rasscf = false,
                   bool omit_uocc = false);
       Extern_RefWavefunction(StateIn&);
       virtual ~Extern_RefWavefunction();
@@ -413,6 +415,7 @@ namespace sc {
 
       void pre_init(std::vector<unsigned int> mopi,
                     std::vector<unsigned int> occpi,
+                    std::vector<unsigned int> corrpi,
                     std::vector<unsigned int> fzcpi,
                     std::vector<unsigned int> fzvpi,
                     const RefSCMatrix& orbs,
@@ -422,6 +425,7 @@ namespace sc {
                        const std::vector<unsigned int>& orbsym);
       void init_spaces(std::vector<unsigned int> mopi,
                        std::vector<unsigned int> occpi,
+                       std::vector<unsigned int> corrpi,
                        std::vector<unsigned int> fzcpi,
                        std::vector<unsigned int> fzvpi,
                        const RefSCMatrix& orbs,

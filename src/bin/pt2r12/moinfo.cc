@@ -438,12 +438,15 @@ ExternMOInfo::ExternMOInfo(std::string filename,
   unsigned int nfzc;    in >> nfzc;
   unsigned int ninact;  in >> ninact;
   unsigned int nact;    in >> nact;
+//  unsigned int ncorr;    in >> ncorr;
   unsigned int nfzv;    in >> nfzv;
   const unsigned int nuocc = nmo - nfzc - ninact - nact - nfzv;
   mopi_.resize(pg->order());     std::fill(mopi_.begin(), mopi_.end(), 0u);
   fzcpi_.resize(pg->order());    std::fill(fzcpi_.begin(), fzcpi_.end(), 0u);
   inactpi_.resize(pg->order());  std::fill(inactpi_.begin(), inactpi_.end(), 0u);
   actpi_.resize(pg->order());    std::fill(actpi_.begin(), actpi_.end(), 0u);
+  corrpi_.resize(pg->order());
+  std::fill(corrpi_.begin(), corrpi_.end(), 0u);
   fzvpi_.resize(pg->order());    std::fill(fzvpi_.begin(), fzvpi_.end(), 0u);
 
   RefDiagSCMatrix pseudo_occnums = coefs_extern.kit()->diagmatrix(coefs_extern.coldim());
@@ -452,7 +455,12 @@ ExternMOInfo::ExternMOInfo(std::string filename,
   unsigned int mo = 0;
   for(unsigned int i=0; i<nfzc;   ++i, ++mo)  { ++fzcpi_[orbsym[mo]];   pseudo_occnums.set_element(mo, 2.0); }
   for(unsigned int i=0; i<ninact; ++i, ++mo)  { ++inactpi_[orbsym[mo]]; pseudo_occnums.set_element(mo, 2.0); }
-  for(unsigned int i=0; i<nact;   ++i, ++mo)  { ++actpi_[orbsym[mo]];   pseudo_occnums.set_element(mo, 1.0); }
+  for(unsigned int i=0; i<nact;   ++i, ++mo)
+  {
+    ++actpi_[orbsym[mo]];
+    pseudo_occnums.set_element(mo, 1.0);
+//    if(i<ncorr) ++corrpi_[orbsym[mo]];
+  }
   mo += nuocc;
   for(unsigned int i=0; i<nfzv;   ++i, ++mo)  { ++fzvpi_[orbsym[mo]];                                        }
   for(unsigned int i=0; i<nmo;   ++i, ++mo)   { ++mopi_[orbsym[i]];                                          }
@@ -465,6 +473,7 @@ ExternMOInfo::ExternMOInfo(std::string filename,
   token = readline(in);  fzcpi_   = parse<unsigned int>(token); assert(fzcpi_.size() == pg->order());
   token = readline(in);  inactpi_ = parse<unsigned int>(token); assert(inactpi_.size() == pg->order());
   token = readline(in);  actpi_   = parse<unsigned int>(token); assert(actpi_.size() == pg->order());
+  corrpi_ = actpi_; // this is the default for molcas
   token = readline(in);  fzvpi_   = parse<unsigned int>(token); assert(fzvpi_.size() == pg->order());
   assert(std::accumulate(mopi_.begin(), mopi_.end(), 0) == nmo);
   unsigned int junk; in >> junk; // fzcpi_ etc are in molcas symmetry order
@@ -472,6 +481,7 @@ ExternMOInfo::ExternMOInfo(std::string filename,
   const unsigned int nfzc   = std::accumulate(fzcpi_.begin(),   fzcpi_.end(),   0u);
   const unsigned int ninact = std::accumulate(inactpi_.begin(), inactpi_.end(), 0u);
   const unsigned int nact   = std::accumulate(actpi_.begin(),   actpi_.end(),   0u);
+  const unsigned int ncorr   = std::accumulate(corrpi_.begin(),   corrpi_.end(),   0u);
   const unsigned int nfzv   = std::accumulate(fzvpi_.begin(),   fzvpi_.end(),   0u);
   const unsigned int nuocc = nmo - nfzc - ninact - nact - nfzv;
 
@@ -531,6 +541,7 @@ ExternMOInfo::ExternMOInfo(std::string filename,
   fzcpi_ = remap(fzcpi_, extern_to_mpqc_irrep_map);
   inactpi_ = remap(inactpi_, extern_to_mpqc_irrep_map);
   actpi_ = remap(actpi_, extern_to_mpqc_irrep_map);
+  corrpi_ = remap(corrpi_, extern_to_mpqc_irrep_map);
   fzvpi_ = remap(fzvpi_, extern_to_mpqc_irrep_map);
   mopi_ = remap(mopi_, extern_to_mpqc_irrep_map);
 
@@ -606,7 +617,10 @@ const std::vector<unsigned int>& ExternMOInfo::actpi() const
 {
   return actpi_;
 }
-
+const std::vector<unsigned int>& ExternMOInfo::corrpi() const
+{
+  return corrpi_;
+}
 const std::vector<unsigned int>& ExternMOInfo::inactpi() const
 {
   return inactpi_;

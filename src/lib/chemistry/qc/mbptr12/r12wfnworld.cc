@@ -86,8 +86,11 @@ R12WavefunctionWorld::R12WavefunctionWorld(
   refwfn_->set_occ_thres(correlate_min_occ_);
   do_screen_ = keyval->booleanvalue("do_screen",KeyValValueboolean(true));
   refwfn_->set_do_screen(do_screen_);
-  const bool force_rasscf_ = keyval->booleanvalue("force_correlate_rasscf",KeyValValueboolean(false));
-  refwfn_->set_force_correlate_rasscf(force_rasscf_);
+  if(keyval->exists("force_correlate_rasscf"))
+  {
+    const bool force_rasscf_ = keyval->booleanvalue("force_correlate_rasscf",KeyValValueboolean(false));
+    refwfn_->set_force_correlate_rasscf(force_rasscf_);
+  }
 }
 
 R12WavefunctionWorld::R12WavefunctionWorld(StateIn& si) : SavableState(si)

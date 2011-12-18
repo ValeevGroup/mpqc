@@ -202,10 +202,12 @@ int try_main(int argc, char **argv)
   const std::vector<unsigned int>& fzcpi = rdorbs->fzcpi();
   const std::vector<unsigned int>& inactpi = rdorbs->inactpi();
   const std::vector<unsigned int>& actpi = rdorbs->actpi();
+  const std::vector<unsigned int>& corrpi = rdorbs->corrpi();
   const std::vector<unsigned int>& fzvpi = rdorbs->fzvpi();
   const unsigned int nfzc = std::accumulate(fzcpi.begin(), fzcpi.end(), 0.0);
   const unsigned int ninact = std::accumulate(inactpi.begin(), inactpi.end(), 0.0);
   const unsigned int nact = std::accumulate(actpi.begin(), actpi.end(), 0.0);
+  const unsigned int ncorr = std::accumulate(corrpi.begin(), corrpi.end(), 0.0);
   const unsigned int nfzv = std::accumulate(fzvpi.begin(), fzvpi.end(), 0.0);
   const unsigned int nmo = orbs->rank();
   const unsigned int nuocc = nmo - nfzc - ninact - nact - nfzv;
@@ -299,11 +301,11 @@ int try_main(int argc, char **argv)
     kva->assign("cabs", cabs_name);
     kva->assign("basis", orbs->basis().pointer());
     kva->assign("molecule", orbs->basis()->molecule().pointer());
-    if(!r12_str.empty())
+    if(not r12_str.empty())
       kva->assign("pt2_correction", r12_str);
-    if(!singles_str.empty())
+    if(not singles_str.empty())
       kva->assign("cabs_singles", singles_str);
-    if(!partition_str.empty())
+    if(not partition_str.empty())
       kva->assign("cabs_singles_h0", partition_str);
     Ref<KeyVal> kv = kva;
     extern_pt2r12 = new ExternPT2R12(kv);

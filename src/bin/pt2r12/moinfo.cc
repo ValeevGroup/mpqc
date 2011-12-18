@@ -438,7 +438,7 @@ ExternMOInfo::ExternMOInfo(std::string filename,
   unsigned int nfzc;    in >> nfzc;
   unsigned int ninact;  in >> ninact;
   unsigned int nact;    in >> nact;
-//  unsigned int ncorr;    in >> ncorr;
+  unsigned int ncorr;    in >> ncorr;
   unsigned int nfzv;    in >> nfzv;
   const unsigned int nuocc = nmo - nfzc - ninact - nact - nfzv;
   mopi_.resize(pg->order());     std::fill(mopi_.begin(), mopi_.end(), 0u);
@@ -459,7 +459,7 @@ ExternMOInfo::ExternMOInfo(std::string filename,
   {
     ++actpi_[orbsym[mo]];
     pseudo_occnums.set_element(mo, 1.0);
-//    if(i<ncorr) ++corrpi_[orbsym[mo]];
+    if(i<ncorr) ++corrpi_[orbsym[mo]];
   }
   mo += nuocc;
   for(unsigned int i=0; i<nfzv;   ++i, ++mo)  { ++fzvpi_[orbsym[mo]];                                        }

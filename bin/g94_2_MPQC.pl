@@ -20,7 +20,7 @@
   H  => hydrogen,
   HE => helium,
   LI => lithium,
-  BE => berillium,
+  BE => beryllium,
   B  => boron,
   C  => carbon,
   N  => nitrogen,

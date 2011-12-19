@@ -394,7 +394,7 @@ PsiRASCI_RefWavefunction::init_spaces()
   // compute active orbital mask
   typedef MolecularOrbitalMask<double, RefDiagSCMatrix> FZCMask;
   typedef MolecularOrbitalMask<double, RefDiagSCMatrix, std::greater<double> > FZVMask;
-  FZCMask fzcmask(nfzc(), ev    als);
+  FZCMask fzcmask(nfzc(), evals);
   FZVMask fzvmask(nfzv(), evals);
   std::vector<bool> actmask(nmo, true);
   // add frozen core and frozen virtuals masks

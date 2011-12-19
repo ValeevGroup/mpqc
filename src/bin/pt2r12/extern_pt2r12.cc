@@ -106,7 +106,7 @@ ExternPT2R12::ExternPT2R12(const Ref<KeyVal>& kv) :
   Ref<Integral> intf = this->integral()->clone();
   intf->set_basis(basis());
 #ifdef PT2R12GAMESS
-  bool force_correlate_rasscf = false;
+  bool force_correlate_rasscf = true;
 #else
   bool force_correlate_rasscf = false;
 #endif

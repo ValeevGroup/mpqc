@@ -1787,7 +1787,8 @@ Extern_RefWavefunction::init_spaces(std::vector<unsigned int> mopi,
       {
         evals.set_element(mocount+j, -1.0);
         occnums.set_element(mocount+j, 1.0);
-        if(j-fzcpi[g] < corrpi[g]) corr_evals.set_element(mocount+j, -2.0);
+        if(j-fzcpi[g] < corrpi[g])
+          corr_evals.set_element(mocount+j, -2.0);
       }
       if(debug)
       {

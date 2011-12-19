@@ -1091,7 +1091,10 @@ namespace sc {
     input->write_keyword("scf:maxiter", maxiter_);
     if(diisdamp_ > 0) input->write_keyword("scf:diisdamp", diisdamp_);
     input->write_keyword("scf:convergence",convergence);
-    if(levelshift_ > 1.0) input->write_keyword("scf:levelshift", levelshift_);
+    if(levelshift_ > 1.0) {
+      input->write_keyword("scf:levelshift", levelshift_);
+      input->write_keyword("scf:levelshift_force", true);
+    }
     if(!diis_) input->write_keyword("scf:diis", false);
   }
 

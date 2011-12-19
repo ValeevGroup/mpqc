@@ -31,16 +31,25 @@
 #include <map>
 #include <limits>
 #include <assert.h>
+#include <iterator>
 #include <util/keyval/keyval.h>
 #include <util/state/statein.h>
 #include <util/state/stateout.h>
 #include <util/class/scexception.h>
 
+#define HAVE_BACKTRACE_SYMBOLS 0
+#if HAVE_BACKTRACE_SYMBOLS
+#  include <execinfo.h>
+#endif
+
 namespace sc {
 
   /// ConsumableResources keeps track of consumable resources (memory, disk).
   class ConsumableResources : virtual public SavableState {
+      // change return value to 1 to debug member functions of this class
       static int debug_class() { return 0; }
+      // change return value to true to profile resource usage
+      static bool profiling() { return true; }
 
     public:
       /** A KeyVal constructor is used to generate a ConsumableResources
@@ -122,13 +131,14 @@ namespace sc {
           ExEnv::out0() << indent << "ConsumableResources::allocate(size=" << size << ") => array="
                         << array_ptr << std::endl;
           // make sure the pointer is not managed (may happen if delete was called directly, not deallocate on a managed buffer before)
-          std::map<void*, std::size_t>::iterator pos = managed_arrays_.find(array_ptr);
+          std::map<void*, ResourceAttribites>::iterator pos = managed_arrays_.find(array_ptr);
           if (pos != managed_arrays_.end()) {
             ExEnv::out0() << indent << "WARNING: " << array_ptr << " is on the list of managed buffers. size="
-                          << managed_arrays_[array_ptr] << std::endl;
+                          << managed_arrays_[array_ptr].size << std::endl;
           }
         }
-        managed_arrays_[array_ptr] = size;
+        ResourceAttribites attr(size);
+        managed_arrays_[array_ptr] = attr;
         return array;
       }
       //@{
@@ -145,9 +155,9 @@ namespace sc {
         if (array != 0) {
           void* array_ptr = static_cast<void*>(array);
           // make sure it's managed by me
-          std::map<void*, std::size_t>::iterator pos = managed_arrays_.find(array_ptr);
+          std::map<void*, ResourceAttribites>::iterator pos = managed_arrays_.find(array_ptr);
           if (pos != managed_arrays_.end()) {
-            const size_t size = pos->second;
+            const size_t size = pos->second.size;
             if (size / sizeof(T) > 1) delete[] array;
             else delete array;
             release_memory(size);
@@ -183,7 +193,7 @@ namespace sc {
           size *= sizeof(T);
           void* array_ptr = static_cast<void*>(array);
           // make sure it's NOT managed by me
-          std::map<void*, std::size_t>::iterator pos = managed_arrays_.find(array_ptr);
+          std::map<void*, ResourceAttribites>::iterator pos = managed_arrays_.find(array_ptr);
           if (pos != managed_arrays_.end()) {
             std::ostringstream oss;
             oss << indent << "ConsumableResources::manage_array() -- given managed array (ptr="
@@ -191,7 +201,8 @@ namespace sc {
             throw ProgrammingError(oss.str().c_str(), __FILE__, __LINE__, class_desc());
           }
           consume_memory(size);
-          managed_arrays_[array_ptr] = size;
+          ResourceAttribites attr(size);
+          managed_arrays_[array_ptr] = attr;
           if (debug_class() > 0) {
             ExEnv::out0() << indent << "ConsumableResources::manage_array(array=" << array_ptr << ", size=" << size << ")" << std::endl;
           }
@@ -209,9 +220,9 @@ namespace sc {
         if (array != 0) {
           void* array_ptr = static_cast<void*>(array);
           // make sure it's managed by me
-          std::map<void*, std::size_t>::iterator pos = managed_arrays_.find(array_ptr);
+          std::map<void*, ResourceAttribites>::iterator pos = managed_arrays_.find(array_ptr);
           if (pos != managed_arrays_.end()) {
-            const size_t size = pos->second;
+            const size_t size = pos->second.size;
             release_memory(size);
             if (debug_class() > 0) {
               ExEnv::out0() << "ConsumableResources::unmanage_array(array=" << array_ptr << ": size=" << size << ")" << std::endl;
@@ -221,7 +232,7 @@ namespace sc {
           else {
             std::ostringstream oss;
             oss << "ConsumableResources::unmanage_array() -- given non-managed array (ptr="
-                << &(array[0]) << " size=" << pos->second << ")";
+                << &(array[0]) << " size=" << pos->second.size << ")";
             throw ProgrammingError(oss.str().c_str(), __FILE__, __LINE__, class_desc());
           }
         }
@@ -348,9 +359,41 @@ namespace sc {
       rsize memory_;
       std::pair<std::string, rsize> disk_;
 
+      /// Describes attributes of a resource (size, where allocated, etc.)
+      struct ResourceAttribites {
+          ResourceAttribites() : size(0) {
+          }
+          ResourceAttribites(std::size_t s) : size(s) {
+#if HAVE_BACKTRACE_SYMBOLS
+            void* stack_addrs[1024];
+            const int naddrs = backtrace(stack_addrs, 1024);
+            char** btrc_symbols = backtrace_symbols(stack_addrs, naddrs);
+            for(int i=0; i<naddrs; ++i) {
+              acquisition_backtrace.push_back(std::string(btrc_symbols[i]));
+            }
+            free(btrc_symbols);
+#endif
+          }
+          std::size_t size;
+#if HAVE_BACKTRACE_SYMBOLS
+          std::vector<std::string> acquisition_backtrace;
+#endif
+          operator std::string() const {
+            std::ostringstream oss;
+            oss << "size=" << size;
+#if HAVE_BACKTRACE_SYMBOLS
+            oss << " allocated at:\n"
+            std::copy(acquisition_backtrace.begin(),
+                      acquisition_backtrace.end(),
+                      std::ostream_iterator<std::string>(oss, "\n"));
+#endif
+            return oss.str();
+          }
+      };
+
       /// this keeps track of arrays of data explicitly managed by ConsumableResources
       /// value is the size of array in bytes
-      std::map<void*, std::size_t> managed_arrays_;
+      std::map<void*, ResourceAttribites> managed_arrays_;
 
       static Ref<ConsumableResources> default_instance_;
 

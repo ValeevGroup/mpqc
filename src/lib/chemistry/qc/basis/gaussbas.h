@@ -259,11 +259,14 @@ class GaussianBasisSet: virtual public SavableState
         basis set names.  It may be necessary to put the name in double
         quotes. There is no default.
 
-        <dt><tt>basis</tt><dd> This is a vector of basis set names that can
-        give a different basis set to each atom in the molecule.  If the
-        element vector is given, then it gives different basis sets to
-        different elements.  The default is to give every atom the basis
-        set specified in name.
+        <dt><tt>basis</tt><dd> If the <tt>element</tt> vector is given,
+        then this vector specifies the names of basis sets
+        for each element. If the <tt>element</tt> vector is not given,
+        this vector specifies basis set name for each atom in the molecule
+        (note that the same basis name must be specified
+        for each set of atoms related by symmetry).
+        If this keyword omitted, the basis
+        set specified in <tt>name</tt> will be used for all atoms.
 
         <dt><tt>element</tt><dd> This is a vector of elements.  If it is
         given then it must have the same number of entries as the basis

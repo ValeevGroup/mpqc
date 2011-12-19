@@ -123,6 +123,12 @@ MsgStateSend::put(const ClassDesc*cd)
 }
 
 int
+MsgStateSend::put(const std::string& d)
+{
+  return StateOut::put(d);
+}
+
+int
 MsgStateSend::put(char d)
 {
   return StateOut::put(d);
@@ -148,6 +154,12 @@ MsgStateSend::put(unsigned long d)
 
 int
 MsgStateSend::put(long d)
+{
+  return StateOut::put(d);
+}
+
+int
+MsgStateSend::put(bool d)
 {
   return StateOut::put(d);
 }
@@ -315,6 +327,12 @@ MsgStateRecv::get(const ClassDesc**cd)
 }
 
 int
+MsgStateRecv::get(std::string& d)
+{
+  return StateIn::get(d);
+}
+
+int
 MsgStateRecv::get(char& d, const char *key)
 {
   return StateIn::get(d,key);
@@ -340,6 +358,12 @@ MsgStateRecv::get(long& d, const char *key)
 
 int
 MsgStateRecv::get(unsigned long& d, const char *key)
+{
+  return StateIn::get(d,key);
+}
+
+int
+MsgStateRecv::get(bool& d, const char *key)
 {
   return StateIn::get(d,key);
 }

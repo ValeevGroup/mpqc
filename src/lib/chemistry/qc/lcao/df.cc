@@ -157,6 +157,9 @@ DensityFitting::compute()
                                                            TwoBodyOper::eri);
         cC_jR.assign(cC_jR_buf);
         cC.assign_subblock(cC_jR.t(), 0, nR - 1, i * nj, (i + 1) * nj - 1);
+
+        // release this block
+        cC_->release_pair_block(0, i, TwoBodyOper::eri);
       }
     }
 

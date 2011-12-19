@@ -66,11 +66,13 @@ class StateOutText: public StateOutFile {
     int put_array_float(const float*,int);
     int put_array_double(const double*,int);
     int put(const ClassDesc*);
+    int put(const std::string &);
     int put(char r);
     int put(unsigned int r);
     int put(int r);
     int put(unsigned long r);
     int put(long r);
+    int put(bool r);
     int put(float r);
     int put(double r);
     int put(const char*,int);
@@ -101,6 +103,7 @@ class StateInText: public StateInFile {
     int read(int&);
     int read(unsigned long&);
     int read(long&);
+    int read(bool&);
     int read(float&);
     int read(double&);
     void newline();
@@ -124,11 +127,13 @@ class StateInText: public StateInFile {
     int get_array_float(float*,int);
     int get_array_double(double*,int);
     int get(const ClassDesc**);
+    int get(std::string&);
     int get(char&r, const char *key = 0);
     int get(unsigned int&r, const char *key = 0);
     int get(int&r, const char *key = 0);
     int get(unsigned long&r, const char *key = 0);
     int get(long&r, const char *key = 0);
+    int get(bool&r, const char *key = 0);
     int get(float&r, const char *key = 0);
     int get(double&r, const char *key = 0);
     int get(char*&);

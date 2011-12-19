@@ -384,6 +384,22 @@ Function::print(ostream&o) const
 }
 
 void
+Function::print_desired_accuracy(ostream&o) const
+{
+  o << indent << "Desired Function Parameters:\n" << incindent;
+  if (value_needed())
+    o << indent << scprintf("value_accuracy    = %10.7e\n",
+                            desired_value_accuracy());
+  if (gradient_needed())
+    o << indent << scprintf("gradient_accuracy = %10.7e\n",
+                            desired_gradient_accuracy());
+  if (hessian_needed())
+    o << indent << scprintf("hessian_accuracy  = %10.7e\n",
+                            desired_hessian_accuracy());
+  o << decindent << endl;
+}
+
+void
 Function::set_matrixkit(const Ref<SCMatrixKit>& kit)
 {
   matrixkit_ = kit;

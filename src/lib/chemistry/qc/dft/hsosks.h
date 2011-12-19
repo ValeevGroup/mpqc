@@ -95,7 +95,6 @@ class HSOSKS: public HSOSSCF {
     // overload of HSOSSCF::semicanonical
     void semicanonical();
 
-  private:
     bool analytic_gradient_implemented() const;
 };
 

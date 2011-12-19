@@ -77,17 +77,45 @@ ConsumableResources::ConsumableResources(StateIn& si) : SavableState(si) {
   disk_.second & si;
 }
 
+namespace {
+  template <typename MapIter>
+  struct SizeCompare {
+      bool operator()(MapIter a, MapIter b) {
+        return a->second.size > b->second.size;
+      }
+  };
+}
+
 ConsumableResources::~ConsumableResources() {
   const bool make_sure_class_desc_initialized = (&class_desc_ != 0);
 
   if (!managed_arrays_.empty()) {
     std::size_t total_unfreed_memory = 0;
-    for(std::map<void*, std::size_t>::const_iterator v=managed_arrays_.begin();
+    for(std::map<void*, ResourceAttribites>::const_iterator v=managed_arrays_.begin();
         v != managed_arrays_.end();
         ++v)
-      total_unfreed_memory += v->second;
-    if (total_unfreed_memory > 0)
+      total_unfreed_memory += v->second.size;
+    if (total_unfreed_memory > 0) {
       ExEnv::err0() << indent << scprintf("WARNING: %ld bytes managed by ConsumableResources was not explicitly deallocated!", total_unfreed_memory) << std::endl;
+      if (profiling()) {
+        ExEnv::err0() << indent << scprintf("ConsumableResources: list of stranded pointers") << std::endl << incindent;
+        // sort by size and print out attributes
+        typedef std::map<void*, ResourceAttribites>::const_iterator citer_t;
+        typedef std::multiset<citer_t, SizeCompare<citer_t> > iterset_t;
+        iterset_t iset;
+        for(std::map<void*, ResourceAttribites>::const_iterator v=managed_arrays_.begin();
+            v != managed_arrays_.end();
+            ++v) {
+          iset.insert(v);
+        }
+        for(iterset_t::const_iterator v=iset.begin();
+            v != iset.end();
+            ++v) {
+          ExEnv::err0() << indent << "ptr=" << (*v)->first << " " << std::string((*v)->second) << std::endl;
+        }
+        ExEnv::err0() << decindent;
+      }
+    }
   }
 }
 

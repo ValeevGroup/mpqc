@@ -268,6 +268,8 @@ namespace sc {
       abort();
     }
 
+    this->print_desired_accuracy();
+
     const bool have_prerequisite = prerequisite_.nonnull();
     if (have_prerequisite) {
       prerequisite_->compute();
@@ -313,7 +315,7 @@ namespace sc {
       const double nucrep_energy_mpqc = this->molecule()->nuclear_repulsion_energy();
       const double nucrep_energy_psi3 = this->nuclear_repulsion_energy();
       const double enuc_diff = std::fabs(nucrep_energy_mpqc - nucrep_energy_psi3);
-      const double enuc_tol = 1e-15;
+      const double enuc_tol = this->desired_value_accuracy() * 0.1;
       if (enuc_diff > enuc_tol)
         ExEnv::out0() << "WARNING: PsiWavefunction::compute -- MPQC and Psi3 nuclear repulsion energies differ by "
                       << enuc_diff << " but expected less than " << enuc_tol << std::endl;

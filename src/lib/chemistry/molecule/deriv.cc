@@ -54,6 +54,7 @@ MolecularHessian::MolecularHessian()
 MolecularHessian::MolecularHessian(const Ref<KeyVal>&keyval)
 {
   mol_ << keyval->describedclassvalue("molecule");
+  desired_accuracy_ = keyval->doublevalue("accuracy", KeyValValuedouble(1e-4));
   matrixkit_ = SCMatrixKit::default_matrixkit();
 }
 
@@ -379,6 +380,16 @@ MolecularHessian::read_cartesian_hessian(const char *filename,
   hess->assign(&(hessv[0]));
 }
 
+void
+MolecularHessian::set_desired_accuracy(double acc) {
+  desired_accuracy_ = acc;
+}
+
+double
+MolecularHessian::desired_accuracy() const {
+  return desired_accuracy_;
+}
+
 /////////////////////////////////////////////////////////////////
 // ReadMolecularHessian
 
@@ -516,6 +527,7 @@ MolecularGradient::MolecularGradient()
 MolecularGradient::MolecularGradient(const Ref<KeyVal>&keyval)
 {
   mol_ << keyval->describedclassvalue("molecule");
+  desired_accuracy_ = keyval->doublevalue("accuracy", KeyValValuedouble(1e-4));
   matrixkit_ = SCMatrixKit::default_matrixkit();
 }
 
@@ -525,6 +537,7 @@ MolecularGradient::MolecularGradient(StateIn&s):
   mol_ << SavableState::restore_state(s);
   d3natom_ << SavableState::restore_state(s);
   matrixkit_ = SCMatrixKit::default_matrixkit();
+  s.get(desired_accuracy_);
 }
 
 MolecularGradient::~MolecularGradient()
@@ -536,6 +549,7 @@ MolecularGradient::save_data_state(StateOut&s)
 {
   SavableState::save_state(mol_.pointer(),s);
   SavableState::save_state(d3natom_.pointer(),s);
+  s.put(desired_accuracy_);
 }
 
 RefSCDimension
@@ -642,6 +656,16 @@ MolecularGradient::read_cartesian_gradient(const char *filename,
     }
   grp->bcast(&(gradv[0]),ncoord);
   grad->assign(&(gradv[0]));
+}
+
+void
+MolecularGradient::set_desired_accuracy(double acc) {
+  desired_accuracy_ = acc;
+}
+
+double
+MolecularGradient::desired_accuracy() const {
+  return desired_accuracy_;
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -488,7 +488,6 @@ MPQCIn::parse_string(const char *s)
       ostrs << indent << ")" << endl;
       ostrs << indent << "opt<QNewtonOpt>: (" << endl;
       ostrs << indent << "  function = $:mpqc:mole" << endl;
-      ostrs << indent << "  update<BFGSUpdate>: ()" << endl;
       ostrs << indent << "  convergence<MolEnergyConvergence>: (" << endl;
       ostrs << indent << "    cartesian = yes" << endl;
       ostrs << indent << "    energy = $:mpqc:mole" << endl;

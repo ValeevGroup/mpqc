@@ -51,7 +51,6 @@ class HSOSHF: public HSOSSCF {
   protected:
     void ao_fock(double accuracy);
     void two_body_deriv(double*);
-  private:
     bool analytic_gradient_implemented() const;
 };
 

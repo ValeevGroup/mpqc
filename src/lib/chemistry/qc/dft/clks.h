@@ -86,7 +86,6 @@ class CLKS: public CLSCF {
     
     void two_body_deriv(double*);
 
-  private:
     bool analytic_gradient_implemented() const;
 
 };

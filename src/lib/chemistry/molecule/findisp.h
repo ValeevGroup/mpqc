@@ -224,6 +224,7 @@ class FinDispMolecularHessian: public MolecularHessian {
       void set_disp_pg(const Ref<PointGroup>& pg) { disp_pg_ = pg; }
       void set_restart(bool r = true) { restart_ = r; }
       void set_checkpoint(bool c = true) { checkpoint_ = c; }
+      void set_desired_accuracy(double acc);
 
     private:
       static ClassDesc class_desc_;
@@ -253,8 +254,6 @@ class FinDispMolecularHessian: public MolecularHessian {
       std::string restart_file_;
       // force computation from energies
       bool use_energies_;
-      // general accuracy (for backward compatibility only)
-      double accuracy_;
       // the accuracy for energy calculations
       double energy_accuracy_;
       // the accuracy for gradient calculations
@@ -394,13 +393,15 @@ class FinDispMolecularHessian: public MolecularHessian {
     };
 
   private:
-    Ref<Impl> pimpl_;
+    Ref<Impl> pimpl_; //<< initliazed lazily
+    Ref<MolecularEnergy> mole_init_;   //< pimpl_ is initalized lazily, so this is used to hold the MolecularEnergy object used to initialize the pimpl_
     Ref<Params> params_;
     bool user_provided_eliminate_cubic_terms_; // default for eliminate_cubic_terms depends on type of Impl ...
                                                // must know whether the default needs to vary
 
   protected:
 
+    /// initializes pimpl_, it should not be called until e is fully initalized, hence use this lazily
     void init_pimpl(const Ref<MolecularEnergy>& e);
     void restart();
 
@@ -435,7 +436,7 @@ class FinDispMolecularHessian: public MolecularHessian {
         <td><em>basename</em><tt>.ckpt.hess</tt><td>The name of
         the file where checkpoint information is written to or read from.
 
-        <tr><td><tt>checkpoint</tt><td>boolean<td>true<td>If true,
+        <tr><td><tt>checkpoint</tt><td>boolean<td>false<td>If true,
         checkpoint intermediate data.
 
         <tr><td><tt>only_totally_symmetric</tt><td>boolean<td>false
@@ -460,8 +461,11 @@ class FinDispMolecularHessian: public MolecularHessian {
         <tr><td><tt>displacement</tt><td>double<td>1.0e-2<td>The size of
         the displacement in Bohr.
 
-        <tr><td><tt>gradient_accuracy</tt><td>double<td><tt>displacement</tt>
-        / 1000<td>The accuracy to which the gradients will be computed.
+        <tr><td><tt>gradient_accuracy</tt><td>double<td><tt>accuracy</tt>
+        * <tt>displacement</tt><td>The accuracy to which the gradients will be computed.
+
+        <tr><td><tt>energy_accuracy</tt><td>double<td><tt>accuracy</tt>
+        * <tt>displacement</tt>^2<td>The accuracy to which the energies will be computed.
 
         <tr><td><tt>use_energies</tt><td>boolean<td>false<td>Setting to true will
         force computation from energies.
@@ -481,6 +485,8 @@ class FinDispMolecularHessian: public MolecularHessian {
     MolecularEnergy* energy() const { return pimpl_.nonnull() ? pimpl_->mole().pointer() : 0; }
 
     const Ref<Params>& params() const { return params_; }
+
+    void set_desired_accuracy(double acc);
 };
 
 /** Computes the molecular gradient by finite differences of energies.
@@ -512,8 +518,8 @@ class FinDispMolecularGradient: public MolecularGradient {
     RefSCVector original_geometry_;
     // the cartesian displacement size in bohr
     double disp_;
-    // the accuracy for energy calculations
-    double accuracy_;
+    // the accuracy of the energy computations
+    double energy_accuracy_;
     // whether or not to attempt a restart
     int restart_;
     // the name of the restart file
@@ -581,7 +587,7 @@ class FinDispMolecularGradient: public MolecularGradient {
         <td><em>basename</em><tt>.ckpt.grad</tt><td>The name of
         the file where checkpoint information is written to or read from.
 
-        <tr><td><tt>checkpoint</tt><td>boolean<td>true<td>If true,
+        <tr><td><tt>checkpoint</tt><td>boolean<td>false<td>If true,
         checkpoint intermediate data.
 
         <tr><td><tt>eliminate_cubic_terms</tt><td>boolean<td>false<td>
@@ -594,8 +600,8 @@ class FinDispMolecularGradient: public MolecularGradient {
         <tr><td><tt>displacement</tt><td>double<td>1.0e-2<td>The size of
         the displacement in Bohr.
 
-        <tr><td><tt>energy_accuracy</tt><td>double<td><tt>displacement</tt>
-        / 1000<td>The accuracy to which the energies will be computed.
+        <tr><td><tt>energy_accuracy</tt><td>double<td><tt>accuracy</tt> * <tt>displacement</tt>
+        <td>The accuracy to which the energies will be computed.
 
         </table>
     */
@@ -619,6 +625,8 @@ class FinDispMolecularGradient: public MolecularGradient {
 
     Ref<SCMatrixKit> matrixkit() const { return mole_->matrixkit(); }
     RefSCDimension d3natom() const { return mole_->moldim(); }
+
+    void set_desired_accuracy(double acc);
 };
 
 #if 0

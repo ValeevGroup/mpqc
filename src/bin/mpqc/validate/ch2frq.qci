@@ -1,0 +1,16 @@
+
+test_basis: STO-3G 6-311G**
+test_method: scf ub3lyp zapt2
+test_symmetry: c1 c2v
+test_calc: optfreq
+test_multiplicity: 3
+
+restart: no
+checkpoint: no
+
+label: methylene test series
+
+molecule:
+  C   0.000   0.000  -0.100
+  H   0.000   0.857   0.596
+  H   0.000  -0.857   0.596

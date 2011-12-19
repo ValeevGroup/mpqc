@@ -33,6 +33,7 @@
 #include <chemistry/qc/wfn/orbitalspace.h>
 #include <math/mmisc/pairiter.impl.h>
 #include <util/misc/print.h>
+#include <util/misc/consumableresources.h>
 #include <math/distarray4/distarray4_node0file.h>
 #include <chemistry/qc/psi/psiwfn.h>
 #include <chemistry/qc/psi/psicc.h>
@@ -499,16 +500,13 @@ namespace sc {
     Ref<DistArray4> T;
     // TODO make this work for non-disk-based storage
     {
-      char* psio_filename;
-      psio.get_volpath(CC_TAMPS, 0, &psio_filename);
-      char* da4_filename = new char[strlen(psio_filename) + 15];
       const char* spin12_label = (spin12 == AlphaAlpha) ? "aa" : ((spin12 == BetaBeta) ? "bb" : "ab");
-      sprintf(da4_filename, "%s.distarray4_%s",
-              psio_filename, spin12_label);
-      T = new DistArray4_Node0File(da4_filename, 1, nocc1_act, nocc2_act,
+      std::string fileext_str(".T2_distarray4_"); fileext_str += spin12_label;
+      const std::string default_basename_prefix = SCFormIO::fileext_to_filename(fileext_str.c_str());
+      const std::string da4_filename = ConsumableResources::get_default_instance()->disk_location() +
+          default_basename_prefix;
+      T = new DistArray4_Node0File(da4_filename.c_str(), 1, nocc1_act, nocc2_act,
                                    nuocc1_act, nuocc2_act);
-      delete[] da4_filename;
-      free(psio_filename);
     }
 
     // If not empty...

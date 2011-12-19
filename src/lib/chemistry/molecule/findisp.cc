@@ -44,7 +44,7 @@
 using namespace std;
 using namespace sc;
 
-#define DEFAULT_CHECKPOINT  1
+#define DEFAULT_CHECKPOINT  0
 #define DEFAULT_RESTART     1
 
 /////////////////////////////////////////////////////////////////
@@ -94,12 +94,12 @@ FinDispMolecularHessian::Params::Params()
   disp_pg_ = 0;
   disp_ = 1.0e-2;
   only_totally_symmetric_ = false;
-  // default for eliminate_cubic_terms is set in FinDispMolecularHessian
-  //eliminate_cubic_terms_ = true;
+  // default for eliminate_cubic_terms is overridden by FinDispMolecularHessian
+  eliminate_cubic_terms_ = true;
   do_null_displacement_ = true;
-  accuracy_ = 1e-8;
-  energy_accuracy_ = disp_/1.e6;
-  gradient_accuracy_ = disp_/1.e3;
+  double desired_accuracy = 1e-4;
+  energy_accuracy_ = desired_accuracy*disp_*disp_;
+  gradient_accuracy_ = desired_accuracy*disp_;
   checkpoint_ = DEFAULT_CHECKPOINT;
   checkpoint_file_ = SCFormIO::fileext_to_filename_string(".ckpt.hess");
   restart_ = DEFAULT_RESTART;
@@ -115,17 +115,16 @@ FinDispMolecularHessian::Params::Params(const Ref<KeyVal>& keyval)
   disp_ = keyval->doublevalue("displacement",KeyValValuedouble(1.0e-2));
   only_totally_symmetric_ = keyval->booleanvalue("only_totally_symmetric",
                                                  KeyValValueboolean(false));
-  // default for eliminate_cubic_terms is set in FinDispMolecularHessian
-  //eliminate_cubic_terms_ = keyval->booleanvalue("eliminate_cubic_terms",
-  //                                              KeyValValueboolean(true));
+  // default for eliminate_cubic_terms is overridden by FinDispMolecularHessian
+  eliminate_cubic_terms_ = keyval->booleanvalue("eliminate_cubic_terms",
+                                                KeyValValueboolean(true));
   do_null_displacement_ = keyval->booleanvalue("do_null_displacement",
                                                KeyValValueboolean(true));
-  accuracy_ = keyval->doublevalue("accuracy",
-                                  KeyValValuedouble(1e-8));
+  const double desired_accuracy = keyval->doublevalue("accuracy", KeyValValuedouble(1e-4));
   energy_accuracy_ = keyval->doublevalue("energy_accuracy",
-                                           KeyValValuedouble(disp_/1e6));
+                                           KeyValValuedouble(desired_accuracy*disp_*disp_));
   gradient_accuracy_ = keyval->doublevalue("gradient_accuracy",
-                                           KeyValValuedouble(disp_/1000));
+                                           KeyValValuedouble(desired_accuracy*disp_));
 
   KeyValValueboolean def_checkpoint(DEFAULT_CHECKPOINT);
   checkpoint_ = keyval->booleanvalue("checkpoint", def_checkpoint);
@@ -147,7 +146,6 @@ FinDispMolecularHessian::Params::Params(StateIn& s)
   s.get(only_totally_symmetric_);
   s.get(eliminate_cubic_terms_);
   s.get(do_null_displacement_);
-  s.get(accuracy_);
   s.get(energy_accuracy_);
   s.get(gradient_accuracy_);
   s.get(checkpoint_);
@@ -170,13 +168,18 @@ FinDispMolecularHessian::Params::save_data_state(StateOut& s)
   s.put(only_totally_symmetric_);
   s.put(eliminate_cubic_terms_);
   s.put(do_null_displacement_);
-  s.put(accuracy_);
   s.put(energy_accuracy_);
   s.put(gradient_accuracy_);
   s.put(checkpoint_);
   s.put(checkpoint_file_);
   s.put(restart_);
   s.put(restart_file_);
+}
+
+void
+FinDispMolecularHessian::Params::set_desired_accuracy(double acc) {
+  energy_accuracy_ = acc*disp_*disp_;
+  gradient_accuracy_ = acc*disp_;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -365,6 +368,7 @@ FinDispMolecularHessian::Impl::displace(const Displacement& disp)
        << " for displaced molecule."
        << endl;
   if (mole_.nonnull()) mole_->obsolete();
+  mol->print();
 }
 
 void
@@ -909,7 +913,8 @@ FinDispMolecularHessian::FinDispMolecularHessian(const Ref<MolecularEnergy> &e) 
     user_provided_eliminate_cubic_terms_(false)
 {
   params_ = new Params;
-  init_pimpl(e);
+  //init_pimpl(e);
+  mole_init_ = e;
 }
 
 FinDispMolecularHessian::FinDispMolecularHessian(const Ref<KeyVal>&keyval):
@@ -918,7 +923,8 @@ FinDispMolecularHessian::FinDispMolecularHessian(const Ref<KeyVal>&keyval):
   Ref<MolecularEnergy> e; e << keyval->describedclassvalue("energy");
   params_ = new Params(keyval);
   user_provided_eliminate_cubic_terms_ = keyval->exists("eliminate_cubic_terms");
-  init_pimpl(e);
+  //init_pimpl(e);
+  mole_init_ = e;
 }
 
 FinDispMolecularHessian::FinDispMolecularHessian(StateIn&s):
@@ -927,11 +933,13 @@ FinDispMolecularHessian::FinDispMolecularHessian(StateIn&s):
 {
   pimpl_ << SavableState::restore_state(s);
   s.get(user_provided_eliminate_cubic_terms_);
+  mole_init_ = 0;
 }
 
 FinDispMolecularHessian::~FinDispMolecularHessian()
 {
   pimpl_ = 0;
+  mole_init_ = 0;
 }
 
 void
@@ -945,6 +953,8 @@ FinDispMolecularHessian::save_data_state(StateOut&s)
 void
 FinDispMolecularHessian::restart()
 {
+  if (pimpl_.null()) { init_pimpl(mole_init_); mole_init_ = 0; }
+
   // broadcast contents of restart file
   int statresult, statsize;
   Ref<MessageGrp> grp = MessageGrp::get_default_messagegrp();
@@ -968,6 +978,8 @@ FinDispMolecularHessian::restart()
 RefSymmSCMatrix
 FinDispMolecularHessian::cartesian_hessian()
 {
+  if (pimpl_.null()) { init_pimpl(mole_init_); mole_init_ = 0; }
+
   if (params()->restart()) restart();
   else pimpl_->init();  // initialize original_geometry etc.
 
@@ -990,7 +1002,8 @@ FinDispMolecularHessian::cartesian_hessian()
 
 void
 FinDispMolecularHessian::set_energy(const Ref<MolecularEnergy>& mole) {
-  init_pimpl(mole);
+  mole_init_ = mole;
+  pimpl_ = 0;
 }
 
 void
@@ -1001,17 +1014,25 @@ FinDispMolecularHessian::init_pimpl(const Ref<MolecularEnergy>& mole) {
   else {
     pimpl_ = 0;
     if (mole->gradient_implemented() && !params_->use_energies()) {
+      // override the default for eliminate_cubic_terms
       if (user_provided_eliminate_cubic_terms_ == false)
         params_->set_eliminate_cubic_terms(true);
       pimpl_ = new GradientsImpl(mole, params_);
     }
     else {
+      // override the default for eliminate_cubic_terms
       if (user_provided_eliminate_cubic_terms_ == false)
         params_->set_eliminate_cubic_terms(false);
       pimpl_ = new EnergiesImpl(mole, params_);
     }
     pimpl_->init();
   }
+}
+
+void
+FinDispMolecularHessian::set_desired_accuracy(double acc) {
+  MolecularHessian::set_desired_accuracy(acc);
+  params_->set_desired_accuracy(acc);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -1027,7 +1048,7 @@ FinDispMolecularGradient::FinDispMolecularGradient(const Ref<MolecularEnergy> &e
   eliminate_cubic_terms_ = 0;
   disp_ = 1.0e-2;
   debug_ = 0;
-  accuracy_ = disp_/1e4;
+  energy_accuracy_ = MolecularGradient::desired_accuracy() * disp_;
   restart_ = DEFAULT_RESTART;
   checkpoint_ = DEFAULT_CHECKPOINT;
   checkpoint_file_ = SCFormIO::fileext_to_filename_string(".ckpt.grad");
@@ -1064,8 +1085,8 @@ FinDispMolecularGradient::FinDispMolecularGradient(const Ref<KeyVal>&keyval):
   eliminate_cubic_terms_ = keyval->booleanvalue("eliminate_cubic_terms",
                                                 falsevalue);
 
-  accuracy_ = keyval->doublevalue("gradient_accuracy",
-                                  KeyValValuedouble(disp_/1000));
+  energy_accuracy_ = keyval->doublevalue("energy_accuracy",
+                                         KeyValValuedouble(MolecularGradient::desired_accuracy() * disp_));
 
 }
 
@@ -1076,7 +1097,7 @@ FinDispMolecularGradient::FinDispMolecularGradient(StateIn&s):
   mole_ << SavableState::restore_state(s);
   s.get(checkpoint_);
   s.get(debug_);
-  s.get(accuracy_);
+  s.get(energy_accuracy_);
   s.get(checkpoint_file_);
   s.get(restart_file_);
 
@@ -1095,7 +1116,7 @@ FinDispMolecularGradient::save_data_state(StateOut&s)
   SavableState::save_state(mole_.pointer(),s);
   s.put(checkpoint_);
   s.put(debug_);
-  s.put(accuracy_);
+  s.put(energy_accuracy_);
   s.put(checkpoint_file_);
   s.put(restart_file_);
 
@@ -1305,6 +1326,7 @@ FinDispMolecularGradient::displace(int disp)
        << endl;
 
   if (mole_.nonnull()) mole_->obsolete();
+  mol_->print();
 }
 
 void
@@ -1330,7 +1352,7 @@ FinDispMolecularGradient::compute_gradient()
   for(int d=0; d<ndisplace(); ++d) {
     int coord; double dispsize;
     get_disp(d, coord, dispsize);
-    std::cout << "disp = " << d << "  coord = " << coord << "  dispsize = " << dispsize << "  energy = " << energies_[d] << std::endl;
+    //std::cout << "disp = " << d << "  coord = " << coord << "  dispsize = " << dispsize << "  energy = " << energies_[d] << std::endl;
     double coeff = 0.0;
     if (!eliminate_cubic_terms_) {
       // 2-pt formula: f' = (f+ - f-)/(2.0 d)
@@ -1376,23 +1398,20 @@ FinDispMolecularGradient::cartesian_gradient()
   ExEnv::out0() << indent << "  displacement: " << disp_
                << " bohr" << endl;
   ExEnv::out0() << indent << "  energy_accuracy: "
-               << accuracy_ << " au" << endl;
+               << energy_accuracy_ << " au" << endl;
   ExEnv::out0() << indent << "  eliminate_cubic_terms: "
                << (eliminate_cubic_terms_==0?"no":"yes") << endl;
 
   for (int i=ndisplacements_done(); i<ndisplace(); i++) {
     // This produces side-effects in mol
     ExEnv::out0() << endl << indent
-         << "Beginning displacement " << i << ":" << endl;
+         << "Beginning displacement " << i+1 << ":" << endl;
     displace(i);
 
     // mole_->obsolete(); displace() obsoleted mole
     double original_accuracy;
     original_accuracy = mole_->desired_value_accuracy();
-    if (accuracy_ > 0.0)
-      mole_->set_desired_value_accuracy(accuracy_);
-    else
-      mole_->set_desired_value_accuracy(disp_/1000.0);
+    mole_->set_desired_value_accuracy(energy_accuracy_);
     const double energy = mole_->energy();
     mole_->set_desired_value_accuracy(original_accuracy);
     energies_.push_back(energy);
@@ -1414,6 +1433,12 @@ FinDispMolecularGradient::cartesian_gradient()
   tim.exit("gradient");
 
   return gradient;
+}
+
+void
+FinDispMolecularGradient::set_desired_accuracy(double acc) {
+  MolecularGradient::set_desired_accuracy(acc);
+  energy_accuracy_ = acc * disp_;
 }
 
 /////////////////////////////////////////////////////////////////////////////

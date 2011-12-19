@@ -173,6 +173,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
   std::vector<bool> conv_occ_mask(nmo, false);
   std::vector<bool> uocc_mask(nmo, false);
   std::vector<bool> uocc_act_mask(nmo, false);
+  const bool debug = true;
   const bool force_use_rasscf = (rasscf_occs[0] != -1.0); //force occ_act_mask to only select active rasscf (instead of rasci) orbs
   for(int i=0; i<nmo; i++) {
     if (fabs(occs[i]) > PopulatedOrbitalSpace::zero_occupancy()) {
@@ -180,7 +181,13 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
       if(not force_use_rasscf)
         occ_act_mask[i] = active[i];
       else
+      {
         occ_act_mask[i] = active[i] and (fabs(rasscf_occs[i]) > PopulatedOrbitalSpace::zero_occupancy());
+        if(debug)
+        {
+          sc::ExEnv::out0() << active[i] << ", " << occ_act_mask[i] << ", " <<rasscf_occs[i] << std::endl;
+        }
+      }
     }
     else {
       uocc_mask[i] = true;

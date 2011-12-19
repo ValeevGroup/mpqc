@@ -454,7 +454,8 @@ ExternMOInfo::ExternMOInfo(std::string filename,
 
   unsigned int mo = 0;
   for(unsigned int i=0; i<nfzc;   ++i, ++mo)  { ++fzcpi_[orbsym[mo]];   pseudo_occnums.set_element(mo, 2.0); }
-  for(unsigned int i=0; i<ninact; ++i, ++mo)  { ++inactpi_[orbsym[mo]]; pseudo_occnums.set_element(mo, 2.0); }
+  // inactive orbitals (i.e. doubly occupied) are correlated
+  for(unsigned int i=0; i<ninact; ++i, ++mo)  { ++inactpi_[orbsym[mo]]; ++corrpi_[orbsym[mo]]; pseudo_occnums.set_element(mo, 2.0); }
   for(unsigned int i=0; i<nact;   ++i, ++mo)
   {
     ++actpi_[orbsym[mo]];

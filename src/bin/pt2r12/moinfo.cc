@@ -459,7 +459,7 @@ ExternMOInfo::ExternMOInfo(std::string filename,
   {
     ++actpi_[orbsym[mo]];
     pseudo_occnums.set_element(mo, 1.0);
-    if(i<ncorr) ++corrpi_[orbsym[mo]];
+//    if(i<ncorr) ++corrpi_[orbsym[mo]];
   }
   mo += nuocc;
   for(unsigned int i=0; i<nfzv;   ++i, ++mo)  { ++fzvpi_[orbsym[mo]];                                        }

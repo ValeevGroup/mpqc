@@ -183,7 +183,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
         occ_act_mask[i] = active[i];
         if(debug)
         {
-          sc::ExEnv::out0() << active[i] << ", " << occ[i] << std::endl;
+          sc::ExEnv::out0() << active[i] << ", " << occs[i] << std::endl;
         }
       }
       else
@@ -191,7 +191,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
         occ_act_mask[i] = active[i] and (fabs(rasscf_occs[i]) > PopulatedOrbitalSpace::zero_occupancy());
         if(debug)
         {
-          sc::ExEnv::out0() << active[i] << ", " << occ_act_mask[i] << ", " <<rasscf_occs[i]<< occ[i] << std::endl;
+          sc::ExEnv::out0() << active[i] << ", " << occ_act_mask[i] << ", " << rasscf_occs[i]<< occs[i] << std::endl;
         }
       }
     }

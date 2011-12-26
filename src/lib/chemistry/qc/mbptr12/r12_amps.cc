@@ -120,8 +120,8 @@ R12Amplitudes::compute_(SpinCase2 spincase2)
   Ref<OrbitalSpace> cabs2 = r12world->cabs_space(spin2);
   Ref<OrbitalSpace> vir1_act = r12eval_->vir_act(spin1);
   Ref<OrbitalSpace> vir2_act = r12eval_->vir_act(spin2);
-  Ref<OrbitalSpace> xspace1 = r12eval_->xspace(spin1);
-  Ref<OrbitalSpace> xspace2 = r12eval_->xspace(spin2);
+  Ref<OrbitalSpace> GGspace1 = r12eval_->GGspace(spin1);
+  Ref<OrbitalSpace> GGspace2 = r12eval_->GGspace(spin2);
 
   // Allocate the matrices
   RefSCDimension dim_f12 = r12eval_->dim_f12(spincase2);
@@ -162,9 +162,9 @@ R12Amplitudes::compute_(SpinCase2 spincase2)
     }
     {
       R12TwoBodyIntKeyCreator tformkey_creator(r12world->world()->moints_runtime4(),
-        xspace1,
+        GGspace1,
         ref->orbs(spin1),
-        xspace2,
+        GGspace2,
         ref->orbs(spin2),
         r12world->r12tech()->corrfactor(),
         true);
@@ -172,9 +172,9 @@ R12Amplitudes::compute_(SpinCase2 spincase2)
     }
     {
       R12TwoBodyIntKeyCreator tform_creator(r12world->world()->moints_runtime4(),
-        xspace1,
+        GGspace1,
         occ1,
-        xspace2,
+        GGspace2,
         cabs2,
         r12world->r12tech()->corrfactor(),
         true);
@@ -182,9 +182,9 @@ R12Amplitudes::compute_(SpinCase2 spincase2)
     }
     {
       R12TwoBodyIntKeyCreator tformkey_creator(r12world->world()->moints_runtime4(),
-        xspace1,
+        GGspace1,
         cabs1,
-        xspace2,
+        GGspace2,
         occ2,
         r12world->r12tech()->corrfactor(),
         true);
@@ -195,18 +195,18 @@ R12Amplitudes::compute_(SpinCase2 spincase2)
 
   const bool antisymm = spincase2!=AlphaBeta;
   r12eval_->compute_T2_(T2_[s],occ1_act,vir1_act,occ2_act,vir2_act,antisymm,tform0_pp_key);
-  r12eval_->compute_F12_(Fvv_[s],xspace1,vir1_act,xspace2,vir2_act,antisymm,tform_pp_keys);
-  r12eval_->compute_F12_(Foo_[s],xspace1,occ1,xspace2,occ2,antisymm,tform_pp_keys);
+  r12eval_->compute_F12_(Fvv_[s],GGspace1,vir1_act,GGspace2,vir2_act,antisymm,tform_pp_keys);
+  r12eval_->compute_F12_(Foo_[s],GGspace1,occ1,GGspace2,occ2,antisymm,tform_pp_keys);
 
   // WARNING cannot antisymmetrize matrices if p1_neq_p2. Should throw but will do nothing for now
   if (!antisymm) {
-    r12eval_->compute_F12_(Fov_[s],xspace1,occ1,xspace2,vir2_act,antisymm,tform_pp_keys);
-    r12eval_->compute_F12_(Fox_[s],xspace1,occ1,xspace2,cabs2,antisymm,tform_mx_keys);
+    r12eval_->compute_F12_(Fov_[s],GGspace1,occ1,GGspace2,vir2_act,antisymm,tform_pp_keys);
+    r12eval_->compute_F12_(Fox_[s],GGspace1,occ1,GGspace2,cabs2,antisymm,tform_mx_keys);
     if (true) {
       Fvo_[s] = kit->matrix(dim_f12,dim_vo);
       Fxo_[s] = kit->matrix(dim_f12,dim_xo);
-      r12eval_->compute_F12_(Fvo_[s],xspace1,vir1_act,xspace2,occ2,antisymm,tform_pp_keys);
-      r12eval_->compute_F12_(Fxo_[s],xspace1,cabs1,xspace2,occ2,antisymm,tform_xm_keys);
+      r12eval_->compute_F12_(Fvo_[s],GGspace1,vir1_act,GGspace2,occ2,antisymm,tform_pp_keys);
+      r12eval_->compute_F12_(Fxo_[s],GGspace1,cabs1,GGspace2,occ2,antisymm,tform_xm_keys);
     }
   }
 

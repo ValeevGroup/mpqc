@@ -41,12 +41,12 @@ void CCR12_Info::smith_dgemm(const long i,const long j,const long k,
   const char chart='t';
   const char charn='n';
   const double one=1.0;
-  const int i_=(const int)i;
-  const int j_=(const int)j;
-  const int k_=(const int)k;
-  const int l_=(const int)l;
-  const int m_=(const int)m;
-  const int n_=(const int)n;
+  const int i_=static_cast<int>(i);
+  const int j_=static_cast<int>(j);
+  const int k_=static_cast<int>(k);
+  const int l_=static_cast<int>(l);
+  const int m_=static_cast<int>(m);
+  const int n_=static_cast<int>(n);
   F77_DGEMM(&chart,&charn,&i_,&j_,&k_,&a,da,&l_,db,&m_,&one,dc,&n_);
 }
 
@@ -138,7 +138,7 @@ void CCR12_Info::sort_indices2(const double* unsorted,double* sorted,
 { 
   // prototype
   if (i==0) {
-    const int j0max=(const int)(a*b);
+    const int j0max=static_cast<int>(a*b);
     for (int j0=0; j0<a*b; ++j0) sorted[j0]=unsorted[j0]*factor;
   } else { 
     int id[2];

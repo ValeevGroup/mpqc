@@ -68,7 +68,7 @@ namespace sc {
 
       const unsigned int nbrasets = (CorrFactorInBra ? corrfactor()->nfunctions() : 1);
       const unsigned int nketsets = (CorrFactorInKet ? corrfactor()->nfunctions() : 1);
-      const unsigned int nsets = (CorrFactorInBraKet ? -1 : nbrasets*nketsets);
+      const unsigned int nsets = (CorrFactorInBraKet ? UINT_MAX : nbrasets*nketsets);
 
       // create transforms, if needed
       typedef std::vector< Ref<TwoBodyMOIntsTransform> > tformvec;

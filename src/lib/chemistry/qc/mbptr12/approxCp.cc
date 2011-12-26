@@ -103,8 +103,8 @@ void R12IntEval::compute_BCp_() {
     Ref<OrbitalSpace> occ2 = occ(spin2);
     Ref<OrbitalSpace> orbs1 = orbs(spin1);
     Ref<OrbitalSpace> orbs2 = orbs(spin2);
-    Ref<OrbitalSpace> xspace1 = xspace(spin1);
-    Ref<OrbitalSpace> xspace2 = xspace(spin2);
+    Ref<OrbitalSpace> GGspace1 = GGspace(spin1);
+    Ref<OrbitalSpace> GGspace2 = GGspace(spin2);
     Ref<OrbitalSpace> vir1 = vir(spin1);
     Ref<OrbitalSpace> vir2 = vir(spin2);
     Ref<OrbitalSpace> cabs1 = r12world()->cabs_space(spin1);
@@ -125,13 +125,13 @@ void R12IntEval::compute_BCp_() {
 
     // compute Q = F12^2 (note F2_only = true in compute_X_ calls)
     RefSCMatrix Q;
-    compute_X_(Q, spincase2, xspace1, xspace2, xspace1, hJ_x2, true);
-    if (xspace1 != xspace2) {
-      compute_X_(Q, spincase2, xspace1, xspace2, hJ_x1, xspace2, true);
+    compute_X_(Q, spincase2, GGspace1, GGspace2, GGspace1, hJ_x2, true);
+    if (GGspace1 != GGspace2) {
+      compute_X_(Q, spincase2, GGspace1, GGspace2, hJ_x1, GGspace2, true);
     } else {
       Q.scale(2.0);
       if (spincase2 == AlphaBeta) {
-        symmetrize<false> (Q, Q, xspace1, xspace1);
+        symmetrize<false> (Q, Q, GGspace1, GGspace1);
       }
     }
 
@@ -174,7 +174,7 @@ void R12IntEval::compute_BCp_() {
       hribs1 = h_P_P(spin1);
       hribs2 = h_P_P(spin2);
       // R_klPm h_PQ R_Qmij
-      compute_FxF_(P, spincase2, xspace1, xspace2, xspace1, xspace2, occ1,
+      compute_FxF_(P, spincase2, GGspace1, GGspace2, GGspace1, GGspace2, occ1,
                    occ2, ribs1, ribs2, hribs1, hribs2);
       if (debug_ >= DefaultPrintThresholds::allO4
           || DEBUG_PRINT_ALL_B_CONTRIBUTIONS)
@@ -190,13 +190,13 @@ void R12IntEval::compute_BCp_() {
       {
         std::vector<std::string> tforms_bra;
         {
-          R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),xspace1,occ1,xspace2,ribs2,
+          R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),GGspace1,occ1,GGspace2,ribs2,
                                                    corrfactor(),true);
           fill_container(tformkey_creator,tforms_bra);
         }
         std::vector<std::string> tforms_ket;
         {
-          R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),xspace1,occ1,j_x_p2,ribs2,
+          R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),GGspace1,occ1,j_x_p2,ribs2,
                                                    corrfactor(),true);
           fill_container(tformkey_creator,tforms_ket);
         }
@@ -205,14 +205,14 @@ void R12IntEval::compute_BCp_() {
           (
             P, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
             2.0,
-            xspace1, xspace2,
+            GGspace1, GGspace2,
             occ1, ribs2,
-            xspace1, j_x_p2,
+            GGspace1, j_x_p2,
             occ1, ribs2,
             spincase2!=AlphaBeta, tforms_bra, tforms_ket
           );
       }
-      if (xspace1 != xspace2)
+      if (GGspace1 != GGspace2)
         abort();
       if (debug_ >= DefaultPrintThresholds::allO4
           || DEBUG_PRINT_ALL_B_CONTRIBUTIONS)
@@ -226,7 +226,7 @@ void R12IntEval::compute_BCp_() {
       forbs1 = hj_p_p(spin1);
       forbs2 = hj_p_p(spin2);
       // R_klpa hJ_pq R_qaij
-      compute_FxF_(P, spincase2, xspace1, xspace2, xspace1, xspace2, vir1,
+      compute_FxF_(P, spincase2, GGspace1, GGspace2, GGspace1, GGspace2, vir1,
                    vir2, orbs1, orbs2, forbs1, forbs2);
       if (debug_ >= DefaultPrintThresholds::allO4
           || DEBUG_PRINT_ALL_B_CONTRIBUTIONS)
@@ -240,7 +240,7 @@ void R12IntEval::compute_BCp_() {
       focc1 = hj_m_p(spin1);
       focc2 = hj_m_p(spin2);
       RefSCMatrix Ptmp;
-      compute_FxF_(Ptmp, spincase2, xspace1, xspace2, xspace1, xspace2, cabs1,
+      compute_FxF_(Ptmp, spincase2, GGspace1, GGspace2, GGspace1, GGspace2, cabs1,
                    cabs2, occ1, occ2, focc1, focc2);
       // bra-ket symmetrization will take care of the conjugate term
       Ptmp.scale(2.0);
@@ -255,7 +255,7 @@ void R12IntEval::compute_BCp_() {
       Ref<OrbitalSpace> forbs1 = hj_p_A(spin1);
       Ref<OrbitalSpace> forbs2 = hj_p_A(spin2);
       RefSCMatrix Ptmp;
-      compute_FxF_(Ptmp, spincase2, xspace1, xspace2, xspace1, xspace2, vir1,
+      compute_FxF_(Ptmp, spincase2, GGspace1, GGspace2, GGspace1, GGspace2, vir1,
                    vir2, orbs1, orbs2, forbs1, forbs2);
       Ptmp.scale(2.0);
       P.accumulate(Ptmp);
@@ -271,7 +271,7 @@ void R12IntEval::compute_BCp_() {
       Ref<OrbitalSpace> focc1 = hj_m_m(spin1);
       Ref<OrbitalSpace> focc2 = hj_m_m(spin2);
       // R_klmA F_mn R_nAij
-      compute_FxF_(P, spincase2, xspace1, xspace2, xspace1, xspace2, cabs1,
+      compute_FxF_(P, spincase2, GGspace1, GGspace2, GGspace1, GGspace2, cabs1,
                    cabs2, occ1, occ2, focc1, focc2);
       if (debug_ >= DefaultPrintThresholds::allO4
           || DEBUG_PRINT_ALL_B_CONTRIBUTIONS)

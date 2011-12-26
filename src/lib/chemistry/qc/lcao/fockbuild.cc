@@ -98,6 +98,9 @@ class FockBuildMatrixRectElemOp: public SCElementOp {
     void collect(const Ref<MessageGrp> &msg) {
       if (!defer_collect_) msg->sum(blocks_[0], ndata_);
     }
+    void collect(const Ref<SCElementOp>& op) {
+      SCElementOp::collect(op);
+    }
     int has_side_effects() { return data_to_mat_; }
     bool threadsafe() { return true; }
     bool cloneable() { return false; }

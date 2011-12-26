@@ -47,14 +47,14 @@ double Parenthesis2q::compute_energy(Ref<Parenthesis2tNum> eval_left,
                                      Ref<Parenthesis2tNum> eval_right){
 
  double energy=0.0;
- double* dummy;
+ double dummy = 0.0;
 
  // precalculating the intermediates
  Ref<RegionTimer> timer_ = new RegionTimer();
  timer_->enter("(2)Q intermediates");
  const double start = timer_->get_wall_time();
- eval_left->compute_amp(dummy,0L,0L,0L,0L,0L,0L,0L,0L,1L);  
- eval_right->compute_amp(dummy,0L,0L,0L,0L,0L,0L,0L,0L,1L);  
+ eval_left->compute_amp(&dummy,0L,0L,0L,0L,0L,0L,0L,0L,1L);
+ eval_right->compute_amp(&dummy,0L,0L,0L,0L,0L,0L,0L,0L,1L);
  if (z->mem()->me()==0) {
    ExEnv::out0() << indent << fixed    << "Elapsed time [ "<< "(2)Q intermediates" << " ]: "
                            << setw(10) << setprecision(2)  << timer_->get_wall_time() - start << endl;
@@ -174,8 +174,8 @@ double Parenthesis2q::compute_energy(Ref<Parenthesis2tNum> eval_left,
 
 
  // deallocating the intermediates
- eval_left->compute_amp(dummy,0L,0L,0L,0L,0L,0L,0L,0L,3L);  
- eval_right->compute_amp(dummy,0L,0L,0L,0L,0L,0L,0L,0L,3L);  
+ eval_left->compute_amp(&dummy,0L,0L,0L,0L,0L,0L,0L,0L,3L);
+ eval_right->compute_amp(&dummy,0L,0L,0L,0L,0L,0L,0L,0L,3L);
 
  z->mem()->sync();
  Ref<MessageGrp> msg_=MessageGrp::get_default_messagegrp();

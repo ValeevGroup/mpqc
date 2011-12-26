@@ -46,11 +46,11 @@ double Parenthesis2t::compute_energy(Ref<Parenthesis2tNum> eval_left,
                                      Ref<Parenthesis2tNum> eval_right){
 
  double energy = 0.0;
- double* dummy; // will be used, not be referred 
+ double dummy = 0.0; // will be used, not be referred
 
  // precalculating the intermediates
- eval_left->compute_amp(dummy, 0L, 0L, 0L, 0L, 0L, 0L, 1L);  
- eval_right->compute_amp(dummy, 0L, 0L, 0L, 0L, 0L, 0L, 1L);  
+ eval_left->compute_amp(&dummy, 0L, 0L, 0L, 0L, 0L, 0L, 1L);
+ eval_right->compute_amp(&dummy, 0L, 0L, 0L, 0L, 0L, 0L, 1L);
 
  long count = 0L;
 
@@ -146,8 +146,8 @@ double Parenthesis2t::compute_energy(Ref<Parenthesis2tNum> eval_left,
 
 
  // deallocating the intermediates
- eval_left->compute_amp(dummy, 0L, 0L, 0L, 0L, 0L, 0L, 3L);  
- eval_right->compute_amp(dummy, 0L, 0L, 0L, 0L, 0L, 0L, 3L);  
+ eval_left->compute_amp(&dummy, 0L, 0L, 0L, 0L, 0L, 0L, 3L);
+ eval_right->compute_amp(&dummy, 0L, 0L, 0L, 0L, 0L, 0L, 3L);
 
  z->mem()->sync();
  Ref<MessageGrp> msg_ = MessageGrp::get_default_messagegrp();

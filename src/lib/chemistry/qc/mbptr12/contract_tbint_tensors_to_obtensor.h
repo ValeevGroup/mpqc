@@ -109,8 +109,8 @@ namespace sc {
     const unsigned int nbrasets = (CorrFactorInBra ? corrfactor()->nfunctions() : 1);
     const unsigned int nketsets = (CorrFactorInKet ? corrfactor()->nfunctions() : 1);
     const unsigned int nintsets = (CorrFactorInInt ? corrfactor()->nfunctions() : 1);
-    const unsigned int nbraintsets = (CorrFactorInBraInt ? -1 : nbrasets*nintsets);
-    const unsigned int nketintsets = (CorrFactorInKetInt ? -1 : nketsets*nintsets);
+    const unsigned int nbraintsets = (CorrFactorInBraInt ? UINT_MAX : nbrasets*nintsets);
+    const unsigned int nketintsets = (CorrFactorInKetInt ? UINT_MAX : nketsets*nintsets);
 
 
     //

@@ -83,8 +83,8 @@ R12IntEval::compute_B_gbc_()
     Ref<OrbitalSpace> orbs2 = orbs(spin2);
     Ref<OrbitalSpace> cabs1 = r12world()->cabs_space(spin1);
     Ref<OrbitalSpace> cabs2 = r12world()->cabs_space(spin2);
-    Ref<OrbitalSpace> xspace1 = xspace(spin1);
-    Ref<OrbitalSpace> xspace2 = xspace(spin2);
+    Ref<OrbitalSpace> GGspace1 = GGspace(spin1);
+    Ref<OrbitalSpace> GGspace2 = GGspace(spin2);
     Ref<OrbitalSpace> vir1 = vir(spin1);
     Ref<OrbitalSpace> vir2 = vir(spin2);
     Ref<OrbitalSpace> F_m_A_1 = F_m_A(spin1);
@@ -100,8 +100,8 @@ R12IntEval::compute_B_gbc_()
 
     // R_klAb F_Am R_mbij
     compute_FxF_(B_gbc1,spincase2,
-                 xspace1,xspace2,
-                 xspace1,xspace2,
+                 GGspace1,GGspace2,
+                 GGspace1,GGspace2,
                  vir1,vir2,
                  occ1,occ2,
                  F_m_A_1,F_m_A_2);
@@ -109,8 +109,8 @@ R12IntEval::compute_B_gbc_()
     if (r12world()->r12tech()->maxnabs() >= 2) {
       // R_klAB F_Am R_mBij
       compute_FxF_(B_gbc1,spincase2,
-                   xspace1,xspace2,
-                   xspace1,xspace2,
+                   GGspace1,GGspace2,
+                   GGspace1,GGspace2,
                    cabs1,cabs2,
                    occ1,occ2,
                    F_m_A_1,F_m_A_2);
@@ -127,16 +127,16 @@ R12IntEval::compute_B_gbc_()
     // GBC2 contribution
     //
 
-    compute_X_(B_gbc2,spincase2,xspace1,xspace2,
-               xspace1,F_x_A_2);
-    if (xspace1 != xspace2) {
-      compute_X_(B_gbc2,spincase2,xspace1,xspace2,
-                 F_x_A_1,xspace2);
+    compute_X_(B_gbc2,spincase2,GGspace1,GGspace2,
+               GGspace1,F_x_A_2);
+    if (GGspace1 != GGspace2) {
+      compute_X_(B_gbc2,spincase2,GGspace1,GGspace2,
+                 F_x_A_1,GGspace2);
     }
     else {
       B_gbc2.scale(2.0);
       if (spincase2 == AlphaBeta) {
-        symmetrize<false>(B_gbc2,B_gbc2,xspace1,xspace1);
+        symmetrize<false>(B_gbc2,B_gbc2,GGspace1,GGspace1);
       }
     }
 

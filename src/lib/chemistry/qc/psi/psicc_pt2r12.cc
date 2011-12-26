@@ -221,8 +221,8 @@ void PsiCC_PT2R12::compute_ept2r12() {
 
       const Ref<OrbitalSpace>& p1 = r12eval()->orbs(spin1);
       const Ref<OrbitalSpace>& p2 = r12eval()->orbs(spin2);
-      const Ref<OrbitalSpace>& x1 = r12eval()->xspace(spin1);
-      const Ref<OrbitalSpace>& x2 = r12eval()->xspace(spin2);
+      const Ref<OrbitalSpace>& x1 = r12eval()->GGspace(spin1);
+      const Ref<OrbitalSpace>& x2 = r12eval()->GGspace(spin2);
       const Ref<OrbitalSpace>& v1 = r12eval()->vir_act(spin1);
       const Ref<OrbitalSpace>& v2 = r12eval()->vir_act(spin2);
       const Ref<OrbitalSpace>& o1 = r12eval()->occ_act(spin1);
@@ -314,8 +314,8 @@ void PsiCC_PT2R12::compute_ept2r12() {
       if (r12eval()->dim_oo(spincase2).n() == 0)
         continue;
 
-      const Ref<OrbitalSpace>& x1 = r12eval()->xspace(spin1);
-      const Ref<OrbitalSpace>& x2 = r12eval()->xspace(spin2);
+      const Ref<OrbitalSpace>& x1 = r12eval()->GGspace(spin1);
+      const Ref<OrbitalSpace>& x2 = r12eval()->GGspace(spin2);
       const Ref<OrbitalSpace>& occ1_act = r12eval()->occ_act(spin1);
       const Ref<OrbitalSpace>& occ2_act = r12eval()->occ_act(spin2);
       const Ref<OrbitalSpace>& vir1_act = r12eval()->vir_act(spin1);
@@ -384,7 +384,7 @@ void PsiCC_PT2R12::compute_ept2r12() {
     // Make H1_R0[AlphaAlpha] if this is a closed-shell case (it isn't computed then)
     if (nspincases2 == 2) {
       H1_R0[AlphaAlpha] = r12eval()->V(AlphaAlpha).clone();
-      antisymmetrize(H1_R0[AlphaAlpha], H1_R0[AlphaBeta], r12eval()->xspace(Alpha),
+      antisymmetrize(H1_R0[AlphaAlpha], H1_R0[AlphaBeta], r12eval()->GGspace(Alpha),
                      r12eval()->occ_act(Alpha));
     }
 

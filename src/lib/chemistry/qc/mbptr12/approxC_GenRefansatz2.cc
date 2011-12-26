@@ -91,7 +91,7 @@ void R12IntEval::compute_BC_GenRefansatz2_spinfree() {
     Ref<OrbitalSpace> occ_space = occ(Alpha);
     Ref<OrbitalSpace> orb_space = orbs(Alpha);
     Ref<OrbitalSpace> GG_space = GGspace(Alpha);
-    Ref<OrbitalSpace> x_space = xspace(Alpha);
+    Ref<OrbitalSpace> x_space = GGspace(Alpha);
     Ref<OrbitalSpace> vir_space = vir(Alpha);
 
 
@@ -101,8 +101,8 @@ void R12IntEval::compute_BC_GenRefansatz2_spinfree() {
     Ref<OrbitalSpace> orbs2 = orb_space;
     Ref<OrbitalSpace> GG1space = GG_space;
     Ref<OrbitalSpace> GG2space = GG_space;
-    Ref<OrbitalSpace> xspace1 = x_space;
-    Ref<OrbitalSpace> xspace2 = x_space;
+    Ref<OrbitalSpace> GGspace1 = x_space;
+    Ref<OrbitalSpace> GGspace2 = x_space;
     Ref<OrbitalSpace> vir1 = vir_space;
     Ref<OrbitalSpace> vir2 = vir_space;
     bool empty_vir_space = vir1->rank()==0 || vir2->rank()==0;
@@ -370,8 +370,8 @@ void R12IntEval::compute_BC_GenRefansatz2_() {
     Ref<OrbitalSpace> orbs2 = orbs(spin2);
     Ref<OrbitalSpace> GG1space = GGspace(spin1);
     Ref<OrbitalSpace> GG2space = GGspace(spin2);
-    Ref<OrbitalSpace> xspace1 = xspace(spin1);
-    Ref<OrbitalSpace> xspace2 = xspace(spin2);
+    Ref<OrbitalSpace> GGspace1 = GGspace(spin1);
+    Ref<OrbitalSpace> GGspace2 = GGspace(spin2);
     Ref<OrbitalSpace> vir1 = vir(spin1);
     Ref<OrbitalSpace> vir2 = vir(spin2);
     bool empty_vir_space = vir1->rank()==0 || vir2->rank()==0;

@@ -119,7 +119,7 @@ void R12IntEval::compute_B_DKH_() {
   for(int s=0; s<NSpinCases1; ++s) {
     
     const SpinCase1 spin = static_cast<SpinCase1>(s);
-    Ref<OrbitalSpace> x = xspace(spin);
+    Ref<OrbitalSpace> x = GGspace(spin);
 
     t_x_P[s] = sc::detail::t_x_X(x, rispace);
     this->r12world()->world()->tfactory()->orbital_registry()->add(make_keyspace_pair(t_x_P[s]));
@@ -133,9 +133,9 @@ void R12IntEval::compute_B_DKH_() {
     const SpinCase1 spin2 = case2(spincase2);
     Ref<RefWavefunction> ref = r12world()->refwfn();
 
-    const Ref<OrbitalSpace>& xspace1 = xspace(spin1);
-    const Ref<OrbitalSpace>& xspace2 = xspace(spin2);
-    const bool x1_eq_x2 = (xspace1 == xspace2);
+    const Ref<OrbitalSpace>& GGspace1 = GGspace(spin1);
+    const Ref<OrbitalSpace>& GGspace2 = GGspace(spin2);
+    const bool x1_eq_x2 = (GGspace1 == GGspace2);
 
     // are particles 1 and 2 equivalent?
     const bool part1_equiv_part2 = (spincase2 != AlphaBeta) || x1_eq_x2;
@@ -151,37 +151,37 @@ void R12IntEval::compute_B_DKH_() {
     // <xy|z T> tforms
     std::vector<std::string> tforms_xyzT;
     {
-      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(), xspace1, xspace1, xspace2,
+      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(), GGspace1, GGspace1, GGspace2,
           t_x2, corrfactor(), true, true);
       fill_container(tformkey_creator, tforms_xyzT);
     }
     compute_tbint_tensor<ManyBodyTensors::I_to_T, true, true>(
         B_DKH,
         corrfactor()->tbint_type_f12t1f12(),
-        xspace1, xspace1,
-        xspace2, t_x2,
+        GGspace1, GGspace1,
+        GGspace2, t_x2,
         antisymmetrize,
         tforms_xyzT);
     if (!part1_equiv_part2) {
       // <xy|T z> tforms
       std::vector<std::string> tforms_xyTz;
       {
-        R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(), xspace1, t_x1, xspace2,
-            xspace2, corrfactor(), true, true);
+        R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(), GGspace1, t_x1, GGspace2,
+            GGspace2, corrfactor(), true, true);
         fill_container(tformkey_creator, tforms_xyTz);
       }
       compute_tbint_tensor<ManyBodyTensors::I_to_T, true, true>(
           B_DKH,
           corrfactor()->tbint_type_f12t1f12(),
-          xspace1, t_x1,
-          xspace2, xspace2,
+          GGspace1, t_x1,
+          GGspace2, GGspace2,
           antisymmetrize,
           tforms_xyTz);
     }
     else {
       B_DKH.scale(2.0);
       if (spincase2 == AlphaBeta) {
-        symmetrize<false>(B_DKH,B_DKH,xspace1,xspace1);
+        symmetrize<false>(B_DKH,B_DKH,GGspace1,GGspace1);
       }
     }
 
@@ -223,8 +223,8 @@ void R12IntEval::compute_B_DKH_() {
                                                                       g12nccorrfact->function(0));
     Ref<TwoBodyIntDescr> descr_g12dkh = new TwoBodyIntDescrG12DKH(r12world()->integral(), params);
     const std::string descr_key = moints_runtime4()->descr_key(descr_g12dkh);
-    const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(xspace1->id(),xspace2->id(),
-                                                           xspace1->id(),xspace2->id(),
+    const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(GGspace1->id(),GGspace2->id(),
+                                                           GGspace1->id(),GGspace2->id(),
                                                            descr_key,
                                                            std::string(TwoBodyIntLayout::b1b2_k1k2));
     tforms_g12dkh.push_back(tform_key);
@@ -233,8 +233,8 @@ void R12IntEval::compute_B_DKH_() {
     compute_tbint_tensor<ManyBodyTensors::I_to_T, true, true>(
                                                               B_DKH,
                                                               TwoBodyOper::g12p4g12_m_g12t1g12t1,
-                                                              xspace1, xspace1,
-                                                              xspace2, xspace2,
+                                                              GGspace1, GGspace1,
+                                                              GGspace2, GGspace2,
                                                               antisymmetrize,
                                                               tforms_g12dkh);
     B_DKH.scale(minus_one_over_8c2);
@@ -293,7 +293,7 @@ void R12IntEval::contrib_to_B_DKH_a_() {
   for(int s=0; s<nspincases1(); ++s) {
     
     const SpinCase1 spin = static_cast<SpinCase1>(s);
-    Ref<OrbitalSpace> x = xspace(spin);
+    Ref<OrbitalSpace> x = GGspace(spin);
     Ref<OrbitalSpace> m = occ(spin);
     Ref<OrbitalSpace> obs = r12world()->refwfn()->orbs(spin);
     Ref<OrbitalSpace> ribs = r12world()->ribs_space();
@@ -326,11 +326,11 @@ void R12IntEval::contrib_to_B_DKH_a_() {
     const SpinCase1 spin2 = case2(spincase2);
     Ref<RefWavefunction> ref = r12world()->refwfn();
 
-    const Ref<OrbitalSpace>& xspace1 = xspace(spin1);
-    const Ref<OrbitalSpace>& xspace2 = xspace(spin2);
+    const Ref<OrbitalSpace>& GGspace1 = GGspace(spin1);
+    const Ref<OrbitalSpace>& GGspace2 = GGspace(spin2);
     const Ref<OrbitalSpace>& x_tP1 = t_x_P[spin1];
     const Ref<OrbitalSpace>& x_tP2 = t_x_P[spin2];
-    const bool x1_eq_x2 = (xspace1 == xspace2);
+    const bool x1_eq_x2 = (GGspace1 == GGspace2);
 
     // are particles 1 and 2 equivalent?
     const bool part1_equiv_part2 = (spincase2 != AlphaBeta) || x1_eq_x2;
@@ -352,9 +352,9 @@ void R12IntEval::contrib_to_B_DKH_a_() {
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
         moints_runtime4(),
-        xspace1,
+        GGspace1,
         orbs1,
-        xspace2,
+        GGspace2,
         orbs2,
         corrfactor(),true
         );
@@ -365,9 +365,9 @@ void R12IntEval::contrib_to_B_DKH_a_() {
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
         moints_runtime4(),
-        xspace1,
+        GGspace1,
         p_tP1,
-        xspace2,
+        GGspace2,
         orbs2,
         corrfactor(),true
         );
@@ -378,9 +378,9 @@ void R12IntEval::contrib_to_B_DKH_a_() {
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
         moints_runtime4(),
-        xspace1,
+        GGspace1,
         orbs1,
-        xspace2,
+        GGspace2,
         p_tP2,
         corrfactor(),true
         );
@@ -393,7 +393,7 @@ void R12IntEval::contrib_to_B_DKH_a_() {
         moints_runtime4(),
         x_tP1,
         orbs1,
-        xspace2,
+        GGspace2,
         orbs2,
         corrfactor(),true
         );
@@ -404,7 +404,7 @@ void R12IntEval::contrib_to_B_DKH_a_() {
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
         moints_runtime4(),
-        xspace1,
+        GGspace1,
         orbs1,
         x_tP2,
         orbs2,
@@ -419,9 +419,9 @@ void R12IntEval::contrib_to_B_DKH_a_() {
         true,true,false>
         (
         B_DKH, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
-        xspace1, xspace2,
+        GGspace1, GGspace2,
         orbs1, orbs2,
-        xspace1, xspace2,
+        GGspace1, GGspace2,
         p_tP1, orbs2,
         tpcontract,
         spincase2!=AlphaBeta, tforms_xy_pq, tforms_xy_pTq
@@ -432,9 +432,9 @@ void R12IntEval::contrib_to_B_DKH_a_() {
         true,true,false>
         (
         B_DKH, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
-        xspace1, xspace2,
+        GGspace1, GGspace2,
         orbs1, orbs2,
-        xspace1, xspace2,
+        GGspace1, GGspace2,
         orbs1, p_tP2,
         tpcontract,
         spincase2!=AlphaBeta, tforms_xy_pq, tforms_xy_pqT
@@ -446,9 +446,9 @@ void R12IntEval::contrib_to_B_DKH_a_() {
         true,true,false>
         (
         B_DKH, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
-        xspace1, xspace2,
+        GGspace1, GGspace2,
         orbs1, orbs2,
-        x_tP1, xspace2,
+        x_tP1, GGspace2,
         orbs1, orbs2,
         tpcontract,
         spincase2!=AlphaBeta, tforms_xy_pq, tforms_xTy_pq
@@ -459,9 +459,9 @@ void R12IntEval::contrib_to_B_DKH_a_() {
         true,true,false>
         (
         B_DKH, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
-        xspace1, xspace2,
+        GGspace1, GGspace2,
         orbs1, orbs2,
-        xspace1, x_tP2,
+        GGspace1, x_tP2,
         orbs1, orbs2,
         tpcontract,
         spincase2!=AlphaBeta, tforms_xy_pq, tforms_xyT_pq
@@ -506,9 +506,9 @@ void R12IntEval::contrib_to_B_DKH_a_() {
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
           moints_runtime4(),
-          xspace1,
+          GGspace1,
           occ1,
-          xspace2,
+          GGspace2,
           cabs2,
           corrfactor(),true
           );
@@ -519,9 +519,9 @@ void R12IntEval::contrib_to_B_DKH_a_() {
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
           moints_runtime4(),
-          xspace1,
+          GGspace1,
           m_tP1,
-          xspace2,
+          GGspace2,
           cabs2,
           corrfactor(),true
           );
@@ -532,9 +532,9 @@ void R12IntEval::contrib_to_B_DKH_a_() {
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
           moints_runtime4(),
-          xspace1,
+          GGspace1,
           occ1,
-          xspace2,
+          GGspace2,
           A_tP2,
           corrfactor(),true
           );
@@ -547,7 +547,7 @@ void R12IntEval::contrib_to_B_DKH_a_() {
           moints_runtime4(),
           x_tP1,
           occ1,
-          xspace2,
+          GGspace2,
           cabs2,
           corrfactor(),true
           );
@@ -558,7 +558,7 @@ void R12IntEval::contrib_to_B_DKH_a_() {
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
           moints_runtime4(),
-          xspace1,
+          GGspace1,
           occ1,
           x_tP2,
           cabs2,
@@ -572,9 +572,9 @@ void R12IntEval::contrib_to_B_DKH_a_() {
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
           moints_runtime4(),
-          xspace1,
+          GGspace1,
           cabs1,
-          xspace2,
+          GGspace2,
           occ2,
           corrfactor(),true
           );
@@ -585,9 +585,9 @@ void R12IntEval::contrib_to_B_DKH_a_() {
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
           moints_runtime4(),
-          xspace1,
+          GGspace1,
           cabs1,
-          xspace2,
+          GGspace2,
           m_tP2,
           corrfactor(),true
           );
@@ -598,9 +598,9 @@ void R12IntEval::contrib_to_B_DKH_a_() {
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
           moints_runtime4(),
-          xspace1,
+          GGspace1,
           A_tP1,
-          xspace2,
+          GGspace2,
           occ2,
           corrfactor(),true
           );
@@ -613,7 +613,7 @@ void R12IntEval::contrib_to_B_DKH_a_() {
           moints_runtime4(),
           x_tP1,
           cabs1,
-          xspace2,
+          GGspace2,
           occ2,
           corrfactor(),true
           );
@@ -624,7 +624,7 @@ void R12IntEval::contrib_to_B_DKH_a_() {
       {
         R12TwoBodyIntKeyCreator tformkey_creator(
           moints_runtime4(),
-          xspace1,
+          GGspace1,
           cabs1,
           x_tP2,
           occ2,
@@ -639,9 +639,9 @@ void R12IntEval::contrib_to_B_DKH_a_() {
           true,true,false>
           (
           B_DKH, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
-          xspace1, xspace2,
+          GGspace1, GGspace2,
           occ1, cabs2,
-          xspace1, xspace2,
+          GGspace1, GGspace2,
           m_tP1, cabs2,
           tpcontract_mA,
           spincase2!=AlphaBeta, tforms_xy_mA, tforms_xy_mTA
@@ -652,9 +652,9 @@ void R12IntEval::contrib_to_B_DKH_a_() {
           true,true,false>
           (
           B_DKH, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
-          xspace1, xspace2,
+          GGspace1, GGspace2,
           occ1, cabs2,
-          xspace1, xspace2,
+          GGspace1, GGspace2,
           occ1, A_tP2,
           tpcontract_mA,
           spincase2!=AlphaBeta, tforms_xy_mA, tforms_xy_mAT
@@ -665,9 +665,9 @@ void R12IntEval::contrib_to_B_DKH_a_() {
           true,true,false>
           (
           B_DKH, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
-          xspace1, xspace2,
+          GGspace1, GGspace2,
           occ1, cabs2,
-          x_tP1, xspace2,
+          x_tP1, GGspace2,
           occ1, cabs2,
           tpcontract_mA,
           spincase2!=AlphaBeta, tforms_xy_mA, tforms_xTy_mA
@@ -678,9 +678,9 @@ void R12IntEval::contrib_to_B_DKH_a_() {
           true,true,false>
           (
           B_DKH, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
-          xspace1, xspace2,
+          GGspace1, GGspace2,
           occ1, cabs2,
-          xspace1, x_tP2,
+          GGspace1, x_tP2,
           occ1, cabs2,
           tpcontract_mA,
           spincase2!=AlphaBeta, tforms_xy_mA, tforms_xyT_mA
@@ -692,9 +692,9 @@ void R12IntEval::contrib_to_B_DKH_a_() {
               true,true,false>
               (
               B_DKH, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
-              xspace1, xspace2,
+              GGspace1, GGspace2,
               cabs1, occ2,
-              xspace1, xspace2,
+              GGspace1, GGspace2,
               cabs1, m_tP2,
               tpcontract_Am,
               spincase2!=AlphaBeta, tforms_xy_Am, tforms_xy_AmT
@@ -705,9 +705,9 @@ void R12IntEval::contrib_to_B_DKH_a_() {
               true,true,false>
               (
               B_DKH, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
-              xspace1, xspace2,
+              GGspace1, GGspace2,
               cabs1, occ2,
-              xspace1, xspace2,
+              GGspace1, GGspace2,
               A_tP1, occ2,
               tpcontract_Am,
               spincase2!=AlphaBeta, tforms_xy_Am, tforms_xy_ATm
@@ -718,9 +718,9 @@ void R12IntEval::contrib_to_B_DKH_a_() {
               true,true,false>
               (
               B_DKH, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
-              xspace1, xspace2,
+              GGspace1, GGspace2,
               cabs1, occ2,
-              x_tP1, xspace2,
+              x_tP1, GGspace2,
               cabs1, occ2,
               tpcontract_Am,
               spincase2!=AlphaBeta, tforms_xy_Am, tforms_xTy_Am
@@ -731,9 +731,9 @@ void R12IntEval::contrib_to_B_DKH_a_() {
               true,true,false>
               (
               B_DKH, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
-              xspace1, xspace2,
+              GGspace1, GGspace2,
               cabs1, occ2,
-              xspace1, x_tP2,
+              GGspace1, x_tP2,
               cabs1, occ2,
               tpcontract_Am,
               spincase2!=AlphaBeta, tforms_xy_Am, tforms_xyT_Am

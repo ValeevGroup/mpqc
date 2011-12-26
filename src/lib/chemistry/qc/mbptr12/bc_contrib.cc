@@ -77,8 +77,8 @@ R12IntEval::compute_B_fX_()
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
     const SpinCase1 spin1 = case1(spincase2);
     const SpinCase1 spin2 = case2(spincase2);
-    Ref<OrbitalSpace> xspace1 = xspace(spin1);
-    Ref<OrbitalSpace> xspace2 = xspace(spin2);
+    Ref<OrbitalSpace> GGspace1 = GGspace(spin1);
+    Ref<OrbitalSpace> GGspace2 = GGspace(spin2);
 
     if (dim_oo(spincase2).n() == 0)
       continue;
@@ -90,28 +90,28 @@ R12IntEval::compute_B_fX_()
       // compute Q = X_{xy}^{xy_{F}}
       if (vbs_eq_obs) { // if VBS == OBS: X_{kl}^{ip} F_p^j
         Ref<OrbitalSpace> F_x2 = F_x_p(spin2);
-        compute_X_(Q, spincase2, xspace1, xspace2, xspace1, F_x2);
+        compute_X_(Q, spincase2, GGspace1, GGspace2, GGspace1, F_x2);
       } else { // if VBS != OBS: X_{kl}^{im} F_m^j + X_{kl}^{ia} F_a^j
         Ref<OrbitalSpace> F_x2 = F_x_m(spin2);
-        compute_X_(Q, spincase2, xspace1, xspace2, xspace1, F_x2);
+        compute_X_(Q, spincase2, GGspace1, GGspace2, GGspace1, F_x2);
         F_x2 = F_x_a(spin2);
-        compute_X_(Q, spincase2, xspace1, xspace2, xspace1, F_x2);
+        compute_X_(Q, spincase2, GGspace1, GGspace2, GGspace1, F_x2);
       }
 
-      if (xspace1 != xspace2) {
+      if (GGspace1 != GGspace2) {
         if (vbs_eq_obs) { // if VBS == OBS: X_{kl}^{ip} F_p^j
           Ref<OrbitalSpace> F_x1 = F_x_p(spin1);
-          compute_X_(Q, spincase2, xspace1, xspace2, F_x1, xspace2);
+          compute_X_(Q, spincase2, GGspace1, GGspace2, F_x1, GGspace2);
         } else { // if VBS != OBS: X_{kl}^{im} F_m^j + X_{kl}^{ia} F_a^j
           Ref<OrbitalSpace> F_x1 = F_x_m(spin1);
-          compute_X_(Q, spincase2, xspace1, xspace2, F_x1, xspace2);
+          compute_X_(Q, spincase2, GGspace1, GGspace2, F_x1, GGspace2);
           F_x1 = F_x_a(spin1);
-          compute_X_(Q, spincase2, xspace1, xspace2, F_x1, xspace2);
+          compute_X_(Q, spincase2, GGspace1, GGspace2, F_x1, GGspace2);
         }
       } else {
         Q.scale(2.0);
         if (spincase2 == AlphaBeta) {
-          symmetrize<false>(Q, Q, xspace1, xspace1);
+          symmetrize<false>(Q, Q, GGspace1, GGspace1);
         }
       }
     } // bc = false || vbs!=obs
@@ -119,8 +119,8 @@ R12IntEval::compute_B_fX_()
 
       const int num_f12 = corrfactor()->nfunctions();
       const int nxy = dim_GG(spincase2).n();
-      RefDiagSCMatrix evals_xspace1 = xspace1->evals();
-      RefDiagSCMatrix evals_xspace2 = xspace2->evals();
+      RefDiagSCMatrix evals_GGspace1 = GGspace1->evals();
+      RefDiagSCMatrix evals_GGspace2 = GGspace2->evals();
 
       // replicate X on all nodes (don't forget to zero out all instances except on node 0)
       globally_sum_scmatrix_(X_[s],true);
@@ -129,7 +129,7 @@ R12IntEval::compute_B_fX_()
       for(int f=0; f<num_f12; f++) {
         const int f_off = f*nxy;
 
-        SpinMOPairIter kl_iter(xspace1->rank(), xspace2->rank(), spincase2);
+        SpinMOPairIter kl_iter(GGspace1->rank(), GGspace2->rank(), spincase2);
         for(kl_iter.start(); kl_iter; kl_iter.next()) {
           const int kl = kl_iter.ij() + f_off;
           if (kl%ntasks != me)
@@ -140,14 +140,14 @@ R12IntEval::compute_B_fX_()
           for(int g=0; g<=f; g++) {
             const int g_off = g*nxy;
 
-            SpinMOPairIter ow_iter(xspace1->rank(), xspace2->rank(), spincase2);
+            SpinMOPairIter ow_iter(GGspace1->rank(), GGspace2->rank(), spincase2);
             for(ow_iter.start(); ow_iter; ow_iter.next()) {
               const int ow = ow_iter.ij() + g_off;
               const int o = ow_iter.i();
               const int w = ow_iter.j();
 
-              const double fx = 0.5 * (evals_xspace1(k) + evals_xspace2(l)
-                                     + evals_xspace1(o) + evals_xspace2(w))
+              const double fx = 0.5 * (evals_GGspace1(k) + evals_GGspace2(l)
+                                     + evals_GGspace1(o) + evals_GGspace2(w))
                                     * X.get_element(kl, ow);
 
               Q.accumulate_element(kl,ow,fx);

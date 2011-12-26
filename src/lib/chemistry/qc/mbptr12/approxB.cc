@@ -88,8 +88,8 @@ R12IntEval::compute_BB_()
     Ref<OrbitalSpace> orbs2 = orbs(spin2);
     Ref<OrbitalSpace> vir1 = vir(spin1);
     Ref<OrbitalSpace> vir2 = vir(spin2);
-    const Ref<OrbitalSpace>& xspace1 = xspace(spin1);
-    const Ref<OrbitalSpace>& xspace2 = xspace(spin2);
+    const Ref<OrbitalSpace>& GGspace1 = GGspace(spin1);
+    const Ref<OrbitalSpace>& GGspace2 = GGspace(spin2);
 
 #if INCLUDE_Q
     const bool include_Kp = abs_eq_obs;
@@ -105,49 +105,49 @@ R12IntEval::compute_BB_()
     if (include_Kp) {
 	if (vbs_eq_obs) {
 	    Ref<OrbitalSpace> Kxp2 = K_x_p(spin2);
-	    compute_X_(Q,spincase2,xspace1,xspace2,
-		       xspace1,Kxp2);
+	    compute_X_(Q,spincase2,GGspace1,GGspace2,
+		       GGspace1,Kxp2);
 	} // VBS == OBS
 	else { // VBX != OBS
 	    Ref<OrbitalSpace> Kxm2 = K_x_m(spin2);
-	    compute_X_(Q,spincase2,xspace1,xspace2,
-		       xspace1,Kxm2);
+	    compute_X_(Q,spincase2,GGspace1,GGspace2,
+		       GGspace1,Kxm2);
 	    Ref<OrbitalSpace> Kxa2 = K_x_a(spin2);
-	    compute_X_(Q,spincase2,xspace1,xspace2,
-		       xspace1,Kxa2);
+	    compute_X_(Q,spincase2,GGspace1,GGspace2,
+		       GGspace1,Kxa2);
 	}
     }
     if (!abs_eq_obs) {
 	Ref<OrbitalSpace> KxA2 = K_x_A(spin2);
-	compute_X_(Q,spincase2,xspace1,xspace2,
-                               xspace1,KxA2);
+	compute_X_(Q,spincase2,GGspace1,GGspace2,
+                               GGspace1,KxA2);
     }
-    if (xspace1 != xspace2) {
+    if (GGspace1 != GGspace2) {
 	if (include_Kp) {
 	    if (vbs_eq_obs) {
 		Ref<OrbitalSpace> Kxp1 = K_x_p(spin1);
-		compute_X_(Q,spincase2,xspace1,xspace2,
-			   Kxp1,xspace2);
+		compute_X_(Q,spincase2,GGspace1,GGspace2,
+			   Kxp1,GGspace2);
 	    } // VBS == OBS
 	    else { // VBS != OBS
 		Ref<OrbitalSpace> Kxm1 = K_x_m(spin1);
-		compute_X_(Q,spincase2,xspace1,xspace2,
-			   Kxm1,xspace2);
+		compute_X_(Q,spincase2,GGspace1,GGspace2,
+			   Kxm1,GGspace2);
 		Ref<OrbitalSpace> Kxa1 = K_x_a(spin1);
-		compute_X_(Q,spincase2,xspace1,xspace2,
-			   Kxa1,xspace2);
+		compute_X_(Q,spincase2,GGspace1,GGspace2,
+			   Kxa1,GGspace2);
 	    }
 	}
 	if (!abs_eq_obs) {
 	    Ref<OrbitalSpace> KxA1 = K_x_A(spin1);
-	    compute_X_(Q,spincase2,xspace1,xspace2,
-		       KxA1,xspace2);
+	    compute_X_(Q,spincase2,GGspace1,GGspace2,
+		       KxA1,GGspace2);
 	}
     }
     else {
 	Q.scale(2.0);
 	if (spincase2 == AlphaBeta) {
-	    symmetrize<false>(Q,Q,xspace1,xspace1);
+	    symmetrize<false>(Q,Q,GGspace1,GGspace1);
 	}
     }
 
@@ -186,8 +186,8 @@ R12IntEval::compute_BB_()
 
 	      // R_klpB K_pa R_aBij
 	      compute_FxF_(P,spincase2,
-			   xspace1,xspace2,
-			   xspace1,xspace2,
+			   GGspace1,GGspace2,
+			   GGspace1,GGspace2,
 			   cabs1,cabs2,
 			   vir1,vir2,
 			   kvir1_obs,kvir2_obs);
@@ -198,8 +198,8 @@ R12IntEval::compute_BB_()
 
 	      // R_klmB K_ma R_aBij
 	      compute_FxF_(P,spincase2,
-			   xspace1,xspace2,
-			   xspace1,xspace2,
+			   GGspace1,GGspace2,
+			   GGspace1,GGspace2,
 			   cabs1,cabs2,
 			   occ1,occ2,
 			   Kma1,Kma2);
@@ -209,8 +209,8 @@ R12IntEval::compute_BB_()
 
 	      // R_klbB K_ba R_aBij
 	      compute_FxF_(P,spincase2,
-			   xspace1,xspace2,
-			   xspace1,xspace2,
+			   GGspace1,GGspace2,
+			   GGspace1,GGspace2,
 			   cabs1,cabs2,
 			   vir1,vir2,
 			   Kaa1,Kaa2);
@@ -227,8 +227,8 @@ R12IntEval::compute_BB_()
 #if INCLUDE_P_AKB
         // R_klPB K_PA R_ABij
         compute_FxF_(P,spincase2,
-                     xspace1,xspace2,
-                     xspace1,xspace2,
+                     GGspace1,GGspace2,
+                     GGspace1,GGspace2,
                      cabs1,cabs2,
                      cabs1,cabs2,
                      kcabs1,kcabs2);
@@ -238,8 +238,8 @@ R12IntEval::compute_BB_()
 #if INCLUDE_P_AKb
         // R_klPb K_PA R_Abij
         compute_FxF_(P,spincase2,
-                     xspace1,xspace2,
-                     xspace1,xspace2,
+                     GGspace1,GGspace2,
+                     GGspace1,GGspace2,
                      vir1,vir2,
                      cabs1,cabs2,
                      kcabs1,kcabs2);
@@ -251,8 +251,8 @@ R12IntEval::compute_BB_()
         Ref<OrbitalSpace> kvir2_ribs = K_a_P(spin2);
         // R_klPB K_Pa R_aBij
         compute_FxF_(P,spincase2,
-                     xspace1,xspace2,
-                     xspace1,xspace2,
+                     GGspace1,GGspace2,
+                     GGspace1,GGspace2,
                      cabs1,cabs2,
                      vir1,vir2,
                      kvir1_ribs,kvir2_ribs);

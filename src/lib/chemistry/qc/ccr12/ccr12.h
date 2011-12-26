@@ -96,7 +96,7 @@ class CCR12: public Wavefunction {
     void print_iteration_footer_short();
     void print_iteration_short(int,double,double,double);
     void print_correction(double,double,std::string);
-    void print(std::ostream&);
+    void print(std::ostream&) const;
     void print_timing(double,std::string);
 
 };

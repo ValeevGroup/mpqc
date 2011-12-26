@@ -712,7 +712,7 @@ PipekMezeyLocalization::compute_orbitals()
 // Write both localized and canonical orbitals for comparison
 // First get the bounding box of the molecule *** make this a separate function
 // p1 and p2 are vectors to opposite far corners of the box
-RefSCMatrix 
+void
 PipekMezeyLocalization::write_orbitals()
 {
   scf_vector_->print("scf_vector");

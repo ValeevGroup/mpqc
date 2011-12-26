@@ -71,12 +71,12 @@ R12IntEval::contrib_to_VXB_abs_()
       const Ref<OrbitalSpace>& occ2_act = occ_act(spin2);
       const Ref<OrbitalSpace>& orbs1 = orbs(spin1);
       const Ref<OrbitalSpace>& orbs2 = orbs(spin2);
-      const Ref<OrbitalSpace>& xspace1 = xspace(spin1);
-      const Ref<OrbitalSpace>& xspace2 = xspace(spin2);
+      const Ref<OrbitalSpace>& GGspace1 = GGspace(spin1);
+      const Ref<OrbitalSpace>& GGspace2 = GGspace(spin2);
 
       // for now geminal-generating products must have same equivalence as the occupied orbitals
       const bool occ1_eq_occ2 = (occ1_act == occ2_act);
-      const bool x1_eq_x2 = (xspace1 == xspace2);
+      const bool x1_eq_x2 = (GGspace1 == GGspace2);
       if (occ1_eq_occ2 ^ x1_eq_x2) {
       throw ProgrammingError("R12IntEval::contrib_to_VXB_a_() -- this orbital_product cannot be handled yet",__FILE__,__LINE__);
       }
@@ -99,9 +99,9 @@ R12IntEval::contrib_to_VXB_abs_()
       {
       R12TwoBodyIntKeyCreator tformkey_creator(
           moints_runtime4(),
-          xspace1,
+          GGspace1,
           orbs1,
-          xspace2,
+          GGspace2,
           orbs2,
           corrfactor(),true
           );
@@ -128,7 +128,7 @@ R12IntEval::contrib_to_VXB_abs_()
           (
           V_[s],
           corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
-          xspace1, xspace2,
+          GGspace1, GGspace2,
           orbs1, orbs2,
           occ1_act, occ2_act,
           orbs1, orbs2,
@@ -142,9 +142,9 @@ R12IntEval::contrib_to_VXB_abs_()
       true,true,false>
           (
           X_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
-          xspace1, xspace2,
+          GGspace1, GGspace2,
           orbs1, orbs2,
-          xspace1, xspace2,
+          GGspace1, GGspace2,
           orbs1, orbs2,
           tpcontract,
           spincase2!=AlphaBeta, tforms_f12, tforms_f12
@@ -156,9 +156,9 @@ R12IntEval::contrib_to_VXB_abs_()
           true,true,false>
           (
           B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
-          xspace1, xspace2,
+          GGspace1, GGspace2,
           orbs1, orbs2,
-          xspace1, xspace2,
+          GGspace1, GGspace2,
           orbs1, orbs2,
           tpcontract,
           spincase2!=AlphaBeta, tforms_f12, tforms_f12
@@ -169,9 +169,9 @@ R12IntEval::contrib_to_VXB_abs_()
           true,true,false>
           (
           B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
-          xspace1, xspace2,
+          GGspace1, GGspace2,
           orbs1, orbs2,
-          xspace1, xspace2,
+          GGspace1, GGspace2,
           orbs1, orbs2,
           tpcontract,
           spincase2!=AlphaBeta, tforms_f12, tforms_f12
@@ -208,9 +208,9 @@ R12IntEval::contrib_to_VXB_abs_()
       {
           R12TwoBodyIntKeyCreator tformkey_creator(
           moints_runtime4(),
-          xspace1,
+          GGspace1,
           occ1,
-          xspace2,
+          GGspace2,
           rispace2,
           corrfactor(),true
           );
@@ -236,7 +236,7 @@ R12IntEval::contrib_to_VXB_abs_()
           true,false,false>
           (
           V_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
-          xspace1, xspace2,
+          GGspace1, GGspace2,
           occ1, rispace2,
           occ1_act, occ2_act,
           occ1, rispace2,
@@ -249,9 +249,9 @@ R12IntEval::contrib_to_VXB_abs_()
           true,true,false>
           (
           X_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
-          xspace1, xspace2,
+          GGspace1, GGspace2,
           occ1, rispace2,
-          xspace1, xspace2,
+          GGspace1, GGspace2,
           occ1, rispace2,
           tpcontract,
           antisymmetrize, tforms_f12_xmyP, tforms_f12_xmyP
@@ -264,9 +264,9 @@ R12IntEval::contrib_to_VXB_abs_()
           true,true,false>
           (
               B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
-              xspace1, xspace2,
+              GGspace1, GGspace2,
               occ1, rispace2,
-              xspace1, xspace2,
+              GGspace1, GGspace2,
               occ1, rispace2,
               tpcontract,
               antisymmetrize, tforms_f12_xmyP, tforms_f12_xmyP
@@ -277,9 +277,9 @@ R12IntEval::contrib_to_VXB_abs_()
           true,true,false>
           (
               B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
-              xspace1, xspace2,
+              GGspace1, GGspace2,
               occ1, rispace2,
-              xspace1, xspace2,
+              GGspace1, GGspace2,
               occ1, rispace2,
               tpcontract,
               antisymmetrize, tforms_f12_xmyP, tforms_f12_xmyP
@@ -295,9 +295,9 @@ R12IntEval::contrib_to_VXB_abs_()
           {
           R12TwoBodyIntKeyCreator tformkey_creator(
               moints_runtime4(),
-              xspace1,
+              GGspace1,
               rispace1,
-              xspace2,
+              GGspace2,
               occ2,
               corrfactor(),true
               );
@@ -329,7 +329,7 @@ R12IntEval::contrib_to_VXB_abs_()
           true,false,false>
           (
               V_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
-              xspace1, xspace2,
+              GGspace1, GGspace2,
               rispace1, occ2,
               occ1_act, occ2_act,
               rispace1, occ2,
@@ -342,9 +342,9 @@ R12IntEval::contrib_to_VXB_abs_()
           true,true,false>
           (
               X_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
-              xspace1, xspace2,
+              GGspace1, GGspace2,
               rispace1, occ2,
-              xspace1, xspace2,
+              GGspace1, GGspace2,
               rispace1, occ2,
               tpcontract,
               antisymmetrize, tforms_f12_xPym, tforms_f12_xPym
@@ -357,9 +357,9 @@ R12IntEval::contrib_to_VXB_abs_()
               true,true,false>
               (
               B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
-              xspace1, xspace2,
+              GGspace1, GGspace2,
               rispace1, occ2,
-              xspace1, xspace2,
+              GGspace1, GGspace2,
               rispace1, occ2,
               tpcontract,
               antisymmetrize, tforms_f12_xPym, tforms_f12_xPym
@@ -370,9 +370,9 @@ R12IntEval::contrib_to_VXB_abs_()
               true,true,false>
               (
               B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
-              xspace1, xspace2,
+              GGspace1, GGspace2,
               rispace1, occ2,
-              xspace1, xspace2,
+              GGspace1, GGspace2,
               rispace1, occ2,
               tpcontract,
               antisymmetrize, tforms_f12_xPym, tforms_f12_xPym
@@ -383,10 +383,10 @@ R12IntEval::contrib_to_VXB_abs_()
       }
 
       if (!antisymmetrize && part1_equiv_part2) {
-          symmetrize<false>(V_[s],V_[s],xspace1,occ1_act);
-          symmetrize<false>(X_[s],X_[s],xspace1,xspace1);
+          symmetrize<false>(V_[s],V_[s],GGspace1,occ1_act);
+          symmetrize<false>(X_[s],X_[s],GGspace1,GGspace1);
           if (compute_B)
-          symmetrize<false>(B_[s],B_[s],xspace1,xspace1);
+          symmetrize<false>(B_[s],B_[s],GGspace1,GGspace1);
       }
 
       if (debug_ >= DefaultPrintThresholds::O4) {

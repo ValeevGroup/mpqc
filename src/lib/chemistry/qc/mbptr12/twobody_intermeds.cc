@@ -80,7 +80,7 @@ R12IntEval::V_cabs(SpinCase2 spincase2,
     V = local_matrix_kit->matrix(dim_f12(spincase2),
                  new SCDimension(np1*(np1-1)/2));
     RefSCMatrix Vab = this->V(AlphaBeta,p1,p1);
-    sc::antisymmetrize(V,Vab,xspace(Alpha),p1);
+    sc::antisymmetrize(V,Vab,GGspace(Alpha),p1);
     return V;
   }
 
@@ -448,7 +448,7 @@ std::vector<Ref<DistArray4> > R12IntEval::V_distarray4(
 
   std::vector<Ref<DistArray4> > V;
   if (!spin_polarized() && (spincase2 == AlphaAlpha || spincase2 == BetaBeta)) {
-    const unsigned int nx1 = xspace(spin1)->rank();
+    const unsigned int nx1 = GGspace(spin1)->rank();
     const unsigned int np1 = p1->rank();
     V = this->V_distarray4(AlphaBeta, p1, p1);
     for (int s = 0; s < V.size(); ++s)
@@ -458,8 +458,8 @@ std::vector<Ref<DistArray4> > R12IntEval::V_distarray4(
 
   Timer tim("R12 intermeds (tensor contract): Vpqxy");
 
-  const Ref<OrbitalSpace>& x1 = xspace(spin1);
-  const Ref<OrbitalSpace>& x2 = xspace(spin2);
+  const Ref<OrbitalSpace>& x1 = GGspace(spin1);
+  const Ref<OrbitalSpace>& x2 = GGspace(spin2);
   const Ref<OrbitalSpace>& orbs1 = orbs(spin1);
   const Ref<OrbitalSpace>& orbs2 = orbs(spin2);
 
@@ -660,7 +660,7 @@ R12IntEval::U_distarray4(
 
   std::vector<Ref<DistArray4> > U;
   if (!spin_polarized() && (spincase2 == AlphaAlpha || spincase2 == BetaBeta)) {
-    const unsigned int nx1 = xspace(spin1)->rank();
+    const unsigned int nx1 = GGspace(spin1)->rank();
     const unsigned int np1 = p1->rank();
     U = this->U_distarray4(AlphaBeta, p1, p1);
     for (int s = 0; s < U.size(); ++s)
@@ -670,8 +670,8 @@ R12IntEval::U_distarray4(
 
   Timer tim("R12 intermeds (tensor contract): Upqxy");
 
-  const Ref<OrbitalSpace>& x1 = xspace(spin1);
-  const Ref<OrbitalSpace>& x2 = xspace(spin2);
+  const Ref<OrbitalSpace>& x1 = GGspace(spin1);
+  const Ref<OrbitalSpace>& x2 = GGspace(spin2);
   const Ref<OrbitalSpace>& orbs1 = orbs(spin1);
   const Ref<OrbitalSpace>& orbs2 = orbs(spin2);
   const Ref<OrbitalSpace>& occ1 = occ(spin1);
@@ -873,8 +873,8 @@ R12IntEval::P(SpinCase2 spincase2)
 
   const SpinCase1 spin1 = case1(spincase2);
   const SpinCase1 spin2 = case2(spincase2);
-  const Ref<OrbitalSpace>& x1 = xspace(spin1);
-  const Ref<OrbitalSpace>& x2 = xspace(spin2);
+  const Ref<OrbitalSpace>& x1 = GGspace(spin1);
+  const Ref<OrbitalSpace>& x2 = GGspace(spin2);
   const Ref<OrbitalSpace>& orbs1 = orbs(spin1);
   const Ref<OrbitalSpace>& orbs2 = orbs(spin2);
   const Ref<OrbitalSpace>& occ1 = occ(spin1);

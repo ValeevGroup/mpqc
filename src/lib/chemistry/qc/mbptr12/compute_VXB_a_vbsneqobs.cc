@@ -71,14 +71,14 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
       const Ref<OrbitalSpace>& occ2 = occ(spin2);
       const Ref<OrbitalSpace>& vir1_act = vir_act(spin1);
       const Ref<OrbitalSpace>& vir2_act = vir_act(spin2);
-      const Ref<OrbitalSpace>& xspace1 = xspace(spin1);
-      const Ref<OrbitalSpace>& xspace2 = xspace(spin2);
+      const Ref<OrbitalSpace>& GGspace1 = GGspace(spin1);
+      const Ref<OrbitalSpace>& GGspace2 = GGspace(spin2);
       const Ref<OrbitalSpace>& cabs1 = r12world()->cabs_space(spin1);
       const Ref<OrbitalSpace>& cabs2 = r12world()->cabs_space(spin2);
 
       // for now geminal-generating products must have same equivalence as the occupied orbitals
       const bool occ1_eq_occ2 = (occ1_act == occ2_act);
-      const bool x1_eq_x2 = (xspace1 == xspace2);
+      const bool x1_eq_x2 = (GGspace1 == GGspace2);
       if (occ1_eq_occ2 ^ x1_eq_x2) {
 	  throw ProgrammingError("R12IntEval::contrib_to_VXB_a_vbsneqobs_() -- this orbital_product cannot be handled yet",__FILE__,__LINE__);
       }
@@ -100,7 +100,7 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),-1.0);
 	  std::vector<std::string> tforms_f12;
 	  {
-	      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),xspace1,cs1,xspace2,cs2,
+	      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),GGspace1,cs1,GGspace2,cs2,
 	                                               corrfactor(),true);
 	      fill_container(tformkey_creator,tforms_f12);
 	  }
@@ -115,24 +115,24 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 
       contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,false,false>
           (V_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
-	   xspace1, xspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
 	   occ1_act, occ2_act, cs1, cs2,
 	   tpcontract, spincase2!=AlphaBeta, tforms_f12, tforms);
       contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,true,false>
           (X_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
-	   xspace1, xspace2, cs1, cs2,
-	   xspace1, xspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
 	   tpcontract, spincase2!=AlphaBeta, tforms_f12, tforms_f12);
       if (compute_B) {
       contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,true,false>
           (B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
-	   xspace1, xspace2, cs1, cs2,
-	   xspace1, xspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
 	   tpcontract, spincase2!=AlphaBeta, tforms_f12, tforms_f12);
       contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,true,false>
           (B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
-	   xspace1, xspace2, cs1, cs2,
-	   xspace1, xspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
 	   tpcontract, spincase2!=AlphaBeta, tforms_f12, tforms_f12);
       B_[s].scale(0.5); RefSCMatrix Bt = B_[s].t(); B_[s].accumulate(Bt);
       }
@@ -145,7 +145,7 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),-1.0);
 	  std::vector<std::string> tforms_f12;
 	  {
-	      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),xspace1,cs1,xspace2,cs2,
+	      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),GGspace1,cs1,GGspace2,cs2,
                                                    corrfactor(),true);
 	      fill_container(tformkey_creator,tforms_f12);
 	  }
@@ -160,24 +160,24 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 
       contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,false,false>
           (V_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
-	   xspace1, xspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
 	   occ1_act, occ2_act, cs1, cs2,
 	   tpcontract, spincase2!=AlphaBeta, tforms_f12, tforms);
       contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,true,false>
           (X_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
-	   xspace1, xspace2, cs1, cs2,
-	   xspace1, xspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
 	   tpcontract, spincase2!=AlphaBeta, tforms_f12, tforms_f12);
       if (compute_B) {
       contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,true,false>
           (B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
-	   xspace1, xspace2, cs1, cs2,
-	   xspace1, xspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
 	   tpcontract, spincase2!=AlphaBeta, tforms_f12, tforms_f12);
       contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,true,false>
           (B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
-	   xspace1, xspace2, cs1, cs2,
-	   xspace1, xspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
 	   tpcontract, spincase2!=AlphaBeta, tforms_f12, tforms_f12);
       B_[s].scale(0.5); RefSCMatrix Bt = B_[s].t(); B_[s].accumulate(Bt);
       }
@@ -191,7 +191,7 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),asymm_contr_pfac);
 	  std::vector<std::string> tforms_f12;
 	  {
-	      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),xspace1,cs1,xspace2,cs2,
+	      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),GGspace1,cs1,GGspace2,cs2,
                                                    corrfactor(),true);
 	      fill_container(tformkey_creator,tforms_f12);
 	  }
@@ -206,24 +206,24 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 
       contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,false,false>
           (V_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
-	   xspace1, xspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
 	   occ1_act, occ2_act, cs1, cs2,
 	   tpcontract, spincase2!=AlphaBeta, tforms_f12, tforms);
       contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,true,false>
           (X_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
-	   xspace1, xspace2, cs1, cs2,
-	   xspace1, xspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
 	   tpcontract, spincase2!=AlphaBeta, tforms_f12, tforms_f12);
       if (compute_B) {
       contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,true,false>
           (B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
-	   xspace1, xspace2, cs1, cs2,
-	   xspace1, xspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
 	   tpcontract, spincase2!=AlphaBeta, tforms_f12, tforms_f12);
       contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,true,false>
           (B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
-	   xspace1, xspace2, cs1, cs2,
-	   xspace1, xspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
 	   tpcontract, spincase2!=AlphaBeta, tforms_f12, tforms_f12);
       B_[s].scale(0.5); RefSCMatrix Bt = B_[s].t(); B_[s].accumulate(Bt);
       }
@@ -238,7 +238,7 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),asymm_contr_pfac);
 	  std::vector<std::string> tforms_f12;
 	  {
-	      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),xspace1,cs1,xspace2,cs2,
+	      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),GGspace1,cs1,GGspace2,cs2,
                                                    corrfactor(),true);
 	      fill_container(tformkey_creator,tforms_f12);
 	  }
@@ -253,24 +253,24 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 
       contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,false,false>
           (V_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
-	   xspace1, xspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
 	   occ1_act, occ2_act, cs1, cs2,
 	   tpcontract, spincase2!=AlphaBeta, tforms_f12, tforms);
       contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,true,false>
           (X_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
-	   xspace1, xspace2, cs1, cs2,
-	   xspace1, xspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
 	   tpcontract, spincase2!=AlphaBeta, tforms_f12, tforms_f12);
       if (compute_B) {
       contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,true,false>
           (B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
-	   xspace1, xspace2, cs1, cs2,
-	   xspace1, xspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
 	   tpcontract, spincase2!=AlphaBeta, tforms_f12, tforms_f12);
       contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,true,false>
           (B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
-	   xspace1, xspace2, cs1, cs2,
-	   xspace1, xspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
 	   tpcontract, spincase2!=AlphaBeta, tforms_f12, tforms_f12);
       B_[s].scale(0.5); RefSCMatrix Bt = B_[s].t(); B_[s].accumulate(Bt);
       }
@@ -285,7 +285,7 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),asymm_contr_pfac);
 	  std::vector<std::string> tforms_f12;
 	  {
-	      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),xspace1,cs1,xspace2,cs2,
+	      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),GGspace1,cs1,GGspace2,cs2,
                                                    corrfactor(),true);
 	      fill_container(tformkey_creator,tforms_f12);
 	  }
@@ -300,24 +300,24 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 
       contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,false,false>
           (V_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
-	   xspace1, xspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
 	   occ1_act, occ2_act, cs1, cs2,
 	   tpcontract, spincase2!=AlphaBeta, tforms_f12, tforms);
       contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,true,false>
           (X_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
-	   xspace1, xspace2, cs1, cs2,
-	   xspace1, xspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
 	   tpcontract, spincase2!=AlphaBeta, tforms_f12, tforms_f12);
       if (compute_B) {
       contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,true,false>
           (B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
-	   xspace1, xspace2, cs1, cs2,
-	   xspace1, xspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
 	   tpcontract, spincase2!=AlphaBeta, tforms_f12, tforms_f12);
       contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,true,false>
           (B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
-	   xspace1, xspace2, cs1, cs2,
-	   xspace1, xspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
 	   tpcontract, spincase2!=AlphaBeta, tforms_f12, tforms_f12);
       B_[s].scale(0.5); RefSCMatrix Bt = B_[s].t(); B_[s].accumulate(Bt);
       }
@@ -332,7 +332,7 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 	  Ref<TwoParticleContraction> tpcontract = new Direct_Contraction(cs1->rank(),cs2->rank(),asymm_contr_pfac);
 	  std::vector<std::string> tforms_f12;
 	  {
-	      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),xspace1,cs1,xspace2,cs2,
+	      R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),GGspace1,cs1,GGspace2,cs2,
                                                    corrfactor(),true);
 	      fill_container(tformkey_creator,tforms_f12);
 	  }
@@ -347,24 +347,24 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
 
       contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,false,false>
           (V_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
-	   xspace1, xspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
 	   occ1_act, occ2_act, cs1, cs2,
 	   tpcontract, spincase2!=AlphaBeta, tforms_f12, tforms);
       contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,true,false>
           (X_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
-	   xspace1, xspace2, cs1, cs2,
-	   xspace1, xspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
 	   tpcontract, spincase2!=AlphaBeta, tforms_f12, tforms_f12);
       if (compute_B) {
       contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,true,false>
           (B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t1f12(),
-	   xspace1, xspace2, cs1, cs2,
-	   xspace1, xspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
 	   tpcontract, spincase2!=AlphaBeta, tforms_f12, tforms_f12);
       contract_tbint_tensor<ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,ManyBodyTensors::I_to_T,true,true,false>
           (B_[s], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_t2f12(),
-	   xspace1, xspace2, cs1, cs2,
-	   xspace1, xspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
+	   GGspace1, GGspace2, cs1, cs2,
 	   tpcontract, spincase2!=AlphaBeta, tforms_f12, tforms_f12);
       B_[s].scale(0.5); RefSCMatrix Bt = B_[s].t(); B_[s].accumulate(Bt);
       }
@@ -372,10 +372,10 @@ R12IntEval::contrib_to_VXB_a_vbsneqobs_()
       }
 
       if (!antisymmetrize && part1_equiv_part2) {
-	  symmetrize<false>(V_[s],V_[s],xspace1,occ1_act);
-	  symmetrize<false>(X_[s],X_[s],xspace1,xspace1);
+	  symmetrize<false>(V_[s],V_[s],GGspace1,occ1_act);
+	  symmetrize<false>(X_[s],X_[s],GGspace1,GGspace1);
 	  if (compute_B)
-	      symmetrize<false>(B_[s],B_[s],xspace1,xspace1);
+	      symmetrize<false>(B_[s],B_[s],GGspace1,GGspace1);
       }
 
       if (debug_ >= DefaultPrintThresholds::O4) {

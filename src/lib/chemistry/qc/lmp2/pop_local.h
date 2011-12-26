@@ -90,7 +90,7 @@ class PipekMezeyLocalization {
                            int nfzc,
                            const sc::RefSymmSCMatrix &ao_overlap);
     sc::RefSCMatrix compute_orbitals();
-    sc::RefSCMatrix write_orbitals();
+    void write_orbitals();
 };
 
 }

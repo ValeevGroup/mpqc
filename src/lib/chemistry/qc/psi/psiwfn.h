@@ -124,7 +124,7 @@ namespace sc {
 #endif
 
       /// return Psi3 nuclear repulsion energy
-      double nuclear_repulsion_energy() const;
+      double nuclear_repulsion_energy();
 
       void obsolete();
       void symmetry_changed();
@@ -345,6 +345,7 @@ namespace sc {
 
       /// AO-basis densities
       RefSymmSCMatrix ao_density(SpinCase1);
+      RefSymmSCMatrix ao_density();
       /// MO-basis density
       RefSymmSCMatrix mo_density(SpinCase1 spin = AnySpinCase1);
 

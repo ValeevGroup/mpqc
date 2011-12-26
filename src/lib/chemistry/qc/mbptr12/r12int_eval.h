@@ -697,17 +697,15 @@ public:
   const RefSCVector& emp2(SpinCase2 S);
 
   /// Returns the act occ space for spin case S
-  const Ref<OrbitalSpace>& DEPRECATED occ_act(SpinCase1 S) const;
+  const Ref<OrbitalSpace>& occ_act(SpinCase1 S) const;
   /// Returns the occ space for spin case S
-  const Ref<OrbitalSpace>& DEPRECATED occ(SpinCase1 S) const;
+  const Ref<OrbitalSpace>& occ(SpinCase1 S) const;
   /// Returns the act vir space for spin case S
-  const Ref<OrbitalSpace>& DEPRECATED vir_act(SpinCase1 S) const;
+  const Ref<OrbitalSpace>& vir_act(SpinCase1 S) const;
   /// Returns the vir space for spin case S
-  const Ref<OrbitalSpace>& DEPRECATED vir(SpinCase1 S) const;
+  const Ref<OrbitalSpace>& vir(SpinCase1 S) const;
   /// Returns the OBS space for spin case S
-  const Ref<OrbitalSpace>& DEPRECATED orbs(SpinCase1 S) const;
-  // same as GGspace()
-  const Ref<OrbitalSpace>&  DEPRECATED xspace(SpinCase1 S) const;
+  const Ref<OrbitalSpace>& orbs(SpinCase1 S) const;
   /// Returns the geminal-generating orbital space for spin case S
   const Ref<OrbitalSpace>& GGspace(SpinCase1 S) const;
   /// Returns the space for spin case S from which geminal-generating substitutions are allowed

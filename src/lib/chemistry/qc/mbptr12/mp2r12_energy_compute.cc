@@ -129,22 +129,22 @@ void MP2R12Energy_SpinOrbital::compute_ef12() {
 
     const Ref<OrbitalSpace>& occ1_act = r12eval()->occ_act(case1(spincase2));
     const Ref<OrbitalSpace>& vir1_act = r12eval()->vir_act(case1(spincase2));
-    const Ref<OrbitalSpace>& xspace1 = r12eval()->xspace(case1(spincase2));
+    const Ref<OrbitalSpace>& GGspace1 = r12eval()->GGspace(case1(spincase2));
     const Ref<OrbitalSpace>& occ2_act = r12eval()->occ_act(case2(spincase2));
     const Ref<OrbitalSpace>& vir2_act = r12eval()->vir_act(case2(spincase2));
-    const Ref<OrbitalSpace>& xspace2 = r12eval()->xspace(case2(spincase2));
+    const Ref<OrbitalSpace>& GGspace2 = r12eval()->GGspace(case2(spincase2));
     int nocc1_act = occ1_act->rank();
     int nvir1_act = vir1_act->rank();
-    int nx1 = xspace1->rank();
+    int nx1 = GGspace1->rank();
     int nocc2_act = occ2_act->rank();
     int nvir2_act = vir2_act->rank();
-    int nx2 = xspace2->rank();
+    int nx2 = GGspace2->rank();
     const std::vector<double> evals_act_occ1 = convert(occ1_act->evals());
     const std::vector<double> evals_act_vir1 = convert(vir1_act->evals());
-    const std::vector<double> evals_xspace1 = convert(xspace1->evals());
+    const std::vector<double> evals_GGspace1 = convert(GGspace1->evals());
     const std::vector<double> evals_act_occ2 = convert(occ2_act->evals());
     const std::vector<double> evals_act_vir2 = convert(vir2_act->evals());
-    const std::vector<double> evals_xspace2 = convert(xspace2->evals());
+    const std::vector<double> evals_GGspace2 = convert(GGspace2->evals());
 
     // Get the intermediates V and X
     RefSCMatrix V;
@@ -322,7 +322,7 @@ void MP2R12Energy_SpinOrbital::compute_ef12() {
     if (same_B_for_all_pairs) {
       RefSymmSCMatrix B_ij = B.clone();
       B_ij.assign(B);
-      SpinMOPairIter xy_iter(xspace1->rank(), xspace2->rank(), spincase2);
+      SpinMOPairIter xy_iter(GGspace1->rank(), GGspace2->rank(), spincase2);
       for (xy_iter.start(); int(xy_iter); xy_iter.next()) {
         const int xy = xy_iter.ij();
         const int x = xy_iter.i();
@@ -336,7 +336,7 @@ void MP2R12Energy_SpinOrbital::compute_ef12() {
             const int g_off = g * nxy;
             const int xyg = g_off + xy;
 
-            const double fx = -(evals_xspace1[x] + evals_xspace2[y])
+            const double fx = -(evals_GGspace1[x] + evals_GGspace2[y])
                 * X.get_element(xyf, xyg);
             B_ij.accumulate_element(xyf, xyg, fx);
 
@@ -417,7 +417,7 @@ void MP2R12Energy_SpinOrbital::compute_ef12() {
         for (int f = 0; f < num_f12; f++) {
           const int f_off = f * nxy;
 
-          SpinMOPairIter kl_iter(xspace1->rank(), xspace2->rank(), spincase2);
+          SpinMOPairIter kl_iter(GGspace1->rank(), GGspace2->rank(), spincase2);
           for (kl_iter.start(); kl_iter; kl_iter.next()) {
             const int kl = kl_iter.ij() + f_off;
             const int k = kl_iter.i();
@@ -426,7 +426,7 @@ void MP2R12Energy_SpinOrbital::compute_ef12() {
             for (int g = 0; g <= f; g++) {
               const int g_off = g * nxy;
 
-              SpinMOPairIter ow_iter(xspace1->rank(), xspace2->rank(), spincase2);
+              SpinMOPairIter ow_iter(GGspace1->rank(), GGspace2->rank(), spincase2);
               for (ow_iter.start(); ow_iter; ow_iter.next()) {
                 const int ow = ow_iter.ij() + g_off;
                 const int o = ow_iter.i();
@@ -604,20 +604,20 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_non_pairspecific(
                                                                          bool include_coupling_in_B) {
   const SpinCase1 spin1 = case1(spincase2);
   const SpinCase1 spin2 = case2(spincase2);
-  const Ref<OrbitalSpace> &xspace1 = r12eval()->xspace(spin1);
-  const Ref<OrbitalSpace> &xspace2 = r12eval()->xspace(spin2);
+  const Ref<OrbitalSpace> &GGspace1 = r12eval()->GGspace(spin1);
+  const Ref<OrbitalSpace> &GGspace2 = r12eval()->GGspace(spin2);
   const Ref<OrbitalSpace> &vir1_act = r12eval()->vir_act(spin1);
   const Ref<OrbitalSpace> &vir2_act = r12eval()->vir_act(spin2);
   const Ref<OrbitalSpace> &occ1_act = r12eval()->occ_act(spin1);
   const Ref<OrbitalSpace> &occ2_act = r12eval()->occ_act(spin2);
-  const std::vector<double> evals_xspace1 = convert(xspace1->evals());
-  const std::vector<double> evals_xspace2 = convert(xspace2->evals());
+  const std::vector<double> evals_GGspace1 = convert(GGspace1->evals());
+  const std::vector<double> evals_GGspace2 = convert(GGspace2->evals());
   const std::vector<double> evals_act_occ1 = convert(occ1_act->evals());
   const std::vector<double> evals_act_vir1 = convert(vir1_act->evals());
   const std::vector<double> evals_act_occ2 = convert(occ2_act->evals());
   const std::vector<double> evals_act_vir2 = convert(vir2_act->evals());
   const int nocc2_act = occ2_act->rank();
-  int nx2 = xspace2->rank();
+  int nx2 = GGspace2->rank();
   const RefSCDimension dim_oo = V.coldim();
   const RefSCDimension dim_xc = V.rowdim();
   const int noo = dim_oo.n();
@@ -633,14 +633,14 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_non_pairspecific(
     ExEnv::out0() << indent << "Spin1 "
         << ((spin1 == Alpha) ? "Alpha" : "Beta") << " Hartree Fock eigenvalues"
         << endl;
-    for (int i = 0; i < evals_xspace1.size(); i++) {
-      ExEnv::out0() << setw(20) << setprecision(12) << evals_xspace1[i] << endl;
+    for (int i = 0; i < evals_GGspace1.size(); i++) {
+      ExEnv::out0() << setw(20) << setprecision(12) << evals_GGspace1[i] << endl;
     }
     ExEnv::out0() << indent << "Spin2 "
         << ((spin2 == Alpha) ? "Alpha" : "Beta") << " Hartree Fock eigenvalues"
         << endl;
-    for (int i = 0; i < evals_xspace2.size(); i++) {
-      ExEnv::out0() << setw(20) << setprecision(12) << evals_xspace2[i] << endl;
+    for (int i = 0; i < evals_GGspace2.size(); i++) {
+      ExEnv::out0() << setw(20) << setprecision(12) << evals_GGspace2[i] << endl;
     }
   }
 
@@ -649,7 +649,7 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_non_pairspecific(
   if (r12eval()->vir(Alpha)->rank() == 0 || r12eval()->vir(Beta)->rank() == 0
       || cabs_empty)
     coupling = false;
-  SpinMOPairIter xy_iter(xspace1->rank(), xspace2->rank(), spincase2);
+  SpinMOPairIter xy_iter(GGspace1->rank(), GGspace2->rank(), spincase2);
 
   Ref<MP2R12EnergyUtil_Diag> util = generate_MP2R12EnergyUtil_Diag(spincase2,
                                                                    dim_oo,
@@ -673,7 +673,7 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_non_pairspecific(
         const int g_off = g * nxy;
         const int xyg = g_off + xy;
 
-        const double fx = -(evals_xspace1[x] + evals_xspace2[y])
+        const double fx = -(evals_GGspace1[x] + evals_GGspace2[y])
             * X.get_element(xyf, xyg);
         B_ij.accumulate_element(xyf, xyg, fx);
 
@@ -709,7 +709,7 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_non_pairspecific(
           const int yxg = g_off + yx;
           if (xyf > yxg) {
 
-            const double fx = -(evals_xspace1[x] + evals_xspace2[y])
+            const double fx = -(evals_GGspace1[x] + evals_GGspace2[y])
                 * X.get_element(xyf, yxg);
             B_ij.accumulate_element(xyf, yxg, fx);
 
@@ -750,20 +750,20 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_pairspecific(
                                                                      const RefSCMatrix &V,
                                                                      const RefSCMatrix &A,
                                                                      const SpinCase2 &spincase2) {
-  const Ref<OrbitalSpace> &xspace1 = r12eval()->xspace(case1(spincase2));
-  const Ref<OrbitalSpace> &xspace2 = r12eval()->xspace(case2(spincase2));
+  const Ref<OrbitalSpace> &GGspace1 = r12eval()->GGspace(case1(spincase2));
+  const Ref<OrbitalSpace> &GGspace2 = r12eval()->GGspace(case2(spincase2));
   const Ref<OrbitalSpace> &vir1_act = r12eval()->vir_act(case1(spincase2));
   const Ref<OrbitalSpace> &vir2_act = r12eval()->vir_act(case2(spincase2));
   const Ref<OrbitalSpace> &occ1_act = r12eval()->occ_act(case1(spincase2));
   const Ref<OrbitalSpace> &occ2_act = r12eval()->occ_act(case2(spincase2));
-  const std::vector<double> evals_xspace1 = convert(xspace1->evals());
-  const std::vector<double> evals_xspace2 = convert(xspace2->evals());
+  const std::vector<double> evals_GGspace1 = convert(GGspace1->evals());
+  const std::vector<double> evals_GGspace2 = convert(GGspace2->evals());
   const std::vector<double> evals_act_occ1 = convert(occ1_act->evals());
   const std::vector<double> evals_act_vir1 = convert(vir1_act->evals());
   const std::vector<double> evals_act_occ2 = convert(occ2_act->evals());
   const std::vector<double> evals_act_vir2 = convert(vir2_act->evals());
   const int nocc2_act = occ2_act->rank();
-  int nx2 = xspace2->rank();
+  int nx2 = GGspace2->rank();
   const RefSCDimension dim_oo = V.coldim();
   const RefSCDimension dim_xc = V.rowdim();
   const int noo = dim_oo.n();
@@ -779,7 +779,7 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_pairspecific(
   if (r12eval()->vir(Alpha)->rank() == 0 || r12eval()->vir(Beta)->rank() == 0
       || cabs_empty)
     coupling = false;
-  SpinMOPairIter xy_iter(xspace1->rank(), xspace2->rank(), spincase2);
+  SpinMOPairIter xy_iter(GGspace1->rank(), GGspace2->rank(), spincase2);
 
   RefSymmSCMatrix B_ij = B.clone();
 
@@ -794,7 +794,7 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_pairspecific(
   for (int f = 0; f < num_f12; f++) {
     const int f_off = f * nxy;
 
-    SpinMOPairIter kl_iter(xspace1->rank(), xspace2->rank(), spincase2);
+    SpinMOPairIter kl_iter(GGspace1->rank(), GGspace2->rank(), spincase2);
     for (kl_iter.start(); kl_iter; kl_iter.next()) {
       const int kl = kl_iter.ij() + f_off;
       const int k = kl_iter.i();
@@ -803,7 +803,7 @@ RefSymmSCMatrix MP2R12Energy_SpinOrbital_new::compute_B_pairspecific(
       for (int g = 0; g <= f; g++) {
         const int g_off = g * nxy;
 
-        SpinMOPairIter ow_iter(xspace1->rank(), xspace2->rank(), spincase2);
+        SpinMOPairIter ow_iter(GGspace1->rank(), GGspace2->rank(), spincase2);
         for (ow_iter.start(); ow_iter; ow_iter.next()) {
           const int ow = ow_iter.ij() + g_off;
           const int o = ow_iter.i();

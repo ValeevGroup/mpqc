@@ -32,7 +32,6 @@
 
 #include <scconfig.h>
 #include <util/misc/formio.h>
-#include <util/misc/timer.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/state/state_text.h>
@@ -89,8 +88,8 @@ void R12IntEval::compute_BC_ansatz1_() {
     Ref<OrbitalSpace> orbs2 = orbs(spin2);
     Ref<OrbitalSpace> GG1space = GGspace(spin1);
     Ref<OrbitalSpace> GG2space = GGspace(spin2);
-    Ref<OrbitalSpace> xspace1 = xspace(spin1);
-    Ref<OrbitalSpace> xspace2 = xspace(spin2);
+    Ref<OrbitalSpace> GGspace1 = GGspace(spin1);
+    Ref<OrbitalSpace> GGspace2 = GGspace(spin2);
     Ref<OrbitalSpace> vir1 = vir(spin1);
     Ref<OrbitalSpace> vir2 = vir(spin2);
     bool empty_vir_space = vir1->rank()==0 || vir2->rank()==0;

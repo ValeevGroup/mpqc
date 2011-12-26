@@ -479,7 +479,7 @@ namespace sc {
 #endif
 
   double
-  PsiWavefunction::nuclear_repulsion_energy() const
+  PsiWavefunction::nuclear_repulsion_energy()
   {
     return exenv()->chkpt().rd_enuc();
   }
@@ -830,6 +830,16 @@ namespace sc {
     RefSymmSCMatrix P = C_ao.kit()->symmmatrix(C_ao.rowdim()); P.assign(0.0);
     P.accumulate_transform(C_ao, this->mo_density(spin));
     return P;
+  }
+
+  RefSymmSCMatrix
+  PsiSCF::ao_density() {
+    RefSymmSCMatrix result = this->ao_density(Alpha).copy();
+    if (this->spin_polarized())
+      result.accumulate(this->ao_density(Beta));
+    else
+      result.scale(2.0);
+    return result;
   }
 
   RefSymmSCMatrix

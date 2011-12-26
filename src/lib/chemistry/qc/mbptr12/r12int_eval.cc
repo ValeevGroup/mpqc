@@ -554,8 +554,8 @@ R12IntEval::init_intermeds_r12_()
     const SpinCase2 spincase2 = static_cast<SpinCase2>(s);
     SpinCase1 spin1 = case1(spincase2);
     SpinCase1 spin2 = case2(spincase2);
-	const Ref<OrbitalSpace>& xspace1 = xspace(case1(spincase2));
-	const Ref<OrbitalSpace>& xspace2 = xspace(case2(spincase2));
+	const Ref<OrbitalSpace>& GGspace1 = GGspace(case1(spincase2));
+	const Ref<OrbitalSpace>& GGspace2 = GGspace(case2(spincase2));
     const Ref<OrbitalSpace>& gg1space = ggspace(spin1);
     const Ref<OrbitalSpace>& gg2space = ggspace(spin2);
     const Ref<OrbitalSpace>& GG1space = GGspace(spin1);
@@ -2440,12 +2440,6 @@ R12IntEval::orbs(SpinCase1 S) const
 
 
 const Ref<OrbitalSpace>&
-R12IntEval::xspace(SpinCase1 S) const
-{
-  return GGspace(S);
-}
-
-const Ref<OrbitalSpace>&
 R12IntEval::GGspace(SpinCase1 S) const {
   switch(r12world()->r12tech()->ansatz()->orbital_product_GG()) {
   case R12Technology::OrbProdGG_ij:
@@ -2536,7 +2530,7 @@ R12IntEval::hj_x_P(SpinCase1 S)
     case R12Technology::OrbProdGG_pq:
 	return(hj_p_P(S));
     default:
-	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
+	throw ProgrammingError("R12IntEval::GGspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
     }
 }
 
@@ -2549,7 +2543,7 @@ R12IntEval::hj_x_p(SpinCase1 S)
     case R12Technology::OrbProdGG_pq:
 	return(hj_p_p(S));
     default:
-	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
+	throw ProgrammingError("R12IntEval::GGspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
     }
 }
 
@@ -2562,7 +2556,7 @@ R12IntEval::hj_x_m(SpinCase1 S)
     case R12Technology::OrbProdGG_pq:
         return(hj_p_m(S));
     default:
-        throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
+        throw ProgrammingError("R12IntEval::GGspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
     }
 }
 
@@ -2575,7 +2569,7 @@ R12IntEval::hj_x_a(SpinCase1 S)
     case R12Technology::OrbProdGG_pq:
         return(hj_p_a(S));
     default:
-        throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
+        throw ProgrammingError("R12IntEval::GGspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
     }
 }
 
@@ -2588,7 +2582,7 @@ R12IntEval::hj_x_A(SpinCase1 S)
     case R12Technology::OrbProdGG_pq:
 	return(hj_p_A(S));
     default:
-	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
+	throw ProgrammingError("R12IntEval::GGspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
     }
 }
 
@@ -2601,7 +2595,7 @@ R12IntEval::K_x_P(SpinCase1 S)
     case R12Technology::OrbProdGG_pq:
 	return(K_p_P(S));
     default:
-	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
+	throw ProgrammingError("R12IntEval::GGspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
     }
 }
 
@@ -2614,7 +2608,7 @@ R12IntEval::K_x_p(SpinCase1 S)
     case R12Technology::OrbProdGG_pq:
 	return(K_p_p(S));
     default:
-	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
+	throw ProgrammingError("R12IntEval::GGspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
     }
 }
 
@@ -2627,7 +2621,7 @@ R12IntEval::K_x_m(SpinCase1 S)
     case R12Technology::OrbProdGG_pq:
 	return(K_p_m(S));
     default:
-	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
+	throw ProgrammingError("R12IntEval::GGspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
     }
 }
 
@@ -2640,7 +2634,7 @@ R12IntEval::K_x_a(SpinCase1 S)
     case R12Technology::OrbProdGG_pq:
 	return(K_p_a(S));
     default:
-	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
+	throw ProgrammingError("R12IntEval::GGspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
     }
 }
 
@@ -2653,7 +2647,7 @@ R12IntEval::K_x_A(SpinCase1 S)
     case R12Technology::OrbProdGG_pq:
 	return(K_p_A(S));
     default:
-	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
+	throw ProgrammingError("R12IntEval::GGspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
     }
 }
 
@@ -2666,7 +2660,7 @@ R12IntEval::F_x_A(SpinCase1 S)
     case R12Technology::OrbProdGG_pq:
 	return(F_p_A(S));
     default:
-	throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
+	throw ProgrammingError("R12IntEval::GGspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
     }
 }
 
@@ -2679,7 +2673,7 @@ R12IntEval::F_x_p(SpinCase1 S)
     case R12Technology::OrbProdGG_pq:
     return(F_p_p(S));
     default:
-    throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
+    throw ProgrammingError("R12IntEval::GGspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
     }
 }
 
@@ -2692,7 +2686,7 @@ R12IntEval::F_x_m(SpinCase1 S)
     case R12Technology::OrbProdGG_pq:
     return(F_p_m(S));
     default:
-    throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
+    throw ProgrammingError("R12IntEval::GGspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
     }
 }
 
@@ -2705,7 +2699,7 @@ R12IntEval::F_x_a(SpinCase1 S)
     case R12Technology::OrbProdGG_pq:
     return(F_p_a(S));
     default:
-    throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
+    throw ProgrammingError("R12IntEval::GGspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
     }
 }
 
@@ -2718,7 +2712,7 @@ R12IntEval::F_x_P(SpinCase1 S)
     case R12Technology::OrbProdGG_pq:
     abort();
     default:
-    throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
+    throw ProgrammingError("R12IntEval::GGspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
     }
 }
 
@@ -2731,7 +2725,7 @@ R12IntEval::J_x_p(SpinCase1 S)
     case R12Technology::OrbProdGG_pq:
       abort();
     default:
-    throw ProgrammingError("R12IntEval::xspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
+    throw ProgrammingError("R12IntEval::GGspace() -- invalid orbital product of the R12 ansatz",__FILE__,__LINE__);
     }
 }
 
@@ -2760,7 +2754,9 @@ namespace {
         case AlphaBeta:  return "ab";
         case AlphaAlpha:  return "aa";
         case BetaBeta:  return "bb";
+        default: assert(false); // unreachable
       }
+      return std::string(); // dummy return statement to pacify picky compilers
     }
 };
 

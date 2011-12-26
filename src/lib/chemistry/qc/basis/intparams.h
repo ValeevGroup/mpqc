@@ -119,42 +119,6 @@ namespace sc {
       ContractedGeminal ket_;
   };
 
-  /** Passes params to Integral::geng12() */
-  class IntParamsGenG12 : public IntParams {
-    public:
-      ///     std::pair<std::pair<  a,     g   >   c,   >  as in c * exp( - a*(r1^2+r2^2) - g*r12^2)
-      typedef std::pair<std::pair<double,double>, double> PrimitiveGeminal;
-      typedef std::vector<PrimitiveGeminal> ContractedGeminal;
-      /// 1 = e^(- 0*(r1+r2) - 0*r12)
-      static ContractedGeminal zero_exponent_geminal;
-      /// null (i.e., invalid) geminal
-      static ContractedGeminal null_geminal;
-
-      /// Request integrals with only 1 geminal (g12, g12/r12, [Ti,g12])
-      IntParamsGenG12(const ContractedGeminal& bra);
-      /// Request integrals with 2 geminals (g12*g12', [g12,[T1,g12']], [Ti,g12*g12'])
-      /// IntParamsGenG12 can only be used to compute integrals with the same integral
-      /// in bra and ket, hence this will throw if bra != ket.
-      IntParamsGenG12(const ContractedGeminal& bra,
-                   const ContractedGeminal& ket);
-      IntParamsGenG12(StateIn&);
-      ~IntParamsGenG12();
-      void save_data_state(StateOut&);
-
-      const ContractedGeminal& bra() const;
-      const ContractedGeminal& ket() const;
-
-    private:
-      bool equiv(const IntParams& other) const;
-
-      /// An invalid exponent (exponent of null_geminal)
-      static double null_exponent;
-
-      ContractedGeminal bra_;
-      ContractedGeminal ket_;
-  };
-
-
 }
 
 #endif

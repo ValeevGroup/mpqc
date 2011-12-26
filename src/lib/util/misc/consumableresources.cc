@@ -221,7 +221,7 @@ ConsumableResources::sprint() const {
 }
 
 void
-ConsumableResources::print(std::ostream& o, bool print_state, bool print_stats) const {
+ConsumableResources::print_summary(std::ostream& o, bool print_state, bool print_stats) const {
   o << indent << "ConsumableResources: (" << std::endl << incindent;
 
   o << indent << "memory = " << rsize::value_to_string(memory_.max_value());

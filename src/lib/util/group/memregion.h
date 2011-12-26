@@ -72,7 +72,7 @@ class MemoryGrpRegion: public MemoryGrp {
     void sync();
     void catchup();
     void* malloc_local(size_t nbytes);
-    void free_local(void* data);
+    void free_local(void*& data);
 
     Ref<MemoryGrp> clone();
     void print(std::ostream &o=ExEnv::out0()) const;

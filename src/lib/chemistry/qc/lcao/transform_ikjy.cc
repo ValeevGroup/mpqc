@@ -125,7 +125,7 @@ TwoBodyMOIntsTransform_ikjy::compute_transform_dynamic_memory_(int ni) const
   return memsize_memgrp + std::max(memsize123,memsize4);
 }
 
-const size_t
+size_t
 TwoBodyMOIntsTransform_ikjy::memgrp_blksize() const
 {
   const int nbasis4 = space4_->basis()->nbasis();

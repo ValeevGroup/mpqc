@@ -280,7 +280,8 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute() {
     buffer[te_type] = inteval->buffer( descr->opertype(te_type) );
 
   // distribute work by basis3
-  // TODO 1) use DistShell 2) use threads
+  // TODO 1) use DistShell -- not too important now
+  // TODO 2) use threads
   for (int s3 = 0; s3 < b3->nshell(); ++s3) {
     if (s3 % nproc != me) continue;
 

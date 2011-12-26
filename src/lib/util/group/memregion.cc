@@ -312,7 +312,7 @@ MemoryGrpRegion::malloc_local(size_t nbytes) {
 }
 
 void
-MemoryGrpRegion::free_local(void* data) {
+MemoryGrpRegion::free_local(void*& data) {
   host_->free_local(data);
 }
 

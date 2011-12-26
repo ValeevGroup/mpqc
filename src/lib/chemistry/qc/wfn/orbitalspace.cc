@@ -548,9 +548,12 @@ namespace {
       int index() const {
         return index_;
       }
+      // not used at the moment
+#if 0
       double value() const {
         return value_;
       }
+#endif
 
       bool operator<(const IndexedValue& a) const {
         const double small_diff = 1.0e-12;

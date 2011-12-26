@@ -103,7 +103,6 @@ R12IntEval::V_cabs(SpinCase2 spincase2,
   // The diagonal contribution
   Ref<R12Technology::G12CorrelationFactor> g12ptr; g12ptr << corrfactor();
   Ref<R12Technology::G12NCCorrelationFactor> g12ncptr; g12ncptr << corrfactor();
-  Ref<R12Technology::GenG12CorrelationFactor> gg12ptr; gg12ptr << corrfactor();
   Ref<R12Technology::R12CorrelationFactor> r12ptr; r12ptr << corrfactor();
   if (r12ptr.nonnull()) {
     RefSCMatrix I = compute_I_(x1,x2,p1,p2);
@@ -112,7 +111,7 @@ R12IntEval::V_cabs(SpinCase2 spincase2,
     else
       sc::antisymmetrize<true>(V,I,x1,x2,p1,p2);
   }
-  else if (g12ptr.nonnull() || g12ncptr.nonnull() || gg12ptr.nonnull()) {
+  else if (g12ptr.nonnull() || g12ncptr.nonnull()) {
     std::vector<std::string> tforms_f12_xmyn;
     {
       R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(),
@@ -472,8 +471,6 @@ std::vector<Ref<DistArray4> > R12IntEval::V_distarray4(
   g12ptr << corrfactor();
   Ref<R12Technology::G12NCCorrelationFactor> g12ncptr;
   g12ncptr << corrfactor();
-  Ref<R12Technology::GenG12CorrelationFactor> gg12ptr;
-  gg12ptr << corrfactor();
   Ref<R12Technology::R12CorrelationFactor> r12ptr;
   r12ptr << corrfactor();
   if (r12ptr.nonnull()) {
@@ -482,7 +479,7 @@ std::vector<Ref<DistArray4> > R12IntEval::V_distarray4(
     RefSCMatrix I = compute_I_(x1,x2,p1,p2);
     V.accumulate(I);
 #endif
-  } else if (g12ptr.nonnull() || g12ncptr.nonnull() || gg12ptr.nonnull()) {
+  } else if (g12ptr.nonnull() || g12ncptr.nonnull()) {
     std::vector<std::string> tforms_f12_xmyn;
     {
       R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(), x1, p1,
@@ -911,7 +908,6 @@ R12IntEval::P(SpinCase2 spincase2)
   //
   Ref<R12Technology::G12CorrelationFactor> g12ptr; g12ptr << corrfactor();
   Ref<R12Technology::G12NCCorrelationFactor> g12ncptr; g12ncptr << corrfactor();
-  Ref<R12Technology::GenG12CorrelationFactor> gg12ptr; gg12ptr << corrfactor();
   Ref<R12Technology::R12CorrelationFactor> r12ptr; r12ptr << corrfactor();
 
   //
@@ -935,7 +931,7 @@ R12IntEval::P(SpinCase2 spincase2)
       antisymmetrize,
       tforms_f12_xoyw);
   }
-  else if (g12ptr.nonnull() || g12ncptr.nonnull() || gg12ptr.nonnull()) {
+  else if (g12ptr.nonnull() || g12ncptr.nonnull()) {
     std::vector<std::string> tforms_f12f12_xoyw;
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
@@ -972,7 +968,7 @@ R12IntEval::P(SpinCase2 spincase2)
     else
       sc::antisymmetrize<true>(V_pp,I,x1,x2,orbs1,orbs2);
   }
-  else if (g12ptr.nonnull() || g12ncptr.nonnull() || gg12ptr.nonnull()) {
+  else if (g12ptr.nonnull() || g12ncptr.nonnull()) {
     std::vector<std::string> tforms_f12_xpyq;
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
@@ -1036,7 +1032,7 @@ R12IntEval::P(SpinCase2 spincase2)
     else
       sc::antisymmetrize<true>(V_iA,I,x1,x2,occ1,cabs2);
   }
-  else if (g12ptr.nonnull() || g12ncptr.nonnull() || gg12ptr.nonnull()) {
+  else if (g12ptr.nonnull() || g12ncptr.nonnull()) {
     std::vector<std::string> tforms_f12_xiyA;
     {
       R12TwoBodyIntKeyCreator tformkey_creator(
@@ -1095,7 +1091,7 @@ R12IntEval::P(SpinCase2 spincase2)
       else
         sc::antisymmetrize<true>(V_Ai,I,x1,x2,cabs1,occ2);
     }
-    else if (g12ptr.nonnull() || g12ncptr.nonnull() || gg12ptr.nonnull()) {
+    else if (g12ptr.nonnull() || g12ncptr.nonnull()) {
       std::vector<std::string> tforms_f12_xAyi;
       {
         R12TwoBodyIntKeyCreator tformkey_creator(

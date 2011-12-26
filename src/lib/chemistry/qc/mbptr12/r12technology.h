@@ -219,8 +219,6 @@ class R12Technology: virtual public SavableState {
 
       /// Computes value of function c when electrons are at distance r12
       virtual double value(unsigned int c, double r12) const =0;
-      /// Computes value of function c when electrons are at (r1, r2, r12). By default, will call value(c,r12).
-      virtual double value(unsigned int c, double r12, double r1, double r2) const;
 
       /** Returns TwoBodyIntDescr needed to compute matrix elements where correlation
           function f appears in either bra or ket only.
@@ -426,54 +424,6 @@ class R12Technology: virtual public SavableState {
 
   };
 
-  /** GenG12CorrelationFactor stands for no correlation factor */
-  class GenG12CorrelationFactor : public CorrelationFactor {
-    public:
-    /// Definitions of primitive and contracted Geminals
-    typedef IntParamsGenG12::PrimitiveGeminal PrimitiveGeminal;
-    typedef IntParamsGenG12::ContractedGeminal ContractedGeminal;
-    /// Vector of contracted 2 particle functions
-    typedef std::vector<ContractedGeminal> CorrelationParameters;
-
-    GenG12CorrelationFactor(const CorrelationParameters& params);
-
-    /// Implementation of CorrelationFactor::equiv()
-    bool equiv(const Ref<CorrelationFactor>& cf) const;
-    /// Reimplementation of CorrelationFactor::nfunctions()
-    unsigned int nfunctions() const;
-    /// Returns contracted function c
-    const ContractedGeminal& function(unsigned int c) const;
-    /// Reimplementation of CorrelationFactor::nprimitives()
-    unsigned int nprimitives(unsigned int c) const;
-    /// Returns std::pair<primitive_parameter,coefficient> in primitive p of contraction c
-    const PrimitiveGeminal& primitive(unsigned int c, unsigned int p) const;
-    /// Implementation of CorrelationFactor::max_num_tbint_types()
-    unsigned int max_num_tbint_types() const { return 4; }
-    /// Reimplementation of CorrelationFactor::tbint_type_f12()
-    TwoBodyOper::type tbint_type_f12() const;
-    /// Reimplementation of CorrelationFactor::tbint_type_f12eri()
-    TwoBodyOper::type tbint_type_f12eri() const;
-    /// Reimplementation of CorrelationFactor::tbint_type_f12f12()
-    TwoBodyOper::type tbint_type_f12f12() const;
-    /// Reimplementation of CorrelationFactor::tbint_type_f12t1f12()
-    TwoBodyOper::type tbint_type_f12t1f12() const;
-    /// Overload of CorrelationFactor::tbintdescr(f)
-    Ref<TwoBodyIntDescr> tbintdescr(const Ref<Integral>& IF, unsigned int f) const;
-    /// Overload of CorrelationFactor::tbintdescr(fbra,fket)
-    Ref<TwoBodyIntDescr> tbintdescr(const Ref<Integral>& IF, unsigned int fbra, unsigned int fket) const;
-    /// Implementation of CorrelationFactor::value()
-    double value(unsigned int c, double r12) const;
-    /// Reimplementation of CorrelationFactor::value()
-    double value(unsigned int c, double r12, double r1, double r2) const;
-
-  private:
-    CorrelationParameters params_;
-
-    /// Reimplementation of CorrelationFactor::print_params()
-    void print_params(std::ostream& os, unsigned int f) const;
-
-  };
-
   class GeminalDescriptorFactory : public RefCount {
     private:
       const char* invalid_id_;  // = "invalid"
@@ -532,92 +482,10 @@ class R12Technology: virtual public SavableState {
         return cf;
       }
 
-  template<class Fitter>
-      static Ref<CorrelationFactor> angstg_to_geng12(const Fitter& fitter,
-                                                     double alpha, double gamma, int k) {
-
-        const double halfalpha = alpha / 2.0;
-
-        using sc::mbptr12::Slater1D;
-        typedef typename Fitter::Gaussians Gaussians;
-        Slater1D stg(gamma, k);
-        Gaussians gtgs = fitter(stg);
-
-        // feed to the constructor of CorrFactor
-        typedef IntParamsGenG12::PrimitiveGeminal PrimitiveGeminal;
-        typedef IntParamsGenG12::ContractedGeminal ContractedGeminal;
-        ContractedGeminal geminal;
-        typedef typename Gaussians::const_iterator citer;
-        for (citer g = gtgs.begin(); g != gtgs.end(); ++g) {
-          const double alpha_i = halfalpha;
-          const double gamma_i = (*g).first - halfalpha;
-          const double C_i = (*g).second;
-          // see basis/intparams.h
-          PrimitiveGeminal i = std::make_pair(std::make_pair(alpha_i, gamma_i),
-                                              C_i);
-          geminal.push_back(i);
-        }
-        std::vector<ContractedGeminal> geminals(1, geminal);
-
-        Ref<CorrelationFactor> cf = new GenG12CorrelationFactor(geminals);
-        return cf;
-      }
-
-  template<class Fitter>
-      static Ref<CorrelationFactor> angplusstg_to_geng12(const Fitter& fitter,
-                                                         double alpha, double gamma,
-                                                         int k) {
-
-        const double halfalpha = alpha / 2.0;
-
-        using sc::mbptr12::Slater1D;
-        typedef typename Fitter::Gaussians Gaussians;
-        Slater1D stg(gamma, k);
-        Gaussians gtgs = fitter(stg);
-
-        // feed to the constructor of CorrFactor
-        typedef IntParamsGenG12::PrimitiveGeminal PrimitiveGeminal;
-        typedef IntParamsGenG12::ContractedGeminal ContractedGeminal;
-        ContractedGeminal geminal_stg;
-        ContractedGeminal geminal_ang;
-
-        // add STG
-        typedef typename Gaussians::const_iterator citer;
-        for (citer g = gtgs.begin(); g != gtgs.end(); ++g) {
-          const double gamma_i = (*g).first;
-          const double C_i = (*g).second;
-          // see basis/intparams.h
-          PrimitiveGeminal i =
-              std::make_pair(std::make_pair(0.0, gamma_i), C_i);
-          geminal_stg.push_back(i);
-        }
-        // add ang
-        geminal_ang.push_back(std::make_pair(std::make_pair(halfalpha,
-                                                            -halfalpha), 1.0));
-
-        std::vector<ContractedGeminal> geminals;
-        geminals.push_back(geminal_stg);
-        geminals.push_back(geminal_ang);
-
-        Ref<CorrelationFactor> cf = new GenG12CorrelationFactor(geminals);
-        return cf;
-      }
-
 #if 0
   /// fits r_{12}^k * exp(-gamma*r_{12}) using the provided fitter. The fitter must implement GaussianFit interface.
   template <class CorrFactor, class Fitter>
   Ref<CorrelationFactor> stg_to_g12(const Fitter& fitter, double gamma, int k=0);
-
-  /// produces geng12 for \f$e^{-\alpha (r_1 \cdot r_2) }\f$
-  Ref<CorrelationFactor> ang_to_geng12(double alpha);
-
-  /// fits \f$r_{12}^k * e^{-\gamma r_{12}} e^{-\alpha (r_1 \cdot r_2)}\f$ using the provided fitter. The fitter must implement GaussianFit interface.
-  template <class Fitter>
-  Ref<CorrelationFactor> angstg_to_geng12(const Fitter& fitter, double alpha, double gamma, int k=0);
-
-  /// fits separately \f$r_{12}^k e^{-\gamma r_{12}}\f$ and \f$e^{-\alpha (r_1 \cdot r_2)}\f$ using the provided fitter. The fitter must implement GaussianFit interface.
-  template <class Fitter>
-  Ref<CorrelationFactor> angplusstg_to_geng12(const Fitter& fitter, double alpha, double gamma, int k=0);
 
   /// direct product of 2 correlation factors A and B
   template <class CF> Ref<CF> direct_product(const Ref<CF>& A, const Ref<CF>& B);
@@ -662,7 +530,7 @@ class R12Technology: virtual public SavableState {
 
         <dt><tt>corr_factor</tt><dd> This string specifies which correlation factor to use.
         Allowed values are "r12", "g12", "stg-Xg" (where X is an integer greater than 0),
-        "geng12", and "none". The default is "stg-6g".
+        and "none". The default is "stg-6g".
 
         <dt><tt>corr_param</tt><dd> This keyword specifies optional parameters
         of the correlation factor. <tt>corr_param</tt> can be a single floating-point value

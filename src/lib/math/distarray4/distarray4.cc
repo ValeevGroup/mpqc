@@ -58,6 +58,7 @@ namespace {
         i0_ = other.i0_;
         i1_ = other.i1_;
         i2_ = other.i2_;
+        return *this;
       }
       T0 i0_;
       T1 i1_;

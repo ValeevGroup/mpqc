@@ -160,14 +160,14 @@ public:
   /// Returns the default TwoBodyIntDescr used to produce integrals
   Ref<TwoBodyIntDescr> tbintdescr() const { return tbintdescr_; }
   /// Returns the method of storing transformed MO integrals.
-  const MOIntsTransform::StoreMethod::type ints_method() const { return ints_method_; }
+  MOIntsTransform::StoreMethod::type ints_method() const { return ints_method_; }
   const CreateTransformHints& hints() const { return hints_; }
   CreateTransformHints& hints() { return hints_; }
   /// Sets the name of the file to hold the integrals.
-  const std::string file_prefix() const { return file_prefix_; }
-  const int debug() const { return debug_; }
-  const double print_percent() const { return print_percent_; }
-  const bool dynamic() const { return dynamic_; }
+  std::string file_prefix() const { return file_prefix_; }
+  int debug() const { return debug_; }
+  double print_percent() const { return print_percent_; }
+  bool dynamic() const { return dynamic_; }
 
   /// Returns OrbitalSpace object 1
   Ref<OrbitalSpace> space1() const;

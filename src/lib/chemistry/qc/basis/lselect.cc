@@ -127,6 +127,8 @@ namespace {
 	    return nselected;
 	}
 
+	// might be useful someday?
+#if 0
 	// return true if only some contractions from shell are found in l_
 	bool select_some_only(const GaussianShell& shell) {
 	    // only generally contracted shells can return true
@@ -150,6 +152,7 @@ namespace {
 	    }
 	    return false;
 	}
+#endif
     private:
 	const std::vector<int>::const_iterator lbegin_;
 	const std::vector<int>::const_iterator lend_;

@@ -182,11 +182,6 @@ ParsedTwoBodyFourCenterIntKey::create_descr(const std::string& oper_key,
     if (params_cast.null()) throw ProgrammingError("ParsedTwoBodyFourCenterIntKey::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
     return new TwoBodyIntDescrG12DKH(integral,params_cast);
   }
-  if (oper_key == std::string("GenG12")) {
-    Ref<IntParamsGenG12> params_cast; params_cast << p;
-    if (params_cast.null()) throw ProgrammingError("ParsedTwoBodyFourCenterIntKey::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
-    return new TwoBodyIntDescrGenG12(integral,params_cast);
-  }
   throw ProgrammingError("ParsedTwoBodyFourCenterIntKey::create_descr() -- unknown oper",
                          __FILE__,__LINE__);
 }
@@ -266,11 +261,6 @@ ParsedTwoBodyThreeCenterIntKey::create_descr(const std::string& oper_key,
     if (params_cast.null()) throw ProgrammingError("ParsedTwoBodyThreeCenterIntKey::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
     return new TwoBodyThreeCenterIntDescrG12DKH(integral,params_cast);
   }
-  if (oper_key == std::string("GenG12")) {
-    Ref<IntParamsGenG12> params_cast; params_cast << p;
-    if (params_cast.null()) throw ProgrammingError("ParsedTwoBodyThreeCenterIntKey::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
-    return new TwoBodyThreeCenterIntDescrGenG12(integral,params_cast);
-  }
   throw ProgrammingError("ParsedTwoBodyThreeCenterIntKey::create_descr() -- unknown oper",
                          __FILE__,__LINE__);
 }
@@ -347,11 +337,6 @@ ParsedTwoBodyTwoCenterIntKey::create_descr(const std::string& oper_key,
     Ref<IntParamsG12> params_cast; params_cast << p;
     if (params_cast.null()) throw ProgrammingError("ParsedTwoBodyTwoCenterIntKey::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
     return new TwoBodyTwoCenterIntDescrG12DKH(integral,params_cast);
-  }
-  if (oper_key == std::string("GenG12")) {
-    Ref<IntParamsGenG12> params_cast; params_cast << p;
-    if (params_cast.null()) throw ProgrammingError("ParsedTwoBodyTwoCenterIntKey::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
-    return new TwoBodyTwoCenterIntDescrGenG12(integral,params_cast);
   }
   throw ProgrammingError("ParsedTwoBodyTwoCenterIntKey::create_descr() -- unknown oper",
                          __FILE__,__LINE__);
@@ -515,6 +500,9 @@ TwoBodyIntLayout::operator std::string() {
       return std::string("(b1 b2|k1 k2)");
     case _b1k1_b2k2:
       return std::string("(b1 k1|b2 k2)");
+    default:
+      assert(false);
+      return std::string();
   }
 }
 
@@ -561,6 +549,8 @@ namespace sc{   namespace detail {
       case AlphaAlpha:  return "aa";
       case BetaBeta:  return "bb";
     }
+    assert(false);
+    return std::string(); // dummy return statement to pacify picky compilers
   }
 
 }}

@@ -244,6 +244,7 @@ MOIntsTransformFactory::twobody_transform(MOIntsTransform::TwoBodyTransformType 
       return twobody_transform<TwoBodyMOIntsTransform_iRjS>(name,descrarg);
   }
   assert(false); // should be unreachable
+  return Ref<TwoBodyMOIntsTransform>(); // dummy return statement to pacify picky compilers
 }
 #endif
 
@@ -257,6 +258,7 @@ MOIntsTransformFactory::twobody_transform(MOIntsTransform::TwoBodyTransformType 
       return twobody_transform<TwoBodyThreeCenterMOIntsTransform_ijR>(name,descrarg);
   }
   assert(false);  // should be unreachable
+  return Ref<TwoBodyThreeCenterMOIntsTransform>(); // dummy return statement to pacify picky compilers
 }
 
 void

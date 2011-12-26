@@ -146,7 +146,7 @@ public:
   bool dynamic() const { return dynamic_; };
   double print_percent() const { return print_percent_; };
   int debug_level() const { return debug_; };
-  const StoreMethod::type ints_method() const { return ints_method_; };
+  StoreMethod::type ints_method() const { return ints_method_; };
   const std::string& ints_file() const;
 
   /// Returns the MOIntsTransformFactory object

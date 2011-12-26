@@ -37,6 +37,7 @@
 #include <util/state/stateout.h>
 #include <util/class/scexception.h>
 
+// set to 1 if you are have backtrace_symbols (e.g. on OS X) and want to trace resource leaks
 #define HAVE_BACKTRACE_SYMBOLS 0
 #if HAVE_BACKTRACE_SYMBOLS
 #  include <execinfo.h>
@@ -113,10 +114,10 @@ namespace sc {
       /// @param os output stream
       /// @param print_state set to true to print out currently available resources
       /// @param print_stats set to true to print out maximum resource usage
-      void print(std::ostream& os = ExEnv::out0(),
-                 bool print_state = true,
-                 bool print_stats = false) const;
-      /// prints short definition to a string \sa print()
+      void print_summary(std::ostream& os = ExEnv::out0(),
+                         bool print_state = true,
+                         bool print_stats = false) const;
+      /// prints short definition to a string \sa print_summary()
       std::string sprint() const;
 
       /// allocate array of T size elements long using operator new[] (keeps track of memory)
@@ -382,7 +383,7 @@ namespace sc {
             std::ostringstream oss;
             oss << "size=" << size;
 #if HAVE_BACKTRACE_SYMBOLS
-            oss << " allocated at:\n"
+            oss << " allocated at:\n";
             std::copy(acquisition_backtrace.begin(),
                       acquisition_backtrace.end(),
                       std::ostream_iterator<std::string>(oss, "\n"));

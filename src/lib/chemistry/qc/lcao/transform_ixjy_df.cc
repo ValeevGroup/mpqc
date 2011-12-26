@@ -140,7 +140,7 @@ TwoBodyMOIntsTransform_ixjy_df::compute_transform_dynamic_memory_(int ni) const
   return memsize_memgrp;
 }
 
-const size_t
+size_t
 TwoBodyMOIntsTransform_ixjy_df::memgrp_blksize() const
 {
   const int nbasis2 = space2_->basis()->nbasis();

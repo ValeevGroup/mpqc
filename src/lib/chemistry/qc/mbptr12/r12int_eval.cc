@@ -531,12 +531,11 @@ R12IntEval::init_intermeds_()
 
   Ref<R12Technology::G12CorrelationFactor> g12ptr; g12ptr << corrfactor();
   Ref<R12Technology::G12NCCorrelationFactor> g12ncptr; g12ncptr << corrfactor();
-  Ref<R12Technology::GenG12CorrelationFactor> gg12ptr; gg12ptr << corrfactor();
   Ref<R12Technology::R12CorrelationFactor> r12ptr; r12ptr << corrfactor();
   if (r12ptr.nonnull()) {
     init_intermeds_r12_();
   }
-  else if (g12ptr.nonnull() || g12ncptr.nonnull() || gg12ptr.nonnull()) {
+  else if (g12ptr.nonnull() || g12ncptr.nonnull()) {
     init_intermeds_g12_();
   }
 

@@ -97,10 +97,6 @@ TwoBodyOper::type OperSetTypeMap<TwoBodyOperSet::G12NC>::value[] = {TwoBodyOper:
                                                               TwoBodyOper::r12_m1_g12,
                                                               TwoBodyOper::g12t1g12,
                                                               TwoBodyOper::anti_g12g12};
-TwoBodyOper::type OperSetTypeMap<TwoBodyOperSet::GenG12>::value[] = {TwoBodyOper::eri,
-                                                               TwoBodyOper::r12_0_gg12,
-                                                               TwoBodyOper::r12_m1_gg12,
-                                                               TwoBodyOper::gg12t1gg12};
 TwoBodyOper::type OperSetTypeMap<TwoBodyOperSet::G12DKH>::value[] = {TwoBodyOper::g12p4g12_m_g12t1g12t1};
 
 TwoBodyOperSetDescr::TwoBodyOperSetDescr(int size,
@@ -128,14 +124,11 @@ TwoBodyOperSetDescr::instance(TwoBodyOperSet::type oset)
       return new TwoBodyOperSetDescr(OperSetTypeMap<TwoBodyOperSet::G12DKH>::size,
                                      OperSetTypeMap<TwoBodyOperSet::G12DKH>::value);
       break;
-    case TwoBodyOperSet::GenG12:
-      return new TwoBodyOperSetDescr(OperSetTypeMap<TwoBodyOperSet::GenG12>::size,
-                                     OperSetTypeMap<TwoBodyOperSet::GenG12>::value);
-      break;
 
     default:
       assert(false);
   }
+  return Ref<TwoBodyOperSetDescr>(); // unreachable
 }
 
 TwoBodyOper::type

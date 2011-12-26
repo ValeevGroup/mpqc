@@ -64,13 +64,6 @@ namespace sc {
       }
     };
 
-    template <int NumCenters> struct GenG12EvalCreator {
-      static Ref< typename TwoBodyIntEvalType<NumCenters>::value >
-      eval(const Ref<Integral>& factory, const Ref<IntParamsGenG12>& params) {
-        return factory->geng12<NumCenters>(params);
-      }
-    };
-
     template <int NumCenters> struct G12DKHEvalCreator {
       static Ref< typename TwoBodyIntEvalType<4>::value >
       eval(const Ref<Integral>& factory, const Ref<IntParamsG12>& params) {
@@ -90,9 +83,6 @@ namespace sc {
     };
     template <int NumCenters> struct EvalCreator<NumCenters,TwoBodyOperSet::G12NC> {
       typedef G12NCEvalCreator<NumCenters> value;
-    };
-    template <int NumCenters> struct EvalCreator<NumCenters,TwoBodyOperSet::GenG12> {
-      typedef GenG12EvalCreator<NumCenters> value;
     };
     template <int NumCenters> struct EvalCreator<NumCenters,TwoBodyOperSet::G12DKH> {
       typedef G12DKHEvalCreator<NumCenters> value;

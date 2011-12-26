@@ -43,9 +43,6 @@
 #if LIBINT2_SUPPORT_G12 && LIBINT2_SUPPORT_T1G12
 #  include <chemistry/qc/libint2/g12.h>
 #endif
-#if LIBINT2_SUPPORT_GENG12
-#  include <chemistry/qc/libint2/geng12.h>
-#endif
 #if LIBINT2_SUPPORT_G12DKH
 #  include <chemistry/qc/libint2/g12dkh.h>
 #endif
@@ -176,19 +173,6 @@ IntegralLibint2::storage_required_g12dkh(const Ref<GaussianBasisSet> &b1,
   return G12DKHLibint2::storage_required(b1,b2,b3,b4);
 #else
   throw InputError("IntegralLibint2::storage_required_g12dkh() -- libint2 library included in this executable does not support computation of G12DKH",__FILE__,__LINE__);
-#endif
-}
-
-size_t
-IntegralLibint2::storage_required_geng12(const Ref<GaussianBasisSet> &b1,
-					 const Ref<GaussianBasisSet> &b2,
-					 const Ref<GaussianBasisSet> &b3,
-					 const Ref<GaussianBasisSet> &b4)
-{
-#if LIBINT2_SUPPORT_GENG12
-  return GenG12Libint2::storage_required(b1,b2,b3,b4);
-#else
-  throw InputError("IntegralLibint2::storage_required_geng12() -- libint2 library included in this executable does not support computation of GenG12",__FILE__,__LINE__);
 #endif
 }
 
@@ -467,17 +451,6 @@ IntegralLibint2::g12dkh_4(const Ref<IntParamsG12>& params)
                                TwoBodyOperSet::G12DKH, static_cast<IntParams*>(params.pointer()));
 #else
   throw InputError("IntegralLibint2::g12dkh_4() -- libint2 library included in this executable does not support computation of G12DKH integrals",__FILE__,__LINE__);
-#endif
-}
-
-Ref<TwoBodyInt>
-IntegralLibint2::geng12_4(const Ref<IntParamsGenG12>& params)
-{
-#if LIBINT2_SUPPORT_GENG12
-  return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_,
-                               TwoBodyOperSet::GenG12, static_cast<IntParams*>(params.pointer()));
-#else
-  throw InputError("IntegralLibint2::geng12_4() -- libint2 library included in this executable does not support computation of GenG12 integrals",__FILE__,__LINE__);
 #endif
 }
 

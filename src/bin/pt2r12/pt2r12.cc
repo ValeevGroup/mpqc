@@ -169,11 +169,11 @@ int try_main(int argc, char **argv)
   }
 
   const char* r12_cstr = opt.retrieve("r12");
-  std::string r12_str = r12_cstr?r12_cstr:"";
+  const std::string r12_str = r12_cstr?r12_cstr:"";
   const char* singles_cstr = opt.retrieve("singles");
-  std::string singles_str = singles_cstr?singles_cstr:"";
+  const std::string singles_str = singles_cstr?singles_cstr:"";
   const char* partition_cstr = opt.retrieve("partitionH");
-  std::string partition_str = partition_cstr?partition_cstr:"";
+  const std::string partition_str = partition_cstr?partition_cstr:"";
 
   ExEnv::out0() << indent << "Given resources: " << resources->sprint() << endl
       << endl;

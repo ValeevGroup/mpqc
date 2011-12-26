@@ -52,6 +52,9 @@ class Optimize: virtual public SavableState {
     Ref<Function> function_;
     Ref<Convergence> conv_;
     Ref<MessageGrp> msg_;
+    /// Initialize the optimizer.
+    void init();
+
   public:
     Optimize();
     /// Restore the state of a Function object.
@@ -100,8 +103,6 @@ class Optimize: virtual public SavableState {
     /// Set the iteration limit.
     void set_max_iterations(int);
   
-    /// Initialize the optimizer.
-    virtual void init();
     /** Take a step.  Returns 1 if the optimization has converged,
         otherwise 0. */
     virtual int update() = 0;

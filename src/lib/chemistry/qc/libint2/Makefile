@@ -51,9 +51,6 @@ ifeq ($(HAVE_LIBINT2_G12),yes)
     CXXSRC += g12.cc comp_g12.cc
   endif
 endif
-ifeq ($(HAVE_LIBINT2_GENG12),yes)
-  CXXSRC += geng12.cc comp_geng12.cc
-endif
 ifeq ($(HAVE_LIBINT2_G12DKH),yes)
   CXXSRC += g12dkh.cc comp_g12dkh.cc
 endif

@@ -99,7 +99,7 @@ TwoBodyMOIntsTransform_iRjS::compute_transform_dynamic_memory_(int ni) const
   return memsize_memgrp + memsize12;
 }
 
-const size_t
+size_t
 TwoBodyMOIntsTransform_iRjS::memgrp_blksize() const
 {
   const int nbasis2 = space2()->basis()->nbasis();

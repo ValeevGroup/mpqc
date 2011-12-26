@@ -699,6 +699,23 @@ try_main(int argc, char *argv[])
         mole->set_molgrad(0);
       }
 
+      // EFV Feb. 6 2011
+      // good idea to print optimized coordinates here
+      {
+        Ref<MolecularCoor> mc = mole->molecularcoor();
+        if (mc)
+          mc->print(ExEnv::out0());
+        else {
+          mole->molecule()->print(ExEnv::out0());
+          // generate simple internals and print them out just FYI
+          Ref<SetIntCoor> cset = new SetIntCoor;
+          Ref<IntCoorGen> intcoorgen = new IntCoorGen(mole->molecule());
+          intcoorgen->generate(cset);
+          cset->update_values(mole->molecule());
+          cset->print_details(mole->molecule(), ExEnv::out0());
+        }
+      }
+
     } else if (do_grad && have_gradient) { // only compute the gradient
 
       RefSCVector grad;
@@ -783,16 +800,6 @@ try_main(int argc, char *argv[])
 
   // Frequency calculation
   if (do_freq) {
-
-    // EFV Feb. 6 2011
-    // good idea to print optimized coordinates here
-    if (opt.nonnull()) {
-      Ref<MolecularCoor> mc = mole->molecularcoor();
-      if (mc)
-        mc->print(ExEnv::out0());
-      else
-        mole->molecule()->print(ExEnv::out0());
-    }
 
     if ((opt && ready_for_freq) || !opt) {
       RefSymmSCMatrix xhessian;
@@ -924,7 +931,7 @@ try_main(int argc, char *argv[])
     const bool print_resources_state = false;
     const bool print_resources_stats = true;
     ExEnv::out0() << endl;
-    resources->print(ExEnv::out0(),print_resources_state,print_resources_stats);
+    resources->print_summary(ExEnv::out0(),print_resources_state,print_resources_stats);
   }
   if (print_timings)
     timer.print(ExEnv::out0());

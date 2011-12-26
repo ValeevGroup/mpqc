@@ -42,11 +42,13 @@ namespace sc {
     if (S1 == Beta && S2 == Alpha) return AlphaBeta;
     if (S1 == Beta && S2 == Beta) return BetaBeta;
     assert(false);
+    return InvalidSpinCase2;  // dummy return statement to pacify picky compilers
   }
   SpinCase1 other(SpinCase1 S) {
     if (S == Alpha) return Beta;
     if (S == Beta) return Alpha;
     assert(false);
+    return InvalidSpinCase1;  // dummy return statement to pacify picky compilers
   }
   std::string to_string(SpinCase1 S) {
     switch(S) {

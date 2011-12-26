@@ -25,10 +25,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 #ifndef _mpqc_src_bin_pt2r12_externpt2r12_h
 #define _mpqc_src_bin_pt2r12_externpt2r12_h
 

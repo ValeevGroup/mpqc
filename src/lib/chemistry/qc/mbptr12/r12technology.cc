@@ -203,33 +203,6 @@ namespace sc {
         - B.second) < epsilon);
   }
 
-  template<>
-  bool sc::R12Technology::CorrParamCompare<IntParamsGenG12>::equiv(
-                                                                   const PrimitiveGeminal& A,
-                                                                   const PrimitiveGeminal& B) {
-    return (std::fabs(A.first.first - B.first.first) < epsilon
-        && std::fabs(A.first.second - B.first.second) < epsilon
-        && std::fabs(A.second - B.second) < epsilon);
-  }
-}
-
-Ref<R12Technology::CorrelationFactor> ang_to_geng12(double alpha) {
-
-  const double halfalpha = alpha/2.0;
-
-  // feed to the constructor of CorrFactor
-  typedef IntParamsGenG12::PrimitiveGeminal PrimitiveGeminal;
-  typedef IntParamsGenG12::ContractedGeminal ContractedGeminal;
-  ContractedGeminal geminal_ang;
-
-  // add ang
-  geminal_ang.push_back(std::make_pair(std::make_pair(halfalpha,-halfalpha),1.0));
-
-  std::vector<ContractedGeminal> geminals;
-  geminals.push_back(geminal_ang);
-
-  Ref<R12Technology::CorrelationFactor> cf = new R12Technology::GenG12CorrelationFactor(geminals);
-  return cf;
 }
 
 /*********************
@@ -521,12 +494,6 @@ Ref<R12Technology::GeminalDescriptor> R12Technology::CorrelationFactor::geminald
 void
 R12Technology::CorrelationFactor::print_params(std::ostream& os, unsigned int f) const
 {
-}
-
-double
-R12Technology::CorrelationFactor::value(unsigned int c, double r12, double r1, double r2) const
-{
-  return value(c,r12);
 }
 
 TwoBodyOper::type
@@ -926,123 +893,6 @@ R12Technology::G12NCCorrelationFactor::product(const ContractedGeminal& A,
   return IntParamsG12::product(A,B);
 }
 
-////
-
-R12Technology::GenG12CorrelationFactor::GenG12CorrelationFactor(const CorrelationParameters& params) :
-  CorrelationFactor(), params_(params)
-{
-  if (params_.size() != 1)
-    throw ProgrammingError("GenG12CorrelationFactor::GenG12CorrelationFactor() -- only 1 general Geminal correlation factor can now be handled",__FILE__,__LINE__);
-}
-
-unsigned int
-R12Technology::GenG12CorrelationFactor::nfunctions() const
-{
-  return params_.size();
-}
-
-
-const R12Technology::GenG12CorrelationFactor::ContractedGeminal&
-R12Technology::GenG12CorrelationFactor::function(unsigned int c) const
-{
-  return params_.at(c);
-}
-
-unsigned int
-R12Technology::GenG12CorrelationFactor::nprimitives(unsigned int c) const
-{
-  return params_.at(c).size();
-}
-
-const R12Technology::GenG12CorrelationFactor::PrimitiveGeminal&
-R12Technology::GenG12CorrelationFactor::primitive(unsigned int c, unsigned int p) const
-{
-  return params_.at(c).at(p);
-}
-
-TwoBodyOper::type
-R12Technology::GenG12CorrelationFactor::tbint_type_f12() const
-{
-  return (TwoBodyOper::r12_0_gg12);
-}
-
-TwoBodyOper::type
-R12Technology::GenG12CorrelationFactor::tbint_type_f12eri() const
-{
-  return (TwoBodyOper::r12_m1_gg12);
-}
-
-TwoBodyOper::type
-R12Technology::GenG12CorrelationFactor::tbint_type_f12f12() const
-{
-  return (TwoBodyOper::r12_0_gg12);
-}
-
-TwoBodyOper::type
-R12Technology::GenG12CorrelationFactor::tbint_type_f12t1f12() const
-{
-  return (TwoBodyOper::gg12t1gg12);
-}
-
-Ref<TwoBodyIntDescr>
-R12Technology::GenG12CorrelationFactor::tbintdescr(const Ref<Integral>& IF, unsigned int f) const
-{
-  Ref<IntParamsGenG12> params = new IntParamsGenG12(function(f));
-  return new TwoBodyIntDescrGenG12(IF,params);
-}
-
-Ref<TwoBodyIntDescr>
-R12Technology::GenG12CorrelationFactor::tbintdescr(const Ref<Integral>& IF,
-                           unsigned int fbra,
-                           unsigned int fket) const
-{
-  Ref<IntParamsGenG12> params = new IntParamsGenG12(function(fbra),function(fket));
-  return new TwoBodyIntDescrGenG12(IF,params);
-}
-
-double
-R12Technology::GenG12CorrelationFactor::value(unsigned int c, double r12) const
-{
-  throw ProgrammingError("GenG12CorrelationFactor::value(c,r12) -- not defined for general Geminal correlation factors",__FILE__,__LINE__);
-}
-
-double
-R12Technology::GenG12CorrelationFactor::value(unsigned int c, double r12, double r1, double r2) const
-{
-  double val = 0.0;
-  const unsigned int nprims = nprimitives(c);
-  for(unsigned int p=0; p<nprims; p++) {
-    const PrimitiveGeminal& prim = primitive(c,p);
-    const double alpha = prim.first.first;
-    const double gamma = prim.first.second;
-    const double coef = prim.second;
-    val += coef*exp( - alpha*(r1*r1 + r2*r2) - gamma*r12*r12 );
-  }
-  return val;
-}
-
-void
-R12Technology::GenG12CorrelationFactor::print_params(std::ostream& os, unsigned int f) const
-{
-  using std::endl;
-
-  os << indent << "[ [Alpha Gamma] Coefficient] = [ ";
-  const int nprim = nprimitives(f);
-  for(int p=0; p<nprim; p++) {
-    const PrimitiveGeminal& prim = primitive(f,p);
-    os << "[ [" << prim.first.first << " " << prim.first.second << "] " << prim.second << "] ";
-  }
-  os << " ]" << endl;
-}
-
-bool
-R12Technology::GenG12CorrelationFactor::equiv(const Ref<CorrelationFactor>& cf) const
-{
-  Ref<GenG12CorrelationFactor> cf_cast; cf_cast << cf;
-  if (cf_cast.null()) return false;
-  return R12Technology::CorrParamCompare<IntParamsGenG12>::equiv(params_,(*cf_cast).params_);
-}
-
 ///////////////////////////////////
 static ClassDesc R12Technology_cd(
   typeid(R12Technology),"R12Technology",10,"virtual public SavableState",
@@ -1191,55 +1041,6 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
         corrfactor_ = new G12CorrelationFactor(params);
       else
         corrfactor_ = new G12NCCorrelationFactor(params);
-    }
-    else
-      throw ProgrammingError("R12Technology::R12Technology() -- corr_param keyword must be given when corr_factor=g12",__FILE__,__LINE__);
-  }
-  //
-  // geng12 correlation factor?
-  //
-  else if (corrfactor == "geng12" || corrfactor == "GENG12") {
-    if (keyval->exists("corr_param")) {
-      typedef GenG12CorrelationFactor::CorrelationParameters CorrParams;
-      CorrParams params;
-      const int num_f12 = keyval->count("corr_param");
-      if (num_f12 != 0) {
-        // Do I have contracted functions?
-        bool contracted = (keyval->count("corr_param",0) != 0);
-        if (!contracted) {
-          // Primitive functions only
-          for(int f=0; f<num_f12; f++) {
-            double exponent = keyval->doublevalue("corr_param", f);
-            GenG12CorrelationFactor::ContractedGeminal vtmp;
-            vtmp.push_back(std::make_pair(std::make_pair(0.0,exponent),1.0));
-            params.push_back(vtmp);
-          }
-        }
-        else {
-          // Contracted functions
-          for(int f=0; f<num_f12; f++) {
-            const int nprims = keyval->count("corr_param", f);
-            if (nprims == 0)
-              throw InputError("Contracted and primitive geminals cannot be mixed in the input", __FILE__, __LINE__);
-            GenG12CorrelationFactor::ContractedGeminal vtmp;
-            for(int p=0; p<nprims; p++) {
-              if (keyval->count("corr_param", f, p) != 3)
-                throw InputError("Invalid contracted geminal specification",__FILE__,__LINE__);
-              double alpha = keyval->Va_doublevalue("corr_param", 3, f, p, 0);
-              double gamma = keyval->Va_doublevalue("corr_param", 3, f, p, 1);
-              double coef = keyval->Va_doublevalue("corr_param", 3, f, p, 2);
-              vtmp.push_back(std::make_pair(std::make_pair(alpha,gamma),coef));
-            }
-            params.push_back(vtmp);
-          }
-        }
-      }
-      else {
-        double exponent = keyval->doublevalue("corr_param");
-        GenG12CorrelationFactor::ContractedGeminal vtmp;  vtmp.push_back(std::make_pair(std::make_pair(0.0,exponent),1.0));
-        params.push_back(vtmp);
-      }
-      corrfactor_ = new GenG12CorrelationFactor(params);
     }
     else
       throw ProgrammingError("R12Technology::R12Technology() -- corr_param keyword must be given when corr_factor=g12",__FILE__,__LINE__);
@@ -1450,14 +1251,6 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
   // Check that requested features are compatible/allowed
   //
   //
-
-  // stdapprox must be C if corrfactor == geng12
-  {
-    Ref<GenG12CorrelationFactor> gg12ptr; gg12ptr << corrfactor_;
-    if (gg12ptr.nonnull() && stdapprox_ != StdApprox_C) {
-      throw InputError("R12Technology::R12Technology() -- stdapprox must be set to C when using general Geminal correlation factor",__FILE__,__LINE__);
-    }
-  }
 
   //
   // Relativistic features are only implemented for certain approximations

@@ -172,9 +172,6 @@ namespace sc {
   typedef TwoBodyNCenterIntDescr<4,TwoBodyOperSet::G12NC> TwoBodyIntDescrG12NC;
   typedef TwoBodyNCenterIntDescr<3,TwoBodyOperSet::G12NC> TwoBodyThreeCenterIntDescrG12NC;
   typedef TwoBodyNCenterIntDescr<2,TwoBodyOperSet::G12NC> TwoBodyTwoCenterIntDescrG12NC;
-  typedef TwoBodyNCenterIntDescr<4,TwoBodyOperSet::GenG12> TwoBodyIntDescrGenG12;
-  typedef TwoBodyNCenterIntDescr<3,TwoBodyOperSet::GenG12> TwoBodyThreeCenterIntDescrGenG12;
-  typedef TwoBodyNCenterIntDescr<2,TwoBodyOperSet::GenG12> TwoBodyTwoCenterIntDescrGenG12;
   typedef TwoBodyNCenterIntDescr<4,TwoBodyOperSet::G12DKH> TwoBodyIntDescrG12DKH;
   typedef TwoBodyNCenterIntDescr<3,TwoBodyOperSet::G12DKH> TwoBodyThreeCenterIntDescrG12DKH;
   typedef TwoBodyNCenterIntDescr<2,TwoBodyOperSet::G12DKH> TwoBodyTwoCenterIntDescrG12DKH;
@@ -203,10 +200,6 @@ namespace sc {
             typedef TwoBodyNCenterIntDescr<NumCenters,TwoBodyOperSet::G12NC> ConcreteType;
             return new ConcreteType(integral,params);
           } break;
-          case TwoBodyOperSet::GenG12: {
-            typedef TwoBodyNCenterIntDescr<NumCenters,TwoBodyOperSet::GenG12> ConcreteType;
-            return new ConcreteType(integral,params);
-          } break;
           case TwoBodyOperSet::G12DKH: {
             typedef TwoBodyNCenterIntDescr<NumCenters,TwoBodyOperSet::G12DKH> ConcreteType;
             return new ConcreteType(integral,params);
@@ -214,6 +207,7 @@ namespace sc {
           default:
             assert(false);
         }
+        return Ref< typename NCentersToDescr<NumCenters,2>::value >(); // dummy return statement to pacify picky compilers
       }
   };
 

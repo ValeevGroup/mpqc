@@ -103,7 +103,6 @@ namespace sc {
       R12,
       G12,
       G12NC,
-      GenG12,
       G12DKH
     };
   };
@@ -124,10 +123,6 @@ namespace sc {
   };
   template <> struct OperSetTypeMap<TwoBodyOperSet::G12NC> {
     static const int size = 5;
-    static TwoBodyOper::type value[];
-  };
-  template <> struct OperSetTypeMap<TwoBodyOperSet::GenG12> {
-    static const int size = 4;
     static TwoBodyOper::type value[];
   };
   template <> struct OperSetTypeMap<TwoBodyOperSet::G12DKH> {
@@ -162,9 +157,6 @@ namespace sc {
   };
   template <> struct IntParamsType<TwoBodyOperSet::G12NC> {
     typedef IntParamsG12 value;
-  };
-  template <> struct IntParamsType<TwoBodyOperSet::GenG12> {
-    typedef IntParamsGenG12 value;
   };
   template <> struct IntParamsType<TwoBodyOperSet::G12DKH> {
     typedef IntParamsG12 value;

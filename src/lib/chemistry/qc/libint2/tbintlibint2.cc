@@ -43,9 +43,6 @@
 #  include <chemistry/qc/libint2/g12.h>
 # endif
 #endif
-#if LIBINT2_SUPPORT_GENG12
-#  include <chemistry/qc/libint2/geng12.h>
-#endif
 #if LIBINT2_SUPPORT_G12DKH
 #  include <chemistry/qc/libint2/g12dkh.h>
 #endif
@@ -115,22 +112,6 @@ namespace sc {
 	}
 # endif
 #endif
-#if LIBINT2_SUPPORT_GENG12
-	template<>
-	Ref<GenG12Libint2>
-	create_int2e(Integral*integral,
-		     const Ref<GaussianBasisSet>& b1,
-		     const Ref<GaussianBasisSet>& b2,
-		     const Ref<GaussianBasisSet>& b3,
-		     const Ref<GaussianBasisSet>& b4,
-		     size_t storage,
-		     const Ref<IntParams>& params)
-	{
-	    typedef IntParamsGenG12 IPType;
-	    Ref<IPType> params_cast = util::require_dynamic_cast<IPType,IntParams>(params);
-	    return new GenG12Libint2(integral,b1,b2,b3,b4,storage,params_cast->bra(),params_cast->ket());
-	}
-#endif
 #if LIBINT2_SUPPORT_G12DKH
 	   template<>
 	    Ref<G12DKHLibint2>
@@ -194,13 +175,6 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
     break;
   }
 # endif
-#endif
-#if LIBINT2_SUPPORT_GENG12
-  case TwoBodyOperSet::GenG12:
-  {
-    int2elibint2_ = create_int2e<GenG12Libint2>(integral,b1,b2,b3,b4,storage,params);
-    break;
-  }
 #endif
 
 #if LIBINT2_SUPPORT_G12DKH
@@ -289,13 +263,6 @@ TwoBodyThreeCenterIntLibint2::TwoBodyThreeCenterIntLibint2(Integral*integral,
   }
 # endif
 #endif
-#if LIBINT2_SUPPORT_GENG12
-  case TwoBodyOperSet::GenG12:
-  {
-    int2elibint2_ = create_int2e<GenG12Libint2>(integral,b1,b2,b3,b4,storage,params);
-    break;
-  }
-#endif
 
 #if LIBINT2_SUPPORT_G12DKH
   case TwoBodyOperSet::G12DKH:
@@ -382,13 +349,6 @@ TwoBodyTwoCenterIntLibint2::TwoBodyTwoCenterIntLibint2(Integral*integral,
     break;
   }
 # endif
-#endif
-#if LIBINT2_SUPPORT_GENG12
-  case TwoBodyOperSet::GenG12:
-  {
-    int2elibint2_ = create_int2e<GenG12Libint2>(integral,b1,b2,b3,b4,storage,params);
-    break;
-  }
 #endif
 
 #if LIBINT2_SUPPORT_G12DKH

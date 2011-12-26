@@ -278,7 +278,7 @@ DistArray4_MemoryGrp::release_pair_block(int i, int j, tbint_type oper_type) con
                   << ": i = " << i << " j = " << j << " tbint_type = " << oper_type << " ptr = " << pb->ints_[oper_type] << " ptr[0] = " << pb->ints_[oper_type][0] << endl;
   if (!is_local(i,j) && pb->ints_[oper_type] != NULL && pb->refcount_[oper_type] == 1) {
     mem_->release_readonly(const_cast<void*>(reinterpret_cast<const void*>(pb->ints_[oper_type])),pb->offset_ + oper_type*blksize_memgrp_,blksize());
-    pb->offset_ = -1;
+    pb->offset_ = ULONG_MAX;
     pb->ints_[oper_type] = NULL;
   }
   pb->refcount_[oper_type] -= 1;

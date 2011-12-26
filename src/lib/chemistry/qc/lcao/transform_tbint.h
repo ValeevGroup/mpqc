@@ -191,7 +191,7 @@ public:
   /** Returns the number of bytes allocated for each ij-block of integrals of one type
       in MemoryGrp. It's guaranteed to be divisible by sizeof(double).
     */
-  virtual const size_t memgrp_blksize() const =0;
+  virtual size_t memgrp_blksize() const =0;
 
   /// Specifies the top-level MolecularEnergy object to use for checkpointing
   void set_top_mole(const Ref<MolecularEnergy>& top_mole) { top_mole_ = top_mole; }

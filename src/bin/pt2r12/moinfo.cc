@@ -441,8 +441,7 @@ ExternMOInfo::ExternMOInfo(std::string filename,
   fzcpi_.resize(pg->order());    std::fill(fzcpi_.begin(), fzcpi_.end(), 0u);
   inactpi_.resize(pg->order());  std::fill(inactpi_.begin(), inactpi_.end(), 0u);
   actpi_.resize(pg->order());    std::fill(actpi_.begin(), actpi_.end(), 0u);
-  corrpi_.resize(pg->order());
-  std::fill(corrpi_.begin(), corrpi_.end(), 0u);
+  corrpi_.resize(pg->order());   std::fill(corrpi_.begin(), corrpi_.end(), 0u);
   fzvpi_.resize(pg->order());    std::fill(fzvpi_.begin(), fzvpi_.end(), 0u);
 
   RefDiagSCMatrix pseudo_occnums = coefs_extern.kit()->diagmatrix(coefs_extern.coldim());

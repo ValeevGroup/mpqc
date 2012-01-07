@@ -98,7 +98,7 @@ namespace {
 
   /// read a line into std::string
   std::string readline(std::istream& in) {
-    const size_t nline = 256;
+    const size_t nline = 2<<15; // 2^16 = 64 kiB
     char linebuf[nline];
     in.getline(linebuf, nline);
     return linebuf;

@@ -274,6 +274,93 @@ class MP2R12Energy_Diag : public MP2R12Energy
                          const double* const T1_array,
                          const int nv, const bool VT1_offset,
                          double* const VT1);
+    //
+    // compute the one electron density matrix for the diagonal ansatz
+    void compute_density_diag();
+    // density matrix
+    RefSCMatrix Dii_[NSpinCases1];
+    RefSCMatrix Dbc_[NSpinCases1];
+    // functions needed for compute_density_diag() function:
+    void obtain_orbitals(const SpinCase2 spincase,
+                         std::vector<Ref<OrbitalSpace> >& v_orbs1,
+                         std::vector<Ref<OrbitalSpace> >& v_orbs2);
+    // functions needed for compute_Dii:
+    void compute_Dii(const int nspincases1, const int nspincases2,
+                     const int nocc_alpha, const int nocc_beta,
+                     const double C_0, const double C_1);
+    // activate f12f12_ints for computing RR^ii_ii
+    void activate_ints_f12f12(Ref<TwoBodyFourCenterMOIntsRuntime>& moints4_rtime, const int b1b2_k1k2,
+                              const std::vector< Ref<OrbitalSpace> >& v_orbs1,
+                              const std::vector< Ref<OrbitalSpace> >& v_orbs2,
+                              const std::string&  descr_f12f12_key, Ref<DistArray4>& f12f12_ints);
+    // activate the three f12_ints for computing RR^ii_ii
+    void activate_ints_X_f12(Ref<TwoBodyFourCenterMOIntsRuntime>& moints4_rtime, const std::string& index,
+                             const std::vector< Ref<OrbitalSpace> >& v_orbs1,
+                             const std::vector< Ref<OrbitalSpace> >& v_orbs2,
+                             const std::string& descr_f12_key, std::vector<Ref<DistArray4> >& f12_ints);
+    // compute AlphaAlpha/BetaBeta:R^ij_ab R^ab_ij and R^ji_ab R^ab_ij
+    void compute_RRii_ii(std::vector<std::string>& output,
+                         const std::vector< Ref<OrbitalSpace> >& v_orbs1,
+                         const std::vector< Ref<OrbitalSpace> >& v_orbs2,
+                         double* RRij_ij, double* RRji_ij);
+    // compute the openshell AlphaBeta:
+    // R^ij_ab R^ab_ij, R^ji_ab R^ab_ij, R^ij_ab R^ab_ji, and R^ji_ab R^ab_ji
+    void compute_Rii_ii(std::vector<std::string>& output,
+                        const std::vector< Ref<OrbitalSpace> >& v_orbs1,
+                        const std::vector< Ref<OrbitalSpace> >& v_orbs2,
+                        double* RRi1i2_i1i2, double* RRi1i2_i2i1,
+                        double* RRi2i1_i1i2, double* RRi2i1_i2i1);
+    void compute_Dii_2(const int nspincases1, const int nspincases2,
+                       const int nocc_alpha, const int nocc_beta,
+                       const double C_0, const double C_1);
+    void compute_RR_sum_abj(const int RRb1b2_k1k2, const int nocc_act,
+                            const int f12f12_idx, const int f12_idx,
+                            Ref<DistArray4>& f12f12_ints,
+                            std::vector< Ref<DistArray4> >& v_f12_ints1, std::vector< Ref<DistArray4> >& v_f12_int2,
+                            double* RR_result);
+    //
+    void compute_Dbc(const int nspincases1, const int nspincases2,
+                     const double C_0, const double C_1);
+
+    // \bar{\tilde{R}}^31_ij \bar{\tilde{R}}^ij_32 with spin orbitals
+    // which is for computing D^b'_c', D^a'_a
+    void compute_RR31_32_spin(const int orbitals_label,
+                              const int nspincases1, const int nspincases2,
+                              const double C_0, const double C_1,
+                              const std::vector< Ref<OrbitalSpace> >& v_orbs1_ab,
+                              const std::vector< Ref<OrbitalSpace> >& v_orbs2_ab,
+                              double* D_alhpha, double* D_beta);
+    //
+    void compute_Dapa(const int nspincases1, const int nspincases2,
+                      const int nocc_alpha, const int nocc_beta,
+                      const double C_0, const double C_1,
+                      RefSCMatrix Dapa[NSpinCases1]);
+    // functions needed for compute_Dapa:
+    // compute MP2 T2 amplitude (antisymmetrized)
+    void compute_T2_mp2(const SpinCase2 spincase,
+                        const std::vector< Ref<OrbitalSpace> >& v_orbs1,
+                        const std::vector< Ref<OrbitalSpace> >& v_orbs2,
+                        double* T2ab_ij);
+    // compute F12T2(a',b,a) = R^ij_a'b * T^ab_ij   (alpha)
+    //                      or R^ij_ba' * T^ba_ij   (beta)
+    // contracted indices: ij
+    void compute_F12T2_ij(const SpinCase1 spin, const int na,
+                          const unsigned int f12_idx,
+                          Ref<DistArray4>& f12_ints, const double* T2_ints,
+                          double* F12T2);
+    // compute F12T2(a',b,a) = R^ji_a'b * T^ab_ij   (alpha)
+    //                      or R^ji_ba' * T^ba_ij   (beta)
+    // contracted indices: i & j
+    void compute_F12T2_ji(const SpinCase1 spin, const int na,
+                          const unsigned int f12_idx,
+                          Ref<DistArray4>& f12_ints, const double* T2_ints,
+                          double* F12T2);
+    // compute R^ij_a'b * T2^ab_ij & R^ji_a'b * T2^ab_ij
+    void compute_RT2_mp2(const SpinCase1 spincase1, const SpinCase2 spincase2,
+                         const std::vector< Ref<OrbitalSpace> >& v_orbs1,
+                         const std::vector< Ref<OrbitalSpace> >& v_orbs2,
+                         const double* T2ab_ij, double* RTij, double* RTji);
+
   public:
     MP2R12Energy_Diag(StateIn&);
     MP2R12Energy_Diag(Ref<R12EnergyIntermediates> &r12intermediates, int debug);

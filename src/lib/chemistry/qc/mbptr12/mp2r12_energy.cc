@@ -917,6 +917,7 @@ Ref<MP2R12Energy> sc::construct_MP2R12Energy(Ref<R12EnergyIntermediates> &r12int
 #include <chemistry/qc/mbptr12/mp2r12_energy_compute.cc>
 #include <chemistry/qc/mbptr12/mp2r12_energy_diag.cc>
 #include <chemistry/qc/mbptr12/mp2r12_energy_diag2.cc>
+#include <chemistry/qc/mbptr12/compute_density_diag.cc>
 
 /////////////////////////////////////////////////////////////////////////////
 

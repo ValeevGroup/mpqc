@@ -84,7 +84,7 @@ namespace {
           }
           ExEnv::out0() << endl;
         }
-    } else {
+    } else if (no1 != 1) {
         const int unique_ij = no1*(no1-1)/2;
         double* const array_unique_ij = new double[unique_ij];
         for (int i=0 ; i < no1; ++i) {
@@ -105,6 +105,9 @@ namespace {
           ExEnv::out0() << endl;
         }
         delete[] array_unique_ij;
+    } else {
+        // There is only one element
+        ExEnv::out0() << indent << scprintf("%12.10f", array[0]) << "  ";
     }
     ExEnv::out0() << endl;
   }
@@ -508,6 +511,10 @@ void MP2R12Energy_Diag::contract_VT1(const Ref<DistArray4>& V,
 
 
 void MP2R12Energy_Diag::compute_ef12() {
+
+  // calculate one electron density
+  // compute_density_diag();
+
   // switch to new implementation that should work correctly for alpha-beta contributions in open-shell molecules
   return this->compute_ef12_10132011();
 

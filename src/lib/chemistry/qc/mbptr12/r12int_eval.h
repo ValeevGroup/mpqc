@@ -89,9 +89,6 @@ class R12IntEval : virtual public SavableState {
   /// "Spin-adapt" MO space id and name
   void spinadapt_mospace_labels(SpinCase1 spin, std::string& id, std::string& name) const;
 
-  /// compute canonical CABS space for spin s
-  const Ref<OrbitalSpace>& cabs_space_canonical(SpinCase1 s);
-
   /// This is the new way to generate needed spaces
   /// generates fock, h+J, or K weighted spaces
   void f_bra_ket(SpinCase1 spin,
@@ -710,6 +707,8 @@ public:
   const Ref<OrbitalSpace>& GGspace(SpinCase1 S) const;
   /// Returns the space for spin case S from which geminal-generating substitutions are allowed
   const Ref<OrbitalSpace>& ggspace(SpinCase1 S) const;
+  /// compute canonical CABS space for spin s
+  const Ref<OrbitalSpace>& cabs_space_canonical(SpinCase1 s);
   /// Returns the 1-RDM for spin S in the ``MO'' basis (i.e. that provided by orbs(S) )
   RefSymmSCMatrix ordm(SpinCase1 S) const;
   /// Returns the total 1-RDM in the ``MO'' basis (i.e. that provided by orbs() )

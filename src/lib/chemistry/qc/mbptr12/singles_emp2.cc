@@ -227,7 +227,8 @@ R12IntEval::cabs_space_canonical(SpinCase1 spin)
     const int nb = blocks->nblock();
     for(int b=0; b<nb; ++b) {
       const int bsize = blocks->size(b);
-      bF_lt->block(b).assign_subblock(bF->block(b),0,bsize-1,0,bsize-1);
+      if (bsize != 0)
+        bF_lt->block(b).assign_subblock(bF->block(b),0,bsize-1,0,bsize-1);
     }
   }
 #define TEST_CABS_CANONICAL 0

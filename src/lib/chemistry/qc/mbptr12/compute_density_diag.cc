@@ -3312,8 +3312,9 @@ void MP2R12Energy_Diag::compute_density_diag() {
 //    const Ref<OrbitalSpace>& cabs2 = r12world->cabs_space(spin2);
     const Ref<OrbitalSpace>& occ2 = r12eval()->occ(spin2);
 
-    Ref<OrbitalSpace> cabs1_canon = r12eval()->cabs_space_canonical(spin1);
-    Ref<OrbitalSpace> cabs2_canon = r12eval()->cabs_space_canonical(spin2);
+    // use CABS orbitals canonicalized by diagonalizing CABS/CABS H(core) (cheaper than the Fock matrix)
+    Ref<OrbitalSpace> cabs1_canon = r12eval()->cabs_space_hcanonical(spin1);
+    Ref<OrbitalSpace> cabs2_canon = r12eval()->cabs_space_hcanonical(spin2);
 
     Ref<DistArray4> f12_ints;
 //    cabs1->print_detail();

@@ -160,6 +160,12 @@ class R12IntEval : virtual public SavableState {
   Ref<OrbitalSpace> gammaFgamma_p_p_[NSpinCases1];
   Ref<OrbitalSpace> Fgamma_p_P_[NSpinCases1];
 
+  /// compute CABS space for spin s canonicalized by diagonalization of the Fock matrix with adjustable component weights
+  Ref<OrbitalSpace> cabs_space_fockcanonical(SpinCase1 s,
+                                             double scale_H,
+                                             double scale_J,
+                                             double scale_K);
+
   /// Set intermediates to zero + add the "diagonal" contributions
   void init_intermeds_();
   /// When F12=R12 number of simplifications occur so a specialized code is provided
@@ -709,6 +715,8 @@ public:
   const Ref<OrbitalSpace>& ggspace(SpinCase1 S) const;
   /// compute canonical CABS space for spin s
   const Ref<OrbitalSpace>& cabs_space_canonical(SpinCase1 s);
+  /// compute CABS space for spin s canonicalized by diagonalization of core hamitonian
+  const Ref<OrbitalSpace>& cabs_space_hcanonical(SpinCase1 s);
   /// Returns the 1-RDM for spin S in the ``MO'' basis (i.e. that provided by orbs(S) )
   RefSymmSCMatrix ordm(SpinCase1 S) const;
   /// Returns the total 1-RDM in the ``MO'' basis (i.e. that provided by orbs() )

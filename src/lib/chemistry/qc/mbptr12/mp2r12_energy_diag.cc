@@ -513,7 +513,7 @@ void MP2R12Energy_Diag::contract_VT1(const Ref<DistArray4>& V,
 void MP2R12Energy_Diag::compute_ef12() {
 
   // calculate one electron density
-  compute_density_diag();
+//  compute_density_diag();
 
   // switch to new implementation that should work correctly for alpha-beta contributions in open-shell molecules
   return this->compute_ef12_10132011();

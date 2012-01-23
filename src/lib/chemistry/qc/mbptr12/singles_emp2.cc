@@ -203,18 +203,41 @@ R12IntEval::cabs_space_canonical(SpinCase1 spin)
 {
   static Ref<OrbitalSpace> cabs_canonical[] = {0, 0};
 
-  assert(r12world()->obs_eq_ribs() == false);
+  if (!spin_polarized() && spin == Beta)
+    return cabs_space_canonical(Alpha);
+  if (cabs_canonical[spin] == 0)
+    cabs_canonical[spin] = this->cabs_space_fockcanonical(spin,1.0,1.0,1.0);
 
-  if (cabs_canonical[spin] != 0)
-    return cabs_canonical[spin];
+  return cabs_canonical[spin];
+}
+
+// rotates CABS so that the Fock matrix is diagonal
+const Ref<OrbitalSpace>&
+R12IntEval::cabs_space_hcanonical(SpinCase1 spin)
+{
+  static Ref<OrbitalSpace> cabs_hcanonical[] = {0, 0};
+
+  if (!spin_polarized() && spin == Beta)
+    return cabs_space_hcanonical(Alpha);
+  if (cabs_hcanonical[spin] == 0)
+    cabs_hcanonical[spin] = this->cabs_space_fockcanonical(spin,1.0,0.0,0.0);
+
+  return cabs_hcanonical[spin];
+}
+
+// rotates CABS so that the Fock matrix is diagonal
+Ref<OrbitalSpace>
+R12IntEval::cabs_space_fockcanonical(SpinCase1 spin,
+                                     double scale_H,
+                                     double scale_J,
+                                     double scale_K)
+{
+  assert(r12world()->obs_eq_ribs() == false);
 
   Ref<OrbitalSpace> cabs = r12world()->cabs_space(spin);
   const int ncabs = cabs->rank();
 
   // note that I'm overriding pauli flag here -- true Fock matrix must always be used
-  const double scale_J = 1.0;
-  const double scale_K = 1.0;
-  const double scale_H = 1.0;
   const int pauli = 0;
   RefSCMatrix F_cabs = fock(cabs,cabs,spin,scale_J,scale_K,scale_H,pauli);
   RefSymmSCMatrix F_cabs_lt(F_cabs.rowdim(),F_cabs->kit());
@@ -227,7 +250,8 @@ R12IntEval::cabs_space_canonical(SpinCase1 spin)
     const int nb = blocks->nblock();
     for(int b=0; b<nb; ++b) {
       const int bsize = blocks->size(b);
-      bF_lt->block(b).assign_subblock(bF->block(b),0,bsize-1,0,bsize-1);
+      if (bsize != 0)
+        bF_lt->block(b).assign_subblock(bF->block(b),0,bsize-1,0,bsize-1);
     }
   }
 #define TEST_CABS_CANONICAL 0
@@ -238,22 +262,22 @@ R12IntEval::cabs_space_canonical(SpinCase1 spin)
 
   std::string id_sb, id;
   if (spin_polarized()) {
-    id = ParsedOrbitalSpaceKey::key(std::string("c'"),Alpha);
+    id = ParsedOrbitalSpaceKey::key(std::string("c'"), spin);
   }
   else {
     id = "c'";
   }
   std::ostringstream oss;  oss << "CABS (" << to_string(spin) << ";canonicalized)";
-  cabs_canonical[spin] = new OrbitalSpace(id, oss.str(),
-                                          cabs->coefs()*F_cabs_lt.eigvecs(),
-                                          cabs->basis(),
-                                          cabs->integral(),
-                                          F_cabs_lt.eigvals(),
-                                          0, 0,
-                                          OrbitalSpace::symmetry);
+  Ref<OrbitalSpace> cabs_canonical = new OrbitalSpace(id, oss.str(),
+                                                      cabs->coefs()*F_cabs_lt.eigvecs(),
+                                                      cabs->basis(),
+                                                      cabs->integral(),
+                                                      F_cabs_lt.eigvals(),
+                                                      0, 0,
+                                                      OrbitalSpace::symmetry);
 
   const Ref<OrbitalSpaceRegistry> idxreg = this->orbital_registry();
-  idxreg->add(make_keyspace_pair(cabs_canonical[spin]));
+  idxreg->add(make_keyspace_pair(cabs_canonical));
 
 #if TEST_CABS_CANONICAL
   {
@@ -263,7 +287,7 @@ R12IntEval::cabs_space_canonical(SpinCase1 spin)
   }
 #endif
 
-  return cabs_canonical[spin];
+  return cabs_canonical;
 }
 
 

@@ -1573,26 +1573,36 @@ R12Technology::make_auto_cabs(const Ref<GaussianBasisSet>& bs) {
 
   if (cabs_name.empty()) { // no CABS in the library -- make a relatively conservative CABS
     // default CABS = Uncontracted(aug-cc-pV5Z) limited up to 3 L_occ + 1
+    Ref<GaussianBasisSet> cabs_core;
+    {
     Ref<AssignedKeyVal> tmpkv = new AssignedKeyVal;
-    tmpkv->assign("name", "cc-pV5Z");
+    tmpkv->assign("name", "aug-cc-pV5Z");
     tmpkv->assign("puream", "true");
     tmpkv->assign("molecule", bs->molecule().pointer());
     Ref<KeyVal> kv = tmpkv;
-    Ref<GaussianBasisSet> cabs_core = new GaussianBasisSet(kv);
+    cabs_core = new GaussianBasisSet(kv);
+    }
+    Ref<GaussianBasisSet> cabs_core_uncontr;
     {
-      Ref<AssignedKeyVal> tmpkv = new AssignedKeyVal;
-      tmpkv->assign("basis", cabs_core.pointer());
-      int lmax;
-      if (bs->molecule()->max_z() <= 20) // H - Ca
-        lmax = 3;
-      else if (bs->molecule()->max_z() <= 56) // Sc - Ba
-        lmax = 6;
-      else
-        // La - higher
-        lmax = 9;
-      tmpkv->assign("lmax", lmax);
-      Ref<KeyVal> kv = tmpkv;
-      cabs = new LSelectBasisSet(kv);
+    Ref<AssignedKeyVal> tmpkv = new AssignedKeyVal;
+    tmpkv->assign("basis", cabs_core.pointer());
+    Ref<KeyVal> kv = tmpkv;
+    cabs_core_uncontr = new UncontractedBasisSet(kv);
+    }
+    {
+    Ref<AssignedKeyVal> tmpkv = new AssignedKeyVal;
+    tmpkv->assign("basis", cabs_core_uncontr.pointer());
+    int lmax;
+    if (bs->molecule()->max_z() <= 20) // H - Ca
+    lmax = 3;
+    else if (bs->molecule()->max_z() <= 56) // Sc - Ba
+    lmax = 6;
+    else
+    // La - higher
+    lmax = 9;
+    tmpkv->assign("lmax", lmax);
+    Ref<KeyVal> kv = tmpkv;
+    cabs = new LSelectBasisSet(kv);
     }
   }
   else { // have an appropriate CABS in the library

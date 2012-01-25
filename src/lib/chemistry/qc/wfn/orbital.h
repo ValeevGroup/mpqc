@@ -64,7 +64,7 @@ class WriteOrbital: public WriteGrid {
     double calculate_value(SCVector3 point);
     void initialize();
   public:
-    /** The KeyVal constructor
+    /** The KeyVal constructor uses all keywords of WriteGrid, plus the following additional keywords:
 
         <dl>
 
@@ -73,9 +73,16 @@ class WriteOrbital: public WriteGrid {
 
         <dt><tt>orbital</tt></dt><dd> Index of the orbital to be plotted. There is no default.</dd>
 
-        </dl> */
+        </dl>
+
+        N.B. Although WriteGrid requires keyword <tt>grid</tt> to be specified, omitting it for WriteOrbital
+        will automatically construct a grid appropriate for the Molecule object of <tt>obwfn</tt>.
+      */
     WriteOrbital(const Ref<KeyVal> &);
     ~WriteOrbital();
+
+    /// if needed, creates default grid for the base class using the molecule of obwfn
+    static Ref<KeyVal> process_keyval_for_base_class(const Ref<KeyVal> kv);
 };
 
 /** The WriteOrbitals class writes orbitals at
@@ -104,12 +111,21 @@ class WriteOrbitals: public WriteVectorGrid {
     /** The KeyVal constructor accepts keywords of WriteVectorGrid and the following additional keywords.
         <dl>
 
+        <dt><tt>obwfn</tt></dt><dd> The OneBodyWavefunction whose orbitals are calculated.
+        There is no default for this option.</dd>
+
         <dt><tt>first</tt></dt><dd> The index of the first orbital to be plotted. MOs are indexed according to their energy,
         hence <tt>first=1</tt> refers to the lowest-energy orbital. The default value is 1.</dd>
 
         <dt><tt>last</tt></dt><dd> The index of the last orbital to be plotted. By default the highest energy orbital is selected.
         MOs are indexed according to their energy, hence <tt>last=<# of orbitals></tt> refers to the highest-energy orbital.</dd>
-        </dl> */
+        </dl>
+
+
+        N.B. Although WriteVectorGrid requires keyword <tt>grid</tt> to be specified, omitting it for WriteOrbitals
+        will automatically construct a grid appropriate for the Molecule object of <tt>obwfn</tt>.
+
+      */
     WriteOrbitals(const Ref<KeyVal> &);
     WriteOrbitals(const Ref<OrbitalSpace> & orbs, const std::vector<int>& labels, const Ref<sc::Grid> & grid,
                   std::string gridformat, std::string gridfile);

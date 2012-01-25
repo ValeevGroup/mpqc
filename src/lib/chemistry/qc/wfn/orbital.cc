@@ -33,6 +33,7 @@
 #include <math/scmat/local.h>
 #include <math/scmat/vector3.h>
 #include <chemistry/molecule/molecule.h>
+#include <chemistry/molecule/molshape.h>
 #include <chemistry/qc/wfn/orbital.h>
 #include <util/class/scexception.h>
 #include <sstream>
@@ -127,7 +128,8 @@ static ClassDesc WriteOrbital_cd(
     typeid(WriteOrbital),"WriteOrbital",1,
     "public WriteGrid", 0, create<WriteOrbital>, 0);
 
-WriteOrbital::WriteOrbital(const Ref<KeyVal> &keyval):  WriteGrid(keyval)
+WriteOrbital::WriteOrbital(const Ref<KeyVal> &keyval):
+    WriteGrid(WriteOrbital::process_keyval_for_base_class(keyval))
 {
   obwfn_ << keyval->describedclassvalue("obwfn");
   if (obwfn_.null()) {
@@ -150,6 +152,39 @@ WriteOrbital::WriteOrbital(const Ref<KeyVal> &keyval):  WriteGrid(keyval)
     sprintf(buff, "%d", orbital_);
     throw InputError("invalid value", __FILE__, __LINE__, "orbital", buff, class_desc());
   }
+}
+
+Ref<KeyVal>
+WriteOrbital::process_keyval_for_base_class(Ref<KeyVal> kv) {
+  Ref<OneBodyWavefunction> obwfn; obwfn << kv->describedclassvalue("obwfn");
+  if (obwfn.null()) { // WriteOrbital constructor will fail anyway, do nothing
+    return kv;
+  }
+  else {
+    // if grid is not given, create automatically
+    if (kv->exists("grid") == false) {
+      const Ref<VDWShape> vdwshape = new VDWShape(obwfn->molecule());
+      SCVector3 gmin, gmax;
+      vdwshape->boundingbox(-1.0, 1.0, gmin, gmax);
+      SCVector3 gorigin = gmin;
+      SCVector3 gsize = gmax - gmin;
+      const double resolution = 0.2;
+      int n[3]; for(int i=0; i<3; ++i) n[i] = int(std::ceil(gsize[i] / 0.2));
+      SCVector3 axis0(gsize[0]/n[0], 0.0, 0.0);
+      SCVector3 axis1(0.0, gsize[1]/n[1], 0.0);
+      SCVector3 axis2(0.0, 0.0, gsize[2]/n[2]);
+      Ref<Grid> grid = new Grid(n[0], n[1], n[2], gorigin, axis0, axis1, axis2);
+
+      Ref<AssignedKeyVal> akv = new AssignedKeyVal;
+      akv->assign("grid", grid.pointer());
+
+      Ref<AggregateKeyVal> aggkv = new AggregateKeyVal(kv, akv);
+      return aggkv;
+    }
+    else // grid given, do nothing
+      return kv;
+  }
+  return kv; // unreachable
 }
 
 WriteOrbital::~WriteOrbital() {}
@@ -182,7 +217,8 @@ static ClassDesc WriteOrbitals_cd(
     typeid(WriteOrbitals),"WriteOrbitals",1,
     "public WriteVectorGrid", 0, create<WriteOrbitals>, 0);
 
-WriteOrbitals::WriteOrbitals(const Ref<KeyVal> &keyval):  WriteVectorGrid(keyval)
+WriteOrbitals::WriteOrbitals(const Ref<KeyVal> &keyval):
+    WriteVectorGrid(WriteOrbital::process_keyval_for_base_class(keyval))
 {
   obwfn_ << keyval->describedclassvalue("obwfn");
   if (obwfn_.null()) {

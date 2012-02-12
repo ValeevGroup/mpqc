@@ -29,6 +29,7 @@
 #include<chemistry/qc/basis/symmint.h>
 #include<chemistry/qc/basis/orthog.h>
 #include<math/scmat/blas.h>
+#include<math/scmat/svd.h>
 #include<chemistry/qc/lcao/fockbuilder.h>
 
 using namespace std;
@@ -900,9 +901,8 @@ namespace sc {
       //
       // Evaluation of the coulomb matrix proceeds as follows:
       //
-      // density-fit (mu nu| -> C_pq^Mu
-      // contract C_pq^Mu with P_pq to yield Q^Mu
-      // contract cC_ab^Mu with Q^Mu to produce J_ab
+      // density-fit (mu nu| . P_{mu nu} -> R^Mu
+      // contract cC_ab^Mu with R^Mu to produce J_ab
       //
       /////////////////////////////////////////////////////////////////////////////////
 
@@ -911,68 +911,112 @@ namespace sc {
       const Ref<OrbitalSpace>& ketspace = ao_registry->value(ketbs);
       const Ref<OrbitalSpace>& dfspace = ao_registry->value(df_info->params()->basis());
       const Ref<OrbitalSpace>& obs_space = ao_registry->value(obs);
+      const int ndf = dfspace->rank();
 
       const Ref<DensityFittingRuntime>& df_rtime = df_info->runtime();
       const Ref<TwoBodyThreeCenterMOIntsRuntime>& int3c_rtime = df_rtime->moints_runtime()->runtime_3c();
 
-      const std::string C_key = ParsedDensityFittingKey::key(obs_space->id(),
-                                                             obs_space->id(),
-                                                             dfspace->id());
-      Ref<DistArray4> C = df_rtime->get(C_key);  C->activate();
-
-      const int nobs = obs_space->rank();
-      const int ndf = dfspace->rank();
-      double* Q = new double[ndf];
-      memset(Q,0,ndf*sizeof(double));
-
+      std::vector<double> R(ndf,0.0);
       {
-        // Compute the number of tasks that have full access to the integrals
-        // and split the work among them
-        vector<int> proc_with_ints;
-        int nproc_with_ints = C->tasks_with_access(proc_with_ints);
+        ///////////////////////////////////////
+        // contract 3-center ERI with density
+        ///////////////////////////////////////
+        const std::string C_key = ParsedTwoBodyThreeCenterIntKey::key(obs_space->id(),
+                                                                      dfspace->id(),
+                                                                      obs_space->id(),
+                                                                      "ERI","");
+        const Ref<TwoBodyThreeCenterMOIntsTransform>& C_tform = int3c_rtime->get(C_key);
+        C_tform->compute();
+        Ref<DistArray4> C = C_tform->ints_acc();  C->activate();
 
-        if (C->has_access(me)) {
+        const int nobs = obs_space->rank();
+        const int ndf = dfspace->rank();
+        std::vector<double> Q(ndf,0.0);
+        {
+          // Compute the number of tasks that have full access to the integrals
+          // and split the work among them
+          vector<int> proc_with_ints;
+          int nproc_with_ints = C->tasks_with_access(proc_with_ints);
 
-          double** P_blk = new double*[nobs];
-          P_blk[0] = new double[nobs*nobs];
-          for(int i=1; i<nobs; ++i) {
-            P_blk[i] = P_blk[i-1] + nobs;
+          if (C->has_access(me)) {
+
+            double** P_blk = new double*[nobs];
+            P_blk[0] = new double[nobs*nobs];
+            for(int i=1; i<nobs; ++i) {
+              P_blk[i] = P_blk[i-1] + nobs;
+            }
+            for(int i=0; i<nobs; ++i)
+              for(int j=0; j<=i; ++j)
+                P_blk[i][j] = P_blk[j][i] = P.get_element(i,j);
+
+            for (int p = 0; p < nobs; ++p) {
+              const int proc = p % nproc_with_ints;
+              if (proc != proc_with_ints[me])
+                continue;
+
+              const double* C_p_qR_buf = C->retrieve_pair_block(0, p, 0);
+              const double* P_p_q = P_blk[p];
+
+              const char notrans = 'n';
+              const double one = 1.0;
+              const int unit_stride = 1;
+              F77_DGEMV(&notrans, &ndf, &nobs, &one, C_p_qR_buf, &ndf, P_p_q,
+                        &unit_stride, &one, &(Q[0]), &unit_stride);
+
+              C->release_pair_block(0, p, TwoBodyOper::eri);
+
+            }
+
+            // cleanup
+            delete[] P_blk[0];
+            delete[] P_blk;
+
           }
-          for(int i=0; i<nobs; ++i)
-            for(int j=0; j<=i; ++j)
-              P_blk[i][j] = P_blk[j][i] = P.get_element(i,j);
 
-          for (int p = 0; p < nobs; ++p) {
-            const int proc = p % nproc_with_ints;
-            if (proc != proc_with_ints[me])
-              continue;
-
-            const double* C_p_qR_buf = C->retrieve_pair_block(0, p, 0);
-            const double* P_p_q = P_blk[p];
-
-            const char notrans = 'n';
-            const double one = 1.0;
-            const int unit_stride = 1;
-            F77_DGEMV(&notrans, &ndf, &nobs, &one, C_p_qR_buf, &ndf, P_p_q,
-                      &unit_stride, &one, Q, &unit_stride);
-
-            C->release_pair_block(0, p, TwoBodyOper::eri);
-
-          }
-
-          // cleanup
-          delete[] P_blk[0];
-          delete[] P_blk;
-
+          // sum all contributions
+          msg->sum(&(Q[0]), ndf);
         }
 
-        // sum all contributions
-        msg->sum(Q, ndf);
+        // intermediate cleanup
+        if (C->data_persistent()) C->deactivate();
+        C = 0;
+
+        ///////
+        // compute 2-center coulomb kernel
+        ///////
+        RefSymmSCMatrix kernel = dfspace->coefs_nb()->kit()->symmmatrix(dfspace->dim());
+        {
+          const std::string kernel_key = ParsedTwoBodyTwoCenterIntKey::key(dfspace->id(),
+                                                                           dfspace->id(),
+                                                                           "ERI", "");
+          RefSCMatrix kernel_rect = df_rtime->moints_runtime()->runtime_2c()->get(kernel_key);
+          kernel.assign_subblock(kernel_rect, 0, ndf-1, 0, ndf-1);
+        }
+
+        //////////////////////////////////////////////
+        // density fit Q using Cholesky solver
+        //////////////////////////////////////////////
+        {
+          std::vector<double> kernel_packed;  // only needed for factorized methods
+          std::vector<double> kernel_factorized;
+          // convert kernel_ to a packed upper-triangle form
+          kernel_packed.resize(ndf * (ndf + 1) / 2);
+          kernel->convert(&(kernel_packed[0]));
+          // factorize kernel_ using diagonal pivoting from LAPACK's DSPTRF
+          kernel_factorized.resize(ndf * (ndf + 1) / 2);
+          sc::lapack_cholesky_symmposdef(kernel,
+                                         &(kernel_factorized[0]),
+                                         1e10);
+
+          const bool refine_solution = false;
+          sc::lapack_linsolv_cholesky_symmposdef(&(kernel_packed[0]), ndf,
+                                                 &(kernel_factorized[0]),
+                                                 &(R[0]), &(Q[0]), 1,
+                                                 refine_solution);
+        }
+
       }
 
-      // intermediate cleanup
-      if (C->data_persistent()) C->deactivate();
-      C = 0;
 
       const std::string cC_key = ParsedTwoBodyThreeCenterIntKey::key(braspace->id(),
                                                                      dfspace->id(),
@@ -985,8 +1029,7 @@ namespace sc {
       const int nbra = braspace->rank();
       const int nket = ketspace->rank();
       const int nbraket = nbra * nket;
-      double* J = new double[nbraket];
-      memset(J,0,sizeof(double)*nbraket);
+      std::vector<double> J(nbraket, 0.0);
       {
         // Compute the number of tasks that have full access to the integrals
         // and split the work among them
@@ -1002,12 +1045,12 @@ namespace sc {
 
             const double* cC_a_bR_buf = cC->retrieve_pair_block(0, a,
                                                                 TwoBodyOper::eri);
-            double* J_a = J + a*nket;
+            double* J_a = &(J[a*nket]);
 
             const char trans = 't';
             const double one = 1.0;
             const int unit_stride = 1;
-            F77_DGEMV(&trans, &ndf, &nket, &one, cC_a_bR_buf, &ndf, Q,
+            F77_DGEMV(&trans, &ndf, &nket, &one, cC_a_bR_buf, &ndf, &(R[0]),
                       &unit_stride, &one, J_a, &unit_stride);
 
             cC->release_pair_block(0, a, TwoBodyOper::eri);
@@ -1017,7 +1060,7 @@ namespace sc {
         }
 
         // sum all contributions
-        msg->sum(J, nbraket);
+        msg->sum(&(J[0]), nbraket);
       }
 
       if (cC->data_persistent()) cC->deactivate();  cC = 0;
@@ -1034,9 +1077,7 @@ namespace sc {
                          ketdim,
                          brabs->so_matrixkit());
 
-      result.assign(J);
-      delete[] J;
-      delete[] Q;
+      result.assign(&(J[0]));
 
       ExEnv::out0() << decindent;
       ExEnv::out0() << indent << "Exited Coulomb(DF) matrix evaluator" << endl;

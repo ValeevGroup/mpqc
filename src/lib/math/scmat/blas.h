@@ -19,6 +19,11 @@ extern void F77_DCOPY(const int *n, const double *dx, const int *incx, double *d
 extern double F77_DNRM2(const int *n, const double *dx, const int *incx);
 extern void F77_DSCAL(const int *n, const double *da, double *dx, const int *incx);
 
+extern void F77_DSPMV(const char* uplo, const int* n, const double* alpha,
+                      const double* A, const double* X, const int* incx,
+                      const double* beta, double* Y,
+                      const int* incy);
+
 }
 
 namespace sc {

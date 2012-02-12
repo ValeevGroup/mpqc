@@ -27,10 +27,12 @@
 
 #include <cmath>
 #include <cassert>
+#include <functional>
 #include <stdexcept>
 #include <util/misc/formio.h>
 #include <util/misc/consumableresources.h>
 #include <util/class/scexception.h>
+#include <math/scmat/blas.h>
 #include <math/scmat/lapack.h>
 #include <math/scmat/svd.h>
 
@@ -310,6 +312,239 @@ namespace sc {
     }
 
     return rcond;
+  }
+
+  /** Solves symmetric non-definite linear system AX = B, where B is a RefSCVector, using Jacobi solver
+   *  This is likely to diverge
+   */
+  double linsolv_symmnondef_jacobi(const RefSymmSCMatrix& A, RefSCVector& X,
+                                   const RefSCVector& B) {
+    const int n = A.n();
+    if (n != B.n())
+      throw std::runtime_error(
+                               "linsolv_symmnondef_jacobi() -- dimensions of A and B do not match");
+    if (n != X.n())
+      throw std::runtime_error(
+                               "linsolv_symmnondef_jacobi() -- dimensions of A and X do not match");
+
+    // convert A to packed lower triangular form (upper triangular in fortran)
+    int ntri = n * (n + 1) / 2;
+    double* RP = allocate<double>(ntri);
+    A.convert(RP);
+    for(int i=0, ii=0; i<n; ii+=(++i + 1))
+      RP[ii] = 0.0;
+    // convert B to a dense vector
+    double* BB = allocate<double>(n);
+    B.convert(BB);
+
+    // soluton vectors
+    double* XX_i = allocate<double>(n);
+    double* XX_ip1 = allocate<double>(n);
+
+    // extract the diagonal inverse
+    double* DDinv = allocate<double>(n);
+    for(int i=0; i<n; ++i)
+      DDinv[i] = 1.0 / A(i,i);
+
+    // approximate the condition number as the ratio of the min and max elements of the diagonal
+    const double DDinv_min = *std::min_element(DDinv, DDinv+n);
+    const double DDinv_max = *std::max_element(DDinv, DDinv+n);
+    const double DD_cond = DDinv_max / DDinv_min;
+    const double conv_threshold = 1e-15 * DD_cond; // estimate of how tightly the system can be converged
+
+    char uplo = 'U';
+    const double minusone = -1.0;
+    const double one = 1.0;
+    const int ione = 1;
+    bool converged = false;
+    const unsigned int max_niter = 50000;
+
+    // starting guess: x_0 = D^-1 . b
+    for(int i=0; i<n; ++i)
+      XX_i[i] = BB[i] * DDinv[i];
+    // exact solution
+//    lapack_linsolv_symmnondef(A, X, B);
+//    for(int i=0; i<n; ++i)
+//      XX_i[i] = X(i);
+
+    unsigned int iter = 0;
+    double norm = 0.0;
+    while (not converged) {
+
+      // XX_ip1 = b - R . x_i
+      std::copy(BB, BB+n, XX_ip1);
+      F77_DSPMV(&uplo, &n, &minusone, RP, XX_i, &ione, &one, XX_ip1, &ione);
+
+      // x_i+1 = D^-1 . XX_ip1 = D^-1 . (b - R . x_i)
+      for(int i=0; i<n; ++i)
+        XX_ip1[i] *= DDinv[i];
+
+      norm = 0.0;
+      for(int i=0; i<n; ++i) {
+        const double dx = (XX_ip1[i] - XX_i[i]);
+        norm += dx*dx;
+      }
+      norm = sqrt(norm);
+      if (norm < conv_threshold)
+        converged = true;
+      ++iter;
+      //ExEnv::out0() << indent << scprintf("iter=%d dnorm=%25.15lf",iter,norm) << std::endl;
+      if (iter >= max_niter) {
+        deallocate(RP);
+        deallocate(BB);
+        deallocate(DDinv);
+        deallocate(XX_i);
+        deallocate(XX_ip1);
+        throw MaxIterExceeded("linsolv_symmnondef_jacobi() -- did not converge within the max # of iterations",
+                              __FILE__, __LINE__,
+                              max_niter);
+      }
+
+      std::swap(XX_ip1, XX_i);
+    }
+
+    X.assign(XX_ip1);
+
+    deallocate(RP);
+    deallocate(BB);
+    deallocate(DDinv);
+    deallocate(XX_i);
+    deallocate(XX_ip1);
+
+    return 1.0 / DD_cond;
+  }
+
+  /** Solves symmetric non-definite linear system AX = B, where B is a RefSCVector, using conjugate gradient solver
+   */
+  double linsolv_symmnondef_cg(const RefSymmSCMatrix& A, RefSCVector& X,
+                                   const RefSCVector& B) {
+    const int n = A.n();
+    if (n != B.n())
+      throw std::runtime_error(
+                               "linsolv_symmnondef_cg() -- dimensions of A and B do not match");
+    if (n != X.n())
+      throw std::runtime_error(
+                               "linsolv_symmnondef_cg() -- dimensions of A and X do not match");
+
+    // convert A to packed lower triangular form (upper triangular in fortran)
+    int ntri = n * (n + 1) / 2;
+    double* AP = allocate<double>(ntri);
+    A.convert(AP);
+    // convert B to a dense vector
+    double* BB = allocate<double>(n);
+    B.convert(BB);
+
+    // soluton vector
+    double* XX_i = allocate<double>(n);
+    // residual vector
+    double* RR_i = allocate<double>(n);
+    // preconditioned residual vector
+    double* ZZ_i = allocate<double>(n);
+    // direction vector
+    double* PP_i = allocate<double>(n);
+    double* APP_i = allocate<double>(n);
+
+    // extract the diagonal |inverse|
+    double* DDinv = allocate<double>(n);
+    for(int i=0; i<n; ++i)
+      DDinv[i] = 1.0 / fabs(A(i,i));
+    // approximate the condition number as the ratio of the min and max elements of the diagonal
+    const double DDinv_min = *std::min_element(DDinv, DDinv+n);
+    const double DDinv_max = *std::max_element(DDinv, DDinv+n);
+    const double DD_cond = DDinv_max / DDinv_min;
+    const double conv_threshold = 1e-15 * DD_cond; // estimate of how tightly the system can be converged
+
+    char uplo = 'U';
+    const double minusone = -1.0;
+    const double one = 1.0;
+    const double zero = 0.0;
+    const int ione = 1;
+    bool converged = false;
+    const unsigned int max_niter = 50000;
+
+    // starting guess: x_0 = D^-1 . b
+    std::transform(BB, BB+n, DDinv, XX_i, std::multiplies<double>());
+    // exact solution
+//    lapack_linsolv_symmnondef(A, X, B);
+//    for(int i=0; i<n; ++i)
+//      XX_i[i] = X(i);
+
+    // r_0 = b - A . x_0
+    std::copy(BB, BB+n, RR_i);
+    F77_DSPMV(&uplo, &n, &minusone, AP, XX_i, &ione, &one, RR_i, &ione);
+
+    // z_0 = D^-1 . r_0
+    std::transform(RR_i, RR_i+n, DDinv, ZZ_i, std::multiplies<double>());
+
+    // p_0 = z_0
+    std::copy(ZZ_i, ZZ_i+n, PP_i);
+
+    unsigned int iter = 0;
+    while (not converged) {
+
+      // alpha_i = (r_i . z_i) / (p_i . A . p_i)
+      const double rz_norm2 = F77_DDOT(&n, RR_i, &ione,
+                                       ZZ_i, &ione);
+      F77_DSPMV(&uplo, &n, &one, AP, PP_i, &ione, &zero, APP_i, &ione);
+      const double pAp_i = F77_DDOT(&n, PP_i, &ione,
+                                    APP_i, &ione);
+      const double alpha_i = rz_norm2 / pAp_i;
+
+      // x_i += alpha_i p_i
+      F77_DAXPY(&n, &alpha_i, PP_i, &ione, XX_i, &ione);
+
+      // r_i -= alpha_i Ap_i
+      const double minus_alpha_i = -alpha_i;
+      F77_DAXPY(&n, &minus_alpha_i, APP_i, &ione, RR_i, &ione);
+
+      const double r_ip1_norm = sqrt(F77_DDOT(&n, RR_i, &ione,
+                                              RR_i, &ione));
+      if (r_ip1_norm < conv_threshold)
+        converged = true;
+
+      // z_i = D^-1 . r_i
+      std::transform(RR_i, RR_i+n, DDinv, ZZ_i, std::multiplies<double>());
+      const double rz_ip1_norm2 = F77_DDOT(&n, RR_i, &ione,
+                                               ZZ_i, &ione);
+
+      const double beta_i = rz_ip1_norm2 / rz_norm2;
+
+      // p_i = z_i+1 + beta_i p_i
+      // 1) scale by beta_i
+      // 2) add z_i+1 (i.e. current contents of z_i)
+      F77_DSCAL(&n, &beta_i, PP_i, &ione);
+      F77_DAXPY(&n, &one, ZZ_i, &ione, PP_i, &ione);
+
+      ++iter;
+      ExEnv::out0() << indent << scprintf("iter=%d dnorm=%25.15lf",iter,r_ip1_norm) << std::endl;
+
+      if (iter >= max_niter) {
+        deallocate(AP);
+        deallocate(BB);
+        deallocate(XX_i);
+        deallocate(RR_i);
+        deallocate(PP_i);
+        deallocate(ZZ_i);
+        deallocate(APP_i);
+        deallocate(DDinv);
+        throw MaxIterExceeded("linsolv_symmnondef_jacobi() -- did not converge within the max # of iterations",
+                              __FILE__, __LINE__,
+                              max_niter);
+      }
+    } // solver loop
+
+    X.assign(XX_i);
+
+    deallocate(AP);
+    deallocate(BB);
+    deallocate(XX_i);
+    deallocate(RR_i);
+    deallocate(PP_i);
+    deallocate(ZZ_i);
+    deallocate(APP_i);
+    deallocate(DDinv);
+
+    return 1.0 / DD_cond;
   }
 
   /** Computed eigenvalues of A and returns how many are below threshold. Uses LAPACK's DSYEVD.

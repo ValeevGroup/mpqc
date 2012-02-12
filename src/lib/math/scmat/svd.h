@@ -114,6 +114,21 @@ namespace sc {
                                      const double* Bt, int ncolB,
                                      bool refine = true);
 
+  /** Solves symmetric non-definite linear system AX = B, where B is a RefSCVector, using Jacobi solver.
+   *  Note that Jacobi solver rarely converges, hence it should not be used.
+   *
+   *       @return The estimate of the reciprocal condition number of the matrix A.
+   */
+  double linsolv_symmnondef_jacobi(const RefSymmSCMatrix& A, RefSCVector& X,
+                                   const RefSCVector& B);
+
+  /** Solves symmetric non-definite linear system AX = B, where B is a RefSCVector, using conjugate gradient solver
+   *
+   *       @return The estimate of the reciprocal condition number of the matrix A.
+   */
+  double linsolv_symmnondef_cg(const RefSymmSCMatrix& A, RefSCVector& X,
+                               const RefSCVector& B);
+
   /** Compute factorization of a symmetric positive-definite matrix using DPPTRF LAPACK routine
    that implements the Cholesky method.
    The resulting factorization (AF and ipiv) can be used to solve a linear system A X = B

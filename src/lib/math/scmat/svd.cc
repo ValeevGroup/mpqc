@@ -27,6 +27,7 @@
 
 #include <cmath>
 #include <cassert>
+#include <algorithm>
 #include <functional>
 #include <stdexcept>
 #include <util/misc/formio.h>

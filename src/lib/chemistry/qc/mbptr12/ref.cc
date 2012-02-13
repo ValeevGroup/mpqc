@@ -281,7 +281,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
   {
     ostringstream oss;
     oss << prefix << " conventional unoccupied symmetry-blocked MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("conv e(sym)"),spin);
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("E(sym)"),spin);
     if (vbs.null())
       conv_uocc_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, conv_uocc_mask);
     else
@@ -290,7 +290,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
   {
     ostringstream oss;
     oss << prefix << " conventional occupied symmetry-blocked MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("conv m(sym)"),spin);
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("M(sym)"),spin);
     if (vbs.null())
       conv_occ_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, conv_occ_mask);
     else
@@ -316,7 +316,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
   {
     ostringstream oss;
     oss << prefix << " conventional unoccupied MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("conv e"),spin);
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("E"),spin);
     conv_uocc_ = blocked_to_nonblocked_space(id, oss.str(),
                                         conv_uocc_sb_,
                                         eorder_increasing);
@@ -1591,9 +1591,6 @@ Extern_RefWavefunction::pre_init(std::vector<unsigned int> mopi,
     // make sure that FockBuildRuntime uses same density fitting info as this reference
     world()->fockbuild_runtime()->dfinfo(dfinfo());
 
-    // make spaces
-    init_spaces(mopi, occpi, corrpi, fzcpi, fzvpi, coefs, orbsyms);
-
     // make sure that FockBuildRuntime uses same densities as the reference wavefunction
     if(force_average_AB_rdm1_ == false) // the densites are in AO basis
         world()->fockbuild_runtime()->set_densities(ordm(Alpha), ordm(Beta));//here computes ordm
@@ -1604,6 +1601,9 @@ Extern_RefWavefunction::pre_init(std::vector<unsigned int> mopi,
         av_rdm.scale(0.5);
         world()->fockbuild_runtime()->set_densities(av_rdm, av_rdm);
     }
+
+    // make spaces
+    init_spaces(mopi, occpi, corrpi, fzcpi, fzvpi, coefs, orbsyms);
   }
 }
 
@@ -1925,6 +1925,7 @@ Extern_RefWavefunction::init_spaces(std::vector<unsigned int> mopi,
 Ref<DensityFittingInfo>
 Extern_RefWavefunction::dfinfo() const {
   return use_world_dfinfo() ? const_cast<DensityFittingInfo*>(world()->tfactory()->df_info()) : 0;
+  //return const_cast<DensityFittingInfo*>(world()->tfactory()->df_info());
 }
 
 ///////////////////////////////////////////////////////////////////

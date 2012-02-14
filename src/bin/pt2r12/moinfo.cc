@@ -425,11 +425,11 @@ ExternMOInfo::ExternMOInfo(std::string filename,
   skipeol(in);
   std::string token = readline(in);
   std::vector<unsigned int> orbsym = parse<unsigned int>(token);  assert(orbsym.size() == nmo);
-  // irrep indicies for MOs start from 1, make them start from 0
+  // map irrep indices to MPQC order; N.B. for MOs start from 1, hence subtraction of 1
   for(std::vector<unsigned int>::iterator i=orbsym.begin();
       i!=orbsym.end();
       ++i)
-    --(*i);
+    *i = extern_to_mpqc_irrep_map[*i - 1];
 
   unsigned int nfzc;    in >> nfzc;
   unsigned int ninact;  in >> ninact;

@@ -157,30 +157,38 @@ TwoBodyInt::buffer(TwoBodyOper::type i) const
   return 0;
 }
 
-std::pair<std::map<TwoBodyOper::type,const double*>,unsigned long[4]>
+//std::pair<std::map<TwoBodyOper::type,const double*>,unsigned long[4]>
+std::pair<std::map<TwoBodyOper::type,const double*>,unsigned long*>
 TwoBodyInt::compute_shell_arrays(int i,int j, int k, int l)
 {
-  int saved_redundant = redundant();
-  set_redundant(1);
+// According to CLJ this is only used by the unmaintained python interfaces
+// PGI compilers (default compiler on Cray) won't accept the code below
+// Lets assume this code is never used and throw if it is -- JPK
 
-  compute_shell(i,j,k,l);
+  throw ProgrammingError("Bad implementation removed, see comment",
+                         __FILE__,__LINE__);
 
-  set_redundant(saved_redundant);
-
-  std::pair<std::map<TwoBodyOper::type,const double*>,unsigned long[4]> r;
-
-  const Ref<TwoBodyOperSetDescr>& descr = this->descr();
-  for (unsigned int it=0; it<descr->size(); it++) {
-      TwoBodyOper::type tbit = descr->opertype(it);
-      r.first[tbit] = buffer(tbit);
-  }
-
-  r.second[0] = basis1()->shell(i).nfunction();
-  r.second[1] = basis2()->shell(j).nfunction();
-  r.second[2] = basis3()->shell(k).nfunction();
-  r.second[3] = basis4()->shell(l).nfunction();
-
-  return r;
+//  int saved_redundant = redundant();
+//  set_redundant(1);
+//
+//  compute_shell(i,j,k,l);
+//
+//  set_redundant(saved_redundant);
+//
+//  std::pair<std::map<TwoBodyOper::type,const double*>,unsigned long[4]> r;
+//
+//  const Ref<TwoBodyOperSetDescr>& descr = this->descr();
+//  for (unsigned int it=0; it<descr->size(); it++) {
+//      TwoBodyOper::type tbit = descr->opertype(it);
+//      r.first[tbit] = buffer(tbit);
+//  }
+//
+//  r.second[0] = basis1()->shell(i).nfunction();
+//  r.second[1] = basis2()->shell(j).nfunction();
+//  r.second[2] = basis3()->shell(k).nfunction();
+//  r.second[3] = basis4()->shell(l).nfunction();
+//
+//  return r;
 }
 
 void

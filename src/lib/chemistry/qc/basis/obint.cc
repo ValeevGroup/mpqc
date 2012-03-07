@@ -28,6 +28,7 @@
 #include <stdexcept>
 
 #include <util/misc/formio.h>
+#include <util/class/scexception.h>
 
 #include <math/scmat/block.h>
 #include <math/scmat/blkiter.h>
@@ -194,15 +195,23 @@ OneBodyInt::reinitialize()
 {
 }
 
-std::pair<const double *,unsigned long[2]>
+//std::pair<const double *, unsigned long[2]>
+std::pair<const double *,unsigned long*>
 OneBodyInt::compute_shell_array(int i,int j)
 {
-  compute_shell(i,j);
-  std::pair<const double *,unsigned long[2]> r;
-  r.first = buffer();
-  r.second[0] = basis1()->shell(i).nfunction();
-  r.second[1] = basis2()->shell(j).nfunction();
-  return r;
+// According to CLJ this is only used by the unmaintained python interfaces
+// PGI compilers (default compiler on Cray) won't accept the code below
+// Lets assume this code is never used and throw if it is -- JPK
+
+  throw ProgrammingError("Bad implementation removed, see comment",
+                         __FILE__,__LINE__);
+
+//  compute_shell(i,j);
+//  std::pair<const double *,unsigned long[2]> r;
+//  r.first = buffer();
+//  r.second[0] = basis1()->shell(i).nfunction();
+//  r.second[1] = basis2()->shell(j).nfunction();
+//  return r;
 }
 
 bool

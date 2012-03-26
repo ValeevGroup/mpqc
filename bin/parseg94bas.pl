@@ -270,6 +270,7 @@ my $pure = 0;
 if ($basisname =~ /cc-p/ || $basisname =~ /ANO/
     || $basisname =~ /^6-311G/
     || $basisname =~ /^6-311\+/
+    || $basisname =~ /^Def2-/
     || $basisname =~ /^STO-[1-9]G/
     ) {
   $pure = 1;
@@ -285,7 +286,9 @@ MAIN: while (<STDIN>) {
     }
     # Grab the element symbol and transform it to the standard
     # full element name
-    ($elemsymb, $junk) = split " ";
+    chomp;
+    @tokens = split " ";
+    $elemsymb = $tokens[0];
     $elemsymb eq "" && last MAIN;
     $elemsymb =~ tr/[a-z]/[A-Z]/;
     print "basis:$elemname{$elemsymb}:\"$basisname\": [";

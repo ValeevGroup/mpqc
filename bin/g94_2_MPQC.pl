@@ -17,97 +17,243 @@
 
 %elemname = (
   G  => ghost,
-  H  => hydrogen,
+  
+  H => hydrogen,
+
   HE => helium,
+
   LI => lithium,
+
   BE => beryllium,
-  B  => boron,
-  C  => carbon,
-  N  => nitrogen,
-  O  => oxygen,
-  F  => fluorine,
+
+  B => boron,
+
+  C => carbon,
+
+  N => nitrogen,
+
+  O => oxygen,
+
+  F => fluorine,
+
   NE => neon,
+
   NA => sodium,
+
   MG => magnesium,
+
   AL => aluminum,
+
   SI => silicon,
-  P  => phosphorus,
-  S  => sulfur,
+
+  P => phosphorus,
+
+  S => sulfur,
+
   CL => chlorine,
+
   AR => argon,
-  K  => POTASSIUM,
-  CA => CALCIUM,
-  SC => SCANDIUM,
-  TI => TITANIUM,
-  V  => VANADIUM,
-  CR => CHROMIUM,
-  MN => MANGANESE,
-  FE => IRON,
-  CO => COBALT,
-  NI => NICKEL,
-  CU => COPPER,
-  ZN => ZINC,
-  GA => GALLIUM,
-  GE => GERMANIUM,
-  AS => ARSENIC,
-  SE => SELENIUM,
-  BR => BROMINE,
-  KR => KRYPTON,
-  RB => RUBIDIUM,
-  SR => STRONTIUM,
-  Y  => YTTRIUM,
-  ZR => ZIRCONIUM,
-  NB => NIOBIUM,
-  MO => MOLYBDENUM,
-  TE => TECHNETIUM,
-  RU => RUTHENIUM,
-  RH => RHODIUM,
-  PD => PALLADIUM,
-  AG => SILVER,
-  CD => CADMIUM,
-  IN => INDIUM,
-  SN => TIN,
-  SB => ANTIMONY,
-  TE => TELLURIUM,
-  I  => IODINE,
-  XE => XENON,
-  CS => CESIUM,
-  BA => BARIUM,
-  LA => LANTHANUM,
-  CE => CERIUM,
-  PR => PRASEODYMIUM,
-  ND => NEODYMIUM,
-  PM => PROMETHIUM,
-  SM => SAMARIUM,
-  EU => EUROPIUM,
-  GD => GADOLINIUM,
-  TB => TERBIUM,
-  DY => DYSPROSIUM,
-  HO => HOLMIUM,
-  ER => ERBIUM,
-  TM => THULIUM,
-  YB => YTTERBIUM,
-  LU => LUTETIUM,
-  HF => HAFNIUM,
-  TA => TANATLUM,
-  W  => TUNGSTEN,
-  RE => RHENIUM,
-  OS => OSMIUM,
-  IR => IRIDIUM,
-  PT => PLATINUM,
-  AU => GOLD,
-  HG => MERCURY,
-  TL => THALLIUM,
-  PB => LEAD,
-  BI => BISMUTH,
-  PO => POLONIUM,
-  AT => ASTATINE,
-  RN => RADON,
-  FR => FRANCIUM,
-  RA => RADIUM,
-  U  => URANIUM,
-  NP => NEPTUNIUM,
-  PU => PLUTONIUM,
+
+  K => potassium,
+
+  CA => calcium,
+
+  SC => scandium,
+
+  TI => titanium,
+
+  V => vanadium,
+
+  CR => chromium,
+
+  MN => manganese,
+
+  FE => iron,
+
+  CO => cobalt,
+
+  NI => nickel,
+
+  CU => copper,
+
+  ZN => zinc,
+
+  GA => gallium,
+
+  GE => germanium,
+
+  AS => arsenic,
+
+  SE => selenium,
+
+  BR => bromine,
+
+  KR => krypton,
+
+  RB => rubidium,
+
+  SR => strontium,
+
+  Y => yttrium,
+
+  ZR => zirconium,
+
+  NB => niobium,
+
+  MO => molybdenum,
+
+  TC => technetium,
+
+  RU => ruthenium,
+
+  RH => rhodium,
+
+  PD => palladium,
+
+  AG => silver,
+
+  CD => cadmium,
+
+  IN => indium,
+
+  SN => tin,
+
+  SB => antimony,
+
+  TE => tellurium,
+
+  I => iodine,
+
+  XE => xenon,
+
+  CS => cesium,
+
+  BA => barium,
+
+  LA => lanthanum,
+
+  CE => cerium,
+
+  PR => praseodymium,
+
+  ND => neodymium,
+
+  PM => promethium,
+
+  SM => samarium,
+
+  EU => europium,
+
+  GD => gadolinium,
+
+  TB => terbium,
+
+  DY => dysprosium,
+
+  HO => holmium,
+
+  ER => erbium,
+
+  TM => thulium,
+
+  YB => ytterbium,
+
+  LU => lutetium,
+
+  HF => hafnium,
+
+  TA => tantalum,
+
+  W => tungsten,
+
+  RE => rhenium,
+
+  OS => osmium,
+
+  IR => iridium,
+
+  PT => platinum,
+
+  AU => gold,
+
+  HG => mercury,
+
+  TL => thallium,
+
+  PB => lead,
+
+  BI => bismuth,
+
+  PO => polonium,
+
+  AT => astatine,
+
+  RN => radon,
+
+  FR => francium,
+
+  RA => radium,
+
+  AC => actinium,
+
+  TH => thorium,
+
+  PA => protactinium,
+
+  U => uranium,
+
+  NP => neptunium,
+
+  PU => plutonium,
+
+  AM => americium,
+
+  CM => curium,
+
+  BK => berkelium,
+
+  CF => californium,
+
+  ES => einsteinium,
+
+  FM => fermium,
+
+  MD => mendelevium,
+
+  NO => nobelium,
+
+  LR => lawrencium,
+
+  RF => rutherfordium,
+
+  DB => dubnium,
+
+  SG => seaborgium,
+
+  BH => bohrium,
+
+  HS => hassium,
+
+  MT => meitnerium,
+
+  DS => darmstadtium,
+
+  RG => roentgenium,
+
+  CN => copernicium,
+
+  UUT => ununtrium,
+
+  UUQ => ununquadium,
+
+  UUP => ununpentium,
+
+  UUH => ununhexium,
+
+  UUS => ununseptium,
+
+  UUO => ununoctium
+  
 ); 
 
 # Find the first line containing BASIS keyword and parse basis name
@@ -124,6 +270,7 @@ my $pure = 0;
 if ($basisname =~ /cc-p/ || $basisname =~ /ANO/
     || $basisname =~ /^6-311G/
     || $basisname =~ /^6-311\+/
+    || $basisname =~ /^Def2-/
     || $basisname =~ /^STO-[1-9]G/
     ) {
   $pure = 1;

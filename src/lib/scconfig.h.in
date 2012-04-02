@@ -121,6 +121,9 @@
 /* Define if you have the signal function.  */
 #undef HAVE_SIGNAL
 
+/* Define if you have the sigaction function.  */
+#undef HAVE_SIGACTION
+
 /* Define if you have the system function.  */
 #undef HAVE_SYSTEM
 

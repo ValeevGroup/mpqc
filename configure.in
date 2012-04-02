@@ -1308,7 +1308,7 @@ AC_STRUCT_TM
 dnl --------- Checks for library functions. ---------
 AC_TYPE_SIGNAL
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS(strerror sigfillset signal system getpwuid geteuid)
+AC_CHECK_FUNCS(strerror sigfillset signal sigaction system getpwuid geteuid)
 AC_CHECK_FUNCS(gethostname time ctime)
 AC_CHECK_FUNCS(setrlimit setenv)
 AC_CHECK_FUNCS(posix_spawn)
@@ -1689,7 +1689,24 @@ dnl ----------- libint2 library checks --------------
 
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
-AC_CHECK_HEADERS(libint2/libint2.h,
+
+LIBINT2DIR=/usr/local
+AC_ARG_WITH(libint2,
+[  --with-libint2               Libint2 directory prefix (i.e. prefix/lib is location of the library)],
+LIBINT2DIR=$withval
+)
+dnl -- find libint2_config.h using given LIBINT2DIR, do rest of checks only if found --
+ref_CPPFLAGS=$CPPFLAGS
+CPPFLAGS="-I$LIBINT2DIR/include/libint2 $CPPFLAGS"
+AC_CHECK_HEADER(libint2_config.h, [HAVE_LIBINT2_CONFIG_H=yes], [HAVE_LIBINT2_CONFIG_H=no])
+if test "X$HAVE_LIBINT2_CONFIG_H" = "Xno"; then
+  CPPFLAGS=$ref_CPPFLAGS
+else # HAVE_LIBINT2_CONFIG_H=yes
+ LIBS="-L$LIBINT2DIR/lib  $LIBS"
+ CPPFLAGS="-I$LIBINT2DIR/include -I$LIBINT2DIR/include/libint2 $ref_CPPFLAGS"
+ 
+ # check for libint2 in earnest
+ AC_CHECK_HEADERS(libint2/libint2.h,
 
   AC_MSG_CHECKING([for libint2_static_init in -lint2])
   REF_LIBS=$LIBS  LIBS="-lint2 $LIBS"
@@ -1863,7 +1880,8 @@ AC_CHECK_HEADERS(libint2/libint2.h,
       [AC_MSG_RESULT(no)]
     )
   fi
-)
+ )
+fi
 AC_LANG_RESTORE
 
 dnl ----------- make sure we have everything for cints ----------

@@ -33,21 +33,22 @@
 static int LEVMAR_PSEUDOINVERSE(LM_REAL *A, LM_REAL *B, int m);
 
 #include <math/optimize/f77sym.h>
+#include <math/scmat/blas.h>
 
 /* BLAS matrix multiplication & LAPACK SVD routines */
 #define GEMM F77_DGEMM
 /* C := alpha*op( A )*op( B ) + beta*C */
-extern void GEMM(char *transa, char *transb, int *m, int *n, int *k,
-          LM_REAL *alpha, LM_REAL *a, int *lda, LM_REAL *b, int *ldb, LM_REAL *beta, LM_REAL *c, int *ldc);
+//extern void GEMM(char *transa, char *transb, blas_f77_integer_t *m, blas_f77_integer_t *n, blas_f77_integer_t *k,
+//          LM_REAL *alpha, LM_REAL *a, blas_f77_integer_t *lda, LM_REAL *b, blas_f77_integer_t *ldb, LM_REAL *beta, LM_REAL *c, blas_f77_integer_t *ldc);
 
 #define GESVD F77_DGESVD
 #define GESDD F77_DGESDD
-extern int GESVD(char *jobu, char *jobvt, int *m, int *n, LM_REAL *a, int *lda, LM_REAL *s, LM_REAL *u, int *ldu,
-                 LM_REAL *vt, int *ldvt, LM_REAL *work, int *lwork, int *info);
+extern int GESVD(char *jobu, char *jobvt, blas_f77_integer_t *m, blas_f77_integer_t *n, LM_REAL *a, blas_f77_integer_t *lda, LM_REAL *s, LM_REAL *u, blas_f77_integer_t *ldu,
+                 LM_REAL *vt, blas_f77_integer_t *ldvt, LM_REAL *work, blas_f77_integer_t *lwork, blas_f77_integer_t *info);
 
 /* lapack 3.0 new SVD routine, faster than xgesvd() */
-extern int GESDD(char *jobz, int *m, int *n, LM_REAL *a, int *lda, LM_REAL *s, LM_REAL *u, int *ldu, LM_REAL *vt, int *ldvt,
-                 LM_REAL *work, int *lwork, int *iwork, int *info);
+extern int GESDD(char *jobz, blas_f77_integer_t *m, blas_f77_integer_t *n, LM_REAL *a, blas_f77_integer_t *lda, LM_REAL *s, LM_REAL *u, blas_f77_integer_t *ldu, LM_REAL *vt, blas_f77_integer_t *ldvt,
+                 LM_REAL *work, blas_f77_integer_t *lwork, blas_f77_integer_t *iwork, blas_f77_integer_t *info);
 
 
 /* blocked multiplication of the transpose of the nxm matrix a with itself (i.e. a^T a)
@@ -61,11 +62,13 @@ extern int GESDD(char *jobz, int *m, int *n, LM_REAL *a, int *lda, LM_REAL *s, L
 void TRANS_MAT_MAT_MULT(LM_REAL *a, LM_REAL *b, int n, int m)
 {
 LM_REAL alpha=CNST(1.0), beta=CNST(0.0);
+const blasint nn = n;
+const blasint mm = m;
   /* Fool BLAS to compute a^T*a avoiding transposing a: a is equivalent to a^T in column major,
    * therefore BLAS computes a*a^T with a and a*a^T in column major, which is equivalent to
    * computing a^T*a in row major!
    */
-  GEMM("N", "T", &m, &m, &n, &alpha, a, &m, a, &m, &beta, b, &m);
+  GEMM("N", "T", &mm, &mm, &nn, &alpha, a, &mm, a, &mm, &beta, b, &mm);
 
 }
 
@@ -276,7 +279,7 @@ register int i, j;
 LM_REAL *a, *u, *s, *vt, *work;
 int a_sz, u_sz, s_sz, vt_sz, tot_sz;
 LM_REAL thresh, one_over_denom;
-int info, rank, worksz, *iwork, iworksz;
+blasint info, rank, worksz, *iwork, iworksz;
    
   /* calculate required memory size */
   worksz=16*m; /* more than needed */
@@ -284,7 +287,7 @@ int info, rank, worksz, *iwork, iworksz;
   a_sz=m*m;
   u_sz=m*m; s_sz=m; vt_sz=m*m;
 
-  tot_sz=iworksz*sizeof(int) + (a_sz + u_sz + s_sz + vt_sz + worksz)*sizeof(LM_REAL);
+  tot_sz=iworksz*sizeof(blasint) + (a_sz + u_sz + s_sz + vt_sz + worksz)*sizeof(LM_REAL);
 
     buf_sz=tot_sz;
     buf=(LM_REAL *)malloc(buf_sz);
@@ -293,7 +296,7 @@ int info, rank, worksz, *iwork, iworksz;
       exit(1);
     }
 
-  iwork=(int *)buf;
+  iwork=(blasint *)buf;
   a=(LM_REAL *)(iwork+iworksz);
   /* store A (column major!) into a */
   for(i=0; i<m; i++)
@@ -305,18 +308,20 @@ int info, rank, worksz, *iwork, iworksz;
   vt=s+s_sz;
   work=vt+vt_sz;
 
+  const blasint mm = m;
+
   /* SVD decomposition of A */
-  GESVD("A", "A", (int *)&m, (int *)&m, a, (int *)&m, s, u, (int *)&m, vt, (int *)&m, work, (int *)&worksz, &info);
+  GESVD("A", "A", (blasint *)&mm, (blasint *)&mm, a, (blasint *)&mm, s, u, (blasint *)&mm, vt, (blasint *)&mm, work, (blasint *)&worksz, &info);
   //GESDD("A", (int *)&m, (int *)&m, a, (int *)&m, s, u, (int *)&m, vt, (int *)&m, work, (int *)&worksz, iwork, &info);
 
   /* error treatment */
   if(info!=0){
     if(info<0){
-      fprintf(stderr, RCAT(RCAT(RCAT("LAPACK error: illegal value for argument %d of ", GESVD), "/" GESDD) " in ", LEVMAR_PSEUDOINVERSE) "()\n", -info);
+      fprintf(stderr, RCAT(RCAT(RCAT("LAPACK error: illegal value for argument %ld of ", GESVD), "/" GESDD) " in ", LEVMAR_PSEUDOINVERSE) "()\n", (long)-info);
       exit(1);
     }
     else{
-      fprintf(stderr, RCAT("LAPACK error: dgesdd (dbdsdc)/dgesvd (dbdsqr) failed to converge in ", LEVMAR_PSEUDOINVERSE) "() [info=%d]\n", info);
+      fprintf(stderr, RCAT("LAPACK error: dgesdd (dbdsdc)/dgesvd (dbdsqr) failed to converge in ", LEVMAR_PSEUDOINVERSE) "() [info=%ld]\n", (long)info);
       free(buf);
 
       return 0;

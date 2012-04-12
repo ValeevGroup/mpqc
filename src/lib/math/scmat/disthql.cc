@@ -91,7 +91,7 @@ dist_diagonalize_(int n, int m, double *a, double *d, double *e,
                   double *sigma, double *z, double *v, double *w, int *ind,
                   const Ref<MessageGrp>& grp)
 {
-  int i,info,one=1;
+  int i,info;
   int nproc = grp->n();
   int id = grp->me();
 
@@ -107,7 +107,9 @@ dist_diagonalize_(int n, int m, double *a, double *d, double *e,
  /* rearrange the eigenvectors by transposition */
 
   i = m * n;
-  F77_DCOPY(&i,&z[0],&one,&a[0],&one);
+  const blasint ii = i;
+  const blasint one = 1;
+  F77_DCOPY(&ii,&z[0],&one,&a[0],&one);
   pflip(id,n,m,nproc,&a[0],&v[0],&w[0],grp);
 }
 
@@ -119,17 +121,21 @@ static void
 pflip(int id,int n,int m,int p,double *ar,double *ac,double *w,
       const Ref<MessageGrp>& grp)
 {
-  int i,k,r,dpsize=sizeof(double),one=1;
+  int i,k,r,dpsize=sizeof(double);
+  const blasint nn = n;
+  const blasint mm = m;
+  const blasint pp = p;
+  const blasint one = 1;
 
   i = 0;
   for (k=0; k<n; k++) {
     r = k % p;
     if (id == r) {
-      F77_DCOPY(&n,&ar[i],&m,&w[0],&one);
+      F77_DCOPY(&nn,&ar[i],&mm,&w[0],&one);
       i++;
     }
     grp->raw_bcast(&w[0], n*dpsize, r);
-    F77_DCOPY(&m,&w[id],&p,&ac[k],&n);
+    F77_DCOPY(&mm,&w[id],&pp,&ac[k],&nn);
   }
 }
 
@@ -170,8 +176,9 @@ ptred_single(double *a,int *lda,int *n,int *m,int *p,int *id,
 {
    double  alpha=0.0, beta, gamma, alpha2; 
    double  oobeta;
-   int     i,j,k,l,ld,r;
-   int     slda, sn, sm, sp, sid, q, inc=1;
+   blasint     i,j,k,l,ld,r;
+   blasint     slda, sn, sm, sp, sid, q;
+   const blasint inc = 1;
 
    /* extract parameters and get  cube information */
 
@@ -213,7 +220,7 @@ ptred_single(double *a,int *lda,int *n,int *m,int *p,int *id,
       /* The root node, r, is the owner of column k.                  */
 
       if (sid == r) {
-         q = sn - k;      
+         q = sn - k;
          alpha = F77_DNRM2(&q,&a[l*slda+k],&inc);
          if (a[l*slda+k] < 0.0) alpha = -alpha;
          if (alpha != 0.0) {
@@ -319,9 +326,9 @@ ptred_parallel(double *a, int *lda, int *n, int *m, int *p, int *id,
                double *d, double *e, double *z, double *work,
                const Ref<MessageGrp>& grp)
 {
-  int i, j, k, l, ld, r, dpsize = sizeof(double);
-  int kp1l;
-  int slda, sn, sm, sp, sid, q, inc = 1;
+  blasint i, j, k, l, ld, r, dpsize = sizeof(double);
+  blasint kp1l;
+  blasint slda, sn, sm, sp, sid, q, inc = 1;
   double alpha=0.0, beta=0.0, gamma, alpha2;
   double oobeta, atemp;
 
@@ -385,8 +392,8 @@ ptred_parallel(double *a, int *lda, int *n, int *m, int *p, int *id,
     * vector. Don't do this on the first step.
     */
       if (k != 1) {
-	int ik = k - 1; /* ik is a temporary index to the previous step */
-	int nmik = sn - ik;
+	blasint ik = k - 1; /* ik is a temporary index to the previous step */
+	blasint nmik = sn - ik;
 
 	if (beta != 0.0) {
 	  for (i = 0; i < sm; i++) {
@@ -419,7 +426,7 @@ ptred_parallel(double *a, int *lda, int *n, int *m, int *p, int *id,
       F77_DCOPY(&q, &alpha2, &j, &e[k], &inc);
       i = ld;
       for (j = l; j < sm; j++) {
-        int ij=j*slda+i;
+        blasint ij=j*slda+i;
 	q = sn - i;
 	e[i] += F77_DDOT(&q, &a[ij], &inc, &d[i], &inc);
 	q--;

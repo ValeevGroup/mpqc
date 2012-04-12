@@ -197,7 +197,7 @@ void Tensor::add_block(long tag, double* data){
   std::map<long,long>::iterator iter = hash_table_.find(tag);
   assert(iter != hash_table_.end());
   long doffset = iter->second;
-  int dsize    = (int)((++iter)->second - doffset);
+  blasint dsize    = (int)((++iter)->second - doffset);
   distsize_t offset = (distsize_t) doffset * sizeof(double);
   const int    size =          (int)dsize  * sizeof(double); // in byte
 
@@ -206,7 +206,7 @@ void Tensor::add_block(long tag, double* data){
   ::memcpy((void*) copy_data, (void*) data, size);
 
   double* buffer = (double*) file_->obtain_readonly(offset, size);
-  const int unit = 1;
+  const blasint unit = 1;
   const double one = 1.0;
   F77_DAXPY(&dsize, &one, buffer, &unit, copy_data, &unit);
   file_->release_readonly((void*) buffer, offset, size);
@@ -219,7 +219,7 @@ void Tensor::add_block(long tag, double* data){
   file_->seekg(doffset * sizeof(double));
   file_->read((char*)copy_data, size);
   const double one = 1.0;
-  const int unit = 1;
+  const blasint unit = 1;
   F77_DAXPY(&dsize, &one, data, &unit, copy_data, &unit);
 
   file_->clear();
@@ -321,9 +321,9 @@ void Tensor::scale(double a){
 }
 
 void Tensor::daxpy(const Ref<Tensor>& other, double a){ // add to self
-  const int unit = 1;
+  const blasint unit = 1;
 #ifndef DISK_BASED_SMITH
-  const int dsize = file_->localsize() / sizeof(double);
+  const blasint dsize = file_->localsize() / sizeof(double);
   assert(dsize == other->file()->localsize() / sizeof(double));
   double* buffer1 = (double *) file_->localdata();
   const double* buffer2 = (double *) other->file()->localdata();
@@ -339,7 +339,7 @@ void Tensor::daxpy(const Ref<Tensor>& other, double a){ // add to self
   this->file_->clear();
   other->file_->clear();
   while (size_back > 0L) {
-    const int rsize = min(cachesize, size_back);
+    const blasint rsize = min(cachesize, size_back);
     const size_t readsize = rsize * sizeof(double);
     const size_t position = size_now * sizeof(double); 
 
@@ -413,12 +413,11 @@ Ref<Tensor> Tensor::clone() const {
 
 
 double Tensor::norm() const {
-  const int unit = 1;
-
+  const blasint unit = 1;
 #ifndef DISK_BASED_SMITH 
   sync();
   const double* buffer = (double *) file_->localdata();
-  const int dsize = file_->localsize() / sizeof(double);
+  const blasint dsize = file_->localsize() / sizeof(double);
   double norm_ = F77_DDOT(&dsize, buffer, &unit, buffer, &unit);
 
   Ref<MessageGrp> msg_ = MessageGrp::get_default_messagegrp();
@@ -430,7 +429,7 @@ double Tensor::norm() const {
   double norm_ = 0.0;
   long size_back = filesize_;
   while (size_back > 0L) {
-    const int bsize = min(cachesize, size_back);
+    const blasint bsize = min(cachesize, size_back);
     file_->read((char*)aux_array, bsize * sizeof(double));
     norm_ += F77_DDOT(&bsize, aux_array, &unit, aux_array, &unit);
     size_back -= cachesize;
@@ -445,12 +444,12 @@ double Tensor::norm() const {
 
 
 double Tensor::ddot(Ref<Tensor>& other) const {
-  const int unit = 1;
-#ifndef DISK_BASED_SMITH 
+  const blasint unit = 1;
+  #ifndef DISK_BASED_SMITH
   sync();
   const double* buffer1 = (double *)        file_->localdata();
   const double* buffer2 = (double *) other->file()->localdata();
-  const int dsize = file_->localsize() / sizeof(double);
+  const blasint dsize = file_->localsize() / sizeof(double);
   assert(file()->localsize() == other->file()->localsize());
   double ddotproduct = F77_DDOT(&dsize, buffer1, &unit, buffer2, &unit);
 
@@ -466,7 +465,7 @@ double Tensor::ddot(Ref<Tensor>& other) const {
   long size_back = filesize_; 
   size_t size_now = 0LU;
   while (size_back > 0L) {
-    const int rsize = min(cachesize, size_back);
+    const blasint rsize = min(cachesize, size_back);
     const size_t readsize = rsize * sizeof(double);
     const size_t position = size_now * sizeof(double);
     file_->seekg(position);

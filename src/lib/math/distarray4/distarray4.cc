@@ -506,7 +506,7 @@ namespace sc {
     const int nj = Y->nj();
     const int nx = Y->nx();
     const int ny = Y->ny();
-    const int nxy = nx * ny;
+    const blasint nxy = nx * ny;
     const size_t bufsize = nxy * sizeof(double);
 
     X->activate();
@@ -532,7 +532,7 @@ namespace sc {
           const double* x_buf = X->retrieve_pair_block(i, j, t);
           Y->retrieve_pair_block(i, j, t, y_buf);
 
-          const int one = 1;
+          const blasint one = 1;
           F77_DAXPY(&nxy, &a, x_buf, &one, y_buf, &one);
           if (scale != 1.0) F77_DSCAL(&nxy, &scale, y_buf, &one);
 
@@ -1166,7 +1166,7 @@ namespace sc {
     const int nworkers = A->tasks_with_access(worker_id);
     const int me = A->msg()->me();
 
-    const int nxy = A->nx() * A->ny();
+    const blasint nxy = A->nx() * A->ny();
 
     for (unsigned int i = 0, task_id = 0; i < A->ni(); ++i) {
       for (unsigned int j = 0; j < A->nj(); ++j, ++task_id) {
@@ -1177,7 +1177,7 @@ namespace sc {
 
         const double* ij_blk = A->retrieve_pair_block(i, j, te_type);
         if (scale != 1.0) {
-          const int one = 1;
+          const blasint one = 1;
           F77_DSCAL(&nxy, &scale, const_cast<double*>(ij_blk), &one);
         }
         result->store_pair_block(i, j, 0, ij_blk);

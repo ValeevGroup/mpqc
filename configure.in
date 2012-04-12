@@ -1601,6 +1601,16 @@ fi
 FLIBS="$LIBLAPACK $LIBBLAS $FLIBS"
 AC_LANG_RESTORE
 
+AC_ARG_ENABLE(blas-f77-i8,
+ [  --enable-blas-f77-i8    Assume that BLAS/LAPACK uses 8-byte integers (default is to assume 4-byte integers; consult your BLAS/LAPACK library manual).],
+ [BLAS_F77_INTEGER_WIDTH_ARG=$enableval]
+)
+if test "X$BLAS_F77_INTEGER_WIDTH_ARG" = "Xyes"; then
+  AC_DEFINE(BLAS_F77_INTEGER_WIDTH,8)
+else
+  AC_DEFINE(BLAS_F77_INTEGER_WIDTH,4)
+fi
+
 dnl ----------- check for Scalable BLAS library --------------
 
 LIBSSAV="$LIBS"

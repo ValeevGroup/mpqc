@@ -1,31 +1,46 @@
-extern "C" {
 #include <math/scmat/f77sym.h>
+#include <scconfig.h>
+#include <stdint.h>
+#if defined(BLAS_F77_INTEGER_WIDTH) && BLAS_F77_INTEGER_WIDTH == 8
+  typedef int64_t blas_f77_integer_t;
+#elif defined(BLAS_F77_INTEGER_WIDTH) && BLAS_F77_INTEGER_WIDTH == 4
+  typedef int32_t blas_f77_integer_t;
+#else
+# error "unknown BLAS_F77_INTEGER_WIDTH"
+#endif
+typedef blas_f77_integer_t blasint;
 
-extern void F77_DGEMM(const char*, const char*, const int*,
-                      const int*, const int*, const double*, const double*, const int*,
-                      const double*, const int*, const double*, double*, const int*);
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+extern void F77_DGEMM(const char*, const char*, const blas_f77_integer_t*,
+                      const blas_f77_integer_t*, const blas_f77_integer_t*, const double*, const double*, const blas_f77_integer_t*,
+                      const double*, const blas_f77_integer_t*, const double*, double*, const blas_f77_integer_t*);
 
-extern void F77_DGEMV(const char* trans, const int* m, const int* n, const double* alpha,
-                      const double* A, const int* lda, const double* X, const int* incX,
-                      const double* beta, double* Y, const int* incY);
+extern void F77_DGEMV(const char* trans, const blas_f77_integer_t* m, const blas_f77_integer_t* n, const double* alpha,
+                      const double* A, const blas_f77_integer_t* lda, const double* X, const blas_f77_integer_t* incX,
+                      const double* beta, double* Y, const blas_f77_integer_t* incY);
 
-extern void F77_DAXPY(const int* n, const double* da, const double* dx,
-                      const int* incx, double* dy, const int* incy);
+extern void F77_DAXPY(const blas_f77_integer_t* n, const double* da, const double* dx,
+                      const blas_f77_integer_t* incx, double* dy, const blas_f77_integer_t* incy);
 
-extern double F77_DDOT(const int* n, const double* dx, const int* incx,
-                       const double* dy, const int* incy);
+extern double F77_DDOT(const blas_f77_integer_t* n, const double* dx, const blas_f77_integer_t* incx,
+                       const double* dy, const blas_f77_integer_t* incy);
 
-extern void F77_DCOPY(const int *n, const double *dx, const int *incx, double *dy, const int *incy);
-extern double F77_DNRM2(const int *n, const double *dx, const int *incx);
-extern void F77_DSCAL(const int *n, const double *da, double *dx, const int *incx);
+extern void F77_DCOPY(const blas_f77_integer_t *n, const double *dx, const blas_f77_integer_t *incx, double *dy, const blas_f77_integer_t *incy);
+extern double F77_DNRM2(const blas_f77_integer_t *n, const double *dx, const blas_f77_integer_t *incx);
+extern void F77_DSCAL(const blas_f77_integer_t *n, const double *da, double *dx, const blas_f77_integer_t *incx);
 
-extern void F77_DSPMV(const char* uplo, const int* n, const double* alpha,
-                      const double* A, const double* X, const int* incx,
+extern void F77_DSPMV(const char* uplo, const blas_f77_integer_t* n, const double* alpha,
+                      const double* A, const double* X, const blas_f77_integer_t* incx,
                       const double* beta, double* Y,
-                      const int* incy);
+                      const blas_f77_integer_t* incy);
 
+#ifdef __cplusplus
 }
+#endif // __cplusplus
 
+#ifdef __cplusplus
 namespace sc {
 
   //
@@ -107,3 +122,4 @@ namespace sc {
                double *C, int ncc);
 
 }
+#endif // __cplusplus

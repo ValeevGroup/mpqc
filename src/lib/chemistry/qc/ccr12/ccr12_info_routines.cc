@@ -41,12 +41,12 @@ void CCR12_Info::smith_dgemm(const long i,const long j,const long k,
   const char chart='t';
   const char charn='n';
   const double one=1.0;
-  const int i_=static_cast<int>(i);
-  const int j_=static_cast<int>(j);
-  const int k_=static_cast<int>(k);
-  const int l_=static_cast<int>(l);
-  const int m_=static_cast<int>(m);
-  const int n_=static_cast<int>(n);
+  const blasint i_=static_cast<blasint>(i);
+  const blasint j_=static_cast<blasint>(j);
+  const blasint k_=static_cast<blasint>(k);
+  const blasint l_=static_cast<blasint>(l);
+  const blasint m_=static_cast<blasint>(m);
+  const blasint n_=static_cast<blasint>(n);
   F77_DGEMM(&chart,&charn,&i_,&j_,&k_,&a,da,&l_,db,&m_,&one,dc,&n_);
 }
 

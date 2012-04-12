@@ -323,9 +323,8 @@
 /* Define if you have the <dlfcn.h> header file.  */
 #undef HAVE_DLFCN_H
 
-/* Define if you have LAPACK
- */
-#undef HAVE_LAPACK
+/* Determines the width of the integer use by BLAS F77 interface */
+#undef BLAS_F77_INTEGER_WIDTH
 
 /* Define if you have the Scalable BLAS package and everything needed for it.
  */

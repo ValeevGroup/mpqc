@@ -339,8 +339,8 @@ PetiteList::aotoso_info()
       // operation loop
       int bfn_offset_in_shell = 0;
       for (c=0; c < gbs(i,s).ncontraction(); c++) {
-        int nfuncuniq = gbs(i,s).nfunction(c);
-        int nfuncall = nfuncuniq * nequiv;
+        const blasint nfuncuniq = gbs(i,s).nfunction(c);
+        const blasint nfuncall = nfuncuniq * nequiv;
 
         // allocate an array to store linear combinations of orbitals
         // this is destroyed by the SVD routine
@@ -403,10 +403,10 @@ PetiteList::aotoso_info()
             // find the linearly independent SO's for this irrep/component
             memcpy(linorbcop[0], linorb[0], nfuncuniq*nfuncall*sizeof(double));
             double *singval = new double[nfuncuniq];
-            double djunk=0; int ijunk=1;
-            int lwork = 5*nfuncall;
+            double djunk=0; blasint ijunk=1;
+            blasint lwork = 5*nfuncall;
             double *work = new double[lwork];
-            int info;
+            blasint info;
             // solves At = V SIGMA Ut (since FORTRAN array layout is used)
             F77_DGESVD("N","A",&nfuncall,&nfuncuniq,linorb[0],&nfuncall,
                        singval, &djunk, &ijunk, u[0], &nfuncuniq,

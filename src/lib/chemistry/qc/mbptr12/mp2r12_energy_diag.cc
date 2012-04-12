@@ -236,7 +236,7 @@ void MP2R12Energy_Diag::compute_YxF(const int b1b2_k1k2, const double prefactor,
                                     Ref<DistArray4>& i1i2x1x2_ints, Ref<DistArray4>& j1j2x1x2_ints,
                                     double* array_i1i2i1i2)
 {
-  const int norbs12 = i1i2x1x2_ints->nx() * i1i2x1x2_ints->ny();
+  const blasint norbs12 = i1i2x1x2_ints->nx() * i1i2x1x2_ints->ny();
 
   int nocc1_act = i1i2x1x2_ints->ni();
   int nocc2_act = i1i2x1x2_ints->nj();
@@ -288,7 +288,7 @@ void MP2R12Energy_Diag::compute_YxF(const int b1b2_k1k2, const double prefactor,
 
   for( ; i<nocc1_act; ++i) {
     for(j=0; j<nocc2_act; ++j) {
-      const int one = 1;
+      const blasint one = 1;
 
       const double* blk1 = i1i2x1x2_ints->retrieve_pair_block(*blk1_i1, *blk1_i2, oper1_idx);
       const double* blk2 = j1j2x1x2_ints->retrieve_pair_block(*blk2_i1, *blk2_i2, oper2_idx);
@@ -315,7 +315,7 @@ void MP2R12Energy_Diag::compute_FxT(const int b1b2_k1k2, const unsigned int f12_
                                     double* V_coupling_array)
 {
   // iiPFa_int dimension: nocc1_act*nocc2_act*nvir1_act*nvir1_act
-  const int nvir12_act = iiPFa_ints->nx() * iiPFa_ints->ny();
+  const blasint nvir12_act = iiPFa_ints->nx() * iiPFa_ints->ny();
 
   // ij case
   int nocc1_act = iiPFa_ints->ni();
@@ -362,7 +362,7 @@ void MP2R12Energy_Diag::compute_FxT(const int b1b2_k1k2, const unsigned int f12_
     const double* iter_T = Ti1i2ab + *iter_T_start;
 
     for(j=0; j<nocc2_act; ++j, ++idx_ij, iter_T += *offset_T) {
-      const int one = 1;
+      const blasint one = 1;
       const double* F_blk = iiPFa_ints->retrieve_pair_block(*F_blk_i1, *F_blk_i2, f12_idx);
 
       // Get the right block of Tij or Tji
@@ -476,7 +476,7 @@ void MP2R12Energy_Diag::contract_VT1(const Ref<DistArray4>& V,
      offset_T1 = &i;   // T^i_a (alpha)
    }
 
-   const int one = 1;
+   const blasint one = 1;
    // Allocate memory for V_blk which contains the swapped electron 1 and 2 integrals
    double* Vma_blk = NULL;
    if (swap_e12_V) {
@@ -498,7 +498,8 @@ void MP2R12Energy_Diag::contract_VT1(const Ref<DistArray4>& V,
 
        const double* iter_T1 = T1_array + (*offset_T1) * nv;
 
-       const double vt1_ij = F77_DDOT(&nv, iter_V, &one, iter_T1, &one);
+       const blasint nvf = nv;
+       const double vt1_ij = F77_DDOT(&nvf, iter_V, &one, iter_T1, &one);
        const int ij = i*no2 + j;
        *iter_VT1 += vt1_ij;
        ++iter_VT1;
@@ -513,7 +514,7 @@ void MP2R12Energy_Diag::contract_VT1(const Ref<DistArray4>& V,
 void MP2R12Energy_Diag::compute_ef12() {
 
   // calculate one electron density
-//  compute_density_diag();
+  //compute_density_diag();
 
   // switch to new implementation that should work correctly for alpha-beta contributions in open-shell molecules
   return this->compute_ef12_10132011();
@@ -2414,8 +2415,8 @@ void MP2R12Energy_Diag::compute_ef12() {
       const Ref<OrbitalSpace>& p2 = r12eval()->orbs(spin2);
       const unsigned int np1 = p1->rank();
       const unsigned int np2 = p2->rank();
-      const int nv12 = nv1 *nv2;
-      const int one = 1;
+      const blasint nv12 = nv1 *nv2;
+      const blasint one = 1;
 
       // Vpq_ij
       std::vector< Ref<DistArray4> > Vpq_vec = r12eval()->V_distarray4(spincase2, p1, p2);
@@ -2598,6 +2599,10 @@ void MP2R12Energy_Diag::compute_ef12() {
             // 2.0 from Hylleraas functional
             const double Hij_pair_energy = 2.0*C_1*(0.5*VT2ij_ij[ij] + VT1ij_ij[ij]);
 //          const double Hij_pair_energy = VT2ij_ij[ij];
+            if (debug_ >= DefaultPrintThresholds::N2) {
+              ExEnv::out0() << indent << "Hij_pair_energy: ij = " << i1 << "," << i2 << " e(CC) = "
+                            << Hij_pair_energy << endl;
+            }
             ef12_[s].accumulate_element(i21, Hij_pair_energy);
           }
         }
@@ -2609,6 +2614,10 @@ void MP2R12Energy_Diag::compute_ef12() {
               const double Hij_pair_energy = 2.0*( 0.5*(C_0+C_1) * VT2ij_ij[ij] + 0.5*(C_0-C_1) * VT2ij_ji[ij]
                                                  + 0.5*(C_0+C_1) * VT1ij_ij[ij] + 0.5*(C_0-C_1) * VT1ij_ji[ij]
                                                    );
+              if (debug_ >= DefaultPrintThresholds::N2) {
+                ExEnv::out0() << indent << "Hij_pair_energy: ij = " << i1 << "," << i2 << " e(CC) = "
+                              << Hij_pair_energy << endl;
+              }
               ef12_[s].accumulate_element(ij, Hij_pair_energy);
             }
           }

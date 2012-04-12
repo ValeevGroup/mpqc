@@ -599,8 +599,8 @@ contract(
           firstA = rangeA.first,
           fenceA = rangeA.second;
       Bbi.assign_blocks(extB, Cbi, extCB);
-      int n_extB = Cbi.subset_size(C.indices(), extCB);
-      int n_extA = Cbi.subset_size(C.indices(), extCA);
+      blasint n_extB = Cbi.subset_size(C.indices(), extCB);
+      blasint n_extA = Cbi.subset_size(C.indices(), extCA);
 #ifdef USE_HASH
       typename Array<NB>::blockhash_t::const_iterator Biter;
 #else
@@ -633,7 +633,7 @@ contract(
           if (Biter == Bbm.end()) continue;
 #endif
           double *Bdata = Biter->second;
-          int n_int = Abi.subset_size(A.indices(), intA);
+          blasint n_int = Abi.subset_size(A.indices(), intA);
 
           double one = 1.0;
           if (timer.nonnull()) timer->enter("dgemm");
@@ -717,14 +717,14 @@ contract(
             }
           else if (repack_scheme.transpose_C()) {
               const char *tA = "T";
-              int lda = n_int;
+              blasint lda = n_int;
               if (repack_scheme.transpose_A()) { tA = "N"; lda = n_extA; }
 
               const char *tB = "T";
-              int ldb = n_extB;
+              blasint ldb = n_extB;
               if (repack_scheme.transpose_B()) { tB = "N"; ldb = n_int; }
 
-              int ldc = n_extA;
+              blasint ldc = n_extA;
 
 //               std::cout << " tA: " << tA
 //                         << " tB: " << tB
@@ -742,14 +742,14 @@ contract(
             }
           else {
               const char *tA = "N";
-              int lda = n_int;
+              blasint lda = n_int;
               if (repack_scheme.transpose_A()) { tA = "T"; lda = n_extA; }
 
               const char *tB = "N";
-              int ldb = n_extB;
+              blasint ldb = n_extB;
               if (repack_scheme.transpose_B()) { tB = "T"; ldb = n_int; }
 
-              int ldc = n_extB;
+              blasint ldc = n_extB;
 
               F77_DGEMM(tB, tA, &n_extB, &n_extA, &n_int,
                         &ABfactor,Bdata,&ldb,Adata,&lda,

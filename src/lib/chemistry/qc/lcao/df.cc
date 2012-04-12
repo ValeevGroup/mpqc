@@ -216,7 +216,7 @@ DensityFitting::compute()
       std::vector<double> kernel_i; // only needed for inverse method
       std::vector<double> kernel_packed;  // only needed for factorized methods
       std::vector<double> kernel_factorized;
-      std::vector<int> ipiv;
+      std::vector<blasint> ipiv;
 
       // factorize or invert kernel
       switch (solver_) {

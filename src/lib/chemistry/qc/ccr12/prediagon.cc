@@ -172,8 +172,8 @@ void CCR12_Info::denom_contraction(const Ref<Tensor>& in, Ref<Tensor>& out) {
 
                   long h5b_1, h6b_1, h1b_1, h2b_1;
                   restricted_4(h5b, h6b, h1b, h2b, h5b_1, h6b_1, h1b_1, h2b_1);
-                  const int dim_common = get_range(h5b) * get_range(h6b);
-                  const int dima1_sort = get_range(h1b) * get_range(h2b);
+                  const blasint dim_common = get_range(h5b) * get_range(h6b);
+                  const blasint dima1_sort = get_range(h1b) * get_range(h2b);
 
                   // read tilde from in
                   ltensor1->get_block(h6b+noab()*(h5b+noab()*pair), k_a1);
@@ -181,7 +181,7 @@ void CCR12_Info::denom_contraction(const Ref<Tensor>& in, Ref<Tensor>& out) {
                   in->get_block(h2b_1+noab()*(h1b_1+noab()*(h6b_1+noab()*h5b_1)), k_a0);
 
                   const double factor = h5b == h6b ? 0.5 : 1.0;
-                  const int unit = 1;
+                  const blasint unit = 1;
                   const double one = 1.0;
 
                   F77_DGEMV("n", &dima1_sort, &dim_common,
@@ -250,9 +250,9 @@ void CCR12_Info::denom_contraction(const Ref<Tensor>& in, Ref<Tensor>& out) {
                   for (int pair = 0; pair != pair_size; ++pair) {
                     intermediate_tensor->get_block(h6b+noab()*(h5b+noab()*pair), k_a0);
                     ltensor2->get_block(h2b+noab()*(h1b+noab()*pair), k_a1);
-                    const int r56 = rh5b * rh6b;
-                    const int r12 = rh1b * rh2b;
-                    const int unit = 1;
+                    const blasint r56 = rh5b * rh6b;
+                    const blasint r12 = rh1b * rh2b;
+                    const blasint unit = 1;
                     const double one = 1.0;
 
                     F77_DGEMM("n", "t", &r56, &r12, &unit, &one, k_a0, &r56, k_a1, &r12, &one, k_c, &r56);

@@ -67,7 +67,7 @@ double CCR12_Triples::get_energy_ig() {
           long h1ba, h2ba, p3ba, h4ba, h5ba, h6ba;
           z->restricted_6(h1b, h2b, p3b, h4b, h5b, h6b,
                           h1ba, h2ba, p3ba, h4ba, h5ba, h6ba);
-          const int dim = z->get_range(h1b) * z->get_range(h2b)
+          const blasint dim = z->get_range(h1b) * z->get_range(h2b)
                         * z->get_range(h4b) * z->get_range(h5b)
                         * z->get_range(h6b) * z->get_range(p3b);
 
@@ -83,7 +83,7 @@ double CCR12_Triples::get_energy_ig() {
           else if (h4b==h5b || h5b==h6b) factor *= 0.5;
 
           // adds the contribution from this block
-          const int unit = 1;
+          const blasint unit = 1;
           energy += factor * F77_DDOT(&dim, work0, &unit, work1, &unit);
 
          }
@@ -137,7 +137,7 @@ double CCR12_Triples::get_energy() {
           long h1ba, h2ba, p3ba, h4ba, h5ba, h6ba; 
           z->restricted_6(h1b, h2b, p3b, h4b, h5b, h6b,
                           h1ba, h2ba, p3ba, h4ba, h5ba, h6ba);
-          const int dim = z->get_range(h1b) * z->get_range(h2b)
+          const blasint dim = z->get_range(h1b) * z->get_range(h2b)
                         * z->get_range(h4b) * z->get_range(h5b)
                         * z->get_range(h6b) * z->get_range(p3b); 
 
@@ -153,7 +153,7 @@ double CCR12_Triples::get_energy() {
           else if (h4b==h5b || h5b==h6b) factor *= 0.5;
 
           // adds the contribution from this block
-          const int unit = 1;
+          const blasint unit = 1;
           energy += factor * F77_DDOT(&dim, work0, &unit, work1, &unit);
           //cout << setprecision(15) << endl;
           //cout << h1b << h2b << p3b << h4b << h5b << h6b << " " << factor * F77_DDOT(&dim, work0, &unit, work1, &unit) << endl;

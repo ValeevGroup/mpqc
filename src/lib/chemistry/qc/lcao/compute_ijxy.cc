@@ -61,10 +61,10 @@ using namespace sc;
 void
 TwoBodyMOIntsTransform_ijxy::compute()
 {
-  int rank1 = space1_->rank();
-  int rank2 = space2_->rank();
-  int rank3 = space3_->rank();
-  int rank4 = space4_->rank();
+  const blasint rank1 = space1_->rank();
+  const blasint rank2 = space2_->rank();
+  const blasint rank3 = space3_->rank();
+  const blasint rank4 = space4_->rank();
 
   init_acc();
   // if all integrals are already available -- do nothing
@@ -77,10 +77,10 @@ TwoBodyMOIntsTransform_ijxy::compute()
   Ref<GaussianBasisSet> bs3 = space3_->basis();
   Ref<GaussianBasisSet> bs4 = space4_->basis();
   const bool bs3_eq_bs4 = (bs3 == bs4);
-  int nbasis1 = bs1->nbasis();
-  int nbasis2 = bs2->nbasis();
-  int nbasis3 = bs3->nbasis();
-  int nbasis4 = bs4->nbasis();
+  blasint nbasis1 = bs1->nbasis();
+  blasint nbasis2 = bs2->nbasis();
+  blasint nbasis3 = bs3->nbasis();
+  blasint nbasis4 = bs4->nbasis();
   int nshell1 = bs1->nshell();
   int nshell2 = bs2->nshell();
   int nshell3 = bs3->nshell();

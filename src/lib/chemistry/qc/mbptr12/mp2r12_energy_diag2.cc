@@ -183,6 +183,15 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
   const double C_0 = 1.0 / 2.0;
   const double C_1 = 1.0 / 4.0;
 
+  std::vector<double> ef12_VT[NSpinCases2];
+  std::vector<double> ef12_TBT[NSpinCases2];
+  for (int spin = 0; spin < num_unique_spincases2; spin++) {
+    const SpinCase2 spincase = static_cast<SpinCase2>(spin);
+    const int noo = r12eval()->dim_oo(spincase).n();
+    ef12_VT[spin].resize(noo);
+    ef12_TBT[spin].resize(noo);
+  }
+
   //
   // Compute the MP2-R12 part
   //
@@ -1673,6 +1682,19 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
           int ij = i1 * nocc2_act + i2;
           int ji = i2 * nocc1_act + i1;
 
+          double Hij_pair_energy_VT = (2.0
+              * (0.5 * (C_0 + C_1) * Vij_ij[ij]
+                  + 0.5 * (C_0 - C_1) * Vij_ji[ij]));
+          double Hij_pair_energy_TBT = (pow(0.5 * (C_0 + C_1), 2)
+              * (Bij_ij[ij]
+                  - (evals_i1(i1) + evals_i2(i2)) * Xij_ij[ij])
+              + 0.25 * (C_0 * C_0 - C_1 * C_1)
+                  * ((Bij_ji[ij] + Bji_ij[ji])
+                      - (evals_i1(i1) + evals_i2(i2))
+                          * (Xij_ji[ij] + Xji_ij[ij]))
+              + pow(0.5 * (C_0 - C_1), 2)
+                  * (Bji_ji[ji]
+                      - (evals_i1(i1) + evals_i2(i2)) * Xji_ji[ij]));
           if (debug_ >= DefaultPrintThresholds::mostN2) {
             ExEnv::out0()
                 << indent
@@ -1681,9 +1703,7 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
                 << ","
                 << i2
                 << " e(VT) = "
-                << (2.0
-                    * (0.5 * (C_0 + C_1) * Vij_ij[ij]
-                        + 0.5 * (C_0 - C_1) * Vij_ji[ij])) << endl;
+                << scprintf("%20.15lf",Hij_pair_energy_VT) << endl;
             ExEnv::out0()
                 << indent
                 << "Hij_pair_energy: ij = "
@@ -1691,30 +1711,20 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
                 << ","
                 << i2
                 << " e(TBT) = "
-                << (pow(0.5 * (C_0 + C_1), 2)
-                    * (Bij_ij[ij]
-                        - (evals_i1(i1) + evals_i2(i2)) * Xij_ij[ij])
-                    + 0.25 * (C_0 * C_0 - C_1 * C_1)
-                        * ((Bij_ji[ij] + Bji_ij[ji])
-                            - (evals_i1(i1) + evals_i2(i2))
-                                * (Xij_ji[ij] + Xji_ij[ij]))
-                    + pow(0.5 * (C_0 - C_1), 2)
-                        * (Bji_ji[ji]
-                            - (evals_i1(i1) + evals_i2(i2)) * Xji_ji[ij]))
+                << scprintf("%20.15lf",Hij_pair_energy_TBT)
                 << endl;
           }
-          Hij_pair_energy =
-              2.0
-                  * (0.5 * (C_0 + C_1) * Vij_ij[ij]
-                      + 0.5 * (C_0 - C_1) * Vij_ji[ij])
-                  + pow(0.5 * (C_0 + C_1), 2)
-                      * (Bij_ij[ij] - (evals_i1(i1) + evals_i2(i2)) * Xij_ij[ij])
-                  + 0.25 * (C_0 * C_0 - C_1 * C_1)
-                      * (Bij_ji[ij] + Bji_ij[ji]
-                          - (evals_i1(i1) + evals_i2(i2))
-                              * (Xij_ji[ij] + Xji_ij[ij]))
-                  + pow(0.5 * (C_0 - C_1), 2)
-                      * (Bji_ji[ji] - (evals_i1(i1) + evals_i2(i2)) * Xji_ji[ij]);
+//              2.0
+//                  * (0.5 * (C_0 + C_1) * Vij_ij[ij]
+//                      + 0.5 * (C_0 - C_1) * Vij_ji[ij])
+//                  + pow(0.5 * (C_0 + C_1), 2)
+//                      * (Bij_ij[ij] - (evals_i1(i1) + evals_i2(i2)) * Xij_ij[ij])
+//                  + 0.25 * (C_0 * C_0 - C_1 * C_1)
+//                      * (Bij_ji[ij] + Bji_ij[ji]
+//                          - (evals_i1(i1) + evals_i2(i2))
+//                              * (Xij_ji[ij] + Xji_ij[ij]))
+//                  + pow(0.5 * (C_0 - C_1), 2)
+//                      * (Bji_ji[ji] - (evals_i1(i1) + evals_i2(i2)) * Xji_ji[ij]);
 
           if (this->r12eval()->coupling() == true
               || this->r12eval()->ebc() == false) {
@@ -1730,13 +1740,17 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
                       * (0.5 * (C_0 + C_1) * Vij_ij_coupling[ij]
                           + 0.5 * (C_0 - C_1) * Vij_ji_coupling[ij])) << endl;
             }
-            Hij_pair_energy += 2.0
+            Hij_pair_energy_VT += 2.0
                 * (0.5 * (C_0 + C_1) * Vij_ij_coupling[ij]
                     + 0.5 * (C_0 - C_1) * Vij_ji_coupling[ij]);
           }
 
+          Hij_pair_energy = Hij_pair_energy_VT + Hij_pair_energy_TBT;
+
           const int i12 = i1 * nocc2_act + i2;
           ef12_[spin].set_element(i12, Hij_pair_energy);
+          ef12_VT[spin][i12] = Hij_pair_energy_VT;
+          ef12_TBT[spin][i12] = Hij_pair_energy_TBT;
         }
       }
       delete[] Bji_ij;
@@ -1804,8 +1818,8 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
       const Ref<OrbitalSpace>& p2 = r12eval()->orbs(spin2);
       const unsigned int np1 = p1->rank();
       const unsigned int np2 = p2->rank();
-      const int nv12 = nv1 * nv2;
-      const int one = 1;
+      const blasint nv12 = nv1 * nv2;
+      const blasint one = 1;
 
       // Vpq_ij
       std::vector<Ref<DistArray4> > Vpq_vec = r12eval()->V_distarray4(spincase2,
@@ -1975,9 +1989,14 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
             const double Hij_pair_energy = 2.0 * C_1
                 * (0.5 * VT2ij_ij[ij] + VT1ij_ij[ij]);
 //          const double Hij_pair_energy = VT2ij_ij[ij];
+            if (debug_ >= DefaultPrintThresholds::mostN2) {
+              ExEnv::out0() << indent << "Hij_pair_energy: ij = " << i1 << "," << i2 << " e(CC) = "
+                  << Hij_pair_energy << endl;
+            }
             ef12_[s].accumulate_element(i21, Hij_pair_energy);
           }
         }
+        ef12_[s].print("f12 pair energies");
       } else {
         // Alpha_beta case
         for (int i1 = 0; i1 < no1; ++i1) {
@@ -1988,8 +2007,18 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
                     + 0.5 * (C_0 - C_1) * VT2ij_ji[ij]
                     + 0.5 * (C_0 + C_1) * VT1ij_ij[ij]
                     + 0.5 * (C_0 - C_1) * VT1ij_ji[ij]);
+            if (debug_ >= DefaultPrintThresholds::mostN2) {
+              ExEnv::out0() << indent << "Hij_pair_energy: ij = " << i1 << "," << i2 << " e(CC) = "
+                  << Hij_pair_energy << endl;
+            }
             ef12_[s].accumulate_element(ij, Hij_pair_energy);
+            ef12_VT[s][ij] += Hij_pair_energy;
           }
+        }
+        ef12_[s].print("f12 pair energies");
+        for(int i12=0; i12<ef12_VT[s].size(); ++i12) {
+          ExEnv::out0() << indent << scprintf("%20.15lf",ef12_VT[s][i12]) << endl;
+          ExEnv::out0() << indent << scprintf("%20.15lf",ef12_TBT[s][i12]) << endl;
         }
       }
     } // end of spin iteration

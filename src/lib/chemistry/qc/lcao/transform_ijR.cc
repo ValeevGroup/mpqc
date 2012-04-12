@@ -230,10 +230,10 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute() {
   const Ref<GaussianBasisSet>& b3 = this->space3()->basis();
 
   const int num_te_types = this->num_te_types();
-  const int n1 = this->space1()->rank();
-  const int n2 = this->space2()->rank();
-  const int n3 = b3->nbasis();
-  const int n23 = n2*n3;
+  const blasint n1 = this->space1()->rank();
+  const blasint n2 = this->space2()->rank();
+  const blasint n3 = b3->nbasis();
+  const blasint n23 = n2*n3;
   const distsize_t ijR_globalsize = (((static_cast<distsize_t>(n1))*n23)*num_te_types)*sizeof(double);
   const int ni_local = (n1 + nproc - 1)/ nproc;
   const size_t memgrp_blocksize = (static_cast<size_t>(n23))*sizeof(double);
@@ -241,8 +241,8 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute() {
   this->alloc_mem(ijR_localsize);
   memset(mem_->localdata(), 0, ijR_localsize);
 
-  const int nbasis1 = b1->nbasis();
-  const int nbasis2 = b2->nbasis();
+  const blasint nbasis1 = b1->nbasis();
+  const blasint nbasis2 = b2->nbasis();
   int nfuncmax3 = b3->max_nfunction_in_shell();
 
   // get scratch storage
@@ -286,8 +286,8 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute() {
     if (s3 % nproc != me) continue;
 
     const int s3offset = b3->shell_to_function(s3);
-    const int nf3 = b3->shell(s3).nfunction();
-    const int nb2f3 = nf3 * nbasis2;
+    const blasint nf3 = b3->shell(s3).nfunction();
+    const blasint nb2f3 = nf3 * nbasis2;
 
     // compute the entire (p1 p2| block
     for (int s1 = 0; s1 < b1->nshell(); ++s1) {

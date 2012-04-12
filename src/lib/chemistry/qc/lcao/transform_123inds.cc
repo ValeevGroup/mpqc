@@ -108,10 +108,10 @@ TwoBodyMOIntsTransform_123Inds::run()
   const bool dynamic = tform_->dynamic();
   const double print_percent = tform_->print_percent();
 
-  const int ni = ni_;
-  const int rank1 = space1->rank();
-  const int rank2 = space2->rank();
-  const int rank3 = space3->rank();
+  const blasint ni = ni_;
+  const blasint rank1 = space1->rank();
+  const blasint rank2 = space2->rank();
+  const blasint rank3 = space3->rank();
   const int nfuncmax1 = bs1->max_nfunction_in_shell();
   const int nfuncmax2 = bs2->max_nfunction_in_shell();
   const int nfuncmax3 = bs3->max_nfunction_in_shell();
@@ -120,10 +120,10 @@ TwoBodyMOIntsTransform_123Inds::run()
   const int nsh2 = bs2->nshell();
   const int nsh3 = bs3->nshell();
   const int nsh4 = bs4->nshell();
-  const int nbasis1 = bs1->nbasis();
-  const int nbasis2 = bs2->nbasis();
-  const int nbasis3 = bs3->nbasis();
-  const int nbasis4 = bs4->nbasis();
+  const blasint nbasis1 = bs1->nbasis();
+  const blasint nbasis2 = bs2->nbasis();
+  const blasint nbasis3 = bs3->nbasis();
+  const blasint nbasis4 = bs4->nbasis();
   double dtol = pow(2.0,tol_);
   const size_t memgrp_blksize = tform_->memgrp_blksize()/sizeof(double);
 

@@ -126,7 +126,7 @@ void CCR12_Triples::denom_contraction_ig(){
 #endif
 
           const size_t h3216 = h3 + rh3b * (h2 + rh2b * (h1 + rh1b * p6));
-          const int stride = rh3b * rh2b * rh1b * rp6b;
+          const blasint stride = rh3b * rh2b * rh1b * rp6b;
 
           for (long h4b = 0L; h4b < noab; ++h4b) {
            for (long g5b = h4b; g5b < noab+nvab; ++g5b) {
@@ -160,8 +160,8 @@ void CCR12_Triples::denom_contraction_ig(){
                    z->restricted_6(h7b, g8b, p6b, h1b, h2b, h3b,
                                    h7b_1, g8b_1, p6b_1, h1b_1, h2b_1, h3b_1);
 
-                   const int dim_common = rh7b * rg8b;
-                   const int dima0_sort = rh4b * rg5b;
+                   const blasint dim_common = rh7b * rg8b;
+                   const blasint dima0_sort = rh4b * rg5b;
 
                    // read the "denominator" tensor
                    denom->get_block(g8b_0+(noab+nvab)*(h7b_0+(noab+nvab)*(g5b_0+(noab+nvab)*h4b_0)), k_a0);
@@ -171,7 +171,7 @@ void CCR12_Triples::denom_contraction_ig(){
                                                   *(p6b_1-noab+nvab*(g8b_1+(noab+nvab)*h7b_1)))), k_a1);
 
                    double factor = h7b == g8b ? 0.5 : 1.0;
-                   const int unit = 1;
+                   const blasint unit = 1;
                    const double one = 1.0;
                    F77_DGEMV("t", &dim_common, &dima0_sort,
                              &factor, k_a0, &dim_common,
@@ -279,7 +279,7 @@ void CCR12_Triples::denom_contraction(){
                     amap, amap, amap, amap, &iiii_erange);
 
           const size_t h3216 = h3 + rh3b * (h2 + rh2b * (h1 + rh1b * p6));
-          const int stride = rh3b * rh2b * rh1b * rp6b;
+          const blasint stride = rh3b * rh2b * rh1b * rp6b;
 
           for (long h4b = 0L; h4b < noab; ++h4b) {
            for (long h5b = h4b; h5b < noab; ++h5b) {
@@ -313,8 +313,8 @@ void CCR12_Triples::denom_contraction(){
                    z->restricted_6(h7b, h8b, p6b, h1b, h2b, h3b,
                                    h7b_1, h8b_1, p6b_1, h1b_1, h2b_1, h3b_1);
 
-                   const int dim_common = rh7b * rh8b;
-                   const int dima0_sort = rh4b * rh5b;
+                   const blasint dim_common = rh7b * rh8b;
+                   const blasint dima0_sort = rh4b * rh5b;
 
                    // read the "denominator" tensor
                    denom->get_block(h8b_0+noab*(h7b_0+noab*(h5b_0+noab*h4b_0)), k_a0);
@@ -325,8 +325,7 @@ void CCR12_Triples::denom_contraction(){
 
                    double factor = 1.0;
                    if (h7b == h8b) factor *= 0.5;
-                   const int unit = 1;
-                   const double one = 1.0;
+                   const blasint unit = 1;                   const double one = 1.0;
                    F77_DGEMV("t", &dim_common, &dima0_sort,
                              &factor, k_a0, &dim_common,
                              k_a1 + h3216, &stride,

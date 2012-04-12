@@ -29,6 +29,7 @@
 #define _chemistry_qc_mbptr12_svd_h
 
 #include <math/scmat/matrix.h>
+#include <math/scmat/blas.h>
 
 namespace sc {
 
@@ -84,7 +85,7 @@ namespace sc {
    \param ipiv integer array of sizeA.dim().n()
 
    */
-  void lapack_dpf_symmnondef(const RefSymmSCMatrix& A, double* AF, int* ipiv,
+  void lapack_dpf_symmnondef(const RefSymmSCMatrix& A, double* AF, blasint* ipiv,
                              double condition_number_threshold = 0.0);
 
   /** invert symmetric positive-definite matrix using DPPTRF LAPACK routine
@@ -110,7 +111,7 @@ namespace sc {
    * @param refine set to false to avoid the iterative refinement of the solution that was obtained by substitution (using LAPACK dsptrs function)
    */
   void lapack_linsolv_dpf_symmnondef(const double* A, int nA, const double* AF,
-                                     const int* ipiv, double* Xt,
+                                     const blasint* ipiv, double* Xt,
                                      const double* Bt, int ncolB,
                                      bool refine = true);
 

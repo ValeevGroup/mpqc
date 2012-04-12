@@ -725,7 +725,7 @@ namespace sc {
       const int nocc = occ_space->rank();
       const int nbra = bra_space->rank();
       const int nket = ket_space->rank();
-      const int nbraket = nbra*nket;
+      const blasint nbraket = nbra*nket;
 
       ExEnv::out0() << indent << "Begin computation of Coulomb matrix" << endl;
 
@@ -767,7 +767,7 @@ namespace sc {
           tim_mo_ints_retrieve.exit_default();
 
           const double one = 1.0;
-          const int unit_stride = 1;
+          const blasint unit_stride = 1;
           F77_DAXPY(&nbraket,&one,mmxy_buf_eri,&unit_stride,J_xy,&unit_stride);
 
           mnxy_acc->release_pair_block(m,m,TwoBodyOper::eri);
@@ -815,7 +815,7 @@ namespace sc {
       const int nocc = occ_space->rank();
       const int nbra = bra_space->rank();
       const int nket = ket_space->rank();
-      const int nbraket = nbra*nket;
+      const blasint nbraket = nbra*nket;
 
       ExEnv::out0() << indent << "Begin computation of exchange matrix" << endl;
 
@@ -857,7 +857,7 @@ namespace sc {
           tim_mo_ints_retrieve.exit_default();
 
           const double one = 1.0;
-          const int unit_stride = 1;
+          const blasint unit_stride = 1;
           F77_DAXPY(&nbraket,&one,mmxy_buf_eri,&unit_stride,K_xy,&unit_stride);
 
           mnxy_acc->release_pair_block(m,m,TwoBodyOper::eri);
@@ -911,7 +911,7 @@ namespace sc {
       const Ref<OrbitalSpace>& ketspace = ao_registry->value(ketbs);
       const Ref<OrbitalSpace>& dfspace = ao_registry->value(df_info->params()->basis());
       const Ref<OrbitalSpace>& obs_space = ao_registry->value(obs);
-      const int ndf = dfspace->rank();
+      const blasint ndf = dfspace->rank();
 
       const Ref<DensityFittingRuntime>& df_rtime = df_info->runtime();
       const Ref<TwoBodyThreeCenterMOIntsRuntime>& int3c_rtime = df_rtime->moints_runtime()->runtime_3c();
@@ -929,8 +929,8 @@ namespace sc {
         C_tform->compute();
         Ref<DistArray4> C = C_tform->ints_acc();  C->activate();
 
-        const int nobs = obs_space->rank();
-        const int ndf = dfspace->rank();
+        const blasint nobs = obs_space->rank();
+        const blasint ndf = dfspace->rank();
         std::vector<double> Q(ndf,0.0);
         {
           // Compute the number of tasks that have full access to the integrals
@@ -959,7 +959,7 @@ namespace sc {
 
               const char notrans = 'n';
               const double one = 1.0;
-              const int unit_stride = 1;
+              const blasint unit_stride = 1;
               F77_DGEMV(&notrans, &ndf, &nobs, &one, C_p_qR_buf, &ndf, P_p_q,
                         &unit_stride, &one, &(Q[0]), &unit_stride);
 
@@ -1027,7 +1027,7 @@ namespace sc {
       Ref<DistArray4> cC = cC_tform->ints_acc();  cC->activate();
 
       const int nbra = braspace->rank();
-      const int nket = ketspace->rank();
+      const blasint nket = ketspace->rank();
       const int nbraket = nbra * nket;
       std::vector<double> J(nbraket, 0.0);
       {
@@ -1049,7 +1049,7 @@ namespace sc {
 
             const char trans = 't';
             const double one = 1.0;
-            const int unit_stride = 1;
+            const blasint unit_stride = 1;
             F77_DGEMV(&trans, &ndf, &nket, &one, cC_a_bR_buf, &ndf, &(R[0]),
                       &unit_stride, &one, J_a, &unit_stride);
 
@@ -1215,7 +1215,7 @@ namespace sc {
       Ref<DistArray4> cC = cC_tform->ints_acc();  cC->activate();
 
       const int ndf = dfspace->rank();
-      const int nsdf = Sspace->rank() * ndf;
+      const blasint nsdf = Sspace->rank() * ndf;
       const unsigned int nbra = braspace->rank();
       const unsigned int nket = ketspace->rank();
       const unsigned int nbraket = nbra * nket;
@@ -1248,7 +1248,7 @@ namespace sc {
               const double* cC_b_pR_buf = cC->retrieve_pair_block(0, b,
                                                                   TwoBodyOper::eri);
 
-              const int unit_stride = 1;
+              const blasint unit_stride = 1;
               const double K_ab = F77_DDOT(&nsdf, C_a_pR_buf, &unit_stride, cC_b_pR_buf, &unit_stride);
 
               cC->release_pair_block(0, b, TwoBodyOper::eri);

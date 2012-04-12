@@ -1028,15 +1028,16 @@ cmat_eigensystem(/*const*/ double**atri, /*const*/ double**stri, double*evals, d
   }
 
   // solve generalized eigenvalue problem with DSYGV
-  const int itype = 1;
+  const blasint itype = 1;
   const char jobz_V = 'V';
   const char uplo_U = 'U';  // lower triangle in C -> upper triange in Fortran
-  int lwork = -1;
-  int info;
+  blasint lwork = -1;
+  blasint info;
   double optlwork;
-  F77_DSYGV(&itype,&jobz_V,&uplo_U, &n,
-            a, &n,
-            s, &n,
+  const blasint nn = n;
+  F77_DSYGV(&itype,&jobz_V,&uplo_U, &nn,
+            a, &nn,
+            s, &nn,
             evals,
             &optlwork,&lwork,
             &info);
@@ -1045,11 +1046,11 @@ cmat_eigensystem(/*const*/ double**atri, /*const*/ double**stri, double*evals, d
                   << info << std::endl;
     abort();
   }
-  lwork = (int)optlwork;
+  lwork = (blasint)optlwork;
   double *work = new double[lwork];
-  F77_DSYGV(&itype,&jobz_V,&uplo_U, &n,
-              a, &n,
-              s, &n,
+  F77_DSYGV(&itype,&jobz_V,&uplo_U, &nn,
+              a, &nn,
+              s, &nn,
               evals,
               work,&lwork,
               &info);

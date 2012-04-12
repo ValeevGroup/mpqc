@@ -68,8 +68,8 @@ TwoParticleContraction::ncol() const { return ncol_; }
 double
 TwoParticleContraction::dot_prod(const double* A, const double* B) const
 {
-  const int blksize = nrow_ * ncol_;
-  const int unitstride = 1;
+  const blasint blksize = nrow_ * ncol_;
+  const blasint unitstride = 1;
   return F77_DDOT(&blksize,A,&unitstride,B,&unitstride);
 }
 
@@ -131,22 +131,22 @@ ABS_OBS_Contraction::save_data_state(StateOut& so)
 double
 ABS_OBS_Contraction::contract(const double* A, const double* B) const
 {
-  const int unitstride = 1;
-  const int nobs = nrow();
-  const int nvir1 = nobs - nocc1_;
-  const int nvir2 = nobs - nocc2_;
-  const int nocc2 = nocc2_;
+  const blasint unitstride = 1;
+  const blasint nobs = nrow();
+  const blasint nvir1 = nobs - nocc1_;
+  const blasint nvir2 = nobs - nocc2_;
+  const blasint nocc2 = nocc2_;
   
   const double* Aoff = A;
   const double* Boff = B;
   double result = 0.0;
   /// contracting occ-occ blocks of A and B.
-  for(int o=0; o<nocc1_; o++,Aoff+=nobs,Boff+=nobs)
+  for(blasint o=0; o<nocc1_; o++,Aoff+=nobs,Boff+=nobs)
     result += F77_DDOT(&nocc2,Aoff,&unitstride,Boff,&unitstride);
 
   /// contracting vir-vir blocks of A and B
   Aoff = A + nocc1_*nobs + nocc2_;  Boff = B + nocc1_*nobs + nocc2_;
-  for(int v=0; v<nvir1; v++,Aoff+=nobs,Boff+=nobs)
+  for(blasint v=0; v<nvir1; v++,Aoff+=nobs,Boff+=nobs)
     result -= F77_DDOT(&nvir2,Aoff,&unitstride,Boff,&unitstride);
   
   return result;

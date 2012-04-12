@@ -75,7 +75,7 @@ RefSCMatrix R12IntEval::coulomb_(const SpinCase1 &spin, const Ref<OrbitalSpace>&
   const int ncontr = contr_space->rank();
   const int nbra = bra_space->rank();
   const int nket = ket_space->rank();
-  const int nbraket = nbra*nket;
+  const blasint nbraket = nbra*nket;
   if (debug_ >= DefaultPrintThresholds::fine) {
     ExEnv::out0() << indent << "nbra = " << nbra << endl;
     ExEnv::out0() << indent << "nket = " << nket << endl;
@@ -127,7 +127,7 @@ RefSCMatrix R12IntEval::coulomb_(const SpinCase1 &spin, const Ref<OrbitalSpace>&
         //    J_pq[pq] += rspq_buf_eri[pq]*onepdm;
         //  }
         //}
-        const int unit_stride = 1;
+        const blasint unit_stride = 1;
         F77_DAXPY(&nbraket,&onepdm,rspq_buf_eri,&unit_stride,J_pq,&unit_stride);
 
         rspq_acc->release_pair_block(r,s,corrfactor()->tbint_type_eri());
@@ -184,7 +184,7 @@ R12IntEval::coulomb_(const Ref<OrbitalSpace>& occ_space, const Ref<OrbitalSpace>
   const int nocc = occ_space->rank();
   const int nbra = bra_space->rank();
   const int nket = ket_space->rank();
-  const int nbraket = nbra*nket;
+  const blasint nbraket = nbra*nket;
 
   ExEnv::out0() << indent << "Begin computation of Coulomb matrix" << endl;
   if (debug_ >= DefaultPrintThresholds::fine) {
@@ -237,7 +237,7 @@ R12IntEval::coulomb_(const Ref<OrbitalSpace>& occ_space, const Ref<OrbitalSpace>
         ExEnv::outn() << indent << "task " << me << ": obtained mm block" << endl;
 
       const double one = 1.0;
-      const int unit_stride = 1;
+      const blasint unit_stride = 1;
       F77_DAXPY(&nbraket,&one,mmxy_buf_eri,&unit_stride,J_xy,&unit_stride);
 
       mnxy_acc->release_pair_block(m,m,corrfactor()->tbint_type_eri());

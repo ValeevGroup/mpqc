@@ -62,10 +62,10 @@ namespace sc {
      U      Vt
 
      */
-    int m = A.nrow();
-    int n = A.ncol();
-    int nsigma = m < n ? m : n;
-    int lwork = m < n ? 5 * n : 5 * m;
+    blasint m = A.nrow();
+    blasint n = A.ncol();
+    blasint nsigma = m < n ? m : n;
+    blasint lwork = m < n ? 5 * n : 5 * m;
     char jobvt = U ? 'A' : 'N';
     char jobu = V ? 'A' : 'N';
 
@@ -82,7 +82,7 @@ namespace sc {
     }
     double* s_data = new double[nsigma];
     double *work = new double[lwork];
-    int info = 0;
+    blasint info = 0;
 
     F77_DGESVD(&jobu, &jobvt, &n, &m, a_data, &n, s_data, v_data, &n, u_data,
                &m, work, &lwork, &info);
@@ -119,7 +119,7 @@ namespace sc {
    */
   double lapack_linsolv_symmnondef(const RefSymmSCMatrix& A, RefSCVector& X,
                                    const RefSCVector& B) {
-    int n = A.n();
+    blasint n = A.n();
     if (n != B.n())
       throw std::runtime_error(
                                "lapack_linsolv_symmnondef() -- dimensions of A and B do not match");
@@ -128,24 +128,24 @@ namespace sc {
                                "lapack_linsolv_symmnondef() -- dimensions of A and X do not match");
 
     // convert A to packed upper triangular form
-    int ntri = n * (n + 1) / 2;
+    blasint ntri = n * (n + 1) / 2;
     double* AP = allocate<double>(ntri);
     A.convert(AP);
     double* AFP = allocate<double>(ntri);
-    int* ipiv = new int[n];
+    blasint* ipiv = new blasint[n];
     double* BB = new double[n];
     B.convert(BB);
     double* XX = new double[n];
 
     char fact = 'N';
     char uplo = 'U';
-    int nrhs = 1;
+    blasint nrhs = 1;
     double rcond = 0.0;
     double* ferr = new double[1];
     double* berr = new double[1];
     double* work = new double[3 * n];
-    int* iwork = new int[n];
-    int info = 0;
+    blasint* iwork = new blasint[n];
+    blasint info = 0;
 
     F77_DSPSVX(&fact, &uplo, &n, &nrhs, AP, AFP, ipiv, BB, &n, XX, &n, &rcond,
                ferr, berr, work, iwork, &info);
@@ -192,8 +192,8 @@ namespace sc {
    */
   double lapack_linsolv_symmnondef(const RefSymmSCMatrix& A, RefSCMatrix& X,
                                    const RefSCMatrix& B) {
-    int n = A.n();
-    int nrhs = B.ncol();
+    blasint n = A.n();
+    blasint nrhs = B.ncol();
     if (n != B.nrow())
       throw std::runtime_error(
                                "lapack_linsolv_symmnondef() -- dimensions of A and B do not match");
@@ -205,11 +205,11 @@ namespace sc {
                                "lapack_linsolv_symmnondef() -- dimensions of B and X do not match");
 
     // convert A to packed upper triangular form
-    int ntri = n * (n + 1) / 2;
+    blasint ntri = n * (n + 1) / 2;
     double* AP = allocate<double>(ntri);
     A.convert(AP);
     double* AFP = allocate<double>(ntri);
-    int* ipiv = new int[n];
+    blasint* ipiv = new blasint[n];
     double* BB = allocate<double>(nrhs * n);
     B.t().convert(BB);
     double* XX = allocate<double>(nrhs * n);
@@ -220,8 +220,8 @@ namespace sc {
     double* ferr = new double[nrhs];
     double* berr = new double[nrhs];
     double* work = new double[3 * n];
-    int* iwork = new int[n];
-    int info = 0;
+    blasint* iwork = new blasint[n];
+    blasint info = 0;
 
     F77_DSPSVX(&fact, &uplo, &n, &nrhs, AP, AFP, ipiv, BB, &n, XX, &n, &rcond,
                ferr, berr, work, iwork, &info);
@@ -272,13 +272,13 @@ namespace sc {
    */
   double lapack_linsolv_symmnondef(const double* AP, int nA, double* Xt,
                                    const double* Bt, int ncolB) {
-    const int n = nA;
-    const int nrhs = ncolB;
+    const blasint n = nA;
+    const blasint nrhs = ncolB;
 
-    const int ntri = n * (n + 1) / 2;
+    const blasint ntri = n * (n + 1) / 2;
     // AFP is a scratch array
     double* AFP = allocate<double>(ntri);
-    int* ipiv = new int[n];
+    blasint* ipiv = new blasint[n];
 
     char fact = 'N';
     char uplo = 'U';
@@ -286,8 +286,8 @@ namespace sc {
     double* ferr = new double[nrhs];
     double* berr = new double[nrhs];
     double* work = new double[3 * n];
-    int* iwork = new int[n];
-    int info = 0;
+    blasint* iwork = new blasint[n];
+    blasint info = 0;
 
     F77_DSPSVX(&fact, &uplo, &n, &nrhs, AP, AFP, ipiv, Bt, &n, Xt, &n, &rcond,
                ferr, berr, work, iwork, &info);
@@ -320,7 +320,7 @@ namespace sc {
    */
   double linsolv_symmnondef_jacobi(const RefSymmSCMatrix& A, RefSCVector& X,
                                    const RefSCVector& B) {
-    const int n = A.n();
+    const blasint n = A.n();
     if (n != B.n())
       throw std::runtime_error(
                                "linsolv_symmnondef_jacobi() -- dimensions of A and B do not match");
@@ -329,10 +329,10 @@ namespace sc {
                                "linsolv_symmnondef_jacobi() -- dimensions of A and X do not match");
 
     // convert A to packed lower triangular form (upper triangular in fortran)
-    int ntri = n * (n + 1) / 2;
+    const blasint ntri = n * (n + 1) / 2;
     double* RP = allocate<double>(ntri);
     A.convert(RP);
-    for(int i=0, ii=0; i<n; ii+=(++i + 1))
+    for(blasint i=0, ii=0; i<n; ii+=(++i + 1))
       RP[ii] = 0.0;
     // convert B to a dense vector
     double* BB = allocate<double>(n);
@@ -344,7 +344,7 @@ namespace sc {
 
     // extract the diagonal inverse
     double* DDinv = allocate<double>(n);
-    for(int i=0; i<n; ++i)
+    for(blasint i=0; i<n; ++i)
       DDinv[i] = 1.0 / A(i,i);
 
     // approximate the condition number as the ratio of the min and max elements of the diagonal
@@ -356,12 +356,12 @@ namespace sc {
     char uplo = 'U';
     const double minusone = -1.0;
     const double one = 1.0;
-    const int ione = 1;
+    const blasint ione = 1;
     bool converged = false;
     const unsigned int max_niter = 50000;
 
     // starting guess: x_0 = D^-1 . b
-    for(int i=0; i<n; ++i)
+    for(blasint i=0; i<n; ++i)
       XX_i[i] = BB[i] * DDinv[i];
     // exact solution
 //    lapack_linsolv_symmnondef(A, X, B);
@@ -377,11 +377,11 @@ namespace sc {
       F77_DSPMV(&uplo, &n, &minusone, RP, XX_i, &ione, &one, XX_ip1, &ione);
 
       // x_i+1 = D^-1 . XX_ip1 = D^-1 . (b - R . x_i)
-      for(int i=0; i<n; ++i)
+      for(blasint i=0; i<n; ++i)
         XX_ip1[i] *= DDinv[i];
 
       norm = 0.0;
-      for(int i=0; i<n; ++i) {
+      for(blasint i=0; i<n; ++i) {
         const double dx = (XX_ip1[i] - XX_i[i]);
         norm += dx*dx;
       }
@@ -419,7 +419,7 @@ namespace sc {
    */
   double linsolv_symmnondef_cg(const RefSymmSCMatrix& A, RefSCVector& X,
                                    const RefSCVector& B) {
-    const int n = A.n();
+    const blasint n = A.n();
     if (n != B.n())
       throw std::runtime_error(
                                "linsolv_symmnondef_cg() -- dimensions of A and B do not match");
@@ -428,7 +428,7 @@ namespace sc {
                                "linsolv_symmnondef_cg() -- dimensions of A and X do not match");
 
     // convert A to packed lower triangular form (upper triangular in fortran)
-    int ntri = n * (n + 1) / 2;
+    const blasint ntri = n * (n + 1) / 2;
     double* AP = allocate<double>(ntri);
     A.convert(AP);
     // convert B to a dense vector
@@ -447,7 +447,7 @@ namespace sc {
 
     // extract the diagonal |inverse|
     double* DDinv = allocate<double>(n);
-    for(int i=0; i<n; ++i)
+    for(blasint i=0; i<n; ++i)
       DDinv[i] = 1.0 / fabs(A(i,i));
     // approximate the condition number as the ratio of the min and max elements of the diagonal
     const double DDinv_min = *std::min_element(DDinv, DDinv+n);
@@ -459,7 +459,7 @@ namespace sc {
     const double minusone = -1.0;
     const double one = 1.0;
     const double zero = 0.0;
-    const int ione = 1;
+    const blasint ione = 1;
     bool converged = false;
     const unsigned int max_niter = 50000;
 
@@ -528,7 +528,7 @@ namespace sc {
         deallocate(ZZ_i);
         deallocate(APP_i);
         deallocate(DDinv);
-        throw MaxIterExceeded("linsolv_symmnondef_jacobi() -- did not converge within the max # of iterations",
+        throw MaxIterExceeded("linsolv_symmnondef_cg() -- did not converge within the max # of iterations",
                               __FILE__, __LINE__,
                               max_niter);
       }
@@ -551,12 +551,12 @@ namespace sc {
   /** Computed eigenvalues of A and returns how many are below threshold. Uses LAPACK's DSYEVD.
    */
   int lapack_evals_less_eps(const RefSymmSCMatrix& A, double threshold) {
-    int n = A.n();
+    blasint n = A.n();
     // convert A to square form
     double* Asq = allocate<double>(n * n);
     double** Arows = new double*[n];
-    int ioff = 0;
-    for (int i = 0; i < n; i++, ioff += n)
+    blasint ioff = 0;
+    for (blasint i = 0; i < n; i++, ioff += n)
       Arows[i] = Asq + ioff;
     A.convert(Arows);
     delete[] Arows;
@@ -564,11 +564,11 @@ namespace sc {
 
     char need_evecs = 'N';
     char uplo = 'U';
-    const int lwork = 2 * n + 1;
+    const blasint lwork = 2 * n + 1;
     double* work = new double[lwork];
-    const int liwork = 1;
-    int* iwork = new int[liwork];
-    int info = 0;
+    const blasint liwork = 1;
+    blasint* iwork = new blasint[liwork];
+    blasint info = 0;
 
     F77_DSYEVD(&need_evecs, &uplo, &n, Asq, &n, evals, work, &lwork, iwork,
                &liwork, &info);
@@ -585,8 +585,8 @@ namespace sc {
                                  __FILE__, __LINE__);
     }
 
-    int nevals_lessthan_threshold = 0;
-    for (int i = 0; i < n; i++) {
+    blasint nevals_lessthan_threshold = 0;
+    for (blasint i = 0; i < n; i++) {
       if (evals[i] < threshold)
         nevals_lessthan_threshold++;
     }
@@ -601,12 +601,12 @@ namespace sc {
 
   void lapack_invert_symmnondef(RefSymmSCMatrix& A,
                                 double condition_number_threshold) {
-    const int n = A.dim().n();
-    const int ntri = n * (n + 1) / 2;
+    const blasint n = A.dim().n();
+    const blasint ntri = n * (n + 1) / 2;
     char uplo = 'U';
     std::vector<double> AF(ntri);
-    std::vector<int> ipiv(n);
-    int info;
+    std::vector<blasint> ipiv(n);
+    blasint info;
     std::vector<double> work(2 * n);
 
     // compute factorization of A
@@ -627,14 +627,14 @@ namespace sc {
     A.assign(&(AF[0]));
   }
 
-  void lapack_dpf_symmnondef(const RefSymmSCMatrix& A, double* AF, int* ipiv,
+  void lapack_dpf_symmnondef(const RefSymmSCMatrix& A, double* AF, blasint* ipiv,
                              double condition_number_threshold) {
 
-    const int n = A.dim().n();
+    const blasint n = A.dim().n();
     char uplo = 'U';
-    int info;
+    blasint info;
     std::vector<double> work(2 * n);
-    std::vector<int> iwork(n);
+    std::vector<blasint> iwork(n);
 
     // compute the infinity-norm of A
     A.convert(AF);
@@ -684,18 +684,19 @@ namespace sc {
   }
 
   void lapack_linsolv_dpf_symmnondef(const double* A, int nA, const double* AF,
-                                     const int* ipiv, double* Xt,
+                                     const blasint* ipiv, double* Xt,
                                      const double* Bt, int ncolB, bool refine) {
-    const int n = nA;
+    const blasint n = nA;
     const char uplo = 'U';
-    int info;
+    blasint info;
+    const blasint ncolBf = ncolB;
 
     // copy B into X
     const char full = 'F';
-    F77_DLACPY(&full, &n, &ncolB, Bt, &n, Xt, &n, &info);
+    F77_DLACPY(&full, &n, &ncolBf, Bt, &n, Xt, &n, &info);
 
     // solve the linear system
-    F77_DSPTRS(&uplo, &n, &ncolB, AF, ipiv, Xt, &n, &info);
+    F77_DSPTRS(&uplo, &n, &ncolBf, AF, ipiv, Xt, &n, &info);
 
     if (refine) {
       // Use iterative refinement to improve the computed solutions and
@@ -703,8 +704,8 @@ namespace sc {
       std::vector<double> ferr(ncolB);
       std::vector<double> berr(ncolB);
       std::vector<double> work(3 * n);
-      std::vector<int> iwork(n);
-      F77_DSPRFS(&uplo, &n, &ncolB, A, AF, ipiv, Bt, &n, Xt, &n, &(ferr[0]),
+      std::vector<blasint> iwork(n);
+      F77_DSPRFS(&uplo, &n, &ncolBf, A, AF, ipiv, Bt, &n, Xt, &n, &(ferr[0]),
                  &(berr[0]), &(work[0]), &(iwork[0]), &info);
     }
 
@@ -713,11 +714,11 @@ namespace sc {
   void lapack_cholesky_symmposdef(const RefSymmSCMatrix& A, double* AF,
                                   double condition_number_threshold) {
 
-    const int n = A.dim().n();
+    const blasint n = A.dim().n();
     char uplo = 'U';
-    int info;
+    blasint info;
     std::vector<double> work(3 * n);
-    std::vector<int> iwork(n);
+    std::vector<blasint> iwork(n);
 
     // compute the infinity-norm of A
     A.convert(AF);
@@ -769,16 +770,17 @@ namespace sc {
                                           const double* AF, double* Xt,
                                           const double* Bt, int ncolB,
                                           bool refine) {
-    const int n = nA;
+    const blasint n = nA;
     const char uplo = 'U';
-    int info;
+    blasint info;
+    const blasint ncolBf = ncolB;
 
     // copy B into X
     const char full = 'F';
-    F77_DLACPY(&full, &n, &ncolB, Bt, &n, Xt, &n, &info);
+    F77_DLACPY(&full, &n, &ncolBf, Bt, &n, Xt, &n, &info);
 
     // solve the linear system
-    F77_DPPTRS(&uplo, &n, &ncolB, AF, Xt, &n, &info);
+    F77_DPPTRS(&uplo, &n, &ncolBf, AF, Xt, &n, &info);
 
     if (refine) {
       // Use iterative refinement to improve the computed solutions and
@@ -786,8 +788,8 @@ namespace sc {
       std::vector<double> ferr(ncolB);
       std::vector<double> berr(ncolB);
       std::vector<double> work(3 * n);
-      std::vector<int> iwork(n);
-      F77_DPPRFS(&uplo, &n, &ncolB, A, AF, Bt, &n, Xt, &n, &(ferr[0]),
+      std::vector<blasint> iwork(n);
+      F77_DPPRFS(&uplo, &n, &ncolBf, A, AF, Bt, &n, Xt, &n, &(ferr[0]),
                  &(berr[0]), &(work[0]), &(iwork[0]), &info);
     }
 
@@ -795,11 +797,11 @@ namespace sc {
 
   void lapack_invert_symmposdef(RefSymmSCMatrix& A,
                                 double condition_number_threshold) {
-    const int n = A.dim().n();
-    const int ntri = n * (n + 1) / 2;
+    const blasint n = A.dim().n();
+    const blasint ntri = n * (n + 1) / 2;
     char uplo = 'U';
     std::vector<double> AF(ntri);
-    int info;
+    blasint info;
 
     // compute Cholesky factorization of A
     lapack_cholesky_symmposdef(A, &(AF[0]), condition_number_threshold);

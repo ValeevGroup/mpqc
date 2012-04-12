@@ -311,11 +311,11 @@ void CCR12_Triples::denom_contraction_new() {
 
                       ltensor1_->get_block(h5b + noab * (h4b + noab * pair), k_a1);
 
-                      const int unit = 1;
+                      const blasint unit = 1;
                       const double factor = h4b == h5b ? 0.5 : 1.0;
                       const double one = 1.0;
-                      const int dim0 = rh1b * rh2b * rh3b * rp6b;
-                      const int dim1 = rh4b * rh5b;
+                      const blasint dim0 = rh1b * rh2b * rh3b * rp6b;
+                      const blasint dim1 = rh4b * rh5b;
                       F77_DGEMV("n", &dim0, &dim1, &factor, k_a0, &dim0, k_a1, &unit, &one, k_c, &unit);
                     }
                   }
@@ -381,9 +381,9 @@ void CCR12_Triples::denom_contraction_new() {
 
                       fill(k_c, k_c+rh4b*rh5b*rp6b*rh1b*rh2b*rh3b, 0.0);
 
-                      const int unit = 1;
-                      const int dim0 = rh1b * rh2b * rh3b * rp6b;
-                      const int dim1 = rh4b * rh5b;
+                      const blasint unit = 1;
+                      const blasint dim0 = rh1b * rh2b * rh3b * rp6b;
+                      const blasint dim1 = rh4b * rh5b;
                       const double one = 1.0;
 
                       for (int pair = 0; pair != pair_size_; ++pair) {

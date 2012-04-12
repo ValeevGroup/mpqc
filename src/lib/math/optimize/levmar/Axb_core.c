@@ -32,6 +32,7 @@
 #define __STATIC__ // empty
 #endif /* LINSOLVERS_RETAIN_MEMORY */
 
+#include <math/scmat/blas.h>
 #include <math/optimize/f77sym.h>
 
 /* prototypes of LAPACK routines */
@@ -47,29 +48,29 @@
 #define GESDD F77_DGESDD
 
 /* QR decomposition */
-extern int GEQRF(int *m, int *n, LM_REAL *a, int *lda, LM_REAL *tau, LM_REAL *work, int *lwork, int *info);
-extern int ORGQR(int *m, int *n, int *k, LM_REAL *a, int *lda, LM_REAL *tau, LM_REAL *work, int *lwork, int *info);
+extern int GEQRF(blas_f77_integer_t *m, blas_f77_integer_t *n, LM_REAL *a, blas_f77_integer_t *lda, LM_REAL *tau, LM_REAL *work, blas_f77_integer_t *lwork, blas_f77_integer_t *info);
+extern int ORGQR(blas_f77_integer_t *m, blas_f77_integer_t *n, blas_f77_integer_t *k, LM_REAL *a, blas_f77_integer_t *lda, LM_REAL *tau, LM_REAL *work, blas_f77_integer_t *lwork, blas_f77_integer_t *info);
 
 /* solution of triangular systems */
-extern int TRTRS(char *uplo, char *trans, char *diag, int *n, int *nrhs, LM_REAL *a, int *lda, LM_REAL *b, int *ldb, int *info);
+extern int TRTRS(char *uplo, char *trans, char *diag, blas_f77_integer_t *n, blas_f77_integer_t *nrhs, LM_REAL *a, blas_f77_integer_t *lda, LM_REAL *b, blas_f77_integer_t *ldb, blas_f77_integer_t *info);
 
 /* cholesky decomposition */
-extern int POTF2(char *uplo, int *n, LM_REAL *a, int *lda, int *info);
-extern int POTRF(char *uplo, int *n, LM_REAL *a, int *lda, int *info); /* block version of dpotf2 */
+extern int POTF2(char *uplo, blas_f77_integer_t *n, LM_REAL *a, blas_f77_integer_t *lda, blas_f77_integer_t *info);
+extern int POTRF(char *uplo, blas_f77_integer_t *n, LM_REAL *a, blas_f77_integer_t *lda, blas_f77_integer_t *info); /* block version of dpotf2 */
 
 /* LU decomposition and systems solution */
-extern int GETRF(int *m, int *n, LM_REAL *a, int *lda, int *ipiv, int *info);
-extern int GETRS(char *trans, int *n, int *nrhs, LM_REAL *a, int *lda, int *ipiv, LM_REAL *b, int *ldb, int *info);
+extern int GETRF(blas_f77_integer_t *m, blas_f77_integer_t *n, LM_REAL *a, blas_f77_integer_t *lda, blas_f77_integer_t *ipiv, blas_f77_integer_t *info);
+extern int GETRS(char *trans, blas_f77_integer_t *n, blas_f77_integer_t *nrhs, LM_REAL *a, blas_f77_integer_t *lda, blas_f77_integer_t *ipiv, LM_REAL *b, blas_f77_integer_t *ldb, blas_f77_integer_t *info);
 
 /* Singular Value Decomposition (SVD) */
-extern int GESVD(char *jobu, char *jobvt, int *m, int *n, LM_REAL *a, int *lda, LM_REAL *s, LM_REAL *u, int *ldu,
-                   LM_REAL *vt, int *ldvt, LM_REAL *work, int *lwork, int *info);
+extern int GESVD(char *jobu, char *jobvt, blas_f77_integer_t *m, blas_f77_integer_t *n, LM_REAL *a, blas_f77_integer_t *lda, LM_REAL *s, LM_REAL *u, blas_f77_integer_t *ldu,
+                   LM_REAL *vt, blas_f77_integer_t *ldvt, LM_REAL *work, blas_f77_integer_t *lwork, blas_f77_integer_t *info);
 
 /* lapack 3.0 new SVD routine, faster than xgesvd().
  * In case that your version of LAPACK does not include them, use the above two older routines
  */
-extern int GESDD(char *jobz, int *m, int *n, LM_REAL *a, int *lda, LM_REAL *s, LM_REAL *u, int *ldu, LM_REAL *vt, int *ldvt,
-                   LM_REAL *work, int *lwork, int *iwork, int *info);
+extern int GESDD(char *jobz, blas_f77_integer_t *m, blas_f77_integer_t *n, LM_REAL *a, blas_f77_integer_t *lda, LM_REAL *s, LM_REAL *u, blas_f77_integer_t *ldu, LM_REAL *vt, blas_f77_integer_t *ldvt,
+                   LM_REAL *work, blas_f77_integer_t *lwork, blas_f77_integer_t *iwork, blas_f77_integer_t *info);
 
 /* precision-specific definitions */
 #define AX_EQ_B_QR LM_ADD_PREFIX(Ax_eq_b_QR)
@@ -103,7 +104,7 @@ __STATIC__ int buf_sz=0;
 LM_REAL *a, *qtb, *tau, *r, *work;
 int a_sz, qtb_sz, tau_sz, r_sz, tot_sz;
 register int i, j;
-int info, worksz, nrhs=1;
+blasint info, worksz, nrhs=1;
 register LM_REAL sum;
 
 #ifdef LINSOLVERS_RETAIN_MEMORY
@@ -154,15 +155,16 @@ register LM_REAL sum;
 			a[i+j*m]=A[i*m+j];
 
   /* QR decomposition of A */
-  GEQRF((int *)&m, (int *)&m, a, (int *)&m, tau, work, (int *)&worksz, (int *)&info);
+  const blasint mm = m;
+  GEQRF((blasint *)&mm, (blasint *)&mm, a, (blasint *)&mm, tau, work, (blasint *)&worksz, (blasint *)&info);
   /* error treatment */
   if(info!=0){
     if(info<0){
-      fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %d of ", GEQRF) " in ", AX_EQ_B_QR) "()\n", -info);
+      fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %ld of ", GEQRF) " in ", AX_EQ_B_QR) "()\n", (long)-info);
       exit(1);
     }
     else{
-      fprintf(stderr, RCAT(RCAT("Unknown LAPACK error %d for ", GEQRF) " in ", AX_EQ_B_QR) "()\n", info);
+      fprintf(stderr, RCAT(RCAT("Unknown LAPACK error %ld for ", GEQRF) " in ", AX_EQ_B_QR) "()\n", (long)info);
 #ifndef LINSOLVERS_RETAIN_MEMORY
       free(buf);
 #endif
@@ -176,14 +178,14 @@ register LM_REAL sum;
     r[i]=a[i];
 
   /* compute Q using the elementary reflectors computed by the above decomposition */
-  ORGQR((int *)&m, (int *)&m, (int *)&m, a, (int *)&m, tau, work, (int *)&worksz, (int *)&info);
+  ORGQR((blasint *)&mm, (blasint *)&mm, (blasint *)&mm, a, (blasint *)&mm, tau, work, (blasint *)&worksz, (blasint *)&info);
   if(info!=0){
     if(info<0){
-      fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %d of ", ORGQR) " in ", AX_EQ_B_QR) "()\n", -info);
+      fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %ld of ", ORGQR) " in ", AX_EQ_B_QR) "()\n", (long)-info);
       exit(1);
     }
     else{
-      fprintf(stderr, RCAT("Unknown LAPACK error (%d) in ", AX_EQ_B_QR) "()\n", info);
+      fprintf(stderr, RCAT("Unknown LAPACK error (%ld) in ", AX_EQ_B_QR) "()\n", (long)info);
 #ifndef LINSOLVERS_RETAIN_MEMORY
       free(buf);
 #endif
@@ -200,15 +202,15 @@ register LM_REAL sum;
   }
 
   /* solve the linear system R x = Q^t b */
-  TRTRS("U", "N", "N", (int *)&m, (int *)&nrhs, r, (int *)&m, qtb, (int *)&m, &info);
+  TRTRS("U", "N", "N", (blasint *)&mm, (blasint *)&nrhs, r, (blasint *)&mm, qtb, (blasint *)&mm, &info);
   /* error treatment */
   if(info!=0){
     if(info<0){
-      fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %d of ", TRTRS) " in ", AX_EQ_B_QR) "()\n", -info);
+      fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %ld of ", TRTRS) " in ", AX_EQ_B_QR) "()\n", (long)-info);
       exit(1);
     }
     else{
-      fprintf(stderr, RCAT("LAPACK error: the %d-th diagonal element of A is zero (singular matrix) in ", AX_EQ_B_QR) "()\n", info);
+      fprintf(stderr, RCAT("LAPACK error: the %ld-th diagonal element of A is zero (singular matrix) in ", AX_EQ_B_QR) "()\n", (long)info);
 #ifndef LINSOLVERS_RETAIN_MEMORY
       free(buf);
 #endif
@@ -255,7 +257,7 @@ __STATIC__ int buf_sz=0;
 LM_REAL *a, *atb, *tau, *r, *work;
 int a_sz, atb_sz, tau_sz, r_sz, tot_sz;
 register int i, j;
-int info, worksz, nrhs=1;
+blasint info, worksz, nrhs=1;
 register LM_REAL sum;
    
 #ifdef LINSOLVERS_RETAIN_MEMORY
@@ -317,16 +319,19 @@ register LM_REAL sum;
     atb[i]=sum;
   }
 
+  const blasint mm = m;
+  const blasint nn = n;
+
   /* QR decomposition of A */
-  GEQRF((int *)&m, (int *)&n, a, (int *)&m, tau, work, (int *)&worksz, (int *)&info);
+  GEQRF((blasint *)&mm, (blasint *)&nn, a, (blasint *)&mm, tau, work, (blasint *)&worksz, (blasint *)&info);
   /* error treatment */
   if(info!=0){
     if(info<0){
-      fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %d of ", GEQRF) " in ", AX_EQ_B_QRLS) "()\n", -info);
+      fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %ld of ", GEQRF) " in ", AX_EQ_B_QRLS) "()\n", (long)-info);
       exit(1);
     }
     else{
-      fprintf(stderr, RCAT(RCAT("Unknown LAPACK error %d for ", GEQRF) " in ", AX_EQ_B_QRLS) "()\n", info);
+      fprintf(stderr, RCAT(RCAT("Unknown LAPACK error %ld for ", GEQRF) " in ", AX_EQ_B_QRLS) "()\n", (long)info);
 #ifndef LINSOLVERS_RETAIN_MEMORY
       free(buf);
 #endif
@@ -346,15 +351,15 @@ register LM_REAL sum;
   }
 
   /* solve the linear system R^T y = A^t b */
-  TRTRS("U", "T", "N", (int *)&n, (int *)&nrhs, r, (int *)&n, atb, (int *)&n, &info);
+  TRTRS("U", "T", "N", (blasint *)&nn, (blasint *)&nrhs, r, (blasint *)&nn, atb, (blasint *)&nn, &info);
   /* error treatment */
   if(info!=0){
     if(info<0){
-      fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %d of ", TRTRS) " in ", AX_EQ_B_QRLS) "()\n", -info);
+      fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %ld of ", TRTRS) " in ", AX_EQ_B_QRLS) "()\n", (long)-info);
       exit(1);
     }
     else{
-      fprintf(stderr, RCAT("LAPACK error: the %d-th diagonal element of A is zero (singular matrix) in ", AX_EQ_B_QRLS) "()\n", info);
+      fprintf(stderr, RCAT("LAPACK error: the %ld-th diagonal element of A is zero (singular matrix) in ", AX_EQ_B_QRLS) "()\n", (long)info);
 #ifndef LINSOLVERS_RETAIN_MEMORY
       free(buf);
 #endif
@@ -364,15 +369,15 @@ register LM_REAL sum;
   }
 
   /* solve the linear system R x = y */
-  TRTRS("U", "N", "N", (int *)&n, (int *)&nrhs, r, (int *)&n, atb, (int *)&n, &info);
+  TRTRS("U", "N", "N", (blasint *)&nn, (blasint *)&nrhs, r, (blasint *)&nn, atb, (blasint *)&nn, &info);
   /* error treatment */
   if(info!=0){
     if(info<0){
-      fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %d of ", TRTRS) " in ", AX_EQ_B_QRLS) "()\n", -info);
+      fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %ld of ", TRTRS) " in ", AX_EQ_B_QRLS) "()\n", (long)-info);
       exit(1);
     }
     else{
-      fprintf(stderr, RCAT("LAPACK error: the %d-th diagonal element of A is zero (singular matrix) in ", AX_EQ_B_QRLS) "()\n", info);
+      fprintf(stderr, RCAT("LAPACK error: the %ld-th diagonal element of A is zero (singular matrix) in ", AX_EQ_B_QRLS) "()\n", (long)info);
 #ifndef LINSOLVERS_RETAIN_MEMORY
       free(buf);
 #endif
@@ -418,7 +423,7 @@ __STATIC__ int buf_sz=0;
 LM_REAL *a, *b;
 int a_sz, b_sz, tot_sz;
 register int i, j;
-int info, nrhs=1;
+blasint info, nrhs=1;
    
 #ifdef LINSOLVERS_RETAIN_MEMORY
     if(!A){
@@ -464,16 +469,18 @@ int info, nrhs=1;
     b[i]=B[i];
   }
 
+  const blasint mm = m;
+
   /* Cholesky decomposition of A */
-  POTF2("U", (int *)&m, a, (int *)&m, (int *)&info);
+  POTF2("U", (blasint *)&mm, a, (blasint *)&mm, (blasint *)&info);
   /* error treatment */
   if(info!=0){
     if(info<0){
-      fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %d of ", POTF2) " in ", AX_EQ_B_CHOL) "()\n", -info);
+      fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %ld of ", POTF2) " in ", AX_EQ_B_CHOL) "()\n", (long)-info);
       exit(1);
     }
     else{
-      fprintf(stderr, RCAT(RCAT("LAPACK error: the leading minor of order %d is not positive definite,\nthe factorization could not be completed for ", POTF2) " in ", AX_EQ_B_CHOL) "()\n", info);
+      fprintf(stderr, RCAT(RCAT("LAPACK error: the leading minor of order %ld is not positive definite,\nthe factorization could not be completed for ", POTF2) " in ", AX_EQ_B_CHOL) "()\n", (long)info);
 #ifndef LINSOLVERS_RETAIN_MEMORY
       free(buf);
 #endif
@@ -483,15 +490,15 @@ int info, nrhs=1;
   }
 
   /* solve the linear system U^T y = b */
-  TRTRS("U", "T", "N", (int *)&m, (int *)&nrhs, a, (int *)&m, b, (int *)&m, &info);
+  TRTRS("U", "T", "N", (blasint *)&mm, (blasint *)&nrhs, a, (blasint *)&mm, b, (blasint *)&mm, &info);
   /* error treatment */
   if(info!=0){
     if(info<0){
-      fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %d of ", TRTRS) " in ", AX_EQ_B_CHOL) "()\n", -info);
+      fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %ld of ", TRTRS) " in ", AX_EQ_B_CHOL) "()\n", (long)-info);
       exit(1);
     }
     else{
-      fprintf(stderr, RCAT("LAPACK error: the %d-th diagonal element of A is zero (singular matrix) in ", AX_EQ_B_CHOL) "()\n", info);
+      fprintf(stderr, RCAT("LAPACK error: the %ld-th diagonal element of A is zero (singular matrix) in ", AX_EQ_B_CHOL) "()\n", (long)info);
 #ifndef LINSOLVERS_RETAIN_MEMORY
       free(buf);
 #endif
@@ -501,15 +508,15 @@ int info, nrhs=1;
   }
 
   /* solve the linear system U x = y */
-  TRTRS("U", "N", "N", (int *)&m, (int *)&nrhs, a, (int *)&m, b, (int *)&m, &info);
+  TRTRS("U", "N", "N", (blasint *)&mm, (blasint *)&nrhs, a, (blasint *)&mm, b, (blasint *)&mm, &info);
   /* error treatment */
   if(info!=0){
     if(info<0){
-      fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %d of ", TRTRS) "in ", AX_EQ_B_CHOL) "()\n", -info);
+      fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %ld of ", TRTRS) "in ", AX_EQ_B_CHOL) "()\n", (long)-info);
       exit(1);
     }
     else{
-      fprintf(stderr, RCAT("LAPACK error: the %d-th diagonal element of A is zero (singular matrix) in ", AX_EQ_B_CHOL) "()\n", info);
+      fprintf(stderr, RCAT("LAPACK error: the %ld-th diagonal element of A is zero (singular matrix) in ", AX_EQ_B_CHOL) "()\n", (long)info);
 #ifndef LINSOLVERS_RETAIN_MEMORY
       free(buf);
 #endif
@@ -554,7 +561,7 @@ __STATIC__ int buf_sz=0;
 
 int a_sz, ipiv_sz, b_sz, work_sz, tot_sz;
 register int i, j;
-int info, *ipiv, nrhs=1;
+blasint info, *ipiv, nrhs=1;
 LM_REAL *a, *b, *work;
    
 #ifdef LINSOLVERS_RETAIN_MEMORY
@@ -592,7 +599,7 @@ LM_REAL *a, *b, *work;
       }
 #endif /* LINSOLVERS_RETAIN_MEMORY */
 
-    ipiv=(int *)buf;
+    ipiv=(blasint *)buf;
     a=(LM_REAL *)(ipiv + ipiv_sz);
     b=a+a_sz;
     work=b+b_sz;
@@ -605,11 +612,13 @@ LM_REAL *a, *b, *work;
       b[i]=B[i];
     }
 
+    const blasint mm = m;
+
   /* LU decomposition for A */
-	GETRF((int *)&m, (int *)&m, a, (int *)&m, ipiv, (int *)&info);  
+	GETRF((blasint *)&mm, (blasint *)&mm, a, (blasint *)&mm, ipiv, (blasint *)&info);
 	if(info!=0){
 		if(info<0){
-      fprintf(stderr, RCAT(RCAT("argument %d of ", GETRF) " illegal in ", AX_EQ_B_LU) "()\n", -info);
+      fprintf(stderr, RCAT(RCAT("argument %ld of ", GETRF) " illegal in ", AX_EQ_B_LU) "()\n", (long)-info);
 			exit(1);
 		}
 		else{
@@ -623,10 +632,10 @@ LM_REAL *a, *b, *work;
 	}
 
   /* solve the system with the computed LU */
-  GETRS("N", (int *)&m, (int *)&nrhs, a, (int *)&m, ipiv, b, (int *)&m, (int *)&info);
+  GETRS("N", (blasint *)&mm, (blasint *)&nrhs, a, (blasint *)&mm, ipiv, b, (blasint *)&mm, (blasint *)&info);
 	if(info!=0){
 		if(info<0){
-			fprintf(stderr, RCAT(RCAT("argument %d of ", GETRS) " illegal in ", AX_EQ_B_LU) "()\n", -info);
+			fprintf(stderr, RCAT(RCAT("argument %ld of ", GETRS) " illegal in ", AX_EQ_B_LU) "()\n", (long)-info);
 			exit(1);
 		}
 		else{
@@ -679,7 +688,7 @@ LM_REAL *a, *u, *s, *vt, *work;
 int a_sz, u_sz, s_sz, vt_sz, tot_sz;
 LM_REAL thresh, one_over_denom;
 register LM_REAL sum;
-int info, rank, worksz, *iwork, iworksz;
+blasint info, rank, worksz, *iwork, iworksz;
    
 #ifdef LINSOLVERS_RETAIN_MEMORY
     if(!A){
@@ -695,7 +704,7 @@ int info, rank, worksz, *iwork, iworksz;
   a_sz=m*m;
   u_sz=m*m; s_sz=m; vt_sz=m*m;
 
-  tot_sz=iworksz*sizeof(int) + (a_sz + u_sz + s_sz + vt_sz + worksz)*sizeof(LM_REAL);
+  tot_sz=iworksz*sizeof(blasint) + (a_sz + u_sz + s_sz + vt_sz + worksz)*sizeof(LM_REAL);
 
 #ifdef LINSOLVERS_RETAIN_MEMORY
   if(tot_sz>buf_sz){ /* insufficient memory, allocate a "big" memory chunk at once */
@@ -717,7 +726,7 @@ int info, rank, worksz, *iwork, iworksz;
     }
 #endif /* LINSOLVERS_RETAIN_MEMORY */
 
-  iwork=(int *)buf;
+  iwork=(blasint *)buf;
   a=(LM_REAL *)(iwork+iworksz);
   /* store A (column major!) into a */
   for(i=0; i<m; i++)
@@ -729,18 +738,20 @@ int info, rank, worksz, *iwork, iworksz;
   vt=s+s_sz;
   work=vt+vt_sz;
 
+  const blasint mm = m;
+
   /* SVD decomposition of A */
-  GESVD("A", "A", (int *)&m, (int *)&m, a, (int *)&m, s, u, (int *)&m, vt, (int *)&m, work, (int *)&worksz, &info);
-  //GESDD("A", (int *)&m, (int *)&m, a, (int *)&m, s, u, (int *)&m, vt, (int *)&m, work, (int *)&worksz, iwork, &info);
+  GESVD("A", "A", (blasint *)&mm, (blasint *)&mm, a, (blasint *)&mm, s, u, (blasint *)&mm, vt, (blasint *)&mm, work, (blasint *)&worksz, &info);
+  //GESDD("A", (blasint *)&mm, (blasint *)&mm, a, (blasint *)&mm, s, u, (blasint *)&mm, vt, (blasint *)&mm, work, (blasint *)&worksz, iwork, &info);
 
   /* error treatment */
   if(info!=0){
     if(info<0){
-      fprintf(stderr, RCAT(RCAT(RCAT("LAPACK error: illegal value for argument %d of ", GESVD), "/" GESDD) " in ", AX_EQ_B_SVD) "()\n", -info);
+      fprintf(stderr, RCAT(RCAT(RCAT("LAPACK error: illegal value for argument %ld of ", GESVD), "/" GESDD) " in ", AX_EQ_B_SVD) "()\n", (long)-info);
       exit(1);
     }
     else{
-      fprintf(stderr, RCAT("LAPACK error: dgesdd (dbdsdc)/dgesvd (dbdsqr) failed to converge in ", AX_EQ_B_SVD) "() [info=%d]\n", info);
+      fprintf(stderr, RCAT("LAPACK error: dgesdd (dbdsdc)/dgesvd (dbdsqr) failed to converge in ", AX_EQ_B_SVD) "() [info=%ld]\n", (long)info);
 #ifndef LINSOLVERS_RETAIN_MEMORY
       free(buf);
 #endif

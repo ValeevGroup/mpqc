@@ -36,6 +36,7 @@
 #define FDIF_FORW_JAC_APPROX LM_ADD_PREFIX(fdif_forw_jac_approx)
 
 #include <math/optimize/f77sym.h>
+#include <math/scmat/blas.h>
 
 #define GEQP3 F77_DGEQP3
 #define ORGQR F77_DORGQR
@@ -50,13 +51,13 @@ struct LMLEC_DATA{
 };
 
 /* prototypes for LAPACK routines */
-extern int GEQP3(int *m, int *n, LM_REAL *a, int *lda, int *jpvt,
-                   LM_REAL *tau, LM_REAL *work, int *lwork, int *info);
+extern int GEQP3(blas_f77_integer_t *m, blas_f77_integer_t *n, LM_REAL *a, blas_f77_integer_t *lda, blas_f77_integer_t *jpvt,
+                   LM_REAL *tau, LM_REAL *work, blas_f77_integer_t *lwork, blas_f77_integer_t *info);
 
-extern int ORGQR(int *m, int *n, int *k, LM_REAL *a, int *lda, LM_REAL *tau,
-                   LM_REAL *work, int *lwork, int *info);
+extern int ORGQR(blas_f77_integer_t *m, blas_f77_integer_t *n, blas_f77_integer_t *k, LM_REAL *a, blas_f77_integer_t *lda, LM_REAL *tau,
+                   LM_REAL *work, blas_f77_integer_t *lwork, blas_f77_integer_t *info);
 
-extern int TRTRI(char *uplo, char *diag, int *n, LM_REAL *a, int *lda, int *info);
+extern int TRTRI(char *uplo, char *diag, blas_f77_integer_t *n, LM_REAL *a, blas_f77_integer_t *lda, blas_f77_integer_t *info);
 
 /*
  * This function implements an elimination strategy for linearly constrained
@@ -88,8 +89,8 @@ static LM_REAL eps=CNST(-1.0);
 LM_REAL *buf=NULL;
 LM_REAL *a, *tau, *work, *r, aux;
 register LM_REAL tmp;
-int a_sz, jpvt_sz, tau_sz, r_sz, Y_sz, worksz;
-int info, rank, *jpvt, tot_sz, mintmn, tm, tn;
+blasint a_sz, jpvt_sz, tau_sz, r_sz, Y_sz, worksz;
+blasint info, rank, *jpvt, tot_sz, mintmn, tm, tn;
 register int i, j, k;
 
   if(m>n){
@@ -102,7 +103,7 @@ register int i, j, k;
 
   /* calculate required memory size */
   worksz=-1; // workspace query. Optimal work size is returned in aux
-  ORGQR((int *)&tm, (int *)&tm, (int *)&mintmn, NULL, (int *)&tm, NULL, (LM_REAL *)&aux, &worksz, &info);
+  ORGQR((blasint *)&tm, (blasint *)&tm, (blasint *)&mintmn, NULL, (blasint *)&tm, NULL, (LM_REAL *)&aux, &worksz, &info);
   worksz=(int)aux;
   a_sz=tm*tm; // tm*tn is enough for xgeqp3()
   jpvt_sz=tn;
@@ -110,7 +111,7 @@ register int i, j, k;
   r_sz=mintmn*mintmn; // actually smaller if a is not of full row rank
   Y_sz=(Y)? 0 : tm*tn;
 
-  tot_sz=jpvt_sz*sizeof(int) + (a_sz + tau_sz + r_sz + worksz + Y_sz)*sizeof(LM_REAL);
+  tot_sz=jpvt_sz*sizeof(blasint) + (a_sz + tau_sz + r_sz + worksz + Y_sz)*sizeof(LM_REAL);
   buf=(LM_REAL *)malloc(tot_sz); /* allocate a "big" memory chunk at once */
   if(!buf){
     fprintf(stderr, RCAT("Memory allocation request failed in ", LMLEC_ELIM) "()\n");
@@ -118,7 +119,7 @@ register int i, j, k;
   }
 
   a=(LM_REAL *)buf;
-  jpvt=(int *)(a+a_sz);
+  jpvt=(blasint *)(a+a_sz);
   tau=(LM_REAL *)(jpvt + jpvt_sz);
   r=tau+tau_sz;
   work=r+r_sz;
@@ -134,16 +135,16 @@ register int i, j, k;
   for(i=0; i<jpvt_sz; ++i) jpvt[i]=0;
 
   /* rank revealing QR decomposition of A^T*/
-  GEQP3((int *)&tm, (int *)&tn, a, (int *)&tm, jpvt, tau, work, (int *)&worksz, &info);
+  GEQP3((blasint *)&tm, (blasint *)&tn, a, (blasint *)&tm, jpvt, tau, work, (blasint *)&worksz, &info);
   //dgeqpf_((int *)&tm, (int *)&tn, a, (int *)&tm, jpvt, tau, work, &info);
   /* error checking */
   if(info!=0){
     if(info<0){
-      fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %d of ", GEQP3) " in ", LMLEC_ELIM) "()\n", -info);
+      fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %ld of ", GEQP3) " in ", LMLEC_ELIM) "()\n", (long)-info);
       exit(1);
     }
     else if(info>0){
-      fprintf(stderr, RCAT(RCAT("unknown LAPACK error (%d) for ", GEQP3) " in ", LMLEC_ELIM) "()\n", info);
+      fprintf(stderr, RCAT(RCAT("unknown LAPACK error (%ld) for ", GEQP3) " in ", LMLEC_ELIM) "()\n", (long)info);
       free(buf);
       return 0;
     }
@@ -167,8 +168,8 @@ register int i, j, k;
     else break; /* diagonal is arranged in absolute decreasing order */
 
   if(rank<tn){
-    fprintf(stderr, RCAT("\nConstraints matrix in ",  LMLEC_ELIM) "() is not of full row rank (i.e. %d < %d)!\n"
-            "Make sure that you do not specify redundant or inconsistent constraints.\n\n", rank, tn);
+    fprintf(stderr, RCAT("\nConstraints matrix in ",  LMLEC_ELIM) "() is not of full row rank (i.e. %ld < %ld)!\n"
+            "Make sure that you do not specify redundant or inconsistent constraints.\n\n", (long)rank, (long)tn);
     exit(1);
   }
 
@@ -182,15 +183,15 @@ register int i, j, k;
   }
 
   /* compute the inverse */
-  TRTRI("U", "N", (int *)&rank, r, (int *)&rank, &info);
+  TRTRI("U", "N", (blasint *)&rank, r, (blasint *)&rank, &info);
   /* error checking */
   if(info!=0){
     if(info<0){
-      fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %d of ", TRTRI) " in ", LMLEC_ELIM) "()\n", -info);
+      fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %ld of ", TRTRI) " in ", LMLEC_ELIM) "()\n", (long)-info);
       exit(1);
     }
     else if(info>0){
-      fprintf(stderr, RCAT(RCAT("A(%d, %d) is exactly zero for ", TRTRI) " (singular matrix) in ", LMLEC_ELIM) "()\n", info, info);
+      fprintf(stderr, RCAT(RCAT("A(%ld, %ld) is exactly zero for ", TRTRI) " (singular matrix) in ", LMLEC_ELIM) "()\n", (long)info, (long)info);
       free(buf);
       return 0;
     }
@@ -217,15 +218,15 @@ register int i, j, k;
     a[i]=0.0;
 
   /* compute Q in a as the product of elementary reflectors. Q is tm x tm */
-  ORGQR((int *)&tm, (int *)&tm, (int *)&mintmn, a, (int *)&tm, tau, work, &worksz, &info);
+  ORGQR((blasint *)&tm, (blasint *)&tm, (blasint *)&mintmn, a, (blasint *)&tm, tau, work, &worksz, &info);
   /* error checking */
   if(info!=0){
     if(info<0){
-      fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %d of ", ORGQR) " in ", LMLEC_ELIM) "()\n", -info);
+      fprintf(stderr, RCAT(RCAT("LAPACK error: illegal value for argument %ld of ", ORGQR) " in ", LMLEC_ELIM) "()\n", (long)-info);
       exit(1);
     }
     else if(info>0){
-      fprintf(stderr, RCAT(RCAT("unknown LAPACK error (%d) for ", ORGQR) " in ", LMLEC_ELIM) "()\n", info);
+      fprintf(stderr, RCAT(RCAT("unknown LAPACK error (%ld) for ", ORGQR) " in ", LMLEC_ELIM) "()\n", (long)info);
       free(buf);
       return 0;
     }

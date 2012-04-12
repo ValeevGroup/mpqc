@@ -363,8 +363,8 @@ void CCR12_Info::guess_glambda2(Ref<Tensor>& d_glambda2_){
 
 double CCR12_Info::energy_lagrangian_r2(const Ref<Tensor>& r2) const { 
   double result = 0.0;
-  const int unit = 1;
-  for (long h3b=0L;h3b<noab();++h3b) { 
+  const blasint unit = 1;
+  for (long h3b=0L;h3b<noab();++h3b) {
    for (long h4b=h3b;h4b<noab();++h4b) { 
     for (long p1b=noab();p1b<noab()+nvab();++p1b) { 
      for (long p2b=p1b;p2b<noab()+nvab();++p2b) { 
@@ -373,7 +373,7 @@ double CCR12_Info::energy_lagrangian_r2(const Ref<Tensor>& r2) const {
         long p1b_0,p2b_0,h3b_0,h4b_0; 
         restricted_4(p1b,p2b,h3b,h4b,p1b_0,p2b_0,h3b_0,h4b_0); 
         if (!t2()->is_this_local(h4b_0+noab()*(h3b_0+noab()*(p2b_0-noab()+nvab()*(p1b_0-noab()))))) continue; 
-        const int dim=get_range(h3b)*get_range(h4b)*get_range(p1b)*get_range(p2b); 
+        const blasint dim=get_range(h3b)*get_range(h4b)*get_range(p1b)*get_range(p2b);
         if (dim > 0L) { 
          double* k_a0=mem()->malloc_local_double(dim); 
          double* k_a1=mem()->malloc_local_double(dim); 
@@ -400,8 +400,8 @@ double CCR12_Info::energy_lagrangian_r2(const Ref<Tensor>& r2) const {
 
 double CCR12_Info::energy_lagrangian_r3(const Ref<Tensor>& r3) const { 
   double result = 0.0;
-  const int unit = 1;
-  for (long h3b=0L;h3b<noab();++h3b) { 
+  const blasint unit = 1;
+  for (long h3b=0L;h3b<noab();++h3b) {
   for (long h4b=h3b;h4b<noab();++h4b) { 
   for (long h5b=h4b;h5b<noab();++h5b) { 
     for (long p0b=noab();p0b<noab()+nvab();++p0b) { 
@@ -414,7 +414,7 @@ double CCR12_Info::energy_lagrangian_r3(const Ref<Tensor>& r3) const {
         restricted_6(p0b,p1b,p2b,h3b,h4b,h5b,p0b_0,p1b_0,p2b_0,h3b_0,h4b_0,h5b_0);
         const long addr = h5b_0+noab()*(h4b_0+noab()*(h3b_0+noab()*(p2b_0-noab()+nvab()*(p1b_0-noab()+nvab()*(p0b_0-noab())))));
         if (!t3()->is_this_local(addr)) continue; 
-        const int dim=get_range(h3b)*get_range(h4b)*get_range(h5b)*get_range(p0b)*get_range(p1b)*get_range(p2b); 
+        const blasint dim=get_range(h3b)*get_range(h4b)*get_range(h5b)*get_range(p0b)*get_range(p1b)*get_range(p2b);
         if (dim > 0L) { 
          double* k_a0=mem()->malloc_local_double(dim); 
          double* k_a1=mem()->malloc_local_double(dim); 

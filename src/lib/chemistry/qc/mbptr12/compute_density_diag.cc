@@ -465,7 +465,7 @@ namespace {
     int size_idx3 = f12_ints1->nj();
     // get the number of the contracted indices
     // eg: R^a'b_ij R^ij_a'c: sum_idx is ij
-    const int size_sum_idx = f12_ints1->nx() * f12_ints1->ny();
+    const blasint size_sum_idx = f12_ints1->nx() * f12_ints1->ny();
 
     // get block indices
     int* f12_blk1_idx1 = &idx1;
@@ -506,7 +506,7 @@ namespace {
       break;
     }
 
-    const int one = 1; // for F77_DDOT
+    const blasint one = 1; // for F77_DDOT
     double* iter_array = f12f12_array;
 
       for (idx1 = 0; idx1 < size_idx1; ++idx1) {
@@ -551,7 +551,7 @@ namespace {
     int size_idx3 = f12_ints1->nj();
     // get the number of the contracted indices
     // eg: R^ij_ab R^ab_ij: sum_idx is ab
-    const int size_sum_idx = f12_ints1->nx() * f12_ints1->ny();
+    const blasint size_sum_idx = f12_ints1->nx() * f12_ints1->ny();
 
     // get block indices
     int* f12_blk1_idx1 = &idx1;
@@ -590,7 +590,7 @@ namespace {
       break;
     }
 
-    const int one = 1; // for F77_DDOT
+    const blasint one = 1; // for F77_DDOT
     double* iter_array = f12f12_array;
 
     for (idx1 = 0; idx1 < size_idx1; ++idx1) {
@@ -1178,7 +1178,7 @@ void MP2R12Energy_Diag::compute_F12T2_ij(const SpinCase1 spin, const int na,
   //                    & internal indices: ij
   int nap = f12_ints->ni();
   int nb = f12_ints->nj();
-  const int nij =  f12_ints->nx() * f12_ints->ny();
+  const blasint nij =  f12_ints->nx() * f12_ints->ny();
 
   // get the right block of f12_ints: R^ij_a'b or R^ij_ba'
   int ap = 0;
@@ -1220,7 +1220,7 @@ void MP2R12Energy_Diag::compute_F12T2_ij(const SpinCase1 spin, const int na,
                 << " nap = " << nap << " nb = " << nb << "nij = " << nij << endl;
 #endif
 
-  const int one = 1; // for F77_DDOT
+  const blasint one = 1; // for F77_DDOT
   for(ap = 0; ap < nap; ++ap) {
     for (b = 0; b < nb; ++b) {
       const double* f12_ij_blk = f12_ints->retrieve_pair_block(*f12_blk_idx1, *f12_blk_idx2, f12_idx);
@@ -1265,7 +1265,7 @@ void MP2R12Energy_Diag::compute_F12T2_ji(const SpinCase1 spin, const int na,
   int nb = f12_ints->nj();
   const int ni = f12_ints->ny();
   const int nj = f12_ints->nx();
-  const int nij = ni * nj;
+  const blasint nij = ni * nj;
 
   // get the right block of f12_ints: R^ij_a'b or R^ij_ba'
   int ap = 0;
@@ -1307,7 +1307,7 @@ void MP2R12Energy_Diag::compute_F12T2_ji(const SpinCase1 spin, const int na,
                 << " nap = " << nap << " nb = " << nb << "nij = " << nij << endl;
 #endif
 
-  const int one = 1; // for F77_DDOT
+  const blasint one = 1; // for F77_DDOT
   for(ap = 0; ap < nap; ++ap) {
     for (b = 0; b < nb; ++b) {
       const double* f12_ij_blk = f12_ints->retrieve_pair_block(*f12_blk_idx1, *f12_blk_idx2, f12_idx);
@@ -2644,8 +2644,8 @@ void MP2R12Energy_Diag::compute_RR31_32_spin(const int orbitals_label,
                      descr_f12_key, moints4_rtime, f12_ints2);
 //       print_f12_ints(spinletters, "R^B'A_IJ ints", f12_idx, f12_ints2);
 
-       const int one = 1;
-       const int nocc12 = nocc_act * nocc_act;
+       const blasint one = 1;
+       const blasint nocc12 = nocc_act * nocc_act;
        const int size_idx3 = ncabs;
 
        double* RR = new double[size_idx1 * size_idx2];
@@ -2872,8 +2872,8 @@ void MP2R12Energy_Diag::compute_RR31_32_spin(const int orbitals_label,
            activate_ints(cabs2->id(), vir1->id(), occ1_act->id(), occ2_act->id(),
                          descr_f12_key, moints4_rtime, f12_ints2);
 
-           const int one = 1;
-           const int nocc12 = nocc_alpha * nocc_beta;
+           const blasint one = 1;
+           const blasint nocc12 = nocc_alpha * nocc_beta;
            const int size_idx1 = vir1->rank();
            const int size_idx2 = vir1->rank();
            const int size_idx3 = cabs2->rank();
@@ -3022,8 +3022,8 @@ void MP2R12Energy_Diag::compute_RR31_32_spin(const int orbitals_label,
              activate_ints(cabs2->id(), vir1->id(), occ1_act->id(), occ2_act->id(),
                            descr_f12_key, moints4_rtime, f12_ints2);
 
-             const int one = 1;
-             const int nocc12 = nocc_alpha * nocc_beta;
+             const blasint one = 1;
+             const blasint nocc12 = nocc_alpha * nocc_beta;
              const int size_idx1 = cabs2->rank();
              const int size_idx2 = cabs2->rank();
              const int size_idx3 = vir1->rank();

@@ -1607,8 +1607,10 @@ AC_ARG_ENABLE(blas-f77-i8,
 )
 if test "X$BLAS_F77_INTEGER_WIDTH_ARG" = "Xyes"; then
   AC_DEFINE(BLAS_F77_INTEGER_WIDTH,8)
+  BLAS_F77_INTEGER_WIDTH=8
 else
   AC_DEFINE(BLAS_F77_INTEGER_WIDTH,4)
+  BLAS_F77_INTEGER_WIDTH=4
 fi
 
 dnl ----------- check for Scalable BLAS library --------------
@@ -2370,6 +2372,7 @@ echo "C preprocessor flags    $CPPFLAGS"
 echo "C++ compiler flags      $CXXFLAGS"
 echo "Linker flags            $LDFLAGS"
 echo "Linker libraries        $LIBS"
+echo "BLAS/LAPACK int width   $BLAS_F77_INTEGER_WIDTH bytes"
 echo "DEFAULT_PARALLEL        ${DEFAULT_PARALLEL:-<not set>}"
 echo "HAVE_PTHREAD            ${HAVE_PTHREAD:-no}"
 echo "HAVE_MPI                ${HAVE_MPI:-no}"

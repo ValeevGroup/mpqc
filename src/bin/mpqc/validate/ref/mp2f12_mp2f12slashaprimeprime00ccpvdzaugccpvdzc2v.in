@@ -5,7 +5,7 @@
 molecule<Molecule>: (
   symmetry = C2V
   unit = angstrom
-  { atoms geometry } = {
+ { atoms geometry } = {
      O     [     0.000000000000     0.000000000000     0.369372944000 ]
      H     [     0.783975899000     0.000000000000    -0.184686472000 ]
      H     [    -0.783975899000     0.000000000000    -0.184686472000 ]
@@ -47,6 +47,7 @@ mpqc: (
     )
 
     abs_method = CABS
+    cabs_singles = false
 
     reference<CLHF>: (
       molecule = $:molecule

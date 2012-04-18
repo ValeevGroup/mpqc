@@ -39,7 +39,7 @@ namespace sc {
 
   gamma is the exponent of the Gaussian geminal in the integral
  --------------------------------------------------------------------------------*/
-inline void G12Libint2::g12_quartet_data_(prim_data *Data, double scale, double gamma, bool eri_only)
+inline void G12Libint2::g12_quartet_data_(prim_data *Data, double scale, double gamma, double g2_4, bool eri_only)
 {
 #define STATIC_OO2NP1
 #include "static.h"
@@ -103,6 +103,7 @@ inline void G12Libint2::g12_quartet_data_(prim_data *Data, double scale, double 
 #endif
 #if LIBINT2_DEFINED(g12,R12_2_G12_scale_to_G12T1G12)
   Data->R12_2_G12_scale_to_G12T1G12[0] = g2_4;
+#endif
   
   //
   // prefactors for (ab|-1|cd) are same as for OSRR, only (00|-1|00)^m are different

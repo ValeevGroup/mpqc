@@ -47,6 +47,7 @@ mpqc: (
     )
 
     abs_method = CABS
+    cabs_singles = false
 
     reference<CLHF>: (
       molecule = $:molecule

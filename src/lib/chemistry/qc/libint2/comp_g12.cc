@@ -437,8 +437,12 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
                       const double gamma_ket = gpket.first;
                       const double gpcoef_ket = gpket.second;
 
+#if !COMPUTE_R12_2_G12
                       // scale r12^2*g12 integrals by 4 * gamma_bra * gamma_ket to obtain [g12,[t1,g12]]
                       const double g2_4 = gamma_bra*gamma_ket*4.0;
+#else
+                      const double g2_4 = 1.0;
+#endif
 
                       // Compute primitive data for Libint
                       g12_quartet_data_(&Libint_, gpcoef_bra*gpcoef_ket, gamma_bra+gamma_ket, g2_4);
@@ -450,17 +454,10 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
                       Libint_.contrdepth = 1;
                       LIBINT2_PREFIXED_NAME(libint2_build_r12kg12)[tam1][tam2][tam3][tam4](&Libint_);
 
-#if !COMPUTE_R12_2_G12
-                      // scale r12^2*g12 integrals by 4 * gamma_bra * gamma_ket to obtain [g12,[t1,g12]]
-                      const double g2_4 = gamma_bra*gamma_ket*4.0;
-#else
-                      const double g2_4 = 1.0;
-#endif
-
                       if (quartet_info_.am) {
-                        LIBINT2_REALTYPE* prim_ints = Libint_.targets[4];
-                        for(int ijkl=0; ijkl<size; ijkl++)
-                        prim_ints[ijkl] *= g2_4;
+//                        LIBINT2_REALTYPE* prim_ints = Libint_.targets[4];
+//                        for(int ijkl=0; ijkl<size; ijkl++)
+//                        prim_ints[ijkl] *= g2_4;
 
                         // If using 2 geminals and g12!=g12' instead of [ti,g12g12'] integrals generate [ti,g12g12'](beta-alpha)/(beta+alpha) = g12[ti,g12'] - g12'[ti,g12]
                         if (!braonly && gamma_bra != gamma_ket) {
@@ -502,7 +499,7 @@ G12Libint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
                   } // end of bra geminal primitive loop
 
                   // Compute primitive data for Libint
-                  g12_quartet_data_(&Libint_, 1.0, 0.0, true);
+                  g12_quartet_data_(&Libint_, 1.0, 0.0, 0.0, true);
                   if (quartet_info_.am) {
                     // Compute the integrals
                     LIBINT2_PREFIXED_NAME(libint2_build_eri)[tam1][tam2][tam3][tam4](&Libint_);

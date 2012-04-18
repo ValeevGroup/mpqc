@@ -103,7 +103,17 @@ ifeq ($(RUN_MBPTF12),yes)
     mp2f12_ch2mp2cabssingles00ccpvdzccpvdzf12cabsc2v.in \
     mp2f12_hmp2cabssingles00ccpvqz.in
   MP2CABSSINGLESINPUTS := $(MP2CABSSINGLESINPUTS:%=$(INP)/%)
+ifeq ($(HAVE_LIBINT2_G12_T1G12),yes)
+  MP2F12INPUTS = mp2f12_mp2f12slashaprime00ccpvdzaugccpvdzc2v.in \
+    mp2f12_mp2f12slashaprime10ccpvdzaugccpvdzc2v.in \
+    mp2f12_mp2f12slashaprimeprime00ccpvdzaugccpvdzc2v.in \
+    mp2f12_mp2f12slashaprimeprime10ccpvdzaugccpvdzc2v.in \
+    mp2f12_mp2f12slashb00ccpvdzaugccpvdzc2v.in \
+    mp2f12_mp2f12slashb10ccpvdzaugccpvdzc2v.in
+  MP2F12INPUTS := $(MP2F12INPUTS:%=$(INP)/%)
+else
   MP2F12INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(SRCDIR) -e -d $(INP) $(MP2F12MASTER)) $(MP2CABSSINGLESINPUTS)
+endif
 endif
 MP2F12OUTPUTS = $(MP2F12INPUTS:%.$(INSUF)=%.out)
 

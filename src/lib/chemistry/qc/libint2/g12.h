@@ -102,6 +102,7 @@ class G12Libint2: public Int2eLibint2 {
     } quartet_info_;
     typedef Libint_t prim_data;
     void g12_quartet_data_(prim_data *Data, double scale, double gamma,
+                           double g2_4,
                            bool eri_only = false);
     /*--- Compute engines ---*/
     Libint_t Libint_;

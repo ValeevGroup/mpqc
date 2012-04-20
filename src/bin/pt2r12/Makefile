@@ -19,9 +19,12 @@ TARGET_TO_MAKE = pt2r12
 default:: $(TARGET_TO_MAKE)
 
 .PHONY: gamess
-gamess : $(TARGET_TO_MAKE)
-gamess : CPPFLAGS += -DPT2R12GAMESS
-#default:: gamess
+gamess : $(TARGET_TO_MAKE) 
+gamess: CPPFLAGS += -DPT2R12GAMESS
+
+.PHONY: gamesslib
+gamesslib : libpt2r12gamess.$(LIBSUF)
+gamesslib: CPPFLAGS += -DPT2R12GAMESS
 
 INC =
 DEPENDINCLUDE = $(INC)
@@ -38,10 +41,18 @@ default:: $(DEPENDINCLUDE)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 
-$(TARGET_TO_MAKE): $(BINOBJ) $(LIBS)
+$(TARGET_TO_MAKE):$(BINOBJ) $(LIBS)
 	echo "$(LISTLIBS) $(INCLUDE) $(DEFINES) $(XDEF) $(SRCDIR)/LIBS.h"
 	$(LTLINK) $(LD) $(LDFLAGS) -o $@ $^ $(XLIBS) $(SYSLIBS) $(LTLINKBINOPTS)
-	
+
+BINOBJ_LIBGAMESS = pt2r12_not_main.o moinfo.o extern_pt2r12.o
+libpt2r12gamess.$(LIBSUF): $(BINOBJ_LIBGAMESS)
+	$(AR) $(ARFLAGS) $@ $^
+	$(RANLIB) $@
+
+pt2r12_not_main.o: pt2r12.cc
+	$(CXX) $(CPPFLAGS) -DSKIP_MAIN $(CXXFLAGS) -c pt2r12.cc -o $@
+
 ifeq ($(ENABLE_DEPLIBS),yes)
 MPQCLTDEPLIBS=$(LIBS)
 MPQCLTSYSLIBS=$(SYSLIBS)

@@ -65,6 +65,7 @@ using namespace sc;
 
 extern int try_main(int argc, char *argv[]);
 
+#ifndef SKIP_MAIN
 int
 main(int argc, char *argv[])
 {
@@ -89,7 +90,57 @@ main(int argc, char *argv[])
     }
   return 0;
 }
+#else
 
+static std::vector<std::string> argv_;
+extern "C" void add_arg_(const char * arg, long len){
+    std::string s(arg,len);
+    s.erase(s.find_last_not_of(' ')+1);
+    argv_.push_back(s);
+}
+
+extern int try_main(int argc, char *argv[]);
+
+char* arg(const char * value){
+    char *p = new char[strlen(value)];
+    strcpy(p,value);
+    return p;
+}
+
+extern "C" int pt2r12_main_() {
+    
+    int argc = argv_.size() +1;
+    char* argv[argc];
+    
+    
+    argv[0] = arg("");
+    for (int i=0; i<argv_.size(); i++){
+	argv[i+1]= arg(argv_[i].c_str());
+    }
+    
+    try {
+	try_main(argc, argv);
+    }
+    catch (std::bad_alloc &e) {
+	cout << argv[0] << ": ERROR: MEMORY ALLOCATION FAILED:" << endl
+	     << e.what()
+	     << endl;
+	exit(1);
+    }
+    catch (std::exception &e) {
+	cout << argv[0] << ": ERROR: EXCEPTION RAISED:" << endl
+	     << e.what()
+	     << endl;
+	exit(1);
+    }
+    catch (...) {
+	cout << argv[0] << ": ERROR: UNKNOWN EXCEPTION RAISED" << endl;
+	exit(1);
+    }
+    return 0;
+}
+
+#endif
 int try_main(int argc, char **argv)
 {
   const bool debug_print = false;

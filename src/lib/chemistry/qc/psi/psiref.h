@@ -65,6 +65,7 @@ namespace sc {
         else return this->basis();
       }
 
+      bool sdref() const { return true; }
       double energy() { return scf()->energy(); }
       double actual_value_accuracy () const { return scf()->actual_value_accuracy(); }
       double desired_value_accuracy() const { return scf()->desired_value_accuracy(); }
@@ -118,6 +119,7 @@ namespace sc {
       void save_data_state(StateOut&);
       const Ref<PsiRASCI>& wfn() const { return wfn_; }
 
+      bool sdref() const { return false; }
       double energy() { return wfn()->energy(); }
       double actual_value_accuracy () const { return wfn()->actual_value_accuracy(); }
       double desired_value_accuracy() const { return wfn()->desired_value_accuracy(); }

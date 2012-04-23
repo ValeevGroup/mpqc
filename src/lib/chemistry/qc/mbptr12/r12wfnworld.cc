@@ -40,9 +40,6 @@
 #include <chemistry/qc/lcao/transform_factory.h>
 #include <util/misc/registry.timpl.h>
 #include <chemistry/qc/mbptr12/ref.h>
-#if HAVE_PSIMPQCIFACE
-# include <chemistry/qc/psi/psiref.h>
-#endif
 
 using namespace std;
 using namespace sc;
@@ -227,22 +224,7 @@ R12WavefunctionWorld::sdref() const {
 
 #define ALWAYS_USE_GENREF_ALGORITHM 0
 #if !ALWAYS_USE_GENREF_ALGORITHM
-  // only references based on OneBodyWavefunction are detected as single-determinant references!
-  {
-    Ref<SD_RefWavefunction> sd; sd << refwfn();
-    if (sd.nonnull()) return true;
-  }
-  // references based on Extern_RefWavefunction are single-determinant references IF their densities are idempotent
-  {
-    Ref<Extern_RefWavefunction> ext; ext << refwfn();
-    if (ext.nonnull()) return ext->ordm_idempotent();
-  }
-#if HAVE_PSIMPQCIFACE
-  {
-    Ref<PsiSCF_RefWavefunction> sd; sd << refwfn();
-    if (sd.nonnull()) return true;
-  }
-#endif
+  return refwfn()->sdref();
 #endif
   return false;
 }

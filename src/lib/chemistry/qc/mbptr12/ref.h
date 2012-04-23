@@ -197,6 +197,9 @@ namespace sc {
     virtual RefSymmSCMatrix ordm_orbs_sb(SpinCase1 spin) const;
     virtual RefSymmSCMatrix ordm_occ_sb(SpinCase1 spin) const;
 
+    /// is this a single-determinantal reference?
+    virtual bool sdref() const =0;
+
     /// Returns the space of symmetry-blocked orthogonal SOs (spans the entire space of the basis)
     const Ref<OrbitalSpace>& oso_space() const;
     /// Return the space of symmetry-blocked MOs of the given spin
@@ -301,6 +304,7 @@ namespace sc {
 
       void obsolete();
 
+      bool sdref() const { return true; }
       const Ref<OneBodyWavefunction>& obwfn() const { return obwfn_; }
       const Ref<OrbitalSpace>& vir_space() const { return vir_space_; }
       const Ref<GaussianBasisSet>& uocc_basis() const {
@@ -389,6 +393,7 @@ namespace sc {
 //                                                    __FILE__, __LINE__);
       }
 
+      bool sdref() const;
       double energy() { return 0.0; }
       double actual_value_accuracy () const { return DBL_EPSILON; }
       double desired_value_accuracy() const { return DBL_EPSILON; }

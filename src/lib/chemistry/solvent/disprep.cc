@@ -7,8 +7,8 @@
 
 #include <util/keyval/keyval.h>
 #include <math/isosurf/shape.h>
-#include <chemistry/qc/dft/solvent.h>
 #include <chemistry/molecule/formula.h>
+#include <chemistry/solvent/bem.h>
 
 #ifdef USING_NAMESPACE_STD
 using namespace std;

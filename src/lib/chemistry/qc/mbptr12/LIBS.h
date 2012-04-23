@@ -1,8 +1,5 @@
 libSCmbptr12.LIBSUF
 #include <chemistry/qc/lmp2/LIBS.h>
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_PSI
-#  include <chemistry/qc/psi/LIBS.h>
-#endif
 #include <chemistry/qc/lcao/LIBS.h>
 #include <chemistry/qc/wfn/LIBS.h>
 #include <chemistry/qc/scf/LIBS.h>

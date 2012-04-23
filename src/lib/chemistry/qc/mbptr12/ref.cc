@@ -1544,6 +1544,12 @@ Extern_RefWavefunction::save_data_state(StateOut& so) {
   so.put(ordm_idempotent_);
 }
 
+bool
+Extern_RefWavefunction::sdref() const {
+  // references based on Extern_RefWavefunction are single-determinant references IF their densities are idempotent
+  return this->ordm_idempotent();
+}
+
 RefSymmSCMatrix
 Extern_RefWavefunction::core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &basis,
                                                    const Ref<GaussianBasisSet> &p_basis) {

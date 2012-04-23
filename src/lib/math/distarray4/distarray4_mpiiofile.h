@@ -35,6 +35,10 @@
 #include <util/misc/registry.h>
 #include <math/distarray4/distarray4.h>
 
+/// xlc 11 seems to dislike presence of a template member function that has the same name as a virtual function
+/// remove after xlc is fixed
+#define AVOID_XLC_BUG 1
+
 namespace sc {
 
 //////////////////////////////////////////////////////////////////////////
@@ -74,9 +78,11 @@ class DistArray4_MPIIOFile: public DistArray4 {
     // Utility functions
     int ij_proc(int i, int j) const { return 0;};
 
+#ifndef AVOID_XLC_BUG
     /// helps to implement clone of Derived class
     template <typename Derived> Ref<DistArray4> clone(const DistArray4Dimensions& dim =
                                                       DistArray4Dimensions::default_dim());
+#endif
 
   public:
     DistArray4_MPIIOFile(const char *filename, int num_te_types,
@@ -107,6 +113,7 @@ namespace detail {
   void clone_filename(std::string& result, const char* original, int id);
 }
 
+#ifndef AVOID_XLC_BUG
 template <typename Derived>
   Ref<DistArray4> DistArray4_MPIIOFile::clone(const DistArray4Dimensions& dim) {
 
@@ -139,6 +146,7 @@ template <typename Derived>
     result->set_clonelist(clonelist_);
     return result;
   }
+#endif
 
 //////////////////////////////////////////////////////////////////////////////
 /** DistArray4_MPIIOFile_Ind handles transformed integrals stored in a binary

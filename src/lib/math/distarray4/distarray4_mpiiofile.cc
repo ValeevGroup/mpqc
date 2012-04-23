@@ -222,10 +222,45 @@ DistArray4_MPIIOFile_Ind::save_data_state(StateOut&so)
   DistArray4_MPIIOFile::save_data_state(so);
 }
 
+#ifndef AVOID_XLC_BUG
 Ref<DistArray4>
 DistArray4_MPIIOFile_Ind::clone(const DistArray4Dimensions& dim) {
   return DistArray4_MPIIOFile::clone<DistArray4_MPIIOFile_Ind>(dim);
 }
+#else
+Ref<DistArray4>
+DistArray4_MPIIOFile_Ind::clone(const DistArray4Dimensions& dim) {
+
+    int id = 0;
+    std::string clonename;
+    using detail::clone_filename;
+    clone_filename(clonename, this->filename_, id);
+    if (clonelist_.nonnull()) {
+      while (clonelist_->key_exists(clonename)) {
+        ++id;
+        clone_filename(clonename, this->filename_, id);
+      }
+    } else {
+      clonelist_ = ListOfClones::instance();
+    }
+    clonelist_->add(clonename, id);
+
+    Ref<DistArray4_MPIIOFile_Ind> result;
+    if (dim == DistArray4Dimensions::default_dim())
+      result = new DistArray4_MPIIOFile_Ind(clonename.c_str(), num_te_types(),
+                           ni(), nj(),
+                           nx(), ny(),
+                           storage());
+    else
+      result = new DistArray4_MPIIOFile_Ind(clonename.c_str(), dim.num_te_types(),
+                           dim.n1(), dim.n2(),
+                           dim.n3(), dim.n4(),
+                           dim.storage());
+
+    result->set_clonelist(clonelist_);
+    return result;
+  }
+#endif
 
 void DistArray4_MPIIOFile_Ind::store_pair_block(int i, int j,
                                                 tbint_type oper_type,

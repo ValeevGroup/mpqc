@@ -33,6 +33,8 @@ using namespace sc;
 
 ////
 
+int TwoBodyOper::max_ntypes = DistArray4::max_num_te_types;
+
 TwoBodyOperDescr::TwoBodyOperDescr(unsigned int n, int perm_p1, int perm_p2, int perm_p12) :
   n_(n), perm_p1_(perm_p1), perm_p2_(perm_p2), perm_p12_(perm_p12)
 {
@@ -51,7 +53,7 @@ int TwoBodyOperDescr::perm_symm(unsigned int i, unsigned int j) const {
   throw ProgrammingError("IntBodyIntTypeDescr::perm_symm(i,j) -- i,j must be 1,2",__FILE__,__LINE__);
 }
 
-const Ref<TwoBodyOperDescr>&
+Ref<TwoBodyOperDescr>
 TwoBodyOper::descr(TwoBodyOper::type type)
 {
     static Ref<TwoBodyOperDescr> symm_type = new TwoBodyOperDescr(2,+1,+1,+1);

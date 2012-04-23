@@ -30,6 +30,7 @@
 
 #include <util/ref/ref.h>
 #include <util/group/message.h>
+#include <util/container/stdarray.h>
 #include <chemistry/qc/basis/gaussbas.h>
 #include <chemistry/qc/basis/dercent.h>
 #include <chemistry/qc/basis/operator.h>
@@ -130,12 +131,8 @@ class TwoBodyInt : public RefCount {
         electron 2. This is used in the python interface where the
         return type is automatically converted to a map of numpy
         arrays. */
-    std::pair<std::map<TwoBodyOper::type,const double*>,unsigned long*>
+    std::pair<std::map<TwoBodyOper::type,const double*>,std::array<unsigned long,4> >
     compute_shell_arrays(int,int,int,int);
-    //std::pair<std::map<TwoBodyOper::type,const double*>,unsigned long[4]>
-    //compute_shell_arrays(int,int,int,int);
-    // above code not standard c++ (rejected by some compilers)
-    // but not really used anyways see comment in implementation (tbint.cc)
 
     /** Return log base 2 of the maximum magnitude of any integral in a
         shell block obtained from compute_shell.  An index of -1 for any

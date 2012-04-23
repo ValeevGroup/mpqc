@@ -30,6 +30,7 @@
 
 #include <util/ref/ref.h>
 #include <util/state/state.h>
+#include <util/container/stdarray.h>
 #include <math/scmat/matrix.h>
 #include <math/scmat/elemop.h>
 
@@ -144,10 +145,7 @@ class OneBodyInt : public RefCount {
     /** Computes the integrals between basis functions in the given
         shell pair. This is used in the python interface where the
         return type is automatically converted to a numpy array. */
-    std::pair<const double *,unsigned long*> compute_shell_array(int,int);
-    //std::pair<const double *,unsigned long[2]> compute_shell_array(int,int);
-    // above line not standard c++ (rejected by some compilers
-    // but not really used anyways see comment in implementation (obint.cc)
+    std::pair<const double *, std::array<unsigned long, 2> > compute_shell_array(int,int);
 
     /** This is called for one body integrals that take data to let
         them know that the data they reference has changed. */

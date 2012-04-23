@@ -91,9 +91,9 @@ namespace sc {
       g12t1g12 =8, g12p4g12_m_g12t1g12t1 =9, anti_g12g12 =10,
       r12_0_gg12 =11, r12_m1_gg12 =12, gg12t1gg12 =13};
     /// The max number of such types
-    static const int max_ntypes = DistArray4::max_num_te_types;
+    static int max_ntypes;
     /// Returns a descriptor for integral type t
-    static const Ref<TwoBodyOperDescr>& descr(TwoBodyOper::type t);
+    static Ref<TwoBodyOperDescr> descr(TwoBodyOper::type t);
   };
 
   /// Known operator sets

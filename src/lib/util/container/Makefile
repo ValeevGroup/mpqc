@@ -40,7 +40,8 @@ TESTPROGS = avltest
 
 LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF))
 
-INC = eavlmmap.h avlmap.h avlset.h compare.h bitarray.h
+INC = eavlmmap.h avlmap.h avlset.h compare.h bitarray.h \
+stdarray.h stdarray_bits.h
 
 DEPENDINCLUDE = $(INC)
 

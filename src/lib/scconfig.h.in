@@ -381,6 +381,59 @@
 /* Set to true if "using namespace std" needed to access ostream, etc.  */
 #undef USING_NAMESPACE_STD
 
+// see lib/autoconf/ac_check_cpp11.m4
+
+/* define if array has fill member function. */
+#undef SC_ARRAY_HAS_FILL
+
+/* define if std::array is available. */
+#undef SC_HAS_STD_ARRAY
+
+/* define if std::make_shared and std::allocate_shared are available. */
+#undef SC_HAS_STD_MAKE_SHARED
+
+/* define if std::shared_ptr is available. */
+#undef SC_HAS_STD_SHARED_PTR
+
+/* define if std::tr1::array is available. */
+#undef SC_HAS_STD_TR1_ARRAY
+
+/* define if std::tr1::shared_ptr is available. */
+#undef SC_HAS_STD_TR1_SHARED_PTR
+
+/* define if std::tr1 type traits are available. */
+#undef SC_HAS_STD_TR1_TYPE_TRAITS
+
+/* define if std type traits are available. */
+#undef SC_HAS_STD_TYPE_TRAITS
+
+/* define if SC is using <array>. */
+#undef SC_USE_ARRAY
+
+/* define if SC is using <boost/tr1/array.hpp>. */
+#undef SC_USE_BOOST_TR1_ARRAY_HPP
+
+/* define if SC is using <boost/tr1/memory.hpp>. */
+#undef SC_USE_BOOST_TR1_MEMORY_HPP
+
+/* define if SC is using <boost/tr1/type_traits.hpp>. */
+#undef SC_USE_BOOST_TR1_TYPE_TRAITS_HPP
+
+/* define if SC is using <memory>. */
+#undef SC_USE_MEMORY
+
+/* define if SC is using <tr1/array>. */
+#undef SC_USE_TR1_ARRAY
+
+/* define if SC is using <tr1/memory>. */
+#undef SC_USE_TR1_MEMORY
+
+/* define if SC is using <tr1/type_traits>. */
+#undef SC_USE_TR1_TYPE_TRAITS
+
+/* define if SC is using <type_traits>. */
+#undef SC_USE_TYPE_TRAITS
+
 #endif /* _CONFIG_H */
 
 /* 

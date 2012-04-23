@@ -1093,6 +1093,11 @@ fi
 
 SC_C_BIGENDIAN
 
+dnl --------- Checks for C++11 features. ---------
+enable_cpptr1=yes
+acx_with_boost=yes
+ACX_CHECK_CPP11
+
 dnl --------- Checks for libraries. ---------
 dnl -- libpthread should be linked in last.
 dnl -- Check on pthread_join since pthread_create, but not pthread_join,

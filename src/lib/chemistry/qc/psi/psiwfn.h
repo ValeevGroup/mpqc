@@ -56,6 +56,7 @@ namespace sc {
       int nirrep_;
       size_t memory_;
       char *memory_str_;
+      bool compute_1rdm_;
       /// Prepares a complete Psi input file. The input file is assumed to have been opened.
       virtual void write_input(int conv) =0;
 

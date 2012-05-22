@@ -232,6 +232,8 @@ namespace sc {
       strcpy(memory_str_,oss.str().c_str());
     }
     memory_ = bytes;
+
+    compute_1rdm_ = keyval->booleanvalue("compute_1rdm", KeyValValueboolean(false));
   }
 
   PsiWavefunction::~PsiWavefunction() {
@@ -374,6 +376,7 @@ namespace sc {
 
     Ref<PsiInput> psiinput = get_psi_input();
     psiinput->write_defaults(exenv_, dertype);
+    if (compute_1rdm_) psiinput->write_keyword("psi:jobtype", "oeprop");
     psiinput->write_keyword("psi:memory", memory_str_);
     psiinput->write_keyword("psi:convergence", conv);
     psiinput->write_keyword("psi:lindep_cutoff", this->lindep_tol());

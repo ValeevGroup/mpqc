@@ -82,45 +82,48 @@ namespace sc {
   };
 
   namespace mbptr12 {
-    /// Slater1D(k,x) = x^k exp(-a*x)
+    /// Slater1D(k,x) = c x^k exp(-a*x)
     class Slater1D {
       public:
-        Slater1D(double a, int k = 0) :
-          a_(a), k_(k) {
+        Slater1D(double a, int k = 0, double c = 1.0) :
+          a_(a), k_(k), c_(c) {
         }
         double operator()(double x) const {
-          return std::pow(x, k_) * std::exp(-a_ * x);
+          return c_ * std::pow(x, k_) * std::exp(-a_ * x);
         }
       private:
         int k_;
         double a_;
+        double c_;
     };
-    /// Gaussian1D(k,x) = x^k exp(-a*x^2)
+    /// Gaussian1D(k,x) = c x^k exp(-a*x^2)
     class Gaussian1D {
       public:
-        Gaussian1D(double a, int k = 0) :
-          a_(a), k_(k) {
+        Gaussian1D(double a, int k = 0, double c = 1.0) :
+          a_(a), k_(k), c_(c) {
         }
         double operator()(double x) const {
-          return std::pow(x, k_) * std::exp(-a_ * x * x);
+          return c_ * std::pow(x, k_) * std::exp(-a_ * x * x);
         }
       private:
         int k_;
         double a_;
+        double c_;
     };
-    /// PowerGaussian1D(k,l,x) = x^k exp(-a*x^l)
+    /// PowerGaussian1D(k,l,x) = c x^k exp(-a*x^l)
     class PowerGaussian1D {
       public:
-        PowerGaussian1D(double a, int l = 2, int k = 0) :
-          a_(a), k_(k), l_(l) {
+        PowerGaussian1D(double a, int l = 2, int k = 0, double c = 1.0) :
+          a_(a), k_(k), l_(l), c_(c) {
         }
         double operator()(double x) const {
-          return std::pow(x, k_) * std::exp(-a_ * std::pow(x, l_));
+          return c_ * std::pow(x, k_) * std::exp(-a_ * std::pow(x, l_));
         }
       private:
         int k_;
         int l_;
         double a_;
+        double c_;
     };
   }
 

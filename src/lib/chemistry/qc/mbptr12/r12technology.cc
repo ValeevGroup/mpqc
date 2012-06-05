@@ -1124,9 +1124,15 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
       GTGFit gtgfit(ng12, *w, 0.0, 10.0, 1001);
       // fit r12^k exp(-gamma*r_{12})
       const int k = 0;
+      assert(k < 2 && k > 0);
       const double gamma = stg_exponents[f];
       Ref<G12CorrelationFactor> cf;
-      cf << stg_to_g12<G12CorrelationFactor,GTGFit>(gtgfit,gamma,k);
+      double scale;
+      if (k == 0) // fit - e^{-\gamma r12} / \gamma
+        scale = -1.0/gamma;
+      if (k == 1) // fit r12 e^{-\gamma r12}
+        scale = 1.0;
+      cf << stg_to_g12<G12CorrelationFactor,GTGFit>(gtgfit,gamma,k,scale);
       params.push_back(cf->function(0));
       delete w;
     }

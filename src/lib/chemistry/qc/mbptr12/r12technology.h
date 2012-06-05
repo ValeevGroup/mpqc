@@ -458,11 +458,12 @@ class R12Technology: virtual public SavableState {
 
   template<class CorrFactor, class Fitter>
       static Ref<CorrelationFactor> stg_to_g12(const Fitter& fitter,
-                                               double gamma, int k) {
+                                               double gamma, int k,
+                                               double scale = 1.0) {
 
         using sc::mbptr12::Slater1D;
         typedef typename Fitter::Gaussians Gaussians;
-        Slater1D stg(gamma, k);
+        Slater1D stg(gamma, k, scale);
         Gaussians gtgs = fitter(stg);
 
         // feed to the constructor of CorrFactor
@@ -472,8 +473,6 @@ class R12Technology: virtual public SavableState {
         typedef typename Gaussians::const_iterator citer;
         typedef typename Gaussians::iterator iter;
         for (iter g = gtgs.begin(); g != gtgs.end(); ++g) {
-          // scale by -1/gamma
-          g->second /= -gamma;
           geminal.push_back(*g);
         }
         std::vector<ContractedGeminal> geminals(1, geminal);

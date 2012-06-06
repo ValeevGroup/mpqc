@@ -300,7 +300,7 @@ namespace {
     int size_idx3 = f12_ints1->nj();
     // get the number of the contracted indices
     // eg: R^ij_ab R^ab_ij: sum_idx is ab
-    const int size_sum_idx = f12_ints1->nx() * f12_ints1->ny();
+    const blasint size_sum_idx = f12_ints1->nx() * f12_ints1->ny();
 
     // get block indices
     int* f12_blk1_idx1 = &idx1;
@@ -339,7 +339,7 @@ namespace {
       break;
     }
 
-    const int one = 1; // for F77_DDOT
+    const blasint one = 1; // for F77_DDOT
     double* iter_array = f12f12_array;
 
     for (idx1 = 0; idx1 < size_idx1; ++idx1) {
@@ -473,7 +473,7 @@ namespace {
     int size_idx3 = f12_ints1->nj();
     // get the number of the contracted indices
     // eg: R^a'b_ij R^ij_a'c: sum_idx is ij
-    const int size_sum_idx = f12_ints1->nx() * f12_ints1->ny();
+    const blasint size_sum_idx = f12_ints1->nx() * f12_ints1->ny();
 
     // get block indices
     int* f12_blk1_idx1 = &idx1;
@@ -516,7 +516,7 @@ namespace {
     // test
 //    ExEnv::out0() << "size of indices: " << size_idx1 << size_idx2 << size_idx3 << endl;
 
-    const int one = 1; // for F77_DDOT
+    const blasint one = 1; // for F77_DDOT
     double* iter_array = f12f12_array;
 
       for (idx1 = 0; idx1 < size_idx1; ++idx1) {
@@ -662,7 +662,7 @@ namespace {
 
     int size_idx1 = f12_ints->ni();
     int size_idx3 = f12_ints->nj();
-    const int nij = f12_ints->nx() * f12_ints->ny();
+    const blasint nij = f12_ints->nx() * f12_ints->ny();
 
     // get block indices
     int* f12_blk_idx1 = &idx1;
@@ -709,7 +709,7 @@ namespace {
       break;
     }
 
-    const int one = 1; // for F77_DDOT
+    const blasint one = 1; // for F77_DDOT
     double* iter_RT2 = RT2;
 
     // index 1: a', index 2: a, index 3: b
@@ -2513,8 +2513,8 @@ void MP2R12Energy_Diag::compute_RR31_32_spin(const int orbitals_label,
        const string RR_label1 = "testing result for R^B'A'_IJ R^IJ_B'A";
        const string RR_label2 = "testing result for R^A'B'_IJ R^IJ_B'A";
 
-       const int one = 1;
-       const int nocc12 = nocc_act * nocc_act;
+       const blasint one = 1;
+       const blasint nocc12 = nocc_act * nocc_act;
        const int size_idx3 = ncabs;
 
        double* RR = new double[size_idx1 * size_idx2];
@@ -2770,8 +2770,8 @@ void MP2R12Energy_Diag::compute_RR31_32_spin(const int orbitals_label,
            const int size_idx3 = cabs2->rank();
 
 
-           const int one = 1;
-           const int nocc12 = nocc_alpha * nocc_beta;
+           const blasint one = 1;
+           const blasint nocc12 = nocc_alpha * nocc_beta;
            double* RR = new double[size_idx1 * size_idx2];
 
            double* iter_RR = RR;
@@ -2894,8 +2894,8 @@ void MP2R12Energy_Diag::compute_RR31_32_spin(const int orbitals_label,
              const int size_idx2 = vir2->rank();
              const int size_idx3 = cabs1->rank();
 
-             const int one = 1;
-             const int nocc12 = nocc_alpha * nocc_beta;
+             const blasint one = 1;
+             const blasint nocc12 = nocc_alpha * nocc_beta;
              double* RR = new double[size_idx1 * size_idx2];
 
              double* iter_RR = RR;
@@ -3299,8 +3299,8 @@ void MP2R12Energy_Diag::compute_Dcb(const int nspincases1, const int nspincases2
 //                          RRapb_apc);
 
      double* iter_array = RRapb_apc;
-     const int one = 1;
-     const int nocc12 = nocc_act * nocc_act;
+     const blasint one = 1;
+     const blasint nocc12 = nocc_act * nocc_act;
      for (int c = 0; c < nvir; ++c) {
        for(int b = 0; b < nvir; ++b) {
 
@@ -3398,7 +3398,7 @@ void MP2R12Energy_Diag::compute_Dcb(const int nspincases1, const int nspincases2
 //                              ap2a1i1i2_f12_ints, ap2a1i1i2_f12_ints,
 //                              RR4); // R^a'b_ij R^ij_a'c
 
-         const int nocc12 = nocc_alpha * nocc_beta;
+         const blasint nocc12 = nocc_alpha * nocc_beta;
 
          iter_array = RR1;
          for (int c = 0; c < nvir; ++c) {
@@ -3651,8 +3651,8 @@ void MP2R12Energy_Diag::compute_Dcpbp_a(const int nspincases1, const int nspinca
 
      // R^ab'_ij R^ij_ac'
      double* iter_array = RRabp_acp;
-     const int one = 1;
-     const int nocc12 = nocc_act * nocc_act;
+     const blasint one = 1;
+     const blasint nocc12 = nocc_act * nocc_act;
      for (int cp = 0; cp < ncabs; ++cp) {
        for(int bp = 0; bp < ncabs; ++bp) {
 
@@ -3725,7 +3725,7 @@ void MP2R12Energy_Diag::compute_Dcpbp_a(const int nspincases1, const int nspinca
        fill_n(RR3, ncabs12, 0.0);
        fill_n(RR4, ncabs12, 0.0);
 
-       const int nocc12 = nocc_alpha * nocc_beta;
+       const blasint nocc12 = nocc_alpha * nocc_beta;
 
        if (spin == Alpha) {
          Ref<DistArray4> ap1a2i1i2_f12_ints;
@@ -4057,8 +4057,8 @@ void MP2R12Energy_Diag::compute_Dcpbp_ap(const int nspincases1, const int nspinc
 
      // R^a'b'_ij R^ij_a'c'
      double* iter_array = RRapbp_apcp;
-     const int one = 1;
-     const int nocc12 = nocc_act * nocc_act;
+     const blasint one = 1;
+     const blasint nocc12 = nocc_act * nocc_act;
      for (int cp = 0; cp < ncabs; ++cp) {
        for(int bp = 0; bp < ncabs; ++bp) {
 
@@ -4130,7 +4130,7 @@ void MP2R12Energy_Diag::compute_Dcpbp_ap(const int nspincases1, const int nspinc
        fill_n(RR3, ncabs12, 0.0);
        fill_n(RR4, ncabs12, 0.0);
 
-       const int nocc12 = nocc_alpha * nocc_beta;
+       const blasint nocc12 = nocc_alpha * nocc_beta;
        Ref<DistArray4> ap1ap2i1i2_f12_ints;
        Ref<DistArray4> ap2ap1i1i2_f12_ints;
        activate_ints(cabs1->id(), cabs2->id(), occ1_act->id(), occ2_act->id(),
@@ -4591,14 +4591,14 @@ void MP2R12Energy_Diag::compute_RT2_apa(const int nspincases1, const int nspinca
            // test compute_RTmp2_sum_3idx function explicitly
 #if 0
          {
-           const int nij = nocc_alpha * nocc_beta;
+           const blasint nij = nocc_alpha * nocc_beta;
            const int na = nvir;
            const int nb = nvir2;
            double* const F12T2_1 = new double[ncabs_vir];
 //           double* const F12T2_2 = new double[ncabs_vir];
            double* iter_F12T2_1 = F12T2_1;
 //           double* iter_F12T2_2 = F12T2_2;
-           const int one = 1;
+           const blasint one = 1;
            for (int ap = 0; ap < ncabs; ++ap) {
              for(int a = 0; a < na; ++a) {
 
@@ -5099,7 +5099,7 @@ void MP2R12Energy_Diag::compute_RTmp2_apa(const int nspincases1, const int nspin
      // test R^ij_a'b * T^ab_ij & R^ij_ba' * T^ab_ij
 #if 0
      {
-       const int nij = nocc_act * nocc_act;
+       const blasint nij = nocc_act * nocc_act;
        const int na = nvir;
        const int nb = nvir;
        double* const F12T2_1 = new double[ncabs_vir];
@@ -5107,7 +5107,7 @@ void MP2R12Energy_Diag::compute_RTmp2_apa(const int nspincases1, const int nspin
        double* iter_F12T2_1 = F12T2_1;
        double* iter_F12T2_2 = F12T2_2;
 
-       const int one = 1;
+       const blasint one = 1;
        for (int ap = 0; ap < ncabs; ++ap) {
          for(int a = 0; a < na; ++a) {
 
@@ -5185,14 +5185,14 @@ void MP2R12Energy_Diag::compute_RTmp2_apa(const int nspincases1, const int nspin
          // test R^ij_a'b * T^ab_ij & R^ij_ba' * T^ab_ij
 #if 0
          {
-           const int nij = nocc_alpha * nocc_beta;
+           const blasint nij = nocc_alpha * nocc_beta;
            const int na = nvir;
            const int nb = nvir_beta;
            double* const F12T2_1 = new double[ncabs_vir];
            double* const F12T2_2 = new double[ncabs_vir];
            double* iter_F12T2_1 = F12T2_1;
            double* iter_F12T2_2 = F12T2_2;
-           const int one = 1;
+           const blasint one = 1;
            for (int ap = 0; ap < ncabs; ++ap) {
              for(int a = 0; a < na; ++a) {
 
@@ -5251,7 +5251,7 @@ void MP2R12Energy_Diag::compute_RTmp2_apa(const int nspincases1, const int nspin
            // test R^ij_ba' * T^ba_ij & R^ij_a'b * T^ba_ij
 #if 0
            {
-             const int nij = nocc_alpha * nocc_beta;
+             const blasint nij = nocc_alpha * nocc_beta;
              const int na = nvir;
              const int nb = nvir_alpha;
              double* const F12T2_1 = new double[ncabs_vir];
@@ -5259,7 +5259,7 @@ void MP2R12Energy_Diag::compute_RTmp2_apa(const int nspincases1, const int nspin
              double* iter_F12T2_1 = F12T2_1;
              double* iter_F12T2_2 = F12T2_2;
 
-             const int one = 1;
+             const blasint one = 1;
              for (int ap = 0; ap < ncabs; ++ap) {
                for(int a = 0; a < na; ++a) {
 

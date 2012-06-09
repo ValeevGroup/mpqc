@@ -92,7 +92,7 @@ R12IntEval::compute_BB_()
     const Ref<OrbitalSpace>& GGspace2 = GGspace(spin2);
 
 #if INCLUDE_Q
-    const bool include_Kp = abs_eq_obs;
+    const bool include_Kp = true;
 
     std::string Qlabel = prepend_spincase(spincase2,"Q intermediate");
     Timer tim_Q(Qlabel);

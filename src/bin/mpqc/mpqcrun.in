@@ -51,6 +51,15 @@ if ("$always_use_mpi" eq "yes") {
 # The integral specialization
 $integral = "none";
 
+# The memory size
+$memorysize = "default";
+
+# The disk size
+$disksize = "default";
+
+# The disk location
+$diskpath = "default";
+
 # The mpi launch command
 $launch = '@LAUNCH@';
 
@@ -149,6 +158,9 @@ if (!GetOptions("small!" => \$small,
                 "memorygrp=s" => \$memorygrp,
                 "messagegrp=s" => \$messagegrp,
                 "integral=s" => \$integral,
+                "memorysize=s" => \$memorysize,
+                "disksize=s" => \$disksize,
+                "diskpath=s" => \$diskpath,
                 "nnodeperjob=i" => \$nnodeperjob,
                 "nthreadperproc=i" => \$nthreadperproc,
                 "nprocpernode=i" => \$nprocpernode,
@@ -217,7 +229,14 @@ if ($help) {
     print  "                     none: uses MPQC's default\n";
     print  "                     intv3: this package is distributed with MPQC\n";
     print  "                     cints: the libint package (required for MP2-R12)\n";
-    print  "                     libint2: the libint2 package (required for MP2-R12 with Gaussian geminals)\n";
+    print  "                     libint2: the libint2 package (required for MP2-F12)\n";
+    print  "  --memorysize s     use the specified amount of memory (value: $memorysize)\n";
+    print  "                     examples of valid values: 0 (=unlimited),  32000000, 32000KB 32MB, 0.032GB, 0.000032TB\n";
+    print  "                     the default is to assume unlimited amount of memory\n";
+    print  "  --diskpath s       the location for temporary high-speed storage (value: $diskpath)\n";
+    print  "                     the default is the current working directory, ./  \n";
+    print  "  --disksize s       use the specified amount of storage, similar to --memorysize (value: $disksize)\n";
+    print  "                     the default is to assume unlimited amount of storage\n";
     printf "  --launch cmd       use the given cmd to launch jobs--see below (value: %s)\n",
           (($launch eq "")?"<not set>":$launch);
     printf "  --nodefile file    a file listing nodes to use (value: %s)\n",
@@ -421,6 +440,23 @@ elsif ($integral eq "libint2") {
 }
 elsif ($integral eq "intv3") {
   $ENV{"INTEGRAL"} = "<IntegralV3>:()";
+}
+
+######################################################################
+
+$resource_str = "";
+if ($memorysize ne "default") {
+  $have_resource = 1;
+  $resource_str .= "memory = \"$memorysize\"";
+}
+if ($diskpath ne "default" || $disksize ne "default") {
+  $have_resource = 1;
+  $disksize = "-1" if $disksize eq "default";
+  $diskpath = "./" if $diskpath eq "default";
+  $resource_str .= "disk = [\"$diskpath\" \"$disksize\"]";
+}
+if ($have_resource) {
+  $ENV{"SC_RESOURCES"} = "<ConsumableResources>:( $resource_str )";
 }
 
 ######################################################################

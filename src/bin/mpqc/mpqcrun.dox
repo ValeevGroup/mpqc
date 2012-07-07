@@ -53,6 +53,14 @@ mpqcrun takes the following command line options:
        <dt>grp=<tt>mtmpi</tt><dd>Use multi-threaded MPI.
        <dt>grp=<tt>armci</tt><dd>Use ARMCI.
   </dl>
+  <dt><tt>--memorysize</tt> s<dd>Use at most the specified amount of memory.
+                                 Examples of valid values: 0 (=unlimited),  32000000, 32000KB 32MB, 0.032GB, 0.000032TB.
+                                 The default is to assume an unlimited amount of memory.
+  <dt><tt>--diskpath</tt> s<dd>The location for temporary high-speed storage. Directory name should end in "/",
+                               for example: --diskpath="/scratch/evaleev/". By default temporary files will be written
+                               to the current working directory, i.e. ./ .
+  <dt><tt>--disksize</tt> s<dd>Use at most the specified amount of disk storage. See also <tt>--memorysize</tt>.
+                               The default is to assume an unlimited amount ofdisk  storage.
   <dt><tt>--launch</tt> cmd<dd>Use the given command to launch jobs. See below.
   <dt><tt>--nodefile</tt> file<dd>Specifies a file listing nodes to use.
                                  Duplicated nodes are removed.

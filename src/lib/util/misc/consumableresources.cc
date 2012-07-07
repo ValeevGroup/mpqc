@@ -65,10 +65,8 @@ ConsumableResources::ConsumableResources(const Ref<KeyVal>& kv) {
                        "disk", "", class_desc());
 
   disk_.first = kv->stringvalue("disk", 0, KeyValValuestring(defaults::disk.first));
-  size_t disk_size = kv->sizevalue("disk", 1, KeyValValuesize(defaults::disk.second));
-  if (disk_size == 0)
-    disk_.second = rsize(std::numeric_limits<size_t>::max());
-
+  const size_t disk_size = kv->sizevalue("disk", 1, KeyValValuesize(defaults::disk.second));
+  disk_.second = (disk_size == 0) ? rsize(std::numeric_limits<size_t>::max()) : rsize(disk_size);
 }
 
 ConsumableResources::ConsumableResources(StateIn& si) : SavableState(si) {

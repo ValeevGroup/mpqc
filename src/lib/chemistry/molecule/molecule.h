@@ -293,7 +293,7 @@ class Molecule: public SavableState
                                     int number_atoms = 1) const;
 
     /// in which units Molecule was specified and in which units it will be reported
-    const Ref<Units>& geometry_units() const { return geometry_units_; }
+    Ref<Units> geometry_units() const { return geometry_units_; }
 
     /// Returns the number of atoms in the molecule.
     int natom() const { return natoms_; }

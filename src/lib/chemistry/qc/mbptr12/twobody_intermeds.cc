@@ -434,6 +434,10 @@ std::vector<Ref<DistArray4> > R12IntEval::V_distarray4(
                                                        const Ref<OrbitalSpace>& p1,
                                                        const Ref<OrbitalSpace>& p2) {
 
+  const bool include_diag =  true; // set to false to skip the "diagonal" (f12/r12) constribution
+  const bool include_obs  =  true; // set to false to skip the P1 P2 part of the projector
+  const bool include_cabs =  true; // set to false to skip the A1 O2 + O1 A2 part of the projector
+
   const bool obs_eq_ribs = r12world()->obs_eq_ribs();
   const bool obs_eq_vbs = r12world()->obs_eq_vbs();
 
@@ -467,6 +471,7 @@ std::vector<Ref<DistArray4> > R12IntEval::V_distarray4(
   const bool p1p2_eq_x1x2 = (p1 == x1) && (p2 == x2);
 
   // The diagonal contribution
+  if (include_diag) {
   Ref<R12Technology::G12CorrelationFactor> g12ptr;
   g12ptr << corrfactor();
   Ref<R12Technology::G12NCCorrelationFactor> g12ncptr;
@@ -504,49 +509,154 @@ std::vector<Ref<DistArray4> > R12IntEval::V_distarray4(
       }
     }
   }
-  if (debug_ >= DefaultPrintThresholds::O4) {
+  if (debug_ >= DefaultPrintThresholds::allO2N2) {
     for (int s = 0; s < V.size(); ++s)
       _print(spincase2, V[s],
              prepend_spincase(spincase2, "Vpqxy: diag contribution").c_str());
   }
-
-  std::vector<std::string> tforms;
-  std::vector<std::string> tforms_f12;
-  {
-    R12TwoBodyIntKeyCreator
-        tformkey_creator(moints_runtime4(), x1, orbs1, x2, orbs2,
-                         corrfactor(), true);
-    fill_container(tformkey_creator, tforms_f12);
-  }
-  if (!p1p2_eq_x1x2) {
-    const std::string
-        tform_key =
-            ParsedTwoBodyFourCenterIntKey::key(
-                                               p1->id(),
-                                               p2->id(),
-                                               orbs1->id(),
-                                               orbs2->id(),
-                                               std::string("ERI"),
-                                               std::string(
-                                                           TwoBodyIntLayout::b1b2_k1k2));
-    tforms.push_back(tform_key);
-  } else
-    tforms.push_back(tforms_f12[0]);
-
-  contract_tbint_tensor<true, false> (V, corrfactor()->tbint_type_f12(),
-                                        corrfactor()->tbint_type_eri(), -1.0,
-                                        x1, x2, orbs1, orbs2, p1, p2,
-                                        orbs1, orbs2, antisymmetrize,
-                                        tforms_f12, tforms);
-
-  if (debug_ >= DefaultPrintThresholds::O4) {
-    for (int s = 0; s < V.size(); ++s)
-      _print(
-             spincase2,
-             V[s],
-             prepend_spincase(spincase2, "Vpqxy: diag+OBS contribution").c_str());
   }
 
+  if (include_obs) {
+    const bool SplitPQContributions = false;  // set to true to evaluate PQ as AB + AN + MB + MN
+
+    if (not SplitPQContributions) {
+      std::vector<std::string> tforms;
+      std::vector<std::string> tforms_f12;
+      {
+        R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(), x1, orbs1,
+                                                 x2, orbs2, corrfactor(), true);
+        fill_container(tformkey_creator, tforms_f12);
+      }
+      if (!p1p2_eq_x1x2) {
+        const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(
+            p1->id(), p2->id(), orbs1->id(), orbs2->id(), std::string("ERI"),
+            std::string(TwoBodyIntLayout::b1b2_k1k2));
+        tforms.push_back(tform_key);
+      } else
+        tforms.push_back(tforms_f12[0]);
+
+      contract_tbint_tensor<true, false>(V, corrfactor()->tbint_type_f12(),
+                                         corrfactor()->tbint_type_eri(), -1.0,
+                                         x1, x2, orbs1, orbs2, p1, p2, orbs1,
+                                         orbs2, antisymmetrize, tforms_f12,
+                                         tforms);
+    } // PQ
+    else { // split PQ = AB + AN + MB + MN
+      const bool include_AB = true;
+      const bool include_AN = true;
+      const bool include_MB = true;
+      const bool include_MN = true;
+
+      const Ref<OrbitalSpace>& vir1 = vir(spin1);
+      const Ref<OrbitalSpace>& vir2 = vir(spin2);
+      const Ref<OrbitalSpace>& occ1 = occ(spin1);
+      const Ref<OrbitalSpace>& occ2 = occ(spin2);
+
+      if (include_AB) {
+        std::vector<std::string> tforms;
+        std::vector<std::string> tforms_f12;
+        const Ref<OrbitalSpace>& i1 = vir1;
+        const Ref<OrbitalSpace>& i2 = vir2;
+        {
+          R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(), x1, i1,
+                                                   x2, i2, corrfactor(), true);
+          fill_container(tformkey_creator, tforms_f12);
+        }
+        {
+          const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(
+              p1->id(), p2->id(), i1->id(), i2->id(), std::string("ERI"),
+              std::string(TwoBodyIntLayout::b1b2_k1k2));
+          tforms.push_back(tform_key);
+        }
+        contract_tbint_tensor<true, false>(V, corrfactor()->tbint_type_f12(),
+                                           corrfactor()->tbint_type_eri(), -1.0,
+                                           x1, x2, i1, i2,
+                                           p1, p2, i1, i2,
+                                           antisymmetrize, tforms_f12,
+                                           tforms);
+      }
+      if (include_MN) {
+        std::vector<std::string> tforms;
+        std::vector<std::string> tforms_f12;
+        const Ref<OrbitalSpace>& i1 = occ1;
+        const Ref<OrbitalSpace>& i2 = occ2;
+        {
+          R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(), x1, i1,
+                                                   x2, i2, corrfactor(), true);
+          fill_container(tformkey_creator, tforms_f12);
+        }
+        {
+          const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(
+              p1->id(), p2->id(), i1->id(), i2->id(), std::string("ERI"),
+              std::string(TwoBodyIntLayout::b1b2_k1k2));
+          tforms.push_back(tform_key);
+        }
+        contract_tbint_tensor<true, false>(V, corrfactor()->tbint_type_f12(),
+                                           corrfactor()->tbint_type_eri(), -1.0,
+                                           x1, x2, i1, i2,
+                                           p1, p2, i1, i2,
+                                           antisymmetrize, tforms_f12,
+                                           tforms);
+      }
+      if (include_MB) {
+        std::vector<std::string> tforms;
+        std::vector<std::string> tforms_f12;
+        const Ref<OrbitalSpace>& i1 = occ1;
+        const Ref<OrbitalSpace>& i2 = vir2;
+        {
+          R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(), x1, i1,
+                                                   x2, i2, corrfactor(), true);
+          fill_container(tformkey_creator, tforms_f12);
+        }
+        {
+          const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(
+              p1->id(), p2->id(), i1->id(), i2->id(), std::string("ERI"),
+              std::string(TwoBodyIntLayout::b1b2_k1k2));
+          tforms.push_back(tform_key);
+        }
+        contract_tbint_tensor<true, false>(V, corrfactor()->tbint_type_f12(),
+                                           corrfactor()->tbint_type_eri(), -1.0,
+                                           x1, x2, i1, i2,
+                                           p1, p2, i1, i2,
+                                           antisymmetrize, tforms_f12,
+                                           tforms);
+      }
+      if (include_AN) {
+        std::vector<std::string> tforms;
+        std::vector<std::string> tforms_f12;
+        const Ref<OrbitalSpace>& i1 = vir1;
+        const Ref<OrbitalSpace>& i2 = occ2;
+        {
+          R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(), x1, i1,
+                                                   x2, i2, corrfactor(), true);
+          fill_container(tformkey_creator, tforms_f12);
+        }
+        {
+          const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(
+              p1->id(), p2->id(), i1->id(), i2->id(), std::string("ERI"),
+              std::string(TwoBodyIntLayout::b1b2_k1k2));
+          tforms.push_back(tform_key);
+        }
+        contract_tbint_tensor<true, false>(V, corrfactor()->tbint_type_f12(),
+                                           corrfactor()->tbint_type_eri(), -1.0,
+                                           x1, x2, i1, i2,
+                                           p1, p2, i1, i2,
+                                           antisymmetrize, tforms_f12,
+                                           tforms);
+      }
+
+    }
+
+    if (debug_ >= DefaultPrintThresholds::allO2N2) {
+      for (int s = 0; s < V.size(); ++s)
+        _print(
+            spincase2,
+            V[s],
+            prepend_spincase(spincase2, "Vpqxy: diag+OBS contribution").c_str());
+    }
+  }
+
+  if (include_cabs) {
   // These terms only contribute if Projector=2
   if (!obs_eq_ribs && ansatz()->projector() == R12Technology::Projector_2) {
 
@@ -629,12 +739,13 @@ std::vector<Ref<DistArray4> > R12IntEval::V_distarray4(
       symmetrize(V[s]);
   }
 
-  if (debug_ >= DefaultPrintThresholds::O4) {
+  if (debug_ >= DefaultPrintThresholds::allO2N2) {
     for (int s = 0; s < V.size(); ++s)
       _print(
              spincase2,
              V[s],
              prepend_spincase(spincase2, "Vpqxy: diag+OBS+ABS contribution").c_str());
+  }
   }
 
   return V;

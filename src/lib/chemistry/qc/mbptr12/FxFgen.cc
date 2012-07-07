@@ -127,7 +127,7 @@ R12IntEval::compute_FxF_(RefSCMatrix& FxF,
   using mbptr12::TwoParticleContraction;
   using mbptr12::Direct_Contraction;
 
-  // If only x1_2 or 1_x2 is computed (this happens only is p1 not equiv p2), need to double its weight.
+  // If only x1_2 or 1_x2 is computed (this happens only if p1 is equiv to p2), need to double its weight; symmetrization later will take care of things
   const double perm_pfac = (part1_equiv_part2 ? 2.0 : 1.0);
 
   if (do_x1_2) {

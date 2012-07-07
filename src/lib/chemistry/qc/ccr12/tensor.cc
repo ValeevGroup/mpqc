@@ -32,7 +32,8 @@
 #include <cmath>
 #include <numeric>
 #include <sstream>
-#include <stdio.h>
+#include <cstdio>
+#include <unistd.h>
 #include <util/misc/exenv.h>
 #include <util/misc/exenv.h>
 #include <math/scmat/blas.h>

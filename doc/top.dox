@@ -2,13 +2,12 @@
 /** \mainpage The Massively Parallel Quantum Chemistry Program (MPQC) and the Scientific Computing Toolkit (SC)
 
 The Massively Parallel Quantum Chemistry program (MPQC) computes
-the properties of molecules, <i>ab initio</i>, on a wide variety
-of computer architectures.
-The Scientific Computing toolkit (SC) provides C++ class libraries for
-scientific computation.  Included are classes for managing memory, saving
-and restoring the state of objects, reading objects from an input file,
+the properties of molecules using first-principles quantum mechanics on a wide variety
+of parallel computer architectures. The MPQC program is implemented using the Scientific Computing toolkit (SC).
+The SC toolkit is a collection of C++ libraries that support
+general scientific computation. Included are classes for managing memory, saving
+and restoring the state of objects, reading objects from a structured-text input file,
 parallel communication, matrix algebra, among others.
-
 
 MPQC and SC are research projects intended primarily for the use by
 expert computational scientists to develop

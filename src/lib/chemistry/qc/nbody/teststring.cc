@@ -44,20 +44,20 @@ int main(int argc, char **argv) {
     // test empty string
     //
     FermionOccupationNBitString<128> os0;
-    std::cout << "os0 = " << os0 << std::endl;
+    std::cout << "os0 = " << os0 << " hash = " << os0.hash_value() << std::endl;
     std::cout << "os0 empty? " << (os0.empty() ? "true" : "false")
         << " (should be true)" << std::endl;
 
     //
     // test non-empty string
     //
-    std::vector<FermionOccupationNBitString<128>::state_index_t> sv1;
+    std::vector<FermionOccupationNBitString<128>::state_index_type> sv1;
     sv1.push_back(0);
     sv1.push_back(5);
     sv1.push_back(73);
 
-    FermionOccupationNBitString<128> os1(sv1);
-    std::cout << "os1 = " << os1 << std::endl;
+    FermionOccupationNBitString<128> os1(128, sv1);
+    std::cout << "os1 = " << os1 << " hash = " << os1.hash_value() << std::endl;
     std::cout << "os1 empty? " << (os1.empty() ? "true" : "false")
         << " (should be false)" << std::endl;
     std::cout << "# of occupied states in os1 = " << os1.count()
@@ -80,20 +80,20 @@ int main(int argc, char **argv) {
     // test empty string
     //
     FermionOccupationDBitString os0(127);
-    std::cout << "os0 = " << os0 << std::endl;
+    std::cout << "os0 = " << os0 << " hash = " << os0.hash_value() << std::endl;
     std::cout << "os0 empty? " << (os0.empty() ? "true" : "false")
         << " (should be true)" << std::endl;
 
     //
     // test non-empty string
     //
-    std::vector<FermionOccupationDBitString::state_index_t> sv1;
+    std::vector<FermionOccupationDBitString::state_index_type> sv1;
     sv1.push_back(0);
     sv1.push_back(5);
     sv1.push_back(73);
 
     FermionOccupationDBitString os1(127, sv1);
-    std::cout << "os1 = " << os1 << std::endl;
+    std::cout << "os1 = " << os1 << " hash = " << os1.hash_value() << std::endl;
     std::cout << "os1 empty? " << (os1.empty() ? "true" : "false")
         << " (should be false)" << std::endl;
     std::cout << "# of occupied states in os1 = " << os1.count()
@@ -108,14 +108,14 @@ int main(int argc, char **argv) {
     // test empty string
     //
     FermionOccupationBlockString os0(127);
-    std::cout << "os0 = " << os0 << std::endl;
+    std::cout << "os0 = " << os0 << " hash = " << os0.hash_value() << std::endl;
     std::cout << "os0 empty? " << (os0.empty() ? "true" : "false")
         << " (should be true)" << std::endl;
 
     //
     // test non-empty string
     //
-    std::vector<FermionOccupationBlockString::state_index_t> sv1;
+    std::vector<FermionOccupationBlockString::state_index_type> sv1;
     sv1.push_back(0);
     sv1.push_back(1);
     sv1.push_back(2);
@@ -125,7 +125,7 @@ int main(int argc, char **argv) {
     sv1.push_back(73);
 
     FermionOccupationBlockString os1(127, sv1);
-    std::cout << "os1 = " << os1 << std::endl;
+    std::cout << "os1 = " << os1 << " hash = " << os1.hash_value() << std::endl;
     std::cout << "os1 empty? " << (os1.empty() ? "true" : "false")
         << " (should be false)" << std::endl;
     std::cout << "# of occupied states in os1 = " << os1.count()

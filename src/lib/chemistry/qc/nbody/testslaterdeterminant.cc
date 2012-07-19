@@ -30,22 +30,30 @@
 #endif
 
 #include <map>
-#include "string.h"
 #include <iostream>
+#include <unordered_set>
+#include <unordered_map>
+#include <time.h>
+#include <cxxabi.h>
+#include "string.h"
 
 using namespace sc;
 
-template <typename RandomAccessStringIterator>
-class SlaterDeterminantSet {
+/**
+ * Implements a "dense" set of Slater determinants
+ * @tparam stringset_type container that provides random-access iterators
+ */
+template <typename stringset_type>
+class SlaterDeterminantDenseSet {
 
   public:
-
-    typedef typename RandomAccessStringIterator::value_type String;
+    typedef typename stringset_type::const_iterator string_iterator;
+    typedef typename string_iterator::value_type String;
 
     struct SlaterDeterminant {
       public:
-        SlaterDeterminant(const RandomAccessStringIterator& as,
-                          const RandomAccessStringIterator& bs) : astr(as), bstr(bs) {}
+        SlaterDeterminant(const string_iterator& as,
+                          const string_iterator& bs) : astr(as), bstr(bs) {}
 
         bool operator<(const SlaterDeterminant& other) const {
           if (astr == other.astr)
@@ -55,15 +63,15 @@ class SlaterDeterminantSet {
         }
 
         /// alpha string
-        RandomAccessStringIterator astr;
+        string_iterator astr;
         /// beta string
-        RandomAccessStringIterator bstr;
+        string_iterator bstr;
     };
 
-    SlaterDeterminantSet(RandomAccessStringIterator abegin,
-                         RandomAccessStringIterator aend,
-                         RandomAccessStringIterator bbegin,
-                         RandomAccessStringIterator bend,
+    SlaterDeterminantDenseSet(string_iterator abegin,
+                         string_iterator aend,
+                         string_iterator bbegin,
+                         string_iterator bend,
                          bool full_ci = false) :
                          abegin_(abegin),
                          aend_(aend),
@@ -74,13 +82,13 @@ class SlaterDeterminantSet {
                          {
                          }
 
-    size_t add(RandomAccessStringIterator astr,
-               RandomAccessStringIterator bstr) {
+    size_t add(string_iterator astr,
+               string_iterator bstr) {
       const size_t num_sd = sdset_.size();
       sdset_[SlaterDeterminant(astr,bstr)] = num_sd;
     }
-    size_t safe_add(RandomAccessStringIterator astr,
-                    RandomAccessStringIterator bstr) {
+    size_t safe_add(string_iterator astr,
+                    string_iterator bstr) {
       SlaterDeterminant sd(astr,bstr);
       if (sdset_.find(sd) == sdset_.end()) {
         const size_t num_sd = sdset_.size();
@@ -88,8 +96,8 @@ class SlaterDeterminantSet {
       }
     }
 
-    long long find(RandomAccessStringIterator astr,
-                   RandomAccessStringIterator bstr) const {
+    long long find(string_iterator astr,
+                   string_iterator bstr) const {
       if (full_ci_) {
         return (astr - abegin_) * num_bstr_ + (bstr - bbegin_);
       }
@@ -99,8 +107,8 @@ class SlaterDeterminantSet {
       }
     }
 
-    long long safe_find(RandomAccessStringIterator astr,
-                        RandomAccessStringIterator bstr) const {
+    long long safe_find(string_iterator astr,
+                        string_iterator bstr) const {
       if (full_ci_) {
         return (astr - abegin_) * num_bstr_ + (bstr - bbegin_);
       }
@@ -124,51 +132,211 @@ class SlaterDeterminantSet {
     }
 
   private:
-    RandomAccessStringIterator abegin_;
-    RandomAccessStringIterator aend_;
-    RandomAccessStringIterator bbegin_;
-    RandomAccessStringIterator bend_;
+    string_iterator abegin_;
+    string_iterator aend_;
+    string_iterator bbegin_;
+    string_iterator bend_;
     size_t num_bstr_;
     bool full_ci_;
     typedef std::map<SlaterDeterminant, size_t> SDContainer;
     SDContainer sdset_;
 };
 
+/**
+ * Implements "sparse" set of Slater determinants.
+ * @tparam stringset_type container that provides forward iterators
+ */
+template <typename stringset_type>
+class SlaterDeterminantSparseSet {
+
+  public:
+    typedef typename stringset_type::const_iterator string_iterator;
+    typedef typename stringset_type::value_type String;
+
+    struct SlaterDeterminant {
+      public:
+        SlaterDeterminant(string_iterator as,
+                          string_iterator bs) : str(std::make_pair(as,bs)) {}
+
+        bool operator==(const SlaterDeterminant& other) const {
+          return str == other.str;
+        }
+
+        size_t hash_value() const {
+          boost::hash< std::pair<const String*,const String*> > h;
+          return h(std::make_pair(&(*str.first),&(*str.second)));
+        }
+
+        struct hash {
+            size_t operator()(const SlaterDeterminant& d) const {
+              return d.hash_value();
+            }
+        };
+
+        /// {alpha,beta} string
+        std::pair<string_iterator,string_iterator> str;
+    };
+
+    SlaterDeterminantSparseSet(const stringset_type& astrings,
+                               const stringset_type& bstrings) :
+                                 astrings_(astrings),
+                                 bstrings_(bstrings)
+                         {
+                         }
+
+    size_t insert(string_iterator astr,
+                  string_iterator bstr) {
+      const size_t num_sd = sdset_.size();
+      sdset_[SlaterDeterminant(astr,bstr)] = num_sd;
+    }
+    size_t safe_insert(string_iterator astr,
+                      string_iterator bstr) {
+      SlaterDeterminant sd(astr,bstr);
+      if (sdset_.find(sd) == sdset_.end()) {
+        const size_t num_sd = sdset_.size();
+        sdset_[SlaterDeterminant(astr,bstr)] = num_sd;
+      }
+    }
+
+    long long find(string_iterator astr,
+                   string_iterator bstr) const {
+      auto result_iter = sdset_.find(SlaterDeterminant(astr,bstr));
+      return (*result_iter).second;
+    }
+
+    long long safe_find(string_iterator astr,
+                        string_iterator bstr) const {
+      auto result_iter = sdset_.find(SlaterDeterminant(astr,bstr));
+      if (result_iter != sdset_.end())
+        return (*result_iter).second;
+      else
+        return -1;
+    }
+
+  private:
+    const stringset_type& astrings_;
+    const stringset_type& bstrings_;
+    typedef std::unordered_map<SlaterDeterminant, size_t, typename SlaterDeterminant::hash> SDContainer;
+    SDContainer sdset_;
+};
+
+template <typename FString>
+int try_main(int argc, char **argv);
+
 int main(int argc, char **argv) {
 
+  //typedef FermionOccupationNBitString<64> FString;
   typedef FermionOccupationDBitString FString;
   //typedef FermionOccupationBlockString FString;
-  typedef std::vector<FString> stringset_t;
-  typedef stringset_t::const_iterator stringsetiter_t;
 
-  stringset_t strings;
-  {
-    std::vector<FString::state_index_t> sv1;
-    sv1.push_back(0);
-    sv1.push_back(1);
-
-    strings.push_back( FString(4, sv1) );
-
-    sv1[1] = 2;
-    strings.push_back( FString(4, sv1) );
-    sv1[1] = 3;
-    strings.push_back( FString(4, sv1) );
-    sv1[0] = 2;
-    strings.push_back( FString(4, sv1) );
-
+  try {
+    try_main<FermionOccupationNBitString<64> >(argc, argv);
+    try_main<FermionOccupationNBitString<128> >(argc, argv);
+    try_main<FermionOccupationNBitString<256> >(argc, argv);
+    try_main<FermionOccupationDBitString>(argc, argv);
+    try_main<FermionOccupationBlockString>(argc, argv);
+  }
+  catch(...) {
+    std::cerr << "caught an exception, bye-bye" << std::endl;
+    return 1;
   }
 
-  SlaterDeterminantSet<stringsetiter_t> sdset(strings.begin(), strings.end(), strings.begin(), strings.end(), true);
-  for(stringsetiter_t ai=strings.begin(); ai!=strings.end(); ++ai) {
-    const auto astr_ex_lvl = ((*ai) ^ strings.front()).count() / 2;
-    for(stringsetiter_t bi=strings.begin(); bi!=strings.end(); ++bi) {
-      const auto bstr_ex_lvl = ((*bi) ^ strings.front()).count() / 2;
+  return 0;
+}
+
+template <typename FString>
+int try_main(int argc, char **argv) {
+
+  const size_t nstates = 24;
+  const size_t nparticles = 12;
+
+  typedef FermionStringSparseSet<FString> stringset_type;
+  typedef typename stringset_type::const_iterator stringsetiter_type;
+
+  ///////// generate a full set of strings //////////
+  clock_t start0 = clock();
+  int status;
+  char* realname = abi::__cxa_demangle(typeid(FString).name(), 0, 0, &status);
+  std::cout << "generating a (m=" << nstates << ",n=" << nparticles << ") string set (type=" << realname << ")" << std::endl;
+  stringset_type sset;
+  FullStringSetBuild<stringset_type> builder(nstates, nparticles);
+  builder(sset);
+  std::cout << "# of strings = " << sset.size() << std::endl;
+  clock_t stop0 = clock();
+  std::cout << "elapsed time = " << (stop0-start0) * 1.0/ CLOCKS_PER_SEC << " sec"<< std::endl;
+
+}
+
+void test0() {
+
+  //typedef FermionOccupationDBitString FString;
+  typedef FermionOccupationBlockString FString;
+#if 0
+  if (use_sparse_sdset) {
+    typedef FermionStringSparseSet<FString> stringset_type;
+    typedef stringset_type::const_iterator stringsetiter_type;
+
+  stringset_type strings;
+  std::vector<FString::state_index_type> sv1;
+  sv1.push_back(0);
+  sv1.push_back(1);
+
+  strings.insert( FString(4, sv1) );
+  const FString a_ref(4, sv1);
+  const FString b_ref(4, sv1);
+
+  sv1[1] = 2;
+  strings.insert( FString(4, sv1) );
+  sv1[1] = 3;
+  strings.insert( FString(4, sv1) );
+  sv1[0] = 2;
+  strings.insert( FString(4, sv1) );
+
+  SlaterDeterminantSparseSet<stringset_type> sdset(strings,
+                                                   strings);
+
+  for(auto a=strings.begin(); a!=strings.end(); ++a) {
+    for(auto b=strings.begin(); b!=strings.end(); ++b) {
+      sdset.insert(a,b);
+    }
+  }
+
+#else
+  typedef FermionStringDenseSet<FString> stringset_type;
+  typedef stringset_type::const_iterator stringsetiter_type;
+
+  stringset_type strings;
+  std::vector<FString::state_index_type> sv1;
+  sv1.push_back(0);
+  sv1.push_back(1);
+
+  strings.insert(FString(4, sv1));
+  const FString a_ref(4, sv1);
+  const FString b_ref(4, sv1);
+
+  sv1[1] = 2;
+  strings.insert(FString(4, sv1));
+  sv1[1] = 3;
+  strings.insert(FString(4, sv1));
+  sv1[0] = 2;
+  strings.insert(FString(4, sv1));
+
+  SlaterDeterminantDenseSet<stringset_type> sdset(strings.begin(),
+                                                  strings.end(),
+                                                  strings.begin(),
+                                                  strings.end());
+
+#endif
+
+  for(auto ai=strings.begin(); ai!=strings.end(); ++ai) {
+    const auto astr_ex_lvl = ((*ai) ^ a_ref ).count() / 2;
+    for(auto bi=strings.begin(); bi!=strings.end(); ++bi) {
+      const auto bstr_ex_lvl = ((*bi) ^ b_ref).count() / 2;
       auto sdi = sdset.find(ai, bi);
       std::cout << "astr = " << *ai << " bstr = " << *bi << " sd index = " << sdi << " ex_lvl = " << astr_ex_lvl+bstr_ex_lvl << std::endl;
     }
   }
 
-  return 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////

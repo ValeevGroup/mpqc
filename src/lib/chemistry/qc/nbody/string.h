@@ -38,7 +38,12 @@
 #include <ostream>
 #include <iostream>
 #include <array>
+#include <functional>
+#include <unordered_set>
+
+#define BOOST_DYNAMIC_BITSET_DONT_USE_FRIENDS // need this to expose dynamic_bitset's naughty bits
 #include <boost/dynamic_bitset.hpp>
+#include <boost/functional/hash.hpp>
 
 namespace sc {
 
@@ -49,19 +54,21 @@ namespace sc {
   template <size_t Ns=64ul>
   class FermionOccupationNBitString : public std::bitset<Ns> {
     public:
-      typedef size_t state_index_t;
+      typedef std::bitset<Ns> parent_type;
+      typedef size_t state_index_type;
 
       /**
        * Constructs an empty set of states
        */
-      FermionOccupationNBitString() {
+      FermionOccupationNBitString(size_t nstates = Ns) : nstates_(nstates) {
       }
 
       /**
        * Constructs FermionOccupationNBitString using a (possibly-empty) set of indices of occupied states
        * @param occupied_states
        */
-      explicit FermionOccupationNBitString(const std::vector<state_index_t>& occupied_states) {
+      explicit FermionOccupationNBitString(size_t nstates, const std::vector<state_index_type>& occupied_states) :
+        nstates_(nstates) {
         for(auto v : occupied_states) {
           (*this)[v].flip();
         }
@@ -125,9 +132,42 @@ namespace sc {
         return tmp.count();
       }
 
+      size_t hash_value() const {
+        std::hash<std::bitset<Ns> > h;
+        return h(*this);
+      }
+
+      template <size_t M> bool operator==(const FermionOccupationNBitString<M>& other) const {
+        return nstates_ == other.nstates_ &&
+               static_cast<parent_type>(*this) == static_cast<parent_type>(other);
+      }
+
+      FermionOccupationNBitString operator+(const FermionOccupationNBitString& other) {
+        assert(nstates_+other.nstates_ <= Ns);
+        FermionOccupationNBitString result(nstates_+other.nstates_);
+        size_t pos=0;
+        for(size_t pos1=0; pos1<nstates_; ++pos1, ++pos)
+          result[pos] = (*this)[pos1];
+        for(size_t pos2=0; pos2<other.nstates_; ++pos2, ++pos)
+          result[pos] = other[pos2];
+        return result;
+      }
+
     private:
-      static const size_t nstates_ = Ns;
+      size_t nstates_;
   };
+
+  template <size_t N1, size_t N2>
+  FermionOccupationNBitString<N1+N2> operator+(const FermionOccupationNBitString<N1>& s1,
+                                               const FermionOccupationNBitString<N2>& s2) {
+    FermionOccupationNBitString<N1+N2> result;
+    size_t pos=0;
+    for(size_t pos1=0; pos1<N1; ++pos1, ++pos)
+      result[pos] = s1[pos1];
+    for(size_t pos2=0; pos2<N2; ++pos2, ++pos)
+      result[pos] = s2[pos2];
+    return result;
+  }
 
   template <class CharT, class Traits, size_t Ns>
   std::basic_ostream<CharT, Traits>&
@@ -144,7 +184,8 @@ namespace sc {
    */
   class FermionOccupationDBitString : public boost::dynamic_bitset<> {
     public:
-      typedef size_t state_index_t;
+      typedef boost::dynamic_bitset<> parent_type;
+      typedef size_t state_index_type;
 
       /**
        * Constructs an empty set of N states
@@ -152,11 +193,14 @@ namespace sc {
       FermionOccupationDBitString(size_t N) : boost::dynamic_bitset<>(N, 0ul), nstates_(N) {
       }
 
+      FermionOccupationDBitString(boost::dynamic_bitset<>&& bs) : nstates_(bs.size()), boost::dynamic_bitset<>(bs) {
+      }
+
       /**
        * Constructs FermionOccupationDBitString using a (possibly-empty) set of indices of occupied states
        * @param occupied_states
        */
-      explicit FermionOccupationDBitString(size_t N, const std::vector<state_index_t>& occupied_states) :
+      explicit FermionOccupationDBitString(size_t N, const std::vector<state_index_type>& occupied_states) :
         boost::dynamic_bitset<>(N, 0ul), nstates_(N)
       {
         for(auto v : occupied_states) {
@@ -222,10 +266,37 @@ namespace sc {
         return tmp.count();
       }
 
+      size_t hash_value() const {
+        typedef std::vector<parent_type::block_type, parent_type::allocator_type> m_bits_type;
+        boost::hash<m_bits_type> h;
+        return h(m_bits);
+      }
+
+      bool operator==(const FermionOccupationDBitString& other) const {
+        return nstates_ == other.nstates_ &&
+               static_cast<parent_type>(*this) == static_cast<parent_type>(other);
+      }
+
     private:
       size_t nstates_;
 
   };
+
+  FermionOccupationDBitString operator+(const FermionOccupationDBitString& s1,
+                                        const FermionOccupationDBitString& s2) {
+    const size_t s1_size = s1.size();
+    const size_t s2_size = s2.size();
+    FermionOccupationDBitString result1(s1);
+    FermionOccupationDBitString result2(s2);
+    result1.resize(s1_size + s2_size);
+    result2.resize(s1_size + s2_size);
+    result2 <<= s1_size;
+    return result1 | result2;
+//    std::cout << "in FermionOccupationDBitString+FermionOccupationDBitString:" << std::endl
+//              << "arg1  =" << result1 << std::endl
+//    << "arg2  =" << result2 << std::endl
+//    << "result=" << result << std::endl;
+  }
 
   template <class CharT, class Traits>
   std::basic_ostream<CharT, Traits>&
@@ -236,22 +307,28 @@ namespace sc {
       return os;
   }
 
-#if 1
   /**
-   * a block-"sparse" string represents occupancies of an arbitrarily-large set of states as a set of alternating unoccupied/occupied blocks
+   * a block-"sparse" string represents occupancies of an arbitrarily-large set of states as a set of alternating unoccupied/occupied blocks.
    */
   class FermionOccupationBlockString {
     public:
-      typedef size_t state_index_t;
+      typedef size_t state_index_type;
 
       /// represents a continuous block of states of same occupancy
       struct Block {
         Block(size_t o, bool n = true) : offset(o), length(1ul), occ(n) {}
         Block(size_t o, size_t l, bool n = true) : offset(o), length(l), occ(n) {}
-        size_t offset;
-        mutable size_t length;
+        int offset;
+        mutable int length;
         bool occ;
         bool operator<(const Block& other) const { return offset < other.offset; }
+
+        operator long int() const {
+          long int result = offset;
+          result << 31;
+          result += length;
+          return occ ? -result : result;
+        }
       };
       typedef std::set<Block> Blocks; //< stores blocks
 
@@ -267,7 +344,7 @@ namespace sc {
        * Constructs FermionOccupationBlockString using a (possibly-empty) set of indices of occupied states
        * @param occupied_states
        */
-      explicit FermionOccupationBlockString(size_t Ns, const std::vector<state_index_t>& occupied_states) : nstates_(Ns), blocks_() {
+      explicit FermionOccupationBlockString(size_t Ns, const std::vector<state_index_type>& occupied_states) : nstates_(Ns), blocks_() {
         blocks_.insert(Block(0,Ns,false));
         // not efficient -- should find blocks
         for(auto v : occupied_states) {
@@ -389,7 +466,7 @@ namespace sc {
         assert(result_iter->occ == false);
 
         if (result_iter->length == 1) { // only
-          auto occ_block = this->block_erase(result_iter);
+          auto occ_block = this->block_replace(result_iter, Block(to,1,true));
         }
         else if (to == result_iter->offset) { // front
           auto uocc_block = this->block_pop_front(result_iter);
@@ -433,7 +510,7 @@ namespace sc {
         for(auto i=blk1_iter; i!=blk2_iter; ++i)
           if (i->occ)
             c += i->length;
-        std::cout << "count = " << c << std::endl;
+//        std::cout << "count = " << c << std::endl;
         return c;
       }
 
@@ -484,6 +561,50 @@ namespace sc {
         return result;
       }
 
+      size_t hash_value() const {
+        boost::hash<Blocks> h;
+        return h(blocks_);
+      }
+
+      bool operator==(const FermionOccupationBlockString& other) const {
+        assert(nstates_ == other.nstates_);
+        return blocks_ == other.blocks_;
+      }
+
+      /**
+       * appends other to the end of this
+       * @param other the string to be appended
+       * @return *this
+       */
+      FermionOccupationBlockString& append(const FermionOccupationBlockString& other) {
+        const size_t other_offset = nstates_;
+        nstates_ += other.nstates_;
+        assert(not other.blocks_.empty());
+        assert(not blocks_.empty());
+        auto back_iter = (--blocks_.end());
+        if (back_iter->occ == other.blocks_.begin()->occ) {
+          Block merged_block(back_iter->offset, back_iter->length+other.blocks_.begin()->length, back_iter->occ);
+          blocks_.erase(back_iter);
+          auto current_iter = blocks_.insert(merged_block).first;
+          for(auto i = ++other.blocks_.begin();
+              i!=other.blocks_.end();
+              ++i) {
+            Block offset_block(i->offset + other_offset, i->length, i->occ);
+            current_iter = blocks_.insert(current_iter, offset_block);
+          }
+        }
+        else {
+          auto current_iter = back_iter;
+          for(auto i = other.blocks_.begin();
+              i!=other.blocks_.end();
+              ++i) {
+            Block offset_block(i->offset + other_offset, i->length, i->occ);
+            current_iter = blocks_.insert(current_iter, offset_block);
+          }
+        }
+        return *this;
+      }
+
     private:
       size_t nstates_;
       Blocks blocks_;
@@ -515,8 +636,16 @@ namespace sc {
         return block;
       }
 
+      Blocks::const_iterator block_replace(Blocks::const_iterator block,
+                                           const Block& new_block) {
+        blocks_.erase(block);
+        auto result = blocks_.insert(new_block);
+        assert(result.second == true);
+        return result.first;
+      }
+
       Blocks::const_iterator block_erase(Blocks::const_iterator block) {
-        const bool have_prev = (block != blocks_.end());
+        const bool have_prev = (block != blocks_.begin());
         Blocks::const_iterator next_block(block); ++next_block;
         const bool have_next = (next_block != blocks_.end());
 
@@ -575,7 +704,12 @@ namespace sc {
       return os;
   }
 
-#endif
+  FermionOccupationBlockString operator+(const FermionOccupationBlockString& s1,
+                                         const FermionOccupationBlockString& s2) {
+    FermionOccupationBlockString result(s1);
+    result.append(s2);
+    return result;
+  }
 
   /**
    * basic Nb-body number-conserving (nc) operator in sp representation
@@ -660,7 +794,189 @@ namespace sc {
       return os;
   }
 
+  //////////////////////////////
+  // specialized string containers
+  //////////////////////////////
+
+  template <typename FString>
+  class FermionStringDenseSet {
+    public:
+      typedef std::vector<FString> container_type;
+      typedef typename container_type::iterator iterator;
+      typedef typename container_type::const_iterator const_iterator;
+      typedef FString value_type;
+
+      FermionStringDenseSet() {}
+      ~FermionStringDenseSet() {}
+
+      const_iterator insert(const FString& s) {
+        strings_.push_back(s);
+        return --strings_.end();
+      }
+      const_iterator insert(FString&& s) {
+        strings_.push_back(s);
+        return --strings_.end();
+      }
+
+      const_iterator begin() const {
+        return strings_.cbegin();
+      }
+      const_iterator end() const {
+        return strings_.cend();
+      }
+
+      size_t size() const {
+        return strings_.size();
+      }
+
+    private:
+      container_type strings_;
+  };
+
+  template <typename FString>
+  class FermionStringSparseSet {
+    public:
+      typedef std::unordered_set<FString> container_type;
+      typedef typename container_type::iterator iterator;
+      typedef typename container_type::const_iterator const_iterator;
+      typedef FString value_type;
+
+      FermionStringSparseSet() {}
+      ~FermionStringSparseSet() {}
+
+      const_iterator insert(const FString& s) {
+        auto result = strings_.insert(s);
+        assert(result.second == true);
+        return result.first;
+      }
+      const_iterator insert(FString&& s) {
+        auto result = strings_.insert(s);
+        assert(result.second == true);
+        return result.first;
+      }
+
+      const_iterator begin() const {
+        return strings_.cbegin();
+      }
+      const_iterator end() const {
+        return strings_.cend();
+      }
+
+      size_t size() const {
+        return strings_.size();
+      }
+
+    private:
+      container_type strings_;
+  };
+
+
+  //////////////////////////////
+  // string algorithms
+  //////////////////////////////
+
+  /**
+   * Makes a set of strings by distributing n particles in m states
+   * @param sset [in/out]
+   * @param m number of states
+   * @param n number of particles
+   */
+  template <typename StringSet>
+  class FullStringSetBuild {
+    public:
+      typedef typename StringSet::value_type string_type;
+
+      FullStringSetBuild(size_t m, size_t n) : nparticles_(n), nstates_(m) {
+        assert(nparticles_ <= nstates_); // these are 1-particle states
+      }
+
+      void operator()(StringSet& sset) {
+        // make recursively by appending a string with 1 particle at the bottom of k states 0....01
+        // to a full set of n-1 particles in m-k states, where 1 <= k <= m-n+1
+        for(size_t k=1; k<=nstates_-nparticles_+1; ++k) {
+
+          string_type s0(k);
+          s0.add(0);
+//          std::cout << "in FullStringSetBuild::operator() -- s0=" << s0 << " m=" << nstates_ << " n=" << nparticles_ << std::endl;
+
+          do_iter(s0, sset, nstates_-k, nparticles_-1);
+        }
+      }
+
+    private:
+      size_t nparticles_;
+      size_t nstates_;
+
+      static void do_iter(const string_type& s0,
+                          StringSet& sset,
+                          size_t nstates, size_t nparticles) {
+//        std::cout << "in FullStringSetBuild::do_iter -- s0=" << s0 << " m=" << nstates << " n=" << nparticles << std::endl;
+        if (nparticles == 1ul) {
+          string_type s1(nstates);
+          s1.add(0ul);
+          string_type s2(s1 + s0);
+          sset.insert(s2);
+//          std::cout << "inserted " << s2 << std::endl;
+          for (size_t pos = 1; pos < nstates; ++pos) {
+            s2.remove(pos-1).add(pos);
+            sset.insert(s2);
+//            std::cout << "inserted " << s2 << std::endl;
+          }
+        }
+        else {
+          for (size_t k = 1; k <= nstates - nparticles + 1; ++k) {
+            string_type s1(k);
+            s1.add(0ul);
+            string_type s2(s1 + s0);
+            do_iter(s2, sset, nstates - k, nparticles - 1);
+          }
+        }
+      }
+  };
+
+
 } // end of namespace sc
+
+// specialize std::hash for the string classes
+namespace std {
+
+  /**
+   * specialization of std::hash for sc::FermionOccupationNBitString
+   */
+  template <size_t Ns>
+  class hash<sc::FermionOccupationNBitString<Ns> > {
+    public:
+      size_t operator()(const sc::FermionOccupationNBitString<Ns> &s) const
+      {
+        return s.hash_value();
+      }
+  };
+
+  /**
+   * specialization of std::hash for sc::FermionOccupationDBitString
+   */
+  template <>
+  class hash<sc::FermionOccupationDBitString > {
+    public:
+      size_t operator()(const sc::FermionOccupationDBitString &s) const
+      {
+        return s.hash_value();
+      }
+  };
+
+  /**
+   * specialization of std::hash for sc::FermionOccupationBlockString
+   */
+  template <>
+  class hash<sc::FermionOccupationBlockString> {
+    public:
+      size_t operator()(const sc::FermionOccupationBlockString &s) const
+      {
+        return s.hash_value();
+      }
+  };
+
+}
 
 #endif // end of header guard
 

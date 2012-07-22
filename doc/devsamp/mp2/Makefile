@@ -10,3 +10,6 @@ LTLINKBINOPTS := $(shell $(SCCONFIG) --ltlinkbinopts)
 
 mp2: mp2.o
 	$(LTLINK) $(CXX) $(CXXFLAGS) -o $@ $^ -L$(LIBDIR) -lmpqc $(LIBS) $(LTLINKBINOPTS)
+
+clean:
+	-rm -f mp2.o mp2

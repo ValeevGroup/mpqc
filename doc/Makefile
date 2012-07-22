@@ -80,11 +80,35 @@ install_man:
 install_samples:
 	$(MKINSTALLDIRS) $(installroot)$(prefix)
 	$(MKINSTALLDIRS) $(installroot)$(prefix)/examples
+	$(MKINSTALLDIRS) $(installroot)$(prefix)/examples/aoints
+	$(MKINSTALLDIRS) $(installroot)$(prefix)/examples/hf
 	$(MKINSTALLDIRS) $(installroot)$(prefix)/examples/mp2
-	$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/devsamp/mp2.cc \
+	$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/devsamp/aoints/aoints.cc \
+		$(installroot)$(prefix)/examples/aoints
+	$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/devsamp/aoints/c_aoints.c \
+		$(installroot)$(prefix)/examples/aoints
+	$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/devsamp/aoints/f90_aoints.f90 \
+		$(installroot)$(prefix)/examples/aoints
+	$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/devsamp/aoints/README \
+		$(installroot)$(prefix)/examples/aoints
+	sed "s+/usr/local/mpqc/current+$(prefix)+" < \
+		$(SRCDIR)/devsamp/aoints/Makefile \
+		> $(installroot)$(prefix)/examples/aoints/Makefile
+	$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/devsamp/hf/hf.cc \
+		$(installroot)$(prefix)/examples/hf
+	$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/devsamp/hf/hf.in \
+		$(installroot)$(prefix)/examples/hf
+	$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/devsamp/hf/README \
+		$(installroot)$(prefix)/examples/hf
+	sed "s+/usr/local/mpqc/current+$(prefix)+" < \
+		$(SRCDIR)/devsamp/hf/Makefile \
+		> $(installroot)$(prefix)/examples/hf/Makefile
+	$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/devsamp/mp2/mp2.cc \
 		$(installroot)$(prefix)/examples/mp2
-	$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/devsamp/mp2.in \
+	$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/devsamp/mp2/mp2.in \
+		$(installroot)$(prefix)/examples/mp2
+	$(INSTALL) $(INSTALLLIBOPT) $(SRCDIR)/devsamp/mp2/README \
 		$(installroot)$(prefix)/examples/mp2
 	sed "s+/usr/local/mpqc/current+$(prefix)+" < \
-		$(SRCDIR)/devsamp/Makefile \
+		$(SRCDIR)/devsamp/mp2/Makefile \
 		> $(installroot)$(prefix)/examples/mp2/Makefile

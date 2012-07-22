@@ -1,0 +1,13 @@
+These code examples, written in C++, C, and Fortran 90, demonstrate how to use MPQC to compute molecular integrals in Gaussian bases.
+
+1) To compile these examples you must have compiled MPQC and installed it using 'make install install_devel'
+   commmand. This will install the code examples under $prefix/examples directory, where $prefix is the
+   installation prefix provided to configure script during configuration of MPQC
+   (the default is /usr/local/mpqc/$mpqcversion).
+2) To compile the C++ example simply type 'make', this will create an executable file called 'aoints'. To run it simply type './aoints'.
+3) To compile the C example type 'make c_aoints'. To run the resulting executable type './c_aoints'.
+4) To compile the F90 example type 'make f90_aoints'. Note that by default the compilation will be attempted with the same
+   Fortran compiler that was used to compile the lone F77 source file in MPQC. Since many modern Fortran compilers default to F90,
+   this should work fine. If you want to specify a different Fortran compiler to compile this example, do so by typing
+   'make F90=path_to_a_f90_compiler F90FLAGS="extra_f90_compiler_flags" f90_aoints'. To run the resulting executable, type './f90_aoints'.
+

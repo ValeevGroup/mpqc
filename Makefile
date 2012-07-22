@@ -15,6 +15,7 @@ include $(SRCDIR)/$(TOPDIR)/lib/GlobalSubDirs
 
 install_devel::
 	-$(INSTALL) $(INSTALLSCRIPTOPT) libtool $(installroot)$(bindir)/sc-libtool
+	cd doc; make install_devel
 
 clean::
 	-rm -f depcheck.cc

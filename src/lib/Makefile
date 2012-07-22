@@ -5,7 +5,7 @@ endif
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-SUBDIRS = util math chemistry
+SUBDIRS = util math chemistry extern
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalSubDirs
 

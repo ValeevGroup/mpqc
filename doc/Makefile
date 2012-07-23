@@ -65,14 +65,18 @@ veryclean:
 clean:
 	/bin/rm -rf *~
 
-install:
+ifeq ($(DOXYGEN_MAN),YES)
+install:: install_man
+endif
+
+install_devel: install_samples
+
+install_html:: html
 	$(MKINSTALLDIRS) $(installroot)$(prefix)
 	/bin/cp -r html $(installroot)$(prefix)
-
-install_devel: install_man install_samples
-
+	
 .PHONY: install_man
-install_man:
+install_man: man1 man3
 	$(MKINSTALLDIRS) $(installroot)$(prefix)
 	/bin/cp -r man $(installroot)$(prefix)
 

@@ -183,6 +183,35 @@ void PsiCC_PT2R12::compute_ept2r12() {
 
   const bool diag = r12eval()->r12world()->r12tech()->ansatz()->diag();
 
+  // Import the Psi CCSD one-particle density
+  if (compute_1rdm_) {
+    // Obtain CC one-particle density from Psi and copy into local matrices
+    //
+    RefSCMatrix D[NSpinCases1];
+    for(int s = 0; s < nspincases1; ++s) {
+      const SpinCase1 spin = static_cast<SpinCase1>(s);
+      RefSCMatrix D_psicc = this->Onerdm(spin);
+      Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
+      D[spin] = localkit->matrix(D_psicc.rowdim(), D_psicc.coldim());
+      D[spin]->convert(D_psicc);
+
+      if (debug() >= DefaultPrintThresholds::mostN2) {
+      D[spin].print(prepend_spincase(spin,"CCSD one-particle density:").c_str());
+      }
+    }
+
+    if (nspincases1 == 1) {
+      D[Beta] = D[Alpha];
+    }
+
+    if (diag == true) { // -> pass D to the diagonal MP2-R12 energy evaluator
+      for(int s = 0; s < NSpinCases1; s++) {
+        const SpinCase1 spin = static_cast<SpinCase1>(s);
+        r12intermediates->assign_1rdm_cc(spin,D[spin]);
+      }
+    } // end of diag
+  } // end of compute_1rdm_
+
   if (diag == true) { // -> pass T1 and T2 amplitudes to the diagonal MP2-R12 energy evaluator
 
     // Pass T1 to r12intermediates
@@ -517,6 +546,7 @@ void PsiCCSD_PT2R12::write_input(int convergence) {
 }
 
 void PsiCCSD_PT2R12::compute() {
+
   PsiCC_PT2R12::compute_ept2r12();
 
   // read Psi3 CCSD energy

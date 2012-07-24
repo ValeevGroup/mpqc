@@ -590,6 +590,84 @@ namespace sc {
     return Lambda2_[spin];
   }
 
+  // import the psi ccsd one-particle density
+  RefSCMatrix PsiCC::Onerdm(SpinCase1 spin) {
+
+    // grab orbital info
+    psi::PSIO& psio = exenv()->psio();
+
+    // psi ccsd one-particle density does not work for frozen core
+    // this code does not work for ROHF
+    assert(nfzc_ == 0 && reference()->reftype() != PsiSCF::hsoshf);
+
+    // get # of occupied and unoccupied orbitals of spin S per irrep
+    const std::vector<unsigned int>& occpi = reference()->occpi(spin);
+    const std::vector<unsigned int>& uoccpi = reference()->uoccpi(spin);
+
+    // obtain # of orbitals per irrep
+    unsigned int nocc = 0;
+    unsigned int nuocc = 0;
+    for (unsigned int irrep = 0; irrep < nirrep_; ++irrep) {
+      nocc += occpi[irrep];
+      nuocc += uoccpi[irrep];
+    }
+    unsigned int norb = nocc + nuocc;
+    ExEnv::out0() << indent << spin << " nocc" << nocc << " nuocc"<< nuocc <<endl;
+
+    // Equation for the one-particle density matrix
+    // D_ij = -1/2 t_im^ef L^jm_ef - t_i^e L^j_e
+    // D_ab = 1/2 L^mn_ae t_mn^be + L^m_a t_m^b
+    // D_ia = t_i^a + (t_im^ae - t_i^e t_m^a) L^m_e
+    //        - 1/2 L^mn_ef (t_in^ef t_m^a + t_i^e t_mn^af)
+    // D_ai = L^i_a
+    RefSCDimension rowdim = new SCDimension(norb);
+    RefSCDimension coldim = new SCDimension(norb);
+    RefSCMatrix D = matrixkit()->matrix(rowdim, coldim);
+    D.assign(0.0);
+
+    // test that D is not empty
+    if (rowdim.n() && coldim.n()) {
+      // read in the p by q matrix in DPD format
+      unsigned int npq_dpd = norb * norb;
+      double* Dpq = new double[npq_dpd];
+      psio.open(PSIF_MO_OPDM, PSIO_OPEN_OLD);
+
+      if (reference()->reftype() == PsiSCF::rhf) {
+        // closed-shell: O[I][J] += 2.0 * D.matrix[h][i][j]
+        //               O[A][B] += 2.0 * D.matrix[h][a][b]
+        //               O[A][I] += 2.0 * D.matrix[h][i][a]
+        //               O[I][A] += 2.0 * D.matrix[h][i][a]
+
+        psio.read_entry(PSIF_MO_OPDM, "MO-basis OPDM",
+                        reinterpret_cast<char*>(Dpq), npq_dpd * sizeof(double));
+        psio.close(PSIF_MO_OPDM, 1);
+
+        unsigned int pq = 0;
+        for (int p = 0; p < norb; ++p)
+          for (int q = 0; q < norb; ++q, ++pq)
+            D.set_element(p, q, 0.5*Dpq[pq]);
+      }
+      else if (reference()->reftype() == PsiSCF::uhf) {
+
+        const char* Dpq_lbl = (spin == Alpha) ? "MO-basis Alpha OPDM" : "MO-basis Beta OPDM";
+        psio.read_entry(PSIF_MO_OPDM, Dpq_lbl,
+                        reinterpret_cast<char*>(Dpq), npq_dpd * sizeof(double));
+        psio.close(PSIF_MO_OPDM, 1);
+
+        unsigned int pq = 0;
+        for (int p = 0; p < norb; ++p)
+          for (int q = 0; q < norb; ++q, ++pq)
+            D.set_element(p, q, Dpq[pq]);
+      }
+
+      delete[] Dpq;
+    }
+    // end of if (rowdim.n() && coldim.n())
+
+    return D;
+  }
+  // end of import psi CCSD one-particle density
+
 #if 0
   RefSCMatrix PsiCC::transform_T1(const SparseMOIndexMap& occ_act_map,
                                   const SparseMOIndexMap& vir_act_map,

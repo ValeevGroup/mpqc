@@ -59,6 +59,9 @@ namespace sc {
       /// read in T2-like quantity of spincase spin using DPD label L
       Ref<DistArray4> T2_distarray4(SpinCase2 spin, const std::string& L);
 
+      /// read in one-particle density of spincase spin
+      RefSCMatrix Onerdm(SpinCase1 spin);
+
 #if 0
       /// transform T1 to the new basis using sparse maps
       RefSCMatrix

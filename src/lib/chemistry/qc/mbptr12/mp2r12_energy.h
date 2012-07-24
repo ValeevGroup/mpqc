@@ -59,6 +59,9 @@ namespace sc {
       RefSCMatrix T1_cc_[NSpinCases1];
       bool T2_cc_computed_;
       Ref<DistArray4> T2_cc_[NSpinCases2];
+      // parameters for importing psi ccsd one-particle density
+      bool Onerdm_cc_computed_;
+      RefSCMatrix Onerdm_cc_[NSpinCases1];
     public:
       typedef enum { V=0, X=1, B=2, A=3 } IntermediateType;
       R12EnergyIntermediates(const Ref<R12IntEval>& r12eval,
@@ -75,6 +78,7 @@ namespace sc {
       bool A_computed() const;
       bool T1_cc_computed() const;
       bool T2_cc_computed() const;
+      bool Onerdm_cc_computed() const;
       const RefSCMatrix& get_V(const SpinCase2 &spincase2) const;
       void assign_V(const SpinCase2 &spincase2, const RefSCMatrix& V);
       const RefSymmSCMatrix& get_X(const SpinCase2 &spincase2) const;
@@ -87,6 +91,8 @@ namespace sc {
       void assign_T1_cc(const SpinCase1 &spincase1, const RefSCMatrix& T1_cc);
       const Ref<DistArray4>& get_T2_cc(const SpinCase2 &spincase2) const;
       void assign_T2_cc(const SpinCase2 &spincase2, const Ref<DistArray4>& T2_cc);
+      const RefSCMatrix& get_1rdm_cc(const SpinCase1 &spincase1) const;
+      void assign_1rdm_cc(const SpinCase1 &spincase1, const RefSCMatrix& Onerdm_cc);
   };
 
   /** Class MP2R12Energy is the object that computes and maintains MP2-R12 energies */
@@ -276,6 +282,7 @@ class MP2R12Energy_Diag : public MP2R12Energy
                          double* const VT1);
     //
     // compute the one electron density matrix for the diagonal ansatz
+   // RefSCMatrix D_ccsdr12_[NSpinCases1];
     void compute_density_diag();
 
     // functions needed for compute_density_diag() function:
@@ -350,7 +357,7 @@ class MP2R12Energy_Diag : public MP2R12Energy
                               const double C_0, const double C_1,
                               const std::vector< Ref<OrbitalSpace> >& v_orbs1_ab,
                               const std::vector< Ref<OrbitalSpace> >& v_orbs2_ab,
-                              double* D_alhpha, double* D_beta);
+                              double* const D_alhpha, double* const D_beta);
 
     // function need for D^a'_a:
     // compute R * T2 (CC amplitudes)

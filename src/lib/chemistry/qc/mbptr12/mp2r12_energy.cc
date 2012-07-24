@@ -138,6 +138,9 @@ bool R12EnergyIntermediates::T1_cc_computed() const {
 bool R12EnergyIntermediates::T2_cc_computed() const {
   return(T2_cc_computed_);
 }
+bool R12EnergyIntermediates::Onerdm_cc_computed() const {
+  return(Onerdm_cc_computed_);
+}
 const RefSCMatrix& R12EnergyIntermediates::get_V(const SpinCase2 &spincase2) const {
   return(V_[spincase2]);
 }
@@ -192,6 +195,14 @@ void R12EnergyIntermediates::assign_T2_cc(const SpinCase2 &spincase2, const Ref<
   T2_cc_computed_ = true;
 }
 
+const RefSCMatrix& R12EnergyIntermediates::get_1rdm_cc(const SpinCase1 &spincase1) const {
+  return(Onerdm_cc_[spincase1]);
+}
+
+void R12EnergyIntermediates::assign_1rdm_cc(const SpinCase1 &spincase1, const RefSCMatrix& Onerdm_cc) {
+  Onerdm_cc_[spincase1] = Onerdm_cc;
+  Onerdm_cc_computed_ = true;
+}
 
 /*-------------
   MP2R12Energy

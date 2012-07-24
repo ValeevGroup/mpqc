@@ -1802,10 +1802,10 @@ void MP2R12Energy_Diag::compute_Dmi_2(const int nspincases1, const int nspincase
   const int nocc_alpha = occ1_act->rank();
   const int nocc_beta = occ2_act->rank();
   // test
-  if (debug_ >= DefaultPrintThresholds::N2) {
-    ExEnv::out0() << endl << "Number of alpha occupied orbital: " << nocc_alpha
-                  << endl << "Number of beta occupied orbital: " << nocc_beta << endl;
-  }
+//  if (debug_ >= DefaultPrintThresholds::mostN2) {
+//    ExEnv::out0() << endl << "Number of alpha occupied orbital: " << nocc_alpha
+//                  << endl << "Number of beta occupied orbital: " << nocc_beta << endl;
+//  }
 
   // activate integrals: R^i1i2_a'1a'2 or R^a'1a'2_i1i2, R^i2i1_a'1a'2 or R^a'1a'2_i1i2
   //                     R^i1i2_a1a'2 or R^a1a'2_i2i1, R^i2i1_a1a'2 or R^a1a'2_i2i1
@@ -1856,7 +1856,7 @@ void MP2R12Energy_Diag::compute_Dmi_2(const int nspincases1, const int nspincase
     const Ref<OrbitalSpace> vir = v_orbs1[1];
     const Ref<OrbitalSpace> cabs = v_orbs1[3];
     const int nocc_act = occ_act->rank();
-    if (debug_ >= DefaultPrintThresholds::N2) {
+    if (debug_ >= DefaultPrintThresholds::mostN2) {
       ExEnv::out0() << endl << spinletters << " D^m_i " << endl
                     << "number of occupied orbital: " << nocc_act << endl;
     }
@@ -2318,7 +2318,6 @@ void MP2R12Energy_Diag::compute_Dmi_2(const int nspincases1, const int nspincase
     i1i2a1ap2_ints->deactivate();
     i2i1a1ap2_ints->deactivate();
   }
-
 }
 // end of computation of D^m_i_2
 
@@ -2344,7 +2343,7 @@ void MP2R12Energy_Diag::compute_RR31_32_spin(const int orbitals_label,
                                              const double C_0, const double C_1,
                                              const vector< Ref<OrbitalSpace> >& v_orbs1_ab,
                                              const vector< Ref<OrbitalSpace> >& v_orbs2_ab,
-                                             double* D_alpha, double* D_beta)
+                                             double* const D_alpha, double* const D_beta)
 {
   Ref<R12WavefunctionWorld> r12world = r12eval()->r12world();
   Ref<TwoBodyFourCenterMOIntsRuntime> moints4_rtime = r12world->world()->moints_runtime4();
@@ -2365,14 +2364,14 @@ void MP2R12Energy_Diag::compute_RR31_32_spin(const int orbitals_label,
   const int nocc_beta = occ2_act->rank();
 
   // test propose
-  if (debug_ >= DefaultPrintThresholds::mostN2) {
-    ExEnv::out0() << endl << "number of alpha active occupied orbital: " << occ1_act->rank() << endl
-                  <<"number of beta active occupied orbital: " << occ2_act->rank() << endl
-                  << "number of alpha virtula orbital: " << vir1->rank() << endl
-                  <<"number of beta virtual orbital: " << vir2->rank() << endl
-                  << "number of alpha cabs: " << cabs1->rank() << endl
-                  <<"number of beta cabs: " << cabs2->rank() << endl;
-  }
+//  if (debug_ >= DefaultPrintThresholds::mostN2) {
+//    ExEnv::out0() << endl << "number of alpha active occupied orbital: " << occ1_act->rank() << endl
+//                  <<"number of beta active occupied orbital: " << occ2_act->rank() << endl
+//                  << "number of alpha virtula orbital: " << vir1->rank() << endl
+//                  <<"number of beta virtual orbital: " << vir2->rank() << endl
+//                  << "number of alpha cabs: " << cabs1->rank() << endl
+//                  <<"number of beta cabs: " << cabs2->rank() << endl;
+//  }
 
   // can not use Ref<OrbitalSpace>&
   Ref<OrbitalSpace> idx1_orbs1 = vir1;
@@ -3149,8 +3148,24 @@ void MP2R12Energy_Diag::compute_RR31_32_spin(const int orbitals_label,
 
      // print our D
      if (debug_ >= DefaultPrintThresholds::N2) {
+       string D_label;
+       switch (orbitals_label) {
+       case vir_vir_cabs:
+         D_label = "D^b_c:";
+       break;
+       case cabs_cabs_vir:
+         D_label = "D^b'_c' (sum over a):";
+       break;
+       case cabs_cabs_cabs:
+         D_label = "D^b'_c' (sum over a'):";
+       break;
+       case cabs_vir_cabs:
+         D_label = "D^a'_a:";
+       break;
+       }
+
        iter_D = (spin == Alpha? D_alpha : D_beta);
-       print_intermediate(spinletters, "D elements:", iter_D, size_idx1, size_idx2);
+       print_intermediate(spinletters, D_label, iter_D, size_idx1, size_idx2);
      }
 
      delete[] RR31_32_array;
@@ -3163,8 +3178,6 @@ void MP2R12Energy_Diag::compute_RR31_32_spin(const int orbitals_label,
      }
   } // end of spincase1 loop
 
-  if (nspincases2 == 2)
-    D_beta = D_alpha;
 }
 // end of computation of compute_RR31_32_spin
 
@@ -5421,13 +5434,57 @@ void MP2R12Energy_Diag::compute_density_diag()
   const int ncabs1 = cabs1->rank();
   const int ncabs2 = cabs2->rank();
 
+  const int norb = nocc1_act + nvir1;
+  const int norb_com = nocc1_act + nvir1 + ncabs1;
+
   // test propose
-  ExEnv::out0() << endl << "number of alpha active occupied orbital: " << nocc1_act << endl
-                        <<"number of beta active occupied orbital: " << nocc2_act << endl
-                        << "number of alpha virtual orbital: " << nvir1 << endl
-                        <<"number of beta virtual orbital: " << nvir2 << endl
-                        << "number of alpha cabs: " << ncabs1 << endl
-                        <<"number of beta cabs: " << ncabs2 << endl;
+  if (debug_ >= DefaultPrintThresholds::N2)
+    ExEnv::out0() << endl << "number of alpha active occupied orbital: " << nocc1_act << endl
+                          << "number of beta active occupied orbital: " << nocc2_act << endl
+                          << "number of alpha virtual orbital: " << nvir1 << endl
+                          << "number of beta virtual orbital: " << nvir2 << endl
+                          << "number of alpha cabs: " << ncabs1 << endl
+                          << "number of beta cabs: " << ncabs2 << endl;
+
+  // initialize arrays
+  const int nocc11 = nocc1_act * nocc1_act;
+  const int nvir11 = nvir1 * nvir1;
+  const int ncabs11 = ncabs1 * ncabs1;
+
+  double* Dm_i_alpha = new double[nocc11];
+  double* Dc_b_alpha = new double[nvir11];
+  double* Dcp_bp_alpha_A = new double[ncabs11];
+  double* Dcp_bp_alpha_Ap = new double[ncabs11];
+
+  fill_n(Dm_i_alpha, nocc11, 0.0);
+  fill_n(Dc_b_alpha, nvir11, 0.0);
+  fill_n(Dcp_bp_alpha_A, ncabs11, 0.0);
+  fill_n(Dcp_bp_alpha_Ap, ncabs11, 0.0);
+
+  double* Dm_i_beta;
+  double* Dc_b_beta;
+  double* Dcp_bp_beta_A;
+  double* Dcp_bp_beta_Ap;
+  if (nspincases1 == 2) {
+    const int nocc22 = nocc2_act * nocc2_act;
+    const int nvir22 = nvir2 * nvir2;
+    const int ncabs22 = ncabs2 * ncabs2;
+
+    Dm_i_beta = new double[nocc22];
+    Dc_b_beta = new double[nvir22];
+    Dcp_bp_beta_A = new double[ncabs22];
+    Dcp_bp_beta_Ap = new double[ncabs22];
+
+    fill_n(Dm_i_beta, nocc22, 0.0);
+    fill_n(Dc_b_beta, nvir22, 0.0);
+    fill_n(Dcp_bp_beta_A, ncabs22, 0.0);
+    fill_n(Dcp_bp_beta_Ap, ncabs22, 0.0);
+  } else if (nspincases1 == 1) {
+      Dm_i_beta =  Dm_i_alpha;
+      Dc_b_beta = Dc_b_alpha;
+      Dcp_bp_beta_A = Dcp_bp_alpha_A;
+      Dcp_bp_beta_Ap = Dcp_bp_alpha_Ap;
+  }
 
   //
   // D^m_i
@@ -5449,39 +5506,9 @@ void MP2R12Energy_Diag::compute_density_diag()
   compute_Dii_test(nspincases1, nspincases2, nocc1_act, nocc2_act, C_0, C_1);
 #endif
 
-#if 1
-  // D^m_i
-  const int nocc11 = nocc1_act * nocc1_act;
-  const int nocc22 = nocc2_act * nocc2_act;
-  double* Dm_i_alpha = new double[nocc11];
-  double* Dm_i_beta = new double[nocc22];
-  fill_n(Dm_i_alpha, nocc11, 0.0);
-  fill_n(Dm_i_beta, nocc22, 0.0);
-
-  ExEnv::out0() << endl << "D^m_i : " << endl;
   compute_Dmi_2(nspincases1, nspincases2, C_0, C_1,
               v_orbs1_ab, v_orbs2_ab,
               Dm_i_alpha, Dm_i_beta);
-
-  // print out the sum of diagonal elements
-  // compute D^m_i through R^ij_a'b' R_ij^a'b' + 2 R^ij_ab' R_ij^ab'
-  double Tr_Dmi = 0;
-  for (int i = 0; i != nocc1_act; ++i) {
-    const int idx = i * nocc1_act + i;
-    Tr_Dmi += Dm_i_alpha[idx];
-  }
-  ExEnv::out0() << endl << "Trace of alpha D^m_i: " << scprintf("%12.10f", Tr_Dmi) << endl;
-
-  Tr_Dmi = 0;
-  for (int i = 0; i != nocc2_act; ++i) {
-    const int idx = i * nocc2_act + i;
-    Tr_Dmi += Dm_i_beta[idx];
-  }
-  ExEnv::out0() << endl << "Trace of beta D^m_i: " << scprintf("%12.10f", Tr_Dmi) << endl;
-
-  delete[] Dm_i_alpha;
-  delete[] Dm_i_beta;
-#endif
 
   // D^c_b:
   // Alpha d^C_B = C1^2 * (R^A'B_IJ R^IJ_A'C - R^BA'_IJ R^IJ_A'C) (I, J, A', B, C in alpha orbitals)
@@ -5493,42 +5520,10 @@ void MP2R12Energy_Diag::compute_density_diag()
   //             + [(C0+C1)/2]^2 * R^A'B_IJ R^IJ_A'C  (I, A' in alpha orbitals, J, B, C in beta orbitals)
   //             + (C0+C1)/2*(C0-C1)/2 * (R^BA'_IJ R^IJ_A'C + R^A'B_IJ R^IJ_CA')
   //             + [(C0-C1)/2]^2 * R^BA'_IJ R^IJ_CA'
-#if 1
-  const int nvir11 = nvir1 * nvir1;
-  const int nvir22 = nvir2 * nvir2;
-  double* Dc_b_alpha = new double[nvir11];
-  double* Dc_b_beta = new double[nvir22];
-  fill_n(Dc_b_alpha, nvir11, 0.0);
-  fill_n(Dc_b_beta, nvir22, 0.0);
-
-  ExEnv::out0() << endl << "D^c_b : " << endl;
   compute_RR31_32_spin(vir_vir_cabs,
                        nspincases1, nspincases2, C_0, C_1,
                        v_orbs1_ab, v_orbs2_ab,
                        Dc_b_alpha, Dc_b_beta);
-
-  // print out the sum of diagonal elements
-  double Tr_alpha = 0;
-  double Tr_beta = 0;
-  double Tr_Dcb = 0;
-  for (int i = 0; i != nvir1; ++i) {
-    const int idx = i * nvir1 + i;
-    Tr_Dcb += Dc_b_alpha[idx];
-  }
-  ExEnv::out0() << endl << "Trace of alpha D^c_b: " << scprintf("%12.10f", Tr_Dcb) << endl;
-  Tr_alpha += Tr_Dcb;
-
-  Tr_Dcb = 0;
-  for (int i = 0; i != nvir2; ++i) {
-    const int idx = i * nvir2 + i;
-    Tr_Dcb += Dc_b_beta[idx];
-  }
-  ExEnv::out0() << endl << "Trace of beta D^c_b: " << scprintf("%12.10f", Tr_Dcb) << endl;
-  Tr_beta += Tr_Dcb;
-
-  delete[] Dc_b_alpha;
-  delete[] Dc_b_beta;
-#endif
 
  // test for D^c_b
 #if 0
@@ -5558,82 +5553,21 @@ void MP2R12Energy_Diag::compute_density_diag()
   //                + [(C0+C1)/2]^2 * R^A'B'_IJ R^IJ_A'C'  (I, A in alpha orbitals, J, B', C' in beta orbitals)
   //                + (C0+C1)/2*(C0-C1)/2 * (R^B'A'_IJ R^IJ_A'C' + R^A'B'_IJ R^IJ_C'A')
   //                + [(C0-C1)/2]^2 * R^B'A'_IJ R^IJ_C'A'
-  const int ncabs11 = ncabs1 * ncabs1;
-  const int ncabs22 = ncabs2 * ncabs2;
-#if 1
-  double* Dcp_bp_alpha_A = new double[ncabs11];
-  double* Dcp_bp_beta_A = new double[ncabs22];
-  fill_n(Dcp_bp_alpha_A, ncabs11, 0.0);
-  fill_n(Dcp_bp_beta_A, ncabs22, 0.0);
-
-  ExEnv::out0() << endl << "D^c'_b' part1 (sum over a)" << endl;
   compute_RR31_32_spin(cabs_cabs_vir,
                        nspincases1, nspincases2, C_0, C_1,
                        v_orbs1_ab, v_orbs2_ab,
                        Dcp_bp_alpha_A, Dcp_bp_beta_A);
 
-  // print out the sum of diagonal elements
-  double Tr_Dcpbp = 0;
-  for (int i = 0; i != ncabs1; ++i) {
-    const int idx = i * ncabs1 + i;
-    Tr_Dcpbp += Dcp_bp_alpha_A[idx];
-  }
-  ExEnv::out0() << endl << "Trace of alpha D^c'_b' sum over a part: " << scprintf("%12.10f", Tr_Dcpbp) << endl;
-  Tr_alpha += Tr_Dcpbp;
-
-  Tr_Dcpbp = 0;
-  for (int i = 0; i != ncabs2; ++i) {
-    const int idx = i * ncabs2 + i;
-    Tr_Dcpbp += Dcp_bp_beta_A[idx];
-  }
-  ExEnv::out0() << endl << "Trace of beta D^c'_b' sum over a part: " << scprintf("%12.10f", Tr_Dcpbp) << endl;
-  Tr_beta += Tr_Dcpbp;
-
-  delete[] Dcp_bp_alpha_A;
-  delete[] Dcp_bp_beta_A;
-#endif
-
   // test for D^c'_b' sum over a
-  #if 0
+#if 0
     ExEnv::out0() << endl << "testing D^c'_b' sum over a : " << endl;
     compute_Dcpbp_a(nspincases1, nspincases2, C_0, C_1);
-  #endif
+#endif
 
-#if 1
-  double* Dcp_bp_alpha_Ap = new double[ncabs11];
-  double* Dcp_bp_beta_Ap = new double[ncabs22];
-  fill_n(Dcp_bp_alpha_Ap, ncabs11, 0.0);
-  fill_n(Dcp_bp_beta_Ap, ncabs22, 0.0);
-
-  ExEnv::out0() << endl << "D^c'_b' part2 (sum over a')" << endl;
   compute_RR31_32_spin(cabs_cabs_cabs,
                        nspincases1, nspincases2, C_0, C_1,
                        v_orbs1_ab, v_orbs2_ab,
                        Dcp_bp_alpha_Ap, Dcp_bp_beta_Ap);
-
-  // print out the sum of diagonal elements
-  Tr_Dcpbp = 0;
-  for (int i = 0; i != ncabs1; ++i) {
-    const int idx = i * ncabs1 + i;
-    Tr_Dcpbp += Dcp_bp_alpha_Ap[idx];
-  }
-  ExEnv::out0() << endl << "Trace of alpha D^c'_b' sum over a' part: " << scprintf("%12.10f", Tr_Dcpbp) << endl;
-  Tr_alpha += Tr_Dcpbp;
-
-  Tr_Dcpbp = 0;
-  for (int i = 0; i != ncabs2; ++i) {
-    const int idx = i * ncabs2 + i;
-    Tr_Dcpbp += Dcp_bp_beta_Ap[idx];
-  }
-  ExEnv::out0() << endl << "Trace of beta D^c'_b' sum over a' part: " << scprintf("%12.10f", Tr_Dcpbp) << endl;
-  Tr_beta += Tr_Dcpbp;
-
-  delete[] Dcp_bp_alpha_Ap;
-  delete[] Dcp_bp_beta_Ap;
-#endif
-
-  ExEnv::out0() << endl << "Trace of alpha D^c_b plus D^c'_b': " << scprintf("%12.10f", Tr_alpha) << endl;
-  ExEnv::out0() << endl << "Trace of beta D^c_b plus D^c'_b': " << scprintf("%12.10f", Tr_beta) << endl;
 
   // test for D^c'_b' sum over a'
   #if 0
@@ -5641,6 +5575,79 @@ void MP2R12Energy_Diag::compute_density_diag()
     compute_Dcpbp_ap(nspincases1, nspincases2, C_0, C_1);
   #endif
 
+  // test code: trace of D^m_i = - trace of (D^b_c + D^b'_c')
+#if 0
+    // D^m_i computed through R^ij_a'b' R_ij^a'b' + 2 R^ij_ab' R_ij^ab'
+    double Tr_Dmi = 0;
+    for (int i = 0; i != nocc1_act; ++i) {
+      const int idx = i * nocc1_act + i;
+      Tr_Dmi += Dm_i_alpha[idx];
+    }
+    ExEnv::out0() << endl << "Trace of alpha D^m_i: " << scprintf("%12.10f", Tr_Dmi) << endl;
+
+    Tr_Dmi = 0;
+    for (int i = 0; i != nocc2_act; ++i) {
+      const int idx = i * nocc2_act + i;
+      Tr_Dmi += Dm_i_beta[idx];
+    }
+    ExEnv::out0() << endl << "Trace of beta D^m_i: " << scprintf("%12.10f", Tr_Dmi) << endl;
+
+
+    double Tr_alpha = 0;
+    double Tr_beta = 0;
+
+    double Tr_Dcb = 0;
+    for (int i = 0; i != nvir1; ++i) {
+      const int idx = i * nvir1 + i;
+      Tr_Dcb += Dc_b_alpha[idx];
+    }
+    ExEnv::out0() << endl << "Trace of alpha D^c_b: " << scprintf("%12.10f", Tr_Dcb) << endl;
+    Tr_alpha += Tr_Dcb;
+
+    Tr_Dcb = 0;
+    for (int i = 0; i != nvir2; ++i) {
+      const int idx = i * nvir2 + i;
+      Tr_Dcb += Dc_b_beta[idx];
+    }
+    ExEnv::out0() << endl << "Trace of beta D^c_b: " << scprintf("%12.10f", Tr_Dcb) << endl;
+    Tr_beta += Tr_Dcb;
+
+    double Tr_Dcpbp = 0;
+    for (int i = 0; i != ncabs1; ++i) {
+      const int idx = i * ncabs1 + i;
+      Tr_Dcpbp += Dcp_bp_alpha_A[idx];
+    }
+    ExEnv::out0() << endl << "Trace of alpha D^c'_b' sum over a part: " << scprintf("%12.10f", Tr_Dcpbp) << endl;
+    Tr_alpha += Tr_Dcpbp;
+
+    Tr_Dcpbp = 0;
+    for (int i = 0; i != ncabs2; ++i) {
+      const int idx = i * ncabs2 + i;
+      Tr_Dcpbp += Dcp_bp_beta_A[idx];
+    }
+    ExEnv::out0() << endl << "Trace of beta D^c'_b' sum over a part: " << scprintf("%12.10f", Tr_Dcpbp) << endl;
+    Tr_beta += Tr_Dcpbp;
+
+    Tr_Dcpbp = 0;
+    for (int i = 0; i != ncabs1; ++i) {
+      const int idx = i * ncabs1 + i;
+      Tr_Dcpbp += Dcp_bp_alpha_Ap[idx];
+    }
+    ExEnv::out0() << endl << "Trace of alpha D^c'_b' sum over a' part: " << scprintf("%12.10f", Tr_Dcpbp) << endl;
+    Tr_alpha += Tr_Dcpbp;
+
+    Tr_Dcpbp = 0;
+    for (int i = 0; i != ncabs2; ++i) {
+      const int idx = i * ncabs2 + i;
+      Tr_Dcpbp += Dcp_bp_beta_Ap[idx];
+    }
+    ExEnv::out0() << endl << "Trace of beta D^c'_b' sum over a' part: " << scprintf("%12.10f", Tr_Dcpbp) << endl;
+    Tr_beta += Tr_Dcpbp;
+
+    // test: trace of D^m_i = - trace of (D^c_b + D^c'_b')
+    ExEnv::out0() << endl << "Trace of alpha D^c_b plus D^c'_b': " << scprintf("%12.10f", Tr_alpha) << endl;
+    ExEnv::out0() << endl << "Trace of beta D^c_b plus D^c'_b': " << scprintf("%12.10f", Tr_beta) << endl;
+#endif
   //
   // D^a'_a
   // Alpha d^A'_A = 1/2 * C1 * (R^IJ_A'B - R^JI_A'B) * T^AB_IJ  (I, J in alpha orbitals)
@@ -5675,7 +5682,7 @@ void MP2R12Energy_Diag::compute_density_diag()
 //  delete[] Dap_a_alpha_RR;
 //  delete[] Dap_a_beta_RR;
 
-#if 1
+#if 0
   if (this->r12eval()->ebc() == false
       && r12intermediates_->T2_cc_computed()) {
     double* Dap_a_alpha_RT = new double[ncabs1_vir1];
@@ -5708,15 +5715,92 @@ void MP2R12Energy_Diag::compute_density_diag()
   }
 
 #endif
-//  if (nspincases1 == 1) {
-//     D_[Beta] = D_[Alpha];
-//   }
 
-//  density_diag_[Alpha] = D[Alpha];
-//  density_diag_[Beta] = D[Beta];
+  RefSCMatrix D[NSpinCases1];
+  RefSCMatrix D_cc[NSpinCases1];
+  RefSCDimension rowdim = new SCDimension(norb_com);
+  RefSCDimension coldim = new SCDimension(norb_com);
+  Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
 
-  ExEnv::out0() << endl << "end of the computation of one electron density" << endl;
-  ExEnv::out0() << endl << "**********************************************" << endl;
+  for (int s = 0; s < nspincases1; ++s) {
+    const SpinCase1 spin = static_cast<SpinCase1>(s);
+    D[spin] = localkit->matrix(rowdim, coldim);
+    D[spin].assign(0.0);
+
+    const int nocc_act = (spin == Alpha? nocc1_act : nocc2_act);
+    const double* iter_Dmi = (spin == Alpha? Dm_i_alpha : Dm_i_beta);
+    for (int i = 0; i < nocc_act; ++i) {
+        for (int j = 0; j < nocc_act; ++j, ++iter_Dmi){
+          D[spin].set_element(i, j, *iter_Dmi);
+        }
+    }
+    //const string spin_label = (spin == Alpha? "Alpha" : "Beta");
+    //ExEnv::out0() << endl << spin_label << " trace of Dij: " << scprintf("%12.10f", D[spin].trace()) << endl;
+
+    const double* iter_Dcb = (spin == Alpha? Dc_b_alpha : Dc_b_beta);
+    for (int a = nocc_act; a < norb; ++a) {
+        for (int b = nocc_act; b < norb; ++b, ++iter_Dcb){
+          D[spin].set_element(a, b, *iter_Dcb);
+        }
+    }
+    //ExEnv::out0() << endl << spin_label << " trace of Dij + Dab: " << scprintf("%12.10f", D[spin].trace()) << endl;
+
+    const double* iter_Dcpbp_a = (spin == Alpha? Dcp_bp_alpha_A : Dcp_bp_beta_A);
+    const double* iter_Dcpbp_ap = (spin == Alpha? Dcp_bp_alpha_Ap : Dcp_bp_beta_Ap);
+    for (int ap = norb; ap < norb_com; ++ap) {
+        for (int bp = norb; bp < norb_com; ++bp, ++iter_Dcpbp_a, ++iter_Dcpbp_ap) {
+          const double Dapbp =  *iter_Dcpbp_a + *iter_Dcpbp_ap;
+          //const double Dapbp =  *iter_Dcpbp_ap ;
+          D[spin].set_element(ap, bp, Dapbp);
+        }
+    }
+
+    //
+    // Obtain CCSD one-particle density from Psi
+    D_cc[spin] = r12intermediates_->get_1rdm_cc(spin);
+
+#if 0
+    // test code for D and D_cc:
+    // trace of D = 0, as trace of Dij = - trace of (Dab + Da'b')
+    const string spin_label = (spin == Alpha? "Alpha" : "Beta");
+    ExEnv::out0() << endl << spin_label << " trace of D_R12: " << scprintf("%12.10f", D[spin].trace())<< endl;
+    // trace of D_cc = # of electrons
+    ExEnv::out0() << endl << spin_label << " trace of D_cc: " << scprintf("%12.10f", D_cc[spin].trace()) << endl;
+#endif
+
+    // add psi ccsd and r12 one-particle density together
+    D[spin].accumulate_subblock(D_cc[spin], 0, norb-1, 0, norb-1, 0, 0);
+
+    if (debug_ >= DefaultPrintThresholds::N2)
+      D[spin].print(prepend_spincase(spin,"CCSD_R12 one-particle density:").c_str());
+
+  } // end of loop over nspincase1
+
+  delete[] Dm_i_alpha;
+  delete[] Dc_b_alpha;
+  delete[] Dcp_bp_alpha_A;
+  delete[] Dcp_bp_alpha_Ap;
+
+  if (nspincases1 == 2) {
+       delete[] Dm_i_beta;
+       delete[] Dc_b_beta;
+       delete[] Dcp_bp_beta_A;
+       delete[] Dcp_bp_beta_Ap;
+   }
+
+  if (nspincases1 == 1) {
+    D[Beta] = D[Alpha];
+  }
+
+  // test code
+#if 1
+  // the trace of D should be the same as D_cc (# of electrons)
+  ExEnv::out0() << endl << "Trace of alpha D: " << scprintf("%12.10f", D[Alpha].trace()) << endl;
+  ExEnv::out0() << endl << "Trace of beta D: " << scprintf("%12.10f", D[Beta].trace()) << endl;
+#endif
+
+
+  ExEnv::out0() << endl << "End of the computation for CCSD_F12 one-particle density" << endl;
   ExEnv::out0() << endl << "**********************************************" << endl;
   return;
 }

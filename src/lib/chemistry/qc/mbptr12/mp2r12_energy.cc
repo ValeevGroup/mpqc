@@ -72,6 +72,7 @@ R12EnergyIntermediates::R12EnergyIntermediates(const Ref<R12IntEval>& r12eval,
   A_computed_=false;
   T1_cc_computed_=false;
   T2_cc_computed_=false;
+  Onerdm_cc_computed_=false;
 }
 
 R12EnergyIntermediates::R12EnergyIntermediates(StateIn &si) {
@@ -87,6 +88,9 @@ R12EnergyIntermediates::R12EnergyIntermediates(StateIn &si) {
     B_[i].restore(si);
     A_[i].restore(si);
   }
+  T1_cc_computed_=false;
+  T2_cc_computed_=false;
+  Onerdm_cc_computed_=false;
 }
 
 void R12EnergyIntermediates::save_data_state(StateOut &so) {
@@ -102,6 +106,10 @@ void R12EnergyIntermediates::save_data_state(StateOut &so) {
     B_[i].save(so);
     A_[i].save(so);
   }
+
+  T1_cc_computed_=false;
+  T2_cc_computed_=false;
+  Onerdm_cc_computed_=false;
 }
 
 Ref<R12IntEval> R12EnergyIntermediates::r12eval() const {

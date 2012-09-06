@@ -515,6 +515,7 @@ void MP2R12Energy_Diag::compute_ef12() {
 
   // calculate one electron density
   if (r12intermediates_->Onerdm_cc_computed()) {
+    //ExEnv::out0() << std:: endl << "Onerdm_cc_computed() " << std::endl;
     compute_density_diag();
   }
 

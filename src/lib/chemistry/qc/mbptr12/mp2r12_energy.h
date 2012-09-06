@@ -282,7 +282,7 @@ class MP2R12Energy_Diag : public MP2R12Energy
                          double* const VT1);
     //
     // compute the one electron density matrix for the diagonal ansatz
-   // RefSCMatrix D_ccsdr12_[NSpinCases1];
+    //RefSCMatrix D_ccsdf12_[NSpinCases1];
     void compute_density_diag();
 
     // functions needed for compute_density_diag() function:
@@ -350,6 +350,10 @@ class MP2R12Energy_Diag : public MP2R12Energy
     void compute_Dcpbp_ap(const int nspincases1, const int nspincases2,
                           const double C_0, const double C_1);
 
+    // test function for D^a'_a RR part
+    void compute_Dapa_RR(const int nspincases1, const int nspincases2,
+                      const double C_0, const double C_1);
+
     // \bar{\tilde{R}}^31_ij \bar{\tilde{R}}^ij_32 with spin orbitals
     // which is for computing D^b'_c', D^a'_a
     void compute_RR31_32_spin(const int orbitals_label,
@@ -378,6 +382,13 @@ class MP2R12Energy_Diag : public MP2R12Energy
                            const std::vector< Ref<OrbitalSpace> >& v_orbs2_ab,
                            double* const RT2_alpha, double* const RT2_beta);
 
+//    // compute dipole integrals
+//    void compute_dipole_ints(const SpinCase1 spin,
+//                                RefSCMatrix& MX, RefSCMatrix& MY, RefSCMatrix& MZ);
+    // transform the one-particle density matrix into the MPQC ordering
+    RefSCMatrix onepdm_transformed(const SpinCase1& spin,const RefSCMatrix& D);
+    // test function for computing CCSD dipole moment
+    RefSCMatrix onepdm_transformed2(const SpinCase1& spin,const RefSCMatrix& D);
   public:
     MP2R12Energy_Diag(StateIn&);
     MP2R12Energy_Diag(Ref<R12EnergyIntermediates> &r12intermediates, int debug);

@@ -28,13 +28,14 @@
 #ifndef _math_scmat_elemop_h
 #define _math_scmat_elemop_h
 
+#include <cmath>
+#include <stdexcept>
+#include <functional>
 #include <util/state/state.h>
 #include <util/state/statein.h>
 #include <util/state/stateout.h>
 #include <util/group/message.h>
 #include <math/scmat/blkiter.h>
-#include <cmath>
-#include <stdexcept>
 
 namespace sc {
 
@@ -61,19 +62,46 @@ struct SCMatrixIterationRanges {
   };
 };
 struct SCElement {
+    typedef double value_type;
     SCElement() : irow(null.irow), icol(null.icol), value(null.value) {}
-    SCElement(int ir, int ic, double v) : irow(ir), icol(ic), value(v) {}
+    SCElement(int ir, int ic, value_type v) : irow(ir), icol(ic), value(v) {}
     int irow;
     int icol;
-    double value;
+    value_type value;
 
     static SCElement null;
 
-    struct fabs_less {
-        bool operator()(const SCElement& a, const SCElement& b) const { return fabs(a.value) < fabs(b.value); }
-        bool operator()(const double& a, const double& b) const { return fabs(a) < fabs(b); }
-    };
+    operator value_type() const {
+      return value;
+    }
 };
+
+/**
+ * Adapts a binary predicate that acts on SCElement::value_type.
+ */
+template <class BinaryPredicate>
+struct SCElementBinaryPredicateAdapter : public std::binary_function<SCElement, SCElement, bool> {
+  bool operator()(const sc::SCElement& a, const sc::SCElement& b) {
+    return BinaryPredicate()(a.value,b.value);
+  }
+};
+
+/**
+ * useful comparison functions
+ */
+template <class T = double>
+struct abs_less : public std::binary_function<T, T, bool> {
+  bool operator()(const T& a, const T& b) {
+    return std::less<T>()(std::abs(a),std::abs(b));
+  }
+};
+template <class T = double>
+struct abs_greater : public std::binary_function<T, T, bool> {
+  bool operator()(const T& a, const T& b) {
+    return std::greater<T>()(std::abs(a),std::abs(b));
+  }
+};
+
 
 /** Objects of class SCElementOp are used to perform operations on the
     elements of matrices.  When the SCElementOp object is given to the
@@ -195,6 +223,9 @@ class SCElementOp3: public SavableState {
                                     SCVectorSimpleBlock*);
 };
 
+/**
+ * evaluates \f$ \sum_{i,j} A(i,j) * B(i,j) \f$
+ */
 class SCElementScalarProduct: public SCElementOp2 {
   private:
     int deferred_;
@@ -213,14 +244,32 @@ class SCElementScalarProduct: public SCElementOp2 {
 };
 
 
-class SCDestructiveElementProduct: public SCElementOp2 {
+/**
+ * does \f$ A(i,j) *= B(i,j), \forall i,j \f$
+ */
+class SCElementDestructiveProduct: public SCElementOp2 {
   public:
-    SCDestructiveElementProduct();
-    SCDestructiveElementProduct(StateIn&);
-    ~SCDestructiveElementProduct();
+    SCElementDestructiveProduct();
+    SCElementDestructiveProduct(StateIn&);
+    ~SCElementDestructiveProduct();
     int has_side_effects();
     void save_data_state(StateOut&);
     void process(SCMatrixBlockIter&,SCMatrixBlockIter&);
+};
+
+/**
+ * does \f$ Y(i,j) += a*X(i,j), \forall i,j \f$
+ */
+class SCElementDAXPY: public SCElementOp2 {
+  public:
+    SCElementDAXPY(double a);
+    SCElementDAXPY(StateIn&);
+    ~SCElementDAXPY();
+    int has_side_effects();
+    void save_data_state(StateOut&);
+    void process(SCMatrixBlockIter&,SCMatrixBlockIter&);
+  private:
+    double a_;
 };
 
 class SCElementScale: public SCElementOp {
@@ -314,18 +363,20 @@ class SCElementShiftDiagonal: public SCElementOp {
     void process(SCMatrixBlockIter&);
 };
 
-/// Searches each range in IterationRanges for element i so that
-/// there is no element j in that Range for which Op(i<j) == true.
-/// Result of the search are returned as std::vector<SCElement>, whose elements
-/// correspond to each Range in IterationRanges
-/// \sa std::max_element
-template <SCMatrixIterationRanges::Values IterationRanges = SCMatrixIterationRanges::AllElements, class BinaryPredicate = std::less<double> >
-class SCElementMaxElement: public SCElementOp {
+/** Searches each range in IterationRanges for element i so that
+  * there is no element j in that Range for which Op(i,j) == true.
+  * Result of the search are returned as std::vector<SCElement>, whose elements
+  * correspond to each Range in IterationRanges
+  * \sa std::max_element
+  *
+  */
+template <class BinaryPredicate = std::less<double>, SCMatrixIterationRanges::Values IterationRanges = SCMatrixIterationRanges::AllElements>
+class SCElementFindExtremum: public SCElementOp {
   public:
-    typedef SCElementMaxElement<IterationRanges, BinaryPredicate> this_type;
+    typedef SCElementFindExtremum<BinaryPredicate, IterationRanges> this_type;
 
-    SCElementMaxElement():deferred_(0), r(1) {}
-    SCElementMaxElement(StateIn& s): SCElementOp(s)
+    SCElementFindExtremum():deferred_(0), r(1) {}
+    SCElementFindExtremum(StateIn& s): SCElementOp(s)
     {
       {
         int nchar; s.get(nchar);
@@ -338,7 +389,7 @@ class SCElementMaxElement: public SCElementOp {
       s.get(deferred_);
     }
 
-    ~SCElementMaxElement() {}
+    ~SCElementFindExtremum() {}
 
     void save_data_state(StateOut& s)
     {
@@ -371,7 +422,7 @@ class SCElementMaxElement: public SCElementOp {
 
     void collect(const Ref<MessageGrp>& msg) {
       if (!deferred_) {
-        GrpCompareReduce<SCElement, SCElement::fabs_less> reduce;
+        GrpCompareReduce<SCElement, SCElementBinaryPredicateAdapter<BinaryPredicate> > reduce;
         msg->reduce<SCElement>(&r[0], r.size(), reduce);
       }
     }
@@ -390,12 +441,12 @@ class SCElementMaxElement: public SCElementOp {
     static ClassDesc class_desc_;
 };
 
-template <SCMatrixIterationRanges::Values IterationRanges, class BinaryPredicate>
-ClassDesc SCElementMaxElement<IterationRanges,BinaryPredicate>::class_desc_(
+template <class BinaryPredicate, SCMatrixIterationRanges::Values IterationRanges>
+ClassDesc SCElementFindExtremum<BinaryPredicate,IterationRanges>::class_desc_(
   typeid(this_type),
   typeid(this_type).name(),
   1,"public SCElementOp",
-  0, 0, create<this_type>);
+  0, 0, sc::create<typename SCElementFindExtremum<BinaryPredicate,IterationRanges>::this_type>);
 
 class SCElementMaxAbs: public SCElementOp {
   private:
@@ -432,7 +483,6 @@ class SCElementMinAbs: public SCElementOp {
     void collect(const Ref<SCElementOp>&);
     double result();
 };
-
 
 class SCElementSum: public SCElementOp {
   private:

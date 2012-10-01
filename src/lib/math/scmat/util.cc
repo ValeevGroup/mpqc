@@ -26,6 +26,7 @@
 //
 
 #include <typeinfo>
+#include <vector>
 
 #include <math/scmat/util.h>
 #include <util/group/thread.h>
@@ -125,16 +126,16 @@ sc::canonicalize_column_phases(RefSCMatrix& A) {
     RefDiagSCMatrix U = A.kit()->diagmatrix(A.coldim());
     const int ncol = A.ncol();
 
-    // find max element in each column
-    typedef SCElementMaxElement<SCMatrixIterationRanges::Columns, SCElement::fabs_less > ElOp;
-    Ref<ElOp> find_max_op = new ElOp;
-    A.element_op(find_max_op);
-    std::vector<SCElement> max_elems = find_max_op->result();
+    // find max abs element in each column
+    typedef SCElementFindExtremum<sc::abs_less<double>, SCMatrixIterationRanges::Columns> ElOp;
+    Ref<ElOp> find_maxabs_op = new ElOp;
+    A.element_op(find_maxabs_op);
+    std::vector<SCElement> maxabs_elems = find_maxabs_op->result();
 
     // scale each column, if needed
     for(int c=0; c<ncol; ++c) {
-      const double phase_correction = (max_elems[c].value < 0.0) ? -1.0 : 1.0;
-      //ExEnv::out0() << indent << "col = " << c << ": max_value = " << max_elems[c].value << " phase = " << phase_correction << std::endl;
+      const double phase_correction = (maxabs_elems[c].value < 0.0) ? -1.0 : 1.0;  // max magnitude, not most positive!!!
+      //ExEnv::out0() << indent << "col = " << c << ": max_value = " << maxabs_elems[c].value << " phase = " << phase_correction << std::endl;
       U.set_element(c, phase_correction);
     }
     A = A * U;

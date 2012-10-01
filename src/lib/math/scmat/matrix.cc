@@ -1292,7 +1292,7 @@ RefDiagSCMatrix::operator*(const RefDiagSCMatrix&a) const
   a.require_nonnull();
 
   RefDiagSCMatrix r = copy();
-  Ref<SCElementOp2> op = new SCDestructiveElementProduct;
+  Ref<SCElementOp2> op = new SCElementDestructiveProduct;
   r->element_op(op,a.pointer());
   return r;
 }

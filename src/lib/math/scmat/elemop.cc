@@ -500,23 +500,23 @@ SCElementScalarProduct::result()
 }
 
 /////////////////////////////////////////////////////////////////////////
-// SCDestructiveElementProduct members
+// SCElementDestructiveProduct members
 
-static ClassDesc SCDestructiveElementProduct_cd(
-  typeid(SCDestructiveElementProduct),"SCDestructiveElementProduct",1,"public SCElementOp2",
-  0, 0, create<SCDestructiveElementProduct>);
-SCDestructiveElementProduct::SCDestructiveElementProduct() {}
-SCDestructiveElementProduct::SCDestructiveElementProduct(StateIn&s):
+static ClassDesc SCElementDestructiveProduct_cd(
+  typeid(SCElementDestructiveProduct),"SCElementDestructiveProduct",1,"public SCElementOp2",
+  0, 0, create<SCElementDestructiveProduct>);
+SCElementDestructiveProduct::SCElementDestructiveProduct() {}
+SCElementDestructiveProduct::SCElementDestructiveProduct(StateIn&s):
   SCElementOp2(s)
 {
 }
 void
-SCDestructiveElementProduct::save_data_state(StateOut&s)
+SCElementDestructiveProduct::save_data_state(StateOut&s)
 {
 }
-SCDestructiveElementProduct::~SCDestructiveElementProduct() {}
+SCElementDestructiveProduct::~SCElementDestructiveProduct() {}
 void
-SCDestructiveElementProduct::process(SCMatrixBlockIter&i,
+SCElementDestructiveProduct::process(SCMatrixBlockIter&i,
                                      SCMatrixBlockIter&j)
 {
   for (i.reset(),j.reset(); i; ++i,++j) {
@@ -525,7 +525,40 @@ SCDestructiveElementProduct::process(SCMatrixBlockIter&i,
 }
 
 int
-SCDestructiveElementProduct::has_side_effects()
+SCElementDestructiveProduct::has_side_effects()
+{
+  return 1;
+}
+
+/////////////////////////////////////////////////////////////////////////
+// SCElementDAXPY members
+
+static ClassDesc SCElementDAXPY_cd(
+  typeid(SCElementDAXPY),"SCElementDAXPY",1,"public SCElementOp2",
+  0, 0, create<SCElementDAXPY>);
+SCElementDAXPY::SCElementDAXPY(double a) : a_(a) {}
+SCElementDAXPY::SCElementDAXPY(StateIn&s):
+  SCElementOp2(s)
+{
+  s.get(a_);
+}
+void
+SCElementDAXPY::save_data_state(StateOut&s)
+{
+  s.put(a_);
+}
+SCElementDAXPY::~SCElementDAXPY() {}
+void
+SCElementDAXPY::process(SCMatrixBlockIter&i,
+                        SCMatrixBlockIter&j)
+{
+  for (i.reset(),j.reset(); i; ++i,++j) {
+    i.set(i.get() + a_*j.get());
+  }
+}
+
+int
+SCElementDAXPY::has_side_effects()
 {
   return 1;
 }

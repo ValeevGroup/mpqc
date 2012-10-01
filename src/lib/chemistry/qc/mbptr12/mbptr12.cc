@@ -651,9 +651,6 @@ MBPT2_R12::mp1_pno(SpinCase2 spin,
     const Ref<OrbitalSpace>& uocc2_act = r12world()->refwfn()->uocc_act(spin2);
     assert(uocc1_act == uocc2_act); // not ready to handle UHF yet
 
-    occ1_act->print_detail();
-    uocc1_act->print_detail();
-
     // compute the vv block of MP1 (not MP2-R12) 1-RDM for each ij
     // \gamma_a^b = T^ij_ac T_ij^bc
 
@@ -694,7 +691,7 @@ MBPT2_R12::mp1_pno(SpinCase2 spin,
       RefSCVector T2_ij_vec = T2.get_row(ij);
       RefSCMatrix T2_ij = T2_ij_vec.kit()->matrix(uocc1_act->dim(), uocc2_act->dim());
       vector_to_matrix(T2_ij, T2_ij_vec, spincase2);
-      T2_ij.print((std::string("MP1 T2 amplitudes ") + oss.str()).c_str());
+      //T2_ij.print((std::string("MP1 T2 amplitudes ") + oss.str()).c_str());
 
       RefSCMatrix T2_ij_eff = T2_ij;
 
@@ -707,7 +704,7 @@ MBPT2_R12::mp1_pno(SpinCase2 spin,
       if (deflate_geminal == false) { // use standard MP1 pair densities
         gamma1ab_ij.accumulate_symmetric_product(T2_ij);
         gamma1ab_ij.accumulate_symmetric_product(T2_ij.t());
-        gamma1ab_ij.print("pair density");
+        //gamma1ab_ij.print("pair density");
 
 //        RefSCMatrix gamma1ab_ij_rect = T2_ij * T2_ij.t() + T2_ij.t() * T2_ij;
 //        gamma1ab_ij.assign(0.0);  gamma1ab_ij.accumulate_symmetric_sum(gamma1ab_ij_rect); gamma1ab_ij.scale(0.5);
@@ -744,7 +741,6 @@ MBPT2_R12::mp1_pno(SpinCase2 spin,
 
         gamma1ab_ij_evals = gamma1ab_ij_sansr12.eigvals();
         gamma1ab_ij_evals.print("pair density (sans R12) eigenvalues");
-      }
 
         // compute the "natural" CABS space
         if (1) {
@@ -766,6 +762,7 @@ MBPT2_R12::mp1_pno(SpinCase2 spin,
           gamma1_xx_evecs = gamma1_xx.eigvecs();
         }
 
+      }
       gamma1ab_ij_evecs = gamma1ab_ij.eigvecs();
 
       // coefficient matrices should use blocked dimensions for using with OrbitalSpace

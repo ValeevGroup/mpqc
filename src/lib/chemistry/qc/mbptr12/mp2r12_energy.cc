@@ -72,6 +72,7 @@ R12EnergyIntermediates::R12EnergyIntermediates(const Ref<R12IntEval>& r12eval,
   A_computed_=false;
   T1_cc_computed_=false;
   T2_cc_computed_=false;
+  Onerdm_cc_computed_=false;
 }
 
 R12EnergyIntermediates::R12EnergyIntermediates(StateIn &si) {
@@ -87,6 +88,9 @@ R12EnergyIntermediates::R12EnergyIntermediates(StateIn &si) {
     B_[i].restore(si);
     A_[i].restore(si);
   }
+  T1_cc_computed_=false;
+  T2_cc_computed_=false;
+  Onerdm_cc_computed_=false;
 }
 
 void R12EnergyIntermediates::save_data_state(StateOut &so) {
@@ -102,6 +106,10 @@ void R12EnergyIntermediates::save_data_state(StateOut &so) {
     B_[i].save(so);
     A_[i].save(so);
   }
+
+  T1_cc_computed_=false;
+  T2_cc_computed_=false;
+  Onerdm_cc_computed_=false;
 }
 
 Ref<R12IntEval> R12EnergyIntermediates::r12eval() const {
@@ -137,6 +145,9 @@ bool R12EnergyIntermediates::T1_cc_computed() const {
 }
 bool R12EnergyIntermediates::T2_cc_computed() const {
   return(T2_cc_computed_);
+}
+bool R12EnergyIntermediates::Onerdm_cc_computed() const {
+  return(Onerdm_cc_computed_);
 }
 const RefSCMatrix& R12EnergyIntermediates::get_V(const SpinCase2 &spincase2) const {
   return(V_[spincase2]);
@@ -192,6 +203,14 @@ void R12EnergyIntermediates::assign_T2_cc(const SpinCase2 &spincase2, const Ref<
   T2_cc_computed_ = true;
 }
 
+const RefSCMatrix& R12EnergyIntermediates::get_1rdm_cc(const SpinCase1 &spincase1) const {
+  return(Onerdm_cc_[spincase1]);
+}
+
+void R12EnergyIntermediates::assign_1rdm_cc(const SpinCase1 &spincase1, const RefSCMatrix& Onerdm_cc) {
+  Onerdm_cc_[spincase1] = Onerdm_cc;
+  Onerdm_cc_computed_ = true;
+}
 
 /*-------------
   MP2R12Energy

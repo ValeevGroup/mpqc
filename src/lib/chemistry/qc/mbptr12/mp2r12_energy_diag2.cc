@@ -45,6 +45,8 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
   Ref<MessageGrp> msg = r12world->world()->msg();
   int me = msg->me();
   int ntasks = msg->n();
+  const bool do_mp2 = r12intermediates_->T1_cc_computed() == false &&
+                      r12intermediates_->T2_cc_computed() == false;
 
   const Ref<R12Technology::CorrelationFactor> corrfactor =
       r12world->r12tech()->corrfactor();
@@ -249,7 +251,9 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
     // Allocate storage for V, X, and B intermediates
     //
     double* Vij_ij = new double[nocc12];
+    fill_n(Vij_ij, nocc12, 0.0);
     double* Vij_ji = new double[nocc12];
+    fill_n(Vij_ji, nocc12, 0.0);
 
     // Assign pointers to V coupling matrixes
     double* Vij_ij_coupling = NULL;
@@ -260,8 +264,25 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
     if (this->r12eval()->coupling() == true
         || this->r12eval()->ebc() == false) {
       Vij_ij_coupling = new double[nocc12];
+      fill_n(Vij_ij_coupling, nocc12, 0.0);
       Vij_ji_coupling = new double[nocc12];
+      fill_n(Vij_ji_coupling, nocc12, 0.0);
       Tij_ab = new double[nocc12 * nvir12_act];
+    }
+    // in MP2 with coupling=true also need to compute a coupling contribution to B matrix
+    double* Bij_ij_coupling = NULL;
+    double* Bij_ji_coupling = NULL;
+    double* Bji_ij_coupling = NULL;
+    double* Bji_ji_coupling = NULL;
+    if (this->r12eval()->coupling() == true && do_mp2) {
+      Bij_ij_coupling = new double[nocc12];
+      fill_n(Bij_ij_coupling, nocc12, 0.0);
+      Bij_ji_coupling = new double[nocc12];
+      fill_n(Bij_ji_coupling, nocc12, 0.0);
+      Bji_ij_coupling = new double[nocc12];
+      fill_n(Bji_ij_coupling, nocc12, 0.0);
+      Bji_ji_coupling = new double[nocc12];
+      fill_n(Bji_ji_coupling, nocc12, 0.0);
     }
 
     // stored as o1 x o2 matrix
@@ -487,7 +508,7 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
 #endif
 
       // Print out all the eigenvalues
-#if 1
+#if 0
       if (debug_ >= DefaultPrintThresholds::mostN2) {
         ExEnv::out0() << endl << indent << "evals_i1: " << endl;
         for (int i1 = 0; i1 < nocc1_act; ++i1) {
@@ -548,11 +569,11 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
 
       // Vji_ji_coupling: R^ij_a'b f^a'_a T^ab_ij
       Ref<DistArray4> i1i2AF1a2_ints = NULL;
-      if (spin1 != spin2) {
+//      if (spin1 != spin2) {
         activate_ints(occ1_act->id(), occ2_act->id(), fvir1_act->id(),
                       vir2_act->id(), descr_f12_key, moints4_rtime,
                       i1i2AF1a2_ints);
-      }
+//      }
 
       Ref<DistArray4> i2i1AF1a2_ints = NULL;
       Ref<DistArray4> i2i1a1AF2_ints = NULL;
@@ -598,7 +619,9 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
                       Vij_ji_coupling);
         }
         T2[spin]->deactivate();
-      } else {
+      } // done with CC coupling contribution to V
+      else if (do_mp2 && this->r12eval()->coupling() == true){ // MP2 coupling contibutions to V and B
+
         // Start computing MP2 V coupling
         if (debug_ >= DefaultPrintThresholds::N2)
           ExEnv::out0() << endl << indent << spinletters << "  MP2 V coupling:"
@@ -675,10 +698,88 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
                 << " Vji_ij_coupling: + R^ji_aa' f^a'_b T^ab_ij" << endl;
           compute_FxT(ji_ij, f12_idx, i1i2a1AF2_ints, Tij_ab, Vij_ji_coupling);
         }
-      } // end of V coupling computation
+
+        // Start computing MP2 B coupling
+        //  1) compute A^i(spin1)j(spin2)_a(spin1)b(spin2)
+        //     = -C^ij_ab / (e_i + e_j - e_a -e_b)
+        //  2) B_coupling = A^ij_ab C^ab_ij
+        if (debug_ >= DefaultPrintThresholds::N2)
+          ExEnv::out0() << endl << indent << spinletters << "  MP2 B coupling:"
+              << endl;
+        // compute A = - C / denom
+        Ref<DistArray4> A_i1i2a1a2 = i1i2a1AF2_ints->clone();
+        A_i1i2a1a2->activate();
+        double* A_buf = new double[nvir12_act];
+        for (int i1 = 0; i1 < nocc1_act; ++i1) {
+          for (int i2 = 0; i2 < nocc2_act; ++i2) {
+            const double* Cij_ab1 = i1i2a1AF2_ints->retrieve_pair_block(i1, i2,
+                                                                        f12_idx);
+            const double* Cij_ab2 = i1i2AF1a2_ints->retrieve_pair_block(i1, i2,
+                                                                        f12_idx);
+
+            for (int a1 = 0, a12 = 0; a1 < nvir1_act; ++a1) {
+              for (int a2 = 0; a2 < nvir2_act; ++a2, ++a12) {
+                A_buf[a12] =
+                    (Cij_ab1[a12] + Cij_ab2[a12])
+                        / (evals_i1(i1) + evals_i2(i2) - evals_a1(a1)
+                            - evals_a2(a2));
+              }
+            }
+            A_i1i2a1a2->store_pair_block(i1, i2, f12_idx, A_buf);
+            i1i2a1AF2_ints->release_pair_block(i1, i2, f12_idx);
+            i1i2AF1a2_ints->release_pair_block(i1, i2, f12_idx);
+          }
+        }
+
+        compute_YxF(ij_ij, 1.0, f12_idx, f12_idx, A_i1i2a1a2, i1i2a1AF2_ints, Bij_ij_coupling);
+        compute_YxF(ij_ij, 1.0, f12_idx, f12_idx, A_i1i2a1a2, i1i2AF1a2_ints, Bij_ij_coupling);
+
+        compute_YxF(ij_ji, 1.0, f12_idx, f12_idx, A_i1i2a1a2, i2i1AF1a2_ints, Bij_ji_coupling);
+        compute_YxF(ij_ji, 1.0, f12_idx, f12_idx, A_i1i2a1a2, i2i1a1AF2_ints, Bij_ji_coupling);
+
+        A_i1i2a1a2->deactivate();
+        A_i1i2a1a2 = 0;
+
+        if (num_unique_spincases2 == 3 && spin1 != spin2) {
+
+          // compute A = - C / denom
+          Ref<DistArray4> A_i2i1a1a2 = i2i1a1AF2_ints->clone();
+          A_i2i1a1a2->activate();
+          double* A_buf = new double[nvir12_act];
+          for (int i2 = 0; i2 < nocc2_act; ++i2) {
+            for (int i1 = 0; i1 < nocc1_act; ++i1) {
+              const double* Cji_ab1 = i2i1a1AF2_ints->retrieve_pair_block(i2, i1,
+                                                                          f12_idx);
+              const double* Cji_ab2 = i2i1AF1a2_ints->retrieve_pair_block(i2, i1,
+                                                                          f12_idx);
+
+              for (int a1 = 0, a12 = 0; a1 < nvir1_act; ++a1) {
+                for (int a2 = 0; a2 < nvir2_act; ++a2, ++a12) {
+                  A_buf[a12] =
+                      (Cji_ab1[a12] + Cji_ab2[a12])
+                          / (evals_i1(i1) + evals_i2(i2) - evals_a1(a1)
+                              - evals_a2(a2));
+                }
+              }
+              A_i2i1a1a2->store_pair_block(i2, i1, f12_idx, A_buf);
+              i2i1a1AF2_ints->release_pair_block(i2, i1, f12_idx);
+              i2i1AF1a2_ints->release_pair_block(i2, i1, f12_idx);
+            }
+          }
+
+          compute_YxF(ji_ji, 1.0, f12_idx, f12_idx, A_i2i1a1a2, i2i1AF1a2_ints, Bji_ji_coupling);
+          compute_YxF(ji_ji, 1.0, f12_idx, f12_idx, A_i2i1a1a2, i2i1a1AF2_ints, Bji_ji_coupling);
+
+          compute_YxF(ji_ij, 1.0, f12_idx, f12_idx, A_i2i1a1a2, i1i2AF1a2_ints, Bji_ij_coupling);
+          compute_YxF(ji_ij, 1.0, f12_idx, f12_idx, A_i2i1a1a2, i1i2a1AF2_ints, Bji_ij_coupling);
+
+          A_i2i1a1a2->deactivate();
+          A_i2i1a1a2 = 0;
+        }
+
+      } // end of MP2 V & B coupling computation
       i1i2a1AF2_ints->deactivate();
-      if (spin1 != spin2)
-        i1i2AF1a2_ints->deactivate();
+      i1i2AF1a2_ints->deactivate();
       if (num_unique_spincases2 == 3 && spin1 != spin2) {
         i2i1AF1a2_ints->deactivate();
         i2i1a1AF2_ints->deactivate();
@@ -689,11 +790,24 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
           print_antisym_intermediate(spincase, "V^ij_ij coupling",
                                      Vij_ij_coupling, Vij_ji_coupling,
                                      nocc1_act, nocc2_act);
+          if (do_mp2 && this->r12eval()->coupling())
+            print_antisym_intermediate(spincase, "B^ij_ij coupling",
+                                       Bij_ij_coupling, Bij_ji_coupling,
+                                       nocc1_act, nocc2_act);
         } else {
           print_intermediate(spincase, "V^ij_ij coupling", Vij_ij_coupling,
                              nocc1_act, nocc2_act);
           print_intermediate(spincase, "V^ij_ji coupling", Vij_ji_coupling,
                              nocc1_act, nocc2_act);
+
+          if (do_mp2 && this->r12eval()->coupling()) {
+            print_intermediate(spincase, "B^ij_ij coupling", Bij_ij_coupling, nocc1_act, nocc2_act);
+            print_intermediate(spincase, "B^ij_ji coupling", Bij_ji_coupling, nocc1_act, nocc2_act);
+            if (spin1 != spin2 && num_unique_spincases2 == 3) {
+              print_intermediate(spincase, "B^ji_ij coupling", Bji_ij_coupling, nocc1_act, nocc2_act);
+              print_intermediate(spincase, "B^ji_ji coupling", Bji_ji_coupling, nocc1_act, nocc2_act);
+            }
+          }
         }
       } // end of debug
 
@@ -1586,7 +1700,7 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
 
             if (debug_ >= DefaultPrintThresholds::mostN2) {
               ExEnv::out0() << indent << "Hij_pair_energy: ij = " << i1 << ","
-                  << i2 << " e(coupling) = "
+                  << i2 << " e(couplingV) = "
                   << (2.0 * C_1 * (Vij_ij_coupling[ij] - Vij_ji_coupling[ij]))
                   << endl;
             }
@@ -1594,6 +1708,17 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
             Hij_pair_energy += 2.0 * C_1
                 * (Vij_ij_coupling[ij] - Vij_ji_coupling[ij]);
 
+            if (do_mp2 && this->r12eval()->coupling()) {
+
+              if (debug_ >= DefaultPrintThresholds::mostN2) {
+                ExEnv::out0() << indent << "Hij_pair_energy: ij = " << i1 << ","
+                    << i2 << " e(couplingB) = "
+                    << (C_1 * C_1 * (Bij_ij_coupling[ij] - Bij_ji_coupling[ij]))
+                    << endl;
+              }
+
+              Hij_pair_energy += C_1 * C_1 * (Bij_ij_coupling[ij] - Bij_ji_coupling[ij]);
+            }
           }
 
           // Get indices for the lower triangle matrix
@@ -1660,7 +1785,7 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
                   << i1
                   << ","
                   << i2
-                  << " e(coupling) = "
+                  << " e(couplingV) = "
                   << (2.0
                       * (0.5 * (C_0 + C_1) * Vij_ij_coupling[ij]
                           + 0.5 * (C_0 - C_1) * Vij_ji_coupling[ij])) << endl;
@@ -1668,6 +1793,32 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
             Hij_pair_energy += 2.0
                 * (0.5 * (C_0 + C_1) * Vij_ij_coupling[ij]
                     + 0.5 * (C_0 - C_1) * Vij_ji_coupling[ij]);
+
+            if (do_mp2 && this->r12eval()->coupling()) {
+
+              if (debug_ >= DefaultPrintThresholds::mostN2) {
+                ExEnv::out0()
+                    << indent
+                    << "Hij_pair_energy: ij = "
+                    << i1
+                    << ","
+                    << i2
+                    << " e(couplingB) = "
+                    << (pow(0.5 * (C_0 + C_1), 2)
+                        * Bij_ij_coupling[ij]
+                        + 0.25 * (C_0 * C_0 - C_1 * C_1)
+                            * (2.0 * Bij_ji_coupling[ij])
+                        + pow(0.5 * (C_0 - C_1), 2)
+                            * (Bij_ij_coupling[ij])) << endl;
+              }
+              Hij_pair_energy += (pow(0.5 * (C_0 + C_1), 2)
+                  * Bij_ij_coupling[ij]
+                  + 0.25 * (C_0 * C_0 - C_1 * C_1)
+                      * (2.0 * Bij_ji_coupling[ij])
+                  + pow(0.5 * (C_0 - C_1), 2)
+                      * (Bij_ij_coupling[ij]));
+
+            }
           }
 
           const int i12 = i1 * nocc2_act + i2;
@@ -1714,17 +1865,6 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
                 << scprintf("%20.15lf",Hij_pair_energy_TBT)
                 << endl;
           }
-//              2.0
-//                  * (0.5 * (C_0 + C_1) * Vij_ij[ij]
-//                      + 0.5 * (C_0 - C_1) * Vij_ji[ij])
-//                  + pow(0.5 * (C_0 + C_1), 2)
-//                      * (Bij_ij[ij] - (evals_i1(i1) + evals_i2(i2)) * Xij_ij[ij])
-//                  + 0.25 * (C_0 * C_0 - C_1 * C_1)
-//                      * (Bij_ji[ij] + Bji_ij[ji]
-//                          - (evals_i1(i1) + evals_i2(i2))
-//                              * (Xij_ji[ij] + Xji_ij[ij]))
-//                  + pow(0.5 * (C_0 - C_1), 2)
-//                      * (Bji_ji[ji] - (evals_i1(i1) + evals_i2(i2)) * Xji_ji[ij]);
 
           if (this->r12eval()->coupling() == true
               || this->r12eval()->ebc() == false) {
@@ -1735,7 +1875,7 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
                   << i1
                   << ","
                   << i2
-                  << " e(coupling) = "
+                  << " e(couplingV) = "
                   << (2.0
                       * (0.5 * (C_0 + C_1) * Vij_ij_coupling[ij]
                           + 0.5 * (C_0 - C_1) * Vij_ji_coupling[ij])) << endl;
@@ -1743,6 +1883,32 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
             Hij_pair_energy_VT += 2.0
                 * (0.5 * (C_0 + C_1) * Vij_ij_coupling[ij]
                     + 0.5 * (C_0 - C_1) * Vij_ji_coupling[ij]);
+
+            if (do_mp2 && this->r12eval()->coupling()) {
+              if (debug_ >= DefaultPrintThresholds::mostN2) {
+                ExEnv::out0()
+                << indent
+                << "Hij_pair_energy: ij = "
+                << i1
+                << ","
+                << i2
+                << " e(couplingB) = "
+                << (pow(0.5 * (C_0 + C_1), 2)
+                    * (Bij_ij_coupling[ij])
+                    + 0.25 * (C_0 * C_0 - C_1 * C_1)
+                        * ((Bij_ji_coupling[ij] + Bji_ij_coupling[ji])
+                          )
+                    + pow(0.5 * (C_0 - C_1), 2)
+                        * (Bji_ji_coupling[ji])) << endl;
+              }
+              Hij_pair_energy_VT += (pow(0.5 * (C_0 + C_1), 2)
+                  * (Bij_ij_coupling[ij])
+                  + 0.25 * (C_0 * C_0 - C_1 * C_1)
+                      * ((Bij_ji_coupling[ij] + Bji_ij_coupling[ji])
+                        )
+                  + pow(0.5 * (C_0 - C_1), 2)
+                      * (Bji_ji_coupling[ji]));
+            }
           }
 
           Hij_pair_energy = Hij_pair_energy_VT + Hij_pair_energy_TBT;

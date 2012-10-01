@@ -75,7 +75,6 @@ MBPT2_R12::MBPT2_R12(StateIn& s):
     throw InputError("MBPT2_R12::MBPT2_R12 -- pq Ansatz not allowed",__FILE__,__LINE__);
   }
 
-  int unv; s.get(unv); jinmei_energy_ = (bool)unv;
   s.get(mp2_corr_energy_);
   s.get(cabs_singles_);
   s.get(cabs_singles_energy_);
@@ -159,12 +158,6 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   const bool default_cabs_singles = null_cf.nonnull() ? false : true;
   cabs_singles_ = keyval->booleanvalue("cabs_singles",KeyValValueboolean(default_cabs_singles));
 
-  const bool diag = r12tech->ansatz()->diag();
-  // use jinmei's code for diagonal ansatz
-  jinmei_energy_ = keyval->booleanvalue("jinmei_energy",KeyValValueboolean(diag));
-  // only diag ansatz is possible now
-  if (jinmei_energy_) assert(diag == true);
-
   twopdm_grid_ = require_dynamic_cast<TwoBodyGrid*>(
                    keyval->describedclassvalue("twopdm_grid").pointer(),
                    "MBPT2_R12::MBPT2_R12\n"
@@ -206,7 +199,6 @@ MBPT2_R12::save_data_state(StateOut& s)
   SavableState::save_state(r12b_energy_.pointer(),s);
   SavableState::save_state(r12c_energy_.pointer(),s);
 
-  s.put((int)jinmei_energy_);
   s.put(mp2_corr_energy_);
   s.put(cabs_singles_);
   s.put(cabs_singles_energy_);
@@ -659,6 +651,9 @@ MBPT2_R12::mp1_pno(SpinCase2 spin,
     const Ref<OrbitalSpace>& uocc2_act = r12world()->refwfn()->uocc_act(spin2);
     assert(uocc1_act == uocc2_act); // not ready to handle UHF yet
 
+    occ1_act->print_detail();
+    uocc1_act->print_detail();
+
     // compute the vv block of MP1 (not MP2-R12) 1-RDM for each ij
     // \gamma_a^b = T^ij_ac T_ij^bc
 
@@ -699,7 +694,7 @@ MBPT2_R12::mp1_pno(SpinCase2 spin,
       RefSCVector T2_ij_vec = T2.get_row(ij);
       RefSCMatrix T2_ij = T2_ij_vec.kit()->matrix(uocc1_act->dim(), uocc2_act->dim());
       vector_to_matrix(T2_ij, T2_ij_vec, spincase2);
-      //T2_ij.print((std::string("MP1 T2 amplitudes ") + oss.str()).c_str());
+      T2_ij.print((std::string("MP1 T2 amplitudes ") + oss.str()).c_str());
 
       RefSCMatrix T2_ij_eff = T2_ij;
 
@@ -712,7 +707,7 @@ MBPT2_R12::mp1_pno(SpinCase2 spin,
       if (deflate_geminal == false) { // use standard MP1 pair densities
         gamma1ab_ij.accumulate_symmetric_product(T2_ij);
         gamma1ab_ij.accumulate_symmetric_product(T2_ij.t());
-        //gamma1ab_ij.print("pair density");
+        gamma1ab_ij.print("pair density");
 
 //        RefSCMatrix gamma1ab_ij_rect = T2_ij * T2_ij.t() + T2_ij.t() * T2_ij;
 //        gamma1ab_ij.assign(0.0);  gamma1ab_ij.accumulate_symmetric_sum(gamma1ab_ij_rect); gamma1ab_ij.scale(0.5);
@@ -744,12 +739,12 @@ MBPT2_R12::mp1_pno(SpinCase2 spin,
         gamma1ab_ij_sansr12.accumulate_symmetric_product(T2_ij.t());
         gamma1ab_ij_sansr12.eigvals().print("pair density (sans R12 vv) eigenvalues");
 #endif
-
         // pass it outside this scope
         gamma1ab_ij = gamma1ab_ij_sansr12;
 
         gamma1ab_ij_evals = gamma1ab_ij_sansr12.eigvals();
         gamma1ab_ij_evals.print("pair density (sans R12) eigenvalues");
+      }
 
         // compute the "natural" CABS space
         if (1) {
@@ -771,7 +766,6 @@ MBPT2_R12::mp1_pno(SpinCase2 spin,
           gamma1_xx_evecs = gamma1_xx.eigvecs();
         }
 
-      }
       gamma1ab_ij_evecs = gamma1ab_ij.eigvecs();
 
       // coefficient matrices should use blocked dimensions for using with OrbitalSpace

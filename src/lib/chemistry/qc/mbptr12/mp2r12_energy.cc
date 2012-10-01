@@ -201,9 +201,11 @@ static ClassDesc MP2R12Energy_cd(
   0, 0, 0);
 
 MP2R12Energy::MP2R12Energy(const Ref<R12EnergyIntermediates>& r12intermediates,
+                           bool include_obs_singles,
                            int debug) :
                              r12intermediates_(r12intermediates),
                              r12eval_(r12intermediates->r12eval()),
+                             include_obs_singles_(include_obs_singles),
                              debug_(debug>=0 ? debug : 0),
                              evaluated_(false)
 {
@@ -215,6 +217,7 @@ MP2R12Energy::MP2R12Energy(StateIn& si) : SavableState(si)
   r12eval_ << SavableState::restore_state(si);
   r12intermediates_ << SavableState::restore_state(si);
 
+  si.get(include_obs_singles_);
   si.get(debug_);
   si.get(evaluated_);
 
@@ -239,6 +242,7 @@ void MP2R12Energy::save_data_state(StateOut& so)
   SavableState::save_state(r12eval_.pointer(),so);
   SavableState::save_state(r12intermediates_.pointer(),so);
 
+  so.put(include_obs_singles_);
   so.put(debug_);
   so.put(evaluated_);
 
@@ -488,7 +492,7 @@ void MP2R12Energy::print_pair_energies(bool spinadapted, std::ostream& so)
   }
 
   const double ef12_corr_energy = ef12tot(AlphaAlpha) + ef12tot(BetaBeta) + ef12tot(AlphaBeta);
-  const double emp2_obs_singles_energy = r12eval()->bc() ? 0.0 : r12eval()->emp2_obs_singles();
+  const double emp2_obs_singles_energy = include_obs_singles_ ? r12eval()->emp2_obs_singles() : 0.0;
   const double emp2f12_corr_energy = emp2f12tot(AlphaAlpha) +
                                      emp2f12tot(BetaBeta) +
                                      emp2f12tot(AlphaBeta) +
@@ -519,8 +523,9 @@ void MP2R12Energy::print_pair_energies(bool spinadapted, std::ostream& so)
   const double etotal = escf + emp2f12_corr_energy;
   so <<endl<<indent
   <<scprintf("RHF energy [au]:                               %17.12lf\n", escf);
-  so <<indent
-  <<scprintf("Singles MP2 correlation energy [au]:           %17.12lf\n", emp2_obs_singles_energy);
+  if (emp2_obs_singles_energy != 0.0)
+    so <<indent
+       <<scprintf("Singles MP2 correlation energy [au]:           %17.12lf\n", emp2_obs_singles_energy);
   so <<indent
   <<scprintf("MP2 correlation energy [au]:                   %17.12lf\n", emp2f12_corr_energy - ef12_corr_energy);
   so <<indent
@@ -797,7 +802,7 @@ MP2R12Energy::ef12(SpinCase2 s)
 
 double MP2R12Energy::energy()
 {
-  const double emp2_obs_singles_energy = r12eval()->bc() ? 0.0 : r12eval()->emp2_obs_singles();
+  const double emp2_obs_singles_energy = include_obs_singles_ ? r12eval()->emp2_obs_singles() : 0.0;
   const double value = emp2f12tot(AlphaAlpha) + emp2f12tot(BetaBeta) + emp2f12tot(AlphaBeta) + emp2_obs_singles_energy;
   return value;
 }
@@ -824,8 +829,9 @@ static ClassDesc MP2R12Energy_SpinOrbital_cd(
                            0, 0, create<MP2R12Energy_SpinOrbital>);
 
 MP2R12Energy_SpinOrbital::MP2R12Energy_SpinOrbital(Ref<R12EnergyIntermediates> &r12intermediates,
+                                                   bool include_obs_singles,
                                                    int debug) :
-  MP2R12Energy(r12intermediates,debug) {
+  MP2R12Energy(r12intermediates,include_obs_singles,debug) {
 }
 
 MP2R12Energy_SpinOrbital::MP2R12Energy_SpinOrbital(StateIn &si) :
@@ -841,41 +847,6 @@ void MP2R12Energy_SpinOrbital::save_data_state(StateOut &so){
   MP2R12Energy::save_data_state(so);
 }
 
-/**************************************
- * class MP2R12Energy_SpinOrbital_new *
- **************************************/
-
-static ClassDesc MP2R12Energy_SpinOrbital_new_cd(
-                           typeid(MP2R12Energy_SpinOrbital_new),"MP2R12Energy_SpinOrbital_new",1,"public MP2R12Energy",
-                           0, 0, create<MP2R12Energy_SpinOrbital_new>);
-
-MP2R12Energy_SpinOrbital_new::MP2R12Energy_SpinOrbital_new(Ref<R12EnergyIntermediates> &r12intermediates,
-                                                           int debug) :
-  MP2R12Energy(r12intermediates,debug) {
-}
-
-MP2R12Energy_SpinOrbital_new::MP2R12Energy_SpinOrbital_new(StateIn &si) :
-  MP2R12Energy(si)
-{
-}
-
-MP2R12Energy_SpinOrbital_new::~MP2R12Energy_SpinOrbital_new()
-{
-}
-
-void MP2R12Energy_SpinOrbital_new::save_data_state(StateOut &so) {
-  MP2R12Energy::save_data_state(so);
-}
-
-bool MP2R12Energy_SpinOrbital_new::diag() const {
-  return(r12eval_->r12world()->r12tech()->ansatz()->diag());
-}
-
-bool MP2R12Energy_SpinOrbital_new::fixedcoeff() const {
-  const bool result = r12eval_->r12world()->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_fullopt;
-  return result;
-}
-
 /*-------------------------
  * MP2R12Energy_Diag
   -------------------------*/
@@ -884,8 +855,9 @@ static ClassDesc MP2R12Energy_Diag_cd(
                            0, 0, create<MP2R12Energy_Diag>);
 
 MP2R12Energy_Diag::MP2R12Energy_Diag(Ref<R12EnergyIntermediates> &r12intermediates,
-                                                   int debug) :
-  MP2R12Energy(r12intermediates,debug) {
+                                     bool include_obs_singles,
+                                     int debug) :
+  MP2R12Energy(r12intermediates,include_obs_singles,debug) {
 }
 
 MP2R12Energy_Diag::MP2R12Energy_Diag(StateIn &si) :
@@ -902,11 +874,12 @@ void MP2R12Energy_Diag::save_data_state(StateOut &so){
 }
 
 Ref<MP2R12Energy> sc::construct_MP2R12Energy(Ref<R12EnergyIntermediates> &r12intermediates,
+                                             bool include_obs_singles,
                                              int debug,
                                              bool diag) {
   Ref<MP2R12Energy> mp2r12energy = diag
-      ? static_cast<MP2R12Energy*>(new MP2R12Energy_Diag(r12intermediates,debug))
-      : static_cast<MP2R12Energy*>(new MP2R12Energy_SpinOrbital(r12intermediates,debug));
+      ? static_cast<MP2R12Energy*>(new MP2R12Energy_Diag(r12intermediates,include_obs_singles,debug))
+      : static_cast<MP2R12Energy*>(new MP2R12Energy_SpinOrbital(r12intermediates,include_obs_singles,debug));
 
   return mp2r12energy;
 }

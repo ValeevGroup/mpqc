@@ -557,8 +557,22 @@ class R12IntEval : virtual public SavableState {
       virtuals differ if VBS != OBS).
     */
   double compute_emp2_obs_singles(bool obs_singles);
-  /** Compute CABS singles contribution to the MP2 energy. */
+  /** Compute CABS singles contribution to the MP2 energy. This assumes occupied and virtual (OBS) orbitals to be
+   *  canonical.
+   *  */
   double compute_emp2_cabs_singles();
+  /** Compute CABS singles contribution to the MP2 energy without
+   * assuming canonical occupied or virtual orbitals.
+   * \sa R12IntEval::compute_emp2_cabs_singles
+   *
+   * @param vir_cabs_coupling if true, will couple conventional and CABS T1
+   */
+  double compute_emp2_cabs_singles_noncanonical(bool vir_cabs_coupling);
+  /** Compute CABS singles contribution to the CCSD energy without
+   * assuming canonical occupied orbitals.
+   * \sa R12IntEval::compute_emp2_cabs_singles_noncanonical */
+  double compute_emp2_cabs_singles_noncanonical_ccsd(const RefSCMatrix& T1_ia_alpha,
+                                                     const RefSCMatrix& T1_ia_beta);
 
   /** New general function to compute <ij|r<sub>12</sub>|pq> integrals. ipjq_tform
       is the source of the integrals.*/
@@ -692,10 +706,17 @@ public:
   /** Returns the cusp consistent coefficient \f$C_{ij}^{kl}\f$. */
   double C_CuspConsistent(int i,int j,int k,int l,SpinCase2 pairspin);
 
-  /// Returns the OBS singles MP2 energy
+  /// Returns the OBS singles correction to the MP2 energy
   double emp2_obs_singles();
-  /// Returns the CABS singles MP2 energy
-  double emp2_cabs_singles();
+  /**
+   * Returns the CABS singles correction to the MP2 energy
+   * @param vir_cabs_coupling if true, will couple conventional and CABS T1's,
+   *        hence the OBS singles correction will not need to be computed separately
+   */
+  double emp2_cabs_singles(bool vir_cabs_coupling);
+  /// Returns the CABS singles MP2 energy, with fixed conventional T1 amplitudes
+  double emp2_cabs_singles(const RefSCMatrix& T1_ia_alpha,
+                           const RefSCMatrix& T1_ia_beta);
   /// Returns alpha-alpha MP2 pair energies
   const RefSCVector& emp2(SpinCase2 S);
 

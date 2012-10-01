@@ -93,6 +93,14 @@ MBPT2_R12::compute_energy_()
   double etotal = 0.0;
   double ef12 = 0.0;
 
+  const bool compute_obs_singles_separately = r12eval_->bc() == false &&
+                                              (this->cabs_singles_ == false
+                                               ||
+                                               (this->cabs_singles_ == true
+                                                && r12eval_->coupling() == false)
+                                              );
+  const bool diag_ansatz = r12eval()->r12world()->r12tech()->ansatz()->diag();
+
   //
   // Now we can compute and print pair energies
   //
@@ -106,7 +114,10 @@ MBPT2_R12::compute_energy_()
       Timer tim2("mp2-r12/a' pair energies");
       if (r12ap_energy_.null()){
         r12intermediates=new R12EnergyIntermediates(r12eval_,R12Technology::StdApprox_Ap);
-        r12ap_energy_ = construct_MP2R12Energy(r12intermediates,debug_,jinmei_energy_);
+        r12ap_energy_ = construct_MP2R12Energy(r12intermediates,
+                                               compute_obs_singles_separately,
+                                               debug_,
+                                               diag_ansatz);
       }
       r12ap_energy_->print_pair_energies(r12world->spinadapted());
       etotal = r12ap_energy_->energy();
@@ -118,7 +129,10 @@ MBPT2_R12::compute_energy_()
       Timer tim2("mp2-r12/b pair energies");
       if (r12b_energy_.null()){
         r12intermediates=new R12EnergyIntermediates(r12eval_,R12Technology::StdApprox_B);
-        r12b_energy_ = construct_MP2R12Energy(r12intermediates,debug_,jinmei_energy_);
+        r12b_energy_ = construct_MP2R12Energy(r12intermediates,
+                                              compute_obs_singles_separately,
+                                              debug_,
+                                              diag_ansatz);
       }
       r12b_energy_->print_pair_energies(r12world->spinadapted());
       etotal = r12b_energy_->energy();
@@ -130,7 +144,10 @@ MBPT2_R12::compute_energy_()
       Timer tim2("mp2-r12/a'' pair energies");
       if (r12app_energy_.null()){
         r12intermediates=new R12EnergyIntermediates(r12eval_,R12Technology::StdApprox_App);
-        r12app_energy_ = construct_MP2R12Energy(r12intermediates,debug_,jinmei_energy_);
+        r12app_energy_ = construct_MP2R12Energy(r12intermediates,
+                                                compute_obs_singles_separately,
+                                                debug_,
+                                                diag_ansatz);
       }
       r12app_energy_->print_pair_energies(r12world->spinadapted());
       etotal = r12app_energy_->energy();
@@ -145,7 +162,10 @@ MBPT2_R12::compute_energy_()
     Timer tim2("mp2-r12/c pair energies");
     if (r12c_energy_.null()){
       r12intermediates=new R12EnergyIntermediates(r12eval_,r12tech->stdapprox());
-      r12c_energy_ = construct_MP2R12Energy(r12intermediates,debug_,jinmei_energy_);
+      r12c_energy_ = construct_MP2R12Energy(r12intermediates,
+                                            compute_obs_singles_separately,
+                                            debug_,
+                                            diag_ansatz);
     }
     r12c_energy_->print_pair_energies(r12world->spinadapted());
     etotal = r12c_energy_->energy();
@@ -153,7 +173,8 @@ MBPT2_R12::compute_energy_()
   }
 
   if (cabs_singles_ && (r12world->obs_eq_ribs() == false)) {
-    cabs_singles_energy_ = r12eval_->emp2_cabs_singles();
+    const bool vir_cabs_coupling = this->r12eval()->coupling();
+    cabs_singles_energy_ = r12eval_->emp2_cabs_singles(vir_cabs_coupling);
   }
 
   tim.exit();

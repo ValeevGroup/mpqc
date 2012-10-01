@@ -105,6 +105,7 @@ class MP2R12Energy : virtual public SavableState {
   protected:
     Ref<R12EnergyIntermediates> r12intermediates_;
     Ref<R12IntEval> r12eval_;
+    bool include_obs_singles_;
     int debug_;
     bool evaluated_;
 
@@ -119,6 +120,7 @@ class MP2R12Energy : virtual public SavableState {
 
     MP2R12Energy(StateIn&);
     MP2R12Energy(const Ref<R12EnergyIntermediates>& r12intermediates,
+                 bool include_obs_singles,
                  int debug);
     ~MP2R12Energy();
 
@@ -129,10 +131,11 @@ class MP2R12Energy : virtual public SavableState {
     Ref<R12IntEval> r12eval() const;
     const Ref<R12EnergyIntermediates>& r12intermediates() const;
     R12Technology::StandardApproximation stdapprox() const;
+    bool include_obs_singles() const { return include_obs_singles_; }
     void set_debug(int debug);
     int get_debug() const;
 
-    /// total correlation energy (including OBS singles for non-Brillouin references)
+    /// total correlation energy (including OBS singles if include_obs_singles() == true)
     double energy();
     const RefSCVector& ef12(SpinCase2 S);
     const RefSCVector& emp2f12(SpinCase2 S);
@@ -167,66 +170,10 @@ class MP2R12Energy_SpinOrbital : public MP2R12Energy
 
   public:
     MP2R12Energy_SpinOrbital(StateIn&);
-    MP2R12Energy_SpinOrbital(Ref<R12EnergyIntermediates> &r12intermediates, int debug);
+    MP2R12Energy_SpinOrbital(Ref<R12EnergyIntermediates> &r12intermediates,
+                             bool include_obs_singles,
+                             int debug);
     ~MP2R12Energy_SpinOrbital();
-
-    void save_data_state(StateOut&);
-};
-
-/**
- * The class MP2R12Energy_SpinOrbital_new is a new version of MP2R12Energy_SpinOrbital
- * and computes diagonal and non diagonal MP2 F12 energies preserving the Spin symmetry
- * of the wavefunction. It also implements fixed-amplitude
- * version of MP2-R12 where the coefficients are determined according to the singlet and
- * triplet electron pair coalescence conditions. For non-diagonal MP2 F12 calculations
- * the old version MP2R12Energy_SpinOrbital should be preferred, since it invokes many
- * security checks still not implemented in this version of MP2R12Energy_SpinOrbital_new.
- */
-class MP2R12Energy_SpinOrbital_new : public MP2R12Energy
-{
-  private:
-    void compute_ef12();
-
-    /// \param include_coupling_in_B if true, include A^t . D2^{-1} . A term into B
-    ///        (this is only appropriate when optimizing amplitudes)
-    RefSymmSCMatrix compute_B_non_pairspecific(const RefSymmSCMatrix &B,
-                                               const RefSymmSCMatrix &X,
-                                               const RefSCMatrix &V,
-                                               const RefSCMatrix &A,
-                                               const SpinCase2 &spincase2,
-                                               bool include_coupling_in_B = true);
-    RefSymmSCMatrix compute_B_pairspecific(const SpinMOPairIter &ij_iter,
-                                           const RefSymmSCMatrix &B,
-                                           const RefSymmSCMatrix &X,
-                                           const RefSCMatrix &V,
-                                           const RefSCMatrix &A,
-                                           const SpinCase2 &spincase2);
-    void determine_C_non_pairspecific(const RefSymmSCMatrix &B_ij,
-                                      const RefSCMatrix &V,
-                                      const SpinCase2 &spincase2,
-                                      const Ref<MP2R12EnergyUtil_Diag> &util);
-    void determine_C_pairspecific(const int ij,
-                                  const RefSymmSCMatrix &B_ij,
-                                  const RefSCMatrix &V,
-                                  const SpinCase2 &spincase2);
-    void determine_C_fixed_non_pairspecific(const SpinCase2 &spincase2);
-    void determine_ef12_hylleraas(const RefSymmSCMatrix &B_ij,
-                                  const RefSCMatrix &V,
-                                  const SpinCase2 &spincase2,
-                                  const Ref<MP2R12EnergyUtil_Diag> &util);
-    void compute_MP2R12_nondiag();
-    void compute_MP2R12_diag_fullopt();
-    void compute_MP2R12_diag_nonfullopt();
-
-    // shortcuts
-    bool diag() const;
-    bool fixedcoeff() const;
-
-  public:
-    MP2R12Energy_SpinOrbital_new(StateIn&);
-    MP2R12Energy_SpinOrbital_new(Ref<R12EnergyIntermediates> &r12intermediates,
-                                 int debug);
-    ~MP2R12Energy_SpinOrbital_new();
 
     void save_data_state(StateOut&);
 };
@@ -234,7 +181,6 @@ class MP2R12Energy_SpinOrbital_new : public MP2R12Energy
 /**
  * The class MP2R12Energy_Diag is an implementation of MP2R12Energy that supports
  * Ten-no's diagonal orbital-invariant ansatz for closed and open-shells.
- * This class will supercede MP2R12Energy_SpinOrbital_new.
  */
 class MP2R12Energy_Diag : public MP2R12Energy
 {
@@ -373,13 +319,16 @@ class MP2R12Energy_Diag : public MP2R12Energy
 
   public:
     MP2R12Energy_Diag(StateIn&);
-    MP2R12Energy_Diag(Ref<R12EnergyIntermediates> &r12intermediates, int debug);
+    MP2R12Energy_Diag(Ref<R12EnergyIntermediates> &r12intermediates,
+                      bool include_obs_singles,
+                      int debug);
     ~MP2R12Energy_Diag();
 
     void save_data_state(StateOut&);
 };
 
 Ref<MP2R12Energy> construct_MP2R12Energy(Ref<R12EnergyIntermediates> &r12intermediates,
+                                         bool include_obs_singles,
                                          int debug,
                                          bool diag);
 

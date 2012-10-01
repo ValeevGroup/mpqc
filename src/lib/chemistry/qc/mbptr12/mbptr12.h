@@ -54,8 +54,6 @@ class MP2R12Energy;
 methods. */
 class MBPT2_R12: public MBPT2 {
 
-    bool jinmei_energy_;
-
     Ref<R12IntEval> r12eval_;           // the R12 intermediates evaluator
     Ref<R12WavefunctionWorld> r12world_;   // parameters for r12eval_
 

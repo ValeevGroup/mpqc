@@ -479,14 +479,23 @@ R12IntEval::emp2_obs_singles()
 }
 
 double
-R12IntEval::emp2_cabs_singles()
+R12IntEval::emp2_cabs_singles(bool vir_cabs_coupling)
 {
   if (!r12world()->sdref())
     ExEnv::out0() << indent
                   << "WARNING: CABS singles correction is not implemented for multiconfiguration references"
                   << std::endl;
   if (emp2_cabs_singles_ == 1.0)
-    emp2_cabs_singles_ = compute_emp2_cabs_singles();
+    emp2_cabs_singles_ = compute_emp2_cabs_singles_noncanonical(vir_cabs_coupling);
+  return emp2_cabs_singles_;
+}
+
+double
+R12IntEval::emp2_cabs_singles(const RefSCMatrix& T1_ia_alpha,
+                              const RefSCMatrix& T1_ia_beta) {
+  assert(r12world()->sdref() == true);
+  if (emp2_cabs_singles_ == 1.0)
+    emp2_cabs_singles_ = compute_emp2_cabs_singles_noncanonical_ccsd(T1_ia_alpha,T1_ia_beta);
   return emp2_cabs_singles_;
 }
 

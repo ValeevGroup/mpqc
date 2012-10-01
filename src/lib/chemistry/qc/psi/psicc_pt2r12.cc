@@ -401,7 +401,10 @@ void PsiCC_PT2R12::compute_ept2r12() {
   } // end of diag == false clause
 
   // compute (2)_R12 energy as MP2-R12 energy with dressed V intermediate
-  Ref<MP2R12Energy> r12energy = construct_MP2R12Energy(r12intermediates,debug(),diag);
+  Ref<MP2R12Energy> r12energy = construct_MP2R12Energy(r12intermediates,
+                                                       false,
+                                                       debug(),
+                                                       diag);
   std::vector<double> E2(NSpinCases2,0.0);
   const int num_unique_spincases2 = (reference_->spin_polarized() ? 3 : 2);
   r12energy->compute();
@@ -414,7 +417,10 @@ void PsiCC_PT2R12::compute_ept2r12() {
   }
 
   // include cabs singles energy?
-  cabs_singles_energy_ = cabs_singles_ ? r12eval()->emp2_cabs_singles() : 0.0;
+  cabs_singles_energy_ = 0.0;
+  if (cabs_singles_) {
+    cabs_singles_energy_ = r12eval()->emp2_cabs_singles(T1[Alpha],T1[Beta]);
+  }
 
   double e2 = cabs_singles_energy();
   ExEnv::out0() << indent << "E2(AB)        = "<< scprintf("%20.15lf",E2[AlphaBeta])

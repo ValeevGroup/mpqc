@@ -43,7 +43,7 @@ extern "C" {
  * initialize a molecule data using atomic numbers and Cartesian coordinates
  * @param[in] natoms the number of atoms
  * @param[in] Z atomic numbers of the atoms
- * @param[in] xyz Cartesian coordinates of the atoms (row-major matrix with natoms rows and 3 columns)
+ * @param[in] xyz Cartesian coordinates of the atoms in atomic units (row-major matrix with natoms rows and 3 columns)
  * @param[in] use_symmetry if true, will detect the point group automatically
  */
 void init_molecule_(int natoms, const double* Z, const double* xyz, int use_symmetry);

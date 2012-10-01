@@ -367,6 +367,8 @@ R12IntEval::compute_emp2_cabs_singles_noncanonical(bool vir_cabs_coupling) {
       result -= dotprodop->result();
     }
 
+    if (! spin_polarized()) result *= 2.0;
+
   } // end of spin loop
 
   ExEnv::out0() << indent << "E(MP2 " << (vir_cabs_coupling ? "OBS+CABS" : "CABS") << " singles = (2)_S) = " << scprintf("%25.15lf",result) << endl;
@@ -414,7 +416,14 @@ R12IntEval::compute_emp2_cabs_singles_noncanonical_ccsd(const RefSCMatrix& T1_ia
     RefSCMatrix Fii = fock(occ,occ,spin);
     RefSCMatrix FaA = fock(vir,cabs,spin);
     RefSCMatrix FAA = fock(cabs,cabs,spin);
-    const RefSCMatrix& T1_ia = (spin == Alpha) ? T1_ia_alpha : T1_ia_beta;
+
+    const RefSCMatrix& T1_ia_ref = (spin == Alpha) ? T1_ia_alpha : T1_ia_beta;
+    RefSCMatrix Fia = fock(occ,vir,spin);
+    RefSCMatrix T1_ia = Fia.clone();
+    Fia.print("Fia");
+    T1_ia->convert(T1_ia_ref);
+    T1_ia.assign(0.0);
+
     RefSCMatrix T1 = FiA.clone(); T1.assign(0.0);
 
     // pre-compute preconditioner: PC(A,i) = 1/(FAA-Fij)
@@ -451,6 +460,8 @@ R12IntEval::compute_emp2_cabs_singles_noncanonical_ccsd(const RefSCMatrix& T1_ia
       T1.element_op(dotprodop, FiA);
       result -= dotprodop->result();
     }
+
+    if (! spin_polarized()) result *= 2.0;
 
   } // end of spin loop
 

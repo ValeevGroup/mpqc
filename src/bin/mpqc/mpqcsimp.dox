@@ -215,28 +215,28 @@ The accepted keywords are:
   keyword <tt>basis</tt> for the list of options that can be given.
 
 <dt><tt>symmetry</tt><dd> Specifices the Schoenflies symbol of the point
-  group of the molecule.  The default is <tt>auto</tt>, which will cause to
+  group of the molecule.  The default is <tt>auto</tt>, which will cause the
   program to find the highest order Abelian subgroup of the molecule.
 
 <dt><tt>docc</tt><dd> Gives the number of doubly occupied orbitals in each
   each irreducible representation in a parenthesized list.  The symmetry
   must be specified and not be <tt>auto</tt>.  The method must be
-  restricted.
+  spin-restricted.
 
 <dt><tt>socc</tt><dd> Gives the number of single occupied orbitals in each
   each irreducible representation in a parenthesized list.  The symmetry
   must be specified and not be <tt>auto</tt>.  The method must be
-  restricted.
+  spin-restricted.
 
 <dt><tt>alpha</tt><dd> Gives the number of alpha occupied orbitals in each
   each irreducible representation in a parenthesized list.  The symmetry
   must be specified and not be <tt>auto</tt>.  The method must be
-  unrestricted.
+  spin-unrestricted.
 
 <dt><tt>beta</tt><dd> Gives the number of beta occupied orbitals in each
   each irreducible representation in a parenthesized list.  The symmetry
   must be specified and not be <tt>auto</tt>.  The method must be
-  unrestricted.
+  spin-unrestricted.
 
 <dt><tt>frozen_docc</tt><dd> Gives the number of frozen core orbitals.  Can
   be either a single integer or a parenthesized list giving the frozen core

@@ -499,6 +499,13 @@ R12IntEval::emp2_cabs_singles(const RefSCMatrix& T1_ia_alpha,
   return emp2_cabs_singles_;
 }
 
+const RefSCMatrix&
+R12IntEval::T1_cabs(SpinCase1 spin) const {
+  assert(r12world()->sdref() == true);
+  assert(emp2_cabs_singles_ != 1.0);
+  return T1_cabs_[spin];
+}
+
 const RefSCVector&
 R12IntEval::emp2(SpinCase2 S)
 {

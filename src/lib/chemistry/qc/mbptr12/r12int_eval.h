@@ -82,6 +82,7 @@ class R12IntEval : virtual public SavableState {
   Ref<R12Amplitudes> Amps_;  // First-order amplitudes of various contributions to the pair functions
   double emp2_obs_singles_;
   double emp2_cabs_singles_;
+  RefSCMatrix T1_cabs_[NSpinCases1];
   int debug_;
 
   mutable RefSymmSCMatrix ordm_[NSpinCases1];  //!< spin-orbital 1-RDM in MO basis
@@ -713,12 +714,20 @@ public:
    * @param vir_cabs_coupling if true, will couple conventional and CABS T1's,
    *        hence the OBS singles correction will not need to be computed separately
    */
-  double emp2_cabs_singles(bool vir_cabs_coupling);
+  double emp2_cabs_singles(bool vir_cabs_coupling = true);
   /// Returns the CABS singles MP2 energy, with fixed conventional T1 amplitudes
   double emp2_cabs_singles(const RefSCMatrix& T1_ia_alpha,
                            const RefSCMatrix& T1_ia_beta);
   /// Returns alpha-alpha MP2 pair energies
   const RefSCVector& emp2(SpinCase2 S);
+
+  /**
+   * returns CABS singles amplitudes. This includes excitations into standard virtuals if
+   * this is a correction to MP2, not CCSD. Must call emp2_cabs_singles() BEFORE calling this.
+   * @param spin SpinCase
+   * @return the amplitude matrix (MP2: occ by allvirt=vir+CABS; CCSD: occ by CABS)
+   */
+  const RefSCMatrix& T1_cabs(SpinCase1 spin) const;
 
   /// Returns the act occ space for spin case S
   const Ref<OrbitalSpace>& occ_act(SpinCase1 S) const;

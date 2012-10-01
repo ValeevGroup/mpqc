@@ -94,11 +94,7 @@ MBPT2_R12::compute_energy_()
   double ef12 = 0.0;
 
   const bool compute_obs_singles_separately = r12eval_->bc() == false &&
-                                              (this->cabs_singles_ == false
-                                               ||
-                                               (this->cabs_singles_ == true
-                                                && r12eval_->coupling() == false)
-                                              );
+                                              this->cabs_singles_ == false;
   const bool diag_ansatz = r12eval()->r12world()->r12tech()->ansatz()->diag();
 
   //
@@ -173,8 +169,7 @@ MBPT2_R12::compute_energy_()
   }
 
   if (cabs_singles_ && (r12world->obs_eq_ribs() == false)) {
-    const bool vir_cabs_coupling = this->r12eval()->coupling();
-    cabs_singles_energy_ = r12eval_->emp2_cabs_singles(vir_cabs_coupling);
+    cabs_singles_energy_ = r12eval_->emp2_cabs_singles();
   }
 
   tim.exit();

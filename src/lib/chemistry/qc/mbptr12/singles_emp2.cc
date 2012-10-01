@@ -293,10 +293,10 @@ R12IntEval::compute_emp2_cabs_singles_noncanonical(bool vir_cabs_coupling) {
     RefSCMatrix FiA = fock(occ,aspace,spin);
     RefSCMatrix Fii = fock(occ,occ,spin);
     RefSCMatrix FAA = fock(aspace,aspace,spin);
-    RefSCMatrix T1 = FiA.clone(); T1.assign(0.0);
+    T1_cabs_[s] = FiA.clone(); T1_cabs_[s].assign(0.0);
 
     // pre-compute preconditioner: PC(A,i) = 1/(FAA-Fij)
-    RefSCMatrix PC = T1.clone();
+    RefSCMatrix PC = T1_cabs_[s].clone();
     const unsigned ni = occ->rank();
     const unsigned nA = aspace->rank();
     for (unsigned i = 0; i < ni; ++i) {
@@ -312,13 +312,13 @@ R12IntEval::compute_emp2_cabs_singles_noncanonical(bool vir_cabs_coupling) {
       rhs.scale(-1.0);
       double Rnorm2;
       try {
-        Rnorm2 = linsolv_conjugate_gradient(h0t1, rhs, T1, PC,
+        Rnorm2 = linsolv_conjugate_gradient(h0t1, rhs, T1_cabs_[s], PC,
                                             1e-9);
       }
       catch (...) {
         // if failed for some reason, at least compute the energy to help with troubleshooting
         Ref<SCElementScalarProduct> dotprodop = new SCElementScalarProduct;
-        T1.element_op(dotprodop, FiA);
+        T1_cabs_[s].element_op(dotprodop, FiA);
         const double E2 = dotprodop->result();
         std::cout << "nonconverged (2)_S energy = " << E2
             << " (elapsed spincase " << (spin == Alpha ? "alpha" : "alpha+beta") << ")"
@@ -326,11 +326,14 @@ R12IntEval::compute_emp2_cabs_singles_noncanonical(bool vir_cabs_coupling) {
         throw;
       }
       Ref<SCElementScalarProduct> dotprodop = new SCElementScalarProduct;
-      T1.element_op(dotprodop, FiA);
+      T1_cabs_[s].element_op(dotprodop, FiA);
       result += dotprodop->result();
     }
 
-    if (! spin_polarized()) result *= 2.0;
+    if (! spin_polarized()) {
+      result *= 2.0;
+      T1_cabs_[Beta] = T1_cabs_[Alpha];
+    }
 
   } // end of spin loop
 
@@ -385,10 +388,10 @@ R12IntEval::compute_emp2_cabs_singles_noncanonical_ccsd(const RefSCMatrix& T1_ia
     RefSCMatrix T1_ia = Fia.clone();
     T1_ia->convert(T1_ia_ref);
 
-    RefSCMatrix T1 = FiA.clone(); T1.assign(0.0);
+    T1_cabs_[s] = FiA.clone(); T1_cabs_[s].assign(0.0);
 
     // pre-compute preconditioner: PC(A,i) = 1/(FAA-Fij)
-    RefSCMatrix PC = T1.clone();
+    RefSCMatrix PC = T1_cabs_[s].clone();
     const unsigned ni = occ->rank();
     const unsigned nA = cabs->rank();
     for (unsigned i = 0; i < ni; ++i) {
@@ -405,13 +408,13 @@ R12IntEval::compute_emp2_cabs_singles_noncanonical_ccsd(const RefSCMatrix& T1_ia
       rhs.scale(-1.0);
       double Rnorm2;
       try {
-        Rnorm2 = linsolv_conjugate_gradient(h0t1, rhs, T1, PC,
+        Rnorm2 = linsolv_conjugate_gradient(h0t1, rhs, T1_cabs_[s], PC,
                                             1e-9);
       }
       catch (...) {
         // if failed for some reason, at least compute the energy to help with troubleshooting
         Ref<SCElementScalarProduct> dotprodop = new SCElementScalarProduct;
-        T1.element_op(dotprodop, FiA);
+        T1_cabs_[s].element_op(dotprodop, FiA);
         const double E2 = dotprodop->result();
         std::cout << "nonconverged (2)_S energy = " << E2
             << " (elapsed spincase " << (spin == Alpha ? "alpha" : "alpha+beta") << ")"
@@ -419,11 +422,14 @@ R12IntEval::compute_emp2_cabs_singles_noncanonical_ccsd(const RefSCMatrix& T1_ia
         throw;
       }
       Ref<SCElementScalarProduct> dotprodop = new SCElementScalarProduct;
-      T1.element_op(dotprodop, FiA);
+      T1_cabs_[s].element_op(dotprodop, FiA);
       result += dotprodop->result();
     }
 
-    if (! spin_polarized()) result *= 2.0;
+    if (! spin_polarized()) {
+      result *= 2.0;
+      T1_cabs_[Beta] = T1_cabs_[Alpha];
+    }
 
   } // end of spin loop
 

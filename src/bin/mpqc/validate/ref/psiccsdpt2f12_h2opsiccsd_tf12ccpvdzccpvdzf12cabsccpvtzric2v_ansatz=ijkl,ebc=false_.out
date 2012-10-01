@@ -2,9 +2,9 @@
                     MPQC: Massively Parallel Quantum Chemistry
                                 Version 3.0.0-alpha
 
-  Machine:    i386-apple-darwin11.1.0
+  Machine:    x86_64-apple-darwin12.2.0
   User:       evaleev@EdBookPro.local
-  Start Time: Sun Oct 30 17:55:42 2011
+  Start Time: Mon Oct  1 09:54:58 2012
 
   Using ProcMessageGrp for message passing (number of nodes = 1).
   Using PthreadThreadGrp for threading (number of threads = 1).
@@ -12,7 +12,7 @@
   Total number of processors = 1
 
   Using IntegralLibint2 by default for molecular integrals evaluation
-  Given resources: ConsumableResources: ( memory = 256MB disk = [./ 0B] )
+  Given resources: ConsumableResources: ( memory = unlimited disk = [./ unlimited] )
 
   Reading file /Users/evaleev/Development/workspace/install/mpqc-gcc/share/mpqc/3.0.0-alpha/atominfo.kv.
 
@@ -48,10 +48,16 @@
     print_mole      = yes
     print_timings   = yes
     print_resources = yes
+  Desired Function Parameters:
+    value_accuracy    = 1.0000000e-08
+
   Using symmetric orthogonalization.
   n(basis):            11     2     7     4
   Maximum orthogonalization residual = 3.66509
   Minimum orthogonalization residual = 0.0352018
+  Desired Function Parameters:
+    value_accuracy    = 1.0000000e-06
+
   Using symmetric orthogonalization.
   n(basis):            11     2     7     4
   Maximum orthogonalization residual = 3.66509
@@ -232,28 +238,28 @@
     Maximum orthogonalization residual = 0.000893841
     Minimum orthogonalization residual = 0.000173094
 
-  Entered CABS singles MP2 energy evaluator
-    E(MP2 CABS singles) =        -0.017845349707160
-  Exited CABS singles MP2 energy evaluator
-  E2(AB)        =   -0.103270822637320
-  E2(AA)        =   -0.016579085523589
-  E2(s)         =   -0.094981279875526
-  E2(t)         =   -0.024868628285383
-  E2(CABS)      =   -0.017845349707160
-  E2            =   -0.137695257868069
+  Entered (2)_S energy evaluator
+    E(MP2 CABS singles = (2)_S) =        -0.016624883988598
+  Exited (2)_S energy evaluator
+  E2(AB)        =   -0.103270822607754
+  E2(AA)        =   -0.016579085524555
+  E2(s)         =   -0.094981279845476
+  E2(t)         =   -0.024868628286832
+  E2(CABS)      =   -0.016624883988598
+  E2            =   -0.136474792120906
   ECCSD         =   -0.213082172608975
-  ECCSD_PT2R12  =   -0.350777430477049
+  ECCSD_PT2R12  =   -0.349556964729882
   E(T)          =   -0.003021822303882
-  ECCSD_PT2R12T =   -0.353799252780931
-  ECCSD_PT2R12T+REF =  -76.379687493038830
+  ECCSD_PT2R12T =   -0.352578787033764
+  ECCSD_PT2R12T+REF =  -76.378467027291663
 
-  Value of the MolecularEnergy:  -76.3796874930
+  Value of the MolecularEnergy:  -76.3784670273
 
   PsiCCSD_PT2R12T:
     PsiCC_PT2R12:
       Spin-adapted algorithm: true
       Include CABS singles? : true
-        E(CABS singles) =        -0.017845349707160
+        E(CABS singles) =        -0.016624883988598
       R12WavefunctionWorld:
         WavefunctionWorld:
           Density-Fitting Parameters:
@@ -278,7 +284,7 @@
 
         R12Technology:
           CorrelationFactor: STG-3G[1.5]
-            [ Exponent Coefficient] = [ [     0.549916472902    -0.240062725132 ] [     3.131856778874    -0.231321126340 ] [    20.611027685628    -0.132656190969 ]  ]
+            [ Exponent Coefficient] = [ [     0.549916471839    -0.240062724636 ] [     3.131856766669    -0.231321126358 ] [    20.611027560377    -0.132656191218 ]  ]
 
           Coupling included: false
           GBC assumed: true
@@ -352,7 +358,7 @@
             name = "cc-pVDZ"
 
         PsiExEnv:
-          Location of Psi: /Users/evaleev/Development/workspace/install/psi3/bin
+          Location of Psi: /Users/evaleev/Development/workspace/install/psi3-gcc/bin
           Current Psi Working Directory: .
           Current Psi File Prefix: psiccsdpt2f12_h2opsiccsd_tf12ccpvdzccpvdzf12cabsccpvtzric2v_ansatz=ijkl,ebc=false_.psi
           Number of Scratch Groups: 1
@@ -389,7 +395,7 @@
               name = "cc-pVDZ"
 
           PsiExEnv:
-            Location of Psi: /Users/evaleev/Development/workspace/install/psi3/bin
+            Location of Psi: /Users/evaleev/Development/workspace/install/psi3-gcc/bin
             Current Psi Working Directory: .
             Current Psi File Prefix: psiccsdpt2f12_h2opsiccsd_tf12ccpvdzccpvdzf12cabsccpvtzric2v_ansatz=ijkl,ebc=false_.psi
             Number of Scratch Groups: 1
@@ -400,10 +406,103 @@
         frozen_uocc = [0 0 0 0 ]
 
   ConsumableResources: (
-    memory = 256MB ( max used: 30.3MB )
-    disk = [./ 0B] ( max used: 0B )
+    memory = unlimited ( max used: 28.4MB )
+    disk = [./ unlimited] ( max used: 0B )
   )
-  WARNING: 2018136 bytes managed by ConsumableResources was not explicitly deallocated!
+                                                                                                  CPU  Wall
+mpqc:                                                                                            9.67 10.12
+  calc:                                                                                          9.57 10.02
+    "diagonal" part of G12 intermediates:                                                        0.32  0.32
+      Generic tensor:                                                                            0.32  0.32
+        MO ints retrieve:                                                                        0.00  0.00
+        tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0,0]|i(sym) i(sym)>(b1 b2|k1 k2):                0.28  0.28
+          tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0,0]|i(sym) >:                               0.25  0.25
+            tbint_tform_ijR <i(sym) Mu|G12'[0,0]|mu >:                                           0.25  0.25
+        tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|i(sym) i(sym)>(b1 b2|k1 k2):                  0.03  0.03
+          TransformedDensityFitting (i(sym) i(sym)|DF|Mu):                                       0.00  0.00
+          tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|i(sym) >:                                 0.00  0.00
+    (2)_S energy:                                                                                0.33  0.33
+    B(app. C) intermediate:                                                                      6.13  5.98
+      Alpha-beta P(C) intermediate:                                                              4.76  4.61
+        build_only:                                                                              2.29  2.29
+          FockBuildThreads:                                                                      3.40  3.40
+        generic FxF intermediate:                                                                0.86  0.71
+          Generic tensor contract:                                                               0.31  0.27
+            MO ints retrieve:                                                                    0.00  0.03
+            tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|e(sym) p(sym)>(b1 b2|k1 k2):              0.04  0.04
+            tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|m(sym) p'>(b1 b2|k1 k2):                  0.05  0.04
+            tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p' p'>(b1 b2|k1 k2):                      0.17  0.11
+            tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p(sym) e(sym)>(b1 b2|k1 k2):              0.04  0.04
+          tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|e(sym) p(sym)_F(a')[A]>(b1 b2|k1 k2):       0.05  0.04
+            TransformedDensityFitting (i(sym) p(sym)_F(a')[A]|DF|Mu):                            0.00  0.00
+            tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|p(sym)_F(a')[A] >:                      0.01  0.00
+          tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|m(sym) p'_F(p')[A]>(b1 b2|k1 k2):           0.09  0.07
+            TransformedDensityFitting (i(sym) p'_F(p')[A]|DF|Mu):                                0.01  0.01
+            tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|p'_F(p')[A] >:                          0.02  0.02
+          tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|m(sym)_F(m(sym))[A] a'>(b1 b2|k1 k2):       0.05  0.04
+            TransformedDensityFitting (i(sym) m(sym)_F(m(sym))[A]|DF|Mu):                        0.00  0.00
+            tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|m(sym)_F(m(sym))[A] >:                  0.00  0.00
+          tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|m(sym)_F(p')[A] a'>(b1 b2|k1 k2):           0.05  0.04
+            TransformedDensityFitting (i(sym) m(sym)_F(p')[A]|DF|Mu):                            0.00  0.00
+            tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|m(sym)_F(p')[A] >:                      0.00  0.00
+          tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p'_K(p')[A] p'>(b1 b2|k1 k2):               0.26  0.17
+            TransformedDensityFitting (i(sym) p'_K(p')[A]|DF|Mu):                                0.01  0.01
+            TransformedDensityFitting (i(sym) p'|DF|Mu):                                         0.01  0.01
+            tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|p' >:                                   0.02  0.02
+            tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|p'_K(p')[A] >:                          0.03  0.02
+          tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p(sym)_F(p(sym))[A] e(sym)>(b1 b2|k1 k2):   0.04  0.04
+            TransformedDensityFitting (i(sym) e(sym)|DF|Mu):                                     0.00  0.00
+            TransformedDensityFitting (i(sym) p(sym)_F(p(sym))[A]|DF|Mu):                        0.00  0.00
+            tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|e(sym) >:                               0.00  0.00
+            tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|p(sym)_F(p(sym))[A] >:                  0.00  0.00
+      Alpha-beta Q(C) intermediate:                                                              0.61  0.62
+        generic X intermediate:                                                                  0.61  0.62
+          Generic tensor:                                                                        0.61  0.62
+            MO ints retrieve:                                                                    0.00  0.00
+            tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0,0]|i(sym) i(sym)_hJ(p')[A]>(b1 b2|k1 k2):  0.61  0.61
+              TransformedDensityFitting (i(sym) i(sym)_hJ(p')[A]|DF|Mu):                         0.00  0.00
+              tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0,0]|i(sym)_hJ(p')[A] >:                 0.58  0.58
+                tbint_tform_ijR <i(sym) Mu|G12'[0,0]|mu' >:                                      0.58  0.57
+      build_only:                                                                                0.36  0.36
+        FockBuildThreads:                                                                        0.66  0.66
+    MO ints retrieve:                                                                            0.00  0.00
+    MP2 pair energies:                                                                           0.01  0.01
+      MO ints retrieve:                                                                          0.00  0.00
+    R12 intermeds (tensor contract): Vpqxy:                                                      2.41  2.42
+      Generic tensor contract:                                                                   1.83  1.83
+        MO ints retrieve:                                                                        0.01  0.02
+        tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|m(sym) a'>(b1 b2|k1 k2):                      1.06  1.05
+          DensityFitting (i(sym) mu'|DF|Mu):                                                     0.49  0.49
+            tbint_tform_ijR <i(sym) Mu|ERI|mu' >:                                                0.27  0.27
+          TransformedDensityFitting (i(sym) a'|DF|Mu):                                           0.01  0.01
+          TransformedDensityFitting (i(sym) m(sym)|DF|Mu):                                       0.00  0.00
+          tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|a' >:                                     0.51  0.50
+            tbint_tform_ijR <i(sym) Mu|G12'[0]|mu' >:                                            0.49  0.48
+          tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|m(sym) >:                                 0.00  0.00
+        tbint_tform_ixjy_df <p(sym) p(sym)|ERI|m(sym) a'>(b1 b2|k1 k2):                          0.31  0.31
+          TransformedDensityFitting (p(sym) m(sym)|DF|Mu):                                       0.00  0.00
+          tbint_tform_ijR_using_iqR <p(sym) Mu|ERI|a' >:                                         0.28  0.27
+            tbint_tform_ijR <p(sym) Mu|ERI|mu' >:                                                0.26  0.26
+        tbint_tform_ixjy_df <p(sym) p(sym)|ERI|p(sym) p(sym)>(b1 b2|k1 k2):                      0.34  0.36
+          DensityFitting (p(sym) mu|DF|Mu):                                                      0.32  0.32
+            tbint_tform_ijR <p(sym) Mu|ERI|mu >:                                                 0.14  0.14
+          TransformedDensityFitting (p(sym) p(sym)|DF|Mu):                                       0.00  0.01
+          tbint_tform_ijR_using_iqR <p(sym) Mu|ERI|p(sym) >:                                     0.00  0.00
+      tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p(sym) p(sym)>(b1 b2|k1 k2):                    0.48  0.49
+        DensityFitting (i(sym) mu|DF|Mu):                                                        0.27  0.28
+          tbint_tform_ijR <i(sym) Mu|ERI|mu >:                                                   0.14  0.14
+        TransformedDensityFitting (i(sym) p(sym)|DF|Mu):                                         0.00  0.00
+        tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|p(sym) >:                                   0.17  0.17
+          tbint_tform_ijR <i(sym) Mu|G12'[0]|mu >:                                               0.17  0.17
+    mp2-f12a intermeds (tensor contract):                                                        0.01  0.01
+      Generic tensor contract:                                                                   0.01  0.01
+        MO ints retrieve:                                                                        0.00  0.00
+    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|a(sym) a(sym)_F(a')[A]>(b1 b2|k1 k2):             0.05  0.05
+      TransformedDensityFitting (i(sym) a(sym)_F(a')[A]|DF|Mu):                                  0.00  0.00
+      TransformedDensityFitting (i(sym) a(sym)|DF|Mu):                                           0.00  0.00
+      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|a(sym) >:                                     0.00  0.00
+      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|a(sym)_F(a')[A] >:                            0.01  0.00
+  input:                                                                                         0.10  0.10
 
-  End Time: Sun Oct 30 17:55:59 2011
+  End Time: Mon Oct  1 09:55:08 2012
 

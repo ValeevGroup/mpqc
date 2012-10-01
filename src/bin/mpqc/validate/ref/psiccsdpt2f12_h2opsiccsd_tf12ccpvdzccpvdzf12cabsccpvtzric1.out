@@ -2,9 +2,9 @@
                     MPQC: Massively Parallel Quantum Chemistry
                                 Version 3.0.0-alpha
 
-  Machine:    i386-apple-darwin11.1.0
+  Machine:    x86_64-apple-darwin12.2.0
   User:       evaleev@EdBookPro.local
-  Start Time: Sun Oct 30 17:53:55 2011
+  Start Time: Mon Oct  1 09:53:59 2012
 
   Using ProcMessageGrp for message passing (number of nodes = 1).
   Using PthreadThreadGrp for threading (number of threads = 1).
@@ -12,7 +12,7 @@
   Total number of processors = 1
 
   Using IntegralLibint2 by default for molecular integrals evaluation
-  Given resources: ConsumableResources: ( memory = 256MB disk = [./ 0B] )
+  Given resources: ConsumableResources: ( memory = unlimited disk = [./ unlimited] )
 
   Reading file /Users/evaleev/Development/workspace/install/mpqc-gcc/share/mpqc/3.0.0-alpha/atominfo.kv.
 
@@ -48,10 +48,16 @@
     print_mole      = yes
     print_timings   = yes
     print_resources = yes
+  Desired Function Parameters:
+    value_accuracy    = 1.0000000e-08
+
   Using symmetric orthogonalization.
   n(basis):            24
   Maximum orthogonalization residual = 3.66509
   Minimum orthogonalization residual = 0.0352018
+  Desired Function Parameters:
+    value_accuracy    = 1.0000000e-06
+
   Using symmetric orthogonalization.
   n(basis):            24
   Maximum orthogonalization residual = 3.66509
@@ -143,34 +149,125 @@
     Built TwoBodyMOIntsTransform_ixjy_df: name = <p(sym) p(sym)|ERI|m(sym) a'>(b1 b2|k1 k2)
   Exited generic contraction (<i(sym) i(sym)|p(sym) p(sym)> = <i(sym) i(sym)|m(sym) a'> . <p(sym) p(sym)|m(sym) a'>^T)
 
+  f12 pair energies
+      1    -0.0303633382
+      2    -0.0005381886
+      3    -0.0002205607
+      4    -0.0004329849
+      5    -0.0005656291
+      6    -0.0005381886
+      7    -0.0030880579
+      8    -0.0038423309
+      9    -0.0037343577
+     10    -0.0044845491
+     11    -0.0002205607
+     12    -0.0038423309
+     13    -0.0039620577
+     14    -0.0021362948
+     15    -0.0023376472
+     16    -0.0004329849
+     17    -0.0037343577
+     18    -0.0021362948
+     19    -0.0055830760
+     20    -0.0030582410
+     21    -0.0005656291
+     22    -0.0044845491
+     23    -0.0023376472
+     24    -0.0030582410
+     25    -0.0064135187
+
+     0.000050461486852
+     0.000000000000000
+     0.000001169259020
+     0.000000000000000
+    -0.000029323934080
+     0.000000000000000
+     0.000007835638484
+     0.000000000000000
+     0.000031363009762
+     0.000000000000000
+     0.000001169259020
+     0.000000000000000
+     0.000781470086748
+     0.000000000000000
+     0.000603304872588
+     0.000000000000000
+     0.000504161613974
+     0.000000000000000
+     0.000498333698867
+     0.000000000000000
+    -0.000029323934080
+     0.000000000000000
+     0.000603304872588
+     0.000000000000000
+     0.001477686341163
+     0.000000000000000
+     0.000493447846779
+     0.000000000000000
+     0.000401020586750
+     0.000000000000000
+     0.000007835638484
+     0.000000000000000
+     0.000504161613974
+     0.000000000000000
+     0.000493447846779
+     0.000000000000000
+     0.001538089243572
+     0.000000000000000
+     0.000506745736492
+     0.000000000000000
+     0.000031363009762
+     0.000000000000000
+     0.000498333698867
+     0.000000000000000
+     0.000401020586750
+     0.000000000000000
+     0.000506745736492
+     0.000000000000000
+     0.001702029349780
+     0.000000000000000
+
   Entered generic contraction (<i(sym) i(sym)|p(sym) p(sym)> = <i(sym) i(sym)|p(sym) p(sym)> . <p(sym) p(sym)|p(sym) p(sym)>^T)
   Exited generic contraction (<i(sym) i(sym)|p(sym) p(sym)> = <i(sym) i(sym)|p(sym) p(sym)> . <p(sym) p(sym)|p(sym) p(sym)>^T)
 
   Entered generic contraction (<i(sym) i(sym)|p(sym) p(sym)> = <i(sym) i(sym)|m(sym) a'> . <p(sym) p(sym)|m(sym) a'>^T)
   Exited generic contraction (<i(sym) i(sym)|p(sym) p(sym)> = <i(sym) i(sym)|m(sym) a'> . <p(sym) p(sym)|m(sym) a'>^T)
 
-  Entered CABS singles MP2 energy evaluator
-    E(MP2 CABS singles) =        -0.017845349706901
-  Exited CABS singles MP2 energy evaluator
-  E2(AB)        =   -0.092111615968876
-  E2(AA)        =   -0.014834580193296
-  E2(s)         =   -0.084694325872228
-  E2(t)         =   -0.022251870289944
-  E2(CABS)      =   -0.017845349706901
-  E2            =   -0.124791545869072
-  ECCSD         =   -0.213082172608974
-  ECCSD_PT2R12  =   -0.337873718478047
-  E(T)          =   -0.003021822303882
-  ECCSD_PT2R12T =   -0.340895540781928
-  ECCSD_PT2R12T+REF =  -76.366783781039857
+  f12 pair energies
+      1    -0.0002406043
+      2    -0.0005581589
+      3    -0.0005102105
+      4    -0.0007340367
+      5    -0.0006688481
+      6    -0.0008073471
+      7    -0.0009307067
+      8    -0.0008513316
+      9    -0.0009676654
+     10    -0.0011483808
 
-  Value of the MolecularEnergy:  -76.3667837810
+
+  Entered (2)_S energy evaluator
+    E(MP2 CABS singles = (2)_S) =        -0.016689162753615
+  Exited (2)_S energy evaluator
+  E2(AB)        =   -0.092111615954749
+  E2(AA)        =   -0.014834580193245
+  E2(s)         =   -0.084694325858127
+  E2(t)         =   -0.022251870289867
+  E2(CABS)      =   -0.016689162753615
+  E2            =   -0.123635358901609
+  ECCSD         =   -0.213082172608974
+  ECCSD_PT2R12  =   -0.336717531510583
+  E(T)          =   -0.003021822303882
+  ECCSD_PT2R12T =   -0.339739353814465
+  ECCSD_PT2R12T+REF =  -76.365627594072393
+
+  Value of the MolecularEnergy:  -76.3656275941
 
   PsiCCSD_PT2R12T:
     PsiCC_PT2R12:
       Spin-adapted algorithm: true
       Include CABS singles? : true
-        E(CABS singles) =        -0.017845349706901
+        E(CABS singles) =        -0.016689162753615
       R12WavefunctionWorld:
         WavefunctionWorld:
           Density-Fitting Parameters:
@@ -195,7 +292,7 @@
 
         R12Technology:
           CorrelationFactor: STG-3G[1.5]
-            [ Exponent Coefficient] = [ [     0.549916472902    -0.240062725132 ] [     3.131856778874    -0.231321126340 ] [    20.611027685628    -0.132656190969 ]  ]
+            [ Exponent Coefficient] = [ [     0.549916471839    -0.240062724636 ] [     3.131856766669    -0.231321126358 ] [    20.611027560377    -0.132656191218 ]  ]
 
           Coupling included: false
           GBC assumed: true
@@ -269,7 +366,7 @@
             name = "cc-pVDZ"
 
         PsiExEnv:
-          Location of Psi: /Users/evaleev/Development/workspace/install/psi3/bin
+          Location of Psi: /Users/evaleev/Development/workspace/install/psi3-gcc/bin
           Current Psi Working Directory: .
           Current Psi File Prefix: psiccsdpt2f12_h2opsiccsd_tf12ccpvdzccpvdzf12cabsccpvtzric1.psi
           Number of Scratch Groups: 1
@@ -306,7 +403,7 @@
               name = "cc-pVDZ"
 
           PsiExEnv:
-            Location of Psi: /Users/evaleev/Development/workspace/install/psi3/bin
+            Location of Psi: /Users/evaleev/Development/workspace/install/psi3-gcc/bin
             Current Psi Working Directory: .
             Current Psi File Prefix: psiccsdpt2f12_h2opsiccsd_tf12ccpvdzccpvdzf12cabsccpvtzric1.psi
             Number of Scratch Groups: 1
@@ -317,10 +414,80 @@
         frozen_uocc = [0 ]
 
   ConsumableResources: (
-    memory = 256MB ( max used: 31.1MB )
-    disk = [./ 0B] ( max used: 0B )
+    memory = unlimited ( max used: 29.5MB )
+    disk = [./ unlimited] ( max used: 0B )
   )
-  WARNING: 1931600 bytes managed by ConsumableResources was not explicitly deallocated!
+                                                                                           CPU Wall
+mpqc:                                                                                     8.99 9.52
+  calc:                                                                                   8.90 9.42
+    (2)_S energy:                                                                         0.13 0.13
+    MP2 pair energies:                                                                    0.01 0.01
+      MO ints retrieve:                                                                   0.00 0.00
+    R12 intermeds (tensor contract): Vpqxy:                                               0.78 0.79
+      Generic tensor contract:                                                            0.78 0.79
+        MO ints retrieve:                                                                 0.01 0.01
+        tbint_tform_ixjy_df <p(sym) p(sym)|ERI|m(sym) a'>(b1 b2|k1 k2):                   0.31 0.31
+          TransformedDensityFitting (p(sym) m(sym)|DF|Mu):                                0.00 0.00
+          tbint_tform_ijR_using_iqR <p(sym) Mu|ERI|a' >:                                  0.27 0.27
+            tbint_tform_ijR <p(sym) Mu|ERI|mu' >:                                         0.26 0.26
+        tbint_tform_ixjy_df <p(sym) p(sym)|ERI|p(sym) p(sym)>(b1 b2|k1 k2):               0.36 0.36
+          DensityFitting (p(sym) mu|DF|Mu):                                               0.33 0.33
+            tbint_tform_ijR <p(sym) Mu|ERI|mu >:                                          0.14 0.14
+          TransformedDensityFitting (p(sym) p(sym)|DF|Mu):                                0.00 0.00
+          tbint_tform_ijR_using_iqR <p(sym) Mu|ERI|p(sym) >:                              0.00 0.00
+    build_only:                                                                           2.77 2.77
+      FockBuildThreads:                                                                   4.19 4.19
+    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0,0]|i(sym) i(sym)>(b1 b2|k1 k2):             0.29 0.29
+      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0,0]|i(sym) >:                            0.26 0.26
+        tbint_tform_ijR <i(sym) Mu|G12'[0,0]|mu >:                                        0.25 0.26
+    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0,0]|i(sym)_hJ(p')[A] i(sym)>(b1 b2|k1 k2):   0.60 0.61
+      TransformedDensityFitting (i(sym) i(sym)_hJ(p')[A]|DF|Mu):                          0.00 0.00
+      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0,0]|i(sym)_hJ(p')[A] >:                  0.57 0.57
+        tbint_tform_ijR <i(sym) Mu|G12'[0,0]|mu' >:                                       0.57 0.56
+    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|a' m(sym)>(b1 b2|k1 k2):                   0.09 0.09
+    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|i(sym) i(sym)>(b1 b2|k1 k2):               0.04 0.04
+      TransformedDensityFitting (i(sym) i(sym)|DF|Mu):                                    0.00 0.00
+      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|i(sym) >:                              0.00 0.00
+    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|m(sym) a'>(b1 b2|k1 k2):                   1.08 1.07
+      DensityFitting (i(sym) mu'|DF|Mu):                                                  0.48 0.48
+        tbint_tform_ijR <i(sym) Mu|ERI|mu' >:                                             0.27 0.27
+      TransformedDensityFitting (i(sym) a'|DF|Mu):                                        0.00 0.00
+      TransformedDensityFitting (i(sym) m(sym)|DF|Mu):                                    0.00 0.00
+      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|a' >:                                  0.53 0.52
+        tbint_tform_ijR <i(sym) Mu|G12'[0]|mu' >:                                         0.52 0.51
+      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|m(sym) >:                              0.00 0.00
+    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|m(sym)_F(m(sym))[A] a'>(b1 b2|k1 k2):      0.05 0.04
+      TransformedDensityFitting (i(sym) m(sym)_F(m(sym))[A]|DF|Mu):                       0.00 0.00
+      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|m(sym)_F(m(sym))[A] >:                 0.00 0.00
+    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|m(sym)_F(p')[A] a'>(b1 b2|k1 k2):          0.05 0.05
+      TransformedDensityFitting (i(sym) m(sym)_F(p')[A]|DF|Mu):                           0.00 0.00
+      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|m(sym)_F(p')[A] >:                     0.00 0.00
+    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p' m(sym)>(b1 b2|k1 k2):                   0.06 0.05
+    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p' p'>(b1 b2|k1 k2):                       0.18 0.10
+      TransformedDensityFitting (i(sym) p'|DF|Mu):                                        0.00 0.00
+      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|p' >:                                  0.01 0.01
+    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p'_F(p')[A] m(sym)>(b1 b2|k1 k2):          0.08 0.06
+      TransformedDensityFitting (i(sym) p'_F(p')[A]|DF|Mu):                               0.00 0.00
+      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|p'_F(p')[A] >:                         0.01 0.01
+    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p'_K(p')[A] p'>(b1 b2|k1 k2):              0.18 0.11
+      TransformedDensityFitting (i(sym) p'_K(p')[A]|DF|Mu):                               0.00 0.00
+      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|p'_K(p')[A] >:                         0.01 0.01
+    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p(sym) e(sym)>(b1 b2|k1 k2):               0.04 0.04
+      TransformedDensityFitting (i(sym) e(sym)|DF|Mu):                                    0.00 0.00
+      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|e(sym) >:                              0.00 0.00
+    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p(sym) p(sym)>(b1 b2|k1 k2):               0.47 0.47
+      DensityFitting (i(sym) mu|DF|Mu):                                                   0.26 0.26
+        tbint_tform_ijR <i(sym) Mu|ERI|mu >:                                              0.14 0.14
+      TransformedDensityFitting (i(sym) p(sym)|DF|Mu):                                    0.00 0.00
+      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|p(sym) >:                              0.17 0.17
+        tbint_tform_ijR <i(sym) Mu|G12'[0]|mu >:                                          0.17 0.17
+    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p(sym)_F(a')[A] e(sym)>(b1 b2|k1 k2):      0.04 0.04
+      TransformedDensityFitting (i(sym) p(sym)_F(a')[A]|DF|Mu):                           0.00 0.00
+      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|p(sym)_F(a')[A] >:                     0.00 0.00
+    tbint_tform_ixjy_df <i(sym) i(sym)|G12'[0]|p(sym)_F(p(sym))[A] e(sym)>(b1 b2|k1 k2):  0.04 0.04
+      TransformedDensityFitting (i(sym) p(sym)_F(p(sym))[A]|DF|Mu):                       0.00 0.00
+      tbint_tform_ijR_using_iqR <i(sym) Mu|G12'[0]|p(sym)_F(p(sym))[A] >:                 0.00 0.00
+  input:                                                                                  0.09 0.09
 
-  End Time: Sun Oct 30 17:54:13 2011
+  End Time: Mon Oct  1 09:54:09 2012
 

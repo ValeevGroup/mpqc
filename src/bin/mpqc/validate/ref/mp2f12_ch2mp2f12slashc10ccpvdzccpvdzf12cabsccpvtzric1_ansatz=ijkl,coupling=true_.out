@@ -2,9 +2,9 @@
                     MPQC: Massively Parallel Quantum Chemistry
                                 Version 3.0.0-alpha
 
-  Machine:    i386-apple-darwin11.1.0
+  Machine:    x86_64-apple-darwin12.2.0
   User:       evaleev@EdBookPro.local
-  Start Time: Sun Oct 30 17:34:49 2011
+  Start Time: Mon Oct  1 09:41:25 2012
 
   Using ProcMessageGrp for message passing (number of nodes = 1).
   Using PthreadThreadGrp for threading (number of threads = 1).
@@ -12,7 +12,7 @@
   Total number of processors = 1
 
   Using IntegralLibint2 by default for molecular integrals evaluation
-  Given resources: ConsumableResources: ( memory = 256MB disk = [./ 0B] )
+  Given resources: ConsumableResources: ( memory = unlimited disk = [./ unlimited] )
 
   Reading file /Users/evaleev/Development/workspace/install/mpqc-gcc/share/mpqc/3.0.0-alpha/atominfo.kv.
 
@@ -139,6 +139,30 @@ switched off integral check in mbptr12.cc/compute
     n(basis):           134
     Maximum orthogonalization residual = 8.05992
     Minimum orthogonalization residual = 9.535e-07
+
+  Entered (2)_S energy evaluator
+    SVD-projecting out alpha occupied symmetry-blocked MOs out of RIBS to obtain space CABS (Alpha)
+      5 basis functions projected out of RIBS.
+      n(basis):           129
+      Maximum singular value = 1
+      Minimum singular value = 1
+    SVD-projecting out beta occupied symmetry-blocked MOs out of RIBS to obtain space CABS (Beta)
+      3 basis functions projected out of RIBS.
+      n(basis):           131
+      Maximum singular value = 1
+      Minimum singular value = 1
+    SVD-projecting out alpha unoccupied symmetry-blocked MOs out of CABS (Alpha) to obtain space CABS (Alpha)
+      19 basis functions projected out of CABS (Alpha).
+      n(basis):           110
+      Maximum singular value = 1
+      Minimum singular value = 1
+    SVD-projecting out beta unoccupied symmetry-blocked MOs out of CABS (Beta) to obtain space CABS (Beta)
+      21 basis functions projected out of CABS (Beta).
+      n(basis):           110
+      Maximum singular value = 1
+      Minimum singular value = 1
+    E(MP2 OBS+CABS singles = (2)_S) =        -0.007246001308806
+  Exited (2)_S energy evaluator
   Built TwoBodyMOIntsTransform_ijR: name = <i(sym)[A] Mu|ERI|mu >
   Built DensityFitting: name = (i(sym)[A] mu|DF|Mu)
   Built TransformedDensityFitting: name = (i(sym)[A] p(sym)[A]|DF|Mu)
@@ -211,26 +235,6 @@ switched off integral check in mbptr12.cc/compute
 
   Entered generic contraction (<i(sym)[A] i(sym)[B]|i(sym)[A] i(sym)[B]> = <i(sym)[A] i(sym)[B]|p(sym)[A] p(sym)[B]> . <i(sym)[A] i(sym)[B]|p(sym)[A] p(sym)[B]>^T)
   Exited generic contraction (<i(sym)[A] i(sym)[B]|i(sym)[A] i(sym)[B]> = <i(sym)[A] i(sym)[B]|p(sym)[A] p(sym)[B]> . <i(sym)[A] i(sym)[B]|p(sym)[A] p(sym)[B]>^T)
-  SVD-projecting out alpha occupied symmetry-blocked MOs out of RIBS to obtain space CABS (Alpha)
-    5 basis functions projected out of RIBS.
-    n(basis):           129
-    Maximum singular value = 1
-    Minimum singular value = 1
-  SVD-projecting out beta occupied symmetry-blocked MOs out of RIBS to obtain space CABS (Beta)
-    3 basis functions projected out of RIBS.
-    n(basis):           131
-    Maximum singular value = 1
-    Minimum singular value = 1
-  SVD-projecting out alpha unoccupied symmetry-blocked MOs out of CABS (Alpha) to obtain space CABS (Alpha)
-    19 basis functions projected out of CABS (Alpha).
-    n(basis):           110
-    Maximum singular value = 1
-    Minimum singular value = 1
-  SVD-projecting out beta unoccupied symmetry-blocked MOs out of CABS (Beta) to obtain space CABS (Beta)
-    21 basis functions projected out of CABS (Beta).
-    n(basis):           110
-    Maximum singular value = 1
-    Minimum singular value = 1
   Built TransformedDensityFitting: name = (i(sym)[A] m(sym)[A]|DF|Mu)
   Built TwoBodyMOIntsTransform_ijR: name = <i(sym)[B] Mu|ERI|mu' >
   Built DensityFitting: name = (i(sym)[B] mu'|DF|Mu)
@@ -691,29 +695,21 @@ switched off integral check in mbptr12.cc/compute
     -----   -----   ------------   ------------   ------------
       2       1     -0.002240647   -0.000458235   -0.002698881
 
-  Entered OBS singles MP2 energy evaluator
-    E(MP2 OBS singles) =        -0.002144351211748
-  Exited OBS singles MP2 energy evaluator
-
   RHF energy [au]:                                -38.905886888507
-  Singles MP2 correlation energy [au]:             -0.002144351212
-  MP2 correlation energy [au]:                     -0.097242424775
+  CABS singles MP2 correlation energy [au]:        -0.007246001309
+  MP2 correlation energy [au]:                     -0.102344074872
   (MBPT2)-R12/  C correlation energy [au]:         -0.032708261990
-  MBPT2-R12/  C correlation energy [au]:           -0.129950686765
-  MBPT2-R12/  C energy [au]:                      -39.035837575272
+  MBPT2-R12/  C correlation energy [au]:           -0.135052336862
+  MBPT2-R12/  C energy [au]:                      -39.040939225369
 
 
-  Entered CABS singles MP2 energy evaluator
-    E(MP2 CABS singles) =        -0.005076201934245
-  Exited CABS singles MP2 energy evaluator
-
-  Value of the MolecularEnergy:  -39.0409137772
+  Value of the MolecularEnergy:  -39.0409392254
 
   MBPT2_R12:
     Occupied orbitals     : canonical
     Unoccupied orbitals   : canonical
     Include CABS singles? : true
-      E(CABS singles) =        -0.005076201934245
+      E(CABS singles) =        -0.007246001308806
     R12WavefunctionWorld:
       WavefunctionWorld:
         Density-Fitting Parameters:
@@ -738,7 +734,7 @@ switched off integral check in mbptr12.cc/compute
 
       R12Technology:
         CorrelationFactor: STG-3G[1.5]
-          [ Exponent Coefficient] = [ [     0.549916472902    -0.240062725132 ] [     3.131856778874    -0.231321126340 ] [    20.611027685628    -0.132656190969 ]  ]
+          [ Exponent Coefficient] = [ [     0.549916471839    -0.240062724636 ] [     3.131856766669    -0.231321126358 ] [    20.611027560377    -0.132656191218 ]  ]
 
         Coupling included: true
         GBC assumed: true
@@ -852,10 +848,386 @@ switched off integral check in mbptr12.cc/compute
 
 
   ConsumableResources: (
-    memory = 256MB ( max used: 29.8MB )
-    disk = [./ 0B] ( max used: 0B )
+    memory = unlimited ( max used: 29.2MB )
+    disk = [./ unlimited] ( max used: 0B )
   )
-  WARNING: 8745864 bytes managed by ConsumableResources was not explicitly deallocated!
+                                                                                                                     CPU  Wall
+mpqc:                                                                                                              12.45 12.34
+  calc:                                                                                                            12.27 12.16
+    mp2-r12 energy:                                                                                                12.27 12.16
+      (2)_S energy:                                                                                                 4.72  4.72
+        build_only:                                                                                                 2.78  2.78
+          FockBuildThreads:                                                                                         4.16  4.16
+      mp2-r12/c pair energies:                                                                                      6.70  6.59
+        "diagonal" part of G12 intermediates:                                                                       0.65  0.65
+          Generic tensor:                                                                                           0.65  0.65
+            MO ints retrieve:                                                                                       0.00  0.00
+            tbint_tform_ixjy_df <i(sym)[A] i(sym)[A]|G12'[0,0]|i(sym)[A] i(sym)[A]>(b1 b2|k1 k2):                   0.03  0.03
+            tbint_tform_ixjy_df <i(sym)[A] i(sym)[A]|G12'[0]|i(sym)[A] i(sym)[A]>(b1 b2|k1 k2):                     0.03  0.03
+            tbint_tform_ixjy_df <i(sym)[A] i(sym)[B]|G12'[0,0]|i(sym)[A] i(sym)[B]>(b1 b2|k1 k2):                   0.51  0.51
+              tbint_tform_ijR_using_iqR <i(sym)[A] Mu|G12'[0,0]|i(sym)[A] >:                                        0.24  0.24
+                tbint_tform_ijR <i(sym)[A] Mu|G12'[0,0]|mu >:                                                       0.24  0.24
+              tbint_tform_ijR_using_iqR <i(sym)[B] Mu|G12'[0,0]|i(sym)[B] >:                                        0.24  0.24
+                tbint_tform_ijR <i(sym)[B] Mu|G12'[0,0]|mu >:                                                       0.24  0.24
+            tbint_tform_ixjy_df <i(sym)[A] i(sym)[B]|G12'[0]|i(sym)[A] i(sym)[B]>(b1 b2|k1 k2):                     0.03  0.03
+              TransformedDensityFitting (i(sym)[A] i(sym)[A]|DF|Mu):                                                0.00  0.00
+              TransformedDensityFitting (i(sym)[B] i(sym)[B]|DF|Mu):                                                0.00  0.00
+              tbint_tform_ijR_using_iqR <i(sym)[A] Mu|G12'[0]|i(sym)[A] >:                                          0.00  0.00
+              tbint_tform_ijR_using_iqR <i(sym)[B] Mu|G12'[0]|i(sym)[B] >:                                          0.00  0.00
+            tbint_tform_ixjy_df <i(sym)[B] i(sym)[B]|G12'[0,0]|i(sym)[B] i(sym)[B]>(b1 b2|k1 k2):                   0.03  0.03
+            tbint_tform_ixjy_df <i(sym)[B] i(sym)[B]|G12'[0]|i(sym)[B] i(sym)[B]>(b1 b2|k1 k2):                     0.03  0.03
+        A intermediate (direct):                                                                                    0.13  0.13
+          F12 integrals:                                                                                            0.13  0.13
+            Generic tensor:                                                                                         0.13  0.13
+              MO ints retrieve:                                                                                     0.00  0.00
+              tbint_tform_ixjy_df <i(sym)[A] i(sym)[A]|G12'[0]|a(sym)[A] a(sym)[A]_F(a'[A])[A]>(b1 b2|k1 k2):       0.03  0.03
+              tbint_tform_ixjy_df <i(sym)[A] i(sym)[B]|G12'[0]|a(sym)[A] a(sym)[B]_F(a'[B])[B]>(b1 b2|k1 k2):       0.03  0.03
+                TransformedDensityFitting (i(sym)[A] a(sym)[A]|DF|Mu):                                              0.00  0.00
+                TransformedDensityFitting (i(sym)[B] a(sym)[B]_F(a'[B])[B]|DF|Mu):                                  0.00  0.00
+                tbint_tform_ijR_using_iqR <i(sym)[A] Mu|G12'[0]|a(sym)[A] >:                                        0.00  0.00
+                tbint_tform_ijR_using_iqR <i(sym)[B] Mu|G12'[0]|a(sym)[B]_F(a'[B])[B] >:                            0.00  0.00
+              tbint_tform_ixjy_df <i(sym)[A] i(sym)[B]|G12'[0]|a(sym)[A]_F(a'[A])[A] a(sym)[B]>(b1 b2|k1 k2):       0.04  0.03
+                TransformedDensityFitting (i(sym)[A] a(sym)[A]_F(a'[A])[A]|DF|Mu):                                  0.00  0.00
+                TransformedDensityFitting (i(sym)[B] a(sym)[B]|DF|Mu):                                              0.00  0.00
+                tbint_tform_ijR_using_iqR <i(sym)[A] Mu|G12'[0]|a(sym)[A]_F(a'[A])[A] >:                            0.00  0.00
+                tbint_tform_ijR_using_iqR <i(sym)[B] Mu|G12'[0]|a(sym)[B] >:                                        0.00  0.00
+              tbint_tform_ixjy_df <i(sym)[B] i(sym)[B]|G12'[0]|a(sym)[B] a(sym)[B]_F(a'[B])[B]>(b1 b2|k1 k2):       0.03  0.03
+        B(app. C) intermediate:                                                                                     3.12  2.98
+          Alpha-alpha P(C) intermediate:                                                                            0.52  0.43
+            generic FxF intermediate:                                                                               0.52  0.43
+              Generic tensor contract:                                                                              0.22  0.19
+                MO ints retrieve:                                                                                   0.00  0.03
+                tbint_tform_ixjy_df <i(sym)[A] i(sym)[A]|G12'[0]|e(sym)[A] p(sym)[A]>(b1 b2|k1 k2):                 0.03  0.03
+                tbint_tform_ixjy_df <i(sym)[A] i(sym)[A]|G12'[0]|m(sym)[A] p'>(b1 b2|k1 k2):                        0.04  0.03
+                tbint_tform_ixjy_df <i(sym)[A] i(sym)[A]|G12'[0]|p' p'>(b1 b2|k1 k2):                               0.11  0.06
+                tbint_tform_ixjy_df <i(sym)[A] i(sym)[A]|G12'[0]|p(sym)[A] e(sym)[A]>(b1 b2|k1 k2):                 0.03  0.03
+              tbint_tform_ixjy_df <i(sym)[A] i(sym)[A]|G12'[0]|e(sym)[A] p(sym)[A]_F(a'[A])[A]>(b1 b2|k1 k2):       0.03  0.03
+              tbint_tform_ixjy_df <i(sym)[A] i(sym)[A]|G12'[0]|m(sym)[A] p'_F(p')[A]>(b1 b2|k1 k2):                 0.04  0.04
+              tbint_tform_ixjy_df <i(sym)[A] i(sym)[A]|G12'[0]|m(sym)[A]_F(m(sym)[A])[A] a'[A]>(b1 b2|k1 k2):       0.04  0.04
+              tbint_tform_ixjy_df <i(sym)[A] i(sym)[A]|G12'[0]|m(sym)[A]_F(p')[A] a'[A]>(b1 b2|k1 k2):              0.04  0.03
+              tbint_tform_ixjy_df <i(sym)[A] i(sym)[A]|G12'[0]|p'_K(p')[A] p'>(b1 b2|k1 k2):                        0.11  0.06
+              tbint_tform_ixjy_df <i(sym)[A] i(sym)[A]|G12'[0]|p(sym)[A]_F(p(sym)[A])[A] e(sym)[A]>(b1 b2|k1 k2):   0.03  0.03
+          Alpha-alpha Q(C) intermediate:                                                                            0.03  0.03
+            generic X intermediate:                                                                                 0.03  0.03
+              Generic tensor:                                                                                       0.03  0.03
+                MO ints retrieve:                                                                                   0.00  0.00
+                tbint_tform_ixjy_df <i(sym)[A] i(sym)[A]|G12'[0,0]|i(sym)[A] i(sym)[A]_hJ(p')[A]>(b1 b2|k1 k2):     0.03  0.03
+          Alpha-beta P(C) intermediate:                                                                             1.01  0.92
+            generic FxF intermediate:                                                                               0.81  0.72
+              Generic tensor contract:                                                                              0.23  0.23
+                MO ints retrieve:                                                                                   0.00  0.03
+                tbint_tform_ixjy_df <i(sym)[A] i(sym)[B]|G12'[0]|e(sym)[A] p(sym)[B]>(b1 b2|k1 k2):                 0.03  0.03
+                tbint_tform_ixjy_df <i(sym)[A] i(sym)[B]|G12'[0]|m(sym)[A] p'>(b1 b2|k1 k2):                        0.03  0.03
+                tbint_tform_ixjy_df <i(sym)[A] i(sym)[B]|G12'[0]|p' m(sym)[B]>(b1 b2|k1 k2):                        0.04  0.04
+                tbint_tform_ixjy_df <i(sym)[A] i(sym)[B]|G12'[0]|p' p'>(b1 b2|k1 k2):                               0.09  0.06
+                  TransformedDensityFitting (i(sym)[A] p'|DF|Mu):                                                   0.00  0.00
+                  tbint_tform_ijR_using_iqR <i(sym)[A] Mu|G12'[0]|p' >:                                             0.01  0.00
+                tbint_tform_ixjy_df <i(sym)[A] i(sym)[B]|G12'[0]|p(sym)[A] e(sym)[B]>(b1 b2|k1 k2):                 0.03  0.03
+              tbint_tform_ixjy_df <i(sym)[A] i(sym)[B]|G12'[0]|a'[A] m(sym)[B]_F(m(sym)[B])[B]>(b1 b2|k1 k2):       0.04  0.04
+                TransformedDensityFitting (i(sym)[B] m(sym)[B]_F(m(sym)[B])[B]|DF|Mu):                              0.00  0.00
+                tbint_tform_ijR_using_iqR <i(sym)[B] Mu|G12'[0]|m(sym)[B]_F(m(sym)[B])[B] >:                        0.00  0.00
+              tbint_tform_ixjy_df <i(sym)[A] i(sym)[B]|G12'[0]|a'[A] m(sym)[B]_F(p')[B]>(b1 b2|k1 k2):              0.04  0.04
+                TransformedDensityFitting (i(sym)[B] m(sym)[B]_F(p')[B]|DF|Mu):                                     0.00  0.00
+                tbint_tform_ijR_using_iqR <i(sym)[B] Mu|G12'[0]|m(sym)[B]_F(p')[B] >:                               0.00  0.00
+              tbint_tform_ixjy_df <i(sym)[A] i(sym)[B]|G12'[0]|e(sym)[A] p(sym)[B]_F(a'[B])[B]>(b1 b2|k1 k2):       0.03  0.03
+                TransformedDensityFitting (i(sym)[B] p(sym)[B]_F(a'[B])[B]|DF|Mu):                                  0.00  0.00
+                tbint_tform_ijR_using_iqR <i(sym)[B] Mu|G12'[0]|p(sym)[B]_F(a'[B])[B] >:                            0.00  0.00
+              tbint_tform_ixjy_df <i(sym)[A] i(sym)[B]|G12'[0]|e(sym)[A] p(sym)[B]_F(p(sym)[B])[B]>(b1 b2|k1 k2):   0.03  0.03
+                TransformedDensityFitting (i(sym)[A] e(sym)[A]|DF|Mu):                                              0.00  0.00
+                TransformedDensityFitting (i(sym)[B] p(sym)[B]_F(p(sym)[B])[B]|DF|Mu):                              0.00  0.00
+                tbint_tform_ijR_using_iqR <i(sym)[A] Mu|G12'[0]|e(sym)[A] >:                                        0.00  0.00
+                tbint_tform_ijR_using_iqR <i(sym)[B] Mu|G12'[0]|p(sym)[B]_F(p(sym)[B])[B] >:                        0.00  0.00
+              tbint_tform_ixjy_df <i(sym)[A] i(sym)[B]|G12'[0]|m(sym)[A] p'_F(p')[B]>(b1 b2|k1 k2):                 0.04  0.04
+                TransformedDensityFitting (i(sym)[B] p'_F(p')[B]|DF|Mu):                                            0.00  0.00
+                tbint_tform_ijR_using_iqR <i(sym)[B] Mu|G12'[0]|p'_F(p')[B] >:                                      0.00  0.00
+              tbint_tform_ixjy_df <i(sym)[A] i(sym)[B]|G12'[0]|m(sym)[A]_F(m(sym)[A])[A] a'[B]>(b1 b2|k1 k2):       0.03  0.03
+                TransformedDensityFitting (i(sym)[A] m(sym)[A]_F(m(sym)[A])[A]|DF|Mu):                              0.00  0.00
+                tbint_tform_ijR_using_iqR <i(sym)[A] Mu|G12'[0]|m(sym)[A]_F(m(sym)[A])[A] >:                        0.00  0.00
+              tbint_tform_ixjy_df <i(sym)[A] i(sym)[B]|G12'[0]|m(sym)[A]_F(p')[A] a'[B]>(b1 b2|k1 k2):              0.03  0.03
+                TransformedDensityFitting (i(sym)[A] m(sym)[A]_F(p')[A]|DF|Mu):                                     0.00  0.00
+                tbint_tform_ijR_using_iqR <i(sym)[A] Mu|G12'[0]|m(sym)[A]_F(p')[A] >:                               0.00  0.00
+              tbint_tform_ixjy_df <i(sym)[A] i(sym)[B]|G12'[0]|p' p'_K(p')[B]>(b1 b2|k1 k2):                        0.09  0.06
+                TransformedDensityFitting (i(sym)[B] p'_K(p')[B]|DF|Mu):                                            0.00  0.00
+                tbint_tform_ijR_using_iqR <i(sym)[B] Mu|G12'[0]|p'_K(p')[B] >:                                      0.01  0.00
+              tbint_tform_ixjy_df <i(sym)[A] i(sym)[B]|G12'[0]|p'_F(p')[A] m(sym)[B]>(b1 b2|k1 k2):                 0.06  0.05
+                TransformedDensityFitting (i(sym)[A] p'_F(p')[A]|DF|Mu):                                            0.00  0.00
+                tbint_tform_ijR_using_iqR <i(sym)[A] Mu|G12'[0]|p'_F(p')[A] >:                                      0.01  0.00
+              tbint_tform_ixjy_df <i(sym)[A] i(sym)[B]|G12'[0]|p'_K(p')[A] p'>(b1 b2|k1 k2):                        0.10  0.06
+                TransformedDensityFitting (i(sym)[A] p'_K(p')[A]|DF|Mu):                                            0.00  0.00
+                TransformedDensityFitting (i(sym)[B] p'|DF|Mu):                                                     0.00  0.00
+                tbint_tform_ijR_using_iqR <i(sym)[A] Mu|G12'[0]|p'_K(p')[A] >:                                      0.01  0.00
+                tbint_tform_ijR_using_iqR <i(sym)[B] Mu|G12'[0]|p' >:                                               0.00  0.00
+              tbint_tform_ixjy_df <i(sym)[A] i(sym)[B]|G12'[0]|p(sym)[A]_F(a'[A])[A] e(sym)[B]>(b1 b2|k1 k2):       0.03  0.03
+                TransformedDensityFitting (i(sym)[A] p(sym)[A]_F(a'[A])[A]|DF|Mu):                                  0.00  0.00
+                tbint_tform_ijR_using_iqR <i(sym)[A] Mu|G12'[0]|p(sym)[A]_F(a'[A])[A] >:                            0.00  0.00
+              tbint_tform_ixjy_df <i(sym)[A] i(sym)[B]|G12'[0]|p(sym)[A]_F(p(sym)[A])[A] e(sym)[B]>(b1 b2|k1 k2):   0.03  0.03
+                TransformedDensityFitting (i(sym)[A] p(sym)[A]_F(p(sym)[A])[A]|DF|Mu):                              0.00  0.00
+                TransformedDensityFitting (i(sym)[B] e(sym)[B]|DF|Mu):                                              0.00  0.00
+                tbint_tform_ijR_using_iqR <i(sym)[A] Mu|G12'[0]|p(sym)[A]_F(p(sym)[A])[A] >:                        0.00  0.00
+                tbint_tform_ijR_using_iqR <i(sym)[B] Mu|G12'[0]|e(sym)[B] >:                                        0.00  0.00
+          Alpha-beta Q(C) intermediate:                                                                             1.13  1.21
+            generic X intermediate:                                                                                 1.13  1.21
+              Generic tensor:                                                                                       1.13  1.16
+                MO ints retrieve:                                                                                   0.00  0.00
+                tbint_tform_ixjy_df <i(sym)[A] i(sym)[B]|G12'[0,0]|i(sym)[A] i(sym)[B]_hJ(p')[B]>(b1 b2|k1 k2):     0.56  0.58
+                  TransformedDensityFitting (i(sym)[B] i(sym)[B]_hJ(p')[B]|DF|Mu):                                  0.00  0.00
+                  tbint_tform_ijR_using_iqR <i(sym)[B] Mu|G12'[0,0]|i(sym)[B]_hJ(p')[B] >:                          0.53  0.53
+                    tbint_tform_ijR <i(sym)[B] Mu|G12'[0,0]|mu' >:                                                  0.53  0.52
+                tbint_tform_ixjy_df <i(sym)[A] i(sym)[B]|G12'[0,0]|i(sym)[A]_hJ(p')[A] i(sym)[B]>(b1 b2|k1 k2):     0.57  0.58
+                  TransformedDensityFitting (i(sym)[A] i(sym)[A]_hJ(p')[A]|DF|Mu):                                  0.00  0.00
+                  tbint_tform_ijR_using_iqR <i(sym)[A] Mu|G12'[0,0]|i(sym)[A]_hJ(p')[A] >:                          0.54  0.55
+                    tbint_tform_ijR <i(sym)[A] Mu|G12'[0,0]|mu' >:                                                  0.54  0.54
+          Beta-beta P(C) intermediate:                                                                              0.36  0.33
+            generic FxF intermediate:                                                                               0.35  0.33
+              Generic tensor contract:                                                                              0.15  0.14
+                MO ints retrieve:                                                                                   0.00  0.01
+                tbint_tform_ixjy_df <i(sym)[B] i(sym)[B]|G12'[0]|e(sym)[B] p(sym)[B]>(b1 b2|k1 k2):                 0.03  0.03
+                tbint_tform_ixjy_df <i(sym)[B] i(sym)[B]|G12'[0]|m(sym)[B] p'>(b1 b2|k1 k2):                        0.03  0.03
+                tbint_tform_ixjy_df <i(sym)[B] i(sym)[B]|G12'[0]|p' p'>(b1 b2|k1 k2):                               0.06  0.04
+                tbint_tform_ixjy_df <i(sym)[B] i(sym)[B]|G12'[0]|p(sym)[B] e(sym)[B]>(b1 b2|k1 k2):                 0.03  0.03
+              tbint_tform_ixjy_df <i(sym)[B] i(sym)[B]|G12'[0]|e(sym)[B] p(sym)[B]_F(a'[B])[B]>(b1 b2|k1 k2):       0.03  0.03
+              tbint_tform_ixjy_df <i(sym)[B] i(sym)[B]|G12'[0]|m(sym)[B] p'_F(p')[B]>(b1 b2|k1 k2):                 0.03  0.03
+              tbint_tform_ixjy_df <i(sym)[B] i(sym)[B]|G12'[0]|m(sym)[B]_F(m(sym)[B])[B] a'[B]>(b1 b2|k1 k2):       0.03  0.03
+              tbint_tform_ixjy_df <i(sym)[B] i(sym)[B]|G12'[0]|m(sym)[B]_F(p')[B] a'[B]>(b1 b2|k1 k2):              0.03  0.03
+              tbint_tform_ixjy_df <i(sym)[B] i(sym)[B]|G12'[0]|p'_K(p')[B] p'>(b1 b2|k1 k2):                        0.05  0.04
+              tbint_tform_ixjy_df <i(sym)[B] i(sym)[B]|G12'[0]|p(sym)[B]_F(p(sym)[B])[B] e(sym)[B]>(b1 b2|k1 k2):   0.03  0.03
+          Beta-beta Q(C) intermediate:                                                                              0.03  0.03
+            generic X intermediate:                                                                                 0.03  0.03
+              Generic tensor:                                                                                       0.03  0.03
+                MO ints retrieve:                                                                                   0.00  0.00
+                tbint_tform_ixjy_df <i(sym)[B] i(sym)[B]|G12'[0,0]|i(sym)[B] i(sym)[B]_hJ(p')[B]>(b1 b2|k1 k2):     0.03  0.03
+        F12 integrals:                                                                                              0.11  0.12
+          Generic tensor:                                                                                           0.11  0.12
+            MO ints retrieve:                                                                                       0.00  0.00
+            tbint_tform_ixjy_df <i(sym)[A] i(sym)[A]|G12'[0]|p[A] p[A]>(b1 b2|k1 k2):                               0.03  0.03
+            tbint_tform_ixjy_df <i(sym)[A] i(sym)[B]|G12'[0]|p[A] p[B]>(b1 b2|k1 k2):                               0.03  0.03
+              TransformedDensityFitting (i(sym)[B] p[B]|DF|Mu):                                                     0.00  0.00
+              tbint_tform_ijR_using_iqR <i(sym)[A] Mu|G12'[0]|p[A] >:                                               0.00  0.00
+              tbint_tform_ijR_using_iqR <i(sym)[B] Mu|G12'[0]|p[B] >:                                               0.00  0.00
+            tbint_tform_ixjy_df <i(sym)[B] i(sym)[B]|G12'[0]|p[B] p[B]>(b1 b2|k1 k2):                               0.03  0.03
+        MP2 pair energies:                                                                                          0.01  0.01
+          MO ints retrieve:                                                                                         0.00  0.00
+        T2 amplitudes:                                                                                              0.02  0.02
+          Generic tensor:                                                                                           0.02  0.02
+            MO ints retrieve:                                                                                       0.00  0.00
+            tbint_tform_ixjy_df <i(sym)[A] i(sym)[A]|ERI|p[A] p[A]>(b1 b2|k1 k2):                                   0.00  0.00
+              tbint_tform_ijR_using_iqR <i(sym)[A] Mu|ERI|p[A] >:                                                   0.00  0.00
+            tbint_tform_ixjy_df <i(sym)[A] i(sym)[B]|ERI|p[A] p[B]>(b1 b2|k1 k2):                                   0.00  0.00
+              TransformedDensityFitting (i(sym)[A] p[A]|DF|Mu):                                                     0.00  0.00
+              tbint_tform_ijR_using_iqR <i(sym)[B] Mu|ERI|p[B] >:                                                   0.00  0.00
+            tbint_tform_ixjy_df <i(sym)[B] i(sym)[B]|ERI|p[B] p[B]>(b1 b2|k1 k2):                                   0.00  0.00
+        mp2-f12a intermeds (tensor contract):                                                                       1.76  1.78
+          Generic tensor contract:                                                                                  0.01  0.01
+            MO ints retrieve:                                                                                       0.00  0.00
+          tbint_tform_ixjy_df <i(sym)[A] i(sym)[A]|G12'[0]|m(sym)[A] a'[A]>(b1 b2|k1 k2):                           0.06  0.05
+          tbint_tform_ixjy_df <i(sym)[A] i(sym)[B]|G12'[0]|a'[A] m(sym)[B]>(b1 b2|k1 k2):                           0.87  0.87
+            DensityFitting (i(sym)[A] mu'|DF|Mu):                                                                   0.37  0.37
+              tbint_tform_ijR <i(sym)[A] Mu|ERI|mu' >:                                                              0.22  0.23
+            TransformedDensityFitting (i(sym)[A] a'[A]|DF|Mu):                                                      0.00  0.00
+            TransformedDensityFitting (i(sym)[B] m(sym)[B]|DF|Mu):                                                  0.00  0.00
+            tbint_tform_ijR_using_iqR <i(sym)[A] Mu|G12'[0]|a'[A] >:                                                0.46  0.45
+              tbint_tform_ijR <i(sym)[A] Mu|G12'[0]|mu' >:                                                          0.44  0.44
+            tbint_tform_ijR_using_iqR <i(sym)[B] Mu|G12'[0]|m(sym)[B] >:                                            0.00  0.00
+          tbint_tform_ixjy_df <i(sym)[A] i(sym)[B]|G12'[0]|m(sym)[A] a'[B]>(b1 b2|k1 k2):                           0.78  0.78
+            DensityFitting (i(sym)[B] mu'|DF|Mu):                                                                   0.30  0.30
+              tbint_tform_ijR <i(sym)[B] Mu|ERI|mu' >:                                                              0.23  0.23
+            TransformedDensityFitting (i(sym)[A] m(sym)[A]|DF|Mu):                                                  0.00  0.00
+            TransformedDensityFitting (i(sym)[B] a'[B]|DF|Mu):                                                      0.00  0.00
+            tbint_tform_ijR_using_iqR <i(sym)[A] Mu|G12'[0]|m(sym)[A] >:                                            0.00  0.00
+            tbint_tform_ijR_using_iqR <i(sym)[B] Mu|G12'[0]|a'[B] >:                                                0.44  0.44
+              tbint_tform_ijR <i(sym)[B] Mu|G12'[0]|mu' >:                                                          0.43  0.43
+          tbint_tform_ixjy_df <i(sym)[B] i(sym)[B]|G12'[0]|m(sym)[B] a'[B]>(b1 b2|k1 k2):                           0.04  0.03
+        tbint_tform_ixjy_df <i(sym)[A] i(sym)[A]|G12'[0]|p(sym)[A] p(sym)[A]>(b1 b2|k1 k2):                         0.03  0.03
+        tbint_tform_ixjy_df <i(sym)[A] i(sym)[B]|G12'[0]|p(sym)[A] p(sym)[B]>(b1 b2|k1 k2):                         0.77  0.77
+          DensityFitting (i(sym)[A] mu|DF|Mu):                                                                      0.25  0.25
+            tbint_tform_ijR <i(sym)[A] Mu|ERI|mu >:                                                                 0.14  0.14
+          DensityFitting (i(sym)[B] mu|DF|Mu):                                                                      0.15  0.15
+            tbint_tform_ijR <i(sym)[B] Mu|ERI|mu >:                                                                 0.14  0.14
+          TransformedDensityFitting (i(sym)[A] p(sym)[A]|DF|Mu):                                                    0.00  0.00
+          TransformedDensityFitting (i(sym)[B] p(sym)[B]|DF|Mu):                                                    0.00  0.00
+          tbint_tform_ijR_using_iqR <i(sym)[A] Mu|G12'[0]|p(sym)[A] >:                                              0.16  0.17
+            tbint_tform_ijR <i(sym)[A] Mu|G12'[0]|mu >:                                                             0.16  0.16
+          tbint_tform_ijR_using_iqR <i(sym)[B] Mu|G12'[0]|p(sym)[B] >:                                              0.16  0.16
+            tbint_tform_ijR <i(sym)[B] Mu|G12'[0]|mu >:                                                             0.16  0.16
+        tbint_tform_ixjy_df <i(sym)[B] i(sym)[B]|G12'[0]|p(sym)[B] p(sym)[B]>(b1 b2|k1 k2):                         0.03  0.03
+      vector:                                                                                                       0.73  0.73
+        density:                                                                                                    0.00  0.00
+        evals:                                                                                                      0.01  0.01
+        extrap:                                                                                                     0.01  0.01
+        fock:                                                                                                       0.64  0.64
+          start thread:                                                                                             0.63  0.63
+          stop thread:                                                                                              0.00  0.00
+  input:                                                                                                            0.17  0.17
+    vector:                                                                                                         0.07  0.07
+      density:                                                                                                      0.00  0.00
+      evals:                                                                                                        0.00  0.00
+      extrap:                                                                                                       0.00  0.00
+      fock:                                                                                                         0.03  0.03
+        start thread:                                                                                               0.03  0.03
+        stop thread:                                                                                                0.00  0.00
+  WARNING: 6949680 bytes managed by ConsumableResources was not explicitly deallocated!
+  ConsumableResources: list of stranded pointers
+    ptr=0x10a05e000 size=3023040
+    ptr=0x10788d000 size=159048
+    ptr=0x107b77000 size=159048
+    ptr=0x1078c1000 size=143648
+    ptr=0x1079f1000 size=143648
+    ptr=0x107a33000 size=143648
+    ptr=0x107a75000 size=143648
+    ptr=0x107bbc000 size=143648
+    ptr=0x107be0000 size=143648
+    ptr=0x107c04000 size=143648
+    ptr=0x107cd9000 size=143648
+    ptr=0x108657000 size=143648
+    ptr=0x108699000 size=143648
+    ptr=0x1086bd000 size=143648
+    ptr=0x108fa2000 size=143648
+    ptr=0x108ecb000 size=140432
+    ptr=0x107e85000 size=138288
+    ptr=0x108e87000 size=137288
+    ptr=0x108ea9000 size=137288
+    ptr=0x107e64000 size=133128
+    ptr=0x108e66000 size=133128
+    ptr=0x7f8f4a8a0400 size=117920
+    ptr=0x7f8f4c042200 size=117920
+    ptr=0x7f8f4e0a3e00 size=35200
+    ptr=0x7f8f4b04e800 size=26400
+    ptr=0x7f8f4b056200 size=26400
+    ptr=0x7f8f4c030c00 size=25728
+    ptr=0x7f8f4c081000 size=25728
+    ptr=0x7f8f4c089c00 size=25728
+    ptr=0x7f8f4c0a8e00 size=25728
+    ptr=0x7f8f4c0ce400 size=25728
+    ptr=0x7f8f4a8bd200 size=25536
+    ptr=0x7f8f4e097600 size=25536
+    ptr=0x7f8f4e09da00 size=25536
+    ptr=0x7f8f4a8dea00 size=22512
+    ptr=0x7f8f4b008c00 size=21120
+    ptr=0x7f8f4c0ee800 size=21120
+    ptr=0x7f8f4c0f3c00 size=21120
+    ptr=0x7f8f4c112600 size=21120
+    ptr=0x7f8f4c12f400 size=21120
+    ptr=0x7f8f4a830200 size=20368
+    ptr=0x7f8f4a874600 size=18480
+    ptr=0x7f8f4a87cc00 size=18480
+    ptr=0x7f8f4a836800 size=16720
+    ptr=0x7f8f4a8e6600 size=16720
+    ptr=0x7f8f4b04a400 size=8208
+    ptr=0x7f8f4b04c600 size=8208
+    ptr=0x7f8f4e004000 size=8208
+    ptr=0x7f8f4e034200 size=6720
+    ptr=0x7f8f4c001000 size=5360
+    ptr=0x7f8f4c06bc00 size=5360
+    ptr=0x7f8f4c087600 size=5360
+    ptr=0x7f8f4c006200 size=5160
+    ptr=0x7f8f4c013e00 size=5160
+    ptr=0x7f8f4c07d200 size=5160
+    ptr=0x7f8f4a816c00 size=4608
+    ptr=0x7f8f4a81ac00 size=4608
+    ptr=0x7f8f4a81d200 size=4608
+    ptr=0x7f8f4a820600 size=4608
+    ptr=0x7f8f4a824800 size=4608
+    ptr=0x7f8f4a825a00 size=4608
+    ptr=0x7f8f4a828800 size=4608
+    ptr=0x7f8f4a848800 size=4608
+    ptr=0x7f8f4a84dc00 size=4608
+    ptr=0x7f8f4a84ee00 size=4608
+    ptr=0x7f8f4c07ec00 size=4608
+    ptr=0x7f8f4c07fe00 size=4608
+    ptr=0x7f8f4c0d7c00 size=4608
+    ptr=0x7f8f4e001c00 size=4608
+    ptr=0x7f8f4e002e00 size=4608
+    ptr=0x7f8f4e007c00 size=4608
+    ptr=0x7f8f4e05d600 size=4608
+    ptr=0x7f8f4e07de00 size=4608
+    ptr=0x7f8f4e081400 size=4608
+    ptr=0x7f8f4b007a00 size=4560
+    ptr=0x7f8f4b055000 size=4560
+    ptr=0x7f8f4b006200 size=4288
+    ptr=0x7f8f4b00e400 size=4288
+    ptr=0x7f8f4a818e00 size=4224
+    ptr=0x7f8f4a84ba00 size=4224
+    ptr=0x7f8f4a851000 size=4224
+    ptr=0x7f8f4a854200 size=4224
+    ptr=0x7f8f4a850000 size=4032
+    ptr=0x7f8f4a852200 size=4032
+    ptr=0x7f8f4a853200 size=4032
+    ptr=0x7f8f4a855400 size=4032
+    ptr=0x7f8f4a817e00 size=3648
+    ptr=0x7f8f4a849a00 size=3648
+    ptr=0x7f8f4a84aa00 size=3648
+    ptr=0x7f8f4a84cc00 size=3648
+    ptr=0x7f8f4b03e200 size=3648
+    ptr=0x7f8f4c037200 size=3216
+    ptr=0x7f8f4c0a6600 size=3216
+    ptr=0x7f8f4c0a7800 size=3216
+    ptr=0x7f8f4c0a2400 size=3144
+    ptr=0x7f8f4c0a3200 size=3144
+    ptr=0x7f8f4c0a4400 size=3144
+    ptr=0x7f8f4b046800 size=2640
+    ptr=0x7f8f4b05ca00 size=2640
+    ptr=0x7f8f4a81a000 size=2400
+    ptr=0x7f8f4a821a00 size=2400
+    ptr=0x7f8f4a822400 size=2400
+    ptr=0x7f8f4a83b400 size=2400
+    ptr=0x7f8f4a83be00 size=2400
+    ptr=0x7f8f4a83c800 size=2400
+    ptr=0x7f8f4a83d200 size=2400
+    ptr=0x7f8f4a83dc00 size=2400
+    ptr=0x7f8f4a83e600 size=2400
+    ptr=0x7f8f4a83f000 size=2400
+    ptr=0x7f8f4a840c00 size=2400
+    ptr=0x7f8f4a841600 size=2400
+    ptr=0x7f8f4a842800 size=2400
+    ptr=0x7f8f4a843200 size=2400
+    ptr=0x7f8f4a843c00 size=2400
+    ptr=0x7f8f4a844e00 size=2400
+    ptr=0x7f8f4a845800 size=2400
+    ptr=0x7f8f4a846200 size=2400
+    ptr=0x7f8f4a847400 size=2400
+    ptr=0x7f8f4a847e00 size=2400
+    ptr=0x7f8f4a856e00 size=2400
+    ptr=0x7f8f4b00f600 size=2144
+    ptr=0x7f8f4b043000 size=2144
+    ptr=0x7f8f4b044c00 size=1680
+    ptr=0x7f8f4b049c00 size=1680
+    ptr=0x7f8f4e080600 size=1680
+    ptr=0x7f8f4a42f2b0 size=960
+    ptr=0x7f8f4a455750 size=960
+    ptr=0x7f8f4a61dba0 size=960
+    ptr=0x7f8f4bc2a060 size=960
+    ptr=0x7f8f4a435cc0 size=768
+    ptr=0x7f8f4a457170 size=768
+    ptr=0x7f8f4a423c50 size=576
+    ptr=0x7f8f4a4243d0 size=576
+    ptr=0x7f8f4a61df60 size=576
+    ptr=0x7f8f4a43ab60 size=512
+    ptr=0x7f8f4a43ad60 size=512
+    ptr=0x7f8f4a43af60 size=512
+    ptr=0x7f8f4a612930 size=504
+    ptr=0x7f8f4a620d80 size=504
+    ptr=0x7f8f4a641060 size=480
+    ptr=0x7f8f4a424930 size=384
+    ptr=0x7f8f4a425070 size=384
+    ptr=0x7f8f4a438c20 size=384
+    ptr=0x7f8f4a457850 size=384
+    ptr=0x7f8f4a488fe0 size=360
+    ptr=0x7f8f4a43b160 size=288
+    ptr=0x7f8f4a43b280 size=288
+    ptr=0x7f8f4a43b440 size=288
+    ptr=0x7f8f4b91d520 size=200
+    ptr=0x7f8f4b91d890 size=200
+    ptr=0x7f8f4a489520 size=72
+    ptr=0x7f8f4a4896b0 size=72
+    ptr=0x7f8f4b905b40 size=72
+    ptr=0x7f8f4b909050 size=72
+    ptr=0x7f8f4a48c410 size=64
+    ptr=0x7f8f4a48c860 size=48
+    ptr=0x7f8f4a623070 size=24
+    ptr=0x7f8f4a434840 size=8
+    ptr=0x7f8f4a4478c0 size=8
+    ptr=0x7f8f4a447910 size=8
+    ptr=0x7f8f4a44c580 size=8
 
-  End Time: Sun Oct 30 17:35:09 2011
+  End Time: Mon Oct  1 09:41:37 2012
 

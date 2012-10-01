@@ -2,9 +2,9 @@
                     MPQC: Massively Parallel Quantum Chemistry
                                 Version 3.0.0-alpha
 
-  Machine:    i386-apple-darwin11.1.0
+  Machine:    x86_64-apple-darwin12.2.0
   User:       evaleev@EdBookPro.local
-  Start Time: Sun Oct 30 17:29:30 2011
+  Start Time: Mon Oct  1 09:38:15 2012
 
   Using ProcMessageGrp for message passing (number of nodes = 1).
   Using PthreadThreadGrp for threading (number of threads = 1).
@@ -12,7 +12,7 @@
   Total number of processors = 1
 
   Using IntegralLibint2 by default for molecular integrals evaluation
-  Given resources: ConsumableResources: ( memory = 256MB disk = [./ 0B] )
+  Given resources: ConsumableResources: ( memory = unlimited disk = [./ unlimited] )
 
   Reading file /Users/evaleev/Development/workspace/install/mpqc-gcc/share/mpqc/3.0.0-alpha/atominfo.kv.
 
@@ -138,8 +138,32 @@ switched off integral check in mbptr12.cc/compute
     n(basis):            51    18    27    38
     Maximum orthogonalization residual = 8.05992
     Minimum orthogonalization residual = 9.535e-07
+
+  Entered (2)_S energy evaluator
+    SVD-projecting out alpha occupied symmetry-blocked MOs out of RIBS to obtain space CABS (Alpha)
+      5 basis functions projected out of RIBS.
+      n(basis):            48    18    26    37
+      Maximum singular value = 1
+      Minimum singular value = 1
+    SVD-projecting out beta occupied symmetry-blocked MOs out of RIBS to obtain space CABS (Beta)
+      3 basis functions projected out of RIBS.
+      n(basis):            49    18    27    37
+      Maximum singular value = 1
+      Minimum singular value = 1
+    SVD-projecting out alpha unoccupied symmetry-blocked MOs out of CABS (Alpha) to obtain space CABS (Alpha)
+      19 basis functions projected out of CABS (Alpha).
+      n(basis):            40    16    23    31
+      Maximum singular value = 1
+      Minimum singular value = 1
+    SVD-projecting out beta unoccupied symmetry-blocked MOs out of CABS (Beta) to obtain space CABS (Beta)
+      21 basis functions projected out of CABS (Beta).
+      n(basis):            40    16    23    31
+      Maximum singular value = 1
+      Minimum singular value = 1
+    E(MP2 OBS+CABS singles = (2)_S) =        -0.007246001333182
+  Exited (2)_S energy evaluator
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|mu mu>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
-    Memory available per node:      255581848 Bytes
+    Memory available per node:      18446744073707956455 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     283392 Bytes
     Memory required for one pass:   283392 Bytes
@@ -160,7 +184,7 @@ switched off integral check in mbptr12.cc/compute
       working on shell pair ( 10   8), 95.455% complete (63 of 66)
     End of loop over shells
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|p(sym)[A] p(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      255550616 Bytes
+    Memory available per node:      18446744073707956455 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     283392 Bytes
     Memory required for one pass:   283392 Bytes
@@ -178,7 +202,7 @@ switched off integral check in mbptr12.cc/compute
   Entered alpha-beta MP2 pair energies evaluator
   Exited alpha-beta MP2 pair energies evaluator
   Entered <i(sym)[A] i(sym)[A]|G12'[0]|mu mu>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
-    Memory available per node:      255519384 Bytes
+    Memory available per node:      18446744073707956455 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     468096 Bytes
     Memory required for one pass:   468096 Bytes
@@ -199,7 +223,7 @@ switched off integral check in mbptr12.cc/compute
       working on shell pair ( 10   8), 95.455% complete (63 of 66)
     End of loop over shells
   Entered <i(sym)[A] i(sym)[A]|G12'[0]|p(sym)[A] p(sym)[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      255488152 Bytes
+    Memory available per node:      18446744073707956455 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     468096 Bytes
     Memory required for one pass:   468096 Bytes
@@ -217,7 +241,7 @@ switched off integral check in mbptr12.cc/compute
   Entered alpha-alpha MP2 pair energies evaluator
   Exited alpha-alpha MP2 pair energies evaluator
   Entered <i(sym)[B] i(sym)[B]|G12'[0]|mu mu>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
-    Memory available per node:      255456920 Bytes
+    Memory available per node:      18446744073707956455 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     142848 Bytes
     Memory required for one pass:   142848 Bytes
@@ -238,7 +262,7 @@ switched off integral check in mbptr12.cc/compute
       working on shell pair ( 10   8), 95.455% complete (63 of 66)
     End of loop over shells
   Entered <i(sym)[B] i(sym)[B]|G12'[0]|p(sym)[B] p(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      255425688 Bytes
+    Memory available per node:      18446744073707956455 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     142848 Bytes
     Memory required for one pass:   142848 Bytes
@@ -255,28 +279,8 @@ switched off integral check in mbptr12.cc/compute
 
   Entered beta-beta MP2 pair energies evaluator
   Exited beta-beta MP2 pair energies evaluator
-  SVD-projecting out alpha occupied symmetry-blocked MOs out of RIBS to obtain space CABS (Alpha)
-    5 basis functions projected out of RIBS.
-    n(basis):            48    18    26    37
-    Maximum singular value = 1
-    Minimum singular value = 1
-  SVD-projecting out beta occupied symmetry-blocked MOs out of RIBS to obtain space CABS (Beta)
-    3 basis functions projected out of RIBS.
-    n(basis):            49    18    27    37
-    Maximum singular value = 1
-    Minimum singular value = 1
-  SVD-projecting out alpha unoccupied symmetry-blocked MOs out of CABS (Alpha) to obtain space CABS (Alpha)
-    19 basis functions projected out of CABS (Alpha).
-    n(basis):            40    16    23    31
-    Maximum singular value = 1
-    Minimum singular value = 1
-  SVD-projecting out beta unoccupied symmetry-blocked MOs out of CABS (Beta) to obtain space CABS (Beta)
-    21 basis functions projected out of CABS (Beta).
-    n(basis):            40    16    23    31
-    Maximum singular value = 1
-    Minimum singular value = 1
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|i(sym)[A] i(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      253608504 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     283392 Bytes
     Memory required for one pass:   283392 Bytes
@@ -291,7 +295,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|mu mu'>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
-    Memory available per node:      253577272 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1204800 Bytes
     Memory required for one pass:   1204800 Bytes
@@ -313,7 +317,7 @@ switched off integral check in mbptr12.cc/compute
       working on shell pair ( 42   8), 99.366% complete (470 of 473)
     End of loop over shells
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|m(sym)[A] a'[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      253524568 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1204800 Bytes
     Memory required for one pass:   1204800 Bytes
@@ -328,7 +332,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|mu' mu>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
-    Memory available per node:      253471864 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1576992 Bytes
     Memory required for one pass:   1576992 Bytes
@@ -349,7 +353,7 @@ switched off integral check in mbptr12.cc/compute
       working on shell pair ( 10   8), 95.455% complete (63 of 66)
     End of loop over shells
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|a'[A] m(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      253419160 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1576992 Bytes
     Memory required for one pass:   1576992 Bytes
@@ -364,7 +368,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|i(sym)[B] i(sym)[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      253366456 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     283392 Bytes
     Memory required for one pass:   283392 Bytes
@@ -379,7 +383,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[A]|G12'[0]|mu mu>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
-    Memory available per node:      253335224 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     235392 Bytes
     Memory required for one pass:   235392 Bytes
@@ -400,7 +404,7 @@ switched off integral check in mbptr12.cc/compute
       working on shell pair ( 10   8), 95.455% complete (63 of 66)
     End of loop over shells
   Entered <i(sym)[B] i(sym)[A]|G12'[0]|p(sym)[A] p(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      253303992 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     235392 Bytes
     Memory required for one pass:   235392 Bytes
@@ -415,7 +419,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[A]|G12'[0]|mu mu'>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
-    Memory available per node:      253272760 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1118400 Bytes
     Memory required for one pass:   1118400 Bytes
@@ -437,7 +441,7 @@ switched off integral check in mbptr12.cc/compute
       working on shell pair ( 42   8), 99.366% complete (470 of 473)
     End of loop over shells
   Entered <i(sym)[B] i(sym)[A]|G12'[0]|m(sym)[A] a'[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      253220056 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1153360 Bytes
     Memory required for one pass:   1153360 Bytes
@@ -452,7 +456,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[A]|G12'[0]|mu' mu>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
-    Memory available per node:      253167352 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1308992 Bytes
     Memory required for one pass:   1308992 Bytes
@@ -473,7 +477,7 @@ switched off integral check in mbptr12.cc/compute
       working on shell pair ( 10   8), 95.455% complete (63 of 66)
     End of loop over shells
   Entered <i(sym)[B] i(sym)[A]|G12'[0]|a'[A] m(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      253114648 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1308992 Bytes
     Memory required for one pass:   1308992 Bytes
@@ -488,7 +492,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|a(sym)[A] a(sym)[B]_F(a'[B])[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      253061944 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1204800 Bytes
     Memory required for one pass:   1204800 Bytes
@@ -503,7 +507,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|a(sym)[A]_F(a'[A])[A] a(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      253009240 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1576992 Bytes
     Memory required for one pass:   1576992 Bytes
@@ -518,7 +522,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[A]|G12'[0]|a(sym)[A]_F(a'[A])[A] a(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      252956536 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1308992 Bytes
     Memory required for one pass:   1308992 Bytes
@@ -533,7 +537,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[A]|G12'[0]|a(sym)[A] a(sym)[B]_F(a'[B])[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      252903832 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1118400 Bytes
     Memory required for one pass:   1118400 Bytes
@@ -548,7 +552,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|a(sym)[A] a(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      252851128 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     283392 Bytes
     Memory required for one pass:   283392 Bytes
@@ -563,7 +567,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[B]|G12'[0,0]|mu mu>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
-    Memory available per node:      252819896 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     283392 Bytes
     Memory required for one pass:   283392 Bytes
@@ -584,7 +588,7 @@ switched off integral check in mbptr12.cc/compute
       working on shell pair ( 10   8), 95.455% complete (63 of 66)
     End of loop over shells
   Entered <i(sym)[A] i(sym)[B]|G12'[0,0]|i(sym)[A] i(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      252788664 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     283392 Bytes
     Memory required for one pass:   283392 Bytes
@@ -599,7 +603,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[B]|G12'[0,0]|i(sym)[B] i(sym)[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      252757432 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     283392 Bytes
     Memory required for one pass:   283392 Bytes
@@ -614,7 +618,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[A]|G12'[0,0]|mu mu>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
-    Memory available per node:      252726200 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     235392 Bytes
     Memory required for one pass:   235392 Bytes
@@ -635,7 +639,7 @@ switched off integral check in mbptr12.cc/compute
       working on shell pair ( 10   8), 95.455% complete (63 of 66)
     End of loop over shells
   Entered <i(sym)[B] i(sym)[A]|G12'[0,0]|i(sym)[A] i(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      252694968 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     235392 Bytes
     Memory required for one pass:   235392 Bytes
@@ -650,7 +654,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[A]|G12'[0,0]|i(sym)[B] i(sym)[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      252663736 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     235392 Bytes
     Memory required for one pass:   235392 Bytes
@@ -665,7 +669,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|mu' mu'>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
-    Memory available per node:      252632504 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     6721520 Bytes
     Memory required for one pass:   6721520 Bytes
@@ -687,7 +691,7 @@ switched off integral check in mbptr12.cc/compute
       working on shell pair ( 42   8), 99.366% complete (470 of 473)
     End of loop over shells
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|p' p'>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      252593464 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     6721520 Bytes
     Memory required for one pass:   6721520 Bytes
@@ -702,7 +706,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|p'_K(p')[A] p'>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      252554424 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     6721520 Bytes
     Memory required for one pass:   6721520 Bytes
@@ -717,7 +721,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[A]|G12'[0]|mu' mu'>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
-    Memory available per node:      252515384 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     6239120 Bytes
     Memory required for one pass:   6239120 Bytes
@@ -739,7 +743,7 @@ switched off integral check in mbptr12.cc/compute
       working on shell pair ( 42   8), 99.366% complete (470 of 473)
     End of loop over shells
   Entered <i(sym)[B] i(sym)[A]|G12'[0]|p' p'>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      252476344 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     6239120 Bytes
     Memory required for one pass:   6239120 Bytes
@@ -754,7 +758,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[A]|G12'[0]|p'_K(p')[B] p'>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      252437304 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     6239120 Bytes
     Memory required for one pass:   6239120 Bytes
@@ -769,7 +773,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|p' m(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      252398264 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1576992 Bytes
     Memory required for one pass:   1576992 Bytes
@@ -784,7 +788,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|p'_F(p')[A] m(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      252345560 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1576992 Bytes
     Memory required for one pass:   1576992 Bytes
@@ -799,7 +803,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[A]|G12'[0]|p' m(sym)[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      252292856 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1308992 Bytes
     Memory required for one pass:   1308992 Bytes
@@ -814,7 +818,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[A]|G12'[0]|p'_F(p')[B] m(sym)[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      252240152 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1308992 Bytes
     Memory required for one pass:   1308992 Bytes
@@ -829,7 +833,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|p(sym)[A] e(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      252187448 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     283392 Bytes
     Memory required for one pass:   283392 Bytes
@@ -844,7 +848,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|p(sym)[A]_F(p(sym)[A])[A] e(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      252156216 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     283392 Bytes
     Memory required for one pass:   283392 Bytes
@@ -859,7 +863,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[A]|G12'[0]|p(sym)[B] e(sym)[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      252124984 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     235392 Bytes
     Memory required for one pass:   235392 Bytes
@@ -874,7 +878,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[A]|G12'[0]|p(sym)[B]_F(p(sym)[B])[B] e(sym)[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      252093752 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     235392 Bytes
     Memory required for one pass:   235392 Bytes
@@ -889,7 +893,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|m(sym)[A]_F(p')[A] a'[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      252062520 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     6721520 Bytes
     Memory required for one pass:   6721520 Bytes
@@ -904,7 +908,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[A]|G12'[0]|m(sym)[B] a'[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      252023480 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1150832 Bytes
     Memory required for one pass:   1150832 Bytes
@@ -919,7 +923,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[A]|G12'[0]|m(sym)[B]_F(p')[B] a'[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      251970776 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     6239120 Bytes
     Memory required for one pass:   6239120 Bytes
@@ -934,7 +938,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|p(sym)[A]_F(a'[A])[A] e(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      251931736 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1576992 Bytes
     Memory required for one pass:   1576992 Bytes
@@ -949,7 +953,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[A]|G12'[0]|p(sym)[B]_F(a'[B])[B] e(sym)[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      251879032 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1308992 Bytes
     Memory required for one pass:   1308992 Bytes
@@ -964,7 +968,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|m(sym)[A]_F(m(sym)[A])[A] a'[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      251826328 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1204800 Bytes
     Memory required for one pass:   1204800 Bytes
@@ -979,7 +983,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[A]|G12'[0]|m(sym)[B]_F(m(sym)[B])[B] a'[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      251773624 Bytes
+    Memory available per node:      18446744073707088615 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1150832 Bytes
     Memory required for one pass:   1150832 Bytes
@@ -994,7 +998,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[B]|G12'[0,0]|mu' mu>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
-    Memory available per node:      251700656 Bytes
+    Memory available per node:      18446744073707082991 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1576992 Bytes
     Memory required for one pass:   1576992 Bytes
@@ -1015,7 +1019,7 @@ switched off integral check in mbptr12.cc/compute
       working on shell pair ( 10   8), 95.455% complete (63 of 66)
     End of loop over shells
   Entered <i(sym)[A] i(sym)[B]|G12'[0,0]|i(sym)[A]_hJ(p')[A] i(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      251647952 Bytes
+    Memory available per node:      18446744073707082991 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1576992 Bytes
     Memory required for one pass:   1576992 Bytes
@@ -1030,7 +1034,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[A]|G12'[0,0]|mu' mu>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
-    Memory available per node:      251577752 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1308992 Bytes
     Memory required for one pass:   1308992 Bytes
@@ -1051,7 +1055,7 @@ switched off integral check in mbptr12.cc/compute
       working on shell pair ( 10   8), 95.455% complete (63 of 66)
     End of loop over shells
   Entered <i(sym)[B] i(sym)[A]|G12'[0,0]|i(sym)[B]_hJ(p')[B] i(sym)[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      251525048 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1308992 Bytes
     Memory required for one pass:   1308992 Bytes
@@ -1066,7 +1070,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[A]|G12'[0]|p'_K(p')[A] p'>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      251472344 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     6239120 Bytes
     Memory required for one pass:   6239120 Bytes
@@ -1081,7 +1085,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|p'_K(p')[B] p'>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      251433304 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     6721520 Bytes
     Memory required for one pass:   6721520 Bytes
@@ -1096,7 +1100,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[A]|G12'[0]|p'_F(p')[A] m(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      251394264 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1308992 Bytes
     Memory required for one pass:   1308992 Bytes
@@ -1111,7 +1115,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|p'_F(p')[B] m(sym)[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      251341560 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1576992 Bytes
     Memory required for one pass:   1576992 Bytes
@@ -1126,7 +1130,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[A]|G12'[0]|p(sym)[A]_F(p(sym)[A])[A] e(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      251288856 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     235392 Bytes
     Memory required for one pass:   235392 Bytes
@@ -1141,7 +1145,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|p(sym)[B]_F(p(sym)[B])[B] e(sym)[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      251257624 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     283392 Bytes
     Memory required for one pass:   283392 Bytes
@@ -1156,7 +1160,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[A]|G12'[0]|m(sym)[A]_F(p')[A] a'[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      251226392 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     6239120 Bytes
     Memory required for one pass:   6239120 Bytes
@@ -1171,7 +1175,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|m(sym)[B]_F(p')[B] a'[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      251187352 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     6721520 Bytes
     Memory required for one pass:   6721520 Bytes
@@ -1186,7 +1190,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[A]|G12'[0]|p(sym)[A]_F(a'[A])[A] e(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      251148312 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1308992 Bytes
     Memory required for one pass:   1308992 Bytes
@@ -1201,7 +1205,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|p(sym)[B]_F(a'[B])[B] e(sym)[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      251095608 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1576992 Bytes
     Memory required for one pass:   1576992 Bytes
@@ -1216,7 +1220,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|m(sym)[B]_F(m(sym)[B])[B] a'[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      251042904 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1204800 Bytes
     Memory required for one pass:   1204800 Bytes
@@ -1231,7 +1235,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[A]|G12'[0]|m(sym)[A]_F(m(sym)[A])[A] a'[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      250990200 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1153360 Bytes
     Memory required for one pass:   1153360 Bytes
@@ -1246,7 +1250,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[B]|G12'[0,0]|i(sym)[B]_hJ(p')[B] i(sym)[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      250937496 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1576992 Bytes
     Memory required for one pass:   1576992 Bytes
@@ -1261,7 +1265,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[A]|G12'[0,0]|i(sym)[A]_hJ(p')[A] i(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      250884792 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1308992 Bytes
     Memory required for one pass:   1308992 Bytes
@@ -1276,7 +1280,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[A]|G12'[0]|p' m(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      250832088 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1308992 Bytes
     Memory required for one pass:   1308992 Bytes
@@ -1291,7 +1295,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|p' m(sym)[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      250779384 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1576992 Bytes
     Memory required for one pass:   1576992 Bytes
@@ -1306,7 +1310,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[A]|G12'[0]|p(sym)[A] e(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      250726680 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     235392 Bytes
     Memory required for one pass:   235392 Bytes
@@ -1321,7 +1325,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|p(sym)[B] e(sym)[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      250695448 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     283392 Bytes
     Memory required for one pass:   283392 Bytes
@@ -1336,7 +1340,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[B]|G12'[0]|m(sym)[B] a'[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      250664216 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     1204800 Bytes
     Memory required for one pass:   1204800 Bytes
@@ -1351,7 +1355,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[A]|G12'[0]|i(sym)[A] i(sym)[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      250611512 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     468096 Bytes
     Memory required for one pass:   468096 Bytes
@@ -1366,7 +1370,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[A]|G12'[0]|mu mu'>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
-    Memory available per node:      250580280 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     2234304 Bytes
     Memory required for one pass:   2234304 Bytes
@@ -1388,7 +1392,7 @@ switched off integral check in mbptr12.cc/compute
       working on shell pair ( 42   8), 99.366% complete (470 of 473)
     End of loop over shells
   Entered <i(sym)[A] i(sym)[A]|G12'[0]|m(sym)[A] a'[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      250527576 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     2234304 Bytes
     Memory required for one pass:   2234304 Bytes
@@ -1403,7 +1407,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[A]|G12'[0]|mu' mu>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
-    Memory available per node:      250474872 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     2606496 Bytes
     Memory required for one pass:   2606496 Bytes
@@ -1424,7 +1428,7 @@ switched off integral check in mbptr12.cc/compute
       working on shell pair ( 10   8), 95.455% complete (63 of 66)
     End of loop over shells
   Entered <i(sym)[A] i(sym)[A]|G12'[0]|a'[A] m(sym)[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      250422168 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     2606496 Bytes
     Memory required for one pass:   2606496 Bytes
@@ -1439,7 +1443,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[A]|G12'[0]|a(sym)[A] a(sym)[A]_F(a'[A])[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      250369464 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     2234304 Bytes
     Memory required for one pass:   2234304 Bytes
@@ -1453,8 +1457,23 @@ switched off integral check in mbptr12.cc/compute
     Begin fourth q.t.
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
+  Entered <i(sym)[A] i(sym)[A]|G12'[0]|a(sym)[A]_F(a'[A])[A] a(sym)[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
+    Memory available per node:      18446744073707080135 Bytes
+    Static memory used per node:    0 Bytes
+    Total memory used per node:     2606496 Bytes
+    Memory required for one pass:   2606496 Bytes
+    Minimum memory required:        660816 Bytes
+    Number of passes:               1
+    Batch size:                     4
+    Beginning pass 1
+    Read half-transformed integrals
+    Begin third q.t.
+    End of third q.t.
+    Begin fourth q.t.
+    End of fourth q.t.
+  Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[A]|G12'[0]|a(sym)[A] a(sym)[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      250316760 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     468096 Bytes
     Memory required for one pass:   468096 Bytes
@@ -1469,7 +1488,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[A]|G12'[0,0]|mu mu>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
-    Memory available per node:      250285528 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     468096 Bytes
     Memory required for one pass:   468096 Bytes
@@ -1490,7 +1509,7 @@ switched off integral check in mbptr12.cc/compute
       working on shell pair ( 10   8), 95.455% complete (63 of 66)
     End of loop over shells
   Entered <i(sym)[A] i(sym)[A]|G12'[0,0]|i(sym)[A] i(sym)[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      250254296 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     468096 Bytes
     Memory required for one pass:   468096 Bytes
@@ -1505,7 +1524,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[A]|G12'[0]|mu' mu'>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
-    Memory available per node:      250223064 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     12467824 Bytes
     Memory required for one pass:   12467824 Bytes
@@ -1527,7 +1546,7 @@ switched off integral check in mbptr12.cc/compute
       working on shell pair ( 42   8), 99.366% complete (470 of 473)
     End of loop over shells
   Entered <i(sym)[A] i(sym)[A]|G12'[0]|p' p'>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      250184024 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     12467824 Bytes
     Memory required for one pass:   12467824 Bytes
@@ -1542,7 +1561,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[A]|G12'[0]|p'_K(p')[A] p'>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      250144984 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     12467824 Bytes
     Memory required for one pass:   12467824 Bytes
@@ -1557,7 +1576,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[A]|G12'[0]|p' m(sym)[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      250105944 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     2606496 Bytes
     Memory required for one pass:   2606496 Bytes
@@ -1572,7 +1591,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[A]|G12'[0]|p'_F(p')[A] m(sym)[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      250053240 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     2606496 Bytes
     Memory required for one pass:   2606496 Bytes
@@ -1587,7 +1606,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[A]|G12'[0]|p(sym)[A] e(sym)[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      250000536 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     468096 Bytes
     Memory required for one pass:   468096 Bytes
@@ -1602,7 +1621,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[A]|G12'[0]|p(sym)[A]_F(p(sym)[A])[A] e(sym)[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      249969304 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     468096 Bytes
     Memory required for one pass:   468096 Bytes
@@ -1617,7 +1636,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[A]|G12'[0]|m(sym)[A]_F(p')[A] a'[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      249938072 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     12467824 Bytes
     Memory required for one pass:   12467824 Bytes
@@ -1632,7 +1651,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[A]|G12'[0]|p(sym)[A]_F(a'[A])[A] e(sym)[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      249899032 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     2606496 Bytes
     Memory required for one pass:   2606496 Bytes
@@ -1647,7 +1666,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[A]|G12'[0]|m(sym)[A]_F(m(sym)[A])[A] a'[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      249846328 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     2234304 Bytes
     Memory required for one pass:   2234304 Bytes
@@ -1662,7 +1681,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[A] i(sym)[A]|G12'[0,0]|mu' mu>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
-    Memory available per node:      249793624 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     2606496 Bytes
     Memory required for one pass:   2606496 Bytes
@@ -1683,7 +1702,7 @@ switched off integral check in mbptr12.cc/compute
       working on shell pair ( 10   8), 95.455% complete (63 of 66)
     End of loop over shells
   Entered <i(sym)[A] i(sym)[A]|G12'[0,0]|i(sym)[A]_hJ(p')[A] i(sym)[A]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      249740920 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     2606496 Bytes
     Memory required for one pass:   2606496 Bytes
@@ -1698,7 +1717,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[B]|G12'[0]|i(sym)[B] i(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      249688216 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     142848 Bytes
     Memory required for one pass:   142848 Bytes
@@ -1713,7 +1732,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[B]|G12'[0]|mu mu'>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
-    Memory available per node:      249656984 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     603456 Bytes
     Memory required for one pass:   603456 Bytes
@@ -1735,7 +1754,7 @@ switched off integral check in mbptr12.cc/compute
       working on shell pair ( 42   8), 99.366% complete (470 of 473)
     End of loop over shells
   Entered <i(sym)[B] i(sym)[B]|G12'[0]|m(sym)[B] a'[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      249604280 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     636272 Bytes
     Memory required for one pass:   636272 Bytes
@@ -1750,7 +1769,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[B]|G12'[0]|mu' mu>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
-    Memory available per node:      249551576 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     794048 Bytes
     Memory required for one pass:   794048 Bytes
@@ -1771,7 +1790,7 @@ switched off integral check in mbptr12.cc/compute
       working on shell pair ( 10   8), 95.455% complete (63 of 66)
     End of loop over shells
   Entered <i(sym)[B] i(sym)[B]|G12'[0]|a'[B] m(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      249498872 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     794048 Bytes
     Memory required for one pass:   794048 Bytes
@@ -1786,7 +1805,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[B]|G12'[0]|a(sym)[B] a(sym)[B]_F(a'[B])[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      249446168 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     603456 Bytes
     Memory required for one pass:   603456 Bytes
@@ -1800,8 +1819,23 @@ switched off integral check in mbptr12.cc/compute
     Begin fourth q.t.
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
+  Entered <i(sym)[B] i(sym)[B]|G12'[0]|a(sym)[B]_F(a'[B])[B] a(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
+    Memory available per node:      18446744073707080135 Bytes
+    Static memory used per node:    0 Bytes
+    Total memory used per node:     794048 Bytes
+    Memory required for one pass:   794048 Bytes
+    Minimum memory required:        402768 Bytes
+    Number of passes:               1
+    Batch size:                     2
+    Beginning pass 1
+    Read half-transformed integrals
+    Begin third q.t.
+    End of third q.t.
+    Begin fourth q.t.
+    End of fourth q.t.
+  Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[B]|G12'[0]|a(sym)[B] a(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      249393464 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     142848 Bytes
     Memory required for one pass:   142848 Bytes
@@ -1816,7 +1850,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[B]|G12'[0,0]|mu mu>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
-    Memory available per node:      249362232 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     142848 Bytes
     Memory required for one pass:   142848 Bytes
@@ -1837,7 +1871,7 @@ switched off integral check in mbptr12.cc/compute
       working on shell pair ( 10   8), 95.455% complete (63 of 66)
     End of loop over shells
   Entered <i(sym)[B] i(sym)[B]|G12'[0,0]|i(sym)[B] i(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      249331000 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     142848 Bytes
     Memory required for one pass:   142848 Bytes
@@ -1852,7 +1886,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[B]|G12'[0]|mu' mu'>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
-    Memory available per node:      249299768 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     3365776 Bytes
     Memory required for one pass:   3365776 Bytes
@@ -1874,7 +1908,7 @@ switched off integral check in mbptr12.cc/compute
       working on shell pair ( 42   8), 99.366% complete (470 of 473)
     End of loop over shells
   Entered <i(sym)[B] i(sym)[B]|G12'[0]|p' p'>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      249260728 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     3365776 Bytes
     Memory required for one pass:   3365776 Bytes
@@ -1889,7 +1923,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[B]|G12'[0]|p'_K(p')[B] p'>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      249221688 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     3365776 Bytes
     Memory required for one pass:   3365776 Bytes
@@ -1904,7 +1938,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[B]|G12'[0]|p' m(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      249182648 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     794048 Bytes
     Memory required for one pass:   794048 Bytes
@@ -1919,7 +1953,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[B]|G12'[0]|p'_F(p')[B] m(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      249129944 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     794048 Bytes
     Memory required for one pass:   794048 Bytes
@@ -1934,7 +1968,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[B]|G12'[0]|p(sym)[B] e(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      249077240 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     142848 Bytes
     Memory required for one pass:   142848 Bytes
@@ -1949,7 +1983,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[B]|G12'[0]|p(sym)[B]_F(p(sym)[B])[B] e(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      249046008 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     142848 Bytes
     Memory required for one pass:   142848 Bytes
@@ -1964,7 +1998,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[B]|G12'[0]|m(sym)[B]_F(p')[B] a'[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      249014776 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     3365776 Bytes
     Memory required for one pass:   3365776 Bytes
@@ -1979,7 +2013,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[B]|G12'[0]|p(sym)[B]_F(a'[B])[B] e(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      248975736 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     794048 Bytes
     Memory required for one pass:   794048 Bytes
@@ -1994,7 +2028,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[B]|G12'[0]|m(sym)[B]_F(m(sym)[B])[B] a'[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      248923032 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     636272 Bytes
     Memory required for one pass:   636272 Bytes
@@ -2009,7 +2043,7 @@ switched off integral check in mbptr12.cc/compute
     End of fourth q.t.
   Detecting non-totally-symmetric integrals ... none
   Entered <i(sym)[B] i(sym)[B]|G12'[0,0]|mu' mu>(b1 b2|k1 k2) integrals evaluator (transform type iRjS)
-    Memory available per node:      248870328 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     794048 Bytes
     Memory required for one pass:   794048 Bytes
@@ -2030,7 +2064,7 @@ switched off integral check in mbptr12.cc/compute
       working on shell pair ( 10   8), 95.455% complete (63 of 66)
     End of loop over shells
   Entered <i(sym)[B] i(sym)[B]|G12'[0,0]|i(sym)[B]_hJ(p')[B] i(sym)[B]>(b1 b2|k1 k2) integrals evaluator (transform type ixjy)
-    Memory available per node:      248817624 Bytes
+    Memory available per node:      18446744073707080135 Bytes
     Static memory used per node:    0 Bytes
     Total memory used per node:     794048 Bytes
     Memory required for one pass:   794048 Bytes
@@ -2048,53 +2082,45 @@ switched off integral check in mbptr12.cc/compute
   Alpha-beta MBPT2-R12/C pair energies:
       i       j        mp2(ij)        f12(ij)      mp2-f12(ij)
     -----   -----   ------------   ------------   ------------
-      1       1     -0.009046706   -0.003772460   -0.012819166
-      1       2     -0.007667682   -0.003502996   -0.011170678
-      2       1     -0.007637425   -0.002859414   -0.010496839
-      2       2     -0.007683611   -0.002057793   -0.009741404
-      3       1     -0.008053941   -0.003453687   -0.011507629
-      3       2     -0.005889403   -0.002162786   -0.008052189
-      4       1     -0.011426896   -0.003770932   -0.015197828
-      4       2     -0.016748948   -0.004353254   -0.021102202
+      1       1     -0.009046706   -0.003776951   -0.012823657
+      1       2     -0.007667682   -0.003506392   -0.011174074
+      2       1     -0.007637425   -0.002862685   -0.010500109
+      2       2     -0.007683611   -0.002061269   -0.009744880
+      3       1     -0.008053941   -0.003455810   -0.011509751
+      3       2     -0.005889403   -0.002165783   -0.008055186
+      4       1     -0.011426896   -0.003775820   -0.015202716
+      4       2     -0.016748948   -0.004360838   -0.021109786
 
   Alpha-alpha MBPT2-R12/C pair energies:
       i       j        mp2(ij)        f12(ij)      mp2-f12(ij)
     -----   -----   ------------   ------------   ------------
-      2       1     -0.001284364   -0.000458588   -0.001742952
-      3       1     -0.001463908   -0.000614287   -0.002078195
-      3       2     -0.005391740   -0.000936586   -0.006328326
-      4       1     -0.001224245   -0.000329013   -0.001553258
-      4       2     -0.004344652   -0.000608470   -0.004953123
-      4       3     -0.004997660   -0.000729124   -0.005726784
+      2       1     -0.001284364   -0.000458818   -0.001743182
+      3       1     -0.001463908   -0.000614683   -0.002078592
+      3       2     -0.005391740   -0.000937762   -0.006329502
+      4       1     -0.001224245   -0.000329158   -0.001553403
+      4       2     -0.004344652   -0.000608983   -0.004953635
+      4       3     -0.004997660   -0.000729813   -0.005727473
 
   Beta-beta MBPT2-R12/C pair energies:
       i       j        mp2(ij)        f12(ij)      mp2-f12(ij)
     -----   -----   ------------   ------------   ------------
-      2       1     -0.002240207   -0.000370181   -0.002610388
-
-  Entered OBS singles MP2 energy evaluator
-    E(MP2 OBS singles) =        -0.002144351207710
-  Exited OBS singles MP2 energy evaluator
+      2       1     -0.002240207   -0.000370367   -0.002610574
 
   RHF energy [au]:                                -38.905886888507
-  Singles MP2 correlation energy [au]:             -0.002144351208
-  MP2 correlation energy [au]:                     -0.097245740467
-  (MBPT2)-R12/  C correlation energy [au]:         -0.029979571154
-  MBPT2-R12/  C correlation energy [au]:           -0.127225311620
-  MBPT2-R12/  C energy [au]:                      -39.033112200128
+  CABS singles MP2 correlation energy [au]:        -0.007246001333
+  MP2 correlation energy [au]:                     -0.102347390592
+  (MBPT2)-R12/  C correlation energy [au]:         -0.030015132325
+  MBPT2-R12/  C correlation energy [au]:           -0.132362522917
+  MBPT2-R12/  C energy [au]:                      -39.038249411424
 
 
-  Entered CABS singles MP2 energy evaluator
-    E(MP2 CABS singles) =        -0.005076201963977
-  Exited CABS singles MP2 energy evaluator
-
-  Value of the MolecularEnergy:  -39.0381884021
+  Value of the MolecularEnergy:  -39.0382494114
 
   MBPT2_R12:
     Occupied orbitals     : canonical
     Unoccupied orbitals   : canonical
     Include CABS singles? : true
-      E(CABS singles) =        -0.005076201963977
+      E(CABS singles) =        -0.007246001333182
     R12WavefunctionWorld:
       WavefunctionWorld:
         How to Store Transformed Integrals: posix
@@ -2110,7 +2136,7 @@ switched off integral check in mbptr12.cc/compute
 
       R12Technology:
         CorrelationFactor: STG-3G[1.5]
-          [ Exponent Coefficient] = [ [     0.549916472902    -0.240062725132 ] [     3.131856778874    -0.231321126340 ] [    20.611027685628    -0.132656190969 ]  ]
+          [ Exponent Coefficient] = [ [     0.549916471839    -0.240062724636 ] [     3.131856766669    -0.231321126358 ] [    20.611027560377    -0.132656191218 ]  ]
 
         Coupling included: true
         GBC assumed: true
@@ -2132,7 +2158,7 @@ switched off integral check in mbptr12.cc/compute
 
     MBPT2:
       Function Parameters:
-        value_accuracy    = 4.509079e-11 (1.000000e-06) (computed)
+        value_accuracy    = 4.509077e-11 (1.000000e-06) (computed)
         gradient_accuracy = 0.000000e+00 (1.000000e-06)
         hessian_accuracy  = 0.000000e+00 (1.000000e-04)
 
@@ -2184,7 +2210,7 @@ switched off integral check in mbptr12.cc/compute
           name = "cc-pVDZ"
       Reference Wavefunction:
         Function Parameters:
-          value_accuracy    = 4.509079e-09 (1.000000e-08) (computed)
+          value_accuracy    = 4.509077e-09 (1.000000e-08) (computed)
           gradient_accuracy = 0.000000e+00 (1.000000e-06)
           hessian_accuracy  = 0.000000e+00 (1.000000e-04)
 
@@ -2224,10 +2250,595 @@ switched off integral check in mbptr12.cc/compute
 
 
   ConsumableResources: (
-    memory = 256MB ( max used: 32.1MB )
-    disk = [./ 0B] ( max used: 0B )
+    memory = unlimited ( max used: 28.3MB )
+    disk = [./ unlimited] ( max used: 0B )
   )
-  WARNING: 917224 bytes managed by ConsumableResources was not explicitly deallocated!
+                                                                                                            CPU  Wall
+mpqc:                                                                                                     61.80 61.63
+  calc:                                                                                                   61.66 61.50
+    mp2-r12 energy:                                                                                       61.66 61.50
+      (2)_S energy:                                                                                        5.54  5.55
+        build_only:                                                                                        2.95  2.95
+          FockBuildThreads:                                                                                4.44  4.44
+      mp2-r12/c pair energies:                                                                            55.32 55.15
+        MP2 pair energies:                                                                                 0.01  0.01
+          MO ints retrieve:                                                                                0.00  0.00
+        tbint_tform_iRjS <i(sym)[A] i(sym)[A]|G12'[0,0]|mu mu>(b1 b2|k1 k2):                               0.55  0.55
+          mp2-r12/a passes:                                                                                0.44  0.44
+            MO ints store:                                                                                 0.00  0.00
+            ints+1qt+2qt:                                                                                  0.44  0.44
+        tbint_tform_iRjS <i(sym)[A] i(sym)[A]|G12'[0,0]|mu' mu>(b1 b2|k1 k2):                              1.81  1.81
+          mp2-r12/a passes:                                                                                1.55  1.55
+            MO ints store:                                                                                 0.00  0.00
+            ints+1qt+2qt:                                                                                  1.55  1.55
+        tbint_tform_iRjS <i(sym)[A] i(sym)[A]|G12'[0]|mu mu'>(b1 b2|k1 k2):                                1.26  1.26
+          mp2-r12/a passes:                                                                                1.11  1.11
+            MO ints store:                                                                                 0.00  0.00
+            ints+1qt+2qt:                                                                                  1.11  1.11
+        tbint_tform_iRjS <i(sym)[A] i(sym)[A]|G12'[0]|mu mu>(b1 b2|k1 k2):                                 0.34  0.34
+          mp2-r12/a passes:                                                                                0.28  0.28
+            MO ints store:                                                                                 0.00  0.00
+            ints+1qt+2qt:                                                                                  0.28  0.28
+        tbint_tform_iRjS <i(sym)[A] i(sym)[A]|G12'[0]|mu' mu'>(b1 b2|k1 k2):                               5.58  5.59
+          mp2-r12/a passes:                                                                                5.48  5.48
+            MO ints store:                                                                                 0.00  0.01
+            ints+1qt+2qt:                                                                                  5.48  5.48
+        tbint_tform_iRjS <i(sym)[A] i(sym)[A]|G12'[0]|mu' mu>(b1 b2|k1 k2):                                1.23  1.23
+          mp2-r12/a passes:                                                                                1.08  1.08
+            MO ints store:                                                                                 0.00  0.00
+            ints+1qt+2qt:                                                                                  1.08  1.08
+        tbint_tform_iRjS <i(sym)[A] i(sym)[B]|G12'[0,0]|mu mu>(b1 b2|k1 k2):                               0.55  0.55
+          mp2-r12/a passes:                                                                                0.44  0.44
+            MO ints store:                                                                                 0.00  0.00
+            ints+1qt+2qt:                                                                                  0.44  0.44
+        tbint_tform_iRjS <i(sym)[A] i(sym)[B]|G12'[0,0]|mu' mu>(b1 b2|k1 k2):                              1.77  1.77
+          mp2-r12/a passes:                                                                                1.52  1.52
+            MO ints store:                                                                                 0.00  0.00
+            ints+1qt+2qt:                                                                                  1.51  1.51
+        tbint_tform_iRjS <i(sym)[A] i(sym)[B]|G12'[0]|mu mu'>(b1 b2|k1 k2):                                1.34  1.34
+          mp2-r12/a passes:                                                                                1.19  1.19
+            MO ints store:                                                                                 0.00  0.00
+            ints+1qt+2qt:                                                                                  1.19  1.19
+        tbint_tform_iRjS <i(sym)[A] i(sym)[B]|G12'[0]|mu mu>(b1 b2|k1 k2):                                 0.36  0.36
+          mp2-r12/a passes:                                                                                0.30  0.30
+            MO ints store:                                                                                 0.00  0.00
+            ints+1qt+2qt:                                                                                  0.30  0.30
+        tbint_tform_iRjS <i(sym)[A] i(sym)[B]|G12'[0]|mu' mu'>(b1 b2|k1 k2):                               5.40  5.40
+          mp2-r12/a passes:                                                                                5.31  5.31
+            MO ints store:                                                                                 0.00  0.00
+            ints+1qt+2qt:                                                                                  5.31  5.31
+        tbint_tform_iRjS <i(sym)[A] i(sym)[B]|G12'[0]|mu' mu>(b1 b2|k1 k2):                                1.22  1.22
+          mp2-r12/a passes:                                                                                1.08  1.08
+            MO ints store:                                                                                 0.00  0.00
+            ints+1qt+2qt:                                                                                  1.08  1.08
+        tbint_tform_iRjS <i(sym)[B] i(sym)[A]|G12'[0,0]|mu mu>(b1 b2|k1 k2):                               0.53  0.53
+          mp2-r12/a passes:                                                                                0.42  0.42
+            MO ints store:                                                                                 0.00  0.00
+            ints+1qt+2qt:                                                                                  0.42  0.42
+        tbint_tform_iRjS <i(sym)[B] i(sym)[A]|G12'[0,0]|mu' mu>(b1 b2|k1 k2):                              1.75  1.75
+          mp2-r12/a passes:                                                                                1.50  1.50
+            MO ints store:                                                                                 0.00  0.00
+            ints+1qt+2qt:                                                                                  1.50  1.50
+        tbint_tform_iRjS <i(sym)[B] i(sym)[A]|G12'[0]|mu mu'>(b1 b2|k1 k2):                                1.22  1.22
+          mp2-r12/a passes:                                                                                1.08  1.08
+            MO ints store:                                                                                 0.00  0.00
+            ints+1qt+2qt:                                                                                  1.08  1.08
+        tbint_tform_iRjS <i(sym)[B] i(sym)[A]|G12'[0]|mu mu>(b1 b2|k1 k2):                                 0.33  0.33
+          mp2-r12/a passes:                                                                                0.27  0.27
+            MO ints store:                                                                                 0.00  0.00
+            ints+1qt+2qt:                                                                                  0.27  0.27
+        tbint_tform_iRjS <i(sym)[B] i(sym)[A]|G12'[0]|mu' mu'>(b1 b2|k1 k2):                               5.22  5.22
+          mp2-r12/a passes:                                                                                5.14  5.14
+            MO ints store:                                                                                 0.00  0.00
+            ints+1qt+2qt:                                                                                  5.14  5.14
+        tbint_tform_iRjS <i(sym)[B] i(sym)[A]|G12'[0]|mu' mu>(b1 b2|k1 k2):                                1.18  1.18
+          mp2-r12/a passes:                                                                                1.04  1.04
+            MO ints store:                                                                                 0.00  0.00
+            ints+1qt+2qt:                                                                                  1.04  1.04
+        tbint_tform_iRjS <i(sym)[B] i(sym)[B]|G12'[0,0]|mu mu>(b1 b2|k1 k2):                               0.55  0.55
+          mp2-r12/a passes:                                                                                0.43  0.43
+            MO ints store:                                                                                 0.00  0.00
+            ints+1qt+2qt:                                                                                  0.43  0.43
+        tbint_tform_iRjS <i(sym)[B] i(sym)[B]|G12'[0,0]|mu' mu>(b1 b2|k1 k2):                              1.75  1.75
+          mp2-r12/a passes:                                                                                1.49  1.49
+            MO ints store:                                                                                 0.00  0.00
+            ints+1qt+2qt:                                                                                  1.49  1.49
+        tbint_tform_iRjS <i(sym)[B] i(sym)[B]|G12'[0]|mu mu'>(b1 b2|k1 k2):                                1.22  1.22
+          mp2-r12/a passes:                                                                                1.08  1.08
+            MO ints store:                                                                                 0.00  0.00
+            ints+1qt+2qt:                                                                                  1.08  1.08
+        tbint_tform_iRjS <i(sym)[B] i(sym)[B]|G12'[0]|mu mu>(b1 b2|k1 k2):                                 0.34  0.34
+          mp2-r12/a passes:                                                                                0.28  0.28
+            MO ints store:                                                                                 0.00  0.00
+            ints+1qt+2qt:                                                                                  0.28  0.28
+        tbint_tform_iRjS <i(sym)[B] i(sym)[B]|G12'[0]|mu' mu'>(b1 b2|k1 k2):                               5.29  5.29
+          mp2-r12/a passes:                                                                                5.20  5.20
+            MO ints store:                                                                                 0.00  0.00
+            ints+1qt+2qt:                                                                                  5.20  5.20
+        tbint_tform_iRjS <i(sym)[B] i(sym)[B]|G12'[0]|mu' mu>(b1 b2|k1 k2):                                1.23  1.23
+          mp2-r12/a passes:                                                                                1.09  1.09
+            MO ints store:                                                                                 0.00  0.00
+            ints+1qt+2qt:                                                                                  1.09  1.09
+        tbint_tform_ixjy <i(sym)[A] i(sym)[A]|G12'[0,0]|i(sym)[A] i(sym)[A]>(b1 b2|k1 k2):                 0.13  0.13
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[A]|G12'[0,0]|i(sym)[A]_hJ(p')[A] i(sym)[A]>(b1 b2|k1 k2):       0.25  0.25
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[A]|G12'[0]|a'[A] m(sym)[A]>(b1 b2|k1 k2):                       0.16  0.16
+          mp2-r12/a passes:                                                                                0.01  0.01
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[A]|G12'[0]|a(sym)[A] a(sym)[A]>(b1 b2|k1 k2):                   0.06  0.06
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[A]|G12'[0]|a(sym)[A] a(sym)[A]_F(a'[A])[A]>(b1 b2|k1 k2):       0.15  0.15
+          mp2-r12/a passes:                                                                                0.01  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[A]|G12'[0]|a(sym)[A]_F(a'[A])[A] a(sym)[A]>(b1 b2|k1 k2):       0.16  0.16
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[A]|G12'[0]|i(sym)[A] i(sym)[A]>(b1 b2|k1 k2):                   0.08  0.08
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[A]|G12'[0]|m(sym)[A] a'[A]>(b1 b2|k1 k2):                       0.16  0.16
+          mp2-r12/a passes:                                                                                0.01  0.01
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[A]|G12'[0]|m(sym)[A]_F(m(sym)[A])[A] a'[A]>(b1 b2|k1 k2):       0.16  0.16
+          mp2-r12/a passes:                                                                                0.01  0.01
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[A]|G12'[0]|m(sym)[A]_F(p')[A] a'[A]>(b1 b2|k1 k2):              0.11  0.11
+          mp2-r12/a passes:                                                                                0.02  0.01
+            3. q.t.:                                                                                       0.01  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[A]|G12'[0]|p' m(sym)[A]>(b1 b2|k1 k2):                          0.17  0.16
+          mp2-r12/a passes:                                                                                0.01  0.01
+            3. q.t.:                                                                                       0.01  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[A]|G12'[0]|p' p'>(b1 b2|k1 k2):                                 0.18  0.15
+          mp2-r12/a passes:                                                                                0.08  0.04
+            3. q.t.:                                                                                       0.03  0.01
+            4. q.t.:                                                                                       0.03  0.01
+            MO ints store:                                                                                 0.00  0.01
+        tbint_tform_ixjy <i(sym)[A] i(sym)[A]|G12'[0]|p'_F(p')[A] m(sym)[A]>(b1 b2|k1 k2):                 0.17  0.16
+          mp2-r12/a passes:                                                                                0.01  0.01
+            3. q.t.:                                                                                       0.01  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[A]|G12'[0]|p'_K(p')[A] p'>(b1 b2|k1 k2):                        0.20  0.15
+          mp2-r12/a passes:                                                                                0.09  0.04
+            3. q.t.:                                                                                       0.04  0.01
+            4. q.t.:                                                                                       0.03  0.01
+            MO ints store:                                                                                 0.01  0.01
+        tbint_tform_ixjy <i(sym)[A] i(sym)[A]|G12'[0]|p(sym)[A] e(sym)[A]>(b1 b2|k1 k2):                   0.06  0.06
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[A]|G12'[0]|p(sym)[A] p(sym)[A]>(b1 b2|k1 k2):                   0.06  0.06
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[A]|G12'[0]|p(sym)[A]_F(a'[A])[A] e(sym)[A]>(b1 b2|k1 k2):       0.15  0.15
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[A]|G12'[0]|p(sym)[A]_F(p(sym)[A])[A] e(sym)[A]>(b1 b2|k1 k2):   0.06  0.06
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0,0]|i(sym)[A] i(sym)[B]>(b1 b2|k1 k2):                 0.11  0.11
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0,0]|i(sym)[A]_hJ(p')[A] i(sym)[B]>(b1 b2|k1 k2):       0.25  0.25
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0,0]|i(sym)[B] i(sym)[A]>(b1 b2|k1 k2):                 0.11  0.11
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0,0]|i(sym)[B]_hJ(p')[B] i(sym)[A]>(b1 b2|k1 k2):       0.25  0.25
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0]|a'[A] m(sym)[B]>(b1 b2|k1 k2):                       0.15  0.15
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0]|a(sym)[A] a(sym)[B]>(b1 b2|k1 k2):                   0.06  0.06
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0]|a(sym)[A] a(sym)[B]_F(a'[B])[B]>(b1 b2|k1 k2):       0.15  0.15
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0]|a(sym)[A]_F(a'[A])[A] a(sym)[B]>(b1 b2|k1 k2):       0.14  0.14
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0]|i(sym)[A] i(sym)[B]>(b1 b2|k1 k2):                   0.06  0.06
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0]|i(sym)[B] i(sym)[A]>(b1 b2|k1 k2):                   0.06  0.06
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0]|m(sym)[A] a'[B]>(b1 b2|k1 k2):                       0.16  0.16
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0]|m(sym)[A]_F(m(sym)[A])[A] a'[B]>(b1 b2|k1 k2):       0.15  0.15
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0]|m(sym)[A]_F(p')[A] a'[B]>(b1 b2|k1 k2):              0.10  0.10
+          mp2-r12/a passes:                                                                                0.01  0.01
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0]|m(sym)[B] a'[A]>(b1 b2|k1 k2):                       0.17  0.17
+          mp2-r12/a passes:                                                                                0.01  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0]|m(sym)[B]_F(m(sym)[B])[B] a'[A]>(b1 b2|k1 k2):       0.15  0.15
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0]|m(sym)[B]_F(p')[B] a'[A]>(b1 b2|k1 k2):              0.10  0.10
+          mp2-r12/a passes:                                                                                0.01  0.01
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0]|p' m(sym)[A]>(b1 b2|k1 k2):                          0.16  0.16
+          mp2-r12/a passes:                                                                                0.01  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0]|p' m(sym)[B]>(b1 b2|k1 k2):                          0.16  0.15
+          mp2-r12/a passes:                                                                                0.01  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0]|p' p'>(b1 b2|k1 k2):                                 0.14  0.12
+          mp2-r12/a passes:                                                                                0.04  0.02
+            3. q.t.:                                                                                       0.01  0.01
+            4. q.t.:                                                                                       0.01  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0]|p'_F(p')[A] m(sym)[B]>(b1 b2|k1 k2):                 0.15  0.15
+          mp2-r12/a passes:                                                                                0.01  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0]|p'_F(p')[B] m(sym)[A]>(b1 b2|k1 k2):                 0.16  0.16
+          mp2-r12/a passes:                                                                                0.01  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0]|p'_K(p')[A] p'>(b1 b2|k1 k2):                        0.14  0.12
+          mp2-r12/a passes:                                                                                0.04  0.02
+            3. q.t.:                                                                                       0.01  0.01
+            4. q.t.:                                                                                       0.01  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0]|p'_K(p')[B] p'>(b1 b2|k1 k2):                        0.14  0.12
+          mp2-r12/a passes:                                                                                0.03  0.02
+            3. q.t.:                                                                                       0.01  0.00
+            4. q.t.:                                                                                       0.01  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0]|p(sym)[A] e(sym)[B]>(b1 b2|k1 k2):                   0.06  0.06
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0]|p(sym)[A] p(sym)[B]>(b1 b2|k1 k2):                   0.06  0.06
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0]|p(sym)[A]_F(a'[A])[A] e(sym)[B]>(b1 b2|k1 k2):       0.14  0.14
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0]|p(sym)[A]_F(p(sym)[A])[A] e(sym)[B]>(b1 b2|k1 k2):   0.06  0.06
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0]|p(sym)[B] e(sym)[A]>(b1 b2|k1 k2):                   0.06  0.06
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0]|p(sym)[B]_F(a'[B])[B] e(sym)[A]>(b1 b2|k1 k2):       0.14  0.14
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[A] i(sym)[B]|G12'[0]|p(sym)[B]_F(p(sym)[B])[B] e(sym)[A]>(b1 b2|k1 k2):   0.06  0.06
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[A]|G12'[0,0]|i(sym)[A] i(sym)[B]>(b1 b2|k1 k2):                 0.11  0.11
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[A]|G12'[0,0]|i(sym)[A]_hJ(p')[A] i(sym)[B]>(b1 b2|k1 k2):       0.25  0.25
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[A]|G12'[0,0]|i(sym)[B] i(sym)[A]>(b1 b2|k1 k2):                 0.11  0.12
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[A]|G12'[0,0]|i(sym)[B]_hJ(p')[B] i(sym)[A]>(b1 b2|k1 k2):       0.26  0.26
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[A]|G12'[0]|a'[A] m(sym)[B]>(b1 b2|k1 k2):                       0.15  0.15
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[A]|G12'[0]|a(sym)[A] a(sym)[B]_F(a'[B])[B]>(b1 b2|k1 k2):       0.14  0.14
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[A]|G12'[0]|a(sym)[A]_F(a'[A])[A] a(sym)[B]>(b1 b2|k1 k2):       0.14  0.14
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[A]|G12'[0]|m(sym)[A] a'[B]>(b1 b2|k1 k2):                       0.15  0.15
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[A]|G12'[0]|m(sym)[A]_F(m(sym)[A])[A] a'[B]>(b1 b2|k1 k2):       0.15  0.15
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[A]|G12'[0]|m(sym)[A]_F(p')[A] a'[B]>(b1 b2|k1 k2):              0.10  0.10
+          mp2-r12/a passes:                                                                                0.01  0.01
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[A]|G12'[0]|m(sym)[B] a'[A]>(b1 b2|k1 k2):                       0.15  0.15
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[A]|G12'[0]|m(sym)[B]_F(m(sym)[B])[B] a'[A]>(b1 b2|k1 k2):       0.16  0.16
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[A]|G12'[0]|m(sym)[B]_F(p')[B] a'[A]>(b1 b2|k1 k2):              0.10  0.10
+          mp2-r12/a passes:                                                                                0.01  0.01
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[A]|G12'[0]|p' m(sym)[A]>(b1 b2|k1 k2):                          0.16  0.15
+          mp2-r12/a passes:                                                                                0.01  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[A]|G12'[0]|p' m(sym)[B]>(b1 b2|k1 k2):                          0.15  0.15
+          mp2-r12/a passes:                                                                                0.01  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[A]|G12'[0]|p' p'>(b1 b2|k1 k2):                                 0.15  0.13
+          mp2-r12/a passes:                                                                                0.05  0.02
+            3. q.t.:                                                                                       0.02  0.01
+            4. q.t.:                                                                                       0.02  0.01
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[A]|G12'[0]|p'_F(p')[A] m(sym)[B]>(b1 b2|k1 k2):                 0.16  0.15
+          mp2-r12/a passes:                                                                                0.01  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[A]|G12'[0]|p'_F(p')[B] m(sym)[A]>(b1 b2|k1 k2):                 0.16  0.15
+          mp2-r12/a passes:                                                                                0.01  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[A]|G12'[0]|p'_K(p')[A] p'>(b1 b2|k1 k2):                        0.14  0.12
+          mp2-r12/a passes:                                                                                0.03  0.02
+            3. q.t.:                                                                                       0.01  0.00
+            4. q.t.:                                                                                       0.01  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[A]|G12'[0]|p'_K(p')[B] p'>(b1 b2|k1 k2):                        0.14  0.12
+          mp2-r12/a passes:                                                                                0.04  0.02
+            3. q.t.:                                                                                       0.01  0.01
+            4. q.t.:                                                                                       0.01  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[A]|G12'[0]|p(sym)[A] e(sym)[B]>(b1 b2|k1 k2):                   0.06  0.06
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[A]|G12'[0]|p(sym)[A] p(sym)[B]>(b1 b2|k1 k2):                   0.06  0.06
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[A]|G12'[0]|p(sym)[A]_F(a'[A])[A] e(sym)[B]>(b1 b2|k1 k2):       0.14  0.14
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[A]|G12'[0]|p(sym)[A]_F(p(sym)[A])[A] e(sym)[B]>(b1 b2|k1 k2):   0.06  0.06
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[A]|G12'[0]|p(sym)[B] e(sym)[A]>(b1 b2|k1 k2):                   0.06  0.06
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[A]|G12'[0]|p(sym)[B]_F(a'[B])[B] e(sym)[A]>(b1 b2|k1 k2):       0.14  0.14
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[A]|G12'[0]|p(sym)[B]_F(p(sym)[B])[B] e(sym)[A]>(b1 b2|k1 k2):   0.06  0.06
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[B]|G12'[0,0]|i(sym)[B] i(sym)[B]>(b1 b2|k1 k2):                 0.11  0.11
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[B]|G12'[0,0]|i(sym)[B]_hJ(p')[B] i(sym)[B]>(b1 b2|k1 k2):       0.25  0.25
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[B]|G12'[0]|a'[B] m(sym)[B]>(b1 b2|k1 k2):                       0.15  0.15
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[B]|G12'[0]|a(sym)[B] a(sym)[B]>(b1 b2|k1 k2):                   0.06  0.06
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[B]|G12'[0]|a(sym)[B] a(sym)[B]_F(a'[B])[B]>(b1 b2|k1 k2):       0.15  0.14
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[B]|G12'[0]|a(sym)[B]_F(a'[B])[B] a(sym)[B]>(b1 b2|k1 k2):       0.15  0.15
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[B]|G12'[0]|i(sym)[B] i(sym)[B]>(b1 b2|k1 k2):                   0.06  0.06
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[B]|G12'[0]|m(sym)[B] a'[B]>(b1 b2|k1 k2):                       0.16  0.16
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[B]|G12'[0]|m(sym)[B]_F(m(sym)[B])[B] a'[B]>(b1 b2|k1 k2):       0.16  0.16
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[B]|G12'[0]|m(sym)[B]_F(p')[B] a'[B]>(b1 b2|k1 k2):              0.10  0.09
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[B]|G12'[0]|p' m(sym)[B]>(b1 b2|k1 k2):                          0.15  0.15
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[B]|G12'[0]|p' p'>(b1 b2|k1 k2):                                 0.13  0.12
+          mp2-r12/a passes:                                                                                0.02  0.01
+            3. q.t.:                                                                                       0.01  0.00
+            4. q.t.:                                                                                       0.01  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[B]|G12'[0]|p'_F(p')[B] m(sym)[B]>(b1 b2|k1 k2):                 0.15  0.15
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[B]|G12'[0]|p'_K(p')[B] p'>(b1 b2|k1 k2):                        0.13  0.12
+          mp2-r12/a passes:                                                                                0.02  0.01
+            3. q.t.:                                                                                       0.01  0.00
+            4. q.t.:                                                                                       0.01  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[B]|G12'[0]|p(sym)[B] e(sym)[B]>(b1 b2|k1 k2):                   0.06  0.06
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[B]|G12'[0]|p(sym)[B] p(sym)[B]>(b1 b2|k1 k2):                   0.06  0.06
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[B]|G12'[0]|p(sym)[B]_F(a'[B])[B] e(sym)[B]>(b1 b2|k1 k2):       0.14  0.14
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+        tbint_tform_ixjy <i(sym)[B] i(sym)[B]|G12'[0]|p(sym)[B]_F(p(sym)[B])[B] e(sym)[B]>(b1 b2|k1 k2):   0.06  0.06
+          mp2-r12/a passes:                                                                                0.00  0.00
+            3. q.t.:                                                                                       0.00  0.00
+            4. q.t.:                                                                                       0.00  0.00
+            MO ints store:                                                                                 0.00  0.00
+      vector:                                                                                              0.63  0.63
+        density:                                                                                           0.00  0.00
+        evals:                                                                                             0.01  0.01
+        extrap:                                                                                            0.01  0.01
+        fock:                                                                                              0.53  0.53
+          start thread:                                                                                    0.46  0.46
+          stop thread:                                                                                     0.00  0.00
+  input:                                                                                                   0.13  0.13
+    vector:                                                                                                0.07  0.07
+      density:                                                                                             0.00  0.00
+      evals:                                                                                               0.00  0.00
+      extrap:                                                                                              0.00  0.00
+      fock:                                                                                                0.03  0.03
+        start thread:                                                                                      0.02  0.02
+        stop thread:                                                                                       0.00  0.00
 
-  End Time: Sun Oct 30 17:31:09 2011
+  End Time: Mon Oct  1 09:39:16 2012
 

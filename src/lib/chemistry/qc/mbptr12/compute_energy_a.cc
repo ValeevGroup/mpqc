@@ -98,6 +98,13 @@ MBPT2_R12::compute_energy_()
   const bool diag_ansatz = r12eval()->r12world()->r12tech()->ansatz()->diag();
 
   //
+  // compute (2)_S energy first
+  //
+  if (cabs_singles_ && (r12world->obs_eq_ribs() == false)) {
+    cabs_singles_energy_ = r12eval_->emp2_cabs_singles();
+  }
+
+  //
   // Now we can compute and print pair energies
   //
 
@@ -115,7 +122,8 @@ MBPT2_R12::compute_energy_()
                                                debug_,
                                                diag_ansatz);
       }
-      r12ap_energy_->print_pair_energies(r12world->spinadapted());
+      r12ap_energy_->print_pair_energies(r12world->spinadapted(),
+                                         cabs_singles_energy_);
       etotal = r12ap_energy_->energy();
       ef12 = er12(r12ap_energy_);
     }
@@ -130,7 +138,8 @@ MBPT2_R12::compute_energy_()
                                               debug_,
                                               diag_ansatz);
       }
-      r12b_energy_->print_pair_energies(r12world->spinadapted());
+      r12b_energy_->print_pair_energies(r12world->spinadapted(),
+                                        cabs_singles_energy_);
       etotal = r12b_energy_->energy();
       ef12 = er12(r12b_energy_);
     }
@@ -145,7 +154,8 @@ MBPT2_R12::compute_energy_()
                                                 debug_,
                                                 diag_ansatz);
       }
-      r12app_energy_->print_pair_energies(r12world->spinadapted());
+      r12app_energy_->print_pair_energies(r12world->spinadapted(),
+                                          cabs_singles_energy_);
       etotal = r12app_energy_->energy();
       ef12 = er12(r12app_energy_);
     }
@@ -163,13 +173,10 @@ MBPT2_R12::compute_energy_()
                                             debug_,
                                             diag_ansatz);
     }
-    r12c_energy_->print_pair_energies(r12world->spinadapted());
+    r12c_energy_->print_pair_energies(r12world->spinadapted(),
+                                      cabs_singles_energy_);
     etotal = r12c_energy_->energy();
     ef12 = er12(r12c_energy_);
-  }
-
-  if (cabs_singles_ && (r12world->obs_eq_ribs() == false)) {
-    cabs_singles_energy_ = r12eval_->emp2_cabs_singles();
   }
 
   tim.exit();

@@ -147,7 +147,9 @@ class MP2R12Energy : virtual public SavableState {
     const RefSCVector& emp2f12(SpinCase2 S);
     double emp2f12tot(SpinCase2 S);
     double ef12tot(SpinCase2 S);
-    void print_pair_energies(bool spinadapted, std::ostream&so=ExEnv::out0());
+    void print_pair_energies(bool spinadapted,
+                             double cabs_singles_energy,
+                             std::ostream&so=ExEnv::out0());
 
 #if MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION
     /** Computes values of pair function ij on tbgrid */

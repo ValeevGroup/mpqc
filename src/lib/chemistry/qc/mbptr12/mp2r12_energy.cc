@@ -370,8 +370,13 @@ double MP2R12Energy::ef12tot(SpinCase2 s) {
   return ef12_[s].dot(unit);
 }
 
-void MP2R12Energy::print_pair_energies(bool spinadapted, std::ostream& so)
+void MP2R12Energy::print_pair_energies(bool spinadapted,
+                                       double emp2_cabs_singles_energy,
+                                       std::ostream& so)
 {
+  // if CABS singles are requested, OBS singles are included in the CABS singles correction
+  if (emp2_cabs_singles_energy != 0.0) assert(include_obs_singles_ == false);
+
   compute();
 
   std::string SA_str;
@@ -515,7 +520,8 @@ void MP2R12Energy::print_pair_energies(bool spinadapted, std::ostream& so)
   const double emp2f12_corr_energy = emp2f12tot(AlphaAlpha) +
                                      emp2f12tot(BetaBeta) +
                                      emp2f12tot(AlphaBeta) +
-                                     emp2_obs_singles_energy;
+                                     emp2_obs_singles_energy +
+                                     emp2_cabs_singles_energy;
 
   ///////////////////////////////////////////////////////////////
   // The computation of the MP2 energy is now complete on each
@@ -543,8 +549,11 @@ void MP2R12Energy::print_pair_energies(bool spinadapted, std::ostream& so)
   so <<endl<<indent
   <<scprintf("RHF energy [au]:                               %17.12lf\n", escf);
   if (emp2_obs_singles_energy != 0.0)
-    so <<indent
-       <<scprintf("Singles MP2 correlation energy [au]:           %17.12lf\n", emp2_obs_singles_energy);
+  so <<indent
+  <<scprintf("OBS singles MP2 correlation energy [au]:       %17.12lf\n", emp2_obs_singles_energy);
+  if (emp2_cabs_singles_energy != 0.0)
+  so <<indent
+  <<scprintf("CABS singles MP2 correlation energy [au]:      %17.12lf\n", emp2_cabs_singles_energy);
   so <<indent
   <<scprintf("MP2 correlation energy [au]:                   %17.12lf\n", emp2f12_corr_energy - ef12_corr_energy);
   so <<indent

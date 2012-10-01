@@ -75,24 +75,15 @@ R12IntEval::compute_emp2_obs_singles(bool obs_singles)
   for(int s=0; s<nspincases1(); s++) {
     const SpinCase1 spin = static_cast<SpinCase1>(s);
 
-    Ref<OrbitalSpace> occ_act = this->occ_act(spin);
-    Ref<OrbitalSpace> vir_act = this->vir_act(spin);
-    RefSCMatrix Fia = this->fock(occ_act,vir_act,spin);
+    // !!! because frozen core/vir orbitals are rotated in semicanonicalization, must use full spaces here!
+    Ref<OrbitalSpace> occ = this->occ(spin);
+    Ref<OrbitalSpace> vir = this->vir(spin);
+    RefSCMatrix Fia = this->fock(occ,vir,spin);
 
-#define DEBUG_EMP2_SINGLES 0
-#if DEBUG_EMP2_SINGLES
-    Fia.print(prepend_spincase(spin,"occ/vir Fock matrix").c_str());
-
-    Ref<OrbitalSpace> orbs = orbs(spin);
-    RefSCMatrix Fpp = fock(orbs,orbs,spin);
-    orbs->print_detail(ExEnv::out0());
-    Fpp.print(prepend_spincase(spin,"OBS/OBS Fock matrix").c_str());
-#endif
-
-    const int ni = occ_act->rank();
-    const int na = vir_act->rank();
-    const RefDiagSCMatrix& ievals = occ_act->evals();
-    const RefDiagSCMatrix& aevals = vir_act->evals();
+    const int ni = occ->rank();
+    const int na = vir->rank();
+    const RefDiagSCMatrix& ievals = occ->evals();
+    const RefDiagSCMatrix& aevals = vir->evals();
 
     for(int i=0; i<ni; i++) {
       for(int a=0; a<na; a++) {

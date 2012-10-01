@@ -85,7 +85,7 @@ namespace sc {
     double rnorm2 = 0.0;
 
     // starting guess: x_0 = D^-1 . b
-    Ref<SCElementOp2> multiply_op = new SCDestructiveElementProduct;
+    Ref<SCElementOp2> multiply_op = new SCElementDestructiveProduct;
     XX_i = b.copy();
     XX_i.element_op(multiply_op, preconditioner);
 

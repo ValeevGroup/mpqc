@@ -45,7 +45,7 @@ main(int argc, char** argv) {
   mol->add_atom(1, 0.0, 1.0, 1.0);
   mol->add_atom(1, 0.0,-1.0, 1.0);
   const bool use_symmetry = true;
-  if (use_symmetry) {
+  if (not use_symmetry) {
     Ref<PointGroup> c1_ptgrp = new PointGroup("C1");
     mol->set_point_group(c1_ptgrp);
   }

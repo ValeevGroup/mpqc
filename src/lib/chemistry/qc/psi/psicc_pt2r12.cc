@@ -552,6 +552,7 @@ void PsiCCSD_PT2R12::write_input(int convergence) {
 }
 
 void PsiCCSD_PT2R12::compute() {
+
   PsiCC_PT2R12::compute_ept2r12();
 
   // read Psi3 CCSD energy

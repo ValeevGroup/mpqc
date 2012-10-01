@@ -220,15 +220,14 @@ namespace {
   };
 
   /** this functor helps to implement conjugate gradient CABS singles solver
-   *  for t_i^A (A = all virtuals)
    */
-  struct CABS_singles_h0t1_allvirt {
+  struct CABS_singles_h0t1 {
       /**
        * @param h0_AB allvirt/allvirt Fock operator
        * @param h0_ij occ/occ Fock operator
        */
-      CABS_singles_h0t1_allvirt(const RefSCMatrix& h0_AB,
-                                const RefSCMatrix& h0_ij) : H0_AB(h0_AB), H0_IJ(h0_ij)
+      CABS_singles_h0t1(const RefSCMatrix& h0_AB,
+                        const RefSCMatrix& h0_ij) : H0_AB(h0_AB), H0_IJ(h0_ij)
       {
       }
 
@@ -244,42 +243,6 @@ namespace {
         R1.accumulate_product(T1, H0_AB);
         RefSCMatrix tmp = H0_IJ * T1; tmp.scale(-1.0);
         R1.accumulate( tmp );
-      }
-  };
-
-  /** this functor helps to implement conjugate gradient CABS singles solver
-   *  for t_i^a' (a' = CABS only); t_i^a are provided as input
-   */
-  struct CABS_singles_h0t1 {
-      /**
-       * @param h0_ApBp CABS/CABS Fock operator
-       * @param h0_aBp vir/CABS Fock operator
-       * @param h0_ij occ/occ Fock operator
-       */
-      CABS_singles_h0t1(const RefSCMatrix& h0_ApBp,
-                        const RefSCMatrix& h0_aBp,
-                        const RefSCMatrix& h0_ij,
-                        const RefSCMatrix& t1_ia) : H0_AB(h0_ApBp), H0_aB(h0_aBp),
-                        H0_IJ(h0_ij), T1_ia(t1_ia)
-      {
-      }
-
-      const RefSCMatrix& H0_AB;
-      const RefSCMatrix& H0_aB;
-      const RefSCMatrix& H0_IJ;
-      const RefSCMatrix& T1_ia;
-
-      /**
-       *
-       * @param[in] T1 t_i^a'
-       * @param[in] R1 R_i^a'
-       */
-      void operator()(const RefSCMatrix& T1, RefSCMatrix& R1) {
-        R1.assign(0.0);
-        R1.accumulate_product(T1, H0_AB);
-        RefSCMatrix tmp = H0_IJ * T1; tmp.scale(-1.0);
-        R1.accumulate( tmp );
-        R1.accumulate_product(T1_ia, H0_aB);
       }
   };
 }
@@ -344,27 +307,27 @@ R12IntEval::compute_emp2_cabs_singles_noncanonical(bool vir_cabs_coupling) {
 
     bool converged = false;
     { // use conjugate gradient
-      CABS_singles_h0t1_allvirt h0t1(FAA, Fii);
-      FiA.scale(-1.0);
+      CABS_singles_h0t1 h0t1(FAA, Fii);
+      RefSCMatrix rhs = FiA.copy();
+      rhs.scale(-1.0);
       double Rnorm2;
       try {
-        Rnorm2 = linsolv_conjugate_gradient(h0t1, FiA, T1, PC,
+        Rnorm2 = linsolv_conjugate_gradient(h0t1, rhs, T1, PC,
                                             1e-9);
       }
       catch (...) {
         // if failed for some reason, at least compute the energy to help with troubleshooting
         Ref<SCElementScalarProduct> dotprodop = new SCElementScalarProduct;
         T1.element_op(dotprodop, FiA);
-        const double E2 = -dotprodop->result();
+        const double E2 = dotprodop->result();
         std::cout << "nonconverged (2)_S energy = " << E2
             << " (elapsed spincase " << (spin == Alpha ? "alpha" : "alpha+beta") << ")"
             << std::endl;
         throw;
       }
-      // recall -- I scaled FiA above by -1!
       Ref<SCElementScalarProduct> dotprodop = new SCElementScalarProduct;
       T1.element_op(dotprodop, FiA);
-      result -= dotprodop->result();
+      result += dotprodop->result();
     }
 
     if (! spin_polarized()) result *= 2.0;
@@ -420,9 +383,7 @@ R12IntEval::compute_emp2_cabs_singles_noncanonical_ccsd(const RefSCMatrix& T1_ia
     const RefSCMatrix& T1_ia_ref = (spin == Alpha) ? T1_ia_alpha : T1_ia_beta;
     RefSCMatrix Fia = fock(occ,vir,spin);
     RefSCMatrix T1_ia = Fia.clone();
-    Fia.print("Fia");
     T1_ia->convert(T1_ia_ref);
-    T1_ia.assign(0.0);
 
     RefSCMatrix T1 = FiA.clone(); T1.assign(0.0);
 
@@ -438,27 +399,28 @@ R12IntEval::compute_emp2_cabs_singles_noncanonical_ccsd(const RefSCMatrix& T1_ia
 
     bool converged = false;
     { // use conjugate gradient
-      CABS_singles_h0t1 h0t1(FAA, FaA, Fii, T1_ia);
-      FiA.scale(-1.0);
+      CABS_singles_h0t1 h0t1(FAA, Fii);
+      RefSCMatrix rhs = FiA.copy();
+      rhs.accumulate_product(T1_ia, FaA);
+      rhs.scale(-1.0);
       double Rnorm2;
       try {
-        Rnorm2 = linsolv_conjugate_gradient(h0t1, FiA, T1, PC,
+        Rnorm2 = linsolv_conjugate_gradient(h0t1, rhs, T1, PC,
                                             1e-9);
       }
       catch (...) {
         // if failed for some reason, at least compute the energy to help with troubleshooting
         Ref<SCElementScalarProduct> dotprodop = new SCElementScalarProduct;
         T1.element_op(dotprodop, FiA);
-        const double E2 = -dotprodop->result();
+        const double E2 = dotprodop->result();
         std::cout << "nonconverged (2)_S energy = " << E2
             << " (elapsed spincase " << (spin == Alpha ? "alpha" : "alpha+beta") << ")"
             << std::endl;
         throw;
       }
-      // recall -- I scaled FiA above by -1!
       Ref<SCElementScalarProduct> dotprodop = new SCElementScalarProduct;
       T1.element_op(dotprodop, FiA);
-      result -= dotprodop->result();
+      result += dotprodop->result();
     }
 
     if (! spin_polarized()) result *= 2.0;

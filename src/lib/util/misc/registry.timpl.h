@@ -81,9 +81,8 @@ namespace sc {
   void
   Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::clear()
   {
-    lock_->lock();
+    ThreadLockHolder lh(lock_);
     map_.clear();
-    lock_->unlock();
   }
 
   template <typename Key, typename Value, template <typename> class CreationPolicy, typename KeyEqual, typename ValueEqual >
@@ -143,11 +142,10 @@ namespace sc {
     bool result = false;
 
     // although this does not modify the map, cannot search map while someone else is changing it
-    lock_->lock();
     const_iterator v = find_by_key(key);
+    ThreadLockHolder lh(lock_);
     if (v != map_.end())
       result = true;
-    lock_->unlock();
 
     return result;
   }
@@ -159,11 +157,10 @@ namespace sc {
     bool result = false;
 
     // although this does not modify the map, cannot search map while someone else is changing it
-    lock_->lock();
+    ThreadLockHolder lh(lock_);
     const_iterator v = find_by_value(value);
     if (v != map_.end())
       result = true;
-    lock_->unlock();
 
     return result;
   }
@@ -173,14 +170,12 @@ namespace sc {
   Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::key(const Value& value) const
   {
     // although this does not modify the map, cannot search map while someone else is changing it
-    lock_->lock();
+    ThreadLockHolder lh(lock_);
     const_iterator v = find_by_value(value);
     if (v != map_.end()) {
-      lock_->unlock();
       return v->first;
     }
     else {
-      lock_->unlock();
       throw not_found("value not found");
     }
     // unreachable
@@ -192,14 +187,12 @@ namespace sc {
   Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::value(const Key& key) const
   {
     // although this does not modify the map, cannot search map while someone else is changing it
-    lock_->lock();
+    ThreadLockHolder lh(lock_);
     const_iterator v = find_by_key(key);
     if (v != map_.end()) {
-      lock_->unlock();
       return v->second;
     }
     else {
-      lock_->unlock();
       this->print(ExEnv::out0());
       throw not_found("key not found");
     }
@@ -217,9 +210,8 @@ namespace sc {
       this->print(ExEnv::out0());
       throw std::logic_error("key already exists");
     }
-    lock_->lock();
+    ThreadLockHolder lh(lock_);
     map_[key] = value;
-    lock_->unlock();
   }
   template <typename Key, typename Value, template <typename> class CreationPolicy, typename KeyEqual, typename ValueEqual >
   void
@@ -232,22 +224,22 @@ namespace sc {
   void
   Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::remove(const Key& key)
   {
-    lock_->lock();
+    ThreadLockHolder lh(lock_);
     iterator v = find_by_key(key);
     if (v != map_.end())
       map_.erase(v);
-    lock_->unlock();
   }
 
   template <typename Key, typename Value, template <typename> class CreationPolicy, typename KeyEqual, typename ValueEqual >
   void
   Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::print(std::ostream& os) const
   {
-      for(typename Map::const_iterator iter = map_.begin();
-          iter != map_.end();
-          ++iter) {
-        os << iter->first << " " << iter->second << std::endl;
-      }
+    ThreadLockHolder lh(lock_);
+    for(typename Map::const_iterator iter = map_.begin();
+        iter != map_.end();
+        ++iter) {
+      os << iter->first << " " << iter->second << std::endl;
+    }
   }
 
 } // end of namespace sc

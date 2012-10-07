@@ -93,6 +93,7 @@ FinDispMolecularHessian::Params::Params()
 {
   disp_pg_ = 0;
   disp_ = 1.0e-2;
+  use_energies_ = false;
   only_totally_symmetric_ = false;
   // default for eliminate_cubic_terms is overridden by FinDispMolecularHessian
   eliminate_cubic_terms_ = true;

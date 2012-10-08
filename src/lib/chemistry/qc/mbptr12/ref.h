@@ -67,7 +67,7 @@ namespace sc {
                             bool eorder_increasing = true,
                             Ref<OrbitalSpace> vbs = 0,
                             Ref<FockBuildRuntime> fbrun = 0,
-                            const std::vector<double>& rasscf_occs=std::vector<double>(1,-1.0)
+                            std::vector<double> rasscf_occs=std::vector<double>()
                            ); //if rasscf_occs is specified, uses rasscf_occs instead of occs to construct occ_act_mask,
                               //eventually to construct occ_act_sb_ differently->force GG/gg space to be ras1+ras2 orbs
       PopulatedOrbitalSpace(const bool doscreen, const double occ_thres, RefSymmSCMatrix OBS_mo_ordm, const Ref<OrbitalSpaceRegistry>& oreg,

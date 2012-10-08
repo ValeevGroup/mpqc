@@ -36,6 +36,7 @@
 #include <util/state/statein.h>
 #include <util/state/stateout.h>
 #include <util/class/scexception.h>
+#include <util/group/thread.h>
 
 // set to 1 if you are have backtrace_symbols (e.g. on OS X) and want to trace resource leaks
 #define HAVE_BACKTRACE_SYMBOLS 0
@@ -124,9 +125,10 @@ namespace sc {
       template <typename T> T* allocate(std::size_t size) {
         if (size == 0)  return 0;
 
+        ThreadLockHolder lh(lock_);
         T* array = (size > 1) ? new T[size] : new T;
         size *= sizeof(T);
-        consume_memory(size);
+        consume_memory_(size);
         void* array_ptr = static_cast<void*>(array);
         if (debug_class() > 0) {
           ExEnv::out0() << indent << "ConsumableResources::allocate(size=" << size << ") => array="
@@ -154,6 +156,7 @@ namespace sc {
           return;
         }
         if (array != 0) {
+          ThreadLockHolder lh(lock_);
           void* array_ptr = static_cast<void*>(array);
           // make sure it's managed by me
           std::map<void*, ResourceAttribites>::iterator pos = managed_arrays_.find(array_ptr);
@@ -161,7 +164,7 @@ namespace sc {
             const size_t size = pos->second.size;
             if (size / sizeof(T) > 1) delete[] array;
             else delete array;
-            release_memory(size);
+            release_memory_(size);
             if (debug_class() > 0) {
               ExEnv::out0() << indent << "ConsumableResources::deallocate(array=" << array_ptr << "): size=" << size << std::endl;
             }
@@ -191,6 +194,7 @@ namespace sc {
       /// adds array to the list of managed arrays and decrements the memory counter
       template <typename T> void manage_array(T* const & array, std::size_t size) {
         if (array != 0) {
+          ThreadLockHolder lh(lock_);
           size *= sizeof(T);
           void* array_ptr = static_cast<void*>(array);
           // make sure it's NOT managed by me
@@ -201,7 +205,7 @@ namespace sc {
                 << array_ptr << " size=" << size << ")";
             throw ProgrammingError(oss.str().c_str(), __FILE__, __LINE__, class_desc());
           }
-          consume_memory(size);
+          consume_memory_(size);
           ResourceAttribites attr(size);
           managed_arrays_[array_ptr] = attr;
           if (debug_class() > 0) {
@@ -219,12 +223,13 @@ namespace sc {
           return;
         }
         if (array != 0) {
+          ThreadLockHolder lh(lock_);
           void* array_ptr = static_cast<void*>(array);
           // make sure it's managed by me
           std::map<void*, ResourceAttribites>::iterator pos = managed_arrays_.find(array_ptr);
           if (pos != managed_arrays_.end()) {
             const size_t size = pos->second.size;
-            release_memory(size);
+            release_memory_(size);
             if (debug_class() > 0) {
               ExEnv::out0() << "ConsumableResources::unmanage_array(array=" << array_ptr << ": size=" << size << ")" << std::endl;
             }
@@ -242,6 +247,18 @@ namespace sc {
 
     private:
       static ClassDesc class_desc_;
+
+      //@{ these do not lock
+      /// consume resource, may throw LimitExceeded<size_t> if not enough available
+      void consume_memory_(size_t value);
+      void consume_disk_(size_t value);
+      //@}
+
+      //@{ these do not lock
+      /// release resouce, may throw ProgrammingError if releasing more resource than how much has been consumed to this point
+      void release_memory_(size_t value);
+      void release_disk_(size_t value);
+      //@}
 
       struct defaults {
           static size_t memory;
@@ -395,6 +412,7 @@ namespace sc {
       /// this keeps track of arrays of data explicitly managed by ConsumableResources
       /// value is the size of array in bytes
       std::map<void*, ResourceAttribites> managed_arrays_;
+      Ref<ThreadLock> lock_; // the lock used to protect the map and resource counters
 
       static Ref<ConsumableResources> default_instance_;
 

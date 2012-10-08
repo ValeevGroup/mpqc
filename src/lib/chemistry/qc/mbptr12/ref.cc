@@ -163,7 +163,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
                                              bool eorder_increasing,
                                              Ref<OrbitalSpace> vbs,
                                              Ref<FockBuildRuntime> fbrun,
-                                             const std::vector<double>& rasscf_occs) :
+                                             std::vector<double> rasscf_occs) :
                                              oreg_(oreg)
 {
   const int nmo = occs.size(); //active tells which orbitals are active; the 'masks' are selectors;
@@ -174,11 +174,11 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
   std::vector<bool> uocc_mask(nmo, false);
   std::vector<bool> uocc_act_mask(nmo, false);
   const bool debug = false;
-  const bool force_use_rasscf = (rasscf_occs[0] != -1.0); //force occ_act_mask to only select active rasscf (instead of rasci) orbs
+  const bool have_rasscf_occs = not rasscf_occs.empty(); //force occ_act_mask to only select active rasscf (instead of rasci) orbs
   for(int i=0; i<nmo; i++) {
     if (fabs(occs[i]) > PopulatedOrbitalSpace::zero_occupancy()) {
       occ_mask[i] = true;
-      if(not force_use_rasscf)
+      if(not have_rasscf_occs)
       {
         occ_act_mask[i] = active[i];
         if(debug)
@@ -188,10 +188,10 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
       }
       else
       {
-        occ_act_mask[i] = active[i] and (fabs(rasscf_occs[i]) > PopulatedOrbitalSpace::zero_occupancy());
+        occ_act_mask[i] = active[i] and (fabs(rasscf_occs.at(i)) > PopulatedOrbitalSpace::zero_occupancy());
         if(debug)
         {
-          sc::ExEnv::out0() << active[i] << ", " << occ_act_mask[i] << ", " << rasscf_occs[i]<< occs[i] << std::endl;
+          sc::ExEnv::out0() << active[i] << ", " << occ_act_mask[i] << ", " << rasscf_occs.at(i)<< occs[i] << std::endl;
         }
       }
     }
@@ -199,10 +199,19 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
       uocc_mask[i] = true;
       uocc_act_mask[i] = active[i];
     }
-    if (fabs(rasscf_occs[i]) < PopulatedOrbitalSpace::zero_occupancy())
-      conv_uocc_mask[i] = true;
-    else
-      conv_occ_mask[i] = true;
+    // "conventional" unoccupied spaces are currently useful to indicate RAS in RASCI, etc.
+    if (have_rasscf_occs) {
+      if (fabs(rasscf_occs.at(i)) < PopulatedOrbitalSpace::zero_occupancy())
+        conv_uocc_mask[i] = true;
+      else
+        conv_occ_mask[i] = true;
+    }
+    else {
+      if (fabs(occs[i]) > PopulatedOrbitalSpace::zero_occupancy())
+        conv_occ_mask[i] = true;
+      else
+        conv_uocc_mask[i] = true;
+    }
   }
   // if VBS is given, recompute the masks for the virtuals
   if (vbs.nonnull()) {

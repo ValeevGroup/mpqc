@@ -47,14 +47,18 @@ ConsumableResources::class_desc_(typeid(ConsumableResources),
                      );
 
 ConsumableResources::ConsumableResources() :
-    memory_(defaults::memory), disk_(defaults::disk) {
+    memory_(defaults::memory), disk_(defaults::disk),
+    lock_(ThreadGrp::get_default_threadgrp()->new_lock())
+{
   if (memory_ == 0)
     memory_ = rsize(std::numeric_limits<size_t>::max());
   if (disk_.second == 0)
     disk_.second = rsize(std::numeric_limits<size_t>::max());
 }
 
-ConsumableResources::ConsumableResources(const Ref<KeyVal>& kv) {
+ConsumableResources::ConsumableResources(const Ref<KeyVal>& kv) :
+    lock_(ThreadGrp::get_default_threadgrp()->new_lock())
+{
   memory_ = kv->sizevalue("memory", KeyValValuesize(defaults::memory));
   if (memory_ == 0)
     memory_ = rsize(std::numeric_limits<size_t>::max());
@@ -69,7 +73,8 @@ ConsumableResources::ConsumableResources(const Ref<KeyVal>& kv) {
   disk_.second = (disk_size == 0) ? rsize(std::numeric_limits<size_t>::max()) : rsize(disk_size);
 }
 
-ConsumableResources::ConsumableResources(StateIn& si) : SavableState(si) {
+ConsumableResources::ConsumableResources(StateIn& si) : SavableState(si),
+    lock_(ThreadGrp::get_default_threadgrp()->new_lock()) {
   memory_ & si;
   si.get(disk_.first);
   disk_.second & si;
@@ -250,6 +255,26 @@ size_t ConsumableResources::memory() const { return memory_; }
 size_t ConsumableResources::disk() const { return disk_.second; }
 
 void ConsumableResources::consume_memory(size_t value) {
+  ThreadLockHolder lh(lock_);
+  consume_memory_(value);
+}
+
+void ConsumableResources::consume_disk(size_t value) {
+  ThreadLockHolder lh(lock_);
+  consume_disk_(value);
+}
+
+void ConsumableResources::release_memory(size_t value) {
+  ThreadLockHolder lh(lock_);
+  release_memory_(value);
+}
+
+void ConsumableResources::release_disk(size_t value) {
+  ThreadLockHolder lh(lock_);
+  release_disk_(value);
+}
+
+void ConsumableResources::consume_memory_(size_t value) {
   rsize& resource = memory_;
   if (value <= resource)
     resource -= value;
@@ -260,7 +285,7 @@ void ConsumableResources::consume_memory(size_t value) {
                                 resource.max_value() - resource.value() + value,
                                 class_desc());
 }
-void ConsumableResources::consume_disk(size_t value) {
+void ConsumableResources::consume_disk_(size_t value) {
   rsize& resource = disk_.second;
   if (value <= resource)
     resource -= value;
@@ -272,7 +297,7 @@ void ConsumableResources::consume_disk(size_t value) {
                                 class_desc());
 }
 
-void ConsumableResources::release_memory(size_t value) {
+void ConsumableResources::release_memory_(size_t value) {
   rsize& resource = memory_;
   if (value + resource <= resource.max_value())
     resource += value;
@@ -285,7 +310,7 @@ void ConsumableResources::release_memory(size_t value) {
     resource += value;
 #endif
 }
-void ConsumableResources::release_disk(size_t value) {
+void ConsumableResources::release_disk_(size_t value) {
   rsize& resource = disk_.second;
   if (value + resource <= resource.max_value())
     resource += value;

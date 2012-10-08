@@ -121,6 +121,7 @@ namespace sc {
         void remove(const Key& key);
         /// removes all objects whose keys evaluate predicate to true:  p(key) == true
         template <typename Pred> void remove_if(const Pred& p) {
+          ThreadLockHolder lh(lock_);
           typename Map::iterator i = map_.begin();
           for(; i != map_.end(); ) {
                       if (p(*i)) {

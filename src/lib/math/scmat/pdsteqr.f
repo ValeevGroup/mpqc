@@ -119,7 +119,7 @@
          INFO = -6
       END IF
       IF( INFO.NE.0 ) THEN
-         CALL PXERBLA( 'DSTEQR', -INFO )
+         CALL PXERBLA( 'PDSTEQR', -INFO )
          RETURN
       END IF
 *

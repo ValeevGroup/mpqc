@@ -312,9 +312,8 @@ R12IntEval::compute_emp2_cabs_singles_noncanonical(bool vir_cabs_coupling) {
         Ref<SCElementScalarProduct> dotprodop = new SCElementScalarProduct;
         T1_cabs_[s].element_op(dotprodop, FiA);
         const double E2 = dotprodop->result();
-        std::cout << "nonconverged (2)_S energy = " << E2
-            << " (elapsed spincase " << (spin == Alpha ? "alpha" : "alpha+beta") << ")"
-            << std::endl;
+        std::cout << indent << "WARNING: CG solver for (2)_S ("
+                  << prepend_spincase(spin, std::string("spin")) << ") did not converge, using direct solver" << std::endl;
         converged = false; // do not rethrow ...
       }
 

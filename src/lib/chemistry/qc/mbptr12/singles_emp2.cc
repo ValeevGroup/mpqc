@@ -47,6 +47,7 @@
 #include <chemistry/qc/mbptr12/r12wfnworld.h>
 #include <math/mmisc/pairiter.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
+#include <math/scmat/svd.h>
 
 using namespace std;
 using namespace sc;
@@ -286,7 +287,7 @@ R12IntEval::compute_emp2_cabs_singles_noncanonical(bool vir_cabs_coupling) {
     RefSCMatrix FAA = fock(aspace,aspace,spin);
     T1_cabs_[s] = FiA.clone(); T1_cabs_[s].assign(0.0);
 
-    // pre-compute preconditioner: PC(A,i) = 1/(FAA-Fij)
+    // pre-compute preconditioner: PC(A,i) = 1/(FAA-Fii)
     RefSCMatrix PC = T1_cabs_[s].clone();
     const unsigned ni = occ->rank();
     const unsigned nA = aspace->rank();
@@ -296,7 +297,7 @@ R12IntEval::compute_emp2_cabs_singles_noncanonical(bool vir_cabs_coupling) {
       }
     }
 
-    bool converged = false;
+    bool converged = true;
     { // use conjugate gradient
       CABS_singles_h0t1 h0t1(FAA, Fii);
       RefSCMatrix rhs = FiA.copy();
@@ -314,8 +315,53 @@ R12IntEval::compute_emp2_cabs_singles_noncanonical(bool vir_cabs_coupling) {
         std::cout << "nonconverged (2)_S energy = " << E2
             << " (elapsed spincase " << (spin == Alpha ? "alpha" : "alpha+beta") << ")"
             << std::endl;
-        throw;
+        converged = false; // do not rethrow ...
       }
+
+      // ... try a direct solver as a last resort
+      if (not converged) {
+        const int niA = ni*nA;
+        RefSCDimension iA_dim = new SCDimension(niA, 1, &niA);
+        iA_dim->blocks()->set_subdim(0, new SCDimension(niA));
+
+        RefSymmSCMatrix C = T1_cabs_[s].kit()->symmmatrix(iA_dim);
+        C.assign(0.0);
+        for (unsigned i = 0, iA = 0; i < ni; ++i) {
+          for (unsigned A = 0; A < nA; ++A, ++iA) {
+            unsigned int iB = i*nA;
+            for (unsigned B = 0; B <= A; ++B, ++iB) {
+              C.set_element(iA, iB, FAA(A, B));
+            }
+          }
+        }
+        for (unsigned i = 0, iA = 0; i < ni; ++i) {
+          for (unsigned j = 0; j <= i; ++j) {
+            unsigned int iA = i*nA;
+            unsigned int jA = j*nA;
+            for (unsigned A = 0; A < nA; ++A, ++iA, ++jA) {
+              const double newval = C(iA, jA) - Fii(i, j);
+              C(iA, jA) = newval;
+            }
+          }
+        }
+
+        RefSCVector B = C.kit()->vector(C.dim());
+        for (unsigned i = 0, iA = 0; i < ni; ++i) {
+          for (unsigned A = 0; A < nA; ++A, ++iA) {
+            B(iA) = rhs(i, A);
+          }
+        }
+
+        RefSCVector X = B.clone();
+        lapack_linsolv_symmnondef(C, X, B);
+
+        for (unsigned i = 0, iA = 0; i < ni; ++i) {
+          for (unsigned A = 0; A < nA; ++A, ++iA) {
+            T1_cabs_[s](i, A) = X(iA);
+          }
+        }
+      }
+
       Ref<SCElementScalarProduct> dotprodop = new SCElementScalarProduct;
       T1_cabs_[s].element_op(dotprodop, FiA);
       result += dotprodop->result();

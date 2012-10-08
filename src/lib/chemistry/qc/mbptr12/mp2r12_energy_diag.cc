@@ -514,10 +514,10 @@ void MP2R12Energy_Diag::contract_VT1(const Ref<DistArray4>& V,
 void MP2R12Energy_Diag::compute_ef12() {
 
   // calculate one electron density
-  if (r12intermediates_->Onerdm_cc_computed()) {
-    //ExEnv::out0() << std:: endl << "Onerdm_cc_computed() " << std::endl;
-    compute_density_diag();
-  }
+//  if (r12intermediates_->Onerdm_cc_computed()) {
+//    ExEnv::out0() << std:: endl << "Onerdm_cc_computed() " << r12intermediates_->Onerdm_cc_computed() << std::endl;
+//    compute_density_diag();
+//  }
 
   // switch to new implementation that should work correctly for alpha-beta contributions in open-shell molecules
   return this->compute_ef12_10132011();

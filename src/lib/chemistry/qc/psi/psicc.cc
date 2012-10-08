@@ -598,21 +598,26 @@ namespace sc {
 
     // psi ccsd one-particle density does not work for frozen core
     // this code does not work for ROHF
-    assert(nfzc_ == 0 && reference()->reftype() != PsiSCF::hsoshf);
+//    assert(nfzc_ == 0 && reference()->reftype() != PsiSCF::hsoshf);
+    assert(reference()->reftype() != PsiSCF::hsoshf);
 
     // get # of occupied and unoccupied orbitals of spin S per irrep
     const std::vector<unsigned int>& occpi = reference()->occpi(spin);
     const std::vector<unsigned int>& uoccpi = reference()->uoccpi(spin);
+//    std::vector<unsigned int> actoccpi(nirrep_);
 
     // obtain # of orbitals per irrep
     unsigned int nocc = 0;
+//    unsigned int nocc_act = 0;
     unsigned int nuocc = 0;
     for (unsigned int irrep = 0; irrep < nirrep_; ++irrep) {
+//      actoccpi[irrep] = occpi[irrep] - frozen_docc_[irrep];
+//      nocc_act += actoccpi[irrep];
       nocc += occpi[irrep];
       nuocc += uoccpi[irrep];
     }
     unsigned int norb = nocc + nuocc;
-    ExEnv::out0() << indent << spin << " nocc" << nocc << " nuocc"<< nuocc <<endl;
+    //ExEnv::out0() << indent << spin << " nocc_act:" << nocc_act << " nuocc:"<< nuocc <<endl;
 
     // Equation for the one-particle density matrix
     // D_ij = -1/2 t_im^ef L^jm_ef - t_i^e L^j_e

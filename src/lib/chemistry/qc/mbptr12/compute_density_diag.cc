@@ -6,6 +6,7 @@
  */
 
 #include <chemistry/qc/mbptr12/mp2r12_energy.h>
+#include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/wfn/orbitalspace_utils.h>
 #include <chemistry/qc/psi/psiwfn.h>
 #include <util/misc/print.h>
@@ -996,7 +997,7 @@ void MP2R12Energy_Diag::obtain_orbitals(const SpinCase2 spincase,
   const Ref<OrbitalSpace> orbs1 = r12eval()->orbs(spin1);
   const Ref<OrbitalSpace> cabs1 = r12world->cabs_space(spin1);
   // use canonical cabs for test propose
-  //const Ref<OrbitalSpace> cabs1 = r12eval()->cabs_space_hcanonical(spin1);
+  //const Ref<OrbitalSpace> cabs1 = r12eval()->cabs_space_canonical(spin1);
 
   const Ref<OrbitalSpace> occ1 = r12eval()->occ(spin1);
 
@@ -1005,7 +1006,8 @@ void MP2R12Energy_Diag::obtain_orbitals(const SpinCase2 spincase,
   const Ref<OrbitalSpace> orbs2 = r12eval()->orbs(spin2);
   const Ref<OrbitalSpace> cabs2 = r12world->cabs_space(spin2);
   // use canonical cabs for test propose
-  //const Ref<OrbitalSpace> cabs2 = r12eval()->cabs_space_hcanonical(spin2);
+  //const Ref<OrbitalSpace> cabs2 = r12eval()->cabs_space_canonical(spin2);
+
   const Ref<OrbitalSpace> occ2 = r12eval()->occ(spin2);
 
   v_orbs1.push_back(occ1_act);
@@ -5428,6 +5430,454 @@ void MP2R12Energy_Diag::compute_T2_mp2(const vector< Ref<OrbitalSpace> >& v_orbs
 }
 // end of function: compute_T2_mp2
 
+// compute CABS canonical T1 amplitude
+//RefSCMatrix MP2R12Energy_Diag::compute_CABS_T1(SpinCase1 spin)
+//{
+//  // obtain occ, vir, orbs, and cabs orbitals in that order
+//  const SpinCase2 spincase = static_cast<SpinCase2>(spin+1);
+//  string spinletters = to_string(spincase);
+//  vector< Ref<OrbitalSpace> > v_orbs1;          // orbitals of spin1
+//  vector< Ref<OrbitalSpace> > v_orbs2;          // orbitals of spin2
+//  obtain_orbitals(spincase, v_orbs1, v_orbs2);
+//
+//  // obtain orbitals
+//  const Ref<OrbitalSpace> occ_act = v_orbs1[0];
+//  const Ref<OrbitalSpace> vir = v_orbs1[1];
+//  const Ref<OrbitalSpace> cabs = v_orbs1[3];
+//
+//  const int nocc_act = occ_act->rank();
+//  const int nvir = vir->rank();
+//  const int ncabs = cabs->rank();
+//  const int nvir_com = nvir + ncabs;
+//
+////  ExEnv::out0() << endl << "number of active occupied orbital: " << nocc_act << endl
+////                        << "number of virtual orbital: " << nvir << endl
+////                        << "number of cabs: " << ncabs << endl;
+//
+//  // get the Fock matrix element
+//  RefSCMatrix Fia = r12eval()->fock(occ_act, vir, spin);
+////  Fia.print(prepend_spincase(spin,"Fia").c_str());
+//
+//  RefSCMatrix Fiap = r12eval()->fock(occ_act, cabs, spin);
+////  Fiap.print(prepend_spincase(spin,"Fia'").c_str());
+//
+////  const RefDiagSCMatrix& i_evals = occ_act->evals();
+////  const RefDiagSCMatrix& a_evals = vir->evals();
+////  const RefDiagSCMatrix& ap_evals = cabs->evals();
+////  i_evals.print(prepend_spincase(spin,"i_evals").c_str());
+////  a_evals.print(prepend_spincase(spin,"a_evals").c_str());
+////  ap_evals.print(prepend_spincase(spin,"ap_evals").c_str());
+//
+//  RefSCMatrix Fii = r12eval()->fock(occ_act, occ_act, spin);
+//  RefSCMatrix Faa = r12eval()->fock(vir, vir, spin);
+//  RefSCMatrix Fapap = r12eval()->fock(cabs, cabs, spin);
+////  Fii.print(prepend_spincase(spin,"Fij").c_str());
+////  Faa.print(prepend_spincase(spin,"Fab").c_str());
+////  Fapap.print(prepend_spincase(spin,"Fa'b'").c_str());
+//
+//  RefSCDimension rowdim = new SCDimension(nocc_act);
+//  RefSCDimension coldim = new SCDimension(nvir_com);
+//  Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
+//  RefSCMatrix T = localkit->matrix(rowdim, coldim);
+//  T.assign(0.0);
+//
+//  for (int i = 0; i < nocc_act; ++i) {
+//
+//    for (int a = 0; a < nvir; ++a) {
+//      const double tia = Fia.get_element(i,a)
+////                        /(i_evals(i) - a_evals(a));
+//                         /(Fii.get_element(i,i) - Faa.get_element(a,a));
+//      T.set_element(i, a, tia);
+//    }
+//
+//    for (int ap = 0; ap < ncabs; ++ap) {
+//      const double tiap = Fiap.get_element(i,ap)
+////                         /(i_evals(i) - ap_evals(ap));
+//                          /(Fii.get_element(i,i) - Fapap.get_element(ap,ap));
+//      T.set_element(i, ap+nvir, tiap);
+//    }
+//  }
+//  //T.print(prepend_spincase(spin,"CABS amplitude Tia").c_str());
+//
+//  return T;
+//}
+//// end of function: compute_cabs_t1
+
+// compute one-electron density form CABS contribution
+RefSCMatrix MP2R12Energy_Diag::compute_D_CABS(SpinCase1 spin) {
+
+  // obtain occ, vir, orbs, and cabs orbitals in that order
+  const SpinCase2 spincase = static_cast<SpinCase2>(spin+1);
+  string spinletters = to_string(spincase);
+  vector< Ref<OrbitalSpace> > v_orbs1;          // orbitals of spin1
+  vector< Ref<OrbitalSpace> > v_orbs2;          // orbitals of spin2
+  obtain_orbitals(spincase, v_orbs1, v_orbs2);
+
+  // obtain orbitals
+  const Ref<OrbitalSpace> occ = v_orbs1[4];
+  const Ref<OrbitalSpace> vir = v_orbs1[1];
+  const Ref<OrbitalSpace> cabs = v_orbs1[3];
+
+  const int nocc = occ->rank();
+  const int nvir = vir->rank();
+  const int ncabs = cabs->rank();
+  const int norbs = nocc + nvir;
+  const int nvir_com = nvir + ncabs;
+  const int norbs_com = nocc + nvir + ncabs;
+
+  Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
+  RefSCDimension rowdim = new SCDimension(norbs_com);
+  RefSCDimension coldim = new SCDimension(norbs_com);
+  RefSCMatrix D = localkit->matrix(rowdim, coldim);
+  D.assign(0.0);
+
+  const RefSCMatrix T1_cabs = r12eval_->T1_cabs(spin);
+  //T1_cabs.print(prepend_spincase(spin,"CABS amplitude Tia from T1_cabs").c_str());
+
+   RefSCDimension rowdim_occ = new SCDimension(nocc);
+   RefSCDimension coldim_vir_com = new SCDimension(nvir_com);
+   RefSCMatrix T = localkit->matrix(rowdim_occ, coldim_vir_com);
+   T.assign(0.0);
+
+   const int nirreps = occ->nblocks();
+   const std::vector<unsigned int>& occpi = occ->block_sizes();
+   const std::vector<unsigned int>& virpi = vir->block_sizes();
+   const std::vector<unsigned int>& cabspi = cabs->block_sizes();
+
+   std::vector<unsigned int> occoff(nirreps);
+   std::vector<unsigned int> viroff(nirreps);
+   std::vector<unsigned int> cabsoff(nirreps);
+   std::vector<unsigned int> vir_comoff(nirreps);
+
+   occoff[0] = 0;
+   viroff[0] = 0;
+   cabsoff[0] = 0;
+//   ExEnv::out0() << endl << "  occpi vir cabspi:" << endl
+//                         << 0 << "  " << occpi[0] << "  " << virpi[0] << "  " << cabspi[0] <<  endl;
+
+   for (unsigned int irrep = 1; irrep < nirreps; ++irrep) {
+     occoff[irrep] = occoff[irrep-1] + occpi[irrep-1];
+     viroff[irrep] = viroff[irrep-1] + virpi[irrep-1];
+     cabsoff[irrep] = cabsoff[irrep-1] + cabspi[irrep-1];
+     vir_comoff[irrep] = viroff[irrep] + cabsoff[irrep];
+//     ExEnv::out0() << irrep << "   " << occpi[irrep] << "  " << virpi[irrep] << "  " << cabspi[irrep] << endl;
+   }
+
+   for (int h = 0; h < nirreps; ++h) {
+
+     if (r12intermediates_->T2_cc_computed()) {
+
+       for (int i = 0; i < occpi[h]; ++i) {
+         for (int ap = 0; ap < cabspi[h]; ++ap) {
+           const int idxi1 = occoff[h] + i;
+           const int idxap1 = cabsoff[h] + ap;
+           const int idxi2 = idxi1;
+           const int idxap2 = nvir + cabsoff[h] + ap;
+           T.set_element(idxi2,idxap2,T1_cabs.get_element(idxi1,idxap1));
+         }
+       }
+     } else {
+         for (int i = 0; i < occpi[h]; ++i) {
+           for (int a = 0; a < virpi[h]; ++a) {
+             const int idxi1 = occoff[h] + i;
+             const int idxa1 = vir_comoff[h] + a;
+             const int idxi2 = idxi1;
+             const int idxa2 = viroff[h] + a;
+             T.set_element(idxi2,idxa2,T1_cabs.get_element(idxi1,idxa1));
+           }
+
+           for (int ap = 0; ap < cabspi[h]; ++ap) {
+             const int idxi1 = occoff[h] + i;
+             const int idxap1 = vir_comoff[h] + virpi[h] + ap;
+             const int idxi2 = idxi1;
+             const int idxap2 = nvir + cabsoff[h] + ap;
+             T.set_element(idxi2,idxap2,T1_cabs.get_element(idxi1,idxap1));
+           }
+         }
+     }
+   }
+
+   if (debug_ >= DefaultPrintThresholds::mostN2)
+     T.print(prepend_spincase(spin,"CABS amplitude Tia").c_str());
+
+  // D^i_j = - t^i_a * t^a_j
+  for (int i = 0; i < nocc; ++i) {
+    RefSCVector tia = T.get_row(i);
+
+    for (int j = 0; j <= i; ++j) {
+      RefSCVector tja = T.get_row(j);
+      const double Dij = - tia.dot(tja);
+      D.set_element(i, j, Dij);
+    }
+  }
+
+  if (!r12intermediates_->T2_cc_computed()) {
+    // D^a_b = t^a_i * t^i_b
+    for (int a = 0; a < nvir; ++a) {
+      RefSCVector tai = T.get_column(a);
+
+      for (int b = 0; b <= a; ++b) {
+        RefSCVector tbi = T.get_column(b);
+        const double Dab = tai.dot(tbi);
+        D.set_element(a+nocc, b+nocc, Dab);
+      }
+    }
+
+    // D^a_i = t^a_i
+    for (int i = 0; i < nocc; ++i) {
+      for (int a = 0; a < nvir; ++a) {
+        const double Dai = T.get_element(i,a);
+        D.set_element(a+nocc, i, Dai);
+      }
+    }
+
+    // D^a'_b= t^a'_i * t^i_b
+    for (int ap = 0; ap < ncabs; ++ap) {
+      RefSCVector tapi = T.get_column(ap+nvir);
+
+      for (int b = 0; b < nvir; ++b) {
+        RefSCVector tbi = T.get_column(b);;
+        const double Dapb = tapi.dot(tbi);
+        D.set_element(ap+norbs, b+nocc, Dapb);
+      }
+    }
+  }
+  // end of if (!r12intermediates_->T2_cc_computed())
+
+  // D^a'_b' = t^a'_i * t^i_b'
+  for (int ap = 0; ap < ncabs; ++ap) {
+    RefSCVector tapi = T.get_column(ap+nvir);
+
+    for (int bp = 0; bp <= ap; ++bp) {
+      RefSCVector tbpi = T.get_column(bp+nvir);
+      const double Dapbp = tapi.dot(tbpi);
+      D.set_element(ap+norbs, bp+norbs, Dapbp);
+    }
+  }
+
+  // D^a'_i = t^a'_i
+  for (int i = 0; i < nocc; ++i) {
+    for (int ap = 0; ap < ncabs; ++ap) {
+      const double Dapi = T.get_element(i,ap+nvir);
+      D.set_element(ap+norbs, i, Dapi);
+    }
+  }
+
+  // Symmetrize matrices
+  for(int p = 0; p < norbs_com; p++) {
+    for(int q = 0; q < p; q++) {
+      D.set_element(q,p,D.get_element(p,q));
+    }
+  }
+  //D.print(prepend_spincase(spin,"D CABS").c_str());
+  return D;
+}
+// end of compute_D_CABS
+
+// test function for computing one-electron density form CABS contribution
+RefSCMatrix MP2R12Energy_Diag::compute_D_CABS_test(SpinCase1 spin) {
+
+  // obtain occ, vir, orbs, and cabs orbitals in that order
+  const SpinCase2 spincase = static_cast<SpinCase2>(spin+1);
+  string spinletters = to_string(spincase);
+  vector< Ref<OrbitalSpace> > v_orbs1;          // orbitals of spin1
+  vector< Ref<OrbitalSpace> > v_orbs2;          // orbitals of spin2
+  obtain_orbitals(spincase, v_orbs1, v_orbs2);
+
+  // obtain orbitals
+  const Ref<OrbitalSpace> occ = v_orbs1[4];
+  const Ref<OrbitalSpace> vir = v_orbs1[1];
+  const Ref<OrbitalSpace> cabs = v_orbs1[3];
+
+  const int nocc = occ->rank();
+  const int nvir = vir->rank();
+  const int ncabs = cabs->rank();
+  const int norbs = nocc + nvir;
+  const int nvir_com = nvir + ncabs;
+  const int norbs_com = nocc + nvir + ncabs;
+
+  const RefSCMatrix T1_cabs = r12eval_->T1_cabs(spin);
+
+  Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
+  RefSCDimension rowdim_occ = new SCDimension(nocc);
+  RefSCDimension coldim_vir_com = new SCDimension(nvir_com);
+  RefSCDimension coldim_cabs = new SCDimension(ncabs);
+  RefSCMatrix T;
+  if (!r12intermediates_->T2_cc_computed()) {
+    T = localkit->matrix(rowdim_occ, coldim_vir_com);
+  } else {
+      T = localkit->matrix(rowdim_occ, coldim_cabs);
+  }
+  T.assign(0.0);
+
+  const int nirreps = cabs->nblocks();
+  const std::vector<unsigned int>& occpi = occ->block_sizes();
+  const std::vector<unsigned int>& virpi = vir->block_sizes();
+  const std::vector<unsigned int>& cabspi = cabs->block_sizes();
+
+  std::vector<unsigned int> occoff(nirreps);
+  std::vector<unsigned int> viroff(nirreps);
+  std::vector<unsigned int> cabsoff(nirreps);
+  std::vector<unsigned int> vir_comoff(nirreps);
+
+  occoff[0] = 0;
+  viroff[0] = 0;
+  cabsoff[0] = 0;
+
+  for (unsigned int irrep = 1; irrep < nirreps; ++irrep) {
+    occoff[irrep] = occoff[irrep-1] + occpi[irrep-1];
+    viroff[irrep] = viroff[irrep-1] + virpi[irrep-1];
+    cabsoff[irrep] = cabsoff[irrep-1] + cabspi[irrep-1];
+    vir_comoff[irrep] = viroff[irrep] + cabsoff[irrep];
+  }
+
+  for (int h = 0; h < nirreps; ++h) {
+
+    if (r12intermediates_->T2_cc_computed()) {
+
+      for (int i = 0; i < occpi[h]; ++i) {
+        for (int ap = 0; ap < cabspi[h]; ++ap) {
+          const int idxi = occoff[h] + i;
+          const int idxap = cabsoff[h] + ap;
+          T.set_element(idxi,idxap,T1_cabs.get_element(idxi,idxap));
+        }
+      }
+    } else {
+        for (int i = 0; i < occpi[h]; ++i) {
+          for (int a = 0; a < virpi[h]; ++a) {
+            const int idxi1 = occoff[h] + i;
+            const int idxa1 = vir_comoff[h] + a;
+            const int idxi2 = idxi1;
+            const int idxa2 = viroff[h] + a;
+            T.set_element(idxi2,idxa2,T1_cabs.get_element(idxi1,idxa1));
+          }
+
+          for (int ap = 0; ap < cabspi[h]; ++ap) {
+            const int idxi1 = occoff[h] + i;
+            const int idxap1 = vir_comoff[h] + virpi[h] + ap;
+            const int idxi2 = idxi1;
+            const int idxap2 = nvir + cabsoff[h] + ap;
+            T.set_element(idxi2,idxap2,T1_cabs.get_element(idxi1,idxap1));
+          }
+        }
+    }
+  }
+  T.print(prepend_spincase(spin,"CABS amplitude Tia").c_str());
+
+  RefSCDimension rowdim = new SCDimension(norbs_com);
+  RefSCDimension coldim = new SCDimension(norbs_com);
+  RefSCMatrix D = localkit->matrix(rowdim, coldim);
+  D.assign(0.0);
+
+  if (!r12intermediates_->T2_cc_computed()) {
+    // D^i_j = - t^i_a * t^a_j
+    for (int i = 0; i < nocc; ++i) {
+      for (int j = 0; j <= i; ++j) {
+
+        double Dij = 0.0;
+        for (int a = 0; a < nvir+ncabs; ++a){
+          Dij += T.get_element(i,a) * T.get_element(j,a);
+        }
+
+        D.set_element(i, j, -Dij);
+      }
+    }
+
+    // D^a_b = t^a_i * t^i_b
+    for (int a = 0; a < nvir; ++a) {
+      for (int b = 0; b <= a; ++b) {
+
+        double Dab = 0.0;
+        for (int i = 0; i < nocc; ++i) {
+          Dab += T.get_element(i,a) * T.get_element(i,b);
+        }
+        D.set_element(a+nocc, b+nocc, Dab);
+      }
+    }
+
+    // D^a'_b' = t^a'_i * t^i_b'
+    for (int ap = 0; ap < ncabs; ++ap) {
+      for (int bp = 0; bp <= ap; ++bp) {
+
+        double Dapbp = 0.0;
+        for (int i = 0; i < nocc; ++i) {
+          Dapbp += T.get_element(i,ap+nvir) * T.get_element(i,bp+nvir);
+        }
+        D.set_element(ap+norbs, bp+norbs, Dapbp);
+      }
+    }
+
+    // D^a_i = t^a_i & D^a'_i = t^a'_i
+    for (int i = 0; i < nocc; ++i) {
+
+      for (int a = 0; a < nvir; ++a) {
+        const double Dai = T.get_element(i,a);
+        D.set_element(a+nocc, i, Dai);
+      }
+      for (int ap = 0; ap < ncabs; ++ap) {
+        const double Dapi = T.get_element(i,ap+nvir);
+        D.set_element(ap+norbs, i, Dapi);
+      }
+    }
+
+    // D^a'_b= t^a'_i * t^i_b
+    for (int ap = 0; ap < ncabs; ++ap) {
+      for (int b = 0; b < nvir; ++b) {
+
+        double Dapb = 0.0;
+        for (int i = 0; i < nocc; ++i) {
+          Dapb += T.get_element(i,ap+nvir) * T.get_element(i,b);
+        }
+        D.set_element(ap+norbs, b+nocc, Dapb);
+      }
+    }
+
+  } else {
+      // D^i_j = - t^i_a' * t^a'_j
+      for (int i = 0; i < nocc; ++i) {
+        for (int j = 0; j <= i; ++j) {
+
+          double Dij = 0;
+          for (int ap = 0; ap < ncabs; ++ap) {
+            Dij += T.get_element(i,ap) * T.get_element(j,ap);
+          }
+
+          D.set_element(i, j, -Dij);
+        }
+      }
+
+      // D^a'_b' = t^a'_i * t^i_b'
+      for (int ap = 0; ap < ncabs; ++ap) {
+        for (int bp = 0; bp <= ap; ++bp) {
+
+          double Dapbp = 0.0;
+          for (int i = 0; i < nocc; ++i) {
+            Dapbp +=  T.get_element(i,ap) * T.get_element(i,bp);
+          }
+          D.set_element(ap+norbs, bp+norbs, Dapbp);
+        }
+      }
+
+      // D^a'_i = t^a'_i
+      for (int i = 0; i < nocc; ++i) {
+        for (int ap = 0; ap < ncabs; ++ap) {
+          const double Dapi = T.get_element(i,ap);
+          D.set_element(ap+norbs, i, Dapi);
+        }
+      }
+  }
+
+  // Symmetrize matrices
+  for(int p = 0; p < norbs_com; p++) {
+    for(int q = 0; q < p; q++) {
+      D.set_element(q,p,D.get_element(p,q));
+    }
+  }
+
+  return D;
+}
+// end of compute_D_CABS_test
+
 // compute R * T2  (mp2 amplitudes) in D^a'_a
 void MP2R12Energy_Diag::compute_RTmp2_apa(const int nspincases1, const int nspincases2,
                                           const double C_0, const double C_1,
@@ -5821,7 +6271,7 @@ void MP2R12Energy_Diag::compute_RTmp2_apa(const int nspincases1, const int nspin
 
      //
      const double* const iter_D = (spin == Alpha? RTmp2_alpha : RTmp2_beta);
-     print_intermediate(spinletters, "D^A'_A RT2 (mp2) part", iter_D, ncabs, nvir);
+     //print_intermediate(spinletters, "D^A'_A RT2 (mp2) part", iter_D, ncabs, nvir);
 
      delete[] RT2apb_ab;
      delete[] RT2bap_ab;
@@ -5885,12 +6335,14 @@ void MP2R12Energy_Diag::compute_density_diag()
   const int nvir2 = vir2->rank();
   const int ncabs1 = cabs1->rank();
   const int ncabs2 = cabs2->rank();
+  const int nfzc1 = occ1->rank() - nocc1_act;
+  const int nfzc2 = occ2->rank() - nocc2_act;
 
   const int norb = nocc1_act + nvir1;
   const int norb_com = nocc1_act + nvir1 + ncabs1;
 
   ExEnv::out0() << endl << "**********************************************" << endl;
-  ExEnv::out0() << endl << "Computing CCSD_F12 one-particle density" << endl<< endl;
+  ExEnv::out0() << endl << "Computing F12 one-particle density" << endl<< endl;
 
   // test propose
 //  if (debug_ >= DefaultPrintThresholds::N2)
@@ -5898,6 +6350,7 @@ void MP2R12Energy_Diag::compute_density_diag()
                           << "number of beta active occupied orbital: " << nocc2_act << endl
                           << "number of alpha virtual orbital: " << nvir1 << endl
                           << "number of beta virtual orbital: " << nvir2 << endl
+                          << "number of orbs: " << norb << endl
                           << "number of alpha cabs: " << ncabs1 << endl
                           << "number of beta cabs: " << ncabs2 << endl;
 
@@ -6243,6 +6696,15 @@ void MP2R12Energy_Diag::compute_density_diag()
   RefSCVector dipoles = localkit->vector(RefSCDimension(new SCDimension(3)));
   dipoles.assign(0.0);
 
+  RefSCVector dipoles_ccsd = localkit->vector(RefSCDimension(new SCDimension(3)));
+  RefSCVector dipoles_f12 = localkit->vector(RefSCDimension(new SCDimension(3)));
+  RefSCVector dipoles_cabs = localkit->vector(RefSCDimension(new SCDimension(3)));
+  RefSCVector dipoles_ebc = localkit->vector(RefSCDimension(new SCDimension(3)));
+  dipoles_ccsd.assign(0.0);
+  dipoles_f12.assign(0.0);
+  dipoles_cabs.assign(0.0);
+  dipoles_ebc.assign(0.0);
+
   for (int s = 0; s < nspincases1; ++s) {
     const SpinCase1 spin = static_cast<SpinCase1>(s);
 
@@ -6279,12 +6741,15 @@ void MP2R12Energy_Diag::compute_density_diag()
     }
     //D[spin].print(prepend_spincase(spin,"F12 one-particle density Dij+Dab+Da'b':").c_str());
 
+    RefSCMatrix D_ebc;
     if (this->r12eval()->ebc() == false
         || this->r12eval()->coupling() == true) {
 
 //      bool ebc = this->r12eval()->ebc() == false;
 //      bool coupling = this->r12eval()->coupling() == true;
 //      ExEnv::out0() << endl << ebc << "  " << coupling << endl;
+      D_ebc = localkit->matrix(rowdim, coldim);
+      D_ebc.assign(0.0);
 
       const double* iter_Dap_a_RR = (spin == Alpha? Dap_a_alpha_RR : Dap_a_beta_RR);
       const double* iter_Dap_a_RT = (spin == Alpha? Dap_a_alpha_RT : Dap_a_beta_RT);
@@ -6292,78 +6757,52 @@ void MP2R12Energy_Diag::compute_density_diag()
         for (int a = nocc_act; a < norb; ++a, ++iter_Dap_a_RR, ++iter_Dap_a_RT) {
             const double Dapa = *iter_Dap_a_RR + *iter_Dap_a_RT;
             D[spin].set_element(ap, a, Dapa);
+            D_ebc.set_element(ap, a, *iter_Dap_a_RT);
           }
       }
 
     } else {
-        const double* iter_Dap_a = (spin == Alpha? Dap_a_alpha_RR : Dap_a_beta_RR);
+        const double* iter_Dap_a_RR = (spin == Alpha? Dap_a_alpha_RR : Dap_a_beta_RR);
         for (int ap = norb; ap < norb_com; ++ap) {
-          for (int a = nocc_act; a < norb; ++a, ++iter_Dap_a) {
-              const double Dapa = *iter_Dap_a;
+          for (int a = nocc_act; a < norb; ++a, ++iter_Dap_a_RR) {
+              const double Dapa = *iter_Dap_a_RR;
               D[spin].set_element(ap, a, Dapa);
             }
         }
     }
-//    if (debug_ >= DefaultPrintThresholds::allN2)
+    if (debug_ >= DefaultPrintThresholds::allN2)
       D[spin].print(prepend_spincase(spin,"F12 one-particle density:").c_str());
-
-
-    //
-    // Obtain CCSD one-particle density from Psi
-    D_cc[spin] = r12intermediates_->get_1rdm_cc(spin);
-    //D_cc[spin].print(prepend_spincase(spin,"CCSD one-particle density:").c_str());
-
 #if 1
-    // test code for D and D_cc:
-    // trace of D = 0, as trace of Dij = - trace of (Dab + Da'b')
+    // test code for D: trace of D = 0, as trace of Dij = - trace of (Dab + Da'b')
     const string spin_label = (spin == Alpha? "Alpha" : "Beta");
     ExEnv::out0() << endl << spin_label << " Trace of D_f12: " << scprintf("%12.10f", D[spin].trace())<< endl;
-    // trace of D_cc = # of electrons
-    ExEnv::out0() << endl << spin_label << " Trace of D_cc: " << scprintf("%12.10f", D_cc[spin].trace()) << endl;
 #endif
-    // add psi ccsd and r12 one-particle density together
-    D[spin].accumulate_subblock(D_cc[spin], 0, norb-1, 0, norb-1, 0, 0);
-    if (debug_ >= DefaultPrintThresholds::allN2)
-      D[spin].print(prepend_spincase(spin,"CCSD_F12 one-particle density:").c_str());
 
-    // transform D_cc to MPQC ordering
-    // not RefSymmSCMatrix ?
-    RefSCMatrix opdm = onepdm_transformed(spin, D[spin]);
-   // opdm.print("CCSD_F12 one-particle density matrix MPQC ordering");
-
-    // computing dipole integrals in MO basis
+    // dipole integrals in ribs: dipole integrals in occ_act, vir, and CABS
     RefSCMatrix MXX, MYY, MZZ, MXY, MXZ, MYZ;
 
-//    const Ref<OrbitalSpace> space = r12world->ribs_space();
-//    compute_multipole_ints(space, space,
-//                           MX, MY, MZ,
-//                           MXX, MYY, MZZ,
-//                           MXY, MXZ, MYZ);
-//
-//    // ?? why need?
-//    const RefSCDimension M_dim(new SCDimension(norb_com));
-//    RefSCMatrix MX_nb = localkit->matrix(M_dim,M_dim);
-//    RefSCMatrix MY_nb = localkit->matrix(M_dim,M_dim);
-//    RefSCMatrix MZ_nb = localkit->matrix(M_dim,M_dim);
-//    for(int i = 0; i < M_dim.n(); i++) {
-//      for(int j = 0; j < M_dim.n(); j++) {
-//        MX_nb.set_element(i,j,MX.get_element(i,j));
-//        MY_nb.set_element(i,j,MY.get_element(i,j));
-//        MZ_nb.set_element(i,j,MZ.get_element(i,j));
-//      }
-//    }
-//    //MZ.print(prepend_spincase(spin,"mu(Z)_nb").c_str());
-
-    RefSCMatrix MX_orbs, MY_orbs, MZ_orbs;
-    const Ref<OrbitalSpace>& space_orbs = (spin == Alpha? orbs1 : orbs2);
-    compute_multipole_ints(space_orbs, space_orbs,
-                           MX_orbs, MY_orbs, MZ_orbs,
+    RefSCMatrix MX_occ_act, MY_occ_act, MZ_occ_act;
+    const Ref<OrbitalSpace>& space_occ_act = (spin == Alpha? occ1_act : occ2_act);
+    compute_multipole_ints(space_occ_act, space_occ_act,
+                           MX_occ_act, MY_occ_act, MZ_occ_act,
                            MXX, MYY, MZZ,
                            MXY, MXZ, MYZ);
-    //MZ_orbs.print(prepend_spincase(spin,"mu(Z)_nb in orbs").c_str());
 
-    // experiment dipole ints of ribs ?= dipole ints of orbs + cabs
+    RefSCMatrix MX_vir, MY_vir, MZ_vir;
+    const Ref<OrbitalSpace>& space_vir = (spin == Alpha? vir1 : vir2);
+    compute_multipole_ints(space_vir, space_vir,
+                           MX_vir, MY_vir, MZ_vir,
+                           MXX, MYY, MZZ,
+                           MXY, MXZ, MYZ);
+
+    RefSCMatrix MX_virocc_act, MY_virocc_act, MZ_virocc_act;
+    compute_multipole_ints(space_vir, space_occ_act,
+                           MX_virocc_act, MY_virocc_act, MZ_virocc_act,
+                           MXX, MYY, MZZ,
+                           MXY, MXZ, MYZ);
+
     RefSCMatrix MX_cabs, MY_cabs, MZ_cabs;
+    //RefSCMatrix MXX_cabs, MYY_cabs, MZZ_cabs, MXY_cabs, MXZ_cabs, MYZ_cabs;
     const Ref<OrbitalSpace>& space_cabs = (spin == Alpha? cabs1 : cabs2);
     compute_multipole_ints(space_cabs, space_cabs,
                            MX_cabs, MY_cabs, MZ_cabs,
@@ -6371,58 +6810,100 @@ void MP2R12Energy_Diag::compute_density_diag()
                            MXY, MXZ, MYZ);
     //MZ_cabs.print(prepend_spincase(spin,"mu(Z)_nb in cabs").c_str());
 
-    RefSCMatrix MX_cabsorbs, MY_cabsorbs, MZ_cabsorbs;
-    compute_multipole_ints(space_cabs, space_orbs,
-                           MX_cabsorbs, MY_cabsorbs, MZ_cabsorbs,
+    RefSCMatrix MX_cabsocc_act, MY_cabsocc_act, MZ_cabsocc_act;
+    compute_multipole_ints(space_cabs, space_occ_act,
+                           MX_cabsocc_act, MY_cabsocc_act, MZ_cabsocc_act,
                            MXX, MYY, MZZ,
                            MXY, MXZ, MYZ);
-    //MZ_cabsorbs.print(prepend_spincase(spin,"mu(Z)_nb in cabs orbs").c_str());
 
-    // clean
-    MXX = 0;
-    MYY = 0;
-    MZZ = 0;
-    MXY = 0;
-    MXZ = 0;
-    MYZ = 0;
+    RefSCMatrix MX_cabsvir, MY_cabsvir, MZ_cabsvir;
+    compute_multipole_ints(space_cabs, space_vir,
+                           MX_cabsvir, MY_cabsvir, MZ_cabsvir,
+                           MXX, MYY, MZZ,
+                           MXY, MXZ, MYZ);
 
-    // obtain the dipole ints in orbs+cabs space
-    const int nirreps = space_cabs->nblocks();
-    const std::vector<unsigned int>& orbspi = space_orbs->block_sizes();
-    const std::vector<unsigned int>& cabspi = space_cabs->block_sizes();
-    std::vector<unsigned int> orbsoff(nirreps);
-    std::vector<unsigned int> cabsoff(nirreps);
-    std::vector<unsigned int> ribsoff(nirreps);
-
-    orbsoff[0] = 0;
-    cabsoff[0] = 0;
-    ribsoff[0] = 0;
-
-    for (unsigned int irrep = 1; irrep < nirreps; ++irrep) {
-      orbsoff[irrep] = orbsoff[irrep-1] + orbspi[irrep-1];
-      cabsoff[irrep] = cabsoff[irrep-1] + cabspi[irrep-1];
-      ribsoff[irrep] = orbsoff[irrep] + cabsoff[irrep];
-    }
-
+    // obtain the dipole ints in ribs
+    // which is the dipole ints in occ_act, vir, cabs space
     const RefSCDimension M_dim_ribs(new SCDimension(norb_com));
     RefSCMatrix MX_nb_ribs = localkit->matrix(M_dim_ribs,M_dim_ribs);
     RefSCMatrix MY_nb_ribs = localkit->matrix(M_dim_ribs,M_dim_ribs);
     RefSCMatrix MZ_nb_ribs = localkit->matrix(M_dim_ribs,M_dim_ribs);
+    MX_nb_ribs.assign(0.0);
+    MY_nb_ribs.assign(0.0);
     MZ_nb_ribs.assign(0.0);
+
+    const int nirreps = space_cabs->nblocks();
+    const std::vector<unsigned int>& occ_actpi = space_occ_act->block_sizes();
+    const std::vector<unsigned int>& virpi = space_vir->block_sizes();
+    const std::vector<unsigned int>& cabspi = space_cabs->block_sizes();
+
+    std::vector<unsigned int> occ_actoff(nirreps);
+    std::vector<unsigned int> viroff(nirreps);
+    std::vector<unsigned int> cabsoff(nirreps);
+    // orbs = occ_act + vir
+    std::vector<unsigned int> orbsoff(nirreps);
+    // orbs = occ_act + vir + cabs
+    std::vector<unsigned int> ribsoff(nirreps);
+
+    occ_actoff[0] = 0;
+    viroff[0] = 0;
+    cabsoff[0] = 0;
+    orbsoff[0] = 0;
+    ribsoff[0] = 0;
+
+    std::vector<unsigned int> orbspi(nirreps);
+    orbspi[0] = occ_actpi[0] + virpi[0];
+
+    for (unsigned int irrep = 1; irrep < nirreps; ++irrep) {
+      occ_actoff[irrep] = occ_actoff[irrep-1] + occ_actpi[irrep-1];
+      viroff[irrep] = viroff[irrep-1] + virpi[irrep-1];
+      cabsoff[irrep] = cabsoff[irrep-1] + cabspi[irrep-1];
+
+      orbsoff[irrep] = occ_actoff[irrep] + viroff[irrep];
+      ribsoff[irrep] = orbsoff[irrep] + cabsoff[irrep];
+
+      orbspi[irrep] = occ_actpi[irrep] + virpi[irrep];
+    }
 
     for (unsigned int h = 0; h < nirreps; ++h) {
 
-      for (int p = 0; p < orbspi[h]; ++p) {
-          for (int q = 0; q <= p; ++q) {
-            const int idxp1 = p + orbsoff[h];
-            const int idxq1 = q + orbsoff[h];
-            const int idxp2 = p + ribsoff[h];
-            const int idxq2 = q + ribsoff[h];
+      for (int i = 0; i < occ_actpi[h]; ++i) {
+        for (int j = 0; j <= i; ++j) {
+          const int idxi1 = i + occ_actoff[h];
+          const int idxj1 = j + occ_actoff[h];
+          const int idxi2 = i + ribsoff[h];
+          const int idxj2 = j + ribsoff[h];
 
-            MX_nb_ribs.set_element(idxp2,idxq2,MX_orbs.get_element(idxp1,idxq1));
-            MY_nb_ribs.set_element(idxp2,idxq2,MY_orbs.get_element(idxp1,idxq1));
-            MZ_nb_ribs.set_element(idxp2,idxq2,MZ_orbs.get_element(idxp1,idxq1));
-          }
+          MX_nb_ribs.set_element(idxi2,idxj2,MX_occ_act.get_element(idxi1,idxj1));
+          MY_nb_ribs.set_element(idxi2,idxj2,MY_occ_act.get_element(idxi1,idxj1));
+          MZ_nb_ribs.set_element(idxi2,idxj2,MZ_occ_act.get_element(idxi1,idxj1));
+        }
+      }
+
+      for (int a = 0; a < virpi[h]; ++a) {
+        for (int b = 0; b <= a; ++b) {
+          const int idxa1 = a + viroff[h];
+          const int idxb1 = b + viroff[h];
+          const int idxa2 = a + ribsoff[h] + occ_actpi[h];
+          const int idxb2 = b + ribsoff[h] + occ_actpi[h];
+
+          MX_nb_ribs.set_element(idxa2,idxb2,MX_vir.get_element(idxa1,idxb1));
+          MY_nb_ribs.set_element(idxa2,idxb2,MY_vir.get_element(idxa1,idxb1));
+          MZ_nb_ribs.set_element(idxa2,idxb2,MZ_vir.get_element(idxa1,idxb1));
+        }
+      }
+
+      for (int a = 0; a < virpi[h]; ++a) {
+        for (int i = 0; i < occ_actpi[h]; ++i) {
+          const int idx_a1 = viroff[h] + a;
+          const int idx_i1 = occ_actoff[h] + i;
+          const int idx_a2 = ribsoff[h] + occ_actpi[h] + a;
+          const int idx_i2 = ribsoff[h] + i;
+
+          MX_nb_ribs.set_element(idx_a2,idx_i2,MX_virocc_act.get_element(idx_a1,idx_i1));
+          MY_nb_ribs.set_element(idx_a2,idx_i2,MY_virocc_act.get_element(idx_a1,idx_i1));
+          MZ_nb_ribs.set_element(idx_a2,idx_i2,MZ_virocc_act.get_element(idx_a1,idx_i1));
+        }
       }
 
       for (int ap = 0; ap < cabspi[h]; ++ap) {
@@ -6439,18 +6920,49 @@ void MP2R12Energy_Diag::compute_density_diag()
       }
 
       for (int ap = 0; ap < cabspi[h]; ++ap) {
-        for (int p = 0; p < orbspi[h]; ++p) {
+        for (int i = 0; i < occ_actpi[h]; ++i) {
           const int idx_ap1 = cabsoff[h] + ap;
-          const int idx_p1 = orbsoff[h] + p;
+          const int idx_i1 = occ_actoff[h] + i;
           const int idx_ap2 = ribsoff[h] + orbspi[h] + ap;
-          const int idx_p2 = ribsoff[h] + p;
+          const int idx_i2 = ribsoff[h] + i;
 
-          MX_nb_ribs.set_element(idx_ap2,idx_p2,MX_cabsorbs.get_element(idx_ap1,idx_p1));
-          MY_nb_ribs.set_element(idx_ap2,idx_p2,MY_cabsorbs.get_element(idx_ap1,idx_p1));
-          MZ_nb_ribs.set_element(idx_ap2,idx_p2,MZ_cabsorbs.get_element(idx_ap1,idx_p1));
+          MX_nb_ribs.set_element(idx_ap2,idx_i2,MX_cabsocc_act.get_element(idx_ap1,idx_i1));
+          MY_nb_ribs.set_element(idx_ap2,idx_i2,MY_cabsocc_act.get_element(idx_ap1,idx_i1));
+          MZ_nb_ribs.set_element(idx_ap2,idx_i2,MZ_cabsocc_act.get_element(idx_ap1,idx_i1));
         }
       }
+
+      for (int ap = 0; ap < cabspi[h]; ++ap) {
+        for (int a = 0; a < virpi[h]; ++a) {
+          const int idx_ap1 = cabsoff[h] + ap;
+          const int idx_a1 = viroff[h] + a;
+          const int idx_ap2 = ribsoff[h] + orbspi[h] + ap;
+          const int idx_a2 = ribsoff[h] + occ_actpi[h] + a;
+
+          MX_nb_ribs.set_element(idx_ap2,idx_a2,MX_cabsvir.get_element(idx_ap1,idx_a1));
+          MY_nb_ribs.set_element(idx_ap2,idx_a2,MY_cabsvir.get_element(idx_ap1,idx_a1));
+          MZ_nb_ribs.set_element(idx_ap2,idx_a2,MZ_cabsvir.get_element(idx_ap1,idx_a1));
+        }
+      }
+
     }
+    // clean
+    MX_occ_act = 0;
+    MY_occ_act = 0;
+    MZ_occ_act = 0;
+    MX_vir = 0;
+    MY_vir = 0;
+    MZ_vir = 0;
+    MX_virocc_act = 0;
+    MY_virocc_act = 0;
+    MZ_virocc_act = 0;
+    MX_cabsocc_act = 0;
+    MY_cabsocc_act = 0;
+    MZ_cabsocc_act = 0;
+    MX_cabsvir = 0;
+    MY_cabsvir = 0;
+    MZ_cabsvir = 0;
+
     // Symmetrize matrices
     for(int p = 0; p < norb_com; p++) {
       for(int q = 0; q < p; q++) {
@@ -6459,88 +6971,299 @@ void MP2R12Energy_Diag::compute_density_diag()
         MZ_nb_ribs.set_element(q,p,MZ_nb_ribs.get_element(p,q));
       }
     }
+    //MZ_nb_ribs.print(prepend_spincase(spin,"mu(Z)_nb_ribs in ribs").c_str());
 
-    //MZ_nb_ribs.print(prepend_spincase(spin,"mu(Z)_nb in ribs").c_str());
+    // transform D to MPQC ordering
+    // RefsymmMatrix ??
+    RefSCMatrix opdm_f12 = onepdm_transformed(spin, true, D[spin]);
+    //opdm_f12.print("F12 one-particle density matrix MPQC ordering");
 
+    RefSCMatrix opdm_x_f12 = MX_nb_ribs * opdm_f12;
+    RefSCMatrix opdm_y_f12 = MY_nb_ribs * opdm_f12;
+    RefSCMatrix opdm_z_f12 = MZ_nb_ribs * opdm_f12;
+    opdm_f12 = 0;
+//    MX_nb_ribs = 0;
+//    MY_nb_ribs = 0;
+//    MZ_nb_ribs = 0;
 
-    RefSCMatrix opdm_x_ribs = MX_nb_ribs * opdm;
-    RefSCMatrix opdm_y_ribs = MY_nb_ribs * opdm;
-    RefSCMatrix opdm_z_ribs = MZ_nb_ribs * opdm;
+    const double dx_f12 = opdm_x_f12.trace();
+    const double dy_f12 = opdm_y_f12.trace();
+    const double dz_f12 = opdm_z_f12.trace();
+    opdm_x_f12 = 0;
+    opdm_y_f12 = 0;
+    opdm_z_f12 = 0;
 
-    const double dx_ribs = opdm_x_ribs.trace();
-    const double dy_ribs = opdm_y_ribs.trace();
-    const double dz_ribs = opdm_z_ribs.trace();
-    ExEnv::out0() << endl << spin_label <<  " CCSD_F12 correlation dipole moment x y z: " << scprintf("%12.10f",dx_ribs)
-                          << " " << scprintf("%12.10f",dy_ribs) << " " << scprintf("%12.10f",dz_ribs) << endl;
+    dipoles_f12[0] = dipoles_f12[0] + dx_f12;
+    dipoles_f12[1] = dipoles_f12[1] + dy_f12;
+    dipoles_f12[2] = dipoles_f12[2] + dz_f12;
 
-    dipoles[0] = dipoles[0] + dx_ribs;
-    dipoles[1] = dipoles[1] + dy_ribs;
-    dipoles[2] = dipoles[2] + dz_ribs;
+    // Obtain one-particle density from CABS contribution
+    const RefSCMatrix D_cabs = compute_D_CABS(spin);
+    //D_cabs.print(prepend_spincase(spin,"one-particle density from CABS contribution:").c_str());
+    ExEnv::out0() << endl << spin_label << " Trace of D_cabs: " << scprintf("%12.10f", D_cabs.trace())<< endl;
+#if 0
+    // test for D_CABS
+    const RefSCMatrix D_cabs_test = compute_D_CABS_test(spin);
+    D_cabs_test.print(prepend_spincase(spin,"Test: one-particle density from CABS contribution:").c_str());
+#endif
 
-    // clean
+    // transform D_cabs to MPQC ordering
+    RefSCMatrix opdm_cabs = onepdm_transformed(spin, false, D_cabs);
+
+    const Ref<OrbitalSpace>& space_orbs = (spin == Alpha? orbs1 : orbs2);
+    const int norbs_nfc = space_orbs->rank();
+    const int nribs_nfc = norbs_nfc + ncabs1;
+    const RefSCDimension dim_ribs_nfc(new SCDimension(nribs_nfc));
+    RefSCMatrix MX_ribs_nfc = localkit->matrix(dim_ribs_nfc,dim_ribs_nfc);
+    RefSCMatrix MY_ribs_nfc = localkit->matrix(dim_ribs_nfc,dim_ribs_nfc);
+    RefSCMatrix MZ_ribs_nfc = localkit->matrix(dim_ribs_nfc,dim_ribs_nfc);
+    MX_ribs_nfc.assign(0.0);
+    MY_ribs_nfc.assign(0.0);
+    MZ_ribs_nfc.assign(0.0);
+
+    RefSCMatrix MX_orbs, MY_orbs, MZ_orbs;
+    compute_multipole_ints(space_orbs, space_orbs,
+                           MX_orbs, MY_orbs, MZ_orbs,
+                           MXX, MYY, MZZ,
+                           MXY, MXZ, MYZ);
+
+    RefSCMatrix MX_cabsorbs, MY_cabsorbs, MZ_cabsorbs;
+    compute_multipole_ints(space_cabs, space_orbs,
+                           MX_cabsorbs, MY_cabsorbs, MZ_cabsorbs,
+                           MXX, MYY, MZZ,
+                           MXY, MXZ, MYZ);
+
+    MXX = 0;
+    MYY = 0;
+    MZZ = 0;
+    MXY = 0;
+    MXZ = 0;
+    MYZ = 0;
+
+    const std::vector<unsigned int>& orbspi_nfc = space_orbs->block_sizes();
+
+    std::vector<unsigned int> orbsoff_nfc(nirreps);
+    std::vector<unsigned int> ribsoff_nfc(nirreps);
+    orbsoff_nfc[0] = 0;
+    ribsoff_nfc[0] = 0;
+    for (unsigned int irrep = 1; irrep < nirreps; ++irrep) {
+      orbsoff_nfc[irrep] = orbsoff_nfc[irrep-1] + orbspi_nfc[irrep-1];
+      ribsoff_nfc[irrep] = orbsoff_nfc[irrep] + cabsoff[irrep];
+    }
+
+    for (unsigned int h = 0; h < nirreps; ++h) {
+
+      for (int p = 0; p < orbspi_nfc[h]; ++p) {
+        for (int q = 0; q <= p; ++q) {
+          const int idxp1 = p + orbsoff_nfc[h];
+          const int idxq1 = q + orbsoff_nfc[h];
+          const int idxp2 = p + ribsoff_nfc[h];
+          const int idxq2 = q + ribsoff_nfc[h];
+
+          MX_ribs_nfc.set_element(idxp2,idxq2,MX_orbs.get_element(idxp1,idxq1));
+          MY_ribs_nfc.set_element(idxp2,idxq2,MY_orbs.get_element(idxp1,idxq1));
+          MZ_ribs_nfc.set_element(idxp2,idxq2,MZ_orbs.get_element(idxp1,idxq1));
+        }
+      }
+
+      for (int ap = 0; ap < cabspi[h]; ++ap) {
+        for (int bp = 0; bp <= ap; ++bp) {
+          const int idx_ap1 = cabsoff[h] + ap;
+          const int idx_bp1 = cabsoff[h] + bp;
+           const int idx_ap2 = ribsoff_nfc[h] + orbspi_nfc[h] + ap;
+           const int idx_bp2 = ribsoff_nfc[h] + orbspi_nfc[h] + bp;
+
+           MX_ribs_nfc.set_element(idx_ap2,idx_bp2,MX_cabs.get_element(idx_ap1,idx_bp1));
+           MY_ribs_nfc.set_element(idx_ap2,idx_bp2,MY_cabs.get_element(idx_ap1,idx_bp1));
+           MZ_ribs_nfc.set_element(idx_ap2,idx_bp2,MZ_cabs.get_element(idx_ap1,idx_bp1));
+         }
+       }
+
+          for (int ap = 0; ap < cabspi[h]; ++ap) {
+            for (int p = 0; p < orbspi_nfc[h]; ++p) {
+              const int idx_ap1 = cabsoff[h] + ap;
+              const int idx_p1 = orbsoff_nfc[h] + p;
+              const int idx_ap2 = ribsoff_nfc[h] + orbspi_nfc[h] + ap;
+              const int idx_p2 = ribsoff_nfc[h] + p;
+
+              MX_ribs_nfc.set_element(idx_ap2,idx_p2,MX_cabsorbs.get_element(idx_ap1,idx_p1));
+              MY_ribs_nfc.set_element(idx_ap2,idx_p2,MY_cabsorbs.get_element(idx_ap1,idx_p1));
+              MZ_ribs_nfc.set_element(idx_ap2,idx_p2,MZ_cabsorbs.get_element(idx_ap1,idx_p1));
+            }
+          }
+        }
+
     MX_cabs = 0;
     MY_cabs = 0;
     MZ_cabs = 0;
     MX_cabsorbs = 0;
     MY_cabsorbs = 0;
     MZ_cabsorbs = 0;
-    MX_nb_ribs = 0;
-    MY_nb_ribs = 0;
-    MZ_nb_ribs = 0;
 
-    opdm_x_ribs = 0;
-    opdm_y_ribs = 0;
-    opdm_z_ribs = 0;
-
-    // test code: compute the ccsd dipole moment
-#if 1
-    {
-      const RefSCDimension M_orbs_dim(new SCDimension(norb));
-      RefSCMatrix MX2_nb = localkit->matrix(M_orbs_dim,M_orbs_dim);
-      RefSCMatrix MY2_nb = localkit->matrix(M_orbs_dim,M_orbs_dim);
-      RefSCMatrix MZ2_nb = localkit->matrix(M_orbs_dim,M_orbs_dim);
-      for(int i = 0; i < M_orbs_dim.n(); i++) {
-        for(int j = 0; j < M_orbs_dim.n(); j++) {
-          MX2_nb.set_element(i,j,MX_orbs.get_element(i,j));
-          MY2_nb.set_element(i,j,MY_orbs.get_element(i,j));
-          MZ2_nb.set_element(i,j,MZ_orbs.get_element(i,j));
-        }
+    // Symmetrize matrices
+    for(int p = 0; p < nribs_nfc; p++) {
+      for(int q = 0; q < p; q++) {
+        MX_ribs_nfc.set_element(q,p,MX_ribs_nfc.get_element(p,q));
+        MY_ribs_nfc.set_element(q,p,MY_ribs_nfc.get_element(p,q));
+        MZ_ribs_nfc.set_element(q,p,MZ_ribs_nfc.get_element(p,q));
       }
-
-      // copy psi ccsd density in MPQC ordering back
-      RefSCMatrix opdm_cc = onepdm_transformed2(spin, D_cc[spin]);
-      //opdm_cc.print("CCSD one-particle density matrix in MPQC ordering");
-
-
-      RefSCMatrix opdm_x_cc = MX2_nb * opdm_cc;
-      RefSCMatrix opdm_y_cc = MY2_nb * opdm_cc;
-      RefSCMatrix opdm_z_cc = MZ2_nb * opdm_cc;
-
-      const double dx_cc = opdm_x_cc.trace();
-      const double dy_cc = opdm_y_cc.trace();
-      const double dz_cc = opdm_z_cc.trace();
-      ExEnv::out0() << endl << spin_label <<  " ccsd correlation dipole x y z: " << scprintf("%12.10f",dx_cc)
-                            << " " << scprintf("%12.10f",dy_cc) << " " << scprintf("%12.10f",dz_cc) << endl;
-      // clean
-      opdm_cc = 0;
-      MX2_nb = 0;
-      MY2_nb = 0;
-      MZ2_nb = 0;
-      opdm_x_cc = 0;
-      opdm_y_cc = 0;
-      opdm_z_cc = 0;
     }
-#endif
-    MX_orbs = 0;
-    MY_orbs = 0;
-    MZ_orbs = 0;
+    //MZ_ribs_nfc.print(prepend_spincase(spin,"mu(Z)_ribs_nfc").c_str());
+
+    RefSCMatrix opdm_x_cabs = MX_ribs_nfc * opdm_cabs;
+    RefSCMatrix opdm_y_cabs = MY_ribs_nfc * opdm_cabs;
+    RefSCMatrix opdm_z_cabs = MZ_ribs_nfc * opdm_cabs;
+    opdm_cabs = 0;
+    MX_ribs_nfc = 0;
+    MY_ribs_nfc = 0;
+    MZ_ribs_nfc = 0;
+
+    const double dx_cabs = opdm_x_cabs.trace();
+    const double dy_cabs = opdm_y_cabs.trace();
+    const double dz_cabs = opdm_z_cabs.trace();
+    opdm_x_cabs = 0;
+    opdm_y_cabs = 0;
+    opdm_z_cabs = 0;
+
+    dipoles_cabs[0] = dipoles_cabs[0] + dx_cabs;
+    dipoles_cabs[1] = dipoles_cabs[1] + dy_cabs;
+    dipoles_cabs[2] = dipoles_cabs[2] + dz_cabs;
+
+//    // add CABS contribution to D
+//    D[spin].accumulate(D_cabs);
+//    if (debug_ >= DefaultPrintThresholds::mostN2)
+//      D[spin].print(prepend_spincase(spin,"F12 one-particle density with CABS contribution:").c_str());
+
+    if (this->r12eval()->ebc() == false
+        || this->r12eval()->coupling() == true) {
+      // EBC contribution
+      //D_ebc.print(prepend_spincase(spin,"one-particle density from EBC contribution:").c_str());
+      RefSCMatrix opdm_ebc = onepdm_transformed(spin, true, D_ebc);
+      D_ebc = 0;
+
+      RefSCMatrix opdm_x_ebc = MX_nb_ribs * opdm_ebc;
+      RefSCMatrix opdm_y_ebc = MY_nb_ribs * opdm_ebc;
+      RefSCMatrix opdm_z_ebc = MZ_nb_ribs * opdm_ebc;
+      opdm_ebc = 0;
+      MX_nb_ribs = 0;
+      MY_nb_ribs = 0;
+      MZ_nb_ribs = 0;
+
+      const double dx_ebc = opdm_x_ebc.trace();
+      const double dy_ebc = opdm_y_ebc.trace();
+      const double dz_ebc = opdm_z_ebc.trace();
+      opdm_x_ebc = 0;
+      opdm_y_ebc = 0;
+      opdm_z_ebc = 0;
+
+      dipoles_ebc[0] = dipoles_ebc[0] + dx_ebc;
+      dipoles_ebc[1] = dipoles_ebc[1] + dy_ebc;
+      dipoles_ebc[2] = dipoles_ebc[2] + dz_ebc;
+    }
+
+    // add psi ccsd density to r12 one-particle density
+    if (r12intermediates_->T2_cc_computed()) {
+
+      // Obtain CCSD one-particle density from Psi
+      D_cc[spin] = r12intermediates_->get_1rdm_cc(spin);
+//      D_cc[spin] = r12intermediates_->get_1rdm_cc(spin);
+//      const int nfzc = (spin == Alpha? nfzc1 : nfzc2);
+//      D_cc[spin] = Dccsd.get_subblock(nfzc, norb+nfzc-1, nfzc, norb+nfzc-1);
+      //Dccsd = 0;
+      //D_cc[spin].print(prepend_spincase(spin,"CCSD one-particle density").c_str());
+
+      // test: trace of D_cc = # of electrons
+      ExEnv::out0() << endl << spin_label << " Trace of D_cc: " << scprintf("%12.10f", D_cc[spin].trace()) << endl;
+
+      // test code: compute the ccsd dipole moment
+  #if 1
+//      {
+          const int nfzc = (spin == Alpha? nfzc1 : nfzc2);
+          const int norbs_tot = norb + nfzc;
+          const RefSCDimension M_dim_orbs(new SCDimension(norbs_tot));
+          RefSCMatrix MX_nb_orbs = localkit->matrix(M_dim_orbs,M_dim_orbs);
+          RefSCMatrix MY_nb_orbs = localkit->matrix(M_dim_orbs,M_dim_orbs);
+          RefSCMatrix MZ_nb_orbs = localkit->matrix(M_dim_orbs,M_dim_orbs);
+          MX_nb_orbs.assign(0.0);
+          MY_nb_orbs.assign(0.0);
+          MZ_nb_orbs.assign(0.0);
+          for(int p = 0; p < norbs_tot; p++) {
+            for(int q = 0; q < norbs_tot; q++) {
+              MX_nb_orbs.set_element(q,p,MX_orbs.get_element(p,q));
+              MY_nb_orbs.set_element(q,p,MY_orbs.get_element(p,q));
+              MZ_nb_orbs.set_element(q,p,MZ_orbs.get_element(p,q));
+            }
+          }
+          MX_orbs = 0;
+          MY_orbs = 0;
+          MZ_orbs = 0;
+          //MZ_nb_orbs.print(prepend_spincase(spin,"mu(Z)_nb in orbs").c_str());
+
+        // copy psi ccsd density in MPQC ordering back
+//        RefSCMatrix opdm_cc = onepdm_transformed2(spin, D_cc[spin]);
+        RefSCMatrix opdm_cc = onepdm_transformed2(spin, D_cc[spin]);
+        //opdm_cc.print("CCSD one-particle density matrix in MPQC ordering");
+
+        RefSCMatrix opdm_x_cc = MX_nb_orbs * opdm_cc;
+        RefSCMatrix opdm_y_cc = MY_nb_orbs * opdm_cc;
+        RefSCMatrix opdm_z_cc = MZ_nb_orbs * opdm_cc;
+
+        const double dx_cc = opdm_x_cc.trace();
+        const double dy_cc = opdm_y_cc.trace();
+        const double dz_cc = opdm_z_cc.trace();
+
+        dipoles_ccsd[0] = dipoles_ccsd[0] + dx_cc;
+        dipoles_ccsd[1] = dipoles_ccsd[1] + dy_cc;
+        dipoles_ccsd[2] = dipoles_ccsd[2] + dz_cc;
+
+        dipoles[0] = dipoles[0] + dx_cc;
+        dipoles[1] = dipoles[0] + dy_cc;
+        dipoles[2] = dipoles[0] + dz_cc;
+        // clean
+        opdm_cc = 0;
+        MX_nb_orbs = 0;
+        MY_nb_orbs = 0;
+        MZ_nb_orbs = 0;
+        opdm_x_cc = 0;
+        opdm_y_cc = 0;
+        opdm_z_cc = 0;
+//      }
+  #endif
+
+//      D[spin].accumulate_subblock(D_cc[spin], 0, norb-1, 0, norb-1, 0, 0);
+//      if (debug_ >= DefaultPrintThresholds::allN2)
+//      D[spin].print(prepend_spincase(spin,"CCSD_F12 one-particle density:").c_str());
+    }
+
+//    RefSCMatrix opdm = onepdm_transformed(spin, D[spin]);
+//    // opdm.print("CCSD_F12 one-particle density matrix MPQC ordering");
+//
+//    RefSCMatrix opdm_x = MX_nb_ribs * opdm;
+//    RefSCMatrix opdm_y = MY_nb_ribs * opdm;
+//    RefSCMatrix opdm_z = MZ_nb_ribs * opdm;
+    // clean
+//    MX_nb_ribs = 0;
+//    MY_nb_ribs = 0;
+//    MZ_nb_ribs = 0;
+//    opdm = 0;
+
+//    const double dx = opdm_x.trace();
+//    const double dy = opdm_y.trace();
+//    const double dz = opdm_z.trace();
+//    opdm_x = 0;
+//    opdm_y = 0;
+//    opdm_z = 0;
+
+    dipoles[0] = dipoles[0] + dx_f12 + dx_cabs;
+    dipoles[1] = dipoles[1] + dy_f12 + dy_cabs;
+    dipoles[2] = dipoles[2] + dz_f12 + dz_cabs;
 
   } // end of loop over nspincase1
 
   Ref<Molecule> molecule = orbs1->basis()->molecule();
   int natom = molecule->natom();
   // test
-  molecule->print();
+  //molecule->print();
   double dx_nuc = 0.0, dy_nuc = 0.0, dz_nuc = 0.0;
   for(int i = 0; i < natom; i++) {
     dx_nuc += molecule->r(i,0) * molecule->Z(i);
@@ -6578,6 +7301,24 @@ void MP2R12Energy_Diag::compute_density_diag()
     dipoles[0] = - dipoles[0] * 2 + dx_nuc;
     dipoles[1] = - dipoles[1] * 2 + dy_nuc;
     dipoles[2] = - dipoles[2] * 2 + dz_nuc;
+
+    dipoles_f12[0] = dipoles_f12[0] * 2;
+    dipoles_f12[1] = dipoles_f12[1] * 2;
+    dipoles_f12[2] = dipoles_f12[2] * 2;
+
+    dipoles_cabs[0] = dipoles_cabs[0] * 2;
+    dipoles_cabs[1] = dipoles_cabs[1] * 2;
+    dipoles_cabs[2] = dipoles_cabs[2] * 2;
+
+    dipoles_ebc[0] = dipoles_ebc[0] * 2;
+    dipoles_ebc[1] = dipoles_ebc[1] * 2;
+    dipoles_ebc[2] = dipoles_ebc[2] * 2;
+
+    if (r12intermediates_->T2_cc_computed()) {
+      dipoles_ccsd[0] = dipoles_ccsd[0] * 2;
+      dipoles_ccsd[1] = dipoles_ccsd[1] * 2;
+      dipoles_ccsd[2] = dipoles_ccsd[2] * 2;
+    }
   } else {
       dipoles[0] = - dipoles[0] + dx_nuc;
       dipoles[1] = - dipoles[1] + dy_nuc;
@@ -6585,282 +7326,79 @@ void MP2R12Energy_Diag::compute_density_diag()
   }
   //ExEnv::out0() << endl <<  "dipole x y z: " << dipoles[0] << " " << dipoles[1] << " " << dipoles[2] << endl;
   dipoles.print("dipole moment: mu(X) mu(Y) mu(Z)");
+  dipoles_f12.print("F12 contribution to dipole moment: mu(X) mu(Y) mu(Z)");
+  dipoles_cabs.print("CABS contribution to dipole moment: mu(X) mu(Y) mu(Z)");
+  dipoles_ebc.print("EBC contribution to dipole moment: mu(X) mu(Y) mu(Z)");
+  if (r12intermediates_->T2_cc_computed()) {
+    dipoles_ccsd.print("CCSD contribution to dipole moment: mu(X) mu(Y) mu(Z)");
+  }
 
-
-//  D_ccsdf12_[Alpha] = D[Alpha];
-//  D_ccsdf12_[Beta] = D[Beta];
-
-  // test code
-#if 1
-  // the trace of D should be the same as D_cc (# of electrons)
-  ExEnv::out0() << endl << "Trace of alpha CCSD_F12 one-particle density: " << scprintf("%12.10f", D[Alpha].trace()) << endl;
-  ExEnv::out0() << endl << "Trace of beta CCSD_F12 one-particle density: " << scprintf("%12.10f", D[Beta].trace()) << endl;
-#endif
-
-  ExEnv::out0() << endl << "End of the computation for CCSD_F12 one-particle density" << endl;
+  ExEnv::out0() << endl << "End of the computation for F12 one-particle density" << endl;
   ExEnv::out0() << endl << "**********************************************" << endl;
   return;
 }
 // end of compute_density_diag
 
-
-//void MP2R12Energy_Diag::compute_dipole_ints(const SpinCase1 spin,
-//                                               RefSCMatrix& MX, RefSCMatrix& MY,
-//                                               RefSCMatrix& MZ) {
-////  Ref<OrbitalSpace> space = r12eval_->orbs(spin);
-//  Ref<R12WavefunctionWorld> r12world = r12eval_->r12world();
-//  const Ref<OrbitalSpace> space = r12world->ribs_space();
-//
-//  const Ref<GaussianBasisSet> bs = space->basis();
-//  Ref<Integral> localints = space->integral()->clone();
-//  localints->set_basis(bs,bs);
-//
-//  Ref<OneBodyInt> m_ints = localints->dipole(0);
-//
-//  // form AO moment matrices
-//  RefSCMatrix vec_t = space->coefs().t();
-//  RefSCMatrix vec = space->coefs();
-//  RefSCDimension aodim1 = vec_t.coldim();
-//  RefSCDimension aodim2 = vec.rowdim();
-//  Ref<SCMatrixKit> aokit = bs->so_matrixkit();
-//
-//  RefSCMatrix mx_ao(aodim1, aodim2, aokit);
-//  RefSCMatrix my_ao(aodim1, aodim2, aokit);
-//  RefSCMatrix mz_ao(aodim1, aodim2, aokit);
-//
-//  mx_ao.assign(0.0);
-//  my_ao.assign(0.0);
-//  mz_ao.assign(0.0);
-//
-//  const int nshell = bs->nshell();
-//  ExEnv::out0() << endl << "number of shells: " << nshell << endl;
-//  for(int sh1 = 0; sh1 < nshell; sh1++) {
-//    int bf1_offset = bs->shell_to_function(sh1);
-//    int nbf1 = bs->shell(sh1).nfunction();
-//
-//    for(int sh2 = 0; sh2 <= sh1; sh2++) {
-//      int bf2_offset = bs->shell_to_function(sh2);
-//      int nbf2 = bs->shell(sh2).nfunction();
-//
-//      m_ints->compute_shell(sh1,sh2);
-//      const double *m_ints_ptr = m_ints->buffer();
-//
-//      int bf1_index = bf1_offset;
-//      for(int bf1 = 0; bf1 < nbf1; bf1++, bf1_index++, m_ints_ptr+=3*nbf2) {
-//        int bf2_index = bf2_offset;
-//
-//        const double *ptr = m_ints_ptr;
-//        for(int bf2 = 0; bf2 < nbf2; bf2++, bf2_index++) {
-//
-//          mx_ao.set_element(bf1_index, bf2_index, *(ptr++));
-//          my_ao.set_element(bf1_index, bf2_index, *(ptr++));
-//          mz_ao.set_element(bf1_index, bf2_index, *(ptr++));
-//
-//        }
-//      }
-//    }
-//    // end of loop over sh2
-//  }
-//  // end of loop over sh1
-//
-//  // and clean up a bit
-//  m_ints = 0;
-//
-//  // Symmetrize matrices
-//  const int nbasis = bs->nbasis();
-//  for(int bf1 = 0; bf1 < nbasis; bf1++) {
-//    for(int bf2 = 0; bf2 <= bf1; bf2++) {
-//      mx_ao(bf2,bf1) = mx_ao(bf1,bf2);
-//      my_ao(bf2,bf1) = my_ao(bf1,bf2);
-//      mz_ao(bf2,bf1) = mz_ao(bf1,bf2);
-//    }
-//  }
-//
-//  //mz_ao.print("mu(Z) in AO basis");
-//
-//  // finally, transform
-////  RefSCMatrix mx_mo, my_mo, mz_mo;
-//  MX = vec_t * mx_ao * vec;
-//  MY = vec_t * my_ao * vec;
-//  MZ = vec_t * mz_ao * vec;
-//
-//#if 0
-//  // transform MZ from CC to QT ordering
-//  Ref<R12WavefunctionWorld> r12world = r12eval_->r12world();
-//
-//  const Ref<OrbitalSpace>& occ = r12eval()->occ_act(spin);
-//  const Ref<OrbitalSpace>& vir = r12eval()->vir(spin);
-//  const Ref<OrbitalSpace>& orbs = r12eval()->orbs(spin);
-//  const Ref<OrbitalSpace>& cabs = r12world->cabs_space(spin);
-//
-//  const std::vector<unsigned int>& occpi = occ->block_sizes();
-//  const std::vector<unsigned int>& uoccpi = vir->block_sizes();
-//  const std::vector<unsigned int>& orbspi = orbs->block_sizes();
-//  const std::vector<unsigned int>& cabspi = cabs->block_sizes();
-//  const int nirreps = occ->nblocks();
-//
-//  const unsigned int nocc = occ->rank();
-//  const unsigned int norbs = orbs->rank();
-//  ExEnv::out0() << endl << "In dipole function: nirreps = " << nirreps << " norbs = " << norbs << endl;
-//
-//  std::vector<unsigned int> occioff(nirreps);
-//  std::vector<unsigned int> uoccioff(nirreps);
-//  std::vector<unsigned int> orbsoff(nirreps);
-// // std::vector<unsigned int> cabsoff(nirreps);
-//
-//  occioff[0] = 0;
-//  uoccioff[0] = 0;
-//  orbsoff[0] = 0;
-// // cabsoff[0] = 0;
-//
-//  for (unsigned int irrep = 1; irrep < nirreps; ++irrep) {
-//    occioff[irrep] = occioff[irrep-1] + occpi[irrep-1];
-//    uoccioff[irrep] = uoccioff[irrep-1] + uoccpi[irrep-1];
-//    orbsoff[irrep] = orbsoff[irrep-1] + orbspi[irrep-1];
-//    //cabsoff[irrep] = cabsoff[irrep-1] + cabsoff[irrep-1];
-////    ExEnv::out0() << endl << "irrep: " << irrep << "  occpi: " << occpi[irrep]
-////                                                << "  uoccpi: " << uoccpi[irrep]
-////                                                << "  orbspi: " << orbspi[irrep] << endl;
-//  }
-//
-//  const Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
-//  const RefSCDimension dim(new SCDimension(norbs));
-//  RefSCMatrix MZ_mpqc = localkit->matrix(dim, dim);
-//  MZ_mpqc.assign(0.0);
-//  MZ_mpqc = vec_t * mz_ao * vec;
-//  //MZ_mpqc.print(prepend_spincase(spin,"mpqc ordering mu(Z)").c_str());
-//  MZ = localkit->matrix(dim, dim);
-//  MZ.assign(0.0);
-//
-//  for (unsigned int h = 0; h < nirreps; ++h) {
-//    const unsigned int irrep_offset = orbsoff[h];
-//    const unsigned int i_offset = occioff[h];
-//    const unsigned int j_offset = i_offset;
-//
-//    for (int i = 0; i < occpi[h]; ++i) {
-//      for (int j = 0; j <= i; ++j) {
-//        //ExEnv::out0() << endl << h << " " << i+irrep_offset << " " << j+irrep_offset << endl;
-//        const double MZ_ij = MZ_mpqc.get_element(i+irrep_offset,j+irrep_offset);
-//        MZ.set_element(i+i_offset, j+j_offset, MZ_ij);
-//        //ExEnv::out0() << " MZ_ij = " << MZ_ij << endl;
-//      }
-//    }
-//  }
-//  //opdm_mat.print(prepend_spincase(spin,"MPQC ccsd opdm ij").c_str());
-//
-//  int irrep_offset = 0;
-//  int nmopi = 0;
-//  for (unsigned int h = 0; h < nirreps; ++h) {
-//    //const unsigned int irrep_offset = orbsoff[h]+occioff[h+1];
-//    irrep_offset = nmopi + occpi[h];
-//    const unsigned int a_offset = nocc + uoccioff[h];
-//    const unsigned int b_offset = a_offset;
-//
-//    for (int a = 0; a < uoccpi[h]; ++a) {
-//      for (int b = 0; b <= a; ++b) {
-//        //ExEnv::out0() << endl << h << " " << a+a_offset << " " << b+b_offset  << endl;
-//        const double MZ_ab = MZ_mpqc.get_element(a+irrep_offset,b+irrep_offset);
-//        MZ.set_element(a+a_offset, b+b_offset, MZ_ab);
-//        //ExEnv::out0() << " irrep_offset " << irrep_offset<< " MZ_ab = " << MZ_ab << endl;
-//      }
-//    }
-//    nmopi += orbspi[h];
-//    //opdm_mat.print(prepend_spincase(spin,"MPQC ccsd opdm ab").c_str());
-//  }
-//
-//  for (unsigned int h = 0; h < nirreps; ++h) {
-//    const unsigned int irrep_offset_a = orbsoff[h]+occpi[h];
-//    const unsigned int irrep_offset_i = orbsoff[h];
-//    const unsigned int a_offset = nocc + uoccioff[h];
-//    const unsigned int i_offset = occioff[h];
-//
-//    for (int a = 0; a < uoccpi[h]; ++a) {
-//      for (int i = 0; i < occpi[h]; ++i) {
-//        const double MZ_ai = MZ_mpqc.get_element(a+irrep_offset_a,i+irrep_offset_i);
-//        MZ.set_element(a+a_offset, i+i_offset, MZ_ai);
-//        //ExEnv::out0() << endl << h << " " << a+mpqc_ab_offset << " " << i+mpqc_ij_offset << " Dai = " << Dai << endl;
-//      }
-//    }
-//    //opdm_mat.print(prepend_spincase(spin,"h ordm transfromed").c_str());
-//
-//  }
-//
-//
-//  // Symmetrize matrices
-//  for(int p = 0; p < norbs; p++) {
-//    for(int q = 0; q < p; q++) {
-//      MZ.set_element(q,p,MZ_mpqc.get_element(p,q));
-//      //ExEnv::out0() << endl << "p q Dpq: "<< p << " " << q << " " << opdm_mat.get_element(q,p) << endl;
-//    }
-//  }
-//
-//  MZ_mpqc = 0;
-//#endif
-//
-//  // and clean up a bit
-//  mx_ao = 0;
-//  my_ao = 0;
-//  mz_ao = 0;
-//
-////  if (debug_ > 1) {
-////    MX.print(prepend_spincase(spin,"mu(X)").c_str());
-////    MY.print(prepend_spincase(spin,"mu(Y)").c_str());
-////    MZ.print(prepend_spincase(spin,"mu(Z)").c_str());
-////  }
-//}
-//// end of compute_dipole_ints
-
 // Transform the density matrix in ribs space (ordered in occ, uocc, cabs)
 //                        to the MPQC ordering (ordered in irreps)
-
-RefSCMatrix MP2R12Energy_Diag::onepdm_transformed(const SpinCase1& spin,
+RefSCMatrix MP2R12Energy_Diag::onepdm_transformed(const SpinCase1& spin, const bool frozen_core,
                                                   const RefSCMatrix& D) {
 
   Ref<R12WavefunctionWorld> r12world = r12eval_->r12world();
 
-  const Ref<OrbitalSpace>& occ = r12eval()->occ(spin);
+  Ref<OrbitalSpace> occ;
+  if (frozen_core == true) {
+    occ = r12eval()->occ_act(spin);
+  } else {
+      occ = r12eval()->occ(spin);
+  }
   const Ref<OrbitalSpace>& vir = r12eval()->vir(spin);
-  const Ref<OrbitalSpace>& orbs = r12eval()->orbs(spin);
+//  const Ref<OrbitalSpace>& orbs = r12eval()->orbs(spin);
   const Ref<OrbitalSpace>& cabs = r12world->cabs_space(spin);
   const Ref<OrbitalSpace> ribs = r12world->ribs_space();
 
   const std::vector<unsigned int>& occpi = occ->block_sizes();
-  const std::vector<unsigned int>& uoccpi = vir->block_sizes();
-  const std::vector<unsigned int>& orbspi = orbs->block_sizes();
+  const std::vector<unsigned int>& virpi = vir->block_sizes();
   const std::vector<unsigned int>& cabspi = cabs->block_sizes();
-  const std::vector<unsigned int>& ribspi = ribs->block_sizes();
+//  const std::vector<unsigned int>& orbspi = orbs->block_sizes();
+//  const std::vector<unsigned int>& ribspi = ribs->block_sizes();
 
   const int nirreps = occ->nblocks();
   const int nocc = occ->rank();
-  const int norbs = orbs->rank();
+  const int nvir = vir->rank();
   const int ncabs = cabs->rank();
-  const int nribs = ribs->rank();
+
+//  const int norbs = orbs->rank();
+//  const int nribs = ribs->rank();
+  const int norbs = nocc + nvir;
+  const int nribs = norbs + ncabs;
+
 //  ExEnv::out0() << endl << "nocc: " << nocc << endl
 //                        << "norbs: " << norbs << endl
 //                        << "ncabs: " << ncabs << endl;
 
   std::vector<unsigned int> occoff(nirreps);
-  std::vector<unsigned int> uoccoff(nirreps);
-  //std::vector<unsigned int> orbsoff(nirreps);
+  std::vector<unsigned int> viroff(nirreps);
+  std::vector<unsigned int> orbsoff(nirreps);
   std::vector<unsigned int> cabsoff(nirreps);
   std::vector<unsigned int> ribsoff(nirreps);
 
   occoff[0] = 0;
-  uoccoff[0] = 0;
-  //orbsoff[0] = 0;
+  viroff[0] = 0;
+  orbsoff[0] = 0;
   cabsoff[0] = 0;
   ribsoff[0] = 0;
 
-//  ExEnv::out0() << endl << "  occpi uoccpi cabspi  ribspi:" << endl
-//                        << 0 << "  " << occpi[0] << "  " << uoccpi[0] << "  " << cabspi[0] << "   "<< ribspi[0] <<  endl;
+//  ExEnv::out0() << endl << "irrep  occ_actpi virpi cabspi:" << endl
+//                        << 0 << "  " << occ_actpi[0] << "  " << virpi[0] << "  " << cabspi[0] <<  endl;
   for (unsigned int irrep = 1; irrep < nirreps; ++irrep) {
     occoff[irrep] = occoff[irrep-1] + occpi[irrep-1];
-    uoccoff[irrep] = uoccoff[irrep-1] + uoccpi[irrep-1];
-    //orbsoff[irrep] = orbsoff[irrep-1] + orbspi[irrep-1];
+    viroff[irrep] = viroff[irrep-1] + virpi[irrep-1];
     cabsoff[irrep] = cabsoff[irrep-1] + cabspi[irrep-1];
-    ribsoff[irrep] = ribsoff[irrep-1] + ribspi[irrep-1];
-//    ExEnv::out0() << irrep << "   " << occpi[irrep] << "  " << uoccpi[irrep] << "  " << cabspi[irrep]
-//                                                                  << "   " << ribspi[irrep]  << endl;
+//    orbsoff[irrep] = orbsoff[irrep-1] + orbspi[irrep-1];
+//    ribsoff[irrep] = ribsoff[irrep-1] + ribspi[irrep-1];
+    ribsoff[irrep] = occoff[irrep] + viroff[irrep] + cabsoff[irrep];
+//    ExEnv::out0() << irrep << "   " << occ_actpi[irrep] << "  " << virpi[irrep] << "  " << cabspi[irrep] << endl;
   }
 
   const RefSCDimension opdm_dim(new SCDimension(nribs));
@@ -6872,14 +7410,14 @@ RefSCMatrix MP2R12Energy_Diag::onepdm_transformed(const SpinCase1& spin,
     // offset for D matrix in occ, uocc, cabs ordering
     const unsigned int i_offset = occoff[h];
     const unsigned int j_offset = i_offset;
-    const unsigned int a_offset = nocc + uoccoff[h];
+    const unsigned int a_offset = nocc + viroff[h];
     const unsigned int b_offset = a_offset;
     const unsigned int ap_offset = norbs + cabsoff[h];
     const unsigned int bp_offset = ap_offset;
 
     const int mpqc_ij_offset = ribsoff[h];
     const int mpqc_ab_offset = ribsoff[h] + occpi[h];
-    const int mpqc_apbp_offset = ribsoff[h] + occpi[h] + uoccpi[h];
+    const int mpqc_apbp_offset = ribsoff[h] + occpi[h] + virpi[h];
 
     for (int i = 0; i < occpi[h]; ++i) {
       for (int j = 0; j <= i; ++j) {
@@ -6889,8 +7427,7 @@ RefSCMatrix MP2R12Energy_Diag::onepdm_transformed(const SpinCase1& spin,
     }
     //opdm_mat.print(prepend_spincase(spin,"MPQC ccsdf12 opdm ij").c_str());
 
-
-    for (int a = 0; a < uoccpi[h]; ++a) {
+    for (int a = 0; a < virpi[h]; ++a) {
       for (int b = 0; b <= a; ++b) {
         const double Dab = D.get_element(a+a_offset,b+b_offset);
         opdm_mat.set_element(a+mpqc_ab_offset, b+mpqc_ab_offset, Dab);
@@ -6898,7 +7435,7 @@ RefSCMatrix MP2R12Energy_Diag::onepdm_transformed(const SpinCase1& spin,
     }
     //opdm_mat.print(prepend_spincase(spin,"MPQC ccsdf12 opdm ab").c_str());
 
-    for (int a = 0; a < uoccpi[h]; ++a) {
+    for (int a = 0; a < virpi[h]; ++a) {
       for (int i = 0; i < occpi[h]; ++i) {
         const double Dai = D.get_element(a+a_offset,i+i_offset);
         opdm_mat.set_element(a+mpqc_ab_offset, i+mpqc_ij_offset, Dai);
@@ -6917,7 +7454,15 @@ RefSCMatrix MP2R12Energy_Diag::onepdm_transformed(const SpinCase1& spin,
     //opdm_mat.print(prepend_spincase(spin,"MPQC ccsd opdm a'b'").c_str());
 
     for (int ap = 0; ap < cabspi[h]; ++ap) {
-      for (int a = 0; a < uoccpi[h]; ++a) {
+      for (int i = 0; i < occpi[h]; ++i) {
+        const double Dapi = D.get_element(ap+ap_offset,i+i_offset);
+        opdm_mat.set_element(ap+mpqc_apbp_offset, i+mpqc_ij_offset, Dapi);
+        //ExEnv::out0() << endl << h << " " << ap+mpqc_apbp_offset << " " << i+mpqc_ij_offset << " Da'i = " << Dapi << endl;
+      }
+    }
+
+    for (int ap = 0; ap < cabspi[h]; ++ap) {
+      for (int a = 0; a < virpi[h]; ++a) {
         const double Dapa = D.get_element(ap+ap_offset,a+a_offset);
         opdm_mat.set_element(ap+mpqc_apbp_offset, a+mpqc_ab_offset, Dapa);
         //ExEnv::out0() << endl << h << " " << ap+mpqc_apbp_offset << " " << a+mpqc_ab_offset << " Da'a = " << Dapa << endl;
@@ -6943,21 +7488,22 @@ RefSCMatrix MP2R12Energy_Diag::onepdm_transformed(const SpinCase1& spin,
 }
 // end of onepdm_transformed
 
-
 RefSCMatrix MP2R12Energy_Diag::onepdm_transformed2(const SpinCase1& spin,
                                                    const RefSCMatrix& D) {
 
+//  const Ref<OrbitalSpace>& occ = r12eval()->occ_act(spin);
   const Ref<OrbitalSpace>& occ = r12eval()->occ(spin);
   const Ref<OrbitalSpace>& vir = r12eval()->vir(spin);
   const Ref<OrbitalSpace>& orbs = r12eval()->orbs(spin);
 
   const std::vector<unsigned int>& occpi = occ->block_sizes();
   const std::vector<unsigned int>& uoccpi = vir->block_sizes();
-  const std::vector<unsigned int>& orbspi = orbs->block_sizes();
+//  const std::vector<unsigned int>& orbspi = orbs->block_sizes();
 
   const int nirreps = occ->nblocks();
   const int nocc = occ->rank();
-  const int norbs = orbs->rank();
+  const int nvir = vir->rank();
+  const int norbs = nocc + nvir;
 
   std::vector<unsigned int> occoff(nirreps);
   std::vector<unsigned int> uoccoff(nirreps);
@@ -6970,7 +7516,7 @@ RefSCMatrix MP2R12Energy_Diag::onepdm_transformed2(const SpinCase1& spin,
   for (unsigned int irrep = 1; irrep < nirreps; ++irrep) {
     occoff[irrep] = occoff[irrep-1] + occpi[irrep-1];
     uoccoff[irrep] = uoccoff[irrep-1] + uoccpi[irrep-1];
-    orbsoff[irrep] = orbsoff[irrep-1] + orbspi[irrep-1];
+    orbsoff[irrep] = occoff[irrep] + uoccoff[irrep];
   }
 
   const RefSCDimension opdm_dim(new SCDimension(norbs));

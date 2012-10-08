@@ -430,6 +430,13 @@ void PsiCC_PT2R12::compute_ept2r12() {
   } // end of diag == false clause
 
   // compute (2)_R12 energy as MP2-R12 energy with dressed V intermediate
+
+  // include cabs singles energy?
+  cabs_singles_energy_ = 0.0;
+  if (cabs_singles_) {
+    cabs_singles_energy_ = r12eval()->emp2_cabs_singles(T1[Alpha],T1[Beta]);
+  }
+
   Ref<MP2R12Energy> r12energy = construct_MP2R12Energy(r12intermediates,
                                                        false,
                                                        debug(),
@@ -443,12 +450,6 @@ void PsiCC_PT2R12::compute_ept2r12() {
       continue;
 
     E2[s]=r12energy->ef12tot(spincase2);
-  }
-
-  // include cabs singles energy?
-  cabs_singles_energy_ = 0.0;
-  if (cabs_singles_) {
-    cabs_singles_energy_ = r12eval()->emp2_cabs_singles(T1[Alpha],T1[Beta]);
   }
 
   double e2 = cabs_singles_energy();

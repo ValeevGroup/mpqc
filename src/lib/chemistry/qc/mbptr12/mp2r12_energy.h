@@ -330,11 +330,10 @@ class MP2R12Energy_Diag : public MP2R12Energy
                            const std::vector< Ref<OrbitalSpace> >& v_orbs2_ab,
                            double* const RT2_alpha, double* const RT2_beta);
 
-//    // compute dipole integrals
-//    void compute_dipole_ints(const SpinCase1 spin,
-//                                RefSCMatrix& MX, RefSCMatrix& MY, RefSCMatrix& MZ);
+    RefSCMatrix compute_D_CABS(SpinCase1 spin);
+    RefSCMatrix compute_D_CABS_test(SpinCase1 spin);
     // transform the one-particle density matrix into the MPQC ordering
-    RefSCMatrix onepdm_transformed(const SpinCase1& spin,const RefSCMatrix& D);
+    RefSCMatrix onepdm_transformed(const SpinCase1& spin, const bool frozen_core, const RefSCMatrix& D);
     // test function for computing CCSD dipole moment
     RefSCMatrix onepdm_transformed2(const SpinCase1& spin,const RefSCMatrix& D);
   public:

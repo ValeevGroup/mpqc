@@ -46,7 +46,7 @@ namespace sc {
    * @param x unknown
    * @param preconditioner
    * @param convergence_target
-   * @return
+   * @return the 2-norm of the residual, a(x) - b, divided by the number of elements in the residual.
    */
   template <typename F>
   double linsolv_conjugate_gradient(F& a,
@@ -78,11 +78,20 @@ namespace sc {
     const double precond_min = findmin_op->result().at(0).value;
     const double precond_max = findmax_op->result().at(0).value;
     const double cond_number = precond_max / precond_min;
-    if (convergence_target < 0.0) convergence_target = 1e-15 * cond_number; // estimate of how tightly the system can be converged
+    // if convergence target is given, estimate of how tightly the system can be converged
+    if (convergence_target < 0.0) {
+      convergence_target = 1e-15 * cond_number;
+    }
+    else { // else warn if the given system is not sufficiently well conditioned
+      if (convergence_target < 1e-15 * cond_number)
+        ExEnv::out0() << indent << "WARNING: linsolv_conjugate_gradient conv. target (" << convergence_target
+                      << ") may be too low for 64-bit precision" << std::endl;
+    }
 
     bool converged = false;
     const unsigned int max_niter = 500;
     double rnorm2 = 0.0;
+    const unsigned int rhs_size = b.nrow() * b.ncol();
 
     // starting guess: x_0 = D^-1 . b
     Ref<SCElementOp2> multiply_op = new SCElementDestructiveProduct;
@@ -127,7 +136,7 @@ namespace sc {
 
       Ref<SCElementKNorm> norm2_op = new SCElementKNorm(2);
       RR_i.element_op(norm2_op);
-      const double r_ip1_norm = norm2_op->result();
+      const double r_ip1_norm = norm2_op->result() / rhs_size;
       if (r_ip1_norm < convergence_target) {
         converged = true;
         rnorm2 = r_ip1_norm;

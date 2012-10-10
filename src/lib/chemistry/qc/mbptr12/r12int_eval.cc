@@ -2531,8 +2531,14 @@ R12IntEval::bc() const {
   if (sdptr.nonnull()) {
     if (!sdptr->obwfn()->spin_unrestricted() && sdptr->spin_polarized())
       return false; // ROHF
-    else
-      return true; // RHF, UHF
+    else {
+      Ref<GaussianBasisSet> obs = sdptr->occ_sb(Alpha)->basis();
+      Ref<GaussianBasisSet> vbs = sdptr->uocc_sb(Alpha)->basis();
+      if (obs->equiv(vbs))
+        return true; // OBS=VBS RHF, UHF
+      else
+        return false; // VBS != OBS
+    }
   }
   return false; // general reference
 }

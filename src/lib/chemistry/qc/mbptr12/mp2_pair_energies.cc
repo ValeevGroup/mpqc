@@ -37,6 +37,16 @@
 using namespace std;
 using namespace sc;
 
+namespace {
+  std::vector<double> to_vector(const RefDiagSCMatrix& src) {
+    const int n = src.n();
+    std::vector<double> result(n);
+    for(int i=0; i<n; ++i)
+      result[i] = src(i);
+    return result;
+  }
+}
+
 void
 R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
                                        SpinCase2 S,
@@ -96,6 +106,10 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
   const RefDiagSCMatrix evals2 = space2->evals();
   const RefDiagSCMatrix evals3 = space3->evals();
   const RefDiagSCMatrix evals4 = space4->evals();
+  const std::vector<double> evals1_vec = to_vector(evals1);
+  const std::vector<double> evals2_vec = to_vector(evals2);
+  const std::vector<double> evals3_vec = to_vector(evals3);
+  const std::vector<double> evals4_vec = to_vector(evals4);
 
   // Using spinorbital iterators means I don't take into account perm symmetry
   // More efficient algorithm will require generic code
@@ -151,7 +165,7 @@ R12IntEval::compute_mp2_pair_energies_(RefSCVector& emp2pair,
         const int ab = aa*trank4+bb;
 
         const double ERI_iajb = ij_buf_eri[ab];
-        const double denom = 1.0/(evals1(i) + evals3(j) - evals2(a) - evals4(b));
+        const double denom = 1.0/(evals1_vec[i] + evals3_vec[j] - evals2_vec[a] - evals4_vec[b]);
 
         if (S == AlphaBeta) {
           emp2 += ERI_iajb*ERI_iajb*denom;

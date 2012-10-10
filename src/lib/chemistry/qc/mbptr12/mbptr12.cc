@@ -97,7 +97,7 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
       );
   Ref<OrbitalSpace> vbs;
   if (bs_vir.nonnull()) {
-    int nlindep_vir;
+    int nlindep_vir = -1; // will compute the number of linear dependencies automatically
     vbs = orthogonalize("e(sym)", "VBS", bs_vir,
                         integral(),
                         this->orthog_method(), this->lindep_tol(),
@@ -181,6 +181,15 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   cabs_singles_energy_ = 0.0;
 
   this->set_desired_value_accuracy(desired_value_accuracy());
+
+  if (bs_vir.nonnull()) { // create AO space for VBS basis, if needed
+    Ref<OrbitalSpaceRegistry> idxreg = this->r12world()->world()->tfactory()->orbital_registry();
+    Ref<AOSpaceRegistry> aoidxreg = this->r12world()->world()->tfactory()->ao_registry();
+    Ref<Integral> localints = this->r12world()->refwfn()->integral()->clone();
+    Ref<OrbitalSpace> nu = new AtomicOrbitalSpace("nu", "VBS(AO)", bs_vir, localints);
+    idxreg->add(make_keyspace_pair(nu));
+    aoidxreg->add(nu->basis(),nu);
+  }
 }
 
 MBPT2_R12::~MBPT2_R12()

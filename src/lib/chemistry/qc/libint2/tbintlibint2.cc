@@ -240,7 +240,7 @@ TwoBodyThreeCenterIntLibint2::TwoBodyThreeCenterIntLibint2(Integral*integral,
     typedef EriLibint2 Int2e;
     typedef BoundsLibint2<Int2e> Bounds;
     Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
-    int2elibint2_ = create_int2e<EriLibint2>(integral,b1,b2,b3,b4,storage,params);
+    int2elibint2_ = create_int2e<Int2e>(integral,b1,b2,b3,b4,storage,params);
     int2elibint2_->bounds(bounds);
     break;
   }
@@ -249,7 +249,7 @@ TwoBodyThreeCenterIntLibint2::TwoBodyThreeCenterIntLibint2(Integral*integral,
     typedef G12NCLibint2 Int2e;
     typedef BoundsLibint2<Int2e> Bounds;
     Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
-    int2elibint2_ = create_int2e<G12NCLibint2>(integral,b1,b2,b3,b4,storage,params);
+    int2elibint2_ = create_int2e<Int2e>(integral,b1,b2,b3,b4,storage,params);
     int2elibint2_->bounds(bounds);
     break;
   }
@@ -324,20 +324,12 @@ TwoBodyTwoCenterIntLibint2::TwoBodyTwoCenterIntLibint2(Integral*integral,
 #if LIBINT2_SUPPORT_ERI
   case TwoBodyOperSet::ERI:
   {
-    typedef EriLibint2 Int2e;
-    typedef BoundsLibint2<Int2e> Bounds;
-    Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
     int2elibint2_ = create_int2e<EriLibint2>(integral,b1,b2,b3,b4,storage,params);
-    int2elibint2_->bounds(bounds);
     break;
   }
   case TwoBodyOperSet::G12NC:
   {
-    typedef G12NCLibint2 Int2e;
-    typedef BoundsLibint2<Int2e> Bounds;
-    Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
     int2elibint2_ = create_int2e<G12NCLibint2>(integral,b1,b2,b3,b4,storage,params);
-    int2elibint2_->bounds(bounds);
     break;
   }
 #endif
@@ -384,8 +376,8 @@ TwoBodyTwoCenterIntLibint2::compute_shell(int is, int ks)
 int
 TwoBodyTwoCenterIntLibint2::log2_shell_bound(int is, int ks)
 {
-  const int bound = int2elibint2_->log2_bound(is,0,ks,0);
-  return bound;
+  // no computational savings from Cauchy bounds here!
+  return 256; // 2^256 \approx 10^26
 }
 
 void

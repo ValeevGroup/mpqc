@@ -36,6 +36,7 @@
 #include <util/state/stateout.h>
 #include <util/group/message.h>
 #include <math/scmat/blkiter.h>
+#include <math/scmat/predicate.h>
 
 namespace sc {
 
@@ -85,23 +86,6 @@ struct SCElementBinaryPredicateAdapter : public std::binary_function<SCElement, 
     return BinaryPredicate()(a.value,b.value);
   }
 };
-
-/**
- * useful comparison functions
- */
-template <class T = double>
-struct abs_less : public std::binary_function<T, T, bool> {
-  bool operator()(const T& a, const T& b) {
-    return std::less<T>()(std::abs(a),std::abs(b));
-  }
-};
-template <class T = double>
-struct abs_greater : public std::binary_function<T, T, bool> {
-  bool operator()(const T& a, const T& b) {
-    return std::greater<T>()(std::abs(a),std::abs(b));
-  }
-};
-
 
 /** Objects of class SCElementOp are used to perform operations on the
     elements of matrices.  When the SCElementOp object is given to the

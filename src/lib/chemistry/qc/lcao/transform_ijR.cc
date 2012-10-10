@@ -247,8 +247,10 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute() {
 
   // get scratch storage
   double** pq_ints = new double*[num_te_types];
-  for(int te_type=0; te_type<num_te_types; te_type++)
-    pq_ints[te_type] = new double[nbasis1 * nbasis2 * nfuncmax3];
+  const size_t pq_ints_size = nbasis1 * nbasis2 * nfuncmax3;
+  for(int te_type=0; te_type<num_te_types; te_type++) {
+    pq_ints[te_type] = new double[pq_ints_size];
+  }
 
   double* iq_ints;
   double* pi;
@@ -288,6 +290,10 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute() {
     const int s3offset = b3->shell_to_function(s3);
     const blasint nf3 = b3->shell(s3).nfunction();
     const blasint nb2f3 = nf3 * nbasis2;
+    const blasint nb1nb2f3 = nbasis1 * nb2f3;
+    for(int te_type=0; te_type < num_te_types; ++te_type) {
+      memset(pq_ints[te_type], 0, nb1nb2f3*sizeof(double));
+    }
 
     // compute the entire (p1 p2| block
     for (int s1 = 0; s1 < b1->nshell(); ++s1) {
@@ -295,12 +301,26 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute() {
       const int nf1 = b1->shell(s1).nfunction();
 
       for (int s2 = 0; s2 < b2->nshell(); ++s2) {
+
         const int s2offset = b2->shell_to_function(s2);
         const int nf2 = b2->shell(s2).nfunction();
         const int nf23 = nf2 * nf3;
 
+        // skip the insignificant integrals
+        const double log2_cauchy_bound = inteval->log2_shell_bound(s1, s2, s3);
+        if (log2_cauchy_bound < this->log2_epsilon()) {
+          continue;
+        }
+
         // compute shell triplet
         inteval->compute_shell(s1, s2, s3);
+
+        // compare the actual bound with the estimated bound
+        if (0) {
+          const double actual_max = * std::max_element(buffer[0], buffer[0]+nf23*nf1, abs_less<double>());
+          ExEnv::outn() << scprintf("s1=%d s2=%d s3=%d log2_cauchy=%10.5e log2_actual_max=%10.5e\n",
+                                    s1, s2, s3, log2_cauchy_bound, log(abs(actual_max))/log(2.0));
+        }
 
         // copy buffer into pq_ints
         // for each f1 copy s2 s3 block to ((f1+s1offset) * nbasis2 + s2offset) * nf3

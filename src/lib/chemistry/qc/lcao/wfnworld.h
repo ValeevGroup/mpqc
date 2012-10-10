@@ -49,7 +49,7 @@ public:
     /** KeyVal constructor uses the following keywords
         <dl>
 
-    <dt><tt>wfn</tt><dd> This specifies the Wavefunction that is in charge of the World. There is no default.
+    <dt><tt>wfn</tt><dd> This specifies the Wavefunction that is in charge of the World ("Czar"). There is no default.
 
     <dt><tt>store_ints</tt><dd> This specifies how to store transformed MO integrals.
     Valid values are:
@@ -107,6 +107,9 @@ public:
     <dt><tt>dynamic</tt><dd> This boolean keyword specifies whether dynamic load balancing
     is used by MO integrals transforms. The default is false.
 
+    <dt><tt>ints_precision</tt><dd> This real keyword specifies the precision of MO integrals. Currently, this keyword specifies the precision of AO integrals.
+                                    The default is to determine the desired precision heuristically according to
+                                    the desired accuracy of the Czar (the current heuristics set the precision to 1e-15 regardless of the Czar accuracy).
 
         </dl>
     */
@@ -148,6 +151,7 @@ public:
   int debug_level() const { return debug_; };
   StoreMethod::type ints_method() const { return ints_method_; };
   const std::string& ints_file() const;
+  double ints_precision() const { return ints_precision_; }
 
   /// Returns the MOIntsTransformFactory object
   const Ref<MOIntsTransformFactory>& tfactory() const { return tfactory_; };
@@ -180,6 +184,7 @@ private:
   int debug_;
   StoreMethod::type ints_method_;
   std::string ints_file_;
+  double ints_precision_;
 
   /// The transform factory
   Ref<MOIntsTransformFactory> tfactory_;

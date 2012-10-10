@@ -70,7 +70,8 @@ TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(const std::string& name, const Re
   dynamic_(factory()->dynamic()),
   ints_method_(factory()->ints_method()),
   file_prefix_(factory()->file_prefix()),
-  max_memory_(ConsumableResources::get_default_instance()->memory())
+  max_memory_(ConsumableResources::get_default_instance()->memory()),
+  log2_epsilon_(factory_->log2_precision())
 {
   // all spaces must be given, even for partial transforms
   assert(space1_.nonnull());
@@ -98,6 +99,7 @@ TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(StateIn& si) : SavableState(si)
   int ints_method; si.get(ints_method); ints_method_ = static_cast<MOIntsTransform::StoreMethod::type>(ints_method);
   si.get(file_prefix_);
   si.get(restart_orbital_);
+  si.get(log2_epsilon_);
 }
 
 TwoBodyMOIntsTransform::~TwoBodyMOIntsTransform()
@@ -121,6 +123,7 @@ TwoBodyMOIntsTransform::save_data_state(StateOut& so)
   so.put((int)ints_method_);
   so.put(file_prefix_);
   so.put(restart_orbital_);
+  so.put(log2_epsilon_);
 }
 
 void
@@ -183,6 +186,12 @@ TwoBodyMOIntsTransform::restart_orbital() const {
   return restart_orbital_;
 }
 
+void
+TwoBodyMOIntsTransform::set_log2_epsilon(double prec) {
+  if (prec < this->log2_epsilon_)
+    this->obsolete();
+  log2_epsilon_ = prec;
+}
 
 ///////////////////////////////////////////////////////
 // Compute the batchsize for the transformation
@@ -445,7 +454,8 @@ TwoBodyThreeCenterMOIntsTransform::TwoBodyThreeCenterMOIntsTransform(const std::
     space1_(space1), space2_(space2), space3_(space3),
     ints_method_(factory_->ints_method()),
     file_prefix_(factory_->file_prefix()),
-    restart_orbital_(0)
+    restart_orbital_(0),
+    log2_epsilon_(factory_->log2_precision())
   {
   }
 
@@ -455,6 +465,7 @@ TwoBodyThreeCenterMOIntsTransform::TwoBodyThreeCenterMOIntsTransform(StateIn& si
   space1_ << SavableState::restore_state(si);
   space2_ << SavableState::restore_state(si);
   space3_ << SavableState::restore_state(si);
+  si.get(log2_epsilon_);
 }
 
 void
@@ -463,6 +474,7 @@ TwoBodyThreeCenterMOIntsTransform::save_data_state(StateOut& so) {
   SavableState::save_state(space1_.pointer(),so);
   SavableState::save_state(space2_.pointer(),so);
   SavableState::save_state(space3_.pointer(),so);
+  so.put(log2_epsilon_);
 }
 
 void
@@ -486,6 +498,12 @@ TwoBodyThreeCenterMOIntsTransform::restart_orbital() const {
   return restart_orbital_;
 }
 
+void
+TwoBodyThreeCenterMOIntsTransform::set_log2_epsilon(double prec) {
+  if (prec < this->log2_epsilon_)
+    this->obsolete();
+  log2_epsilon_ = prec;
+}
 
 void
 TwoBodyThreeCenterMOIntsTransform::init_vars()

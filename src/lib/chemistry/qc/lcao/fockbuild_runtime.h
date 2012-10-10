@@ -76,6 +76,7 @@ namespace sc {
       const RefSCVector& electric_field() const { return efield_; }
       const Ref<DensityFittingInfo>& dfinfo() const { return dfinfo_; }
       void dfinfo(const Ref<DensityFittingInfo>& d) { dfinfo_ = d; }
+      const Ref<OrbitalSpaceRegistry>& orbital_registry() const { return oreg_; }
 
       /// sets AO densities. Unless these are identical to the current densities, contents will be cleared.
       void set_densities(const RefSymmSCMatrix& aodensity_alpha,

@@ -72,6 +72,7 @@ MOIntsTransformFactory::MOIntsTransformFactory(const Ref<Integral>& integral) :
   print_percent_ = 10.0;
   ints_method_ = MOIntsTransform::StoreMethod::mem_posix;
   file_prefix_ = "/tmp/moints";
+  log2_precision_ = -50.0; // 2^{-50} \sim 10^{-15}
 }
 
 MOIntsTransformFactory::MOIntsTransformFactory(StateIn& si) : SavableState(si)
@@ -95,6 +96,7 @@ MOIntsTransformFactory::MOIntsTransformFactory(StateIn& si) : SavableState(si)
   int ints_method; si.get(ints_method);
   ints_method_ = static_cast<MOIntsTransform::StoreMethod::type>(ints_method);
   si.get(file_prefix_);
+  si.get(log2_precision_);
 }
 
 MOIntsTransformFactory::~MOIntsTransformFactory()
@@ -118,6 +120,7 @@ MOIntsTransformFactory::save_data_state(StateOut& so)
   so.put(print_percent_);
   so.put((int)ints_method_);
   so.put(file_prefix_);
+  so.put(log2_precision_);
 }
 
 void

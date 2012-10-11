@@ -38,9 +38,7 @@
 #include <util/class/scexception.h>
 #include <util/group/thread.h>
 
-// set to 1 if you are have backtrace_symbols (e.g. on OS X) and want to trace resource leaks
-#define HAVE_BACKTRACE_SYMBOLS 0
-#if HAVE_BACKTRACE_SYMBOLS
+#if HAVE_BACKTRACE
 #  include <execinfo.h>
 #endif
 
@@ -410,7 +408,7 @@ namespace sc {
           ResourceAttribites() : size(0) {
           }
           ResourceAttribites(std::size_t s) : size(s) {
-#if HAVE_BACKTRACE_SYMBOLS
+#if HAVE_BACKTRACE
             void* stack_addrs[1024];
             const int naddrs = backtrace(stack_addrs, 1024);
             char** btrc_symbols = backtrace_symbols(stack_addrs, naddrs);
@@ -421,13 +419,13 @@ namespace sc {
 #endif
           }
           std::size_t size;
-#if HAVE_BACKTRACE_SYMBOLS
+#if HAVE_BACKTRACE
           std::vector<std::string> acquisition_backtrace;
 #endif
           operator std::string() const {
             std::ostringstream oss;
             oss << "size=" << size;
-#if HAVE_BACKTRACE_SYMBOLS
+#if HAVE_BACKTRACE
             oss << " allocated at:\n";
             std::copy(acquisition_backtrace.begin(),
                       acquisition_backtrace.end(),

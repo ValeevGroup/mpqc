@@ -171,7 +171,7 @@ ConsumableResources::initial_instance(int& argc, char ** argv)
     }
   }
 
-  // if keyval input for a integral was found, then
+  // if keyval input for a ConsumableResources object was found, then
   // create it.
   if (keyval_string) {
     if (keyval_string[0] == '\0') return 0;

@@ -126,9 +126,29 @@ namespace sc {
         if (size == 0)  return 0;
 
         ThreadLockHolder lh(lock_);
-        T* array = (size > 1) ? new T[size] : new T;
+
+        T* array = 0;
+        try {
+          array = (size > 1) ? new T[size] : new T;
+        }
+        catch (std::bad_alloc&) {
+          std::ostringstream oss;
+          oss << "ConsumableResources::allocate(size=" << size << "): allocation failed";
+          this->print_summary(ExEnv::out0(), true, true);
+          throw MemAllocFailed(oss.str().c_str(),__FILE__,__LINE__,size*sizeof(T));
+        }
+
         size *= sizeof(T);
-        consume_memory_(size);
+        try {
+          consume_memory_(size);
+        }
+        catch (LimitExceeded<size_t>&) {
+          if (size > sizeof(T)) delete[] array;
+          else delete array;
+          this->print_summary(ExEnv::out0(), true, true);
+          throw;
+        }
+
         void* array_ptr = static_cast<void*>(array);
         if (debug_class() > 0) {
           ExEnv::out0() << indent << "ConsumableResources::allocate(size=" << size << ") => array="
@@ -162,7 +182,7 @@ namespace sc {
           std::map<void*, ResourceAttribites>::iterator pos = managed_arrays_.find(array_ptr);
           if (pos != managed_arrays_.end()) {
             const size_t size = pos->second.size;
-            if (size / sizeof(T) > 1) delete[] array;
+            if (size > sizeof(T)) delete[] array;
             else delete array;
             release_memory_(size);
             if (debug_class() > 0) {
@@ -205,7 +225,15 @@ namespace sc {
                 << array_ptr << " size=" << size << ")";
             throw ProgrammingError(oss.str().c_str(), __FILE__, __LINE__, class_desc());
           }
-          consume_memory_(size);
+
+          try {
+            consume_memory_(size);
+          }
+          catch (LimitExceeded<size_t>&) {
+            this->print_summary(ExEnv::out0(), true, true);
+            throw;
+          }
+
           ResourceAttribites attr(size);
           managed_arrays_[array_ptr] = attr;
           if (debug_class() > 0) {

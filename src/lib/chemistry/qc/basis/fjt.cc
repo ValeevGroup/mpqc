@@ -45,7 +45,7 @@ namespace {
 Fjt::Fjt() {}
 Fjt::~Fjt() {}
 
-double Taylor_Fjt::relative_zero_(1e-6);
+double Taylor_Fjt::relative_zero_(1e-15);
 
 /*------------------------------------------------------
   Initialize Taylor_Fm_Eval object (computes incomplete

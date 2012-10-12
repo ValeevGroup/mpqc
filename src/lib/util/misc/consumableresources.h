@@ -37,12 +37,7 @@
 #include <util/state/stateout.h>
 #include <util/class/scexception.h>
 #include <util/group/thread.h>
-
-// set to 1 if you are have backtrace_symbols (e.g. on OS X) and want to trace resource leaks
-#define HAVE_BACKTRACE_SYMBOLS 0
-#if HAVE_BACKTRACE_SYMBOLS
-#  include <execinfo.h>
-#endif
+#include <util/misc/bug.h>
 
 namespace sc {
 
@@ -288,6 +283,12 @@ namespace sc {
       void release_disk_(size_t value);
       //@}
 
+      /**
+       * Checks that there are no outstanding debts
+       * @param os output stream to which the info is written (default = sc::ExEnv::err0())
+       */
+      void summarize_unreleased_resources(std::ostream& os = sc::ExEnv::err0()) const;
+
       struct defaults {
           static size_t memory;
           static std::pair<std::string,size_t> disk;
@@ -410,29 +411,14 @@ namespace sc {
           ResourceAttribites() : size(0) {
           }
           ResourceAttribites(std::size_t s) : size(s) {
-#if HAVE_BACKTRACE_SYMBOLS
-            void* stack_addrs[1024];
-            const int naddrs = backtrace(stack_addrs, 1024);
-            char** btrc_symbols = backtrace_symbols(stack_addrs, naddrs);
-            for(int i=0; i<naddrs; ++i) {
-              acquisition_backtrace.push_back(std::string(btrc_symbols[i]));
-            }
-            free(btrc_symbols);
-#endif
           }
           std::size_t size;
-#if HAVE_BACKTRACE_SYMBOLS
-          std::vector<std::string> acquisition_backtrace;
-#endif
+          Debugger::Backtrace backtrace;
           operator std::string() const {
             std::ostringstream oss;
             oss << "size=" << size;
-#if HAVE_BACKTRACE_SYMBOLS
-            oss << " allocated at:\n";
-            std::copy(acquisition_backtrace.begin(),
-                      acquisition_backtrace.end(),
-                      std::ostream_iterator<std::string>(oss, "\n"));
-#endif
+            const size_t nframes_to_skip = 1;
+            oss << " allocated at:" << std::endl << backtrace.str(nframes_to_skip);
             return oss.str();
           }
       };

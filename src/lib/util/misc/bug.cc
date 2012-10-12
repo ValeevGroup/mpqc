@@ -40,6 +40,8 @@
 #include <unistd.h>
 #include <iostream>
 #include <signal.h>
+#include <sstream>
+#include <iterator>
 
 #if HAVE_LIBUNWIND
 #  define UNW_LOCAL_ONLY
@@ -449,33 +451,39 @@ Debugger::traceback(const char *reason)
   Debugger::__traceback(prefix_,reason);
 }
 
-
-std::string
-Debugger::__demangle(const char* symbol)
-{
-  std::string dsymbol;
-#if HAVE_CXA_DEMANGLE
-  {
-    int status;
-    char* dsymbol_char = abi::__cxa_demangle(symbol, 0, 0, &status);
-    dsymbol = dsymbol_char;
-    free(dsymbol_char);
-  }
-#else
-  dsymbol = symbol;
-#endif
-  return dsymbol;
-}
-
 void
 Debugger::__traceback(const std::string& prefix, const char *reason)
 {
+  Backtrace result(prefix);
+  const size_t nframes_to_skip = 2;
 #if HAVE_LIBUNWIND
   ExEnv::outn() << prefix << "Debugger::traceback(using libunwind):";
+#elif HAVE_BACKTRACE // !HAVE_LIBUNWIND
+  ExEnv::outn() << prefix << "Debugger::traceback(using backtrace):";
+#else // !HAVE_LIBUNWIND && !HAVE_BACKTRACE
+# if SIMPLE_STACK
+  ExEnv::outn() << prefix << "Debugger::traceback:";
+# else
+  ExEnv::outn() << prefix << "traceback not available for this arch" << endl;
+  return;
+# endif // SIMPLE_STACK
+#endif // HAVE_LIBUNWIND, HAVE_BACKTRACE
+
   if (reason) ExEnv::outn() << reason;
   else ExEnv::outn() << "no reason given";
   ExEnv::outn() << endl;
 
+  if (result.empty())
+    ExEnv::outn() << prefix << "backtrace returned no state information" << std::endl;
+  else
+    ExEnv::outn() << result.str(nframes_to_skip) << std::endl;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+Debugger::Backtrace::Backtrace(const std::string& prefix) : prefix_(prefix)
+{
+#if HAVE_LIBUNWIND
   {
     unw_cursor_t cursor; unw_context_t uc;
     unw_word_t ip, sp, offp;
@@ -488,34 +496,29 @@ Debugger::__traceback(const std::string& prefix, const char *reason)
       unw_get_reg(&cursor, UNW_REG_SP, &sp);
       char name[1024];
       unw_get_proc_name(&cursor, name, 1024, &offp);
-      ExEnv::out0() << prefix
-                    << "frame " << frame
-                    << ": " << scprintf("ip = 0x%lx sp = 0x%lx ", (long) ip, (long) sp)
-                    << " symbol = " << __demangle(name)
-                    << std::endl;
+      std::ostringstream oss;
+      oss << prefix_
+          << "frame " << frame
+          << ": " << scprintf("ip = 0x%lx sp = 0x%lx ", (long) ip, (long) sp)
+          << " symbol = " << __demangle(name);
+      frames_.push_back(oss.str());
       ++frame;
     }
   }
 #elif HAVE_BACKTRACE // !HAVE_LIBUNWIND
-  ExEnv::outn() << prefix << "Debugger::traceback(using backtrace):";
-  if (reason) ExEnv::outn() << reason;
-  else ExEnv::outn() << "no reason given";
-  ExEnv::outn() << endl;
-
-  const int n = 128;
-  void *p[n];
-  int nret = backtrace(p,n);
-  char** frame_symbols = backtrace_symbols(p, nret);
-  if (nret == 0) {
-      ExEnv::outn() << prefix << "backtrace returned no state information" << std::endl;
-    }
-  for (int i=0; i<nret; i++) {
-      ExEnv::outn() << prefix
-                    << "frame " << i
-                    << ": return address = " << p[i] << std::endl
-                    << "  symbol = " << __demangle(frame_symbols[i])
-                    << std::endl;
-    }
+  void* stack_addrs[1024];
+  const int naddrs = backtrace(stack_addrs, 1024);
+  char** frame_symbols = backtrace_symbols(stack_addrs, naddrs);
+  // starting @ 1 to skip this function
+  for(int i=1; i<naddrs; ++i) {
+    std::ostringstream oss;
+    oss << prefix_
+        << "frame " << i
+        << ": return address = " << stack_addrs[i] << std::endl
+        << "  symbol = " << __demangle(frame_symbols[i]);
+    frames_.push_back(oss.str());
+  }
+  free(frame_symbols);
 #else // !HAVE_LIBUNWIND && !HAVE_BACKTRACE
 #if SIMPLE_STACK
   int bottom = 0x1234;
@@ -527,10 +530,6 @@ Debugger::__traceback(const std::string& prefix, const char *reason)
   void **bottext = (void**)0x00010000L;
 #endif // SIMPLE_STACK
 
-  ExEnv::outn() << prefix << "Debugger::traceback:";
-  if (reason) ExEnv::outn() << reason;
-  else ExEnv::outn() << "no reason given";
-  ExEnv::outn() << endl;
 #if (defined(linux) && defined(i386))
   topstack = (void**)0xc0000000;
   botstack = (void**)0xb0000000;
@@ -552,18 +551,53 @@ Debugger::__traceback(const std::string& prefix, const char *reason)
         && frame_pointer < topstack
         && frame_pointer[1] >= bottext
         && frame_pointer[1] < toptext) {
-      ExEnv::outn() << prefix << "frame: " << (void*)frame_pointer;
-      ExEnv::outn().flush();
-      ExEnv::outn() << "  retaddr: " << frame_pointer[1] << endl;
-      frame_pointer = (void**)*frame_pointer;
-    }
-#else
-  ExEnv::outn() << prefix << "traceback not available for this arch" << endl;
+
+    std::ostringstream oss;
+    oss << prefix_ << "frame: " << (void*)frame_pointer;
+    oss << "  retaddr: " << frame_pointer[1];
+    frames_.push_back(oss.str());
+
+    frame_pointer = (void**)*frame_pointer;
+  }
 #endif // SIMPLE_STACK
 #endif // HAVE_BACKTRACE
 }
-/////////////////////////////////////////////////////////////////////////////
 
+Debugger::Backtrace::Backtrace(const Backtrace& other) :
+    frames_(other.frames_),
+    prefix_(other.prefix_)
+{
+}
+
+std::string
+Debugger::Backtrace::str(size_t nframes_to_skip) const {
+  std::ostringstream oss;
+  std::copy(frames_.begin() + nframes_to_skip, frames_.end(),
+            std::ostream_iterator<std::string>(oss, "\n"));
+  return oss.str();
+}
+
+std::string
+Debugger::Backtrace::__demangle(const std::string& symbol) {
+  std::string dsymbol;
+#if HAVE_CXA_DEMANGLE
+  {
+    int status;
+    char* dsymbol_char = abi::__cxa_demangle(symbol.c_str(), 0, 0, &status);
+    if (status == 0) { // success
+      dsymbol = dsymbol_char;
+      free(dsymbol_char);
+    }
+    else // fail
+      dsymbol = symbol;
+  }
+#else
+  dsymbol = symbol;
+#endif
+  return dsymbol;
+}
+
+/////////////////////////////////////////////////////////////////////////////
 // Local Variables:
 // mode: c++
 // c-file-style: "CLJ"

@@ -220,21 +220,14 @@ class SlaterDeterminantSparseSet {
     SDContainer sdset_;
 };
 
-template <typename FString>
 int try_main(int argc, char **argv);
+template <typename FString>
+  int test1(size_t nstates, size_t nparticles);
 
 int main(int argc, char **argv) {
 
-  //typedef FermionOccupationNBitString<64> FString;
-  typedef FermionOccupationDBitString FString;
-  //typedef FermionOccupationBlockString FString;
-
   try {
-    try_main<FermionOccupationNBitString<64> >(argc, argv);
-    try_main<FermionOccupationNBitString<128> >(argc, argv);
-    try_main<FermionOccupationNBitString<256> >(argc, argv);
-    try_main<FermionOccupationDBitString>(argc, argv);
-    try_main<FermionOccupationBlockString>(argc, argv);
+    try_main(argc, argv);
   }
   catch(...) {
     std::cerr << "caught an exception, bye-bye" << std::endl;
@@ -244,11 +237,40 @@ int main(int argc, char **argv) {
   return 0;
 }
 
-template <typename FString>
 int try_main(int argc, char **argv) {
 
-  const size_t nstates = 24;
-  const size_t nparticles = 12;
+  size_t nstates, nparticles;
+
+  for(int occtype=0; occtype<2; ++occtype) {
+    switch (occtype) {
+      case 0:
+        // low occupancy
+        nstates = 50;
+        nparticles = 5;
+        break;
+
+      case 1:
+        // half-occupancy
+        nstates = 24;
+        nparticles = 12;
+        break;
+
+      default:
+        assert(false);
+        break;
+    }
+
+    test1<FermionOccupationNBitString<64> >(nstates, nparticles);
+    test1<FermionOccupationNBitString<128> >(nstates, nparticles);
+    test1<FermionOccupationDBitString>(nstates, nparticles);
+    test1<FermionOccupationBlockString>(nstates, nparticles);
+  }
+
+  return 0;
+}
+
+template <typename FString>
+int test1(size_t nstates, size_t nparticles) {
 
   typedef FermionStringSparseSet<FString> stringset_type;
   typedef typename stringset_type::const_iterator stringsetiter_type;
@@ -259,10 +281,22 @@ int try_main(int argc, char **argv) {
   char* realname = abi::__cxa_demangle(typeid(FString).name(), 0, 0, &status);
   std::cout << "generating a (m=" << nstates << ",n=" << nparticles << ") string set (type=" << realname << ")" << std::endl;
   stringset_type sset;
-  FullStringSetBuild<stringset_type> builder(nstates, nparticles);
+  FullFermionStringSetBuild<stringset_type> builder(nstates, nparticles);
   builder(sset);
   std::cout << "# of strings = " << sset.size() << std::endl;
   clock_t stop0 = clock();
+  std::cout << "elapsed time = " << (stop0-start0) * 1.0/ CLOCKS_PER_SEC << " sec"<< std::endl;
+
+  ///////// generate replacement lists for the first few //////////
+  clock_t start1 = clock();
+  const size_t rank = 1;
+  const size_t nstrings = 1;
+  auto current_string = sset.begin();
+  for(size_t s=0; s<nstrings; ++s, ++current_string) {
+    std::cout << "iterating over rank-" << rank << " replacement list for string " << *current_string << std::endl;
+    StringReplacementListIterator<FString, rank, true> repl_list_iter(*current_string);
+  }
+  clock_t stop1 = clock();
   std::cout << "elapsed time = " << (stop0-start0) * 1.0/ CLOCKS_PER_SEC << " sec"<< std::endl;
 
 }

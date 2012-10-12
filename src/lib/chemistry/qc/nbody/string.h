@@ -34,6 +34,7 @@
 
 #include <bitset>
 #include <vector>
+#include <array>
 #include <set>
 #include <ostream>
 #include <iostream>
@@ -88,6 +89,14 @@ namespace sc {
        */
       void reset() {
         std::bitset<Ns>::reset();
+      }
+
+      /**
+       * Reports the total number of states
+       * @return the total number states
+       */
+      size_t size() const {
+        return nstates_;
       }
 
       /**
@@ -190,10 +199,10 @@ namespace sc {
       /**
        * Constructs an empty set of N states
        */
-      FermionOccupationDBitString(size_t N) : boost::dynamic_bitset<>(N, 0ul), nstates_(N) {
+      FermionOccupationDBitString(size_t N) : boost::dynamic_bitset<>(N, 0ul) {
       }
 
-      FermionOccupationDBitString(boost::dynamic_bitset<>&& bs) : nstates_(bs.size()), boost::dynamic_bitset<>(bs) {
+      FermionOccupationDBitString(boost::dynamic_bitset<>&& bs) : boost::dynamic_bitset<>(bs) {
       }
 
       /**
@@ -201,7 +210,7 @@ namespace sc {
        * @param occupied_states
        */
       explicit FermionOccupationDBitString(size_t N, const std::vector<state_index_type>& occupied_states) :
-        boost::dynamic_bitset<>(N, 0ul), nstates_(N)
+        boost::dynamic_bitset<>(N, 0ul)
       {
         for(auto v : occupied_states) {
           (*this)[v].flip();
@@ -262,7 +271,7 @@ namespace sc {
         // to_ determine the number of particles crossed count the number of particles between to_ and from_
         FermionOccupationDBitString tmp(*this);
         tmp >>= (pos1+1);
-        tmp <<= (nstates_ - (pos2 - pos1 - 1));
+        tmp <<= (size() - (pos2 - pos1 - 1));
         return tmp.count();
       }
 
@@ -273,13 +282,11 @@ namespace sc {
       }
 
       bool operator==(const FermionOccupationDBitString& other) const {
-        return nstates_ == other.nstates_ &&
+        return size() == other.size() &&
                static_cast<parent_type>(*this) == static_cast<parent_type>(other);
       }
 
     private:
-      size_t nstates_;
-
   };
 
   FermionOccupationDBitString operator+(const FermionOccupationDBitString& s1,
@@ -711,89 +718,6 @@ namespace sc {
     return result;
   }
 
-  /**
-   * basic Nb-body number-conserving (nc) operator in sp representation
-   * @tparam Nb rank of the operator (number of particles that possibly change states)
-   */
-  template <size_t Nb, typename FString>
-  class FermionBasicNCOper {
-    public:
-      template <typename Int> FermionBasicNCOper(Int t, Int f) : to_(t) , from_(f) {
-      }
-
-      /**
-       * reports the state to which this operator places a particle
-       * @return the state to which this operator places a particle
-       */
-      size_t to() const { return to_; }
-
-      /**
-       * reports the state from which this operator removes a particle
-       * @return the state from which this operator removes a particle
-       */
-      size_t from() const { return from_; }
-
-      /**
-       * applies this operator to_ FermionOccupationNBitString os. to_==from_ is allowed.
-       * @param os the FermionOccupationNBitString object
-       * @return FermionOccupationNBitString obtained by removing a particle from_ \a from_ and adding a particle to_ \a to_.
-       */
-      void apply(FString& os) const {
-        if (os[from_] == true && (os[to_] == false || from_ == to_)) {
-          os.remove(from_).add(to_);
-        }
-        else
-          os.reset();
-      }
-
-      /**
-       * same as apply(), but returns whether application operator changes the sign of the state; the sign changes if
-       * the number of occupied states "crossed" by the operator is odd
-       * @param os the FermionOccupationNBitString object
-       * @return true is the sign of the state changes
-       */
-      bool apply_sign(FString& os) const {
-        if (os[from_] == true && (os[to_] == false || from_ == to_)) {
-          os.remove(from_).add(to_);
-          // to_ determine the number of particles crossed, count the number of particles between to_ and from_
-          if (to_ > from_) {
-            const bool sign_changes = os.count(from_,to_) & size_t(1);
-            return sign_changes;
-          } else { // to_ <= from_
-            const bool sign_changes = os.count(to_,from_) & size_t(1);
-            return sign_changes;
-          }
-        }
-        else {
-          os.reset();
-          return false;
-        }
-      }
-
-      /**
-       * similar to_ apply_sign(), but keeps the argument unchanged
-       * @param os the FermionOccupationNBitString object
-       * @return new pair[sign_change,FermionOccupationNBitString]
-       */
-      std::pair<bool,FString > operator()(const FString& os) const {
-        FString result(os);
-        const bool sign_changes = this->apply_sign(result);
-        return std::make_pair(sign_changes,result);
-      }
-
-    private:
-      size_t to_, from_;
-  };
-
-  template <class CharT, class Traits, size_t Nb, typename FString>
-  std::basic_ostream<CharT, Traits>&
-  operator<<(std::basic_ostream<CharT, Traits>& os,
-             const FermionBasicNCOper<Nb, FString>& o)
-  {
-      os << o.to() << "<-" << o.from();
-      return os;
-  }
-
   //////////////////////////////
   // specialized string containers
   //////////////////////////////
@@ -870,34 +794,292 @@ namespace sc {
       container_type strings_;
   };
 
-
   //////////////////////////////
   // string algorithms
   //////////////////////////////
 
   /**
-   * Makes a set of strings by distributing n particles in m states
-   * @param sset [in/out]
-   * @param m number of states
-   * @param n number of particles
-   */
-  template <typename StringSet>
-  class FullStringSetBuild {
-    public:
-      typedef typename StringSet::value_type string_type;
+    * basic Nb-body number-conserving (nc) operator in sp representation
+    * @tparam Nb rank of the operator (number of particles that possibly change states)
+    */
+   template <size_t Nb, typename FString>
+   class FermionBasicNCOper;
+   template <typename FString>
+   class FermionBasicNCOper<1,FString> {
+     public:
+       static const size_t Rank = 1;
+       typedef typename FString::state_index_type state_index_type;
 
-      FullStringSetBuild(size_t m, size_t n) : nparticles_(n), nstates_(m) {
+       template <typename Int> FermionBasicNCOper(Int t, Int f) : to_(t) , from_(f) {
+       }
+
+       /**
+        * reports the state to which this operator places a particle
+        * @return the state to which this operator places a particle
+        */
+       size_t to() const { return to_[0]; }
+
+       /**
+        * reports the states in which particles are created
+        * @return the states in which particles are created
+        */
+       const std::array<state_index_type,1>& cre() const { return to_; }
+
+       /**
+        * reports the state from which this operator removes a particle
+        * @return the state from which this operator removes a particle
+        */
+       size_t from() const { return from_[0]; }
+
+       /**
+        * reports the states in which particles are annihilated
+        * @return the states in which particles are annihilated
+        */
+       const std::array<state_index_type,1>& ann() const { return from_; }
+
+
+       /**
+        * applies this operator to_ FermionOccupationNBitString os. to_==from_ is allowed.
+        * @param os the FermionOccupationNBitString object
+        * @return FermionOccupationNBitString obtained by removing a particle from_ \a from_ and adding a particle to_ \a to_.
+        */
+       void apply(FString& os) const {
+         if (os[from_[0]] == true && (os[to_[0]] == false || from_ == to_)) {
+           os.remove(from_[0]).add(to_[0]);
+         }
+         else
+           os.reset();
+       }
+
+       /**
+        * same as apply(), but returns whether application operator changes the sign of the state; the sign changes if
+        * the number of occupied states "crossed" by the operator is odd
+        * @param os the FermionOccupationNBitString object
+        * @return true is the sign of the state changes
+        */
+       bool apply_sign(FString& os) const {
+         if (os[from_[0]] == true && (os[to_[0]] == false || from_ == to_)) {
+           os.remove(from_[0]).add(to_[0]);
+           // to_ determine the number of particles crossed, count the number of particles between to_ and from_
+           if (to_[0] > from_[0]) {
+             const bool sign_changes = os.count(from_[0],to_[0]) & size_t(1);
+             return sign_changes;
+           } else { // to_ <= from_
+             const bool sign_changes = os.count(to_[0],from_[0]) & size_t(1);
+             return sign_changes;
+           }
+         }
+         else {
+           os.reset();
+           return false;
+         }
+       }
+
+       /**
+        * similar to_ apply_sign(), but keeps the argument unchanged
+        * @param os the FermionOccupationNBitString object
+        * @return new pair[sign_change,FermionOccupationNBitString]
+        */
+       std::pair<bool,FString > operator()(const FString& os) const {
+         FString result(os);
+         const bool sign_changes = this->apply_sign(result);
+         return std::make_pair(sign_changes,result);
+       }
+
+     private:
+       std::array<state_index_type, Rank> from_;
+       std::array<state_index_type, Rank> to_;
+   };
+
+   template <size_t Nb, typename FString>
+   class FermionBasicNCOper {
+     public:
+       static const size_t Rank = Nb;
+       typedef typename FString::state_index_type state_index_type;
+
+       template <typename Int> FermionBasicNCOper(const std::array<Int,Rank>& t, const std::array<Int,Rank>& f) : to_(t) , from_(f) {
+       }
+
+       /**
+        * reports the states in which particles are created
+        * @return the states in which particles are created
+        */
+       const std::array<state_index_type,Rank>& cre() const { return to_; }
+
+       /**
+        * reports the states in which particles are annihilated
+        * @return the states in which particles are annihilated
+        */
+       const std::array<state_index_type,Rank>& ann() const { return from_; }
+
+
+       /**
+        * applies this operator to_ FermionOccupationNBitString os. Unsafe, but fast.
+        * @param os the FermionOccupationNBitString object
+        * @return FermionOccupationNBitString obtained by removing a particle from_ \a from_ and adding a particle to_ \a to_.
+        */
+       void apply(FString& os) const {
+         for(size_t r=0; r<Rank; ++r)
+           os.remove(from_[r]).add(to_[r]);
+       }
+
+       /**
+        * same as apply(), but returns whether application operator changes the sign of the state; the sign changes if
+        * the number of occupied states "crossed" by the operator is odd
+        * @param os the FermionOccupationNBitString object
+        * @return true is the sign of the state changes
+        */
+       bool apply_sign(FString& os) const {
+         bool sign_changes = false;
+         for (size_t r=0; r<Rank; ++r) {
+           os.remove(from_[r]).add(to_[r]);
+           // to_ determine the number of particles crossed, count the number of particles between to_ and from_
+           if (to_[r] > from_[r]) {
+             sign_changes ^= os.count(from_[r],to_[r]) & size_t(1);
+           } else { // to_ <= from_
+             sign_changes ^= os.count(to_[r],from_[r]) & size_t(1);
+           }
+         }
+         return sign_changes;
+       }
+
+       /**
+        * similar to_ apply_sign(), but keeps the argument unchanged
+        * @param os the FermionOccupationNBitString object
+        * @return new pair[sign_change,FermionOccupationNBitString]
+        */
+       std::pair<bool,FString > operator()(const FString& os) const {
+         FString result(os);
+         const bool sign_changes = this->apply_sign(result);
+         return std::make_pair(sign_changes,result);
+       }
+
+     private:
+       std::array<state_index_type, Rank> from_;
+       std::array<state_index_type, Rank> to_;
+   };
+
+   template <class CharT, class Traits, size_t Nb, typename FString>
+   std::basic_ostream<CharT, Traits>&
+   operator<<(std::basic_ostream<CharT, Traits>& os,
+              const FermionBasicNCOper<Nb, FString>& o)
+   {
+       os << o.to() << "<-" << o.from();
+       return os;
+   }
+
+  /**
+   * Iterates over strings obtained by rank R replecement from a given string. This is a forward output iterator
+   * @tparam FString fermion string type
+   * @tparam R replacement rank
+   * @tparam GenerateStrings if true, will compute strings also, otherwise will only compute the operators
+   */
+  template <typename FString, unsigned int R, bool GenerateStrings>
+  class StringReplacementListIterator {
+  public:
+      typedef typename FString::state_index_type state_index_type;
+      static const unsigned int Rank = R;
+
+      StringReplacementListIterator(const FString& ref_string) :
+        rstr_(ref_string), str_(ref_string)
+      {
+        init();
+      }
+
+      StringReplacementListIterator& operator++() {
+        assert(false); // not implemented yet
+        return *this;
+      }
+
+      const FString& operator*() const {
+        assert(false);
+        return str_;
+      }
+
+      const FermionBasicNCOper<Rank, FString>& oper() const {
+        return oper_;
+      }
+
+      /**
+       * are there more strings left?
+       * @return true if there are more strings in the interation sequence
+       */
+      operator bool() const {
+        return more_;
+      }
+
+      bool operator==(const StringReplacementListIterator& other) {
+        if (rstr_ == other.rstr_) {
+          if (more_ != other.more_)
+            return false;
+          else {
+            return str_ == other.str_;
+          }
+        }
+        else // rstr_ != other.rstr_
+          return false;
+      }
+
+      static StringReplacementListIterator begin(const FString& ref_string) {
+        return StringReplacementListIterator(ref_string);
+      }
+
+      static StringReplacementListIterator end(const FString& ref_string) {
+        return StringReplacementListIterator(ref_string, false);
+      }
+
+  private:
+      FString rstr_; //< reference string
+      FString str_;  //< current string
+      size_t nparticles_;
+      FermionBasicNCOper<Rank,FString> oper_;
+      bool more_; //< are there more strings left?
+
+      void init() {
+        nparticles_ = rstr_.count();
+        if (nparticles_ == rstr_.size()
+            ||
+            R > rstr_.count()
+           )
+          more_ = false;
+        else
+          more_ = true;
+      }
+
+      /// this should only be used by end()
+      StringReplacementListIterator(const FString& ref_string,
+                                    bool more) : rstr_(ref_string), str_(ref_string), more_(more) {
+        init();
+      }
+  };
+
+  /**
+   * Build all possible strings by distributing n particles in m states.
+   * @tparam FermionStringSet string set that will hold the result
+   */
+  template <typename FermionStringSet>
+  class FullFermionStringSetBuild {
+    public:
+      typedef typename FermionStringSet::value_type string_type;
+
+      /**
+       * Makes a set of strings by distributing n particles in m states
+       * @param m number of states
+       * @param n number of particles
+       */
+      FullFermionStringSetBuild(size_t m, size_t n) : nparticles_(n), nstates_(m) {
         assert(nparticles_ <= nstates_); // these are 1-particle states
       }
 
-      void operator()(StringSet& sset) {
+      void operator()(FermionStringSet& sset) {
         // make recursively by appending a string with 1 particle at the bottom of k states 0....01
         // to a full set of n-1 particles in m-k states, where 1 <= k <= m-n+1
-        for(size_t k=1; k<=nstates_-nparticles_+1; ++k) {
+        // iterate starting with most significant states empty
+        for(size_t k=nstates_-nparticles_+1; k>=1; --k) {
 
           string_type s0(k);
           s0.add(0);
-//          std::cout << "in FullStringSetBuild::operator() -- s0=" << s0 << " m=" << nstates_ << " n=" << nparticles_ << std::endl;
+//          std::cout << "in FullFermionStringSetBuild::operator() -- s0=" << s0 << " m=" << nstates_ << " n=" << nparticles_ << std::endl;
 
           do_iter(s0, sset, nstates_-k, nparticles_-1);
         }
@@ -908,9 +1090,9 @@ namespace sc {
       size_t nstates_;
 
       static void do_iter(const string_type& s0,
-                          StringSet& sset,
+                          FermionStringSet& sset,
                           size_t nstates, size_t nparticles) {
-//        std::cout << "in FullStringSetBuild::do_iter -- s0=" << s0 << " m=" << nstates << " n=" << nparticles << std::endl;
+//        std::cout << "in FullFermionStringSetBuild::do_iter -- s0=" << s0 << " m=" << nstates << " n=" << nparticles << std::endl;
         if (nparticles == 1ul) {
           string_type s1(nstates);
           s1.add(0ul);
@@ -924,7 +1106,7 @@ namespace sc {
           }
         }
         else {
-          for (size_t k = 1; k <= nstates - nparticles + 1; ++k) {
+          for (size_t k = nstates - nparticles + 1; k >= 1; --k) {
             string_type s1(k);
             s1.add(0ul);
             string_type s2(s1 + s0);
@@ -933,7 +1115,6 @@ namespace sc {
         }
       }
   };
-
 
 } // end of namespace sc
 

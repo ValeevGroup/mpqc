@@ -36,11 +36,13 @@
 
 namespace sc {
 
-/** The Debugger class describes what should be done when a catastrophic
-error causes unexpected program termination.  It can try things such as
-start a debugger running where the program died or it can attempt to
-produce a stack traceback showing roughly where the program died.  These
-attempts will not always succeed.  */
+/**
+ * The Debugger class describes what should be done when a catastrophic
+ * error causes unexpected program termination.  It can try things such as
+ * start a debugger running where the program died or it can attempt to
+ * produce a stack traceback showing roughly where the program died.  These
+ * attempts will not always succeed.
+ */
 class Debugger: public SavableState {
   protected:
     std::string prefix_;
@@ -105,7 +107,18 @@ class Debugger: public SavableState {
     ~Debugger();
 
     /**
-     * contains backtrace of a running program/thread
+     * Creates a backtrace of a running program/thread. Example of use:
+     * \code
+     * void make_omelet(int num_eggs) {
+     *   if (num_eggs < 1) {
+     *     sc::Debugger::Backtrace bt("breakfast fail:");
+     *     throw std::runtime_error(bt.str());
+     *   }
+     *   stove.on();
+     *   // etc.
+     * }
+     * \endcode
+     *
      */
     class Backtrace {
       public:

@@ -107,6 +107,13 @@ StringKeyVal::key_value(const char* key, const KeyValValue &def)
               if (!cd) {
                   ClassDesc::load_class(classn);
                   cd = ClassDesc::name_to_class_desc(classn);
+
+                  if (cd == 0) {
+                    std::ostringstream oss;
+                    oss << "StringKeyVal is asked to construct an object of unknown type \"" << classn << "\"";
+                    throw InputError(oss.str().c_str(),
+                                     __FILE__, __LINE__, tkw, 0);
+                  }
                 }
               // the original error status must be saved
               KeyValError original_error = error();

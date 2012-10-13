@@ -30,6 +30,7 @@
 #endif
 
 #include <string>
+#include <vector>
 
 #include <stdlib.h>
 #include <string.h>
@@ -593,12 +594,26 @@ ClassDesc::load_class(const char* classname)
   delete[] path;
 #endif // HAVE_DLFCN_H
 
-  ExEnv::outn() << "ClassDesc::load_class(\"" << classname << "\"): load failed"
+  ExEnv::outn() << "ClassDesc::load_class(\"" << classname << "\"): load failed!"
        << endl
-       << "Either \"" << classname << "\" is an invalid class name or the code"
-       << endl
-       << "for \"" << classname << "\" was not linked into the executable."
-       << endl;
+       << "Possible causes:" << std::endl;
+
+  // check if the name was simply misspelled
+  int reason = 1;
+  for (std::map<std::string,ClassDescP>::iterator ind=all_->begin();
+       ind!=all_->end(); ind++) {
+      ClassDesc* classdesc = ind->second;
+      if (sc::string_distance(classname, classdesc->name()) <= std::size_t(4)) {
+        ExEnv::outn() << "(" << reason << ") \"" << classname
+            << "\" could be a misspelling of the known class name \""
+            << classdesc->name() << "\"" << std::endl;
+        ++reason;
+      }
+  }
+
+  ExEnv::outn() << "(" << reason++ << ") the code for \"" << classname
+                << "\" was not linked into the executable" << std::endl;
+  ExEnv::outn() << "(" << reason++ << ") \"" << classname << "\" is an invalid class name" << std::endl;
 
   return -1;
 }
@@ -673,6 +688,61 @@ template class std::map<std::string,int>;
 template class std::set<std::string>;
 
 #endif
+
+/////////////////////////////////////////////////////////////////////////////
+
+namespace {
+  template <typename T>
+  T
+  min (const T& t1,
+       const T& t2,
+       const T& t3) {
+    return std::min(std::min(t1,t2),t3);
+  }
+}
+
+std::string::size_type
+sc::string_distance(const std::string& str1,
+                    const std::string& str2) {
+
+  typedef std::string::size_type intsize;
+  const intsize lenStr1 = str1.length();
+  const intsize lenStr2 = str2.length();
+
+  std::vector< std::vector<intsize> > d(lenStr1+1);
+  for(intsize i=0; i<=lenStr1; ++i)
+    d[i].resize(lenStr2+1);
+
+  for(intsize i=0; i<=lenStr1; ++i)
+    d[i][0] = i;
+  for(intsize j=1; j<=lenStr2; ++j)
+    d[0][j] = j;
+
+  for(intsize i=1; i<=lenStr1; ++i) {
+    for(intsize j=1; j<=lenStr2; ++j) {
+
+      intsize cost;
+      if (str1[i-1] == str2[j-1])
+        cost = 0;
+      else
+        cost = 1;
+
+      d[i][j] = min(
+                   d[i-1][j] + 1,     // deletion
+                   d[i][j-1] + 1,     // insertion
+                   d[i-1][j-1] + cost   // substitution
+                );
+
+      if (i > 1 and j > 1 and str1[i] == str2[j-1] and str1[i-1] == str2[j])
+        d[i][j] = std::min(
+            d[i][j],
+            d[i-2][j-2] + cost   // transposition
+        );
+    }
+  }
+
+  return d[lenStr1][lenStr2];
+}
 
 /////////////////////////////////////////////////////////////////////////////
 

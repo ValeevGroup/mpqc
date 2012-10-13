@@ -77,6 +77,11 @@ namespace sc {
       const Ref<DensityFittingInfo>& dfinfo() const { return dfinfo_; }
       void dfinfo(const Ref<DensityFittingInfo>& d) { dfinfo_ = d; }
       const Ref<OrbitalSpaceRegistry>& orbital_registry() const { return oreg_; }
+      /**
+       * @return prec \f$ \log_2(\epsilon) \f$, where \f$ \epsilon \f$ is the abolute numerical precision of the integrals
+       *         requested from the produced operator matrices
+       */
+      double log2_precision() const { return log2_precision_; }
 
       /// sets AO densities. Unless these are identical to the current densities, contents will be cleared.
       void set_densities(const RefSymmSCMatrix& aodensity_alpha,
@@ -85,6 +90,18 @@ namespace sc {
       RefSymmSCMatrix P() const { return P_; }
       /// return open-shell density in AO basis
       RefSymmSCMatrix Po() const { return Po_; }
+
+      /**
+       * Specifies the precision of the computed operator matrices.
+       * The default precision assumed by a newly constructed FockBuildRuntime
+       * is -50 ( \f$ 2^{-50} \approx 10^{-15} \f$ ).
+       * Using this function to increase the precision \em may cause some
+       * matrices of lower precision to be purged from cache.
+       *
+       * @param prec \f$ \log_2(\epsilon) \f$, where \f$ \epsilon \f$ is the absolute numerical precision of the integrals
+       *        requested from the produced Fock matrices.
+       */
+      void set_log2_precision(double prec);
 
     private:
 
@@ -102,6 +119,7 @@ namespace sc {
       Ref<GaussianBasisSet> basis_;
       RefSCVector efield_;
       bool spin_polarized_;
+      double log2_precision_;
 
       // Densities
       RefSymmSCMatrix P_, Po_;

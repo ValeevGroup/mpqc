@@ -121,7 +121,7 @@ WavefunctionWorld::WavefunctionWorld(const Ref<KeyVal>& keyval)
   dynamic_ = static_cast<bool>(keyval->booleanvalue("dynamic",KeyValValueboolean(false)));
 
   // ints precision
-  // the default will indicate that should determing ints_precision heuristically
+  // the default will indicate that ints_precision will be determined heuristically
   ints_precision_ = keyval->doublevalue("ints_precision", KeyValValuedouble(DBL_MAX));
 
   mem_ = MemoryGrp::get_default_memorygrp();
@@ -201,14 +201,17 @@ WavefunctionWorld::initialize()
   tfactory_->set_dynamic(dynamic_);
   tfactory_->set_ints_method(ints_method_);
   tfactory_->set_file_prefix(ints_file_);
+  double tfactory_ints_precision;
   if (ints_precision_ != DBL_MAX) { // precision provided in the constructor -- override wfn
-    tfactory_->set_log2_precision( log(ints_precision_) / log(2.0) );
+    tfactory_ints_precision = ints_precision_;
   }
   else { // determine the precision using wfn accuracy
     // but in practice I have no idea how to do this reliably
     const double heuristic_precision = 1e-15;
-    tfactory_->set_log2_precision( log(heuristic_precision) / log(2.0) );
+    tfactory_ints_precision = heuristic_precision;
   }
+  const double tfactory_ints_log2_precision = log(tfactory_ints_precision) / log(2.0);
+  tfactory_->set_log2_precision( tfactory_ints_log2_precision );
 
   {
 //    // also create AO spaces
@@ -242,6 +245,8 @@ WavefunctionWorld::initialize()
                                               msg(),
                                               thr());
     fockbuild_runtime_->dfinfo( const_cast<DensityFittingInfo*>(moints_runtime_->runtime_4c()->params()) );
+    const double fock_log2_precision = tfactory_ints_log2_precision;
+    fockbuild_runtime_->set_log2_precision( tfactory_ints_log2_precision );
 
 //    if (bs_df_) { // DF-BS
 //      Ref<Integral> integral = moints_runtime_->factory()->integral();

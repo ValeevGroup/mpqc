@@ -734,10 +734,11 @@ RefWavefunction::init() const
     RefWavefunction* this_nonconst = const_cast<RefWavefunction*>(this);
     // make sure it's computed first
     const double e = this_nonconst->energy();
-    this_nonconst->init_spaces();//should pay great attention to this!
 
     // make sure that FockBuildRuntime uses same density fitting info as this reference
     world_->fockbuild_runtime()->dfinfo(this->dfinfo());
+
+    this_nonconst->init_spaces();//should pay great attention to this!
 
     // make sure that FockBuildRuntime uses same densities as the reference wavefunction
 

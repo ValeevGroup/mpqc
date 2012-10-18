@@ -511,11 +511,19 @@ Debugger::Backtrace::Backtrace(const std::string& prefix) : prefix_(prefix)
   char** frame_symbols = backtrace_symbols(stack_addrs, naddrs);
   // starting @ 1 to skip this function
   for(int i=1; i<naddrs; ++i) {
+    // extract (mangled) function name
+    std::string mangled_function_name;
+    {
+      std::istringstream iss(std::string(frame_symbols[i]), std::istringstream::in);
+      std::string token0, token1, token2;
+      iss >> token0 >> token1 >> token2 >> mangled_function_name;
+    }
+
     std::ostringstream oss;
     oss << prefix_
         << "frame " << i
         << ": return address = " << stack_addrs[i] << std::endl
-        << "  symbol = " << __demangle(frame_symbols[i]);
+        << "  symbol = " << __demangle(mangled_function_name);
     frames_.push_back(oss.str());
   }
   free(frame_symbols);

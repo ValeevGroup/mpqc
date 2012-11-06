@@ -515,8 +515,8 @@ Debugger::Backtrace::Backtrace(const std::string& prefix) : prefix_(prefix)
     std::string mangled_function_name;
     {
       std::istringstream iss(std::string(frame_symbols[i]), std::istringstream::in);
-      std::string token0, token1, token2;
-      iss >> token0 >> token1 >> token2 >> mangled_function_name;
+      std::string frame, file, address;
+      iss >> frame >> file >> address >> mangled_function_name;
     }
 
     std::ostringstream oss;

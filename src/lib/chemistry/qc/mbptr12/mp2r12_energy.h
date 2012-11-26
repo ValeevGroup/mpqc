@@ -332,6 +332,26 @@ class MP2R12Energy_Diag : public MP2R12Energy
 
     RefSCMatrix compute_D_CABS(SpinCase1 spin);
     RefSCMatrix compute_D_CABS_test(SpinCase1 spin);
+    // compute MP2 one-electron density matrix
+    RefSCMatrix compute_1rdm_mp2(const SpinCase1 spin);
+    RefSCMatrix compute_1rdm_mp2_test(const SpinCase1 spin);
+    // compute MP2 T2 amplitude (antisymmetrized), stored in array (a,b,i,j)
+    void compute_T2_mp2(const SpinCase2 spincase,
+                        double* const T2ab_ij);
+    // compute F12 corrected T2 amplitude (antisymmetrized), stored in array (a,b,i,j)
+    void compute_T2abij_f12corr(const SpinCase2 spincase,
+                                const double C_0, const double C_1,
+                                double* const T2ab_ij_f12corr);
+    // compute MP2F12 T2 amplitude = T2 (MP2) + T2 (F12 corrected)
+    void compute_T2abij_mp2f12(const int nocc1_act, const int nocc2_act,
+                               const int nvir1, const int nvir2,
+                               const double* const T2ab_ij_mp2,
+                               const double* const T2ab_ij_f12corr,
+                               double* const T2abij_mp2f12);
+    // compute MP2F12 T2 amplitude, stored in array (a,b,i,j)
+    void compute_T2abij_mp2f12(const SpinCase2 spincase,
+                               const double C_0, const double C_1,
+                               double* const T2ab_ij_mp2f12);
     // transform the one-particle density matrix into the MPQC ordering
     RefSCMatrix onepdm_transformed(const SpinCase1& spin, const bool frozen_core, const RefSCMatrix& D);
     // test function for computing CCSD dipole moment

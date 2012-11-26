@@ -37,7 +37,7 @@ mole<CCSD>: (
   abs_method = cabs+
   memory     = 200000000
   workmemory = 100000000
-  store_ints = posix
+  store_ints = mem
   nfzc = auto
   ansatz<R12Ansatz> : ( diag = false )
   reference<CLHF>: (

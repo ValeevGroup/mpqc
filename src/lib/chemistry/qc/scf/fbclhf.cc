@@ -216,7 +216,6 @@ DFCLHF::ao_fock(double accuracy)
   Timer routine_tim("ao_fock");
   Timer step_tim("misc");
   int nthread = threadgrp_->nthread();
-  assert(nthread == 1);
 
   // transform the density difference to the AO basis
   RefSymmSCMatrix dd = cl_dens_diff_;

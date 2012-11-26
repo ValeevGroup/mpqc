@@ -31,6 +31,7 @@
 #include <chemistry/qc/wfn/wfn.h>
 #include <chemistry/qc/wfn/obwfn.h>
 #include <chemistry/qc/wfn/spin.h>
+#include <math/distarray4/distarray4.h>
 
 namespace sc {
 
@@ -255,6 +256,7 @@ namespace sc {
       virtual void obsolete() {
         wfn_->obsolete();
         scmat_ = 0;
+        da4_ = 0;
       }
 
       /// the corresponding Wavefunction
@@ -278,8 +280,12 @@ namespace sc {
                                __FILE__,
                                __LINE__);
       }
-      /// full density matrix
+      /// full density matrix, can be used for RDM of any rank
       virtual RefSymmSCMatrix scmat() const;
+      /** should only be used for R=2
+          @return DistArray4 object that contains RDM2
+        */
+      virtual const Ref<DistArray4>& da4() const;
 
       /// RDM of rank decreased by 1
       virtual Ref< SpinFreeRDM< static_cast<Rank>(R-1) > > rdm_m_1() const;
@@ -289,7 +295,10 @@ namespace sc {
       Ref<Wavefunction> wfn_;
 
     protected:
+      // used for R=1
       mutable RefSymmSCMatrix scmat_;
+      // used for R=2
+      mutable Ref<DistArray4> da4_;
   };
 
   template <Rank R>

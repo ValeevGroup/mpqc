@@ -113,13 +113,14 @@ R12WavefunctionWorld::construct_orthog_aux_()
   if (abs_space_.nonnull())
     return;
 
-  nlindep_aux_ = -1;
   if (! this->basis()->equiv(bs_aux_) &&
       (orthog_method() == OverlapOrthog::Symmetric ||
        orthog_method() == OverlapOrthog::Canonical) &&
       this->r12tech()->abs_nlindep() >= 0) {  // if R12Technology has abs_nlindep, use it only with symmetric/canonical orthogonalization
     nlindep_aux_ = this->r12tech()->abs_nlindep();
   }
+  else // will compute the number of linear dependencies automatically
+    nlindep_aux_ = -1;
   abs_space_ = orthogonalize("p'","RIBS", bs_aux_, integral(), orthog_method(), r12tech()->abs_lindep_tol(), nlindep_aux_);
   if (bs_aux_ == bs_ri_) {
     ribs_space_ = abs_space_;
@@ -139,13 +140,14 @@ R12WavefunctionWorld::construct_orthog_ri_()
     construct_orthog_aux_();
   if (ribs_space_.null()) {
 
-    nlindep_ri_ = -1;
     if (! this->basis()->equiv(bs_ri_) &&
         (orthog_method() == OverlapOrthog::Symmetric ||
          orthog_method() == OverlapOrthog::Canonical) &&
         this->r12tech()->abs_nlindep() >= 0) {  // if R12Technology has abs_nlindep, use it only with symmetric/canonical orthogonalization
       nlindep_ri_ = this->r12tech()->abs_nlindep();
     }
+    else  // will compute the number of linear dependencies automatically
+      nlindep_ri_ = -1;
 
     ribs_space_ = orthogonalize("p'","RIBS", bs_ri_, integral(), orthog_method(), r12tech()->abs_lindep_tol(), nlindep_ri_);
   }
@@ -161,12 +163,13 @@ R12WavefunctionWorld::abs_spans_obs_()
   // Compute the bumber of linear dependencies in OBS+ABS
   GaussianBasisSet& abs = *(bs_aux_.pointer());
   Ref<GaussianBasisSet> ri_basis = abs + refwfn()->basis();
-  int nlindep_ri = 0;
+  int nlindep_ri;
   if (bs_ri_.nonnull() && ri_basis->equiv(bs_ri_)) {
     construct_orthog_ri_();
     nlindep_ri = nlindep_ri_;
   }
   else {
+    nlindep_ri = -1;  // will compute the number of linear dependencies automatically
     Ref<OrbitalSpace> ribs_space = orthogonalize("p+p'","OBS+ABS", ri_basis, integral(), orthog_method(), r12tech()->abs_lindep_tol(), nlindep_ri);
   }
 

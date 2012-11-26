@@ -312,9 +312,8 @@ R12IntEval::compute_emp2_cabs_singles_noncanonical(bool vir_cabs_coupling) {
         Ref<SCElementScalarProduct> dotprodop = new SCElementScalarProduct;
         T1_cabs_[s].element_op(dotprodop, FiA);
         const double E2 = dotprodop->result();
-        std::cout << "nonconverged (2)_S energy = " << E2
-            << " (elapsed spincase " << (spin == Alpha ? "alpha" : "alpha+beta") << ")"
-            << std::endl;
+        std::cout << indent << "WARNING: CG solver for (2)_S ("
+                  << prepend_spincase(spin, std::string("spin")) << ") did not converge, using direct solver" << std::endl;
         converged = false; // do not rethrow ...
       }
 
@@ -386,15 +385,15 @@ R12IntEval::compute_emp2_cabs_singles_noncanonical_ccsd(const RefSCMatrix& T1_ia
 
   // prerequsites:
   // H1_A^i = F_a'^i where a' is cabs
+  // H1_a^B = F_a^b'
   // H0_A^B = F_a'^b'
-  // H0_a^B = F_a^b'
   // H0_i^j = F_i^j
   // compute:
   // R_A^i =  F_A^B t_A^i - F_j^i t^j_A + F_A^a t^i_a + H1_A^i
   // update:
   // t_A^i -= R_A^i / (F_A^A - F_i^i)
   // energy correction:
-  // E2 = t_A^i H1^A_i
+  // E2 = t_A^i H1^A_i + t_A^i H1^A_a t^a_i
 
   Ref<MessageGrp> msg = r12world()->world()->msg();
   Ref<MemoryGrp> mem = r12world()->world()->mem();
@@ -442,7 +441,7 @@ R12IntEval::compute_emp2_cabs_singles_noncanonical_ccsd(const RefSCMatrix& T1_ia
       CABS_singles_h0t1 h0t1(FAA, Fii);
       RefSCMatrix rhs = FiA.copy();
       rhs.accumulate_product(T1_ia, FaA);
-      rhs.scale(-1.0);
+      rhs.scale(-1.0);  // rhs = - (F_i^a' + t_i^a F_a^a')
       double Rnorm2;
       try {
         Rnorm2 = linsolv_conjugate_gradient(h0t1, rhs, T1_cabs_[s], PC,
@@ -459,8 +458,9 @@ R12IntEval::compute_emp2_cabs_singles_noncanonical_ccsd(const RefSCMatrix& T1_ia
         throw;
       }
       Ref<SCElementScalarProduct> dotprodop = new SCElementScalarProduct;
-      T1_cabs_[s].element_op(dotprodop, FiA);
-      result += dotprodop->result();
+      T1_cabs_[s].element_op(dotprodop, rhs);
+      // - because rhs included a - sign
+      result -= dotprodop->result();
     }
 
     if (! spin_polarized()) {

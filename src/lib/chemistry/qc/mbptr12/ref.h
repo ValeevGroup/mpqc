@@ -458,6 +458,17 @@ namespace sc {
   compute_canonvir_space(const Ref<FockBuildRuntime>& fb_rtime,
                          const Ref<OrbitalSpace>& A,
                          SpinCase1 spin);
+
+  /// construct and add an AO space to aoreg and oreg
+  void add_ao_space(const Ref<GaussianBasisSet>& bs,
+                    const Ref<Integral>& ints,
+                    const Ref<AOSpaceRegistry>& aoreg,
+                    const Ref<OrbitalSpaceRegistry> oreg);
+  /// undo the effect of add_ao_space()
+  void remove_ao_space(const Ref<GaussianBasisSet>& bs,
+                       const Ref<AOSpaceRegistry>& aoreg,
+                       const Ref<OrbitalSpaceRegistry> oreg);
+
 };
 
 #endif

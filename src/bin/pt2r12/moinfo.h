@@ -116,14 +116,12 @@ namespace sc {
       /// the orbital space in which the density is reported
       Ref<OrbitalSpace> orbs() const { return orbs_; }
       /// density matrix
-      RefSymmSCMatrix scmat() const { return rdm_; }
+      RefSymmSCMatrix scmat() const { return scmat_; }
 
     private:
       static ClassDesc class_desc_;
 
-    private:
       Ref<OrbitalSpace> orbs_;
-      RefSymmSCMatrix rdm_;
   };
 
   /// Reads 2-RDM from a text file
@@ -143,7 +141,9 @@ namespace sc {
       /// the orbital space of spincase s in which the density is reported
       Ref<OrbitalSpace> orbs() const { return orbs_; }
       /// density matrix
-      RefSymmSCMatrix scmat() const { return rdm_; }
+      RefSymmSCMatrix scmat() const { return scmat_; }
+      /// density matrix in DistArray4 format
+      const Ref<DistArray4>& da4() const { return da4_; }
       Ref< SpinFreeRDM<One> > rdm_m_1() const;
 
     private:
@@ -151,7 +151,6 @@ namespace sc {
 
     private:
       Ref<OrbitalSpace> orbs_;
-      RefSymmSCMatrix rdm_;
       std::string filename_; // filename from which this was constructed -- may be useful to find rdm1 file
 
       void init_from_rdm2_occspace(const std::vector<unsigned int>& indexmap,

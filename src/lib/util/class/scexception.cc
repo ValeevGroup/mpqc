@@ -49,7 +49,8 @@ SCException::SCException(const char *description,
   line_(line),
   class_desc_(class_desc),
   exception_type_(exception_type),
-  elaboration_c_str_(0)
+  elaboration_c_str_(0),
+  backtrace_("=scbacktrace=: ")
 {
   try {
       elaboration_ = new ostringstream;
@@ -69,6 +70,8 @@ SCException::SCException(const char *description,
           elaborate() << "class:       " << class_desc_->name()
                       << std::endl;
         }
+      const size_t nframes_to_skip = 1;
+      elaborate() << "backtrace:" << std::endl << backtrace_.str(nframes_to_skip);
     }
   catch (...) {
       // info in the elaboration is incomplete, so delete it
@@ -82,7 +85,8 @@ SCException::SCException(const SCException& ref) throw():
   description_(ref.description_),
   file_(ref.file_),
   line_(ref.line_),
-  class_desc_(ref.class_desc_)
+  class_desc_(ref.class_desc_),
+  backtrace_(ref.backtrace_)
 {
   elaboration_c_str_ = 0;
   elaboration_ = 0;
@@ -116,6 +120,7 @@ SCException::what() const throw()
           elaboration_c_str_ = 0;
           elaboration_c_str_ = new char[1+elab.size()];
           for (int i=0; i<elab.size(); i++) elaboration_c_str_[i] = elab[i];
+          elaboration_c_str_[elab.size()] = '\0';
           return elaboration_c_str_;
         }
     }

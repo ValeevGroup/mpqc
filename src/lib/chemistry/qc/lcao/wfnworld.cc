@@ -120,6 +120,10 @@ WavefunctionWorld::WavefunctionWorld(const Ref<KeyVal>& keyval)
   // dynamic load balancing?
   dynamic_ = static_cast<bool>(keyval->booleanvalue("dynamic",KeyValValueboolean(false)));
 
+  // ints precision
+  // the default will indicate that ints_precision will be determined heuristically
+  ints_precision_ = keyval->doublevalue("ints_precision", KeyValValuedouble(DBL_MAX));
+
   mem_ = MemoryGrp::get_default_memorygrp();
   msg_ = MessageGrp::get_default_messagegrp();
   thr_ = ThreadGrp::get_default_threadgrp();
@@ -146,6 +150,7 @@ WavefunctionWorld::WavefunctionWorld(StateIn& si) : SavableState(si)
   si.get(debug_);
   si.get(dynamic_);
   si.get(print_percent_);
+  si.get(ints_precision_);
 
   tfactory_ << SavableState::restore_state(si);
   moints_runtime_ << SavableState::restore_state(si);
@@ -166,6 +171,7 @@ void WavefunctionWorld::save_data_state(StateOut& so)
   so.put(debug_);
   so.put(dynamic_);
   so.put(print_percent_);
+  so.put(ints_precision_);
 
   SavableState::save_state(tfactory_.pointer(),so);
   SavableState::save_state(moints_runtime_.pointer(),so);
@@ -195,6 +201,17 @@ WavefunctionWorld::initialize()
   tfactory_->set_dynamic(dynamic_);
   tfactory_->set_ints_method(ints_method_);
   tfactory_->set_file_prefix(ints_file_);
+  double tfactory_ints_precision;
+  if (ints_precision_ != DBL_MAX) { // precision provided in the constructor -- override wfn
+    tfactory_ints_precision = ints_precision_;
+  }
+  else { // determine the precision using wfn accuracy
+    // but in practice I have no idea how to do this reliably
+    const double heuristic_precision = 1e-15;
+    tfactory_ints_precision = heuristic_precision;
+  }
+  const double tfactory_ints_log2_precision = log(tfactory_ints_precision) / log(2.0);
+  tfactory_->set_log2_precision( tfactory_ints_log2_precision );
 
   {
 //    // also create AO spaces
@@ -228,6 +245,8 @@ WavefunctionWorld::initialize()
                                               msg(),
                                               thr());
     fockbuild_runtime_->dfinfo( const_cast<DensityFittingInfo*>(moints_runtime_->runtime_4c()->params()) );
+    const double fock_log2_precision = tfactory_ints_log2_precision;
+    fockbuild_runtime_->set_log2_precision( tfactory_ints_log2_precision );
 
 //    if (bs_df_) { // DF-BS
 //      Ref<Integral> integral = moints_runtime_->factory()->integral();

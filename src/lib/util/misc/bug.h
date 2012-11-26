@@ -28,17 +28,21 @@
 #ifndef _util_misc_bug_h
 #define _util_misc_bug_h
 
+#include <string>
+#include <vector>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/ref/ref.h>
 
 namespace sc {
 
-/** The Debugger class describes what should be done when a catastrophic
-error causes unexpected program termination.  It can try things such as
-start a debugger running where the program died or it can attempt to
-produce a stack traceback showing roughly where the program died.  These
-attempts will not always succeed.  */
+/**
+ * The Debugger class describes what should be done when a catastrophic
+ * error causes unexpected program termination.  It can try things such as
+ * start a debugger running where the program died or it can attempt to
+ * produce a stack traceback showing roughly where the program died.  These
+ * attempts will not always succeed.
+ */
 class Debugger: public SavableState {
   protected:
     std::string prefix_;
@@ -58,9 +62,12 @@ class Debugger: public SavableState {
 
     static Debugger *default_debugger_;
 
-    /// demangles a symbol
-    static std::string __demangle(const char* symbol);
-    /// prints out traceback if any methods are available
+    /** prints out a backtrace
+     *
+     * @param prefix this string will be prepended at the beginning of each line of Backtrace
+     * @param reason optional string specifying the reason for traceback
+     * @return backtrace
+     */
     static void __traceback(const std::string& prefix, const char *reason = 0);
   public:
     Debugger(const char *exec = 0);
@@ -99,14 +106,62 @@ class Debugger: public SavableState {
     Debugger(StateIn&);
     ~Debugger();
 
+    /**
+     * Creates a backtrace of a running program/thread. Example of use:
+     * \code
+     * void make_omelet(int num_eggs) {
+     *   if (num_eggs < 1) {
+     *     sc::Debugger::Backtrace bt("breakfast fail:");
+     *     throw std::runtime_error(bt.str());
+     *   }
+     *   stove.on();
+     *   // etc.
+     * }
+     * \endcode
+     *
+     */
+    class Backtrace {
+      public:
+        /**
+         * @param prefix will be prepended to each line
+         */
+        Backtrace(const std::string& prefix = std::string(""));
+        Backtrace(const Backtrace&);
+
+        /**
+         * @return true is did not get a backtrace
+         */
+        bool empty() const {
+          return frames_.empty();
+        }
+
+        /**
+         * converts to a string
+         * @param nframes_to_skip how many frames to skip
+         * @return string representation of Backtrace, with each frame on a separate line, from bottom to top
+         */
+        std::string str(const size_t nframes_to_skip = 0) const;
+
+      private:
+        /// frames_.begin() is the bottom of the stack
+        std::vector<std::string> frames_;
+        /// prepended to each line
+        std::string prefix_;
+
+        /// demangles a symbol
+        static std::string __demangle(const std::string& symbol);
+    };
+
     /** The debug member attempts to start a debugger
         running on the current process. */
     virtual void debug(const char *reason = 0);
-    /** The traceback member attempts a stack traceback
+    /** The traceback member attempts to produce a Backtrace
      for the current process.  A symbol table must be saved for
      the executable if any sense is to be made of the traceback.
      This feature is available on platforms with (1) libunwind,
-     (2) backtrace, or (3) certain platforms with hardwired unwinding. */
+     (2) backtrace, or (3) certain platforms with hardwired unwinding.
+     @param reason optional string specifying the reason for traceback
+     */
     virtual void traceback(const char *reason = 0);
     /// Turn on or off debugging on a signel.  The default is on.
     virtual void set_debug_on_signal(int);

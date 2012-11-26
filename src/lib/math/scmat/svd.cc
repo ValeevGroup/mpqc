@@ -385,7 +385,7 @@ namespace sc {
         const double dx = (XX_ip1[i] - XX_i[i]);
         norm += dx*dx;
       }
-      norm = sqrt(norm);
+      norm = sqrt(norm) / n; // divide by n to make it dimension-independent
       if (norm < conv_threshold)
         converged = true;
       ++iter;
@@ -499,7 +499,7 @@ namespace sc {
       F77_DAXPY(&n, &minus_alpha_i, APP_i, &ione, RR_i, &ione);
 
       const double r_ip1_norm = sqrt(F77_DDOT(&n, RR_i, &ione,
-                                              RR_i, &ione));
+                                              RR_i, &ione)) / n;  // divide by n to make this dimension-independent
       if (r_ip1_norm < conv_threshold)
         converged = true;
 

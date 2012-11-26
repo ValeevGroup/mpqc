@@ -140,26 +140,49 @@ namespace sc {
 	    }
 	    else if (equiv_12_43_) {
 		Q34_.resize(n12);
-		int f12 = 0;
+		int f21 = 0;
 		for(int s2=0; s2<nsh2; ++s2) {
-		    for(int s1=0; s1<nsh1; ++s1, ++f12) {
-			Q34_[f12] = Q12_[s1*nsh2 + s2];
+		    for(int s1=0; s1<nsh1; ++s1, ++f21) {
+			Q34_[f21] = Q12_[s1*nsh2 + s2];
 		    }
 		}
 	    }
 	}
 
-        if (debugclass_ > 1) {
-            ExEnv::out0() << indent << "BoundsLibint2::Q12 :" << std::endl;
-            for(int s1=0; s1<nsh1; ++s1) {
-                const int s2max = equiv_1_2_ ? s1 : nsh2-1;
-                for(int s2=0; s2<=s2max; ++s2) {
-                    const int f12 = s1*nsh2 + s2;
-                    ExEnv::out0() << indent << s1 << " " << s2 << "  "
-                                  << int(Q12_[f12]) << std::endl;
-                }
+    if (debugclass_ > 0) {
+        ExEnv::out0() << indent << "BoundsLibint2::Q12 :" << std::endl;
+        ExEnv::out0() << indent << "bs1:" << std::endl;
+        b1->print_brief(ExEnv::out0());
+        ExEnv::out0() << indent << "bs2:" << std::endl;
+        b2->print_brief(ExEnv::out0());
+        for(int s1=0; s1<nsh1; ++s1) {
+            const int s2max = equiv_1_2_ ? s1 : nsh2-1;
+            for(int s2=0; s2<=s2max; ++s2) {
+                const int f12 = s1*nsh2 + s2;
+                ExEnv::out0() << indent << s1 << " " << s2 << "  "
+                              << int(Q12_[f12]) << std::endl;
             }
         }
+    }
+
+    if (debugclass_ > 0 && not equiv_12_34_ && not equiv_12_43_) {
+      const int nsh3 = b3->nshell();
+      const int nsh4 = b4->nshell();
+        ExEnv::out0() << indent << "BoundsLibint2::Q34 :" << std::endl;
+        ExEnv::out0() << indent << "bs3:" << std::endl;
+        b3->print_brief(ExEnv::out0());
+        ExEnv::out0() << indent << "bs4:" << std::endl;
+        b4->print_brief(ExEnv::out0());
+        for(int s3=0; s3<nsh3; ++s3) {
+            const int s4max = equiv_3_4_ ? s3 : nsh4-1;
+            for(int s4=0; s4<=s4max; ++s4) {
+                const int f34 = s3*nsh4 + s4;
+                ExEnv::out0() << indent << s3 << " " << s4 << "  "
+                              << int(Q34_[f34]) << std::endl;
+            }
+        }
+    }
+
     }
 
     template <class Int2e>

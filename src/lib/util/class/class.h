@@ -334,6 +334,17 @@ class ForceLink: public ForceLinkBase<A> {
     DescribedClass *create(A a) { return new T(a); }
 };
 
+
+/**
+ * computes Damerau–Levenshtein distance between two strings
+ * @param str1 a string
+ * @param str2 another string
+ * @return the distance between the strings
+ */
+std::string::size_type
+string_distance(const std::string& str1,
+                const std::string& str2);
+
 }
 
 #endif

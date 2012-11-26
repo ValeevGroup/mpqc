@@ -397,7 +397,7 @@ LocalSymmSCMatrix::gen_invert_this(double condition_number_threshold)
   double **evecs = cmat_new_square_matrix(n());
 
   cmat_diag(rows,evals,evecs,n(),1,1.0e-15);
-  const double sigma_max = * std::max_element(evals, evals+n(), fabs_less<double>());
+  const double sigma_max = * std::max_element(evals, evals+n(), abs_less<double>());
   const double sigma_min_threshold = sigma_max / condition_number_threshold;
   for (int i=0; i < n(); i++) {
     if (fabs(evals[i]) > sigma_min_threshold)

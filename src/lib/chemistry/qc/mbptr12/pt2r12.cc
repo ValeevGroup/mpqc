@@ -1375,8 +1375,8 @@ double PT2R12::cabs_singles_Complete()
   RefSCMatrix hcore_ii_block = r12eval_->fock(pspace, pspace, spin, 0.0, 0.0);
   RefSCMatrix hcore_AA_block = r12eval_->fock(Aspace, Aspace, spin, 0.0, 0.0);
   RefSCMatrix hcore_iA_block = r12eval_->fock(pspace, Aspace, spin, 0.0, 0.0);
-  RefSCMatrix hcore_AA = local_kit->matrix(dimA, dimA);
-  RefSCMatrix hcore_ii = local_kit->matrix(dimi, dimi);
+  RefSymmSCMatrix hcore_AA = local_kit->symmmatrix(dimA);
+  RefSymmSCMatrix hcore_ii = local_kit->symmmatrix(dimi);
   RefSCMatrix hcore_iA = local_kit->matrix(dimi, dimA);
   for (int aa = 0; aa < nA; ++aa) // can't use accumulate
   {
@@ -1404,11 +1404,11 @@ double PT2R12::cabs_singles_Complete()
   hcore_ii.print(string("core ii").c_str());
   hcore_iA.print(string("core iA").c_str());
 #endif
-  RefSCMatrix delta_AA = hcore_AA->clone();
+  RefDiagSCMatrix delta_AA = hcore_AA.kit()->diagmatrix(hcore_AA.dim());
   delta_AA->assign(0.0);
   for (int i = 0; i < nA; ++i)
   {
-    delta_AA->set_element(i,i, 1.0);
+    delta_AA->set_element(i, 1.0);
   }
 
   RefSCMatrix gamma1 = rdm1_sf_2spaces(pspace, pspace);
@@ -1771,7 +1771,8 @@ double PT2R12::cabs_singles_Dyall()
   X.assign(0.0);
   RefSymmSCMatrix Bsymm = B.kit()->symmmatrix(dimiA);
   Bsymm.assign_subblock(B, 0, ni*nA-1, 0, ni*nA-1);
-  lapack_linsolv_symmnondef(Bsymm, X, b);
+  //lapack_linsolv_symmnondef(Bsymm, X, b);
+  linsolv_symmnondef_cg(Bsymm, X, b);
   double E = -1.0 * (X.dot(b));
   return E;
 }
@@ -1974,7 +1975,7 @@ RefSCMatrix PT2R12::g(const Ref<OrbitalSpace>& bra1,
       // find equivalent spaces in the registry
       Ref<OrbitalSpaceRegistry> oreg = this->r12world()->world()->tfactory()->orbital_registry();
       if (!oreg->value_exists(bra1) || !oreg->value_exists(bra2) || !oreg->value_exists(ket1) || !oreg->value_exists(ket2))
-        throw ProgrammingError("SpinOrbitalPT2R12::g() -- spaces must be registered",__FILE__,__LINE__);
+        throw ProgrammingError("PT2R12::g() -- spaces must be registered",__FILE__,__LINE__);
 
 
       // compute (bra1 ket1 | bra2 ket2)

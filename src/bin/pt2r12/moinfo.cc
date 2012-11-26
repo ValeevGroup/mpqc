@@ -648,7 +648,7 @@ ExternSpinFreeRDMOne::ExternSpinFreeRDMOne(const std::string & filename,
     oss << "ExternSpinFreeRDMOne: could not open file " << filename;
     throw std::runtime_error(oss.str().c_str());
   }
-  rdm_ = orbs->coefs().kit()->symmmatrix(orbs->coefs().coldim()); rdm_.assign(0.0);
+  scmat_ = orbs->coefs().kit()->symmmatrix(orbs->coefs().coldim()); scmat_.assign(0.0);
   bool have_coefs = true;
   while(have_coefs) {
     int row, col;
@@ -658,20 +658,21 @@ ExternSpinFreeRDMOne::ExternSpinFreeRDMOne(const std::string & filename,
       --row;  --col;
       const unsigned int mbra = indexmap[row];
       const unsigned int mket = indexmap[col];
-      rdm_.set_element(mbra, mket, value);
+      scmat_.set_element(mbra, mket, value);
     }
     else
       have_coefs = false;
   }
   in.close();
 
-  //rdm_.print("ExternSpinFreeRDMOne:: MO density");
+  //scmat_.print("ExternSpinFreeRDMOne:: MO density");
 }
 
 ExternSpinFreeRDMOne::ExternSpinFreeRDMOne(const RefSymmSCMatrix& rdm, const Ref<OrbitalSpace>& orbs) :
-  SpinFreeRDM<One>(Ref<Wavefunction>()), rdm_(rdm), orbs_(orbs)
+  SpinFreeRDM<One>(Ref<Wavefunction>()), orbs_(orbs)
 {
-  //rdm_.print("ExternSpinFreeRDMOne:: MO density");
+  scmat_ = rdm;
+  //scmat_.print("ExternSpinFreeRDMOne:: MO density");
 }
 
 ExternSpinFreeRDMOne::~ExternSpinFreeRDMOne()
@@ -724,8 +725,8 @@ ExternSpinFreeRDMTwo::init_from_rdm2_actspace(const std::vector<unsigned int>& i
   RefSCDimension dim1 = new SCDimension(nocc);
   dim->blocks()->set_subdim(0, new SCDimension(dim->n()));
   dim1->blocks()->set_subdim(0, new SCDimension(dim1->n()));
-  rdm_ = occ_orbs->coefs().kit()->symmmatrix(dim);
-  rdm_.assign(0.0);
+  scmat_ = occ_orbs->coefs().kit()->symmmatrix(dim);
+  scmat_.assign(0.0);
   RefSymmSCMatrix  rdm1 = occ_orbs->coefs().kit()->symmmatrix(dim1); // to store 1-rdm in obs
   rdm1.assign(0.0);
 
@@ -813,7 +814,7 @@ ExternSpinFreeRDMTwo::init_from_rdm2_actspace(const std::vector<unsigned int>& i
         {
           const unsigned int lowind = r*nocc + s;
           if(uppind>=lowind)
-            rdm_.set_element(uppind,lowind, rdm1.get_element(p,r)*rdm1.get_element(q,s)
+            scmat_.set_element(uppind,lowind, rdm1.get_element(p,r)*rdm1.get_element(q,s)
                                             -0.5*rdm1.get_element(p,s)*rdm1.get_element(q,r));
         }
       }
@@ -831,12 +832,12 @@ ExternSpinFreeRDMTwo::init_from_rdm2_actspace(const std::vector<unsigned int>& i
         for (int s = 0; s < nact; ++s)
         {
           const unsigned int inds = indexmap[s];
-          rdm_.set_element(indp *nocc + indq, indr *nocc+inds, ext_act_rdm2.get_element(p*nact+q, r*nact+s));
+          scmat_.set_element(indp *nocc + indq, indr *nocc+inds, ext_act_rdm2.get_element(p*nact+q, r*nact+s));
         }
       }
     }
   }
-  //rdm_.print("ExternSpinFreeRDMTwo:: MO density");
+  //scmat_.print("ExternSpinFreeRDMTwo:: MO density");
 }
 
 void
@@ -853,8 +854,8 @@ ExternSpinFreeRDMTwo::init_from_rdm2_occspace(const std::vector<unsigned int>& i
   const unsigned int norbs = occ_orbs->coefs().coldim().n();
   RefSCDimension dim = new SCDimension(norbs * norbs);
   dim->blocks()->set_subdim(0, new SCDimension(dim->n()));
-  rdm_ = occ_orbs->coefs().kit()->symmmatrix(dim);
-  rdm_.assign(0.0);
+  scmat_ = occ_orbs->coefs().kit()->symmmatrix(dim);
+  scmat_.assign(0.0);
   bool have_coefs = true;
   while (have_coefs) {
     int bra1, bra2, ket1, ket2;
@@ -876,14 +877,14 @@ ExternSpinFreeRDMTwo::init_from_rdm2_occspace(const std::vector<unsigned int>& i
       const unsigned int mket1 = indexmap[ket1];
       const unsigned int mket2 = indexmap[ket2];
 
-      rdm_.set_element(mbra1 * norbs + mbra2, mket1 * norbs + mket2, value);
-      rdm_.set_element(mbra2 * norbs + mbra1, mket2 * norbs + mket1, value);
+      scmat_.set_element(mbra1 * norbs + mbra2, mket1 * norbs + mket2, value);
+      scmat_.set_element(mbra2 * norbs + mbra1, mket2 * norbs + mket1, value);
     } else
       have_coefs = false;
   }
   in.close();
 
-  //rdm_.print("ExternReadRDMTwo:: MO density");
+  //scmat_.print("ExternReadRDMTwo:: MO density");
 }
 
 ExternSpinFreeRDMTwo::~ExternSpinFreeRDMTwo()
@@ -904,7 +905,7 @@ ExternSpinFreeRDMTwo::rdm_m_1() const
         const unsigned k12_offset = k1 * norbs;
         double value = 0.0;
         for (unsigned int i2 = 0; i2 < norbs; ++i2) {
-          value += rdm_.get_element(b12_offset + i2, k12_offset + i2);
+          value += scmat_.get_element(b12_offset + i2, k12_offset + i2);
         }
         rdm1.set_element(b1, k1, value);
       }

@@ -146,7 +146,7 @@ LocalDiagSCMatrix::gen_invert_this(double condition_number_threshold)
 {
   int nelem = n();
   double *data = block->data;
-  const double sigma_max = * std::max_element(data, data+n(), fabs_less<double>());
+  const double sigma_max = * std::max_element(data, data+n(), abs_less<double>());
   const double sigma_min_threshold = sigma_max / condition_number_threshold;
   for (int i=0; i < nelem; i++) {
     if (fabs(data[i]) > sigma_min_threshold)

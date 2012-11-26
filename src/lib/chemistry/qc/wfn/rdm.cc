@@ -251,6 +251,14 @@ SpinFreeRDM<One>::scmat() const {
   return scmat_;
 }
 
+template<>
+const Ref<DistArray4>&
+SpinFreeRDM<One>::da4() const {
+  throw ProgrammingError("SpinFreeRDM<One>::da4() is called",
+                         __FILE__, __LINE__);
+  return da4_;
+}
+
 ////////////////////////
 
 template<>
@@ -266,12 +274,22 @@ SpinFreeRDM<Two>::scmat() const {
   throw ProgrammingError("SpinFreeRDM<Two>::scmat is called",
                          __FILE__,
                          __LINE__);
+  return scmat_; // unreachable
+}
+
+template<>
+const Ref<DistArray4>&
+SpinFreeRDM<Two>::da4() const {
+  throw ProgrammingError("SpinFreeRDM<Two>::scmat is called",
+                         __FILE__,
+                         __LINE__);
+  return da4_; // unreachable
 }
 
 template<>
 Ref< SpinFreeRDM<One> >
 SpinFreeRDM<Two>::rdm_m_1() const {
-  throw ProgrammingError("SpinFreeRDM<Two>::rdm_m_1 is called",
+  throw ProgrammingError("SpinFreeRDM<Two>::da4 is called",
                          __FILE__,
                          __LINE__);
 }

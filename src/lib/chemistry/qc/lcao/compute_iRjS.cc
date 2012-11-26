@@ -122,7 +122,8 @@ TwoBodyMOIntsTransform_iRjS::compute()
   Ref<ThreadLock> lock = thr_->new_lock();
   TwoBodyMOIntsTransform_13Inds** e13thread = new TwoBodyMOIntsTransform_13Inds*[thr_->nthread()];
   for (int i=0; i<thr_->nthread(); i++) {
-    e13thread[i] = new TwoBodyMOIntsTransform_13Inds(this,i,thr_->nthread(),lock,tbints[i],-100.0,debug());
+    e13thread[i] = new TwoBodyMOIntsTransform_13Inds(this,i,thr_->nthread(),lock,tbints[i],
+                                                     this->log2_epsilon(),debug());
   }
 
   /*-----------------------------------

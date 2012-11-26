@@ -206,7 +206,7 @@ MBPT2::MBPT2(const Ref<KeyVal>& keyval):
   msg_ = MessageGrp::get_default_messagegrp();
   thr_ = ThreadGrp::get_default_threadgrp();
 
-  method_ = keyval->stringvalue("method");
+  method_ = keyval->stringvalue("method", KeyValValuestring("default"));
 
   algorithm_ = keyval->stringvalue("algorithm");
 

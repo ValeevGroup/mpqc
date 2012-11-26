@@ -32,11 +32,20 @@
 
 namespace sc {
 
-  /// fabs_less(a,b) return true if fabs(a) < fabs(b)
-  template <typename T>
-  struct fabs_less : std::binary_function<T, T, bool> {
-    fabs_less() {}
-    bool operator()(T a, T b) { return fabs(a) < fabs(b); }
+  /**
+   * useful comparison functions
+   */
+  template <class T = double>
+  struct abs_less : public std::binary_function<T, T, bool> {
+    bool operator()(const T& a, const T& b) {
+      return std::less<T>()(std::abs(a),std::abs(b));
+    }
+  };
+  template <class T = double>
+  struct abs_greater : public std::binary_function<T, T, bool> {
+    bool operator()(const T& a, const T& b) {
+      return std::greater<T>()(std::abs(a),std::abs(b));
+    }
   };
 
 } // end of namespace sc

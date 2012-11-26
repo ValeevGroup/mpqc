@@ -145,7 +145,8 @@ TwoBodyMOIntsTransform_ikjy::compute()
   Ref<ThreadLock> lock = thr_->new_lock();
   TwoBodyMOIntsTransform_123Inds** e123thread = new TwoBodyMOIntsTransform_123Inds*[thr_->nthread()];
   for (int i=0; i<thr_->nthread(); i++) {
-    e123thread[i] = new TwoBodyMOIntsTransform_123Inds(this,i,thr_->nthread(),lock,tbints[i],-100.0,debug());
+    e123thread[i] = new TwoBodyMOIntsTransform_123Inds(this,i,thr_->nthread(),lock,tbints[i],
+                                                       this->log2_epsilon(),debug());
   }
 
   /*-----------------------------------

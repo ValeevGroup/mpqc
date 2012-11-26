@@ -121,6 +121,27 @@ namespace {
     }
   }
 
+  /// pack a matrix to a vector
+  void matrix_to_vector(RefSCVector &vector, const RefSymmSCMatrix &matrix) {
+    int n = matrix.dim().n();
+    for(int i=0; i<n; i++) {
+      for(int j=0; j<=i; j++) {
+        const double value = matrix.get_element(i,j);
+        vector.set_element(ordinary_INDEX(i,j,n),value);
+        vector.set_element(ordinary_INDEX(j,i,n),value);
+      }
+    }
+  }
+
+  /// pack a matrix to a vector
+  void matrix_to_vector(RefSCVector &vector, const RefDiagSCMatrix &matrix) {
+    int n = matrix.dim().n();
+    for(int i=0; i<n; i++) {
+      const double value = matrix.get_element(i);
+      vector.set_element(ordinary_INDEX(i,i,n),value);
+    }
+  }
+
   /// pack a matrix to a vector depending on SpinCase2
   void matrix_to_vector(RefSCVector &vector, const RefSCMatrix &matrix,const SpinCase2 &pairspin) {
     int dim1 = matrix.rowdim().n();

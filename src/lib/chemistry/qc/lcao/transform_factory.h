@@ -106,6 +106,7 @@ private:
   int debug_;
   MOIntsTransform::StoreMethod::type ints_method_;
   std::string file_prefix_;
+  double log2_precision_; //< numerical precision of the integrals
 
   template <typename TransformType> Ref<TwoBodyMOIntsTransform>
     twobody_transform(const std::string& name,
@@ -146,6 +147,11 @@ public:
   void set_debug(int debug);
   void set_print_percent(double print_percent);
   void set_dynamic(bool dynamic) { dynamic_ = dynamic; }
+  /**
+   * @param prec \f$ \log_2(\epsilon) \f$, where \f$ \epsilon \f$ is the absolute numerical precision of the integrals
+   *        requested from the produced MOIntsTransform objects. The default is -50 ( \f$ 2^{-50} \approx 10^{-15} \f$ ).
+   */
+  void set_log2_precision(double prec) { log2_precision_ = prec; }
 
   /// Returns the MemoryGrp object
   Ref<MemoryGrp> mem() const { return mem_; }
@@ -168,6 +174,11 @@ public:
   int debug() const { return debug_; }
   double print_percent() const { return print_percent_; }
   bool dynamic() const { return dynamic_; }
+  /**
+   * @return prec \f$ \log_2(\epsilon) \f$, where \f$ \epsilon \f$ is the abolute numerical precision of the integrals
+   *         requested from the produced MOIntsTransform objects
+   */
+  double log2_precision() const { return log2_precision_; }
 
   /// Returns OrbitalSpace object 1
   Ref<OrbitalSpace> space1() const;

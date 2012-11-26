@@ -36,6 +36,7 @@
 #include <exception>
 #include <sstream>
 #include <vector>
+#include <util/misc/bug.h>
 
 namespace sc {
 
@@ -50,6 +51,7 @@ class SCException: public std::exception {
     const char *exception_type_;
     mutable char *elaboration_c_str_;
     std::ostringstream *elaboration_;
+    Debugger::Backtrace backtrace_;
 
   public:
     /** Create an SCException.
@@ -92,7 +94,7 @@ class SCException: public std::exception {
     /// Returns the classname of the exception.  May return null.
     const char *exception_type() const throw() { return exception_type_; }
 
-    /** Returns a stream where addition information about the exception can
+    /** Returns a stream where additional information about the exception can
         be written.  This will throw if a valid stream cannot be returned
         (possibly due to low memory). */
     std::ostream &elaborate();

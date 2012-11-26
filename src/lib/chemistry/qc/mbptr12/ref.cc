@@ -125,6 +125,11 @@ Ref<OrbitalSpace>
 sc::compute_canonvir_space(const Ref<FockBuildRuntime>& fb_rtime,
                            const Ref<OrbitalSpace>& vir_space,
                            SpinCase1 spin) {
+  // add vir_space to the OrbitalSpaceRegistry, if necessary
+  const bool need_to_add_virspace = fb_rtime->orbital_registry()->key_exists(vir_space->id()) == false;
+  if (need_to_add_virspace)
+    fb_rtime->orbital_registry()->add(make_keyspace_pair(vir_space));
+
   // compute the Fock matrix in VBS space, convert to symmetric form
   const std::string key = ParsedOneBodyIntKey::key(vir_space->id(),vir_space->id(),
                                                    std::string("F"),
@@ -142,6 +147,11 @@ sc::compute_canonvir_space(const Ref<FockBuildRuntime>& fb_rtime,
                                               Fs.eigvals(),
                                               0, 0,
                                               OrbitalSpace::symmetry);
+
+  // clean up the mess
+  if (need_to_add_virspace)
+    fb_rtime->orbital_registry()->remove(vir_space->id());
+
   return result;
 }
 
@@ -212,15 +222,6 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
       else
         conv_uocc_mask[i] = true;
     }
-  }
-  // if VBS is given, recompute the masks for the virtuals
-  if (vbs.nonnull()) {
-    assert(fbrun.nonnull());
-    const int nvirt = vbs->rank();
-    uocc_mask.resize(nvirt);
-    uocc_act_mask.resize(nvirt);
-    std::fill(uocc_mask.begin(), uocc_mask.end(), true);
-    std::fill(uocc_act_mask.begin(), uocc_act_mask.end(), true);
   }
 
   const std::string prefix(to_string(spin));
@@ -311,8 +312,11 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
     std::string id = ParsedOrbitalSpaceKey::key(std::string("a(sym)"),spin);
     if (vbs.null())
       uocc_act_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, uocc_act_mask);
-    else
+    else {
+      uocc_act_mask.resize(uocc_sb_->rank());
+      std::fill(uocc_act_mask.begin(), uocc_act_mask.end(), true);
       uocc_act_sb_ = new MaskedOrbitalSpace(id, oss.str(), uocc_sb_, uocc_act_mask);
+    }
   }
   {
     ostringstream oss;
@@ -409,17 +413,6 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const bool doscreen, const double o
   }
 
   std::vector<bool> unscreen_occ_act_mask = occ_act_mask;
-
-  // if VBS is given, recompute the masks for the virtuals
-  if (vbs.nonnull())
-  {
-    assert(fbrun.nonnull());
-    const int nvirt = vbs->rank();
-    uocc_mask.resize(nvirt);
-    uocc_act_mask.resize(nvirt);
-    std::fill(uocc_mask.begin(), uocc_mask.end(), true);
-    std::fill(uocc_act_mask.begin(), uocc_act_mask.end(), true);
-  }
 
 //assume orbs are ordered in symmetry
   for (int i = 0; i < nblocks; ++i) // we do svd in each block to avoid problems in symmetry blocks, since svd doesn't uniquely fix the ordering of columns or rows
@@ -581,8 +574,11 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const bool doscreen, const double o
     std::string id = ParsedOrbitalSpaceKey::key(std::string("-a(sym)"),spin);
     if (vbs.null())
       uocc_act_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, uocc_act_mask);
-    else
+    else {
+      uocc_act_mask.resize(uocc_sb_->rank());
+      std::fill(uocc_act_mask.begin(), uocc_act_mask.end(), true);
       uocc_act_sb_ = new MaskedOrbitalSpace(id, oss.str(), uocc_sb_, uocc_act_mask);
+    }
   }
   {
      ostringstream oss;
@@ -738,10 +734,11 @@ RefWavefunction::init() const
     RefWavefunction* this_nonconst = const_cast<RefWavefunction*>(this);
     // make sure it's computed first
     const double e = this_nonconst->energy();
-    this_nonconst->init_spaces();//should pay great attention to this!
 
     // make sure that FockBuildRuntime uses same density fitting info as this reference
     world_->fockbuild_runtime()->dfinfo(this->dfinfo());
+
+    this_nonconst->init_spaces();//should pay great attention to this!
 
     // make sure that FockBuildRuntime uses same densities as the reference wavefunction
 
@@ -1348,7 +1345,7 @@ SD_RefWavefunction::dfinfo() const {
   return result;
 }
 
-namespace {
+namespace sc {
   void add_ao_space(const Ref<GaussianBasisSet>& bs,
                     const Ref<Integral>& ints,
                     const Ref<AOSpaceRegistry>& aoreg,

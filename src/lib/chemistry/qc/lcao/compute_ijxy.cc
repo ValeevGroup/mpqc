@@ -150,7 +150,8 @@ TwoBodyMOIntsTransform_ijxy::compute()
   Ref<ThreadLock> lock = thr_->new_lock();
   TwoBodyMOIntsTransform_12Inds** e12thread = new TwoBodyMOIntsTransform_12Inds*[thr_->nthread()];
   for (int i=0; i<thr_->nthread(); i++) {
-    e12thread[i] = new TwoBodyMOIntsTransform_12Inds(this,i,thr_->nthread(),lock,tbints[i],-100.0,debug());
+    e12thread[i] = new TwoBodyMOIntsTransform_12Inds(this,i,thr_->nthread(),lock,tbints[i],
+                                                     this->log2_epsilon(),debug());
   }
 
   //find the type of integrals which is antisymmetric with respect to permuting functions of particle 2

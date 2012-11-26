@@ -943,7 +943,7 @@ MBPT2::compute_hsos_v2_lb()
                               *ref_to_mp2_acc());
     }
   else {
-    if (method_ != "zapt") {
+    if (not (method_ == "zapt" || method_ == "default")) {
       ExEnv::out0() << indent
            << "MBPT2: bad method: " << method_ << ", using zapt" << endl;
       }

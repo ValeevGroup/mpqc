@@ -52,6 +52,7 @@ FockBuildRuntime::FockBuildRuntime(const Ref<OrbitalSpaceRegistry>& oreg,
   oreg_(oreg), aoreg_(aoreg), P_(aodensity_alpha+aodensity_beta), Po_(0),
   basis_(refbasis), integral_(integral),
   efield_(efield), msg_(msg), thr_(thr),
+  log2_precision_(-50.0),
   registry_(FockMatrixRegistry::instance()),
   psqrtregistry_(PSqrtRegistry::instance()) {
   if (efield_) throw ProgrammingError("FockBuildRuntime -- nonzero electric fields not supported yet",
@@ -84,6 +85,8 @@ FockBuildRuntime::FockBuildRuntime(StateIn& si) {
   efield_ = SCMatrixKit::default_matrixkit()->vector(new SCDimension(3));
   efield_.restore(si);
 
+  si.get(log2_precision_);
+
   msg_ = MessageGrp::get_default_messagegrp();
   thr_ = ThreadGrp::get_default_threadgrp();
 }
@@ -101,6 +104,7 @@ void FockBuildRuntime::save_data_state(StateOut& so) {
   FockMatrixRegistry::save_instance(registry_, so);
   PSqrtRegistry::save_instance(psqrtregistry_, so);
   efield_.save(so);
+  so.put(log2_precision_);
 }
 
 void FockBuildRuntime::set_densities(const RefSymmSCMatrix& aodensity_alpha,
@@ -128,6 +132,13 @@ void
 FockBuildRuntime::obsolete() {
   registry_->clear();
   psqrtregistry_->clear();
+}
+
+void
+FockBuildRuntime::set_log2_precision(double prec) {
+  if (prec < log2_precision_)
+    this->obsolete();
+  log2_precision_ = prec;
 }
 
 void FockBuildRuntime::validate_key(const std::string& key) const {
@@ -248,7 +259,7 @@ FockBuildRuntime::get(const std::string& key) {
         if (bs1_eq_bs2) {
           Ref<OneBodyFockMatrixBuilder<true> >
           fmb = new OneBodyFockMatrixBuilder<true> (OneBodyFockMatrixBuilder<true>::NonRelativistic,
-              bs1, bs2, obs, integral());
+                                                    bs1, bs2, obs, integral(), pow(2.0,log2_precision_));
 
           RefSymmSCMatrix Hsymm = fmb->result();
           // convert to H
@@ -258,7 +269,7 @@ FockBuildRuntime::get(const std::string& key) {
           Ref<OneBodyFockMatrixBuilder<false> >
           fmb =
               new OneBodyFockMatrixBuilder<false> (OneBodyFockMatrixBuilder<false>::NonRelativistic,
-                  bs1, bs2, obs, integral());
+                                                   bs1, bs2, obs, integral(), pow(2.0,log2_precision_));
           H = fmb->result();
         }
         registry_->add(hkey, H);
@@ -273,14 +284,16 @@ FockBuildRuntime::get(const std::string& key) {
       Ref<TwoBodyFockMatrixDFBuilder> fmb_df;
       if (use_density_fitting())
         fmb_df = new TwoBodyFockMatrixDFBuilder(compute_F, compute_J, compute_K,
-                                               bs1, bs2, obs, P_, Po_, dfinfo(), psqrtregistry_);
+                                                bs1, bs2, obs, P_, Po_, dfinfo(), psqrtregistry_);
 
       double nints;
       if (bs1_eq_bs2) {
         Ref<TwoBodyFockMatrixBuilder<true> > fmb;
         if (!use_density_fitting()) {
           fmb = new TwoBodyFockMatrixBuilder<true> (compute_F, compute_J, compute_K,
-                                                    bs1, bs2, obs, P_, Po_, integral(), msg(), thr());
+                                                    bs1, bs2, obs, P_, Po_, integral(),
+                                                    msg(), thr(),
+                                                    pow(2.0,log2_precision_));
           nints = fmb->nints();
         }
         {
@@ -339,7 +352,9 @@ FockBuildRuntime::get(const std::string& key) {
         Ref<TwoBodyFockMatrixBuilder<false> > fmb;
         if (!use_density_fitting()) {
           fmb = new TwoBodyFockMatrixBuilder<false> (compute_F, compute_J, compute_K,
-                                                     bs1, bs2, obs, P_, Po_, integral(), msg(), thr());
+                                                     bs1, bs2, obs, P_, Po_, integral(),
+                                                     msg(), thr(),
+                                                     pow(2.0,log2_precision_));
           nints = fmb->nints();
         }
         {

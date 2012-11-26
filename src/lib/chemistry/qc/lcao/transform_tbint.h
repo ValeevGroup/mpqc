@@ -90,6 +90,7 @@ protected:
   DistShellPair::SharedData spdata_;
   MOIntsTransform::StoreMethod::type ints_method_;
   std::string file_prefix_;
+  double log2_epsilon_;
 
   // These variables computed every time in case environment has changed or it's a restart
   size_t max_memory_;      // max memory given to this object
@@ -172,6 +173,14 @@ public:
   const Ref<OrbitalSpace>& space3() const;
   /// Returns OrbitalSpace object 4
   const Ref<OrbitalSpace>& space4() const;
+  /**
+   *
+   * @param \f$ \log_2(\epsilon) \f$, where \f$ \epsilon \f$ is the absolute numerical precision of the integrals
+   *        computed by this object.
+   */
+  double log2_epsilon() const { return log2_epsilon_; }
+  /// \sa log2_epsilon()
+  void set_log2_epsilon(double prec);
 
   /// Supplies the partially transformed integrals.
   virtual void partially_transformed_ints(const Ref<DistArray4>&);
@@ -259,6 +268,14 @@ class TwoBodyThreeCenterMOIntsTransform: virtual public SavableState {
     const Ref<OrbitalSpace>& space2() const { return space2_; }
     /// Returns OrbitalSpace object 3
     const Ref<OrbitalSpace>& space3() const { return space3_; }
+    /**
+     *
+     * @param \f$ \log_2(\epsilon) \f$, where \f$ \epsilon \f$ is the absolute numerical precision of the integrals
+     *        computed by this object.
+     */
+    double log2_epsilon() const { return log2_epsilon_; }
+    /// \sa log2_epsilon()
+    void set_log2_epsilon(double prec);
 
     /// Returns amount of memory used by this object after compute() has been called
     size_t memory() const;
@@ -290,6 +307,7 @@ class TwoBodyThreeCenterMOIntsTransform: virtual public SavableState {
     size_t memory_;       // memory (per process) used by this transform after compute() has been called
     MOIntsTransform::StoreMethod::type ints_method_;
     std::string file_prefix_;
+    double log2_epsilon_;
 
     // These variables computed every time in case environment has changed or it's a restart
     size_t max_memory_;      // max memory given to this object

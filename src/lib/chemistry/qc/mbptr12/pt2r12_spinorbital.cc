@@ -1597,6 +1597,7 @@ double SpinOrbitalPT2R12::cabs_singles_Dyall()
   RefSCVector X = rhs_vector.clone();
   X.assign(0.0);
   const double rcond = lapack_linsolv_symmnondef(B, X, rhs_vector);
+  //const double rcond = linsolv_symmnondef_cg(B, X, rhs_vector);
   if (rcond < 1e-8)
     ExEnv::out0() << indent << "[1]_S wfn eqs rcond = " << std::setprecision(12) << rcond << std::endl;
 

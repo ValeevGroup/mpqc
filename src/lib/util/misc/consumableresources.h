@@ -413,12 +413,12 @@ namespace sc {
           ResourceAttribites(std::size_t s) : size(s) {
           }
           std::size_t size;
-          Debugger::Backtrace backtrace;
+          //Debugger::Backtrace backtrace;
           operator std::string() const {
             std::ostringstream oss;
             oss << "size=" << size;
-            const size_t nframes_to_skip = 1;
-            oss << " allocated at:" << std::endl << backtrace.str(nframes_to_skip);
+            //const size_t nframes_to_skip = 1;
+            //oss << " allocated at:" << std::endl << backtrace.str(nframes_to_skip);
             return oss.str();
           }
       };

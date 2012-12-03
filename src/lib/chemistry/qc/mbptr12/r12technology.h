@@ -491,6 +491,12 @@ class R12Technology: virtual public SavableState {
 #endif
 
   private:
+
+    // implements KeyVal constructor
+    void init_from_kv(const Ref<KeyVal>& keyval,
+                      bool abs_eq_obs = true,
+                      bool vbs_eq_obs = true);
+
     bool abs_eq_obs_;
     bool vbs_eq_obs_;
 
@@ -677,6 +683,7 @@ class R12Technology: virtual public SavableState {
     relativistic terms in Q intermediate of the A'' approximation.
 
     */
+    R12Technology(const Ref<KeyVal>&);
     R12Technology(const Ref<KeyVal>&,
 		  const Ref<GaussianBasisSet>& bs,
 		  const Ref<GaussianBasisSet>& vbs,

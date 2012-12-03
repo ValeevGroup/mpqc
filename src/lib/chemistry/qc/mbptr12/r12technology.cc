@@ -895,8 +895,8 @@ R12Technology::G12NCCorrelationFactor::product(const ContractedGeminal& A,
 
 ///////////////////////////////////
 static ClassDesc R12Technology_cd(
-  typeid(R12Technology),"R12Technology",10,"virtual public SavableState",
-  0, 0, create<R12Technology>);
+  typeid(R12Technology),"R12Technology",11,"virtual public SavableState",
+  0, create<R12Technology>, create<R12Technology>);
 
 R12Technology::R12Technology(StateIn& s)
 {

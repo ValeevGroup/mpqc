@@ -8,7 +8,6 @@
 #include <chemistry/qc/mbptr12/mp2r12_energy.h>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/wfn/orbitalspace_utils.h>
-#include <chemistry/qc/psi/psiwfn.h>
 #include <util/misc/print.h>
 #include <math/scmat/blas.h>
 

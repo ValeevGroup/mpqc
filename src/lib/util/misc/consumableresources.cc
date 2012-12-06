@@ -29,7 +29,7 @@
 #include <stdexcept>
 #include <sstream>
 #include <util/misc/consumableresources.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 
 using namespace sc;
 

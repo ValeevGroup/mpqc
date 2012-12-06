@@ -25,7 +25,7 @@
 #include <math/scmat/vector3.h>
 #include <math/scmat/matrix.h>
 #include <math/mmisc/grid.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 
 using namespace std;
 using namespace sc;

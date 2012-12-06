@@ -29,7 +29,7 @@
 
 #include <util/state/stateio.h>
 #include <util/misc/formio.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <chemistry/qc/libint2/libint2.h>
 #include <chemistry/qc/libint2/tform.h>
 #include <chemistry/qc/libint2/obintlibint2.h>

@@ -26,7 +26,7 @@
 //
 
 #include "tbintcca.h"
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <limits.h>
 #include <chemistry/qc/basis/tbint.h>
 

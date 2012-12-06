@@ -33,7 +33,7 @@
 #include <math/optimize/mcsearch.h>
 #include <util/keyval/keyval.h>
 #include <util/misc/formio.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 
 using namespace std;
 using namespace sc;

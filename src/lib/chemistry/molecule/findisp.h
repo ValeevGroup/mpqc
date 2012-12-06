@@ -33,7 +33,7 @@
 #include <vector>
 #include <algorithm>
 
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <chemistry/molecule/deriv.h>
 #include <chemistry/molecule/energy.h>
 

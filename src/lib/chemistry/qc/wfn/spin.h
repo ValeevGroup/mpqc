@@ -26,7 +26,7 @@
 //
 
 #include <stdexcept>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 
 #ifndef _chemistry_qc_mbptr12_spin_h
 #define _chemistry_qc_mbptr12_spin_h

@@ -55,7 +55,7 @@
 #include "mpqcinit.h"
 
 #include <util/options/GetLongOpt.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <util/misc/newstring.h>
 #include <util/keyval/keyval.h>
 #include <util/state/state_bin.h>

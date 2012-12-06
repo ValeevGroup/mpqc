@@ -26,7 +26,7 @@
 //
 
 #include <limits.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/intdescr.h>
 #include <chemistry/qc/cints/tbintcints.h>

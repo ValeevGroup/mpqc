@@ -32,7 +32,7 @@
 #include <stdexcept>
 #include <util/misc/formio.h>
 #include <util/misc/consumableresources.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <math/scmat/blas.h>
 #include <math/scmat/lapack.h>
 #include <math/scmat/svd.h>

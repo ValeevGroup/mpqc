@@ -28,7 +28,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <util/state/state_text.h>
 
 using namespace std;

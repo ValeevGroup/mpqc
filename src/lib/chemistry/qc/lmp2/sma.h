@@ -36,7 +36,7 @@
 #include <util/state/statein.h>
 #include <util/state/stateout.h>
 #include <util/misc/regtime.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 
 #ifndef TWO_INDEX_SPECIALIZATIONS
 #  define THREE_INDEX_SPECIALIZATIONS 1

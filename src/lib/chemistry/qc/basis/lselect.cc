@@ -27,7 +27,7 @@
 #include <algorithm>
 #include <util/state/statein.h>
 #include <util/state/stateout.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <chemistry/qc/basis/lselect.h>
 #include <chemistry/qc/basis/split.h>
 #include <chemistry/qc/basis/gaussshell.h>

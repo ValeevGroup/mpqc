@@ -30,7 +30,7 @@
 #include <util/misc/formio.h>
 #include <util/ref/ref.h>
 #include <util/misc/string.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <math/scmat/local.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/basis/petite.h>

@@ -36,7 +36,7 @@
 #include <errno.h>
 
 #include <scconfig.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <util/ref/ref.h>
 #include <util/keyval/keyval.h>
 #include <util/misc/formio.h>

@@ -25,7 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/mbptr12/ref.h>
 #include <chemistry/qc/scf/hsosscf.h>

@@ -1,5 +1,5 @@
 
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <stdexcept>
 
 using namespace sc;

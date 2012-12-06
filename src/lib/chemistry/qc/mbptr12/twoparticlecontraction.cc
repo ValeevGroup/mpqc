@@ -26,7 +26,7 @@
 //
 
 #include <util/misc/formio.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <util/ref/ref.h>
 #include <chemistry/qc/mbptr12/twoparticlecontraction.h>
 #include <math/scmat/blas.h>

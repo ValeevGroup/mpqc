@@ -38,7 +38,7 @@
 #include <stdarg.h>
 
 #include <util/class/class.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <util/keyval/keyvalval.h>
 
 namespace sc {

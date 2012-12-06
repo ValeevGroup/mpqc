@@ -35,7 +35,7 @@
 #include <unistd.h>
 #include <new>
 
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <util/keyval/keyval.h>
 #include <util/group/message.h>
 #include <util/group/pregtime.h>

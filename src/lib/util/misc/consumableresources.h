@@ -35,7 +35,7 @@
 #include <util/keyval/keyval.h>
 #include <util/state/statein.h>
 #include <util/state/stateout.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <util/group/thread.h>
 #include <util/misc/bug.h>
 

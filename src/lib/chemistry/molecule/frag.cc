@@ -28,7 +28,7 @@
 #include <algorithm>
 #include <cassert>
 #include <chemistry/molecule/frag.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <chemistry/molecule/coor.h>
 #include <util/state/statein.h>
 #include <util/state/stateout.h>

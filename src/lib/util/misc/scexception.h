@@ -28,14 +28,11 @@
 #ifndef _util_misc_scexception_h
 #define _util_misc_scexception_h
 
-#ifndef _util_class_class_h
-#include <util/class/class.h>
-#endif
-
 #include <stddef.h>
 #include <exception>
 #include <sstream>
 #include <vector>
+#include <util/class/class.h>
 #include <util/misc/bug.h>
 
 namespace sc {

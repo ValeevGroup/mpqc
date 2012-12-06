@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <cfloat>
 #include <util/misc/formio.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/wfn/orbitalspace.h>
 

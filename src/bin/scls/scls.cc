@@ -32,7 +32,7 @@
 #include <new>
 #include <unistd.h>
 
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <util/misc/exenv.h>
 #include <util/misc/formio.h>
 #include <util/group/mstate.h>

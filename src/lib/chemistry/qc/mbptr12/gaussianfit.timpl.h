@@ -31,7 +31,7 @@
 #include <cmath>
 #include <algorithm>
 #include <math/optimize/levmar/lm.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <chemistry/qc/mbptr12/gaussianfit.h>
 
 extern "C" {

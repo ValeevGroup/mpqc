@@ -24,7 +24,7 @@
 
 #include <math/scmat/vector3.h>
 #include <chemistry/qc/wfn/esp.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 
 using namespace std;
 using namespace sc;

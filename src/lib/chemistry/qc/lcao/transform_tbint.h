@@ -30,7 +30,7 @@
 
 #include <string>
 #include <util/ref/ref.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <chemistry/molecule/energy.h>
 #include <chemistry/qc/basis/intdescr.h>
 #include <chemistry/qc/basis/distshpair.h>

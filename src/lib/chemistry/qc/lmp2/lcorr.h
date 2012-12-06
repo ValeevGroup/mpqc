@@ -27,7 +27,7 @@
 
 #include <math.h>
 
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 
 #include <math/optimize/diis.h>
 #include <math/scmat/repl.h>

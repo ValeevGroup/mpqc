@@ -36,7 +36,7 @@
 
 #include <util/keyval/keyval.h>
 #include <util/misc/formio.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <util/state/stateio.h>
 #include <math/scmat/local.h>
 #include <math/scmat/util.h>

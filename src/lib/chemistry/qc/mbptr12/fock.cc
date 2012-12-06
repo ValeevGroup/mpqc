@@ -26,7 +26,7 @@
 //
 
 #include <stdexcept>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/basis/symmint.h>
 #include <chemistry/qc/basis/gaussbas.h>

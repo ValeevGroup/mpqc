@@ -41,7 +41,7 @@
 #include <sys/types.h>
 #endif
 
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <util/state/translate.h>
 #include <util/state/stateout.h>
 

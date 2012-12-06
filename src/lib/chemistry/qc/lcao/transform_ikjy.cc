@@ -27,7 +27,7 @@
 
 #include <stdexcept>
 
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <util/misc/formio.h>
 #include <util/group/memregion.h>
 #include <util/state/state_bin.h>

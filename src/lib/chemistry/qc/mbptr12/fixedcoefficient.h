@@ -29,7 +29,7 @@
 
 #include <util/ref/ref.h>
 #include <math/scmat/matrix.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <chemistry/qc/wfn/spin.h>
 #include <chemistry/qc/mbptr12/r12technology.h>
 #include <math/mmisc/pairiter.h>

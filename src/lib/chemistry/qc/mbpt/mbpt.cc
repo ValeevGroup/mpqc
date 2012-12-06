@@ -25,7 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
 #include <util/state/stateio.h>

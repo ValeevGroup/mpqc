@@ -26,7 +26,7 @@
 //
 
 #include <scconfig.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <util/state/state_bin.h>
 
 using namespace std;

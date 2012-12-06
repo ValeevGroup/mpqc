@@ -27,7 +27,7 @@
 
 #include <chemistry/qc/wfn/femo.h>
 #include <math/scmat/blocked.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 
 using namespace sc;
 

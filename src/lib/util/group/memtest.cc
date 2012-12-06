@@ -50,7 +50,7 @@ using namespace sc;
 #endif
 //#endif
 
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 static const char * (sc::SCException::*force_except_link)() const
     = &sc::SCException::description;
 

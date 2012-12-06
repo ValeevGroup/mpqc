@@ -29,7 +29,7 @@
 #include <stdexcept>
 
 #include <util/ref/ref.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/basis/intparams.h>
 #include <chemistry/qc/basis/intdescr.h>

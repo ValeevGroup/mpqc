@@ -34,7 +34,7 @@
 using namespace sc;
 
 int
-main()
+main(int argc, char* argv[])
 {
   // Abort on floating point errors.
   ieee_trap_errors();

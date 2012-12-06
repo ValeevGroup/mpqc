@@ -37,6 +37,7 @@ void matrixtest(Ref<SCMatrixKit> kit, Ref<KeyVal> keyval,
                 RefSCDimension d1,RefSCDimension d2,RefSCDimension d3,
                 bool have_svd);
 
+int
 main(int argc, char** argv)
 {
   char *infile = SRCDIR "/matrixtest.in";

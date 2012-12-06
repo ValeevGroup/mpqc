@@ -206,7 +206,7 @@ void test4() {}
 #endif
 
 int
-main()
+main(int argc, char* argv[])
 {
   cout << "X::nx before test1: " << X::nx << "(0)" << endl;
   test1();

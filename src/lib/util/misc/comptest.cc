@@ -80,7 +80,8 @@ A::print()
        << setw(5) << setprecision(3) << (double)a << endl;
 }
 
-main()
+int
+main(int argc, char* argv[])
 {
   A a;
 

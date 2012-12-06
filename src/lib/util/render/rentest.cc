@@ -38,7 +38,7 @@ using namespace std;
 using namespace sc;
 
 int
-main()
+main(int argc, char* argv[])
 {
   Ref<KeyVal> keyval = new ParsedKeyVal(SRCDIR "/rentest.in");
   cout << "getting render" << endl << flush;

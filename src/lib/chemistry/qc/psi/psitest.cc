@@ -16,6 +16,7 @@ void die()
   abort();
 }
 
+int
 main(int argc, char**argv)
 {
 

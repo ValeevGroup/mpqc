@@ -136,7 +136,8 @@ Quadratic::guess_hessian(RefSymmSCMatrix&gh)
   gh.assign(hguess);
 }
 
-main()
+int
+main(int argc, char* argv[])
 {
   Ref<KeyVal> kv = new ParsedKeyVal( SRCDIR "/opttest.in");
   Ref<KeyVal> pkv = new PrefixKeyVal(kv,"opt");

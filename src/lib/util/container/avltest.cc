@@ -127,7 +127,7 @@ rantest(EAVLMMap<int, Data>&map1, Data** data, int n)
 }
 
 int
-main()
+main(int argc, char* argv[])
 {
   int i;
   const int maxkey = 9;

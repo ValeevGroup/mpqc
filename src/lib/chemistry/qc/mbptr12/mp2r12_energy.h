@@ -335,6 +335,23 @@ class MP2R12Energy_Diag : public MP2R12Energy
     // compute MP2 one-electron density matrix
     RefSCMatrix compute_1rdm_mp2(const SpinCase1 spin);
     RefSCMatrix compute_1rdm_mp2_test(const SpinCase1 spin);
+    // MP2F12 one-electron density matrix
+    // D_MP2F12 = T(MP2)T(MP2) + 2 T(MP2)T(F12) + T(F12)T(F12)
+    void compute_1rdm_mp2f12(const int nspincases1, const int nspincases2,
+                             const int C_0, const int C_1,
+                             RefSCMatrix Dmp2f12[NSpinCases1]);
+    // compute contribution for MP2F12 one-electron density matrix: D_MP2F12
+    // compute T(MP2)T(MP2) or T(F12)T(F12)
+    RefSCMatrix compute_1rdm_mp2part(const SpinCase1 spin,
+                                     const int nocc1_act, const int nocc2_act,
+                                     const int nvir1, const int nvir2,
+                                     const double* const T2, const double* const T2_ab);
+    // compute T(MP2)T(F12) or T(MP2)T(F12)
+    RefSCMatrix compute_1rdm_mp2part(const SpinCase1 spin,
+                                     const int nocc1_act, const int nocc2_act,
+                                     const int nvir1, const int nvir2,
+                                     const double* const T2_left,const double* const T2_right,
+                                     const double* const T2_ab_left, const double* const T2_ab_right);
     // compute MP2 T2 amplitude (antisymmetrized), stored in array (a,b,i,j)
     void compute_T2_mp2(const SpinCase2 spincase,
                         double* const T2ab_ij);
@@ -356,6 +373,13 @@ class MP2R12Energy_Diag : public MP2R12Energy
     RefSCMatrix onepdm_transformed(const SpinCase1& spin, const bool frozen_core, const RefSCMatrix& D);
     // test function for computing CCSD dipole moment
     RefSCMatrix onepdm_transformed2(const SpinCase1& spin,const RefSCMatrix& D);
+    // compute D^a'_i = R * T1 (CC)
+    void compute_RT1_api(const int nspincases1, const int nspincases2,
+                         const double C_0, const double C_1,
+                         const std::vector< Ref<OrbitalSpace> >& v_orbs1_ab,
+                         const std::vector< Ref<OrbitalSpace> >& v_orbs2_ab,
+                         double* const D_alpha, double* const D_beta);
+
   public:
     MP2R12Energy_Diag(StateIn&);
     MP2R12Energy_Diag(Ref<R12EnergyIntermediates> &r12intermediates,

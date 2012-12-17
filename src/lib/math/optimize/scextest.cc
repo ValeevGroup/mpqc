@@ -42,7 +42,7 @@ static ForceLink<DIIS> fl0;
 #endif
 
 int
-main()
+main(int argc, char* argv[])
 {
   int i;
   

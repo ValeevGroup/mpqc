@@ -28,7 +28,7 @@
 #ifndef _chemistry_qc_libint2_bounds_h
 #define _chemistry_qc_libint2_bounds_h
 
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <chemistry/qc/basis/intparams.h>
 #include <chemistry/qc/libint2/int2e.h>
 

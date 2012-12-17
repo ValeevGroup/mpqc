@@ -29,7 +29,7 @@
 #include <cassert>
 #include <sys/stat.h>
 
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <util/misc/formio.h>
 #include <util/misc/regtime.h>
 #include <util/state/stateio.h>

@@ -27,7 +27,7 @@
 
 #include <sstream>
 #include <math/scmat/repl.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <chemistry/qc/lcao/fockbuild_runtime.h>
 #include <util/misc/registry.timpl.h>
 #include <chemistry/qc/wfn/orbitalspace.h>

@@ -28,7 +28,7 @@
 #include <stdexcept>
 
 #include <util/misc/formio.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 
 #include <math/scmat/block.h>
 #include <math/scmat/blkiter.h>

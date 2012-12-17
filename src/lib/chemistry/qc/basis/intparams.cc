@@ -26,7 +26,7 @@
 //
 
 #include <float.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <chemistry/qc/basis/intparams.h>
 
 using namespace sc;

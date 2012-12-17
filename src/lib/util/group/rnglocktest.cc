@@ -36,7 +36,8 @@
 using namespace std;
 using namespace sc;
 
-main()
+int
+main(int argc, char* argv[])
 {
   const int size = 10000;
   int bin[size];

@@ -26,7 +26,7 @@
 //
 
 #include <chemistry/qc/wfn/spin.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <ctype.h>
 #include <cassert>
 

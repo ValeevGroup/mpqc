@@ -42,15 +42,15 @@ BIN_OR_LIB = LIB
 CSRC =
 
 CXXSRC = compute.cc formio.cc bug.cc regtime.cc exenv.cc units.cc ieee.cc \
-         runnable.cc consumableresources.cc
+         runnable.cc consumableresources.cc scexception.cc
 
 TESTSRC = comptest.cc formiot.cc bugtest.cc tregtime.cc unittest.cc \
-          autovectest.cc
+          autovectest.cc scextest.cc
 
-TESTPROGS = autovectest comptest formiot bugtest tregtime unittest
+TESTPROGS = autovectest comptest formiot bugtest tregtime unittest scextest
 
 INC = timer.h compute.h ieee.h bug.h exenv.h runnable.h consumableresources.h \
-      registry.h registry.timpl.h
+      registry.h registry.timpl.h scexception.h
 
 DISTFILES = $(CSRC) $(CXXSRC) $(TESTSRC) $(INC) Makefile LIBS.h
 
@@ -100,6 +100,9 @@ unittest: unittest.$(OBJSUF) $(LIBS)
 
 formiot: formiot.$(OBJSUF) $(LIBS)
 	$(LTLINK) $(LD) $(LDFLAGS) $^ -o formiot $(SYSLIBS) $(LTLINKBINOPTS)
+
+#scextest: scextest.$(OBJSUF) libSCclass.$(LIBSUF) libSCcontainer.$(LIBSUF) libSCref.$(LIBSUF) libSCmisc.$(LIBSUF) libSCstate.$(LIBSUF) libSCkeyval.$(LIBSUF)
+#	$(LTLINK) $(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS) $(LTLINKBINOPTS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

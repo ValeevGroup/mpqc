@@ -35,7 +35,7 @@
 #include <chemistry/cca/int/intcca.h>
 #include <chemistry/cca/int/obintcca.h>
 #include <chemistry/cca/int/tbintcca.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <Chemistry_QC_GaussianBasis_IntegralSuperFactoryInterface.hxx>
 #include <Chemistry_QC_GaussianBasis_DerivCentersInterface.hxx>
 #include <Chemistry_QC_GaussianBasis_DescrInterface.hxx>

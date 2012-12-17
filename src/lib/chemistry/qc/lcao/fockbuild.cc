@@ -38,7 +38,7 @@
 #include <util/misc/exenv.h>
 #include <util/misc/scint.h>
 #include <util/misc/autovec.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <math/scmat/elemop.h>
 #include <math/scmat/blkiter.h>
 #include <chemistry/qc/basis/petite.h>

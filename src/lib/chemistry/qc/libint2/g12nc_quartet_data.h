@@ -137,7 +137,6 @@ inline void G12NCLibint2::g12nc_quartet_data_(prim_data *Data, double scale, Ope
         const double gcoef = gbra_i.second;
         const double rhog = rho + gamma;
         const double oorhog = 1.0/rhog;
-        const double rho2 = rho*rho;
 
         const double gorg = gamma * oorhog;
         const double rorg = rho * oorhog;
@@ -213,7 +212,6 @@ inline void G12NCLibint2::g12nc_quartet_data_(prim_data *Data, double scale, Ope
 
           const double rhog = rho + gamma;
           const double oorhog = 1.0/rhog;
-          const double rho2 = rho*rho;
 
           const double gorg = gamma * oorhog;
           const double rorg = rho * oorhog;

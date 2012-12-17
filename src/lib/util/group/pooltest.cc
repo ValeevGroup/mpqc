@@ -133,7 +133,7 @@ void test1(Pool*);
 void test2(Pool*);
 
 int
-main()
+main(int argc, char* argv[])
 {
   const int poolsize = 4000000;
   Pool *pool = new(malloc(poolsize)) Pool(poolsize);

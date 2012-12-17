@@ -5,7 +5,8 @@
 
 using namespace sc;
 
-main()
+int
+main(int argc, char* argv[])
 {
   std::cout << "sizeof(sc_int8_t) = " << sizeof(sc_int8_t) << std::endl;
   std::cout << "sizeof(sc_int16_t) = " << sizeof(sc_int16_t) << std::endl;

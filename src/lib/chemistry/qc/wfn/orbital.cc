@@ -35,7 +35,7 @@
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/molshape.h>
 #include <chemistry/qc/wfn/orbital.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <sstream>
 
 using namespace sc;

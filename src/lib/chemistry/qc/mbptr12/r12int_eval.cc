@@ -26,7 +26,7 @@
 //
 
 #include <util/misc/formio.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <util/ref/ref.h>
 #include <util/state/state_bin.h>
 #include <math/scmat/local.h>

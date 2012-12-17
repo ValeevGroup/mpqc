@@ -85,6 +85,7 @@ init_mp(const Ref<KeyVal>& keyval)
   return grp;
 }
 
+int
 main(int argc, char**argv)
 {
   const char *input =      (argc > 1)? argv[1] : SRCDIR "/mpqc.in";

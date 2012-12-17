@@ -28,7 +28,7 @@
 #ifndef _chemistry_qc_mbptr12_pairiterimpl_h
 #define _chemistry_qc_mbptr12_pairiterimpl_h
 
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <math/mmisc/pairiter.h>
 
 namespace sc {

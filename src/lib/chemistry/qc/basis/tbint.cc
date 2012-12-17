@@ -27,7 +27,7 @@
 
 #include <limits.h>
 
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <math/scmat/offset.h>
 
 #include <chemistry/qc/basis/tbint.h>

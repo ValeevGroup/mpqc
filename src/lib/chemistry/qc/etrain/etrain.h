@@ -28,7 +28,7 @@
 #ifndef _mpqc_src_lib_chemistry_qc_etrain_etrain_h
 #define _mpqc_src_lib_chemistry_qc_etrain_etrain_h
 
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <util/misc/runnable.h>
 #include <math/mmisc/grid.h>
 #include <chemistry/qc/wfn/wfn.h>

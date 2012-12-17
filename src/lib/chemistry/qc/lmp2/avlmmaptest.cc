@@ -284,7 +284,8 @@ mmap_timings()
   timer->print();
 }
 
-main()
+int
+main(int argc, char* argv[])
 {
   mmap_timings();
   

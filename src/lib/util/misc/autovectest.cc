@@ -25,7 +25,8 @@ expect(const std::string &m)
   std::cout << "expect " << m << ": ";
 }
 
-main()
+int
+main(int argc, char* argv[])
 {
   auto_vec<double> double_data(new double[4]);
   double_data.release();

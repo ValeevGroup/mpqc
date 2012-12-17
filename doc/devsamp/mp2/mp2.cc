@@ -1,7 +1,7 @@
 
 #include <stddef.h>
 #include <util/misc/autovec.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <chemistry/qc/wfn/obwfn.h>
 #include <chemistry/qc/scf/clhf.h>
 

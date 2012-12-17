@@ -28,7 +28,7 @@
 // includes go here
 #include <chemistry/qc/lcao/wfnworld.h>
 #include <chemistry/qc/basis/petite.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <util/misc/consumableresources.h>
 #include <chemistry/qc/lcao/df_runtime.h>
 

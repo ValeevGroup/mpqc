@@ -37,7 +37,7 @@
 #include <util/misc/formio.h>
 #include <util/misc/autovec.h>
 #include <util/state/stateio.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <chemistry/qc/basis/uncontract.h>
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/basis/symmint.h>

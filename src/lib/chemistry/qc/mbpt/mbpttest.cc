@@ -135,6 +135,7 @@ init_mp(const Ref<KeyVal>& keyval, int &argc, char **&argv)
   return grp;
 }
 
+int
 main(int argc, char**argv)
 {
   const char *input =      (argc > 1)? argv[1] : SRCDIR "/mbpttest.in";

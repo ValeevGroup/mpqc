@@ -82,7 +82,7 @@ static ClassDesc D_cd(typeid(D),"D",1,"public B, public C",create<D>);
 
 #endif /* ! SIMPLE_TEST */
 
-main()
+int main(int argc, char* argv[])
 {
   ClassDesc::list_all_classes();
 

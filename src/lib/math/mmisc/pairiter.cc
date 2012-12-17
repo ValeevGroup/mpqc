@@ -26,7 +26,7 @@
 //
 
 #include <assert.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <math/mmisc/pairiter.h>
 #include <math/mmisc/pairiter.impl.h>
 

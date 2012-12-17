@@ -26,7 +26,7 @@
 //
 
 #include <cassert>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <chemistry/qc/basis/operator.h>
 
 using namespace sc;

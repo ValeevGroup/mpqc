@@ -31,7 +31,7 @@
 
 #include <util/misc/string.h>
 #include <util/misc/formio.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <math/symmetry/corrtab.h>
 #include <chemistry/qc/wfn/obwfn.h>
 #include <chemistry/molecule/molecule.h>

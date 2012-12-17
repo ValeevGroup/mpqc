@@ -31,7 +31,7 @@
 #include <cassert>
 #include <util/ref/ref.h>
 #include <util/group/thread.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <chemistry/qc/basis/gpetite.h>
 #include <chemistry/qc/basis/symmint.h>
 #include <chemistry/qc/lcao/fockbuild.h>

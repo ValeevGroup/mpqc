@@ -4,6 +4,7 @@
 
 using namespace sc;
 
+int
 main(int argc, char *argv[])
 {
   Ref<PointGroup> pg = new PointGroup(argv[1]);

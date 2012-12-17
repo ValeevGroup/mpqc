@@ -28,7 +28,7 @@
 #include <libint2/libint2.h>
 
 #include <util/class/class.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/intdescr.h>
 #include <chemistry/qc/libint2/tbintlibint2.h>

@@ -30,7 +30,7 @@
 #include <stdexcept>
 #include <util/misc/string.h>
 
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 #include <math/scmat/local.h>

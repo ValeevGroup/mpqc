@@ -1,7 +1,7 @@
 
 #include <chemistry/qc/lcao/fockdist.h>
 
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <util/state/statein.h>
 #include <util/state/stateout.h>
 

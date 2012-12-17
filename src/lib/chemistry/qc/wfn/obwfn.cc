@@ -37,7 +37,7 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/wfn/obwfn.h>
 #include <chemistry/qc/wfn/orbitalspace.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 
 
 using namespace std;

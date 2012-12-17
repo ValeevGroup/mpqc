@@ -27,7 +27,7 @@
 
 #include <chemistry/qc/ccr12/tensor.h>
 #include <chemistry/qc/ccr12/tensorextrap.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 
 
 using namespace sc;

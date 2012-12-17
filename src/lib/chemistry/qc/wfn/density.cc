@@ -33,7 +33,7 @@
 #include <math/scmat/vector3.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/wfn/density.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 
 using namespace std;
 using namespace sc;

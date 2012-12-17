@@ -31,21 +31,21 @@ ifndef SRCDIR
 endif
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalMakefile
 
-CXXSRC = class.cc scexception.cc
+CXXSRC = class.cc
 
 LIBOBJ = $(CXXSRC:%.cc=%.$(OBJSUF)) $(GENCXXSRC:%.cc=%.$(OBJSUF))
 
-INC = class.h proxy.h scexception.h
+INC = class.h proxy.h
 
 DEPENDINCLUDE = $(INC) $(GENINC)
 
 BIN_OR_LIB = LIB
 TARGET_TO_MAKE = libSCclass
 
-TESTCXXSRC = classtest.cc scextest.cc
+TESTCXXSRC = classtest.cc
 DISTFILES = $(CXXSRC) $(INC) Makefile LIBS.h $(TESTCXXSRC)
 
-TESTPROGS = classtest scextest
+TESTPROGS = classtest
 
 LIBS := $(shell $(LISTLIBS) $(INCLUDE) $(DEFINES) $(SRCDIR)/LIBS.h)
 
@@ -57,12 +57,6 @@ interface:: $(DEPENDINCLUDE)
 LD = $(CXX)
 classtest: classtest.$(OBJSUF) libSCclass.$(LIBSUF) libSCcontainer.$(LIBSUF) libSCref.$(LIBSUF) libSCmisc.$(LIBSUF) libSCstate.$(LIBSUF) libSCkeyval.$(LIBSUF)
 	$(LTLINK) $(LD) $(LDFLAGS) -o classtest $^ $(SYSLIBS) $(LTLINKBINOPTS)
-
-scextest: scextest.$(OBJSUF) libSCclass.$(LIBSUF) libSCcontainer.$(LIBSUF) libSCref.$(LIBSUF) libSCmisc.$(LIBSUF) libSCstate.$(LIBSUF) libSCkeyval.$(LIBSUF)
-	$(LTLINK) $(LD) $(LDFLAGS) -o $@ $^ $(SYSLIBS) $(LTLINKBINOPTS)
-
-bug: bug.cc
-	$(LTLINK) $(CXX) $(CXXFLAGS) -o bug $^ $(LTLINKBINOPTS)
 
 include $(SRCDIR)/$(TOPDIR)/lib/GlobalRules
 

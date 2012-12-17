@@ -895,8 +895,8 @@ R12Technology::G12NCCorrelationFactor::product(const ContractedGeminal& A,
 
 ///////////////////////////////////
 static ClassDesc R12Technology_cd(
-  typeid(R12Technology),"R12Technology",10,"virtual public SavableState",
-  0, 0, create<R12Technology>);
+  typeid(R12Technology),"R12Technology",11,"virtual public SavableState",
+  0, create<R12Technology>, create<R12Technology>);
 
 R12Technology::R12Technology(StateIn& s)
 {
@@ -932,13 +932,47 @@ R12Technology::R12Technology(StateIn& s)
   }
 }
 
-R12Technology::R12Technology(const Ref<KeyVal>& keyval,
-			     const Ref<GaussianBasisSet>& obs,
-			     const Ref<GaussianBasisSet>& vbs,
-			     const Ref<GaussianBasisSet>& abs)
+R12Technology::R12Technology(const Ref<KeyVal>& keyval)
 {
-  abs_eq_obs_ = abs->equiv(obs);
-  vbs_eq_obs_ = vbs->equiv(obs);
+  Ref<GaussianBasisSet> obs = require_dynamic_cast<GaussianBasisSet*>(
+      keyval->describedclassvalue("basis").pointer(),
+      "R12Technology::R12Technology\n"
+      );
+  Ref<GaussianBasisSet> abs = require_dynamic_cast<GaussianBasisSet*>(
+      keyval->describedclassvalue("aux_basis").pointer(),
+      "R12Technology::R12Technology\n"
+      );
+  Ref<GaussianBasisSet> vbs = require_dynamic_cast<GaussianBasisSet*>(
+      keyval->describedclassvalue("vir_basis").pointer(),
+      "R12Technology::R12Technology\n"
+      );
+
+  bool abs_eq_obs = true;
+  bool vbs_eq_obs = true;
+  if (obs.nonnull()) {
+    abs_eq_obs = abs.nonnull() ? abs->equiv(obs) : true;
+    vbs_eq_obs = vbs.nonnull() ? vbs->equiv(obs) : true;
+  }
+  this->init_from_kv(keyval, abs_eq_obs, vbs_eq_obs);
+}
+
+R12Technology::R12Technology(const Ref<KeyVal>& keyval,
+                             const Ref<GaussianBasisSet>& obs,
+                             const Ref<GaussianBasisSet>& vbs,
+                             const Ref<GaussianBasisSet>& abs)
+{
+  this->init_from_kv(keyval,
+                     abs.nonnull() ? abs->equiv(obs) : true,
+                     vbs.nonnull() ? vbs->equiv(obs) : true);
+}
+
+void
+R12Technology::init_from_kv(const Ref<KeyVal>& keyval,
+                            bool abs_eq_obs,
+                            bool vbs_eq_obs)
+{
+  abs_eq_obs_ = abs_eq_obs;
+  vbs_eq_obs_ = vbs_eq_obs;
 
   // Default is to use the R12 factor
   std::string corrfactor = keyval->stringvalue("corr_factor", KeyValValuestring("stg-6g"));

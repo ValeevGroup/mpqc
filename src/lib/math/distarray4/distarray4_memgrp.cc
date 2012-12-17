@@ -30,7 +30,7 @@
 #include <cstdlib>
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <math/distarray4/distarray4_memgrp.h>
 
 using namespace std;

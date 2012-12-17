@@ -30,7 +30,7 @@
 #include <util/misc/regtime.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 
 #include <math/scmat/block.h>
 #include <math/scmat/blocked.h>

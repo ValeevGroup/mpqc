@@ -371,7 +371,7 @@ static ClassDesc D_cd(typeid(D),"D",1,"public B, public C",
                       create<D>, create<D>, create<D>);
 
 int
-main()
+main(int argc, char* argv[])
 {
   Ref<A> ra;
 

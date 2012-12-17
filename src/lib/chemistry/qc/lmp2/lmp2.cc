@@ -38,7 +38,7 @@
 #include <util/group/mstate.h>
 #include <util/group/pregtime.h>
 #include <util/state/state_bin.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/molecule/formula.h>

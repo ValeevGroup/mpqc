@@ -32,7 +32,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include <functional>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <util/group/memregion.h>
 #include <util/group/message.h>
 

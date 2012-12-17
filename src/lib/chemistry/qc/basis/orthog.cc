@@ -32,7 +32,7 @@
 #include <stdexcept>
 
 #include <util/state/stateio.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <chemistry/qc/basis/orthog.h>
 #include <math/scmat/elemop.h>
 #include <math/scmat/blocked.h>

@@ -84,7 +84,7 @@ int getrusage (
 #include <util/misc/regtime.h>
 #define _util_misc_regtime_cc
 #include <util/misc/timer.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 
 using namespace std;
 using namespace sc;

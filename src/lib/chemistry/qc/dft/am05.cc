@@ -16,7 +16,7 @@
 
 #include <util/misc/math.h>
 
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>

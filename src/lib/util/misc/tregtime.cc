@@ -37,7 +37,7 @@ using namespace std;
 using namespace sc;
 
 int
-main()
+main(int argc, char* argv[])
 {
   int i;
   Ref<RegionTimer> tim = new RegionTimer("top", 1, 1);

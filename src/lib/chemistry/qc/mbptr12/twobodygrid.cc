@@ -28,7 +28,7 @@
 #include <cmath>
 #include <stdexcept>
 #include <util/misc/formio.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <chemistry/qc/mbptr12/twobodygrid.h>
 
 using namespace std;

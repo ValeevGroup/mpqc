@@ -37,7 +37,7 @@ extern "C" {
 
 #include <util/misc/formio.h>
 #include <util/misc/consumableresources.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <util/group/memarmci.h>
 
 using namespace sc;

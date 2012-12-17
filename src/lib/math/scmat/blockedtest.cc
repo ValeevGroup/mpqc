@@ -35,6 +35,7 @@ void matrixtest(Ref<SCMatrixKit>, Ref<KeyVal>,
                 RefSCDimension d1,RefSCDimension d2,RefSCDimension d3,
                 bool have_svd);
 
+int
 main(int argc, char **argv)
 {
   int i;

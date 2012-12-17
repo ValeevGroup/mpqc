@@ -28,7 +28,7 @@
 #include <stdarg.h>
 
 #include <util/misc/formio.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <chemistry/qc/libint2/macros.h>
 #include <chemistry/qc/libint2/g12.h>
 #include <chemistry/qc/libint2/tform.h>

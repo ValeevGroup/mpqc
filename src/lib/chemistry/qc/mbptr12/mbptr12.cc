@@ -30,7 +30,7 @@
 #include <numeric>
 #include <cmath>
 #include <util/misc/string.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>
 #include <util/state/stateio.h>

@@ -50,6 +50,7 @@ static ForceLink<SphereShape> fl0;
 static ForceLink<TriangulatedImplicitSurface> fl1;
 #endif
 
+int
 main(int argc,char** argv)
 {
   ieee_trap_errors();

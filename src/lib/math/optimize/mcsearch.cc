@@ -2,7 +2,7 @@
 // and modified by Curtis Janssen.
 
 #include <math.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <math/optimize/mcsearch.h>
 
 static inline double min(double a, double b)

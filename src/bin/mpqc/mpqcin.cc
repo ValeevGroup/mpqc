@@ -5,7 +5,7 @@
 #include <stdexcept>
 
 #include <util/misc/formio.h>
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 
 using namespace std;
 using namespace sc;

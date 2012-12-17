@@ -1,5 +1,5 @@
 
-#include <util/class/scexception.h>
+#include <util/misc/scexception.h>
 #include <stdexcept>
 
 using namespace sc;
@@ -174,7 +174,7 @@ nested()
                         __FILE__, __LINE__);
 }
 
-main()
+int main(int argc, char* argv[])
 {
   try {
       f();

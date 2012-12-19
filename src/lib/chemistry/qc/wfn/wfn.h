@@ -131,7 +131,7 @@ class Wavefunction: public MolecularEnergy {
 
   public:
     Wavefunction(StateIn&);
-    /** The KeyVal constructor.
+    /** The KeyVal constructor. It accepts all keywords of MolecularEnergy and the following additional keywords:
 
         <dl>
 
@@ -234,16 +234,16 @@ class Wavefunction: public MolecularEnergy {
 
 
     /** Returns the nuclear repulsion energy.  This must be used instead of
-        Molecule::nuclear_repulsion_energy() since there may be diffuse
-        atomic charges. */
+        Molecule::nuclear_repulsion_energy() since there may be contributions from
+        diffuse atomic charges or an external electric field (\sa MolecularEnergy::electric_field). */
     virtual double nuclear_repulsion_energy();
     /** Computes the nuclear repulsion gradient.  This must be used instead
-        of Molecule::nuclear_repulsion_1der() since there may be diffuse
+        of Molecule::nuclear_repulsion_1der() since there may be contributions from diffuse
         atomic charges.  The gradient, g, is zeroed and set to x_0, y_0,
         z_0, x_1, ... . */
     void nuclear_repulsion_energy_gradient(double *g);
     /** Computes the nuclear repulsion gradient.  This must be used instead
-        of Molecule::nuclear_repulsion_1der() since there may be diffuse
+        of Molecule::nuclear_repulsion_1der() since there may be contributions from diffuse
         atomic charges.  The gradient, g, is first zeroed.  Its dimensions
         are g[natom][3]. */
     virtual void nuclear_repulsion_energy_gradient(double **g);

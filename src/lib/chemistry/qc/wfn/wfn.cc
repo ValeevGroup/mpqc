@@ -245,6 +245,17 @@ Wavefunction::Wavefunction(const Ref<KeyVal>&keyval):
   sodim_ = pl->SO_basisdim();
   aodim_ = pl->AO_basisdim();
   basiskit_ = gbs_->so_matrixkit();
+
+  // post-construction validation
+  {
+    if (electric_field().nonnull()) {
+      if (fabs(electric_field().dot(electric_field())) > 1e-13 &&
+          not Wavefunction::nonzero_efield_supported())
+        throw FeatureNotImplemented("External electric field is specified, \
+but this Wavefunction cannot be computed in its presence",
+              __FILE__, __LINE__, this->class_desc());
+    }
+  }
 }
 
 Wavefunction::Wavefunction(StateIn&s):

@@ -73,7 +73,6 @@ namespace sc {
       const Ref<MessageGrp>& msg() const { return msg_; }
       const Ref<ThreadGrp>& thr() const { return thr_; }
       const Ref<GaussianBasisSet>& basis() const { return basis_; }
-      const RefSCVector& electric_field() const { return efield_; }
       const Ref<DensityFittingInfo>& dfinfo() const { return dfinfo_; }
       void dfinfo(const Ref<DensityFittingInfo>& d) { dfinfo_ = d; }
       const Ref<OrbitalSpaceRegistry>& orbital_registry() const { return oreg_; }
@@ -90,6 +89,13 @@ namespace sc {
       RefSymmSCMatrix P() const { return P_; }
       /// return open-shell density in AO basis
       RefSymmSCMatrix Po() const { return Po_; }
+
+      /// returns the uniform electric field (may be a null reference)
+      const RefSCVector& electric_field() const { return efield_; }
+      /// sets uniform electric field. In presence of electric field the core and total Fock matrices will
+      /// not be cached (i.e. only field-free Fock matrices and their components are cached; assembly
+      /// of in-field Fock matrices is done each time)
+      void set_electric_field(const RefSCVector& efield);
 
       /**
        * Specifies the precision of the computed operator matrices.
@@ -130,6 +136,15 @@ namespace sc {
 
       /// throws if key is not parsable by ParsedOneBodyIntKey
       void validate_key(const std::string& key) const;
+
+      /** computes the electric_field contribution to the core hamiltonian
+       *
+       * @param bra_key bra key
+       * @param ket_key ket key
+       * @return - mu . E
+       */
+      RefSCMatrix electric_field_contribution(std::string bra_key,
+                                              std::string ket_key);
 
     public:
       /// this functor compares RefSymmSCMatrix objects. Such objects are same if every element in one

@@ -1163,7 +1163,7 @@ namespace sc {
         RefSCDimension Sdim = new SCDimension(Srank, 1); Sdim->blocks()->set_subdim(0, new SCDimension(Srank));
         RefSCMatrix S = Pevecs.kit()->matrix(obs_space->coefs().coldim(), Sdim);
         {  // compute S from Pevecs
-          // since both a blocked matrcies with 1 block, must operates on the blocks directly
+          // since both are blocked matrcies with 1 block, must operate on the blocks directly
           RefSCMatrix Sblk = S.block(0);
           RefSCMatrix Ublk = Pevecs.block(0);
           int s = 0;

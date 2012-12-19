@@ -55,9 +55,6 @@ FockBuildRuntime::FockBuildRuntime(const Ref<OrbitalSpaceRegistry>& oreg,
   log2_precision_(-50.0),
   registry_(FockMatrixRegistry::instance()),
   psqrtregistry_(PSqrtRegistry::instance()) {
-  if (efield_) throw ProgrammingError("FockBuildRuntime -- nonzero electric fields not supported yet",
-                                      __FILE__,__LINE__);
-
   RefSymmSCMatrix Po = aodensity_alpha - aodensity_beta;
   spin_polarized_ = Po->maxabs() > DBL_EPSILON;
   if (spin_polarized_)
@@ -119,13 +116,16 @@ void FockBuildRuntime::set_densities(const RefSymmSCMatrix& aodensity_alpha,
   RefSymmSCMatrix dPo = Po_ ? (Po - Po_) : Po;
   new_P = new_P || dPo->maxabs() > DBL_EPSILON;
   if (new_P) {
-    registry_->clear();
-    psqrtregistry_->clear();
+    this->obsolete();
     P_ = P;
     spin_polarized_ = Po->maxabs() > DBL_EPSILON;
     if (spin_polarized_)
       Po_ = Po;
   }
+}
+
+void FockBuildRuntime::set_electric_field(const RefSCVector& efield) {
+  efield_ = efield;
 }
 
 void
@@ -181,279 +181,348 @@ namespace {
 
 RefSCMatrix
 FockBuildRuntime::get(const std::string& key) {
-  validate_key(key);
+
+  // N.B. will ask for field-free matrices first, and add any additional contributions later
+
+  // parse the key
+  ParsedOneBodyIntKey pkey(key);
+  const std::string& bra_key = pkey.bra();
+  const std::string& ket_key = pkey.ket();
+  const std::string& oper_key = pkey.oper();
+  const SpinCase1 spin = pkey.spin();
+
+  RefSCMatrix result;
   if (registry_->key_exists(key)) {
-    return registry_->value(key);
-  } else { // if not found
+    result = registry_->value(key);
+  }
+  else { // if not found
 
     // try transpose first
     const std::string tkey = transposed_key(key);
     if (registry_->key_exists(tkey)) {
-      return registry_->value(tkey).t();
+      result = registry_->value(tkey).t();
     }
-
-    // parse the key
-    ParsedOneBodyIntKey pkey(key);
-    const std::string& bra_key = pkey.bra();
-    const std::string& ket_key = pkey.ket();
-    const std::string& oper_key = pkey.oper();
-    const SpinCase1 spin = pkey.spin();
-
-    // if spin-nonpolarized and spin != AnySpinCase1, ask for AnySpinCase1
-    if (spin_polarized_ != true && spin != AnySpinCase1)
-      return get( alternatespin_key(key, AnySpinCase1) );
-
-
-    Ref<OrbitalSpaceRegistry> idxreg = oreg_;
-    Ref<OrbitalSpace> bra = idxreg->value(bra_key);
-    Ref<OrbitalSpace> ket = idxreg->value(ket_key);
-
-    // is the AO matrix available?
-    Ref<AOSpaceRegistry> aoidxreg = aoreg_;
-    Ref<OrbitalSpace> aobra = aoidxreg->value(bra->basis());
-    Ref<OrbitalSpace> aoket = aoidxreg->value(ket->basis());
-    const std::string& aobra_key = idxreg->key(aobra);
-    const std::string& aoket_key = idxreg->key(aoket);
-    const std::string aokey = ParsedOneBodyIntKey::key(aobra_key, aoket_key,
-                                                       oper_key, spin);
-    if (registry_->key_exists(aokey)) {
-      RefSCMatrix aofock = registry_->value(aokey);
-      RefSCMatrix mofock = bra->coefs().t() * aofock * ket->coefs();
-      registry_->add(key, mofock);
-      return registry_->value(key);
-    }
-    const std::string transposed_aokey = transposed_key(aokey);
-    if (registry_->key_exists(transposed_aokey)) {
-      RefSCMatrix transposed_aofock = registry_->value(transposed_aokey);
-      RefSCMatrix mofock = bra->coefs().t() * transposed_aofock.t() * ket->coefs();
-      registry_->add(key, mofock);
-      return registry_->value(key);
-    }
-
-    // AO matrix not found: compute all components of it first, then call itself again
-    const Ref<GaussianBasisSet>& bs1 = bra->basis();
-    const Ref<GaussianBasisSet>& bs2 = ket->basis();
-    const bool bs1_eq_bs2 = bs1->equiv(bs2);
-
-    const std::string hkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("H"));
-    const std::string jkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("J"));
-    const std::string kkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("K"),spin);
-    const std::string fkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("F"),spin);
-    const bool have_H = registry_->key_exists(hkey);
-    const bool have_J = registry_->key_exists(jkey);
-    const bool have_K = registry_->key_exists(kkey);
-    const bool have_F = registry_->key_exists(fkey);
-    const bool need_H = (oper_key == "H" || oper_key == "F");
-    const bool need_J = (oper_key == "J" || oper_key == "F");
-    const bool need_K = (oper_key == "K" || oper_key == "F");
-    const bool need_F = (oper_key == "F");
-    const bool compute_F = false;   // tell FockBuilder to not compute F; compute it myself from components
-    const bool compute_H = need_H && !have_H;
-    const bool compute_J = need_J && !have_J;
-    const bool compute_K = need_K && !have_K;
-
-    RefSCMatrix H;
-    if (need_H) { // compute core hamiltonian
-      if (compute_H) {
-        const Ref<GaussianBasisSet>& obs = basis_;
-        if (bs1_eq_bs2) {
-          Ref<OneBodyFockMatrixBuilder<true> >
-          fmb = new OneBodyFockMatrixBuilder<true> (OneBodyFockMatrixBuilder<true>::NonRelativistic,
-                                                    bs1, bs2, obs, integral(), pow(2.0,log2_precision_));
-
-          RefSymmSCMatrix Hsymm = fmb->result();
-          // convert to H
-          H = SymmToRect(Hsymm);
-        } else { // result is rectangular already
-
-          Ref<OneBodyFockMatrixBuilder<false> >
-          fmb =
-              new OneBodyFockMatrixBuilder<false> (OneBodyFockMatrixBuilder<false>::NonRelativistic,
-                                                   bs1, bs2, obs, integral(), pow(2.0,log2_precision_));
-          H = fmb->result();
-        }
-        registry_->add(hkey, H);
+    else {
+      // if spin-nonpolarized and spin != AnySpinCase1, ask for AnySpinCase1
+      if (spin_polarized_ != true && spin != AnySpinCase1) {
+        return this->get(alternatespin_key(key, AnySpinCase1));
       }
-      else { // have_H == true
-        H = registry_->value(hkey);
-      }
-    }
+      else {
 
-    { // J, K, and F
-      const Ref<GaussianBasisSet>& obs = basis_;
-      Ref<TwoBodyFockMatrixDFBuilder> fmb_df;
-      if (use_density_fitting())
-        fmb_df = new TwoBodyFockMatrixDFBuilder(compute_F, compute_J, compute_K,
-                                                bs1, bs2, obs, P_, Po_, dfinfo(), psqrtregistry_);
+        Ref<OrbitalSpaceRegistry> idxreg = oreg_;
+        Ref<OrbitalSpace> bra = idxreg->value(bra_key);
+        Ref<OrbitalSpace> ket = idxreg->value(ket_key);
 
-      double nints;
-      if (bs1_eq_bs2) {
-        Ref<TwoBodyFockMatrixBuilder<true> > fmb;
-        if (!use_density_fitting()) {
-          fmb = new TwoBodyFockMatrixBuilder<true> (compute_F, compute_J, compute_K,
-                                                    bs1, bs2, obs, P_, Po_, integral(),
-                                                    msg(), thr(),
-                                                    pow(2.0,log2_precision_));
-          nints = fmb->nints();
+        // is the AO matrix available?
+        Ref<AOSpaceRegistry> aoidxreg = aoreg_;
+        Ref<OrbitalSpace> aobra = aoidxreg->value(bra->basis());
+        Ref<OrbitalSpace> aoket = aoidxreg->value(ket->basis());
+        const std::string& aobra_key = idxreg->key(aobra);
+        const std::string& aoket_key = idxreg->key(aoket);
+        const std::string aokey = ParsedOneBodyIntKey::key(aobra_key, aoket_key,
+                                                           oper_key, spin);
+        if (registry_->key_exists(aokey)) {
+          RefSCMatrix aofock = registry_->value(aokey);
+          RefSCMatrix mofock = bra->coefs().t() * aofock * ket->coefs();
+          registry_->add(key, mofock);
+          result = registry_->value(key);
         }
-        {
-          RefSCMatrix J;
-          if (need_J) {
-            if (compute_J) {
-              J = use_density_fitting() ? fmb_df->J() : SymmToRect(fmb->J());
-              registry_->add(jkey, J);
-              if (debug()) {
-                J.print(jkey.c_str());
-              }
-            }
-            else { // have_J == true
-              J = registry_->value(jkey);
-            }
+        else {
+          const std::string transposed_aokey = transposed_key(aokey);
+          if (registry_->key_exists(transposed_aokey)) {
+            RefSCMatrix transposed_aofock = registry_->value(transposed_aokey);
+            RefSCMatrix mofock = bra->coefs().t() * transposed_aofock.t()
+                * ket->coefs();
+            registry_->add(key, mofock);
+            result = registry_->value(key);
           }
+          else {
 
-          RefSCMatrix K;
-          if (need_K) {
-            if (compute_K) {
-              // since non-DF based Fock builder computes components for exchange of both spins, ask for K matrices for each spin here
-              const int nunique_spins = spin_polarized_ ? 2 : 1;
-              // refer to spin indirectly to properly handle AnySpinCase1
-              std::vector<SpinCase1> spins(nunique_spins);
-              if (spin_polarized_) { spins[0] = Alpha; spins[1] = Beta; }
-              else { spins[0] = AnySpinCase1; }
-              for (int s=0; s<nunique_spins; ++s) {
-                const SpinCase1 spin1 = spins[s];
-                const std::string kkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("K"),spin1);
-                RefSCMatrix KK = use_density_fitting() ? fmb_df->K(spin1) : SymmToRect(fmb->K(spin1));
-                registry_->add(kkey, KK);
-                if (debug()) {
-                  KK.print(kkey.c_str());
+            // AO matrix not found: compute all components of it first, then call itself again
+            const Ref<GaussianBasisSet>& bs1 = bra->basis();
+            const Ref<GaussianBasisSet>& bs2 = ket->basis();
+            const bool bs1_eq_bs2 = bs1->equiv(bs2);
+
+            const std::string hkey = ParsedOneBodyIntKey::key(aobra_key,
+                                                              aoket_key,
+                                                              std::string("H"));
+            const std::string jkey = ParsedOneBodyIntKey::key(aobra_key,
+                                                              aoket_key,
+                                                              std::string("J"));
+            const std::string kkey = ParsedOneBodyIntKey::key(aobra_key,
+                                                              aoket_key,
+                                                              std::string("K"),
+                                                              spin);
+            const std::string fkey = ParsedOneBodyIntKey::key(aobra_key,
+                                                              aoket_key,
+                                                              std::string("F"),
+                                                              spin);
+            const bool have_H = registry_->key_exists(hkey);
+            const bool have_J = registry_->key_exists(jkey);
+            const bool have_K = registry_->key_exists(kkey);
+            const bool have_F = registry_->key_exists(fkey);
+            const bool need_H = (oper_key == "H" || oper_key == "F");
+            const bool need_J = (oper_key == "J" || oper_key == "F");
+            const bool need_K = (oper_key == "K" || oper_key == "F");
+            const bool need_F = (oper_key == "F");
+            const bool compute_F = false; // tell FockBuilder to not compute F; compute it myself from components
+            const bool compute_H = need_H && !have_H;
+            const bool compute_J = need_J && !have_J;
+            const bool compute_K = need_K && !have_K;
+
+            RefSCMatrix H;
+            if (need_H) { // compute core hamiltonian
+              if (compute_H) {
+                const Ref<GaussianBasisSet>& obs = basis_;
+                if (bs1_eq_bs2) {
+                  Ref<OneBodyFockMatrixBuilder<true> > fmb =
+                      new OneBodyFockMatrixBuilder<true>(
+                          OneBodyFockMatrixBuilder<true>::NonRelativistic, bs1,
+                          bs2, obs, integral(), pow(2.0, log2_precision_));
+
+                  RefSymmSCMatrix Hsymm = fmb->result();
+                  // convert to H
+                  H = SymmToRect(Hsymm);
+                } else { // result is rectangular already
+
+                  Ref<OneBodyFockMatrixBuilder<false> > fmb =
+                      new OneBodyFockMatrixBuilder<false>(
+                          OneBodyFockMatrixBuilder<false>::NonRelativistic, bs1,
+                          bs2, obs, integral(), pow(2.0, log2_precision_));
+                  H = fmb->result();
                 }
-                if (spin == spin1) K = KK;
+                if (electric_field().null())
+                  registry_->add(hkey, H);
+              } else { // have_H == true
+                H = registry_->value(hkey);
               }
             }
-            else { // have_K == true
-              K = registry_->value(kkey);
-            }
-          }
 
-          RefSCMatrix F;
-          if (need_F && !have_F) {
-            F = K.clone(); F.assign(K); F.scale(-1.0); F.accumulate(J); F.accumulate(H);
-            registry_->add(fkey, F);
-            if (debug()) {
-              F.print(fkey.c_str());
-            }
-          }
+            { // J, K, and F
+              const Ref<GaussianBasisSet>& obs = basis_;
+              Ref<TwoBodyFockMatrixDFBuilder> fmb_df;
+              if (use_density_fitting())
+                fmb_df = new TwoBodyFockMatrixDFBuilder(compute_F, compute_J,
+                                                        compute_K, bs1, bs2,
+                                                        obs, P_, Po_, dfinfo(),
+                                                        psqrtregistry_);
 
-        }
-
-      } else { // result is rectangular already
-
-        Ref<TwoBodyFockMatrixBuilder<false> > fmb;
-        if (!use_density_fitting()) {
-          fmb = new TwoBodyFockMatrixBuilder<false> (compute_F, compute_J, compute_K,
-                                                     bs1, bs2, obs, P_, Po_, integral(),
-                                                     msg(), thr(),
-                                                     pow(2.0,log2_precision_));
-          nints = fmb->nints();
-        }
-        {
-          RefSCMatrix J;
-          if (need_J) {
-            if (compute_J) {
-              J = use_density_fitting() ? fmb_df->J() : fmb->J();
-              registry_->add(jkey, J);
-              if (debug()) {
-                J.print(jkey.c_str());
-              }
-            }
-            else { // have_J == true
-              J = registry_->value(jkey);
-            }
-          }
-
-          RefSCMatrix K;
-          if (need_K) {
-            if (compute_K) {
-              // since non-DF based Fock builder computes components for exchange of both spins, ask for K matrices for each spin here
-              const int nunique_spins = spin_polarized_ ? 2 : 1;
-              // refer to spin indirectly to properly handle AnySpinCase1
-              std::vector<SpinCase1> spins(nunique_spins);
-              if (spin_polarized_) { spins[0] = Alpha; spins[1] = Beta; }
-              else { spins[0] = AnySpinCase1; }
-              for (int s=0; s<nunique_spins; ++s) {
-                const SpinCase1 spin1 = spins[s];
-                const std::string kkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("K"),spin1);
-                RefSCMatrix KK = use_density_fitting() ? fmb_df->K(spin1) : fmb->K(spin1);
-                registry_->add(kkey, KK);
-                if (debug()) {
-                  KK.print(kkey.c_str());
+              double nints;
+              if (bs1_eq_bs2) {
+                Ref<TwoBodyFockMatrixBuilder<true> > fmb;
+                if (!use_density_fitting()) {
+                  fmb = new TwoBodyFockMatrixBuilder<true>(
+                      compute_F, compute_J, compute_K, bs1, bs2, obs, P_, Po_,
+                      integral(), msg(), thr(), pow(2.0, log2_precision_));
+                  nints = fmb->nints();
                 }
-                if (spin == spin1) K = KK;
+                {
+                  RefSCMatrix J;
+                  if (need_J) {
+                    if (compute_J) {
+                      J = use_density_fitting() ? fmb_df->J() :
+                                                  SymmToRect(fmb->J());
+                      registry_->add(jkey, J);
+                      if (debug()) {
+                        J.print(jkey.c_str());
+                      }
+                    } else { // have_J == true
+                      J = registry_->value(jkey);
+                    }
+                  }
+
+                  RefSCMatrix K;
+                  if (need_K) {
+                    if (compute_K) {
+                      // since non-DF based Fock builder computes components for exchange of both spins, ask for K matrices for each spin here
+                      const int nunique_spins = spin_polarized_ ? 2 : 1;
+                      // refer to spin indirectly to properly handle AnySpinCase1
+                      std::vector<SpinCase1> spins(nunique_spins);
+                      if (spin_polarized_) {
+                        spins[0] = Alpha;
+                        spins[1] = Beta;
+                      } else {
+                        spins[0] = AnySpinCase1;
+                      }
+                      for (int s = 0; s < nunique_spins; ++s) {
+                        const SpinCase1 spin1 = spins[s];
+                        const std::string kkey = ParsedOneBodyIntKey::key(
+                            aobra_key, aoket_key, std::string("K"), spin1);
+                        RefSCMatrix KK =
+                            use_density_fitting() ? fmb_df->K(spin1) :
+                                                    SymmToRect(fmb->K(spin1));
+                        registry_->add(kkey, KK);
+                        if (debug()) {
+                          KK.print(kkey.c_str());
+                        }
+                        if (spin == spin1)
+                          K = KK;
+                      }
+                    } else { // have_K == true
+                      K = registry_->value(kkey);
+                    }
+                  }
+
+                  RefSCMatrix F;
+                  if (need_F && !have_F) {
+                    F = K.clone();
+                    F.assign(K);
+                    F.scale(-1.0);
+                    F.accumulate(J);
+                    F.accumulate(H);
+                    registry_->add(fkey, F);
+                    if (debug()) {
+                      F.print(fkey.c_str());
+                    }
+                  }
+
+                }
+
+              } else { // result is rectangular already
+
+                Ref<TwoBodyFockMatrixBuilder<false> > fmb;
+                if (!use_density_fitting()) {
+                  fmb = new TwoBodyFockMatrixBuilder<false>(
+                      compute_F, compute_J, compute_K, bs1, bs2, obs, P_, Po_,
+                      integral(), msg(), thr(), pow(2.0, log2_precision_));
+                  nints = fmb->nints();
+                }
+                {
+                  RefSCMatrix J;
+                  if (need_J) {
+                    if (compute_J) {
+                      J = use_density_fitting() ? fmb_df->J() : fmb->J();
+                      registry_->add(jkey, J);
+                      if (debug()) {
+                        J.print(jkey.c_str());
+                      }
+                    } else { // have_J == true
+                      J = registry_->value(jkey);
+                    }
+                  }
+
+                  RefSCMatrix K;
+                  if (need_K) {
+                    if (compute_K) {
+                      // since non-DF based Fock builder computes components for exchange of both spins, ask for K matrices for each spin here
+                      const int nunique_spins = spin_polarized_ ? 2 : 1;
+                      // refer to spin indirectly to properly handle AnySpinCase1
+                      std::vector<SpinCase1> spins(nunique_spins);
+                      if (spin_polarized_) {
+                        spins[0] = Alpha;
+                        spins[1] = Beta;
+                      } else {
+                        spins[0] = AnySpinCase1;
+                      }
+                      for (int s = 0; s < nunique_spins; ++s) {
+                        const SpinCase1 spin1 = spins[s];
+                        const std::string kkey = ParsedOneBodyIntKey::key(
+                            aobra_key, aoket_key, std::string("K"), spin1);
+                        RefSCMatrix KK =
+                            use_density_fitting() ? fmb_df->K(spin1) :
+                                                    fmb->K(spin1);
+                        registry_->add(kkey, KK);
+                        if (debug()) {
+                          KK.print(kkey.c_str());
+                        }
+                        if (spin == spin1)
+                          K = KK;
+                      }
+                    } else { // have_K == true
+                      K = registry_->value(kkey);
+                    }
+                  }
+
+                  RefSCMatrix F;
+                  if (need_F && !have_F) {
+                    F = K.clone();
+                    F.assign(K);
+                    F.scale(-1.0);
+                    F.accumulate(J);
+                    F.accumulate(H);
+                    const std::string fkey = ParsedOneBodyIntKey::key(
+                        aobra_key, aoket_key, std::string("F"), spin);
+                    registry_->add(fkey, F);
+                    if (debug()) {
+                      F.print(fkey.c_str());
+                    }
+                  }
+                }
               }
-            }
-            else { // have_K == true
-              K = registry_->value(kkey);
-            }
-          }
 
-          RefSCMatrix F;
-          if (need_F && !have_F) {
-            F= K.clone(); F.assign(K); F.scale(-1.0); F.accumulate(J); F.accumulate(H);
-            const std::string fkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("F"),spin);
-            registry_->add(fkey, F);
-            if (debug()) {
-              F.print(fkey.c_str());
-            }
+            } // J, K, F components
+
+            // now all components are available, call itself again
+            return get(key);
           }
         }
       }
-
     }
-
-#if 0
-    else { // use density-fitting-based Fock builder
-
-      const Ref<GaussianBasisSet>& obs = basis_;
-      const bool compute_F = false;
-      const bool compute_J = true;
-      const bool compute_K = true;
-
-      Ref<TwoBodyFockMatrixDFBuilder> fmb =
-          new TwoBodyFockMatrixDFBuilder(compute_F,
-                                         compute_J,
-                                         compute_K,
-                                         bs1, bs2, obs,
-                                         P_,
-                                         Po_,
-                                         dfinfo(),
-                                         psqrtregistry_);
-      {
-        RefSCMatrix J = fmb->J();
-        const std::string jkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("J"));
-        registry_->add(jkey, J);
-
-        RefSCMatrix K = fmb->K(spin);
-        const std::string kkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("K"),spin);
-        registry_->add(kkey, K);
-
-        RefSCMatrix F = K.clone(); F.assign(K); F.scale(-1.0); F.accumulate(J);
-        const std::string fkey = ParsedOneBodyIntKey::key(aobra_key,aoket_key,std::string("F"),spin);
-        registry_->add(fkey, F);
-
-        if (debug()) {
-          J.print(jkey.c_str());
-          K.print(kkey.c_str());
-          F.print(fkey.c_str());
-        }
-      }
-    } // end of DF-based computation
-#endif
-
-    // now all components are available, call itself again
-    return get(key);
   }
-  abort(); // unreachable
+
+  // add field contribution to the result, if needed
+  if (electric_field().nonnull() && (oper_key == "H" || oper_key == "F") )
+    result.accumulate( electric_field_contribution(bra_key, ket_key) );
+
+  return result;
+}
+
+RefSCMatrix
+FockBuildRuntime::electric_field_contribution(std::string bra_key,
+                                              std::string ket_key) {
+  assert(electric_field().nonnull());
+
+  // only AO matrices will be cached
+
+  Ref<OrbitalSpaceRegistry> idxreg = oreg_;
+  Ref<OrbitalSpace> bra = idxreg->value(bra_key);
+  Ref<OrbitalSpace> ket = idxreg->value(ket_key);
+  const Ref<GaussianBasisSet>& bs1 = bra->basis();
+  const Ref<GaussianBasisSet>& bs2 = ket->basis();
+  const bool bs1_eq_bs2 = bs1->equiv(bs2);
+
+  Ref<AOSpaceRegistry> aoidxreg = aoreg_;
+  Ref<OrbitalSpace> aobra = aoidxreg->value(bra->basis());
+  Ref<OrbitalSpace> aoket = aoidxreg->value(ket->basis());
+  const std::string& aobra_key = idxreg->key(aobra);
+  const std::string& aoket_key = idxreg->key(aoket);
+
+  RefSCMatrix H_efield_ao;
+  std::vector<std::string> mukeys(3);
+  for (int xyz = 0; xyz < 3; ++xyz) {
+    const char xyz_char[] = { 'x', 'y', 'z' };
+    std::ostringstream oss;
+    oss << "Mu_" << xyz_char[xyz];
+    mukeys[xyz] = ParsedOneBodyIntKey::key(aobra_key, aoket_key,
+                                           oss.str());
+  }
+
+  std::vector<RefSCMatrix> Mu(3);
+  const bool compute_Mu = not registry_->key_exists(mukeys[0]);
+  if (compute_Mu) {
+    const Ref<GaussianBasisSet>& obs = basis_;
+    Ref<DipoleData> dipole_data = new DipoleData();
+    sc::detail::onebodyint_ao<&Integral::dipole>(bs1, bs2, integral(), dipole_data, Mu);
+    for (int xyz = 0; xyz < 3; ++xyz)
+      registry_->add(mukeys[xyz], Mu[xyz]);
+  }
+  else { // have_Mu == true
+    for (int xyz = 0; xyz < 3; ++xyz)
+      Mu[xyz] = registry_->value(mukeys[xyz]);
+  }
+
+  // electron charge is not included in Mu
+  H_efield_ao = efield_.get_element(0) * Mu[0]
+              + efield_.get_element(1) * Mu[1]
+              + efield_.get_element(2) * Mu[2];
+
+  // convert H_efield_ao from unblocked to blocked dimensions to be able to multiply with coefs
+  RefSCMatrix H_efield_ao_blk = bra->coefs().kit()->matrix(bra->coefs().rowdim(),ket->coefs().rowdim());
+  H_efield_ao_blk->convert( H_efield_ao );
+
+
+  // transform to MO basis
+  return bra->coefs().t() * H_efield_ao_blk * ket->coefs();
 }
 
 /////////////////////////////////////////////////////////////////////////////

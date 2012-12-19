@@ -88,6 +88,7 @@ namespace sc {
     };
 
     typedef Ref<OneBodyInt> (Integral::*OneBodyIntCreator)();
+    typedef Ref<OneBodyInt> (Integral::*MultipoleOneBodyIntCreator)(const Ref<DipoleData>&);
 
     template <OneBodyIntCreator OpEval>
     RefSymmSCMatrix onebodyint(const Ref<GaussianBasisSet>& bas,
@@ -131,7 +132,7 @@ namespace sc {
       Ref<Integral> localints = integral->clone();
       Ref<GPetiteList2> pl12 = GPetiteListFactory::plist2(brabas,ketbas);
       localints->set_basis(brabas,ketbas);
-      Ref<OneBodyInt> ov_ints = localints->overlap();
+      Ref<OneBodyInt> ov_ints = (localints->*OpEval)();
 
       // form overlap in AO basis
       RefSCMatrix sao(brabas->basisdim(), ketbas->basisdim(), brabas->matrixkit());
@@ -170,6 +171,55 @@ namespace sc {
 
     }
 
+    template <MultipoleOneBodyIntCreator OpEval>
+    void onebodyint_ao(const Ref<GaussianBasisSet>& brabas,
+                       const Ref<GaussianBasisSet>& ketbas,
+                       const Ref<Integral>& integral, const Ref<DipoleData>& dipole_data,
+                       std::vector<RefSCMatrix>& result) {
+
+      Ref<Integral> localints = integral->clone();
+      Ref<GPetiteList2> pl12 = GPetiteListFactory::plist2(brabas,ketbas);
+      localints->set_basis(brabas,ketbas);
+      Ref<OneBodyInt> ob_ints = (localints->*OpEval)(dipole_data);
+
+      // form obints in AO basis
+      const size_t nopers = result.size();
+      for(int i=0; i<nopers; ++i) {
+        result[i] = brabas->matrixkit()->matrix(brabas->basisdim(), ketbas->basisdim());
+        result[i].assign(0.0);
+      }
+
+      const Ref<GaussianBasisSet>& bs1 = brabas;
+      const Ref<GaussianBasisSet>& bs2 = ketbas;
+      const int nshell1 = bs1->nshell();
+      const int nshell2 = bs2->nshell();
+      for(int sh1=0; sh1<nshell1; sh1++) {
+        const int bf1_offset = bs1->shell_to_function(sh1);
+        const int nbf1 = bs1->shell(sh1).nfunction();
+
+        for(int sh2=0; sh2<nshell2; sh2++) {
+          const int bf2_offset = bs2->shell_to_function(sh2);
+          const int nbf2 = bs2->shell(sh2).nfunction();
+
+          ob_ints->compute_shell(sh1,sh2);
+          const double *ovintsptr = ob_ints->buffer();
+
+          int bf1_index = bf1_offset;
+          for(int bf1=0; bf1<nbf1; bf1++, bf1_index++, ovintsptr+=nopers*nbf2) {
+            int bf2_index = bf2_offset;
+            const double *ptr = ovintsptr;
+            for(int bf2=0; bf2<nbf2; bf2++, bf2_index++) {
+
+              for(size_t oper=0; oper<nopers; ++oper)
+                result[oper].set_element(bf1_index, bf2_index, *(ptr++));
+
+            }
+          }
+        }
+      }
+
+    }
+
     template <OneBodyIntCreator OpEval>
     RefSCMatrix onebodyint(const Ref<GaussianBasisSet>& brabas,
                            const Ref<GaussianBasisSet>& ketbas,
@@ -205,7 +255,7 @@ namespace sc {
     RefSCMatrix overlap(const Ref<GaussianBasisSet>& brabs,
                         const Ref<GaussianBasisSet>& ketbs,
                         const Ref<Integral>& integral);
-    /// computes electric dipole matrix in SO basis (assuming electronic dipole, hence minus sign included)
+    /// computes electric dipole matrix in SO basis (minus sign not included)
     void edipole(const Ref<GaussianBasisSet>& basis,
                  const Ref<Integral>& integral,
                  RefSymmSCMatrix& mu_x,

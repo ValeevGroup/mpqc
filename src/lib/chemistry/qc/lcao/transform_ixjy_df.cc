@@ -40,7 +40,13 @@
 #include <chemistry/qc/lcao/df.h>
 #include <math/scmat/blas.h>
 
-#include <math/distarray4/distarray4_memgrp.h>
+// set to 1 when finished rewriting DistArray4_MemoryGrp
+#define HAVE_R12IA_MEMGRP 1
+#if HAVE_R12IA_MEMGRP
+  #include <math/distarray4/distarray4_memgrp.h>
+#endif
+#include <cassert>
+
 #include <math/distarray4/distarray4_node0file.h>
 #ifdef HAVE_MPIIO
 #  include <math/distarray4/distarray4_mpiiofile.h>

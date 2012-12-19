@@ -643,6 +643,13 @@ void
 MolecularEnergy::print(ostream&o) const
 {
   Function::print(o);
+  if (efield_.nonnull()) {
+    o << indent << "External uniform electric field: "
+      << scprintf("[%20.15lf %20.15lf %20.15lf]",
+                  efield_.get_element(0),
+                  efield_.get_element(1),
+                  efield_.get_element(2)) << std::endl;
+  }
   if (mc_.nonnull()) {
       o << indent << "Molecular Coordinates:\n" << incindent;
       mc_->print(o);

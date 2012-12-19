@@ -83,7 +83,8 @@ class MolecularEnergy: public Function {
 
     int print_molecule_when_changed_;
 
-    /// overload this in classes that support computations in nonzero electric field
+    /** overload this in classes that support computations in nonzero electric field
+        the default is to not support external electric fields. */
     virtual bool nonzero_efield_supported() const;
 
     /** must overload this in a derived class if analytic gradient can be computed
@@ -128,6 +129,12 @@ class MolecularEnergy: public Function {
         <tt>coor</tt>, then the guess hessian is obtained from the
         MolecularCoor object.  If neither this nor <tt>coor</tt> are given,
         then Function::guess_hessian is used, which returns a unit matrix.
+
+        <dt><tt>electric_field</tt><dd> This 3-element vector specifies the Cartesian
+        components of an external uniform electric field, in a.u. The default value, <tt>[0 0 0]</tt>,
+        causes computations in absence of an electric field. Not all MolecularEnergy objects
+        will support computations in presence of an electric field -- use
+        MolecularEnergy::nonzero_efield_supported() to query objects about this capability.
 
         <dt><tt>print_molecule_when_changed</tt><dd> If true, then whenever
         the molecule's coordinates are updated they will be printed.  The

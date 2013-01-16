@@ -60,6 +60,12 @@ namespace {
                         unsigned int nbra1, unsigned int nbra2,
                         unsigned int nket1, unsigned int nket2,
                         double zero);
+
+
+    void _print(SpinCase2 spin,
+                const Ref<DistArray4>& mat,
+                const char* label);
+
 }
 
 namespace sc {
@@ -95,8 +101,10 @@ namespace sc {
     int* cachefiles = init_int_array(PSIO_MAXUNIT);
     int** cachelist = init_int_matrix(32,32);
 
-    const Ref<OrbitalSpace>& aocc = occ_act_sb(Alpha);
+    const Ref<OrbitalSpace>& aocc = (!compute_1rdm_? occ_act_sb(Alpha) : occ_sb(Alpha));
     const Ref<OrbitalSpace>& avir = vir_act_sb(Alpha);
+
+    //const Ref<OrbitalSpace>& aocc = r12eval()->occ(Alpha);
 
     int* aoccpi = to_C<int>(aocc->block_sizes());
     int* avirpi = to_C<int>(avir->block_sizes());
@@ -105,7 +113,7 @@ namespace sc {
 
     // UHF/ROHF (ROHF always expected in semicanonical orbitals)
     if (reference()->reftype() != PsiSCF::rhf) {
-      const Ref<OrbitalSpace>& bocc = occ_act_sb(Beta);
+      const Ref<OrbitalSpace>& bocc = (!compute_1rdm_? occ_act_sb(Beta) : occ_sb(Beta));
       const Ref<OrbitalSpace>& bvir = vir_act_sb(Beta);
 
       int* boccpi = to_C<int>(bocc->block_sizes());
@@ -140,7 +148,9 @@ namespace sc {
 
     // Grab T matrices
     const char* kwd = (spin1 == Beta && reftype != PsiSCF::rhf) ? "tia" : "tIA";
-    T1_[spin1] = T1(spin1, kwd);
+    // When computing one-electron density, we use non frozen core for CCSD,
+    // but only need the frozen core portion of the T1 amplitude
+    T1_[spin1] = (!compute_1rdm_? T1(spin1, kwd) : T1_fzc(spin1, kwd));
     if (debug() >= DefaultPrintThresholds::mostN2)
       T1_[spin1].print(prepend_spincase(spin1,"T1 amplitudes").c_str());
 
@@ -206,7 +216,10 @@ namespace sc {
 
     // Grab T matrices
     const char* kwd = (spin2 != AlphaBeta) ? (spin2 == AlphaAlpha ? "tIJAB (IJ,AB)" : "tijab (ij,ab)") : "tIjAb";
-    T2_da4_[spin2] = T2_distarray4(spin2, kwd);
+    // When computing one-electron density, we use non frozen core for CCSD,
+    // but only need the frozen core portion of the amplitude
+    T2_da4_[spin2] = (!compute_1rdm_? T2_distarray4(spin2, kwd)
+                                    : T2_distarray4_fzc(spin2, kwd));
 
     return T2_da4_[spin2];
   }
@@ -268,7 +281,7 @@ namespace sc {
       actuoccioff[irrep] = actuoccioff[irrep-1] + actuoccpi[irrep-1];
     }
 
-    RefSCDimension rowdim = new SCDimension(nocc_act);
+    RefSCDimension rowdim =  new SCDimension(nocc_act);
     //rowdim->blocks()->set_subdim(0,new SCDimension(rowdim.n()));
     RefSCDimension coldim = new SCDimension(nuocc_act);
     //coldim->blocks()->set_subdim(0,new SCDimension(coldim.n()));
@@ -279,7 +292,8 @@ namespace sc {
       // read in the i by a matrix in DPD format
       unsigned int nia_dpd = 0;
       for (unsigned int h=0; h<nirrep_; ++h)
-        nia_dpd += actoccpi[h] * actuoccpi[h];
+      nia_dpd += actoccpi[h] * actuoccpi[h];
+
       double* T1 = new double[nia_dpd];
       psio.open(CC_OEI, PSIO_OPEN_OLD);
       psio.read_entry(CC_OEI, const_cast<char*>(dpdlabel.c_str()),
@@ -294,10 +308,104 @@ namespace sc {
         for (int i=0; i<actoccpi[h]; ++i)
           for (int a=0; a<actuoccpi[h]; ++a, ++ia)
             T.set_element(i+i_offset, a+a_offset, T1[ia]);
-      }
+        }
       delete[] T1;
     }
 
+    return T;
+  }
+
+  // When compute_1rdm = true, get the T1 amplitudes (frozen core size)
+  // from non frozen core PSI CCSD density calculation
+  RefSCMatrix PsiCC::T1_fzc(SpinCase1 spin, const std::string& dpdlabel) {
+    psi::PSIO& psio = exenv()->psio();
+    // grab orbital info
+    const std::vector<unsigned int>& occpi = reference()->occpi(spin);
+    const std::vector<unsigned int>& uoccpi = reference()->uoccpi(spin);
+    const std::vector<unsigned int>& frozen_docc = this->frozen_docc();
+    const std::vector<unsigned int>& frozen_uocc = this->frozen_uocc();
+
+    std::vector<unsigned int> actoccpi(nirrep_);
+    std::vector<unsigned int> actuoccpi(nirrep_);
+    unsigned int nocc_act = 0;
+    unsigned int nuocc_act = 0;
+    unsigned int nocc = 0;
+    for (unsigned int irrep = 0; irrep < nirrep_; ++irrep) {
+      actoccpi[irrep] = occpi[irrep] - frozen_docc_[irrep];
+      actuoccpi[irrep] = uoccpi[irrep] - frozen_uocc_[irrep];
+      nocc_act += actoccpi[irrep];
+      nuocc_act += actuoccpi[irrep];
+      nocc += occpi[irrep];
+    }
+
+    std::vector<unsigned int> actoccioff(nirrep_);
+    std::vector<unsigned int> actuoccioff(nirrep_);
+    std::vector<unsigned int> occioff(nirrep_);
+    actoccioff[0] = 0;
+    actuoccioff[0] = 0;
+    occioff[0] = 0;
+    for (unsigned int irrep = 1; irrep < nirrep_; ++irrep) {
+      actoccioff[irrep] = actoccioff[irrep-1] + actoccpi[irrep-1];
+      actuoccioff[irrep] = actuoccioff[irrep-1] + actuoccpi[irrep-1];
+      occioff[irrep] = occioff[irrep-1] + occpi[irrep-1];
+    }
+
+    RefSCDimension rowdim_occ_act = new SCDimension(nocc_act);
+    RefSCDimension rowdim_occ = new SCDimension(nocc);
+    RefSCDimension coldim = new SCDimension(nuocc_act);
+
+    // T1 amplitude matrix only exclude the frozen core portion
+    RefSCMatrix T = matrixkit()->matrix(rowdim_occ_act, coldim);
+    T.assign(0.0);
+
+    // T1 amplitude matrix from the non frozen core PSI CCSD calculation
+    RefSCMatrix T_nfzc = matrixkit()->matrix(rowdim_occ, coldim);
+    T_nfzc.assign(0.0);
+
+    // test that T1 is not empty
+    if (rowdim_occ_act.n() && coldim.n()) {
+      // read in the i by a matrix in DPD format
+      unsigned int nia_dpd = 0;
+      for (unsigned int h=0; h<nirrep_; ++h)
+        nia_dpd += occpi[h] * actuoccpi[h];
+
+      double* T1 = new double[nia_dpd];
+      psio.open(CC_OEI, PSIO_OPEN_OLD);
+      psio.read_entry(CC_OEI, const_cast<char*>(dpdlabel.c_str()),
+                      reinterpret_cast<char*>(T1), nia_dpd*sizeof(double));
+      psio.close(CC_OEI, 1);
+
+      // form the full matrix
+      unsigned int ia = 0;
+      for (unsigned int h = 0; h < nirrep_; ++h) {
+        const unsigned int i_offset = occioff[h];
+        const unsigned int a_offset = actuoccioff[h];
+
+        for (int i = 0; i < occpi[h]; ++i) {
+          for (int a = 0; a < actuoccpi[h]; ++a, ++ia) {
+            T_nfzc.set_element(i+i_offset, a+a_offset, T1[ia]);
+          }
+        }
+      }
+      delete[] T1;
+
+      for (unsigned int h = 0; h < nirrep_; ++h) {
+        const unsigned int i_nfzc_offset = occioff[h] + frozen_docc_[h];
+        const unsigned int i_offset = actoccioff[h];
+        const unsigned int a_offset = actuoccioff[h];
+
+        for (int i = 0; i < actoccpi[h]; ++i) {
+          for (int a = 0; a < actuoccpi[h]; ++a) {
+            const double Tia = T_nfzc.get_element(i+i_nfzc_offset, a+a_offset);
+            T.set_element(i+i_offset, a+a_offset, Tia);
+          }
+        }
+      }
+      T_nfzc = 0;
+
+    }
+
+    //T.print(prepend_spincase(spin,"CCSD T1 amplitudes:").c_str());
     return T;
   }
 
@@ -572,6 +680,207 @@ namespace sc {
     }
 
     return T;
+  }
+
+  // When compute_1rdm = true, get the T2 amplitudes (frozen core size)
+  // from non frozen core PSI CCSD density calculation
+  Ref<DistArray4> PsiCC::T2_distarray4_fzc(SpinCase2 spin12,
+                                       const std::string& dpdlabel) {
+    psi::PSIO& psio = exenv()->psio();
+
+    const SpinCase1 spin1 = case1(spin12);
+    const SpinCase1 spin2 = case2(spin12);
+
+    // grab orbital info
+    typedef std::vector<unsigned int> uvec;
+    const uvec& occpi1 = reference()->occpi(spin1);
+    const uvec& occpi2 = reference()->occpi(spin2);
+    const uvec& uoccpi1 = reference()->uoccpi(spin1);
+    const uvec& uoccpi2 = reference()->uoccpi(spin2);
+
+    uvec actoccpi1(nirrep_);
+    uvec actuoccpi1(nirrep_);
+    uvec actoccpi2(nirrep_);
+    uvec actuoccpi2(nirrep_);
+    unsigned int nocc1_act = 0;
+    unsigned int nuocc1_act = 0;
+    unsigned int nocc2_act = 0;
+    unsigned int nuocc2_act = 0;
+
+    unsigned int nocc1 = 0;
+    unsigned int nocc2 = 0;
+    for (unsigned int irrep = 0; irrep < nirrep_; ++irrep) {
+      actoccpi1[irrep] = occpi1[irrep] - frozen_docc_[irrep];
+      actuoccpi1[irrep] = uoccpi1[irrep] - frozen_uocc_[irrep];
+      actoccpi2[irrep] = occpi2[irrep] - frozen_docc_[irrep];
+      actuoccpi2[irrep] = uoccpi2[irrep] - frozen_uocc_[irrep];
+      nocc1_act += actoccpi1[irrep];
+      nuocc1_act += actuoccpi1[irrep];
+      nocc2_act += actoccpi2[irrep];
+      nuocc2_act += actuoccpi2[irrep];
+
+      nocc1 += occpi1[irrep];
+      nocc2 += occpi2[irrep];
+    }
+
+    uvec actoccioff1(nirrep_);
+    uvec actuoccioff1(nirrep_);
+    uvec actoccioff2(nirrep_);
+    uvec actuoccioff2(nirrep_);
+
+    uvec occioff1(nirrep_);
+    uvec occioff2(nirrep_);
+
+    actoccioff1[0] = 0;
+    actuoccioff1[0] = 0;
+    actoccioff2[0] = 0;
+    actuoccioff2[0] = 0;
+
+    occioff1[0] = 0;
+    occioff2[0] = 0;
+    for (unsigned int irrep = 1; irrep < nirrep_; ++irrep) {
+      actoccioff1[irrep] = actoccioff1[irrep - 1] + actoccpi1[irrep - 1];
+      actuoccioff1[irrep] = actuoccioff1[irrep - 1] + actuoccpi1[irrep - 1];
+      actoccioff2[irrep] = actoccioff2[irrep - 1] + actoccpi2[irrep - 1];
+      actuoccioff2[irrep] = actuoccioff2[irrep - 1] + actuoccpi2[irrep - 1];
+
+      occioff1[irrep] = occioff1[irrep - 1] + occpi1[irrep - 1];
+      occioff2[irrep] = occioff2[irrep - 1] + occpi2[irrep - 1];
+    }
+
+    // DPD of orbital product spaces
+    std::vector<size_t> ijpi(nirrep_);
+    std::vector<size_t> abpi(nirrep_);
+    size_t nijab_dpd = 0;
+    for (unsigned int h = 0; h < nirrep_; ++h) {
+      size_t nij = 0;
+      size_t nab = 0;
+      for (unsigned int g = 0; g < nirrep_; ++g) {
+        nij += (size_t)occpi1[g] * occpi2[h ^ g];
+        nab += (size_t)actuoccpi1[g] * actuoccpi2[h ^ g];
+      }
+      ijpi[h] = nij;
+      abpi[h] = nab;
+      nijab_dpd += nij * nab;
+    }
+
+    Ref<DistArray4> T;       // T2 amplitude from non frozen core PSI CCSD
+    // TODO make this work for non-disk-based storage
+    {
+      const char* spin12_label = (spin12 == AlphaAlpha) ? "aa" : ((spin12 == BetaBeta) ? "bb" : "ab");
+      std::string fileext_str(".T2_distarray4_"); fileext_str += spin12_label;
+      const std::string default_basename_prefix = SCFormIO::fileext_to_filename(fileext_str.c_str());
+      const std::string da4_filename = ConsumableResources::get_default_instance()->disk_location() +
+          default_basename_prefix;
+      T = new DistArray4_Node0File(da4_filename.c_str(), 1, nocc1, nocc2,
+                                   nuocc1_act, nuocc2_act);
+    }
+
+    Ref<DistArray4> T_fzc;   // T2 amplitude excluding the frozen core part
+    {
+      const char* spin12_label = (spin12 == AlphaAlpha) ? "aa" : ((spin12 == BetaBeta) ? "bb" : "ab");
+      std::string fileext_str(".T2_fzc_distarray4_"); fileext_str += spin12_label;
+      const std::string default_basename_prefix = SCFormIO::fileext_to_filename(fileext_str.c_str());
+      const std::string da4_filename = ConsumableResources::get_default_instance()->disk_location() +
+          default_basename_prefix;
+      T_fzc = new DistArray4_Node0File(da4_filename.c_str(), 1,
+                                       nocc1_act, nocc2_act,
+                                       nuocc1_act, nuocc2_act);
+    }
+
+    // If not empty...
+    if (nijab_dpd) {
+      const size_t max_nab = *std::max_element(abpi.begin(), abpi.end());
+      const size_t nij = nocc1 * nocc2;
+      const size_t nab = nuocc1_act * nuocc2_act;
+
+      // read in T2 one ij at a time
+      psio.open(CC_TAMPS, PSIO_OPEN_OLD);
+
+      double* t2_ij = new double[max_nab];
+      double* T_ij = new double[nab];
+
+      T->activate();
+
+      // convert to the full form
+      size_t ij_offset = 0;
+      size_t ab_offset = 0;
+      psio_address t2_ij_address = PSIO_ZERO;
+      for (unsigned int h = 0; h < nirrep_; ij_offset += ijpi[h], ab_offset
+          += abpi[h], ++h) {
+        for (unsigned int g = 0; g < nirrep_; ++g) {
+          unsigned int gh = g ^ h;
+          for (int i = 0; i < occpi1[g]; ++i) {
+            const size_t ii = i + occioff1[g];
+
+            for (int j = 0; j < occpi2[gh]; ++j) {
+              const size_t jj = j + occioff2[gh];
+
+              std::fill(T_ij, T_ij+nab, 0.0);
+
+              const size_t nab_h = abpi[h];
+              psio.read(CC_TAMPS, const_cast<char*> (dpdlabel.c_str()),
+                        reinterpret_cast<char*> (t2_ij), nab_h * sizeof(double),
+                        t2_ij_address, &t2_ij_address);
+
+              size_t ab_h = 0;
+              for (unsigned int f = 0; f < nirrep_; ++f) {
+                unsigned int fh = f ^ h;
+                for (int a = 0; a < actuoccpi1[f]; ++a) {
+                  const size_t aa = a + actuoccioff1[f];
+
+                  for (int b = 0; b < actuoccpi2[fh]; ++b, ++ab_h) {
+                    const size_t bb = b + actuoccioff2[fh];
+
+                    const size_t ab = aa * nuocc2_act + bb;
+                    T_ij[ab] = t2_ij[ab_h];
+                  }
+                }
+              }
+
+              T->store_pair_block(ii, jj, 0, T_ij);
+            }
+          }
+        }
+      }
+      psio.close(CC_TAMPS, 1);
+
+      delete[] t2_ij;
+      delete[] T_ij;
+
+      T_fzc->activate();
+
+      for (unsigned int h = 0; h < nirrep_; ++h) {
+        for (unsigned int g = 0; g < nirrep_; ++g) {
+          unsigned int gh = g ^ h;
+          const size_t nfzcpi_g = frozen_docc_[g];
+          const size_t nfzcpi_gh = frozen_docc_[gh];
+
+          for (int i = 0; i < actoccpi1[g]; ++i) {
+            const size_t ii = i + occioff1[g] + nfzcpi_g;
+            const size_t ii_fzc = i + actoccioff1[g];
+
+            for (int j = 0; j < actoccpi2[gh]; ++j) {
+              const size_t jj = j + occioff2[gh] + nfzcpi_gh;
+              const size_t jj_fzc = j + actoccioff2[gh];
+
+              const double* const ij_blk = T->retrieve_pair_block(ii, jj, 0);
+              T_fzc->store_pair_block(ii_fzc, jj_fzc, 0, ij_blk);
+
+              T->release_pair_block(ii, jj, 0);
+            }
+          }
+        }
+      }
+
+      if (T->data_persistent()) {
+        T->deactivate();
+        T_fzc->deactivate();
+      }
+
+    }
+    //_print(spin12, T_fzc, prepend_spincase(spin12,"CCSD T2 amplitudes:").c_str());
+    return T_fzc;
   }
 
   const RefSCMatrix&PsiCC::Lambda1(SpinCase1 spin) {
@@ -932,10 +1241,40 @@ namespace sc {
     return vir_act_sb_[spin];
   }
 
+  const Ref<OrbitalSpace>&
+  PsiCC::occ_sb(SpinCase1 spin) {
+    if (occ_sb_[spin].nonnull())
+      return occ_sb_[spin];
+    if (reference_->reftype() == PsiSCF::rhf && spin == Beta)
+      return occ_sb(Alpha);
+
+    const unsigned int nmo = reference_->nmo();
+    const std::vector<unsigned int>& mopi = reference_->mopi();
+    const std::vector<unsigned int>& occpi = reference_->occpi(spin);
+    const int nirreps = occpi.size();
+    std::vector<bool> occ_mask(nmo, false);
+    for (int irrep = 0, irrep_offset = 0; irrep < nirreps; ++irrep) {
+      for (int i = 0; i < occpi[irrep]; ++i) {
+        occ_mask[i + irrep_offset] = true;
+      }
+      irrep_offset += mopi[irrep];
+    }
+
+    Ref<OrbitalSpace> orbs_sb = new OrbitalSpace("", "",
+                                                 reference_->coefs(spin),
+                                                 basis(), integral(),
+                                                 reference_->evals(spin), 0, 0,
+                                                 OrbitalSpace::symmetry);
+    occ_sb_[spin] = new MaskedOrbitalSpace("", "", orbs_sb, occ_mask);
+
+    return occ_sb_[spin];
+  }
+
   void
   PsiCC::obsolete() {
     occ_act_sb_[Alpha] = occ_act_sb_[Beta] = 0;
     vir_act_sb_[Alpha] = vir_act_sb_[Beta] = 0;
+    occ_sb_[Alpha] = occ_sb_[Beta] = 0;
     T1_[Alpha] = T1_[Beta] = 0;
     T2_[Alpha] = T2_[Beta] = 0;
     T2_da4_[Alpha] = T2_da4_[Beta] = 0;
@@ -1119,6 +1458,18 @@ namespace {
       }
     }
   }
+
+    void _print(SpinCase2 spin,
+               const Ref<DistArray4>& mat,
+               const char* label) {
+      if (mat->msg()->me() == 0) {
+        const size_t nij = (spin != AlphaBeta && mat->ni() == mat->nj()) ? mat->ni() * (mat->ni()-1) / 2 : mat->ni() * mat->nj();
+        const size_t nxy = (spin != AlphaBeta && mat->nx() == mat->ny()) ? mat->nx() * (mat->nx()-1) / 2 : mat->nx() * mat->ny();
+        RefSCMatrix scmat = SCMatrixKit::default_matrixkit()->matrix(new SCDimension(nij), new SCDimension(nxy));
+        scmat << mat;
+        scmat.print(label);
+      }
+    }
 
 } // anonymous namespace
 

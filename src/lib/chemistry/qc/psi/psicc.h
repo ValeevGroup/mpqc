@@ -48,6 +48,8 @@ namespace sc {
       RefSCMatrix Lambda1_[NSpinCases1];
       RefSCMatrix Lambda2_[NSpinCases2];
 
+      Ref<OrbitalSpace> occ_sb_[NSpinCases1];
+
     protected:
       // set to true if want to run only if Psi3 and MPQC orbitals match exactly up to a phase
       static const bool use_sparsemap_only_ = false;
@@ -58,6 +60,14 @@ namespace sc {
       RefSCMatrix T2(SpinCase2 spin, const std::string& L);
       /// read in T2-like quantity of spincase spin using DPD label L
       Ref<DistArray4> T2_distarray4(SpinCase2 spin, const std::string& L);
+
+      // get the T1 amplitudes (frozen core size) from
+      // non frozen core PSI CCSD density calculation as compute_1rdm = true
+      RefSCMatrix T1_fzc(SpinCase1 spin, const std::string& dpdlabel);
+      // get the T2 amplitudes (frozen core size) from
+      // non frozen core PSI CCSD density calculation as compute_1rdm = true
+      Ref<DistArray4> T2_distarray4_fzc(SpinCase2 spin12,
+                                        const std::string& dpdlabel);
 
       /// read in one-particle density of spincase spin
       RefSCMatrix Onerdm(SpinCase1 spin);
@@ -110,6 +120,9 @@ namespace sc {
       const Ref<OrbitalSpace>& occ_act_sb(SpinCase1 spin);
       /// return active virtual orbital space (symmetry-blocked)
       const Ref<OrbitalSpace>& vir_act_sb(SpinCase1 spin);
+
+      /// return occupied orbital space (symmetry-blocked)
+      const Ref<OrbitalSpace>& occ_sb(SpinCase1 spin);
 
       int maxiter_;   //< max number of CC iterations
       static const int default_maxiter = 50;

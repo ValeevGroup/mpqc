@@ -234,6 +234,7 @@ namespace sc {
     memory_ = bytes;
 
     compute_1rdm_ = keyval->booleanvalue("compute_1rdm", KeyValValueboolean(false));
+    dertype_ = keyval->pcharvalue("dertype", KeyValValuepchar("none"));
   }
 
   PsiWavefunction::~PsiWavefunction() {
@@ -375,7 +376,7 @@ namespace sc {
   }
 
   void PsiWavefunction::write_basic_input(int conv) {
-    const char *dertype = gradient_needed() ? "first" : "none";
+    const char *dertype = gradient_needed() ? "first" : dertype_;
 
     Ref<PsiInput> psiinput = get_psi_input();
     psiinput->write_defaults(exenv_, dertype);
@@ -1765,14 +1766,29 @@ namespace sc {
     PsiWavefunction::write_basic_input(convergence);
     reference_->write_basic_input( accuracy_to_convergence(reference_->desired_value_accuracy()) );
     input->write_keyword("psi:tolerance", convergence + 5);
+    // For CCSD density, frozen core can not be used
     if (frozen2restricted) {
-      input->write_keyword_array("psi:restricted_docc", this->frozen_docc());
-      //input->write_keyword_array("psi:restricted_uocc", this->frozen_uocc());
+        if (compute_1rdm_) {
+          // CCSD density can not deal with frozen core
+          const std::vector<unsigned int> frozen_docc(nirrep_,0);
+          input->write_keyword_array("psi:restricted_docc", frozen_docc);
+        } else {
+            input->write_keyword_array("psi:restricted_docc", this->frozen_docc());
+            //input->write_keyword_array("psi:restricted_uocc", this->frozen_uocc());
+        }
     }
     else {
-      input->write_keyword_array("psi:frozen_docc", this->frozen_docc());
-      input->write_keyword_array("psi:frozen_uocc", this->frozen_uocc());
+      if (compute_1rdm_) {
+        // CCSD density can not deal with frozen core
+        const std::vector<unsigned int> frozen_docc(nirrep_,0);
+        input->write_keyword_array("psi:frozen_docc", frozen_docc);
+        input->write_keyword_array("psi:frozen_uocc", this->frozen_uocc());
+      } else {
+          input->write_keyword_array("psi:frozen_docc", this->frozen_docc());
+          input->write_keyword_array("psi:frozen_uocc", this->frozen_uocc());
+      }
     }
+
   }
 
   void

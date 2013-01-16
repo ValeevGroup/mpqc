@@ -33,8 +33,8 @@ using namespace sc;
 
 ///////////////////////////////////////////////////////////////////
 
-static ClassDesc PsiSCF_R12RefWavefunction_cd(
-  typeid(PsiSCF_RefWavefunction),"PsiSCF_R12RefWavefunction",1,"public R12RefWavefunction",
+static ClassDesc PsiSCF_RefWavefunction_cd(
+  typeid(PsiSCF_RefWavefunction),"PsiSCF_RefWavefunction",1,"public RefWavefunction",
   0, 0, create<PsiSCF_RefWavefunction>);
 
 PsiSCF_RefWavefunction::PsiSCF_RefWavefunction(const Ref<WavefunctionWorld>& world,
@@ -289,10 +289,10 @@ PsiSCF_RefWavefunction::dfinfo() const {
 ///////////////////////////////////////////////////////////////////
 
 ClassDesc
-PsiRASCI_R12RefWavefunction_cd(typeid(PsiRASCI_RefWavefunction),
-                     "PsiRASCI_R12RefWavefunction",
+PsiRASCI_RefWavefunction_cd(typeid(PsiRASCI_RefWavefunction),
+                     "PsiRASCI_RefWavefunction",
                      1,               // version
-                     "public R12RefWavefunction", // must match parent
+                     "public RefWavefunction", // must match parent
                      0,               // change to create<PsiRASCI_RefWavefunction> if this class is DefaultConstructible
                      0,               // change to 0 if this class is not KeyValConstructible
                      create<PsiRASCI_RefWavefunction>  // change to 0 if this class is not StateInConstructible
@@ -412,7 +412,7 @@ PsiRASCI_RefWavefunction::init_spaces()
                                                      occs, actmask, evals, moorder);
   spinspaces_[Beta] = spinspaces_[Alpha];
   orig_space_init_ed_ = true;
-  if(!force_rasscf() and (! screened_space_init_ed_) and fabs(occ_thres()) > sc::SpinOrbitalPT2R12::zero_occupancy())
+  if(!force_rasscf() and (! screened_space_init_ed_) and fabs(occ_thres()) > sc::PopulatedOrbitalSpace::zero_occupancy())
   {  // must get spin-free RDM and orbital space coefficients in the original MO basis, since we are constructing new ones.
     RefSymmSCMatrix OBS_mo_ordm = this->orig_ordm_orbs_sb(Alpha) + this->orig_ordm_orbs_sb(Beta);
     screened_spinspaces_[Alpha] = new PopulatedOrbitalSpace(do_screen(), occ_thres(), OBS_mo_ordm, oreg, AnySpinCase1, bs, integral, evecs_ao,
@@ -490,7 +490,7 @@ RefWavefunctionFactory::make(const Ref<WavefunctionWorld> & world,
     Ref<PsiRASCI> cast; cast << ref;
     if (cast.nonnull()) {
       if (vir_space.nonnull() && vir_space->rank() != 0)
-        throw ProgrammingError("PsiRASCI_R12RefWavefunction can only be used with default virtual space",
+        throw ProgrammingError("PsiRASCI_RefWavefunction can only be used with default virtual space",
                                __FILE__, __LINE__);
       const bool omit_uocc = vir_space.nonnull();
       return new PsiRASCI_RefWavefunction(world, cast, spin_restricted, nfzc, nfzv, omit_uocc);
@@ -501,7 +501,7 @@ RefWavefunctionFactory::make(const Ref<WavefunctionWorld> & world,
     if (cast.nonnull())
       return new SD_RefWavefunction(world, cast, spin_restricted, nfzc, nfzv, vir_space);
   }
-  throw FeatureNotImplemented("this reference wavefunction cannot be used for R12 methods",
+  throw FeatureNotImplemented("this reference wavefunction cannot be used for correlated methods",
                               __FILE__, __LINE__);
 }
 

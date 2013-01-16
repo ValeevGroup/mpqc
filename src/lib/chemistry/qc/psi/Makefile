@@ -9,14 +9,14 @@ include $(TOPDIR)/lib/Makedirlist
 TARGET_TO_MAKE = libSCpsi
 BIN_OR_LIB = LIB
 
-CXXSRC = psiwfn.cc psiexenv.cc psiinput.cc psifile11.cc psicc.cc psici.cc psiqtorder.cc
+CXXSRC = psiwfn.cc psiexenv.cc psiinput.cc psifile11.cc psicc.cc psici.cc psiqtorder.cc psiref.cc psirdm.cc psici.cc
 CSRC = 
-INC = psiwfn.h psiinput.h psiexenv.h psifile11.h psicc.h psici.h psiqtorder.h
+INC = psiwfn.h psiinput.h psiexenv.h psifile11.h psicc.h psici.h psiqtorder.h psiref.h psirdm.h psici.h
 
 # R12 functionality depends on MP2-R12 code
 ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12),yes)
-CXXSRC := $(CXXSRC) psicc_pt2r12.cc psiref.cc psirdm.cc psici.cc
-INC := $(INC) psicc_pt2r12.h psiref.h psirdm.h psici.h
+CXXSRC := $(CXXSRC) psicc_pt2r12.cc
+INC := $(INC) psicc_pt2r12.h
 endif
 
 psitest.testrun: DO_TESTRUN=no

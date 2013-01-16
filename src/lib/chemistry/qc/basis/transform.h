@@ -40,6 +40,8 @@ class SphericalTransformComponent {
     int a_, b_, c_, cartindex_, pureindex_;
 
   public:
+    virtual ~SphericalTransformComponent();
+
     /// Returns the exponent of x.
     int a() const { return a_; }
     /// Returns the exponent of y.

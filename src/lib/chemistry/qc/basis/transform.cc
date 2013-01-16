@@ -461,6 +461,11 @@ SphericalTransformIter::SphericalTransformIter(const SphericalTransform*t)
   transform_ = t;
 }
 
+////////////////////////////////////////////////////////////////////////////
+// SphericalTransformComponent class
+
+SphericalTransformComponent::~SphericalTransformComponent() {}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

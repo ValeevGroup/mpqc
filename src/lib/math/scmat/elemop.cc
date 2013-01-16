@@ -794,9 +794,10 @@ SCElementKNorm::defer_collect(int h)
 void
 SCElementKNorm::collect(const Ref<MessageGrp>&msg)
 {
-  if (!deferred_)
+  if (!deferred_) {
     msg->sum(r_);
-  r_ = std::pow(r_,1.0/k_);
+    r_ = std::pow(r_,1.0/k_);
+  }
 }
 void
 SCElementKNorm::collect(const Ref<SCElementOp>&op)

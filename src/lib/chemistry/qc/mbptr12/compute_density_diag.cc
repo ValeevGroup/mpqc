@@ -1637,7 +1637,7 @@ RefSCMatrix MP2R12Energy_Diag::compute_1rdm_mp2(const SpinCase1 spin)
   // same spin part: T^ik_ab T^ab_jk - T^ik_ab T^ab_jk
   // different spin part: T^ik_ab T^ab_jk
   const int norbs = nocc_act + nvir;
-  const int noccocc = nocc_act * nocc_act;
+  const blasint noccocc = nocc_act * nocc_act;
   const int nvirvir = nvir * nvir;
   const int noccoccvir = nvir * nocc_act * nocc_act;
 
@@ -1660,7 +1660,7 @@ RefSCMatrix MP2R12Energy_Diag::compute_1rdm_mp2(const SpinCase1 spin)
   int nocc2_act = 0;
   int nvir1 = 0;
   int nvir2 = 0;
-  int nocc12 = 0;
+  blasint nocc12 = 0;
   int nocc12vir = 0;
   if (nspincase2 == 3) {
     // obtain AlphaBeta/BetaAlpha occ, vir, orbs, cabs, and occ orbitals
@@ -1824,11 +1824,11 @@ RefSCMatrix MP2R12Energy_Diag::compute_1rdm_mp2part(const SpinCase1 spin,
 //  if (nocc_act == 0)
 //    continue;
   const int norbs = nocc_act + nvir;
-  const int noccocc = nocc_act * nocc_act;
+  const blasint noccocc = nocc_act * nocc_act;
   const int nvirvir = nvir * nvir;
   const int noccoccvir = nocc_act * nocc_act * nvir;
 
-  const int nocc12 = nocc1_act * nocc2_act;
+  const blasint nocc12 = nocc1_act * nocc2_act;
   const int nocc12vir2 = nocc12 * nvir2;
 
   RefSCDimension rowdim = new SCDimension(norbs);
@@ -1960,11 +1960,11 @@ RefSCMatrix MP2R12Energy_Diag::compute_1rdm_mp2part(const SpinCase1 spin,
 //  if (nocc_act == 0)
 //    continue;
   const int norbs = nocc_act + nvir;
-  const int noccocc = nocc_act * nocc_act;
+  const blasint noccocc = nocc_act * nocc_act;
   const int nvirvir = nvir * nvir;
   const int noccoccvir = nocc_act * nocc_act * nvir;
 
-  const int nocc12 = nocc1_act * nocc2_act;
+  const blasint nocc12 = nocc1_act * nocc2_act;
   const int nocc12vir2 = nocc12 * nvir2;
 
   RefSCDimension rowdim = new SCDimension(norbs);
@@ -6655,8 +6655,8 @@ void MP2R12Energy_Diag::compute_RT1_api(const int nspincases1, const int nspinca
 
   const int nocc1_act = occ1_act->rank();
   const int nocc2_act = occ2_act->rank();
-  const int nvir1 = vir1->rank();
-  const int nvir2 = vir2->rank();
+  const blasint nvir1 = vir1->rank();
+  const blasint nvir2 = vir2->rank();
 
   for(int s = 0; s < nspincases1; ++s) {
      const SpinCase1 spin = static_cast<SpinCase1>(s);
@@ -6680,7 +6680,7 @@ void MP2R12Energy_Diag::compute_RT1_api(const int nspincases1, const int nspinca
 
      const Ref<OrbitalSpace> vir = v_orbs1[1];
      const Ref<OrbitalSpace> cabs = v_orbs1[3];
-     const int nvir = vir->rank();
+     const blasint nvir = vir->rank();
      const int ncabs = cabs->rank();
 
      // test propose

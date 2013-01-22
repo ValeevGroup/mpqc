@@ -1157,18 +1157,17 @@ Wavefunction::core_hamiltonian_nr(const Ref<GaussianBasisSet> &bas)
         mu.assign(0.0);
 
         double E[3];  for(int xyz=0; xyz<3; ++xyz) E[xyz] = electric_field().get_element(xyz);
-        Ref<GaussianBasisSet> bs = basis();
-        const int nshell = bs->nshell();
-        integral()->set_basis(bs,bs);
+        const int nshell = bas->nshell();
+        integral()->set_basis(bas,bas);
         Ref<OneBodyInt> m1_ints = integral()->dipole(0);
         for(int sh1=0; sh1<nshell; sh1++) {
-          int bf1_offset = bs->shell_to_function(sh1);
-          int nbf1 = bs->shell(sh1).nfunction();
+          int bf1_offset = bas->shell_to_function(sh1);
+          int nbf1 = bas->shell(sh1).nfunction();
 
           int sh2max = sh1;
           for(int sh2=0; sh2<=sh2max; sh2++) {
-            int bf2_offset = bs->shell_to_function(sh2);
-            int nbf2 = bs->shell(sh2).nfunction();
+            int bf2_offset = bas->shell_to_function(sh2);
+            int nbf2 = bas->shell(sh2).nfunction();
 
             m1_ints->compute_shell(sh1,sh2);
             const double *m1intsptr = m1_ints->buffer();
@@ -1195,7 +1194,7 @@ Wavefunction::core_hamiltonian_nr(const Ref<GaussianBasisSet> &bas)
         }
         m1_ints = 0;
 
-        const int nbasis = bs->nbasis();
+        const int nbasis = bas->nbasis();
         for(int bf1=0; bf1<nbasis; bf1++)
           for(int bf2=0; bf2<=bf1; bf2++) {
             mu(bf2,bf1) = mu(bf1,bf2);

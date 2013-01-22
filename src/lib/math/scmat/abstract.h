@@ -469,7 +469,8 @@ class SymmSCMatrix: public DescribedClass {
     virtual void accumulate(const SymmSCMatrix* m) = 0;
     /// Sum into this the products of various vectors or matrices.
     virtual void accumulate_symmetric_sum(SCMatrix*) = 0;
-    virtual void accumulate_symmetric_product(SCMatrix*);
+    /// Sum into this a * a.t()
+    virtual void accumulate_symmetric_product(SCMatrix* a);
     virtual void accumulate_transform(SCMatrix*,SymmSCMatrix*,
                             SCMatrix::Transform = SCMatrix::NormalTransform);
     virtual void accumulate_transform(SCMatrix*,DiagSCMatrix*,

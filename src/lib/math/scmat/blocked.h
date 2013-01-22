@@ -170,6 +170,8 @@ class BlockedSCMatrix: public SCMatrix {
     void schmidt_orthog(SymmSCMatrix*,int);
     int schmidt_orthog_tol(SymmSCMatrix*, double tol, double *res=0);
 
+    void convert_accumulate(SCMatrix*a);
+
     void element_op(const Ref<SCElementOp>&);
     void element_op(const Ref<SCElementOp2>&,
                     SCMatrix*);
@@ -304,6 +306,8 @@ class BlockedDiagSCMatrix: public DiagSCMatrix {
     double trace();
     /// generalized-invert this. \sa DiagSCMatrix::gen_invert_this()
     void gen_invert_this(double condition_number_threshold = 1e8);
+
+    void convert_accumulate(DiagSCMatrix*a);
 
     void element_op(const Ref<SCElementOp>&);
     void element_op(const Ref<SCElementOp2>&,

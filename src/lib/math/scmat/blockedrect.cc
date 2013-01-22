@@ -26,6 +26,7 @@
 //
 
 #include <math.h>
+#include <cassert>
 
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
@@ -240,6 +241,44 @@ BlockedSCMatrix::convert_pp(double**a) const
   else {
       SCMatrix::convert_pp(a);
     }
+}
+
+void
+BlockedSCMatrix::convert_accumulate(SCMatrix*a)
+{
+  // ok, are we converting a non-blocked matrix to a blocked one, or are
+  // we converting a blocked matrix from one specialization to another?
+
+  assert(a->nrow() == this->nrow());
+  assert(a->ncol() == this->ncol());
+
+  if (dynamic_cast<BlockedSCMatrix*>(a)) {
+    BlockedSCMatrix *ba = dynamic_cast<BlockedSCMatrix*>(a);
+    if (ba->nblocks() == this->nblocks()) {
+      for (int i=0; i < nblocks(); i++)
+        mats_[i]->convert_accumulate(ba->mats_[i]);
+    } else {
+      ExEnv::errn() << indent
+           << "BlockedSCMatrix::convert_accumulate: "
+           << "can't convert from BlockedSCMatrix with different nblock"
+           << endl;
+      abort();
+    }
+  }
+  else {
+    if (nblocks()==1) {
+      mats_[0]->convert_accumulate(a);
+    } else {
+      int row_offset = 0, col_offset = 0;
+      for (int i=0; i < nblocks(); i++) {
+        mats_[i]->accumulate_subblock(a,
+                                      0, mats_[i]->nrow()-1, 0, mats_[i]->ncol()-1,
+                                      row_offset, col_offset);
+        row_offset += mats_[i]->nrow();
+        col_offset += mats_[i]->ncol();
+      }
+    }
+  }
 }
 
 SCMatrix *

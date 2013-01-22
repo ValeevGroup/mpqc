@@ -422,7 +422,20 @@ R12IntEval::compute_emp2_cabs_singles_noncanonical_ccsd(const RefSCMatrix& T1_ia
     const RefSCMatrix& T1_ia_ref = (spin == Alpha) ? T1_ia_alpha : T1_ia_beta;
     RefSCMatrix Fia = fock(occ,vir,spin);
     RefSCMatrix T1_ia = Fia.clone();
-    T1_ia->convert(T1_ia_ref);
+    // doesn't work because T1_ia_ref is local, T1_ia is replicated
+    //T1_ia->convert(T1_ia_ref);
+    T1_ia->assign(0.0);
+    const int nocc_act = T1_ia_ref.nrow();
+    const int nvir_act = T1_ia_ref.ncol();
+    Ref<OrbitalSpace> occ_act = this->occ_act(spin);
+    Ref<OrbitalSpace> vir_act = this->vir_act(spin);
+    MOIndexMap map_act2occ(*occ << *occ_act);
+    MOIndexMap map_act2vir(*vir << *vir_act);
+    for(int i=0; i<nocc_act; ++i) {
+      for(int a=0; a<nvir_act; ++a) {
+        T1_ia(map_act2occ[i], map_act2vir[a]) = T1_ia_ref(i,a);
+      }
+    }
 
     T1_cabs_[s] = FiA.clone(); T1_cabs_[s].assign(0.0);
 

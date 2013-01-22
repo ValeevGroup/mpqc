@@ -165,6 +165,38 @@ BlockedDiagSCMatrix::gen_invert_this(double condition_number_threshold)
 }
 
 void
+BlockedDiagSCMatrix::convert_accumulate(DiagSCMatrix*a)
+{
+  // ok, are we converting a non-blocked matrix to a blocked one, or are
+  // we converting a blocked matrix from one specialization to another?
+
+  if (dynamic_cast<BlockedDiagSCMatrix*>(a)) {
+    BlockedDiagSCMatrix *ba = dynamic_cast<BlockedDiagSCMatrix*>(a);
+    if (ba->nblocks() == this->nblocks()) {
+      for (int i=0; i < nblocks(); i++)
+        mats_[i]->convert_accumulate(ba->mats_[i]);
+    } else {
+      ExEnv::errn() << indent
+           << "BlockedDiagSCMatrix::convert_accumulate: "
+           << "can't convert from BlockedDiagSCMatrix with different nblock"
+           << endl;
+      abort();
+    }
+  }
+  else {
+    if (nblocks()==1) {
+      mats_[0]->convert_accumulate(a);
+    } else {
+      ExEnv::errn() << indent
+           << "BlockedDiagSCMatrix::convert_accumulate: "
+           << "can't convert from DiagSCMatrix when nblocks != 1"
+           << endl;
+      abort();
+    }
+  }
+}
+
+void
 BlockedDiagSCMatrix::element_op(const Ref<SCElementOp>& op)
 {
   BlockedSCElementOp *bop = dynamic_cast<BlockedSCElementOp*>(op.pointer());

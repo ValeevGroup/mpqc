@@ -270,6 +270,8 @@ R12IntEval::compute_emp2_cabs_singles_noncanonical(bool vir_cabs_coupling) {
     if (occ->rank() == 0) continue;
     Ref<OrbitalSpace> vir = this->vir(spin);
     Ref<OrbitalSpace> cabs = r12world()->cabs_space(spin);
+    // test for CABS Singles contribution to dipole moment
+    //Ref<OrbitalSpace> cabs = cabs_space_canonical(spin);
     if (cabs->rank() == 0) continue;
     Ref<OrbitalSpace> aspace = cabs;
     if (vir_cabs_coupling) {

@@ -1207,13 +1207,13 @@ namespace {
                            MX_cabsorbs, MY_cabsorbs, MZ_cabsorbs,
                            MXX, MYY, MZZ,
                            MXY, MXZ, MYZ);
+    //MX_cabsorbs.print(prepend_spincase(spin,"mu(X) in cabs_orbs").c_str());
     MXX = 0;
     MYY = 0;
     MZZ = 0;
     MXY = 0;
     MXZ = 0;
     MYZ = 0;
-
 
     const std::vector<unsigned int>& orbspi_nfc = space_orbs->block_sizes();
 
@@ -1307,18 +1307,18 @@ void MP2R12Energy_Diag::obtain_orbitals(const SpinCase2 spincase,
   const Ref<OrbitalSpace> occ1_act = r12eval()->occ_act(spin1);
   const Ref<OrbitalSpace> vir1 = r12eval()->vir(spin1);
   const Ref<OrbitalSpace> orbs1 = r12eval()->orbs(spin1);
-  //const Ref<OrbitalSpace> cabs1 = r12world->cabs_space(spin1);
+  const Ref<OrbitalSpace> cabs1 = r12world->cabs_space(spin1);
   // use canonical cabs for test propose
-  const Ref<OrbitalSpace> cabs1 = r12eval()->cabs_space_canonical(spin1);
+  //const Ref<OrbitalSpace> cabs1 = r12eval()->cabs_space_canonical(spin1);
 
   const Ref<OrbitalSpace> occ1 = r12eval()->occ(spin1);
 
   const Ref<OrbitalSpace> occ2_act = r12eval()->occ_act(spin2);
   const Ref<OrbitalSpace> vir2 = r12eval()->vir(spin2);
   const Ref<OrbitalSpace> orbs2 = r12eval()->orbs(spin2);
-  //const Ref<OrbitalSpace> cabs2 = r12world->cabs_space(spin2);
+  const Ref<OrbitalSpace> cabs2 = r12world->cabs_space(spin2);
   // use canonical cabs for test propose
-  const Ref<OrbitalSpace> cabs2 = r12eval()->cabs_space_canonical(spin2);
+  //const Ref<OrbitalSpace> cabs2 = r12eval()->cabs_space_canonical(spin2);
 
   const Ref<OrbitalSpace> occ2 = r12eval()->occ(spin2);
 
@@ -6909,10 +6909,6 @@ void MP2R12Energy_Diag::compute_RT1_api(const int nspincases1, const int nspinca
 }
 // end of compute_RT1_api function
 
-// end of compute_RT1_api
-
-
-
 // compute MP2 T2 amplitude (non-antisymmetrized), stored in array (a,b,i,j)
 //  T^i(spin1)j(spin2)_a(spin1)b(spin2) 4-dimension matrix
 //= g^ij_ab / (e_i + e_j - e_a - e_b)
@@ -7725,6 +7721,33 @@ RefSCMatrix MP2R12Energy_Diag::compute_D_CABS(SpinCase1 spin) {
   const RefSCMatrix T1_cabs = r12eval_->T1_cabs(spin);
   T1_cabs.print(prepend_spincase(spin,"CABS T1 amplitude").c_str());
 
+  // test for T1_cabs for different symmetry
+  {
+  RefSCDimension rowdim = new SCDimension(T1_cabs.nrow()+T1_cabs.ncol());
+  RefSCDimension coldim = rowdim;
+
+  RefDiagSCMatrix evals = localkit->diagmatrix(rowdim);
+  RefSCMatrix evecs = localkit->matrix(rowdim, coldim);
+  evals.assign(0.0);
+
+  RefSymmSCMatrix T1 = localkit->symmmatrix(rowdim);
+  T1.assign(0.0);
+  //T1.copyRefSCMatrix(T1_cabs);
+  for(int i = 0; i < nocc; i++) {
+    for(int ap = 0; ap < ncabs; ap++) {
+      T1.set_element(i,ap+nocc,T1_cabs.get_element(i,ap));
+    }
+  }
+  T1.print(prepend_spincase(spin,"CABS T1 amplitude (RefSymmSCMatrix)").c_str());
+
+  T1.diagonalize(evals, evecs);
+  T1 = 0;
+  evals.print("evals of T1_cabs");
+
+  evals = 0;
+  evecs = 0;
+  }
+
    RefSCDimension rowdim_occ = new SCDimension(nocc);
    RefSCDimension coldim_vir_com = new SCDimension(nvir_com);
    RefSCMatrix T = localkit->matrix(rowdim_occ, coldim_vir_com);
@@ -7734,10 +7757,34 @@ RefSCMatrix MP2R12Energy_Diag::compute_D_CABS(SpinCase1 spin) {
      RefSCMatrix T1_ccsd = r12intermediates_->get_T1_cc(spin);
      T1_ccsd.print(prepend_spincase(spin,"CCSD T1 amplitude").c_str());
 
-     const Ref<OrbitalSpace> occ_act = v_orbs1[0];
-     const int nocc_act = occ_act->rank();
-     const int nfzc = nocc - nocc_act;
-     T.accumulate_subblock(T1_ccsd, nfzc, nocc-1, 0, nvir-1, 0, 0);
+     // test for T1_ccsd for different symmetry
+     {
+     RefSCDimension rowdim = new SCDimension(T1_ccsd.nrow()+T1_ccsd.ncol());
+     RefSCDimension coldim = rowdim;
+
+     RefDiagSCMatrix evals = localkit->diagmatrix(rowdim);
+     RefSCMatrix evecs = localkit->matrix(rowdim, coldim);
+     evals.assign(0.0);
+
+     RefSymmSCMatrix T1 = localkit->symmmatrix(rowdim);
+     T1.assign(0.0);
+     //T1.copyRefSCMatrix(T1_ccsd);
+     for(int i = 0; i < nocc; i++) {
+       for(int a = 0; a < nvir; a++) {
+         T1.set_element(i,a+nocc,T1_ccsd.get_element(i,a));
+       }
+     }
+     T1.print(prepend_spincase(spin,"CCSD T1 amplitude (RefSymmSCMatrix)").c_str());
+
+     T1.diagonalize(evals, evecs);
+     T1 = 0;
+     evals.print("evals of T1_ccsd");
+
+     evals = 0;
+     evecs = 0;
+     }
+
+     T.accumulate_subblock(T1_ccsd, 0, nocc-1, 0, nvir-1, 0, 0);
    }
 
    const int nirreps = occ->nblocks();
@@ -7753,15 +7800,15 @@ RefSCMatrix MP2R12Energy_Diag::compute_D_CABS(SpinCase1 spin) {
    occoff[0] = 0;
    viroff[0] = 0;
    cabsoff[0] = 0;
-//   ExEnv::out0() << endl << "  occpi vir cabspi:" << endl
-//                         << 0 << "  " << occpi[0] << "  " << virpi[0] << "  " << cabspi[0] <<  endl;
+   ExEnv::out0() << endl << "  occpi vir cabspi:" << endl
+                         << 0 << "  " << occpi[0] << "  " << virpi[0] << "  " << cabspi[0] <<  endl;
 
    for (unsigned int irrep = 1; irrep < nirreps; ++irrep) {
      occoff[irrep] = occoff[irrep-1] + occpi[irrep-1];
      viroff[irrep] = viroff[irrep-1] + virpi[irrep-1];
      cabsoff[irrep] = cabsoff[irrep-1] + cabspi[irrep-1];
      vir_comoff[irrep] = viroff[irrep] + cabsoff[irrep];
-//     ExEnv::out0() << irrep << "   " << occpi[irrep] << "  " << virpi[irrep] << "  " << cabspi[irrep] << endl;
+     ExEnv::out0() << irrep << "   " << occpi[irrep] << "  " << virpi[irrep] << "  " << cabspi[irrep] << endl;
    }
 
    for (int h = 0; h < nirreps; ++h) {
@@ -7806,6 +7853,32 @@ RefSCMatrix MP2R12Energy_Diag::compute_D_CABS(SpinCase1 spin) {
 
    if (debug_ >= DefaultPrintThresholds::mostN2)
      T.print(prepend_spincase(spin,"CABS amplitude Tia").c_str());
+
+   // test for T for different symmetry
+   {
+   RefSCDimension rowdim = new SCDimension(T.nrow()+T.ncol());
+   RefSCDimension coldim = rowdim;
+
+   RefDiagSCMatrix evals = localkit->diagmatrix(rowdim);
+   RefSCMatrix evecs = localkit->matrix(rowdim, coldim);
+   evals.assign(0.0);
+
+   RefSymmSCMatrix T1 = localkit->symmmatrix(rowdim);
+   T1.assign(0.0);
+   //T1.copyRefSCMatrix(T1_ccsd);
+   for(int i = 0; i < nocc; i++) {
+     for(int a = 0; a < nvir; a++) {
+       T1.set_element(i,a,T.get_element(i,a));
+     }
+   }
+
+   T1.diagonalize(evals, evecs);
+   T1 = 0;
+   evals.print("evals of CABS Singles T1 ");
+
+   evals = 0;
+   evecs = 0;
+   }
 
   if (!r12intermediates_->T2_cc_computed()) {
 
@@ -7880,6 +7953,8 @@ RefSCMatrix MP2R12Energy_Diag::compute_D_CABS(SpinCase1 spin) {
       D.set_element(ap+norbs, bp+norbs, Dapbp);
     }
   }
+//  D.print(prepend_spincase(spin,"Da'b' CABS").c_str());
+
 
   // D^a'_i = t^a'_i
   for (int i = 0; i < nocc; ++i) {
@@ -9180,7 +9255,7 @@ void MP2R12Energy_Diag::compute_density_diag()
                            MX_nb_ribs, MY_nb_ribs, MZ_nb_ribs,
                            MX_ribs_nfc, MY_ribs_nfc, MZ_ribs_nfc);
 
-    //MZ_nb_ribs.print(prepend_spincase(spin,"mu(Z)_nb_ribs in ribs").c_str());
+    //MZ_ribs_nfc.print(prepend_spincase(spin,"MZ_ribs_nfc").c_str());
 
     // Test codes: dipole moment from each contribution
 #if 1
@@ -9343,9 +9418,10 @@ void MP2R12Energy_Diag::compute_density_diag()
 
     // Obtain one-particle density from CABS contribution
     RefSCMatrix D_CABS_single = compute_D_CABS(spin);
-    //D_cabs.print(prepend_spincase(spin,"one-particle density from CABS contribution:").c_str());
+    //D_CABS_single.print(prepend_spincase(spin,"one-particle density from CABS contribution:").c_str());
     ExEnv::out0() << endl << endl
                   << "Trace of D_cabs_single: " << scprintf("%12.10f", D_CABS_single.trace())<< endl;
+
 //    // add CABS contribution to D
 //    D[spin].accumulate(D_cabs);
 //    if (debug_ >= DefaultPrintThresholds::mostN2)
@@ -9357,10 +9433,67 @@ void MP2R12Energy_Diag::compute_density_diag()
 #endif
 
     RefSCMatrix opdm_cabs_single = onepdm_transformed(spin, false, D_CABS_single);
+    //opdm_cabs_single.print(prepend_spincase(spin,"opdm_cabs_single").c_str());
+    //print_Mathematica_form(opdm_cabs_single);
     D_CABS_single = 0;
     RefSCMatrix opdm_x_cabs_single = MX_ribs_nfc * opdm_cabs_single;
     RefSCMatrix opdm_y_cabs_single = MY_ribs_nfc * opdm_cabs_single;
     RefSCMatrix opdm_z_cabs_single = MZ_ribs_nfc * opdm_cabs_single;
+
+//    // test for MX_ribs_nfc
+//    RefSCMatrix opdm_x_cabs_single = MX_nb_ribs * opdm_cabs_single;
+//    RefSCMatrix opdm_y_cabs_single = MY_nb_ribs * opdm_cabs_single;
+//    RefSCMatrix opdm_z_cabs_single = MZ_nb_ribs * opdm_cabs_single;
+
+    // test for CABS Singles contribution
+    {
+    RefSCDimension rowdim = new SCDimension(opdm_cabs_single.nrow());
+    RefSCDimension coldim = new SCDimension(opdm_cabs_single.ncol());
+
+    RefDiagSCMatrix evals = localkit->diagmatrix(rowdim);
+    RefSCMatrix evecs = localkit->matrix(rowdim, coldim);
+    evals.assign(0.0);
+
+    RefSymmSCMatrix DCabsSingles = localkit->symmmatrix(rowdim);
+    DCabsSingles.assign(0.0);
+    DCabsSingles.copyRefSCMatrix(opdm_cabs_single);
+    //DCabsSingles.print(prepend_spincase(spin,"one-particle density from CABS contribution symmetric version:").c_str());
+    ExEnv::out0() << endl
+                  << "Trace of opdm_cabs_single(RefSymmSCMatrix): " << scprintf("%12.10f", opdm_cabs_single.trace())<< endl;
+
+    DCabsSingles.diagonalize(evals, evecs);
+    DCabsSingles = 0;
+    evals.print("evals of opdm_cabs_single");
+
+    RefSymmSCMatrix MZRibs = localkit->symmmatrix(rowdim);
+    MZRibs.assign(0.0);
+
+    ExEnv::out0() << endl << endl
+                  << "Trace of MZ_ribs_nfc: " << scprintf("%12.10f", MZ_ribs_nfc.trace())<< endl;
+//    MXRibs.copyRefSCMatrix(MX_ribs_nfc);
+    MZRibs.copyRefSCMatrix(MZ_ribs_nfc);
+    ExEnv::out0() << endl
+                  << "Trace of MXRibs(RefSymmSCMatrix): " << scprintf("%12.10f", MZRibs.trace())<< endl;
+
+    evals.assign(0.0);
+    MZRibs.diagonalize(evals, evecs);
+    MZRibs = 0;
+    evals.print("evals of MZ");
+
+    RefSymmSCMatrix opdm_z = localkit->symmmatrix(rowdim);
+    opdm_z.assign(0.0);
+    opdm_z.copyRefSCMatrix(opdm_z_cabs_single);
+
+    evals.assign(0.0);
+    opdm_z.diagonalize(evals, evecs);
+    opdm_z = 0;
+    evals.print("evals of opdm_z_cabs_single");
+
+    evals = 0;
+    evecs = 0;
+    }
+    // end of test
+
     opdm_cabs_single = 0;
     MX_ribs_nfc = 0;
     MY_ribs_nfc = 0;
@@ -9430,6 +9563,29 @@ void MP2R12Energy_Diag::compute_density_diag()
       MZ_orbs = 0;
       //MZ_nb_orbs.print(prepend_spincase(spin,"mu(Z)_nb in orbs").c_str());
 
+      // test for CABS Singles contribution
+      {
+      RefSCDimension rowdim = new SCDimension(MZ_nb_orbs.nrow());
+      RefSCDimension coldim = new SCDimension(MZ_nb_orbs.ncol());
+
+      RefDiagSCMatrix evals = localkit->diagmatrix(rowdim);
+      RefSCMatrix evecs = localkit->matrix(rowdim, coldim);
+      evals.assign(0.0);
+
+      RefSymmSCMatrix MZ = localkit->symmmatrix(rowdim);
+      MZ.assign(0.0);
+      MZ.copyRefSCMatrix(MZ_nb_orbs);
+
+      MZ.diagonalize(evals, evecs);
+      MZ = 0;
+      evals.print("evals of MZ_nb_orbs");
+
+      evals = 0;
+      evecs = 0;
+      }
+      // end of test
+
+
     // copy psi ccsd density in MPQC ordering back
     RefSCMatrix opdm_cc = onepdm_transformed2(spin, D_cc);
     //opdm_cc.print("CCSD one-particle density matrix in MPQC ordering");
@@ -9449,6 +9605,10 @@ void MP2R12Energy_Diag::compute_density_diag()
     opdm_x_cc = 0;
     opdm_y_cc = 0;
     opdm_z_cc = 0;
+    ExEnv::out0() << endl << "x y z dipole moments from CCSD: "
+                          << scprintf("%12.10f", dx_cc) << "  "
+                          << scprintf("%12.10f", dy_cc) << "  "
+                          << scprintf("%12.10f", dz_cc) << endl;
 
     dipoles_ccsd[0] = dipoles_ccsd[0] + dx_cc;
     dipoles_ccsd[1] = dipoles_ccsd[1] + dy_cc;
@@ -9700,7 +9860,7 @@ void MP2R12Energy_Diag::compute_density_diag()
 
   dipoles.print("dipole moment: mu(X) mu(Y) mu(Z)");
   dipoles_f12.print("F12 contribution to dipole moment: mu(X) mu(Y) mu(Z)");
-  dipoles_cabs.print("CABS contribution to dipole moment: mu(X) mu(Y) mu(Z)");
+  dipoles_cabs.print("CABS Singles contribution to dipole moment: mu(X) mu(Y) mu(Z)");
   if (r12intermediates_->T2_cc_computed()) {
     dipoles_ccsd.print("CCSD contribution to dipole moment: mu(X) mu(Y) mu(Z)");
   } else {

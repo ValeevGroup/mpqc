@@ -101,7 +101,9 @@ namespace sc {
     int* cachefiles = init_int_array(PSIO_MAXUNIT);
     int** cachelist = init_int_matrix(32,32);
 
-    const Ref<OrbitalSpace>& aocc = (!compute_1rdm_? occ_act_sb(Alpha) : occ_sb(Alpha));
+    const Ref<OrbitalSpace>& aocc = ((!compute_1rdm_ || nfzc_ == 0)? occ_act_sb(Alpha)
+                                    : occ_sb(Alpha));
+//    const Ref<OrbitalSpace>& aocc = occ_act_sb(Alpha);
     const Ref<OrbitalSpace>& avir = vir_act_sb(Alpha);
 
     //const Ref<OrbitalSpace>& aocc = r12eval()->occ(Alpha);
@@ -113,7 +115,9 @@ namespace sc {
 
     // UHF/ROHF (ROHF always expected in semicanonical orbitals)
     if (reference()->reftype() != PsiSCF::rhf) {
-      const Ref<OrbitalSpace>& bocc = (!compute_1rdm_? occ_act_sb(Beta) : occ_sb(Beta));
+      const Ref<OrbitalSpace>& bocc = ((!compute_1rdm_ || nfzc_ == 0)? occ_act_sb(Beta)
+                                      : occ_sb(Beta));
+//        const Ref<OrbitalSpace>& bocc = occ_act_sb(Beta);
       const Ref<OrbitalSpace>& bvir = vir_act_sb(Beta);
 
       int* boccpi = to_C<int>(bocc->block_sizes());
@@ -150,7 +154,8 @@ namespace sc {
     const char* kwd = (spin1 == Beta && reftype != PsiSCF::rhf) ? "tia" : "tIA";
     // When computing one-electron density, we use non frozen core for CCSD,
     // but only need the frozen core portion of the T1 amplitude
-    T1_[spin1] = (!compute_1rdm_? T1(spin1, kwd) : T1_fzc(spin1, kwd));
+    T1_[spin1] = ((!compute_1rdm_ || nfzc_ == 0)? T1(spin1, kwd) : T1_fzc(spin1, kwd));
+//    T1_[spin1] = T1(spin1, kwd);
     if (debug() >= DefaultPrintThresholds::mostN2)
       T1_[spin1].print(prepend_spincase(spin1,"T1 amplitudes").c_str());
 
@@ -218,8 +223,9 @@ namespace sc {
     const char* kwd = (spin2 != AlphaBeta) ? (spin2 == AlphaAlpha ? "tIJAB (IJ,AB)" : "tijab (ij,ab)") : "tIjAb";
     // When computing one-electron density, we use non frozen core for CCSD,
     // but only need the frozen core portion of the amplitude
-    T2_da4_[spin2] = (!compute_1rdm_? T2_distarray4(spin2, kwd)
+    T2_da4_[spin2] = ((!compute_1rdm_ || nfzc_ == 0)? T2_distarray4(spin2, kwd)
                                     : T2_distarray4_fzc(spin2, kwd));
+//    T2_da4_[spin2] = T2_distarray4(spin2, kwd);
 
     return T2_da4_[spin2];
   }

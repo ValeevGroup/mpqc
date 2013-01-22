@@ -308,7 +308,7 @@ namespace sc {
         for (int i=0; i<actoccpi[h]; ++i)
           for (int a=0; a<actuoccpi[h]; ++a, ++ia)
             T.set_element(i+i_offset, a+a_offset, T1[ia]);
-        }
+      }
       delete[] T1;
     }
 

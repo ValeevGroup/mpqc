@@ -109,9 +109,21 @@ void DistArray4_MemoryGrp::init() {
   pairblk_ = new struct PairBlkInfo[ni()*nj()];
   for (i=0, ij=0; i<ni(); i++)
     for (j=0; j<nj(); j++, ij++) {
-      for (int type=0; type<num_te_types(); type++) {
-        pairblk_[ij].ints_[type] = NULL;
-        pairblk_[ij].refcount_[type] = 0;
+      if (not is_local(i,j)) { // remote blocks are not yet cached here
+        for (int type=0; type<num_te_types(); type++) {
+          pairblk_[ij].ints_[type] = NULL;
+          pairblk_[ij].refcount_[type] = 0;
+        }
+      }
+      else { // location of local blocks is immediately known
+        const int ij = ij_index(i,j);
+        const int local_ij_index = ij / ntasks();
+        for (int type=0; type<num_te_types(); type++) {
+          pairblk_[ij].ints_[type] =
+              const_cast<const double *>(reinterpret_cast<double*>((size_t)mem_->localdata() +
+                  blksize_memgrp_*(num_te_types()*local_ij_index + type)));
+          pairblk_[ij].refcount_[type] = 0;
+        }
       }
     }
 }

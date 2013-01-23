@@ -226,6 +226,7 @@ void CCR12::print_correction(double corr, double base, string theory){
 void CCR12::print(ostream&o) const {
   o << indent << "CCR12:" << endl;
   o << incindent;
+  Wavefunction::print(o);
   info()->print(o);
   o << decindent;
 }

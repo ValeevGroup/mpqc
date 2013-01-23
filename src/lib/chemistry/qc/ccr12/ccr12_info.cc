@@ -90,6 +90,8 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
   // compute the correlated spin-orbital space used by SMITH
   compute_corr_space();
 
+  // now get MemoryGrp ready
+  mem_->set_localsize(memorysize);
   // compute all source integrals now, before MemoryGrp is used by Tensors
   if (restricted_)
     compute_source_integrals_rhf();
@@ -100,9 +102,6 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
   if (need_w1()) {
     retrieve_B_and_X_ii();
   }
-
-  // now get MemoryGrp ready
-  mem_->set_localsize(memorysize);
 
   // retrieve and sort eigenvalues of Fock matrix
   orbital_energies();
@@ -511,7 +510,12 @@ double CCR12_Info::get_e(const Ref<Tensor>& d_e_){
 
 
 void CCR12_Info::print(ostream& o){
-
+  o << indent << "theory = " << theory_ << endl;
+  o << indent << "perturbative = " << perturbative_ << endl;
+  o << indent << "reference wave function = " << endl;
+  o << incindent;
+  ref_->print(o);
+  o << decindent;
 }
 
 void CCR12_Info::orbital_energies(){

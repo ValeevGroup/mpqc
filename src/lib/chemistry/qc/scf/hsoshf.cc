@@ -83,7 +83,11 @@ HSOSHF::analytic_gradient_implemented() const
 void
 HSOSHF::print(ostream&o) const
 {
+  o << indent
+    << "High-Spin (Spin-Restricted) Open-Shell Hartree-Fock (HSOSHF):" << endl;
+  o << incindent;
   HSOSSCF::print(o);
+  o << decindent;
 }
 
 //////////////////////////////////////////////////////////////////////////////

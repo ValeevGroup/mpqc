@@ -7719,34 +7719,34 @@ RefSCMatrix MP2R12Energy_Diag::compute_D_CABS(SpinCase1 spin) {
   D.assign(0.0);
 
   const RefSCMatrix T1_cabs = r12eval_->T1_cabs(spin);
-  T1_cabs.print(prepend_spincase(spin,"CABS T1 amplitude").c_str());
+  //T1_cabs.print(prepend_spincase(spin,"CABS T1 amplitude").c_str());
 
-  // test for T1_cabs for different symmetry
-  {
-  RefSCDimension rowdim = new SCDimension(T1_cabs.nrow()+T1_cabs.ncol());
-  RefSCDimension coldim = rowdim;
-
-  RefDiagSCMatrix evals = localkit->diagmatrix(rowdim);
-  RefSCMatrix evecs = localkit->matrix(rowdim, coldim);
-  evals.assign(0.0);
-
-  RefSymmSCMatrix T1 = localkit->symmmatrix(rowdim);
-  T1.assign(0.0);
-  //T1.copyRefSCMatrix(T1_cabs);
-  for(int i = 0; i < nocc; i++) {
-    for(int ap = 0; ap < ncabs; ap++) {
-      T1.set_element(i,ap+nocc,T1_cabs.get_element(i,ap));
-    }
-  }
-  T1.print(prepend_spincase(spin,"CABS T1 amplitude (RefSymmSCMatrix)").c_str());
-
-  T1.diagonalize(evals, evecs);
-  T1 = 0;
-  evals.print("evals of T1_cabs");
-
-  evals = 0;
-  evecs = 0;
-  }
+//  // test for T1_cabs for different symmetry
+//  {
+//  RefSCDimension rowdim = new SCDimension(T1_cabs.nrow()+T1_cabs.ncol());
+//  RefSCDimension coldim = rowdim;
+//
+//  RefDiagSCMatrix evals = localkit->diagmatrix(rowdim);
+//  RefSCMatrix evecs = localkit->matrix(rowdim, coldim);
+//  evals.assign(0.0);
+//
+//  RefSymmSCMatrix T1 = localkit->symmmatrix(rowdim);
+//  T1.assign(0.0);
+//  //T1.copyRefSCMatrix(T1_cabs);
+//  for(int i = 0; i < nocc; i++) {
+//    for(int ap = 0; ap < ncabs; ap++) {
+//      T1.set_element(i,ap+nocc,T1_cabs.get_element(i,ap));
+//    }
+//  }
+//  //T1.print(prepend_spincase(spin,"CABS T1 amplitude (RefSymmSCMatrix)").c_str());
+//
+//  T1.diagonalize(evals, evecs);
+//  T1 = 0;
+//  evals.print("evals of T1_cabs");
+//
+//  evals = 0;
+//  evecs = 0;
+//  }
 
    RefSCDimension rowdim_occ = new SCDimension(nocc);
    RefSCDimension coldim_vir_com = new SCDimension(nvir_com);
@@ -7755,36 +7755,39 @@ RefSCMatrix MP2R12Energy_Diag::compute_D_CABS(SpinCase1 spin) {
 
    if (r12intermediates_->T2_cc_computed()) {
      RefSCMatrix T1_ccsd = r12intermediates_->get_T1_cc(spin);
-     T1_ccsd.print(prepend_spincase(spin,"CCSD T1 amplitude").c_str());
+     //T1_ccsd.print(prepend_spincase(spin,"CCSD T1 amplitude").c_str());
+     const Ref<OrbitalSpace> occ_act = v_orbs1[0];
+     const int nocc_act = occ_act->rank();
+     const int nfzc = nocc - nocc_act;
 
-     // test for T1_ccsd for different symmetry
-     {
-     RefSCDimension rowdim = new SCDimension(T1_ccsd.nrow()+T1_ccsd.ncol());
-     RefSCDimension coldim = rowdim;
+//     // test for T1_ccsd for different symmetry
+//     {
+//     RefSCDimension rowdim = new SCDimension(T1_ccsd.nrow()+T1_ccsd.ncol());
+//     RefSCDimension coldim = rowdim;
+//
+//     RefDiagSCMatrix evals = localkit->diagmatrix(rowdim);
+//     RefSCMatrix evecs = localkit->matrix(rowdim, coldim);
+//     evals.assign(0.0);
+//
+//     RefSymmSCMatrix T1 = localkit->symmmatrix(rowdim);
+//     T1.assign(0.0);
+//     //T1.copyRefSCMatrix(T1_ccsd);
+//     for(int i = 0; i < nocc_act; i++) {
+//       for(int a = 0; a < nvir; a++) {
+//         T1.set_element(i,a+nocc_act,T1_ccsd.get_element(i,a));
+//       }
+//     }
+//     //T1.print(prepend_spincase(spin,"CCSD T1 amplitude (RefSymmSCMatrix)").c_str());
+//
+//     T1.diagonalize(evals, evecs);
+//     T1 = 0;
+//     evals.print("evals of T1_ccsd");
+//
+//     evals = 0;
+//     evecs = 0;
+//     }
 
-     RefDiagSCMatrix evals = localkit->diagmatrix(rowdim);
-     RefSCMatrix evecs = localkit->matrix(rowdim, coldim);
-     evals.assign(0.0);
-
-     RefSymmSCMatrix T1 = localkit->symmmatrix(rowdim);
-     T1.assign(0.0);
-     //T1.copyRefSCMatrix(T1_ccsd);
-     for(int i = 0; i < nocc; i++) {
-       for(int a = 0; a < nvir; a++) {
-         T1.set_element(i,a+nocc,T1_ccsd.get_element(i,a));
-       }
-     }
-     T1.print(prepend_spincase(spin,"CCSD T1 amplitude (RefSymmSCMatrix)").c_str());
-
-     T1.diagonalize(evals, evecs);
-     T1 = 0;
-     evals.print("evals of T1_ccsd");
-
-     evals = 0;
-     evecs = 0;
-     }
-
-     T.accumulate_subblock(T1_ccsd, 0, nocc-1, 0, nvir-1, 0, 0);
+     T.accumulate_subblock(T1_ccsd, nfzc, nocc-1, 0, nvir-1, 0, 0);
    }
 
    const int nirreps = occ->nblocks();
@@ -7854,31 +7857,31 @@ RefSCMatrix MP2R12Energy_Diag::compute_D_CABS(SpinCase1 spin) {
    if (debug_ >= DefaultPrintThresholds::mostN2)
      T.print(prepend_spincase(spin,"CABS amplitude Tia").c_str());
 
-   // test for T for different symmetry
-   {
-   RefSCDimension rowdim = new SCDimension(T.nrow()+T.ncol());
-   RefSCDimension coldim = rowdim;
-
-   RefDiagSCMatrix evals = localkit->diagmatrix(rowdim);
-   RefSCMatrix evecs = localkit->matrix(rowdim, coldim);
-   evals.assign(0.0);
-
-   RefSymmSCMatrix T1 = localkit->symmmatrix(rowdim);
-   T1.assign(0.0);
-   //T1.copyRefSCMatrix(T1_ccsd);
-   for(int i = 0; i < nocc; i++) {
-     for(int a = 0; a < nvir; a++) {
-       T1.set_element(i,a,T.get_element(i,a));
-     }
-   }
-
-   T1.diagonalize(evals, evecs);
-   T1 = 0;
-   evals.print("evals of CABS Singles T1 ");
-
-   evals = 0;
-   evecs = 0;
-   }
+//   // test for T for different symmetry
+//   {
+//   RefSCDimension rowdim = new SCDimension(T.nrow()+T.ncol());
+//   RefSCDimension coldim = rowdim;
+//
+//   RefDiagSCMatrix evals = localkit->diagmatrix(rowdim);
+//   RefSCMatrix evecs = localkit->matrix(rowdim, coldim);
+//   evals.assign(0.0);
+//
+//   RefSymmSCMatrix T1 = localkit->symmmatrix(rowdim);
+//   T1.assign(0.0);
+//   //T1.copyRefSCMatrix(T1_ccsd);
+//   for(int i = 0; i < nocc; i++) {
+//     for(int a = 0; a < nvir; a++) {
+//       T1.set_element(i,a,T.get_element(i,a));
+//     }
+//   }
+//
+//   T1.diagonalize(evals, evecs);
+//   T1 = 0;
+//   evals.print("evals of CABS Singles T1 ");
+//
+//   evals = 0;
+//   evecs = 0;
+//   }
 
   if (!r12intermediates_->T2_cc_computed()) {
 
@@ -8769,11 +8772,11 @@ void MP2R12Energy_Diag::compute_density_diag()
               v_orbs1_ab, v_orbs2_ab,
               Dm_i_alpha, Dm_i_beta);
 
-//  if (debug_ >= DefaultPrintThresholds::N2) {
+  if (debug_ >= DefaultPrintThresholds::N2) {
     print_intermediate("Alpha", "D^m_i RI", Dm_i_alpha, nocc1_act, nocc1_act);
     if (nspincases1 == 2)
       print_intermediate("Beta", "D^m_i RI", Dm_i_beta, nocc2_act, nocc2_act);
-//  }
+  }
 
   // test for compute_Dmi
   ExEnv::out0() << indent << "testing: D^i_i" << endl;
@@ -9445,54 +9448,54 @@ void MP2R12Energy_Diag::compute_density_diag()
 //    RefSCMatrix opdm_y_cabs_single = MY_nb_ribs * opdm_cabs_single;
 //    RefSCMatrix opdm_z_cabs_single = MZ_nb_ribs * opdm_cabs_single;
 
-    // test for CABS Singles contribution
-    {
-    RefSCDimension rowdim = new SCDimension(opdm_cabs_single.nrow());
-    RefSCDimension coldim = new SCDimension(opdm_cabs_single.ncol());
-
-    RefDiagSCMatrix evals = localkit->diagmatrix(rowdim);
-    RefSCMatrix evecs = localkit->matrix(rowdim, coldim);
-    evals.assign(0.0);
-
-    RefSymmSCMatrix DCabsSingles = localkit->symmmatrix(rowdim);
-    DCabsSingles.assign(0.0);
-    DCabsSingles.copyRefSCMatrix(opdm_cabs_single);
-    //DCabsSingles.print(prepend_spincase(spin,"one-particle density from CABS contribution symmetric version:").c_str());
-    ExEnv::out0() << endl
-                  << "Trace of opdm_cabs_single(RefSymmSCMatrix): " << scprintf("%12.10f", opdm_cabs_single.trace())<< endl;
-
-    DCabsSingles.diagonalize(evals, evecs);
-    DCabsSingles = 0;
-    evals.print("evals of opdm_cabs_single");
-
-    RefSymmSCMatrix MZRibs = localkit->symmmatrix(rowdim);
-    MZRibs.assign(0.0);
-
-    ExEnv::out0() << endl << endl
-                  << "Trace of MZ_ribs_nfc: " << scprintf("%12.10f", MZ_ribs_nfc.trace())<< endl;
-//    MXRibs.copyRefSCMatrix(MX_ribs_nfc);
-    MZRibs.copyRefSCMatrix(MZ_ribs_nfc);
-    ExEnv::out0() << endl
-                  << "Trace of MXRibs(RefSymmSCMatrix): " << scprintf("%12.10f", MZRibs.trace())<< endl;
-
-    evals.assign(0.0);
-    MZRibs.diagonalize(evals, evecs);
-    MZRibs = 0;
-    evals.print("evals of MZ");
-
-    RefSymmSCMatrix opdm_z = localkit->symmmatrix(rowdim);
-    opdm_z.assign(0.0);
-    opdm_z.copyRefSCMatrix(opdm_z_cabs_single);
-
-    evals.assign(0.0);
-    opdm_z.diagonalize(evals, evecs);
-    opdm_z = 0;
-    evals.print("evals of opdm_z_cabs_single");
-
-    evals = 0;
-    evecs = 0;
-    }
-    // end of test
+//    // test for CABS Singles contribution
+//    {
+//    RefSCDimension rowdim = new SCDimension(opdm_cabs_single.nrow());
+//    RefSCDimension coldim = new SCDimension(opdm_cabs_single.ncol());
+//
+//    RefDiagSCMatrix evals = localkit->diagmatrix(rowdim);
+//    RefSCMatrix evecs = localkit->matrix(rowdim, coldim);
+//    evals.assign(0.0);
+//
+//    RefSymmSCMatrix DCabsSingles = localkit->symmmatrix(rowdim);
+//    DCabsSingles.assign(0.0);
+//    DCabsSingles.copyRefSCMatrix(opdm_cabs_single);
+//    //DCabsSingles.print(prepend_spincase(spin,"one-particle density from CABS contribution symmetric version:").c_str());
+//    ExEnv::out0() << endl
+//                  << "Trace of opdm_cabs_single(RefSymmSCMatrix): " << scprintf("%12.10f", opdm_cabs_single.trace())<< endl;
+//
+//    DCabsSingles.diagonalize(evals, evecs);
+//    DCabsSingles = 0;
+//    evals.print("evals of opdm_cabs_single");
+//
+//    RefSymmSCMatrix MZRibs = localkit->symmmatrix(rowdim);
+//    MZRibs.assign(0.0);
+//
+//    ExEnv::out0() << endl << endl
+//                  << "Trace of MZ_ribs_nfc: " << scprintf("%12.10f", MZ_ribs_nfc.trace())<< endl;
+////    MXRibs.copyRefSCMatrix(MX_ribs_nfc);
+//    MZRibs.copyRefSCMatrix(MZ_ribs_nfc);
+//    ExEnv::out0() << endl
+//                  << "Trace of MXRibs(RefSymmSCMatrix): " << scprintf("%12.10f", MZRibs.trace())<< endl;
+//
+//    evals.assign(0.0);
+//    MZRibs.diagonalize(evals, evecs);
+//    MZRibs = 0;
+//    evals.print("evals of MZ");
+//
+//    RefSymmSCMatrix opdm_z = localkit->symmmatrix(rowdim);
+//    opdm_z.assign(0.0);
+//    opdm_z.copyRefSCMatrix(opdm_z_cabs_single);
+//
+//    evals.assign(0.0);
+//    opdm_z.diagonalize(evals, evecs);
+//    opdm_z = 0;
+//    evals.print("evals of opdm_z_cabs_single");
+//
+//    evals = 0;
+//    evecs = 0;
+//    }
+//    // end of test
 
     opdm_cabs_single = 0;
     MX_ribs_nfc = 0;
@@ -9563,27 +9566,27 @@ void MP2R12Energy_Diag::compute_density_diag()
       MZ_orbs = 0;
       //MZ_nb_orbs.print(prepend_spincase(spin,"mu(Z)_nb in orbs").c_str());
 
-      // test for CABS Singles contribution
-      {
-      RefSCDimension rowdim = new SCDimension(MZ_nb_orbs.nrow());
-      RefSCDimension coldim = new SCDimension(MZ_nb_orbs.ncol());
-
-      RefDiagSCMatrix evals = localkit->diagmatrix(rowdim);
-      RefSCMatrix evecs = localkit->matrix(rowdim, coldim);
-      evals.assign(0.0);
-
-      RefSymmSCMatrix MZ = localkit->symmmatrix(rowdim);
-      MZ.assign(0.0);
-      MZ.copyRefSCMatrix(MZ_nb_orbs);
-
-      MZ.diagonalize(evals, evecs);
-      MZ = 0;
-      evals.print("evals of MZ_nb_orbs");
-
-      evals = 0;
-      evecs = 0;
-      }
-      // end of test
+//      // test for CABS Singles contribution
+//      {
+//      RefSCDimension rowdim = new SCDimension(MZ_nb_orbs.nrow());
+//      RefSCDimension coldim = new SCDimension(MZ_nb_orbs.ncol());
+//
+//      RefDiagSCMatrix evals = localkit->diagmatrix(rowdim);
+//      RefSCMatrix evecs = localkit->matrix(rowdim, coldim);
+//      evals.assign(0.0);
+//
+//      RefSymmSCMatrix MZ = localkit->symmmatrix(rowdim);
+//      MZ.assign(0.0);
+//      MZ.copyRefSCMatrix(MZ_nb_orbs);
+//
+//      MZ.diagonalize(evals, evecs);
+//      MZ = 0;
+//      evals.print("evals of MZ_nb_orbs");
+//
+//      evals = 0;
+//      evecs = 0;
+//      }
+//      // end of test
 
 
     // copy psi ccsd density in MPQC ordering back

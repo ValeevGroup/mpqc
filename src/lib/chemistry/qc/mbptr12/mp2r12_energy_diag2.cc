@@ -1662,6 +1662,13 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
                                    nocc1_act, nocc2_act);
     }
 
+    // test for one-electron density:
+    // print out the V coupling, X, and B contributions
+    double E_V = 0.0;
+    double E_Vcoupling = 0.0;
+    double E_X = 0.0;
+    double E_B = 0.0;
+
     // Compute the f12 correction pair energy
     if (spin1 == spin2) {
       // Alpha_alpha or beta_beta case
@@ -1695,6 +1702,12 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
                       - (evals_i1(i1) + evals_i2(i2))
                           * (Xij_ij[ij] - Xij_ji[ij]));
 
+          // test for 1e density
+          E_V += 2.0 * C_1 * (Vij_ij[ij] - Vij_ji[ij]);
+          E_X += - C_1 * C_1* (evals_i1(i1) + evals_i2(i2))
+                             * (Xij_ij[ij] - Xij_ji[ij]);
+          E_B += C_1 * C_1 * (Bij_ij[ij] - Bij_ji[ij]);
+
           if (this->r12eval()->coupling() == true
               || this->r12eval()->ebc() == false) {
 
@@ -1706,6 +1719,10 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
             }
 
             Hij_pair_energy += 2.0 * C_1
+                * (Vij_ij_coupling[ij] - Vij_ji_coupling[ij]);
+
+            // test for 1e density
+            E_Vcoupling += 2.0 * C_1
                 * (Vij_ij_coupling[ij] - Vij_ji_coupling[ij]);
 
             if (do_mp2 && this->r12eval()->coupling()) {
@@ -1776,6 +1793,20 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
                   + pow(0.5 * (C_0 - C_1), 2)
                       * (Bij_ij[ij] - (evals_i1(i1) + evals_i2(i2)) * Xij_ij[ij]);
 
+          // test for 1e density
+          E_V += 2.0  * (0.5 * (C_0 + C_1) * Vij_ij[ij]
+                       + 0.5 * (C_0 - C_1) * Vij_ji[ij]);
+          E_X += - pow(0.5 * (C_0 + C_1), 2)
+                          * (evals_i1(i1) + evals_i2(i2)) * Xij_ij[ij]
+                 - 0.25 * (C_0 * C_0 - C_1 * C_1)
+                          * (evals_i1(i1) + evals_i2(i2)) * (2.0 * Xij_ji[ij])
+                 - pow(0.5 * (C_0 - C_1), 2)
+                          * (evals_i1(i1) + evals_i2(i2)) * Xij_ij[ij];
+
+          E_B += pow(0.5 * (C_0 + C_1), 2) * Bij_ij[ij]
+                 + 0.25 * (C_0 * C_0 - C_1 * C_1) * 2.0 * Bij_ji[ij]
+                 + pow(0.5 * (C_0 - C_1), 2) * Bij_ij[ij] ;
+
           if (this->r12eval()->coupling() == true
               || this->r12eval()->ebc() == false) {
             if (debug_ >= DefaultPrintThresholds::mostN2) {
@@ -1791,6 +1822,11 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
                           + 0.5 * (C_0 - C_1) * Vij_ji_coupling[ij])) << endl;
             }
             Hij_pair_energy += 2.0
+                * (0.5 * (C_0 + C_1) * Vij_ij_coupling[ij]
+                    + 0.5 * (C_0 - C_1) * Vij_ji_coupling[ij]);
+
+            // test for 1e density
+            E_Vcoupling += 2.0
                 * (0.5 * (C_0 + C_1) * Vij_ij_coupling[ij]
                     + 0.5 * (C_0 - C_1) * Vij_ji_coupling[ij]);
 
@@ -1925,6 +1961,14 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
       delete[] Xji_ji;
       delete[] Pji_ij;
       delete[] Pji_ji;
+    }
+    if (r12intermediates_->T2_cc_computed()) {
+      ExEnv::out0() << endl << spinletters << " individual contributions to the R12 energy:"
+                    << endl << "E_V = " << scprintf("%12.10f", E_V)
+                    << endl << "E_Vcoupling = " << scprintf("%12.10f", E_Vcoupling)
+                    << endl << "E_X = " << scprintf("%12.10f", E_X)
+                    << endl << "E_B = " << scprintf("%12.10f", E_B)
+                    << endl;
     }
 
     // deallocate memory
@@ -2124,6 +2168,9 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
         print_intermediate(spincase2, "VT1ij_ij += V^aj_ij * T1^i_a", VT1ij_ij,
                            no1, no2);
 
+      // test for 1e density
+      double E_VT = 0.0;
+
       // VT1ij_ji += V^aj_ji * T1^i_a = V^ja_ij * T1^i_a
       if (spincase2 == AlphaBeta) {
 
@@ -2159,6 +2206,10 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
               ExEnv::out0() << indent << "Hij_pair_energy: ij = " << i1 << "," << i2 << " e(CC) = "
                   << Hij_pair_energy << endl;
             }
+
+            // test for 1e density
+            E_VT += Hij_pair_energy;
+
             ef12_[s].accumulate_element(i21, Hij_pair_energy);
           }
         }
@@ -2177,6 +2228,10 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
               ExEnv::out0() << indent << "Hij_pair_energy: ij = " << i1 << "," << i2 << " e(CC) = "
                   << Hij_pair_energy << endl;
             }
+
+            // test for 1e density
+            E_VT += Hij_pair_energy;
+
             ef12_[s].accumulate_element(ij, Hij_pair_energy);
             ef12_VT[s][ij] += Hij_pair_energy;
           }
@@ -2187,6 +2242,15 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
           ExEnv::out0() << indent << scprintf("%20.15lf",ef12_TBT[s][i12]) << endl;
         }
       }
+
+      // test
+      if (r12intermediates_->T2_cc_computed()) {
+        std::string spinletters = to_string(spincase2);
+        ExEnv::out0() << endl << spinletters << "  CC V contribution to the R12 energy "
+                      << endl << "E_VT = " << scprintf("%12.10f", E_VT)
+                      << endl << endl;
+      }
+
     } // end of spin iteration
     delete[] VT2ij_ij;
     delete[] VT2ij_ji;

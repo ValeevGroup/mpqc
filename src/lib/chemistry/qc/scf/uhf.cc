@@ -84,7 +84,10 @@ UHF::analytic_gradient_implemented() const
 void
 UHF::print(ostream&o) const
 {
+  o << indent << "(Spin-)Unrestricted Hartree-Fock (UHF):" << endl;
+  o << incindent;
   UnrestrictedSCF::print(o);
+  o << decindent;
 }
 
 //////////////////////////////////////////////////////////////////////////////

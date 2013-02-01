@@ -104,7 +104,7 @@ CLKS::analytic_gradient_implemented() const
 void
 CLKS::print(ostream&o) const
 {
-  o << indent << "Closed Shell Kohn-Sham (CLKS) Parameters:" << endl;
+  o << indent << "Closed Shell Kohn-Sham (CLKS):" << endl;
   o << incindent;
   CLSCF::print(o);
   o << indent << "Functional:" << endl;

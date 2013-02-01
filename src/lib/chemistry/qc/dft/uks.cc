@@ -138,7 +138,7 @@ UKS::extrap_data()
 void
 UKS::print(ostream&o) const
 {
-  o << indent << "Unrestricted Kohn-Sham (UKS) Parameters:" << endl;
+  o << indent << "(Spin-)Unrestricted Kohn-Sham (UKS):" << endl;
   o << incindent;
   UnrestrictedSCF::print(o);
   o << indent << "Functional:" << endl;

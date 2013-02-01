@@ -112,7 +112,7 @@ void
 HSOSKS::print(ostream&o) const
 {
   o << indent
-    << "Restricted Open Shell Kohn-Sham (HSOSKS) Parameters:" << endl;
+    << "High-Spin (Spin-Restricted)  Open-Shell Kohn-Sham (HSOSKS):" << endl;
   o << incindent;
   HSOSSCF::print(o);
   o << indent << "Functional:" << endl;

@@ -83,7 +83,10 @@ CLHF::analytic_gradient_implemented() const
 void
 CLHF::print(ostream&o) const
 {
+  o << indent << "Closed Shell Hartree-Fock (CLHF):" << endl;
+  o << incindent;
   CLSCF::print(o);
+  o << decindent;
 }
 
 //////////////////////////////////////////////////////////////////////////////

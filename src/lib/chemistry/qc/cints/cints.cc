@@ -285,10 +285,14 @@ IntegralCints::set_basis(const Ref<GaussianBasisSet> &b1,
 			 const Ref<GaussianBasisSet> &b3,
 			 const Ref<GaussianBasisSet> &b4)
 {
-  free_transforms();
   Integral::set_basis(b1,b2,b3,b4);
   check_fullgencon();
-  initialize_transforms();
+  const int maxl_new = std::max(std::max(b1->max_angular_momentum(),b2->max_angular_momentum()),
+                                std::max(b3->max_angular_momentum(),b4->max_angular_momentum()) );
+  if (maxl_new > maxl_) {
+    free_transforms();
+    initialize_transforms();
+  }
 }
 
 void

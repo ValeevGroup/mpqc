@@ -279,6 +279,15 @@ IntegralCints::grt_4()
   return new TwoBodyIntCints(this, bs1_, bs2_, bs3_, bs4_, storage_, TwoBodyOperSet::R12);
 }
 
+namespace {
+  int maxl(const Ref<GaussianBasisSet>& bs) {
+    int result = -1;
+    if (bs.nonnull())
+      result = bs->max_angular_momentum();
+    return result;
+  }
+}
+
 void
 IntegralCints::set_basis(const Ref<GaussianBasisSet> &b1,
 			 const Ref<GaussianBasisSet> &b2,
@@ -287,8 +296,8 @@ IntegralCints::set_basis(const Ref<GaussianBasisSet> &b1,
 {
   Integral::set_basis(b1,b2,b3,b4);
   check_fullgencon();
-  const int maxl_new = std::max(std::max(b1->max_angular_momentum(),b2->max_angular_momentum()),
-                                std::max(b3->max_angular_momentum(),b4->max_angular_momentum()) );
+  const int maxl_new = std::max(std::max(maxl(b1),maxl(b2)),
+                                std::max(maxl(b3),maxl(b4)) );
   if (maxl_new > maxl_) {
     free_transforms();
     initialize_transforms();

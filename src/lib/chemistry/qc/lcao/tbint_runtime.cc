@@ -548,6 +548,7 @@ namespace sc{   namespace detail {
       case AlphaBeta:  return "ab";
       case AlphaAlpha:  return "aa";
       case BetaBeta:  return "bb";
+      default: break;
     }
     assert(false);
     return std::string(); // dummy return statement to pacify picky compilers

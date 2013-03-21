@@ -206,7 +206,7 @@ UnrestrictedSCF::UnrestrictedSCF(const Ref<KeyVal>& keyval) :
     initial_nbeta_ = new int[nirrep_];
     memcpy(initial_nbeta_, nbeta_, sizeof(int)*nirrep_);
   }
-  else if (nalpha_ && !nbeta_ || !nalpha_ && nbeta_) {
+  else if ((nalpha_ && (!nbeta_)) || ((!nalpha_) && nbeta_)) {
     ExEnv::out0() << "ERROR: USCF: only one of alpha and beta specified: "
                  << "give both or none" << endl;
     abort();

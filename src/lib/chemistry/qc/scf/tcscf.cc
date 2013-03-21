@@ -183,7 +183,7 @@ TCSCF::TCSCF(const Ref<KeyVal>& keyval) :
     }
     delete[] nsocc;
   }
-  else if (ndocc_ && !nsocc || !ndocc_ && nsocc) {
+  else if ((ndocc_ && (!nsocc)) || ((!ndocc_) && nsocc)) {
     ExEnv::outn() << "ERROR: TCSCF: only one of docc and socc specified: "
                  << "give both or none" << endl;
     abort();
@@ -202,7 +202,7 @@ TCSCF::TCSCF(const Ref<KeyVal>& keyval) :
 
   ExEnv::out0() << indent << "socc = [";
   for (i=0; i < nirrep_; i++)
-    ExEnv::out0() << " " << (i==osa_ || i==osb_) ? 1 : 0;
+    ExEnv::out0() << " " << ((i==osa_ || i==osb_) ? 1 : 0);
   ExEnv::out0() << " ]\n";
 
   // check to see if this was done in SCF(keyval)
@@ -337,7 +337,7 @@ TCSCF::print(ostream&o) const
   o << " ]" << endl
     << indent << "socc = [";
   for (i=0; i < nirrep_; i++)
-    o << " " << (i==osa_ || i==osb_) ? 1 : 0;
+    o << " " << ((i==osa_ || i==osb_) ? 1 : 0);
   o << " ]" << endl << decindent << endl;
 }
 

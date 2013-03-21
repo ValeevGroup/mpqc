@@ -155,10 +155,10 @@ SimpleCo::operator!=(SimpleCo&u)
 int
 SimpleCo::operator==(SimpleCo& sc)
 {
-  if(label_ && !sc.label_ || !label_ && sc.label_) return 0;
+  if((label_ && (!sc.label_)) || ((!label_) && sc.label_)) return 0;
   if(label_ && strcmp(label_,sc.label_)) return 0;
 
-  if(atoms && !sc.atoms || !atoms && sc.atoms) return 0;
+  if((atoms && !sc.atoms) || (!atoms && sc.atoms)) return 0;
   if(atoms)
     for(int i=0; i < natoms_; i++) if (atoms[i]!=sc.atoms[i]) return 0;
 
@@ -187,7 +187,7 @@ SimpleCo::bmat(const Ref<Molecule>&mol,RefSCVector&bmat,double coef)
   for (i=0; i<n; i++) {
       bmat(i) = v[i];
     }
-  
+
   delete[] v;
 }
 
@@ -203,7 +203,7 @@ SimpleCo::print_details(const Ref<Molecule> &mol, ostream& os) const
   os << indent
      << scprintf("%-5s %7s %11.5f", ctype(), (label()?label():""),
                  preferred_value());
-  
+
   int i;
   for (i=0; i<natoms(); i++)
       os << scprintf(" %4d", atoms[i]);
@@ -221,7 +221,7 @@ SimpleCo::print_details(const Ref<Molecule> &mol, ostream& os) const
     }
 
   os << endl;
-  
+
 }
 
 // this doesn't catch all cases, it would be best for each subclass

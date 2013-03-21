@@ -115,9 +115,9 @@ ShmMemoryGrp::attach_memory(void *ataddress, int size)
                << " on node " << me()
                << endl;
         }
-      if (attach_address_[i] == 0
-          || attach_address_[i] == (void*) -1
-          || ataddress && attach_address_[i] != ataddress) {
+      if ((attach_address_[i] == 0)
+          || (attach_address_[i] == ((void*) -1))
+          || (ataddress && (attach_address_[i] != ataddress))) {
           //ExEnv::outn() << "ShmMemoryGrp: shmat: problem attaching using address: "
           //     << " " << (void*) ataddress
           //     << ": got address: "

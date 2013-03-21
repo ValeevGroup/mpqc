@@ -354,13 +354,13 @@ template <class K, class T>
 void
 EAVLMMap<K,T>::next(const T*& node) const
 {
-  const T* r;
-  if (r = rlink(node)) {
+  const T* r = rlink(node);
+  if (r) {
       node = r;
-      while (r = llink(node)) node = r;
+      while ((r = llink(node))) node = r;
       return;
     }
-  while (r = uplink(node)) {
+  while ((r = uplink(node))) {
       if (node == llink(r)) {
           node = r;
           return;
@@ -374,13 +374,13 @@ template <class K, class T>
 void
 EAVLMMap<K,T>::next(T*& node) const
 {
-  T* r;
-  if (r = rlink(node)) {
+  T* r = rlink(node);
+  if (r) {
       node = r;
-      while (r = llink(node)) node = r;
+      while ((r = llink(node))) node = r;
       return;
     }
-  while (r = uplink(node)) {
+  while ((r = uplink(node))) {
       if (node == llink(r)) {
           node = r;
           return;

@@ -624,6 +624,7 @@ public:
   bool gbc() const { return r12world()->r12tech()->gbc(); }
   bool ebc() const { return r12world()->r12tech()->ebc(); }
   bool coupling() const { return r12world()->r12tech()->coupling(); }
+  bool compute_1rdm() const { return r12world()->r12tech()->compute_1rdm(); }
   R12Technology::StandardApproximation stdapprox() const { return r12world()->r12tech()->stdapprox(); }
   bool omit_P() const { return r12world()->r12tech()->omit_P(); }
   const Ref<MOIntsTransformFactory>& tfactory() const { return r12world()->world()->tfactory(); };
@@ -993,6 +994,8 @@ public:
 std::vector< Ref<DistArray4> >
 A_distarray4(SpinCase2 spincase2, const Ref<R12IntEval>& r12eval);
 
+// compute orbital Z-vector from F12 contribution
+RefSCMatrix Onerdm_X_F12(SpinCase1 spin, const Ref<R12IntEval>& r12eval, int debug);
 } // end of namespace sc
 
 #endif

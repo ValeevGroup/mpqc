@@ -510,6 +510,7 @@ class R12Technology: virtual public SavableState {
     bool gbc_;
     bool ebc_;
     bool coupling_;
+    bool compute_1rdm_;  // compute mp2r12 1e density
     bool omit_P_;
     H0_dk_approx_pauli H0_dk_approx_pauli_;
     bool H0_dk_keep_;
@@ -700,6 +701,7 @@ class R12Technology: virtual public SavableState {
     bool gbc() const;
     bool ebc() const;
     bool coupling() const;
+    bool compute_1rdm() const;
     ABSMethod abs_method() const;
     int abs_nlindep() const;
     double abs_lindep_tol() const;

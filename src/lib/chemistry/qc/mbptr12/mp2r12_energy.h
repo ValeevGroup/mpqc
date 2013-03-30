@@ -62,6 +62,10 @@ namespace sc {
       // parameters for importing psi ccsd one-particle density
       bool Onerdm_cc_computed_;
       RefSCMatrix Onerdm_cc_[NSpinCases1];
+      // parameters for orbial relaxation contribution to
+      // ccsd_f12 one-particle density
+      bool Onerdm_relax_computed_;
+      RefSCMatrix Onerdm_relax_[NSpinCases1];
     public:
       typedef enum { V=0, X=1, B=2, A=3 } IntermediateType;
       R12EnergyIntermediates(const Ref<R12IntEval>& r12eval,
@@ -93,6 +97,8 @@ namespace sc {
       void assign_T2_cc(const SpinCase2 &spincase2, const Ref<DistArray4>& T2_cc);
       const RefSCMatrix& get_1rdm_cc(const SpinCase1 &spincase1) const;
       void assign_1rdm_cc(const SpinCase1 &spincase1, const RefSCMatrix& Onerdm_cc);
+      const RefSCMatrix& get_1rdm_relax(const SpinCase1 &spincase1) const;
+      void assign_1rdm_relax(const SpinCase1 &spincase1, const RefSCMatrix& Onerdm_relax);
   };
 
   /** Class MP2R12Energy is the object that computes and maintains MP2-R12 energies */
@@ -206,7 +212,7 @@ class MP2R12Energy_Diag : public MP2R12Energy
                    Ref<DistArray4>& i1i2i1i2_ints, double* array_i1i2i1i2);
     void compute_YxF(const int b1b2_k1k2, const double prefactor,
                      const unsigned int oper1_idx, const unsigned int oper2_idx,
-                     Ref<DistArray4>& i1i2x1x2_ints, Ref<DistArray4>& i2i1x1x2_ints,
+                     const Ref<DistArray4>& i1i2x1x2_ints, const Ref<DistArray4>& i2i1x1x2_ints,
                      double* array_ijij);
     void compute_FxT(const int b1b2_k1k2, const unsigned int f12_idx,
                      Ref<DistArray4>& F_ints, const double* Tiiaa,
@@ -214,8 +220,8 @@ class MP2R12Energy_Diag : public MP2R12Energy
     void compute_VX(const int b1b2_k1k2, std::vector<std::string>& VX_output,
                     const unsigned int oper12_idx, Ref<DistArray4>& Y12_ints,
                     const unsigned int oper1_idx, const unsigned int oper2_idx,
-                    std::vector<Ref<DistArray4> >& Y_ints,
-                    std::vector<Ref<DistArray4> >& F_ints,
+                    const std::vector<Ref<DistArray4> >& Y_ints,
+                    const std::vector<Ref<DistArray4> >& F_ints,
                     double* VX_array);
     void accumulate_P_YxF(std::vector<std::string>& P_output,
                           std::vector<int>& b1b2_k1k2, std::vector<double>& P_prefactor,

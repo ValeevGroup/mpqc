@@ -33,6 +33,8 @@
 #include <chemistry/qc/lcao/utils.impl.h>
 #include <math/mmisc/pairiter.impl.h>
 #include <chemistry/qc/psi/psicc_pt2r12.h>
+#include <libqt/qt.h>
+#include <libciomr/libciomr.h>
 
 #define TEST_ViaT1 0
 
@@ -202,6 +204,31 @@ void PsiCC_PT2R12::compute_ept2r12() {
 
     if (nspincases1 == 1) {
       D[Beta] = D[Alpha];
+    }
+
+    RefSCMatrix D_orbs[NSpinCases1];
+    compute_onerdm_relax(D_orbs[Alpha], D_orbs[Beta]);
+    if (debug() >= DefaultPrintThresholds::mostN2) {
+      D_orbs[Alpha].print(prepend_spincase(Alpha,"CCSD_F12 one-particle density from relaxation:").c_str());
+      if (nspincases1 != 1) {
+        D_orbs[Beta].print(prepend_spincase(Beta,"CCSD_F12 one-particle density from relaxation:").c_str());
+      }
+    }
+    // pass orbital relaxation 1rdm to the diagonal MP2-R12 energy evaluator
+    for(int s = 0; s < NSpinCases1; s++) {
+      const SpinCase1 spin = static_cast<SpinCase1>(s);
+      r12intermediates->assign_1rdm_relax(spin,D_orbs[spin]);
+
+//      // test: print the Z-vector from PSI3
+//      RefSCMatrix X_psi = this->Onerdm_relax_X(spin);
+//      X_psi.print(prepend_spincase(spin,"PSI3 Z-vector X:").c_str());
+//      // test: print the relaxation effect from PSI3
+//      RefSCMatrix Dorbs_psi = this->Onerdm_relax_D(Alpha);
+//      Dorbs_psi.print(prepend_spincase(Alpha,"PSI3 Dorbs:").c_str());
+//
+//      // test: print the Z-vector from F12 contribution
+//      RefSCMatrix Xf12 = Onerdm_X_F12(spin, r12eval_, debug());
+//      Xf12.print(prepend_spincase(spin,"F12 Z-vector X:").c_str());
     }
 
     if (diag == true) { // -> pass D to the diagonal MP2-R12 energy evaluator
@@ -486,6 +513,282 @@ PsiCC_PT2R12::cabs_singles_energy()
 {
   return cabs_singles_energy_;
 }
+
+// Compute orbital relaxation contribution for
+// CCSD_F12 one-electron density
+void PsiCC_PT2R12::compute_onerdm_relax(RefSCMatrix& Dorbs_alpha,
+                                        RefSCMatrix& Dorbs_beta)
+{
+  // grab orbital info
+  psi::PSIO& psio = exenv()->psio();
+
+  const SpinCase1 spin1 = Alpha;
+  // get # of occupied and unoccupied orbitals of spin S per irrep
+  const std::vector<unsigned int>& occ1pi = reference()->occpi(spin1);
+  const std::vector<unsigned int>& uocc1pi = reference()->uoccpi(spin1);
+
+  // obtain # of orbitals per irrep
+  std::vector<unsigned int> occ1pioff(nirrep_);
+  std::vector<unsigned int> uocc1pioff(nirrep_);
+  occ1pioff[0] = 0;
+  uocc1pioff[0] = 0;
+
+  unsigned int nocc1 = occ1pi[0];
+  unsigned int nuocc1 = uocc1pi[0];
+  for (unsigned int irrep = 1; irrep < nirrep_; ++irrep) {
+    occ1pioff[irrep] = occ1pioff[irrep-1] + occ1pi[irrep-1];
+    uocc1pioff[irrep] = uocc1pioff[irrep-1] + uocc1pi[irrep-1];
+    nocc1 += occ1pi[irrep];
+    nuocc1 += uocc1pi[irrep];
+  }
+
+  unsigned int na1i1_dpd = 0;
+  for (unsigned int h = 0; h < nirrep_; ++h)
+    na1i1_dpd += uocc1pi[h] * occ1pi[h];
+
+  // DPD of orbital product spaces
+  std::vector<size_t> a1i1_pi(nirrep_);
+  for (unsigned int h = 0; h < nirrep_; ++h) {
+    size_t nai = 0;
+    for (unsigned int g = 0; g < nirrep_; ++g) {
+      nai += (size_t)uocc1pi[g] * occ1pi[h ^ g];
+    }
+    a1i1_pi[h] = nai;
+  }
+
+  // compute the orbital Z vector contribution from F12
+  RefSCMatrix X_F12[NSpinCases1];
+  RefSCMatrix Xf12_alpha = Onerdm_X_F12(spin1, r12eval_, debug());
+  Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
+  X_F12[spin1] = localkit->matrix(Xf12_alpha.rowdim(), Xf12_alpha.coldim());
+  X_F12[spin1]->convert(Xf12_alpha);
+  X_F12[spin1].assign(0.0);
+
+  psio.open(CC_OEI, PSIO_OPEN_OLD);
+  psio.open(CC_MISC, PSIO_OPEN_OLD);
+  if (reference()->reftype() == PsiSCF::rhf) {
+
+    double* Xai_ccsd = new double[na1i1_dpd];
+    //ExEnv::out0() << std::endl << "X nai_dpd: " << na1i1_dpd << std::endl;
+
+    psio.read_entry(CC_OEI, "XAI",
+                    reinterpret_cast<char*>(Xai_ccsd), na1i1_dpd*sizeof(double));
+
+    // add X_F12 to X
+
+    double* Xai = new double[na1i1_dpd];
+    std::fill_n(Xai, na1i1_dpd, 0.0);
+
+    double* iter_Xai = Xai;
+    const double* iter_Xai_ccsd = Xai_ccsd;
+    for (unsigned int h = 0; h < nirrep_; ++h) {
+      const unsigned int a_offset = uocc1pioff[h];
+      const unsigned int i_offset = occ1pioff[h];
+
+      for (int a = 0; a < uocc1pi[h]; ++a)
+        for (int i = 0; i< occ1pi[h]; ++i, ++iter_Xai, ++iter_Xai_ccsd)
+         *iter_Xai = - *iter_Xai_ccsd - X_F12[spin1].get_element(a+a_offset, i+i_offset);
+    }
+    delete[] Xai_ccsd;
+
+    // Grab only irrep 0 of the orbital Hessian
+//      unsigned int nai_dpd_h0 = uocc1pi[0] * occ1pi[0];
+    unsigned int nai_dpd_h0 = a1i1_pi[0];
+    //ExEnv::out0() << std::endl << "nai_dpd of irrep 0: " << nai_dpd_h0 << std::endl;
+    double** A = block_matrix(nai_dpd_h0, nai_dpd_h0);
+
+    psio_address A_address = PSIO_ZERO;
+    for(int ai = 0; ai < nai_dpd_h0; ai++) {
+      psio.read(CC_MISC, "A(EM,AI)",
+                reinterpret_cast<char*> (A[ai]), nai_dpd_h0*sizeof(double),
+                A_address, &A_address);
+     }
+
+     FILE* outfile = tmpfile ();
+     pople(A, Xai, nai_dpd_h0, 1, 1e-12, outfile, 0);
+     fclose (outfile);
+
+     psio.close(CC_OEI, 1);
+     psio.close(CC_MISC, 1);
+
+     RefSCDimension rowdim = new SCDimension(nuocc1);
+     RefSCDimension coldim = new SCDimension(nocc1);
+     Dorbs_alpha = matrixkit()->matrix(rowdim, coldim);
+     Dorbs_alpha.assign(0.0);
+
+     unsigned int ai = 0;
+     for (unsigned int h = 0; h < nirrep_; ++h) {
+       const unsigned int a_offset = uocc1pioff[h];
+       const unsigned int i_offset = occ1pioff[h];
+
+       for (int a = 0; a < uocc1pi[h]; ++a)
+         for (int i = 0; i< occ1pi[h]; ++i, ++ai)
+           Dorbs_alpha.set_element(a+a_offset, i+i_offset,Xai[ai]);
+     }
+
+     delete[] Xai;
+
+     Dorbs_beta = Dorbs_alpha;
+
+     // test: print the relaxation effect from PSI3
+//       RefSCMatrix Dorbs_psi = this->Onerdm_relax_D(Alpha);
+//       Dorbs_psi.print(prepend_spincase(Alpha,"PSI3 Dorbs:").c_str());
+  } else if (reference()->reftype() == PsiSCF::uhf) {
+
+      const SpinCase1 spin2 = Beta;
+      const std::vector<unsigned int>& occ2pi = reference()->occpi(spin2);
+      const std::vector<unsigned int>& uocc2pi = reference()->uoccpi(spin2);
+
+      RefSCMatrix Xf12_beta = Onerdm_X_F12(spin2, r12eval_, debug());
+      X_F12[spin2] = localkit->matrix(Xf12_beta.rowdim(), Xf12_beta.coldim());
+      X_F12[spin2]->convert(Xf12_beta);
+//      X_F12[spin2].assign(0.0);
+
+      std::vector<unsigned int> occ2pioff(nirrep_);
+      std::vector<unsigned int> uocc2pioff(nirrep_);
+      occ2pioff[0] = 0;
+      uocc2pioff[0] = 0;
+
+      unsigned int nocc2 = occ2pi[0];
+      unsigned int nuocc2 = uocc2pi[0];
+      for (unsigned int irrep = 1; irrep < nirrep_; ++irrep) {
+        occ2pioff[irrep] = occ2pioff[irrep-1] + occ2pi[irrep-1];
+        uocc2pioff[irrep] = uocc2pioff[irrep-1] + uocc2pi[irrep-1];
+        nocc2 += occ2pi[irrep];
+        nuocc2 += uocc2pi[irrep];
+      }
+
+      unsigned int na2i2_dpd = 0;
+      for (unsigned int h = 0; h < nirrep_; ++h)
+        na2i2_dpd += uocc2pi[h] * occ2pi[h];
+
+      double* const Xai_ccsd = new double[na1i1_dpd + na2i2_dpd];
+      //ExEnv::out0() << std::endl << "X na1i1_dpd: " << na1i1_dpd << std::endl;
+      //ExEnv::out0() << std::endl << "X na2i2_dpd: " << na2i2_dpd << std::endl;
+
+      double* iter_Xai_ccsd = Xai_ccsd;
+      psio.read_entry(CC_OEI, "XAI",
+                      reinterpret_cast<char*>(iter_Xai_ccsd), na1i1_dpd*sizeof(double));
+
+      iter_Xai_ccsd += na1i1_dpd;
+      psio.read_entry(CC_OEI, "Xai",
+                      reinterpret_cast<char*>(iter_Xai_ccsd), na1i1_dpd*sizeof(double));
+
+      // add Alpha and Beta X_F12 to X
+      double* const Xai = new double[na1i1_dpd + na2i2_dpd];
+      std::fill_n(Xai, na1i1_dpd + na2i2_dpd, 0.0);
+
+      double* iter_X = Xai;
+      const double* iter_X_ccsd = Xai_ccsd;
+      for (unsigned int h = 0; h < nirrep_; ++h) {
+        const unsigned int a_offset = uocc1pioff[h];
+        const unsigned int i_offset = occ1pioff[h];
+
+        for (int a = 0; a < uocc1pi[h]; ++a)
+          for (int i = 0; i< occ1pi[h]; ++i, ++iter_X, ++iter_X_ccsd)
+           *iter_X = - *iter_X_ccsd - X_F12[spin1].get_element(a+a_offset, i+i_offset);
+      }
+      for (unsigned int h = 0; h < nirrep_; ++h) {
+        const unsigned int a_offset = uocc2pioff[h];
+        const unsigned int i_offset = occ2pioff[h];
+
+        for (int a = 0; a < uocc2pi[h]; ++a)
+          for (int i = 0; i< occ2pi[h]; ++i, ++iter_X, ++iter_X_ccsd)
+           *iter_X -= - *iter_X_ccsd - X_F12[spin2].get_element(a+a_offset, i+i_offset);
+      }
+      delete[] Xai_ccsd;
+
+      std::vector<size_t> a2i2_pi(nirrep_);
+      for (unsigned int h = 0; h < nirrep_; ++h) {
+        size_t nai = 0;
+        for (unsigned int g = 0; g < nirrep_; ++g) {
+          nai += (size_t)uocc2pi[g] * occ2pi[h ^ g];
+        }
+        a2i2_pi[h] = nai;
+      }
+
+      // Grab only irrep 0 of the orbital Hessian
+      unsigned int na1i1_dpd_h0 = a1i1_pi[0];
+      unsigned int na2i2_dpd_h0 = a2i2_pi[0];
+      unsigned int nai_dpd_h0  = na1i1_dpd_h0 + na2i2_dpd_h0;
+      //ExEnv::out0() << std::endl << "na1i1_dpd of irrep 0: " << na1i1_dpd_h0 << std::endl;
+      //ExEnv::out0() << std::endl << "na2i2_dpd of irrep 0: " << na2i2_dpd_h0 << std::endl;
+
+      double** A = block_matrix(nai_dpd_h0, nai_dpd_h0);
+
+      psio_address A1_address = PSIO_ZERO;
+      for(int a1i1 = 0; a1i1 < na1i1_dpd_h0; a1i1++) {
+        psio.read(CC_MISC, "A(AI,BJ)",
+                  reinterpret_cast<char*> (A[a1i1]), na1i1_dpd_h0*sizeof(double),
+                  A1_address, &A1_address);
+       }
+
+      psio_address A2_address = PSIO_ZERO;
+      for(int a2i2 = na1i1_dpd_h0; a2i2 < nai_dpd_h0; a2i2++) {
+        double* iter_A = A[a2i2] + na1i1_dpd_h0;
+        psio.read(CC_MISC, "A(ai,bj)",
+                  reinterpret_cast<char*> (iter_A), na2i2_dpd_h0*sizeof(double),
+                  A2_address, &A2_address);
+      }
+
+      psio_address A12_address = PSIO_ZERO;
+      for(int a1i1 = 0; a1i1 < na1i1_dpd_h0; a1i1++) {
+        double* iter_A = A[a1i1] + na1i1_dpd_h0;
+        psio.read(CC_MISC, "A(AI,bj)",
+                  reinterpret_cast<char*> (iter_A), na2i2_dpd_h0*sizeof(double),
+                  A12_address, &A12_address);
+
+        for(int a2i2 = na1i1_dpd_h0; a2i2 < nai_dpd_h0; a2i2++) {
+            A[a2i2][a1i1] = A[a1i1][a2i2];
+        }
+      }
+
+      FILE* outfile = tmpfile ();
+      pople(A, Xai, nai_dpd_h0, 1, 1e-12, outfile, 0);
+      fclose (outfile);
+
+      psio.close(CC_OEI, 1);
+      psio.close(CC_MISC, 1);
+
+      RefSCDimension rowdim1 = new SCDimension(nuocc1);
+      RefSCDimension coldim1 = new SCDimension(nocc1);
+      Dorbs_alpha = matrixkit()->matrix(rowdim1, coldim1);
+      Dorbs_alpha.assign(0.0);
+
+      unsigned int ai = 0;
+      for (unsigned int h = 0; h < nirrep_; ++h) {
+        const unsigned int a_offset = uocc1pioff[h];
+        const unsigned int i_offset = occ1pioff[h];
+
+        for (int a = 0; a < uocc1pi[h]; ++a)
+          for (int i = 0; i< occ1pi[h]; ++i, ++ai)
+            Dorbs_alpha.set_element(a+a_offset, i+i_offset, Xai[ai]);
+      }
+
+      RefSCDimension rowdim2 = new SCDimension(nuocc2);
+      RefSCDimension coldim2 = new SCDimension(nocc2);
+      Dorbs_beta = matrixkit()->matrix(rowdim2, coldim2);
+      Dorbs_beta.assign(0.0);
+
+      for (unsigned int h = 0; h < nirrep_; ++h) {
+        const unsigned int a_offset = uocc2pioff[h];
+        const unsigned int i_offset = occ2pioff[h];
+
+        for (int a = 0; a < uocc2pi[h]; ++a)
+          for (int i = 0; i< occ2pi[h]; ++i, ++ai)
+            Dorbs_beta.set_element(a+a_offset, i+i_offset, Xai[ai]);
+      }
+      delete[] Xai;
+
+      // test: print the relaxation effect from PSI3
+//        RefSCMatrix Dorbs_psi_alpha = this->Onerdm_relax_D(Alpha);
+//        Dorbs_psi_alpha.print(prepend_spincase(Alpha,"PSI3 Dorbs:").c_str());
+//        RefSCMatrix Dorbs_psi_beta = this->Onerdm_relax_D(Beta);
+//        Dorbs_psi_beta.print(prepend_spincase(Beta,"PSI3 Dorbs:").c_str());
+  }
+
+}
+// end of one-electron relaxation
 
 void PsiCC_PT2R12::print(std::ostream&o) const {
   o << indent << "PsiCC_PT2R12:" << std::endl;

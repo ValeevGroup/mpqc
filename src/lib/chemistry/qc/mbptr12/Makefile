@@ -46,7 +46,7 @@ CXXSRCS = mbptr12.cc \
   creator.cc approxC.cc approxCp.cc approxApp.cc \
   mp2r12_energy_util.cc compute_VXB_a.cc \
   compute_VXB_a_vbsneqobs.cc \
-  gaussianfit.cc r12technology.cc twobody_intermeds.cc \
+  gaussianfit.cc r12technology.cc twobody_intermeds.cc compute_1rdm_X_F12.cc \
   singles_emp2.cc fixedcoefficient.cc \
   compute_VXB_c_ansatz1.cc approxC_ansatz1.cc \
   compute_VX_GenRefansatz2.cc approxC_GenRefansatz2.cc \

@@ -906,6 +906,7 @@ R12Technology::R12Technology(StateIn& s)
   int gbc; s.get(gbc); gbc_ = (bool)gbc;
   int ebc; s.get(ebc); ebc_ = (bool)ebc;
   int coupling; s.get(coupling); coupling_ = (bool)coupling;
+  int compute_1rdm; s.get(compute_1rdm); compute_1rdm_ = (bool)compute_1rdm;
   int omit_P; s.get(omit_P); omit_P_ = (bool)omit_P;
   int absmethod; s.get(absmethod); abs_method_ = (ABSMethod)absmethod;
   int stdapprox; s.get(stdapprox); stdapprox_ = (StandardApproximation) stdapprox;
@@ -1194,6 +1195,8 @@ R12Technology::init_from_kv(const Ref<KeyVal>& keyval,
   ebc_ = keyval->booleanvalue("ebc",KeyValValueboolean((int)true));
   // Default is to not include coupling
   coupling_ = keyval->booleanvalue("coupling",KeyValValueboolean((int)false));
+  // Default is to not computing MP2-R12 one-electron density
+  compute_1rdm_ = keyval->booleanvalue("compute_1rdm",KeyValValueboolean((int)false));
 
   // Default is to include P in intermediate B
   omit_P_ = keyval->booleanvalue("omit_P",KeyValValueboolean((int)false));
@@ -1318,6 +1321,7 @@ R12Technology::save_data_state(StateOut& s)
   s.put((int)gbc_);
   s.put((int)ebc_);
   s.put((int)coupling_);
+  s.put((int)compute_1rdm_);
   s.put((int)omit_P_);
   s.put((int)abs_method_);
   s.put((int)stdapprox_);
@@ -1492,6 +1496,14 @@ bool
 R12Technology::coupling() const
 {
   return coupling_;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+bool
+R12Technology::compute_1rdm() const
+{
+  return compute_1rdm_;
 }
 
 /////////////////////////////////////////////////////////////////////////////

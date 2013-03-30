@@ -69,8 +69,14 @@ namespace sc {
       Ref<DistArray4> T2_distarray4_fzc(SpinCase2 spin12,
                                         const std::string& dpdlabel);
 
-      /// read in one-particle density of spincase spin
+      // read PSI3 ccsd one-particle density of spincase spin
       RefSCMatrix Onerdm(SpinCase1 spin);
+      // read PSI3 relaxation 1e density of spincase spin
+      RefSCMatrix Onerdm_relax_X(SpinCase1 spin);
+      // test
+      RefSCMatrix Onerdm_relax_D(SpinCase1 spin);
+//      void compute_onerdm_relax(RefSCMatrix& Dorbs_alpha,
+//                                RefSCMatrix& Dorbs_beta);
 
 #if 0
       /// transform T1 to the new basis using sparse maps

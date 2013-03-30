@@ -212,6 +212,15 @@ void R12EnergyIntermediates::assign_1rdm_cc(const SpinCase1 &spincase1, const Re
   Onerdm_cc_computed_ = true;
 }
 
+const RefSCMatrix& R12EnergyIntermediates::get_1rdm_relax(const SpinCase1 &spincase1) const {
+  return(Onerdm_relax_[spincase1]);
+}
+
+void R12EnergyIntermediates::assign_1rdm_relax(const SpinCase1 &spincase1, const RefSCMatrix& Onerdm_relax) {
+  Onerdm_relax_[spincase1] = Onerdm_relax;
+  Onerdm_relax_computed_ = true;
+}
+
 /*-------------
   MP2R12Energy
  -------------*/

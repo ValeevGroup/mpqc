@@ -233,7 +233,7 @@ void MP2R12Energy_Diag::compute_Y(const int b1b2_k1k2, const double prefactor,
 // Y can be g or f
 void MP2R12Energy_Diag::compute_YxF(const int b1b2_k1k2, const double prefactor,
                                     const unsigned int oper1_idx, const unsigned int oper2_idx,
-                                    Ref<DistArray4>& i1i2x1x2_ints, Ref<DistArray4>& j1j2x1x2_ints,
+                                    const Ref<DistArray4>& i1i2x1x2_ints, const Ref<DistArray4>& j1j2x1x2_ints,
                                     double* array_i1i2i1i2)
 {
   const blasint norbs12 = i1i2x1x2_ints->nx() * i1i2x1x2_ints->ny();
@@ -382,8 +382,8 @@ void MP2R12Energy_Diag::compute_FxT(const int b1b2_k1k2, const unsigned int f12_
 void MP2R12Energy_Diag::compute_VX(const int b1b2_k1k2, std::vector<std::string>& VX_output,
                                    const unsigned int oper12_idx, Ref<DistArray4>& Y12_ints,
                                    const unsigned int oper1_idx, const unsigned int oper2_idx,
-                                   std::vector<Ref<DistArray4> >& Y_ints,
-                                   std::vector<Ref<DistArray4> >& F_ints,
+                                   const std::vector<Ref<DistArray4> >& Y_ints,
+                                   const std::vector<Ref<DistArray4> >& F_ints,
                                    double* VX_array)
 {
   if (debug_ >= DefaultPrintThresholds::mostN2)
@@ -513,8 +513,13 @@ void MP2R12Energy_Diag::contract_VT1(const Ref<DistArray4>& V,
 
 void MP2R12Energy_Diag::compute_ef12() {
 
-  // calculate one electron density
-  if (r12intermediates_->Onerdm_cc_computed()) {
+  if (this->r12eval()->compute_1rdm()) {
+//    // tests for open-shell systems using MP2-F12 method
+//    const int nspincases1 = r12eval()->nspincases1();
+//    for(int s = 0; s < nspincases1; ++s) {
+//      const SpinCase1 spin = static_cast<SpinCase1>(s);
+//      RefSCMatrix Xf12_alpha = Onerdm_X_F12(spin, r12eval_, debug_);
+//    }
     ExEnv::out0() << std:: endl << "Onerdm_cc_computed() " << r12intermediates_->Onerdm_cc_computed() << std::endl;
     compute_density_diag();
   }

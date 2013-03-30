@@ -48,6 +48,14 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
   const bool do_mp2 = r12intermediates_->T1_cc_computed() == false &&
                       r12intermediates_->T2_cc_computed() == false;
 
+  // test for 1e density matrix
+  double E_V_tot = 0.0;
+  double E_Vcoupling_tot = 0.0;
+  double E_X_tot = 0.0;
+  double E_B_tot = 0.0;
+  double E_X_noca_tot = 0.0;
+  double E_VT_tot = 0.0;
+
   const Ref<R12Technology::CorrelationFactor> corrfactor =
       r12world->r12tech()->corrfactor();
   const bool obs_eq_ribs = r12world->obs_eq_ribs();
@@ -512,12 +520,14 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
       if (debug_ >= DefaultPrintThresholds::mostN2) {
         ExEnv::out0() << endl << indent << "evals_i1: " << endl;
         for (int i1 = 0; i1 < nocc1_act; ++i1) {
-          ExEnv::out0() << indent << evals_i1(i1) << endl;
+          const double e_i1 = evals_i1(i1);
+          ExEnv::out0() << indent << scprintf("%12.10f", e_i1) << endl;
         }
 
-        ExEnv::out0() << endl << indent << "evals_i2: " << endl;
+        ExEnv::out0() << endl << indent <<  "evals_i2: " << endl;
         for (int i2 = 0; i2 < nocc2_act; ++i2) {
-          ExEnv::out0() << indent << evals_i2(i2) << endl;
+          const double e_i2 = evals_i2(i2);
+          ExEnv::out0() << indent << scprintf("%12.10f", e_i2) << endl;
         }
 
         ExEnv::out0() << endl << indent << "evals_a1: " << endl;
@@ -1607,6 +1617,435 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
 
     } // end of alpha-beta open-shell case
 
+    // code for testing 1e density matrix
+    // compute X terms using non-canonical orbitals
+#if 1
+    double* Xioccj_ij = NULL;
+    double* Xioccj_ji = NULL;
+    double* Xijocc_ij = NULL;
+    double* Xijocc_ji = NULL;
+    double* Xjiocc_ij = NULL;
+    double* Xjiocc_ji = NULL;
+    double* Xjocci_ij = NULL;
+    double* Xjocci_ji = NULL;
+    if (this->r12eval()->compute_1rdm() ||
+        r12intermediates_->Onerdm_cc_computed()) {
+
+      const Ref<OrbitalSpace>& focc1_im = r12eval()->F_i_m(spin1);
+      const Ref<OrbitalSpace>& focc2_im = r12eval()->F_i_m(spin2);
+      Xioccj_ij = new double[nocc12];
+      Xioccj_ji = new double[nocc12];
+      fill_n(Xioccj_ij, nocc12, 0.0);
+      fill_n(Xioccj_ji, nocc12, 0.0);
+
+      // Xioccj_ij += (f12f12)^ioccj_ij
+      Ref<DistArray4> ioccjij_f12f12_ints;
+      activate_ints(focc1_im->id(), occ2_act->id(), occ1_act->id(),
+                    occ2_act->id(), descr_f12f12_key, moints4_rtime,
+                    ioccjij_f12f12_ints);
+      // store all the ints
+      std::vector<Ref<DistArray4> > f12_ioccj_ints;
+
+      // Xioccj_ij -= f^ioccj_pq f^pq_ij
+      Ref<DistArray4> ioccjpp_ints;
+      activate_ints(focc1_im->id(), occ2_act->id(), orbs1->id(), orbs2->id(),
+                    descr_f12_key, moints4_rtime, ioccjpp_ints);
+      f12_ioccj_ints.push_back(ioccjpp_ints);
+
+      // Xioccj_ij-= f^ioccj_ma' f^ma'_ij
+      Ref<DistArray4> ioccjia_ints;
+      activate_ints(focc1_im->id(), occ2_act->id(), occ1->id(), cabs2->id(),
+                    descr_f12_key, moints4_rtime, ioccjia_ints);
+      f12_ioccj_ints.push_back(ioccjia_ints);
+
+      // Xioccj_ij-= f^ioccj_a'm f^a'm_ij
+      Ref<DistArray4> ioccjai_ints;
+      activate_ints(focc1_im->id(), occ2_act->id(), cabs1->id(), occ2->id(),
+                    descr_f12_key, moints4_rtime, ioccjai_ints);
+      f12_ioccj_ints.push_back(ioccjai_ints);
+
+      compute_VX(ij_ij, VX_output, f12f12_idx, ioccjij_f12f12_ints, f12_idx,
+                 f12_idx, f12_ioccj_ints, f12_ij_ints, Xioccj_ij);
+//    print_intermediate(spincase, "X^ioccj_ij", Xioccj_ij, nocc1_act, nocc2_act);
+
+      // Xioccj_ji
+      Ref<DistArray4> ioccjji_f12f12_ints;
+      if (num_unique_spincases2 == 3 && spin1 != spin2) {
+        activate_ints(focc1_im->id(), occ2_act->id(),occ2_act->id(),
+                      occ1_act->id(), descr_f12f12_key, moints4_rtime,
+                      ioccjji_f12f12_ints);
+      } else {
+          ioccjji_f12f12_ints = ioccjij_f12f12_ints;
+      }
+
+      std::vector<Ref<DistArray4> > f12_ij_ints;
+      Ref<DistArray4> i1i2p1p2_ints;
+      activate_ints(occ1_act->id(), occ2_act->id(), orbs1->id(), orbs2->id(),
+                    descr_f12_key, moints4_rtime, i1i2p1p2_ints);
+      f12_ij_ints.push_back(i1i2p1p2_ints);
+
+      Ref<DistArray4> i1i2i1a2_ints;
+      activate_ints(occ1_act->id(), occ2_act->id(), occ1->id(), cabs2->id(),
+                    descr_f12_key, moints4_rtime, i1i2i1a2_ints);
+      f12_ij_ints.push_back(i1i2i1a2_ints);
+
+      Ref<DistArray4> i1i2a1i2_ints;
+      activate_ints(occ1_act->id(), occ2_act->id(), cabs1->id(), occ2->id(),
+                    descr_f12_key, moints4_rtime, i1i2a1i2_ints);
+      f12_ij_ints.push_back(i1i2a1i2_ints);
+
+      if (num_unique_spincases2 == 3 && spin1 != spin2) {
+        activate_ints(occ2_act->id(), occ1_act->id(), orbs1->id(), orbs2->id(),
+                      descr_f12_key, moints4_rtime, i2i1p1p2_ints);
+
+        activate_ints(occ2_act->id(), occ1_act->id(), occ1->id(), cabs2->id(),
+                      descr_f12_key, moints4_rtime, i2i1i1a2_ints);
+
+        activate_ints(occ2_act->id(), occ1_act->id(), cabs1->id(), occ2->id(),
+                      descr_f12_key, moints4_rtime, i2i1a1i2_ints);
+      } else {
+        i2i1p1p2_ints = i1i2p1p2_ints;
+        i2i1i1a2_ints = i1i2i1a2_ints;
+        i2i1a1i2_ints = i1i2a1i2_ints;
+      }
+      std::vector<Ref<DistArray4> > f12_ji_ints;
+      f12_ji_ints.push_back(i2i1p1p2_ints);
+      f12_ji_ints.push_back(i2i1i1a2_ints);
+      f12_ji_ints.push_back(i2i1a1i2_ints);
+
+      compute_VX(ij_ji, VX_output, f12f12_idx, ioccjji_f12f12_ints, f12_idx,
+                 f12_idx, f12_ioccj_ints, f12_ji_ints, Xioccj_ji);
+//    print_intermediate(spincase, "X^ioccj_ji", Xioccj_ji, nocc1_act, nocc2_act);
+
+      ioccjij_f12f12_ints->deactivate();
+      if (num_unique_spincases2 == 3 && spin1 != spin2) {
+        ioccjji_f12f12_ints->deactivate();
+      }
+      for (std::vector<Ref<DistArray4> >::iterator it = f12_ioccj_ints.begin();
+          it < f12_ioccj_ints.end(); ++it) {
+        (*it)->deactivate();
+      }
+
+      Xijocc_ij = new double[nocc12];
+      Xijocc_ji = new double[nocc12];
+      fill_n(Xijocc_ij, nocc12, 0.0);
+      fill_n(Xijocc_ji, nocc12, 0.0);
+
+      // Xijocc_ij += (f12f12)^ijocc_ij
+      Ref<DistArray4> ijoccij_f12f12_ints;
+      activate_ints(occ1_act->id(), focc2_im->id(), occ1_act->id(),
+                    occ2_act->id(), descr_f12f12_key, moints4_rtime,
+                    ijoccij_f12f12_ints);
+      // store all the ints
+      std::vector<Ref<DistArray4> > f12_ijocc_ints;
+
+      // Xijocc_ij -= f^ijocc_pq f^pq_ij
+      Ref<DistArray4> ijoccpp_ints;
+      activate_ints(occ1_act->id(), focc2_im->id(), orbs1->id(), orbs2->id(),
+                    descr_f12_key, moints4_rtime, ijoccpp_ints);
+      f12_ijocc_ints.push_back(ijoccpp_ints);
+
+      // Xijocc_ij -= f^ijocc_ma' f^ma'_ij
+      Ref<DistArray4> ijoccia_ints;
+      activate_ints(occ1_act->id(), focc2_im->id(), occ1->id(), cabs2->id(),
+                    descr_f12_key, moints4_rtime, ijoccia_ints);
+      f12_ijocc_ints.push_back(ijoccia_ints);
+
+      // Xijocc_ij -= f^ijocc_a'm f^a'm_ij
+      Ref<DistArray4> ijoccai_ints;
+      activate_ints(occ1_act->id(), focc2_im->id(), cabs1->id(), occ2->id(),
+                    descr_f12_key, moints4_rtime, ijoccai_ints);
+      f12_ijocc_ints.push_back(ijoccai_ints);
+
+      compute_VX(ij_ij, VX_output, f12f12_idx, ijoccij_f12f12_ints, f12_idx,
+                 f12_idx, f12_ijocc_ints, f12_ij_ints, Xijocc_ij);
+//    print_intermediate(spincase, "X^ijocc_ij", Xijocc_ij, nocc1_act, nocc2_act);
+
+      // Xijocc_ji
+      Ref<DistArray4> ijoccji_f12f12_ints;
+      if (num_unique_spincases2 == 3 && spin1 != spin2) {
+        activate_ints(occ1_act->id(), focc2_im->id(), occ2_act->id(),
+                      occ1_act->id(), descr_f12f12_key, moints4_rtime,
+                      ijoccji_f12f12_ints);
+      } else {
+          ijoccji_f12f12_ints = ijoccij_f12f12_ints;
+      }
+
+      //ExEnv::out0() << endl << "f12_ji_ints size" <<
+      compute_VX(ij_ji, VX_output, f12f12_idx, ijoccji_f12f12_ints, f12_idx,
+                 f12_idx, f12_ijocc_ints, f12_ji_ints, Xijocc_ji);
+//    print_intermediate(spincase, "X^ijocc_ji", Xijocc_ji, nocc1_act, nocc2_act);
+
+      ijoccij_f12f12_ints->deactivate();
+      if (num_unique_spincases2 == 3 && spin1 != spin2) {
+        ijoccji_f12f12_ints->deactivate();
+      }
+      for (std::vector<Ref<DistArray4> >::iterator it = f12_ijocc_ints.begin();
+          it < f12_ijocc_ints.end(); ++it) {
+        (*it)->deactivate();
+      }
+
+      // these are only needed in alpha-beta open-shell
+      if (spin1 != spin2 && num_unique_spincases2 == 3) {
+
+        Xjiocc_ij = new double[nocc12];
+        fill_n(Xjiocc_ij, nocc12, 0.0);
+        Xjiocc_ji = new double[nocc12];
+        fill_n(Xjiocc_ji, nocc12, 0.0);
+
+        // X^jiocc_ij = (f12f12)^jiocc_ij
+        Ref<DistArray4> j2iocc1ci1j2_f12f12_ints;
+        activate_ints(occ2_act->id(), focc1_im->id(), occ1_act->id(),
+                      occ2_act->id(), descr_f12f12_key, moints4_rtime,
+                      j2iocc1ci1j2_f12f12_ints);
+
+        // store all the ints
+        std::vector<Ref<DistArray4> > f12_jiocc_ints;
+
+        // Xjiocc_ij -= f^jiocc_pq f^pq_ij
+        Ref<DistArray4> jioccpp_ints;
+        activate_ints(occ2_act->id(), focc1_im->id(), orbs1->id(), orbs2->id(),
+                      descr_f12_key, moints4_rtime, jioccpp_ints);
+        f12_jiocc_ints.push_back(jioccpp_ints);
+
+        // Xjiocc_ij-= f^jiocc_ma' f^ma'_ij
+        Ref<DistArray4> jioccia_ints;
+        activate_ints(occ2_act->id(), focc1_im->id(), occ1->id(), cabs2->id(),
+                      descr_f12_key, moints4_rtime, jioccia_ints);
+        f12_jiocc_ints.push_back(jioccia_ints);
+
+        // Xjiocc_ij-= f^jiocc_a'm f^a'm_ij
+        Ref<DistArray4> jioccai_ints;
+        activate_ints(occ2_act->id(), focc1_im->id(), cabs1->id(), occ2->id(),
+                      descr_f12_key, moints4_rtime, jioccai_ints);
+        f12_jiocc_ints.push_back(jioccai_ints);
+
+        compute_VX(ji_ij, VX_output, f12f12_idx, j2iocc1ci1j2_f12f12_ints, f12_idx,
+                   f12_idx, f12_jiocc_ints, f12_ij_ints, Xjiocc_ij);
+//      print_intermediate(spincase, "X^jiocc_ij", Xjiocc_ij, nocc1_act, nocc2_act);
+
+        // X^jiocc_ji = (f12f12)^jiocc_ji
+        Ref<DistArray4> j2iocc1cj2i1_f12f12_ints;
+        activate_ints(occ2_act->id(), focc1_im->id(), occ2_act->id(),
+                      occ1_act->id(), descr_f12f12_key, moints4_rtime,
+                      j2iocc1cj2i1_f12f12_ints);
+
+        compute_VX(ji_ji, VX_output, f12f12_idx, j2iocc1cj2i1_f12f12_ints, f12_idx,
+                   f12_idx, f12_jiocc_ints, f12_ji_ints, Xjiocc_ji);
+//      print_intermediate(spincase, "X^jiocc_ji", Xjiocc_ji, nocc1_act, nocc2_act);
+
+        j2iocc1ci1j2_f12f12_ints->deactivate();
+        j2iocc1cj2i1_f12f12_ints->deactivate();
+        for (std::vector<Ref<DistArray4> >::iterator it = f12_jiocc_ints.begin();
+            it < f12_jiocc_ints.end(); ++it) {
+          (*it)->deactivate();
+        }
+
+        Xjocci_ij = new double[nocc12];
+        fill_n(Xjocci_ij, nocc12, 0.0);
+        Xjocci_ji = new double[nocc12];
+        fill_n(Xjocci_ji, nocc12, 0.0);
+
+        // Xjocci_ij += (f12f12)^ijocc_ij
+        Ref<DistArray4> jocc2i1i1j2_f12f12_ints;
+        activate_ints(focc2_im->id(), occ1_act->id(), occ1_act->id(),
+                      occ2_act->id(), descr_f12f12_key, moints4_rtime,
+                      jocc2i1i1j2_f12f12_ints);
+        // store all the ints
+        std::vector<Ref<DistArray4> > f12_jocci_ints;
+
+        // Xjocci_ij -= f^jocci_pq f^pq_ij
+        Ref<DistArray4> joccipp_ints;
+        activate_ints(focc2_im->id(), occ1_act->id(), orbs1->id(), orbs2->id(),
+                      descr_f12_key, moints4_rtime, joccipp_ints);
+        f12_jocci_ints.push_back(joccipp_ints);
+
+        // Xjocci_ij-= f^jocci_ma' f^ma'_ij
+        Ref<DistArray4> jocciia_ints;
+        activate_ints(focc2_im->id(), occ1_act->id(), occ1->id(), cabs2->id(),
+                      descr_f12_key, moints4_rtime, jocciia_ints);
+        f12_jocci_ints.push_back(jocciia_ints);
+
+        // Xjocci_ij-= f^jocci_a'm f^a'm_ij
+        Ref<DistArray4> jocciai_ints;
+        activate_ints(focc2_im->id(), occ1_act->id(), cabs1->id(), occ2->id(),
+                      descr_f12_key, moints4_rtime, jocciai_ints);
+        f12_jocci_ints.push_back(jocciai_ints);
+
+        compute_VX(ji_ij, VX_output, f12f12_idx, jocc2i1i1j2_f12f12_ints, f12_idx,
+                   f12_idx, f12_jocci_ints, f12_ij_ints, Xjocci_ij);
+
+        // Xjocci_ji += (f12f12)^jocci_ji
+        Ref<DistArray4> jocc2i1i2j1_f12f12_ints;
+        activate_ints(focc2_im->id(), occ1_act->id(), occ2_act->id(),
+                      occ1_act->id(), descr_f12f12_key, moints4_rtime,
+                      jocc2i1i2j1_f12f12_ints);
+
+        compute_VX(ji_ji, VX_output, f12f12_idx, jocc2i1i2j1_f12f12_ints, f12_idx,
+                   f12_idx, f12_jocci_ints, f12_ji_ints, Xjocci_ji);
+
+        jocc2i1i1j2_f12f12_ints->deactivate();
+        jocc2i1i2j1_f12f12_ints->deactivate();
+        for (std::vector<Ref<DistArray4> >::iterator it = f12_jocci_ints.begin();
+            it < f12_jocci_ints.end(); ++it) {
+          (*it)->deactivate();
+        }
+
+//      print_intermediate(spincase, "X^jocci_ij", Xjocci_ij, nocc1_act, nocc2_act);
+//      print_intermediate(spincase, "X^jocci_ji", Xjocci_ji, nocc1_act, nocc2_act);
+      } // end of if (spin1 != spin2 && num_unique_spincases2 == 3)
+
+      for (std::vector<Ref<DistArray4> >::iterator it = f12_ij_ints.begin();
+        it < f12_ij_ints.end(); ++it) {
+        (*it)->deactivate();
+      }
+      if (num_unique_spincases2 == 3 && spin1 != spin2) {
+        for (std::vector<Ref<DistArray4> >::iterator it = f12_ji_ints.begin();
+          it < f12_ji_ints.end(); ++it) {
+          (*it)->deactivate();
+        }
+      }
+
+      // print out the V coupling, X, and B contributions
+      double E_V = 0.0;
+      double E_Vcoupling = 0.0;
+      double E_X = 0.0;
+      double E_B = 0.0;
+      // X terms using non-canonical orbitals
+      double E_X_noca = 0.0;
+
+      if (spin1 == spin2) {
+        // Alpha_alpha or beta_beta case
+        for (int i1 = 0; i1 < nocc1_act; ++i1) {
+          for (int i2 = i1 + 1; i2 < nocc2_act; ++i2) {
+            const int ij = i1 * nocc2_act + i2;
+
+            E_V += 2.0 * C_1 * (Vij_ij[ij] - Vij_ji[ij]);
+            E_X += - C_1 * C_1* (evals_i1(i1) + evals_i2(i2))
+                               * (Xij_ij[ij] - Xij_ji[ij]);
+            E_B += C_1 * C_1 * (Bij_ij[ij] - Bij_ji[ij]);
+
+            E_X_noca += - C_1 * C_1* (Xioccj_ij[ij] - Xioccj_ji[ij]
+                                    + Xijocc_ij[ij] - Xijocc_ji[ij]);
+
+            if (this->r12eval()->coupling() == true
+                || this->r12eval()->ebc() == false) {
+              E_Vcoupling += 2.0 * C_1
+                  * (Vij_ij_coupling[ij] - Vij_ji_coupling[ij]);
+            }
+
+          }
+        }
+        if (num_unique_spincases2 == 2) {
+          E_V_tot += E_V * 2.0;
+          E_X_tot += E_X * 2.0;
+          E_B_tot += E_B * 2.0;
+          E_X_noca_tot += E_X_noca * 2.0;
+          E_Vcoupling_tot += E_Vcoupling * 2.0;
+        } else {
+            E_V_tot += E_V;
+            E_X_tot += E_X;
+            E_B_tot += E_B;
+            E_X_noca_tot = +E_X_noca;
+            E_Vcoupling_tot += E_Vcoupling;
+        }
+      } else if (num_unique_spincases2 == 2) {
+        // Alpha_beta case for closed shell
+        for (int i1 = 0; i1 < nocc1_act; ++i1) {
+          for (int i2 = 0; i2 < nocc2_act; ++i2) {
+            int ij = i1 * nocc2_act + i2;
+
+            E_V += 2.0  * (0.5 * (C_0 + C_1) * Vij_ij[ij]
+                         + 0.5 * (C_0 - C_1) * Vij_ji[ij]);
+            E_X += - pow(0.5 * (C_0 + C_1), 2)
+                            * (evals_i1(i1) + evals_i2(i2)) * Xij_ij[ij]
+                   - 0.25 * (C_0 * C_0 - C_1 * C_1)
+                            * (evals_i1(i1) + evals_i2(i2)) * (2.0 * Xij_ji[ij])
+                   - pow(0.5 * (C_0 - C_1), 2)
+                            * (evals_i1(i1) + evals_i2(i2)) * Xij_ij[ij];
+            E_B += pow(0.5 * (C_0 + C_1), 2) * Bij_ij[ij]
+                   + 0.25 * (C_0 * C_0 - C_1 * C_1) * 2.0 * Bij_ji[ij]
+                   + pow(0.5 * (C_0 - C_1), 2) * Bij_ij[ij] ;
+
+            E_X_noca += - pow(0.5 * (C_0 + C_1), 2)
+                                  * (Xioccj_ij[ij] + Xijocc_ij[ij])
+                        - 0.25 * (C_0 * C_0 - C_1 * C_1)
+                               * (Xioccj_ji[ij] + Xijocc_ji[ij]) * 2.0
+                        - pow(0.5 * (C_0 - C_1), 2)
+                                  * (Xioccj_ij[ij] + Xijocc_ij[ij]);
+
+            if (this->r12eval()->coupling() == true
+                || this->r12eval()->ebc() == false) {
+              E_Vcoupling += 2.0
+                  * (0.5 * (C_0 + C_1) * Vij_ij_coupling[ij]
+                      + 0.5 * (C_0 - C_1) * Vij_ji_coupling[ij]);
+            }
+
+          }
+        }
+        E_V_tot += E_V;
+        E_X_tot += E_X;
+        E_B_tot += E_B;
+        E_X_noca_tot = +E_X_noca;
+        E_Vcoupling_tot += E_Vcoupling;
+      } else {
+        // Alpha_beta case for open shell
+        for (int i1 = 0; i1 < nocc1_act; ++i1) {
+          for (int i2 = 0; i2 < nocc2_act; ++i2) {
+            double Hij_pair_energy;
+            int ij = i1 * nocc2_act + i2;
+            int ji = i2 * nocc1_act + i1;
+
+            E_V += (2.0
+                * (0.5 * (C_0 + C_1) * Vij_ij[ij]
+                    + 0.5 * (C_0 - C_1) * Vij_ji[ij]));
+            E_X += pow(0.5 * (C_0 + C_1), 2)
+                * (- (evals_i1(i1) + evals_i2(i2)) * Xij_ij[ij])
+                + 0.25 * (C_0 * C_0 - C_1 * C_1)
+                    * (- (evals_i1(i1) + evals_i2(i2))
+                            * (Xij_ji[ij] + Xji_ij[ij]))
+                + pow(0.5 * (C_0 - C_1), 2)
+                    * (- (evals_i1(i1) + evals_i2(i2)) * Xji_ji[ij]);
+            E_B += pow(0.5 * (C_0 + C_1), 2) * Bij_ij[ij]
+                   + 0.25 * (C_0 * C_0 - C_1 * C_1)
+                         * (Bij_ji[ij] + Bji_ij[ji])
+                   + pow(0.5 * (C_0 - C_1), 2) * Bji_ji[ji];
+
+            E_X_noca += - pow(0.5 * (C_0 + C_1), 2)
+                                  * (Xioccj_ij[ij] + Xijocc_ij[ij])
+                        - 0.25 * (C_0 * C_0 - C_1 * C_1)
+                               *  (Xioccj_ji[ij] + Xijocc_ji[ij] + Xjiocc_ij[ij] + Xjocci_ij[ij])
+                        - pow(0.5 * (C_0 - C_1), 2)
+                                  * (Xjiocc_ji[ij]+ Xjocci_ji[ij]);
+
+            if (this->r12eval()->coupling() == true
+                || this->r12eval()->ebc() == false) {
+              E_Vcoupling += 2.0
+                              * (0.5 * (C_0 + C_1) * Vij_ij_coupling[ij]
+                               + 0.5 * (C_0 - C_1) * Vij_ji_coupling[ij]);
+            }
+          }
+        }
+        E_V_tot += E_V;
+        E_X_tot += E_X;
+        E_B_tot += E_B;
+        E_X_noca_tot = +E_X_noca;
+        E_Vcoupling_tot += E_Vcoupling;
+      }
+      delete[] Xioccj_ij;
+      delete[] Xioccj_ji;
+      delete[] Xijocc_ij;
+      delete[] Xijocc_ji;
+      if (spin1 != spin2 && num_unique_spincases2 == 3) {
+        delete[] Xjiocc_ij;
+        delete[] Xjiocc_ji;
+        delete[] Xjocci_ij;
+        delete[] Xjocci_ji;
+      }
+
+    }
+#endif
+
     // Deactivate all the ints
     i1i2i1i2_ints->deactivate();
     for (std::vector<Ref<DistArray4> >::iterator it = f12_ij_ints.begin();
@@ -1662,13 +2101,6 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
                                    nocc1_act, nocc2_act);
     }
 
-    // test for one-electron density:
-    // print out the V coupling, X, and B contributions
-    double E_V = 0.0;
-    double E_Vcoupling = 0.0;
-    double E_X = 0.0;
-    double E_B = 0.0;
-
     // Compute the f12 correction pair energy
     if (spin1 == spin2) {
       // Alpha_alpha or beta_beta case
@@ -1702,12 +2134,6 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
                       - (evals_i1(i1) + evals_i2(i2))
                           * (Xij_ij[ij] - Xij_ji[ij]));
 
-          // test for 1e density
-          E_V += 2.0 * C_1 * (Vij_ij[ij] - Vij_ji[ij]);
-          E_X += - C_1 * C_1* (evals_i1(i1) + evals_i2(i2))
-                             * (Xij_ij[ij] - Xij_ji[ij]);
-          E_B += C_1 * C_1 * (Bij_ij[ij] - Bij_ji[ij]);
-
           if (this->r12eval()->coupling() == true
               || this->r12eval()->ebc() == false) {
 
@@ -1719,10 +2145,6 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
             }
 
             Hij_pair_energy += 2.0 * C_1
-                * (Vij_ij_coupling[ij] - Vij_ji_coupling[ij]);
-
-            // test for 1e density
-            E_Vcoupling += 2.0 * C_1
                 * (Vij_ij_coupling[ij] - Vij_ji_coupling[ij]);
 
             if (do_mp2 && this->r12eval()->coupling()) {
@@ -1793,20 +2215,6 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
                   + pow(0.5 * (C_0 - C_1), 2)
                       * (Bij_ij[ij] - (evals_i1(i1) + evals_i2(i2)) * Xij_ij[ij]);
 
-          // test for 1e density
-          E_V += 2.0  * (0.5 * (C_0 + C_1) * Vij_ij[ij]
-                       + 0.5 * (C_0 - C_1) * Vij_ji[ij]);
-          E_X += - pow(0.5 * (C_0 + C_1), 2)
-                          * (evals_i1(i1) + evals_i2(i2)) * Xij_ij[ij]
-                 - 0.25 * (C_0 * C_0 - C_1 * C_1)
-                          * (evals_i1(i1) + evals_i2(i2)) * (2.0 * Xij_ji[ij])
-                 - pow(0.5 * (C_0 - C_1), 2)
-                          * (evals_i1(i1) + evals_i2(i2)) * Xij_ij[ij];
-
-          E_B += pow(0.5 * (C_0 + C_1), 2) * Bij_ij[ij]
-                 + 0.25 * (C_0 * C_0 - C_1 * C_1) * 2.0 * Bij_ji[ij]
-                 + pow(0.5 * (C_0 - C_1), 2) * Bij_ij[ij] ;
-
           if (this->r12eval()->coupling() == true
               || this->r12eval()->ebc() == false) {
             if (debug_ >= DefaultPrintThresholds::mostN2) {
@@ -1822,11 +2230,6 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
                           + 0.5 * (C_0 - C_1) * Vij_ji_coupling[ij])) << endl;
             }
             Hij_pair_energy += 2.0
-                * (0.5 * (C_0 + C_1) * Vij_ij_coupling[ij]
-                    + 0.5 * (C_0 - C_1) * Vij_ji_coupling[ij]);
-
-            // test for 1e density
-            E_Vcoupling += 2.0
                 * (0.5 * (C_0 + C_1) * Vij_ij_coupling[ij]
                     + 0.5 * (C_0 - C_1) * Vij_ji_coupling[ij]);
 
@@ -1962,14 +2365,6 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
       delete[] Pji_ij;
       delete[] Pji_ji;
     }
-    if (r12intermediates_->T2_cc_computed()) {
-      ExEnv::out0() << endl << spinletters << " individual contributions to the R12 energy:"
-                    << endl << "E_V = " << scprintf("%12.10f", E_V)
-                    << endl << "E_Vcoupling = " << scprintf("%12.10f", E_Vcoupling)
-                    << endl << "E_X = " << scprintf("%12.10f", E_X)
-                    << endl << "E_B = " << scprintf("%12.10f", E_B)
-                    << endl;
-    }
 
     // deallocate memory
     delete[] Vij_ij;
@@ -1985,7 +2380,7 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
     delete[] Pij_ji;
     delete[] Qij_ij;
     delete[] Qij_ji;
-
+    
   } // end of spincase loop
 
   //
@@ -2168,9 +2563,6 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
         print_intermediate(spincase2, "VT1ij_ij += V^aj_ij * T1^i_a", VT1ij_ij,
                            no1, no2);
 
-      // test for 1e density
-      double E_VT = 0.0;
-
       // VT1ij_ji += V^aj_ji * T1^i_a = V^ja_ij * T1^i_a
       if (spincase2 == AlphaBeta) {
 
@@ -2206,10 +2598,6 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
               ExEnv::out0() << indent << "Hij_pair_energy: ij = " << i1 << "," << i2 << " e(CC) = "
                   << Hij_pair_energy << endl;
             }
-
-            // test for 1e density
-            E_VT += Hij_pair_energy;
-
             ef12_[s].accumulate_element(i21, Hij_pair_energy);
           }
         }
@@ -2228,10 +2616,6 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
               ExEnv::out0() << indent << "Hij_pair_energy: ij = " << i1 << "," << i2 << " e(CC) = "
                   << Hij_pair_energy << endl;
             }
-
-            // test for 1e density
-            E_VT += Hij_pair_energy;
-
             ef12_[s].accumulate_element(ij, Hij_pair_energy);
             ef12_VT[s][ij] += Hij_pair_energy;
           }
@@ -2243,13 +2627,42 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
         }
       }
 
-      // test
-      if (r12intermediates_->T2_cc_computed()) {
-        std::string spinletters = to_string(spincase2);
-        ExEnv::out0() << endl << spinletters << "  CC V contribution to the R12 energy "
-                      << endl << "E_VT = " << scprintf("%12.10f", E_VT)
-                      << endl << endl;
-      }
+      if (this->r12eval()->compute_1rdm() == true ||
+          r12intermediates_->Onerdm_cc_computed()) {
+        double E_VT = 0.0;
+
+        if (spin1 == spin2) {
+          for (int i1 = 0; i1 < no1; ++i1) {
+            for (int i2 = i1 + 1; i2 < no2; ++i2) {
+              const int ij = i1 * no2 + i2;
+
+              // 2.0 from Hylleraas functional
+              const double Hij_pair_energy = 2.0 * C_1
+                    * (0.5 * VT2ij_ij[ij] + VT1ij_ij[ij]);
+              E_VT += Hij_pair_energy;
+            }
+          }
+          if (num_unique_spincases2 == 2) {
+            E_VT_tot += E_VT * 2.0 ;
+          } else {
+              E_VT_tot += E_VT;
+          }
+        } else {
+          // Alpha_beta case
+          for (int i1 = 0; i1 < no1; ++i1) {
+            for (int i2 = 0; i2 < no2; ++i2) {
+              const int ij = i1 * no2 + i2;
+              const double Hij_pair_energy = 2.0
+                       * (0.5 * (C_0 + C_1) * VT2ij_ij[ij]
+                        + 0.5 * (C_0 - C_1) * VT2ij_ji[ij]
+                        + 0.5 * (C_0 + C_1) * VT1ij_ij[ij]
+                        + 0.5 * (C_0 - C_1) * VT1ij_ji[ij]);
+              E_VT += Hij_pair_energy;
+            }
+          }
+          E_VT_tot += E_VT;
+        }
+    }
 
     } // end of spin iteration
     delete[] VT2ij_ij;
@@ -2257,6 +2670,18 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
     delete[] VT1ij_ij;
     delete[] VT1ij_ji;
   } // end of CC V contribution
+
+  if (this->r12eval()->compute_1rdm() == true ||
+      r12intermediates_->Onerdm_cc_computed()) {
+    ExEnv::out0() << endl << "Individual contributions to the R12 energy:"
+                  << endl << "E_V = " << scprintf("%12.10f", E_V_tot)
+                  << endl << "E_Vcoupling = " << scprintf("%12.10f", E_Vcoupling_tot)
+                  << endl << "E_X = " << scprintf("%12.10f", E_X_tot)
+                  << endl << "E_X (non canonical orbitals) = " << scprintf("%12.10f", E_X_noca_tot)
+                  << endl << "E_B = " << scprintf("%12.10f", E_B_tot)
+                  << endl << "E_VT = " << scprintf("%12.10f", E_VT_tot)
+                  << endl << endl;
+  }
 
   // Set beta-beta energies to alpha-alpha for closed-shell
   if (!r12world->refwfn()->spin_polarized()) {

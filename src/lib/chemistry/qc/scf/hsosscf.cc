@@ -206,7 +206,7 @@ HSOSSCF::HSOSSCF(const Ref<KeyVal>& keyval) :
     initial_nsocc_ = new int[nirrep_];
     memcpy(initial_nsocc_, nsocc_, sizeof(int)*nirrep_);
   }
-  else if (ndocc_ && !nsocc_ || !ndocc_ && nsocc_) {
+  else if ((ndocc_ && (!nsocc_)) || ((!ndocc_) && nsocc_)) {
     ExEnv::outn() << "ERROR: HSOSSCF: only one of docc and socc specified: "
                  << "give both or none" << endl;
     abort();

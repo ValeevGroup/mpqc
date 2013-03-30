@@ -451,13 +451,13 @@ MBPT2::eigen(RefDiagSCMatrix &vals, RefSCMatrix &vecs, RefDiagSCMatrix &occs)
           double occi = reference_->occupation(i);
           for (j=0; j<=i; j++) {
               double occj = reference_->occupation(j);
-              if (occi == 2.0 && occj == 1.0
-                  || occi == 1.0 && occj == 2.0) {
+              if ((occi == 2.0 && occj == 1.0)
+                  || (occi == 1.0 && occj == 2.0)) {
                   fock_eff_mo1.accumulate_element(i,j,
                                                   fock_c_mo1(i,j)-fock_o_mo1(i,j));
                 }
-              else if (occi == 0.0 && occj == 1.0
-                  || occi == 1.0 && occj == 0.0) {
+              else if ((occi == 0.0 && occj == 1.0)
+                  || (occi == 1.0 && occj == 0.0)) {
                   fock_eff_mo1.accumulate_element(i,j,
                                                   fock_o_mo1(i,j)-fock_c_mo1(i,j));
                 }

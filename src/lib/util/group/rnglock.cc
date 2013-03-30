@@ -115,9 +115,9 @@ RangeLock::checkeq(int start, int fence, int value)
 {
   split_ranges(start, fence);
   for (RangeLockItem *i = root_; i; i = i->next) {
-      if (start >= i->start && start < i->fence
-          || fence > i->start && fence <= i->fence
-          || start < i->start && fence > i->fence) {
+      if (((start >= i->start) && (start < i->fence))
+          || ((fence > i->start) && (fence <= i->fence))
+          || ((start < i->start) && (fence > i->fence))) {
           if (value != i->value) return 0;
         }
       if (fence < i->fence) break;
@@ -130,9 +130,9 @@ RangeLock::checkgr(int start, int fence, int value)
 {
   split_ranges(start, fence);
   for (RangeLockItem *i = root_; i; i = i->next) {
-      if (start >= i->start && start < i->fence
-          || fence > i->start && fence <= i->fence
-          || start < i->start && fence > i->fence) {
+      if (((start >= i->start) && (start < i->fence))
+          || ((fence > i->start) && (fence <= i->fence))
+          || ((start < i->start) && (fence > i->fence))) {
           if (i->value <= value) return 0;
         }
       if (fence < i->fence) break;
@@ -284,9 +284,9 @@ RangeLock::do_valop(RangeLockValOp& op, int start, int fence)
 #endif
 
   for (RangeLockItem *i = root_; i; i = i->next) {
-      if (start == i->start
-          || fence == i->fence
-          || start < i->start && fence > i->fence) {
+      if ((start == i->start)
+          || (fence == i->fence)
+          || ((start < i->start) && (fence > i->fence))) {
           op.op(i->value);
         }
       if (fence < i->fence) break;

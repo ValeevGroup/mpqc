@@ -40,9 +40,9 @@ MPQCIn::MPQCIn():
   tmpdir_(0),
   molecule_bohr_(0),
   alpha_(0),
-  beta_(0),  
+  beta_(0),
   docc_(0),
-  socc_(0),  
+  socc_(0),
   frozen_docc_(0),
   frozen_uocc_(0),
   debug_(0),
@@ -947,6 +947,7 @@ MPQCIn::write_energy_object(ostream &ostrs,
     switch (r12descr->corrfactor_type()) {
       case R12TechDescr::R12CorrFactor:  ifactory = Cints; break;
       case R12TechDescr::GTGCorrFactor:  ifactory = Libint2; break;
+      default: break;
     }
 
     if (need_wfnworld) {

@@ -154,7 +154,7 @@ OSSSCF::OSSSCF(const Ref<KeyVal>& keyval) :
     }
     delete[] nsocc;
   }
-  else if (ndocc_ && !nsocc || !ndocc_ && nsocc) {
+  else if ((ndocc_ && (!nsocc)) || ((!ndocc_) && nsocc)) {
     ExEnv::outn() << "ERROR: OSSSCF: only one of docc and socc specified: "
                  << "give both or none" << endl;
     abort();

@@ -49,7 +49,7 @@ class TwoBodyIntCints : public TwoBodyInt {
                  const Ref<GaussianBasisSet>&b3,
                  const Ref<GaussianBasisSet>&b4,
                  size_t storage, TwoBodyOperSet::type int2etype);
-    ~TwoBodyIntCints();
+    virtual ~TwoBodyIntCints();
 
     TwoBodyOperSet::type type() const { return int2etype_; }
     const Ref<TwoBodyOperSetDescr>& descr() const { return descr_; }
@@ -78,7 +78,7 @@ class TwoBodyDerivIntCints : public TwoBodyDerivInt {
                       const Ref<GaussianBasisSet>&b3,
                       const Ref<GaussianBasisSet>&b4,
                       size_t storage, TwoBodyOperSet::type int2etype);
-    ~TwoBodyDerivIntCints();
+    virtual ~TwoBodyDerivIntCints();
 
     int log2_shell_bound(int,int,int,int);
     void compute_shell(int,int,int,int,DerivCenters&);

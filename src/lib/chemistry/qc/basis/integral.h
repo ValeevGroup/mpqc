@@ -98,8 +98,11 @@ class Integral : public SavableState {
     // storing intermediates
     size_t storage_;
     size_t storage_used_;
+    // in absence of atomic<> weapons use this to protect storage_ and storage_used_
+    Ref<ThreadLock> tlock_;
 
     Ref<MessageGrp> grp_;
+
   private:
     /**
        CCA standard specifies the new ordering (-l ... +l).
@@ -145,11 +148,33 @@ class Integral : public SavableState {
     virtual CartesianOrdering cartesian_ordering() const =0;
 
     /// Sets the total amount of storage, in bytes, that is available.
-    virtual void set_storage(size_t i) { storage_=i; };
+    virtual void set_storage(size_t i);
     /// Returns how much storage has been used.
-    size_t storage_used() { return storage_used_; }
+    size_t storage_used() const { return storage_used_; }
     /// Returns how much storage was not needed.
-    size_t storage_unused();
+    size_t storage_unused() const;
+
+    /**
+     * Reports the approximate amount of memory required, in bytes, to create an evaluator
+     * for \c opertype
+     *
+     * @param opertype the operator type, TwoBodyOper::type
+     * @param tbinttype the integral type, TwoBodyIntShape::value
+     * @param deriv_level derivative level
+     * @param b1 basis set on center 1
+     * @param b2 basis set on center 2
+     * @param b3 basis set on center 3
+     * @param b4 basis set on center 4
+     * @return number of bytes needed to create an evaluator of the specified type
+     */
+    virtual size_t storage_required(TwoBodyOper::type opertype,
+                                    TwoBodyIntShape::value tbinttype,
+                                    size_t deriv_level = 0,
+                                    const Ref<GaussianBasisSet> &b1 = 0,
+                                    const Ref<GaussianBasisSet> &b2 = 0,
+                                    const Ref<GaussianBasisSet> &b3 = 0,
+                                    const Ref<GaussianBasisSet> &b4 = 0);
+
   /** Returns how much storage will be needed to initialize a two-body integrals
       evaluator for electron repulsion integrals. */
     virtual size_t storage_required_eri(const Ref<GaussianBasisSet> &b1,
@@ -189,7 +214,7 @@ class Integral : public SavableState {
 
     /** The specific integral classes use this to tell Integral
         how much memory they are using/freeing. */
-    void adjust_storage(ptrdiff_t s) { storage_used_ += s; }
+    void adjust_storage(ptrdiff_t s);
 
     /// Return the PetiteList object.
     Ref<PetiteList> petite_list();
@@ -330,6 +355,28 @@ class Integral : public SavableState {
 
     /// Return a TwoBodyDerivInt that computes electron repulsion derivatives.
     virtual Ref<TwoBodyDerivInt> electron_repulsion_deriv();
+
+
+    /**
+     * Creates an evaluator for \c opertype
+     *
+     * @param opertype the operator type, TwoBodyOper::type
+     * @param tbinttype the integral type, TwoBodyIntShape::value
+     * @param deriv_level derivative level
+     * @param b1 basis set on center 1
+     * @param b2 basis set on center 2
+     * @param b3 basis set on center 3
+     * @param b4 basis set on center 4
+     * @return number of bytes needed to create an evaluator of the specified type
+     */
+    virtual Ref<TwoBodyIntEval> make_eval(TwoBodyOper::type opertype,
+                                          TwoBodyIntShape::value tbinttype,
+                                          size_t deriv_level = 0,
+                                          const Ref<GaussianBasisSet> &b1 = 0,
+                                          const Ref<GaussianBasisSet> &b2 = 0,
+                                          const Ref<GaussianBasisSet> &b3 = 0,
+                                          const Ref<GaussianBasisSet> &b4 = 0);
+
 
     template <int NumCenters>
     Ref< typename TwoBodyIntEvalType<NumCenters>::value > coulomb() {

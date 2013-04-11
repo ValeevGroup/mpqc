@@ -117,11 +117,11 @@ class SCElementOp: public SavableState {
 
     /** Returns true if this SCElementOp is threadsafe. The default
      * implementation returns false. */
-    virtual bool threadsafe();
+    virtual bool threadsafe() const;
 
-    /** Returns true if this SCElementOp supports the cloneable member. The
+    /** Returns true if this SCElementOp supports the clone() member. The
      * default implmentation returns false. */
-    virtual bool cloneable();
+    virtual bool cloneable() const;
 
     /** Returns a clone of this object.  This is needed for multithreaded
         use of SCElementOp objects that are not thread safe. The default

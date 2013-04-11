@@ -43,11 +43,12 @@ namespace sc {
     virtual ~OperatorDescr() {}
 
     virtual unsigned int num_particles() const =0;
-    /// number of functions for particle i
-    virtual unsigned int num_functions(unsigned int i) const =0;
+    /// number of functions for particle p
+    virtual unsigned int num_functions(unsigned int p) const =0;
+    /// Reports symmetry with respect to the permutation of function in bra with function in ket for particle \c p
     /// +1 corresponds to hermitian, -1 to antihermitian, 0  to nonhermitian
-    virtual int perm_symm(unsigned int i) const =0;
-    /// Symmetry with respect to permutation of particles i and j
+    virtual int perm_symm(unsigned int p) const =0;
+    /// Reports symmetry with respect to permutation of particles i and j in bra, or ket
     virtual int perm_symm(unsigned int i, unsigned int j) const =0;
   };
 
@@ -88,8 +89,7 @@ namespace sc {
   struct TwoBodyOper {
     enum type { eri =0, r12 =1, r12t1 =2, r12t2 =3,
       r12_0_g12 =4, r12_m1_g12 =5, t1g12 =6, t2g12 =7,
-      g12t1g12 =8, g12p4g12_m_g12t1g12t1 =9, anti_g12g12 =10,
-      r12_0_gg12 =11, r12_m1_gg12 =12, gg12t1gg12 =13};
+      g12t1g12 =8, g12p4g12_m_g12t1g12t1 =9, anti_g12g12 =10};
     /// The max number of such types
     static int max_ntypes;
     /// Returns a descriptor for integral type t
@@ -99,11 +99,22 @@ namespace sc {
   /// Known operator sets
   struct TwoBodyOperSet {
     enum type {
+      /// eri
       ERI,
+      /// eri, r12, r12t1, r12t2
       R12,
+      /// eri, r12_0_g12, r12_m1_g12, t1g12, t2g12, g12t1g12
       G12,
+      /// eri, r12_0_g12, r12_m1_g12, g12t1g12, anti_g12g12
       G12NC,
-      G12DKH
+      /// g12p4g12_m_g12t1g12t1
+      G12DKH,
+      /// r12_0_g12
+      R12_0_G12,
+      /// r12_m1_g12
+      R12_m1_G12,
+      /// g12t1g12
+      G12_T1_G12
     };
   };
 
@@ -126,6 +137,18 @@ namespace sc {
     static TwoBodyOper::type value[];
   };
   template <> struct OperSetTypeMap<TwoBodyOperSet::G12DKH> {
+    static const int size = 1;
+    static TwoBodyOper::type value[];
+  };
+  template <> struct OperSetTypeMap<TwoBodyOperSet::R12_0_G12> {
+    static const int size = 1;
+    static TwoBodyOper::type value[];
+  };
+  template <> struct OperSetTypeMap<TwoBodyOperSet::R12_m1_G12> {
+    static const int size = 1;
+    static TwoBodyOper::type value[];
+  };
+  template <> struct OperSetTypeMap<TwoBodyOperSet::G12_T1_G12> {
     static const int size = 1;
     static TwoBodyOper::type value[];
   };
@@ -159,6 +182,15 @@ namespace sc {
     typedef IntParamsG12 value;
   };
   template <> struct IntParamsType<TwoBodyOperSet::G12DKH> {
+    typedef IntParamsG12 value;
+  };
+  template <> struct IntParamsType<TwoBodyOperSet::R12_0_G12> {
+    typedef IntParamsG12 value;
+  };
+  template <> struct IntParamsType<TwoBodyOperSet::R12_m1_G12> {
+    typedef IntParamsG12 value;
+  };
+  template <> struct IntParamsType<TwoBodyOperSet::G12_T1_G12> {
     typedef IntParamsG12 value;
   };
 

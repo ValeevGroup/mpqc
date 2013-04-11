@@ -82,7 +82,7 @@ OneBodyIntCints::compute_shell(int i, int j)
 }
 
 bool
-OneBodyIntCints::cloneable()
+OneBodyIntCints::cloneable() const
 {
   return true;
 }

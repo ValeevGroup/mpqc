@@ -71,6 +71,19 @@ TwoBodyIntV3::set_integral_storage(size_t storage)
   int2ev3_->init_storage(storage);
 }
 
+bool
+TwoBodyIntV3::cloneable() const
+{
+  return true;
+}
+
+Ref<TwoBodyInt>
+TwoBodyIntV3::clone()
+{
+  const size_t storage = int2ev3_->used_storage();
+  return new TwoBodyIntV3(integral_, bs1_, bs2_, bs3_, bs4_, storage);
+}
+
 //////////////////////////////////////////////////////////////////////////
 
 TwoBodyThreeCenterIntV3::TwoBodyThreeCenterIntV3(
@@ -111,6 +124,19 @@ void
 TwoBodyThreeCenterIntV3::set_integral_storage(size_t storage)
 {
   int2ev3_->init_storage(storage);
+}
+
+bool
+TwoBodyThreeCenterIntV3::cloneable() const
+{
+  return true;
+}
+
+Ref<TwoBodyThreeCenterInt>
+TwoBodyThreeCenterIntV3::clone()
+{
+  const size_t storage = int2ev3_->used_storage();
+  return new TwoBodyThreeCenterIntV3(integral_, bs1_, bs2_, bs3_, storage);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -155,7 +181,7 @@ TwoBodyTwoCenterIntV3::set_integral_storage(size_t storage)
 }
 
 bool
-TwoBodyTwoCenterIntV3::cloneable()
+TwoBodyTwoCenterIntV3::cloneable() const
 {
   return true;
 }

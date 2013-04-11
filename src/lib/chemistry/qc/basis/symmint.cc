@@ -65,7 +65,7 @@ SymmOneBodyIntIter::scale() const
 }
 
 bool
-SymmOneBodyIntIter::cloneable()
+SymmOneBodyIntIter::cloneable() const
 {
   return obi->cloneable();
 }
@@ -155,7 +155,7 @@ SymmTwoBodyTwoCenterIntIter::scale() const
 }
 
 bool
-SymmTwoBodyTwoCenterIntIter::cloneable()
+SymmTwoBodyTwoCenterIntIter::cloneable() const
 {
   return tbi->cloneable();
 }

@@ -42,6 +42,19 @@ namespace sc {
 
 class Integral;
 
+/**
+ * Describes types of integrals of 2-body operators
+ */
+struct TwoBodyIntShape {
+    enum value {
+      /// 4-center integral in chemistry convention
+      _11_O_22,
+      /// 3-center integral
+      _11_O_2,
+      /// 2-center integral
+      _1_O_2 };
+};
+
 /** This is an abstract base type for classes that
     compute integrals involving two electrons and 2 functions per electron.
  */
@@ -155,7 +168,7 @@ class TwoBodyInt : public RefCount {
 
     /** Return true if the clone member can be called.  The default
      * implementation returns false. */
-    virtual bool cloneable();
+    virtual bool cloneable() const;
 
     /** Returns a clone of this.  The default implementation throws an
      * exception. */
@@ -264,7 +277,7 @@ class TwoBodyThreeCenterInt : public RefCount {
 
     /** Return true if the clone member can be called.  The default
      * implementation returns false. */
-    virtual bool cloneable();
+    virtual bool cloneable() const;
 
     /** Returns a clone of this.  The default implementation throws an
      * exception. */
@@ -366,7 +379,7 @@ class TwoBodyTwoCenterInt : public RefCount {
 
     /** Return true if the clone member can be called.  The default
      * implementation returns false. */
-    virtual bool cloneable();
+    virtual bool cloneable() const;
 
     /** Returns a clone of this.  The default implementation throws an
      * exception. */
@@ -514,14 +527,14 @@ class TwoBodyTwoCenterIntIter : public RefCount {
 
     ShellPairIter& current_pair();
 
-    virtual bool cloneable();
+    virtual bool cloneable() const;
     virtual Ref<TwoBodyTwoCenterIntIter> clone();
 };
 
 // //////////////////////////////////////////////////////////////////////////
 
 /** This is an abstract base type for classes that
-    compute integrals involving two electrons.
+    compute integrals involving two electrons and four basis functions.
  */
 class TwoBodyDerivInt : public RefCount {
 
@@ -602,6 +615,14 @@ class TwoBodyDerivInt : public RefCount {
 
     /// Return the integral factory that was used to create this object.
     Integral *integral() const { return integral_; }
+
+    /** Return true if the clone member can be called.  The default
+     * implementation returns false. */
+    virtual bool cloneable() const;
+
+    /** Returns a clone of this.  The default implementation throws an
+     * exception. */
+    virtual Ref<TwoBodyDerivInt> clone();
 
 };
 
@@ -767,14 +788,103 @@ class TwoBodyTwoCenterIntOp: public SCElementOp {
     void process_spec_rectsub(SCMatrixRectSubBlock*);
     void process_spec_ltrisub(SCMatrixLTriSubBlock*);
 
-    bool cloneable();
+    bool cloneable() const;
     Ref<SCElementOp> clone();
 
     int has_side_effects();
 };
 
+// //////////////////////////////////////////////////////////////////////////
 
-}
+/** This is an abstract base type for classes that
+    compute integrals involving two electrons and 2 functions per electron.
+ */
+class TwoBodyIntEval : public RefCount {
+
+  private:
+    double *log2_to_double_;
+
+  protected:
+    // this is who created me
+    Integral *integral_;
+
+    std::vector< Ref<GaussianBasisSet> > bs_;
+    double *buffer_;
+
+    int redundant_;
+
+    TwoBodyIntEval(Integral *integral,
+                   const std::vector< Ref<GaussianBasisSet> >&bs);
+
+  public:
+    virtual ~TwoBodyIntEval();
+
+    /// Return the basis set on center \c C
+    Ref<GaussianBasisSet> basis(size_t C);
+
+    /** Returns the type of the operator set that this object computes.
+        this function is necessary to describe the computed integrals
+        (their number, symmetries, etc.) and/or to implement cloning. */
+    virtual TwoBodyOperSet::type type() const =0;
+    /// return the operator set descriptor
+    virtual const Ref<TwoBodyOperSetDescr>& descr() const =0;
+
+    /** The computed shell integrals will be put in the buffer returned
+        by this member.  Some TwoBodyInt specializations have more than
+    one buffer:  The type arguments selects which buffer is returned.
+    If the requested type is not supported, then 0 is returned. */
+    virtual const double * buffer(TwoBodyOper::type type = TwoBodyOper::eri) const;
+
+    /** Given four shell indices, integrals will be computed and placed in
+        the buffer.  The first two indices correspond to electron 1 and the
+        second two indices correspond to electron 2.*/
+    virtual void compute_shell(int,int,int,int) = 0;
+
+    /** Given four shell indices, supported two body integral types
+        are computed and returned.  The first two indices correspond
+        to electron 1 and the second two indices correspond to
+        electron 2. This is used in the python interface where the
+        return type is automatically converted to a map of numpy
+        arrays. */
+    std::pair<std::map<TwoBodyOper::type,const double*>,std::array<unsigned long,4> >
+    compute_shell_arrays(int,int,int,int);
+
+    /** Return log base 2 of the maximum magnitude of any integral in a
+        shell block obtained from compute_shell.  An index of -1 for any
+        argument indicates any shell.  */
+    virtual int log2_shell_bound(int= -1,int= -1,int= -1,int= -1) = 0;
+
+    /** Return the maximum magnitude of any integral in a
+        shell block obtained from compute_shell.  An index of -1 for any
+        argument indicates any shell.  */
+    double shell_bound(int= -1,int= -1,int= -1,int= -1);
+
+    /** If redundant is true, then keep redundant integrals in the buffer.
+        The default is true. */
+    virtual int redundant() const { return redundant_; }
+    /// See redundant().
+    virtual void set_redundant(int i) { redundant_ = i; }
+
+    /// This storage is used to cache computed integrals.
+    virtual void set_integral_storage(size_t storage);
+
+    /** Return true if the clone member can be called.  The default
+     * implementation returns false. */
+    virtual bool cloneable() const;
+
+    /** Returns a clone of this.  The default implementation throws an
+     * exception. */
+    virtual Ref<TwoBodyIntEval> clone();
+
+    /// Return the integral factory that was used to create this object.
+    Integral *integral() const { return integral_; }
+
+};
+
+
+} // end of namespace sc
+
+// //////////////////////////////////////////////////////////////////////////
 
 #endif
 

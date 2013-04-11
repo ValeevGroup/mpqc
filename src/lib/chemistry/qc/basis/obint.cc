@@ -214,7 +214,7 @@ OneBodyInt::compute_shell_array(int i,int j)
 }
 
 bool
-OneBodyInt::cloneable()
+OneBodyInt::cloneable() const
 {
   return false;
 }
@@ -287,7 +287,7 @@ OneBodyOneCenterInt::reinitialize()
 }
 
 bool
-OneBodyOneCenterInt::cloneable()
+OneBodyOneCenterInt::cloneable() const
 {
   return false;
 }
@@ -422,7 +422,7 @@ OneBodyIntIter::current_pair()
 }
 
 bool
-OneBodyIntIter::cloneable()
+OneBodyIntIter::cloneable() const
 {
   return obi->cloneable();
 }
@@ -450,7 +450,7 @@ OneBodyIntOp::~OneBodyIntOp()
 }
 
 bool
-OneBodyIntOp::cloneable()
+OneBodyIntOp::cloneable() const
 {
   return iter->cloneable();
 }

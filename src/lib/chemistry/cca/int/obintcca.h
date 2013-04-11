@@ -68,7 +68,7 @@ namespace sc {
 		   bool );
     ~OneBodyIntCCA();
     void compute_shell(int,int);
-    bool cloneable();
+    bool cloneable() const;
     Ref<OneBodyInt> clone();
 };
 
@@ -104,7 +104,7 @@ namespace sc {
     ~OneBodyDerivIntCCA();
     void compute_shell(int, int, DerivCenters&);
     void compute_shell(int, int, int);
-    bool cloneable();
+    bool cloneable() const;
     Ref<OneBodyDerivInt> clone();
   };
 

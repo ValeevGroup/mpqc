@@ -114,7 +114,7 @@ OneBodyIntCCA::compute_shell(int i, int j)
 }
 
 bool
-OneBodyIntCCA::cloneable()
+OneBodyIntCCA::cloneable() const
 {
   return true;
 }
@@ -225,7 +225,7 @@ OneBodyDerivIntCCA::compute_shell(int i, int j, int atom)
 }
 
 bool
-OneBodyDerivIntCCA::cloneable()
+OneBodyDerivIntCCA::cloneable() const
 {
   return true;
 }

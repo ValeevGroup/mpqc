@@ -46,10 +46,13 @@ class TwoBodyIntV3 : public TwoBodyInt {
                  const Ref<GaussianBasisSet>&b3,
                  const Ref<GaussianBasisSet>&b4,
                  size_t storage);
-    ~TwoBodyIntV3();
+    virtual ~TwoBodyIntV3();
 
     TwoBodyOperSet::type type() const { return TwoBodyOperSet::ERI; }
     const Ref<TwoBodyOperSetDescr>& descr() const { return descr_; }
+
+    bool cloneable() const;
+    Ref<TwoBodyInt> clone();
 
     int log2_shell_bound(int,int,int,int);
     void compute_shell(int,int,int,int);
@@ -71,10 +74,13 @@ class TwoBodyThreeCenterIntV3 : public TwoBodyThreeCenterInt {
                             const Ref<GaussianBasisSet>&b2,
                             const Ref<GaussianBasisSet>&b3,
                             size_t storage);
-    ~TwoBodyThreeCenterIntV3();
+    virtual ~TwoBodyThreeCenterIntV3();
 
     TwoBodyOperSet::type type() const { return TwoBodyOperSet::ERI; }
     const Ref<TwoBodyOperSetDescr>& descr() const { return descr_; }
+
+    bool cloneable() const;
+    Ref<TwoBodyThreeCenterInt> clone();
 
     int log2_shell_bound(int,int,int);
     void compute_shell(int,int,int);
@@ -95,12 +101,12 @@ class TwoBodyTwoCenterIntV3 : public TwoBodyTwoCenterInt {
                           const Ref<GaussianBasisSet>&b1,
                           const Ref<GaussianBasisSet>&b2,
                           size_t storage);
-    ~TwoBodyTwoCenterIntV3();
+    virtual ~TwoBodyTwoCenterIntV3();
 
     TwoBodyOperSet::type type() const { return TwoBodyOperSet::ERI; }
     const Ref<TwoBodyOperSetDescr>& descr() const { return descr_; }
 
-    bool cloneable();
+    bool cloneable() const;
     Ref<TwoBodyTwoCenterInt> clone();
 
     int log2_shell_bound(int,int);
@@ -123,7 +129,7 @@ class TwoBodyDerivIntV3 : public TwoBodyDerivInt {
                       const Ref<GaussianBasisSet>&b3,
                       const Ref<GaussianBasisSet>&b4,
                       size_t storage);
-    ~TwoBodyDerivIntV3();
+    virtual ~TwoBodyDerivIntV3();
 
     int log2_shell_bound(int,int,int,int);
     void compute_shell(int,int,int,int,DerivCenters&);

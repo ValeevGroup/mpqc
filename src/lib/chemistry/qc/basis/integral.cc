@@ -27,6 +27,7 @@
 
 #include <stdexcept>
 #include <sstream>
+#include <cassert>
 
 #include <util/misc/scexception.h>
 #include <util/state/stateio.h>
@@ -46,7 +47,7 @@ Integral::Integral(const Ref<GaussianBasisSet> &b1,
                    const Ref<GaussianBasisSet> &b2,
                    const Ref<GaussianBasisSet> &b3,
                    const Ref<GaussianBasisSet> &b4) :
-    sharmorder_(default_sharmorder_)
+    sharmorder_(default_sharmorder_), tlock_(ThreadGrp::get_default_threadgrp()->new_lock())
 {
   storage_ = 0;
   storage_used_ = 0;
@@ -59,7 +60,7 @@ Integral::~Integral()
 }
 
 Integral::Integral(StateIn& s) :
-  SavableState(s)
+  SavableState(s), tlock_(ThreadGrp::get_default_threadgrp()->new_lock())
 {
   storage_used_ = 0;
   bs1_ << SavableState::restore_state(s);
@@ -88,7 +89,7 @@ Integral::Integral(StateIn& s) :
 }
 
 Integral::Integral(const Ref<KeyVal>&) :
-    sharmorder_(default_sharmorder_)
+    sharmorder_(default_sharmorder_), tlock_(ThreadGrp::get_default_threadgrp()->new_lock())
 {
   storage_used_ = 0;
   storage_ = 0;
@@ -230,6 +231,16 @@ Integral::set_basis(const Ref<GaussianBasisSet> &b1,
   if (bs4_.null()) bs4_ = bs3_;
 }
 
+size_t Integral::storage_required(TwoBodyOper::type opertype,
+                                  TwoBodyIntShape::value tbinttype,
+                                  size_t deriv_level,
+                                  const Ref<GaussianBasisSet> &b1,
+                                  const Ref<GaussianBasisSet> &b2,
+                                  const Ref<GaussianBasisSet> &b3,
+                                  const Ref<GaussianBasisSet> &b4) {
+  assert(false); // not implemented
+}
+
 size_t
 Integral::storage_required_eri(const Ref<GaussianBasisSet> &b1,
 			       const Ref<GaussianBasisSet> &b2,
@@ -296,12 +307,27 @@ Integral::storage_required_g12dkh(const Ref<GaussianBasisSet> &b1,
   return 0;
 }
 
+void
+Integral::set_storage(size_t i) {
+  tlock_->lock();
+  storage_ = i;
+  tlock_->unlock();
+}
+
 size_t
-Integral::storage_unused()
+Integral::storage_unused() const
 {
   ptrdiff_t tmp=storage_-storage_used_;
   return (tmp<0?0:tmp);
 }
+
+void
+Integral::adjust_storage(ptrdiff_t s) {
+  tlock_->lock();
+  storage_used_ += s;
+  tlock_->unlock();
+}
+
 
 Ref<OneBodyInt>
 Integral::p_dot_nuclear_p()
@@ -421,6 +447,17 @@ Ref<TwoBodyTwoCenterInt>
 Integral::g12dkh_2(const Ref<IntParamsG12>& p)
 {
   throw FeatureNotImplemented("Integral::g12dkh_2(): not implemented in this particular integrals factory.",__FILE__,__LINE__);
+}
+
+Ref<TwoBodyIntEval>
+Integral::make_eval(TwoBodyOper::type opertype,
+                    TwoBodyIntShape::value tbinttype,
+                    size_t deriv_level,
+                    const Ref<GaussianBasisSet> &b1,
+                    const Ref<GaussianBasisSet> &b2,
+                    const Ref<GaussianBasisSet> &b3,
+                    const Ref<GaussianBasisSet> &b4) {
+  assert(false); // not implemented yet
 }
 
 /////////////////////////////////////////////////////////////////////////////

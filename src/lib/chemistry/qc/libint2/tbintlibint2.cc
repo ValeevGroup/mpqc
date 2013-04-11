@@ -218,6 +218,19 @@ TwoBodyIntLibint2::set_integral_storage(size_t storage)
   int2elibint2_->init_storage(storage);
 }
 
+bool
+TwoBodyIntLibint2::cloneable() const
+{
+  return true;
+}
+
+Ref<TwoBodyInt>
+TwoBodyIntLibint2::clone()
+{
+  const size_t storage = int2elibint2_->storage_used();
+  return new TwoBodyIntLibint2(integral_, bs1_, bs2_, bs3_, bs4_, storage, int2etype_, params_);
+}
+
 //////////////////////////////////////////////////////////////////////////
 
 TwoBodyThreeCenterIntLibint2::TwoBodyThreeCenterIntLibint2(Integral*integral,
@@ -305,6 +318,20 @@ TwoBodyThreeCenterIntLibint2::set_integral_storage(size_t storage)
 {
   int2elibint2_->init_storage(storage);
 }
+
+bool
+TwoBodyThreeCenterIntLibint2::cloneable() const
+{
+  return true;
+}
+
+Ref<TwoBodyThreeCenterInt>
+TwoBodyThreeCenterIntLibint2::clone()
+{
+  const size_t storage = int2elibint2_->storage_used();
+  return new TwoBodyThreeCenterIntLibint2(integral_, bs1_, bs2_, bs3_, storage, int2etype_, params_);
+}
+
 //////////////////////////////////////////////////////////////////////////
 
 TwoBodyTwoCenterIntLibint2::TwoBodyTwoCenterIntLibint2(Integral*integral,
@@ -387,7 +414,7 @@ TwoBodyTwoCenterIntLibint2::set_integral_storage(size_t storage)
 }
 
 bool
-TwoBodyTwoCenterIntLibint2::cloneable()
+TwoBodyTwoCenterIntLibint2::cloneable() const
 {
   return true;
 }
@@ -398,7 +425,6 @@ TwoBodyTwoCenterIntLibint2::clone()
   const size_t storage = int2elibint2_->storage_used();
   return new TwoBodyTwoCenterIntLibint2(integral_, bs1_, bs2_, storage, int2etype_, params_);
 }
-
 
 //////////////////////////////////////////////////////////////////
 

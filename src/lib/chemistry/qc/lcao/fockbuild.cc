@@ -102,8 +102,8 @@ class FockBuildMatrixRectElemOp: public SCElementOp {
       SCElementOp::collect(op);
     }
     int has_side_effects() { return data_to_mat_; }
-    bool threadsafe() { return true; }
-    bool cloneable() { return false; }
+    bool threadsafe() const { return true; }
+    bool cloneable() const { return false; }
     /** This assumes that the blocks in the matrix actually
      *  correspond to the blocks in the SCDimension's BlockInfo.
      *  This assertion is not tested, however. */

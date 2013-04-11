@@ -196,7 +196,7 @@ class TwoBodyIntBatch:public RefCount {
     /** Return true if the clone member can be called.  The default
      * implementation returns false. */
     /// TODO JTF implement
-    virtual bool cloneable() = 0;
+    virtual bool cloneable() const = 0;
 
     /** Returns a clone of this.  The default implementation throws an
      * exception. */
@@ -247,7 +247,7 @@ class TwoBodyIntBatchGeneric:public TwoBodyIntBatch<NumCenters>  {
 
     }
 
-    bool cloneable(){
+    bool cloneable() const {
       return false;
     }
 

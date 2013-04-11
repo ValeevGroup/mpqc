@@ -81,7 +81,7 @@ OneBodyIntV3::compute_shell(int i, int j)
 }
 
 bool
-OneBodyIntV3::cloneable()
+OneBodyIntV3::cloneable() const
 {
   return true;
 }

@@ -200,7 +200,7 @@ TwoBodyInt::shell_bound(int s1, int s2, int s3, int s4)
 }
 
 bool
-TwoBodyInt::cloneable()
+TwoBodyInt::cloneable() const
 {
   return false;
 }
@@ -328,7 +328,7 @@ TwoBodyThreeCenterInt::shell_bound(int s1, int s2, int s3)
 }
 
 bool
-TwoBodyThreeCenterInt::cloneable()
+TwoBodyThreeCenterInt::cloneable() const
 {
   return false;
 }
@@ -437,7 +437,7 @@ TwoBodyTwoCenterInt::shell_bound(int s1, int s2)
 }
 
 bool
-TwoBodyTwoCenterInt::cloneable()
+TwoBodyTwoCenterInt::cloneable() const
 {
   return false;
 }
@@ -780,6 +780,18 @@ TwoBodyDerivInt::shell_bound(int s1, int s2, int s3, int s4)
   return log2_to_double_[ ibound - SCHAR_MIN ];
 }
 
+bool
+TwoBodyDerivInt::cloneable() const
+{
+  return false;
+}
+
+Ref<TwoBodyDerivInt>
+TwoBodyDerivInt::clone()
+{
+  throw FeatureNotImplemented("TwoBodyDerivInt::clone() not implemented",__FILE__,__LINE__);
+}
+
 ///////////////////////////////////////////////////////////////////////
 
 TwoBodyThreeCenterDerivInt::TwoBodyThreeCenterDerivInt(Integral *integral,
@@ -1075,7 +1087,7 @@ TwoBodyTwoCenterIntIter::current_pair()
 }
 
 bool
-TwoBodyTwoCenterIntIter::cloneable()
+TwoBodyTwoCenterIntIter::cloneable() const
 {
   return tbi->cloneable();
 }
@@ -1103,7 +1115,7 @@ TwoBodyTwoCenterIntOp::~TwoBodyTwoCenterIntOp()
 }
 
 bool
-TwoBodyTwoCenterIntOp::cloneable()
+TwoBodyTwoCenterIntOp::cloneable() const
 {
   return iter->cloneable();
 }

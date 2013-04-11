@@ -74,9 +74,6 @@ TwoBodyOper::descr(TwoBodyOper::type type)
     case TwoBodyOper::r12_m1_g12:
     case TwoBodyOper::g12t1g12:
     case TwoBodyOper::anti_g12g12:
-    case TwoBodyOper::r12_0_gg12:
-    case TwoBodyOper::r12_m1_gg12:
-    case TwoBodyOper::gg12t1gg12:
     case TwoBodyOper::g12p4g12_m_g12t1g12t1:
     return symm_type;
     }
@@ -100,6 +97,9 @@ TwoBodyOper::type OperSetTypeMap<TwoBodyOperSet::G12NC>::value[] = {TwoBodyOper:
                                                               TwoBodyOper::g12t1g12,
                                                               TwoBodyOper::anti_g12g12};
 TwoBodyOper::type OperSetTypeMap<TwoBodyOperSet::G12DKH>::value[] = {TwoBodyOper::g12p4g12_m_g12t1g12t1};
+TwoBodyOper::type OperSetTypeMap<TwoBodyOperSet::R12_0_G12>::value[] = {TwoBodyOper::r12_0_g12};
+TwoBodyOper::type OperSetTypeMap<TwoBodyOperSet::R12_m1_G12>::value[] = {TwoBodyOper::r12_m1_g12};
+TwoBodyOper::type OperSetTypeMap<TwoBodyOperSet::G12_T1_G12>::value[] = {TwoBodyOper::g12t1g12};
 
 TwoBodyOperSetDescr::TwoBodyOperSetDescr(int size,
                                          const TwoBodyOper::type* value) :
@@ -125,6 +125,18 @@ TwoBodyOperSetDescr::instance(TwoBodyOperSet::type oset)
     case TwoBodyOperSet::G12DKH:
       return new TwoBodyOperSetDescr(OperSetTypeMap<TwoBodyOperSet::G12DKH>::size,
                                      OperSetTypeMap<TwoBodyOperSet::G12DKH>::value);
+      break;
+    case TwoBodyOperSet::R12_0_G12:
+      return new TwoBodyOperSetDescr(OperSetTypeMap<TwoBodyOperSet::R12_0_G12>::size,
+                                     OperSetTypeMap<TwoBodyOperSet::R12_0_G12>::value);
+      break;
+    case TwoBodyOperSet::R12_m1_G12:
+      return new TwoBodyOperSetDescr(OperSetTypeMap<TwoBodyOperSet::R12_m1_G12>::size,
+                                     OperSetTypeMap<TwoBodyOperSet::R12_m1_G12>::value);
+      break;
+    case TwoBodyOperSet::G12_T1_G12:
+      return new TwoBodyOperSetDescr(OperSetTypeMap<TwoBodyOperSet::G12_T1_G12>::size,
+                                     OperSetTypeMap<TwoBodyOperSet::G12_T1_G12>::value);
       break;
 
     default:

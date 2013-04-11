@@ -77,13 +77,13 @@ SCElementOp::collect(const Ref<MessageGrp>&)
 }
 
 bool
-SCElementOp::threadsafe()
+SCElementOp::threadsafe() const
 {
   return false;
 }
 
 bool
-SCElementOp::cloneable()
+SCElementOp::cloneable() const
 {
   return false;
 }

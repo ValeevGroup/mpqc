@@ -153,7 +153,7 @@ class OneBodyInt : public RefCount {
 
     /** Return true if the clone member can be called.  The default
      * implementation returns false. */
-    virtual bool cloneable();
+    virtual bool cloneable() const;
 
     /** Returns a clone of this.  The default implementation throws an
      * exception. */
@@ -212,7 +212,7 @@ class OneBodyOneCenterInt : public RefCount {
 
     /** Return true if the clone member can be called.  The default
      * implementation returns false. */
-    virtual bool cloneable();
+    virtual bool cloneable() const;
 
     /** Returns a clone of this.  The default implementation throws an
      * exception. */
@@ -331,7 +331,7 @@ class OneBodyIntIter : public RefCount {
 
     ShellPairIter& current_pair();
 
-    virtual bool cloneable();
+    virtual bool cloneable() const;
     virtual Ref<OneBodyIntIter> clone();
 };
 
@@ -354,7 +354,7 @@ class OneBodyIntOp: public SCElementOp {
     void process_spec_rectsub(SCMatrixRectSubBlock*);
     void process_spec_ltrisub(SCMatrixLTriSubBlock*);
 
-    bool cloneable();
+    bool cloneable() const;
     Ref<SCElementOp> clone();
 
     int has_side_effects();

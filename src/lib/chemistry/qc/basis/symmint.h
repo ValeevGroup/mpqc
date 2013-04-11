@@ -51,7 +51,7 @@ class SymmOneBodyIntIter : public OneBodyIntIter {
 
     double scale() const;
 
-    bool cloneable();
+    bool cloneable() const;
     Ref<OneBodyIntIter> clone();
 };
 
@@ -84,7 +84,7 @@ class SymmTwoBodyTwoCenterIntIter : public TwoBodyTwoCenterIntIter {
 
     double scale() const;
 
-    bool cloneable();
+    bool cloneable() const;
     Ref<TwoBodyTwoCenterIntIter> clone();
 };
 

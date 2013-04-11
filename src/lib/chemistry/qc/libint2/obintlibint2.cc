@@ -83,7 +83,7 @@ OneBodyIntLibint2::compute_shell(int i, int j)
 }
 
 bool
-OneBodyIntLibint2::cloneable()
+OneBodyIntLibint2::cloneable() const
 {
   return true;
 }

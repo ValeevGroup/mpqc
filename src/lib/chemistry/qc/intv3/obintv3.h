@@ -49,7 +49,7 @@ class OneBodyIntV3 : public OneBodyInt {
                  IntegralFunction);
     ~OneBodyIntV3();
     void compute_shell(int,int);
-    bool cloneable();
+    bool cloneable() const;
     Ref<OneBodyInt> clone();
 };
 

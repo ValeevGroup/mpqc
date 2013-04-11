@@ -52,7 +52,7 @@ class OneBodyIntLibint2 : public OneBodyInt {
 
     void compute_shell(int,int);
 
-    bool cloneable();
+    bool cloneable() const;
     Ref<OneBodyInt> clone();
 };
 

@@ -52,7 +52,7 @@ class TwoBodyIntLibint2 : public TwoBodyInt {
                  const Ref<GaussianBasisSet>&b4,
                  size_t storage, TwoBodyOperSet::type int2etype,
 		 const Ref<IntParams>& params);
-    ~TwoBodyIntLibint2();
+    virtual ~TwoBodyIntLibint2();
 
     TwoBodyOperSet::type type() const { return int2etype_; }
     const Ref<TwoBodyOperSetDescr>& descr() const { return descr_; }
@@ -66,6 +66,9 @@ class TwoBodyIntLibint2 : public TwoBodyInt {
     const double *buffer(TwoBodyOper::type te_type) const {
       return int2elibint2_->buffer( descr_->opertype(te_type) );
     }
+
+    bool cloneable() const;
+    Ref<TwoBodyInt> clone();
 };
 
 /** This implements 3-center 2-body integrals in the IntLibint2 library. */
@@ -86,7 +89,7 @@ class TwoBodyThreeCenterIntLibint2 : public TwoBodyThreeCenterInt {
                  const Ref<GaussianBasisSet>&b3,
                  size_t storage, TwoBodyOperSet::type int2etype,
          const Ref<IntParams>& params);
-    ~TwoBodyThreeCenterIntLibint2();
+    virtual ~TwoBodyThreeCenterIntLibint2();
 
     TwoBodyOperSet::type type() const { return int2etype_; }
     const Ref<TwoBodyOperSetDescr>& descr() const { return descr_; }
@@ -100,6 +103,9 @@ class TwoBodyThreeCenterIntLibint2 : public TwoBodyThreeCenterInt {
     const double *buffer(TwoBodyOper::type te_type) const {
       return int2elibint2_->buffer( descr_->opertype(te_type) );
     }
+
+    bool cloneable() const;
+    Ref<TwoBodyThreeCenterInt> clone();
 };
 
 /** This implements 2-center 2-body integrals in the IntLibint2 library. */
@@ -119,12 +125,12 @@ class TwoBodyTwoCenterIntLibint2 : public TwoBodyTwoCenterInt {
                  const Ref<GaussianBasisSet>&b2,
                  size_t storage, TwoBodyOperSet::type int2etype,
          const Ref<IntParams>& params);
-    ~TwoBodyTwoCenterIntLibint2();
+    virtual ~TwoBodyTwoCenterIntLibint2();
 
     TwoBodyOperSet::type type() const { return int2etype_; }
     const Ref<TwoBodyOperSetDescr>& descr() const { return descr_; }
 
-    bool cloneable();
+    bool cloneable() const;
     Ref<TwoBodyTwoCenterInt> clone();
 
     int log2_shell_bound(int,int);
@@ -151,7 +157,7 @@ class TwoBodyDerivIntLibint2 : public TwoBodyDerivInt {
                       const Ref<GaussianBasisSet>&b3,
                       const Ref<GaussianBasisSet>&b4,
                       size_t storage, TwoBodyOperSet::type int2etype);
-    ~TwoBodyDerivIntLibint2();
+    virtual ~TwoBodyDerivIntLibint2();
 
     int log2_shell_bound(int,int,int,int);
     void compute_shell(int,int,int,int,DerivCenters&);

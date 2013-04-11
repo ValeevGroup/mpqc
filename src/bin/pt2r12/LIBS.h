@@ -5,4 +5,7 @@
 #ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12
 #  include <chemistry/qc/mbptr12/LIBS.h>
 #endif
+#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_PSI
+#  include <chemistry/qc/psi/LIBS.h>
+#endif
 #include <util/options/LIBS.h>

@@ -364,6 +364,8 @@ int try_main(int argc, char **argv)
 
   extern_pt2r12->compute();
 
+  extern_pt2r12->print();
+
   return 0;
 }
 

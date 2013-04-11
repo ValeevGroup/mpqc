@@ -185,6 +185,10 @@ void ExternPT2R12::set_desired_value_accuracy(double acc) {
   pt2r12_->set_desired_value_accuracy(acc);
 }
 
+void ExternPT2R12::print(std::ostream& os) {
+  pt2r12_->print(os);
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

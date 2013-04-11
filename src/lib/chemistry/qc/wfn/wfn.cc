@@ -70,7 +70,7 @@ class ChargeDistInt: public OneBodyInt {
 
     void compute_shell(int,int);
 
-    bool cloneable();
+    bool cloneable() const;
 };
 
 ChargeDistInt::ChargeDistInt(const Ref<TwoBodyThreeCenterInt>& tbint,
@@ -131,7 +131,7 @@ ChargeDistInt::compute_shell(int ish,int jsh)
 }
 
 bool
-ChargeDistInt::cloneable()
+ChargeDistInt::cloneable() const
 {
   // not cloneable because tbint is not cloneable
   return false;

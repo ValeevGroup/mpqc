@@ -1,6 +1,10 @@
 
+mpqc:(
+  mole = $:mole
+)
+
 nproc = 2
-molecule = $:ch2
+molecule = $:tmmc1
 coor = $:symcoor
 message = $:message1
 basis_matrixkit = $:replmatrixkit
@@ -12,7 +16,7 @@ basis_matrixkit = $:replmatrixkit
 % can be CLSCF, HSOSSCF, OSSSCF, TCSCF, XSCF, MCSCF
 %
 
-mole<TCHF>: (
+mole<CLHF>: (
   %matrixkit = $:localmatrixkit
   memory=32000000
 
@@ -25,25 +29,27 @@ mole<TCHF>: (
   basis<GaussianBasisSet>: (
     molecule = $:molecule
     %name = "6-31G*"
-    %name = "6-311++G**"
+    name = "6-311++G**"
     %name = "STO-3G"
-    name = "DZP (Dunning)"
+    %name = "DZP (Dunning)"
+    %name = "STO-6G"
     %puream=yes
     matrixkit = $:basis_matrixkit
   )
 
   % comment out coor if molecule is an atom
-  coor = $:coor
+  %coor = $:coor
 
   % SCF input
   %total_charge = 1
   %maxiter=2
-  extrap<DIIS>: (
-    n = 4
-  )
+  %extrap<DIIS>: (
+  %  n = 4
+  %)
 
   %guess_wavefunction = "scftest.wfn"
-  %guess_wavefunction = $:guess
+  guess_wavefunction = $:soad_guess
+  %debug = 5
 )
 
 guess<HSOSHF>: (
@@ -59,6 +65,17 @@ guess<HSOSHF>: (
     name = "STO-3G"
   )
 )
+
+soad_guess<SuperpositionOfAtomicDensities>: (
+  molecule = $:molecule
+  basis = $:mole:basis
+  %basis<GaussianBasisSet>: (
+  %  molecule = $:molecule
+  %  name = "STO-6G"
+  %)
+  %debug = 2
+)
+
 
 xopt<QNewtonOpt>: (
   convergence = 1.0e-6
@@ -126,6 +143,15 @@ ch2<Molecule>: (
   { atoms geometry } = {
       C  [   0.0  0.0   0.0 ]
       H  [   1.5  0.0   1.0 ]
+  }
+)
+
+ch2_c1<Molecule>: (
+  symmetry=c1
+  { atoms geometry } = {
+      C  [   0.0  0.0   0.0 ]
+      H  [   1.5  0.0   1.0 ]
+      H  [  -1.5  0.0   1.0 ]
   }
 )
 
@@ -281,6 +307,72 @@ sileth<Molecule>: (
     h   [ 0.00000000 -3.78418965  1.65770850]
     h   [-4.13743057  0.00000000  2.26831382]
   }
+)
+
+c60<Molecule>: (
+  symmetry = c1
+  { atoms geometry } = {
+C [ -2.868	0.371	2.136 ]
+C [ -2.543	-0.931	2.354 ]
+C [ -1.478	-1.295	3.127 ]
+C [ -2.117	1.36	2.684 ]
+C [ -1.778	2.508	1.861 ]
+C [ -0.379	2.843	2.087 ]
+C [ -1.024	-3.1	1.565 ]
+C [ 0.028	-3.497	0.636 ]
+C [ -0.679	-2.431	2.681 ]
+C [ 0.713	-2.116	2.919 ]
+C [ -0.645	-0.372	3.656 ]
+C [ 0.733	-0.806	3.515 ]
+C [ -0.937	1.025	3.451 ]
+C [ 0.146	1.909	3.065 ]
+C [ 3.341	0.669	0.088 ]
+C [ 3.266	-0.548	-0.502 ]
+C [ 2.99	-1.662	0.229 ]
+C [ 3.132	0.837	1.417 ]
+C [ 2.746	-0.3	2.217 ]
+C [ 1.792	0.106	3.089 ]
+C [ 2.707	-1.527	1.644 ]
+C [ 1.75	-2.42	1.944 ]
+C [ 2.157	-2.624	-0.218 ]
+C [ 1.417	-3.087	0.82 ]
+C [ 1.767	2.832	0.91 ]
+C [ 0.493	3.266	0.994 ]
+C [ 2.296	1.903	1.898 ]
+C [ 1.514	1.422	2.886 ]
+C [ -3.351	0.445	0.871 ]
+C [ -3.116	1.536	0.086 ]
+C [ -3.365	-0.797	0.337 ]
+C [ -3.15	-0.993	-0.992 ]
+C [ -2.864	-1.648	1.255 ]
+C [ -2.132	-2.729	0.877 ]
+C [ -2.282	2.607	0.621 ]
+C [ -1.44	3.092	-0.449 ]
+C [ -2.847	1.404	-1.235 ]
+C [ -1.793	2.333	-1.617 ]
+C [ -2.869	0.185	-1.803 ]
+C [ -1.845	-0.192	-2.749 ]
+C [ -2.387	-2.024	-1.436 ]
+C [ -1.54	-1.577	-2.534 ]
+C [ -1.881	-2.902	-0.55 ]
+C [ -0.517	-3.359	-0.683 ]
+C [ 2.75	-0.402	-1.741 ]
+C [ 1.951	-1.361	-2.276 ]
+C [ 2.471	0.902	-1.921 ]
+C [ 1.386	1.282	-2.645 ]
+C [ 2.817	1.559	-0.794 ]
+C [ 2.087	2.634	-0.382 ]
+C [ 1.631	-2.516	-1.466 ]
+C [ 0.353	-2.841	-1.73 ]
+C [ 0.823	-1.058	-2.948 ]
+C [ -0.137	-1.963	-2.63 ]
+C [ 0.516	0.247	-3.164 ]
+C [ -0.744	0.708	-3.063 ]
+C [ 0.576	2.28	-2.246 ]
+C [ -0.708	1.937	-2.508 ]
+C [ 0.901	2.99	-1.135 ]
+C [ -0.029	3.382	-0.245 ]
+        }
 )
 
 basis:(

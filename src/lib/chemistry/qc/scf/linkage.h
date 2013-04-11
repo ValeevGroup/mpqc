@@ -39,6 +39,7 @@
 
 #include <math/scmat/linkage.h>
 #include <chemistry/molecule/linkage.h>
+#include <chemistry/qc/wfn/linkage.h>
 
 #ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS
 #  include <chemistry/qc/cints/linkage.h>

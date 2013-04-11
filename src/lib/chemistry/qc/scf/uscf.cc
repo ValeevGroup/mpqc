@@ -426,7 +426,8 @@ UnrestrictedSCF::initial_vector()
           &&orthog_method() == guess_wfn_->orthog_method()
           &&oso_dimension()->equiv(guess_wfn_->oso_dimension().pointer())) {
         ExEnv::out0() << indent
-                      << "Using guess wavefunction as starting vector" << endl;
+                      << "Using " << guess_wfn_->class_name()
+                      << " guess wavefunction as starting vector" << endl;
 
         // indent output of eigenvectors() call if there is any
         ExEnv::out0() << incindent << incindent;
@@ -446,7 +447,9 @@ UnrestrictedSCF::initial_vector()
         ExEnv::out0() << decindent << decindent;
       } else {
         ExEnv::out0() << indent
-                      << "Projecting guess wavefunction into the present basis set"
+                      << "Projecting guess wavefunction ("
+                      << guess_wfn_->class_name()
+                      << ") into the present basis set"
                       << endl;
 
         // indent output of projected_eigenvectors() call if there is any

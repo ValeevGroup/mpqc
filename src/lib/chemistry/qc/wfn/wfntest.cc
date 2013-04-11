@@ -32,12 +32,14 @@
 
 #include <chemistry/qc/wfn/density.h>
 #include <chemistry/qc/wfn/obwfn.h>
+#include <chemistry/qc/wfn/soad.h>
 
 using namespace std;
 using namespace sc;
 
 // Force linkages:
 static ForceLink<HCoreWfn> fl0;
+static ForceLink<SuperpositionOfAtomicDensities> fl1;
 
 #include <chemistry/molecule/linkage.h>
 
@@ -150,6 +152,8 @@ main(int argc, char *argv[])
 
   evecs.print("projected wavefunction");
 
+  wfn->ao_density().print("projected AO density");
+
   StateOutBin so("wfn.ckpt");
   SavableState::save_state(wfn.pointer(),so);
   so.close();
@@ -160,6 +164,14 @@ main(int argc, char *argv[])
   
   me->print(o);
   o << me->value();
+
+  //
+  // test SuperpositionOfAtomicDensities
+  //
+  Ref<Wavefunction> soadwfn;
+  soadwfn << rpkv->describedclassvalue("soadwfn");
+  RefSymmSCMatrix soad_density = soadwfn->density();
+  soad_density.print("SOAD density");
   
   return 0;
 }

@@ -50,9 +50,12 @@ class Wavefunction: public MolecularEnergy {
 
     ResultRefSymmSCMatrix overlap_;
     ResultRefSymmSCMatrix hcore_;
+
+  protected:
     ResultRefSCMatrix natural_orbitals_;
     ResultRefDiagSCMatrix natural_density_;
 
+  private:
     double * bs_values;
     double * bsg_values;
 
@@ -195,7 +198,7 @@ class Wavefunction: public MolecularEnergy {
     virtual RefSymmSCMatrix density() = 0;
     /// Returns the AO density.
     virtual RefSymmSCMatrix ao_density();
-    /// Returns the natural orbitals.
+    /// Returns the natural orbitals, in SO basis
     virtual RefSCMatrix natural_orbitals();
     /// Returns the natural density (a diagonal matrix).
     virtual RefDiagSCMatrix natural_density();

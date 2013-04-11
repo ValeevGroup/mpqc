@@ -158,11 +158,17 @@ class OneBodyWavefunction: public Wavefunction {
     virtual RefDiagSCMatrix alpha_eigenvalues();
     virtual RefDiagSCMatrix beta_eigenvalues();
 
+    /** Imports the *eigenvalues* of <tt>guess_wfn</tt>.  Returns the resulting eigenvalues.
+     *
+     *  Implementation notes. This is a hack for big basis sets where the core hamiltonian eigenvalues
+     *  are total garbage.  Use the old wavefunction's occupied eigenvalues, and
+     *  set all others to 99.
+     * */
     virtual RefDiagSCMatrix
-      projected_eigenvalues(const Ref<OneBodyWavefunction>&, int alp=1);
-    /** Projects the density into the current basis set.  Returns an
-        orthogonalized SO to MO transformation with the orbitals. */
-    virtual RefSCMatrix projected_eigenvectors(const Ref<OneBodyWavefunction>&,
+      projected_eigenvalues(const Ref<OneBodyWavefunction>& guess_wfn, int alp=1);
+    /** Projects the *density* (not eigenvalues)  of <tt>guess_wfn</tt> into the current basis set. Returns natural orbitals
+        of the projected density to be used as the new MO coefficient vector in the orthogonalized SO basis */
+    virtual RefSCMatrix projected_eigenvectors(const Ref<OneBodyWavefunction>& guess_wfn,
                                                int alp=1);
     /** Return a guess vector.  The guess transforms the orthogonal SO
         basis to the MO basis. */

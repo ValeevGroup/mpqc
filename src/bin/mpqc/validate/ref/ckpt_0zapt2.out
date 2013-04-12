@@ -1,10 +1,10 @@
 
                     MPQC: Massively Parallel Quantum Chemistry
-                                Version 2.3.0-alpha
+                                Version 3.0.0-alpha
 
-  Machine:    i686-pc-linux-gnu
-  User:       cljanss@n65
-  Start Time: Sun Jan  9 18:49:24 2005
+  Machine:    x86_64-apple-darwin12.3.0
+  User:       evaleev@EdBookPro.local
+  Start Time: Fri Apr 12 08:58:52 2013
 
   Using ProcMessageGrp for message passing (number of nodes = 1).
   Using PthreadThreadGrp for threading (number of threads = 1).
@@ -12,43 +12,51 @@
   Total number of processors = 1
 
   Using IntegralV3 by default for molecular integrals evaluation
+  Given resources: ConsumableResources: ( memory = unlimited disk = [./ unlimited] )
 
-  Reading file /home/cljanss/src/SC/lib/atominfo.kv.
-  Reading file /home/cljanss/src/SC/lib/basis/sto-3g.kv.
+  Reading file /Users/evaleev/Development/workspace/install/mpqc-gcc/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /Users/evaleev/Development/workspace/install/mpqc-gcc/share/mpqc/3.0.0-alpha/basis/sto-3g.kv.
 
   HSOSSCF::init: total charge = 0
-
-  Starting from core Hamiltonian guess
 
   Using symmetric orthogonalization.
   n(basis):             4     0     1     1
   Maximum orthogonalization residual = 1.63055
   Minimum orthogonalization residual = 0.398251
-  docc = [ 2 0 1 1 ]
-  socc = [ 1 0 0 0 ]
+  Using symmetric orthogonalization.
+  n(basis):             4     0     1     1
+  Maximum orthogonalization residual = 1.63055
+  Minimum orthogonalization residual = 0.398251
+  Using SuperpositionOfAtomicDensities guess wavefunction as starting vector
+      Reading file /Users/evaleev/Development/workspace/install/mpqc-gcc/share/mpqc/3.0.0-alpha/basis/sto-6g.kv.
+
+  docc = [ 3 0 1 0 ]
+  socc = [ 0 0 0 1 ]
 
   Molecular formula HO
 
   MPQC options:
-    matrixkit     = <ReplSCMatrixKit>
-    filename      = ckpt_0zapt2
-    restart_file  = ckpt_0zapt2.ckpt
-    restart       = no
-    checkpoint    = yes
-    savestate     = yes
-    do_energy     = yes
-    do_gradient   = no
-    optimize      = no
-    write_pdb     = no
-    print_mole    = yes
-    print_timings = yes
+    matrixkit       = <ReplSCMatrixKit>
+    filename        = ckpt_0zapt2
+    restart_file    = ckpt_0zapt2.ckpt
+    restart         = no
+    checkpoint      = yes
+    savestate       = yes
+    do_energy       = yes
+    do_gradient     = no
+    do_freq         = no
+    optimize        = no
+    write_pdb       = no
+    print_mole      = yes
+    print_timings   = yes
+    print_resources = yes
 
     Just entered OPT2 program (opt2_v1)
   nproc = 1
   Memory available per node:      16000000 Bytes
-  Total memory used per node:     9676 Bytes
-  Memory required for one pass:   9676 Bytes
-  Minimum memory required:        2572 Bytes
+  Total memory used per node:     9700 Bytes
+  Memory required for one pass:   9700 Bytes
+  Minimum memory required:        2596 Bytes
   Batch size:                     5
    npass  rest  nbasis  nshell  nfuncmax  ndocc  nsocc  nvir  nfzc  nfzv
      1      0     6       3        4       4       1     2      0     0  
@@ -57,50 +65,53 @@
 
   nuclear repulsion energy =    4.2334179920
 
+  Beginning iterations.  Basis is STO-3G.
                    510 integrals
-  iter     1 energy =  -73.6979060135 delta = 8.39848e-01
+  iter     1 energy =  -74.2279965074 delta = 8.47737e-01
                    510 integrals
-  iter     2 energy =  -74.1233026635 delta = 1.73142e-01
+  iter     2 energy =  -74.3469049838 delta = 1.26808e-01
                    510 integrals
-  iter     3 energy =  -74.1412022418 delta = 4.32738e-02
+  iter     3 energy =  -74.3617279287 delta = 5.58011e-02
                    510 integrals
-  iter     4 energy =  -74.1457333889 delta = 3.87065e-02
+  iter     4 energy =  -74.3634721977 delta = 2.26619e-02
                    510 integrals
-  iter     5 energy =  -74.1457877224 delta = 6.72488e-03
+  iter     5 energy =  -74.3635154638 delta = 3.56417e-03
                    510 integrals
-  iter     6 energy =  -74.1458062354 delta = 2.34209e-03
+  iter     6 energy =  -74.3635166153 delta = 5.77843e-04
                    510 integrals
-  iter     7 energy =  -74.1458063484 delta = 1.34780e-04
+  iter     7 energy =  -74.3635166503 delta = 9.92707e-05
                    510 integrals
-  iter     8 energy =  -74.1458063599 delta = 8.11183e-05
+  iter     8 energy =  -74.3635166514 delta = 1.76768e-05
                    510 integrals
-  iter     9 energy =  -74.1458063601 delta = 8.20546e-06
+  iter     9 energy =  -74.3635166514 delta = 3.15892e-06
                    510 integrals
-  iter    10 energy =  -74.1458063601 delta = 1.06641e-06
+  iter    10 energy =  -74.3635166514 delta = 5.69429e-07
                    510 integrals
-  iter    11 energy =  -74.1458063601 delta = 8.79092e-08
+  iter    11 energy =  -74.3635166514 delta = 1.02864e-07
                    510 integrals
-  iter    12 energy =  -74.1458063601 delta = 1.23255e-08
+  iter    12 energy =  -74.3635166514 delta = 1.86487e-08
+                   510 integrals
+  iter    13 energy =  -74.3635166514 delta = 3.35644e-09
 
-  HOMO is     3  A1 =  -0.237839
-  LUMO is     4  A1 =   0.660770
+  HOMO is     1  B2 =  -0.081322
+  LUMO is     4  A1 =   0.606973
 
-  total scf energy =  -74.1458063601
+  total scf energy =  -74.3635166514
   Number of shell quartets for which AO integrals would
   have been computed without bounds checking: 36
   Number of shell quartets for which AO integrals
   were computed: 36
-  ROHF energy [au]:                   -74.145806360129
-  OPT1 energy [au]:                   -74.161344706266
-  OPT2 second order correction [au]:   -0.015373793105
-  OPT2 energy [au]:                   -74.161180153234
-  ZAPT2 correlation energy [au]:       -0.013535517579
-  ZAPT2 energy [au]:                  -74.159341877708
-Value of the MolecularEnergy:  -74.1593418777
+  ROHF energy [au]:                   -74.363516651433
+  OPT1 energy [au]:                   -74.381509931599
+  OPT2 second order correction [au]:   -0.017993280166
+  OPT2 energy [au]:                   -74.381509931599
+  ZAPT2 correlation energy [au]:       -0.017637726063
+  ZAPT2 energy [au]:                  -74.381154377496
+Value of the MolecularEnergy:  -74.3811543775
 
   MBPT2:
     Function Parameters:
-      value_accuracy    = 8.790490e-08 (1.000000e-06) (computed)
+      value_accuracy    = 3.356438e-07 (1.000000e-06) (computed)
       gradient_accuracy = 0.000000e+00 (1.000000e-06)
       hessian_accuracy  = 0.000000e+00 (1.000000e-04)
 
@@ -116,52 +127,62 @@ Value of the MolecularEnergy:  -74.1593418777
       )
       Atomic Masses:
          15.99491    1.00783
+      Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
 
-    GaussianBasisSet:
-      nbasis = 6
-      nshell = 3
-      nprim  = 9
-      name = "STO-3G"
-    Reference Wavefunction:
-      Function Parameters:
-        value_accuracy    = 8.790490e-10 (1.000000e-08) (computed)
-        gradient_accuracy = 0.000000e+00 (1.000000e-06)
-        hessian_accuracy  = 0.000000e+00 (1.000000e-04)
-
-      Molecule:
-        Molecular formula: HO
-        molecule<Molecule>: (
-          symmetry = c2v
-          unit = "angstrom"
-          {  n atoms                        geometry                     }={
-             1     O [    0.0000000000     0.0000000000     0.0000000000]
-             2     H [    0.0000000000     0.0000000000     1.0000000000]
-          }
-        )
-        Atomic Masses:
-           15.99491    1.00783
-
+    Electronic basis:
       GaussianBasisSet:
         nbasis = 6
         nshell = 3
         nprim  = 9
         name = "STO-3G"
-      SCF Parameters:
-        maxiter = 100
-        density_reset_frequency = 10
-        level_shift = 0.250000
+    Reference Wavefunction:
+      High-Spin (Spin-Restricted) Open-Shell Hartree-Fock (HSOSHF):
+        Function Parameters:
+          value_accuracy    = 3.356438e-09 (1.000000e-08) (computed)
+          gradient_accuracy = 0.000000e+00 (1.000000e-06)
+          hessian_accuracy  = 0.000000e+00 (1.000000e-04)
 
-      HSOSSCF Parameters:
-        charge = 0
-        ndocc = 4
-        nsocc = 1
-        docc = [ 2 0 1 1 ]
-        socc = [ 1 0 0 0 ]
+        Molecule:
+          Molecular formula: HO
+          molecule<Molecule>: (
+            symmetry = c2v
+            unit = "angstrom"
+            {  n atoms                        geometry                     }={
+               1     O [    0.0000000000     0.0000000000     0.0000000000]
+               2     H [    0.0000000000     0.0000000000     1.0000000000]
+            }
+          )
+          Atomic Masses:
+             15.99491    1.00783
+          Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
+
+        Electronic basis:
+          GaussianBasisSet:
+            nbasis = 6
+            nshell = 3
+            nprim  = 9
+            name = "STO-3G"
+        SCF Parameters:
+          maxiter = 100
+          density_reset_frequency = 10
+          level_shift = 0.250000
+
+        HSOSSCF Parameters:
+          charge = 0
+          ndocc = 4
+          nsocc = 1
+          docc = [ 3 0 1 0 ]
+          socc = [ 0 0 0 1 ]
 
 
+
+  ConsumableResources: (
+    memory = unlimited ( max used: 50kB )
+    disk = [./ unlimited] ( max used: 0B )
+  )
                               CPU Wall
-mpqc:                        0.10 0.13
-  calc:                      0.05 0.06
+mpqc:                        0.07 0.07
+  calc:                      0.04 0.04
     4. quart. tr.:           0.00 0.00
       bcast0 socc_sum:       0.00 0.00
     RS loop:                 0.00 0.00
@@ -174,14 +195,14 @@ mpqc:                        0.10 0.13
     collect:                 0.00 0.00
     compute ecorr:           0.00 0.00
       sum mo_int_do_so_vir:  0.00 0.00
-    vector:                  0.05 0.05
+    vector:                  0.04 0.04
       density:               0.00 0.00
-      evals:                 0.00 0.01
+      evals:                 0.00 0.00
       extrap:                0.01 0.01
-      fock:                  0.03 0.03
+      fock:                  0.02 0.02
         start thread:        0.00 0.00
         stop thread:         0.00 0.00
-  input:                     0.05 0.05
+  input:                     0.03 0.03
 
-  End Time: Sun Jan  9 18:49:24 2005
+  End Time: Fri Apr 12 08:58:52 2013
 

@@ -1,10 +1,10 @@
 
                     MPQC: Massively Parallel Quantum Chemistry
-                                Version 2.3.0-alpha
+                                Version 3.0.0-alpha
 
-  Machine:    i686-pc-linux-gnu
-  User:       cljanss@n65
-  Start Time: Sun Jan  9 18:50:29 2005
+  Machine:    x86_64-apple-darwin12.3.0
+  User:       evaleev@EdBookPro.local
+  Start Time: Fri Apr 12 08:59:14 2013
 
   Using ProcMessageGrp for message passing (number of nodes = 1).
   Using PthreadThreadGrp for threading (number of threads = 1).
@@ -12,96 +12,116 @@
   Total number of processors = 1
 
   Using IntegralV3 by default for molecular integrals evaluation
+  Given resources: ConsumableResources: ( memory = unlimited disk = [./ unlimited] )
 
-  Reading file /home/cljanss/src/SC/lib/atominfo.kv.
+  Reading file /Users/evaleev/Development/workspace/install/mpqc-gcc/share/mpqc/3.0.0-alpha/atominfo.kv.
 
   Restored <HSOSKS> from ckpt_0hsosksxalpha.wfn
 
   Molecular formula HO
 
   MPQC options:
-    matrixkit     = <ReplSCMatrixKit>
-    filename      = ckpt_1hsosksxalpha
-    restart_file  = ckpt_0hsosksxalpha.wfn
-    restart       = yes
-    checkpoint    = yes
-    savestate     = yes
-    do_energy     = yes
-    do_gradient   = yes
-    optimize      = no
-    write_pdb     = no
-    print_mole    = yes
-    print_timings = yes
+    matrixkit       = <ReplSCMatrixKit>
+    filename        = ckpt_1hsosksxalpha
+    restart_file    = ckpt_0hsosksxalpha.wfn
+    restart         = yes
+    checkpoint      = yes
+    savestate       = yes
+    do_energy       = yes
+    do_gradient     = yes
+    do_freq         = no
+    optimize        = no
+    write_pdb       = no
+    print_mole      = yes
+    print_timings   = yes
+    print_resources = yes
 
-  Value of the MolecularEnergy:  -73.6575055991
+  Value of the MolecularEnergy:  -73.8592150647
 
 
   SCF::compute: energy accuracy = 1.0000000e-08
 
   nuclear repulsion energy =    4.2334179920
 
+  Beginning iterations.  Basis is STO-3G.
                    510 integrals
-  Total integration points = 2706
-  Integrated electron density error = -0.000254927663
-  iter     1 energy =  -73.6573329984 delta = 8.75005e-01
-                   510 integrals
-  Total integration points = 30890
-  Integrated electron density error = -0.000000062435
-  iter     2 energy =  -73.6575055896 delta = 3.87437e-05
+  Total integration points = 2686
+  Integrated electron density =   8.999888511635
+  iter     1 energy =  -73.8591423624 delta = 8.82646e-01
                    510 integrals
   Total integration points = 30890
-  Integrated electron density error = -0.000000062437
-  iter     3 energy =  -73.6575055960 delta = 1.74212e-05
+  Integrated electron density =   8.999999938220
+  iter     2 energy =  -73.8592150436 delta = 6.35484e-05
                    510 integrals
   Total integration points = 30890
-  Integrated electron density error = -0.000000062438
-  iter     4 energy =  -73.6575055978 delta = 7.51624e-06
+  Integrated electron density =   8.999999938218
+  iter     3 energy =  -73.8592150582 delta = 2.92737e-05
                    510 integrals
   Total integration points = 30890
-  Integrated electron density error = -0.000000062438
-  iter     5 energy =  -73.6575055985 delta = 4.90617e-06
+  Integrated electron density =   8.999999938217
+  iter     4 energy =  -73.8592150629 delta = 1.66306e-05
                    510 integrals
   Total integration points = 30890
-  Integrated electron density error = -0.000000062439
-  iter     6 energy =  -73.6575055991 delta = 1.07676e-05
+  Integrated electron density =   8.999999938215
+  iter     5 energy =  -73.8592150644 delta = 2.33747e-05
                    510 integrals
   Total integration points = 30890
-  Integrated electron density error = -0.000000062438
-  iter     7 energy =  -73.6575055991 delta = 1.25711e-06
+  Integrated electron density =   8.999999938217
+  iter     6 energy =  -73.8592150629 delta = 2.34941e-05
                    510 integrals
   Total integration points = 30890
-  Integrated electron density error = -0.000000062438
-  iter     8 energy =  -73.6575055991 delta = 2.17715e-07
+  Integrated electron density =   8.999999938216
+  iter     7 energy =  -73.8592150646 delta = 1.37452e-05
                    510 integrals
   Total integration points = 30890
-  Integrated electron density error = -0.000000062438
-  iter     9 energy =  -73.6575055991 delta = 4.14203e-08
+  Integrated electron density =   8.999999938221
+  iter     8 energy =  -73.8592150647 delta = 3.10326e-06
+                   510 integrals
+  Total integration points = 30890
+  Integrated electron density =   8.999999938221
+  iter     9 energy =  -73.8592150647 delta = 8.10067e-07
+                   510 integrals
+  Total integration points = 30890
+  Integrated electron density =   8.999999938221
+  iter    10 energy =  -73.8592150647 delta = 2.33271e-07
+                   510 integrals
+  Total integration points = 30890
+  Integrated electron density =   8.999999938221
+  iter    11 energy =  -73.8592150647 delta = 7.02170e-08
+                   510 integrals
+  Total integration points = 30890
+  Integrated electron density =   8.999999938221
+  iter    12 energy =  -73.8592150647 delta = 2.16014e-08
+                   510 integrals
+  Total integration points = 30890
+  Integrated electron density =   8.999999938221
+  iter    13 energy =  -73.8592150647 delta = 6.46105e-09
 
-  HOMO is     1  B2 =   0.024403
-  LUMO is     4  A1 =   0.366171
+  HOMO is     1  B1 =  -0.033374
+  LUMO is     4  A1 =   0.347801
 
-  total scf energy =  -73.6575055991
+  total scf energy =  -73.8592150647
 
   SCF::compute: gradient accuracy = 1.0000000e-06
 
   Total integration points = 30890
-  Integrated electron density error = -0.000000062515
+  Integrated electron density =   8.999999938127
   Total Gradient:
-       1   O  -0.0000000000  -0.0000000000   0.0246241326
-       2   H   0.0000000000   0.0000000000  -0.0246241326
+       1   O  -0.0000000000  -0.0000000000   0.0554085668
+       2   H   0.0000000000   0.0000000000  -0.0554085668
 
   Gradient of the MolecularEnergy:
-      1   -0.0000000000
-      2   -0.0000000000
-      3    0.0246241326
-      4    0.0000000000
-      5    0.0000000000
-      6   -0.0246241326
+      1    -0.0000000000
+      2    -0.0000000000
+      3     0.0554085668
+      4     0.0000000000
+      5     0.0000000000
+      6    -0.0554085668
 
-  Restricted Open Shell Kohn-Sham (HSOSKS) Parameters:
+  High-Spin (Spin-Restricted)  Open-Shell Kohn-Sham (HSOSKS):
     Function Parameters:
-      value_accuracy    = 7.915399e-09 (1.000000e-08) (computed)
-      gradient_accuracy = 7.915399e-07 (1.000000e-06) (computed)
+      value_accuracy    = 6.461051e-09 (1.000000e-08) (computed)
+      gradient_accuracy = 6.461051e-07 (1.000000e-06) (computed)
       hessian_accuracy  = 0.000000e+00 (1.000000e-04)
 
     Molecule:
@@ -116,52 +136,60 @@
       )
       Atomic Masses:
          15.99491    1.00783
+      Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
 
-    GaussianBasisSet:
-      nbasis = 6
-      nshell = 3
-      nprim  = 9
-      name = "STO-3G"
+    Electronic basis:
+      GaussianBasisSet:
+        nbasis = 6
+        nshell = 3
+        nprim  = 9
+        name = "STO-3G"
     SCF Parameters:
       maxiter = 100
       density_reset_frequency = 10
       level_shift = 0.250000
 
     HSOSSCF Parameters:
-      charge = 0.0000000000
+      charge = 0
       ndocc = 4
       nsocc = 1
-      docc = [ 2 0 1 1 ]
-      socc = [ 1 0 0 0 ]
+      docc = [ 3 0 1 0 ]
+      socc = [ 0 0 0 1 ]
 
     Functional:
       Standard Density Functional: XALPHA
       Sum of Functionals:
+        +0.0000000000000000 Hartree-Fock Exchange
         +1.0000000000000000
           XalphaFunctional: alpha =   0.70000000
     Integrator:
       RadialAngularIntegrator:
         Pruned fine grid employed
+
+  ConsumableResources: (
+    memory = unlimited ( max used: 119kB )
+    disk = [./ unlimited] ( max used: 0B )
+  )
                                CPU Wall
-mpqc:                         1.00 1.02
-  calc:                       0.98 0.99
-    compute gradient:         0.17 0.18
+mpqc:                         0.67 0.67
+  calc:                       0.66 0.66
+    compute gradient:         0.13 0.13
       nuc rep:                0.00 0.00
       one electron gradient:  0.00 0.00
       overlap gradient:       0.00 0.00
-      two electron gradient:  0.17 0.17
-        grad:                 0.17 0.17
-          integrate:          0.13 0.13
+      two electron gradient:  0.12 0.12
+        grad:                 0.12 0.12
+          integrate:          0.11 0.11
           two-body:           0.00 0.00
-    vector:                   0.81 0.81
+    vector:                   0.53 0.53
       density:                0.00 0.00
-      evals:                  0.00 0.01
-      extrap:                 0.02 0.01
-      fock:                   0.72 0.72
-        integrate:            0.67 0.67
+      evals:                  0.01 0.01
+      extrap:                 0.01 0.01
+      fock:                   0.49 0.49
+        integrate:            0.45 0.45
         start thread:         0.00 0.00
         stop thread:          0.00 0.00
-  input:                      0.02 0.03
+  input:                      0.01 0.01
 
-  End Time: Sun Jan  9 18:50:30 2005
+  End Time: Fri Apr 12 08:59:15 2013
 

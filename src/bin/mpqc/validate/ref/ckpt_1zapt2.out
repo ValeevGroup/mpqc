@@ -1,10 +1,10 @@
 
                     MPQC: Massively Parallel Quantum Chemistry
-                                Version 2.3.0-alpha
+                                Version 3.0.0-alpha
 
-  Machine:    i686-pc-linux-gnu
-  User:       cljanss@n65
-  Start Time: Sun Jan  9 18:50:32 2005
+  Machine:    x86_64-apple-darwin12.3.0
+  User:       evaleev@EdBookPro.local
+  Start Time: Fri Apr 12 08:59:16 2013
 
   Using ProcMessageGrp for message passing (number of nodes = 1).
   Using PthreadThreadGrp for threading (number of threads = 1).
@@ -12,32 +12,35 @@
   Total number of processors = 1
 
   Using IntegralV3 by default for molecular integrals evaluation
+  Given resources: ConsumableResources: ( memory = unlimited disk = [./ unlimited] )
 
-  Reading file /home/cljanss/src/SC/lib/atominfo.kv.
+  Reading file /Users/evaleev/Development/workspace/install/mpqc-gcc/share/mpqc/3.0.0-alpha/atominfo.kv.
 
   Restored <MBPT2> from ckpt_0zapt2.wfn
 
   Molecular formula HO
 
   MPQC options:
-    matrixkit     = <ReplSCMatrixKit>
-    filename      = ckpt_1zapt2
-    restart_file  = ckpt_0zapt2.wfn
-    restart       = yes
-    checkpoint    = yes
-    savestate     = yes
-    do_energy     = yes
-    do_gradient   = no
-    optimize      = no
-    write_pdb     = no
-    print_mole    = yes
-    print_timings = yes
+    matrixkit       = <ReplSCMatrixKit>
+    filename        = ckpt_1zapt2
+    restart_file    = ckpt_0zapt2.wfn
+    restart         = yes
+    checkpoint      = yes
+    savestate       = yes
+    do_energy       = yes
+    do_gradient     = no
+    do_freq         = no
+    optimize        = no
+    write_pdb       = no
+    print_mole      = yes
+    print_timings   = yes
+    print_resources = yes
 
-  Value of the MolecularEnergy:  -74.1593418777
+  Value of the MolecularEnergy:  -74.3811543775
 
   MBPT2:
     Function Parameters:
-      value_accuracy    = 8.790490e-08 (1.000000e-06) (computed)
+      value_accuracy    = 3.356438e-07 (1.000000e-06) (computed)
       gradient_accuracy = 0.000000e+00 (1.000000e-06)
       hessian_accuracy  = 0.000000e+00 (1.000000e-04)
 
@@ -53,53 +56,63 @@
       )
       Atomic Masses:
          15.99491    1.00783
+      Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
 
-    GaussianBasisSet:
-      nbasis = 6
-      nshell = 3
-      nprim  = 9
-      name = "STO-3G"
-    Reference Wavefunction:
-      Function Parameters:
-        value_accuracy    = 8.790490e-10 (1.000000e-08) (computed)
-        gradient_accuracy = 0.000000e+00 (1.000000e-06)
-        hessian_accuracy  = 0.000000e+00 (1.000000e-04)
-
-      Molecule:
-        Molecular formula: HO
-        molecule<Molecule>: (
-          symmetry = c2v
-          unit = "angstrom"
-          {  n atoms                        geometry                     }={
-             1     O [    0.0000000000     0.0000000000     0.0000000000]
-             2     H [    0.0000000000     0.0000000000     1.0000000000]
-          }
-        )
-        Atomic Masses:
-           15.99491    1.00783
-
+    Electronic basis:
       GaussianBasisSet:
         nbasis = 6
         nshell = 3
         nprim  = 9
         name = "STO-3G"
-      SCF Parameters:
-        maxiter = 100
-        density_reset_frequency = 10
-        level_shift = 0.250000
+    Reference Wavefunction:
+      High-Spin (Spin-Restricted) Open-Shell Hartree-Fock (HSOSHF):
+        Function Parameters:
+          value_accuracy    = 3.356438e-09 (1.000000e-08) (computed)
+          gradient_accuracy = 0.000000e+00 (1.000000e-06)
+          hessian_accuracy  = 0.000000e+00 (1.000000e-04)
 
-      HSOSSCF Parameters:
-        charge = 0
-        ndocc = 4
-        nsocc = 1
-        docc = [ 2 0 1 1 ]
-        socc = [ 1 0 0 0 ]
+        Molecule:
+          Molecular formula: HO
+          molecule<Molecule>: (
+            symmetry = c2v
+            unit = "angstrom"
+            {  n atoms                        geometry                     }={
+               1     O [    0.0000000000     0.0000000000     0.0000000000]
+               2     H [    0.0000000000     0.0000000000     1.0000000000]
+            }
+          )
+          Atomic Masses:
+             15.99491    1.00783
+          Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
+
+        Electronic basis:
+          GaussianBasisSet:
+            nbasis = 6
+            nshell = 3
+            nprim  = 9
+            name = "STO-3G"
+        SCF Parameters:
+          maxiter = 100
+          density_reset_frequency = 10
+          level_shift = 0.250000
+
+        HSOSSCF Parameters:
+          charge = 0
+          ndocc = 4
+          nsocc = 1
+          docc = [ 3 0 1 0 ]
+          socc = [ 0 0 0 1 ]
 
 
+
+  ConsumableResources: (
+    memory = unlimited ( max used: 2.88kB )
+    disk = [./ unlimited] ( max used: 0B )
+  )
            CPU Wall
-mpqc:     0.03 0.03
+mpqc:     0.01 0.01
   calc:   0.00 0.00
-  input:  0.03 0.03
+  input:  0.01 0.01
 
-  End Time: Sun Jan  9 18:50:32 2005
+  End Time: Fri Apr 12 08:59:16 2013
 

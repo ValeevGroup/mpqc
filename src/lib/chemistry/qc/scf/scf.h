@@ -167,9 +167,9 @@ class SCF: public OneBodyWavefunction {
         <dt><tt>guess_wavefunction</tt><dd> This specifies the initial
         guess for the solution to the SCF equations.  This can be either a
         OneBodyWavefunction object or the name of file that contains the
-        saved state of a OneBodyWavefunction object.  By default the
-        one-electron hamiltonian will be diagonalized to obtain the initial
-        guess.
+        saved state of a OneBodyWavefunction object. By default,
+        SuperpositionOfAtomicDensities object will be used; if that fails,
+        core hamiltonian guess will be used instead.
 
         <dt><tt>keep_guess_wavefunction</tt><dd> The guess wavefunction is
         normally discarded after it is projected.  Setting this boolean

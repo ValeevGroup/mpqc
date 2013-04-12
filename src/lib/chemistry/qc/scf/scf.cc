@@ -43,6 +43,7 @@
 #include <math/optimize/diis.h>
 
 #include <chemistry/qc/basis/petite.h>
+#include <chemistry/qc/wfn/soad.h>
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/lcao/df_runtime.h>
 
@@ -412,6 +413,19 @@ SCF::initial_vector()
 {
   const bool vector_is_null = oso_eigenvectors_.result_noupdate().null();
   if (vector_is_null) {
+    bool soad_guess = false;
+    if (guess_wfn_.null()) {
+      Ref<AssignedKeyVal> akv = new AssignedKeyVal;
+      akv->assign("molecule", molecule().pointer());
+      akv->assign("basis", basis().pointer());
+      try {
+        guess_wfn_ = new SuperpositionOfAtomicDensities(Ref<KeyVal>(akv));
+        soad_guess = true;
+      }
+      catch (...) { // failed? Oh well, will resort to core guess.
+      }
+    }
+
     // if guess_wfn_ is non-null then try to get a guess vector from it.
     // First check that the same basis is used...if not, then project the
     // guess vector into the present basis.
@@ -455,10 +469,12 @@ SCF::initial_vector()
       // we should only have to do this once, so free up memory used
       // for the old wavefunction, unless told otherwise
       if (!keep_guess_wfn_) guess_wfn_=0;
+      // if made a SOAD guess, erase it
+      if (soad_guess) guess_wfn_=0;
 
       ExEnv::out0() << endl;
 
-    } else {
+    } else { // if all else failed
       ExEnv::out0() << indent << "Starting from core Hamiltonian guess\n"
                     << endl;
       oso_eigenvectors_ = hcore_guess(eigenvalues_.result_noupdate());

@@ -38,11 +38,17 @@ namespace sc {
 
   /** SuperpositionOfAtomicDensities is a OneBodyWavefunction
    *  useful as a guess for other OneBodyWavefunction objects.
-   *  It uses STO-6G orbitals as atomic orbitals.
+   *  It uses WTBS and/or STO-6G orbitals as atomic orbitals.
    *
    *  */
   class SuperpositionOfAtomicDensities : public OneBodyWavefunction {
     public:
+
+    /* these keywords may not even be necessary!
+    <tr><td><tt>total_charge</tt><td>integer<td>0<td>the total charge of the molecule
+    <tr><td><tt>spin_unrestricted</tt><td>boolean<td>false<td>produce same spin-up and and spin-down orbitals?
+     */
+
       /** A KeyVal constructor is used to generate a SuperpositionOfAtomicDensities
           object from the input. In addition to all keywords of OneBodyWavefunction,
           the following list of keywords
@@ -52,14 +58,12 @@ namespace sc {
 
           <tr><td><b>%Keyword</b><td><b>Type</b><td><b>Default</b><td><b>Description</b>
 
-          <tr><td><tt>total_charge</tt><td>integer<td>0<td>the total charge of the molecule
-          <tr><td><tt>spin_unrestricted</tt><td>boolean<td>false<td>produce same spin-up and and spin-down orbitals?
-
           </table>
 
-          Implementation notes. STO-6G basis is used to specify the atomic orbitals and construct the
+          Implementation notes. WTBS basis (and STO-6G for H) is used to specify the atomic orbitals and construct the
           guess density; this guess density is then projected unto the basis given by the
-          the keyword <tt>basis</tt>.
+          the keyword <tt>basis</tt>. Since WTBS basis is only available for atoms up to
+          Rn, constructor will throw if the Molecule object contains heavier atoms.
        */
       SuperpositionOfAtomicDensities(const Ref<KeyVal>& kv);
       SuperpositionOfAtomicDensities(StateIn&);
@@ -88,7 +92,7 @@ namespace sc {
       int total_charge_;
       bool spin_unrestricted_;
 
-      Ref<GaussianBasisSet> minbasis_;   //< STO-6G basis (or other minimal basis)
+      Ref<GaussianBasisSet> minbasis_;   //< STO-6G and/or WTBS basis (or other minimal basis)
       RefSymmSCMatrix minbasis_density_; //< in AO basis
 
   };

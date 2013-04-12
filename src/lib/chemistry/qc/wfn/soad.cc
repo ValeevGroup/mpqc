@@ -48,6 +48,10 @@ SuperpositionOfAtomicDensities::class_desc_(typeid(SuperpositionOfAtomicDensitie
 
 SuperpositionOfAtomicDensities::SuperpositionOfAtomicDensities(const Ref<KeyVal>& kv) : OneBodyWavefunction(kv)
 {
+  if (molecule()->max_z() > 86) // for He-Rn (Z=86) will use WTBS, for H will use STO-6G
+    throw FeatureNotImplemented("SuperpositionOfAtomicDensities only implemented for up to Z=86",
+                                __FILE__,__LINE__,this->class_desc());
+
   total_charge_ = kv->intvalue("total_charge", KeyValValueint(0));
   assert(total_charge_ == 0); // nonzero charge not implemented yet
   spin_unrestricted_ = kv->booleanvalue("spin_unrestricted", KeyValValueboolean(false));
@@ -90,10 +94,19 @@ void sc::SuperpositionOfAtomicDensities::compute() {
 
     { // make minimal basis
 
-      // make mother STO-6G basis
+      // make mother (STO-6G + WTBS) minimal basis
       Ref<AssignedKeyVal> akv = new AssignedKeyVal;
       akv->assign("molecule", Ref<DescribedClass>(molecule()));
-      akv->assign("name", "STO-6G");
+      // mix STO-6G (for H) and WTB (for He-Rn)
+      for (int a=0; a<molecule()->natom(); ++a) {
+        std::ostringstream oss;
+        oss << "basis:" << a;
+        const char* keyword = oss.str().c_str();
+        if (molecule()->Z(a) <= 1)
+          akv->assign(keyword, "STO-6G");
+        else
+          akv->assign(keyword, "WTBS");
+      }
       Ref<GaussianBasisSet> mother = new GaussianBasisSet(akv);
 
       // and split
@@ -172,7 +185,11 @@ void sc::SuperpositionOfAtomicDensities::compute() {
             const int l = i->first;
             const std::vector<int>& shells = i->second;
             // loop over shells
-            for(int s=0; s<shells.size(); ++s) {
+            const int nocc_shells_of_this_l = shell_occs[l].size();
+            // if this fails, aufbau produced more occupied shells than in the basis
+            // either aufbau algorithm is broken or the basis is broken
+            assert(nocc_shells_of_this_l <= shells.size());
+            for(int s=0; s<nocc_shells_of_this_l; ++s) {
               const int nelectrons_in_shell = shell_occs[l].at(s);
               const double nelectrons_per_bf = static_cast<double>(nelectrons_in_shell) / (2*l + 1);
 

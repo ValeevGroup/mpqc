@@ -45,6 +45,7 @@ mpqc: (
   )
   % optimizer object for the molecular geometry
   opt<EFCOpt>: (
+    accuracy = 1e-6
     max_iterations = 3
     function = $..:mole
     transition_state = yes

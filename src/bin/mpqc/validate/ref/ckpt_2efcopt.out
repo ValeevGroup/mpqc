@@ -1,10 +1,10 @@
 
                     MPQC: Massively Parallel Quantum Chemistry
-                                Version 2.3.0-alpha
+                                Version 3.0.0-alpha
 
-  Machine:    i686-pc-linux-gnu
-  User:       cljanss@n65
-  Start Time: Sun Jan  9 18:50:33 2005
+  Machine:    x86_64-apple-darwin12.3.0
+  User:       evaleev@EdBookPro.local
+  Start Time: Sat Apr 13 08:43:18 2013
 
   Using ProcMessageGrp for message passing (number of nodes = 1).
   Using PthreadThreadGrp for threading (number of threads = 1).
@@ -12,8 +12,9 @@
   Total number of processors = 1
 
   Using IntegralV3 by default for molecular integrals evaluation
+  Given resources: ConsumableResources: ( memory = unlimited disk = [./ unlimited] )
 
-  Reading file /home/cljanss/src/SC/lib/atominfo.kv.
+  Reading file /Users/evaleev/Development/workspace/install/mpqc-clang-opt/share/mpqc/3.0.0-alpha/atominfo.kv.
   Using symmetric orthogonalization.
   n(basis):            20
   Maximum orthogonalization residual = 2.59659
@@ -24,73 +25,99 @@
   Molecular formula C2H5N
 
   MPQC options:
-    matrixkit     = <ReplSCMatrixKit>
-    filename      = ckpt_2efcopt
-    restart_file  = ckpt_1efcopt.ckpt
-    restart       = yes
-    checkpoint    = no
-    savestate     = no
-    do_energy     = yes
-    do_gradient   = no
-    optimize      = yes
-    write_pdb     = no
-    print_mole    = yes
-    print_timings = yes
+    matrixkit       = <ReplSCMatrixKit>
+    filename        = ckpt_2efcopt
+    restart_file    = ckpt_1efcopt.ckpt
+    restart         = yes
+    checkpoint      = no
+    savestate       = no
+    do_energy       = yes
+    do_gradient     = no
+    do_freq         = no
+    optimize        = yes
+    write_pdb       = no
+    print_mole      = yes
+    print_timings   = yes
+    print_resources = yes
 
-  SCF::compute: energy accuracy = 7.6422247e-07
+  Optimizing using:
+    EFCOpt:
+      accuracy         = 7.64223e-05
+      transition_state = yes
+      mode_following   = yes
+      update           =
+        Object of type PowellUpdate
+      Optimize (base class of EFCOpt):
+        print_timings  = no
+        checkpoint     = yes
+        max_iterations = 1
+        max_stepsize   = 0.6
+        convergence    = 
+          MolEnergyConvergence:
+            cartesian     = yes
+            Convergence (base class of MolEnergyConvergence):
+              The following criteria must be simultaneously satified:
+              max_disp         = 0.0001
+              max_grad         = 0.0001
+              graddisp         = 0.0001
 
-  integral intermediate storage = 68970 bytes
-  integral cache = 15927670 bytes
-  nuclear repulsion energy =   73.6706508643
+  SCF::compute: energy accuracy = 7.6422273e-07
 
+  nuclear repulsion energy =   73.6706575537
+
+  integral intermediate storage = 69410 bytes
+  integral cache = 15927230 bytes
+  Beginning iterations.  Basis is STO-3G.
                  26133 integrals
-  iter     1 energy = -131.2337830667 delta = 3.88802e-01
+  iter     1 energy = -131.2337834067 delta = 3.88802e-01
                  26290 integrals
-  iter     2 energy = -131.2385553481 delta = 9.40446e-03
+  iter     2 energy = -131.2385554139 delta = 9.40418e-03
                  26048 integrals
-  iter     3 energy = -131.2391897435 delta = 4.67426e-03
+  iter     3 energy = -131.2391897729 delta = 4.67411e-03
                  25609 integrals
-  iter     4 energy = -131.2392293799 delta = 1.19303e-03
+  iter     4 energy = -131.2392294082 delta = 1.19301e-03
                  26400 integrals
-  iter     5 energy = -131.2392339874 delta = 3.10553e-04
+  iter     5 energy = -131.2392340153 delta = 3.10546e-04
                  26036 integrals
-  iter     6 energy = -131.2392350845 delta = 1.58403e-04
+  iter     6 energy = -131.2392351124 delta = 1.58405e-04
                  25702 integrals
-  iter     7 energy = -131.2392352813 delta = 8.57019e-05
+  iter     7 energy = -131.2392353091 delta = 8.57009e-05
                  25544 integrals
-  iter     8 energy = -131.2392352967 delta = 3.68870e-05
+  iter     8 energy = -131.2392353246 delta = 3.68858e-05
                  26663 integrals
-  iter     9 energy = -131.2392353841 delta = 9.25517e-06
+  iter     9 energy = -131.2392354120 delta = 9.25474e-06
                  25913 integrals
-  iter    10 energy = -131.2392353816 delta = 3.10450e-06
+  iter    10 energy = -131.2392354095 delta = 3.10427e-06
                  26733 integrals
-  iter    11 energy = -131.2392353844 delta = 8.56318e-07
+  iter    11 energy = -131.2392354123 delta = 8.56201e-07
+                 26045 integrals
+  iter    12 energy = -131.2392354123 delta = 4.52443e-07
 
   HOMO is    12   A =  -0.277565
-  LUMO is    13   A =   0.298214
+  LUMO is    13   A =   0.298215
 
-  total scf energy = -131.2392353844
+  total scf energy = -131.2392354123
 
-  SCF::compute: gradient accuracy = 7.6422247e-05
+  SCF::compute: gradient accuracy = 7.6422273e-05
 
   Total Gradient:
-       1   N  -0.0077511591  -0.0007834083  -0.0139443385
-       2   H   0.0047306346  -0.0021796280   0.0084235182
-       3   C   0.0017966659  -0.0022400359   0.0015306977
-       4   C  -0.0019706892   0.0036388586  -0.0127193223
-       5   H   0.0015700697   0.0023876917   0.0127022545
-       6   H  -0.0002217306   0.0012509918   0.0005633482
-       7   H   0.0002250581  -0.0007812125   0.0010860559
-       8   H   0.0016211507  -0.0012932574   0.0023577864
+       1   N  -0.0077508601  -0.0007832587  -0.0139433213
+       2   H   0.0047303195  -0.0021796145   0.0084228612
+       3   C   0.0017966316  -0.0022400423   0.0015305083
+       4   C  -0.0019705575   0.0036387080  -0.0127191957
+       5   H   0.0015701258   0.0023875826   0.0127017976
+       6   H  -0.0002218143   0.0012509530   0.0005633090
+       7   H   0.0002251423  -0.0007811843   0.0010860893
+       8   H   0.0016210127  -0.0012931437   0.0023579517
 
   
  following mode 0
-  lambda_p = 0.00053332
-  lambda_n = -0.0017873
+  lambda_p = 0.00053329
+  lambda_n = -0.0017872
 
-  Max Gradient     :   0.0139443385   0.0001000000  no
-  Max Displacement :   0.1284857450   0.0001000000  no
-  Gradient*Displace:   0.0011957307   0.0001000000  no
+  Max Gradient     :   0.0139433213   0.0001000000  no
+  Max Displacement :   0.1284825163   0.0001000000  no
+  Gradient*Displace:   0.0011956309   0.0001000000  no
 
   taking step of size 0.278911
 
@@ -100,147 +127,235 @@
     symmetry = c1
     unit = "angstrom"
     {  n atoms                        geometry                     }={
-       1     N [    0.5771360752     0.0226307610    -0.9527999540]
-       2     H [   -0.2303532411     0.1763077167    -1.6087311376]
-       3     C [    0.0384051760    -0.6786978932     0.2433129158]
-       4     C [   -0.0239507826     0.7854630712     0.6155486948]
-       5     H [    0.7862047822     1.0688072618    -0.3293358949]
-       6     H [   -0.8934146962    -1.2053288133     0.0545126826]
-       7     H [    0.7805856486    -1.3068699819     0.7314504456]
-       8     H [   -1.0346129622     1.1376878977     0.3347464377]
+       1     N [    0.5771357213     0.0226310276    -0.9527994867]
+       2     H [   -0.2303521596     0.1763059485    -1.6087330908]
+       3     C [    0.0384051001    -0.6786979136     0.2433129577]
+       4     C [   -0.0239502054     0.7854629828     0.6155490019]
+       5     H [    0.7862035423     1.0688085077    -0.3293355597]
+       6     H [   -0.8934149408    -1.2053284557     0.0545128325]
+       7     H [    0.7805854300    -1.3068704146     0.7314498698]
+       8     H [   -1.0346124879     1.1376883373     0.3347476653]
     }
   )
   Atomic Masses:
      14.00307    1.00783   12.00000   12.00000    1.00783
       1.00783    1.00783    1.00783
+  Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
   The optimization has NOT converged.
 
-  Function Parameters:
-    value_accuracy    = 4.525505e-07 (7.642225e-07)
-    gradient_accuracy = 4.525505e-05 (7.642225e-05)
-    hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+  IntMolecularCoor Parameters:
+    update_bmat = no
+    scale_bonds = 1
+    scale_bends = 1
+    scale_tors = 1
+    scale_outs = 1
+    symmetry_tolerance = 1.000000e-05
+    simple_tolerance = 1.000000e-03
+    coordinate_tolerance = 1.000000e-07
+    have_fixed_values = 0
+    max_update_steps = 100
+    max_update_disp = 0.500000
+    have_fixed_values = 0
 
-  Molecular Coordinates:
-    IntMolecularCoor Parameters:
-      update_bmat = no
-      scale_bonds = 1
-      scale_bends = 1
-      scale_tors = 1
-      scale_outs = 1
-      symmetry_tolerance = 1.000000e-05
-      simple_tolerance = 1.000000e-03
-      coordinate_tolerance = 1.000000e-07
-      have_fixed_values = 0
-      max_update_steps = 100
-      max_update_disp = 0.500000
-      have_fixed_values = 0
+  Molecular formula: C2H5N
+  molecule<Molecule>: (
+    symmetry = c1
+    unit = "angstrom"
+    {  n atoms                        geometry                     }={
+       1     N [    0.5771357213     0.0226310276    -0.9527994867]
+       2     H [   -0.2303521596     0.1763059485    -1.6087330908]
+       3     C [    0.0384051001    -0.6786979136     0.2433129577]
+       4     C [   -0.0239502054     0.7854629828     0.6155490019]
+       5     H [    0.7862035423     1.0688085077    -0.3293355597]
+       6     H [   -0.8934149408    -1.2053284557     0.0545128325]
+       7     H [    0.7805854300    -1.3068704146     0.7314498698]
+       8     H [   -1.0346124879     1.1376883373     0.3347476653]
+    }
+  )
+  Atomic Masses:
+     14.00307    1.00783   12.00000   12.00000    1.00783
+      1.00783    1.00783    1.00783
+  Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
 
-    Molecular formula: C2H5N
-    molecule<Molecule>: (
-      symmetry = c1
-      unit = "angstrom"
-      {  n atoms                        geometry                     }={
-         1     N [    0.5771360752     0.0226307610    -0.9527999540]
-         2     H [   -0.2303532411     0.1763077167    -1.6087311376]
-         3     C [    0.0384051760    -0.6786978932     0.2433129158]
-         4     C [   -0.0239507826     0.7854630712     0.6155486948]
-         5     H [    0.7862047822     1.0688072618    -0.3293358949]
-         6     H [   -0.8934146962    -1.2053288133     0.0545126826]
-         7     H [    0.7805856486    -1.3068699819     0.7314504456]
-         8     H [   -1.0346129622     1.1376878977     0.3347464377]
-      }
-    )
-    Atomic Masses:
-       14.00307    1.00783   12.00000   12.00000    1.00783
-        1.00783    1.00783    1.00783
+  Bonds:
+    STRE       s1     1.05162    1    2         N-H
+    STRE       s2     1.48754    1    3         N-C
+    STRE       s3     1.51202    3    4         C-C
+    STRE       s4     1.23568    1    5         N-H
+    STRE       s5     1.27649    4    5         C-H
+    STRE       s6     1.08686    3    6         C-H
+    STRE       s7     1.08798    3    7         C-H
+    STRE       s8     1.10650    4    8         C-H
+  Bends:
+    BEND       b1   106.99862    2    1    3      H-N-C
+    BEND       b2    75.89760    1    3    4      N-C-C
+    BEND       b3    94.48317    1    5    4      N-H-C
+    BEND       b4   108.71744    2    1    5      H-N-H
+    BEND       b5    93.13775    3    1    5      C-N-H
+    BEND       b6    90.37481    3    4    5      C-C-H
+    BEND       b7   113.53229    1    3    6      N-C-H
+    BEND       b8   118.46432    4    3    6      C-C-H
+    BEND       b9   112.70109    1    3    7      N-C-H
+    BEND      b10   118.47498    4    3    7      C-C-H
+    BEND      b11   112.52120    6    3    7      H-C-H
+    BEND      b12   106.46556    3    4    8      C-C-H
+    BEND      b13   108.73498    5    4    8      H-C-H
+  Torsions:
+    TORS       t1   -93.19014    2    1    3    4   H-N-C-C
+    TORS       t2    17.46997    5    1    3    4   H-N-C-C
+    TORS       t3   -16.86857    1    3    4    5   N-C-C-H
+    TORS       t4    92.81754    1    3    4    8   N-C-C-H
+    TORS       t5    88.89078    2    1    5    4   H-N-H-C
+    TORS       t6   -20.23911    3    1    5    4   C-N-H-C
+    TORS       t7    19.86678    3    4    5    1   C-C-H-N
+    TORS       t8   -87.68230    8    4    5    1   H-C-H-N
+  Out of Plane:
+    OUT        o1    63.48420    2    1    3    5   H-N-C-H
+    OUT        o2   -64.54717    8    4    3    5   H-C-C-H
+  Followed:
+    SUM               -0.0771308604
+        1.0000000000 STRE              1.23568    1    5         N-H
+       -1.0000000000 STRE              1.27649    4    5         C-H
 
-    Bonds:
-      STRE       s1     1.05162    1    2         N-H
-      STRE       s2     1.48754    1    3         N-C
-      STRE       s3     1.51202    3    4         C-C
-      STRE       s4     1.23568    1    5         N-H
-      STRE       s5     1.27650    4    5         C-H
-      STRE       s6     1.08686    3    6         C-H
-      STRE       s7     1.08798    3    7         C-H
-      STRE       s8     1.10650    4    8         C-H
-    Bends:
-      BEND       b1   106.99854    2    1    3      H-N-C
-      BEND       b2    75.89762    1    3    4      N-C-C
-      BEND       b3    94.48319    1    5    4      N-H-C
-      BEND       b4   108.71734    2    1    5      H-N-H
-      BEND       b5    93.13772    3    1    5      C-N-H
-      BEND       b6    90.37474    3    4    5      C-C-H
-      BEND       b7   113.53229    1    3    6      N-C-H
-      BEND       b8   118.46432    4    3    6      C-C-H
-      BEND       b9   112.70109    1    3    7      N-C-H
-      BEND      b10   118.47497    4    3    7      C-C-H
-      BEND      b11   112.52120    6    3    7      H-C-H
-      BEND      b12   106.46555    3    4    8      C-C-H
-      BEND      b13   108.73503    5    4    8      H-C-H
-    Torsions:
-      TORS       t1   -93.18993    2    1    3    4   H-N-C-C
-      TORS       t2    17.47005    5    1    3    4   H-N-C-C
-      TORS       t3   -16.86863    1    3    4    5   N-C-C-H
-      TORS       t4    92.81751    1    3    4    8   N-C-C-H
-      TORS       t5    88.89058    2    1    5    4   H-N-H-C
-      TORS       t6   -20.23919    3    1    5    4   C-N-H-C
-      TORS       t7    19.86687    3    4    5    1   C-C-H-N
-      TORS       t8   -87.68218    8    4    5    1   H-C-H-N
-    Out of Plane:
-      OUT        o1    63.48435    2    1    3    5   H-N-C-H
-      OUT        o2   -64.54715    8    4    3    5   H-C-C-H
-    Followed:
-      SUM               -0.0771336771
-          1.0000000000 STRE              1.23568    1    5         N-H
-         -1.0000000000 STRE              1.27650    4    5         C-H
+  SymmMolecularCoor Parameters:
+    change_coordinates = no
+    transform_hessian = yes
+    max_kappa2 = 10.000000
 
-    SymmMolecularCoor Parameters:
-      change_coordinates = no
-      transform_hessian = yes
-      max_kappa2 = 10.000000
+  Closed Shell Hartree-Fock (CLHF):
+    Function Parameters:
+      value_accuracy    = 4.524426e-07 (7.642227e-07)
+      gradient_accuracy = 4.524426e-05 (7.642227e-05)
+      hessian_accuracy  = 0.000000e+00 (1.000000e-04)
 
-  GaussianBasisSet:
-    nbasis = 20
-    nshell = 11
-    nprim  = 33
-    name = "STO-3G"
-  SCF Parameters:
-    maxiter = 40
-    density_reset_frequency = 10
-    level_shift = 0.000000
+    Molecular Coordinates:
+      IntMolecularCoor Parameters:
+        update_bmat = no
+        scale_bonds = 1
+        scale_bends = 1
+        scale_tors = 1
+        scale_outs = 1
+        symmetry_tolerance = 1.000000e-05
+        simple_tolerance = 1.000000e-03
+        coordinate_tolerance = 1.000000e-07
+        have_fixed_values = 0
+        max_update_steps = 100
+        max_update_disp = 0.500000
+        have_fixed_values = 0
 
-  CLSCF Parameters:
-    charge = 0
-    ndocc = 12
-    docc = [ 12 ]
+      Molecular formula: C2H5N
+      molecule<Molecule>: (
+        symmetry = c1
+        unit = "angstrom"
+        {  n atoms                        geometry                     }={
+           1     N [    0.5771357213     0.0226310276    -0.9527994867]
+           2     H [   -0.2303521596     0.1763059485    -1.6087330908]
+           3     C [    0.0384051001    -0.6786979136     0.2433129577]
+           4     C [   -0.0239502054     0.7854629828     0.6155490019]
+           5     H [    0.7862035423     1.0688085077    -0.3293355597]
+           6     H [   -0.8934149408    -1.2053284557     0.0545128325]
+           7     H [    0.7805854300    -1.3068704146     0.7314498698]
+           8     H [   -1.0346124879     1.1376883373     0.3347476653]
+        }
+      )
+      Atomic Masses:
+         14.00307    1.00783   12.00000   12.00000    1.00783
+          1.00783    1.00783    1.00783
+      Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
 
+      Bonds:
+        STRE       s1     1.05162    1    2         N-H
+        STRE       s2     1.48754    1    3         N-C
+        STRE       s3     1.51202    3    4         C-C
+        STRE       s4     1.23568    1    5         N-H
+        STRE       s5     1.27649    4    5         C-H
+        STRE       s6     1.08686    3    6         C-H
+        STRE       s7     1.08798    3    7         C-H
+        STRE       s8     1.10650    4    8         C-H
+      Bends:
+        BEND       b1   106.99862    2    1    3      H-N-C
+        BEND       b2    75.89760    1    3    4      N-C-C
+        BEND       b3    94.48317    1    5    4      N-H-C
+        BEND       b4   108.71744    2    1    5      H-N-H
+        BEND       b5    93.13775    3    1    5      C-N-H
+        BEND       b6    90.37481    3    4    5      C-C-H
+        BEND       b7   113.53229    1    3    6      N-C-H
+        BEND       b8   118.46432    4    3    6      C-C-H
+        BEND       b9   112.70109    1    3    7      N-C-H
+        BEND      b10   118.47498    4    3    7      C-C-H
+        BEND      b11   112.52120    6    3    7      H-C-H
+        BEND      b12   106.46556    3    4    8      C-C-H
+        BEND      b13   108.73498    5    4    8      H-C-H
+      Torsions:
+        TORS       t1   -93.19014    2    1    3    4   H-N-C-C
+        TORS       t2    17.46997    5    1    3    4   H-N-C-C
+        TORS       t3   -16.86857    1    3    4    5   N-C-C-H
+        TORS       t4    92.81754    1    3    4    8   N-C-C-H
+        TORS       t5    88.89078    2    1    5    4   H-N-H-C
+        TORS       t6   -20.23911    3    1    5    4   C-N-H-C
+        TORS       t7    19.86678    3    4    5    1   C-C-H-N
+        TORS       t8   -87.68230    8    4    5    1   H-C-H-N
+      Out of Plane:
+        OUT        o1    63.48420    2    1    3    5   H-N-C-H
+        OUT        o2   -64.54717    8    4    3    5   H-C-C-H
+      Followed:
+        SUM               -0.0771308604
+            1.0000000000 STRE              1.23568    1    5         N-H
+           -1.0000000000 STRE              1.27649    4    5         C-H
+
+      SymmMolecularCoor Parameters:
+        change_coordinates = no
+        transform_hessian = yes
+        max_kappa2 = 10.000000
+
+    Electronic basis:
+      GaussianBasisSet:
+        nbasis = 20
+        nshell = 11
+        nprim  = 33
+        name = "STO-3G"
+    SCF Parameters:
+      maxiter = 100
+      density_reset_frequency = 10
+      level_shift = 0.000000
+
+    CLSCF Parameters:
+      charge = 0
+      ndocc = 12
+      docc = [ 12 ]
+
+
+  ConsumableResources: (
+    memory = unlimited ( max used: 153kB )
+    disk = [./ unlimited] ( max used: 0B )
+  )
                                CPU Wall
-mpqc:                         0.55 0.57
-  calc:                       0.52 0.54
-    compute gradient:         0.33 0.33
+mpqc:                         0.15 0.15
+  calc:                       0.14 0.14
+    compute gradient:         0.08 0.08
       nuc rep:                0.00 0.00
-      one electron gradient:  0.03 0.03
-      overlap gradient:       0.01 0.01
-      two electron gradient:  0.29 0.29
-        contribution:         0.27 0.26
-          start thread:       0.26 0.26
+      one electron gradient:  0.01 0.01
+      overlap gradient:       0.00 0.00
+      two electron gradient:  0.07 0.07
+        contribution:         0.06 0.06
+          start thread:       0.06 0.06
           stop thread:        0.00 0.00
-        setup:                0.02 0.03
-    vector:                   0.16 0.18
+        setup:                0.01 0.01
+    vector:                   0.05 0.05
       density:                0.00 0.00
-      evals:                  0.02 0.00
-      extrap:                 0.00 0.01
-      fock:                   0.11 0.11
+      evals:                  0.00 0.00
+      extrap:                 0.00 0.00
+      fock:                   0.03 0.03
         accum:                0.00 0.00
-        ao_gmat:              0.09 0.11
-          start thread:       0.09 0.11
+        ao_gmat:              0.03 0.03
+          start thread:       0.03 0.03
           stop thread:        0.00 0.00
         init pmax:            0.00 0.00
-        local data:           0.01 0.00
+        local data:           0.00 0.00
         setup:                0.00 0.00
         sum:                  0.00 0.00
-        symm:                 0.01 0.00
-  input:                      0.03 0.03
+        symm:                 0.00 0.00
+  input:                      0.01 0.01
 
-  End Time: Sun Jan  9 18:50:33 2005
+  End Time: Sat Apr 13 08:43:18 2013
 

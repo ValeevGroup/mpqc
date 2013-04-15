@@ -121,7 +121,7 @@ non-alpha-numerical characters in their name must be given in quotes.
 <tr><td><tt>pc-4-aug</tt><td>H, C-F, Si-Cl<td>88<td>145<td>141
 </table>
 
-All basis sets except for the pc-<i>n</i> and pc-<i>n</i>-aug basis sets
+All basis sets
 were obtained from the Extensible Computational Chemistry
 Environment Basis Set Database, Version 12/03/03, as developed and
 distributed by the Molecular Science Computing Facility, Environmental and
@@ -131,11 +131,6 @@ the U.S. Department of Energy. The Pacific Northwest Laboratory is a
 multi-program laboratory operated by Battelle Memorial Institute for the
 U.S. Department of Energy under contract DE-AC06-76RLO 1830. Contact David
 Feller or Karen Schuchardt for further information.
-
-The pc-<i>n</i> and pc-<i>n</i>-aug basis sets are the polarization
-consistent basis sets of Frank Jensen.  See J. Chem. Phys. 115 (2001) 9113;
-J. Chem. Phys. 116 (2002) 7372; J. Chem. Phys. 117 (2002) 9234; and
-J. Chem. Phys. 121 (2004) 3463.
 
 */
 class GaussianBasisSet: virtual public SavableState

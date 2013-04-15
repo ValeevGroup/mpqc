@@ -332,7 +332,7 @@ ExtendedHuckelWfn::value_implemented() const
 void
 ExtendedHuckelWfn::fill_occ(const RefDiagSCMatrix &evals,int nelectron,int *docc, int *socc)
 {
-  HundsFEMOSeeker femoseeker(nelectron, HundsFEMOSeeker::tolerance, false, evals);
+  HundsFEMOSeeker femoseeker(nelectron, HundsFEMOSeeker::tolerance, true, evals);
   Ref<FEMO> femo = femoseeker.result();
   for(int g=0; g<nirrep_; ++g) {
     const int na = femo->nalpha(g);

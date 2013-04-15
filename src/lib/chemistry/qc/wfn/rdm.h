@@ -295,9 +295,9 @@ namespace sc {
       Ref<Wavefunction> wfn_;
 
     protected:
-      // used for R=1
+      // used for R=1 (and for now for R=2)
       mutable RefSymmSCMatrix scmat_;
-      // used for R=2
+      // (will be) used for R=2
       mutable Ref<DistArray4> da4_;
   };
 

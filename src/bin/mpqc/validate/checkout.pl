@@ -158,33 +158,33 @@ sub check {
                     my $maxerror = compare_numbers($result->s2norm(),
                                                    $cresult->s2norm());
                     printf " S2N:%d", $maxerror;
-                    flagerror() if ($maxerror <= 8);
+                    flagerror() if ($maxerror <= 7);
                 }
                 if (!$cresult->degenerate() &&
                     $result->s2matrix1norm() && $cresult->s2matrix1norm()) {
                     my $maxerror = compare_numbers($result->s2matrix1norm(),
                                                    $cresult->s2matrix1norm());
                     printf " |S2|1:%d", $maxerror;
-                    flagerror() if ($maxerror <= 8);
+                    flagerror() if ($maxerror <= 7);
                 }
                 if ($result->d1mp2() && $cresult->d1mp2()) {
                     my $maxerror = compare_numbers($result->d1mp2(),
                                                    $cresult->d1mp2());
                     printf " D1:%d", $maxerror;
-                    flagerror() if ($maxerror <= 8);
+                    flagerror() if ($maxerror <= 7);
                 }
                 if ($result->d2mp1() && $cresult->d2mp1()) {
                     my $maxerror = compare_numbers($result->d2mp1(),
                                                    $cresult->d2mp1());
                     printf " D2:%d", $maxerror;
-                    flagerror() if ($maxerror <= 8);
+                    flagerror() if ($maxerror <= 7);
                 }
                 if (!$cresult->degenerate() &&
                     $result->s2matrixinfnorm() && $cresult->s2matrixinfnorm()){
                     my $maxerror = compare_numbers($result->s2matrixinfnorm(),
                                                  $cresult->s2matrixinfnorm());
                     printf " |S2|i:%d", $maxerror;
-                    flagerror() if ($maxerror <= 8);
+                    flagerror() if ($maxerror <= 7);
                 }
                 if ($result->npacharge() && $cresult->npacharge()) {
                     my $maxerror = compare_vecs($result->npacharge(),

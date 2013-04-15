@@ -895,8 +895,6 @@ namespace sc {
                << "Entered Coulomb(DF) matrix evaluator" << endl;
       ExEnv::out0() << incindent;
 
-      ExEnv::out0() << indent << "Begin computation of Coulomb(DF) matrix" << endl;
-
       //////////////////////////////////////////////////////////////
       //
       // Evaluation of the coulomb matrix proceeds as follows:
@@ -925,10 +923,13 @@ namespace sc {
                                                                       dfspace->id(),
                                                                       obs_space->id(),
                                                                       "ERI","");
+        tim.enter(C_key);
         const Ref<TwoBodyThreeCenterMOIntsTransform>& C_tform = int3c_rtime->get(C_key);
         C_tform->compute();
         Ref<DistArray4> C = C_tform->ints_acc();  C->activate();
+        tim.exit();
 
+        tim.enter("contract density");
         const blasint nobs = obs_space->rank();
         const blasint ndf = dfspace->rank();
         std::vector<double> Q(ndf,0.0);
@@ -976,6 +977,7 @@ namespace sc {
           // sum all contributions
           msg->sum(&(Q[0]), ndf);
         }
+        tim.exit();
 
         // intermediate cleanup
         if (C->data_persistent()) C->deactivate();
@@ -989,13 +991,16 @@ namespace sc {
           const std::string kernel_key = ParsedTwoBodyTwoCenterIntKey::key(dfspace->id(),
                                                                            dfspace->id(),
                                                                            "ERI", "");
+          tim.enter(kernel_key);
           RefSCMatrix kernel_rect = df_rtime->moints_runtime()->runtime_2c()->get(kernel_key);
           kernel.assign_subblock(kernel_rect, 0, ndf-1, 0, ndf-1);
+          tim.exit();
         }
 
         //////////////////////////////////////////////
         // density fit Q using Cholesky solver
         //////////////////////////////////////////////
+        tim.enter("density fit");
         {
           std::vector<double> kernel_packed;  // only needed for factorized methods
           std::vector<double> kernel_factorized;
@@ -1014,18 +1019,21 @@ namespace sc {
                                                  &(R[0]), &(Q[0]), 1,
                                                  refine_solution);
         }
+        tim.exit();
 
       }
-
 
       const std::string cC_key = ParsedTwoBodyThreeCenterIntKey::key(braspace->id(),
                                                                      dfspace->id(),
                                                                      ketspace->id(),
                                                                      "ERI","");
+      tim.enter(cC_key);
       const Ref<TwoBodyThreeCenterMOIntsTransform>& cC_tform = int3c_rtime->get(cC_key);
       cC_tform->compute();
       Ref<DistArray4> cC = cC_tform->ints_acc();  cC->activate();
+      tim.exit();
 
+      tim.enter("assemble J");
       const int nbra = braspace->rank();
       const blasint nket = ketspace->rank();
       const int nbraket = nbra * nket;
@@ -1062,9 +1070,9 @@ namespace sc {
         // sum all contributions
         msg->sum(&(J[0]), nbraket);
       }
+      tim.exit();
 
       if (cC->data_persistent()) cC->deactivate();  cC = 0;
-      ExEnv::out0() << indent << "End of computation of Coulomb(DF) matrix" << endl;
 
       Ref<Integral> localints = int3c_rtime->factory()->integral()->clone();
       localints->set_basis(brabs);
@@ -1103,8 +1111,6 @@ namespace sc {
       ExEnv::out0() << endl << indent
                << "Entered exchange(DF) matrix evaluator" << endl;
       ExEnv::out0() << incindent;
-
-      ExEnv::out0() << indent << "Begin computation of exchange(DF) matrix" << endl;
 
       //////////////////////////////////////////////////////////////
       //
@@ -1163,7 +1169,7 @@ namespace sc {
         RefSCDimension Sdim = new SCDimension(Srank, 1); Sdim->blocks()->set_subdim(0, new SCDimension(Srank));
         RefSCMatrix S = Pevecs.kit()->matrix(obs_space->coefs().coldim(), Sdim);
         {  // compute S from Pevecs
-          // since both are blocked matrcies with 1 block, must operate on the blocks directly
+          // since both are blocked matrices with 1 block, must operate on the blocks directly
           RefSCMatrix Sblk = S.block(0);
           RefSCMatrix Ublk = Pevecs.block(0);
           int s = 0;
@@ -1193,19 +1199,18 @@ namespace sc {
       Ref<OrbitalSpaceRegistry> oreg = df_info->runtime()->moints_runtime()->factory()->orbital_registry();
       oreg->add(Sspace->id(), Sspace);
 
-      // little optimization here ... since DensityFittingRuntime currently always fits (iq| to get to (ij|
-      // and since rank of S will be smaller than rank of OBS when Hartree-Fock or CAS references are used
-      // compute density fitting of (S bra| and permute to get (bra S|
-      const std::string C_key = ParsedDensityFittingKey::key(Sspace->id(),
-                                                             braspace->id(),
+      // fit (bra S|
+      const std::string C_key = ParsedDensityFittingKey::key(braspace->id(),
+                                                             Sspace->id(),
                                                              dfspace->id());
       Ref<DistArray4> C = df_rtime->get(C_key);  C->activate();
-      {
-        Ref<DistArray4> Ctmp = permute23(C);
-        if (C->data_persistent()) C->deactivate();
-        C = Ctmp;  C->activate();
-      }
+//      {
+//        Ref<DistArray4> Ctmp = permute23(C);
+//        if (C->data_persistent()) C->deactivate();
+//        C = Ctmp;  C->activate();
+//      }
 
+      // get (ket S| integrals
       const std::string cC_key = ParsedTwoBodyThreeCenterIntKey::key(ketspace->id(),
                                                                      dfspace->id(),
                                                                      Sspace->id(),
@@ -1269,7 +1274,6 @@ namespace sc {
 
       if (cC->data_persistent()) cC->deactivate();
       if (C->data_persistent()) C->deactivate();
-      ExEnv::out0() << indent << "End of computation of exchange(DF) matrix" << endl;
 
       // remove P-depenedent entries from registries
       psqrtregistry->remove(P);

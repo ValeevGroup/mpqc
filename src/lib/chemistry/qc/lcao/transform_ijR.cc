@@ -68,7 +68,7 @@ TwoBodyThreeCenterMOIntsTransform_ijR::TwoBodyThreeCenterMOIntsTransform_ijR(Sta
 
 void
 TwoBodyThreeCenterMOIntsTransform_ijR::save_data_state(StateOut& so) {
-  assert(false);
+  TwoBodyThreeCenterMOIntsTransform::save_data_state(so);
 }
 
 int
@@ -211,16 +211,32 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute() {
   if (space3()->rank() == restart_orbital_)
     return;
 
-  std::string tim_label("tbint_tform_ijR ");
-  tim_label += this->name();
-  Timer tim(tim_label);
-
   // determine whether space1, space2, and space3 are AO spaces
   Ref<AOSpaceRegistry> aoidxreg = this->factory()->ao_registry();
   const bool space1_is_ao = aoidxreg->value_exists( this->space1() );
   const bool space2_is_ao = aoidxreg->value_exists( this->space2() );
   const bool space3_is_ao = aoidxreg->value_exists( this->space3() );
-  assert(space3_is_ao);
+
+  if (space1_is_ao)
+    compute_pjR();
+  else
+    compute_ijR();
+
+  restart_orbital_ = space3()->rank();
+}
+
+void
+TwoBodyThreeCenterMOIntsTransform_ijR::compute_ijR() {
+
+  // determine whether space1, space2, and space3 are AO spaces
+  Ref<AOSpaceRegistry> aoidxreg = this->factory()->ao_registry();
+  const bool space1_is_ao = false;
+  const bool space2_is_ao = aoidxreg->value_exists( this->space2() );
+  const bool space3_is_ao = aoidxreg->value_exists( this->space3() );
+
+  std::string tim_label("tbint_tform_ijR ");
+  tim_label += this->name();
+  Timer tim(tim_label);
 
   const int nproc = mem_->n();
   const int me = mem_->me();
@@ -404,6 +420,12 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute() {
 
   mem_->sync();
 
+  // transform R now, if necessary
+  if (not space3_is_ao) {
+    throw FeatureNotImplemented("TwoBodyThreeCenterMOIntsTransform_ijR: non-AO R space in <ij|R> is not yes supported",
+                                __FILE__, __LINE__, this->class_desc());
+  }
+
   // dump integrals from MemoryGrp to DistArray4
   ints_acc_->activate();
   detail::store_memorygrp(ints_acc_,mem_,0,1,memgrp_blocksize);
@@ -422,7 +444,208 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute() {
   }
   delete[] buffer;
 
-  restart_orbital_ = space3()->rank();
+  tim.exit();
+  ExEnv::out0() << indent << "Built TwoBodyMOIntsTransform_ijR: name = " << this->name() << std::endl;
+}
+
+void
+TwoBodyThreeCenterMOIntsTransform_ijR::compute_pjR() {
+
+  // foreach p shell
+  //   compute qS integrals
+  //   transform qS -> jR
+  //   store jR to ints_acc
+
+  // determine whether space1, space2, and space3 are AO spaces
+  Ref<AOSpaceRegistry> aoidxreg = this->factory()->ao_registry();
+  const bool space1_is_ao = true;
+  const bool space2_is_ao = aoidxreg->value_exists( this->space2() );
+  const bool space3_is_ao = aoidxreg->value_exists( this->space3() );
+
+  std::string tim_label("tbint_tform_ijR ");
+  tim_label += this->name();
+  Timer tim(tim_label);
+
+  const int nproc = mem_->n();
+  const int me = mem_->me();
+
+  const Ref<GaussianBasisSet>& b1 = this->space1()->basis();
+  const Ref<GaussianBasisSet>& b2 = this->space2()->basis();
+  const Ref<GaussianBasisSet>& b3 = this->space3()->basis();
+
+  const int num_te_types = this->num_te_types();
+  const blasint n1 = this->space1()->rank();
+  const blasint n2 = this->space2()->rank();
+  const blasint n3 = this->space3()->rank();
+  const blasint n23 = n2*n3;
+  const blasint nbasis2 = b2->nbasis();
+  const blasint nbasis3 = b3->nbasis();
+  const blasint nb23 = nbasis2 * nbasis3;
+  int nfuncmax1 = b1->max_nfunction_in_shell();
+
+  // get scratch storage
+  const size_t qS_ints_size = nfuncmax1 * nbasis2 * nbasis3;
+  double* qS_ints_ptr = allocate<double>(num_te_types * qS_ints_size);
+  std::vector< double* > qS_ints(num_te_types);
+  qS_ints[0] = qS_ints_ptr;
+  for(int te_type=1; te_type<num_te_types; te_type++) {
+    qS_ints[te_type] = qS_ints[te_type - 1] + qS_ints_size;
+  }
+
+  double* jS_ints;
+  double* qj;
+  if (!space2_is_ao) {
+    jS_ints = allocate<double>(n2 * nbasis3);
+    RefSCMatrix mocoefs2 = space2_->coefs();   // (pi)
+    qj = allocate<double>(nbasis2 * n2);
+    mocoefs2.convert(qj);  mocoefs2 = 0;
+  }
+
+  double* jR_ints;
+  double* SR;
+  if (!space3_is_ao) {
+    jR_ints = allocate<double>(n23);
+    RefSCMatrix mocoefs3 = space3_->coefs();   // (SR)
+    SR = allocate<double>(nbasis3 * n3);
+    mocoefs3.convert(SR);  mocoefs3 = 0;
+  }
+
+  // get the integral evaluator
+  Ref<Integral> integral = tbintdescr_->factory();
+  integral->set_basis(b1, b2, b3);
+  Ref<TwoBodyThreeCenterInt> inteval = tbintdescr_->inteval();
+  const Ref<TwoBodyOperSetDescr>& descr = inteval->descr();
+  std::vector<const double*> buffer(num_te_types);
+  for(int te_type=0; te_type<num_te_types; te_type++)
+    buffer[te_type] = inteval->buffer( descr->opertype(te_type) );
+
+  ints_acc_->activate();
+
+  std::vector<int> tasks_with_access;
+  const int ntasks_with_access = ints_acc_->tasks_with_access(tasks_with_access);
+
+  // distribute work by basis1
+  // TODO 1) use DistShell -- not too important now
+  // TODO 2) use threads
+  if (tasks_with_access[me] != -1) { // work, if can write to ints_acc
+    for (int s1 = 0; s1 < b1->nshell(); ++s1) {
+      const int s1offset = b1->shell_to_function(s1);
+      const int nf1 = b1->shell(s1).nfunction();
+
+      // static round-robin load distribution
+      if (s1 % ntasks_with_access != tasks_with_access[me])
+        continue;
+
+      //////////
+      // compute the entire (... q| S) block where ... is shell s1
+      // multiple threads will cooperate here
+      //////////
+
+      const size_t f1nb2nb3 = nf1 * nbasis2 * nbasis3;
+      for (int te_type = 0; te_type < num_te_types; ++te_type) {
+        memset(qS_ints[te_type], 0, f1nb2nb3 * sizeof(double));
+      }
+
+      for (int s2 = 0; s2 < b2->nshell(); ++s2) {
+
+        const int s2offset = b2->shell_to_function(s2);
+        const int nf2 = b2->shell(s2).nfunction();
+
+        for (int s3 = 0; s3 < b3->nshell(); ++s3) {
+
+          // skip the insignificant integrals
+          const double log2_cauchy_bound = inteval->log2_shell_bound(s1, s2,
+                                                                     s3);
+          if (log2_cauchy_bound < this->log2_epsilon()) {
+            continue;
+          }
+
+          const int s3offset = b3->shell_to_function(s3);
+          const blasint nf3 = b3->shell(s3).nfunction();
+          const blasint nf23 = nf2 * nf3;
+
+          // compute shell triplet
+          inteval->compute_shell(s1, s2, s3);
+
+          // compare the actual bound with the estimated bound
+          if (0) {
+            const double actual_max = *std::max_element(buffer[0],
+                                                        buffer[0] + nf1 * nf23,
+                                                        abs_less<double>());
+            ExEnv::outn()
+                << scprintf(
+                    "s1=%d s2=%d s3=%d log2_cauchy=%10.5e log2_actual_max=%10.5e\n",
+                    s1, s2, s3, log2_cauchy_bound,
+                    log(abs(actual_max)) / log(2.0));
+          }
+
+          // copy buffer into qS_ints
+          // for each f1 copy s2 s3 block to the isometric block with left top corner at
+          // (f1 * nbasis2 + s2offset) * nbasis3 + s3offset
+          for (int te_type = 0; te_type < num_te_types; ++te_type) {
+            const double* f1s2s3_src = buffer[te_type];
+            double* f1s2s3_dst = qS_ints[te_type] + s2offset * nbasis3
+                + s3offset;
+            for (int f1 = 0; f1 < nf1; ++f1, f1s2s3_dst += nb23) {
+              for (int f2 = 0; f2 < nf2; ++f2, f1s2s3_src += nf3) {
+                std::copy(f1s2s3_src, f1s2s3_src + nf3,
+                          f1s2s3_dst + f2 * nbasis3);
+              }
+            }
+          }
+
+        }
+      }
+
+      // **** transform (pq|S) to (pj|S) ****
+      const char notransp = 'n';
+      const char transp = 't';
+      const double one = 1.0;
+      const double zero = 0.0;
+      for (int te_type = 0; te_type < num_te_types; ++te_type) {
+
+        // for each p: (pq|S) = (jq) * (pq|S)
+        const double* pqS_ints = qS_ints[te_type];
+        for (int p = 0; p < nf1; ++p, pqS_ints += nb23) {
+
+          if (!space2_is_ao)
+            C_DGEMM(transp, notransp, nbasis2, n2, nbasis3, one, qj, n2,
+                    pqS_ints, nbasis3, zero, jS_ints, nbasis3);
+          else
+            jS_ints = const_cast<double*>(pqS_ints);
+
+          // (pj|R) = (pj|S) * (S|R)
+          if (!space3_is_ao)
+            C_DGEMM(notransp, notransp, n2, nbasis3, n3, one, jS_ints, nbasis3,
+                    SR, n3, zero, jR_ints, n3);
+          else
+            jR_ints = const_cast<double*>(jS_ints);
+
+          // store jR block to ints_acc
+          ints_acc_->store_pair_block(0, s1offset + p, te_type, jR_ints);
+
+        } // end of p loop
+
+      } // end of te_type loop
+
+    } // end of loop over p shells
+  } // tasks with access
+
+  mem_->sync();
+
+  if (ints_acc_->data_persistent()) ints_acc_->deactivate();
+
+  // cleanup
+  deallocate(qS_ints_ptr);
+  if (not space2_is_ao) {
+    deallocate(qj);
+    deallocate(jS_ints);
+  }
+  if (not space3_is_ao) {
+    deallocate(SR);
+    deallocate(jR_ints);
+  }
+
   tim.exit();
   ExEnv::out0() << indent << "Built TwoBodyMOIntsTransform_ijR: name = " << this->name() << std::endl;
 }
@@ -460,7 +683,7 @@ TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR::TwoBodyThreeCenterMOIntsTransfo
 
 void
 TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR::save_data_state(StateOut& so) {
-  assert(false);
+  TwoBodyThreeCenterMOIntsTransform::save_data_state(so);
 }
 
 int

@@ -44,18 +44,6 @@ pwavefunction<HCoreWfn>: (
 coor = $:symcoor
 message = $:message1
 
-soadwfn<SuperpositionOfAtomicDensities>: (
-
-  molecule = $:molecule
-  basis<GaussianBasisSet>: (
-    molecule = $..:molecule
-    name = "cc-pVDZ"
-    puream = yes
-  )
-  
-)
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % message types

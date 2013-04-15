@@ -69,6 +69,12 @@ namespace sc {
       void init_acc();
       // implements TwoBodyThreeCenterMOIntsTransform::extra_memory_report()
       void extra_memory_report(std::ostream& os = ExEnv::out0()) const;
+
+      /// specialization of compute() for the case where space1 is AO
+      void compute_pjR();
+      /// specialization of compute() for the case where space1 is not AO
+      void compute_ijR();
+
   };
 
   /** TwoBodyThreeCenterMOIntsTransform_ijR computes (ij|R) integrals,

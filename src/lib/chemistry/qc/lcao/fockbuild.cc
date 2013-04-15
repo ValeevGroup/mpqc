@@ -2413,6 +2413,13 @@ FockBuildThread_F12_P33::run_J()
                       contrib_->contrib_e_J(1.0, I, J, K, L,
                                             nI, nJ, nK, nL, buf);
                     }
+
+                   //                      std::cout << "contrib_->nint() before = " << contrib_->nint()
+                   //                                << std::endl;
+                                        contrib_->nint() += (double) nI*nJ*nK*nL;
+                   //                      std::cout << "contrib_->nint() after = " << contrib_->nint()
+                   //                                << std::endl;
+
                 }
             }
         }
@@ -2455,6 +2462,13 @@ FockBuildThread_F12_P33::run_K()
                   // K are from the same basis set
                   contrib_->contrib_e_K(coef_K_, I, J, K, L,
                                         nI, nJ, nK, nL, buf);
+
+                  //                       std::cout << "contrib_->nint() before = " << contrib_->nint()
+                  //                                 << std::endl;
+                                        contrib_->nint() += (double) nI*nJ*nK*nL;
+                  //                       std::cout << "contrib_->nint() after = " << contrib_->nint()
+                  //                                 << std::endl;
+
                 }
             }
         }

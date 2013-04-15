@@ -462,18 +462,32 @@ TwoBodyThreeCenterMOIntsTransform::TwoBodyThreeCenterMOIntsTransform(const std::
 TwoBodyThreeCenterMOIntsTransform::TwoBodyThreeCenterMOIntsTransform(StateIn& si) :
   SavableState(si) {
   si.get(name_);
+  factory_ << SavableState::restore_state(si);
+  ints_acc_ << SavableState::restore_state(si);
   space1_ << SavableState::restore_state(si);
   space2_ << SavableState::restore_state(si);
   space3_ << SavableState::restore_state(si);
+
+  mem_ = MemoryGrp::get_default_memorygrp();
+
+  int ints_method; si.get(ints_method); ints_method_ = static_cast<MOIntsTransform::StoreMethod::type>(ints_method);
+  si.get(file_prefix_);
+  si.get(restart_orbital_);
   si.get(log2_epsilon_);
 }
 
 void
 TwoBodyThreeCenterMOIntsTransform::save_data_state(StateOut& so) {
   so.put(name_);
+  SavableState::save_state(factory_.pointer(),so);
+  SavableState::save_state(ints_acc_.pointer(),so);
   SavableState::save_state(space1_.pointer(),so);
   SavableState::save_state(space2_.pointer(),so);
   SavableState::save_state(space3_.pointer(),so);
+
+  so.put((int)ints_method_);
+  so.put(file_prefix_);
+  so.put(restart_orbital_);
   so.put(log2_epsilon_);
 }
 

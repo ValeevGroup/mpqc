@@ -39,13 +39,12 @@ TESTPROGS = wfntest
 
 SRCS = wfn.cc densval.cc natorbval.cc obwfn.cc density.cc hcorewfn.cc \
        accum.cc nao.cc orbital.cc eht.cc esp.cc femo.cc \
-       orbitalspace.cc orbitalspace_utils.cc rdm.cc spin.cc \
-       soad.cc
+       orbitalspace.cc orbitalspace_utils.cc rdm.cc spin.cc
 
 INC = wfn.h accum.h density.h eht.h esp.h femo.h obwfn.h orbital.h \
       orbitalspace.h orbitalspace.timpl.h \
       orbitalspace_utils.h orbitalspace_utils.timpl.h rdm.h \
-      spin.h soad.h
+      spin.h
 
 LIBOBJ= $(SRCS:%.cc=%.$(OBJSUF))
 

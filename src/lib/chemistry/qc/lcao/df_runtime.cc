@@ -187,7 +187,9 @@ DensityFittingRuntime::create_result(const std::string& key)
   // 1) look for (space2 space1|
   // 2) look for (space1 AO(space2)|, (space2 AO(space1)|, (AO(space1) space2|
   // 3) else construct from scratch
-  //   a) make (space_i AO(space_j)| where i and j are determined such that rank(space_i) = min(rank(space1),rank(space2))
+  //   a) make (space_i space_j| where i and j are determined such that space_i is an AO space, if possible
+  //      (to make 3-center integrals easier); if space1 and space2 and both AO choose space_i such that
+  //      rank(space_i) = min(rank(space1),rank(space2))
   //   b) call itself
 
   // 1) look for (space2 space1|
@@ -206,7 +208,7 @@ DensityFittingRuntime::create_result(const std::string& key)
 
   Ref<AOSpaceRegistry> aoreg = this->moints_runtime()->factory()->ao_registry();
 
-  // 2) look for AO-basis fittings
+  // 2) look for existing AO-basis fittings
 #if USE_TRANSFORMED_DF
   {
     Ref<OrbitalSpace> space1_ao = aoreg->value( space1->basis() );
@@ -214,7 +216,7 @@ DensityFittingRuntime::create_result(const std::string& key)
     const bool space1_is_ao = aoreg->value_exists( space1 );
     const bool space2_is_ao = aoreg->value_exists( space2 );
 
-    // look for (space1 AO(space2)| -> compute (space1 space| and return
+    // look for (space1 AO(space2)| -> compute (space1 space2| and return
     if (!space2_is_ao) {
       const std::string bkey = ParsedResultKey::key(space1->id(), space2_ao->id(), fspace->id());
       if (this->exists(bkey)) {
@@ -283,26 +285,35 @@ DensityFittingRuntime::create_result(const std::string& key)
     Ref<OrbitalSpace> space2_ao = aoreg->value( space2->basis() );
     const bool space1_is_ao = aoreg->value_exists( space1 );
     const bool space2_is_ao = aoreg->value_exists( space2 );
-    // since 1 AO space case should have been handled above, either both spaces are AO (then just skip this) or neither
-    // in the latter case leave alone the space with the lowest rank
+    // if both spaces are MO, compute (AO(space_i) space_j|, (where rank is increased the least) call itself
     if (!space1_is_ao && !space2_is_ao) {
       Ref<OrbitalSpace> mospace, aospace;
-      if (space1->rank() > space2->rank()) {
-        mospace = space2;
+      if (space1->rank() * space2_ao->rank() >= space1_ao->rank() * space2->rank()) {
         aospace = space1_ao;
+        mospace = space2;
       }
       else {
-        mospace = space1;
         aospace = space2_ao;
+        mospace = space1;
       }
-      const std::string bkey = ParsedResultKey::key(mospace->id(), aospace->id(), fspace->id());
+      const std::string bkey = ParsedResultKey::key(aospace->id(), mospace->id(), fspace->id());
       Ref<DensityFitting> df = new DensityFitting(moints_runtime_, "1/r_{12}", solver_,
-                                                  mospace, aospace, fspace->basis());
+                                                  aospace, mospace, fspace->basis());
       df->compute();
       results_->add(bkey, df->C());
       return this->create_result(key);
     }
 #endif
+    // if space1 is MO and space2 is AO, compute (space2 space_1|, call itself
+    if (!space1_is_ao && space2_is_ao) {
+      const std::string bkey = ParsedResultKey::key(space2->id(), space1_ao->id(), fspace->id());
+      Ref<DensityFitting> df = new DensityFitting(moints_runtime_, "1/r_{12}", solver_,
+                                                  space2, space1_ao, fspace->basis());
+      df->compute();
+      results_->add(bkey, df->C());
+      return this->create_result(key);
+    }
+    // otherwise just compute (space1 space2|
     {
       Ref<DensityFitting> df = new DensityFitting(moints_runtime_, "1/r_{12}", solver_,
                                                   space1, space2, fspace->basis());

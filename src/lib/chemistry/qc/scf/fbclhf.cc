@@ -150,7 +150,6 @@ FockBuildCLHF::ao_fock(double accuracy)
 
   // F = H+G
   cl_fock_.result_noupdate().assign(hcore_);
-  dd.print("G");
   cl_fock_.result_noupdate().accumulate(dd);
   accumddh_->accum(cl_fock_.result_noupdate());
   cl_fock_.computed()=1;

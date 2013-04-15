@@ -43,7 +43,7 @@
 #include <math/optimize/diis.h>
 
 #include <chemistry/qc/basis/petite.h>
-#include <chemistry/qc/wfn/soad.h>
+#include <chemistry/qc/lcao/soad.h>
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/lcao/df_runtime.h>
 
@@ -420,6 +420,7 @@ SCF::initial_vector()
       akv->assign("basis", basis().pointer());
       try {
         guess_wfn_ = new SuperpositionOfAtomicDensities(Ref<KeyVal>(akv));
+        //guess_wfn_ = new HCoreWfn(Ref<KeyVal>(akv));   not done because the "diagonalize-in-SO-basis" is not implemented
         soad_guess = true;
       }
       catch (...) { // failed? Oh well, will resort to core guess.
@@ -443,7 +444,7 @@ SCF::initial_vector()
                       << " guess wavefunction as starting vector" << endl;
 
         // indent output of eigenvectors() call if there is any
-        ExEnv::out0() << incindent << incindent;
+        ExEnv::out0() << incindent;
         SCF *g = dynamic_cast<SCF*>(guess_wfn_.pointer());
         if (!g || compute_guess_) {
           oso_eigenvectors_ = guess_wfn_->oso_eigenvectors().copy();
@@ -452,7 +453,7 @@ SCF::initial_vector()
           oso_eigenvectors_ = g->oso_eigenvectors_.result_noupdate().copy();
           eigenvalues_ = g->eigenvalues_.result_noupdate().copy();
         }
-        ExEnv::out0() << decindent << decindent;
+        ExEnv::out0() << decindent;
       } else {
         ExEnv::out0() << indent
                       << "Projecting "

@@ -12,18 +12,33 @@
 
 namespace sc {
 
-  /// This helper class simplifies initialization of MPQC.
+  /** This helper class simplifies initialization of MPQC. Only one object must be created
+   *  since the initialization performed by this class can only be done once per program lifetime.
+   */
   class MPQCInit {
     GetLongOpt& opt_;
     char **argv_;
     int &argc_;
+
+    /// the unique instance. should be std::unique_ptr<>
+    static MPQCInit* instance_;
+
   public:
-    /// Create the initializer. Needed options will be enrolled
+
+    /// Create the initializer. Only one object of this time can be created.
+    /// Needed options will be enrolled
     /// in the opt object. The parse member of opt must be called
     /// after this constructor completes, but before any of the
     /// other members of MPQCInit are called.
+    ///
+    /// N.B. This is not explicitly implemented as a Singleton for syntactic reasons.
     MPQCInit(GetLongOpt&opt, int &argc, char **argv);
+
     ~MPQCInit();
+
+    /// returns ptr to the only instance of this object; 0 if has not been constructed
+    MPQCInit* instance() { return instance_; }
+
     /// Initialize the floating point control word.
     void init_fp();
     /// Initialize the resource limits.
@@ -64,6 +79,18 @@ namespace sc {
     /// Clean up at the end of a run. This is called automatically by
     /// the destructor.
     void finalize();
+
+#ifdef HAVE_MADNESS
+    madness::World& madness_world() { return *madworld_; }
+#endif
+
+  private:
+    /// initializes MADNESS runtime, if available. No need to call manually, will call from MPQCInit::init()
+    void init_madness();
+#ifdef HAVE_MADNESS
+    madness::World* madworld_; // global MADNESS world
+#endif
+
   };
 
 }

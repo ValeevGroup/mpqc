@@ -27,7 +27,13 @@
 #include <chemistry/qc/basis/integral.h>
 #include <util/misc/consumableresources.h>
 
+#ifdef HAVE_MADNESS
+# include <world/world.h>
+#endif
+
 namespace sc {
+
+MPQCInit* MPQCInit::instance_(0);
 
 static void
 finalize()
@@ -285,6 +291,7 @@ MPQCInit::init(const std::string &input_filename,
   ExEnv::init(argc_, argv_);
   init_fp();
   init_limits();
+  init_madness(); // this will call MPI_Init, if MADNESS is available
   Ref<MessageGrp> grp = init_messagegrp();
   init_io(grp);
   Ref<KeyVal> keyval = init_keyval(grp,input_filename);
@@ -303,8 +310,20 @@ void
 MPQCInit::finalize()
 {
   sc::finalize();
+#ifdef HAVE_MADNESS
+  madworld_.gop.fence();
+  madness::finalize();
+#endif
 }
 
+void
+MPQCInit::init_madness()
+{
+#ifdef HAVE_MADNESS
+  madness::initialize(argc_, argv_);
+  madworld_ = new madness::World(SafeMPI::COMM_WORLD);
+#endif
+}
 
 }
 

@@ -144,7 +144,7 @@ case $enableval in
     PARALLEL=no
   ;;
   *)
-    AC_MSG_ERROR([Invalid value for --enable-parallel ($enableval)])
+    AC_MSG_ERROR([Invalid value for --disable-parallel ($enableval)])
   ;;
 esac
 ],[
@@ -152,8 +152,8 @@ esac
 ]
 )
 
-AC_ARG_ENABLE(always-use-mpi,
-[  --enable-always-use-mpi Causes MPI_Init to always be called from main],
+AC_ARG_ENABLE(disways-use-mpi,
+[  --disable-always-use-mpi Causes MPI_Init to not be called from main unless MPIMessageGrp is explicitly provided],
 [
 case $enableval in
   yes)
@@ -163,11 +163,11 @@ case $enableval in
     ALWAYS_USE_MPI=no
   ;;
   *)
-    AC_MSG_ERROR([Invalid value for --enable-always-use-mpi ($enableval)])
+    AC_MSG_ERROR([Invalid value for --disable-always-use-mpi ($enableval)])
   ;;
 esac
 ],[
-    ALWAYS_USE_MPI=no
+    ALWAYS_USE_MPI=yes
 ]
 )
 
@@ -435,7 +435,7 @@ changequote(<<, >>)dnl
 CCALAUNCH="%CCAFE% --ccafe-rc %INPUT% --ccafe-remap-stdio --ccafe-outputdir %OUTPUT%";
 changequote([, ])dnl
 AC_ARG_WITH(cca-launch,
-[  --with-cca-launch        The ccarun script launch string.],
+[  --with-cca-launch       The ccarun script launch string.],
 CCALAUNCH=$withval
 )
 AC_SUBST(CCALAUNCH)
@@ -480,14 +480,14 @@ echo Using extra libraries: $withval
 
 XTRA_FLIBS=
 AC_ARG_WITH(extra-flibs,
-[  --with-extra-flibs      Specifies libs needing a F77 runtime (-llib1 -llib2).],
+[  --with-extra-flibs      Specifies extra libs for FORTRAN runtime (-llib1 -llib2).],
 XTRA_FLIBS=$withval
 echo Using extra FORTRAN libraries: $withval
 )
 
 have_flibs=no
 AC_ARG_WITH(flibs,
-[  --with-flibs            Specifies the F77 runtime (by default, will guess).],
+[  --with-flibs            Specifies the FORTRAN runtime libs (by default, will guess).],
 FLIBS=$withval
 have_flibs=yes
 echo Using FORTRAN runtime libraries: $withval
@@ -1260,9 +1260,7 @@ if test X$PARALLEL = Xyes; then
   AC_LANG_RESTORE
 fi
 
-if test X$HAVE_MPI != Xyes -a $ALWAYS_USE_MPI = yes; then
-  AC_MSG_ERROR([--enable-always-use-mpi is set but MPI is not available])
-elif test $ALWAYS_USE_MPI = yes; then
+if test X$HAVE_MPI = Xyes -a X$ALWAYS_USE_MPI = Xyes; then
   AC_DEFINE(ALWAYS_USE_MPI)
 fi
 
@@ -1660,6 +1658,163 @@ AC_TRY_LINK([
 fi
 AC_LANG_RESTORE
 
+dnl ----------- MADNESS framework checks --------------
+
+if test "X$HAVE_MPI" = "Xyes"; then
+  AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+
+  MADNESSDIR=/usr/local
+  AC_ARG_WITH(madness,
+  [  --with-madness          MADNESS directory prefix (i.e. prefix/lib is location of the library)],
+  MADNESSDIR=$withval
+  )
+  dnl -- find madness_config.h using given MADNESSDIR, do rest of checks only if found --
+  ref_CPPFLAGS=$CPPFLAGS
+  CPPFLAGS="-I$MADNESSDIR/include $CPPFLAGS"
+  AC_CHECK_HEADER(madness_config.h, [HAVE_MADNESS_CONFIG_H=yes], [HAVE_MADNESS_CONFIG_H=no])
+  if test "X$HAVE_MADNESS_CONFIG_H" = "Xno"; then
+    CPPFLAGS=$ref_CPPFLAGS
+  else # HAVE_MADNESS_CONFIG_H=yes
+    LIBS="-L$MADNESSDIR/lib  $LIBS"
+    CPPFLAGS="-I$MADNESSDIR/include $ref_CPPFLAGS"
+ 
+    # check for MADNESS in earnest
+    AC_CHECK_HEADERS(world/world.h,
+
+    AC_MSG_CHECKING([for madness::initialize in -lMADworld])
+    REF_LIBS=$LIBS  LIBS="-lMADworld $LIBS"
+    AC_LINK_IFELSE(
+     AC_LANG_PROGRAM(
+      [[#include <world/world.h>
+      ]],
+      [[
+        void (*funcptr)(int,char**) = madness::initialize;
+        funcptr(0, 0);
+      ]]
+     ),
+     [can_link_madworld=yes
+      AC_MSG_RESULT(yes)],
+     [AC_MSG_RESULT(no)]
+    )
+    LIBS=$REF_LIBS
+  
+    if test X$can_link_madworld = Xyes; then
+      HAVE_MADNESS=yes
+      AC_DEFINE(HAVE_MADNESS)
+      AC_SUBST(HAVE_MADNESS)
+      REF_LIBS="-lMADworld $LIBS"
+      LIBS=$REF_LIBS
+    fi
+   )
+  fi
+  AC_LANG_RESTORE
+fi
+
+dnl ----------- Eigen library checks --------------
+
+if test "X" = "X"; then
+  AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+
+  EIGENDIR=/opt/local/include/eigen3
+  AC_ARG_WITH(eigen,
+    [  --with-eigen            Eigen directory prefix (i.e. prefix/Eigen is location of the library); the default is /opt/local/include/eigen3],
+    EIGENDIR=$withval
+  )
+  dnl -- find tiled_array.h using given TADIR, do rest of checks only if found --
+  ref_CPPFLAGS=$CPPFLAGS
+  CPPFLAGS="-I$EIGENDIR $CPPFLAGS"
+  AC_CHECK_HEADER(Eigen/Core, [HAVE_EIGEN_CORE=yes], [HAVE_EIGEN_CORE=no])
+  AC_CHECK_HEADER(Eigen/Dense,[HAVE_EIGEN_DENSE=yes], [HAVE_EIGEN_DENSE=no])
+  if test "X$HAVE_EIGEN_CORE" = "Xno" -o "X$HAVE_EIGEN_DENSE" = "Xno"; then
+    CPPFLAGS=$ref_CPPFLAGS
+  else # HAVE_EIGEN_CORE=yes
+    CPPFLAGS="-I$EIGENDIR $ref_CPPFLAGS"
+ 
+    # check Eigen in earnest
+    AC_MSG_CHECKING([basic sanity of Eigen])
+    AC_LINK_IFELSE(
+     AC_LANG_PROGRAM(
+      [[#include <Eigen/Core>
+        #include <Eigen/Dense>
+        #include <iostream>
+      ]],
+      [[
+        Eigen::MatrixXd m = Eigen::MatrixXd::Random(5, 5);
+        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(m);
+        Eigen::MatrixXd m_invsqrt = eig.operatorInverseSqrt();
+        std::cout << m_invsqrt << std::endl;
+      ]]
+     ),
+     [can_use_eigen=yes
+      AC_MSG_RESULT(yes)],
+     [AC_MSG_RESULT(no)]
+    )
+  
+    if test X$can_use_eigen = Xyes; then
+      HAVE_EIGEN=yes
+      AC_DEFINE(HAVE_EIGEN)
+      AC_SUBST(HAVE_EIGEN)
+    fi
+  fi
+  AC_LANG_RESTORE
+fi
+
+dnl ----------- TiledArray library checks --------------
+
+if test "X$HAVE_MADNESS" = "Xyes" -a "X$HAVE_EIGEN" = "Xyes"; then
+  AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+
+  TILEDARRAYDIR=/usr/local
+  AC_ARG_WITH(tiledarray,
+    [  --with-tiledarray       TiledArray directory prefix (i.e. prefix/include is location of the library)],
+    TILEDARRAYDIR=$withval
+  )
+  dnl -- find tiled_array.h using given TADIR, do rest of checks only if found --
+  ref_CPPFLAGS=$CPPFLAGS
+  CPPFLAGS="-I$TILEDARRAYDIR/include $CPPFLAGS"
+  AC_CHECK_HEADER(tiled_array.h, [HAVE_TILEDARRAY_H=yes], [HAVE_TILEDARRAY_H=no])
+  if test "X$HAVE_TILEDARRAY_H" = "Xno"; then
+    CPPFLAGS=$ref_CPPFLAGS
+  else # HAVE_TILEDARRAY_H=yes
+    CPPFLAGS="-I$TILEDARRAYDIR/include $ref_CPPFLAGS"
+ 
+    # check for TiledArray in earnest
+    AC_MSG_CHECKING([basic sanity of TiledArray])
+    AC_LINK_IFELSE(
+     AC_LANG_PROGRAM(
+      [[#include <tiled_array.h>
+      ]],
+      [[
+        madness::initialize(0,0);
+        madness::World world(SafeMPI::COMM_WORLD);
+        std::vector<TiledArray::TiledRange1> tile_ranges;
+        size_t tile_bounds[[]] = {0, 3, 7}; // 2 tiles; N.B. double square brackets due to autoconf madness
+        const size_t ntiles = sizeof(tile_bounds)/sizeof(size_t) - 1;
+        tile_ranges.push_back(TiledArray::TiledRange1(tile_bounds, tile_bounds+ntiles));
+        tile_ranges.push_back(TiledArray::TiledRange1(tile_bounds, tile_bounds+ntiles));
+        TiledArray::TiledRange trange_2d(tile_ranges.begin(), tile_ranges.end());
+        TiledArray::Array<double,2> array_2d(world, trange_2d);
+        TiledArray::Array<double,2> array_2d_tr(array_2d.get_world(), array_2d.trange());
+        array_2d_tr("i,j") = array_2d("j,i");
+      ]]
+     ),
+     [can_use_tiledarray=yes
+      AC_MSG_RESULT(yes)],
+     [AC_MSG_RESULT(no)]
+    )
+  
+    if test X$can_use_tiledarray = Xyes; then
+      HAVE_TILEDARRAY=yes
+      AC_DEFINE(HAVE_TILEDARRAY)
+      AC_SUBST(HAVE_TILEDARRAY)
+    fi
+  fi
+  AC_LANG_RESTORE
+fi
+
 dnl ----------- libint library checks --------------
 
 AC_LANG_SAVE
@@ -1709,7 +1864,7 @@ AC_LANG_CPLUSPLUS
 
 LIBINT2DIR=/usr/local
 AC_ARG_WITH(libint2,
-[  --with-libint2               Libint2 directory prefix (i.e. prefix/lib is location of the library)],
+[  --with-libint2          Libint2 directory prefix (i.e. prefix/lib is location of the library)],
 LIBINT2DIR=$withval
 )
 dnl -- find libint2_config.h using given LIBINT2DIR, do rest of checks only if found --
@@ -1992,7 +2147,7 @@ dnl ----------- Psi program checks --------------
 
 PSIROOTDIR=
 AC_ARG_WITH(psi,
-[  --with-psi                   Psi root directory (i.e. prefix/bin is location for the binaries)],
+[  --with-psi              Psi root directory (i.e. prefix/bin is location for the binaries)],
 PSIROOTDIR=$withval
 )
 dnl -- find psi3 using given PSIDROOTDIR, do rest of checks only if found --
@@ -2389,11 +2544,14 @@ if test "$HAVE_MPI" = yes; then
   fi
 fi
 echo "HAVE_ARMCI              ${HAVE_ARMCI:-no}"
+echo "HAVE_MADNESS            ${HAVE_MADNESS:-no}"
+echo "HAVE_EIGEN              ${HAVE_EIGEN:-no}"
+echo "HAVE_TILEDARRAY         ${HAVE_TILEDARRAY:-no}"
 echo "HAVE_LIBINT             ${HAVE_LIBINT:-no}"
 echo "HAVE_LIBR12             ${HAVE_LIBR12:-no}"
 echo "HAVE_LIBDERIV           ${HAVE_LIBDERIV:-no}"
 echo "HAVE_LIBINT2            ${HAVE_LIBINT2:-no}"
-echo "Psi interface           ${HAVE_PSIMPQCIFACE:-no}"
+echo "Psi3 interface          ${HAVE_PSIMPQCIFACE:-no}"
 echo "components              ${components:-<not set>}"
 if test "$components" = yes; then
    echo "                        (CCA_CHEM_CONFIG=${CCA_CHEM_CONFIG:-<not set>})"

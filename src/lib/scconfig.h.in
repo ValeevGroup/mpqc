@@ -245,6 +245,15 @@
 /* Define if you have the <armci.h> header file and library.  */
 #undef HAVE_ARMCI
 
+/* Define if you have the MADNESS framework.  */
+#undef HAVE_MADNESS
+
+/* Define if you have the Eigen library.  */
+#undef HAVE_EIGEN
+
+/* Define if you have the TiledArray library.  */
+#undef HAVE_TILEDARRAY
+
 /* Define if you have the libint header file and library.  */
 #undef HAVE_LIBINT
 
@@ -433,6 +442,10 @@
 
 /* define if SC is using <type_traits>. */
 #undef SC_USE_TYPE_TRAITS
+
+#if defined(HAVE_TILEDARRAY) && defined(HAVE_LIBINT2)
+#  define HAVE_MPQC3_RUNTIME
+#endif
 
 #endif /* _CONFIG_H */
 

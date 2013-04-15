@@ -467,8 +467,8 @@ class SymmSCMatrix: public DescribedClass {
     virtual void eigensystem(SymmSCMatrix*s,DiagSCMatrix*d,SCMatrix*m) = 0;
     /// Sum m into this.
     virtual void accumulate(const SymmSCMatrix* m) = 0;
-    /// Sum into this the products of various vectors or matrices.
-    virtual void accumulate_symmetric_sum(SCMatrix*) = 0;
+    /// Sum into a + a.t()
+    virtual void accumulate_symmetric_sum(SCMatrix* a) = 0;
     /// Sum into this a * a.t()
     virtual void accumulate_symmetric_product(SCMatrix* a);
     virtual void accumulate_transform(SCMatrix*,SymmSCMatrix*,

@@ -13,9 +13,29 @@ typedef blas_f77_integer_t blasint;
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
-extern void F77_DGEMM(const char*, const char*, const blas_f77_integer_t*,
-                      const blas_f77_integer_t*, const blas_f77_integer_t*, const double*, const double*, const blas_f77_integer_t*,
-                      const double*, const blas_f77_integer_t*, const double*, double*, const blas_f77_integer_t*);
+
+/** does C = alpha op(A) op(B) + beta C in Fortran.
+ * to use this in C++ do C = alpha op(B) op(A) + beta C
+ * @param transa
+ * @param transb
+ * @param nrows_opA
+ * @param ncols_opB
+ * @param nrows_opB
+ * @param alpha
+ * @param A
+ * @param lda
+ * @param B
+ * @param ldb
+ * @param beta
+ * @param C
+ * @param ldc
+ */
+extern void F77_DGEMM(const char* transa, const char* transb, const blas_f77_integer_t* nrows_opA,
+                      const blas_f77_integer_t* ncols_opB, const blas_f77_integer_t* nrows_opB,
+                      const double* alpha, const double* A, const blas_f77_integer_t* lda,
+                      const double* B, const blas_f77_integer_t* ldb,
+                      const double* beta,
+                      double* C, const blas_f77_integer_t* ldc);
 
 extern void F77_DGEMV(const char* trans, const blas_f77_integer_t* m, const blas_f77_integer_t* n, const double* alpha,
                       const double* A, const blas_f77_integer_t* lda, const double* X, const blas_f77_integer_t* incX,

@@ -52,6 +52,8 @@ class MPIMessageGrp: public MessageGrp {
     static int nmpi_grps;
     /// lock to access nmpi_grps variable
     static Ref<ThreadLock> grplock;
+    /// Was MPI_Init called by one of MPIMessagrGrp? Will also call MPI_Finalize, if so
+    static bool mpi_init_called;
 
     Ref<ThreadGrp> threadgrp;
     /// Currently each commgrp is a dup of MPI_COMM_WORLD

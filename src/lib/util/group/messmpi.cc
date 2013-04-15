@@ -35,7 +35,7 @@
 #define MPICH_SKIP_MPICXX
 #endif
 #include <mpi.h>
-extern int MPI_Initialized(int *); // missing in mpi.h
+extern int MPI_Initialized(int *); // used to be missing in old mpi.h
 
 #include <util/keyval/keyval.h>
 #include <util/group/messmpi.h>
@@ -54,6 +54,7 @@ using namespace sc;
 
 int MPIMessageGrp::nmpi_grps=0;
 Ref<ThreadLock> MPIMessageGrp::grplock;
+bool MPIMessageGrp::mpi_init_called=false;
 
 static
 void
@@ -193,6 +194,7 @@ MPIMessageGrp::init(MPI_Comm comm, int *argc, char ***argv)
 #else
       MPI_Init(inits_argc, inits_argv);
 #endif
+      mpi_init_called = true;
 #ifdef HAVE_FCHDIR
       fchdir(dot);
 #endif
@@ -243,7 +245,10 @@ MPIMessageGrp::~MPIMessageGrp()
 
   grplock->lock();
   nmpi_grps--;
-  if (!nmpi_grps) MPI_Finalize();
+  if (!nmpi_grps && mpi_init_called) {
+    MPI_Finalize();
+    mpi_init_called = false;
+  }
   else MPI_Comm_free(&commgrp);
   grplock->unlock();
   

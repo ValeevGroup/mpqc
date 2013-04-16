@@ -152,7 +152,7 @@ esac
 ]
 )
 
-AC_ARG_ENABLE(disways-use-mpi,
+AC_ARG_ENABLE(disable-always-use-mpi,
 [  --disable-always-use-mpi Causes MPI_Init to not be called from main unless MPIMessageGrp is explicitly provided],
 [
 case $enableval in
@@ -1260,9 +1260,11 @@ if test X$PARALLEL = Xyes; then
   AC_LANG_RESTORE
 fi
 
-if test X$HAVE_MPI = Xyes -a X$ALWAYS_USE_MPI = Xyes; then
-  AC_DEFINE(ALWAYS_USE_MPI)
+if test X$HAVE_MPI != Xyes -a X$ALWAYS_USE_MPI = Xyes; then
+  ALWAYS_USE_MPI=no
 fi
+  AC_DEFINE(ALWAYS_USE_MPI)
+  AC_SUBST(ALWAYS_USE_MPI)
 
   dnl ------ check for the armci library
   AC_LANG_SAVE
@@ -1290,7 +1292,6 @@ fi
 
 AC_SUBST(HAVE_PERF)
 AC_SUBST(HAVE_MPI)
-AC_SUBST(ALWAYS_USE_MPI)
 AC_SUBST(HAVE_ARMCI)
 AC_SUBST(HAVE_MPIIO)
 AC_SUBST(HAVE_PTHREAD)

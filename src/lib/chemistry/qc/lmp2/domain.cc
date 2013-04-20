@@ -50,12 +50,12 @@ namespace sc {
 
 class GreaterAbsVal {
   public:
-    bool operator() (double val1, double val2) {
+    bool operator()(double val1, double val2) const {
       return fabs(val1) > fabs(val2);
     }
 };
 
-static double 
+static double
 compute_residual(const RefSCMatrix &overlap_times_scf,
                  const RefSymmSCMatrix &S,
                  const vector<int> &domain, int *index_array,
@@ -63,7 +63,7 @@ compute_residual(const RefSCMatrix &overlap_times_scf,
 {
   // Compute the residual for the domain of molecular orbital mo
   // This is computed from Eq. (9) in Hampel&Werner
-  
+
   int domain_length = domain.size();
   int nbasis = basis->nbasis();
 
@@ -76,7 +76,7 @@ compute_residual(const RefSCMatrix &overlap_times_scf,
       nbasis_in_domain += tmp;
     }
   // Create an array of offsets for the basis functions on the
-  // centers in index_array 
+  // centers in index_array
   std::vector<int> center_offsets(domain_length);
   for (int j=0; j<domain_length; j++) {
     center_offsets[j] = 0;
@@ -106,7 +106,7 @@ compute_residual(const RefSCMatrix &overlap_times_scf,
   for (int j=0; j<domain_length; j++) {
     int k_offset = center_offsets[j];
     for (int k=0; k<basis->nbasis_on_center(index_array[j]); k++) {
-      int index2 = 0;  
+      int index2 = 0;
       for (int l=0; l<domain_length; l++) {
         int m_offset = center_offsets[l];
         for (int m=0; m<basis->nbasis_on_center(index_array[l]); m++) {
@@ -117,10 +117,10 @@ compute_residual(const RefSCMatrix &overlap_times_scf,
       index1++;
       }
     }
-  
+
   RefSCVector R_prime = overlap_times_scf_domain.copy();
   S_domain.solve_lin(R_prime);
-  
+
   double residual = 1.0 - R_prime.dot(overlap_times_scf_domain);
 
   return residual;
@@ -138,7 +138,7 @@ domain_distance(const vector<int> &domain1, const vector<int> &domain2,
   SCVector3 rj = molecule->r(domain2[0]);
   SCVector3 rij = ri - rj;
   double minimum_distance = rij.norm();
-  
+
   for (int i=0; i<domain1.size(); i++) { // loop over atoms in domain1
     for (int j=0; j<domain2.size(); j++) { // loop over atoms in domain2
       ri = molecule->r(domain1[i]);
@@ -183,7 +183,7 @@ create_domains(const Ref<OneBodyWavefunction> &wfn, int nfzc,
   domainmap_t weak_pair_domainmap;
   create_domains(wfn, nfzc, scf_local, domains,
                  domainmap, distance_threshold,
-                 completeness_threshold,	
+                 completeness_threshold,
                  weak_pair_domainmap, -1.0,
                  all_nondist_pairs, S_ao, L, bound, msg);
 }
@@ -213,7 +213,7 @@ create_domains(const Ref<OneBodyWavefunction> &wfn, int nfzc,
   // atoms in the domain for this mo
 
   Timer tim("various inits");
-  
+
   Ref<GaussianBasisSet> basis = wfn->basis();
 
   int natoms = wfn->molecule()->natom();
@@ -221,8 +221,8 @@ create_domains(const Ref<OneBodyWavefunction> &wfn, int nfzc,
   double mo_pop;
 
   int nocc = wfn->nelectron()/2; // number of doubly occupied orbitals
-  int nocc_act = nocc - nfzc; 
-      
+  int nocc_act = nocc - nfzc;
+
   //**** Only works for closed shell systems for now ****//
 
   int nbasis = basis->nbasis();
@@ -258,16 +258,16 @@ create_domains(const Ref<OneBodyWavefunction> &wfn, int nfzc,
   RefSCDimension occ_act_dim(new SCDimension(nocc_act));
   RefSCMatrix overlap_times_scf(ao_dim, occ_act_dim, kit);
   pack_array_into_matrix(overlap_times_scf_array, overlap_times_scf);
-  
+
   tim.change("create domain for each MO");
   // Create the domain associated with each occupied MO
   for (int i=nfzc; i<nocc; i++) { // loop over active occupied MO's
-    
+
     // ordered_pop contains Mulliken populations for the current MO
     // and the corresponding atoms
     // (populations ordered according to decreasing absolute value)
     std::multimap<double, int, GreaterAbsVal> ordered_pop;
-    
+
     int k_offset = 0;
     for (int j=0; j<natoms; j++) { // compute contrib. to population of i
       // from AO's on atom j
@@ -278,7 +278,7 @@ create_domains(const Ref<OneBodyWavefunction> &wfn, int nfzc,
       ordered_pop.insert(std::make_pair(pop,j));
       k_offset += basis->nbasis_on_center(j);
     }
-    
+
     // Add atoms to the domain
     mo_pop = 0.0;
     for (std::multimap<double, int, GreaterAbsVal>::iterator iter = ordered_pop.begin();
@@ -287,7 +287,7 @@ create_domains(const Ref<OneBodyWavefunction> &wfn, int nfzc,
       domains[i-nfzc].push_back(iter->second);
       if (mo_pop >= occ_threshold) break;
     }
-    
+
     // Create index_array which is an array of atoms, ordered as they
     // are in ordered_pop
     int *index_array = new int[natoms];
@@ -296,7 +296,7 @@ create_domains(const Ref<OneBodyWavefunction> &wfn, int nfzc,
          iter != ordered_pop.end(); iter++, index++) {
       index_array[index] = iter->second;
     }
-    
+
     // Test for completeness of the domain and expand domain, if necessary
     double residual = compute_residual(overlap_times_scf, S, domains[i-nfzc],
                                        index_array, basis, i-nfzc);
@@ -311,7 +311,7 @@ create_domains(const Ref<OneBodyWavefunction> &wfn, int nfzc,
       residual = compute_residual(overlap_times_scf, S, domains[i-nfzc], index_array,
                                   basis, i-nfzc);
     }
-    
+
     delete[] index_array;
 
 #if 1
@@ -327,9 +327,9 @@ create_domains(const Ref<OneBodyWavefunction> &wfn, int nfzc,
     ExEnv::out0() << std::endl;
     // imbn end of debug print
 #endif
-    
+
   } // End i loop
-  
+
   // Print out the domains
   ExEnv::out0() << indent << scprintf("Orbital Domains:") << std::endl;
   ExEnv::out0() << indent << scprintf("  MO            Atoms in domain"
@@ -428,7 +428,7 @@ create_domains(const Ref<OneBodyWavefunction> &wfn, int nfzc,
     ndoubles += nbasis_in_pair_domain*nbasis_in_pair_domain;
     }
 
-  
+
   // Print out the number of pairs and double substitution amplitudes
   int npairs_total;
   if (all_nondist_pairs) {

@@ -601,7 +601,7 @@ namespace sma2 {
             }
         }
     };
-    
+
     template<> inline
     bool IndicesLess<2>::operator() (const BlockInfo<2>&b1,
                                      const BlockInfo<2>&b2) const
@@ -609,7 +609,7 @@ namespace sma2 {
       if (b1.b_.i < b2.b_.i) return true;
       return false;
     }
-    
+
     template<> inline
     int IndicesLess<2>::compare(const BlockInfo<2>&b1,
                                 const BlockInfo<2>&b2) const
@@ -760,7 +760,7 @@ namespace sma2 {
             }
         }
     };
-    
+
     template<> inline
     bool IndicesLess<3>::operator() (const BlockInfo<3>&b1,
                                      const BlockInfo<3>&b2) const
@@ -768,7 +768,7 @@ namespace sma2 {
       if (b1.b_.l < b2.b_.l) return true;
       return false;
     }
-    
+
     template<> inline
     int IndicesLess<3>::compare(const BlockInfo<3>&b1,
                                 const BlockInfo<3>&b2) const
@@ -924,7 +924,7 @@ namespace sma2 {
             }
         }
     };
-    
+
     template<> inline
     bool IndicesLess<4>::operator() (const BlockInfo<4>&b1,
                                      const BlockInfo<4>&b2) const
@@ -932,7 +932,7 @@ namespace sma2 {
       if (b1.b_.l < b2.b_.l) return true;
       return false;
     }
-    
+
     template<> inline
     int IndicesLess<4>::compare(const BlockInfo<4>&b1,
                                 const BlockInfo<4>&b2) const
@@ -1102,7 +1102,7 @@ namespace sma2 {
         template <int N2, class Op>
         void do_binary_op_with_fixed_indices(double f, const ContractPart<N2> &o,
                                              bool initarray, Op &op) const;
-        
+
         template <class Op>
         void do_binary_op(double f, const ContractPart<N> &o,
                           bool initarray, Op &op) const;
@@ -1148,7 +1148,7 @@ namespace sma2 {
         Array<N>& array() const;
         const Index &index(int i) const;
         bool clear_after_use() const { return clear_after_use_; }
-        
+
         void operator = (const ContractPart &o) const;
         template <int N2>
         void operator = (const ContractPart<N2> &o) const;
@@ -1918,7 +1918,7 @@ namespace sma2 {
           }
           return max_abs;
         }
-        
+
         /** Print the array. */
         void print_local(std::ostream&o=sc::ExEnv::outn()) const;
         void print(const sc::Ref<sc::MessageGrp> &grp = 0,
@@ -2119,7 +2119,7 @@ namespace sma2 {
            i++) {
           const BlockInfo<N> &orig_bi(i->first);
           BlockInfo<N> new_bi(orig_bi,il);
-          target.blocks_.insert(std::make_pair<BlockInfo<N>,double*>(new_bi,
+          target.blocks_.insert(std::pair<BlockInfo<N>,double*>(new_bi,
                                                                      i->second));
         }
       target.data_ = source.data_;

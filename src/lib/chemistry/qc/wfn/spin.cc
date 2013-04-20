@@ -58,8 +58,9 @@ namespace sc {
         return std::string("beta");
       case AnySpinCase1:
         return std::string("");
+      default:
+        throw ProgrammingError("to_string() -- invalid argument",__FILE__,__LINE__);
     }
-    throw ProgrammingError("to_string() -- invalid argument",__FILE__,__LINE__);
   }
 
   std::string to_string(SpinCase2 S) {
@@ -72,8 +73,9 @@ namespace sc {
         return std::string("beta-beta");
       case AnySpinCase2:
         return std::string("");
+      default:
+        throw ProgrammingError("to_string() -- invalid argument",__FILE__,__LINE__);
     }
-    throw ProgrammingError("to_string() -- invalid argument",__FILE__,__LINE__);
   }
 
   std::string to_string(PureSpinCase2 S) {
@@ -84,8 +86,9 @@ namespace sc {
         return std::string("triplet");
       case AnyPureSpinCase2:
         return std::string("");
+      default:
+        throw ProgrammingError("to_string() -- invalid argument",__FILE__,__LINE__);
     }
-    throw ProgrammingError("to_string() -- invalid argument",__FILE__,__LINE__);
   }
 
   SpinCase1 to_spincase1(const std::string& key) {

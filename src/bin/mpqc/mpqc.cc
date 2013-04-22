@@ -953,7 +953,6 @@ try_main(int argc, char *argv[])
   grp = 0;
   memory = 0;
   resources = 0;
-  init.finalize();
 
 #if defined(HAVE_TIME) && defined(HAVE_CTIME)
   time(&t);

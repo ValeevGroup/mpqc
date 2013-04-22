@@ -11,7 +11,10 @@
 #include <string>
 
 #ifdef HAVE_MADNESS
-#include <world/world.h>
+# ifndef WORLD_INSTANTIATE_STATIC_TEMPLATES
+# define WORLD_INSTANTIATE_STATIC_TEMPLATES
+# endif
+# include <world/world.h>
 #endif
 
 namespace sc {
@@ -82,10 +85,6 @@ namespace sc {
     /// constructor must have been called before this is called.
     sc::Ref<sc::KeyVal> init(const std::string &input_filename,
                              const std::string &output_filename = "");
-    /// Clean up at the end of a run. This is called automatically by
-    /// the destructor.
-    void finalize();
-
 #ifdef HAVE_MADNESS
     madness::World& madness_world() { return *madworld_; }
 #endif
@@ -94,6 +93,10 @@ namespace sc {
 #ifdef HAVE_MADNESS
     madness::World* madworld_; // global MADNESS world
 #endif
+
+    /// Clean up at the end of a run. This is called automatically by
+    /// the destructor. Since this is a "Singleton" making private.
+    void finalize();
 
   };
 

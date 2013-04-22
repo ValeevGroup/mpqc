@@ -27,10 +27,6 @@
 #include <chemistry/qc/basis/integral.h>
 #include <util/misc/consumableresources.h>
 
-#ifdef HAVE_MADNESS
-# include <world/world.h>
-#endif
-
 namespace sc {
 
 MPQCInit* MPQCInit::instance_(0);

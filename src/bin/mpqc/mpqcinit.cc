@@ -50,7 +50,17 @@ finalize()
 
 MPQCInit::MPQCInit(GetLongOpt&opt, int &argc, char **argv):
   opt_(opt), argc_(argc), argv_(argv)
+#ifdef HAVE_MADNESS
+  , madworld_(0)
+#endif
 {
+  if (instance_ != 0) {
+    throw ProgrammingError("Only one MPQCInit object can be created!",
+                           __FILE__, __LINE__);
+  }
+  else
+    instance_ = this;
+
   opt_.enroll("messagegrp", GetLongOpt::MandatoryValue,
               "which message group to use", 0);
   opt_.enroll("threadgrp", GetLongOpt::MandatoryValue,
@@ -66,6 +76,7 @@ MPQCInit::MPQCInit(GetLongOpt&opt, int &argc, char **argv):
 MPQCInit::~MPQCInit()
 {
   finalize();
+  instance_ = 0;
 }
 
 void
@@ -311,7 +322,11 @@ MPQCInit::finalize()
 {
   sc::finalize();
 #ifdef HAVE_MADNESS
-  madworld_.gop.fence();
+  if (madworld_) {
+    madworld_->gop.fence();
+    delete madworld_;
+    madworld_ = 0;
+  }
   madness::finalize();
 #endif
 }

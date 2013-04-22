@@ -10,6 +10,10 @@
 #include <util/group/memory.h>
 #include <string>
 
+#ifdef HAVE_MADNESS
+#include <world/world.h>
+#endif
+
 namespace sc {
 
   /** This helper class simplifies initialization of MPQC. Only one object must be created
@@ -37,7 +41,7 @@ namespace sc {
     ~MPQCInit();
 
     /// returns ptr to the only instance of this object; 0 if has not been constructed
-    MPQCInit* instance() { return instance_; }
+    static MPQCInit* instance() { return instance_; }
 
     /// Initialize the floating point control word.
     void init_fp();
@@ -64,6 +68,8 @@ namespace sc {
     void init_resources(Ref<KeyVal> keyval = Ref<KeyVal>());
     /// Initialize the default region timer.
     void init_timer(const Ref<MessageGrp> &grp, Ref<KeyVal> keyval = Ref<KeyVal>());
+    /// initializes MADNESS runtime, if available. Normally, no need to call manually, will be called by MPQCInit::init()
+    void init_madness();
     /// @}
 
     /// Initialize formatted I/O.
@@ -85,8 +91,6 @@ namespace sc {
 #endif
 
   private:
-    /// initializes MADNESS runtime, if available. No need to call manually, will call from MPQCInit::init()
-    void init_madness();
 #ifdef HAVE_MADNESS
     madness::World* madworld_; // global MADNESS world
 #endif

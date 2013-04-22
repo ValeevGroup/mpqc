@@ -25,16 +25,16 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _chemistry_qc_mbptr12_transformfactory_h
-#define _chemistry_qc_mbptr12_transformfactory_h
+#ifndef _chemistry_qc_lcao_transformfactory_h
+#define _chemistry_qc_lcao_transformfactory_h
 
 #include <string>
 #include <util/ref/ref.h>
 #include <util/group/memory.h>
 #include <chemistry/molecule/energy.h>
 #include <chemistry/qc/basis/integral.h>
+#include <chemistry/qc/basis/intdescr.h>
 #include <chemistry/qc/wfn/orbitalspace.h>
-#include <chemistry/qc/mbptr12/r12technology.h>
 #include <chemistry/qc/lcao/transform.h>
 
 namespace sc {

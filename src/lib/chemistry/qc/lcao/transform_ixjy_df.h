@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _chemistry_qc_mbptr12_transformixjydf_h
-#define _chemistry_qc_mbptr12_transformixjydf_h
+#ifndef _chemistry_qc_lcao_transformixjydf_h
+#define _chemistry_qc_lcao_transformixjydf_h
 
 #include <string>
 #include <util/ref/ref.h>

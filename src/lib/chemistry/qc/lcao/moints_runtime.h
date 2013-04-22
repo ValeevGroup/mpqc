@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _mpqc_src_lib_chemistry_qc_mbptr12_mointsruntime_h
-#define _mpqc_src_lib_chemistry_qc_mbptr12_mointsruntime_h
+#ifndef _mpqc_src_lib_chemistry_qc_lcao_mointsruntime_h
+#define _mpqc_src_lib_chemistry_qc_lcao_mointsruntime_h
 
 #include <chemistry/qc/lcao/tbint_runtime.h>
 #include <chemistry/qc/lcao/df_runtime.h>

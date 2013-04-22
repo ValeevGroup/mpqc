@@ -29,8 +29,8 @@
 #include <chemistry/qc/wfn/orbitalspace.h>
 #include <math/mmisc/pairiter.h>
 
-#ifndef _chemistry_qc_mbptr12_utilsimpl_h
-#define _chemistry_qc_mbptr12_utilsimpl_h
+#ifndef _chemistry_qc_lcao_utilsimpl_h
+#define _chemistry_qc_lcao_utilsimpl_h
 
 namespace sc {
 

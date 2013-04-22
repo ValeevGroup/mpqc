@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _mpqc_src_lib_chemistry_qc_mbptr12_transform_ijR_h
-#define _mpqc_src_lib_chemistry_qc_mbptr12_transform_ijR_h
+#ifndef _mpqc_src_lib_chemistry_qc_lcao_transform_ijR_h
+#define _mpqc_src_lib_chemistry_qc_lcao_transform_ijR_h
 
 #include <chemistry/qc/basis/intdescr.h>
 #include <math/distarray4/distarray4.h>

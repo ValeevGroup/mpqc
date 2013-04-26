@@ -1309,7 +1309,7 @@ ParsedOrbitalSpaceKey::ParsedOrbitalSpaceKey(const std::string& key) :
     else if (spinkey == std::string("B"))
       spin_ = Beta;
     else
-      abort();
+      throw exception();
   } else {
     spin_ = AnySpinCase1;
   }
@@ -1326,32 +1326,71 @@ std::string ParsedOrbitalSpaceKey::key(const std::string& label, SpinCase1 spin)
 
 /////////////////////////////////////////////////////////////////////////////
 
-const char* ParsedTransformedOrbitalSpaceKey::OneBodyOperatorLabel[] =
-    ParsedTransformedOrbitalSpaceKey_OneBodyOperatorLabelInitializer;
-
-ParsedTransformedOrbitalSpaceKey::ParsedTransformedOrbitalSpaceKey(
-                                                                   const std::string& key) :
+ParsedTransformedOrbitalSpaceKey::ParsedTransformedOrbitalSpaceKey(const std::string& key) :
   key_(key) {
   std::string keycopy(key);
 
   const std::string tformed_key = pop_till_token(keycopy, '_');
+  if (keycopy.empty()) throw exception();
   ParsedOrbitalSpaceKey parsed_tformed_key(tformed_key);
   label_ = parsed_tformed_key.label();
   spin_ = parsed_tformed_key.spin();
 
   const std::string oper_key = pop_till_token(keycopy, '(');
-  transform_operator_ = InvalidOneBodyOperator;
-  for (int o = 0; o != InvalidOneBodyOperator; ++o) {
-    if (oper_key == std::string(OneBodyOperatorLabel[o])) {
-      transform_operator_ = static_cast<OneBodyOperator> (o);
+  if (keycopy.empty()) throw exception();
+  transform_operator_ = OneBodyOper::invalid;
+  for (int o = 0; o != OneBodyOper::invalid; ++o) {
+    OneBodyOper::type otype = static_cast<OneBodyOper::type> (o);
+    if (oper_key == OneBodyOper::to_string(otype)) {
+      transform_operator_ = otype;
       break;
     }
   }
+  if (transform_operator_ == OneBodyOper::invalid)
+    throw exception();
 
   const std::string orig_key = pop_till_token(keycopy, ')');
+  if (not keycopy.empty()) throw exception();
   ParsedOrbitalSpaceKey parsed_orig_key(orig_key);
-  original_label_ = parsed_orig_key.label();
-  original_spin_ = parsed_orig_key.spin();
+  support_label_ = parsed_orig_key.label();
+  support_spin_ = parsed_orig_key.spin();
+}
+
+std::string
+ParsedTransformedOrbitalSpaceKey::key(const std::string& label, SpinCase1 spin,
+                                      const std::string& original_label,
+                                      SpinCase1 original_spin, OneBodyOper::type oper) {
+  std::string result(ParsedOrbitalSpaceKey::key(label,spin) + "_" + OneBodyOper::to_string(oper) +
+      "(" + ParsedOrbitalSpaceKey::key(original_label,original_spin) + ")");
+  return result;
+}
+
+bool
+ParsedTransformedOrbitalSpaceKey::valid_key(const std::string& key) {
+  std::string keycopy(key);
+
+  const std::string tformed_key = pop_till_token(keycopy, '_');
+  if (keycopy.empty()) return false;
+  ParsedOrbitalSpaceKey parsed_tformed_key(tformed_key);
+
+  const std::string oper_key = pop_till_token(keycopy, '(');
+  if (keycopy.empty()) return false;
+  OneBodyOper::type transform_operator = OneBodyOper::invalid;
+  for (int o = 0; o != OneBodyOper::invalid; ++o) {
+    OneBodyOper::type otype = static_cast<OneBodyOper::type> (o);
+    if (oper_key == OneBodyOper::to_string(otype)) {
+      transform_operator = otype;
+      break;
+    }
+  }
+  if (transform_operator == OneBodyOper::invalid)
+    return false;
+
+  const std::string orig_key = pop_till_token(keycopy, ')');
+  if (not keycopy.empty()) return false;
+  ParsedOrbitalSpaceKey parsed_orig_key(orig_key);
+
+  return true;
 }
 
 /////////////////////////////////////////////////////////////////////////////

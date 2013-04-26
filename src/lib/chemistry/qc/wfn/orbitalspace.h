@@ -38,6 +38,7 @@
 #include <math/scmat/abstract.h>
 #include <util/state/statein.h>
 #include <chemistry/qc/basis/basis.h>
+#include <chemistry/qc/basis/operator.h>
 #include <chemistry/qc/wfn/spin.h>
 #include <util/misc/registry.h>
 
@@ -579,6 +580,8 @@ namespace sc {
    */
   class ParsedOrbitalSpaceKey {
     public:
+      struct exception {};
+
       /// throws if key is not properly formatted
       ParsedOrbitalSpaceKey(const std::string& key);
 
@@ -606,23 +609,15 @@ namespace sc {
    represents space U obtained by transformation of space V as
    U_i^j = C_i^k V_k^j, where V is the coefficient matrix of the original space, C is the transformation
    matrix, and U is the transformed space. Transformation matrices typically represent common
-   one-electron operators, e.g., Fock, Coulomb, exchange, kinetic energy, etc.
+   one-electron operators, e.g., Fock, Coulomb, exchange, kinetic energy, etc. (\sa OneBodyOper::type)
+
+   The key format is "idU_operC(idV)".
    */
   class ParsedTransformedOrbitalSpaceKey {
     public:
-      typedef enum {
-        Fock = 0,
-        Coulomb = 1,
-        Exchange = 2,
-        KineticEnergy = 3,
-        CoreHamiltonian = 4,
-        CorePlusCoulomb = 5,
-        InvalidOneBodyOperator = 6
-      } OneBodyOperator;
-#define ParsedTransformedOrbitalSpaceKey_OneBodyOperatorLabelInitializer {"F", "J", "K", "T", "h", "h+J"}
-      static const char* OneBodyOperatorLabel[]; // = ParsedTransformedOrbitalSpaceKey_OneBodyOperatorLabelInitializer
+      struct exception { };
 
-      /// throws if key is not properly formatted
+      /// throws ParsedTransformedOrbitalSpaceKey::exception if the key is not properly formatted
       ParsedTransformedOrbitalSpaceKey(const std::string& key);
 
       const std::string& key() const {
@@ -634,27 +629,29 @@ namespace sc {
       SpinCase1 spin() const {
         return spin_;
       }
-      const std::string& original_label() const {
-        return original_label_;
+      const std::string& support_label() const {
+        return support_label_;
       }
-      SpinCase1 original_spin() const {
+      SpinCase1 support_spin() const {
         return spin_;
       }
-      OneBodyOperator transform_operator() const {
+      OneBodyOper::type transform_operator() const {
         return transform_operator_;
       }
 
       static std::string key(const std::string& label, SpinCase1 spin,
                              const std::string& original_label,
-                             SpinCase1 original_spin, OneBodyOperator oper);
+                             SpinCase1 original_spin, OneBodyOper::type oper);
+
+      static bool valid_key(const std::string& key);
 
     private:
       std::string key_;
       std::string label_;
       SpinCase1 spin_;
-      std::string original_label_;
-      SpinCase1 original_spin_;
-      OneBodyOperator transform_operator_;
+      std::string support_label_;
+      SpinCase1 support_spin_;
+      OneBodyOper::type transform_operator_;
   };
 
   /// registry of globally-known OrbitalSpace objects

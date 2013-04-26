@@ -523,12 +523,12 @@ ExternMOInfo::ExternMOInfo(std::string filename,
 
   // sym->E->occ order
   orbs_sb_ = new SymmOrbitalSpace(
-      std::string("p(sym)"), std::string("symmetry-ordered MOInfo orbitals"),
+      std::string("p"), std::string("symmetry-ordered MOInfo orbitals"),
       basis, integral, coefs_extern, pseudo_evals,
       pseudo_occnums, orbsym, SymmetryMOOrder(pg->order()) );
   // occ->sym->E
   orbs_ = new CorrOrbitalSpace(
-      std::string("p"), std::string("energy-ordered MOInfo orbitals"),
+      std::string("p~"), std::string("energy-ordered MOInfo orbitals"),
       basis, integral, coefs_extern, pseudo_evals,
       pseudo_occnums, orbsym, EnergyMOOrder<std::less<double> >() );
 
@@ -566,7 +566,7 @@ ExternMOInfo::ExternMOInfo(std::string filename,
                                                        nfzc + ninact, nuocc + nfzv);
 
   // second, compute MPQC spaces: active, and occupied
-  Ref<OrbitalSpace> orbs_sb_occ = new OrbitalSpace(std::string("i(sym)"),
+  Ref<OrbitalSpace> orbs_sb_occ = new OrbitalSpace(std::string("i"),
                                                    std::string("symmetry-ordered occupied MOInfo orbitals"),
                                                    orbs_sb_->coefs(),
                                                    orbs_sb_->basis(),

@@ -203,6 +203,18 @@ class StateIn:  public DescribedClass {
       return r;
     }
 
+    /// "Specialization" of the above get() to an std::vector
+    template <class T, class A>
+    int get(std::vector<T, A> &v) {
+      size_t l;
+      int r = get(l);
+      v.resize(l);
+      for (size_t i=0; i<l; i++) {
+        detail::FromStateIn<T>::get(v[i],*this,r);
+      }
+      return r;
+    }
+
     /// Read an std::set. This also works if Key or Value is a Ref to a SavableState.
     template <typename Key, typename Compare, typename Alloc>
     int get(std::set<Key,Compare,Alloc>& s) {

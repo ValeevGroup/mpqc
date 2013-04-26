@@ -157,6 +157,16 @@ class StateOut: public DescribedClass {
       return r;
     }
 
+    /// "Specialization" of the above put() to std::vector.
+    template <class T, class A>
+    int put(const std::vector<T,A> &v) {
+      const size_t l = v.size();
+      int r = put(l);
+      for (typename std::vector<T,A>::const_iterator i=v.begin(); i!=v.end(); ++i)
+        detail::ToStateOut<T>::put(*i,*this,r);
+      return r;
+    }
+
     /// Write an std::set. This also works if Key or Value is a Ref to a SavableState.
     template <typename Key, typename Compare, typename Alloc>
     int put(const std::set<Key,Compare,Alloc> &s) {

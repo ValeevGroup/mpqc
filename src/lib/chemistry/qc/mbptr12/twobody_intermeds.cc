@@ -414,6 +414,9 @@ R12IntEval::V_genref_spinfree(const Ref<OrbitalSpace>& p1,
                                                                        std::string(TwoBodyIntLayout::b1b2_k1k2));
       tforms.push_back(tform_key);
     }
+    // 2.0 due to using "average" 1-RDM (hence half of spin-free 1-RDM)
+    // obviously this form is not symmetric w.r.t p1 <-> p2
+    // will symmetry below just for cleanliness
     contract_tbint_tensor<true,false>(V, corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_eri(),
         -2.0,
         GG1,GG2,g_m_m_av,cabs,

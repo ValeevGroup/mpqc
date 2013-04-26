@@ -55,7 +55,8 @@ CXXSRCS = mbptr12.cc \
   r12_amps.cc compute_amps.cc \
   mp2_pair_energies.cc \
   compute_energy_a.cc mp2r12_energy.cc bc_contrib.cc dkh.cc \
-  pt2r12.cc pt2r12_spinorbital.cc
+  pt2r12.cc pt2r12_spinorbital.cc \
+  twobody_intermediates_ta.cc
   
 INC = compute_tbint_tensor.h r12int_eval.h \
 container.h                     r12technology.h \

@@ -1,0 +1,69 @@
+//
+// twobody_intermediates_ta.cc
+//
+// Copyright (C) 2013 Edward Valeev
+//
+// Author: Edward Valeev <evaleev@vt.edu>
+// Maintainer: EV
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
+
+#ifdef __GNUG__
+#pragma implementation
+#endif
+
+#include <scconfig.h>
+
+#if defined(HAVE_MPQC3_RUNTIME)
+
+#include <chemistry/qc/mbptr12/r12int_eval.h>
+#include <../bin/mpqc/mpqcinit.h>
+#include <chemistry/qc/mbptr12/sr_r12intermediates.h>
+
+using namespace sc;
+namespace TA = TiledArray;
+
+void
+R12IntEval::V_diag_ta() {
+  SingleReference_R12Intermediates<double> srr12intrmds(MPQCInit::instance()->madness_world(),
+                                                        this->r12world());
+  auto Vpair = srr12intrmds.V_diag();
+  ExEnv::out0() << indent << "V_ij_ij" << std::endl << Vpair.first << std::endl
+                << indent << "V_ij_ji" << std::endl << Vpair.second << std::endl;
+
+  auto Xpair = srr12intrmds.X_diag();
+  ExEnv::out0() << indent << "X_ij_ij" << std::endl << Xpair.first << std::endl
+                << indent << "X_ij_ji" << std::endl << Xpair.second << std::endl;
+
+  auto Bpair = srr12intrmds.B_diag();
+  ExEnv::out0() << indent << "B_ij_ij" << std::endl << Bpair.first << std::endl
+                << indent << "B_ij_ji" << std::endl << Bpair.second << std::endl;
+
+  auto rdm1 = srr12intrmds.rdm1();
+}
+
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+
+// Local Variables:
+// mode: c++
+// c-file-style: "CLJ-CONDENSED"
+// End:

@@ -25,6 +25,9 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#ifndef _chemistry_qc_mbptr12_r12inteval_h
+#define _chemistry_qc_mbptr12_r12inteval_h
+
 #include <util/ref/ref.h>
 #include <chemistry/qc/mbptr12/r12wfnworld.h>
 #include <chemistry/qc/mbptr12/r12technology.h>
@@ -32,9 +35,6 @@
 #include <chemistry/qc/wfn/spin.h>
 #include <chemistry/qc/mbptr12/fixedcoefficient.h>
 #include <chemistry/qc/mbptr12/twobodytensorinfo.h>
-
-#ifndef _chemistry_qc_mbptr12_r12inteval_h
-#define _chemistry_qc_mbptr12_r12inteval_h
 
 namespace sc {
 
@@ -979,6 +979,11 @@ public:
   /** Compute V intermediates in SF-[2]R12 */
   RefSCMatrix V_genref_spinfree(const Ref<OrbitalSpace>& p,
                      const Ref<OrbitalSpace>& q);
+
+  /**
+   * TiledArray-based builder of closed-shell V intermediate
+   */
+  void V_diag_ta();
 
   /// returns the OrbitalSpaceRegistry object
   const Ref<OrbitalSpaceRegistry>& orbital_registry() const {

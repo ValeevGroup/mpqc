@@ -2196,6 +2196,13 @@ R12IntEval::compute()
 
   init_intermeds_();
 
+#ifdef HAVE_MPQC3_RUNTIME
+  {
+    ExEnv::out0() << indent << "Trying out MPQC3-based R12 code" << std::endl;
+    V_diag_ta();
+  }
+#endif
+
   // different expressions hence codepaths depending on relationship between OBS, VBS, and RIBS
   // compare these basis sets here
   const bool obs_eq_vbs = r12world()->obs_eq_vbs();

@@ -168,22 +168,6 @@ namespace sc {
       */
       TArray2 rdm1();
 
-    private:
-      madness::World& world_;
-      Ref<R12WavefunctionWorld> r12world_;
-
-      // utilities
-
-      /// computes a DistArray4 and converts into a TArray22
-      std::shared_ptr<TArray22> ab_O_cd(const std::string& key,
-                                        const int te_type);
-
-      std::map<std::string, std::shared_ptr<TArray22> > tarray22_registry_;
-      std::map<std::string, std::shared_ptr<TArray4> > tarray4_registry_;
-      std::map<std::string, std::shared_ptr<TArray22d> > tarray22d_registry_;
-
-      // deprecated
-      TArray22& _(const std::string& key);
 
       /// see _4()
       TArray4& ijxy(const std::string& key);
@@ -224,6 +208,23 @@ namespace sc {
       TA::expressions::TensorExpression<TA::Tensor<T> > _4(const std::string& key);
 
       //TA::expressions::TensorExpression<TA::Tensor< TA::Tensor<T> > > _22(const std::string& key);
+
+    private:
+      madness::World& world_;
+      Ref<R12WavefunctionWorld> r12world_;
+
+      // utilities
+
+      /// computes a DistArray4 and converts into a TArray22
+      std::shared_ptr<TArray22> ab_O_cd(const std::string& key,
+                                        const int te_type);
+
+      std::map<std::string, std::shared_ptr<TArray22> > tarray22_registry_;
+      std::map<std::string, std::shared_ptr<TArray4> > tarray4_registry_;
+      std::map<std::string, std::shared_ptr<TArray22d> > tarray22d_registry_;
+
+      // deprecated
+      TArray22& _(const std::string& key);
 
       /**
        * converts index label to space label using the canonical dictionary documented in _()

@@ -36,17 +36,6 @@ namespace sc {
             typename SingleReference_R12Intermediates<T>::TArray2>
   SingleReference_R12Intermediates<T>::V_diag() {
 
-#if 0
-    TArray4 r_ij_pq = ijxy("<i j|r|p q>");
-    TArray2 r2_i_j = r_ij_pq("i,j,p,q") * r_ij_pq("k,j,p,q");
-    std::cout << "<ij|r|pq> . <kj|r|pq>\n" << r2_i_j << std::endl;
-#endif
-
-#if 1
-    TArray2 r2_i_j = _4("<i j|r|p q>") * _4("<k_F(p) j|r|p q>");
-    std::cout << "<ij|r|pq> . <kj|r|pq>\n" << r2_i_j << std::endl;
-#endif
-
     TArray2 V_ij_ij_cabs = dotket(ij_xy("<i j|g|m a'>"), ij_xy("<i j|r|m a'>"));
     // don't need this in closed shell!
     //TArray2 V_ij_ij_cabs1 = dotket(ij_xy("<i j|g|a' m>"), ij_xy("<i j|r|a' m>"));

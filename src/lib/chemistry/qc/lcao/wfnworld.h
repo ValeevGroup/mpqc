@@ -93,14 +93,14 @@ public:
     density-fitting will be performed. Valid values are:
     <dl>
 
-      <dt><tt>cholesky_inv</tt><dd> Use Cholesky inverse. Only valid if <tt>df_kernel=coulomb</tt>.
+      <dt><tt>cholesky_inv</tt><dd> Use Cholesky inverse. Only valid if <tt>df_kernel=coulomb</tt>. This is the cheapest option and the default.
       <dt><tt>cholesky</tt><dd> Use Cholesky linear solver. Only valid if <tt>df_kernel=coulomb</tt>.
       <dt><tt>cholesky_refine</tt><dd> Use Cholesky linear solver + iterative refinement. Only valid if <tt>df_kernel=coulomb</tt>.
 
       <dt><tt>bunchkaufman_inv</tt><dd> Use Bunch-Kaufman inverse. Valid for any value of <tt>df_kernel</tt>.
       <dt><tt>bunchkaufman</tt><dd> Use Bunch-Kaufman linear solver. Valid for any value of <tt>df_kernel</tt>.
-      <dt><tt>bunchkaufman_refine</tt><dd> Use Bunch-Kaufman linear solver + iterative refinement. Valid for any value of <tt>df_kernel</tt>.
-      This is the default.
+      <dt><tt>bunchkaufman_refine</tt><dd> Use Bunch-Kaufman linear solver + iterative refinement. Valid for any value of <tt>df_kernel</tt>. Use this option
+      if you want the maximum numerical precision of the density fitting.
 
     </dl>
 

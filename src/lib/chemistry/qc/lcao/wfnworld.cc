@@ -62,7 +62,7 @@ WavefunctionWorld::WavefunctionWorld(const Ref<KeyVal>& keyval)
                              df_kernel_.c_str(),
                              class_desc());
 
-    df_solver_ = keyval->stringvalue("df_solver", KeyValValuestring("bunchkaufman_refine"));
+    df_solver_ = keyval->stringvalue("df_solver", KeyValValuestring("cholesky_inv"));
     if (df_solver_ != "bunchkaufman" &&
         df_solver_ != "bunchkaufman_inv" &&
         df_solver_ != "bunchkaufman_refine" &&

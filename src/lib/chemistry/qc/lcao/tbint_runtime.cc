@@ -479,10 +479,10 @@ ParamsRegistry::add(const std::string& key, const Ref<IntParams>& params) const
 
 TwoBodyIntLayout::TwoBodyIntLayout(const std::string& str)
 {
-  if (str == std::string("(b1 b2|k1 k2)")) {
+  if (str == std::string("")) {
     type_ = _b1b2_k1k2;
   }
-  else if (str == std::string("(b1 k1|b2 k2)")) {
+  else if (str == std::string("(11|22)")) {
     type_ = _b1k1_b2k2;
   }
   else
@@ -497,9 +497,9 @@ TwoBodyIntLayout::TwoBodyIntLayout(const TwoBodyIntLayout& other) :
 TwoBodyIntLayout::operator std::string() {
   switch (type_) {
     case _b1b2_k1k2:
-      return std::string("(b1 b2|k1 k2)");
+      return std::string("");
     case _b1k1_b2k2:
-      return std::string("(b1 k1|b2 k2)");
+      return std::string("(11|22)");
     default:
       assert(false);
       return std::string();
@@ -519,8 +519,8 @@ TwoBodyIntLayout::operator==(const TwoBodyIntLayout& other) const
   return type_ == other.type_;
 }
 
-TwoBodyIntLayout TwoBodyIntLayout::b1b2_k1k2(std::string("(b1 b2|k1 k2)"));
-TwoBodyIntLayout TwoBodyIntLayout::b1k1_b2k2(std::string("(b1 k1|b2 k2)"));
+TwoBodyIntLayout TwoBodyIntLayout::b1b2_k1k2(std::string(""));
+TwoBodyIntLayout TwoBodyIntLayout::b1k1_b2k2(std::string("(11|22)"));
 
 /////////////////////////////////////////////////////////////////////////////
 

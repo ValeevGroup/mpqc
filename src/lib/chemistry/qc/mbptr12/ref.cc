@@ -140,7 +140,7 @@ sc::compute_canonvir_space(const Ref<FockBuildRuntime>& fb_rtime,
   Fs.accumulate_symmetric_sum(F);
   Fs.scale(0.5);
 
-  Ref<OrbitalSpace> result = new OrbitalSpace("e(sym)", "canonical symmetry-blocked VBS",
+  Ref<OrbitalSpace> result = new OrbitalSpace("e", "canonical symmetry-blocked VBS",
                                               vir_space->coefs()*Fs.eigvecs(),
                                               vir_space->basis(),
                                               vir_space->integral(),
@@ -229,13 +229,13 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
   {
     ostringstream oss;
     oss << prefix << " symmetry-blocked MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("p(sym)"),spin);
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("p"),spin);
     orbs_sb_ = new OrbitalSpace(id, oss.str(), coefs, bs, integral, energies, 0, 0, OrbitalSpace::symmetry);
   }
   {
     ostringstream oss;
     oss << prefix << " energy-ordered MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("p"),spin);
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("p~"),spin);
     orbs_ = blocked_to_nonblocked_space(id, oss.str(),
                                         orbs_sb_,
                                         eorder_increasing);
@@ -243,14 +243,14 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
   {
     ostringstream oss;
     oss << prefix << " occupied symmetry-blocked MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("m(sym)"),spin);
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("m"),spin);
     occ_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, occ_mask);
   }
 
   {
     ostringstream oss;
     oss << prefix << " occupied MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("m"),spin);
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("m~"),spin);
     occ_ = blocked_to_nonblocked_space(id, oss.str(),
                                        occ_sb_,
                                        eorder_increasing);
@@ -258,14 +258,14 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
   {
      ostringstream oss;
      oss << prefix << " active occupied symmetry-blocked MOs";
-     std::string id = ParsedOrbitalSpaceKey::key(std::string("i(sym)"),spin);
+     std::string id = ParsedOrbitalSpaceKey::key(std::string("i"),spin);
      occ_act_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, occ_act_mask);
   }
   unscreen_occ_act_sb_ = 0;//make sure it crashes when this is called.
   {
     ostringstream oss;
     oss << prefix << " active occupied MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("i"),spin);
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("i~"),spin);
     occ_act_ = blocked_to_nonblocked_space(id, oss.str(),
                                            occ_act_sb_,
                                            eorder_increasing);
@@ -274,7 +274,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
   {
     ostringstream oss;
     oss << prefix << " unoccupied symmetry-blocked MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("e(sym)"),spin);
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("e"),spin);
     if (vbs.null())
       uocc_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, uocc_mask);
     else {
@@ -291,7 +291,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
   {
     ostringstream oss;
     oss << prefix << " conventional unoccupied symmetry-blocked MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("E(sym)"),spin);
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("E"),spin);
     if (vbs.null())
       conv_uocc_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, conv_uocc_mask);
     else
@@ -300,7 +300,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
   {
     ostringstream oss;
     oss << prefix << " conventional occupied symmetry-blocked MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("M(sym)"),spin);
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("M"),spin);
     if (vbs.null())
       conv_occ_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, conv_occ_mask);
     else
@@ -309,7 +309,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
   {
     ostringstream oss;
     oss << prefix << " active unoccupied symmetry-blocked MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("a(sym)"),spin);
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("a"),spin);
     if (vbs.null())
       uocc_act_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, uocc_act_mask);
     else {
@@ -321,7 +321,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
   {
     ostringstream oss;
     oss << prefix << " unoccupied MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("e"),spin);
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("e~"),spin);
     uocc_ = blocked_to_nonblocked_space(id, oss.str(),
                                         uocc_sb_,
                                         eorder_increasing);
@@ -329,7 +329,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
   {
     ostringstream oss;
     oss << prefix << " conventional unoccupied MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("E"),spin);
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("E~"),spin);
     conv_uocc_ = blocked_to_nonblocked_space(id, oss.str(),
                                         conv_uocc_sb_,
                                         eorder_increasing);
@@ -337,7 +337,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
   {
     ostringstream oss;
     oss << prefix << " active unoccupied MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("a"),spin);
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("a~"),spin);
     uocc_act_ = blocked_to_nonblocked_space(id, oss.str(),
                                             uocc_act_sb_,
                                             eorder_increasing);
@@ -503,14 +503,14 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const bool doscreen, const double o
   {
     ostringstream oss;
     oss << prefix << " symmetry-blocked MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("-p(sym)"),spin);
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("-p"),spin);
     orbs_sb_ = new OrbitalSpace(id, oss.str(), coefs, bs, integral, energies, 0, 0, OrbitalSpace::symmetry);
   }
 
   {
     ostringstream oss;
     oss << prefix << " energy-ordered MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("-p"),spin);
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("-p~"),spin);
     orbs_ = blocked_to_nonblocked_space(id, oss.str(),
                                         orbs_sb_,
                                         eorder_increasing);
@@ -518,13 +518,13 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const bool doscreen, const double o
   {
     ostringstream oss;
     oss << prefix << " occupied symmetry-blocked MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("-m(sym)"),spin);
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("-m"),spin);
     occ_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, occ_mask);
   }
   {
     ostringstream oss;
     oss << prefix << " occupied MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("-m"),spin);
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("-m~"),spin);
     occ_ = blocked_to_nonblocked_space(id, oss.str(),
                                        occ_sb_,
                                        eorder_increasing);
@@ -532,20 +532,20 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const bool doscreen, const double o
   {
     ostringstream oss;
     oss << prefix << " active occupied symmetry-blocked MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("-i(sym)"),spin);
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("-i"),spin);
     occ_act_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, occ_act_mask);
   }
   {
 //    ostringstream oss;
 //    oss << prefix << " unscreened active occupied symmetry-blocked MOs";
-//    std::string id = ParsedOrbitalSpaceKey::key(std::string("-i(sym)"),spin);
+//    std::string id = ParsedOrbitalSpaceKey::key(std::string("-i"),spin);
 //    unscreen_occ_act_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, unscreen_occ_act_mask);
     unscreen_occ_act_sb_ = 0; //make sure it crashes when this is called
   }
   {
     ostringstream oss;
     oss << prefix << " active occupied MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("-i"),spin);
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("-i~"),spin);
     occ_act_ = blocked_to_nonblocked_space(id, oss.str(),
                                            occ_act_sb_,
                                            eorder_increasing);
@@ -554,7 +554,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const bool doscreen, const double o
   {
     ostringstream oss;
     oss << prefix << " unoccupied symmetry-blocked MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("-e(sym)"),spin);
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("-e"),spin);
     if (vbs.null())
       uocc_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, uocc_mask);
     else {
@@ -571,7 +571,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const bool doscreen, const double o
   {
     ostringstream oss;
     oss << prefix << " active unoccupied symmetry-blocked MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("-a(sym)"),spin);
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("-a"),spin);
     if (vbs.null())
       uocc_act_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, uocc_act_mask);
     else {
@@ -583,7 +583,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const bool doscreen, const double o
   {
      ostringstream oss;
      oss << prefix << " unoccupied MOs";
-     std::string id = ParsedOrbitalSpaceKey::key(std::string("-e"),spin);
+     std::string id = ParsedOrbitalSpaceKey::key(std::string("-e~"),spin);
      uocc_ = blocked_to_nonblocked_space(id, oss.str(),
                                          uocc_sb_,
                                          eorder_increasing);
@@ -591,7 +591,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const bool doscreen, const double o
   {
     ostringstream oss;
     oss << prefix << " active unoccupied MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("-a"),spin);
+    std::string id = ParsedOrbitalSpaceKey::key(std::string("-a~"),spin);
     uocc_act_ = blocked_to_nonblocked_space(id, oss.str(),
                                             uocc_act_sb_,
                                             eorder_increasing);

@@ -324,7 +324,7 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_spinfree_() {
   const Ref<OrbitalSpace>& orbs = this->orbs(Alpha);
   const Ref<OrbitalSpace>& GG_space = GGspace(Alpha);
   const Ref<OrbitalSpace>& cabs = r12world()->cabs_space(Alpha);
-  const Ref<OrbitalSpace>& g_p_p_av = gamma_p_p_av(); //'p' menas obs; 'A': cabs; 'P': cbs
+  const Ref<OrbitalSpace>& g_p_p_av = gamma_p_p_av(); //'p' means obs; 'A': cabs; 'P': cbs
 
   // some transforms can be skipped if gg is a subset of GG
   // for now it's always true since can only use pq products to generate geminals
@@ -360,7 +360,7 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_spinfree_() {
     }
   }
 
-  { /// first CABS Term
+  { /// CABS Term
       std::vector<std::string> tforms_bra_f12;
       {
         R12TwoBodyIntKeyCreator tform_creator(
@@ -381,54 +381,21 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_spinfree_() {
         fill_container(tform_creator,tforms_ket_f12);
       }
 
+      // 2.0 due to using "average" 1-RDM (hence half of spin-free 1-RDM)
+      // obviously this form is not symmetric w.r.t p1 <-> p2
+      // will symmetry below just for cleanliness
       contract_tbint_tensor<true,true>
           (X_[AlphaBeta], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
-           -1.0,
+           -2.0,
            GG_space, GG_space,
            g_p_p_av,cabs,
            GG_space, GG_space,
            orbs,cabs,
            false,tforms_bra_f12,tforms_ket_f12
            );
-      if (debug_ >= DefaultPrintThresholds::O4 )
-      {
-          ExEnv::out0() << indent << __FILE__ << ": "<<__LINE__<<"\n";
-          X_[AlphaBeta].print(prepend_spincase(AlphaBeta,"X(diag+OBS+ABS) final contribution").c_str());
-      }
   }
 
-  { /// second CABS Term
-      std::vector<std::string> tforms_bra_f12;
-      {
-        R12TwoBodyIntKeyCreator tform_creator(
-                            moints_runtime4(),
-                            GG_space,cabs,GG_space,g_p_p_av,
-                            corrfactor(),true
-                            );
-        fill_container(tform_creator,tforms_bra_f12);
-      }
-
-      std::vector<std::string> tforms_ket_f12;
-      {
-        R12TwoBodyIntKeyCreator tform_creator(
-                            moints_runtime4(),
-                            GG_space,cabs,GG_space,orbs,
-                            corrfactor(),true
-                            );
-        fill_container(tform_creator,tforms_ket_f12);
-      }
-
-      contract_tbint_tensor<true,true>
-          (X_[AlphaBeta], corrfactor()->tbint_type_f12(), corrfactor()->tbint_type_f12(),
-           -1.0,
-           GG_space, GG_space,
-           cabs,g_p_p_av,
-           GG_space, GG_space,
-           cabs, orbs,
-           false,tforms_bra_f12,tforms_ket_f12);
-  }
-
-      symmetrize<false>(X_[AlphaBeta],X_[AlphaBeta],GG_space,GG_space);
+  symmetrize<false>(X_[AlphaBeta],X_[AlphaBeta],GG_space,GG_space);
 
   if (debug_ >= DefaultPrintThresholds::O4)
   {

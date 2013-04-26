@@ -31,6 +31,82 @@
 
 using namespace sc;
 
+///////////////////////////////////////////////////////////////////////
+
+EfieldDotVectorData::~EfieldDotVectorData()
+{
+}
+
+void
+EfieldDotVectorData::set_position(double*p)
+{
+  position[0] = p[0];
+  position[1] = p[1];
+  position[2] = p[2];
+}
+
+void
+EfieldDotVectorData::set_vector(double*v)
+{
+  vector[0] = v[0];
+  vector[1] = v[1];
+  vector[2] = v[2];
+}
+
+///////////////////////////////////////////////////////////////////////
+
+DipoleData::~DipoleData()
+{
+}
+
+void
+DipoleData::set_origin(double*o)
+{
+  origin[0] = o[0];
+  origin[1] = o[1];
+  origin[2] = o[2];
+}
+
+///////////////////////////////////////////////////////////////////////
+
+PointChargeData::PointChargeData(int ncharges,
+                                 const double *const*positions,
+                                 const double *charges,
+                                 int copy_data)
+{
+  ncharges_ = ncharges;
+  if (copy_data) {
+    alloced_positions_ = new double*[ncharges];
+    alloced_charges_ = new double[ncharges];
+    memcpy(alloced_charges_, charges, sizeof(double)*ncharges);
+    double *tmp = new double[ncharges*3];
+    for (int i=0; i<ncharges; i++) {
+      alloced_positions_[i] = tmp;
+      for (int j=0; j<3; j++) {
+        *tmp++ = positions[i][j];
+      }
+    }
+    positions_ = alloced_positions_;
+    charges_ = alloced_charges_;
+  }
+  else {
+    charges_ = charges;
+    alloced_charges_ = 0;
+    alloced_positions_ = 0;
+    charges_ = charges;
+    positions_ = positions;
+  }
+}
+
+PointChargeData::~PointChargeData()
+{
+  if (alloced_positions_) {
+    delete[] alloced_positions_[0];
+    delete[] alloced_positions_;
+  }
+  delete[] alloced_charges_;
+}
+
 /////////////////////////////
 
 static ClassDesc IntParams_cd(
@@ -79,6 +155,38 @@ IntParamsVoid::save_data_state(StateOut& so)
 bool
 IntParamsVoid::equiv(const IntParams& other) const {
   return (downcast<IntParamsVoid>(other) != 0);
+}
+
+/////////////////////////////
+
+static ClassDesc IntParamsOrigin_cd(
+  typeid(IntParamsOrigin),"IntParamsOrigin",1,"public IntParams",
+  0, 0, create<IntParamsOrigin>);
+
+IntParamsOrigin::IntParamsOrigin(const double (&O)[3]) : IntParams(0), O_(3) {
+  std::copy(O, O+3, O_.begin());
+}
+
+IntParamsOrigin::IntParamsOrigin(const Ref<DipoleData>& mudata) : IntParams(0), O_(3) {
+  std::copy(mudata->origin, mudata->origin+3, O_.begin());
+}
+
+IntParamsOrigin::IntParamsOrigin(StateIn& si) : IntParams(si) {
+  si.get(O_);
+}
+
+IntParamsOrigin::~IntParamsOrigin() {}
+
+void
+IntParamsOrigin::save_data_state(StateOut& so)
+{
+  IntParams::save_data_state(so);
+  so.put(O_);
+}
+
+bool
+IntParamsOrigin::equiv(const IntParams& other) const {
+  return (downcast<IntParamsOrigin>(other) != 0);
 }
 
 /////////////////////////////

@@ -30,6 +30,7 @@
 
 #include <cassert>
 #include <chemistry/qc/basis/integral.h>
+#include <chemistry/qc/basis/intparams.h>
 
 namespace sc {
 
@@ -90,14 +91,14 @@ namespace sc {
   };
 
   /// Traits of a set of two-body integrals
-  template <int NumCenters, TwoBodyOperSet::type Type> struct NBodyIntTraits {
+  template <int NumCenters, TwoBodyOperSet::type Type> struct TwoBodyIntTraits {
     /// the type of the NBodyInt object that evaluates this set
     typedef typename TwoBodyIntEvalType<NumCenters>::value EvalType;
     /** the type of IntParams object needed to initialize the evaluator
         for computing this set of integrals */
-    typedef typename IntParamsType<Type>::value ParamsType;
+    typedef typename TwoBodyIntParamsType<Type>::value ParamsType;
     /// the type of the NBodyInt object that evaluates this set
-    typedef OperSetTypeMap<Type> TypeMap;
+    typedef TwoBodyOperSetTypeMap<Type> TypeMap;
     /// number of integral types
     static const int size = TypeMap::size;
     /// creates an Eval object

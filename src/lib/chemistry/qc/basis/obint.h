@@ -36,61 +36,13 @@
 
 #include <chemistry/qc/basis/gaussbas.h>
 #include <chemistry/qc/basis/dercent.h>
+#include <chemistry/qc/basis/intparams.h>
 
 namespace sc {
 
 class Integral;
 
 // //////////////////////////////////////////////////////////////////////////
-
-class EfieldDotVectorData: public RefCount
-{
-  public:
-    EfieldDotVectorData() {};
-    ~EfieldDotVectorData();
-
-    double position[3];
-    double vector[3];
-
-    void set_position(double*);
-    void set_vector(double*);
-};
-
-
-class DipoleData: public RefCount
-{
-  public:
-    double origin[3];
-
-    DipoleData(double *d) {origin[0]=d[0]; origin[1]=d[1]; origin[2]=d[2];}
-    DipoleData() {origin[0]=origin[1]=origin[2]=0.0;}
-    ~DipoleData();
-    void set_origin(double*);
-};
-
-
-class PointChargeData: public RefCount
-{
-  private:
-    int ncharges_;
-    const double *charges_;
-    const double *const*positions_;
-    double *alloced_charges_;
-    double **alloced_positions_;
-
-  public:
-    // If copy_data is 0, the passed positions and charges will
-    // be stored (but not freed).
-    PointChargeData(int ncharge,
-                    const double *const*positions, const double *charges,
-                    int copy_data = 0);
-    ~PointChargeData();
-
-    int ncharges() const { return ncharges_; }
-    const double *charges() const { return charges_; }
-    const double *const*positions() const { return positions_; }
-};
-
 
 /** OneBodyInt is an abstract base class for objects that
     compute integrals between two basis functions. */

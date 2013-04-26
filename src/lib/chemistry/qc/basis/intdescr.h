@@ -88,7 +88,7 @@ namespace sc {
   template <int NumCenters, TwoBodyOperSet::type TwoBodyIntSet>
     class TwoBodyNCenterIntDescr : public IntegralSetDescr< typename TwoBodyIntType<NumCenters>::value > {
       public:
-        typedef NBodyIntTraits<NumCenters,TwoBodyIntSet> TraitsType;
+        typedef TwoBodyIntTraits<NumCenters,TwoBodyIntSet> TraitsType;
         typedef typename TraitsType::ParamsType ParamsType;
         typedef typename TwoBodyIntType<NumCenters>::value EvalType;
 

@@ -888,6 +888,7 @@ namespace sc {
       Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
 
       Timer tim("coulomb(DF)");
+      const double wall_time_start = tim.wall_time("coulomb(DF)");
 
       int me = msg->me();
       int nproc = msg->n();
@@ -1087,9 +1088,10 @@ namespace sc {
 
       result.assign(&(J[0]));
 
-      ExEnv::out0() << decindent;
-      ExEnv::out0() << indent << "Exited Coulomb(DF) matrix evaluator" << endl;
       tim.exit();
+      ExEnv::out0() << decindent;
+      ExEnv::out0() << indent << "Exited Coulomb(DF) matrix evaluator ("
+                    << (tim.wall_time("coulomb(DF)") - wall_time_start) << " sec)" << endl;
 
       return result;
     }
@@ -1105,6 +1107,7 @@ namespace sc {
       Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
 
       Timer tim("exchange(DF)");
+      const double wall_time_start = tim.wall_time("exchange(DF)");
 
       int me = msg->me();
       int nproc = msg->n();
@@ -1295,9 +1298,10 @@ namespace sc {
       result.assign(K);
       delete[] K;
 
-      ExEnv::out0() << decindent;
-      ExEnv::out0() << indent << "Exited exchange(DF) matrix evaluator" << endl;
       tim.exit();
+      ExEnv::out0() << decindent;
+      ExEnv::out0() << indent << "Exited exchange(DF) matrix evaluator ("
+          << (tim.wall_time("exchange(DF)") - wall_time_start) << " sec)" << endl;
 
       return result;
     }

@@ -72,6 +72,13 @@ class TimedRegion {
     TimedRegion *next() const { return next_; }
     TimedRegion *prev() const { return prev_; }
 
+    /** reports the current values of cpu_time, wall_time, and flops  */
+    //@{
+    double cpu_time() const { return cpu_time_; }
+    double wall_time() const { return wall_time_; }
+    double flops() const { return flops_; }
+    //@}
+
     /// Include the regions in r in this object's regions.
     void merge(const TimedRegion* r);
 
@@ -106,6 +113,9 @@ class RegionTimer: public DescribedClass {
     void enter(const char * = 0);
     void change(const char *newname, const char * oldname = 0);
     void exit(const char * = 0, bool do_not_throw = false);
+    double cpu_time(const char * name = 0) const;
+    double wall_time(const char * name = 0) const;
+    double flops(const char * name = 0) const;
     void set_default(const char *);
     void unset_default();
     void enter_default();
@@ -210,6 +220,15 @@ class Timer {
     void unset_default();
     void enter_default();
     void exit_default();
+    //@}
+    /** Query the timers and flop counter for the region */
+    //@{
+    double cpu_time(const char *region) const;
+    double cpu_time(const std::string &region) const { return cpu_time(region.c_str()); }
+    double wall_time(const char *region) const;
+    double wall_time(const std::string &region) const { return wall_time(region.c_str()); }
+    double flops(const char *region) const;
+    double flops(const std::string &region) const { return flops(region.c_str()); }
     //@}
 };
 

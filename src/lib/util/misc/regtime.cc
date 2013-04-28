@@ -444,6 +444,54 @@ RegionTimer::exit(const char *name, bool do_not_throw)
   current_ = current_->up();
 }
 
+double
+RegionTimer::wall_time(const char *name) const
+{
+  double result;
+  if (!current_ || !name) {
+    throw ProgrammingError("no region name given, but default does not exists",
+                           __FILE__, __LINE__, this->class_desc());
+  }
+  if (name && !strcmp(name, current_->name()))
+    result = current_->wall_time();
+  else
+    result = current_->findinsubregion(name)->wall_time();
+
+  return result;
+}
+
+double
+RegionTimer::cpu_time(const char *name) const
+{
+  double result;
+  if (!current_ || !name) {
+    throw ProgrammingError("no region name given, but default does not exists",
+                           __FILE__, __LINE__, this->class_desc());
+  }
+  if (name && !strcmp(name, current_->name()))
+    result = current_->cpu_time();
+  else
+    result = current_->findinsubregion(name)->cpu_time();
+
+  return result;
+}
+
+double
+RegionTimer::flops(const char *name) const
+{
+  double result;
+  if (!current_ || !name) {
+    throw ProgrammingError("no region name given, but default does not exists",
+                           __FILE__, __LINE__, this->class_desc());
+  }
+  if (name && !strcmp(name, current_->name()))
+    result = current_->flops();
+  else
+    result = current_->findinsubregion(name)->flops();
+
+  return result;
+}
+
 void
 RegionTimer::add_wall_time(const char *name, double t)
 {
@@ -875,6 +923,19 @@ Timer::reset(const char *name)
           enter(name);
         }
     }
+}
+
+double
+Timer::cpu_time(const char* region) const {
+  return timer_->cpu_time(region);
+}
+
+double Timer::wall_time(const char* region) const {
+  return timer_->wall_time(region);
+}
+
+double Timer::flops(const char* region) const {
+  return timer_->flops(region);
 }
 
 //////////////////////////////////////////////////////////////////////

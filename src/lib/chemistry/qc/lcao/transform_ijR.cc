@@ -244,6 +244,7 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute_ijR() {
   const Ref<GaussianBasisSet>& b1 = this->space1()->basis();
   const Ref<GaussianBasisSet>& b2 = this->space2()->basis();
   const Ref<GaussianBasisSet>& b3 = this->space3()->basis();
+  const bool b1_equiv_b2 = b1->equiv(b2);
 
   const int num_te_types = this->num_te_types();
   const blasint n1 = this->space1()->rank();
@@ -316,7 +317,10 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute_ijR() {
       const int s1offset = b1->shell_to_function(s1);
       const int nf1 = b1->shell(s1).nfunction();
 
-      for (int s2 = 0; s2 < b2->nshell(); ++s2) {
+      const int s2_fence = b1_equiv_b2 ? s1+1 : b2->nshell();
+      for (int s2 = 0; s2 < s2_fence; ++s2) {
+
+        const bool copy_to_s2_s1 = b1_equiv_b2 && s1 != s2;
 
         const int s2offset = b2->shell_to_function(s2);
         const int nf2 = b2->shell(s2).nfunction();
@@ -345,6 +349,18 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute_ijR() {
           double* f1s2s3_dst = pq_ints[te_type] + (s1offset * nbasis2 + s2offset) * nf3;
           for(int f1=0; f1<nf1; ++f1, f1s2s3_src += nf23, f1s2s3_dst += nb2f3) {
             std::copy(f1s2s3_src, f1s2s3_src + nf23, f1s2s3_dst);
+          }
+        }
+        if (copy_to_s2_s1) { // if also need s2 s1
+          // for each f1f2 copy s3 block to ((f2+s2offset) * nbasis1 + f1+s1offset) * nf3, note that nbasis1 equiv nbasis2
+          for(int te_type=0; te_type < num_te_types; ++te_type) {
+            for(int f2=0; f2<nf2; ++f2) {
+              double* f2f1s3_dst = pq_ints[te_type] + ((f2+s2offset) * nbasis1 + s1offset) * nf3;
+              const double* f1f2s3_src = buffer[te_type] + f2*nf3;
+              for(int f1=0; f1<nf1; ++f1, f1f2s3_src += nf23, f2f1s3_dst += nf3) {
+                std::copy(f1f2s3_src, f1f2s3_src + nf3, f2f1s3_dst);
+              }
+            }
           }
         }
 
@@ -422,7 +438,7 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute_ijR() {
 
   // transform R now, if necessary
   if (not space3_is_ao) {
-    throw FeatureNotImplemented("TwoBodyThreeCenterMOIntsTransform_ijR: non-AO R space in <ij|R> is not yes supported",
+    throw FeatureNotImplemented("TwoBodyThreeCenterMOIntsTransform_ijR: non-AO R space in <ij|R> is not yet supported",
                                 __FILE__, __LINE__, this->class_desc());
   }
 
@@ -472,6 +488,7 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute_pjR() {
   const Ref<GaussianBasisSet>& b1 = this->space1()->basis();
   const Ref<GaussianBasisSet>& b2 = this->space2()->basis();
   const Ref<GaussianBasisSet>& b3 = this->space3()->basis();
+  const bool b1_equiv_b2 = b1->equiv(b2);
 
   const int num_te_types = this->num_te_types();
   const blasint n1 = this->space1()->rank();

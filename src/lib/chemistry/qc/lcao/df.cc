@@ -131,48 +131,6 @@ DensityFitting::compute()
   tform->compute();
   cC_ = tform->ints_acc();
 
-#if 1
-  {
-    cC_->activate();
-    const int ni = space1_->rank();
-    const int nj = space2_->rank();
-    const int nR = fbasis_->nbasis();
-    RefSCMatrix cC = kernel_.kit()->matrix(new SCDimension(nR),
-                                           this->product_dimension());
-    cC.assign(0.0);
-
-    std::vector<int> readers;
-    const int nreaders = cC_->tasks_with_access(readers);
-    const int me = runtime()->factory()->msg()->me();
-
-    if (cC_->has_access(me)) {
-      RefSCMatrix cC_jR = kernel_.kit()->matrix(new SCDimension(nj),
-                                                new SCDimension(nR));
-      for (int i = 0; i < ni; ++i) {
-
-        if (i % nreaders != readers[me])
-          continue;
-
-        const double* cC_jR_buf = cC_->retrieve_pair_block(0, i,
-                                                           TwoBodyOper::eri);
-        cC_jR.assign(cC_jR_buf);
-        cC.assign_subblock(cC_jR.t(), 0, nR - 1, i * nj, (i + 1) * nj - 1);
-
-        // release this block
-        cC_->release_pair_block(0, i, TwoBodyOper::eri);
-      }
-    }
-
-    // broadcast to all tasks
-
-    // print out the result
-    //cC.print("DensityFitting: cC");
-
-    if (cC_->data_persistent()) cC_->deactivate();
-    runtime()->factory()->mem()->sync();
-  }
-#endif
-
   // compute the kernel second
   {
     const std::string kernel_key = ParsedTwoBodyTwoCenterIntKey::key(aoidxreg->value(fbasis_)->id(),

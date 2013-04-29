@@ -31,6 +31,7 @@
 #include<math/scmat/blas.h>
 #include<math/scmat/svd.h>
 #include<chemistry/qc/lcao/fockbuilder.h>
+#include<util/misc/consumableresources.h>
 
 using namespace std;
 using namespace sc;
@@ -1239,36 +1240,88 @@ namespace sc {
 
         if (C->has_access(me)) {
 
-          int ab = 0;
-          for (int a = 0; a < nbra; ++a) {
+          // figure out how big of a block of a/b can be held in memory
+          // each block is nsdf doubles big
+          const size_t nbytes_per_block = 2 * nsdf * sizeof(double);
+          const size_t max_num_SR_blocks = ConsumableResources::get_default_instance()->memory() / (nbytes_per_block);
+          if (max_num_SR_blocks < 1)
+            throw MemAllocFailed("not enough memory to hold 1 block, increase memory in ConsumableResources",
+                                 __FILE__, __LINE__, nbytes_per_block);
+          const size_t max_blk_size = static_cast<size_t>(floor(sqrt(max_num_SR_blocks))); // based on how much memory we have
+          const size_t min_blk_size = std::min(nbra,nket)/static_cast<size_t>(floor(sqrt(nproc_with_ints)));
 
-            const double* C_a_pR_buf = 0;
+          // emphasize distributed concurrency over minimizing local bandwidth
+          // i.e. prefer smaller blocks but more units of work
+          const size_t blk_size = std::min(max_blk_size, min_blk_size);
+          const size_t nblk_a = (nbra + blk_size - 1) / blk_size;
+          const size_t nblk_b = (nket + blk_size - 1) / blk_size;
+          const size_t blk_size_a = (nbra + nblk_a - 1) / nblk_a;
+          const size_t blk_size_b = (nket + nblk_b - 1) / nblk_b;
 
-            for (int b = 0; b < nket; ++b, ++ab) {
+          std::vector<double> C_a_pR_bufs(blk_size_a * nsdf);
+          std::vector<double> cC_b_pR_bufs(blk_size_b * nsdf);
+          ConsumableResources::get_default_instance()->consume_memory( (blk_size_a+blk_size_b) * nbytes_per_block );
+          // will read a blocks in the innermost loop, but lazily
+          bool read_a_bufs = false;
+          // will hold one block of the result
+          std::vector<double> K_blk(blk_size_a * blk_size_b);
 
-              const int proc = ab % nproc_with_ints;
+          int a_offset = 0;
+          for(int blk_a = 0; blk_a<nblk_a; ++blk_a, a_offset+=blk_size_a) {
+
+            const size_t bsize_a = nbra > (a_offset + blk_size_a) ? blk_size_a : nbra - a_offset;
+
+            int b_offset = 0;
+            for(int blk_b = 0; blk_b<nblk_b; ++blk_b, b_offset+=blk_size_b) {
+
+              const size_t task_id = blk_a * nblk_b + blk_b;
+              const int proc = task_id % nproc_with_ints;
               if (proc != proc_with_ints[me])
                 continue;
 
-              if (C_a_pR_buf == 0)
-                C_a_pR_buf = C->retrieve_pair_block(0, a, 0);
+              const size_t bsize_b = nket > (b_offset + blk_size_b) ? blk_size_b : nket - b_offset;
 
-              const double* cC_b_pR_buf = cC->retrieve_pair_block(0, b,
-                                                                  TwoBodyOper::eri);
+              if (not read_a_bufs) {
+                for(int a=0; a<bsize_a; ++a)
+                  C->retrieve_pair_block(0, a_offset + a, 0,
+                                         &C_a_pR_bufs[a*nsdf]);
+                read_a_bufs = true;
+              }
 
-              const blasint unit_stride = 1;
-              const double K_ab = F77_DDOT(&nsdf, C_a_pR_buf, &unit_stride, cC_b_pR_buf, &unit_stride);
+              for(int b=0; b<bsize_b; ++b)
+                cC->retrieve_pair_block(0, b_offset + b,
+                                        TwoBodyOper::eri,
+                                        &cC_b_pR_bufs[b*nsdf]);
 
-              cC->release_pair_block(0, b, TwoBodyOper::eri);
+              C_DGEMM('n', 't', bsize_a, bsize_b, nsdf,
+                      1.0, &C_a_pR_bufs[0], nsdf,
+                      &cC_b_pR_bufs[0], nsdf, 0.0, &K_blk[0], bsize_b);
 
-              K[ab] += K_ab;
-            } // end of b loop
+              for(int b=0; b<bsize_b; ++b)
+                cC->release_pair_block(0, b_offset + b, TwoBodyOper::eri);
 
-            if (C_a_pR_buf)
-              C->release_pair_block(0, a, 0);
+              for(int a=0, ab=0; a<bsize_a; ++a) {
+                const int aa = a_offset + a;
+                for(int b=0; b<bsize_b; ++b, ++ab) {
+                  const int bb = b_offset + b;
+                  K[aa * nket + bb] += K_blk[ab];
+                }
+              }
 
-          } // end of a loop
+            } // end of b block loop
 
+            if (read_a_bufs) {
+              for(int a=0; a<bsize_a; ++a)
+                C->release_pair_block(0, a_offset + a, 0);
+              read_a_bufs = false;
+            }
+
+          } // end of a block loop
+
+
+          ConsumableResources::get_default_instance()->release_memory( (blk_size_a+blk_size_b) * nbytes_per_block );
+          //C_a_pR_bufs.~vector();
+          //cC_b_pR_bufs.~vector();
         }
 
         // sum all contributions

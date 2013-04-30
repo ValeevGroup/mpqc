@@ -116,7 +116,7 @@ void FockBuildRuntime::set_densities(const RefSymmSCMatrix& aodensity_alpha,
   RefSymmSCMatrix dPo = Po_ ? (Po - Po_) : Po;
   new_P = new_P || dPo->maxabs() > DBL_EPSILON;
   if (new_P) {
-    this->obsolete();
+    this->obsolete_density_dependents();
     P_ = P;
     spin_polarized_ = Po->maxabs() > DBL_EPSILON;
     if (spin_polarized_)
@@ -132,6 +132,33 @@ void
 FockBuildRuntime::obsolete() {
   registry_->clear();
   psqrtregistry_->clear();
+  dfinfo()->obsolete();
+}
+
+namespace {
+  template <typename T, typename U>
+  struct key_equals {
+      key_equals(T k) : key(k) {}
+      bool operator()(const std::pair<T, U>& i) const {
+        return i.first == key;
+      }
+      T key;
+  };
+}
+
+void
+FockBuildRuntime::obsolete_density_dependents() {
+  psqrtregistry_->clear();
+  // leave H core intact? too cheap to bother
+  registry_->clear();
+  // purge density-dependent spaces
+  if (dfinfo()) {
+    dfinfo()->runtime()->remove_if(std::string("dd"));
+    dfinfo()->runtime()->moints_runtime()->runtime_2c()->remove_if(std::string("dd"));
+    dfinfo()->runtime()->moints_runtime()->runtime_3c()->remove_if(std::string("dd"));
+    key_equals<std::string, RefSymmSCMatrix> pred("dd");
+    dfinfo()->runtime()->moints_runtime()->runtime_2c_inv()->remove_if(pred);
+  }
 }
 
 void

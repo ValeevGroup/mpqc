@@ -112,9 +112,10 @@ DensityFitting::compute()
   if (cC_.nonnull() && kernel_ && C_.nonnull()) // nothing to compute then
     return;
   const Ref<AOSpaceRegistry>& aoidxreg = this->runtime()->factory()->ao_registry();
+  const std::string fbasis_space_id = aoidxreg->value(fbasis_)->id();
   const std::string name = ParsedDensityFittingKey::key(space1_->id(),
                                                         space2_->id(),
-                                                        aoidxreg->value(fbasis_)->id());
+                                                        fbasis_space_id);
   std::string tim_label("DensityFitting ");
   tim_label += name;
   Timer tim(tim_label);
@@ -181,12 +182,16 @@ DensityFitting::compute()
         case SolveMethod_InverseBunchKaufman:
         case SolveMethod_InverseCholesky:
         {
-          RefSymmSCMatrix kernel_i_mat = kernel_.clone();
-          kernel_i_mat.assign(kernel_);
-          if (solver_ == SolveMethod_InverseBunchKaufman)
-            lapack_invert_symmnondef(kernel_i_mat, 1e10);
-          if (solver_ == SolveMethod_InverseCholesky)
-            lapack_invert_symmposdef(kernel_i_mat, 1e10);
+          RefSymmSCMatrix kernel_i_mat;
+          if (not runtime_->runtime_2c_inv()->key_exists(fbasis_space_id)) {
+            RefSymmSCMatrix kernel_i_mat = kernel_.copy();
+            if (solver_ == SolveMethod_InverseBunchKaufman)
+              lapack_invert_symmnondef(kernel_i_mat, 1e10);
+            if (solver_ == SolveMethod_InverseCholesky)
+              lapack_invert_symmposdef(kernel_i_mat, 1e10);
+            runtime_->runtime_2c_inv()->add(fbasis_space_id, kernel_i_mat);
+          }
+          kernel_i_mat = runtime_->runtime_2c_inv()->value(fbasis_space_id);
 
           // convert kernel_i to dense rectangular form
           kernel_i.resize(n3 * n3);

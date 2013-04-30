@@ -82,7 +82,7 @@ namespace sc {
        */
       double log2_precision() const { return log2_precision_; }
 
-      /// sets AO densities. Unless these are identical to the current densities, contents will be cleared.
+      /// sets AO densities. Unless these are identical to the current densities, density-dependent contents will be cleared.
       void set_densities(const RefSymmSCMatrix& aodensity_alpha,
                          const RefSymmSCMatrix& aodensity_beta);
       /// return total density in AO basis
@@ -110,6 +110,9 @@ namespace sc {
       void set_log2_precision(double prec);
 
     private:
+
+      /// obsoletes all density-dependent data
+      void obsolete_density_dependents();
 
       // set to 1 to debug this class
       static int debug() { return 0; }
@@ -147,20 +150,6 @@ namespace sc {
                                               std::string ket_key);
 
     public:
-      /// this functor compares RefSymmSCMatrix objects. Such objects are same if every element in one
-      /// differs by less than DBL_EPSILON from the corresponding element in the other.
-      struct RefSymmSCMatrixEqual {
-        bool operator()(const RefSymmSCMatrix& mat1, const RefSymmSCMatrix& mat2) {
-          if (mat1.pointer() == mat2.pointer()) return true;
-          const int n = mat1.n();
-          if (n != mat2.n()) return false;
-          for(int r=0; r<n; ++r)
-            for(int c=0; c<=r; ++c)
-              if ( fabs(mat1(r,c) - mat2(r,c)) > DBL_EPSILON)
-                return false;
-          return true;
-        }
-      };
       /// the way I compute exchange matrices is by computing square root of the density (P)
       /// this Registry keeps track of P->sqrt(P) mapping
       typedef Registry<RefSymmSCMatrix, Ref<OrbitalSpace>,

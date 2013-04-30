@@ -797,7 +797,9 @@ TwoBodyMOIntsRuntimeUnion23::TwoBodyMOIntsRuntimeUnion23(const Ref<MOIntsTransfo
                                                          const Ref<TwoBodyThreeCenterMOIntsRuntime>& r3c) :
   factory_(factory),
   runtime_2c_(r2c.null() ? Ref<TwoBodyTwoCenterMOIntsRuntime>(new TwoBodyTwoCenterMOIntsRuntime(factory_)) : r2c),
-  runtime_3c_(r3c.null() ? Ref<TwoBodyThreeCenterMOIntsRuntime>(new TwoBodyThreeCenterMOIntsRuntime(factory_)) : r3c) {
+  runtime_3c_(r3c.null() ? Ref<TwoBodyThreeCenterMOIntsRuntime>(new TwoBodyThreeCenterMOIntsRuntime(factory_)) : r3c),
+  runtime_2c_inv_(KernelInverseRegistry::instance())
+{
 }
 
 TwoBodyMOIntsRuntimeUnion23::~TwoBodyMOIntsRuntimeUnion23() {
@@ -807,6 +809,7 @@ TwoBodyMOIntsRuntimeUnion23::TwoBodyMOIntsRuntimeUnion23(StateIn& si) {
   factory_ << SavableState::restore_state(si);
   runtime_2c_ << SavableState::restore_state(si);
   runtime_3c_ << SavableState::restore_state(si);
+  runtime_2c_inv_ = KernelInverseRegistry::restore_instance(si);
 }
 
 void
@@ -814,6 +817,7 @@ TwoBodyMOIntsRuntimeUnion23::save_data_state(StateOut& so) {
   SavableState::save_state(factory_.pointer(),so);
   SavableState::save_state(runtime_2c_.pointer(),so);
   SavableState::save_state(runtime_3c_.pointer(),so);
+  KernelInverseRegistry::save_instance(runtime_2c_inv_, so);
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -179,6 +179,9 @@ namespace sc {
       const Ref<DensityFittingParams>& params() const { return params_; }
       const Ref<DensityFittingRuntime>& runtime() const { return runtime_; }
 
+      /// obsoletes all dependent runtimes
+      void obsolete();
+
     private:
       Ref<DensityFittingParams> params_;
       Ref<DensityFittingRuntime> runtime_;

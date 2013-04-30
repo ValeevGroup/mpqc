@@ -1004,6 +1004,33 @@ namespace sc {
         //////////////////////////////////////////////
         tim.enter("density fit");
         {
+          // check if kernel fit already exists
+          RefSymmSCMatrix kernel_i_mat;
+          if ( not df_rtime->moints_runtime()->runtime_2c_inv()->key_exists(dfspace->id()) ) {
+            kernel_i_mat = kernel.copy();
+            lapack_invert_symmposdef(kernel_i_mat, 1e10);
+            df_rtime->moints_runtime()->runtime_2c_inv()->add(dfspace->id(), kernel_i_mat);
+          }
+          kernel_i_mat = df_rtime->moints_runtime()->runtime_2c_inv()->value(dfspace->id());
+          double* kernel_i_rect = allocate<double>(ndf * ndf);
+          for(int r=0, rc=0; r<ndf; ++r) {
+            for(int c=r; c<ndf; ++c, ++rc) {
+              double value = kernel_i_mat(r,c);
+              kernel_i_rect[r*ndf + c] = value;
+              kernel_i_rect[c*ndf + r] = value;
+            }
+          }
+          {
+            char notransp = 'n';
+            blasint n = ndf;
+            double one = 1.0;
+            blasint ione = 1;
+            double zero = 0.0;
+            F77_DGEMV(&notransp, &n, &n, &one, kernel_i_rect, &n, &Q[0], &ione, &zero, &R[0], &ione);
+          }
+          deallocate(kernel_i_rect);
+#if 0
+          {
           std::vector<double> kernel_packed;  // only needed for factorized methods
           std::vector<double> kernel_factorized;
           // convert kernel_ to a packed upper-triangle form
@@ -1020,6 +1047,13 @@ namespace sc {
                                                  &(kernel_factorized[0]),
                                                  &(R[0]), &(Q[0]), 1,
                                                  refine_solution);
+          }
+
+          for(int i=0; i<ndf; ++i) {
+            std::cout << R[i] << " " << Rnew[i] << std::endl;
+          }
+#endif
+
         }
         tim.exit();
 
@@ -1242,13 +1276,13 @@ namespace sc {
 
           // figure out how big of a block of a/b can be held in memory
           // each block is nsdf doubles big
-          const size_t nbytes_per_block = 2 * nsdf * sizeof(double);
-          const size_t max_num_SR_blocks = ConsumableResources::get_default_instance()->memory() / (nbytes_per_block);
+          const size_t nbytes_per_block = nsdf * sizeof(double);
+          const size_t max_num_SR_blocks = ConsumableResources::get_default_instance()->memory() / (2 * nbytes_per_block); // 2 to account for bra and ket storage
           if (max_num_SR_blocks < 1)
             throw MemAllocFailed("not enough memory to hold 1 block, increase memory in ConsumableResources",
-                                 __FILE__, __LINE__, nbytes_per_block);
-          const size_t max_blk_size = static_cast<size_t>(floor(sqrt(max_num_SR_blocks))); // based on how much memory we have
-          const size_t min_blk_size = std::min(nbra,nket)/static_cast<size_t>(floor(sqrt(nproc_with_ints)));
+                                 __FILE__, __LINE__, 2 * nbytes_per_block);
+          const size_t max_blk_size = max_num_SR_blocks; // based on how much memory we have
+          const size_t min_blk_size = std::min(nbra,nket)/static_cast<size_t>(floor(sqrt(nproc_with_ints))); // based on the amount of parallelism
 
           // emphasize distributed concurrency over minimizing local bandwidth
           // i.e. prefer smaller blocks but more units of work

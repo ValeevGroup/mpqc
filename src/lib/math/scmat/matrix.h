@@ -29,6 +29,7 @@
 #define _math_scmat_matrix_h
 
 #include <iostream>
+#include <cfloat>
 
 #include <math/scmat/abstract.h>
 
@@ -526,7 +527,22 @@ class DiagSCMatrixdouble {
     double val() const;
 };
 
-}
+/// this functor compares RefSymmSCMatrix objects. Such objects are same if every element in one
+/// differs by less than DBL_EPSILON from the corresponding element in the other.
+struct RefSymmSCMatrixEqual {
+  bool operator()(const RefSymmSCMatrix& mat1, const RefSymmSCMatrix& mat2) {
+    if (mat1.pointer() == mat2.pointer()) return true;
+    const int n = mat1.n();
+    if (n != mat2.n()) return false;
+    for(int r=0; r<n; ++r)
+      for(int c=0; c<=r; ++c)
+        if ( fabs(mat1(r,c) - mat2(r,c)) > DBL_EPSILON)
+          return false;
+    return true;
+  }
+};
+
+} // namespace sc
 
 #ifdef INLINE_FUNCTIONS
 #include <math/scmat/matrix_i.h>

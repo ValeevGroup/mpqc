@@ -96,7 +96,7 @@ DensityFittingRuntime::class_desc_(typeid(this_type),
                                    create<this_type> );
 
 DensityFittingRuntime::DensityFittingRuntime(const Ref<MOIntsRuntime>& r) :
-  moints_runtime_(r), solver_(DensityFitting::SolveMethod_RefinedBunchKaufman),
+  moints_runtime_(r), solver_(DensityFitting::SolveMethod_InverseCholesky),
   results_(ResultRegistry::instance())
 {
 }
@@ -439,6 +439,14 @@ DensityFittingInfo::class_desc_(typeid(this_type),
                                 1,
                                 "virtual public SavableState", 0, 0,
                                 create<this_type> );
+
+void
+DensityFittingInfo::obsolete() {
+  runtime()->obsolete();
+  runtime()->moints_runtime()->runtime_2c()->obsolete();
+  runtime()->moints_runtime()->runtime_3c()->obsolete();
+  runtime()->moints_runtime()->runtime_2c_inv()->clear();
+}
 
 /////////////////////////////////////////////////////////////////////////////
 

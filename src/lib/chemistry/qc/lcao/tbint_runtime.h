@@ -358,6 +358,51 @@ namespace sc {
   }
 
   template <int NumCenters>
+  struct ParsedTwoBodyMOIntsKeyInvolvesSpace;
+
+  template <>
+  struct ParsedTwoBodyMOIntsKeyInvolvesSpace<4> {
+      ParsedTwoBodyMOIntsKeyInvolvesSpace(const std::string& skey) : space_key(skey) {}
+      bool operator()(const std::pair<std::string, typename detail::TwoBodyIntEval<4>::refvalue>& i) const {
+        const ParsedTwoBodyFourCenterIntKey pkey(i.first);
+        return pkey.bra1() == space_key ||
+            pkey.bra2() == space_key ||
+            pkey.ket1() == space_key ||
+            pkey.ket2() == space_key;
+      }
+      std::string space_key;
+  };
+  template <>
+  struct ParsedTwoBodyMOIntsKeyInvolvesSpace<3> {
+      ParsedTwoBodyMOIntsKeyInvolvesSpace(const std::string& skey) : space_key(skey) {}
+      bool operator()(const std::pair<std::string, typename detail::TwoBodyIntEval<3>::refvalue>& i) const {
+        const ParsedTwoBodyThreeCenterIntKey pkey(i.first);
+        return pkey.bra1() == space_key ||
+            pkey.bra2() == space_key ||
+            pkey.ket1() == space_key;
+      }
+      std::string space_key;
+  };
+  template <>
+  struct ParsedTwoBodyMOIntsKeyInvolvesSpace<2> {
+      ParsedTwoBodyMOIntsKeyInvolvesSpace(const std::string& skey) : space_key(skey) {}
+      bool operator()(const std::pair<std::string, typename detail::TwoBodyIntEval<2>::refvalue>& i) const {
+        const ParsedTwoBodyTwoCenterIntKey pkey(i.first);
+        return pkey.bra1() == space_key ||
+            pkey.bra2() == space_key;
+      }
+      std::string space_key;
+  };
+
+  template <int NumCenters>
+  void
+  TwoBodyMOIntsRuntime<NumCenters>::remove_if(const std::string& space_key) {
+    ParsedTwoBodyMOIntsKeyInvolvesSpace<NumCenters> pred(space_key);
+    evals_->remove_if(pred);
+  }
+
+
+  template <int NumCenters>
   bool
   TwoBodyMOIntsRuntime<NumCenters>::exists(const std::string& key) const
   {
@@ -413,11 +458,14 @@ namespace sc {
 
   //////////////////////
 
-  /** TwoBodyMOIntsRuntimeUnion23 packages 2-center and 3-center runtimes.
+  /** TwoBodyMOIntsRuntimeUnion23 packages 2-center and 3-center runtimes; it also keeps track of 2-center matrix inverses
     */
   class TwoBodyMOIntsRuntimeUnion23 : virtual public SavableState {
     public:
       typedef TwoBodyMOIntsRuntimeUnion23 this_type;
+      typedef Registry<std::string, RefSymmSCMatrix,
+                       detail::NonsingletonCreationPolicy,
+                       std::equal_to<std::string>, RefSymmSCMatrixEqual > KernelInverseRegistry;
 
       TwoBodyMOIntsRuntimeUnion23(const Ref<MOIntsTransformFactory>& factory,
                                   const Ref<TwoBodyTwoCenterMOIntsRuntime>& runtime_2c = 0,
@@ -432,6 +480,8 @@ namespace sc {
       const Ref<TwoBodyTwoCenterMOIntsRuntime>& runtime_2c() const { return runtime_2c_; }
       /// runtime for 3-center integrals
       const Ref<TwoBodyThreeCenterMOIntsRuntime>& runtime_3c() const { return runtime_3c_; }
+      /// runtime for 2-center integral matrix inverses
+      const Ref<KernelInverseRegistry>& runtime_2c_inv() const { return runtime_2c_inv_; }
 
     private:
       static ClassDesc class_desc_;
@@ -439,6 +489,8 @@ namespace sc {
       Ref<MOIntsTransformFactory> factory_;
       Ref<TwoBodyTwoCenterMOIntsRuntime> runtime_2c_;
       Ref<TwoBodyThreeCenterMOIntsRuntime> runtime_3c_;
+      Ref<KernelInverseRegistry> runtime_2c_inv_;
+
   };
 
 

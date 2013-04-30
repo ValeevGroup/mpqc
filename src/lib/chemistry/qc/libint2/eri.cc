@@ -57,7 +57,11 @@ EriLibint2::EriLibint2(Integral *integral,
 		   const Ref<GaussianBasisSet>& b3,
 		   const Ref<GaussianBasisSet>& b4,
 		   size_t storage) :
-  Int2eLibint2(integral,b1,b2,b3,b4,storage)
+  Int2eLibint2(integral,b1,b2,b3,b4,storage),
+  Fm_Eval_(b1->max_angular_momentum() +
+          b2->max_angular_momentum() +
+          b3->max_angular_momentum() +
+          b4->max_angular_momentum())
 {
   // The static part of Libint's interface is automatically initialized in libint.cc
   int l1 = bs1_->max_angular_momentum();
@@ -134,10 +138,7 @@ EriLibint2::EriLibint2(Integral *integral,
     bs2_->max_angular_momentum() +
     bs3_->max_angular_momentum() +
     bs4_->max_angular_momentum();
-  if (use_taylor_fjt_)
-      Fm_Eval_ = new Taylor_Fjt(mmax,1e-15);
-  else
-      Fm_Eval_ = new FJT(mmax);
+  Fm_table_ = new double[mmax+1];
 }
 
 
@@ -156,6 +157,7 @@ EriLibint2::~EriLibint2()
 #ifdef DMALLOC
   dmalloc_shutdown();
 #endif
+  delete[] Fm_table_;
 }
 
 size_t

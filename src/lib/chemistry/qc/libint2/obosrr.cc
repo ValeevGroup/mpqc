@@ -56,12 +56,12 @@ void Int1eLibint2::AI_OSrecurs_(double ***AI0, double PA[3], double PB[3],
   int mmax = iang+jang;
   double tmp = sqrt(gamma)*M_2_SQRTPI;
   double u = gamma*(PC[0]*PC[0] + PC[1]*PC[1] + PC[2]*PC[2]);
-  double *F = Fm_Eval_->values(mmax,u);
+  Fm_Eval_->eval(Fm_table_,u,mmax);
 
 	/* Computing starting integrals for recursion */
 
   for(m=0;m<=mmax;m++)
-    AI0[0][0][m] = tmp*F[m];
+    AI0[0][0][m] = tmp * Fm_table_[m];
 
 	/* Upward recursion in j with i=0 */
   

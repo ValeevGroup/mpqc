@@ -52,7 +52,11 @@ G12NCLibint2::G12NCLibint2(Integral *integral,
 			   const ContractedGeminal& geminal_bra,
 			   const ContractedGeminal& geminal_ket) :
   Int2eLibint2(integral,b1,b2,b3,b4,storage), ExpMath_(),
-  geminal_bra_(geminal_bra), geminal_ket_(geminal_ket)
+  geminal_bra_(geminal_bra), geminal_ket_(geminal_ket),
+  Fm_Eval_(b1->max_angular_momentum() +
+          b2->max_angular_momentum() +
+          b3->max_angular_momentum() +
+          b4->max_angular_momentum() + 1)
 {
   // The static part of Libint's interface is automatically initialized in libint.cc
   int l1 = bs1_->max_angular_momentum();
@@ -135,7 +139,7 @@ G12NCLibint2::G12NCLibint2(Integral *integral,
     bs2_->max_angular_momentum() +
     bs3_->max_angular_momentum() +
     bs4_->max_angular_momentum();
-  Fm_Eval_ = new FJT(mmax+1);
+  Fm_table_ = new double[mmax+2];
 }
 
 
@@ -154,6 +158,7 @@ G12NCLibint2::~G12NCLibint2()
 #ifdef DMALLOC
   dmalloc_shutdown();
 #endif
+  delete[] Fm_table_;
 }
 
 size_t

@@ -93,7 +93,9 @@ Int1eLibint2::Int1eLibint2(Integral *integral,
   }
 
   if (need_coulomb_) {
-    Fm_Eval_ = new FJT(bs1_->max_angular_momentum() + bs2_->max_angular_momentum() + order);
+    const int mmax = bs1_->max_angular_momentum() + bs2_->max_angular_momentum() + order;
+    Fm_Eval_ = new ::libint2::FmEval_Chebyshev3(mmax);
+    Fm_table_ = new double[mmax+1];
     indmax_ = (max_am+order)*(max_am+1+order)*(max_am+1+order)+1;
     // Allocate AI0
     AI0_ = init_box_(indmax_,indmax_,2*(max_am+order)+1);
@@ -113,6 +115,8 @@ Int1eLibint2::~Int1eLibint2()
   }
   if (need_coulomb_) {
     free_box_(AI0_);
+    delete Fm_Eval_;
+    delete[] Fm_table_;
   }
   if (need_overlap_) {
     free_block_(OIX_);

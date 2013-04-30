@@ -102,8 +102,8 @@ inline void EriLibint2::eri_quartet_data_(prim_data *Data, double scale)
   double T = rho*PQ2;
 
   if (!quartet_info_.am) {
-    double *fjttable = Fm_Eval_->values(0,T);
-    Data->LIBINT_T_SS_EREP_SS(0)[0] = fjttable[0]*pfac;
+    Fm_Eval_.eval(Fm_table_, T, 0);
+    Data->LIBINT_T_SS_EREP_SS(0)[0] = Fm_table_[0]*pfac;
   }
   else {
 #if LIBINT2_DEFINED(eri,oo2ze)
@@ -126,8 +126,8 @@ inline void EriLibint2::eri_quartet_data_(prim_data *Data, double scale)
       assign_FjT(Data,quartet_info_.am,oo2np1,pfac);
     }
     else {
-      double *fjttable = Fm_Eval_->values(quartet_info_.am,T);
-      assign_FjT(Data,quartet_info_.am,fjttable,pfac);
+      Fm_Eval_.eval(Fm_table_, T, quartet_info_.am);
+      assign_FjT(Data,quartet_info_.am,Fm_table_,pfac);
     }
 
     /* PA */
@@ -343,8 +343,8 @@ inline void EriLibint2::eri_quartet_data_(prim_data *Data, double scale)
       assign_FjT(Data,quartet_info_.am,oo2np1,pfac);
     }
     else {
-      double *fjttable = Fm_Eval_->values(quartet_info_.am,T);
-      assign_FjT(Data,quartet_info_.am,fjttable,pfac);
+      Fm_Eval_.values(Fm_table_, T, quartet_info_.am);
+      assign_FjT(Data,quartet_info_.am,Fm_table_,pfac);
     }
   }
   else {
@@ -381,7 +381,8 @@ inline void EriLibint2::eri_quartet_data_(prim_data *Data, double scale)
             F = oo2np1;
           }
           else {
-            F = Fm_Eval_->values(quartet_info_.am,rorgT);
+            Fm_Eval_->values(Fm_table_, rorgT, quartet_info_.am);
+            F = Fm_table_;
           }
 
           double g_i[4*LIBINT2_MAX_AM_ERI+1];

@@ -35,6 +35,7 @@
 #include <chemistry/qc/basis/fjt.h>
 #include <chemistry/qc/libint2/int2e.h>
 #include <libint2/libint2.h>
+#include <libint2/boys.h>
 
 #if LIBINT2_SUPPORT_ERI
 
@@ -83,9 +84,8 @@ class EriLibint2: public Int2eLibint2 {
     void eri_quartet_data_(prim_data *Data, double scale);
     /*--- Compute engines ---*/
     std::vector<Libint_t> Libint_;
-    // set to 1 use taylor interpolation
-    static const bool use_taylor_fjt_ = 1;
-    Ref<Fjt> Fm_Eval_;
+    ::libint2::FmEval_Chebyshev3 Fm_Eval_;
+    double* Fm_table_;
   
   public:
     EriLibint2(Integral *,

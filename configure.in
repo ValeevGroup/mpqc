@@ -9,6 +9,7 @@ AC_INIT(src/lib/util/ref/ref.h)
 AC_PREREQ(2.55)
 AC_CONFIG_HEADER(src/lib/scconfig.h)
 AC_CONFIG_AUX_DIR(bin)
+AC_LANG(C++)
 
 AC_CANONICAL_SYSTEM
 
@@ -776,14 +777,11 @@ esac
 
 if test X$GXX == Xyes; then
   AC_MSG_CHECKING([for C++ cpu tuning flag])
-  AC_LANG_SAVE
-  AC_LANG_CPLUSPLUS
-  CXXFLAGS_SAV=$CXXFLAGS
+      CXXFLAGS_SAV=$CXXFLAGS
   CXXFLAGS="-mtune=$opt_target_cpu $CXXFLAGS_SAV"
   AC_COMPILE_IFELSE([int main(){}],cxx_tuneflag="-mtune",cxx_tuneflag="-mcpu")
   CXXFLAGS=$CXXFLAGS_SAV
-  AC_LANG_RESTORE
-  AC_MSG_RESULT($cxx_tuneflag)
+    AC_MSG_RESULT($cxx_tuneflag)
 fi
 
 if test X$GCC == Xyes; then
@@ -908,8 +906,6 @@ dnl ----------- check for C++ typename ---------------
 dnl This is done before template flags are set to avoid
 dnl undefined symbol problems.
 
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
 AC_MSG_CHECKING([for C++ typename keyword])
 AC_TRY_LINK([
   class X { public: typedef int t; X(){} };
@@ -923,33 +919,21 @@ AC_MSG_RESULT([yes])
 ],
 AC_MSG_RESULT([no])
 );
-AC_LANG_RESTORE
 
 dnl  ----------- check for C++ restrict extension ---------------
 
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
 AC_TRY_LINK(,[double *restrict x=0;],AC_DEFINE(CXX_RESTRICT))
-AC_LANG_RESTORE
 
 dnl  ----------- check for C++ deprecated attribute ---------------
 
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
 AC_TRY_LINK(,[void f() __attribute__((deprecated));],AC_DEFINE(CXX_DEPRECATED))
-AC_LANG_RESTORE
 
 dnl  ----------- check for C++ __restrict__ extension ---------------
 
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
 AC_TRY_LINK(,[double *__restrict__ x=0;],AC_DEFINE(CXX___RESTRICT__))
-AC_LANG_RESTORE
 
 dnl ----------- check for namespace std ---------------
 
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
 AC_MSG_CHECKING([for namespace std])
 AC_TRY_LINK([
 #include <iostream>
@@ -965,13 +949,10 @@ AC_MSG_RESULT([yes])
 NAMESPACE_STD=
 AC_MSG_RESULT([no])
 );
-AC_LANG_RESTORE
 
 dnl ----------- check for GNU libc++-v3 prerelease bug ---------------
 
 if test X$GXX = Xyes; then
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
 AC_MSG_CHECKING([for GNU libc++-v3 prerelease bug])
 AC_TRY_LINK([
 #include <stdio.h>
@@ -983,7 +964,6 @@ AC_MSG_RESULT([no])
 EXTRADEFINES="$EXTRADEFINES -D_ISOC99_SOURCE=1"
 AC_MSG_RESULT([yes])
 );
-AC_LANG_RESTORE
 fi
 
 dnl -- other options --
@@ -1106,38 +1086,29 @@ if test "(" X$PARALLEL = Xyes -a X$THREADS != Xno ")" -o X$THREADS = Xyes; then
 
 AC_MSG_CHECKING([pthreads])
 dnl see if posix threads are automatically linked ...
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
 LIBSSAV="$LIBS"
 AC_TRY_LINK([#include <pthread.h>],[pthread_join(0,0);],[
 HAVE_PTHREAD=yes],[
 HAVE_PTHREAD=no])
-AC_LANG_RESTORE
 
 dnl see if posix threads are in -lpthread
 if test $HAVE_PTHREAD = no; then
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
 LIBSSAV="$LIBS"
 LIBS="$LIBS -lpthread"
 AC_TRY_LINK([#include <pthread.h>],[pthread_join(0,0);],[
 HAVE_PTHREAD=yes],[
 HAVE_PTHREAD=no
 LIBS="$LIBSSAV"])
-AC_LANG_RESTORE
 fi
 
 dnl see if posix threads are in -lpthreads
 if test $HAVE_PTHREAD = no; then
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
 LIBSSAV="$LIBS"
 LIBS="$LIBS -lpthreads"
 AC_TRY_LINK([#include <pthread.h>],[pthread_join(0,0);],[
 HAVE_PTHREAD=yes],[
 HAVE_PTHREAD=no
 LIBS="$LIBSSAV"])
-AC_LANG_RESTORE
 fi
 
 AC_MSG_RESULT($HAVE_PTHREAD)
@@ -1176,24 +1147,18 @@ AC_CHECK_HEADER(perf.h,[
 AC_CHECK_HEADER(libunwind.h,[
  AC_MSG_CHECKING([libunwind])
  dnl see if libunwind is automatically linked ...
- AC_LANG_SAVE
- AC_LANG_CPLUSPLUS
  LIBSSAV="$LIBS"
  AC_TRY_LINK([#include <libunwind.h>],[unw_init_local(0,0);],[
  HAVE_LIBUNWIND=yes],[
  HAVE_LIBUNWIND=no])
- AC_LANG_RESTORE
 
  dnl see if posix threads are in -lpthread
  if test X$HAVE_LIBUNWIND = Xno; then
- AC_LANG_SAVE
- AC_LANG_CPLUSPLUS
  LIBSSAV="$LIBS"
  LIBS="$LIBS -lunwind"
  AC_TRY_LINK([#include <libunwind.h>],[unw_init_local(0,0);],[
  HAVE_LIBUNWIND=yes],[HAVE_LIBUNWIND=no]
  )
- AC_LANG_RESTORE
  fi
 
  AC_MSG_RESULT($HAVE_LIBUNWIND)
@@ -1205,8 +1170,6 @@ AC_CHECK_HEADER(libunwind.h,[
 
 AC_MSG_CHECKING([__cxa_demangle])
 dnl see if abi::__cxa_demangle is available
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
 AC_TRY_LINK([#include <cxxabi.h>],[int status; const char symbol[] = "main"; char* result = abi::__cxa_demangle(symbol, 0, 0, &status);],
  [
   AC_DEFINE(HAVE_CXA_DEMANGLE)
@@ -1216,7 +1179,6 @@ AC_TRY_LINK([#include <cxxabi.h>],[int status; const char symbol[] = "main"; cha
   AC_MSG_RESULT(no)
  ]
 )
-AC_LANG_RESTORE
 
 AC_CHECK_HEADER(execinfo.h,HAVE_EXECINFO_H_INC=1)
 AC_CHECK_FUNC(backtrace, HAVE_BACKTRACE_FUNC=1)
@@ -1228,8 +1190,6 @@ fi
 if test X$PARALLEL = Xyes; then
 
   dnl ----- check for the mpi library
-  AC_LANG_SAVE
-  AC_LANG_CPLUSPLUS
   dnl Must use try_link since check_header runs cpp which doesn't
   dnl always find mpi.h (if mpicc and no -I is used for example)
   AC_MSG_CHECKING([for mpi.h])
@@ -1257,7 +1217,6 @@ if test X$PARALLEL = Xyes; then
     fi
     AC_DEFINE(HAVE_MPIPP)
   fi
-  AC_LANG_RESTORE
 fi
 
 if test X$HAVE_MPI != Xyes -a X$ALWAYS_USE_MPI = Xyes; then
@@ -1267,14 +1226,11 @@ fi
   AC_SUBST(ALWAYS_USE_MPI)
 
   dnl ------ check for the armci library
-  AC_LANG_SAVE
-  AC_LANG_CPLUSPLUS
   AC_CHECK_HEADER(armci.h,[
     AC_CHECK_FUNC(ARMCI_Init,HAVE_ARMCI=yes,[
       AC_CHECK_LIB(armci,ARMCI_Init,[HAVE_ARMCI=yes;LIBS="-larmci $LIBS"])
     ])
   ])
-  AC_LANG_RESTORE
 
   if test X$HAVE_ARMCI = Xyes; then
     AC_DEFINE(HAVE_ARMCI)
@@ -1319,8 +1275,6 @@ AC_CHECK_FUNCS(posix_spawn)
 
 dnl --------- Check for an isnan and make sure it can be used
 dnl           with iostream (it can't on OS X)
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
 AC_MSG_CHECKING([isnan and iostream])
 AC_LINK_IFELSE([
   #include <iostream>
@@ -1331,7 +1285,6 @@ AC_LINK_IFELSE([
   AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
 )
-AC_LANG_RESTORE
 
 dnl --------- Check for the glibc extensions to C99 fenv.h. ---------
 
@@ -1339,8 +1292,6 @@ AC_CHECK_HEADERS(fenv.h)
 AC_CHECK_FUNCS(feenableexcept fedisableexcept)
 
 dnl --------- Checks for a C++ linkable fchdir. ---------
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
 AC_MSG_CHECKING([fchdir])
 AC_TRY_COMPILE([#include <unistd.h>],[
 fchdir(0);
@@ -1350,13 +1301,10 @@ AC_MSG_RESULT(yes)],[
 AC_MSG_RESULT(no)
 HAVE_FCHDIR=no
 ])
-AC_LANG_RESTORE
 AC_SUBST(HAVE_FCHDIR)
 
 dnl --------- Check for ios::fmtflags. ---------
 
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
 AC_MSG_CHECKING([ios::fmtflags])
 AC_TRY_COMPILE([#include <iostream>],[
 $NAMESPACE_STD ios::fmtflags flags;
@@ -1366,14 +1314,11 @@ AC_MSG_RESULT(yes)],[
 AC_MSG_RESULT(no)
 HAVE_IOS_FMTFLAGS=no
 ])
-AC_LANG_RESTORE
 AC_SUBST(HAVE_IOS_FMTFLAGS)
 
 dnl --------- check for long long  ---------
 
 if test X"$LONGLONG" = Xyes; then
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
 AC_MSG_CHECKING([long long])
 AC_TRY_COMPILE([],[
 long long i;
@@ -1381,13 +1326,10 @@ long long i;
 AC_MSG_RESULT(yes)],[
 AC_MSG_RESULT(no)
 ])
-AC_LANG_RESTORE
 fi
 
 dnl --------- Check for sgetn. ---------
 
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
 AC_MSG_CHECKING([sgetn])
 AC_TRY_COMPILE([#include <iostream>],[
 char *c=0;
@@ -1398,13 +1340,10 @@ AC_MSG_RESULT(yes)],[
 AC_MSG_RESULT(no)
 HAVE_SGETN=no
 ])
-AC_LANG_RESTORE
 AC_SUBST(HAVE_SGETN)
 
 dnl --------- Check for pubseekoff. ---------
 
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
 AC_MSG_CHECKING([pubseekoff])
 AC_TRY_COMPILE([#include <iostream>],[
 $NAMESPACE_STD cout.rdbuf()->pubseekoff(0,$NAMESPACE_STD ios::beg,
@@ -1415,13 +1354,10 @@ AC_MSG_RESULT(yes)],[
 AC_MSG_RESULT(no)
 HAVE_PUBSEEKOFF=no
 ])
-AC_LANG_RESTORE
 AC_SUBST(HAVE_PUBSEEKOFF)
 
 dnl --------- Check for seekoff. ---------
 
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
 AC_MSG_CHECKING([seekoff])
 AC_TRY_COMPILE([#include <iostream>],[
 $NAMESPACE_STD cout.rdbuf()->seekoff(0,$NAMESPACE_STD ios::beg,
@@ -1432,13 +1368,10 @@ AC_MSG_RESULT(yes)],[
 AC_MSG_RESULT(no)
 HAVE_SEEKOFF=no
 ])
-AC_LANG_RESTORE
 AC_SUBST(HAVE_SEEKOFF)
 
 dnl --------- Check for signal handler argument lists. ---------
 
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
 AC_MSG_CHECKING([signal handler needs ellipsis])
 AC_TRY_LINK([
 #include <signal.h>
@@ -1452,15 +1385,11 @@ void handler(int) {}
 ],
 AC_DEFINE(SIGHASELLIP) AC_MSG_RESULT(yes),
 AC_MSG_RESULT(no))
-AC_LANG_RESTORE
 
 dnl --------- Checks for rand functions ---------
 
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
 AC_CHECK_FUNCS(drand48)
 AC_CHECK_FUNCS(lrand48)
-AC_LANG_RESTORE
 
 dnl --------- Checks for SYSV IPC. ---------
 
@@ -1485,8 +1414,6 @@ else
   AC_SUBST(HAVE_SYSV_IPC)
 fi
 
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
 AC_MSG_CHECKING([if semctl requires semun])
 AC_TRY_LINK([
 #include <sys/types.h>
@@ -1506,7 +1433,6 @@ case $target in
 esac
 ],
 AC_DEFINE(SEMCTL_REQUIRES_SEMUN) AC_MSG_RESULT(yes))
-AC_LANG_RESTORE
 
 dnl ----------- See if Fortran works --------------
 
@@ -1560,8 +1486,6 @@ AC_SUBST(F77_SYMBOLS)
 
 dnl ----------- check for FORTRAN libraries --------------
 
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
 LIBSSAV="$LIBS"
 LIBS="$LIBSSAV $FLIBS"
 
@@ -1603,7 +1527,6 @@ if test X$HAVE_LAPACK != Xyes; then
 fi
 
 FLIBS="$LIBLAPACK $LIBBLAS $FLIBS"
-AC_LANG_RESTORE
 
 AC_ARG_ENABLE(blas-f77-i8,
  [  --enable-blas-f77-i8    Assume that BLAS/LAPACK uses 8-byte integers (default is to assume 4-byte integers; consult your BLAS/LAPACK library manual).],
@@ -1636,8 +1559,6 @@ fi
 
 dnl ----------- NIAMA library checks --------------
 
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
 AC_CHECK_PROG(NIAMACFG,niama-config,niama-config)
 if test X$NIAMACFG != X; then
   LIBSSAV="$LIBS"
@@ -1657,14 +1578,11 @@ AC_TRY_LINK([
 ]
 )
 fi
-AC_LANG_RESTORE
 
 dnl ----------- MADNESS framework checks --------------
 
 if test "X$HAVE_MPI" = "Xyes"; then
-  AC_LANG_SAVE
-  AC_LANG_CPLUSPLUS
-
+    
   MADNESSDIR=/usr/local
   AC_ARG_WITH(madness,
   [  --with-madness          MADNESS directory prefix (i.e. prefix/lib is location of the library)],
@@ -1709,15 +1627,12 @@ if test "X$HAVE_MPI" = "Xyes"; then
     fi
    )
   fi
-  AC_LANG_RESTORE
-fi
+  fi
 
 dnl ----------- Eigen library checks --------------
 
 if test "X" = "X"; then
-  AC_LANG_SAVE
-  AC_LANG_CPLUSPLUS
-
+    
   EIGENDIR=/opt/local/include/eigen3
   AC_ARG_WITH(eigen,
     [  --with-eigen            Eigen directory prefix (i.e. prefix/Eigen is location of the library); the default is /opt/local/include/eigen3],
@@ -1759,15 +1674,12 @@ if test "X" = "X"; then
       AC_SUBST(HAVE_EIGEN)
     fi
   fi
-  AC_LANG_RESTORE
-fi
+  fi
 
 dnl ----------- TiledArray library checks --------------
 
 if test "X$HAVE_MADNESS" = "Xyes" -a "X$HAVE_EIGEN" = "Xyes"; then
-  AC_LANG_SAVE
-  AC_LANG_CPLUSPLUS
-
+    
   TILEDARRAYDIR=/usr/local
   AC_ARG_WITH(tiledarray,
     [  --with-tiledarray       TiledArray directory prefix (i.e. prefix/include is location of the library)],
@@ -1813,13 +1725,10 @@ if test "X$HAVE_MADNESS" = "Xyes" -a "X$HAVE_EIGEN" = "Xyes"; then
       AC_SUBST(HAVE_TILEDARRAY)
     fi
   fi
-  AC_LANG_RESTORE
-fi
+  fi
 
 dnl ----------- libint library checks --------------
 
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
 AC_CHECK_HEADERS(libint/libint.h,
   AC_CHECK_LIB(int,init_libint_base,
     HAVE_LIBINT=yes
@@ -1828,12 +1737,9 @@ AC_CHECK_HEADERS(libint/libint.h,
     LIBS="-lint $LIBS"
     )
   )
-AC_LANG_RESTORE
 
 dnl ----------- libr12 library checks --------------
 
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
 AC_CHECK_HEADERS(libr12/libr12.h,
   AC_CHECK_LIB(r12,init_libr12_base,
     HAVE_LIBR12=yes
@@ -1842,12 +1748,9 @@ AC_CHECK_HEADERS(libr12/libr12.h,
     LIBS="-lr12 $LIBS"
     )
   )
-AC_LANG_RESTORE
 
 dnl ----------- libderiv library checks --------------
 
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
 AC_CHECK_HEADERS(libderiv/libderiv.h,
   AC_CHECK_LIB(deriv,init_libderiv_base,
     HAVE_LIBDERIV=yes
@@ -1856,12 +1759,9 @@ AC_CHECK_HEADERS(libderiv/libderiv.h,
     LIBS="-lderiv $LIBS"
     )
   )
-AC_LANG_RESTORE
 
 dnl ----------- libint2 library checks --------------
 
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
 
 LIBINT2DIR=/usr/local
 AC_ARG_WITH(libint2,
@@ -2052,10 +1952,27 @@ else # HAVE_LIBINT2_CONFIG_H=yes
        AC_MSG_RESULT(yes)],
       [AC_MSG_RESULT(no)]
     )
+    
+    # check that libint2 is recent enough
+    AC_CHECK_HEADERS(libint2/boys.h,
+      AC_COMPILE_IFELSE(
+        AC_LANG_PROGRAM(
+        [[#include <libint2/libint2.h>
+          #if !(LIBINT_MAJOR_VERSION==2 && LIBINT_MINOR_VERSION==0 && LIBINT_MICRO_VERSION>=2)
+          # error "Libint2 library is too old"
+          #endif
+        ]],
+        [[
+        ]]
+        ),
+        [],
+        AC_MSG_ERROR([Libint2 library version 2.0.2 or later is required])
+      ),
+      AC_MSG_ERROR([Libint2 library version 2.0.2 or later is required])
+    )
   fi
  )
 fi
-AC_LANG_RESTORE
 
 dnl ----------- make sure we have everything for cints ----------
 
@@ -2159,8 +2076,6 @@ LIBS="-L$PSIROOTDIR/lib  $LIBS"
 CPPFLAGS="-I$PSIROOTDIR/include $CPPFLAGS"
 
 HAVE_COMPATIBLE_PSI=no
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
 AC_CHECK_HEADERS(psiconfig.h,
   dnl -- check if Psi was configured to use CCA integrals standard --
   AC_MSG_CHECKING([if Psi was configured to use CCA integrals standard])
@@ -2180,7 +2095,6 @@ AC_CHECK_HEADERS(psiconfig.h,
     ]
   )
 )
-AC_LANG_RESTORE
 
 dnl ---- if IntegralLibint2 uses non-cca normalization, will not use Psi!
 
@@ -2198,8 +2112,6 @@ dnl ----------- libpsio library checks --------------
 
 HAVE_LIBPSIO=no
 if test X$HAVE_COMPATIBLE_PSI = Xyes; then
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
 AC_CHECK_HEADERS(libpsio/psio.hpp,
   AC_MSG_CHECKING([if libpsio can be used])
   OLD_LIBS=$LIBS
@@ -2221,15 +2133,12 @@ AC_CHECK_HEADERS(libpsio/psio.hpp,
     ]
   )
 )
-AC_LANG_RESTORE
 fi
 
 dnl ----------- libchkpt library checks --------------
 
 HAVE_LIBCHKPT=no
 if test X$HAVE_COMPATIBLE_PSI = Xyes -a X$HAVE_LIBPSIO = Xyes; then
-AC_LANG_SAVE
-AC_LANG_CPLUSPLUS
 AC_CHECK_HEADERS(libchkpt/chkpt.hpp,
   AC_MSG_CHECKING([if libchkpt can be used])
   OLD_LIBS=$LIBS
@@ -2253,7 +2162,6 @@ AC_CHECK_HEADERS(libchkpt/chkpt.hpp,
    ]
   )
  )
-AC_LANG_RESTORE
 fi
 
 dnl ----------- other Psi3 library checks --------------
@@ -2262,9 +2170,7 @@ if test X$HAVE_COMPATIBLE_PSI = Xyes -a X$HAVE_LIBPSIO = Xyes -a X$HAVE_LIBCHKPT
   SAVELIBS=$LIBS
   PSILIBS=
 
-  AC_LANG_SAVE
-  AC_LANG_CPLUSPLUS
-  dnl - libciomr doesn't depend on other libraries
+      dnl - libciomr doesn't depend on other libraries
   AC_CHECK_LIB(PSI_ciomr,init_int_matrix,[HAVE_LIBCIOMR=yes;PSILIBS="-lPSI_ciomr $PSILIBS"],HAVE_LIBCIOMR=no)
   dnl - libdpd's dpd_init requires libciomr
   LIBS="$PSILIBS $SAVELIBS"
@@ -2273,8 +2179,7 @@ if test X$HAVE_COMPATIBLE_PSI = Xyes -a X$HAVE_LIBPSIO = Xyes -a X$HAVE_LIBCHKPT
   AC_CHECK_LIB(PSI_iwl,iwl_buf_close,[HAVE_LIBIWL=yes;PSILIBS="-lPSI_iwl $PSILIBS"],HAVE_LIBIWL=no)  
   dnl - libqt's pople requires libqt
   AC_CHECK_LIB(PSI_qt,pople,[HAVE_LIBQT=yes;PSILIBS="-lPSI_qt $PSILIBS"],HAVE_LIBQT=no)
-  AC_LANG_RESTORE
-  
+    
   if test X$HAVE_LIBCIOMR = Xyes -a X$HAVE_LIBDPD = Xyes -a X$HAVE_LIBIWL = Xyes; then
     HAVE_OTHER_PSILIBS=yes
     LIBS="$PSILIBS $SAVELIBS"

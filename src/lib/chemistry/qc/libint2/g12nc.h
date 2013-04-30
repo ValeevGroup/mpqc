@@ -37,6 +37,7 @@
 #include <chemistry/qc/basis/fjt.h>
 #include <chemistry/qc/libint2/int2e.h>
 #include <libint2/libint2.h>
+#include <libint2/boys.h>
 
 #ifndef _chemistry_qc_libint2_g12nc_h
 #define _chemistry_qc_libint2_g12nc_h
@@ -112,7 +113,8 @@ class G12NCLibint2: public Int2eLibint2 {
                              const ContractedGeminal* gket);
     /*--- Compute engines ---*/
     std::vector<Libint_t> Libint_;
-    Ref<Fjt> Fm_Eval_;
+    ::libint2::FmEval_Chebyshev3 Fm_Eval_;
+    double* Fm_table_;
 
     class ExpensiveMath {
     public:

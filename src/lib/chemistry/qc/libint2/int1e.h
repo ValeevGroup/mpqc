@@ -32,6 +32,7 @@
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/basis/fjt.h>
+#include <libint2/boys.h>
 
 namespace sc {
 
@@ -93,7 +94,8 @@ class Int1eLibint2: public RefCount {
 		      double PC[3], double gamma, int iang, int jang);
     void OI_OSrecurs_(double **OIX, double **OIY, double **OIZ, double PA[3], double PB[3],
 		      double gamma, int lmaxi, int lmaxj);
-    Ref<FJT> Fm_Eval_;
+    ::libint2::FmEval_Chebyshev3* Fm_Eval_;
+    double* Fm_table_;
 
     // tasks common to different types of integral evaluation
     void compute_doublet_info_(int, int);

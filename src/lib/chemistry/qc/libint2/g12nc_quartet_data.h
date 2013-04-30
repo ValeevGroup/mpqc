@@ -116,8 +116,8 @@ inline void G12NCLibint2::g12nc_quartet_data_(prim_data *Data, double scale, Ope
       assign_FjT(Data,quartet_info_.am,oo2np1,pfac);
     }
     else {
-      double *fjttable = Fm_Eval_->values(quartet_info_.am,T);
-      assign_FjT(Data,quartet_info_.am,fjttable,pfac);
+      Fm_Eval_.eval(Fm_table_,T,quartet_info_.am);
+      assign_FjT(Data,quartet_info_.am,Fm_table_,pfac);
     }
   }
   else {
@@ -153,7 +153,8 @@ inline void G12NCLibint2::g12nc_quartet_data_(prim_data *Data, double scale, Ope
             F = oo2np1;
           }
           else {
-            F = Fm_Eval_->values(quartet_info_.am,rorgT);
+            Fm_Eval_.eval(Fm_table_,rorgT,quartet_info_.am);
+            F = Fm_table_;
           }
 
           double g_i[4*LIBINT2_MAX_AM_ERI+1];

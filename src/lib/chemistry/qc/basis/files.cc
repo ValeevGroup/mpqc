@@ -103,6 +103,9 @@ BasisFileSet::keyval(const Ref<KeyVal> &keyval, const char *basisname)
       else if (basisname[i] == ')') {
           filename[i] = 'R';
         }
+      else if (basisname[i] == '/') {
+          filename[i] = 'X';
+        }
       else {
           filename[i] = basisname[i];
         }

@@ -146,8 +146,11 @@ class DistArray4: virtual public SavableState {
                                         double* buf) const =0;
     /// Releases the buffer that holds ij block of integrals. If it was allocated by DistArray4, it will be freed.
     virtual void release_pair_block(int i, int j, tbint_type oper_type) const =0;
-    /// Stores an ij pair block of integrals. It is assumed to be stored according to storage(). It must also be "local", i.e. is_local(i,j) must be true.
-    /// No locking is performed.
+    /// Stores an ij pair block of integrals. It is assumed to be stored according to storage().
+    /// It does not have to be "local", i.e. is_local(i,j) can be false, but:
+    ///  - nonlocal writes may require additional copies and/or communication.
+    ///  - and currently fail for some implementations :-(
+    /// Locking is performed, hence should be thread safe
     virtual void store_pair_block(int i, int j, tbint_type oper_type, const double* ints) =0;
     /// Stores an rectangular subblock of ij block of integrals. Most efficient if the block is contiguous, i.e. yfence - ystart = ny().
     /// \sa store_pair_block()

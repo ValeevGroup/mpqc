@@ -67,7 +67,8 @@ DistArray4_MemoryGrp::~DistArray4_MemoryGrp() {
           if (pairblk_[ij].ints_[oper_type] != NULL) {
             ExEnv::outn() << indent << me() << ": i = " << i << " j = "
                 << j << " oper_type = " << oper_type << endl;
-            throw std::runtime_error("Logic error: DistArray4_MemoryGrp::~ : some nonlocal blocks have not been released!");
+            throw ProgrammingError("Logic error: DistArray4_MemoryGrp::~ : some nonlocal blocks have not been released!",
+                                   __FILE__, __LINE__);
           }
       }
   delete[] pairblk_;
@@ -132,25 +133,24 @@ void
 DistArray4_MemoryGrp::store_pair_block(int i, int j, tbint_type oper_type, const double *ints)
 {
   assert(this->active());  //make sure we are active
-  assert(is_local(i,j));   // store blocks local to this node ONLY
 
   const int ij = ij_index(i,j);
-  // sanity check: check if the given pointer already points to the correct location in MemoryGrp
+  struct PairBlkInfo *pb = &pairblk_[ij];
+  // whether it's local or not writing will happen via the MemoryGrp
   const int local_ij_index = ij / ntasks();
-  const double* ints_destination =
-    const_cast<const double *>(reinterpret_cast<double*>((size_t)mem_->localdata() + blksize_memgrp_*(num_te_types()*local_ij_index + oper_type)));
-  const bool ints_already_there = (ints_destination == ints);
-
-  // copy integrals to MemoryGrp if needed
-  if (!ints_already_there) {
-    const distsize_t dest_ptr = mem_->localoffset() + (distsize_t)blksize_memgrp_*(num_te_types()*local_ij_index + oper_type);
-    void* dest = mem_->obtain_writeonly(dest_ptr, blksize_memgrp_);
-    memcpy(dest, static_cast<const void*>(ints), this->blksize());
-    mem_->release_writeonly(dest, dest_ptr, blksize_memgrp_);
-    ints = static_cast<const double*>(dest);   // ints now points to the location in MemoryGrp
+  pb->offset_ = mem_->offset(ij_proc(i,j)) + (distsize_t)local_ij_index*blksize_memgrp_*num_te_types();
+  const distsize_t offset = pb->offset_ + (distsize_t)oper_type*blksize_memgrp_;
+  mem_->write(static_cast<const void*>(ints), offset, this->blksize());
+  // cannot copy directly since may need to lock ... MemoryGrp may need a write() method.
+  //void* dest = mem_->obtain_writeonly(offset, blksize_memgrp_);
+  //memcpy(dest, static_cast<const void*>(ints), this->blksize());
+  //mem_->release_writeonly(dest, offset, blksize_memgrp_);
+  if (classdebug() > 0) {
+    std::ostringstream oss;
+    oss << "i=" << i << ",j=" << j << ": wrote " << blksize_memgrp_ << " bytes to proc=" << ij_proc(i,j) << " offset=" << offset << " buf[0]=" << ints[0] << std::endl;
+    ExEnv::outn() << oss.str();
+    ExEnv::outn() << scprintf("offsets = %d %d\n",mem_->offset(0), mem_->offset(1));
   }
-
-  pairblk_[ij].ints_[oper_type] = ints;
 }
 
 void
@@ -204,14 +204,20 @@ DistArray4_MemoryGrp::retrieve_pair_block(int i, int j, tbint_type oper_type,
     // this offset could not be computed in ::init(), compute here and store so that release can reuse its value
     pairblk_[ij].offset_ = mem_->offset(ij_proc(i,j)) + (distsize_t)local_ij_index*blksize_memgrp_*num_te_types();
     const distsize_t offset = pb->offset_ + (distsize_t)oper_type*blksize_memgrp_;
-    if (classdebug() > 0)
-      ExEnv::out0() << indent << "retrieving remote block:  i,j=" << i << "," << j << " oper_type=" << oper_type << " offset=" << offset << endl;
+    if (classdebug() > 0) {
+      std::ostringstream oss;
+      oss << indent << "retrieving remote block:  i,j=" << i << "," << j << " oper_type=" << oper_type << " offset=" << offset << endl;
+      ExEnv::outn() << oss.str();
+    }
     pb->ints_[oper_type] = (double *) mem_->obtain_readonly(offset, blksize());
   }
   pb->refcount_[oper_type] += 1;
-  if (classdebug() > 0)
-    ExEnv::outn() << indent << me() << ":refcount=" << pb->refcount_[oper_type]
+  if (classdebug() > 0) {
+    std::ostringstream oss;
+    oss << indent << me() << ":refcount=" << pb->refcount_[oper_type]
                   << ": i = " << i << " j = " << j << " tbint_type = " << oper_type  << " ptr = " << pb->ints_[oper_type] << endl;
+    ExEnv::outn() << oss.str();
+  }
 
   if (buf) {
     // if user provided the buffer, copy to it

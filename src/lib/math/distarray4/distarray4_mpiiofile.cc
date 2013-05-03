@@ -267,8 +267,6 @@ void DistArray4_MPIIOFile_Ind::store_pair_block(int i, int j,
                                                 const double *ints)
 {
   assert(this->active());  //make sure we are active
-  // store blocks local to this node ONLY
-  assert(is_local(i,j));
 
   const int nproc = ntasks();
   const int ij = ij_index(i,j);
@@ -293,8 +291,6 @@ void DistArray4_MPIIOFile_Ind::store_pair_subblock(int i, int j, tbint_type oper
                                                    const double *buf)
 {
   assert(this->active());  //make sure we are active
-  // store blocks local to this node ONLY
-  assert(is_local(i,j));
 
   const bool contiguous = (ystart == 0) && (yfence == ny());
   const int xsize = xfence - xstart;

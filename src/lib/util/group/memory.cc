@@ -198,11 +198,13 @@ MemoryGrp::deactivate()
 void
 MemoryGrp::print(ostream&o) const
 {
-  o << scprintf("MemoryGrp (node %d):\n", me());
-  o << scprintf("%d: n = %d\n", me(), n());
+  std::ostringstream oss;
+  oss << scprintf("MemoryGrp (node %d):\n", me());
+  oss << scprintf("%d: n = %d\n", me(), n());
   for (int i=0; i<=n_; i++) {
-      o << scprintf("%d: offset[%d] = %5d\n", me(), i, offsets_[i]);
+      oss << scprintf("%d: offset[%d] = %5ld\n", me(), i, offsets_[i]);
     }
+  o << oss.str();
 }
 
 void
@@ -293,6 +295,13 @@ MemoryGrp::release_local_lock(size_t start, size_t fence)
   for (int i=lstart; i<=llast; i++) {
       locks_[i]->unlock();
     }
+}
+
+void
+MemoryGrp::write(const void *data, distsize_t offset, int size) {
+  void* data_buf = obtain_writeonly(offset, size);
+  memcpy(data_buf, data, size);
+  release_writeonly(data_buf, offset, size);
 }
 
 static Ref<MemoryGrp> default_memorygrp;

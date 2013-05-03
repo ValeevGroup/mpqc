@@ -188,6 +188,10 @@ class MemoryGrp: public DescribedClass {
         The memory will be unlocked. */
     virtual void release_readwrite(void *data, distsize_t offset, int size)=0;
 
+    /// This is used to write data directly. The default implementation uses obtain_writeonly().
+    /// More efficient implementations will avoid copies
+    virtual void write(const void *data, distsize_t offset, int size);
+
     /** Perform a sum reduction on double data.
         @param data the contribution to sum into the global array.
         @param doffset the global offset in terms of doubles.

@@ -153,6 +153,7 @@ void
 MemoryGrpRegion::set_localsize(size_t localsize)
 {
   assert(localsize <= host_->localsize());
+  assert(localsize <= reserve_.size());
 
   // replicate sizes
   const int nnodes = host_->n();
@@ -172,7 +173,9 @@ MemoryGrpRegion::set_localsize(size_t localsize)
   delete[] sizes;
 
   if (classdebug()) {
-    ExEnv::out0() << indent << "MemoryGrpRegion::set_localsize(" << localsize << ") called" << std::endl << incindent;
+    std::ostringstream oss;
+    oss << "MemoryGrpRegion::set_localsize(" << localsize << ") called" << std::endl;
+    ExEnv::out0() << indent << oss.str() << incindent;
     this->print(ExEnv::out0());
     ExEnv::out0() << decindent;
   }
@@ -319,17 +322,18 @@ MemoryGrpRegion::free_local(void*& data) {
 void
 MemoryGrpRegion::print(std::ostream& o) const
 {
-  o << scprintf("MemoryRegionGrp (node %d):\n", me());
-  o << scprintf("%d: n = %d\n", me(), n());
+  std::ostringstream oss;
+  oss << scprintf("MemoryRegionGrp (node %d):\n", me());
+  oss << scprintf("%d: n = %d max_size = %ld\n", me(), n(), reserve_.size());
   for (int i=0; i<=n_; i++) {
-    o << me() << ": offset[" << i << "] = " << std::setw(10) << offsets_[i];
+    oss << me() << ": offset[" << i << "] = " << std::setw(10) << offsets_[i];
     if (i < n_)
-      o << "  host_offset[" << i << "] = " << std::setw(10) << host_offsets_[i];
-    o << std::endl;
+      oss << "  host_offset[" << i << "] = " << std::setw(10) << host_offsets_[i];
+    oss << std::endl;
   }
-  o << "Host MemoryGrp (class " << host_->class_name() << ")" << std::endl << incindent;
-  host_->print(o);
-  o << decindent;
+  oss << "Host MemoryGrp (class " << host_->class_name() << ")" << std::endl << incindent;
+  host_->print(oss);
+  o << oss.str() << decindent;
 }
 
 /////////////////////////////////////////////////////////////////////////////

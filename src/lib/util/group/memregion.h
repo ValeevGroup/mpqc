@@ -82,10 +82,11 @@ class MemoryGrpRegion: public MemoryGrp {
     // change to 0 if want the most general implementation, but semantics of double-specific functions (sum_reduction_on_node, etc.) will throw then
     static const int only_allow_double_aligned_regions_ = 1;
 
-    // set to greater than 1 to produce debugging information at runtime:
-    // 0 -- no debugging information
-    // 1 -- debug constructor and change of state
-    // 2 -- debug operations
+    /** set to greater than 1 to produce debugging information at runtime:
+     *  - 0 -- no debugging information
+     *  - 1 -- debug constructor and change of state
+     *  - 2 -- debug operations
+     */
     static const int classdebug_ = 0;
     static int classdebug() { return classdebug_; }
 

@@ -145,15 +145,16 @@ TwoBodyThreeCenterMOIntsTransform_ijR::init_acc() {
 
   const int nproc = mem_->n();
   const size_t blksize = space2()->rank() * space3()->rank() * sizeof(double);
-  const size_t localmem = (num_te_types() * space1()->rank() * blksize  + nproc - 1) / nproc;
+  const size_t n1_local = (space1()->rank() + nproc - 1) / nproc ;
+  const size_t localmem =  num_te_types() * n1_local * blksize;
 
   switch (ints_method_) {
 
   case MOIntsTransform::StoreMethod::mem_only:
     {
       // use a subset of a MemoryGrp provided by TransformFactory
-      Ref<MemoryGrp> mem = new MemoryGrpRegion(factory()->mem(),localmem);
-      ints_acc_ = new DistArray4_MemoryGrp(mem, num_te_types(),
+      set_memgrp(new MemoryGrpRegion(mem(),localmem));
+      ints_acc_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
                                            1, space1()->rank(),
                                            space2()->rank(), space3()->rank(),
                                            blksize);
@@ -164,8 +165,8 @@ TwoBodyThreeCenterMOIntsTransform_ijR::init_acc() {
     // if can do in one pass, use the factory hints about how data will be used
     if (!factory()->hints().data_persistent()) {
       // use a subset of a MemoryGrp provided by TransformFactory
-      Ref<MemoryGrp> mem = new MemoryGrpRegion(factory()->mem(),localmem);
-      ints_acc_ = new DistArray4_MemoryGrp(mem, num_te_types(),
+      set_memgrp(new MemoryGrpRegion(mem(),localmem));
+      ints_acc_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
                                            1, space1()->rank(),
                                            space2()->rank(), space3()->rank(),
                                            blksize);
@@ -183,8 +184,8 @@ TwoBodyThreeCenterMOIntsTransform_ijR::init_acc() {
     // if can do in one pass, use the factory hints about how data will be used
     if (!factory()->hints().data_persistent()) {
       // use a subset of a MemoryGrp provided by TransformFactory
-      Ref<MemoryGrp> mem = new MemoryGrpRegion(factory()->mem(),localmem);
-      ints_acc_ = new DistArray4_MemoryGrp(mem, num_te_types(),
+      set_memgrp(new MemoryGrpRegion(mem(),localmem));
+      ints_acc_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
                                            1, space1()->rank(),
                                            space2()->rank(), space3()->rank(),
                                            blksize);
@@ -371,7 +372,7 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute_ijR() {
     if (s3 == 1) {
     for(int i=0; i<nbasis1; ++i) {
       for(int j=0; j<nbasis2; ++j) {
-        const double value = pq_ints[(i*nbasis2 + j)*nf3];
+        const double value = pq_ints[0][(i*nbasis2 + j)*nf3];
         ExEnv::outn() << "i = " << i << " j = " << j << " R = 1  value = " << value << endl;
       }
     }
@@ -499,6 +500,17 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute_pjR() {
   const blasint nbasis3 = b3->nbasis();
   const blasint nb23 = nbasis2 * nbasis3;
   int nfuncmax1 = b1->max_nfunction_in_shell();
+
+  Ref<DistArray4_MemoryGrp> ints_acc_cast; ints_acc_cast << ints_acc_;
+  const bool need_memgrp = ints_acc_cast.nonnull();
+  if (need_memgrp) {
+    const distsize_t ijR_globalsize = (((static_cast<distsize_t>(n1))*n23)*num_te_types)*sizeof(double);
+    const int ni_local = (n1 + nproc - 1)/ nproc;
+    const size_t memgrp_blocksize = (static_cast<size_t>(n23))*sizeof(double);
+    const size_t ijR_localsize = num_te_types * ni_local * memgrp_blocksize;
+    this->alloc_mem(ijR_localsize);
+    memset(mem_->localdata(), 0, ijR_localsize);
+  }
 
   // get scratch storage
   const size_t qS_ints_size = nfuncmax1 * nbasis2 * nbasis3;
@@ -751,6 +763,17 @@ TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR::compute() {
   const int n23 = n2*n3;
   const int nbasis2 = this->space2()->basis()->nbasis();
 
+  Ref<DistArray4_MemoryGrp> ints_acc_cast; ints_acc_cast << ints_acc_;
+  const bool need_memgrp = ints_acc_cast.nonnull();
+  if (need_memgrp) {
+    const distsize_t ijR_globalsize = (((static_cast<distsize_t>(n1))*n23)*num_te_types)*sizeof(double);
+    const int ni_local = (n1 + nproc - 1)/ nproc;
+    const size_t memgrp_blocksize = (static_cast<size_t>(n23))*sizeof(double);
+    const size_t ijR_localsize = num_te_types * ni_local * memgrp_blocksize;
+    this->alloc_mem(ijR_localsize);
+    memset(mem_->localdata(), 0, ijR_localsize);
+  }
+
   iqR_tform_->compute();
   Ref<DistArray4> iqR_data = iqR_tform_->ints_acc();
   Ref<DistArray4> ijR_data = ints_acc_;
@@ -774,7 +797,7 @@ TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR::compute() {
         for(int i = 0; i < n1; ++i, ++task_count) {
 
           // distribute work in round robin
-          if (task_count % nwriters != writers[me])
+          if (not iqR_data->is_local(0,i))
             continue;
 
           const double* C_qR = iqR_data->retrieve_pair_block(0, i, te_type);

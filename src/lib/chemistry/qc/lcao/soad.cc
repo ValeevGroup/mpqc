@@ -164,6 +164,7 @@ void sc::SuperpositionOfAtomicDensities::compute() {
         }
 #endif
         akv->assign("df_solver", "cholesky_inv");
+        akv->assign("store_ints", "mem-posix");
         akv->assign("ints_precision", 1e-5);
         world = new WavefunctionWorld(akv);
       }

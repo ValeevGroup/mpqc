@@ -57,7 +57,7 @@ namespace sc {
 
           <tr><td><b>%Keyword</b><td><b>Type</b><td><b>Default</b><td><b>Description</b>
 
-          <tr><td><tt>memory</tt><td>integer<td>256MB<td>number of bytes; user is allowed to use KB/MB/GB abbreviations \sa KeyValValuestring::sizevalue()
+          <tr><td><tt>memory</tt><td>integer<td>1GB<td>number of bytes; user is allowed to use KB/MB/GB abbreviations \sa KeyValValuestring::sizevalue()
 
           <tr><td><tt>disk</tt><td>[string integer] pair<td>["./" 0]<td>specifies location of scratch files and available storage in bytes ("0" means unlimited)
 
@@ -254,7 +254,7 @@ namespace sc {
             const size_t size = pos->second.size;
             release_memory_(size);
             if (debug_class() > 0) {
-              ExEnv::out0() << "ConsumableResources::unmanage_array(array=" << array_ptr << ": size=" << size << ")" << std::endl;
+              ExEnv::out0() << indent << "ConsumableResources::unmanage_array(array=" << array_ptr << ": size=" << size << ")" << std::endl;
             }
             managed_arrays_.erase(pos);
           }

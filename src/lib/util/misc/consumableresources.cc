@@ -33,7 +33,7 @@
 
 using namespace sc;
 
-size_t ConsumableResources::defaults::memory = 0; // assume infinite memory
+size_t ConsumableResources::defaults::memory = ((size_t)1) << 30; // 1GB
 std::pair<std::string,size_t> ConsumableResources::defaults::disk = make_pair(std::string("./"), size_t(0));
 
 ClassDesc

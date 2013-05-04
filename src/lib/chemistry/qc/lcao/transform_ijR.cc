@@ -164,13 +164,16 @@ TwoBodyThreeCenterMOIntsTransform_ijR::init_acc() {
   case MOIntsTransform::StoreMethod::mem_posix:
     // if can do in one pass, use the factory hints about how data will be used
     if (!factory()->hints().data_persistent()) {
-      // use a subset of a MemoryGrp provided by TransformFactory
-      set_memgrp(new MemoryGrpRegion(mem(),localmem));
-      ints_acc_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
-                                           1, space1()->rank(),
-                                           space2()->rank(), space3()->rank(),
-                                           blksize);
-      break;
+      try {
+        // use a subset of a MemoryGrp provided by TransformFactory
+        set_memgrp(new MemoryGrpRegion(mem(),localmem));
+        ints_acc_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
+                                             1, space1()->rank(),
+                                             space2()->rank(), space3()->rank(),
+                                             blksize);
+        break;
+      }
+      catch(...) {}
     }
     // else use the next case
 
@@ -183,13 +186,16 @@ TwoBodyThreeCenterMOIntsTransform_ijR::init_acc() {
   case MOIntsTransform::StoreMethod::mem_mpi:
     // if can do in one pass, use the factory hints about how data will be used
     if (!factory()->hints().data_persistent()) {
-      // use a subset of a MemoryGrp provided by TransformFactory
-      set_memgrp(new MemoryGrpRegion(mem(),localmem));
-      ints_acc_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
-                                           1, space1()->rank(),
-                                           space2()->rank(), space3()->rank(),
-                                           blksize);
-      break;
+      try {
+        // use a subset of a MemoryGrp provided by TransformFactory
+        set_memgrp(new MemoryGrpRegion(mem(),localmem));
+        ints_acc_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
+                                             1, space1()->rank(),
+                                             space2()->rank(), space3()->rank(),
+                                             blksize);
+        break;
+      }
+      catch (...) {}
     }
     // else use the next case
 
@@ -200,7 +206,8 @@ TwoBodyThreeCenterMOIntsTransform_ijR::init_acc() {
 #endif
 
   default:
-    throw std::runtime_error("TwoBodyThreeCenterMOIntsTransform_ijR::init_acc() -- invalid integrals store method");
+    throw InputError("TwoBodyThreeCenterMOIntsTransform_ijR::init_acc() -- invalid integrals store method",
+                     __FILE__, __LINE__);
   }
 
 }

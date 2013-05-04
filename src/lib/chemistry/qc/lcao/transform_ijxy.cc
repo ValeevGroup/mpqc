@@ -151,7 +151,8 @@ TwoBodyMOIntsTransform_ijxy::init_acc()
 
   case MOIntsTransform::StoreMethod::mem_only:
     if (npass_ > 1)
-      throw std::runtime_error("TwoBodyMOIntsTransform_ijxy::init_acc() -- cannot use MemoryGrp-based accumulator in multi-pass transformations");
+      throw AlgorithmException("TwoBodyMOIntsTransform_ijxy::init_acc() -- cannot use MemoryGrp-based accumulator in multi-pass transformations; add more memory or swtch to other store methods",
+                             __FILE__, __LINE__);
 #if HAVE_R12IA_MEMGRP
     {
       // use a subset of a MemoryGrp provided by TransformFactory
@@ -166,19 +167,22 @@ TwoBodyMOIntsTransform_ijxy::init_acc()
     break;
 
   case MOIntsTransform::StoreMethod::mem_posix:
-    // if can do in one pass, use the factory hints about how data will be used
-    if (npass_ == 1 && !factory()->hints().data_persistent()) {
+    try {
+      // if can do in one pass, use the factory hints about how data will be used
+      if (npass_ == 1 && !factory()->hints().data_persistent()) {
 #if HAVE_R12IA_MEMGRP
-      // use a subset of a MemoryGrp provided by TransformFactory
-      set_memgrp(new MemoryGrpRegion(mem(),localmem));
-      ints_acc_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
-                                           space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank(),
-                                           memgrp_blksize());
+        // use a subset of a MemoryGrp provided by TransformFactory
+        set_memgrp(new MemoryGrpRegion(mem(),localmem));
+        ints_acc_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
+                                             space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank(),
+                                             memgrp_blksize());
 #else
-      assert(false);
+        assert(false);
 #endif
-      break;
+        break;
+      }
     }
+    catch (...) {}
     // else use the next case
 
   case MOIntsTransform::StoreMethod::posix:
@@ -188,19 +192,22 @@ TwoBodyMOIntsTransform_ijxy::init_acc()
 
 #if HAVE_MPIIO
   case MOIntsTransform::StoreMethod::mem_mpi:
-    // if can do in one pass, use the factory hints about how data will be used
-    if (npass_ == 1 && !factory()->hints().data_persistent()) {
+    try {
+      // if can do in one pass, use the factory hints about how data will be used
+      if (npass_ == 1 && !factory()->hints().data_persistent()) {
 #if HAVE_R12IA_MEMGRP
-      // use a subset of a MemoryGrp provided by TransformFactory
-      set_memgrp(new MemoryGrpRegion(mem(),localmem));
-      ints_acc_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
-                                           space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank(),
-                                           memgrp_blksize());
+        // use a subset of a MemoryGrp provided by TransformFactory
+        set_memgrp(new MemoryGrpRegion(mem(),localmem));
+        ints_acc_ = new DistArray4_MemoryGrp(mem(), num_te_types(),
+                                             space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank(),
+                                             memgrp_blksize());
 #else
-      assert(false);
+        assert(false);
 #endif
-      break;
+        break;
+      }
     }
+    catch (...) {}
     // else use the next case
 
   case MOIntsTransform::StoreMethod::mpi:
@@ -214,7 +221,8 @@ TwoBodyMOIntsTransform_ijxy::init_acc()
 #endif
 
   default:
-    throw std::runtime_error("TwoBodyMOIntsTransform_ijxy::init_acc() -- invalid integrals store method");
+    throw InputError("TwoBodyMOIntsTransform_ijxy::init_acc() -- invalid integrals store method",
+                     __FILE__, __LINE__);
   }
 
   // now safe to use memorygrp

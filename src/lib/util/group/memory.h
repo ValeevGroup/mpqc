@@ -171,33 +171,33 @@ class MemoryGrp: public DescribedClass {
     virtual void deactivate();
 
     /// This gives write access to the memory location.  No locking is done.
-    virtual void *obtain_writeonly(distsize_t offset, int size) = 0;
+    virtual void *obtain_writeonly(distsize_t offset, size_t size) = 0;
     /** Only one thread can have an unreleased obtain_readwrite at a time.
         The actual memory region locked can be larger than that requested.
         If the memory region is already locked this will block.  For this
         reason, data should be held as read/write for as short a time as
         possible. */
-    virtual void *obtain_readwrite(distsize_t offset, int size) = 0;
+    virtual void *obtain_readwrite(distsize_t offset, size_t size) = 0;
     /// This gives read access to the memory location.  No locking is done.
-    virtual void *obtain_readonly(distsize_t offset, int size) = 0;
+    virtual void *obtain_readonly(distsize_t offset, size_t size) = 0;
     /// This is called when read access is no longer needed.
-    virtual void release_readonly(void *data, distsize_t offset, int size) = 0;
+    virtual void release_readonly(void *data, distsize_t offset, size_t size) = 0;
     /// This is called when write access is no longer needed.
-    virtual void release_writeonly(void *data, distsize_t offset, int size)=0;
+    virtual void release_writeonly(void *data, distsize_t offset, size_t size)=0;
     /** This is called when read/write access is no longer needed.
         The memory will be unlocked. */
-    virtual void release_readwrite(void *data, distsize_t offset, int size)=0;
+    virtual void release_readwrite(void *data, distsize_t offset, size_t size)=0;
 
     /// This is used to write data directly. The default implementation uses obtain_writeonly().
     /// More efficient implementations will avoid copies
-    virtual void write(const void *data, distsize_t offset, int size);
+    virtual void write(const void *data, distsize_t offset, size_t size);
 
     /** Perform a sum reduction on double data.
         @param data the contribution to sum into the global array.
         @param doffset the global offset in terms of doubles.
         @param dsize the size in terms of doubles.
     */
-    virtual void sum_reduction(double *data, distsize_t doffset, int dsize);
+    virtual void sum_reduction(double *data, distsize_t doffset, size_t dsize);
     /** Perform a sum reduction on double data localized to a single node.
         @param data the contribution to sum into the global array.
         @param doffset the local offset on the node in terms of doubles.
@@ -205,7 +205,7 @@ class MemoryGrp: public DescribedClass {
         @param node the node holding the data. The default is the local
         node.
     */
-    virtual void sum_reduction_on_node(double *data, size_t doffset, int dsize,
+    virtual void sum_reduction_on_node(double *data, size_t doffset, size_t dsize,
                                        int node = -1);
 
     /** Synchronizes all the nodes.  This is useful after remote memory
@@ -278,7 +278,7 @@ class MemoryGrpBuf {
     AccessType accesstype_;
     data_t *data_;
     distsize_t offset_;
-    int length_;
+    size_t length_;
   public:
     /** Creates a new MemoryGrpBuf given a MemoryGrp
         reference.  This is a template class parameterized on
@@ -288,35 +288,35 @@ class MemoryGrpBuf {
         offset and with size length.  Writing the same bit of memory twice
         without an intervening sync of the MemoryGrp will have undefined
         results. */
-    data_t *writeonly(distsize_t offset, int length);
+    data_t *writeonly(distsize_t offset, size_t length);
     /** Request read write access to global memory at the global address
         offset and with size length.  This will lock the memory it uses
         until release is called unless locking has been turned off in the
         MemoryGrp object. */
-    data_t *readwrite(distsize_t offset, int length);
+    data_t *readwrite(distsize_t offset, size_t length);
     /** Request read only access to global memory at the global address
         offset and with size length.  Writing to the
         specified region without an intervening sync of the MemoryGrp
         will have undefined results. */
-    const data_t *readonly(distsize_t offset, int length);
+    const data_t *readonly(distsize_t offset, size_t length);
     /** This behaves like writeonly, except the
         offset is local to the node specified by node.  If node = -1, then
         the local node is used. */
-    data_t *writeonly_on_node(size_t offset, int length, int node = -1);
+    data_t *writeonly_on_node(size_t offset, size_t length, int node = -1);
     /** This behaves like readwrite, except the
         offset is local to the node specified by node.  If node = -1, then
         the local node is used. */
-    data_t *readwrite_on_node(size_t offset, int length, int node = -1);
+    data_t *readwrite_on_node(size_t offset, size_t length, int node = -1);
     /** This behaves like readonly, except the
         offset is local to the node specified by node.  If node = -1, then
         the local node is used. */
-    const data_t *readonly_on_node(size_t offset, int length, int node = -1);
+    const data_t *readonly_on_node(size_t offset, size_t length, int node = -1);
     /** Release the access to the chunk of global memory that was obtained
         with writeonly, readwrite, readonly, writeonly_on_node,
         readwrite_on_node, and readonly_on_node. */
     void release();
     /// The length of the current bit of memory.
-    int length() const { return length_; }
+    size_t length() const { return length_; }
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -331,7 +331,7 @@ MemoryGrpBuf<data_t>::MemoryGrpBuf(const Ref<MemoryGrp> & grp)
 
 template <class data_t>
 data_t *
-MemoryGrpBuf<data_t>::writeonly(distsize_t offset, int length)
+MemoryGrpBuf<data_t>::writeonly(distsize_t offset, size_t length)
 {
   if (accesstype_ != None) release();
   data_ = (data_t *) grp_->obtain_writeonly(sizeof(data_t)*offset,
@@ -344,7 +344,7 @@ MemoryGrpBuf<data_t>::writeonly(distsize_t offset, int length)
 
 template <class data_t>
 data_t *
-MemoryGrpBuf<data_t>::readwrite(distsize_t offset, int length)
+MemoryGrpBuf<data_t>::readwrite(distsize_t offset, size_t length)
 {
   if (accesstype_ != None) release();
   data_ = (data_t *) grp_->obtain_readwrite(sizeof(data_t)*offset,
@@ -357,7 +357,7 @@ MemoryGrpBuf<data_t>::readwrite(distsize_t offset, int length)
 
 template <class data_t>
 const data_t *
-MemoryGrpBuf<data_t>::readonly(distsize_t offset, int length)
+MemoryGrpBuf<data_t>::readonly(distsize_t offset, size_t length)
 {
   if (accesstype_ != None) release();
   data_ = (data_t *) grp_->obtain_readonly(sizeof(data_t)*offset,
@@ -370,7 +370,7 @@ MemoryGrpBuf<data_t>::readonly(distsize_t offset, int length)
 
 template <class data_t>
 data_t *
-MemoryGrpBuf<data_t>::writeonly_on_node(size_t offset, int length, int node)
+MemoryGrpBuf<data_t>::writeonly_on_node(size_t offset, size_t length, int node)
 {
   if (node == -1) node = grp_->me();
   return writeonly(offset + grp_->offset(node)/sizeof(data_t), length);
@@ -378,7 +378,7 @@ MemoryGrpBuf<data_t>::writeonly_on_node(size_t offset, int length, int node)
 
 template <class data_t>
 data_t *
-MemoryGrpBuf<data_t>::readwrite_on_node(size_t offset, int length, int node)
+MemoryGrpBuf<data_t>::readwrite_on_node(size_t offset, size_t length, int node)
 {
   if (node == -1) node = grp_->me();
   return readwrite(offset + grp_->offset(node)/sizeof(data_t), length);
@@ -386,7 +386,7 @@ MemoryGrpBuf<data_t>::readwrite_on_node(size_t offset, int length, int node)
 
 template <class data_t>
 const data_t *
-MemoryGrpBuf<data_t>::readonly_on_node(size_t offset, int length, int node)
+MemoryGrpBuf<data_t>::readonly_on_node(size_t offset, size_t length, int node)
 {
   if (node == -1) node = grp_->me();
   return readonly(offset + grp_->offset(node)/sizeof(data_t), length);

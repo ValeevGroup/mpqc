@@ -54,18 +54,18 @@ class MemoryGrpRegion: public MemoryGrp {
     void set_localsize(size_t);
     void* localdata();
 
-    void* obtain_readwrite(distsize_t offset, int size);
-    void* obtain_readonly(distsize_t offset, int size);
-    void* obtain_writeonly(distsize_t offset, int size);
-    void release_readonly(void* data, distsize_t offset, int size);
-    void release_writeonly(void* data, distsize_t offset, int size);
-    void release_readwrite(void* data, distsize_t offset, int size);
+    void* obtain_readwrite(distsize_t offset, size_t size);
+    void* obtain_readonly(distsize_t offset, size_t size);
+    void* obtain_writeonly(distsize_t offset, size_t size);
+    void release_readonly(void* data, distsize_t offset, size_t size);
+    void release_writeonly(void* data, distsize_t offset, size_t size);
+    void release_readwrite(void* data, distsize_t offset, size_t size);
     // to implement sum_reduction as in ActiveMsgMemoryGrp (i.e., with locking one node at a time)
     // need the analog of MemoryIter
     // TODO implement MemoryRegionIter
     // for now use the less efficient MemoryGrp version which uses obtain_readwrite, hence may lock multiple nodes
     //void sum_reduction(double *data, distsize_t doffset, int dsize);
-    void sum_reduction_on_node(double *data, size_t doffset, int dsize, int node=-1);
+    void sum_reduction_on_node(double *data, size_t doffset, size_t dsize, int node=-1);
 
     void activate();
     void deactivate();

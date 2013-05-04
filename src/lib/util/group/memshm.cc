@@ -355,7 +355,7 @@ ShmMemoryGrp::~ShmMemoryGrp()
 }
 
 void *
-ShmMemoryGrp::obtain_readwrite(distsize_t offset, int size)
+ShmMemoryGrp::obtain_readwrite(distsize_t offset, size_t size)
 {
   if (offset + size > totalsize()) {
       ExEnv::errn() << scprintf("ShmMemoryGrp::obtain_readwrite: arg out of range\n");
@@ -402,7 +402,7 @@ ShmMemoryGrp::obtain_readwrite(distsize_t offset, int size)
 }
 
 void *
-ShmMemoryGrp::obtain_readonly(distsize_t offset, int size)
+ShmMemoryGrp::obtain_readonly(distsize_t offset, size_t size)
 {
   if (offset + size > totalsize()) {
       ExEnv::errn() << scprintf("ShmMemoryGrp::obtain_readonly: arg out of range\n");
@@ -413,7 +413,7 @@ ShmMemoryGrp::obtain_readonly(distsize_t offset, int size)
 }
 
 void *
-ShmMemoryGrp::obtain_writeonly(distsize_t offset, int size)
+ShmMemoryGrp::obtain_writeonly(distsize_t offset, size_t size)
 {
   if (offset + size > totalsize()) {
       ExEnv::errn() << scprintf("ShmMemoryGrp::obtain_writeonly: arg out of range\n");
@@ -424,17 +424,17 @@ ShmMemoryGrp::obtain_writeonly(distsize_t offset, int size)
 }
 
 void
-ShmMemoryGrp::release_readonly(void *data, distsize_t offset, int size)
+ShmMemoryGrp::release_readonly(void *data, distsize_t offset, size_t size)
 {
 }
 
 void
-ShmMemoryGrp::release_writeonly(void *data, distsize_t offset, int size)
+ShmMemoryGrp::release_writeonly(void *data, distsize_t offset, size_t size)
 {
 }
 
 void
-ShmMemoryGrp::release_readwrite(void *data, distsize_t offset, int size)
+ShmMemoryGrp::release_readwrite(void *data, distsize_t offset, size_t size)
 {
 #if SIMPLE_LOCK
   release_lock();

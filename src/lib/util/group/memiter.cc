@@ -36,17 +36,17 @@ using namespace sc;
 ///////////////////////////////////////////////////////////////////////
 // The MemoryIter class
 
-int
-MemoryIter::local(distsize_t offset, int size, int node)
+bool
+MemoryIter::local(distsize_t offset, size_t size, int node)
 {
   if (offset >= offsets_[node] && offset + size <= offsets_[node+1])
-      return 1;
-  return 0;
+      return true;
+  return false;
 }
 
 MemoryIter::MemoryIter(void *data,
                        distsize_t *offsets,
-                       int n):
+                       size_t n):
   offsets_(offsets),
   n_(n),
   data_(data),
@@ -55,7 +55,7 @@ MemoryIter::MemoryIter(void *data,
 }
 
 void
-MemoryIter::begin(distsize_t offset, int size)
+MemoryIter::begin(distsize_t offset, size_t size)
 {
   offset_ = offset;
   size_ = size;

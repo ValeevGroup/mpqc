@@ -45,14 +45,14 @@ class MemoryIter {
     void *data_;
 
     char *current_data_;
-    int current_size_;
-    int current_offset_;
+    size_t current_size_;
+    size_t current_offset_;
     int node_;
 
     int ready_;
 
     distsize_t offset_;
-    int size_;
+    size_t size_;
   public:
     /** Create the MemoryIter.
         @param data an array with n bytes. It is up to the programmer
@@ -62,13 +62,13 @@ class MemoryIter {
         This has one entry for each node.
         @param n the number of nodes
     */
-    MemoryIter(void *data, distsize_t *offsets, int n);
+    MemoryIter(void *data, distsize_t *offsets, size_t n);
 
     /** Initialize the iterator to a block of the global array.
         @param offset the offset for the block.
         @param size the number of bytes in the block.
     */
-    void begin(distsize_t offset, int size);
+    void begin(distsize_t offset, size_t size);
     /// Returns true if there is more data to process.
     int ready() { return ready_; }
     /// Advance to the next subblock.
@@ -80,12 +80,12 @@ class MemoryIter {
     /// The node on which the current subblock resides.
     int node() { return node_; }
     /// The local offset of the current subblock on the node.
-    int offset() { return current_offset_; }
+    size_t offset() { return current_offset_; }
     /// The size of the current subblock.
-    int size() { return current_size_; }
+    size_t size() { return current_size_; }
 
     /// Returns true if all data is local to node.
-    int local(distsize_t offset, int size, int node);
+    bool local(distsize_t offset, size_t size, int node);
 };
 
 }

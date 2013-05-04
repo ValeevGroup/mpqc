@@ -60,6 +60,8 @@ MsgMemoryGrp::MsgMemoryGrp(const Ref<KeyVal> &keyval):
   msg_ = msg;
   n_ = msg->n();
   me_ = msg->me();
+  offsets_ = new distsize_t[n_ + 1];
+  std::fill(offsets_, offsets_ + n_ + 1, distsize_t(0));
 }
 
 MsgMemoryGrp::~MsgMemoryGrp()
@@ -69,19 +71,18 @@ MsgMemoryGrp::~MsgMemoryGrp()
 void
 MsgMemoryGrp::set_localsize(size_t localsize)
 {
-  delete[] offsets_;
+  if (offsets_ != 0) delete[] offsets_;
 
   offsets_ = new distsize_t[n_ + 1];
-  long *sizes = new long[n_];
+  size_t *sizes = new size_t[n_];
 
-  int i;
-  for (i=0; i<n_; i++) sizes[i] = 0;
+  for (size_t i=0; i<n_; i++) sizes[i] = 0;
   sizes[me_] = localsize;
 
   msg_->sum(sizes, n_);
 
   offsets_[0] = 0;
-  for (i=1; i<=n_; i++) {
+  for (int i=1; i<=n_; i++) {
       offsets_[i] = sizes[i-1] + offsets_[i-1];
       if (offsets_[i] < offsets_[i-1]) {
           ExEnv::errn() << "MsgMemoryGrp::set_localsize: distsize_t cannot handle biggest size" << endl;
@@ -101,7 +102,7 @@ MsgMemoryGrp::sync()
   for (int i=0; i<n(); i++) {
       if (i == me()) {
           cout << "Data on node " << i << ":" << endl;
-          for (int j=0; j<localsize()/sizeof(double); j++) {
+          for (size_t j=0; j<localsize()/sizeof(double); j++) {
               double dat = ((double*)localdata())[j];
               if (fabs(dat) > 1.e-12) {
                   cout << " " << i << " " << offset(me()) + j << " "

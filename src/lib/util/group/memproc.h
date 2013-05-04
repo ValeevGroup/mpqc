@@ -47,12 +47,12 @@ class ProcMemoryGrp: public MemoryGrp {
     void set_localsize(size_t);
     void *localdata();
 
-    void *obtain_readwrite(distsize_t offset, int size);
-    void *obtain_readonly(distsize_t offset, int size);
-    void *obtain_writeonly(distsize_t offset, int size);
-    void release_readonly(void *data, distsize_t offset, int size);
-    void release_writeonly(void *data, distsize_t offset, int size);
-    void release_readwrite(void *data, distsize_t offset, int size);
+    void *obtain_readwrite(distsize_t offset, size_t size);
+    void *obtain_readonly(distsize_t offset, size_t size);
+    void *obtain_writeonly(distsize_t offset, size_t size);
+    void release_readonly(void *data, distsize_t offset, size_t size);
+    void release_writeonly(void *data, distsize_t offset, size_t size);
+    void release_readwrite(void *data, distsize_t offset, size_t size);
 
     void sync();
 };

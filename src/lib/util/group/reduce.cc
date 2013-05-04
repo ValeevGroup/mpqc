@@ -157,6 +157,12 @@ MessageGrp::sum(long* data, int n, long* tmp, int target)
 }
 
 void
+MessageGrp::sum(size_t* data, int n, size_t* tmp, int target)
+{
+  do_sum(this, data, n, tmp, target);
+}
+
+void
 MessageGrp::sum(char* data, int n, char* tmp, int target)
 {
   do_sum(this, data, n, tmp, target);

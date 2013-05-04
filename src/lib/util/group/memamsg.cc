@@ -177,7 +177,7 @@ ActiveMsgMemoryGrp::set_localsize(size_t localsize)
     }
   deactivate();
   MsgMemoryGrp::set_localsize(localsize);
-  deallocate(data_);
+  if (data_) deallocate(data_);
   data_ = allocate<char>(localsize);
   activate();
   if (debug_) {
@@ -198,18 +198,18 @@ ActiveMsgMemoryGrp::localdata()
 ActiveMsgMemoryGrp::~ActiveMsgMemoryGrp()
 {
   deactivate();
-  deallocate(data_);
+  if (data_) deallocate(data_);
 }
 
 void *
-ActiveMsgMemoryGrp::obtain_writeonly(distsize_t offset, int size)
+ActiveMsgMemoryGrp::obtain_writeonly(distsize_t offset, size_t size)
 {
   void *data = this->malloc_local(size);
   return data;
 }
 
 void *
-ActiveMsgMemoryGrp::obtain_readwrite(distsize_t offset, int size)
+ActiveMsgMemoryGrp::obtain_readwrite(distsize_t offset, size_t size)
 {
   PRINTF(("%d: entering ActiveMsgMemoryGrp::obtain_readwrite: overall: offset = %ld size = %d\n",
           me(), (size_t)offset, size));
@@ -217,17 +217,17 @@ ActiveMsgMemoryGrp::obtain_readwrite(distsize_t offset, int size)
   MemoryIter i(data, offsets_, n());
   for (i.begin(offset, size); i.ready(); i.next()) {
     PRINTF(("%d: ActiveMsgMemoryGrp::obtain_readwrite: working on:"
-            "node = %d offset = %d size = %d\n",
+            "node = %d offset = %ld size = %ld\n",
             me(), i.node(), i.offset(), i.size()));
       if (i.node() == me()) {
           PRINTF(("%d: ActiveMsgMemoryGrp::obtain_readwrite: local copy: "
-                  "offset = %d size = %d\n", me(), i.offset(), i.size()));
+                  "offset = %ld size = %ld\n", me(), i.offset(), i.size()));
           obtain_local_lock(i.offset(), i.offset()+i.size());
           memcpy(i.data(), &data_[i.offset()], i.size());
         }
       else {
           PRINTF(("%d: ActiveMsgMemoryGrp::obtain_readwrite: node = %d, "
-                  "int offset = %d, int size = %d\n",
+                  "int offset = %ld, int size = %ld\n",
                   me(), i.node(), i.offset()/sizeof(int), i.size()/sizeof(int)));
           retrieve_data(i.data(), i.node(), i.offset(), i.size(), 1);
         }
@@ -237,7 +237,7 @@ ActiveMsgMemoryGrp::obtain_readwrite(distsize_t offset, int size)
 }
 
 void *
-ActiveMsgMemoryGrp::obtain_readonly(distsize_t offset, int size)
+ActiveMsgMemoryGrp::obtain_readonly(distsize_t offset, size_t size)
 {
   void *data = this->malloc_local(size);
   PRINTF(("%d: entering ActiveMsgMemoryGrp::obtain_readonly:"
@@ -246,16 +246,16 @@ ActiveMsgMemoryGrp::obtain_readonly(distsize_t offset, int size)
   MemoryIter i(data, offsets_, n());
   for (i.begin(offset, size); i.ready(); i.next()) {
       PRINTF(("%d: ActiveMsgMemoryGrp::obtain_readonly: working on:"
-              "node = %d offset = %d size = %d\n",
+              "node = %d offset = %ld size = %ld\n",
               me(), i.node(), i.offset(), i.size()));
       if (i.node() == me()) {
           PRINTF(("%d: ActiveMsgMemoryGrp::obtain_readonly: local: "
-                  "offset = %d size = %d\n", me(), i.offset(), i.size()));
+                  "offset = %ld size = %ld\n", me(), i.offset(), i.size()));
           memcpy(i.data(), &data_[i.offset()], i.size());
         }
       else {
           PRINTF(("%d: ActiveMsgMemoryGrp::obtain_readonly: node = %d, "
-                  "int offset = %d, int size = %d\n",
+                  "int offset = %ld, int size = %ld\n",
                   me(), i.node(), i.offset()/sizeof(int), i.size()/sizeof(int)));
           retrieve_data(i.data(), i.node(), i.offset(), i.size(), 0);
         }
@@ -265,10 +265,10 @@ ActiveMsgMemoryGrp::obtain_readonly(distsize_t offset, int size)
 }
 
 void
-ActiveMsgMemoryGrp::sum_reduction(double *data, distsize_t doffset, int dsize)
+ActiveMsgMemoryGrp::sum_reduction(double *data, distsize_t doffset, size_t dsize)
 {
   distsize_t offset = doffset * sizeof(double);
-  int size = dsize * sizeof(double);
+  size_t size = dsize * sizeof(double);
   MemoryIter i(data, offsets_, n());
   for (i.begin(offset, size); i.ready(); i.next()) {
       if (i.node() == me()) {
@@ -289,7 +289,7 @@ ActiveMsgMemoryGrp::sum_reduction(double *data, distsize_t doffset, int dsize)
 
 void
 ActiveMsgMemoryGrp::sum_reduction_on_node(double *data, size_t doffset,
-                                          int dlength, int node)
+                                          size_t dlength, int node)
 {
   if (node == -1) node = me();
 
@@ -297,7 +297,7 @@ ActiveMsgMemoryGrp::sum_reduction_on_node(double *data, size_t doffset,
       double *localdata = (double*) &data_[sizeof(double)*doffset];
       obtain_local_lock(sizeof(double)*doffset,
                         sizeof(double)*(doffset+dlength));
-      for (int j=0; j<dlength; j++) {
+      for (size_t j=0; j<dlength; j++) {
           *localdata++ += *data++;
         }
       release_local_lock(sizeof(double)*doffset,
@@ -309,26 +309,26 @@ ActiveMsgMemoryGrp::sum_reduction_on_node(double *data, size_t doffset,
 }
 
 void
-ActiveMsgMemoryGrp::release_readonly(void *data, distsize_t offset, int size)
+ActiveMsgMemoryGrp::release_readonly(void *data, distsize_t offset, size_t size)
 {
   this->free_local(data);
 }
 
 void
-ActiveMsgMemoryGrp::release_writeonly(void *data, distsize_t offset, int size)
+ActiveMsgMemoryGrp::release_writeonly(void *data, distsize_t offset, size_t size)
 {
   MemoryIter i(data, offsets_, n());
   for (i.begin(offset, size); i.ready(); i.next()) {
       if (i.node() == me()) {
           PRINTF(("ActiveMsgMemoryGrp::release_write: local\n"));
-          PRINTF(("  i.offset() = %d i.data() = 0x%x i.size() = %d\n",
+          PRINTF(("  i.offset() = %ld i.data() = 0x%x i.size() = %ld\n",
                   i.offset(), i.data(), i.size()));
           PRINTF(("  &data_[i.offset()] = 0x%x\n", &data_[i.offset()]));
           memcpy(static_cast<void*>(&data_[i.offset()]), i.data(), i.size());
         }
       else {
           PRINTF(("ActiveMsgMemoryGrp::release_write: node = %d, "
-                  "int offset = %d, int size = %d\n",
+                  "int offset = %ld, int size = %ld\n",
                   i.node(), i.offset()/sizeof(int), i.size()/sizeof(int)));
           replace_data(i.data(), i.node(), i.offset(), i.size(), 0);
         }
@@ -337,7 +337,7 @@ ActiveMsgMemoryGrp::release_writeonly(void *data, distsize_t offset, int size)
 }
 
 void
-ActiveMsgMemoryGrp::release_readwrite(void *data, distsize_t offset, int size)
+ActiveMsgMemoryGrp::release_readwrite(void *data, distsize_t offset, size_t size)
 {
   PRINTF(("%d: entering ActiveMsgMemoryGrp::release_readwrite:"
           "overall: offset = %ld size = %d\n",
@@ -365,7 +365,7 @@ ActiveMsgMemoryGrp::release_readwrite(void *data, distsize_t offset, int size)
 }
 
 void
-ActiveMsgMemoryGrp::write(const void* data, distsize_t offset, int size) {
+ActiveMsgMemoryGrp::write(const void* data, distsize_t offset, size_t size) {
   MemoryIter i(const_cast<void*>(data), offsets_, n());
   for (i.begin(offset, size); i.ready(); i.next()) {
     if (i.node() == me()) {

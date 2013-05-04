@@ -111,16 +111,16 @@ class ActiveMsgMemoryGrp : public MsgMemoryGrp {
     void set_localsize(size_t);
     void *localdata();
 
-    void *obtain_writeonly(distsize_t offset, int size);
-    void *obtain_readwrite(distsize_t offset, int size);
-    void *obtain_readonly(distsize_t offset, int size);
-    void release_readonly(void *data, distsize_t offset, int size);
-    void release_writeonly(void *data, distsize_t offset, int size);
-    void release_readwrite(void *data, distsize_t offset, int size);
-    void write(const void* data, distsize_t offset, int size);
+    void *obtain_writeonly(distsize_t offset, size_t size);
+    void *obtain_readwrite(distsize_t offset, size_t size);
+    void *obtain_readonly(distsize_t offset, size_t size);
+    void release_readonly(void *data, distsize_t offset, size_t size);
+    void release_writeonly(void *data, distsize_t offset, size_t size);
+    void release_readwrite(void *data, distsize_t offset, size_t size);
+    void write(const void* data, distsize_t offset, size_t size);
 
-    void sum_reduction(double *data, distsize_t doffset, int dsize);
-    void sum_reduction_on_node(double *data, size_t doffset, int dsize,
+    void sum_reduction(double *data, distsize_t doffset, size_t dsize);
+    void sum_reduction_on_node(double *data, size_t doffset, size_t dsize,
                                int node = -1);
 
     void print(std::ostream &o = ExEnv::out0()) const;

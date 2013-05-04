@@ -138,14 +138,14 @@ RDMAMemoryGrp::~RDMAMemoryGrp()
 }
 
 void *
-RDMAMemoryGrp::obtain_writeonly(distsize_t offset, int size)
+RDMAMemoryGrp::obtain_writeonly(distsize_t offset, size_t size)
 {
   void *data = malloc_region(size);
   return data;
 }
 
 void *
-RDMAMemoryGrp::obtain_readwrite(distsize_t offset, int size)
+RDMAMemoryGrp::obtain_readwrite(distsize_t offset, size_t size)
 {
   PRINTF(("RDMAMemoryGrp::obtain_readwrite entered\n"));
   void *data = malloc_region(size);
@@ -161,7 +161,7 @@ RDMAMemoryGrp::obtain_readwrite(distsize_t offset, int size)
 }
 
 void *
-RDMAMemoryGrp::obtain_readonly(distsize_t offset, int size)
+RDMAMemoryGrp::obtain_readonly(distsize_t offset, size_t size)
 {
   void *data = malloc_region(size);
   PRINTF(("%d: RDMAMemoryGrp::obtain_readonly:"
@@ -181,10 +181,10 @@ RDMAMemoryGrp::obtain_readonly(distsize_t offset, int size)
 }
 
 void
-RDMAMemoryGrp::sum_reduction(double *data, distsize_t doffset, int dsize)
+RDMAMemoryGrp::sum_reduction(double *data, distsize_t doffset, size_t dsize)
 {
   distsize_t offset = doffset * sizeof(double);
-  int size = dsize * sizeof(double);
+  size_t size = dsize * sizeof(double);
   MemoryIter i(data, offsets_, n());
   for (i.begin(offset, size); i.ready(); i.next()) {
       sum_data((double*)i.data(), i.node(), i.offset(), i.size());
@@ -193,7 +193,7 @@ RDMAMemoryGrp::sum_reduction(double *data, distsize_t doffset, int dsize)
 
 void
 RDMAMemoryGrp::sum_reduction_on_node(double *data, size_t doffset,
-                                          int dlength, int node)
+                                          size_t dlength, int node)
 {
   if (node == -1) node = me();
 
@@ -201,13 +201,13 @@ RDMAMemoryGrp::sum_reduction_on_node(double *data, size_t doffset,
 }
 
 void
-RDMAMemoryGrp::release_readonly(void *data, distsize_t offset, int size)
+RDMAMemoryGrp::release_readonly(void *data, distsize_t offset, size_t size)
 {
   free_region(data);
 }
 
 void
-RDMAMemoryGrp::release_writeonly(void *data, distsize_t offset, int size)
+RDMAMemoryGrp::release_writeonly(void *data, distsize_t offset, size_t size)
 {
   MemoryIter i(data, offsets_, n());
   for (i.begin(offset, size); i.ready(); i.next()) {
@@ -220,7 +220,7 @@ RDMAMemoryGrp::release_writeonly(void *data, distsize_t offset, int size)
 }
 
 void
-RDMAMemoryGrp::release_readwrite(void *data, distsize_t offset, int size)
+RDMAMemoryGrp::release_readwrite(void *data, distsize_t offset, size_t size)
 {
   MemoryIter i(data, offsets_, n());
   for (i.begin(offset, size); i.ready(); i.next()) {

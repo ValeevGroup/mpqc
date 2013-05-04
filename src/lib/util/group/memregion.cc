@@ -203,49 +203,49 @@ MemoryGrpRegion::offset_to_host_offset(const distsize_t& offset) const
 }
 
 void *
-MemoryGrpRegion::obtain_readwrite(distsize_t offset, int size)
+MemoryGrpRegion::obtain_readwrite(distsize_t offset, size_t size)
 {
   const distsize_t host_offset = offset_to_host_offset(offset);
   return host_->obtain_readwrite(host_offset,size);
 }
 
 void *
-MemoryGrpRegion::obtain_readonly(distsize_t offset, int size)
+MemoryGrpRegion::obtain_readonly(distsize_t offset, size_t size)
 {
   const distsize_t host_offset = offset_to_host_offset(offset);
   return host_->obtain_readonly(host_offset,size);
 }
 
 void *
-MemoryGrpRegion::obtain_writeonly(distsize_t offset, int size)
+MemoryGrpRegion::obtain_writeonly(distsize_t offset, size_t size)
 {
   const distsize_t host_offset = offset_to_host_offset(offset);
   return host_->obtain_writeonly(host_offset,size);
 }
 
 void
-MemoryGrpRegion::release_readonly(void *data, distsize_t offset, int size)
+MemoryGrpRegion::release_readonly(void *data, distsize_t offset, size_t size)
 {
   const distsize_t host_offset = offset_to_host_offset(offset);
   host_->release_readonly(data,host_offset,size);
 }
 
 void
-MemoryGrpRegion::release_writeonly(void *data, distsize_t offset, int size)
+MemoryGrpRegion::release_writeonly(void *data, distsize_t offset, size_t size)
 {
   const distsize_t host_offset = offset_to_host_offset(offset);
   return host_->release_writeonly(data,host_offset,size);
 }
 
 void
-MemoryGrpRegion::release_readwrite(void *data, distsize_t offset, int size)
+MemoryGrpRegion::release_readwrite(void *data, distsize_t offset, size_t size)
 {
   const distsize_t host_offset = offset_to_host_offset(offset);
   return host_->release_readwrite(data,host_offset,size);
 }
 
 void
-MemoryGrpRegion::sum_reduction_on_node(double *data, size_t doffset, int dsize, int node)
+MemoryGrpRegion::sum_reduction_on_node(double *data, size_t doffset, size_t dsize, int node)
 {
   const distsize_t offset = doffset * sizeof(double);
   const distsize_t host_offset = offset_to_host_offset(offset);
@@ -254,7 +254,7 @@ MemoryGrpRegion::sum_reduction_on_node(double *data, size_t doffset, int dsize, 
 
 #if 0
 void
-MemoryGrpRegion::sum_reduction(double *data, distsize_t doffset, int dsize)
+MemoryGrpRegion::sum_reduction(double *data, distsize_t doffset, size_t dsize)
 {
   // doffset is in terms of doubles
   const distsize_t offset = doffset * sizeof(double);

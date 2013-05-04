@@ -58,7 +58,7 @@ using namespace sc;
 
 #ifdef EXPLICIT_TEMPLATE_INSTANTIATION
 template class MemoryGrpBuf<double>;
-template class MemoryGrpBuf<int>;
+template class MemoryGrpBuf<size_t>;
 template class MemoryGrpBuf<char>;
 template class MemoryGrpBuf<unsigned char>;
 #endif
@@ -90,7 +90,7 @@ MemoryGrp::MemoryGrp(const Ref<KeyVal>& keyval)
 
 MemoryGrp::~MemoryGrp()
 {
-  delete[] offsets_;
+  if (offsets_ != 0) delete[] offsets_;
   delete[] locks_;
 }
 
@@ -201,17 +201,22 @@ MemoryGrp::print(ostream&o) const
   std::ostringstream oss;
   oss << scprintf("MemoryGrp (node %d):\n", me());
   oss << scprintf("%d: n = %d\n", me(), n());
-  for (int i=0; i<=n_; i++) {
+  if (offsets_) {
+    for (int i=0; i<=n_; i++) {
       oss << scprintf("%d: offset[%d] = %5ld\n", me(), i, offsets_[i]);
     }
+  }
+  else { // offsets_ = 0
+    oss << "offsets not initialized" << std::endl;
+  }
   o << oss.str();
 }
 
 void
-MemoryGrp::sum_reduction(double *data, distsize_t doffset, int dlength)
+MemoryGrp::sum_reduction(double *data, distsize_t doffset, size_t dlength)
 {
   distsize_t offset = doffset * sizeof(double);
-  int length = dlength * sizeof(double);
+  size_t length = dlength * sizeof(double);
 
   if (offset + length > totalsize()) {
       ExEnv::errn() << "MemoryGrp::sum_reduction: arg out of range:"
@@ -224,7 +229,7 @@ MemoryGrp::sum_reduction(double *data, distsize_t doffset, int dlength)
 
   double *source_data = (double*) obtain_readwrite(offset, length);
 
-  for (int i=0; i<dlength; i++) {
+  for (size_t i=0; i<dlength; i++) {
       source_data[i] += data[i];
     }
 
@@ -232,7 +237,7 @@ MemoryGrp::sum_reduction(double *data, distsize_t doffset, int dlength)
 }
 
 void
-MemoryGrp::sum_reduction_on_node(double *data, size_t doffset, int dlength,
+MemoryGrp::sum_reduction_on_node(double *data, size_t doffset, size_t dlength,
                                  int node)
 {
   if (node == -1) node = me();
@@ -279,9 +284,9 @@ void
 MemoryGrp::obtain_local_lock(size_t start, size_t fence)
 {
   distsize_t locked_region_size = 1 + localsize()/nlock_;
-  int lstart = start/locked_region_size;
-  int llast = fence/locked_region_size;
-  for (int i=lstart; i<=llast; i++) {
+  size_t lstart = start/locked_region_size;
+  size_t llast = fence/locked_region_size;
+  for (size_t i=lstart; i<=llast; i++) {
       locks_[i]->lock();
     }
 }
@@ -290,15 +295,15 @@ void
 MemoryGrp::release_local_lock(size_t start, size_t fence)
 {
   distsize_t locked_region_size = 1 + localsize()/nlock_;
-  int lstart = start/locked_region_size;
-  int llast = fence/locked_region_size;
-  for (int i=lstart; i<=llast; i++) {
+  size_t lstart = start/locked_region_size;
+  size_t llast = fence/locked_region_size;
+  for (size_t i=lstart; i<=llast; i++) {
       locks_[i]->unlock();
     }
 }
 
 void
-MemoryGrp::write(const void *data, distsize_t offset, int size) {
+MemoryGrp::write(const void *data, distsize_t offset, size_t size) {
   void* data_buf = obtain_writeonly(offset, size);
   memcpy(data_buf, data, size);
   release_writeonly(data_buf, offset, size);

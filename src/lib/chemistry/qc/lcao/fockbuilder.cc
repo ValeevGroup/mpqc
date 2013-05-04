@@ -953,8 +953,7 @@ namespace sc {
                 P_blk[i][j] = P_blk[j][i] = P.get_element(i,j);
 
             for (int p = 0; p < nobs; ++p) {
-              const int proc = p % nproc_with_ints;
-              if (proc != proc_with_ints[me])
+              if (not C->is_local(0,p))
                 continue;
 
               const double* C_p_qR_buf = C->retrieve_pair_block(0, p, 0);
@@ -966,7 +965,7 @@ namespace sc {
               F77_DGEMV(&notrans, &ndf, &nobs, &one, C_p_qR_buf, &ndf, P_p_q,
                         &unit_stride, &one, &(Q[0]), &unit_stride);
 
-              C->release_pair_block(0, p, TwoBodyOper::eri);
+              C->release_pair_block(0, p, 0);
 
             }
 
@@ -1083,8 +1082,7 @@ namespace sc {
         if (cC->has_access(me)) {
 
           for (int a = 0; a < nbra; ++a) {
-            const int proc = a % nproc_with_ints;
-            if (proc != proc_with_ints[me])
+            if (not cC->is_local(0, a))
               continue;
 
             const double* cC_a_bR_buf = cC->retrieve_pair_block(0, a,

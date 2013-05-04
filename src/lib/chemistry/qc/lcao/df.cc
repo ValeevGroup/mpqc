@@ -239,8 +239,8 @@ DensityFitting::compute()
 
       for (int i = 0; i < n1; ++i) {
 
-        // distribute work in round robin
-        if (i % nwriters != writers[me])
+        // work on local blocks
+        if (not cC_->is_local(0, i))
           continue;
 
         const double* cC_jR = cC_->retrieve_pair_block(0, i, TwoBodyOper::eri);

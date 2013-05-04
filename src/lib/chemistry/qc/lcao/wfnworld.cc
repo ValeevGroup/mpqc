@@ -124,6 +124,7 @@ WavefunctionWorld::WavefunctionWorld(const Ref<KeyVal>& keyval)
   // the default will indicate that ints_precision will be determined heuristically
   ints_precision_ = keyval->doublevalue("ints_precision", KeyValValuedouble(DBL_MAX));
 
+  // world should have their own communicators, thus currently only one world will work
   mem_ = MemoryGrp::get_default_memorygrp();
   msg_ = MessageGrp::get_default_messagegrp();
   thr_ = ThreadGrp::get_default_threadgrp();
@@ -131,6 +132,14 @@ WavefunctionWorld::WavefunctionWorld(const Ref<KeyVal>& keyval)
   if (wfn_ != 0) {
     integral()->set_basis(wfn_->basis());
     initialize();
+  }
+
+  // allocate MemoryGrp storage if will use it for integrals
+  if (ints_method_ == StoreMethod::mem_only ||
+      ints_method_ == StoreMethod::mem_posix ||
+      ints_method_ == StoreMethod::mem_mpi) {
+    const size_t memgrp_size = 2 * ConsumableResources::get_default_instance()->memory()/3;    
+    mem_->set_localsize(memgrp_size);
   }
 }
 
@@ -156,10 +165,19 @@ WavefunctionWorld::WavefunctionWorld(StateIn& si) : SavableState(si)
   moints_runtime_ << SavableState::restore_state(si);
   fockbuild_runtime_ << SavableState::restore_state(si);
   bs_df_ << SavableState::restore_state(si);
+
+  // allocate MemoryGrp storage if will use it for integrals
+  if (ints_method_ == StoreMethod::mem_only ||
+      ints_method_ == StoreMethod::mem_posix ||
+      ints_method_ == StoreMethod::mem_mpi) {
+    const size_t memgrp_size = 2 * ConsumableResources::get_default_instance()->memory()/3;
+    mem_->set_localsize(memgrp_size);
+  }
 }
 
 WavefunctionWorld::~WavefunctionWorld()
 {
+    mem_->set_localsize(0);
 }
 
 void WavefunctionWorld::save_data_state(StateOut& so)

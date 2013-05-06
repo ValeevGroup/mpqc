@@ -244,10 +244,13 @@ DistArray4_Node0File::store_pair_block(int i, int j, tbint_type oper_type, const
   if (classdebug() > 0)
     ExEnv::out0() << indent << "storing block: file=" << filename_ << " i,j=" << i << "," << j << " oper_type=" << oper_type << " offset=" << offset << endl;
   const off_t result_offset = lseek(datafile_,offset,SEEK_SET);
-  if (offset == static_cast<off_t>(-1) || result_offset != offset)
-    throw FileOperationFailed("DistArray4_Node0File::store_pair_block() -- lseek failed",
+  if (offset == static_cast<off_t>(-1) || result_offset != offset) {
+    std::ostringstream oss;
+    oss << "DistArray4_Node0File::store_pair_block() -- lseek failed: " << strerror(errno);
+    throw FileOperationFailed(oss.str().c_str(),
                                 __FILE__, __LINE__,
                                 filename_, FileOperationFailed::Other);
+  }
 
   // then, write
   ssize_t wrote_this_much = write(datafile_, data, blksize());
@@ -292,10 +295,13 @@ DistArray4_Node0File::store_pair_subblock(int i, int j, tbint_type oper_type,
       ExEnv::out0() << indent << "storing block: file=" << filename_ << " i,j=" << i << "," << j << " oper_type=" << oper_type
                     << " offset=" << offset << " batchsize=" << batchsize << endl;
     const off_t result_offset = lseek(datafile_,offset,SEEK_SET);
-    if (offset == static_cast<off_t>(-1) || result_offset != offset)
-      throw FileOperationFailed("DistArray4_Node0File::store_pair_block() -- lseek failed",
+    if (offset == static_cast<off_t>(-1) || result_offset != offset) {
+      std::ostringstream oss;
+      oss << "DistArray4_Node0File::store_pair_block() -- lseek failed: " << strerror(errno);
+      throw FileOperationFailed(oss.str().c_str(),
                                 __FILE__, __LINE__,
                                 filename_, FileOperationFailed::Other);
+    }
 
     // then, write
     const ssize_t amount = write(datafile_, buf, batchsize);
@@ -334,12 +340,15 @@ const double * DistArray4_Node0File::retrieve_pair_block(int i, int j,
 
     off_t offset = pb->offset_ + (off_t)oper_type*blksize();
     off_t result_offset = lseek(datafile_, offset, SEEK_SET);
-    if (offset == (off_t)-1 || result_offset != offset)
-      throw FileOperationFailed("DistArray4_Node0File::retrieve_pair_block() -- lseek failed",
+    if (offset == (off_t)-1 || result_offset != offset) {
+      std::ostringstream oss;
+      oss << "DistArray4_Node0File::store_pair_block() -- lseek failed: " << strerror(errno);
+      throw FileOperationFailed(oss.str().c_str(),
           __FILE__,
           __LINE__,
           filename_,
           FileOperationFailed::Other);
+    }
     if (buf != 0) {
       pb->ints_[oper_type] = buf;
       pb->manage_[oper_type] = false;
@@ -349,12 +358,15 @@ const double * DistArray4_Node0File::retrieve_pair_block(int i, int j,
       pb->manage_[oper_type] = true;
     }
     ssize_t read_this_much = read(datafile_, pb->ints_[oper_type], blksize());
-    if (read_this_much != blksize())
-      throw FileOperationFailed("DistArray4_Node0File::retrieve_pair_block() -- read failed",
+    if (read_this_much != blksize()) {
+      std::ostringstream oss;
+      oss << "DistArray4_Node0File::store_pair_block() -- read failed: " << strerror(errno);
+      throw FileOperationFailed(oss.str().c_str(),
           __FILE__,
           __LINE__,
           filename_,
           FileOperationFailed::Read);
+    }
   }
   else { // data is already available
     if (buf != 0 && buf != pb->ints_[oper_type]) // may need to copy
@@ -407,7 +419,7 @@ DistArray4_Node0File::retrieve_pair_subblock(int i, int j, tbint_type oper_type,
 
   // Can read blocks?
   if (!is_avail(i, j))
-    throw ProgrammingError("DistArray4_Node0File::retrieve_pair_block -- can only be called on node 0",
+    throw ProgrammingError("DistArray4_Node0File::retrieve_pair_block() -- can only be called on node 0",
         __FILE__,__LINE__);
 
   const int ij = ij_index(i, j);
@@ -420,12 +432,15 @@ DistArray4_Node0File::retrieve_pair_subblock(int i, int j, tbint_type oper_type,
     off_t offset = pb->offset_ + (off_t)oper_type*blksize() +
                    (off_t)(xstart*ny() + ystart)*sizeof(double);
     off_t result_offset = lseek(datafile_, offset, SEEK_SET);
-    if (offset == (off_t)-1 || result_offset != offset)
-      throw FileOperationFailed("DistArray4_Node0File::retrieve_pair_subblock() -- lseek failed",
+    if (offset == (off_t)-1 || result_offset != offset) {
+      std::ostringstream oss;
+      oss << "DistArray4_Node0File::retrieve_pair_block() -- lseek failed: " << strerror(errno);
+      throw FileOperationFailed(oss.str().c_str(),
           __FILE__,
           __LINE__,
           filename_,
           FileOperationFailed::Other);
+    }
 
     // do not assume that there is enough memory -- use static scratch and lock, if necessary
     size_t readbuf_size = contiguous ? bufsize : ((xsize-1) * ny() + ysize) * sizeof(double);
@@ -436,12 +451,15 @@ DistArray4_Node0File::retrieve_pair_subblock(int i, int j, tbint_type oper_type,
     }
 
     const ssize_t read_this_much = read(datafile_, readbuf, readbuf_size);
-    if (read_this_much != readbuf_size)
-      throw FileOperationFailed("DistArray4_Node0File::retrieve_pair_subblock() -- read failed",
+    if (read_this_much != readbuf_size) {
+      std::ostringstream oss;
+      oss << "DistArray4_Node0File::retrieve_pair_subblock() -- read failed: " << strerror(errno);
+      throw FileOperationFailed(oss.str().c_str(),
                                 __FILE__,
                                 __LINE__,
                                 filename_,
                                 FileOperationFailed::Read);
+    }
 
     // hence may need to copy the required data to the buffer
     if (!contiguous) {

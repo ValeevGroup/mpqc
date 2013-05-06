@@ -92,6 +92,14 @@ namespace sc {
 
     TArray4 x = _4("<i j|r|p q>");
 
+    TArray2 Fab = _2("<a|F|b>");
+    TArray2 Iij = _2("<i|I|j>");
+    std::cout << Fab << std::endl;
+    std::cout << Iij << std::endl;
+
+    TArray4 A = _2("<a|F|b>") * _2("<i|I|j>");
+    std::cout << A << std::endl;
+
     /// this is just an example of how to compute the density
     TArray2 r2_i_j = _4("<i j|r|p q>") * _4("<k_F(p) j|r|p q>");
     std::cout << "<ij|r|pq> . <kj|r|pq>\n" << r2_i_j << std::endl;

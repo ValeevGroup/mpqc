@@ -345,6 +345,94 @@ namespace sc {
   }
 
   template <typename T>
+  typename SingleReference_R12Intermediates<T>::TArray2&
+  SingleReference_R12Intermediates<T>::xy(const std::string& key) {
+
+    auto v = tarray2_registry_.find(key);
+    if (v == tarray2_registry_.end()) {
+
+    ParsedOneBodyIntKey pkey(key);
+
+    // canonicalize indices, may compute spaces if needed
+    auto bra_id = to_space(pkey.bra());
+    auto ket_id = to_space(pkey.ket());
+
+    auto oreg = r12world_->world()->tfactory()->orbital_registry();
+    auto freg = r12world_->world()->fockbuild_runtime();
+    auto bra = oreg->value(bra_id);
+    auto ket = oreg->value(ket_id);
+
+    // grab the matrix
+    RefSCMatrix operator_matrix;
+    if (pkey.oper() == "J")
+      operator_matrix = freg->get(ParsedOneBodyIntKey::key(bra_id, ket_id, "J"));
+    else if (pkey.oper() == "K")
+      operator_matrix = freg->get(ParsedOneBodyIntKey::key(bra_id, ket_id, "K"));
+    else if (pkey.oper() == "F")
+      operator_matrix = freg->get(ParsedOneBodyIntKey::key(bra_id, ket_id, "F"));
+    else if (pkey.oper() == "hJ")
+      operator_matrix = freg->get(ParsedOneBodyIntKey::key(bra_id, ket_id, "H"))
+                      + freg->get(ParsedOneBodyIntKey::key(bra_id, ket_id, "J"));
+    else if (pkey.oper() == "I") {
+      assert(bra == ket);
+      operator_matrix = bra->coefs()->kit()->matrix(bra->coefs().coldim(), ket->coefs().coldim());
+      operator_matrix.assign(0.0);
+      const int n = bra->rank();
+      for(int i=0; i<n; ++i)
+        operator_matrix.set_element(i,i,1.0);
+    }
+    else
+      throw ProgrammingError("SingleReference_R12Intermediates<T>::xy -- operator not recognized",
+                             __FILE__, __LINE__);
+
+    // make tiled ranges
+    std::vector<size_t> x_hashmarks(2, 0); x_hashmarks[1] = bra->rank();
+    std::vector<size_t> y_hashmarks(2, 0); y_hashmarks[1] = ket->rank();
+
+    std::vector<TA::TiledRange1> hashmarks;
+    hashmarks.push_back(TiledArray::TiledRange1(x_hashmarks.begin(), x_hashmarks.end()));
+    hashmarks.push_back(TiledArray::TiledRange1(y_hashmarks.begin(), y_hashmarks.end()));
+    TiledArray::TiledRange xy_trange(hashmarks.begin(), hashmarks.end());
+
+    std::vector<size_t> xy_start(2, 0);
+    std::vector<size_t> xy_finish(2);  xy_finish[0] = bra->rank(); xy_finish[1] = ket->rank();
+    TA::Range xy_range(xy_start, xy_finish);
+
+    std::shared_ptr<TArray2> result(new TArray2(world_, xy_trange) );
+    // construct local tiles
+    for(auto t=result->get_pmap()->begin();
+        t!=result->get_pmap()->end();
+        ++t)
+      {
+
+        auto tile_range = result->trange().make_tile_range(*t);
+        std::vector<double> ptr_data(tile_range.volume());
+
+        for(size_t r=tile_range.start()[0], rc=0;
+            r != tile_range.finish()[0];
+            ++r) {
+          for(size_t c=tile_range.start()[1];
+              c != tile_range.finish()[1];
+              ++c, ++rc) {
+            ptr_data[rc] = operator_matrix->get_element(r,c);
+          }
+        }
+
+        madness::Future < typename TArray2::value_type >
+          tile(typename TArray2::value_type(xy_range, &ptr_data[0]));
+
+        // Insert the tile into the array
+        result->set(*t, tile);
+      }
+
+      tarray2_registry_[key] = result;
+      v = tarray2_registry_.find(key);
+    }
+
+    return *(v->second);
+  }
+
+  template <typename T>
   TA::expressions::TensorExpression<TA::Tensor<T> >
   SingleReference_R12Intermediates<T>::_4(const std::string& key) {
     TArray4d& tarray4 = ijxy(key);
@@ -361,6 +449,25 @@ namespace sc {
     const std::string annotation = ind[0] + "," + ind[1] + "," + ind[2] + "," + ind[3];
     return tarray4(annotation);
   }
+
+  template <typename T>
+  TA::expressions::TensorExpression<TA::Tensor<T> >
+  SingleReference_R12Intermediates<T>::_2(const std::string& key) {
+    TArray2& tarray2 = xy(key);
+    ParsedOneBodyIntKey pkey(key);
+
+    std::array<std::string, 2> ind = {{pkey.bra(), pkey.ket()}};
+    for(auto v=ind.begin(); v!=ind.end(); ++v) {
+      if (ParsedTransformedOrbitalSpaceKey::valid_key(*v) ) {
+        ParsedTransformedOrbitalSpaceKey ptkey(*v);
+        *v = ptkey.label();
+      }
+    }
+
+    const std::string annotation = ind[0] + "," + ind[1];
+    return tarray2(annotation);
+  }
+
 
   namespace expressions {
 

@@ -44,6 +44,7 @@ void
 R12IntEval::V_diag_ta() {
   SingleReference_R12Intermediates<double> srr12intrmds(MPQCInit::instance()->madness_world(),
                                                         this->r12world());
+#if 0
   auto Vpair = srr12intrmds.V_diag();
   ExEnv::out0() << indent << "V_ij_ij" << std::endl << Vpair.first << std::endl
                 << indent << "V_ij_ji" << std::endl << Vpair.second << std::endl;
@@ -55,7 +56,7 @@ R12IntEval::V_diag_ta() {
   auto Bpair = srr12intrmds.B_diag();
   ExEnv::out0() << indent << "B_ij_ij" << std::endl << Bpair.first << std::endl
                 << indent << "B_ij_ji" << std::endl << Bpair.second << std::endl;
-
+#endif
   auto rdm1 = srr12intrmds.rdm1();
 }
 

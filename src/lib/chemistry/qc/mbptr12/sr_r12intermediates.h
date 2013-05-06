@@ -174,6 +174,8 @@ namespace sc {
       TArray4d& ijxy(const std::string& key);
       ///
       TArray22d& ij_xy(const std::string& key);
+      /// see _2()
+      TArray2& xy(const std::string& key);
 
       /** Creates a rank-4 Array, key describes the integral. A higher-level version of ijxy().
        *  key is similar to keys understood by ParsedTwoBodyInt and used by TwoBodyMOIntsRuntime,
@@ -208,6 +210,8 @@ namespace sc {
         */
       TA::expressions::TensorExpression<TA::Tensor<T> > _4(const std::string& key);
 
+      TA::expressions::TensorExpression<TA::Tensor<T> > _2(const std::string& key);
+
       //TA::expressions::TensorExpression<TA::Tensor< TA::Tensor<T> > > _22(const std::string& key);
 
     private:
@@ -222,6 +226,7 @@ namespace sc {
 
       std::map<std::string, std::shared_ptr<TArray22> > tarray22_registry_;
       std::map<std::string, std::shared_ptr<TArray4d> > tarray4_registry_;
+      std::map<std::string, std::shared_ptr<TArray2> > tarray2_registry_;
       std::map<std::string, std::shared_ptr<TArray22d> > tarray22d_registry_;
 
       // deprecated

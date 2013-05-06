@@ -199,6 +199,7 @@ namespace sc {
     Ref<TwoBodyMOIntsTransform> tform = r12world_->world()->moints_runtime4()->get(tform_key);
     tform->compute();
     Ref<DistArray4> darray4 = tform->ints_distarray4();
+    darray4->activate();
 
     const size_t n1 = darray4->ni();
     const size_t n2 = darray4->nj();

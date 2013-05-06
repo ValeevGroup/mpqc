@@ -158,7 +158,7 @@ namespace sc {
   }
 
   template <typename T>
-  typename SingleReference_R12Intermediates<T>::TArray4&
+  typename SingleReference_R12Intermediates<T>::TArray4d&
   SingleReference_R12Intermediates<T>::ijxy(const std::string& key) {
 
     auto v = tarray4_registry_.find(key);
@@ -229,7 +229,7 @@ namespace sc {
     hashmarks.push_back(TiledArray::TiledRange1(y_hashmarks.begin(), y_hashmarks.end()));
     TiledArray::TiledRange ijxy_trange(hashmarks.begin(), hashmarks.end());
 
-    std::shared_ptr<TArray4> result(new TArray4(world_, ijxy_trange) );
+    std::shared_ptr<TArray4d> result(new TArray4d(world_, ijxy_trange) );
     // construct local tiles
     for(auto t=ijxy_trange.tiles().begin();
         t!=ijxy_trange.tiles().end();
@@ -237,7 +237,7 @@ namespace sc {
       if (result->is_local(*t))
       {
         std::array<std::size_t, 4> index; std::copy(t->begin(), t->end(), index.begin());
-        madness::Future < typename TArray4::value_type >
+        madness::Future < typename TArray4d::value_type >
           tile((DA4_Tile<T>(result.get(), index, darray4, oper_idx)
               ));
 
@@ -346,7 +346,7 @@ namespace sc {
   template <typename T>
   TA::expressions::TensorExpression<TA::Tensor<T> >
   SingleReference_R12Intermediates<T>::_4(const std::string& key) {
-    TArray4& tarray4 = ijxy(key);
+    TArray4d& tarray4 = ijxy(key);
     ParsedTwoBodyFourCenterIntKey pkey(key);
 
     std::array<std::string, 4> ind = {{pkey.bra1(), pkey.bra2(), pkey.ket1(), pkey.ket2()}};
@@ -558,57 +558,10 @@ namespace sc {
                            __FILE__, __LINE__);
   }
 
-
-  template <>
-  DA4_Tile<double>::operator TA::Tensor<double>() const {
-
-    eval_type tile(owner_->trange().make_tile_range(index_));
-
-    darray4_->activate();
-
-    size_t size34 = tile.range().size()[2] * tile.range().size()[3];
-
-    for(size_t e1=tile.range().start()[0], e12=0; e1!=tile.range().finish()[0]; ++e1) {
-      for(size_t e2=tile.range().start()[1]; e2!=tile.range().finish()[1]; ++e2, ++e12) {
-
-        darray4_->retrieve_pair_subblock(e1, e2, te_type_,
-                                         tile.range().start()[2], tile.range().finish()[2],
-                                         tile.range().start()[3], tile.range().finish()[3],
-                                         tile.data() + e12*size34);
-
-      }
-    }
-
-    if (darray4_->data_persistent()) darray4_->deactivate();
-
-    return tile;
-  }
-
   template <typename T>
   std::ostream& operator<<(std::ostream& os, const DA4_Tile<T>& t) {
     os << typename DA4_Tile<T>::eval_type(t);
     return os;
-  }
-
-  template <>
-  DA4_Tile34<double>::operator TA::Tensor<TA::Tensor<double> >() const {
-
-    // make ordinary ranges needed to make 34 tiles
-    std::vector<size_t> i3i4_start(2, 0);
-    std::vector<size_t> i3i4_finish(2);  i3i4_finish[0] = darray4_->nx(); i3i4_finish[1] = darray4_->ny();
-    TA::Range i3i4_range(i3i4_start, i3i4_finish);
-
-    eval_type tile(owner_->trange().make_tile_range(index_), eval_type::value_type(i3i4_range));
-
-    darray4_->activate();
-
-    darray4_->retrieve_pair_block(index_[0], index_[1], te_type_,
-                                  tile.data()->data());
-    darray4_->release_pair_block(index_[0], index_[1], te_type_);
-
-    //if (darray4_->data_persistent()) darray4_->deactivate();
-
-    return tile;
   }
 
   template <typename T>

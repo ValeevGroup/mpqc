@@ -90,6 +90,8 @@ namespace sc {
   typename SingleReference_R12Intermediates<T>::TArray2
   SingleReference_R12Intermediates<T>::rdm1() {
 
+    TArray4 x = _4("<i j|r|p q>");
+
     /// this is just an example of how to compute the density
     TArray2 r2_i_j = _4("<i j|r|p q>") * _4("<k_F(p) j|r|p q>");
     std::cout << "<ij|r|pq> . <kj|r|pq>\n" << r2_i_j << std::endl;

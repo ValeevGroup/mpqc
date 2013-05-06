@@ -127,7 +127,8 @@ namespace sc {
   class SingleReference_R12Intermediates {
     public:
 
-      typedef TA::Array<T, 4, DA4_Tile<T>  > TArray4; // Tile = DA4_Tile<T>
+      typedef TA::Array<T, 4 > TArray4; // Tile = Tensor<T>
+      typedef TA::Array<T, 4, DA4_Tile<T> > TArray4d; // Tile = DA4_Tile<T>
       typedef TA::Array<T, 2> TArray2; // Tile = Tensor<T>
       typedef TA::Array<TA::Tensor<T>, 2> TArray22; // Tile = Tensor<Tensor<T>>
       typedef TA::Array<TA::Tensor<T>, 2, DA4_Tile34<T> > TArray22d; // Tile = Tensor<Tensor<T>>
@@ -170,7 +171,7 @@ namespace sc {
 
 
       /// see _4()
-      TArray4& ijxy(const std::string& key);
+      TArray4d& ijxy(const std::string& key);
       ///
       TArray22d& ij_xy(const std::string& key);
 
@@ -202,7 +203,7 @@ namespace sc {
         * Note that the indices are used to create the resulting tensor expression, hence these keys can be used
         * in composing expressions. For example, the full (non-diagonal) V intermediate without the CABS terms
         * can be computed as follows:
-        * TArray4 V_ij_kl = _4("<i j|gr|k l>") - _4("<i j|g|p q>") * _4("<k l|r|p q>");
+        * TArray4d V_ij_kl = _4("<i j|gr|k l>") - _4("<i j|g|p q>") * _4("<k l|r|p q>");
         *
         */
       TA::expressions::TensorExpression<TA::Tensor<T> > _4(const std::string& key);
@@ -220,7 +221,7 @@ namespace sc {
                                         const int te_type);
 
       std::map<std::string, std::shared_ptr<TArray22> > tarray22_registry_;
-      std::map<std::string, std::shared_ptr<TArray4> > tarray4_registry_;
+      std::map<std::string, std::shared_ptr<TArray4d> > tarray4_registry_;
       std::map<std::string, std::shared_ptr<TArray22d> > tarray22d_registry_;
 
       // deprecated

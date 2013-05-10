@@ -169,6 +169,16 @@ namespace sc {
       */
       TArray2 rdm1();
 
+      /**
+       * provides T1 amplitude tensor
+       * @param t1 act_occ by act_vir matrix
+       */
+      void set_T1(const RefSCMatrix& t1) { t1_ = t1; }
+      /**
+       * provides T1 CABS amplitude tensor
+       * @param t1 act_occ by allvir (or CABS) matrix
+       */
+      void set_T1_cabs(const RefSCMatrix& t1_cabs) { t1_cabs_ = t1_cabs; }
 
       /// see _4()
       TArray4d& ijxy(const std::string& key);
@@ -217,6 +227,10 @@ namespace sc {
     private:
       madness::World& world_;
       Ref<R12WavefunctionWorld> r12world_;
+
+      // extra data
+      RefSCMatrix t1_;
+      RefSCMatrix t1_cabs_;
 
       // utilities
 

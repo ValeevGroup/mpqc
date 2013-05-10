@@ -93,7 +93,8 @@ namespace sc {
       double cabs_singles_energy();
 
       // CCSD_F12 orbital relaxation contribution to 1rdm
-      void compute_onerdm_relax(RefSCMatrix& Dorbs_alpha,
+      void compute_onerdm_relax(const Ref<R12EnergyIntermediates>& r12intermediates,
+                                RefSCMatrix& Dorbs_alpha,
                                 RefSCMatrix& Dorbs_beta);
 
       /// print

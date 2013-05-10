@@ -41,6 +41,7 @@ namespace sc {
   class TwoBodyMOIntsTransform;
   class DistArray4;
   class R12Amplitudes;
+  class R12EnergyIntermediates;
 
   /** R12IntEval is the top-level class which computes intermediates occuring in R12 theories.
       This class is used by all Wavefunction classes that implement R12 methods.
@@ -1001,6 +1002,13 @@ A_distarray4(SpinCase2 spincase2, const Ref<R12IntEval>& r12eval);
 
 // compute orbital Z-vector from F12 contribution
 RefSCMatrix Onerdm_X_F12(SpinCase1 spin, const Ref<R12IntEval>& r12eval, int debug);
+
+// compute orbital relaxation contributions from CABS Singles
+RefSCMatrix Onerdm_X_CABS_Singles(SpinCase1 spin,
+                                  const Ref<R12IntEval>& r12eval,
+                                  const Ref<R12EnergyIntermediates>& r12intermediates,
+                                  int debug);
+
 } // end of namespace sc
 
 #endif

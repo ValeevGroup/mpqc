@@ -183,62 +183,16 @@ void PsiCC_PT2R12::compute_ept2r12() {
     }
   }
 
+  // compute (2)_R12 energy as MP2-R12 energy with dressed V intermediate
+
+  // include cabs singles energy?
+  cabs_singles_energy_ = 0.0;
+  if (cabs_singles_) {
+    cabs_singles_energy_ = r12eval()->emp2_cabs_singles(T1[Alpha],T1[Beta]);
+    //cabs_singles_energy_ = r12eval()->emp2_cabs_singles(); // test: use MP2 CABS Singles
+  }
+
   const bool diag = r12eval()->r12world()->r12tech()->ansatz()->diag();
-
-  // Import the Psi CCSD one-particle density
-  if (compute_1rdm_) {
-    // Obtain CC one-particle density from Psi and copy into local matrices
-    //
-    RefSCMatrix D[NSpinCases1];
-    for(int s = 0; s < nspincases1; ++s) {
-      const SpinCase1 spin = static_cast<SpinCase1>(s);
-      RefSCMatrix D_psicc = this->Onerdm(spin);
-      Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
-      D[spin] = localkit->matrix(D_psicc.rowdim(), D_psicc.coldim());
-      D[spin]->convert(D_psicc);
-
-      if (debug() >= DefaultPrintThresholds::mostN2) {
-      D[spin].print(prepend_spincase(spin,"CCSD one-particle density:").c_str());
-      }
-    }
-
-    if (nspincases1 == 1) {
-      D[Beta] = D[Alpha];
-    }
-
-    RefSCMatrix D_orbs[NSpinCases1];
-    compute_onerdm_relax(D_orbs[Alpha], D_orbs[Beta]);
-    if (debug() >= DefaultPrintThresholds::mostN2) {
-      D_orbs[Alpha].print(prepend_spincase(Alpha,"CCSD_F12 one-particle density from relaxation:").c_str());
-      if (nspincases1 != 1) {
-        D_orbs[Beta].print(prepend_spincase(Beta,"CCSD_F12 one-particle density from relaxation:").c_str());
-      }
-    }
-    // pass orbital relaxation 1rdm to the diagonal MP2-R12 energy evaluator
-    for(int s = 0; s < NSpinCases1; s++) {
-      const SpinCase1 spin = static_cast<SpinCase1>(s);
-      r12intermediates->assign_1rdm_relax(spin,D_orbs[spin]);
-
-//      // test: print the Z-vector from PSI3
-//      RefSCMatrix X_psi = this->Onerdm_relax_X(spin);
-//      X_psi.print(prepend_spincase(spin,"PSI3 Z-vector X:").c_str());
-//      // test: print the relaxation effect from PSI3
-//      RefSCMatrix Dorbs_psi = this->Onerdm_relax_D(Alpha);
-//      Dorbs_psi.print(prepend_spincase(Alpha,"PSI3 Dorbs:").c_str());
-//
-//      // test: print the Z-vector from F12 contribution
-//      RefSCMatrix Xf12 = Onerdm_X_F12(spin, r12eval_, debug());
-//      Xf12.print(prepend_spincase(spin,"F12 Z-vector X:").c_str());
-    }
-
-    if (diag == true) { // -> pass D to the diagonal MP2-R12 energy evaluator
-      for(int s = 0; s < NSpinCases1; s++) {
-        const SpinCase1 spin = static_cast<SpinCase1>(s);
-        r12intermediates->assign_1rdm_cc(spin,D[spin]);
-      }
-    } // end of diag
-  } // end of compute_1rdm_
-
   if (diag == true) { // -> pass T1 and T2 amplitudes to the diagonal MP2-R12 energy evaluator
 
     // Pass T1 to r12intermediates
@@ -254,6 +208,73 @@ void PsiCC_PT2R12::compute_ept2r12() {
         continue;
       r12intermediates->assign_T2_cc(spincase2,T2[s]);
     }
+
+    // Import the Psi CCSD one-particle density
+    if (compute_1rdm_) {
+      // Obtain CC one-particle density from Psi and copy into local matrices
+      //
+      RefSCMatrix D[NSpinCases1];
+      for(int s = 0; s < nspincases1; ++s) {
+        const SpinCase1 spin = static_cast<SpinCase1>(s);
+        RefSCMatrix D_psicc = this->Onerdm(spin);
+        Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
+        D[spin] = localkit->matrix(D_psicc.rowdim(), D_psicc.coldim());
+        D[spin]->convert(D_psicc);
+
+        if (debug() >= DefaultPrintThresholds::mostN2) {
+        D[spin].print(prepend_spincase(spin,"CCSD one-particle density:").c_str());
+        }
+      }
+
+      if (nspincases1 == 1) {
+        D[Beta] = D[Alpha];
+      }
+
+      // -> pass D to the diagonal MP2-R12 energy evaluator
+      for(int s = 0; s < NSpinCases1; s++) {
+        const SpinCase1 spin = static_cast<SpinCase1>(s);
+        r12intermediates->assign_1rdm_cc(spin,D[spin]);
+      }
+
+      RefSCMatrix D_orbs[NSpinCases1];
+      // T1 & cabs I1 need to be ready for CABS_Singles orbital relaxation Z-vector
+      compute_onerdm_relax(r12intermediates, D_orbs[Alpha], D_orbs[Beta]);
+      if (debug() >= DefaultPrintThresholds::mostN2) {
+        D_orbs[Alpha].print(prepend_spincase(Alpha,"CCSD_F12 one-particle density from relaxation:").c_str());
+        if (nspincases1 != 1) {
+          D_orbs[Beta].print(prepend_spincase(Beta,"CCSD_F12 one-particle density from relaxation:").c_str());
+        }
+      }
+      // pass orbital relaxation 1rdm to the diagonal MP2-R12 energy evaluator
+      for(int s = 0; s < NSpinCases1; s++) {
+        const SpinCase1 spin = static_cast<SpinCase1>(s);
+        r12intermediates->assign_1rdm_relax(spin,D_orbs[spin]);
+      }
+
+      // tests:
+//      for(int s = 0; s < nspincases1; ++s) {
+//        const SpinCase1 spin = static_cast<SpinCase1>(s);
+
+//      // test: print the Z-vector from PSI3
+//      RefSCMatrix X_psi = this->Onerdm_relax_X(spin);
+//      X_psi.print(prepend_spincase(spin,"PSI3 Z-vector X:").c_str());
+//      // test: print the relaxation effect from PSI3
+//      RefSCMatrix Dorbs_psi = this->Onerdm_relax_D(Alpha);
+//      Dorbs_psi.print(prepend_spincase(Alpha,"PSI3 Dorbs:").c_str());
+//
+//      // test: print the Z-vector from F12 contribution
+//      RefSCMatrix Xf12 = Onerdm_X_F12(spin, r12eval_, debug());
+//      Xf12.print(prepend_spincase(spin,"F12 Z-vector X:").c_str());
+
+//        if (cabs_singles_) {
+//          // test: print the Z-vector from CABS Singles contribution
+//          RefSCMatrix X_cabs = Onerdm_X_CABS_Singles(spin, r12eval_, r12intermediates, debug());
+//          X_cabs.print(prepend_spincase(spin,"CABS_Singles Z-vector X:").c_str());
+//        }
+//      }
+
+    } // end of compute_1rdm_
+
 
   } // end of diag = true clause
   else { // diag = false:
@@ -456,14 +477,6 @@ void PsiCC_PT2R12::compute_ept2r12() {
     }
   } // end of diag == false clause
 
-  // compute (2)_R12 energy as MP2-R12 energy with dressed V intermediate
-
-  // include cabs singles energy?
-  cabs_singles_energy_ = 0.0;
-  if (cabs_singles_) {
-    cabs_singles_energy_ = r12eval()->emp2_cabs_singles(T1[Alpha],T1[Beta]);
-  }
-
   Ref<MP2R12Energy> r12energy = construct_MP2R12Energy(r12intermediates,
                                                        false,
                                                        debug(),
@@ -516,7 +529,8 @@ PsiCC_PT2R12::cabs_singles_energy()
 
 // Compute orbital relaxation contribution for
 // CCSD_F12 one-electron density
-void PsiCC_PT2R12::compute_onerdm_relax(RefSCMatrix& Dorbs_alpha,
+void PsiCC_PT2R12::compute_onerdm_relax(const Ref<R12EnergyIntermediates>& r12intermediates,
+                                        RefSCMatrix& Dorbs_alpha,
                                         RefSCMatrix& Dorbs_beta)
 {
   // grab orbital info
@@ -559,16 +573,18 @@ void PsiCC_PT2R12::compute_onerdm_relax(RefSCMatrix& Dorbs_alpha,
   // compute the orbital Z vector contribution from F12
   RefSCMatrix X_F12[NSpinCases1];
   RefSCMatrix Xf12_alpha = Onerdm_X_F12(spin1, r12eval_, debug());
+                           //Onerdm_X_CABS_Singles(spin1, r12eval_, r12intermediates, debug());
   Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
   X_F12[spin1] = localkit->matrix(Xf12_alpha.rowdim(), Xf12_alpha.coldim());
   X_F12[spin1]->convert(Xf12_alpha);
-  X_F12[spin1].assign(0.0);
+//  X_F12[spin1].assign(0.0);
 
   psio.open(CC_OEI, PSIO_OPEN_OLD);
   psio.open(CC_MISC, PSIO_OPEN_OLD);
   if (reference()->reftype() == PsiSCF::rhf) {
 
     double* Xai_ccsd = new double[na1i1_dpd];
+    std::fill_n(Xai_ccsd, na1i1_dpd, 0.0);
     //ExEnv::out0() << std::endl << "X nai_dpd: " << na1i1_dpd << std::endl;
 
     psio.read_entry(CC_OEI, "XAI",
@@ -587,7 +603,7 @@ void PsiCC_PT2R12::compute_onerdm_relax(RefSCMatrix& Dorbs_alpha,
 
       for (int a = 0; a < uocc1pi[h]; ++a)
         for (int i = 0; i< occ1pi[h]; ++i, ++iter_Xai, ++iter_Xai_ccsd)
-         *iter_Xai = - *iter_Xai_ccsd - X_F12[spin1].get_element(a+a_offset, i+i_offset);
+         *iter_Xai = - *iter_Xai_ccsd + X_F12[spin1].get_element(a+a_offset, i+i_offset);
     }
     delete[] Xai_ccsd;
 
@@ -663,6 +679,7 @@ void PsiCC_PT2R12::compute_onerdm_relax(RefSCMatrix& Dorbs_alpha,
         na2i2_dpd += uocc2pi[h] * occ2pi[h];
 
       double* const Xai_ccsd = new double[na1i1_dpd + na2i2_dpd];
+      std::fill_n(Xai_ccsd, na1i1_dpd + na2i2_dpd, 0.0);
       //ExEnv::out0() << std::endl << "X na1i1_dpd: " << na1i1_dpd << std::endl;
       //ExEnv::out0() << std::endl << "X na2i2_dpd: " << na2i2_dpd << std::endl;
 
@@ -686,7 +703,7 @@ void PsiCC_PT2R12::compute_onerdm_relax(RefSCMatrix& Dorbs_alpha,
 
         for (int a = 0; a < uocc1pi[h]; ++a)
           for (int i = 0; i< occ1pi[h]; ++i, ++iter_X, ++iter_X_ccsd)
-           *iter_X = - *iter_X_ccsd - X_F12[spin1].get_element(a+a_offset, i+i_offset);
+           *iter_X = - *iter_X_ccsd + X_F12[spin1].get_element(a+a_offset, i+i_offset);
       }
       for (unsigned int h = 0; h < nirrep_; ++h) {
         const unsigned int a_offset = uocc2pioff[h];
@@ -694,7 +711,7 @@ void PsiCC_PT2R12::compute_onerdm_relax(RefSCMatrix& Dorbs_alpha,
 
         for (int a = 0; a < uocc2pi[h]; ++a)
           for (int i = 0; i< occ2pi[h]; ++i, ++iter_X, ++iter_X_ccsd)
-           *iter_X -= - *iter_X_ccsd - X_F12[spin2].get_element(a+a_offset, i+i_offset);
+           *iter_X = - *iter_X_ccsd + X_F12[spin2].get_element(a+a_offset, i+i_offset);
       }
       delete[] Xai_ccsd;
 

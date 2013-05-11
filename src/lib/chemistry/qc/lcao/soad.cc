@@ -383,17 +383,39 @@ SuperpositionOfAtomicDensities::minimal_basis_set(const Ref<Molecule>& mol) {
   // make mother (STO-6G + WTBS) minimal basis
   Ref<AssignedKeyVal> akv = new AssignedKeyVal;
   akv->assign("molecule", Ref<DescribedClass>(mol));
-  // mix STO-6G (for H-Kr) and WTB (for Rb-Rn)
-  for (int a = 0; a < mol->natom(); ++a) {
-    std::ostringstream oss;
-    oss << "basis:" << a;
-    const char* keyword = oss.str().c_str();
-    if (mol->Z(a) <= 38)
-      akv->assign(keyword, "STO-3G");
-    else
-      akv->assign(keyword, "WTBS");
+  Ref<GaussianBasisSet> mother;
+  // for some reason on our local linux cluster this breaks
+  try {
+    // mix STO-6G (for H-Kr) and WTB (for Rb-Rn)
+    for (int a = 0; a < mol->natom(); ++a) {
+      std::ostringstream oss;
+      oss << "basis:" << a;
+      const char* keyword = oss.str().c_str();
+      if (mol->Z(a) <= 38)
+        akv->assign(keyword, "STO-3G");
+      else
+        akv->assign(keyword, "WTBS");
+    }
+    mother = new GaussianBasisSet(akv);
   }
-  Ref<GaussianBasisSet> mother = new GaussianBasisSet(akv);
+  catch(...) {}
+  if (mother.null()) {
+    try {
+      akv->assign("name", "STO-3G");
+      mother = new GaussianBasisSet(akv);
+    }
+    catch (...) {}
+  }
+  if (mother.null()) {
+    try {
+      akv->assign("name", "WTBS");
+      mother = new GaussianBasisSet(akv);
+    }
+    catch (...) {}
+  }
+  if (mother.null())
+    throw ProgrammingError("could not construct a minimal basis for SuperpositionOfAtomicDensities",
+                           __FILE__, __LINE__);
 
   // and split (because some integrals need it, and because the logic of atomic aufbau does not tolerate sp shells)
   Ref<AssignedKeyVal> akv1 = new AssignedKeyVal;

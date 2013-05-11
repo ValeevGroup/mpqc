@@ -380,12 +380,12 @@ RefDiagSCMatrix sc::SuperpositionOfAtomicDensities::eigenvalues() {
 
 Ref<GaussianBasisSet>
 SuperpositionOfAtomicDensities::minimal_basis_set(const Ref<Molecule>& mol) {
-  // make mother (STO-6G + WTBS) minimal basis
-  Ref<AssignedKeyVal> akv = new AssignedKeyVal;
-  akv->assign("molecule", Ref<DescribedClass>(mol));
+  // make mother minimal basis
   Ref<GaussianBasisSet> mother;
   // for some reason on our local linux cluster this breaks
   try {
+    Ref<AssignedKeyVal> akv = new AssignedKeyVal;
+    akv->assign("molecule", Ref<DescribedClass>(mol));
     // mix STO-6G (for H-Kr) and WTB (for Rb-Rn)
     for (int a = 0; a < mol->natom(); ++a) {
       std::ostringstream oss;
@@ -401,6 +401,8 @@ SuperpositionOfAtomicDensities::minimal_basis_set(const Ref<Molecule>& mol) {
   catch(...) {}
   if (mother.null()) {
     try {
+      Ref<AssignedKeyVal> akv = new AssignedKeyVal;
+      akv->assign("molecule", Ref<DescribedClass>(mol));
       akv->assign("name", "STO-3G");
       mother = new GaussianBasisSet(akv);
     }
@@ -408,6 +410,8 @@ SuperpositionOfAtomicDensities::minimal_basis_set(const Ref<Molecule>& mol) {
   }
   if (mother.null()) {
     try {
+      Ref<AssignedKeyVal> akv = new AssignedKeyVal;
+      akv->assign("molecule", Ref<DescribedClass>(mol));
       akv->assign("name", "WTBS");
       mother = new GaussianBasisSet(akv);
     }

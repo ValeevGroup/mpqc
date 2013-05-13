@@ -51,7 +51,7 @@ class TwoBodyIntLibint2 : public TwoBodyInt {
                  const Ref<GaussianBasisSet>&b3,
                  const Ref<GaussianBasisSet>&b4,
                  size_t storage, TwoBodyOperSet::type int2etype,
-		 const Ref<IntParams>& params);
+                 const Ref<IntParams>& params);
     virtual ~TwoBodyIntLibint2();
 
     TwoBodyOperSet::type type() const { return int2etype_; }
@@ -69,6 +69,18 @@ class TwoBodyIntLibint2 : public TwoBodyInt {
 
     bool cloneable() const;
     Ref<TwoBodyInt> clone();
+
+  private:
+    /// similar to the standard constructor, but saves some work (and pain)
+    /// for clone() method
+    TwoBodyIntLibint2(Integral*integral,
+                      const Ref<GaussianBasisSet>&b1,
+                      const Ref<GaussianBasisSet>&b2,
+                      const Ref<GaussianBasisSet>&b3,
+                      const Ref<GaussianBasisSet>&b4,
+                      size_t storage, TwoBodyOperSet::type int2etype,
+                      const Ref<IntParams>& params,
+                      const Ref<Log2Bounds>& bounds);
 };
 
 /** This implements 3-center 2-body integrals in the IntLibint2 library. */
@@ -88,7 +100,7 @@ class TwoBodyThreeCenterIntLibint2 : public TwoBodyThreeCenterInt {
                  const Ref<GaussianBasisSet>&b2,
                  const Ref<GaussianBasisSet>&b3,
                  size_t storage, TwoBodyOperSet::type int2etype,
-         const Ref<IntParams>& params);
+                 const Ref<IntParams>& params);
     virtual ~TwoBodyThreeCenterIntLibint2();
 
     TwoBodyOperSet::type type() const { return int2etype_; }
@@ -106,6 +118,19 @@ class TwoBodyThreeCenterIntLibint2 : public TwoBodyThreeCenterInt {
 
     bool cloneable() const;
     Ref<TwoBodyThreeCenterInt> clone();
+
+  private:
+    /// similar to the standard constructor, but saves some work (and pain)
+    /// for clone() method
+    TwoBodyThreeCenterIntLibint2(Integral*integral,
+                 const Ref<GaussianBasisSet>&b1,
+                 const Ref<GaussianBasisSet>&b2,
+                 const Ref<GaussianBasisSet>&b3,
+                 const Ref<GaussianBasisSet>&bunit,
+                 size_t storage, TwoBodyOperSet::type int2etype,
+                 const Ref<IntParams>& params,
+                 const Ref<Log2Bounds>& bounds);
+
 };
 
 /** This implements 2-center 2-body integrals in the IntLibint2 library. */
@@ -124,7 +149,7 @@ class TwoBodyTwoCenterIntLibint2 : public TwoBodyTwoCenterInt {
                  const Ref<GaussianBasisSet>&b1,
                  const Ref<GaussianBasisSet>&b2,
                  size_t storage, TwoBodyOperSet::type int2etype,
-         const Ref<IntParams>& params);
+                 const Ref<IntParams>& params);
     virtual ~TwoBodyTwoCenterIntLibint2();
 
     TwoBodyOperSet::type type() const { return int2etype_; }
@@ -142,6 +167,17 @@ class TwoBodyTwoCenterIntLibint2 : public TwoBodyTwoCenterInt {
     const double *buffer(TwoBodyOper::type te_type) const {
       return int2elibint2_->buffer( descr_->opertype(te_type) );
     }
+
+  private:
+    /// similar to the standard constructor, but saves some work (and pain)
+    /// for clone() method
+    TwoBodyTwoCenterIntLibint2(Integral*integral,
+                 const Ref<GaussianBasisSet>&b1,
+                 const Ref<GaussianBasisSet>&b2,
+                 const Ref<GaussianBasisSet>&bunit,
+                 size_t storage, TwoBodyOperSet::type int2etype,
+                 const Ref<IntParams>& params,
+                 const Ref<Log2Bounds>& bounds);
 };
 
 /** This implements electron repulsion derivative integrals in the IntV3

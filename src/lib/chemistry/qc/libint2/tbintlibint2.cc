@@ -193,6 +193,63 @@ evaluator of unimplemented or unknown type",__FILE__,__LINE__);
   integral_->adjust_storage(int2elibint2_->storage_used());
 }
 
+TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
+                     const Ref<GaussianBasisSet>& b1,
+                     const Ref<GaussianBasisSet>& b2,
+                     const Ref<GaussianBasisSet>& b3,
+                     const Ref<GaussianBasisSet>& b4,
+                     size_t storage, TwoBodyOperSet::type int2etype,
+                     const Ref<IntParams>& params,
+                     const Ref<Log2Bounds>& bounds):
+    TwoBodyInt(integral,b1,b2,b3,b4), int2etype_(int2etype),
+    descr_(TwoBodyOperSetDescr::instance(int2etype)),
+    params_(params)
+{
+    using sc::libint2::create_int2e;
+  // Which evaluator to use
+  switch (int2etype_) {
+#if LIBINT2_SUPPORT_ERI
+  case TwoBodyOperSet::ERI:
+  {
+    typedef EriLibint2 Int2e;
+    int2elibint2_ = create_int2e<EriLibint2>(integral,b1,b2,b3,b4,storage,params);
+    int2elibint2_->bounds(bounds);
+    break;
+  }
+  case TwoBodyOperSet::G12NC:
+  {
+    typedef G12NCLibint2 Int2e;
+    int2elibint2_ = create_int2e<G12NCLibint2>(integral,b1,b2,b3,b4,storage,params);
+    int2elibint2_->bounds(bounds);
+    break;
+  }
+#endif
+#if LIBINT2_SUPPORT_G12
+# if LIBINT2_SUPPORT_T1G12
+  case TwoBodyOperSet::G12:
+  {
+    int2elibint2_ = create_int2e<G12Libint2>(integral,b1,b2,b3,b4,storage,params);
+    break;
+  }
+# endif
+#endif
+
+#if LIBINT2_SUPPORT_G12DKH
+  case TwoBodyOperSet::G12DKH:
+  {
+    int2elibint2_ = create_int2e<G12DKHLibint2>(integral,b1,b2,b3,b4,storage,params);
+    break;
+  }
+#endif
+  default:
+    throw FeatureNotImplemented("Tried to construct a two-electron integral \
+evaluator of unimplemented or unknown type",__FILE__,__LINE__);
+  }
+
+  buffer_ = int2elibint2_->buffer(TwoBodyOper::eri);
+  integral_->adjust_storage(int2elibint2_->storage_used());
+}
+
 TwoBodyIntLibint2::~TwoBodyIntLibint2()
 {
   integral_->adjust_storage(-int2elibint2_->storage_used());
@@ -228,7 +285,8 @@ Ref<TwoBodyInt>
 TwoBodyIntLibint2::clone()
 {
   const size_t storage = int2elibint2_->storage_used();
-  return new TwoBodyIntLibint2(integral_, bs1_, bs2_, bs3_, bs4_, storage, int2etype_, params_);
+  return new TwoBodyIntLibint2(integral_, bs1_, bs2_, bs3_, bs4_,
+                               storage, int2etype_, params_, int2elibint2_->bounds());
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -293,6 +351,63 @@ evaluator of unimplemented or unknown type",__FILE__,__LINE__);
   integral_->adjust_storage(int2elibint2_->storage_used());
 }
 
+TwoBodyThreeCenterIntLibint2::TwoBodyThreeCenterIntLibint2(Integral*integral,
+                     const Ref<GaussianBasisSet>& b1,
+                     const Ref<GaussianBasisSet>& b2,
+                     const Ref<GaussianBasisSet>& b3,
+                     const Ref<GaussianBasisSet>& bunit,
+                     size_t storage, TwoBodyOperSet::type int2etype,
+                     const Ref<IntParams>& params,
+                     const Ref<Log2Bounds>& bounds) :
+    TwoBodyThreeCenterInt(integral,b1,b2,b3), int2etype_(int2etype),
+    descr_(TwoBodyOperSetDescr::instance(int2etype)),
+    params_(params)
+{
+  using sc::libint2::create_int2e;
+  // Which evaluator to use
+  switch (int2etype_) {
+#if LIBINT2_SUPPORT_ERI
+  case TwoBodyOperSet::ERI:
+  {
+    typedef EriLibint2 Int2e;
+    int2elibint2_ = create_int2e<Int2e>(integral,b1,b2,b3,bunit,storage,params);
+    int2elibint2_->bounds(bounds);
+    break;
+  }
+  case TwoBodyOperSet::G12NC:
+  {
+    typedef G12NCLibint2 Int2e;
+    int2elibint2_ = create_int2e<Int2e>(integral,b1,b2,b3,bunit,storage,params);
+    int2elibint2_->bounds(bounds);
+    break;
+  }
+#endif
+#if LIBINT2_SUPPORT_G12
+# if LIBINT2_SUPPORT_T1G12
+  case TwoBodyOperSet::G12:
+  {
+    int2elibint2_ = create_int2e<G12Libint2>(integral,b1,b2,b3,bunit,storage,params);
+    break;
+  }
+# endif
+#endif
+
+#if LIBINT2_SUPPORT_G12DKH
+  case TwoBodyOperSet::G12DKH:
+  {
+    int2elibint2_ = create_int2e<G12DKHLibint2>(integral,b1,b2,b3,bunit,storage,params);
+    break;
+  }
+#endif
+  default:
+    throw FeatureNotImplemented("Tried to construct a two-electron integral \
+evaluator of unimplemented or unknown type",__FILE__,__LINE__);
+  }
+
+  buffer_ = int2elibint2_->buffer(TwoBodyOper::eri);
+  integral_->adjust_storage(int2elibint2_->storage_used());
+}
+
 TwoBodyThreeCenterIntLibint2::~TwoBodyThreeCenterIntLibint2()
 {
   integral_->adjust_storage(-int2elibint2_->storage_used());
@@ -329,7 +444,8 @@ Ref<TwoBodyThreeCenterInt>
 TwoBodyThreeCenterIntLibint2::clone()
 {
   const size_t storage = int2elibint2_->storage_used();
-  return new TwoBodyThreeCenterIntLibint2(integral_, bs1_, bs2_, bs3_, storage, int2etype_, params_);
+  return new TwoBodyThreeCenterIntLibint2(integral_, bs1_, bs2_, bs3_, int2elibint2_->basis4(),
+                                          storage, int2etype_, params_, int2elibint2_->bounds());
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -386,6 +502,60 @@ evaluator of unimplemented or unknown type",__FILE__,__LINE__);
   integral_->adjust_storage(int2elibint2_->storage_used());
 }
 
+TwoBodyTwoCenterIntLibint2::TwoBodyTwoCenterIntLibint2(Integral*integral,
+                     const Ref<GaussianBasisSet>& b1,
+                     const Ref<GaussianBasisSet>& b3,
+                     const Ref<GaussianBasisSet>& bunit,
+                     size_t storage, TwoBodyOperSet::type int2etype,
+                     const Ref<IntParams>& params,
+                     const Ref<Log2Bounds>& bounds):
+    TwoBodyTwoCenterInt(integral,b1,b3), int2etype_(int2etype),
+    descr_(TwoBodyOperSetDescr::instance(int2etype)),
+    params_(params)
+{
+  using sc::libint2::create_int2e;
+  // Which evaluator to use
+  switch (int2etype_) {
+#if LIBINT2_SUPPORT_ERI
+  case TwoBodyOperSet::ERI:
+  {
+    int2elibint2_ = create_int2e<EriLibint2>(integral,b1,bunit,b3,bunit,storage,params);
+    int2elibint2_->bounds(bounds);
+    break;
+  }
+  case TwoBodyOperSet::G12NC:
+  {
+    int2elibint2_ = create_int2e<G12NCLibint2>(integral,b1,bunit,b3,bunit,storage,params);
+    int2elibint2_->bounds(bounds);
+    break;
+  }
+#endif
+#if LIBINT2_SUPPORT_G12
+# if LIBINT2_SUPPORT_T1G12
+  case TwoBodyOperSet::G12:
+  {
+    int2elibint2_ = create_int2e<G12Libint2>(integral,b1,bunit,b3,bunit,storage,params);
+    break;
+  }
+# endif
+#endif
+
+#if LIBINT2_SUPPORT_G12DKH
+  case TwoBodyOperSet::G12DKH:
+  {
+    int2elibint2_ = create_int2e<G12DKHLibint2>(integral,b1,bunit,b3,bunit,storage,params);
+    break;
+  }
+#endif
+  default:
+    throw FeatureNotImplemented("Tried to construct a two-electron integral \
+evaluator of unimplemented or unknown type",__FILE__,__LINE__);
+  }
+
+  buffer_ = int2elibint2_->buffer(TwoBodyOper::eri);
+  integral_->adjust_storage(int2elibint2_->storage_used());
+}
+
 TwoBodyTwoCenterIntLibint2::~TwoBodyTwoCenterIntLibint2()
 {
   integral_->adjust_storage(-int2elibint2_->storage_used());
@@ -423,7 +593,8 @@ Ref<TwoBodyTwoCenterInt>
 TwoBodyTwoCenterIntLibint2::clone()
 {
   const size_t storage = int2elibint2_->storage_used();
-  return new TwoBodyTwoCenterIntLibint2(integral_, bs1_, bs2_, storage, int2etype_, params_);
+  return new TwoBodyTwoCenterIntLibint2(integral_, bs1_, bs2_, int2elibint2_->basis4(),
+                                        storage, int2etype_, params_, int2elibint2_->bounds());
 }
 
 //////////////////////////////////////////////////////////////////

@@ -113,6 +113,8 @@ class Int2eLibint2: public RefCount {
 
     /// provides the bounds evaluator for log2_bound
     void bounds(const Ref<Log2Bounds>&);
+    /// returns the bounds evaluator for log2_bound
+    const Ref<Log2Bounds>& bounds() const { return bounds_; }
 
     /// Sets storage limit and starts storage tracking
     void init_storage(size_t);

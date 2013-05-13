@@ -361,6 +361,8 @@ namespace sc {
     auto freg = r12world_->world()->fockbuild_runtime();
     auto bra = oreg->value(bra_id);
     auto ket = oreg->value(ket_id);
+    auto nbra = bra->rank();
+    auto nket = ket->rank();
 
     // grab the matrix
     RefSCMatrix operator_matrix;
@@ -377,28 +379,46 @@ namespace sc {
       assert(bra == ket);
       operator_matrix = bra->coefs()->kit()->matrix(bra->coefs().coldim(), ket->coefs().coldim());
       operator_matrix.assign(0.0);
-      const int n = bra->rank();
-      for(int i=0; i<n; ++i)
+      for(int i=0; i<nbra; ++i)
         operator_matrix.set_element(i,i,1.0);
+    }
+    else if (pkey.oper() == "T1") {
+      if (ket_id == "a") {
+        assert(t1_.nonnull());
+        operator_matrix = t1_;
+      }
+      else {
+        assert(ket_id == "a'" || ket_id == "A'");
+        assert(t1_cabs_.nonnull());
+        operator_matrix = t1_cabs_;
+      }
     }
     else
       throw ProgrammingError("SingleReference_R12Intermediates<T>::xy -- operator not recognized",
                              __FILE__, __LINE__);
 
     // make tiled ranges
-    std::vector<size_t> x_hashmarks(2, 0); x_hashmarks[1] = bra->rank();
-    std::vector<size_t> y_hashmarks(2, 0); y_hashmarks[1] = ket->rank();
+    std::vector<size_t> bra_hashmarks(2,0); bra_hashmarks[1] = nbra;
+    if (bra_id == "i") { // unit-tile occupied space
+      bra_hashmarks.resize(nbra+1);
+      bra_hashmarks[0] = 0;
+      for(size_t i=1; i<=nbra; ++i)
+        bra_hashmarks[i] = bra_hashmarks[i-1] + 1;
+    }
+    std::vector<size_t> ket_hashmarks(2,0); ket_hashmarks[1] = nket;
+    if (ket_id == "i") { // unit-tile occupied space
+      ket_hashmarks.resize(nket+1);
+      ket_hashmarks[0] = 0;
+      for(size_t i=1; i<=nbra; ++i)
+        ket_hashmarks[i] = ket_hashmarks[i-1] + 1;
+    }
 
     std::vector<TA::TiledRange1> hashmarks;
-    hashmarks.push_back(TiledArray::TiledRange1(x_hashmarks.begin(), x_hashmarks.end()));
-    hashmarks.push_back(TiledArray::TiledRange1(y_hashmarks.begin(), y_hashmarks.end()));
-    TiledArray::TiledRange xy_trange(hashmarks.begin(), hashmarks.end());
+    hashmarks.push_back(TiledArray::TiledRange1(bra_hashmarks.begin(), bra_hashmarks.end()));
+    hashmarks.push_back(TiledArray::TiledRange1(ket_hashmarks.begin(), ket_hashmarks.end()));
+    TiledArray::TiledRange braket_trange(hashmarks.begin(), hashmarks.end());
 
-    std::vector<size_t> xy_start(2, 0);
-    std::vector<size_t> xy_finish(2);  xy_finish[0] = bra->rank(); xy_finish[1] = ket->rank();
-    TA::Range xy_range(xy_start, xy_finish);
-
-    std::shared_ptr<TArray2> result(new TArray2(world_, xy_trange) );
+    std::shared_ptr<TArray2> result(new TArray2(world_, braket_trange) );
     // construct local tiles
     for(auto t=result->get_pmap()->begin();
         t!=result->get_pmap()->end();
@@ -419,7 +439,7 @@ namespace sc {
         }
 
         madness::Future < typename TArray2::value_type >
-          tile(typename TArray2::value_type(xy_range, &ptr_data[0]));
+          tile(typename TArray2::value_type(tile_range, &ptr_data[0]));
 
         // Insert the tile into the array
         result->set(*t, tile);

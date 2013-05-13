@@ -57,6 +57,13 @@ R12IntEval::V_diag_ta() {
   ExEnv::out0() << indent << "B_ij_ij" << std::endl << Bpair.first << std::endl
                 << indent << "B_ij_ji" << std::endl << Bpair.second << std::endl;
 #endif
+
+  bool vir_cabs_coupling = true; // need CABS singles into vir+CABS? set to true
+  this->compute_emp2_cabs_singles_noncanonical(vir_cabs_coupling);
+  srr12intrmds.set_T1_cabs(this->T1_cabs_[Alpha]);
+
+  assert(this->orbital_registry()->key_exists("A'"));
+
   auto rdm1 = srr12intrmds.rdm1();
 }
 

@@ -357,10 +357,9 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
       have_custom = 0;
       nelement = 0;
       if (name_.empty()) {
-          ExEnv::err0() << indent
-               << "GaussianBasisSet: No name given for basis set\n";
-          abort();
-        }
+          throw InputError("GaussianBasisSet: No name given for basis set\n",
+                           __FILE__, __LINE__);
+      }
     }
 
   // Construct label_

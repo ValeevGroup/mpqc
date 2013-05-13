@@ -275,13 +275,16 @@ R12IntEval::compute_emp2_cabs_singles_noncanonical(bool vir_cabs_coupling) {
     if (cabs->rank() == 0) continue;
     Ref<OrbitalSpace> aspace = cabs;
     if (vir_cabs_coupling) {
-      std::string allvirt_key = ParsedOrbitalSpaceKey::key(std::string("A(sym)"),spin);
-      Ref<OrbitalSpaceUnion> allvirt = new OrbitalSpaceUnion(allvirt_key,
-                                                             prepend_spincase(spin, std::string("all virtual orbitals")),
-                                                             *vir, *cabs, true);
-      assert(this->orbital_registry()->key_exists(allvirt->id()) == false); /// this should be the first time this is created
-      this->orbital_registry()->add(allvirt->id(), allvirt);
-      aspace = allvirt;
+      std::string allvirt_key = ParsedOrbitalSpaceKey::key(std::string("A'"),this->spin_polarized() ? spin : AnySpinCase1);
+      if (not this->orbital_registry()->key_exists(allvirt_key)) { // this should be the first time this is created
+        Ref<OrbitalSpaceUnion> allvirt = new OrbitalSpaceUnion(allvirt_key,
+                                                               prepend_spincase(spin, std::string("all virtual orbitals")),
+                                                               *vir, *cabs, true);
+        this->orbital_registry()->add(allvirt->id(), allvirt);
+        aspace = allvirt;
+      }
+      else
+        aspace = orbital_registry()->value(allvirt_key);
     }
 
     RefSCMatrix FiA = fock(occ,aspace,spin);
@@ -307,7 +310,7 @@ R12IntEval::compute_emp2_cabs_singles_noncanonical(bool vir_cabs_coupling) {
       double Rnorm2;
       try {
         Rnorm2 = linsolv_conjugate_gradient(h0t1, rhs, T1_cabs_[s], PC,
-                                            1e-9);
+                                            1e-10);
       }
       catch (...) {
         // if failed for some reason, at least compute the energy to help with troubleshooting
@@ -460,7 +463,7 @@ R12IntEval::compute_emp2_cabs_singles_noncanonical_ccsd(const RefSCMatrix& T1_ia
       double Rnorm2;
       try {
         Rnorm2 = linsolv_conjugate_gradient(h0t1, rhs, T1_cabs_[s], PC,
-                                            1e-9);
+                                            1e-10);
       }
       catch (...) {
         // if failed for some reason, at least compute the energy to help with troubleshooting

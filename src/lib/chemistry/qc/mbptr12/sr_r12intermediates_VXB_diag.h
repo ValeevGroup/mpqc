@@ -101,15 +101,17 @@ namespace sc {
     TArray2 T1iA = _2("<i|T1|A'>");
     t1_cabs_.print("T1(RefSCMatrix)");
     std::cout << "T1(cabs)\n" << T1iA << std::endl;
+    TArray2 T1ia = _2("<i|T1|a>");
+    std::cout << "T1(cabs) => i by a block\n" << T1ia << std::endl;
 
     // recompute E2(CABS) = T1_cabs . H1
     const double E2_cabs = 2.0 * dot(T1iA("i,A'"), _2("<i|F|A'>"));
     std::cout << "E2_cabs (recomputed) = " << E2_cabs << std::endl;
 
     // this does not work now ... outer product needs to be implemented explicitly
-#if 0
-    TArray4 A = _2("<a|F|b>") * _2("<i|I|j>");
-    std::cout << A << std::endl;
+#if 1
+    TArray4 A = _2("<i|I|j>") * _2("<a|F|b>") - _4("<i j|g|a b>");
+    std::cout << "A\n" << A << std::endl;
 #endif
 
     /// this is just an example of how to compute the density
@@ -117,7 +119,7 @@ namespace sc {
     std::cout << "<ij|r|pq> . <kj|r|pq>\n" << r2_i_j << std::endl;
 
     // this is another random contraction, useful for non-diagonal X intermediate
-    TArray4 x = _4("<i j|r|p q>") * _4("<k l|r|p q>");
+    //TArray4 x = _4("<i j|r|p q>") * _4("<k l|r|p q>");
 
     return r2_i_j;
   }

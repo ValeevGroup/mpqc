@@ -383,13 +383,38 @@ namespace sc {
         operator_matrix.set_element(i,i,1.0);
     }
     else if (pkey.oper() == "T1") {
-      if (ket_id == "a") {
-        assert(t1_.nonnull());
-        operator_matrix = t1_;
+      if (ket_id == "a") { // if given t1_ explicitly (CC), make sure it's size matches
+        if (t1_.nonnull()) {
+          if (t1_.ncol() != oreg->value(ket_id)->rank())
+            throw ProgrammingError("SingleReference_R12Intermediates::xy() -- T1.ncol() != nvir_act",
+                                   __FILE__, __LINE__);
+          operator_matrix = t1_;
+        }
+        else if (t1_cabs_.nonnull()) { // if t1_cabs given, this means extract the occ_act x vir_act block
+          if (t1_cabs_.ncol() == oreg->value("a'")->rank()) // doesn't make sense if T1 only include CABS
+            throw ProgrammingError("SingleReference_R12Intermediates::xy() -- asked for <i|T1|a> but T1_cabs does not include conv. virtuals",
+                                   __FILE__, __LINE__);
+          Ref<OrbitalSpace> vir_act = oreg->value("a");
+          Ref<OrbitalSpace> allvir = oreg->value("A'"); // should exist since t1_cabs_ spans more than just CABS
+          assert(t1_cabs_.ncol() == allvir->rank()); // this should be the only other possibility
+          RefSCMatrix t1_subblock = t1_cabs_.kit()->matrix(t1_cabs_.rowdim(),
+                                                           vir_act->coefs()->coldim());
+          std::vector<int> vir_to_allvir = sc::map(*allvir, *vir_act, false);
+          const int nocc_act = t1_subblock.nrow();
+          const int nvir_act = vir_act->rank();
+          for(int i=0; i<nocc_act; ++i) {
+            for(int a=0; a<nvir_act; ++a) {
+              const int Ap = vir_to_allvir[a];
+              t1_subblock.set_element(i, a, t1_cabs_.get_element(i, Ap));
+            }
+          }
+          operator_matrix = t1_subblock;
+        }
       }
       else {
         assert(ket_id == "a'" || ket_id == "A'");
         assert(t1_cabs_.nonnull());
+        assert(oreg->value(ket_id)->rank() == t1_cabs_.ncol());
         operator_matrix = t1_cabs_;
       }
     }

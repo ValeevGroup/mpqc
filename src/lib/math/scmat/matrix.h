@@ -133,6 +133,8 @@ class RefDiagSCMatrix;
 class RefSCMatrix: public Ref<SCMatrix> {
     // standard overrides
   public:
+    typedef double value_type;
+
     /** Initializes the matrix pointer to 0.  The reference must
         be initialized before it is used. */
     RefSCMatrix();

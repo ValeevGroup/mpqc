@@ -359,7 +359,7 @@ class SCElementFindExtremum: public SCElementOp {
   public:
     typedef SCElementFindExtremum<BinaryPredicate, IterationRanges> this_type;
 
-    SCElementFindExtremum():deferred_(0), r(1) {}
+    SCElementFindExtremum(double init_value = 0.0):deferred_(0), init_value_(init_value), r(1, SCElement(0,0,init_value)) {}
     SCElementFindExtremum(StateIn& s): SCElementOp(s)
     {
       {
@@ -367,6 +367,7 @@ class SCElementFindExtremum: public SCElementOp {
         r.resize(nchar / sizeof(SCElement));
         char* r_char;
         s.get(r_char);
+        s.get(init_value_);
         memcpy(&r[0], r_char, nchar);
         delete[] r_char;
       }
@@ -380,6 +381,7 @@ class SCElementFindExtremum: public SCElementOp {
       {
         int nchar = r.size() * sizeof(SCElement);
         s.put(nchar);
+        s.put(init_value_);
         s.put((char*)(&r[0]), nchar);
       }
       s.put(deferred_);
@@ -393,7 +395,13 @@ class SCElementFindExtremum: public SCElementOp {
           case SCMatrixIterationRanges::Columns: range = i.j(); break;
           case SCMatrixIterationRanges::Rows: range = i.i(); break;
         }
-        if (range >= r.size()) r.resize(range+1);
+        if (range >= r.size()) {
+          const size_t old_size = r.size();
+          r.resize(range+1);
+          for(size_t i=old_size; i<r.size(); ++i) {
+            r[i] = SCElement(0,0,init_value_);
+          }
+        }
         double value = i.get();
         if (Op(r[range].value, value)) {
           r[range] = SCElement(i.i(), i.j(), i.get());
@@ -419,6 +427,7 @@ class SCElementFindExtremum: public SCElementOp {
 
   private:
     int deferred_;
+    double init_value_;
     std::vector<SCElement> r;
     BinaryPredicate Op;
 

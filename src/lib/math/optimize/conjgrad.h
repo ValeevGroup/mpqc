@@ -72,9 +72,10 @@ namespace sc {
     // assuming that preconditioner is the approximate inverse of A in Ax - b =0
     typedef SCElementFindExtremum<std::greater<double>, SCMatrixIterationRanges::AllElements> MinOp;
     typedef SCElementFindExtremum<std::less<double>, SCMatrixIterationRanges::AllElements> MaxOp;
-    Ref<MinOp> findmin_op = new MinOp;
+    Ref<MinOp> findmin_op = new MinOp(1e10);
     Ref<MaxOp> findmax_op = new MaxOp;
     preconditioner.element_op(findmin_op);
+    preconditioner.element_op(findmax_op);
     const double precond_min = findmin_op->result().at(0).value;
     const double precond_max = findmax_op->result().at(0).value;
     const double cond_number = precond_max / precond_min;
@@ -171,6 +172,199 @@ namespace sc {
 
     return rnorm2;
   }
+
+  size_t size(const RefSCMatrix& m) {
+    return m.nrow() * m.ncol();
+  }
+
+  RefSCMatrix clone(const RefSCMatrix& m) {
+    return m.clone();
+  }
+
+  RefSCMatrix copy(const RefSCMatrix& m) {
+    return m.copy();
+  }
+
+  double min_value(const RefSCMatrix& m) {
+    typedef SCElementFindExtremum<std::greater<double>, SCMatrixIterationRanges::AllElements> MinOp;
+    Ref<MinOp> findmin_op = new MinOp(1e10);
+    m.element_op(findmin_op);
+    return findmin_op->result().at(0).value;
+  }
+
+  double max_value(const RefSCMatrix& m) {
+    typedef SCElementFindExtremum<std::less<double>, SCMatrixIterationRanges::AllElements> MaxOp;
+    Ref<MaxOp> findmax_op = new MaxOp;
+    m.element_op(findmax_op);
+    return findmax_op->result().at(0).value;
+  }
+
+  void vec_multiply(RefSCMatrix& m1, const RefSCMatrix& m2) {
+    Ref<SCElementOp2> multiply_op = new SCElementDestructiveProduct;
+    m1.element_op(multiply_op, m2);
+  }
+
+  double dot_product(const RefSCMatrix& m1, const RefSCMatrix& m2) {
+    Ref<SCElementScalarProduct> scalarprod_op = new SCElementScalarProduct;
+    scalarprod_op->init();
+    m1.element_op(scalarprod_op, m2);
+    return scalarprod_op->result();
+  }
+
+  void scale(RefSCMatrix& m, double scaling_factor) {
+    m.scale(scaling_factor);
+  }
+
+  void daxpy(RefSCMatrix& y, double a, const RefSCMatrix& x) {
+    Ref<SCElementDAXPY> daxpy_op = new SCElementDAXPY(a);
+    y.element_op(daxpy_op, x);
+  }
+
+  void assign(RefSCMatrix& m1, const RefSCMatrix& m2) {
+    m1.assign(m2);
+  }
+
+  double norm2(const RefSCMatrix& m) {
+    Ref<SCElementKNorm> norm2_op = new SCElementKNorm(2);
+    m.element_op(norm2_op);
+    return norm2_op->result();
+  }
+
+  /**
+   * Solves linear system a(x) = b using conjugate gradient solver
+   * where a is a linear function of x.
+   *
+   * @tparam D type of \c x and \c b, as well as the preconditioner; must implement the following standalone functions:
+   *   - size_t size(const D&)
+   *   - D clone(const D&)
+   *   - D copy(const D&)
+   *   - value_type min_value(const D&)
+   *   - value_type max_value(const D&)
+   *   - void vec_multiply(D& a, const D& b) (element-wise multiply of a by b)
+   *   - value_type dot_product(const D& a, const D& b)
+   *   - void scale(D&, value_type)
+   *   - void daxpy(D& y, value_type a, const D& x)
+   *   - void assign(D&, const D&)
+   *   - double norm2(const D&)
+   * @tparam F type that evaluates the LHS, will call F::operator()(x, result), hence must implement operator()(const D&, D&) const
+   *
+   * @param a object of type F
+   * @param b RHS
+   * @param x unknown
+   * @param preconditioner
+   * @param convergence_target
+   * @return the 2-norm of the residual, a(x) - b, divided by the number of elements in the residual.
+   */
+  template <typename D, typename F>
+  struct ConjugateGradientSolver {
+    typedef typename D::value_type value_type;
+
+    value_type operator()(F& a,
+               const D& b,
+               D& x,
+               const D& preconditioner,
+               value_type convergence_target = -1.0) {
+
+      auto n = size(x);
+      assert(n == size(preconditioner));
+
+      // solution vector
+      D XX_i;
+      // residual vector
+      D RR_i = clone(b);
+      // preconditioned residual vector
+      D ZZ_i;
+      // direction vector
+      D PP_i;
+      D APP_i = clone(b);
+
+      // approximate the condition number as the ratio of the min and max elements of the preconditioner
+      // assuming that preconditioner is the approximate inverse of A in Ax - b =0
+      const value_type precond_min = min_value(preconditioner);
+      const value_type precond_max = max_value(preconditioner);
+      const value_type cond_number = precond_max / precond_min;
+      // if convergence target is given, estimate of how tightly the system can be converged
+      if (convergence_target < 0.0) {
+        convergence_target = 1e-15 * cond_number;
+      }
+      else { // else warn if the given system is not sufficiently well conditioned
+        if (convergence_target < 1e-15 * cond_number)
+          std::cout << "WARNING: ConjugateGradient convergence target (" << convergence_target
+                    << ") may be too low for 64-bit precision" << std::endl;
+      }
+
+      bool converged = false;
+      const unsigned int max_niter = 500;
+      value_type rnorm2 = 0.0;
+      const auto rhs_size = size(b);
+
+      // starting guess: x_0 = D^-1 . b
+      Ref<SCElementOp2> multiply_op = new SCElementDestructiveProduct;
+      XX_i = copy(b);
+      vec_multiply(XX_i, preconditioner);
+
+      // r_0 = b - a(x)
+      a(XX_i, RR_i);  // RR_i = a(XX_i)
+      scale(RR_i, -1.0);
+      daxpy(RR_i, 1.0, b); // RR_i = b - a(XX_i)
+
+      // z_0 = D^-1 . r_0
+      ZZ_i = copy(RR_i);
+      vec_multiply(ZZ_i, preconditioner);
+
+      // p_0 = z_0
+      PP_i = copy(ZZ_i);
+
+      unsigned int iter = 0;
+      while (not converged) {
+
+        // alpha_i = (r_i . z_i) / (p_i . A . p_i)
+        value_type rz_norm2 = dot_product(RR_i, ZZ_i);
+        a(PP_i,APP_i);
+
+        const value_type pAp_i = dot_product(PP_i, APP_i);
+        const value_type alpha_i = rz_norm2 / pAp_i;
+
+        // x_i += alpha_i p_i
+        daxpy(XX_i, alpha_i, PP_i);
+
+        // r_i -= alpha_i Ap_i
+        daxpy(RR_i, -alpha_i, APP_i);
+
+        const value_type r_ip1_norm = norm2(RR_i) / rhs_size;
+        if (r_ip1_norm < convergence_target) {
+          converged = true;
+          rnorm2 = r_ip1_norm;
+        }
+
+        // z_i = D^-1 . r_i
+        ZZ_i = copy(RR_i);
+        vec_multiply(ZZ_i, preconditioner);
+
+        const value_type rz_ip1_norm2 = dot_product(ZZ_i, RR_i);
+
+        const value_type beta_i = rz_ip1_norm2 / rz_norm2;
+
+        // p_i = z_i+1 + beta_i p_i
+        // 1) scale p_i by beta_i
+        // 2) add z_i+1 (i.e. current contents of z_i)
+        scale(PP_i, beta_i);
+        daxpy(PP_i, 1.0, ZZ_i);
+
+        ++iter;
+        //std::cout << "iter=" << iter << " dnorm=" << r_ip1_norm << std::endl;
+
+        if (iter >= max_niter) {
+          assign(x, XX_i);
+          throw std::domain_error("ConjugateGradient: max # of iterations exceeded");
+        }
+      } // solver loop
+
+      assign(x, XX_i);
+
+      return rnorm2;
+    }
+  };
 
 } // end of namespace sc
 

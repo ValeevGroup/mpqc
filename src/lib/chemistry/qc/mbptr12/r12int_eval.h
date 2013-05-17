@@ -559,10 +559,12 @@ class R12IntEval : virtual public SavableState {
       virtuals differ if VBS != OBS).
     */
   double compute_emp2_obs_singles(bool obs_singles);
+#if 0
   /** Compute CABS singles contribution to the MP2 energy. This assumes occupied and virtual (OBS) orbitals to be
    *  canonical.
    *  */
   double compute_emp2_cabs_singles();
+#endif
   /** Compute CABS singles contribution to the MP2 energy without
    * assuming canonical occupied or virtual orbitals.
    * \sa R12IntEval::compute_emp2_cabs_singles

@@ -79,10 +79,10 @@ void R12IntEval::compute_BC_GenRefansatz2_spinfree() {
   Timer timer("B(app. C) general reference Ansatz2 intermediate");
 
   ExEnv::out0() << std::endl << std::endl << std::endl << indent
-          << "Entered B(app. C) general reference Ansatz2 spin-adapated intermediate evaluator" << std::endl << std::endl;
+          << "Entered B(app. C) general reference Ansatz2 spin-adapted intermediate evaluator" << std::endl << std::endl;
   ExEnv::out0() << incindent;
 
-  // this function is adapated from the above one (spin-orbital version) for AlphaBeta spincase; to maximize code reuse, we use references extensively
+  // this function is adapted from the above one (spin-orbital version) for AlphaBeta spincase; to maximize code reuse, we use references extensively
     const SpinCase2 spincase2 = AlphaBeta;
     const int s = AlphaBeta;
     const SpinCase1 spin1 = Alpha;

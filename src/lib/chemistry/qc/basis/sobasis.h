@@ -83,7 +83,7 @@ class SOTransform {
 
 /** A SOBasis object describes the transformation from an atomic orbital
     basis to a symmetry orbital basis. The cental concept here is "SO shell".
-    An SO shell is defined as a collection of symmetry-adapated basis functions that
+    An SO shell is defined as a collection of symmetry-adapted basis functions that
     arise from one set of AO shells related by symmetry (an AO shell orbit).
     Thus the number of SO shells = the number of symmetry-unique AO shells,
     and each SO shell contains basis functions of potentially several symmetries.

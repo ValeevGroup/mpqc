@@ -159,7 +159,7 @@
       Built TwoBodyMOIntsTransform_ixjy_df: name = <i(sym) i(sym)|G12'[0]|a' p(sym)>(b1 b2|k1 k2)
     Exited generic contraction (<i(sym) i(sym)|i(sym) i(sym)> = <i(sym) i(sym)|a' p(sym)_gamma(p(sym))> . <i(sym) i(sym)|a' p(sym)>^T)
 
-    Entered B(app. C) general reference Ansatz2 spin-adapated intermediate evaluator
+    Entered B(app. C) general reference Ansatz2 spin-adapted intermediate evaluator
 
       Entered Coulomb(DF) matrix evaluator
         Begin computation of Coulomb(DF) matrix

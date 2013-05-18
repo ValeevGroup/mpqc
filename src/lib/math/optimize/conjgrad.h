@@ -173,61 +173,65 @@ namespace sc {
     return rnorm2;
   }
 
-  size_t size(const RefSCMatrix& m) {
+  inline size_t size(const RefSCMatrix& m) {
     return m.nrow() * m.ncol();
   }
 
-  RefSCMatrix clone(const RefSCMatrix& m) {
+  inline RefSCMatrix clone(const RefSCMatrix& m) {
     return m.clone();
   }
 
-  RefSCMatrix copy(const RefSCMatrix& m) {
+  inline RefSCMatrix copy(const RefSCMatrix& m) {
     return m.copy();
   }
 
-  double min_value(const RefSCMatrix& m) {
-    typedef SCElementFindExtremum<std::greater<double>, SCMatrixIterationRanges::AllElements> MinOp;
-    Ref<MinOp> findmin_op = new MinOp(1e10);
+  inline double minabs_value(const RefSCMatrix& m) {
+    typedef SCElementFindExtremum<sc::abs_greater<double>, SCMatrixIterationRanges::AllElements> MinOp;
+    Ref<MinOp> findmin_op = new MinOp(std::numeric_limits<double>::max());
     m.element_op(findmin_op);
     return findmin_op->result().at(0).value;
   }
 
-  double max_value(const RefSCMatrix& m) {
-    typedef SCElementFindExtremum<std::less<double>, SCMatrixIterationRanges::AllElements> MaxOp;
+  inline double maxabs_value(const RefSCMatrix& m) {
+    typedef SCElementFindExtremum<sc::abs_less<double>, SCMatrixIterationRanges::AllElements> MaxOp;
     Ref<MaxOp> findmax_op = new MaxOp;
     m.element_op(findmax_op);
     return findmax_op->result().at(0).value;
   }
 
-  void vec_multiply(RefSCMatrix& m1, const RefSCMatrix& m2) {
+  inline void vec_multiply(RefSCMatrix& m1, const RefSCMatrix& m2) {
     Ref<SCElementOp2> multiply_op = new SCElementDestructiveProduct;
     m1.element_op(multiply_op, m2);
   }
 
-  double dot_product(const RefSCMatrix& m1, const RefSCMatrix& m2) {
+  inline double dot_product(const RefSCMatrix& m1, const RefSCMatrix& m2) {
     Ref<SCElementScalarProduct> scalarprod_op = new SCElementScalarProduct;
     scalarprod_op->init();
     m1.element_op(scalarprod_op, m2);
     return scalarprod_op->result();
   }
 
-  void scale(RefSCMatrix& m, double scaling_factor) {
+  inline void scale(RefSCMatrix& m, double scaling_factor) {
     m.scale(scaling_factor);
   }
 
-  void daxpy(RefSCMatrix& y, double a, const RefSCMatrix& x) {
+  inline void daxpy(RefSCMatrix& y, double a, const RefSCMatrix& x) {
     Ref<SCElementDAXPY> daxpy_op = new SCElementDAXPY(a);
     y.element_op(daxpy_op, x);
   }
 
-  void assign(RefSCMatrix& m1, const RefSCMatrix& m2) {
+  inline void assign(RefSCMatrix& m1, const RefSCMatrix& m2) {
     m1.assign(m2);
   }
 
-  double norm2(const RefSCMatrix& m) {
+  inline double norm2(const RefSCMatrix& m) {
     Ref<SCElementKNorm> norm2_op = new SCElementKNorm(2);
     m.element_op(norm2_op);
     return norm2_op->result();
+  }
+
+  inline void print(const RefSCMatrix& m, const char* label) {
+    m.print(label);
   }
 
   /**
@@ -238,8 +242,8 @@ namespace sc {
    *   - size_t size(const D&)
    *   - D clone(const D&)
    *   - D copy(const D&)
-   *   - value_type min_value(const D&)
-   *   - value_type max_value(const D&)
+   *   - value_type minabs_value(const D&)
+   *   - value_type maxabs_value(const D&)
    *   - void vec_multiply(D& a, const D& b) (element-wise multiply of a by b)
    *   - value_type dot_product(const D& a, const D& b)
    *   - void scale(D&, value_type)
@@ -257,7 +261,7 @@ namespace sc {
    */
   template <typename D, typename F>
   struct ConjugateGradientSolver {
-    typedef typename D::value_type value_type;
+    typedef typename D::element_type value_type;
 
     value_type operator()(F& a,
                const D& b,
@@ -280,9 +284,10 @@ namespace sc {
 
       // approximate the condition number as the ratio of the min and max elements of the preconditioner
       // assuming that preconditioner is the approximate inverse of A in Ax - b =0
-      const value_type precond_min = min_value(preconditioner);
-      const value_type precond_max = max_value(preconditioner);
+      const value_type precond_min = minabs_value(preconditioner);
+      const value_type precond_max = maxabs_value(preconditioner);
       const value_type cond_number = precond_max / precond_min;
+      //std::cout << "condition number = " << precond_max << " / " << precond_min << " = " << cond_number << std::endl;
       // if convergence target is given, estimate of how tightly the system can be converged
       if (convergence_target < 0.0) {
         convergence_target = 1e-15 * cond_number;

@@ -321,7 +321,12 @@ DistArray4_Node0File::store_pair_subblock(int i, int j, tbint_type oper_type,
 const double * DistArray4_Node0File::retrieve_pair_block(int i, int j,
                                                    tbint_type oper_type,
                                                    double* buf) const {
-  assert(this->active());  //make sure we are active
+  if (not this->active()) { //make sure we are active
+    std::ostringstream oss;
+    oss << "DistArray4_Node0File::retrieve_pair_block -- file " << this->filename_ << " is not open" << std::endl;
+    ExEnv::outn() << oss.str();
+    throw ProgrammingError(oss.str().c_str(), __FILE__, __LINE__);
+  }
   // Can read blocks?
   if (!is_avail(i, j))
     throw ProgrammingError("DistArray4_Node0File::retrieve_pair_block -- can only be called on node 0",

@@ -134,6 +134,7 @@ class RefSCMatrix: public Ref<SCMatrix> {
     // standard overrides
   public:
     typedef double value_type;
+    typedef double element_type;
 
     /** Initializes the matrix pointer to 0.  The reference must
         be initialized before it is used. */

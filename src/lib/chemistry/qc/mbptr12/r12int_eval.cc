@@ -2194,14 +2194,14 @@ R12IntEval::compute()
   if (evaluated_)
     return;
 
-  init_intermeds_();
-
 #ifdef HAVE_MPQC3_RUNTIME
   {
     ExEnv::out0() << indent << "Trying out MPQC3-based R12 code" << std::endl;
     V_diag_ta();
   }
 #endif
+
+  init_intermeds_();
 
   // different expressions hence codepaths depending on relationship between OBS, VBS, and RIBS
   // compare these basis sets here
@@ -2234,7 +2234,7 @@ R12IntEval::compute()
       }
       else {
         if (r12world()->spinadapted()) // to compute in spin-adapted fashion assume general reference
-                                       // would be more efficient to have specialized single-determinant spin-adapated version, but not there yet
+                                       // would be more efficient to have specialized single-determinant spin-adapted version, but not there yet
           contrib_to_VX_GenRefansatz2_spinfree_();
         else if (r12world()->sdref()) // single-determinant reference
           contrib_to_VXB_a_();

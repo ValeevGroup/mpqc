@@ -115,6 +115,52 @@ namespace sc {
 
   };
 
+  /// Tile of a DIM-order tensor that's "evaluated" when needed by calling ElementGenerator({i0, i1, i2, .... i_DIM-1})
+  template <typename T, unsigned int DIM, typename ElementGenerator>
+  class LazyTensor {
+  private:
+    TA::Array<T, DIM, LazyTensor>* owner_;
+    std::array<std::size_t, DIM> index_;
+    ElementGenerator* element_generator_;
+
+  public:
+    typedef T value_type;
+    typedef TA::Tensor<T> eval_type;
+    typedef typename eval_type::range_type range_type;
+
+    LazyTensor() { }
+
+    LazyTensor(TA::Array<T, DIM, LazyTensor>* owner,
+               const std::array<std::size_t, DIM>& index,
+               ElementGenerator* gen) :
+      owner_(owner), index_(index), element_generator_(gen)
+    { }
+
+    operator TA::Tensor<T> () const {
+
+      eval_type tile(owner_->trange().make_tile_range(index_));
+
+      auto* ptr = tile.data();
+      for(auto i = tile.range().begin();
+          i!=tile.range().end();
+          ++i, ++ptr) {
+
+        *ptr = (*element_generator_)(*i);
+
+      }
+
+      return tile;
+    }
+
+    /// \tparam Archive The serialization archive type
+    /// \param ar The serialization archive
+    template <typename Archive>
+    void serialize(Archive& ar) {
+      assert(false);
+    }
+
+  };
+
   namespace expressions {
     template <typename ArgType, bool Transpose> struct trace_tensor2_op;
     template <typename ArgType, bool Transpose> struct diag_tensor2_op;
@@ -127,10 +173,17 @@ namespace sc {
   class SingleReference_R12Intermediates {
     public:
 
+      /// standard 4-index tensor
       typedef TA::Array<T, 4 > TArray4; // Tile = Tensor<T>
+      /// 4-index tensor with lazy tiles
       typedef TA::Array<T, 4, DA4_Tile<T> > TArray4d; // Tile = DA4_Tile<T>
+      /// standard 2-index tensor
       typedef TA::Array<T, 2> TArray2; // Tile = Tensor<T>
+      /// 2-index tensor with lazy tiles
+      //typedef TA::Array<T, 2, LazyTensor<T, 2, ElementGenerator> > TArray2d; // Tile = LazyTensor<T, 2, ElementGenerator>
+      /// 2-index tensor of 2-index tensors
       typedef TA::Array<TA::Tensor<T>, 2> TArray22; // Tile = Tensor<Tensor<T>>
+      /// 2-index tensor of lazy 2-index tensors
       typedef TA::Array<TA::Tensor<T>, 2, DA4_Tile34<T> > TArray22d; // Tile = Tensor<Tensor<T>>
 
       /**

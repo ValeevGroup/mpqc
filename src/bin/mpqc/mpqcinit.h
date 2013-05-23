@@ -92,6 +92,7 @@ namespace sc {
   private:
 #ifdef HAVE_MADNESS
     madness::World* madworld_; // global MADNESS world
+    bool mpqc_owns_madworld_;  // true if I'm in charge of creating and destroying MADNESS world
 #endif
 
     /// Clean up at the end of a run. This is called automatically by

@@ -318,12 +318,15 @@ MPQCInit::finalize()
 {
   sc::finalize();
 #ifdef HAVE_MADNESS
-  if (madworld_) {
-    madworld_->gop.fence();
-    delete madworld_;
-    madworld_ = 0;
+  if (madness::initialized()) {
+    if (madworld_) {
+      madworld_->gop.fence();
+      if (mpqc_owns_madworld_)
+        delete madworld_;
+      madworld_ = 0;
+    }
+    madness::finalize();
   }
-  madness::finalize();
 #endif
 }
 
@@ -331,8 +334,15 @@ void
 MPQCInit::init_madness()
 {
 #ifdef HAVE_MADNESS
-  madness::initialize(argc_, argv_);
-  madworld_ = new madness::World(SafeMPI::COMM_WORLD);
+  if (not madness::initialized()) {
+    madness::initialize(argc_, argv_);
+    madworld_ = new madness::World(SafeMPI::COMM_WORLD);
+    mpqc_owns_madworld_ = true;
+  }
+  else {
+    madworld_ = madness::World::find_instance(SafeMPI::COMM_WORLD);
+    mpqc_owns_madworld_ = false;
+  }
 #endif
 }
 

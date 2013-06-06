@@ -34,7 +34,8 @@
 
 #include <stdlib.h>
 #include <string.h>
-#if defined(HAVE_DLFCN_H)
+
+#ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
 #endif // HAVE_DLFCN_H
 
@@ -512,7 +513,7 @@ ClassDesc::load_class(const char* classname)
       return 0;
     }
   
-#if HAVE_DLFCN_H
+#ifdef HAVE_DLFCN_H
   // make a copy of the library search list
   char* path = new char[strlen(classlib_search_path_) + 1];
   strcpy(path, classlib_search_path_);

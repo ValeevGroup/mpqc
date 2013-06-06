@@ -2,9 +2,6 @@
 #include <scconfig.h>
 #endif
 #include <iostream>
-#ifdef USING_NAMESPACE_STD
-using namespace std;
-#endif
 
 #line 3 "<stdout>"
 
@@ -690,7 +687,7 @@ YY_RULE_SETUP
                     }
                   yylval.str = (char *)malloc(strlenyytext+1);
                   if (!yylval.str) {
-                    ExEnv::errn() << "IPV2: {string} rule: malloc failed" << endl;
+                    ExEnv::errn() << "IPV2: {string} rule: malloc failed" << std::endl;
                     abort();
                     }
                   strcpy(yylval.str,yytext);
@@ -701,7 +698,7 @@ case 3:
 YY_RULE_SETUP
 { yylval.str = (char *)malloc(strlen(yytext));
                   if (!yylval.str) {
-                    ExEnv::errn() << "IPV2: {qstring} rule: malloc failed" << endl;
+                    ExEnv::errn() << "IPV2: {qstring} rule: malloc failed" << std::endl;
                     abort();
                     }
                   strcpy(yylval.str,&yytext[1]);

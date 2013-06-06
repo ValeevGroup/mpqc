@@ -1,0 +1,52 @@
+set(EXTERNAL_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external)
+set(EXTERNAL_BUILD_DIR ${PROJECT_BINARY_DIR}/external/build)
+
+include(ExternalProject)
+
+set(LIBINT_FOUND FALSE)
+
+# find_package(LIBINT)
+# if (LIBINT_FOUND)
+#   include_directories(${LIBINT_INCLUDE_DIRS})
+# endif()
+
+if (NOT LIBINT_FOUND)
+
+  # set(LIBINT_URL ${EXTERNAL_SOURCE_DIR}/libint.tar.gz)
+  # set(LIBINT_URL_HASH MD5=c59ac34c54dfff59aab3f3d19244071d)
+
+  set(LIBINT_URL http://downloads.sourceforge.net/project/libint/libint-for-mpqc/libint-2.0.3-stable.tgz)
+  set(LIBINT_URL_HASH MD5=6fe65ec0763a7c353dd66c7f6687edd4)
+
+  if (EXISTS ${EXTERNAL_SOURCE_DIR}/libint.tar.gz)
+    set(LIBINT_URL ${EXTERNAL_SOURCE_DIR}/libint.tar.gz)
+    set(LIBINT_URL_HASH "")
+    message(STATUS "Using LIBINT archive ${LIBINT_URL}")
+  endif()
+
+  ExternalProject_Add(
+    libint
+    PREFIX ${EXTERNAL_BUILD_DIR}/libint
+    URL ${LIBINT_URL}
+    URL_HASH ${LIBINT_URL_HASH}
+    BUILD_IN_SOURCE 1
+    CONFIGURE_COMMAND /bin/bash ./configure
+      --prefix=${EXTERNAL_BUILD_DIR}/libint
+      CC=${CMAKE_C_COMPILER}
+      "CFLAGS=\"${CMAKE_C_FLAGS}"
+      CXX=${CMAKE_CXX_COMPILER}
+      "CXXFLAGS=${CMAKE_CXX_FLAGS}"
+    BUILD_COMMAND make SHELL=/bin/bash
+    INSTALL_COMMAND make install SHELL=/bin/bash
+  )
+
+  add_dependencies(External libint)
+  include_directories(${EXTERNAL_BUILD_DIR}/libint/include)
+  set(LIBRARIES ${EXTERNAL_BUILD_DIR}/libint/lib/libint2.a;${LIBRARIES})
+  set(HAVE_LIBINT2 TRUE)
+
+endif()
+
+if (LIBINT_LIBRARIES)
+  set(LIBRARIES "${LIBINT_LIBRARIES};${LIBRARIES}")
+endif()

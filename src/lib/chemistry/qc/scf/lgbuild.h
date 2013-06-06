@@ -48,7 +48,7 @@ class LocalGBuild : public GBuild<T> {
     GaussianBasisSet *gbs_;
     PetiteList *rpl_;
 
-    signed char * restrictxx pmax;
+    signed char * RESTRICT pmax;
     int threadno_;
     int nthread_;
     double accuracy_;

@@ -246,8 +246,10 @@ try_main(int argc, char *argv[])
   }
 
   // set the working dir
-  if (strcmp(options.retrieve("W"),"."))
-    chdir(options.retrieve("W"));
+  if (strcmp(options.retrieve("W"),".")) {
+      int err = chdir(options.retrieve("W"));
+      assert(!err);
+  }
 
   // initialize keyval input
   const char *object_input = options.retrieve("f");

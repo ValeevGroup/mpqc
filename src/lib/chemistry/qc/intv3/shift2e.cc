@@ -303,7 +303,7 @@ Int2eV3::shiftam_12(double *I0100, double *I1000, double *I0000,
   double AmB2 = AmB[2];
 
   /* Loop over the target integrals. */
-  double *restrictxx I0100i=I0100;
+  double *RESTRICT I0100i=I0100;
   int cartindex1 = 0;
   for (i1=0; i1<=am1; i1++) {
     for (k1=0; k1<=am1-i1; k1++) {
@@ -373,7 +373,7 @@ Int2eV3::shiftam_12eAB(double *I0100, double *I1000, double *I0000,
   int size_xcontrib = (size2-(am2+1))*size34;
 
   /* Loop over the target integrals. */
-  double *restrictxx I0100i=I0100;
+  double *RESTRICT I0100i=I0100;
   int cartindex1 = 0;
   for (i1=0; i1<=am1; i1++) {
     for (k1=0; k1<=am1-i1; k1++) {
@@ -410,7 +410,7 @@ Int2eV3::shiftam_12eAB(double *I0100, double *I1000, double *I0000,
   }
 
 void
-Int2eV3::shiftam_34(double *restrictxx I0001, double *I0010, double *I0000,
+Int2eV3::shiftam_34(double *RESTRICT I0001, double *I0010, double *I0000,
                     int am1, int am2, int am3, int am4)
 {
   int i1,k1,cartindex1;

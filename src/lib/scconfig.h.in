@@ -1,32 +1,22 @@
-
-#ifndef _CONFIG_H
-#define _CONFIG_H
-
-#ifndef __cplusplus
-
-/* Define to empty if the keyword does not work.  */
-#undef const
-
-#endif /* __cplusplus */
-
-#ifdef __cplusplus
+#ifndef SCCONFIG_H
+#define SCCONFIG_H
 
 /* Define if the C++ restrict keyword extension exists.  */
-#undef CXX_RESTRICT
+#cmakedefine HAVE_CXX_RESTRICT
 
 /* Define if the C++ __restrict__ keyword extension exists.  */
-#undef CXX___RESTRICT__
+#cmakedefine HAVE_CXX___RESTRICT__
 
-#if defined(CXX_RESTRICT)
-#define restrictxx restrict
-#elif defined(CXX___RESTRICT__)
-#define restrictxx __restrict__
+#if defined(HAVE_CXX_RESTRICT)
+#define RESTRICT restrict
+#elif defined(HAVE_CXX___RESTRICT__)
+#define RESTRICT __restrict__
 #else
-#define restrictxx
+#define RESTRICT
 #endif
 
 /* Define if the deprecated attribute exists in C++.  */
-#undef CXX_DEPRECATED
+#cmakedefine CXX_DEPRECATED
 
 #ifdef CXX_DEPRECATED
 #define DEPRECATED __attribute__((deprecated))
@@ -34,420 +24,396 @@
 #define DEPRECATED
 #endif
 
-#endif
-
 /* Define if you want to optimize the reference counting code.  */
-#undef REF_OPTIMIZE
+#cmakedefine REF_OPTIMIZE
 
 /* Define if you have <stdint.h>.  */
-#undef HAVE_STDINT_H
+#cmakedefine HAVE_STDINT_H
 
 /* Define if you have <sys/stat.h>.  */
-#undef HAVE_SYS_STAT_H
+#cmakedefine HAVE_SYS_STAT_H
 
 /* Define if you have <sys/types.h>.  */
-#undef HAVE_SYS_TYPES_H
+#cmakedefine HAVE_SYS_TYPES_H
 
 /* Define if you have <pwd.h>.  */
-#undef HAVE_PWD_H
+#cmakedefine HAVE_PWD_H
 
 /* Define if you have <termios.h>.  */
-#undef HAVE_TERMIOS_H
+#cmakedefine HAVE_TERMIOS_H
 
 /* Define if you have <sys/times.h>.  */
-#undef HAVE_SYS_TIMES_H
+#cmakedefine HAVE_SYS_TIMES_H @HAVE_SYS_TIMES_H@
 
 /* Define if you have <time.h>.  */
-#undef HAVE_TIME_H
+#cmakedefine HAVE_TIME_H
 
 /* Define if you have <machine/fpu.h>.  */
-#undef HAVE_MACHINE_FPU_H
+#cmakedefine HAVE_MACHINE_FPU_H
 
 /* Define if you have <asm/fpu.h>.  */
-#undef HAVE_ASM_FPU_H
+#cmakedefine HAVE_ASM_FPU_H
 
 /* Define if you have <sys/resource.h>.  */
-#undef HAVE_SYS_RESOURCE_H
+#cmakedefine HAVE_SYS_RESOURCE_H @HAVE_SYS_RESOURCE_H@
 
 /* Define if you have the vprintf function.  */
-#undef HAVE_VPRINTF
+#cmakedefine HAVE_VPRINTF
 
 /* Define if you have the ios::fmtflags.  */
-#undef HAVE_IOS_FMTFLAGS
+#cmakedefine HAVE_IOS_FMTFLAGS
 
 /* Define if you have the long long type extension.  */
 #ifndef HAVE_LONG_LONG
-#undef HAVE_LONG_LONG
+#cmakedefine HAVE_LONG_LONG
 #endif
 
 /* Define if you have streambuf::pubseekoff (you should).  */
-#undef HAVE_PUBSEEKOFF
+#cmakedefine HAVE_PUBSEEKOFF
 
 /* Define if you have streambuf::sgetn (you should).  */
-#undef HAVE_SGETN
+#cmakedefine HAVE_SGETN
 
 /* Define if you have a public streambuf::seekoff.  */
-#undef HAVE_SEEKOFF
+#cmakedefine HAVE_SEEKOFF
 
 /* Define as the return type of signal handlers (int or void).  */
-#undef RETSIGTYPE
+#cmakedefine RETSIGTYPE
+#ifndef RETSIGTYPE
+#define RETSIGTYPE void
+#endif
 
 /* Define if signal handlers have an ellipsis argument in C++.  */
-#undef SIGHASELLIP
-
-/* Define to `unsigned' if <sys/types.h> doesn't define.  */
-#undef size_t
+#cmakedefine SIGHASELLIP
 
 /* Define if you have the ANSI C header files.  */
-#undef STDC_HEADERS
+#cmakedefine STDC_HEADERS
 
 /* Define if your <sys/time.h> declares struct tm.  */
-#undef TM_IN_SYS_TIME
+#cmakedefine TM_IN_SYS_TIME
 
 /* Define if you have the strerror function.  */
-#undef HAVE_STRERROR
+#cmakedefine HAVE_STRERROR
 
 /* Define if you have the setenv function.  */
-#undef HAVE_SETENV
+#cmakedefine HAVE_SETENV
 
 /* Define if isnan is available from C++.  */
 #ifndef HAVE_ISNAN
-#undef HAVE_ISNAN
+#cmakedefine HAVE_ISNAN
 #endif
 
 /* Define if you have the sigfillset function (and company).  */
-#undef HAVE_SIGFILLSET
+#cmakedefine HAVE_SIGFILLSET
 
 /* Define if you have the signal function.  */
-#undef HAVE_SIGNAL
+#cmakedefine HAVE_SIGNAL
 
 /* Define if you have the sigaction function.  */
-#undef HAVE_SIGACTION
+#cmakedefine HAVE_SIGACTION
 
 /* Define if you have the system function.  */
-#undef HAVE_SYSTEM
+#cmakedefine HAVE_SYSTEM
 
 /* Define if you have the posix_spawn function.  */
-#undef HAVE_POSIX_SPAWN
+#cmakedefine HAVE_POSIX_SPAWN
 
 /* Define if you have the drand48 function.  */
-#undef HAVE_DRAND48
+#cmakedefine HAVE_DRAND48
 
 /* Define if you have the fchdir function.  */
-#undef HAVE_FCHDIR
+#cmakedefine HAVE_FCHDIR
 
 /* Define if you have the getpwuid function.  */
-#undef HAVE_GETPWUID
+#cmakedefine HAVE_GETPWUID
 
 /* Define if you have the geteuid function.  */
-#undef HAVE_GETEUID
+#cmakedefine HAVE_GETEUID
 
 /* Define if you have the gethostname function.  */
-#undef HAVE_GETHOSTNAME
+#cmakedefine HAVE_GETHOSTNAME
 
 /* Define if you have the time function.  */
-#undef HAVE_TIME
+#cmakedefine HAVE_TIME
 
 /* Define if you have the ctime function.  */
-#undef HAVE_CTIME
+#cmakedefine HAVE_CTIME
 
 /* Define if you have the C99 <fenv.h>.  */
-#undef HAVE_FENV_H
+#cmakedefine HAVE_FENV_H
 
 /* Define if you have the glibc feenableexcept extension.  */
-#undef HAVE_FEENABLEEXCEPT
+#cmakedefine HAVE_FEENABLEEXCEPT
 
 /* Define if you have the glibc fedisableexcept extension.  */
-#undef HAVE_FEDISABLEEXCEPT
+#cmakedefine HAVE_FEDISABLEEXCEPT
 
 /* Define if you have the setrlimit function.  */
-#undef HAVE_SETRLIMIT
+#cmakedefine HAVE_SETRLIMIT
 
 /* Define if you have functioning SYSV IPC.  */
-#undef HAVE_SYSV_IPC
+#cmakedefine HAVE_SYSV_IPC
 
 /* Define if semctl must have a semun as the fourth argument.  */
-#undef SEMCTL_REQUIRES_SEMUN
+#cmakedefine SEMCTL_REQUIRES_SEMUN
 
 /* Define to the type used for shared memory.  */
-/* #undef SHMTYPE */
+/* #cmakedefine SHMTYPE */
 
 #ifndef SHMTYPE
 #define SHMTYPE char*
 #endif
 
 /* Define if you have the <fcntl.h> header file.  */
-#undef HAVE_FCNTL_H
+#cmakedefine HAVE_FCNTL_H
 
 /* Define if you have the <limits.h> header file.  */
-#undef HAVE_LIMITS_H
+#cmakedefine HAVE_LIMITS_H
 
 /* Define if you have the <sys/ioctl.h> header file.  */
-#undef HAVE_SYS_IOCTL_H
+#cmakedefine HAVE_SYS_IOCTL_H
 
 /* Define if you have the <sys/time.h> header file.  */
-#undef HAVE_SYS_TIME_H
+#cmakedefine HAVE_SYS_TIME_H @HAVE_SYS_TIME_H@
 
 /* Define if you have the <unistd.h> header file.  */
-#undef HAVE_UNISTD_H
+#cmakedefine HAVE_UNISTD_H @HAVE_UNISTD_H@
 
 /* Define if you have the <pthread.h> header file and the pthread library.  */
-#undef HAVE_PTHREAD
+#cmakedefine HAVE_PTHREAD
 
 /* Define if you can have the pthread_attr_setstacksize function.  */
-#undef HAVE_PTHREAD_ATTR_SETSTACKSIZE
+#cmakedefine HAVE_PTHREAD_ATTR_SETSTACKSIZE
 
 /* Define if you can have the pthread_attr_getstacksize function.  */
-#undef HAVE_PTHREAD_ATTR_GETSTACKSIZE
+#cmakedefine HAVE_PTHREAD_ATTR_GETSTACKSIZE
 
 /* Define if you can have the pthread_attr_getscope function.  */
-#undef HAVE_PTHREAD_ATTR_GETSCOPE
+#cmakedefine HAVE_PTHREAD_ATTR_GETSCOPE
 
 /* Define if you can have the pthread_attr_setscope function.  */
-#undef HAVE_PTHREAD_ATTR_SETSCOPE
+#cmakedefine HAVE_PTHREAD_ATTR_SETSCOPE
 
 /* Define if you can have the pthread_attr_getinheritsched function.  */
-#undef HAVE_PTHREAD_ATTR_GETINHERITSCHED
+#cmakedefine HAVE_PTHREAD_ATTR_GETINHERITSCHED
 
 /* Define if you can have the pthread_attr_setinheritsched function.  */
-#undef HAVE_PTHREAD_ATTR_SETINHERITSCHED
+#cmakedefine HAVE_PTHREAD_ATTR_SETINHERITSCHED
 
 /* Define if you can have the pthread_attr_setschedpolicy function.  */
-#undef HAVE_PTHREAD_ATTR_SETSCHEDPOLICY
+#cmakedefine HAVE_PTHREAD_ATTR_SETSCHEDPOLICY
 
 /* Define if you can have the pthread_attr_getschedpolicy function.  */
-#undef HAVE_PTHREAD_ATTR_GETSCHEDPOLICY
+#cmakedefine HAVE_PTHREAD_ATTR_GETSCHEDPOLICY
 
 /* Define if you can have the pthread_attr_setschedparam function.  */
-#undef HAVE_PTHREAD_ATTR_SETSCHEDPARAM
+#cmakedefine HAVE_PTHREAD_ATTR_SETSCHEDPARAM
 
 /* Define if you can have the pthread_attr_getschedparam function.  */
-#undef HAVE_PTHREAD_ATTR_GETSCHEDPARAM
+#cmakedefine HAVE_PTHREAD_ATTR_GETSCHEDPARAM
 
 /* Define if you can have the sched_get_priority_max function.  */
-#undef HAVE_SCHED_GET_PRIORITY_MAX
+#cmakedefine HAVE_SCHED_GET_PRIORITY_MAX
 
 /* Define if you can have the sched_get_priority_min function.  */
-#undef HAVE_SCHED_GET_PRIORITY_MIN
+#cmakedefine HAVE_SCHED_GET_PRIORITY_MIN
 
 /* Define if you have the NIAMA library.  */
-#undef HAVE_NIAMA
+#cmakedefine HAVE_NIAMA
 
 /* Define if you have the <mpi.h> header file and library.  */
-#undef HAVE_MPI
+#cmakedefine HAVE_MPI
 
 /* Define if you have the MPI_Init_thread routine.  */
-#undef HAVE_MPI_INIT_THREAD
+#cmakedefine HAVE_MPI_INIT_THREAD
 
 /* Set to the MPI macro defined the desired threading support level.  */
-#undef SC_MPI_THREAD_LEVEL
+#cmakedefine SC_MPI_THREAD_LEVEL
 
 /* Define if you have the <armci.h> header file and library.  */
-#undef HAVE_ARMCI
-
-/* Define if you have the MADNESS framework.  */
-#undef HAVE_MADNESS
-
-/* Define if you have the Eigen library.  */
-#undef HAVE_EIGEN
-
-/* Define if you have the TiledArray library.  */
-#undef HAVE_TILEDARRAY
+#cmakedefine HAVE_ARMCI
 
 /* Define if you have the libint header file and library.  */
-#undef HAVE_LIBINT
+#cmakedefine HAVE_LIBINT
 
 /* Define if you have the libr12 header file and library.  */
-#undef HAVE_LIBR12
+#cmakedefine HAVE_LIBR12
 
 /* Define if you have the libderiv header file and library.  */
-#undef HAVE_LIBDERIV
+#cmakedefine HAVE_LIBDERIV
 
 /* Define if IntegralCints can be compiled.  */
-#undef HAVE_INTEGRALCINTS
+#cmakedefine HAVE_INTEGRALCINTS
 
 /* Define if you have the libint2 header file and library.  */
-#undef HAVE_LIBINT2
+#cmakedefine HAVE_LIBINT2
 
 /* Define if IntegralLibint2 can be compiled.  */
-#undef HAVE_INTEGRALLIBINT2
+#cmakedefine HAVE_INTEGRALLIBINT2
 
 /* Define what is the normalization convention of IntegralLibint2, 1(cca) or 2(exact).  */
-#undef INTEGRALLIBINT2_NORMCONV
+#cmakedefine INTEGRALLIBINT2_NORMCONV
 #define INTEGRALLIBINT2_NORMCONV_CCA 1
 #define INTEGRALLIBINT2_NORMCONV_EXACT 2
 
 /* Define if you have the libpsio header file and library.  */
-#undef HAVE_LIBPSIO
+#cmakedefine HAVE_LIBPSIO
 
 /* Define if you have the libchkpt header file and library.  */
-#undef HAVE_LIBCHKPT
+#cmakedefine HAVE_LIBCHKPT
 
 /* Define if Psi-MPQC interface can be compiled.  */
-#undef HAVE_PSIMPQCIFACE
+#cmakedefine HAVE_PSIMPQCIFACE
 
 /* The location of Psi root directory. */
-#undef PSIROOTDIR
+#cmakedefine PSIROOTDIR
 
 /* Define if your MPI implementation has MPI-IO functions */
-#undef HAVE_MPIIO
+#cmakedefine HAVE_MPIIO
 
 /* Define if you have the <perf.h> header file and library.  */
-#undef HAVE_PERF
+#cmakedefine HAVE_PERF
 
 /* Define if you have <libunwind.h> and unw_init_local.  */
-#undef HAVE_LIBUNWIND
+#cmakedefine HAVE_LIBUNWIND
 
 /* Define if you have <execinfo.h> backtrace and backtrace_symbol.  */
-#undef HAVE_BACKTRACE
+#cmakedefine HAVE_BACKTRACE
 
 /* Define if you have abi::__cxa_demangle.  */
-#undef HAVE_CXA_DEMANGLE
+#cmakedefine HAVE_CXA_DEMANGLE
 
 /* Define if MPIMessageGrp should be used by default. */
-#undef DEFAULT_MPI
+#cmakedefine DEFAULT_MPI
 
 /* Define if MTMPIMemoryGrp should be used by default. */
-#undef DEFAULT_MTMPI
+#cmakedefine DEFAULT_MTMPI
 
 /* Define if ARMCIMemoryGrp should be used by default. */
-#undef DEFAULT_ARMCI
+#cmakedefine DEFAULT_ARMCI
 
 /* Define if is MPI is always used (needed if MPI_Init is used to
    initialize argument list). */
-#undef ALWAYS_USE_MPI
+#cmakedefine ALWAYS_USE_MPI
 
 /* Define if you have the m library (-lm).  */
-#undef HAVE_LIBM
+#cmakedefine HAVE_LIBM
 
 /* Define if you have the sun library (-lsun).  */
-#undef HAVE_LIBSUN
+#cmakedefine HAVE_LIBSUN
 
 /* Define if you have the fl library (-lfl).  */
-#undef HAVE_LIBFL
+#cmakedefine HAVE_LIBFL
 
 /* Define if you have the dl library (-ldl).  */
-#undef HAVE_LIBDL
+#cmakedefine HAVE_LIBDL
 
 /* Define if you have the <dlfcn.h> header file.  */
-#undef HAVE_DLFCN_H
+#cmakedefine HAVE_DLFCN_H @HAVE_DLFCN_H@
 
 /* Determines the width of the integer use by BLAS F77 interface */
-#undef BLAS_F77_INTEGER_WIDTH
+#cmakedefine BLAS_F77_INTEGER_WIDTH @BLAS_F77_INTEGER_WIDTH@
 
 /* Define if you have the Scalable BLAS package and everything needed for it.
  */
-#undef HAVE_SCALABLE_BLAS
+#cmakedefine HAVE_SCALABLE_BLAS
 
 /* Define if machine byte order is big endian. */
-#undef WORDS_BIGENDIAN
+#cmakedefine WORDS_BIGENDIAN
+
+#cmakedefine HAVE_PYTHON
 
 /* The host architecture. */
-#undef HOST_ARCH
+#cmakedefine HOST_ARCH
 
 /* The target architecture. */
-#undef TARGET_ARCH
+#cmakedefine TARGET_ARCH "@TARGET_ARCH@"
 
 /* The version number. */
-#undef SC_VERSION
+#define SC_VERSION "@SC_VERSION@"
 
 /* The major version number. */
-#undef SC_MAJOR_VERSION
+#define SC_MAJOR_VERSION @SC_MAJOR_VERSION@
 
 /* The minor version number. */
-#undef SC_MINOR_VERSION
+#define SC_MINOR_VERSION @SC_MINOR_VERSION@
 
 /* The micro version number. */
-#undef SC_MICRO_VERSION
+#define SC_MICRO_VERSION @SC_MICRO_VERSION@
 
 /* The buildid. */
-#undef SC_BUILDID
+#define SC_BUILDID "@SC_BUILDID@"
 
 /* The library directory in the src distribution. */
-#undef SRC_SCLIBDIR
+#define SRC_SCLIBDIR "@SRC_SCLIBDIR@"
 
 /* The installed location of the library directory. */
-#undef INSTALLED_SCLIBDIR
+#define INSTALLED_SCLIBDIR "@INSTALLED_SCLIBDIR@"
 
 /* The location of architecture independent files. */
-#undef SCDATADIR
+#define SCDATADIR "@SCDATADIR@"
 
 /* The default memory allocation, in bytes. */
-#undef DEFAULT_SC_MEMORY
+#cmakedefine DEFAULT_SC_MEMORY @DEFAULT_SC_MEMORY@
+#ifndef DEFAULT_SC_MEMORY
+#define DEFAULT_SC_MEMORY 536870912
+#endif
 
 /* Define if template should be explicitly instantiated.  */
-#undef EXPLICIT_TEMPLATE_INSTANTIATION
-
-/* Define if the C++ keywork "typename" exists.  */
-#undef HAVE_TYPENAME
-
-#ifdef __cplusplus
-#  ifndef HAVE_TYPENAME
-#    define typename
-#  endif
-#endif
-
-/* Set to true if "using namespace std" needed to access ostream, etc.  */
-#undef USING_NAMESPACE_STD
-
-// see lib/autoconf/ac_check_cpp11.m4
+#cmakedefine EXPLICIT_TEMPLATE_INSTANTIATION
 
 /* define if array has fill member function. */
-#undef SC_ARRAY_HAS_FILL
+#cmakedefine SC_ARRAY_HAS_FILL
 
 /* define if std::array is available. */
-#undef SC_HAS_STD_ARRAY
+#cmakedefine SC_HAS_STD_ARRAY
 
 /* define if std::make_shared and std::allocate_shared are available. */
-#undef SC_HAS_STD_MAKE_SHARED
+#cmakedefine SC_HAS_STD_MAKE_SHARED
 
 /* define if std::shared_ptr is available. */
-#undef SC_HAS_STD_SHARED_PTR
+#cmakedefine SC_HAS_STD_SHARED_PTR
 
 /* define if std::tr1::array is available. */
-#undef SC_HAS_STD_TR1_ARRAY
+#cmakedefine SC_HAS_STD_TR1_ARRAY
 
 /* define if std::tr1::shared_ptr is available. */
-#undef SC_HAS_STD_TR1_SHARED_PTR
+#cmakedefine SC_HAS_STD_TR1_SHARED_PTR
 
 /* define if std::tr1 type traits are available. */
-#undef SC_HAS_STD_TR1_TYPE_TRAITS
+#cmakedefine SC_HAS_STD_TR1_TYPE_TRAITS
 
 /* define if std type traits are available. */
-#undef SC_HAS_STD_TYPE_TRAITS
+#cmakedefine SC_HAS_STD_TYPE_TRAITS
 
 /* define if SC is using <array>. */
-#undef SC_USE_ARRAY
+#cmakedefine SC_USE_ARRAY
 
 /* define if SC is using <boost/tr1/array.hpp>. */
-#undef SC_USE_BOOST_TR1_ARRAY_HPP
+#cmakedefine SC_USE_BOOST_TR1_ARRAY_HPP
 
 /* define if SC is using <boost/tr1/memory.hpp>. */
-#undef SC_USE_BOOST_TR1_MEMORY_HPP
+#cmakedefine SC_USE_BOOST_TR1_MEMORY_HPP
 
 /* define if SC is using <boost/tr1/type_traits.hpp>. */
-#undef SC_USE_BOOST_TR1_TYPE_TRAITS_HPP
+#cmakedefine SC_USE_BOOST_TR1_TYPE_TRAITS_HPP
 
 /* define if SC is using <memory>. */
-#undef SC_USE_MEMORY
+#cmakedefine SC_USE_MEMORY
 
 /* define if SC is using <tr1/array>. */
-#undef SC_USE_TR1_ARRAY
+#cmakedefine SC_USE_TR1_ARRAY
 
 /* define if SC is using <tr1/memory>. */
-#undef SC_USE_TR1_MEMORY
+#cmakedefine SC_USE_TR1_MEMORY
 
 /* define if SC is using <tr1/type_traits>. */
-#undef SC_USE_TR1_TYPE_TRAITS
+#cmakedefine SC_USE_TR1_TYPE_TRAITS
 
 /* define if SC is using <type_traits>. */
-#undef SC_USE_TYPE_TRAITS
+#cmakedefine SC_USE_TYPE_TRAITS
 
-#if defined(HAVE_TILEDARRAY) && defined(HAVE_LIBINT2)
-#  define HAVE_MPQC3_RUNTIME
-#endif
-
-#endif /* _CONFIG_H */
+#endif /* SCCONFIG_H */
 
 /* 
  * Local Variables:

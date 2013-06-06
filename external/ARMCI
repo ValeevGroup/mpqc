@@ -1,0 +1,50 @@
+set(EXTERNAL_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external)
+set(EXTERNAL_BUILD_DIR ${PROJECT_BINARY_DIR}/external/build)
+
+include(ExternalProject)
+
+set(ARMCI_FOUND FALSE)
+
+# find_package(ARMCI)
+# if (ARMCI_FOUND)
+#   include_directories(${ARMCI_INCLUDE_DIRS})
+# endif()
+
+if (NOT ARMCI_FOUND)
+
+  set(ARMCI_URL ${EXTERNAL_SOURCE_DIR}/armci.tar.gz)
+  set(ARMCI_URL_HASH MD5=c59ac34c54dfff59aab3f3d19244071d)
+
+  # set(ARMCI_URL http://www.hdfgroup.org/ftp/ARMCI/current/src/armci-1.8.10-patch1.tar.gz)
+  # set(ARMCI_URL_HASH MD5=2147a289fb33c887464ad2b6c5a8ae4c)
+
+  if (EXISTS ${EXTERNAL_SOURCE_DIR}/armci.tar.gz)
+    set(ARMCI_URL ${EXTERNAL_SOURCE_DIR}/armci.tar.gz)
+    set(ARMCI_URL_HASH "")
+    message(STATUS "Using ARMCI archive ${ARMCI_URL}")
+  endif()
+
+  ExternalProject_Add(
+    armci
+    PREFIX ${EXTERNAL_BUILD_DIR}/armci
+    URL ${ARMCI_URL}
+    URL_HASH ${ARMCI_URL_HASH}
+    BUILD_IN_SOURCE 1
+    CONFIGURE_COMMAND ./configure
+      --prefix=${EXTERNAL_BUILD_DIR}/armci
+      CPPFLAGS=-I${MPI_C_INCLUDE_PATH}
+      CC=${CMAKE_C_COMPILER}
+      CFLAGS=-g
+    BUILD_COMMAND make
+    INSTALL_COMMAND make install
+  )
+
+  add_dependencies(External armci)
+  include_directories(${EXTERNAL_BUILD_DIR}/armci/include)
+  set(LIBRARIES ${EXTERNAL_BUILD_DIR}/armci/lib/libarmci.a;${LIBRARIES})
+
+endif()
+
+if (ARMCI_LIBRARIES)
+  set(LIBRARIES "${ARMCI_LIBRARIES};${LIBRARIES}")
+endif()

@@ -254,8 +254,8 @@ CONFIGURE_FILE(
 #   ${PROJECT_BINARY_DIR}/lib/LocalMakefile
 # )
 
-
 add_subdirectory(src)
+add_subdirectory(doc)
 
 # checking/testing
 add_subdirectory(test)

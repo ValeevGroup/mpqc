@@ -18,6 +18,10 @@ set(subdirectories
   wfn
   )
 
+if (HAVE_LIBINT2)
+  list(APPEND subdirectories libint2)
+endif()
+
 foreach(s ${subdirectories})
   add_subdirectory(${s})
 #  message("${s} $<TARGET_OBJECTS:${s}>")

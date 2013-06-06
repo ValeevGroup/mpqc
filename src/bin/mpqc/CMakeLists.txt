@@ -19,6 +19,7 @@ target_link_libraries(
   util
 )
 
+target_link_libraries(${executable} ${LIBINT2_LIBRARY})
 target_link_libraries(${executable} ${Boost_LIBRARIES})
 target_link_libraries(${executable} ${LAPACK_LIBRARIES})
 target_link_libraries(${executable} ${BLAS_LIBRARIES})

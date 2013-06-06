@@ -1,16 +1,23 @@
-set(EXTERNAL_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external)
-set(EXTERNAL_BUILD_DIR ${PROJECT_BINARY_DIR}/external/build)
-
-include(ExternalProject)
+option(REQUIRE_LIBINT2 "Require Libint2" OFF)
 
 set(LIBINT_FOUND FALSE)
+find_library(LIBINT2_LIBRARY int2 libint2)
+if (LIBINT2_LIBRARY)
+  message(STATUS "Found Libint2: ${LIBINT2_LIBRARY}")
+  find_path(LIBINT2_INCLUDE_DIR libint2/libint2.h)
+  set(LIBINT_FOUND TRUE)
+  set(HAVE_LIBINT2 TRUE)
+  include_directories(${LIBINT2_INCLUDE_DIR})
+  include_directories(${LIBINT2_INCLUDE_DIR}/libint2)
+endif()
 
-# find_package(LIBINT)
-# if (LIBINT_FOUND)
-#   include_directories(${LIBINT_INCLUDE_DIRS})
-# endif()
 
-if (NOT LIBINT_FOUND)
+if (NOT LIBINT_FOUND AND REQUIRE_LIBINT2)
+
+  set(EXTERNAL_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external)
+  set(EXTERNAL_BUILD_DIR ${PROJECT_BINARY_DIR}/external/build)
+
+  include(ExternalProject)
 
   # set(LIBINT_URL ${EXTERNAL_SOURCE_DIR}/libint.tar.gz)
   # set(LIBINT_URL_HASH MD5=c59ac34c54dfff59aab3f3d19244071d)
@@ -42,6 +49,7 @@ if (NOT LIBINT_FOUND)
 
   add_dependencies(External libint)
   include_directories(${EXTERNAL_BUILD_DIR}/libint/include)
+  include_directories(${EXTERNAL_BUILD_DIR}/libint/include/libint2)
   set(LIBRARIES ${EXTERNAL_BUILD_DIR}/libint/lib/libint2.a;${LIBRARIES})
   set(HAVE_LIBINT2 TRUE)
 

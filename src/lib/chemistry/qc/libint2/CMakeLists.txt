@@ -6,14 +6,14 @@ add_library(libint2 OBJECT
   comp_g12.cc
   comp_g12dkh.cc
   comp_g12nc.cc
-  comp_grt.cc
+  #comp_grt.cc
   edipole.cc
   equadrupole.cc
   eri.cc
   g12.cc
   g12dkh.cc
   g12nc.cc
-  grt.cc
+  #grt.cc
   gto.cc
   hcore.cc
   int1e.cc

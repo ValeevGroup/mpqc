@@ -31,9 +31,8 @@
 #include <unistd.h> // for fchdir etc.
 #include <fcntl.h> // for open on AIX
 
-#ifndef MPICH_SKIP_MPICXX
+#define OMPI_SKIP_MPICXX
 #define MPICH_SKIP_MPICXX
-#endif
 #include <mpi.h>
 extern int MPI_Initialized(int *); // used to be missing in old mpi.h
 

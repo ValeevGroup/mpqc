@@ -31,8 +31,9 @@
 #include <chemistry/qc/lmp2/collective.h>
 
 #ifdef HAVE_MPI
-#  define MPICH_SKIP_MPICXX
-#  include <mpi.h>
+#define OMPI_SKIP_MPICXX
+#define MPICH_SKIP_MPICXX
+#include <mpi.h>
 #endif
 
 namespace sc {

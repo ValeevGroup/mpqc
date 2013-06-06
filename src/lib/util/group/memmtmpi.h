@@ -32,9 +32,8 @@
 #include <fstream>
 #include <vector>
 
-#ifndef MPICH_SKIP_MPICXX
+#define OMPI_SKIP_MPICXX
 #define MPICH_SKIP_MPICXX
-#endif
 #include <mpi.h>
 
 #include <util/group/message.h>

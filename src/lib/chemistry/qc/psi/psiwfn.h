@@ -252,7 +252,10 @@ namespace sc {
       RefSymmSCMatrix twopdm_dirac();
       RefSymmSCMatrix twopdm_dirac_from_components();
 #endif
+      /// produces 2-RDM for spin case \c pairspin
       RefSymmSCMatrix twopdm_dirac(const SpinCase2 &pairspin);
+      /// produces spin-free 2-RDM
+      RefSymmSCMatrix twopdm_dirac();
       void print_onepdm_vec(FILE *output,const RefSCVector &opdm,double TOL);
       void print_onepdm_mat(FILE *output,const RefSymmSCMatrix &opdm,double TOL);
       void print_twopdm_mat(FILE *output,const RefSymmSCMatrix &tpdm, double TOL);
@@ -464,8 +467,10 @@ namespace sc {
     /// this function reads 2-rdm in physicists format. Depending on the
     /// calculation, on-disk Psi densities will be reported in different formats.
     /// Hence the user must provide the index map (dmap). @sa sc::detail::rdopdm
+    /// if \c pairspin == \c AlphaBeta, \c spinfree = \c true will produce spin-free 2-RDM
     RefSymmSCMatrix rdtpdm(SpinCase2 pairspin,
                            const std::vector<unsigned int>& dmap,
+                           bool spinfree = false,
                            Ref<SCMatrixKit> kit = 0);
   }
 }

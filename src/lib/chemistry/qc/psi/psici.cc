@@ -808,10 +808,40 @@ namespace sc {
     twopdm_occ_[spin] = detail::rdtpdm(spin, dmap);
 
     if(debug_>=DefaultPrintThresholds::mostN4) {
-      twopdm_occ_[spin].print(prepend_spincase(spin,"Psi tpdm").c_str());
+      twopdm_occ_[spin].print(prepend_spincase(spin,"Psi 2-RDM").c_str());
     }
 
     return twopdm_occ_[spin];
+  }
+
+  RefSymmSCMatrix PsiRASCI::twopdm_occ() {
+
+    if (ras3_max_ > 0 && this->nfzv() == 0) return this->twopdm_dirac();
+
+    if (twopdm_sf_occ_.nonnull())
+      return twopdm_sf_occ_;
+
+    // 2-rdm reported by Psi is in RAS order, hence need to map it to symmetry-blocked order
+    // map_density_to_sb() reports mapping from full RAS to full SB orders
+    // here need to map RAS1+RAS2 (since ras3_max = 0) to full SB
+    std::vector<unsigned int> dmap;
+    {
+      std::vector<unsigned int> empty(nirrep_, 0);
+      std::vector<unsigned int> fmap = index_map_symmtocorrorder(frozen_docc(),
+                                                               ras1(),
+                                                               ras2(),
+                                                               empty,
+                                                               empty);
+      dmap = index_map_inverse( fmap );
+    }
+    const bool spinfree_is_true = true;
+    twopdm_sf_occ_ = detail::rdtpdm(AlphaBeta, dmap, spinfree_is_true);
+
+    if(debug_>=DefaultPrintThresholds::mostN4) {
+      twopdm_sf_occ_.print("Psi spin-free 2-RDM");
+    }
+
+    return twopdm_sf_occ_;
   }
 
   int

@@ -296,6 +296,270 @@ PsiRDMOne::scmat(SpinCase1 spin) const {
 
 /////////////////////////////////////////////////////////////////////////////
 
+ClassDesc
+PsiSpinFreeRDMTwo::class_desc_(typeid(PsiSpinFreeRDMTwo),
+                     "PsiSpinFreeRDMTwo",
+                     1,               // version
+                     "public SpinFreeRDM<Two>", // must match parent
+                     0,               // change to create<PsiRDMTwo> if this class is DefaultConstructible
+                     create<PsiSpinFreeRDMTwo>, // change to 0 if this class is not KeyValConstructible
+                     create<PsiSpinFreeRDMTwo>  // change to 0 if this class is not StateInConstructible
+                     );
+
+PsiSpinFreeRDMTwo::PsiSpinFreeRDMTwo(const Ref<KeyVal>& kv) : SpinFreeRDM<Two>(kv) {
+  wfn_ = require_dynamic_cast<PsiWavefunction*>(
+        kv->describedclassvalue("wfn").pointer(),
+        "PsiSpinFreeRDMTwo::PsiSpinFreeRDMTwo\n"
+        );
+}
+
+PsiSpinFreeRDMTwo::PsiSpinFreeRDMTwo(StateIn& si) : SpinFreeRDM<Two>(si) {
+  wfn_ << SavableState::restore_state(si);
+  if (wfn_.null())
+    throw ProgrammingError("failed constructor",__FILE__,__LINE__);
+}
+
+PsiSpinFreeRDMTwo::~PsiSpinFreeRDMTwo() {
+}
+
+void
+PsiSpinFreeRDMTwo::save_data_state(StateOut& so) {
+  SavableState::save_state(wfn_.pointer(), so);
+}
+
+Ref< SpinFreeRDM<One> > sc::PsiSpinFreeRDMTwo::rdm_m_1() const {
+  return new PsiSpinFreeRDMOne(wfn_);
+}
+
+Ref<OrbitalSpace>
+sc::PsiSpinFreeRDMTwo::orbs() const {
+  try {
+    return orbs_from_psiwfn(wfn_, Alpha);
+  }
+  catch (...) {
+    throw ProgrammingError("PsiSpinFreeRDMTwo::orbs() not defined for this PsiWavefunction",
+                           __FILE__,
+                           __LINE__);
+  }
+}
+
+RefSymmSCMatrix sc::PsiSpinFreeRDMTwo::scmat() const {
+
+  if (scmat_.nonnull()) return scmat_;
+
+  Ref<PsiRASCI> psiciwfn_;
+  psiciwfn_ << wfn_;
+  if (psiciwfn_.nonnull()) {
+    return psiciwfn_->twopdm_occ();
+  }
+
+  Ref<PsiCorrWavefunction> psicorrwfn_;
+  psicorrwfn_ << wfn_;
+  if (psicorrwfn_.nonnull()) {
+    scmat_ = psicorrwfn_->twopdm_dirac();
+    return scmat_;
+  }
+
+  Ref<PsiSCF> psiscfwfn_;
+  psiscfwfn_ << wfn_;
+  if (psiscfwfn_.nonnull()) {
+    Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
+    const RefSymmSCMatrix opdm_a = psiscfwfn_->mo_density(Alpha);
+    const RefSymmSCMatrix opdm_b = psiscfwfn_->mo_density(Beta);
+    assert(opdm_a.n() == opdm_b.n());
+    const int n = opdm_a.n();
+
+    RefSCDimension dim = new SCDimension(n*n);
+    RefSymmSCMatrix tpdm = kit->symmmatrix(dim); tpdm.assign(0.0);
+
+    int b12 = 0;
+    for(int b1=0; b1<n; ++b1) {
+      for(int b2=0; b2<n; ++b2, ++b12) {
+
+        int k12 = 0;
+        for(int k1=0; k1<n; ++k1) {
+          const double gamma_a_b1_k1 = opdm_a.get_element(b1,k1);
+          const double gamma_a_b2_k1 = opdm_a.get_element(b2,k1);
+          const double gamma_b_b1_k1 = opdm_b.get_element(b1,k1);
+          const double gamma_b_b2_k1 = opdm_b.get_element(b2,k1);
+
+          for(int k2=0; k2<n; ++k2, ++k12) {
+
+            const double gamma_a_b2_k2 = opdm_a.get_element(b2,k2);
+            const double gamma_a_b1_k2 = opdm_a.get_element(b1,k2);
+            const double gamma_b_b2_k2 = opdm_b.get_element(b2,k2);
+            const double gamma_b_b1_k2 = opdm_b.get_element(b1,k2);
+
+            double value = (gamma_a_b1_k1 * gamma_a_b2_k2 - gamma_a_b2_k1 * gamma_a_b1_k2)
+                + (gamma_b_b1_k1 * gamma_b_b2_k2 - gamma_b_b2_k1 * gamma_b_b1_k2)
+                + gamma_a_b1_k1 * gamma_b_b2_k2
+                + gamma_b_b1_k1 * gamma_a_b2_k2;
+
+            tpdm.accumulate_element(b12,k12,value);
+          }
+        }
+      }
+    }
+    scmat_ = tpdm;
+    return scmat_;
+  } // PsiSCF wavefunction
+
+  throw FeatureNotImplemented("PsiSpinFreeRDMTwo::scmat() is not implemented for this PsiWavefunction",__FILE__,__LINE__);
+}
+
+const Ref<DistArray4>&
+PsiSpinFreeRDMTwo::da4() const {
+  if (da4_.null()) {
+
+    Ref<PsiRASCI> psiciwfn_;
+    psiciwfn_ << wfn_;
+    if (psiciwfn_.nonnull()) {
+      RefSymmSCMatrix rdm2_scmat = psiciwfn_->twopdm_occ();
+      const int n = psiciwfn_->occ(Alpha)->rank();
+      assert(n == int(sqrt(rdm2_scmat.n())));
+      da4_ = make_distarray4(1, n, n, n, n);
+      da4_->activate();
+
+      std::vector<double> k1k2_buf(n*n);
+      int b12 = 0;
+      for(int b1=0; b1<n; ++b1) {
+        for(int b2=0; b2<n; ++b2, ++b12) {
+
+          RefSCVector b12_row = rdm2_scmat.get_row(b12);
+          b12_row.convert(&k1k2_buf[0]);
+
+          da4_->store_pair_block(b1, b2, 0, &(k1k2_buf[0]));
+        }
+      }
+
+      if (da4_->data_persistent()) da4_->deactivate();
+
+      return da4_;
+
+    }
+
+    Ref<PsiCorrWavefunction> psicorrwfn_;
+    psicorrwfn_ << wfn_;
+    if (psicorrwfn_.nonnull()) {
+      throw ProgrammingError("PsiSpinFreeRDMTwo::da4() -- DistArray4-based storage is not implemented for PsiCorrWavefunction",
+                             __FILE__, __LINE__);
+    }
+
+    Ref<PsiSCF> psiscfwfn_;
+    psiscfwfn_ << wfn_;
+    if (psiscfwfn_.nonnull()) {
+      const RefSymmSCMatrix opdm_a = psiscfwfn_->mo_density(Alpha);
+      const RefSymmSCMatrix opdm_b = psiscfwfn_->mo_density(Beta);
+      assert(opdm_a.n() == opdm_b.n());
+      const int n = opdm_a.n();
+
+      da4_ = make_distarray4(1, n, n, n, n);
+      da4_->activate();
+
+      std::vector<double> k1k2_buf(n*n);
+      int b12 = 0;
+      for(int b1=0; b1<n; ++b1) {
+        for(int b2=0; b2<n; ++b2, ++b12) {
+
+          int k12 = 0;
+          for(int k1=0; k1<n; ++k1) {
+            const double gamma_a_b1_k1 = opdm_a.get_element(b1,k1);
+            const double gamma_a_b2_k1 = opdm_a.get_element(b2,k1);
+            const double gamma_b_b1_k1 = opdm_b.get_element(b1,k1);
+            const double gamma_b_b2_k1 = opdm_b.get_element(b2,k1);
+
+            for(int k2=0; k2<n; ++k2, ++k12) {
+
+              const double gamma_a_b2_k2 = opdm_a.get_element(b2,k2);
+              const double gamma_a_b1_k2 = opdm_a.get_element(b1,k2);
+              const double gamma_b_b2_k2 = opdm_b.get_element(b2,k2);
+              const double gamma_b_b1_k2 = opdm_b.get_element(b1,k2);
+
+              double value = (gamma_a_b1_k1 * gamma_a_b2_k2 - gamma_a_b2_k1 * gamma_a_b1_k2)
+                  + (gamma_b_b1_k1 * gamma_b_b2_k2 - gamma_b_b2_k1 * gamma_b_b1_k2)
+                  + gamma_a_b1_k1 * gamma_b_b2_k2
+                  + gamma_b_b1_k1 * gamma_a_b2_k2;
+
+              k1k2_buf[k12] = (b12 == k12 ? 1.0 : 2.0) * value;
+            }
+          }
+
+          da4_->store_pair_block(b1, b2, 0, &(k1k2_buf[0]));
+        }
+      }
+
+      if (da4_->data_persistent()) da4_->deactivate();
+
+      return da4_;
+    }
+
+    throw FeatureNotImplemented("PsiSpinFreeRDMTwo::da4() is not implemented for this PsiWavefunction",__FILE__,__LINE__);
+  }
+  // da4_ is nonzero
+  return da4_;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+ClassDesc
+PsiSpinFreeRDMOne::class_desc_(typeid(PsiSpinFreeRDMOne),
+                     "PsiSpinFreeRDMOne",
+                     1,               // version
+                     "public SpinFreeRDM<One>", // must match parent
+                     0,               // change to create<PsiRDMTwo> if this class is DefaultConstructible
+                     create<PsiSpinFreeRDMOne>, // change to 0 if this class is not KeyValConstructible
+                     create<PsiSpinFreeRDMOne>  // change to 0 if this class is not StateInConstructible
+                     );
+
+PsiSpinFreeRDMOne::PsiSpinFreeRDMOne(const Ref<KeyVal>& kv) : SpinFreeRDM<One>(kv) {
+  wfn_ = require_dynamic_cast<PsiWavefunction*>(
+        kv->describedclassvalue("wfn").pointer(),
+        "PsiSpinFreeRDMOne::PsiRDMOne\n"
+        );
+}
+
+PsiSpinFreeRDMOne::PsiSpinFreeRDMOne(StateIn& si) : SpinFreeRDM<One>(si) {
+  wfn_ << SavableState::restore_state(si);
+  if (wfn_.null())
+    throw ProgrammingError("failed constructor",__FILE__,__LINE__);
+}
+
+PsiSpinFreeRDMOne::PsiSpinFreeRDMOne(const Ref<PsiWavefunction>& wfn) : SpinFreeRDM<One>(wfn.pointer()), wfn_(wfn) {
+}
+
+PsiSpinFreeRDMOne::~PsiSpinFreeRDMOne() {
+}
+
+void
+PsiSpinFreeRDMOne::save_data_state(StateOut& so) {
+  SavableState::save_state(wfn_.pointer(), so);
+}
+
+Ref<OrbitalSpace>
+PsiSpinFreeRDMOne::orbs() const {
+  try {
+    return orbs_from_psiwfn(wfn_, Alpha);
+  }
+  catch (...) {
+    throw ProgrammingError("PsiSpinFreeRDMOne::orbs() not defined for this PsiWavefunction",
+                           __FILE__,
+                           __LINE__);
+  }
+}
+
+RefSymmSCMatrix
+PsiSpinFreeRDMOne::scmat() const {
+  Ref<PsiRASCI> psiciwfn;
+  psiciwfn << wfn_;
+  if (psiciwfn.nonnull()) {
+    return psiciwfn->onepdm_occ(Alpha) + psiciwfn->onepdm_occ(Beta);
+  }
+  else
+    return wfn_->mo_density(Alpha) + wfn_->mo_density(Beta);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
 // Local Variables:
 // mode: c++
 // c-file-style: "CLJ-CONDENSED"

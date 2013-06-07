@@ -100,6 +100,8 @@ namespace sc {
       RefSymmSCMatrix onepdm_occ(SpinCase1 spin);
       /// 2-pdm in the space reported by occ()
       RefSymmSCMatrix twopdm_occ(SpinCase2 spin);
+      /// spin-free 2-pdm in the space reported by occ()
+      RefSymmSCMatrix twopdm_occ();
 
     protected:
 
@@ -122,6 +124,7 @@ namespace sc {
 
       RefSymmSCMatrix onepdm_occ_[NSpinCases1];
       RefSymmSCMatrix twopdm_occ_[NSpinCases2];
+      RefSymmSCMatrix twopdm_sf_occ_;
 
       // optional RAS info
       // it is initialized automatically

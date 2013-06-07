@@ -116,6 +116,70 @@ namespace sc {
       static ClassDesc class_desc_;
   };
 
+  /// PsiRDMTwo is a spin-free 2-RDM from a PsiWavefunction
+  class PsiSpinFreeRDMTwo : public SpinFreeRDM<Two> {
+    public:
+    /** A KeyVal constructor is used to generate a PsiSpinFreeRDMTwo
+        object from the input. The full list of keywords
+        that are accepted is below.
+
+        <table border="1">
+
+        <tr><td>%Keyword<td>Type<td>Default<td>Description
+
+        <tr><td><tt>wfn</tt><td>PsiWavefunction<td>none<td>the PsiWavefunction object
+
+        </table>
+     */
+      PsiSpinFreeRDMTwo(const Ref<KeyVal>& kv);
+      PsiSpinFreeRDMTwo(StateIn& si);
+      ~PsiSpinFreeRDMTwo();
+      void save_data_state(StateOut& so);
+
+      Ref<PsiWavefunction> wfn() const { return wfn_; }
+      RefSymmSCMatrix scmat() const;
+      const Ref<DistArray4>& da4() const;
+      Ref< SpinFreeRDM<One> > rdm_m_1() const;
+      Ref<OrbitalSpace> orbs() const;
+
+    private:
+      Ref<PsiWavefunction> wfn_;
+
+      void make_da4();
+
+      static ClassDesc class_desc_;
+  };
+
+  /// PsiSpinFreeRDMOne is a spin-free 1-RDM from a PsiWavefunction
+  class PsiSpinFreeRDMOne : public SpinFreeRDM<One> {
+    public:
+    /** A KeyVal constructor is used to generate a PsiRDMOne
+        object from the input. The full list of keywords
+        that are accepted is below.
+
+        <table border="1">
+
+        <tr><td>%Keyword<td>Type<td>Default<td>Description
+
+        <tr><td><tt>wfn</tt><td>PsiWavefunction<td>none<td>the PsiWavefunction object
+
+        </table>
+     */
+      PsiSpinFreeRDMOne(const Ref<KeyVal>& kv);
+      PsiSpinFreeRDMOne(StateIn& si);
+      PsiSpinFreeRDMOne(const Ref<PsiWavefunction>& wfn);
+      ~PsiSpinFreeRDMOne();
+      void save_data_state(StateOut& so);
+
+      Ref<OrbitalSpace> orbs() const;
+      RefSymmSCMatrix scmat() const;
+
+    private:
+      Ref<PsiWavefunction> wfn_;
+
+      static ClassDesc class_desc_;
+  };
+
 } // end of namespace sc
 
 #endif // end of header guard

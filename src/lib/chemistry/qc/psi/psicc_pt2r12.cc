@@ -209,26 +209,26 @@ void PsiCC_PT2R12::compute_ept2r12() {
       r12intermediates->assign_T2_cc(spincase2,T2[s]);
     }
 
-    // Import the Psi CCSD one-particle density
-    if (compute_1rdm_) {
-      // Obtain CC one-particle density from Psi and copy into local matrices
-      //
-      RefSCMatrix D[NSpinCases1];
-      for(int s = 0; s < nspincases1; ++s) {
-        const SpinCase1 spin = static_cast<SpinCase1>(s);
-        RefSCMatrix D_psicc = this->Onerdm(spin);
-        Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
-        D[spin] = localkit->matrix(D_psicc.rowdim(), D_psicc.coldim());
-        D[spin]->convert(D_psicc);
+  // Import the Psi CCSD one-particle density
+  if (compute_1rdm_) {
+    // Obtain CC one-particle density from Psi and copy into local matrices
+    //
+    RefSCMatrix D[NSpinCases1];
+    for(int s = 0; s < nspincases1; ++s) {
+      const SpinCase1 spin = static_cast<SpinCase1>(s);
+      RefSCMatrix D_psicc = this->Onerdm(spin);
+      Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
+      D[spin] = localkit->matrix(D_psicc.rowdim(), D_psicc.coldim());
+      D[spin]->convert(D_psicc);
 
-        if (debug() >= DefaultPrintThresholds::mostN2) {
-        D[spin].print(prepend_spincase(spin,"CCSD one-particle density:").c_str());
-        }
+      if (debug() >= DefaultPrintThresholds::mostN2) {
+      D[spin].print(prepend_spincase(spin,"CCSD one-particle density:").c_str());
       }
+    }
 
-      if (nspincases1 == 1) {
-        D[Beta] = D[Alpha];
-      }
+    if (nspincases1 == 1) {
+      D[Beta] = D[Alpha];
+    }
 
       // -> pass D to the diagonal MP2-R12 energy evaluator
       for(int s = 0; s < NSpinCases1; s++) {
@@ -236,19 +236,19 @@ void PsiCC_PT2R12::compute_ept2r12() {
         r12intermediates->assign_1rdm_cc(spin,D[spin]);
       }
 
-      RefSCMatrix D_orbs[NSpinCases1];
+    RefSCMatrix D_orbs[NSpinCases1];
       // T1 & cabs I1 need to be ready for CABS_Singles orbital relaxation Z-vector
       compute_onerdm_relax(r12intermediates, D_orbs[Alpha], D_orbs[Beta]);
-      if (debug() >= DefaultPrintThresholds::mostN2) {
-        D_orbs[Alpha].print(prepend_spincase(Alpha,"CCSD_F12 one-particle density from relaxation:").c_str());
-        if (nspincases1 != 1) {
-          D_orbs[Beta].print(prepend_spincase(Beta,"CCSD_F12 one-particle density from relaxation:").c_str());
-        }
+    if (debug() >= DefaultPrintThresholds::mostN2) {
+      D_orbs[Alpha].print(prepend_spincase(Alpha,"CCSD_F12 one-particle density from relaxation:").c_str());
+      if (nspincases1 != 1) {
+        D_orbs[Beta].print(prepend_spincase(Beta,"CCSD_F12 one-particle density from relaxation:").c_str());
       }
-      // pass orbital relaxation 1rdm to the diagonal MP2-R12 energy evaluator
-      for(int s = 0; s < NSpinCases1; s++) {
-        const SpinCase1 spin = static_cast<SpinCase1>(s);
-        r12intermediates->assign_1rdm_relax(spin,D_orbs[spin]);
+    }
+    // pass orbital relaxation 1rdm to the diagonal MP2-R12 energy evaluator
+    for(int s = 0; s < NSpinCases1; s++) {
+      const SpinCase1 spin = static_cast<SpinCase1>(s);
+      r12intermediates->assign_1rdm_relax(spin,D_orbs[spin]);
       }
 
       // tests:
@@ -273,7 +273,7 @@ void PsiCC_PT2R12::compute_ept2r12() {
 //        }
 //      }
 
-    } // end of compute_1rdm_
+  } // end of compute_1rdm_
 
 
   } // end of diag = true clause
@@ -323,39 +323,9 @@ void PsiCC_PT2R12::compute_ept2r12() {
         A[s] = Avec[0];
       }
 
-#if 0
-      for (unsigned int xy=0; xy<nxy; ++xy) {
-        unsigned int ab = 0;
-        for (unsigned int a=0; a<nv1; ++a) {
-          const unsigned int p = v1_to_p1[a];
-          for (unsigned int b=0; b<nv1; ++b, ++ab) {
-            const unsigned int q = v2_to_p2[b];
-            const unsigned int pq = p*np2 + q;
-            const double elem = Vpq[s].get_element(xy, pq);
-            Vab[s].set_element(xy, ab, elem);
-          }
-        }
-      }
-#endif
-
       // Vai[AlphaBeta] is also needed if spin-polarized reference is used
       if (spincase2 == AlphaBeta && r12world()->refwfn()->spin_polarized())
         map(Vpq, x1, x2, p1, p2, Vai[s], x1, x2, v1, o2);
-
-#if 0
-      for (unsigned int xy=0; xy<nxy; ++xy) {
-        unsigned int ia = 0;
-        for (unsigned int i=0; i<no1; ++i) {
-          const unsigned int p = o1_to_p1[i];
-          for (unsigned int a=0; a<nv2; ++a, ++ia) {
-            const unsigned int q = v1_to_p1[a];
-            const unsigned int pq = p*np2 + q;
-            const double elem = Vpq[s].get_element(xy, pq);
-            Via[s].set_element(xy, ia, elem);
-          }
-        }
-      }
-#endif
 
       if (debug() >= DefaultPrintThresholds::mostO2N2) {
         _print(spincase2, Vpq, prepend_spincase(spincase2,"Vpq matrix").c_str());
@@ -369,16 +339,6 @@ void PsiCC_PT2R12::compute_ept2r12() {
       if (debug() >= DefaultPrintThresholds::mostO4) {
         Vij[s].print(prepend_spincase(spincase2,"Vij matrix").c_str());
       }
-#if TEST_V
-      RefSCMatrix Vab_test = r12eval()->V(spincase2,vir1_act,vir2_act);
-      Vab_test.print("Vab matrix (test)");
-      (Vab[s] - Vab_test).print("Vab - Vab (test): should be 0");
-#endif
-#if TEST_V
-      RefSCMatrix Via_test = r12eval()->V(spincase2,occ1_act,vir2_act);
-      Via_test.print("Via matrix (test)");
-      (Via[s] - Via_test).print("Via - Via (test): should be 0");
-#endif
     } // end of spincase2 loop
     Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
 

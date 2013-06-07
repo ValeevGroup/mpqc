@@ -2044,7 +2044,12 @@ namespace sc {
 
   RefSymmSCMatrix sc::detail::rdtpdm(SpinCase2 pairspin,
                                      const std::vector<unsigned int>& dmap,
+                                     bool spinfree,
                                      Ref<SCMatrixKit> kit) {
+
+    if (spinfree)
+      assert(pairspin == AlphaBeta);
+
     const string pairspin_str = to_string(pairspin);
     iwlbuf tpdm_buf;
     const int nmo = dmap.size();
@@ -2093,14 +2098,14 @@ namespace sc {
 
     int TPDM_FILE;
     switch (pairspin) {
-      case AlphaBeta:  TPDM_FILE = PSIF_MO_AB_TPDM; break;
+      case AlphaBeta:  TPDM_FILE = spinfree ? PSIF_MO_TPDM : PSIF_MO_AB_TPDM; break;
       case AlphaAlpha: TPDM_FILE = PSIF_MO_AA_TPDM; break;
       case BetaBeta:   TPDM_FILE = PSIF_MO_BB_TPDM; break;
       default: assert(false);
     }
     iwl_buf_init(&tpdm_buf,TPDM_FILE,0.0,1,1);
     if(pairspin==AlphaBeta) {
-      iwl_buf_rd_all2(&tpdm_buf,tpdm_arr2,ioff_nonsymm,ioff_nonsymm,1,ioff_nonsymm_pair,0, NULL);
+      iwl_buf_rd_all2(&tpdm_buf,tpdm_arr2,ioff_nonsymm,ioff_nonsymm,1,ioff_nonsymm_pair,1, stdout);
     }
     else {
       iwl_buf_rd_all( &tpdm_buf,tpdm_arr ,ioff_nonsymm,ioff_nonsymm,1,ioff,             0, NULL);
@@ -2123,6 +2128,7 @@ namespace sc {
         for(int j=0; j<nmo; j++) {
           const int jj = dmap[j];
           const int ind_ij = ordinary_INDEX(ii,jj,nmo);
+          const int ind_ji = spinfree ? ordinary_INDEX(jj,ii,nmo) : 0;
           for(int k=0; k<=i; k++) {
             const int kk = dmap[k];
             int lmax;
@@ -2136,7 +2142,11 @@ namespace sc {
               const int ll = dmap[l];
               //const int index = ordinary_INDEX(ordinary_INDEX(i,k,nmo),ordinary_INDEX(j,l,nmo),npair);
               const int ind_kl = ordinary_INDEX(kk,ll,nmo);
-              tpdm_mat->set_element(ind_ij,ind_kl,tpdm_arr2[ordinary_INDEX(i,k,nmo)][ordinary_INDEX(j,l,nmo)]);
+              const int ind_lk = spinfree ? ordinary_INDEX(ll,kk,nmo) : 0;
+              const double value = tpdm_arr2[ordinary_INDEX(i,k,nmo)][ordinary_INDEX(j,l,nmo)];
+              tpdm_mat->set_element(ind_ij,ind_kl,value);
+              if (spinfree)
+                tpdm_mat->set_element(ind_ji,ind_lk,value);
             }
           }
         }
@@ -2188,6 +2198,10 @@ namespace sc {
     else {
       delete [] tpdm_arr;
     }
+
+    // Psi convention for spin-free 2-RDM is a factor of 2 off
+    if (spinfree)
+      tpdm_mat.scale(2.0);
 
     return tpdm_mat;
   }
@@ -2508,6 +2522,13 @@ namespace sc {
     // map orbitals to symmetry-blocked orbitals
     const std::vector<unsigned int> dmap = map_density_to_sb();
     RefSymmSCMatrix result = detail::rdtpdm(pairspin, dmap);
+    return result;
+  }
+
+  RefSymmSCMatrix PsiCorrWavefunction::twopdm_dirac() {
+    // map orbitals to symmetry-blocked orbitals
+    const std::vector<unsigned int> dmap = map_density_to_sb();
+    RefSymmSCMatrix result = detail::rdtpdm(AlphaBeta, dmap, true);
     return result;
   }
 

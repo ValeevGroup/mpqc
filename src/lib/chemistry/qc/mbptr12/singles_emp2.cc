@@ -311,11 +311,11 @@ R12IntEval::compute_emp2_cabs_singles_noncanonical(bool vir_cabs_coupling) {
       rhs.scale(-1.0);
       double Rnorm2;
       try {
-        //Rnorm2 = linsolv_conjugate_gradient(h0t1, rhs, T1_cabs_[s], PC,
-        //                                    1e-10);
-        ConjugateGradientSolver<RefSCMatrix, CABS_singles_h0t1> cg;
-        Rnorm2 = cg(h0t1, rhs, T1_cabs_[s], PC,
-                    1e-10);
+        Rnorm2 = linsolv_conjugate_gradient(h0t1, rhs, T1_cabs_[s], PC,
+                                            1e-10);
+        //ConjugateGradientSolver<RefSCMatrix, CABS_singles_h0t1> cg;
+        //Rnorm2 = cg(h0t1, rhs, T1_cabs_[s], PC,
+        //            1e-10);
       }
       catch (...) {
         // if failed for some reason, at least compute the energy to help with troubleshooting

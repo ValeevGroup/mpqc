@@ -25,14 +25,14 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _chemistry_qc_mbptr12_gaussianfittimpl_h
-#define _chemistry_qc_mbptr12_gaussianfittimpl_h
+#ifndef _math_optimize_gaussianfittimpl_h
+#define _math_optimize_gaussianfittimpl_h
 
 #include <cmath>
 #include <algorithm>
 #include <math/optimize/levmar/lm.h>
+#include <math/optimize/gaussianfit.h>
 #include <util/misc/scexception.h>
-#include <chemistry/qc/mbptr12/gaussianfit.h>
 
 extern "C" {
   void __eval_slater(double* params, double* f, int nparam, int np,
@@ -183,7 +183,7 @@ namespace sc {
     }
   } // namespace
 
-  namespace mbptr12 {
+  namespace detail {
     template <class Function, class Weight> struct __to_extern_C_eval {
         static eval_f_ptr f_ptr;
         static eval_dfdp_ptr dfdp_ptr;
@@ -205,8 +205,8 @@ namespace sc {
 
     extract_params();
 
-    const int niter = dlevmar_der(mbptr12::__to_extern_C_eval<Function,Weight>::f_ptr,
-        mbptr12::__to_extern_C_eval<Function,Weight>::dfdp_ptr,
+    const int niter = dlevmar_der(detail::__to_extern_C_eval<Function,Weight>::f_ptr,
+                                  detail::__to_extern_C_eval<Function,Weight>::dfdp_ptr,
         p_, scratch_, 2*ngaussians, npts_, 100000, NULL, NULL, NULL, NULL, static_cast<void*>(&xp));
     if (niter> 0) {
       if (classdebug_) {

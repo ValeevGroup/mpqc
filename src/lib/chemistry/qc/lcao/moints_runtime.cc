@@ -46,8 +46,8 @@ MOIntsRuntime::MOIntsRuntime(const Ref<MOIntsTransformFactory>& factory,
   runtime_4c_(new TwoBodyFourCenterMOIntsRuntime(factory_))
 {
   if (dfparams_.nonnull()) {
-    runtime_df_ = new DensityFittingRuntime(new DensityFitting::MOIntsRuntime(factory_,runtime_2c_,runtime_3c_));
-    runtime_df_->set_solver(dfparams->solver());
+    runtime_df_ = new DensityFittingRuntime(new DensityFitting::MOIntsRuntime(factory_,runtime_2c_,runtime_3c_),
+                                            dfparams_.pointer());
     typedef TwoBodyFourCenterMOIntsRuntime::Params DFInfo;
     dfinfo_ = new DFInfo(dfparams_, runtime_df_);
     runtime_4c_->params(dfinfo_);

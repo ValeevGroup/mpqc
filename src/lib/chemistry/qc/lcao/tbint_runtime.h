@@ -70,7 +70,7 @@ namespace sc {
       /// computes operator part of the key given an TwoBodyIntDescr object
       static std::string key(const Ref<TwoBodyIntDescr>& descr);
       /// this factory method constructs a descriptor given operator key + IntParams object + Integrals object
-      static Ref<TwoBodyIntDescr> create_descr(const std::string& oper_key,
+      static Ref<TwoBodyIntDescr> create_descr(const std::string& operset_key,
                                                const Ref<IntParams>& p,
                                                const Ref<Integral>& integral);
 
@@ -107,8 +107,8 @@ namespace sc {
                              const std::string& descr);
       /// computes operator part of the key given an TwoBodyThreeCenterIntDescr object
       static std::string key(const Ref<TwoBodyThreeCenterIntDescr>& descr);
-      /// this factory method constructs a descriptor given operator key + IntParams object + Integrals object
-      static Ref<TwoBodyThreeCenterIntDescr> create_descr(const std::string& oper_key,
+      /// this factory method constructs a descriptor given operator set key + IntParams object + Integrals object
+      static Ref<TwoBodyThreeCenterIntDescr> create_descr(const std::string& operset_key,
                                                           const Ref<IntParams>& p,
                                                           const Ref<Integral>& integral);
 
@@ -281,7 +281,7 @@ namespace sc {
 
       /** Returns the TwoBodyIntEval that contains the integrals described by key.
 
-          key must be in format recognized by ParsedTwoBodyIntKey.
+          @param key must be in format recognized by ParsedTwoBodyIntKey.
           If this key is not known, an appropriate object for computing the integrals
           will be created and (possibly) evaluated.
         */

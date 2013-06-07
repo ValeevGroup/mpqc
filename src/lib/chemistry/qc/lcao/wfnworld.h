@@ -87,7 +87,10 @@ public:
     There is no default (no density fitting will be performed).
 
     <dt><tt>df_kernel</tt><dd> If df_basis is specified, this keyword will be queried to determine the kernel
-    for density-fitting. The only supported value is <tt>coulomb</tt>.
+    for density-fitting. The only supported values are <tt>coulomb</tt> (the default; this corresponds to the fitting
+    the density to reproduce the electric field) and <tt>exp(X)</tt> (this corresponds to fitting the density to reproduce
+    the potential) where <tt>X</tt> is a positive parameter that determines the lengthscale of
+    the region in which to fit the potential.
 
     <dt><tt>df_solver</tt><dd> If df_basis is specified, this keyword will be queried to determine the method by which
     density-fitting will be performed. Valid values are:

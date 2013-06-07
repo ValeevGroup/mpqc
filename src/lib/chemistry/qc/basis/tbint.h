@@ -488,6 +488,7 @@ class TwoBodyIntIter {
 class TwoBodyTwoCenterIntIter : public RefCount {
   protected:
     Ref<TwoBodyTwoCenterInt> tbi; // help me obi wan
+    TwoBodyOper::type type;
     ShellPairIter spi;
 
     int redund;
@@ -505,7 +506,8 @@ class TwoBodyTwoCenterIntIter : public RefCount {
 
   public:
     TwoBodyTwoCenterIntIter();
-    TwoBodyTwoCenterIntIter(const Ref<TwoBodyTwoCenterInt>&);
+    TwoBodyTwoCenterIntIter(const Ref<TwoBodyTwoCenterInt>& e,
+                            TwoBodyOper::type t = TwoBodyOper::eri);
     virtual ~TwoBodyTwoCenterIntIter();
 
     virtual void start(int ist=0, int jst=0, int ien=0, int jen=0);
@@ -778,7 +780,7 @@ class TwoBodyTwoCenterIntOp: public SCElementOp {
     Ref<TwoBodyTwoCenterIntIter> iter;
 
   public:
-    TwoBodyTwoCenterIntOp(const Ref<TwoBodyTwoCenterInt>&);
+    TwoBodyTwoCenterIntOp(const Ref<TwoBodyTwoCenterInt>&, TwoBodyOper::type type = TwoBodyOper::eri);
     TwoBodyTwoCenterIntOp(const Ref<TwoBodyTwoCenterIntIter>&);
     virtual ~TwoBodyTwoCenterIntOp();
 

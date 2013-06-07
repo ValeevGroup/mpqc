@@ -49,7 +49,7 @@ namespace sc {
    \f[
    (A|\hat{W}|rs) = \sum_B C^{rs}_B (A|\hat{W}|B)  \quad .
    \f]
-   The kernel \f$\hat{W} \f$ is any operator.
+   The kernel \f$\hat{W} \f$ is any (positive-definite) operator.
 
    \param runtime is the MOIntsRuntime object used to compute MO/AO integrals
    \param kernel_key denotes the kernel operator to be used for fitting. Currently only "1/r_{12}" is supported.
@@ -197,92 +197,6 @@ namespace sc {
       static ClassDesc class_desc_;
 
   };
-
-  namespace test {
-
-    /** Represents decomposition of a product of basis sets. The definition is as follows:
-     \f[
-     |rs) = \sum_A C^{rs}_A |A)  \quad ,
-     \f]
-     where \f$ |A) \f$ represent the low-rank space. The coefficients in the expansion are returned by result().
-     */
-    class BasisProductDecomposition: virtual public SavableState {
-      public:
-        ~BasisProductDecomposition();
-        BasisProductDecomposition(const Ref<Integral>& integral, const Ref<
-            GaussianBasisSet>& basis1, const Ref<GaussianBasisSet>& basis2);
-        BasisProductDecomposition(StateIn&);
-        void save_data_state(StateOut&);
-
-        /// column dimension corresponds to the basis product space, row dimension corresponds to the reduced rank space
-        virtual const RefSCMatrix& C() const =0;
-
-        const Ref<Integral>& integral() const {
-          return integral_;
-        }
-        const Ref<GaussianBasisSet>& basis(unsigned int i) const {
-          return basis_[i];
-        }
-
-        virtual void compute() =0;
-
-      protected:
-        const RefSCDimension& product_dimension() const {
-          return pdim_;
-        }
-
-      private:
-        RefSCDimension pdim_; //< basis product dimension
-
-        Ref<Integral> integral_;
-        Ref<GaussianBasisSet> basis_[2];
-
-    };
-
-    /** Decomposition by density fitting with respect to some kernel. The definition is as follows:
-     \f[
-     |rs) = \sum_A C^{rs}_A |A)  \quad ,
-     \f]
-     where \f$ |A) \f$ belong to a fitting basis and \f$ C^{rs}_A \f$ are determined by solving the linear system
-     \f[
-     (A|\hat{W}|rs) = \sum_B C^{rs}_B (A|\hat{W}|B)  \quad .
-     \f]
-     The kernel \f$\hat{W} \f$ is any definite operator (currently hardwired to Coulomb kernel).
-     */
-    class DensityFitting: public BasisProductDecomposition {
-      public:
-        ~DensityFitting();
-        DensityFitting(const Ref<Integral>& integral, const Ref<
-            GaussianBasisSet>& basis1, const Ref<GaussianBasisSet>& basis2,
-                       const Ref<GaussianBasisSet>& fitting_basis);
-        DensityFitting(StateIn&);
-        void save_data_state(StateOut&);
-
-        const RefSCMatrix& C() const {
-          return C_;
-        }
-        /// returns the kernel represented in the fitting basis, i.e. \f$ (A|\hat{W}|B) \f$ .
-        const RefSymmSCMatrix& kernel() const {
-          return kernel_;
-        }
-        /// returns the conjugate expansion matrix, i.e. \f$ (A|\hat{W}|rs) \equiv \sum_B C^{rs}_B (A|\hat{W}|B) \f$ .
-        const RefSCMatrix& conjugateC() const {
-          return cC_;
-        }
-
-        // implements BasisProductDecomposition::compute()
-        void compute();
-
-      private:
-        RefSCMatrix C_;
-        RefSymmSCMatrix kernel_;
-        RefSCMatrix cC_;
-
-        Ref<GaussianBasisSet> fbasis_;
-
-    };
-
-  } // end of namespace test
 
 } // end of namespace sc
 

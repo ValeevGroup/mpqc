@@ -203,6 +203,8 @@ class DistArray4: virtual public SavableState {
 
 };
 
+Ref<DistArray4> make_distarray4(int num_te_types, int ni, int nj, int nx, int ny,
+                                DistArray4Storage storage = DistArray4Storage_XY);
 
 /// extracts te_type from A
 Ref<DistArray4>

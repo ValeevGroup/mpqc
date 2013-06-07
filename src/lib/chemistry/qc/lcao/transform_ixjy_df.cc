@@ -312,31 +312,45 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
   const bool equiv_12_34 = (*space1() == *space3() && *space2() == *space4());
 
   // Prerequivisites:
-  // 1) if computing Coulomb integrals only, need DensityFitting object only for robust fitting
+  // 1) if computing a set of 1 integral types only && all operator types coincide with the operator used for fitting
+  //    the simple formula is robust, hence only need DensityFitting object
   //    Wr = cC12 * C34 (if density fitting bases for 12 and 34 are different, this does not work)
-  // 2) if computing other integrals, need DensityFitting, as well as 2- and 3-center matrices
+  // 2) otherwise, use explicitly robust formula need DensityFitting, as well as 2- and 3-center matrices
   //    Wr = K12 * C34 + C12 * K34 - C12 * k * C34
   TwoBodyOperSet::type oset = intdescr()->operset();
-  const bool coulomb_only = (oset == TwoBodyOperSet::ERI);
+  Ref<TwoBodyOperSetDescr> oset_descr = TwoBodyOperSetDescr::instance(oset);
+  const std::string& kernel_key = this->factory()->df_info()->params()->kernel_key();
+  TwoBodyOper::type kernel_otype = this->factory()->df_info()->params()->kernel_otype();
+  bool use_simple_formula = true;
+  for(unsigned int o=0; o<oset_descr->size(); ++o) {
+    if (oset_descr->opertype(o) != kernel_otype) {
+      use_simple_formula = false;
+      break;
+    }
+  }
+  if (use_simple_formula) // right now simple formula will only work for size-1 operator set (TwoBodyOperSet::ERI)
+    assert(oset_descr->size() == 1);
 
   const Ref<AOSpaceRegistry>& aoidxreg = this->factory()->ao_registry();
 
-  Ref<DistArray4> C12, cC12;
+  Ref<DistArray4> C12;
   {
     const Ref<OrbitalSpace> dfspace12 = aoidxreg->value(dfbasis12());
     const std::string C12_key = ParsedDensityFittingKey::key(space1()->id(),
                                                              space2()->id(),
-                                                             dfspace12->id());
+                                                             dfspace12->id(),
+                                                             kernel_key);
     C12 = runtime()->get(C12_key);
   }
 
-  Ref<DistArray4> C34, cC34;  // C34 only needed for robust density-fitting of non-Coulomb (non-kernel) operators
-  if (!coulomb_only) {
+  Ref<DistArray4> C34;  // C34 only needed for robust density-fitting using the manifestly robust formula
+  if (!use_simple_formula) {
     if (!equiv_12_34) {
       const Ref<OrbitalSpace> dfspace34 = aoidxreg->value(dfbasis34());
       const std::string C34_key = ParsedDensityFittingKey::key(space3()->id(),
                                                                space4()->id(),
-                                                               dfspace34->id());
+                                                               dfspace34->id(),
+                                                               kernel_key);
       C34 = runtime()->get(C34_key);
     }
     else {
@@ -351,6 +365,7 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
   const std::string descr_key = runtime()->moints_runtime()->runtime_3c()->descr_key(descr);
 
   // compute the 3-center operator matrices
+  Ref<DistArray4> cC34, cC12;
   {
     const Ref<AOSpaceRegistry>& aoidxreg = this->factory()->ao_registry();
 
@@ -363,7 +378,7 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
     cC34_tform->compute();
     cC34 = cC34_tform->ints_acc();
 
-    if (!coulomb_only) { // cC12 only needed for robust density-fitting of non-Coulomb (non-kernel) operators
+    if (!use_simple_formula) { // cC12 only needed for manifestly-robust fitting
       if (!equiv_12_34) {
         const Ref<OrbitalSpace> dfspace12 = aoidxreg->value(dfbasis12());
         const std::string cC12_key =
@@ -378,12 +393,11 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
       else
         cC12 = cC34;
     }
-
   }
 
   double** kernel = 0;
   Ref<DistArray4> L12;   // L12 = C12 * kernel
-  if (!coulomb_only) {
+  if (!use_simple_formula) {
 
     // TODO convert to using two-body two-center ints runtime
     const int ntypes = num_te_types();
@@ -507,7 +521,7 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
 
   C12->activate();
   cC34->activate();
-  if (!coulomb_only) {
+  if (!use_simple_formula) {
     L12->activate();
     C34->activate();
     cC12->activate();
@@ -531,7 +545,7 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
                 0.0, xy_buf, rank4);
         cC34->release_pair_block(0, j, te_type);
 
-        if (opertype != TwoBodyOper::eri) {
+        if (opertype != kernel_otype) {
           if (cC12_buf == 0) cC12_buf = cC12->retrieve_pair_block(0, i, te_type);
           const double* C34_buf = C34->retrieve_pair_block(0, j, 0);
           C_DGEMM('n', 't', rank2, rank4, rankF, 1.0, cC12_buf, rankF, C34_buf, rankF,
@@ -568,7 +582,7 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
   if (ints_acc_->data_persistent()) ints_acc_->deactivate();
   if (C12->data_persistent())   C12->deactivate();
   if (cC34->data_persistent()) cC34->deactivate();
-  if (!coulomb_only) {
+  if (!use_simple_formula) {
     if (L12->data_persistent()) L12->deactivate();
     if (cC12->data_persistent()) cC12->deactivate();
     if (C34->data_persistent())   C34->deactivate();

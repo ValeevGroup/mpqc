@@ -916,15 +916,22 @@ namespace sc {
       const Ref<DensityFittingRuntime>& df_rtime = df_info->runtime();
       const Ref<TwoBodyThreeCenterMOIntsRuntime>& int3c_rtime = df_rtime->moints_runtime()->runtime_3c();
 
+      std::string kernel_key = df_info->params()->kernel_key();
+      const bool noncoulomb_kernel = (kernel_key.find("exp") != std::string::npos);
+      std::string params_key = df_info->params()->intparams_key();
+      std::string operset_key = noncoulomb_kernel ? "G12'" : "ERI";
+      TwoBodyOper::type kernel_oper = noncoulomb_kernel ? TwoBodyOper::r12_0_g12 : TwoBodyOper::eri;
+      unsigned int ints_type_idx = TwoBodyOperSetDescr::instance(noncoulomb_kernel ? TwoBodyOperSet::G12NC : TwoBodyOperSet::ERI)->opertype(kernel_oper);
+
       std::vector<double> R(ndf,0.0);
       {
         ///////////////////////////////////////
-        // contract 3-center ERI with density
+        // contract 3-center fitting kernel_key ints with density
         ///////////////////////////////////////
         const std::string C_key = ParsedTwoBodyThreeCenterIntKey::key(obs_space->id(),
                                                                       dfspace->id(),
                                                                       obs_space->id(),
-                                                                      "ERI","");
+                                                                      operset_key, params_key);
         tim.enter(C_key);
         const Ref<TwoBodyThreeCenterMOIntsTransform>& C_tform = int3c_rtime->get(C_key);
         C_tform->compute();
@@ -956,7 +963,7 @@ namespace sc {
               if (not C->is_local(0,p))
                 continue;
 
-              const double* C_p_qR_buf = C->retrieve_pair_block(0, p, 0);
+              const double* C_p_qR_buf = C->retrieve_pair_block(0, p, ints_type_idx);
               const double* P_p_q = P_blk[p];
 
               const char notrans = 'n';
@@ -965,7 +972,7 @@ namespace sc {
               F77_DGEMV(&notrans, &ndf, &nobs, &one, C_p_qR_buf, &ndf, P_p_q,
                         &unit_stride, &one, &(Q[0]), &unit_stride);
 
-              C->release_pair_block(0, p, 0);
+              C->release_pair_block(0, p, ints_type_idx);
 
             }
 
@@ -985,13 +992,13 @@ namespace sc {
         C = 0;
 
         ///////
-        // compute 2-center coulomb kernel
+        // compute 2-center fitting kernel_key
         ///////
         RefSymmSCMatrix kernel = dfspace->coefs_nb()->kit()->symmmatrix(dfspace->dim());
         {
           const std::string kernel_key = ParsedTwoBodyTwoCenterIntKey::key(dfspace->id(),
                                                                            dfspace->id(),
-                                                                           "ERI", "");
+                                                                           operset_key, params_key);
           tim.enter(kernel_key);
           RefSCMatrix kernel_rect = df_rtime->moints_runtime()->runtime_2c()->get(kernel_key);
           kernel.assign_subblock(kernel_rect, 0, ndf-1, 0, ndf-1);
@@ -999,11 +1006,11 @@ namespace sc {
         }
 
         //////////////////////////////////////////////
-        // density fit Q using Cholesky solver
+        // density fit Q using Cholesky inverse
         //////////////////////////////////////////////
         tim.enter("density fit");
         {
-          // check if kernel fit already exists
+          // check if kernel_key fit already exists
           RefSymmSCMatrix kernel_i_mat;
           if ( not df_rtime->moints_runtime()->runtime_2c_inv()->key_exists(dfspace->id()) ) {
             kernel_i_mat = kernel.copy();
@@ -1034,10 +1041,10 @@ namespace sc {
           std::vector<double> kernel_factorized;
           // convert kernel_ to a packed upper-triangle form
           kernel_packed.resize(ndf * (ndf + 1) / 2);
-          kernel->convert(&(kernel_packed[0]));
+          kernel_key->convert(&(kernel_packed[0]));
           // factorize kernel_ using diagonal pivoting from LAPACK's DSPTRF
           kernel_factorized.resize(ndf * (ndf + 1) / 2);
-          sc::lapack_cholesky_symmposdef(kernel,
+          sc::lapack_cholesky_symmposdef(kernel_key,
                                          &(kernel_factorized[0]),
                                          1e10);
 
@@ -1058,6 +1065,7 @@ namespace sc {
 
       }
 
+      // finish out by multiplying with the 3-center fitting kernel_key integrals
       const std::string cC_key = ParsedTwoBodyThreeCenterIntKey::key(braspace->id(),
                                                                      dfspace->id(),
                                                                      ketspace->id(),
@@ -1085,8 +1093,7 @@ namespace sc {
             if (not cC->is_local(0, a))
               continue;
 
-            const double* cC_a_bR_buf = cC->retrieve_pair_block(0, a,
-                                                                TwoBodyOper::eri);
+            const double* cC_a_bR_buf = cC->retrieve_pair_block(0, a, 0);
             double* J_a = &(J[a*nket]);
 
             const char trans = 't';
@@ -1095,7 +1102,7 @@ namespace sc {
             F77_DGEMV(&trans, &ndf, &nket, &one, cC_a_bR_buf, &ndf, &(R[0]),
                       &unit_stride, &one, J_a, &unit_stride);
 
-            cC->release_pair_block(0, a, TwoBodyOper::eri);
+            cC->release_pair_block(0, a, 0);
 
           }
 
@@ -1238,7 +1245,8 @@ namespace sc {
       // fit (bra S|
       const std::string C_key = ParsedDensityFittingKey::key(braspace->id(),
                                                              Sspace->id(),
-                                                             dfspace->id());
+                                                             dfspace->id(),
+                                                             df_info->params()->kernel_key());
       Ref<DistArray4> C = df_rtime->get(C_key);  C->activate();
 //      {
 //        Ref<DistArray4> Ctmp = permute23(C);

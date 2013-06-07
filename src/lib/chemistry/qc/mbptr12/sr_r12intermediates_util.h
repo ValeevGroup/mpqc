@@ -30,6 +30,8 @@
 #ifndef _mpqc_src_lib_chemistry_qc_mbptr12_srr12intermediatesutil_h
 #define _mpqc_src_lib_chemistry_qc_mbptr12_srr12intermediatesutil_h
 
+#include <algorithm>
+
 namespace sc {
 
   template <typename T>
@@ -167,6 +169,7 @@ namespace sc {
     /// map operator to the index within the operator set
     Ref<TwoBodyIntDescr> tbint_descr = r12world_->r12tech()->corrfactor()->tbintdescr(r12world_->integral(),0);
     std::string operset_label = "G12'[0]";
+    bool rdm2 = false;
     unsigned int oper_idx;
     if (pkey.oper() == "g")
       oper_idx = tbint_descr->intset(TwoBodyOper::eri);
@@ -182,8 +185,12 @@ namespace sc {
       oper_idx = tbint_descr->intset(TwoBodyOper::g12t1g12);
       operset_label = "G12'[0,0]";
     }
+    else if (pkey.oper() == "gamma") {
+      rdm2 = true;
+      oper_idx = 0;
+    }
     else
-      throw ProgrammingError("SingleReference_R12Intermediates<T>::_ : invalid operator key",__FILE__,__LINE__);
+      throw ProgrammingError("SingleReference_R12Intermediates<T>::ijxy : invalid operator key",__FILE__,__LINE__);
 
     // canonicalize indices, may compute spaces if needed
     auto bra1 = to_space(pkey.bra1());
@@ -191,12 +198,72 @@ namespace sc {
     auto ket1 = to_space(pkey.ket1());
     auto ket2 = to_space(pkey.ket2());
 
-    std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(bra1, bra2, ket1, ket2,
-                                                               operset_label, "");
+    Ref<DistArray4> darray4;
+    if (not rdm2) {
+      std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(bra1, bra2, ket1, ket2,
+                                                                 operset_label, "");
 
-    Ref<TwoBodyMOIntsTransform> tform = r12world_->world()->moints_runtime4()->get(tform_key);
-    tform->compute();
-    Ref<DistArray4> darray4 = tform->ints_distarray4();
+      Ref<TwoBodyMOIntsTransform> tform = r12world_->world()->moints_runtime4()->get(tform_key);
+      tform->compute();
+      darray4 = tform->ints_distarray4();
+    }
+    else { // rdm2
+      if (rdm2_.null())
+        throw ProgrammingError("SingleReference_R12Intermediates<T>::ijxy: asked for rdm2, but it had not been given");
+      // if requested spaces don't match exactly, make a new DistArray4
+      auto oreg = r12world_->world()->tfactory()->orbital_registry();
+      auto bra1_space = oreg->value(bra1);
+      auto bra2_space = oreg->value(bra2);
+      auto ket1_space = oreg->value(ket1);
+      auto ket2_space = oreg->value(ket2);
+      const auto& rdm_space = rdm2_->orbs();
+
+      darray4 = rdm2_->da4();
+      if (not (*bra1_space == *rdm_space &&
+          *bra2_space == *rdm_space &&
+          *ket1_space == *rdm_space &&
+          *ket2_space == *rdm_space )) {
+        DistArray4Dimensions dims(1, bra1_space->rank(), bra2_space->rank(), ket1_space->rank(), ket2_space->rank());
+        Ref<DistArray4> darray4_mapped = darray4->clone(dims);
+        std::vector<int> bra1_map = sc::map(*rdm_space, *bra1_space, true);
+        std::vector<int> bra2_map = sc::map(*rdm_space, *bra2_space, true);
+        std::vector<int> ket1_map = sc::map(*rdm_space, *ket1_space, true);
+        std::vector<int> ket2_map = sc::map(*rdm_space, *ket2_space, true);
+
+        std::vector<double> buf(rdm_space->rank() * rdm_space->rank());
+        std::vector<double> map_buf(ket1_space->rank() * ket2_space->rank());
+
+        darray4->activate();
+        darray4_mapped->activate();
+
+        for(int b1=0; b1<bra1_space->rank(); ++b1) {
+          const int bb1 = bra1_map[b1];
+          for(int b2=0; b2<bra2_space->rank(); ++b2) {
+            const int bb2 = bra2_map[b2];
+
+            darray4->retrieve_pair_block(bb1, bb2, 0, &buf[0]);
+
+            const int nk1 = ket1_space->rank();
+            const int nk2 = ket2_space->rank();
+            for(int k1=0, k12=0; k1<nk1; ++k1) {
+              const int kk1 = ket1_map[k1];
+              const int kk1_offset = kk1 * rdm_space->rank();
+              for(int k2=0; k2<nk2; ++k2, ++k12) {
+                const int kk2 = ket1_map[k2];
+                map_buf[k12] = buf[kk1_offset + kk2];
+              }
+            }
+
+            darray4_mapped->store_pair_block(b1, b2, 0, &map_buf[0]);
+            darray4->release_pair_block(bb1, bb2, 0);
+          }
+        }
+        if (darray4->data_persistent()) darray4->deactivate();
+        if (darray4_mapped->data_persistent()) darray4_mapped->deactivate();
+
+        darray4 = darray4_mapped;
+      }
+    }
     darray4->activate();
 
     const size_t n1 = darray4->ni();
@@ -211,15 +278,10 @@ namespace sc {
     assert(ntasks_with_access == r12world_->world()->msg()->n());
 
     // make tiled ranges
-    // N.B. using little trickery using partial sum to create tilesize=1 range
-    std::vector<size_t> i_hashmarks(n1+1, 1);
-    i_hashmarks[0] = 0;
-    std::partial_sum(i_hashmarks.begin(), i_hashmarks.end(), i_hashmarks.begin());
-    std::vector<size_t> j_hashmarks(n2+1, 1);
-    j_hashmarks[0] = 0;
-    std::partial_sum(j_hashmarks.begin(), j_hashmarks.end(), j_hashmarks.begin());
-    std::vector<size_t> x_hashmarks(2, 0); x_hashmarks[1] = n3;
-    std::vector<size_t> y_hashmarks(2, 0); y_hashmarks[1] = n4;
+    std::vector<size_t> i_hashmarks = space_hashmarks(bra1);
+    std::vector<size_t> j_hashmarks = space_hashmarks(bra2);
+    std::vector<size_t> x_hashmarks = space_hashmarks(ket1);
+    std::vector<size_t> y_hashmarks = space_hashmarks(ket2);
 
     std::vector<TA::TiledRange1> hashmarks;
     hashmarks.push_back(TiledArray::TiledRange1(i_hashmarks.begin(), i_hashmarks.end()));
@@ -279,7 +341,7 @@ namespace sc {
       operset_label = "G12'[0,0]";
     }
     else
-      throw ProgrammingError("SingleReference_R12Intermediates<T>::_ : invalid operator key",__FILE__,__LINE__);
+      throw ProgrammingError("SingleReference_R12Intermediates<T>::ij_xy : invalid operator key",__FILE__,__LINE__);
 
     // canonicalize indices, may compute spaces if needed
     auto bra1 = to_space(pkey.bra1());
@@ -371,9 +433,13 @@ namespace sc {
       operator_matrix = freg->get(ParsedOneBodyIntKey::key(bra_id, ket_id, "K"));
     else if (pkey.oper() == "F")
       operator_matrix = freg->get(ParsedOneBodyIntKey::key(bra_id, ket_id, "F"));
+    else if (pkey.oper() == "h")
+      operator_matrix = freg->get(ParsedOneBodyIntKey::key(bra_id, ket_id, "H"));
     else if (pkey.oper() == "hJ")
       operator_matrix = freg->get(ParsedOneBodyIntKey::key(bra_id, ket_id, "H"))
                       + freg->get(ParsedOneBodyIntKey::key(bra_id, ket_id, "J"));
+    else if (pkey.oper() == "gamma")
+      operator_matrix = this->rdm1(bra, ket);
     else if (pkey.oper() == "I") {
       assert(bra == ket);
       operator_matrix = bra->coefs()->kit()->matrix(bra->coefs().coldim(), ket->coefs().coldim());
@@ -417,25 +483,16 @@ namespace sc {
         operator_matrix = t1_cabs_;
       }
     }
-    else
-      throw ProgrammingError("SingleReference_R12Intermediates<T>::xy -- operator not recognized",
-                             __FILE__, __LINE__);
+    else {
+      std::ostringstream oss;
+      oss << "SingleReference_R12Intermediates<T>::xy -- operator " << pkey.oper() << " is not recognized";
+      throw ProgrammingError(oss.str().c_str(),
+                              __FILE__, __LINE__);
+    }
 
     // make tiled ranges
-    std::vector<size_t> bra_hashmarks(2,0); bra_hashmarks[1] = nbra;
-    if (bra_id == "i") { // unit-tile occupied space
-      bra_hashmarks.resize(nbra+1);
-      bra_hashmarks[0] = 0;
-      for(size_t i=1; i<=nbra; ++i)
-        bra_hashmarks[i] = bra_hashmarks[i-1] + 1;
-    }
-    std::vector<size_t> ket_hashmarks(2,0); ket_hashmarks[1] = nket;
-    if (ket_id == "i") { // unit-tile occupied space
-      ket_hashmarks.resize(nket+1);
-      ket_hashmarks[0] = 0;
-      for(size_t i=1; i<=nbra; ++i)
-        ket_hashmarks[i] = ket_hashmarks[i-1] + 1;
-    }
+    std::vector<size_t> bra_hashmarks = space_hashmarks(bra_id);
+    std::vector<size_t> ket_hashmarks = space_hashmarks(ket_id);
 
     std::vector<TA::TiledRange1> hashmarks;
     hashmarks.push_back(TiledArray::TiledRange1(bra_hashmarks.begin(), bra_hashmarks.end()));
@@ -512,6 +569,81 @@ namespace sc {
     return tarray2(annotation);
   }
 
+  template <typename T>
+  expressions::TGeminalGenerator<T> SingleReference_R12Intermediates<T>::tg_s0_gen(0);
+  template <typename T>
+  expressions::TGeminalGenerator<T> SingleReference_R12Intermediates<T>::tg_s1_gen(1);
+
+  template <typename T>
+  TA::expressions::TensorExpression<TA::Tensor<T> >
+  SingleReference_R12Intermediates<T>::_Tg(const std::string& key) {
+
+    ParsedTwoBodyFourCenterIntKey pkey(key);
+
+    auto v = tarray4tg_registry_.find(key);
+    if (v == tarray4tg_registry_.end()) {
+
+    if (pkey.oper() != "Tg") {
+      std::ostringstream oss;
+      oss << "SingleReference_R12Intermediates<T>::_Tg : " << pkey.oper() << " is an invalid operator key";
+      throw ProgrammingError(oss.str().c_str(), __FILE__, __LINE__);
+    }
+
+    // canonicalize indices, may compute spaces if needed
+    auto bra1 = to_space(pkey.bra1());
+    auto bra2 = to_space(pkey.bra2());
+    auto ket1 = to_space(pkey.ket1());
+    auto ket2 = to_space(pkey.ket2());
+
+    if (not (bra1 == bra2 && bra1 == ket1 && bra1 == ket2)) {
+      throw ProgrammingError("SingleReference_R12Intermediates<T>::_Tg : all spaces must be the same", __FILE__, __LINE__);
+    }
+
+    // make tiled ranges
+    std::vector<size_t> i_hashmarks = space_hashmarks(bra1);
+    std::vector<size_t> j_hashmarks = space_hashmarks(bra2);
+    std::vector<size_t> x_hashmarks = space_hashmarks(ket1);
+    std::vector<size_t> y_hashmarks = space_hashmarks(ket2);
+
+    std::vector<TA::TiledRange1> hashmarks;
+    hashmarks.push_back(TiledArray::TiledRange1(i_hashmarks.begin(), i_hashmarks.end()));
+    hashmarks.push_back(TiledArray::TiledRange1(j_hashmarks.begin(), j_hashmarks.end()));
+    hashmarks.push_back(TiledArray::TiledRange1(x_hashmarks.begin(), x_hashmarks.end()));
+    hashmarks.push_back(TiledArray::TiledRange1(y_hashmarks.begin(), y_hashmarks.end()));
+    TiledArray::TiledRange ijxy_trange(hashmarks.begin(), hashmarks.end());
+
+    std::shared_ptr<TArray4Tg> result(new TArray4Tg(world_, ijxy_trange) );
+    // construct local tiles
+    for(auto t=ijxy_trange.tiles().begin();
+        t!=ijxy_trange.tiles().end();
+        ++t)
+      if (result->is_local(*t))
+      {
+        std::array<std::size_t, 4> index; std::copy(t->begin(), t->end(), index.begin());
+        madness::Future < typename TArray4Tg::value_type >
+          tile((typename TArray4Tg::value_type(result.get(), index, &tg_s0_gen)
+              ));
+
+        // Insert the tile into the array
+        result->set(*t, tile);
+      }
+
+    tarray4tg_registry_[key] = result;
+    v = tarray4tg_registry_.find(key);
+    }
+    TArray4Tg& tarray4 = *(v->second);
+
+    std::array<std::string, 4> ind = {{pkey.bra1(), pkey.bra2(), pkey.ket1(), pkey.ket2()}};
+    for(auto v=ind.begin(); v!=ind.end(); ++v) {
+      if (ParsedTransformedOrbitalSpaceKey::valid_key(*v) ) {
+        ParsedTransformedOrbitalSpaceKey ptkey(*v);
+        *v = ptkey.label();
+      }
+    }
+
+    const std::string annotation = ind[0] + "," + ind[1] + "," + ind[2] + "," + ind[3];
+    return tarray4(annotation);
+  }
 
   namespace expressions {
 
@@ -649,6 +781,7 @@ namespace sc {
                                                                     pkey.transform_operator());
       auto oreg = r12world_->world()->tfactory()->orbital_registry();
       auto freg = r12world_->world()->fockbuild_runtime();
+
       if (not oreg->key_exists(space_key)) { // compute if needed
         std::string support_key = ParsedOrbitalSpaceKey::key(to_space(pkey.support_label()), pkey.support_spin());
         std::string target_key = ParsedOrbitalSpaceKey::key(space_label, pkey.spin());
@@ -660,17 +793,20 @@ namespace sc {
         RefSCMatrix operator_matrix;
         switch(pkey.transform_operator()) {
           case OneBodyOper::J:
-          operator_matrix = freg->get(ParsedOneBodyIntKey::key(target_key, support_key, "J"));
+          operator_matrix = freg->get(ParsedOneBodyIntKey::key(support_key, target_key, "J"));
           break;
           case OneBodyOper::K:
-          operator_matrix = freg->get(ParsedOneBodyIntKey::key(target_key, support_key, "K"));
+          operator_matrix = freg->get(ParsedOneBodyIntKey::key(support_key, target_key, "K"));
           break;
           case OneBodyOper::F:
-          operator_matrix = freg->get(ParsedOneBodyIntKey::key(target_key, support_key, "F"));
+          operator_matrix = freg->get(ParsedOneBodyIntKey::key(support_key, target_key, "F"));
           break;
           case OneBodyOper::hJ:
-          operator_matrix = freg->get(ParsedOneBodyIntKey::key(target_key, support_key, "H"))
-                          + freg->get(ParsedOneBodyIntKey::key(target_key, support_key, "J"));
+          operator_matrix = freg->get(ParsedOneBodyIntKey::key(support_key, target_key, "H"))
+                          + freg->get(ParsedOneBodyIntKey::key(support_key, target_key, "J"));
+          break;
+          case OneBodyOper::gamma:
+          operator_matrix = this->rdm1(support_space, target_space);
           break;
           default:
             throw ProgrammingError("SingleReference_R12Intermediates<T>::to_space -- transformed spaces only with Fock-like operators are supported now",
@@ -678,12 +814,56 @@ namespace sc {
         }
 
         Ref<OrbitalSpace> tformed_space = new OrbitalSpace(space_key, space_key,
-                                                           target_space, support_coefs * operator_matrix.t(),
+                                                           target_space, support_coefs * operator_matrix,
                                                            support_space->basis());
+        operator_matrix = 0;
         oreg->add(make_keyspace_pair(tformed_space));
       }
       return space_key;
     }
+
+    return to_space_(index);
+  }
+
+  template <typename T>
+  RefSCMatrix SingleReference_R12Intermediates<T>::rdm1(const Ref<OrbitalSpace>& row_space,
+                                                        const Ref<OrbitalSpace>& col_space) const {
+    // get the reference 1-RDM
+    RefSymmSCMatrix gamma_total = r12world_->refwfn()->ordm_occ_sb(Alpha) + r12world_->refwfn()->ordm_occ_sb(Beta);
+    Ref<OrbitalSpace> occ = r12world_->refwfn()->occ_sb(Alpha);
+    // map to the target space and support space
+    std::vector<int> col_to_occ;
+    std::vector<int> row_to_occ;
+    try {
+      const bool require_same_basis = true;
+      col_to_occ = map(*occ, *col_space, require_same_basis);
+      row_to_occ = map(*occ, *row_space, require_same_basis);
+    }
+    catch (sc::CannotConstructMap&) {
+      throw ProgrammingError("requested RDM1 in spaces x and y, but x and y are not supported by the same basis",
+                             __FILE__, __LINE__);
+    }
+    RefSCMatrix result = gamma_total.kit()->matrix(row_space->dim(), col_space->dim());
+    result.assign(0.0);
+    const int nr = result.nrow();
+    const int nc = result.ncol();
+    for(int r=0; r<nr; ++r) {
+      const int rr = row_to_occ[r];
+      if (rr >= 0)
+        for(int c=0; c<nc; ++c) {
+          const int cc = col_to_occ[c];
+          if (cc >= 0)
+            result.set_element(r, c, gamma_total.get_element(rr, cc));
+        }
+    }
+
+    return result;
+  }
+
+  template<typename T>
+  std::string SingleReference_R12Intermediates<T>::to_space_(std::string index) {
+
+    index.erase(std::remove_if(index.begin(), index.end(), &isdigit), index.end());
 
     if (index == "i" || index == "j" || index == "k" || index == "l")
       return "i";
@@ -694,21 +874,45 @@ namespace sc {
     if (index == "e" || index == "f")
       return "e";
     if (index == "a" || index == "b" || index == "c" || index == "d")
-       return "a";
+      return "a";
     if (index == "p" || index == "q" || index == "r" || index == "s")
-       return "p";
+      return "p";
     if (index == "p'" || index == "q'" || index == "r'" || index == "s'")
-       return "p'";
+      return "p'";
     if (index == "a'" || index == "b'" || index == "c'" || index == "d'")
-       return "a'";
+      return "a'";
     if (index == "A'" || index == "B'" || index == "C'" || index == "D'")
-       return "A'";
+      return "A'";
 
     std::ostringstream oss;
-    oss << "SingleReference_R12Intermediates::to_space(): index label " << index << " not in the dictionary";
+    oss << "SingleReference_R12Intermediates::to_space(): index label " << index << " not in the current dictionary:";
     throw ProgrammingError(oss.str().c_str(),
                            __FILE__, __LINE__);
   }
+
+  template <typename T>
+  std::vector<size_t>
+  SingleReference_R12Intermediates<T>::space_hashmarks(std::string space_label) const {
+
+    const bool tformed_space = ParsedTransformedOrbitalSpaceKey::valid_key(space_label);
+    if (tformed_space) {
+      ParsedTransformedOrbitalSpaceKey ptkey(space_label);
+      space_label = ptkey.label();
+    }
+
+    auto oreg = r12world_->world()->tfactory()->orbital_registry();
+    size_t rank = oreg->value(space_label)->rank();
+    std::vector<size_t> hashmarks(2,0); hashmarks[1] = rank;
+    if (space_label == "i" || space_label == "m") { // unit-tile occupied spaces
+      hashmarks.resize(rank+1);
+      hashmarks[0] = 0;
+      for(size_t i=1; i<=rank; ++i)
+        hashmarks[i] = hashmarks[i-1] + 1;
+    }
+
+    return hashmarks;
+  }
+
 
   template <typename T>
   std::ostream& operator<<(std::ostream& os, const DA4_Tile<T>& t) {

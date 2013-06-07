@@ -130,57 +130,41 @@ ParsedTwoBodyFourCenterIntKey::key(const std::string& bra1,
 std::string
 ParsedTwoBodyFourCenterIntKey::key(const Ref<TwoBodyIntDescr>& descr)
 {
-  Ref<TwoBodyIntDescrERI> eridescr; eridescr << descr;
-  Ref<TwoBodyIntDescrR12> r12descr; r12descr << descr;
-  Ref<TwoBodyIntDescrG12> g12descr; g12descr << descr;
-  Ref<TwoBodyIntDescrG12NC> g12ncdescr; g12ncdescr << descr;
-  Ref<TwoBodyIntDescrG12DKH> g12dkhdescr; g12dkhdescr << descr;
-
-  std::string result;
-  if (eridescr.nonnull()) {
-    result = std::string("ERI");
-  }
-  if (r12descr.nonnull()) {
-    result = std::string("R12");
-  }
-  if (g12descr.nonnull()) {
-    result = std::string("G12");
-  }
-  if (g12ncdescr.nonnull()) {
-    result = std::string("G12'");
-  }
-  if (g12dkhdescr.nonnull()) {
-    result = std::string("G12DKH");
-  }
-
-  return result;
+  return TwoBodyOperSetDescr::instance(descr->operset())->key();
 }
 
 Ref<TwoBodyIntDescr>
-ParsedTwoBodyFourCenterIntKey::create_descr(const std::string& oper_key,
+ParsedTwoBodyFourCenterIntKey::create_descr(const std::string& operset_key,
                                   const Ref<IntParams>& p,
                                   const Ref<Integral>& integral)
 {
-  if (oper_key == std::string("ERI")) {
-    return new TwoBodyIntDescrERI(integral);
+  static const int N = 4;
+  if (operset_key == TwoBodyOperSetDescr::instance(TwoBodyOperSet::ERI)->key()) {
+    return new TwoBodyNCenterIntDescr<N,TwoBodyOperSet::ERI>(integral, p);
   }
-  if (oper_key == std::string("R12")) {
-    return new TwoBodyIntDescrR12(integral);
+  if (operset_key == TwoBodyOperSetDescr::instance(TwoBodyOperSet::R12)->key()) {
+    return new TwoBodyNCenterIntDescr<N,TwoBodyOperSet::R12>(integral, p);
   }
-  if (oper_key == std::string("G12")) {
-    Ref<IntParamsG12> params_cast; params_cast << p;
-    if (params_cast.null()) throw ProgrammingError("ParsedTwoBodyFourCenterIntKey::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
-    return new TwoBodyIntDescrG12(integral,params_cast);
+  if (operset_key == TwoBodyOperSetDescr::instance(TwoBodyOperSet::G12)->key()) {
+    return new TwoBodyNCenterIntDescr<N,TwoBodyOperSet::G12>(integral, p);
   }
-  if (oper_key == std::string("G12'")) {
-    Ref<IntParamsG12> params_cast; params_cast << p;
-    if (params_cast.null()) throw ProgrammingError("ParsedTwoBodyFourCenterIntKey::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
-    return new TwoBodyIntDescrG12NC(integral,params_cast);
+  if (operset_key == TwoBodyOperSetDescr::instance(TwoBodyOperSet::G12NC)->key()) {
+    return new TwoBodyNCenterIntDescr<N,TwoBodyOperSet::G12NC>(integral, p);
   }
-  if (oper_key == std::string("G12DKH")) {
-    Ref<IntParamsG12> params_cast; params_cast << p;
-    if (params_cast.null()) throw ProgrammingError("ParsedTwoBodyFourCenterIntKey::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
-    return new TwoBodyIntDescrG12DKH(integral,params_cast);
+  if (operset_key == TwoBodyOperSetDescr::instance(TwoBodyOperSet::G12DKH)->key()) {
+    return new TwoBodyNCenterIntDescr<N,TwoBodyOperSet::G12DKH>(integral, p);
+  }
+  if (operset_key == TwoBodyOperSetDescr::instance(TwoBodyOperSet::R12_0_G12)->key()) {
+    return new TwoBodyNCenterIntDescr<N,TwoBodyOperSet::R12_0_G12>(integral, p);
+  }
+  if (operset_key == TwoBodyOperSetDescr::instance(TwoBodyOperSet::R12_m1_G12)->key()) {
+    return new TwoBodyNCenterIntDescr<N,TwoBodyOperSet::R12_m1_G12>(integral, p);
+  }
+  if (operset_key == TwoBodyOperSetDescr::instance(TwoBodyOperSet::G12_T1_G12)->key()) {
+    return new TwoBodyNCenterIntDescr<N,TwoBodyOperSet::G12_T1_G12>(integral, p);
+  }
+  if (operset_key == TwoBodyOperSetDescr::instance(TwoBodyOperSet::DeltaFunction)->key()) {
+    return new TwoBodyNCenterIntDescr<N,TwoBodyOperSet::DeltaFunction>(integral, p);
   }
   throw ProgrammingError("ParsedTwoBodyFourCenterIntKey::create_descr() -- unknown oper",
                          __FILE__,__LINE__);
@@ -210,58 +194,42 @@ ParsedTwoBodyThreeCenterIntKey::key(const std::string& bra1,
 }
 std::string
 ParsedTwoBodyThreeCenterIntKey::key(const Ref<TwoBodyThreeCenterIntDescr>& descr) {
-    Ref<TwoBodyThreeCenterIntDescrERI> eridescr; eridescr << descr;
-    Ref<TwoBodyThreeCenterIntDescrR12> r12descr; r12descr << descr;
-    Ref<TwoBodyThreeCenterIntDescrG12> g12descr; g12descr << descr;
-    Ref<TwoBodyThreeCenterIntDescrG12NC> g12ncdescr; g12ncdescr << descr;
-    Ref<TwoBodyThreeCenterIntDescrG12DKH> g12dkhdescr; g12dkhdescr << descr;
-
-    std::string result;
-    if (eridescr.nonnull()) {
-      result = std::string("ERI");
-    }
-    if (r12descr.nonnull()) {
-      result = std::string("R12");
-    }
-    if (g12descr.nonnull()) {
-      result = std::string("G12");
-    }
-    if (g12ncdescr.nonnull()) {
-      result = std::string("G12'");
-    }
-    if (g12dkhdescr.nonnull()) {
-      result = std::string("G12DKH");
-    }
-
-    return result;
+  return TwoBodyOperSetDescr::instance(descr->operset())->key();
 }
 
 Ref<TwoBodyThreeCenterIntDescr>
-ParsedTwoBodyThreeCenterIntKey::create_descr(const std::string& oper_key,
+ParsedTwoBodyThreeCenterIntKey::create_descr(const std::string& operset_key,
                                              const Ref<IntParams>& p,
                                              const Ref<Integral>& integral) {
-  if (oper_key == std::string("ERI")) {
-    return new TwoBodyThreeCenterIntDescrERI(integral);
+  static const int N = 3;
+  if (operset_key == TwoBodyOperSetDescr::instance(TwoBodyOperSet::ERI)->key()) {
+    return new TwoBodyNCenterIntDescr<N,TwoBodyOperSet::ERI>(integral, p);
   }
-  if (oper_key == std::string("R12")) {
-    return new TwoBodyThreeCenterIntDescrR12(integral);
+  if (operset_key == TwoBodyOperSetDescr::instance(TwoBodyOperSet::R12)->key()) {
+    return new TwoBodyNCenterIntDescr<N,TwoBodyOperSet::R12>(integral, p);
   }
-  if (oper_key == std::string("G12")) {
-    Ref<IntParamsG12> params_cast; params_cast << p;
-    if (params_cast.null()) throw ProgrammingError("ParsedTwoBodyThreeCenterIntKey::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
-    return new TwoBodyThreeCenterIntDescrG12(integral,params_cast);
+  if (operset_key == TwoBodyOperSetDescr::instance(TwoBodyOperSet::G12)->key()) {
+    return new TwoBodyNCenterIntDescr<N,TwoBodyOperSet::G12>(integral, p);
   }
-  if (oper_key == std::string("G12'")) {
-    Ref<IntParamsG12> params_cast; params_cast << p;
-    if (params_cast.null()) throw ProgrammingError("ParsedTwoBodyThreeCenterIntKey::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
-    return new TwoBodyThreeCenterIntDescrG12NC(integral,params_cast);
+  if (operset_key == TwoBodyOperSetDescr::instance(TwoBodyOperSet::G12NC)->key()) {
+    return new TwoBodyNCenterIntDescr<N,TwoBodyOperSet::G12NC>(integral, p);
   }
-  if (oper_key == std::string("G12DKH")) {
-    Ref<IntParamsG12> params_cast; params_cast << p;
-    if (params_cast.null()) throw ProgrammingError("ParsedTwoBodyThreeCenterIntKey::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
-    return new TwoBodyThreeCenterIntDescrG12DKH(integral,params_cast);
+  if (operset_key == TwoBodyOperSetDescr::instance(TwoBodyOperSet::G12DKH)->key()) {
+    return new TwoBodyNCenterIntDescr<N,TwoBodyOperSet::G12DKH>(integral, p);
   }
-  throw ProgrammingError("ParsedTwoBodyThreeCenterIntKey::create_descr() -- unknown oper",
+  if (operset_key == TwoBodyOperSetDescr::instance(TwoBodyOperSet::R12_0_G12)->key()) {
+    return new TwoBodyNCenterIntDescr<N,TwoBodyOperSet::R12_0_G12>(integral, p);
+  }
+  if (operset_key == TwoBodyOperSetDescr::instance(TwoBodyOperSet::R12_m1_G12)->key()) {
+    return new TwoBodyNCenterIntDescr<N,TwoBodyOperSet::R12_m1_G12>(integral, p);
+  }
+  if (operset_key == TwoBodyOperSetDescr::instance(TwoBodyOperSet::G12_T1_G12)->key()) {
+    return new TwoBodyNCenterIntDescr<N,TwoBodyOperSet::G12_T1_G12>(integral, p);
+  }
+  if (operset_key == TwoBodyOperSetDescr::instance(TwoBodyOperSet::DeltaFunction)->key()) {
+    return new TwoBodyNCenterIntDescr<N,TwoBodyOperSet::DeltaFunction>(integral, p);
+  }
+  throw ProgrammingError("ParsedTwoBodyFourCenterIntKey::create_descr() -- unknown oper",
                          __FILE__,__LINE__);
 }
 
@@ -287,58 +255,42 @@ ParsedTwoBodyTwoCenterIntKey::key(const std::string& bra1,
 }
 std::string
 ParsedTwoBodyTwoCenterIntKey::key(const Ref<TwoBodyTwoCenterIntDescr>& descr) {
-    Ref<TwoBodyTwoCenterIntDescrERI> eridescr; eridescr << descr;
-    Ref<TwoBodyTwoCenterIntDescrR12> r12descr; r12descr << descr;
-    Ref<TwoBodyTwoCenterIntDescrG12> g12descr; g12descr << descr;
-    Ref<TwoBodyTwoCenterIntDescrG12NC> g12ncdescr; g12ncdescr << descr;
-    Ref<TwoBodyTwoCenterIntDescrG12DKH> g12dkhdescr; g12dkhdescr << descr;
-
-    std::string result;
-    if (eridescr.nonnull()) {
-      result = std::string("ERI");
-    }
-    if (r12descr.nonnull()) {
-      result = std::string("R12");
-    }
-    if (g12descr.nonnull()) {
-      result = std::string("G12");
-    }
-    if (g12ncdescr.nonnull()) {
-      result = std::string("G12'");
-    }
-    if (g12dkhdescr.nonnull()) {
-      result = std::string("G12DKH");
-    }
-
-    return result;
+  return TwoBodyOperSetDescr::instance(descr->operset())->key();
 }
 
 Ref<TwoBodyTwoCenterIntDescr>
-ParsedTwoBodyTwoCenterIntKey::create_descr(const std::string& oper_key,
+ParsedTwoBodyTwoCenterIntKey::create_descr(const std::string& operset_key,
                                              const Ref<IntParams>& p,
                                              const Ref<Integral>& integral) {
-  if (oper_key == std::string("ERI")) {
-    return new TwoBodyTwoCenterIntDescrERI(integral);
+  static const int N = 2;
+  if (operset_key == TwoBodyOperSetDescr::instance(TwoBodyOperSet::ERI)->key()) {
+    return new TwoBodyNCenterIntDescr<N,TwoBodyOperSet::ERI>(integral, p);
   }
-  if (oper_key == std::string("R12")) {
-    return new TwoBodyTwoCenterIntDescrR12(integral);
+  if (operset_key == TwoBodyOperSetDescr::instance(TwoBodyOperSet::R12)->key()) {
+    return new TwoBodyNCenterIntDescr<N,TwoBodyOperSet::R12>(integral, p);
   }
-  if (oper_key == std::string("G12")) {
-    Ref<IntParamsG12> params_cast; params_cast << p;
-    if (params_cast.null()) throw ProgrammingError("ParsedTwoBodyTwoCenterIntKey::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
-    return new TwoBodyTwoCenterIntDescrG12(integral,params_cast);
+  if (operset_key == TwoBodyOperSetDescr::instance(TwoBodyOperSet::G12)->key()) {
+    return new TwoBodyNCenterIntDescr<N,TwoBodyOperSet::G12>(integral, p);
   }
-  if (oper_key == std::string("G12'")) {
-    Ref<IntParamsG12> params_cast; params_cast << p;
-    if (params_cast.null()) throw ProgrammingError("ParsedTwoBodyTwoCenterIntKey::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
-    return new TwoBodyTwoCenterIntDescrG12NC(integral,params_cast);
+  if (operset_key == TwoBodyOperSetDescr::instance(TwoBodyOperSet::G12NC)->key()) {
+    return new TwoBodyNCenterIntDescr<N,TwoBodyOperSet::G12NC>(integral, p);
   }
-  if (oper_key == std::string("G12DKH")) {
-    Ref<IntParamsG12> params_cast; params_cast << p;
-    if (params_cast.null()) throw ProgrammingError("ParsedTwoBodyTwoCenterIntKey::create_descr() -- mismatch between oper and param",__FILE__,__LINE__);
-    return new TwoBodyTwoCenterIntDescrG12DKH(integral,params_cast);
+  if (operset_key == TwoBodyOperSetDescr::instance(TwoBodyOperSet::G12DKH)->key()) {
+    return new TwoBodyNCenterIntDescr<N,TwoBodyOperSet::G12DKH>(integral, p);
   }
-  throw ProgrammingError("ParsedTwoBodyTwoCenterIntKey::create_descr() -- unknown oper",
+  if (operset_key == TwoBodyOperSetDescr::instance(TwoBodyOperSet::R12_0_G12)->key()) {
+    return new TwoBodyNCenterIntDescr<N,TwoBodyOperSet::R12_0_G12>(integral, p);
+  }
+  if (operset_key == TwoBodyOperSetDescr::instance(TwoBodyOperSet::R12_m1_G12)->key()) {
+    return new TwoBodyNCenterIntDescr<N,TwoBodyOperSet::R12_m1_G12>(integral, p);
+  }
+  if (operset_key == TwoBodyOperSetDescr::instance(TwoBodyOperSet::G12_T1_G12)->key()) {
+    return new TwoBodyNCenterIntDescr<N,TwoBodyOperSet::G12_T1_G12>(integral, p);
+  }
+  if (operset_key == TwoBodyOperSetDescr::instance(TwoBodyOperSet::DeltaFunction)->key()) {
+    return new TwoBodyNCenterIntDescr<N,TwoBodyOperSet::DeltaFunction>(integral, p);
+  }
+  throw ProgrammingError("ParsedTwoBodyFourCenterIntKey::create_descr() -- unknown oper",
                          __FILE__,__LINE__);
 }
 
@@ -745,14 +697,12 @@ TwoBodyMOIntsRuntime<2>::create_eval(const std::string& key)
   const std::string& oper_str = pkey.oper();
   const std::string& params_str = pkey.params();
 
-  // currently can only handle Coulomb integrals
-  assert(oper_str == "ERI");
-
   // get the spaces and construct the descriptor
   Ref<OrbitalSpaceRegistry> idxreg = this->factory()->orbital_registry();
   Ref<OrbitalSpace> bra1 = idxreg->value(bra1_str);
   Ref<OrbitalSpace> bra2 = idxreg->value(bra2_str);
   Ref<TwoBodyIntDescr> descr = create_descr(oper_str, params_str);
+  Ref<IntParams> params = ParamsRegistry::instance()->value(params_str);
 
   // compute the matrix
   RefSCMatrix result;
@@ -765,8 +715,22 @@ TwoBodyMOIntsRuntime<2>::create_eval(const std::string& key)
     // form 2-center Coulomb in AO basis
     RefSCMatrix ao(brabas->basisdim(), ketbas->basisdim(), brabas->matrixkit());
     ao.assign(0.0);
-    Ref<SCElementOp> sc =
-        new TwoBodyTwoCenterIntOp(localints->electron_repulsion2());
+    Ref<SCElementOp> sc;
+    if (oper_str == "ERI")
+      sc = new TwoBodyTwoCenterIntOp(localints->electron_repulsion2(), TwoBodyOper::eri);
+    else if (oper_str == "G12'") {
+      Ref<IntParamsG12> params_cast; params_cast << params; assert(params_cast.nonnull());
+      sc = new TwoBodyTwoCenterIntOp(localints->g12nc<2>(params_cast), TwoBodyOper::r12_0_g12);
+    }
+    else if (oper_str == "Delta") {
+      Ref<OneBodyInt> overlap = localints->overlap();
+      sc = new OneBodyIntOp(overlap);
+    }
+    else {
+      std::ostringstream oss;
+      oss << "Key " << oper_str << " is unknown";
+      throw sc::ProgrammingError(oss.str().c_str(), __FILE__, __LINE__);
+    }
     ao.element_op(sc);
     sc = 0;
 

@@ -25,12 +25,12 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#ifndef _math_optimize_gaussianfit_h
+#define _math_optimize_gaussianfit_h
+
 #include <stdexcept>
 #include <vector>
 #include <cmath>
-
-#ifndef _chemistry_qc_mbptr12_gaussianfit_h
-#define _chemistry_qc_mbptr12_gaussianfit_h
 
 namespace sc {
 
@@ -81,7 +81,7 @@ namespace sc {
       void assign_params() const;
   };
 
-  namespace mbptr12 {
+  namespace math {
     /// Slater1D(k,x) = c x^k exp(-a*x)
     class Slater1D {
       public:
@@ -110,10 +110,10 @@ namespace sc {
         double a_;
         double c_;
     };
-    /// PowerGaussian1D(k,l,x) = c x^k exp(-a*x^l)
-    class PowerGaussian1D {
+    /// PowerExponential1D(k,l,x) = c x^k exp(-a*x^l)
+    class PowerExponential1D {
       public:
-        PowerGaussian1D(double a, int l = 2, int k = 0, double c = 1.0) :
+        PowerExponential1D(double a, int l = 2, int k = 0, double c = 1.0) :
           a_(a), k_(k), l_(l), c_(c) {
         }
         double operator()(double x) const {

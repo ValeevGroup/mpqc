@@ -69,7 +69,8 @@ namespace sc {
 	const int nsh2 = b2->nshell();
 	const int n12 = nsh1*nsh2;
 	{
-	    Ref<Int2e> int12 = libint2::create_int2e<Int2e>(integral,b1,b2,b1,b2,storage,params);
+	  libint2::Int2eCreator<Int2e> creator;
+	    Ref<Int2e> int12 = creator(integral,b1,b2,b1,b2,storage,params);
 	    Q12_.resize(n12);  for(int i=0; i<n12; ++i) Q12_[i] = (int_bound_t)0;
 	    double* buf = int12->buffer(0);
 	    int f12 = 0;
@@ -104,7 +105,8 @@ namespace sc {
         const int nsh4 = b4->nshell();
         const int n34 = nsh3*nsh4;
         {
-            Ref<Int2e> int34 = libint2::create_int2e<Int2e>(integral,b3,b4,b3,b4,storage,params);
+          libint2::Int2eCreator<Int2e> creator;
+            Ref<Int2e> int34 = creator(integral,b3,b4,b3,b4,storage,params);
             Q34_.resize(n34);  for(int i=0; i<n34; ++i) Q34_[i] = (int_bound_t)0;
             double* buf = int34->buffer(0);
             int f34 = 0;

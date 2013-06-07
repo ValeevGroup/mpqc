@@ -338,7 +338,7 @@ R12IntEval::V_genref_spinfree(const Ref<OrbitalSpace>& p1,
   assert(r12world()->spinadapted());
   ExEnv::out0() << std::endl << std::endl << indent << "Entered V_genref_spinfree\n\n";
 
-  const bool debugprint = false;
+  const bool debugprint = true;
   Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
 
   const bool p1_eq_p2 = (p1 == p2);

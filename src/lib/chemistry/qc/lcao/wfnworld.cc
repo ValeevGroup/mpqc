@@ -54,13 +54,25 @@ WavefunctionWorld::WavefunctionWorld(const Ref<KeyVal>& keyval)
       );
   if (bs_df_.nonnull()) {
     df_kernel_ = keyval->stringvalue("df_kernel", KeyValValuestring("coulomb"));
-    if (df_kernel_ != "coulomb")
+    if (not (df_kernel_ == "coulomb" ||
+             df_kernel_.find("exp") != std::string::npos)
+       )
       throw InputError("invalid value",
                              __FILE__,
                              __LINE__,
                              "df_kernel",
                              df_kernel_.c_str(),
                              class_desc());
+    // in case of the exp kernel validate the kernel string format
+    if (df_kernel_.find("exp") != std::string::npos) {
+      if (not DensityFittingParams::valid_kernel(df_kernel_))
+        throw InputError("recognized, but invalid kernel",
+                               __FILE__,
+                               __LINE__,
+                               "df_kernel",
+                               df_kernel_.c_str(),
+                               class_desc());
+    }
 
     df_solver_ = keyval->stringvalue("df_solver", KeyValValuestring("cholesky_inv"));
     if (df_solver_ != "bunchkaufman" &&

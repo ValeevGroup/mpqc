@@ -39,6 +39,9 @@
 #include <math/mmisc/pairiter.h>
 #include <math/scmat/blas.h>
 #include <util/misc/print.h>
+#include <math/distarray4/distarray4_memgrp.h>
+#include <math/distarray4/distarray4_node0file.h>
+#include <math/distarray4/distarray4_mpiiofile.h>
 
 using namespace std;
 using namespace sc;
@@ -1276,6 +1279,30 @@ namespace sc {
 
 
 
+ Ref<DistArray4> make_distarray4(int num_te_types, int ni, int nj, int nx, int ny,
+                                 DistArray4Storage storage) {
+
+   const int nproc = MessageGrp::get_default_messagegrp()->n();
+   const size_t nij_local_max = ((size_t)ni*nj + nproc - 1)/nproc;
+   const size_t blksize = num_te_types * nx * ny * sizeof(double);
+   const size_t max_local_memory = nij_local_max * blksize;
+
+   if (false && ConsumableResources::get_default_instance()->memory() > max_local_memory*3) {
+     return new DistArray4_MemoryGrp(MemoryGrp::get_default_memorygrp(), num_te_types, ni, nj, nx, ny, blksize, storage);
+   }
+   else {
+     const std::string basename = SCFormIO::fileext_to_filename(".moints");
+     const std::string dir = ConsumableResources::get_default_instance()->disk_location();
+     const std::string fname(tempnam(dir.c_str(), basename.c_str()));
+//#if HAVE_MPIIO
+//     return new DistArray4_MPIIOFile_Ind(fname.c_str(), num_te_types, ni, nj, nx, ny, storage);
+//#else
+     return new DistArray4_Node0File(fname.c_str(), num_te_types, ni, nj, nx, ny, storage);
+//#endif
+   }
+
+
+ }
 
 
 

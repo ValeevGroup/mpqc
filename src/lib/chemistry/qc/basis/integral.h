@@ -38,6 +38,8 @@
 #include <chemistry/qc/basis/intparams.h>
 #include <chemistry/qc/basis/operator.h>
 
+#define INTEGRALTHROWDEFAULT { throw ProgrammingError("not implemented in this particular factory", __FILE__, __LINE__); }
+
 namespace sc {
 
 class SymmetryOperation;
@@ -69,6 +71,10 @@ namespace detail {
   template <int NumCenters> struct G12EvalCreator;
   template <int NumCenters> struct G12NCEvalCreator;
   template <int NumCenters> struct G12DKHEvalCreator;
+  template <int NumCenters> struct R120G12EvalCreator;
+  template <int NumCenters> struct R12m1G12EvalCreator;
+  template <int NumCenters> struct G12T1G12EvalCreator;
+  template <int NumCenters> struct DeltaFunctionEvalCreator;
   template <int NumCenters, TwoBodyOperSet::type Type> struct EvalCreator;
 };
 
@@ -356,7 +362,6 @@ class Integral : public SavableState {
     /// Return a TwoBodyDerivInt that computes electron repulsion derivatives.
     virtual Ref<TwoBodyDerivInt> electron_repulsion_deriv();
 
-
     /**
      * Creates an evaluator for \c opertype
      *
@@ -430,12 +435,25 @@ class Integral : public SavableState {
       return EvalCreator::eval(this,p);
     }
 
+    /** Return a TwoBodyInt that computes 4-center integrals of a 2-electron delta function (i.e. 1-e overlap).
+        This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrDelta. */
+    template <int NumCenters>
+    Ref< typename TwoBodyIntEvalType<NumCenters>::value > delta_function() {
+      typedef typename detail::EvalCreator<NumCenters,TwoBodyOperSet::DeltaFunction>::value EvalCreator;
+      return EvalCreator::eval(this, new IntParamsVoid);
+    }
+
   private:
     template <int NumCenters> friend struct sc::detail::ERIEvalCreator;
     template <int NumCenters> friend struct sc::detail::R12EvalCreator;
     template <int NumCenters> friend struct sc::detail::G12EvalCreator;
     template <int NumCenters> friend struct sc::detail::G12NCEvalCreator;
     template <int NumCenters> friend struct sc::detail::G12DKHEvalCreator;
+    template <int NumCenters> friend struct sc::detail::R120G12EvalCreator;
+    template <int NumCenters> friend struct sc::detail::R12m1G12EvalCreator;
+    template <int NumCenters> friend struct sc::detail::G12T1G12EvalCreator;
+    template <int NumCenters> friend struct sc::detail::DeltaFunctionEvalCreator;
+
     /** Return a TwoBodyInt that computes two-electron integrals specific
         to linear R12 methods.  According to the convention in the
         literature, "g" stands for electron repulsion integral, "r" for the
@@ -444,34 +462,58 @@ class Integral : public SavableState {
         This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrR12.
         Implementation for this kind of TwoBodyInt is
         optional. */
-    virtual Ref<TwoBodyInt> grt_4();
-    virtual Ref<TwoBodyThreeCenterInt> grt_3();
-    virtual Ref<TwoBodyTwoCenterInt> grt_2();
+    virtual Ref<TwoBodyInt> grt_4() INTEGRALTHROWDEFAULT;
+    virtual Ref<TwoBodyThreeCenterInt> grt_3() INTEGRALTHROWDEFAULT;
+    virtual Ref<TwoBodyTwoCenterInt> grt_2() INTEGRALTHROWDEFAULT;
 
     /** Return a TwoBodyInt that computes two-electron integrals specific
         to explicitly correlated methods which use Gaussian geminals.
         This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrG12.
         Implementation for this kind of TwoBodyInt is optional. */
-    virtual Ref<TwoBodyInt> g12_4(const Ref<IntParamsG12>&);
-    virtual Ref<TwoBodyThreeCenterInt> g12_3(const Ref<IntParamsG12>&);
-    virtual Ref<TwoBodyTwoCenterInt> g12_2(const Ref<IntParamsG12>&);
+    virtual Ref<TwoBodyInt> g12_4(const Ref<IntParamsG12>&) INTEGRALTHROWDEFAULT;
+    virtual Ref<TwoBodyThreeCenterInt> g12_3(const Ref<IntParamsG12>&) INTEGRALTHROWDEFAULT;
+    virtual Ref<TwoBodyTwoCenterInt> g12_2(const Ref<IntParamsG12>&) INTEGRALTHROWDEFAULT;
 
     /** Return a TwoBodyInt that computes two-electron integrals specific
         to explicitly correlated methods which use Gaussian geminals.
 	    This particular implementation does not produce commutator integrals.
 	    This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrG12NC.
         Implementation for this kind of TwoBodyInt is optional. */
-    virtual Ref<TwoBodyInt> g12nc_4(const Ref<IntParamsG12>&);
-    virtual Ref<TwoBodyThreeCenterInt> g12nc_3(const Ref<IntParamsG12>&);
-    virtual Ref<TwoBodyTwoCenterInt> g12nc_2(const Ref<IntParamsG12>&);
+    virtual Ref<TwoBodyInt> g12nc_4(const Ref<IntParamsG12>&) INTEGRALTHROWDEFAULT;
+    virtual Ref<TwoBodyThreeCenterInt> g12nc_3(const Ref<IntParamsG12>&) INTEGRALTHROWDEFAULT;
+    virtual Ref<TwoBodyTwoCenterInt> g12nc_2(const Ref<IntParamsG12>&) INTEGRALTHROWDEFAULT;
 
     /** Return a TwoBodyInt that computes two-electron integrals specific
         to relativistic explicitly correlated methods which use Gaussian geminals.
         This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrG12DKH.
         Implementation for this kind of TwoBodyInt is optional. */
-    virtual Ref<TwoBodyInt> g12dkh_4(const Ref<IntParamsG12>&);
-    virtual Ref<TwoBodyThreeCenterInt> g12dkh_3(const Ref<IntParamsG12>&);
-    virtual Ref<TwoBodyTwoCenterInt> g12dkh_2(const Ref<IntParamsG12>&);
+    virtual Ref<TwoBodyInt> g12dkh_4(const Ref<IntParamsG12>&) INTEGRALTHROWDEFAULT;
+    virtual Ref<TwoBodyThreeCenterInt> g12dkh_3(const Ref<IntParamsG12>&) INTEGRALTHROWDEFAULT;
+    virtual Ref<TwoBodyTwoCenterInt> g12dkh_2(const Ref<IntParamsG12>&) INTEGRALTHROWDEFAULT;
+
+    /** Return a TwoBodyInt that computes two-electron integrals of TwoBodyOper::r12_0_g12.
+        Implementation for this kind of TwoBodyInt is optional. */
+    virtual Ref<TwoBodyInt> r120g12_4(const Ref<IntParamsG12>&) INTEGRALTHROWDEFAULT;
+    virtual Ref<TwoBodyThreeCenterInt> r120g12_3(const Ref<IntParamsG12>&) INTEGRALTHROWDEFAULT;
+    virtual Ref<TwoBodyTwoCenterInt> r120g12_2(const Ref<IntParamsG12>&) INTEGRALTHROWDEFAULT;
+
+    /** Return a TwoBodyInt that computes two-electron integrals of TwoBodyOper::r12_m1_g12.
+        Implementation for this kind of TwoBodyInt is optional. */
+    virtual Ref<TwoBodyInt> r12m1g12_4(const Ref<IntParamsG12>&) INTEGRALTHROWDEFAULT;
+    virtual Ref<TwoBodyThreeCenterInt> r12m1g12_3(const Ref<IntParamsG12>&) INTEGRALTHROWDEFAULT;
+    virtual Ref<TwoBodyTwoCenterInt> r12m1g12_2(const Ref<IntParamsG12>&) INTEGRALTHROWDEFAULT;
+
+    /** Return a TwoBodyInt that computes two-electron integrals of TwoBodyOper::g12t1g12.
+        Implementation for this kind of TwoBodyInt is optional. */
+    virtual Ref<TwoBodyInt> g12t1g12_4(const Ref<IntParamsG12>&) INTEGRALTHROWDEFAULT;
+    virtual Ref<TwoBodyThreeCenterInt> g12t1g12_3(const Ref<IntParamsG12>&) INTEGRALTHROWDEFAULT;
+    virtual Ref<TwoBodyTwoCenterInt> g12t1g12_2(const Ref<IntParamsG12>&) INTEGRALTHROWDEFAULT;
+
+    /** Return a TwoBodyInt that computes two-electron integrals of TwoBodyOper::delta.
+        Implementation for this kind of TwoBodyInt is optional. */
+    virtual Ref<TwoBodyInt> delta_function_4() INTEGRALTHROWDEFAULT;
+    virtual Ref<TwoBodyThreeCenterInt> delta_function_3() INTEGRALTHROWDEFAULT;
+    virtual Ref<TwoBodyTwoCenterInt> delta_function_2() INTEGRALTHROWDEFAULT;
 
 };
 
@@ -573,6 +615,82 @@ namespace detail {
     }
   };
 
+  template <> struct R120G12EvalCreator<4> {
+    static Ref< TwoBodyIntEvalType<4>::value >
+    eval(Integral* factory, const Ref<IntParamsG12>& params) {
+      return factory->r120g12_4(params);
+    }
+  };
+  template <> struct R120G12EvalCreator<3> {
+    static Ref< TwoBodyIntEvalType<3>::value >
+    eval(Integral* factory, const Ref<IntParamsG12>& params) {
+      return factory->r120g12_3(params);
+    }
+  };
+  template <> struct R120G12EvalCreator<2> {
+    static Ref< TwoBodyIntEvalType<2>::value >
+    eval(Integral* factory, const Ref<IntParamsG12>& params) {
+      return factory->r120g12_2(params);
+    }
+  };
+
+  template <> struct R12m1G12EvalCreator<4> {
+    static Ref< TwoBodyIntEvalType<4>::value >
+    eval(Integral* factory, const Ref<IntParamsG12>& params) {
+      return factory->r12m1g12_4(params);
+    }
+  };
+  template <> struct R12m1G12EvalCreator<3> {
+    static Ref< TwoBodyIntEvalType<3>::value >
+    eval(Integral* factory, const Ref<IntParamsG12>& params) {
+      return factory->r12m1g12_3(params);
+    }
+  };
+  template <> struct R12m1G12EvalCreator<2> {
+    static Ref< TwoBodyIntEvalType<2>::value >
+    eval(Integral* factory, const Ref<IntParamsG12>& params) {
+      return factory->r12m1g12_2(params);
+    }
+  };
+
+  template <> struct G12T1G12EvalCreator<4> {
+    static Ref< TwoBodyIntEvalType<4>::value >
+    eval(Integral* factory, const Ref<IntParamsG12>& params) {
+      return factory->g12t1g12_4(params);
+    }
+  };
+  template <> struct G12T1G12EvalCreator<3> {
+    static Ref< TwoBodyIntEvalType<3>::value >
+    eval(Integral* factory, const Ref<IntParamsG12>& params) {
+      return factory->g12t1g12_3(params);
+    }
+  };
+  template <> struct G12T1G12EvalCreator<2> {
+    static Ref< TwoBodyIntEvalType<2>::value >
+    eval(Integral* factory, const Ref<IntParamsG12>& params) {
+      return factory->g12t1g12_2(params);
+    }
+  };
+
+  template <> struct DeltaFunctionEvalCreator<4> {
+    static Ref< TwoBodyIntEvalType<4>::value >
+    eval(Integral* factory, const Ref<IntParamsVoid>& params) {
+      return factory->delta_function_4();
+    }
+  };
+  template <> struct DeltaFunctionEvalCreator<3> {
+    static Ref< TwoBodyIntEvalType<3>::value >
+    eval(Integral* factory, const Ref<IntParamsVoid>& params) {
+      return factory->delta_function_3();
+    }
+  };
+  template <> struct DeltaFunctionEvalCreator<2> {
+    static Ref< TwoBodyIntEvalType<2>::value >
+    eval(Integral* factory, const Ref<IntParamsVoid>& params) {
+      return factory->delta_function_2();
+    }
+  };
+
   template <int NumCenters> struct EvalCreator<NumCenters,TwoBodyOperSet::ERI> {
     typedef ERIEvalCreator<NumCenters> value;
   };
@@ -587,6 +705,18 @@ namespace detail {
   };
   template <int NumCenters> struct EvalCreator<NumCenters,TwoBodyOperSet::G12DKH> {
     typedef G12DKHEvalCreator<NumCenters> value;
+  };
+  template <int NumCenters> struct EvalCreator<NumCenters,TwoBodyOperSet::R12_0_G12> {
+    typedef R120G12EvalCreator<NumCenters> value;
+  };
+  template <int NumCenters> struct EvalCreator<NumCenters,TwoBodyOperSet::R12_m1_G12> {
+    typedef R12m1G12EvalCreator<NumCenters> value;
+  };
+  template <int NumCenters> struct EvalCreator<NumCenters,TwoBodyOperSet::G12_T1_G12> {
+    typedef G12T1G12EvalCreator<NumCenters> value;
+  };
+  template <int NumCenters> struct EvalCreator<NumCenters,TwoBodyOperSet::DeltaFunction> {
+    typedef DeltaFunctionEvalCreator<NumCenters> value;
   };
 
 };

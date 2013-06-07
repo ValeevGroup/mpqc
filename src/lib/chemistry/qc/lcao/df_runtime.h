@@ -34,7 +34,7 @@
 namespace sc {
 
   /** Parsed representation of a string key that represents fitting of a product of space1 and space2 into fspace
-      Coulomb fitting kernel is the default. */
+      Coulomb fitting kernel_key is the default. */
   class ParsedDensityFittingKey {
     public:
       ParsedDensityFittingKey(const std::string& key);
@@ -43,17 +43,20 @@ namespace sc {
       const std::string& space1() const { return space1_; }
       const std::string& space2() const { return space2_; }
       const std::string& fspace() const { return fspace_; }
+      const std::string& kernel() const { return kernel_; }
 
       /// computes key from its components
       static std::string key(const std::string& space1,
                              const std::string& space2,
-                             const std::string& fspace);
+                             const std::string& fspace,
+                             const std::string& kernel);
 
     private:
       std::string key_;
-      std::string space1_, space2_, fspace_;
+      std::string space1_, space2_, fspace_, kernel_;
   };
 
+  class DensityFittingParams;
 
   /**
    *    Smart runtime support for managing DensityFitting objects
@@ -67,7 +70,8 @@ namespace sc {
       typedef DensityFitting::MOIntsRuntime MOIntsRuntime;
 
       // uses MOIntsRuntime to evaluate integrals
-      DensityFittingRuntime(const Ref<MOIntsRuntime>& moints_runtime);
+      DensityFittingRuntime(const Ref<MOIntsRuntime>& moints_runtime,
+                            const DensityFittingParams* dfparams);
       DensityFittingRuntime(StateIn& si);
       void save_data_state(StateOut& so);
 
@@ -75,9 +79,7 @@ namespace sc {
       void obsolete();
 
       /// which density fitting solver will be used to compute?
-      DensityFitting::SolveMethod solver() const { return solver_; }
-      /// change default solver to this
-      void set_solver(DensityFitting::SolveMethod s) { solver_ = s; }
+      const DensityFittingParams* dfparams() const { return dfparams_; }
 
       /** Returns true if the given DensityFitting is available
         */
@@ -111,7 +113,7 @@ namespace sc {
 
     private:
       Ref<MOIntsRuntime> moints_runtime_;
-      DensityFitting::SolveMethod solver_;
+      const DensityFittingParams* dfparams_;
 
       typedef Registry<std::string, ResultRef, detail::NonsingletonCreationPolicy > ResultRegistry;
       Ref<ResultRegistry> results_;
@@ -129,22 +131,36 @@ namespace sc {
     /**
      * Encapsulates parameters used by all density fitting objects
      * @param basis
-     * @param kernel
+     * @param kernel_key A string describing the kernel_key. The only supported values are <tt>coulomb</tt> (the default; this corresponds to the fitting
+     *               the density to reproduce the electric field), <tt>delta</tt> (optimizes the overlap), and <tt>exp(X)</tt> (this corresponds to fitting the density to reproduce
+     *               the potential) where <tt>X</tt> is a positive parameter that determines the lengthscale of
+     *               the region in which to fit the potential.
      * @param solver
      * @return
      */
       DensityFittingParams(const Ref<GaussianBasisSet>& basis,
-                           const std::string& kernel = std::string("1/r_{12}"),
-                           const std::string& solver = std::string("cholesky_refine"));
+                           const std::string& kernel = std::string("coulomb"),
+                           const std::string& solver = std::string("cholesky_inv"));
       DensityFittingParams(StateIn&);
       ~DensityFittingParams();
       void save_data_state(StateOut&);
 
       const Ref<GaussianBasisSet>& basis() const { return basis_; }
-      const std::string& kernel() const { return kernel_; }
+      const std::string& kernel_key() const { return kernel_; }
       DensityFitting::SolveMethod solver() const { return solver_; }
+      /// returns the TwoBodyInt::oper_type object that specifies
+      /// the type of the operator kernel_key used for fitting the density
+      TwoBodyOper::type kernel_otype() const;
+      /// returns the IntParams object corresponding to the fitting kernel_key
+      std::string intparams_key() const;
 
       void print(std::ostream& o) const;
+
+      /// @return true if kernel_key describes a valid kernel_key
+      static bool valid_kernel(const std::string& kernel);
+
+      /// @return string describing kernel_key params (the format depends on the kernel_key type)
+      static std::string kernel_params(std::string kernel);
 
     private:
       static ClassDesc class_desc_;
@@ -152,11 +168,12 @@ namespace sc {
       Ref<GaussianBasisSet> basis_;
       std::string kernel_;
       DensityFitting::SolveMethod solver_;
+      mutable std::string kernel_intparams_key_;
 
   };
 
    inline bool operator==(const DensityFittingParams& A, const DensityFittingParams& B) {
-    return A.basis()->equiv(B.basis()) && A.kernel() == B.kernel() && A.solver() == B.solver();
+    return A.basis()->equiv(B.basis()) && A.kernel_key() == B.kernel_key() && A.solver() == B.solver();
   }
 
   /// this class encapsulates objects needed to perform density fitting of a 4-center integral

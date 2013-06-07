@@ -1014,8 +1014,9 @@ TwoBodyTwoCenterIntIter::TwoBodyTwoCenterIntIter()
 {
 }
 
-TwoBodyTwoCenterIntIter::TwoBodyTwoCenterIntIter(const Ref<TwoBodyTwoCenterInt>& o) :
-  tbi(o)
+TwoBodyTwoCenterIntIter::TwoBodyTwoCenterIntIter(const Ref<TwoBodyTwoCenterInt>& o,
+                                                 TwoBodyOper::type t) :
+  tbi(o), type(t)
 {
 }
 
@@ -1042,16 +1043,10 @@ TwoBodyTwoCenterIntIter::start(int ist, int jst, int ien, int jen)
   ij = (icur*(icur+1)>>1) + jcur;
 }
 
-static inline int
-min(int i, int j)
-{
-  return (i<j) ? i : j;
-}
-
 void
 TwoBodyTwoCenterIntIter::next()
 {
-  int jlast = (redund) ? min(icur,jend-1) : jend-1;
+  int jlast = (redund) ? std::min(icur,jend-1) : jend-1;
 
   if (jcur < jlast) {
     jcur++;
@@ -1075,7 +1070,7 @@ ShellPairIter&
 TwoBodyTwoCenterIntIter::current_pair()
 {
   tbi->compute_shell(icur,jcur);
-  spi.init(tbi->buffer(), icur, jcur,
+  spi.init(tbi->buffer(type), icur, jcur,
            tbi->basis1()->shell_to_function(icur),
            tbi->basis2()->shell_to_function(jcur),
            tbi->basis1()->operator()(icur).nfunction(),
@@ -1095,14 +1090,16 @@ TwoBodyTwoCenterIntIter::cloneable() const
 Ref<TwoBodyTwoCenterIntIter>
 TwoBodyTwoCenterIntIter::clone()
 {
-  return new TwoBodyTwoCenterIntIter(tbi->clone());
+  return new TwoBodyTwoCenterIntIter(tbi->clone(),
+                                     type);
 }
 
 ///////////////////////////////////////////////////////////////////////
 
-TwoBodyTwoCenterIntOp::TwoBodyTwoCenterIntOp(const Ref<TwoBodyTwoCenterInt>& it)
+TwoBodyTwoCenterIntOp::TwoBodyTwoCenterIntOp(const Ref<TwoBodyTwoCenterInt>& it,
+                                             TwoBodyOper::type type)
 {
-  iter = new TwoBodyTwoCenterIntIter(it);
+  iter = new TwoBodyTwoCenterIntIter(it, type);
 }
 
 TwoBodyTwoCenterIntOp::TwoBodyTwoCenterIntOp(const Ref<TwoBodyTwoCenterIntIter>& it) :

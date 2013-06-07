@@ -28,8 +28,6 @@
 #ifndef _chemistry_qc_libint2_linkage_h
 #define _chemistry_qc_libint2_linkage_h
 
-#ifndef __PIC__
-
 #include <util/class/class.h>
 #include <chemistry/qc/libint2/libint2.h>
 
@@ -38,7 +36,5 @@ namespace sc {
 static ForceLink<IntegralLibint2> libint2_force_link_a_;
 
 }
-
-#endif /* __PIC__ */
 
 #endif

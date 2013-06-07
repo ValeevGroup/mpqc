@@ -317,7 +317,7 @@ namespace sc {
       /** methods for spin-free algorithm */
       double energy_PT2R12_projector2();
       RefSCMatrix V_genref_projector2();
-      /** computes t^pq_rs * Gamma^rs_vx * f^x_w * t^vw_tu; */
+      /** @return \f$ Gamma^rs_vx * f^x_w * t^vw_tu \f$, a matrix with dimensions \c gg_space()->rank() by \c GG_space()->rank() */
       RefSCMatrix X_term_Gamma_F_T();
       RefSymmSCMatrix X_transformed_by_C();
       RefSCMatrix B_others();
@@ -382,6 +382,10 @@ namespace sc {
       double compute_energy(const RefSCMatrix &hmat,
                             bool print_pair_energies = true,
                             std::ostream& os = ExEnv::out0());
+
+
+      /// @return the {[2]_R12,reference} pair of energies computed using the MPQC3 runtime
+      std::pair<double,double> energy_PT2R12_projector2_mpqc3();
 
   };
 

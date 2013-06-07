@@ -41,16 +41,6 @@
 using namespace std;
 using namespace sc;
 
-// This global object initializes the static interface of libint
-Libint2StaticInterface Libint2StaticInitializer;
-
-inline int max(int a,int b) { return (a > b) ? a : b;}
-inline void fail()
-{
-  ExEnv::errn() << scprintf("failing module:\n%s",__FILE__) << endl;
-  abort();
-}
-
 EriLibint2::EriLibint2(Integral *integral,
 		   const Ref<GaussianBasisSet>& b1,
 		   const Ref<GaussianBasisSet>& b2,

@@ -130,10 +130,23 @@ class IntegralLibint2 : public Integral {
 
     Ref<TwoBodyInt> g12dkh_4(const Ref<IntParamsG12>& p);
 
+    Ref<TwoBodyInt> delta_function_4();
+    Ref<TwoBodyThreeCenterInt> delta_function_3();
+
     void set_basis(const Ref<GaussianBasisSet> &b1,
                    const Ref<GaussianBasisSet> &b2 = 0,
                    const Ref<GaussianBasisSet> &b3 = 0,
                    const Ref<GaussianBasisSet> &b4 = 0);
+};
+
+/* Libint2StaticInterface is an initializer class for the static part
+   of libint's interface (one per executable) */
+class Libint2StaticInterface {
+    bool ready;
+
+    public:
+    Libint2StaticInterface();
+    ~Libint2StaticInterface() { ready = false; }
 };
 
 }

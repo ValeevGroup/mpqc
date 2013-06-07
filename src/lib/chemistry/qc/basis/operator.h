@@ -89,16 +89,18 @@ namespace sc {
    */
   struct OneBodyOper {
       /**
-       * Types of one-body operators
+       * Types of one-body operators, includes various context-dependent "projectors", such as 1-RDM, etc.
+       * "True" operators have type >= 0.
        */
     enum type {
+      gamma = -1, //!< 1-body reduced density matrix
       T = 0,      //!< (nonrelativitic) kinetic energy
       V = 1,      //!< nuclear (Coulomb) potential
       h = 2,      //!< core Hamiltonian = T+V
       J = 3,      //!< (electronic) Coulomb
       K = 4,      //!< (electronic) exchange
       F = 5,      //!< Fock operator
-      hJ = 6,    //!< h+J
+      hJ = 6,     //!< h+J
       mu_x = 7,   //!< x component of electric dipole moment
       mu_y = 8,   //!< y component of electric dipole moment
       mu_z = 9,   //!< z component of electric dipole moment
@@ -227,7 +229,7 @@ namespace sc {
     */
   struct TwoBodyOper {
       /**
-       * types of known operators
+       * types of known two-body operators
        */
     enum type {
       eri =0,                  //!< two-body Coulomb \f$ 1/r_{12} \f$
@@ -240,7 +242,8 @@ namespace sc {
       t2g12 =7,                //!< \f$ [\hat{T}_2, g_{12}] \f$
       g12t1g12 =8,             //!< \f$ [ g_{12}, [\hat{T}_1, g_{12}] ] \f$
       g12p4g12_m_g12t1g12t1 =9,//!< \f$ [g_{12}, [\hat{p}^4_1 + \hat{p}^4_2, g_{12}]] - 2 [g_{12}, [\hat{T}_1 + \hat{T}_2, g_{12}]](\hat{T}_1 + \hat{T}_2) \f$
-      anti_g12g12 =10          //!< anti_g12g12
+      anti_g12g12 =10,         //!< anti_g12g12
+      delta =11                //!< \f$ \delta_3({\bf r}_1 - {\bf r}_2) \f$
     };
     /// The max number of such types
     static int max_ntypes;
@@ -253,14 +256,16 @@ namespace sc {
   /// Known two-body operator sets
   struct TwoBodyOperSet {
     enum type {
-      ERI,       //!< eri}
+      ERI,       //!< {eri}
       R12,       //!< {eri, r12, r12t1, r12t2}
       G12,       //!< {eri, r12_0_g12, r12_m1_g12, t1g12, t2g12, g12t1g12}
       G12NC,     //!< {eri, r12_0_g12, r12_m1_g12, g12t1g12, anti_g12g12}
       G12DKH,    //!< {g12p4g12_m_g12t1g12t1}
       R12_0_G12, //!< {r12_0_g12}
       R12_m1_G12,//!< {r12_m1_g12}
-      G12_T1_G12 //!< {g12t1g12}
+      G12_T1_G12,//!< {g12t1g12}
+      DeltaFunction, //!< {delta}
+
     };
   };
 
@@ -269,34 +274,47 @@ namespace sc {
   template <> struct TwoBodyOperSetTypeMap<TwoBodyOperSet::ERI> {
     static const int size = 1;
     static TwoBodyOper::type value[];
+    static std::string key;
   };
   template <> struct TwoBodyOperSetTypeMap<TwoBodyOperSet::R12> {
     static const int size = 4;
     static TwoBodyOper::type value[];
+    static std::string key;
   };
   template <> struct TwoBodyOperSetTypeMap<TwoBodyOperSet::G12> {
     static const int size = 6;
     static TwoBodyOper::type value[];
+    static std::string key;
   };
   template <> struct TwoBodyOperSetTypeMap<TwoBodyOperSet::G12NC> {
     static const int size = 5;
     static TwoBodyOper::type value[];
+    static std::string key;
   };
   template <> struct TwoBodyOperSetTypeMap<TwoBodyOperSet::G12DKH> {
     static const int size = 1;
     static TwoBodyOper::type value[];
+    static std::string key;
   };
   template <> struct TwoBodyOperSetTypeMap<TwoBodyOperSet::R12_0_G12> {
     static const int size = 1;
     static TwoBodyOper::type value[];
+    static std::string key;
   };
   template <> struct TwoBodyOperSetTypeMap<TwoBodyOperSet::R12_m1_G12> {
     static const int size = 1;
     static TwoBodyOper::type value[];
+    static std::string key;
   };
   template <> struct TwoBodyOperSetTypeMap<TwoBodyOperSet::G12_T1_G12> {
     static const int size = 1;
     static TwoBodyOper::type value[];
+    static std::string key;
+  };
+  template <> struct TwoBodyOperSetTypeMap<TwoBodyOperSet::DeltaFunction> {
+    static const int size = 1;
+    static TwoBodyOper::type value[];
+    static std::string key;
   };
 
   /// runtime version of TwoBodyOperSetTypeMap
@@ -306,11 +324,14 @@ namespace sc {
       int size() const { return size_; }
       TwoBodyOper::type opertype(unsigned int o) const;
       unsigned int opertype(TwoBodyOper::type o) const;
+      std::string key() const { return key_; }
     private:
       TwoBodyOperSetDescr(int size,
-                          const TwoBodyOper::type* value);
+                          const TwoBodyOper::type* value,
+                          const std::string& key);
       int size_;
       const TwoBodyOper::type* value_;
+      std::string key_;
   };
 
   /// which parameter set needed to specify the operator set?
@@ -338,6 +359,9 @@ namespace sc {
   };
   template <> struct TwoBodyIntParamsType<TwoBodyOperSet::G12_T1_G12> {
     typedef IntParamsG12 value;
+  };
+  template <> struct TwoBodyIntParamsType<TwoBodyOperSet::DeltaFunction> {
+    typedef IntParamsVoid value;
   };
 
 

@@ -39,6 +39,7 @@
 #if LIBINT2_SUPPORT_ERI
 #  include <chemistry/qc/libint2/eri.h>
 #  include <chemistry/qc/libint2/g12nc.h>
+#  include <chemistry/qc/libint2/tbosar.h>
 #endif
 #if LIBINT2_SUPPORT_G12 && LIBINT2_SUPPORT_T1G12
 #  include <chemistry/qc/libint2/g12.h>
@@ -454,6 +455,28 @@ IntegralLibint2::g12dkh_4(const Ref<IntParamsG12>& params)
 #endif
 }
 
+Ref<TwoBodyInt>
+IntegralLibint2::delta_function_4()
+{
+#if LIBINT2_SUPPORT_ERI
+  Ref<IntParamsVoid> params = new IntParamsVoid;  // these are dummy params for this evaluator anyway
+  return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_, TwoBodyOperSet::DeltaFunction, params);
+#else
+  throw InputError("IntegralLibint2::delta_function() -- libint2 library included in this executable does not support computation of ERI, hence this feature is not available",__FILE__,__LINE__);
+#endif
+}
+
+Ref<TwoBodyThreeCenterInt>
+IntegralLibint2::delta_function_3()
+{
+#if LIBINT2_SUPPORT_ERI
+  Ref<IntParamsVoid> params = new IntParamsVoid;  // these are dummy params for this evaluator anyway
+  return new TwoBodyThreeCenterIntLibint2(this, bs1_, bs2_, bs3_, storage_, TwoBodyOperSet::DeltaFunction, params);
+#else
+  throw InputError("IntegralLibint2::delta_function() -- libint2 library included in this executable does not support computation of ERI, hence this feature is not available",__FILE__,__LINE__);
+#endif
+}
+
 namespace {
   int maxl(const Ref<GaussianBasisSet>& bs) {
     int result = -1;
@@ -559,6 +582,13 @@ has_fullgencon(const Ref<GaussianBasisSet>& bs)
   }
 
   return has_it;
+}
+
+// This global object initializes the static interface of libint
+Libint2StaticInterface Libint2StaticInitializer;
+
+Libint2StaticInterface::Libint2StaticInterface() {
+  LIBINT2_PREFIXED_NAME(libint2_static_init)(); ready = true;
 }
 
 /////////////////////////////////////////////////////////////////////////////

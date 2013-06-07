@@ -48,6 +48,7 @@ OneBodyOper::descr(OneBodyOper::type t) {
     case iL_z:
       return antihermitian;
 
+    case gamma:
     case T:
     case V:
     case h:
@@ -77,39 +78,10 @@ OneBodyOper::descr(OneBodyOper::type t) {
   return Ref<OneBodyOperDescr>(); // shut up stupid compiler
 }
 
-enum type {
-  T = 0,      //!< (nonrelativitic) kinetic energy
-  V = 1,      //!< nuclear (Coulomb) potential
-  h = 2,      //!< core Hamiltonian = T+V
-  J = 3,      //!< (electronic) Coulomb
-  K = 4,      //!< (electronic) exchange
-  F = 5,      //!< Fock operator
-  mu_x = 6,   //!< x component of electric dipole moment
-  mu_y = 7,   //!< y component of electric dipole moment
-  mu_z = 8,   //!< z component of electric dipole moment
-  q_xx = 9,   //!< xx component of quadrupole moment
-  q_xy = 10,  //!< xy component of quadrupole moment
-  q_xz = 11,  //!< xz component of quadrupole moment
-  q_yy = 12,  //!< yy component of quadrupole moment
-  q_yz = 13,  //!< yz component of quadrupole moment
-  q_zz = 14,  //!< zz component of quadrupole moment
-  pVp = 15,   //!< \$f \underline{\hat{p}} \cdot V \underline{\hat{p}} \f$
-  pxVp_x = 16,//!< x component of \$f \underline{\hat{p}} \cross V \underline{\hat{p}} \f$
-  pxVp_y = 17,//!< y component of \$f \underline{\hat{p}} \cross V \underline{\hat{p}} \f$
-  pxVp_z = 18,//!< z component of \$f \underline{\hat{p}} \cross V \underline{\hat{p}} \f$
-  p4 = 19,      //!< \f$ (\underline{\hat{p}} \cdot \underline{\hat{p}})^2 \f$
-  Nabla_x = 20,   //!< x component of Nabla operator ( \f$ \equiv i \hat{p}_x \f$ )
-  Nabla_y = 21,   //!< y component of Nabla operator ( \f$ \equiv i \hat{p}_y \f$ )
-  Nabla_z = 22,   //!< z component of Nabla operator ( \f$ \equiv i \hat{p}_z \f$ )
-  iL_x = 23,   //!< x component of negative imaginary part of angular momentum ( \f$ \equiv i \hat{L}_x \f$ )
-  iL_y = 24,   //!< y component of negative imaginary part of angular momentum ( \f$ \equiv i \hat{L}_y \f$ )
-  iL_z = 25,    //!< z component of negative imaginary part of angular momentum ( \f$ \equiv i \hat{L}_z \f$ )
-  invalid = 26
-};
-
 std::string
 OneBodyOper::to_string(OneBodyOper::type t) {
   switch (t) {
+    case gamma: return "gamma"; break;
     case T: return "T"; break;
     case V: return "V"; break;
     case h: return "h"; break;
@@ -275,6 +247,7 @@ TwoBodyOper::descr(TwoBodyOper::type type)
     case TwoBodyOper::g12t1g12:
     case TwoBodyOper::anti_g12g12:
     case TwoBodyOper::g12p4g12_m_g12t1g12t1:
+    case TwoBodyOper::delta:
     return symm_type;
     }
     throw ProgrammingError("TwoBodyOper::descr() -- incorrect type");
@@ -292,6 +265,7 @@ TwoBodyOper::to_string(TwoBodyOper::type t) {
     case g12t1g12: return "g12t1g12"; break;
     case t1g12: return "t1g12"; break;
     case t2g12: return "t2g12"; break;
+    case delta: return "delta"; break;
     default:
       std::ostringstream oss;
       oss << "TwoBodyOper::to_string: unknown type " << t;
@@ -319,10 +293,21 @@ TwoBodyOper::type TwoBodyOperSetTypeMap<TwoBodyOperSet::G12DKH>::value[] = {TwoB
 TwoBodyOper::type TwoBodyOperSetTypeMap<TwoBodyOperSet::R12_0_G12>::value[] = {TwoBodyOper::r12_0_g12};
 TwoBodyOper::type TwoBodyOperSetTypeMap<TwoBodyOperSet::R12_m1_G12>::value[] = {TwoBodyOper::r12_m1_g12};
 TwoBodyOper::type TwoBodyOperSetTypeMap<TwoBodyOperSet::G12_T1_G12>::value[] = {TwoBodyOper::g12t1g12};
+TwoBodyOper::type TwoBodyOperSetTypeMap<TwoBodyOperSet::DeltaFunction>::value[] = {TwoBodyOper::delta};
+
+std::string TwoBodyOperSetTypeMap<TwoBodyOperSet::ERI>::key("ERI");
+std::string TwoBodyOperSetTypeMap<TwoBodyOperSet::G12>::key("G12");
+std::string TwoBodyOperSetTypeMap<TwoBodyOperSet::G12NC>::key("G12'");
+std::string TwoBodyOperSetTypeMap<TwoBodyOperSet::G12DKH>::key("G12DKH");
+std::string TwoBodyOperSetTypeMap<TwoBodyOperSet::R12_0_G12>::key("R12_0_G12");
+std::string TwoBodyOperSetTypeMap<TwoBodyOperSet::R12_m1_G12>::key("R12_m1_G12");
+std::string TwoBodyOperSetTypeMap<TwoBodyOperSet::G12_T1_G12>::key("G12_T1_G12");
+std::string TwoBodyOperSetTypeMap<TwoBodyOperSet::DeltaFunction>::key("Delta");
 
 TwoBodyOperSetDescr::TwoBodyOperSetDescr(int size,
-                                         const TwoBodyOper::type* value) :
-  size_(size), value_(value)
+                                         const TwoBodyOper::type* value,
+                                         const std::string& key) :
+  size_(size), value_(value), key_(key)
   {}
 
 Ref<TwoBodyOperSetDescr>
@@ -331,31 +316,48 @@ TwoBodyOperSetDescr::instance(TwoBodyOperSet::type oset)
   switch (oset) {
     case TwoBodyOperSet::ERI:
       return new TwoBodyOperSetDescr(TwoBodyOperSetTypeMap<TwoBodyOperSet::ERI>::size,
-                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::ERI>::value);
+                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::ERI>::value,
+                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::ERI>::key);
+      break;
+    case TwoBodyOperSet::R12:
+      return new TwoBodyOperSetDescr(TwoBodyOperSetTypeMap<TwoBodyOperSet::G12>::size,
+                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::G12>::value,
+                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::G12>::key);
       break;
     case TwoBodyOperSet::G12:
       return new TwoBodyOperSetDescr(TwoBodyOperSetTypeMap<TwoBodyOperSet::G12>::size,
-                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::G12>::value);
+                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::G12>::value,
+                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::G12>::key);
       break;
     case TwoBodyOperSet::G12NC:
       return new TwoBodyOperSetDescr(TwoBodyOperSetTypeMap<TwoBodyOperSet::G12NC>::size,
-                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::G12NC>::value);
+                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::G12NC>::value,
+                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::G12NC>::key);
       break;
     case TwoBodyOperSet::G12DKH:
       return new TwoBodyOperSetDescr(TwoBodyOperSetTypeMap<TwoBodyOperSet::G12DKH>::size,
-                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::G12DKH>::value);
+                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::G12DKH>::value,
+                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::G12DKH>::key);
       break;
     case TwoBodyOperSet::R12_0_G12:
       return new TwoBodyOperSetDescr(TwoBodyOperSetTypeMap<TwoBodyOperSet::R12_0_G12>::size,
-                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::R12_0_G12>::value);
+                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::R12_0_G12>::value,
+                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::R12_0_G12>::key);
       break;
     case TwoBodyOperSet::R12_m1_G12:
       return new TwoBodyOperSetDescr(TwoBodyOperSetTypeMap<TwoBodyOperSet::R12_m1_G12>::size,
-                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::R12_m1_G12>::value);
+                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::R12_m1_G12>::value,
+                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::R12_m1_G12>::key);
       break;
     case TwoBodyOperSet::G12_T1_G12:
       return new TwoBodyOperSetDescr(TwoBodyOperSetTypeMap<TwoBodyOperSet::G12_T1_G12>::size,
-                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::G12_T1_G12>::value);
+                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::G12_T1_G12>::value,
+                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::G12_T1_G12>::key);
+      break;
+    case TwoBodyOperSet::DeltaFunction:
+      return new TwoBodyOperSetDescr(TwoBodyOperSetTypeMap<TwoBodyOperSet::DeltaFunction>::size,
+                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::DeltaFunction>::value,
+                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::DeltaFunction>::key);
       break;
 
     default:

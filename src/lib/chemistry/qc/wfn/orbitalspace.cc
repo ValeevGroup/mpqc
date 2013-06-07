@@ -1339,7 +1339,7 @@ ParsedTransformedOrbitalSpaceKey::ParsedTransformedOrbitalSpaceKey(const std::st
   const std::string oper_key = pop_till_token(keycopy, '(');
   if (keycopy.empty()) throw exception();
   transform_operator_ = OneBodyOper::invalid;
-  for (int o = 0; o != OneBodyOper::invalid; ++o) {
+  for (int o = OneBodyOper::gamma; o != OneBodyOper::invalid; ++o) {
     OneBodyOper::type otype = static_cast<OneBodyOper::type> (o);
     if (oper_key == OneBodyOper::to_string(otype)) {
       transform_operator_ = otype;
@@ -1376,7 +1376,7 @@ ParsedTransformedOrbitalSpaceKey::valid_key(const std::string& key) {
   const std::string oper_key = pop_till_token(keycopy, '(');
   if (keycopy.empty()) return false;
   OneBodyOper::type transform_operator = OneBodyOper::invalid;
-  for (int o = 0; o != OneBodyOper::invalid; ++o) {
+  for (int o = OneBodyOper::gamma; o != OneBodyOper::invalid; ++o) {
     OneBodyOper::type otype = static_cast<OneBodyOper::type> (o);
     if (oper_key == OneBodyOper::to_string(otype)) {
       transform_operator = otype;

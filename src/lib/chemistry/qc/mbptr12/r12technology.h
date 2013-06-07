@@ -30,7 +30,7 @@
 
 #include <util/state/state.h>
 #include <chemistry/qc/basis/intdescr.h>
-#include <chemistry/qc/mbptr12/gaussianfit.h>
+#include <math/optimize/gaussianfit.h>
 
 namespace sc {
 
@@ -461,7 +461,7 @@ class R12Technology: virtual public SavableState {
                                                double gamma, int k,
                                                double scale = 1.0) {
 
-        using sc::mbptr12::Slater1D;
+        using sc::math::Slater1D;
         typedef typename Fitter::Gaussians Gaussians;
         Slater1D stg(gamma, k, scale);
         Gaussians gtgs = fitter(stg);

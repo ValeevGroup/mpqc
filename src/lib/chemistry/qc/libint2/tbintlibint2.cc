@@ -37,6 +37,7 @@
 #if LIBINT2_SUPPORT_ERI
 #  include <chemistry/qc/libint2/eri.h>
 #  include <chemistry/qc/libint2/g12nc.h>
+#  include <chemistry/qc/libint2/tbosar.h>
 #endif
 #if LIBINT2_SUPPORT_G12
 # if LIBINT2_SUPPORT_T1G12
@@ -66,21 +67,9 @@ namespace sc {
     namespace libint2 {
 
 #if LIBINT2_SUPPORT_ERI
-	template<>
-	Ref<EriLibint2>
-	create_int2e(Integral*integral,
-		     const Ref<GaussianBasisSet>& b1,
-		     const Ref<GaussianBasisSet>& b2,
-		     const Ref<GaussianBasisSet>& b3,
-		     const Ref<GaussianBasisSet>& b4,
-		     size_t storage,
-		     const Ref<IntParams>& params)
-	{
-	    return new EriLibint2(integral,b1,b2,b3,b4,storage);
-	}
     template<>
-    Ref<G12NCLibint2>
-    create_int2e(Integral*integral,
+    struct Int2eCreator<G12NCLibint2> {
+        Ref<G12NCLibint2> operator()(Integral*integral,
              const Ref<GaussianBasisSet>& b1,
              const Ref<GaussianBasisSet>& b2,
              const Ref<GaussianBasisSet>& b3,
@@ -92,13 +81,14 @@ namespace sc {
         Ref<IPType> params_cast = util::require_dynamic_cast<IPType,IntParams>(params);
         return new G12NCLibint2(integral,b1,b2,b3,b4,storage,params_cast->bra(),params_cast->ket());
     }
+    };
 #endif
 
 #if LIBINT2_SUPPORT_G12
 # if LIBINT2_SUPPORT_T1G12
 	template<>
-	Ref<G12Libint2>
-	create_int2e(Integral*integral,
+	struct Int2eCrator<G12Libint2> {
+	Ref<G12Libint2> operator()(Integral*integral,
 		     const Ref<GaussianBasisSet>& b1,
 		     const Ref<GaussianBasisSet>& b2,
 		     const Ref<GaussianBasisSet>& b3,
@@ -110,12 +100,13 @@ namespace sc {
 	    Ref<IPType> params_cast = util::require_dynamic_cast<IPType,IntParams>(params);
 	    return new G12Libint2(integral,b1,b2,b3,b4,storage,params_cast->bra(),params_cast->ket());
 	}
+	};
 # endif
 #endif
 #if LIBINT2_SUPPORT_G12DKH
 	   template<>
-	    Ref<G12DKHLibint2>
-	    create_int2e(Integral*integral,
+	   struct Int2eCreator<G12DKHLibint2> {
+	    Ref<G12DKHLibint2> operator()(Integral*integral,
 	             const Ref<GaussianBasisSet>& b1,
 	             const Ref<GaussianBasisSet>& b2,
 	             const Ref<GaussianBasisSet>& b3,
@@ -129,6 +120,7 @@ namespace sc {
 	          throw FeatureNotImplemented("G12DKH integrals are currently available for 1 correlation factor only",__FILE__,__LINE__);
 	        return new G12DKHLibint2(integral,b1,b2,b3,b4,storage,params_cast->bra());
 	    }
+	   };
 #endif
     }
 }
@@ -144,16 +136,18 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
     descr_(TwoBodyOperSetDescr::instance(int2etype)),
     params_(params)
 {
-    using sc::libint2::create_int2e;
+    using sc::libint2::Int2eCreator;
   // Which evaluator to use
   switch (int2etype_) {
 #if LIBINT2_SUPPORT_ERI
   case TwoBodyOperSet::ERI:
   {
-    typedef EriLibint2 Int2e;
+    //typedef EriLibint2 Int2e;
+    typedef TwoBodyOSARLibint2<TwoBodyOper::eri> Int2e;
     typedef BoundsLibint2<Int2e> Bounds;
     Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
-    int2elibint2_ = create_int2e<EriLibint2>(integral,b1,b2,b3,b4,storage,params);
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
     int2elibint2_->bounds(bounds);
     break;
   }
@@ -162,7 +156,18 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
     typedef G12NCLibint2 Int2e;
     typedef BoundsLibint2<Int2e> Bounds;
     Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
-    int2elibint2_ = create_int2e<G12NCLibint2>(integral,b1,b2,b3,b4,storage,params);
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
+    int2elibint2_->bounds(bounds);
+    break;
+  }
+  case TwoBodyOperSet::DeltaFunction:
+  {
+    typedef TwoBodyOSARLibint2<TwoBodyOper::delta> Int2e;
+    typedef BoundsLibint2<Int2e> Bounds;
+    Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
     int2elibint2_->bounds(bounds);
     break;
   }
@@ -171,7 +176,9 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
 # if LIBINT2_SUPPORT_T1G12
   case TwoBodyOperSet::G12:
   {
-    int2elibint2_ = create_int2e<G12Libint2>(integral,b1,b2,b3,b4,storage,params);
+    typedef G12Libint2 Int2e;
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
     break;
   }
 # endif
@@ -180,7 +187,9 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
 #if LIBINT2_SUPPORT_G12DKH
   case TwoBodyOperSet::G12DKH:
   {
-    int2elibint2_ = create_int2e<G12DKHLibint2>(integral,b1,b2,b3,b4,storage,params);
+    typedef G12DKHLibint2 Int2e;
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
     break;
   }
 #endif
@@ -205,21 +214,32 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
     descr_(TwoBodyOperSetDescr::instance(int2etype)),
     params_(params)
 {
-    using sc::libint2::create_int2e;
+    using sc::libint2::Int2eCreator;
   // Which evaluator to use
   switch (int2etype_) {
 #if LIBINT2_SUPPORT_ERI
   case TwoBodyOperSet::ERI:
   {
-    typedef EriLibint2 Int2e;
-    int2elibint2_ = create_int2e<EriLibint2>(integral,b1,b2,b3,b4,storage,params);
+    //typedef EriLibint2 Int2e;
+    typedef TwoBodyOSARLibint2<TwoBodyOper::eri> Int2e;
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
     int2elibint2_->bounds(bounds);
     break;
   }
   case TwoBodyOperSet::G12NC:
   {
     typedef G12NCLibint2 Int2e;
-    int2elibint2_ = create_int2e<G12NCLibint2>(integral,b1,b2,b3,b4,storage,params);
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
+    int2elibint2_->bounds(bounds);
+    break;
+  }
+  case TwoBodyOperSet::DeltaFunction:
+  {
+    typedef TwoBodyOSARLibint2<TwoBodyOper::delta> Int2e;
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
     int2elibint2_->bounds(bounds);
     break;
   }
@@ -228,7 +248,9 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
 # if LIBINT2_SUPPORT_T1G12
   case TwoBodyOperSet::G12:
   {
-    int2elibint2_ = create_int2e<G12Libint2>(integral,b1,b2,b3,b4,storage,params);
+    typedef G12Libint2 Int2e;
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
     break;
   }
 # endif
@@ -237,7 +259,9 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
 #if LIBINT2_SUPPORT_G12DKH
   case TwoBodyOperSet::G12DKH:
   {
-    int2elibint2_ = create_int2e<G12DKHLibint2>(integral,b1,b2,b3,b4,storage,params);
+    typedef G12DKHLibint2 Int2e;
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
     break;
   }
 #endif
@@ -302,7 +326,7 @@ TwoBodyThreeCenterIntLibint2::TwoBodyThreeCenterIntLibint2(Integral*integral,
     params_(params)
 {
   Ref<GaussianBasisSet> b4 = new GaussianBasisSet(GaussianBasisSet::Unit);
-  using sc::libint2::create_int2e;
+  using sc::libint2::Int2eCreator;
   // Which evaluator to use
   switch (int2etype_) {
 #if LIBINT2_SUPPORT_ERI
@@ -311,7 +335,8 @@ TwoBodyThreeCenterIntLibint2::TwoBodyThreeCenterIntLibint2(Integral*integral,
     typedef EriLibint2 Int2e;
     typedef BoundsLibint2<Int2e> Bounds;
     Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
-    int2elibint2_ = create_int2e<Int2e>(integral,b1,b2,b3,b4,storage,params);
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
     int2elibint2_->bounds(bounds);
     break;
   }
@@ -320,7 +345,18 @@ TwoBodyThreeCenterIntLibint2::TwoBodyThreeCenterIntLibint2(Integral*integral,
     typedef G12NCLibint2 Int2e;
     typedef BoundsLibint2<Int2e> Bounds;
     Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
-    int2elibint2_ = create_int2e<Int2e>(integral,b1,b2,b3,b4,storage,params);
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
+    int2elibint2_->bounds(bounds);
+    break;
+  }
+  case TwoBodyOperSet::DeltaFunction:
+  {
+    typedef TwoBodyOSARLibint2<TwoBodyOper::delta> Int2e;
+    typedef BoundsLibint2<Int2e> Bounds;
+    Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
     int2elibint2_->bounds(bounds);
     break;
   }
@@ -329,7 +365,9 @@ TwoBodyThreeCenterIntLibint2::TwoBodyThreeCenterIntLibint2(Integral*integral,
 # if LIBINT2_SUPPORT_T1G12
   case TwoBodyOperSet::G12:
   {
-    int2elibint2_ = create_int2e<G12Libint2>(integral,b1,b2,b3,b4,storage,params);
+    typedef G12Libint2 Int2e;
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
     break;
   }
 # endif
@@ -338,7 +376,9 @@ TwoBodyThreeCenterIntLibint2::TwoBodyThreeCenterIntLibint2(Integral*integral,
 #if LIBINT2_SUPPORT_G12DKH
   case TwoBodyOperSet::G12DKH:
   {
-    int2elibint2_ = create_int2e<G12DKHLibint2>(integral,b1,b2,b3,b4,storage,params);
+    typedef G12DKHLibint2 Int2e;
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
     break;
   }
 #endif
@@ -363,21 +403,31 @@ TwoBodyThreeCenterIntLibint2::TwoBodyThreeCenterIntLibint2(Integral*integral,
     descr_(TwoBodyOperSetDescr::instance(int2etype)),
     params_(params)
 {
-  using sc::libint2::create_int2e;
+  using sc::libint2::Int2eCreator;
   // Which evaluator to use
   switch (int2etype_) {
 #if LIBINT2_SUPPORT_ERI
   case TwoBodyOperSet::ERI:
   {
     typedef EriLibint2 Int2e;
-    int2elibint2_ = create_int2e<Int2e>(integral,b1,b2,b3,bunit,storage,params);
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,bunit,storage,params);
     int2elibint2_->bounds(bounds);
     break;
   }
   case TwoBodyOperSet::G12NC:
   {
     typedef G12NCLibint2 Int2e;
-    int2elibint2_ = create_int2e<Int2e>(integral,b1,b2,b3,bunit,storage,params);
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,bunit,storage,params);
+    int2elibint2_->bounds(bounds);
+    break;
+  }
+  case TwoBodyOperSet::DeltaFunction:
+  {
+    typedef TwoBodyOSARLibint2<TwoBodyOper::delta> Int2e;
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,bunit,storage,params);
     int2elibint2_->bounds(bounds);
     break;
   }
@@ -386,7 +436,9 @@ TwoBodyThreeCenterIntLibint2::TwoBodyThreeCenterIntLibint2(Integral*integral,
 # if LIBINT2_SUPPORT_T1G12
   case TwoBodyOperSet::G12:
   {
-    int2elibint2_ = create_int2e<G12Libint2>(integral,b1,b2,b3,bunit,storage,params);
+    typedef G12Libint2 Int2e;
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,bunit,storage,params);
     break;
   }
 # endif
@@ -395,7 +447,9 @@ TwoBodyThreeCenterIntLibint2::TwoBodyThreeCenterIntLibint2(Integral*integral,
 #if LIBINT2_SUPPORT_G12DKH
   case TwoBodyOperSet::G12DKH:
   {
-    int2elibint2_ = create_int2e<G12DKHLibint2>(integral,b1,b2,b3,bunit,storage,params);
+    typedef G12DKHLibint2 Int2e;
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,bunit,storage,params);
     break;
   }
 #endif
@@ -461,18 +515,22 @@ TwoBodyTwoCenterIntLibint2::TwoBodyTwoCenterIntLibint2(Integral*integral,
 {
   Ref<GaussianBasisSet> b2 = new GaussianBasisSet(GaussianBasisSet::Unit);
   Ref<GaussianBasisSet> b4 = b2;
-  using sc::libint2::create_int2e;
+  using sc::libint2::Int2eCreator;
   // Which evaluator to use
   switch (int2etype_) {
 #if LIBINT2_SUPPORT_ERI
   case TwoBodyOperSet::ERI:
   {
-    int2elibint2_ = create_int2e<EriLibint2>(integral,b1,b2,b3,b4,storage,params);
+    typedef EriLibint2 Int2e;
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
     break;
   }
   case TwoBodyOperSet::G12NC:
   {
-    int2elibint2_ = create_int2e<G12NCLibint2>(integral,b1,b2,b3,b4,storage,params);
+    typedef G12NCLibint2 Int2e;
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
     break;
   }
 #endif
@@ -480,7 +538,9 @@ TwoBodyTwoCenterIntLibint2::TwoBodyTwoCenterIntLibint2(Integral*integral,
 # if LIBINT2_SUPPORT_T1G12
   case TwoBodyOperSet::G12:
   {
-    int2elibint2_ = create_int2e<G12Libint2>(integral,b1,b2,b3,b4,storage,params);
+    typedef G12Libint2 Int2e;
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
     break;
   }
 # endif
@@ -489,7 +549,9 @@ TwoBodyTwoCenterIntLibint2::TwoBodyTwoCenterIntLibint2(Integral*integral,
 #if LIBINT2_SUPPORT_G12DKH
   case TwoBodyOperSet::G12DKH:
   {
-    int2elibint2_ = create_int2e<G12DKHLibint2>(integral,b1,b2,b3,b4,storage,params);
+    typedef G12DKHLibint2 Int2e;
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
     break;
   }
 #endif
@@ -513,19 +575,23 @@ TwoBodyTwoCenterIntLibint2::TwoBodyTwoCenterIntLibint2(Integral*integral,
     descr_(TwoBodyOperSetDescr::instance(int2etype)),
     params_(params)
 {
-  using sc::libint2::create_int2e;
+  using sc::libint2::Int2eCreator;
   // Which evaluator to use
   switch (int2etype_) {
 #if LIBINT2_SUPPORT_ERI
   case TwoBodyOperSet::ERI:
   {
-    int2elibint2_ = create_int2e<EriLibint2>(integral,b1,bunit,b3,bunit,storage,params);
+    typedef EriLibint2 Int2e;
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,bunit,b3,bunit,storage,params);
     int2elibint2_->bounds(bounds);
     break;
   }
   case TwoBodyOperSet::G12NC:
   {
-    int2elibint2_ = create_int2e<G12NCLibint2>(integral,b1,bunit,b3,bunit,storage,params);
+    typedef G12NCLibint2 Int2e;
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,bunit,b3,bunit,storage,params);
     int2elibint2_->bounds(bounds);
     break;
   }
@@ -534,7 +600,9 @@ TwoBodyTwoCenterIntLibint2::TwoBodyTwoCenterIntLibint2(Integral*integral,
 # if LIBINT2_SUPPORT_T1G12
   case TwoBodyOperSet::G12:
   {
-    int2elibint2_ = create_int2e<G12Libint2>(integral,b1,bunit,b3,bunit,storage,params);
+    typedef G12Libint2 Int2e;
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,bunit,b3,bunit,storage,params);
     break;
   }
 # endif
@@ -543,7 +611,9 @@ TwoBodyTwoCenterIntLibint2::TwoBodyTwoCenterIntLibint2(Integral*integral,
 #if LIBINT2_SUPPORT_G12DKH
   case TwoBodyOperSet::G12DKH:
   {
-    int2elibint2_ = create_int2e<G12DKHLibint2>(integral,b1,bunit,b3,bunit,storage,params);
+    typedef G12DKHLibint2 Int2e;
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,bunit,b3,bunit,storage,params);
     break;
   }
 #endif

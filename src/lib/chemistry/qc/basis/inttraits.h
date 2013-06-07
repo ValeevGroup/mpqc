@@ -66,7 +66,7 @@ namespace sc {
     };
 
     template <int NumCenters> struct G12DKHEvalCreator {
-      static Ref< typename TwoBodyIntEvalType<4>::value >
+      static Ref< typename TwoBodyIntEvalType<NumCenters>::value >
       eval(const Ref<Integral>& factory, const Ref<IntParamsG12>& params) {
         return factory->g12dkh<NumCenters>(params);
       }

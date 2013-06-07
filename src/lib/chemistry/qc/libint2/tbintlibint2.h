@@ -30,6 +30,7 @@
 
 #include <chemistry/qc/basis/tbint.h>
 #include <chemistry/qc/libint2/int2e.h>
+#include <chemistry/qc/libint2/tbosar.h>
 
 namespace sc {
 
@@ -202,15 +203,20 @@ class TwoBodyDerivIntLibint2 : public TwoBodyDerivInt {
 };
 
     namespace libint2 {
-	template <class Int2e>
-	Ref<Int2e>
-	create_int2e(Integral*integral,
+
+      template <class Int2e>
+      struct Int2eCreator {
+          Ref<Int2e> operator()(Integral*integral,
 		     const Ref<GaussianBasisSet>& b1,
 		     const Ref<GaussianBasisSet>& b2,
 		     const Ref<GaussianBasisSet>& b3,
 		     const Ref<GaussianBasisSet>& b4,
 		     size_t storage,
-		     const Ref<IntParams>& params);
+		     const Ref<IntParams>& params) {
+            return new Int2e(integral,b1,b2,b3,b4,storage);
+          }
+      };
+
     }
 
 }

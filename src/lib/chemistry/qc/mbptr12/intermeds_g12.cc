@@ -264,7 +264,7 @@ R12IntEval::init_intermeds_g12_()
   ExEnv::out0() << indent << "Exited G12 diagonal intermediates evaluator" << endl;
 
   tim_diagonal.exit();
-  checkpoint_();
+  //checkpoint_();
 
   return;
 }

@@ -46,7 +46,7 @@ CXXSRCS = mbptr12.cc \
   creator.cc approxC.cc approxCp.cc approxApp.cc \
   mp2r12_energy_util.cc compute_VXB_a.cc \
   compute_VXB_a_vbsneqobs.cc \
-  gaussianfit.cc r12technology.cc twobody_intermeds.cc compute_1rdm_X_F12.cc \
+  r12technology.cc twobody_intermeds.cc compute_1rdm_X_F12.cc \
   singles_emp2.cc fixedcoefficient.cc \
   compute_VXB_c_ansatz1.cc approxC_ansatz1.cc \
   compute_VX_GenRefansatz2.cc approxC_GenRefansatz2.cc \
@@ -63,7 +63,6 @@ container.h                     r12technology.h \
 contract_tbint_tensor.h  contract_tbint_tensors_to_obtensor.h \
 ref.h \
 creator.h \
-gaussianfit.h gaussianfit.timpl.h \
 linkage.h mbptr12.h \
 mp2r12_energy.h mp2r12_energy_util.h            twobodygrid.h \
 twobodytensorinfo.h \

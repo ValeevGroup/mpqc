@@ -38,6 +38,7 @@
 # error "sr_r12intermediates.h requires MPQC3 runtime, but it is not available"
 #endif
 
+#include <chemistry/qc/wfn/rdm.h>
 #include <chemistry/qc/mbptr12/r12wfnworld.h>
 #include <../bin/mpqc/mpqcinit.h>
 
@@ -130,6 +131,17 @@ namespace sc {
 
     LazyTensor() { }
 
+    LazyTensor(const LazyTensor& other) :
+      owner_(other.owner_), index_(other.index_), element_generator_(other.element_generator_)
+    {}
+
+    LazyTensor& operator=(const LazyTensor& other) {
+      owner_ = other.owner_;
+      index_ = other.index_;
+      element_generator_ = other.element_generator_;
+      return *this;
+    }
+
     LazyTensor(TA::Array<T, DIM, LazyTensor>* owner,
                const std::array<std::size_t, DIM>& index,
                ElementGenerator* gen) :
@@ -164,6 +176,35 @@ namespace sc {
   namespace expressions {
     template <typename ArgType, bool Transpose> struct trace_tensor2_op;
     template <typename ArgType, bool Transpose> struct diag_tensor2_op;
+
+    /// makes a geminal T tensor
+    template <typename T>
+    struct TGeminalGenerator {
+        /// @param spin 0(singlet) or 1(triplet)
+        TGeminalGenerator(unsigned int spin = 0) : s_(spin) {
+          assert(s_ == 0 || s_ == 1);
+        }
+
+        template <typename Index> T operator()(const Index& i) {
+          if (s_ == 0) {
+            if (i[0] == i[1] && i[0] == i[2] && i[0] == i[3]) // iiii
+              return 1.0/2.0;
+            else if (i[0] == i[2] && i[1] == i[3]) // ijij
+              return 3.0/8.0;
+            else if (i[0] == i[3] && i[1] == i[2]) // ijji
+              return 1.0/8.0;
+          }
+          if (s_ == 1) {
+            if (i[0] == i[2] && i[1] == i[3] || i[0] == i[3] && i[1] == i[2]) // ijij
+              return 1.0/4.0;
+          }
+          return 0.0;
+        }
+
+      private:
+        unsigned int s_;
+    };
+
   };
 
 
@@ -185,6 +226,9 @@ namespace sc {
       typedef TA::Array<TA::Tensor<T>, 2> TArray22; // Tile = Tensor<Tensor<T>>
       /// 2-index tensor of lazy 2-index tensors
       typedef TA::Array<TA::Tensor<T>, 2, DA4_Tile34<T> > TArray22d; // Tile = Tensor<Tensor<T>>
+
+      /// geminal T tensor
+      typedef TA::Array<T, 4, LazyTensor<T, 4, expressions::TGeminalGenerator<T> > > TArray4Tg;
 
       /**
        * Constructs an SingleReference_R12Intermediates object. There can be many.
@@ -217,10 +261,33 @@ namespace sc {
       */
       std::pair<TArray2,TArray2> B_diag();
 
-      /** computes 1-particle density intermediate
+      /** returns the 1-particle reduced density matrix
       * @return \f$ \gamma^{p}_{q} \f$, respectively
       */
       TArray2 rdm1();
+
+      /** returns the 2-particle density matrix
+      * @return \f$ \gamma^{pq}_{rs} \f$, respectively
+      */
+      TArray4 rdm2();
+
+      /** computes spin-free V intermediate
+        * @param symmetrize_p1_p2 if yes, make sure this holds for the result: V^{ij}_{mn} = V^{ji}_{nm}
+        * @return \f$ V^{ij}_{mn} \f$, where ij refer to the geminal indices
+      */
+      TArray4 V_spinfree(bool symmetrize_p1_p2 = false);
+
+      /** computes spin-free X intermediate
+        * @param symmetrize_p1_p2 if yes, make sure this holds for the result: X^{ij}_{kl} = X^{ji}_{kl}
+        * @return \f$ X^{ij}_{kl} \f$
+      */
+      TArray4 X_spinfree(bool symmetrize_p1_p2 = false);
+
+      /** computes spin-free B intermediate
+        * @param symmetrize_p1_p2 if yes, make sure this holds for the result: B^{ij}_{kl} = B^{ji}_{kl}
+        * @return \f$ B^{ij}_{kl} \f$
+      */
+      TArray4 B_spinfree(bool symmetrize_p1_p2 = false);
 
       /**
        * provides T1 amplitude tensor
@@ -232,6 +299,11 @@ namespace sc {
        * @param t1 act_occ by allvir (or CABS) matrix
        */
       void set_T1_cabs(const RefSCMatrix& t1_cabs) { t1_cabs_ = t1_cabs; }
+      /**
+       * provides (spin-free) RDM2
+       * @param rdm2 a SpinFreeRDM<Two> object
+       */
+      void set_rdm2(const Ref<SpinFreeRDM<Two> >& rdm2) { rdm2_ = rdm2; }
 
       /// see _4()
       TArray4d& ijxy(const std::string& key);
@@ -240,26 +312,17 @@ namespace sc {
       /// see _2()
       TArray2& xy(const std::string& key);
 
-      /** Creates a rank-4 Array, key describes the integral. A higher-level version of ijxy().
-       *  key is similar to keys understood by ParsedTwoBodyInt and used by TwoBodyMOIntsRuntime,
+      /** Given a descriptive \c key, creates a rank-4 Array of integrals, or other related quantities
+       *  The syntax of \c key is similar to that used by ParsedTwoBodyInt and TwoBodyMOIntsRuntime,
        *  but with te_type embedded into key.
         * The following te_types are understood:
         *   - g : \f$ r_{12}^{-1} \f$
         *   - r : \f$ f(r_{12}) \f$
         *   - gr : \f$ r_{12}^{-1} f(r_{12}) \f$
         *   - rTr : \f$ [f(r_{12}), [ \hat{T}_1 , f(r_{12})]] \f$
+        *   - gamma : \f$ \Gamma \f$, 2-RDM (not yet implemented)
         *
-        * Here's the key index dictionary that can be used (\sa to_space):
-        *   - i,j,k,l -> act_occ
-        *   - m,n -> occ
-        *   - a,b,c,d -> act_vir
-        *   - e,f -> vir
-        *   - p,q,r,s -> obs
-        *   - p',q',r',s' -> cbs
-        *   - a', b', c', d' -> cabs = cbs - obs
-        *   - A', B', C', D' -> vir + cabs = cbs - occ
-        *
-        * Indices can also include a 1-particle operator transform (see Example2 and ParsedTransformedOrbitalSpaceKey)
+        *   Indices are interpreted using to_space().
         *
         * Example1: <i j|g|p a'> will create an array of <act_occ act_occ| r_{12}^{-1} |obs cabs> integrals
         * Example2: <i j_F(p')|g|p a'> will create an array of <act_occ cbs| r_{12}^{-1} |obs cabs> integrals
@@ -270,12 +333,16 @@ namespace sc {
         * can be computed as follows:
         * TArray4d V_ij_kl = _4("<i j|gr|k l>") - _4("<i j|g|p q>") * _4("<k l|r|p q>");
         *
+        * \sa ijxy()
         */
       TA::expressions::TensorExpression<TA::Tensor<T> > _4(const std::string& key);
 
       TA::expressions::TensorExpression<TA::Tensor<T> > _2(const std::string& key);
 
       //TA::expressions::TensorExpression<TA::Tensor< TA::Tensor<T> > > _22(const std::string& key);
+
+      /// like _4, produces geminal T tensor
+      TA::expressions::TensorExpression<TA::Tensor<T> > _Tg(const std::string& key);
 
     private:
       madness::World& world_;
@@ -284,9 +351,11 @@ namespace sc {
       // extra data
       RefSCMatrix t1_;
       RefSCMatrix t1_cabs_;
+      Ref<SpinFreeRDM<Two> > rdm2_;
 
       // utilities
 
+      // deprecated
       /// computes a DistArray4 and converts into a TArray22
       std::shared_ptr<TArray22> ab_O_cd(const std::string& key,
                                         const int te_type);
@@ -295,16 +364,57 @@ namespace sc {
       std::map<std::string, std::shared_ptr<TArray4d> > tarray4_registry_;
       std::map<std::string, std::shared_ptr<TArray2> > tarray2_registry_;
       std::map<std::string, std::shared_ptr<TArray22d> > tarray22d_registry_;
+      std::map<std::string, std::shared_ptr<TArray4Tg> > tarray4tg_registry_;
+
+      // helps to create TArray4Tg
+      static expressions::TGeminalGenerator<T> tg_s0_gen;
+      static expressions::TGeminalGenerator<T> tg_s1_gen;
 
       // deprecated
       TArray22& _(const std::string& key);
 
       /**
-       * converts index label to space label using the canonical dictionary documented in _()
+       *  Converts an index label to the label of the corresponding space
+       *  Indices can be composite, e.g. also include a 1-particle operator transform
+       *  Base indices are transformed using to_space_()
+       *
+       * converts index label to space label using the canonical dictionary documented in to_space_()
        * @param index label
        * @return space label
        */
       std::string to_space(const std::string& index);
+
+      /**   Converts an index label to the label of the corresponding space.
+       *    Composite indices are not allowed.
+        *   Here's the key index dictionary that can be used (\sa to_space):
+        *     - i,j,k,l -> i (active occupied, act_occ)
+        *     - m,n -> m (occupied, occ)
+        *     - a,b,c,d -> a (active virtual, act_vir)
+        *     - e,f -> e (virtual, vir)
+        *     - p,q,r,s -> p (orbital basis, obs)
+        *     - p',q',r',s' -> p' (complete basis, cbs)
+        *     - a', b', c', d' -> a' (cabs = complete basis - orbital basis)
+        *     - A', B', C', D' -> A' (complete virtuals = a + a', cvir)
+        *   Indices can have arbitrary numerical labels. Examples:
+        *   to_space_("s'") -> "p'"
+        *   to_space_("j17") -> "i"
+        *
+        * @param index
+        * @return space label
+        */
+      static std::string to_space_(std::string index);
+
+      /// returns the hashmarks for tiling a space corresponding to space_label.
+      /// space_label should have been canonicalized using to_space().
+      /// By default, occupied space chopped finely, and other spaces are chopped coarsely.
+      std::vector<size_t> space_hashmarks(std::string space_label) const;
+
+      /** returns the 1-particle reduced density matrix in spaces row and col. Will throw if the RDM of r12world()->refwfn()
+       * is expressed in a space not supported by the same basis as \c row and \c col
+      * @return \f$ \gamma^{r}_{c} \f$, respectively
+      */
+      RefSCMatrix rdm1(const Ref<OrbitalSpace>& row,
+                       const Ref<OrbitalSpace>& col) const;
 
       typedef enum {
         ij=0, ji=1

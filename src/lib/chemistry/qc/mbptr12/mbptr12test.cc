@@ -55,8 +55,8 @@
 #include <chemistry/qc/scf/clhf.h>
 
 #include <chemistry/qc/mbptr12/mbptr12.h>
-#include <chemistry/qc/mbptr12/gaussianfit.h>
-#include <chemistry/qc/mbptr12/gaussianfit.timpl.h>
+#include <math/optimize/gaussianfit.h>
+#include <math/optimize/gaussianfit.timpl.h>
 #include <chemistry/qc/mbptr12/r12technology.h>
 
 using namespace std;
@@ -176,12 +176,12 @@ int main(int argc, char**argv)
 
 #if MBPTR12TEST_TEST2
   tim->enter("test2");
-  using sc::mbptr12::Slater1D;
-  using sc::mbptr12::Gaussian1D;
-  using sc::mbptr12::PowerGaussian1D;
+  using sc::math::Slater1D;
+  using sc::math::Gaussian1D;
+  using sc::math::PowerGaussian1D;
   Slater1D stg(1.0);
-  PowerGaussian1D w(0.01,4,0);
-  typedef GaussianFit<Slater1D,PowerGaussian1D> GTGFit;
+  PowerExponential1D w(0.01,4,0);
+  typedef GaussianFit<Slater1D,PowerExponential1D> GTGFit;
   GTGFit gtgfit(6, w, 0.0, 10.0, 101);
   GTGFit::Gaussians stg_fit = gtgfit(stg);
 

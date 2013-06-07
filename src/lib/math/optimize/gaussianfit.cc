@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <chemistry/qc/mbptr12/gaussianfit.h>
-#include <chemistry/qc/mbptr12/gaussianfit.timpl.h>
+#include <math/optimize/gaussianfit.h>
+#include <math/optimize/gaussianfit.timpl.h>
 
 using namespace std;
 using namespace sc;
@@ -36,39 +36,39 @@ extern "C" {
     void
     __eval_slater(double* params, double* f, int nparam, int np, void *extraparams)
     {
-	eval_f<sc::mbptr12::Slater1D,sc::mbptr12::Gaussian1D>(params,f,nparam,np,extraparams);
+	eval_f<sc::math::Slater1D,sc::math::Gaussian1D>(params,f,nparam,np,extraparams);
     }
 
     void
     __eval_slater_dfdp(double* params, double* f, int nparam, int np, void *extraparams)
     {
-	eval_dfdp<sc::mbptr12::Slater1D,sc::mbptr12::Gaussian1D>(params,f,nparam,np,extraparams);
+	eval_dfdp<sc::math::Slater1D,sc::math::Gaussian1D>(params,f,nparam,np,extraparams);
     }
 
     void
     __eval_slater_pgauss(double* params, double* f, int nparam, int np, void *extraparams)
     {
-	eval_f<sc::mbptr12::Slater1D,sc::mbptr12::PowerGaussian1D>(params,f,nparam,np,extraparams);
+	eval_f<sc::math::Slater1D,sc::math::PowerExponential1D>(params,f,nparam,np,extraparams);
     }
 
     void
     __eval_slater_dfdp_pgauss(double* params, double* f, int nparam, int np, void *extraparams)
     {
-	eval_dfdp<sc::mbptr12::Slater1D,sc::mbptr12::PowerGaussian1D>(params,f,nparam,np,extraparams);
+	eval_dfdp<sc::math::Slater1D,sc::math::PowerExponential1D>(params,f,nparam,np,extraparams);
     }
 
 };
 
 namespace sc {
-  namespace mbptr12 {
+  namespace detail {
     template<>
-    eval_f_ptr __to_extern_C_eval<sc::mbptr12::Slater1D,sc::mbptr12::Gaussian1D>::f_ptr(__eval_slater);
+    eval_f_ptr __to_extern_C_eval<sc::math::Slater1D,sc::math::Gaussian1D>::f_ptr(__eval_slater);
     template<>
-    eval_dfdp_ptr __to_extern_C_eval<sc::mbptr12::Slater1D,sc::mbptr12::Gaussian1D>::dfdp_ptr(__eval_slater_dfdp);
+    eval_dfdp_ptr __to_extern_C_eval<sc::math::Slater1D,sc::math::Gaussian1D>::dfdp_ptr(__eval_slater_dfdp);
     template<>
-    eval_f_ptr __to_extern_C_eval<sc::mbptr12::Slater1D,sc::mbptr12::PowerGaussian1D>::f_ptr(__eval_slater_pgauss);
+    eval_f_ptr __to_extern_C_eval<sc::math::Slater1D,sc::math::PowerExponential1D>::f_ptr(__eval_slater_pgauss);
     template<>
-    eval_dfdp_ptr __to_extern_C_eval<sc::mbptr12::Slater1D,sc::mbptr12::PowerGaussian1D>::dfdp_ptr(__eval_slater_dfdp_pgauss);
+    eval_dfdp_ptr __to_extern_C_eval<sc::math::Slater1D,sc::math::PowerExponential1D>::dfdp_ptr(__eval_slater_dfdp_pgauss);
   }
 }
 

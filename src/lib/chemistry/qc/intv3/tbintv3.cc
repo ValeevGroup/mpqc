@@ -116,8 +116,7 @@ TwoBodyThreeCenterIntV3::compute_shell(int is, int js, int ks)
 int
 TwoBodyThreeCenterIntV3::log2_shell_bound(int is, int js, int ks)
 {
-  throw std::runtime_error("TwoBodyThreeCenterIntv3: doesn't support bounds");
-  return 0;
+  return 128;
 }
 
 void
@@ -170,8 +169,7 @@ TwoBodyTwoCenterIntV3::compute_shell(int is, int js)
 int
 TwoBodyTwoCenterIntV3::log2_shell_bound(int is, int js)
 {
-  throw std::runtime_error("TwoBodyTwoCenterIntv3: doesn't support bounds");
-  return 0;
+  return 128;
 }
 
 void

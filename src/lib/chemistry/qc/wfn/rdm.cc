@@ -280,7 +280,7 @@ SpinFreeRDM<Two>::scmat() const {
 template<>
 const Ref<DistArray4>&
 SpinFreeRDM<Two>::da4() const {
-  throw ProgrammingError("SpinFreeRDM<Two>::scmat is called",
+  throw ProgrammingError("SpinFreeRDM<Two>::da4 is called",
                          __FILE__,
                          __LINE__);
   return da4_; // unreachable

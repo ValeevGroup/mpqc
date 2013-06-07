@@ -145,7 +145,7 @@ namespace sc {
         /// a useful variation of Registry::add(const Key&, const Value&)
         void add(const std::pair<Key,Value>& keyval_pair);
 
-        void print(std::ostream& os) const;
+        void print(std::ostream& os = ExEnv::out0()) const;
 
         class not_found : public std::logic_error {
           public:

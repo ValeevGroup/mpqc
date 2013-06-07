@@ -39,21 +39,26 @@ name.  If the input file name is not given, it will default to
 
   <dt><tt>-messagegrp</tt><dd>A ParsedKeyVal specification of a MessageGrp
                 object.  The default depends on how MPQC was compiled.
+                Example: <tt>-messagegrp "<MPIMessageGrp>:()"</tt>
 
   <dt><tt>-memorygrp</tt><dd>A ParsedKeyVal specification of a MemoryGrp
                 object.  The default depends on how MPQC was compiled.
+                Example: <tt>-memorygrp "<MTMPIMemoryGrp>:()"</tt>
 
   <dt><tt>-threadgrp</tt><dd>A ParsedKeyVal specification of a ThreadGrp
                 object.  The default depends on how MPQC was compiled.
+                Example: <tt>-threadgrp "<PthreadThreadGrp>:(num_threads=4)"</tt>
 
   <dt><tt>-integral</tt><dd>A ParsedKeyVal specification of an Integral
                 object. The default is IntegralV3. Note that some
                 MolecularEnergy specializations require specific choices
                 of Integral specializations and may not work with IntegralV3.
+                Example: <tt>-integral "<IntegralLibint2>:()"</tt>
 
   <dt><tt>-resources</tt><dd>A ParsedKeyVal specification of a ConsumableResources
                 object. By default a ConsumableResources object constructed with its default
                 constructor will be used.
+                Example: <tt>-resources "<ConsumableResources>:( memory=1GB disk=[/tmp/mpqcuser/ 0] )"</tt>
 
   <dt><tt>-l</tt><dd>Sets a limit on the number of basis functions.  The
                 default is zero, which means an unlimited number of basis

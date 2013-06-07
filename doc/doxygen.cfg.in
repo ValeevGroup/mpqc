@@ -555,6 +555,7 @@ INPUT_ENCODING         = UTF-8
 
 FILE_PATTERNS          = *.h \
                          *.hh \
+                         *.hpp \
                          *.dox
 
 # The RECURSIVE tag can be used to turn specify whether or not subdirectories 
@@ -567,10 +568,7 @@ RECURSIVE              = YES
 # excluded from the INPUT source files. This way you can easily exclude a 
 # subdirectory from a directory tree whose root is specified with the INPUT tag.
 
-EXCLUDE                = @top_srcdir@/src/lib/chemistry/qc/cints/eri_quartet_data.h \
-                         @top_srcdir@/src/lib/chemistry/qc/cints/grt_quartet_data.h \
-                         @top_srcdir@/src/lib/chemistry/qc/mbptr12/eri_quartet_data.h \
-                         @top_srcdir@/src/lib/chemistry/qc/mbptr12/grt_quartet_data.h
+EXCLUDE                = @top_srcdir@/src/lib/chemistry/cca/
 
 # The EXCLUDE_SYMLINKS tag can be used select whether or not files or 
 # directories that are symbolic links (a Unix filesystem feature) are excluded 

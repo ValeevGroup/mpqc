@@ -11,8 +11,7 @@ if (LIBINT2_LIBRARY)
   include_directories(${LIBINT2_INCLUDE_DIR}/libint2)
 endif()
 
-
-if (NOT LIBINT_FOUND AND REQUIRE_LIBINT2)
+if (REQUIRE_LIBINT2 AND NOT HAVE_LIBINT2)
 
   set(EXTERNAL_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external)
   set(EXTERNAL_BUILD_DIR ${PROJECT_BINARY_DIR}/external/build)
@@ -40,7 +39,7 @@ if (NOT LIBINT_FOUND AND REQUIRE_LIBINT2)
     CONFIGURE_COMMAND /bin/bash ./configure
       --prefix=${EXTERNAL_BUILD_DIR}/libint
       CC=${CMAKE_C_COMPILER}
-      "CFLAGS=\"${CMAKE_C_FLAGS}"
+      "CFLAGS=${CMAKE_C_FLAGS}"
       CXX=${CMAKE_CXX_COMPILER}
       "CXXFLAGS=${CMAKE_CXX_FLAGS}"
     BUILD_COMMAND make SHELL=/bin/bash
@@ -50,7 +49,7 @@ if (NOT LIBINT_FOUND AND REQUIRE_LIBINT2)
   add_dependencies(External libint)
   include_directories(${EXTERNAL_BUILD_DIR}/libint/include)
   include_directories(${EXTERNAL_BUILD_DIR}/libint/include/libint2)
-  set(LIBRARIES ${EXTERNAL_BUILD_DIR}/libint/lib/libint2.a;${LIBRARIES})
+  set(LIBINT2_LIBRARY ${EXTERNAL_BUILD_DIR}/libint/lib/libint2.a)
   set(HAVE_LIBINT2 TRUE)
 
 endif()

@@ -19,7 +19,10 @@ target_link_libraries(
   util
 )
 
-target_link_libraries(${executable} ${LIBINT2_LIBRARY})
+if (HAVE_LIBINT2)
+  target_link_libraries(${executable} ${LIBINT2_LIBRARY})
+endif()
+
 target_link_libraries(${executable} ${Boost_LIBRARIES})
 target_link_libraries(${executable} ${LAPACK_LIBRARIES})
 target_link_libraries(${executable} ${BLAS_LIBRARIES})

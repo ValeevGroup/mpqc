@@ -43,6 +43,7 @@ Some influential environment variables:
 # was told to build local cmake
 if [ $# -eq 1 -a "$1" = "cmake" ]; then
     cd cmake && make cmake
+    exit
 fi
 
 # check if local cmake was built

@@ -176,10 +176,10 @@ compute_delta(int natoms, const Ref<GaussianBasisSet> &basis, int nocc_act,
       double P_mo1_mo2 = 0.0;
       double P_mo1_mo1 = 0.0;
       double P_mo2_mo2 = 0.0;
-      double * restrictxx tmp_ptr1 = &scf_vector_dat[offset + mo1*nbasis];
-      double * restrictxx tmp_ptr2 = &scf_vector_dat[offset + mo2*nbasis];
-      double * restrictxx tmp_ptr3 = &S_half_trans_dat[offset + mo1*nbasis];
-      double * restrictxx tmp_ptr4 = &S_half_trans_dat[offset + mo2*nbasis];
+      double * RESTRICT tmp_ptr1 = &scf_vector_dat[offset + mo1*nbasis];
+      double * RESTRICT tmp_ptr2 = &scf_vector_dat[offset + mo2*nbasis];
+      double * RESTRICT tmp_ptr3 = &S_half_trans_dat[offset + mo1*nbasis];
+      double * RESTRICT tmp_ptr4 = &S_half_trans_dat[offset + mo2*nbasis];
       int index = basis->nbasis_on_center(atom);
       for (int ao1=0; ao1<index; ao1++) {
           double tmp1 = *tmp_ptr1;
@@ -223,8 +223,8 @@ do_rotation(double gamma,
             int nbasis, int nocc_act,
             double *vec, int mo1, int mo2)
 {
-  double * restrictxx tmp_ptr1 = &vec[mo1*nbasis];
-  double * restrictxx tmp_ptr2 = &vec[mo2*nbasis];
+  double * RESTRICT tmp_ptr1 = &vec[mo1*nbasis];
+  double * RESTRICT tmp_ptr2 = &vec[mo2*nbasis];
   double cgamma = cos(gamma);
   double sgamma = sin(gamma);
   for (int aoindex=0; aoindex<nbasis; aoindex++) {
@@ -438,10 +438,10 @@ PipekMezeyLocalization::compute_rotation(OrbData &orbdata)
       double P_mo1_mo2 = 0.0;
       double P_mo1_mo1 = 0.0;
       double P_mo2_mo2 = 0.0;
-      double * restrictxx tmp_ptr1 = &scf_vector_dat_[offset + mo1*nbasis];
-      double * restrictxx tmp_ptr2 = &scf_vector_dat_[offset + mo2*nbasis];
-      double * restrictxx tmp_ptr3 = &S_half_trans_dat_[offset + mo1*nbasis];
-      double * restrictxx tmp_ptr4 = &S_half_trans_dat_[offset + mo2*nbasis];
+      double * RESTRICT tmp_ptr1 = &scf_vector_dat_[offset + mo1*nbasis];
+      double * RESTRICT tmp_ptr2 = &scf_vector_dat_[offset + mo2*nbasis];
+      double * RESTRICT tmp_ptr3 = &S_half_trans_dat_[offset + mo1*nbasis];
+      double * RESTRICT tmp_ptr4 = &S_half_trans_dat_[offset + mo2*nbasis];
       int index = basis_->nbasis_on_center(atom);
       for (int ao1=0; ao1<index; ao1++) {
           double tmp1 = *tmp_ptr1;
@@ -487,8 +487,8 @@ PipekMezeyLocalization::rotate(const OrbData &orbdata,
   int mo2 = orbdata.j;
   double gamma = orbdata.gamma;
   int nbasis = wfn_->basis()->nbasis();
-  double * restrictxx tmp_ptr1 = &vec[mo1*nbasis];
-  double * restrictxx tmp_ptr2 = &vec[mo2*nbasis];
+  double * RESTRICT tmp_ptr1 = &vec[mo1*nbasis];
+  double * RESTRICT tmp_ptr2 = &vec[mo2*nbasis];
   double cgamma = cos(gamma);
   double sgamma = sin(gamma);
   for (int aoindex=0; aoindex<nbasis_; aoindex++) {

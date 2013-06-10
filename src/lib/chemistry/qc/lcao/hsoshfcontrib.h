@@ -39,7 +39,7 @@ class HSOSHFContribution: public GenericFockContribution {
     void contrib_e_J(double factor,
                      int I, int J, int K, int L,
                      int nI, int nJ, int nK, int nL,
-                     const double * restrictxx buf);
+                     const double * RESTRICT buf);
 
     /** Compute the exchange contribution applying no two electron integral
         permutations. The integrals in buf are the full redundant set
@@ -48,48 +48,48 @@ class HSOSHFContribution: public GenericFockContribution {
     void contrib_e_K(double factor,
                      int I, int J, int K, int L,
                      int nI, int nJ, int nK, int nL,
-                     const double * restrictxx buf);
+                     const double * RESTRICT buf);
 
     void contrib_p12_p13p24_J(double factor,
                               int I, int J, int K, int L,
                               int nI, int nJ, int nK, int nL,
-                              const double * restrictxx buf);
+                              const double * RESTRICT buf);
     void contrib_p12_p13p24_K(double factor,
                               int I, int J, int K, int L,
                               int nI, int nJ, int nK, int nL,
-                              const double * restrictxx buf);
+                              const double * RESTRICT buf);
     void contrib_p34_p13p24_J(double factor,
                               int I, int J, int K, int L,
                               int nI, int nJ, int nK, int nL,
-                              const double * restrictxx buf);
+                              const double * RESTRICT buf);
     void contrib_p34_p13p24_K(double factor,
                               int I, int J, int K, int L,
                               int nI, int nJ, int nK, int nL,
-                              const double * restrictxx buf);
+                              const double * RESTRICT buf);
     void contrib_p12_p34_J(double factor,
                            int I, int J, int K, int L,
                            int nI, int nJ, int nK, int nL,
-                           const double * restrictxx buf);
+                           const double * RESTRICT buf);
     void contrib_p12_p34_K(double factor,
                            int I, int J, int K, int L,
                            int nI, int nJ, int nK, int nL,
-                           const double * restrictxx buf);
+                           const double * RESTRICT buf);
     void contrib_p34_J(double factor,
                        int I, int J, int K, int L,
                        int nI, int nJ, int nK, int nL,
-                       const double * restrictxx buf);
+                       const double * RESTRICT buf);
     void contrib_p34_K(double factor,
                        int I, int J, int K, int L,
                        int nI, int nJ, int nK, int nL,
-                       const double * restrictxx buf);
+                       const double * RESTRICT buf);
     void contrib_p13p24_J(double factor,
                           int I, int J, int K, int L,
                           int nI, int nJ, int nK, int nL,
-                          const double * restrictxx buf);
+                          const double * RESTRICT buf);
     void contrib_p13p24_K(double factor,
                           int I, int J, int K, int L,
                           int nI, int nJ, int nK, int nL,
-                          const double * restrictxx buf);
+                          const double * RESTRICT buf);
 
     /** Compute the Coulomb contribution applying all two electron integral
         permutations. I, J, K, and L indices must all be unique.
@@ -97,7 +97,7 @@ class HSOSHFContribution: public GenericFockContribution {
     void contrib_all_J(double factor,
                        int I, int J, int K, int L,
                        int nI, int nJ, int nK, int nL,
-                       const double * restrictxx buf);
+                       const double * RESTRICT buf);
 
     /** Compute the exchange contribution applying all two electron integral
         permutations. I, J, K, and L indices must all be unique.
@@ -105,7 +105,7 @@ class HSOSHFContribution: public GenericFockContribution {
     void contrib_all_K(double factor,
                        int I, int J, int K, int L,
                        int nI, int nJ, int nK, int nL,
-                       const double * restrictxx buf);
+                       const double * RESTRICT buf);
 };
 
 }

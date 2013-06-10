@@ -38,11 +38,10 @@
 #  include <util/group/messpgon.h>
 #endif
 #ifdef HAVE_MPI
-#  ifndef MPICH_SKIP_MPICXX
-#  define MPICH_SKIP_MPICXX
-#  endif
-#  include <mpi.h>
-#  include <util/group/messmpi.h>
+#define OMPI_SKIP_MPICXX
+#define MPICH_SKIP_MPICXX
+#include <mpi.h>
+#include <util/group/messmpi.h>
 #endif
 
 #define DEFAULT_GOP_MAX 320000

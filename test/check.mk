@@ -1,0 +1,1045 @@
+SRCTOPDIR=$(shell pwd)/..
+ifndef TESTDIR
+  TESTDIR=$(shell pwd)
+endif
+
+PERL=perl
+INSUF=in
+PROGRAM=mpqc
+RUN=run
+INP=input
+REF=$(TESTDIR)/ref
+MPQC=$(SRCTOPDIR)/src/bin/mpqc/mpqc
+MPQCRUN = cd run && $(PERL) $(SRCTOPDIR)/bin/mpqcrun
+
+INPUTGENDEPS=$(SRCTOPDIR)/lib/perl/QCParse.pm \
+             $(SRCTOPDIR)/lib/perl/QCResult.pm \
+             $(SRCTOPDIR)/lib/perl/Molecule.pm \
+             $(TESTDIR)/makein.pl
+
+MAKEIN=$(PERL) -I$(SRCTOPDIR)/lib/perl $(TESTDIR)/makein.pl
+MAKEINCCA=$(PERL) makeccain.pl
+CHECKOUT=$(PERL) -I$(SRCTOPDIR)/lib/perl $(TESTDIR)/checkout.pl
+CHECKCCAOUT=$(PERL) $(TESTDIR)/checkccaout.pl
+
+########################################################################
+# need to determine nthreadperproc from MPQCRUN_ARGS, since this determines
+# whether or not certain tests
+
+ALL_MPQCRUN_ARGS:=$(MPQCRUN_ARGS)
+
+ifneq ($(filter --nthreadperproc,$(ALL_MPQCRUN_ARGS)),)
+$(error must use --nthreadperproc=xxx syntax for MPQCRUN_ARGS)
+endif
+MPQCRUN_NTHREADPERPROC:=$(filter --nthreadperproc=%, $(ALL_MPQCRUN_ARGS))
+MPQCRUN_NTHREADPERPROC:=$(patsubst --nthreadperproc=%, %, $(MPQCRUN_NTHREADPERPROC))
+MPQCRUN_NTHREADPERPROC:=$(strip $(MPQCRUN_NTHREADPERPROC))
+ifeq ($(MPQCRUN_NTHREADPERPROC),)
+  MPQCRUN_NTHREADPERPROC=1
+endif
+
+ifneq ($(filter --integral,$(ALL_MPQCRUN_ARGS)),)
+$(error must use --integral=xxx syntax for MPQCRUN_ARGS)
+endif
+MPQCRUN_INTEGRAL:=$(filter --integral=%, $(ALL_MPQCRUN_ARGS))
+MPQCRUN_INTEGRAL:=$(patsubst --integral=%, %, $(MPQCRUN_INTEGRAL))
+MPQCRUN_INTEGRAL:=$(strip $(MPQCRUN_INTEGRAL))
+ifeq ($(MPQCRUN_INTEGRAL),)
+  MPQCRUN_INTEGRAL=intv3
+endif
+
+# Also need to see if --mpqc was specified.  If not, then add
+# --mpqc ../../mpqc.
+ifeq ($(filter --mpqc%, $(ALL_MPQCRUN_ARGS)),)
+ALL_MPQCRUN_ARGS:=--mpqc $(MPQC) $(ALL_MPQCRUN_ARGS)
+endif
+
+# MP2-R12 tests are only run when 1) appropriate factories are specified via MPQCRUN_ARGS
+# and 2) MPQC was configured with MP2-R12 capabilities
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12),yes)
+ifeq ($(MPQCRUN_INTEGRAL),cints)
+RUN_MBPTR12=yes
+endif
+ifeq ($(MPQCRUN_INTEGRAL),libint2)
+RUN_MBPTF12=yes
+endif
+endif
+
+# CC-R12 tests are only run when the CC-R12 code has been configured
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CCR12),yes)
+RUN_CCR12=yes
+endif
+
+# PSI tests are only run when MPQC-PSI interface was configured
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_PSI),yes)
+RUN_PSI=yes
+endif
+
+########################################################################
+
+H2OMASTER=h2o.qci
+H2OINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(H2OMASTER))
+H2OOUTPUTS = $(H2OINPUTS:%.$(INSUF)=%.out)
+
+H2OMP2MASTER=h2omp2.qci
+H2OMP2INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(H2OMP2MASTER))
+H2OMP2OUTPUTS = $(H2OMP2INPUTS:%.$(INSUF)=%.out)
+
+MP2R12MASTER=mp2r12.qci
+MP2R12INPUTS=
+ifeq ($(RUN_MBPTR12),yes)
+  MP2R12INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(MP2R12MASTER))
+endif
+MP2R12OUTPUTS = $(MP2R12INPUTS:%.$(INSUF)=%.out)
+
+MP2F12MASTER=mp2f12.qci
+MP2F12INPUTS=
+ifeq ($(RUN_MBPTF12),yes)
+  # add CABS singles inputs
+  MP2CABSSINGLESINPUTS = mp2f12_h2omp2cabssingles00ccpvdzccpvdzf12cabsc1.in \
+    mp2f12_h2omp2cabssingles00ccpvdzccpvdzf12cabsc2v.in \
+    mp2f12_ch2mp2cabssingles00ccpvdzccpvdzf12cabsc1.in  \
+    mp2f12_ch2mp2cabssingles00ccpvdzccpvdzf12cabsc2v.in \
+    mp2f12_hmp2cabssingles00ccpvqz.in
+  MP2CABSSINGLESINPUTS := $(MP2CABSSINGLESINPUTS:%=$(INP)/%)
+ifeq ($(HAVE_LIBINT2_G12_T1G12),yes)
+  MP2F12INPUTS = mp2f12_mp2f12slashaprime00ccpvdzaugccpvdzc2v.in \
+    mp2f12_mp2f12slashaprime10ccpvdzaugccpvdzc2v.in \
+    mp2f12_mp2f12slashaprimeprime00ccpvdzaugccpvdzc2v.in \
+    mp2f12_mp2f12slashaprimeprime10ccpvdzaugccpvdzc2v.in \
+    mp2f12_mp2f12slashb00ccpvdzaugccpvdzc2v.in \
+    mp2f12_mp2f12slashb10ccpvdzaugccpvdzc2v.in
+  MP2F12INPUTS := $(MP2F12INPUTS:%=$(INP)/%)
+else
+  MP2F12INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(MP2F12MASTER)) $(MP2CABSSINGLESINPUTS)
+endif
+endif
+MP2F12OUTPUTS = $(MP2F12INPUTS:%.$(INSUF)=%.out)
+
+PT2F12MASTER=
+PT2F12INPUTS=
+ifeq ($(RUN_MBPTF12),yes)
+  PT2F12INPUTS= pt2f12_scfc00ccpvdzaugccpvdzc2v.in \
+    pt2f12_scfc01ccpvdzaugccpvdzc2v.in \
+    pt2f12_scfc10ccpvdzaugccpvdzc2v.in \
+    pt2f12_scfc11ccpvdzaugccpvdzc2v.in 
+#    pt2f12sf_scfc00ccpvdzaugccpvdzc2v.in \
+#    pt2f12sf_scfc01ccpvdzaugccpvdzc2v.in \
+#    pt2f12sf_scfc10ccpvdzaugccpvdzc2v.in \
+#    pt2f12sf_scfc11ccpvdzaugccpvdzc2v.in
+  PT2F12INPUTS := $(PT2F12INPUTS:%=$(INP)/%)
+endif
+PT2F12OUTPUTS = $(PT2F12INPUTS:%.$(INSUF)=%.out)
+
+CCSDR12MASTER=ccsdr12.qci
+CCSDR12INPUTS=
+ifeq ($(RUN_CCR12),yes)
+ ifeq ($(RUN_MBPTF12),yes)
+  CCSDR12INPUTS= ccsdpt_ptr12_h2o.in \
+    ccsdpt_ptr12_ne.in \
+    ccsdptpr12_df_ne.in \
+    ccsdptpr12_ne.in
+  CCSDR12INPUTS := $(CCSDR12INPUTS:%=$(INP)/%)
+ endif
+endif
+CCSDR12OUTPUTS = $(CCSDR12INPUTS:%.$(INSUF)=%.out)
+
+PSICCSDPT2R12MASTER=psiccsdpt2r12.qci
+PSICCSDPT2R12INPUTS=
+ifeq ($(RUN_MBPTR12),yes)
+  ifeq ($(RUN_PSI),yes)
+    PSICCSDPT2R12INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(PSICCSDPT2R12MASTER))
+  endif
+endif
+PSICCSDPT2R12OUTPUTS = $(PSICCSDPT2R12INPUTS:%.$(INSUF)=%.out)
+
+PSICCSDPT2F12MASTER=psiccsdpt2f12.qci
+PSICCSDPT2F12INPUTS=
+ifeq ($(RUN_MBPTF12),yes)
+  ifeq ($(RUN_PSI),yes)
+    PSICCSDPT2F12INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(PSICCSDPT2F12MASTER))
+  endif
+endif
+PSICCSDPT2F12OUTPUTS = $(PSICCSDPT2F12INPUTS:%.$(INSUF)=%.out)
+
+PSIPT2F12MASTER=
+PSIPT2F12INPUTS=
+ifeq ($(RUN_MBPTF12),yes)
+  ifeq ($(RUN_PSI),yes)
+    PSIPT2F12INPUTS= psipt2f12_scfc00ccpvdzaugccpvdzc2v.in \
+      psipt2f12_scfc01ccpvdzaugccpvdzc2v.in \
+      psipt2f12_scfc10ccpvdzaugccpvdzc2v.in \
+      psipt2f12_scfc11ccpvdzaugccpvdzc2v.in \
+      psipt2f12_casscfc00ccpvdzaugccpvdzc2v.in \
+      psipt2f12_casscfc01ccpvdzaugccpvdzc2v.in \
+      psipt2f12_casscfc10ccpvdzaugccpvdzc2v.in \
+      psipt2f12_casscfc11ccpvdzaugccpvdzc2v.in \
+      psipt2f12_mrcic00ccpvdzaugccpvdzc2v.in \
+      psipt2f12_mrcic10ccpvdzaugccpvdzc2v.in 
+#      psipt2f12sf_scfc00ccpvdzaugccpvdzc2v.in \
+#      psipt2f12sf_scfc01ccpvdzaugccpvdzc2v.in \
+#      psipt2f12sf_scfc10ccpvdzaugccpvdzc2v.in \
+#      psipt2f12sf_scfc11ccpvdzaugccpvdzc2v.in \
+#      psipt2f12sf_casscfc00ccpvdzaugccpvdzc2v.in \
+#      psipt2f12sf_casscfc01ccpvdzaugccpvdzc2v.in \
+#      psipt2f12sf_casscfc10ccpvdzaugccpvdzc2v.in \
+#      psipt2f12sf_casscfc11ccpvdzaugccpvdzc2v.in \
+#      psipt2f12sf_mrcic00ccpvdzaugccpvdzc2v.in \
+#      psipt2f12sf_mrcic10ccpvdzaugccpvdzc2v.in
+    PSIPT2F12INPUTS := $(PSIPT2F12INPUTS:%=$(INP)/%)
+  endif
+endif
+PSIPT2F12OUTPUTS = $(PSIPT2F12INPUTS:%.$(INSUF)=%.out)
+
+H2OFRQMASTER=h2ofrq.qci
+H2OFRQINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(H2OFRQMASTER))
+H2OFRQOUTPUTS = $(H2OFRQINPUTS:%.$(INSUF)=%.out)
+
+CH2FRQMASTER=ch2frq.qci
+CH2FRQINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(CH2FRQMASTER))
+CH2FRQOUTPUTS = $(CH2FRQINPUTS:%.$(INSUF)=%.out)
+
+ORTHOGMASTER=orthog.qci
+ORTHOGINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(ORTHOGMASTER))
+ORTHOGOUTPUTS = $(ORTHOGINPUTS:%.$(INSUF)=%.out)
+
+BASIS1MASTER=basis1.qci
+BASIS1INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(BASIS1MASTER))
+BASIS1OUTPUTS = $(BASIS1INPUTS:%.$(INSUF)=%.out)
+
+DFTMASTER=dft.qci
+DFTINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(DFTMASTER))
+DFTOUTPUTS = $(DFTINPUTS:%.$(INSUF)=%.out)
+
+BASIS2MASTER=basis2.qci
+BASIS2INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(BASIS2MASTER))
+BASIS2OUTPUTS = $(BASIS2INPUTS:%.$(INSUF)=%.out)
+
+OPTMASTER=opt.qci
+OPTINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(OPTMASTER))
+OPTOUTPUTS = $(OPTINPUTS:%.$(INSUF)=%.out)
+OPTTSMASTER=optts.qci
+OPTTSINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(OPTTSMASTER))
+OPTTSOUTPUTS = $(OPTTSINPUTS:%.$(INSUF)=%.out)
+
+SYMM1MASTER=symm1.qci
+SYMM1INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(SYMM1MASTER))
+SYMM1OUTPUTS = $(SYMM1INPUTS:%.$(INSUF)=%.out)
+
+SYMM2MASTER=symm2.qci
+SYMM2INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(SYMM2MASTER))
+SYMM2OUTPUTS = $(SYMM2INPUTS:%.$(INSUF)=%.out)
+
+SYMM3MASTER=symm3.qci
+SYMM3INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(SYMM3MASTER))
+SYMM3OUTPUTS = $(SYMM3INPUTS:%.$(INSUF)=%.out)
+
+CLSCFMASTER=clscf.qci
+CLSCFINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(CLSCFMASTER))
+CLSCFOUTPUTS = $(CLSCFINPUTS:%.$(INSUF)=%.out)
+
+USCFMASTER=uscf.qci
+USCFINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(USCFMASTER))
+USCFOUTPUTS = $(USCFINPUTS:%.$(INSUF)=%.out)
+
+HSOSSCFMASTER=hsosscf.qci
+HSOSSCFINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(HSOSSCFMASTER))
+HSOSSCFOUTPUTS = $(HSOSSCFINPUTS:%.$(INSUF)=%.out)
+
+CCAINTV3MASTER=ccaintv3.qci
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
+  CCAINTV3INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(CCAINTV3MASTER))
+  CCAINTV3OUTPUTS = $(CCAINTV3INPUTS:%.$(INSUF)=%.out)
+endif
+
+CCACINTSMASTER=ccacints.qci
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
+ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
+  CCACINTSINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(CCACINTSMASTER))
+  CCACINTSOUTPUTS = $(CCACINTSINPUTS:%.$(INSUF)=%.out)
+ endif
+endif
+
+CCALIBINT2MASTER=ccalibint2.qci
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
+ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_LIBINT2),yes)
+  CCALIBINT2INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(CCALIBINT2MASTER))
+  CCALIBINT2OUTPUTS = $(CCALIBINT2INPUTS:%.$(INSUF)=%.out)
+ endif
+endif
+
+CCAMP2R12MASTER=ccamp2r12.qci
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
+ ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12),yes)
+  ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
+   CCAMP2R12INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(CCAMP2R12MASTER))
+   CCAMP2R12OUTPUTS = $(CCAMP2R12INPUTS:%.$(INSUF)=%.out)
+  endif
+ endif
+endif
+
+CCAFEIN = $(TESTDIR)/ref/ccafe_h2oscfsto3g \
+          $(TESTDIR)/ref/ccafe_h2oscfgradccpvtz \
+          $(TESTDIR)/ref/ccafe_h2oq4scfgrad321g
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
+ CCAFEINPUTS = ccafe_h2oscfsto3g.cca \
+               ccafe_h2oscfgradccpvtz.cca \
+               ccafe_h2oq4scfgrad321g.cca
+ CCAFEOUTPUTS = $(CCAFEINPUTS:%.cca=%.out)
+ CCAFERESULTS = $(CCAFEINPUTS:%.cca=%.results)
+endif
+
+CKPTINPUTS = \
+ ckpt_0clscf.in     ckpt_0qnewtopt.in  ckpt_1zapt2.in     ckpt_mp2.in \
+ ckpt_0efcopt.in    ckpt_1clscf.in     ckpt_1qnewtopt.in  ckpt_2qnewtopt.in \
+ ckpt_0hsosscf.in   ckpt_1efcopt.in    ckpt_clscf.in      ckpt_efcopt.in \
+ ckpt_0mp2.in       ckpt_1hsosscf.in   ckpt_2efcopt.in    ckpt_qnewtopt.in \
+ ckpt_0zapt2.in     ckpt_1mp2.in       ckpt_hsosscf.in \
+ ckpt_0clksb3lyp.in     ckpt_1clksb3lyp.in     ckpt_clksb3lyp.in \
+ ckpt_0clkskmlyp.in     ckpt_1clkskmlyp.in     ckpt_clkskmlyp.in \
+ ckpt_0clksbp86.in      ckpt_1clksbp86.in      ckpt_clksbp86.in \
+ ckpt_0clkshfg96.in     ckpt_1clkshfg96.in     ckpt_clkshfg96.in \
+ ckpt_0clksmpwpw91.in   ckpt_1clksmpwpw91.in   ckpt_clksmpwpw91.in \
+ ckpt_0clkspbe.in       ckpt_1clkspbe.in       ckpt_clkspbe.in \
+ ckpt_0clkspw91.in      ckpt_1clkspw91.in      ckpt_clkspw91.in \
+ ckpt_0clksspz81.in     ckpt_1clksspz81.in     ckpt_clksspz81.in \
+ ckpt_0clkssvwn1.in     ckpt_1clkssvwn1.in     ckpt_clkssvwn1.in \
+ ckpt_0clkssvwn1rpa.in  ckpt_1clkssvwn1rpa.in  ckpt_clkssvwn1rpa.in \
+ ckpt_0clkssvwn2.in     ckpt_1clkssvwn2.in     ckpt_clkssvwn2.in \
+ ckpt_0clkssvwn3.in     ckpt_1clkssvwn3.in     ckpt_clkssvwn3.in \
+ ckpt_0clkssvwn4.in     ckpt_1clkssvwn4.in     ckpt_clkssvwn4.in \
+ ckpt_0clkssvwn5.in     ckpt_1clkssvwn5.in     ckpt_clkssvwn5.in \
+ ckpt_0clksxalpha.in    ckpt_1clksxalpha.in    ckpt_clksxalpha.in \
+ ckpt_0hsosksxalpha.in  ckpt_1hsosksxalpha.in  ckpt_hsosksxalpha.in \
+ ckpt_0uksxalpha.in     ckpt_1uksxalpha.in     ckpt_uksxalpha.in
+
+CKPTINPUTS := $(CKPTINPUTS:%=$(INP)/%)
+CKPTOUTPUTS = $(CKPTINPUTS:%.$(INSUF)=%.out)
+
+MBPTINPUTS = \
+ mbpt_mp2mem.in     mbpt_opt12v1.in    mbpt_opt22v2.in    mbpt_zapt2v2lb.in \
+ mbpt_mp2v1.in      mbpt_opt12v2.in    mbpt_opt22v2lb.in \
+ mbpt_mp2v2.in      mbpt_opt12v2lb.in  mbpt_zapt2v1.in \
+ mbpt_mp2v2lb.in    mbpt_opt22v1.in    mbpt_zapt2v2.in \
+ mbpt_mp2mem_mp.in  mbpt_mp2v2_mp.in   mbpt_mp2mem_c1.in  mbpt_mp2mem_auto.in \
+ mbpt_mp2mem_dyn.in
+
+ifeq ($(RUN_MBPTR12),yes)
+  MBPTINPUTS += \
+    mbpt_mp2r12_ne2.in \
+    mbpt_mp2r12_ne2_tz.in         mbpt_mp2r12_ne2_dyn.in \
+    mbpt_mp2r12_c6h6_multipass.in
+  ifeq ($(MPQCRUN_NTHREADPERPROC),1)
+   MBPTINPUTS += mbpt_mp2r12_ne2_multipass.in
+  endif
+endif
+
+MBPTINPUTS := $(MBPTINPUTS:%=$(INP)/%)
+MBPTOUTPUTS = $(MBPTINPUTS:%.$(INSUF)=%.out)
+
+LMP2INPUTS = lmp2_c12h26.lmp2.ccpvdz.in lmp2_c8h18.631gs.lmp2.in	\
+             lmp2_glycine.lmp2.631gs.in lmp2_glycine.lmp2.cd.631gs.in	\
+             lmp2_glycine.mp2.631gs.in
+LMP2INPUTS := $(LMP2INPUTS:%=$(INP)/%)
+LMP2OUTPUTS = $(LMP2INPUTS:%.$(INSUF)=%.out)
+
+METHODSINPUTS = \
+clhf.in        hsosks_b3lyp.in       tchf.in \
+clks_b3lyp.in  hsosks_b88.in         uhf.in \
+clks_b88.in    hsosks_blyp.in        uks_b3lyp.in \
+clks_blyp.in   hsosks_lsdax.in       uks_b88.in \
+clks_lsdax.in  hsosks_xa.in          uks_blyp.in \
+clks_xa.in     uks_lsdax.in          uks_xa.in \
+hsoshf.in      osshf.in              qmmm1.in \
+qmmm2.in       clhfdk1.in            clhfdk2.in \
+clks_kmlyp.in  hsosks_kmlyp.in       uks_kmlyp.in
+
+ifeq ($(RUN_MBPTR12),yes)
+  METHODSINPUTS += \
+    mp2r12ap_+gbc.in mp2r12ap_abs+.in \
+    mp2r12ap_abs.in  mp2r12ap_cabs+.in \
+    mp2r12ap_cabs.in mp2r12ap_nogebc.in \
+    mp2r12ap_+ebc.in mp2r12ap_+gbc+ebc.in
+endif
+
+METHODSINPUTS := $(METHODSINPUTS:%=$(INP)/methods_%)
+
+INPUTINPUTS = \
+rksch2.in uksch2.in uhfch2opt.in rhfch2opt.in hfch2opt.in \
+hfh2ofreq.in ksh2oco.in ksh2o.in hfh2oopt.in \
+mp2h2o.in zapt2ch2.in
+ifeq ($(RUN_MBPTR12),yes)
+    INPUTINPUTS += mp2r12aph2o.in mp2f12ch2o.in
+endif
+INPUTINPUTS := $(INPUTINPUTS:%=$(INP)/input_%)
+
+##############################################################################
+
+# cints and libint2 will not run all test cases.  These filters can be used to select
+# just cases that these can run
+CINTSFILTER = $(INP)/mbpt_mp2r12% $(INP)/methods_mp2r12% $(INP)/mp2r12% $(INP)/psiccsdpt2r12%
+# use libint2 configuration to determine which MP2-F12 set to run
+ifeq ($(HAVE_LIBINT2_G12_T1G12),yes)
+LIBINT2FILTER = $(INP)/mbpt_mp2f12% $(INP)/methods_mp2f12% \
+$(INP)/mp2f12_mp2f12slasha% $(INP)/mp2f12_mp2f12slashb%
+else
+LIBINT2FILTER = $(INP)/mbpt_mp2f12% $(INP)/methods_mp2f12% \
+$(INP)/mp2f12_h2omp2f12slashc% $(INP)/mp2f12_ch2mp2f12slashc% \
+$(INP)/mp2f12_h2omp2cabs% $(INP)/mp2f12_ch2mp2cabs% \
+$(INP)/mp2f12_mp2f12slashc%  $(INP)/psiccsdpt2f12% \
+$(INP)/pt2f12% $(INP)/psipt2f12% $(INP)/ccsdpt%
+endif
+
+ALLINPUTS = $(METHODSINPUTS) $(H2OINPUTS) $(H2OMP2INPUTS) \
+            $(H2OFRQINPUTS) $(CH2FRQINPUTS) \
+	    $(MP2R12INPUTS) $(MP2F12INPUTS) $(CCSDR12INPUTS) \
+	    $(PT2F12INPUTS) $(PSIPT2F12INPUTS) \
+	    $(PSICCSDPT2R12INPUTS) $(PSICCSDPT2F12INPUTS) \
+            $(ORTHOGINPUTS) $(BASIS1INPUTS) $(BASIS2INPUTS) \
+            $(DFTINPUTS) \
+            $(OPTINPUTS) $(OPTTSINPUTS) \
+            $(SYMM1INPUTS) $(SYMM2INPUTS) $(SYMM3INPUTS) \
+            $(CKPTINPUTS) $(MBPTINPUTS) $(LMP2INPUTS) \
+            $(CLSCFINPUTS) $(USCFINPUTS) $(HSOSSCFINPUTS) \
+            $(INPUTINPUTS) $(CCAINTV3INPUTS) $(CCACINTSINPUTS) $(CCALIBINT2INPUTS) \
+            $(CCAMP2R12INPUTS)
+
+ALLOUTPUTS = $(ALLINPUTS:%.$(INSUF)=%.out)
+
+CHECK0INPUTS := $(H2OINPUTS) $(H2OFRQINPUTS) $(H2OMP2INPUTS)		\
+                $(METHODSINPUTS) $(INPUTINPUTS) $(CCAINTV3INPUTS)	\
+                $(CCACINTSINPUTS) $(CCALIBINT2INPUTS) $(LMP2INPUTS)
+
+CHECK0BFILTER := %ccpvdz %ccpvtz %ccpvqz %ccpv5z
+CHECK0BFILTER += %ccpcvdz %ccpcvtz %ccpcvqz %ccpcv5z
+CHECK0BFILTER += %pc2 %pc3 %pc4 %pc2aug %pc3aug %pc4aug
+CHECK0BFILTER += %6311gss
+CHECK0FILTER := $(CHECK0BFILTER:%=%d2h) \
+                $(CHECK0BFILTER:%=%c2v) \
+                $(CHECK0BFILTER:%=%c2) \
+                $(CHECK0BFILTER:%=%ci) \
+                $(CHECK0BFILTER:%=%auto) \
+                $(CHECK0BFILTER:%=%cs) \
+                $(CHECK0BFILTER:%=%c1)
+CHECK0FILTER := $(CHECK0FILTER:%=%.in) \
+                $(CHECK0FILTER:%=%frq.in) \
+                $(CHECK0FILTER:%= %opt.in) \
+                $(CHECK0FILTER:%= %optfrq.in)
+CHECK0FILTER += $(INP)/basis2_% $(INP)/dft_% $(INP)/symm1_cub%
+CHECK0FILTER += $(INP)/mbpt_mp2r12_c6h6_multipass.in
+CHECK0FILTER += $(INP)/lmp2_c8h18.631gs.lmp2.in
+CHECK0FILTER += $(INP)/lmp2_c12h26.lmp2.ccpvdz.in
+CHECK0INPUTS := $(filter-out $(CHECK0FILTER),$(CHECK0INPUTS))
+ifeq ($(MPQCRUN_INTEGRAL),cints)
+  CHECK0INPUTS := $(filter $(CINTSFILTER),$(CHECK0INPUTS))
+endif
+ifeq ($(MPQCRUN_INTEGRAL),libint2)
+  CHECK0INPUTS := $(filter $(LIBINT2FILTER),$(CHECK0INPUTS))
+endif
+CHECK0OUTPUTS := $(CHECK0INPUTS:%.$(INSUF)=%.out)
+#printcheck0:
+#	@echo CHECK0BFILTER = $(CHECK0BFILTER)
+#	@echo CHECK0FILTER = $(CHECK0FILTER)
+#	@ls -l $(CHECK0INPUTS)
+
+CHECK1INPUTS := $(ALLINPUTS)
+CHECK1BFILTER := %ccpvdz %ccpvtz %ccpvqz %ccpv5z
+CHECK1BFILTER += %ccpcvdz %ccpcvtz %ccpcvqz %ccpcv5z
+CHECK1BFILTER += %pc2 %pc3 %pc4 %pc2aug %pc3aug %pc4aug
+CHECK1BFILTER += %6311gss
+CHECK1FILTER := $(CHECK1BFILTER:%=%d2h) \
+                $(CHECK1BFILTER:%=%c2v) \
+                $(CHECK1BFILTER:%=%c2) \
+                $(CHECK1BFILTER:%=%ci) \
+                $(CHECK1BFILTER:%=%auto) \
+                $(CHECK1BFILTER:%=%cs) \
+                $(CHECK1BFILTER:%=%c1)
+CHECK1FILTER := $(CHECK1FILTER:%=%.in) \
+                $(CHECK1FILTER:%=%frq.in) \
+                $(CHECK1FILTER:%= %opt.in) \
+                $(CHECK1FILTER:%= %optfrq.in)
+CHECK1FILTER += $(INP)/basis2_% $(INP)/dft_% $(INP)/symm1_cub%
+CHECK1FILTER += $(INP)/mbpt_mp2r12_c6h6_multipass.in
+CHECK1FILTER += $(INP)/lmp2_c8h18.631gs.lmp2.in
+CHECK1FILTER += $(INP)/lmp2_c12h26.lmp2.ccpvdz.in
+CHECK1INPUTS := $(filter-out $(CHECK1FILTER),$(CHECK1INPUTS))
+ifeq ($(MPQCRUN_INTEGRAL),cints)
+  CHECK1INPUTS := $(filter $(CINTSFILTER),$(CHECK1INPUTS))
+endif
+ifeq ($(MPQCRUN_INTEGRAL),libint2)
+  CHECK1INPUTS := $(filter $(LIBINT2FILTER),$(CHECK1INPUTS))
+endif
+CHECK1OUTPUTS := $(CHECK1INPUTS:%.$(INSUF)=%.out)
+#printcheck1:
+#	@echo CHECK1BFILTER = $(CHECK1BFILTER)
+#	@echo CHECK1FILTER = $(CHECK1FILTER)
+#	@ls -l $(CHECK1INPUTS)
+
+CHECK2INPUTS := $(ALLINPUTS)
+ifeq ($(MPQCRUN_INTEGRAL),cints)
+  CHECK2INPUTS := $(filter $(CINTSFILTER),$(CHECK2INPUTS))
+endif
+ifeq ($(MPQCRUN_INTEGRAL),libint2)
+  CHECK2INPUTS := $(filter $(LIBINT2FILTER),$(CHECK2INPUTS))
+endif
+CHECK2OUTPUTS := $(CHECK2INPUTS:%.$(INSUF)=%.out)
+#printcheck2:
+#	@echo $(ALLINPUTS)
+#	@ls -l $(CHECK2INPUTS)
+
+##############################################################################
+
+.PHONY: default
+default::
+	@echo \'make check0\' to run and check the small test suite
+	@echo \'make check0_run\' to run the small test suite
+	@echo \'make check0_chk\' to check the small test suite
+	@echo \'make check1\' to run and check the intermediate test suite
+	@echo \'make check1_run\' to run the intermediate test suite
+	@echo \'make check1_chk\' to check the intermediate test suite
+	@echo \'make check2\' to inputs and check the full test suite
+	@echo \'make check2_run\' to run the full test suite
+	@echo \'make check2_chk\' to check the full test suite
+	@echo "  For each of the above, MPQCRUN_ARGS=... can be given to"
+	@echo "  to control how the jobs are run.  If MPQCRUN_ARGS is"
+	@echo "  given to checkn_run, then the same MPQCRUN_ARGS must be given"
+	@echo "  to the checkn_chk."
+	@echo \'make inputs\' to make a run directory containing all inputs.
+	@echo "               This is not needed to run the checks since the"
+	@echo "               inputs from the src directory are used.  It"
+	@echo "               is only for maintainer use."
+	@echo \'make check_clean\' removes output and scratch files from the run directory
+	@echo \'make check_clean_scratch\' removes scratch files from the run directory
+	@echo Deprecated make targets:
+	@echo \'make checkrun\' to check outputs of the run directory
+	@echo \'make check\' to compare the outputs in run with those in ref
+	@echo \'make diff\' to use the diff program to compare outputs
+
+.PHONY: check check0 check0_run check0_chk
+.PHONY: check1 check1_run check1_chk
+.PHONY: check2 check2_run check2_chk
+.PHONY: check_clean check_clean_scratch
+
+check_clean: check_clean_scratch
+	/bin/rm -f $(RUN)/*.out $(RUN)/*.diff
+	/bin/rm -f $(RUN)/*.cca $(RUN)/*.results $(RUN)/*.err
+	/bin/rm -rf $(RUN)/*.ccatmpdir
+
+check_clean_scratch:
+	/bin/rm -rf $(RUN)/*.tmp $(RUN)/*.wfn $(RUN)/*.hess $(RUN)/*.results report.txt
+	/bin/rm -rf $(RUN)/*.ckpt $(RUN)/*.tmp $(RUN)/*.wfn $(RUN)/*.hess $(RUN)/*.results report.txt
+	/bin/rm -rf $(RUN)/*.moints.* $(RUN)/*.psi.*
+
+check: check0
+
+check0: $(RUN) check0_run check0_chk
+
+MPQCRUN_EXTRA_ARGS = --autoout --simpout \
+                     --inputprefix $(TESTDIR)/ref/ \
+                     --seq ^ckpt_
+
+check0_run:
+	$(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CHECK0INPUTS:$(INP)/%=%)
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_INTCCA),yes)
+	$(MAKE) checkccafe_run
+endif
+
+check0_chk:
+	$(CHECKOUT) -r $(TESTDIR)/ref $(CHECK0OUTPUTS:$(INP)/%=$(RUN)/%)
+ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_INTCCA),yes)
+	$(MAKE) checkccafe_chk
+endif
+
+check1: $(RUN) check1_run check1_chk
+
+check1_run:
+	$(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CHECK1INPUTS:$(INP)/%=%)
+
+check1_chk:
+	$(CHECKOUT) -r $(TESTDIR)/ref $(CHECK1OUTPUTS:$(INP)/%=$(RUN)/%)
+
+check2: $(RUN) check2_run check2_chk
+
+check2_run:
+	$(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CHECK2INPUTS:$(INP)/%=%)
+
+check2_chk:
+	$(CHECKOUT) -r $(TESTDIR)/ref $(CHECK2OUTPUTS:$(INP)/%=$(RUN)/%)
+
+checkcca_run: $(RUN)
+	$(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CCAINTV3INPUTS:$(INP)/%=%) $(CCACINTSINPUTS:$(INP)/%=%) $(CCALIBINT2INPUTS:$(INP)/%=%) $(CCAMP2R12INPUTS:$(INP)/%=%)
+ifeq ($(ENABLESHARED),yes)
+	$(MAKE) checkccafe_run
+endif
+
+checkcca_chk:
+	$(CHECKOUT) -r $(TESTDIR)/ref $(CCAINTV3OUTPUTS:$(INP)/%=$(RUN)/%) $(CCACINTSOUTPUTS:$(INP)/%=$(RUN)/%) $(CCALIBINT2OUTPUTS:$(INP)/%=$(RUN)/%)  $(CCAMP2R12OUTPUTS:$(INP)/%=$(RUN)/%)
+ifeq ($(ENABLESHARED),yes)
+	$(MAKE) checkccafe_chk
+endif
+
+CCARUN = ../ccarun
+CCARUN_EXTRA_ARGS = --inputprefix $(RUN) \
+                     --outputprefix $(RUN)
+
+checkccafe_run: $(RUN) stamp-ccafe
+	$(PERL) $(CCARUN) $(CCARUN_EXTRA_ARGS) $(CCAFEINPUTS) 
+
+checkccafe_chk:
+	$(CHECKCCAOUT) --refprefix $(TESTDIR)/ref --outputprefix $(RUN) $(CCAFERESULTS)
+
+.PHONY: inputs
+inputs:: h2o h2omp2 mp2r12 mp2f12 psiccsdpt2r12 psiccsdpt2f12 h2ofrq ch2frq basis1 basis2 opt optts symm1 symm2 symm3 ckpt mbpt
+inputs:: methods clscf uscf hsosscf input dft orthog ccacints ccaintv3 ccamp2r12
+
+.PHONY: h2o
+h2o: stamp-h2o
+
+.PHONY: h2omp2
+h2omp2: stamp-h2omp2
+
+.PHONY: mp2r12
+mp2r12: stamp-mp2r12
+
+.PHONY: mp2f12
+mp2f12: stamp-mp2f12
+
+.PHONY: psiccsdpt2r12
+psiccsdpt2r12: stamp-psiccsdpt2r12
+
+.PHONY: psiccsdpt2f12
+psiccsdpt2f12: stamp-psiccsdpt2f12
+
+.PHONY: pt2f12
+pt2f12: stamp-pt2f12
+
+.PHONY: psipt2f12
+psipt2f12: stamp-psipt2f12
+
+.PHONY: h2ofrq
+h2ofrq: stamp-h2ofrq
+
+.PHONY: ch2frq
+ch2frq: stamp-ch2frq
+
+.PHONY: orthog
+orthog: stamp-orthog
+
+.PHONY: basis1
+basis1: stamp-basis1
+
+.PHONY: dft
+dft: stamp-dft
+
+.PHONY: basis2
+basis2: stamp-basis2
+
+.PHONY: symm1
+symm1: stamp-symm1
+
+.PHONY: symm2
+symm2: stamp-symm2
+
+.PHONY: symm3
+symm3: stamp-symm3
+
+.PHONY: clscf
+clscf: stamp-clscf
+
+.PHONY: uscf
+uscf: stamp-uscf
+
+.PHONY: hsosscf
+hsosscf: stamp-hsosscf
+
+.PHONY: opt
+opt: stamp-opt
+
+.PHONY: optts
+optts: stamp-optts
+
+.PHONY: ccaintv3
+ccaintv3: stamp-ccaintv3
+
+.PHONY: ccacints
+ccacints: stamp-ccacints
+
+.PHONY: ccamp2r12
+ccamp2r12: stamp-ccamp2r12
+
+.PHONY: ckpt
+ckpt: $(CKPTINPUTS) $(CKPTINPUTS:%.in=%.qci)
+
+.PHONY: mbpt
+mbpt: $(MBPTINPUTS) $(MBPTINPUTS:%.in=%.qci)
+
+.PHONY: lmp2
+lmp2: $(LMP2INPUTS) $(LMP2INPUTS:%.in=%.qci)
+
+.PHONY: methods
+methods: $(METHODSINPUTS) $(METHODSINPUTS:%.in=%.qci)
+
+.PHONY: input
+input: $(INPUTINPUTS) $(INPUTINPUTS:%.in=%.qci)
+
+stamp-h2o: $(INP) $(H2OMASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(H2OMASTER)
+	touch stamp-h2o
+
+stamp-h2omp2: $(INP) $(H2OMP2MASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(H2OMP2MASTER)
+	touch stamp-h2omp2
+
+stamp-mp2r12: $(INP) $(MP2R12MASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(MP2R12MASTER)
+	touch stamp-mp2r12
+
+stamp-mp2f12: $(INP) $(MP2F12MASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(MP2F12MASTER)
+	touch stamp-mp2f12
+
+stamp-psiccsdpt2r12: $(INP) $(PSICCSDPT2R12MASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(PSICCSDPT2R12MASTER)
+	touch stamp-psiccsdpt2r12
+
+stamp-psiccsdpt2f12: $(INP) $(PSICCSDPT2F12MASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(PSICCSDPT2F12MASTER)
+	touch stamp-psiccsdpt2f12
+
+stamp-pt2f12: $(INP) $(PT2F12MASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(PT2F12MASTER)
+	touch stamp-pt2f12
+
+stamp-psipt2f12: $(INP) $(PSIPT2F12MASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(PSIPT2F12MASTER)
+	touch stamp-psipt2f12
+
+stamp-h2ofrq: $(INP) $(H2OFRQMASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(H2OFRQMASTER)
+	touch stamp-h2ofrq
+
+stamp-ch2frq: $(INP) $(CH2FRQMASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(CH2FRQMASTER)
+	touch stamp-ch2frq
+
+stamp-orthog: $(INP) $(ORTHOGMASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(ORTHOGMASTER)
+	touch stamp-orthog
+
+stamp-basis1: $(INP) $(BASIS1MASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(BASIS1MASTER)
+	touch stamp-basis1
+
+stamp-dft: $(INP) $(DFTMASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(DFTMASTER)
+	touch stamp-dft
+
+stamp-basis2: $(INP) $(BASIS2MASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(BASIS2MASTER)
+	touch stamp-basis2
+
+stamp-opt: $(INP) $(OPTMASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(OPTMASTER)
+	touch stamp-opt
+
+stamp-optts: $(INP) $(OPTTSMASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(OPTTSMASTER)
+	touch stamp-optts
+
+stamp-symm1: $(INP) $(SYMM1MASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(SYMM1MASTER)
+	touch stamp-symm1
+
+stamp-symm2: $(INP) $(SYMM2MASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(SYMM2MASTER)
+	touch stamp-symm2
+
+stamp-symm3: $(INP) $(SYMM3MASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(SYMM3MASTER)
+	touch stamp-symm3
+
+stamp-clscf: $(INP) $(CLSCFMASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(CLSCFMASTER)
+	touch stamp-clscf
+
+stamp-uscf: $(INP) $(USCFMASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(USCFMASTER)
+	touch stamp-uscf
+
+stamp-hsosscf: $(INP) $(HSOSSCFMASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(HSOSSCFMASTER)
+	touch stamp-hsosscf
+
+stamp-ccafe: $(RUN) $(CCAFEIN)
+	$(MAKEINCCA) --dir $(RUN) --scref $(TESTDIR)/ref $(CCAFEIN)
+	touch stamp-ccafe
+
+stamp-ccaintv3: $(INP) $(CCAINTV3MASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(CCAINTV3MASTER)
+	touch stamp-ccaintv3
+
+stamp-ccacints: $(INP) $(CCACINTSMASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(CCACINTSMASTER)
+	touch stamp-ccacints
+
+stamp-ccalibint2: $(INP) $(CCALIBINT2MASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(CCALIBINT2MASTER)
+	touch stamp-ccacints
+
+stamp-ccamp2r12: $(INP) $(CCAMP2R12MASTER) $(INPUTGENDEPS)
+	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(CCAMP2R12MASTER)
+	touch stamp-ccamp2r12
+
+##############################################################################
+
+.PHONY: checkrun
+checkrun: checkckpt checkmbpt checksymm1 checksymm2 checksymm3 checkdft checklmp2
+	@echo Check for complete outputs in the run directory:
+	for file in $(ALLOUTPUTS); \
+	  do \
+	    ($(CHECKOUT) $${file} ); \
+	  done
+
+.PHONY: checkh2ofrq
+checkh2ofrq:
+	@echo Consistency checks on h2o frequency tests:
+	@$(CHECKOUT) $(RUN)/h2ofrq_scfsto3g{c1,c2v}frq.out
+	@$(CHECKOUT) $(RUN)/h2ofrq_scfsto3g{c1,c2v}optfrq.out
+	@$(CHECKOUT) $(RUN)/h2ofrq_mp200sto3g{c1,c2v}frq.out
+	@$(CHECKOUT) $(RUN)/h2ofrq_mp200sto3g{c1,c2v}optfrq.out
+	@$(CHECKOUT) $(RUN)/h2ofrq_scf6311gss{c1,c2v}frq.out
+	@$(CHECKOUT) $(RUN)/h2ofrq_scf6311gss{c1,c2v}optfrq.out
+	@$(CHECKOUT) $(RUN)/h2ofrq_mp2006311gss{c1,c2v}frq.out
+	@$(CHECKOUT) $(RUN)/h2ofrq_mp2006311gss{c1,c2v}optfrq.out
+
+.PHONY: checkch2frq
+checkch2frq:
+	@echo Consistency checks on ch2 frequency tests:
+	@$(CHECKOUT) $(RUN)/ch2frq_scfsto3g{c1,c2v}optfrq.out
+	@$(CHECKOUT) $(RUN)/ch2frq_ub3lypsto3g{c1,c2v}optfrq.out
+	@$(CHECKOUT) $(RUN)/ch2frq_zapt200sto3g{c1,c2v}optfrq.out
+	@$(CHECKOUT) $(RUN)/ch2frq_scf6311gss{c1,c2v}optfrq.out
+	@$(CHECKOUT) $(RUN)/ch2frq_ub3lyp6311gss{c1,c2v}optfrq.out
+	@$(CHECKOUT) $(RUN)/ch2frq_zapt2006311gss{c1,c2v}optfrq.out
+
+.PHONY: checkckpt
+checkckpt:
+	@echo Consistency checks on checkpoint tests:
+	@$(CHECKOUT) $(RUN)/ckpt_1hsosscf.out $(RUN)/ckpt_hsosscf.out
+	@$(CHECKOUT) $(RUN)/ckpt_1clscf.out $(RUN)/ckpt_clscf.out
+	@$(CHECKOUT) $(RUN)/ckpt_1mp2.out $(RUN)/ckpt_mp2.out
+	@$(CHECKOUT) $(RUN)/ckpt_qnewtopt.out $(RUN)/ckpt_2qnewtopt.out
+	@$(CHECKOUT) $(RUN)/ckpt_efcopt.out $(RUN)/ckpt_2efcopt.out
+	@$(CHECKOUT) $(RUN)/ckpt_0zapt2.out $(RUN)/ckpt_1zapt2.out
+	@$(CHECKOUT) $(RUN)/ckpt_clksxalpha.out $(RUN)/ckpt_1clksxalpha.out
+	@$(CHECKOUT) $(RUN)/ckpt_clksb3lyp.out $(RUN)/ckpt_1clksb3lyp.out
+	@$(CHECKOUT) $(RUN)/ckpt_clkskmlyp.out $(RUN)/ckpt_1clkskmlyp.out
+	@$(CHECKOUT) $(RUN)/ckpt_clksbp86.out $(RUN)/ckpt_1clksbp86.out
+	@$(CHECKOUT) $(RUN)/ckpt_clkshfg96.out $(RUN)/ckpt_1clkshfg96.out
+	@$(CHECKOUT) $(RUN)/ckpt_clksmpwpw91.out $(RUN)/ckpt_1clksmpwpw91.out
+	@$(CHECKOUT) $(RUN)/ckpt_clkspbe.out $(RUN)/ckpt_1clkspbe.out
+	@$(CHECKOUT) $(RUN)/ckpt_clkspw91.out $(RUN)/ckpt_1clkspw91.out
+	@$(CHECKOUT) $(RUN)/ckpt_clksspz81.out $(RUN)/ckpt_1clksspz81.out
+	@$(CHECKOUT) $(RUN)/ckpt_clkssvwn1.out $(RUN)/ckpt_1clkssvwn1.out
+	@$(CHECKOUT) $(RUN)/ckpt_clkssvwn1rpa.out $(RUN)/ckpt_1clkssvwn1rpa.out
+	@$(CHECKOUT) $(RUN)/ckpt_clkssvwn2.out $(RUN)/ckpt_1clkssvwn2.out
+	@$(CHECKOUT) $(RUN)/ckpt_clkssvwn3.out $(RUN)/ckpt_1clkssvwn3.out
+	@$(CHECKOUT) $(RUN)/ckpt_clkssvwn4.out $(RUN)/ckpt_1clkssvwn4.out
+	@$(CHECKOUT) $(RUN)/ckpt_clkssvwn5.out $(RUN)/ckpt_1clkssvwn5.out
+	@$(CHECKOUT) $(RUN)/ckpt_hsosksxalpha.out $(RUN)/ckpt_1hsosksxalpha.out
+	@$(CHECKOUT) $(RUN)/ckpt_uksxalpha.out $(RUN)/ckpt_1uksxalpha.out
+
+.PHONY: checkmbpt
+checkmbpt:
+	@echo Consistency checks on MBPT tests:
+	@$(CHECKOUT) $(RUN)/mbpt_zapt2{v1,v2}.out
+	@$(CHECKOUT) $(RUN)/mbpt_zapt2{v1,v2lb}.out
+	@$(CHECKOUT) $(RUN)/mbpt_opt12{v1,v2}.out
+	@$(CHECKOUT) $(RUN)/mbpt_opt12{v1,v2lb}.out
+	@$(CHECKOUT) $(RUN)/mbpt_opt22{v1,v2}.out
+	@$(CHECKOUT) $(RUN)/mbpt_opt22{v1,v2lb}.out
+	@$(CHECKOUT) $(RUN)/mbpt_mp2{v1,v2}.out
+	@$(CHECKOUT) $(RUN)/mbpt_mp2{v1,v2lb}.out
+	@$(CHECKOUT) $(RUN)/mbpt_mp2{v1,mem}.out
+	@$(CHECKOUT) $(RUN)/mbpt_mp2{v1,mem_c1}.out
+	@$(CHECKOUT) $(RUN)/mbpt_mp2{v1,mem_auto}.out
+	@$(CHECKOUT) $(RUN)/mbpt_mp2r12_ne2{,_posix}.out
+	@$(CHECKOUT) $(RUN)/mbpt_mp2r12_ne2{,_multipass}.out
+
+.PHONY: checklmp2
+checklmp2:
+	@echo Consistency checks on LMP2 tests:
+	@$(CHECKOUT) $(RUN)/lmp2_glycine.{mp2,lmp2.cd}.631gs.out
+
+.PHONY: checkdft
+checkdft:
+	@echo Consistency checks on DFT tests:
+	for mol in h2 lih beh2 b2h6 nh3 ch4 c2h4 c2h2 h2o hf \
+                   nah mgh2 alh sih2 ph3 h2s hcl; \
+	do (\
+	  $(CHECKOUT) $(RUN)/dft_$${mol}hfs{ultrafine,}631gs*.out \
+	); done
+
+.PHONY: checksymm1
+checksymm1:
+	@echo Consistency checks on symmetry test series 1:
+	@for b in sto3g; \
+	do (\
+	  $(CHECKOUT) $(RUN)/symm1_{c2h2scf$${b}c1,c2h2scf$${b}ci}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{c2h2scf$${b}c1,c2h2scf$${b}c2}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{c2h2scf$${b}c1,c2h2scf$${b}cs}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{c2h2scf$${b}c1,c2h2scf$${b}c2v}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{c2h2scf$${b}c1,c2h2scf$${b}d2h}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{cubscf$${b}c1,cubscf$${b}ci}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{cubscf$${b}c1,cubscf$${b}c2}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{cubscf$${b}c1,cubscf$${b}cs}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{cubscf$${b}c1,cubscf$${b}c2v}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{cubscf$${b}c1,cubscf$${b}d2h}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{c2h2mp222$${b}c1,c2h2mp222$${b}ci}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{c2h2mp222$${b}c1,c2h2mp222$${b}c2}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{c2h2mp222$${b}c1,c2h2mp222$${b}cs}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{c2h2mp222$${b}c1,c2h2mp222$${b}c2v}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{c2h2mp222$${b}c1,c2h2mp222$${b}d2h}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{cubmp284$${b}c1,cubmp284$${b}ci}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{cubmp284$${b}c1,cubmp284$${b}c2}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{cubmp284$${b}c1,cubmp284$${b}cs}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{cubmp284$${b}c1,cubmp284$${b}c2v}.out;\
+	  $(CHECKOUT) $(RUN)/symm1_{cubmp284$${b}c1,cubmp284$${b}d2h}.out;\
+	); done
+
+.PHONY: checksymm2
+checksymm2:
+	@echo Consistency checks on symmetry test series 2:
+	@for b in ccpvdz ccpvtz ccpvqz ccpv5z; \
+	do (\
+	  $(CHECKOUT) $(RUN)/symm2_{c2h2scf$${b}c1,c2h2scf$${b}ci}.out;\
+	  $(CHECKOUT) $(RUN)/symm2_{c2h2scf$${b}c1,c2h2scf$${b}c2}.out;\
+	  $(CHECKOUT) $(RUN)/symm2_{c2h2scf$${b}c1,c2h2scf$${b}cs}.out;\
+	  $(CHECKOUT) $(RUN)/symm2_{c2h2scf$${b}c1,c2h2scf$${b}c2v}.out;\
+	  $(CHECKOUT) $(RUN)/symm2_{c2h2scf$${b}c1,c2h2scf$${b}d2h}.out;\
+	  $(CHECKOUT) $(RUN)/symm2_{c2h2nsscf$${b}auto,c2h2scf$${b}c1}.out;\
+	  $(CHECKOUT) $(RUN)/symm2_{cubscf$${b}c1,cubscf$${b}ci}.out;\
+	  $(CHECKOUT) $(RUN)/symm2_{cubscf$${b}c1,cubscf$${b}c2}.out;\
+	  $(CHECKOUT) $(RUN)/symm2_{cubscf$${b}c1,cubscf$${b}cs}.out;\
+	  $(CHECKOUT) $(RUN)/symm2_{cubscf$${b}c1,cubscf$${b}c2v}.out;\
+	  $(CHECKOUT) $(RUN)/symm2_{cubscf$${b}c1,cubscf$${b}d2h}.out;\
+	); done
+
+.PHONY: checksymm3
+checksymm3:
+	@for o in $(SYMM3OUTPUTS); \
+	do ( \
+	  expect=`echo $${o}|sed 's/^.*symm3_.*_\(.*\)_.*$$/\1/'`; \
+	  actual=`grep 'g point g' $${o}|sed 's/^.*to \(.*\)$$/\1/'`; \
+	  echo $${o}: expected $${expect} got $${actual}; \
+	); done
+
+# check all outputs in the ref directory with outputs in the run directory
+.PHONY: check
+check:
+	@echo Comparing outputs in run and ref directories:
+	$(CHECKOUT) -d $(REF) $(RUN)
+
+# Check all outputs files defined in this makefile in the ref directory
+# with those in the run directory.  This will break on some platforms
+# since a very long argument list is used.
+.PHONY: fastcheck
+checkall:
+	@echo Comparing outputs in run and ref directories:
+	$(CHECKOUT) -r $(TESTDIR)/ref $(ALLOUTPUTS)
+
+.PHONY: diff
+diff:
+	-diff -ur $(REF) $(RUN)
+
+##############################################################################
+
+$(RUN):
+	mkdir -p $(RUN)
+
+$(INP):
+	mkdir -p $(INP)
+
+$(INP)/ckpt_%.in: ckpt/ckpt_%.in
+	@mkdir -p $(INP)
+	/bin/cp $< $@
+
+$(INP)/ckpt_0clks%.qci: ckpt/energy.qci
+	@mkdir -p $(INP)
+	/bin/cp $< $@
+
+$(INP)/ckpt_1clks%.qci: ckpt/gradient.qci
+	@mkdir -p $(INP)
+	/bin/cp $< $@
+
+$(INP)/ckpt_clks%.qci: ckpt/gradient.qci
+	@mkdir -p $(INP)
+	/bin/cp $< $@
+
+$(INP)/ckpt_0hsosks%.qci: ckpt/energy.qci
+	@mkdir -p $(INP)
+	/bin/cp $< $@
+
+$(INP)/ckpt_1hsosks%.qci: ckpt/gradient.qci
+	@mkdir -p $(INP)
+	/bin/cp $< $@
+
+$(INP)/ckpt_hsosks%.qci: ckpt/gradient.qci
+	@mkdir -p $(INP)
+	/bin/cp $< $@
+
+$(INP)/ckpt_0uks%.qci: ckpt/energy.qci
+	@mkdir -p $(INP)
+	/bin/cp $< $@
+
+$(INP)/ckpt_1uks%.qci: ckpt/gradient.qci
+	@mkdir -p $(INP)
+	/bin/cp $< $@
+
+$(INP)/ckpt_uks%.qci: ckpt/gradient.qci
+	@mkdir -p $(INP)
+	/bin/cp $< $@
+
+$(INP)/ckpt_%.qci: ckpt/ckpt_%.qci
+	@mkdir -p $(INP)
+	/bin/cp $< $@
+
+$(INP)/mbpt_%.in: mbpt/mbpt_%.in
+	@mkdir -p $(INP)
+	/bin/cp $< $@
+
+$(INP)/mbpt_%.qci: mbpt/mbpt_%.qci
+	@mkdir -p $(INP)
+	/bin/cp $< $@
+
+$(INP)/methods_%.in: methods/%.in
+	@mkdir -p $(INP)
+	/bin/cp $< $@
+
+$(INP)/methods_%.qci: methods/%.qci
+	@mkdir -p $(INP)
+	/bin/cp $< $@
+
+$(INP)/input_%.in: input/%.in
+	@mkdir -p $(INP)
+	/bin/cp $< $@
+
+$(INP)/input_%opt.qci:
+	@mkdir -p $(INP)
+	(echo "method: generic"; echo "optimize: yes") > $@
+
+$(INP)/input_%.qci:
+	@mkdir -p $(INP)
+	(echo "method: generic"; echo "optimize: no") > $@
+
+##############################################################################
+
+.PHONY: ch2frq_run
+ch2frq_run:
+	$(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CH2FRQINPUTS:$(INP)/%=%)
+
+##############################################################################
+
+.PHONY: clean
+clean: check_clean
+	/bin/rm -f stamp-*;

@@ -669,11 +669,7 @@ BcastStateInBin::next_buffer()
 {
   if (grp->me() == 0) {
       // fill the buffer
-#if HAVE_SGETN
       *nbuf_buffer = buf_->sgetn(buffer,bufsize);
-#else
-      *nbuf_buffer = buf_->xsgetn(buffer,bufsize);
-#endif
       if (*nbuf_buffer == 0) {
           ExEnv::errn() << "BcastStateInBin: read failed" << endl;
           abort();

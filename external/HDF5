@@ -1,0 +1,56 @@
+set(EXTERNAL_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external)
+set(EXTERNAL_BUILD_DIR ${PROJECT_BINARY_DIR}/external/build)
+
+include(ExternalProject)
+
+find_package(HDF5)
+
+if (HDF5_FOUND)
+  include_directories(${HDF5_INCLUDE_DIRS})
+endif()
+
+if (NOT HDF5_FOUND)
+
+  set(HDF5_URL http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.8.10-patch1.tar.gz)
+  set(HDF5_URL_HASH MD5=2147a289fb33c887464ad2b6c5a8ae4c)
+
+  if (EXISTS ${EXTERNAL_SOURCE_DIR}/hdf5.tar.gz)
+    set(HDF5_URL ${EXTERNAL_SOURCE_DIR}/hdf5.tar.gz)
+    set(HDF5_URL_HASH "")
+    message(STATUS "Using HDF5 archive ${HDF5_URL}")
+  endif()
+
+  ExternalProject_Add(
+    hdf5
+    PREFIX ${EXTERNAL_BUILD_DIR}/hdf5
+    URL ${HDF5_URL}
+    URL_HASH ${HDF5_URL_HASH}
+    BUILD_IN_SOURCE 1
+    CONFIGURE_COMMAND ./configure
+      --prefix=${EXTERNAL_BUILD_DIR}/hdf5
+      --enable-threadsafe
+      --with-pthread
+      CC=${CMAKE_C_COMPILER} CPPFLAGS=-D_GNU_SOURCE
+    BUILD_COMMAND make
+    INSTALL_COMMAND make install
+  )
+
+  add_dependencies(External hdf5)
+  include_directories(${EXTERNAL_BUILD_DIR}/hdf5/include)
+  set(HDF5_LIBRARIES ${EXTERNAL_BUILD_DIR}/hdf5/lib/libhdf5.a)
+
+endif()
+
+if (HDF5_LIBRARIES)
+  set(LIBRARIES "${HDF5_LIBRARIES};${LIBRARIES}")
+endif()
+
+# HDF5 compression libs
+find_library(LIBZ NAMES z)
+if (LIBZ)
+  set(LIBRARIES "${LIBRARIES};${LIBZ}")
+endif()
+find_library(LIBSZ NAMES sz)
+if (LIBSZ)
+  set(LIBRARIES "${LIBRARIES};${LIBSZ}")
+endif()

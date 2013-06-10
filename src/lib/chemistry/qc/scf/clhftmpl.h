@@ -14,8 +14,8 @@ namespace sc {
 
 class LocalCLHFContribution {
   private:
-    double * const restrictxx gmat;
-    double * const restrictxx pmat;
+    double * const RESTRICT gmat;
+    double * const RESTRICT pmat;
 
     double ibound_;
     double pbound_;

@@ -28,6 +28,7 @@
 #ifndef _chemistry_qc_mbptr12_distarray4_mpiiofile_h
 #define _chemistry_qc_mbptr12_distarray4_mpiiofile_h
 
+#define OMPI_SKIP_MPICXX
 #define MPICH_SKIP_MPICXX
 #include <mpi.h>
 #include <util/ref/ref.h>

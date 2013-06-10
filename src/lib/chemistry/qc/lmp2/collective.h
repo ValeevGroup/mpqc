@@ -29,6 +29,7 @@
 
 #ifdef HAVE_MPI
 
+#define OMPI_SKIP_MPICXX
 #define MPICH_SKIP_MPICXX
 #include <mpi.h>
 

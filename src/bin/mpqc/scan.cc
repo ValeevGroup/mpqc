@@ -2,9 +2,6 @@
 #include <scconfig.h>
 #endif
 #include <iostream>
-#ifdef USING_NAMESPACE_STD
-using namespace std;
-#endif
 
 #line 3 "<stdout>"
 
@@ -604,7 +601,7 @@ cstr(char *yytext)
   ret = (char *)malloc(strlenyytext+1);
   if (!ret) {
     ExEnv::outn() << "MPQC: malloc failed"
-                 << endl;
+		  << std::endl;
     abort();
   }
   strcpy(ret,yytext);
@@ -1008,7 +1005,7 @@ YY_RULE_SETUP
                   MPQCInylval.str = (char *)malloc(strlen(yytext));
                   if (!MPQCInylval.str) {
                     ExEnv::outn() << "MPQC: {qstring} rule: malloc failed"
-                                 << endl;
+				  << std::endl;
                     abort();
                     }
                   strcpy(MPQCInylval.str,&yytext[1]);
@@ -1035,7 +1032,7 @@ YY_RULE_SETUP
 case 55:
 YY_RULE_SETUP
 { if (!MPQCIn::checking()) ExEnv::outn() << "MPQC: Illegal character: \""
-                               << yytext[0] <<"\"" << endl; }
+					 << yytext[0] <<"\"" << std::endl; }
 	YY_BREAK
 case 56:
 YY_RULE_SETUP

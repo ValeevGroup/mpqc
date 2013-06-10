@@ -401,10 +401,10 @@ BatchElectronDensity::compute_basis_values(const SCVector3&r)
 }
 
 void
-BatchElectronDensity::compute_spin_density(const double *restrictxx dmat,
-                                           double *restrictxx rho,
-                                           double *restrictxx pgrad,
-                                           double *restrictxx phess)
+BatchElectronDensity::compute_spin_density(const double *RESTRICT dmat,
+                                           double *RESTRICT rho,
+                                           double *RESTRICT pgrad,
+                                           double *RESTRICT phess)
 {
   int i, j;
 
@@ -416,9 +416,9 @@ BatchElectronDensity::compute_spin_density(const double *restrictxx dmat,
   double grad[3];
   double hess[6];
 
-  double *restrictxx bs_vals = bs_values_;
-  double *restrictxx bsg_vals = bsg_values_;
-  double *restrictxx bsh_vals = bsh_values_;
+  double *RESTRICT bs_vals = bs_values_;
+  double *RESTRICT bsg_vals = bsg_values_;
+  double *RESTRICT bsh_vals = bsh_values_;
 
   if (need_gradient_) for (i=0; i<3; i++) grad[i] = 0.0;
   if (need_hessian_) for (i=0; i<6; i++) hess[i] = 0.0;

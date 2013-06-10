@@ -1,0 +1,30 @@
+set(EXTERNAL_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external)
+set(EXTERNAL_BUILD_DIR ${PROJECT_BINARY_DIR}/external/build)
+
+include(ExternalProject)
+
+set(EIGEN_URL https://bitbucket.org/eigen/eigen/get/3.1.3.tar.gz)
+set(EIGEN_URL_HASH MD5=dc4247efd4f5d796041f999e8774af04)
+
+if (EXISTS ${EXTERNAL_SOURCE_DIR}/eigen.tar.gz)
+  set(EIGEN_URL ${EXTERNAL_SOURCE_DIR}/eigen.tar.gz)
+  set(EIGEN_URL_HASH "")
+  message(STATUS "Using Eigen archive ${EIGEN_URL}")
+endif()
+
+ExternalProject_Add(
+  Eigen
+  PREFIX ${EXTERNAL_BUILD_DIR}/Eigen
+  URL ${EIGEN_URL}
+  URL_HASH ${EIGEN_URL_HASH}
+  CONFIGURE_COMMAND ""
+  BUILD_COMMAND ""
+  INSTALL_COMMAND
+    ${CMAKE_COMMAND} -E copy_directory
+    ${EXTERNAL_BUILD_DIR}/Eigen/src/Eigen/Eigen/
+    ${EXTERNAL_BUILD_DIR}/Eigen/include/Eigen/
+)
+
+add_dependencies(External Eigen)
+include_directories(${EXTERNAL_BUILD_DIR}/Eigen/include)
+

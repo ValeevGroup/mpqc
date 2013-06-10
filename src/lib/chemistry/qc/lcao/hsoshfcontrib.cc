@@ -102,7 +102,7 @@ void
 HSOSHFContribution::contrib_e_J(double factor,
                               int I, int J, int K, int L,
                               int nI, int nJ, int nK, int nL,
-                              const double * restrictxx buf)
+                              const double * RESTRICT buf)
 {
   if (I < J && jmat_symmetric(0)) return;
 
@@ -111,7 +111,7 @@ HSOSHFContribution::contrib_e_J(double factor,
 
   if (K>=L) {
       PBlock P_KL_block(this, 0, K, L, nK, nL);
-      const double * restrictxx P_KL = P_KL_block.data();
+      const double * RESTRICT P_KL = P_KL_block.data();
       int nKL = nK*nL;
       for (int i=0, ijkl=0, ij=0; i<nI; i++) {
           for (int j=0; j<nJ; j++, ij++) {
@@ -128,7 +128,7 @@ HSOSHFContribution::contrib_e_J(double factor,
     }
   else {
       PBlock P_LK_block(this, 0, L, K, nL, nK);
-      const double * restrictxx P_LK = P_LK_block.data();
+      const double * RESTRICT P_LK = P_LK_block.data();
       int nKL = nK*nL;
       for (int i=0, ijkl=0, ij=0; i<nI; i++) {
           for (int j=0; j<nJ; j++, ij++) {
@@ -151,7 +151,7 @@ void
 HSOSHFContribution::contrib_e_K(double factor,
                               int I, int J, int K, int L,
                               int nI, int nJ, int nK, int nL,
-                              const double * restrictxx buf)
+                              const double * RESTRICT buf)
 {
   if (I < K && kmat_symmetric(0)) return;
 
@@ -163,7 +163,7 @@ HSOSHFContribution::contrib_e_K(double factor,
 
   if (J>=L) {
       PBlock P_JL_block(this, mat, J, L, nJ, nL);
-      const double * restrictxx P_JL = P_JL_block.data();
+      const double * RESTRICT P_JL = P_JL_block.data();
       for (int i=0, ijkl=0, ik_begin=0; i<nI; i++, ik_begin += nK) {
           for (int j=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
               for (int k=0, ik=ik_begin; k<nK; k++, ik++) {
@@ -179,7 +179,7 @@ HSOSHFContribution::contrib_e_K(double factor,
     }
   else {
       PBlock P_LJ_block(this, mat, L, J, nL, nJ);
-      const double * restrictxx P_LJ = P_LJ_block.data();
+      const double * RESTRICT P_LJ = P_LJ_block.data();
       for (int i=0, ijkl=0, ik_begin=0; i<nI; i++, ik_begin += nK) {
           for (int j=0, lj_begin=0; j<nJ; j++, lj_begin += 1) {
               for (int k=0, ik=ik_begin; k<nK; k++, ik++) {
@@ -200,7 +200,7 @@ void
 HSOSHFContribution::contrib_all_J(double factor,
                                 int I, int J, int K, int L,
                                 int nI, int nJ, int nK, int nL,
-                                const double * restrictxx buf)
+                                const double * RESTRICT buf)
 {
   double J_factor = factor * 2.0;
 
@@ -209,9 +209,9 @@ HSOSHFContribution::contrib_all_J(double factor,
   JKBlock<JLocator> F_KL_block(this, 0, K, L, nK, nL);
   double *F_KL = F_KL_block.data();
   PBlock P_IJ_block(this, 0, I, J, nI, nJ);
-  const double * restrictxx P_IJ = P_IJ_block.data();
+  const double * RESTRICT P_IJ = P_IJ_block.data();
   PBlock P_KL_block(this, 0, K, L, nK, nL);
-  const double * restrictxx P_KL = P_KL_block.data();
+  const double * RESTRICT P_KL = P_KL_block.data();
 
   int nKL = nK * nL;
 
@@ -237,7 +237,7 @@ void
 HSOSHFContribution::contrib_all_K(double factor,
                                 int I, int J, int K, int L,
                                 int nI, int nJ, int nK, int nL,
-                                const double * restrictxx buf)
+                                const double * RESTRICT buf)
 {
   for(int mat=0; mat<2; ++mat) {
   JKBlock<KLocator> F_IK_block(this, mat, I, K, nI, nK);
@@ -245,9 +245,9 @@ HSOSHFContribution::contrib_all_K(double factor,
   JKBlock<KLocator> F_IL_block(this, mat, I, L, nI, nL);
   double *F_IL = F_IL_block.data();
   PBlock P_IK_block(this, mat, I, K, nI, nK);
-  const double * restrictxx P_IK = P_IK_block.data();
+  const double * RESTRICT P_IK = P_IK_block.data();
   PBlock P_IL_block(this, mat, I, L, nI, nL);
-  const double * restrictxx P_IL = P_IL_block.data();
+  const double * RESTRICT P_IL = P_IL_block.data();
 
   // We normally leave out the transposed Fock matrix element and apply the
   // standard contribution of -0.5.  However, if both indices are the same,
@@ -263,9 +263,9 @@ HSOSHFContribution::contrib_all_K(double factor,
       JKBlock<KLocator> F_JL_block(this, mat, J, L, nJ, nL);
       double *F_JL = F_JL_block.data();
       PBlock P_JK_block(this, mat, J, K, nJ, nK);
-      const double * restrictxx P_JK = P_JK_block.data();
+      const double * RESTRICT P_JK = P_JK_block.data();
       PBlock P_JL_block(this, mat, J, L, nJ, nL);
-      const double * restrictxx P_JL = P_JL_block.data();
+      const double * RESTRICT P_JL = P_JL_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0, jk=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
@@ -297,9 +297,9 @@ HSOSHFContribution::contrib_all_K(double factor,
       JKBlock<KLocator> F_JL_block(this, mat, J, L, nJ, nL);
       double *F_JL = F_JL_block.data();
       PBlock P_KJ_block(this, mat, K, J, nK, nJ);
-      const double * restrictxx P_KJ = P_KJ_block.data();
+      const double * RESTRICT P_KJ = P_KJ_block.data();
       PBlock P_JL_block(this, mat, J, L, nJ, nL);
-      const double * restrictxx P_JL = P_JL_block.data();
+      const double * RESTRICT P_JL = P_JL_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
@@ -332,9 +332,9 @@ HSOSHFContribution::contrib_all_K(double factor,
       JKBlock<KLocator> F_LJ_block(this, mat, L, J, nL, nJ);
       double *F_LJ = F_LJ_block.data();
       PBlock P_KJ_block(this, mat, K, J, nK, nJ);
-      const double * restrictxx P_KJ = P_KJ_block.data();
+      const double * RESTRICT P_KJ = P_KJ_block.data();
       PBlock P_LJ_block(this, mat, L, J, nL, nJ);
-      const double * restrictxx P_LJ = P_LJ_block.data();
+      const double * RESTRICT P_LJ = P_LJ_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0; j<nJ; j++) {
@@ -367,7 +367,7 @@ void
 HSOSHFContribution::contrib_p12_p13p24_J(double factor,
                                        int I, int J, int K, int L,
                                        int nI, int nJ, int nK, int nL,
-                                       const double * restrictxx buf)
+                                       const double * RESTRICT buf)
 {
   double factor2 = 2.0 * factor;
 
@@ -376,9 +376,9 @@ HSOSHFContribution::contrib_p12_p13p24_J(double factor,
   JKBlock<JLocator> F_KL_block(this, 0, K, L, nK, nL);
   double *F_KL = F_KL_block.data();
   PBlock P_IJ_block(this, 0, I, J, nI, nJ);
-  const double * restrictxx P_IJ = P_IJ_block.data();
+  const double * RESTRICT P_IJ = P_IJ_block.data();
   PBlock P_KL_block(this, 0, K, L, nK, nL);
-  const double * restrictxx P_KL = P_KL_block.data();
+  const double * RESTRICT P_KL = P_KL_block.data();
 
   int nKL = nK * nL;
 
@@ -404,7 +404,7 @@ void
 HSOSHFContribution::contrib_p12_p13p24_K(double factor,
                                        int I, int J, int K, int L,
                                        int nI, int nJ, int nK, int nL,
-                                       const double * restrictxx buf)
+                                       const double * RESTRICT buf)
 {
   for(int mat=0; mat<2; ++mat) {
   JKBlock<KLocator> F_IK_block(this, mat, I, K, nI, nK);
@@ -412,9 +412,9 @@ HSOSHFContribution::contrib_p12_p13p24_K(double factor,
 //   JKBlock<KLocator> F_IL_block(this, mat, I, L, nI, nL);
 //   double *F_IL = F_IL_block.data();
 //   PBlock P_IK_block(this, mat, I, K, nI, nK);
-//   const double * restrictxx P_IK = P_IK_block.data();
+//   const double * RESTRICT P_IK = P_IK_block.data();
   PBlock P_IL_block(this, mat, I, L, nI, nL);
-  const double * restrictxx P_IL = P_IL_block.data();
+  const double * RESTRICT P_IL = P_IL_block.data();
 
   // We normally leave out the transposed Fock matrix element and apply the
   // standard contribution of -0.5.  However, if both indices are the same,
@@ -430,9 +430,9 @@ HSOSHFContribution::contrib_p12_p13p24_K(double factor,
 //       JKBlock<KLocator> F_JL_block(this, mat, J, L, nJ, nL);
 //       double *F_JL = F_JL_block.data();
 //       PBlock P_JK_block(this, mat, J, K, nJ, nK);
-//       const double * restrictxx P_JK = P_JK_block.data();
+//       const double * RESTRICT P_JK = P_JK_block.data();
       PBlock P_JL_block(this, mat, J, L, nJ, nL);
-      const double * restrictxx P_JL = P_JL_block.data();
+      const double * RESTRICT P_JL = P_JL_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0, jk=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
@@ -464,9 +464,9 @@ HSOSHFContribution::contrib_p12_p13p24_K(double factor,
 //       JKBlock<KLocator> F_JL_block(this, mat, J, L, nJ, nL);
 //       double *F_JL = F_JL_block.data();
 //       PBlock P_KJ_block(this, mat, K, J, nK, nJ);
-//       const double * restrictxx P_KJ = P_KJ_block.data();
+//       const double * RESTRICT P_KJ = P_KJ_block.data();
       PBlock P_JL_block(this, mat, J, L, nJ, nL);
-      const double * restrictxx P_JL = P_JL_block.data();
+      const double * RESTRICT P_JL = P_JL_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
@@ -499,9 +499,9 @@ HSOSHFContribution::contrib_p12_p13p24_K(double factor,
 //       JKBlock<KLocator> F_LJ_block(this, mat, L, J, nL, nJ);
 //       double *F_LJ = F_LJ_block.data();
 //       PBlock P_KJ_block(this, mat, K, J, nK, nJ);
-//       const double * restrictxx P_KJ = P_KJ_block.data();
+//       const double * RESTRICT P_KJ = P_KJ_block.data();
       PBlock P_LJ_block(this, mat, L, J, nL, nJ);
-      const double * restrictxx P_LJ = P_LJ_block.data();
+      const double * RESTRICT P_LJ = P_LJ_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0; j<nJ; j++) {
@@ -534,7 +534,7 @@ void
 HSOSHFContribution::contrib_p34_p13p24_J(double factor,
                                        int I, int J, int K, int L,
                                        int nI, int nJ, int nK, int nL,
-                                       const double * restrictxx buf)
+                                       const double * RESTRICT buf)
 {
   double factor2 = 2.0 * factor;
 
@@ -543,9 +543,9 @@ HSOSHFContribution::contrib_p34_p13p24_J(double factor,
   JKBlock<JLocator> F_KL_block(this, 0, K, L, nK, nL);
   double *F_KL = F_KL_block.data();
   PBlock P_IJ_block(this, 0, I, J, nI, nJ);
-  const double * restrictxx P_IJ = P_IJ_block.data();
+  const double * RESTRICT P_IJ = P_IJ_block.data();
   PBlock P_KL_block(this, 0, K, L, nK, nL);
-  const double * restrictxx P_KL = P_KL_block.data();
+  const double * RESTRICT P_KL = P_KL_block.data();
 
   int nKL = nK * nL;
 
@@ -571,7 +571,7 @@ void
 HSOSHFContribution::contrib_p34_p13p24_K(double factor,
                                        int I, int J, int K, int L,
                                        int nI, int nJ, int nK, int nL,
-                                       const double * restrictxx buf)
+                                       const double * RESTRICT buf)
 {
   for(int mat=0; mat<2; ++mat) {
   JKBlock<KLocator> F_IK_block(this, mat, I, K, nI, nK);
@@ -579,9 +579,9 @@ HSOSHFContribution::contrib_p34_p13p24_K(double factor,
   JKBlock<KLocator> F_IL_block(this, mat, I, L, nI, nL);
   double *F_IL = F_IL_block.data();
   PBlock P_IK_block(this, mat, I, K, nI, nK);
-  const double * restrictxx P_IK = P_IK_block.data();
+  const double * RESTRICT P_IK = P_IK_block.data();
   PBlock P_IL_block(this, mat, I, L, nI, nL);
-  const double * restrictxx P_IL = P_IL_block.data();
+  const double * RESTRICT P_IL = P_IL_block.data();
 
   // We normally leave out the transposed Fock matrix element and apply the
   // standard contribution of -0.5.  However, if both indices are the same,
@@ -597,9 +597,9 @@ HSOSHFContribution::contrib_p34_p13p24_K(double factor,
 //       JKBlock<KLocator> F_JL_block(this, mat, J, L, nJ, nL);
 //       double *F_JL = F_JL_block.data();
       PBlock P_JK_block(this, mat, J, K, nJ, nK);
-      const double * restrictxx P_JK = P_JK_block.data();
+      const double * RESTRICT P_JK = P_JK_block.data();
       PBlock P_JL_block(this, mat, J, L, nJ, nL);
-      const double * restrictxx P_JL = P_JL_block.data();
+      const double * RESTRICT P_JL = P_JL_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0, jk=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
@@ -631,9 +631,9 @@ HSOSHFContribution::contrib_p34_p13p24_K(double factor,
 //       JKBlock<KLocator> F_JL_block(this, mat, J, L, nJ, nL);
 //       double *F_JL = F_JL_block.data();
       PBlock P_KJ_block(this, mat, K, J, nK, nJ);
-      const double * restrictxx P_KJ = P_KJ_block.data();
+      const double * RESTRICT P_KJ = P_KJ_block.data();
       PBlock P_JL_block(this, mat, J, L, nJ, nL);
-      const double * restrictxx P_JL = P_JL_block.data();
+      const double * RESTRICT P_JL = P_JL_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
@@ -666,9 +666,9 @@ HSOSHFContribution::contrib_p34_p13p24_K(double factor,
 //       JKBlock<KLocator> F_LJ_block(this, mat, L, J, nL, nJ);
 //       double *F_LJ = F_LJ_block.data();
       PBlock P_KJ_block(this, mat, K, J, nK, nJ);
-      const double * restrictxx P_KJ = P_KJ_block.data();
+      const double * RESTRICT P_KJ = P_KJ_block.data();
       PBlock P_LJ_block(this, mat, L, J, nL, nJ);
-      const double * restrictxx P_LJ = P_LJ_block.data();
+      const double * RESTRICT P_LJ = P_LJ_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0; j<nJ; j++) {
@@ -701,14 +701,14 @@ void
 HSOSHFContribution::contrib_p12_p34_J(double factor,
                                     int I, int J, int K, int L,
                                     int nI, int nJ, int nK, int nL,
-                                    const double * restrictxx buf)
+                                    const double * RESTRICT buf)
 {
   double factor2 = 2.0 * factor;
 
   JKBlock<JLocator> F_IJ_block(this, 0, I, J, nI, nJ);
   double *F_IJ = F_IJ_block.data();
   PBlock P_KL_block(this, 0, K, L, nK, nL);
-  const double * restrictxx P_KL = P_KL_block.data();
+  const double * RESTRICT P_KL = P_KL_block.data();
 
   int nKL = nK * nL;
 
@@ -730,7 +730,7 @@ void
 HSOSHFContribution::contrib_p12_p34_K(double factor,
                                     int I, int J, int K, int L,
                                     int nI, int nJ, int nK, int nL,
-                                    const double * restrictxx buf)
+                                    const double * RESTRICT buf)
 {
   for(int mat=0; mat<2; ++mat) {
   JKBlock<KLocator> F_IK_block(this, mat, I, K, nI, nK);
@@ -738,9 +738,9 @@ HSOSHFContribution::contrib_p12_p34_K(double factor,
   JKBlock<KLocator> F_IL_block(this, mat, I, L, nI, nL);
   double *F_IL = F_IL_block.data();
   PBlock P_IK_block(this, mat, I, K, nI, nK);
-  const double * restrictxx P_IK = P_IK_block.data();
+  const double * RESTRICT P_IK = P_IK_block.data();
   PBlock P_IL_block(this, mat, I, L, nI, nL);
-  const double * restrictxx P_IL = P_IL_block.data();
+  const double * RESTRICT P_IL = P_IL_block.data();
 
 
   double IK_factor = -0.5*factor; // IK are always canonical
@@ -754,9 +754,9 @@ HSOSHFContribution::contrib_p12_p34_K(double factor,
       JKBlock<KLocator> F_JL_block(this, mat, J, L, nJ, nL);
       double *F_JL = F_JL_block.data();
       PBlock P_JK_block(this, mat, J, K, nJ, nK);
-      const double * restrictxx P_JK = P_JK_block.data();
+      const double * RESTRICT P_JK = P_JK_block.data();
       PBlock P_JL_block(this, mat, J, L, nJ, nL);
-      const double * restrictxx P_JL = P_JL_block.data();
+      const double * RESTRICT P_JL = P_JL_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0, jk=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
@@ -788,9 +788,9 @@ HSOSHFContribution::contrib_p12_p34_K(double factor,
       JKBlock<KLocator> F_JL_block(this, mat, J, L, nJ, nL);
       double *F_JL = F_JL_block.data();
       PBlock P_KJ_block(this, mat, K, J, nK, nJ);
-      const double * restrictxx P_KJ = P_KJ_block.data();
+      const double * RESTRICT P_KJ = P_KJ_block.data();
       PBlock P_JL_block(this, mat, J, L, nJ, nL);
-      const double * restrictxx P_JL = P_JL_block.data();
+      const double * RESTRICT P_JL = P_JL_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
@@ -823,9 +823,9 @@ HSOSHFContribution::contrib_p12_p34_K(double factor,
       JKBlock<KLocator> F_LJ_block(this, mat, L, J, nL, nJ);
       double *F_LJ = F_LJ_block.data();
       PBlock P_KJ_block(this, mat, K, J, nK, nJ);
-      const double * restrictxx P_KJ = P_KJ_block.data();
+      const double * RESTRICT P_KJ = P_KJ_block.data();
       PBlock P_LJ_block(this, mat, L, J, nL, nJ);
-      const double * restrictxx P_LJ = P_LJ_block.data();
+      const double * RESTRICT P_LJ = P_LJ_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0; j<nJ; j++) {
@@ -858,7 +858,7 @@ void
 HSOSHFContribution::contrib_p34_J(double factor,
                                 int I, int J, int K, int L,
                                 int nI, int nJ, int nK, int nL,
-                                const double * restrictxx buf)
+                                const double * RESTRICT buf)
 {
   contrib_p12_p34_J(factor,I,J,K,L,nI,nJ,nK,nL,buf);
 }
@@ -867,7 +867,7 @@ void
 HSOSHFContribution::contrib_p34_K(double factor,
                                 int I, int J, int K, int L,
                                 int nI, int nJ, int nK, int nL,
-                                const double * restrictxx buf)
+                                const double * RESTRICT buf)
 {
   for(int mat=0; mat<2; ++mat) {
   JKBlock<KLocator> F_IK_block(this, mat, I, K, nI, nK);
@@ -883,9 +883,9 @@ HSOSHFContribution::contrib_p34_K(double factor,
   JKBlock<KLocator> F_JL_block(this, mat, J, L, nJ, nL);
   double *F_JL = F_JL_block.data();
   PBlock P_JK_block(this, mat, J, K, nJ, nK);
-  const double * restrictxx P_JK = P_JK_block.data();
+  const double * RESTRICT P_JK = P_JK_block.data();
   PBlock P_JL_block(this, mat, J, L, nJ, nL);
-  const double * restrictxx P_JL = P_JL_block.data();
+  const double * RESTRICT P_JL = P_JL_block.data();
   for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
        i++,il_begin+=nL,ik_begin+=nK) {
       for (int j=0, jk=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
@@ -911,16 +911,16 @@ void
 HSOSHFContribution::contrib_p13p24_J(double factor,
                                    int I, int J, int K, int L,
                                    int nI, int nJ, int nK, int nL,
-                                   const double * restrictxx buf)
+                                   const double * RESTRICT buf)
 {
   JKBlock<JLocator> F_IJ_block(this, 0, I, J, nI, nJ);
   double *F_IJ = F_IJ_block.data();
   JKBlock<JLocator> F_KL_block(this, 0, K, L, nK, nL);
   double *F_KL = F_KL_block.data();
   PBlock P_IJ_block(this, 0, I, J, nI, nJ);
-  const double * restrictxx P_IJ = P_IJ_block.data();
+  const double * RESTRICT P_IJ = P_IJ_block.data();
   PBlock P_KL_block(this, 0, K, L, nK, nL);
-  const double * restrictxx P_KL = P_KL_block.data();
+  const double * RESTRICT P_KL = P_KL_block.data();
 
   int nKL = nK * nL;
 
@@ -946,7 +946,7 @@ void
 HSOSHFContribution::contrib_p13p24_K(double factor,
                                    int I, int J, int K, int L,
                                    int nI, int nJ, int nK, int nL,
-                                   const double * restrictxx buf)
+                                   const double * RESTRICT buf)
 {
   for(int mat=0; mat<2; ++mat) {
   JKBlock<KLocator> F_IK_block(this, mat, I, K, nI, nK);
@@ -954,9 +954,9 @@ HSOSHFContribution::contrib_p13p24_K(double factor,
 //   JKBlock<KLocator> F_IL_block(this, mat, I, L, nI, nL);
 //   double *F_IL = F_IL_block.data();
 //   PBlock P_IK_block(this, mat, I, K, nI, nK);
-//   const double * restrictxx P_IK = P_IK_block.data();
+//   const double * RESTRICT P_IK = P_IK_block.data();
 //   PBlock P_IL_block(this, mat, I, L, nI, nL);
-//   const double * restrictxx P_IL = P_IL_block.data();
+//   const double * RESTRICT P_IL = P_IL_block.data();
 
   // We normally leave out the transposed Fock matrix element and apply the
   // standard contribution of -0.5.  However, if both indices are the same,
@@ -972,9 +972,9 @@ HSOSHFContribution::contrib_p13p24_K(double factor,
 //       JKBlock<KLocator> F_JL_block(this, mat, J, L, nJ, nL);
 //       double *F_JL = F_JL_block.data();
 //       PBlock P_JK_block(this, mat, J, K, nJ, nK);
-//       const double * restrictxx P_JK = P_JK_block.data();
+//       const double * RESTRICT P_JK = P_JK_block.data();
       PBlock P_JL_block(this, mat, J, L, nJ, nL);
-      const double * restrictxx P_JL = P_JL_block.data();
+      const double * RESTRICT P_JL = P_JL_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0, jk=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
@@ -1006,9 +1006,9 @@ HSOSHFContribution::contrib_p13p24_K(double factor,
 //       JKBlock<KLocator> F_JL_block(this, mat, J, L, nJ, nL);
 //       double *F_JL = F_JL_block.data();
 //       PBlock P_KJ_block(this, mat, K, J, nK, nJ);
-//       const double * restrictxx P_KJ = P_KJ_block.data();
+//       const double * RESTRICT P_KJ = P_KJ_block.data();
       PBlock P_JL_block(this, mat, J, L, nJ, nL);
-      const double * restrictxx P_JL = P_JL_block.data();
+      const double * RESTRICT P_JL = P_JL_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0, jl_begin=0; j<nJ; j++, jl_begin += nL) {
@@ -1041,9 +1041,9 @@ HSOSHFContribution::contrib_p13p24_K(double factor,
 //       JKBlock<KLocator> F_LJ_block(this, mat, L, J, nL, nJ);
 //       double *F_LJ = F_LJ_block.data();
 //       PBlock P_KJ_block(this, mat, K, J, nK, nJ);
-//       const double * restrictxx P_KJ = P_KJ_block.data();
+//       const double * RESTRICT P_KJ = P_KJ_block.data();
       PBlock P_LJ_block(this, mat, L, J, nL, nJ);
-      const double * restrictxx P_LJ = P_LJ_block.data();
+      const double * RESTRICT P_LJ = P_LJ_block.data();
       for (int i=0,ijkl=0,il_begin=0,ik_begin=0; i<nI;
            i++,il_begin+=nL,ik_begin+=nK) {
           for (int j=0; j<nJ; j++) {

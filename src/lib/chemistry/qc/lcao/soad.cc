@@ -29,11 +29,12 @@
 #pragma implementation
 #endif
 
+#include <scconfig.h>
 #include <chemistry/qc/lcao/soad.h>
 #include <chemistry/qc/wfn/femo.h>
 #include <chemistry/qc/basis/split.h>
-#if HAVE_LIBINT2
-#  include <chemistry/qc/libint2/libint2.h>
+#ifdef HAVE_LIBINT2
+#include <chemistry/qc/libint2/libint2.h>
 #endif
 #include <math/scmat/abstract.h>
 #include <chemistry/qc/basis/petite.h>
@@ -149,7 +150,7 @@ void sc::SuperpositionOfAtomicDensities::compute() {
         Ref<AssignedKeyVal> akv = new AssignedKeyVal;
         akv->assign("wfn", Ref<DescribedClass>(minbasis_wfn));
         // only Libint2 can do DF
-#if HAVE_LIBINT2
+#ifdef HAVE_LIBINT2
         Ref<IntegralLibint2> intf_cast; intf_cast << intf;
         if (intf_cast.nonnull()) {
           // use dz df basis

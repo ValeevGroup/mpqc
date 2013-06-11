@@ -141,8 +141,8 @@ void CCR12_Info::sort_indices2(const double* unsorted,double* sorted,
     const int j0max=static_cast<int>(a*b);
     for (int j0=0; j0<a*b; ++j0) sorted[j0]=unsorted[j0]*factor;
   } else { 
-    int id[2];
-    int jd[2] = {a, b};
+    long id[2];
+    long jd[2] = {a, b};
     long iall=0;
     for(int j0=0;j0<(int)a;++j0){
       id[0]=j0;
@@ -164,8 +164,8 @@ void CCR12_Info::sort_indices4(const double* unsorted,double* sorted,
                                const double factor) const
 {
   // prototype
-  int id[4];
-  int jd[4] = {a, b, c, d};
+  long id[4];
+  long jd[4] = {a, b, c, d};
 
   long iall=0;
   for(int j0=0;j0<(int)a;++j0){
@@ -193,8 +193,8 @@ void CCR12_Info::sort_indices6(const double* unsorted,double* sorted,
                                const double factor) const
 {
   // prototype
-  int id[6];
-  int jd[6] = {a, b, c, d, e, f};
+  long id[6];
+  long jd[6] = {a, b, c, d, e, f};
 
   int iall=0;
   for(int j0=0;j0<(int)a;++j0){
@@ -228,8 +228,8 @@ void CCR12_Info::sort_indices8(const double* unsorted,double* sorted,
                                const double factor) const
 {
   // prototype
-  int id[8];
-  int jd[8] = {a, b, c, d, e, f, g, h};
+  long id[8];
+  long jd[8] = {a, b, c, d, e, f, g, h};
 
   int iall=0;
   for(int j0=0;j0<(int)a;++j0){
@@ -269,8 +269,8 @@ void CCR12_Info::sort_indices_acc6(const double* unsorted,double* sorted,
                                    const double factor) const
 {
   // prototype
-  int id[6];
-  int jd[6] = {a, b, c, d, e, f};
+  long id[6];
+  long jd[6] = {a, b, c, d, e, f};
 
   int iall=0;
   for(int j0=0;j0<(int)a;++j0){
@@ -304,8 +304,8 @@ void CCR12_Info::sort_indices_acc8(const double* unsorted,double* sorted,
                                    const double factor) const
 {
   // prototype
-  int id[8];
-  int jd[8] = {a, b, c, d, e, f, g, h};
+  long id[8];
+  long jd[8] = {a, b, c, d, e, f, g, h};
 
   int iall=0;
   for(int j0=0;j0<(int)a;++j0){

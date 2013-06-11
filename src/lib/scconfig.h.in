@@ -366,7 +366,7 @@
 #cmakedefine SC_ARRAY_HAS_FILL
 
 /* define if std::array is available. */
-#cmakedefine SC_HAS_STD_ARRAY
+#cmakedefine HAVE_STD_ARRAY
 
 /* define if std::make_shared and std::allocate_shared are available. */
 #cmakedefine SC_HAS_STD_MAKE_SHARED

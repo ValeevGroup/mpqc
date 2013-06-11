@@ -61,9 +61,7 @@ CHECK_CXX_SOURCE_COMPILES("
 
 option(MPQC_NEW_FEATURES "Use new MPQC features (requires C++11)" OFF)
 if (MPQC_NEW_FEATURES)
-
   add_definitions(-DMPQC_NEW_FEATURES)
-
   # C++11 flag
   CHECK_CXX_ACCEPTS_FLAG("-std=c++0x" CXX_FLAG_CXX0X)
   CHECK_CXX_ACCEPTS_FLAG("-std=c++11" CXX_FLAG_CXX11)
@@ -76,28 +74,41 @@ if (MPQC_NEW_FEATURES)
     MESSAGE(STATUS "C++11 flag: -std=c++11")
   endif()
 
-  # C++11 features
-  CHECK_CXX_SOURCE_COMPILES("
+endif(MPQC_NEW_FEATURES)
+
+# C++11 features
+CHECK_CXX_SOURCE_COMPILES("
     int main() {
     auto c = 1;
-    }" HAVE_CXX_AUTO)
-  if (NOT HAVE_CXX_AUTO)
-    message(FATAL_ERROR "No support for C++ auto")
-  endif()
+    }"
+    HAVE_CXX_AUTO)  
 
-  # rvalue references
-  CHECK_CXX_SOURCE_COMPILES("
+# rvalue references
+CHECK_CXX_SOURCE_COMPILES("
     #include <utility>
     int foo(int &&i) { return i; }
     int main(void)
     {
       return foo(std::forward<int>(0));
-    }" HAVE_CXX_RVALUE
-    )
+    }"
+    HAVE_CXX_RVALUE)
+
+# std::array
+CHECK_CXX_SOURCE_COMPILES("
+    #include <array>
+    int main(void)
+    {
+      std::array<int,2> array;
+    }"
+    HAVE_STD_ARRAY)
+
+if (MPQC_NEW_FEATURES)
+  if (NOT HAVE_CXX_AUTO)
+    message(FATAL_ERROR "No support for C++ auto")
+  endif()
   if (NOT HAVE_CXX_RVALUE)
     message(FATAL_ERROR "No support for C++ rvalue/std::forward")
   endif()
-
 endif(MPQC_NEW_FEATURES)
 
 

@@ -33,8 +33,30 @@ add_library(lcao OBJECT
 
 # tests
 
-#set_property(SOURCE dftest.cc PROPERTY COMPILE_DEFINITIONS
-#    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-#add_executable(dftest EXCLUDE_FROM_ALL dftest.cc $<TARGET_OBJECTS:lcao>)
-#add_test(dftest dftest)
+set_property(SOURCE dftest.cc PROPERTY COMPILE_DEFINITIONS
+   SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+
+add_executable(dftest EXCLUDE_FROM_ALL
+ dftest.cc
+)
+
+target_link_libraries(
+  dftest
+  chemistry
+  math
+  util
+  chemistry
+  math
+  util
+)
+
+if (HAVE_LIBINT2)
+  target_link_libraries(dftest ${LIBINT2_LIBRARY})
+endif()
+
+target_link_libraries(dftest ${LAPACK_LIBRARIES})
+target_link_libraries(dftest ${BLAS_LIBRARIES})
+
+target_link_libraries(dftest ${LIBRARIES})
+target_link_libraries(dftest ${CMAKE_DL_LIBS})
 

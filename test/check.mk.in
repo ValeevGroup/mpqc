@@ -1,6 +1,6 @@
-SRCTOPDIR=$(shell pwd)/..
+SRCTOPDIR=@PROJECT_SOURCE_DIR@
 ifndef TESTDIR
-  TESTDIR=$(shell pwd)
+  TESTDIR=@PROJECT_SOURCE_DIR@/test
 endif
 
 PERL=perl
@@ -8,9 +8,9 @@ INSUF=in
 PROGRAM=mpqc
 RUN=run
 INP=input
-REF=$(TESTDIR)/ref
-MPQC=$(SRCTOPDIR)/src/bin/mpqc/mpqc
-MPQCRUN = cd run && $(PERL) $(SRCTOPDIR)/bin/mpqcrun
+REF=$(SRCTOPDIR)/test/ref
+MPQC=@PROJECT_BINARY_DIR@/src/bin/mpqc/mpqc
+MPQCRUN = cd run && $(PERL) @PROJECT_BINARY_DIR@/bin/mpqcrun
 
 INPUTGENDEPS=$(SRCTOPDIR)/lib/perl/QCParse.pm \
              $(SRCTOPDIR)/lib/perl/QCResult.pm \

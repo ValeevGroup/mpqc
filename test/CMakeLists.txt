@@ -10,6 +10,11 @@ cmake_minimum_required(VERSION 2.8)
 #   add_test(${input} ../mpqc.py "-X ${CMAKE_CURRENT_SOURCE_DIR}/../src/bin/mpqc/mpqc" ${input})
 # endforeach()
 
+CONFIGURE_FILE(
+  ${CMAKE_CURRENT_SOURCE_DIR}/check.mk.in
+  ${CMAKE_CURRENT_BINARY_DIR}/check.mk
+  @ONLY
+)
 
 add_custom_target(
   check0

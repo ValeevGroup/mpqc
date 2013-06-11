@@ -1,11 +1,11 @@
 #!/bin/sh
 
+TOPDIR=$PWD/`dirname $0`
 
 # Strip prefix from argument
 arg () {
   echo "$1" | sed "s/^${2-[^=]*=}//"
 }
-
 
 # Display CMake bootstrap usage
 help()
@@ -47,7 +47,7 @@ if [ $# -eq 1 -a "$1" = "cmake" ]; then
 fi
 
 # check if local cmake was built
-CMAKE=$PWD/cmake/bin/cmake
+CMAKE=$TOPDIR/cmake/bin/cmake
 if [ ! -x "$CMAKE" ]; then
     CMAKE=`which cmake 2>/dev/null`
 fi
@@ -55,10 +55,8 @@ fi
 # if no local/system cmake exist, build!
 if [ -z "$CMAKE" ]; then
     make -C cmake
-    CMAKE=$PWD/cmake/bin/cmake
+    CMAKE=$TOPDIR/cmake/bin/cmake
 fi
-
-
 
 srcdir=`dirname $0`
 echo $srcdir

@@ -265,3 +265,15 @@ add_subdirectory(doc)
 
 # checking/testing
 add_subdirectory(test)
+
+list(APPEND LIBS ${Boost_LIBRARIES})
+list(APPEND LIBS ${LAPACK_LIBRARIES})
+list(APPEND LIBS ${LIBRARIES})
+
+CONFIGURE_FILE(
+  ${PROJECT_SOURCE_DIR}/bin/sc-config.in
+  ${PROJECT_BINARY_DIR}/bin/sc-config
+  @ONLY
+)
+
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/bin/sc-config DESTINATION bin)

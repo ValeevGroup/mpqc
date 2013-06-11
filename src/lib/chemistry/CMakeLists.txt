@@ -14,3 +14,4 @@ list(APPEND objects $<TARGET_OBJECTS:solvent>)
 
 add_library(chemistry STATIC ${objects})
 set(chemistry/OBJECTS ${objects} PARENT_SCOPE)
+install(TARGETS chemistry ARCHIVE DESTINATION lib)

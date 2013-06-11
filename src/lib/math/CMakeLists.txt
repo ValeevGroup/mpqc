@@ -14,3 +14,4 @@ endforeach()
 
 add_library(math ${objects})
 set(math/OBJECTS ${objects} PARENT_SCOPE)
+install(TARGETS math ARCHIVE DESTINATION lib)

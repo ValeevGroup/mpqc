@@ -42,8 +42,8 @@
 #include <chemistry/qc/lcao/fockbuilder.h>
 
 #include <chemistry/qc/basis/linkage.h>
-#if HAVE_LIBINT2
-#  include <chemistry/qc/libint2/linkage.h>
+#ifdef HAVE_LIBINT2
+#include <chemistry/qc/libint2/linkage.h>
 #endif
 
 using namespace std;

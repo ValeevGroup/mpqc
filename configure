@@ -54,7 +54,7 @@ fi
 
 # if no local/system cmake exist, build!
 if [ -z "$CMAKE" ]; then
-    cd cmake && make
+    make -C cmake
     CMAKE=$PWD/cmake/bin/cmake
 fi
 

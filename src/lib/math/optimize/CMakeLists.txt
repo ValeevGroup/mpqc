@@ -6,6 +6,7 @@ add_library(optimize OBJECT
   diis.cc
   efc.cc
   function.cc
+  gaussianfit.cc
   gdiis.cc
   kvopt.cc
   lbfgs.f
@@ -18,7 +19,12 @@ add_library(optimize OBJECT
   scextrapmat.cc
   steep.cc
   transform.cc
-  update.cc)
+  update.cc
+  levmar/lm.c
+  levmar/Axb.c
+  levmar/lmbc.c
+  levmar/misc.c
+)
 
 # tests
 

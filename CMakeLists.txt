@@ -181,6 +181,12 @@ set(FORTRAN_FUNCTIONS
   DSPRFS
   DPPRFS
   DSYGV
+  DGEQRF
+  DGETRF
+  DGETRS
+  DORGQR
+  DPOTF2
+  DTRTRS
   )
 
 set(fortran_headers 

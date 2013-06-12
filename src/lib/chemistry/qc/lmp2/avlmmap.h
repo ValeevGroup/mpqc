@@ -351,8 +351,8 @@ AVLMMap<K,T,C,A>::equal_range(const K& __k) const
         }
     }
 
-  return std::make_pair<const_iterator,const_iterator>(__lb,
-                                                       __ub);
+  typedef typename AVLMMap<K,T,C,A>::const_iterator iterator;
+  return std::pair<iterator,iterator>(__lb, __ub);
 }
 
 template <class K, class T, class C, class A>

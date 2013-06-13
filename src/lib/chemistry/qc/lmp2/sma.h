@@ -1529,9 +1529,9 @@ namespace sma2 {
 #if USE_STL_MULTIMAP
           typename blockmap_t::iterator bi = blocks_.find(b);
           if (bi != blocks_.end()) return *bi;
-          return *blocks_.insert(typename blockmap_t::value_type(b,0));
+          return *blocks_.insert(typename blockmap_t::value_type(b,(double*)0));
 #else
-          return *blocks_.insert_unique(typename blockmap_t::value_type(b,0));
+          return *blocks_.insert_unique(typename blockmap_t::value_type(b,(double*)0));
 #endif
         }
         /** Adds block b.  The data is allocated.  This should not be

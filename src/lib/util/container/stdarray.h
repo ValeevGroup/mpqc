@@ -6,7 +6,9 @@
 
 #include <scconfig.h>
 
-#ifndef HAVE_STD_ARRAY
+#ifdef HAVE_STD_ARRAY
+#include <array>
+#else
 #include <util/container/stdarray_bits.h>
 namespace std {
   using namespace sc::tr1::array;

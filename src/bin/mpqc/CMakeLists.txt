@@ -1,16 +1,21 @@
 set(executable mpqc)
 
-add_executable(
-  ${executable}
-  mpqc.cc
+add_library(
+  mpqcinit
   mpqcin.cc
   mpqcinit.cc
   parse.cc
-  scan.cc
+  scan.cc  
+)
+
+add_executable(
+  ${executable}
+  mpqc.cc
 )
 
 target_link_libraries(
   ${executable}
+  mpqcinit
   chemistry
   math
   util
@@ -33,3 +38,10 @@ target_link_libraries(${executable} ${CMAKE_DL_LIBS})
 
 install(TARGETS ${executable} DESTINATION ${CMAKE_INSTALL_FULL_BINDIR})
 
+set(headers mpqcinit.h mpqcin.h)
+foreach (_file ${headers})
+  #message(STATUS "gonna install ${_file} in include/mpqc" )
+  install(FILES ${_file} DESTINATION include/mpqc)
+endforeach()
+
+install(TARGETS mpqcinit ARCHIVE DESTINATION lib)

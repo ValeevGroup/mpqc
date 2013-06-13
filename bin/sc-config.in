@@ -3,11 +3,11 @@
 prefix=@CMAKE_INSTALL_PREFIX@
 exec_prefix=@CMAKE_INSTALL_PREFIX@
 libdir=@CMAKE_INSTALL_PREFIX@/lib
-includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
+includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@/mpqc
 LIBSUF=@LIBSUF@
 exec_prefix_set=no
 libs="@LIBS@"
-sclibs="-lchemistry -lmath -lutil"
+sclibs="-lmpqcinit -lchemistry -lmath -lutil -lchemistry -lmath -lutil"
 cppdefines="@DEFS@ @EXTRADEFINES@"
 cxxflags="@CMAKE_CXX_FLAGS@"
 cppflags="@CMAKE_CPP_FLAGS@"

@@ -1617,9 +1617,9 @@ namespace sma2 {
                 }
             }
 #if USE_STL_MULTIMAP
-          return blocks_.insert(blockmap_t::value_type(b,0));
+          return blocks_.insert(blockmap_t::value_type(b,(double*)0));
 #else
-          return blocks_.insert_new(hint, typename blockmap_t::value_type(b,0));
+          return blocks_.insert_new(hint, typename blockmap_t::value_type(b,(double*)0));
 #endif
         }
         /** Adds block b.  The data is not allocated.  This cannot be
@@ -1641,9 +1641,9 @@ namespace sma2 {
                 }
             }
 #if USE_STL_MULTIMAP
-          return blocks_.insert(blockmap_t::value_type(b,0));
+          return blocks_.insert(blockmap_t::value_type(b,(double*)0));
 #else
-          return blocks_.insert_new(typename blockmap_t::value_type(b,0));
+          return blocks_.insert_new(typename blockmap_t::value_type(b,(double*)0));
 #endif
         }
         /** Adds all possible blocks to give a dense array.  The data is

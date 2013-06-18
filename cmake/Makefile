@@ -1,4 +1,4 @@
-CMAKE := cmake-2.8.11.1
+CMAKE := cmake-2.8.10.2
 URL := http://www.cmake.org/files/v2.8/$(CMAKE).tar.gz
 PREFIX := $(PWD)
 

@@ -1,6 +1,7 @@
 #!/bin/sh
 
-TOPDIR=$PWD/`dirname $0`
+TOPDIR=$(cd `dirname $0` && pwd)
+#echo $TOPDIR
 
 # Strip prefix from argument
 arg () {
@@ -44,7 +45,7 @@ Some influential environment variables:
 
 # was told to build local cmake
 if [ $# -eq 1 -a "$1" = "cmake" ]; then
-    cd cmake && make cmake
+    cd $TOPDIR/cmake && make cmake
     exit
 fi
 

@@ -120,13 +120,15 @@
 #endif
 
 #ifndef REF_USE_LOCKS
-#  if HAVE_STHREAD || HAVE_CREATETHREAD || HAVE_PTHREAD
-#    define REF_USE_LOCKS 1
-#  endif
+#if HAVE_STHREAD || HAVE_CREATETHREAD || HAVE_PTHREAD
+#define REF_USE_LOCKS 1
+#endif
+#else // REF_USE_LOCKS
+#warning "REF_USE_LOCKS not defined"
 #endif
 
 #ifndef REF_ALWAYS_USE_LOCKS
-#  define REF_ALWAYS_USE_LOCKS 1
+#define REF_ALWAYS_USE_LOCKS 1
 #endif
 
 #if REF_CHECK_STACK

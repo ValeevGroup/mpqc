@@ -226,9 +226,8 @@ INSTALL(FILES ./lib/atominfo.kv DESTINATION ${SCDATADIR})
 INSTALL(DIRECTORY ./lib/basis DESTINATION ${SCDATADIR})
 
 
-include_directories("${PROJECT_SOURCE_DIR}/include") # flex/lexer
-include_directories("${PROJECT_SOURCE_DIR}/src/lib")
 include_directories("${PROJECT_BINARY_DIR}/src/lib")
+include_directories("${PROJECT_SOURCE_DIR}/include") # flex/lexer
 
 
 find_package(MPI)
@@ -325,8 +324,8 @@ endforeach()
 # message(STATUS "mpqc_link_libraries = ${MPQC_LINK_LIBRARIES}")
 
 set(MPQC_CPP_FLAGS "${CMAKE_CPP_FLAGS}")
-get_property(MPQC_INCLUDE_DIRECTORIES DIRECTORY ${PROJECT_BINARY_DIR}/src/bin/mpqc PROPERTY INCLUDE_DIRECTORIES)
-foreach (_dir ${MPQC_INCLUDE_DIRECTORIES})
+get_directory_property(MPQC_INCLUDE_DIRECTORIES DIRECTORY src/bin/mpqc INCLUDE_DIRECTORIES)
+foreach (_dir ${MPQC_INCLUDE_DIRECTORIES} ${CMAKE_INSTALL_PREFIX}/include/mpqc)
   set(MPQC_CPP_FLAGS "${MPQC_CPP_FLAGS} -I${_dir}")
 endforeach()
 message(STATUS "MPQC_CPP_FLAGS = ${MPQC_CPP_FLAGS}")

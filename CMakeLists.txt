@@ -316,13 +316,20 @@ foreach (_lib ${LINK_LIBRARIES})
     get_filename_component(_name ${_library} NAME_WE)
     get_filename_component(_path ${_library} PATH)
     #message(STATUS "${_library} = ${_name} ${_path} ${_ext}")
-    set(_library "-F ${_path} -f ${_name}")
+    set(_library "-F ${_path} -framework ${_name}")
   endif()
   #message(STATUS "${_lib} = ${_library}")
   set(MPQC_LINK_LIBRARIES "${MPQC_LINK_LIBRARIES} ${_library}")
 endforeach()
 
 # message(STATUS "mpqc_link_libraries = ${MPQC_LINK_LIBRARIES}")
+
+set(MPQC_CPP_FLAGS "${CMAKE_CPP_FLAGS}")
+get_property(MPQC_INCLUDE_DIRECTORIES DIRECTORY ${PROJECT_BINARY_DIR}/src/bin/mpqc PROPERTY INCLUDE_DIRECTORIES)
+foreach (_dir ${MPQC_INCLUDE_DIRECTORIES})
+  set(MPQC_CPP_FLAGS "${MPQC_CPP_FLAGS} -I${_dir}")
+endforeach()
+message(STATUS "MPQC_CPP_FLAGS = ${MPQC_CPP_FLAGS}")
 
 CONFIGURE_FILE(
   ${PROJECT_SOURCE_DIR}/bin/sc-config.in

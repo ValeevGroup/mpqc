@@ -3,14 +3,14 @@
 prefix=@CMAKE_INSTALL_PREFIX@
 exec_prefix=@CMAKE_INSTALL_PREFIX@
 libdir=@CMAKE_INSTALL_PREFIX@/lib
-includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@/mpqc
+includedir=""
 LIBSUF=@LIBSUF@
 exec_prefix_set=no
 libs="@MPQC_LINK_LIBRARIES@"
 sclibs="-lmpqcinit -lchemistry -lmath -lutil -lchemistry -lmath -lutil"
 cppdefines="@DEFS@ @EXTRADEFINES@"
 cxxflags="@CMAKE_CXX_FLAGS@"
-cppflags="@CMAKE_CPP_FLAGS@"
+cppflags="@MPQC_CPP_FLAGS@" 
 cflags="@CMAKE_C_FLAGS@"
 f77flags="@CMAKE_Fortran_FLAGS@"
 cxx="@CMAKE_CXX_COMPILER@"
@@ -29,10 +29,6 @@ Usage: sc-config [--prefix[=DIR]] [--exec-prefix[=DIR]] [--version] [--buildid] 
 if test $# -eq 0; then
       echo "${usage}" 1>&2
       exit 1
-fi
-
-if test ${includedir} != /usr/include ; then
-  includes=-I${includedir}
 fi
 
 while test $# -gt 0; do

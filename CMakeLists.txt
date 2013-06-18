@@ -125,7 +125,8 @@ ENDIF()
 
 
 find_package(Threads)
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+if (CMAKE_THREAD_LIBS_INIT)
+  #message(STATUS "Threads: ${CMAKE_THREAD_LIBS_INIT}")
   set(LIBRARIES "${LIBRARIES};${CMAKE_THREAD_LIBS_INIT}")
 endif()
 
@@ -265,21 +266,63 @@ CONFIGURE_FILE(
   @ONLY
 )
 
-# # ?is the LocalMakefile necessary
-# CONFIGURE_FILE(
-#   ${PROJECT_SOURCE_DIR}/lib/LocalMakefile.in
-#   ${PROJECT_BINARY_DIR}/lib/LocalMakefile
-# )
+# libraries
+set(LINK_LIBRARIES "")
+if (HAVE_LIBINT2)
+  list(APPEND LINK_LIBRARIES ${LIBINT2_LIBRARY})
+endif()
+list(APPEND LINK_LIBRARIES ${Boost_LIBRARIES})
+list(APPEND LINK_LIBRARIES ${LAPACK_LIBRARIES})
+list(APPEND LINK_LIBRARIES ${BLAS_LIBRARIES})
+list(APPEND LINK_LIBRARIES ${PYTHON_LIBRARIES})
+list(APPEND LINK_LIBRARIES ${LIBRARIES})
+list(APPEND LINK_LIBRARIES ${CMAKE_DL_LIBS})
 
+# sources
 add_subdirectory(src)
 add_subdirectory(doc)
 
 # checking/testing
 add_subdirectory(test)
 
-list(APPEND LIBS ${Boost_LIBRARIES})
-list(APPEND LIBS ${LAPACK_LIBRARIES})
-list(APPEND LIBS ${LIBRARIES})
+
+# Export include dirs, library list
+
+# get_target_property(LINK_LIBRARIES mpqc LINK_LIBRARIES)
+# message(STATUS "LINK_LIBRARIES = ${LINK_LIBRARIES}")
+
+set(MPQC_LINK_LIBRARIES "")
+
+# Fortran libraries
+foreach (_lib ${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES})
+  set(_libpath _path-NOTFOUND)
+  find_library(_libpath ${_lib} PATHS ${CMAKE_Fortran_IMPLICIT_LINK_DIRECTORIES})
+  list(APPEND LINK_LIBRARIES ${_libpath})
+endforeach()
+
+# transform library list into compiler args
+foreach (_lib ${LINK_LIBRARIES})
+  set(_libpath _path-NOTFOUND)
+  find_library(_libpath ${_lib} PATHS ${CMAKE_Fortran_IMPLICIT_LINK_DIRECTORIES})
+  #message(STATUS "_lib = ${_lib}, _path = ${_path}")
+  if (_libpath)
+    set(_library "${_libpath}")
+  else()
+    set(_library "${_lib}")
+  endif()
+  # Apple framework libs
+  get_filename_component(_ext ${_library} EXT)
+  if ("${_ext}" STREQUAL ".framework")
+    get_filename_component(_name ${_library} NAME_WE)
+    get_filename_component(_path ${_library} PATH)
+    #message(STATUS "${_library} = ${_name} ${_path} ${_ext}")
+    set(_library "-F ${_path} -f ${_name}")
+  endif()
+  #message(STATUS "${_lib} = ${_library}")
+  set(MPQC_LINK_LIBRARIES "${MPQC_LINK_LIBRARIES} ${_library}")
+endforeach()
+
+# message(STATUS "mpqc_link_libraries = ${MPQC_LINK_LIBRARIES}")
 
 CONFIGURE_FILE(
   ${PROJECT_SOURCE_DIR}/bin/sc-config.in

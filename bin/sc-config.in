@@ -6,7 +6,7 @@ libdir=@CMAKE_INSTALL_PREFIX@/lib
 includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@/mpqc
 LIBSUF=@LIBSUF@
 exec_prefix_set=no
-libs="@LIBS@"
+libs="@MPQC_LINK_LIBRARIES@"
 sclibs="-lmpqcinit -lchemistry -lmath -lutil -lchemistry -lmath -lutil"
 cppdefines="@DEFS@ @EXTRADEFINES@"
 cxxflags="@CMAKE_CXX_FLAGS@"
@@ -22,8 +22,6 @@ buildid="@BUILDID@"
 datarootdir=@CMAKE_INSTALL_FULL_DATAROOTDIR@
 scdatadir=@CMAKE_INSTALL_FULL_DATADIR@
 enableshared=@ENABLESHARED@
-
-libs=`echo $libs | sed "s/;/ /g"`
 
 usage="\
 Usage: sc-config [--prefix[=DIR]] [--exec-prefix[=DIR]] [--version] [--buildid] [--so-version] [--datadir] [--libs] [--libdir] [--cppflags] [--cc] [--cflags] [--cxx] [--cxxflags] [--f77] [--f77flags]"

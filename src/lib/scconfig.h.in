@@ -180,7 +180,7 @@
 #cmakedefine HAVE_UNISTD_H @HAVE_UNISTD_H@
 
 /* Define if you have the <pthread.h> header file and the pthread library.  */
-#cmakedefine HAVE_PTHREAD
+#cmakedefine HAVE_PTHREAD @HAVE_PTHREAD@
 
 /* Define if you can have the pthread_attr_setstacksize function.  */
 #cmakedefine HAVE_PTHREAD_ATTR_SETSTACKSIZE

@@ -24,19 +24,11 @@ target_link_libraries(
   util
 )
 
-if (HAVE_LIBINT2)
-  target_link_libraries(${executable} ${LIBINT2_LIBRARY})
-endif()
+target_link_libraries(
+  ${executable}
+  ${LINK_LIBRARIES})
 
-target_link_libraries(${executable} ${Boost_LIBRARIES})
-target_link_libraries(${executable} ${LAPACK_LIBRARIES})
-target_link_libraries(${executable} ${BLAS_LIBRARIES})
-target_link_libraries(${executable} ${PYTHON_LIBRARIES})
-
-target_link_libraries(${executable} ${LIBRARIES})
-target_link_libraries(${executable} ${CMAKE_DL_LIBS})
-
-install(TARGETS ${executable} DESTINATION ${CMAKE_INSTALL_FULL_BINDIR})
+install(TARGETS ${executable} DESTINATION bin)
 
 set(headers mpqcinit.h mpqcin.h)
 foreach (_file ${headers})

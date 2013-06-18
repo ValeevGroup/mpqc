@@ -20,12 +20,14 @@ Usage: '"$0"' [<options>...]
 Options: [defaults in brackets after descriptions]
 Configuration:
   --help                  print this message
-  --blas                  BLAS libraries
-  --lapack                LAPACK libraries
+  --debug                 debug build (CMAKE_BUILD_TYPE=Debug)
+  --prefix=               install prefix (CMAKE_INSTALL_PREFIX=)
+  --blas=                 BLAS libraries (BLAS_LIBRARIES=)
+  --lapack=               LAPACK libraries (LAPACK_LIBRARIES=)
   --integer8              assume integer*8 in fortran
-  --debug                 debug build
-Directory and file names:
-  --prefix=PREFIX         install files in tree rooted at PREFIX
+  --mpicc=                MPI C compiler to deduce MPI environment (MPI_C_COMPILER=)
+  --search=               paths to search for files/libraries (CMAKE_PREFIX_PATH=)
+  -D*                     passed verbatim to cmake command
 
 Some influential environment variables:
   CC          C compiler command
@@ -66,6 +68,8 @@ build="Release"
 
 blas=""
 lapack=""
+search=""
+mpicc=""
 
 while test $# != 0; do
   case "$1" in
@@ -76,7 +80,8 @@ while test $# != 0; do
   --lapack=*) lapack="`arg \"$1\"`" ;;
   --integer8) args="$args -DINTEGER8=TRUE" ;;
   --debug) build="Debug" ;; #args="$args -DCMAKE_BUILD_TYPE=Debug" ;;
-  --mpi=*) mpi="`arg \"$1\"`" ;;
+  --search=*) search="`arg \"$1\"`" ;;
+  --mpicc=*) mpicc="`arg \"$1\"`" ;;
   CC=*) CC="`arg \"$1\"`" ;;
   CXX=*) CXX="`arg \"$1\"`" ;;
   F77=*) F77="`arg \"$1\"`" ;;
@@ -99,6 +104,15 @@ fi
 if [ -n "$lapack" ]; then
     args="$args -DLAPACK_LIBRARIES=\"$lapack\""
 fi
+
+if [ -n "$search" ]; then
+    args="$args -DCMAKE_PREFIX_PATH=\"$search\""
+fi
+
+if [ -n "$mpicc" ]; then
+    args="$args -DMPI_C_COMPILER=$mpicc"
+fi
+
 
 if [ -n "$CC" ]; then
     args="$args -DCMAKE_C_COMPILER=$CC"

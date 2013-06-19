@@ -28,7 +28,7 @@
 #cmakedefine REF_OPTIMIZE
 
 /* Define if you have <stdint.h>.  */
-#cmakedefine HAVE_STDINT_H
+#cmakedefine HAVE_STDINT_H @HAVE_STDINT_H@
 
 /* Define if you have <sys/stat.h>.  */
 #cmakedefine HAVE_SYS_STAT_H

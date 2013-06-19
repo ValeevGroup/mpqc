@@ -125,10 +125,12 @@ ENDIF()
 
 
 find_package(Threads)
-if (CMAKE_THREAD_LIBS_INIT)
+if (Threads_FOUND)
   #message(STATUS "Threads: ${CMAKE_THREAD_LIBS_INIT}")
   set(LIBRARIES "${LIBRARIES};${CMAKE_THREAD_LIBS_INIT}")
+  check_include_files(pthread.h HAVE_PTHREAD)
 endif()
+
 
 
 set(TARGET_ARCH "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
@@ -225,10 +227,9 @@ set(INSTALLED_SCLIBDIR ${CMAKE_INSTALL_FULL_LIBDIR})
 INSTALL(FILES ./lib/atominfo.kv DESTINATION ${SCDATADIR})
 INSTALL(DIRECTORY ./lib/basis DESTINATION ${SCDATADIR})
 
-
 include_directories("${PROJECT_BINARY_DIR}/src/lib")
+include_directories("${PROJECT_SOURCE_DIR}/src/lib")
 include_directories("${PROJECT_SOURCE_DIR}/include") # flex/lexer
-
 
 find_package(MPI)
 if (NOT MPI_FOUND)
@@ -323,12 +324,20 @@ endforeach()
 
 # message(STATUS "mpqc_link_libraries = ${MPQC_LINK_LIBRARIES}")
 
-set(MPQC_CPP_FLAGS "${CMAKE_CPP_FLAGS}")
+# include dirs sans the source dirs
 get_directory_property(MPQC_INCLUDE_DIRECTORIES DIRECTORY src/bin/mpqc INCLUDE_DIRECTORIES)
+list(REMOVE_ITEM
+  MPQC_INCLUDE_DIRECTORIES
+  ${PROJECT_BINARY_DIR}/src/lib
+  ${PROJECT_SOURCE_DIR}/src/lib
+  ${PROJECT_SOURCE_DIR}/include
+) 
+
+set(MPQC_CPP_FLAGS "${CMAKE_CPP_FLAGS}")
 foreach (_dir ${MPQC_INCLUDE_DIRECTORIES} ${CMAKE_INSTALL_PREFIX}/include/mpqc)
   set(MPQC_CPP_FLAGS "${MPQC_CPP_FLAGS} -I${_dir}")
 endforeach()
-message(STATUS "MPQC_CPP_FLAGS = ${MPQC_CPP_FLAGS}")
+#message(STATUS "MPQC_CPP_FLAGS = ${MPQC_CPP_FLAGS}")
 
 CONFIGURE_FILE(
   ${PROJECT_SOURCE_DIR}/bin/sc-config.in

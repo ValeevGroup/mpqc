@@ -1,0 +1,33 @@
+% emacs should use -*- KeyVal -*- mode
+molecule<Molecule>: (
+  symmetry = C1
+  unit = angstrom
+  { atoms geometry } = {
+    O     [     0.78000000     0.00000000    -0.18000000 ]
+    O     [     0.78000000     1.00000000    -0.18000000 ]
+  }
+)
+basis<GaussianBasisSet>: (
+  name = "6-31G"
+  molecule = $:molecule
+)
+mpqc: (
+  checkpoint = no
+  savestate = no
+  mole<CI>: (
+    molecule = $:molecule
+    basis = $:basis
+
+%   level = 0 % Full-CI
+    level = 4 % CI-SDTQ
+%    orbitals = 16
+
+    reference<SD_RefWavefunction>: (
+      obwfn<CLHF>: (
+        molecule = $:molecule
+        basis = $:basis
+      )
+    )
+  )
+)
+

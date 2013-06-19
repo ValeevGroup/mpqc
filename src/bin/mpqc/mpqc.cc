@@ -115,6 +115,9 @@
 #  include <chemistry/cca/int/linkage.h>
 #endif
 
+#include <chemistry/qc/nbody/linkage.h>
+#include <chemistry/qc/ci/linkage.h>
+
 #ifdef HAVE_MPI
 #define OMPI_SKIP_MPICXX
 #define MPICH_SKIP_MPICXX

@@ -3,7 +3,7 @@
 //
 // Copyright (C) 1996 Limit Point Systems, Inc.
 //
-// Author: Edward Seidl <seidl@janed.com>
+// Author: Ida Nielsen <ibniels@ca.sandia.gov>
 // Maintainer: LPS
 //
 // This file is part of the SC Toolkit.
@@ -25,15 +25,15 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _chemistry_qc_lcao_linkage_h
-#define _chemistry_qc_lcao_linkage_h
+#ifndef _chemistry_qc_ci_linkage_h
+#define _chemistry_qc_ci_linkage_h
 
-#include "chemistry/qc/lcao/soad.h"
+#include <chemistry/qc/ci/ci.h>
+#include <chemistry/qc/scf/linkage.h>
 
 namespace sc {
 
-static ForceLink<DensityFitting> lcao_force_link_a_;
-static ForceLink<SuperpositionOfAtomicDensities> lcao_force_link_b_;
+  static ForceLink<CI> ci_force_link_a_;
 
 }
 

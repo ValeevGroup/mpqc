@@ -1,7 +1,7 @@
 set(subdirectories
   basis
   ccr12
-#  ci
+  ci
 #  cints
   dft
   etrain
@@ -11,7 +11,7 @@ set(subdirectories
   lmp2
   mbpt
   #mbptr12
-  #nbody
+  nbody
   oint3
   #psi
   scf

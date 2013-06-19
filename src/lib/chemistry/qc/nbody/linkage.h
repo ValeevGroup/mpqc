@@ -1,10 +1,10 @@
 //
 // linkage.h
 //
-// Copyright (C) 1996 Limit Point Systems, Inc.
+// Copyright (C) 2012 Edward Valeev
 //
-// Author: Edward Seidl <seidl@janed.com>
-// Maintainer: LPS
+// Author: Edward Valeev <evaleev@vt.edu>
+// Maintainer: EV
 //
 // This file is part of the SC Toolkit.
 //
@@ -25,16 +25,22 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _chemistry_qc_lcao_linkage_h
-#define _chemistry_qc_lcao_linkage_h
+#ifndef _chemistry_qc_nbody_linkage_h
+#define _chemistry_qc_nbody_linkage_h
 
-#include "chemistry/qc/lcao/soad.h"
+#include <util/class/class.h>
+#include <chemistry/qc/nbody/nbwfn.h>
 
 namespace sc {
 
-static ForceLink<DensityFitting> lcao_force_link_a_;
-static ForceLink<SuperpositionOfAtomicDensities> lcao_force_link_b_;
+    static ForceLink<ManyBodyWavefunction> nbody_force_link_a_;
+    static ForceLink<SD_RefWavefunction> nbody_force_link_b_;
 
 }
 
 #endif
+
+// Local Variables:
+// mode: c++
+// c-file-style: "CLJ-CONDENSED"
+// End:

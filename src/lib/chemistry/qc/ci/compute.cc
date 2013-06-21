@@ -31,7 +31,7 @@ void sc::CI::compute(const Ref<RefWavefunction> &wfn,
     ExEnv::out0() << "Beginning CI\n";
     
     mpqc::ci::Config config;
-    Matrix C = Matrix(*wfn->orbs()->coefs()).transpose();
+    Matrix C = Matrix(wfn->orbs()->coefs()).transpose();
 
     {
         size_t ne = wfn->nelectron();

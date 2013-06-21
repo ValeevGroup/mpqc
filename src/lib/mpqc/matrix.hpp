@@ -25,12 +25,12 @@ namespace mpqc {
         template<class A>
 	matrix(const Eigen::EigenBase<A> &a) : eigen_base(a) {}
 
-        matrix(const sc::SCMatrix &a) {
+        matrix(sc::RefSCMatrix a) {
             this->resize(a.nrow(), a.ncol());
             apply(assign(), this->rows(), this->cols(), *this, a);
         }
 
-        matrix(const sc::SymmSCMatrix &a) {
+        matrix(const sc::RefSymmSCMatrix &a) {
             this->resize(a.n(), a.n());
             apply(assign(), this->rows(), this->cols(), *this, a);
         }
@@ -74,7 +74,7 @@ namespace mpqc {
 
     private:
         template<class F, class A, class B>
-        static void apply(const F &f, size_t m, size_t n, A &a, const B &b) {
+        static void apply(const F &f, size_t m, size_t n, A &a, B &b) {
 	    for (int j = 0; j < n; ++j) {
 		for (int i = 0; i < m; ++i) {
 		    f(a(i, j), b(i, j));

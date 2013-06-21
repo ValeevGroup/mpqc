@@ -37,6 +37,8 @@
 #include <chemistry/qc/scf/lgbuild.h>
 #include <chemistry/qc/scf/clhftmpl.h>
 
+#include "mpqc/hf/fock.hpp"
+
 using namespace std;
 using namespace sc;
 
@@ -143,48 +145,97 @@ CLHF::ao_fock(double accuracy)
     double gmat_accuracy = accuracy;
     if (min_orthog_res() < 1.0) { gmat_accuracy *= min_orthog_res(); }
 
-    for (i=0; i < nthread; i++) {
-      if (i) {
-        gmats[i] = new double[ntri];
-        memset(gmats[i], 0, sizeof(double)*ntri);
-      }
-      conts[i] = new LocalCLHFContribution(gmats[i], pmat);
-      gblds[i] = new LocalGBuild<LocalCLHFContribution>(*conts[i], tbis_[i],
-               pl, bs, scf_grp_, pmax, gmat_accuracy, nthread, i
-        );
-
-      threadgrp_->add_thread(i, gblds[i]);
+    size_t n = bs->nbasis();
+    Matrix F(n,n), D(n,n);
+    for (int i = 0, ij = 0; i < n; ++i) {
+        for (int j = 0; j <= i; ++j, ++ij) {
+            D(i,j) = pmat[ij]/2;
+            D(j,i) = pmat[ij]/2;
+            F(i,j) = gmat[ij];
+            F(j,i) = gmat[ij];
+        }
+        D(i,i) *= 2;
     }
 
-    tim.enter("start thread");
-    if (threadgrp_->start_threads() < 0) {
-      ExEnv::err0() << indent
-           << "CLHF: error starting threads" << endl;
-      abort();
-    }
-    tim.exit("start thread");
+    // asadchev
+    {
+        Matrix G(n,n);
+        //auto factory = Integral::get_default_integral()->clone();
+        //factory->set_basis(bs);
+        //mpqc::hf::Integral int2(factory->electron_repulsion());
+        mpqc::hf::Integral int2(this->integral()->electron_repulsion());
+        //mpqc::hf::Integral int2(tbis_[0]);
 
-    tim.enter("stop thread");
-    if (threadgrp_->wait_threads() < 0) {
-      ExEnv::err0() << indent
-           << "CLHF: error waiting for threads" << endl;
-      abort();
+        mpqc::matrix<signed char> Dmax2(bs->nshell(), bs->nshell());
+        for (int i = 0, ij = 0; i < bs->nshell(); ++i) {
+            for (int j = 0; j <= i; ++j, ++ij) {
+                Dmax2(i,j) = pmax[ij];
+                Dmax2(j,i) = pmax[ij];
+            }
+        }
+        
+        mpqc::hf::fock(*bs, int2, D, F, Dmax2, gmat_accuracy);
+        
+        //std::cout << "F' = \n" << F << std::endl;
+        for (int i = 0, ij = 0; i < n; ++i) {
+            for (int j = 0; j <= i; ++j, ++ij) {
+                double f = F(j,i);// + F(i,j);
+                // if (i == j) f *= 0.5;
+                // F(i,j) = f;
+                // F(j,i) = f;
+                //gmat[ij] = f;
+                G(i,j) = gmat[ij];
+                G(j,i) = gmat[ij];
+                gmat[ij] = f;
+            }
+        }
+        //std::cout << "F* = \n" << G << std::endl;
     }
-    tim.exit("stop thread");
+
+    double tnint = 0;
+
+    // for (i=0; i < nthread; i++) {
+    //   if (i) {
+    //     gmats[i] = new double[ntri];
+    //     memset(gmats[i], 0, sizeof(double)*ntri);
+    //   }
+    //   conts[i] = new LocalCLHFContribution(gmats[i], pmat);
+    //   gblds[i] = new LocalGBuild<LocalCLHFContribution>(*conts[i], tbis_[i],
+    //            pl, bs, scf_grp_, pmax, gmat_accuracy, nthread, i
+    //     );
+
+    //   threadgrp_->add_thread(i, gblds[i]);
+    // }
+
+    // tim.enter("start thread");
+    // if (threadgrp_->start_threads() < 0) {
+    //   ExEnv::err0() << indent
+    //        << "CLHF: error starting threads" << endl;
+    //   abort();
+    // }
+    // tim.exit("start thread");
+
+    // tim.enter("stop thread");
+    // if (threadgrp_->wait_threads() < 0) {
+    //   ExEnv::err0() << indent
+    //        << "CLHF: error waiting for threads" << endl;
+    //   abort();
+    // }
+    // tim.exit("stop thread");
       
-    double tnint=0;
-    for (i=0; i < nthread; i++) {
-      tnint += gblds[i]->tnint;
+    // double tnint=0;
+    // for (i=0; i < nthread; i++) {
+    //   tnint += gblds[i]->tnint;
 
-      if (i) {
-        for (int j=0; j < ntri; j++)
-          gmat[j] += gmats[i][j];
-        delete[] gmats[i];
-      }
+    //   if (i) {
+    //     for (int j=0; j < ntri; j++)
+    //       gmat[j] += gmats[i][j];
+    //     delete[] gmats[i];
+    //   }
 
-      delete gblds[i];
-      delete conts[i];
-    }
+    //   delete gblds[i];
+    //   delete conts[i];
+    // }
 
     delete[] gmats;
     delete[] gblds;

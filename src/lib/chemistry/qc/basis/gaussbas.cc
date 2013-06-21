@@ -1034,6 +1034,11 @@ GaussianBasisSet::shell_on_center(int icenter, int ishell) const
 {
   return center_to_shell_[icenter] + ishell;
 }
+ 
+mpqc::range GaussianBasisSet::range(int s) const {
+    int f = this->shell_to_function(s);
+    return mpqc::range(f, f + this->shell(s).nfunction());
+}
 
 const GaussianShell&
 GaussianBasisSet::operator()(int icenter,int ishell) const

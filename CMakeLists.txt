@@ -59,7 +59,7 @@ CHECK_CXX_SOURCE_COMPILES("
   }" HAVE_CXX___RESTRICT__)
 
 
-option(MPQC_NEW_FEATURES "Use new MPQC features (requires C++11)" OFF)
+option(MPQC_NEW_FEATURES "Use new MPQC features (requires C++11)" ON)
 if (MPQC_NEW_FEATURES)
   add_definitions(-DMPQC_NEW_FEATURES)
   # C++11 flag
@@ -247,7 +247,7 @@ else()
 endif()
 
 # external dependencies
-include(external/CMakeLists.txt)
+include(external/External)
 
 CONFIGURE_FILE(
   ${PROJECT_SOURCE_DIR}/src/lib/scconfig.h.in

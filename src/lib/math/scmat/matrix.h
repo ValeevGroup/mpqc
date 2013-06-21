@@ -492,7 +492,7 @@ class SCMatrixdouble {
     ~SCMatrixdouble();
     double operator=(double a);
     double operator=(const SCMatrixdouble&);
-    operator double();
+    operator double() const;
     double val() const;
 };
 

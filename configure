@@ -27,6 +27,7 @@ Configuration:
   --lapack=               LAPACK libraries (LAPACK_LIBRARIES=)
   --integer8              assume integer*8 in fortran
   --mpicc=                MPI C compiler to deduce MPI environment (MPI_C_COMPILER=)
+  --libint=               TRUE/FALSE or Libint path
   --search=               paths to search for files/libraries (CMAKE_PREFIX_PATH=)
   -D*                     passed verbatim to cmake command
 
@@ -82,6 +83,7 @@ while test $# != 0; do
   --integer8) args="$args -DINTEGER8=TRUE" ;;
   --debug) build="Debug" ;; #args="$args -DCMAKE_BUILD_TYPE=Debug" ;;
   --search=*) search="`arg \"$1\"`" ;;
+  --libint=*) libint="`arg \"$1\"`" ;;
   --mpicc=*) mpicc="`arg \"$1\"`" ;;
   CC=*) CC="`arg \"$1\"`" ;;
   CXX=*) CXX="`arg \"$1\"`" ;;
@@ -108,6 +110,10 @@ fi
 
 if [ -n "$search" ]; then
     args="$args -DCMAKE_PREFIX_PATH=\"$search\""
+fi
+
+if [ -n "$libint" ]; then
+    args="$args -DLIBINT=$libint"
 fi
 
 if [ -n "$mpicc" ]; then

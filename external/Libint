@@ -1,17 +1,41 @@
-option(REQUIRE_LIBINT2 "Require Libint2" OFF)
+# -*- mode: cmake -*-
 
-set(LIBINT_FOUND FALSE)
-find_library(LIBINT2_LIBRARY int2 libint2)
-if (LIBINT2_LIBRARY)
-  message(STATUS "Found Libint2: ${LIBINT2_LIBRARY}")
-  find_path(LIBINT2_INCLUDE_DIR libint2/libint2.h)
-  set(LIBINT_FOUND TRUE)
-  set(HAVE_LIBINT2 TRUE)
-  include_directories(${LIBINT2_INCLUDE_DIR})
-  include_directories(${LIBINT2_INCLUDE_DIR}/libint2)
+set(LIBINT "" CACHE STRING "Libint on/off/prefix")
+set_property(CACHE LIBINT PROPERTY STRINGS "" "on" "off") 
+
+# default libint action
+if ("${LIBINT}" STREQUAL "")
+  set(LIBINT "optional")
 endif()
 
-if (REQUIRE_LIBINT2 AND NOT HAVE_LIBINT2)
+if (LIBINT)
+
+  if ("${LIBINT}" OR "${LIBINT}" STREQUAL "optional")
+    find_library(LIBINT2_LIBRARY int2)
+    find_path(LIBINT2_INCLUDE_DIR libint2/libint2.h)
+  else()
+    find_library(LIBINT2_LIBRARY int2
+                 PATHS ${LIBINT}/lib NO_DEFAULT_PATH)
+    find_path(LIBINT2_INCLUDE_DIR libint2/libint2.h
+              PATHS ${LIBINT}/include NO_DEFAULT_PATH)
+    if (NOT LIBINT2_LIBRARY)
+      message(FATAL_ERROR "Could not find libint2 in ${LIBINT}")
+    endif()
+  endif()
+
+  if (LIBINT2_LIBRARY)
+    if (NOT LIBINT2_INCLUDE_DIR)
+      message(FATAL_ERROR "Could not find libint2/libint2.h")
+    endif()
+    set(LIBINT2_FOUND TRUE)
+    message(STATUS "Found Libint2:")
+    message(STATUS "\tLIBINT2_LIBRARY=${LIBINT2_LIBRARY}")
+    message(STATUS "\tLIBINT2_INCLUDE_DIR=${LIBINT2_INCLUDE_DIR}")
+  endif()
+
+endif()
+
+if ("${LIBINT}" AND NOT LIBINT2_FOUND)
 
   set(EXTERNAL_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external)
   set(EXTERNAL_BUILD_DIR ${PROJECT_BINARY_DIR}/external/build)
@@ -27,8 +51,9 @@ if (REQUIRE_LIBINT2 AND NOT HAVE_LIBINT2)
   if (EXISTS ${EXTERNAL_SOURCE_DIR}/libint.tar.gz)
     set(LIBINT_URL ${EXTERNAL_SOURCE_DIR}/libint.tar.gz)
     set(LIBINT_URL_HASH "")
-    message(STATUS "Using LIBINT archive ${LIBINT_URL}")
   endif()
+
+  message(STATUS "Will build Libint from ${LIBINT_URL}")
 
   ExternalProject_Add(
     libint

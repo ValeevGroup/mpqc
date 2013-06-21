@@ -1,3 +1,5 @@
+# -*- mode: cmake -*-
+
 set(EXTERNAL_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external)
 set(EXTERNAL_BUILD_DIR ${PROJECT_BINARY_DIR}/external/build)
 
@@ -26,5 +28,6 @@ ExternalProject_Add(
 )
 
 add_dependencies(External Eigen)
+#set(Eigen_INCLUDE_DIR ${EXTERNAL_BUILD_DIR}/Eigen/include)
 include_directories(${EXTERNAL_BUILD_DIR}/Eigen/include)
 

@@ -1,7 +1,11 @@
 #; -*-CMake-*-
 
 enable_language (CXX)
+
 enable_language (Fortran)
+if (NOT CMAKE_Fortran_COMPILER)
+   message(FATAL_ERROR "Fortran compiler not found")
+endif()
 
 cmake_minimum_required (VERSION 2.8.8)
 project (MPQC)
@@ -16,19 +20,6 @@ set(CMAKE_SKIP_RPATH FALSE)
 set(BUILD_TESTING FALSE CACHE BOOLEAN "BUILD_TESTING")
 set(BUILD_TESTING_STATIC FALSE CACHE BOOLEAN "BUILD_TESTING_STATIC")
 set(BUILD_TESTING_SHARED FALSE CACHE BOOLEAN "BUILD_TESTING_SHARED")
-
-# string(TOUPPER ${CMAKE_SYSTEM_NAME} TARGET_)
-# if(ARCH EQUAL 64)
-#   set(TARGET_ "${TARGET_}64")
-# endif()
-
-# set(TARGET "${TARGET_}" CACHE STRING "TARGET")
-# add_definitions(-D${TARGET})
-# if("${TARGET}" MATCHES "64")
-#   string(REGEX REPLACE "64" "" TARGET_ "${TARGET}")
-#   add_definitions(-D${TARGET_})
-# endif()
-# MESSAGE(STATUS "TARGET: ${TARGET}")
 
 # if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 #  set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /opt/local/lib)
@@ -59,7 +50,7 @@ CHECK_CXX_SOURCE_COMPILES("
   }" HAVE_CXX___RESTRICT__)
 
 
-option(MPQC_NEW_FEATURES "Use new MPQC features (requires C++11)" ON)
+option(MPQC_NEW_FEATURES "Use new MPQC features (requires C++11)" OFF)
 if (MPQC_NEW_FEATURES)
   add_definitions(-DMPQC_NEW_FEATURES)
   # C++11 flag

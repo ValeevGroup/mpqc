@@ -6,6 +6,8 @@
 #include "mpqc/omp.hpp"
 #include "mpqc/utility/foreach.hpp"
 
+#include "rysq/eri.hpp"
+
 namespace mpqc {
 namespace hf {
 
@@ -150,6 +152,36 @@ namespace hf {
 
         int tol2 = (int)log2(tol);
         int N = basis.nshell();
+
+        struct {
+            std::vector< ::rysq::Shell* > basis;
+        } rysq;
+
+        for (int i = 0; i < N; ++i) {
+            const auto &shell = basis.shell(i);
+            int nc = shell.ncontraction();
+            int K = shell.nprimitive();
+
+            rysq::type type = rysq::type(shell.max_am());
+            if (nc == 2) type = rysq::type(-type);
+            if (nc > 2) throw;
+
+            double e[K];
+            double C[K][2];
+
+            for (int k = 0; k < K; ++k) {
+                e[k] = shell.exponent(k);
+                for (int j = 0; j < nc; ++j) {
+                    C[k][j] = shell.coefficient_unnorm(j,k);
+                }
+            }
+
+            int r = basis.shell_to_center(i);
+            rysq::Center R = { basis.r(r,0), basis.r(r,1), basis.r(r,2) };
+
+            rysq.basis.push_back(new rysq::Shell(type, K, e, C, R));
+            std::cout << *rysq.basis.back() << std::endl;
+        }
 
         for (int i = 0; i < N; ++i) {
             for (int j = 0; j <= i; ++j) {

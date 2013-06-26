@@ -17,11 +17,11 @@ foreach (_lib MADworld MADtensor MADlinalg MADmisc MADmra MADtinyxml MADmuparser
   endif()
 endforeach()
 
-find_path(MADNESS_INCLUDE_DIR mra/mra.h)
+find_path(MADNESS_INCLUDE_DIR madness_config.h)
 
 if (MADNESS_LIBRARIES)
   if (NOT MADNESS_INCLUDE_DIR)
-    message(FATAL_ERROR "Could not find mra/mra.h")
+    message(FATAL_ERROR "Could not find madness_config.h")
   endif()
   set(HAVE_MADNESS TRUE)
   message(STATUS "Found MADNESS:")

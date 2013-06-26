@@ -31,6 +31,7 @@ if (LIBINT)
     message(STATUS "Found Libint2:")
     message(STATUS "\tLIBINT2_LIBRARY=${LIBINT2_LIBRARY}")
     message(STATUS "\tLIBINT2_INCLUDE_DIR=${LIBINT2_INCLUDE_DIR}")
+    set(HAVE_LIBINT2 TRUE)
   endif()
 
 endif()

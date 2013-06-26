@@ -1,0 +1,31 @@
+# -*- mode: cmake -*-
+
+#LIBWORLD=$(LIBWORLDDIR)/libMADworld.a
+#LIBTENSOR=$(LIBTENSORDIR)/libMADtensor.a
+#LIBLINALG=$(LIBLINALGDIR)/libMADlinalg.a
+#LIBMISC=$(LIBMISCDIR)/libMADmisc.a
+#LIBMRA=$(LIBMRADIR)/libMADmra.a
+#LIBTINYXML=$(LIBTINYXMLDIR)/libMADtinyxml.a
+#LIBMUPARSER=$(LIBMUPARSERDIR)/libMADmuparser.a
+
+set(MADNESS_LIBRARIES "")
+foreach (_lib MADworld MADtensor MADlinalg MADmisc MADmra MADtinyxml MADmuparser)
+  set(_libpath _libpath-NOTFOUND)
+  find_library(_libpath ${_lib})
+  if (_libpath)
+    list(APPEND MADNESS_LIBRARIES ${_libpath})
+  endif()
+endforeach()
+
+find_path(MADNESS_INCLUDE_DIR mra/mra.h)
+
+if (MADNESS_LIBRARIES)
+  if (NOT MADNESS_INCLUDE_DIR)
+    message(FATAL_ERROR "Could not find mra/mra.h")
+  endif()
+  set(HAVE_MADNESS TRUE)
+  message(STATUS "Found MADNESS:")
+  message(STATUS "\tMADNESS_LIBRARIES=${MADNESS_LIBRARIES}")
+  message(STATUS "\tMADNESS_INCLUDE_DIR=${MADNESS_INCLUDE_DIR}")
+  include_directories(${MADNESS_INCLUDE_DIR})
+endif()

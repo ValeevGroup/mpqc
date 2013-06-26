@@ -8,6 +8,7 @@ include(external/Lapack)
 include(external/Libint)
 
 if (MPQC_NEW_FEATURES)
+  include(external/Madness)
   include(external/Eigen)
   include(external/Boost)
   include(external/HDF5)

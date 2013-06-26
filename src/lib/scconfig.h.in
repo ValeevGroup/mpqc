@@ -256,6 +256,8 @@
 #define INTEGRALLIBINT2_NORMCONV_CCA 1
 #define INTEGRALLIBINT2_NORMCONV_EXACT 2
 
+#cmakedefine HAVE_MADNESS
+
 /* Define if you have the libpsio header file and library.  */
 #cmakedefine HAVE_LIBPSIO
 

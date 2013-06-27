@@ -6,10 +6,10 @@ add_custom_target(External)
 
 include(external/Lapack)
 include(external/Libint)
-include(external/Madness)
 
 if (MPQC_NEW_FEATURES)
   include(external/Eigen)
+  include(external/Madness)
   include(external/Boost)
   include(external/HDF5)
   include(external/ARMCI)

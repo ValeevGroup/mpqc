@@ -73,13 +73,15 @@ if ("${LIBINT}" AND NOT LIBINT2_FOUND)
   )
 
   add_dependencies(External libint)
-  include_directories(${EXTERNAL_BUILD_DIR}/libint/include)
-  include_directories(${EXTERNAL_BUILD_DIR}/libint/include/libint2)
   set(LIBINT2_LIBRARY ${EXTERNAL_BUILD_DIR}/libint/lib/libint2.a)
+  set(LIBINT2_INCLUDE_DIR ${EXTERNAL_BUILD_DIR}/libint/include)
   set(HAVE_LIBINT2 TRUE)
 
 endif()
 
-if (LIBINT_LIBRARIES)
-  set(LIBRARIES "${LIBINT_LIBRARIES};${LIBRARIES}")
+if (LIBINT2_LIBRARY)
+  set(LIBRARIES "${LIBINT2_LIBRARY};${LIBRARIES}")
+  include_directories(${LIBINT2_INCLUDE_DIR})
+  include_directories(${LIBINT2_INCLUDE_DIR}/libint2)
 endif()
+

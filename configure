@@ -28,7 +28,7 @@ Configuration:
   --integer8              assume integer*8 in fortran
   --mpicc=                MPI C compiler to deduce MPI environment (MPI_C_COMPILER=)
   --libint=               TRUE/FALSE or Libint path
-  --search=               paths to search for files/libraries (CMAKE_PREFIX_PATH=)
+  --search=               paths to search for files/libraries, separated by semicolon (CMAKE_PREFIX_PATH=)
   -D*                     passed verbatim to cmake command
 
 Some influential environment variables:

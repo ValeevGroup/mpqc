@@ -10,6 +10,9 @@ endif()
 cmake_minimum_required (VERSION 2.8.8)
 project (MPQC)
 
+# extra cmake files are shipped with MPQC
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
+
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release")
 endif()

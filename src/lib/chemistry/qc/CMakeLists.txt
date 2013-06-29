@@ -1,25 +1,23 @@
 set(subdirectories
   basis
-  ccr12
-#  ci
-#  cints
+  #ci
   dft
   etrain
   intv3
   lcao
-  #libint2
   lmp2
   mbpt
-  #mbptr12
-  #nbody
   oint3
-  #psi
   scf
   wfn
   )
 
 if (HAVE_LIBINT2)
-  list(APPEND subdirectories libint2)
+  list(APPEND subdirectories libint2 mbptr12 ccr12)
+endif()
+
+if (HAVE_PSI3)
+  list(APPEND subdirectories psi)
 endif()
 
 foreach(s ${subdirectories})

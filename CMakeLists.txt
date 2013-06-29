@@ -161,6 +161,7 @@ if(INTEGER8)
 endif()  
 
 include(FortranCInterface)
+FortranCInterface_VERIFY(CXX)
 
 set(FORTRAN_FUNCTIONS
   PDSTEQR

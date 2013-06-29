@@ -39,8 +39,6 @@
 #include <time.h>
 #endif
 
-#include <scdirlist.h>
-
 #include <new>
 #include <stdexcept>
 #include <string.h>
@@ -69,9 +67,6 @@
 #include <util/misc/exenv.h>
 #include <util/misc/runnable.h>
 #include <util/misc/consumableresources.h>
-#ifdef HAVE_CHEMISTRY_CCA
-  #include "cca.h"
-#endif
 #include <util/render/render.h>
 
 #include <math/optimize/opt.h>
@@ -83,7 +78,6 @@
 #include <chemistry/molecule/formula.h>
 #include <chemistry/qc/wfn/wfn.h>
 
-// Force linkages:
 #include <util/group/linkage.h>
 #include <chemistry/qc/basis/linkage.h>
 #include <chemistry/qc/wfn/linkage.h>
@@ -92,28 +86,15 @@
 #include <chemistry/qc/etrain/linkage.h>
 #include <chemistry/qc/mbpt/linkage.h>
 #include <chemistry/qc/lmp2/linkage.h>
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12
-#  include <chemistry/qc/mbptr12/linkage.h>
-#endif
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CCR12
-#  include <chemistry/qc/ccr12/linkage.h>
-#endif
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS
-#  include <chemistry/qc/cints/linkage.h>
-#endif
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_LIBINT2
+#ifdef HAVE_LIBINT2
 #  include <chemistry/qc/libint2/linkage.h>
+#  include <chemistry/qc/mbptr12/linkage.h>
+#  include <chemistry/qc/ccr12/linkage.h>
+#  ifdef HAVE_PSI3
+#    include <chemistry/qc/psi/linkage.h>
+#  endif
 #endif
 #include <util/state/linkage.h>
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CC
-#  include <chemistry/qc/cc/linkage.h>
-#endif
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_PSI
-#  include <chemistry/qc/psi/linkage.h>
-#endif
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_CCA_INT
-#  include <chemistry/cca/int/linkage.h>
-#endif
 
 #ifdef HAVE_MPI
 #define OMPI_SKIP_MPICXX

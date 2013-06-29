@@ -343,6 +343,11 @@ MPQCInit::init_madness()
     madworld_ = madness::World::find_instance(SafeMPI::COMM_WORLD);
     mpqc_owns_madworld_ = false;
   }
+  // now make sure that MADNESS has initialized MPI with full thread safety ...
+  // if MPQC were using SafeMPI instead of MPI directly this would not be an issue
+  if (SafeMPI::Query_thread() != MPI_THREAD_MULTIPLE && madworld_->rank() != 1) {
+    throw FeatureNotImplemented("nproc>1, and MPQC cannot get along with MADNESS because MADNESS was not configured with --with-mpi-thread=multiple; reconfigure MADNESS", __FILE__, __LINE__);
+  }
 #endif
 }
 

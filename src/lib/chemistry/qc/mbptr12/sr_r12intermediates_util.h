@@ -438,6 +438,12 @@ namespace sc {
     else if (pkey.oper() == "hJ")
       operator_matrix = freg->get(ParsedOneBodyIntKey::key(bra_id, ket_id, "H"))
                       + freg->get(ParsedOneBodyIntKey::key(bra_id, ket_id, "J"));
+    else if (pkey.oper().find("mu_") == 0) {
+      // convert mu_ -> Mu_
+      std::string mu_oper_key = pkey.oper();
+      mu_oper_key[0] = 'M';
+      operator_matrix = freg->get(ParsedOneBodyIntKey::key(bra_id, ket_id, mu_oper_key));
+    }
     else if (pkey.oper() == "gamma")
       operator_matrix = this->rdm1(bra, ket);
     else if (pkey.oper() == "I") {

@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _chemistry_cca_int_cartit_h
-#define _chemistry_cca_int_cartit_h
+#ifndef _chemistry_qc_basis_cartit_h
+#define _chemistry_qc_basis_cartit_h
 
 #include <chemistry/qc/basis/cartiter.h>
 

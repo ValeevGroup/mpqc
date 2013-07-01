@@ -942,7 +942,6 @@ sub input_string() {
 	my $qcparse = $qcinput->{"parser"};
 
 	$use_r12ints = "none";
-	my $do_cca      = $qcparse->value("do_cca");
 
 	printf "molecule = %s\n", $qcparse->value("molecule") if ($debug);
 
@@ -979,21 +978,7 @@ sub input_string() {
 	$basis = "$basis\n)\n";
 
 	my $integrals = "";
-	if ($do_cca) {
-		$integrals = "% using cca integrals";
-		$integrals = "$integrals\nintegrals<IntegralCCA>: (";
-		my $int_package = $qcparse->value("default_package");
-		if (   $int_package ne "MPQC.IntV3EvaluatorFactory"
-			&& $int_package ne "MPQC.CintsEvaluatorFactory"
-			&& $int_package ne "MPQC.Libint2EvaluatorFactory" )
-		{
-			$int_package = "MPQC.IntV3EvaluatorFactory";
-		}
-		$integrals = "$integrals\n  default_subfactory = $int_package";
-		$integrals = "$integrals\n  molecule = \$:molecule";
-		$integrals = "$integrals\n)\n";
-	}
-
+	
 	my $fixed    = $qcparse->value_as_arrayref("fixed");
 	my $followed = $qcparse->value_as_arrayref("followed");
 	if ( scalar( @{$fixed} ) != 0 ) {
@@ -1085,10 +1070,6 @@ sub input_string() {
 	else {
 		$mole = "$mole\n  do_gradient = no";
 	}
-	if ($do_cca) {
-		$mole = "$mole\n  do_cca = yes";
-                $mole = "$mole\n  integrals = \$:integrals";
-	}
 	$mole = "$mole\n  % method for computing the molecule's energy";
 	$mole = "$mole\n  mole<$method>: (";
 	$mole = "$mole\n    molecule = \$:molecule";
@@ -1132,7 +1113,7 @@ sub input_string() {
 		my $r12theory  = $qcinput->r12theory();
 		$mole =
 		  append_r12technology( $qcinput, $mole, $auxbasis, $dfbasis, $stdapprox,
-			$corrfactor, $r12theory, $fzc, $do_cca );
+			$corrfactor, $r12theory, $fzc);
 
 		my $refmethod = "";
 		if ( $qcinput->mult() == 1 ) {
@@ -1158,7 +1139,7 @@ sub input_string() {
 	my $r12theory  = $qcinput->r12theory();
         $mole =
           append_r12technology( $qcinput, $mole, $auxbasis, $dfbasis, $stdapprox,
-            $corrfactor, $r12theory, $fzc, $do_cca );
+            $corrfactor, $r12theory, $fzc);
 
         my $psirefmethod = "";
         if ( $qcinput->mult() == 1 ) {
@@ -1197,8 +1178,7 @@ sub input_string() {
 			$socc,   "STO-3G"
 		);
 	}
-	elsif (!( $basis =~ /^STO/ || $basis =~ /^MI/ || $basis =~ /^\d-\d1G$/ )
-		&& !$do_cca )
+	elsif (!( $basis =~ /^STO/ || $basis =~ /^MI/ || $basis =~ /^\d-\d1G$/ ))
 	{
 		my $guessmethod = "${openmethod}HF";
 		$mole = "$mole\n    guess_wavefunction<$guessmethod>: (";
@@ -1213,9 +1193,6 @@ sub input_string() {
 		$mole = "$mole\n      )";
 		$mole = "$mole\n      memory = $memory";
 
-		if ($do_cca) {
-			$mole = "$mole\n      integrals = \$:integrals";
-		}
 		$mole = "$mole\n    )";
 	}
 	if ( $qcinput->frequencies() ) {
@@ -1284,17 +1261,7 @@ sub input_string() {
 	$mpqcstart = sprintf( "%s  restart = %s\n",
 		$mpqcstart, bool_to_yesno( $qcinput->restart() ) );
 	if ( $use_r12ints ne "none" ) {
-		if ($do_cca) {
-			$mpqcstart = "$mpqcstart  integrals = \$:integrals\n";
-		}
-		else {
-			if ( $use_r12ints eq "r12" ) {
-				$mpqcstart = "$mpqcstart  integrals<IntegralCints>: ()\n";
-			}
-			else {
-				$mpqcstart = "$mpqcstart  integrals<IntegralLibint2>: ()\n";
-			}
-		}
+	  $mpqcstart = "$mpqcstart  integrals<IntegralLibint2>: ()\n";
 	}
 	my $mpqcstop = ")\n";
 	my $emacs    = "% Emacs should use -*- KeyVal -*- mode\n";
@@ -1428,23 +1395,13 @@ sub append_r12technology {
     my $corrfactor    = shift;
     my $r12theory     = shift;
     my $fzc           = shift;
-    my $do_cca        = shift;
     
         my ($diag, $ri, $range, $coupling, $ebc) = parse_r12theory($r12theory);
 
 	$mole = sprintf "%s\n    stdapprox = \"%s\"\n    corr_factor = \"%s\"",
 	  $mole, $stdapprox, $corrfactor;
-	if ( $do_cca ne "yes" ) {
-		if ( $corrfactor eq "R12" ) {
-			$mole        = "$mole\n    integrals<IntegralCints>: ()";
-			$use_r12ints = "cints";
-		}
-		else {
-			$mole =
-			  "$mole\n    corr_param = $range\n    integrals<IntegralLibint2>: ()";
-			$use_r12ints = "libint2";
-		}
-	}
+	$mole = "$mole\n    corr_param = $range\n    integrals<IntegralLibint2>: ()";
+	$use_r12ints = "libint2";
 	$mole = "$mole\n    nfzc = $fzc";
 	$mole = "$mole\n    ansatz<R12Ansatz>: (diag=$diag)";
 	$mole = "$mole\n    ebc=$ebc";

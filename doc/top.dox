@@ -7,12 +7,14 @@ of parallel computer architectures. The MPQC program is implemented using the Sc
 The SC toolkit is a collection of C++ libraries that support
 general scientific computation. Included are classes for managing memory, saving
 and restoring the state of objects, reading objects from a structured-text input file,
-parallel communication, matrix algebra, among others.
+parallel communication, and matrix algebra, among others.
 
-MPQC and SC are research projects intended primarily for the use by
-expert computational scientists to develop
-new computational approaches to problems in computational science
-in general and, in particular, to quantum chemistry.
+MPQC and SC are ongoing research projects intended for the use by
+<ul>
+  <li> expert computational scientists to develop new computational approaches to problems
+  in computational science in general and, in particular, to quantum chemistry, and
+  <li> novice 
+</ul>
 
 <ul>
   <li> \ref overview

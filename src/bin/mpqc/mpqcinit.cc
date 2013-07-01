@@ -304,7 +304,6 @@ MPQCInit::init(const std::string &input_filename,
   Ref<KeyVal> keyval = init_keyval(grp,input_filename);
   init_threadgrp(keyval);
   init_memorygrp(keyval);
-  //init_cca();
   init_integrals(keyval);
   init_resources(keyval);
   init_timer(grp,keyval);

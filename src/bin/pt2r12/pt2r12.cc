@@ -29,10 +29,10 @@
 #include <extern_pt2r12.h>
 
 // Force linkages:
-#include <scdirlist.h>
+#include <scconfig.h>
 #include <util/group/linkage.h>
 #include <chemistry/qc/basis/linkage.h>
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_PSI
+#ifdef HAVE_PSI3
 #include <chemistry/qc/psi/linkage.h>
 #endif
 #include <chemistry/qc/wfn/linkage.h>

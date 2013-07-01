@@ -29,7 +29,7 @@
 
 // see libint2's configure for the hardwired values
 # if LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_STANDARD
-#  include <chemistry/cca/int/macros.h>
+#  include <chemistry/qc/basis/macros_cca.h>
 # elif LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_INTV3
 #  include <chemistry/qc/intv3/macros.h>
 # elif LIBINT2_CGSHELL_ORDERING == LIBINT2_CGSHELL_ORDERING_GAMESS

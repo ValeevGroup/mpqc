@@ -2226,6 +2226,8 @@ R12IntEval::compute()
         R12IntEval::contrib_to_VXB_c_ansatz1_();
       }
       else {
+        V_diag_ta();
+
         if (r12world()->spinadapted()) // to compute in spin-adapted fashion assume general reference
                                        // would be more efficient to have specialized single-determinant spin-adapted version, but not there yet
           contrib_to_VX_GenRefansatz2_spinfree_();

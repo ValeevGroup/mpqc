@@ -29,7 +29,7 @@
 #define _chemistry_qc_psi_linkage_h
 
 #include <stdio.h>
-#include <scdirlist.h>
+#include <scconfig.h>
 #include <chemistry/qc/psi/psiwfn.h>
 #include <chemistry/qc/psi/psicc.h>
 #include <chemistry/qc/psi/psici.h>
@@ -46,7 +46,7 @@ static ForceLink<PsiCCSD> psi_force_link_d_;
 static ForceLink<PsiCCSD_T> psi_force_link_e_;
 static ForceLink<PsiRASCI> psi_force_link_h_;
 static ForceLink<PsiRDMTwo> psi_force_link_j_;
-#if HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12
+#if HAVE_LIBINT2
   static ForceLink<PsiCC_PT2R12> psi_force_link_f_;
   static ForceLink<PsiCCSD_PT2R12T> psi_force_link_g_;
 #endif

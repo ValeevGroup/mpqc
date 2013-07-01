@@ -5,9 +5,6 @@
   <li> \ref compilepre   
   <li> \ref compilepreopt
   <li> \ref compileconf  
-  <ul>
-    <li> \ref compilecca
-  </ul>
   <li> \ref compilecomp
   <li> \ref compilecheck
 </ul>
@@ -131,12 +128,6 @@ features.
          (GPL) from <a
          href="http://www.chem.vt.edu/chem-dept/valeev/software/libint/libint.html">http://www.chem.vt.edu/chem-dept/valeev/software/libint/libint.html</a>.
 
-    <li> Cca-chem-generic (version 0.2.0 or higher, and associated CCA tools):
-         This package allows both stand-alone and embedded component applications  
-         to be formed using MPQC-based components.  Visit the
-         <a href="http://cca-forum.org/~cca-chem">CCA Chemistry Component Toolkit Homepage</a>
-         for information on the freely available source code.
-
 </ul>
 
 \section compileconf Configuration
@@ -209,9 +200,6 @@ Useful options to configure include:
   link with them instead of standard ``.a'' libraries.  This works on a
   Linux-ELF system.
 
-<dt><tt>--enable-components</tt><dd>This will generate CCA components and
-  enable embedded CCA frameworks within MPQC.
-
 <dt><tt>--with-build-id</tt><dd>This is used to generate unique shared
   library names and a unique default prefix for an MPQC installation.
   Unique shared library names must be used used by package distributors if
@@ -262,28 +250,12 @@ The default is 32 million bytes (roughly, 32 MB).
   should be sought.  For example,
   <tt>--with-libdirs=-L/usr/local/lib64</tt>.
 
-<dt><tt>--with-cca-chem-config</tt><dd>Specifies the config script for the
-  cca-chem-generic package (prerequisite for CCA components).
-
 </dl>
 
   If you would like to further customize your target directory,
 you can edit <tt>src/lib/scconfig.h</tt> and <tt>lib/LocalMakefile</tt> to
 suit your needs.  The next time you run configure, these files and
 all the makefiles will be overwritten.
-
-\subsection compilecca Notes on CCA Configuration
-
-<ul>
-  <li> Use the <tt>--enable-components</tt> flag to generate CCA components and enable 
-       embedded frameworks within MPQC.  
-  <li> The <tt>cca-chem-config</tt> script must be found in the user's path or 
-       specified using the <tt>--with-cca-chem-config</tt>.
-  <li> To fully support runtime configuration of component applications, 
-       compile using <tt>--enable-shared</tt>.
-  <li> Run <tt>make install_devel</tt> after compiling to install the <tt>sc-config</tt>
-       script (required by <tt>cca-chem-apps</tt>).
-</ul>
 
 \section compilecomp Compilation
 

@@ -176,10 +176,6 @@ try_main(int argc, char *argv[])
   options.enroll("i", GetLongOpt::NoValue, "convert simple to OO input", 0);
   options.enroll("d", GetLongOpt::NoValue, "debug", 0);
   options.enroll("h", GetLongOpt::NoValue, "print this message", 0);
-  options.enroll("cca-path", GetLongOpt::OptionalValue,
-                 "cca component path", "");
-  options.enroll("cca-load", GetLongOpt::OptionalValue,
-                 "cca components to load", "");
 
   MPQCInit init(options,argc,argv);
 
@@ -374,45 +370,6 @@ try_main(int argc, char *argv[])
        << " for distributed shared memory." << endl
        << indent
        << "Total number of processors = " << grp->n() * thread->nthread() << endl;
-
-#ifdef HAVE_CHEMISTRY_CCA
-  // initialize cca framework
-  KeyValValuestring emptystring("");
-  bool do_cca = keyval->booleanvalue("do_cca",falsevalue);
-
-  string cca_path(options.retrieve("cca-path"));
-  string cca_load(options.retrieve("cca-load"));
-  if(cca_path.size()==0)
-    cca_path = keyval->stringvalue("cca_path",emptystring);
-  if(cca_load.size()==0)
-    cca_load = keyval->stringvalue("cca_load",emptystring);
-
-  if( !do_cca && (cca_load.size() > 0 || cca_path.size() > 0) )
-    do_cca = true;
-
-  if(cca_path.size()==0) {
-    #ifdef CCA_PATH
-      cca_path = CCA_PATH;
-    #endif
-  }
-  if(cca_load.size()==0) {
-    cca_load += "Chemistry.IntegralSuperFactory:MPQC.IntV3EvaluatorFactory";
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS
-    cca_load += ":MPQC.CintsEvaluatorFactory";
-#endif
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_LIBINT2
-    cca_load += ":MPQC.Libint2EvaluatorFactory";
-#endif
-  }
-
-  if( cca_load.size() > 0 && cca_path.size() > 0 && do_cca ) {
-    string cca_args = "--path " + cca_path + " --load " + cca_load;
-    ExEnv::out0() << endl << indent << "Initializing CCA framework with args: "
-                  << endl << indent << cca_args << endl;
-    Ref<CCAFramework> mpqc_fw = new MPQC_CCAFramework(cca_args);
-    CCAEnv::init( mpqc_fw );
-  }
-#endif
 
   // now set up the debugger
   Ref<Debugger> debugger; debugger << keyval->describedclassvalue("debug");

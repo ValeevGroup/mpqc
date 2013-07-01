@@ -251,11 +251,6 @@ CONFIGURE_FILE(
 add_definitions(-DHAVE_CONFIG_H)
 
 CONFIGURE_FILE(
-  ${PROJECT_SOURCE_DIR}/src/lib/scdirlist.h.in
-  ${PROJECT_BINARY_DIR}/src/lib/scdirlist.h
-)
-
-CONFIGURE_FILE(
   ${PROJECT_SOURCE_DIR}/bin/mpqcrun.in
   ${PROJECT_BINARY_DIR}/bin/mpqcrun
   @ONLY

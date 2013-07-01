@@ -33,6 +33,7 @@ extern "C" {
 
 #include <iostream>
 
+#include <util/class/proxy.h>
 #include <util/misc/formio.h>
 #include <util/keyval/keyval.h>
 
@@ -282,6 +283,42 @@ Ref<DescribedClass>
 KeyVal::describedclassvalue(const char*key,const KeyValValue& def)
 {
   return key_describedclassvalue(key,def);
+}
+
+const char*
+KeyVal::classname(const char * key)
+{
+  return 0;
+}
+
+Ref<DescribedClass>
+KeyVal::describedclass(const char* classname)
+{
+  const ClassDesc* cd = ClassDesc::name_to_class_desc(classname);
+  if (!cd) {
+      ClassDesc::load_class(classname);
+      cd = ClassDesc::name_to_class_desc(classname);
+
+      if (cd == 0) {
+        std::ostringstream oss;
+        oss << "KeyVal::describedclass is asked to construct an object of unknown type \"" << classname << "\"";
+        throw InputError(oss.str().c_str(),
+                         __FILE__, __LINE__, '\0', 0);
+      }
+    }
+  // the original error status must be saved
+  KeyValError original_error = error();
+  Ref<DescribedClass> newdc(cd->create(this));
+  if (newdc.nonnull()) {
+    DescribedClassProxy *proxy
+    = dynamic_cast<DescribedClassProxy*>(newdc.pointer());
+    if (proxy) {
+      newdc = proxy->object();
+    }
+  }
+  seterror(original_error);
+
+  return newdc;
 }
 
 static void getnewkey(char*newkey,const char*key,int n1)

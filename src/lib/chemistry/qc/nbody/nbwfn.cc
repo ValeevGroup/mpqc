@@ -52,22 +52,21 @@ ManyBodyWavefunction::ManyBodyWavefunction(const Ref<KeyVal>& keyval) : Wavefunc
 
   // tell reference to live in my world, unless user said otherwise (probably a bad idea)
   if (not keyval->exists("reference:world")) {
-      throw InputError("code block disabled", __FILE__, __LINE__); 
-    // Ref<KeyVal> ref_kv = new PrefixKeyVal(keyval, "reference");
-    // if (ref_kv.null())
-    //   throw InputError("ManyBodyWavefunction::ManyBodyWavefunction -- reference keyword missing",
-    //                    __FILE__, __LINE__, "reference", "0", this->class_desc());
+    Ref<KeyVal> ref_kv = new PrefixKeyVal(keyval, "reference");
+    if (ref_kv.null())
+      throw InputError("ManyBodyWavefunction::ManyBodyWavefunction -- reference keyword missing",
+                       __FILE__, __LINE__, "reference", "0", this->class_desc());
 
-    // const char* ref_classname = keyval->classname("reference");
-    // if (ref_classname == 0)
-    //   throw InputError("ManyBodyWavefunction::ManyBodyWavefunction -- invalid reference specification",
-    //                    __FILE__, __LINE__, "reference", "0");
+    const char* ref_classname = keyval->classname("reference");
+    if (ref_classname == 0)
+      throw InputError("ManyBodyWavefunction::ManyBodyWavefunction -- invalid reference specification",
+                       __FILE__, __LINE__, "reference", "0");
 
-    // Ref<AssignedKeyVal> akv = new AssignedKeyVal;
-    // akv->assign("world", world_.pointer());
-    // Ref<KeyVal> newref_kv = new AggregateKeyVal(akv, ref_kv);
+    Ref<AssignedKeyVal> akv = new AssignedKeyVal;
+    akv->assign("world", world_.pointer());
+    Ref<KeyVal> newref_kv = new AggregateKeyVal(akv, ref_kv);
 
-    // refwfn_ << newref_kv->describedclass(ref_classname);
+    refwfn_ << newref_kv->describedclass(ref_classname);
   }
   else
     refwfn_ << keyval->describedclassvalue("reference", KeyValValueRefDescribedClass(0));

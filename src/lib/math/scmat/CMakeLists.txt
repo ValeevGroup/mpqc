@@ -55,8 +55,8 @@ add_test(disttest disttest)
 
 set_property(SOURCE localtest.cc PROPERTY COMPILE_DEFINITIONS
     -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-add_executable(localtest EXCLUDE_FROM_ALL localtest.cc $<TARGET_OBJECTS:scmat>)
-add_test(localtest localtest)
+add_executable(scmath/localtest EXCLUDE_FROM_ALL localtest.cc $<TARGET_OBJECTS:scmat>)
+add_test(localtest scmat/localtest)
 
 set_property(SOURCE matrixtest.cc PROPERTY COMPILE_DEFINITIONS
     -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")

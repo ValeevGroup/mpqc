@@ -134,7 +134,7 @@ class KeyVal: public RefCount {
         counted. */
     int    count(const char* =0);
     /// Return the value associated with the keyword.
-    Ref<KeyValValue> value(const char* = 0,
+    Ref<KeyValValue> value(const char* key = 0,
                          const KeyValValue& def=KeyValValue());
     /// Returns the boolean value (0 = false, 1 = true) of key.
     int    booleanvalue(const char* key = 0,
@@ -168,6 +168,15 @@ class KeyVal: public RefCount {
     /// Returns a reference to an object of type DescribedClass.
     Ref<DescribedClass> describedclassvalue(const char* key = 0,
                      const KeyValValue& def=KeyValValueRefDescribedClass());
+    /** Returns the name of the exact class of the object at the keyword.
+        If no classname is assigned, or this KeyVal does not support classes,
+        then 0 is returned. */
+    virtual const char* classname(const char*);
+
+    /// Returns a reference to an object of type DescribedClass using the top level keywords of this KeyVal
+    /// @param[in] classname specifies the class name, must be derived from DescribedClass
+    /// @return Ref<> to the object, null if constructor not successful
+    virtual Ref<DescribedClass> describedclass(const char* classname);
 
     /** @name Reading Vectors.
         These members correspond to the above members, but take
@@ -356,6 +365,8 @@ class AssignedKeyVal: public KeyVal {
     void assign(const char* key, const Ref<DescribedClass>& val);
     //@}
 
+    const char* classname(const char*);
+
     /// Erase all of the stored assignments.
     void clear();
 
@@ -441,6 +452,8 @@ class AggregateKeyVal : public KeyVal {
                     const Ref<KeyVal>& keyval3, const Ref<KeyVal>& keyval4);
     //@}
     ~AggregateKeyVal();
+
+    const char* classname(const char*);
     void errortrace(std::ostream&fp=ExEnv::err0());
     void dump(std::ostream&fp=ExEnv::err0());
 };
@@ -514,6 +527,8 @@ class PrefixKeyVal : public KeyVal {
     PrefixKeyVal(const Ref<KeyVal>&,const char*prefix,int i,int j,int k,int l);
     //@}
     ~PrefixKeyVal();
+
+    const char* classname(const char*);
     void errortrace(std::ostream&fp=ExEnv::err0());
     void dump(std::ostream&fp=ExEnv::err0());
 };

@@ -4,8 +4,8 @@ PREFIX := $(PWD)
 
 all: cmake
 
-wget := $(shell wget 2>/dev/null)
-curl := $(shell curl 2>/dev/null)
+wget := $(shell which wget 2>/dev/null)
+curl := $(shell which curl 2>/dev/null)
 
 ifneq  ($(wget), )
 download := wget $(URL) -O $(CMAKE).tar.gz

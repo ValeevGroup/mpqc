@@ -178,7 +178,7 @@ MPIMessageGrp::init(MPI_Comm comm, int *argc, char ***argv)
           ExEnv::outn() << endl;
         }
 #ifdef HAVE_MPI_INIT_THREAD
-      int provided, desired = SC_MPI_THREAD_LEVEL;
+      int provided, desired = MPQC_MPI_THREAD_LEVEL;
       MPI_Init_thread(inits_argc, inits_argv, desired, &provided);
       int me;
       MPI_Comm_rank(MPI_COMM_WORLD, &me);

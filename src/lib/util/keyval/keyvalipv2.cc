@@ -25,7 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -92,15 +92,15 @@ nfp(0)
 
   std::string directory = keyval->stringvalue(dirspec);
   if (directory.empty()) {
-      directory = ExEnv::getenv_string("SCLIBDIR");
+      directory = ExEnv::getenv_string("MPQC_DATA_PATH");
       if (directory.empty()) {
           struct stat sb;
-          const char *dir = INSTALLED_SCLIBDIR;
-#ifdef SRC_SCLIBDIR
+          const char *dir = INSTALLED_MPQC_DATA_PATH;
+#ifdef SRC_MPQC_DATA_PATH
           if (stat(dir, &sb) != 0) {
               ExEnv::out0() << indent << "WARNING: could not find "
                    << dir << endl;
-              dir = SRC_SCLIBDIR;
+              dir = SRC_MPQC_DATA_PATH;
             }
 #endif
           directory = dir;
@@ -137,15 +137,15 @@ ParsedKeyVal::cat_files(const char* keyprefix, const Ref<KeyVal>& keyval,
 
   std::string directory = keyval->stringvalue(dirspec.c_str());
   if (directory.empty()) {
-      directory = ExEnv::getenv_string("SCLIBDIR");
+      directory = ExEnv::getenv_string("MPQC_DATA_PATH");
       if (directory.empty()) {
           struct stat sb;
-          const char *dir = INSTALLED_SCLIBDIR;
-#ifdef SRC_SCLIBDIR
+          const char *dir = INSTALLED_MPQC_DATA_PATH;
+#ifdef SRC_MPQC_DATA_PATH
           if (stat(dir, &sb) != 0) {
               ExEnv::out0() << indent << "WARNING: could not find "
                    << dir << endl;
-              dir = SRC_SCLIBDIR;
+              dir = SRC_MPQC_DATA_PATH;
             }
 #endif
           directory = dir;

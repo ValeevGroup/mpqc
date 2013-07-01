@@ -7,7 +7,7 @@ includedir=""
 LIBSUF=@LIBSUF@
 exec_prefix_set=no
 libs="@MPQC_LINK_LIBRARIES@"
-sclibs="-lmpqcinit -lchemistry -lmath -lutil -lchemistry -lmath -lutil"
+mpqclibs="-lmpqcinit -lchemistry -lmath -lutil -lchemistry -lmath -lutil"
 cppdefines="@DEFS@ @EXTRADEFINES@"
 cxxflags="@CMAKE_CXX_FLAGS@"
 cppflags="@MPQC_CPP_FLAGS@" 
@@ -16,15 +16,15 @@ f77flags="@CMAKE_Fortran_FLAGS@"
 cxx="@CMAKE_CXX_COMPILER@"
 cc="@CMAKE_C_COMPILER@"
 f77="@CMAKE_Fortran_COMPILER@"
-version="@SC_VERSION@"
-soversion="@SC_SO_VERSION@"
+version="@MPQC_VERSION@"
+soversion="@MPQC_SO_VERSION@"
 buildid="@BUILDID@"
 datarootdir=@CMAKE_INSTALL_FULL_DATAROOTDIR@
 scdatadir=@CMAKE_INSTALL_FULL_DATADIR@
 enableshared=@ENABLESHARED@
 
 usage="\
-Usage: sc-config [--prefix[=DIR]] [--exec-prefix[=DIR]] [--version] [--buildid] [--so-version] [--datadir] [--libs] [--libdir] [--cppflags] [--cc] [--cflags] [--cxx] [--cxxflags] [--f77] [--f77flags]"
+Usage: mpqc-config [--prefix[=DIR]] [--exec-prefix[=DIR]] [--version] [--buildid] [--so-version] [--datadir] [--libs] [--libdir] [--cppflags] [--cc] [--cflags] [--cxx] [--cxxflags] [--f77] [--f77flags]"
 
 if test $# -eq 0; then
       echo "${usage}" 1>&2
@@ -91,7 +91,7 @@ while test $# -gt 0; do
       echo $libdir
       ;;
     --libs)
-      echo -L${libdir} $sclibs $libs
+      echo -L${libdir} $mpqclibs $libs
       ;;
     *)
       echo "${usage}" 1>&2

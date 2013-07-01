@@ -26,10 +26,10 @@
 //
 
 #ifdef HAVE_CONFIG_H
-#include <scconfig.h>
+#include <mpqc_config.h>
 #endif
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <util/misc/scexception.h>
 #include <util/misc/formio.h>
 #include <util/misc/consumableresources.h>

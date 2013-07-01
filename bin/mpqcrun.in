@@ -4,8 +4,7 @@
 
 $prefix = '@CMAKE_INSTALL_PREFIX@';
 $bindir = "@CMAKE_INSTALL_FULL_BINDIR@";
-$datarootdir = "@CMAKE_INSTALL_FULL_DATAROOTDIR@";
-$scdatadir = "@SCDATADIR@";
+$scdatadir = "@MPQCDATAPATH@";
 
 use POSIX;
 use Sys::Hostname;
@@ -455,7 +454,7 @@ if ($diskpath ne "default" || $disksize ne "default") {
   $resource_str .= "disk = [\"$diskpath\" \"$disksize\"]";
 }
 if ($have_resource) {
-  $ENV{"SC_RESOURCES"} = "<ConsumableResources>:( $resource_str )";
+  $ENV{"MPQC_RESOURCES"} = "<ConsumableResources>:( $resource_str )";
 }
 
 ######################################################################
@@ -511,8 +510,9 @@ foreach my $i (0..$maxjobs-1) {
 printenvvar("MESSAGEGRP");
 printenvvar("THREADGRP");
 printenvvar("MEMORYGRP");
-printenvvar("SCLIBDIR");
+printenvvar("MPQC_DATA_PATH");
 printenvvar("INTEGRAL");
+printenvvar("MPQC_RESOURCES");
 
 $thecount = 0;
 $n = 0;

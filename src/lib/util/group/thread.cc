@@ -34,7 +34,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 #ifdef HAVE_PTHREAD
 #  include <util/group/thpthd.h>
 #endif

@@ -108,7 +108,7 @@ This can also be done by defining REF_OPTIMIZE.
   An include file can be used to set these options as well.  This has
 the advantage that dependency checking will force an automatic
 recompile of all affected files if the options change.  This is done
-in the file scconfig.h, which is produced by the automated configuration
+in the file mpqc_config.h, which is produced by the automated configuration
 procedure.
 
   Note that all source code that uses references must be compiled with

@@ -2,7 +2,7 @@
 #ifndef _chemistry_qc_lcao_hsoshfcontrib_h
 #define _chemistry_qc_lcao_hsoshfcontrib_h
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <util/misc/exenv.h>
 #include <chemistry/qc/lcao/fockbuild.h>
 

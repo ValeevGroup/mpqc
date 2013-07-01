@@ -10,7 +10,7 @@
 #ifndef util_misc_scint_h
 #define util_misc_scint_h
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 
 #if HAVE_STDINT_H
 

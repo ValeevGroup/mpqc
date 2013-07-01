@@ -29,7 +29,7 @@
 
 #include <stdexcept>
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <util/misc/scint.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/basis/petite.h>

@@ -1,5 +1,5 @@
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <sstream>
 #include <stdlib.h>
 #include <stdexcept>

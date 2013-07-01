@@ -1,5 +1,5 @@
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <util/misc/exenv.h>
 
 #undef SCF_CHECK_BOUNDS

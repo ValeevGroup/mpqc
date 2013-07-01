@@ -30,7 +30,7 @@
 
 #include <iostream>
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <util/class/class.h>
 #include <util/group/thread.h>
 

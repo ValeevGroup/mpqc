@@ -10,11 +10,8 @@ and restoring the state of objects, reading objects from a structured-text input
 parallel communication, and matrix algebra, among others.
 
 MPQC and SC are ongoing research projects intended for the use by
-<ul>
-  <li> expert computational scientists to develop new computational approaches to problems
-  in computational science in general and, in particular, to quantum chemistry, and
-  <li> novice 
-</ul>
+expert computational scientists to develop new computational approaches to problems
+in computational science in general and, in particular, to electronic structure theory.
 
 <ul>
   <li> \ref overview
@@ -29,7 +26,7 @@ MPQC and SC are ongoing research projects intended for the use by
   <li> \ref scpr
   <li> \ref scls
   <li> \ref molrender
-  <li> \ref sc-config
+  <li> \ref mpqc-config
   <li> \ref sc-libtool
   <li> \ref sc-mkf77sym
 </ul>

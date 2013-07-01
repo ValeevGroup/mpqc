@@ -29,7 +29,7 @@
 #pragma implementation
 #endif
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <chemistry/qc/lcao/soad.h>
 #include <chemistry/qc/wfn/femo.h>
 #include <chemistry/qc/basis/split.h>

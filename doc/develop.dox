@@ -1,11 +1,11 @@
 
-/** \page develop Developing Code Using SC
+/** \page develop Developing Code Using MPQC
 
-In addition to the executables, the Scientific Computing toolkit libraries
+In addition to the executables, the MPQC toolkit libraries
 and include files can be installed on your machine.  This is described in
 the \ref compile section of this manual.
 
-The <tt>sc-config</tt> program can be use to obtain the compilers, compiler
+The <tt>mpqc-config</tt> program can be use to obtain the compilers, compiler
 options, and libraries needed to use the SC toolkit from your program.
 This utility is discussed below, along with how the SC toolkit must be
 initialized in your <tt>main</tt> subroutine.
@@ -19,12 +19,12 @@ initialized in your <tt>main</tt> subroutine.
   <li> \ref devcheck
 </ul>
 
-\section scconfig The sc-config Program
+\section scconfig The mpqc-config Program
 
-The sc-config program returns information about how SC was compiled
-and installed.  See \ref sc-config for more information.                        
+The mpqc-config program returns information about how SC was compiled
+and installed.  See \ref mpqc-config for more information.                        
 
-\section scinit Initializing SC
+\section scinit Initializing MPQC
 
 A variety of initializations must be done when a program using the
 MPQC classes is started. This includes finding out what sc::MessageGrp
@@ -90,7 +90,7 @@ available for use, see the \ref devsampmp2mak section.
 
 This example Makefile demonstrates how to link in a new class to
 form a new mpqc executable, here named mp2.  The code is given in
-the \ref devsampmp2src section.  The \ref scconfig "sc-config command"
+the \ref devsampmp2src section.  The \ref scconfig "mpqc-config command"
 is used to obtain information about how the SC toolkit
 was compiled and installed.  The library specified with -lmpqc
 provides the main routine from mpqc.
@@ -131,7 +131,7 @@ here in its entirety.
 \subsection devsamphfmak HF Implementation Example: Makefile
 
 This example Makefile will build an executable named hf.
-The \ref scconfig "sc-config command"
+The \ref scconfig "mpqc-config command"
 is used to obtain information about how the SC toolkit
 was compiled and installed.  The library specified with -lmpqcinit
 provides the initialization routines from mpqc.

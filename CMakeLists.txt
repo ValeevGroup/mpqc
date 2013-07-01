@@ -128,13 +128,13 @@ endif()
 
 
 set(TARGET_ARCH "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
-set(SC_MAJOR_VERSION 3)
-set(SC_MINOR_VERSION 0)
-set(SC_MICRO_VERSION 0)
-set(SC_BUILDID alpha)
+set(MPQC_MAJOR_VERSION 3)
+set(MPQC_MINOR_VERSION 0)
+set(MPQC_MICRO_VERSION 0)
+set(MPQC_BUILDID alpha)
 
-set(SC_VERSION "${SC_MAJOR_VERSION}.${SC_MINOR_VERSION}.${SC_MICRO_VERSION}")
-set(SC_VERSION "${SC_VERSION}-${SC_BUILDID}")
+set(MPQC_VERSION "${MPQC_MAJOR_VERSION}.${MPQC_MINOR_VERSION}.${MPQC_MICRO_VERSION}")
+set(MPQC_VERSION "${MPQC_VERSION}-${MPQC_BUILDID}")
 
 check_include_files(stdint.h HAVE_STDINT_H)
 check_include_files(dlfcn.h HAVE_DLFCN_H)
@@ -215,12 +215,12 @@ endforeach()
 
 include(GNUInstallDirs)           
 
-set(SRC_SCLIBDIR ${PROJECT_SOURCE_DIR}/src/lib)
-set(SCDATADIR ${CMAKE_INSTALL_FULL_DATAROOTDIR}/mpqc/${SC_VERSION})
-set(INSTALLED_SCLIBDIR ${CMAKE_INSTALL_FULL_LIBDIR})
+set(SRC_MPQC_DATA_PATH ${PROJECT_SOURCE_DIR}/lib)
+set(MPQCDATAPATH ${CMAKE_INSTALL_FULL_DATAROOTDIR}/mpqc/${MPQC_VERSION})
+set(INSTALLED_MPQC_DATA_PATH ${CMAKE_INSTALL_FULL_DATAROOTDIR}/mpqc/${MPQC_VERSION})
 
-INSTALL(FILES ./lib/atominfo.kv DESTINATION ${SCDATADIR})
-INSTALL(DIRECTORY ./lib/basis DESTINATION ${SCDATADIR})
+INSTALL(FILES ./lib/atominfo.kv DESTINATION ${MPQCDATAPATH})
+INSTALL(DIRECTORY ./lib/basis DESTINATION ${MPQCDATAPATH})
 
 include_directories("${PROJECT_BINARY_DIR}/src/lib")
 include_directories("${PROJECT_SOURCE_DIR}/src/lib")
@@ -245,8 +245,8 @@ endif()
 include(external/External)
 
 CONFIGURE_FILE(
-  ${PROJECT_SOURCE_DIR}/src/lib/scconfig.h.in
-  ${PROJECT_BINARY_DIR}/src/lib/scconfig.h
+  ${PROJECT_SOURCE_DIR}/src/lib/mpqc_config.h.in
+  ${PROJECT_BINARY_DIR}/src/lib/mpqc_config.h
 )
 add_definitions(-DHAVE_CONFIG_H)
 
@@ -331,9 +331,9 @@ endforeach()
 #message(STATUS "MPQC_CPP_FLAGS = ${MPQC_CPP_FLAGS}")
 
 CONFIGURE_FILE(
-  ${PROJECT_SOURCE_DIR}/bin/sc-config.in
-  ${PROJECT_BINARY_DIR}/bin/sc-config
+  ${PROJECT_SOURCE_DIR}/bin/mpqc-config.in
+  ${PROJECT_BINARY_DIR}/bin/mpqc-config
   @ONLY
 )
 
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/bin/sc-config DESTINATION bin)
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/bin/mpqc-config DESTINATION bin)

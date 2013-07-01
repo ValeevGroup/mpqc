@@ -253,7 +253,7 @@ The default is 32 million bytes (roughly, 32 MB).
 </dl>
 
   If you would like to further customize your target directory,
-you can edit <tt>src/lib/scconfig.h</tt> and <tt>lib/LocalMakefile</tt> to
+you can edit <tt>src/lib/mpqc_config.h</tt> and <tt>lib/LocalMakefile</tt> to
 suit your needs.  The next time you run configure, these files and
 all the makefiles will be overwritten.
 

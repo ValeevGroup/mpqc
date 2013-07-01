@@ -29,7 +29,7 @@
 #define _util_container_eavlmmap_h
 
 #ifdef HAVE_CONFIG_H
-#  include <scconfig.h>
+#  include <mpqc_config.h>
 #endif
 #include <iostream>
 #include <util/misc/exenv.h>

@@ -29,7 +29,7 @@
 #define _util_group_linkage_h
 
 #ifdef HAVE_CONFIG_H
-#include <scconfig.h>
+#include <mpqc_config.h>
 #endif
 
 #include <util/group/memproc.h>

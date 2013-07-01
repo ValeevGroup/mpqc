@@ -32,7 +32,7 @@
 #endif
 
 #ifdef HAVE_CONFIG_H
-#include <scconfig.h>
+#include <mpqc_config.h>
 #endif
 
 #ifdef HAVE_TIME_H
@@ -47,7 +47,7 @@
 #include <fstream>
 #include <libgen.h>
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <sstream>
 
 #include "mpqcinit.h"
@@ -190,7 +190,7 @@ try_main(int argc, char *argv[])
 
   if (options.retrieve("h")) {
     ExEnv::out0()
-         << indent << "MPQC version " << SC_VERSION << endl
+         << indent << "MPQC version " << MPQC_VERSION << endl
          << indent << "compiled for " << TARGET_ARCH << endl
          << SCFormIO::copyright << endl;
     options.usage(ExEnv::out0());
@@ -199,7 +199,7 @@ try_main(int argc, char *argv[])
 
   if (options.retrieve("v")) {
     ExEnv::out0()
-         << indent << "MPQC version " << SC_VERSION << endl
+         << indent << "MPQC version " << MPQC_VERSION << endl
          << indent << "compiled for " << TARGET_ARCH << endl
          << SCFormIO::copyright;
     exit(0);
@@ -207,7 +207,7 @@ try_main(int argc, char *argv[])
 
   if (options.retrieve("w")) {
     ExEnv::out0()
-         << indent << "MPQC version " << SC_VERSION << endl
+         << indent << "MPQC version " << MPQC_VERSION << endl
          << indent << "compiled for " << TARGET_ARCH << endl
          << SCFormIO::copyright << endl
          << SCFormIO::warranty;
@@ -216,7 +216,7 @@ try_main(int argc, char *argv[])
 
   if (options.retrieve("L")) {
     ExEnv::out0()
-         << indent << "MPQC version " << SC_VERSION << endl
+         << indent << "MPQC version " << MPQC_VERSION << endl
          << indent << "compiled for " << TARGET_ARCH << endl
          << SCFormIO::copyright << endl
          << SCFormIO::license;
@@ -330,7 +330,7 @@ try_main(int argc, char *argv[])
   // announce ourselves
   const char title1[] = "MPQC: Massively Parallel Quantum Chemistry";
   int ntitle1 = sizeof(title1);
-  const char title2[] = "Version " SC_VERSION;
+  const char title2[] = "Version " MPQC_VERSION;
   int ntitle2 = sizeof(title2);
   ExEnv::out0() << endl;
   ExEnv::out0() << indent;

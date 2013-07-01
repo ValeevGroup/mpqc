@@ -1,7 +1,7 @@
 #ifndef _chemistry_qc_oint3_build_h
 #define _chemistry_qc_oint3_build_h
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <chemistry/qc/intv3/array.h>
 
 namespace sc {

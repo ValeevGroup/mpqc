@@ -30,7 +30,7 @@
 
 #include <stdlib.h>
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 
 #include <iostream>
 

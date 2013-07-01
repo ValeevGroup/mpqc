@@ -4,7 +4,7 @@
 #ifndef _util_container_stdarray_h
 #define _util_container_stdarray_h
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 
 #ifdef HAVE_STD_ARRAY
 #include <array>

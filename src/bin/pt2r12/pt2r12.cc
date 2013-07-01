@@ -29,7 +29,7 @@
 #include <extern_pt2r12.h>
 
 // Force linkages:
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <util/group/linkage.h>
 #include <chemistry/qc/basis/linkage.h>
 #ifdef HAVE_PSI3

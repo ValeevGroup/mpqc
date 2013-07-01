@@ -1,5 +1,5 @@
 #include <math/scmat/f77sym.h>
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <stdint.h>
 #if defined(BLAS_F77_INTEGER_WIDTH) && BLAS_F77_INTEGER_WIDTH == 8
   typedef int64_t blas_f77_integer_t;

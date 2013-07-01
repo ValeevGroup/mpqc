@@ -28,7 +28,7 @@
 #include <stdio.h>
 #include <stdexcept>
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <sstream>
 #include <algorithm>
 #include <numeric>

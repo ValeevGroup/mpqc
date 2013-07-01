@@ -28,7 +28,7 @@
 #ifndef _chemistry_qc_scf_linkage_h
 #define _chemistry_qc_scf_linkage_h
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 
 #include <chemistry/qc/scf/clhf.h>
 #include <chemistry/qc/scf/fbclhf.h>

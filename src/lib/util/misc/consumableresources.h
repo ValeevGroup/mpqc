@@ -97,7 +97,7 @@ namespace sc {
       const std::string& disk_location() const;
 
       /** Create a ConsumableResources object.  This routine looks for a -resource
-          argument, then the environmental variable SC_RESOURCES.
+          argument, then the environmental variable MPQC_RESOURCES.
           The argument to -resources should be a string for the KeyVal constructor. */
       static Ref<ConsumableResources> initial_instance(int &argc, char **argv);
       /// Specifies a new default ConsumableResources

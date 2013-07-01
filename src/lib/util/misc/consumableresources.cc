@@ -166,9 +166,9 @@ ConsumableResources::initial_instance(int& argc, char ** argv)
 
   if (!keyval_string) {
     // find out if the environment gives the resources
-    keyval_string = getenv("SC_RESOURCES");
+    keyval_string = getenv("MPQC_RESOURCES");
     if (keyval_string) {
-      if (!strncmp("SC_RESOURCES=", keyval_string, 13)) {
+      if (!strncmp("MPQC_RESOURCES=", keyval_string, 13)) {
         keyval_string = strchr(keyval_string, '=');
       }
       if (*keyval_string == '=') keyval_string++;

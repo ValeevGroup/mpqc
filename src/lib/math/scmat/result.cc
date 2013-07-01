@@ -26,7 +26,7 @@
 //
 
 #ifdef HAVE_CONFIG_H
-#include <scconfig.h>
+#include <mpqc_config.h>
 #endif
 #include <math/scmat/result.h>
 #include <util/state/state.h>

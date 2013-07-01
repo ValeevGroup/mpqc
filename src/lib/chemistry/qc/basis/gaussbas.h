@@ -292,12 +292,12 @@ class GaussianBasisSet: virtual public SavableState
         the basis set name to a file name (see the note below for the rules
         of this conversion) and check first in the directory
         given by basisdir.  Next it checks for the environment variable
-        SCLIBDIR.  If it is set it will look for the basis file in
-        $SCLIBDIR/basis.  Otherwise it will look in the source code
+        MPQC_DATA_PATH.  If it is set it will look for the basis file in
+        $MPQC_DATA_PATH/basis.  Otherwise it will look in the source code
         distribution in the directory SC/lib/basis.  If the executable has
         changed machines or the source code has be moved, then it may be
         necessary to copy the library files to your machine and set the
-        SCLIBDIR environmental variable.
+        MPQC_DATA_PATH environmental variable.
 
         <b>Note</b>: translation of a basis name to a file name will convert
         upper-case letters(A-Z) to the lower-case letters,

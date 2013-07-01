@@ -30,7 +30,7 @@
 #include <iostream>
 #include <fstream>
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 
 #ifdef HAVE_PWD_H
 #include <pwd.h>

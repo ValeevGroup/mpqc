@@ -1,5 +1,5 @@
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <util/container/carray.h>
 
 #ifdef EXPLICIT_TEMPLATE_INSTANTIATION

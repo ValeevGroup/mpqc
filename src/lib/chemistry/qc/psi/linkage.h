@@ -29,7 +29,7 @@
 #define _chemistry_qc_psi_linkage_h
 
 #include <stdio.h>
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <chemistry/qc/psi/psiwfn.h>
 #include <chemistry/qc/psi/psicc.h>
 #include <chemistry/qc/psi/psici.h>

@@ -4,7 +4,7 @@
 
 #include <sstream>
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 
 #ifdef HAVE_SYS_RESOURCE_H
 #  include <sys/resource.h>

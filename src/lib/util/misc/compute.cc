@@ -28,7 +28,7 @@
 #include <math.h>
 #include <float.h>
 #ifdef HAVE_CONFIG_H
-#include <scconfig.h>
+#include <mpqc_config.h>
 #endif
 #include <util/misc/scexception.h>
 #include <util/misc/formio.h>

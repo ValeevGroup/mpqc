@@ -1,5 +1,5 @@
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <util/group/pregtime.h>
 #include <util/misc/exenv.h>
 #if defined(HAVE_MPI)

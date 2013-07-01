@@ -233,36 +233,19 @@
 /* Define if you have the <armci.h> header file and library.  */
 #cmakedefine HAVE_ARMCI
 
-/* Define if you have the libint header file and library.  */
-#cmakedefine HAVE_LIBINT
-
-/* Define if you have the libr12 header file and library.  */
-#cmakedefine HAVE_LIBR12
-
-/* Define if you have the libderiv header file and library.  */
-#cmakedefine HAVE_LIBDERIV
-
-/* Define if IntegralCints can be compiled.  */
-#cmakedefine HAVE_INTEGRALCINTS
-
 /* Define if you have the libint2 header file and library.  */
 #cmakedefine HAVE_LIBINT2
-
-/* Define if IntegralLibint2 can be compiled.  */
-#cmakedefine HAVE_INTEGRALLIBINT2
 
 /* Define what is the normalization convention of IntegralLibint2, 1(cca) or 2(exact).  */
 #cmakedefine INTEGRALLIBINT2_NORMCONV
 #define INTEGRALLIBINT2_NORMCONV_CCA 1
 #define INTEGRALLIBINT2_NORMCONV_EXACT 2
 
+/* Define if MADNESS is available.  */
 #cmakedefine HAVE_MADNESS
 
-/* Define if you have the libpsio header file and library.  */
-#cmakedefine HAVE_LIBPSIO
-
-/* Define if you have the libchkpt header file and library.  */
-#cmakedefine HAVE_LIBCHKPT
+/* Define if TiledArray is available.  */
+#cmakedefine HAVE_TILEDARRAY
 
 /* Define if Psi-MPQC interface can be compiled.  */
 #cmakedefine HAVE_PSIMPQCIFACE
@@ -414,6 +397,11 @@
 
 /* define if SC is using <type_traits>. */
 #cmakedefine SC_USE_TYPE_TRAITS
+
+/* Define if "new" MPQC3 feature set is supported.  */
+#if defined(HAVE_TILEDARRAY) && defined(HAVE_LIBINT2)
+#  define HAVE_MPQC3_RUNTIME
+#endif
 
 #endif /* SCCONFIG_H */
 

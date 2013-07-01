@@ -414,13 +414,13 @@ DistArray4_Node0File::retrieve_pair_subblock(int i, int j, tbint_type oper_type,
 {
   assert(this->active());  //make sure we are active
   static ScratchBuffer<char> scratch;
-  Ref<ThreadLock> scratch_lock = ThreadGrp::get_default_threadgrp()->new_lock();
+  static Ref<ThreadLock> read_lock = ThreadGrp::get_default_threadgrp()->new_lock();
 
-  const bool contiguous = (ystart == 0) && (yfence == ny());
   const int xsize = xfence - xstart;
   const int ysize = yfence - ystart;
   const int xysize = xsize * ysize;
   const int bufsize = xysize * sizeof(double);
+  const bool contiguous = (ysize == ny()) || (xsize == 1);
 
   // Can read blocks?
   if (!is_avail(i, j))
@@ -436,10 +436,12 @@ DistArray4_Node0File::retrieve_pair_subblock(int i, int j, tbint_type oper_type,
 
     off_t offset = pb->offset_ + (off_t)oper_type*blksize() +
                    (off_t)(xstart*ny() + ystart)*sizeof(double);
+    read_lock->lock();
     off_t result_offset = lseek(datafile_, offset, SEEK_SET);
     if (offset == (off_t)-1 || result_offset != offset) {
       std::ostringstream oss;
       oss << "DistArray4_Node0File::retrieve_pair_block() -- lseek failed: " << strerror(errno);
+      read_lock->unlock();
       throw FileOperationFailed(oss.str().c_str(),
           __FILE__,
           __LINE__,
@@ -451,7 +453,6 @@ DistArray4_Node0File::retrieve_pair_subblock(int i, int j, tbint_type oper_type,
     size_t readbuf_size = contiguous ? bufsize : ((xsize-1) * ny() + ysize) * sizeof(double);
     void* readbuf = buf;
     if (!contiguous) {
-      scratch_lock->lock();
       readbuf = scratch.buffer(readbuf_size);
     }
 
@@ -459,6 +460,7 @@ DistArray4_Node0File::retrieve_pair_subblock(int i, int j, tbint_type oper_type,
     if (read_this_much != readbuf_size) {
       std::ostringstream oss;
       oss << "DistArray4_Node0File::retrieve_pair_subblock() -- read failed: " << strerror(errno);
+      read_lock->unlock();
       throw FileOperationFailed(oss.str().c_str(),
                                 __FILE__,
                                 __LINE__,
@@ -473,9 +475,8 @@ DistArray4_Node0File::retrieve_pair_subblock(int i, int j, tbint_type oper_type,
       for(int x=0; x<xsize; ++x, srcbuf+=ny(), outbuf+=ysize) {
         std::copy(srcbuf, srcbuf + ysize, outbuf);
       }
-      // release scratch if necessary
-      if (!contiguous) scratch_lock->unlock();
     }
+    read_lock->unlock();
   }
   else { // data is already available
     double* outbuf = buf;

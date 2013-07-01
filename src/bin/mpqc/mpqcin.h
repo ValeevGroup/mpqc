@@ -116,7 +116,6 @@ class MPQCIn {
 
     enum IntegralsFactoryType {
         IntV3,
-        Cints,
         Libint2,
         Invalid
     };

@@ -121,12 +121,12 @@ features.
          permit remote memory access through the ARMCIMemoryGrp and the
          MTMPIMemoryGrp classes, respectively.
 
-    <li> Libint (version 1.1.0 or higher): This is a machine-generated
+    <li> Libint (version 2.0.3 or higher): This is a machine-generated
          library that can be used for evaluation of certain molecular
-         integrals. IntegralCints and MBPT2_R12 classes depend on this
+         integrals. IntegralLibint2 and MBPT2_R12 classes depend on this
          library. The library is freely available under GNU Public License
          (GPL) from <a
-         href="http://www.chem.vt.edu/chem-dept/valeev/software/libint/libint.html">http://www.chem.vt.edu/chem-dept/valeev/software/libint/libint.html</a>.
+         href="http://libint.valeyev.net">libint.valeyev.net</a>.
 
 </ul>
 
@@ -266,11 +266,8 @@ compilation.  To compile four files at a time, type <tt>make -j4</tt>.
 This feature works correctly with GNU make version 3.78.1 or later; for
 older versions of GNU make use <tt>make JOBS=-j4</tt>.
 
- You can install the executables and data files with <tt>make install</tt>.
-
- You can install the libraries and header files with <tt>make
-install_devel</tt>, however, <tt>make install</tt> must be also be run to
-install the files needed for run-time support.
+ You can install the executables and data files with <tt>make install</tt>. Starting with
+ version 3, this will also install the libraries and header files needed for development.
 
 \section compilecheck Checking the Compilation
 

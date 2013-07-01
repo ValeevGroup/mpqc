@@ -80,8 +80,8 @@ class.
 
 <dt><tt>integrals</tt><dd> This specifies an object of type Integral that
         will be used as the default integral evaluator.  If MP2-R12 is
-        used, then this should be set to use IntegralCints with a line
-        like <tt>integrals<IntegralCints>: ()</tt>.
+        used, then this should be set to use IntegralLibint2 with a line
+        like <tt>integrals<IntegralLibint2>: ()</tt>.
 
 <dt><tt>checkpoint</tt> </dt> <dd> The value of this keyword is boolean.
 
@@ -489,13 +489,13 @@ mpqc: (
     stdapprox = "A'"
     nfzc = 1
     memory = 16000000
-    integrals<IntegralCints>:()
+    integrals<IntegralLibint2>:()
     \% reference wavefunction
     reference<CLHF>: (
       molecule = $:molecule
       basis = $:basis
       memory = 16000000
-      integrals<IntegralCints>:()
+      integrals<IntegralLibint2>:()
     )
   )
 )
@@ -1266,13 +1266,13 @@ mpqc: (
     stdapprox = "A'"
     nfzc = 1
     memory = 16000000
-    integrals<IntegralCints>:()
+    integrals<IntegralLibint2>:()
     \% reference wavefunction
     reference<CLHF>: (
       molecule = $:molecule
       basis = $:basis
       memory = 16000000
-      integrals<IntegralCints>:()
+      integrals<IntegralLibint2>:()
     )
   )
 )

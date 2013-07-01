@@ -210,7 +210,7 @@ IntegralV3::dipole(const Ref<DipoleData>& dat)
 Ref<OneBodyInt>
 IntegralV3::quadrupole(const Ref<DipoleData>& dat)
 {
-  throw std::runtime_error("IntegralV3 cannot compute quadrupole moment integrals yet. Try IntegralCints instead.");
+  throw std::runtime_error("IntegralV3 cannot compute quadrupole moment integrals yet. Try IntegralLibint2 instead.");
 }
 
 Ref<OneBodyDerivInt>

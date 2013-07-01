@@ -1,5 +1,5 @@
-#ifndef SCCONFIG_H
-#define SCCONFIG_H
+#ifndef MPQCCONFIG_H
+#define MPQCCONFIG_H
 
 /* Define if the C++ restrict keyword extension exists.  */
 #cmakedefine HAVE_CXX_RESTRICT
@@ -403,7 +403,7 @@
 #  define HAVE_MPQC3_RUNTIME
 #endif
 
-#endif /* SCCONFIG_H */
+#endif /* MPQCCONFIG_H */
 
 /* 
  * Local Variables:

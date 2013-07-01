@@ -1559,7 +1559,7 @@ R12Technology::check_integral_factory(const Ref<Integral>& ints)
   // any factory can support pure MP2 calculations! Thus only test for nontrivial corr factors
   Ref<NullCorrelationFactor> nullcf; nullcf << corrfactor();
   if (nullcf.null()) {
-    // Only IntegralCints or IntegralLibint2 can be used at the moment
+    // Only IntegralLibint2 can be used at the moment
     bool allowed_integral_factory = false;
 #ifdef HAVE_LIBINT2
     IntegralLibint2* libint2intf = dynamic_cast<IntegralLibint2*>(ints.pointer());

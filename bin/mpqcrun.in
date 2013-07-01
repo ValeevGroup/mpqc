@@ -430,10 +430,7 @@ elsif ($memorygrp eq "armci") {
 
 ######################################################################
 
-if ($integral eq "cints") {
-  $ENV{"INTEGRAL"} = "<IntegralCints>:()";
-}
-elsif ($integral eq "libint2") {
+if ($integral eq "libint2") {
   $ENV{"INTEGRAL"} = "<IntegralLibint2>:()";
 }
 elsif ($integral eq "intv3") {

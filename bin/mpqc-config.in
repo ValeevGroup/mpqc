@@ -20,7 +20,7 @@ version="@MPQC_VERSION@"
 soversion="@MPQC_SO_VERSION@"
 buildid="@BUILDID@"
 datarootdir=@CMAKE_INSTALL_FULL_DATAROOTDIR@
-scdatadir=@CMAKE_INSTALL_FULL_DATADIR@
+datadir=@CMAKE_INSTALL_FULL_DATADIR@
 enableshared=@ENABLESHARED@
 
 usage="\
@@ -60,8 +60,8 @@ while test $# -gt 0; do
     --so-version)
       echo $soversion | sed s/:/./g
       ;;
-    --scdatadir)
-      echo $scdatadir
+    --datadir)
+      echo $datadir
       ;;
     --buildid)
       echo $buildid

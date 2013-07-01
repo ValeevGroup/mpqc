@@ -280,7 +280,7 @@ add_subdirectory(test)
 # Export include dirs, library list
 
 # get_target_property(LINK_LIBRARIES mpqc LINK_LIBRARIES)
-# message(STATUS "LINK_LIBRARIES = ${LINK_LIBRARIES}")
+# message(STATUS "LIBRARIES = ${LIBRARIES}")
 
 set(MPQC_LINK_LIBRARIES "")
 
@@ -292,14 +292,13 @@ foreach (_lib ${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES})
 endforeach()
 
 # transform library list into compiler args
-foreach (_lib ${LINK_LIBRARIES})
-  set(_libpath _path-NOTFOUND)
-  find_library(_libpath ${_lib} PATHS ${CMAKE_Fortran_IMPLICIT_LINK_DIRECTORIES})
-  #message(STATUS "_lib = ${_lib}, _path = ${_path}")
+foreach (_abspathlib ${LINK_LIBRARIES})
+  get_filename_component(_lib ${_abspathlib} NAME)
+  get_filename_component(_libpath ${_abspathlib} PATH)
+  find_library(_libpath ${_lib} PATHS ${CMAKE_Fortran_IMPLICIT_LINK_DIRECTORIES} ${_libpath})
+  # message(STATUS "_lib = ${_lib}, _libpath = ${_libpath}")
   if (_libpath)
-    set(_library "${_libpath}")
-  else()
-    set(_library "${_lib}")
+    set(_library "${_abspathlib}")
   endif()
   # Apple framework libs
   get_filename_component(_ext ${_library} EXT)

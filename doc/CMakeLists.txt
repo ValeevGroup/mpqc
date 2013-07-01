@@ -1,3 +1,7 @@
+INSTALL(DIRECTORY ./devsamp/hf DESTINATION ${CMAKE_INSTALL_PREFIX}/examples)
+INSTALL(DIRECTORY ./devsamp/mp2 DESTINATION ${CMAKE_INSTALL_PREFIX}/examples)
+INSTALL(DIRECTORY ./devsamp/aoints DESTINATION ${CMAKE_INSTALL_PREFIX}/examples)
+
 #-- Add an Option to toggle the generation of the API documentation
 
 find_package(Doxygen)

@@ -324,12 +324,12 @@ to a file on a GPFS file system.
 <br>
 
 At the moment, MBPT2_R12 objects require specific specialization of Integral,
-IntegralCints. Thus in order to compute MP2-R12 energies, your version of MPQC
-needs to be compiled with support for IntegralCints.  A free, open-source
-library called <tt>libint</tt> is a prerequisite for IntegralCints\if html (see \ref compile)\endif.
-In order to use IntegralCints as the default Integral object,
-add <tt>-integral "<IntegralCints>:()"</tt> to the command line,
-or set environmental variable <tt>INTEGRAL</tt> to <tt>"<IntegralCints>:()"</tt>.
+IntegralLibint2. Thus in order to compute MP2-R12 energies, your version of MPQC
+needs to be compiled with support for IntegralLibint2.  A free, open-source
+library called <tt>libint</tt> (version 2) is a prerequisite for IntegralLibint2\if html (see \ref compile)\endif.
+In order to use IntegralLibint2 as the default Integral object,
+add <tt>-integral "<IntegralLibint2>:()"</tt> to the command line,
+or set environmental variable <tt>INTEGRAL</tt> to <tt>"<IntegralLibint2>:()"</tt>.
 </p>
 
 */

@@ -945,7 +945,7 @@ MPQCIn::write_energy_object(ostream &ostrs,
     if (r12method_ri_.set()) r12descr->ri = r12method_ri_.val();
     r12descr->write(ostrs);
     switch (r12descr->corrfactor_type()) {
-      case R12TechDescr::R12CorrFactor:  ifactory = Cints; break;
+      case R12TechDescr::R12CorrFactor:  ifactory = Libint2; break;
       case R12TechDescr::GTGCorrFactor:  ifactory = Libint2; break;
       default: break;
     }
@@ -1112,8 +1112,6 @@ MPQCIn::to_string(IntegralsFactoryType ifactory) {
   switch (ifactory) {
     case IntV3:
       result = "IntegralV3"; break;
-    case Cints:
-      result = "IntegralCints"; break;
     case Libint2:
       result = "IntegralLibint2"; break;
     default:

@@ -66,7 +66,7 @@ SCMatrixdouble::operator=(const SCMatrixdouble& md)
   return a;
 }
 INLINE
-SCMatrixdouble::operator double()
+SCMatrixdouble::operator double() const
 {
   return matrix.get_element(i,j);
 }

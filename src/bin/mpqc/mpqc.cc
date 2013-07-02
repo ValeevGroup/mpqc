@@ -86,6 +86,7 @@
 #include <chemistry/qc/etrain/linkage.h>
 #include <chemistry/qc/mbpt/linkage.h>
 #include <chemistry/qc/lmp2/linkage.h>
+#include <chemistry/qc/ci/linkage.h>
 #ifdef HAVE_LIBINT2
 #  include <chemistry/qc/libint2/linkage.h>
 #  include <chemistry/qc/mbptr12/linkage.h>

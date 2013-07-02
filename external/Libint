@@ -79,9 +79,10 @@ if ("${LIBINT}" AND NOT LIBINT2_FOUND)
 
 endif()
 
-if (LIBINT2_LIBRARY)
-  set(LIBRARIES "${LIBINT2_LIBRARY};${LIBRARIES}")
+if (HAVE_LIBINT2)
   include_directories(${LIBINT2_INCLUDE_DIR})
   include_directories(${LIBINT2_INCLUDE_DIR}/libint2)
+else()
+  set(LIBINT2_LIBRARY "")
 endif()
 

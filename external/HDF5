@@ -1,15 +1,18 @@
+# -*- mode: cmake -*-
+
 set(EXTERNAL_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external)
 set(EXTERNAL_BUILD_DIR ${PROJECT_BINARY_DIR}/external/build)
 
 include(ExternalProject)
 
-find_package(HDF5)
+find_package(HDF5 QUIET)
 
 if (HDF5_FOUND)
-  include_directories(${HDF5_INCLUDE_DIRS})
-endif()
 
-if (NOT HDF5_FOUND)
+  include_directories(${HDF5_INCLUDE_DIRS})
+  set(HDF5_LIBRARIES "${HDF5_LIBRARIES_RELEASE}")
+
+else()
 
   set(HDF5_URL http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.8.10-patch1.tar.gz)
   set(HDF5_URL_HASH MD5=2147a289fb33c887464ad2b6c5a8ae4c)
@@ -41,16 +44,16 @@ if (NOT HDF5_FOUND)
 
 endif()
 
+# HDF5 libs
 if (HDF5_LIBRARIES)
-  set(LIBRARIES "${HDF5_LIBRARIES};${LIBRARIES}")
-endif()
-
-# HDF5 compression libs
-find_library(LIBZ NAMES z)
-if (LIBZ)
-  set(LIBRARIES "${LIBRARIES};${LIBZ}")
-endif()
-find_library(LIBSZ NAMES sz)
-if (LIBSZ)
-  set(LIBRARIES "${LIBRARIES};${LIBSZ}")
+  set(HAVE_HDF5 TRUE)
+  find_library(LIBZ NAMES z)
+  if (LIBZ)
+    list(APPEND HDF5_LIBRARIES ${LIBZ})
+  endif()
+  find_library(LIBSZ NAMES sz)
+  if (LIBSZ)
+    list(APPEND HDF5_LIBRARIES ${LIBSZ})
+  endif()
+  message(STATUS "HDF5 libraries: ${HDF5_LIBRARIES}")
 endif()

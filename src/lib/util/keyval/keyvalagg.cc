@@ -108,6 +108,14 @@ AggregateKeyVal::key_exists(const char* key)
   else return 0;
 }
 
+const char*
+AggregateKeyVal::classname(const char * key)
+{
+  Ref<KeyVal> kval = getkeyval(key);
+  if (kval.nonnull()) return kval->classname(key);
+  else return 0;
+}
+
 void
 AggregateKeyVal::errortrace(ostream&fp)
 {

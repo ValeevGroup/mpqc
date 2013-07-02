@@ -1,17 +1,20 @@
 #; -*-CMake-*-
 
 enable_language (CXX)
+if (NOT CMAKE_CXX_COMPILER)
+  message(FATAL_ERROR "C++ compiler not found")
+endif()
 
 enable_language (Fortran)
 if (NOT CMAKE_Fortran_COMPILER)
    message(FATAL_ERROR "Fortran compiler not found")
 endif()
 
-cmake_minimum_required (VERSION 2.8.8)
+cmake_minimum_required (VERSION 2.8.11)
 project (MPQC)
 
 # extra cmake files are shipped with MPQC
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/modules/")
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release")
@@ -257,15 +260,14 @@ CONFIGURE_FILE(
 )
 
 # libraries
-set(LINK_LIBRARIES "")
-if (HAVE_LIBINT2)
-  list(APPEND LINK_LIBRARIES ${LIBINT2_LIBRARY})
-endif()
+set(LINK_LIBRARIES)
+list(APPEND LINK_LIBRARIES ${LIBINT2_LIBRARY})
 list(APPEND LINK_LIBRARIES ${MADNESS_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${Boost_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${LAPACK_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${BLAS_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${PYTHON_LIBRARIES})
+list(APPEND LINK_LIBRARIES ${HDF5_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${LIBRARIES})
 list(APPEND LINK_LIBRARIES ${CMAKE_DL_LIBS})
 
@@ -282,23 +284,28 @@ add_subdirectory(test)
 # get_target_property(LINK_LIBRARIES mpqc LINK_LIBRARIES)
 # message(STATUS "LIBRARIES = ${LIBRARIES}")
 
-set(MPQC_LINK_LIBRARIES "")
+set(MPQC_CONFIG_LIBRARIES "")
 
 # Fortran libraries
 foreach (_lib ${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES})
-  set(_libpath _path-NOTFOUND)
+  set(_libpath _libpath-NOTFOUND)
   find_library(_libpath ${_lib} PATHS ${CMAKE_Fortran_IMPLICIT_LINK_DIRECTORIES})
-  list(APPEND LINK_LIBRARIES ${_libpath})
+  if (_libpath)
+    list(APPEND LINK_LIBRARIES ${_libpath})
+  else()
+    list(APPEND LINK_LIBRARIES ${_lib})
+  endif()
 endforeach()
 
 # transform library list into compiler args
-foreach (_abspathlib ${LINK_LIBRARIES})
-  get_filename_component(_lib ${_abspathlib} NAME)
-  get_filename_component(_libpath ${_abspathlib} PATH)
-  find_library(_libpath ${_lib} PATHS ${CMAKE_Fortran_IMPLICIT_LINK_DIRECTORIES} ${_libpath})
-  # message(STATUS "_lib = ${_lib}, _libpath = ${_libpath}")
+foreach (_lib ${LINK_LIBRARIES})
+  set(_libpath _libpath-NOTFOUND) # DON'T REMOVE THIS LINE
+  find_library(_libpath ${_lib})
+  #message(STATUS "_lib = ${_lib}, _libpath = ${_libpath}")
   if (_libpath)
-    set(_library "${_abspathlib}")
+    set(_library "${_libpath}")
+  else()
+    set(_library "${_lib}")
   endif()
   # Apple framework libs
   get_filename_component(_ext ${_library} EXT)
@@ -309,13 +316,14 @@ foreach (_abspathlib ${LINK_LIBRARIES})
     set(_library "-F ${_path} -framework ${_name}")
   endif()
   #message(STATUS "${_lib} = ${_library}")
-  set(MPQC_LINK_LIBRARIES "${MPQC_LINK_LIBRARIES} ${_library}")
+  set(MPQC_CONFIG_LIBRARIES "${MPQC_CONFIG_LIBRARIES} ${_library}")
 endforeach()
 
-# message(STATUS "mpqc_link_libraries = ${MPQC_LINK_LIBRARIES}")
+# message(STATUS "MPQC_CONFIG_LIBRARIES = ${MPQC_CONFIG_LIBRARIES}")
 
-# include dirs sans the source dirs
+# include dirs
 get_directory_property(MPQC_INCLUDE_DIRECTORIES DIRECTORY src/bin/mpqc INCLUDE_DIRECTORIES)
+# remove internal source dirs
 list(REMOVE_ITEM
   MPQC_INCLUDE_DIRECTORIES
   ${PROJECT_BINARY_DIR}/src/lib

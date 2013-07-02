@@ -1,12 +1,13 @@
 set(subdirectories
   basis
-  #ci
+  ci
   dft
   etrain
   intv3
   lcao
   lmp2
   mbpt
+  nbody
   oint3
   scf
   wfn

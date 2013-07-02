@@ -34,12 +34,14 @@ namespace sc {
       int value_implemented() const;
 
       void compute();
+
       RefSymmSCMatrix density();
     
     private:
       Ref<KeyVal> kv_;
-      static void compute(const Ref<RefWavefunction> &ref,
-                          const Ref<KeyVal> &kv);
+      std::vector<double> E_;
+      static std::vector<double> compute(const Ref<RefWavefunction> &ref,
+                                         const Ref<KeyVal> &kv);
   };
 
 }

@@ -11,7 +11,7 @@ void sc::CI::compute(const Ref<RefWavefunction> &wfn,
 
 #else // MPQC_NEW_FEATURES
 
-#define MPQC_PROFILE_ENABLE
+//#define MPQC_PROFILE_ENABLE
 #include "mpqc/utility/profile.hpp"
 
 #include "mpqc/ci/ci.hpp"
@@ -22,8 +22,8 @@ void sc::CI::compute(const Ref<RefWavefunction> &wfn,
 #include <memory>
 
 
-void sc::CI::compute(const Ref<RefWavefunction> &wfn,
-                     const Ref<KeyVal> &kv) {
+std::vector<double> sc::CI::compute(const Ref<RefWavefunction> &wfn,
+                                    const Ref<KeyVal> &kv) {
 
     using mpqc::Vector;
     using mpqc::Matrix;
@@ -75,16 +75,20 @@ void sc::CI::compute(const Ref<RefWavefunction> &wfn,
     std::auto_ptr<mpqc::File> file;
     file.reset(new mpqc::File(fname + "." + mpqc::string_cast(comm.rank())));
 
+    std::vector<double> E;
+
     if (config.level > 0) {
         mpqc::ci::CI<mpqc::ci::Truncated> ci(config, comm, file->group());
-        mpqc::ci::direct(ci, h, V);
+        E = mpqc::ci::direct(ci, h, V);
     }
     else {
         mpqc::ci::CI<mpqc::ci::Full> ci(config, comm, file->group());
-        mpqc::ci::direct(ci, h, V);
+        E = mpqc::ci::direct(ci, h, V);
     }
 
     // delete file;
+
+    
  
 }
 

@@ -361,8 +361,8 @@ namespace ci {
             S.sync();
 
             time.sigma2 = t;
-            std::cout << "sigma1+2 time: " << time.sigma1+time.sigma2 << std::endl;
-            std::cout << "sigma1+2 kernel time: " << time.kernel12 << std::endl;
+            // std::cout << "sigma1+2 time: " << time.sigma1+time.sigma2 << std::endl;
+            // std::cout << "sigma1+2 kernel time: " << time.kernel12 << std::endl;
         } 
 
 	MPQC_PROFILE_DUMP(std::cout);
@@ -380,7 +380,7 @@ namespace ci {
             Matrix s(alpha.size(), rb.size());
             S(alpha,rb) >> s;
 
-            ci.comm.printf("rb = [%i,%i]\n", rb.begin(), rb.end());
+            // ci.comm.printf("rb = [%i,%i]\n", rb.begin(), rb.end());
 
             // all beta->beta single replacements in rb, sorted
             auto BB = replacements(beta, *rb.begin(), *rb.end(), ci);
@@ -530,9 +530,9 @@ namespace ci {
 
         S.sync();
 
-	std::cout << "sigma3 time: " << time.sigma3 << std::endl;
-	std::cout << "sigma3 kernel time: " << time.kernel3 << std::endl;
-	std::cout << "sigma3 flops: " << time.ops/time.kernel3 << std::endl;
+	// std::cout << "sigma3 time: " << time.sigma3 << std::endl;
+	// std::cout << "sigma3 kernel time: " << time.kernel3 << std::endl;
+	// std::cout << "sigma3 flops: " << time.ops/time.kernel3 << std::endl;
 
 	MPQC_PROFILE_DUMP(std::cout);
 

@@ -155,6 +155,8 @@ namespace hf {
 
         struct {
             std::vector< ::rysq::Shell* > basis;
+            ::rysq::Eri eri;
+            double buffer[10000];
         } rysq;
 
         for (int i = 0; i < N; ++i) {
@@ -174,6 +176,7 @@ namespace hf {
                 for (int j = 0; j < nc; ++j) {
                     C[k][j] = shell.coefficient_unnorm(j,k);
                 }
+                if (nc == 2) std::swap(C[k][0], C[k][1]);
             }
 
             int r = basis.shell_to_center(i);
@@ -187,7 +190,7 @@ namespace hf {
             for (int j = 0; j <= i; ++j) {
 
                 omp::task<int> task;
-#pragma omp parallel
+#pragma omp parallel 
                 {
                     auto next = task++;
                     for (int k = 0, kl = 0; k <= i; ++k) {
@@ -217,11 +220,34 @@ namespace hf {
 
                             fock(int2, p, q, r, s, D, F, 4.0/symmetry(i,j,k,l));
 
+                            // const double *eri1 = int2(p, q, r, s).data();
+                            // double *eri2 = rysq.buffer;
+                            // rysq.eri(*rysq.basis[l],
+                            //          *rysq.basis[k],
+                            //          *rysq.basis[j],
+                            //          *rysq.basis[i],
+                            //          eri2, 1e-10);
+                            
+                            // // if (p.size()*q.size()*r.size()*s.size() > 12) continue;
+
+                            // foreach (int i, p) {
+                            //     foreach (int j, q) {
+                            //         foreach (int k, r) {
+                            //             foreach (int l, s) {
+                            //                 printf("2-e %i %i %i %i: %e %e\n",
+                            //                        i, j, k, l, *eri1++, *eri2++);
+                            //             }
+                            //         }
+                            //     }
+                            // }
+
                         }
                     }
                 }
             }
         }
+
+        //throw;
 
 
         F += Matrix(F.transpose());

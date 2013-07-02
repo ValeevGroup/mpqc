@@ -197,7 +197,20 @@ PrefixKeyVal::key_value(const char * arg, const KeyValValue &def)
 int PrefixKeyVal::key_exists(const char* key)
 {
   char newkey[MaxKeywordLength];
-  return getnewprefixkey(key,newkey);
+  getnewprefixkey(key,newkey);
+  int result = keyval->key_exists(newkey);
+  seterror(keyval->error());
+  return result;
+}
+
+const char*
+PrefixKeyVal::classname(const char * key)
+{
+  char newkey[MaxKeywordLength];
+  getnewprefixkey(key,newkey);
+  const char* result = keyval->classname(newkey);
+  seterror(keyval->error());
+  return result;
 }
 
 /////////////////////////////////////////////////////////////////////////////

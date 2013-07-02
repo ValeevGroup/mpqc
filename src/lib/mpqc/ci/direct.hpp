@@ -113,8 +113,8 @@ namespace ci {
 
 
     template<class Type>
-    void direct(CI<Type> &ci, const Vector &h, const Matrix &V) {
-
+    std::vector<double> direct(CI<Type> &ci, const Vector &h, const Matrix &V) {
+        
         MPQC_PROFILE_REGISTER_THREAD;
 
         Matrix lambda;
@@ -148,6 +148,8 @@ namespace ci {
         // mpqc::Array<double> D("ci.D", ci.dims, ARRAY_FILE, comm);
 
         comm.barrier();
+
+        std::vector<double> E;
 
 // #ifdef HAVE_PYTHON 
 //         Python py;
@@ -330,14 +332,19 @@ namespace ci {
 // 	    }
 // #endif // HAVE_PYTHON
 
-            std::cout << "time: " << t << std::endl;
+            //std::cout << "time: " << t << std::endl;
 
             MPQC_PROFILE_DUMP(std::cout);
 
-            //if (fabs(iters[it - 1].E - iters[it].E) < ci.convergence) break;
+            if (fabs(iters[it - 1].E - iters[it].E) < ci.convergence) {
+                E.push_back(iters[it].E);
+                break;
+            }
 
 	    ++M;
 	}
+
+        return E;
 
     }
 

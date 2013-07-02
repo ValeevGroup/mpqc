@@ -135,6 +135,20 @@ AssignedKeyVal::assign(const char*key,const Ref<DescribedClass>&val)
   assign(key,new KeyValValueRefDescribedClass(val));
 }
 
+const char*
+AssignedKeyVal::classname(const char * key)
+{
+  Ref<KeyValValueRefDescribedClass> kv_dc;
+  kv_dc << this->key_value(key, KeyValValueRefDescribedClass());
+  const char* result = 0;
+  if (kv_dc.nonnull()) {
+    Ref<DescribedClass> dc;
+    kv_dc->describedclassvalue(dc);
+    result = dc->class_name();
+  }
+  return result;
+}
+
 void
 AssignedKeyVal::clear()
 {

@@ -10,7 +10,7 @@ if (NOT CMAKE_Fortran_COMPILER)
    message(FATAL_ERROR "Fortran compiler not found")
 endif()
 
-cmake_minimum_required (VERSION 2.8.11)
+cmake_minimum_required (VERSION 2.8.8)
 project (MPQC)
 
 # extra cmake files are shipped with MPQC

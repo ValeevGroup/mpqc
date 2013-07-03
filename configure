@@ -29,18 +29,19 @@ Configuration:
   --mpicc=                MPI C compiler to deduce MPI environment (MPI_C_COMPILER=)
   --libint=               TRUE/FALSE or Libint path
   --boost=                Boost path
-  --search=               paths to search for files/libraries, separated by semicolon (CMAKE_PREFIX_PATH=)
+  --search=               paths to search for files/libraries, separated by semicolon
+                          (CMAKE_PREFIX_PATH=)
   -D*                     passed verbatim to cmake command
 
 Some influential environment variables:
-  CC          C compiler command
-  CFLAGS      C compiler flags
-  CXX         C++ compiler command
-  CXXFLAGS    C++ compiler flags
-  F77         Fortran 77 compiler command
-  FFLAGS      Fortran 77 compiler flags
-  LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
-              nonstandard directory <lib dir>
+  CC          C compiler command       (e.g. CC='mpicc')
+  CFLAGS      C compiler flags         (e.g. CFLAGS='-O0 -g -std=c11')
+  CXX         C++ compiler command     (e.g. CXX='mpicxx')
+  CXXFLAGS    C++ compiler flags       (e.g. CXXFLAGS='-O3 -Wall')
+  CPPFLAGS    C/C++ proprocessor flags (e.g. CPPFLAGS='-I/usr/local -I/opt/local -DNODEBUG')
+  F77         Fortran 77 compiler command  (e.g. F77='gfortran')
+  FFLAGS      Fortran 77 compiler flags    (e.g. FFLAGS='-O4 -g')
+  LDFLAGS     linker flags             (e.g. LDFLAGS=-L/libdir)
 '
   exit 10
 }
@@ -73,7 +74,13 @@ blas=""
 lapack=""
 search=""
 
-echo "$0 $*" > config.log
+# log the command, preserving quotes
+log="Last invoked on `date`:\n$0 "
+for token in "$@"
+  do
+    log="$log '$token'"
+  done
+echo $log > config.log
 
 while test $# != 0; do
   case "$1" in

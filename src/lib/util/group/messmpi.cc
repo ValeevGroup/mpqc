@@ -182,8 +182,8 @@ MPIMessageGrp::init(MPI_Comm comm, int *argc, char ***argv)
       MPI_Init_thread(inits_argc, inits_argv, desired, &provided);
       int me;
       MPI_Comm_rank(MPI_COMM_WORLD, &me);
-      if (provided != desired && me == 0) {
-          ExEnv::outn() << indent
+      if (provided != desired) {
+          ExEnv::out0() << indent
                         << "WARNING: desired "
                         << mpi_thread_string(desired)
                         << " MPI threading support but got "

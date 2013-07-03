@@ -72,7 +72,6 @@ build="Release"
 blas=""
 lapack=""
 search=""
-mpicc=""
 
 echo "$0 $*" > config.log
 
@@ -87,7 +86,7 @@ while test $# != 0; do
   --debug) build="Debug" ;; #args="$args -DCMAKE_BUILD_TYPE=Debug" ;;
   --search=*) search="`arg \"$1\"`" ;;
   --libint=*) libint="`arg \"$1\"`" ;;
-  --mpicc=*) mpicc="`arg \"$1\"`" ;;
+  --mpicc=*) args="$args -DMPI_C_COMPILER=`arg \"$1\"`" ;;
   --boost=*) args="$args -DBOOST=`arg \"$1\"`" ;;
   CC=*) CC="`arg \"$1\"`" ;;
   CXX=*) CXX="`arg \"$1\"`" ;;
@@ -119,11 +118,6 @@ fi
 if [ -n "$libint" ]; then
     args="$args -DLIBINT=$libint"
 fi
-
-if [ -n "$mpicc" ]; then
-    args="$args -DMPI_C_COMPILER=$mpicc"
-fi
-
 
 if [ -n "$CC" ]; then
     args="$args -DCMAKE_C_COMPILER=$CC"

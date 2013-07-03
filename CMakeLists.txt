@@ -1,5 +1,13 @@
 #; -*-CMake-*-
 
+cmake_minimum_required (VERSION 2.8.8)
+project (MPQC)
+
+
+option(MPQC_NEW_FEATURES "Use new MPQC features (requires C++11)" OFF)
+option(OPENMP "Enable OpenMP" ON)
+
+
 enable_language (CXX)
 if (NOT CMAKE_CXX_COMPILER)
   message(FATAL_ERROR "C++ compiler not found")
@@ -10,8 +18,6 @@ if (NOT CMAKE_Fortran_COMPILER)
    message(FATAL_ERROR "Fortran compiler not found")
 endif()
 
-cmake_minimum_required (VERSION 2.8.8)
-project (MPQC)
 
 # extra cmake files are shipped with MPQC
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/modules/")
@@ -31,7 +37,25 @@ set(BUILD_TESTING_SHARED FALSE CACHE BOOLEAN "BUILD_TESTING_SHARED")
 #  set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /opt/local/lib)
 # endif()
 
-option(OPENMP "Enable OpenMP" ON)
+
+include(TestCXXAcceptsFlag)
+
+# C++11 flag
+CHECK_CXX_ACCEPTS_FLAG("-std=c++0x" CXX_FLAG_CXX0X)
+CHECK_CXX_ACCEPTS_FLAG("-std=c++11" CXX_FLAG_CXX11)
+
+set(HAVE_CXX11 FALSE)
+if (CXX_FLAG_CXX0X)
+  set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS}")
+  MESSAGE(STATUS "C++11 flag: -std=c++0x")
+  set(HAVE_CXX11 TRUE)
+elseif(CXX_FLAG_CXX11)
+  set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+  MESSAGE(STATUS "C++11 flag: -std=c++11")
+  set(HAVE_CXX11 TRUE)
+endif()
+
+
 if(OPENMP)
   find_package(OpenMP)
   if(OPENMP_FOUND)
@@ -41,9 +65,7 @@ if(OPENMP)
   endif()
 endif()
 
-
 include(CheckCXXSourceCompiles)
-include(TestCXXAcceptsFlag)
 
 CHECK_CXX_SOURCE_COMPILES("
   int main() {
@@ -54,24 +76,6 @@ CHECK_CXX_SOURCE_COMPILES("
   int main() {
   void *__restrict__ ptr;
   }" HAVE_CXX___RESTRICT__)
-
-
-option(MPQC_NEW_FEATURES "Use new MPQC features (requires C++11)" OFF)
-if (MPQC_NEW_FEATURES)
-  add_definitions(-DMPQC_NEW_FEATURES)
-  # C++11 flag
-  CHECK_CXX_ACCEPTS_FLAG("-std=c++0x" CXX_FLAG_CXX0X)
-  CHECK_CXX_ACCEPTS_FLAG("-std=c++11" CXX_FLAG_CXX11)
-
-  if (CXX_FLAG_CXX0X)
-    set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS}")
-    MESSAGE(STATUS "C++11 flag: -std=c++0x")
-  elseif(CXX_FLAG_CXX11)
-    set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
-    MESSAGE(STATUS "C++11 flag: -std=c++11")
-  endif()
-
-endif(MPQC_NEW_FEATURES)
 
 # C++11 features
 CHECK_CXX_SOURCE_COMPILES("
@@ -99,6 +103,7 @@ CHECK_CXX_SOURCE_COMPILES("
     }"
     HAVE_STD_ARRAY)
 
+
 if (MPQC_NEW_FEATURES)
   if (NOT HAVE_CXX_AUTO)
     message(FATAL_ERROR "No support for C++ auto")
@@ -106,6 +111,7 @@ if (MPQC_NEW_FEATURES)
   if (NOT HAVE_CXX_RVALUE)
     message(FATAL_ERROR "No support for C++ rvalue/std::forward")
   endif()
+  add_definitions(-DMPQC_NEW_FEATURES)
 endif(MPQC_NEW_FEATURES)
 
 
@@ -229,19 +235,29 @@ include_directories("${PROJECT_BINARY_DIR}/src/lib")
 include_directories("${PROJECT_SOURCE_DIR}/src/lib")
 include_directories("${PROJECT_SOURCE_DIR}/include") # flex/lexer
 
-find_package(MPI)
-if (NOT MPI_FOUND)
-  set(MPI_LIBRARIES "")
-  MESSAGE(ERROR "MPI not found")
+set(MPI_LIBRARIES "")
+if (DEFINED MPI_C_COMPILER AND NOT MPI_C_COMPILER)
+  message(STATUS "MPI disabled")
 else()
-  set(HAVE_MPI TRUE)
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MPI_LINKER_FLAGS}")
-  set(LIBRARIES "${LIBRARIES};${MPI_LIBRARIES}")
-  include_directories(${MPI_INCLUDE_PATH})
-  message(STATUS "MPI_LIBRARIES: ${MPI_LIBRARIES}")
-  message(STATUS "MPI_LINKER_FLAGS: ${MPI_LINKER_FLAGS}")
-  #add_definitions(-DOMPI_SKIP_MPICXX)
-  option(ALWAYS_USE_MPI "Always use MPI" TRUE)
+  find_package(MPI)
+  if (NOT MPI_FOUND)
+    message(ERROR "MPI not found")
+  else()
+    set(HAVE_MPI TRUE)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MPI_LINKER_FLAGS}")
+    set(LIBRARIES "${LIBRARIES};${MPI_LIBRARIES}")
+    include_directories(${MPI_INCLUDE_PATH})
+    message(STATUS "MPI_LIBRARIES: ${MPI_LIBRARIES}")
+    message(STATUS "MPI_LINKER_FLAGS: ${MPI_LINKER_FLAGS}")
+    #add_definitions(-DOMPI_SKIP_MPICXX)
+    option(ALWAYS_USE_MPI "Always use MPI" TRUE)
+  endif()
+endif()
+
+# PAPI
+find_package(PAPI)
+if (PAPI_FOUND)
+  set(HAVE_PAPI TRUE)
 endif()
 
 # external dependencies

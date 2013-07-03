@@ -41,7 +41,9 @@
 #include <util/misc/print.h>
 #include <math/distarray4/distarray4_memgrp.h>
 #include <math/distarray4/distarray4_node0file.h>
+#ifdef HAVE_MPI
 #include <math/distarray4/distarray4_mpiiofile.h>
+#endif
 
 using namespace std;
 using namespace sc;

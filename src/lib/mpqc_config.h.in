@@ -403,6 +403,8 @@
 #  define HAVE_MPQC3_RUNTIME
 #endif
 
+#cmakedefine HAVE_PAPI
+
 #endif /* MPQCCONFIG_H */
 
 /* 

@@ -34,6 +34,7 @@
 
 #include <assert.h>
 #include <math/scmat/abstract.h>
+#include <limits>
 
 namespace sc {
 

@@ -130,6 +130,9 @@ namespace sc {
      It is essentially an abstract <a href="http://en.wikipedia.org/wiki/Adapter_pattern">Adapter</a>.
      The main content is a set of OrbitalSpace objects.
      Single-determinantal and multi-determinantal Wavefunction can be used as a reference.
+     However since Wavefunction does not have proper constructors, it's not implemented
+     as a proper Adapter to Wavefunction and thus implements many member functions of Wavefunction.
+     The main content is a set of OrbitalSpace objects.
   */
   class RefWavefunction : virtual public SavableState {
     protected:

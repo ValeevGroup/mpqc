@@ -28,7 +28,7 @@
 #ifndef _mpqc_src_lib_chemistry_qc_psi_psiref_h
 #define _mpqc_src_lib_chemistry_qc_psi_psiref_h
 
-#include <chemistry/qc/mbptr12/ref.h>
+#include <chemistry/qc/nbody/ref.h>
 #include <chemistry/qc/psi/psiwfn.h>
 #include <chemistry/qc/psi/psici.h>
 

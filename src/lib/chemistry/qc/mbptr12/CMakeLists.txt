@@ -36,7 +36,6 @@ r12_amps.cc
 r12int_eval.cc 
 r12technology.cc 
 r12wfnworld.cc 
-ref.cc 
 ri_basis.cc 
 singles_emp2.cc 
 sr_r12intermediates_util.cc

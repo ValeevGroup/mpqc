@@ -25,7 +25,7 @@
 #ifndef _chemistry_qc_lmp2_collective_h
 #define _chemistry_qc_lmp2_collective_h
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 
 #ifdef HAVE_MPI
 

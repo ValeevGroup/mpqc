@@ -62,7 +62,7 @@
 //   An include file can be used to set these options as well.  This has
 // the advantage that dependency checking will force an automatic
 // recompile of all affected files if the options change.  The file
-// <scconfig.h> will be include if -DHAVE_CONFIG_H is specified.
+// <mpqc_config.h> will be include if -DHAVE_CONFIG_H is specified.
 //
 //   Note that all source code that uses references must be compiled with
 // the same value REF_MANAGE.  Changing this can change the storage layout
@@ -79,7 +79,7 @@
 #include <util/ref/identity.h>
 
 #ifdef HAVE_CONFIG_H
-#include <scconfig.h>
+#include <mpqc_config.h>
 #endif
 
 #ifdef REF_OPTIMIZE

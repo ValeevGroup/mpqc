@@ -2,7 +2,6 @@
 
 add_library(misc OBJECT
   bug.cc
-#  ccaenv.cc
   compute.cc
   consumableresources.cc
   exenv.cc

@@ -28,7 +28,7 @@
 #ifndef _chemistry_qc_scf_linkage_h
 #define _chemistry_qc_scf_linkage_h
 
-#include <scdirlist.h>
+#include <mpqc_config.h>
 
 #include <chemistry/qc/scf/clhf.h>
 #include <chemistry/qc/scf/fbclhf.h>
@@ -41,10 +41,7 @@
 #include <chemistry/molecule/linkage.h>
 #include <chemistry/qc/wfn/linkage.h>
 
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS
-#  include <chemistry/qc/cints/linkage.h>
-#endif
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_LIBINT2
+#ifdef HAVE_LIBINT2
 #  include <chemistry/qc/libint2/linkage.h>
 #endif
 

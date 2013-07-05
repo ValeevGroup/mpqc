@@ -27,7 +27,7 @@
 
 #include <stdlib.h>
 #ifdef HAVE_CONFIG_H
-#include <scconfig.h>
+#include <mpqc_config.h>
 #endif
 #include <util/misc/formio.h>
 #include <chemistry/qc/intv3/macros.h>

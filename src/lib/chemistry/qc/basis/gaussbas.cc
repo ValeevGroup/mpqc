@@ -28,7 +28,7 @@
 #include <stdio.h>
 #include <stdexcept>
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <sstream>
 #include <algorithm>
 #include <numeric>
@@ -1034,11 +1034,6 @@ GaussianBasisSet::shell_on_center(int icenter, int ishell) const
 {
   return center_to_shell_[icenter] + ishell;
 }
- 
-mpqc::range GaussianBasisSet::range(int s) const {
-    int f = this->shell_to_function(s);
-    return mpqc::range(f, f + this->shell(s).nfunction());
-}
 
 const GaussianShell&
 GaussianBasisSet::operator()(int icenter,int ishell) const
@@ -1051,6 +1046,12 @@ GaussianBasisSet::operator()(int icenter,int ishell)
 {
   return *shell_[center_to_shell_[icenter] + ishell];
 }
+
+mpqc::range GaussianBasisSet::range(int s) const {
+    int f = this->shell_to_function(s);
+    return mpqc::range(f, f + this->shell(s).nfunction());
+}
+
 
 int
 GaussianBasisSet::find(int C, const GaussianShell& S) const {

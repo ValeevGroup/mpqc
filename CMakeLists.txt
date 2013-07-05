@@ -1,10 +1,26 @@
 #; -*-CMake-*-
 
-enable_language (CXX)
-enable_language (Fortran)
-
 cmake_minimum_required (VERSION 2.8.8)
 project (MPQC)
+
+
+option(MPQC_NEW_FEATURES "Use new MPQC features (requires C++11)" ON)
+option(OPENMP "Enable OpenMP" ON)
+
+
+enable_language (CXX)
+if (NOT CMAKE_CXX_COMPILER)
+  message(FATAL_ERROR "C++ compiler not found")
+endif()
+
+enable_language (Fortran)
+if (NOT CMAKE_Fortran_COMPILER)
+   message(FATAL_ERROR "Fortran compiler not found")
+endif()
+
+
+# extra cmake files are shipped with MPQC
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/modules/")
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release")
@@ -17,24 +33,29 @@ set(BUILD_TESTING FALSE CACHE BOOLEAN "BUILD_TESTING")
 set(BUILD_TESTING_STATIC FALSE CACHE BOOLEAN "BUILD_TESTING_STATIC")
 set(BUILD_TESTING_SHARED FALSE CACHE BOOLEAN "BUILD_TESTING_SHARED")
 
-# string(TOUPPER ${CMAKE_SYSTEM_NAME} TARGET_)
-# if(ARCH EQUAL 64)
-#   set(TARGET_ "${TARGET_}64")
-# endif()
-
-# set(TARGET "${TARGET_}" CACHE STRING "TARGET")
-# add_definitions(-D${TARGET})
-# if("${TARGET}" MATCHES "64")
-#   string(REGEX REPLACE "64" "" TARGET_ "${TARGET}")
-#   add_definitions(-D${TARGET_})
-# endif()
-# MESSAGE(STATUS "TARGET: ${TARGET}")
-
 # if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 #  set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /opt/local/lib)
 # endif()
 
-option(OPENMP "Enable OpenMP" ON)
+
+include(TestCXXAcceptsFlag)
+
+# C++11 flag
+CHECK_CXX_ACCEPTS_FLAG("-std=c++0x" CXX_FLAG_CXX0X)
+CHECK_CXX_ACCEPTS_FLAG("-std=c++11" CXX_FLAG_CXX11)
+
+set(HAVE_CXX11 FALSE)
+if (CXX_FLAG_CXX0X)
+  set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS}")
+  MESSAGE(STATUS "C++11 flag: -std=c++0x")
+  set(HAVE_CXX11 TRUE)
+elseif(CXX_FLAG_CXX11)
+  set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+  MESSAGE(STATUS "C++11 flag: -std=c++11")
+  set(HAVE_CXX11 TRUE)
+endif()
+
+
 if(OPENMP)
   find_package(OpenMP)
   if(OPENMP_FOUND)
@@ -44,9 +65,7 @@ if(OPENMP)
   endif()
 endif()
 
-
 include(CheckCXXSourceCompiles)
-include(TestCXXAcceptsFlag)
 
 CHECK_CXX_SOURCE_COMPILES("
   int main() {
@@ -57,24 +76,6 @@ CHECK_CXX_SOURCE_COMPILES("
   int main() {
   void *__restrict__ ptr;
   }" HAVE_CXX___RESTRICT__)
-
-
-option(MPQC_NEW_FEATURES "Use new MPQC features (requires C++11)" ON)
-if (MPQC_NEW_FEATURES)
-  add_definitions(-DMPQC_NEW_FEATURES)
-  # C++11 flag
-  CHECK_CXX_ACCEPTS_FLAG("-std=c++0x" CXX_FLAG_CXX0X)
-  CHECK_CXX_ACCEPTS_FLAG("-std=c++11" CXX_FLAG_CXX11)
-
-  if (CXX_FLAG_CXX0X)
-    set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS}")
-    MESSAGE(STATUS "C++11 flag: -std=c++0x")
-  elseif(CXX_FLAG_CXX11)
-    set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
-    MESSAGE(STATUS "C++11 flag: -std=c++11")
-  endif()
-
-endif(MPQC_NEW_FEATURES)
 
 # C++11 features
 CHECK_CXX_SOURCE_COMPILES("
@@ -102,6 +103,7 @@ CHECK_CXX_SOURCE_COMPILES("
     }"
     HAVE_STD_ARRAY)
 
+
 if (MPQC_NEW_FEATURES)
   if (NOT HAVE_CXX_AUTO)
     message(FATAL_ERROR "No support for C++ auto")
@@ -109,6 +111,7 @@ if (MPQC_NEW_FEATURES)
   if (NOT HAVE_CXX_RVALUE)
     message(FATAL_ERROR "No support for C++ rvalue/std::forward")
   endif()
+  add_definitions(-DMPQC_NEW_FEATURES)
 endif(MPQC_NEW_FEATURES)
 
 
@@ -134,13 +137,13 @@ endif()
 
 
 set(TARGET_ARCH "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
-set(SC_MAJOR_VERSION 3)
-set(SC_MINOR_VERSION 0)
-set(SC_MICRO_VERSION 0)
-set(SC_BUILDID alpha)
+set(MPQC_MAJOR_VERSION 3)
+set(MPQC_MINOR_VERSION 0)
+set(MPQC_MICRO_VERSION 0)
+set(MPQC_BUILDID alpha)
 
-set(SC_VERSION "${SC_MAJOR_VERSION}.${SC_MINOR_VERSION}.${SC_MICRO_VERSION}")
-set(SC_VERSION "${SC_VERSION}-${SC_BUILDID}")
+set(MPQC_VERSION "${MPQC_MAJOR_VERSION}.${MPQC_MINOR_VERSION}.${MPQC_MICRO_VERSION}")
+set(MPQC_VERSION "${MPQC_VERSION}-${MPQC_BUILDID}")
 
 check_include_files(stdint.h HAVE_STDINT_H)
 check_include_files(dlfcn.h HAVE_DLFCN_H)
@@ -167,6 +170,7 @@ if(INTEGER8)
 endif()  
 
 include(FortranCInterface)
+FortranCInterface_VERIFY(CXX)
 
 set(FORTRAN_FUNCTIONS
   PDSTEQR
@@ -220,45 +224,52 @@ endforeach()
 
 include(GNUInstallDirs)           
 
-set(SRC_SCLIBDIR ${PROJECT_SOURCE_DIR}/src/lib)
-set(SCDATADIR ${CMAKE_INSTALL_FULL_DATAROOTDIR}/mpqc/${SC_VERSION})
-set(INSTALLED_SCLIBDIR ${CMAKE_INSTALL_FULL_LIBDIR})
+set(SRC_MPQC_DATA_PATH ${PROJECT_SOURCE_DIR}/lib)
+set(MPQCDATAPATH ${CMAKE_INSTALL_FULL_DATAROOTDIR}/mpqc/${MPQC_VERSION})
+set(INSTALLED_MPQC_DATA_PATH ${CMAKE_INSTALL_FULL_DATAROOTDIR}/mpqc/${MPQC_VERSION})
 
-INSTALL(FILES ./lib/atominfo.kv DESTINATION ${SCDATADIR})
-INSTALL(DIRECTORY ./lib/basis DESTINATION ${SCDATADIR})
+INSTALL(FILES ./lib/atominfo.kv DESTINATION ${MPQCDATAPATH})
+INSTALL(DIRECTORY ./lib/basis DESTINATION ${MPQCDATAPATH})
 
 include_directories("${PROJECT_BINARY_DIR}/src/lib")
 include_directories("${PROJECT_SOURCE_DIR}/src/lib")
 include_directories("${PROJECT_SOURCE_DIR}/include") # flex/lexer
 
-find_package(MPI)
-if (NOT MPI_FOUND)
-  set(MPI_LIBRARIES "")
-  MESSAGE(ERROR "MPI not found")
+set(MPI_LIBRARIES "")
+if (DEFINED MPI_C_COMPILER AND NOT MPI_C_COMPILER)
+  message(STATUS "MPI disabled")
 else()
-  set(HAVE_MPI TRUE)
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MPI_LINKER_FLAGS}")
-  set(LIBRARIES "${LIBRARIES};${MPI_LIBRARIES}")
-  include_directories(${MPI_INCLUDE_PATH})
-  message(STATUS "MPI_LIBRARIES: ${MPI_LIBRARIES}")
-  message(STATUS "MPI_LINKER_FLAGS: ${MPI_LINKER_FLAGS}")
-  #add_definitions(-DOMPI_SKIP_MPICXX)
-  option(ALWAYS_USE_MPI "Always use MPI" TRUE)
+  find_package(MPI)
+  if (NOT MPI_FOUND)
+    message(ERROR "MPI not found")
+  else()
+    set(HAVE_MPI TRUE)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MPI_LINKER_FLAGS}")
+    include_directories(${MPI_INCLUDE_PATH})
+    message(STATUS "MPI_LIBRARIES: ${MPI_LIBRARIES}")
+    message(STATUS "MPI_LINKER_FLAGS: ${MPI_LINKER_FLAGS}")
+    #add_definitions(-DOMPI_SKIP_MPICXX)
+    option(ALWAYS_USE_MPI "Always use MPI" TRUE)
+  endif()
+endif()
+
+# PAPI
+find_package(PAPI)
+if (PAPI_FOUND)
+  set(HAVE_PAPI TRUE)
+  include_directories(${PAPI_INCLUDE_DIRS})
+else()
+  set(PAPI_LIBRARIES "")
 endif()
 
 # external dependencies
 include(external/External)
 
 CONFIGURE_FILE(
-  ${PROJECT_SOURCE_DIR}/src/lib/scconfig.h.in
-  ${PROJECT_BINARY_DIR}/src/lib/scconfig.h
+  ${PROJECT_SOURCE_DIR}/src/lib/mpqc_config.h.in
+  ${PROJECT_BINARY_DIR}/src/lib/mpqc_config.h
 )
 add_definitions(-DHAVE_CONFIG_H)
-
-CONFIGURE_FILE(
-  ${PROJECT_SOURCE_DIR}/src/lib/scdirlist.h.in
-  ${PROJECT_BINARY_DIR}/src/lib/scdirlist.h
-)
 
 CONFIGURE_FILE(
   ${PROJECT_SOURCE_DIR}/bin/mpqcrun.in
@@ -267,15 +278,17 @@ CONFIGURE_FILE(
 )
 
 # libraries
-set(LINK_LIBRARIES "")
-if (HAVE_LIBINT2)
-  list(APPEND LINK_LIBRARIES ${LIBINT2_LIBRARY})
-endif()
+set(LINK_LIBRARIES)
 list(APPEND LINK_LIBRARIES ${LIBRYSQ_LIBRARY})
+list(APPEND LINK_LIBRARIES ${LIBINT2_LIBRARY})
+list(APPEND LINK_LIBRARIES ${MADNESS_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${Boost_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${LAPACK_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${BLAS_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${PYTHON_LIBRARIES})
+list(APPEND LINK_LIBRARIES ${HDF5_LIBRARIES})
+list(APPEND LINK_LIBRARIES ${MPI_LIBRARIES})
+list(APPEND LINK_LIBRARIES ${PAPI_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${LIBRARIES})
 list(APPEND LINK_LIBRARIES ${CMAKE_DL_LIBS})
 
@@ -290,22 +303,26 @@ add_subdirectory(test)
 # Export include dirs, library list
 
 # get_target_property(LINK_LIBRARIES mpqc LINK_LIBRARIES)
-# message(STATUS "LINK_LIBRARIES = ${LINK_LIBRARIES}")
+# message(STATUS "LIBRARIES = ${LIBRARIES}")
 
-set(MPQC_LINK_LIBRARIES "")
+set(MPQC_CONFIG_LIBRARIES "")
 
 # Fortran libraries
 foreach (_lib ${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES})
-  set(_libpath _path-NOTFOUND)
+  set(_libpath _libpath-NOTFOUND)
   find_library(_libpath ${_lib} PATHS ${CMAKE_Fortran_IMPLICIT_LINK_DIRECTORIES})
-  list(APPEND LINK_LIBRARIES ${_libpath})
+  if (_libpath)
+    list(APPEND LINK_LIBRARIES ${_libpath})
+  else()
+    list(APPEND LINK_LIBRARIES ${_lib})
+  endif()
 endforeach()
 
 # transform library list into compiler args
 foreach (_lib ${LINK_LIBRARIES})
-  set(_libpath _path-NOTFOUND)
-  find_library(_libpath ${_lib} PATHS ${CMAKE_Fortran_IMPLICIT_LINK_DIRECTORIES})
-  #message(STATUS "_lib = ${_lib}, _path = ${_path}")
+  set(_libpath _libpath-NOTFOUND) # DON'T REMOVE THIS LINE
+  find_library(_libpath ${_lib})
+  #message(STATUS "_lib = ${_lib}, _libpath = ${_libpath}")
   if (_libpath)
     set(_library "${_libpath}")
   else()
@@ -320,13 +337,14 @@ foreach (_lib ${LINK_LIBRARIES})
     set(_library "-F ${_path} -framework ${_name}")
   endif()
   #message(STATUS "${_lib} = ${_library}")
-  set(MPQC_LINK_LIBRARIES "${MPQC_LINK_LIBRARIES} ${_library}")
+  set(MPQC_CONFIG_LIBRARIES "${MPQC_CONFIG_LIBRARIES} ${_library}")
 endforeach()
 
-# message(STATUS "mpqc_link_libraries = ${MPQC_LINK_LIBRARIES}")
+# message(STATUS "MPQC_CONFIG_LIBRARIES = ${MPQC_CONFIG_LIBRARIES}")
 
-# include dirs sans the source dirs
+# include dirs
 get_directory_property(MPQC_INCLUDE_DIRECTORIES DIRECTORY src/bin/mpqc INCLUDE_DIRECTORIES)
+# remove internal source dirs
 list(REMOVE_ITEM
   MPQC_INCLUDE_DIRECTORIES
   ${PROJECT_BINARY_DIR}/src/lib
@@ -341,9 +359,9 @@ endforeach()
 #message(STATUS "MPQC_CPP_FLAGS = ${MPQC_CPP_FLAGS}")
 
 CONFIGURE_FILE(
-  ${PROJECT_SOURCE_DIR}/bin/sc-config.in
-  ${PROJECT_BINARY_DIR}/bin/sc-config
+  ${PROJECT_SOURCE_DIR}/bin/mpqc-config.in
+  ${PROJECT_BINARY_DIR}/bin/mpqc-config
   @ONLY
 )
 
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/bin/sc-config DESTINATION bin)
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/bin/mpqc-config DESTINATION bin)

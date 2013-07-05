@@ -30,7 +30,7 @@
 
 #include <iostream>
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 
 namespace sc {
 

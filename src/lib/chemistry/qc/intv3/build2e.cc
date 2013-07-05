@@ -29,7 +29,7 @@
 #include <assert.h>
 #include <math.h>
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <util/misc/formio.h>
 #include <util/misc/consumableresources.h>
 #include <chemistry/qc/intv3/macros.h>

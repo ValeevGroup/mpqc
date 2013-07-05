@@ -33,7 +33,7 @@
 
 #include <memory>
 #include <algorithm>
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <util/misc/scint.h>
 #include <util/misc/regtime.h>
 

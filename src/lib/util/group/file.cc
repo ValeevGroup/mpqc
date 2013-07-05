@@ -29,7 +29,7 @@
 #include <util/misc/string.h>
 
 #ifdef HAVE_CONFIG_H
-#include <scconfig.h>
+#include <mpqc_config.h>
 #endif
 
 

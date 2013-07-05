@@ -161,6 +161,45 @@ namespace sc {
   typename SingleReference_R12Intermediates<T>::TArray2
   SingleReference_R12Intermediates<T>::rdm1() {
 
+    if (0) {
+      {
+      typedef TiledArray::Array<T,2> Array;
+      Array FiA = _2("<i|F|A'>");
+      Array FAi = _2("<A'|F|i>");
+      std::cout << "<i|F|A'>:" << std::endl << FiA << std::endl;
+      std::cout << "<A'|F|i>:" << std::endl << FAi << std::endl;
+      Array FiA_2(FiA.get_world(), FiA.trange());
+      FiA_2("i,A'") = FAi("A',i");
+      std::cout << "<i|F|A'>=Perm(<A'|F|i>):" << std::endl << FiA_2 << std::endl;
+      }
+      {
+      typedef TiledArray::Array<T,4> Array;
+      Array g_ij_ab = _4("<i j|g|a b>");
+      Array g_ab_ij = _4("<a b|g|i j>");
+      std::cout << "<i j|g|a b>:" << std::endl << g_ij_ab << std::endl;
+      std::cout << "<a b|g|i j>:" << std::endl << g_ab_ij << std::endl;
+      Array g_ij_ab_2(g_ij_ab.get_world(), g_ij_ab.trange());
+      g_ij_ab_2("i,j,a,b") = g_ab_ij("a,b,i,j");
+      std::cout << "<i j|g|a b>=Perm(<a b|g|i j>):" << std::endl << g_ij_ab_2 << std::endl;
+      Array should_be_zero = g_ij_ab("i,j,a,b") - g_ab_ij("a,b,i,j");
+      std::cout << "<i j|g|a b> - Perm(<a b|g|i j>):" << std::endl << should_be_zero << std::endl;
+      const double max_nonzero = norminf(should_be_zero("i,j,a,b"));
+      std::cout << "|| <i j|g|a b> - Perm(<a b|g|i j>) ||_\infty = " << max_nonzero << std::endl;
+      }
+      {
+      typedef TiledArray::Array<T,2> Array;
+      Array mu_z_ij = _2("<i|mu_z|j>");
+      Array gamma_ij = _2("<i|gamma|j>");
+      const double mu_z_e = dot(mu_z_ij("i,j"), gamma_ij("i,j"));
+      double mu_z_n = 0.0;
+      Ref<Molecule> mol = r12world_->basis()->molecule();
+      for(int a=0; a<mol->natom(); ++a) {
+        mu_z_n += mol->Z(a) * mol->r(a, 2);
+      }
+      std::cout << "mu_z = " << -mu_z_e+mu_z_n << std::endl;
+      }
+    }
+
     TArray2 Fab = _2("<a|F|b>");
     TArray2 Iij = _2("<i|I|j>");
     //std::cout << "Fock(vir,vir)\n" << Fab << std::endl;

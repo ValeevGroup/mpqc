@@ -27,7 +27,7 @@
 
 #include <limits.h>
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 
 #include <unistd.h>
 #include <string.h>

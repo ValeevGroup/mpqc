@@ -18,9 +18,7 @@ INPUTGENDEPS=$(SRCTOPDIR)/lib/perl/QCParse.pm \
              $(TESTDIR)/makein.pl
 
 MAKEIN=$(PERL) -I$(SRCTOPDIR)/lib/perl $(TESTDIR)/makein.pl
-MAKEINCCA=$(PERL) makeccain.pl
 CHECKOUT=$(PERL) -I$(SRCTOPDIR)/lib/perl $(TESTDIR)/checkout.pl
-CHECKCCAOUT=$(PERL) $(TESTDIR)/checkccaout.pl
 
 ########################################################################
 # need to determine nthreadperproc from MPQCRUN_ARGS, since this determines
@@ -246,49 +244,6 @@ HSOSSCFMASTER=hsosscf.qci
 HSOSSCFINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(HSOSSCFMASTER))
 HSOSSCFOUTPUTS = $(HSOSSCFINPUTS:%.$(INSUF)=%.out)
 
-CCAINTV3MASTER=ccaintv3.qci
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
-  CCAINTV3INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(CCAINTV3MASTER))
-  CCAINTV3OUTPUTS = $(CCAINTV3INPUTS:%.$(INSUF)=%.out)
-endif
-
-CCACINTSMASTER=ccacints.qci
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
- ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
-  CCACINTSINPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(CCACINTSMASTER))
-  CCACINTSOUTPUTS = $(CCACINTSINPUTS:%.$(INSUF)=%.out)
- endif
-endif
-
-CCALIBINT2MASTER=ccalibint2.qci
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
- ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_LIBINT2),yes)
-  CCALIBINT2INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(CCALIBINT2MASTER))
-  CCALIBINT2OUTPUTS = $(CCALIBINT2INPUTS:%.$(INSUF)=%.out)
- endif
-endif
-
-CCAMP2R12MASTER=ccamp2r12.qci
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
- ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12),yes)
-  ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS),yes)
-   CCAMP2R12INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(CCAMP2R12MASTER))
-   CCAMP2R12OUTPUTS = $(CCAMP2R12INPUTS:%.$(INSUF)=%.out)
-  endif
- endif
-endif
-
-CCAFEIN = $(TESTDIR)/ref/ccafe_h2oscfsto3g \
-          $(TESTDIR)/ref/ccafe_h2oscfgradccpvtz \
-          $(TESTDIR)/ref/ccafe_h2oq4scfgrad321g
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_CCA),yes)
- CCAFEINPUTS = ccafe_h2oscfsto3g.cca \
-               ccafe_h2oscfgradccpvtz.cca \
-               ccafe_h2oq4scfgrad321g.cca
- CCAFEOUTPUTS = $(CCAFEINPUTS:%.cca=%.out)
- CCAFERESULTS = $(CCAFEINPUTS:%.cca=%.results)
-endif
-
 CKPTINPUTS = \
  ckpt_0clscf.in     ckpt_0qnewtopt.in  ckpt_1zapt2.in     ckpt_mp2.in \
  ckpt_0efcopt.in    ckpt_1clscf.in     ckpt_1qnewtopt.in  ckpt_2qnewtopt.in \
@@ -401,14 +356,12 @@ ALLINPUTS = $(METHODSINPUTS) $(H2OINPUTS) $(H2OMP2INPUTS) \
             $(SYMM1INPUTS) $(SYMM2INPUTS) $(SYMM3INPUTS) \
             $(CKPTINPUTS) $(MBPTINPUTS) $(LMP2INPUTS) \
             $(CLSCFINPUTS) $(USCFINPUTS) $(HSOSSCFINPUTS) \
-            $(INPUTINPUTS) $(CCAINTV3INPUTS) $(CCACINTSINPUTS) $(CCALIBINT2INPUTS) \
-            $(CCAMP2R12INPUTS)
+            $(INPUTINPUTS)
 
 ALLOUTPUTS = $(ALLINPUTS:%.$(INSUF)=%.out)
 
 CHECK0INPUTS := $(H2OINPUTS) $(H2OFRQINPUTS) $(H2OMP2INPUTS)		\
-                $(METHODSINPUTS) $(INPUTINPUTS) $(CCAINTV3INPUTS)	\
-                $(CCACINTSINPUTS) $(CCALIBINT2INPUTS) $(LMP2INPUTS)
+                $(METHODSINPUTS) $(INPUTINPUTS) $(LMP2INPUTS)
 
 CHECK0BFILTER := %ccpvdz %ccpvtz %ccpvqz %ccpv5z
 CHECK0BFILTER += %ccpcvdz %ccpcvtz %ccpcvqz %ccpcv5z
@@ -522,8 +475,7 @@ default::
 
 check_clean: check_clean_scratch
 	/bin/rm -f $(RUN)/*.out $(RUN)/*.diff
-	/bin/rm -f $(RUN)/*.cca $(RUN)/*.results $(RUN)/*.err
-	/bin/rm -rf $(RUN)/*.ccatmpdir
+	/bin/rm -f $(RUN)/*.results $(RUN)/*.err
 
 check_clean_scratch:
 	/bin/rm -rf $(RUN)/*.tmp $(RUN)/*.wfn $(RUN)/*.hess $(RUN)/*.results report.txt
@@ -540,15 +492,9 @@ MPQCRUN_EXTRA_ARGS = --autoout --simpout \
 
 check0_run:
 	$(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CHECK0INPUTS:$(INP)/%=%)
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_INTCCA),yes)
-	$(MAKE) checkccafe_run
-endif
 
 check0_chk:
 	$(CHECKOUT) -r $(TESTDIR)/ref $(CHECK0OUTPUTS:$(INP)/%=$(RUN)/%)
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_INTCCA),yes)
-	$(MAKE) checkccafe_chk
-endif
 
 check1: $(RUN) check1_run check1_chk
 
@@ -566,31 +512,9 @@ check2_run:
 check2_chk:
 	$(CHECKOUT) -r $(TESTDIR)/ref $(CHECK2OUTPUTS:$(INP)/%=$(RUN)/%)
 
-checkcca_run: $(RUN)
-	$(MPQCRUN) $(MPQCRUN_EXTRA_ARGS) $(ALL_MPQCRUN_ARGS) $(CCAINTV3INPUTS:$(INP)/%=%) $(CCACINTSINPUTS:$(INP)/%=%) $(CCALIBINT2INPUTS:$(INP)/%=%) $(CCAMP2R12INPUTS:$(INP)/%=%)
-ifeq ($(ENABLESHARED),yes)
-	$(MAKE) checkccafe_run
-endif
-
-checkcca_chk:
-	$(CHECKOUT) -r $(TESTDIR)/ref $(CCAINTV3OUTPUTS:$(INP)/%=$(RUN)/%) $(CCACINTSOUTPUTS:$(INP)/%=$(RUN)/%) $(CCALIBINT2OUTPUTS:$(INP)/%=$(RUN)/%)  $(CCAMP2R12OUTPUTS:$(INP)/%=$(RUN)/%)
-ifeq ($(ENABLESHARED),yes)
-	$(MAKE) checkccafe_chk
-endif
-
-CCARUN = ../ccarun
-CCARUN_EXTRA_ARGS = --inputprefix $(RUN) \
-                     --outputprefix $(RUN)
-
-checkccafe_run: $(RUN) stamp-ccafe
-	$(PERL) $(CCARUN) $(CCARUN_EXTRA_ARGS) $(CCAFEINPUTS) 
-
-checkccafe_chk:
-	$(CHECKCCAOUT) --refprefix $(TESTDIR)/ref --outputprefix $(RUN) $(CCAFERESULTS)
-
 .PHONY: inputs
 inputs:: h2o h2omp2 mp2r12 mp2f12 psiccsdpt2r12 psiccsdpt2f12 h2ofrq ch2frq basis1 basis2 opt optts symm1 symm2 symm3 ckpt mbpt
-inputs:: methods clscf uscf hsosscf input dft orthog ccacints ccaintv3 ccamp2r12
+inputs:: methods clscf uscf hsosscf input dft orthog
 
 .PHONY: h2o
 h2o: stamp-h2o
@@ -657,15 +581,6 @@ opt: stamp-opt
 
 .PHONY: optts
 optts: stamp-optts
-
-.PHONY: ccaintv3
-ccaintv3: stamp-ccaintv3
-
-.PHONY: ccacints
-ccacints: stamp-ccacints
-
-.PHONY: ccamp2r12
-ccamp2r12: stamp-ccamp2r12
 
 .PHONY: ckpt
 ckpt: $(CKPTINPUTS) $(CKPTINPUTS:%.in=%.qci)
@@ -769,26 +684,6 @@ stamp-uscf: $(INP) $(USCFMASTER) $(INPUTGENDEPS)
 stamp-hsosscf: $(INP) $(HSOSSCFMASTER) $(INPUTGENDEPS)
 	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(HSOSSCFMASTER)
 	touch stamp-hsosscf
-
-stamp-ccafe: $(RUN) $(CCAFEIN)
-	$(MAKEINCCA) --dir $(RUN) --scref $(TESTDIR)/ref $(CCAFEIN)
-	touch stamp-ccafe
-
-stamp-ccaintv3: $(INP) $(CCAINTV3MASTER) $(INPUTGENDEPS)
-	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(CCAINTV3MASTER)
-	touch stamp-ccaintv3
-
-stamp-ccacints: $(INP) $(CCACINTSMASTER) $(INPUTGENDEPS)
-	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(CCACINTSMASTER)
-	touch stamp-ccacints
-
-stamp-ccalibint2: $(INP) $(CCALIBINT2MASTER) $(INPUTGENDEPS)
-	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(CCALIBINT2MASTER)
-	touch stamp-ccacints
-
-stamp-ccamp2r12: $(INP) $(CCAMP2R12MASTER) $(INPUTGENDEPS)
-	$(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -d $(INP) $(CCAMP2R12MASTER)
-	touch stamp-ccamp2r12
 
 ##############################################################################
 

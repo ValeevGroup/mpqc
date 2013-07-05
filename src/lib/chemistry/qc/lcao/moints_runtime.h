@@ -33,7 +33,7 @@
 
 namespace sc {
 
-  /** MOIntsRuntime provides runtime support for computing 2-, 3-, and 4-center MO-basis integrals
+  /** MOIntsRuntime provides runtime support for computing 1-body and 2-body (2-, 3-, and 4-center) MO-basis integrals
       (with or without density fitting).
     */
   class MOIntsRuntime : virtual public SavableState {
@@ -50,17 +50,17 @@ namespace sc {
       /// obsoletes this object
       void obsolete();
 
-      /// factory for creating AO->MO transforms
+      /// factory for creating AO->MO transforms for 2-body integrals
       const Ref<MOIntsTransformFactory>& factory() const { return factory_; }
       /// density fitting basis set. May be null.
       const Ref<DensityFittingParams>& dfparams() const { return dfparams_; }
       /// runtime for density fitting matrices. Returns null if density fitting basis was not given.
       const Ref<DensityFittingRuntime>& runtime_df() const { return runtime_df_; }
-      /// runtime for 2-center integrals
+      /// runtime for 2-body 2-center integrals
       const Ref<TwoBodyTwoCenterMOIntsRuntime>& runtime_2c() const { return runtime_2c_; }
-      /// runtime for 3-center integrals
+      /// runtime for 2-body 3-center integrals
       const Ref<TwoBodyThreeCenterMOIntsRuntime>& runtime_3c() const { return runtime_3c_; }
-      /// runtime for 4-center integrals
+      /// runtime for 2-body 4-center integrals
       const Ref<TwoBodyFourCenterMOIntsRuntime>& runtime_4c() const { return runtime_4c_; }
 
     private:

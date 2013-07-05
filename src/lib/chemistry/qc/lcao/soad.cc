@@ -29,7 +29,7 @@
 #pragma implementation
 #endif
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <chemistry/qc/lcao/soad.h>
 #include <chemistry/qc/wfn/femo.h>
 #include <chemistry/qc/basis/split.h>
@@ -393,7 +393,7 @@ SuperpositionOfAtomicDensities::minimal_basis_set(const Ref<Molecule>& mol) {
       oss << "basis:" << a;
       const char* keyword = oss.str().c_str();
       if (mol->Z(a) <= 38)
-        akv->assign(keyword, "STO-3G");
+        akv->assign(keyword, "STO-6G");
       else
         akv->assign(keyword, "WTBS");
     }
@@ -404,7 +404,7 @@ SuperpositionOfAtomicDensities::minimal_basis_set(const Ref<Molecule>& mol) {
     try {
       Ref<AssignedKeyVal> akv = new AssignedKeyVal;
       akv->assign("molecule", Ref<DescribedClass>(mol));
-      akv->assign("name", "STO-3G");
+      akv->assign("name", "STO-6G");
       mother = new GaussianBasisSet(akv);
     }
     catch (...) {}

@@ -29,19 +29,17 @@
 #include <extern_pt2r12.h>
 
 // Force linkages:
-#include <scdirlist.h>
+#include <mpqc_config.h>
 #include <util/group/linkage.h>
 #include <chemistry/qc/basis/linkage.h>
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_PSI
+#ifdef HAVE_PSI3
 #include <chemistry/qc/psi/linkage.h>
 #endif
 #include <chemistry/qc/wfn/linkage.h>
 #include <chemistry/qc/scf/linkage.h>
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12
-#  include <chemistry/qc/mbptr12/linkage.h>
-#endif
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_LIBINT2
+#ifdef HAVE_LIBINT2
 #  include <chemistry/qc/libint2/linkage.h>
+#  include <chemistry/qc/mbptr12/linkage.h>
 #endif
 #include <util/state/linkage.h>
 
@@ -53,7 +51,7 @@
 #endif
 
 // MUST HAVE LIBINT2
-#if HAVE_INTEGRALLIBINT2
+#ifdef HAVE_LIBINT2
 #  include <chemistry/qc/libint2/libint2.h>
 #else
 #  error "this copy of MPQC does not include the Libint2 library (see libint.valeyev.net) -- cannot use F12 methods"
@@ -168,7 +166,7 @@ int try_main(int argc, char **argv)
   init.init_io(grp);
   Ref<ThreadGrp> thread = init.init_threadgrp();
   Ref<MemoryGrp> memory = init.init_memorygrp();
-#if HAVE_INTEGRALLIBINT2
+#ifdef HAVE_LIBINT2
   Integral::set_default_integral(new IntegralLibint2);
 #endif
   init.init_integrals();

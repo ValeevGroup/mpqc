@@ -32,6 +32,7 @@
 #include <util/state/stateio.h>
 
 #include <chemistry/qc/basis/petite.h>
+#include <chemistry/qc/basis/split.h>
 
 #include <chemistry/qc/scf/clhf.h>
 #include <chemistry/qc/scf/lgbuild.h>
@@ -174,7 +175,13 @@ CLHF::ao_fock(double accuracy)
             }
         }
         
-        mpqc::hf::fock(*bs, int2, D, F, Dmax2, gmat_accuracy);
+        {
+            Ref<SplitBasisSet> basis(new SplitBasisSet(bs));
+            auto factory = this->integral()->clone();
+            factory->set_basis(basis);
+            mpqc::hf::Integral int2(factory->electron_repulsion());
+            mpqc::hf::fock(*basis, int2, D, F, Dmax2, gmat_accuracy);
+        }
         
         //std::cout << "F' = \n" << F << std::endl;
         for (int i = 0, ij = 0; i < n; ++i) {

@@ -29,7 +29,7 @@
 #pragma implementation
 #endif
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 
 #if defined(HAVE_MPQC3_RUNTIME)
 

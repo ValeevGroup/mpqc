@@ -29,7 +29,7 @@
 #ifndef _chemistry_qc_lcao_fockbuild_h
 #define _chemistry_qc_lcao_fockbuild_h
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <util/misc/regtime.h>
 #include <util/group/thread.h>
 #include <util/group/message.h>

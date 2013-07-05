@@ -28,7 +28,7 @@
 #ifndef _util_misc_timer_h
 #define _util_misc_timer_h
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 
 #define DEPRECATE_TIMER 1
 

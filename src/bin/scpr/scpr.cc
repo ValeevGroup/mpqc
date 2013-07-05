@@ -26,7 +26,7 @@
 //
 
 #ifdef HAVE_CONFIG_H
-#include <scconfig.h>
+#include <mpqc_config.h>
 #endif
 
 #include <unistd.h>
@@ -43,19 +43,12 @@
 #include <chemistry/qc/wfn/linkage.h>
 #include <chemistry/qc/dft/linkage.h>
 #include <chemistry/qc/mbpt/linkage.h>
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS
-#  include <chemistry/qc/cints/linkage.h>
-#endif
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_LIBINT2
+#ifdef HAVE_LIBINT2
 #  include <chemistry/qc/libint2/linkage.h>
-#endif
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12
 #  include <chemistry/qc/mbptr12/linkage.h>
-#endif
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CCR12
 #  include <chemistry/qc/ccr12/linkage.h>
 #endif
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_PSI
+#ifdef HAVE_PSI3
 #  include <chemistry/qc/psi/linkage.h>
 #endif
 #include <util/state/linkage.h>
@@ -147,7 +140,7 @@ main(int argc, char *argv[])
 
   if (help || nobject == 0 || nfile == 0) {
       ExEnv::out0()
-           << indent << "scpr version " << SC_VERSION << endl
+           << indent << "scpr version " << MPQC_VERSION << endl
            << SCFormIO::copyright << endl
            << indent << "usage: " << argv[0] << " [options] file ..." << endl
            << indent << "where options are chosen from:" << endl
@@ -173,14 +166,14 @@ main(int argc, char *argv[])
 
   if (version) {
       ExEnv::out0()
-         << indent << "scpr version " << SC_VERSION << endl
+         << indent << "scpr version " << MPQC_VERSION << endl
          << SCFormIO::copyright;
     exit(0);
   }
 
   if (warranty) {
       ExEnv::out0()
-         << indent << "scpr version " << SC_VERSION << endl
+         << indent << "scpr version " << MPQC_VERSION << endl
          << SCFormIO::copyright << endl
          << SCFormIO::warranty;
     exit(0);
@@ -188,7 +181,7 @@ main(int argc, char *argv[])
 
   if (license) {
       ExEnv::out0()
-         << indent << "scpr version " << SC_VERSION << endl
+         << indent << "scpr version " << MPQC_VERSION << endl
          << SCFormIO::copyright << endl
          << SCFormIO::license;
     exit(0);

@@ -4,8 +4,8 @@
 
 #ifndef MPQC_NEW_FEATURES
 
-void sc::CI::compute(const Ref<RefWavefunction> &wfn,
-                     const Ref<KeyVal> &kv) {
+std::vector<double> sc::CI::compute(const Ref<RefWavefunction> &wfn,
+                                    const Ref<KeyVal> &kv) {
     throw std::runtime_error("sc::CI::compute: MPQC was compiled without new features");
 }
 

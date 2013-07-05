@@ -29,7 +29,7 @@
 #define _util_state_translate_h
 
 #ifdef HAVE_CONFIG_H
-#include <scconfig.h>
+#include <mpqc_config.h>
 #endif
 
 #if defined(WORDS_BIGENDIAN)

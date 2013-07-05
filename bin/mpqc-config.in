@@ -1,0 +1,103 @@
+#!/bin/sh
+
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=@CMAKE_INSTALL_PREFIX@
+libdir=@CMAKE_INSTALL_PREFIX@/lib
+includedir=""
+LIBSUF=@LIBSUF@
+exec_prefix_set=no
+libs="@MPQC_CONFIG_LIBRARIES@"
+mpqclibs="-lmpqcinit -lchemistry -lmath -lutil -lchemistry -lmath -lutil"
+cppdefines="@DEFS@ @EXTRADEFINES@"
+cxxflags="@CMAKE_CXX_FLAGS@"
+cppflags="@MPQC_CPP_FLAGS@" 
+cflags="@CMAKE_C_FLAGS@"
+f77flags="@CMAKE_Fortran_FLAGS@"
+cxx="@CMAKE_CXX_COMPILER@"
+cc="@CMAKE_C_COMPILER@"
+f77="@CMAKE_Fortran_COMPILER@"
+version="@MPQC_VERSION@"
+soversion="@MPQC_SO_VERSION@"
+buildid="@BUILDID@"
+datarootdir=@CMAKE_INSTALL_FULL_DATAROOTDIR@
+datadir=@CMAKE_INSTALL_FULL_DATADIR@
+enableshared=@ENABLESHARED@
+
+usage="\
+Usage: mpqc-config [--prefix[=DIR]] [--exec-prefix[=DIR]] [--version] [--buildid] [--so-version] [--datadir] [--libs] [--libdir] [--cppflags] [--cc] [--cflags] [--cxx] [--cxxflags] [--f77] [--f77flags]"
+
+if test $# -eq 0; then
+      echo "${usage}" 1>&2
+      exit 1
+fi
+
+while test $# -gt 0; do
+  case "$1" in
+  -*=*) optarg=`echo "$1" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
+  *) optarg= ;;
+  esac
+
+  case $1 in
+    --prefix=*)
+      prefix=$optarg
+      if test $exec_prefix_set = no ; then
+        exec_prefix=$optarg
+      fi
+      ;;
+    --prefix)
+      echo $prefix
+      ;;
+    --exec-prefix=*)
+      exec_prefix=$optarg
+      exec_prefix_set=yes
+      ;;
+    --exec-prefix)
+      echo $exec_prefix
+      ;;
+    --version)
+      echo $version
+      ;;
+    --so-version)
+      echo $soversion | sed s/:/./g
+      ;;
+    --datadir)
+      echo $datadir
+      ;;
+    --buildid)
+      echo $buildid
+      ;;
+    --cppflags)
+      echo $includes $cppflags
+      ;;
+    --cflags)
+      echo $cflags
+      ;;
+    --cxxflags)
+      echo $cxxflags
+      ;;
+    --cc)
+      echo $cc
+      ;;
+    --f77flags)
+      echo $f77flags
+      ;;
+    --f77)
+      echo $f77
+      ;;
+    --cxx)
+      echo $cxx
+      ;;
+    --libdir)
+      echo $libdir
+      ;;
+    --libs)
+      echo -L${libdir} $mpqclibs $libs
+      ;;
+    *)
+      echo "${usage}" 1>&2
+      exit 1
+      ;;
+  esac
+  shift
+done
+

@@ -2,7 +2,7 @@
 #ifndef _mpqcinit_h
 #define _mpqcinit_h
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <util/options/GetLongOpt.h>
 #include <util/keyval/keyval.h>
 #include <util/group/message.h>

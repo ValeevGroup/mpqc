@@ -19,7 +19,6 @@ different environments:
   <li> \ref mpqcmpi
   <li> \ref mpqcmp2
   <li> \ref mpqcmp2r12
-  <li> \ref mpqccca
 </ul>
 
 \section mpqccomline Command Line Options
@@ -85,13 +84,6 @@ name.  If the input file name is not given, it will default to
                 by given the input file name on the command line
                 without any option flags.
 
-  <dt><tt>-cca-path</tt><dd>A colon-separated list of directories in which 
-                CCA component libraries may be found.
-
-  <dt><tt>-cca-load</tt><dd>A colon-separated list of sidl class names for
-                CCA components which will be instantiated from the libraries
-                found in the path given by <tt>-cca-path</tt>
-
 </dl>
 
 Some MPI environments do not pass the command line to slave programs, but
@@ -101,16 +93,16 @@ correct arguments as early as possible use the configure option
 
 \section mpqcenv Environmental Variables
 
-MPQC looks at five environmental variables to set up
+MPQC looks at six environmental variables to set up
 communication, find library files, and specify the default Integral
 object.  Machine specific libraries
 and utilities to run programs in parallel might look
-at other environment variables as well.  The five that
+at other environment variables as well.  The six that
 apply on all platforms are:
 
 <dl>
 
-  <dt><tt>SCLIBDIR</tt><dd>The name of the library directory.  See the
+  <dt><tt>MPQC_DATA_PATH</tt><dd>The name of the library directory.  See the
                      GaussianBasisSet documentation and look below for more
                      information.
 
@@ -131,7 +123,7 @@ apply on all platforms are:
                 MolecularEnergy specializations require specific choices
                 of Integral specializations and may not work with IntegralV3.
 
-  <dt><tt>SC_RESOURCES</tt><dd>A ParsedKeyVal specification of a ConsumableResources
+  <dt><tt>MPQC_RESOURCES</tt><dd>A ParsedKeyVal specification of a ConsumableResources
                 object. By default a ConsumableResources object constructed with its default
                 constructor will be used.
 
@@ -140,7 +132,7 @@ apply on all platforms are:
 By default, MPQC tries to find library files first in the <tt>lib</tt>
 subdirectory of the installation directory and then the source code
 directory.  If the library files cannot be found, MPQC must be notified of
-the new location with the environmental variable <tt>SCLIBDIR</tt>.
+the new location with the environmental variable <tt>MPQC_DATA_PATH</tt>.
 
 For example, if you need to run MPQC on a machine that doesn't have the
 source code distribution in the same place as it was located on the machine
@@ -159,7 +151,7 @@ and do something like
 mkdir ~/sclib
 cd ~/sclib
 tar xvf ../sclib.tar
-setenv SCLIBDIR ~/sclib
+setenv MPQC_DATA_PATH ~/sclib
 </pre>
 
 The <tt>setenv</tt> command is specific to the C-shell.  You will need to
@@ -332,41 +324,12 @@ to a file on a GPFS file system.
 <br>
 
 At the moment, MBPT2_R12 objects require specific specialization of Integral,
-IntegralCints. Thus in order to compute MP2-R12 energies, your version of MPQC
-needs to be compiled with support for IntegralCints.  A free, open-source
-library called <tt>libint</tt> is a prerequisite for IntegralCints\if html (see \ref compile)\endif.
-In order to use IntegralCints as the default Integral object,
-add <tt>-integral "<IntegralCints>:()"</tt> to the command line,
-or set environmental variable <tt>INTEGRAL</tt> to <tt>"<IntegralCints>:()"</tt>.
+IntegralLibint2. Thus in order to compute MP2-R12 energies, your version of MPQC
+needs to be compiled with support for IntegralLibint2.  A free, open-source
+library called <tt>libint</tt> (version 2) is a prerequisite for IntegralLibint2\if html (see \ref compile)\endif.
+In order to use IntegralLibint2 as the default Integral object,
+add <tt>-integral "<IntegralLibint2>:()"</tt> to the command line,
+or set environmental variable <tt>INTEGRAL</tt> to <tt>"<IntegralLibint2>:()"</tt>.
 </p>
-
-\section mpqccca Special Notes for CCA Components
-
-<p>
-<b>Common Component Architecture (CCA)</b>
-
-Portions of MPQC functionality are being packaged into CCA components.
-For general overviews of CCA technology and framework usage, please see 
-<a href="http://www.cca-forum.org">www.cca-forum.org</a> (the tutorial in particular) and the 
-<a href="http://www.cca-forum.org/~cca-chem/doc-apps-0.2/index.html">cca-chem-apps</a> 
-documentation.
-MPQC components may be utilized directly within the ccaffeine framework, while some 
-components may be instantiated and used within MPQC itself, making use of an embedded
-CCA framework.
-</p>
-
-<p>
-<b>CCA Runtime Environment</b>
-
-For MPQC runs utilizing embedded components, the runtime environment for the CCA
-framework must be specified.
-The colon-separated path used to locate component libraries must be specified either 
-using the <tt>-cca-path</tt> command-line option or using the <tt>cca_path</tt> key 
-within the <tt>mpqc</tt> section of a keyval input.
-The colon-separated list of component sidl class names which will be referenced within the
-input must be specified using either the <tt>-cca-load</tt> command-line option or using
-the <tt>cca_load</tt> key within the <tt>mpqc</tt> section of a keyval input.
-If defaults for the cca-path and cca-load options are desired, <tt>do_cca</tt> must be 
-set to <tt>yes</tt> in the keyval input.
 
 */

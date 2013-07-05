@@ -5,9 +5,6 @@
   <li> \ref compilepre   
   <li> \ref compilepreopt
   <li> \ref compileconf  
-  <ul>
-    <li> \ref compilecca
-  </ul>
   <li> \ref compilecomp
   <li> \ref compilecheck
 </ul>
@@ -124,18 +121,12 @@ features.
          permit remote memory access through the ARMCIMemoryGrp and the
          MTMPIMemoryGrp classes, respectively.
 
-    <li> Libint (version 1.1.0 or higher): This is a machine-generated
+    <li> Libint (version 2.0.3 or higher): This is a machine-generated
          library that can be used for evaluation of certain molecular
-         integrals. IntegralCints and MBPT2_R12 classes depend on this
+         integrals. IntegralLibint2 and MBPT2_R12 classes depend on this
          library. The library is freely available under GNU Public License
          (GPL) from <a
-         href="http://www.chem.vt.edu/chem-dept/valeev/software/libint/libint.html">http://www.chem.vt.edu/chem-dept/valeev/software/libint/libint.html</a>.
-
-    <li> Cca-chem-generic (version 0.2.0 or higher, and associated CCA tools):
-         This package allows both stand-alone and embedded component applications  
-         to be formed using MPQC-based components.  Visit the
-         <a href="http://cca-forum.org/~cca-chem">CCA Chemistry Component Toolkit Homepage</a>
-         for information on the freely available source code.
+         href="http://libint.valeyev.net">libint.valeyev.net</a>.
 
 </ul>
 
@@ -209,9 +200,6 @@ Useful options to configure include:
   link with them instead of standard ``.a'' libraries.  This works on a
   Linux-ELF system.
 
-<dt><tt>--enable-components</tt><dd>This will generate CCA components and
-  enable embedded CCA frameworks within MPQC.
-
 <dt><tt>--with-build-id</tt><dd>This is used to generate unique shared
   library names and a unique default prefix for an MPQC installation.
   Unique shared library names must be used used by package distributors if
@@ -262,28 +250,12 @@ The default is 32 million bytes (roughly, 32 MB).
   should be sought.  For example,
   <tt>--with-libdirs=-L/usr/local/lib64</tt>.
 
-<dt><tt>--with-cca-chem-config</tt><dd>Specifies the config script for the
-  cca-chem-generic package (prerequisite for CCA components).
-
 </dl>
 
   If you would like to further customize your target directory,
-you can edit <tt>src/lib/scconfig.h</tt> and <tt>lib/LocalMakefile</tt> to
+you can edit <tt>src/lib/mpqc_config.h</tt> and <tt>lib/LocalMakefile</tt> to
 suit your needs.  The next time you run configure, these files and
 all the makefiles will be overwritten.
-
-\subsection compilecca Notes on CCA Configuration
-
-<ul>
-  <li> Use the <tt>--enable-components</tt> flag to generate CCA components and enable 
-       embedded frameworks within MPQC.  
-  <li> The <tt>cca-chem-config</tt> script must be found in the user's path or 
-       specified using the <tt>--with-cca-chem-config</tt>.
-  <li> To fully support runtime configuration of component applications, 
-       compile using <tt>--enable-shared</tt>.
-  <li> Run <tt>make install_devel</tt> after compiling to install the <tt>sc-config</tt>
-       script (required by <tt>cca-chem-apps</tt>).
-</ul>
 
 \section compilecomp Compilation
 
@@ -294,11 +266,8 @@ compilation.  To compile four files at a time, type <tt>make -j4</tt>.
 This feature works correctly with GNU make version 3.78.1 or later; for
 older versions of GNU make use <tt>make JOBS=-j4</tt>.
 
- You can install the executables and data files with <tt>make install</tt>.
-
- You can install the libraries and header files with <tt>make
-install_devel</tt>, however, <tt>make install</tt> must be also be run to
-install the files needed for run-time support.
+ You can install the executables and data files with <tt>make install</tt>. Starting with
+ version 3, this will also install the libraries and header files needed for development.
 
 \section compilecheck Checking the Compilation
 

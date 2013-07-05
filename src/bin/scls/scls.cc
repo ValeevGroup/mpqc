@@ -26,7 +26,7 @@
 //
 
 #ifdef HAVE_CONFIG_H
-#include <scconfig.h>
+#include <mpqc_config.h>
 #endif
 
 #include <new>
@@ -122,7 +122,7 @@ main(int argc, char *argv[])
 
   if (help) {
       ExEnv::out0()
-           << indent << "scls version " << SC_VERSION << endl
+           << indent << "scls version " << MPQC_VERSION << endl
            << SCFormIO::copyright << endl
            << indent << "-memorygrp <$val> (which memory group to use)" << endl
            << indent << "-threadgrp <$val> (which thread group to use)" << endl
@@ -139,14 +139,14 @@ main(int argc, char *argv[])
   
   if (version) {
       ExEnv::out0()
-         << indent << "scls version " << SC_VERSION << endl
+         << indent << "scls version " << MPQC_VERSION << endl
          << SCFormIO::copyright;
     exit(0);
   }
   
   if (warranty) {
       ExEnv::out0()
-         << indent << "scls version " << SC_VERSION << endl
+         << indent << "scls version " << MPQC_VERSION << endl
          << SCFormIO::copyright << endl
          << SCFormIO::warranty;
     exit(0);
@@ -154,7 +154,7 @@ main(int argc, char *argv[])
   
   if (license) {
       ExEnv::out0()
-         << indent << "scls version " << SC_VERSION << endl
+         << indent << "scls version " << MPQC_VERSION << endl
          << SCFormIO::copyright << endl
          << SCFormIO::license;
     exit(0);

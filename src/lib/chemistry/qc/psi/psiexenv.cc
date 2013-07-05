@@ -35,7 +35,7 @@
 #include <cstdlib>
 #include <errno.h>
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <util/misc/scexception.h>
 #include <util/ref/ref.h>
 #include <util/keyval/keyval.h>

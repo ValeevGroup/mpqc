@@ -28,9 +28,9 @@
 #ifndef _chemistry_qc_basis_petite_h
 #define _chemistry_qc_basis_petite_h
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <iostream>
-#include <scconfig.h>
+#include <mpqc_config.h>
 
 #include <util/misc/scint.h>
 #include <util/ref/ref.h>

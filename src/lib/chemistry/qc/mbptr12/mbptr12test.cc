@@ -30,7 +30,7 @@
 #define MBPTR12TEST_TEST3 1
 
 #ifdef HAVE_CONFIG_H
-#include <scconfig.h>
+#include <mpqc_config.h>
 #endif
 
 #include <string.h>

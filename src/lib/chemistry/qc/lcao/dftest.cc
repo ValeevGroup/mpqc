@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <util/misc/formio.h>
 #include <util/misc/regtime.h>
 #include <util/misc/consumableresources.h>

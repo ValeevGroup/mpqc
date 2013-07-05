@@ -268,7 +268,7 @@ AtomInfo::load_library_values()
   if (grp->me() == 0) {
       const char* libdir;
       std::string filename;
-      if ((libdir = getenv("SCLIBDIR")) != 0) {
+      if ((libdir = getenv("MPQC_DATA_PATH")) != 0) {
           const char* atominfo = "/atominfo.kv";
           const char *eq = ::strchr(libdir,'=');
           if (eq) libdir = eq + 1;
@@ -276,10 +276,10 @@ AtomInfo::load_library_values()
         }
       else {
           struct stat sb;
-          const char *ainfo = SCDATADIR "/atominfo.kv";
-#ifdef SRC_SCLIBDIR
+          const char *ainfo = MPQCDATAPATH "/atominfo.kv";
+#ifdef SRC_MPQC_DATA_PATH
           if (stat(ainfo, &sb) != 0) {
-              ainfo = SRC_SCLIBDIR "/atominfo.kv";
+              ainfo = SRC_MPQC_DATA_PATH "/atominfo.kv";
             }
 #endif
           filename = ainfo;

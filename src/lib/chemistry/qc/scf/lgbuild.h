@@ -32,7 +32,7 @@
 #undef SCF_CHECK_BOUNDS
 #undef SCF_DONT_USE_BOUNDS
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <chemistry/qc/scf/gbuild.h>
 
 namespace sc {

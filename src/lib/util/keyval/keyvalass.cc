@@ -25,9 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef HAVE_CONFIG_H
-#include <scconfig.h>
-#endif
+#include <mpqc_config.h>
 #include <util/keyval/keyval.h>
 
 using namespace sc;

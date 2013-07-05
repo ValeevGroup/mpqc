@@ -100,11 +100,8 @@ namespace sc {
 
     protected:
       template <typename T> const T* downcast(const IntParams& p) const {
-        try {
-          const T& voidref = dynamic_cast<const T&>(p);
-          return &voidref;
-        }
-        catch (std::bad_cast&) { return 0; }
+        const T* castptr = dynamic_cast<const T*>(&p);
+        return castptr;
       }
 
     private:

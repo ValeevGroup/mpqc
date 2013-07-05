@@ -4,7 +4,7 @@
 
 #include <sstream>
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 
 #ifdef HAVE_SYS_RESOURCE_H
 #  include <sys/resource.h>
@@ -304,7 +304,6 @@ MPQCInit::init(const std::string &input_filename,
   Ref<KeyVal> keyval = init_keyval(grp,input_filename);
   init_threadgrp(keyval);
   init_memorygrp(keyval);
-  //init_cca();
   init_integrals(keyval);
   init_resources(keyval);
   init_timer(grp,keyval);
@@ -342,6 +341,11 @@ MPQCInit::init_madness()
   else {
     madworld_ = madness::World::find_instance(SafeMPI::COMM_WORLD);
     mpqc_owns_madworld_ = false;
+  }
+  // now make sure that MADNESS has initialized MPI with full thread safety ...
+  // if MPQC were using SafeMPI instead of MPI directly this would not be an issue
+  if (SafeMPI::Query_thread() != MPI_THREAD_MULTIPLE && madworld_->rank() != 1) {
+    throw FeatureNotImplemented("nproc>1, and MPQC cannot get along with MADNESS because MADNESS was not configured with --with-mpi-thread=multiple; reconfigure MADNESS", __FILE__, __LINE__);
   }
 #endif
 }

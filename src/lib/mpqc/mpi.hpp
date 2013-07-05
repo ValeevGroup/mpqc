@@ -7,7 +7,7 @@
 #include "mpqc/config.h"
 
 #ifndef HAVE_MPI
-#error Missing MPI (HAVE_MPI not defined)
+#warning NO MPI: stubs will be built
 #endif
 
 #include <mpi.h>
@@ -26,6 +26,8 @@ extern "C" {
 
 namespace mpqc {
 namespace mpi {
+
+#ifdef HAVE_MPI
 
     struct threadsafe : boost::noncopyable {
         threadsafe() {
@@ -58,8 +60,11 @@ namespace mpi {
     MPQC_MPI_TYPE(int, MPI_INT)
     MPQC_MPI_TYPE(double, MPI_DOUBLE)
 
+#endif // HAVE_MPI
+
 
     inline void initialize(int thread_level) {
+#ifdef HAVE_MPI
         int initialized = 0;
         MPI_Initialized(&initialized);
         if (!initialized) {
@@ -73,17 +78,24 @@ namespace mpi {
         if (thread < MPI_THREAD_SERIALIZED) {
 	    throw std::runtime_error("thread < MPI_THREAD_SERIALIZED");
 	}
+#endif // HAVE_MPI
     }
 
     inline void finalize() {
+#ifdef HAVE_MPI
 	MPI_Finalize();
+#endif // HAVE_MPI
     }
 
     inline std::string get_processor_name() {
+#ifdef HAVE_MPI
         char name[MPI_MAX_PROCESSOR_NAME];
         int len;
         MPI_Get_processor_name(name, &len);
         return std::string(name, len);
+#else
+        return std::string("localhost")
+#endif // HAVE_MPI
     }
 
     inline MPI_Status wait(MPI_Request request, size_t us = 0) {

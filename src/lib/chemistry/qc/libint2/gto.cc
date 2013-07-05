@@ -27,7 +27,7 @@
 
 #include <cmath>
 #include <algorithm>
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <util/ref/ref.h>
 #include <chemistry/qc/libint2/gto.h>
 #include <chemistry/qc/libint2/macros.h>

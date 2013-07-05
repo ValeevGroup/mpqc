@@ -54,30 +54,6 @@ void
 OneBodyIntV3::compute_shell(int i, int j)
 {
   (int1ev3_.pointer()->*intfunc_)(i, j);
-
-  // temporary debugging stuff for cca integrals comparison
-  /*
-  if( 1 ) {
-    std::cerr << setprecision(15)
-              << setiosflags( ios::showpoint | ios::fixed);
-    std::cerr << "buffer for shell doublet:\n";
-    std::cerr << "shellnum1: " << i << std::endl;
-    GaussianShell* s1 = &( bs1_->shell(i) );
-    int nc1 = s1->ncontraction();
-    for (int ii=0; ii<nc1; ++ii)
-      std::cerr << "am: " << s1->am(ii) << std::endl;
-    std::cerr << "shellnum2: " << j << std::endl;
-    GaussianShell* s2 = &( bs2_->shell(j) );
-    int nc2 = s2->ncontraction();
-    for (int ii=0; ii<nc2; ++ii)
-      std::cerr << "am: " << s2->am(ii) << std::endl;
-
-    int nfunc = s1->max_cartesian() * s2->max_cartesian();
-    for( int ii=0; ii<nfunc; ++ii)
-      std::cerr << buffer_[ii] << std::endl;
-  }
-  */
-
 }
 
 bool
@@ -212,69 +188,12 @@ OneBodyDerivIntV3::compute_shell(int i, int j, DerivCenters& c)
   c.clear();
   c.add_center(0,basis1(),i);
   c.add_omitted(1,basis2(),j);
-
-// temporary debugging stuff for cca integrals comparison
-/*
-  if( 1 ) {
-    std::cerr << "buffer for shell doublet (with dc):\n";
-    std::cerr << "shellnum1: " << i << std::endl;
-    GaussianShell* s1 = &( bs1->shell(i) );
-    int nc1 = s1->ncontraction();
-    for (int ii=0; ii<nc1; ++ii)
-      std::cerr << "am: " << s1->am(ii) << std::endl;
-    std::cerr << "shellnum2: " << j << std::endl;
-    GaussianShell* s2 = &( bs2->shell(j) );
-    int nc2 = s2->ncontraction();
-    for (int ii=0; ii<nc2; ++ii)
-      std::cerr << "am: " << s2->am(ii) << std::endl;
-
-    int nfunc = s1->max_cartesian() * s2->max_cartesian();
-    std::cerr << "dx\n";
-    for( int ii=0; ii<nfunc; ++ii)
-      std::cerr << buffer_[ii] << std::endl;
-    std::cerr << "dy\n";
-    for( int ii=nfunc; ii<nfunc*2; ++ii)
-      std::cerr << buffer_[ii] << std::endl;
-    std::cerr << "dz\n";
-    for( int ii=nfunc*2; ii<nfunc*3; ++ii)
-      std::cerr << buffer_[ii] << std::endl;
-  }
-*/
-
 }
 
 void
 OneBodyDerivIntV3::compute_shell(int i, int j, int c)
 {
   (int1ev3_.pointer()->*intfunc_)(i,j,0,c);
-
-// temporary debuging stuff for cca integrals comparison
-/*
-  if( 1 ) {
-    std::cerr << "doing center " << c << std::endl;
-    std::cerr << "buffer for shell doublet:\n";
-    std::cerr << "shellnum1: " << i << std::endl;
-    GaussianShell* s1 = &( bs1->shell(i) );
-    int nc1 = s1->ncontraction();
-    for (int ii=0; ii<nc1; ++ii)
-      std::cerr << "am: " << s1->am(ii) << std::endl;
-    std::cerr << "shellnum2: " << j << std::endl;
-    GaussianShell* s2 = &( bs2->shell(j) );
-    int nc2 = s2->ncontraction();
-    for (int ii=0; ii<nc2; ++ii)
-      std::cerr << "am: " << s2->am(ii) << std::endl;
-
-    int nfunc = s1->max_cartesian() * s2->max_cartesian();
-    for( int i=0; i<nfunc; ++i) {
-      std::cerr << "integral " << i << std::endl;
-      std::cerr << " dx: " << buffer_[i*3] << std::endl;
-      std::cerr << " dy: " << buffer_[i*3+1] << std::endl;
-      std::cerr << " dz: " << buffer_[i*3+2] << std::endl;
-    }
-
-  }
-*/
-
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -32,10 +32,7 @@
 #include <chemistry/qc/basis/uncontract.h>
 #include <chemistry/qc/basis/lselect.h>
 #include <chemistry/qc/intv3/intv3.h>
-#if HAVE_INTEGRALCINTS
-#  include <chemistry/qc/cints/cints.h>
-#endif
-#if HAVE_INTEGRALLIBINT2
+#ifdef HAVE_LIBINT2
 #  include <chemistry/qc/libint2/libint2.h>
 #endif
 #include <math/optimize/gaussianfit.h>
@@ -1562,28 +1559,19 @@ R12Technology::check_integral_factory(const Ref<Integral>& ints)
   // any factory can support pure MP2 calculations! Thus only test for nontrivial corr factors
   Ref<NullCorrelationFactor> nullcf; nullcf << corrfactor();
   if (nullcf.null()) {
-    // Only IntegralCints or IntegralLibint2 can be used at the moment
+    // Only IntegralLibint2 can be used at the moment
     bool allowed_integral_factory = false;
-#if HAVE_INTEGRALCINTS
-    IntegralCints* cintsintf = dynamic_cast<IntegralCints*>(ints.pointer());
-    if (cintsintf) {
-      allowed_integral_factory = true;
-    }
-#endif
-#if HAVE_INTEGRALLIBINT2
+#ifdef HAVE_LIBINT2
     IntegralLibint2* libint2intf = dynamic_cast<IntegralLibint2*>(ints.pointer());
     if (libint2intf) {
       allowed_integral_factory = true;
     }
 #endif
-    if(strcmp(ints->class_name(),"IntegralCCA") == 0) {
-      allowed_integral_factory = true;
-    }
     if (!allowed_integral_factory) {
       InputError ex("R12Technology::check_integral_factory_(): invalid integral factory provided.",
                   __FILE__, __LINE__, 0, 0, class_desc());
       try {
-        ex.elaborate() << "Try using IntegralCints, IntegralCCA, or IntegralLibint2."
+        ex.elaborate() << "Try using IntegralLibint2."
                        << std::endl
                        << "The given integral factory was of type " << ints->class_name()
                        << std::endl;

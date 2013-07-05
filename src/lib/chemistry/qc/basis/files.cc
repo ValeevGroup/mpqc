@@ -30,7 +30,7 @@
 #include <stdio.h>
 #include <fstream>
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <sstream>
 
 #include <sys/stat.h>
@@ -48,13 +48,13 @@ BasisFileSet::BasisFileSet(const Ref<KeyVal>& keyval)
   basissets_ = 0;
 
   dir_[0] = keyval->stringvalue("basisdir");
-  dir_[1] = ExEnv::getenv_string("SCLIBDIR");
+  dir_[1] = ExEnv::getenv_string("MPQC_DATA_PATH");
   if (dir_[1].empty()) {
       struct stat sb;
-      const char *bdir = SCDATADIR "/basis";
-#ifdef SRC_SCLIBDIR
+      const char *bdir = MPQCDATAPATH "/basis";
+#ifdef SRC_MPQC_DATA_PATH
       if (stat(bdir, &sb) != 0) {
-          bdir = SRC_SCLIBDIR "/basis";
+          bdir = SRC_MPQC_DATA_PATH "/basis";
         }
 #endif
       dir_[1] = bdir;

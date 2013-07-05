@@ -1,7 +1,7 @@
 This code example, written in C++, demonstrates how to implement a simple MP2 program using MPQC. This example
 demonstrates how to extend MPQC Wavefunction class to implement new quantum chemical methods.
 
-1) To compile this example you must have compiled MPQC and installed it using 'make install install_devel'
+1) To compile this example you must have compiled MPQC and installed it using 'make install'
    commmand. This will install the code examples under $prefix/examples directory, where $prefix is the
    installation prefix provided to configure script during configuration of MPQC
    (the default is /usr/local/mpqc/$mpqcversion).

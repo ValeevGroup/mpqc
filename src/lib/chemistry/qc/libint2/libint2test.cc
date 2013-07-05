@@ -41,7 +41,7 @@
 #include <chemistry/qc/intv3/int2e.h>
 #include <chemistry/qc/intv3/intv3.h>
 #include <chemistry/qc/intv3/cartitv3.h>
-#include <chemistry/cca/int/cartit.h>
+#include <chemistry/qc/basis/cartit_cca.h>
 #include <chemistry/qc/libint2/libint2.h>
 #include <chemistry/qc/libint2/int2e.h>
 #include <chemistry/qc/cints/cints.h>

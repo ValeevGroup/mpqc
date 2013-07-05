@@ -80,8 +80,8 @@ class.
 
 <dt><tt>integrals</tt><dd> This specifies an object of type Integral that
         will be used as the default integral evaluator.  If MP2-R12 is
-        used, then this should be set to use IntegralCints with a line
-        like <tt>integrals<IntegralCints>: ()</tt>.
+        used, then this should be set to use IntegralLibint2 with a line
+        like <tt>integrals<IntegralLibint2>: ()</tt>.
 
 <dt><tt>checkpoint</tt> </dt> <dd> The value of this keyword is boolean.
 
@@ -158,19 +158,6 @@ class.
         calculation will occur after a successful geometry optimization (in other
         words, if geometry optimization failed then the frequency computation will be skipped).
         The default is false.
-
-<dt><tt>do_cca</tt><dd> The value of this keywork is boolean.  If true
-        the CCA embedded framework will be initialized.  The default is 
-        false.
-
-<dt><tt>cca_path</tt><dd> The value of this keyword is a string that provides
-        a colon-separated list of directories in which CCA component libraries 
-        may be found.
-
-<dt><tt>cca_load</tt><dd> The value of this keyword is a string that provides 
-        a colon-separated list of sidl class names for CCA components which 
-        will be instantiated from the libraries found in the path given by 
-        <tt>cca_path</tt>.
 
 <dt><tt>write_pdb</tt><dd> The value of this keyword is boolean.  If true a
         PDB file with the molecular coordinates will be written.
@@ -388,7 +375,6 @@ inputs that most nearly matches your problem.  The
   <li> \ref mpqcoosampmp2r12ckpt
   <li> \ref mpqcoosamphfgradfromwfn
   <li> \ref mpqcoosampmp2usinghfwfn
-  <li> \ref mpqcoosamphfusingcca
 </ul>
 
 \subsection mpqcoosamphf Hartree-Fock Energy
@@ -503,13 +489,13 @@ mpqc: (
     stdapprox = "A'"
     nfzc = 1
     memory = 16000000
-    integrals<IntegralCints>:()
+    integrals<IntegralLibint2>:()
     \% reference wavefunction
     reference<CLHF>: (
       molecule = $:molecule
       basis = $:basis
       memory = 16000000
-      integrals<IntegralCints>:()
+      integrals<IntegralLibint2>:()
     )
   )
 )
@@ -1280,13 +1266,13 @@ mpqc: (
     stdapprox = "A'"
     nfzc = 1
     memory = 16000000
-    integrals<IntegralCints>:()
+    integrals<IntegralLibint2>:()
     \% reference wavefunction
     reference<CLHF>: (
       molecule = $:molecule
       basis = $:basis
       memory = 16000000
-      integrals<IntegralCints>:()
+      integrals<IntegralLibint2>:()
     )
   )
 )
@@ -1397,54 +1383,5 @@ Note that now object <tt>reference</tt> is of type <tt>SavableStateProxy</tt>,
 rather than <tt>CLHF</tt>. <tt>SavableStateProxy</tt> is a special object type
 that can be converted at runtime into the desired type (in this case, <tt>CLHF</tt>,
 as indicated by <tt>object</tt>).
-
-\subsection mpqcoosamphfusingcca CLHF energy using a CCA integrals component
-
-The following input will compute the CLHF energy of water using a CCA integrals component
-via the IntegralCCA adaptor class.
-
-<pre>
-\% emacs should use -*- KeyVal -*- mode
-\% molecule specification
-molecule<Molecule>: (
-  symmetry = C2V
-  unit = angstrom
-  { atoms geometry } = {
-    O     [     0.00000000     0.00000000     0.37000000 ]
-    H     [     0.78000000     0.00000000    -0.18000000 ]
-    H     [    -0.78000000     0.00000000    -0.18000000 ]
-  }
-)
-\% basis set specification
-basis<GaussianBasisSet>: (
-  name = "STO-3G"
-  molecule = $:molecule
-)
-mpqc: (
-  \% path to component libraries
-  cca_path = /usr/local/lib/cca
-  \% sidl class names of components which will be instantiated
-  cca_load = MPQC.IntegralEvaluatorFactory
-  do_cca = yes
-  checkpoint = no
-  savestate = no
-  \% method for computing the molecule's energy
-  mole<CLHF>: (
-    molecule = $:molecule
-    basis = $:basis
-    \% cca integrals adaptor class
-    integrals<IntegralCCA>: (
-      molecule = $:molecule
-      \% integral buffer type
-      integral_buffer = opaque
-      \% integral package
-      integral_package = intv3
-      \% factory component sidl class name
-      evaluator_factory = MPQC.IntegralEvaluatorFactory
-    )
-  )
-)
-</pre>
-<br />
 
 */

@@ -95,6 +95,7 @@ while test $# != 0; do
   CFLAGS=*) CFLAGS="`arg \"$1\"`" ;;
   CXXFLAGS=*) CXXFLAGS="`arg \"$1\"`" ;;
   FFLAGS=*) FFLAGS="`arg \"$1\"`" ;;
+#  LD=*) LD="`arg \"$1\"`" ;;
   LDFLAGS=*) LDFLAGS="`arg \"$1\"`" ;;
   *) exit "Unknown option: \"$1\"" ;;
   esac
@@ -148,6 +149,11 @@ fi
 if [ -n "$FFLAGS" ]; then
     args="$args -DCMAKE_Fortran_FLAGS=\"$FFLAGS\""
 fi
+
+# if [ -n "$LD" ]; then
+#     args="$args -DCMAKE_C_LINK_EXECUTABLE=\"$LD\""
+#     args="$args -DCMAKE_CXX_LINK_EXECUTABLE=\"$LD\""
+# fi
 
 if [ -n "$LDFLAGS" ]; then
     args="$args -DCMAKE_EXE_LINKER_FLAGS=\"$LDFLAGS\""

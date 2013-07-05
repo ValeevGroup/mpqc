@@ -32,14 +32,12 @@
 #endif
 
 #ifdef HAVE_CONFIG_H
-#include <scconfig.h>
+#include <mpqc_config.h>
 #endif
 
 #ifdef HAVE_TIME_H
 #include <time.h>
 #endif
-
-#include <scdirlist.h>
 
 #include <new>
 #include <stdexcept>
@@ -49,7 +47,7 @@
 #include <fstream>
 #include <libgen.h>
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <sstream>
 
 #include "mpqcinit.h"
@@ -69,9 +67,6 @@
 #include <util/misc/exenv.h>
 #include <util/misc/runnable.h>
 #include <util/misc/consumableresources.h>
-#ifdef HAVE_CHEMISTRY_CCA
-  #include "cca.h"
-#endif
 #include <util/render/render.h>
 
 #include <math/optimize/opt.h>
@@ -83,7 +78,6 @@
 #include <chemistry/molecule/formula.h>
 #include <chemistry/qc/wfn/wfn.h>
 
-// Force linkages:
 #include <util/group/linkage.h>
 #include <chemistry/qc/basis/linkage.h>
 #include <chemistry/qc/wfn/linkage.h>
@@ -92,28 +86,16 @@
 #include <chemistry/qc/etrain/linkage.h>
 #include <chemistry/qc/mbpt/linkage.h>
 #include <chemistry/qc/lmp2/linkage.h>
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12
-#  include <chemistry/qc/mbptr12/linkage.h>
-#endif
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CCR12
-#  include <chemistry/qc/ccr12/linkage.h>
-#endif
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS
-#  include <chemistry/qc/cints/linkage.h>
-#endif
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_LIBINT2
+#include <chemistry/qc/ci/linkage.h>
+#ifdef HAVE_LIBINT2
 #  include <chemistry/qc/libint2/linkage.h>
+//#  include <chemistry/qc/mbptr12/linkage.h>
+//#  include <chemistry/qc/ccr12/linkage.h>
+#  ifdef HAVE_PSI3
+#    include <chemistry/qc/psi/linkage.h>
+#  endif
 #endif
 #include <util/state/linkage.h>
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CC
-#  include <chemistry/qc/cc/linkage.h>
-#endif
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_PSI
-#  include <chemistry/qc/psi/linkage.h>
-#endif
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_CCA_INT
-#  include <chemistry/cca/int/linkage.h>
-#endif
 
 #include <chemistry/qc/nbody/linkage.h>
 #include <chemistry/qc/ci/linkage.h>
@@ -198,10 +180,6 @@ try_main(int argc, char *argv[])
   options.enroll("i", GetLongOpt::NoValue, "convert simple to OO input", 0);
   options.enroll("d", GetLongOpt::NoValue, "debug", 0);
   options.enroll("h", GetLongOpt::NoValue, "print this message", 0);
-  options.enroll("cca-path", GetLongOpt::OptionalValue,
-                 "cca component path", "");
-  options.enroll("cca-load", GetLongOpt::OptionalValue,
-                 "cca components to load", "");
 
   MPQCInit init(options,argc,argv);
 
@@ -216,7 +194,7 @@ try_main(int argc, char *argv[])
 
   if (options.retrieve("h")) {
     ExEnv::out0()
-         << indent << "MPQC version " << SC_VERSION << endl
+         << indent << "MPQC version " << MPQC_VERSION << endl
          << indent << "compiled for " << TARGET_ARCH << endl
          << SCFormIO::copyright << endl;
     options.usage(ExEnv::out0());
@@ -225,7 +203,7 @@ try_main(int argc, char *argv[])
 
   if (options.retrieve("v")) {
     ExEnv::out0()
-         << indent << "MPQC version " << SC_VERSION << endl
+         << indent << "MPQC version " << MPQC_VERSION << endl
          << indent << "compiled for " << TARGET_ARCH << endl
          << SCFormIO::copyright;
     exit(0);
@@ -233,7 +211,7 @@ try_main(int argc, char *argv[])
 
   if (options.retrieve("w")) {
     ExEnv::out0()
-         << indent << "MPQC version " << SC_VERSION << endl
+         << indent << "MPQC version " << MPQC_VERSION << endl
          << indent << "compiled for " << TARGET_ARCH << endl
          << SCFormIO::copyright << endl
          << SCFormIO::warranty;
@@ -242,7 +220,7 @@ try_main(int argc, char *argv[])
 
   if (options.retrieve("L")) {
     ExEnv::out0()
-         << indent << "MPQC version " << SC_VERSION << endl
+         << indent << "MPQC version " << MPQC_VERSION << endl
          << indent << "compiled for " << TARGET_ARCH << endl
          << SCFormIO::copyright << endl
          << SCFormIO::license;
@@ -356,7 +334,7 @@ try_main(int argc, char *argv[])
   // announce ourselves
   const char title1[] = "MPQC: Massively Parallel Quantum Chemistry";
   int ntitle1 = sizeof(title1);
-  const char title2[] = "Version " SC_VERSION;
+  const char title2[] = "Version " MPQC_VERSION;
   int ntitle2 = sizeof(title2);
   ExEnv::out0() << endl;
   ExEnv::out0() << indent;
@@ -396,45 +374,6 @@ try_main(int argc, char *argv[])
        << " for distributed shared memory." << endl
        << indent
        << "Total number of processors = " << grp->n() * thread->nthread() << endl;
-
-#ifdef HAVE_CHEMISTRY_CCA
-  // initialize cca framework
-  KeyValValuestring emptystring("");
-  bool do_cca = keyval->booleanvalue("do_cca",falsevalue);
-
-  string cca_path(options.retrieve("cca-path"));
-  string cca_load(options.retrieve("cca-load"));
-  if(cca_path.size()==0)
-    cca_path = keyval->stringvalue("cca_path",emptystring);
-  if(cca_load.size()==0)
-    cca_load = keyval->stringvalue("cca_load",emptystring);
-
-  if( !do_cca && (cca_load.size() > 0 || cca_path.size() > 0) )
-    do_cca = true;
-
-  if(cca_path.size()==0) {
-    #ifdef CCA_PATH
-      cca_path = CCA_PATH;
-    #endif
-  }
-  if(cca_load.size()==0) {
-    cca_load += "Chemistry.IntegralSuperFactory:MPQC.IntV3EvaluatorFactory";
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_CINTS
-    cca_load += ":MPQC.CintsEvaluatorFactory";
-#endif
-#ifdef HAVE_SC_SRC_LIB_CHEMISTRY_QC_LIBINT2
-    cca_load += ":MPQC.Libint2EvaluatorFactory";
-#endif
-  }
-
-  if( cca_load.size() > 0 && cca_path.size() > 0 && do_cca ) {
-    string cca_args = "--path " + cca_path + " --load " + cca_load;
-    ExEnv::out0() << endl << indent << "Initializing CCA framework with args: "
-                  << endl << indent << cca_args << endl;
-    Ref<CCAFramework> mpqc_fw = new MPQC_CCAFramework(cca_args);
-    CCAEnv::init( mpqc_fw );
-  }
-#endif
 
   // now set up the debugger
   Ref<Debugger> debugger; debugger << keyval->describedclassvalue("debug");

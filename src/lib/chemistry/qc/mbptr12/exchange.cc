@@ -31,7 +31,7 @@
 #include <math.h>
 #include <limits.h>
 
-#include <scconfig.h>
+#include <mpqc_config.h>
 #include <util/misc/formio.h>
 #include <util/misc/regtime.h>
 #include <util/class/class.h>

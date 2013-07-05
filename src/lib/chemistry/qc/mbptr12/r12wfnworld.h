@@ -38,7 +38,7 @@
 #include <chemistry/qc/mbptr12/r12technology.h>
 #include <chemistry/qc/wfn/orbitalspace.h>
 #include <chemistry/qc/lcao/transform_factory.h>
-#include <chemistry/qc/mbptr12/ref.h>
+#include <chemistry/qc/nbody/ref.h>
 #include <chemistry/qc/lcao/moints_runtime.h>
 #include <chemistry/qc/lcao/fockbuild_runtime.h>
 

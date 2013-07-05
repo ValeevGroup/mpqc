@@ -1,6 +1,6 @@
 set(subdirectories
   basis
-  ci
+#  ci
   dft
   etrain
   intv3

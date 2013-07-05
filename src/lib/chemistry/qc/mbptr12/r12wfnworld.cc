@@ -39,7 +39,7 @@
 #include <chemistry/qc/wfn/orbitalspace.h>
 #include <chemistry/qc/lcao/transform_factory.h>
 #include <util/misc/registry.timpl.h>
-#include <chemistry/qc/mbptr12/ref.h>
+#include <chemistry/qc/nbody/ref.h>
 
 using namespace std;
 using namespace sc;

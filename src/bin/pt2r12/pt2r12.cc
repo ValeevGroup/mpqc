@@ -12,7 +12,7 @@
 #include <chemistry/qc/intv3/intv3.h>
 #include <chemistry/qc/lcao/wfnworld.h>
 #include <chemistry/qc/lcao/fockbuilder.h>
-#include <chemistry/qc/mbptr12/ref.h>
+#include <chemistry/qc/nbody/ref.h>
 #include <chemistry/qc/mbptr12/pt2r12.h>
 #include <chemistry/qc/scf/clhf.h>
 #include <math/optimize/scextrap.h>

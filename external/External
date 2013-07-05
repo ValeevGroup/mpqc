@@ -6,7 +6,6 @@ add_custom_target(External)
 
 include(external/Lapack)
 include(external/Libint)
-include(external/Librysq)
 include(external/Eigen)
 
 if (MPQC_NEW_FEATURES)

@@ -53,7 +53,8 @@ namespace sc {
 
     template <>
     struct OSAR_CoreInts<TwoBodyOper::eri> {
-        const static double small_T = 1E-15;       /*--- Use only one term in Taylor expansion of Fj(T) if T < small_T ---*/
+	// Line below isn't legal
+        //const static double small_T = 1E-15;       /*--- Use only one term in Taylor expansion of Fj(T) if T < small_T ---*/
         ::libint2::FmEval_Chebyshev3 Fm_Eval_;
 
         OSAR_CoreInts(unsigned int mmax) :   Fm_Eval_(mmax) {}
@@ -67,7 +68,8 @@ namespace sc {
             1.0/51.0, 1.0/53.0, 1.0/55.0, 1.0/57.0, 1.0/59.0,
             1.0/61.0, 1.0/63.0, 1.0/65.0, 1.0/67.0, 1.0/69.0,
             1.0/71.0, 1.0/73.0, 1.0/75.0, 1.0/77.0, 1.0/79.0};
-
+	  
+	  const static double small_T = 1E-15;
           if(T < small_T){
             return oo2np1;
           }

@@ -7,7 +7,6 @@ project (MPQC)
 option(MPQC_NEW_FEATURES "Use new MPQC features (requires C++11)" OFF)
 option(OPENMP "Enable OpenMP" ON)
 
-
 enable_language (CXX)
 if (NOT CMAKE_CXX_COMPILER)
   message(FATAL_ERROR "C++ compiler not found")
@@ -38,30 +37,31 @@ set(BUILD_TESTING_SHARED FALSE CACHE BOOLEAN "BUILD_TESTING_SHARED")
 # endif()
 
 
-include(TestCXXAcceptsFlag)
-
-# C++11 flag
-CHECK_CXX_ACCEPTS_FLAG("-std=c++0x" CXX_FLAG_CXX0X)
-CHECK_CXX_ACCEPTS_FLAG("-std=c++11" CXX_FLAG_CXX11)
-
-set(HAVE_CXX11 FALSE)
-if (CXX_FLAG_CXX0X)
-  set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS}")
-  MESSAGE(STATUS "C++11 flag: -std=c++0x")
-  set(HAVE_CXX11 TRUE)
-elseif(CXX_FLAG_CXX11)
-  set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
-  MESSAGE(STATUS "C++11 flag: -std=c++11")
-  set(HAVE_CXX11 TRUE)
-endif()
-
-
 if(OPENMP)
   find_package(OpenMP)
   if(OPENMP_FOUND)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+  endif()
+endif()
+
+
+include(TestCXXAcceptsFlag)
+
+if (MPQC_NEW_FEATURES)
+  # C++11 flag
+  CHECK_CXX_ACCEPTS_FLAG("-std=c++0x" CXX_FLAG_CXX0X)
+  CHECK_CXX_ACCEPTS_FLAG("-std=c++11" CXX_FLAG_CXX11)
+  set(HAVE_CXX11 FALSE)
+  if (CXX_FLAG_CXX0X)
+    set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS}")
+    MESSAGE(STATUS "C++11 flag: -std=c++0x")
+    set(HAVE_CXX11 TRUE)
+  elseif(CXX_FLAG_CXX11)
+    set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+    MESSAGE(STATUS "C++11 flag: -std=c++11")
+    set(HAVE_CXX11 TRUE)
   endif()
 endif()
 
@@ -245,7 +245,6 @@ else()
   else()
     set(HAVE_MPI TRUE)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MPI_LINKER_FLAGS}")
-    set(LIBRARIES "${LIBRARIES};${MPI_LIBRARIES}")
     include_directories(${MPI_INCLUDE_PATH})
     message(STATUS "MPI_LIBRARIES: ${MPI_LIBRARIES}")
     message(STATUS "MPI_LINKER_FLAGS: ${MPI_LINKER_FLAGS}")
@@ -258,6 +257,9 @@ endif()
 find_package(PAPI)
 if (PAPI_FOUND)
   set(HAVE_PAPI TRUE)
+  include_directories(${PAPI_INCLUDE_DIRS})
+else()
+  set(PAPI_LIBRARIES "")
 endif()
 
 # external dependencies
@@ -277,6 +279,7 @@ CONFIGURE_FILE(
 
 # libraries
 set(LINK_LIBRARIES)
+list(APPEND LINK_LIBRARIES ${LIBRYSQ_LIBRARY})
 list(APPEND LINK_LIBRARIES ${LIBINT2_LIBRARY})
 list(APPEND LINK_LIBRARIES ${MADNESS_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${Boost_LIBRARIES})
@@ -284,6 +287,8 @@ list(APPEND LINK_LIBRARIES ${LAPACK_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${BLAS_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${PYTHON_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${HDF5_LIBRARIES})
+list(APPEND LINK_LIBRARIES ${MPI_LIBRARIES})
+list(APPEND LINK_LIBRARIES ${PAPI_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${LIBRARIES})
 list(APPEND LINK_LIBRARIES ${CMAKE_DL_LIBS})
 

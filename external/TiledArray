@@ -24,9 +24,9 @@ if (MADNESS_LIBRARIES)
   # sanity check: try compiling a simple program
   file(WRITE B.cxx "
     #include <world/world.h>
-    int main(int argc, char* argv[]){
-      void (*funcptr)(int,char**) = madness::initialize;
-      funcptr(0, 0);
+    int main(int argc, char** argv){
+      madness::World& (*funcptr)(int&,char**&) = madness::initialize;
+      funcptr(argc, argv);
     }
   ")
   try_compile(RES1 ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/B.cxx

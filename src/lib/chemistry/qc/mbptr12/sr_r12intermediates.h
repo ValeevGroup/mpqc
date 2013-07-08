@@ -312,6 +312,10 @@ namespace sc {
       /// see _2()
       TArray2& xy(const std::string& key);
 
+      /// sieves x|o1|y -> x'|o1|y'
+      /// does not throw only if each tile of the result depends only on 1 tile of the input
+      TArray2& sieve(const TArray2& input, const std::string& output_annotation);
+
       /** Given a descriptive \c key, creates a rank-4 Array of integrals, or other related quantities
        *  The syntax of \c key is similar to that used by ParsedTwoBodyInt and TwoBodyMOIntsRuntime,
        *  but with te_type embedded into key.
@@ -408,6 +412,10 @@ namespace sc {
       /// space_label should have been canonicalized using to_space().
       /// By default, occupied space chopped finely, and other spaces are chopped coarsely.
       std::vector<size_t> space_hashmarks(std::string space_label) const;
+
+      template <size_t NDIM>
+      TA::TiledRange
+      make_trange(const std::array<std::string, NDIM>& spaces) const;
 
       /** returns the 1-particle reduced density matrix in spaces row and col. Will throw if the RDM of r12world()->refwfn()
        * is expressed in a space not supported by the same basis as \c row and \c col

@@ -332,10 +332,30 @@ int try_main(int argc, char **argv)
     if (dfbs_name.empty() == false) {
       Ref<AssignedKeyVal> tmpkv = new AssignedKeyVal;
       tmpkv->assign("name", dfbs_name.c_str());
-      tmpkv->assign("molecule", basis->molecule().pointer());
-      Ref<KeyVal> kv = tmpkv;
-      Ref<GaussianBasisSet> df_basis = new GaussianBasisSet(kv);
-      kva->assign("df_basis", df_basis.pointer());
+      if (dfbs_name.find("aug-cc-pV") != std::string::npos &&
+          dfbs_name.find("Z-RI") != std::string::npos) { // if aug-cc-pVXZ-RI, make one as a union of
+                                                         // cc-pVXZ-RI and augmentation-cc-pVXZ-RI
+        std::string ccpvxzri_name(dfbs_name, 4, dfbs_name.size()-4);
+
+        Ref<AssignedKeyVal> tmpkv1 = new AssignedKeyVal;
+        tmpkv1->assign("name", ccpvxzri_name);
+        tmpkv1->assign("molecule", basis->molecule().pointer());
+        Ref<GaussianBasisSet> ccpvxzri = new GaussianBasisSet(tmpkv1);
+
+        Ref<AssignedKeyVal> tmpkv2 = new AssignedKeyVal;
+        tmpkv2->assign("name", std::string("augmentation-") + ccpvxzri_name);
+        tmpkv2->assign("molecule", basis->molecule().pointer());
+        Ref<GaussianBasisSet> augmentationccpvxzri = new GaussianBasisSet(tmpkv2);
+
+        Ref<GaussianBasisSet> df_basis = new UnionBasisSet(ccpvxzri, augmentationccpvxzri);
+        kva->assign("df_basis", df_basis.pointer());
+      }
+      else { // otherwise assume the basis exists in the library
+        tmpkv->assign("molecule", basis->molecule().pointer());
+        Ref<KeyVal> kv = tmpkv;
+        Ref<GaussianBasisSet> df_basis = new GaussianBasisSet(kv);
+        kva->assign("df_basis", df_basis.pointer());
+      }
     }
     Ref<KeyVal> kv = kva;
     world = new WavefunctionWorld(kv);

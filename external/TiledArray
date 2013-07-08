@@ -24,9 +24,9 @@ if (MADNESS_LIBRARIES)
   # sanity check: try compiling a simple program
   file(WRITE B.cxx "
     #include <world/world.h>
-    int main(int argc, char** argv){
-      madness::World& (*funcptr)(int&,char**&) = madness::initialize;
-      funcptr(argc, argv);
+    int main(int argc, char** argv) {
+      madness::World& world = madness::initialize(argc, argv);
+      return 0;
     }
   ")
   try_compile(RES1 ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/B.cxx
@@ -57,9 +57,8 @@ if (TiledArray_INCLUDE_DIR)
   # sanity check: try compiling a simple program
   file(WRITE C.cxx "
     #include <tiled_array.h>
-    int main(int argc, char* argv[]){
-      madness::initialize(0,0);
-      madness::World world(SafeMPI::COMM_WORLD);
+    int main(int argc, char** argv) {
+      madness::World& world = madness::initialize(argc, argv);
       std::vector<TiledArray::TiledRange1> tile_ranges;
       size_t tile_bounds[] = {0, 3, 7}; // 2 tiles; N.B. double square brackets due to autoconf madness
       const size_t ntiles = sizeof(tile_bounds)/sizeof(size_t) - 1;
@@ -69,6 +68,7 @@ if (TiledArray_INCLUDE_DIR)
       TiledArray::Array<double,2> array_2d(world, trange_2d);
       TiledArray::Array<double,2> array_2d_tr(array_2d.get_world(), array_2d.trange());
       array_2d_tr(\"i,j\") = array_2d(\"j,i\");
+      return 0;
     }
   ")
   try_compile(RES2 ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/C.cxx

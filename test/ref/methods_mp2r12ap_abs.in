@@ -35,16 +35,16 @@
      memory = 100MB
      store_ints = posix
      nfzc = 1
-     integrals<IntegralCints>: ()
+     integrals<IntegralLibint2>: ()
      reference<CLHF>: (
        molecule = $:molecule
        basis = $:basis
        memory = 24000000
-       integrals<IntegralCints>: ()
+       integrals<IntegralLibint2>: ()
        guess_wavefunction<HCoreWfn>: (
          molecule = $:molecule
          basis = $:basis
-         integrals<IntegralCints>: ()
+         integrals<IntegralLibint2>: ()
        )
      )
    )

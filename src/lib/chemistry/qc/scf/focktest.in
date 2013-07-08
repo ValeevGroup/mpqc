@@ -95,7 +95,7 @@ basis<GaussianBasisSet>: (
 )
 )
 
-integrals<IntegralCints>: ()
+integrals<IntegralLibint2>: ()
 
 mole: (
   value_accuracy = 1e-6

@@ -20,7 +20,7 @@ mpqc: (
   checkpoint = no
   savestate = no
   restart = no
-  integrals<IntegralCints>: ()
+  integrals<IntegralLibint2>: ()
   % molecular coordinates for optimization
   coor<SymmMolecularCoor>: (
     molecule = $:molecule
@@ -37,7 +37,7 @@ mpqc: (
     coor = $..:coor
     memory = 32000000
     stdapprox = "A'"
-    integrals<IntegralCints>: ()
+    integrals<IntegralLibint2>: ()
     nfzc = 1
     reference<CLHF>: (
       molecule = $:molecule

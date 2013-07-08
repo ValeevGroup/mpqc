@@ -56,7 +56,7 @@ mpqc: (
 
     stdapprox = "C"
     corr_factor = "R12"
-    integrals<IntegralCints>: ()
+    integrals<IntegralLibint2>: ()
     nfzc = 0
     aux_basis<GaussianBasisSet>: (
       name = "aug-cc-pVDZ"

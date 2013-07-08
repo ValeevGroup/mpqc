@@ -6,7 +6,7 @@ mpqc:(
 %  frozen_uocc = 1
 )
 
-integralcints<IntegralCints>:()
+integrallibint2<IntegralLibint>:()
 
 default:(
   % for open shell
@@ -47,7 +47,7 @@ reference = $:clscf_reference
 %
 
 mole<MBPT2_R12>: (
-  integrals = $:integralcints
+  integrals = $:integrallibint2
   % Function
   value_accuracy = 1e-9
   gradient_accuracy = 1e-7
@@ -104,7 +104,7 @@ hsosscf_guess<HSOSHF>: (
 )
 
 clscf_reference<CLHF>: (
-  integrals = $:integralcints
+  integrals = $:integrallibint2
   matrixkit = $:localmatrixkit
   memory=32000000
   value_accuracy = 1e-9

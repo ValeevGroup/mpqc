@@ -38,7 +38,7 @@ mpqc: (
     memory = 32000000
     stdapprox = "B"
     corr_factor = "R12"
-    integrals<IntegralCints>: ()
+    integrals<IntegralLibint2>: ()
     nfzc = 1
     reference<CLHF>: (
       molecule = $:molecule

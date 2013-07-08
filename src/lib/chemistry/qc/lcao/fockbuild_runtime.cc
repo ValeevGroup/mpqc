@@ -318,8 +318,10 @@ FockBuildRuntime::get(const std::string& key) {
                             pow(2.0, log2_precision_));
                     H = fmb->result();
                   }
-                  if (electric_field().null())
-                    registry_->add(hkey, H);
+                  registry_->add(hkey, H);
+                  if (debug()) {
+                    H.print(hkey.c_str());
+                  }
                 } else { // have_H == true
                   H = registry_->value(hkey);
                 }
@@ -520,10 +522,13 @@ FockBuildRuntime::get(const std::string& key) {
   }
 
   // add field contribution to the result, if needed
-  if (electric_field().nonnull() && (oper_key == "H" || oper_key == "F") )
-    result.accumulate( electric_field_contribution(bra_key, ket_key) );
-
-  return result;
+  if (electric_field().nonnull() && (oper_key == "H" || oper_key == "F") ) {
+    RefSCMatrix result_incl_field = result.copy();
+    result_incl_field.accumulate( electric_field_contribution(bra_key, ket_key) );
+    return result_incl_field;
+  }
+  else
+    return result;
 }
 
 RefSCMatrix
@@ -562,8 +567,11 @@ FockBuildRuntime::electric_field_contribution(std::string bra_key,
     const Ref<GaussianBasisSet>& obs = basis_;
     Ref<DipoleData> dipole_data = new DipoleData();
     sc::detail::onebodyint_ao<&Integral::dipole>(bs1, bs2, integral(), dipole_data, Mu);
-    for (int xyz = 0; xyz < 3; ++xyz)
-      registry_->add(mukeys[xyz], Mu[xyz]);
+    for (int xyz = 0; xyz < 3; ++xyz) {
+      RefSCMatrix mu_ao_blk = bra->coefs().kit()->matrix(bra->coefs().rowdim(),ket->coefs().rowdim());
+      mu_ao_blk->convert( Mu[xyz] );
+      registry_->add(mukeys[xyz], mu_ao_blk);
+    }
   }
   else { // have_Mu == true
     for (int xyz = 0; xyz < 3; ++xyz)

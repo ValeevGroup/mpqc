@@ -17,22 +17,28 @@ endforeach()
 find_path(MADNESS_INCLUDE_DIR madness_config.h)
 
 if (MADNESS_LIBRARIES)
+
   if (NOT MADNESS_INCLUDE_DIR)
     message(FATAL_ERROR "Could not find madness_config.h")
   endif()
 
+  set(TryCompileMadness ${CMAKE_CURRENT_BINARY_DIR}/TryCompileMadness.cxx)
+
   # sanity check: try compiling a simple program
-  file(WRITE B.cxx "
+  file(WRITE ${TryCompileMadness} "
     #include <world/world.h>
     int main(int argc, char* argv[]){
       void (*funcptr)(int,char**) = madness::initialize;
       funcptr(0, 0);
-    }
-  ")
-  try_compile(RES1 ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/B.cxx
+    }")
+
+  try_compile(RES1 ${CMAKE_CURRENT_BINARY_DIR} ${TryCompileMadness}
               CMAKE_FLAGS LINK_LIBRARIES "-DLINK_LIBRARIES:STRING=${MADNESS_LIBRARIES}"
-              CMAKE_FLAGS COMPILE_DEFINITIONS "-I${MADNESS_INCLUDE_DIR}"
+              COMPILE_DEFINITIONS "-I${MADNESS_INCLUDE_DIR}"
               OUTPUT_VARIABLE LOG1)
+
+  file(REMOVE ${TryCompileMadness})
+
   if (NOT RES1)
     message("LOG1: ${LOG1}")
     message(FATAL_ERROR "Could not compile MADNESS test program")
@@ -54,8 +60,10 @@ find_path(TiledArray_INCLUDE_DIR tiled_array.h)
 
 if (TiledArray_INCLUDE_DIR)
 
+  set(TryCompileTiledArray ${CMAKE_CURRENT_BINARY_DIR}/TryCompileTiledArray.cxx)
+
   # sanity check: try compiling a simple program
-  file(WRITE C.cxx "
+  file(WRITE ${TryCompileTiledArray} "
     #include <tiled_array.h>
     int main(int argc, char* argv[]){
       madness::initialize(0,0);
@@ -71,10 +79,14 @@ if (TiledArray_INCLUDE_DIR)
       array_2d_tr(\"i,j\") = array_2d(\"j,i\");
     }
   ")
-  try_compile(RES2 ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/C.cxx
+
+  try_compile(RES2 ${CMAKE_CURRENT_BINARY_DIR} ${TryCompileTiledArray}
               CMAKE_FLAGS LINK_LIBRARIES "-DLINK_LIBRARIES:STRING=${MADNESS_LIBRARIES}"
-              CMAKE_FLAGS COMPILE_DEFINITIONS "-I${TiledArray_INCLUDE_DIR} -I${MADNESS_INCLUDE_DIR} -I${EIGEN_INCLUDE_DIR}"
+              COMPILE_DEFINITIONS "-I${TiledArray_INCLUDE_DIR} -I${MADNESS_INCLUDE_DIR} -I${EIGEN_INCLUDE_DIR}"
               OUTPUT_VARIABLE LOG2)
+
+  file(REMOVE ${TryCompileTiledArray})
+
   if (NOT RES2)
     message("LOG2: ${LOG2}")
     message(FATAL_ERROR "Could not compile TiledArray test program")

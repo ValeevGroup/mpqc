@@ -11,10 +11,24 @@ CONFIGURE_FILE(
 #   ${CC_SOURCES}
 # )
 
-# add_executable(test-mpqc EXCLUDE_FROM_ALL test.cpp)
+# # library headers
+# file(GLOB_RECURSE headers RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.hpp)
+# foreach (_file ${headers})
+#   get_filename_component(_path ${_file} PATH)
+#   #message(STATUS "gonna installl ${_file} in include/mpqc/${_path}" )
+#   install(FILES ${_file} DESTINATION include/mpqc/${_path})
+# endforeach()
+# install(FILES ${CMAKE_CURRENT_BINARY_DIR}/config.h DESTINATION include/mpqc)
 
-# target_link_libraries(test-mpqc ${Boost_LIBRARIES})
-# #target_link_libraries(test-mpqc ${LAPACK_LIBRARIES})
-# target_link_libraries(test-mpqc ${PYTHON_LIBRARIES})
-# target_link_libraries(test-mpqc ${LIBRARIES})
-# target_link_libraries(test-mpqc ${CMAKE_DL_LIBS})
+install(FILES range.hpp DESTINATION include/mpqc)
+
+# tests
+
+add_executable(test-mpqc EXCLUDE_FROM_ALL test.cpp)
+
+target_link_libraries(test-mpqc ${Boost_LIBRARIES})
+#target_link_libraries(test-mpqc ${LAPACK_LIBRARIES})
+target_link_libraries(test-mpqc ${PYTHON_LIBRARIES})
+target_link_libraries(test-mpqc ${LIBRARIES})
+target_link_libraries(test-mpqc ${CMAKE_DL_LIBS})
+

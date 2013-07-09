@@ -5,8 +5,10 @@
 #include "mpqc/integrals.hpp"
 #include "mpqc/omp.hpp"
 #include "mpqc/utility/foreach.hpp"
+#include "mpqc/utility/timer.hpp"
 
 #include "rysq/eri.hpp"
+#include <papi.h>
 
 namespace mpqc {
 namespace hf {
@@ -150,19 +152,25 @@ namespace hf {
               const matrix<signed char> &Dmax2,
               double tol) {
 
+        basis.print(std::cout);
+
         int tol2 = (int)log2(tol);
         int N = basis.nshell();
 
         struct {
             std::vector< ::rysq::Shell* > basis;
-            ::rysq::Eri eri;
-            double buffer[10000];
+            ::rysq::Eri *eri;
+            double *buffer;
         } rysq;
+        ::rysq::initialize();
+        rysq.buffer = new double[100000];
 
         for (int i = 0; i < N; ++i) {
             const auto &shell = basis.shell(i);
             int nc = shell.ncontraction();
             int K = shell.nprimitive();
+
+            shell.print(std::cout);
 
             rysq::type type = rysq::type(shell.max_am());
             if (nc == 2) type = rysq::type(-type);
@@ -186,6 +194,16 @@ namespace hf {
             std::cout << *rysq.basis.back() << std::endl;
         }
 
+        rysq.eri = new ::rysq::Eri();
+
+        if (PAPI_library_init(PAPI_VER_CURRENT) != PAPI_VER_CURRENT) exit(1);
+
+        int events = PAPI_NULL;
+        if (PAPI_create_eventset(&events) != PAPI_OK) throw;
+        if (PAPI_add_event(events, PAPI_TOT_CYC) != PAPI_OK) throw;
+        if (PAPI_add_event(events, PAPI_DP_OPS) != PAPI_OK) throw;
+        if (PAPI_add_event(events, PAPI_VEC_DP) != PAPI_OK) throw;
+
         for (int i = 0; i < N; ++i) {
             for (int j = 0; j <= i; ++j) {
 
@@ -204,31 +222,81 @@ namespace hf {
                             const auto r = Integral::Shell(k, basis.range(k));
                             const auto s = Integral::Shell(l, basis.range(l));
 
+                            // {
+                            //     using std::max;
+                            //     int g = int2.max2(p,q,r,s);
+                            //     int dmax;
+                            //     dmax = max(Dmax2(i,j), Dmax2(k,l));
+                            //     dmax = max(dmax, Dmax2(i,k)-1);
+                            //     dmax = max(dmax, Dmax2(i,l)-1);
+                            //     dmax = max(dmax, Dmax2(j,k)-1);
+                            //     dmax = max(dmax, Dmax2(j,l)-1);
+                            //     if (g+dmax < tol2) {
+                            //         continue;
+                            //     }
+                            // }
+
+                            //fock(int2, p, q, r, s, D, F, 4.0/symmetry(i,j,k,l));
+
+
                             {
-                                using std::max;
-                                int g = int2.max2(p,q,r,s);
-                                int dmax;
-                                dmax = max(Dmax2(i,j), Dmax2(k,l));
-                                dmax = max(dmax, Dmax2(i,k)-1);
-                                dmax = max(dmax, Dmax2(i,l)-1);
-                                dmax = max(dmax, Dmax2(j,k)-1);
-                                dmax = max(dmax, Dmax2(j,l)-1);
-                                if (g+dmax < tol2) {
-                                    continue;
+                                mpqc::timer timer;
+                                PAPI_start(events);
+
+                                auto p = rysq.basis[i];
+                                auto q = rysq.basis[j];
+                                auto r = rysq.basis[k];
+                                auto s = rysq.basis[l];
+
+                                if (p->L < q->L) std::swap(p,q);
+                                if (r->L < s->L) std::swap(r,s);
+
+                                if ((p->L + q->L) < (r->L + s->L)) {
+                                    std::swap(p,r);
+                                    std::swap(q,s);
                                 }
-                            }                            
 
-                            fock(int2, p, q, r, s, D, F, 4.0/symmetry(i,j,k,l));
+                                std::cout << "quartet "
+                                          << ::rysq::shell(*p)
+                                          << ::rysq::shell(*q)
+                                          << ::rysq::shell(*r)
+                                          << ::rysq::shell(*s)
+                                          << std::endl;
 
-                            // const double *eri1 = int2(p, q, r, s).data();
-                            // double *eri2 = rysq.buffer;
-                            // rysq.eri(*rysq.basis[l],
-                            //          *rysq.basis[k],
-                            //          *rysq.basis[j],
-                            //          *rysq.basis[i],
-                            //          eri2, 1e-10);
-                            
-                            // // if (p.size()*q.size()*r.size()*s.size() > 12) continue;
+                                double *eri2 = rysq.buffer;
+                                (*rysq.eri)(*p, *q, *r, *s, eri2, 0);
+
+                                long_long counter[3];
+                                PAPI_stop(events, counter);
+
+                                std::cout << " librysq:";
+                                std::cout << " cycles = " << counter[0];
+                                std::cout << " dp ops = " << counter[1];
+                                std::cout << " vec dp = " << counter[2];
+                                std::cout << " time = " << timer;
+                                std::cout << std::endl;
+                            }
+
+                            {
+                                mpqc::timer timer;
+                                PAPI_start(events);
+
+                                const double *eri1 = int2(p, q, r, s).data();
+
+                                long_long counter[3];
+                                PAPI_stop(events, counter);
+
+                                std::cout << " libint:";
+                                std::cout << " cycles = " << counter[0];
+                                std::cout << " dp ops = " << counter[1];
+                                std::cout << " vec dp = " << counter[2];
+                                std::cout << " time = " << timer;
+                                std::cout << std::endl;
+                            }
+
+                            std::cout << std::endl;
+
+                            // if (p.size()*q.size()*r.size()*s.size() > 12) continue;
 
                             // foreach (int i, p) {
                             //     foreach (int j, q) {
@@ -248,7 +316,9 @@ namespace hf {
         }
 
         //throw;
-
+        
+        delete rysq.eri;
+        delete[] rysq.buffer;
 
         F += Matrix(F.transpose());
         F /= 2;

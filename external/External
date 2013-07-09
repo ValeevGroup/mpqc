@@ -4,6 +4,8 @@ cmake_minimum_required(VERSION 2.8)
 
 add_custom_target(External)
 
+include(external/TiledArray)
+
 include(external/Lapack)
 include(external/Libint)
 include(external/Librysq)

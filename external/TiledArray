@@ -22,27 +22,29 @@ if (MADNESS_LIBRARIES)
     message(FATAL_ERROR "Could not find madness_config.h")
   endif()
 
-  set(TryCompileMadness ${CMAKE_CURRENT_BINARY_DIR}/TryCompileMadness.cxx)
+  # BUG: Madness try_compile here requires mpi libs, headers, etc.
 
-  # sanity check: try compiling a simple program
-  file(WRITE ${TryCompileMadness} "
-    #include <world/world.h>
-    int main(int argc, char* argv[]){
-      void (*funcptr)(int,char**) = madness::initialize;
-      funcptr(0, 0);
-    }")
+  # set(TryCompileMadness ${CMAKE_CURRENT_BINARY_DIR}/TryCompileMadness.cxx)
 
-  try_compile(RES1 ${CMAKE_CURRENT_BINARY_DIR} ${TryCompileMadness}
-              CMAKE_FLAGS LINK_LIBRARIES "-DLINK_LIBRARIES:STRING=${MADNESS_LIBRARIES}"
-              COMPILE_DEFINITIONS "-I${MADNESS_INCLUDE_DIR}"
-              OUTPUT_VARIABLE LOG1)
+  # # sanity check: try compiling a simple program
+  # file(WRITE ${TryCompileMadness} "
+  #   #include <world/world.h>
+  #   int main(int argc, char* argv[]){
+  #     void (*funcptr)(int,char**) = madness::initialize;
+  #     funcptr(0, 0);
+  #   }")
 
-  file(REMOVE ${TryCompileMadness})
+  # try_compile(RES1 ${CMAKE_CURRENT_BINARY_DIR} ${TryCompileMadness}
+  #             CMAKE_FLAGS LINK_LIBRARIES "-DLINK_LIBRARIES:STRING=${MADNESS_LIBRARIES}"
+  #             COMPILE_DEFINITIONS "-I${MADNESS_INCLUDE_DIR}"
+  #             OUTPUT_VARIABLE LOG1)
 
-  if (NOT RES1)
-    message("LOG1: ${LOG1}")
-    message(FATAL_ERROR "Could not compile MADNESS test program")
-  endif()
+  # file(REMOVE ${TryCompileMadness})
+
+  # if (NOT RES1)
+  #   message("LOG1: ${LOG1}")
+  #   message(FATAL_ERROR "Could not compile MADNESS test program")
+  # endif()
 
   set(HAVE_MADNESS TRUE)
   message(STATUS "Found MADNESS:")
@@ -60,37 +62,37 @@ find_path(TiledArray_INCLUDE_DIR tiled_array.h)
 
 if (TiledArray_INCLUDE_DIR)
 
-  set(TryCompileTiledArray ${CMAKE_CURRENT_BINARY_DIR}/TryCompileTiledArray.cxx)
+  # set(TryCompileTiledArray ${CMAKE_CURRENT_BINARY_DIR}/TryCompileTiledArray.cxx)
 
-  # sanity check: try compiling a simple program
-  file(WRITE ${TryCompileTiledArray} "
-    #include <tiled_array.h>
-    int main(int argc, char* argv[]){
-      madness::initialize(0,0);
-      madness::World world(SafeMPI::COMM_WORLD);
-      std::vector<TiledArray::TiledRange1> tile_ranges;
-      size_t tile_bounds[] = {0, 3, 7}; // 2 tiles; N.B. double square brackets due to autoconf madness
-      const size_t ntiles = sizeof(tile_bounds)/sizeof(size_t) - 1;
-      tile_ranges.push_back(TiledArray::TiledRange1(tile_bounds, tile_bounds+ntiles));
-      tile_ranges.push_back(TiledArray::TiledRange1(tile_bounds, tile_bounds+ntiles));
-      TiledArray::TiledRange trange_2d(tile_ranges.begin(), tile_ranges.end());
-      TiledArray::Array<double,2> array_2d(world, trange_2d);
-      TiledArray::Array<double,2> array_2d_tr(array_2d.get_world(), array_2d.trange());
-      array_2d_tr(\"i,j\") = array_2d(\"j,i\");
-    }
-  ")
+  # # sanity check: try compiling a simple program
+  # file(WRITE ${TryCompileTiledArray} "
+  #   #include <tiled_array.h>
+  #   int main(int argc, char* argv[]){
+  #     madness::initialize(0,0);
+  #     madness::World world(SafeMPI::COMM_WORLD);
+  #     std::vector<TiledArray::TiledRange1> tile_ranges;
+  #     size_t tile_bounds[] = {0, 3, 7}; // 2 tiles; N.B. double square brackets due to autoconf madness
+  #     const size_t ntiles = sizeof(tile_bounds)/sizeof(size_t) - 1;
+  #     tile_ranges.push_back(TiledArray::TiledRange1(tile_bounds, tile_bounds+ntiles));
+  #     tile_ranges.push_back(TiledArray::TiledRange1(tile_bounds, tile_bounds+ntiles));
+  #     TiledArray::TiledRange trange_2d(tile_ranges.begin(), tile_ranges.end());
+  #     TiledArray::Array<double,2> array_2d(world, trange_2d);
+  #     TiledArray::Array<double,2> array_2d_tr(array_2d.get_world(), array_2d.trange());
+  #     array_2d_tr(\"i,j\") = array_2d(\"j,i\");
+  #   }
+  # ")
 
-  try_compile(RES2 ${CMAKE_CURRENT_BINARY_DIR} ${TryCompileTiledArray}
-              CMAKE_FLAGS LINK_LIBRARIES "-DLINK_LIBRARIES:STRING=${MADNESS_LIBRARIES}"
-              COMPILE_DEFINITIONS "-I${TiledArray_INCLUDE_DIR} -I${MADNESS_INCLUDE_DIR} -I${EIGEN_INCLUDE_DIR}"
-              OUTPUT_VARIABLE LOG2)
+  # try_compile(RES2 ${CMAKE_CURRENT_BINARY_DIR} ${TryCompileTiledArray}
+  #             CMAKE_FLAGS LINK_LIBRARIES "-DLINK_LIBRARIES:STRING=${MADNESS_LIBRARIES}"
+  #             COMPILE_DEFINITIONS "-I${TiledArray_INCLUDE_DIR} -I${MADNESS_INCLUDE_DIR} -I${EIGEN_INCLUDE_DIR}"
+  #             OUTPUT_VARIABLE LOG2)
 
-  file(REMOVE ${TryCompileTiledArray})
+  # file(REMOVE ${TryCompileTiledArray})
 
-  if (NOT RES2)
-    message("LOG2: ${LOG2}")
-    message(FATAL_ERROR "Could not compile TiledArray test program")
-  endif()
+  # if (NOT RES2)
+  #   message("LOG2: ${LOG2}")
+  #   message(FATAL_ERROR "Could not compile TiledArray test program")
+  # endif()
 
   set(HAVE_TILEDARRAY TRUE)
   message(STATUS "Found TiledArray:")

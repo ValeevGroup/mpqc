@@ -30,13 +30,13 @@ mpqc: (
     stdapprox = "A'"
     nfzc = 1
     memory = 16000000
-    integrals<IntegralCints>:()
+    integrals<IntegralLibint2>:()
     % reference wavefunction
     reference<CLHF>: (
       molecule = $:molecule
       basis = $:basis
       memory = 16000000
-      integrals<IntegralCints>:()
+      integrals<IntegralLibint2>:()
     )
   )
 )

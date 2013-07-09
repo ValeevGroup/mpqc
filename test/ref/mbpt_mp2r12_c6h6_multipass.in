@@ -26,7 +26,7 @@ basis<GaussianBasisSet>: (
   molecule = $:molecule
 )
 mpqc: (
-  integrals<IntegralCints>: ()
+  integrals<IntegralLibint2>: ()
   checkpoint = no
   savestate = no
   restart = no

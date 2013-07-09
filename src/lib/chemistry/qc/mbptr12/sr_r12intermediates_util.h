@@ -447,11 +447,15 @@ namespace sc {
     else if (pkey.oper() == "gamma")
       operator_matrix = this->rdm1(bra, ket);
     else if (pkey.oper() == "I") {
-      assert(bra == ket);
       operator_matrix = bra->coefs()->kit()->matrix(bra->coefs().coldim(), ket->coefs().coldim());
-      operator_matrix.assign(0.0);
-      for(int i=0; i<nbra; ++i)
-        operator_matrix.set_element(i,i,1.0);
+      if (bra == ket) {
+        operator_matrix.assign(0.0);
+        for(int i=0; i<nbra; ++i)
+          operator_matrix.set_element(i,i,1.0);
+      }
+      else {
+        operator_matrix = sc::overlap(*bra,*ket,operator_matrix->kit());
+      }
     }
     else if (pkey.oper() == "T1") {
       if (ket_id == "a") { // if given t1_ explicitly (CC), make sure it's size matches
@@ -532,8 +536,8 @@ namespace sc {
         result->set(*t, tile);
       }
 
-      tarray2_registry_[key] = result;
-      v = tarray2_registry_.find(key);
+    tarray2_registry_[key] = result;
+    v = tarray2_registry_.find(key);
     }
 
     return *(v->second);
@@ -919,6 +923,157 @@ namespace sc {
     return hashmarks;
   }
 
+#if 0
+  namespace {
+    std::vector<std::string>
+    split(const std::string& key,
+          char separator) {
+
+      std::stringstream ss(key);
+      std::string item;
+      std::vector<std::string> tokens;
+      while (std::getline(ss, item, separator)) {
+        tokens.push_back(item);
+      }
+
+      return tokens;
+    }
+
+  }
+
+  template <typename T> template <size_t NDIM>
+  TA::TiledRange
+  SingleReference_R12Intermediates<T>::make_trange(const std::array<std::string, NDIM>& spaces) const {
+
+    std::vector<TA::TiledRange1> hashmarks;
+    for(auto id=spaces.begin(); id!=spaces.end(); ++id) {
+      std::vector<size_t> hashmark = space_hashmarks(*id);
+      hashmarks.push_back(TiledArray::TiledRange1(hashmark.begin(), hashmark.end()));
+    }
+    return TA::TiledRange(hashmarks.begin(), hashmarks.end());
+  }
+
+  namespace detail {
+
+    template <typename T, typename Index>
+    void
+    sieve_tensor(TA::Array<T, 2>* result,
+                 Index t,
+                 madness::Future<typename TA::Array<T, 2>::value_type > source_tile,
+                 TA::Array<T, 2>* source,
+                 Index t_source,
+                 std::vector<int>* row_map,
+                 std::vector<int>* col_map) {
+
+      typedef TA::Array<T, 2> TArray2;
+
+      auto result_trange = result->trange().make_tile_range(t);
+      auto source_trange = source->trange().make_tile_range(t_source);
+
+      std::vector<T> ptr_result(result_trange.volume(), T(0.0));
+
+      for(size_t r=source_trange.start()[0], rc=0;
+          r != source_trange.finish()[0];
+          ++r) {
+        const int rr = row_map->operator[](r);
+        if (rr != -1) {
+          for(size_t c=source_trange.start()[1];
+              c != source_trange.finish()[1];
+              ++c, ++rc) {
+
+            const int cc = col_map->operator[](c);
+
+            if (cc != -1) {
+
+              assert(false);
+
+            }
+          }
+        }
+      }
+
+      madness::Future < typename TArray2::value_type >
+        tile(typename TArray2::value_type(result_trange, &ptr_result[0]));
+
+      // Insert the tile into the array
+      result->set(*t, tile);
+
+    }
+  }
+
+  template <typename T>
+  typename SingleReference_R12Intermediates<T>::TArray2&
+  SingleReference_R12Intermediates<T>::sieve(const TArray2& input,
+                                             const std::string& output_annotation) {
+
+    // find the input key
+    std::string input_key;
+    for(auto i = tarray2_registry_.begin();
+        i!=tarray2_registry_.end(); ++i) {
+      if (i->second.get() == &input) {
+        input_key = i->first;
+        break;
+      }
+    }
+    assert(input_key.empty() == false);
+
+    std::vector<std::string> output_space_keys = split(output_annotation, ',');
+    assert(output_space_keys.size() == 2);
+
+    ParsedOneBodyIntKey input_pkey(input_key);
+    ParsedOneBodyIntKey output_pkey(ParsedOneBodyIntKey::key(output_space_keys[0],
+                                                             output_space_keys[1],
+                                                             input_pkey.oper()));
+
+    auto v = tarray2_registry_.find(output_pkey.key());
+    if (v == tarray2_registry_.end()) {
+
+      // canonicalize indices, may compute spaces if needed
+      auto ibra_id = to_space(input_pkey.bra());
+      auto iket_id = to_space(input_pkey.ket());
+      auto obra_id = to_space(output_pkey.bra());
+      auto oket_id = to_space(output_pkey.ket());
+
+      auto oreg = r12world_->world()->tfactory()->orbital_registry();
+      auto freg = r12world_->world()->fockbuild_runtime();
+      auto ibra = oreg->value(ibra_id);
+      auto iket = oreg->value(iket_id);
+      auto obra = oreg->value(obra_id);
+      auto oket = oreg->value(oket_id);
+
+      auto nbra = obra->rank();
+      auto nket = oket->rank();
+
+      std::vector<int> bra_map = map(*obra, *ibra);
+      std::vector<int> ket_map = map(*oket, *iket);
+
+      // construct the output array
+      std::array<std::string, 2> ospaces = {{obra_id, oket_id}};
+      TA::TiledRange output_trange = make_trange(ospaces);
+      std::shared_ptr<TArray2> result(new TArray2(world_, output_trange) );
+
+      // construct tasks to fill in local tiles
+      for(auto t=result->get_pmap()->begin();
+          t!=result->get_pmap()->end();
+          ++t)
+        {
+
+          // map t to the index of the tile that contains the data needed for t
+          auto t_input = *t;
+          assert(false);
+
+          world_.taskq.add(& detail::sieve_tensor,
+                           &result, *t, input.find(t_input), &bra_map, &ket_map);
+        }
+
+      tarray2_registry_[output_pkey.key()] = result;
+      v = tarray2_registry_.find(output_pkey.key());
+
+    }
+
+    return *(v->second);
+  }
+#endif
 
   template <typename T>
   std::ostream& operator<<(std::ostream& os, const DA4_Tile<T>& t) {

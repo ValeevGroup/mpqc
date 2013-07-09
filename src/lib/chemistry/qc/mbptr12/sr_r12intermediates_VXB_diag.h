@@ -116,6 +116,42 @@ namespace sc {
         }
     };
 
+    /** this functor helps to implement orbital response
+     */
+    template<typename T>
+    struct _OrbResponse {
+
+        typedef TiledArray::Array<T, 2> Array2;
+        typedef TiledArray::Array<T, 4> Array4;
+
+        /**
+         * @param f_AB virt/virt Fock operator
+         * @param f_ij occ/occ Fock operator
+         * @param g_ij_ab <ij|ab>
+         * @param g_ia_jb <ia|jb>
+         */
+        _OrbResponse(const Array2& f_AB, const Array2& f_ij,
+                     const Array4& g_ij_ab, const Array4& g_ia_jb) :
+            F_AB(f_AB), F_IJ(f_ij), G_IJ_AB(g_ij_ab), G_IA_JB(g_ia_jb) {
+        }
+
+        const Array2& F_AB;
+        const Array2& F_IJ;
+        const Array4& G_IJ_AB;
+        const Array4& G_IA_JB;
+
+        /**
+         * @param[in] kappa kappa_i^a
+         * @param[out] residual residual_i^a
+         */
+        void operator()(const Array2& kappa, Array2& residual) {
+          residual =  kappa("i,b") * F_AB("b,a") - F_IJ("i,j") * kappa("j,a")
+          + 4.0 * G_IJ_AB("i,j,a,b") *  kappa("j,b")
+                   -       G_IJ_AB("i,j,b,a") *  kappa("j,b")
+                   -       G_IA_JB("i,a,j,b") *  kappa("j,b");
+        }
+    };
+
     /// makes a diagonal 2-index preconditioner: pc_x^y = -1/ ( <x|O1|x> - <y|O2|y> )
     template <typename T>
     struct diag_precond2 {
@@ -267,8 +303,318 @@ namespace sc {
                                preconditioner,
                                1e-10);
       std::cout << "Converged CG to " << resnorm << std::endl;
-      const double E2_cabs = 2.0 * dot(T1_recomp("i,A'"), _2("<i|F|A'>"));
+      const double E2_cabs = 2.0 * dot(T1_recomp("i,A'"), _2("<i|F|A'>")); // 2 accounts for spin
       std::cout << "E2_cabs (re-recomputed) = " << E2_cabs << std::endl;
+
+      // compute the (2)_S dipole moment
+      {
+        const double mu_z_e = 2*dot(_2("<i|mu_z|A'>"), T1_recomp("i,A'"))
+                            - dot(_2("<i|mu_z|j>"), T1_recomp("i,A'") * T1_recomp("j,A'") )
+                            + dot(_2("<A'|mu_z|B'>"), T1_recomp("i,A'") * T1_recomp("i,B'") );
+        std::cout << "Mu_z (2)_S = " << 2*mu_z_e << std::endl; // 2 accounts for spin degeneracy
+        std::cout << "Mu_z ref = " << (dot(_2("<i|mu_z|j>"),_2("<i|gamma|j>")))
+                  << std::endl; // 2 is included in gamma!
+      }
+
+      // compute orbital rotation multipliers in the (2)_S Lagrangian
+      if (1) {
+        TArray2 Tia = T1_recomp("j,A'") * _2("<A'|I|a>");
+        TArray2 Xia_1 = 2* (_2("<i|F|j>") * Tia("j,a") - T1_recomp("i,B'") * _2("<B'|F|a>"))
+                        + 2 * _2("<i|F|C'>") * T1_recomp("j,C'") * Tia("j,a")
+                        - 2 * (2 * _4("<j i|g|B' a>") - _4("<j i|g|a B'>") + 2 * _4("<j a|g|B' i>") - _4("<j a|g|i B'>")) * T1_recomp("j,B'")
+                        - 2 * (2 * _4("<B' i|g|C' a>") - _4("<B' i|g|a C'>")) * T1_recomp("j,B'") * T1_recomp("j,C'")
+                        + 2 * (2 * _4("<j i|g|k a>") - _4("<j i|g|a k>")) * T1_recomp("j,B'") * T1_recomp("k,B'");
+        std::cout << "Xia_1, should not be 0:\n" << Xia_1 << std::endl;
+
+        TArray2 Faa = _2("<a|F|b>");
+        TArray4 G_ij_ab = _4("<i j|g|a b>");
+        TArray4 G_ia_jb = _4("<i a|g|j b>");
+        detail::_OrbResponse<double> response_lhs_eval(Faa, Fii, G_ij_ab, G_ia_jb);
+
+        TA::ConjugateGradientSolver<Array, detail::_OrbResponse<double> > cg_solver;
+        Array kappa = Xia_1;
+
+        // make preconditioner: Delta_ia = <i|F|i> - <a|F|a>
+        typedef detail::diag_precond2<double> pceval_type; //!< evaluator of preconditioner
+        typedef TA::Array<T, 2, LazyTensor<T, 2, pceval_type > > TArray2d;
+        TArray2d Delta_ia(Xia_1.get_world(), Xia_1.trange());
+        pceval_type Delta_ia_gen(TA::array_to_eigen(Fii),
+                                 TA::array_to_eigen(Faa));
+
+        // construct local tiles
+        for(auto t=Delta_ia.trange().tiles().begin();
+            t!=Delta_ia.trange().tiles().end();
+            ++t)
+          if (Delta_ia.is_local(*t)) {
+            std::array<std::size_t, 2> index; std::copy(t->begin(), t->end(), index.begin());
+            madness::Future < typename TArray2d::value_type >
+              tile((LazyTensor<T, 2, pceval_type >(&Delta_ia, index, &Delta_ia_gen)
+                  ));
+
+            // Insert the tile into the array
+            Delta_ia.set(*t, tile);
+          }
+        Array preconditioner = Delta_ia("i,a");
+
+        // solves orbital response using CG
+        auto resnorm = cg_solver(response_lhs_eval,
+                                 Xia_1,
+                                 kappa,
+                                 preconditioner,
+                                 1e-10);
+        std::cout << "Converged CG to " << resnorm << std::endl;
+
+        // verify the solution:
+        {
+          TArray2 res = Xia_1;
+          response_lhs_eval(kappa, res);
+          std::cout << "should be zero = " << TA::expressions::norm2(res("i,a") - Xia_1("i,a"));
+        }
+
+        const double mu_z_e = dot(kappa("i,a"), _2("<i|mu_z|a>"));
+        std::cout << "mu_z_e (orb response) = " << 2*mu_z_e << std::endl;
+
+      }
+    }
+
+    // now recompute T1_cabs and E2_cabs using only CABS for perturbation!
+    {
+      std::cout << "computing E2_cabs due to CABS only as the first-order space\n";
+      typedef TiledArray::Array<T,2> Array;
+      Array Fii = _2("<i|F|j>");
+      Array FAA = _2("<a'|F|b'>");
+      // this computes Z_i^a' = T_i^b' F_b'^a' - F_i^j T_j^a'
+      detail::_CABS_singles_h0t1<double> cabs_singles_rhs_eval(FAA, Fii);
+
+      TA::ConjugateGradientSolver<Array, detail::_CABS_singles_h0t1<double> > cg_solver;
+      Array FiA = _2("<i|F|a'>");
+      Array minus_FiA = -1.0 * FiA("i,a'");
+      Array T1_recomp = FiA;
+
+      // make preconditioner: Delta_iA = <i|F|i> - <a'|F|a'>
+      typedef detail::diag_precond2<double> pceval_type; //!< evaluator of preconditioner
+      typedef TA::Array<T, 2, LazyTensor<T, 2, pceval_type > > TArray2d;
+      TArray2d Delta_iA(FiA.get_world(), FiA.trange());
+      pceval_type Delta_iA_gen(TA::array_to_eigen(Fii),
+                               TA::array_to_eigen(FAA));
+
+      // construct local tiles
+      for(auto t=Delta_iA.trange().tiles().begin();
+          t!=Delta_iA.trange().tiles().end();
+          ++t)
+        if (Delta_iA.is_local(*t)) {
+          std::array<std::size_t, 2> index; std::copy(t->begin(), t->end(), index.begin());
+          madness::Future < typename TArray2d::value_type >
+            tile((LazyTensor<T, 2, pceval_type >(&Delta_iA, index, &Delta_iA_gen)
+                ));
+
+          // Insert the tile into the array
+          Delta_iA.set(*t, tile);
+        }
+      Array preconditioner = Delta_iA("i,a'");
+
+#if 0
+      std::cout << "FiA:\n" << FiA << std::endl;
+      std::cout << "Fii:\n" << Fii << std::endl;
+      std::cout << "FAA:\n" << FAA << std::endl;
+      std::cout << "preconditioner:\n" << preconditioner << std::endl;
+#endif
+
+      // solves CABS singles equations T_i^B' F_B'^A' - F_i^j T_j^A' = -F_i^A' using CG
+      auto resnorm = cg_solver(cabs_singles_rhs_eval,
+                               minus_FiA,
+                               T1_recomp,
+                               preconditioner,
+                               1e-10);
+      std::cout << "Converged CG to " << resnorm << std::endl;
+      const double E2_cabs = 2.0 * dot(T1_recomp("i,a'"), _2("<i|F|a'>")); // 2 accounts for spin
+      std::cout << "E2_cabs (re-recomputed) = " << E2_cabs << std::endl;
+
+      // compute the (2)_S dipole moment
+      {
+        const double mu_z_e = 2*dot(_2("<i|mu_z|a'>"), T1_recomp("i,a'"))
+                            - dot(_2("<i|mu_z|j>"), T1_recomp("i,a'") * T1_recomp("j,a'") )
+                            + dot(_2("<a'|mu_z|b'>"), T1_recomp("i,a'") * T1_recomp("i,b'") );
+        std::cout << "Mu_z (2)_S = " << 2*mu_z_e << std::endl; // 2 accounts for spin degeneracy
+      }
+
+      // compute orbital rotation multipliers in the (2)_S Lagrangian
+      if (1) {
+        // only include the first-order terms in the Lagrangian derivative
+        TArray2 Xia_1 = - 2 * T1_recomp("i,b'") * _2("<b'|F|a>")
+                      - 2 * (2 * _4("<j i|g|b' a>") - _4("<j i|g|a b'>") + 2 * _4("<j a|g|b' i>") - _4("<j a|g|i b'>")) * T1_recomp("j,b'")
+                      - 2 * (2 * _4("<b' i|g|c' a>") - _4("<b' i|g|a c'>")) * T1_recomp("j,b'") * T1_recomp("j,c'")
+                      + 2 * (2 * _4("<j i|g|k a>") - _4("<j i|g|a k>")) * T1_recomp("j,b'") * T1_recomp("k,b'");
+        std::cout << "Xia_1, should not be 0:\n" << Xia_1 << std::endl;
+
+        TArray2 Faa = _2("<a|F|b>");
+        TArray4 G_ij_ab = _4("<i j|g|a b>");
+        TArray4 G_ia_jb = _4("<i a|g|j b>");
+        detail::_OrbResponse<double> response_lhs_eval(Faa, Fii, G_ij_ab, G_ia_jb);
+
+        TA::ConjugateGradientSolver<Array, detail::_OrbResponse<double> > cg_solver;
+        Array kappa = Xia_1;
+
+        // make preconditioner: Delta_ia = <i|F|i> - <a|F|a>
+        typedef detail::diag_precond2<double> pceval_type; //!< evaluator of preconditioner
+        typedef TA::Array<T, 2, LazyTensor<T, 2, pceval_type > > TArray2d;
+        TArray2d Delta_ia(Xia_1.get_world(), Xia_1.trange());
+        pceval_type Delta_ia_gen(TA::array_to_eigen(Fii),
+                                 TA::array_to_eigen(Faa));
+
+        // construct local tiles
+        for(auto t=Delta_ia.trange().tiles().begin();
+            t!=Delta_ia.trange().tiles().end();
+            ++t)
+          if (Delta_ia.is_local(*t)) {
+            std::array<std::size_t, 2> index; std::copy(t->begin(), t->end(), index.begin());
+            madness::Future < typename TArray2d::value_type >
+              tile((LazyTensor<T, 2, pceval_type >(&Delta_ia, index, &Delta_ia_gen)
+                  ));
+
+            // Insert the tile into the array
+            Delta_ia.set(*t, tile);
+          }
+        Array preconditioner = Delta_ia("i,a");
+
+        // solves orbital response using CG
+        auto resnorm = cg_solver(response_lhs_eval,
+                                 Xia_1,
+                                 kappa,
+                                 preconditioner,
+                                 1e-10);
+        std::cout << "Converged CG to " << resnorm << std::endl;
+        const double mu_z_e = dot(kappa("i,a"), _2("<i|mu_z|a>"));
+        std::cout << "mu_z_e (orb reponse) = " << 2*mu_z_e << std::endl;
+
+      }
+    }
+
+    // compute T1_obs and E2_obs
+    {
+      std::cout << "computing E2_obs (virtuals is the first-order space)\n";
+      typedef TiledArray::Array<T,2> Array;
+      Array Fii = _2("<i|F|j>");
+      Array FAA = _2("<a|F|b>");
+      // this computes Z_i^a = T_i^b F_b^a - F_i^j T_j^a
+      detail::_CABS_singles_h0t1<double> cabs_singles_rhs_eval(FAA, Fii);
+
+      TA::ConjugateGradientSolver<Array, detail::_CABS_singles_h0t1<double> > cg_solver;
+      Array FiA = _2("<i|F|a>");
+      Array minus_FiA = -1.0 * FiA("i,a");
+      Array T1_obs = FiA;
+
+      // make preconditioner: Delta_iA = <i|F|i> - <a|F|a>
+      typedef detail::diag_precond2<double> pceval_type; //!< evaluator of preconditioner
+      typedef TA::Array<T, 2, LazyTensor<T, 2, pceval_type > > TArray2d;
+      TArray2d Delta_iA(FiA.get_world(), FiA.trange());
+      pceval_type Delta_iA_gen(TA::array_to_eigen(Fii),
+                               TA::array_to_eigen(FAA));
+
+      // construct local tiles
+      for(auto t=Delta_iA.trange().tiles().begin();
+          t!=Delta_iA.trange().tiles().end();
+          ++t)
+        if (Delta_iA.is_local(*t)) {
+          std::array<std::size_t, 2> index; std::copy(t->begin(), t->end(), index.begin());
+          madness::Future < typename TArray2d::value_type >
+            tile((LazyTensor<T, 2, pceval_type >(&Delta_iA, index, &Delta_iA_gen)
+                ));
+
+          // Insert the tile into the array
+          Delta_iA.set(*t, tile);
+        }
+      Array preconditioner = Delta_iA("i,a");
+
+#if 0
+      std::cout << "FiA:\n" << FiA << std::endl;
+      std::cout << "Fii:\n" << Fii << std::endl;
+      std::cout << "FAA:\n" << FAA << std::endl;
+      std::cout << "preconditioner:\n" << preconditioner << std::endl;
+#endif
+
+      // solves CABS singles equations T_i^B' F_B'^A' - F_i^j T_j^A' = -F_i^A' using CG
+      auto resnorm = cg_solver(cabs_singles_rhs_eval,
+                               minus_FiA,
+                               T1_obs,
+                               preconditioner,
+                               1e-10);
+      std::cout << "Converged CG to " << resnorm << std::endl;
+      // same as the lagrangian since solved for T1 exactly
+      const double E2_obs = 2.0 * dot(T1_obs("i,a"), _2("<i|F|a>")); // 2 accounts for spin
+      std::cout << "E2_obs = " << E2_obs << std::endl;
+      const double E0_obs = dot(_2("<i|F|j>"), _2("<i|gamma|j>")); // 2 included in gamma
+      std::cout << "E0_obs = " << scprintf("%15.10lf",E0_obs) << std::endl;
+
+      // compute the (2)_S dipole moment
+      {
+        const double mu_z_e = 2*dot(_2("<i|mu_z|a>"), T1_obs("i,a"))
+                            - dot(_2("<i|mu_z|j>"), T1_obs("i,a") * T1_obs("j,a") )
+                            + dot(_2("<a|mu_z|b>"), T1_obs("i,a") * T1_obs("i,b") );
+        std::cout << scprintf("Mu_z (2)_S OBS = %25.15lf", 2*mu_z_e) << std::endl; // 2 accounts for spin degeneracy
+        std::cout << scprintf("Mu_z ref = %25.15lf", (dot(_2("<i|mu_z|j>"),_2("<i|gamma|j>")))) << std::endl;
+      }
+
+      // compute orbital rotation multipliers in the (2)_S OBS Lagrangian
+      if (1) {
+        // only include the first-order terms in the Lagrangian derivative
+        TArray2 Xia_1 = _2("<i|F|j>") * T1_obs("j,a") - T1_obs("i,b") * _2("<b|F|a>")
+                        + 2 * _2("<i|F|c>") * T1_obs("j,c") * T1_obs("j,a")
+                        + 2 * T1_obs("i,c") * T1_obs("j,c") * _2("<j|F|a>")
+                        ;
+        std::cout << "Xia_1, should not be 0:\n" << Xia_1 << std::endl;
+        TArray2 Fia = _2("<i|F|a>");
+        std::cout << "Fia, should be close to Xia_1:\n" << Fia << std::endl;
+
+        TArray2 Faa = _2("<a|F|b>");
+        TArray4 G_ij_ab = _4("<i j|g|a b>");
+        TArray4 G_ia_jb = _4("<i a|g|j b>");
+        detail::_OrbResponse<double> response_lhs_eval(Faa, Fii, G_ij_ab, G_ia_jb);
+
+        TA::ConjugateGradientSolver<Array, detail::_OrbResponse<double> > cg_solver;
+        Array kappa = Xia_1;
+
+        // make preconditioner: Delta_ia = <i|F|i> - <a|F|a>
+        typedef detail::diag_precond2<double> pceval_type; //!< evaluator of preconditioner
+        typedef TA::Array<T, 2, LazyTensor<T, 2, pceval_type > > TArray2d;
+        TArray2d Delta_ia(Xia_1.get_world(), Xia_1.trange());
+        pceval_type Delta_ia_gen(TA::array_to_eigen(Fii),
+                                 TA::array_to_eigen(Faa));
+
+        // construct local tiles
+        for(auto t=Delta_ia.trange().tiles().begin();
+            t!=Delta_ia.trange().tiles().end();
+            ++t)
+          if (Delta_ia.is_local(*t)) {
+            std::array<std::size_t, 2> index; std::copy(t->begin(), t->end(), index.begin());
+            madness::Future < typename TArray2d::value_type >
+              tile((LazyTensor<T, 2, pceval_type >(&Delta_ia, index, &Delta_ia_gen)
+                  ));
+
+            // Insert the tile into the array
+            Delta_ia.set(*t, tile);
+          }
+        Array preconditioner = Delta_ia("i,a");
+
+        // solves orbital response using CG
+        auto resnorm = cg_solver(response_lhs_eval,
+                                 Xia_1,
+                                 kappa,
+                                 preconditioner,
+                                 1e-10);
+        std::cout << "Converged CG to " << resnorm << std::endl;
+        std::cout << scprintf("E_2 (orb reponse) = %25.15lf", 2*dot(kappa("i,a"), _2("<i|F|a>"))) << std::endl;
+        const double mu_z_e = dot(kappa("i,a"), _2("<i|mu_z|a>"));
+        std::cout << scprintf("mu_z_e (orb reponse) = %25.15lf", 2*mu_z_e) << std::endl;
+
+      }
+    }
+
+    if (1) {
+      for(int i=0; i<10; ++i) {
+        TArray4 should_be_zero = _4("<b j|g|a i>") - _4("<b i|g|a j>");
+        std::cout << "should be 0: " << TA::expressions::norminf(should_be_zero("b,j,a,i")) << std::endl;
+      }
     }
 
     // this now works ... thanks Justus!

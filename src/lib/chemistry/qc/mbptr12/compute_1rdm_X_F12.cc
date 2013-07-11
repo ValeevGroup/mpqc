@@ -221,7 +221,7 @@ namespace {
      int size_a = ints->ni();
      int size_i = ints->nx();
      int size_idx1 = ints->nj(); // contracted index
-     const int size_idx2 = ints->ny(); // size of second contracted index
+     const blasint size_idx2 = ints->ny(); // size of second contracted index
 
      int a = 0;
      int idx1 = 0;

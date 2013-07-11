@@ -1,0 +1,8 @@
+# PAPI
+find_package(PAPI)
+if (PAPI_FOUND)
+  set(HAVE_PAPI TRUE)
+  include_directories(${PAPI_INCLUDE_DIRS})
+else()
+  set(PAPI_LIBRARIES "")
+endif()

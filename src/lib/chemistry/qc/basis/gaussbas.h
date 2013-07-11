@@ -37,7 +37,9 @@
 #include <math/scmat/vector3.h>
 #include <chemistry/molecule/molecule.h>
 
+#ifdef MPQC_NEW_FEATURES
 #include "mpqc/range.hpp"
+#endif
 
 namespace sc {
 
@@ -481,8 +483,10 @@ class GaussianBasisSet: virtual public SavableState
     /// Return the shell to which the given function belongs.
     int function_to_shell(int i) const;
 
+#ifdef MPQC_NEW_FEATURES
     /// Shell s function range
     mpqc::range range(int s) const;
+#endif
 
     /// Return a reference to GaussianShell number i.
     const GaussianShell& operator()(int i) const { return *shell_[i]; }

@@ -241,33 +241,6 @@ include_directories("${PROJECT_BINARY_DIR}/src/lib")
 include_directories("${PROJECT_SOURCE_DIR}/src/lib")
 include_directories("${PROJECT_SOURCE_DIR}/include") # flex/lexer
 
-set(MPI_LIBRARIES "")
-if (DEFINED MPI_C_COMPILER AND NOT MPI_C_COMPILER)
-  message(STATUS "MPI disabled")
-else()
-  find_package(MPI)
-  if (NOT MPI_FOUND)
-    message(ERROR "MPI not found")
-  else()
-    set(HAVE_MPI TRUE)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MPI_LINKER_FLAGS}")
-    include_directories(${MPI_INCLUDE_PATH})
-    message(STATUS "MPI_LIBRARIES: ${MPI_LIBRARIES}")
-    message(STATUS "MPI_LINKER_FLAGS: ${MPI_LINKER_FLAGS}")
-    #add_definitions(-DOMPI_SKIP_MPICXX)
-    option(ALWAYS_USE_MPI "Always use MPI" TRUE)
-  endif()
-endif()
-
-# PAPI
-find_package(PAPI)
-if (PAPI_FOUND)
-  set(HAVE_PAPI TRUE)
-  include_directories(${PAPI_INCLUDE_DIRS})
-else()
-  set(PAPI_LIBRARIES "")
-endif()
-
 # external dependencies
 include(external/External)
 

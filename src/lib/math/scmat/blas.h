@@ -2,9 +2,17 @@
 #include <mpqc_config.h>
 #include <stdint.h>
 #if defined(BLAS_F77_INTEGER_WIDTH) && BLAS_F77_INTEGER_WIDTH == 8
-  typedef int64_t blas_f77_integer_t;
+#  if  C_TYPE_INT64_T == C_TYPE_LONG // prefer long -- MADNESS incorrectly uses long instead of int64_t to map to fortran integers
+     typedef long blas_f77_integer_t;
+#  else
+     typedef int64_t blas_f77_integer_t;
+#  endif
 #elif defined(BLAS_F77_INTEGER_WIDTH) && BLAS_F77_INTEGER_WIDTH == 4
-  typedef int32_t blas_f77_integer_t;
+#  if C_TYPE_INT32_T == C_TYPE_INT_T // prefer long -- MADNESS incorrectly uses long instead of int64_t to map to fortran integers
+     typedef int blas_f77_integer_t;
+#  else
+     typedef int32_t blas_f77_integer_t;
+#  endif
 #else
 # error "unknown BLAS_F77_INTEGER_WIDTH"
 #endif

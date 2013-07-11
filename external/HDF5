@@ -8,27 +8,8 @@ include(ExternalProject)
 find_package(HDF5 QUIET)
 
 if (HDF5_FOUND)
-
-  # if HDF5 is found, ensure that it's threadsafe before declaring victory
-  file(WRITE conftest.cxx "
-    #include <hdf5.h>
-    #ifndef H5_HAVE_THREADSAFE
-    #error "HDF5 NOT THREADSAFE"
-    #endif
-    int main(int argc, char** argv) { return 0; }
-  ")
-  try_compile(RES1 ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/conftest.cxx
-              CMAKE_FLAGS LINK_LIBRARIES "-DLINK_LIBRARIES:STRING=${HDF5_LIBRARIES_RELEASE}"
-              COMPILE_DEFINITIONS "-I${HDF5_INCLUDE_DIRS}"
-              OUTPUT_VARIABLE LOG1)
-  if (NOT RES1)
-    message(WARNING "Found HDF5 (${HDF5_LIBRARIES_RELEASE}) but not thread-safe, will compile ourselves")
-    set(HDF5_FOUND FALSE)
-  else()
-    include_directories(${HDF5_INCLUDE_DIRS})
-    set(HDF5_LIBRARIES "${HDF5_LIBRARIES_RELEASE}")
-  endif()
-
+  include_directories(${HDF5_INCLUDE_DIRS})
+  set(HDF5_LIBRARIES "${HDF5_LIBRARIES_RELEASE}")
 endif()
 
 if (NOT HDF5_FOUND)

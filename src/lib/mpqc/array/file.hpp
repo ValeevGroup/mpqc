@@ -6,7 +6,7 @@
 #include "mpqc/file.hpp"
 
 #ifndef H5_HAVE_THREADSAFE
-#error "HDF5 NOT THREADSAFE"
+#warning "HDF5 NOT THREADSAFE"
 #endif
 
 namespace mpqc {

@@ -26,7 +26,7 @@
 //
 
 #include <string>
-#include <extern_pt2r12.h>
+#include "extern_pt2r12.h"
 #include <iostream>
 
 using namespace sc;

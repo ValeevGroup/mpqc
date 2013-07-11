@@ -23,10 +23,10 @@
 #include <util/group/memory.h>
 #include <util/group/thread.h>
 #include <util/misc/consumableresources.h>
-#include <mpqcinit.h>
+#include "../mpqc/mpqcinit.h"
 
-#include <moinfo.h>
-#include <extern_pt2r12.h>
+#include "moinfo.h"
+#include "extern_pt2r12.h"
 
 // Force linkages:
 #include <mpqc_config.h>

@@ -22,12 +22,59 @@ if (LIBINT)
 
   if (NOT LIBINT2_LIBRARY)
     message(FATAL_ERROR "Could not find libint library in ${LIBINT}")
-  endif()    
+  endif()
   if (LIBINT2_LIBRARY)
+  
     if (NOT LIBINT2_INCLUDE_DIR)
       message(FATAL_ERROR "Could not find libint2/libint2.h")
     endif()
+
+    list(APPEND CMAKE_REQUIRED_INCLUDES ${LIBINT2_INCLUDE_DIR})
+    list(APPEND CMAKE_REQUIRED_INCLUDES ${LIBINT2_INCLUDE_DIR}/libint2)
+    list(APPEND CMAKE_REQUIRED_LIBRARIES ${LIBINT2_LIBRARY})
+
+    # sanity check: try compiling a simple program
+    CHECK_CXX_SOURCE_COMPILES(
+      "
+      #include <libint2/libint2.h>
+      int main(int argc, char** argv) {
+        libint2_static_init();
+        return 0;
+      }
+      "  LIBINT_COMPILES)
+    if (NOT LIBINT_COMPILES)
+      message(FATAL_ERROR "Could not compile LIBINT test program")
+    endif()
+    
+    # make sure libint2 version is up to date
+    CHECK_CXX_SOURCE_COMPILES(
+      "
+          #include <libint2/libint2.h>
+          #include <libint2/boys.h>
+          #if !(LIBINT_MAJOR_VERSION==2 && LIBINT_MINOR_VERSION==0 && LIBINT_MICRO_VERSION>=2)
+          # error \"Libint2 library is too old\"
+          #endif
+          int main(int argc, char** argv) {}
+      "  LIBINT_IS_UP_TO_DATE)    
+    if (NOT LIBINT_IS_UP_TO_DATE)
+      message(FATAL_ERROR "Libint library is too old: version 2.0.2 or later is required")
+    endif()
+    
+    # check that libint2 uses one of orderings supported by MPQC
+    CHECK_CXX_SOURCE_COMPILES(
+      "
+        #include <libint2/libint2.h>
+        #if LIBINT2_CGSHELL_ORDERING != LIBINT2_CGSHELL_ORDERING_STANDARD && LIBINT2_CGSHELL_ORDERING != LIBINT2_CGSHELL_ORDERING_INTV3 && LIBINT2_CGSHELL_ORDERING != LIBINT2_CGSHELL_ORDERING_GAMESS
+        # error \"Libint2 library is uses an Cartesian Gaussian ordering not supported by MPQC, or it is simply too old\"
+        #endif
+        int main(int argc, char** argv) {}
+      "  LIBINT_USES_SUPPORTED_CARTGAUSS_ORDERING)    
+    if (NOT LIBINT_USES_SUPPORTED_CARTGAUSS_ORDERING)
+      message(FATAL_ERROR "Libint2 library is uses an Cartesian Gaussian ordering not supported by MPQC, or it's simply too old")
+    endif()
+    
     set(LIBINT2_FOUND TRUE)
+    
     message(STATUS "Found Libint2:")
     message(STATUS "\tLIBINT2_LIBRARY=${LIBINT2_LIBRARY}")
     message(STATUS "\tLIBINT2_INCLUDE_DIR=${LIBINT2_INCLUDE_DIR}")

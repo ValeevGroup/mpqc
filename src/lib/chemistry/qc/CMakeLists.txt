@@ -1,6 +1,5 @@
 set(subdirectories
   basis
-  ci
   dft
   etrain
   intv3
@@ -13,6 +12,10 @@ set(subdirectories
   wfn
   )
 
+if (MPQC_NEW_FEATURES_CI)
+  list(APPEND subdirectories ci)
+endif()
+
 if (HAVE_LIBINT2)
   list(APPEND subdirectories libint2 mbptr12 ccr12)
 endif()
@@ -23,7 +26,6 @@ endif()
 
 foreach(s ${subdirectories})
   add_subdirectory(${s})
-#  message("${s} $<TARGET_OBJECTS:${s}>")
   list(APPEND objects $<TARGET_OBJECTS:${s}>)
 endforeach()
 

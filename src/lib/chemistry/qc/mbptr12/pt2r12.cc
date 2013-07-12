@@ -1388,9 +1388,10 @@ void PT2R12::compute()
     r12world()->refwfn()->set_spinfree(true);
     assert(r12world()->r12tech()->ansatz()->projector() == R12Technology::Projector_2);
 
-#if defined(HAVE_MPQC3_RUNTIME)
+#define ENABLE_NEW_PT2R12_CODE 0
+#if ENABLE_NEW_PT2R12_CODE && defined(HAVE_MPQC3_RUNTIME)
     if (1) {
-      auto e = energy_PT2R12_projector2_mpqc3();
+      std::pair<double,double> e = energy_PT2R12_projector2_mpqc3();
       energy_pt2r12_sf = e.first;
       recomp_ref_energy = e.second;
     }

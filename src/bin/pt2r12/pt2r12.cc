@@ -162,6 +162,9 @@ int try_main(int argc, char **argv)
   MPQCInit init(opt,argc,argv);
   init.init_fp();
   init.init_limits();
+#ifdef HAVE_MADNESS
+  init.init_madness();
+#endif
   Ref<MessageGrp> grp = init.init_messagegrp();
   init.init_io(grp);
   Ref<ThreadGrp> thread = init.init_threadgrp();

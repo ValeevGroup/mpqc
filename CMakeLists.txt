@@ -19,10 +19,12 @@ endif()
 
 set(BLAS_F77_INTEGER_WIDTH 4)
 if(INTEGER8) 
+  #message(FATAL_ERROR ${CMAKE_Fortran_COMPILER_ID})
   set(BLAS_F77_INTEGER_WIDTH 8)
-  if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
+  if (CMAKE_Fortran_COMPILER_ID MATCHES GNU)
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fdefault-integer-8")
-  elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
+    #message(FATAL_ERROR ${CMAKE_Fortran_COMPILER_ID} ${CMAKE_Fortran_FLAGS})
+  elseif (CMAKE_Fortran_COMPILER_ID MATCHES Intel)
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -i8")
   else()
     message(FATAL_ERROR "Don't know how to set INTEGER*8 for '${CMAKE_Fortran_COMPILER_ID}' compiler")
@@ -57,26 +59,47 @@ if(OPENMP)
   endif()
 endif()
 
-
 include(TestCXXAcceptsFlag)
+include(CheckCXXSourceCompiles)
 
 if (MPQC_NEW_FEATURES)
-  # C++11 flag
-  CHECK_CXX_ACCEPTS_FLAG("-std=c++0x" CXX_FLAG_CXX0X)
-  CHECK_CXX_ACCEPTS_FLAG("-std=c++11" CXX_FLAG_CXX11)
-  set(HAVE_CXX11 FALSE)
-  if (CXX_FLAG_CXX0X)
-    set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS}")
-    MESSAGE(STATUS "C++11 flag: -std=c++0x")
-    set(HAVE_CXX11 TRUE)
-  elseif(CXX_FLAG_CXX11)
-    set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
-    MESSAGE(STATUS "C++11 flag: -std=c++11")
-    set(HAVE_CXX11 TRUE)
+  if (CMAKE_CXX_COMPILER_ID MATCHES Clang)
+    message(WARNING "Assuming Clang doesn't need -std=c++0x flag to enable C++11 features.")
+  else()
+    # C++11 flag is required
+    CHECK_CXX_ACCEPTS_FLAG("-std=c++0x" CXX_FLAG_CXX0X)
+    CHECK_CXX_ACCEPTS_FLAG("-std=c++11" CXX_FLAG_CXX11)
+    set(HAVE_CXX11 FALSE)
+    if (CXX_FLAG_CXX0X)
+      set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS}")
+      MESSAGE(STATUS "C++11 flag: -std=c++0x")
+      set(HAVE_CXX11 TRUE)
+    elseif(CXX_FLAG_CXX11)
+      set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+      MESSAGE(STATUS "C++11 flag: -std=c++11")
+      set(HAVE_CXX11 TRUE)
+    endif()
   endif()
+  # C++11 features
+  CHECK_CXX_SOURCE_COMPILES("
+    int main() {
+    auto c = 1;
+    }"
+    HAVE_CXX_AUTO)  
+  if (NOT HAVE_CXX_AUTO)
+    message(FATAL_ERROR "No support for C++ auto")
+  endif()
+  add_definitions(-DMPQC_NEW_FEATURES)  
 endif()
 
-include(CheckCXXSourceCompiles)
+# std::array
+CHECK_CXX_SOURCE_COMPILES("
+    #include <array>
+    int main(void)
+    {
+      std::array<int,2> array;
+    }"
+    HAVE_STD_ARRAY)
 
 CHECK_CXX_SOURCE_COMPILES("
   int main() {
@@ -88,42 +111,6 @@ CHECK_CXX_SOURCE_COMPILES("
   void *__restrict__ ptr;
   }" HAVE_CXX___RESTRICT__)
 
-# C++11 features
-CHECK_CXX_SOURCE_COMPILES("
-    int main() {
-    auto c = 1;
-    }"
-    HAVE_CXX_AUTO)  
-
-# rvalue references
-CHECK_CXX_SOURCE_COMPILES("
-    #include <utility>
-    int foo(int &&i) { return i; }
-    int main(void)
-    {
-      return foo(std::forward<int>(0));
-    }"
-    HAVE_CXX_RVALUE)
-
-# std::array
-CHECK_CXX_SOURCE_COMPILES("
-    #include <array>
-    int main(void)
-    {
-      std::array<int,2> array;
-    }"
-    HAVE_STD_ARRAY)
-
-
-if (MPQC_NEW_FEATURES)
-  if (NOT HAVE_CXX_AUTO)
-    message(FATAL_ERROR "No support for C++ auto")
-  endif()
-  if (NOT HAVE_CXX_RVALUE)
-    message(FATAL_ERROR "No support for C++ rvalue/std::forward")
-  endif()
-  add_definitions(-DMPQC_NEW_FEATURES)
-endif(MPQC_NEW_FEATURES)
 
 
 option(USE_STATIC_LIBS "use static libraries" OFF)

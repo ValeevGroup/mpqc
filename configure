@@ -21,6 +21,7 @@ Usage: '"$0"' [<options>...]
 Options: [defaults in brackets after descriptions]
 Configuration:
   --help                  print this message
+  --new-features          MPQC new features (-DMPQC_NEW_FEATURES=TRUE)
   --debug                 debug build (CMAKE_BUILD_TYPE=Debug)
   --prefix=               install prefix (CMAKE_INSTALL_PREFIX=)
   --lapack=               LAPACK libraries (LAPACK_LIBRARIES=)
@@ -82,9 +83,9 @@ echo $log > config.log
 
 while test $# != 0; do
   case "$1" in
-  -D*) args="$args $1" ;; # raw  cmake arg
-  --prefix=*) prefix="`arg \"$1\"`" ;;
   --help|-h) help ;;
+  --prefix=*) prefix="`arg \"$1\"`" ;;
+  --new-features) args="$args -DMPQC_NEW_FEATURES=TRUE" ;;
   --lapack=*) lapack="`arg \"$1\"`" ;;
   --integer8) args="$args -DINTEGER8=TRUE" ;;
   --debug) build="Debug" ;; #args="$args -DCMAKE_BUILD_TYPE=Debug" ;;
@@ -92,6 +93,7 @@ while test $# != 0; do
   --libint=*) libint="`arg \"$1\"`" ;;
   --mpicc=*) args="$args -DMPI_C_COMPILER=`arg \"$1\"`" ;;
   --boost=*) args="$args -DBOOST=`arg \"$1\"`" ;;
+  -D*) args="$args $1" ;; # raw  cmake arg
   CC=*) CC="`arg \"$1\"`" ;;
   CXX=*) CXX="`arg \"$1\"`" ;;
   F77=*) F77="`arg \"$1\"`" ;;

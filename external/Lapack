@@ -3,11 +3,6 @@ set(EXTERNAL_BUILD_DIR ${PROJECT_BINARY_DIR}/external/build)
 
 include(ExternalProject)
 
-# BLAS
-if(BLAS_LIBRARIES)
-  set(LAPACK_LIBRARIES "${BLAS_LIBRARIES}" CACHE STRING "LAPACK_LIBRARIES")
-endif()
-
 # this will find BLAS unless BLAS_LIBRARIES set
 find_package(LAPACK)
 

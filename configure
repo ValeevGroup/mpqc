@@ -23,7 +23,6 @@ Configuration:
   --help                  print this message
   --debug                 debug build (CMAKE_BUILD_TYPE=Debug)
   --prefix=               install prefix (CMAKE_INSTALL_PREFIX=)
-  --blas=                 BLAS libraries (BLAS_LIBRARIES=)
   --lapack=               LAPACK libraries (LAPACK_LIBRARIES=)
   --integer8              assume integer*8 in fortran
   --mpicc=                MPI C compiler to deduce MPI environment (MPI_C_COMPILER=)
@@ -70,7 +69,6 @@ args=""
 prefix=$PWD
 build="Release"
 
-blas=""
 lapack=""
 search=""
 
@@ -87,7 +85,6 @@ while test $# != 0; do
   -D*) args="$args $1" ;; # raw  cmake arg
   --prefix=*) prefix="`arg \"$1\"`" ;;
   --help|-h) help ;;
-  --blas=*) blas="`arg \"$1\"`" ;;
   --lapack=*) lapack="`arg \"$1\"`" ;;
   --integer8) args="$args -DINTEGER8=TRUE" ;;
   --debug) build="Debug" ;; #args="$args -DCMAKE_BUILD_TYPE=Debug" ;;
@@ -109,10 +106,6 @@ done
 
 args="$args -DCMAKE_INSTALL_PREFIX=$prefix"
 args="$args -DCMAKE_BUILD_TYPE=$build"
-
-if [ -n "$blas" ]; then
-    args="$args -DBLAS_LIBRARIES=\"$blas\""
-fi
 
 if [ -n "$lapack" ]; then
     args="$args -DLAPACK_LIBRARIES=\"$lapack\""

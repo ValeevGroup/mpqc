@@ -28,7 +28,7 @@ add_library(scmat OBJECT
   matrix.cc
   matrix3.cc
   matrix_i.cc
-  pdsteqr.f
+  pdsteqr.F
   repl.cc
   repldiag.cc
   replrect.cc
@@ -40,6 +40,12 @@ add_library(scmat OBJECT
   util.cc
   vector3.cc
   vector3_i.cc)
+
+if (INTEGER8)
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DINTEGERX='INTEGER*8' ")
+else()
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DINTEGERX='INTEGER*4' ")
+endif()
 
 # tests
 

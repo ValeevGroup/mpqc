@@ -17,7 +17,11 @@ if (MPQC_NEW_FEATURES_CI)
 endif()
 
 if (HAVE_LIBINT2)
-  list(APPEND subdirectories libint2 mbptr12 ccr12)
+  list(APPEND subdirectories libint2)
+endif()
+
+if (MPQC_R12)
+  list(APPEND subdirectories mbptr12 ccr12)
 endif()
 
 if (HAVE_PSI3)

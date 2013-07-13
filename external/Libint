@@ -85,44 +85,52 @@ endif()
 
 if ("${LIBINT}" AND NOT LIBINT2_FOUND)
 
-  set(EXTERNAL_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external)
-  set(EXTERNAL_BUILD_DIR ${PROJECT_BINARY_DIR}/external/build)
+  if (MPQC_EXPERT)
 
-  include(ExternalProject)
+    message("** Downloading and building Libint2 is explicitly disabled in EXPERT mode")
 
-  # set(LIBINT_URL ${EXTERNAL_SOURCE_DIR}/libint.tar.gz)
-  # set(LIBINT_URL_HASH MD5=c59ac34c54dfff59aab3f3d19244071d)
+  else()
 
-  set(LIBINT_URL http://downloads.sourceforge.net/project/libint/libint-for-mpqc/libint-2.0.3-stable.tgz)
-  set(LIBINT_URL_HASH MD5=6fe65ec0763a7c353dd66c7f6687edd4)
+    set(EXTERNAL_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external)
+    set(EXTERNAL_BUILD_DIR ${PROJECT_BINARY_DIR}/external/build)
 
-  if (EXISTS ${EXTERNAL_SOURCE_DIR}/libint.tar.gz)
-    set(LIBINT_URL ${EXTERNAL_SOURCE_DIR}/libint.tar.gz)
-    set(LIBINT_URL_HASH "")
-  endif()
+    include(ExternalProject)
 
-  message(STATUS "Will build Libint from ${LIBINT_URL}")
+    # set(LIBINT_URL ${EXTERNAL_SOURCE_DIR}/libint.tar.gz)
+    # set(LIBINT_URL_HASH MD5=c59ac34c54dfff59aab3f3d19244071d)
 
-  ExternalProject_Add(
-    libint
-    PREFIX ${EXTERNAL_BUILD_DIR}/libint
-    URL ${LIBINT_URL}
-    URL_HASH ${LIBINT_URL_HASH}
-    BUILD_IN_SOURCE 1
-    CONFIGURE_COMMAND /bin/bash ./configure
+    set(LIBINT_URL http://downloads.sourceforge.net/project/libint/libint-for-mpqc/libint-2.0.3-stable.tgz)
+    set(LIBINT_URL_HASH MD5=6fe65ec0763a7c353dd66c7f6687edd4)
+
+    if (EXISTS ${EXTERNAL_SOURCE_DIR}/libint.tar.gz)
+      set(LIBINT_URL ${EXTERNAL_SOURCE_DIR}/libint.tar.gz)
+      set(LIBINT_URL_HASH "")
+    endif()
+
+    message("** Will build Libint from ${LIBINT_URL}")
+
+    ExternalProject_Add(
+      libint
+      PREFIX ${EXTERNAL_BUILD_DIR}/libint
+      URL ${LIBINT_URL}
+      URL_HASH ${LIBINT_URL_HASH}
+      BUILD_IN_SOURCE 1
+      CONFIGURE_COMMAND /bin/bash ./configure
       --prefix=${EXTERNAL_BUILD_DIR}/libint
       CC=${CMAKE_C_COMPILER}
       "CFLAGS=${CMAKE_C_FLAGS}"
       CXX=${CMAKE_CXX_COMPILER}
       "CXXFLAGS=${CMAKE_CXX_FLAGS}"
-    BUILD_COMMAND make SHELL=/bin/bash
-    INSTALL_COMMAND make install SHELL=/bin/bash
-  )
+      BUILD_COMMAND make SHELL=/bin/bash
+      INSTALL_COMMAND make install SHELL=/bin/bash
+      )
 
-  add_dependencies(External libint)
-  set(LIBINT2_LIBRARY ${EXTERNAL_BUILD_DIR}/libint/lib/libint2.a)
-  set(LIBINT2_INCLUDE_DIR ${EXTERNAL_BUILD_DIR}/libint/include)
-  set(HAVE_LIBINT2 TRUE)
+    add_dependencies(External libint)
+    set(LIBINT2_LIBRARY ${EXTERNAL_BUILD_DIR}/libint/lib/libint2.a)
+    set(LIBINT2_INCLUDE_DIR ${EXTERNAL_BUILD_DIR}/libint/include)
+    set(HAVE_LIBINT2 TRUE)
+
+  endif()
 
 endif()
 
@@ -130,6 +138,7 @@ if (HAVE_LIBINT2)
   include_directories(${LIBINT2_INCLUDE_DIR})
   include_directories(${LIBINT2_INCLUDE_DIR}/libint2)
 else()
+  message("** Libint2 was not found")
   set(LIBINT2_LIBRARY "")
 endif()
 

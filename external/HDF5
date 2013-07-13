@@ -12,7 +12,12 @@ if (HDF5_FOUND)
   set(HDF5_LIBRARIES "${HDF5_LIBRARIES_RELEASE}")
 endif()
 
-if (NOT HDF5_FOUND)
+if (NOT HDF5_FOUND AND MPQC_EXPERT)
+ 
+  message("** HDF5 was not found or explicitly set")
+  message("** Downloading and building HDF5 is explicitly disabled in EXPERT mode")
+
+else()
 
   set(HDF5_URL http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.10-patch1/src/hdf5-1.8.10-patch1.tar.gz)
   set(HDF5_URL_HASH MD5=2147a289fb33c887464ad2b6c5a8ae4c)
@@ -20,7 +25,7 @@ if (NOT HDF5_FOUND)
   if (EXISTS ${EXTERNAL_SOURCE_DIR}/hdf5.tar.gz)
     set(HDF5_URL ${EXTERNAL_SOURCE_DIR}/hdf5.tar.gz)
     set(HDF5_URL_HASH "")
-    message(STATUS "Using HDF5 archive ${HDF5_URL}")
+    message("** HDF5 will be built from ${HDF5_URL}")
   endif()
 
   ExternalProject_Add(

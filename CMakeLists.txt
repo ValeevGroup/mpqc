@@ -3,32 +3,26 @@
 cmake_minimum_required (VERSION 2.8.8)
 project (MPQC)
 
-
+option(MPQC_EXPERT "MPQC Expert mode: disables automatically downloading or building dependencies" OFF)
 option(MPQC_NEW_FEATURES "Use new MPQC features (requires C++11)" OFF)
-option(OPENMP "Enable OpenMP" ON)
+option(MPQC_OPENMP "Use OpenMP" OFF)
 
 enable_language (CXX)
 if (NOT CMAKE_CXX_COMPILER)
   message(FATAL_ERROR "C++ compiler not found")
 endif()
 
+# FORTRAN setup
 enable_language (Fortran)
 if (NOT CMAKE_Fortran_COMPILER)
    message(FATAL_ERROR "Fortran compiler not found")
 endif()
-
-set(BLAS_F77_INTEGER_WIDTH 4)
 if(INTEGER8) 
-  #message(FATAL_ERROR ${CMAKE_Fortran_COMPILER_ID})
-  set(BLAS_F77_INTEGER_WIDTH 8)
-  if (CMAKE_Fortran_COMPILER_ID MATCHES GNU)
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fdefault-integer-8")
-    #message(FATAL_ERROR ${CMAKE_Fortran_COMPILER_ID} ${CMAKE_Fortran_FLAGS})
-  elseif (CMAKE_Fortran_COMPILER_ID MATCHES Intel)
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -i8")
-  else()
-    message(FATAL_ERROR "Don't know how to set INTEGER*8 for '${CMAKE_Fortran_COMPILER_ID}' compiler")
-  endif()
+  set(F77_INTEGER_WIDTH 8)
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DINTEGER77='INTEGER*8' ")
+else()
+  set(F77_INTEGER_WIDTH 4)
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DINTEGER77='INTEGER*4' ")
 endif()
 
 # extra cmake files are shipped with MPQC
@@ -49,10 +43,9 @@ set(BUILD_TESTING_SHARED FALSE CACHE BOOLEAN "BUILD_TESTING_SHARED")
 #  set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /opt/local/lib)
 # endif()
 
-
-if(OPENMP)
+if (MPQC_OPENMP)
   find_package(OpenMP)
-  if(OPENMP_FOUND)
+  if (OPENMP_FOUND)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
@@ -64,7 +57,7 @@ include(CheckCXXSourceCompiles)
 
 if (MPQC_NEW_FEATURES)
   if (CMAKE_CXX_COMPILER_ID MATCHES Clang)
-    message(WARNING "Assuming Clang doesn't need -std=c++0x flag to enable C++11 features.")
+    message("* C++11: assuming Clang doesn't need -std=c++0x flag.")
   else()
     # C++11 flag is required
     CHECK_CXX_ACCEPTS_FLAG("-std=c++0x" CXX_FLAG_CXX0X)
@@ -72,24 +65,25 @@ if (MPQC_NEW_FEATURES)
     set(HAVE_CXX11 FALSE)
     if (CXX_FLAG_CXX0X)
       set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS}")
-      MESSAGE(STATUS "C++11 flag: -std=c++0x")
+      message(STATUS "C++11 flag: -std=c++0x")
       set(HAVE_CXX11 TRUE)
     elseif(CXX_FLAG_CXX11)
       set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
-      MESSAGE(STATUS "C++11 flag: -std=c++11")
+      message(STATUS "C++11 flag: -std=c++11")
       set(HAVE_CXX11 TRUE)
     endif()
   endif()
-  # C++11 features
-  CHECK_CXX_SOURCE_COMPILES("
-    int main() {
-    auto c = 1;
-    }"
-    HAVE_CXX_AUTO)  
-  if (NOT HAVE_CXX_AUTO)
-    message(FATAL_ERROR "No support for C++ auto")
-  endif()
   add_definitions(-DMPQC_NEW_FEATURES)  
+endif()
+
+# C++11 features
+CHECK_CXX_SOURCE_COMPILES("
+  int main() {
+  auto c = 1;
+  }"
+  HAVE_CXX_AUTO)  
+if (MPQC_NEW_FEATURES AND NOT HAVE_CXX_AUTO)
+  message(FATAL_ERROR "MPQC_NEW_FEATURES requires support for C++11 auto")
 endif()
 
 # std::array
@@ -263,6 +257,14 @@ list(APPEND LINK_LIBRARIES ${MPI_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${PAPI_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${LIBRARIES})
 list(APPEND LINK_LIBRARIES ${CMAKE_DL_LIBS})
+
+# R-12
+if (HAVE_LIBINT2 AND HAVE_CXX_AUTO)
+  set(MPQC_R12 TRUE)
+  add_definitions(-DMPQC_R12)
+else()
+  message("** R12 requires Libint2 *and* C++11.  R12 methods are disabled")
+endif()
 
 # sources
 add_subdirectory(src)

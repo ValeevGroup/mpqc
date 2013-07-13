@@ -1,22 +1,19 @@
+#ifndef MPQC_BLAS_H
+#define MPQC_BLAS_H
+
 #include <math/scmat/f77sym.h>
 #include <mpqc_config.h>
 #include <stdint.h>
-#if defined(BLAS_F77_INTEGER_WIDTH) && BLAS_F77_INTEGER_WIDTH == 8
-#  if  C_TYPE_INT64_T == C_TYPE_LONG // prefer long -- MADNESS incorrectly uses long instead of int64_t to map to fortran integers
-     typedef long blas_f77_integer_t;
-#  else
-     typedef int64_t blas_f77_integer_t;
-#  endif
-#elif defined(BLAS_F77_INTEGER_WIDTH) && BLAS_F77_INTEGER_WIDTH == 4
-#  if C_TYPE_INT32_T == C_TYPE_INT_T // prefer long -- MADNESS incorrectly uses long instead of int64_t to map to fortran integers
-     typedef int blas_f77_integer_t;
-#  else
-     typedef int32_t blas_f77_integer_t;
-#  endif
+
+#if defined(F77_INTEGER_WIDTH) && F77_INTEGER_WIDTH == 8
+  typedef int64_t f77_integer_t;
+#elif defined(F77_INTEGER_WIDTH) && F77_INTEGER_WIDTH == 4
+  typedef int32_t f77_integer_t;
 #else
-# error "unknown BLAS_F77_INTEGER_WIDTH"
+# error "unknown F77_INTEGER_WIDTH"
 #endif
-typedef blas_f77_integer_t blasint;
+
+typedef f77_integer_t blasint;
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,31 +35,31 @@ extern "C" {
  * @param C
  * @param ldc
  */
-extern void F77_DGEMM(const char* transa, const char* transb, const blas_f77_integer_t* nrows_opA,
-                      const blas_f77_integer_t* ncols_opB, const blas_f77_integer_t* nrows_opB,
-                      const double* alpha, const double* A, const blas_f77_integer_t* lda,
-                      const double* B, const blas_f77_integer_t* ldb,
+extern void F77_DGEMM(const char* transa, const char* transb, const blasint* nrows_opA,
+                      const blasint* ncols_opB, const blasint* nrows_opB,
+                      const double* alpha, const double* A, const blasint* lda,
+                      const double* B, const blasint* ldb,
                       const double* beta,
-                      double* C, const blas_f77_integer_t* ldc);
+                      double* C, const blasint* ldc);
 
-extern void F77_DGEMV(const char* trans, const blas_f77_integer_t* m, const blas_f77_integer_t* n, const double* alpha,
-                      const double* A, const blas_f77_integer_t* lda, const double* X, const blas_f77_integer_t* incX,
-                      const double* beta, double* Y, const blas_f77_integer_t* incY);
+extern void F77_DGEMV(const char* trans, const blasint* m, const blasint* n, const double* alpha,
+                      const double* A, const blasint* lda, const double* X, const blasint* incX,
+                      const double* beta, double* Y, const blasint* incY);
 
-extern void F77_DAXPY(const blas_f77_integer_t* n, const double* da, const double* dx,
-                      const blas_f77_integer_t* incx, double* dy, const blas_f77_integer_t* incy);
+extern void F77_DAXPY(const blasint* n, const double* da, const double* dx,
+                      const blasint* incx, double* dy, const blasint* incy);
 
-extern double F77_DDOT(const blas_f77_integer_t* n, const double* dx, const blas_f77_integer_t* incx,
-                       const double* dy, const blas_f77_integer_t* incy);
+extern double F77_DDOT(const blasint* n, const double* dx, const blasint* incx,
+                       const double* dy, const blasint* incy);
 
-extern void F77_DCOPY(const blas_f77_integer_t *n, const double *dx, const blas_f77_integer_t *incx, double *dy, const blas_f77_integer_t *incy);
-extern double F77_DNRM2(const blas_f77_integer_t *n, const double *dx, const blas_f77_integer_t *incx);
-extern void F77_DSCAL(const blas_f77_integer_t *n, const double *da, double *dx, const blas_f77_integer_t *incx);
+extern void F77_DCOPY(const blasint *n, const double *dx, const blasint *incx, double *dy, const blasint *incy);
+extern double F77_DNRM2(const blasint *n, const double *dx, const blasint *incx);
+extern void F77_DSCAL(const blasint *n, const double *da, double *dx, const blasint *incx);
 
-extern void F77_DSPMV(const char* uplo, const blas_f77_integer_t* n, const double* alpha,
-                      const double* A, const double* X, const blas_f77_integer_t* incx,
+extern void F77_DSPMV(const char* uplo, const blasint* n, const double* alpha,
+                      const double* A, const double* X, const blasint* incx,
                       const double* beta, double* Y,
-                      const blas_f77_integer_t* incy);
+                      const blasint* incy);
 
 #ifdef __cplusplus
 }
@@ -151,3 +148,5 @@ namespace sc {
 
 }
 #endif // __cplusplus
+
+#endif // MPQC_BLAS_H

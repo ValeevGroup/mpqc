@@ -8,8 +8,8 @@
 *     September 30, 1994
 *
 *     .. Scalar Arguments ..
-      INTEGER            INFO, LDZ, N
-      integer nz
+      INTEGER77 INFO, LDZ, N
+      INTEGER77 nz
 *     ..
 *     .. Array Arguments ..
       DOUBLE PRECISION   D( * ), E( * ), WORK( * ), Z( LDZ, * )
@@ -37,7 +37,7 @@
 *                  tridiagonal matrix.  Z is initialized to the identity
 *                  matrix.
 *
-*  N       (input) INTEGER
+*  N       (input) INTEGER77
 *          The order of the matrix.  N >= 0.
 *
 *  D       (input/output) DOUBLE PRECISION array, dimension (N)
@@ -58,14 +58,14 @@
 *          of the symmetric tridiagonal matrix.
 *          If COMPZ = 'N', then Z is not referenced.
 *
-*  LDZ     (input) INTEGER
+*  LDZ     (input) INTEGER77
 *          The leading dimension of the array Z.  LDZ >= 1, and if
 *          eigenvectors are desired, then  LDZ >= max(1,N).
 *
 *  WORK    (workspace) DOUBLE PRECISION array, dimension (max(1,2*N-2))
 *          If COMPZ = 'N', then WORK is not referenced.
 *
-*  INFO    (output) INTEGER
+*  INFO    (output) INTEGER77
 *          = 0:  successful exit
 *          < 0:  if INFO = -i, the i-th argument had an illegal value
 *          > 0:  the algorithm has failed to find all the eigenvalues in
@@ -81,11 +81,11 @@
       DOUBLE PRECISION   ZERO, ONE, TWO, THREE
       PARAMETER          ( ZERO = 0.0D0, ONE = 1.0D0, TWO = 2.0D0,
      $                   THREE = 3.0D0 )
-      INTEGER            MAXIT
+      INTEGER77        MAXIT
       PARAMETER          ( MAXIT = 30 )
 *     ..
 *     .. Local Scalars ..
-      INTEGER            I, ICOMPZ, II, ISCALE, J, JTOT, K, L, L1, LEND,
+      INTEGER77        I, ICOMPZ, II, ISCALE, J, JTOT, K, L, L1, LEND,
      $                   LENDM1, LENDP1, LENDSV, LM1, LSV, M, MM, MM1,
      $                   NM1, NMAXIT
       DOUBLE PRECISION   ANORM, B, C, EPS, EPS2, F, G, P, R, RT1, RT2,
@@ -694,7 +694,7 @@
       PARAMETER          ( HALF = 0.5D0 )
 *     ..
 *     .. Local Scalars ..
-      INTEGER            SGN1, SGN2
+      INTEGER77        SGN1, SGN2
       DOUBLE PRECISION   AB, ACMN, ACMX, ACS, ADF, CS, CT, DF, RT, SM,
      $                   TB, TN
 *     ..
@@ -841,7 +841,7 @@
 *     ..
 *     .. Local Scalars ..
       LOGICAL            FIRST, LRND
-      INTEGER            BETA, IMAX, IMIN, IT
+      INTEGER77        BETA, IMAX, IMIN, IT
       DOUBLE PRECISION   BASE, EMAX, EMIN, EPS, PREC, RMACH, RMAX, RMIN,
      $                   RND, SFMIN, SMALL, T
 *     ..
@@ -927,7 +927,7 @@
 *
 *     .. Scalar Arguments ..
       LOGICAL            IEEE1, RND
-      INTEGER            BETA, T
+      INTEGER77        BETA, T
 *     ..
 *
 *  Purpose
@@ -939,10 +939,10 @@
 *  Arguments
 *  =========
 *
-*  BETA    (output) INTEGER
+*  BETA    (output) INTEGER77
 *          The base of the machine.
 *
-*  T       (output) INTEGER
+*  T       (output) INTEGER77
 *          The number of ( BETA ) digits in the mantissa.
 *
 *  RND     (output) LOGICAL
@@ -972,7 +972,7 @@
 *
 *     .. Local Scalars ..
       LOGICAL            FIRST, LIEEE1, LRND
-      INTEGER            LBETA, LT
+      INTEGER77        LBETA, LT
       DOUBLE PRECISION   A, B, C, F, ONE, QTR, SAVEC, T1, T2
 *     ..
 *     .. External Functions ..
@@ -1114,7 +1114,7 @@
 *
 *     .. Scalar Arguments ..
       LOGICAL            RND
-      INTEGER            BETA, EMAX, EMIN, T
+      INTEGER77        BETA, EMAX, EMIN, T
       DOUBLE PRECISION   EPS, RMAX, RMIN
 *     ..
 *
@@ -1127,10 +1127,10 @@
 *  Arguments
 *  =========
 *
-*  BETA    (output) INTEGER
+*  BETA    (output) INTEGER77
 *          The base of the machine.
 *
-*  T       (output) INTEGER
+*  T       (output) INTEGER77
 *          The number of ( BETA ) digits in the mantissa.
 *
 *  RND     (output) LOGICAL
@@ -1146,7 +1146,7 @@
 *
 *          where fl denotes the computed value.
 *
-*  EMIN    (output) INTEGER
+*  EMIN    (output) INTEGER77
 *          The minimum exponent before (gradual) underflow occurs.
 *
 *  RMIN    (output) DOUBLE PRECISION
@@ -1154,7 +1154,7 @@
 *          BASE**( EMIN - 1 ), where  BASE  is the floating point value
 *          of BETA.
 *
-*  EMAX    (output) INTEGER
+*  EMAX    (output) INTEGER77
 *          The maximum exponent before overflow occurs.
 *
 *  RMAX    (output) DOUBLE PRECISION
@@ -1172,7 +1172,7 @@
 *
 *     .. Local Scalars ..
       LOGICAL            FIRST, IEEE, IWARN, LIEEE1, LRND
-      INTEGER            GNMIN, GPMIN, I, LBETA, LEMAX, LEMIN, LT,
+      INTEGER77        GNMIN, GPMIN, I, LBETA, LEMAX, LEMIN, LT,
      $                   NGNMIN, NGPMIN
       DOUBLE PRECISION   A, B, C, HALF, LEPS, LRMAX, LRMIN, ONE, RBASE,
      $                   SIXTH, SMALL, THIRD, TWO, ZERO
@@ -1429,7 +1429,7 @@
 *     October 31, 1992
 *
 *     .. Scalar Arguments ..
-      INTEGER            BASE, EMIN
+      INTEGER77        BASE, EMIN
       DOUBLE PRECISION   START
 *     ..
 *
@@ -1449,13 +1449,13 @@
 *  START   (input) DOUBLE PRECISION
 *          The starting point for determining EMIN.
 *
-*  BASE    (input) INTEGER
+*  BASE    (input) INTEGER77
 *          The base of the machine.
 *
 * =====================================================================
 *
 *     .. Local Scalars ..
-      INTEGER            I
+      INTEGER77        I
       DOUBLE PRECISION   A, B1, B2, C1, C2, D1, D2, ONE, RBASE, ZERO
 *     ..
 *     .. External Functions ..
@@ -1514,7 +1514,7 @@
 *
 *     .. Scalar Arguments ..
       LOGICAL            IEEE
-      INTEGER            BETA, EMAX, EMIN, P
+      INTEGER77        BETA, EMAX, EMIN, P
       DOUBLE PRECISION   RMAX
 *     ..
 *
@@ -1531,21 +1531,21 @@
 *  Arguments
 *  =========
 *
-*  BETA    (input) INTEGER
+*  BETA    (input) INTEGER77
 *          The base of floating-point arithmetic.
 *
-*  P       (input) INTEGER
+*  P       (input) INTEGER77
 *          The number of base BETA digits in the mantissa of a
 *          floating-point value.
 *
-*  EMIN    (input) INTEGER
+*  EMIN    (input) INTEGER77
 *          The minimum exponent before (gradual) underflow.
 *
 *  IEEE    (input) LOGICAL
 *          A logical flag specifying whether or not the arithmetic
 *          system is thought to comply with the IEEE standard.
 *
-*  EMAX    (output) INTEGER
+*  EMAX    (output) INTEGER77
 *          The largest exponent before overflow
 *
 *  RMAX    (output) DOUBLE PRECISION
@@ -1558,7 +1558,7 @@
       PARAMETER          ( ZERO = 0.0D0, ONE = 1.0D0 )
 *     ..
 *     .. Local Scalars ..
-      INTEGER            EXBITS, EXPSUM, I, LEXP, NBITS, TRY, UEXP
+      INTEGER77        EXBITS, EXPSUM, I, LEXP, NBITS, TRY, UEXP
       DOUBLE PRECISION   OLDY, RECBAS, Y, Z
 *     ..
 *     .. External Functions ..
@@ -1673,7 +1673,7 @@
 *
 *     .. Scalar Arguments ..
       CHARACTER          NORM
-      INTEGER            N
+      INTEGER77        N
 *     ..
 *     .. Array Arguments ..
       DOUBLE PRECISION   D( * ), E( * )
@@ -1711,7 +1711,7 @@
 *          Specifies the value to be returned in DLANST as described
 *          above.
 *
-*  N       (input) INTEGER
+*  N       (input) INTEGER77
 *          The order of the matrix A.  N >= 0.  When N = 0, DLANST is
 *          set to zero.
 *
@@ -1728,7 +1728,7 @@
       PARAMETER          ( ONE = 1.0D+0, ZERO = 0.0D+0 )
 *     ..
 *     .. Local Scalars ..
-      INTEGER            I
+      INTEGER77        I
       DOUBLE PRECISION   ANORM, SCALE, SUM
 *     ..
 *     .. External Functions ..
@@ -1902,7 +1902,7 @@
 *     ..
 *     .. Local Scalars ..
       LOGICAL            FIRST
-      INTEGER            COUNT, I
+      INTEGER77        COUNT, I
       DOUBLE PRECISION   EPS, F1, G1, SAFMIN, SAFMN2, SAFMX2, SCALE
 *     ..
 *     .. External Functions ..
@@ -1995,7 +1995,7 @@
 *
 *     .. Scalar Arguments ..
       CHARACTER          TYPE
-      INTEGER            INFO, KL, KU, LDA, M, N
+      INTEGER77        INFO, KL, KU, LDA, M, N
       DOUBLE PRECISION   CFROM, CTO
 *     ..
 *     .. Array Arguments ..
@@ -2029,11 +2029,11 @@
 *          = 'Z':  A is a band matrix with lower bandwidth KL and upper
 *                  bandwidth KU.
 *
-*  KL      (input) INTEGER
+*  KL      (input) INTEGER77
 *          The lower bandwidth of A.  Referenced only if TYPE = 'B',
 *          'Q' or 'Z'.
 *
-*  KU      (input) INTEGER
+*  KU      (input) INTEGER77
 *          The upper bandwidth of A.  Referenced only if TYPE = 'B',
 *          'Q' or 'Z'.
 *
@@ -2044,20 +2044,20 @@
 *          can be represented without over/underflow.  CFROM must be
 *          nonzero.
 *
-*  M       (input) INTEGER
+*  M       (input) INTEGER77
 *          The number of rows of the matrix A.  M >= 0.
 *
-*  N       (input) INTEGER
+*  N       (input) INTEGER77
 *          The number of columns of the matrix A.  N >= 0.
 *
 *  A       (input/output) DOUBLE PRECISION array, dimension (LDA,M)
 *          The matrix to be multiplied by CTO/CFROM.  See TYPE for the
 *          storage type.
 *
-*  LDA     (input) INTEGER
+*  LDA     (input) INTEGER77
 *          The leading dimension of the array A.  LDA >= max(1,M).
 *
-*  INFO    (output) INTEGER
+*  INFO    (output) INTEGER77
 *          0  - successful exit
 *          <0 - if INFO = -i, the i-th argument had an illegal value.
 *
@@ -2069,7 +2069,7 @@
 *     ..
 *     .. Local Scalars ..
       LOGICAL            DONE
-      INTEGER            I, ITYPE, J, K1, K2, K3, K4
+      INTEGER77        I, ITYPE, J, K1, K2, K3, K4
       DOUBLE PRECISION   BIGNUM, CFROM1, CFROMC, CTO1, CTOC, MUL, SMLNUM
 *     ..
 *     .. External Functions ..
@@ -2263,7 +2263,7 @@
 *
 *     .. Scalar Arguments ..
       CHARACTER          UPLO
-      INTEGER            LDA, M, N
+      INTEGER77        LDA, M, N
       DOUBLE PRECISION   ALPHA, BETA
 *     ..
 *     .. Array Arguments ..
@@ -2287,10 +2287,10 @@
 *                      triangular part of A is not changed.
 *          Otherwise:  All of the matrix A is set.
 *
-*  M       (input) INTEGER
+*  M       (input) INTEGER77
 *          The number of rows of the matrix A.  M >= 0.
 *
-*  N       (input) INTEGER
+*  N       (input) INTEGER77
 *          The number of columns of the matrix A.  N >= 0.
 *
 *  ALPHA   (input) DOUBLE PRECISION
@@ -2308,13 +2308,13 @@
 *
 *          and, for all UPLO, A(i,i) = BETA, 1<=i<=min(m,n).
 *
-*  LDA     (input) INTEGER
+*  LDA     (input) INTEGER77
 *          The leading dimension of the array A.  LDA >= max(1,M).
 *
 * =====================================================================
 *
 *     .. Local Scalars ..
-      INTEGER            I, J
+      INTEGER77        I, J
 *     ..
 *     .. External Functions ..
       LOGICAL            PLSAME
@@ -2378,7 +2378,7 @@
 *
 *     .. Scalar Arguments ..
       CHARACTER          DIRECT, PIVOT, SIDE
-      INTEGER            LDA, M, N
+      INTEGER77        LDA, M, N
 *     ..
 *     .. Array Arguments ..
       DOUBLE PRECISION   A( LDA, * ), C( * ), S( * )
@@ -2448,11 +2448,11 @@
 *          = 'T':  Top pivot, the plane (1,k+1)
 *          = 'B':  Bottom pivot, the plane (k,z)
 *
-*  M       (input) INTEGER
+*  M       (input) INTEGER77
 *          The number of rows of the matrix A.  If m <= 1, an immediate
 *          return is effected.
 *
-*  N       (input) INTEGER
+*  N       (input) INTEGER77
 *          The number of columns of the matrix A.  If n <= 1, an
 *          immediate return is effected.
 *
@@ -2469,7 +2469,7 @@
 *          The m by n matrix A.  On exit, A is overwritten by P*A if
 *          SIDE = 'R' or by A*P' if SIDE = 'L'.
 *
-*  LDA     (input) INTEGER
+*  LDA     (input) INTEGER77
 *          The leading dimension of the array A.  LDA >= max(1,M).
 *
 *  =====================================================================
@@ -2479,7 +2479,7 @@
       PARAMETER          ( ONE = 1.0D+0, ZERO = 0.0D+0 )
 *     ..
 *     .. Local Scalars ..
-      INTEGER            I, INFO, J
+      INTEGER77        I, INFO, J
       DOUBLE PRECISION   CTEMP, STEMP, TEMP
 *     ..
 *     .. External Functions ..
@@ -2703,7 +2703,7 @@
 *
 *     .. Scalar Arguments ..
       CHARACTER          ID
-      INTEGER            INFO, N
+      INTEGER77        INFO, N
 *     ..
 *     .. Array Arguments ..
       DOUBLE PRECISION   D( * )
@@ -2725,7 +2725,7 @@
 *          = 'I': sort D in increasing order;
 *          = 'D': sort D in decreasing order.
 *
-*  N       (input) INTEGER
+*  N       (input) INTEGER77
 *          The length of the array D.
 *
 *  D       (input/output) DOUBLE PRECISION array, dimension (N)
@@ -2734,22 +2734,22 @@
 *          (D(1) <= ... <= D(N) ) or into decreasing order
 *          (D(1) >= ... >= D(N) ), depending on ID.
 *
-*  INFO    (output) INTEGER
+*  INFO    (output) INTEGER77
 *          = 0:  successful exit
 *          < 0:  if INFO = -i, the i-th argument had an illegal value
 *
 *  =====================================================================
 *
 *     .. Parameters ..
-      INTEGER            SELECT
+      INTEGER77        SELECT
       PARAMETER          ( SELECT = 20 )
 *     ..
 *     .. Local Scalars ..
-      INTEGER            DIR, ENDD, I, J, START, STKPNT
+      INTEGER77        DIR, ENDD, I, J, START, STKPNT
       DOUBLE PRECISION   D1, D2, D3, DMNMX, TMP
 *     ..
 *     .. Local Arrays ..
-      INTEGER            STACK( 2, 32 )
+      INTEGER77        STACK( 2, 32 )
 *     ..
 *     .. External Functions ..
       LOGICAL            PLSAME
@@ -2946,7 +2946,7 @@
 *     June 30, 1999
 *
 *     .. Scalar Arguments ..
-      INTEGER            INCX, N
+      INTEGER77        INCX, N
       DOUBLE PRECISION   SCALE, SUMSQ
 *     ..
 *     .. Array Arguments ..
@@ -2973,14 +2973,14 @@
 *  Arguments
 *  =========
 *
-*  N       (input) INTEGER
+*  N       (input) INTEGER77
 *          The number of elements to be used from the vector X.
 *
 *  X       (input) DOUBLE PRECISION array, dimension (N)
 *          The vector for which a scaled sum of squares is computed.
 *             x( i )  = X( 1 + ( i - 1 )*INCX ), 1 <= i <= n.
 *
-*  INCX    (input) INTEGER
+*  INCX    (input) INTEGER77
 *          The increment between successive values of the vector X.
 *          INCX > 0.
 *
@@ -3001,7 +3001,7 @@
       PARAMETER          ( ZERO = 0.0D+0 )
 *     ..
 *     .. Local Scalars ..
-      INTEGER            IX
+      INTEGER77        IX
       DOUBLE PRECISION   ABSXI
 *     ..
 *     .. Intrinsic Functions ..
@@ -3057,7 +3057,7 @@
       INTRINSIC          ICHAR
 *     ..
 *     .. Local Scalars ..
-      INTEGER            INTA, INTB, ZCODE
+      INTEGER77        INTA, INTB, ZCODE
 *     ..
 *     .. Executable Statements ..
 *
@@ -3123,7 +3123,7 @@
 *
 *     .. Scalar Arguments ..
       CHARACTER*6        SRNAME
-      INTEGER            INFO
+      INTEGER77        INFO
 *     ..
 *
 *  Purpose
@@ -3142,7 +3142,7 @@
 *  SRNAME  (input) CHARACTER*6
 *          The name of the routine which called XERBLA.
 *
-*  INFO    (input) INTEGER
+*  INFO    (input) INTEGER77
 *          The position of the invalid parameter in the parameter list
 *          of the calling routine.
 *

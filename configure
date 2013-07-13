@@ -31,16 +31,18 @@ Configuration:
   --boost=                Boost path
   --search=               paths to search for files/libraries, separated by semicolon
                           (CMAKE_PREFIX_PATH=)
+  --expert                Expert mode: disables building dependencies (MPQC_EXPERT=TRUE)
+  --openmp                Enable OpenMP (MPQC_OPENMP=TRUE)
   -D*                     passed verbatim to cmake command
 
 Some influential environment variables:
   CC          C compiler command       (e.g. CC='mpicc')
   CFLAGS      C compiler flags         (e.g. CFLAGS='-O0 -g -std=c11')
   CXX         C++ compiler command     (e.g. CXX='mpicxx')
-  CXXFLAGS    C++ compiler flags       (e.g. CXXFLAGS='-O3 -Wall')
-  CPPFLAGS    C/C++ proprocessor flags (e.g. CPPFLAGS='-I/usr/local -I/opt/local -DNODEBUG')
+  CXXFLAGS    C++ compiler flags       (e.g. CXXFLAGS='-O0 -g -std=c++0x')
+  CPPFLAGS    C/C++ proprocessor flags (e.g. CPPFLAGS='-I/opt/local/include -DNDEBUG')
   F77         Fortran 77 compiler command  (e.g. F77='gfortran')
-  FFLAGS      Fortran 77 compiler flags    (e.g. FFLAGS='-O4 -g')
+  FFLAGS      Fortran 77 compiler flags    (e.g. FFLAGS='-fdefault-integer-8')
   LDFLAGS     linker flags             (e.g. LDFLAGS=-L/libdir)
 '
   exit 10
@@ -70,9 +72,6 @@ args=""
 prefix=$PWD
 build="Release"
 
-lapack=""
-search=""
-
 # log the command, preserving quotes
 log="Last invoked on `date`:\n$0 "
 for token in "$@"
@@ -84,15 +83,20 @@ echo $log > config.log
 while test $# != 0; do
   case "$1" in
   --help|-h) help ;;
-  --prefix=*) prefix="`arg \"$1\"`" ;;
-  --new-features) args="$args -DMPQC_NEW_FEATURES=TRUE" ;;
-  --lapack=*) lapack="`arg \"$1\"`" ;;
-  --integer8) args="$args -DINTEGER8=TRUE" ;;
-  --debug) build="Debug" ;; #args="$args -DCMAKE_BUILD_TYPE=Debug" ;;
-  --search=*) search="`arg \"$1\"`" ;;
-  --libint=*) libint="`arg \"$1\"`" ;;
-  --mpicc=*) args="$args -DMPI_C_COMPILER=`arg \"$1\"`" ;;
-  --boost=*) args="$args -DBOOST=`arg \"$1\"`" ;;
+  --prefix=*)      prefix="`arg \"$1\"`" ;;
+  --new-features)  args="$args -DMPQC_NEW_FEATURES=TRUE" ;;
+  --lapack=*)      lapack="`arg \"$1\"`"
+                   args="$args -DLAPACK_LIBRARIES=\"$lapack\"" ;;
+  --integer8)      args="$args -DINTEGER8=TRUE" ;;
+  --debug)         build="Debug" ;; #args="$args -DCMAKE_BUILD_TYPE=Debug" ;;
+  --search=*)      search="`arg \"$1\"`"
+		   args="$args -DCMAKE_PREFIX_PATH=\"$search\"" ;;
+  --libint=*)      libint="`arg \"$1\"`"
+                   args="$args -DLIBINT=\"$libint\"" ;;
+  --mpicc=*)       args="$args -DMPI_C_COMPILER=`arg \"$1\"`" ;;
+  --boost=*)       args="$args -DBOOST=`arg \"$1\"`" ;;
+  --expert)        args="$args -DMPQC_EXPERT=TRUE" ;;
+  --openmp)        args="$args -DMPQC_OPENMP=TRUE" ;;
   -D*) args="$args $1" ;; # raw  cmake arg
   CC=*) CC="`arg \"$1\"`" ;;
   CXX=*) CXX="`arg \"$1\"`" ;;
@@ -108,18 +112,6 @@ done
 
 args="$args -DCMAKE_INSTALL_PREFIX=$prefix"
 args="$args -DCMAKE_BUILD_TYPE=$build"
-
-if [ -n "$lapack" ]; then
-    args="$args -DLAPACK_LIBRARIES=\"$lapack\""
-fi
-
-if [ -n "$search" ]; then
-    args="$args -DCMAKE_PREFIX_PATH=\"$search\""
-fi
-
-if [ -n "$libint" ]; then
-    args="$args -DLIBINT=$libint"
-fi
 
 if [ -n "$CC" ]; then
     args="$args -DCMAKE_C_COMPILER=$CC"

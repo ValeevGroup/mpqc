@@ -13,6 +13,11 @@ if (DEFINED BOOST)
     message(FATAL_ERROR "Boost not found in ${BOOST_ROOT}")
   endif()
 
+elseif (MPQC_EXPERT)
+
+  message("** BOOST was not explicitly set")
+  message("** Downloading and building Boost is explicitly disabled in EXPERT mode")
+
 else()
 
   set(EXTERNAL_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external)
@@ -25,8 +30,9 @@ else()
   if (EXISTS ${EXTERNAL_SOURCE_DIR}/boost.tar.gz)
     set(BOOST_URL ${EXTERNAL_SOURCE_DIR}/boost.tar.gz)
     set(BOOST_URL_HASH "")
-    MESSAGE(STATUS "USing Boost archive ${BOOST_URL}")
   endif()
+
+  message("** Will build Boost from ${BOOST_URL}")
 
   if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
     set(BOOST_TOOLSET gcc)
@@ -50,7 +56,7 @@ else()
   if (EXISTS ${EXTERNAL_BUILD_DIR}/boost/user-config.jam)
     file(READ ${EXTERNAL_BUILD_DIR}/boost/user-config.jam BOOST_CONFIG_JAM)
     if (NOT ("${BOOST_CONFIG}" STREQUAL "${BOOST_CONFIG_JAM}"))
-      MESSAGE(STATUS "Boost needs to be rebuilt")
+      message(STATUS "Boost needs to be rebuilt")
       file(REMOVE ${EXTERNAL_BUILD_DIR}/boost/src/boost-stamp/boost-build)
     endif()
   endif()
@@ -81,6 +87,6 @@ endif()
 
 include_directories(${Boost_INCLUDE_DIRS})
 
-MESSAGE(STATUS "Boost include dir: ${Boost_INCLUDE_DIRS}")
-MESSAGE(STATUS "Boost libraries: ${Boost_LIBRARIES}")
+message(STATUS "Boost include dir: ${Boost_INCLUDE_DIRS}")
+message(STATUS "Boost libraries: ${Boost_LIBRARIES}")
 

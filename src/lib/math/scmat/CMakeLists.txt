@@ -28,7 +28,7 @@ add_library(scmat OBJECT
   matrix.cc
   matrix3.cc
   matrix_i.cc
-  pdsteqr.f
+  pdsteqr.F
   repl.cc
   repldiag.cc
   replrect.cc

@@ -38,17 +38,17 @@ static int LEVMAR_PSEUDOINVERSE(LM_REAL *A, LM_REAL *B, int m);
 /* BLAS matrix multiplication & LAPACK SVD routines */
 #define GEMM F77_DGEMM
 /* C := alpha*op( A )*op( B ) + beta*C */
-//extern void GEMM(char *transa, char *transb, blas_f77_integer_t *m, blas_f77_integer_t *n, blas_f77_integer_t *k,
-//          LM_REAL *alpha, LM_REAL *a, blas_f77_integer_t *lda, LM_REAL *b, blas_f77_integer_t *ldb, LM_REAL *beta, LM_REAL *c, blas_f77_integer_t *ldc);
+//extern void GEMM(char *transa, char *transb, blasint *m, blasint *n, blasint *k,
+//          LM_REAL *alpha, LM_REAL *a, blasint *lda, LM_REAL *b, blasint *ldb, LM_REAL *beta, LM_REAL *c, blasint *ldc);
 
 #define GESVD F77_DGESVD
 #define GESDD F77_DGESDD
-extern int GESVD(char *jobu, char *jobvt, blas_f77_integer_t *m, blas_f77_integer_t *n, LM_REAL *a, blas_f77_integer_t *lda, LM_REAL *s, LM_REAL *u, blas_f77_integer_t *ldu,
-                 LM_REAL *vt, blas_f77_integer_t *ldvt, LM_REAL *work, blas_f77_integer_t *lwork, blas_f77_integer_t *info);
+extern int GESVD(char *jobu, char *jobvt, blasint *m, blasint *n, LM_REAL *a, blasint *lda, LM_REAL *s, LM_REAL *u, blasint *ldu,
+                 LM_REAL *vt, blasint *ldvt, LM_REAL *work, blasint *lwork, blasint *info);
 
 /* lapack 3.0 new SVD routine, faster than xgesvd() */
-extern int GESDD(char *jobz, blas_f77_integer_t *m, blas_f77_integer_t *n, LM_REAL *a, blas_f77_integer_t *lda, LM_REAL *s, LM_REAL *u, blas_f77_integer_t *ldu, LM_REAL *vt, blas_f77_integer_t *ldvt,
-                 LM_REAL *work, blas_f77_integer_t *lwork, blas_f77_integer_t *iwork, blas_f77_integer_t *info);
+extern int GESDD(char *jobz, blasint *m, blasint *n, LM_REAL *a, blasint *lda, LM_REAL *s, LM_REAL *u, blasint *ldu, LM_REAL *vt, blasint *ldvt,
+                 LM_REAL *work, blasint *lwork, blasint *iwork, blasint *info);
 
 
 /* blocked multiplication of the transpose of the nxm matrix a with itself (i.e. a^T a)

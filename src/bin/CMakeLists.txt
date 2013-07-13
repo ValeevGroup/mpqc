@@ -2,6 +2,6 @@
 
 add_subdirectory(mpqc)
 
-if (HAVE_LIBINT2)
+if (MPQC_R12)
   add_subdirectory(pt2r12)
 endif()

@@ -48,29 +48,29 @@
 #define GESDD F77_DGESDD
 
 /* QR decomposition */
-extern int GEQRF(blas_f77_integer_t *m, blas_f77_integer_t *n, LM_REAL *a, blas_f77_integer_t *lda, LM_REAL *tau, LM_REAL *work, blas_f77_integer_t *lwork, blas_f77_integer_t *info);
-extern int ORGQR(blas_f77_integer_t *m, blas_f77_integer_t *n, blas_f77_integer_t *k, LM_REAL *a, blas_f77_integer_t *lda, LM_REAL *tau, LM_REAL *work, blas_f77_integer_t *lwork, blas_f77_integer_t *info);
+extern int GEQRF(blasint *m, blasint *n, LM_REAL *a, blasint *lda, LM_REAL *tau, LM_REAL *work, blasint *lwork, blasint *info);
+extern int ORGQR(blasint *m, blasint *n, blasint *k, LM_REAL *a, blasint *lda, LM_REAL *tau, LM_REAL *work, blasint *lwork, blasint *info);
 
 /* solution of triangular systems */
-extern int TRTRS(char *uplo, char *trans, char *diag, blas_f77_integer_t *n, blas_f77_integer_t *nrhs, LM_REAL *a, blas_f77_integer_t *lda, LM_REAL *b, blas_f77_integer_t *ldb, blas_f77_integer_t *info);
+extern int TRTRS(char *uplo, char *trans, char *diag, blasint *n, blasint *nrhs, LM_REAL *a, blasint *lda, LM_REAL *b, blasint *ldb, blasint *info);
 
 /* cholesky decomposition */
-extern int POTF2(char *uplo, blas_f77_integer_t *n, LM_REAL *a, blas_f77_integer_t *lda, blas_f77_integer_t *info);
-extern int POTRF(char *uplo, blas_f77_integer_t *n, LM_REAL *a, blas_f77_integer_t *lda, blas_f77_integer_t *info); /* block version of dpotf2 */
+extern int POTF2(char *uplo, blasint *n, LM_REAL *a, blasint *lda, blasint *info);
+extern int POTRF(char *uplo, blasint *n, LM_REAL *a, blasint *lda, blasint *info); /* block version of dpotf2 */
 
 /* LU decomposition and systems solution */
-extern int GETRF(blas_f77_integer_t *m, blas_f77_integer_t *n, LM_REAL *a, blas_f77_integer_t *lda, blas_f77_integer_t *ipiv, blas_f77_integer_t *info);
-extern int GETRS(char *trans, blas_f77_integer_t *n, blas_f77_integer_t *nrhs, LM_REAL *a, blas_f77_integer_t *lda, blas_f77_integer_t *ipiv, LM_REAL *b, blas_f77_integer_t *ldb, blas_f77_integer_t *info);
+extern int GETRF(blasint *m, blasint *n, LM_REAL *a, blasint *lda, blasint *ipiv, blasint *info);
+extern int GETRS(char *trans, blasint *n, blasint *nrhs, LM_REAL *a, blasint *lda, blasint *ipiv, LM_REAL *b, blasint *ldb, blasint *info);
 
 /* Singular Value Decomposition (SVD) */
-extern int GESVD(char *jobu, char *jobvt, blas_f77_integer_t *m, blas_f77_integer_t *n, LM_REAL *a, blas_f77_integer_t *lda, LM_REAL *s, LM_REAL *u, blas_f77_integer_t *ldu,
-                   LM_REAL *vt, blas_f77_integer_t *ldvt, LM_REAL *work, blas_f77_integer_t *lwork, blas_f77_integer_t *info);
+extern int GESVD(char *jobu, char *jobvt, blasint *m, blasint *n, LM_REAL *a, blasint *lda, LM_REAL *s, LM_REAL *u, blasint *ldu,
+                   LM_REAL *vt, blasint *ldvt, LM_REAL *work, blasint *lwork, blasint *info);
 
 /* lapack 3.0 new SVD routine, faster than xgesvd().
  * In case that your version of LAPACK does not include them, use the above two older routines
  */
-extern int GESDD(char *jobz, blas_f77_integer_t *m, blas_f77_integer_t *n, LM_REAL *a, blas_f77_integer_t *lda, LM_REAL *s, LM_REAL *u, blas_f77_integer_t *ldu, LM_REAL *vt, blas_f77_integer_t *ldvt,
-                   LM_REAL *work, blas_f77_integer_t *lwork, blas_f77_integer_t *iwork, blas_f77_integer_t *info);
+extern int GESDD(char *jobz, blasint *m, blasint *n, LM_REAL *a, blasint *lda, LM_REAL *s, LM_REAL *u, blasint *ldu, LM_REAL *vt, blasint *ldvt,
+                   LM_REAL *work, blasint *lwork, blasint *iwork, blasint *info);
 
 /* precision-specific definitions */
 #define AX_EQ_B_QR LM_ADD_PREFIX(Ax_eq_b_QR)

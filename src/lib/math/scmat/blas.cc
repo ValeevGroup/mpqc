@@ -47,12 +47,12 @@ namespace sc {
     /* also, do nothing if a dimension is 0 */
     if (m == 0 || n == 0 || k == 0) return;
 
-    const blas_f77_integer_t nf = n;
-    const blas_f77_integer_t mf = m;
-    const blas_f77_integer_t kf = k;
-    const blas_f77_integer_t ncaf = nca;
-    const blas_f77_integer_t ncbf = ncb;
-    const blas_f77_integer_t nccf = ncc;
+    const blasint nf = n;
+    const blasint mf = m;
+    const blasint kf = k;
+    const blasint ncaf = nca;
+    const blasint ncbf = ncb;
+    const blasint nccf = ncc;
 
     F77_DGEMM(&transb,&transa,&nf,&mf,&kf,&alpha,B,&ncbf,A,&ncaf,&beta,C,&nccf);
 

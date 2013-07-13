@@ -1,44 +1,40 @@
-
 #include <iostream>
-
 #include <math.h>
-
 #include <util/group/message.h>
-
 #include <util/misc/consumableresources.h>
-
 #include <math/scmat/disthql.h>
-
 #include <math/scmat/blas.h>
+
+typedef blasint INTEGER;
 
 using namespace std;
 using namespace sc;
 
 extern "C" {
-  void F77_PDSTEQR(int *n, double *d, double *e,
-                double *z, int *ldz, int *nz, double *work,
-                int *info);
+  void F77_PDSTEQR(INTEGER *n, double *d, double *e,
+                double *z, INTEGER *ldz, INTEGER *nz, double *work,
+                INTEGER *info);
 }
 
 namespace sc {
 
-static void dist_diagonalize_(int n, int m, double *a, double *d, double *e,
+static void dist_diagonalize_(INTEGER n, INTEGER m, double *a, double *d, double *e,
                               double *sigma, double *z, double *v, double *w,
-                              int *ind, const Ref<MessageGrp>&);
+                              INTEGER *ind, const Ref<MessageGrp>&);
 
 static void pflip(int id,int n,int m,int p,double *ar,double *ac,double *w,
                   const Ref<MessageGrp>&);
 
 static void
-ptred2_(double *a, int *lda, int *n, int *m, int *p, int *id,
+ptred2_(double *a, INTEGER *lda, INTEGER *n, INTEGER *m, INTEGER *p, INTEGER *id,
         double *d, double *e, double *z, double *work,
         const Ref<MessageGrp>& grp);
 
 static void
-ptred_single(double *a,int *lda,int *n,int *m,int *p,int *id,
+ptred_single(double *a,INTEGER *lda,INTEGER *n,INTEGER *m,INTEGER *p,INTEGER *id,
              double *d,double *e,double *z,double *work);
 static void
-ptred_parallel(double *a, int *lda, int *n, int *m, int *p, int *id,
+ptred_parallel(double *a, INTEGER *lda, INTEGER *n, INTEGER *m, INTEGER *p, INTEGER *id,
                double *d, double *e, double *z, double *work,
                const Ref<MessageGrp>&);
 
@@ -61,7 +57,7 @@ dist_diagonalize(int n, int m, double *a, double *d, double *v,
   double *sigma = new double[n];
   double *z = allocate<double>(n*m);
   double *w = new double[3*n];
-  int *ind = new int[n];
+  INTEGER *ind = new INTEGER[n];
   dist_diagonalize_(n, m, a, d, e, sigma, z, v, w, ind, grp);
   delete[] e;
   delete[] sigma;
@@ -87,13 +83,13 @@ dist_diagonalize(int n, int m, double *a, double *d, double *v,
 /*    ind[n]  - scratch space (integer)                     */
 /* -------------------------------------------------------- */
 static void
-dist_diagonalize_(int n, int m, double *a, double *d, double *e,
-                  double *sigma, double *z, double *v, double *w, int *ind,
+dist_diagonalize_(INTEGER n, INTEGER m, double *a, double *d, double *e,
+                  double *sigma, double *z, double *v, double *w, INTEGER *ind,
                   const Ref<MessageGrp>& grp)
 {
-  int i,info;
-  int nproc = grp->n();
-  int id = grp->me();
+  INTEGER i,info;
+  INTEGER nproc = grp->n();
+  INTEGER id = grp->me();
 
  /* reduce A to tridiagonal matrix using Householder transformation */
 
@@ -142,7 +138,7 @@ pflip(int id,int n,int m,int p,double *ar,double *ac,double *w,
 /*******************************************************************/
 
 static void
-ptred2_(double *a, int *lda, int *n, int *m, int *p, int *id,
+ptred2_(double *a, INTEGER *lda, INTEGER *n, INTEGER *m, INTEGER *p, INTEGER *id,
         double *d, double *e, double *z, double *work,
         const Ref<MessageGrp>& grp)
 {
@@ -171,7 +167,7 @@ ptred2_(double *a, int *lda, int *n, int *m, int *p, int *id,
 /* -------------------------------------------------------- */
 
 static void
-ptred_single(double *a,int *lda,int *n,int *m,int *p,int *id,
+ptred_single(double *a,INTEGER *lda,INTEGER *n,INTEGER *m,INTEGER *p,INTEGER *id,
              double *d,double *e,double *z,double *work)
 {
    double  alpha=0.0, beta, gamma, alpha2; 
@@ -322,7 +318,7 @@ ptred_single(double *a,int *lda,int *n,int *m,int *p,int *id,
  */
 
 static void
-ptred_parallel(double *a, int *lda, int *n, int *m, int *p, int *id,
+ptred_parallel(double *a, INTEGER *lda, INTEGER *n, INTEGER *m, INTEGER *p, INTEGER *id,
                double *d, double *e, double *z, double *work,
                const Ref<MessageGrp>& grp)
 {

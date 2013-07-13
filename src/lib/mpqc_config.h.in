@@ -297,7 +297,7 @@
 #cmakedefine HAVE_DLFCN_H @HAVE_DLFCN_H@
 
 /* Determines the width of the integer use by BLAS F77 interface */
-#cmakedefine BLAS_F77_INTEGER_WIDTH @BLAS_F77_INTEGER_WIDTH@
+#cmakedefine F77_INTEGER_WIDTH @F77_INTEGER_WIDTH@
 
 /* Define if you have the Scalable BLAS package and everything needed for it.
  */

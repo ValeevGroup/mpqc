@@ -87,14 +87,20 @@
 #include <chemistry/qc/mbpt/linkage.h>
 #include <chemistry/qc/lmp2/linkage.h>
 //#include <chemistry/qc/ci/linkage.h>
+
 #ifdef HAVE_LIBINT2
-#  include <chemistry/qc/libint2/linkage.h>
-#  include <chemistry/qc/mbptr12/linkage.h>
-#  include <chemistry/qc/ccr12/linkage.h>
-#  ifdef HAVE_PSI3
-#    include <chemistry/qc/psi/linkage.h>
-#  endif
-#endif
+#include <chemistry/qc/libint2/linkage.h>
+#endif // HAVE_LIBINT2
+
+#ifdef MPQC_R12
+#include <chemistry/qc/mbptr12/linkage.h>
+#include <chemistry/qc/ccr12/linkage.h>
+#endif // MPQC_R12
+
+#ifdef HAVE_PSI3
+#include <chemistry/qc/psi/linkage.h>
+#endif // HAVE_PSI3
+
 #include <util/state/linkage.h>
 
 #ifdef HAVE_MPI

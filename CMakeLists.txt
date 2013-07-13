@@ -259,11 +259,11 @@ list(APPEND LINK_LIBRARIES ${LIBRARIES})
 list(APPEND LINK_LIBRARIES ${CMAKE_DL_LIBS})
 
 # R-12
-if (HAVE_LIBINT2 AND HAVE_CXX_AUTO)
+if (HAVE_LIBINT2)
   set(MPQC_R12 TRUE)
   add_definitions(-DMPQC_R12)
 else()
-  message("** R12 requires Libint2 *and* C++11.  R12 methods are disabled")
+  message("** R12 requires Libint2.  R12 methods are disabled")
 endif()
 
 # sources

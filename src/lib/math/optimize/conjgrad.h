@@ -270,7 +270,7 @@ namespace sc {
                const D& preconditioner,
                value_type convergence_target = -1.0) {
 
-      auto n = size(x);
+      const size_t n = size(x);
       assert(n == size(preconditioner));
 
       // solution vector
@@ -302,7 +302,7 @@ namespace sc {
       bool converged = false;
       const unsigned int max_niter = 500;
       value_type rnorm2 = 0.0;
-      const auto rhs_size = size(b);
+      const size_t rhs_size = size(b);
 
       // starting guess: x_0 = D^-1 . b
       Ref<SCElementOp2> multiply_op = new SCElementDestructiveProduct;

@@ -87,7 +87,7 @@
 *     .. Local Scalars ..
       INTEGER77        I, ICOMPZ, II, ISCALE, J, JTOT, K, L, L1, LEND,
      $                   LENDM1, LENDP1, LENDSV, LM1, LSV, M, MM, MM1,
-     $                   NM1, NMAXIT
+     $                   NM1, NMAXIT, ITWO
       DOUBLE PRECISION   ANORM, B, C, EPS, EPS2, F, G, P, R, RT1, RT2,
      $                   S, SAFMAX, SAFMIN, SSFMAX, SSFMIN, TST
 *     ..
@@ -245,7 +245,8 @@
                CALL PDLAEV2( D( L ), E( L ), D( L+1 ), RT1, RT2, C, S )
                WORK( L ) = C
                WORK( N-1+L ) = S
-               CALL PDLASR( 'R', 'V', 'B', nz, 2, WORK( L ),
+               ITWO = 2
+               CALL PDLASR( 'R', 'V', 'B', nz, ITWO, WORK( L ),
      $                     WORK( N-1+L ), Z( 1, L ), nz )
             ELSE
                CALL PDLAE2( D( L ), E( L ), D( L+1 ), RT1, RT2 )
@@ -352,7 +353,8 @@
                CALL PDLAEV2( D( L-1 ), E( L-1 ), D( L ), RT1, RT2, C,S)
                WORK( M ) = C
                WORK( N-1+M ) = S
-               CALL PDLASR( 'R', 'V', 'F', nz, 2, WORK( M ),
+               ITWO = 2
+               CALL PDLASR( 'R', 'V', 'F', nz, ITWO, WORK( M ),
      $                     WORK( N-1+M ), Z( 1, L-1 ), nz )
             ELSE
                CALL PDLAE2( D( L-1 ), E( L-1 ), D( L ), RT1, RT2 )

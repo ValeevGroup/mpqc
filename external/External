@@ -10,6 +10,11 @@ include(external/Lapack)
 include(external/Libint)
 include(external/Eigen)
 
+# Psi3 is not usable from MPQC without Libint2
+if (HAVE_LIBINT2)
+  include(external/Psi3)
+endif()
+
 if (MPQC_NEW_FEATURES)
   include(external/TiledArray)
   include(external/Boost)

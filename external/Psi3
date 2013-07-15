@@ -1,0 +1,126 @@
+# -*- mode: cmake -*-
+
+set(PSI3 "" CACHE STRING "Psi3 on/off/prefix")
+set_property(CACHE PSI3 PROPERTY STRINGS "" "on" "off") 
+
+# default psi3 action
+if ("${PSI3}" STREQUAL "")
+  set(PSI3 "optional")
+endif()
+
+if (PSI3)
+
+  set(PSI3_LIBRARIES "")
+  foreach (_lib PSI_psio PSI_chkpt PSI_iwl PSI_ciomr PSI_dpd PSI_qt)
+    set(_libpath _libpath-NOTFOUND)
+    if ("${PSI3}" OR "${PSI3}" STREQUAL "optional")
+      find_library(_libpath ${_lib})
+    else()
+      find_library(_libpath ${_lib}
+                   PATHS ${PSI3}/lib NO_DEFAULT_PATH)
+    endif()
+    message(STATUS "Found ${_lib}: ${_libpath}")
+    if (_libpath)
+      list(APPEND PSI3_LIBRARIES ${_libpath})
+    endif()
+  endforeach()
+
+  if ("${PSI3}" OR "${PSI3}" STREQUAL "optional")
+    find_path(PSI3_INCLUDE_DIR psiconfig.h)
+  else()
+    find_path(PSI3_INCLUDE_DIR psiconfig.h
+              PATHS ${PSI3}/include NO_DEFAULT_PATH)
+  endif()
+
+  if (PSI3_LIBRARIES)
+  
+    if (NOT PSI3_INCLUDE_DIR)
+      message(FATAL_ERROR "Could not find psiconfig.h")
+    endif()
+
+    # sanity check: try compiling a simple program
+    list(APPEND CMAKE_REQUIRED_INCLUDES ${PSI3_INCLUDE_DIR})
+    list(APPEND CMAKE_REQUIRED_LIBRARIES ${PSI3_LIBRARIES})
+    CHECK_CXX_SOURCE_COMPILES(
+      "
+      #include <libpsio/psio.hpp>
+      #include <libchkpt/chkpt.hpp>
+      extern \"C\" char *gprgid() { return \"test\"; }
+      int main(int argc, char** argv) {
+        psi::PSIO psio;
+        psi::Chkpt chkpt(&psio,1);
+        return 0;
+      }
+      "  PSI3_COMPILES)
+    if (NOT PSI3_COMPILES)
+      message(FATAL_ERROR "Could not compile Psi3 test program")
+    endif()
+    
+    set(HAVE_PSI3 TRUE)
+    message(STATUS "Found PSI3:")
+    message(STATUS "\tPSI3_LIBRARIES=${PSI3_LIBRARIES}")
+    message(STATUS "\tPSI3_INCLUDE_DIR=${PSI3_INCLUDE_DIR}")
+    include_directories(${PSI3_INCLUDE_DIR})
+  endif()
+
+endif()
+
+if ("${PSI3}" AND NOT PSI3_FOUND)
+
+  if (MPQC_EXPERT)
+
+    message("** Building Psi3 from the included tarball is explicitly disabled in EXPERT mode")
+
+  else()
+
+    set(EXTERNAL_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external)
+    set(EXTERNAL_BUILD_DIR ${PROJECT_BINARY_DIR}/external/build)
+
+    include(ExternalProject)
+
+    if (EXISTS ${EXTERNAL_SOURCE_DIR}/psi3.tar.bz2)
+      set(PSI3_URL ${EXTERNAL_SOURCE_DIR}/psi3.tar.bz2)
+      set(PSI3_URL_HASH "")
+
+      message("** Will build Psi3 from ${PSI3_URL}")
+
+      ExternalProject_Add(
+        psi3
+        PREFIX ${EXTERNAL_BUILD_DIR}/psi3
+        URL ${PSI3_URL}
+        URL_HASH ${PSI3_URL_HASH}
+        BUILD_IN_SOURCE 1
+        CONFIGURE_COMMAND /bin/bash ./configure
+        --prefix=${EXTERNAL_BUILD_DIR}/psi3
+        --with-cc=${CMAKE_C_COMPILER}
+        "CFLAGS=${CMAKE_C_FLAGS}"
+        --with-cxx=${CMAKE_CXX_COMPILER}
+        "CXXFLAGS=${CMAKE_CXX_FLAGS}"
+        --with-fc=${CMAKE_Fortran_COMPILER}
+        "--with-blas=${LAPACK_LIBRARIES} ${BLAS_LIBRARIES}"
+        BUILD_COMMAND make SHELL=/bin/bash
+        INSTALL_COMMAND make install SHELL=/bin/bash
+        )
+
+      add_dependencies(External psi3)
+      foreach (_lib PSI_psio PSI_chkpt PSI_iwl PSI_ciomr PSI_dpd PSI_qt)
+        list(APPEND PSI3_LIBRARIES ${EXTERNAL_BUILD_DIR}/psi3/lib/lib${_lib}.a)
+      endforeach()
+      set(PSI3_INCLUDE_DIR ${EXTERNAL_BUILD_DIR}/psi3/include)
+      set(HAVE_PSI3 TRUE)
+    else()
+      message("psi3.tar.bz2 not found, your MPQC source seems to be broken")
+    endif()
+
+  endif()
+
+endif()
+
+if (HAVE_PSI3)
+  include_directories(${PSI3_INCLUDE_DIR})
+  set(PSI3ROOTDIR "${PSI3_INCLUDE_DIR}/..")
+else()
+  message("** Psi3 was not found")
+  set(PSI3_LIBRARY "")
+endif()
+

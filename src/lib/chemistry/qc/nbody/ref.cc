@@ -2048,7 +2048,7 @@ Extern_RefWavefunction::dfinfo() const {
 
 ///////////////////////////////////////////////////////////////////
 
-#if !HAVE_PSIMPQCIFACE
+#if !defined(HAVE_PSI3)
 Ref<RefWavefunction>
 RefWavefunctionFactory::make(const Ref<WavefunctionWorld> & world,
                                 const Ref<Wavefunction> & ref,

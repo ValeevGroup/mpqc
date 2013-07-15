@@ -248,10 +248,10 @@
 #cmakedefine HAVE_TILEDARRAY
 
 /* Define if Psi-MPQC interface can be compiled.  */
-#cmakedefine HAVE_PSIMPQCIFACE
+#cmakedefine HAVE_PSI3
 
-/* The location of Psi root directory. */
-#cmakedefine PSIROOTDIR
+/* The location of Psi3 root directory. */
+#cmakedefine PSI3ROOTDIR "@PSI3ROOTDIR@"
 
 /* Define if your MPI implementation has MPI-IO functions */
 #cmakedefine HAVE_MPIIO

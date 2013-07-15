@@ -72,7 +72,7 @@ string PsiExEnv::file11name_("file11.dat");
 int PsiExEnv::ckptfile_(PSIF_CHKPT);
 string PsiExEnv::defaultcwd_(".");
 string PsiExEnv::defaultfileprefix_("psi");
-string PsiExEnv::defaultpsiprefix_(PSIROOTDIR "/bin");
+string PsiExEnv::defaultpsiprefix_(PSI3ROOTDIR "/bin");
 string PsiExEnv::defaultstdout_("stdout");
 string PsiExEnv::defaultstderr_("stderr");
 

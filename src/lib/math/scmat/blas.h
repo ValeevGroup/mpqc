@@ -6,9 +6,17 @@
 #include <stdint.h>
 
 #if defined(F77_INTEGER_WIDTH) && F77_INTEGER_WIDTH == 8
-  typedef int64_t f77_integer_t;
+#  if C_TYPE_INT64_T == C_TYPE_LONG // prefer long -- MADNESS incorrectly uses long instead of int64_t to map to fortran integers
+     typedef long f77_integer_t;
+#  else
+     typedef int64_t f77_integer_t;
+#  endif
 #elif defined(F77_INTEGER_WIDTH) && F77_INTEGER_WIDTH == 4
-  typedef int32_t f77_integer_t;
+#  if C_TYPE_INT32_T == C_TYPE_INT // prefer int -- MADNESS incorrectly uses int instead of int32_t to map to fortran integers
+     typedef int f77_integer_t;
+#  else
+     typedef int32_t f77_integer_t;
+#  endif
 #else
 # error "unknown F77_INTEGER_WIDTH"
 #endif

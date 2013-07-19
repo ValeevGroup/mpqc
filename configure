@@ -101,6 +101,7 @@ while test $# != 0; do
   CC=*) CC="`arg \"$1\"`" ;;
   CXX=*) CXX="`arg \"$1\"`" ;;
   F77=*) F77="`arg \"$1\"`" ;;
+  CPPFLAGS=*) CPPFLAGS="`arg \"$1\"`" ;;
   CFLAGS=*) CFLAGS="`arg \"$1\"`" ;;
   CXXFLAGS=*) CXXFLAGS="`arg \"$1\"`" ;;
   FFLAGS=*) FFLAGS="`arg \"$1\"`" ;;
@@ -123,6 +124,10 @@ fi
 
 if [ -n "$F77" ]; then
     args="$args -DCMAKE_Fortran_COMPILER=$F77"
+fi
+
+if [ -n "$CPPFLAGS" ]; then
+    args="$args -DCMAKE_CPP_FLAGS=\"$CPPFLAGS\""
 fi
 
 if [ -n "$CFLAGS" ]; then

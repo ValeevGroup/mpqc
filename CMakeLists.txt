@@ -259,12 +259,27 @@ list(APPEND LINK_LIBRARIES ${PAPI_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${LIBRARIES})
 list(APPEND LINK_LIBRARIES ${CMAKE_DL_LIBS})
 
-# R-12
+########################################################
+# determine whether certain features lack preprequisites
+########################################################
+# R12
 if (HAVE_LIBINT2)
   set(MPQC_R12 TRUE)
   add_definitions(-DMPQC_R12)
 else()
-  message("** R12 requires Libint2.  R12 methods are disabled")
+  message("** R12 methods require Libint2.  R12 methods are disabled")
+endif()
+# propagate some variables into Makefiles
+if (MPQC_R12)
+  set(MAKE_ASSUME_R12 yes)
+endif()
+if (HAVE_PSI3)
+  set(MAKE_ASSUME_PSI yes)
+endif()
+if (HAVE_LIBINT2)
+  if (LIBINT_SUPPORTS_G12_T1G12_INTEGRALS)
+    set(MAKE_ASSUME_LIBINT2_SUPPORTS_T1G12 yes)
+  endif()
 endif()
 
 # sources
@@ -294,28 +309,9 @@ foreach (_lib ${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES})
 endforeach()
 
 # transform library list into compiler args
-foreach (_lib ${LINK_LIBRARIES})
-  set(_libpath _libpath-NOTFOUND) # DON'T REMOVE THIS LINE
-  find_library(_libpath ${_lib})
-  #message(STATUS "_lib = ${_lib}, _libpath = ${_libpath}")
-  if (_libpath)
-    set(_library "${_libpath}")
-  else()
-    set(_library "${_lib}")
-  endif()
-  # Apple framework libs
-  get_filename_component(_ext ${_library} EXT)
-  if ("${_ext}" STREQUAL ".framework")
-    get_filename_component(_name ${_library} NAME_WE)
-    get_filename_component(_path ${_library} PATH)
-    #message(STATUS "${_library} = ${_name} ${_path} ${_ext}")
-    set(_library "-F ${_path} -framework ${_name}")
-  endif()
-  #message(STATUS "${_lib} = ${_library}")
-  set(MPQC_CONFIG_LIBRARIES "${MPQC_CONFIG_LIBRARIES} ${_library}")
-endforeach()
-
-# message(STATUS "MPQC_CONFIG_LIBRARIES = ${MPQC_CONFIG_LIBRARIES}")
+include(ConvertLibrariesListToCompilerArgs)
+convert_libs_to_compargs(MPQC_CONFIG_LIBRARIES "${LINK_LIBRARIES}")
+#message(STATUS "MPQC_CONFIG_LIBRARIES = ${MPQC_CONFIG_LIBRARIES}")
 
 # include dirs
 get_directory_property(MPQC_INCLUDE_DIRECTORIES DIRECTORY src/bin/mpqc INCLUDE_DIRECTORIES)

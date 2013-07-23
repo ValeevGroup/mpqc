@@ -29,43 +29,33 @@
 #define _chemistry_qc_basis_dercent_h
 
 #include <chemistry/qc/basis/basis.h>
+#include <vector>
 
 namespace sc {
 
 /** DerivCenters keeps track the centers that
-    derivatives are taken with respect to. */
+    derivatives are taken with respect to.
+    DerivCenters will be used to describe a set of geometric
+    derivative integral shell-sets to specify which derivatives
+    are present in the set.
+  */
 class DerivCenters {
   private:
-    int center_[4];
-    int atom_[4];
-    int ncenter_;
-    int omitted_center_;
-    int omitted_atom_;
+    std::vector< std::pair<int, int> > centers_;   // sequence of {center,atom index} pairs (center = 0 .. 3)
+    std::pair<int, int> omitted_center_;           // points out which center is skipped
   public:
     /// Construct a new, empty DerivCenters object.
     DerivCenters();
 
-    /// @name Routines to Modify DerivCenters
+    /// @name Routines to modify DerivCenters
     //@{
     /// Clear the list of centers.
     void clear();
-    /** Add a center using a basis set and the shell number.
-     * @param center The center number (between 0 and 3 inclusive).
-     * @param bs     The basis set for this center.
-     * @param shell  The shell number for this center.
-     */
-    void add_center(int center, const Ref<GaussianBasisSet> &bs, int shell);
     /** Add a center using the atom number.
      * @param center The center number (between 0 and 3 inclusive).
      * @param atom   The center within a GaussianBasisSet.
      */
     void add_center(int center, int atom);
-    /** Add the omitted center using a basis set and the shell number.
-     * @param center The center number (between 0 and 3 inclusive).
-     * @param bs     The basis set for this center.
-     * @param shell  The shell number for this center.
-     */
-    void add_omitted(int center, const Ref<GaussianBasisSet> &bs, int shell);
     /** Add the omitted center using the atom number.
      * @param center The center number (between 0 and 3 inclusive).
      * @param atom   The center within a GaussianBasisSet.
@@ -73,27 +63,27 @@ class DerivCenters {
     void add_omitted(int center, int atom);
     //@}
 
-    /// @name Routines to Query DerivCenters
+    /// @name Members to query DerivCenters
     //@{
     /// The number of centers for which derivatives have been computed.
-    int n() const { return ncenter_; }
+    int n() const { return centers_.size(); }
     /** @param i The computed center index (between 0 and n() - 1, inclusive).
      *  @return The center number (between 0 and 3, inclusive).
      */
-    int center(int i) const { return center_[i]; }
+    int center(int i) const { return centers_.at(i).first; }
     /** @param i The computed center index (between 0 and n() - 1, inclusive).
      *  @return The atom number.
      */
-    int atom(int i) const { return atom_[i]; }
+    int atom(int i) const { return centers_.at(i).second; }
     /** @return 1 if there is an omitted center, otherwise 0.
      */
-    int has_omitted_center() const { return omitted_center_ >= 0; }
+    bool has_omitted_center() const { return omitted_center_.first >= 0; }
     /** @return The center for which integrals where not computed.
      */
-    int omitted_center() const { return omitted_center_; }
+    int omitted_center() const { return omitted_center_.first; }
     /** @return The atom that is omitted from the integral buffer.
      */
-    int omitted_atom() const { return omitted_atom_; }
+    int omitted_atom() const { return omitted_center_.second; }
     //}@
 };
 

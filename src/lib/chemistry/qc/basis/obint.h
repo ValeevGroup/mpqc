@@ -380,7 +380,24 @@ class OneBodyDerivInt : public RefCount {
     Ref<GaussianBasisSet> basis2();
 
     /** The computed shell integrals will be put in the buffer returned by
-        this member.  */
+        this member. The integrals are are returned as an array with derivative
+        index as the "fast" (innermost) dimension.
+        E.g. derivatives of a (p|p) shell would be stored like this:
+        d (p_0|p_0) / d R_0x (derivative with respect to x coordinate of atom 0;
+                               atom 0 is provided as argument to compute_shell or returned in DerivCenters)
+        d (p_0|p_0) / d R_0y
+        d (p_0|p_0) / d R_0z
+        d (p_0|p_0) / d R_1x (missing if derivatives with respect to one atom only)
+        ... (the rest of geometric derivatives of (p_0|p_0))
+        d (p_0|p_1) / d R_0x
+        ... etc.
+
+        where p_0, p_1, p_2 are the components of p shell (spherical or Cartesian).
+
+        The number of computed derivatives is 3 times DerivCenters::n() for the object returned
+        by OneBodyIntDeriv::compute_shell(), or simply 3 if called the version of OneBodyIntDeriv::compute_shell()
+        that does not use DerivCenters.
+      */
     const double * buffer() const;
     
     /** Compute the derivative integrals and place the result in the buffer

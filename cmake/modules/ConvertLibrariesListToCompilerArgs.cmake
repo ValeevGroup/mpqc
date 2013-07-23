@@ -27,8 +27,9 @@ macro(convert_libs_to_compargs _args _libs )
     set(_library "-F ${_path} -framework ${_name}")
    endif()
    #message(STATUS "${_lib} => ${_library}")
-   set(${_args} "${${_args}} ${_library}")
   endif() # APPLE only
+  
+  set(${_args} "${${_args}} ${_library}")
   
  endforeach()
 endmacro()

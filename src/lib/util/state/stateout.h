@@ -36,7 +36,16 @@
 
 namespace sc {
 
-  /// helper class to save to StateOut
+  /** Helps to write user-defined types to StateOut. Overload/specialize
+   * this function for each user-defined type not derived from SavableState
+   * (if your class is derived from SavableState simply implement its save_data_state()
+   * member).
+   *
+   * @tparam T type of an object
+   * @param t an object to serialize to StateIn
+   * @param so the StateOut object
+   * @param count number of bytes written
+   */
   template <typename T> void ToStateOut(const T& t, StateOut& so, int& count);
 
 class StateOutData {

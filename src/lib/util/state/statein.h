@@ -36,8 +36,17 @@
 
 namespace sc {
 
-  /// helper class to read from StateIn
-  template <typename T> void FromStateIn(T& t, StateIn& so, int& count);
+  /** Helps to read user-defined types from StateIn. Overload/specialize
+   * this function for each user-defined type not derived from SavableState
+   * (if your class is derived from SavableState simply implement its "StateIn" constructor
+   * member).
+   *
+   * @tparam T type of an object
+   * @param t an object to deserialize from StateIn
+   * @param si the StateIn object
+   * @param count number of bytes read
+   */
+  template <typename T> void FromStateIn(T& t, StateIn& si, int& count);
 
 class StateInData {
   public:

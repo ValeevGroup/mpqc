@@ -116,6 +116,12 @@ class StateOut: public DescribedClass {
     virtual int put(bool r);
     virtual int put(float r);
     virtual int put(double r);
+    /// for all other T use user-provided T::serialize(StateOut&) const
+    template <class T>
+    int put(const T& v) {
+        return v.serialize(*this);
+    }
+
     //@}
     /** @name StateOut::put(array)
      *  Write the given array data.  Size information is also saved.  The

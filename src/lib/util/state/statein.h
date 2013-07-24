@@ -159,6 +159,12 @@ class StateIn:  public DescribedClass {
     virtual int get(bool&r, const char *keyword = 0);
     virtual int get(float&r, const char *keyword = 0);
     virtual int get(double&r, const char *keyword = 0);
+    /// for all other T use user-provided T::deserialize(StateIn&)
+    template <class T>
+    int get(T& v, const char *keyword = 0) {
+        return v.deserialize(*this);
+    }
+
     //@}
     /** @name StateIn::get(array)
      *  These restore data saved with StateOut's put.

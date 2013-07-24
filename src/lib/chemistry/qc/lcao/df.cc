@@ -84,7 +84,7 @@ DensityFitting::DensityFitting(StateIn& si) :
   C_ << SavableState::restore_state(si);
 
   int count;
-  detail::FromStateIn<RefSymmSCMatrix>::get(kernel_,si,count);
+  FromStateIn(kernel_,si,count);
 }
 
 void
@@ -99,7 +99,7 @@ DensityFitting::save_data_state(StateOut& so) {
   SavableState::save_state(C_.pointer(),so);
 
   int count;
-  detail::ToStateOut<RefSymmSCMatrix>::put(kernel_,so,count);
+  ToStateOut(kernel_,so,count);
 }
 
 RefSCDimension

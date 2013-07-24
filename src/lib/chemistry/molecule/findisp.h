@@ -179,16 +179,10 @@ namespace sc {
       RefSCVector gradient_;
       RefSymmSCMatrix hessian_;
   };
-  namespace detail {
-    //@{ specify how to serialize/deserialize EGH
-    template <> struct FromStateIn<EGH> {
-      static void get(EGH& v, StateIn& s, int& count);
-    };
-    template <> struct ToStateOut<EGH> {
-      static void put(const EGH& v, StateOut& so, int& count);
-    };
-    //@}
-  }
+  //@{ specify how to serialize/deserialize EGH
+  template <> void FromStateIn<EGH>(EGH& v, StateIn& s, int& count);
+  template <> void ToStateOut<EGH>(const EGH& v, StateOut& so, int& count);
+  //@}
 
 
 /** Computes the molecular hessian by finite displacements of gradients (or, if not available, energies).

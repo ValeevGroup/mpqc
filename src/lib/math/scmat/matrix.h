@@ -32,6 +32,8 @@
 #include <cfloat>
 
 #include <math/scmat/abstract.h>
+#include <util/state/statein.h>
+#include <util/state/stateout.h>
 
 namespace sc {
 
@@ -544,6 +546,23 @@ struct RefSymmSCMatrixEqual {
     return true;
   }
 };
+
+/// specialization for RefSCVector
+template <> void FromStateIn<sc::RefSCVector>(sc::RefSCVector& t, StateIn& so, int& count);
+/// specialization for RefSCMatrix
+template <> void FromStateIn<sc::RefSCMatrix>(sc::RefSCMatrix& t, StateIn& so, int& count);
+/// specialization for RefSymmSCMatrix
+template <> void FromStateIn<sc::RefSymmSCMatrix>(sc::RefSymmSCMatrix& t, StateIn& so, int& count);
+/// specialization for RefDiagSCMatrix
+template <> void FromStateIn<sc::RefDiagSCMatrix>(sc::RefDiagSCMatrix& t, StateIn& so, int& count);
+/// specialization for RefSCVector
+template <> void ToStateOut<sc::RefSCVector>(const sc::RefSCVector& t, StateOut& so, int& count);
+/// specialization for RefSCMatrix
+template <> void ToStateOut<sc::RefSCMatrix>(const sc::RefSCMatrix& t, StateOut& so, int& count);
+/// specialization for RefSymmSCMatrix
+template <> void ToStateOut<sc::RefSymmSCMatrix>(const sc::RefSymmSCMatrix& t, StateOut& so, int& count);
+/// specialization for RefDiagSCMatrix
+template <> void ToStateOut<sc::RefDiagSCMatrix>(const sc::RefDiagSCMatrix& t, StateOut& so, int& count);
 
 } // namespace sc
 

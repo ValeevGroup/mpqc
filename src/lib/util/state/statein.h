@@ -36,10 +36,8 @@
 
 namespace sc {
 
-  namespace detail {
-    /// helper template to read from StateIn
-    template <typename T> struct FromStateIn;
-  }
+  /// helper class to read from StateIn
+  template <typename T> void FromStateIn(T& t, StateIn& so, int& count);
 
 class StateInData {
   public:
@@ -159,11 +157,6 @@ class StateIn:  public DescribedClass {
     virtual int get(bool&r, const char *keyword = 0);
     virtual int get(float&r, const char *keyword = 0);
     virtual int get(double&r, const char *keyword = 0);
-    /// for all other T use user-provided T::deserialize(StateIn&)
-    template <class T>
-    int get(T& v, const char *keyword = 0) {
-        return v.deserialize(*this);
-    }
 
     //@}
     /** @name StateIn::get(array)
@@ -203,7 +196,7 @@ class StateIn:  public DescribedClass {
       int r = get(l);
       for (size_t i=0; i<l; i++) {
         T tmp;
-        detail::FromStateIn<T>::get(tmp,*this,r);
+        FromStateIn(tmp,*this,r);
         v.push_back(tmp);
       }
       return r;
@@ -216,7 +209,7 @@ class StateIn:  public DescribedClass {
       int r = get(l);
       v.resize(l);
       for (size_t i=0; i<l; i++) {
-        detail::FromStateIn<T>::get(v[i],*this,r);
+        FromStateIn(v[i],*this,r);
       }
       return r;
     }
@@ -230,7 +223,7 @@ class StateIn:  public DescribedClass {
       if (size) {
         for(size_t i=0; i<size; ++i) {
           Key k;
-          detail::FromStateIn<Key>::get(k,*this,r);
+          FromStateIn(k,*this,r);
           s.insert(k);
         }
       }
@@ -257,8 +250,8 @@ class StateIn:  public DescribedClass {
     template <typename L, typename R>
     int get(std::pair<L,R>& v) {
       int s = 0;
-      detail::FromStateIn<L>::get(v.first,*this,s);
-      detail::FromStateIn<R>::get(v.second,*this,s);
+      FromStateIn(v.first,*this,s);
+      FromStateIn(v.second,*this,s);
       return s;
     }
     ///@}
@@ -293,43 +286,17 @@ class StateIn:  public DescribedClass {
     const Ref<KeyVal> &override() const { return override_; }
   };
 
-  class RefSCVector;
-  class RefSCMatrix;
-  class RefSymmSCMatrix;
-  class RefDiagSCMatrix;
-
-  namespace detail {
-    /// helper template to read from StateIn
-    template <typename T> struct FromStateIn {
-      static void get(T& t, StateIn& so, int& count) {
-        count += so.get(t);
-      }
-    };
-    /// specialization for Ref<SavableState>
-    template <typename T> struct FromStateIn< sc::Ref<T> > {
-      static void get(Ref<T>& t, StateIn& so, int& count) {
-        t << SavableState::restore_state(so);
-      }
-    };
-    /// specialization for RefSCVector
-    template <> struct FromStateIn<sc::RefSCVector> {
-      static void get(sc::RefSCVector& t, StateIn& so, int& count);
-    };
-    /// specialization for RefSCMatrix
-    template <> struct FromStateIn<sc::RefSCMatrix> {
-      static void get(sc::RefSCMatrix& t, StateIn& so, int& count);
-    };
-    /// specialization for RefSymmSCMatrix
-    template <> struct FromStateIn<sc::RefSymmSCMatrix> {
-      static void get(sc::RefSymmSCMatrix& t, StateIn& so, int& count);
-    };
-    /// specialization for RefDiagSCMatrix
-    template <> struct FromStateIn<sc::RefDiagSCMatrix> {
-      static void get(sc::RefDiagSCMatrix& t, StateIn& so, int& count);
-    };
+  /// helper template to read from StateIn
+  template <typename T> void FromStateIn(T& t, StateIn& so, int& count) {
+    count += so.get(t);
   }
 
-}
+  /// specialization for Ref<SavableState>
+  template <typename T> void FromStateIn(Ref<T>& t, StateIn& so, int& count) {
+    t << SavableState::restore_state(so);
+  }
+
+} // namespace sc
 
 #endif
 

@@ -62,24 +62,26 @@ EGH::EGH(double e, const RefSCVector& g, const RefSymmSCMatrix& h) :
 
 EGH::~EGH() {}
 
+template<>
 void
-sc::detail::FromStateIn<EGH>::get(EGH& v, StateIn& s, int& count) {
+sc::FromStateIn<EGH>(EGH& v, StateIn& s, int& count) {
   double e;
   RefSCVector g;
   RefSymmSCMatrix h;
 
   s.get(e);
-  detail::FromStateIn<RefSCVector>::get(g,s,count);
-  detail::FromStateIn<RefSymmSCMatrix>::get(h,s,count);
+  FromStateIn(g,s,count);
+  FromStateIn(h,s,count);
 
   v = EGH(e,g,h);
 }
 
+template<>
 void
-sc::detail::ToStateOut<EGH>::put(const EGH& v, StateOut& s, int& count) {
+sc::ToStateOut<EGH>(const EGH& v, StateOut& s, int& count) {
   s.put(v.energy());
-  detail::ToStateOut<RefSCVector>::put(v.gradient(),s,count);
-  detail::ToStateOut<RefSymmSCMatrix>::put(v.hessian(),s,count);
+  ToStateOut<RefSCVector>(v.gradient(),s,count);
+  ToStateOut<RefSymmSCMatrix>(v.hessian(),s,count);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -267,8 +269,8 @@ FinDispMolecularHessian::Impl::restore_displacements(StateIn& s)
   params_ = 0;
   params_ << SavableState::restore_state(s);
   original_point_group_ << SavableState::restore_state(s);
-  detail::FromStateIn<RefSCVector>::get(original_geometry_,s,count);
-  detail::FromStateIn<RefSCMatrix>::get(symbasis_,s,count);
+  FromStateIn(original_geometry_,s,count);
+  FromStateIn(symbasis_,s,count);
   values_.restore(s);
 }
 
@@ -279,8 +281,8 @@ FinDispMolecularHessian::Impl::checkpoint_displacements(StateOut& s)
 
   SavableState::save_state(params_.pointer(),s);
   SavableState::save_state(original_point_group_.pointer(),s);
-  detail::ToStateOut<RefSCVector>::put(original_geometry_,s,count);
-  detail::ToStateOut<RefSCMatrix>::put(symbasis_,s,count);
+  ToStateOut<RefSCVector>(original_geometry_,s,count);
+  ToStateOut<RefSCMatrix>(symbasis_,s,count);
   values_.save(s);
 }
 

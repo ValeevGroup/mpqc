@@ -36,6 +36,8 @@
 #include <chemistry/molecule/formula.h>
 #include <chemistry/molecule/localdef.h>
 #include <math/scmat/cmatrix.h>
+#include <algorithm>
+
 
 using namespace std;
 using namespace sc;
@@ -48,7 +50,7 @@ static ClassDesc Molecule_cd(
   create<Molecule>, create<Molecule>, create<Molecule>);
 
 Molecule::Molecule():
-  natoms_(0), r_(0), Z_(0), charges_(0), mass_(0), labels_(0), fragments_(0)
+  natoms_(0), atoms_(), r_(0), Z_(0), charges_(0), mass_(0), labels_(0), fragments_(0)
 {
   pg_ = new PointGroup;
   atominfo_ = new AtomInfo();
@@ -65,7 +67,7 @@ Molecule::Molecule():
 }
 
 Molecule::Molecule(const Molecule& mol):
- natoms_(0), r_(0), Z_(0), charges_(0), mass_(0), labels_(0), fragments_(0)
+ natoms_(0), atoms_(), r_(0), Z_(0), charges_(0), mass_(0), labels_(0), fragments_(0)
 {
   nuniq_ = 0;
   equiv_ = 0;
@@ -112,9 +114,9 @@ void
 Molecule::throw_if_atom_duplicated(int begin, double tol)
 {
   for (int i=begin; i<natoms_; i++) {
-      SCVector3 ri(r_[i]);
+      SCVector3 ri(atoms_[i].r());
       for (int j=0; j<i; j++) {
-          SCVector3 rj(r_[j]);
+          SCVector3 rj(atoms_[j].r());
           if (ri.dist(rj) < tol) {
               throw InputError("duplicated atom coordinate",
                                __FILE__, __LINE__, 0, 0, class_desc());
@@ -124,7 +126,7 @@ Molecule::throw_if_atom_duplicated(int begin, double tol)
 }
 
 Molecule::Molecule(const Ref<KeyVal>&input):
- natoms_(0), r_(0), Z_(0), charges_(0), mass_(0), labels_(0), fragments_(0)
+ natoms_(0), atoms_(), r_(0), Z_(0), charges_(0), mass_(0), labels_(0), fragments_(0)
 {
   nuniq_ = 0;
   equiv_ = 0;
@@ -173,6 +175,8 @@ Molecule::Molecule(const Ref<KeyVal>&input):
           throw InputError("size of \"geometry\" != size of \"atoms\"",
                            __FILE__, __LINE__, 0, 0, class_desc());
         }
+
+      atoms_.reserve(natom);
 
       int i;
       for (i=0; i<natom; i++) {
@@ -248,6 +252,7 @@ Molecule::operator=(const Molecule& mol)
   non_q_atoms_ = mol.non_q_atoms_;
 
   natoms_ = mol.natoms_;
+  atoms_ = mol.atoms_;
 
   if (natoms_) {
       if (mol.mass_) {
@@ -296,6 +301,10 @@ Molecule::add_atom(int Z,double x,double y,double z,
                    int have_fragment, int fragment)
 {
   int i;
+
+  Atom temp(Z, x, y, z, label, mass, have_charge, charge, have_fragment,
+            fragment);
+  atoms_.push_back(temp);
 
   // allocate new arrays
   int *newZ = new int[natoms_+1];
@@ -426,33 +435,43 @@ Molecule::print_parsedkeyval(ostream& os,
          << endl;
     }
   os << indent << "{";
+
   if (number_atoms) os << scprintf("%3s", "n");
+
   os << scprintf(" %5s", "atoms");
-  if (labels_) os << scprintf(" %11s", "atom_labels");
+
+  // Took out if(label_)
+  os << scprintf(" %11s", "atom_labels");
+
+  // Took out if(charges_)
   int int_charges = 1;
-  if (charges_) {
-      for (i=0;i<natom();i++) if (charges_[i]!=(int)charges_[i]) int_charges=0;
-      if (int_charges) {
-          os << scprintf(" %7s", "charge");
-        }
-      else {
-          os << scprintf(" %17s", "charge");
-        }
-    }
-  if (fragments_) {
-      os << scprintf(" %8s", "fragment");
-    }
+  for (i=0;i<natom();i++){
+      if (atoms_[i].charge() != int( atoms_[i].charge()) )
+          int_charges=0;
+  }
+  if (int_charges) {
+      os << scprintf(" %7s", "charge");
+  }
+  else {
+      os << scprintf(" %17s", "charge");
+  }
+
+  // Took out if(fragments_)
+  os << scprintf(" %8s", "fragment");
+
   os << scprintf("  %16s", "")
      << scprintf(" %16s", "geometry   ")
      << scprintf(" %16s ", "");
   os << "}={" << endl;
+
+
   for (i=0; i<natom(); i++) {
       os << indent;
       if (number_atoms) os << scprintf(" %3d", i+1);
       std::string symbol(atom_symbol(i));
       os << scprintf(" %5s", symbol.c_str());
-      if (labels_) {
-          const char *lab = labels_[i];
+      if (atoms_[i].label()) {
+          const char *lab = atoms_[i].label();
           if (lab == 0) lab = "";
           char  *qlab = new char[strlen(lab)+3];
           strcpy(qlab,"\"");
@@ -461,12 +480,12 @@ Molecule::print_parsedkeyval(ostream& os,
           os << scprintf(" %11s",qlab);
           delete[] qlab;
         }
-      if (charges_) {
-          if (int_charges) os << scprintf(" %7.4f", charges_[i]);
-          else os << scprintf(" %17.15f", charges_[i]);
+      if (atoms_[i].have_charge()) {
+          if (int_charges) os << scprintf(" %7.4f", atoms_[i].charge());
+          else os << scprintf(" %17.15f", atoms_[i].charge());
         }
-      if (fragments_) {
-          os << scprintf(" %8d", fragments_[i]);
+      if (atoms_[i].have_fragment()) {
+          os << scprintf(" %8d", atoms_[i].fragment() );
       }
       os << scprintf(" [% 16.10f", conv * r(i,0))
          << scprintf(" % 16.10f", conv * r(i,1))
@@ -518,31 +537,54 @@ Molecule::atom_label_to_index(const std::string &l) const
   return -1;
 }
 
+// only for use with sort_by_distance()
+struct dist_sort{
+
+   dist_sort(const SCVector3 &v = SCVector3(0,0,0)) : v_(v) {}
+
+   bool operator() (const Atom a1, const Atom a2) const {
+       const SCVector3 v1(a1.r());
+       const SCVector3 v2(a2.r());
+       double d1 = v_.dist(v1);
+       double d2 = v_.dist(v2);
+       return ((d1 < d2) ||
+               (d1 == d2 && v1[0] < v2[0]) ||
+               (d1 == d2 && v1[0] == v2[0] && v1[1] < v2[1]) ||
+               (d1 == d2 && v1[0] == v2[0] && v1[1] == v2[1] && v1[2] < v2[2])
+              );
+   }
+
+private:
+   SCVector3 v_;
+};
+
+void
+Molecule::sort_by_distance(){
+  std::sort( atoms_.begin(), atoms_.end(), dist_sort());
+}
+
 double*
 Molecule::charges() const
 {
   double*result = new double[natoms_];
-  if (charges_) {
-      memcpy(result, charges_, sizeof(double)*natom());
-    }
-  else {
-      for (int i=0; i<natom(); i++) result[i] = Z_[i];
-    }
+
+  for(int a = 0; a < natoms_; ++a){
+      result[a] = atoms_[a].have_charge() ? atoms_[a].charge() : atoms_[a].Z();
+  }
+
   return result;
 }
 
 double
 Molecule::charge(int iatom) const
 {
-  if (charges_) return charges_[iatom];
-  return Z_[iatom];
+  return atoms_[iatom].have_charge() ? atoms_[iatom].charge() : atoms_[iatom].Z();
 }
 
 int
 Molecule::fragment(int iatom) const
 {
-  if (fragments_) return fragments_[iatom];
-  return 0;
+  return atoms_[iatom].have_fragment() ? atoms_[iatom].fragment() : 0;
 }
 
 double
@@ -597,7 +639,7 @@ void Molecule::save_data_state(StateOut& so)
 
 Molecule::Molecule(StateIn& si):
   SavableState(si),
-  natoms_(0), r_(0), Z_(0), mass_(0), labels_(0)
+  natoms_(0), atoms_(), r_(0), Z_(0), mass_(0), labels_(0)
 {
   if (si.version(::class_desc<Molecule>()) < 4) {
       throw FileOperationFailed("cannot restore from old molecules",
@@ -674,6 +716,7 @@ Molecule::Molecule(StateIn& si):
   nequiv_ = 0;
   atom_to_uniq_ = 0;
   init_symmetry_info();
+
 }
 
 int
@@ -978,7 +1021,7 @@ Molecule::symmetrize(double tol)
       if (atom < 0) {
         const char* c_lbl = label(i);
         const std::string lbl = (c_lbl ? c_lbl : "");
-        newmol->add_atom(Z_[i],np[0],np[1],np[2],lbl);
+        newmol->add_atom(atoms_[i].Z(),np[0],np[1],np[2],lbl);
       }
       else {
         if (Z(i) != newmol->Z(atom)
@@ -1004,6 +1047,9 @@ void
 Molecule::translate(const double *r)
 {
   for (int i=0; i < natom(); i++) {
+    atoms_[i].xyz(0) += r[0];
+    atoms_[i].xyz(1) += r[1];
+    atoms_[i].xyz(2) += r[2];
     r_[i][0] += r[0];
     r_[i][1] += r[1];
     r_[i][2] += r[2];
@@ -1080,7 +1126,7 @@ Molecule::transform_to_principal_axes(int trans_frame)
           for (k=0; k<3; k++) {
               e += a[k] * evecs[k][j];
             }
-          r_[i][j] = e;
+          atoms_[i].xyz(j) = e;
         }
     }
 
@@ -1119,7 +1165,7 @@ Molecule::transform_to_symmetry_frame()
           for (k=0; k<3; k++) {
               e += a[k] * t[k][j];
             }
-          r_[i][j] = e;
+          atoms_[i].xyz(j) = e;
         }
     }
 
@@ -1169,9 +1215,9 @@ Molecule::cleanup_molecule(double tol)
             }
         }
       // replace the unique coordinate with the average coordinate
-      r_[unique(i)][0] = ap[0] / ncoor;
-      r_[unique(i)][1] = ap[1] / ncoor;
-      r_[unique(i)][2] = ap[2] / ncoor;
+      atoms_[unique(i)].xyz(0) = ap[0] / ncoor;
+      atoms_[unique(i)].xyz(1) = ap[1] / ncoor;
+      atoms_[unique(i)].xyz(2) = ap[2] / ncoor;
     }
 
   // find the atoms equivalent to each unique atom and eliminate
@@ -1195,9 +1241,9 @@ Molecule::cleanup_molecule(double tol)
           for (int j=0; j < natom(); j++) {
               // see if j is generated from i
               if (np.dist(SCVector3(r(j))) < tol) {
-                  r_[j][0] = np[0];
-                  r_[j][1] = np[1];
-                  r_[j][2] = np[2];
+                  atoms_[j].xyz(0) = np[0];
+                  atoms_[j].xyz(1) = np[1];
+                  atoms_[j].xyz(2) = np[2];
                   found = 1;
                 }
             }
@@ -1289,7 +1335,7 @@ Molecule::n_core_electrons()
   int i,n=0;
   for (i=0; i<natom(); i++) {
       if (charge(i) == 0.0) continue;
-      int z = Z_[i];
+      int z = atoms_[i].Z();
       if (z > 2) n += 2;
       if (z > 10) n += 8;
       if (z > 18) n += 8;
@@ -1310,9 +1356,9 @@ Molecule::max_z()
 {
   int i, maxz=0;
   for (i=0; i<natom(); i++) {
-      int z = Z_[i];
+      int z = atoms_[i].Z();
       if (z>maxz) maxz = z;
-    }
+  }
   return maxz;
 }
 
@@ -1490,29 +1536,26 @@ Molecule::print_pdb(ostream& os, char *title) const
 double
 Molecule::mass(int atom) const
 {
-  if (!mass_ || mass_[atom] == 0) {
-      return atominfo_->mass(Z_[atom]);
-    }
-  return mass_[atom];
+  return atoms_[atom].mass() ? atoms_[atom].mass() :
+                               atominfo_->mass(atoms_[atom].Z());
 }
 
 const char *
 Molecule::label(int atom) const
 {
-  if (!labels_) return 0;
-  return labels_[atom];
+  return atoms_[atom].label() ? atoms_[atom].label() : 0;
 }
 
 std::string
 Molecule::atom_name(int iatom) const
 {
-  return atominfo_->name(Z_[iatom]);
+  return atominfo_->name(atoms_[iatom].Z());
 }
 
 std::string
 Molecule::atom_symbol(int iatom) const
 {
-  return atominfo_->symbol(Z_[iatom]);
+  return atominfo_->symbol(atoms_[iatom].Z());
 }
 
 /////////////////////////////////////////////////////////////////////////////

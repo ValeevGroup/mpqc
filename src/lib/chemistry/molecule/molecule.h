@@ -38,6 +38,7 @@
 #include <math/scmat/vector3.h>
 #include <math/scmat/matrix.h>
 #include <chemistry/molecule/atominfo.h>
+#include <chemistry/molecule/atom.h>
 
 namespace sc {
 
@@ -123,6 +124,7 @@ atoms so be careful.
 class Molecule: public SavableState
 {
   protected:
+    std::vector<Atom> atoms_;
     int natoms_;
     Ref<AtomInfo> atominfo_;
     Ref<PointGroup> pg_;
@@ -298,11 +300,11 @@ class Molecule: public SavableState
     /// Returns the number of atoms in the molecule.
     int natom() const { return natoms_; }
 
-    int Z(int atom) const { return Z_[atom]; }
-    double &r(int atom, int xyz) { return r_[atom][xyz]; }
-    const double &r(int atom, int xyz) const { return r_[atom][xyz]; }
-    double *r(int atom) { return r_[atom]; }
-    const double *r(int atom) const { return r_[atom]; }
+    int Z(int atom) const { return atoms_[atom].Z(); }
+    double &r(int atom, int xyz) { return atoms_[atom].xyz(xyz); }
+    const double &r(int atom, int xyz) const { return atoms_[atom].xyz(xyz); }
+    double *r(int atom) { return atoms_[atom].r(); }
+    const double *r(int atom) const { return atoms_[atom].r(); }
     double mass(int atom) const;
     /** Returns the label explicitly assigned to atom.  If
         no label has been assigned, then null is returned. */
@@ -317,6 +319,11 @@ class Molecule: public SavableState
     /** Returns the index of the atom with the given label.
         If the label cannot be found -1 is returned. */
     int atom_label_to_index(const std::string &label) const;
+
+    /** Sorts atoms based on distance from arbitrary point. First checks
+     *  distance, then if necesarry check x then
+     */
+    void sort_by_distance();
 
     /** Returns a double* containing the nuclear
         charges of the atoms.  The caller is responsible for

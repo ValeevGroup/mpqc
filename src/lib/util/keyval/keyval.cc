@@ -303,7 +303,7 @@ KeyVal::describedclass(const char* classname)
         std::ostringstream oss;
         oss << "KeyVal::describedclass is asked to construct an object of unknown type \"" << classname << "\"";
         throw InputError(oss.str().c_str(),
-                         __FILE__, __LINE__, '\0', 0);
+                         __FILE__, __LINE__, "", 0);
       }
     }
   // the original error status must be saved

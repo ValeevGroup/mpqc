@@ -37,6 +37,7 @@ else()
     CONFIGURE_COMMAND ./configure
       --prefix=${EXTERNAL_BUILD_DIR}/hdf5
       --enable-threadsafe
+      --enable-unsupported
       --with-pthread
       CC=${CMAKE_C_COMPILER} CPPFLAGS=-D_GNU_SOURCE
     BUILD_COMMAND make

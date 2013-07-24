@@ -35,11 +35,11 @@
 
 namespace sc {
 
-static ForceLink<ElectronDensity> wfn_force_link_a_;
-static ForceLink<Orbital> wfn_force_link_b_;
-static ForceLink<ExtendedHuckelWfn> wfn_force_link_d_;
-static ForceLink<WriteElectrostaticPotential> wfn_force_link_e_;
-static ForceLink<HCoreWfn> wfn_force_link_f_;
+ForceLink<ElectronDensity> wfn_force_link_a_;
+ForceLink<Orbital> wfn_force_link_b_;
+ForceLink<ExtendedHuckelWfn> wfn_force_link_d_;
+ForceLink<WriteElectrostaticPotential> wfn_force_link_e_;
+ForceLink<HCoreWfn> wfn_force_link_f_;
 
 }
 

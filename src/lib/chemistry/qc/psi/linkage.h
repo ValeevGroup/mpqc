@@ -39,16 +39,16 @@
 
 namespace sc {
 
-static ForceLink<PsiCLHF> psi_force_link_a_;
-static ForceLink<PsiHSOSHF> psi_force_link_b_;
-static ForceLink<PsiUHF> psi_force_link_c_;
-static ForceLink<PsiCCSD> psi_force_link_d_;
-static ForceLink<PsiCCSD_T> psi_force_link_e_;
-static ForceLink<PsiRASCI> psi_force_link_h_;
-static ForceLink<PsiRDMTwo> psi_force_link_j_;
+ForceLink<PsiCLHF> psi_force_link_a_;
+ForceLink<PsiHSOSHF> psi_force_link_b_;
+ForceLink<PsiUHF> psi_force_link_c_;
+ForceLink<PsiCCSD> psi_force_link_d_;
+ForceLink<PsiCCSD_T> psi_force_link_e_;
+ForceLink<PsiRASCI> psi_force_link_h_;
+ForceLink<PsiRDMTwo> psi_force_link_j_;
 #ifdef HAVE_LIBINT2
-  static ForceLink<PsiCC_PT2R12> psi_force_link_f_;
-  static ForceLink<PsiCCSD_PT2R12T> psi_force_link_g_;
+  ForceLink<PsiCC_PT2R12> psi_force_link_f_;
+  ForceLink<PsiCCSD_PT2R12T> psi_force_link_g_;
 #endif
 
 }

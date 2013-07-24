@@ -182,15 +182,6 @@ OneBodyDerivIntV3::~OneBodyDerivIntV3()
 }
 
 void
-OneBodyDerivIntV3::compute_shell(int i, int j, DerivCenters& c)
-{
-  (int1ev3_.pointer()->*intfunc_)(i,j,0,basis1()->shell_to_center(i));
-  c.clear();
-  c.add_center(0,basis1(),i);
-  c.add_omitted(1,basis2(),j);
-}
-
-void
 OneBodyDerivIntV3::compute_shell(int i, int j, int c)
 {
   (int1ev3_.pointer()->*intfunc_)(i,j,0,c);

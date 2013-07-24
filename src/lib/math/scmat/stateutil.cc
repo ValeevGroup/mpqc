@@ -32,8 +32,9 @@
 
 using namespace sc;
 
+template<>
 void
-sc::detail::FromStateIn<sc::RefSCVector>::get(sc::RefSCVector& t, StateIn& si, int& count) {
+sc::FromStateIn<sc::RefSCVector>(sc::RefSCVector& t, StateIn& si, int& count) {
   int nonnull;
   count += si.get(nonnull);
   if (nonnull) {
@@ -46,8 +47,9 @@ sc::detail::FromStateIn<sc::RefSCVector>::get(sc::RefSCVector& t, StateIn& si, i
   }
 }
 
+template<>
 void
-sc::detail::FromStateIn<sc::RefSCMatrix>::get(sc::RefSCMatrix& t, StateIn& si, int& count) {
+sc::FromStateIn<sc::RefSCMatrix>(sc::RefSCMatrix& t, StateIn& si, int& count) {
   int nonnull;
   count += si.get(nonnull);
   if (nonnull) {
@@ -62,8 +64,9 @@ sc::detail::FromStateIn<sc::RefSCMatrix>::get(sc::RefSCMatrix& t, StateIn& si, i
   }
 }
 
+template<>
 void
-sc::detail::FromStateIn<sc::RefSymmSCMatrix>::get(sc::RefSymmSCMatrix& t, StateIn& si, int& count) {
+sc::FromStateIn<sc::RefSymmSCMatrix>(sc::RefSymmSCMatrix& t, StateIn& si, int& count) {
   int nonnull;
   count += si.get(nonnull);
   if (nonnull) {
@@ -76,8 +79,9 @@ sc::detail::FromStateIn<sc::RefSymmSCMatrix>::get(sc::RefSymmSCMatrix& t, StateI
   }
 }
 
+template<>
 void
-sc::detail::FromStateIn<sc::RefDiagSCMatrix>::get(sc::RefDiagSCMatrix& t, StateIn& si, int& count) {
+sc::FromStateIn<sc::RefDiagSCMatrix>(sc::RefDiagSCMatrix& t, StateIn& si, int& count) {
   int nonnull;
   count += si.get(nonnull);
   if (nonnull) {
@@ -90,8 +94,9 @@ sc::detail::FromStateIn<sc::RefDiagSCMatrix>::get(sc::RefDiagSCMatrix& t, StateI
   }
 }
 
+template<>
 void
-sc::detail::ToStateOut<sc::RefSCVector>::put(const sc::RefSCVector& t, StateOut& so, int& count) {
+sc::ToStateOut<sc::RefSCVector>(const sc::RefSCVector& t, StateOut& so, int& count) {
   if (t.null())
     count += so.put(0);
   else {
@@ -101,8 +106,9 @@ sc::detail::ToStateOut<sc::RefSCVector>::put(const sc::RefSCVector& t, StateOut&
   }
 }
 
+template<>
 void
-sc::detail::ToStateOut<sc::RefSCMatrix>::put(const sc::RefSCMatrix& t, StateOut& so, int& count) {
+sc::ToStateOut<sc::RefSCMatrix>(const sc::RefSCMatrix& t, StateOut& so, int& count) {
   if (t.null())
     count += so.put(0);
   else {
@@ -113,8 +119,9 @@ sc::detail::ToStateOut<sc::RefSCMatrix>::put(const sc::RefSCMatrix& t, StateOut&
   }
 }
 
+template<>
 void
-sc::detail::ToStateOut<sc::RefSymmSCMatrix>::put(const sc::RefSymmSCMatrix& t, StateOut& so, int& count) {
+sc::ToStateOut<sc::RefSymmSCMatrix>(const sc::RefSymmSCMatrix& t, StateOut& so, int& count) {
   if (t.null())
     count += so.put(0);
   else {
@@ -124,8 +131,9 @@ sc::detail::ToStateOut<sc::RefSymmSCMatrix>::put(const sc::RefSymmSCMatrix& t, S
   }
 }
 
+template<>
 void
-sc::detail::ToStateOut<sc::RefDiagSCMatrix>::put(const sc::RefDiagSCMatrix& t, StateOut& so, int& count) {
+sc::ToStateOut<sc::RefDiagSCMatrix>(const sc::RefDiagSCMatrix& t, StateOut& so, int& count) {
   if (t.null())
     count += so.put(0);
   else {

@@ -33,7 +33,7 @@ add_custom_target(
 
 add_custom_target(
   check
-  DEPENDS check0 check1 check2
+  DEPENDS check0
 )
 
 # checking

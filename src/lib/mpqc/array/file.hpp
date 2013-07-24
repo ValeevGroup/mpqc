@@ -44,13 +44,14 @@ namespace detail {
     };
 
 #ifdef H5_HAVE_PARALLEL
+#if 0 // TODO Andrey, do we need this?
     template<typename T>
-    struct array_parallel_impl<T, ARRAY_FILE>
+    struct array_parallel_impl<T, array_file_driver>
 	: ArrayBase, boost::noncopyable
     {
-	array_driver(const std::string &name,
+        array_parallel_impl(const std::string &name,
 		     const std::vector<size_t> &dims,
-		     Comm comm)
+		     mpi::Comm comm)
             : ArrayBase(dims)
         {
 	    File file = (comm == MPI_COMM_NULL) ?
@@ -67,6 +68,7 @@ namespace detail {
     private:
 	File::Dataset<T> dataset_;
     };
+#endif
 #endif // H5_HAVE_PARALLEL
 
 

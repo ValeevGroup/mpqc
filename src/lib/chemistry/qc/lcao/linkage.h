@@ -30,8 +30,8 @@
 
 namespace sc {
 
-static ForceLink<DensityFitting> lcao_force_link_a_;
-static ForceLink<SuperpositionOfAtomicDensities> lcao_force_link_b_;
+ForceLink<DensityFitting> lcao_force_link_a_;
+ForceLink<SuperpositionOfAtomicDensities> lcao_force_link_b_;
 
 }
 

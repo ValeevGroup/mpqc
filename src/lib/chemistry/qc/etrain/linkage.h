@@ -32,7 +32,7 @@
 
 namespace sc {
 
-  static ForceLink<ETraIn> etrain_force_link_a_;
+  ForceLink<ETraIn> etrain_force_link_a_;
 
 } // end of namespace sc
 

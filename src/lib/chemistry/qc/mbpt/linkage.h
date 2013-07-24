@@ -35,8 +35,8 @@
 
 namespace sc {
 
-static ForceLink<MBPT2> mbpt_force_link_a_;
-static ForceLink<MP2BasisExtrap> mbpt_force_link_b_;
+ForceLink<MBPT2> mbpt_force_link_a_;
+ForceLink<MP2BasisExtrap> mbpt_force_link_b_;
 
 }
 

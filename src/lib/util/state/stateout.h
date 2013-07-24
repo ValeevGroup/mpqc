@@ -36,10 +36,17 @@
 
 namespace sc {
 
-  namespace detail {
-    /// helper template to save to StateOut
-    template <typename T> struct ToStateOut;
-  }
+  /** Helps to write user-defined types to StateOut. Overload/specialize
+   * this function for each user-defined type not derived from SavableState
+   * (if your class is derived from SavableState simply implement its save_data_state()
+   * member).
+   *
+   * @tparam T type of an object
+   * @param t an object to serialize to StateIn
+   * @param so the StateOut object
+   * @param count number of bytes written
+   */
+  template <typename T> void ToStateOut(const T& t, StateOut& so, int& count);
 
 class StateOutData {
   public:
@@ -116,6 +123,7 @@ class StateOut: public DescribedClass {
     virtual int put(bool r);
     virtual int put(float r);
     virtual int put(double r);
+
     //@}
     /** @name StateOut::put(array)
      *  Write the given array data.  Size information is also saved.  The
@@ -153,7 +161,7 @@ class StateOut: public DescribedClass {
       const size_t l = v.size();
       int r = put(l);
       for (typename Container<T,A>::const_iterator i=v.begin(); i!=v.end(); ++i)
-        detail::ToStateOut<T>::put(*i,*this,r);
+        ToStateOut(*i,*this,r);
       return r;
     }
 
@@ -163,7 +171,7 @@ class StateOut: public DescribedClass {
       const size_t l = v.size();
       int r = put(l);
       for (typename std::vector<T,A>::const_iterator i=v.begin(); i!=v.end(); ++i)
-        detail::ToStateOut<T>::put(*i,*this,r);
+        ToStateOut(*i,*this,r);
       return r;
     }
 
@@ -173,7 +181,7 @@ class StateOut: public DescribedClass {
       const size_t l = s.size();
       int r = put(l);
       for (typename std::set<Key,Compare,Alloc>::const_iterator i=s.begin(); i!=s.end(); ++i)
-        detail::ToStateOut<Key>::put(*i,*this,r);
+        ToStateOut(*i,*this,r);
       return r;
     }
 
@@ -197,8 +205,8 @@ class StateOut: public DescribedClass {
     template <typename L, typename R>
     int put(const std::pair<L,R>& v) {
       int s = 0;
-      detail::ToStateOut<L>::put(v.first,*this,s);
-      detail::ToStateOut<R>::put(v.second,*this,s);
+      ToStateOut(v.first,*this,s);
+      ToStateOut(v.second,*this,s);
       return s;
     }
     //@}
@@ -236,43 +244,17 @@ class StateOut: public DescribedClass {
     virtual int seekable();
   };
 
-  class RefSCVector;
-  class RefSCMatrix;
-  class RefSymmSCMatrix;
-  class RefDiagSCMatrix;
-
-  namespace detail {
-    /// helper template to save to StateOut
-    template <typename T> struct ToStateOut {
-      static void put(const T& t, StateOut& so, int& count) {
-        count += so.put(t);
-      }
-    };
-    /// specialization for Ref<SavableState>
-    template <typename T> struct ToStateOut< sc::Ref<T> > {
-      static void put(const Ref<T>& t, StateOut& so, int& count) {
-        SavableState::save_state(t.pointer(),so);
-      }
-    };
-    /// specialization for RefSCVector
-    template <> struct ToStateOut<sc::RefSCVector> {
-      static void put(const sc::RefSCVector& t, StateOut& so, int& count);
-    };
-    /// specialization for RefSCMatrix
-    template <> struct ToStateOut<sc::RefSCMatrix> {
-      static void put(const sc::RefSCMatrix& t, StateOut& so, int& count);
-    };
-    /// specialization for RefSymmSCMatrix
-    template <> struct ToStateOut<sc::RefSymmSCMatrix> {
-      static void put(const sc::RefSymmSCMatrix& t, StateOut& so, int& count);
-    };
-    /// specialization for RefDiagSCMatrix
-    template <> struct ToStateOut<sc::RefDiagSCMatrix> {
-      static void put(const sc::RefDiagSCMatrix& t, StateOut& so, int& count);
-    };
+    /// helper class to save to StateOut
+  template <typename T> void ToStateOut(const T& t, StateOut& so, int& count){
+    count += so.put(t);
   }
 
-}
+  /// specialization for Ref<SavableState>
+  template <typename T> void ToStateOut(const Ref<T>& t, StateOut& so, int& count) {
+    SavableState::save_state(t.pointer(),so);
+  }
+
+} // namespace sc
 
 #endif
 

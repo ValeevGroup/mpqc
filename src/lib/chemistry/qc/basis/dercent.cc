@@ -31,42 +31,27 @@ using namespace sc;
 
 DerivCenters::DerivCenters()
 {
+  centers_.reserve(4); // at most have 4-center integrals
   clear();
 }
 
 void
 DerivCenters::clear()
 {
-  ncenter_ = 0;
-  omitted_center_ = -1;
-  omitted_atom_ = -1;
+  centers_.resize(0);
+  omitted_center_ = std::make_pair(-1,-1);
 }
 
 void
 DerivCenters::add_center(int center, int atom)
 {
-  center_[ncenter_] = center;
-  atom_[ncenter_] = atom;
-  ncenter_++;
+  centers_.push_back(std::make_pair(center, atom));
 }
 
 void
 DerivCenters::add_omitted(int center, int atom)
 {
-  omitted_center_ = center;
-  omitted_atom_ = atom;
-}
-
-void
-DerivCenters::add_center(int center, const Ref<GaussianBasisSet> &b, int shell)
-{
-  add_center(center, b->shell_to_center(shell));
-}
-
-void
-DerivCenters::add_omitted(int center, const Ref<GaussianBasisSet> &b, int shell)
-{
-  add_omitted(center, b->shell_to_center(shell));
+  omitted_center_ = std::make_pair(center, atom);
 }
 
 /////////////////////////////////////////////////////////////////////////////

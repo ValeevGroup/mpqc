@@ -254,6 +254,7 @@ void contract34(Ref<DistArray4>& braket,
                 unsigned int intsetidx_ket,
                 int debug = 0);
 
+class RefSCMatrix;
 
 /// contracts ijxy("bra") with klxy ("ket", a RefSCMatrix) to produce ijkl ("braket"); The last two arguments
 /// definie the dimension for the resultant DistArray4 object, since a RefSCMatrix itself only gives the the product of dimensions

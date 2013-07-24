@@ -35,9 +35,9 @@
 
 namespace sc {
 
-static ForceLink<DistArray4_MemoryGrp> math_distarray4_force_link_a_;
-static ForceLink<DistArray4_Node0File> math_distarray4_force_link_b_;
-static ForceLink<DistArray4_MPIIO>     math_distarray4_force_link_c_;
+ForceLink<DistArray4_MemoryGrp> math_distarray4_force_link_a_;
+ForceLink<DistArray4_Node0File> math_distarray4_force_link_b_;
+ForceLink<DistArray4_MPIIO>     math_distarray4_force_link_c_;
 
 }
 

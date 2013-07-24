@@ -536,7 +536,8 @@ class TwoBodyTwoCenterIntIter : public RefCount {
 // //////////////////////////////////////////////////////////////////////////
 
 /** This is an abstract base type for classes that
-    compute integrals involving two electrons and four basis functions.
+    compute geometric derivatives of the integrals
+    involving two electrons and four basis functions.
  */
 class TwoBodyDerivInt : public RefCount {
 
@@ -598,14 +599,36 @@ class TwoBodyDerivInt : public RefCount {
     /// Return the basis set on center four.
     Ref<GaussianBasisSet> basis4();
 
-    /** The computed shell integrals will be put in the buffer returned
-        by this member.
+    /** The computed shell-set of integrals will be put in the buffer returned by
+        this member. The integrals are are returned as an array with derivative
+        index as the "fast" (innermost) dimension.
+        E.g. derivatives of a (pp|pp) shell would be stored like this:
+        d (p_0 p_0|p_0 p_0) / d R_0x (derivative with respect to x coordinate of atom 0;
+                               atom 0 is provided as argument to compute_shell or returned in DerivCenters)
+        d (p_0 p_0|p_0 p_0) / d R_0y
+        d (p_0 p_0|p_0 p_0) / d R_0z
+        d (p_0 p_0|p_0 p_0) / d R_1x (missing if derivatives with respect to one atom only)
+        ... (the rest of geometric derivatives of (p_0 p_0|p_0 p_0))
+        d (p_0 p_0|p_0 p_1) / d R_0x
+        ... etc.
+
+        where p_0, p_1, p_2 are the components of p shell (spherical or Cartesian), etc.
+
+        The number of computed derivatives is 3 times DerivCenters::n() for the object returned
+        by TwoBodyIntDeriv::compute_shell().
     */
     const double * buffer() const;
 
-    /** Given for shell indices, this will cause the integral buffer
-        to be filled in. */
-    virtual void compute_shell(int,int,int,int,DerivCenters&) = 0;
+    /**
+     * Given for shell indices, this will cause the derivative integral shell set to be computed
+     * @param[in] sh0 shell index for bra function of electron 1
+     * @param[in] sh1 shell index for ket function of electron 1
+     * @param[in] sh2 shell index for bra function of electron 2
+     * @param[in] sh3 shell index for ket function of electron 2
+     * @param[out] dercenters returns the information about centers the derivatives are computed for
+     */
+    virtual void compute_shell(int sh0, int sh1, int sh2, int sh3,
+                               DerivCenters& dercenters) = 0;
 
     /** Return log base 2 of the maximum magnitude of any integral in a
         shell block.  An index of -1 for any argument indicates any shell.  */

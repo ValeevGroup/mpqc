@@ -35,28 +35,28 @@
 #include <util/group/memproc.h>
 
 namespace sc {
-static ForceLink<ProcMessageGrp> group_force_link_0_;
-static ForceLink<ProcMemoryGrp> group_force_link_1_;
+ForceLink<ProcMessageGrp> group_force_link_0_;
+ForceLink<ProcMemoryGrp> group_force_link_1_;
 }
 
 # if defined(HAVE_PTHREAD)
 #   include <util/group/thpthd.h>
 namespace sc {
-    static ForceLink<PthreadThreadGrp> group_force_link_c_;
+    ForceLink<PthreadThreadGrp> group_force_link_c_;
 }
 # endif
 
 #if defined(HAVE_MPI)
 #   include <util/group/memmtmpi.h>
 namespace sc {
-    static ForceLink<MTMPIMemoryGrp> group_force_link_g_;
+    ForceLink<MTMPIMemoryGrp> group_force_link_g_;
 }
 #endif
 
 #if defined(HAVE_ARMCI)
 #   include <util/group/memarmci.h>
 namespace sc {
-    static ForceLink<ARMCIMemoryGrp> group_force_link_h_;
+    ForceLink<ARMCIMemoryGrp> group_force_link_h_;
 }
 #endif
 

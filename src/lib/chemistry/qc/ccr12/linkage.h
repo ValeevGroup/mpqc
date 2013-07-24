@@ -40,12 +40,12 @@
 namespace sc {
 
   namespace ccr12 {
-    static ForceLink<CCSD> fl1_;
-    static ForceLink<CCSDT> fl2_;
-    static ForceLink<CCSDTQ> fl3_;
+    ForceLink<CCSD> fl1_;
+    ForceLink<CCSDT> fl2_;
+    ForceLink<CCSDTQ> fl3_;
 
-    static ForceLink<CCSD_R12> fl4_;
-    static ForceLink<CCSDPR12> fl5_;
+    ForceLink<CCSD_R12> fl4_;
+    ForceLink<CCSDPR12> fl5_;
   }
 
 }

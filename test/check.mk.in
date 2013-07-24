@@ -54,22 +54,19 @@ endif
 
 # MP2-R12 tests are only run when 1) appropriate factories are specified via MPQCRUN_ARGS
 # and 2) MPQC was configured with MP2-R12 capabilities
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_MBPTR12),yes)
+ifeq (@MAKE_ASSUME_R12@,yes)
 ifeq ($(MPQCRUN_INTEGRAL),cints)
 RUN_MBPTR12=yes
 endif
 ifeq ($(MPQCRUN_INTEGRAL),libint2)
 RUN_MBPTF12=yes
 endif
-endif
-
 # CC-R12 tests are only run when the CC-R12 code has been configured
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_CCR12),yes)
 RUN_CCR12=yes
 endif
 
 # PSI tests are only run when MPQC-PSI interface was configured
-ifeq ($(HAVE_SC_SRC_LIB_CHEMISTRY_QC_PSI),yes)
+ifeq (@MAKE_ASSUME_PSI@,yes)
 RUN_PSI=yes
 endif
 
@@ -100,7 +97,7 @@ ifeq ($(RUN_MBPTF12),yes)
     mp2f12_ch2mp2cabssingles00ccpvdzccpvdzf12cabsc2v.in \
     mp2f12_hmp2cabssingles00ccpvqz.in
   MP2CABSSINGLESINPUTS := $(MP2CABSSINGLESINPUTS:%=$(INP)/%)
-ifeq ($(HAVE_LIBINT2_G12_T1G12),yes)
+ifeq (@MAKE_ASSUME_LIBINT2_SUPPORTS_T1G12@,yes)
   MP2F12INPUTS = mp2f12_mp2f12slashaprime00ccpvdzaugccpvdzc2v.in \
     mp2f12_mp2f12slashaprime10ccpvdzaugccpvdzc2v.in \
     mp2f12_mp2f12slashaprimeprime00ccpvdzaugccpvdzc2v.in \
@@ -334,7 +331,7 @@ INPUTINPUTS := $(INPUTINPUTS:%=$(INP)/input_%)
 # just cases that these can run
 CINTSFILTER = $(INP)/mbpt_mp2r12% $(INP)/methods_mp2r12% $(INP)/mp2r12% $(INP)/psiccsdpt2r12%
 # use libint2 configuration to determine which MP2-F12 set to run
-ifeq ($(HAVE_LIBINT2_G12_T1G12),yes)
+ifeq (@MAKE_ASSUME_LIBINT2_SUPPORTS_T1G12@,yes)
 LIBINT2FILTER = $(INP)/mbpt_mp2f12% $(INP)/methods_mp2f12% \
 $(INP)/mp2f12_mp2f12slasha% $(INP)/mp2f12_mp2f12slashb%
 else

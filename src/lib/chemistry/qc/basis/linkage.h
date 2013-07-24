@@ -35,10 +35,10 @@
 
 namespace sc {
 
-static ForceLink<UncontractedBasisSet> basis_force_link_a_;
-static ForceLink<SplitBasisSet> basis_force_link_b_;
-static ForceLink<LSelectBasisSet> basis_force_link_c_;
-static ForceLink<UnionBasisSet> basis_force_link_d_;
+ForceLink<UncontractedBasisSet> basis_force_link_a_;
+ForceLink<SplitBasisSet> basis_force_link_b_;
+ForceLink<LSelectBasisSet> basis_force_link_c_;
+ForceLink<UnionBasisSet> basis_force_link_d_;
 
 }
 

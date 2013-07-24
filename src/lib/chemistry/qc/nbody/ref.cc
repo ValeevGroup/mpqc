@@ -1634,8 +1634,8 @@ Extern_RefWavefunction::Extern_RefWavefunction(const Ref<WavefunctionWorld>& wor
 
 Extern_RefWavefunction::Extern_RefWavefunction(StateIn& si) : RefWavefunction(si) {
   int c = 0;
-  detail::FromStateIn<RefSymmSCMatrix>::get(rdm_[Alpha], si, c);
-  detail::FromStateIn<RefSymmSCMatrix>::get(rdm_[Beta], si, c);
+  FromStateIn(rdm_[Alpha], si, c);
+  FromStateIn(rdm_[Beta], si, c);
   si.get(nfzc_);
   si.get(nfzv_);
   si.get(omit_uocc_);
@@ -1648,8 +1648,8 @@ Extern_RefWavefunction::~Extern_RefWavefunction() {
 void
 Extern_RefWavefunction::save_data_state(StateOut& so) {
   int c = 0;
-  detail::ToStateOut<RefSymmSCMatrix>::put(rdm_[Alpha], so, c);
-  detail::ToStateOut<RefSymmSCMatrix>::put(rdm_[Alpha], so, c);
+  ToStateOut(rdm_[Alpha], so, c);
+  ToStateOut(rdm_[Alpha], so, c);
   so.put(nfzc_);
   so.put(nfzv_);
   so.put(omit_uocc_);

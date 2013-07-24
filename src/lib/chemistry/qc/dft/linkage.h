@@ -38,33 +38,33 @@
 
 namespace sc {
 
-static ForceLink<RadialAngularIntegrator> dft_force_link_a_;
-static ForceLink<NElFunctional> dft_force_link_b_;
-static ForceLink<XalphaFunctional> dft_force_link_c_;
-static ForceLink<SlaterXFunctional> dft_force_link_d_;
-static ForceLink<Becke88XFunctional> dft_force_link_e_;
-static ForceLink<LYPCFunctional> dft_force_link_f_;
-static ForceLink<CLKS> dft_force_link_h_;
-static ForceLink<UKS> dft_force_link_i_;
-static ForceLink<VWN5LCFunctional> dft_force_link_j_;
-static ForceLink<VWN3LCFunctional> dft_force_link_k_;
-static ForceLink<PW92LCFunctional> dft_force_link_l_;
-static ForceLink<PBEXFunctional> dft_force_link_m_;
-static ForceLink<PBECFunctional> dft_force_link_n_;
-static ForceLink<P86CFunctional> dft_force_link_o_;
-static ForceLink<PW91XFunctional> dft_force_link_p_;
-static ForceLink<PW86XFunctional> dft_force_link_q_;
-static ForceLink<PZ81LCFunctional> dft_force_link_r_;
-static ForceLink<G96XFunctional> dft_force_link_s_;
-static ForceLink<VWN1LCFunctional> dft_force_link_t_;
-static ForceLink<VWN2LCFunctional> dft_force_link_u_;
-static ForceLink<VWN4LCFunctional> dft_force_link_v_;
-static ForceLink<PW91CFunctional> dft_force_link_w_;
-static ForceLink<HSOSKS> dft_force_link_x_;
-static ForceLink<VWNLCFunctional> dft_force_link_y_;
-static ForceLink<NewP86CFunctional> dft_force_link_z_;
-static ForceLink<AM05Functional> dft_force_link_aa_;
-static ForceLink<BEMSolventH> dft_force_link_ab_;
+ForceLink<RadialAngularIntegrator> dft_force_link_a_;
+ForceLink<NElFunctional> dft_force_link_b_;
+ForceLink<XalphaFunctional> dft_force_link_c_;
+ForceLink<SlaterXFunctional> dft_force_link_d_;
+ForceLink<Becke88XFunctional> dft_force_link_e_;
+ForceLink<LYPCFunctional> dft_force_link_f_;
+ForceLink<CLKS> dft_force_link_h_;
+ForceLink<UKS> dft_force_link_i_;
+ForceLink<VWN5LCFunctional> dft_force_link_j_;
+ForceLink<VWN3LCFunctional> dft_force_link_k_;
+ForceLink<PW92LCFunctional> dft_force_link_l_;
+ForceLink<PBEXFunctional> dft_force_link_m_;
+ForceLink<PBECFunctional> dft_force_link_n_;
+ForceLink<P86CFunctional> dft_force_link_o_;
+ForceLink<PW91XFunctional> dft_force_link_p_;
+ForceLink<PW86XFunctional> dft_force_link_q_;
+ForceLink<PZ81LCFunctional> dft_force_link_r_;
+ForceLink<G96XFunctional> dft_force_link_s_;
+ForceLink<VWN1LCFunctional> dft_force_link_t_;
+ForceLink<VWN2LCFunctional> dft_force_link_u_;
+ForceLink<VWN4LCFunctional> dft_force_link_v_;
+ForceLink<PW91CFunctional> dft_force_link_w_;
+ForceLink<HSOSKS> dft_force_link_x_;
+ForceLink<VWNLCFunctional> dft_force_link_y_;
+ForceLink<NewP86CFunctional> dft_force_link_z_;
+ForceLink<AM05Functional> dft_force_link_aa_;
+ForceLink<BEMSolventH> dft_force_link_ab_;
 
 }
 

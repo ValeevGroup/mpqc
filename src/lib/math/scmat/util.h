@@ -7,6 +7,8 @@
 
 namespace sc {
 
+  class RefSCMatrix;
+
   void
   scmat_perform_op_on_blocks(const Ref<SCElementOp>& op,
                              const Ref<SCMatrixBlockList> &blocklist);

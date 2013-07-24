@@ -111,7 +111,6 @@ class OneBodyDerivIntV3 : public OneBodyDerivInt {
                       const Ref<GaussianBasisSet>&,
                       IntegralFunction);
     ~OneBodyDerivIntV3();
-    void compute_shell(int,int,DerivCenters&);
     void compute_shell(int,int,int);
 };
 

@@ -19,7 +19,7 @@ if (PSI3)
       find_library(_libpath ${_lib}
                    PATHS ${PSI3}/lib NO_DEFAULT_PATH)
     endif()
-    message(STATUS "Found ${_lib}: ${_libpath}")
+    #message(STATUS "Found ${_lib}: ${_libpath}")
     if (_libpath)
       list(APPEND PSI3_LIBRARIES ${_libpath})
     endif()

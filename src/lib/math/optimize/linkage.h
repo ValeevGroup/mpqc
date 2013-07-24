@@ -40,14 +40,14 @@
 
 namespace sc {
 
-static ForceLink<QNewtonOpt> optimize_force_link_a_;
-static ForceLink<GDIISOpt> optimize_force_link_b_;
-static ForceLink<EFCOpt> optimize_force_link_c_;
-static ForceLink<BFGSUpdate> optimize_force_link_d_;
-static ForceLink<PowellUpdate> optimize_force_link_e_;
-static ForceLink<SteepestDescentOpt> optimize_force_link_f_;
-static ForceLink<NewtonOpt> optimize_force_link_g_;
-static ForceLink<MCSearch> optimize_force_link_h_;
+ForceLink<QNewtonOpt> optimize_force_link_a_;
+ForceLink<GDIISOpt> optimize_force_link_b_;
+ForceLink<EFCOpt> optimize_force_link_c_;
+ForceLink<BFGSUpdate> optimize_force_link_d_;
+ForceLink<PowellUpdate> optimize_force_link_e_;
+ForceLink<SteepestDescentOpt> optimize_force_link_f_;
+ForceLink<NewtonOpt> optimize_force_link_g_;
+ForceLink<MCSearch> optimize_force_link_h_;
 
 }
 

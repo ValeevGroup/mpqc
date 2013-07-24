@@ -30,7 +30,7 @@
 
 namespace sc {
 
-static ForceLink<LMP2> lmp2_force_link_a_;
+ForceLink<LMP2> lmp2_force_link_a_;
 
 }
 

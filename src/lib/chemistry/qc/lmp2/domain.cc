@@ -37,7 +37,6 @@
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/molecule/energy.h>
-#include <chemistry/qc/scf/linkage.h>
 
 #include <chemistry/qc/lmp2/pop_local.h>
 #include <chemistry/qc/lmp2/domain.h>

@@ -33,7 +33,7 @@
 
 namespace sc {
 
-  static ForceLink<CI> ci_force_link_a_;
+  ForceLink<CI> ci_force_link_a_;
 
 }
 

@@ -33,7 +33,7 @@
 
 namespace sc {
 
-static ForceLink<IntegralLibint2> libint2_force_link_a_;
+ForceLink<IntegralLibint2> libint2_force_link_a_;
 
 }
 

@@ -47,12 +47,12 @@
 
 namespace sc {
 
-static ForceLink<CLHF> scf_force_link_a_;
-static ForceLink<HSOSHF> scf_force_link_b_;
-static ForceLink<OSSHF> scf_force_link_c_;
-static ForceLink<TCHF> scf_force_link_d_;
-static ForceLink<UHF> scf_force_link_e_;
-static ForceLink<FockBuildCLHF> scf_force_link_f_;
+ForceLink<CLHF> scf_force_link_a_;
+ForceLink<HSOSHF> scf_force_link_b_;
+ForceLink<OSSHF> scf_force_link_c_;
+ForceLink<TCHF> scf_force_link_d_;
+ForceLink<UHF> scf_force_link_e_;
+ForceLink<FockBuildCLHF> scf_force_link_f_;
 
 }
 

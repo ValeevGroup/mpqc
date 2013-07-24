@@ -32,7 +32,7 @@
 
 namespace sc {
 
-static ForceLink<SavableStateProxy,const Ref<KeyVal> &> state_force_link_a_;
+ForceLink<SavableStateProxy,const Ref<KeyVal> &> state_force_link_a_;
 
 }
 

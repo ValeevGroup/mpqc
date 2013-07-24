@@ -35,8 +35,8 @@
 
 namespace sc {
 
-static ForceLink<ReplSCMatrixKit> math_scmat_force_link_a_;
-static ForceLink<DistSCMatrixKit> math_scmat_force_link_b_;
+ForceLink<ReplSCMatrixKit> math_scmat_force_link_a_;
+ForceLink<DistSCMatrixKit> math_scmat_force_link_b_;
 
 }
 

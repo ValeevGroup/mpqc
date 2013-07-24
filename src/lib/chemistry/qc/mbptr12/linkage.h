@@ -37,9 +37,9 @@
 
 namespace sc {
 
-static ForceLink<MBPT2_R12> mbptr12_force_link_a_;
-static ForceLink<PT2R12> mbptr12_force_link_b_;
-static ForceLink<SpinOrbitalPT2R12> mbptr12_force_link_c_;
+ForceLink<MBPT2_R12> mbptr12_force_link_a_;
+ForceLink<PT2R12> mbptr12_force_link_b_;
+ForceLink<SpinOrbitalPT2R12> mbptr12_force_link_c_;
 
 }
 

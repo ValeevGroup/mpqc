@@ -33,8 +33,8 @@
 
 namespace sc {
 
-    static ForceLink<ManyBodyWavefunction> nbody_force_link_a_;
-    static ForceLink<SD_RefWavefunction> nbody_force_link_b_;
+    ForceLink<ManyBodyWavefunction> nbody_force_link_a_;
+    ForceLink<SD_RefWavefunction> nbody_force_link_b_;
 
 }
 

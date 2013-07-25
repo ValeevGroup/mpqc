@@ -1165,7 +1165,7 @@ GaussianBasisSet::init(
   shell_to_primitive_.resize(nshell_);
   center_to_nshell_.resize(ncenter_);
   center_to_nbasis_.resize(ncenter_);
-  center_to_shell_.resize(nshell_);
+  center_to_shell_.resize(ncenter_);
 
   std::fill(center_to_shell_.begin(), center_to_shell_.end(), -1);
   std::fill(center_to_nshell_.begin(), center_to_nshell_.end(), 0);

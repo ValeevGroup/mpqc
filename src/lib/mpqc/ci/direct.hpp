@@ -1,6 +1,8 @@
 #ifndef MPQC_CI_DIRECT_HPP
 #define MPQC_CI_DIRECT_HPP
 
+#include <util/misc/formio.h>
+
 //#define MPQC_PROFILE_ENABLE
 #include "mpqc/utility/profile.hpp"
 
@@ -264,8 +266,11 @@ namespace mpqc {
           if (comm.rank() == 0) {
             double dc = fabs(iters[it - 1].D - iters[it].D);
             double de = fabs(iters[it - 1].E - iters[it].E);
-            printf("CI iter. %i, E=%12.8f, del.E=%e, del.C=%e\n", (int) it,
-                   lambda[0] + ci.e_ref, de, dc);
+            sc::ExEnv::out0() << sc::indent << sc::scprintf("CI iter. %i, E=%12.8f, del.E=%e, del.C=%e\n",
+                                                            (int) it,
+                                                            lambda[0] + ci.e_ref,
+                                                            de,
+                                                            dc);
           }
 
           // preconditioner

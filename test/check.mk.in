@@ -306,6 +306,10 @@ hsoshf.in      osshf.in              qmmm1.in \
 qmmm2.in       clhfdk1.in            clhfdk2.in \
 clks_kmlyp.in  hsosks_kmlyp.in       uks_kmlyp.in
 
+ifeq (@MAKE_ASSUME_NEW_FEATURES_CI@,yes)
+  METHODSINPUTS += fci.in
+endif
+
 ifeq ($(RUN_MBPTR12),yes)
   METHODSINPUTS += \
     mp2r12ap_+gbc.in mp2r12ap_abs+.in \

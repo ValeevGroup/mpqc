@@ -3,6 +3,10 @@
 
 #include <chemistry/qc/nbody/nbwfn.h>
 
+//#define MPQC_PROFILE_ENABLE
+#include "mpqc/utility/profile.hpp"
+#include "mpqc/ci/ci.hpp"
+
 namespace sc {
 
   /**
@@ -41,7 +45,7 @@ namespace sc {
       Ref<KeyVal> kv_;
       std::vector<double> E_;
       static std::vector<double> compute(const Ref<RefWavefunction> &ref,
-                                         const Ref<KeyVal> &kv);
+                                         const mpqc::ci::Config& config);
   };
 
 }

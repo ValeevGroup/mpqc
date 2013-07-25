@@ -60,7 +60,27 @@ RefSymmSCMatrix CI::density() {
 }
 
 void CI::compute() {
-    E_ = CI::compute(ManyBodyWavefunction::refwfn(), this->kv_);
+
+  mpqc::ci::Config config;
+  {
+    size_t ne = refwfn()->nelectron();
+    size_t no = refwfn()->basis()->nbasis();
+    typedef KeyValValueint Int;
+    config.core = kv_->intvalue("core", Int(0));
+    config.orbitals = kv_->intvalue("orbitals", Int(no));
+    config.alpha = kv_->intvalue("alpha", Int((ne + 1) / 2));
+    config.beta = kv_->intvalue("beta", Int(ne / 2));
+    config.level = kv_->intvalue("level", Int(0));
+    config.max = kv_->intvalue("max", Int(30));
+    config.collapse = kv_->intvalue("collapse", Int(config.collapse));
+    config.cutoff = kv_->intvalue("cutoff", Int(config.cutoff));
+    config.block = kv_->intvalue("block", Int(config.block));
+    config.convergence = this->desired_value_accuracy();
+    config.e_ref = molecule()->nuclear_repulsion_energy();
+  }
+
+  E_ = CI::compute(ManyBodyWavefunction::refwfn(), config);
+  this->set_energy(E_.back() + config.e_ref);
 }
 
 int CI::value_implemented() const {

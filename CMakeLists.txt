@@ -57,6 +57,9 @@ include(CheckCXXSourceCompiles)
 
 if (MPQC_NEW_FEATURES)
   add_definitions(-DMPQC_NEW_FEATURES)
+  if (MPQC_NEW_FEATURES_CI)
+    add_definitions(-DMPQC_NEW_FEATURES_CI)
+  endif()
   
   # "some" C++11 features are required, check if we need a flag to turn on the support in the compiler
   # N.B. even though clang++ assumes c++11, it still needs the flag for some features (e.g. static_assert)

@@ -2,15 +2,6 @@
 #include "util/misc/consumableresources.h"
 #include <stdexcept>
 
-#ifndef MPQC_NEW_FEATURES
-
-std::vector<double> sc::CI::compute(const Ref<RefWavefunction> &wfn,
-                                    const Ref<KeyVal> &kv) {
-    throw std::runtime_error("sc::CI::compute: MPQC was compiled without new features");
-}
-
-#else // MPQC_NEW_FEATURES
-
 //#define MPQC_PROFILE_ENABLE
 #include "mpqc/utility/profile.hpp"
 
@@ -91,5 +82,3 @@ std::vector<double> sc::CI::compute(const Ref<RefWavefunction> &wfn,
     
  
 }
-
-#endif

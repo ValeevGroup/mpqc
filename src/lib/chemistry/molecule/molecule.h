@@ -326,6 +326,9 @@ class Molecule: public SavableState
     /// Return the charge of the atom.
     double charge(int iatom) const;
 
+    /// Return true if iatom is a simple point charge
+    bool is_Q(int iatom) const;
+
     /// Returns the total nuclear charge.
     double nuclear_charge() const;
 

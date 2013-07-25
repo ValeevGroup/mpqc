@@ -74,8 +74,8 @@ GaussianBasisSet::GaussianBasisSet(const Ref<KeyVal>&topkeyval)
 {
   molecule_ << topkeyval->describedclassvalue("molecule");
   if (molecule_.null()) {
-      ExEnv::err0() << indent << "GaussianBasisSet: no \"molecule\"\n";
-      abort();
+      throw InputError("GaussianBasisSet: no molecule specified",
+                       __FILE__, __LINE__, "molecule", 0);
     }
 
   // see if the user requests pure am or cartesian functions
@@ -425,12 +425,13 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
         }
       if (sbasisname.size() == 0) {
           if (name_.empty()) {
-              ExEnv::err0()
-                  << indent << "GaussianBasisSet: no basis name for atom "
+            std::ostringstream oss;
+            oss << indent << "GaussianBasisSet: no basis name for atom "
                   << iatom
                   << " (Z=" <<molecule->atominfo()->name(Z) << ")"
                   << std::endl;
-              abort();
+            throw ProgrammingError(oss.str().c_str(),
+                                   __FILE__, __LINE__);
             }
           sbasisname = name_;
         }
@@ -466,12 +467,14 @@ GaussianBasisSet::init(Ref<Molecule>&molecule,
         }
       if (sbasisname.size() == 0) {
           if (name_.empty()) {
-              ExEnv::err0()
+              std::ostringstream oss;
+              oss
                   << indent << "GaussianBasisSet: no basis name for atom "
                   << iatom
                   << " (Z=" <<molecule->atominfo()->name(Z) << ")"
                   << std::endl;
-              abort();
+              throw ProgrammingError(oss.str().c_str(),
+                                     __FILE__, __LINE__);
             }
           sbasisname = name_;
         }

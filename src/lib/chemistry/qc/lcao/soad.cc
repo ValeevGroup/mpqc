@@ -445,7 +445,9 @@ SuperpositionOfAtomicDensities::guess_minimal_density(const Ref<GaussianBasisSet
 
   const int ncenters = mol->natom();
   for (int center = 0; center < ncenters; ++center) {
-    if (mol->charge(center) != 0.0) { // using charge() instead of Z() to account for ghost atoms
+    // using charge() instead of Z() to account for ghost atoms
+    // skipping point charges also
+    if (mol->charge(center) != 0.0 && not mol->is_Q(center)) {
       const int Z = mol->Z(center);
       int nelectrons = Z;
 

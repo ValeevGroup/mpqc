@@ -5,10 +5,11 @@
  *      Author: drewlewis
  */
 
-#ifndef ATOM_CLASS_H_
-#define ATOM_CLASS_H_
+#ifndef ATOM_H
+#define ATOM_H
 
 #include <string>
+#include <util/state/stateio.h>
 
 namespace sc {
     class Atom {
@@ -50,7 +51,10 @@ namespace sc {
             r_[2] = z;
         }
 
-        Atom();
+        //Don't use this guy.
+        Atom() : Z_(-1), mass_(-1), have_charge_(-1), charge_(-1),
+                        have_fragment_(-1), fragment_(-1)
+        { r_[0] = -1; r_[1] = -1; r_[2] = -1; }
 
         double& xyz(int xyz){return r_[xyz];}
         const double& xyz(int xyz) const {return r_[xyz];}
@@ -74,8 +78,15 @@ namespace sc {
         void set_fragment(double fragment){fragment_ = fragment;}
 
         const char* label() const {return label_.c_str();}
-    };
+
+        friend void FromStateIn(Atom &a, StateIn &so, int &count);
+
+   };
+
+    void ToStateOut(const Atom &a, StateOut &so, int &count);
+
+    void FromStateIn(Atom &a, StateIn &so, int &count);
 }
 
 
-#endif /* ATOM_CLASS_H_ */
+#endif /* ATOM_H */

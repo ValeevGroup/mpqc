@@ -1,6 +1,7 @@
 # molecule library
 
 add_library(molecule OBJECT
+  atom.cc
   atominfo.cc
   bend.cc
   cartcoor.cc

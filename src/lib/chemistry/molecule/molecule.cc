@@ -608,6 +608,7 @@ void Molecule::save_data_state(StateOut& so)
 {
   so.put(include_q_);
   so.put(include_qq_);
+  so.put(atoms_);
   so.put(natoms_);
   SavableState::save_state(pg_.pointer(),so);
   SavableState::save_state(geometry_units_.pointer(),so);
@@ -655,6 +656,7 @@ Molecule::Molecule(StateIn& si):
     si.get(include_q_);
     si.get(include_qq_);
   }
+  si.get(atoms_);
   si.get(natoms_);
   pg_ << SavableState::restore_state(si);
   geometry_units_ << SavableState::restore_state(si);

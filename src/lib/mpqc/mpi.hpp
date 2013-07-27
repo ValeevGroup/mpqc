@@ -4,7 +4,7 @@
 #define OMPI_SKIP_MPICXX
 #define MPICH_SKIP_MPICXX
 
-#include "mpqc/config.h"
+#include "mpqc_config.h"
 
 #ifndef HAVE_MPI
 #error Missing MPI (HAVE_MPI not defined)

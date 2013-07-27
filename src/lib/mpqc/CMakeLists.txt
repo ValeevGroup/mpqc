@@ -1,10 +1,4 @@
 
-CONFIGURE_FILE(
-  ${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
-  ${CMAKE_CURRENT_SOURCE_DIR}/config.h
-)
-
-
 # set(CC_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/cc/integrals.cpp")
 # #file(GLOB CC_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/cc/*.cpp")
 # add_library(mpqc/cc OBJECT

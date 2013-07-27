@@ -210,7 +210,7 @@ lib/math/scmat/f77sym.h
 
 foreach(header ${fortran_headers})
   FortranCInterface_HEADER(
-    ${PROJECT_SOURCE_DIR}/src/${header}
+    ${PROJECT_BINARY_DIR}/src/${header}
     MACRO_NAMESPACE "FC_"
     SYMBOL_NAMESPACE "F77_"
     SYMBOLS ${FORTRAN_FUNCTIONS}

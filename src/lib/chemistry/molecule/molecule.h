@@ -129,10 +129,6 @@ class Molecule: public SavableState
     Ref<AtomInfo> atominfo_;
     Ref<PointGroup> pg_;
     Ref<Units> geometry_units_;
-    double **r_;
-    int *Z_;
-    double *charges_;
-    int *fragments_;
     double ref_origin_[3];   //< position of the origin of the reference coordinate system
 
     // symmetry equiv info
@@ -142,10 +138,6 @@ class Molecule: public SavableState
     int *atom_to_uniq_;
     void init_symmetry_info(double tol=0.5);
     void clear_symmetry_info();
-
-    // these are optional
-    double *mass_;
-    char **labels_;
 
     // The Z that represents a "Q" type atom.
     int q_Z_;

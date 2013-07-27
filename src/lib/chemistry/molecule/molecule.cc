@@ -50,7 +50,7 @@ static ClassDesc Molecule_cd(
   create<Molecule>, create<Molecule>, create<Molecule>);
 
 Molecule::Molecule():
-  natoms_(0), atoms_(), r_(0), Z_(0), charges_(0), mass_(0), labels_(0), fragments_(0)
+  natoms_(0), atoms_()
 {
   pg_ = new PointGroup;
   atominfo_ = new AtomInfo();
@@ -67,7 +67,7 @@ Molecule::Molecule():
 }
 
 Molecule::Molecule(const Molecule& mol):
- natoms_(0), atoms_(), r_(0), Z_(0), charges_(0), mass_(0), labels_(0), fragments_(0)
+ natoms_(0), atoms_()
 {
   nuniq_ = 0;
   equiv_ = 0;
@@ -85,26 +85,6 @@ Molecule::~Molecule()
 void
 Molecule::clear()
 {
-  if (r_) {
-      delete[] r_[0];
-      delete[] r_;
-      r_ = 0;
-    }
-  if (labels_) {
-      for (int i=0; i<natoms_; i++) {
-          delete[] labels_[i];
-        }
-      delete[] labels_;
-      labels_ = 0;
-    }
-  delete[] charges_;
-  charges_ = 0;
-  delete[] mass_;
-  mass_ = 0;
-  delete[] Z_;
-  Z_ = 0;
-  delete[] fragments_;
-  fragments_ = 0;
   std::fill(ref_origin_, ref_origin_+3, 0.0);
 
   clear_symmetry_info();
@@ -126,7 +106,7 @@ Molecule::throw_if_atom_duplicated(int begin, double tol)
 }
 
 Molecule::Molecule(const Ref<KeyVal>&input):
- natoms_(0), atoms_(), r_(0), Z_(0), charges_(0), mass_(0), labels_(0), fragments_(0)
+ natoms_(0), atoms_()
 {
   nuniq_ = 0;
   equiv_ = 0;
@@ -171,6 +151,8 @@ Molecule::Molecule(const Ref<KeyVal>&input):
       // we'll try to set up atom_labels such that different lengths are
       // possible
       int natom = input->count("geometry");
+      std::cout << "natom = " << natom << std::endl;
+      std::cout << "atoms = " << input->count("atoms") << std::endl;
       if (natom != input->count("atoms")) {
           throw InputError("size of \"geometry\" != size of \"atoms\"",
                            __FILE__, __LINE__, 0, 0, class_desc());
@@ -178,8 +160,7 @@ Molecule::Molecule(const Ref<KeyVal>&input):
 
       atoms_.reserve(natom);
 
-      int i;
-      for (i=0; i<natom; i++) {
+      for (int i=0; i<natom; i++) {
           int ghost = input->booleanvalue("ghost",i);
           double charge = input->doublevalue("charge",i);
           int have_charge = input->error() == KeyVal::OK;
@@ -254,39 +235,6 @@ Molecule::operator=(const Molecule& mol)
   natoms_ = mol.natoms_;
   atoms_ = mol.atoms_;
 
-  if (natoms_) {
-      if (mol.mass_) {
-          mass_ = new double[natoms_];
-          memcpy(mass_,mol.mass_,natoms_*sizeof(double));
-        }
-      if (mol.charges_) {
-          charges_ = new double[natoms_];
-          memcpy(charges_,mol.charges_,natoms_*sizeof(double));
-        }
-      if (mol.labels_) {
-          labels_ = new char *[natoms_];
-          for (int i=0; i<natoms_; i++) {
-              if (mol.labels_[i]) {
-                  labels_[i] = strcpy(new char[strlen(mol.labels_[i])+1],
-                                      mol.labels_[i]);
-                }
-              else labels_[i] = 0;
-            }
-        }
-      if (mol.fragments_) {
-        fragments_ = new int[natoms_];
-        memcpy(fragments_, mol.fragments_, natoms_*sizeof(int));
-        }
-      r_ = new double*[natoms_];
-      r_[0] = new double[natoms_*3];
-      for (int i=0; i<natoms_; i++) {
-          r_[i] = &(r_[0][i*3]);
-        }
-      memcpy(r_[0], mol.r_[0], natoms_*3*sizeof(double));
-      Z_ = new int[natoms_];
-      memcpy(Z_, mol.Z_, natoms_*sizeof(int));
-    }
-
   std::copy(mol.ref_origin_, mol.ref_origin_+3, ref_origin_);
 
   init_symmetry_info();
@@ -300,119 +248,10 @@ Molecule::add_atom(int Z,double x,double y,double z,
                    int have_charge, double charge,
                    int have_fragment, int fragment)
 {
-  int i;
-
   Atom temp(Z, x, y, z, label, mass, have_charge, charge, have_fragment,
             fragment);
+
   atoms_.push_back(temp);
-
-  // allocate new arrays
-  int *newZ = new int[natoms_+1];
-  double **newr = new double*[natoms_+1];
-  double *newr0 = new double[(natoms_+1)*3];
-  char **newlabels = 0;
-  if (label.size() > 0 || labels_) {
-      newlabels = new char*[natoms_+1];
-    }
-  double *newcharges = 0;
-  if (have_charge || charges_) {
-      newcharges = new double[natoms_+1];
-    }
-  double *newmass = 0;
-  if (mass_ || mass != 0.0) {
-      newmass = new double[natoms_+1];
-    }
-  int *newfragments = 0;
-  if (have_fragment || fragments_) {
-    newfragments = new int[natoms_+1];
-    }
-
-  // setup the r_ pointers
-  for (i=0; i<=natoms_; i++) {
-      newr[i] = &(newr0[i*3]);
-    }
-
-  // copy old data to new arrays
-  if (natoms_) {
-      memcpy(newZ,Z_,sizeof(int)*natoms_);
-      memcpy(newr0,r_[0],sizeof(double)*natoms_*3);
-      if (labels_) {
-          memcpy(newlabels,labels_,sizeof(char*)*natoms_);
-        }
-      else if (newlabels) {
-          memset(newlabels,0,sizeof(char*)*natoms_);
-        }
-      if (charges_) {
-          memcpy(newcharges,charges_,sizeof(double)*natoms_);
-        }
-      else if (newcharges) {
-          for (i=0; i<natoms_; i++) newcharges[i] = Z_[i];
-        }
-      if (mass_) {
-          memcpy(newmass,mass_,sizeof(double)*natoms_);
-        }
-      else if (newmass) {
-          memset(newmass,0,sizeof(double)*natoms_);
-        }
-      if (fragments_) {
-        memcpy(newfragments,fragments_,sizeof(int)*natoms_);
-        }
-      else if (newfragments) {
-        memset(newfragments,0,sizeof(int)*natoms_);
-        }
-    }
-
-  // delete old data
-  delete[] Z_;
-  if (r_) {
-      delete[] r_[0];
-      delete[] r_;
-    }
-  delete[] labels_;
-  delete[] charges_;
-  delete[] mass_;
-  delete[] fragments_;
-
-  // setup new pointers
-  Z_ = newZ;
-  r_ = newr;
-  labels_ = newlabels;
-  charges_ = newcharges;
-  mass_ = newmass;
-  fragments_ = newfragments;
-
-  // copy info for this atom into arrays
-  Z_[natoms_] = Z;
-  r_[natoms_][0] = x;
-  r_[natoms_][1] = y;
-  r_[natoms_][2] = z;
-  if (mass_) mass_[natoms_] = mass;
-  if (label.size() > 0) {
-      labels_[natoms_] = strcpy(new char[label.size()+1],label.c_str());
-    }
-  else if (labels_) {
-      labels_[natoms_] = 0;
-    }
-  if (have_charge) {
-      charges_[natoms_] = charge;
-    }
-  else if (charges_) {
-      charges_[natoms_] = Z;
-    }
-  if (have_fragment) {
-    fragments_[natoms_] = fragment;
-    }
-  else if (fragments_) {
-    fragments_[natoms_] = 0;
-    }
-
-  if (Z == q_Z_) {
-      q_atoms_.push_back(natoms_);
-    }
-  else {
-      non_q_atoms_.push_back(natoms_);
-    }
-
   natoms_++;
 
   throw_if_atom_duplicated(natoms_-1);
@@ -610,37 +449,17 @@ void Molecule::save_data_state(StateOut& so)
   so.put(include_qq_);
   so.put(atoms_);
   so.put(natoms_);
+
   SavableState::save_state(pg_.pointer(),so);
   SavableState::save_state(geometry_units_.pointer(),so);
   SavableState::save_state(atominfo_.pointer(),so);
-  if (natoms_) {
-      so.put(Z_, natoms_);
-      so.put_array_double(r_[0], natoms_*3);
-      so.put(charges_,natoms_);
-      so.put(fragments_,natoms_);
-    }
-  if (mass_) {
-      so.put(1);
-      so.put_array_double(mass_, natoms_);
-    }
-  else {
-      so.put(0);
-    }
-  if (labels_){
-      so.put(1);
-      for (int i=0; i<natoms_; i++) {
-          so.putstring(labels_[i]);
-        }
-    }
-  else {
-      so.put(0);
-    }
+
   so.put_array_double(ref_origin_,3);
 }
 
 Molecule::Molecule(StateIn& si):
   SavableState(si),
-  natoms_(0), atoms_(), r_(0), Z_(0), mass_(0), labels_(0)
+  natoms_(0), atoms_()
 {
   if (si.version(::class_desc<Molecule>()) < 4) {
       throw FileOperationFailed("cannot restore from old molecules",
@@ -662,40 +481,6 @@ Molecule::Molecule(StateIn& si):
   geometry_units_ << SavableState::restore_state(si);
   atominfo_ << SavableState::restore_state(si);
   q_Z_ = atominfo_->string_to_Z("Q");
-  if (natoms_) {
-      si.get(Z_);
-      r_ = new double*[natoms_];
-      r_[0] = new double[natoms_*3];
-      si.get_array_double(r_[0],natoms_*3);
-      for (int i=1; i<natoms_; i++) {
-          r_[i] = &(r_[0][i*3]);
-        }
-      if (si.version(::class_desc<Molecule>()) > 4) {
-          si.get(charges_);
-        }
-      else {
-          charges_ = 0;
-        }
-      if (si.version(::class_desc<Molecule>()) > 6) {
-          si.get(fragments_);
-        }
-      else {
-          fragments_ = 0;
-        }
-    }
-  int test;
-  si.get(test);
-  if (test) {
-      mass_ = new double[natoms_];
-      si.get_array_double(mass_, natoms_);
-    }
-  si.get(test);
-  if (test){
-      labels_ = new char*[natoms_];
-      for (int i=0; i<natoms_; i++) {
-          si.getstring(labels_[i]);
-        }
-    }
 
   if (si.version(::class_desc<Molecule>()) > 7) {
     si.get_array_double(ref_origin_, 3);
@@ -705,7 +490,7 @@ Molecule::Molecule(StateIn& si):
   }
 
   for (int i=0; i<natoms_; i++) {
-      if (Z_[i] == q_Z_) {
+      if (atoms_[i].Z() == q_Z_) {
           q_atoms_.push_back(i);
         }
       else {
@@ -1052,9 +837,6 @@ Molecule::translate(const double *r)
     atoms_[i].xyz(0) += r[0];
     atoms_[i].xyz(1) += r[1];
     atoms_[i].xyz(2) += r[2];
-    r_[i][0] += r[0];
-    r_[i][1] += r[1];
-    r_[i][2] += r[2];
   }
   for(int xyz=0; xyz<3; ++xyz) ref_origin_[xyz] += r[xyz];
 }
@@ -1512,7 +1294,7 @@ Molecule::print_pdb(ostream& os, char *title) const
   }
 
   for (i=0; i < natom(); i++) {
-    double at_rad_i = atominfo_->atomic_radius(Z_[i]);
+    double at_rad_i = atominfo_->atomic_radius(atoms_[i].Z());
     SCVector3 ai(r(i));
 
     os << scprintf("CONECT%5d",i+1);
@@ -1521,7 +1303,7 @@ Molecule::print_pdb(ostream& os, char *title) const
 
       if (j==i) continue;
 
-      double at_rad_j = atominfo_->atomic_radius(Z_[j]);
+      double at_rad_j = atominfo_->atomic_radius(atoms_[j].Z());
       SCVector3 aj(r(j));
 
       if (ai.dist(aj) < 1.1*(at_rad_i+at_rad_j))

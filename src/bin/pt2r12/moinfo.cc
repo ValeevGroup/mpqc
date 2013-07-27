@@ -924,9 +924,40 @@ ExternSpinFreeRDMTwo::rdm_m_1() const
   return rdm1_;
 }
 
+const Ref<DistArray4>&
+ExternSpinFreeRDMTwo::da4() const {
+  if (da4_.null()) {
 
+    const int n = orbs()->dim().n();
+    da4_ = make_distarray4(1, n, n, n, n);
+    da4_->activate();
 
+    BlockedSymmSCMatrix* blocked_scmat = dynamic_cast<BlockedSymmSCMatrix*>(scmat_.pointer());
 
+    std::vector<double> k1k2_buf(n*n);
+    int b12 = 0;
+    for(int b1=0; b1<n; ++b1) {
+      for(int b2=0; b2<n; ++b2, ++b12) {
+
+        if (blocked_scmat) {
+          const size_t n2 = n*n;
+          for(size_t k12=0; k12<n2; ++k12)
+            k1k2_buf[k12] = scmat_.get_element(b12, k12);
+        }
+        else {
+          RefSCVector b12_row = scmat_.get_row(b12);
+          b12_row.convert(&k1k2_buf[0]);
+        }
+
+        da4_->store_pair_block(b1, b2, 0, &(k1k2_buf[0]));
+      }
+    }
+
+    if (da4_->data_persistent()) da4_->deactivate();
+  }
+
+  return da4_;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 

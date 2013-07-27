@@ -143,7 +143,7 @@ namespace sc {
       /// density matrix
       RefSymmSCMatrix scmat() const { return scmat_; }
       /// density matrix in DistArray4 format
-      const Ref<DistArray4>& da4() const { return da4_; }
+      const Ref<DistArray4>& da4() const;
       Ref< SpinFreeRDM<One> > rdm_m_1() const;
 
     private:

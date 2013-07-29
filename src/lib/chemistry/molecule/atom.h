@@ -17,8 +17,8 @@ namespace sc {
     private:
         double r_[3];
         int Z_;
-        int have_charge_;
-        int have_fragment_;
+        bool have_charge_;
+        bool have_fragment_;
 
         // optional prameters.
         double charge_;
@@ -52,7 +52,7 @@ namespace sc {
         }
 
         //Don't use this guy.
-        Atom() : Z_(-1), mass_(-1), have_charge_(-1), charge_(-1),
+        Atom() : Z_(-1), mass_(-1), label_(), have_charge_(-1), charge_(-1),
                         have_fragment_(-1), fragment_(-1)
         { r_[0] = -1; r_[1] = -1; r_[2] = -1; }
 
@@ -67,17 +67,18 @@ namespace sc {
         double mass() const {return mass_;}
         void set_mass(double mass){mass_ = mass;}
 
-        int have_charge() const {return have_charge_;}
+        bool have_charge() const {return have_charge_;}
 
         double charge() const {return charge_;}
         void set_charge(double charge){charge_ = charge;}
 
-        int have_fragment() const {return have_fragment_;}
+        bool have_fragment() const {return have_fragment_;}
 
         double fragment() const {return fragment_;}
         void set_fragment(double fragment){fragment_ = fragment;}
 
-        const char* label() const {return label_.c_str();}
+        const std::string label() const {return label_;}
+        const char* label_c_str() const {return label_.c_str();}
 
         friend void FromStateIn(Atom &a, StateIn &so, int &count);
 

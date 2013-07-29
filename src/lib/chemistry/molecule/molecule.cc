@@ -151,9 +151,10 @@ Molecule::Molecule(const Ref<KeyVal>&input):
       // we'll try to set up atom_labels such that different lengths are
       // possible
       int natom = input->count("geometry");
-      std::cout << "natom = " << natom << std::endl;
-      std::cout << "atoms = " << input->count("atoms") << std::endl;
       if (natom != input->count("atoms")) {
+          std::cout << "I should be throwing" << std::endl;
+          std::cout << "natom = " << natom << std::endl;
+          std::cout << "atoms = " << input->count("atoms") << std::endl;
           throw InputError("size of \"geometry\" != size of \"atoms\"",
                            __FILE__, __LINE__, 0, 0, class_desc());
         }
@@ -252,6 +253,8 @@ Molecule::add_atom(int Z,double x,double y,double z,
             fragment);
 
   atoms_.push_back(temp);
+  (Z == q_Z_) ? q_atoms_.push_back(natoms_) : 
+                non_q_atoms_.push_back(natoms_);
   natoms_++;
 
   throw_if_atom_duplicated(natoms_-1);

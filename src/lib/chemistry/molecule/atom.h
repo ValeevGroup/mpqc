@@ -52,7 +52,7 @@ namespace sc {
         }
 
         //Don't use this guy.
-        Atom() : Z_(-1), mass_(-1), have_charge_(-1), charge_(-1),
+        Atom() : Z_(-1), mass_(-1), label_(""), have_charge_(-1), charge_(-1),
                         have_fragment_(-1), fragment_(-1)
         { r_[0] = -1; r_[1] = -1; r_[2] = -1; }
 

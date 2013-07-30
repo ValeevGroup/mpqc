@@ -1,22 +1,52 @@
-/*
- * atom_class.h
- *
- *  Created on: Jul 22, 2013
- *      Author: drewlewis
- */
+//
+// atom.h
+//
+// Copyright (C) 1996 Limit Point Systems, Inc.
+//
+// Author: Drew Lewis <drew90@vt.edu>
+// Maintainer: LPS
+//
+// This file is part of the SC Toolkit.
+//
+// The SC Toolkit is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The SC Toolkit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the SC Toolkit; see the file COPYING.LIB.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// The U.S. Government is granted a limited license as per AL 91-7.
+//
 
-#ifndef ATOM_H
-#define ATOM_H
+ifndef _chemisty_molecule_atom_h
+#define _chemisty_molecule_atom_h
 
 #include <string>
 #include <util/state/stateio.h>
 
 namespace sc {
+
+    /**
+     * The atom class constains information about atoms. Its construction
+     * follows the form of add_atom in molecule.  Atom was intended to be
+     * a replacement for standalone arrays holding information about
+     * atoms.
+     *
+     */
     class Atom {
 
     private:
+        /// Contains the vector to the atom in units determined by molecule.
         double r_[3];
         int Z_;
+
         bool have_charge_;
         bool have_fragment_;
 
@@ -55,13 +85,19 @@ namespace sc {
         Atom() : Z_(-1), mass_(-1), label_(), have_charge_(-1), charge_(-1),
                         have_fragment_(-1), fragment_(-1)
         { r_[0] = -1; r_[1] = -1; r_[2] = -1; }
+        /** Default constructor supplied so that Atom will work with
+         * sc::SavableState.  The user should not use this.
+         */
 
+        /// Returns a reference to the x,y, or z coordinate.
         double& xyz(int xyz){return r_[xyz];}
         const double& xyz(int xyz) const {return r_[xyz];}
 
+        /// Returns a pointer to the coordinate array
         double* r(){return r_;}
         const double* r() const {return r_;}
 
+        /// Returns nuclear I.D.
         int Z() const {return Z_;}
 
         double mass() const {return mass_;}
@@ -70,24 +106,30 @@ namespace sc {
         bool have_charge() const {return have_charge_;}
 
         double charge() const {return charge_;}
+
+        /// Allows the user to manually set the charge
         void set_charge(double charge){charge_ = charge;}
 
         bool have_fragment() const {return have_fragment_;}
 
         double fragment() const {return fragment_;}
+        /// Allows the user to manually set the fragment variable
         void set_fragment(double fragment){fragment_ = fragment;}
 
         const std::string label() const {return label_;}
         const char* label_c_str() const {return label_.c_str();}
 
+        /// Made friend for direct access for sc::SavableState
         friend void FromStateIn(Atom &a, StateIn &so, int &count);
 
    };
 
+    /// Interface to sc::StateOut
     void ToStateOut(const Atom &a, StateOut &so, int &count);
 
+    /// Interface to sc::StateIn
     void FromStateIn(Atom &a, StateIn &so, int &count);
 }
 
 
-#endif /* ATOM_H */
+#endif /* _chemistry_molecule_atom_h */

@@ -315,7 +315,7 @@ Molecule::print_parsedkeyval(ostream& os,
       std::string symbol(atom_symbol(i));
       os << scprintf(" %5s", symbol.c_str());
       if (label_) {
-          const char *lab = atoms_[i].label_c_str();
+          const char *lab = atoms_[i].label().c_str();
           if (lab == 0) lab = "";
           char  *qlab = new char[strlen(lab)+3];
           strcpy(qlab,"\"");
@@ -1333,7 +1333,7 @@ Molecule::mass(int atom) const
 const char *
 Molecule::label(int atom) const
 {
-  return !atoms_[atom].label().empty() ? atoms_[atom].label_c_str() : 0;
+  return !atoms_[atom].label().empty() ? atoms_[atom].label().c_str() : 0;
 }
 
 std::string

@@ -295,7 +295,6 @@ class Molecule: public SavableState
     int Z(int atom) const { return atoms_[atom].Z(); }
     double &r(int atom, int xyz) { return atoms_[atom].xyz(xyz); }
     const double &r(int atom, int xyz) const { return atoms_[atom].xyz(xyz); }
-    double *r(int atom) { return atoms_[atom].r(); }
     const double *r(int atom) const { return atoms_[atom].r(); }
     double mass(int atom) const;
     /** Returns the label explicitly assigned to atom.  If

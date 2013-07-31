@@ -216,9 +216,11 @@ class StateIn:  public DescribedClass {
     int get(std::vector<T, A> &v) {
       size_t l;
       int r = get(l);
-      v.resize(l);
+      v.reserve(l);
       for (size_t i=0; i<l; i++) {
-        FromStateIn(v[i],*this,r);
+        T e;
+        FromStateIn(e,*this,r);
+        v.push_back(e);
       }
       return r;
     }

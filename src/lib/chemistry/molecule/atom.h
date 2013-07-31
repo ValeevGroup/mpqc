@@ -57,9 +57,9 @@ namespace sc {
         std::string label_;
 
     public:
-        Atom(int Z, double x, double y, double z, char *label = 0,
-             double mass = 0, int have_charge = false, double charge = 0,
-             int have_fragment = false, int fragment = 0)
+        Atom(int Z, double x, double y, double z, const char *label = 0,
+             double mass = 0, int have_charge = 0, double charge = 0,
+             int have_fragment = 0, int fragment = 0)
              : Z_(Z), mass_(mass), label_(label ? label : ""), charge_(charge),
                have_charge_(have_charge), have_fragment_(have_fragment),
                fragment_(fragment)
@@ -70,8 +70,8 @@ namespace sc {
         }
 
         Atom(int Z, double x, double y, double z, const std::string &label,
-             double mass = 0, int have_charge = false, double charge = 0,
-             int have_fragment = false, int fragment = 0)
+             double mass = 0, int have_charge = 0, double charge = 0,
+             int have_fragment = 0, int fragment = 0)
              : Z_(Z), mass_(mass), label_(label), charge_(charge),
                have_charge_(have_charge), have_fragment_(have_fragment),
                fragment_(fragment)
@@ -81,13 +81,12 @@ namespace sc {
             r_[2] = z;
         }
 
-        //Don't use this guy.
-        Atom() : Z_(-1), mass_(-1), label_(), have_charge_(false), charge_(-1),
-                        have_fragment_(false), fragment_(-1)
-        { r_[0] = -1; r_[1] = -1; r_[2] = -1; }
-        /** Default constructor supplied so that Atom will work with
+        /* Default constructor supplied so that Atom will work with
          * sc::SavableState.  The user should not use this.
          */
+        Atom() : Z_(-1), mass_(-1), label_(), have_charge_(true), charge_(-1),
+                        have_fragment_(true), fragment_(-1)
+        { r_[0] = -1; r_[1] = -1; r_[2] = -1; }
 
         /// Returns a reference to the x,y, or z coordinate.
         double& xyz(int xyz){return r_[xyz];}
@@ -99,17 +98,11 @@ namespace sc {
 
         /// Returns atomic number
         int Z() const {return Z_;}
-
         double mass() const {return mass_;}
-
         bool have_charge() const {return have_charge_;}
-
         double charge() const {return charge_;}
-
         bool have_fragment() const {return have_fragment_;}
-
         int fragment() const {return fragment_;}
-
         const std::string& label() const {return label_;}
 
         // Made friend for direct access for sc::SavableState

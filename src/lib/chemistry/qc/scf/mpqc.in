@@ -3,8 +3,8 @@ mpqc:(
   mole = $:mole
 )
 
-nproc = 2
-molecule = $:tmmc1
+nproc = 5
+molecule = $:he
 coor = $:symcoor
 message = $:message1
 basis_matrixkit = $:replmatrixkit
@@ -19,10 +19,24 @@ basis_matrixkit = $:replmatrixkit
 mole<DFCLHF>: (
   %matrixkit = $:localmatrixkit
   memory=32000000
+  integrals<IntegralLibint2>:()
 
   df_basis<GaussianBasisSet>:(
     molecule = $..:molecule
     name = "cc-pVDZ-RI"
+    %name = "cc-pVDZ"
+    puream=yes
+    %name = "6-31G"
+  )
+  
+  world<WavefunctionWorld>:(
+  	wfn = $..:mole
+  	df_basis = $..:df_basis
+  	%df_kernel = "exp(20)"  
+    df_kernel = "coulomb"
+  	df_solver = "bunchkaufman_refine"
+  	df_local_coulomb = yes
+  	df_local_exchange = yes
   )
 
 
@@ -34,15 +48,9 @@ mole<DFCLHF>: (
   molecule = $:molecule
   mbasis<GaussianBasisSet>: (
     molecule = $:molecule
-    name = "6-31G"
-    %name = "6-311++G**"
-    %name = "STO-3G"
-    %name = "DZP (Dunning)"
-    %name = "STO-6G"
-    %name = "3-21G"
     %name = "cc-pVDZ"
-    %name = "Def2-SVP"
-    %puream=yes
+    name = "6-31G"
+    puream=yes
     matrixkit = $:basis_matrixkit
   )
   basis<SplitBasisSet>:(
@@ -292,6 +300,16 @@ he<Molecule>: (
   symmetry=c1
   { atoms geometry } = {
      he [ 0 0 0 ]
+  }
+)
+
+r = 5
+he2<Molecule>: (
+  units=bohr
+  symmetry=c1
+  { atoms geometry } = {
+     he [ 0 0 0 ]
+     he [ 0 0 $:r ]
   }
 )
 

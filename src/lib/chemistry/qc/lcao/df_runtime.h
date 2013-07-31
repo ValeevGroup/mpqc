@@ -140,7 +140,9 @@ namespace sc {
      */
       DensityFittingParams(const Ref<GaussianBasisSet>& basis,
                            const std::string& kernel = std::string("coulomb"),
-                           const std::string& solver = std::string("cholesky_inv"));
+                           const std::string& solver = std::string("cholesky_inv"),
+                           bool local_coulomb = false,
+                           bool local_exchange = false);
       DensityFittingParams(StateIn&);
       ~DensityFittingParams();
       void save_data_state(StateOut&);
@@ -148,6 +150,8 @@ namespace sc {
       const Ref<GaussianBasisSet>& basis() const { return basis_; }
       const std::string& kernel_key() const { return kernel_; }
       DensityFitting::SolveMethod solver() const { return solver_; }
+      bool local_coulomb() const { return local_coulomb_; }
+      bool local_exchange() const { return local_exchange_; }
       /// returns the TwoBodyInt::oper_type object that specifies
       /// the type of the operator kernel_key used for fitting the density
       TwoBodyOper::type kernel_otype() const;
@@ -162,6 +166,7 @@ namespace sc {
       /// @return string describing kernel_key params (the format depends on the kernel_key type)
       static std::string kernel_params(std::string kernel);
 
+
     private:
       static ClassDesc class_desc_;
 
@@ -169,12 +174,15 @@ namespace sc {
       std::string kernel_;
       DensityFitting::SolveMethod solver_;
       mutable std::string kernel_intparams_key_;
+      bool local_coulomb_;
+      bool local_exchange_;
 
   };
 
-   inline bool operator==(const DensityFittingParams& A, const DensityFittingParams& B) {
+  inline bool operator==(const DensityFittingParams& A, const DensityFittingParams& B) {
     return A.basis()->equiv(B.basis()) && A.kernel_key() == B.kernel_key() && A.solver() == B.solver();
   }
+
 
   /// this class encapsulates objects needed to perform density fitting of a 4-center integral
   struct DensityFittingInfo : virtual public SavableState {

@@ -107,6 +107,12 @@ public:
 
     </dl>
 
+    <dt><tt>df_local_coulomb</tt><dd> If df_basis is specified, this keyword will tell whether strongly local (a.k.a. pair atomic) fitting
+    should be used for the coulomb operator
+
+    <dt><tt>df_local_exchange</tt><dd> If df_basis is specified, this keyword will tell whether strongly local (a.k.a. pair atomic) fitting
+    should be used for the exchange operator
+
     <dt><tt>dynamic</tt><dd> This boolean keyword specifies whether dynamic load balancing
     is used by MO integrals transforms. The default is false.
 
@@ -178,6 +184,8 @@ private:
   Ref<GaussianBasisSet> bs_df_;   //!< the density-fitting basis
   std::string df_kernel_;         //!< the density-fitting kernel
   std::string df_solver_;         //!< the density-fitting solver
+  bool df_local_coulomb_;         //!< whether or not local density fitting should be employed for the coulomb operator
+  bool df_local_exchange_;        //!< whether or not local density fitting should be employed for the exchange operator
   Ref<MessageGrp> msg_;
   Ref<MemoryGrp> mem_;
   Ref<ThreadGrp> thr_;

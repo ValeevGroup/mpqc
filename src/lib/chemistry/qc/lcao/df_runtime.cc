@@ -385,20 +385,29 @@ DensityFittingRuntime::default_dfbs_name(const std::string& obs_name, int incX, 
 
 /////////////////////////////////////////////////////////////////////////////
 
+
+
+/////////////////////////////////////////////////////////////////////////////
+
 ClassDesc
 DensityFittingParams::class_desc_(typeid(DensityFittingParams),
                      "DensityFittingParams",
-                     1,               // version
+                     2,               // version
                      "virtual public SavableState", // must match parent
                      0, 0, create<DensityFittingParams>
                      );
 
 DensityFittingParams::DensityFittingParams(const Ref<GaussianBasisSet>& basis,
                                            const std::string& kernel,
-                                           const std::string& solver) :
+                                           const std::string& solver,
+                                           bool local_coulomb,
+                                           bool local_exchange
+                                           ) :
                                            basis_(basis),
                                            kernel_(kernel),
-                                           kernel_intparams_key_("default")
+                                           kernel_intparams_key_("default"),
+                                           local_coulomb_(local_coulomb),
+                                           local_exchange_(local_exchange)
 {
   if (solver == "cholesky_inv")
     solver_ = DensityFitting::SolveMethod_InverseCholesky;
@@ -424,6 +433,8 @@ DensityFittingParams::DensityFittingParams(StateIn& si) : SavableState(si) {
   si.get(kernel_);
   si.get(kernel_intparams_key_);
   int s; si.get(s); solver_ = static_cast<DensityFitting::SolveMethod>(s);
+  si.get(local_coulomb_);
+  si.get(local_exchange_);
 }
 
 DensityFittingParams::~DensityFittingParams() {
@@ -435,6 +446,8 @@ DensityFittingParams::save_data_state(StateOut& so) {
   so.put(kernel_);
   so.put(kernel_intparams_key_);
   so.put((int)solver_);
+  so.put(local_coulomb_);
+  so.put(local_exchange_);
 }
 
 void
@@ -445,6 +458,8 @@ DensityFittingParams::print(std::ostream& o) const {
     o << incindent;
       basis_->print(o);
     o << decindent;
+    if(local_coulomb_) o << "strongly local fitting active in coulomb operator" << std::endl;
+    if(local_exchange_) o << "strongly local fitting active in exchange operator" << std::endl;
     o << indent << "kernel = " << kernel_ << std::endl;
     o << indent << "solver = ";
     switch(solver_) {

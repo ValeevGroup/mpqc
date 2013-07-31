@@ -25,7 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-ifndef _chemisty_molecule_atom_h
+#ifndef _chemisty_molecule_atom_h
 #define _chemisty_molecule_atom_h
 
 #include <string>
@@ -57,9 +57,9 @@ namespace sc {
         std::string label_;
 
     public:
-        Atom(int Z, double x, double y, double z, char *label = nullptr,
-             double mass = 0, int have_charge = 0, double charge = 0,
-             int have_fragment = 0, int fragment = 0)
+        Atom(int Z, double x, double y, double z, char *label = 0,
+             double mass = 0, int have_charge = false, double charge = 0,
+             int have_fragment = false, int fragment = 0)
              : Z_(Z), mass_(mass), label_(label ? label : ""), charge_(charge),
                have_charge_(have_charge), have_fragment_(have_fragment),
                fragment_(fragment)
@@ -70,8 +70,8 @@ namespace sc {
         }
 
         Atom(int Z, double x, double y, double z, const std::string &label,
-             double mass = 0, int have_charge = 0, double charge = 0,
-             int have_fragment = 0, int fragment = 0)
+             double mass = 0, int have_charge = false, double charge = 0,
+             int have_fragment = false, int fragment = 0)
              : Z_(Z), mass_(mass), label_(label), charge_(charge),
                have_charge_(have_charge), have_fragment_(have_fragment),
                fragment_(fragment)
@@ -82,8 +82,8 @@ namespace sc {
         }
 
         //Don't use this guy.
-        Atom() : Z_(-1), mass_(-1), label_(), have_charge_(-1), charge_(-1),
-                        have_fragment_(-1), fragment_(-1)
+        Atom() : Z_(-1), mass_(-1), label_(), have_charge_(false), charge_(-1),
+                        have_fragment_(false), fragment_(-1)
         { r_[0] = -1; r_[1] = -1; r_[2] = -1; }
         /** Default constructor supplied so that Atom will work with
          * sc::SavableState.  The user should not use this.
@@ -97,29 +97,22 @@ namespace sc {
         double* r(){return r_;}
         const double* r() const {return r_;}
 
-        /// Returns nuclear I.D.
+        /// Returns atomic number
         int Z() const {return Z_;}
 
         double mass() const {return mass_;}
-        void set_mass(double mass){mass_ = mass;}
 
         bool have_charge() const {return have_charge_;}
 
         double charge() const {return charge_;}
 
-        /// Allows the user to manually set the charge
-        void set_charge(double charge){charge_ = charge;}
-
         bool have_fragment() const {return have_fragment_;}
 
-        double fragment() const {return fragment_;}
-        /// Allows the user to manually set the fragment variable
-        void set_fragment(double fragment){fragment_ = fragment;}
+        int fragment() const {return fragment_;}
 
-        const std::string label() const {return label_;}
-        const char* label_c_str() const {return label_.c_str();}
+        const std::string& label() const {return label_;}
 
-        /// Made friend for direct access for sc::SavableState
+        // Made friend for direct access for sc::SavableState
         friend void FromStateIn(Atom &a, StateIn &so, int &count);
 
    };

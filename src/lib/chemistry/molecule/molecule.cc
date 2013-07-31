@@ -428,7 +428,7 @@ Molecule::charge(int iatom) const
 bool
 Molecule::is_Q(int iatom) const
 {
-  return Z_[iatom] == q_Z_;
+  return atoms_[iatom].Z() == q_Z_;
 }
 
 int
@@ -1151,19 +1151,10 @@ Molecule::max_z()
 {
   int i, maxz=0;
   for (i=0; i<natom(); i++) {
-<<<<<<< local
       int z = atoms_[i].Z();
-=======
-      int z = Z_[i];
->>>>>>> other
       if (z != q_Z_ && z > maxz)
-<<<<<<< local
           maxz = z;
   }
-=======
-        maxz = z;
-    }
->>>>>>> other
   return maxz;
 }
 

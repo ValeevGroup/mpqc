@@ -225,10 +225,10 @@
 #cmakedefine HAVE_MPI
 
 /* Define if you have the MPI_Init_thread routine.  */
-#cmakedefine HAVE_MPI_INIT_THREAD
+#define HAVE_MPI_INIT_THREAD // Are there even any MPI's without it?
 
 /* Set to the MPI macro defined the desired threading support level.  */
-#cmakedefine MPQC_MPI_THREAD_LEVEL
+#define MPQC_MPI_THREAD_LEVEL MPI_THREAD_MULTIPLE // assume we want that always
 
 /* Define if you have the <armci.h> header file and library.  */
 #cmakedefine HAVE_ARMCI

@@ -2,6 +2,7 @@
 #define MPQC_ARRAY_HPP
 
 #include "mpqc/range.hpp"
+#include "mpqc/range/operator.hpp"
 #include "mpqc/mpi.hpp"
 
 #include "mpqc/array/core.hpp"
@@ -13,18 +14,14 @@
 namespace mpqc {
 
     template<typename T>
-    struct Array
-        : range_operator_base<Array<T>*, Array<T>, Array<T> >
-    {
-        typedef range_operator_base<Array<T>*, Array<T>, Array<T> > range_base;
+    struct Array {
 
-        Array() : range_base(this) {}
+        Array() {}
 
         template<typename Extent>
         Array(const std::string &name,
               const std::vector<Extent> &extents,
               mpi::Comm comm = mpi::Comm(MPI_COMM_SELF))
-            : range_base(this)
         {
 	    initialize(name, extents, ARRAY_CORE, comm);
         }
@@ -34,13 +31,11 @@ namespace mpqc {
               const std::vector<Extent> &extents,
               Driver driver,
               mpi::Comm comm = mpi::Comm(MPI_COMM_SELF))
-            : range_base(this)
         {
 	    initialize(name, extents, driver, comm);
         }
 
         Array(const Array &a)
-            : range_base(this)
         {
             range_ = a.range_;
             dims_ = a.dims_;
@@ -79,8 +74,6 @@ namespace mpqc {
             return p;
         }
 
-        using range_base::operator();
-
         Array operator()(const std::vector<range> &r) {
             return Array(*this, r);
         }
@@ -88,6 +81,10 @@ namespace mpqc {
         Array operator()(const std::vector<range> &r) const {
             return Array(*this, r);
         }
+
+        // generate range operators up to rank 4
+        MPQC_RANGE_OPERATORS(4, Array, this->operator())
+        MPQC_RANGE_CONST_OPERATORS(4, Array, this->operator())
 
         void write(File::Dataspace<T> f) const {
             assert(this->rank() == 2);
@@ -134,8 +131,7 @@ namespace mpqc {
 	    this->impl_.reset(impl);
 	}
 
-        Array(Array &A, const std::vector<range> &r)
-            : range_base(this)            
+        Array(const Array &A, const std::vector<range> &r)
         {
             range_ = r;
             foreach (range r, range_) {

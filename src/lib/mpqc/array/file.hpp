@@ -5,10 +5,6 @@
 #include "mpqc/array/forward.hpp"
 #include "mpqc/file.hpp"
 
-#ifndef H5_HAVE_THREADSAFE
-#warning "HDF5 NOT THREADSAFE"
-#endif
-
 namespace mpqc {
 namespace detail {
 
@@ -25,8 +21,8 @@ namespace detail {
                    const std::vector<Extent> &extents)
             : ArrayBase(extents)
         {
-            File file(name + ".h5");
-            data_.reset(new File::Dataset<T>(file, "data", this->dims_));
+            mpqc::File file(name + ".h5");
+            data_.reset(new mpqc::File::Dataset<T>(file, "data", this->dims_));
 	}
         void sync() {
             //data_->flush();
@@ -40,7 +36,7 @@ namespace detail {
             (*data_)(r).read((T*)buffer);
 	}
     private:
-        std::auto_ptr< File::Dataset<T> > data_;
+        std::auto_ptr< mpqc::File::Dataset<T> > data_;
     };
 
 #ifdef H5_HAVE_PARALLEL

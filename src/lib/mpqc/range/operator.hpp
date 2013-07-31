@@ -3,6 +3,7 @@
 
 #include "mpqc/range.hpp"
 #include <boost/preprocessor/repetition.hpp>
+#include <boost/preprocessor/tuple.hpp>
 
 #define MPQC_RANGE_OPERATOR_DIMENSIONS
 
@@ -23,35 +24,29 @@ namespace mpqc {
 #undef MPQC_RANGIFY
 #undef MPQC_RANGIFY1
 
+}
 
-    template<class _Object, class _Type, class _Const>
-    struct range_operator_base {
-    protected:
-        _Object object_;
-        explicit range_operator_base(_Object object) : object_(object) {}
-
-    public:
-
-#define MPQC_RANGE_CONST_OPERATOR(Z, N, TYPE)                                   \
+#define MPQC_RANGE_CONST_OPERATOR(Z, N, DATA)                                   \
         template<BOOST_PP_ENUM_PARAMS(N, class _R)>                             \
-        TYPE operator()(BOOST_PP_ENUM_BINARY_PARAMS(N, const _R, &r)) const {   \
-            return object_->operator()(rangify(BOOST_PP_ENUM_PARAMS(N, r)));    \
+        BOOST_PP_TUPLE_ELEM(0, DATA)                                            \
+            operator()(BOOST_PP_ENUM_BINARY_PARAMS(N, const _R, &r)) const {    \
+            return BOOST_PP_TUPLE_ELEM(1, DATA)                                 \
+                (rangify(BOOST_PP_ENUM_PARAMS(N, r)));                          \
         }
 
-#define MPQC_RANGE_OPERATOR(Z, N, TYPE)                                         \
+#define MPQC_RANGE_OPERATOR(Z, N, DATA)                                         \
         template<BOOST_PP_ENUM_PARAMS(N, class _R)>                             \
-        TYPE operator()(BOOST_PP_ENUM_BINARY_PARAMS(N, const _R, &r)) {         \
-            return object_->operator()(rangify(BOOST_PP_ENUM_PARAMS(N, r)));    \
+        BOOST_PP_TUPLE_ELEM(0, DATA)                                            \
+            operator()(BOOST_PP_ENUM_BINARY_PARAMS(N, const _R, &r)) {          \
+            return BOOST_PP_TUPLE_ELEM(1, DATA)                                 \
+                (rangify(BOOST_PP_ENUM_PARAMS(N, r)));                          \
         }
 
-        BOOST_PP_REPEAT_FROM_TO(1, 5, MPQC_RANGE_OPERATOR, _Type)
-        BOOST_PP_REPEAT_FROM_TO(1, 5, MPQC_RANGE_CONST_OPERATOR, _Const)
+#define MPQC_RANGE_OPERATORS(N, Type, Function)                                 \
+    BOOST_PP_REPEAT_FROM_TO(1, N, MPQC_RANGE_OPERATOR, (Type, Function))
 
-#undef MPQC_RANGE_CONST_OPERATOR
-#undef MPQC_RANGE_OPERATOR
+#define MPQC_RANGE_CONST_OPERATORS(N, Type, Function)                           \
+    BOOST_PP_REPEAT_FROM_TO(1, N, MPQC_RANGE_CONST_OPERATOR, (Type, Function))
 
-    };
-
-} // namespace mpqc
 
 #endif // MPQC_RANGE_OPERATOR_HPP

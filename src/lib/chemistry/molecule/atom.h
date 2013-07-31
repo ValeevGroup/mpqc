@@ -1,10 +1,10 @@
 //
 // atom.h
 //
-// Copyright (C) 1996 Limit Point Systems, Inc.
+// Copyright (C) 2013 Drew Lewis
 //
 // Author: Drew Lewis <drew90@vt.edu>
-// Maintainer: LPS
+// Maintainer: Drew Lewis and Edward Valeev
 //
 // This file is part of the SC Toolkit.
 //

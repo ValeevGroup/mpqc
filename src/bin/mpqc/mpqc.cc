@@ -79,6 +79,7 @@
 #include <chemistry/qc/wfn/wfn.h>
 
 #include <util/group/linkage.h>
+#include <util/state/linkage.h>
 #include <chemistry/qc/basis/linkage.h>
 #include <chemistry/qc/wfn/linkage.h>
 #include <chemistry/qc/scf/linkage.h>
@@ -86,10 +87,9 @@
 #include <chemistry/qc/etrain/linkage.h>
 #include <chemistry/qc/mbpt/linkage.h>
 #include <chemistry/qc/lmp2/linkage.h>
-//#include <chemistry/qc/ci/linkage.h>
 
 #ifdef HAVE_LIBINT2
-#include <chemistry/qc/libint2/linkage.h>
+# include <chemistry/qc/libint2/linkage.h>
 #endif // HAVE_LIBINT2
 
 #ifdef MPQC_R12
@@ -98,10 +98,12 @@
 #endif // MPQC_R12
 
 #ifdef HAVE_PSI3
-#include <chemistry/qc/psi/linkage.h>
+# include <chemistry/qc/psi/linkage.h>
 #endif // HAVE_PSI3
 
-#include <util/state/linkage.h>
+#ifdef MPQC_NEW_FEATURES_CI
+# include <chemistry/qc/ci/linkage.h>
+#endif
 
 #ifdef HAVE_MPI
 #define OMPI_SKIP_MPICXX

@@ -5,50 +5,54 @@ set(EXTERNAL_BUILD_DIR ${PROJECT_BINARY_DIR}/external/build)
 
 include(ExternalProject)
 
-find_package(HDF5 QUIET)
+find_package(HDF5)
 
 if (HDF5_FOUND)
   include_directories(${HDF5_INCLUDE_DIRS})
   set(HDF5_LIBRARIES "${HDF5_LIBRARIES_RELEASE}")
 endif()
 
-if (NOT HDF5_FOUND AND MPQC_EXPERT)
- 
-  message("** HDF5 was not found or explicitly set")
-  message("** Downloading and building HDF5 is explicitly disabled in EXPERT mode")
+if (NOT HDF5_FOUND)
 
-else()
+  if (MPQC_EXPERT)
 
-  set(HDF5_URL http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.10-patch1/src/hdf5-1.8.10-patch1.tar.gz)
-  set(HDF5_URL_HASH MD5=2147a289fb33c887464ad2b6c5a8ae4c)
+    message("** HDF5 was not found or explicitly set")
+    message("** Downloading and building HDF5 is explicitly disabled in EXPERT mode")
 
-  if (EXISTS ${EXTERNAL_SOURCE_DIR}/hdf5.tar.gz)
-    set(HDF5_URL ${EXTERNAL_SOURCE_DIR}/hdf5.tar.gz)
-    set(HDF5_URL_HASH "")
-    message("** HDF5 will be built from ${HDF5_URL}")
-  endif()
+  else()
+    
+    set(HDF5_URL http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.10-patch1/src/hdf5-1.8.10-patch1.tar.gz)
+    set(HDF5_URL_HASH MD5=2147a289fb33c887464ad2b6c5a8ae4c)
 
-  ExternalProject_Add(
-    hdf5
-    PREFIX ${EXTERNAL_BUILD_DIR}/hdf5
-    URL ${HDF5_URL}
-    URL_HASH ${HDF5_URL_HASH}
-    BUILD_IN_SOURCE 1
-    CONFIGURE_COMMAND ./configure
+    if (EXISTS ${EXTERNAL_SOURCE_DIR}/hdf5.tar.gz)
+      set(HDF5_URL ${EXTERNAL_SOURCE_DIR}/hdf5.tar.gz)
+      set(HDF5_URL_HASH "")
+      message("** HDF5 will be built from ${HDF5_URL}")
+    endif()
+
+    ExternalProject_Add(
+      hdf5
+      PREFIX ${EXTERNAL_BUILD_DIR}/hdf5
+      URL ${HDF5_URL}
+      URL_HASH ${HDF5_URL_HASH}
+      BUILD_IN_SOURCE 1
+      CONFIGURE_COMMAND ./configure
       --prefix=${EXTERNAL_BUILD_DIR}/hdf5
       --enable-threadsafe
       --enable-unsupported
       --with-pthread
       CC=${CMAKE_C_COMPILER} CPPFLAGS=-D_GNU_SOURCE
-    BUILD_COMMAND make
-    INSTALL_COMMAND make install
-  )
+      BUILD_COMMAND make
+      INSTALL_COMMAND make install
+      )
 
-  add_dependencies(External hdf5)
-  include_directories(${EXTERNAL_BUILD_DIR}/hdf5/include)
-  set(HDF5_LIBRARIES ${EXTERNAL_BUILD_DIR}/hdf5/lib/libhdf5.a)
+    add_dependencies(External hdf5)
+    include_directories(${EXTERNAL_BUILD_DIR}/hdf5/include)
+    set(HDF5_LIBRARIES ${EXTERNAL_BUILD_DIR}/hdf5/lib/libhdf5.a)
 
-endif()
+  endif(MPQC_EXPERT)
+
+endif(NOT HDF5_FOUND)
 
 # HDF5 libs
 if (HDF5_LIBRARIES)

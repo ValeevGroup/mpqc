@@ -57,6 +57,9 @@ include(CheckCXXSourceCompiles)
 
 if (MPQC_NEW_FEATURES)
   add_definitions(-DMPQC_NEW_FEATURES)
+  if (MPQC_NEW_FEATURES_CI)
+    add_definitions(-DMPQC_NEW_FEATURES_CI)
+  endif()
   
   # "some" C++11 features are required, check if we need a flag to turn on the support in the compiler
   # N.B. even though clang++ assumes c++11, it still needs the flag for some features (e.g. static_assert)
@@ -207,7 +210,7 @@ lib/math/scmat/f77sym.h
 
 foreach(header ${fortran_headers})
   FortranCInterface_HEADER(
-    ${PROJECT_SOURCE_DIR}/src/${header}
+    ${PROJECT_BINARY_DIR}/src/${header}
     MACRO_NAMESPACE "FC_"
     SYMBOL_NAMESPACE "F77_"
     SYMBOLS ${FORTRAN_FUNCTIONS}
@@ -269,6 +272,12 @@ else()
   message("** R12 methods require Libint2.  R12 methods are disabled")
 endif()
 # propagate some variables into Makefiles
+if (MPQC_NEW_FEATURES)
+  set(MAKE_ASSUME_NEW_FEATURES yes)
+  if (MPQC_NEW_FEATURES_CI)
+    set(MAKE_ASSUME_NEW_FEATURES_CI yes)
+  endif()
+endif()
 if (MPQC_R12)
   set(MAKE_ASSUME_R12 yes)
 endif()

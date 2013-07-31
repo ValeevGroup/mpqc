@@ -1,6 +1,7 @@
 #ifndef MPQC_CI_CONFIG_HPP
 #define MPQC_CI_CONFIG_HPP
 
+#include <util/misc/formio.h>
 #include "mpqc/ci/string.hpp"
 #include "mpqc/matrix.hpp"
 #include "mpqc/file.hpp"
@@ -77,11 +78,11 @@ namespace ci {
             dims.push_back(alpha.size());
             dims.push_back(beta.size());
 
-            printf("CI space = (%lu %lu):  "
-                   "alpha = %lu, beta = %lu, dets = %lu\n",
-                   config.orbitals, config.alpha+config.beta,
-                   alpha.size(), beta.size(),
-                   alpha.size()*beta.size());
+            sc::ExEnv::out0() << sc::indent
+                << sc::scprintf("CI space = (%lu %lu):  alpha = %lu, beta = %lu, dets = %lu\n",
+                                config.orbitals, config.alpha+config.beta,
+                                alpha.size(), beta.size(),
+                                alpha.size()*beta.size());
 
             initialize();
 

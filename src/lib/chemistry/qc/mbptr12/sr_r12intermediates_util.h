@@ -249,7 +249,7 @@ namespace sc {
               const int kk1 = ket1_map[k1];
               const int kk1_offset = kk1 * rdm_space->rank();
               for(int k2=0; k2<nk2; ++k2, ++k12) {
-                const int kk2 = ket1_map[k2];
+                const int kk2 = ket2_map[k2];
                 map_buf[k12] = buf[kk1_offset + kk2];
               }
             }

@@ -26,7 +26,12 @@
 //
 
 #define EIGEN_NO_AUTOMATIC_RESIZING 1
-#define eigenout(label, var) cout << "@@@@@ " label << " @@@@@" << endl << setprecision(20) << var << endl << "%%%%%%%%%%" << endl
+#define DO_EIGEN_OUT 0
+#if DO_EIGEN_OUT
+#  define eigenout(label, var) cout << "@@@@@ " label << " @@@@@" << endl << setprecision(20) << var << endl << "%%%%%%%%%%" << endl
+#else
+#  define eigenout(label, var)
+#endif
 
 #include <cfloat>
 #include<chemistry/qc/basis/symmint.h>
@@ -1238,6 +1243,7 @@ namespace sc {
       //----------------------------------------//
       for(int atomA=0; atomA < brabs->ncenter(); ++atomA){
         const int nshA = brabs->nshell_on_center(atomA);
+        const int nbfA = brabs->nbasis_on_center(atomA);
         const int shoffA = brabs->shell_on_center(atomA, 0);
         const int bfoffA = brabs->shell_to_function(shoffA);
         const int dfnshA = dfbs->nshell_on_center(atomA);
@@ -1247,6 +1253,7 @@ namespace sc {
         // TODO Permutational symmetry
         for(int atomB=0; atomB < ketbs->ncenter(); ++atomB){
           const int nshB = ketbs->nshell_on_center(atomB);
+          const int nbfB = ketbs->nbasis_on_center(atomB);
           const int shoffB = ketbs->shell_on_center(atomB, 0);
           const int bfoffB = ketbs->shell_to_function(shoffB);
           const int dfnshB = dfbs->nshell_on_center(atomB);
@@ -1312,22 +1319,39 @@ namespace sc {
           }
           //----------------------------------------//
           EigenMatrixMap X_m_Y(metric_2c_part_ptr, dfpart_size, dfpart_size);
+          eigenout("X_m_Y, atomA = " << atomA << ", atomB = " << atomB, X_m_Y);
+          for(int X = 0; X < dfpart_size; ++X){
+            for(int Y = 0; Y < dfpart_size; ++Y){
+              if(fabs(double(X_m_Y(X,Y))) < 1e-12){
+                X_m_Y(X,Y) = 0;
+              }
+            }
+          }
+          //cout << "X_m_Y = \n" << X_m_Y << endl;
           //Eigen::FullPivHouseholderQR<EigenMatrix> coefficient_solver(X_m_Y);
+          //Eigen::LDLT<EigenMatrix> coefficient_solver(X_m_Y);
           Eigen::FullPivLU<EigenMatrix> coefficient_solver(X_m_Y);
+          //Eigen::JacobiSVD<EigenMatrix> coefficient_solver(X_m_Y);
+          //assert(coefficient_solver.computeU());
+          //assert(coefficient_solver.computeV());
+          //Eigen::LDLT<EigenMatrix> coefficient_solver(X_m_Y);
           //coefficient_solver.compute(X_m_Y);
           //----------------------------------------//
           const double* buffer = metric_3c_eval->buffer();
           int ibfoff = 0;
           for(int ishA = 0; ishA < nshA; ++ishA){
             const int ish = ishA + shoffA;
+            const int ishbfoff = brabs->shell_to_function(ish);
             const int inbf = brabs->shell(ish).nfunction();
             int jbfoff = 0;
             for(int jshB = 0; jshB < nshB; ++jshB){
               const int jsh = jshB + shoffB;
-              const int jnbf = brabs->shell(jsh).nfunction();
+              const int jshbfoff = ketbs->shell_to_function(jsh);
+              const int jnbf = ketbs->shell(jsh).nfunction();
               //----------------------------------------//
               // Compute the integrals ( mu_(a) nu_(b) | M | Y_(ab) )
               EigenMatrix munu_m_Y(inbf*jnbf, dfpart_size);
+              munu_m_Y = EigenMatrix::Constant(inbf*jnbf, dfpart_size, 9e99);
               int Ybfoff = 0;
               for(int YshA = 0; YshA < dfnshA; ++YshA){
                 const int Ysh = YshA + dfshoffA;
@@ -1335,12 +1359,15 @@ namespace sc {
                 metric_3c_eval->compute_shell(ish, jsh, Ysh);
                 int buff_off = 0;
                 for(int ibf=0; ibf < inbf; ++ibf){
-                  ConstEigenMatrixMap buffmap(&buffer[buff_off], jnbf, Ynbf);
-                  munu_m_Y.block(ibf*jnbf, Ybfoff, jnbf, Ynbf) = buffmap;
-                  buff_off += Ynbf*jnbf;
+                    for(int jbf=0; jbf < jnbf; ++jbf){
+                      for(int Ybf=0; Ybf < Ynbf; ++Ybf){
+                        munu_m_Y(ibf*jnbf + jbf, Ybfoff + Ybf) = buffer[buff_off++];
+                      }
+                    }
+                  //ConstEigenMatrixMap buffmap(&buffer[buff_off], jnbf, Ynbf);
+                  //munu_m_Y.block(ibf*jnbf, Ybfoff, jnbf, Ynbf) = buffmap;
+                  //buff_off += Ynbf*jnbf;
                 }
-                ConstEigenMatrixMap buffmap(buffer, inbf*jnbf, Ynbf);
-                munu_m_Y.block(0, Ybfoff, inbf*jnbf, Ynbf) = buffmap;
                 Ybfoff += Ynbf;
               }
               if(atomA != atomB) {
@@ -1350,31 +1377,44 @@ namespace sc {
                   metric_3c_eval->compute_shell(ish, jsh, Ysh);
                   int buff_off = 0;
                   for(int ibf=0; ibf < inbf; ++ibf){
-                    ConstEigenMatrixMap buffmap(&buffer[buff_off], jnbf, Ynbf);
-                    munu_m_Y.block(ibf*jnbf, Ybfoff, jnbf, Ynbf) = buffmap;
-                    buff_off += Ynbf*jnbf;
+                    //ConstEigenMatrixMap buffmap(&buffer[buff_off], jnbf, Ynbf);
+                    //munu_m_Y.block(ibf*jnbf, Ybfoff, jnbf, Ynbf) = buffmap;
+                    //munu_m_Y.block((ibfoff+ibf)*nbfB + jbfoff, Ybfoff, jnbf, Ynbf) = buffmap;
+                    //buff_off += Ynbf*jnbf;
+                    for(int jbf=0; jbf < jnbf; ++jbf){
+                      for(int Ybf=0; Ybf < Ynbf; ++Ybf){
+                        munu_m_Y(ibf*jnbf + jbf, Ybfoff + Ybf) = buffer[buff_off++];
+                      }
+                    }
                   }
+                  assert(buff_off == Ynbf*inbf*jnbf);
                   Ybfoff += Ynbf;
                 }
               }
               //----------------------------------------//
               // Now solve A * x = b, with A = ( X_(ab) | M | Y_(ab) ) and b = ( mu_(a) nu_(b) | M | Y_(ab) )
               // The result will be dfnbf rows and inbf*jnbf columns and needs to be stored in the big C
-              EigenMatrix Cpart(dfnbf, inbf*jnbf);
+              EigenMatrix Cpart(dfpart_size, inbf*jnbf);
               Cpart = coefficient_solver.solve(munu_m_Y.transpose());
-              C.block(
-                  dfbfoffA, (bfoffA+ibfoff)*ketnbf + (bfoffB+jbfoff),
-                  dfnbfA, inbf*jnbf
-              ) = Cpart.block(
-                  0, 0, dfnbfA, inbf*jnbf
-              );
-              if(atomA != atomB) {
+              assert(Cpart.rows() == dfpart_size);
+              assert(Cpart.cols() == inbf*jnbf);
+              double relerr = (X_m_Y * Cpart - munu_m_Y.transpose()).norm() / munu_m_Y.norm();
+              if(fabs(relerr) > 1e-11) {
+                cout << "Relative error encountered for atoms " << atomA << " and " << atomB << " of " << relerr << endl;
+              }
+              for(int ibf1 = 0; ibf1 < inbf; ++ibf1){
                 C.block(
-                    dfbfoffB, (bfoffA+ibfoff)*ketnbf + (bfoffB+jbfoff),
-                    dfnbfB, inbf*jnbf
-                ) = Cpart.block(
-                    dfnbfA, 0, dfnbfB, inbf*jnbf
-                );
+                    dfbfoffA, (ishbfoff+ibf1)*ketnbf + jshbfoff,
+                    dfnbfA, jnbf
+                ) = Cpart.block(0, ibf1*jnbf, dfnbfA, jnbf);
+              }
+              if(atomA != atomB) {
+                for(int ibf1 = 0; ibf1 < inbf; ++ibf1){
+                  C.block(
+                      dfbfoffB, (ishbfoff+ibf1)*ketnbf + jshbfoff,
+                      dfnbfB, jnbf
+                  ) = Cpart.block(dfnbfA, ibf1*jnbf, dfnbfB, jnbf);
+                }
               }
               //----------------------------------------//
               jbfoff += jnbf;
@@ -1412,9 +1452,14 @@ namespace sc {
               //   don't.  Shouldn't save that much time anyway.
               // new (&buffmap) ConstEigenMatrixMap(&buffer[buff_off], jnbf, Xnbf);
               // Instead, just create a new buffmap each time
-              ConstEigenMatrixMap buffmap(&buffer[buff_off], jnbf, Xnbf);
-              munu_r12_X.block((ibfoff+ibf)*ketnbf + jbfoff, Xbfoff, jnbf, Xnbf) = buffmap;
-              buff_off += Xnbf*jnbf;
+              //ConstEigenMatrixMap buffmap(&buffer[buff_off], jnbf, Xnbf);
+              //munu_r12_X.block((ibfoff+ibf)*ketnbf + jbfoff, Xbfoff, jnbf, Xnbf) = buffmap;
+              //buff_off += Xnbf*jnbf;
+              for(int jbf=0; jbf < jnbf; ++jbf){
+                for(int Xbf=0; Xbf < Xnbf; ++Xbf){
+                  munu_r12_X((ibfoff+ibf)*ketnbf + jbfoff + jbf, Xbfoff + Xbf) = buffer[buff_off++];
+                }
+              }
             }
             // This doesn't work
           }
@@ -1487,7 +1532,6 @@ namespace sc {
       return result;
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
-
     }
 
     RefSCMatrix exchange_df_local(const Ref<DensityFittingInfo>& df_info,
@@ -1586,6 +1630,7 @@ namespace sc {
       //----------------------------------------//
       for(int atomA=0; atomA < brabs->ncenter(); ++atomA){
         const int nshA = brabs->nshell_on_center(atomA);
+        const int nbfA = brabs->nbasis_on_center(atomA);
         const int shoffA = brabs->shell_on_center(atomA, 0);
         const int bfoffA = brabs->shell_to_function(shoffA);
         const int dfnshA = dfbs->nshell_on_center(atomA);
@@ -1595,6 +1640,7 @@ namespace sc {
         // TODO Permutational symmetry
         for(int atomB=0; atomB < ketbs->ncenter(); ++atomB){
           const int nshB = ketbs->nshell_on_center(atomB);
+          const int nbfB = ketbs->nbasis_on_center(atomB);
           const int shoffB = ketbs->shell_on_center(atomB, 0);
           const int bfoffB = ketbs->shell_to_function(shoffB);
           const int dfnshB = dfbs->nshell_on_center(atomB);
@@ -1660,22 +1706,45 @@ namespace sc {
           }
           //----------------------------------------//
           EigenMatrixMap X_m_Y(metric_2c_part_ptr, dfpart_size, dfpart_size);
+          eigenout("X_m_Y, atomA = " << atomA << ", atomB = " << atomB, X_m_Y);
+          for(int X = 0; X < dfpart_size; ++X){
+            for(int Y = 0; Y < dfpart_size; ++Y){
+              if(fabs(double(X_m_Y(X,Y))) < 1e-12){
+                X_m_Y(X,Y) = 0;
+              }
+            }
+          }
+          for(int X = 0; X < dfpart_size; ++X){
+            for(int Y = 0; Y < X; ++Y){
+              X_m_Y(X,Y) += X_m_Y(Y,X);
+              X_m_Y(X,Y) *= 0.5;
+            }
+          }
+          //cout << "X_m_Y = \n" << X_m_Y << endl;
           //Eigen::FullPivHouseholderQR<EigenMatrix> coefficient_solver(X_m_Y);
+          //Eigen::LDLT<EigenMatrix> coefficient_solver(X_m_Y);
           Eigen::FullPivLU<EigenMatrix> coefficient_solver(X_m_Y);
+          //Eigen::JacobiSVD<EigenMatrix> coefficient_solver(X_m_Y);
+          //assert(coefficient_solver.computeU());
+          //assert(coefficient_solver.computeV());
+          //Eigen::LDLT<EigenMatrix> coefficient_solver(X_m_Y);
           //coefficient_solver.compute(X_m_Y);
           //----------------------------------------//
           const double* buffer = metric_3c_eval->buffer();
           int ibfoff = 0;
           for(int ishA = 0; ishA < nshA; ++ishA){
             const int ish = ishA + shoffA;
+            const int ishbfoff = brabs->shell_to_function(ish);
             const int inbf = brabs->shell(ish).nfunction();
             int jbfoff = 0;
             for(int jshB = 0; jshB < nshB; ++jshB){
               const int jsh = jshB + shoffB;
-              const int jnbf = brabs->shell(jsh).nfunction();
+              const int jshbfoff = ketbs->shell_to_function(jsh);
+              const int jnbf = ketbs->shell(jsh).nfunction();
               //----------------------------------------//
               // Compute the integrals ( mu_(a) nu_(b) | M | Y_(ab) )
               EigenMatrix munu_m_Y(inbf*jnbf, dfpart_size);
+              munu_m_Y = EigenMatrix::Constant(inbf*jnbf, dfpart_size, 9e99);
               int Ybfoff = 0;
               for(int YshA = 0; YshA < dfnshA; ++YshA){
                 const int Ysh = YshA + dfshoffA;
@@ -1683,12 +1752,15 @@ namespace sc {
                 metric_3c_eval->compute_shell(ish, jsh, Ysh);
                 int buff_off = 0;
                 for(int ibf=0; ibf < inbf; ++ibf){
-                  ConstEigenMatrixMap buffmap(&buffer[buff_off], jnbf, Ynbf);
-                  munu_m_Y.block(ibf*jnbf, Ybfoff, jnbf, Ynbf) = buffmap;
-                  buff_off += Ynbf*jnbf;
+                  for(int jbf=0; jbf < jnbf; ++jbf){
+                    for(int Ybf=0; Ybf < Ynbf; ++Ybf){
+                      munu_m_Y(ibf*jnbf + jbf, Ybfoff + Ybf) = buffer[buff_off++];
+                    }
+                  }
+                  //ConstEigenMatrixMap buffmap(&buffer[buff_off], jnbf, Ynbf);
+                  //munu_m_Y.block(ibf*jnbf, Ybfoff, jnbf, Ynbf) = buffmap;
+                  //buff_off += Ynbf*jnbf;
                 }
-                ConstEigenMatrixMap buffmap(buffer, inbf*jnbf, Ynbf);
-                munu_m_Y.block(0, Ybfoff, inbf*jnbf, Ynbf) = buffmap;
                 Ybfoff += Ynbf;
               }
               if(atomA != atomB) {
@@ -1698,31 +1770,42 @@ namespace sc {
                   metric_3c_eval->compute_shell(ish, jsh, Ysh);
                   int buff_off = 0;
                   for(int ibf=0; ibf < inbf; ++ibf){
-                    ConstEigenMatrixMap buffmap(&buffer[buff_off], jnbf, Ynbf);
-                    munu_m_Y.block(ibf*jnbf, Ybfoff, jnbf, Ynbf) = buffmap;
-                    buff_off += Ynbf*jnbf;
+                    for(int jbf=0; jbf < jnbf; ++jbf){
+                      for(int Ybf=0; Ybf < Ynbf; ++Ybf){
+                        munu_m_Y(ibf*jnbf + jbf, Ybfoff + Ybf) = buffer[buff_off++];
+                      }
+                    }
+                    //ConstEigenMatrixMap buffmap(&buffer[buff_off], jnbf, Ynbf);
+                    //munu_m_Y.block(ibf*jnbf, Ybfoff, jnbf, Ynbf) = buffmap;
+                    ////munu_m_Y.block((ibfoff+ibf)*nbfB + jbfoff, Ybfoff, jnbf, Ynbf) = buffmap;
+                    //buff_off += Ynbf*jnbf;
                   }
+                  assert(buff_off == Ynbf*inbf*jnbf);
                   Ybfoff += Ynbf;
                 }
               }
               //----------------------------------------//
               // Now solve A * x = b, with A = ( X_(ab) | M | Y_(ab) ) and b = ( mu_(a) nu_(b) | M | Y_(ab) )
               // The result will be dfnbf rows and inbf*jnbf columns and needs to be stored in the big C
-              EigenMatrix Cpart(dfnbf, inbf*jnbf);
+              EigenMatrix Cpart(dfpart_size, inbf*jnbf);
               Cpart = coefficient_solver.solve(munu_m_Y.transpose());
-              C.block(
-                  dfbfoffA, (bfoffA+ibfoff)*ketnbf + (bfoffB+jbfoff),
-                  dfnbfA, inbf*jnbf
-              ) = Cpart.block(
-                  0, 0, dfnbfA, inbf*jnbf
-              );
-              if(atomA != atomB) {
+              double relerr = (X_m_Y * Cpart - munu_m_Y.transpose()).norm() / munu_m_Y.norm();
+              if(fabs(relerr) > 1e-11) {
+                cout << "Relative error encountered for atoms " << atomA << " and " << atomB << " of " << relerr << endl;
+              }
+              for(int ibf1 = 0; ibf1 < inbf; ++ibf1){
                 C.block(
-                    dfbfoffB, (bfoffA+ibfoff)*ketnbf + (bfoffB+jbfoff),
-                    dfnbfB, inbf*jnbf
-                ) = Cpart.block(
-                    dfnbfA, 0, dfnbfB, inbf*jnbf
-                );
+                    dfbfoffA, (ishbfoff+ibf1)*ketnbf + jshbfoff,
+                    dfnbfA, jnbf
+                ) = Cpart.block(0, ibf1*jnbf, dfnbfA, jnbf);
+              }
+              if(atomA != atomB) {
+                for(int ibf1 = 0; ibf1 < inbf; ++ibf1){
+                  C.block(
+                      dfbfoffB, (ishbfoff+ibf1)*ketnbf + jshbfoff,
+                      dfnbfB, jnbf
+                  ) = Cpart.block(dfnbfA, ibf1*jnbf, dfnbfB, jnbf);
+                }
               }
               //----------------------------------------//
               jbfoff += jnbf;
@@ -1760,9 +1843,14 @@ namespace sc {
               //   don't.  Shouldn't save that much time anyway.
               // new (&buffmap) ConstEigenMatrixMap(&buffer[buff_off], jnbf, Xnbf);
               // Instead, just create a new buffmap each time
-              ConstEigenMatrixMap buffmap(&buffer[buff_off], jnbf, Xnbf);
-              munu_r12_X.block((ibfoff+ibf)*ketnbf + jbfoff, Xbfoff, jnbf, Xnbf) = buffmap;
-              buff_off += Xnbf*jnbf;
+              //ConstEigenMatrixMap buffmap(&buffer[buff_off], jnbf, Xnbf);
+              //munu_r12_X.block((ibfoff+ibf)*ketnbf + jbfoff, Xbfoff, jnbf, Xnbf) = buffmap;
+              //buff_off += Xnbf*jnbf;
+              for(int jbf=0; jbf < jnbf; ++jbf){
+                for(int Xbf=0; Xbf < Xnbf; ++Xbf){
+                  munu_r12_X((ibfoff+ibf)*ketnbf + jbfoff + jbf, Xbfoff + Xbf) = buffer[buff_off++];
+                }
+              }
             }
             // This doesn't work
           }
@@ -1807,7 +1895,8 @@ namespace sc {
             }
           }
         }
-        K = 2 * CD * g_phys.transpose();
+        K = CD * g_phys.transpose();
+        K += K.transpose().eval();
       }
       {
         //Eigen::Map<EigenMatrix, Eigen::Unaligned, Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic> > CD(

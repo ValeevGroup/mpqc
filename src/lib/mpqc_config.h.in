@@ -233,6 +233,10 @@
 /* Define if you have the <armci.h> header file and library.  */
 #cmakedefine HAVE_ARMCI
 
+#if (defined HAVE_MPI) && (defined HAVE_ARMCI)
+#define MPQC_PARALLEL
+#endif
+
 /* Define if you have the libint2 header file and library.  */
 #cmakedefine HAVE_LIBINT2
 

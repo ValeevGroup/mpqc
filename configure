@@ -33,6 +33,7 @@ Configuration:
                           (CMAKE_PREFIX_PATH=)
   --expert                Expert mode: disables building dependencies (MPQC_EXPERT=TRUE)
   --openmp                Enable OpenMP (MPQC_OPENMP=TRUE)
+  --ci=                   Enable/disable CI
   -D*                     passed verbatim to cmake command
 
 Some influential environment variables:
@@ -97,6 +98,7 @@ while test $# != 0; do
   --boost=*)       args="$args -DBOOST=`arg \"$1\"`" ;;
   --expert)        args="$args -DMPQC_EXPERT=TRUE" ;;
   --openmp)        args="$args -DMPQC_OPENMP=TRUE" ;;
+  --ci=*)          args="$args -DMPQC_CI=`arg \"$1\"`" ;;
   -D*) args="$args $1" ;; # raw  cmake arg
   CC=*) CC="`arg \"$1\"`" ;;
   CXX=*) CXX="`arg \"$1\"`" ;;

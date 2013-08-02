@@ -360,6 +360,10 @@ namespace mpqc {
         template<class R, ...>
         Dataspace<T> operator()(const R &r, ...);
 #else
+        template<class S>
+        Dataspace<T> operator()(const range::tie<S> &t) {
+            return this->operator()(std::vector<range>(t));
+        }
         MPQC_RANGE_OPERATORS(4, Dataspace<T>, this->operator())
 #endif
 
@@ -523,6 +527,7 @@ namespace mpqc {
 
         /** Access dataspace of same rank */
         Dataspace<T> operator()(const std::vector<range> &r) {
+            std::cout << "r=" << r.size() << " " << this->rank() << std::endl;
             //std::cout << this->extents_.size() << " " << r.size() << std::endl;
             assert(this->rank() == r.size());
             return Dataspace<T>(*this, base_, r, r.size());
@@ -545,6 +550,14 @@ namespace mpqc {
         template<class R, ...>
         Dataspace<T> operator()(const R &r, ...);
 #else
+        template<class S>
+        Dataspace<T> operator()(const range::tie<S> &t) {
+            return this->operator()(std::vector<range>(t));
+        }
+        template<class S>
+        Dataspace<T> operator()(const range::tie<S> &t) const {
+            return this->operator()(std::vector<range>(t));
+        }
         MPQC_RANGE_OPERATORS(4, Dataspace<T>, this->operator())
         MPQC_RANGE_CONST_OPERATORS(4, Dataspace<const T>, this->operator())
 #endif

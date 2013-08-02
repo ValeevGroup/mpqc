@@ -12,7 +12,7 @@ set(subdirectories
   wfn
   )
 
-if (MPQC_NEW_FEATURES_CI)
+if (MPQC_CI)
   list(APPEND subdirectories ci)
 endif()
 

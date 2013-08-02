@@ -304,7 +304,7 @@ namespace ci {
                 }
             }
 
-            mpi::Task task(ci.comm);
+            MPI::Task task(ci.comm);
             
             foreach (auto rj, ci.io.local.block(ci.block)) {
                 MPQC_PROFILE_LINE;
@@ -369,7 +369,7 @@ namespace ci {
 
 	MPQC_PROFILE_RESET;
 
-        mpi::Task task(ci.comm);
+        MPI::Task task(ci.comm);
 
         while (true) {
             timer t;

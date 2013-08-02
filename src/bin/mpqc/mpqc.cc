@@ -101,7 +101,7 @@
 # include <chemistry/qc/psi/linkage.h>
 #endif // HAVE_PSI3
 
-#ifdef MPQC_NEW_FEATURES_CI
+#ifdef MPQC_CI
 # include <chemistry/qc/ci/linkage.h>
 #endif
 

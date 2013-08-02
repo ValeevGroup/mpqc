@@ -5,19 +5,19 @@ set(EXTERNAL_BUILD_DIR ${PROJECT_BINARY_DIR}/external/build)
 
 include(ExternalProject)
 
-set(ARMCI_FOUND FALSE)
+set(HAVE_ARMCI FALSE)
 
 # find_package(ARMCI)
 # if (ARMCI_FOUND)
 #   include_directories(${ARMCI_INCLUDE_DIRS})
 # endif()
 
-if (NOT ARMCI_FOUND)
-
-  if (NOT MPI_FOUND)
-    message(WARNING "MPI not found:  ARMCI will not be built")
+if (NOT HAVE_ARMCI)
+  
+  if (NOT HAVE_MPI)
+    message(WARNING "No MPI:  ARMCI will not be built")
   else()
-
+    
     set(ARMCI_URL ${EXTERNAL_SOURCE_DIR}/armci.tar.gz)
     set(ARMCI_URL_HASH MD5=c59ac34c54dfff59aab3f3d19244071d)
     
@@ -47,7 +47,8 @@ if (NOT ARMCI_FOUND)
 
     add_dependencies(External armci)
     include_directories(${EXTERNAL_BUILD_DIR}/armci/include)
-    set(LIBRARIES ${EXTERNAL_BUILD_DIR}/armci/lib/libarmci.a;${LIBRARIES})
+    set(ARMCI_LIBRARIES ${EXTERNAL_BUILD_DIR}/armci/lib/libarmci.a)
+    set(HAVE_ARMCI TRUE)
 
   endif()
 

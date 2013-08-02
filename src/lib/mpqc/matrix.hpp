@@ -48,8 +48,8 @@ namespace mpqc {
             Eigen::Block<eigen_base>
             >::type 
         operator()(const Ri &i, const Rj &j) {
-            range ri = rangify1(i);
-            range rj = rangify1(j);
+            range ri = range_cast(i);
+            range rj = range_cast(j);
             // printf("i=(%i,%i),j=(%i:%i)\n",
             //        *ri.begin(), *ri.end(),
             //        *rj.begin(), *rj.end());
@@ -62,8 +62,8 @@ namespace mpqc {
             Eigen::Block<const eigen_base>
             >::type 
         operator()(const Ri &i, const Rj &j) const {
-            range ri = rangify1(i);
-            range rj = rangify1(j);
+            range ri = range_cast(i);
+            range rj = range_cast(j);
             // printf("i=(%i,%i),j=(%i:%i)\n",
             //        *i.begin(), *i.end(),
             //        *j.begin(), *j.end());

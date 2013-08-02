@@ -124,7 +124,7 @@ namespace ArrayServer {
     struct Thread : boost::noncopyable {
 
     private:
-        explicit Thread(mpi::Comm comm)
+        explicit Thread(MPI::Comm comm)
 	    : comm_(comm), tag_(1<<20)
 	{
             buffer_ = malloc(array_proxy::BUFFER);
@@ -188,8 +188,8 @@ namespace ArrayServer {
 	static std::shared_ptr<Thread>& instance() {
 	    static std::shared_ptr<Thread> thread;
 	    if (!thread.get()) {
-		mpi::initialize(MPI_THREAD_MULTIPLE);
-		thread.reset(new Thread(mpi::Comm(MPI_COMM_WORLD)));
+		MPI::initialize(MPI_THREAD_MULTIPLE);
+		thread.reset(new Thread(MPI::Comm(MPI_COMM_WORLD)));
 	    }
 	    return thread;
 	}
@@ -208,7 +208,7 @@ namespace ArrayServer {
             return int(N + (next_++ % N));
         }
 
-	int translate(mpi::Comm comm1, int rank1) const {
+	int translate(MPI::Comm comm1, int rank1) const {
 	    int rank2;;
 	    MPI_Group group1, group2;
 	    MPI_Comm_group(comm1, &group1);
@@ -232,7 +232,7 @@ namespace ArrayServer {
 
                 this->socket_.wait(&msg);
 
-		//std::cout << mpi::get_processor_name() << std::endl;
+		//std::cout << MPI::get_processor_name() << std::endl;
 
                 // MPI_Status status;
                 // status = comm_.recv(&msg, sizeof(Message), MPI_BYTE,
@@ -241,7 +241,7 @@ namespace ArrayServer {
                 // MPI_Request request =
                 //     comm_.irecv(&msg, sizeof(Message), MPI_BYTE,
 		// 	       MPI_ANY_SOURCE, this->tag_);
-                // status = mpi::wait(request, 10);
+                // status = MPI::wait(request, 10);
 
 		//comm_.printf("Message received %i\n", msg.request);
 
@@ -271,7 +271,7 @@ namespace ArrayServer {
 
     private:
 
-	mpi::Comm comm_;
+	MPI::Comm comm_;
         void *buffer_;
 	boost::thread *thread_;
 
@@ -376,7 +376,7 @@ namespace detail {
 
     private:
 
-        mpi::Comm comm_;
+        MPI::Comm comm_;
 	std::shared_ptr<Thread> thread_;
 
 	int tag() const {

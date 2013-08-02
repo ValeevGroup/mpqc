@@ -55,11 +55,18 @@ endif()
 include(TestCXXAcceptsFlag)
 include(CheckCXXSourceCompiles)
 
+# Enable CI
+if (MPQC_NEW_FEATURES)
+  if (NOT DEFINED MPQC_CI)
+    set(MPQC_CI TRUE)
+  endif()
+  if (MPQC_CI)
+    add_definitions(-DMPQC_CI)
+  endif()
+endif()
+
 if (MPQC_NEW_FEATURES)
   add_definitions(-DMPQC_NEW_FEATURES)
-  if (MPQC_NEW_FEATURES_CI)
-    add_definitions(-DMPQC_NEW_FEATURES_CI)
-  endif()
   
   # "some" C++11 features are required, check if we need a flag to turn on the support in the compiler
   # N.B. even though clang++ assumes c++11, it still needs the flag for some features (e.g. static_assert)
@@ -271,19 +278,24 @@ if (HAVE_LIBINT2)
 else()
   message("** R12 methods require Libint2.  R12 methods are disabled")
 endif()
+
 # propagate some variables into Makefiles
 if (MPQC_NEW_FEATURES)
   set(MAKE_ASSUME_NEW_FEATURES yes)
-  if (MPQC_NEW_FEATURES_CI)
-    set(MAKE_ASSUME_NEW_FEATURES_CI yes)
-  endif()
 endif()
+
+if (MPQC_CI)
+  set(MAKE_ASSUME_CI yes)
+endif()
+
 if (MPQC_R12)
   set(MAKE_ASSUME_R12 yes)
 endif()
+
 if (HAVE_PSI3)
   set(MAKE_ASSUME_PSI yes)
 endif()
+
 if (HAVE_LIBINT2)
   if (LIBINT_SUPPORTS_G12_T1G12_INTEGRALS)
     set(MAKE_ASSUME_LIBINT2_SUPPORTS_T1G12 yes)

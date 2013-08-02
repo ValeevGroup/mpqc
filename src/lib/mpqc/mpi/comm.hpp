@@ -13,6 +13,13 @@ namespace MPI {
     /// @ingroup MPI
     struct Comm {
 
+    protected:
+#ifdef MPQC_PARALLEL
+        // warning: comm_ must be initialized prior to cout
+        MPI_Comm comm_;
+#endif
+
+    public:
         struct OStream {
             explicit OStream(const MPI::Comm &comm) {
                 this->rank_ = comm.rank();
@@ -24,6 +31,7 @@ namespace MPI {
         private:
             int rank_;
         };
+
 	const OStream cout;
 
         void printf(std::string fmt, ...) const {
@@ -34,7 +42,7 @@ namespace MPI {
             va_end(args);
         }
 
-        // serial "MPI" stubs
+        // serial "MPI" stubs, PTP aren't available in serial
 #ifndef MPQC_PARALLEL
     public:
         static MPI::Comm Self() { return Comm(); }
@@ -49,11 +57,8 @@ namespace MPI {
         Comm() : cout(*this) {}
 #endif
 
-        // following functions are if MPI is available
+        // following functions are used if MPI is available
 #ifdef MPQC_PARALLEL
-
-    protected:
-        MPI_Comm comm_;
 
     public:
 
@@ -159,6 +164,8 @@ namespace MPI {
 
 #endif // MPQC_PARALLEL
 
+        // Collective calls, either MPI or serial stubs
+
     public:
 
         template <typename T>
@@ -211,7 +218,7 @@ namespace MPI {
 
 
     template <typename T>
-    std::ostream& operator<<(const Comm::OStream &s, const T &t) {
+    std::ostream& operator<<(const MPI::Comm::OStream &s, const T &t) {
 	s.stream() << t;
 	return s.stream();
     }

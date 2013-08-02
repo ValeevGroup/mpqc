@@ -2,6 +2,7 @@
 #define MPQC_MPI_HPP
 
 /// @defgroup MPI mpqc::MPI
+/// <a href=http://www.mpi-forum.org>MPI</a> wrappers/stubs
 
 #include "mpqc/mpi/base.hpp"
 #include "mpqc/mpi/comm.hpp"

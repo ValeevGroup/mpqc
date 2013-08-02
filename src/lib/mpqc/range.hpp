@@ -12,7 +12,8 @@
 #include <boost/fusion/include/size.hpp>
 #include <boost/fusion/include/at_c.hpp>
 
-/** @defgroup Range mpqc::Range */
+/// @defgroup Range mpqc::Range
+/// Range objects for iterating or accessing slices of data
 
 namespace mpqc {
 
@@ -163,6 +164,7 @@ namespace mpqc {
     template<class R>
     typename boost::enable_if<boost::is_integral<R>, range>::type
     range_cast(const R &r) {
+        //std::cout << "range_cast<R>" << r << std::endl;
         return range(r,r+1);
     }
 

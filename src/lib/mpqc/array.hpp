@@ -15,6 +15,7 @@
 #include "mpqc/utility/foreach.hpp"
 
 /// @defgroup Array mpqc::Array
+/// Distributed/serial array implementation
 
 namespace mpqc {
 

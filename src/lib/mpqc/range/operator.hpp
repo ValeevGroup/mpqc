@@ -3,8 +3,7 @@
 
 #include "mpqc/range.hpp"
 #include <boost/tuple/tuple.hpp>
-#include <boost/fusion/include/vector_tie.hpp>
-#include <boost/fusion/include/make_vector.hpp>
+#include <boost/tuple/tuple_io.hpp>
 
 #include <boost/preprocessor/repetition.hpp>
 #include <boost/preprocessor/enum_params.hpp>
@@ -13,14 +12,15 @@
 namespace mpqc {
 
     /// boost::tuple tie wrapper
-    template<class S>
-    struct range::tie : S {
-        static const int N = boost::tuples::length<S>::value;
-        tie(const S &s) : S(s) {}
+    template<class Tuple>
+    struct range::tie : Tuple {
+        static const int N = boost::tuples::length<Tuple>::value;
+        tie(const Tuple &s) : Tuple(s) {}
         /// cast range tuple as boost::array
         operator boost::array<range,N>() const {
             boost::array<range,N> a;
             cast(a, int_<N>());
+            return a;
         }
         /// cast range tuple as std::vector
         operator std::vector<range>() const {
@@ -33,11 +33,18 @@ namespace mpqc {
         template<class V, int I>
         void cast(V &v, int_<I>) const {
             v[I-1] = range_cast(boost::tuples::get<I-1>(*this));
+            //std::cout << "cast " << I-1 << "=" << v[I-1] << std::endl;
             cast(v, int_<I-1>());
         }
         template<class V>
         void cast(V &v, int_<0>) const {}
     };
+
+    template<class Tuple>
+    std::ostream& operator<<(std::ostream& os, const range::tie<Tuple> &tie) {
+        os << (const Tuple&)tie;
+        return os;
+    }
 
 }
 
@@ -62,18 +69,18 @@ namespace _range {
 
 #define MPQC_RANGE_CONST_OPERATOR(Z, N, DATA)                                   \
         template<BOOST_PP_ENUM_PARAMS(N, class _R)>                             \
-        BOOST_PP_TUPLE_ELEM(0, DATA)                                            \
+        BOOST_PP_TUPLE_ELEM(2, 0, DATA)                                         \
             operator()(BOOST_PP_ENUM_BINARY_PARAMS(N, const _R, &r)) const {    \
-            return BOOST_PP_TUPLE_ELEM(1, DATA)                                 \
+            return BOOST_PP_TUPLE_ELEM(2, 1, DATA)                              \
                 (mpqc::detail::_range::tie                                      \
                  (boost::tie(BOOST_PP_ENUM_PARAMS(N, r))));                     \
         }
 
 #define MPQC_RANGE_OPERATOR(Z, N, DATA)                                         \
         template<BOOST_PP_ENUM_PARAMS(N, class _R)>                             \
-        BOOST_PP_TUPLE_ELEM(0, DATA)                                            \
+        BOOST_PP_TUPLE_ELEM(2, 0, DATA)                                         \
             operator()(BOOST_PP_ENUM_BINARY_PARAMS(N, const _R, &r)) {          \
-            return BOOST_PP_TUPLE_ELEM(1, DATA)                                 \
+            return BOOST_PP_TUPLE_ELEM(2, 1, DATA)                              \
                 (mpqc::detail::_range::tie                                      \
                  (boost::tie(BOOST_PP_ENUM_PARAMS(N, r))));                     \
         }

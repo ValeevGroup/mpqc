@@ -7,7 +7,6 @@ set(sources
   globcnt.cc
   hcube.cc
   memamsg.cc
-#  memarmci.cc
   memiter.cc
   memmsg.cc
   memory.cc
@@ -31,6 +30,11 @@ set(sources
 if(HAVE_MPI)
   list(APPEND sources messmpi.cc memmtmpi.cc)
 endif()
+
+# # ARMCIMemGroup broken, doesnt compile
+# if (HAVE_ARMCI)
+#   list(APPEND sources memarmci.cc)
+# endif()
 
 add_library(group OBJECT ${sources})
 

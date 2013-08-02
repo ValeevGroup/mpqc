@@ -202,7 +202,7 @@ namespace ci {
                     Matrix c(alpha.size(), rb.size());
                     const Matrix &s = D(alpha, rb);
                     for (int j = 0; j < M; ++j) {
-                        io.b(alpha,rb,j) >> c;
+                        io.b(range(alpha),rb,j) >> c;
                         double q = 0; //dot(c,s);
 #pragma omp parallel for schedule(dynamic,1) reduction(+:q)
                         for (int b = 0; b < rb.size(); ++b) {
@@ -241,7 +241,7 @@ namespace ci {
                     d.fill(0);
                     for (int i = 0; i < M; ++i) {
                         MPQC_PROFILE_LINE;
-                        io.b(alpha,rb,i) >> v;
+                        io.b(range(alpha),rb,i) >> v;
                         double r = -a(i,k)*lambda(k);
 #pragma omp parallel for schedule(dynamic,1)
                         for (int b = 0; b < rb.size(); ++b) {

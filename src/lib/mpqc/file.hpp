@@ -411,6 +411,7 @@ namespace mpqc {
             assert(ndims <= r.size());
             size_ = (r.size() ? 1 : 0);
             for (int i = 0; i < r.size(); ++i) {
+                //std::cout << "r = " << r[i] << std::endl;
                 size_ *= r[i].size();
             }
         }
@@ -527,7 +528,6 @@ namespace mpqc {
 
         /** Access dataspace of same rank */
         Dataspace<T> operator()(const std::vector<range> &r) {
-            std::cout << "r=" << r.size() << " " << this->rank() << std::endl;
             //std::cout << this->extents_.size() << " " << r.size() << std::endl;
             assert(this->rank() == r.size());
             return Dataspace<T>(*this, base_, r, r.size());

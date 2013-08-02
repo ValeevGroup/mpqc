@@ -19,6 +19,7 @@ else()
       }
       "  CXX_COMPILER_COMPILES_MPI)
     if (CXX_COMPILER_COMPILES_MPI)
+      set(MPI_FOUND TRUE)
       set(HAVE_MPI TRUE)
       message(STATUS "C++ compiler (${CMAKE_CXX_COMPILER}) compiles and links MPI")
     endif()

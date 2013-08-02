@@ -13,11 +13,11 @@ set(HAVE_ARMCI FALSE)
 # endif()
 
 if (NOT HAVE_ARMCI)
-  
+
   if (NOT HAVE_MPI)
-    message(WARNING "No MPI:  ARMCI will not be built")
+    message(WARNING "MPI not found:  ARMCI will not be built")
   else()
-    
+
     set(ARMCI_URL ${EXTERNAL_SOURCE_DIR}/armci.tar.gz)
     set(ARMCI_URL_HASH MD5=c59ac34c54dfff59aab3f3d19244071d)
     
@@ -29,6 +29,12 @@ if (NOT HAVE_ARMCI)
       set(ARMCI_URL_HASH "")
       message(STATUS "Using ARMCI archive ${ARMCI_URL}")
     endif()
+    
+    if (MPI_C_INCLUDE_PATH)
+      set(MPI_C_CPPFLAGS "CPPFLAGS=-I${MPI_C_INCLUDE_PATH}")
+    else()
+      set(MPI_C_CPPFLAGS)
+    endif()
 
     ExternalProject_Add(
       armci
@@ -38,8 +44,8 @@ if (NOT HAVE_ARMCI)
       BUILD_IN_SOURCE 1
       CONFIGURE_COMMAND ./configure
       --prefix=${EXTERNAL_BUILD_DIR}/armci
-      CPPFLAGS=-I${MPI_C_INCLUDE_PATH}
-      CC=${CMAKE_C_COMPILER}
+      ${MPI_C_CPPFLAGS}
+      MPICC=${CMAKE_C_COMPILER}
       CFLAGS=-g
       BUILD_COMMAND make
       INSTALL_COMMAND make install

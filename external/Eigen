@@ -19,14 +19,14 @@ if (EIGEN_FOUND)
     }"
     EIGEN_COMPILES)
   if (NOT EIGEN_COMPILES)
-    message("Eigen found at ${Eigen_INCLUDE_DIR} but failed to compile")
-    message("See CMakeFiles/CMakeOutput.log for details")
+    message(STATUS "Eigen found at ${Eigen_INCLUDE_DIR} but failed to compile")
+    message(STATUS "See CMakeFiles/CMakeOutput.log for details")
     set(EIGEN_FOUND FALSE)
+    list(REMOVE_AT CMAKE_REQUIRED_INCLUDES 0) # Eigen install not usable
   else()
     include_directories(${Eigen_INCLUDE_DIR})
     set(HAVE_EIGEN TRUE)
   endif()
-  list(REMOVE_AT CMAKE_REQUIRED_INCLUDES 0)
 endif()
 
 #if eigen not found or did not compile, use the built in

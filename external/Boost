@@ -9,15 +9,16 @@
 
 if (DEFINED BOOST)
 
-  set(Boost_USE_STATIC_LIBS        ON)
-  set(Boost_USE_MULTITHREADED      OFF)
-  #set(Boost_USE_STATIC_RUNTIME    OFF)
+  set(Boost_USE_STATIC_LIBS ON)
+  #set(Boost_USE_MULTITHREADED OFF)
+  #set(Boost_USE_STATIC_RUNTIME OFF)
 
   set(BOOST_ROOT ${BOOST})
   set(Boost_NO_SYSTEM_PATHS TRUE)
-  find_package(Boost 1.48 COMPONENTS thread system)
+  set(Boost_DETAILED_FAILURE_MSG TRUE)
+  find_package(Boost 1.48 COMPONENTS thread)
   if (NOT Boost_FOUND)
-    message(FATAL_ERROR "Boost not found in ${BOOST_ROOT}")
+    message(FATAL_ERROR "Necessary Boost install not found in ${BOOST_ROOT}")
   endif()
 
 elseif (MPQC_EXPERT)

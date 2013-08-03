@@ -19,8 +19,9 @@ else()
       }
       "  CXX_COMPILER_COMPILES_MPI)
     if (CXX_COMPILER_COMPILES_MPI)
-      set(MPI_FOUND TRUE)
       set(HAVE_MPI TRUE)
+      # assume C sources are compatible with C++
+      set(MPI_CXX_COMPILER ${CMAKE_CXX_COMPILER})
       message(STATUS "C++ compiler (${CMAKE_CXX_COMPILER}) compiles and links MPI")
     endif()
   endif()

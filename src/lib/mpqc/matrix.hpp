@@ -1,5 +1,5 @@
-#ifndef MPQC_MATH_HPP
-#define MPQC_MATH_HPP
+#ifndef MPQC_MATRIX_HPP
+#define MPQC_MATRIX_HPP
 
 #include "mpqc/range.hpp"
 #include "math/scmat/matrix.h"
@@ -10,8 +10,14 @@
 // #define EIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET
 // #include <Eigen/Sparse>
 
+/// @defgroup Matrix mpqc.Matrix
+
 namespace mpqc {
 
+    /// @addtogroup Matrix
+    /// @{
+
+    /// Matrix class derived from Eigen::Matrix with additional MPQC integration
     template<typename T>
     struct matrix :
 	Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>
@@ -20,16 +26,21 @@ namespace mpqc {
 
 	matrix() : eigen_base() {}
 
+	/// Construct mxn matrix
+	/// @warning NOT initialized to zeroes.
 	matrix(size_t m, size_t n) : eigen_base(m,n) {}
 
+	/// Construct matrix from Eigen type
         template<class A>
 	matrix(const Eigen::EigenBase<A> &a) : eigen_base(a) {}
 
+	/// Construct matrix from sc::RefSCMatrix matrix
         matrix(sc::RefSCMatrix a) {
             this->resize(a.nrow(), a.ncol());
             apply(assign(), this->rows(), this->cols(), *this, a);
         }
 
+	/// Construct full matrix from sc::RefSCMatrix matrix
         matrix(const sc::RefSymmSCMatrix &a) {
             this->resize(a.n(), a.n());
             apply(assign(), this->rows(), this->cols(), *this, a);
@@ -37,11 +48,15 @@ namespace mpqc {
 
         using eigen_base::operator();
 
+	/// Test if both template parameters are integral types
         template<typename T_, typename U_>
         struct is_index : boost::mpl::and_<
             boost::is_integral<T_>,
             boost::is_integral<U_> > {};
 
+	/// Access a matrix block.
+	/// Disabled if both arguments are integral types in which case
+	/// an element access operator is used
         template<class Ri, class Rj>
         typename boost::disable_if<
             is_index<Ri, Rj>,
@@ -116,17 +131,20 @@ namespace mpqc {
     };
 
 
-    //typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> Matrix;
+    /// Convience double matrix type
     typedef matrix<double> Matrix;
+    /// Convience double vector type
     typedef vector<double> Vector;
 
     // typedef Eigen::SparseMatrix<double> Sparse;
 
+    /// absolute max of an Eigen type
     template<class E>
     double absmax(const E &e) {
         return std::max(fabs(e.maxCoeff()), fabs(e.minCoeff()));
     }
 
+    /// element-wise dot product of two matrices
     template<class T>
     T dot(const matrix<T> &a, const matrix<T> &b) {
 	T q = 0;
@@ -137,6 +155,7 @@ namespace mpqc {
 	return q;
     }
 
+    /// 
     template<class T>
     Eigen::SelfAdjointEigenSolver<Matrix::eigen_base> symmetric(const matrix<T> &a) {
 	Eigen::SelfAdjointEigenSolver<Matrix::eigen_base> es(a);
@@ -145,11 +164,13 @@ namespace mpqc {
 	return es;
     }
 
+    /// Matrix norm
     template<class T>
     T norm(const matrix<T> &a) {
 	return a.norm();
     }
 
+    /// Normalize matrix
     template<class T>
     void normalize(matrix<T> &a) {
 	a *= 1/a.norm();
@@ -164,6 +185,8 @@ namespace mpqc {
         //d /= sqrt(d.norm());
     }
 
+    /// @} Matrix
+
 } // namespace mpqc
 
 namespace sc {
@@ -172,4 +195,4 @@ namespace sc {
     using mpqc::dot;
 }
 
-#endif /* MPQC_MATH_HPP */
+#endif /* MPQC_MATRIX_HPP */

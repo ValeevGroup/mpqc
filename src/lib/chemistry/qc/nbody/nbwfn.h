@@ -55,7 +55,7 @@ namespace sc {
 	  specifies the reference wavefunction.
 	  The most common choice is an SD_RefWavefunction.
 
-          <tr><td><tt>world</tt><td>WavefunctionWorld<td>none<td>
+          <tr><td><tt>world</tt><td>WavefunctionWorld<td>see the notes<td>
 	  the WavefunctionWorld object that this Wavefunction belongs to.
 	  If not given, this object will live in its own WavefunctionWorld.
           Ordinarily one does need to specify this.

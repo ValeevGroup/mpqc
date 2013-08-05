@@ -66,12 +66,6 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
   cabs_singles_h0_ = keyval->stringvalue("cabs_singles_h0", KeyValValuestring(string("dyall_1")));
   cabs_singles_coupling_ = keyval->booleanvalue("cabs_singles_coupling", KeyValValueboolean(true));
   rotate_core_ = keyval->booleanvalue("rotate_core", KeyValValueboolean(true));
-  bool correlate_rasscf = keyval->booleanvalue("force_correlate_rasscf",KeyValValueboolean(false));
-  if(correlate_rasscf)  // Only when correlating RAS-CI, we have the necessary orbital spaces
-                    // to compute Davidson correction.
-      calc_davidson_ = true;
-  else
-      calc_davidson_ = false;
 
   rdm2_ = require_dynamic_cast<SpinFreeRDM<Two>*>(
         keyval->describedclassvalue("rdm2").pointer(),
@@ -150,7 +144,6 @@ PT2R12::PT2R12(StateIn &s) : Wavefunction(s) {
   s.get(cabs_singles_);
   s.get(cabs_singles_coupling_);
   s.get(debug_);
-  s.get(calc_davidson_);
 }
 
 PT2R12::~PT2R12() {
@@ -166,7 +159,6 @@ void PT2R12::save_data_state(StateOut &s) {
   s.put(omit_uocc_);
   s.put(cabs_singles_coupling_);
   s.put(debug_);
-  s.put(calc_davidson_);
 }
 
 void
@@ -698,19 +690,6 @@ double PT2R12::energy_PT2R12_projector2() {
     ExEnv::out0() << indent << scprintf("Hylleraas:                %17.12lf", E_total) << std::endl;
     ExEnv::out0() << indent << scprintf("deviation percentage:     %17.12lf", deviation) << std::endl << std::endl << std::endl;
   }
-  if(fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupancy())
-  {
-    const int total_active_occ = r12world()->refwfn()->get_poporbspace(Alpha)->occ_act_sb()->rank();
-    const int survive_active_occ = r12world()->refwfn()->occ_act_sb(Alpha)->rank();
-    const double kept = double(survive_active_occ)/double(total_active_occ);
-    const double filter = 1 -kept;
-    ExEnv::out0() << std::endl << std::endl;
-    ExEnv::out0() << indent << "SCREENING INFO:" << std::endl;
-    ExEnv::out0() << indent << scprintf("total corre orbs:         %12d", total_active_occ) << std::endl;
-    ExEnv::out0() << indent << scprintf("screen corre orbs:        %12d", survive_active_occ) << std::endl;
-    ExEnv::out0() << indent << scprintf("ratio of kept:            %17.12lf", kept) << std::endl;
-    ExEnv::out0() << indent << scprintf("ratio of filter:          %17.12lf", filter) << std::endl <<std::endl << std::endl;
-  }
 
   const double energy = compute_energy(HylleraasMatrix);
   return energy;
@@ -826,7 +805,7 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
     MPQCInit::instance()->madness_world().gop.fence();
 
   }
-  std::cout << "Delta=" << Delta << std::endl;
+  std::cout << indent << "Delta=" << Delta << std::endl;
 
   double eref_recomp = 0.0;
   {
@@ -878,8 +857,8 @@ RefSCMatrix PT2R12::transform_MO() //transformation matrix between occupied orbi
 {                                       // assume mo_density is of the same ordering as occ_sb()
   const bool debugprint = false;
   RefSymmSCMatrix mo_density =  rdm1();//this will eventually read the checkpoint file. I assume they are of the dimension of occ orb space
-  Ref<OrbitalSpace> unscreen_occ_act = r12world()->refwfn()->get_poporbspace(AnySpinCase1)->occ_act_sb();
-  Ref<OrbitalSpace> occ = r12world()->refwfn()->get_poporbspace(AnySpinCase1)->occ_sb();
+  Ref<OrbitalSpace> unscreen_occ_act = r12world()->refwfn()->occ_act_sb();
+  Ref<OrbitalSpace> occ = r12world()->refwfn()->occ_sb();
   std::vector<int> map1 = map(*occ, *unscreen_occ_act);
 
   int num_occ_act = unscreen_occ_act->rank();
@@ -1014,16 +993,6 @@ RefSymmSCMatrix PT2R12::rdm1_sf()
 {
   static bool printed = false;
   RefSymmSCMatrix sf_opdm = rdm1();//converted to local
-  if(fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupancy())
-  {
-    if (not printed) // force print out natural orb occ, just once
-    {
-      ExEnv::out0() << std::endl << std::endl;
-      printed = true;
-    }
-    return rdm1_sf_transform();
-  }
-  else
   {
     return(sf_opdm);
   }
@@ -1082,30 +1051,6 @@ RefSymmSCMatrix PT2R12::rdm2_sf()
 {
   RefSymmSCMatrix sf_rdm = rdm2();
 
-  if(fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupancy())
-  {
-    const bool printdebug = false;
-    RefSymmSCMatrix res = sf_rdm->clone();
-    res->assign(0.0);
-    RefSCMatrix transMO = this->transform_MO();
-    const int n = transMO->nrow();
-    RefSCMatrix RefSCrdm = sf_rdm->kit()->matrix(sf_rdm->dim(), sf_rdm->dim());//get a RefSCMatrix instead of RefSymm..
-    RefSCrdm->assign(0.0);
-    RefSCrdm->accumulate(sf_rdm);
-    RefSCMatrix one = transform_one_ind(transMO, RefSCrdm, 1, n);
-
-    if(printdebug) ExEnv::out0() << __FILE__ << __LINE__ << "\n";
-    if(printdebug) one.print(string("rdm2_sf: one").c_str());
-    RefSCMatrix two = transform_one_ind(transMO, one, 2, n);
-    if(printdebug) two.print(string("rdm2_sf: two").c_str());
-    RefSCMatrix three = transform_one_ind(transMO, two, 3, n);
-    if(printdebug) three.print(string("rdm2_sf: three").c_str());
-    RefSCMatrix four = transform_one_ind(transMO, three, 4, n);
-    if(printdebug) four.print(string("rdm2_sf: four").c_str());
-    res.copyRefSCMatrix(four);
-    return res;
-  }
-  else
     return sf_rdm;
 }
 
@@ -1127,11 +1072,7 @@ RefSCMatrix PT2R12::rdm2_sf_4spaces(const Ref<OrbitalSpace> b1space, const Ref<O
 
   // 1. to avoid potential problems and for cleanness, all orb spaces should be accessed through r12eval_->r12world_->ref_->spinspaces_ (or screened_spinspaces_);
   // 2. take care of screening
-  Ref<OrbitalSpace> pdmspace;
-  if(fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupancy())
-    pdmspace = get_r12eval()->r12world()->refwfn()->get_screened_poporbspace()->occ_sb();
-  else
-    pdmspace = get_r12eval()->r12world()->refwfn()->get_poporbspace()->occ_sb();
+  Ref<OrbitalSpace> pdmspace = get_r12eval()->r12world()->refwfn()->occ_sb();
 
   const unsigned int n_pdmspace = pdmspace->rank();
 
@@ -1144,7 +1085,7 @@ RefSCMatrix PT2R12::rdm2_sf_4spaces(const Ref<OrbitalSpace> b1space, const Ref<O
     ExEnv::out0() << "ordm dimension: " << ABX->n() << "\n";
     ABX.print(prepend_spincase(AlphaBeta, "ordm").c_str());
 
-    RefSCMatrix old_mocoef2 = r12world()->refwfn()->get_poporbspace()->orbs_sb()->coefs();
+    RefSCMatrix old_mocoef2 = r12world()->refwfn()->orbs_sb()->coefs();
     ExEnv::out0() << __FILE__ << ": " << __LINE__ << "\n";
     ExEnv::out0() << "print old symmetry-block Mo coefs of dimension: " << old_mocoef2->ncol() << " (AO dimensin: )" << old_mocoef2->nrow() << "\n";
     old_mocoef2.print(prepend_spincase(AlphaBeta, "symm old mo").c_str());
@@ -1367,6 +1308,7 @@ void PT2R12::compute()
   double cabs_singles_e = 0.0;
   const bool spin_polarized = r12world()->refwfn()->spin_polarized();
 
+#if 0
   if(calc_davidson_)
   {
     if(not r12world()->refwfn()->force_rasscf())
@@ -1381,14 +1323,14 @@ void PT2R12::compute()
     ExEnv::out0()  << indent << scprintf("Davidson correction coef:              %17.12lf",
                                             davidson) << std::endl << std::endl;
   }
+#endif
 
   double recomp_ref_energy = 0.0;
   if (pt2_correction_)
   {
-    r12world()->refwfn()->set_spinfree(true);
     assert(r12world()->r12tech()->ansatz()->projector() == R12Technology::Projector_2);
 
-#define ENABLE_NEW_PT2R12_CODE 0
+#define ENABLE_NEW_PT2R12_CODE 1
 #if ENABLE_NEW_PT2R12_CODE && defined(HAVE_MPQC3_RUNTIME)
     if (1) {
       std::pair<double,double> e = energy_PT2R12_projector2_mpqc3();
@@ -1949,8 +1891,6 @@ void PT2R12::print(std::ostream & os) const
 
 RefSymmSCMatrix PT2R12::_rdm2_to_gg(RefSymmSCMatrix rdm)
 {
-  if(fabs(r12world_->refwfn()->occ_thres()) > PT2R12::zero_occupancy())
-     throw ProgrammingError("this function hasn't been examined to take care of the screening; at least 'orbs1/2' should be specified using r12int_eval_...", __FILE__,__LINE__);
   Ref<OrbitalSpace> orbs = rdm2_->orbs();
   Ref<OrbitalSpace> gspace = r12eval_->ggspace(AnySpinCase1);
   // if density is already in required spaces?

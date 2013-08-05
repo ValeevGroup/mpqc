@@ -135,7 +135,6 @@ namespace sc {
       unsigned int nfzv() const { return nfzv_; }
       bool omit_uocc() const { return omit_uocc_; }
       RefSymmSCMatrix ordm(SpinCase1 spin) const;
-      RefSymmSCMatrix orig_ordm_orbs_sb(SpinCase1 spin) const;
       Ref<DensityFittingInfo> dfinfo() const;
     private:
       Ref<PsiRASCI> wfn_;

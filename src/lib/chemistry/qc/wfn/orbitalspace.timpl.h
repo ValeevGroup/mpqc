@@ -87,7 +87,6 @@ namespace sc {
     // construct vector of MolecularOrbital objects
     std::vector<MolecularOrbital> orbs;
     for(size_t o=0; o<norbs; ++o) {
-      using detail::MolecularOrbitalAttributes;
       orbs.push_back(MolecularOrbital(o,
                                       MolecularOrbitalAttributes(orbsyms.at(o),
                                                                  evals.get_element(o),
@@ -176,7 +175,6 @@ namespace sc {
     // 1) construct vector of MolecularOrbital objects
     std::vector<MolecularSpinOrbital> orbs;
     for(size_t o=0; o<norbs; ++o) { // alpha spin
-      using detail::MolecularSpinOrbitalAttributes;
       orbs.push_back(MolecularSpinOrbital(o,
                                       MolecularSpinOrbitalAttributes(orbsyms_a.at(o),
                                                                      evals_a.get_element(o),
@@ -186,7 +184,6 @@ namespace sc {
       ));
     }
     for(size_t o=0; o<norbs; ++o) { // beta spin
-      using detail::MolecularSpinOrbitalAttributes;
       orbs.push_back(MolecularSpinOrbital(o + norbs,
                                       MolecularSpinOrbitalAttributes(orbsyms_b.at(o),
                                                                      evals_b.get_element(o),

@@ -469,10 +469,14 @@ ExternMOInfo::ExternMOInfo(std::string filename,
   token = readline(in);  fzcpi_   = parse<unsigned int>(token); assert(fzcpi_.size() == pg->order());
   token = readline(in);  inactpi_ = parse<unsigned int>(token); assert(inactpi_.size() == pg->order());
   token = readline(in);  actpi_   = parse<unsigned int>(token); assert(actpi_.size() == pg->order());
-  corrpi_ = actpi_; // this is the default for molcas
   token = readline(in);  fzvpi_   = parse<unsigned int>(token); assert(fzvpi_.size() == pg->order());
   assert(std::accumulate(mopi_.begin(), mopi_.end(), 0) == nmo);
   unsigned int junk; in >> junk; // fzcpi_ etc are in molcas symmetry order
+
+  // by default correlate all inactive and active orbitals
+  corrpi_ = actpi_;
+  for(size_t i=0; i<corrpi_.size(); ++i)
+    corrpi_[i] += inactpi_[i];
 
   const unsigned int nfzc   = std::accumulate(fzcpi_.begin(),   fzcpi_.end(),   0u);
   const unsigned int ninact = std::accumulate(inactpi_.begin(), inactpi_.end(), 0u);

@@ -149,9 +149,6 @@ private:
   bool ribs_space_given_;        // true if ribs_space was given in the constructor, only used to detect
   mutable Ref<OrbitalSpace> cabs_space_[NSpinCases1]; // CABS spaces
   double ref_acc_for_cabs_space_; // CABS space depends on reference. this keeps track of the accuracy of reference used to compute cabs_space_
-  bool do_screen_; // this is introduced for debugging purpose; if false, orbitals are rotated, by screening is not done (no orbs dropped)
-  double correlate_min_occ_; // this parameter is used to screen geminal correlated orbitals based on occupation number; only those of occ num >
-                              // this threshold are explicitly correlated; defaults to zero, thus nothing particular is done.
 
 
 

@@ -909,7 +909,7 @@ iquicksort(int *item,int *index,int n)
 static void
 iqs(int *item,int *index,int left,int right)
 {
-  register int i,j;
+  int i,j;
   int x,y;
 
   i=left; j=right;

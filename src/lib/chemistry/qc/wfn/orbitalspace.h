@@ -28,6 +28,7 @@
 #ifndef _chemistry_qc_mbptr12_orbitalspace_h
 #define _chemistry_qc_mbptr12_orbitalspace_h
 
+#include <bitset>
 #include <vector>
 #include <stdexcept>
 #include <algorithm>

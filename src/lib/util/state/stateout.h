@@ -36,7 +36,8 @@
 
 namespace sc {
 
-  /** Helps to write user-defined types to StateOut. Overload/specialize
+  /** @ingroup State
+   * Helps to write user-defined types to StateOut. Overload/specialize
    * this function for each user-defined type not derived from SavableState
    * (if your class is derived from SavableState simply implement its save_data_state()
    * member).
@@ -58,12 +59,13 @@ class StateOutData {
     StateOutData(): num(0), size(0), type(0), offset(0) {}
 };
 
-/** Serializes objects that derive from SavableState.
+/** @ingroup State
+ * Serializes fundamental and user-defined types.
+   A special ability, and the primary reason for the existence of StateOut and StateIn,
+   is being able to serialize/deserialize graphs of Ref pointers to SavableState objects so that two references to the same
+   piece of data do not result in that data being sent to the output device two times.
 
-    StateOut keeps track
-    of pointers to data so that two references to the same
-    piece of data do not result in that data being sent to the
-    output device two times.
+   @sa StateIn
  */
 class StateOut: public DescribedClass {
     friend class SavableState;
@@ -244,7 +246,9 @@ class StateOut: public DescribedClass {
     virtual int seekable();
   };
 
-    /// helper class to save to StateOut
+  /// @addtogroup State
+  /// @{
+  /// helper class to save to StateOut
   template <typename T> void ToStateOut(const T& t, StateOut& so, int& count){
     count += so.put(t);
   }
@@ -253,6 +257,7 @@ class StateOut: public DescribedClass {
   template <typename T> void ToStateOut(const Ref<T>& t, StateOut& so, int& count) {
     SavableState::save_state(t.pointer(),so);
   }
+  /// @}
 
 } // namespace sc
 

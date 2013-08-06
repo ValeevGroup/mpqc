@@ -33,7 +33,9 @@
 
 namespace sc {
 
-/** Create a proxy for a SavableState object.
+/** @ingroup State
+ *  @ingroup KeyVal
+ *  Create a proxy for a SavableState object.
     This can be used to include an object that has been saved with
     SavableState in an input file for ParsedKeyVal.
 */

@@ -304,7 +304,7 @@ endif()
 
 # sources
 add_subdirectory(src)
-add_subdirectory(doc)
+add_subdirectory(doc EXCLUDE_FROM_ALL) # will not build docs by default
 
 # checking/testing
 add_subdirectory(test)

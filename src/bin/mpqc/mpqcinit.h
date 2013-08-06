@@ -19,6 +19,12 @@
 
 namespace sc {
 
+  /// @defgroup Init mpqc.Init
+  /// Classes/functions used for initialization of MPQC.
+
+  /// @addtogroup Init
+  /// @{
+
   /** This helper class simplifies initialization of MPQC. Only one object must be created
    *  since the initialization performed by this class can only be done once per program lifetime.
    */
@@ -56,9 +62,11 @@ namespace sc {
     sc::Ref<sc::KeyVal> init_keyval(const sc::Ref<sc::MessageGrp> &grp,
                                     const std::string &filename);
 
-    /// @defgroup init These members initialize MPQC defaults (such as ThreadGrp, Integral, etc.)
-    /// All try environment first, then @a keyval (which may be null), to initialize the corresponding default object
-    /// @{
+    /**  @name init
+     *   These members initialize MPQC defaults (such as ThreadGrp, Integral, etc.).
+         All try environment first, then @c keyval (which may be null), to initialize the corresponding default object. */
+    //@{
+
     /// Return the initial ThreadGrp.
     sc::Ref<sc::ThreadGrp>
       init_threadgrp(Ref<sc::KeyVal> keyval = Ref<KeyVal>());
@@ -71,10 +79,10 @@ namespace sc {
     void init_resources(Ref<KeyVal> keyval = Ref<KeyVal>());
     /// Initialize the default region timer.
     void init_timer(const Ref<MessageGrp> &grp, Ref<KeyVal> keyval = Ref<KeyVal>());
+    //@}
+
     /// initializes MADNESS runtime, if available. Normally, no need to call manually, will be called by MPQCInit::init()
     void init_madness();
-    /// @}
-
     /// Initialize formatted I/O.
     void init_io(const sc::Ref<sc::MessageGrp> &grp);
     /// Initialize the name used to construct data file names.
@@ -85,6 +93,8 @@ namespace sc {
     /// constructor must have been called before this is called.
     sc::Ref<sc::KeyVal> init(const std::string &input_filename,
                              const std::string &output_filename = "");
+
+
 #ifdef HAVE_MADNESS
     madness::World& madness_world() { return *madworld_; }
 #endif
@@ -100,6 +110,9 @@ namespace sc {
     void finalize();
 
   };
+
+  /// @}
+  // end of addtogroup Init
 
 }
 

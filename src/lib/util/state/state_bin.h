@@ -32,7 +32,8 @@
 
 namespace sc {
 
-/** Save state to a binary file.
+/**  @ingroup State
+ *   Save state to a binary file.
  */
 class StateOutBin: public StateOutFile {
   private:
@@ -60,7 +61,8 @@ class StateOutBin: public StateOutFile {
     int seekable();
   };
 
-/** Read objects written with StateOutBin.
+/**  @ingroup State
+ *   Read objects written with StateOutBin.
  */
 class StateInBin: public StateInFile {
   private:

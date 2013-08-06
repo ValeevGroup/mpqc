@@ -9,6 +9,9 @@
 
 namespace sc {
 
+/// @addtogroup Init
+/// @{
+
 /// Parse command line options.
 class GetLongOpt {
 public:
@@ -76,6 +79,9 @@ public:
    /// @param str the usage synopsis
    void usage(const char *str)		{ ustring = str; }
 };
+
+/// @}
+// end of addtogroup Init
 
 }
 

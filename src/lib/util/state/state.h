@@ -32,10 +32,16 @@
 
 namespace sc {
 
+/// @defgroup State mpqc.State
+/// Classes/functions used for serialization/deserialization
+
 class StateIn;
 class StateOut;
 class TranslateDataIn;
 class TranslateDataOut;
+
+/// @addtogroup State
+/// @{
 
 /** Base class for objects that can save/restore state.
  */
@@ -121,6 +127,9 @@ class SavableState: virtual public DescribedClass {
   private:
     static ClassDesc class_desc_;
   };
+
+/// @}
+// end of addgroup State
 
 }
 

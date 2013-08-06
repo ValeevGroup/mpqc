@@ -45,7 +45,7 @@ namespace mpqc {
         Array(const std::string &name,
               const std::vector<Extent> &extents,
               Driver driver,
-              MPI::Comm comm = MPI::Comm(MPI::Comm::Self))
+              MPI::Comm comm = MPI::Comm(MPI::Comm::Self()))
         {
 	    initialize(name, extents, driver, comm);
         }

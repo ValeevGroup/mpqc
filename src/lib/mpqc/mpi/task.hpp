@@ -2,6 +2,7 @@
 #define MPQC_MPI_TASK_HPP
 
 #include "mpqc/mpi.hpp"
+#include "mpqc/utility/mutex.hpp"
 
 #ifdef MPQC_PARALLEL
 extern "C" {

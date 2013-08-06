@@ -20,7 +20,7 @@ namespace mpqc {
     };
 
     template<typename T>
-    boost::mutex static_mutex<T>::mutex
+    boost::mutex static_mutex<T>::mutex;
     
     /// Static mutex instance container
     /// Use as mutex::global::lock()/mutex::global::unlock()

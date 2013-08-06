@@ -42,7 +42,7 @@ if (NOT HAVE_ARMCI)
 
     set(ARMCI_MPICC "")
     if(MPI_C_COMPILER)
-      set(ARMCI_MPICC "CC=${MPI_C_COMPILER}")
+      set(ARMCI_MPICC "${MPI_C_COMPILER}")
     endif()
 
     ExternalProject_Add(

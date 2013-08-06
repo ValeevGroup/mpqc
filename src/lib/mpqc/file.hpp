@@ -28,7 +28,7 @@
 #include <util/misc/exenv.h>
 
 /**
- * @defgroup File mpqc::File
+ * @defgroup File mpqc.File
  * Implementation of hierarchical file objects based on
  * <a href="http://www.hdfgroup.org/HDF5/">HDF5</a>.
 */

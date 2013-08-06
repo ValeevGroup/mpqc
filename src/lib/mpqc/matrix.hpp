@@ -10,7 +10,20 @@
 // #define EIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET
 // #include <Eigen/Sparse>
 
-/// @defgroup Matrix mpqc.Matrix
+/** @defgroup Matrix mpqc.Matrix
+    Matrix and Vector classes and function,
+    derived from <a href="http://eigen.tuxfamily.org">Eigen</a>.
+    @anchor MatrixOperators
+    The matrix and vector objects overide <c>operator()</c>,
+    s.t. if one of the arguments is a range, a block is returned rather
+    than a single element.
+    Example:
+    @code
+    matrix(0,range(0,4)); // returns 1x4 sub-matrix (0,0:3)
+    matrix(0,0); // returns matrix element (0,0);
+    vector(range(2,4)); // returns sub-vector (2:3)
+    @endcode
+*/
 
 namespace mpqc {
 
@@ -26,7 +39,9 @@ namespace mpqc {
 
 	matrix() : eigen_base() {}
 
-	/// Construct mxn matrix
+	/// Construct <i>unititialized</i> matrix
+	/// @param m number of rows
+	/// @param n number of columns
 	/// @warning NOT initialized to zeroes.
 	matrix(size_t m, size_t n) : eigen_base(m,n) {}
 
@@ -46,6 +61,13 @@ namespace mpqc {
             apply(assign(), this->rows(), this->cols(), *this, a);
         }
 
+#ifdef DOXYGEN
+
+	/// Operators to access matrix element/block, see @ref MatrixOperators "here".
+	Type operator()(i, j);
+
+#else // DOXYGEN
+
         using eigen_base::operator();
 
 	/// Test if both template parameters are integral types
@@ -54,9 +76,7 @@ namespace mpqc {
             boost::is_integral<T_>,
             boost::is_integral<U_> > {};
 
-	/// Access a matrix block.
-	/// Disabled if both arguments are integral types in which case
-	/// an element access operator is used
+	/// Access a matrix block, see @ref MatrixDetail "details".
         template<class Ri, class Rj>
         typename boost::disable_if<
             is_index<Ri, Rj>,
@@ -85,6 +105,8 @@ namespace mpqc {
 	    return this->block(*ri.begin(), *rj.begin(), ri.size(), rj.size());
         }
 
+#endif // DOXYGEN
+
         void reshape(int m, int n);
 
     private:
@@ -104,26 +126,38 @@ namespace mpqc {
         };
     };
 
+    /// Vector class derived from Eigen::Matrix with additional MPQC integration
+    /// @tparam T vector type
     template<typename T>
     struct vector: Eigen::Matrix<T, Eigen::Dynamic, 1> {
+
+	/// Eigen base type.
         typedef Eigen::Matrix<T, Eigen::Dynamic, 1> eigen_base;
 
+	/// Construct <i>unititialized</i> vector
+	/// @param m vector size
+	/// @warning NOT initialized to zeroes
 	explicit vector(size_t m = 0) : eigen_base(m) {}
 
+	/// Construct vector from Eigen type
         template<class A>
 	vector(const Eigen::EigenBase<A> &a) : eigen_base(a) {}
 
+	/// Construct vector from iterator range
         vector(const T *begin, const T *end) {
 	    eigen_base::resize(end - begin, 1);
 	    std::copy(begin, end, eigen_base::data());
         }
 
+	/// Element access operators, inherited from Eigen base.
         using eigen_base::operator();
 
+	/// range operator.
         Eigen::Block<eigen_base> operator()(range i) {
 	    return this->block(*i.begin(), 0, i.size(), 1);
         }
 
+	/// const range operator.
         Eigen::Block<const eigen_base> operator()(range i) const {
 	    return this->block(*i.begin(), 0, i.size(), 1);
         }
@@ -139,12 +173,14 @@ namespace mpqc {
     // typedef Eigen::SparseMatrix<double> Sparse;
 
     /// absolute max of an Eigen type
+    /// @todo Refactor to accept EigenBase types and return proper type
     template<class E>
     double absmax(const E &e) {
         return std::max(fabs(e.maxCoeff()), fabs(e.minCoeff()));
     }
 
     /// element-wise dot product of two matrices
+    /// @todo Refactor to work with EigenBase types
     template<class T>
     T dot(const matrix<T> &a, const matrix<T> &b) {
 	T q = 0;
@@ -155,7 +191,9 @@ namespace mpqc {
 	return q;
     }
 
-    /// 
+    /// Computes (Eigen::SelfAdjointEigenSolver) eigensystem of a matrix.
+    /// Matrix must be symmetric.
+    /// @todo Find a better name
     template<class T>
     Eigen::SelfAdjointEigenSolver<Matrix::eigen_base> symmetric(const matrix<T> &a) {
 	Eigen::SelfAdjointEigenSolver<Matrix::eigen_base> es(a);
@@ -165,17 +203,22 @@ namespace mpqc {
     }
 
     /// Matrix norm
+    /// @todo Refactor to work with EigenBase types
     template<class T>
     T norm(const matrix<T> &a) {
 	return a.norm();
     }
 
     /// Normalize matrix
+    /// @todo Refactor to work with EigenBase types
     template<class T>
     void normalize(matrix<T> &a) {
 	a *= 1/a.norm();
     }
 
+    /// orthormalize matrix d wrt to normalized matrix b
+    /// d = normalize(d - (<d|b>*b))
+    /// @todo Refactor to work with EigenBase types
     template<class T>
     void orthonormalize(matrix<T> &d, const matrix<T> &b) {
 	T db = dot(d, b);

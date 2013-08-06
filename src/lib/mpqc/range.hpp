@@ -12,7 +12,7 @@
 #include <boost/fusion/include/size.hpp>
 #include <boost/fusion/include/at_c.hpp>
 
-/// @defgroup Range mpqc::Range
+/// @defgroup Range mpqc.Range
 /// Range objects for iterating or accessing slices of data
 
 namespace mpqc {

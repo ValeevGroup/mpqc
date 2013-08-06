@@ -108,8 +108,12 @@ class TwoBodyInt : public RefCount {
     /// Return the number of shells on center four.
     int nshell4() const;
 
-    /// Return the basis set on center one.
-    Ref<GaussianBasisSet> basis();
+    /**
+     * Return the basis set on center @c c
+     * @param[in] c center index, in [0,3]; default = 0 (first center)
+     * @return (pointer to) the basis set object on the center @c c
+     */
+    Ref<GaussianBasisSet> basis(size_t c = 0);
 
     /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis1();
@@ -228,8 +232,12 @@ class TwoBodyThreeCenterInt : public RefCount {
     /// Return the number of shells on center three.
     int nshell3() const;
 
-    /// Return the basis set on center one.
-    Ref<GaussianBasisSet> basis();
+    /**
+     * Return the basis set on center @c c
+     * @param[in] c center index, in [0,2]; default = 0 (first center)
+     * @return (pointer to) the basis set object on the center @c c
+     */
+    Ref<GaussianBasisSet> basis(size_t c = 0);
 
     /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis1();
@@ -332,8 +340,12 @@ class TwoBodyTwoCenterInt : public RefCount {
     /// Return the number of shells on center two.
     int nshell2() const;
 
-    /// Return the basis set on center one.
-    Ref<GaussianBasisSet> basis();
+    /**
+     * Return the basis set on center @c c
+     * @param[in] c center index, in [0,2]; default = 0 (first center)
+     * @return (pointer to) the basis set object on the center @c c
+     */
+    Ref<GaussianBasisSet> basis(size_t c = 0);
 
     /// Return the basis set on center one.
     Ref<GaussianBasisSet> basis1();

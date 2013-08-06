@@ -238,7 +238,12 @@ class Integral : public SavableState {
     const Ref<GaussianBasisSet>& basis3() const { return bs3_; }
     /// retrieves basis for center 4
     const Ref<GaussianBasisSet>& basis4() const { return bs4_; }
-    /// Set the basis set for each center.
+    /** Set the basis set for each center.
+     * @param[in] b1 basis set on center 1; there is no default
+     * @param[in] b2 basis set on center 2; if null, will use b1
+     * @param[in] b3 basis set on center 3; if null, will use b2
+     * @param[in] b4 basis set on center 4; if null, will use b3
+     */
     virtual void set_basis(const Ref<GaussianBasisSet> &b1,
                            const Ref<GaussianBasisSet> &b2 = 0,
                            const Ref<GaussianBasisSet> &b3 = 0,

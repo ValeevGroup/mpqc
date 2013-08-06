@@ -10,6 +10,8 @@
 
 #include <boost/preprocessor/repetition/enum_params_with_a_default.hpp>
 
+#include "mpqc/range/operator.hpp"
+
 namespace mpqc {
 
     template<class T>
@@ -60,13 +62,13 @@ namespace mpqc {
             std::copy(strides, strides+N, this->strides_);
         }
 
-        // MPQC_RANGE_OPERATORS(5, TensorBase, this->operator())
+        MPQC_RANGE_OPERATORS(5, TensorBase, this->operator())
 
 #define MPQC_TENSOR_INDEX_OPERATOR(Z, N, DATA)                                  \
         template< BOOST_PP_ENUM_PARAMS(N, class T) >                            \
         typename boost::enable_if                                               \
         < is_index<BOOST_PP_ENUM_PARAMS(N,T)>, T&>::type                        \
-        operator()(BOOST_PP_ENUM_PARAMS(N, const int &i)) {                     \
+        operator()(BOOST_PP_ENUM_BINARY_PARAMS(N, const T, &i)) {               \
             return this->operator()(tie(boost::tie(BOOST_PP_ENUM_PARAMS(N,i)))); \
         }                                                                       \
         
@@ -84,9 +86,9 @@ namespace mpqc {
         
         /// element-access operator
         template<class Tie>
-        T& operator()(const index_tie<Tie> &idx) {
-            return this->data_[this->index(idx)];
-        }
+        T& operator()(const index_tie<Tie> &idx);//  {
+        //     return this->data_[this->index(idx)];
+        // }
 
     private:
 

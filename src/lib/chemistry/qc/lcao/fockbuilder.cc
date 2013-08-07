@@ -1716,20 +1716,10 @@ namespace sc {
       // C is X by (mu nu)
       // CD is X (by 1)
       // Dg is X (by 1)
-      //eigenout("munu_r12_X", munu_r12_X);
-      //cout << "-----------------------------" << endl << "D = \n" << D << endl << "-----------------------------" << endl;
+      //----------------------------------------//
       J = C.transpose() * Dg;
-      //cout << "-----------------------------" << endl << "J1 = \n" << J << endl << "-----------------------------" << endl;
       J += munu_g_X * CD;
-      //cout << "-----------------------------" << endl << "J2 = \n" << J << endl << "-----------------------------" << endl;
       J -= CD.transpose() * X_g_Y * C;
-      //J = CD.transpose() * X_r12_Y * C;
-      //cout << "-----------------------------" << endl << "J = \n" << J << endl << "-----------------------------" << endl;
-      //cout << "-----------------------------" << endl << "C = \n" << C << endl << "-----------------------------" << endl;
-      //cout << "-----------------------------" << endl << "CD = \n" << CD << endl << "-----------------------------" << endl;
-      //cout << "-----------------------------" << endl << "Dg = \n" << Dg << endl << "-----------------------------" << endl;
-      //cout << "-----------------------------" << endl << "X_r12_Y = \n" << X_r12_Y << endl << "-----------------------------" << endl;
-      //cout << "-----------------------------" << endl << "munu_r12_X = \n" << munu_r12_X << endl << "-----------------------------" << endl;
       //----------------------------------------//
       Ref<Integral> localints = int3c_rtime->factory()->integral()->clone();
       localints->set_basis(brabs);
@@ -2061,6 +2051,13 @@ namespace sc {
       const Ref<TwoBodyThreeCenterMOIntsRuntime>& int3c_rtime = df_rtime->moints_runtime()->runtime_3c();
       const Ref<TwoBodyTwoCenterMOIntsRuntime>& int2c_rtime = df_rtime->moints_runtime()->runtime_2c();
       //----------------------------------------//
+      double *P_ptr = allocate<double>(branbf*ketnbf);
+      {
+        RefSymmSCMatrix Ptmp = P.copy();
+        Ptmp.convert2RefSCMat().convert(P_ptr);
+      }
+      EigenMatrixMap D(P_ptr, branbf, ketnbf);
+      //----------------------------------------//
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
       /* Get the coefficients                                  		                        {{{1 */ #if 1 // begin fold
@@ -2103,7 +2100,9 @@ namespace sc {
       // loop over atom pairs...
       timer_change("04 - loop over atom pairs", 2);
       EigenMatrix C(dfnbf, brabs->nbasis() * ketbs->nbasis());
+      EigenMatrix d_mu_siX(branbf, obsnbf*dfnbf);
       C = EigenMatrix::Zero(dfnbf, brabs->nbasis() * ketbs->nbasis());
+      d_mu_siX = EigenMatrix::Zero(branbf, obsnbf*dfnbf);
       for(int atomA=0; atomA < brabs->ncenter(); ++atomA){
         //----------------------------------------//
         // Convenience variables for atom A
@@ -2233,8 +2232,8 @@ namespace sc {
                 ibfjbf_M_X.tail(dfnbfB) = ibfjbf_M_X_B;
               }
               // Now solve A * x = b, with A = ( X_(ab) | M | Y_(ab) ) and b = ( ibf jbf | M | Y_(ab) )
-              // The result will be dfpart_size rows and 1 column and needs to be stored in the big C
               Eigen::VectorXd Cpart(dfpart_size);
+              // The result will be dfpart_size rows and 1 column and needs to be stored in the big C
               Cpart = coefficient_solver.solve(ibfjbf_M_X);
               C.block(
                   dfbfoffA, ibf*ketnbf + jbf,
@@ -2245,6 +2244,18 @@ namespace sc {
                     dfbfoffB, ibf*ketnbf + jbf,
                     dfnbfB, 1
                 ) = Cpart.tail(dfnbfB);
+              }
+              // contract with density and put it into d_mu_siX
+              // TODO do this as one matrix multiply
+              for(int sigma = 0; sigma < obsnbf; ++sigma){
+                for(int XbfA = 0; XbfA < dfnbfA; ++XbfA){
+                  d_mu_siX(ibf, sigma*dfnbf + (dfbfoffA + XbfA)) += D(jbf, sigma) * Cpart(XbfA);
+                }
+                if(atomA != atomB){
+                  for(int XbfB = 0; XbfB < dfnbfB; ++XbfB){
+                    d_mu_siX(ibf, sigma*dfnbf + (dfbfoffB + XbfB)) += D(jbf, sigma) * Cpart(dfnbfA + XbfB);
+                  }
+                }
               }
             } // end loop over basis functions in B (jbf)
           } // end loop over basis functions in A (ibf)
@@ -2263,6 +2274,8 @@ namespace sc {
       // in chemists notation: ( mu nu | coulomb | X )
       timer_change("03 - get (mu nu | g | X)", 1);
       timer_enter("01 - setup", 2);
+      EigenMatrix K_tilde(branbf, ketnbf);
+      K_tilde = EigenMatrix::Zero(branbf, ketnbf);
       EigenMatrix munu_g_X(branbf*ketnbf, dfnbf);
       unsigned int g_type_idx = TwoBodyOperSetDescr::instance(TwoBodyOperSet::ERI)->opertype(metric_oper);
       timer_change("02 - compute", 2);
@@ -2291,6 +2304,12 @@ namespace sc {
               0,   dfnbf,  // X_start, X_fence
               ibfjbf_g_X_buffer
           );
+          // TODO replace with a single matrix multiply
+          for(int Xbf = 0; Xbf < dfnbf; ++Xbf){
+            for(int mu = 0; mu < branbf; ++mu){
+              K_tilde(mu, ibf) += d_mu_siX(mu, jbf*dfnbf + Xbf) * ibfjbf_g_X(Xbf);
+            }
+          }
           munu_g_X.row(ibf*ketnbf + jbf) = ibfjbf_g_X;
         }
       }
@@ -2322,14 +2341,9 @@ namespace sc {
       /* Compute K                                             		                        {{{1 */ #if 1 // begin fold
       timer_change("05 - compute K", 1);
       EigenMatrix K(branbf, ketnbf);
-      double *P_ptr = new double[branbf*ketnbf];
-      {
-        RefSymmSCMatrix Ptmp = P.copy();
-        Ptmp.convert2RefSCMat().convert(P_ptr);
-      }
-      EigenMatrixMap D(P_ptr, branbf, ketnbf);
       //----------------------------------------//
       // C_{mu rho}^X D^{rho sigma}
+      timer_enter("01 - three body terms", 2);
       {
         EigenMatrix CD(branbf, dfnbf*obsnbf);
         EigenMatrix g_phys(branbf, dfnbf*obsnbf);
@@ -2345,7 +2359,9 @@ namespace sc {
         }
         K = CD * g_phys.transpose();
         K += K.transpose().eval();
+        //K = K_tilde + K_tilde.transpose();
       }
+      timer_change("02 - two body terms", 2);
       {
         //Eigen::Map<EigenMatrix, Eigen::Unaligned, Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic> > CD(
         //    branbf*obsnbf, dfnbf
@@ -2370,6 +2386,7 @@ namespace sc {
           }
         }
       }
+      timer_exit(2);
       //----------------------------------------//
       Ref<Integral> localints = int3c_rtime->factory()->integral()->clone();
       localints->set_basis(brabs);
@@ -2388,7 +2405,7 @@ namespace sc {
       /*=======================================================================================*/
       /* Cleanup stuff                                         		                        {{{1 */ #if 1 // begin fold
       timer_change("06 - cleanup", 1);
-      delete[] P_ptr;
+      deallocate(P_ptr);
       deallocate(coulomb_2c_ints_ptr);
       timer_exit(1);
       tim.exit();

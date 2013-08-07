@@ -4,7 +4,7 @@ mpqc:(
 )
 
 nproc = 5
-molecule = $:h2o
+molecule = $:water_c1
 coor = $:symcoor
 message = $:message1
 basis_matrixkit = $:replmatrixkit
@@ -23,9 +23,9 @@ mole<DFCLHF>: (
 
   df_basis<GaussianBasisSet>:(
     molecule = $..:molecule
-    %name = "cc-pVTZ-JKFIT"
+    name = "cc-pVDZ-JKFIT"
     %name = "aug-cc-pVTZ"
-    name = "cc-pVTZ-RI"
+    %name = "cc-pVTZ-RI"
     %name = "cc-pVDZ"
     %name = "6-31G"
     %puream=yes
@@ -44,14 +44,14 @@ mole<DFCLHF>: (
 
 
   % Function
-  value_accuracy = 1e-8
+  value_accuracy = 1e-5
   gradient_accuracy = 1e-6
 
   % MolecularEnergy input
   molecule = $:molecule
   mbasis<GaussianBasisSet>: (
     molecule = $:molecule
-    name = "cc-pVTZ"
+    name = "cc-pVDZ"
     %name = "STO-3G"
     %puream=yes
     matrixkit = $:basis_matrixkit
@@ -80,6 +80,7 @@ mole<DFCLHF>: (
 
 guess<CLHF>: (
   integral_storage=32000000
+  integrals<IntegralLibint2>:()
   value_accuracy = 1e-9
   molecule = $:molecule
   coor = $:coor
@@ -93,6 +94,7 @@ guess<CLHF>: (
 )
 
 ehw_guess<ExtendedHuckelWfn>: (
+  integrals<IntegralLibint2>:()
   molecule = $:molecule
   %basis = $:mole:basis
   basis<GaussianBasisSet>: (
@@ -465,6 +467,20 @@ hf<Molecule>: (
   }
 )
 
+ethane_c1<Molecule>: (
+  symmetry = c1
+  units = angstrom
+  { atoms geometry } = {
+    C   [    0.76500000   0.00000000  -0.00000000 ]
+    C   [   -0.76500000  -0.00000000  -0.00000000 ]
+    H   [    1.12830000  -0.51380000   0.89000000 ]
+    H   [    1.12830000  -0.51380000  -0.89000000 ]
+    H   [    1.12830000   1.02770000   0.00000000 ]
+    H   [   -1.12830000   0.51380000   0.89000000 ]
+    H   [   -1.12830000   0.51380000  -0.89000000 ]
+    H   [   -1.12830000  -1.02770000   0.00000000 ]
+  }
+)
 
 
 taxol<Molecule>: (
@@ -582,6 +598,35 @@ H  [    -2.6864693812  -1.5071204618   2.3903167090 ]
 H  [    -3.3390142876    .1000510598   2.4688669158 ]
 H  [    -1.9770019524   -.2959025420   3.4410100992 ]
 }
+)
+
+ch4_c1<Molecule>: (
+  symmetry = c1
+  units = angstrom
+  { atoms geometry } = {
+    C   [    0.00000000  -0.00000000   0.00000000 ]
+    H   [    0.00000000  -0.89000000  -0.62930000 ]
+    H   [    0.00000000   0.89000000  -0.62930000 ]
+    H   [   -0.89000000  -0.00000000   0.62930000 ]
+    H   [    0.89000000  -0.00000000   0.62930000 ]
+  }
+)
+
+acetone_c1<Molecule>: (
+  symmetry = c1
+  units = angstrom
+  { atoms geometry } = {
+    C   [    1.30510000  -0.67720000  -0.00000000 ]
+    C   [    0.00000000   0.07630000  -0.00000000 ]
+    O   [   -0.00000000   1.28390000   0.00000000 ]
+    C   [   -1.30510000  -0.67720000   0.00000000 ]
+    H   [    1.61980000  -0.85880000   1.02770000 ]
+    H   [    1.17480000  -1.62960000  -0.51380000 ]
+    H   [    2.06470000  -0.08810000  -0.51380000 ]
+    H   [   -1.10590000  -1.74880000  -0.00000000 ]
+    H   [   -1.87670000  -0.41380000   0.89000000 ]
+    H   [   -1.87670000  -0.41380000  -0.89000000 ]
+  }
 )
 
 basis:(

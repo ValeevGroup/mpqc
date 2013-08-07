@@ -26,7 +26,7 @@
 //
 
 #define EIGEN_NO_AUTOMATIC_RESIZING 1
-#define TIMER_DEPTH 1
+#define TIMER_DEPTH 5
 #define timer_change(str, depth) \
   if(TIMER_DEPTH >= depth) tim.change(str);
 #define timer_enter(str, depth) \
@@ -2218,6 +2218,7 @@ namespace sc {
           Eigen::FullPivHouseholderQR<EigenMatrix> coefficient_solver(X_m_Y);
           /*---------------------------------------------------------------*/
           timer_change("03 - solve equations", 3);
+          timer_enter("misc", 4);
           double* ibfjbf_M_X_buffer_A = allocate<double>(dfnbfA);
           VectorMap ibfjbf_M_X_A(ibfjbf_M_X_buffer_A, dfnbfA);
           double* ibfjbf_M_X_buffer_B;
@@ -2231,6 +2232,7 @@ namespace sc {
           for(int ibf = bfoffA; ibf < bfoffA + nbfA; ++ibf){
             // loop over the basis functions mu in B
             for(int jbf = bfoffB; jbf < bfoffB + nbfB; ++jbf){
+              timer_change("01 - get ibfjbf_M_X", 4);
               munu_M_X->retrieve_pair_subblock(
                   0, ibf,     // index in unit basis, index in mu
                   ints_type_idx,
@@ -2249,12 +2251,14 @@ namespace sc {
                 );
                 ibfjbf_M_X.tail(dfnbfB) = ibfjbf_M_X_B;
               }
+              timer_change("02 - get Cpart", 4);
               // Now solve A * x = b, with A = ( X_(ab) | M | Y_(ab) ) and b = ( ibf jbf | M | Y_(ab) )
               Eigen::VectorXd Cpart(dfpart_size);
               // The result will be dfpart_size rows and 1 column
               Cpart = coefficient_solver.solve(ibfjbf_M_X);
               //----------------------------------------//
               // contract with X_g_Y to form gt_mu_siX
+              timer_change("03 - get gt_mu_siX", 4);
               gt_nu_siX.block(
                   ibf, jbf*dfnbf,
                   1, dfnbf
@@ -2267,6 +2271,7 @@ namespace sc {
               }
               //----------------------------------------//
               // contract with density and put it into d_mu_siX
+              timer_change("04 - get d_mu_siX", 4);
               for(int sigma = 0; sigma < obsnbf; ++sigma){
                 d_mu_siX.block(
                     ibf, sigma*dfnbf + dfbfoffA,
@@ -2280,11 +2285,13 @@ namespace sc {
                 }
               }
               //----------------------------------------//
+              timer_change("misc", 4);
             } // end loop over basis functions in B (jbf)
           } // end loop over basis functions in A (ibf)
           deallocate(ibfjbf_M_X_buffer_A);
           if(atomA != atomB)
             deallocate(ibfjbf_M_X_buffer_B);
+          timer_exit(4);
           timer_exit(3);
         } // end loop over atomA
       } // end loop over atomB
@@ -2315,11 +2322,13 @@ namespace sc {
         munu_g_X_tform->compute();
         munu_g_X_D4 = munu_g_X_tform->ints_acc(); munu_g_X_D4->activate();
       }
-      timer_change("03 - transfer to eigen", 2);
+      timer_change("03 - compute K_tilde", 2);
+      timer_enter("misc", 3);
       double* ibfjbf_g_X_buffer = allocate<double>(dfnbf);
       VectorMap ibfjbf_g_X(ibfjbf_g_X_buffer, dfnbf);
       for(int ibf = 0; ibf < branbf; ++ibf){
         for(int jbf = 0; jbf < ketnbf; ++jbf){
+          timer_change("01 - get pair subblock", 3);
           munu_g_X_D4->retrieve_pair_subblock(
               0, ibf,      // unit basis index, mu_index
               g_type_idx,
@@ -2327,68 +2336,27 @@ namespace sc {
               0,   dfnbf,  // X_start, X_fence
               ibfjbf_g_X_buffer
           );
+          timer_change("02 - get K_tilde contribution", 3);
           for(int mu = 0; mu < branbf; ++mu){
             K_tilde(mu, ibf) += d_mu_siX.row(mu).segment(jbf*dfnbf, dfnbf) * ibfjbf_g_X;
           }
-          //for(int Xbf = 0; Xbf < dfnbf; ++Xbf){
-          //  for(int mu = 0; mu < branbf; ++mu){
-          //    K_tilde(mu, ibf) += d_mu_siX(mu, jbf*dfnbf + Xbf) * ibfjbf_g_X(Xbf);
-          //  }
-          //}
-          //munu_g_X.row(ibf*ketnbf + jbf) = ibfjbf_g_X;
+          timer_change("misc", 3);
         }
       }
       deallocate(ibfjbf_g_X_buffer);
+      timer_exit(3);
       timer_exit(2);
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
       /* Compute K                                             		                        {{{1 */ #if 1 // begin fold
       timer_change("05 - compute K", 1);
-      //----------------------------------------//
-      /* old code */ #if 0
-      EigenMatrix CD(branbf, dfnbf*obsnbf);
-      EigenMatrix g_phys(branbf, dfnbf*obsnbf);
-      Eigen::RowVectorXd rhotmp(obsnbf);
-      for(int X = 0; X < dfnbf; ++X) {
-        for(int sigma = 0; sigma < obsnbf; ++sigma) {
-          for(int mu = 0; mu < branbf; ++mu) {
-            rhotmp = C.block(X, mu*obsnbf, 1, obsnbf);
-            CD(mu, X*obsnbf + sigma) = rhotmp.dot(D.row(sigma));
-            g_phys(mu, X*obsnbf + sigma) = munu_g_X(mu*obsnbf + sigma, X);
-          }
-        }
-      }
-      K = CD * g_phys.transpose();
-      K += K.transpose().eval();
-      Eigen::Map<EigenMatrix, Eigen::Unaligned, Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic> > CD(
-          branbf*obsnbf, dfnbf
-      );
-      EigenMatrix CD(dfnbf, branbf*obsnbf);
-      Eigen::RowVectorXd rhotmp(obsnbf);
-      for(int X = 0; X < dfnbf; ++X) {
-        for(int sigma = 0; sigma < obsnbf; ++sigma) {
-          for(int mu = 0; mu < branbf; ++mu) {
-            rhotmp = C.block(X, mu*obsnbf, 1, obsnbf);
-            CD(X, mu*obsnbf + sigma) = rhotmp.dot(D.row(sigma));
-          }
-        }
-      }
-      EigenMatrix CDg(dfnbf, branbf*obsnbf);
-      CDg = X_g_Y * CD;
-      for(int mu = 0; mu < branbf; ++mu) {
-        for(int nu = 0; nu < ketnbf; ++nu) {
-          for(int sigma = 0; sigma < obsnbf; ++sigma) {
-            K(mu, nu) -= CDg.col(mu*obsnbf + sigma).dot(C.col(nu*obsnbf + sigma));
-          }
-        }
-      }
-      /* old code */ #endif
       timer_enter("01 - two body part", 2);
       K_tilde -= 0.5 * (d_mu_siX * gt_nu_siX.transpose());
       timer_change("02 - symmetrize", 2);
       EigenMatrix K(branbf, ketnbf);
       K = K_tilde + K_tilde.transpose();
       //----------------------------------------//
+      // Transfer K to a RefSCMatrix
       timer_change("03 - transfer to RefSCMatrix", 2);
       Ref<Integral> localints = int3c_rtime->factory()->integral()->clone();
       localints->set_basis(brabs);
@@ -2415,7 +2383,6 @@ namespace sc {
       return result;
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
-
     }
 
 }} // namespace sc::detail

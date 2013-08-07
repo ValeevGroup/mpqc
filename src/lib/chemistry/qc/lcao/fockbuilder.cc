@@ -26,6 +26,13 @@
 //
 
 #define EIGEN_NO_AUTOMATIC_RESIZING 1
+#define TIMER_DEPTH 5
+#define timer_change(str, depth) \
+  if(TIMER_DEPTH >= depth) tim.change(str);
+#define timer_enter(str, depth) \
+  if(TIMER_DEPTH >= depth) tim.enter(str);
+#define timer_exit(depth) \
+  if(TIMER_DEPTH >= depth) tim.exit();
 #define DO_EIGEN_OUT 0
 #if DO_EIGEN_OUT
 #  define eigenout(label, var) cout << "@@@@@ " label << " @@@@@" << endl << setprecision(20) << var << endl << "%%%%%%%%%%" << endl
@@ -950,6 +957,7 @@ namespace sc {
         const Ref<TwoBodyThreeCenterMOIntsTransform>& C_tform = int3c_rtime->get(C_key);
         C_tform->compute();
         Ref<DistArray4> C = C_tform->ints_acc();  C->activate();
+        cout << C->ni() << " " << C->nj() << " " << C->nx() << " " << C->ny() << endl;
         tim.exit();
 
         tim.enter("contract density");
@@ -1161,17 +1169,13 @@ namespace sc {
       /* Setup and stuff                                       		                        {{{1 */ #if 1 // begin fold
       //----------------------------------------//
       Timer tim("coulomb(DF local)");
-      const double wall_time_start = tim.wall_time("coulomb(DF)");
+      timer_enter("01 - setup", 1);
       //----------------------------------------//
       Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
       int me = msg->me();
       int nproc = msg->n();
-      //ExEnv::out0() << endl << indent
-      //         << "Entered Coulomb(DF) matrix evaluator" << endl;
-      //ExEnv::out0() << incindent;
       //----------------------------------------//
       const Ref<DensityFittingRuntime>& df_rtime = df_info->runtime();
-      //----------------------------------------//
       const Ref<AOSpaceRegistry> ao_registry = df_rtime->moints_runtime()->factory()->ao_registry();
       const Ref<OrbitalSpace>& braspace = ao_registry->value(brabs);
       const Ref<OrbitalSpace>& ketspace = ao_registry->value(ketbs);
@@ -1190,15 +1194,202 @@ namespace sc {
       //unsigned int ints_type_idx = TwoBodyOperSetDescr::instance(noncoulomb_kernel ? TwoBodyOperSet::G12NC : TwoBodyOperSet::ERI)->opertype(kernel_oper);
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
-      /* Get the TwoBodyThreeCenterInt objects and the two center ints                    {{{1 */ #if 1 // begin fold
+      /* Get the coefficients                                  		                        {{{1 */ #if 1 // begin fold
+      //========================================//
+      timer_change("02 - get coefficients", 1);
       //----------------------------------------//
-      // Get the Integral object
-      Ref<Integral> integral = df_info->runtime()->moints_runtime()->factory()->integral();
-      //----------------------------------------//
+      // Setup
+      timer_enter("01 - (mu nu | M | X) setup", 2);
       std::string metric_key = df_info->params()->kernel_key();
       const bool noncoulomb_kernel = (metric_key.find("exp") != std::string::npos);
       std::string params_key = df_info->params()->intparams_key();
       std::string operset_key = noncoulomb_kernel ? "G12'" : "ERI";
+      TwoBodyOper::type metric_oper =
+          noncoulomb_kernel ? TwoBodyOper::r12_0_g12 : TwoBodyOper::eri;
+      unsigned int ints_type_idx = TwoBodyOperSetDescr::instance(
+          noncoulomb_kernel ? TwoBodyOperSet::G12NC : TwoBodyOperSet::ERI
+      )->opertype(metric_oper);
+      //----------------------------------------//
+      // Go ahead and compute them all for now.  It will be faster to
+      //   compute only the ones we need and save them for later, but
+      //   that requires significant infrastructure changes.
+      const std::string munu_M_X_key = ParsedTwoBodyThreeCenterIntKey::key(obs_space->id(),
+                                                                           dfspace->id(),
+                                                                           obs_space->id(),
+                                                                           operset_key, params_key);
+      timer_change("02 - (mu nu | M | X) compute", 2);
+      const Ref<TwoBodyThreeCenterMOIntsTransform>& munu_M_X_tform = int3c_rtime->get(munu_M_X_key);
+      munu_M_X_tform->compute();
+      Ref<DistArray4> munu_M_X = munu_M_X_tform->ints_acc(); munu_M_X->activate();
+      //----------------------------------------//
+      // < X Y | metric | >
+      // in chemists notation: ( X | metric | Y )
+      timer_change("03 - compute (X | M | Y)", 2);
+      const std::string metric2c_key = ParsedTwoBodyTwoCenterIntKey::key(
+          dfspace->id(),
+          dfspace->id(),
+          operset_key, params_key
+      );
+      RefSCMatrix metric_2c_ints = int2c_rtime->get(metric2c_key);
+      //----------------------------------------//
+      // loop over atom pairs...
+      timer_change("04 - loop over atom pairs", 2);
+      EigenMatrix C(dfnbf, brabs->nbasis() * ketbs->nbasis());
+      C = EigenMatrix::Zero(dfnbf, brabs->nbasis() * ketbs->nbasis());
+      for(int atomA=0; atomA < brabs->ncenter(); ++atomA){
+        //----------------------------------------//
+        // Convenience variables for atom A
+        const int nshA = brabs->nshell_on_center(atomA);
+        const int nbfA = brabs->nbasis_on_center(atomA);
+        const int shoffA = brabs->shell_on_center(atomA, 0);
+        const int bfoffA = brabs->shell_to_function(shoffA);
+        const int dfnshA = dfbs->nshell_on_center(atomA);
+        const int dfnbfA = dfbs->nbasis_on_center(atomA);
+        const int dfshoffA = dfbs->shell_on_center(atomA, 0);
+        const int dfbfoffA = dfbs->shell_to_function(dfshoffA);
+        //----------------------------------------//
+        // TODO Permutational symmetry
+        for(int atomB=0; atomB < ketbs->ncenter(); ++atomB){
+          //----------------------------------------//
+          // Convenience variables for atom B
+          const int nshB = ketbs->nshell_on_center(atomB);
+          const int nbfB = ketbs->nbasis_on_center(atomB);
+          const int shoffB = ketbs->shell_on_center(atomB, 0);
+          const int bfoffB = ketbs->shell_to_function(shoffB);
+          const int dfnshB = dfbs->nshell_on_center(atomB);
+          const int dfnbfB = dfbs->nbasis_on_center(atomB);
+          const int dfshoffB = dfbs->shell_on_center(atomB, 0);
+          const int dfbfoffB = dfbs->shell_to_function(dfshoffB);
+          int dfpart_size = dfnbfA;
+          if(atomA != atomB) dfpart_size += dfnbfB;
+          /*---------------------------------------------------------------*/
+          /*  Get ( X_(ab) | M | Y_(ab) ) into an Eigen Matrix        {{{2 */ #if 2 // begin fold
+          //===============================================================//
+          timer_enter("01 - get ( X_(ab) | M | Y_(ab) ) block", 3);
+          double* metric_2c_part_ptr = new double[dfpart_size*dfpart_size];
+          double** blockptr = new double*[dfpart_size];
+          //---------------------------------------------------------------//
+          // Get the block corresponding to (A|m|A)
+          for(int idfpart = 0; idfpart < dfnbfA; ++idfpart) {
+            blockptr[idfpart] = &(metric_2c_part_ptr[idfpart * dfpart_size]);
+          }
+          {
+            RefSCMatrix block = metric_2c_ints.get_subblock(
+                dfbfoffA, dfbfoffA+dfnbfA-1,
+                dfbfoffA, dfbfoffA+dfnbfA-1
+            );
+            block.convert(blockptr);
+          }
+          // if atomA == atomB, we're done.  Otherwise,
+          if(atomA != atomB){
+            // Get the block corresponding to (A|m|B)
+            for(int idfpart = 0; idfpart < dfnbfA; ++idfpart) {
+              blockptr[idfpart] = &(metric_2c_part_ptr[idfpart * dfpart_size + dfnbfA]);
+            }
+            {
+              RefSCMatrix block = metric_2c_ints.get_subblock(
+                  dfbfoffA, dfbfoffA+dfnbfA-1,
+                  dfbfoffB, dfbfoffB+dfnbfB-1
+              );
+              block.convert(blockptr);
+            }
+            //---------------------------------------------------------------//
+            // Get the block corresponding to (B|m|A)
+            for(int idfpart = 0; idfpart < dfnbfB; ++idfpart) {
+              blockptr[idfpart] = &(metric_2c_part_ptr[(idfpart+dfnbfA) * dfpart_size]);
+            }
+            {
+              RefSCMatrix block = metric_2c_ints.get_subblock(
+                  dfbfoffB, dfbfoffB+dfnbfB-1,
+                  dfbfoffA, dfbfoffA+dfnbfA-1
+              );
+              block.convert(blockptr);
+            }
+            //---------------------------------------------------------------//
+            // Get the block corresponding to (B|m|B)
+            for(int idfpart = 0; idfpart < dfnbfB; ++idfpart) {
+              blockptr[idfpart] = &(metric_2c_part_ptr[(idfpart+dfnbfA) * dfpart_size + dfnbfA]);
+            }
+            {
+              RefSCMatrix block = metric_2c_ints.get_subblock(
+                  dfbfoffB, dfbfoffB+dfnbfB-1,
+                  dfbfoffB, dfbfoffB+dfnbfB-1
+              );
+              block.convert(blockptr);
+            }
+          }
+          //-----------------------------------------------------------------//
+          EigenMatrixMap X_m_Y(metric_2c_part_ptr, dfpart_size, dfpart_size);
+          //for(int X = 0; X < dfpart_size; ++X){
+          //  for(int Y = 0; Y < dfpart_size; ++Y){
+          //    if(fabs(double(X_m_Y(X,Y))) < 1e-12){
+          //      X_m_Y(X,Y) = 0;
+          //    }
+          //  }
+          //}
+          /*****************************************************************/ #endif //2}}}
+          /*---------------------------------------------------------------*/
+          timer_change("02 - decompose ( X(ab) | M | Y(ab) )", 3);
+          Eigen::FullPivHouseholderQR<EigenMatrix> coefficient_solver(X_m_Y);
+          /*---------------------------------------------------------------*/
+          timer_change("03 - solve equations", 3);
+          double* ibfjbf_M_X_buffer_A = allocate<double>(dfnbfA);
+          VectorMap ibfjbf_M_X_A(ibfjbf_M_X_buffer_A, dfnbfA);
+          double* ibfjbf_M_X_buffer_B;
+          VectorMap ibfjbf_M_X_B(0, dfnbfB);
+          if(atomA != atomB){
+            ibfjbf_M_X_buffer_B = allocate<double>(dfnbfB);
+            new (&ibfjbf_M_X_B) VectorMap(ibfjbf_M_X_buffer_B, dfnbfB);
+          }
+          Eigen::VectorXd ibfjbf_M_X(dfpart_size);
+          // loop over the basis functions mu in A
+          for(int ibf = bfoffA; ibf < bfoffA + nbfA; ++ibf){
+            // loop over the basis functions mu in B
+            for(int jbf = bfoffB; jbf < bfoffB + nbfB; ++jbf){
+              munu_M_X->retrieve_pair_subblock(
+                  0, ibf,     // index in unit basis, index in mu
+                  ints_type_idx,
+                  jbf,        jbf+1,             // nu start, nu fence
+                  dfbfoffA,   dfbfoffA + dfnbfA, // X start,  X fence
+                  ibfjbf_M_X_buffer_A
+              );
+              ibfjbf_M_X.head(dfnbfA) = ibfjbf_M_X_A;
+              if(atomA != atomB){
+                munu_M_X->retrieve_pair_subblock(
+                    0, ibf,     // index in unit basis, index in mu
+                    ints_type_idx,
+                    jbf,        jbf+1,             // nu start, nu fence
+                    dfbfoffB,   dfbfoffB + dfnbfB, // X start,  X fence
+                    ibfjbf_M_X_buffer_B
+                );
+                ibfjbf_M_X.tail(dfnbfB) = ibfjbf_M_X_B;
+              }
+              // Now solve A * x = b, with A = ( X_(ab) | M | Y_(ab) ) and b = ( ibf jbf | M | Y_(ab) )
+              // The result will be dfpart_size rows and 1 column and needs to be stored in the big C
+              Eigen::VectorXd Cpart(dfpart_size);
+              Cpart = coefficient_solver.solve(ibfjbf_M_X);
+              C.block(
+                  dfbfoffA, ibf*ketnbf + jbf,
+                  dfnbfA, 1
+              ) = Cpart.head(dfnbfA);
+              if(atomA != atomB) {
+                C.block(
+                    dfbfoffB, ibf*ketnbf + jbf,
+                    dfnbfB, 1
+                ) = Cpart.tail(dfnbfB);
+              }
+            } // end loop over basis functions in B (jbf)
+          } // end loop over basis functions in A (ibf)
+          deallocate(ibfjbf_M_X_buffer_A);
+          if(atomA != atomB)
+            deallocate(ibfjbf_M_X_buffer_B);
+          timer_exit(3);
+        } // end loop over atomA
+      } // end loop over atomB
+      timer_exit(2);
+      //============================================================================//
+      /* old code */ #if 0
+      ////////////////////////////////////////////////////////////////////////////////
       //----------------------------------------//
       // Metric TwoBodyThreeCenterInt object
       // < mu X | metric | nu >
@@ -1213,31 +1404,6 @@ namespace sc {
       metric_3c_eval_descr->factory()->set_basis(brabs, ketbs, dfbs, 0);
       Ref<TwoBodyThreeCenterInt> metric_3c_eval = metric_3c_eval_descr->inteval();
       //----------------------------------------//
-      // < mu X | coulomb | nu >
-      // in chemists notation: ( mu nu | coulomb | X )
-      const std::string coulomb3c_key = ParsedTwoBodyThreeCenterIntKey::key(
-          braspace->id(),
-          dfspace->id(),
-          ketspace->id(),
-          "ERI", ""
-      );
-      Ref<TwoBodyThreeCenterIntDescr> coulomb_3c_eval_descr = int3c_rtime->get(coulomb3c_key)->intdescr();
-      coulomb_3c_eval_descr->factory()->set_basis(brabs, ketbs, dfbs, 0);
-      Ref<TwoBodyThreeCenterInt> coulomb_3c_eval = coulomb_3c_eval_descr->inteval();
-      //----------------------------------------//
-      // < X Y | metric | >
-      // in chemists notation: ( X | metric | Y )
-      const std::string metric2c_key = ParsedTwoBodyTwoCenterIntKey::key(
-          dfspace->id(),
-          dfspace->id(),
-          operset_key, params_key
-      );
-      RefSCMatrix metric_2c_ints = int2c_rtime->get(metric2c_key);
-      //double* metric_2c_ints_ptr = new double[ndf*ndf];
-      //----------------------------------------//
-      /*****************************************************************************************/ #endif //1}}}
-      /*=======================================================================================*/
-      /* Get the coefficients                                  		                        {{{1 */ #if 1 // begin fold
       EigenMatrix C(dfnbf, brabs->nbasis() * ketbs->nbasis());
       C = EigenMatrix::Zero(dfnbf, brabs->nbasis() * ketbs->nbasis());
       //----------------------------------------//
@@ -1328,9 +1494,9 @@ namespace sc {
             }
           }
           //cout << "X_m_Y = \n" << X_m_Y << endl;
-          //Eigen::FullPivHouseholderQR<EigenMatrix> coefficient_solver(X_m_Y);
+          Eigen::FullPivHouseholderQR<EigenMatrix> coefficient_solver(X_m_Y);
           //Eigen::LDLT<EigenMatrix> coefficient_solver(X_m_Y);
-          Eigen::FullPivLU<EigenMatrix> coefficient_solver(X_m_Y);
+          //Eigen::FullPivLU<EigenMatrix> coefficient_solver(X_m_Y);
           //Eigen::JacobiSVD<EigenMatrix> coefficient_solver(X_m_Y);
           //assert(coefficient_solver.computeU());
           //assert(coefficient_solver.computeV());
@@ -1359,11 +1525,12 @@ namespace sc {
                 metric_3c_eval->compute_shell(ish, jsh, Ysh);
                 int buff_off = 0;
                 for(int ibf=0; ibf < inbf; ++ibf){
-                    for(int jbf=0; jbf < jnbf; ++jbf){
-                      for(int Ybf=0; Ybf < Ynbf; ++Ybf){
-                        munu_m_Y(ibf*jnbf + jbf, Ybfoff + Ybf) = buffer[buff_off++];
-                      }
+                  for(int jbf=0; jbf < jnbf; ++jbf){
+                    for(int Ybf=0; Ybf < Ynbf; ++Ybf){
+                      munu_m_Y(ibf*jnbf + jbf, Ybfoff + Ybf) = buffer[buff_off++];
                     }
+                  }
+                  // Ask Drew about this
                   //ConstEigenMatrixMap buffmap(&buffer[buff_off], jnbf, Ynbf);
                   //munu_m_Y.block(ibf*jnbf, Ybfoff, jnbf, Ynbf) = buffmap;
                   //buff_off += Ynbf*jnbf;
@@ -1426,10 +1593,54 @@ namespace sc {
           delete[] metric_2c_part_ptr;
         } // end loop over atoms in B (atomB)
       } // end loop over atoms in A (atomA)
+      /* old code */ #endif
+      //============================================================================//
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
-      /* Get ( mu nu | 1/r12 | X )                             		                        {{{1 */ #if 1 // begin fold
-      EigenMatrix munu_r12_X(branbf*ketnbf, dfnbf);
+      /* Get ( mu nu | g | X )                                 		                        {{{1 */ #if 1 // begin fold
+      //----------------------------------------//
+      // < mu X | coulomb | nu >
+      // in chemists notation: ( mu nu | coulomb | X )
+      timer_change("03 - get (mu nu | g | X)", 1);
+      timer_enter("01 - setup", 2);
+      EigenMatrix munu_g_X(branbf*ketnbf, dfnbf);
+      unsigned int g_type_idx = TwoBodyOperSetDescr::instance(TwoBodyOperSet::ERI)->opertype(metric_oper);
+      timer_change("02 - compute", 2);
+      Ref<DistArray4> munu_g_X_D4 = munu_M_X;
+      // Only need to recompute if we're using a non-coulomb kernel
+      if(noncoulomb_kernel){
+        const std::string munu_g_X_key = ParsedTwoBodyThreeCenterIntKey::key(
+            braspace->id(),
+            dfspace->id(),
+            ketspace->id(),
+            "ERI", ""
+        );
+        const Ref<TwoBodyThreeCenterMOIntsTransform>& munu_g_X_tform = int3c_rtime->get(munu_g_X_key);
+        munu_g_X_tform->compute();
+        munu_g_X_D4 = munu_g_X_tform->ints_acc(); munu_g_X_D4->activate();
+      }
+      timer_change("03 - transfer to eigen", 2);
+      double* ibfjbf_g_X_buffer = allocate<double>(dfnbf);
+      VectorMap ibfjbf_g_X(ibfjbf_g_X_buffer, dfnbf);
+      for(int ibf = 0; ibf < branbf; ++ibf){
+        for(int jbf = 0; jbf < ketnbf; ++jbf){
+          munu_g_X_D4->retrieve_pair_subblock(
+              0, ibf,      // unit basis index, mu_index
+              g_type_idx,
+              jbf, jbf+1,  // nu_start, nu_fence
+              0,   dfnbf,  // X_start, X_fence
+              ibfjbf_g_X_buffer
+          );
+          munu_g_X.row(ibf*ketnbf + jbf) = ibfjbf_g_X;
+        }
+      }
+      deallocate(ibfjbf_g_X_buffer);
+      timer_exit(2);
+      //----------------------------------------//
+      /* old code */ #if 0
+      Ref<TwoBodyThreeCenterIntDescr> coulomb_3c_eval_descr = int3c_rtime->get(coulomb3c_key)->intdescr();
+      coulomb_3c_eval_descr->factory()->set_basis(brabs, ketbs, dfbs, 0);
+      Ref<TwoBodyThreeCenterInt> coulomb_3c_eval = coulomb_3c_eval_descr->inteval();
       const double* buffer = coulomb_3c_eval->buffer();
       int ibfoff = 0;
       for(int ish=0; ish < brabs->nshell(); ++ish){
@@ -1467,21 +1678,32 @@ namespace sc {
         }
         ibfoff += inbf;
       }
+      /* old code */ #endif
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
-      /* Get ( X | 1/r12 | Y )                                 		                        {{{1 */ #if 1 // begin fold
-      const std::string coulomb2c_key = ParsedTwoBodyTwoCenterIntKey::key(
-          dfspace->id(),
-          dfspace->id(),
-          "ERI", ""
-      );
-      RefSCMatrix coulomb_2c_ints = int2c_rtime->get(metric2c_key);
-      double* coulomb_2c_ints_ptr = new double[dfnbf*dfnbf];
+      /* Get ( X | g | Y )                                     		                        {{{1 */ #if 1 // begin fold
+      timer_change("04 - get (X | g | Y)", 1);
+      // hopefully this doesn't do a copy?
+      timer_enter("01 - setup", 2);
+      RefSCMatrix coulomb_2c_ints = metric_2c_ints.pointer();
+      timer_change("02 - compute", 2);
+      if(noncoulomb_kernel){
+        const std::string coulomb2c_key = ParsedTwoBodyTwoCenterIntKey::key(
+            dfspace->id(),
+            dfspace->id(),
+            "ERI", ""
+        );
+        coulomb_2c_ints = int2c_rtime->get(metric2c_key);
+      }
+      timer_change("03 - transfer", 2);
+      double* coulomb_2c_ints_ptr = allocate<double>(dfnbf*dfnbf);
       coulomb_2c_ints.convert(coulomb_2c_ints_ptr);
-      EigenMatrixMap X_r12_Y(coulomb_2c_ints_ptr, dfnbf, dfnbf);
+      EigenMatrixMap X_g_Y(coulomb_2c_ints_ptr, dfnbf, dfnbf);
+      timer_exit(2);
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
       /* Compute J                                             		                        {{{1 */ #if 1 // begin fold
+      timer_change("05 - compute J", 1);
       Eigen::VectorXd J(branbf*ketnbf);
       double *P_ptr = new double[branbf*ketnbf];
       {
@@ -1490,7 +1712,7 @@ namespace sc {
       }
       VectorMap D(P_ptr, branbf*ketnbf);
       Eigen::VectorXd CD = C * D;
-      Eigen::VectorXd Dg = munu_r12_X.transpose() * D;
+      Eigen::VectorXd Dg = munu_g_X.transpose() * D;
       // C is X by (mu nu)
       // CD is X (by 1)
       // Dg is X (by 1)
@@ -1498,9 +1720,9 @@ namespace sc {
       //cout << "-----------------------------" << endl << "D = \n" << D << endl << "-----------------------------" << endl;
       J = C.transpose() * Dg;
       //cout << "-----------------------------" << endl << "J1 = \n" << J << endl << "-----------------------------" << endl;
-      J += munu_r12_X * CD;
+      J += munu_g_X * CD;
       //cout << "-----------------------------" << endl << "J2 = \n" << J << endl << "-----------------------------" << endl;
-      J -= CD.transpose() * X_r12_Y * C;
+      J -= CD.transpose() * X_g_Y * C;
       //J = CD.transpose() * X_r12_Y * C;
       //cout << "-----------------------------" << endl << "J = \n" << J << endl << "-----------------------------" << endl;
       //cout << "-----------------------------" << endl << "C = \n" << C << endl << "-----------------------------" << endl;
@@ -1526,428 +1748,15 @@ namespace sc {
       /*=======================================================================================*/
       /* Cleanup stuff                                         		                        {{{1 */ #if 1 // begin fold
       //----------------------------------------//
+      timer_change("06 - cleanup", 1);
       delete[] P_ptr;
-      delete[] coulomb_2c_ints_ptr;
+      deallocate(coulomb_2c_ints_ptr);
+      timer_exit(1);
       tim.exit();
       return result;
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
     }
-
-    RefSCMatrix exchange_df_local(const Ref<DensityFittingInfo>& df_info,
-                            const RefSymmSCMatrix& P,
-                            SpinCase1 spin,
-                            const Ref<GaussianBasisSet>& brabs,
-                            const Ref<GaussianBasisSet>& ketbs,
-                            const Ref<GaussianBasisSet>& obs,
-                            const Ref<FockBuildRuntime::PSqrtRegistry>& psqrtregistry) {
-      /*=======================================================================================*/
-      /* Setup and stuff                                       		                        {{{1 */ #if 1 // begin fold
-      //----------------------------------------//
-      // Only closed shell is implemented so far...
-      if(spin != AnySpinCase1)
-        throw FeatureNotImplemented("open shell local DF exchange", __FILE__, __LINE__);
-      //----------------------------------------//
-      Timer tim("exchange(DF local)");
-      const double wall_time_start = tim.wall_time("exchange(DF local)");
-      //----------------------------------------//
-      Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
-      int me = msg->me();
-      int nproc = msg->n();
-      //ExEnv::out0() << endl << indent
-      //         << "Entered Coulomb(DF) matrix evaluator" << endl;
-      //ExEnv::out0() << incindent;
-      //----------------------------------------//
-      const Ref<DensityFittingRuntime>& df_rtime = df_info->runtime();
-      //----------------------------------------//
-      const Ref<AOSpaceRegistry> ao_registry = df_rtime->moints_runtime()->factory()->ao_registry();
-      const Ref<OrbitalSpace>& braspace = ao_registry->value(brabs);
-      const Ref<OrbitalSpace>& ketspace = ao_registry->value(ketbs);
-      const Ref<GaussianBasisSet>& dfbs = df_info->params()->basis();
-      assert(dfbs.nonnull());
-      const Ref<OrbitalSpace>& dfspace = ao_registry->value(dfbs);
-      const Ref<OrbitalSpace>& obs_space = ao_registry->value(obs);
-      //----------------------------------------//
-      const blasint dfnbf = dfspace->rank();
-      int branbf = brabs->nbasis();
-      int ketnbf = ketbs->nbasis();
-      int obsnbf = obs->nbasis();
-      //----------------------------------------//
-      const Ref<TwoBodyThreeCenterMOIntsRuntime>& int3c_rtime = df_rtime->moints_runtime()->runtime_3c();
-      const Ref<TwoBodyTwoCenterMOIntsRuntime>& int2c_rtime = df_rtime->moints_runtime()->runtime_2c();
-      //----------------------------------------//
-      /*****************************************************************************************/ #endif //1}}}
-      /*=======================================================================================*/
-      /* Get the TwoBodyThreeCenterInt objects and the two center ints                    {{{1 */ #if 1 // begin fold
-      //----------------------------------------//
-      // Get the Integral object
-      Ref<Integral> integral = df_info->runtime()->moints_runtime()->factory()->integral();
-      //----------------------------------------//
-      std::string metric_key = df_info->params()->kernel_key();
-      const bool noncoulomb_kernel = (metric_key.find("exp") != std::string::npos);
-      std::string params_key = df_info->params()->intparams_key();
-      std::string operset_key = noncoulomb_kernel ? "G12'" : "ERI";
-      //----------------------------------------//
-      // Metric TwoBodyThreeCenterInt object
-      // < mu X | metric | nu >
-      // in chemists notation: ( mu nu | metric | X )
-      const std::string metric3c_key = ParsedTwoBodyThreeCenterIntKey::key(
-          obs_space->id(),
-          dfspace->id(),
-          obs_space->id(),
-          operset_key, params_key
-      );
-      Ref<TwoBodyThreeCenterIntDescr> metric_3c_eval_descr = int3c_rtime->get(metric3c_key)->intdescr();
-      metric_3c_eval_descr->factory()->set_basis(brabs, ketbs, dfbs, 0);
-      Ref<TwoBodyThreeCenterInt> metric_3c_eval = metric_3c_eval_descr->inteval();
-      //----------------------------------------//
-      // < mu X | coulomb | nu >
-      // in chemists notation: ( mu nu | coulomb | X )
-      const std::string coulomb3c_key = ParsedTwoBodyThreeCenterIntKey::key(
-          braspace->id(),
-          dfspace->id(),
-          ketspace->id(),
-          "ERI", ""
-      );
-      Ref<TwoBodyThreeCenterIntDescr> coulomb_3c_eval_descr = int3c_rtime->get(coulomb3c_key)->intdescr();
-      coulomb_3c_eval_descr->factory()->set_basis(brabs, ketbs, dfbs, 0);
-      Ref<TwoBodyThreeCenterInt> coulomb_3c_eval = coulomb_3c_eval_descr->inteval();
-      //----------------------------------------//
-      // < X Y | metric | >
-      // in chemists notation: ( X | metric | Y )
-      const std::string metric2c_key = ParsedTwoBodyTwoCenterIntKey::key(
-          dfspace->id(),
-          dfspace->id(),
-          operset_key, params_key
-      );
-      RefSCMatrix metric_2c_ints = int2c_rtime->get(metric2c_key);
-      //----------------------------------------//
-      /*****************************************************************************************/ #endif //1}}}
-      /*=======================================================================================*/
-      /* Get the coefficients                                  		                        {{{1 */ #if 1 // begin fold
-      EigenMatrix C(dfnbf, brabs->nbasis() * ketbs->nbasis());
-      C = EigenMatrix::Zero(dfnbf, brabs->nbasis() * ketbs->nbasis());
-      //----------------------------------------//
-      for(int atomA=0; atomA < brabs->ncenter(); ++atomA){
-        const int nshA = brabs->nshell_on_center(atomA);
-        const int nbfA = brabs->nbasis_on_center(atomA);
-        const int shoffA = brabs->shell_on_center(atomA, 0);
-        const int bfoffA = brabs->shell_to_function(shoffA);
-        const int dfnshA = dfbs->nshell_on_center(atomA);
-        const int dfnbfA = dfbs->nbasis_on_center(atomA);
-        const int dfshoffA = dfbs->shell_on_center(atomA, 0);
-        const int dfbfoffA = dfbs->shell_to_function(dfshoffA);
-        // TODO Permutational symmetry
-        for(int atomB=0; atomB < ketbs->ncenter(); ++atomB){
-          const int nshB = ketbs->nshell_on_center(atomB);
-          const int nbfB = ketbs->nbasis_on_center(atomB);
-          const int shoffB = ketbs->shell_on_center(atomB, 0);
-          const int bfoffB = ketbs->shell_to_function(shoffB);
-          const int dfnshB = dfbs->nshell_on_center(atomB);
-          const int dfnbfB = dfbs->nbasis_on_center(atomB);
-          const int dfshoffB = dfbs->shell_on_center(atomB, 0);
-          const int dfbfoffB = dfbs->shell_to_function(dfshoffB);
-          //----------------------------------------//
-          int dfpart_size = dfnbfA;
-          if(atomA != atomB) dfpart_size += dfnbfB;
-          //----------------------------------------//
-          // Get ( X_(ab) | M | Y_(ab) ) into an Eigen Matrix
-          double* metric_2c_part_ptr = new double[dfpart_size*dfpart_size];
-          double** blockptr = new double*[dfpart_size];
-          //----------------------------------------//
-          // Get the block corresponding to (A|m|A)
-          for(int idfpart = 0; idfpart < dfnbfA; ++idfpart) {
-            blockptr[idfpart] = &(metric_2c_part_ptr[idfpart * dfpart_size]);
-          }
-          {
-            RefSCMatrix block = metric_2c_ints.get_subblock(
-                dfbfoffA, dfbfoffA+dfnbfA-1,
-                dfbfoffA, dfbfoffA+dfnbfA-1
-            );
-            block.convert(blockptr);
-          }
-          // if atomA == atomB, we're done.  Otherwise,
-          if(atomA != atomB){
-            // Get the block corresponding to (A|m|B)
-            for(int idfpart = 0; idfpart < dfnbfA; ++idfpart) {
-              blockptr[idfpart] = &(metric_2c_part_ptr[idfpart * dfpart_size + dfnbfA]);
-            }
-            {
-              RefSCMatrix block = metric_2c_ints.get_subblock(
-                  dfbfoffA, dfbfoffA+dfnbfA-1,
-                  dfbfoffB, dfbfoffB+dfnbfB-1
-              );
-              block.convert(blockptr);
-            }
-            //----------------------------------------//
-            // Get the block corresponding to (B|m|A)
-            for(int idfpart = 0; idfpart < dfnbfB; ++idfpart) {
-              blockptr[idfpart] = &(metric_2c_part_ptr[(idfpart+dfnbfA) * dfpart_size]);
-            }
-            {
-              RefSCMatrix block = metric_2c_ints.get_subblock(
-                  dfbfoffB, dfbfoffB+dfnbfB-1,
-                  dfbfoffA, dfbfoffA+dfnbfA-1
-              );
-              block.convert(blockptr);
-            }
-            //----------------------------------------//
-            // Get the block corresponding to (B|m|B)
-            for(int idfpart = 0; idfpart < dfnbfB; ++idfpart) {
-              blockptr[idfpart] = &(metric_2c_part_ptr[(idfpart+dfnbfA) * dfpart_size + dfnbfA]);
-            }
-            {
-              RefSCMatrix block = metric_2c_ints.get_subblock(
-                  dfbfoffB, dfbfoffB+dfnbfB-1,
-                  dfbfoffB, dfbfoffB+dfnbfB-1
-              );
-              block.convert(blockptr);
-            }
-          }
-          //----------------------------------------//
-          EigenMatrixMap X_m_Y(metric_2c_part_ptr, dfpart_size, dfpart_size);
-          eigenout("X_m_Y, atomA = " << atomA << ", atomB = " << atomB, X_m_Y);
-          for(int X = 0; X < dfpart_size; ++X){
-            for(int Y = 0; Y < dfpart_size; ++Y){
-              if(fabs(double(X_m_Y(X,Y))) < 1e-12){
-                X_m_Y(X,Y) = 0;
-              }
-            }
-          }
-          for(int X = 0; X < dfpart_size; ++X){
-            for(int Y = 0; Y < X; ++Y){
-              X_m_Y(X,Y) += X_m_Y(Y,X);
-              X_m_Y(X,Y) *= 0.5;
-            }
-          }
-          //cout << "X_m_Y = \n" << X_m_Y << endl;
-          //Eigen::FullPivHouseholderQR<EigenMatrix> coefficient_solver(X_m_Y);
-          //Eigen::LDLT<EigenMatrix> coefficient_solver(X_m_Y);
-          Eigen::FullPivLU<EigenMatrix> coefficient_solver(X_m_Y);
-          //Eigen::JacobiSVD<EigenMatrix> coefficient_solver(X_m_Y);
-          //assert(coefficient_solver.computeU());
-          //assert(coefficient_solver.computeV());
-          //Eigen::LDLT<EigenMatrix> coefficient_solver(X_m_Y);
-          //coefficient_solver.compute(X_m_Y);
-          //----------------------------------------//
-          const double* buffer = metric_3c_eval->buffer();
-          int ibfoff = 0;
-          for(int ishA = 0; ishA < nshA; ++ishA){
-            const int ish = ishA + shoffA;
-            const int ishbfoff = brabs->shell_to_function(ish);
-            const int inbf = brabs->shell(ish).nfunction();
-            int jbfoff = 0;
-            for(int jshB = 0; jshB < nshB; ++jshB){
-              const int jsh = jshB + shoffB;
-              const int jshbfoff = ketbs->shell_to_function(jsh);
-              const int jnbf = ketbs->shell(jsh).nfunction();
-              //----------------------------------------//
-              // Compute the integrals ( mu_(a) nu_(b) | M | Y_(ab) )
-              EigenMatrix munu_m_Y(inbf*jnbf, dfpart_size);
-              munu_m_Y = EigenMatrix::Constant(inbf*jnbf, dfpart_size, 9e99);
-              int Ybfoff = 0;
-              for(int YshA = 0; YshA < dfnshA; ++YshA){
-                const int Ysh = YshA + dfshoffA;
-                const int Ynbf = dfbs->shell(Ysh).nfunction();
-                metric_3c_eval->compute_shell(ish, jsh, Ysh);
-                int buff_off = 0;
-                for(int ibf=0; ibf < inbf; ++ibf){
-                  for(int jbf=0; jbf < jnbf; ++jbf){
-                    for(int Ybf=0; Ybf < Ynbf; ++Ybf){
-                      munu_m_Y(ibf*jnbf + jbf, Ybfoff + Ybf) = buffer[buff_off++];
-                    }
-                  }
-                  //ConstEigenMatrixMap buffmap(&buffer[buff_off], jnbf, Ynbf);
-                  //munu_m_Y.block(ibf*jnbf, Ybfoff, jnbf, Ynbf) = buffmap;
-                  //buff_off += Ynbf*jnbf;
-                }
-                Ybfoff += Ynbf;
-              }
-              if(atomA != atomB) {
-                for(int YshB = 0; YshB < dfnshB; ++YshB){
-                  const int Ysh = YshB + dfshoffB;
-                  const int Ynbf = dfbs->shell(Ysh).nfunction();
-                  metric_3c_eval->compute_shell(ish, jsh, Ysh);
-                  int buff_off = 0;
-                  for(int ibf=0; ibf < inbf; ++ibf){
-                    for(int jbf=0; jbf < jnbf; ++jbf){
-                      for(int Ybf=0; Ybf < Ynbf; ++Ybf){
-                        munu_m_Y(ibf*jnbf + jbf, Ybfoff + Ybf) = buffer[buff_off++];
-                      }
-                    }
-                    //ConstEigenMatrixMap buffmap(&buffer[buff_off], jnbf, Ynbf);
-                    //munu_m_Y.block(ibf*jnbf, Ybfoff, jnbf, Ynbf) = buffmap;
-                    ////munu_m_Y.block((ibfoff+ibf)*nbfB + jbfoff, Ybfoff, jnbf, Ynbf) = buffmap;
-                    //buff_off += Ynbf*jnbf;
-                  }
-                  assert(buff_off == Ynbf*inbf*jnbf);
-                  Ybfoff += Ynbf;
-                }
-              }
-              //----------------------------------------//
-              // Now solve A * x = b, with A = ( X_(ab) | M | Y_(ab) ) and b = ( mu_(a) nu_(b) | M | Y_(ab) )
-              // The result will be dfnbf rows and inbf*jnbf columns and needs to be stored in the big C
-              EigenMatrix Cpart(dfpart_size, inbf*jnbf);
-              Cpart = coefficient_solver.solve(munu_m_Y.transpose());
-              double relerr = (X_m_Y * Cpart - munu_m_Y.transpose()).norm() / munu_m_Y.norm();
-              if(fabs(relerr) > 1e-11) {
-                cout << "Relative error encountered for atoms " << atomA << " and " << atomB << " of " << relerr << endl;
-              }
-              for(int ibf1 = 0; ibf1 < inbf; ++ibf1){
-                C.block(
-                    dfbfoffA, (ishbfoff+ibf1)*ketnbf + jshbfoff,
-                    dfnbfA, jnbf
-                ) = Cpart.block(0, ibf1*jnbf, dfnbfA, jnbf);
-              }
-              if(atomA != atomB) {
-                for(int ibf1 = 0; ibf1 < inbf; ++ibf1){
-                  C.block(
-                      dfbfoffB, (ishbfoff+ibf1)*ketnbf + jshbfoff,
-                      dfnbfB, jnbf
-                  ) = Cpart.block(dfnbfA, ibf1*jnbf, dfnbfB, jnbf);
-                }
-              }
-              //----------------------------------------//
-              jbfoff += jnbf;
-            } // end loop over shells in B (jshB)
-            ibfoff += inbf;
-          } // end loop over shells in A (ishA)
-          //----------------------------------------//
-          delete[] blockptr;
-          delete[] metric_2c_part_ptr;
-        } // end loop over atoms in B (atomB)
-      } // end loop over atoms in A (atomA)
-      /*****************************************************************************************/ #endif //1}}}
-      /*=======================================================================================*/
-      /* Get ( mu nu | 1/r12 | X )                             		                        {{{1 */ #if 1 // begin fold
-      EigenMatrix munu_r12_X(branbf*ketnbf, dfnbf);
-      const double* buffer = coulomb_3c_eval->buffer();
-      int ibfoff = 0;
-      for(int ish=0; ish < brabs->nshell(); ++ish){
-        int ibfoff = brabs->shell_to_function(ish);
-        int inbf = brabs->shell(ish).nfunction();
-        int jbfoff = 0;
-        for(int jsh=0; jsh < ketbs->nshell(); ++jsh){
-          int jnbf = ketbs->shell(jsh).nfunction();
-          for(int Xsh=0; Xsh < dfbs->nshell(); ++Xsh){
-            int Xbfoff = dfbs->shell_to_function(Xsh);
-            int Xnbf = dfbs->shell(Xsh).nfunction();
-            coulomb_3c_eval->compute_shell(ish, jsh, Xsh);
-            int buff_off = 0;
-            // Declare here and reassign as needed using placement new
-            //ConstEigenMatrixMap buffmap(buffer, jnbf, Xnbf);
-            for(int ibf=0; ibf < inbf; ++ibf){
-              // reassign the buffmap using placement new
-              // Eclipse doesn't like this, for some reason, so I'll leave
-              //   it out in case it knows something about compilers that I
-              //   don't.  Shouldn't save that much time anyway.
-              // new (&buffmap) ConstEigenMatrixMap(&buffer[buff_off], jnbf, Xnbf);
-              // Instead, just create a new buffmap each time
-              //ConstEigenMatrixMap buffmap(&buffer[buff_off], jnbf, Xnbf);
-              //munu_r12_X.block((ibfoff+ibf)*ketnbf + jbfoff, Xbfoff, jnbf, Xnbf) = buffmap;
-              //buff_off += Xnbf*jnbf;
-              for(int jbf=0; jbf < jnbf; ++jbf){
-                for(int Xbf=0; Xbf < Xnbf; ++Xbf){
-                  munu_r12_X((ibfoff+ibf)*ketnbf + jbfoff + jbf, Xbfoff + Xbf) = buffer[buff_off++];
-                }
-              }
-            }
-            // This doesn't work
-          }
-          jbfoff += jnbf;
-        }
-        ibfoff += inbf;
-      }
-      /*****************************************************************************************/ #endif //1}}}
-      /*=======================================================================================*/
-      /* Get ( X | 1/r12 | Y )                                 		                        {{{1 */ #if 1 // begin fold
-      const std::string coulomb2c_key = ParsedTwoBodyTwoCenterIntKey::key(
-          dfspace->id(),
-          dfspace->id(),
-          "ERI", ""
-      );
-      RefSCMatrix coulomb_2c_ints = int2c_rtime->get(metric2c_key);
-      double* coulomb_2c_ints_ptr = new double[dfnbf*dfnbf];
-      coulomb_2c_ints.convert(coulomb_2c_ints_ptr);
-      EigenMatrixMap X_r12_Y(coulomb_2c_ints_ptr, dfnbf, dfnbf);
-      /*****************************************************************************************/ #endif //1}}}
-      /*=======================================================================================*/
-      /* Compute K                                             		                        {{{1 */ #if 1 // begin fold
-      EigenMatrix K(branbf, ketnbf);
-      double *P_ptr = new double[branbf*ketnbf];
-      {
-        RefSymmSCMatrix Ptmp = P.copy();
-        Ptmp.convert2RefSCMat().convert(P_ptr);
-      }
-      EigenMatrixMap D(P_ptr, branbf, ketnbf);
-      //----------------------------------------//
-      // C_{mu rho}^X D^{rho sigma}
-      {
-        EigenMatrix CD(branbf, dfnbf*obsnbf);
-        EigenMatrix g_phys(branbf, dfnbf*obsnbf);
-        Eigen::RowVectorXd rhotmp(obsnbf);
-        for(int X = 0; X < dfnbf; ++X) {
-          for(int sigma = 0; sigma < obsnbf; ++sigma) {
-            for(int mu = 0; mu < branbf; ++mu) {
-              rhotmp = C.block(X, mu*obsnbf, 1, obsnbf);
-              CD(mu, X*obsnbf + sigma) = rhotmp.dot(D.row(sigma));
-              g_phys(mu, X*obsnbf + sigma) = munu_r12_X(mu*obsnbf + sigma, X);
-            }
-          }
-        }
-        K = CD * g_phys.transpose();
-        K += K.transpose().eval();
-      }
-      {
-        //Eigen::Map<EigenMatrix, Eigen::Unaligned, Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic> > CD(
-        //    branbf*obsnbf, dfnbf
-        //);
-        EigenMatrix CD(dfnbf, branbf*obsnbf);
-        Eigen::RowVectorXd rhotmp(obsnbf);
-        for(int X = 0; X < dfnbf; ++X) {
-          for(int sigma = 0; sigma < obsnbf; ++sigma) {
-            for(int mu = 0; mu < branbf; ++mu) {
-              rhotmp = C.block(X, mu*obsnbf, 1, obsnbf);
-              CD(X, mu*obsnbf + sigma) = rhotmp.dot(D.row(sigma));
-            }
-          }
-        }
-        EigenMatrix CDg(dfnbf, branbf*obsnbf);
-        CDg = X_r12_Y * CD;
-        for(int mu = 0; mu < branbf; ++mu) {
-          for(int nu = 0; nu < ketnbf; ++nu) {
-            for(int sigma = 0; sigma < obsnbf; ++sigma) {
-              K(mu, nu) -= CDg.col(mu*obsnbf + sigma).dot(C.col(nu*obsnbf + sigma));
-            }
-          }
-        }
-      }
-      //----------------------------------------//
-      Ref<Integral> localints = int3c_rtime->factory()->integral()->clone();
-      localints->set_basis(brabs);
-      Ref<PetiteList> brapl = localints->petite_list();
-      localints->set_basis(ketbs);
-      Ref<PetiteList> ketpl = localints->petite_list();
-      RefSCDimension bradim = brapl->AO_basisdim();
-      RefSCDimension ketdim = ketpl->AO_basisdim();
-      RefSCMatrix result(
-          bradim,
-          ketdim,
-          brabs->so_matrixkit()
-      );
-      result.assign(K.data());
-      /*****************************************************************************************/ #endif //1}}}
-      /*=======================================================================================*/
-      /* Cleanup stuff                                         		                        {{{1 */ #if 1 // begin fold
-      delete[] P_ptr;
-      delete[] coulomb_2c_ints_ptr;
-      tim.exit();
-      return result;
-      /*****************************************************************************************/ #endif //1}}}
-      /*=======================================================================================*/
-
-    }
-
 
     RefSCMatrix exchange_df(const Ref<DensityFittingInfo>& df_info,
                             const RefSymmSCMatrix& P,
@@ -2209,6 +2018,384 @@ namespace sc {
       //    << (tim.wall_time("exchange(DF)") - wall_time_start) << " sec)" << endl;
 
       return result;
+    }
+
+    RefSCMatrix exchange_df_local(const Ref<DensityFittingInfo>& df_info,
+                            const RefSymmSCMatrix& P,
+                            SpinCase1 spin,
+                            const Ref<GaussianBasisSet>& brabs,
+                            const Ref<GaussianBasisSet>& ketbs,
+                            const Ref<GaussianBasisSet>& obs,
+                            const Ref<FockBuildRuntime::PSqrtRegistry>& psqrtregistry) {
+      /*=======================================================================================*/
+      /* Setup and stuff                                       		                        {{{1 */ #if 1 // begin fold
+      Timer tim("exchange(DF local)");
+      timer_enter("01 - setup", 1);
+      //----------------------------------------//
+      // Only closed shell is implemented so far...
+      if(spin != AnySpinCase1)
+        throw FeatureNotImplemented("open shell local DF exchange", __FILE__, __LINE__);
+      //----------------------------------------//
+      Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
+      int me = msg->me();
+      int nproc = msg->n();
+      //ExEnv::out0() << endl << indent
+      //         << "Entered Coulomb(DF) matrix evaluator" << endl;
+      //ExEnv::out0() << incindent;
+      //----------------------------------------//
+      const Ref<DensityFittingRuntime>& df_rtime = df_info->runtime();
+      //----------------------------------------//
+      const Ref<AOSpaceRegistry> ao_registry = df_rtime->moints_runtime()->factory()->ao_registry();
+      const Ref<OrbitalSpace>& braspace = ao_registry->value(brabs);
+      const Ref<OrbitalSpace>& ketspace = ao_registry->value(ketbs);
+      const Ref<GaussianBasisSet>& dfbs = df_info->params()->basis();
+      assert(dfbs.nonnull());
+      const Ref<OrbitalSpace>& dfspace = ao_registry->value(dfbs);
+      const Ref<OrbitalSpace>& obs_space = ao_registry->value(obs);
+      //----------------------------------------//
+      const blasint dfnbf = dfspace->rank();
+      int branbf = brabs->nbasis();
+      int ketnbf = ketbs->nbasis();
+      int obsnbf = obs->nbasis();
+      //----------------------------------------//
+      const Ref<TwoBodyThreeCenterMOIntsRuntime>& int3c_rtime = df_rtime->moints_runtime()->runtime_3c();
+      const Ref<TwoBodyTwoCenterMOIntsRuntime>& int2c_rtime = df_rtime->moints_runtime()->runtime_2c();
+      //----------------------------------------//
+      /*****************************************************************************************/ #endif //1}}}
+      /*=======================================================================================*/
+      /* Get the coefficients                                  		                        {{{1 */ #if 1 // begin fold
+      timer_change("02 - get coefficients", 1);
+      //----------------------------------------//
+      // Setup
+      timer_enter("01 - (mu nu | M | X) setup", 2);
+      std::string metric_key = df_info->params()->kernel_key();
+      const bool noncoulomb_kernel = (metric_key.find("exp") != std::string::npos);
+      std::string params_key = df_info->params()->intparams_key();
+      std::string operset_key = noncoulomb_kernel ? "G12'" : "ERI";
+      TwoBodyOper::type metric_oper =
+          noncoulomb_kernel ? TwoBodyOper::r12_0_g12 : TwoBodyOper::eri;
+      unsigned int ints_type_idx = TwoBodyOperSetDescr::instance(
+          noncoulomb_kernel ? TwoBodyOperSet::G12NC : TwoBodyOperSet::ERI
+      )->opertype(metric_oper);
+      //----------------------------------------//
+      // Go ahead and compute them all for now.  It will be faster to
+      //   compute only the ones we need and save them for later, but
+      //   that requires significant infrastructure changes.
+      const std::string munu_M_X_key = ParsedTwoBodyThreeCenterIntKey::key(obs_space->id(),
+                                                                           dfspace->id(),
+                                                                           obs_space->id(),
+                                                                           operset_key, params_key);
+      timer_change("02 - (mu nu | M | X) compute", 2);
+      const Ref<TwoBodyThreeCenterMOIntsTransform>& munu_M_X_tform = int3c_rtime->get(munu_M_X_key);
+      munu_M_X_tform->compute();
+      Ref<DistArray4> munu_M_X = munu_M_X_tform->ints_acc(); munu_M_X->activate();
+      //----------------------------------------//
+      // < X Y | metric | >
+      // in chemists notation: ( X | metric | Y )
+      timer_change("03 - compute (X | M | Y)", 2);
+      const std::string metric2c_key = ParsedTwoBodyTwoCenterIntKey::key(
+          dfspace->id(),
+          dfspace->id(),
+          operset_key, params_key
+      );
+      RefSCMatrix metric_2c_ints = int2c_rtime->get(metric2c_key);
+      //----------------------------------------//
+      // loop over atom pairs...
+      timer_change("04 - loop over atom pairs", 2);
+      EigenMatrix C(dfnbf, brabs->nbasis() * ketbs->nbasis());
+      C = EigenMatrix::Zero(dfnbf, brabs->nbasis() * ketbs->nbasis());
+      for(int atomA=0; atomA < brabs->ncenter(); ++atomA){
+        //----------------------------------------//
+        // Convenience variables for atom A
+        const int nshA = brabs->nshell_on_center(atomA);
+        const int nbfA = brabs->nbasis_on_center(atomA);
+        const int shoffA = brabs->shell_on_center(atomA, 0);
+        const int bfoffA = brabs->shell_to_function(shoffA);
+        const int dfnshA = dfbs->nshell_on_center(atomA);
+        const int dfnbfA = dfbs->nbasis_on_center(atomA);
+        const int dfshoffA = dfbs->shell_on_center(atomA, 0);
+        const int dfbfoffA = dfbs->shell_to_function(dfshoffA);
+        //----------------------------------------//
+        // TODO Permutational symmetry
+        for(int atomB=0; atomB < ketbs->ncenter(); ++atomB){
+          //----------------------------------------//
+          // Convenience variables for atom B
+          const int nshB = ketbs->nshell_on_center(atomB);
+          const int nbfB = ketbs->nbasis_on_center(atomB);
+          const int shoffB = ketbs->shell_on_center(atomB, 0);
+          const int bfoffB = ketbs->shell_to_function(shoffB);
+          const int dfnshB = dfbs->nshell_on_center(atomB);
+          const int dfnbfB = dfbs->nbasis_on_center(atomB);
+          const int dfshoffB = dfbs->shell_on_center(atomB, 0);
+          const int dfbfoffB = dfbs->shell_to_function(dfshoffB);
+          int dfpart_size = dfnbfA;
+          if(atomA != atomB) dfpart_size += dfnbfB;
+          /*---------------------------------------------------------------*/
+          /*  Get ( X_(ab) | M | Y_(ab) ) into an Eigen Matrix        {{{2 */ #if 2 // begin fold
+          //===============================================================//
+          timer_enter("01 - get ( X_(ab) | M | Y_(ab) ) block", 3);
+          double* metric_2c_part_ptr = new double[dfpart_size*dfpart_size];
+          double** blockptr = new double*[dfpart_size];
+          //---------------------------------------------------------------//
+          // Get the block corresponding to (A|m|A)
+          for(int idfpart = 0; idfpart < dfnbfA; ++idfpart) {
+            blockptr[idfpart] = &(metric_2c_part_ptr[idfpart * dfpart_size]);
+          }
+          {
+            RefSCMatrix block = metric_2c_ints.get_subblock(
+                dfbfoffA, dfbfoffA+dfnbfA-1,
+                dfbfoffA, dfbfoffA+dfnbfA-1
+            );
+            block.convert(blockptr);
+          }
+          // if atomA == atomB, we're done.  Otherwise,
+          if(atomA != atomB){
+            // Get the block corresponding to (A|m|B)
+            for(int idfpart = 0; idfpart < dfnbfA; ++idfpart) {
+              blockptr[idfpart] = &(metric_2c_part_ptr[idfpart * dfpart_size + dfnbfA]);
+            }
+            {
+              RefSCMatrix block = metric_2c_ints.get_subblock(
+                  dfbfoffA, dfbfoffA+dfnbfA-1,
+                  dfbfoffB, dfbfoffB+dfnbfB-1
+              );
+              block.convert(blockptr);
+            }
+            //---------------------------------------------------------------//
+            // Get the block corresponding to (B|m|A)
+            for(int idfpart = 0; idfpart < dfnbfB; ++idfpart) {
+              blockptr[idfpart] = &(metric_2c_part_ptr[(idfpart+dfnbfA) * dfpart_size]);
+            }
+            {
+              RefSCMatrix block = metric_2c_ints.get_subblock(
+                  dfbfoffB, dfbfoffB+dfnbfB-1,
+                  dfbfoffA, dfbfoffA+dfnbfA-1
+              );
+              block.convert(blockptr);
+            }
+            //---------------------------------------------------------------//
+            // Get the block corresponding to (B|m|B)
+            for(int idfpart = 0; idfpart < dfnbfB; ++idfpart) {
+              blockptr[idfpart] = &(metric_2c_part_ptr[(idfpart+dfnbfA) * dfpart_size + dfnbfA]);
+            }
+            {
+              RefSCMatrix block = metric_2c_ints.get_subblock(
+                  dfbfoffB, dfbfoffB+dfnbfB-1,
+                  dfbfoffB, dfbfoffB+dfnbfB-1
+              );
+              block.convert(blockptr);
+            }
+          }
+          //-----------------------------------------------------------------//
+          EigenMatrixMap X_m_Y(metric_2c_part_ptr, dfpart_size, dfpart_size);
+          //for(int X = 0; X < dfpart_size; ++X){
+          //  for(int Y = 0; Y < dfpart_size; ++Y){
+          //    if(fabs(double(X_m_Y(X,Y))) < 1e-12){
+          //      X_m_Y(X,Y) = 0;
+          //    }
+          //  }
+          //}
+          /*****************************************************************/ #endif //2}}}
+          /*---------------------------------------------------------------*/
+          timer_change("02 - decompose ( X(ab) | M | Y(ab) )", 3);
+          Eigen::FullPivHouseholderQR<EigenMatrix> coefficient_solver(X_m_Y);
+          /*---------------------------------------------------------------*/
+          timer_change("03 - solve equations", 3);
+          double* ibfjbf_M_X_buffer_A = allocate<double>(dfnbfA);
+          VectorMap ibfjbf_M_X_A(ibfjbf_M_X_buffer_A, dfnbfA);
+          double* ibfjbf_M_X_buffer_B;
+          VectorMap ibfjbf_M_X_B(0, dfnbfB);
+          if(atomA != atomB){
+            ibfjbf_M_X_buffer_B = allocate<double>(dfnbfB);
+            new (&ibfjbf_M_X_B) VectorMap(ibfjbf_M_X_buffer_B, dfnbfB);
+          }
+          Eigen::VectorXd ibfjbf_M_X(dfpart_size);
+          // loop over the basis functions mu in A
+          for(int ibf = bfoffA; ibf < bfoffA + nbfA; ++ibf){
+            // loop over the basis functions mu in B
+            for(int jbf = bfoffB; jbf < bfoffB + nbfB; ++jbf){
+              munu_M_X->retrieve_pair_subblock(
+                  0, ibf,     // index in unit basis, index in mu
+                  ints_type_idx,
+                  jbf,        jbf+1,             // nu start, nu fence
+                  dfbfoffA,   dfbfoffA + dfnbfA, // X start,  X fence
+                  ibfjbf_M_X_buffer_A
+              );
+              ibfjbf_M_X.head(dfnbfA) = ibfjbf_M_X_A;
+              if(atomA != atomB){
+                munu_M_X->retrieve_pair_subblock(
+                    0, ibf,     // index in unit basis, index in mu
+                    ints_type_idx,
+                    jbf,        jbf+1,             // nu start, nu fence
+                    dfbfoffB,   dfbfoffB + dfnbfB, // X start,  X fence
+                    ibfjbf_M_X_buffer_B
+                );
+                ibfjbf_M_X.tail(dfnbfB) = ibfjbf_M_X_B;
+              }
+              // Now solve A * x = b, with A = ( X_(ab) | M | Y_(ab) ) and b = ( ibf jbf | M | Y_(ab) )
+              // The result will be dfpart_size rows and 1 column and needs to be stored in the big C
+              Eigen::VectorXd Cpart(dfpart_size);
+              Cpart = coefficient_solver.solve(ibfjbf_M_X);
+              C.block(
+                  dfbfoffA, ibf*ketnbf + jbf,
+                  dfnbfA, 1
+              ) = Cpart.head(dfnbfA);
+              if(atomA != atomB) {
+                C.block(
+                    dfbfoffB, ibf*ketnbf + jbf,
+                    dfnbfB, 1
+                ) = Cpart.tail(dfnbfB);
+              }
+            } // end loop over basis functions in B (jbf)
+          } // end loop over basis functions in A (ibf)
+          deallocate(ibfjbf_M_X_buffer_A);
+          if(atomA != atomB)
+            deallocate(ibfjbf_M_X_buffer_B);
+          timer_exit(3);
+        } // end loop over atomA
+      } // end loop over atomB
+      timer_exit(2);
+      /*****************************************************************************************/ #endif //1}}}
+      /*=======================================================================================*/
+      /* Get ( mu nu | g | X )                                		                        {{{1 */ #if 1 // begin fold
+      //----------------------------------------//
+      // < mu X | coulomb | nu >
+      // in chemists notation: ( mu nu | coulomb | X )
+      timer_change("03 - get (mu nu | g | X)", 1);
+      timer_enter("01 - setup", 2);
+      EigenMatrix munu_g_X(branbf*ketnbf, dfnbf);
+      unsigned int g_type_idx = TwoBodyOperSetDescr::instance(TwoBodyOperSet::ERI)->opertype(metric_oper);
+      timer_change("02 - compute", 2);
+      Ref<DistArray4> munu_g_X_D4 = munu_M_X;
+      // Only need to recompute if we're using a non-coulomb kernel
+      if(noncoulomb_kernel){
+        const std::string munu_g_X_key = ParsedTwoBodyThreeCenterIntKey::key(
+            braspace->id(),
+            dfspace->id(),
+            ketspace->id(),
+            "ERI", ""
+        );
+        const Ref<TwoBodyThreeCenterMOIntsTransform>& munu_g_X_tform = int3c_rtime->get(munu_g_X_key);
+        munu_g_X_tform->compute();
+        munu_g_X_D4 = munu_g_X_tform->ints_acc(); munu_g_X_D4->activate();
+      }
+      timer_change("03 - transfer to eigen", 2);
+      double* ibfjbf_g_X_buffer = allocate<double>(dfnbf);
+      VectorMap ibfjbf_g_X(ibfjbf_g_X_buffer, dfnbf);
+      for(int ibf = 0; ibf < branbf; ++ibf){
+        for(int jbf = 0; jbf < ketnbf; ++jbf){
+          munu_g_X_D4->retrieve_pair_subblock(
+              0, ibf,      // unit basis index, mu_index
+              g_type_idx,
+              jbf, jbf+1,  // nu_start, nu_fence
+              0,   dfnbf,  // X_start, X_fence
+              ibfjbf_g_X_buffer
+          );
+          munu_g_X.row(ibf*ketnbf + jbf) = ibfjbf_g_X;
+        }
+      }
+      deallocate(ibfjbf_g_X_buffer);
+      timer_exit(2);
+      /*****************************************************************************************/ #endif //1}}}
+      /*=======================================================================================*/
+      /* Get ( X | g | Y )                                     		                        {{{1 */ #if 1 // begin fold
+      timer_change("04 - get (X | g | Y)", 1);
+      // hopefully this doesn't do a copy?
+      timer_enter("01 - setup", 2);
+      RefSCMatrix coulomb_2c_ints = metric_2c_ints.pointer();
+      timer_change("02 - compute", 2);
+      if(noncoulomb_kernel){
+        const std::string coulomb2c_key = ParsedTwoBodyTwoCenterIntKey::key(
+            dfspace->id(),
+            dfspace->id(),
+            "ERI", ""
+        );
+        coulomb_2c_ints = int2c_rtime->get(metric2c_key);
+      }
+      timer_change("03 - transfer", 2);
+      double* coulomb_2c_ints_ptr = allocate<double>(dfnbf*dfnbf);
+      coulomb_2c_ints.convert(coulomb_2c_ints_ptr);
+      EigenMatrixMap X_g_Y(coulomb_2c_ints_ptr, dfnbf, dfnbf);
+      timer_exit(2);
+      /*****************************************************************************************/ #endif //1}}}
+      /*=======================================================================================*/
+      /* Compute K                                             		                        {{{1 */ #if 1 // begin fold
+      timer_change("05 - compute K", 1);
+      EigenMatrix K(branbf, ketnbf);
+      double *P_ptr = new double[branbf*ketnbf];
+      {
+        RefSymmSCMatrix Ptmp = P.copy();
+        Ptmp.convert2RefSCMat().convert(P_ptr);
+      }
+      EigenMatrixMap D(P_ptr, branbf, ketnbf);
+      //----------------------------------------//
+      // C_{mu rho}^X D^{rho sigma}
+      {
+        EigenMatrix CD(branbf, dfnbf*obsnbf);
+        EigenMatrix g_phys(branbf, dfnbf*obsnbf);
+        Eigen::RowVectorXd rhotmp(obsnbf);
+        for(int X = 0; X < dfnbf; ++X) {
+          for(int sigma = 0; sigma < obsnbf; ++sigma) {
+            for(int mu = 0; mu < branbf; ++mu) {
+              rhotmp = C.block(X, mu*obsnbf, 1, obsnbf);
+              CD(mu, X*obsnbf + sigma) = rhotmp.dot(D.row(sigma));
+              g_phys(mu, X*obsnbf + sigma) = munu_g_X(mu*obsnbf + sigma, X);
+            }
+          }
+        }
+        K = CD * g_phys.transpose();
+        K += K.transpose().eval();
+      }
+      {
+        //Eigen::Map<EigenMatrix, Eigen::Unaligned, Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic> > CD(
+        //    branbf*obsnbf, dfnbf
+        //);
+        EigenMatrix CD(dfnbf, branbf*obsnbf);
+        Eigen::RowVectorXd rhotmp(obsnbf);
+        for(int X = 0; X < dfnbf; ++X) {
+          for(int sigma = 0; sigma < obsnbf; ++sigma) {
+            for(int mu = 0; mu < branbf; ++mu) {
+              rhotmp = C.block(X, mu*obsnbf, 1, obsnbf);
+              CD(X, mu*obsnbf + sigma) = rhotmp.dot(D.row(sigma));
+            }
+          }
+        }
+        EigenMatrix CDg(dfnbf, branbf*obsnbf);
+        CDg = X_g_Y * CD;
+        for(int mu = 0; mu < branbf; ++mu) {
+          for(int nu = 0; nu < ketnbf; ++nu) {
+            for(int sigma = 0; sigma < obsnbf; ++sigma) {
+              K(mu, nu) -= CDg.col(mu*obsnbf + sigma).dot(C.col(nu*obsnbf + sigma));
+            }
+          }
+        }
+      }
+      //----------------------------------------//
+      Ref<Integral> localints = int3c_rtime->factory()->integral()->clone();
+      localints->set_basis(brabs);
+      Ref<PetiteList> brapl = localints->petite_list();
+      localints->set_basis(ketbs);
+      Ref<PetiteList> ketpl = localints->petite_list();
+      RefSCDimension bradim = brapl->AO_basisdim();
+      RefSCDimension ketdim = ketpl->AO_basisdim();
+      RefSCMatrix result(
+          bradim,
+          ketdim,
+          brabs->so_matrixkit()
+      );
+      result.assign(K.data());
+      /*****************************************************************************************/ #endif //1}}}
+      /*=======================================================================================*/
+      /* Cleanup stuff                                         		                        {{{1 */ #if 1 // begin fold
+      timer_change("06 - cleanup", 1);
+      delete[] P_ptr;
+      deallocate(coulomb_2c_ints_ptr);
+      timer_exit(1);
+      tim.exit();
+      return result;
+      /*****************************************************************************************/ #endif //1}}}
+      /*=======================================================================================*/
+
     }
 
 }} // namespace sc::detail

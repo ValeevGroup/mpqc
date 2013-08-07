@@ -23,9 +23,9 @@ mole<DFCLHF>: (
 
   df_basis<GaussianBasisSet>:(
     molecule = $..:molecule
-    name = "cc-pVDZ-JKFIT"
+    %name = "cc-pVTZ-JKFIT"
     %name = "aug-cc-pVTZ"
-    %name = "cc-pVDZ-RI"
+    name = "cc-pVTZ-RI"
     %name = "cc-pVDZ"
     %name = "6-31G"
     %puream=yes
@@ -35,8 +35,8 @@ mole<DFCLHF>: (
   world<WavefunctionWorld>:(
   	wfn = $..:mole
   	df_basis = $..:df_basis
-  	df_kernel = "exp(1)"  
-    %df_kernel = "coulomb"
+  	%df_kernel = "exp(1)"  
+    df_kernel = "coulomb"
   	df_solver = "bunchkaufman_refine"
   	df_local_coulomb = yes
   	df_local_exchange = yes
@@ -51,7 +51,7 @@ mole<DFCLHF>: (
   molecule = $:molecule
   mbasis<GaussianBasisSet>: (
     molecule = $:molecule
-    name = "cc-pVDZ"
+    name = "cc-pVTZ"
     %name = "STO-3G"
     %puream=yes
     matrixkit = $:basis_matrixkit

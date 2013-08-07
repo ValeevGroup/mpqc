@@ -26,7 +26,7 @@
 //
 
 #define EIGEN_NO_AUTOMATIC_RESIZING 1
-#define TIMER_DEPTH 5
+#define TIMER_DEPTH 1
 #define timer_change(str, depth) \
   if(TIMER_DEPTH >= depth) tim.change(str);
 #define timer_enter(str, depth) \
@@ -2096,13 +2096,31 @@ namespace sc {
           operset_key, params_key
       );
       RefSCMatrix metric_2c_ints = int2c_rtime->get(metric2c_key);
+      // hopefully this doesn't do a copy?
+      RefSCMatrix coulomb_2c_ints = metric_2c_ints.pointer();
+      timer_change("04 - compute (X | g | Y)", 2);
+      if(noncoulomb_kernel){
+        const std::string coulomb2c_key = ParsedTwoBodyTwoCenterIntKey::key(
+            dfspace->id(),
+            dfspace->id(),
+            "ERI", ""
+        );
+        coulomb_2c_ints = int2c_rtime->get(metric2c_key);
+      }
+      timer_change("05 - transfer (X | g | Y)", 2);
+      double* coulomb_2c_ints_ptr = allocate<double>(dfnbf*dfnbf);
+      coulomb_2c_ints.convert(coulomb_2c_ints_ptr);
+      EigenMatrixMap X_g_Y(coulomb_2c_ints_ptr, dfnbf, dfnbf);
+      timer_exit(2);
       //----------------------------------------//
       // loop over atom pairs...
       timer_change("04 - loop over atom pairs", 2);
       EigenMatrix C(dfnbf, brabs->nbasis() * ketbs->nbasis());
       EigenMatrix d_mu_siX(branbf, obsnbf*dfnbf);
+      EigenMatrix gt_nu_siX(branbf, obsnbf*dfnbf);
       C = EigenMatrix::Zero(dfnbf, brabs->nbasis() * ketbs->nbasis());
       d_mu_siX = EigenMatrix::Zero(branbf, obsnbf*dfnbf);
+      gt_nu_siX = EigenMatrix::Zero(branbf, obsnbf*dfnbf);
       for(int atomA=0; atomA < brabs->ncenter(); ++atomA){
         //----------------------------------------//
         // Convenience variables for atom A
@@ -2233,30 +2251,35 @@ namespace sc {
               }
               // Now solve A * x = b, with A = ( X_(ab) | M | Y_(ab) ) and b = ( ibf jbf | M | Y_(ab) )
               Eigen::VectorXd Cpart(dfpart_size);
-              // The result will be dfpart_size rows and 1 column and needs to be stored in the big C
+              // The result will be dfpart_size rows and 1 column
               Cpart = coefficient_solver.solve(ibfjbf_M_X);
-              C.block(
-                  dfbfoffA, ibf*ketnbf + jbf,
-                  dfnbfA, 1
-              ) = Cpart.head(dfnbfA);
-              if(atomA != atomB) {
-                C.block(
-                    dfbfoffB, ibf*ketnbf + jbf,
-                    dfnbfB, 1
-                ) = Cpart.tail(dfnbfB);
+              //----------------------------------------//
+              // contract with X_g_Y to form gt_mu_siX
+              gt_nu_siX.block(
+                  ibf, jbf*dfnbf,
+                  1, dfnbf
+              ) += Cpart.head(dfnbfA).transpose() * X_g_Y.middleRows(dfbfoffA, dfnbfA);
+              if(atomA != atomB){
+                gt_nu_siX.block(
+                    ibf, jbf*dfnbf,
+                    1, dfnbf
+                ) += Cpart.tail(dfnbfB).transpose() * X_g_Y.middleRows(dfbfoffB, dfnbfB);
               }
+              //----------------------------------------//
               // contract with density and put it into d_mu_siX
-              // TODO do this as one matrix multiply
               for(int sigma = 0; sigma < obsnbf; ++sigma){
-                for(int XbfA = 0; XbfA < dfnbfA; ++XbfA){
-                  d_mu_siX(ibf, sigma*dfnbf + (dfbfoffA + XbfA)) += D(jbf, sigma) * Cpart(XbfA);
-                }
+                d_mu_siX.block(
+                    ibf, sigma*dfnbf + dfbfoffA,
+                    1, dfnbfA
+                ) += D(jbf, sigma) * Cpart.head(dfnbfA).transpose();
                 if(atomA != atomB){
-                  for(int XbfB = 0; XbfB < dfnbfB; ++XbfB){
-                    d_mu_siX(ibf, sigma*dfnbf + (dfbfoffB + XbfB)) += D(jbf, sigma) * Cpart(dfnbfA + XbfB);
-                  }
+                  d_mu_siX.block(
+                      ibf, sigma*dfnbf + dfbfoffB,
+                      1, dfnbfB
+                  ) += D(jbf, sigma) * Cpart.tail(dfnbfB).transpose();
                 }
               }
+              //----------------------------------------//
             } // end loop over basis functions in B (jbf)
           } // end loop over basis functions in A (ibf)
           deallocate(ibfjbf_M_X_buffer_A);
@@ -2276,7 +2299,7 @@ namespace sc {
       timer_enter("01 - setup", 2);
       EigenMatrix K_tilde(branbf, ketnbf);
       K_tilde = EigenMatrix::Zero(branbf, ketnbf);
-      EigenMatrix munu_g_X(branbf*ketnbf, dfnbf);
+      //EigenMatrix munu_g_X(branbf*ketnbf, dfnbf);
       unsigned int g_type_idx = TwoBodyOperSetDescr::instance(TwoBodyOperSet::ERI)->opertype(metric_oper);
       timer_change("02 - compute", 2);
       Ref<DistArray4> munu_g_X_D4 = munu_M_X;
@@ -2304,90 +2327,69 @@ namespace sc {
               0,   dfnbf,  // X_start, X_fence
               ibfjbf_g_X_buffer
           );
-          // TODO replace with a single matrix multiply
-          for(int Xbf = 0; Xbf < dfnbf; ++Xbf){
-            for(int mu = 0; mu < branbf; ++mu){
-              K_tilde(mu, ibf) += d_mu_siX(mu, jbf*dfnbf + Xbf) * ibfjbf_g_X(Xbf);
-            }
+          for(int mu = 0; mu < branbf; ++mu){
+            K_tilde(mu, ibf) += d_mu_siX.row(mu).segment(jbf*dfnbf, dfnbf) * ibfjbf_g_X;
           }
-          munu_g_X.row(ibf*ketnbf + jbf) = ibfjbf_g_X;
+          //for(int Xbf = 0; Xbf < dfnbf; ++Xbf){
+          //  for(int mu = 0; mu < branbf; ++mu){
+          //    K_tilde(mu, ibf) += d_mu_siX(mu, jbf*dfnbf + Xbf) * ibfjbf_g_X(Xbf);
+          //  }
+          //}
+          //munu_g_X.row(ibf*ketnbf + jbf) = ibfjbf_g_X;
         }
       }
       deallocate(ibfjbf_g_X_buffer);
       timer_exit(2);
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
-      /* Get ( X | g | Y )                                     		                        {{{1 */ #if 1 // begin fold
-      timer_change("04 - get (X | g | Y)", 1);
-      // hopefully this doesn't do a copy?
-      timer_enter("01 - setup", 2);
-      RefSCMatrix coulomb_2c_ints = metric_2c_ints.pointer();
-      timer_change("02 - compute", 2);
-      if(noncoulomb_kernel){
-        const std::string coulomb2c_key = ParsedTwoBodyTwoCenterIntKey::key(
-            dfspace->id(),
-            dfspace->id(),
-            "ERI", ""
-        );
-        coulomb_2c_ints = int2c_rtime->get(metric2c_key);
-      }
-      timer_change("03 - transfer", 2);
-      double* coulomb_2c_ints_ptr = allocate<double>(dfnbf*dfnbf);
-      coulomb_2c_ints.convert(coulomb_2c_ints_ptr);
-      EigenMatrixMap X_g_Y(coulomb_2c_ints_ptr, dfnbf, dfnbf);
-      timer_exit(2);
-      /*****************************************************************************************/ #endif //1}}}
-      /*=======================================================================================*/
       /* Compute K                                             		                        {{{1 */ #if 1 // begin fold
       timer_change("05 - compute K", 1);
+      //----------------------------------------//
+      /* old code */ #if 0
+      EigenMatrix CD(branbf, dfnbf*obsnbf);
+      EigenMatrix g_phys(branbf, dfnbf*obsnbf);
+      Eigen::RowVectorXd rhotmp(obsnbf);
+      for(int X = 0; X < dfnbf; ++X) {
+        for(int sigma = 0; sigma < obsnbf; ++sigma) {
+          for(int mu = 0; mu < branbf; ++mu) {
+            rhotmp = C.block(X, mu*obsnbf, 1, obsnbf);
+            CD(mu, X*obsnbf + sigma) = rhotmp.dot(D.row(sigma));
+            g_phys(mu, X*obsnbf + sigma) = munu_g_X(mu*obsnbf + sigma, X);
+          }
+        }
+      }
+      K = CD * g_phys.transpose();
+      K += K.transpose().eval();
+      Eigen::Map<EigenMatrix, Eigen::Unaligned, Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic> > CD(
+          branbf*obsnbf, dfnbf
+      );
+      EigenMatrix CD(dfnbf, branbf*obsnbf);
+      Eigen::RowVectorXd rhotmp(obsnbf);
+      for(int X = 0; X < dfnbf; ++X) {
+        for(int sigma = 0; sigma < obsnbf; ++sigma) {
+          for(int mu = 0; mu < branbf; ++mu) {
+            rhotmp = C.block(X, mu*obsnbf, 1, obsnbf);
+            CD(X, mu*obsnbf + sigma) = rhotmp.dot(D.row(sigma));
+          }
+        }
+      }
+      EigenMatrix CDg(dfnbf, branbf*obsnbf);
+      CDg = X_g_Y * CD;
+      for(int mu = 0; mu < branbf; ++mu) {
+        for(int nu = 0; nu < ketnbf; ++nu) {
+          for(int sigma = 0; sigma < obsnbf; ++sigma) {
+            K(mu, nu) -= CDg.col(mu*obsnbf + sigma).dot(C.col(nu*obsnbf + sigma));
+          }
+        }
+      }
+      /* old code */ #endif
+      timer_enter("01 - two body part", 2);
+      K_tilde -= 0.5 * (d_mu_siX * gt_nu_siX.transpose());
+      timer_change("02 - symmetrize", 2);
       EigenMatrix K(branbf, ketnbf);
+      K = K_tilde + K_tilde.transpose();
       //----------------------------------------//
-      // C_{mu rho}^X D^{rho sigma}
-      timer_enter("01 - three body terms", 2);
-      {
-        EigenMatrix CD(branbf, dfnbf*obsnbf);
-        EigenMatrix g_phys(branbf, dfnbf*obsnbf);
-        Eigen::RowVectorXd rhotmp(obsnbf);
-        for(int X = 0; X < dfnbf; ++X) {
-          for(int sigma = 0; sigma < obsnbf; ++sigma) {
-            for(int mu = 0; mu < branbf; ++mu) {
-              rhotmp = C.block(X, mu*obsnbf, 1, obsnbf);
-              CD(mu, X*obsnbf + sigma) = rhotmp.dot(D.row(sigma));
-              g_phys(mu, X*obsnbf + sigma) = munu_g_X(mu*obsnbf + sigma, X);
-            }
-          }
-        }
-        K = CD * g_phys.transpose();
-        K += K.transpose().eval();
-        //K = K_tilde + K_tilde.transpose();
-      }
-      timer_change("02 - two body terms", 2);
-      {
-        //Eigen::Map<EigenMatrix, Eigen::Unaligned, Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic> > CD(
-        //    branbf*obsnbf, dfnbf
-        //);
-        EigenMatrix CD(dfnbf, branbf*obsnbf);
-        Eigen::RowVectorXd rhotmp(obsnbf);
-        for(int X = 0; X < dfnbf; ++X) {
-          for(int sigma = 0; sigma < obsnbf; ++sigma) {
-            for(int mu = 0; mu < branbf; ++mu) {
-              rhotmp = C.block(X, mu*obsnbf, 1, obsnbf);
-              CD(X, mu*obsnbf + sigma) = rhotmp.dot(D.row(sigma));
-            }
-          }
-        }
-        EigenMatrix CDg(dfnbf, branbf*obsnbf);
-        CDg = X_g_Y * CD;
-        for(int mu = 0; mu < branbf; ++mu) {
-          for(int nu = 0; nu < ketnbf; ++nu) {
-            for(int sigma = 0; sigma < obsnbf; ++sigma) {
-              K(mu, nu) -= CDg.col(mu*obsnbf + sigma).dot(C.col(nu*obsnbf + sigma));
-            }
-          }
-        }
-      }
-      timer_exit(2);
-      //----------------------------------------//
+      timer_change("03 - transfer to RefSCMatrix", 2);
       Ref<Integral> localints = int3c_rtime->factory()->integral()->clone();
       localints->set_basis(brabs);
       Ref<PetiteList> brapl = localints->petite_list();
@@ -2401,6 +2403,7 @@ namespace sc {
           brabs->so_matrixkit()
       );
       result.assign(K.data());
+      timer_exit(2);
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
       /* Cleanup stuff                                         		                        {{{1 */ #if 1 // begin fold

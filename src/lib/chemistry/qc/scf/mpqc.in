@@ -4,7 +4,7 @@ mpqc:(
 )
 
 nproc = 5
-molecule = $:water_c1
+molecule = $:acetone_c1
 coor = $:symcoor
 message = $:message1
 basis_matrixkit = $:replmatrixkit

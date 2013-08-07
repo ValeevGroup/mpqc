@@ -95,14 +95,9 @@ namespace sc {
                              const std::string &output_filename = "");
 
 
-#ifdef HAVE_MADNESS
-    madness::World& madness_world() { return *madworld_; }
-#endif
-
   private:
 #ifdef HAVE_MADNESS
-    madness::World* madworld_; // global MADNESS world
-    bool mpqc_owns_madworld_;  // true if I'm in charge of creating and destroying MADNESS world
+    bool mpqc_initialized_madness_;  // true if I'm in charge of initializing and finalizing MADNESS
 #endif
 
     /// Clean up at the end of a run. This is called automatically by

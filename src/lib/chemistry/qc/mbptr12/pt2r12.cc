@@ -709,7 +709,7 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
   if(print_all)
     ExEnv::out0() << std::endl << std::endl << indent << "Entered PT2R12::energy_PT2R12_projector2_mpqc3\n\n";
 
-  SingleReference_R12Intermediates<double> srr12intrmds(MPQCInit::instance()->madness_world(),
+  SingleReference_R12Intermediates<double> srr12intrmds(madness::World::get_default(),
                                                         this->r12world());
   srr12intrmds.set_rdm2(this->rdm2_);
   TArray4 Tg_ij_kl = srr12intrmds._Tg("<i j|Tg|k l>");
@@ -725,7 +725,7 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
     // cancellation of the previous 1/2 by this 2 to yield Eq. (11)
     VT2 = 2.0 * dot(Vg_ij_kl("i,j,k,l"), srr12intrmds._Tg("<i j|Tg|k l>"));
   }
-  MPQCInit::instance()->madness_world().gop.fence();
+  madness::World::get_default().gop.fence();
   ExEnv::out0() << indent << "VT2=" << VT2 << std::endl;
 
   double X = 0.0;
@@ -735,7 +735,7 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
     TArray4 TXT = Tg_ij_kl("i1,i2,j1,j2") * X_ij_kl("j1,j2,k1,k2") * Tg_ij_kl("k1,k2,l1,l2");
     X = -dot(TXT("i1,i2,j1,j2"), rdm2_F("i1,i2,j1,j2"));
   }
-  MPQCInit::instance()->madness_world().gop.fence();
+  madness::World::get_default().gop.fence();
   ExEnv::out0() << indent << "X=" << X << std::endl;
 
   double B0 = 0.0;
@@ -745,7 +745,7 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
     // extra 1/2 relative to Eq. (12), but B was scaled by factor of 2 relative to that Eq.
     B0 = 0.5 * dot(TBT("i1,i2,j1,j2"), srr12intrmds._4("<i1 i2|gamma|j1 j2>"));
   }
-  MPQCInit::instance()->madness_world().gop.fence();
+  madness::World::get_default().gop.fence();
   ExEnv::out0() << indent << "B0=" << B0 << std::endl;
 
   double Delta = 0.0;
@@ -768,7 +768,7 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
       Trf_gamma_Tr_1_ta("m,k,l,n") = Trf_gamma_Tr_1;
       Delta += dot(Trf_gamma_Tr_1_ta("m,k,l,n"), lambda_1("m,k,l,n"));
     }
-    MPQCInit::instance()->madness_world().gop.fence();
+    madness::World::get_default().gop.fence();
 
     {
       TArray4 lambda_2 =       (rdm1_oo("m,n") * rdm1_aa("l,k")
@@ -780,7 +780,7 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
       Trf_gamma_Tr_2_ta("m,n,l,k") = Trf_gamma_Tr_2;
       Delta += dot(Trf_gamma_Tr_2_ta("m,n,l,k"), lambda_2("m,n,l,k"));
     }
-    MPQCInit::instance()->madness_world().gop.fence();
+    madness::World::get_default().gop.fence();
 
     {
       TArray4 lambda_3 =    (srr12intrmds._4("<m l|gamma|k n>")
@@ -792,7 +792,7 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
         Trf_gamma_Tr_3_ta("m,l,k,n") = Trf_gamma_Tr_3;
         Delta += dot(Trf_gamma_Tr_3_ta("m,l,k,n"), lambda_3("m,l,k,n"));
       }
-      MPQCInit::instance()->madness_world().gop.fence();
+      madness::World::get_default().gop.fence();
 
       {
         // lambda_4 = -0.5 lambda_3
@@ -802,7 +802,7 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
         Delta += -0.5 * dot(Trf_gamma_Tr_4_ta("m,l,k,n"), lambda_3("m,l,k,n"));
       }
     }
-    MPQCInit::instance()->madness_world().gop.fence();
+    madness::World::get_default().gop.fence();
 
   }
   std::cout << indent << "Delta=" << Delta << std::endl;
@@ -813,7 +813,7 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
         0.5 * dot(srr12intrmds._4("<m1 m2|g|n1 n2>"), srr12intrmds._4("<m1 m2|gamma|n1 n2>"));
   }
   eref_recomp += r12world()->refwfn()->basis()->molecule()->nuclear_repulsion_energy();
-  MPQCInit::instance()->madness_world().gop.fence();
+  madness::World::get_default().gop.fence();
 
 
   return std::make_pair(VT2 + X + B0 + Delta, eref_recomp);

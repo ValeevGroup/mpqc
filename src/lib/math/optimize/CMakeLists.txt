@@ -8,7 +8,6 @@ add_library(optimize OBJECT
   function.cc
   gaussianfit.cc
   gdiis.cc
-  kvopt.cc
   lbfgs.f
   mcsearch.cc
   newton.cc

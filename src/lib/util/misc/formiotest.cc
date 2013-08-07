@@ -1,5 +1,5 @@
 //
-// formiot.cc
+// formiotest.cc
 //
 // Copyright (C) 1996 Limit Point Systems, Inc.
 //

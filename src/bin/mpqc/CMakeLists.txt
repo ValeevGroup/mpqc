@@ -2,10 +2,17 @@ set(executable mpqc)
 
 add_library(
   mpqcinit
+  SHARED
   mpqcin.cc
   mpqcinit.cc
   parse.cc
   scan.cc  
+)
+
+target_link_libraries(
+  mpqcinit
+  chemistry
+  util
 )
 
 add_executable(
@@ -16,12 +23,6 @@ add_executable(
 target_link_libraries(
   ${executable}
   mpqcinit
-  chemistry
-  math
-  util
-  chemistry
-  math
-  util
 )
 
 target_link_libraries(
@@ -36,4 +37,4 @@ foreach (_file ${headers})
   install(FILES ${_file} DESTINATION include/mpqc)
 endforeach()
 
-install(TARGETS mpqcinit ARCHIVE DESTINATION lib)
+install(TARGETS mpqcinit DESTINATION lib)

@@ -35,19 +35,19 @@ namespace mpqc {
     struct matrix :
 	Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>
     {
-        typedef Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> eigen_base;
+        typedef Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> EigenType;
 
-	matrix() : eigen_base() {}
+	matrix() : EigenType() {}
 
 	/// Construct <i>unititialized</i> matrix
 	/// @param m number of rows
 	/// @param n number of columns
 	/// @warning NOT initialized to zeroes.
-	matrix(size_t m, size_t n) : eigen_base(m,n) {}
+	matrix(size_t m, size_t n) : EigenType(m,n) {}
 
 	/// Construct matrix from Eigen type
         template<class A>
-	matrix(const Eigen::EigenBase<A> &a) : eigen_base(a) {}
+	matrix(const Eigen::EigenBase<A> &a) : EigenType(a) {}
 
 	/// Construct matrix from sc::RefSCMatrix matrix
         matrix(sc::RefSCMatrix a) {
@@ -68,7 +68,7 @@ namespace mpqc {
 
 #else // DOXYGEN
 
-        using eigen_base::operator();
+        using EigenType::operator();
 
 	/// Test if both template parameters are integral types
         template<typename T_, typename U_>
@@ -80,7 +80,7 @@ namespace mpqc {
         template<class Ri, class Rj>
         typename boost::disable_if<
             is_index<Ri, Rj>,
-            Eigen::Block<eigen_base>
+            Eigen::Block<EigenType>
             >::type 
         operator()(const Ri &i, const Rj &j) {
             range ri = range_cast(i);
@@ -94,7 +94,7 @@ namespace mpqc {
         template<class Ri, class Rj>
         typename boost::disable_if<
             is_index<Ri, Rj>,
-            Eigen::Block<const eigen_base>
+            Eigen::Block<const EigenType>
             >::type 
         operator()(const Ri &i, const Rj &j) const {
             range ri = range_cast(i);
@@ -132,33 +132,33 @@ namespace mpqc {
     struct vector: Eigen::Matrix<T, Eigen::Dynamic, 1> {
 
 	/// Eigen base type.
-        typedef Eigen::Matrix<T, Eigen::Dynamic, 1> eigen_base;
+        typedef Eigen::Matrix<T, Eigen::Dynamic, 1> EigenType;
 
 	/// Construct <i>unititialized</i> vector
 	/// @param m vector size
 	/// @warning NOT initialized to zeroes
-	explicit vector(size_t m = 0) : eigen_base(m) {}
+	explicit vector(size_t m = 0) : EigenType(m) {}
 
 	/// Construct vector from Eigen type
         template<class A>
-	vector(const Eigen::EigenBase<A> &a) : eigen_base(a) {}
+	vector(const Eigen::EigenBase<A> &a) : EigenType(a) {}
 
 	/// Construct vector from iterator range
         vector(const T *begin, const T *end) {
-	    eigen_base::resize(end - begin, 1);
-	    std::copy(begin, end, eigen_base::data());
+	    EigenType::resize(end - begin, 1);
+	    std::copy(begin, end, EigenType::data());
         }
 
 	/// Element access operators, inherited from Eigen base.
-        using eigen_base::operator();
+        using EigenType::operator();
 
 	/// range operator.
-        Eigen::Block<eigen_base> operator()(range i) {
+        Eigen::Block<EigenType> operator()(range i) {
 	    return this->block(*i.begin(), 0, i.size(), 1);
         }
 
 	/// const range operator.
-        Eigen::Block<const eigen_base> operator()(range i) const {
+        Eigen::Block<const EigenType> operator()(range i) const {
 	    return this->block(*i.begin(), 0, i.size(), 1);
         }
 
@@ -195,8 +195,8 @@ namespace mpqc {
     /// Matrix must be symmetric.
     /// @todo Find a better name
     template<class T>
-    Eigen::SelfAdjointEigenSolver<Matrix::eigen_base> symmetric(const matrix<T> &a) {
-	Eigen::SelfAdjointEigenSolver<Matrix::eigen_base> es(a);
+    Eigen::SelfAdjointEigenSolver<Matrix::EigenType> symmetric(const matrix<T> &a) {
+	Eigen::SelfAdjointEigenSolver<Matrix::EigenType> es(a);
 	if (es.info() != Eigen::Success)
 	    throw std::runtime_error("Eigen solver failed");
 	return es;
@@ -216,7 +216,7 @@ namespace mpqc {
 	a *= 1/a.norm();
     }
 
-    /// orthormalize matrix d wrt to normalized matrix b
+    /// orthormalize matrix d wrt to *normalized* matrix b
     /// d = normalize(d - (<d|b>*b))
     /// @todo Refactor to work with EigenBase types
     template<class T>

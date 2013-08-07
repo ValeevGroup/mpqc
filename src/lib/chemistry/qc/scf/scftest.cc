@@ -60,10 +60,8 @@ init_mp(const Ref<KeyVal>& keyval)
 {
   // if we are on a paragon then use a ParagonMessageGrp
   // otherwise read the message group from the input file
-  grp << keyval->describedclassvalue("message");
+  //grp << keyval->describedclassvalue("message");
 
-  if (grp.nonnull()) MessageGrp::set_default_messagegrp(grp);
-  else grp = MessageGrp::get_default_messagegrp();
 
   Ref<Debugger> debugger; debugger << keyval->describedclassvalue(":debug");
   // Let the debugger know the name of the executable and the node
@@ -94,6 +92,11 @@ main(int argc, char**argv)
 
   // open keyval input
   Ref<KeyVal> rpkv(new ParsedKeyVal(input));
+
+  grp = MessageGrp::initial_messagegrp(argc, argv);
+  if (grp.nonnull()) MessageGrp::set_default_messagegrp(grp);
+  else grp = MessageGrp::get_default_messagegrp();
+  MessageGrp::set_default_messagegrp(grp);
 
   init_mp(rpkv);
 

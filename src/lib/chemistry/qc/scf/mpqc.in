@@ -3,11 +3,11 @@ mpqc:(
   mole = $:mole
 )
 
-nproc = 5
-molecule = $:acetone_c1
+nproc = 4
+molecule = $:h2o
 coor = $:symcoor
-message = $:message1
-basis_matrixkit = $:replmatrixkit
+%message = $:messageShm
+%basis_matrixkit = $:replmatrixkit
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -39,7 +39,7 @@ mole<DFCLHF>: (
     df_kernel = "coulomb"
   	df_solver = "bunchkaufman_refine"
   	df_local_coulomb = yes
-  	df_local_exchange = yes
+  	df_local_exchange = no
   )
 
 
@@ -54,7 +54,7 @@ mole<DFCLHF>: (
     name = "cc-pVDZ"
     %name = "STO-3G"
     %puream=yes
-    matrixkit = $:basis_matrixkit
+    %matrixkit = $:basis_matrixkit
   )
   basis<SplitBasisSet>:(
     molecule = $..:molecule
@@ -117,17 +117,17 @@ xopt<QNewtonOpt>: (
 %
 % matrix kits
 %
-localmatrixkit<LocalSCMatrixKit>: (
-  messagegrp = $:message
-)
-
-replmatrixkit<ReplSCMatrixKit>: (
-  messagegrp = $:message
-)
-
-distmatrixkit<DistSCMatrixKit>: (
-  messagegrp = $:message
-)
+%localmatrixkit<LocalSCMatrixKit>: (
+%  messagegrp = $:message
+%)
+%
+%replmatrixkit<ReplSCMatrixKit>: (
+%  messagegrp = $:message
+%)
+%
+%distmatrixkit<DistSCMatrixKit>: (
+%  messagegrp = $:message
+%)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -137,11 +137,12 @@ distmatrixkit<DistSCMatrixKit>: (
 xdebug<Debugger>: (
 )
 
-message1<ProcMessageGrp>: ()
-
-messageShm<ShmMessageGrp>: (
-  n = $:nproc
-)
+%messageMPI<MPIMessageGrp>: ()
+%message1<ProcMessageGrp>: ()
+%
+%messageShm<ShmMessageGrp>: (
+%  n = $:nproc
+%)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %

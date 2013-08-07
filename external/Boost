@@ -20,6 +20,7 @@ if (DEFINED BOOST)
   if (NOT Boost_FOUND)
     message(FATAL_ERROR "Necessary Boost install not found in ${BOOST_ROOT}")
   endif()
+  set(HAVE_BOOST)
 
 elseif (MPQC_EXPERT)
 
@@ -91,10 +92,13 @@ else()
   list(APPEND Boost_LIBRARIES ${EXTERNAL_BUILD_DIR}/boost/src/boost/stage/lib/libboost_thread.a)
   list(APPEND Boost_LIBRARIES ${EXTERNAL_BUILD_DIR}/boost/src/boost/stage/lib/libboost_system.a)
 
+  set(HAVE_BOOST)
+  
 endif()
 
-include_directories(${Boost_INCLUDE_DIRS})
-
-message(STATUS "Boost include dir: ${Boost_INCLUDE_DIRS}")
-message(STATUS "Boost libraries: ${Boost_LIBRARIES}")
+if (HAVE_BOOST)
+  include_directories(${Boost_INCLUDE_DIRS})
+  message(STATUS "Boost include dir: ${Boost_INCLUDE_DIRS}")
+  message(STATUS "Boost libraries: ${Boost_LIBRARIES}")
+endif()
 

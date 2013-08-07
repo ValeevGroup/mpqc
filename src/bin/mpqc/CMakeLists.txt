@@ -2,7 +2,6 @@ set(executable mpqc)
 
 add_library(
   mpqcinit
-  SHARED
   mpqcin.cc
   mpqcinit.cc
   parse.cc
@@ -29,7 +28,7 @@ target_link_libraries(
   ${executable}
   ${LINK_LIBRARIES})
 
-install(TARGETS ${executable} DESTINATION bin)
+install(TARGETS ${executable} RUNTIME DESTINATION bin)
 
 set(headers mpqcinit.h mpqcin.h)
 foreach (_file ${headers})

@@ -45,7 +45,7 @@ else()
       message(STATUS "MPI_LIBRARIES: ${MPI_LIBRARIES}")
       message(STATUS "MPI_LINKER_FLAGS: ${MPI_LINKER_FLAGS}")
 
-    endif()  
+    endif()
   endif()
   
   # This should be outside the conditionals, ask Ed

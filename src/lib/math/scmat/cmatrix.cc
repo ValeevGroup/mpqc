@@ -805,7 +805,7 @@ tred2(int n,double** a,double* d,double* e,int matz)
 static void
 tqli(int n, double* d, double** z, double* e, int matz, double toler)
 {
-  register int k;
+  int k;
   int i,l,m,iter;
   double g,r,s,c,p,f,b;
   double azi;

@@ -19,7 +19,7 @@
         BOOST_PP_TUPLE_ELEM(2, 0, DATA)                                         \
             operator()(BOOST_PP_ENUM_BINARY_PARAMS(N, const _R, &r)) const {    \
             return BOOST_PP_TUPLE_ELEM(2, 1, DATA)                              \
-                (mpqc::detail::_range::tie                                      \
+                (mpqc::detail::range_tie                                      \
                  (boost::tie(BOOST_PP_ENUM_PARAMS(N, r))));                     \
         }
 
@@ -28,7 +28,7 @@
         BOOST_PP_TUPLE_ELEM(2, 0, DATA)                                         \
             operator()(BOOST_PP_ENUM_BINARY_PARAMS(N, const _R, &r)) {          \
             return BOOST_PP_TUPLE_ELEM(2, 1, DATA)                              \
-                (mpqc::detail::_range::tie                                      \
+                (mpqc::detail::range_tie                                      \
                  (boost::tie(BOOST_PP_ENUM_PARAMS(N, r))));                     \
         }
 

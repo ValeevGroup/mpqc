@@ -489,7 +489,7 @@ namespace ci {
 				t.col(i) = c(ra,index[i]);
 			    }
 			    range ri(0, index.size());
-			    //ct(ri,ra) = t.transpose();
+			    ct(ri,ra) = t.transpose();
                         }
                     }
 

@@ -8,25 +8,21 @@ add_library(
   scan.cc  
 )
 
-target_link_libraries(
-  mpqcinit
-  chemistry
-  util
-)
-
 add_executable(
   ${executable}
   mpqc.cc
 )
 
+# Ed, the previous linking configuration broke badly
+# afaik, only one target_link_libraries per target is allowed
 target_link_libraries(
   ${executable}
   mpqcinit
-)
-
-target_link_libraries(
-  ${executable}
+  chemistry
+  util
   ${LINK_LIBRARIES})
+
+#message("** LINK_LIBRARIES=${LINK_LIBRARIES}")
 
 install(TARGETS ${executable} RUNTIME DESTINATION bin)
 

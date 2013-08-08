@@ -28,11 +28,6 @@ if (NOT HAVE_ARMCI)
     # set(ARMCI_URL http://www.hdfgroup.org/ftp/ARMCI/current/src/armci-1.8.10-patch1.tar.gz)
     # set(ARMCI_URL_HASH MD5=2147a289fb33c887464ad2b6c5a8ae4c)
 
-    if (EXISTS ${EXTERNAL_SOURCE_DIR}/armci.tar.gz)
-      set(ARMCI_URL ${EXTERNAL_SOURCE_DIR}/armci.tar.gz)
-      set(ARMCI_URL_HASH "")
-    endif()
-
     message("** Will build ARMCI from ${ARMCI_URL}")    
 
     set(ARMCI_CPPFLAGS "")
@@ -70,4 +65,5 @@ endif()
 
 if (HAVE_ARMCI)
   include_directories(${ARMCI_INCLUDE_DIRS})
+  set(LIBRARIES "${ARMCI_LIBRARIES};${LIBRARIES}")
 endif()

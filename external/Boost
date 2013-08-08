@@ -1,6 +1,5 @@
 # -*- mode: cmake -*-
 
-
 # It is important to match MPQC compiler toolchain and Boost toolchain
 # otherwise strange things may happen
 # The default is to build Boost to match toolchain in order to avoid issues.
@@ -9,18 +8,23 @@
 
 if (DEFINED BOOST)
 
-  set(Boost_USE_STATIC_LIBS ON)
+  set(Boost_USE_STATIC_LIBS OFF)
   #set(Boost_USE_MULTITHREADED OFF)
   #set(Boost_USE_STATIC_RUNTIME OFF)
 
   set(BOOST_ROOT ${BOOST})
   set(Boost_NO_SYSTEM_PATHS TRUE)
   set(Boost_DETAILED_FAILURE_MSG TRUE)
-  find_package(Boost 1.48 COMPONENTS thread system) # thread depends on system
+  if (PYTHONLIBS_FOUND)
+    set(pythoncomponent python)
+  else()
+    set(pythoncomponent )
+  endif()
+  find_package(Boost 1.48 COMPONENTS thread ${pythonlibs} system)
   if (NOT Boost_FOUND)
     message(FATAL_ERROR "Necessary Boost install not found in ${BOOST_ROOT}")
   endif()
-  set(HAVE_BOOST)
+  set(HAVE_BOOST ON)
 
 elseif (MPQC_EXPERT)
 
@@ -32,14 +36,10 @@ else()
   set(EXTERNAL_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external)
   set(EXTERNAL_BUILD_DIR ${PROJECT_BINARY_DIR}/external/build)
 
-  set(BOOST_URL
-    http://downloads.sourceforge.net/project/boost/boost/1.53.0/boost_1_53_0.tar.gz)
+  #set(BOOST_URL
+  #  http://downloads.sourceforge.net/project/boost/boost/1.53.0/boost_1_53_0.tar.gz)
+  set(BOOST_URL ${EXTERNAL_SOURCE_DIR}/boost_1_53_0.tar.gz)
   set(BOOST_URL_HASH MD5=57a9e2047c0f511c4dfcf00eb5eb2fbb)
-
-  if (EXISTS ${EXTERNAL_SOURCE_DIR}/boost.tar.gz)
-    set(BOOST_URL ${EXTERNAL_SOURCE_DIR}/boost.tar.gz)
-    set(BOOST_URL_HASH "")
-  endif()
 
   message("** Will build Boost from ${BOOST_URL}")
 
@@ -81,6 +81,8 @@ else()
     BUILD_COMMAND ./b2 --user-config=${EXTERNAL_BUILD_DIR}/boost/user-config.jam
     --toolset=${BOOST_TOOLSET}
     --with-thread
+    --with-python
+    --with-system
     --link=static
     INSTALL_COMMAND ""
     )
@@ -90,9 +92,10 @@ else()
   set(Boost_INCLUDE_DIRS ${EXTERNAL_BUILD_DIR}/boost/src/boost)
 
   list(APPEND Boost_LIBRARIES ${EXTERNAL_BUILD_DIR}/boost/src/boost/stage/lib/libboost_thread.a)
+  list(APPEND Boost_LIBRARIES ${EXTERNAL_BUILD_DIR}/boost/src/boost/stage/lib/libboost_python.a)
   list(APPEND Boost_LIBRARIES ${EXTERNAL_BUILD_DIR}/boost/src/boost/stage/lib/libboost_system.a)
 
-  set(HAVE_BOOST)
+  set(HAVE_BOOST ON)
   
 endif()
 

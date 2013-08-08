@@ -1,5 +1,4 @@
-#include "mpqc/tensor/base.hpp"
-#include "mpqc/tensor/ref.hpp"
+#include "mpqc/tensor.hpp"
 #include <iostream>
 
 #include <boost/mpl/vector.hpp>
@@ -16,12 +15,19 @@ int main() {
     mpqc::TensorBase<double,2> t(data, dims);
     mpqc::TensorBase<double,2> b = t(range(2,4), range(1,8));
     mpqc::TensorRef<double,2> u(data, dims);
+    mpqc::Tensor<double,2> s(dims);
 
     for (int i : range(0,4)) {
         for (int j : range(0,3)) {
             b(i,j) = i+j*10;
         }
     }
+
+    u += u;
+    u /= 1;
+    u *= 2;
+
+    //s = u;
 
     for (int j : range(0,3)) {
         for (int i : range(0,6)) {

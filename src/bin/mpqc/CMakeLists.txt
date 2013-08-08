@@ -19,12 +19,14 @@ target_link_libraries(
   util
 )
 
+# N.B. mpqcinit alone has almost no dependencies
+# library dependencies should be tied to chemistry and util
 target_link_libraries(
   ${executable}
   mpqcinit
-  ${LINK_LIBRARIES})
+)
 
-#message("** LINK_LIBRARIES=${LINK_LIBRARIES}")
+# message("** LINK_LIBRARIES=${LINK_LIBRARIES}")
 
 install(TARGETS ${executable} RUNTIME DESTINATION bin)
 

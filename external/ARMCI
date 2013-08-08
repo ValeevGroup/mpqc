@@ -65,5 +65,4 @@ endif()
 
 if (HAVE_ARMCI)
   include_directories(${ARMCI_INCLUDE_DIRS})
-  set(LIBRARIES "${ARMCI_LIBRARIES};${LIBRARIES}")
 endif()

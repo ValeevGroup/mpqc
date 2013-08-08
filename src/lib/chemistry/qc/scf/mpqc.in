@@ -39,7 +39,7 @@ mole<DFCLHF>: (
     df_kernel = "coulomb"
   	df_solver = "bunchkaufman_refine"
   	df_local_coulomb = yes
-  	df_local_exchange = no
+  	df_local_exchange = yes
   )
 
 
@@ -77,6 +77,8 @@ mole<DFCLHF>: (
   guess_wavefunction = $:guess
   %debug = 4
 )
+
+integrals<IntegralLibint2>:()
 
 guess<CLHF>: (
   integral_storage=32000000

@@ -105,14 +105,14 @@ WavefunctionWorld::WavefunctionWorld(const Ref<KeyVal>& keyval)
     ints_method_ = StoreMethod::mem_posix;
   }
   else if (ints_str == std::string("mpi")) {
-#if HAVE_MPIIO
+#ifdef HAVE_MPIIO
     ints_method_ = StoreMethod::mpi;
 #else
     throw std::runtime_error("WavefunctionWorld::WavefunctionWorld -- store_ints=mpi is not valid in this environment (no MPI-I/O detected)");
 #endif
   }
   else if (ints_str == std::string("mem-mpi")) {
-#if HAVE_MPIIO
+#ifdef HAVE_MPIIO
     ints_method_ = StoreMethod::mem_mpi;
 #else
     throw std::runtime_error("WavefunctionWorld::WavefunctionWorld -- store_ints=mem_mpi is not valid in this environment (no MPI-I/O detected)");
@@ -349,7 +349,7 @@ WavefunctionWorld::print(std::ostream& o) const {
     ints_str = std::string("mem-posix"); break;
   case WavefunctionWorld::StoreMethod::posix:
     ints_str = std::string("posix"); break;
-#if HAVE_MPIIO
+#ifdef HAVE_MPIIO
   case WavefunctionWorld::StoreMethod::mem_mpi:
     ints_str = std::string("mem-mpi"); break;
   case WavefunctionWorld::StoreMethod::mpi:

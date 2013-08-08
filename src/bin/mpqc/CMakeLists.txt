@@ -13,22 +13,18 @@ add_executable(
   mpqc.cc
 )
 
+# Ed, the previous linking configuration broke badly
+# afaik, only one target_link_libraries per target is allowed
 target_link_libraries(
   ${executable}
   mpqcinit
   chemistry
-  math
   util
-  chemistry
-  math
-  util
-)
-
-target_link_libraries(
-  ${executable}
   ${LINK_LIBRARIES})
 
-install(TARGETS ${executable} DESTINATION bin)
+#message("** LINK_LIBRARIES=${LINK_LIBRARIES}")
+
+install(TARGETS ${executable} RUNTIME DESTINATION bin)
 
 set(headers mpqcinit.h mpqcin.h)
 foreach (_file ${headers})
@@ -36,4 +32,4 @@ foreach (_file ${headers})
   install(FILES ${_file} DESTINATION include/mpqc)
 endforeach()
 
-install(TARGETS mpqcinit ARCHIVE DESTINATION lib)
+install(TARGETS mpqcinit DESTINATION lib)

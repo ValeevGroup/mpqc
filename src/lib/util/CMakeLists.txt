@@ -17,4 +17,4 @@ endforeach()
 
 set(util/OBJECTS ${objects} PARENT_SCOPE)
 add_library(util ${objects})
-install(TARGETS util ARCHIVE DESTINATION lib)
+install(TARGETS util DESTINATION lib)

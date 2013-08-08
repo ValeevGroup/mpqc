@@ -33,6 +33,7 @@
 #include <chemistry/qc/basis/tbint.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/basis.h>
+#include <cassert>
 
 using namespace sc;
 
@@ -48,6 +49,7 @@ TwoBodyInt::TwoBodyInt(Integral *integral,
   integral_(integral),
   bs1_(b1), bs2_(b2), bs3_(b3), bs4_(b4), redundant_(1)
 {
+  assert(bs1_.nonnull() && bs2_.nonnull() && bs3_.nonnull() && bs4_.nonnull());
   integral_->reference();
   buffer_ = 0;
   log2_to_double_ = init_log2_to_double();
@@ -121,9 +123,19 @@ TwoBodyInt::nshell4() const
 }
 
 Ref<GaussianBasisSet>
-TwoBodyInt::basis()
+TwoBodyInt::basis(size_t c)
 {
-  return bs1_;
+  if (c >= 4)
+    throw ProgrammingError("TwoBodyInt::basis(c): c >= 4",
+                           __FILE__, __LINE__);
+  switch (c) {
+    case 0: return bs1_; break;
+    case 1: return bs2_; break;
+    case 2: return bs3_; break;
+    case 3: return bs4_; break;
+    default: assert(false); // unreachable
+  }
+  return 0; // unreachable
 }
 
 Ref<GaussianBasisSet>
@@ -281,9 +293,18 @@ TwoBodyThreeCenterInt::nshell3() const
 }
 
 Ref<GaussianBasisSet>
-TwoBodyThreeCenterInt::basis()
+TwoBodyThreeCenterInt::basis(size_t c)
 {
-  return bs1_;
+  if (c >= 3)
+    throw ProgrammingError("TwoBodyThreeCenterInt::basis(c): c >= 4",
+                           __FILE__, __LINE__);
+  switch (c) {
+    case 0: return bs1_; break;
+    case 1: return bs2_; break;
+    case 2: return bs3_; break;
+    default: assert(false); // unreachable
+  }
+  return 0; // unreachable
 }
 
 Ref<GaussianBasisSet>
@@ -396,9 +417,17 @@ TwoBodyTwoCenterInt::nshell2() const
 }
 
 Ref<GaussianBasisSet>
-TwoBodyTwoCenterInt::basis()
+TwoBodyTwoCenterInt::basis(size_t c)
 {
-  return bs1_;
+  if (c >= 2)
+    throw ProgrammingError("TwoBodyTwoCenterInt::basis(c): c >= 4",
+                           __FILE__, __LINE__);
+  switch (c) {
+    case 0: return bs1_; break;
+    case 1: return bs2_; break;
+    default: assert(false); // unreachable
+  }
+  return 0; // unreachable
 }
 
 Ref<GaussianBasisSet>

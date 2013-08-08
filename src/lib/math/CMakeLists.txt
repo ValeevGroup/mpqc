@@ -13,5 +13,7 @@ foreach(s ${subdirectories})
 endforeach()
 
 add_library(math ${objects})
+add_dependencies(math util)
+target_link_libraries(math util ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
 set(math/OBJECTS ${objects} PARENT_SCOPE)
-install(TARGETS math ARCHIVE DESTINATION lib)
+install(TARGETS math DESTINATION lib)

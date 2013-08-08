@@ -5,19 +5,23 @@ set(EXTERNAL_BUILD_DIR ${PROJECT_BINARY_DIR}/external/build)
 
 include(ExternalProject)
 
-set(ARMCI_FOUND FALSE)
+set(HAVE_ARMCI FALSE)
 
-# find_package(ARMCI)
-# if (ARMCI_FOUND)
-#   include_directories(${ARMCI_INCLUDE_DIRS})
-# endif()
+if (DEFINED ARMCI)
+  set(ARMCI_PREFIX ${ARMCI})
+  find_package(ARMCI)
+  if (NOT ARMCI_FOUND)
+    message(FATAL_ERROR "ARMCI not found in ${ARMCI_PREFIX}")
+  endif()
+endif()
 
-if (NOT ARMCI_FOUND)
+if (NOT HAVE_ARMCI)
 
-  if (NOT MPI_FOUND)
+  if (NOT HAVE_MPI)
     message(WARNING "MPI not found:  ARMCI will not be built")
   else()
 
+    set(ARMCI_PREFIX ${EXTERNAL_BUILD_DIR}/armci)
     set(ARMCI_URL ${EXTERNAL_SOURCE_DIR}/armci.tar.gz)
     set(ARMCI_URL_HASH MD5=c59ac34c54dfff59aab3f3d19244071d)
     
@@ -27,7 +31,18 @@ if (NOT ARMCI_FOUND)
     if (EXISTS ${EXTERNAL_SOURCE_DIR}/armci.tar.gz)
       set(ARMCI_URL ${EXTERNAL_SOURCE_DIR}/armci.tar.gz)
       set(ARMCI_URL_HASH "")
-      message(STATUS "Using ARMCI archive ${ARMCI_URL}")
+    endif()
+
+    message("** Will build ARMCI from ${ARMCI_URL}")    
+
+    set(ARMCI_CPPFLAGS "")
+    if (MPI_INCLUDE_PATH)
+      set(ARMCI_CPPFLAGS "-I${MPI_INCLUDE_PATH}")
+    endif()
+
+    set(ARMCI_MPICC "")
+    if(MPI_C_COMPILER)
+      set(ARMCI_MPICC "${MPI_C_COMPILER}")
     endif()
 
     ExternalProject_Add(
@@ -36,23 +51,23 @@ if (NOT ARMCI_FOUND)
       URL ${ARMCI_URL}
       URL_HASH ${ARMCI_URL_HASH}
       BUILD_IN_SOURCE 1
-      CONFIGURE_COMMAND ./configure
-      --prefix=${EXTERNAL_BUILD_DIR}/armci
-      CPPFLAGS=-I${MPI_C_INCLUDE_PATH}
-      CC=${CMAKE_C_COMPILER}
-      CFLAGS=-g
+      CONFIGURE_COMMAND ./configure --prefix=${ARMCI_PREFIX}
+        CC=${CMAKE_C_COMPILER} CFLAGS=-g
+        CPPFLAGS=${ARMCI_CPPFLAGS}
+        MPICC=${ARMCI_MPICC}
       BUILD_COMMAND make
       INSTALL_COMMAND make install
       )
 
     add_dependencies(External armci)
-    include_directories(${EXTERNAL_BUILD_DIR}/armci/include)
-    set(LIBRARIES ${EXTERNAL_BUILD_DIR}/armci/lib/libarmci.a;${LIBRARIES})
+    set(HAVE_ARMCI TRUE)
+    set(ARMCI_INCLUDE_DIRS ${ARMCI_PREFIX}/include)
+    set(ARMCI_LIBRARIES ${ARMCI_PREFIX}/lib/libarmci.a)
 
   endif()
 
 endif()
 
-if (ARMCI_LIBRARIES)
-  set(LIBRARIES "${ARMCI_LIBRARIES};${LIBRARIES}")
+if (HAVE_ARMCI)
+  include_directories(${ARMCI_INCLUDE_DIRS})
 endif()

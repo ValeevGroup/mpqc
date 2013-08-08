@@ -29,10 +29,10 @@ $ ./configure -h
 
 Most relevant options/variables are:
 
--D - passed directly to CMAKE command
---debug - forces debug build
 --prefix - the installation directory
+--debug - forces debug build
 CXX - the C++ compiler
+-D - passed directly to CMAKE command
 
 The MPQC can either be built in source or in a build directory, e.g.
 $ mdkir build
@@ -41,4 +41,18 @@ $ ../configure
 $ make
 
 
-To be continued ...
+For basic validation of MPQC do this:
+$ make check0
+
+For a thorougher validation of MPQC do this:
+$ make check1
+
+For the thoroughest validation of MPQC do this:
+$ make check2
+
+To install MPQC (program, libraries, and header files):
+$ make install
+
+To build and install programmer's documentation for MPQC:
+$ cd doc
+$ make install

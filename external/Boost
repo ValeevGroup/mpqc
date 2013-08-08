@@ -1,17 +1,26 @@
 # -*- mode: cmake -*-
 
+
+# It is important to match MPQC compiler toolchain and Boost toolchain
+# otherwise strange things may happen
+# The default is to build Boost to match toolchain in order to avoid issues.
+# In case one knows exactly what compiler/Boost are used,
+# set BOOST to Boost installation root, e.g. /usr/local
+
 if (DEFINED BOOST)
 
-  set(Boost_USE_STATIC_LIBS        ON)
-  set(Boost_USE_MULTITHREADED      OFF)
-  #set(Boost_USE_STATIC_RUNTIME    OFF)
+  set(Boost_USE_STATIC_LIBS ON)
+  #set(Boost_USE_MULTITHREADED OFF)
+  #set(Boost_USE_STATIC_RUNTIME OFF)
 
   set(BOOST_ROOT ${BOOST})
   set(Boost_NO_SYSTEM_PATHS TRUE)
-  find_package(Boost 1.48 COMPONENTS thread)
+  set(Boost_DETAILED_FAILURE_MSG TRUE)
+  find_package(Boost 1.48 COMPONENTS thread system) # thread depends on system
   if (NOT Boost_FOUND)
-    message(FATAL_ERROR "Boost not found in ${BOOST_ROOT}")
+    message(FATAL_ERROR "Necessary Boost install not found in ${BOOST_ROOT}")
   endif()
+  set(HAVE_BOOST)
 
 elseif (MPQC_EXPERT)
 
@@ -83,10 +92,13 @@ else()
   list(APPEND Boost_LIBRARIES ${EXTERNAL_BUILD_DIR}/boost/src/boost/stage/lib/libboost_thread.a)
   list(APPEND Boost_LIBRARIES ${EXTERNAL_BUILD_DIR}/boost/src/boost/stage/lib/libboost_system.a)
 
+  set(HAVE_BOOST)
+  
 endif()
 
-include_directories(${Boost_INCLUDE_DIRS})
-
-message(STATUS "Boost include dir: ${Boost_INCLUDE_DIRS}")
-message(STATUS "Boost libraries: ${Boost_LIBRARIES}")
+if (HAVE_BOOST)
+  include_directories(${Boost_INCLUDE_DIRS})
+  message(STATUS "Boost include dir: ${Boost_INCLUDE_DIRS}")
+  message(STATUS "Boost libraries: ${Boost_LIBRARIES}")
+endif()
 

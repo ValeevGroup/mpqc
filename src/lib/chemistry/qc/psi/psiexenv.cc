@@ -362,7 +362,7 @@ PsiExEnv::keep_output() {
   keep_output_ = true;
 }
 
-extern "C" char* gprgid() { return "MPQC"; }
+extern "C" char* gprgid() { static const char* program_id = "MPQC"; return const_cast<char*>(program_id); }
 
 //////////////////////////////////////////////////
 

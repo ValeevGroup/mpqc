@@ -9,7 +9,16 @@
 #include <boost/type_traits/is_integral.hpp>
 #include <boost/preprocessor/repetition.hpp>
 
+#include <boost/fusion/include/size.hpp>
+#include <boost/fusion/include/at_c.hpp>
+
+/// @defgroup Range mpqc.Range
+/// Range objects for iterating or accessing slices of data
+
 namespace mpqc {
+
+/// @addtogroup Range
+/// @{
 
     struct range_block_iterator;
 
@@ -18,6 +27,9 @@ namespace mpqc {
     {
 	typedef boost::iterator_range<
 	    boost::range_detail::integer_iterator<int> > iterator_range;
+
+        template<class S>
+        struct tie;
 
 	explicit range(int size = 0) : iterator_range(0, size) {}
 
@@ -64,15 +76,18 @@ namespace mpqc {
 
     };
 
+    /// Range intersection
     inline range operator&(const range &a, const range &b) {
         return range::intersection(a,b);
     }
 
+    /// print range as "begin:end"
     inline std::ostream& operator<<(std::ostream &os, const range &r) {
         os << *r.begin() << ":" << *r.end();
         return os;
     }
 
+    /// print range vector as "[ begin:end, ... ]"
     inline std::ostream& operator<<(std::ostream &os, const std::vector<range> &r) {
         os << "[ ";
 	for (int i = 0; i < r.size(); ++i) {
@@ -95,7 +110,7 @@ namespace mpqc {
     {
         range_block_iterator(range::iterator it, range r, int block)
             : data_(it), range_(r), block_(block) {}
-        
+
     private:
         friend class boost::iterator_core_access;
 
@@ -140,28 +155,20 @@ namespace mpqc {
         return Range(It(this->begin(), *this, N), It(this->end(), *this, N));
     }
 
-
-    // struct range::list {
-    //     typedef std::vector<range>::const_iterator const_iterator;
-    //     list() {};
-    //     size_t rank() const {
-    //         return data_.size();
-    //     }
-    //     const_iterator begin() const { return data_.begin(); }
-    //     const_iterator end() const { return data_.end(); }
-    // private:
-    //     std::vector<range> data_;
-    // };
-
-    inline range rangify1(const range &r) {
+    /// Cast range to range, return argument unchanged
+    inline range range_cast(const range &r) {
         return r;
     }
 
+    /// Cast integral argument r to range [r:r+1)
     template<class R>
     typename boost::enable_if<boost::is_integral<R>, range>::type
-    rangify1(const R &r) {
+    range_cast(const R &r) {
+        //std::cout << "range_cast<R>" << r << std::endl;
         return range(r,r+1);
     }
+
+    /// @} // Range group
 
 
 }

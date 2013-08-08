@@ -44,7 +44,7 @@ using namespace sc;
 static void
 dqs(double *item,int *index,int left,int right)
 {
-  register int i,j;
+  int i,j;
   double x;
   int y;
 

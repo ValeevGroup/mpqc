@@ -2,55 +2,71 @@
 #define MPQC_ARRAY_HPP
 
 #include "mpqc/range.hpp"
+#include "mpqc/range/operator.hpp"
 #include "mpqc/mpi.hpp"
 
 #include "mpqc/array/core.hpp"
 #include "mpqc/array/file.hpp"
+#ifdef MPQC_PARALLEL
 #include "mpqc/array/parallel.hpp"
+#endif
 
+#include "mpqc/assert.hpp"
 #include "mpqc/utility/foreach.hpp"
+
+/// @defgroup Array mpqc.Array
+/// Distributed/serial array implementation
 
 namespace mpqc {
 
+    /// @addtogroup Array
+    /// @{
+
+
+    /// Array implementation.
+    /// Array can either be serial or parallel and reside in memory or filesystem.
     template<typename T>
-    struct Array
-        : range_operator_base<Array<T>*, Array<T>, Array<T> >
-    {
-        typedef range_operator_base<Array<T>*, Array<T>, Array<T> > range_base;
+    struct Array {
 
-        Array() : range_base(this) {}
+        /// Create new empty array
+        Array() {}
 
+        /// Create new array using CORE driver (in-memory)
         template<typename Extent>
         Array(const std::string &name,
               const std::vector<Extent> &extents,
-              mpi::Comm comm = mpi::Comm(MPI_COMM_SELF))
-            : range_base(this)
+              MPI::Comm comm = MPI::Comm::Self())
         {
 	    initialize(name, extents, ARRAY_CORE, comm);
         }
 
+        /// Create new array using an arbitrary driver
         template<typename Extent, class Driver>
         Array(const std::string &name,
               const std::vector<Extent> &extents,
               Driver driver,
-              mpi::Comm comm = mpi::Comm(MPI_COMM_SELF))
-            : range_base(this)
+              MPI::Comm comm = MPI::Comm(MPI::Comm::Self()))
         {
 	    initialize(name, extents, driver, comm);
         }
 
+        /// Shallow copy constructor
+        /// @warning Shallow copy
         Array(const Array &a)
-            : range_base(this)
         {
             range_ = a.range_;
             dims_ = a.dims_;
             impl_ = a.impl_;
         }
 
+        /// Put buffer data into array
+        /// @warning buffer must be contigous
 	void put(const T *buffer) {
 	    impl_->put(this->range_, buffer);
 	}
 
+        /// Get array data into buffer
+        /// @warning buffer must be contigous
 	void get(T *buffer) const {
 	    impl_->get(this->range_, buffer);
         }
@@ -79,8 +95,6 @@ namespace mpqc {
             return p;
         }
 
-        using range_base::operator();
-
         Array operator()(const std::vector<range> &r) {
             return Array(*this, r);
         }
@@ -89,6 +103,31 @@ namespace mpqc {
             return Array(*this, r);
         }
 
+
+#ifdef DOXYGEN
+        /**
+           N-ary sub-array access operators.
+           The parameters R should be either integral types (a single element)
+           or of type mpqc::range (a range of elements)
+           The method packs arguments into <c>std::vector<range></c>
+           and calls the equivalent operator.
+        */
+        template<class R, ...>
+        Array operator()(const R &r, ...);
+#else
+        template<class S>
+        Array operator()(const range::tie<S> &t) {
+            return this->operator()(std::vector<range>(t));
+        }
+        template<class S>
+        Array operator()(const range::tie<S> &t) const {
+            return this->operator()(std::vector<range>(t));
+        }
+        MPQC_RANGE_OPERATORS(4, Array, this->operator())
+        MPQC_RANGE_CONST_OPERATORS(4, Array, this->operator())
+#endif
+
+        /// Write array data to File::Dataspace
         void write(File::Dataspace<T> f) const {
             assert(this->rank() == 2);
             size_t B = block();
@@ -100,6 +139,7 @@ namespace mpqc {
             }
         }
 
+        /// Read array data from File::Dataspace
         void read(File::Dataspace<T> f) {
             assert(this->rank() == 2);
             size_t B = block();
@@ -117,7 +157,7 @@ namespace mpqc {
 	template<class Extent, class Driver>
 	void initialize(const std::string &name,
 			const std::vector<Extent> &extents,
-			Driver driver, mpi::Comm comm) {
+			Driver driver, MPI::Comm comm) {
 	    
             foreach (auto e, extents) {
                 range_.push_back(detail::ArrayBase::extent(e));
@@ -125,18 +165,20 @@ namespace mpqc {
             }
 
 	    detail::ArrayBase *impl = NULL;
-	    if (comm == MPI_COMM_SELF) {
+	    if (comm == MPI::Comm::Self()) {
 		impl = new detail::array_impl<T, Driver>(name, dims_);
 	    }
 	    else {
+#ifdef MPQC_PARALLEL
 		impl = new detail::array_parallel_impl<T, Driver>(name, dims_, comm);
+#endif
 	    }
 	    this->impl_.reset(impl);
 	}
 
-        Array(Array &A, const std::vector<range> &r)
-            : range_base(this)            
+        Array(const Array &A, const std::vector<range> &r)
         {
+            MPQC_CHECK(A.rank() == r.size());
             range_ = r;
             foreach (range r, range_) {
 		//std::cout << r << ",";
@@ -159,20 +201,37 @@ namespace mpqc {
     };
 
 
+    /**
+       Write to Array from a generic vector V.
+       @tparam V Vector with member <c>const T* V::data() const</c>
+       @param A Array to write to
+       @param v Vector to read from.
+       @warning The pointer returned by V::data() must be contigous
+    */
     template<typename T, class V>
     void operator<<(Array<T> A, const V &v) {
         A.put(v.data());
     }
 
+
+    /**
+       Read from Array to a generic vector V.
+       @tparam V Vector with member <c>T* V::data()</c>
+       @param A Array to read from
+       @param v Vector to write to.
+       @warning The pointer returned by V::data() must be contigous
+    */
     template<typename T, class V>
     void operator>>(Array<T> A, V &v) {
         A.get(v.data());
     }
 
-    template<typename T, class E>
-    void operator>>(Array<T> A, Eigen::Block<E> b) {
-        //A >> b;
-    }
+    // template<typename T, class E>
+    // void operator>>(Array<T> A, Eigen::Block<E> b) {
+    //     //A >> b;
+    // }
+
+    /// @} // group Array
 
 }
 

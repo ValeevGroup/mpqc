@@ -53,11 +53,12 @@ namespace sc {
 }
 #endif
 
-#if defined(HAVE_ARMCI)
-#   include <util/group/memarmci.h>
-namespace sc {
-    ForceLink<ARMCIMemoryGrp> group_force_link_h_;
-}
-#endif
+// ARMCIMemoryGrp is broken, won't compile
+// #if defined(HAVE_ARMCI)
+// #   include <util/group/memarmci.h>
+// namespace sc {
+//     ForceLink<ARMCIMemoryGrp> group_force_link_h_;
+// }
+// #endif
 
 #endif

@@ -38,6 +38,7 @@
 #include <math/scmat/vector3.h>
 #include <math/scmat/matrix.h>
 #include <chemistry/molecule/atominfo.h>
+#include <chemistry/molecule/atom.h>
 
 namespace sc {
 
@@ -124,13 +125,10 @@ class Molecule: public SavableState
 {
   protected:
     int natoms_;
+    std::vector<Atom> atoms_;
     Ref<AtomInfo> atominfo_;
     Ref<PointGroup> pg_;
     Ref<Units> geometry_units_;
-    double **r_;
-    int *Z_;
-    double *charges_;
-    int *fragments_;
     double ref_origin_[3];   //< position of the origin of the reference coordinate system
 
     // symmetry equiv info
@@ -140,10 +138,6 @@ class Molecule: public SavableState
     int *atom_to_uniq_;
     void init_symmetry_info(double tol=0.5);
     void clear_symmetry_info();
-
-    // these are optional
-    double *mass_;
-    char **labels_;
 
     // The Z that represents a "Q" type atom.
     int q_Z_;
@@ -298,11 +292,10 @@ class Molecule: public SavableState
     /// Returns the number of atoms in the molecule.
     int natom() const { return natoms_; }
 
-    int Z(int atom) const { return Z_[atom]; }
-    double &r(int atom, int xyz) { return r_[atom][xyz]; }
-    const double &r(int atom, int xyz) const { return r_[atom][xyz]; }
-    double *r(int atom) { return r_[atom]; }
-    const double *r(int atom) const { return r_[atom]; }
+    int Z(int atom) const { return atoms_[atom].Z(); }
+    double &r(int atom, int xyz) { return atoms_[atom].xyz(xyz); }
+    const double &r(int atom, int xyz) const { return atoms_[atom].xyz(xyz); }
+    const double *r(int atom) const { return atoms_[atom].r(); }
     double mass(int atom) const;
     /** Returns the label explicitly assigned to atom.  If
         no label has been assigned, then null is returned. */
@@ -317,6 +310,11 @@ class Molecule: public SavableState
     /** Returns the index of the atom with the given label.
         If the label cannot be found -1 is returned. */
     int atom_label_to_index(const std::string &label) const;
+
+    /** Sorts atoms based on distance from arbitrary point. First checks
+     *  distance, then if necesarry check x then
+     */
+    void sort_by_distance();
 
     /** Returns a double* containing the nuclear
         charges of the atoms.  The caller is responsible for
@@ -464,6 +462,13 @@ class Molecule: public SavableState
     int n_non_q_atom() const { return non_q_atoms_.size(); }
     /// Retrieve the of non-"Q" atoms.
     int non_q_atom(int i) const { return non_q_atoms_[i]; }
+
+    /// Determine if any of the atoms have non-standard charge
+    bool any_atom_has_charge() const;
+    /// Determine if any of the atoms have a fragment label
+    bool any_atom_has_fragment() const;
+    /// Determine if any of the atoms have a user defined label
+    bool any_atom_has_label() const;
 
     /// returns the origin of the reference coordinate system (the system in which atoms were specified
     /// before the center-of-mass shift

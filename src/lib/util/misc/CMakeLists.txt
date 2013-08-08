@@ -6,12 +6,10 @@ add_library(misc OBJECT
   consumableresources.cc
   exenv.cc
   formio.cc
-  formiot.cc
   ieee.cc
   regtime.cc
   runnable.cc
   scexception.cc
-  tregtime.cc
   units.cc)
 
 # tests
@@ -30,6 +28,16 @@ set_property(SOURCE comptest.cc PROPERTY COMPILE_DEFINITIONS
     -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
 add_executable(comptest EXCLUDE_FROM_ALL comptest.cc $<TARGET_OBJECTS:misc>)
 add_test(comptest comptest)
+
+set_property(SOURCE formiotest.cc PROPERTY COMPILE_DEFINITIONS
+    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+add_executable(formiotest EXCLUDE_FROM_ALL formiotest.cc $<TARGET_OBJECTS:misc>)
+add_test(formiotest formiotest)
+
+set_property(SOURCE regtimetest.cc PROPERTY COMPILE_DEFINITIONS
+    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+add_executable(regtimetest EXCLUDE_FROM_ALL regtimetest.cc $<TARGET_OBJECTS:misc>)
+add_test(regtimetest regtimetest)
 
 set_property(SOURCE scinttest.cc PROPERTY COMPILE_DEFINITIONS
     -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")

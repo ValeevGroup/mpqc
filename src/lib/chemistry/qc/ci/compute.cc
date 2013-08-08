@@ -36,15 +36,14 @@ std::vector<double> sc::CI::compute(const Ref<RefWavefunction> &wfn,
     const auto &basis = wfn->basis();
     
     mpqc::ci::integrals(basis, C(mo, ao), wfn->integral()->hcore(), h);
-    mpqc::ci::integrals(basis, C(mo, ao), wfn->integral()->electron_repulsion(),
-                        V);
+    mpqc::ci::integrals(basis, C(mo, ao), wfn->integral()->electron_repulsion(), V);
   }
 
-  mpqc::mpi::Comm comm(MPI_COMM_WORLD);
+  mpqc::MPI::Comm comm = mpqc::MPI::Comm::World();
 
   std::string fname =
-      ConsumableResources::get_default_instance()->disk_location()
-          + SCFormIO::fileext_to_filename(".h5");
+      ConsumableResources::get_default_instance()->disk_location() +
+      SCFormIO::fileext_to_filename(".h5");
 
   std::auto_ptr<mpqc::File> file;
   file.reset(new mpqc::File(fname + "." + mpqc::string_cast(comm.rank())));
@@ -52,11 +51,11 @@ std::vector<double> sc::CI::compute(const Ref<RefWavefunction> &wfn,
   std::vector<double> E;
 
   if (config.level > 0) {
-    mpqc::ci::CI<mpqc::ci::Truncated> ci(config, comm, file->group());
-    E = mpqc::ci::direct(ci, h, V);
+      mpqc::ci::CI<mpqc::ci::Truncated> ci(config, comm, file->group());
+      E = mpqc::ci::direct(ci, h, V);
   } else {
-    mpqc::ci::CI<mpqc::ci::Full> ci(config, comm, file->group());
-    E = mpqc::ci::direct(ci, h, V);
+      mpqc::ci::CI<mpqc::ci::Full> ci(config, comm, file->group());
+      E = mpqc::ci::direct(ci, h, V);
   }
 
   // delete file;

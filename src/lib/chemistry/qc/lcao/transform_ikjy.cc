@@ -188,7 +188,7 @@ TwoBodyMOIntsTransform_ikjy::init_acc()
                                          space1_->rank(), space3_->rank(), space2_->rank(), space4_->rank());
     break;
 
-#if HAVE_MPIIO
+#ifdef HAVE_MPIIO
   case MOIntsTransform::StoreMethod::mem_mpi:
     try {
       // if can do in one pass, use the factory hints about how data will be used

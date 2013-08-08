@@ -49,7 +49,7 @@ namespace ci {
         struct IO : boost::noncopyable {
             range local;
             File::Dataset<double> b, Hb;
-            IO(mpi::Comm comm, File::Group io,
+            IO(MPI::Comm comm, File::Group io,
                size_t alpha, size_t beta, size_t N) {
                 std::vector<range> extents(3);
 
@@ -66,7 +66,7 @@ namespace ci {
         };
 
         CI(const Config &config,
-           mpi::Comm comm, File::Group io,
+           MPI::Comm comm, File::Group io,
            const ci::String::List<Index> &alpha,
            const ci::String::List<Index> &beta)
             : Config(config),
@@ -104,7 +104,7 @@ namespace ci {
 
     public:
         ci::String::List<ci::String::Index> alpha, beta;
-        mpi::Comm comm;
+        MPI::Comm comm;
         IO io;
         std::vector<size_t> dims;
     };
@@ -114,7 +114,7 @@ namespace ci {
 
     template<>
     struct CI<Full> : CI<> {
-        CI(const Config &config, mpi::Comm comm, File::Group io)
+        CI(const Config &config, MPI::Comm comm, File::Group io)
             : CI<>(config, comm, io,
                    ci::strings(config.orbitals, config.alpha),
                    ci::strings(config.orbitals, config.beta))
@@ -123,7 +123,7 @@ namespace ci {
 
     template<>
     struct CI<Truncated> : CI<> {
-        CI(const Config &config, mpi::Comm comm, File::Group io)
+        CI(const Config &config, MPI::Comm comm, File::Group io)
             : CI<>(config, comm, io,
                    ci::strings(config.orbitals, config.alpha, config.level),
                    ci::strings(config.orbitals, config.alpha, config.level)),

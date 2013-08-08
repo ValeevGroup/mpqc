@@ -64,12 +64,6 @@ SpinOrbitalPT2R12::SpinOrbitalPT2R12(const Ref<KeyVal> &keyval) : Wavefunction(k
   cabs_singles_h0_ = keyval->stringvalue("cabs_singles_h0", KeyValValuestring(string("dyall")));
   cabs_singles_coupling_ = keyval->booleanvalue("cabs_singles_coupling", KeyValValueboolean(true));
   rotate_core_ = keyval->booleanvalue("rotate_core", KeyValValueboolean(true));
-  bool correlate_rasscf = keyval->booleanvalue("force_correlate_rasscf",KeyValValueboolean(false));
-  if(correlate_rasscf)  // Only when correlating RAS-CI, we have the necessary orbital spaces
-                    // to compute Davidson correction.
-      calc_davidson_ = true;
-  else
-      calc_davidson_ = false;
 
   rdm2_ = require_dynamic_cast<RDM<Two>*>(
         keyval->describedclassvalue("rdm2").pointer(),
@@ -141,7 +135,6 @@ SpinOrbitalPT2R12::SpinOrbitalPT2R12(StateIn &s) : Wavefunction(s) {
   s.get(cabs_singles_);
   s.get(cabs_singles_coupling_);
   s.get(debug_);
-  s.get(calc_davidson_);
 }
 
 SpinOrbitalPT2R12::~SpinOrbitalPT2R12() {
@@ -157,7 +150,6 @@ void SpinOrbitalPT2R12::save_data_state(StateOut &s) {
   s.put(omit_uocc_);
   s.put(cabs_singles_coupling_);
   s.put(debug_);
-  s.put(calc_davidson_);
 }
 
 void
@@ -742,8 +734,8 @@ RefSCMatrix SpinOrbitalPT2R12::transform_MO() //transformation matrix between oc
   const bool debugprint = false;
   RefSymmSCMatrix mo_density =  rdm1(Alpha) + rdm1(Beta);//this will eventually read the checkpoint file. I assume they are of the dimension of occ orb space
 //  mo_density.print(string("transform_MO: mo_density (occ)").c_str());
-  Ref<OrbitalSpace> unscreen_occ_act = r12world()->refwfn()->get_poporbspace(Alpha)->occ_act_sb();
-  Ref<OrbitalSpace> occ = r12world()->refwfn()->get_poporbspace(Alpha)->occ_sb();
+  Ref<OrbitalSpace> unscreen_occ_act = r12world()->refwfn()->occ_act_sb(Alpha);
+  Ref<OrbitalSpace> occ = r12world()->refwfn()->occ_sb(Alpha);
   std::vector<int> map1 = map(*occ, *unscreen_occ_act);
 
   int num_occ_act = unscreen_occ_act->rank();
@@ -934,8 +926,6 @@ void SpinOrbitalPT2R12::compute()
   {
     // use spin-orbital version
     {
-      if(fabs(r12world_->refwfn()->occ_thres()) > SpinOrbitalPT2R12::zero_occupancy())
-         throw ProgrammingError("Due to issue with V_, SpinOrbitalPT2R12 needs to be corrected to work for screening", __FILE__,__LINE__);
       for(int i=0; i<NSpinCases2; i++) // may comment out this part for pure cas
       {
         SpinCase2 pairspin = static_cast<SpinCase2>(i);
@@ -1808,8 +1798,6 @@ void SpinOrbitalPT2R12::print(std::ostream & os) const
 RefSymmSCMatrix SpinOrbitalPT2R12::_rdm2_to_gg(SpinCase2 spin,
                                         RefSymmSCMatrix rdm)
 {
-  if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > SpinOrbitalPT2R12::zero_occupancy())
-     throw ProgrammingError("this function hasn't been examined to take care of the screening; at least 'orbs1/2' should be specified using r12int_eval_...", __FILE__,__LINE__);
   const SpinCase1 spin1 = case1(spin);
   const SpinCase1 spin2 = case2(spin);
   Ref<OrbitalSpace> orbs1 = rdm2_->orbs(spin1);
@@ -1901,8 +1889,6 @@ RefSymmSCMatrix SpinOrbitalPT2R12::lambda2_gg(SpinCase2 spin)
 
 RefSymmSCMatrix SpinOrbitalPT2R12::rdm1_gg(SpinCase1 spin)
 {
-  if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > SpinOrbitalPT2R12::zero_occupancy())
-    throw ProgrammingError("this function hasn't been examined to take care of the screening; at least 'orbs' should be specified using r12int_eval_...", __FILE__,__LINE__);
   RefSymmSCMatrix rdm = this->rdm1(spin);
   Ref<OrbitalSpace> orbs = rdm1_->orbs(spin);
   Ref<OrbitalSpace> gspace = r12eval_->ggspace(spin);
@@ -1931,16 +1917,12 @@ RefSymmSCMatrix SpinOrbitalPT2R12::rdm1_gg(SpinCase1 spin)
 
 RefSymmSCMatrix SpinOrbitalPT2R12::rdm2_gg(SpinCase2 spin)
 {
-  if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > SpinOrbitalPT2R12::zero_occupancy())
-     throw ProgrammingError("this function hasn't been examined to take care of the screening; at least 'orbs' should be specified using r12int_eval_...", __FILE__,__LINE__);
   RefSymmSCMatrix rdm = this->rdm2(spin);
   return this->_rdm2_to_gg(spin, rdm);
 }
 
 RefSymmSCMatrix SpinOrbitalPT2R12::lambda2(SpinCase2 spin)
 {
-  if(r12world_->spinadapted() and fabs(r12world_->refwfn()->occ_thres()) > SpinOrbitalPT2R12::zero_occupancy())
-     throw ProgrammingError("this function hasn't been examined to take care of the screening; at least 'orbs' should be specified using r12int_eval_...", __FILE__,__LINE__);
   // since LocalSCMatrixKit is used everywhere, convert to Local kit
   return convert_to_local_kit(rdm2_->cumulant()->scmat(spin));
 }

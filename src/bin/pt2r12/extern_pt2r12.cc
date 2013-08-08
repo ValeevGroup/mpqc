@@ -60,7 +60,7 @@ ExternPT2R12::ExternPT2R12(const Ref<KeyVal>& kv) :
   const std::vector<unsigned int>& fzcpi = orbs_info_->fzcpi();
   const std::vector<unsigned int>& inactpi = orbs_info_->inactpi();
   const std::vector<unsigned int>& actpi = orbs_info_->actpi();
-  const std::vector<unsigned int>& corrpi = orbs_info_->corrpi();
+  const std::vector<unsigned int>& holepi = orbs_info_->corrpi();
   const std::vector<unsigned int>& fzvpi = orbs_info_->fzvpi();
   const std::vector<unsigned int>& mopi = orbs_info_->mopi();
   std::vector<unsigned int> occpi;
@@ -101,20 +101,13 @@ ExternPT2R12::ExternPT2R12(const Ref<KeyVal>& kv) :
   // use its orbitals to initialize Extern_RefWavefunction
   Ref<Integral> intf = this->integral()->clone();
   intf->set_basis(basis());
-#ifdef PT2R12GAMESS
-  bool force_correlate_rasscf = true;
-#else
-  bool force_correlate_rasscf = false;
-#endif
   Ref<RefWavefunction> ref_wfn = new Extern_RefWavefunction(world_, basis(), intf,
                                                             orbs->coefs(), orbs->orbsym(),
                                                             P1_mo, P1_mo,
-                                                            mopi,
                                                             occpi,
-                                                            corrpi,
                                                             fzcpi,
                                                             fzvpi,
-                                                            force_correlate_rasscf);
+                                                            holepi);
   if(debug_print_)
   {
     sc::ExEnv::out0() << "debug:print refwfn orbs " << std::endl;

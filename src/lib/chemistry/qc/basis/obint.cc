@@ -36,6 +36,7 @@
 
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/basis/basis.h>
+#include <cassert>
 
 using namespace sc;
 
@@ -91,9 +92,17 @@ OneBodyInt::nshell2() const
 }
 
 Ref<GaussianBasisSet>
-OneBodyInt::basis()
+OneBodyInt::basis(size_t c)
 {
-  return bs1_;
+  if (c >= 2)
+    throw ProgrammingError("OneBodyInt::basis(c): c >= 2",
+                           __FILE__, __LINE__);
+  switch (c) {
+    case 0: return bs1_; break;
+    case 1: return bs2_; break;
+    default: assert(false); // unreachable
+  }
+  return 0; // unreachable
 }
 
 Ref<GaussianBasisSet>
@@ -188,9 +197,16 @@ OneBodyOneCenterInt::nshell1() const
 }
 
 Ref<GaussianBasisSet>
-OneBodyOneCenterInt::basis()
+OneBodyOneCenterInt::basis(size_t c)
 {
-  return bs1_;
+  if (c >= 1)
+    throw ProgrammingError("OneBodyOneCenterInt::basis(c): c >= 2",
+                           __FILE__, __LINE__);
+  switch (c) {
+    case 0: return bs1_; break;
+    default: assert(false); // unreachable
+  }
+  return 0; // unreachable
 }
 
 Ref<GaussianBasisSet>

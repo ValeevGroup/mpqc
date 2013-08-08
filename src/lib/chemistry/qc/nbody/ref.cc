@@ -189,59 +189,54 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
                                              const Ref<Integral>& integral,
                                              const RefSCMatrix& coefs,
                                              const std::vector<double>& occs,
-                                             const std::vector<bool>& active,
+                                             const std::vector<ParticleHoleOrbitalAttributes>& active,
                                              const RefDiagSCMatrix& energies,
                                              bool eorder_increasing,
                                              Ref<OrbitalSpace> vbs,
-                                             Ref<FockBuildRuntime> fbrun,
-                                             std::vector<double> rasscf_occs) :
+                                             Ref<FockBuildRuntime> fbrun
+//                                             ,
+//                                             std::vector<double> rasscf_occs
+                                             ) :
                                              oreg_(oreg)
 {
-  const int nmo = occs.size(); //active tells which orbitals are active; the 'masks' are selectors;
+  //
+  // validate input
+  // 0. sizes agree
+  const int nmo = occs.size();
+  assert(occs.size() == coefs.ncol());
+  assert(bs->nbasis() == coefs.nrow());
+  assert(occs.size() == active.size());
+  assert(energies.n() == occs.size());
+  // 1. occupancies are bounded by 2/1
+  assert(fabs(*max_element(occs.begin(), occs.end()) - 1.0) < zero_occupancy() ||
+         fabs(*max_element(occs.begin(), occs.end()) - 2.0) < zero_occupancy() );
+  assert(*min_element(occs.begin(), occs.end()) >= 0.0);
+  // 2. active:
+  //   a. can create holes in only occupied orbitals
+  //   b. can create particles in only empty or partially occupied orbitals
+  for(size_t o=0; o<active.size(); ++o) {
+    if (active[o] == ParticleHoleOrbitalAttributes::Hole)
+      assert(occs[o] >= zero_occupancy());
+    if (active[o] == ParticleHoleOrbitalAttributes::Particle)
+      assert(occs[o] <= zero_occupancy());
+  }
+
+  //active tells which orbitals are active; the 'masks' are selectors
   std::vector<bool> occ_mask(nmo, false);
   std::vector<bool> occ_act_mask(nmo, false);
-  std::vector<bool> conv_uocc_mask(nmo, false);
-  std::vector<bool> conv_occ_mask(nmo, false);
   std::vector<bool> uocc_mask(nmo, false);
   std::vector<bool> uocc_act_mask(nmo, false);
   const bool debug = false;
-  const bool have_rasscf_occs = not rasscf_occs.empty(); //force occ_act_mask to only select active rasscf (instead of rasci) orbs
   for(int i=0; i<nmo; i++) {
     if (fabs(occs[i]) > PopulatedOrbitalSpace::zero_occupancy()) {
       occ_mask[i] = true;
-      if(not have_rasscf_occs)
-      {
-        occ_act_mask[i] = active[i];
-        if(debug)
-        {
-          sc::ExEnv::out0() << active[i] << ", " << occs[i] << std::endl;
-        }
-      }
-      else
-      {
-        occ_act_mask[i] = active[i] and (fabs(rasscf_occs.at(i)) > PopulatedOrbitalSpace::zero_occupancy());
-        if(debug)
-        {
-          sc::ExEnv::out0() << active[i] << ", " << occ_act_mask[i] << ", " << rasscf_occs.at(i)<< occs[i] << std::endl;
-        }
-      }
+      occ_act_mask[i] = (active[i] == ParticleHoleOrbitalAttributes::Hole ||
+                         active[i] == ParticleHoleOrbitalAttributes::Any);
     }
     else {
       uocc_mask[i] = true;
-      uocc_act_mask[i] = active[i];
-    }
-    // "conventional" unoccupied spaces are currently useful to indicate RAS in RASCI, etc.
-    if (have_rasscf_occs) {
-      if (fabs(rasscf_occs.at(i)) < PopulatedOrbitalSpace::zero_occupancy())
-        conv_uocc_mask[i] = true;
-      else
-        conv_occ_mask[i] = true;
-    }
-    else {
-      if (fabs(occs[i]) > PopulatedOrbitalSpace::zero_occupancy())
-        conv_occ_mask[i] = true;
-      else
-        conv_uocc_mask[i] = true;
+      uocc_act_mask[i] = (active[i] == ParticleHoleOrbitalAttributes::Particle ||
+                          active[i] == ParticleHoleOrbitalAttributes::Any);
     }
   }
 
@@ -282,7 +277,6 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
      std::string id = ParsedOrbitalSpaceKey::key(std::string("i"),spin);
      occ_act_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, occ_act_mask);
   }
-  unscreen_occ_act_sb_ = 0;//make sure it crashes when this is called.
   {
     ostringstream oss;
     oss << prefix << " active occupied MOs";
@@ -306,26 +300,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
       }
       else // empty vbs
         uocc_sb_ = new EmptyOrbitalSpace(id, oss.str(), vbs->basis(), vbs->integral(), OrbitalSpace::symmetry);
-      //uocc_sb_ = vbs;
     }
-  }
-  {
-    ostringstream oss;
-    oss << prefix << " conventional unoccupied symmetry-blocked MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("E"),spin);
-    if (vbs.null())
-      conv_uocc_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, conv_uocc_mask);
-    else
-      conv_uocc_sb_ = uocc_sb_;
-  }
-  {
-    ostringstream oss;
-    oss << prefix << " conventional occupied symmetry-blocked MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("M"),spin);
-    if (vbs.null())
-      conv_occ_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, conv_occ_mask);
-    else
-      conv_occ_sb_ = 0;
   }
   {
     ostringstream oss;
@@ -334,9 +309,9 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
     if (vbs.null())
       uocc_act_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, uocc_act_mask);
     else {
-      uocc_act_mask.resize(uocc_sb_->rank());
-      std::fill(uocc_act_mask.begin(), uocc_act_mask.end(), true);
-      uocc_act_sb_ = new MaskedOrbitalSpace(id, oss.str(), uocc_sb_, uocc_act_mask);
+      // make a local uocc_act_mask
+      std::vector<bool> _uocc_act_mask(uocc_sb_->rank(),true);
+      uocc_act_sb_ = new MaskedOrbitalSpace(id, oss.str(), uocc_sb_, _uocc_act_mask);
     }
   }
   {
@@ -345,14 +320,6 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
     std::string id = ParsedOrbitalSpaceKey::key(std::string("e~"),spin);
     uocc_ = blocked_to_nonblocked_space(id, oss.str(),
                                         uocc_sb_,
-                                        eorder_increasing);
-  }
-  {
-    ostringstream oss;
-    oss << prefix << " conventional unoccupied MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("E~"),spin);
-    conv_uocc_ = blocked_to_nonblocked_space(id, oss.str(),
-                                        conv_uocc_sb_,
                                         eorder_increasing);
   }
   {
@@ -385,260 +352,6 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
 }
 
 
-
-PopulatedOrbitalSpace::PopulatedOrbitalSpace(const bool doscreen, const double occ_thres, RefSymmSCMatrix OBS_mo_ordm,
-                                             const Ref<OrbitalSpaceRegistry>& oreg,
-                                             SpinCase1 spin,
-                                             const Ref<GaussianBasisSet>& bs,
-                                             const Ref<Integral>& integral,
-                                             RefSCMatrix& old_coefs,
-                                             const std::vector<double>& occs,
-                                             std::vector<bool>& old_active,
-                                             const RefDiagSCMatrix& energies,
-                                             bool eorder_increasing,
-                                             Ref<OrbitalSpace> vbs,
-                                             Ref<FockBuildRuntime> fbrun):
-                                             oreg_(oreg)
-{ // for R12, only occ_act needs to be changed-> change active correspondingly.
-  const int nmo = occs.size();//'active' tells which orbitals are active; the 'masks' are selectors;
-  std::vector<bool> occ_mask(nmo, false);
-  std::vector<bool> occ_act_mask(nmo, false);
-  std::vector<bool> uocc_mask(nmo, false);
-  std::vector<bool> uocc_act_mask(nmo, false);
-  std::vector<bool> active = old_active;
-  RefSCMatrix coefs = old_coefs->copy();
-  const bool debugprint = false;
-
-  ExEnv::out0() << "Entered constructor for screened orbital space\n\n";
-  if(debugprint)
-  {
-    OBS_mo_ordm.print(prepend_spincase(AlphaBeta, "poporbitals: OBS_mo_ordm").c_str());
-    old_coefs.print(prepend_spincase(AlphaBeta, "poporbitals: old_coefs").c_str());
-    coefs.print(prepend_spincase(AlphaBeta, "poporbitals: copied coefs").c_str());
-    energies.print(prepend_spincase(AlphaBeta, "poporbitals: energies").c_str());
-  }
-  const int num_ao = coefs.coldim().n();
-  Ref<SCBlockInfo> blockinfo = coefs.coldim()->blocks();
-  assert(nmo == blockinfo->nelem());
-  const int nblocks = blockinfo->nblock();
-
-  for(int i=0; i<nmo; i++) {
-    if (fabs(occs[i]) > PopulatedOrbitalSpace::zero_occupancy()) {
-      occ_mask[i] = true;
-      occ_act_mask[i] = active[i];
-    }
-    else {
-      uocc_mask[i] = true;
-      uocc_act_mask[i] = active[i];
-    }
-  }
-
-  std::vector<bool> unscreen_occ_act_mask = occ_act_mask;
-
-//assume orbs are ordered in symmetry
-  for (int i = 0; i < nblocks; ++i) // we do svd in each block to avoid problems in symmetry blocks, since svd doesn't uniquely fix the ordering of columns or rows
-  {
-    std::vector<int> occ_act_orb_inds; //record the position of occ_act orbitals in each sym block
-    for (int j = 0; j < blockinfo->size(i); ++j)
-    {
-      const int ind = blockinfo->start(i) + j;
-      if (occ_act_mask[ind]) occ_act_orb_inds.push_back(ind);
-    }
-    const int num_occ_act = occ_act_orb_inds.size();
-//    Ref<SCBlockInfo> occ_act_pseduoBlock = new SCBlockInfo(num_occ_act, 1, &num_occ_act);
-//    SCDimension* block_dim = new SCDimension(occ_act_pseduoBlock);
-    SCDimension* dim = new SCDimension(num_occ_act);
-    SCDimension * ao_dim = new SCDimension(num_ao);
-    Ref<LocalSCMatrixKit> local_kit = new LocalSCMatrixKit();
-    RefSCMatrix occ_act_blockmat = local_kit->matrix(dim, dim);
-    RefSCMatrix occ_act_coefsmat = local_kit->matrix(ao_dim, dim);
-    for (int k1 = 0; k1 < num_occ_act; ++k1)
-    {
-      for (int k2 = 0; k2 < num_occ_act; ++k2)
-      {
-        const double element = OBS_mo_ordm->get_element(occ_act_orb_inds[k1], occ_act_orb_inds[k2]);
-        occ_act_blockmat->set_element(k1,k2, element);
-      }
-    } // finish constructing a block of RDM matrix: occ_act
-    RefSCMatrix UU = occ_act_blockmat->clone();
-    RefSCMatrix VV = occ_act_blockmat->clone();
-    RefDiagSCMatrix DD = local_kit->diagmatrix(dim); // the matrix is a postive-semidefinite matrix, do SVD
-    occ_act_blockmat->svd_this(UU,DD,VV);
-    if(debugprint)
-    {
-      ExEnv::out0() << "block number: " << i << "\n";
-      UU.print(prepend_spincase(AlphaBeta, "poporbitals: UU").c_str());
-      DD.print(prepend_spincase(AlphaBeta, "poporbitals: DD").c_str());
-      VV.print(prepend_spincase(AlphaBeta, "poporbitals: VV").c_str());
-      (UU*UU.t()).print(prepend_spincase(AlphaBeta, "poporbitals: UU prod").c_str());
-    }
-    if(doscreen)
-    {
-      for (int xx = 0; xx < num_occ_act; ++xx)
-      {
-        int indd = occ_act_orb_inds[xx];
-        if(active[indd]) //without this check, core orbitals will be made active
-          active[indd] = (DD->get_element(xx) > occ_thres)? true:false;
-      } // use eigenvalue to modify 'active', which is a vector to mask/select 'active' orbitals (in practice, the occ_act part defines gg/GG)
-    }
-    for (int i2 = 0; i2 < num_occ_act; ++i2) //i2: the new MO index
-    {
-      for (int j2 = 0; j2 < num_ao; ++j2) //j2: the new AO index
-      {
-        double x = 0;
-        for (int j3 = 0; j3 < num_occ_act; ++j3) // j3: the old/contraction index
-        {
-          x += old_coefs->get_element(j2, occ_act_orb_inds[j3]) * UU->get_element(j3, i2);
-        }
-        occ_act_coefsmat->set_element(j2, i2, x);
-      }
-    }// next reconstruct (part of) the new AO-MO coefficients
-    for (int ii = 0; ii < num_occ_act; ++ii)
-    {
-      for (int jj = 0; jj < num_ao; ++jj)
-      {
-        coefs->set_element(jj, occ_act_orb_inds[ii], occ_act_coefsmat->get_element(jj,ii));
-      }
-    } // one block done
-  }//done constructing the new AO-MO coefs
-
-  if(debugprint)
-  {
-      ExEnv::out0() << __FILE__ << ": " << __LINE__ << "\n";
-      coefs.print(std::string("poporbitals: coefs").c_str());
-  }
-  //here we can not simply call the previous constructor, since the orbital registry will complain ('id' conflicts)
-  // so, we simply add '-' to each id to distinguish
-  // with updated 'active', we reset occ_act_mask, which is responsible for ggspace, etc
-  for(int i=0; i<nmo; i++)
-  {
-    if (fabs(occs[i]) > PopulatedOrbitalSpace::zero_occupancy())
-    {
-      if (occ_act_mask[i] == true) occ_act_mask[i] = active[i]; //reset occ_act_mask based the updated active
-    }
-  }
-
-
-  const std::string prefix(to_string(spin));
-  using std::ostringstream;
-  {
-    ostringstream oss;
-    oss << prefix << " symmetry-blocked MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("-p"),spin);
-    orbs_sb_ = new OrbitalSpace(id, oss.str(), coefs, bs, integral, energies, 0, 0, OrbitalSpace::symmetry);
-  }
-
-  {
-    ostringstream oss;
-    oss << prefix << " energy-ordered MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("-p~"),spin);
-    orbs_ = blocked_to_nonblocked_space(id, oss.str(),
-                                        orbs_sb_,
-                                        eorder_increasing);
-  }
-  {
-    ostringstream oss;
-    oss << prefix << " occupied symmetry-blocked MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("-m"),spin);
-    occ_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, occ_mask);
-  }
-  {
-    ostringstream oss;
-    oss << prefix << " occupied MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("-m~"),spin);
-    occ_ = blocked_to_nonblocked_space(id, oss.str(),
-                                       occ_sb_,
-                                       eorder_increasing);
-  }
-  {
-    ostringstream oss;
-    oss << prefix << " active occupied symmetry-blocked MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("-i"),spin);
-    occ_act_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, occ_act_mask);
-  }
-  {
-//    ostringstream oss;
-//    oss << prefix << " unscreened active occupied symmetry-blocked MOs";
-//    std::string id = ParsedOrbitalSpaceKey::key(std::string("-i"),spin);
-//    unscreen_occ_act_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, unscreen_occ_act_mask);
-    unscreen_occ_act_sb_ = 0; //make sure it crashes when this is called
-  }
-  {
-    ostringstream oss;
-    oss << prefix << " active occupied MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("-i~"),spin);
-    occ_act_ = blocked_to_nonblocked_space(id, oss.str(),
-                                           occ_act_sb_,
-                                           eorder_increasing);
-  }
-
-  {
-    ostringstream oss;
-    oss << prefix << " unoccupied symmetry-blocked MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("-e"),spin);
-    if (vbs.null())
-      uocc_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, uocc_mask);
-    else {
-      if (vbs->rank() > 0) {
-        uocc_sb_ = orthog_comp(occ_sb_, vbs, id, "VBS", OverlapOrthog::default_lindep_tol());
-        // canonicalize
-        uocc_sb_ = compute_canonvir_space(fbrun, uocc_sb_, spin);
-      }
-      else // empty vbs
-        uocc_sb_ = new EmptyOrbitalSpace(id, oss.str(), vbs->basis(), vbs->integral(), OrbitalSpace::symmetry);
-      //uocc_sb_ = vbs;
-    }
-  }
-  {
-    ostringstream oss;
-    oss << prefix << " active unoccupied symmetry-blocked MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("-a"),spin);
-    if (vbs.null())
-      uocc_act_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, uocc_act_mask);
-    else {
-      uocc_act_mask.resize(uocc_sb_->rank());
-      std::fill(uocc_act_mask.begin(), uocc_act_mask.end(), true);
-      uocc_act_sb_ = new MaskedOrbitalSpace(id, oss.str(), uocc_sb_, uocc_act_mask);
-    }
-  }
-  {
-     ostringstream oss;
-     oss << prefix << " unoccupied MOs";
-     std::string id = ParsedOrbitalSpaceKey::key(std::string("-e~"),spin);
-     uocc_ = blocked_to_nonblocked_space(id, oss.str(),
-                                         uocc_sb_,
-                                         eorder_increasing);
-   }
-  {
-    ostringstream oss;
-    oss << prefix << " active unoccupied MOs";
-    std::string id = ParsedOrbitalSpaceKey::key(std::string("-a~"),spin);
-    uocc_act_ = blocked_to_nonblocked_space(id, oss.str(),
-                                            uocc_act_sb_,
-                                            eorder_increasing);
-  }
-
-
-  // register all spaces
-  Ref<OrbitalSpaceRegistry> idxreg = oreg_;
-  idxreg->add(make_keyspace_pair(orbs_sb_));
-  idxreg->add(make_keyspace_pair(orbs_));
-  idxreg->add(make_keyspace_pair(occ_sb_));
-  idxreg->add(make_keyspace_pair(occ_));
-  idxreg->add(make_keyspace_pair(uocc_sb_));
-  idxreg->add(make_keyspace_pair(uocc_));
-  idxreg->add(make_keyspace_pair(occ_act_sb_));
-  idxreg->add(make_keyspace_pair(occ_act_));
-  idxreg->add(make_keyspace_pair(uocc_act_sb_));
-  idxreg->add(make_keyspace_pair(uocc_act_));
-
-#if 0
-  orbs_sb_->print_detail();
-  occ_sb_->print_detail();
-  uocc_sb_->print_detail();
-#endif
-  ExEnv::out0() << "Exited constructor for screened orbital space\n";
-}
 
 PopulatedOrbitalSpace::PopulatedOrbitalSpace(StateIn& si) : SavableState(si) {
   oreg_ = OrbitalSpaceRegistry::restore_instance(si);
@@ -693,10 +406,8 @@ static ClassDesc RefWavefunction_cd(
   0, 0, 0);
 
 RefWavefunction::RefWavefunction(const Ref<KeyVal>& kv) :
-  omit_uocc_(true),
-  force_average_AB_rdm1_(false), screened_space_init_ed_(false),
-  force_correlate_rasscf_(false),
-  orig_space_init_ed_(false), occ_thres_(0.0), do_screen_(true)
+    force_average_AB_rdm1_(false),
+    omit_uocc_(true)
 {
   world_ << require_dynamic_cast<WavefunctionWorld*>(
       kv->describedclassvalue("world").pointer(),
@@ -724,15 +435,15 @@ RefWavefunction::RefWavefunction(const Ref<KeyVal>& kv) :
     valence_orbs_ = new OrbitalSpace("valorbs","valence orbital space",Cv_ao,bs,integral);
   }
 
+  use_world_dfinfo_ = kv->booleanvalue("use_world_df", KeyValValueboolean(false));
+
   for(int spin=0; spin<NSpinCases1; ++spin) spinspaces_[spin] = 0;
 }
 
 RefWavefunction::RefWavefunction(const Ref<WavefunctionWorld>& world,
                                  const Ref<GaussianBasisSet>& basis,
                                  const Ref<Integral>& integral) :
-  world_(world), basis_(basis),  integral_(integral->clone()), omit_uocc_(true),
-  force_average_AB_rdm1_(false), screened_space_init_ed_(false), force_correlate_rasscf_(false),
-  orig_space_init_ed_(false), occ_thres_(0.0), do_screen_(true)
+  world_(world), basis_(basis),  integral_(integral->clone()), omit_uocc_(true)
 {
   for(int spin=0; spin<NSpinCases1; ++spin) spinspaces_[spin] = 0;
   integral_->set_basis(basis, basis, basis, basis);
@@ -751,8 +462,8 @@ RefWavefunction::RefWavefunction(StateIn& si) :
                      __FILE__,__LINE__);
   integral_->set_basis(basis_);
   si.get(omit_uocc_);
+  si.get(use_world_dfinfo_);
   si.get(force_average_AB_rdm1_);
-  si.get(force_correlate_rasscf_);
 
   for(int spin=0; spin<NSpinCases1; spin++)
     spinspaces_[spin] << SavableState::restore_state(si);
@@ -769,6 +480,7 @@ RefWavefunction::save_data_state(StateOut& so)
   SavableState::save_state(basis_.pointer(),so);
   so.put(static_cast<int>(integral_->cartesian_ordering()));
   so.put(omit_uocc_);
+  so.put(use_world_dfinfo_);
   so.put(force_average_AB_rdm1_);
 
   for(int spin=0; spin<NSpinCases1; spin++)
@@ -799,10 +511,9 @@ RefWavefunction::init() const
     // make sure that FockBuildRuntime uses same densities as the reference wavefunction
 
     RefSymmSCMatrix R = ordm(Alpha);
-    if(force_average_AB_rdm1_ == false) // the densites are in AO basis
+    if(force_average_AB_rdm1_ == false) // the densities are in AO basis
         world_->fockbuild_runtime()->set_densities(this->ordm(Alpha), this->ordm(Beta));//here computes ordm
-    else
-    {
+    else {
         RefSymmSCMatrix av_rdm = this->ordm(Alpha).copy();
         av_rdm.accumulate(this->ordm(Beta));
         av_rdm.scale(0.5);
@@ -827,8 +538,6 @@ RefWavefunction::reset()
 {
   spinspaces_[Alpha] = 0;
   spinspaces_[Beta] = 0;
-  screened_spinspaces_[Alpha] = 0;
-  screened_spinspaces_[Beta] = 0;
 }
 
 bool
@@ -893,17 +602,6 @@ RefWavefunction::ordm_occ_sb(SpinCase1 spin) const {
   return P_mo;
 }
 
-
-void
-RefWavefunction::set_spinfree(bool TrueOrFalse)
-{
-  if (TrueOrFalse != this->force_average_AB_rdm1_)
-  {
-    this->reset();
-    this->force_average_AB_rdm1_ = TrueOrFalse;
-  }
-}
-
 namespace {
   SpinCase1 valid_spincase(SpinCase1 s) {
     return s == AnySpinCase1 ? Alpha : s;
@@ -911,7 +609,7 @@ namespace {
 }
 
 const Ref<OrbitalSpace>&
-RefWavefunction::orig_orbs_sb(SpinCase1 s) const
+RefWavefunction::orbs_sb(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
@@ -919,33 +617,11 @@ RefWavefunction::orig_orbs_sb(SpinCase1 s) const
 }
 
 const Ref<OrbitalSpace>&
-RefWavefunction::orbs_sb(SpinCase1 s) const
-{
-  init();
-  s = valid_spincase(s);
-  if(occ_thres_ >sc::PopulatedOrbitalSpace::zero_occupancy())
-  {
-    if(screened_space_init_ed_) return screened_spinspaces_[s]->orbs_sb();
-    else
-      throw ProgrammingError("screened orb space should have not been built", __FILE__,__LINE__);;
-  }
-  else
-    return spinspaces_[s]->orbs_sb();
-}
-
-const Ref<OrbitalSpace>&
 RefWavefunction::occ_sb(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  if(occ_thres_ > sc::PopulatedOrbitalSpace::zero_occupancy())
-  {
-    if(screened_space_init_ed_) return screened_spinspaces_[s]->occ_sb();
-    else
-      throw ProgrammingError("screened orb space should have not been built", __FILE__,__LINE__);;
-  }
-  else
-    return spinspaces_[s]->occ_sb();
+  return spinspaces_[s]->occ_sb();
 }
 
 const Ref<OrbitalSpace>&
@@ -953,32 +629,7 @@ RefWavefunction::occ_act_sb(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  if(occ_thres_ >sc::PopulatedOrbitalSpace::zero_occupancy())
-  {
-    if(screened_space_init_ed_) return screened_spinspaces_[s]->occ_act_sb();
-    else
-      throw ProgrammingError("screened orb space should have not been built", __FILE__,__LINE__);;
-  }
-  else
-    return spinspaces_[s]->occ_act_sb();
-}
-
-const Ref<OrbitalSpace>&
-RefWavefunction::unscreen_occ_act_sb(SpinCase1 s) const
-{
-  init();
-  s = valid_spincase(s);
-  if(occ_thres_ >sc::PopulatedOrbitalSpace::zero_occupancy())
-  {
-    if(screened_space_init_ed_)
-    {
-      throw ProgrammingError("Maybe you can use get_poporbspace() instead?\n Otherwise uncomment relevant part in the constructor and return 'screened_spinspaces_[s]->unscreen_occ_act_sb()'", __FILE__,__LINE__);
-    }
-    else
-      throw ProgrammingError("screened orb space should have not been built", __FILE__,__LINE__);
-  }
-  else
-    throw ProgrammingError("this function should be called only if doing screening", __FILE__,__LINE__);
+  return spinspaces_[s]->occ_act_sb();
 }
 
 const Ref<OrbitalSpace>&
@@ -986,44 +637,7 @@ RefWavefunction::uocc_sb(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  if(occ_thres_ >sc::PopulatedOrbitalSpace::zero_occupancy())
-  {
-    if(screened_space_init_ed_) return screened_spinspaces_[s]->uocc_sb();
-    else
-      throw ProgrammingError("screened orb space should have not been built", __FILE__,__LINE__);;
-  }
-  else
-    return spinspaces_[s]->uocc_sb();
-}
-
-const Ref<OrbitalSpace>&
-RefWavefunction::conv_uocc_sb(SpinCase1 s) const
-{
-  init();
-  s = valid_spincase(s);
-  if((not force_average_AB_rdm1_) or occ_thres_ >sc::PopulatedOrbitalSpace::zero_occupancy())
-  /* not intended for use with spin orbital pt2r12 or screening calcs yet,
-   since our main interest is spin adapted methods and so far correlating RAS orbs seems sufficient */
-  {
-    throw ProgrammingError("must be spinadapted calc and no screening for now", __FILE__,__LINE__);;
-  }
-  else
-    return spinspaces_[s]->conv_uocc_sb();
-}
-
-const Ref<OrbitalSpace>&
-RefWavefunction::conv_occ_sb(SpinCase1 s) const
-{
-  init();
-  s = valid_spincase(s);
-  if((not force_average_AB_rdm1_) or occ_thres_ >sc::PopulatedOrbitalSpace::zero_occupancy())
-  /* not intended for use with spin orbital pt2r12 or screening calcs yet,
-   since our main interest is spin adapted methods and so far correlating RAS orbs seems sufficient */
-  {
-    throw ProgrammingError("must be spinadapted calc and no screening for now", __FILE__,__LINE__);;
-  }
-  else
-    return spinspaces_[s]->conv_occ_sb();
+  return spinspaces_[s]->uocc_sb();
 }
 
 const Ref<OrbitalSpace>&
@@ -1031,14 +645,7 @@ RefWavefunction::uocc_act_sb(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  if(occ_thres_ >sc::PopulatedOrbitalSpace::zero_occupancy())
-  {
-    if(screened_space_init_ed_) return screened_spinspaces_[s]->uocc_act_sb();
-    else
-      throw ProgrammingError("screened orb space should have not been built", __FILE__,__LINE__);;
-  }
-  else
-    return spinspaces_[s]->uocc_act_sb();
+  return spinspaces_[s]->uocc_act_sb();
 }
 
 const Ref<OrbitalSpace>&
@@ -1046,30 +653,14 @@ RefWavefunction::orbs(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  if(occ_thres_ > sc::PopulatedOrbitalSpace::zero_occupancy())
-  {
-    if(screened_space_init_ed_) return screened_spinspaces_[s]->orbs();
-    else
-      throw ProgrammingError("screened orb space should have not been built", __FILE__,__LINE__);;
-  }
-  else
-    return spinspaces_[s]->orbs();
-//  return orbs_sb(s);
+  return spinspaces_[s]->orbs();
 }
 const Ref<OrbitalSpace>&
 RefWavefunction::occ(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  if(occ_thres_ >sc::PopulatedOrbitalSpace::zero_occupancy())
-  {
-    if(screened_space_init_ed_) return screened_spinspaces_[s]->occ();
-    else
-      throw ProgrammingError("screened orb space should have not been built", __FILE__,__LINE__);;
-  }
-  else
-    return spinspaces_[s]->occ();
-//  return occ_sb(s);
+  return spinspaces_[s]->occ();
 }
 
 const Ref<OrbitalSpace>&
@@ -1077,15 +668,7 @@ RefWavefunction::occ_act(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  if(occ_thres_ >sc::PopulatedOrbitalSpace::zero_occupancy())
-  {
-    if(screened_space_init_ed_) return screened_spinspaces_[s]->occ_act();
-    else
-      throw ProgrammingError("screened orb space should have not been built", __FILE__,__LINE__);;
-  }
-  else
-    return spinspaces_[s]->occ_act();
-//  return occ_act_sb(s);
+  return spinspaces_[s]->occ_act();
 }
 
 
@@ -1095,15 +678,7 @@ RefWavefunction::uocc(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  if(occ_thres_ >sc::PopulatedOrbitalSpace::zero_occupancy())
-  {
-    if(screened_space_init_ed_) return screened_spinspaces_[s]->uocc();
-    else
-      throw ProgrammingError("screened orb space should have not been built", __FILE__,__LINE__);;
-  }
-  else
-    return spinspaces_[s]->uocc();
-//  return uocc_sb(s);
+  return spinspaces_[s]->uocc();
 }
 
 const Ref<OrbitalSpace>&
@@ -1111,15 +686,7 @@ RefWavefunction::uocc_act(SpinCase1 s) const
 {
   init();
   s = valid_spincase(s);
-  if(occ_thres_ > sc::PopulatedOrbitalSpace::zero_occupancy())
-  {
-    if(screened_space_init_ed_) return screened_spinspaces_[s]->uocc_act();
-    else
-      throw ProgrammingError("screened orb space should have not been built", __FILE__,__LINE__);;
-  }
-  else
-    return spinspaces_[s]->uocc_act();
-//  return uocc_act_sb(s);
+  return spinspaces_[s]->uocc_act();
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -1358,29 +925,38 @@ SD_RefWavefunction::init_spaces_restricted()
   }
 
   // compute active orbital mask
+  std::vector<ParticleHoleOrbitalAttributes> actmask_a(nmo, ParticleHoleOrbitalAttributes::None);
+  std::vector<ParticleHoleOrbitalAttributes> actmask_b(nmo, ParticleHoleOrbitalAttributes::None);
   nmo = evals.n();
+  for(size_t o=0; o<nmo; ++o) {
+    actmask_a[o] = aoccs[o] == 0.0 ? ParticleHoleOrbitalAttributes::Particle : ParticleHoleOrbitalAttributes::Hole;
+    actmask_b[o] = boccs[o] == 0.0 ? ParticleHoleOrbitalAttributes::Particle : ParticleHoleOrbitalAttributes::Hole;
+  }
   typedef MolecularOrbitalMask<double, RefDiagSCMatrix> FZCMask;
   typedef MolecularOrbitalMask<double, RefDiagSCMatrix, std::greater<double> > FZVMask;
   FZCMask fzcmask(nfzc(), evals);
   FZVMask fzvmask(nfzv(), evals);
-  std::vector<bool> actmask(nmo, true);
   // add frozen core and frozen virtuals masks
-  std::transform(fzcmask.mask().begin(), fzcmask.mask().end(),
-                 fzvmask.mask().begin(), actmask.begin(), std::logical_and<bool>());
+  for(size_t o=0; o<nmo; ++o) {
+    if (not fzcmask[o] || not fzvmask[o]) {
+      actmask_a[o] = ParticleHoleOrbitalAttributes::None;
+      actmask_b[o] = ParticleHoleOrbitalAttributes::None;
+    }
+  }
 
   Ref<OrbitalSpaceRegistry> oreg = this->world()->tfactory()->orbital_registry();
   if (obwfn()->spin_polarized() == false) { // closed-shell
     spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, AnySpinCase1, bs, integral, evecs_ao,
-                                                   aoccs, actmask, evals, moorder,
+                                                   aoccs, actmask_a, evals, moorder,
                                                    vir_space(), fbrun);
     spinspaces_[Beta] = spinspaces_[Alpha];
   }
   else { // spin-restricted open-shell
     spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, Alpha, bs, integral, evecs_ao,
-                                                   aoccs, actmask, evals, moorder,
+                                                   aoccs, actmask_a, evals, moorder,
                                                    vir_space(), fbrun);
     spinspaces_[Beta] = new PopulatedOrbitalSpace(oreg, Beta, bs, integral, evecs_ao,
-                                                  boccs, actmask, evals, moorder,
+                                                  boccs, actmask_b, evals, moorder,
                                                   vir_space(), fbrun);
   }
 }
@@ -1432,26 +1008,38 @@ SD_RefWavefunction::init_spaces_unrestricted()
   typedef MolecularOrbitalMask<double, RefDiagSCMatrix> FZCMask;
   typedef MolecularOrbitalMask<double, RefDiagSCMatrix, std::greater<double> > FZVMask;
   { // alpha spin
+    std::vector<ParticleHoleOrbitalAttributes> actmask(nmo, ParticleHoleOrbitalAttributes::None);
+    for(size_t o=0; o<nmo; ++o) {
+      actmask[o] = aocc[o] == 0.0 ? ParticleHoleOrbitalAttributes::Particle : ParticleHoleOrbitalAttributes::Hole;
+    }
     // compute active orbital mask
     FZCMask fzcmask(nfzc(), alpha_evals);
     FZVMask fzvmask(nfzv(), alpha_evals);
-    std::vector<bool> actmask(nmo, true);
     // add frozen core and frozen virtuals masks
-    std::transform(fzcmask.mask().begin(), fzcmask.mask().end(),
-                   fzvmask.mask().begin(), actmask.begin(), std::logical_and<bool>());
+    for(size_t o=0; o<nmo; ++o) {
+      if (not fzcmask[o] || not fzvmask[o]) {
+        actmask[o] = ParticleHoleOrbitalAttributes::None;
+      }
+    }
     spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, Alpha, bs, integral,
                                                    plist->evecs_to_AO_basis(alpha_evecs),
                                                    aocc, actmask, alpha_evals, moorder,
                                                    vir_space(), fbrun);
   }
   { // beta spin
+    std::vector<ParticleHoleOrbitalAttributes> actmask(nmo, ParticleHoleOrbitalAttributes::None);
+    for(size_t o=0; o<nmo; ++o) {
+      actmask[o] = bocc[o] == 0.0 ? ParticleHoleOrbitalAttributes::Particle : ParticleHoleOrbitalAttributes::Hole;
+    }
     // compute active orbital mask
     FZCMask fzcmask(nfzc(), beta_evals);
     FZVMask fzvmask(nfzv(), beta_evals);
-    std::vector<bool> actmask(nmo, true);
     // add frozen core and frozen virtuals masks
-    std::transform(fzcmask.mask().begin(), fzcmask.mask().end(),
-                   fzvmask.mask().begin(), actmask.begin(), std::logical_and<bool>());
+    for(size_t o=0; o<nmo; ++o) {
+      if (not fzcmask[o] || not fzvmask[o]) {
+        actmask[o] = ParticleHoleOrbitalAttributes::None;
+      }
+    }
     spinspaces_[Beta] = new PopulatedOrbitalSpace(oreg, Beta, bs, integral,
                                                   plist->evecs_to_AO_basis(beta_evecs),
                                                   bocc, actmask, beta_evals, moorder,
@@ -1545,8 +1133,6 @@ Extern_RefWavefunction::Extern_RefWavefunction(const Ref<WavefunctionWorld>& wor
     rdm_[Beta] = beta_1rdm_ao;
   }
 
-  // this object will never become obsolete, so can compute it right now
-//  init_spaces(nocc, orbs, orbsym); // calling it here causes issues: init() is never get run and fockbuild_runtime's AO density is not set.
   force_average_AB_rdm1_ = true; // this is meant to always be used with spin-free algorithms
 }
 
@@ -1557,17 +1143,19 @@ Extern_RefWavefunction::Extern_RefWavefunction(const Ref<WavefunctionWorld>& wor
                          const std::vector<unsigned int>& orbsym,
                          const RefSymmSCMatrix& alpha_1rdm,
                          const RefSymmSCMatrix& beta_1rdm,
-                         std::vector<unsigned int> mopi,
                          std::vector<unsigned int> occpi,
-                         std::vector<unsigned int> corrpi,
                          std::vector<unsigned int> fzcpi,
                          std::vector<unsigned int> fzvpi,
-                         bool force_correlate_rasscf,
+                         std::vector<unsigned int> holepi,
+                         std::vector<unsigned int> partpi,
                          bool omit_uocc) :
                          RefWavefunction(world, basis, integral),
                          omit_uocc_(omit_uocc)
 {
-  set_force_correlate_rasscf(force_correlate_rasscf);
+  if (omit_uocc_)
+    throw FeatureNotImplemented("omit_uocc=true is not yet implemented",
+                                __FILE__, __LINE__, this->class_desc());
+
   const unsigned int nfzc = std::accumulate(fzcpi.begin(), fzcpi.end(), 0.0);
   const unsigned int nocc = std::accumulate(occpi.begin(), occpi.end(), 0.0);
   const unsigned int nfzv = std::accumulate(fzvpi.begin(), fzvpi.end(), 0.0);
@@ -1626,9 +1214,8 @@ Extern_RefWavefunction::Extern_RefWavefunction(const Ref<WavefunctionWorld>& wor
   }
 
  // // this object will never become obsolete, so can compute it right now
-//  init_spaces(nocc, orbs, orbsym); // calling it here causes issues: init() is never get run and fockbuild_runtime's AO density is not set.
   force_average_AB_rdm1_ = true; // this is meant to always be used with spin-free algorithms
-  pre_init(mopi, occpi, corrpi, fzcpi, fzvpi, orbs, orbsym);
+  init(orbs, orbsym, occpi, fzcpi, fzvpi, holepi, partpi);
 }
 
 
@@ -1647,6 +1234,7 @@ Extern_RefWavefunction::~Extern_RefWavefunction() {
 
 void
 Extern_RefWavefunction::save_data_state(StateOut& so) {
+  RefWavefunction::save_data_state(so);
   int c = 0;
   ToStateOut(rdm_[Alpha], so, c);
   ToStateOut(rdm_[Alpha], so, c);
@@ -1695,13 +1283,13 @@ Extern_RefWavefunction::core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &
 }
 
 void
-Extern_RefWavefunction::pre_init(std::vector<unsigned int> mopi,
-                                 std::vector<unsigned int> occpi,
-                                 std::vector<unsigned int> corrpi,
-                                 std::vector<unsigned int> fzcpi,
-                                 std::vector<unsigned int> fzvpi,
-                                 const RefSCMatrix& coefs,
-                             const std::vector<unsigned int>& orbsyms)
+Extern_RefWavefunction::init(const RefSCMatrix& coefs,
+                             const std::vector<unsigned int>& orbsyms,
+                             std::vector<unsigned int> occpi,
+                             std::vector<unsigned int> fzcpi,
+                             std::vector<unsigned int> fzvpi,
+                             std::vector<unsigned int> holepi,
+                             std::vector<unsigned int> partpi)
 {
   if (spinspaces_[Alpha].null()) {
     Extern_RefWavefunction* this_nonconst = const_cast<Extern_RefWavefunction*>(this);
@@ -1721,140 +1309,45 @@ Extern_RefWavefunction::pre_init(std::vector<unsigned int> mopi,
     }
 
     // make spaces
-    init_spaces(mopi, occpi, corrpi, fzcpi, fzvpi, coefs, orbsyms);
+    init_spaces(coefs, orbsyms, occpi, fzcpi, fzvpi, holepi, partpi);
   }
 }
 
 void
-Extern_RefWavefunction::init_spaces(unsigned int nocc,
-                                    const RefSCMatrix& coefs,
-                                    const std::vector<unsigned int>& orbsyms) {
-
-  const unsigned int nmo = coefs.coldim().n();
-  // block orbitals by symmetry
-  Ref<OrbitalSpace> pspace_ao;
-  {
-    const std::string unique_id = new_unique_key(this->world()->tfactory()->orbital_registry());
-    const std::string id = ParsedOrbitalSpaceKey::key(unique_id, AnySpinCase1);
-    const std::string name("MOs blocked by symmetry");
-    RefDiagSCMatrix evals = coefs.kit()->diagmatrix(coefs.coldim());
-    // will set eigenvalues as follows:
-    // frozen occupied orbitals to -2.0
-    // active occupied orbitals to -1.0
-    // active virtual orbitals to 1.0
-    // frozen virtual orbitals to 2.0
-    // this will help to determine occupation numbers later
-    evals.assign(0.0);
-    for(int i=0; i<nfzc_; ++i) evals.set_element(i, -2.0);
-    for(int i=nfzc_; i<nocc; ++i) evals.set_element(i, -1.0);
-    for(int i=nocc; i<nmo-nfzv_; ++i) evals.set_element(i, 1.0);
-    for(int i=nmo-nfzv_; i<nmo; ++i) evals.set_element(i, 2.0);
-    RefDiagSCMatrix occnums = evals.clone();
-    occnums.assign(0.0);
-    for(int i=0; i<nocc; ++i)
-      occnums.set_element(i, 1.0);
-    const unsigned int nirreps =
-        basis()->molecule()->point_group()->char_table().order();
-    pspace_ao = new OrderedOrbitalSpace<SymmetryMOOrder>(
-        id, name, basis(), integral(), coefs, evals, occnums, orbsyms,
-        SymmetryMOOrder(nirreps));
-  }
-  RefSCMatrix C_ao = pspace_ao->coefs();
-  RefDiagSCMatrix evals = pspace_ao->evals();
-  // compute occupancies from evals (see the trick above)
-  std::vector<double> occnums(nmo);
-  for(unsigned int i=0; i<nmo; ++i)
-    occnums[i] = evals(i) > 0.0 ? 0.0 : 1.0;
-
-  // transform orbitals to SO basis
-  Ref<PetiteList> plist = integral()->petite_list();
-  RefSCMatrix C_so = plist->evecs_to_SO_basis(C_ao);
-
-  // compute overlap in SO basis
-  RefSymmSCMatrix S_so = compute_onebody_matrix<&Integral::overlap>(plist);
-
-  // transform to MO basis, verify orthonormality of MOs
-  RefSymmSCMatrix S_mo = S_so.kit()->symmmatrix(C_so.coldim());
-  S_mo.assign(0.0);
-  S_mo->accumulate_transform(C_so, S_so, SCMatrix::TransposeTransform);
-  //S_mo.print("MO metric");
-
-  // compute active orbital mask
-  // from frozen-core
-  typedef MolecularOrbitalMask<double, RefDiagSCMatrix, std::less<double> > FZCMask;
-  FZCMask fzcmask(nfzc(), evals);
-  std::vector<bool> cmask = fzcmask.mask();
-  // and frozen-virtuals
-  typedef MolecularOrbitalMask<double, RefDiagSCMatrix, std::greater<double> > FZVMask;
-  FZVMask fzvmask(nfzv(), evals);
-  std::vector<bool> vmask = fzvmask.mask();
-  std::vector<bool> actmask(nmo);
-  std::transform(cmask.begin(), cmask.end(), vmask.begin(), actmask.begin(), std::logical_and<bool>() );
-
-  // compute "real" orbital eigenvalues as diagonal elements of the Fock matrix
-#if 1
-  {
-    Ref<OrbitalSpaceRegistry> oreg = this->world()->tfactory()->orbital_registry();
-    const bool need_to_add_pspace_temporarily = !oreg->key_exists(pspace_ao->id());
-    if (need_to_add_pspace_temporarily)
-      oreg->add(pspace_ao->id(), pspace_ao);
-    Ref<AOSpaceRegistry> aoreg = this->world()->tfactory()->ao_registry();
-    const bool need_to_add_aospace_temporarily = !aoreg->key_exists(basis());
-    if (need_to_add_aospace_temporarily)
-      add_ao_space(basis(), integral(), aoreg, oreg);
-
-    const std::string fkey =
-      ParsedOneBodyIntKey::key(pspace_ao->id(), pspace_ao->id(),
-                               std::string("F"));
-    RefSCMatrix F = world()->fockbuild_runtime()->get(fkey);
-    for(int o=0; o<nmo; ++o)
-      evals.set_element(o, F(o,o));
-    //F.print("orbital Fock matrix");
-    //evals.print("orbital eigenvalues");
-    RefSymmSCMatrix P = world()->fockbuild_runtime()->P();
-    RefSymmSCMatrix P_mo = P.kit()->symmmatrix(C_ao.coldim()); P_mo.assign(0.0);
-    P_mo.accumulate_transform(C_ao, P, SCMatrix::TransposeTransform);
-
-    if (need_to_add_pspace_temporarily)
-      oreg->remove(pspace_ao->id());
-    if (need_to_add_aospace_temporarily)
-      remove_ao_space(basis(), aoreg, oreg);
-
-    //this->world()->obsolete();
-  }
-#endif
-
-  Ref<OrbitalSpaceRegistry> oreg = this->world()->tfactory()->orbital_registry();
-
-  if (spin_polarized() == false) { // closed-shell
-    spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, AnySpinCase1, basis(), integral(), C_ao,
-                                                   occnums, actmask, evals);
-    spinspaces_[Beta] = spinspaces_[Alpha];
-#if 0
-    spinspaces_[Alpha]->occ_sb()->print_detail();
-    spinspaces_[Alpha]->occ_act_sb()->print_detail();
-    spinspaces_[Alpha]->uocc_sb()->print_detail();
-    spinspaces_[Alpha]->uocc_act_sb()->print_detail();
-    spinspaces_[Alpha]->occ()->print_detail();
-    spinspaces_[Alpha]->occ_act()->print_detail();
-#endif
-  }
-  else { // spin-restricted open-shell
-    spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, Alpha, basis(), integral(), C_ao,
-                                                   occnums, actmask, evals);
-    spinspaces_[Beta] = new PopulatedOrbitalSpace(oreg, Beta, basis(), integral(), C_ao,
-                                                  occnums, actmask, evals);
-  }
-}
-
-void
-Extern_RefWavefunction::init_spaces(std::vector<unsigned int> mopi,
+Extern_RefWavefunction::init_spaces(const RefSCMatrix& coefs,
+                                    const std::vector<unsigned int>& orbsyms,
                                     std::vector<unsigned int> occpi,
-                                    std::vector<unsigned int> corrpi,
                                     std::vector<unsigned int> fzcpi,
                                     std::vector<unsigned int> fzvpi,
-                                    const RefSCMatrix& coefs,
-                                const std::vector<unsigned int>& orbsyms) {
+                                    std::vector<unsigned int> holepi,
+                                    std::vector<unsigned int> partpi) {
+
+  // compute orbspi
+  const unsigned int nirreps = *std::max_element(orbsyms.begin(), orbsyms.end())
+      + 1;
+  std::vector<unsigned int> orbspi(nirreps);
+  for (unsigned int irrep = 0; irrep < nirreps; ++irrep) {
+    orbspi[irrep] = std::count(orbsyms.begin(), orbsyms.end(), irrep);
+  }
+
+  assert(occpi.size() == nirreps);
+  assert(fzcpi.size() == nirreps);
+  assert(fzvpi.size() == nirreps);
+
+  // compute holepi and partpi, if needed
+  if (holepi.empty()) {
+    holepi.resize(nirreps);
+    for (unsigned int irrep = 0; irrep < nirreps; ++irrep)
+      holepi[irrep] = occpi[irrep] - fzcpi[irrep];
+  }
+  if (partpi.empty()) {
+    partpi.resize(nirreps);
+    for (unsigned int irrep = 0; irrep < nirreps; ++irrep)
+      partpi[irrep] = orbspi[irrep] - occpi[irrep] - fzvpi[irrep];
+  }
+
+  assert(holepi.size() == nirreps);
+  assert(partpi.size() == nirreps);
 
   const unsigned int nmo = coefs.coldim().n();
   const bool debug = false; // control debug printing
@@ -1865,7 +1358,8 @@ Extern_RefWavefunction::init_spaces(std::vector<unsigned int> mopi,
   // block orbitals by symmetry
   Ref<OrbitalSpace> pspace_ao;
   {
-    const std::string unique_id = new_unique_key(this->world()->tfactory()->orbital_registry());
+    const std::string unique_id = new_unique_key(
+        this->world()->tfactory()->orbital_registry());
     const std::string id = ParsedOrbitalSpaceKey::key(unique_id, AnySpinCase1);
     const std::string name("MOs blocked by symmetry");
     evals = coefs.kit()->diagmatrix(coefs.coldim());
@@ -1880,83 +1374,80 @@ Extern_RefWavefunction::init_spaces(std::vector<unsigned int> mopi,
     occnums.assign(0.0);
     corr_evals.assign(2.0);
     evals.assign(2.0);
-    if(debug)
-    {
+    if (debug) {
       evals->print("debug ref_wfn: print evals");
       occnums->print("debug ref_wfn: print occnums");
     }
     const unsigned int nirrep = occpi.size();
     int mocount = 0;
-    for (int g = 0; g < nirrep; ++g)
-    {
-      for (int i = 0; i < fzcpi[g]; ++i)
-      {
-        evals.set_element(mocount+i, -2.0);
-        corr_evals.set_element(mocount+i, -2.0);
-        occnums.set_element(mocount +i, 1.0);
+    for (int g = 0; g < nirrep; ++g) {
+      for (int i = 0; i < fzcpi[g]; ++i) {
+        evals.set_element(mocount + i, -2.0);
+        corr_evals.set_element(mocount + i, -2.0);
+        occnums.set_element(mocount + i, 1.0);
       }
-      if(debug)
-      {
+      if (debug) {
         evals->print("debug ref_wfn: print evals");
         occnums->print("debug ref_wfn: print occnums");
       }
-      for (int j = fzcpi[g]; j < occpi[g]; ++j)
-      {
-        evals.set_element(mocount+j, -1.0);
-        occnums.set_element(mocount+j, 1.0);
-        if(j-fzcpi[g] < corrpi[g])
-          corr_evals.set_element(mocount+j, -2.0);
+      for (int j = fzcpi[g]; j < occpi[g]; ++j) {
+        evals.set_element(mocount + j, -1.0);
+        occnums.set_element(mocount + j, 1.0);
+        if (j - fzcpi[g] < holepi[g])
+          corr_evals.set_element(mocount + j, -2.0);
       }
-      if(debug)
-      {
+      if (debug) {
         evals->print("debug ref_wfn: print evals");
         occnums->print("debug ref_wfn: print occnums");
       }
-      for (int k = occpi[g]; k < (mopi[g]-fzvpi[g]); ++k)
-      {
-        evals.set_element(mocount+k, 1.0);
+      for (int k = occpi[g]; k < (orbspi[g] - fzvpi[g]); ++k) {
+        evals.set_element(mocount + k, 1.0);
       }
-      mocount += mopi[g];
+      mocount += orbspi[g];
     }
-    if(debug)
-    {
+    if (debug) {
       evals->print("debug ref_wfn: print evals");
       occnums->print("debug ref_wfn: print occnums");
     }
     pspace_ao = new OrderedOrbitalSpace<SymmetryMOOrder>(
         id, name, basis(), integral(), coefs, evals, occnums, orbsyms,
         SymmetryMOOrder(nirrep));
-    if(debug)
-    {
+    if (debug) {
       pspace_ao->print_detail();
       pspace_ao->evals().print("debu ref_wfn: pspace_ao");
     }
   }
 
-  if(debug_version)
-  {
+  if (debug_version) {
     C_ao = coefs;
-  }
-  else
-  {
+  } else {
     C_ao = pspace_ao->coefs();
     evals = pspace_ao->evals();
   }
-  if(debug)
-  {
-    evals.print("debu ref_wfn: pspace_ao");
+  if (debug) {
+    evals.print("debug ref_wfn: pspace_ao");
   }
 
   // compute occupancies from evals (see the trick above)
   std::vector<double> occnums(nmo, 0.0);
-  for(unsigned int i=0; i<nmo; ++i)
-  {
+  for (unsigned int i = 0; i < nmo; ++i) {
     occnums[i] = evals(i) > 0.0 ? 0.0 : 1.0;
   }
-  std::vector<double> rasscf_occs(nmo, 0.0);
-  for(unsigned int i=0; i<nmo; ++i)
+
+  // compute correlation-active orbitals
+  std::vector<ParticleHoleOrbitalAttributes> actmask(nmo, ParticleHoleOrbitalAttributes::None);
   {
-    rasscf_occs[i] = corr_evals(i) > 0.0 ? 0.0 : 1.0;
+    size_t offset = 0;
+    for(unsigned int irrep=0; irrep<nirreps; ++irrep) {
+      std::fill(actmask.begin() + offset + fzcpi[irrep],
+                actmask.begin() + offset + fzcpi[irrep] + holepi[irrep],
+                ParticleHoleOrbitalAttributes::Hole);
+      std::fill(actmask.begin() + offset + orbspi[irrep] - fzvpi[irrep] - partpi[irrep],
+                actmask.begin() + offset + orbspi[irrep] - fzvpi[irrep],
+                ParticleHoleOrbitalAttributes::Particle);
+
+      offset+=orbspi[irrep];
+    }
   }
 
   // transform orbitals to SO basis
@@ -1972,23 +1463,13 @@ Extern_RefWavefunction::init_spaces(std::vector<unsigned int> mopi,
   S_mo->accumulate_transform(C_so, S_so, SCMatrix::TransposeTransform);
   //S_mo.print("MO metric");
 
-  // compute active orbital mask
-  // from frozen-core
-  typedef MolecularOrbitalMask<double, RefDiagSCMatrix, std::less<double> > FZCMask;
-  FZCMask fzcmask(nfzc(), evals);
-  std::vector<bool> cmask = fzcmask.mask();
-  // and frozen-virtuals
-  typedef MolecularOrbitalMask<double, RefDiagSCMatrix, std::greater<double> > FZVMask;
-  FZVMask fzvmask(nfzv(), evals);
-  std::vector<bool> vmask = fzvmask.mask();
-  std::vector<bool> actmask(nmo);
-  std::transform(cmask.begin(), cmask.end(), vmask.begin(), actmask.begin(), std::logical_and<bool>() );
-
   // compute "real" orbital eigenvalues as diagonal elements of the Fock matrix
 #if 1
   {
-    Ref<OrbitalSpaceRegistry> oreg = this->world()->tfactory()->orbital_registry();
-    const bool need_to_add_pspace_temporarily = !oreg->key_exists(pspace_ao->id());
+    Ref<OrbitalSpaceRegistry> oreg =
+        this->world()->tfactory()->orbital_registry();
+    const bool need_to_add_pspace_temporarily = !oreg->key_exists(
+        pspace_ao->id());
     if (need_to_add_pspace_temporarily)
       oreg->add(pspace_ao->id(), pspace_ao);
     Ref<AOSpaceRegistry> aoreg = this->world()->tfactory()->ao_registry();
@@ -1996,16 +1477,17 @@ Extern_RefWavefunction::init_spaces(std::vector<unsigned int> mopi,
     if (need_to_add_aospace_temporarily)
       add_ao_space(basis(), integral(), aoreg, oreg);
 
-    const std::string fkey =
-      ParsedOneBodyIntKey::key(pspace_ao->id(), pspace_ao->id(),
-                               std::string("F"));
+    const std::string fkey = ParsedOneBodyIntKey::key(pspace_ao->id(),
+                                                      pspace_ao->id(),
+                                                      std::string("F"));
     RefSCMatrix F = world()->fockbuild_runtime()->get(fkey);
-    for(int o=0; o<nmo; ++o)
-      evals.set_element(o, F(o,o));
+    for (int o = 0; o < nmo; ++o)
+      evals.set_element(o, F(o, o));
     //F.print("orbital Fock matrix");
     //evals.print("orbital eigenvalues");
     RefSymmSCMatrix P = world()->fockbuild_runtime()->P();
-    RefSymmSCMatrix P_mo = P.kit()->symmmatrix(C_ao.coldim()); P_mo.assign(0.0);
+    RefSymmSCMatrix P_mo = P.kit()->symmmatrix(C_ao.coldim());
+    P_mo.assign(0.0);
     P_mo.accumulate_transform(C_ao, P, SCMatrix::TransposeTransform);
 
     if (need_to_add_pspace_temporarily)
@@ -2017,24 +1499,19 @@ Extern_RefWavefunction::init_spaces(std::vector<unsigned int> mopi,
   }
 #endif
 
-  Ref<OrbitalSpaceRegistry> oreg = this->world()->tfactory()->orbital_registry();
-  if(force_rasscf())
-  {
-    sc::ExEnv::out0() << "force correlate rasscf" << std::endl;
-    spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, AnySpinCase1, basis(), integral(), C_ao,
-                                                       occnums, actmask, evals, true, 0,0,rasscf_occs);
-  }
-  else
-    spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, AnySpinCase1, basis(), integral(), C_ao,
-                                                   occnums, actmask, evals);
+  Ref<OrbitalSpaceRegistry> oreg =
+      this->world()->tfactory()->orbital_registry();
+  spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, AnySpinCase1, basis(),
+                                                 integral(), C_ao, occnums,
+                                                 actmask, evals);
   spinspaces_[Beta] = spinspaces_[Alpha];
-#if 0
-    spinspaces_[Alpha]->occ_sb()->print_detail();
-    spinspaces_[Alpha]->occ_act_sb()->print_detail();
-    spinspaces_[Alpha]->uocc_sb()->print_detail();
-    spinspaces_[Alpha]->uocc_act_sb()->print_detail();
-    spinspaces_[Alpha]->occ()->print_detail();
-    spinspaces_[Alpha]->occ_act()->print_detail();
+#if 1
+  spinspaces_[Alpha]->occ_sb()->print_detail();
+  spinspaces_[Alpha]->occ_act_sb()->print_detail();
+  spinspaces_[Alpha]->uocc_sb()->print_detail();
+  spinspaces_[Alpha]->uocc_act_sb()->print_detail();
+  spinspaces_[Alpha]->occ()->print_detail();
+  spinspaces_[Alpha]->occ_act()->print_detail();
 #endif
 
 }

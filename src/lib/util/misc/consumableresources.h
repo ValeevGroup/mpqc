@@ -259,9 +259,10 @@ namespace sc {
             managed_arrays_.erase(pos);
           }
           else {
+            void* array_ptr = static_cast<void*>(array);
             std::ostringstream oss;
             oss << "ConsumableResources::unmanage_array() -- given non-managed array (ptr="
-                << &(array[0]) << " size=" << pos->second.size << ")";
+                << array_ptr << " size=" << pos->second.size << ")";
             throw ProgrammingError(oss.str().c_str(), __FILE__, __LINE__, class_desc());
           }
         }

@@ -4,7 +4,7 @@ mpqc:(
 )
 
 nproc = 4
-molecule = $:h2o
+molecule = $:water
 coor = $:symcoor
 %message = $:messageShm
 %basis_matrixkit = $:replmatrixkit
@@ -40,6 +40,8 @@ mole<DFCLHF>: (
   	df_solver = "bunchkaufman_refine"
   	df_local_coulomb = yes
   	df_local_exchange = yes
+    store_ints = mem
+    %store_ints = mpi
   )
 
 

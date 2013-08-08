@@ -12,7 +12,7 @@ namespace mpqc {
     /// Tensor reference class.
     /// All data is assumed to be contiguous.
     template<typename T, size_t N, class Order = TensorColumnMajor<N> >
-    class TensorRef : TensorBase<T,N,Order> {
+    struct TensorRef : TensorBase<T,N,Order> {
 
     public:
 
@@ -23,6 +23,12 @@ namespace mpqc {
         const T* data() const { return this->data_; }
 
     public:
+
+        /// fast assignment operator
+        TensorRef& operator=(const TensorRef &u) {
+            size_t size = this->size();
+            std::copy(u.data(), u.data()+size, this->data());
+        }
 
         /// fast assignment operator
         template<typename U>

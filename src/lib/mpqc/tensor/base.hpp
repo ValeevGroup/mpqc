@@ -116,22 +116,34 @@ namespace mpqc {
     class TensorBase {
 
     public:
-
         static const size_t RANK = N;
+        typedef size_t Dims[N];
+
+    protected:
+        T *data_;
+        Dims dims_;
+        Order order_;
+
+    public:
 
         TensorBase(T *data,
                    const size_t *dims,
                    const size_t *ld = NULL)
-            : dims(make_dims(dims)),
-              order_(ld ? ld : dims),
+            : order_(ld ? ld : dims),
               data_(data)
-        { }
+        {
+            std::copy(dims, dims+N, this->dims_);
+        }
 
         size_t size() const {
             size_t size = 1;
             for (int i = 0; i < N; ++i)
-                size *= this->dims[i];
+                size *= this->dims_[i];
             return size;
+        }
+
+        const Dims& dims() const {
+            return dims_;
         }
 
         // generate index operator of arity N
@@ -167,12 +179,6 @@ namespace mpqc {
         MPQC_TENSOR_INDEX_OPERATOR(nil, 2,      )
         MPQC_TENSOR_INDEX_OPERATOR(nil, 2, const)
 
-    public:
-        const boost::array<size_t,N> dims;
-    protected:
-        Order order_;
-        T *data_;
-
     protected:
         
         /// element-access operator
@@ -205,9 +211,9 @@ namespace mpqc {
         void check_index(const detail::Tensor::integral_tie<Tie> &tie,
                          boost::mpl::int_<K>) const {
             if ((tie.template get<K>() < 0) ||
-                (tie.template get<K>() > this->dims[K])) {
+                (tie.template get<K>() > this->dims_[K])) {
                 throw TensorIndexException(K, tie.template get<K>(),
-                                           0, this->dims[K]);
+                                           0, this->dims_[K]);
             }
             check_index(tie, boost::mpl::int_<K+1>());
         }
@@ -237,13 +243,13 @@ namespace mpqc {
                           "Invalid TensorBase::operator() arity");
             boost::array<range,N> r = range::tie<Tie>(tie);
             boost::array<ptrdiff_t,N> begin;
-            boost::array<size_t,N> dims;
+            Dims dims;
             for (int i = 0; i < N; ++i) {
                 begin[i] = *r[i].begin();
                 dims[i] = r[i].size();
 #ifndef  NDEBUG
-                if ((*r[i].begin() < 0) || (*r[i].end() > t.dims[i])) {
-                    throw TensorRangeException(i, r[i], 0, t.dims[i]);
+                if ((*r[i].begin() < 0) || (*r[i].end() > t.dims_[i])) {
+                    throw TensorRangeException(i, r[i], 0, t.dims_[i]);
                 }
 #endif
             }
@@ -255,19 +261,14 @@ namespace mpqc {
     private:
 
         friend class TensorBase< typename boost::remove_const<T>::type, N, Order>;
-        TensorBase(T *data, const boost::array<size_t,N> &dims,
+        TensorBase(T *data, const Dims &dims,
                    const Order &order)
-            : dims(dims), data_(data), order_(order) {}
-
-        TensorBase& operator=(const TensorBase&);
-        
-
-    private:
-        static boost::array<size_t,N> make_dims(const size_t *p) {
-            boost::array<size_t,N> dims;
-            std::copy(p, p+N, dims.begin());
-            return dims;
+            : data_(data), order_(order)
+        {
+            std::copy(dims, dims+N, dims_);
         }
+
+        TensorBase& operator=(const TensorBase&);        
 
     };
 

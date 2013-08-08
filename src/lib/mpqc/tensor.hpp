@@ -11,7 +11,7 @@ namespace mpqc {
     /// Tensor reference class.
     /// All data is assumed to be contiguous.
     template<typename T, size_t N, class Order = TensorColumnMajor<N> >
-    class Tensor : TensorRef<T,N,Order> {
+    struct Tensor : TensorRef<T,N,Order> {
 
     public:
 
@@ -20,17 +20,17 @@ namespace mpqc {
         { }
 
         Tensor(const Tensor &u)
-            : TensorRef<T,N,Order>(allocate(u.dims.elems), u.dims.elems)
+            : TensorRef<T,N,Order>(allocate(u.dims()), u.dims())
         {
             TensorRef<T,N,Order>::operator=(u);
         }
 
-        // template<typename U>
-        // Tensor(const TensorRef<U,N,Order> &u)
-        //     : TensorRef<T,N,Order>(allocate(u.dims.elems), u.dims.elems)
-        // {
-        //     TensorRef<T,N,Order>::operator=(u);
-        // }
+        template<typename U>
+        Tensor(const TensorRef<U,N,Order> &u)
+            : TensorRef<T,N,Order>(allocate(u.dims()), u.dims())
+        {
+            TensorRef<T,N,Order>::operator=(u);
+        }
 
         ~Tensor() {
             delete[] TensorRef<T,N,Order>::data();

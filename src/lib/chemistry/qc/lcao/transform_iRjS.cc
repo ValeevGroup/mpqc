@@ -157,7 +157,7 @@ TwoBodyMOIntsTransform_iRjS::init_acc()
                                          DistArray4Storage_YX);
     break;
 
-#if HAVE_MPIIO
+#ifdef HAVE_MPIIO
   case MOIntsTransform::StoreMethod::mem_mpi:
     // if can do in one pass, use the factory hints about how data will be used
     if (npass_ == 1 && !factory()->hints().data_persistent()) {

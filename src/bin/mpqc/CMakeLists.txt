@@ -13,13 +13,15 @@ add_executable(
   mpqc.cc
 )
 
-# Ed, the previous linking configuration broke badly
-# afaik, only one target_link_libraries per target is allowed
 target_link_libraries(
-  ${executable}
   mpqcinit
   chemistry
   util
+)
+
+target_link_libraries(
+  ${executable}
+  mpqcinit
   ${LINK_LIBRARIES})
 
 #message("** LINK_LIBRARIES=${LINK_LIBRARIES}")

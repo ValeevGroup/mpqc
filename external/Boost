@@ -71,6 +71,10 @@ else()
   endif()
   file(WRITE ${EXTERNAL_BUILD_DIR}/boost/user-config.jam "${BOOST_CONFIG}")
 
+  if (HAVE_PYTHON)
+    set (withpython --with-python)
+  endif()
+
   ExternalProject_Add(
     boost
     PREFIX ${EXTERNAL_BUILD_DIR}/boost
@@ -81,7 +85,7 @@ else()
     BUILD_COMMAND ./b2 --user-config=${EXTERNAL_BUILD_DIR}/boost/user-config.jam
     --toolset=${BOOST_TOOLSET}
     --with-thread
-    --with-python
+    ${withpython}
     --with-system
     --link=static
     INSTALL_COMMAND ""
@@ -92,8 +96,10 @@ else()
   set(Boost_INCLUDE_DIRS ${EXTERNAL_BUILD_DIR}/boost/src/boost)
 
   list(APPEND Boost_LIBRARIES ${EXTERNAL_BUILD_DIR}/boost/src/boost/stage/lib/libboost_thread.a)
-  list(APPEND Boost_LIBRARIES ${EXTERNAL_BUILD_DIR}/boost/src/boost/stage/lib/libboost_python.a)
   list(APPEND Boost_LIBRARIES ${EXTERNAL_BUILD_DIR}/boost/src/boost/stage/lib/libboost_system.a)
+  if (HAVE_PYTHON)
+    list(APPEND Boost_LIBRARIES ${EXTERNAL_BUILD_DIR}/boost/src/boost/stage/lib/libboost_python.a)
+  endif()
 
   set(HAVE_BOOST ON)
   

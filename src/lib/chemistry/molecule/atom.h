@@ -110,11 +110,11 @@ namespace sc {
 
    };
 
-    /// Interface to sc::StateOut
+    /// writes Atom to sc::StateOut
     void ToStateOut(const Atom &a, StateOut &so, int &count);
 
-    /// Interface to sc::StateIn
-    void FromStateIn(Atom &a, StateIn &so, int &count);
+    /// reads Atom from sc::StateOut
+    void FromStateIn(Atom &a, StateIn &si, int &count);
 }
 
 

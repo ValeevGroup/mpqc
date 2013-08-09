@@ -30,8 +30,7 @@ std::vector<double> sc::CI::compute(const Ref<RefWavefunction> &wfn,
     range mo(config.core, config.core + config.orbitals);
     range ao(0, C.cols());
     
-    if (mo.size() > C.rows())
-      throw std::runtime_error("Number of orbitals too great");
+    assert(mo.size() <= C.rows());
     
     const auto &basis = wfn->basis();
     

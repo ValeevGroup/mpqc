@@ -148,4 +148,18 @@ namespace ci {
 }
 }
 
+namespace sc {
+  /// writes Config to sc::StateOut
+  inline void ToStateOut(const mpqc::ci::Config &a, StateOut &so, int &count) {
+    const char* a_cast = reinterpret_cast<const char*>(&a);
+    count += so.put(a_cast, sizeof(mpqc::ci::Config));
+  }
+
+  /// reads Config from sc::StateIn
+  inline void FromStateIn(mpqc::ci::Config &a, StateIn &si, int &count) {
+    char* a_cast = reinterpret_cast<char*>(&a);
+    count += si.get(a_cast);
+  }
+}
+
 #endif // MPQC_CI_CONFIG_HPP

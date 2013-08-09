@@ -295,7 +295,6 @@ MPQCInit::init(const std::string &input_filename,
   ExEnv::init(argc_, argv_);
   init_fp();
   init_limits();
-  init_madness(); // this will call MPI_Init, if MADNESS is available
   Ref<MessageGrp> grp = init_messagegrp();
   init_io(grp);
   Ref<KeyVal> keyval = init_keyval(grp,input_filename);
@@ -313,31 +312,6 @@ void
 MPQCInit::finalize()
 {
   sc::finalize();
-#ifdef HAVE_MADNESS
-  if (madness::initialized()) {
-    if (mpqc_initialized_madness_)
-      madness::finalize();
-  }
-#endif
-}
-
-void
-MPQCInit::init_madness()
-{
-#ifdef HAVE_MADNESS
-  if (not madness::initialized()) {
-    madness::initialize(argc_, argv_);
-    mpqc_initialized_madness_ = true;
-  }
-  else {
-    mpqc_initialized_madness_ = false;
-  }
-  // now make sure that MADNESS has initialized MPI with full thread safety ...
-  // if MPQC were using SafeMPI instead of MPI directly this would not be an issue
-  if (SafeMPI::Query_thread() != MPI_THREAD_MULTIPLE && madness::World::get_default().rank() != 1) {
-    throw FeatureNotImplemented("nproc>1, and MPQC cannot get along with MADNESS because MADNESS was not configured with --with-mpi-thread=multiple; reconfigure MADNESS", __FILE__, __LINE__);
-  }
-#endif
 }
 
 }

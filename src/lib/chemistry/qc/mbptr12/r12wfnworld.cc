@@ -40,6 +40,9 @@
 #include <chemistry/qc/lcao/transform_factory.h>
 #include <util/misc/registry.timpl.h>
 #include <chemistry/qc/nbody/ref.h>
+#ifdef HAVE_MADNESS
+# include <util/madness/init.h>
+#endif
 
 using namespace std;
 using namespace sc;
@@ -79,6 +82,11 @@ R12WavefunctionWorld::R12WavefunctionWorld(
   r12tech_ = new R12Technology(keyval,ref->basis(),ref->uocc_basis(),bs_aux_);
   // Make sure can use the integral factory for R12 calcs
   r12tech_->check_integral_factory(integral());
+
+  // boot up madness
+#ifdef HAVE_MADNESS
+  MADNESSRuntime::initialize();
+#endif
 }
 
 R12WavefunctionWorld::R12WavefunctionWorld(StateIn& si) : SavableState(si)
@@ -92,10 +100,19 @@ R12WavefunctionWorld::R12WavefunctionWorld(StateIn& si) : SavableState(si)
 
   abs_space_ << SavableState::restore_state(si);
   ribs_space_ << SavableState::restore_state(si);
+
+  // boot up madness
+#ifdef HAVE_MADNESS
+  MADNESSRuntime::initialize();
+#endif
 }
 
 R12WavefunctionWorld::~R12WavefunctionWorld()
 {
+  // boot up madness
+#ifdef HAVE_MADNESS
+  MADNESSRuntime::finalize();
+#endif
 }
 
 void R12WavefunctionWorld::save_data_state(StateOut& so)

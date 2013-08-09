@@ -25,6 +25,10 @@
 #include <util/misc/consumableresources.h>
 #include "../mpqc/mpqcinit.h"
 
+#ifdef HAVE_MADNESS
+# include <util/madness/init.h>
+#endif
+
 #include "moinfo.h"
 #include "extern_pt2r12.h"
 
@@ -160,14 +164,16 @@ int try_main(int argc, char **argv)
 
   // initialize the environment
   MPQCInit init(opt,argc,argv);
+  ExEnv::init(argc, argv);
   init.init_fp();
   init.init_limits();
-#ifdef HAVE_MADNESS
-  init.init_madness();
-#endif
   Ref<MessageGrp> grp = init.init_messagegrp();
   init.init_io(grp);
   init.init_timer(grp,0);
+
+#ifdef HAVE_MADNESS
+  MADNESSRuntime::initialize();
+#endif
 
   Timer timer;
 
@@ -416,6 +422,10 @@ int try_main(int argc, char **argv)
   }
   ExEnv::out0() << std::endl
                 << indent << scprintf("End Time: %s", tstr) << std::endl;
+
+#ifdef HAVE_MADNESS
+  MADNESSRuntime::finalize();
+#endif
 
   return 0;
 }

@@ -255,9 +255,6 @@ try_main(int argc, char *argv[])
   ExEnv::init(argc, argv);
   init.init_fp();
   init.init_limits();
-#ifdef HAVE_MADNESS
-  init.init_madness();
-#endif
   Ref<MessageGrp> grp = init.init_messagegrp();
   init.init_io(grp);
 

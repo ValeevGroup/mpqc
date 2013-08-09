@@ -43,6 +43,8 @@ using namespace sc;
 CI::CI(StateIn& s) :
     ManyBodyWavefunction(s)
 {
+  int count;
+  FromStateIn(config_, s, count);
 }
 
 CI::CI(const Ref<KeyVal> &kv)
@@ -79,6 +81,8 @@ CI::~CI() {}
 void
 CI::save_data_state(StateOut& so) {
   ManyBodyWavefunction::save_data_state(so);
+  int count;
+  ToStateOut(config_, so, count);
 }
 
 RefSymmSCMatrix CI::density() {

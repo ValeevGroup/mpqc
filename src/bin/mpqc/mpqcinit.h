@@ -10,13 +10,6 @@
 #include <util/group/memory.h>
 #include <string>
 
-#ifdef HAVE_MADNESS
-# ifndef WORLD_INSTANTIATE_STATIC_TEMPLATES
-# define WORLD_INSTANTIATE_STATIC_TEMPLATES
-# endif
-# include <world/world.h>
-#endif
-
 namespace sc {
 
   /// @defgroup Init mpqc.Init
@@ -81,8 +74,6 @@ namespace sc {
     void init_timer(const Ref<MessageGrp> &grp, Ref<KeyVal> keyval = Ref<KeyVal>());
     //@}
 
-    /// initializes MADNESS runtime, if available. Normally, no need to call manually, will be called by MPQCInit::init()
-    void init_madness();
     /// Initialize formatted I/O.
     void init_io(const sc::Ref<sc::MessageGrp> &grp);
     /// Initialize the name used to construct data file names.
@@ -96,10 +87,6 @@ namespace sc {
 
 
   private:
-#ifdef HAVE_MADNESS
-    bool mpqc_initialized_madness_;  // true if I'm in charge of initializing and finalizing MADNESS
-#endif
-
     /// Clean up at the end of a run. This is called automatically by
     /// the destructor. Since this is a "Singleton" making private.
     void finalize();

@@ -91,7 +91,7 @@ double sc::SuperpositionOfAtomicDensities::magnetic_moment() const {
 }
 
 int sc::SuperpositionOfAtomicDensities::nelectron() {
-  return static_cast<int>(this->molecule()->total_Z());
+  return this->molecule()->total_Z();
 }
 
 int sc::SuperpositionOfAtomicDensities::value_implemented() const {

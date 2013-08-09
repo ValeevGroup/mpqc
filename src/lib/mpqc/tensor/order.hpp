@@ -4,6 +4,7 @@
 #include <boost/tuple/tuple.hpp>
 #include <boost/fusion/include/boost_tuple.hpp>
 #include <boost/fusion/include/boost_array.hpp>
+#include <boost/fusion/include/as_vector.hpp>
 #include <boost/fusion/include/at_c.hpp>
 #include <boost/mpl/int.hpp>
 
@@ -28,7 +29,7 @@ namespace mpqc {
         /// given N-d index tuple, compute 1-d index
         template<class Index>
         ptrdiff_t index(const Index &idx) const {
-            return index(idx, boost::mpl::int_<N-1>());
+            return index(boost::fusion::as_vector(idx), boost::mpl::int_<N-1>());
         }
     protected:
         /// recursively add index for each rank K,...,0

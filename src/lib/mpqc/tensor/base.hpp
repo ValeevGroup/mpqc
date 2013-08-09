@@ -5,12 +5,6 @@
 #include <assert.h>
 
 #include <boost/tuple/tuple.hpp>
-#include <boost/fusion/include/boost_tuple.hpp>
-#include <boost/mpl/accumulate.hpp>
-#include <boost/mpl/print.hpp>
-
-#include <boost/type_traits/remove_const.hpp>
-#include <boost/type_traits/remove_reference.hpp>
 
 #include <boost/preprocessor/repetition/enum_params.hpp>
 #include <boost/preprocessor/repetition/enum_binary_params.hpp>
@@ -21,92 +15,12 @@
 
 #include "mpqc/tensor/forward.hpp"
 #include "mpqc/tensor/functional.hpp"
-
-namespace mpqc {
-namespace detail {
-namespace Tensor {
-
-    template<class T>
-    struct is_integral {
-        typedef typename boost::is_integral<
-            typename boost::remove_reference<T>::type
-            >::type type;
-    };
-
-    /// "returns" true if every element of tuple T is an integral type
-    template<class T>
-    struct is_integral_tuple {
-        static const bool value =
-            boost::mpl::accumulate<
-            T,
-            boost::mpl::bool_<true>,
-            boost::mpl::and_< is_integral<boost::mpl::_2>, boost::mpl::_1 >
-            >::type::value;
-    };
-
-    /// index tie wrapper
-    template<class Tie>
-    struct integral_tie : Tie {
-        integral_tie(const Tie &t) : Tie(t) {}
-    };
-
-    /// range tie wrapper
-    template<class Tie>
-    struct range_tie : Tie {
-        range_tie(const Tie &t) : Tie(t) {}
-    };
-
-    /// returns integral_tie if every type in Tie is an integral type,
-    /// disabled otherwise
-    template<class Tie>
-    typename boost::enable_if<
-        is_integral_tuple<Tie>,
-        integral_tie<Tie>
-        >::type
-    tie(const Tie &t) {
-        return integral_tie<Tie>(t);
-    }
-
-    /// returns range_tie if NOT every type in Tie is an integral type,
-    /// disabled otherwise
-    template<class Tie>
-    typename boost::disable_if<
-        is_integral_tuple<Tie>,
-        range_tie<Tie>
-        >::type
-    tie(const Tie &t) {
-        return range_tie<Tie>(t);
-    }
-
-} // Tensor
-} // detail
-} // mpqc
-
+#include "mpqc/tensor/exception.hpp"
 
 namespace mpqc {
 
     /// @addtogroup Tensor
     /// @{
-
-    struct TensorIndexException : std::runtime_error {
-        template<typename Rank, typename Index, typename Begin, typename End>
-        TensorIndexException(Rank rank, Index index, Begin begin, End end)
-            : std::runtime_error("rank<" + string_cast(rank) + "> " +
-                                 "index=" + string_cast(index) + " " +
-                                 "outside the dimensions [" +
-                                 string_cast(begin) + ":" + string_cast(end) + ")")
-        {}
-    };
-
-    struct TensorRangeException : std::runtime_error {
-        template<typename Rank, typename Range, typename Begin, typename End>
-        TensorRangeException(Rank rank, Range range, Begin begin, End end)
-            : std::runtime_error("rank<" + string_cast(rank) + "> " +
-                                 "range=" + string_cast(range) + " " +
-                                 "outside the dimensions [" +
-                                 string_cast(begin) + ":" + string_cast(end) + ")")
-        {}
-    };
 
     /// Tensor base class.
     /// For performance reasons the storage order needs to be known at compile time,
@@ -201,58 +115,56 @@ namespace mpqc {
         BOOST_PP_REPEAT_FROM_TO(1, 5, MPQC_TENSOR_RANGE_OPERATOR,      )
         BOOST_PP_REPEAT_FROM_TO(1, 5, MPQC_TENSOR_RANGE_OPERATOR, const)
 
-    protected:
+    public:
         
         /// element-access operator
-        template<class Tie>
-        T& operator()(const detail::Tensor::integral_tie<Tie> &idx) {
+        template<class Seq>
+        T& operator()(const detail::Tensor::integral_tie<Seq> &idx) {
             return this->data_[this->index(idx)];
         }
 
         /// element-access operator
-        template<class Tie>
-        const T& operator()(const detail::Tensor::integral_tie<Tie> &idx) const  {
+        template<class Seq>
+        const T& operator()(const detail::Tensor::integral_tie<Seq> &idx) const  {
             return this->data_[this->index(idx)];
         }
 
-        template<class Tie>
+        template<class Seq>
         TensorBase<T, N>
-        operator()(const detail::Tensor::range_tie<Tie> &tie) {
+        operator()(const detail::Tensor::range_tie<Seq> &tie) {
             return block< TensorBase<T, N> >(*this, tie);
         }
 
-        template<class Tie>
+        template<class Seq>
         TensorBase<const T, N>
-        operator()(const detail::Tensor::range_tie<Tie> &tie) const {
+        operator()(const detail::Tensor::range_tie<Seq> &tie) const {
             return block< TensorBase<const T, N> >(*this, tie);
         }
 
     private:
 
-        template<class Tie, int K>
-        void check_index(const detail::Tensor::integral_tie<Tie> &tie,
+        template<class Seq, int K>
+        void check_index(const detail::Tensor::integral_tie<Seq> &tie,
                          boost::mpl::int_<K>) const {
-            if ((tie.template get<K>() < 0) ||
-                (tie.template get<K>() > this->dims_[K])) {
-                throw TensorIndexException(K, tie.template get<K>(),
-                                           0, this->dims_[K]);
+            using boost::fusion::at_c;
+            if ((at_c<K>(tie) < 0) || (at_c<K>(tie) > this->dims_[K])) {
+                throw TensorIndexException(K, at_c<K>(tie), 0, this->dims_[K]);
             }
             check_index(tie, boost::mpl::int_<K+1>());
         }
 
-        template<class Tie>
-        void check_index(const detail::Tensor::integral_tie<Tie> &tie,
-                         boost::mpl::int_<N>) const {
-        }
+        template<class Seq>
+        void check_index(const detail::Tensor::integral_tie<Seq> &tie,
+                         boost::mpl::int_<N>) const {}
 
-        template<class Tie>
-        ptrdiff_t index(const detail::Tensor::integral_tie<Tie> &idx) const {
-            static_assert(boost::tuples::length<Tie>::value == N,
+        template<class Seq>
+        ptrdiff_t index(const detail::Tensor::integral_tie<Seq> &idx) const {
+            static_assert(boost::fusion::result_of::size<Seq>::value == N,
                           "Invalid TensorBase::operator() arity");
-#ifndef NDEBUG
-            check_index(idx, boost::mpl::int_<0>());
-#endif
-            ptrdiff_t index = order_.template index<Tie>(idx);
+// #ifndef NDEBUG
+//             check_index(idx, boost::mpl::int_<0>());
+// #endif
+            ptrdiff_t index = order_.template index<Seq>(idx);
             //std::cout << idx << ":" << index << "->" << data_+index << std::endl;
             return index;
         }

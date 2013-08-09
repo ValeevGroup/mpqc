@@ -136,6 +136,16 @@ namespace mpqc {
             std::copy(dims, dims+N, this->dims_);
         }
 
+        template<typename U, class O>
+        TensorBase(T *data,
+                   const size_t *dims,
+                   const size_t *ld = NULL)
+            : order_(ld ? ld : dims),
+              data_(data)
+        {
+            std::copy(dims, dims+N, this->dims_);
+        }
+
         size_t size() const {
             size_t size = 1;
             for (int i = 0; i < N; ++i)
@@ -149,13 +159,13 @@ namespace mpqc {
 
     public:
         
-        template<typename U>
-        TensorBase& operator=(const TensorBase<U,N,Order> &u) {
+        template<typename U, class O>
+        void operator=(const TensorBase<const U,N,O> &u) {
             detail::Tensor::apply(detail::Tensor::assign(), *this, u);
         }
 
-        TensorBase& operator=(const TensorBase& o) {
-            return this->operator=<T>(o);
+        void operator=(const TensorBase& o) {
+            this->operator=<T>(o);
         }
 
     public:
@@ -186,18 +196,10 @@ namespace mpqc {
             return this->operator()(tie(boost::tie(BOOST_PP_ENUM_PARAMS(N,i)))); \
         }                                                                       \
         
-        //BOOST_PP_REPEAT_FROM_TO(1, 5, MPQC_TENSOR_INDEX_OPERATOR, nil)
-        MPQC_TENSOR_RANGE_OPERATOR(nil, 2,      )
-        MPQC_TENSOR_RANGE_OPERATOR(nil, 2, const)
-
-        MPQC_TENSOR_INDEX_OPERATOR(nil, 2,      )
-        MPQC_TENSOR_INDEX_OPERATOR(nil, 2, const)
-
-        MPQC_TENSOR_RANGE_OPERATOR(nil, 3,      )
-        MPQC_TENSOR_RANGE_OPERATOR(nil, 3, const)
-
-        MPQC_TENSOR_INDEX_OPERATOR(nil, 3,      )
-        MPQC_TENSOR_INDEX_OPERATOR(nil, 3, const)
+        BOOST_PP_REPEAT_FROM_TO(1, 5, MPQC_TENSOR_INDEX_OPERATOR,      )
+        BOOST_PP_REPEAT_FROM_TO(1, 5, MPQC_TENSOR_INDEX_OPERATOR, const)
+        BOOST_PP_REPEAT_FROM_TO(1, 5, MPQC_TENSOR_RANGE_OPERATOR,      )
+        BOOST_PP_REPEAT_FROM_TO(1, 5, MPQC_TENSOR_RANGE_OPERATOR, const)
 
     protected:
         

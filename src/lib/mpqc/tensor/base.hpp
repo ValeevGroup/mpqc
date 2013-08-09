@@ -179,6 +179,12 @@ namespace mpqc {
         MPQC_TENSOR_INDEX_OPERATOR(nil, 2,      )
         MPQC_TENSOR_INDEX_OPERATOR(nil, 2, const)
 
+        MPQC_TENSOR_RANGE_OPERATOR(nil, 3,      )
+        MPQC_TENSOR_RANGE_OPERATOR(nil, 3, const)
+
+        MPQC_TENSOR_INDEX_OPERATOR(nil, 3,      )
+        MPQC_TENSOR_INDEX_OPERATOR(nil, 3, const)
+
     protected:
         
         /// element-access operator

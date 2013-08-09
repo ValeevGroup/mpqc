@@ -2,6 +2,10 @@
 #define MPQC_TENSOR_FUNCTIONAL_HPP
 
 #include "mpqc/tensor/forward.hpp"
+#include "mpqc/tensor/exception.hpp"
+
+#include <boost/mpl/int.hpp>
+#include <boost/fusion/include/vector.hpp>
 
 namespace mpqc {
 namespace detail {
@@ -9,36 +13,36 @@ namespace Tensor {
 
     template<class F, typename T, typename U, size_t N, class Order, class Seq>
     void apply(F f, TensorBase<T,N,Order> t, TensorBase<U,N,Order> u,
-               const Seq &idx) {
-        integral_tie<Seq> tie(idx);
-        f(t(tie), u(tie));
+               const integral_tie<Seq> &idx) {
+        f(t(idx), u(idx));
     }
 
     template<class F, typename T, typename U, size_t N, class Order, class Seq>
     void apply(F f, TensorBase<T,N,Order> t, TensorBase<U,N,Order> u,
-               const Seq &idx, boost::mpl::int_<0>) {
-        assert(t.dims()[0] == u.dims()[0]);
-        int n = t.dims()[0];
-        for (int i = 0; i < n; ++i) {
-            apply(f, t, u, boost::fusion::push_front(idx, boost::cref(i)));
-        }
+               boost::mpl::int_<0>, const Seq &idx) {
+        typedef integral_tie<Seq> tie;
+        f(t(tie(idx)), u(tie(idx)));
     }
 
     template<class F, typename T, typename U, size_t N, class Order,
              class Seq, int I>
     void apply(F f, TensorBase<T,N,Order> t, TensorBase<U,N,Order> u,
-               const Seq &idx, boost::mpl::int_<I>) {
-        assert(t.dims()[I] == u.dims()[I]);
-        int n = t.dims()[I];
+               boost::mpl::int_<I>, const Seq &idx) {
+#ifndef NDEBUG
+        if (t.dims()[I-1] != u.dims()[I-1]) {
+            throw TensorDimensionsException(I-1, t.dims()[I-1], u.dims()[I-1]);
+        }
+#endif
+        int n = t.dims()[I-1];
         for (int i = 0; i < n; ++i) {
-            const auto &s = boost::fusion::push_front(idx, boost::cref(i));
-            apply(f, t, u, s, boost::mpl::int_<I-1>());
+            apply(f, t, u, boost::mpl::int_<I-1>(),
+                  boost::fusion::push_front(idx, boost::cref(i)));
         }
     }
 
     template<class F, typename T, typename U, size_t N, class Order>
     void apply(F f, TensorBase<T,N,Order> t, TensorBase<U,N,Order> u) {
-        apply(f, t, u, boost::tuple<>(), boost::mpl::int_<N-1>());
+        apply(f, t, u, boost::mpl::int_<N>(), boost::fusion::vector<>());
     }
 
     /// @addtogroup Tensor

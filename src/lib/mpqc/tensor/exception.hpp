@@ -9,6 +9,16 @@ namespace mpqc {
     /// @addtogroup Tensor
     /// @{
 
+    struct TensorDimensionsException : std::runtime_error {
+        template<typename Rank, typename Dim1, typename Dim2>
+        TensorDimensionsException(Rank rank, Dim1 dim1, Dim2 dim2)
+            : std::runtime_error("rank<" + string_cast(rank) + "> " +
+                                 "dimensions mismatch (" +
+                                 string_cast(dim1) + " != " + string_cast(dim2) +
+                                 ")")
+        {}
+    };
+
     struct TensorIndexException : std::runtime_error {
         template<typename Rank, typename Index, typename Begin, typename End>
         TensorIndexException(Rank rank, Index index, Begin begin, End end)

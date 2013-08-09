@@ -17,6 +17,8 @@ int main() {
     mpqc::TensorRef<double,2> u(data, dims);
     mpqc::Tensor<double,2> s(dims);
 
+    s(range(0,2), range(0,2)) = b;
+
     for (int j : range(0,4)) {
         for (int i : range(0,2)) {
             b(i,j) = i+j*10;

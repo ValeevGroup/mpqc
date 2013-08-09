@@ -19,7 +19,8 @@
 #include "mpqc/range/tie.hpp"
 #include "mpqc/utility/string.hpp"
 
-#include "mpqc/tensor/order.hpp"
+#include "mpqc/tensor/forward.hpp"
+#include "mpqc/tensor/functional.hpp"
 
 namespace mpqc {
 namespace detail {
@@ -112,7 +113,7 @@ namespace mpqc {
     /// for time being I assume col-major as default (Eigen default).
     /// Only the first major dimenstion is assumed to be contiguous.
     /// Only minimum functionality is provided, namely element and range operators
-    template<typename T, size_t N, class Order = TensorColumnMajor<N> >
+    template<typename T, size_t N, class Order>
     class TensorBase {
 
     public:
@@ -145,6 +146,19 @@ namespace mpqc {
         const Dims& dims() const {
             return dims_;
         }
+
+    public:
+        
+        template<typename U>
+        TensorBase& operator=(const TensorBase<U,N,Order> &u) {
+            detail::Tensor::apply(detail::Tensor::assign(), *this, u);
+        }
+
+        TensorBase& operator=(const TensorBase& o) {
+            return this->operator=<T>(o);
+        }
+
+    public:
 
         // generate index operator of arity N
         // CV may be empty or const
@@ -273,8 +287,6 @@ namespace mpqc {
         {
             std::copy(dims, dims+N, dims_);
         }
-
-        TensorBase& operator=(const TensorBase&);        
 
     };
 

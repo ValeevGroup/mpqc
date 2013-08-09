@@ -115,11 +115,11 @@ TCSCF::TCSCF(const Ref<KeyVal>& keyval) :
   kb_.computed()=0;
 
   // calculate the total nuclear charge
-  double Znuc=molecule()->nuclear_charge();
+  const int Znuc=molecule()->total_Z();
 
   // check to see if this is to be a charged molecule
-  double charge = keyval->doublevalue("total_charge");
-  int nelectrons = (int)(Znuc-charge+1.0e-4);
+  const int charge = keyval->intvalue("total_charge", KeyValValueint(0));
+  const int nelectrons = Znuc-charge;
 
   // figure out how many doubly occupied shells there are
   if (keyval->exists("ndocc")) {
@@ -312,10 +312,10 @@ TCSCF::fock(int n)
     return kb_.result();
 }
 
-int
-TCSCF::spin_polarized()
+double
+TCSCF::magnetic_moment() const
 {
-  return 1;
+  return 0;
 }
 
 void

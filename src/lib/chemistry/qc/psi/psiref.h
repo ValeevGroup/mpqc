@@ -71,7 +71,7 @@ namespace sc {
       double desired_value_accuracy() const { return scf()->desired_value_accuracy(); }
       bool desired_value_accuracy_set_to_default() const { return scf()->desired_value_accuracy_set_to_default(); }
       int nelectron() const { return scf()->nelectron(); }
-      bool spin_polarized() const { return scf_->spin_polarized(); }
+      double magnetic_moment() const { return scf_->magnetic_moment(); }
       bool spin_restricted() const { return spin_restricted_; }
       int dk() const { return 0; }
       Ref<GaussianBasisSet> momentum_basis() const { return 0; }
@@ -125,7 +125,7 @@ namespace sc {
       double desired_value_accuracy() const { return wfn()->desired_value_accuracy(); }
       bool desired_value_accuracy_set_to_default() const { return wfn()->desired_value_accuracy_set_to_default(); }
       int nelectron() const { return wfn()->nelectron(); }
-      bool spin_polarized() const { return wfn_->spin_polarized(); }
+      double magnetic_moment() const { return wfn_->magnetic_moment(); }
       bool spin_restricted() const { return spin_restricted_; }
       int dk() const { return 0; }
       Ref<GaussianBasisSet> momentum_basis() const { return 0; }

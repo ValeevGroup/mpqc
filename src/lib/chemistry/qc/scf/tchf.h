@@ -34,6 +34,12 @@ namespace sc {
 
 // //////////////////////////////////////////////////////////////////////////
 
+  /**
+   * Two-determinant wave function for open-shell singlet electronic configurations.
+   * The two unpaired electrons must occupy orbitals of different irreducible representations.
+   * The wave function is a linear combination of
+   * two determinants, c1 |1a1b> + c2 |2a2b>. A more general version of OSSHF.
+   */
 class TCHF: public TCSCF {
   public:
     TCHF(StateIn&);

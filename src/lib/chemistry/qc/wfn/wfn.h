@@ -75,6 +75,8 @@ class Wavefunction: public MolecularEnergy {
     int dk_; // 0, 1, 2, or 3
     Ref<GaussianBasisSet> momentum_basis_;
 
+    mutable double magnetic_moment_; //!< caches the value returned by magnetic_moment()
+
     void init_orthog();
 
     void set_up_charge_types(std::vector<int> &q_pc,
@@ -189,10 +191,20 @@ class Wavefunction: public MolecularEnergy {
                            const RefSCMatrix& orbs,
                            double* orbval = 0);
 
-    /// Returns the charge.
-    double charge();
+    /// Returns the total charge of the system.
+    double total_charge() const;
     /// Returns the number of electrons.
     virtual int nelectron() = 0;
+    /// Computes the S (or J) magnetic moment
+    /// of the target state(s), in units of \f$ \hbar/2 \f$.
+    /// Can be evaluated from density and overlap, as;
+    /// \code
+    ///   (this->alpha_density() * this-> overlap()).trace() -
+    ///   (this->beta_density() * this-> overlap()).trace()
+    /// \endcode
+    /// but derived Wavefunction may have this value as user input.
+    /// @return the magnetic moment
+    virtual double magnetic_moment() const;
 
     /// Returns the SO density.
     virtual RefSymmSCMatrix density() = 0;
@@ -203,8 +215,8 @@ class Wavefunction: public MolecularEnergy {
     /// Returns the natural density (a diagonal matrix).
     virtual RefDiagSCMatrix natural_density();
 
-    /// Return 1 if the alpha density is not equal to the beta density.
-    virtual int spin_polarized() = 0;
+    /// Return 1 if the magnetic moment != 0
+    int spin_polarized() { return magnetic_moment_ == 0.0; }
 
     /// Returns the level the of the Douglas-Kroll approximation.
     int dk() const { return dk_; }

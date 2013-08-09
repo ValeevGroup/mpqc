@@ -25,6 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <numeric>
 #include <math.h>
 #include <limits.h>
 #include <sys/types.h>
@@ -142,7 +143,7 @@ UnrestrictedSCF::UnrestrictedSCF(const Ref<KeyVal>& keyval) :
   fockb_.computed()=0;
 
   // calculate the total nuclear charge
-  double Znuc=molecule()->nuclear_charge();
+  double Znuc=molecule()->total_charge();
 
   // check to see if this is to be a charged molecule
   double charge = keyval->doublevalue("total_charge");
@@ -352,10 +353,12 @@ UnrestrictedSCF::beta_eigenvalues()
   return eigenvalues_beta_.result();
 }
 
-int
-UnrestrictedSCF::spin_polarized()
+double
+UnrestrictedSCF::magnetic_moment() const
 {
-  return 1;
+  const int mm = std::accumulate(nalpha_, nalpha_+nirrep_, 0) -
+                 std::accumulate(nbeta_, nbeta_+nirrep_, 0);
+  return static_cast<double>(mm);
 }
 
 int
@@ -393,7 +396,7 @@ UnrestrictedSCF::print(ostream&o) const
 
   SCF::print(o);
   o << indent << "UnrestrictedSCF Parameters:\n" << incindent
-    << indent << "charge = " << molecule()->nuclear_charge()
+    << indent << "charge = " << molecule()->total_charge()
                                 - tnalpha_ - tnbeta_ << endl
     << indent << "nalpha = " << tnalpha_ << endl
     << indent << "nbeta = " << tnbeta_ << endl

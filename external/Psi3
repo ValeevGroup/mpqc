@@ -121,6 +121,6 @@ if (HAVE_PSI3)
   set(PSI3ROOTDIR "${PSI3_INCLUDE_DIR}/..")
 else()
   message("** Psi3 was not found")
-  set(PSI3_LIBRARY "")
+  set(PSI3_LIBRARIES "")
 endif()
 

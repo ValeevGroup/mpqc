@@ -49,12 +49,13 @@ class CLSCF: public SCF {
 
   public:
     CLSCF(StateIn&);
-    /** The KeyVal constructor:
+    /** The KeyVal constructor accepts all keywords of SCF, plus the following additional keywords:
         <dl>
 
-        <dt><tt>total_charge</tt><dd> This floating point number
-        gives the total charge
-        of the molecule.  The default is 0.
+        <dt><tt>total_charge</tt><dd> Specifies the total charge
+           of the system. This charge is defined without taking into account custom nuclear
+           charges or classical charges, i.e. total charge = sum of atomic numbers of nuclei
+           - number of electrons. The default is 0.
 
         <dt><tt>docc</tt><dd> This vector of integers gives the total
         number of doubly occupied orbitals of each irreducible
@@ -85,8 +86,8 @@ class CLSCF: public SCF {
 
     void symmetry_changed();
     
-    // returns 0
-    int spin_polarized();
+    /// returns 0
+    double magnetic_moment() const;
 
   protected:
     // these are temporary data, so they should not be checkpointed

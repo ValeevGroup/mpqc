@@ -327,8 +327,12 @@ class Molecule: public SavableState
     /// Return true if iatom is a simple point charge
     bool is_Q(int iatom) const;
 
-    /// Returns the total nuclear charge.
-    double nuclear_charge() const;
+    /// Returns the total nuclear charge. If include_q is true, this includes
+    /// classical charges.
+    double total_charge() const;
+
+    /// Returns the sum of atomic numbers of nuclei.
+    int total_Z() const;
 
     /// Sets the PointGroup of the molecule.
     void set_point_group(const Ref<PointGroup>&, double tol=1.0e-7);

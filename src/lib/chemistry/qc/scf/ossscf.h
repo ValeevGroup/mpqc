@@ -34,6 +34,10 @@ namespace sc {
 
 // //////////////////////////////////////////////////////////////////////////
 
+/**
+ * SCF implementation for open-shell singlet electronic configurations.
+ * The two unpaired electrons must occupy orbitals of different irreducible representations.
+ */
 class OSSSCF: public SCF {
  protected:
     int user_occupations_;
@@ -49,6 +53,33 @@ class OSSSCF: public SCF {
 
   public:
     OSSSCF(StateIn&);
+    /**
+     *  The KeyVal constructor accepts all keywords of SCF class, plus the following additional keywords:
+        <dl>
+
+        <dt><tt>total_charge</tt><dd> Specifies the total charge
+           of the system. This charge is defined without taking into account custom nuclear
+           charges or classical charges, i.e. total charge = sum of atomic numbers of nuclei
+           - number of electrons.  The default is 0.
+
+        <dt><tt>socc</tt><dd> This vector of integers gives the total
+        number of singly occupied orbitals of each irreducible
+        representation. Only 2 singly-occupied orbitals in total must be present.
+        By default, the two singly
+        occupied orbitals will be distributed according to orbital
+        eigenvalues.  If socc is given, then docc must be given.
+
+        <dt><tt>docc</tt><dd> This vector of integers gives the total
+        number of doubly occupied orbitals of each irreducible
+        representation.  By default, the \f$n_\mathrm{docc}\f$ singly
+        occupied orbitals will be distributed according to orbital
+        eigenvalues.  If docc is given, then socc must be given.
+
+        <dt><tt>level_shift</tt><dd> This has the same meaning as in the
+        parent class, SCF; however, the default value is 1.0.
+
+        </dl>
+     */
     OSSSCF(const Ref<KeyVal>&);
     ~OSSSCF();
 
@@ -69,7 +100,7 @@ class OSSSCF: public SCF {
 
     void symmetry_changed();
     
-    int spin_polarized();
+    double magnetic_moment() const;
 
   protected:
     // these are temporary data, so they should not be checkpointed

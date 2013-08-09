@@ -229,8 +229,12 @@ namespace sc {
     virtual bool desired_value_accuracy_set_to_default() const;
     /// @sa Wavefunction::nelectron()
     virtual int nelectron() const =0;
-    /// @sa Wavefunction::spin_polarized()
-    virtual bool spin_polarized() const =0;
+    /// @sa Wavefunction::magnetic_moment()
+    virtual double magnetic_moment() const =0;
+    /// @return false if magnetic moment is 0. @sa Wavefunction::spin_polarized()
+    bool spin_polarized() const {
+      return magnetic_moment() != 0.0;
+    }
     /// @sa Wavefunction::dk()
     virtual int dk() const =0;
     /// @sa Wavefunction::momentum_basis()
@@ -386,7 +390,7 @@ namespace sc {
       double desired_value_accuracy() const { return obwfn()->desired_value_accuracy(); }
       bool desired_value_accuracy_set_to_default() const { return obwfn()->desired_value_accuracy_set_to_default(); }
       int nelectron() const { return obwfn()->nelectron(); }
-      bool spin_polarized() const { return obwfn_->spin_polarized(); }
+      double magnetic_moment() const { return obwfn()->magnetic_moment(); }
       bool spin_restricted() const { return spin_restricted_; }
       int dk() const { return obwfn()->dk(); }
       Ref<GaussianBasisSet> momentum_basis() const { return obwfn()->momentum_basis(); }
@@ -486,6 +490,7 @@ namespace sc {
       double desired_value_accuracy() const { return DBL_EPSILON; }
       int nelectron() const { return nelectron_; }
       bool spin_polarized() const { return rdm_[Alpha] != rdm_[Beta]; }
+      double magnetic_moment() const;
       bool spin_restricted() const { return true; }
       /// reimplements RefWavefunction::dk(). Currently only nonrelativistic references are supported.
       int dk() const { return 0; }

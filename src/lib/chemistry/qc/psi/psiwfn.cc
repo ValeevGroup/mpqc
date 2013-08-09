@@ -977,7 +977,7 @@ namespace sc {
     const bool spin_unrestricted = obwfn->spin_unrestricted();
 
     // make sure that the number of electrons is the same
-    const int nuclear_charge = static_cast<int>(molecule()->nuclear_charge());
+    const int nuclear_charge = static_cast<int>(molecule()->total_Z());
     if (charge_ != (nuclear_charge - obwfn->nelectron()) )
       throw InputError("PsiSCF::import_occupations(obwfn) -- number of electrons in obwfn does not match this");
 
@@ -1054,11 +1054,11 @@ namespace sc {
     PsiSCF(keyval) {
 
     multp_ = 1;
-    const int nuclear_charge = static_cast<int>(molecule()->nuclear_charge());
+    const int nuclear_charge = molecule()->total_Z();
     if (docc_.empty()) {
       charge_ = keyval->intvalue("total_charge",KeyValValueint(0));
       if ( (nuclear_charge + charge_) % 2 != 0) {
-        throw InputError("PsiCLHF::PsiCLHF -- odd number of electrons, charge keyword is not given or incorrect");
+        throw InputError("PsiCLHF::PsiCLHF -- odd number of electrons, total_charge keyword is not given or incorrect");
       }
 
       // try guess wavefunction
@@ -1138,7 +1138,7 @@ namespace sc {
          (!docc_.empty() && socc_.empty()) ) {
       throw InputError("PsiHSOSHF::PsiHSOSHF -- must give both docc and socc keywords, or neither");
     }
-    const int nuclear_charge = static_cast<int>(molecule()->nuclear_charge());
+    const int nuclear_charge = molecule()->total_Z();
     if (docc_.empty() || socc_.empty()) {
       charge_ = keyval->intvalue("total_charge",KeyValValueint(0));
       // lowest possible multp is 1 (when # of electrons is even) or 2 (odd)
@@ -1536,7 +1536,7 @@ namespace sc {
          (!docc_.empty() && socc_.empty()) ) {
       throw InputError("PsiUHF::PsiUHF -- must give both docc and socc keywords, or neither");
     }
-    const int nuclear_charge = static_cast<int>(molecule()->nuclear_charge());
+    const int nuclear_charge = molecule()->total_Z();
     if (docc_.empty() || socc_.empty()) {
       charge_ = keyval->intvalue("total_charge",KeyValValueint(0));
       // lowest possible multp is 1 (when # of electrons is even) or 2 (odd)

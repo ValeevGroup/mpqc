@@ -1516,6 +1516,11 @@ Extern_RefWavefunction::init_spaces(const RefSCMatrix& coefs,
 
 }
 
+double
+Extern_RefWavefunction::magnetic_moment() const {
+  assert((rdm_[Alpha] + rdm_[Beta]).trace() == nelectron_);
+  return (rdm_[Alpha] - rdm_[Beta]).trace();
+}
 
 Ref<DensityFittingInfo>
 Extern_RefWavefunction::dfinfo() const {

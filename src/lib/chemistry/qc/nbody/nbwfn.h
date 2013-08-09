@@ -70,9 +70,6 @@ namespace sc {
       const Ref<WavefunctionWorld>& world() const { return world_; }
       const Ref<RefWavefunction>& refwfn() const { return refwfn_; }
 
-      int nelectron();
-      int spin_polarized();
-
       double ref_energy() { return refwfn_->energy(); }
       double corr_energy() {
         return energy() - ref_energy();
@@ -84,9 +81,6 @@ namespace sc {
       /// overloads MolecularEnergy::purge()
       void purge();
       void obsolete();
-
-      void compute() {}
-      RefSymmSCMatrix density() { return RefSymmSCMatrix(); }
 
       void symmetry_changed();
       void set_desired_value_accuracy(double acc);

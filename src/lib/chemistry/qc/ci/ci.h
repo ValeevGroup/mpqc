@@ -24,9 +24,21 @@ namespace sc {
 
           <tr><td><b>%Keyword</b><td><b>Type</b><td><b>Default</b><td><b>Description</b>
 
-          <tr><td><tt>key1</tt><td>string<td>false<td>Keyword1 description
+           <tr><td><tt>total_charge</tt><td>int<td>see description<td>Specifies the total charge
+           of the system. This charge is defined without taking into account custom nuclear
+           charges or classical charges, i.e. total charge = sum of atomic numbers of nuclei
+           - number of electrons.
+           The default is to assume the same charge as that of the RefWavefunction object, i.e.
+           @c molecule()->total_Z()-refwfn()->nelectron()
 
-           <tr><td><tt>key2</tt><td>string<td>false<td>Keyword2 description
+           <tr><td><tt>magnetic_moment</tt><td>int<td>see description<td>The S (or J) magnetic moment
+           of the target state(s), in units of \f$ \hbar/2 \f$.
+           The default is the magnetic moment of the @c reference RefWavefunction.
+
+           <tr><td><tt>core</tt><td>unsigned int<td>0<td>The number of correlation-inactive (core) orbitals.
+
+           <tr><td><tt>orbitals</tt><td>unsigned int<td>see description<td>The number of correlation-active orbitals.
+           The default is all orbitals except core.
 
            </table>
        */
@@ -39,10 +51,12 @@ namespace sc {
 
       void compute();
 
+      int nelectron();
+      double magnetic_moment() const;
       RefSymmSCMatrix density();
-    
+
     private:
-      Ref<KeyVal> kv_;
+      mpqc::ci::Config config_;
       std::vector<double> E_;
       static std::vector<double> compute(const Ref<RefWavefunction> &ref,
                                          const mpqc::ci::Config& config);

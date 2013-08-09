@@ -732,7 +732,7 @@ MPQCIn::write_energy_object(ostream &ostrs,
                             Basis const* basis,
                             int coor, IntegralsFactoryType& ifactory)
 {
-  int nelectron = int(mol_->nuclear_charge()+1e-6) - charge_.val();
+  const int nelectron = mol_->total_Z() - charge_.val();
   if (nelectron < 0) {
       error("charge is impossibly large");
     }

@@ -1,5 +1,5 @@
-#ifndef MPQC_CI_CONFIG_HPP
-#define MPQC_CI_CONFIG_HPP
+#ifndef MPQC_CI_CI_HPP
+#define MPQC_CI_CI_HPP
 
 #include <util/misc/formio.h>
 #include "mpqc/ci/string.hpp"

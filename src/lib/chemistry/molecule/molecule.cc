@@ -438,7 +438,7 @@ Molecule::fragment(int iatom) const
 }
 
 double
-Molecule::nuclear_charge() const
+Molecule::total_charge() const
 {
   double c = 0.0;
   if (include_q_) {
@@ -452,6 +452,15 @@ Molecule::nuclear_charge() const
     }
   }
   return c;
+}
+
+int
+Molecule::total_Z() const {
+  double Z = 0.0;
+  for (int i=0; i<natom(); i++) {
+    Z += atoms_[i].Z();
+  }
+  return Z;
 }
 
 void Molecule::save_data_state(StateOut& so)

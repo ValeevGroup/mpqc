@@ -142,7 +142,7 @@ ChargeDistInt::cloneable() const
 /////////////////////////////////////////////////////////////////////////
 
 static ClassDesc Wavefunction_cd(
-  typeid(Wavefunction),"Wavefunction",8,"public MolecularEnergy",
+  typeid(Wavefunction),"Wavefunction",9,"public MolecularEnergy",
   0, 0, 0);
 
 Wavefunction::Wavefunction(const Ref<KeyVal>&keyval):
@@ -246,6 +246,8 @@ Wavefunction::Wavefunction(const Ref<KeyVal>&keyval):
   aodim_ = pl->AO_basisdim();
   basiskit_ = gbs_->so_matrixkit();
 
+  magnetic_moment_ = aodim_.n() + 1;
+
   // post-construction validation
   {
     if (electric_field().nonnull()) {
@@ -344,6 +346,13 @@ Wavefunction::Wavefunction(StateIn&s):
     dk_ = 0;
   }
 
+  if (s.version(::class_desc<Wavefunction>()) >= 9) {
+    s.get(magnetic_moment_);
+  }
+  else {
+    magnetic_moment_ = aodim_.n() + 1;
+  }
+
   integral_->set_basis(gbs_);
   Ref<PetiteList> pl = integral_->petite_list();
 
@@ -364,6 +373,7 @@ Wavefunction::symmetry_changed()
   basiskit_ = gbs_->so_matrixkit();
 
   orthog_ = 0;
+  magnetic_moment_ = aodim_.n() + 1;
 }
 
 Wavefunction::~Wavefunction()
@@ -401,12 +411,24 @@ Wavefunction::save_data_state(StateOut&s)
 
   s.put(dk_);
   SavableState::save_state(momentum_basis_.pointer(), s);
+
+  s.put(magnetic_moment_);
 }
 
 double
-Wavefunction::charge()
+Wavefunction::total_charge() const
 {
-  return molecule()->nuclear_charge() - nelectron();
+  return molecule()->total_charge() - const_cast<Wavefunction*>(this)->nelectron();
+}
+
+double
+Wavefunction::magnetic_moment() const
+{
+  Wavefunction* this_ptr_nonconst = const_cast<Wavefunction*>(this);
+  if (magnetic_moment_ > aodim_.n()) // magnetic moment greater than the number of states means it has not been computed yet.
+    magnetic_moment_ = (this_ptr_nonconst->alpha_density() * this_ptr_nonconst->overlap()).trace() -
+                       (this_ptr_nonconst->beta_density() * this_ptr_nonconst->overlap()).trace();
+  return magnetic_moment_;
 }
 
 RefSymmSCMatrix
@@ -1615,6 +1637,7 @@ Wavefunction::print(ostream&o) const
     momentum_basis_->print_brief(o);
     ExEnv::out0() << decindent;
   }
+  ExEnv::out0() << indent << "magnetic moment = " << magnetic_moment() << std::endl;
   // the other stuff is a wee bit too big to print
   if (print_nao_ || print_npa_) {
     Timer tim("NAO");
@@ -1666,6 +1689,7 @@ void
 Wavefunction::obsolete()
 {
   orthog_ = 0;
+  magnetic_moment_ = aodim_.n() + 1;
 
   MolecularEnergy::obsolete();
 }

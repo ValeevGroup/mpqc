@@ -77,6 +77,7 @@ namespace sc {
       void compute();
       void print(std::ostream&) const;
 
+      double magnetic_moment() const;
       /// returns true if alpha<->beta swap leaves densities unchanged
       int spin_polarized();
 

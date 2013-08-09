@@ -25,6 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <numeric>
+
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 
@@ -65,9 +67,9 @@ HCoreWfn::HCoreWfn(const Ref<KeyVal>&keyval):
   socc_ = new int[nirrep_];
 
   user_occ_ = 0;
-  total_charge_ = keyval->intvalue("total_charge");
+  total_charge_ = keyval->intvalue("total_charge", KeyValValueint(0));
 
-  int nuclear_charge = int(molecule()->nuclear_charge());
+  const int nuclear_charge = molecule()->total_Z();
   int computed_charge = nuclear_charge;
 
   for (int i=0; i < nirrep_; i++) {
@@ -152,7 +154,7 @@ HCoreWfn::oso_eigenvectors()
     eigenvalues_.computed() = 1;
 
     if (!user_occ_) {
-      int nelectron = int(molecule()->nuclear_charge()) - total_charge_;
+      const int nelectron = molecule()->total_Z() - total_charge_;
       fill_occ(val, nelectron, docc_, socc_);
 
       ExEnv::out0() << indent << "docc = [";
@@ -240,10 +242,12 @@ HCoreWfn::occupation(int ir, int i)
     return 0.0;
 }
 
-int
-HCoreWfn::spin_polarized()
+double
+HCoreWfn::magnetic_moment() const
 {
-  return 0;
+  const int nirrep = molecule()->point_group()->order();
+  const int mm = std::accumulate(socc_, socc_ + nirrep, 0);
+  return static_cast<double>(mm);
 }
 
 int

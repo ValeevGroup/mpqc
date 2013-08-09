@@ -25,6 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <numeric>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 
@@ -65,9 +66,9 @@ ExtendedHuckelWfn::ExtendedHuckelWfn(const Ref<KeyVal>&keyval):
   socc_ = new int[nirrep_];
 
   user_occ_ = 0;
-  total_charge_ = keyval->intvalue("total_charge");
+  total_charge_ = keyval->intvalue("total_charge", KeyValValueint(0));
 
-  int nuclear_charge = int(molecule()->nuclear_charge());
+  const int nuclear_charge = molecule()->total_Z();
   int computed_charge = nuclear_charge;
 
   for (int i=0; i < nirrep_; i++) {
@@ -208,7 +209,7 @@ ExtendedHuckelWfn::oso_eigenvectors()
     eigenvalues_.computed() = 1;
 
     if (!user_occ_) {
-      int nelectron = int(molecule()->nuclear_charge()) - total_charge_;
+      const int nelectron = molecule()->total_Z() - total_charge_;
       fill_occ(val, nelectron, docc_, socc_);
 
       ExEnv::out0() << indent << "docc = [";
@@ -302,10 +303,11 @@ ExtendedHuckelWfn::occupation(int ir, int i)
     return 0.0;
 }
 
-int
-ExtendedHuckelWfn::spin_polarized()
+double
+ExtendedHuckelWfn::magnetic_moment() const
 {
-  return 0;
+  const int magmom = std::accumulate(socc_, socc_ + nirrep_, 0);
+  return static_cast<double>(magmom);
 }
 
 int

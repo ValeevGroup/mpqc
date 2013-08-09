@@ -122,8 +122,7 @@ class UnrestrictedSCF: public SCF {
     double alpha_occupation(int, int);
     double beta_occupation(int, int);
 
-    // both return 1
-    int spin_polarized();
+    double magnetic_moment() const;
     int spin_unrestricted();
 
     void print(std::ostream&o=ExEnv::out0()) const;

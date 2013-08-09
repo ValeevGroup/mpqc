@@ -26,6 +26,7 @@
 //
 
 #include <math.h>
+#include <numeric>
 
 #include <util/misc/regtime.h>
 #include <util/misc/formio.h>
@@ -154,19 +155,22 @@ HSOSSCF::HSOSSCF(const Ref<KeyVal>& keyval) :
   beta_semican_evecs_.computed()=0;
 
   // calculate the total nuclear charge
-  double Znuc=molecule()->nuclear_charge();
+  const int Znuc=molecule()->total_Z();
 
   // check to see if this is to be a charged molecule
-  double charge = keyval->doublevalue("total_charge");
-  int nelectrons = (int)(Znuc-charge+1.0e-4);
+  const int charge = keyval->intvalue("total_charge", KeyValValueint(0));
+  const int nelectrons = Znuc-charge;
 
-  bool multiplicity_given = false;
+  bool magnetic_moment_given = false;
   // first let's try to figure out how many open shells there are
   if (keyval->exists("nsocc")) {
     tnsocc_ = keyval->intvalue("nsocc");
-  } else if (keyval->exists("multiplicity")) {
+  } else if (keyval->exists("magnetic_moment")) {
+    tnsocc_ = keyval->intvalue("magnetic_moment");
+    magnetic_moment_given = true;
+  } else if (keyval->exists("multiplicity")) { // obsolete
     tnsocc_ = keyval->intvalue("multiplicity")-1;
-    multiplicity_given = true;
+    magnetic_moment_given = true;
   } else {
     // if there's an odd number of electrons, then do a doublet, otherwise
     // do a triplet
@@ -217,8 +221,8 @@ HSOSSCF::HSOSSCF(const Ref<KeyVal>& keyval) :
     initial_ndocc_=0;
     initial_nsocc_=0;
     user_occupations_=0;
-    // second argument: allow to change multiplicity?
-    set_occupations(0, multiplicity_given? false : true);
+    // second argument: allow to change magnetic moment?
+    set_occupations(0, magnetic_moment_given? false : true);
   }
 
   ExEnv::out0() << indent << "docc = [";
@@ -334,10 +338,11 @@ HSOSSCF::fock(int n)
     return op_fock_.result();
 }
 
-int
-HSOSSCF::spin_polarized()
+double
+HSOSSCF::magnetic_moment() const
 {
-  return 1;
+  const int mm = std::accumulate(nsocc_, nsocc_+nirrep_, 0);
+  return static_cast<double>(mm);
 }
 
 void
@@ -347,7 +352,7 @@ HSOSSCF::print(ostream&o) const
 
   SCF::print(o);
   o << indent << "HSOSSCF Parameters:\n" << incindent
-    << indent << "charge = " << molecule()->nuclear_charge()
+    << indent << "charge = " << molecule()->total_charge()
                                 - 2*tndocc_ - tnsocc_ << endl
     << indent << "ndocc = " << tndocc_ << endl
     << indent << "nsocc = " << tnsocc_ << endl
@@ -367,12 +372,12 @@ HSOSSCF::print(ostream&o) const
 void
 HSOSSCF::set_occupations(const RefDiagSCMatrix& ev)
 {
-  // set_occupations preserves multiplicity
+  // set_occupations preserves magnetic_moment
   set_occupations(ev,false);
 }
 
 void
-HSOSSCF::set_occupations(const RefDiagSCMatrix& ev, bool can_change_multiplicity)
+HSOSSCF::set_occupations(const RefDiagSCMatrix& ev, bool can_change_magnetic_moment)
 {
   if (user_occupations_ || (initial_ndocc_ && initial_nsocc_ && ev.null())) {
     if (form_occupations(ndocc_, initial_ndocc_)
@@ -401,9 +406,9 @@ HSOSSCF::set_occupations(const RefDiagSCMatrix& ev, bool can_change_multiplicity
   //
   // populate orbitals
   //
-  // if can change the multiplicity, use HundsFEMOSeeker to get the FEMO with maximum multiplicity
+  // if can change the magnetic moment, use HundsFEMOSeeker to get the FEMO with maximum magnetic moment
   Ref<FEMO> femo;
-  if (can_change_multiplicity) {
+  if (can_change_magnetic_moment) {
     //                            # electron,       Etol, allow closed-shell?
     HundsFEMOSeeker femoseeker(tndocc_*2 + tnsocc_, HundsFEMOSeeker::tolerance, false,
                                evals);

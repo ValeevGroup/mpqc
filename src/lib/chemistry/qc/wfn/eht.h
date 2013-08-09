@@ -32,7 +32,7 @@
 
 namespace sc {
 
-/* This computes the extended Huckel energy and wavefunction.  It is useful
+/** This computes the extended Huckel energy and wavefunction.  It is useful
    as a quick initial guess for other one body wavefunctions.  */
 class ExtendedHuckelWfn: public OneBodyWavefunction {
   private:
@@ -52,6 +52,26 @@ class ExtendedHuckelWfn: public OneBodyWavefunction {
 
   public:
     ExtendedHuckelWfn(StateIn&);
+    /**
+     *  The KeyVal constructor accepts all keywords of OneBodyWavefunction class, plus the following additional keywords:
+        <dl>
+
+        <dt><tt>total_charge</tt><dd> Specifies the total charge
+           of the system. This charge is defined without taking into account custom nuclear
+           charges or classical charges, i.e. total charge = sum of atomic numbers of nuclei
+           - number of electrons.  The default is 0.
+
+        <dt><tt>socc</tt><dd> This vector of integers gives the total
+        number of singly occupied orbitals of each irreducible
+        representation. All electrons are assumed to have m_s = +1/2.
+        If socc is given, then docc must be given.
+
+        <dt><tt>docc</tt><dd> This vector of integers gives the total
+        number of doubly occupied orbitals of each irreducible
+        representation.  If docc is given, then socc must be given.
+
+        </dl>
+     */
     ExtendedHuckelWfn(const Ref<KeyVal>&);
     ~ExtendedHuckelWfn();
 
@@ -62,7 +82,7 @@ class ExtendedHuckelWfn: public OneBodyWavefunction {
     RefSCMatrix oso_eigenvectors();
     RefDiagSCMatrix eigenvalues();
     RefSymmSCMatrix density();
-    int spin_polarized();
+    double magnetic_moment() const;
     int spin_unrestricted();
 
     int value_implemented() const;

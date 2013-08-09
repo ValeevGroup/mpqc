@@ -15,6 +15,7 @@ namespace sc {
     class_<Wavefunction, Ref<Wavefunction>, bases<MolecularEnergy>, boost::noncopyable >
       ("Wavefunction", no_init)
       .def("nelectron", &Wavefunction::nelectron)
+      .def("magnetic_moment", &Wavefunction::magnetic_moment)
       ;
     implicitly_convertible<Ref<Wavefunction>, Ref<MolecularEnergy> >();
 

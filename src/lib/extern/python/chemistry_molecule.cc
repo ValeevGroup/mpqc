@@ -32,7 +32,8 @@ namespace sc {
       .def("atom_at_position",&Molecule::atom_at_position)
       .def("atom_label_to_index",&Molecule::atom_label_to_index)
       .def("charge",&Molecule::charge)
-      .def("nuclear_charge",&Molecule::nuclear_charge)
+      .def("total_charge",&Molecule::total_charge)
+      .def("total_Z",&Molecule::total_Z)
       .def("nuclear_repulsion_energy",&Molecule::nuclear_repulsion_energy)
       .def("geometry_units",&Molecule::geometry_units)
       ;

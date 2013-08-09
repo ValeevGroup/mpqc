@@ -113,14 +113,6 @@ void ManyBodyWavefunction::symmetry_changed() {
   //refwfn_->symmetry_changed();
 }
 
-int sc::ManyBodyWavefunction::nelectron() {
-  return refwfn_->nelectron();
-}
-
-int sc::ManyBodyWavefunction::spin_polarized() {
-  return refwfn_->spin_polarized();
-}
-
 void sc::ManyBodyWavefunction::set_desired_value_accuracy(double acc) {
   Function::set_desired_value_accuracy(acc);
   refwfn_->set_desired_value_accuracy(acc * ref_to_corr_acc());

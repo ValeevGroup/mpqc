@@ -844,6 +844,11 @@ namespace sc {
     return twopdm_sf_occ_;
   }
 
+  double
+  PsiRASCI::magnetic_moment() const {
+    return static_cast<double>(multiplicity_ - 1);
+  }
+
   int
   PsiRASCI::spin_polarized() {
     // this is not correct -- Ms = 0 nonsinglet calculations are not spin-polarized, but this returns true

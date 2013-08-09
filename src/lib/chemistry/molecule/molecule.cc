@@ -458,7 +458,8 @@ int
 Molecule::total_Z() const {
   double Z = 0.0;
   for (int i=0; i<natom(); i++) {
-    Z += atoms_[i].Z();
+    const double Z_a = atoms_[i].Z();
+    Z += (Z_a == q_Z_) ? 0.0 : Z_a;
   }
   return Z;
 }

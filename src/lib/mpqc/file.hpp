@@ -24,6 +24,7 @@
 #include "mpqc/assert.hpp"
 #include "mpqc/utility/foreach.hpp"
 #include "mpqc/utility/timer.hpp"
+#include "mpqc/utility/mutex.hpp"
 
 #include <util/misc/exenv.h>
 
@@ -593,6 +594,7 @@ namespace mpqc {
                 (parent.id(), name.c_str(), type, fspace, dcpl);
             MPQC_FILE_VERIFY(id);
             MPQC_FILE_VERIFY(H5Pclose(dcpl));
+            _threadsafe.~threadsafe();
             return Object(parent, id, &Dataset::close, false);
         }
 

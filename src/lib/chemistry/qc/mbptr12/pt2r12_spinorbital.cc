@@ -1069,9 +1069,9 @@ double SpinOrbitalPT2R12::compute_energy(const RefSCMatrix &hmat,
 }
 
 
-int SpinOrbitalPT2R12::spin_polarized()
+double SpinOrbitalPT2R12::magnetic_moment() const
 {
-  return r12world()->refwfn()->spin_polarized();
+  return r12world()->refwfn()->magnetic_moment();
 }
 
 

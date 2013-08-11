@@ -76,7 +76,7 @@ class CCR12: public Wavefunction {
     const Ref<R12IntEval>& r12eval() const { return r12eval_; }
     Ref<SCF> ref() { return reference_; }
 
-    int spin_polarized() { return ccr12_info_->restricted(); };
+    double magnetic_moment() const { return ccr12_info_->magnetic_moment(); };
 
     RefSymmSCMatrix density() { return 0; };
     int nelectron() { return ccr12_info_->naoa()+ccr12_info_->naob(); };

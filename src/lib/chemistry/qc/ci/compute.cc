@@ -27,16 +27,22 @@ std::vector<double> sc::CI::compute(const Ref<RefWavefunction> &wfn,
 
   // compute molecular integrals
   {
-    range mo(config.core, config.core + config.orbitals);
+    range act_orbs(config.core, config.core + config.orbitals);
     range ao(0, C.cols());
     
-    assert(mo.size() <= C.rows());
+    assert(act_orbs.size() <= C.rows());
     
     const auto &basis = wfn->basis();
     
-    mpqc::ci::integrals(basis, C(mo, ao), wfn->integral()->hcore(), h);
-    mpqc::ci::integrals(basis, C(mo, ao), wfn->integral()->electron_repulsion(), V);
+    mpqc::ci::integrals(basis, C(act_orbs, ao), wfn->integral()->hcore(), h);
+    mpqc::ci::integrals(basis, C(act_orbs, ao), wfn->integral()->electron_repulsion(), V);
   }
+
+  // h needs to include core contributions. For closed-shell case:
+  // h'(p,q) = h(p,q) + \sum_i 2 V(p,q;i,i) - V(p,i;q,i)
+
+  // we also need core contribution to the energy
+  // E = \sum_i 2 h(i,i) + \sum_i<j 4 V(i,i;j,j) - 2 V(i,j;i,j)
 
   mpqc::MPI::Comm comm = mpqc::MPI::Comm::World();
 
@@ -49,7 +55,7 @@ std::vector<double> sc::CI::compute(const Ref<RefWavefunction> &wfn,
 
   std::vector<double> E;
 
-  if (config.level > 0) {
+  if (config.rank > 0) {
       mpqc::ci::CI<mpqc::ci::Truncated> ci(config, comm, file->group());
       E = mpqc::ci::direct(ci, h, V);
   } else {

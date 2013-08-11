@@ -216,7 +216,7 @@ class Wavefunction: public MolecularEnergy {
     virtual RefDiagSCMatrix natural_density();
 
     /// Return 1 if the magnetic moment != 0
-    int spin_polarized() { return magnetic_moment_ == 0.0; }
+    int spin_polarized() { return magnetic_moment() != 0.0; }
 
     /// Returns the level the of the Douglas-Kroll approximation.
     int dk() const { return dk_; }

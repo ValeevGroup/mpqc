@@ -1399,9 +1399,9 @@ void PT2R12::compute()
   set_energy(energy);
 }
 
-int PT2R12::spin_polarized()
+double PT2R12::magnetic_moment() const
 {
-  return r12world()->refwfn()->spin_polarized();
+  return r12world()->refwfn()->magnetic_moment();
 }
 
 double PT2R12::cabs_singles_Complete()

@@ -52,6 +52,12 @@ CI::CI(const Ref<KeyVal> &kv)
   {
     typedef KeyValValueint Int;
 
+    /// only SD_RefWavefunction is tested for now
+    Ref<SD_RefWavefunction> sd_refwfn; sd_refwfn << refwfn();
+    if (sd_refwfn.null())
+      throw InputError("only SD_RefWavefunction has been tested with CI",
+                       __FILE__, __LINE__, "reference");
+
     const int charge = kv->intvalue("total_charge", Int(molecule()->total_Z() - refwfn()->nelectron()));
     const int nelectron = molecule()->total_Z() - charge;
     const int magmom = kv->intvalue("magnetic_moment", Int(refwfn()->magnetic_moment()));
@@ -59,13 +65,17 @@ CI::CI(const Ref<KeyVal> &kv)
       throw InputError("charge and magnetic_moment inconsistent",
                        __FILE__, __LINE__);
 
-    config_.core = kv->intvalue("core", Int(0));
-    config_.orbitals = kv->intvalue("orbitals", Int(refwfn()->basis()->nbasis() - config_.core));
+    config_.core = refwfn()->occ()->rank() - refwfn()->occ_act()->rank();
+    config_.orbitals = refwfn()->occ_act()->rank() + refwfn()->uocc_act()->rank();
 
     config_.alpha = (nelectron + magmom ) / 2;
     config_.beta =  (nelectron - magmom ) / 2;
 
-    config_.level = kv->intvalue("level", Int(0));
+    config_.rank = kv->intvalue("max_ex_rank", Int(0));
+    if (config_.rank != 0)
+      throw FeatureNotImplemented("only max_ex_rank=0 currently supported (full CI)",
+                                  __FILE__, __LINE__);
+
     config_.max = kv->intvalue("max", Int(30));
     config_.collapse = kv->intvalue("collapse", Int(config_.collapse));
     config_.cutoff = kv->intvalue("cutoff", Int(config_.cutoff));

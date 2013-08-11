@@ -13,7 +13,7 @@ namespace ci {
     struct Config {
         size_t core, orbitals;
         size_t alpha, beta;
-        size_t level;
+        size_t rank;
         size_t roots;
         size_t max;
         size_t collapse;
@@ -26,7 +26,7 @@ namespace ci {
             orbitals = 0;
             alpha = 0;
             beta = 0;
-            level = 0;
+            rank = 0;
             roots = 1;
             max = 10;
             collapse = 0;
@@ -125,13 +125,13 @@ namespace ci {
     struct CI<Truncated> : CI<> {
         CI(const Config &config, MPI::Comm comm, File::Group io)
             : CI<>(config, comm, io,
-                   ci::strings(config.orbitals, config.alpha, config.level),
-                   ci::strings(config.orbitals, config.alpha, config.level)),
+                   ci::strings(config.orbitals, config.alpha, config.rank),
+                   ci::strings(config.orbitals, config.alpha, config.rank)),
               ref_(CI<>::alpha[0])
         {}
         bool test(const String &ex) const {
             //return 0;
-            if (String::difference(ex, ref_) > this->level) return false;
+            if (String::difference(ex, ref_) > this->rank) return false;
             return true;
         }
     private:

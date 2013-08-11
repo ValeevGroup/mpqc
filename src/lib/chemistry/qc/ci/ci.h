@@ -35,10 +35,9 @@ namespace sc {
            of the target state(s), in units of \f$ \hbar/2 \f$.
            The default is the magnetic moment of the @c reference RefWavefunction.
 
-           <tr><td><tt>core</tt><td>unsigned int<td>0<td>The number of correlation-inactive (core) orbitals.
-
-           <tr><td><tt>orbitals</tt><td>unsigned int<td>see description<td>The number of correlation-active orbitals.
-           The default is all orbitals except core.
+           <tr><td><tt>max_ex_rank</tt><td>unsigned int<td>0<td>The maximum excitation rank. The default
+           is zero, which denotes full CI. This is equivalent to setting rank=number of electrons
+           in active orbitals.
 
            </table>
        */

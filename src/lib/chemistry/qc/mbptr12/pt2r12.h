@@ -74,7 +74,7 @@ namespace sc {
       void compute();
       void print(std::ostream& os =ExEnv::out0()) const;
       RefSymmSCMatrix density();
-      int spin_polarized();
+      double magnetic_moment() const;
       int value_implemented() const { return 1; }
       void set_desired_value_accuracy(double acc);
 
@@ -249,7 +249,7 @@ namespace sc {
       void compute();
       void print(std::ostream& os =ExEnv::out0()) const;
       RefSymmSCMatrix density();
-      int spin_polarized();
+      double magnetic_moment() const;
       int value_implemented() const { return 1; }
       void set_desired_value_accuracy(double acc);
 

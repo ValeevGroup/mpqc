@@ -198,6 +198,7 @@ class CCR12_Info : virtual public RefCount {
 
     void print(std::ostream&);
 
+    double magnetic_moment() const { return ref_->magnetic_moment(); }
 
     /// constants used in initialization
     const Ref<R12IntEval>& r12eval() const { return r12int_eval_; }

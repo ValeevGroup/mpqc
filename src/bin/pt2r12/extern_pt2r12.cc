@@ -169,9 +169,9 @@ RefSymmSCMatrix ExternPT2R12::density()
                               __FILE__, __LINE__, this->class_desc());
 }
 
-int ExternPT2R12::spin_polarized()
+double ExternPT2R12::magnetic_moment() const
 {
-  return pt2r12_->spin_polarized();
+  return pt2r12_->magnetic_moment();
 }
 
 void ExternPT2R12::set_desired_value_accuracy(double acc) {

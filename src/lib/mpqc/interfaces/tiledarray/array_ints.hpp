@@ -27,29 +27,20 @@ namespace mpqc {
         return blocking;
     }
 
-    template<std::size_t N>
-    TA::TiledRange
-    make_TiledRange(std::array<tiling::TRange1, N> &blocking){
-        return TA::TiledRange(blocking.begin(), blocking.end());
-    }
-
     template <typename IntEngPool>
     TA::Array<double, EngineTypeTraits<typename IntEngPool::engine_type>::ncenters >
     Integrals(madness::World &world, const IntEngPool &pool,
               const TRange1Gen &trange1gen){
 
         typedef typename IntEngPool::engine_type engine_type;
-        const size_t engine_ncenters = EngineTypeTraits<engine_type>::ncenters;
-        /*
-        static_assert(N == engine_ncenters,
-                      "Rank of Tensor does not corresond "
-                      "to Rank of this type of integral Engine");
-                      */
+        const size_t rank = EngineTypeTraits<engine_type>::ncenters;
 
-        std::array<tiling::TRange1, engine_ncenters> blocking =
-                        get_blocking<engine_ncenters>(pool, trange1gen);
+        std::array<tiling::TRange1, rank> blocking =
+                        get_blocking<rank>(pool, trange1gen);
 
-        TA::Array<double,engine_ncenters> array(world, make_TiledRange(blocking));
+        TA::TiledRange trange(blocking.begin(), blocking.end());
+
+        TA::Array<double, rank> array(world, trange);
 
         fill_tiles(array, pool);
 

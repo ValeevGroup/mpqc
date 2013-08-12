@@ -51,15 +51,17 @@ namespace File {
 
     /// HDF5 may not be threadsafe, in that case mpqc::mutex::global is used
     struct threadsafe : boost::noncopyable {
-#ifndef H5_HAVE_THREADSAFE
+        //#ifndef H5_HAVE_THREADSAFE
         threadsafe() {
             // use global lock since HDF5 may call MPI routines
-            mutex::global::lock();
+            lock();
         }
         ~threadsafe() {
-            mutex::global::unlock();
+            unlock();
         }
-#endif
+        static void lock() { mutex::global::lock(); }
+        static void unlock() { mutex::global::unlock(); }
+        //#endif
     };
 
 #define MPQC_FILE_THREADSAFE mpqc::detail::File::threadsafe _threadsafe
@@ -569,32 +571,34 @@ namespace mpqc {
                              const Extents &extents,
                              const std::vector<size_t> &chunk) {
 
-            MPQC_FILE_THREADSAFE;
+            hid_t id;
+            // Object constructor may also obtain mutex
+            // make sure lock is released before constructing Object
+            {
+                MPQC_FILE_THREADSAFE;
+                std::vector<hsize_t> dims;
+                foreach (auto e, extents) {
+                    dims.push_back(extent(e).size());
+                }
+                std::reverse(dims.begin(), dims.end());
 
-            std::vector<hsize_t> dims;
-            foreach (auto e, extents) {
-                dims.push_back(extent(e).size());
-            }
-            std::reverse(dims.begin(), dims.end());
-
-            hid_t fspace = H5Screate_simple(dims.size(), &dims[0], NULL);
-            hid_t type = detail::File::h5t<T>();
-            hid_t dcpl = H5Pcreate(H5P_DATASET_CREATE);
-            if (chunk.size()) {
-                assert(chunk.size() == dims.size());
-                std::vector<hsize_t> block(chunk.rbegin(), chunk.rend());
-                H5Pset_chunk(dcpl, block.size(), &block[0]);
-            }
-            //printf("parent.id() = %i, name=%s\n", parent.id(), name.c_str());
+                hid_t fspace = H5Screate_simple(dims.size(), &dims[0], NULL);
+                hid_t type = detail::File::h5t<T>();
+                hid_t dcpl = H5Pcreate(H5P_DATASET_CREATE);
+                if (chunk.size()) {
+                    assert(chunk.size() == dims.size());
+                    std::vector<hsize_t> block(chunk.rbegin(), chunk.rend());
+                    H5Pset_chunk(dcpl, block.size(), &block[0]);
+                }
+                //printf("parent.id() = %i, name=%s\n", parent.id(), name.c_str());
 #if H5_VERS_MAJOR == 1 && H5_VERS_MINOR < 8
-            hid_t id = H5Dcreate
+                id = H5Dcreate(parent.id(), name.c_str(), type, fspace, dcpl);
 #else
-                hid_t id = H5Dcreate1
+                id = H5Dcreate1(parent.id(), name.c_str(), type, fspace, dcpl);
 #endif
-                (parent.id(), name.c_str(), type, fspace, dcpl);
-            MPQC_FILE_VERIFY(id);
-            MPQC_FILE_VERIFY(H5Pclose(dcpl));
-            _threadsafe.~threadsafe();
+                MPQC_FILE_VERIFY(id);
+                MPQC_FILE_VERIFY(H5Pclose(dcpl));
+            }
             return Object(parent, id, &Dataset::close, false);
         }
 

@@ -79,6 +79,23 @@ PsiSCF_RefWavefunction::save_data_state(StateOut& so) {
   so.put(nfzv_);
 }
 
+void
+PsiSCF_RefWavefunction::print(std::ostream&o) const {
+  using std::endl;
+  o << indent << "PsiSCF_RefWavefunction:" << endl;
+  o << incindent;
+    o << indent << "spin_restricted = " << (spin_restricted_ ? "true" : "false") << endl;
+    o << indent << "# frozen core   = " << nfzc_ << endl;
+    o << indent << "# frozen virt   = " << nfzv_ << endl;
+    if (vir_space_.nonnull()) {
+      o << indent << "vir_basis:" << endl;
+      vir_space_->basis()->print(o);
+      o << endl;
+    }
+    scf_->print(o);
+  o << decindent;
+}
+
 namespace {
   SpinCase1 valid_spincase(SpinCase1 s) {
     return s == AnySpinCase1 ? Alpha : s;
@@ -350,6 +367,19 @@ PsiRASCI_RefWavefunction::PsiRASCI_RefWavefunction(StateIn& si) : RefWavefunctio
 }
 
 PsiRASCI_RefWavefunction::~PsiRASCI_RefWavefunction() {
+}
+
+void
+PsiRASCI_RefWavefunction::print(std::ostream&o) const {
+  using std::endl;
+  o << indent << "PsiRASCI_RefWavefunction:" << endl;
+  o << incindent;
+    o << indent << "spin_restricted = " << (spin_restricted_ ? "true" : "false") << endl;
+    o << indent << "omit_uocc       = " << (omit_uocc_ ? "true" : "false") << endl;
+    o << indent << "# frozen core   = " << nfzc_ << endl;
+    o << indent << "# frozen virt   = " << nfzv_ << endl;
+    wfn_->print(o);
+  o << decindent;
 }
 
 void

@@ -75,8 +75,7 @@ namespace sc {
         return energy() - ref_energy();
       }
 
-      /// prints out the object
-      void print(std::ostream& o) const;
+      void print(std::ostream& o=ExEnv::out0()) const;
 
       /// overloads MolecularEnergy::purge()
       void purge();

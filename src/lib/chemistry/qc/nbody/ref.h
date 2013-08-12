@@ -280,6 +280,8 @@ namespace sc {
     /// Return the space of active unoccupied (virtual) MOs of the given spin
     const Ref<OrbitalSpace>& uocc_act(SpinCase1 spin = AnySpinCase1) const;
 
+    virtual void print(std::ostream& os = ExEnv::out0()) const =0;
+
     protected:
 
     mutable Ref<PopulatedOrbitalSpace> spinspaces_[NSpinCases1];
@@ -374,6 +376,8 @@ namespace sc {
       SD_RefWavefunction(StateIn&);
       ~SD_RefWavefunction();
       void save_data_state(StateOut&);
+
+      void print(std::ostream& os = ExEnv::out0()) const;
 
       void purge();
 
@@ -479,6 +483,8 @@ namespace sc {
       void save_data_state(StateOut&);
       RefSymmSCMatrix ordm(SpinCase1 spin) const { return rdm_[spin]; }
 
+      void print(std::ostream& os = ExEnv::out0()) const;
+
       void obsolete() {
 //        throw FeatureNotImplemented("cannot obsolete Extern_R12RefWavefunction",
 //                                                    __FILE__, __LINE__);
@@ -507,7 +513,7 @@ namespace sc {
       unsigned int nfzv_;
       unsigned int nelectron_;
       bool omit_uocc_;
-      bool ordm_idempotent_;
+      mutable bool ordm_idempotent_;
 
 
       void init(const RefSCMatrix& orbs,

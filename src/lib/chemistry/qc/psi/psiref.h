@@ -65,6 +65,8 @@ namespace sc {
         else return this->basis();
       }
 
+      void print(std::ostream& os = ExEnv::out0()) const;
+
       bool sdref() const { return true; }
       double energy() { return scf()->energy(); }
       double actual_value_accuracy () const { return scf()->actual_value_accuracy(); }
@@ -118,6 +120,8 @@ namespace sc {
       ~PsiRASCI_RefWavefunction();
       void save_data_state(StateOut&);
       const Ref<PsiRASCI>& wfn() const { return wfn_; }
+
+      void print(std::ostream& os = ExEnv::out0()) const;
 
       bool sdref() const { return false; }
       double energy() { return wfn()->energy(); }

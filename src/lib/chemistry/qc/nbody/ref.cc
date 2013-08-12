@@ -406,8 +406,7 @@ static ClassDesc RefWavefunction_cd(
   0, 0, 0);
 
 RefWavefunction::RefWavefunction(const Ref<KeyVal>& kv) :
-    force_average_AB_rdm1_(false),
-    omit_uocc_(true)
+    force_average_AB_rdm1_(false)
 {
   world_ << require_dynamic_cast<WavefunctionWorld*>(
       kv->describedclassvalue("world").pointer(),
@@ -443,7 +442,7 @@ RefWavefunction::RefWavefunction(const Ref<KeyVal>& kv) :
 RefWavefunction::RefWavefunction(const Ref<WavefunctionWorld>& world,
                                  const Ref<GaussianBasisSet>& basis,
                                  const Ref<Integral>& integral) :
-  world_(world), basis_(basis),  integral_(integral->clone()), omit_uocc_(true)
+  world_(world), basis_(basis),  integral_(integral->clone())
 {
   for(int spin=0; spin<NSpinCases1; ++spin) spinspaces_[spin] = 0;
   integral_->set_basis(basis, basis, basis, basis);
@@ -461,7 +460,6 @@ RefWavefunction::RefWavefunction(StateIn& si) :
     throw InputError("default Integral is incompatible with the Integral used to produce this object",
                      __FILE__,__LINE__);
   integral_->set_basis(basis_);
-  si.get(omit_uocc_);
   si.get(use_world_dfinfo_);
   si.get(force_average_AB_rdm1_);
 
@@ -479,7 +477,6 @@ RefWavefunction::save_data_state(StateOut& so)
   SavableState::save_state(world_.pointer(),so);
   SavableState::save_state(basis_.pointer(),so);
   so.put(static_cast<int>(integral_->cartesian_ordering()));
-  so.put(omit_uocc_);
   so.put(use_world_dfinfo_);
   so.put(force_average_AB_rdm1_);
 
@@ -794,6 +791,7 @@ SD_RefWavefunction::SD_RefWavefunction(StateIn& si) : RefWavefunction(si) {
   si.get(spin_restricted_);
   si.get(nfzc_);
   si.get(nfzv_);
+  si.get(occ_orbitals_);
 }
 
 SD_RefWavefunction::~SD_RefWavefunction() {
@@ -807,6 +805,24 @@ SD_RefWavefunction::save_data_state(StateOut& so) {
   so.put(spin_restricted_);
   so.put(nfzc_);
   so.put(nfzv_);
+  so.put(occ_orbitals_);
+}
+
+void
+SD_RefWavefunction::print(std::ostream&o) const {
+  using std::endl;
+  o << indent << "SD_RefWavefunction:" << endl;
+  o << incindent;
+    o << indent << "spin_restricted = " << (spin_restricted_ ? "true" : "false") << endl;
+    o << indent << "# frozen core   = " << nfzc_ << endl;
+    o << indent << "# frozen virt   = " << nfzv_ << endl;
+    o << indent << "occ_orbitals    = " << occ_orbitals_ << endl;
+    if (vir_space_.nonnull()) {
+      o << indent << "vir_basis:" << endl;
+      vir_space_->basis()->print(o);
+      o << endl;
+    }
+  o << decindent;
 }
 
 void
@@ -1242,6 +1258,17 @@ Extern_RefWavefunction::save_data_state(StateOut& so) {
   so.put(nfzv_);
   so.put(omit_uocc_);
   so.put(ordm_idempotent_);
+}
+
+void
+Extern_RefWavefunction::print(std::ostream&o) const {
+  using std::endl;
+  o << indent << "Extern_RefWavefunction:" << endl;
+  o << incindent;
+    o << indent << "omit_uocc       = " << (omit_uocc_ ? "true" : "false") << endl;
+    o << indent << "# frozen core   = " << nfzc_ << endl;
+    o << indent << "# frozen virt   = " << nfzv_ << endl;
+  o << decindent;
 }
 
 bool

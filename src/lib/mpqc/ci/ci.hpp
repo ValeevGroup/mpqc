@@ -12,12 +12,13 @@ namespace ci {
     
     struct Config {
         size_t core, orbitals;
-        size_t alpha, beta;
+        size_t alpha, beta; //!< number of electrons of each spin in CI
         size_t rank;
         size_t roots;
         size_t max;
         size_t collapse;
         double e_ref;
+        mutable double e_core;
         double convergence;
         double cutoff;
         size_t block, block2;
@@ -30,11 +31,16 @@ namespace ci {
             roots = 1;
             max = 10;
             collapse = 0;
-            e_ref = 0;
+            e_ref = 0.0;
+            e_core = 0.0;
             convergence = 1e-10;
             cutoff = convergence;
             block = 128;
             block2 = 128;
+        }
+        void print(std::ostream& o = sc::ExEnv::out0()) const {
+          o << sc::indent << "rank       = " << rank << std::endl;
+          o << sc::indent << "# of roots = " << roots << std::endl;
         }
     };
 

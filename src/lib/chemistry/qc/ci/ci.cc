@@ -59,15 +59,18 @@ CI::CI(const Ref<KeyVal> &kv)
                        __FILE__, __LINE__, "reference");
 
     const int charge = kv->intvalue("total_charge", Int(molecule()->total_Z() - refwfn()->nelectron()));
-    const int nelectron = molecule()->total_Z() - charge;
     const int magmom = kv->intvalue("magnetic_moment", Int(refwfn()->magnetic_moment()));
+    {
+    const int nelectron = molecule()->total_Z() - charge;
     if (nelectron%2 != magmom%2)
       throw InputError("charge and magnetic_moment inconsistent",
                        __FILE__, __LINE__);
+    }
 
     config_.core = refwfn()->occ()->rank() - refwfn()->occ_act()->rank();
     config_.orbitals = refwfn()->occ_act()->rank() + refwfn()->uocc_act()->rank();
 
+    const int nelectron = molecule()->total_Z() - charge - 2 * config_.core;
     config_.alpha = (nelectron + magmom ) / 2;
     config_.beta =  (nelectron - magmom ) / 2;
 
@@ -95,13 +98,23 @@ CI::save_data_state(StateOut& so) {
   ToStateOut(config_, so, count);
 }
 
+void
+CI::print(std::ostream&o) const {
+  using std::endl;
+  o << indent << "CI:" << endl;
+  o << incindent;
+    config_.print(o);
+    ManyBodyWavefunction::print(o);
+  o << decindent;
+}
+
 RefSymmSCMatrix CI::density() {
   return 0;
 }
 
 void CI::compute() {
   E_ = CI::compute(ManyBodyWavefunction::refwfn(), config_);
-  this->set_energy(E_.back() + config_.e_ref);
+  this->set_energy(E_.back() + config_.e_ref + config_.e_core);
 }
 
 int CI::value_implemented() const {

@@ -46,6 +46,8 @@ namespace sc {
       void save_data_state(StateOut &so);
       virtual ~CI();
 
+      void print(std::ostream& os=ExEnv::out0()) const;
+
       int value_implemented() const;
 
       void compute();

@@ -18,59 +18,25 @@ at any GNU software FTP repository.
 
     <li> Compilers for the C, C++, and FORTRAN languages are needed.  The
          FORTRAN compiler is used to determine the linkage conventions for
-         the BLAS libraries, however, you can turn off the use of a FORTRAN
-         compiler by giving <tt>--without-f77</tt> as an option to the
-         configure script, however, this will not work unless you
-         only want the utility libraries.  The compilers listed below are
+         the BLAS libraries. The compilers listed below are
          known to work.  Other ISO C++ compilers should work as well.
 
        <ul>
 
-           <li> GCC 2.96 and later, available from <a
-                href="http://gcc.gnu.org">http://gcc.gnu.org</a>.  However,
-                the 3.0 and 3.0.1 releases of GCC are not recommended.
+           <li> GCC 4.7 and later, available from <a
+                href="http://gcc.gnu.org">http://gcc.gnu.org</a>.
 
-           <li> IBM xlC 5.0.2 and later work with both 32 and 64 bit modes
-                Use the versions of the compilers with the "_r" appended to
-                the name, since SC uses multi-threading.  You must also
-                specify that RTTI is used: <tt>--with-cxx='xlC_r
-                -qrtti'</tt>.
+           <li> The Intel C/C++ compilers version 12 and later.
 
-           <li> Compaq/Alpha/Linux with Compaq C++ 6.3.6.8 and later work.
-                Special configure options are needed: <tt>--with-cxx='cxx
-                -D__USE_STD_IOSTREAM'</tt>
-
-           <li> The Intel 5.0.1 Linux compilers for IA-32 work.  Version
-                5.0.1 for IA-64 will not work.
-
-           <li> The KAI version 4.0e1 compiler works.  Special configure
-                options are needed: <tt>--with-cxx='KCC
-                --one_instantiation_per_object' --with-ar=KCC
-                --with-ar-flags=-o</tt>
+           <li> The C/C++ compiler frontend to LLVM (clang/clang++).
 
        </ul>
 
-    <li> The Basic Linear Algebra Subprograms (BLAS) are required.  A
-         prepackaged version of BLAS is available for most machines.
-         Consult you operating system documentation for more information.
-         If precompiled BLAS routines are not available for your machine,
-         the source can be obtained from <a
-         href="http://www.netlib.org/blas">http://www.netlib.org/blas</a>.
-         The file blas.tgz contains the source for all of the BLAS
-         routines.  If the BLAS library is not named libblas.a or is not
-         installed in the default library search path, then configure must
-         be given --with-libs, --with-libdirs, or both.
-
-    <li> The Linear Algebra Package (LAPACK) 3.0 is required.  A
-         prepackaged version of LAPACK is available for most machines.
-         Consult you operating system documentation for more information.
-         If a precompiled LAPACK is not available for your machine, the
-         source can be obtained from <a
-         href="http://www.netlib.org/lapack">http://www.netlib.org/lapack</a>.
-         The file lapack.tgz contains the source for all of the LAPACK
-         routines.  If the LAPACK library is not named liblapack.a or is
-         not installed in the default library search path, then configure
-         must be given --with-libs, --with-libdirs, or both.
+    <li> The Basic Linear Algebra Subprograms (BLAS) and
+         the Linear Algebra Package (LAPACK) 3.0 are required.
+         It is preferable to use vendor-provided optimized libraries,
+         such as Intel Math Kernel Library (MKL) or Apple's Accelerate
+         framework. A reference copy of Netlib.org 
 
     <li> If you modify the scanner source file, then a
          lexical analyzer generator is required to generate code to read

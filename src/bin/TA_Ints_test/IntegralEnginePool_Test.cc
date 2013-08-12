@@ -8,9 +8,11 @@
 #include <mpqc/interfaces/tiledarray/array_ints.hpp>
 #include <mpqc/integrals/integralenginepool.h>
 #include <chemistry/molecule/molecule.h>
+#include <chemistry/qc/lcao/soad.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/basis.h>
 #include <chemistry/qc/basis/split.h>
+#include <mpqc/interfaces/tiledarray/symmscmat.hpp>
 #include <util/keyval/keyval.h>
 #include <iostream>
 
@@ -22,8 +24,9 @@ int try_main(int argc, char** argv) {
     if(world.rank() == 0)
         std::cout << "Making Molecule(H2) . . . " << std::endl;
     sc::Ref<sc::Molecule> mol = new sc::Molecule;
-    mol->add_atom(1, 0,0,0);
-    mol->add_atom(1, 0,0,1.11);
+    mol->add_atom(8, 0,0,0);
+    mol->add_atom(1, 0,1,-1);
+    mol->add_atom(1, 0,1,1);
 
     // Make Basis
     if(world.rank() == 0)
@@ -37,6 +40,7 @@ int try_main(int argc, char** argv) {
         sc::Ref<sc::GaussianBasisSet> split_basis = new sc::SplitBasisSet(basis, basis->name());
         basis = split_basis;
     }
+    akv->assign("basis", basis.pointer());
 
 
     //  Int factory and Engine Pool
@@ -64,21 +68,30 @@ int try_main(int argc, char** argv) {
                                            hpool, &mpqc::tiling::tile_by_atom);
     TA::Array<double, 4> Eri = mpqc::Integrals(world, eripool,
                                                &mpqc::tiling::tile_by_atom);
+
+    sc::Ref<sc::SuperpositionOfAtomicDensities> soad_guess =
+            new sc::SuperpositionOfAtomicDensities(sc::Ref<sc::KeyVal> (akv));
+    sc::Ref<sc::SymmSCMatrix> P_guess = soad_guess->ao_density();
+
+    TA::Array<double, 2> D_AO_guess = mpqc::SymmScMat_To_TiledArray(world,
+                                         P_guess,
+                                         mpqc::tiling::tile_by_atom(basis));
+    D_AO_guess("i,j") = D_AO_guess("i,j") * 0.5;
+
     if(world.rank() == 0){
-        std::cout << "If we pretend that density = hcore then we get the " <<
-            "following energy for h2 with bond length 1.11" << std::endl;
+        std::cout << "Computing intial guess at energy . . . " << std::endl;
     }
 
-    TA::Array<double,2> FAKE_G = 2.0 * Hcore("n,l") * Eri("i,j,n,l") -
-                    Hcore("n,l") * Eri("i,n,j,l");
-    double fake_energy = TA::expressions::dot(2.0 * Hcore("i,j") + FAKE_G("i,j") , Hcore("i,j"));
+    TA::Array<double,2> G = D_AO_guess("n,m") * (2 * Eri("i,j,m,n") - Eri("i,n,m,j") );
+    double fake_energy = TA::expressions::dot(
+                    2.0 * Hcore("i,j") + G("i,j"),
+                    D_AO_guess("i,j"));
+
     if(world.rank() == 0)
         std::cout << "FAKE ENERGY = " << fake_energy << std::endl;
 
-
-
-
-
+    world.gop.fence();
+    world.gop.fence();
     return 0;
 }
 

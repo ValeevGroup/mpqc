@@ -9134,8 +9134,10 @@ void MP2R12Energy_Diag::compute_density_diag()
   } else {
       dipoles_ccsd = localkit->vector(RefSCDimension(new SCDimension(3)));
       dipoles_ccsd.assign(0.0);
-      dipoles_or_relax = localkit->vector(RefSCDimension(new SCDimension(3)));
-      dipoles_or_relax.assign(0.0);
+      if (r12intermediates_->Onerdm_relax_computed()) {
+        dipoles_or_relax = localkit->vector(RefSCDimension(new SCDimension(3)));
+        dipoles_or_relax.assign(0.0);
+      }
   }
 
   for (int s = 0; s < nspincases1; ++s) {
@@ -9171,6 +9173,7 @@ void MP2R12Energy_Diag::compute_density_diag()
         }
     }
     //ExEnv::out0() << endl << " trace of Dij: " << scprintf("%12.10f", D[spin].trace()) << endl;
+    ExEnv::out0() << endl << " trace of D_occ_act: " << scprintf("%12.10f", D_occ_act.trace()) << endl;
 
     const double* iter_Dcb = (spin == Alpha? Dc_b_alpha : Dc_b_beta);
     for (int a = nocc_act; a < norb; ++a) {
@@ -9182,6 +9185,7 @@ void MP2R12Energy_Diag::compute_density_diag()
     }
     //D[spin].print(prepend_spincase(spin,"F12 one-particle density Dij+Dab:").c_str());
     //ExEnv::out0() << endl << " trace of Dij + Dab: " << scprintf("%12.10f", D[spin].trace()) << endl;
+    ExEnv::out0() << endl << " trace of D_vir: " << scprintf("%12.10f", D_vir.trace()) << endl;
 
     const double* iter_Dcpbp_a = (spin == Alpha? Dcp_bp_alpha_A : Dcp_bp_beta_A);
     const double* iter_Dcpbp_ap = (spin == Alpha? Dcp_bp_alpha_Ap : Dcp_bp_beta_Ap);
@@ -9194,6 +9198,8 @@ void MP2R12Energy_Diag::compute_density_diag()
         }
     }
     //D[spin].print(prepend_spincase(spin,"F12 one-particle density Dij+Dab+Da'b':").c_str());
+    //ExEnv::out0() << endl << " trace of Dij + Dab + Da'b': " << scprintf("%12.10f", D[spin].trace()) << endl;
+    ExEnv::out0() << endl << " trace of D_cabs: " << scprintf("%12.10f", D_cabs.trace()) << endl;
 
     if (this->r12eval()->ebc() == false
         || this->r12eval()->coupling() == true) {
@@ -9231,7 +9237,8 @@ void MP2R12Energy_Diag::compute_density_diag()
       D[spin].print(prepend_spincase(spin,"F12 one-particle density:").c_str());
 
     // Test code for D: trace of D = 0, as trace of Dij = - trace of (Dab + Da'b')
-    ExEnv::out0() << endl << "Trace of D_f12: " << scprintf("%12.10f", D[spin].trace())<< endl;
+    //ExEnv::out0() << endl << "Trace of D_f12: " << scprintf("%12.10f", D[spin].trace())<< endl;
+    ExEnv::out0() << endl << " trace of D_cabsvir: " << scprintf("%12.10f", D_cabsvir.trace()) << endl;
 
     //
     // Obtain dipole ints in ribs
@@ -9257,6 +9264,34 @@ void MP2R12Energy_Diag::compute_density_diag()
     form_DipoleInts_inRibs(spin, v_orbs1_ab, v_orbs2_ab,
                            MX_nb_ribs, MY_nb_ribs, MZ_nb_ribs,
                            MX_ribs_nfc, MY_ribs_nfc, MZ_ribs_nfc);
+
+    // test
+    {
+      const int nfzc = (spin == Alpha? nfzc1 : nfzc2);
+      const int norbs_tot = norb + nfzc;
+      const RefSCDimension M_dim_orbs(new SCDimension(norbs_tot));
+      RefSCMatrix MX_nb_orbs = localkit->matrix(M_dim_orbs,M_dim_orbs);
+      RefSCMatrix MY_nb_orbs = localkit->matrix(M_dim_orbs,M_dim_orbs);
+      RefSCMatrix MZ_nb_orbs = localkit->matrix(M_dim_orbs,M_dim_orbs);
+      MX_nb_orbs.assign(0.0);
+      MY_nb_orbs.assign(0.0);
+      MZ_nb_orbs.assign(0.0);
+
+      const Ref<OrbitalSpace>& space_orbs = (spin == Alpha? orbs1 : orbs2);
+      RefSCMatrix MX_orbs, MY_orbs, MZ_orbs;
+      RefSCMatrix  MXX, MYY, MZZ, MXY, MXZ, MYZ;
+      compute_multipole_ints(space_orbs, space_orbs,
+                             MX_orbs, MY_orbs, MZ_orbs,
+                             MXX, MYY, MZZ,
+                             MXY, MXZ, MYZ);
+      //MZ_orbs.print(prepend_spincase(spin,"MZ_orbs").c_str());
+      MXX = 0;
+      MYY = 0;
+      MZZ = 0;
+      MXY = 0;
+      MXZ = 0;
+      MYZ = 0;
+    }
 
     //MZ_ribs_nfc.print(prepend_spincase(spin,"MZ_ribs_nfc").c_str());
 
@@ -9618,47 +9653,48 @@ void MP2R12Energy_Diag::compute_density_diag()
 #endif
 
     // Obtain CCSD_F12 orbital relaxation contribution to 1rdm
-    RefSCMatrix D_ccsdf12_relax = r12intermediates_->get_1rdm_relax(spin);
-    RefSCMatrix D_relax = localkit->matrix(D_cc.rowdim(), D_cc.coldim());
-    D_relax.assign(0.0);
+    if (r12intermediates_->Onerdm_relax_computed()) {
+      RefSCMatrix D_ccsdf12_relax = r12intermediates_->get_1rdm_relax(spin);
+      RefSCMatrix D_relax = localkit->matrix(D_cc.rowdim(), D_cc.coldim());
+      D_relax.assign(0.0);
 
-    for (int a = 0; a < nvir; ++a) {
-      for (int i = 0; i < nocc; ++i){
-        const double Dai = D_ccsdf12_relax.get_element(a,i);
-        const int idx_a = a + nocc;
-        D_relax.set_element(idx_a, i, Dai);
-        D_relax.set_element(i, idx_a, Dai);
+      for (int a = 0; a < nvir; ++a) {
+        for (int i = 0; i < nocc; ++i){
+          const double Dai = D_ccsdf12_relax.get_element(a,i);
+          const int idx_a = a + nocc;
+          D_relax.set_element(idx_a, i, Dai);
+          D_relax.set_element(i, idx_a, Dai);
+        }
       }
+      //D_relax.print(prepend_spincase(spin,"one-particle density from orbital relax contribution:").c_str());
+
+      // copy D_relax in MPQC ordering back
+      RefSCMatrix opdm_relax = onepdm_transformed2(spin, D_relax);
+
+      RefSCMatrix opdm_x_relax = MX_nb_orbs * opdm_relax;
+      RefSCMatrix opdm_y_relax = MY_nb_orbs * opdm_relax;
+      RefSCMatrix opdm_z_relax = MZ_nb_orbs * opdm_relax;
+      opdm_relax = 0;
+
+      const double dx_relax = opdm_x_relax.trace();
+      const double dy_relax = opdm_y_relax.trace();
+      const double dz_relax = opdm_z_relax.trace();
+      // clean
+      opdm_x_relax = 0;
+      opdm_y_relax = 0;
+      opdm_z_relax = 0;
+      ExEnv::out0() << endl << "x y z dipole moments from CCSD_F12 orbital relaxtion: "
+                            << scprintf("%12.10f", dx_relax) << "  "
+                            << scprintf("%12.10f", dy_relax) << "  "
+                            << scprintf("%12.10f", dz_relax) << endl;
+
+      dipoles_or_relax[0] = dipoles_or_relax[0] + dx_relax;
+      dipoles_or_relax[1] = dipoles_or_relax[1] + dy_relax;
+      dipoles_or_relax[2] = dipoles_or_relax[2] + dz_relax;
     }
-    //D_relax.print(prepend_spincase(spin,"one-particle density from orbital relax contribution:").c_str());
-
-    // copy D_relax in MPQC ordering back
-    RefSCMatrix opdm_relax = onepdm_transformed2(spin, D_relax);
-
-    RefSCMatrix opdm_x_relax = MX_nb_orbs * opdm_relax;
-    RefSCMatrix opdm_y_relax = MY_nb_orbs * opdm_relax;
-    RefSCMatrix opdm_z_relax = MZ_nb_orbs * opdm_relax;
-    opdm_relax = 0;
-
     MX_nb_orbs = 0;
     MY_nb_orbs = 0;
     MZ_nb_orbs = 0;
-
-    const double dx_relax = opdm_x_relax.trace();
-    const double dy_relax = opdm_y_relax.trace();
-    const double dz_relax = opdm_z_relax.trace();
-    // clean
-    opdm_x_relax = 0;
-    opdm_y_relax = 0;
-    opdm_z_relax = 0;
-    ExEnv::out0() << endl << "x y z dipole moments from CCSD_F12 orbital relaxtion: "
-                          << scprintf("%12.10f", dx_relax) << "  "
-                          << scprintf("%12.10f", dy_relax) << "  "
-                          << scprintf("%12.10f", dz_relax) << endl;
-
-    dipoles_or_relax[0] = dipoles_or_relax[0] + dx_relax;
-    dipoles_or_relax[1] = dipoles_or_relax[1] + dy_relax;
-    dipoles_or_relax[2] = dipoles_or_relax[2] + dz_relax;
     } else {
 //        RefSCMatrix Dmp2 = compute_1rdm_mp2(spin);
 //        //Dmp2.print("MP2 one-electron density matrix");
@@ -9859,9 +9895,11 @@ void MP2R12Energy_Diag::compute_density_diag()
       dipoles_ccsd[1] = - dipoles_ccsd[1] * 2;
       dipoles_ccsd[2] = - dipoles_ccsd[2] * 2;
 
-      dipoles_or_relax[0] = - dipoles_or_relax[0] * 2;
-      dipoles_or_relax[1] = - dipoles_or_relax[1] * 2;
-      dipoles_or_relax[2] = - dipoles_or_relax[2] * 2;
+      if (r12intermediates_->Onerdm_relax_computed()) {
+        dipoles_or_relax[0] = - dipoles_or_relax[0] * 2;
+        dipoles_or_relax[1] = - dipoles_or_relax[1] * 2;
+        dipoles_or_relax[2] = - dipoles_or_relax[2] * 2;
+      }
     } else{
         dipoles_mp2[0] = - dipoles_mp2[0] * 2;
         dipoles_mp2[1] = - dipoles_mp2[1] * 2;
@@ -9880,10 +9918,11 @@ void MP2R12Energy_Diag::compute_density_diag()
         dipoles_ccsd[0] = - dipoles_ccsd[0];
         dipoles_ccsd[1] = - dipoles_ccsd[1];
         dipoles_ccsd[2] = - dipoles_ccsd[2];
-
-        dipoles_or_relax[0] = - dipoles_or_relax[0];
-        dipoles_or_relax[1] = - dipoles_or_relax[1];
-        dipoles_or_relax[2] = - dipoles_or_relax[2];
+        if (r12intermediates_->Onerdm_relax_computed()) {
+          dipoles_or_relax[0] = - dipoles_or_relax[0];
+          dipoles_or_relax[1] = - dipoles_or_relax[1];
+          dipoles_or_relax[2] = - dipoles_or_relax[2];
+        }
       } else{
           dipoles_mp2[0] = - dipoles_mp2[0];
           dipoles_mp2[1] = - dipoles_mp2[1];
@@ -9898,9 +9937,14 @@ void MP2R12Energy_Diag::compute_density_diag()
   dipoles[1] = dy_nuc + dipoles_f12[1] + dipoles_cabs[1];
   dipoles[2] = dz_nuc + dipoles_f12[2] + dipoles_cabs[2];
   if (r12intermediates_->T2_cc_computed()) {
-    dipoles[0] = dipoles[0] + dipoles_ccsd[0] + dipoles_or_relax[0];
-    dipoles[1] = dipoles[1] + dipoles_ccsd[1] + dipoles_or_relax[1];
-    dipoles[2] = dipoles[2] + dipoles_ccsd[2] + dipoles_or_relax[2];
+    dipoles[0] = dipoles[0] + dipoles_ccsd[0];
+    dipoles[1] = dipoles[1] + dipoles_ccsd[1];
+    dipoles[2] = dipoles[2] + dipoles_ccsd[2];
+    if (r12intermediates_->Onerdm_relax_computed()) {
+        dipoles[0] = dipoles[0] + dipoles_or_relax[0];
+        dipoles[1] = dipoles[1] + dipoles_or_relax[1];
+        dipoles[2] = dipoles[2] + dipoles_or_relax[2];
+    }
   } else {
       dipoles[0] = dipoles[0] + dipoles_mp2[0];
       dipoles[1] = dipoles[1] + dipoles_mp2[1];

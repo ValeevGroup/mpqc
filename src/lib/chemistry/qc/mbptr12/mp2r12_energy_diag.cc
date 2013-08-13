@@ -515,14 +515,16 @@ void MP2R12Energy_Diag::compute_ef12() {
 
   if (this->r12eval()->compute_1rdm()) {
 //    // tests for open-shell systems using MP2-F12 method
-//    const int nspincases1 = r12eval()->nspincases1();
-//    for(int s = 0; s < nspincases1; ++s) {
-//      const SpinCase1 spin = static_cast<SpinCase1>(s);
-//      RefSCMatrix Xf12_alpha = Onerdm_X_F12(spin, r12eval_, debug_);
+//    if (r12intermediates_->Onerdm_relax_computed()) {
+//      const int nspincases1 = r12eval()->nspincases1();
+//      for(int s = 0; s < nspincases1; ++s) {
+//        const SpinCase1 spin = static_cast<SpinCase1>(s);
+//        RefSCMatrix Xf12_alpha = Onerdm_X_F12(spin, r12eval_, debug_);
 //
-//      // test: print the Z-vector from CABS Singles contribution
-//      RefSCMatrix X_cabs = Onerdm_X_CABS_Singles(spin, r12eval_, r12intermediates_, debug_);
-//      X_cabs.print(prepend_spincase(spin,"CABS_Singles Z-vector X:").c_str());
+//        // test: print the Z-vector from CABS Singles contribution
+//        RefSCMatrix X_cabs = Onerdm_X_CABS_Singles(spin, r12eval_, r12intermediates_, debug_);
+//        X_cabs.print(prepend_spincase(spin,"CABS_Singles Z-vector X:").c_str());
+//      }
 //    }
     ExEnv::out0() << std:: endl << "Onerdm_cc_computed() " << r12intermediates_->Onerdm_cc_computed() << std::endl;
     compute_density_diag();

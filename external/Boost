@@ -3,7 +3,7 @@
 if (DEFINED BOOST)
 
   set(Boost_USE_STATIC_LIBS        ON)
-  set(Boost_USE_MULTITHREADED      OFF)
+  set(Boost_USE_MULTITHREADED      ON)
   #set(Boost_USE_STATIC_RUNTIME    OFF)
 
   set(BOOST_ROOT ${BOOST})

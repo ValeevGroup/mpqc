@@ -10,7 +10,7 @@ and some advanced electron correlation methods (in particular, explicitly correl
 MPQC is an ongoing research project intended for the use by
 expert computational scientists to develop new computational approaches to problems
 in computational science in general and, in particular, to electronic structure theory.
-It is distributed under the terms of the General Public License (GPL), version 3.
+It is distributed under the terms of the General Public License (GPL), version 2.
 
 <ul>
   <li> \ref overview

@@ -19,7 +19,7 @@ int main() {
     //mpqc::TensorBase<double, N, Order> u(data, dims);
     mpqc::Tensor<double, N, Order> u(dims);
 
-    //u(range(0,1), range(0,1)) = t(range(1,2), range(1,2));
+    u(range(0,1), range(0,1), range(0,1)) = t(range(1,2), range(1,2), range(1,2));
     //u = (t);
 
     for (int k : range(0,N)) {

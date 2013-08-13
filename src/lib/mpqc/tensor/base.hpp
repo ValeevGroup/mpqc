@@ -179,9 +179,9 @@ namespace mpqc {
                 }
 #endif
             }
-            ptrdiff_t offset = t.order_.index(begin);
+            ptrdiff_t offset = Order::index(begin, t.strides_);
             //std::cout << offset << std::endl;
-            return U(t.data_+offset, dims, t.order_);
+            return U(t.data_+offset, dims, t.strides_);
         }
 
     private:

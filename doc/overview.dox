@@ -1,20 +1,13 @@
 
 /** \page overview Overview
 
-The Scientific Computing toolkit (SC) provides C++ class libraries for
-scientific computation. Included are classes for managing memory, saving
-and restoring the state of objects, reading objects from an input file,
-parallel communication, matrix algebra, among others.
-
-The development of SC has been driven by the development of the Massively
-Parallel Quantum Chemistry (MPQC) program, which is built on top of SC.
-Thus, class libraries supporting
-quantum chemistry applications are provided with
-the full distribution of SC.  While, currently, MPQC and SC
-are distributed together, the most of SC code is problem-domain independent.  For
-example, the utility classes provided in src/lib/util do not require the
-code in src/lib/math or src/lib/chemistry and the src/lib/math classes do
-not require src/lib/chemistry.
+The Massively Parallel Quantum Chemistry (MPQC) is a collection of C++ libraries
+for computation of molecular electronic structure (aka quantum chemistry).
+The domain-specific QC C++ libraries, known collectively as <a href="modules.html">mpqc.QC</a>, are supported by two C++ code layers:
+  - <a href="modules.html">mpqc.Core</a>, also known as the Scientific Toolkit (SC) in the past: core libraries for managing memory,
+      saving and restoring the state of objects, reading objects from an input file, parallel communication, among others.
+  - <a href="modules.html">mpqc.Math</a>: libraries for data containers (matrix and multidimensional array/tensor) and associated algebra, such as
+      solving linear and nonlinear equations expressed in terms of these data containers.
 
 The \ref mpqc "MPQC" program is the end-user code for practical
 application of the variety of quantum chemistry methods implemented in SC.
@@ -25,15 +18,16 @@ coupled-cluster and multireference methods). MPQC is also
 well-suited for learning quantum chemistry by advanced undergraduate
 and beginning graduate students.
 
-MPQC and SC are works-in-progress.  They are experimental codes that are
-used to apply new computational approaches to problems in scientific
-programming in general and, in particular, to quantum chemistry.  Thus,
+Although the development of MPQC has been ongoing since 1993, the code is constantly evolving.
+MPQC is fundamentally an experimental/research code that is
+used to seek new computational approaches to problems in scientific
+programming in general and, in particular, to quantum chemistry. Thus,
 this manual is incomplete.  Furthermore, some of the classes in the
 distribution may be on the verge of obsolescence and others may be
 unfinished work that are intended to provide new functionality in later
 releases.
 
-MPQC and SC run on Unix platforms of all kinds, from a laptop running
+MPQC runs on Unix platforms of all kinds, from a laptop running
 Linux or Apple OS X to a massively-parallel distributed-memory computer such as
 IBM BlueGene/P or Cray XT/XE.
 

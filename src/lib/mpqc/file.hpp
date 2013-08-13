@@ -29,7 +29,7 @@
 #include <util/misc/exenv.h>
 
 /**
- * @defgroup File mpqc.Util.File
+ * @defgroup File mpqc.Core.File
  * Implementation of hierarchical file objects based on
  * <a href="http://www.hdfgroup.org/HDF5/">HDF5</a>.
 */

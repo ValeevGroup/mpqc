@@ -2,6 +2,7 @@
 /** \page compile Compiling
 
 <ul>
+  <li> \ref compiledownload
   <li> \ref compilepre   
   <li> \ref compilepreopt
   <li> \ref compileconf  
@@ -9,92 +10,67 @@
   <li> \ref compilecheck
 </ul>
 
+\section compiledownload Obtaining the code
+
+   The latest version of the source code is available from
+   <a href="http://www.mpqc.org">http://www.mpqc.org</a>.
+   Public stable releases of MPQC have not occured since 2006.
+   Therefore it is recommended that the users
+   obtain the latest source code directly from the code repository.
+
 \section compilepre Prerequisites
 
-Make sure that you have the following programs available. Most can be found
-at any GNU software FTP repository.
+The following programs are necessary to compile even a bare-bones version of MPQC. Most are
+available on any modern computer system.
 
-<ul>
+  - Code building is performed by <a href="http://cmake.org/">CMake</a>, version 2.8.8 or higher.
 
-    <li> Compilers for the C, C++, and FORTRAN languages are needed.  The
-         FORTRAN compiler is used to determine the linkage conventions for
-         the BLAS libraries. The compilers listed below are
-         known to work.  Other ISO C++ compilers should work as well.
+  - Compilers for the C, C++, and FORTRAN languages are needed.  The
+    FORTRAN compiler is used to determine the linkage conventions for
+    the BLAS libraries. The compilers listed below are
+    known to work.  Other ISO C++ compilers should work as well.
 
-       <ul>
+      - GCC 4.7 and later, available from <a href="http://gcc.gnu.org">http://gcc.gnu.org</a>.
+      - The Intel C/C++ compilers version 12 and later.
+      - The C/C++ compiler frontend to LLVM (clang/clang++).
 
-           <li> GCC 4.7 and later, available from <a
-                href="http://gcc.gnu.org">http://gcc.gnu.org</a>.
+  - The Basic Linear Algebra Subprograms (BLAS) and
+    the Linear Algebra Package (LAPACK) 3.0 are required.
+    It is preferable to use vendor-provided optimized libraries,
+    such as Intel Math Kernel Library (MKL) or Apple's Accelerate
+    framework. A reference copy of <a href="http://netlib.org/">netlib.org</a>
+    LAPACK+BLAS is included and can be automatically build by cmake.
 
-           <li> The Intel C/C++ compilers version 12 and later.
+  - If you modify the scanner source file, then a
+    lexical analyzer generator is required to generate code to read
+	input files.  The flex program is used for this purpose.
 
-           <li> The C/C++ compiler frontend to LLVM (clang/clang++).
+  - If you modify a parser source file, then GNU bison (version 1.24
+    or greater) is needed.  This is a parser generator used to
+    generate code to read input files.
 
-       </ul>
+  - GNU make.
 
-    <li> The Basic Linear Algebra Subprograms (BLAS) and
-         the Linear Algebra Package (LAPACK) 3.0 are required.
-         It is preferable to use vendor-provided optimized libraries,
-         such as Intel Math Kernel Library (MKL) or Apple's Accelerate
-         framework. A reference copy of Netlib.org 
+  - perl: This is used to convert template classes to macros, generate
+    and check the validation suite etc.
 
-    <li> If you modify the scanner source file, then a
-         lexical analyzer generator is required to generate code to read
-	 input files.  The flex program is used for this purpose.
-	 However, the most common version of flex, 2.5.4a, does
-	 not generate legal C++.  It may be necessary to download,
-	 compile, and install a more recent version of flex from <a
-	 href="http://lex.sourceforge.net">http://lex.sourceforge.net</a>.
+\section compilepreopt "New" Prerequisites
 
-         Make sure that <tt>FlexLexer.h</tt> from flex is in your include
-         path. You may need to give the path to <tt>FlexLexer.h</tt> to
-         configure with an argument that looks something like:
-         <tt>--with-include=-I/usr/local/include</tt>
+Certain advanced features of MPQC require additional packages.
 
-    <li> If you modify a parser source file, then GNU bison (version 1.24
-         or greater) is needed.  This is a parser generator used to
-         generate code to read input files.
+  -    A Message Passing Interface (MPI) is required to use MPQC in
+       parallel on distributed memory machines. A thread-safe version of
+       MPQC is recommended.
 
-    <li> GNU gmake (version 3.70 or greater): GNU specific extensions to make
-         are used extensively.
+  -    Libint (version 2.0.3 or higher): This is a machine-generated
+       library that can be used for evaluation of certain molecular
+       integrals. Explicitly-correlated methods in MPQC require
+       Libint. The library is freely available under GNU Public License
+       (GPL) from <a
+       href="http://libint.valeyev.net">libint.valeyev.net</a>.
+       cmake can automatically download and build Libint.
 
-    <li> perl: This is used to convert template classes to macros, generate
-         and check the validation suite etc.  To compile SC, either perl 4
-         or perl 5 will work.  To generate the validation inputs and
-         automatically check the outputs, perl 5.003 or later is needed.
-
-    <li> If you are working from the source tree, then you also need
-         autoconf (at least version 2.55).
-
-  </ul>
-
-\section compilepreopt Optional Packages
-
-The following packages are not necessary to compile MPQC, but may provide additional
-features.
-
-<ul>
-
-    <li> A Message Passing Interface (MPI) is required to use MPQC in
-         parallel on distributed memory machines.
-
-    <li> The parallel MP2 and MP2-R12 methods require direct access to
-         remote memory.  This requires one of two features: A thread-safe
-         MPI (<a href="http://www.mpi-softtech.com">MPI Software
-         Technology, Inc.</a> has developed a thread-safe MPI) or the <a
-         href="http://www.emsl.pnl.gov/docs/parsoft/armci/">Aggregate
-         Remote Memory Copy Interface (ARMCI)</a>.  These respectively
-         permit remote memory access through the ARMCIMemoryGrp and the
-         MTMPIMemoryGrp classes, respectively.
-
-    <li> Libint (version 2.0.3 or higher): This is a machine-generated
-         library that can be used for evaluation of certain molecular
-         integrals. IntegralLibint2 and MBPT2_R12 classes depend on this
-         library. The library is freely available under GNU Public License
-         (GPL) from <a
-         href="http://libint.valeyev.net">libint.valeyev.net</a>.
-
-</ul>
+  -    to be continued
 
 \section compileconf Configuration
 
@@ -118,103 +94,18 @@ directories and the necessary makefiles. Do a <tt>configure --help</tt> to
 see a list of options.  Options are specified with an equals sign, as in
 <tt>configure --prefix=/usr/local</tt>.  Some options, such as all the
 <tt>enable</tt> and <tt>disable</tt> options, do not require an argument.
-Useful options to configure include:
+The most useful options to configure include:
 
 <dl>
 
 <dt><tt>--prefix</tt><dd>Specifies the installation directory.  The default
   is <tt>/usr/local/mpqc/</tt><i>version-number</i>
 
-<dt><tt>--enable-debug</tt><dd>Options for debugging will be given to the
-  compiler.  Use <tt>--enable-debug=opt</tt> to use both debugging and
-  optimization options.
+<dt><tt>--debug</tt><dd>Options for debugging will be given to the
+  compiler.
 
-<dt><tt>--with-default-parallel</tt><dd>Gives the default parallism
-  specializations.  Can be <tt>none</tt> for no default or <tt>mtmpi</tt>
-  for MTMPIMemoryGrp (MPI must be fully thread-safe) and MPIMessageGrp
-  specializations.  The parallelism model can be overridden with command
-  line arguments or environmental variables.
-
-<dt><tt>--enable-always-use-mpi</tt>This can be given if MPIMessageGrp
-  is to be the only MessageGrp that will be used.  This option should
-  be given if the real argc and argv must be given to MPI_Init.
-
-<dt><tt>--disable-parallel</tt><dd>Do not try to find communications
-  libraries.
-
-<dt><tt>--disable-threads</tt><dd>Do not try to find the multi-thread
-  libraries.
-
-<dt><tt>--enable-shared</tt><dd>Use shared libraries.  This will
-  reduce the size of executables, if shared libraries are supported
-  on your system.
-
-<dt><tt>--disable-static</tt><dd>Do not build libraries for static linking.
-
-<dt><tt>--enable-ref-debug</tt><dd>Check for overwrites and overflows of
-  reference counts.  Implied by ``--enable-debug''.
-
-<dt><tt>--disable-ref-macros</tt><dd>Use template classes for reference
-  counting.  The default is to use a CPP macro to generate a class
-  definition.
-
-<dt><tt>--enable-cross-compile</tt><dd>If this option is set then the
-  configure script will take care to not execute any compiled test
-  programs.
-
-<dt><tt>--enable-shared-libs</tt><dd>This will generate shared objects and
-  link with them instead of standard ``.a'' libraries.  This works on a
-  Linux-ELF system.
-
-<dt><tt>--with-build-id</tt><dd>This is used to generate unique shared
-  library names and a unique default prefix for an MPQC installation.
-  Unique shared library names must be used used by package distributors if
-  a non-official ABI is used.  The official ABI is GCC-3.2.  Earlier
-  versions of GCC are not compatible.  Installations with multiple C++
-  compilers that use shared libraries should use --with-build-id to avoid
-  accidentally dynamically linking with the wrong libraries.
-
-<dt><tt>--with-default-memory</tt><dd>This specifies the default
-memory allocation, which is used in absense of the <tt>memory</tt>
-keyword in user's input.
-The default is 32 million bytes (roughly, 32 MB).
-
-<dt><tt>--with-cc</tt><dd>Gives the name of the C compiler.
-
-<dt><tt>--with-cc-optflags</tt><dd>By default configure will attempt to
-  guess a reasonable set of optimization flags.  These flags will be
-  overridden by the argument given to this keyword.
-
-<dt><tt>--with-cxx</tt><dd>Gives the name of the C++ compiler.
-
-<dt><tt>--with-cxx-optflags</tt><dd>By default configure will attempt to
-  guess a reasonable set of optimization flags.  These flags will be
-  overridden by the argument given to this keyword.
-
-<dt><tt>--with-f77</tt><dd>Gives the name of the FORTRAN compiler.
-
-<dt><tt>--without-f77</tt><dd>configure will not try to find a FORTRAN
-  compiler.  This can only be used if nothing more than the utility
-  libraries are needed.
-
-<dt><tt>--with-ranlib</tt><dd>Gives the name of the archive indexing
-  utility.
-
-<dt><tt>--with-ar</tt><dd>Gives the name of the program that makes
-  libraries.
-
-<dt><tt>--with-ld</tt><dd>Gives the name of the object linker.
-
-<dt><tt>--with-include</tt><dd>Gives directories in which include files
-  should be sought.  For example, <tt>--with-include="-I/u/local/inc
-  -I/u/cljanss/include"</tt>
-
-<dt><tt>--with-libs</tt><dd>Specifies libraries that executables should be
-  linked with.  For example, <tt>--with-libs=-llapack_IRIX.a</tt>.
-
-<dt><tt>--with-libdirs</tt><dd>Gives the directories in which libraries
-  should be sought.  For example,
-  <tt>--with-libdirs=-L/usr/local/lib64</tt>.
+<dt><tt>--new-features</tt><dd>Enables compilations of all advanced features of MPQC,
+hence most, if not all, prerequisites will be checked and built, if needed.
 
 </dl>
 
@@ -229,8 +120,6 @@ all the makefiles will be overwritten.
 typing <tt>make</tt> in your target directory.  If you are running on a
 symmetric multi-processor, you can use GNU make to parallelize the
 compilation.  To compile four files at a time, type <tt>make -j4</tt>.
-This feature works correctly with GNU make version 3.78.1 or later; for
-older versions of GNU make use <tt>make JOBS=-j4</tt>.
 
  You can install the executables and data files with <tt>make install</tt>. Starting with
  version 3, this will also install the libraries and header files needed for development.

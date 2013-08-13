@@ -14,7 +14,6 @@ if(DOXYGEN_FOUND)
                       DEPENDS
                         ${CMAKE_CURRENT_SOURCE_DIR}/compile.dox
                         ${CMAKE_CURRENT_SOURCE_DIR}/develop.dox
-                        ${CMAKE_CURRENT_SOURCE_DIR}/download.dox
                         ${CMAKE_CURRENT_SOURCE_DIR}/footer.html
                         ${CMAKE_CURRENT_SOURCE_DIR}/overview.dox
                         ${CMAKE_CURRENT_SOURCE_DIR}/sf_footer.html
@@ -37,6 +36,7 @@ if(DOXYGEN_FOUND)
                         ${CMAKE_SOURCE_DIR}/src/lib/chemistry/qc/psi/mpqcpsi.dox
                         ${CMAKE_SOURCE_DIR}/src/lib/math/scmat/scmat.dox
                         ${CMAKE_SOURCE_DIR}/src/lib/math/symmetry/symmetry.dox
+                        ${CMAKE_SOURCE_DIR}/src/lib/mpqc/utility/utility.dox
                         ${CMAKE_SOURCE_DIR}/src/lib/util/class/class.dox
                         ${CMAKE_SOURCE_DIR}/src/lib/util/group/group.dox
                         ${CMAKE_SOURCE_DIR}/src/lib/util/keyval/keyval.dox

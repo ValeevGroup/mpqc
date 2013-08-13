@@ -27,7 +27,7 @@ namespace mpqc {
             for (int i = 0; i < N; ++i) {
                 strides_[N-(i+1)] = stride;
                 stride *= ld[N-(i+1)];
-                printf("strides_[%i]=%i\n", N-(i+1), strides_[N-(i+1)]);
+                //printf("strides_[%i]=%i\n", N-(i+1), strides_[N-(i+1)]);
             }
         }
         /// given N-d index tuple, compute 1-d index
@@ -35,7 +35,7 @@ namespace mpqc {
         ptrdiff_t index(const Index &idx) const {
             namespace fusion = boost::fusion;
             ptrdiff_t diff = index(fusion::as_vector(idx), this->strides_);
-            std::cout << idx << " diff=" << diff << std::endl;
+            //std::cout << idx << " diff=" << diff << std::endl;
             return diff;
         }
     private:

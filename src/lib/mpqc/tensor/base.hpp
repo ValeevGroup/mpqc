@@ -104,7 +104,7 @@ namespace mpqc {
         typename boost::disable_if                                              \
         < detail::Tensor::is_integral_tuple                                     \
           < boost::tuple<BOOST_PP_ENUM_PARAMS(N,T)> >,                          \
-          TensorBase<CV T, N> >::type                                           \
+          TensorBase<CV T, N, Order> >::type                                    \
         operator()(BOOST_PP_ENUM_BINARY_PARAMS(N, const T, &i)) CV {            \
             using detail::Tensor::tie;                                          \
             return this->operator()(tie(boost::tie(BOOST_PP_ENUM_PARAMS(N,i)))); \
@@ -130,15 +130,15 @@ namespace mpqc {
         }
 
         template<class Seq>
-        TensorBase<T, N>
+        TensorBase<T, N, Order>
         operator()(const detail::Tensor::range_tie<Seq> &tie) {
-            return block< TensorBase<T, N> >(*this, tie);
+            return block< TensorBase<T, N, Order> >(*this, tie);
         }
 
         template<class Seq>
-        TensorBase<const T, N>
+        TensorBase<const T, N, Order>
         operator()(const detail::Tensor::range_tie<Seq> &tie) const {
-            return block< TensorBase<const T, N> >(*this, tie);
+            return block< TensorBase<const T, N, Order> >(*this, tie);
         }
 
     private:

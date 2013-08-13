@@ -62,23 +62,30 @@ class HSOSSCF: public SCF {
 
   public:
     HSOSSCF(StateIn&);
-    /** The KeyVal constructor.
+    /** The KeyVal constructor accepts all keywords of SCF class, plus the following additional keywords:
         <dl>
 
-        <dt><tt>total_charge</tt><dd> This floating point number
-        gives the total charge,
-        \f$c\f$, of the molecule.  The default is 0.
+        <dt><tt>total_charge</tt><dd> Specifies the total charge
+           of the system. This charge is defined without taking into account custom nuclear
+           charges or classical charges, i.e. total charge = sum of atomic numbers of nuclei
+           - number of electrons.  The default is 0.
 
         <dt><tt>nsocc</tt><dd> This integer gives the total number of
         singly occupied orbitals, \f$n_\mathrm{socc}\f$.  If this is not
         given, then multiplicity will be read.
 
-        <dt><tt>multiplicity</tt><dd> This integer gives the multiplicity,
-        \f$m\f$, of the molecule.  The number of singly occupied orbitals
-        is then \f$n_\mathrm{socc} = m - 1\f$.  If neither nsocc nor
-        multiplicity is given, then the maximum value of multiplicity
+        <dt><tt>magnetic_moment</tt><dd> This integer specifies the
+        the magnetic moment (S or J), in units of \f$ \hbar/2 \f$ .
+        The number of singly occupied orbitals
+        is equal to the magnetic moment, hence this OneBodyWavefunction
+        magnetic_moment must be a nonnegative.
+        If neither nsocc nor
+        magnetic_moment is given, then the maximum value of magnetic_moment
         will be sought that minimizes the total sum of orbital energies from guess_wavefunction
         (multiplicity = 1 will not be considered in the search). \sa HundsFEMOSeeker
+
+        <dt><tt>multiplicity</tt><dd> OBSOLETE since version 3.
+        multiplicity = magnetic_moment + 1.
 
         <dt><tt>ndocc</tt><dd> This integer gives the total number of
         doubly occupied orbitals \f$n_\mathrm{docc}\f$.  The default
@@ -127,8 +134,7 @@ class HSOSSCF: public SCF {
 
     void symmetry_changed();
     
-    // returns 1
-    int spin_polarized();
+    double magnetic_moment() const;
     RefSymmSCMatrix density();
     RefSymmSCMatrix alpha_density();
     RefSymmSCMatrix beta_density();

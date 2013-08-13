@@ -44,7 +44,7 @@ using namespace sc;
 static void
 dqs(double *item,int *index,int left,int right)
 {
-  register int i,j;
+  int i,j;
   double x;
   int y;
 
@@ -273,10 +273,10 @@ MBPT2::print(ostream&o) const
 
 //////////////////////////////////////////////////////////////////////////////
 
-int
-MBPT2::spin_polarized()
+double
+MBPT2::magnetic_moment() const
 {
-  return reference_->spin_polarized();
+  return reference_->magnetic_moment();
 }
 
 RefSymmSCMatrix

@@ -46,9 +46,6 @@ finalize()
 
 MPQCInit::MPQCInit(GetLongOpt&opt, int &argc, char **argv):
   opt_(opt), argc_(argc), argv_(argv)
-#ifdef HAVE_MADNESS
-  , madworld_(0)
-#endif
 {
   if (instance_ != 0) {
     throw ProgrammingError("Only one MPQCInit object can be created!",
@@ -298,7 +295,6 @@ MPQCInit::init(const std::string &input_filename,
   ExEnv::init(argc_, argv_);
   init_fp();
   init_limits();
-  init_madness(); // this will call MPI_Init, if MADNESS is available
   Ref<MessageGrp> grp = init_messagegrp();
   init_io(grp);
   Ref<KeyVal> keyval = init_keyval(grp,input_filename);
@@ -316,38 +312,6 @@ void
 MPQCInit::finalize()
 {
   sc::finalize();
-#ifdef HAVE_MADNESS
-  if (madness::initialized()) {
-    if (madworld_) {
-      madworld_->gop.fence();
-      if (mpqc_owns_madworld_)
-        delete madworld_;
-      madworld_ = 0;
-    }
-    madness::finalize();
-  }
-#endif
-}
-
-void
-MPQCInit::init_madness()
-{
-#ifdef HAVE_MADNESS
-  if (not madness::initialized()) {
-    madness::initialize(argc_, argv_);
-    madworld_ = new madness::World(SafeMPI::COMM_WORLD);
-    mpqc_owns_madworld_ = true;
-  }
-  else {
-    madworld_ = madness::World::find_instance(SafeMPI::COMM_WORLD);
-    mpqc_owns_madworld_ = false;
-  }
-  // now make sure that MADNESS has initialized MPI with full thread safety ...
-  // if MPQC were using SafeMPI instead of MPI directly this would not be an issue
-  if (SafeMPI::Query_thread() != MPI_THREAD_MULTIPLE && madworld_->rank() != 1) {
-    throw FeatureNotImplemented("nproc>1, and MPQC cannot get along with MADNESS because MADNESS was not configured with --with-mpi-thread=multiple; reconfigure MADNESS", __FILE__, __LINE__);
-  }
-#endif
 }
 
 }

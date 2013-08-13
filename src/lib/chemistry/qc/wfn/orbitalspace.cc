@@ -43,6 +43,11 @@ inline int max(int a, int b) {
   return (a > b) ? a : b;
 }
 
+ParticleHoleOrbitalAttributes ParticleHoleOrbitalAttributes::None(0x0000);
+ParticleHoleOrbitalAttributes ParticleHoleOrbitalAttributes::Hole(0x0001);
+ParticleHoleOrbitalAttributes ParticleHoleOrbitalAttributes::Particle(0x0002);
+ParticleHoleOrbitalAttributes ParticleHoleOrbitalAttributes::Any(0x0001 | 0x0002);
+
 /*---------------
  OrbitalSpace
  ---------------*/

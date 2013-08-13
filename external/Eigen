@@ -1,5 +1,20 @@
 # -*- mode: cmake -*-
 
+# Clang < 3.2 breaks Eigen
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  check_cxx_source_compiles("
+    #ifdef __clang__
+    #if ((__clang_major__ == 3 && __clang_minor__ < 2) || (__clang_major__ < 3))
+    #error clang < 3.2
+    #endif
+    #endif
+    int main() { }
+  " CLANG_VERSION_32)
+  if (NOT CLANG_VERSION_32)
+    message(FATAL_ERROR "Clang => 3.2 is required to compile Eigen")
+  endif()
+endif()
+
 find_package(Eigen 3.0)
 
 # if found, try sanity check: try compiling a simple program
@@ -11,22 +26,27 @@ if (EIGEN_FOUND)
     #include <Eigen/Core>
     #include <Eigen/Dense>
     #include <iostream>
-    int main(int argc, char* argv[]){
-      Eigen::MatrixXd m = Eigen::MatrixXd::Random(5, 5);
-      Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(m);
-      Eigen::MatrixXd m_invsqrt = eig.operatorInverseSqrt();
-      std::cout << m_invsqrt << std::endl;
-    }"
+    typedef Eigen::MatrixXd Matrix;
+    template<class T>
+    void test() {
+        Matrix m = Matrix::Random(5, 5);
+        Eigen::MatrixXd b = Matrix::Random(5, 5);
+        m.row(0) = b.col(0);
+        Eigen::SelfAdjointEigenSolver<Matrix> eig(m);
+        Matrix m_invsqrt = eig.operatorInverseSqrt();
+        std::cout << m_invsqrt << std::endl;
+    }
+    int main() { test<void>(); }"
     EIGEN_COMPILES)
   if (NOT EIGEN_COMPILES)
-    message("Eigen found at ${Eigen_INCLUDE_DIR} but failed to compile")
-    message("See CMakeFiles/CMakeOutput.log for details")
+    message("** Eigen found at ${Eigen_INCLUDE_DIR} but failed to compile")
+    message("** See CMakeFiles/CMakeOutput.log for details")
     set(EIGEN_FOUND FALSE)
+    list(REMOVE_AT CMAKE_REQUIRED_INCLUDES 0) # Eigen install not usable
   else()
     include_directories(${Eigen_INCLUDE_DIR})
     set(HAVE_EIGEN TRUE)
   endif()
-  list(REMOVE_AT CMAKE_REQUIRED_INCLUDES 0)
 endif()
 
 #if eigen not found or did not compile, use the built in

@@ -16,12 +16,20 @@ if (HAVE_LIBINT2)
 endif()
 
 if (MPQC_NEW_FEATURES)
+
   include(external/TiledArray)
+  include(external/Python)
   include(external/Boost)
-  if (MPQC_NEW_FEATURES_CI)
+  
+  # Right now only CI depends on HDF5, minimize deps
+  if (MPQC_CI)
     include(external/HDF5)
-    include(external/ARMCI)
+    # may be serial build
+    if (HAVE_MPI)
+      include(external/ARMCI)
+    endif()
   endif()
+
 endif()
 
 

@@ -318,8 +318,8 @@ LMP2::density(void)
   return 0;
 }
 
-int
-LMP2::spin_polarized(void)
+double
+LMP2::magnetic_moment() const
 {
   return 0;
 }

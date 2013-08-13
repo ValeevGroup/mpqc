@@ -306,8 +306,8 @@ hsoshf.in      osshf.in              qmmm1.in \
 qmmm2.in       clhfdk1.in            clhfdk2.in \
 clks_kmlyp.in  hsosks_kmlyp.in       uks_kmlyp.in
 
-ifeq (@MAKE_ASSUME_NEW_FEATURES_CI@,yes)
-  METHODSINPUTS += fci.in
+ifeq (@MAKE_ASSUME_CI@,yes)
+  METHODSINPUTS += fci.in fci_fzc.in
 endif
 
 ifeq ($(RUN_MBPTR12),yes)

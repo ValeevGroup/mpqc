@@ -2,7 +2,11 @@
 #define MPQC_ARRAY_CORE_HPP
 
 #include "mpqc/array/forward.hpp"
+
+#ifdef MPQC_PARALLEL
 #include "mpqc/array/parallel.hpp"
+#endif
+
 #include "mpqc/range.hpp"
 #include "mpqc/utility/foreach.hpp"
 #include "mpqc/utility/mutex.hpp"
@@ -105,7 +109,7 @@ namespace detail {
 
     };
 
-#if (defined MPQC_USE_ARMCI || 1)
+#ifdef HAVE_ARMCI
 
     template<typename T>
     struct array_parallel_impl<T, array_core_driver>
@@ -114,7 +118,7 @@ namespace detail {
 
 	array_parallel_impl(const std::string &name,
 			    const std::vector<size_t> &dims,
-			    mpi::Comm comm)
+			    MPI::Comm comm)
             : ArrayBase(dims)
         {
 	    assert(comm == MPI_COMM_WORLD);
@@ -174,7 +178,7 @@ namespace detail {
 	std::vector<Tile> tiles_;
 
 	static void check(int err, const std::string &func,
-			  mpi::Comm comm = mpi::Comm(MPI_COMM_SELF)) {
+			  MPI::Comm comm = MPI::Comm::Self()) {
 	    if (comm.any((err != 0))) {
 		throw std::runtime_error(func + " failed");
 	    }

@@ -244,7 +244,7 @@ class MBPT2: public Wavefunction {
     int nfzvirt() const { return nfzv; };
 
     RefSymmSCMatrix density();
-    int spin_polarized();
+    double magnetic_moment() const;
 
     bool analytic_gradient_implemented() const;
     int value_implemented() const;

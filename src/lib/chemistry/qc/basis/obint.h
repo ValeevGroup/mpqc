@@ -79,8 +79,11 @@ class OneBodyInt : public RefCount {
     /// Return the number of shells on the center two.
     int nshell2() const;
 
-    /// Return the basis set on center one.
-    Ref<GaussianBasisSet> basis();
+    /** Return the basis set on center one.
+     * @param[in] c center index, in [0,1]; default = 0 (first center)
+     * @return (pointer to) the basis set object on center @c c
+     */
+    Ref<GaussianBasisSet> basis(size_t c);
 
     /// Return the basis set on the center one.
     Ref<GaussianBasisSet> basis1();
@@ -145,8 +148,11 @@ class OneBodyOneCenterInt : public RefCount {
     /// Return the number of shells on the center one.
     int nshell1() const;
 
-    /// Return the basis set on center one.
-    Ref<GaussianBasisSet> basis();
+    /** Return the basis set on center one.
+     * @param[in] c center index, in [0,0]; default = 0 (first center)
+     * @return (pointer to) the basis set object on center @c c
+     */
+    Ref<GaussianBasisSet> basis(size_t c);
 
     /// Return the basis set on the center one.
     Ref<GaussianBasisSet> basis1();

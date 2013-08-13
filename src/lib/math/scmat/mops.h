@@ -128,7 +128,7 @@ mult_block(double **a, double **b, double **c, int ni, int nj, int nk)
       t00=c0[jj]; t10=c1[jj]; t20=c2[jj]; t30=c3[jj];
 
       for (kk=0; kk < nk; kk += 2) {
-        register double b0=bt[kk], b1=bt[kk+1];
+        double b0=bt[kk], b1=bt[kk+1];
         t00 += a0[kk]*b0 + a0[kk+1]*b1;
         t10 += a1[kk]*b0 + a1[kk+1]*b1;
         t20 += a2[kk]*b0 + a2[kk+1]*b1;

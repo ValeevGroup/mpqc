@@ -1,5 +1,5 @@
-#ifndef MPQC_CI_CONFIG_HPP
-#define MPQC_CI_CONFIG_HPP
+#ifndef MPQC_CI_CI_HPP
+#define MPQC_CI_CI_HPP
 
 #include <util/misc/formio.h>
 #include "mpqc/ci/string.hpp"
@@ -12,12 +12,13 @@ namespace ci {
     
     struct Config {
         size_t core, orbitals;
-        size_t alpha, beta;
-        size_t level;
+        size_t alpha, beta; //!< number of electrons of each spin in CI
+        size_t rank;
         size_t roots;
         size_t max;
         size_t collapse;
         double e_ref;
+        mutable double e_core;
         double convergence;
         double cutoff;
         size_t block, block2;
@@ -26,15 +27,20 @@ namespace ci {
             orbitals = 0;
             alpha = 0;
             beta = 0;
-            level = 0;
+            rank = 0;
             roots = 1;
             max = 10;
             collapse = 0;
-            e_ref = 0;
+            e_ref = 0.0;
+            e_core = 0.0;
             convergence = 1e-10;
             cutoff = convergence;
             block = 128;
             block2 = 128;
+        }
+        void print(std::ostream& o = sc::ExEnv::out0()) const {
+          o << sc::indent << "rank       = " << rank << std::endl;
+          o << sc::indent << "# of roots = " << roots << std::endl;
         }
     };
 
@@ -49,7 +55,7 @@ namespace ci {
         struct IO : boost::noncopyable {
             range local;
             File::Dataset<double> b, Hb;
-            IO(mpi::Comm comm, File::Group io,
+            IO(MPI::Comm comm, File::Group io,
                size_t alpha, size_t beta, size_t N) {
                 std::vector<range> extents(3);
 
@@ -66,7 +72,7 @@ namespace ci {
         };
 
         CI(const Config &config,
-           mpi::Comm comm, File::Group io,
+           MPI::Comm comm, File::Group io,
            const ci::String::List<Index> &alpha,
            const ci::String::List<Index> &beta)
             : Config(config),
@@ -104,7 +110,7 @@ namespace ci {
 
     public:
         ci::String::List<ci::String::Index> alpha, beta;
-        mpi::Comm comm;
+        MPI::Comm comm;
         IO io;
         std::vector<size_t> dims;
     };
@@ -114,7 +120,7 @@ namespace ci {
 
     template<>
     struct CI<Full> : CI<> {
-        CI(const Config &config, mpi::Comm comm, File::Group io)
+        CI(const Config &config, MPI::Comm comm, File::Group io)
             : CI<>(config, comm, io,
                    ci::strings(config.orbitals, config.alpha),
                    ci::strings(config.orbitals, config.beta))
@@ -123,15 +129,15 @@ namespace ci {
 
     template<>
     struct CI<Truncated> : CI<> {
-        CI(const Config &config, mpi::Comm comm, File::Group io)
+        CI(const Config &config, MPI::Comm comm, File::Group io)
             : CI<>(config, comm, io,
-                   ci::strings(config.orbitals, config.alpha, config.level),
-                   ci::strings(config.orbitals, config.alpha, config.level)),
+                   ci::strings(config.orbitals, config.alpha, config.rank),
+                   ci::strings(config.orbitals, config.alpha, config.rank)),
               ref_(CI<>::alpha[0])
         {}
         bool test(const String &ex) const {
             //return 0;
-            if (String::difference(ex, ref_) > this->level) return false;
+            if (String::difference(ex, ref_) > this->rank) return false;
             return true;
         }
     private:
@@ -146,6 +152,20 @@ namespace mpqc {
 namespace ci {
 
 }
+}
+
+namespace sc {
+  /// writes Config to sc::StateOut
+  inline void ToStateOut(const mpqc::ci::Config &a, StateOut &so, int &count) {
+    const char* a_cast = reinterpret_cast<const char*>(&a);
+    count += so.put(a_cast, sizeof(mpqc::ci::Config));
+  }
+
+  /// reads Config from sc::StateIn
+  inline void FromStateIn(mpqc::ci::Config &a, StateIn &si, int &count) {
+    char* a_cast = reinterpret_cast<char*>(&a);
+    count += si.get(a_cast);
+  }
 }
 
 #endif // MPQC_CI_CONFIG_HPP

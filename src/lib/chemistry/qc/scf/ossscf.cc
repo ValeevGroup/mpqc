@@ -103,11 +103,11 @@ OSSSCF::OSSSCF(const Ref<KeyVal>& keyval) :
   op_fockb_.computed()=0;
 
   // calculate the total nuclear charge
-  double Znuc=molecule()->nuclear_charge();
+  const int Znuc=molecule()->total_Z();
 
   // check to see if this is to be a charged molecule
-  double charge = keyval->doublevalue("total_charge");
-  int nelectrons = (int)(Znuc-charge+1.0e-4);
+  const int charge = keyval->intvalue("total_charge", KeyValValueint(0));
+  const int nelectrons = Znuc-charge;
 
   // figure out how many doubly occupied shells there are
   if (keyval->exists("ndocc")) {
@@ -127,7 +127,7 @@ OSSSCF::OSSSCF(const Ref<KeyVal>& keyval) :
   ExEnv::out0() << endl << indent << "OSSSCF::init: total charge = "
        << Znuc-2*tndocc_-2 << endl << endl;
 
-  nirrep_ = molecule()->point_group()->char_table().ncomp();
+  nirrep_ = molecule()->point_group()->order();
 
   if (nirrep_==1) {
     ExEnv::err0() << indent << "OSSSCF::init: cannot do C1 symmetry\n";
@@ -267,10 +267,10 @@ OSSSCF::fock(int n)
     return op_fockb_.result();
 }
 
-int
-OSSSCF::spin_polarized()
+double
+OSSSCF::magnetic_moment() const
 {
-  return 1;
+  return 0;
 }
 
 void

@@ -29,6 +29,9 @@
 #ifndef _util_group_memarmci_cc
 #define _util_group_memarmci_cc
 
+// ARMCI may include MPI/C++ headers
+#define OMPI_SKIP_MPICXX
+#define MPICH_SKIP_MPICXX
 extern "C" {
 #include <armci.h>
 }
@@ -217,7 +220,7 @@ ARMCIMemoryGrp::malloc_local(size_t nbyte)
 }
 
 void
-ARMCIMemoryGrp::free_local(void *data)
+ARMCIMemoryGrp::free_local(void* &data)
 {
   ARMCI_Free_local(data);
   unmanage_array(data);

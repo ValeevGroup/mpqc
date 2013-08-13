@@ -96,12 +96,12 @@ CLSCF::CLSCF(const Ref<KeyVal>& keyval) :
   cl_fock_.computed()=0;
 
   // calculate the total nuclear charge
-  double Znuc=molecule()->nuclear_charge();
+  const int Znuc=molecule()->total_Z();
 
   // check to see if this is to be a charged molecule
-  double charge = keyval->doublevalue("total_charge");
+  const int charge = keyval->intvalue("total_charge", KeyValValueint(0));
 
-  int nelectron = (int)((Znuc-charge+1.0e-4));
+  int nelectron = Znuc-charge;
 
   // now see if ndocc was specified
   if (keyval->exists("ndocc")) {
@@ -200,10 +200,10 @@ CLSCF::fock(int n)
   return cl_fock_.result();
 }
 
-int
-CLSCF::spin_polarized()
+double
+CLSCF::magnetic_moment() const
 {
-  return 0;
+  return 0.0;
 }
 
 void
@@ -211,7 +211,7 @@ CLSCF::print(ostream&o) const
 {
   SCF::print(o);
   o << indent << "CLSCF Parameters:\n" << incindent
-    << indent << "charge = " << molecule()->nuclear_charge()-2*tndocc_ << endl
+    << indent << "charge = " << molecule()->total_charge()-2*tndocc_ << endl
     << indent << "ndocc = " << tndocc_ << endl
     << indent << "docc = [";
   for (int i=0; i < nirrep_; i++)

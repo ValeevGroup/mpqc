@@ -1,17 +1,30 @@
 # -*- mode: cmake -*-
 
+# It is important to match MPQC compiler toolchain and Boost toolchain
+# otherwise strange things may happen
+# The default is to build Boost to match toolchain in order to avoid issues.
+# In case one knows exactly what compiler/Boost are used,
+# set BOOST to Boost installation root, e.g. /usr/local
+
 if (DEFINED BOOST)
 
-  set(Boost_USE_STATIC_LIBS        ON)
-  set(Boost_USE_MULTITHREADED      ON)
-  #set(Boost_USE_STATIC_RUNTIME    OFF)
+  set(Boost_USE_STATIC_LIBS OFF)
+  #set(Boost_USE_MULTITHREADED OFF)
+  #set(Boost_USE_STATIC_RUNTIME OFF)
 
   set(BOOST_ROOT ${BOOST})
   set(Boost_NO_SYSTEM_PATHS TRUE)
-  find_package(Boost 1.48 COMPONENTS thread)
-  if (NOT Boost_FOUND)
-    message(FATAL_ERROR "Boost not found in ${BOOST_ROOT}")
+  set(Boost_DETAILED_FAILURE_MSG TRUE)
+  if (PYTHONLIBS_FOUND)
+    set(pythoncomponent python)
+  else()
+    set(pythoncomponent )
   endif()
+  find_package(Boost 1.48 COMPONENTS thread ${pythonlibs} system)
+  if (NOT Boost_FOUND)
+    message(FATAL_ERROR "Necessary Boost install not found in ${BOOST_ROOT}")
+  endif()
+  set(HAVE_BOOST ON)
 
 elseif (MPQC_EXPERT)
 
@@ -23,14 +36,10 @@ else()
   set(EXTERNAL_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external)
   set(EXTERNAL_BUILD_DIR ${PROJECT_BINARY_DIR}/external/build)
 
-  set(BOOST_URL
-    http://downloads.sourceforge.net/project/boost/boost/1.53.0/boost_1_53_0.tar.gz)
+  #set(BOOST_URL
+  #  http://downloads.sourceforge.net/project/boost/boost/1.53.0/boost_1_53_0.tar.gz)
+  set(BOOST_URL ${EXTERNAL_SOURCE_DIR}/boost_1_53_0.tar.gz)
   set(BOOST_URL_HASH MD5=57a9e2047c0f511c4dfcf00eb5eb2fbb)
-
-  if (EXISTS ${EXTERNAL_SOURCE_DIR}/boost.tar.gz)
-    set(BOOST_URL ${EXTERNAL_SOURCE_DIR}/boost.tar.gz)
-    set(BOOST_URL_HASH "")
-  endif()
 
   message("** Will build Boost from ${BOOST_URL}")
 
@@ -62,6 +71,10 @@ else()
   endif()
   file(WRITE ${EXTERNAL_BUILD_DIR}/boost/user-config.jam "${BOOST_CONFIG}")
 
+  if (HAVE_PYTHON)
+    set (withpython --with-python)
+  endif()
+
   ExternalProject_Add(
     boost
     PREFIX ${EXTERNAL_BUILD_DIR}/boost
@@ -72,6 +85,8 @@ else()
     BUILD_COMMAND ./b2 --user-config=${EXTERNAL_BUILD_DIR}/boost/user-config.jam
     --toolset=${BOOST_TOOLSET}
     --with-thread
+    ${withpython}
+    --with-system
     --link=static
     INSTALL_COMMAND ""
     )
@@ -82,11 +97,17 @@ else()
 
   list(APPEND Boost_LIBRARIES ${EXTERNAL_BUILD_DIR}/boost/src/boost/stage/lib/libboost_thread.a)
   list(APPEND Boost_LIBRARIES ${EXTERNAL_BUILD_DIR}/boost/src/boost/stage/lib/libboost_system.a)
+  if (HAVE_PYTHON)
+    list(APPEND Boost_LIBRARIES ${EXTERNAL_BUILD_DIR}/boost/src/boost/stage/lib/libboost_python.a)
+  endif()
 
+  set(HAVE_BOOST ON)
+  
 endif()
 
-include_directories(${Boost_INCLUDE_DIRS})
-
-message(STATUS "Boost include dir: ${Boost_INCLUDE_DIRS}")
-message(STATUS "Boost libraries: ${Boost_LIBRARIES}")
+if (HAVE_BOOST)
+  include_directories(${Boost_INCLUDE_DIRS})
+  message(STATUS "Boost include dir: ${Boost_INCLUDE_DIRS}")
+  message(STATUS "Boost libraries: ${Boost_LIBRARIES}")
+endif()
 

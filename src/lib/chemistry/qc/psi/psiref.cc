@@ -79,6 +79,23 @@ PsiSCF_RefWavefunction::save_data_state(StateOut& so) {
   so.put(nfzv_);
 }
 
+void
+PsiSCF_RefWavefunction::print(std::ostream&o) const {
+  using std::endl;
+  o << indent << "PsiSCF_RefWavefunction:" << endl;
+  o << incindent;
+    o << indent << "spin_restricted = " << (spin_restricted_ ? "true" : "false") << endl;
+    o << indent << "# frozen core   = " << nfzc_ << endl;
+    o << indent << "# frozen virt   = " << nfzv_ << endl;
+    if (vir_space_.nonnull()) {
+      o << indent << "vir_basis:" << endl;
+      vir_space_->basis()->print(o);
+      o << endl;
+    }
+    scf_->print(o);
+  o << decindent;
+}
+
 namespace {
   SpinCase1 valid_spincase(SpinCase1 s) {
     return s == AnySpinCase1 ? Alpha : s;
@@ -177,29 +194,38 @@ PsiSCF_RefWavefunction::init_spaces_restricted()
 
   // compute active orbital mask
   nmo = evals.n();
+  std::vector<ParticleHoleOrbitalAttributes> actmask_a(nmo, ParticleHoleOrbitalAttributes::None);
+  std::vector<ParticleHoleOrbitalAttributes> actmask_b(nmo, ParticleHoleOrbitalAttributes::None);
+  for(size_t o=0; o<nmo; ++o) {
+    actmask_a[o] = aoccs[o] == 0.0 ? ParticleHoleOrbitalAttributes::Particle : ParticleHoleOrbitalAttributes::Hole;
+    actmask_b[o] = boccs[o] == 0.0 ? ParticleHoleOrbitalAttributes::Particle : ParticleHoleOrbitalAttributes::Hole;
+  }
   typedef MolecularOrbitalMask<double, RefDiagSCMatrix> FZCMask;
   typedef MolecularOrbitalMask<double, RefDiagSCMatrix, std::greater<double> > FZVMask;
   FZCMask fzcmask(nfzc(), evals);
   FZVMask fzvmask(nfzv(), evals);
-  std::vector<bool> actmask(nmo, true);
   // add frozen core and frozen virtuals masks
-  std::transform(fzcmask.mask().begin(), fzcmask.mask().end(),
-                 fzvmask.mask().begin(), actmask.begin(), std::logical_and<bool>());
+  for(size_t o=0; o<nmo; ++o) {
+    if (not fzcmask[o] || not fzvmask[o]) {
+      actmask_a[o] = ParticleHoleOrbitalAttributes::None;
+      actmask_b[o] = ParticleHoleOrbitalAttributes::None;
+    }
+  }
 
   Ref<OrbitalSpaceRegistry> oreg = this->world()->tfactory()->orbital_registry();
 
   if (scf()->spin_polarized() == false) { // closed-shell
     spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, AnySpinCase1, bs, integral, evecs_ao,
-                                                   aoccs, actmask, evals, moorder,
+                                                   aoccs, actmask_a, evals, moorder,
                                                    vir_space(), fbrun);
     spinspaces_[Beta] = spinspaces_[Alpha];
   }
   else { // spin-restricted open-shell
     spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, Alpha, bs, integral, evecs_ao,
-                                                   aoccs, actmask, evals, moorder,
+                                                   aoccs, actmask_a, evals, moorder,
                                                    vir_space(), fbrun);
     spinspaces_[Beta] = new PopulatedOrbitalSpace(oreg, Beta, bs, integral, evecs_ao,
-                                                  boccs, actmask, evals, moorder,
+                                                  boccs, actmask_b, evals, moorder,
                                                   vir_space(), fbrun);
   }
 }
@@ -255,12 +281,21 @@ PsiSCF_RefWavefunction::init_spaces_unrestricted()
   typedef MolecularOrbitalMask<double, RefDiagSCMatrix, std::greater<double> > FZVMask;
   { // alpha spin
     // compute active orbital mask
+    std::vector<ParticleHoleOrbitalAttributes> actmask(nmo, ParticleHoleOrbitalAttributes::None);
+    for(size_t o=0; o<nmo; ++o) {
+      actmask[o] = aocc[o] == 0.0 ? ParticleHoleOrbitalAttributes::Particle : ParticleHoleOrbitalAttributes::Hole;
+    }
+    typedef MolecularOrbitalMask<double, RefDiagSCMatrix> FZCMask;
+    typedef MolecularOrbitalMask<double, RefDiagSCMatrix, std::greater<double> > FZVMask;
     FZCMask fzcmask(nfzc(), alpha_evals);
     FZVMask fzvmask(nfzv(), alpha_evals);
-    std::vector<bool> actmask(nmo, true);
     // add frozen core and frozen virtuals masks
-    std::transform(fzcmask.mask().begin(), fzcmask.mask().end(),
-                   fzvmask.mask().begin(), actmask.begin(), std::logical_and<bool>());
+    for(size_t o=0; o<nmo; ++o) {
+      if (not fzcmask[o] || not fzvmask[o]) {
+        actmask[o] = ParticleHoleOrbitalAttributes::None;
+      }
+    }
+
     spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, Alpha, bs, integral,
                                                    alpha_evecs,
                                                    aocc, actmask, alpha_evals, moorder,
@@ -268,12 +303,21 @@ PsiSCF_RefWavefunction::init_spaces_unrestricted()
   }
   { // beta spin
     // compute active orbital mask
-    FZCMask fzcmask(nfzc(), beta_evals);
-    FZVMask fzvmask(nfzv(), beta_evals);
-    std::vector<bool> actmask(nmo, true);
+    std::vector<ParticleHoleOrbitalAttributes> actmask(nmo, ParticleHoleOrbitalAttributes::None);
+    for(size_t o=0; o<nmo; ++o) {
+      actmask[o] = bocc[o] == 0.0 ? ParticleHoleOrbitalAttributes::Particle : ParticleHoleOrbitalAttributes::Hole;
+    }
+    typedef MolecularOrbitalMask<double, RefDiagSCMatrix> FZCMask;
+    typedef MolecularOrbitalMask<double, RefDiagSCMatrix, std::greater<double> > FZVMask;
+    FZCMask fzcmask(nfzc(), alpha_evals);
+    FZVMask fzvmask(nfzv(), alpha_evals);
     // add frozen core and frozen virtuals masks
-    std::transform(fzcmask.mask().begin(), fzcmask.mask().end(),
-                   fzvmask.mask().begin(), actmask.begin(), std::logical_and<bool>());
+    for(size_t o=0; o<nmo; ++o) {
+      if (not fzcmask[o] || not fzvmask[o]) {
+        actmask[o] = ParticleHoleOrbitalAttributes::None;
+      }
+    }
+
     spinspaces_[Beta] = new PopulatedOrbitalSpace(oreg, Beta, bs, integral,
                                                   beta_evecs,
                                                   bocc, actmask, beta_evals, moorder,
@@ -323,6 +367,19 @@ PsiRASCI_RefWavefunction::PsiRASCI_RefWavefunction(StateIn& si) : RefWavefunctio
 }
 
 PsiRASCI_RefWavefunction::~PsiRASCI_RefWavefunction() {
+}
+
+void
+PsiRASCI_RefWavefunction::print(std::ostream&o) const {
+  using std::endl;
+  o << indent << "PsiRASCI_RefWavefunction:" << endl;
+  o << incindent;
+    o << indent << "spin_restricted = " << (spin_restricted_ ? "true" : "false") << endl;
+    o << indent << "omit_uocc       = " << (omit_uocc_ ? "true" : "false") << endl;
+    o << indent << "# frozen core   = " << nfzc_ << endl;
+    o << indent << "# frozen virt   = " << nfzv_ << endl;
+    wfn_->print(o);
+  o << decindent;
 }
 
 void
@@ -392,35 +449,27 @@ PsiRASCI_RefWavefunction::init_spaces()
   }
 
   // compute active orbital mask
+  std::vector<ParticleHoleOrbitalAttributes> actmask(nmo, ParticleHoleOrbitalAttributes::None);
+  for(size_t o=0; o<nmo; ++o) {
+    actmask[o] = occs[o] == 0.0 ? ParticleHoleOrbitalAttributes::Particle : ParticleHoleOrbitalAttributes::Hole;
+  }
   typedef MolecularOrbitalMask<double, RefDiagSCMatrix> FZCMask;
   typedef MolecularOrbitalMask<double, RefDiagSCMatrix, std::greater<double> > FZVMask;
   FZCMask fzcmask(nfzc(), evals);
   FZVMask fzvmask(nfzv(), evals);
-  std::vector<bool> actmask(nmo, true);
   // add frozen core and frozen virtuals masks
-  std::transform(fzcmask.mask().begin(), fzcmask.mask().end(),
-                 fzvmask.mask().begin(), actmask.begin(), std::logical_and<bool>());
+  for(size_t o=0; o<nmo; ++o) {
+    if (not fzcmask[o] || not fzvmask[o]) {
+      actmask[o] = ParticleHoleOrbitalAttributes::None;
+    }
+  }
 
   Ref<OrbitalSpaceRegistry> oreg = this->world()->tfactory()->orbital_registry();
 
   // alpha and beta orbitals are the same
-  if(force_rasscf())
-    spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, AnySpinCase1, bs, integral, evecs_ao,
-                                                 occs, actmask, evals, moorder,0,0,rasscf_occs);
-  else
-    spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, AnySpinCase1, bs, integral, evecs_ao,
-                                                     occs, actmask, evals, moorder);
+  spinspaces_[Alpha] = new PopulatedOrbitalSpace(oreg, AnySpinCase1, bs, integral, evecs_ao,
+                                                 occs, actmask, evals, moorder);
   spinspaces_[Beta] = spinspaces_[Alpha];
-  orig_space_init_ed_ = true;
-  if(!force_rasscf() and (! screened_space_init_ed_) and fabs(occ_thres()) > sc::PopulatedOrbitalSpace::zero_occupancy())
-  {  // must get spin-free RDM and orbital space coefficients in the original MO basis, since we are constructing new ones.
-    RefSymmSCMatrix OBS_mo_ordm = this->orig_ordm_orbs_sb(Alpha) + this->orig_ordm_orbs_sb(Beta);
-    screened_spinspaces_[Alpha] = new PopulatedOrbitalSpace(do_screen(), occ_thres(), OBS_mo_ordm, oreg, AnySpinCase1, bs, integral, evecs_ao,
-                                                            occs, actmask, evals, moorder);
-    screened_spinspaces_[Beta] = screened_spinspaces_[Alpha];
-    screened_space_init_ed_ = true;
-  }
-
 }
 
 RefSymmSCMatrix
@@ -433,33 +482,10 @@ PsiRASCI_RefWavefunction::core_hamiltonian_for_basis(const Ref<GaussianBasisSet>
 
 
 RefSymmSCMatrix
-PsiRASCI_RefWavefunction::orig_ordm_orbs_sb(SpinCase1 spin) const
-{
-  RefSymmSCMatrix opdm_full = wfn()->mo_density(spin);
-  RefSymmSCMatrix result;
-  if (omit_uocc() == false)
-    result = opdm_full;
-  else {  // if uoccs were omitted, map the density from wfn()->orbs_sb() to this->orbs_sb()
-    result = opdm_full.kit()->symmmatrix(this->orig_orbs_sb(spin)->dim());
-    MOIndexMap o2f = (*(wfn()->orbs_sb(spin)) << *(this->orig_orbs_sb(spin)));// call 'orig_orbs_sb' instead of 'orbs_sb'
-    const unsigned int nocc = this->orig_orbs_sb(spin)->rank();
-    for(unsigned int r=0; r<nocc; ++r) {
-      unsigned int rr = o2f[r];
-      for(unsigned int c=0; c<=r; ++c) {
-        unsigned int cc = o2f[c];
-        result(r,c) = opdm_full(rr,cc);
-      }
-    }
-  }
-  return result;
-}
-
-
-RefSymmSCMatrix
 PsiRASCI_RefWavefunction::ordm(SpinCase1 spin) const
-{ // this AO density is computed from the unscreened RDM and orbital spaces. RDM is in OBS
-  RefSymmSCMatrix P = this->orig_ordm_orbs_sb(spin);//'P' and 'C_ao' must be consistent
-  RefSCMatrix C_ao = this->orig_orbs_sb(spin)->coefs(); //must call orig_orbs_sb for consistency with ordm_orbs_sb() and to avoid infinite loop
+{
+  RefSymmSCMatrix P = wfn()->mo_density(spin);
+  RefSCMatrix C_ao = wfn()->orbs_sb(spin)->coefs();
   RefSymmSCMatrix P_ao = P.kit()->symmmatrix(C_ao.rowdim());
   P_ao.assign(0.0);
   P_ao.accumulate_transform(C_ao, P);

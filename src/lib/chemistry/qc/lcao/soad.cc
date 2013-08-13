@@ -80,12 +80,18 @@ RefSymmSCMatrix sc::SuperpositionOfAtomicDensities::density() {
   return density_;
 }
 
-int sc::SuperpositionOfAtomicDensities::spin_polarized() {
-  return this->nelectron() % 2;
+double sc::SuperpositionOfAtomicDensities::magnetic_moment() const {
+  // count unpaired electrons
+  const int norbs = occs_.n();
+  double magmom = 0.0;
+  for(int o=0; o<norbs; ++o)
+    if (occs_.get_element(o) == 1.0)
+      magmom += 1.0;
+  return magmom;
 }
 
 int sc::SuperpositionOfAtomicDensities::nelectron() {
-  return static_cast<int>(this->molecule()->nuclear_charge());
+  return this->molecule()->total_Z();
 }
 
 int sc::SuperpositionOfAtomicDensities::value_implemented() const {

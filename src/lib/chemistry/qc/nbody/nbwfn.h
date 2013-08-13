@@ -55,7 +55,7 @@ namespace sc {
 	  specifies the reference wavefunction.
 	  The most common choice is an SD_RefWavefunction.
 
-          <tr><td><tt>world</tt><td>WavefunctionWorld<td>none<td>
+          <tr><td><tt>world</tt><td>WavefunctionWorld<td>see the notes<td>
 	  the WavefunctionWorld object that this Wavefunction belongs to.
 	  If not given, this object will live in its own WavefunctionWorld.
           Ordinarily one does need to specify this.
@@ -70,23 +70,16 @@ namespace sc {
       const Ref<WavefunctionWorld>& world() const { return world_; }
       const Ref<RefWavefunction>& refwfn() const { return refwfn_; }
 
-      int nelectron();
-      int spin_polarized();
-
       double ref_energy() { return refwfn_->energy(); }
       double corr_energy() {
         return energy() - ref_energy();
       }
 
-      /// prints out the object
-      void print(std::ostream& o) const;
+      void print(std::ostream& o=ExEnv::out0()) const;
 
       /// overloads MolecularEnergy::purge()
       void purge();
       void obsolete();
-
-      void compute() {}
-      RefSymmSCMatrix density() { return RefSymmSCMatrix(); }
 
       void symmetry_changed();
       void set_desired_value_accuracy(double acc);

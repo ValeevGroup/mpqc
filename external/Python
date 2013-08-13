@@ -1,0 +1,29 @@
+# -*- mode: cmake -*-
+
+if (PYTHON)
+
+  find_package(PythonInterp)
+  if (PYTHONINTERP_FOUND)
+    # seek the same version of python
+    set(PYTHONINTERP_VERSION_STRING ${PYTHON_VERSION_STRING})
+    set(Python_ADDITIONAL_VERSIONS ${PYTHONINTERP_VERSION_STRING})
+    find_package(PythonLibs)
+    
+    # if versions of libraries and interpreter match, show can go on
+    if (PYTHONLIBS_VERSION_STRING STREQUAL PYTHONINTERP_VERSION_STRING)
+      set(HAVE_PYTHON TRUE)
+      include(find_python_module)
+      find_python_module(numpy REQUIRED)
+      if (PY_NUMPY)
+        set (HAVE_PYTHON_NUMPY TRUE)
+      endif(PY_NUMPY)
+    else()
+      message("** Could not find matching PYTHON interpreter and libraries")
+      message("** Make sure that the \"correct\" PYTHON interpreter appears first in PATH")
+      if (CMAKE_SYSTEM_NAME STREQUAL Darwin)
+        message("** N.B. With MacPorts use \"port select\", e.g.: port select python python27-apple")
+      endif()
+    endif()
+  endif(PYTHONINTERP_FOUND)
+  
+endif()

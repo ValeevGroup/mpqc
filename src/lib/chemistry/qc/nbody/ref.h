@@ -40,19 +40,20 @@ namespace sc {
 
   /// PopulatedOrbitalSpace is an OrbitalSpace populated with a density.
   /// It holds OrbitalSpaces representing subsets of the OrbitalSpace,
-  /// for example, corresponding to various occupancies.
+  /// for example, corresponding to various occupancies, or involved/not involved
+  /// in correlation treatment.
   class PopulatedOrbitalSpace : virtual public SavableState {
     public:
     /**
      * @param oreg an OrbitalSpaceRegistry object that will know of the computed spaces
-     * @param spin spin-case that will be used to compute labels of OrbitalSpace objects
+     * @param spin spincase attributed to the OrbitalSpace and its subspaces
      * @param bs basis set
      * @param integral Integral factory used to support coefficients
-     * @param coefs coefficients of orbitals expanded in basis (AO by MO matrix)
-     * @param occs occupation vector
-     * @param active the mask used to freeze orbitals (active[i] == false means i will be frozen)
+     * @param coefs coefficients of orbitals expanded in basis (AO by MO matrix), the MO dimension blocked by symmetry
+     * @param occs specifies occupancies of the orbitals specified by coefs
+     * @param active the mask used to exclude orbitals from correlation treatment (active[i] == false means i will be frozen)
      * @param energies orbital energies.
-     * @param eorder_increasing if true, energy-ordered spaces will order orbitals in the order of increasing energies
+     * @param eorder_increasing if true/false, energy-ordered spaces will be in the order of increasing/decreasing energies
      * @param vbs OrbitalSpace that represents the unoccupied orbitals.
      *            The default is 0, which means to use empty orbitals from coefs.
      * @param fbrun the FockBuildRuntime object used to compute Fock matrices. if vbs != 0, fbrun must be specified.
@@ -62,46 +63,54 @@ namespace sc {
                             const Ref<Integral>& integral,
                             const RefSCMatrix& coefs,
                             const std::vector<double>& occs,
-                            const std::vector<bool>& active,
+                            const std::vector<ParticleHoleOrbitalAttributes>& active,
                             const RefDiagSCMatrix& energies,
                             bool eorder_increasing = true,
                             Ref<OrbitalSpace> vbs = 0,
-                            Ref<FockBuildRuntime> fbrun = 0,
-                            std::vector<double> rasscf_occs=std::vector<double>()
-                           ); //if rasscf_occs is specified, uses rasscf_occs instead of occs to construct occ_act_mask,
-                              //eventually to construct occ_act_sb_ differently->force GG/gg space to be ras1+ras2 orbs
-      PopulatedOrbitalSpace(const bool doscreen, const double occ_thres, RefSymmSCMatrix OBS_mo_ordm, const Ref<OrbitalSpaceRegistry>& oreg,
-                                  SpinCase1 spin, const Ref<GaussianBasisSet>& bs,
-                                  const Ref<Integral>& integral,
-                                  RefSCMatrix& coefs,
-                                  const std::vector<double>& occs,
-                                  std::vector<bool>& active,
-                                  const RefDiagSCMatrix& energies,
-                                  bool eorder_increasing = true,
-                                  Ref<OrbitalSpace> vbs = 0,
-                                  Ref<FockBuildRuntime> fbrun = 0); // this is to construct screened orb spaces
+                            Ref<FockBuildRuntime> fbrun = 0
+                           );
       PopulatedOrbitalSpace(StateIn& si);
       ~PopulatedOrbitalSpace();
       void save_data_state(StateOut& so);
 
       /// an orbital is occupied if its occupancy is greater than this
-      static double zero_occupancy() { return 1e-12; }
+      static double zero_occupancy() {
+        return 1e-8; // \approx sqrt(DBL_EPSILON)
+      }
 
+      /**
+       * @return the OrbitalSpaceRegistry object that keeps this OrbitalSpace and its subspaces
+       */
       const Ref<OrbitalSpaceRegistry>& orbital_registry() const { return oreg_; }
 
+      /// @name OrbitalSpace accessors
+      /// These access the OrbitalSpace and its subspaces.
+      /// Occupied/unoccupied subspaces are decided by
+      /// @c occs and @c zero_occupancy().
+      //@{
+
+      /// @return symmetry-blocked orbitals
       const Ref<OrbitalSpace>& orbs_sb() const { return orbs_sb_; }
+      /// @return energy-ordered orbitals, see @c eorder_increasing
       const Ref<OrbitalSpace>& orbs() const { return orbs_; }
+      /// @return symmetry-blocked occupied orbitals
       const Ref<OrbitalSpace>& occ_sb() const { return occ_sb_; }
-      const Ref<OrbitalSpace>& occ_act_sb() const { return occ_act_sb_; }
-      const Ref<OrbitalSpace>& unscreen_occ_act_sb() const { return unscreen_occ_act_sb_; }
+      /// @return energy-ordered occupied orbitals
       const Ref<OrbitalSpace>& occ() const { return occ_; }
+      /// @return symmetry-blocked active (as in ``participating in correlation treatment'') occupied orbitals
+      const Ref<OrbitalSpace>& occ_act_sb() const { return occ_act_sb_; }
+      /// @return energy-ordered active occupied orbitals
       const Ref<OrbitalSpace>& occ_act() const { return occ_act_; }
+      /// @return symmetry-blocked unoccupied orbitals
       const Ref<OrbitalSpace>& uocc_sb() const { return uocc_sb_; }
-      const Ref<OrbitalSpace>& conv_uocc_sb() const { return conv_uocc_sb_; }
-      const Ref<OrbitalSpace>& conv_occ_sb() const { return conv_occ_sb_; }
-      const Ref<OrbitalSpace>& uocc_act_sb() const { return uocc_act_sb_; }
+      /// @return energy-ordered unoccupied orbitals
       const Ref<OrbitalSpace>& uocc() const { return uocc_; }
+      /// @return symmetry-blocked active unoccupied orbitals
+      const Ref<OrbitalSpace>& uocc_act_sb() const { return uocc_act_sb_; }
+      /// @return energy-ordered active unoccupied orbitals
       const Ref<OrbitalSpace>& uocc_act() const { return uocc_act_; }
+
+      //@}
 
     private:
       Ref<OrbitalSpaceRegistry> oreg_;
@@ -109,40 +118,42 @@ namespace sc {
       Ref<OrbitalSpace> orbs_;
       Ref<OrbitalSpace> occ_sb_;
       Ref<OrbitalSpace> occ_act_sb_;
-      Ref<OrbitalSpace> unscreen_occ_act_sb_; // we keep the unscreened (but rotated) orbitals to use when transformation RDM
       Ref<OrbitalSpace> occ_;
       Ref<OrbitalSpace> occ_act_;
       Ref<OrbitalSpace> uocc_sb_;
       Ref<OrbitalSpace> uocc_act_sb_;
       Ref<OrbitalSpace> uocc_;
       Ref<OrbitalSpace> uocc_act_;
-      Ref<OrbitalSpace> conv_uocc_;//this denotes the virtual orb space in the conventional sense,e.g. in MRCI, they are orbs other than
-                                   // core and active occupied ones
-      Ref<OrbitalSpace> conv_uocc_sb_;
-      Ref<OrbitalSpace> conv_occ_sb_;
 
       /// purges the spaces from the registry
       void purge();
   };
 
   /**
-     RefWavefunction represents the reference wave function used in correlated calculations.
+     RefWavefunction represents the reference wave function (or, more generally, a state)
+     used as a starting point for the introduction of electron correlation.
+     Single-determinantal Wavefunction, such as OneBodyWavefunction, and more general
+     multi-determinantal (multiconfiguration) Wavefunction, such as CI, can be used as a reference (see SD_RefWavefunction).
+     See Extern_RefWavefunction for an example of a RefWavefunction composed without a Wavefunction object.
+
+     RefWavefunction is essentially two things:
+     a set of orbitals (one-particle states) represented by OrbitalSpace objects, and one-particle
+     reduced density matrices (RDMs). More generally, higher-order RDMs may also be needed for multideterminantal references,
+     but currently they are not provided by RefWavefunction.
+
      It is essentially an abstract <a href="http://en.wikipedia.org/wiki/Adapter_pattern">Adapter</a>.
-     The main content is a set of OrbitalSpace objects.
-     Single-determinantal and multi-determinantal Wavefunction can be used as a reference.
      However since Wavefunction does not have proper constructors, it's not implemented
      as a proper Adapter to Wavefunction and thus implements many member functions of Wavefunction.
      The main content is a set of OrbitalSpace objects.
+
   */
   class RefWavefunction : virtual public SavableState {
     protected:
 
-      /// return true to override density fitting settings of RefWavefunction objects to
-      /// those of WavefunctionWorld in which they live. This should only be used for testing
-      /// as it may produce Fock matrices that will differ from those of the original reference.
-      static bool use_world_dfinfo() {
-        return false;
-      }
+      /// if true, override density fitting settings of RefWavefunction objects with
+      /// those of WavefunctionWorld in which they live. This may result in
+      /// Fock matrices that will differ from those of the original reference.
+      bool use_world_dfinfo() const { return use_world_dfinfo_; }
 
       /** A KeyVal constructor is used to generate a RefWavefunction
           object from a KeyVal object. This constructor accepts all keywords
@@ -168,6 +179,11 @@ namespace sc {
           an SCF object with the minimal basis needed to express the orbitals used in defining the RAS spaces.
           For example, for a valence RASSCF this means that SCF with an STO-3G basis will suffice. For states
           with Rydberg character one may want to choose an appropriate ANO basis set.
+
+          <tr><td><tt>use_world_df</tt><td>boolean<td>false<td>Whether to override this object's density-fitting
+          settings by those provided by <tt>world</tt> object. The default is to use the object-specific
+          density fitting settings (see the particular implementation of RefWavefunction to find out what that
+          may be).
 
           </table>
       */
@@ -201,8 +217,6 @@ namespace sc {
      */
     const Ref<OrbitalSpace>& valence_orbs() const;
 
-    /// if true, force alpha and beta 1-rdm the same for spin-free algorithms
-    void set_spinfree(bool TrueOrFalse);
     /// @sa MolecularEnergy::energy()
     virtual double energy() =0;
     /// Set the accuracy to which the value is to be computed. @sa Function::set_desired_value_accuracy()
@@ -215,8 +229,12 @@ namespace sc {
     virtual bool desired_value_accuracy_set_to_default() const;
     /// @sa Wavefunction::nelectron()
     virtual int nelectron() const =0;
-    /// @sa Wavefunction::spin_polarized()
-    virtual bool spin_polarized() const =0;
+    /// @sa Wavefunction::magnetic_moment()
+    virtual double magnetic_moment() const =0;
+    /// @return false if magnetic moment is 0. @sa Wavefunction::spin_polarized()
+    bool spin_polarized() const {
+      return magnetic_moment() != 0.0;
+    }
     /// @sa Wavefunction::dk()
     virtual int dk() const =0;
     /// @sa Wavefunction::momentum_basis()
@@ -229,12 +247,15 @@ namespace sc {
                                                        const Ref<GaussianBasisSet> &p_basis) =0;
     /// return the AO basis density
     virtual RefSymmSCMatrix ordm(SpinCase1 spin) const =0;
-    /// return the MO basis density (MOs are given by orbs_sb())
+    /// return the density in the orbs_sb() space
     virtual RefSymmSCMatrix ordm_orbs_sb(SpinCase1 spin) const;
+    /// return the density in the occ_sb() space
     virtual RefSymmSCMatrix ordm_occ_sb(SpinCase1 spin) const;
 
     /// is this a single-determinantal reference?
     virtual bool sdref() const =0;
+    /// which DensityFittingRuntime used to compute this reference wave function
+    virtual Ref<DensityFittingInfo> dfinfo() const =0;
 
     /// Returns the space of symmetry-blocked orthogonal SOs (spans the entire space of the basis)
     const Ref<OrbitalSpace>& oso_space() const;
@@ -246,16 +267,12 @@ namespace sc {
     const Ref<OrbitalSpace>& occ_sb(SpinCase1 spin = AnySpinCase1) const;
     /// Return the space of symmery-blocked active occupied MOs of the given spin
     const Ref<OrbitalSpace>& occ_act_sb(SpinCase1 spin = AnySpinCase1) const;
-    /// Return the space of symmery-blocked active occupied MOs of the given spin, (orbs rotated but not screened)
-    const Ref<OrbitalSpace>& unscreen_occ_act_sb(SpinCase1 spin = AnySpinCase1) const;
     /// Return the space of occupied MOs of the given spin
     const Ref<OrbitalSpace>& occ(SpinCase1 spin = AnySpinCase1) const;
     /// Return the space of active occupied MOs of the given spin
     const Ref<OrbitalSpace>& occ_act(SpinCase1 spin = AnySpinCase1) const;
     /// Return the space of symmetry-blocked unoccupied (virtual) MOs of the given spin
     const Ref<OrbitalSpace>& uocc_sb(SpinCase1 spin = AnySpinCase1) const;
-    const Ref<OrbitalSpace>& conv_uocc_sb(SpinCase1 spin = AnySpinCase1) const;
-    const Ref<OrbitalSpace>& conv_occ_sb(SpinCase1 spin = AnySpinCase1) const;
     /// Return the space of symmetry-blocked active unoccupied (virtual) MOs of the given spin
     const Ref<OrbitalSpace>& uocc_act_sb(SpinCase1 spin = AnySpinCase1) const;
     /// Return the space of unoccupied (virtual) MOs of the given spin
@@ -263,50 +280,34 @@ namespace sc {
     /// Return the space of active unoccupied (virtual) MOs of the given spin
     const Ref<OrbitalSpace>& uocc_act(SpinCase1 spin = AnySpinCase1) const;
 
-    // 'original' orbs_sb: without transformation to the screened orbital space
-    const Ref<OrbitalSpace>& orig_orbs_sb(SpinCase1 spin = AnySpinCase1) const;
+    virtual void print(std::ostream& os = ExEnv::out0()) const =0;
 
-    double occ_thres() {return occ_thres_;}
-    void set_occ_thres(double vv) {occ_thres_ = vv;}
-    bool force_rasscf(){return force_correlate_rasscf_;}
-    void set_force_correlate_rasscf(const bool force) {force_correlate_rasscf_ = force;}
-    bool do_screen() {return do_screen_;}
-    void set_do_screen(bool screenornot) {do_screen_ = screenornot;}
-    Ref<PopulatedOrbitalSpace> & get_poporbspace(SpinCase1 spin = Alpha) {return spinspaces_[spin];}
-    Ref<PopulatedOrbitalSpace>& get_screened_poporbspace(SpinCase1 spin = Alpha) {return screened_spinspaces_[spin];}
-    /// which DensityFittingRuntime used to compute this reference wave function
-    virtual Ref<DensityFittingInfo> dfinfo() const =0;
+    protected:
+
+    mutable Ref<PopulatedOrbitalSpace> spinspaces_[NSpinCases1];
+
+    /// For spin-free algorithms, if this is true, we would set both alpha/beta 1-rdm to the average of them; defaults to false
+    bool force_average_AB_rdm1_;
+
+    /// initializes the object
+    void init() const;
+    /// calling this will cause the object to be re-initialized next time it is used
+    virtual void reset();
+    /// initialize OrbitalSpace objects
+    virtual void init_spaces() = 0;
 
     private:
     Ref<WavefunctionWorld> world_;   // who owns this?
     Ref<GaussianBasisSet> basis_;
     Ref<Integral> integral_;
     bool omit_uocc_;
-    bool force_correlate_rasscf_;
-    double occ_thres_; // this parameter is in fact assigned to the value of correlate_min_occ_ of R12WavefunctionWorld, where is a logical
-                        // place to define such a variable, since it more belong to the R12 world. However, we need it to control RefWavefunction too.
-    bool do_screen_;
+    bool use_world_dfinfo_; //!< \sa use_world_dfinfo()
     /// specifies the valence orbitals. Maximum overlap heuristics can be used to reorder orbs to match these.
     Ref<OrbitalSpace> valence_orbs_;
 
     /// used to implement set_desired_value_accuracy()
     virtual void _set_desired_value_accuracy(double eps) =0;
 
-    protected:
-    /// initializes the object
-    void init() const;
-    /// calling this will cause the object to be re-initialized next time it is used
-    virtual void reset();
-    /// For spin-free algorithms, if this is true, we would set both alpha/beta 1-rdm to the average of them; defaults to false
-    bool force_average_AB_rdm1_;
-    mutable Ref<PopulatedOrbitalSpace> spinspaces_[NSpinCases1];
-    mutable Ref<PopulatedOrbitalSpace> screened_spinspaces_[NSpinCases1]; // this is used to construct the orbital spaces which are screened based on occ number using natural orbitals.
-    bool screened_space_init_ed_; // to avoid potential complexity and redundancy, we use this parameter to monitor whether "screened_spincases_" is initialized or not,
-                                  // so that we only construct it once.
-    bool orig_space_init_ed_; // created to potentially monitor the initialization state of spincases_; I find the space is initialized again and again now by calling init_spaces(), confusing.
-
-    /// initialize OrbitalSpace objects
-    virtual void init_spaces() = 0;
   };
 
   /// RefWavefunction specialization for a single-determinant wave function
@@ -376,6 +377,8 @@ namespace sc {
       ~SD_RefWavefunction();
       void save_data_state(StateOut&);
 
+      void print(std::ostream& os = ExEnv::out0()) const;
+
       void purge();
 
       bool sdref() const { return true; }
@@ -391,7 +394,7 @@ namespace sc {
       double desired_value_accuracy() const { return obwfn()->desired_value_accuracy(); }
       bool desired_value_accuracy_set_to_default() const { return obwfn()->desired_value_accuracy_set_to_default(); }
       int nelectron() const { return obwfn()->nelectron(); }
-      bool spin_polarized() const { return obwfn_->spin_polarized(); }
+      double magnetic_moment() const { return obwfn()->magnetic_moment(); }
       bool spin_restricted() const { return spin_restricted_; }
       int dk() const { return obwfn()->dk(); }
       Ref<GaussianBasisSet> momentum_basis() const { return obwfn()->momentum_basis(); }
@@ -415,22 +418,23 @@ namespace sc {
       void _set_desired_value_accuracy(double eps) { obwfn_->set_desired_value_accuracy(eps); }
   };
 
-  /// RefWavefunction specialization for a general wave function specified by its orbitals and rank-1 reduced density matrices
+  /// RefWavefunction specialization that is not an adaptor to a Wavefunction object.
+  /// This should be used as a general reference wave function specified by its orbitals and rank-1 reduced density matrices
   class Extern_RefWavefunction : public RefWavefunction {
     public:
       /// Constructs Extern_RefWavefunction using the MO-basis 1-RDMs + MO coefficients (same for alpha and beta spincase)
-      /// @param world The WavefunctionWorld in which this objects lives.
-      /// @param basis The basis set
-      /// @param integral The integral object that determines the ordering of basis functions in shells
-      /// @param orbs  The MO coefficient matrix
-      /// @param symm  Irreps of MOs
-      /// @param alpha_1rdm The alpha-spin density matrix in MO basis
-      /// @param beta_1rdm The beta-spin density matrix in MO basis (assuming if alpha_1rdm and beta_1rdm point to the SAME object
+      /// @param[in] world The WavefunctionWorld in which this objects lives.
+      /// @param[in] basis The basis set
+      /// @param[in] integral The integral object that determines the ordering of basis functions in shells
+      /// @param[in] orbs  The MO coefficient matrix, ordered by occupancy, i.e. occupied orbitals come first
+      /// @param[in] orbsymm  Irreps of MOs
+      /// @param[in] alpha_1rdm The alpha-spin density matrix in the basis of @c orbs
+      /// @param[in] beta_1rdm The beta-spin density matrix in MO basis (assuming if alpha_1rdm and beta_1rdm point to the SAME object
       ///   then if alpha and beta densities are identical.
-      /// @param nocc orbitals [0,nocc) will be occupied
-      /// @param nfzc orbitals [0,nfzc) will be inactive
-      /// @param nfzv orbitals [nmo-nfzv,nmo) will be inactive
-      /// @param omit_uocc If true, omit all unoccupied orbitals (i.e. make the unoccupied space empty). N.B. This is
+      /// @param[in] nocc orbitals [0,nocc) will be occupied
+      /// @param[in] nfzc orbitals [0,nfzc) will not be active, i.e. will not be involved in correlation treatment
+      /// @param[in] nfzv orbitals [nmo-nfzv,nmo) will not be active
+      /// @param[in] omit_uocc If true, omit all unoccupied orbitals (i.e. make the unoccupied space empty). N.B. This is
       ///                      not the same as "freezing" the unoccupieds.
       Extern_RefWavefunction(const Ref<WavefunctionWorld>& world,
                   const Ref<GaussianBasisSet>& basis,
@@ -443,6 +447,24 @@ namespace sc {
                   unsigned int nfzc = 0,
                   unsigned int nfzv = 0,
                   bool omit_uocc = false);
+      /// Constructs Extern_RefWavefunction using the orbital coefficients and 1-RDM matrices(same for alpha and beta spincase)
+      /// @param[in] world The WavefunctionWorld in which this objects lives.
+      /// @param[in] basis The basis set
+      /// @param[in] integral The integral object that determines the ordering of basis functions in shells
+      /// @param[in] orbs  AO coefficients of orbitals
+      /// @param[in] orbsymm  Irreps of the orbitals
+      /// @param[in] alpha_1rdm The alpha-spin density matrix in the basis of @c orbs
+      /// @param[in] beta_1rdm The beta-spin density matrix (assuming if alpha_1rdm and beta_1rdm point to the SAME object
+      ///   then if alpha and beta densities are identical.
+      /// @param[in] occpi specifies how many orbitals of each irrep are occupied
+      /// @param[in] fzcpi specifies how many occupied orbitals of each irrep are excluded (frozen) from correlation treatment
+      /// @param[in] fzvpi specifies how many unoccupied orbitals of each irrep are excluded (frozen) from correlation treatment
+      /// @param[in] holepi specifies in how many correlated orbitals in each irrep holes can be created;
+      ///                   the default (empty vector) means any non-frozen occupied orbital ("occpi - fzcpi")
+      /// @param[in] partpi specifies in how many correlated orbitals in each irrep particles can be created;
+      ///                   the default (empty vector) means any non-frozen unoccupied orbital ("orbspi - occpi - fzvpi")
+      /// @param[in] omit_uocc If true, omit all unoccupied orbitals (i.e. make the unoccupied space empty). N.B. This is
+      ///                      not the same as "freezing" the unoccupieds.
       Extern_RefWavefunction(const Ref<WavefunctionWorld>& world,
                   const Ref<GaussianBasisSet>& basis,
                   const Ref<Integral>& integral,
@@ -450,17 +472,18 @@ namespace sc {
                   const std::vector<unsigned int>& orbsymm,
                   const RefSymmSCMatrix& alpha_1rdm,
                   const RefSymmSCMatrix& beta_1rdm,
-                  std::vector<unsigned int> mopi,
                   std::vector<unsigned int> occpi,
-                  std::vector<unsigned int> corrpi,
                   std::vector<unsigned int> fzcpi,
                   std::vector<unsigned int> fzvpi,
-                  bool force_correlate_rasscf = false,
+                  std::vector<unsigned int> holepi = std::vector<unsigned int>(),
+                  std::vector<unsigned int> partpi = std::vector<unsigned int>(),
                   bool omit_uocc = false);
       Extern_RefWavefunction(StateIn&);
       virtual ~Extern_RefWavefunction();
       void save_data_state(StateOut&);
       RefSymmSCMatrix ordm(SpinCase1 spin) const { return rdm_[spin]; }
+
+      void print(std::ostream& os = ExEnv::out0()) const;
 
       void obsolete() {
 //        throw FeatureNotImplemented("cannot obsolete Extern_R12RefWavefunction",
@@ -473,6 +496,7 @@ namespace sc {
       double desired_value_accuracy() const { return DBL_EPSILON; }
       int nelectron() const { return nelectron_; }
       bool spin_polarized() const { return rdm_[Alpha] != rdm_[Beta]; }
+      double magnetic_moment() const;
       bool spin_restricted() const { return true; }
       /// reimplements RefWavefunction::dk(). Currently only nonrelativistic references are supported.
       int dk() const { return 0; }
@@ -489,26 +513,26 @@ namespace sc {
       unsigned int nfzv_;
       unsigned int nelectron_;
       bool omit_uocc_;
-      bool ordm_idempotent_;
+      mutable bool ordm_idempotent_;
 
 
-      void pre_init(std::vector<unsigned int> mopi,
-                    std::vector<unsigned int> occpi,
-                    std::vector<unsigned int> corrpi,
-                    std::vector<unsigned int> fzcpi,
-                    std::vector<unsigned int> fzvpi,
-                    const RefSCMatrix& orbs,
-                const std::vector<unsigned int>& orbsym);
+      void init(const RefSCMatrix& orbs,
+                const std::vector<unsigned int>& orbsym,
+                std::vector<unsigned int> occpi,
+                std::vector<unsigned int> fzcpi,
+                std::vector<unsigned int> fzvpi,
+                std::vector<unsigned int> holepi,
+                std::vector<unsigned int> partpi);
       void init_spaces() {throw sc::ProgrammingError("For Extern_RefWavefunction, spaces must be init-ed in constructor");}
-      void init_spaces(unsigned int nocc, const RefSCMatrix& orbs,
-                       const std::vector<unsigned int>& orbsym);
-      void init_spaces(std::vector<unsigned int> mopi,
+      //void init_spaces(unsigned int nocc, const RefSCMatrix& orbs,
+      //                 const std::vector<unsigned int>& orbsym);
+      void init_spaces(const RefSCMatrix& orbs,
+                       const std::vector<unsigned int>& orbsym,
                        std::vector<unsigned int> occpi,
-                       std::vector<unsigned int> corrpi,
                        std::vector<unsigned int> fzcpi,
                        std::vector<unsigned int> fzvpi,
-                       const RefSCMatrix& orbs,
-                   const std::vector<unsigned int>& orbsym);
+                       std::vector<unsigned int> holepi,
+                       std::vector<unsigned int> partpi);
       void _set_desired_value_accuracy(double eps) {
         // do nothing
       }

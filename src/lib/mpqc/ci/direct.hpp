@@ -18,12 +18,12 @@
 namespace mpqc {
   namespace ci {
 
-    double norm(const mpqc::Array<double> &A, const mpqc::mpi::Comm &comm) {
+    double norm(const mpqc::Array<double> &A, const MPI::Comm &comm) {
       MPQC_PROFILE_LINE;
       range r1 = range(0, A.dims()[0]);
       auto r2 = range(0, A.dims()[1]).block(128);
       double n = 0;
-      mpqc::mpi::Task task(comm);
+        MPI::Task task(comm);
       int j;
       while ((j = task++) < r2.size()) {
         n += norm(Matrix(A(r1, r2[j])));
@@ -72,7 +72,7 @@ namespace mpqc {
      //     @return <d,b>/||d||
      */
     double orthonormalize(range alpha, range beta, const Array<double> &b,
-                          Array<double> &D, mpi::Comm &comm) {
+                          Array<double> &D, MPI::Comm &comm) {
       MPQC_PROFILE_LINE;
       // db = d*B
       double db = 0;
@@ -202,7 +202,7 @@ namespace mpqc {
             Matrix c(alpha.size(), rb.size());
             const Matrix &s = D(alpha, rb);
             for (int j = 0; j < M; ++j) {
-              io.b(alpha,rb,j) >> c;
+                        io.b(range(alpha),rb,j) >> c;
               double q = 0; //dot(c,s);
 #pragma omp parallel for schedule(dynamic,1) reduction(+:q)
               for (int b = 0; b < rb.size(); ++b) {
@@ -241,7 +241,7 @@ namespace mpqc {
             d.fill(0);
             for (int i = 0; i < M; ++i) {
               MPQC_PROFILE_LINE;
-              io.b(alpha,rb,i) >> v;
+                        io.b(range(alpha),rb,i) >> v;
               double r = -a(i,k)*lambda(k);
 #pragma omp parallel for schedule(dynamic,1)
               for (int b = 0; b < rb.size(); ++b) {
@@ -266,11 +266,10 @@ namespace mpqc {
           if (comm.rank() == 0) {
             double dc = fabs(iters[it - 1].D - iters[it].D);
             double de = fabs(iters[it - 1].E - iters[it].E);
-            sc::ExEnv::out0() << sc::indent << sc::scprintf("CI iter. %i, E=%12.8f, del.E=%e, del.C=%e\n",
-                                                            (int) it,
-                                                            lambda[0] + ci.e_ref,
-                                                            de,
-                                                            dc);
+                    sc::ExEnv::out0()
+                        << sc::indent
+                        << sc::scprintf("CI iter. %3i, E=%15.12lf, del.E=%4.2e, del.C=%4.2e\n",
+                                        (int) it, lambda[0] + ci.e_ref + ci.e_core, de, dc);
           }
 
           // preconditioner
@@ -343,6 +342,50 @@ namespace mpqc {
 
         ++M;
       }
+
+#define ANALYZE_EIGENVECTOR 0
+#if ANALYZE_EIGENVECTOR
+      {
+        // compute the CI coefficient matrix
+        Matrix c(ci.alpha.size(), ci.beta.size());
+        c.assign(0.0);
+        Matrix tmp(c);
+        const size_t krylov_rank = ci.evals.size();
+        for(size_t v=0; v<krylov_rank; ++v) {
+          C.read(ds.b[v]);
+          C >> tmp;
+          c += ci.coefs(v,0) * tmp;
+        }
+        if (c.cols() < 100) std::cout << c << std::endl;
+
+        // SVD c
+        auto c_svd = c.jacobiSvd();
+        auto sigma = c_svd.singularValues();
+        std::vector<double> sigma_vec(sigma.rows());
+        for(size_t i=0; i<sigma_vec.size(); ++i)
+          sigma_vec[i] = sigma(i);
+        //sc::ExEnv::out0() << "CI vector singular values:\n" << sigma << std::endl;
+        //std::copy(sigma_vec.begin(), sigma_vec.end(), std::ostream_iterator<double>(std::cout,"\n"));
+
+        // compute histogram of the singular values
+        // first first nonzero signular value to determine the number of bins
+        detail::nonzero_t nonzero;
+        std::vector<double>::const_reverse_iterator v = std::find_if(sigma_vec.rbegin(), sigma_vec.rend(), nonzero);
+        const int nbins = std::floor(-std::log10(*v)) + 1;
+        std::vector<int> sigma_bins(nbins, 0);
+        for(std::vector<double>::const_reverse_iterator u = v; u != sigma_vec.rend(); ++u) {
+          const int bin = std::floor(-std::log10(*u));
+          sigma_bins[bin]++;
+        }
+        sc::ExEnv::out0() << "Log10 histogram of singular values for vector:" << std::endl;
+        for(int b=0; b<nbins; ++b) {
+          sc::ExEnv::out0() << sc::scprintf("  10^%d .. 10^%d %9d\n", -b, -(b+1), sigma_bins[b]);
+        }
+        sc::ExEnv::out0() << std::endl;
+
+      }
+
+#endif
 
       return E;
 

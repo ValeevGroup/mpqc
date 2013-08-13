@@ -28,6 +28,7 @@
 #ifndef _chemistry_qc_mbptr12_orbitalspace_h
 #define _chemistry_qc_mbptr12_orbitalspace_h
 
+#include <bitset>
 #include <vector>
 #include <stdexcept>
 #include <algorithm>
@@ -62,7 +63,6 @@ namespace sc {
   /// Orbital in a blocked space
   typedef DecoratedOrbital< unsigned int > BlockedOrbital;
 
-  namespace detail {
     /// MO is irrep, energy, occupation number
     struct MolecularOrbitalAttributes {
       public:
@@ -101,10 +101,24 @@ namespace sc {
       private:
         SpinCase1 spin_;
     };
-  } // namespace detail
 
-  typedef DecoratedOrbital< detail::MolecularOrbitalAttributes > MolecularOrbital;
-  typedef DecoratedOrbital< detail::MolecularSpinOrbitalAttributes > MolecularSpinOrbital;
+
+  /**
+   * Describes particle-hole attributes of orbitals
+   */
+  struct ParticleHoleOrbitalAttributes : public std::bitset<2> {
+    ParticleHoleOrbitalAttributes() {}
+    ParticleHoleOrbitalAttributes(unsigned long val) : std::bitset<2>(val) {}
+    ParticleHoleOrbitalAttributes(const std::bitset<2>& bs) : std::bitset<2>(bs) {}
+
+    static ParticleHoleOrbitalAttributes Hole;          //!< only holes can be created
+    static ParticleHoleOrbitalAttributes Particle;      //!< only particles can be created
+    static ParticleHoleOrbitalAttributes Any;           //!< holes and particles can be created
+    static ParticleHoleOrbitalAttributes None;          //!< neither holes nor particles can be created
+  };
+
+  typedef DecoratedOrbital< MolecularOrbitalAttributes > MolecularOrbital;
+  typedef DecoratedOrbital< MolecularSpinOrbitalAttributes > MolecularSpinOrbital;
 
   /// order by symmetry first, then by energy, then by occ num
   struct SymmetryMOOrder {
@@ -304,6 +318,8 @@ namespace sc {
         }
 
       const std::vector<bool>& mask() const { return mask_; }
+
+      bool operator[](size_t o) const { return mask_[o]; }
 
     private:
       std::vector<bool> mask_;

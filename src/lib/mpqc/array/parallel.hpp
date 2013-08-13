@@ -35,7 +35,7 @@ namespace detail {
 
 	array_parallel_impl(const std::string &name,
 			    const std::vector<size_t> &dims,
-			    mpi::Comm comm)
+			    MPI::Comm comm)
             : ArrayBase(dims),
 	      comm_(comm)
         {

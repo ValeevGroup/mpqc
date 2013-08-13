@@ -56,9 +56,9 @@ namespace sc {
       /** maps the MO indices assumed by the contents of the data file
           to that of orbs() */
       const std::vector<unsigned int>& indexmap() const;
-      /** same as @c occindexmap_sb(), except it maps to the occupied subset of orbs only */
+      /** same as @c occindexmap_sb(), except it maps the occupied subset of orbs only */
       const std::vector<unsigned int>& occindexmap_occ() const;
-      /** same as @c actindexmap_sb(), except it maps to the occupied subset of orbs only */
+      /** same as @c actindexmap_sb(), except it maps the active subset of orbs only */
       const std::vector<unsigned int>& actindexmap_occ() const;
 
       const std::vector<unsigned int>& fzcpi() const;
@@ -71,9 +71,9 @@ namespace sc {
     private:
       static ClassDesc class_desc_;
 
-      std::vector<unsigned int> indexmap_; //< file order -> mpqc order
-      std::vector<unsigned int> occindexmap_occ_;
-      std::vector<unsigned int> actindexmap_occ_;
+      std::vector<unsigned int> indexmap_; //< all file order -> all mpqc order
+      std::vector<unsigned int> occindexmap_occ_; //< occ file order -> occ mpqc order
+      std::vector<unsigned int> actindexmap_occ_; //< act file order -> act mpqc order
 
       Ref<SymmOrbitalSpace> orbs_sb_;
       Ref<CorrOrbitalSpace> orbs_;
@@ -82,7 +82,7 @@ namespace sc {
       std::vector<unsigned int> fzvpi_;
       std::vector<unsigned int> inactpi_;
       std::vector<unsigned int> actpi_;
-      std::vector<unsigned int> corrpi_; // explicitly corrlated orbitals
+      std::vector<unsigned int> corrpi_; // explicitly correlated orbitals
   };
 
   /// Reads 1-RDM from a text file

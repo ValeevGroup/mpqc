@@ -27,6 +27,10 @@ class MPQCInDatum {
     T val() const { return val_; }
 };
 
+/// @addtogroup Init
+/// @{
+
+/// Converts MPQC simple input to object-oriented input
 class MPQCIn {
 
   public:
@@ -195,6 +199,9 @@ class MPQCIn {
 
     static int checking() { return checking_; }
 };
+
+/// @}
+// end of addtogroup Init
 
 }
 

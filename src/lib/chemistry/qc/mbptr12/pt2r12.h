@@ -74,7 +74,7 @@ namespace sc {
       void compute();
       void print(std::ostream& os =ExEnv::out0()) const;
       RefSymmSCMatrix density();
-      int spin_polarized();
+      double magnetic_moment() const;
       int value_implemented() const { return 1; }
       void set_desired_value_accuracy(double acc);
 
@@ -104,7 +104,6 @@ namespace sc {
       bool cabs_singles_;
       std::string cabs_singles_h0_; // specify zeroth order H; options: 'fock',
                                     // 'dyall'
-      bool calc_davidson_;           // print out Davidson correction coefficient or not. Defaults to false.
       bool cabs_singles_coupling_; // if set to true, we include the coupling between cabs and OBS virtual orbitals. This should be preferred choice,
                                    // as explained in the paper.
       bool rotate_core_; // if set to false, when doing rasscf cabs_singles correction, don't include excitation from core orbitals to cabs orbitals in
@@ -250,7 +249,7 @@ namespace sc {
       void compute();
       void print(std::ostream& os =ExEnv::out0()) const;
       RefSymmSCMatrix density();
-      int spin_polarized();
+      double magnetic_moment() const;
       int value_implemented() const { return 1; }
       void set_desired_value_accuracy(double acc);
 
@@ -283,7 +282,6 @@ namespace sc {
                                      // in dyall_sf options
                                      // represent whether use 1-body Fock or including 2-b op
                                      // in H(1).
-      bool calc_davidson_;           // print out Davidson correction coefficient or not. Defaults to false.
       bool cabs_singles_coupling_; // if set to true, we include the coupling between cabs and OBS virtual orbitals. This should be preferred choice,
                                    // as explained in the paper.
       bool rotate_core_; // if set to false, when doing rasscf cabs_singles correction, don't include excitation from core orbitals to cabs orbitals in

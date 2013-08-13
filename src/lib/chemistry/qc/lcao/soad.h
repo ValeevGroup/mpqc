@@ -103,10 +103,10 @@ namespace sc {
       static RefSymmSCMatrix guess_density(const Ref<GaussianBasisSet>& basis_set,
                                            const Ref<Integral>& intf);
 
-      // implement pure virtual methods of Wavefunction and below
+      // implement (pure) virtual methods of Wavefunction and below
       /// reports the (idempotent) density corresponding to the orbitals and occupancies reported by oso_eigenvectors() and occupation()
       RefSymmSCMatrix density();
-      int spin_polarized();
+      double magnetic_moment() const;
       int nelectron();
       int value_implemented() const;
       void compute();

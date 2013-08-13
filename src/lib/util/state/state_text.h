@@ -32,7 +32,8 @@
 
 namespace sc {
 
-/** Writes out state information in an almost human readable format.
+/**  @ingroup State
+ *   Writes out state information in an almost human readable format.
 
  StateOutText is intended for debugging only.  The state information can
  read in again with StateInText.
@@ -84,7 +85,8 @@ class StateOutText: public StateOutFile {
     int put(const double*,int);
   };
 
-/** Reads state information written with StateOutText.
+/**  @ingroup State
+ *   Reads state information written with StateOutText.
  */
 class StateInText: public StateInFile {
   private:

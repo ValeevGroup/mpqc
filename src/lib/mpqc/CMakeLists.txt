@@ -18,7 +18,7 @@ install(FILES range.hpp DESTINATION include/mpqc)
 
 # tests
 
-# add_executable(test-mpqc EXCLUDE_FROM_ALL test.cpp)
+add_executable(tensor.test EXCLUDE_FROM_ALL tensor/test.cpp)
 
 # target_link_libraries(test-mpqc ${Boost_LIBRARIES})
 # #target_link_libraries(test-mpqc ${LAPACK_LIBRARIES})

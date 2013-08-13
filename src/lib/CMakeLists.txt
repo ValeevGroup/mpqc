@@ -2,9 +2,7 @@ add_subdirectory(chemistry)
 add_subdirectory(math)
 add_subdirectory(util)
 add_subdirectory(mpqc)
-
-# add_library(mpqc)
-# target_link_libraries(mpqc util)
+add_subdirectory(extern)
 
 # library headers
 file(GLOB_RECURSE headers RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} chemistry/*.h math/*.h util/*h)

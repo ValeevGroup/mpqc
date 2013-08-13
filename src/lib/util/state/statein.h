@@ -36,7 +36,8 @@
 
 namespace sc {
 
-  /** Helps to read user-defined types from StateIn. Overload/specialize
+  /** @ingroup State
+   *  Helps to read user-defined types from StateIn. Overload/specialize
    * this function for each user-defined type not derived from SavableState
    * (if your class is derived from SavableState simply implement its "StateIn" constructor
    * member).
@@ -72,7 +73,8 @@ class StateClassData {
     StateClassData &operator=(const StateClassData &d);
 };
 
-/** Restores objects that derive from SavableState.
+/** @ingroup State
+ * Restores fundamental and user-defined types from images created with StateOut. @sa StateOut
  */
 class StateIn:  public DescribedClass {
     friend class SavableState;
@@ -169,7 +171,7 @@ class StateIn:  public DescribedClass {
 
     //@}
     /** @name StateIn::get(array)
-     *  These restore data saved with StateOut's put.
+     *  These restore data saved with StateOut's put()
         members.  The data is allocated by StateIn. */
     //@{
     virtual int get(char*&);
@@ -181,7 +183,7 @@ class StateIn:  public DescribedClass {
     virtual int get(double*&);
     //@}
     /** @name StateIn::get_array()
-     *  These restore data saved with StateOut's put.
+     *  These restore data saved with StateOut's put()
         members.  The data must be preallocated by the user. */
     //@{
     virtual int get_array_char(char*p,int size);
@@ -216,9 +218,11 @@ class StateIn:  public DescribedClass {
     int get(std::vector<T, A> &v) {
       size_t l;
       int r = get(l);
-      v.resize(l);
+      v.reserve(l);
       for (size_t i=0; i<l; i++) {
-        FromStateIn(v[i],*this,r);
+        T e;
+        FromStateIn(e,*this,r);
+        v.push_back(e);
       }
       return r;
     }
@@ -295,6 +299,8 @@ class StateIn:  public DescribedClass {
     const Ref<KeyVal> &override() const { return override_; }
   };
 
+  /// @addtogroup State
+  /// @{
   /// helper template to read from StateIn
   template <typename T> void FromStateIn(T& t, StateIn& so, int& count) {
     count += so.get(t);
@@ -304,6 +310,7 @@ class StateIn:  public DescribedClass {
   template <typename T> void FromStateIn(Ref<T>& t, StateIn& so, int& count) {
     t << SavableState::restore_state(so);
   }
+  /// @}
 
 } // namespace sc
 

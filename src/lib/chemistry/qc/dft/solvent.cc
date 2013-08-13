@@ -281,7 +281,7 @@ BEMSolventH::accum(const RefSymmSCMatrix& h)
       // electron contrib
       solvent_->normalize_charge(-wfn_->nelectron(), charges_);
       // nuclear contrib
-      solvent_->normalize_charge(wfn_->molecule()->nuclear_charge(),
+      solvent_->normalize_charge(wfn_->molecule()->total_charge(),
                                  charges_n_);
       tim.exit("norm");
     }

@@ -46,9 +46,10 @@
 #  include <util/group/memmtmpi.h>
 #endif
 
-#if defined(HAVE_ARMCI)
-#  include <util/group/memarmci.h>
-#endif
+// ARMCI memgroup broken
+// #if defined(HAVE_ARMCI)
+// #  include <util/group/memarmci.h>
+// #endif
 
 using namespace std;
 using namespace sc;
@@ -346,12 +347,15 @@ MemoryGrp::get_default_memorygrp()
       return default_memorygrp.pointer();
     }
 #endif
-#if defined(HAVE_ARMCI)
-  else if (msg->class_desc() == ::class_desc<MPIMessageGrp>()) {
-      default_memorygrp = new ARMCIMemoryGrp(msg);
-      return default_memorygrp.pointer();
-    }
-#endif
+
+// ARMCI mem group broken
+// #if defined(HAVE_ARMCI)
+//   else if (msg->class_desc() == ::class_desc<MPIMessageGrp>()) {
+//       default_memorygrp = new ARMCIMemoryGrp(msg);
+//       return default_memorygrp.pointer();
+//     }
+// #endif
+
   else if (msg->n() == 1) {
       default_memorygrp = new ProcMemoryGrp();
       return default_memorygrp.pointer();

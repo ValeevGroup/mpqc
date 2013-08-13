@@ -25,6 +25,10 @@
 #include <util/misc/consumableresources.h>
 #include "../mpqc/mpqcinit.h"
 
+#ifdef HAVE_MADNESS
+# include <util/madness/init.h>
+#endif
+
 #include "moinfo.h"
 #include "extern_pt2r12.h"
 
@@ -160,13 +164,34 @@ int try_main(int argc, char **argv)
 
   // initialize the environment
   MPQCInit init(opt,argc,argv);
+  ExEnv::init(argc, argv);
   init.init_fp();
   init.init_limits();
-#ifdef HAVE_MADNESS
-  init.init_madness();
-#endif
   Ref<MessageGrp> grp = init.init_messagegrp();
   init.init_io(grp);
+  init.init_timer(grp,0);
+
+#ifdef HAVE_MADNESS
+  MADNESSRuntime::initialize();
+#endif
+
+  Timer timer;
+
+  const char *tstr = 0;
+#if defined(HAVE_TIME) && defined(HAVE_CTIME)
+  time_t t;
+  time(&t);
+  tstr = ctime(&t);
+#endif
+  if (!tstr) {
+    tstr = "UNKNOWN";
+  }
+  ExEnv::out0()
+       << indent << scprintf("Machine:    %s", TARGET_ARCH) << endl
+       << indent << scprintf("User:       %s@%s",
+                             ExEnv::username(), ExEnv::hostname()) << endl
+       << indent << scprintf("Start Time: %s", tstr) << endl;
+
   Ref<ThreadGrp> thread = init.init_threadgrp();
   Ref<MemoryGrp> memory = init.init_memorygrp();
 #ifdef HAVE_LIBINT2
@@ -255,12 +280,10 @@ int try_main(int argc, char **argv)
   const std::vector<unsigned int>& fzcpi = rdorbs->fzcpi();
   const std::vector<unsigned int>& inactpi = rdorbs->inactpi();
   const std::vector<unsigned int>& actpi = rdorbs->actpi();
-  const std::vector<unsigned int>& corrpi = rdorbs->corrpi();
   const std::vector<unsigned int>& fzvpi = rdorbs->fzvpi();
   const unsigned int nfzc = std::accumulate(fzcpi.begin(), fzcpi.end(), 0.0);
   const unsigned int ninact = std::accumulate(inactpi.begin(), inactpi.end(), 0.0);
   const unsigned int nact = std::accumulate(actpi.begin(), actpi.end(), 0.0);
-  const unsigned int ncorr = std::accumulate(corrpi.begin(), corrpi.end(), 0.0);
   const unsigned int nfzv = std::accumulate(fzvpi.begin(), fzvpi.end(), 0.0);
   const unsigned int nmo = orbs->rank();
   const unsigned int nuocc = nmo - nfzc - ninact - nact - nfzv;
@@ -387,6 +410,22 @@ int try_main(int argc, char **argv)
   extern_pt2r12->compute();
 
   extern_pt2r12->print();
+
+  timer.print(ExEnv::out0());
+
+#if defined(HAVE_TIME) && defined(HAVE_CTIME)
+  time(&t);
+  tstr = ctime(&t);
+#endif
+  if (!tstr) {
+    tstr = "UNKNOWN";
+  }
+  ExEnv::out0() << std::endl
+                << indent << scprintf("End Time: %s", tstr) << std::endl;
+
+#ifdef HAVE_MADNESS
+  MADNESSRuntime::finalize();
+#endif
 
   return 0;
 }

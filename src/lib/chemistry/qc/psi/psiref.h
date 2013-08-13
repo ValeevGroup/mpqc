@@ -65,13 +65,15 @@ namespace sc {
         else return this->basis();
       }
 
+      void print(std::ostream& os = ExEnv::out0()) const;
+
       bool sdref() const { return true; }
       double energy() { return scf()->energy(); }
       double actual_value_accuracy () const { return scf()->actual_value_accuracy(); }
       double desired_value_accuracy() const { return scf()->desired_value_accuracy(); }
       bool desired_value_accuracy_set_to_default() const { return scf()->desired_value_accuracy_set_to_default(); }
       int nelectron() const { return scf()->nelectron(); }
-      bool spin_polarized() const { return scf_->spin_polarized(); }
+      double magnetic_moment() const { return scf_->magnetic_moment(); }
       bool spin_restricted() const { return spin_restricted_; }
       int dk() const { return 0; }
       Ref<GaussianBasisSet> momentum_basis() const { return 0; }
@@ -119,13 +121,15 @@ namespace sc {
       void save_data_state(StateOut&);
       const Ref<PsiRASCI>& wfn() const { return wfn_; }
 
+      void print(std::ostream& os = ExEnv::out0()) const;
+
       bool sdref() const { return false; }
       double energy() { return wfn()->energy(); }
       double actual_value_accuracy () const { return wfn()->actual_value_accuracy(); }
       double desired_value_accuracy() const { return wfn()->desired_value_accuracy(); }
       bool desired_value_accuracy_set_to_default() const { return wfn()->desired_value_accuracy_set_to_default(); }
       int nelectron() const { return wfn()->nelectron(); }
-      bool spin_polarized() const { return wfn_->spin_polarized(); }
+      double magnetic_moment() const { return wfn_->magnetic_moment(); }
       bool spin_restricted() const { return spin_restricted_; }
       int dk() const { return 0; }
       Ref<GaussianBasisSet> momentum_basis() const { return 0; }
@@ -135,7 +139,6 @@ namespace sc {
       unsigned int nfzv() const { return nfzv_; }
       bool omit_uocc() const { return omit_uocc_; }
       RefSymmSCMatrix ordm(SpinCase1 spin) const;
-      RefSymmSCMatrix orig_ordm_orbs_sb(SpinCase1 spin) const;
       Ref<DensityFittingInfo> dfinfo() const;
     private:
       Ref<PsiRASCI> wfn_;

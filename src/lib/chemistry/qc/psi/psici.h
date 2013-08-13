@@ -77,6 +77,7 @@ namespace sc {
       void compute();
       void print(std::ostream&) const;
 
+      double magnetic_moment() const;
       /// returns true if alpha<->beta swap leaves densities unchanged
       int spin_polarized();
 
@@ -89,6 +90,7 @@ namespace sc {
       /// returns the maximum number of electrons allowed in RAS3 space
       unsigned int ras3_max() const { return ras3_max_; }
 
+      /// @return the density in space specified by @c orbs_sb()
       RefSymmSCMatrix mo_density(SpinCase1 spin); // mo_density is overloaded because detci
                                                   // reports density in active orbitals only; it reports ORDM in OBS (!)
       /// if this is PsiRASSCF this will return RASSCF orbitals

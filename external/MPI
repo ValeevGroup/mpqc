@@ -20,6 +20,8 @@ else()
       "  CXX_COMPILER_COMPILES_MPI)
     if (CXX_COMPILER_COMPILES_MPI)
       set(HAVE_MPI TRUE)
+      # assume C sources are compatible with C++
+      set(MPI_CXX_COMPILER ${CMAKE_CXX_COMPILER})
       message(STATUS "C++ compiler (${CMAKE_CXX_COMPILER}) compiles and links MPI")
     endif()
   endif()
@@ -43,7 +45,7 @@ else()
       message(STATUS "MPI_LIBRARIES: ${MPI_LIBRARIES}")
       message(STATUS "MPI_LINKER_FLAGS: ${MPI_LINKER_FLAGS}")
 
-    endif()  
+    endif()
   endif()
   
   # This should be outside the conditionals, ask Ed
@@ -51,4 +53,23 @@ else()
      option(ALWAYS_USE_MPI "Always use MPI" TRUE)
   endif()
 
+  # check for MPI IO
+  if (HAVE_MPI)
+    CHECK_CXX_SOURCE_COMPILES(
+      "
+      #include <mpi.h>
+      int main(int argc, char **argv) {
+          MPI_Init(&argc, &argv);
+          MPI_File file;
+          MPI_File_open(MPI_COMM_WORLD, \"dummy.txt\", MPI_MODE_CREATE|MPI_MODE_WRONLY,
+                        MPI_INFO_NULL, &file);
+          MPI_File_close(&file);
+          MPI_Finalize();
+      }
+      "  CXX_COMPILER_COMPILES_MPIIO)
+    if (CXX_COMPILER_COMPILES_MPIIO)
+      set(HAVE_MPIIO TRUE)
+    endif()
+  endif()
+  
 endif()

@@ -43,7 +43,11 @@
 
 namespace sc {
 
+  /// @defgroup KeyVal mpqc.Core.KeyVal
+  /// Classes/functions for managing structured sets of keyword-value associations, such as encoded in the MPQC object-oriented input format.
+
 /**
+ * @ingroup KeyVal
  The KeyVal class is designed to simplify the process of allowing
  a user to specify keyword/value associations to a C++ program.  A
  flexible input style and ease of use for the programmer is achieved with
@@ -333,7 +337,8 @@ class KeyVal: public RefCount {
 
 
 
-/** This class allows keyval associations to be set up by the program,
+/** @ingroup KeyVal
+ *  This class allows keyval associations to be set up by the program,
     rather than determined by an external file. */
 class AssignedKeyVal: public KeyVal {
   private:
@@ -382,7 +387,8 @@ class AssignedKeyVal: public KeyVal {
     }
 };
 
-/** StringKeyVal is a base class for KeyVal implementations
+/** @ingroup KeyVal
+ *  StringKeyVal is a base class for KeyVal implementations
     that store all values in a string format.  These are
     converted to other data types through KeyValValue.
 */
@@ -420,7 +426,8 @@ class StringKeyVal: public KeyVal {
     //@}
 };
 
-/** This takes several KeyVal objects and makes them look like
+/** @ingroup KeyVal
+ *  This takes several KeyVal objects and makes them look like
     one KeyVal object.  When a key is sought first KeyVal, then
     the next, and so on is searched until the keyword is found.
 */
@@ -458,7 +465,8 @@ class AggregateKeyVal : public KeyVal {
     void dump(std::ostream&fp=ExEnv::err0());
 };
 
-/** PrefixKeyVal is a KeyVal that searches a different KeyVal using
+/** @ingroup KeyVal
+ *  PrefixKeyVal is a KeyVal that searches a different KeyVal using
     modified keys.  This is convenient for reading keys grouped together
     with a common prefix.  Consider the following code:
     <pre>
@@ -534,7 +542,8 @@ class PrefixKeyVal : public KeyVal {
 };
 
 class IPV2;
-/** Converts textual information into keyword/value assocations.  The
+/** @ingroup KeyVal
+ *  Converts textual information into keyword/value assocations.  The
     parsing is done with an IPV2 object.  The \ref keyval for more
     information on the input format.  */
 class ParsedKeyVal : public StringKeyVal {
@@ -660,7 +669,7 @@ namespace detail {
   };
 }
 
-/**
+/** @ingroup KeyVal
  * Provides convenient way to fill standard containers from KeyVal
  */
 class Keyword {

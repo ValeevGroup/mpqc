@@ -344,7 +344,7 @@ class LMP2: public LCorr {
     void compute(void);
     int nelectron(void);
     sc::RefSymmSCMatrix density(void);
-    int spin_polarized(void);
+    double magnetic_moment() const;
     int value_implemented(void) const;
 
 };

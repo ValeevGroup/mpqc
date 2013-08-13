@@ -34,6 +34,12 @@ namespace sc {
 
 // //////////////////////////////////////////////////////////////////////////
 
+  /**
+   * Hartree-Fock-like wave function for open-shell singlet electronic configurations.
+   * The two unpaired electrons must occupy orbitals of different irreducible representations.
+   * The wave function is a spin-projected single-determinant, hence it's a combination of
+   * two determinants, |1a2b> - |1b2a>. Can be viewed as TCHF constrained to keep the two coefficients equal.
+   */
 class OSSHF: public OSSSCF {
   public:
     OSSHF(StateIn&);

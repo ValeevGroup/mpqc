@@ -34,7 +34,6 @@
 #if defined(HAVE_MPQC3_RUNTIME)
 
 #include <chemistry/qc/mbptr12/r12int_eval.h>
-#include <../bin/mpqc/mpqcinit.h>
 #include <chemistry/qc/mbptr12/sr_r12intermediates.h>
 
 using namespace sc;
@@ -42,7 +41,7 @@ namespace TA = TiledArray;
 
 void
 R12IntEval::V_diag_ta() {
-  SingleReference_R12Intermediates<double> srr12intrmds(MPQCInit::instance()->madness_world(),
+  SingleReference_R12Intermediates<double> srr12intrmds(madness::World::get_default(),
                                                         this->r12world());
 #if 0
   auto Vpair = srr12intrmds.V_diag();

@@ -10,7 +10,7 @@
 // #define EIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET
 // #include <Eigen/Sparse>
 
-/** @defgroup Matrix mpqc.Matrix
+/** @defgroup Matrix mpqc.Math.Matrix
     Matrix and Vector classes and function,
     derived from <a href="http://eigen.tuxfamily.org">Eigen</a>.
     @anchor MatrixOperators

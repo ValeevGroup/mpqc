@@ -32,7 +32,7 @@
 
 namespace sc {
 
-/// @defgroup State mpqc.State
+/// @defgroup State mpqc.Core.State
 /// Classes/functions used for serialization/deserialization
 
 class StateIn;

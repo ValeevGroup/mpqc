@@ -43,7 +43,7 @@
 
 namespace sc {
 
-  /// @defgroup KeyVal mpqc.KeyVal
+  /// @defgroup KeyVal mpqc.Core.KeyVal
   /// Classes/functions for managing structured sets of keyword-value associations, such as encoded in the MPQC object-oriented input format.
 
 /**

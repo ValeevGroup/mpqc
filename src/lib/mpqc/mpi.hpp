@@ -1,7 +1,7 @@
 #ifndef MPQC_MPI_HPP
 #define MPQC_MPI_HPP
 
-/// @defgroup MPI mpqc.MPI
+/// @defgroup MPI mpqc.Util.MPI
 /// <a href=http://www.mpi-forum.org>MPI</a> wrappers/stubs
 
 #include "mpqc/mpi/base.hpp"

@@ -12,7 +12,7 @@
 
 namespace mpqc {
 
-    template <typename T, size_t N, class Order = TensorColumnMajor<N> >
+    template <typename T, size_t N, class Order = TensorColumnMajor >
     struct TensorBase;
 
 }

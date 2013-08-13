@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <assert.h>
 
+#include <boost/array.hpp>
 #include <boost/tuple/tuple.hpp>
 
 #include <boost/preprocessor/repetition/enum_params.hpp>
@@ -32,32 +33,23 @@ namespace mpqc {
 
     public:
         static const size_t RANK = N;
-        typedef size_t Dims[N];
+        typedef boost::array<size_t,N> Dims;
+        typedef boost::array<size_t,N> Strides;
 
     protected:
         T *data_;
         Dims dims_;
-        Order order_;
+        Strides strides_;
 
     public:
 
         TensorBase(T *data,
                    const size_t *dims,
                    const size_t *ld = NULL)
-            : order_(ld ? ld : dims),
-              data_(data)
         {
-            std::copy(dims, dims+N, this->dims_);
-        }
-
-        template<typename U, class O>
-        TensorBase(T *data,
-                   const size_t *dims,
-                   const size_t *ld = NULL)
-            : order_(ld ? ld : dims),
-              data_(data)
-        {
-            std::copy(dims, dims+N, this->dims_);
+            this->data_ = data;
+            std::copy(dims, dims+N, this->dims_.begin());
+            strides_ = Order::template strides<N>(ld ? ld : dims);
         }
 
         size_t size() const {
@@ -164,7 +156,7 @@ namespace mpqc {
 // #ifndef NDEBUG
 //             check_index(idx, boost::mpl::int_<0>());
 // #endif
-            ptrdiff_t index = order_.template index<Seq>(idx);
+            ptrdiff_t index = Order::index((const Seq&)idx, this->strides_);
             //std::cout << idx << ":" << index << "->" << data_+index << std::endl;
             return index;
         }
@@ -195,11 +187,9 @@ namespace mpqc {
     private:
 
         friend class TensorBase< typename boost::remove_const<T>::type, N, Order>;
-        TensorBase(T *data, const Dims &dims,
-                   const Order &order)
-            : data_(data), order_(order)
+        TensorBase(T *data, const Dims &dims, const Strides &strides) 
+            : data_(data), dims_(dims), strides_(strides)
         {
-            std::copy(dims, dims+N, dims_);
         }
 
     };

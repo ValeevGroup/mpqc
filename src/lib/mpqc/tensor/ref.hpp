@@ -11,7 +11,7 @@ namespace mpqc {
 
     /// Tensor reference class.
     /// All data is assumed to be contiguous.
-    template<typename T, size_t N, class Order = TensorColumnMajor<N> >
+    template<typename T, size_t N, class Order = TensorColumnMajor >
     struct TensorRef : TensorBase<T,N,Order> {
 
     public:

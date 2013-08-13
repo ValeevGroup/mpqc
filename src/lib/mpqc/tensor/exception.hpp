@@ -17,6 +17,14 @@ namespace mpqc {
                                  string_cast(dim1) + " != " + string_cast(dim2) +
                                  ")")
         {}
+        template<typename Rank1, typename Rank2, typename Dim1, typename Dim2>
+        TensorDimensionsException(Rank1 rank1, Rank2 rank2, Dim1 dim1, Dim2 dim2)
+            : std::runtime_error("rank<" + string_cast(rank1) + "> and" +
+                                 "rank<" + string_cast(rank2) + "> " +
+                                 "dimensions mismatch (" +
+                                 string_cast(dim1) + " != " + string_cast(dim2) +
+                                 ")")
+        {}
     };
 
     struct TensorIndexException : std::runtime_error {

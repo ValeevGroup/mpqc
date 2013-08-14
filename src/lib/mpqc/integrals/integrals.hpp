@@ -62,9 +62,9 @@ namespace detail {
     template<class RefEngine>
     struct Integrals {
 
-        typedef TensorRef<const double,2> Tensor2;
-        typedef TensorRef<const double,3> Tensor3;
-        typedef TensorRef<const double,4> Tensor4;
+        typedef TensorRef<const double,2, TensorRowMajor > Tensor2;
+        typedef TensorRef<const double,3, TensorRowMajor > Tensor3;
+        typedef TensorRef<const double,4, TensorRowMajor > Tensor4;
 
         explicit Integrals(RefEngine integral)
             : integral_(integral) {}
@@ -102,7 +102,7 @@ namespace detail {
     void evaluate(Integrals<Engine> integral,
                   const std::vector<int> &P,
                   const std::vector<int> &Q,
-                  TensorRef<double,2> &ints) {
+                  TensorRef<double,2, TensorRowMajor > &ints) {
         std::vector<Shell> shells[] = {
             pack(integral.engine()->basis1(), P),
             pack(integral.engine()->basis2(), Q)
@@ -130,7 +130,7 @@ namespace detail {
                   const std::vector<int> &P,
                   const std::vector<int> &Q,
                   const std::vector<int> &R,
-                  TensorRef<double,3> &ints) {
+                  TensorRef<double,3, TensorRowMajor > &ints) {
         std::vector<Shell> shells[] = {
             pack(integral.engine()->basis1(), P),
             pack(integral.engine()->basis2(), Q),
@@ -163,7 +163,7 @@ namespace detail {
                   const std::vector<int> &Q,
                   const std::vector<int> &R,
                   const std::vector<int> &S,
-                  TensorRef<double,4> &ints) {
+                  TensorRef<double,4, TensorRowMajor > &ints) {
         std::vector<Shell> shells[] = {
             pack(integral.engine()->basis1(), P),
             pack(integral.engine()->basis2(), Q),
@@ -252,14 +252,14 @@ namespace integrals {
     inline void evaluate(sc::Ref<sc::OneBodyInt> &engine,
                   const std::vector<int> &P,
                   const std::vector<int> &Q,
-                  TensorRef<double,2> &ints) {
+                  TensorRef<double,2, TensorRowMajor > &ints) {
         detail::evaluate(detail::Integrals<sc::Ref<sc::OneBodyInt> >(engine), P, Q, ints);
     }
 
     inline void evaluate(sc::Ref<sc::TwoBodyTwoCenterInt> &engine,
                   const std::vector<int> &P,
                   const std::vector<int> &Q,
-                  TensorRef<double,2> &ints) {
+                  TensorRef<double,2, TensorRowMajor > &ints) {
         detail::evaluate(detail::Integrals<sc::Ref<sc::TwoBodyTwoCenterInt> >(engine),
                          P, Q, ints);
     }
@@ -268,7 +268,7 @@ namespace integrals {
                   const std::vector<int> &P,
                   const std::vector<int> &Q,
                   const std::vector<int> &R,
-                  TensorRef<double,3> &ints) {
+                  TensorRef<double,3, TensorRowMajor > &ints) {
         detail::evaluate(detail::Integrals<sc::Ref<sc::TwoBodyThreeCenterInt> >(engine),
                          P, Q, R, ints);
     }
@@ -278,7 +278,7 @@ namespace integrals {
                   const std::vector<int> &Q,
                   const std::vector<int> &R,
                   const std::vector<int> &S,
-                  TensorRef<double,4> &ints) {
+                  TensorRef<double,4, TensorRowMajor > &ints) {
         detail::evaluate(detail::Integrals<sc::Ref<sc::TwoBodyInt> >(engine),
                          P, Q, R, S, ints);
     }

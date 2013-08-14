@@ -27,6 +27,7 @@
 
 #include <stdexcept>
 #include <sstream>
+#include <cassert>
 
 #include <util/misc/formio.h>
 #include <util/misc/exenv.h>

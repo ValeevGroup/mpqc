@@ -4,6 +4,8 @@
  *  Created on: Mar 4, 2013
  *      Author: jinmei
  */
+
+#include <cassert>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/mp2r12_energy.h>
 #include <chemistry/qc/wfn/spin.h>
@@ -436,7 +438,7 @@ namespace {
       RefSCMatrix T = localkit->matrix(rowdim_occ, coldim_vir_com);
       T.assign(0.0);
 
-#define TEST_CC_CABS  1
+#define TEST_CC_CABS  0
 #if TEST_CC_CABS
       if (r12intermediates->T2_cc_computed()) {
         RefSCMatrix T1_ccsd = r12intermediates->get_T1_cc(spin);
@@ -2701,34 +2703,35 @@ RefSCMatrix sc::Onerdm_X_CABS_Singles(SpinCase1 spin,
   //D_CABS.print("CABS 1e density");
 
   // compute contribution from
-//  // d^p'_q' g^aq'_ip' & d^p'_q' g^q'a_ip'
-//  double* const dg_cabs = new double[nvir_occ];
-//  fill_n(dg_cabs, nvir_occ, 0.0);
-//
-//  // d^p'_c g^ac_ip' & d^p'_c g^ca_ip'
-//  double* const dg_vir_cabs = new double[nvir_occ];
-//  fill_n(dg_vir_cabs, nvir_occ, 0.0);
-//
-//  // d^c_q' g^aq'_ic & d^c_q' g^q'a_ic
-//  double* const dg_cabs_vir = new double[nvir_occ];
-//  fill_n(dg_cabs_vir, nvir_occ, 0.0);
-//
-//  // d^k_l g^al_ik & d^k_l g^la_ik
-//  double* const dg_occ = new double[nvir_occ];
-//  fill_n(dg_occ, nvir_occ, 0.0);
-//
-//  // d^p'_k g^ak_ip' & d^p'_k g^ka_ip'
-//  double* const dg_occ_cabs = new double[nvir_occ];
-//  fill_n(dg_occ_cabs, nvir_occ, 0.0);
-//
-//  // d^k_p' g^ap'_ik & d^k_p' g^p'a_ik
-//  double* const dg_cabs_occ = new double[nvir_occ];
-//  fill_n(dg_cabs_occ, nvir_occ, 0.0);
+  // d^p'_q' g^aq'_ip' & d^p'_q' g^q'a_ip'
+  double* const dg_cabs = new double[nvir_occ];
+  fill_n(dg_cabs, nvir_occ, 0.0);
+
+  // d^p'_c g^ac_ip' & d^p'_c g^ca_ip'
+  double* const dg_vir_cabs = new double[nvir_occ];
+  fill_n(dg_vir_cabs, nvir_occ, 0.0);
+
+  // d^c_q' g^aq'_ic & d^c_q' g^q'a_ic
+  double* const dg_cabs_vir = new double[nvir_occ];
+  fill_n(dg_cabs_vir, nvir_occ, 0.0);
+
+  // d^k_l g^al_ik & d^k_l g^la_ik
+  double* const dg_occ = new double[nvir_occ];
+  fill_n(dg_occ, nvir_occ, 0.0);
+
+  // d^p'_k g^ak_ip' & d^p'_k g^ka_ip'
+  double* const dg_occ_cabs = new double[nvir_occ];
+  fill_n(dg_occ_cabs, nvir_occ, 0.0);
+
+  // d^k_p' g^ap'_ik & d^k_p' g^p'a_ik
+  double* const dg_cabs_occ = new double[nvir_occ];
+  fill_n(dg_cabs_occ, nvir_occ, 0.0);
 
   // F^a_a' * D^a'_i
   double* const dg_fd1 = new double[nvir_occ];
   fill_n(dg_fd1, nvir_occ, 0.0);
   RefSCMatrix FaA = r12eval->fock(vir,cabs,spin);
+//  FaA.print("F^a_A'");
   compute_FDai(nvir, nocc,
                "a", FaA,
                D_CABS, norbs,
@@ -2742,6 +2745,7 @@ RefSCMatrix sc::Onerdm_X_CABS_Singles(SpinCase1 spin,
   double* const dg_fd2 = new double[nvir_occ];
   fill_n(dg_fd2, nvir_occ, 0.0);
   RefSCMatrix FAi = r12eval->fock(cabs,occ,spin);
+//  FAi.print("F^A_i");
   compute_FDai(nvir, nocc,
                "i", FAi,
                D_CABS, norbs,
@@ -2766,7 +2770,8 @@ RefSCMatrix sc::Onerdm_X_CABS_Singles(SpinCase1 spin,
   double* const dg_fd3 = new double[nvir_occ];
   fill_n(dg_fd3, nvir_occ, 0.0);
   RefSCMatrix Fmi = r12eval->fock(occ,occ,spin);
-  Fmi.print("Fmi");
+//  Fmi.print("Fmi");
+//  D_CABS.print("D CABS Singles");
   compute_FDai(nvir, nocc,
                "i", Fmi,
                D_CABS, 0,
@@ -2782,82 +2787,82 @@ RefSCMatrix sc::Onerdm_X_CABS_Singles(SpinCase1 spin,
                D_CABS, nocc,
                dg_fd4);
 
-//  const int nspincases2 = (r12eval->spin_polarized() ? 3 : 2);
-//  if (nspincases2 == 3) {
-//    // obtain the opposite spin
-//    const SpinCase1 spin2 = (spin == Alpha? Beta : Alpha);
-//
-//    const Ref<OrbitalSpace> occ2 = r12eval->occ(spin2);
-//    const Ref<OrbitalSpace> vir2 = r12eval->vir(spin2);
-//    const Ref<OrbitalSpace> cabs2 = r12world->cabs_space(spin2);
-//    const int nocc2 = occ2->rank();
-//    const int nvir2 = vir2->rank();
-//    const int norbs2 = nocc2 + nvir2;
-//
-//    RefSCMatrix D_CABS2 = compute_D_CABS(spin2, r12eval, r12intermediates);
-//
-//    compute_dg_contri(vir, occ, cabs, cabs,
-//                      cabs2, cabs2,
-//                      D_CABS, D_CABS2,
-//                      norbs, norbs, norbs2, norbs2,
-//                      r12eval, dg_cabs);
-//
-//    compute_dg_contri(vir, occ, vir, cabs,
-//                      vir2, cabs2,
-//                      D_CABS, D_CABS2,
-//                      nocc, norbs, nocc2, norbs2,
-//                      r12eval, dg_vir_cabs);
-//
-//    compute_dg_contri(vir, occ, cabs, vir,
-//                      cabs2, vir2,
-//                      D_CABS, D_CABS2,
-//                      norbs, nocc, norbs2, nocc2,
-//                      r12eval, dg_cabs_vir);
-//
-//    const int zero = 0;
-//    compute_dg_contri(vir, occ, occ, occ,
-//                      occ2, occ2,
-//                      D_CABS, D_CABS2,
-//                      zero, zero, zero, zero,
-//                      r12eval, dg_occ);
-//
-//    compute_dg_contri(vir, occ, occ, cabs,
-//                      occ2, cabs2,
-//                      D_CABS, D_CABS2,
-//                      zero, norbs, zero, norbs2,
-//                      r12eval, dg_occ_cabs);
-//
-//    compute_dg_contri(vir, occ, cabs, occ,
-//                      cabs2, occ2,
-//                      D_CABS, D_CABS2,
-//                      norbs, zero, norbs2, zero,
-//                      r12eval, dg_cabs_occ);
-//  } else {
-//      compute_dg_contri(vir, occ, cabs, cabs,
-//                        D_CABS, norbs, norbs,
-//                        r12eval, dg_cabs);
-//
-//      compute_dg_contri(vir, occ, vir, cabs,
-//                        D_CABS, nocc, norbs,
-//                        r12eval, dg_vir_cabs);
-//
-//      compute_dg_contri(vir, occ, cabs, vir,
-//                        D_CABS, norbs, nocc,
-//                        r12eval, dg_cabs_vir);
-//
-//      const int zero = 0;
-//      compute_dg_contri(vir, occ, occ, occ,
-//                        D_CABS, zero, zero,
-//                        r12eval, dg_occ);
-//
-//      compute_dg_contri(vir, occ, occ, cabs,
-//                        D_CABS, zero, norbs,
-//                        r12eval, dg_occ_cabs);
-//
-//      compute_dg_contri(vir, occ, cabs, occ,
-//                        D_CABS, norbs, zero,
-//                        r12eval, dg_cabs_occ);
-//  }
+  const int nspincases2 = (r12eval->spin_polarized() ? 3 : 2);
+  if (nspincases2 == 3) {
+    // obtain the opposite spin
+    const SpinCase1 spin2 = (spin == Alpha? Beta : Alpha);
+
+    const Ref<OrbitalSpace> occ2 = r12eval->occ(spin2);
+    const Ref<OrbitalSpace> vir2 = r12eval->vir(spin2);
+    const Ref<OrbitalSpace> cabs2 = r12world->cabs_space(spin2);
+    const int nocc2 = occ2->rank();
+    const int nvir2 = vir2->rank();
+    const int norbs2 = nocc2 + nvir2;
+
+    RefSCMatrix D_CABS2 = compute_D_CABS(spin2, r12eval, r12intermediates);
+
+    compute_dg_contri(vir, occ, cabs, cabs,
+                      cabs2, cabs2,
+                      D_CABS, D_CABS2,
+                      norbs, norbs, norbs2, norbs2,
+                      r12eval, dg_cabs);
+
+    compute_dg_contri(vir, occ, vir, cabs,
+                      vir2, cabs2,
+                      D_CABS, D_CABS2,
+                      nocc, norbs, nocc2, norbs2,
+                      r12eval, dg_vir_cabs);
+
+    compute_dg_contri(vir, occ, cabs, vir,
+                      cabs2, vir2,
+                      D_CABS, D_CABS2,
+                      norbs, nocc, norbs2, nocc2,
+                      r12eval, dg_cabs_vir);
+
+    const int zero = 0;
+    compute_dg_contri(vir, occ, occ, occ,
+                      occ2, occ2,
+                      D_CABS, D_CABS2,
+                      zero, zero, zero, zero,
+                      r12eval, dg_occ);
+
+    compute_dg_contri(vir, occ, occ, cabs,
+                      occ2, cabs2,
+                      D_CABS, D_CABS2,
+                      zero, norbs, zero, norbs2,
+                      r12eval, dg_occ_cabs);
+
+    compute_dg_contri(vir, occ, cabs, occ,
+                      cabs2, occ2,
+                      D_CABS, D_CABS2,
+                      norbs, zero, norbs2, zero,
+                      r12eval, dg_cabs_occ);
+  } else {
+      compute_dg_contri(vir, occ, cabs, cabs,
+                        D_CABS, norbs, norbs,
+                        r12eval, dg_cabs);
+
+      compute_dg_contri(vir, occ, vir, cabs,
+                        D_CABS, nocc, norbs,
+                        r12eval, dg_vir_cabs);
+
+      compute_dg_contri(vir, occ, cabs, vir,
+                        D_CABS, norbs, nocc,
+                        r12eval, dg_cabs_vir);
+
+      const int zero = 0;
+      compute_dg_contri(vir, occ, occ, occ,
+                        D_CABS, zero, zero,
+                        r12eval, dg_occ);
+
+      compute_dg_contri(vir, occ, occ, cabs,
+                        D_CABS, zero, norbs,
+                        r12eval, dg_occ_cabs);
+
+      compute_dg_contri(vir, occ, cabs, occ,
+                        D_CABS, norbs, zero,
+                        r12eval, dg_cabs_occ);
+  }
 
   if (debug >= DefaultPrintThresholds::mostN2) {
     const string spinletter = (spin == Alpha? "Alpha" : "Beta");
@@ -2872,50 +2877,51 @@ RefSCMatrix sc::Onerdm_X_CABS_Singles(SpinCase1 spin,
     print_intermediate(spinletter, "CABS_Singles F^a_c * D^c_i", dg_fd4, nvir, nocc);
   }
 
-//  const double* iter_dg_cabs = dg_cabs;
-//  const double* iter_dg_vir_cabs = dg_vir_cabs;
-//  const double* iter_dg_cabs_vir = dg_cabs_vir;
-//  const double* iter_dg_occ = dg_occ;
-//  const double* iter_dg_occ_cabs = dg_occ_cabs;
-//  const double* iter_dg_cabs_occ = dg_cabs_occ;
+  const double* iter_dg_cabs = dg_cabs;
+  const double* iter_dg_vir_cabs = dg_vir_cabs;
+  const double* iter_dg_cabs_vir = dg_cabs_vir;
+  const double* iter_dg_occ = dg_occ;
+  const double* iter_dg_occ_cabs = dg_occ_cabs;
+  const double* iter_dg_cabs_occ = dg_cabs_occ;
   const double* iter_dg_fd1 = dg_fd1;
   const double* iter_dg_fd2 = dg_fd2;
   const double* iter_dg_fd3 = dg_fd3;
   const double* iter_dg_fd4 = dg_fd4;
   for (int a = 0;  a < nvir; ++a) {
     for (int i = 0; i < nocc; ++i) {
-      const double element_ai = // *iter_dg_cabs
-                               //+ *iter_dg_vir_cabs + *iter_dg_cabs_vir
-                               //- *iter_dg_occ
-                               //+ *iter_dg_occ_cabs + *iter_dg_cabs_occ
-                              // 2.0 *(
-                                  *iter_dg_fd1
-                               //- *iter_dg_fd2
-                               //- *iter_dg_fd3
-                               //+ *iter_dg_fd4
-                               //)
+      const double element_ai =  *iter_dg_cabs
+                               + *iter_dg_vir_cabs + *iter_dg_cabs_vir
+//                               - *iter_dg_occ
+//                               + *iter_dg_occ_cabs
+//                               + *iter_dg_cabs_occ
+//                               2.0 *(
+//                                 *iter_dg_fd1
+//                               + *iter_dg_fd4
+//                               - *iter_dg_fd2
+//                               - *iter_dg_fd3
+//                               )
                                ;
       Xai.set_element(a,i,element_ai);
 
-//      ++iter_dg_cabs;
-//      ++iter_dg_vir_cabs;
-//      ++iter_dg_cabs_vir;
-//      ++iter_dg_occ;
-//      ++iter_dg_occ_cabs;
-//      ++iter_dg_cabs_occ;
-      ++iter_dg_fd1;
-      ++iter_dg_fd2;
-      ++iter_dg_fd3;
-      ++iter_dg_fd4;
+      ++iter_dg_cabs;
+      ++iter_dg_vir_cabs;
+      ++iter_dg_cabs_vir;
+      ++iter_dg_occ;
+      ++iter_dg_occ_cabs;
+      ++iter_dg_cabs_occ;
+//      ++iter_dg_fd1;
+//      ++iter_dg_fd2;
+//      ++iter_dg_fd3;
+//      ++iter_dg_fd4;
     }
   }
 
-//  delete[] dg_cabs;
-//  delete[] dg_vir_cabs;
-//  delete[] dg_cabs_vir;
-//  delete[] dg_occ;
-//  delete[] dg_occ_cabs;
-//  delete[] dg_cabs_occ;
+  delete[] dg_cabs;
+  delete[] dg_vir_cabs;
+  delete[] dg_cabs_vir;
+  delete[] dg_occ;
+  delete[] dg_occ_cabs;
+  delete[] dg_cabs_occ;
   delete[] dg_fd1;
   delete[] dg_fd2;
   delete[] dg_fd3;

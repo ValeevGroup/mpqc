@@ -25,7 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-// includes go here
+#include <cassert>
 #include<chemistry/qc/lcao/transform_ijR.h>
 #include <math/distarray4/distarray4_memgrp.h>
 #include <math/distarray4/distarray4_node0file.h>

@@ -5,6 +5,8 @@
 #   ${CC_SOURCES}
 # )
 
+add_subdirectory(interfaces/tiledarray/tests)
+
 # # library headers
 # file(GLOB_RECURSE headers RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.hpp)
 # foreach (_file ${headers})

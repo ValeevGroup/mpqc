@@ -26,6 +26,7 @@
 //
 
 #include <cmath>
+#include <cassert>
 #include <ccfiles.h>
 #include <math/scmat/local.h>
 #include <chemistry/qc/lcao/utils.h>
@@ -236,42 +237,45 @@ void PsiCC_PT2R12::compute_ept2r12() {
         r12intermediates->assign_1rdm_cc(spin,D[spin]);
       }
 
-    RefSCMatrix D_orbs[NSpinCases1];
-      // T1 & cabs I1 need to be ready for CABS_Singles orbital relaxation Z-vector
-      compute_onerdm_relax(r12intermediates, D_orbs[Alpha], D_orbs[Beta]);
-    if (debug() >= DefaultPrintThresholds::mostN2) {
-      D_orbs[Alpha].print(prepend_spincase(Alpha,"CCSD_F12 one-particle density from relaxation:").c_str());
-      if (nspincases1 != 1) {
-        D_orbs[Beta].print(prepend_spincase(Beta,"CCSD_F12 one-particle density from relaxation:").c_str());
+      if (!strncmp(dertype_, "first", 10)) {
+        RefSCMatrix D_orbs[NSpinCases1];
+        // T1 & cabs I1 need to be ready for CABS_Singles orbital relaxation Z-vector
+        compute_onerdm_relax(r12intermediates, D_orbs[Alpha], D_orbs[Beta]);
+      if (debug() >= DefaultPrintThresholds::mostN2) {
+          D_orbs[Alpha].print(prepend_spincase(Alpha,"CCSD_F12 one-particle density from relaxation:").c_str());
+          if (nspincases1 != 1) {
+            D_orbs[Beta].print(prepend_spincase(Beta,"CCSD_F12 one-particle density from relaxation:").c_str());
+          }
       }
-    }
-    // pass orbital relaxation 1rdm to the diagonal MP2-R12 energy evaluator
-    for(int s = 0; s < NSpinCases1; s++) {
-      const SpinCase1 spin = static_cast<SpinCase1>(s);
-      r12intermediates->assign_1rdm_relax(spin,D_orbs[spin]);
-      }
+        // pass orbital relaxation 1rdm to the diagonal MP2-R12 energy evaluator
+        for(int s = 0; s < NSpinCases1; s++) {
+          const SpinCase1 spin = static_cast<SpinCase1>(s);
+          r12intermediates->assign_1rdm_relax(spin,D_orbs[spin]);
+        }
 
-      // tests:
-//      for(int s = 0; s < nspincases1; ++s) {
-//        const SpinCase1 spin = static_cast<SpinCase1>(s);
-
-//      // test: print the Z-vector from PSI3
-//      RefSCMatrix X_psi = this->Onerdm_relax_X(spin);
-//      X_psi.print(prepend_spincase(spin,"PSI3 Z-vector X:").c_str());
-//      // test: print the relaxation effect from PSI3
-//      RefSCMatrix Dorbs_psi = this->Onerdm_relax_D(Alpha);
-//      Dorbs_psi.print(prepend_spincase(Alpha,"PSI3 Dorbs:").c_str());
+        // tests:
+//        for(int s = 0; s < nspincases1; ++s) {
+//          const SpinCase1 spin = static_cast<SpinCase1>(s);
 //
-//      // test: print the Z-vector from F12 contribution
-//      RefSCMatrix Xf12 = Onerdm_X_F12(spin, r12eval_, debug());
-//      Xf12.print(prepend_spincase(spin,"F12 Z-vector X:").c_str());
-
-//        if (cabs_singles_) {
-//          // test: print the Z-vector from CABS Singles contribution
-//          RefSCMatrix X_cabs = Onerdm_X_CABS_Singles(spin, r12eval_, r12intermediates, debug());
-//          X_cabs.print(prepend_spincase(spin,"CABS_Singles Z-vector X:").c_str());
+//        // test: print the Z-vector from PSI3
+//        RefSCMatrix X_psi = this->Onerdm_relax_X(spin);
+//        X_psi.print(prepend_spincase(spin,"PSI3 Z-vector X:").c_str());
+//        // test: print the relaxation effect from PSI3
+//        RefSCMatrix Dorbs_psi = this->Onerdm_relax_D(Alpha);
+//        Dorbs_psi.print(prepend_spincase(Alpha,"PSI3 Dorbs:").c_str());
+//
+//        // test: print the Z-vector from F12 contribution
+//        RefSCMatrix Xf12 = Onerdm_X_F12(spin, r12eval_, debug());
+//        Xf12.print(prepend_spincase(spin,"F12 Z-vector X:").c_str());
+//
+//          if (cabs_singles_) {
+//            // test: print the Z-vector from CABS Singles contribution
+//            RefSCMatrix X_cabs = Onerdm_X_CABS_Singles(spin, r12eval_, r12intermediates, debug());
+//            X_cabs.print(prepend_spincase(spin,"CABS_Singles Z-vector X:").c_str());
+//          }
 //        }
-//      }
+
+      } // end of dertype_
 
   } // end of compute_1rdm_
 
@@ -521,6 +525,7 @@ void PsiCC_PT2R12::compute_onerdm_relax(const Ref<R12EnergyIntermediates>& r12in
     na1i1_dpd += uocc1pi[h] * occ1pi[h];
 
   // DPD of orbital product spaces
+  unsigned int nemai = 0;
   std::vector<size_t> a1i1_pi(nirrep_);
   for (unsigned int h = 0; h < nirrep_; ++h) {
     size_t nai = 0;
@@ -528,6 +533,7 @@ void PsiCC_PT2R12::compute_onerdm_relax(const Ref<R12EnergyIntermediates>& r12in
       nai += (size_t)uocc1pi[g] * occ1pi[h ^ g];
     }
     a1i1_pi[h] = nai;
+    nemai += a1i1_pi[h] ;
   }
 
   // compute the orbital Z vector contribution from F12
@@ -537,7 +543,7 @@ void PsiCC_PT2R12::compute_onerdm_relax(const Ref<R12EnergyIntermediates>& r12in
   Ref<SCMatrixKit> localkit = new LocalSCMatrixKit;
   X_F12[spin1] = localkit->matrix(Xf12_alpha.rowdim(), Xf12_alpha.coldim());
   X_F12[spin1]->convert(Xf12_alpha);
-//  X_F12[spin1].assign(0.0);
+  //X_F12[spin1].assign(0.0);
 
   psio.open(CC_OEI, PSIO_OPEN_OLD);
   psio.open(CC_MISC, PSIO_OPEN_OLD);
@@ -551,7 +557,6 @@ void PsiCC_PT2R12::compute_onerdm_relax(const Ref<R12EnergyIntermediates>& r12in
                     reinterpret_cast<char*>(Xai_ccsd), na1i1_dpd*sizeof(double));
 
     // add X_F12 to X
-
     double* Xai = new double[na1i1_dpd];
     std::fill_n(Xai, na1i1_dpd, 0.0);
 
@@ -579,6 +584,35 @@ void PsiCC_PT2R12::compute_onerdm_relax(const Ref<R12EnergyIntermediates>& r12in
                 reinterpret_cast<char*> (A[ai]), nai_dpd_h0*sizeof(double),
                 A_address, &A_address);
      }
+//    // test: print of A
+//    ExEnv::out0() << std::endl << "A(EM,AI)" << std::endl;
+//    for (int em = 0; em < nai_dpd_h0; em++) {
+//      ExEnv::out0() << em << ":  ";
+//      for(int ai = 0; ai < nai_dpd_h0; ai++) {
+//          ExEnv::out0() << A[em][ai] << " ";
+//      }
+//      ExEnv::out0() << std::endl;
+//    }
+
+//    // test: print of A in all irreps
+//    {
+//      double** A = block_matrix(nemai, nemai);
+//
+//      psio_address A_address = PSIO_ZERO;
+//      for(int ai = 0; ai < nemai; ai++) {
+//        psio.read(CC_MISC, "A(EM,AI)",
+//                  reinterpret_cast<char*> (A[ai]), nemai*sizeof(double),
+//                  A_address, &A_address);
+//       }
+//      ExEnv::out0() << std::endl << "A(EM,AI) with all irreps" << std::endl;
+//      for (int em = 0; em < nemai; em++) {
+//        ExEnv::out0() << em << ":  ";
+//        for(int ai = 0; ai < nemai; ai++) {
+//            ExEnv::out0() << A[em][ai] << " ";
+//        }
+//        ExEnv::out0() << std::endl;
+//      }
+//    }
 
      FILE* outfile = tmpfile ();
      pople(A, Xai, nai_dpd_h0, 1, 1e-12, outfile, 0);

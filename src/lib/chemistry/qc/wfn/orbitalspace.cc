@@ -29,6 +29,7 @@
 #include <algorithm>
 #include <stdlib.h>
 #include <cfloat>
+#include <cassert>
 #include <util/misc/formio.h>
 #include <util/misc/scexception.h>
 #include <chemistry/qc/basis/petite.h>

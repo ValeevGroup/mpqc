@@ -28,6 +28,7 @@
 #include "moinfo.h"
 #include <iostream>
 #include <numeric>
+#include <cassert>
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/basis/split.h>
 #include <chemistry/qc/basis/cart.h>

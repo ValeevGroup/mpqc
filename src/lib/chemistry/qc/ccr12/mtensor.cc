@@ -25,7 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-// includes go here
+#include <cassert>
 #include <chemistry/qc/ccr12/mtensor.h>
 
 using namespace std;

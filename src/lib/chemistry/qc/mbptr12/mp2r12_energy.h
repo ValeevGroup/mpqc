@@ -83,6 +83,7 @@ namespace sc {
       bool T1_cc_computed() const;
       bool T2_cc_computed() const;
       bool Onerdm_cc_computed() const;
+      bool Onerdm_relax_computed() const;
       const RefSCMatrix& get_V(const SpinCase2 &spincase2) const;
       void assign_V(const SpinCase2 &spincase2, const RefSCMatrix& V);
       const RefSymmSCMatrix& get_X(const SpinCase2 &spincase2) const;

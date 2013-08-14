@@ -26,6 +26,7 @@
 //
 
 #include <stdexcept>
+#include <cassert>
 
 #include <util/misc/scexception.h>
 #include <util/misc/formio.h>

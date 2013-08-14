@@ -26,6 +26,7 @@
 //
 
 #include <sstream>
+#include <cassert>
 #include <math/scmat/repl.h>
 #include <util/misc/scexception.h>
 #include <chemistry/qc/lcao/fockbuild_runtime.h>

@@ -27,6 +27,7 @@
 
 
 #include <sstream>
+#include <cassert>
 #include <algorithm>
 #include <chemistry/qc/ccr12/ccr12_triples.h> 
 #include <math/scmat/blas.h>

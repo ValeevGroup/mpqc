@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <cassert>
 #include <mpqc_config.h>
 #include <chemistry/qc/lcao/soad.h>
 #include <chemistry/qc/wfn/femo.h>

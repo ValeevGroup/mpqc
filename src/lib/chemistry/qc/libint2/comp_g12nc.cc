@@ -26,6 +26,7 @@
 //
 
 #include <stdarg.h>
+#include <cassert>
 
 #include <util/misc/formio.h>
 #include <util/misc/scexception.h>

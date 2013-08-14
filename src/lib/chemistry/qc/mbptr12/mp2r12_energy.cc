@@ -29,6 +29,7 @@
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
+#include <cassert>
 #include <util/misc/string.h>
 #include <util/misc/formio.h>
 #include <util/misc/regtime.h>
@@ -148,6 +149,9 @@ bool R12EnergyIntermediates::T2_cc_computed() const {
 }
 bool R12EnergyIntermediates::Onerdm_cc_computed() const {
   return(Onerdm_cc_computed_);
+}
+bool R12EnergyIntermediates::Onerdm_relax_computed() const {
+  return(Onerdm_relax_computed_);
 }
 const RefSCMatrix& R12EnergyIntermediates::get_V(const SpinCase2 &spincase2) const {
   return(V_[spincase2]);

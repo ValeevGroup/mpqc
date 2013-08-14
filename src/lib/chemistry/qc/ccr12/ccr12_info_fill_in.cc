@@ -26,6 +26,7 @@
 //
 
 #include <string>
+#include <cassert>
 #include <vector>
 #include <algorithm>
 #include <chemistry/qc/wfn/orbitalspace.h>

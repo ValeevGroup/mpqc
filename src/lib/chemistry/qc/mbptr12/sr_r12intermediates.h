@@ -195,7 +195,7 @@ namespace sc {
               return 1.0/8.0;
           }
           if (s_ == 1) {
-            if (i[0] == i[2] && i[1] == i[3] || i[0] == i[3] && i[1] == i[2]) // ijij
+            if ((i[0] == i[2] && i[1] == i[3]) || (i[0] == i[3] && i[1] == i[2])) // ijij
               return 1.0/4.0;
           }
           return 0.0;
@@ -265,6 +265,10 @@ namespace sc {
       * @return \f$ \gamma^{p}_{q} \f$, respectively
       */
       TArray2 rdm1();
+
+      // compute B^p_q which is summed over k
+      TArray2 Bpk_qk(const char* p, const char* q);
+      TArray4 Bpr_qs(const char* p, const char* q);
 
       /** returns the 2-particle density matrix
       * @return \f$ \gamma^{pq}_{rs} \f$, respectively

@@ -12,7 +12,7 @@
 // distribution.
 //
 
-#include <assert.h>
+#include <cassert>
 
 #include <util/misc/math.h>
 

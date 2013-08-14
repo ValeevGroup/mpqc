@@ -29,7 +29,7 @@
 #ifndef _util_group_memmtmpi_cc
 #define _util_group_memmtmpi_cc
 
-#include <assert.h>
+#include <cassert>
 
 #include <util/misc/formio.h>
 #include <util/group/messmpi.h>

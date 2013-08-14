@@ -1,5 +1,6 @@
 
-#include <math.h>
+#include <cmath>
+#include <cassert>
 
 #include <util/misc/scexception.h>
 #include <util/misc/consumableresources.h>

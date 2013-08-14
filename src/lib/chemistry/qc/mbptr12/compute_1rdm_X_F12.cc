@@ -4,6 +4,8 @@
  *  Created on: Mar 4, 2013
  *      Author: jinmei
  */
+
+#include <cassert>
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/mbptr12/mp2r12_energy.h>
 #include <chemistry/qc/wfn/spin.h>

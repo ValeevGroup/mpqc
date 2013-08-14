@@ -29,6 +29,7 @@
 #include <sstream>
 #include <numeric>
 #include <cmath>
+#include <cassert>
 #include <util/misc/string.h>
 #include <util/misc/scexception.h>
 #include <util/misc/formio.h>

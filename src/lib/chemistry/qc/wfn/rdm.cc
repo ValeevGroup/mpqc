@@ -25,7 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-// includes go here
+#include <cassert>
 #include <chemistry/qc/wfn/rdm.h>
 #include <chemistry/qc/wfn/orbitalspace.h>
 #include <math/mmisc/pairiter.h>

@@ -36,6 +36,7 @@
 #include <time.h>
 #include <cxxabi.h>
 #include "string.h"
+#include <cassert>
 
 using namespace sc;
 

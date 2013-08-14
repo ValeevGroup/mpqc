@@ -25,6 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <cassert>
 #include <chemistry/qc/lcao/df_runtime.h>
 #include <math/optimize/gaussianfit.h>
 #include <math/optimize/gaussianfit.timpl.h>

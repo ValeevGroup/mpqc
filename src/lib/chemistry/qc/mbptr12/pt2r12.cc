@@ -28,6 +28,7 @@
 
 #include <fstream>
 #include <numeric>
+#include <cassert>
 #include <chemistry/qc/mbptr12/pt2r12.h>
 #include <util/misc/print.h>
 #include <chemistry/qc/wfn/orbitalspace_utils.h>

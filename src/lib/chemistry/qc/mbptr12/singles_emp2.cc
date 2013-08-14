@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <limits.h>
+#include <cassert>
 
 #include <mpqc_config.h>
 #include <util/misc/formio.h>

@@ -25,7 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <assert.h>
+#include <cassert>
 #include <psifiles.h>
 #include <ccfiles.h>
 #include <libdpd/dpd.h>

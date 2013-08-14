@@ -25,6 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <cassert>
 #include <chemistry/qc/mbptr12/mp2r12_energy_util.h>
 #include <math/mmisc/pairiter.h>
 

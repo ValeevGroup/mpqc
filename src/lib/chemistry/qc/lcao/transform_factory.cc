@@ -26,6 +26,7 @@
 //
 
 #include <stdexcept>
+#include <cassert>
 
 #include <util/misc/formio.h>
 #include <util/state/state_bin.h>

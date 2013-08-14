@@ -26,7 +26,7 @@
 //
 
 #include <stdlib.h>
-#include <assert.h>
+#include <cassert>
 #include <math.h>
 
 #include <mpqc_config.h>

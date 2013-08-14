@@ -25,10 +25,11 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <cassert>
 #include <chemistry/qc/mbptr12/mp2r12_energy.h>
 #include <util/misc/print.h>
 #include <math/scmat/blas.h>
-#include <math.h>
+#include <cmath>
 
 using namespace std;
 using namespace sc;

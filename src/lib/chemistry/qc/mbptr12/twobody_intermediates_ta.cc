@@ -29,6 +29,7 @@
 #pragma implementation
 #endif
 
+#include <cassert>
 #include <mpqc_config.h>
 
 #if defined(HAVE_MPQC3_RUNTIME)

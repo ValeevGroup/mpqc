@@ -26,6 +26,7 @@
 //
 
 #include <cmath>
+#include <cassert>
 #include <ccfiles.h>
 #include <math/scmat/local.h>
 #include <chemistry/qc/lcao/utils.h>

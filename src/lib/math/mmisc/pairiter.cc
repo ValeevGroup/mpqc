@@ -25,7 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <assert.h>
+#include <cassert>
 #include <util/misc/scexception.h>
 #include <math/mmisc/pairiter.h>
 #include <math/mmisc/pairiter.impl.h>

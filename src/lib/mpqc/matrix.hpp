@@ -31,11 +31,11 @@ namespace mpqc {
     /// @{
 
     /// Matrix class derived from Eigen::Matrix with additional MPQC integration
-    template<typename T>
+    template<typename T, int Order = Eigen::ColMajor>
     struct matrix :
-	Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>
+	Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Order>
     {
-        typedef Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> EigenType;
+        typedef Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Order> EigenType;
 
 	matrix() : EigenType() {}
 

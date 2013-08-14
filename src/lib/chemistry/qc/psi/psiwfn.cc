@@ -31,6 +31,7 @@
 #include <numeric>
 #include <functional>
 #include <algorithm>
+#include <cassert>
 
 #include <psifiles.h>
 

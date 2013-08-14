@@ -26,6 +26,7 @@
 //
 
 #include <cfloat>
+#include <cassert>
 #include<chemistry/qc/basis/symmint.h>
 #include<chemistry/qc/basis/orthog.h>
 #include<math/scmat/blas.h>

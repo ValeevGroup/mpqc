@@ -25,6 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <cassert>
 #include <stdexcept>
 #include <util/misc/consumableresources.h>
 #include <util/misc/scexception.h>

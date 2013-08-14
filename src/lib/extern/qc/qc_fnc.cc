@@ -29,7 +29,7 @@
 #pragma implementation
 #endif
 
-#include <assert.h>
+#include <cassert>
 #include <iostream>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/split.h>

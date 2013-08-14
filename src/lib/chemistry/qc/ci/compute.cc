@@ -1,6 +1,7 @@
 #include "chemistry/qc/ci/ci.h"
 #include "util/misc/consumableresources.h"
 #include <stdexcept>
+#include <cassert>
 
 //#define MPQC_PROFILE_ENABLE
 #include "mpqc/utility/profile.hpp"

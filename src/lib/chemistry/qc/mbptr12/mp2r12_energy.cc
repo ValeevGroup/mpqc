@@ -29,6 +29,7 @@
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
+#include <cassert>
 #include <util/misc/string.h>
 #include <util/misc/formio.h>
 #include <util/misc/regtime.h>

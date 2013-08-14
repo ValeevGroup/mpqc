@@ -25,6 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <cassert>
 #include <util/keyval/keyval.h>
 #include <util/group/message.h>
 #include <util/group/pregtime.h>

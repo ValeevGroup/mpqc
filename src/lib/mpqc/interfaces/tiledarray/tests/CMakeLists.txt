@@ -55,3 +55,12 @@ target_link_libraries(fock_build_df chemistry)
 target_link_libraries(fock_build_df math)
 target_link_libraries(fock_build_df util)
 target_link_libraries(fock_build_df ${LINK_LIBRARIES})
+
+
+add_executable(dmm_scf
+   EXCLUDE_FROM_ALL dmm_scf.cpp )
+
+target_link_libraries(dmm_scf chemistry)
+target_link_libraries(dmm_scf math)
+target_link_libraries(dmm_scf util)
+target_link_libraries(dmm_scf ${LINK_LIBRARIES})

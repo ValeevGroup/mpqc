@@ -30,6 +30,7 @@
 
 #include <chemistry/qc/lcao/df.h>
 #include <chemistry/qc/lcao/tbint_runtime.h>
+#include <Eigen/Dense>
 
 namespace sc {
 
@@ -68,6 +69,9 @@ namespace sc {
       typedef Ref<Result> ResultRef;
       typedef ParsedDensityFittingKey ParsedResultKey;
       typedef DensityFitting::MOIntsRuntime MOIntsRuntime;
+      typedef Eigen::MatrixXd CoefContainer;
+      typedef std::pair<int, int> IntPair;
+      typedef std::pair<std::string, IntPair> CoefKey;
 
       // uses MOIntsRuntime to evaluate integrals
       DensityFittingRuntime(const Ref<MOIntsRuntime>& moints_runtime,
@@ -117,6 +121,10 @@ namespace sc {
 
       typedef Registry<std::string, ResultRef, detail::NonsingletonCreationPolicy > ResultRegistry;
       Ref<ResultRegistry> results_;
+
+      //typedef Registry<CoefKey, CoefContainer, detail::NonsingletonCreationPolicy > CoefRegistry;
+      //Ref<CoefRegistry> coef_results_;
+
 
       // creates the result for a given key
       const ResultRef& create_result(const std::string& key);

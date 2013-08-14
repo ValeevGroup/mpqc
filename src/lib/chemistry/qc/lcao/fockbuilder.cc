@@ -1,5 +1,5 @@
 //
-// fockbuilder.cc
+                                                                                                                                // fockbuilder.cc
 //
 // Copyright (C) 2009 Edward Valeev
 //
@@ -53,6 +53,11 @@ typedef Eigen::Map<Eigen::MatrixXd> EigenMatrixMap;
 typedef Eigen::Map<const Eigen::MatrixXd> ConstEigenMatrixMap;
 typedef Eigen::Map<Eigen::VectorXd> VectorMap;
 typedef Eigen::MatrixXd EigenMatrix;
+typedef std::pair<int, int> IntPair;
+typedef Eigen::HouseholderQR<EigenMatrix> Decomposition;
+typedef std::map<IntPair, Decomposition*> DecompositionMap;
+
+typedef DecompositionMap::iterator DMap_iter;
 
 using namespace std;
 using namespace sc;
@@ -957,7 +962,6 @@ namespace sc {
         const Ref<TwoBodyThreeCenterMOIntsTransform>& C_tform = int3c_rtime->get(C_key);
         C_tform->compute();
         Ref<DistArray4> C = C_tform->ints_acc();  C->activate();
-        cout << C->ni() << " " << C->nj() << " " << C->nx() << " " << C->ny() << endl;
         tim.exit();
 
         tim.enter("contract density");
@@ -1233,10 +1237,11 @@ namespace sc {
       RefSCMatrix metric_2c_ints = int2c_rtime->get(metric2c_key);
       //----------------------------------------//
       // loop over atom pairs...
-      timer_change("04 - loop over atom pairs", 2);
+      timer_change("04 - loop over basis function pairs", 2);
       EigenMatrix C(dfnbf, branbf * ketnbf);
       C = EigenMatrix::Zero(dfnbf, branbf * ketnbf);
       if(munu_M_X->has_access(me)){
+        DecompositionMap decomps;
         for(int ibf = 0; ibf < branbf; ++ibf){
           if(not munu_M_X->is_local(0, ibf))
             continue;
@@ -1269,88 +1274,92 @@ namespace sc {
             const int dfbfoffB = dfbs->shell_to_function(dfshoffB);
             int dfpart_size = dfnbfA;
             if(atomA != atomB) dfpart_size += dfnbfB;
+            IntPair atomAB(atomA, atomB);
             /*---------------------------------------------------------------*/
-            /*  Get ( X_(ab) | M | Y_(ab) ) into an Eigen Matrix        {{{2 */ #if 2 // begin fold
+            /*  Get and Decompose ( X_(ab) | M | Y_(ab) )               {{{2 */ #if 2 // begin fold
             //===============================================================//
             timer_enter("01 - get ( X_(ab) | M | Y_(ab) ) block", 3);
-            double* metric_2c_part_ptr = new double[dfpart_size*dfpart_size];
-            double** blockptr = new double*[dfpart_size];
-            //---------------------------------------------------------------//
-            // Get the block corresponding to (A|m|A)
-            for(int idfpart = 0; idfpart < dfnbfA; ++idfpart) {
-              blockptr[idfpart] = &(metric_2c_part_ptr[idfpart * dfpart_size]);
-            }
-            {
-              RefSCMatrix block = metric_2c_ints.get_subblock(
-                  dfbfoffA, dfbfoffA+dfnbfA-1,
-                  dfbfoffA, dfbfoffA+dfnbfA-1
-              );
-              block.convert(blockptr);
-            }
-            // if atomA == atomB, we're done.  Otherwise,
-            if(atomA != atomB){
-              // Get the block corresponding to (A|m|B)
+            if(decomps.count(atomAB) == 0){
+              double* metric_2c_part_ptr = allocate<double>(dfpart_size*dfpart_size);
+              double** blockptr = allocate<double*>(dfpart_size);
+              //---------------------------------------------------------------//
+              // Get the block corresponding to (A|m|A)
               for(int idfpart = 0; idfpart < dfnbfA; ++idfpart) {
-                blockptr[idfpart] = &(metric_2c_part_ptr[idfpart * dfpart_size + dfnbfA]);
+                blockptr[idfpart] = &(metric_2c_part_ptr[idfpart * dfpart_size]);
               }
               {
                 RefSCMatrix block = metric_2c_ints.get_subblock(
                     dfbfoffA, dfbfoffA+dfnbfA-1,
-                    dfbfoffB, dfbfoffB+dfnbfB-1
-                );
-                block.convert(blockptr);
-              }
-              //---------------------------------------------------------------//
-              // Get the block corresponding to (B|m|A)
-              for(int idfpart = 0; idfpart < dfnbfB; ++idfpart) {
-                blockptr[idfpart] = &(metric_2c_part_ptr[(idfpart+dfnbfA) * dfpart_size]);
-              }
-              {
-                RefSCMatrix block = metric_2c_ints.get_subblock(
-                    dfbfoffB, dfbfoffB+dfnbfB-1,
                     dfbfoffA, dfbfoffA+dfnbfA-1
                 );
                 block.convert(blockptr);
               }
-              //---------------------------------------------------------------//
-              // Get the block corresponding to (B|m|B)
-              for(int idfpart = 0; idfpart < dfnbfB; ++idfpart) {
-                blockptr[idfpart] = &(metric_2c_part_ptr[(idfpart+dfnbfA) * dfpart_size + dfnbfA]);
+              // if atomA == atomB, we're done.  Otherwise,
+              if(atomA != atomB){
+                // Get the block corresponding to (A|m|B)
+                for(int idfpart = 0; idfpart < dfnbfA; ++idfpart) {
+                  blockptr[idfpart] = &(metric_2c_part_ptr[idfpart * dfpart_size + dfnbfA]);
+                }
+                {
+                  RefSCMatrix block = metric_2c_ints.get_subblock(
+                      dfbfoffA, dfbfoffA+dfnbfA-1,
+                      dfbfoffB, dfbfoffB+dfnbfB-1
+                  );
+                  block.convert(blockptr);
+                }
+                //---------------------------------------------------------------//
+                // Get the block corresponding to (B|m|A)
+                for(int idfpart = 0; idfpart < dfnbfB; ++idfpart) {
+                  blockptr[idfpart] = &(metric_2c_part_ptr[(idfpart+dfnbfA) * dfpart_size]);
+                }
+                {
+                  RefSCMatrix block = metric_2c_ints.get_subblock(
+                      dfbfoffB, dfbfoffB+dfnbfB-1,
+                      dfbfoffA, dfbfoffA+dfnbfA-1
+                  );
+                  block.convert(blockptr);
+                }
+                //---------------------------------------------------------------//
+                // Get the block corresponding to (B|m|B)
+                for(int idfpart = 0; idfpart < dfnbfB; ++idfpart) {
+                  blockptr[idfpart] = &(metric_2c_part_ptr[(idfpart+dfnbfA) * dfpart_size + dfnbfA]);
+                }
+                {
+                  RefSCMatrix block = metric_2c_ints.get_subblock(
+                      dfbfoffB, dfbfoffB+dfnbfB-1,
+                      dfbfoffB, dfbfoffB+dfnbfB-1
+                  );
+                  block.convert(blockptr);
+                }
               }
-              {
-                RefSCMatrix block = metric_2c_ints.get_subblock(
-                    dfbfoffB, dfbfoffB+dfnbfB-1,
-                    dfbfoffB, dfbfoffB+dfnbfB-1
-                );
-                block.convert(blockptr);
-              }
+              //-----------------------------------------------------------------//
+              EigenMatrixMap X_m_Y(metric_2c_part_ptr, dfpart_size, dfpart_size);
+              //for(int X = 0; X < dfpart_size; ++X){
+              //  for(int Y = 0; Y < dfpart_size; ++Y){
+              //    if(fabs(double(X_m_Y(X,Y))) < 1e-12){
+              //      X_m_Y(X,Y) = 0;
+              //    }
+              //  }
+              //}
+              timer_change("02 - decompose ( X(ab) | M | Y(ab) )", 3);
+              //Decomposition solver(X_m_Y);
+              decomps[atomAB] = new Decomposition(X_m_Y);
+              //decomps.insert(
+              //    std::pair<IntPair, Decomposition>(atomAB, Decomposition(X_m_Y))
+              //);
+              deallocate(blockptr);
+              deallocate(metric_2c_part_ptr);
             }
-            //-----------------------------------------------------------------//
-            EigenMatrixMap X_m_Y(metric_2c_part_ptr, dfpart_size, dfpart_size);
-            //for(int X = 0; X < dfpart_size; ++X){
-            //  for(int Y = 0; Y < dfpart_size; ++Y){
-            //    if(fabs(double(X_m_Y(X,Y))) < 1e-12){
-            //      X_m_Y(X,Y) = 0;
-            //    }
-            //  }
-            //}
             /*****************************************************************/ #endif //2}}}
             /*---------------------------------------------------------------*/
-            timer_change("02 - decompose ( X(ab) | M | Y(ab) )", 3);
-            //Eigen::FullPivHouseholderQR<EigenMatrix> coefficient_solver(X_m_Y);
-            Eigen::HouseholderQR<EigenMatrix> coefficient_solver(X_m_Y);
-            //Eigen::JacobiSVD<EigenMatrix> coefficient_solver(X_m_Y);
-            /*---------------------------------------------------------------*/
             timer_change("03 - solve equations", 3);
+            //----------------------------------------//
+            // Allocate (ibf jbf | M | X(AB) )
+            Eigen::VectorXd ibfjbf_M_X(dfpart_size);
+            //----------------------------------------//
+            // get (ibf jbf | M | X(A) )
             double* ibfjbf_M_X_buffer_A = allocate<double>(dfnbfA);
             VectorMap ibfjbf_M_X_A(ibfjbf_M_X_buffer_A, dfnbfA);
-            double* ibfjbf_M_X_buffer_B;
-            VectorMap ibfjbf_M_X_B(0, dfnbfB);
-            if(atomA != atomB){
-              ibfjbf_M_X_buffer_B = allocate<double>(dfnbfB);
-              new (&ibfjbf_M_X_B) VectorMap(ibfjbf_M_X_buffer_B, dfnbfB);
-            }
-            Eigen::VectorXd ibfjbf_M_X(dfpart_size);
             munu_M_X->retrieve_pair_subblock(
                 0, ibf,     // index in unit basis, index in mu
                 ints_type_idx,
@@ -1359,7 +1368,12 @@ namespace sc {
                 ibfjbf_M_X_buffer_A
             );
             ibfjbf_M_X.head(dfnbfA) = ibfjbf_M_X_A;
+            deallocate(ibfjbf_M_X_buffer_A);
+            //----------------------------------------//
+            // get (ibf jbf | M | X(B) )
             if(atomA != atomB){
+              double* ibfjbf_M_X_buffer_B = allocate<double>(dfnbfB);
+              VectorMap ibfjbf_M_X_B(ibfjbf_M_X_buffer_B, dfnbfB);
               munu_M_X->retrieve_pair_subblock(
                   0, ibf,     // index in unit basis, index in mu
                   ints_type_idx,
@@ -1368,11 +1382,15 @@ namespace sc {
                   ibfjbf_M_X_buffer_B
               );
               ibfjbf_M_X.tail(dfnbfB) = ibfjbf_M_X_B;
+              deallocate(ibfjbf_M_X_buffer_B);
             }
+            //----------------------------------------//
             // Now solve A * x = b, with A = ( X_(ab) | M | Y_(ab) ) and b = ( ibf jbf | M | Y_(ab) )
             // The result will be dfpart_size rows and 1 column and needs to be stored in the big C
             Eigen::VectorXd Cpart(dfpart_size);
-            Cpart = coefficient_solver.solve(ibfjbf_M_X);
+            Cpart = decomps[atomAB]->solve(ibfjbf_M_X);
+            //----------------------------------------//
+            // and store in the big C
             C.block(
                 dfbfoffA, ibf*ketnbf + jbf,
                 dfnbfA, 1
@@ -1383,12 +1401,14 @@ namespace sc {
                   dfnbfB, 1
               ) = Cpart.tail(dfnbfB);
             }
-            deallocate(ibfjbf_M_X_buffer_A);
-            if(atomA != atomB)
-              deallocate(ibfjbf_M_X_buffer_B);
+            //----------------------------------------//
             timer_exit(3);
           } // end loop over basis functions (jbf)
         } // end loop over basis functions (ibf)
+        // clean up memory
+        for(DMap_iter it=decomps.begin(); it != decomps.end(); ++it){
+          delete it->second;
+        }
       }
       timer_change("05 - global sum C", 2);
       msg->sum(C.data(), dfnbf * branbf * ketnbf);
@@ -1508,7 +1528,7 @@ namespace sc {
       /* Compute J                                             		                        {{{1 */ #if 1 // begin fold
       timer_change("05 - compute J", 1);
       Eigen::VectorXd J(branbf*ketnbf);
-      double *P_ptr = new double[branbf*ketnbf];
+      double *P_ptr = allocate<double>(branbf*ketnbf);
       {
         RefSymmSCMatrix Ptmp = P.copy();
         Ptmp.convert2RefSCMat().convert(P_ptr);
@@ -1542,7 +1562,7 @@ namespace sc {
       /* Cleanup stuff                                         		                        {{{1 */ #if 1 // begin fold
       //----------------------------------------//
       timer_change("06 - cleanup", 1);
-      delete[] P_ptr;
+      deallocate(P_ptr);
       deallocate(coulomb_2c_ints_ptr);
       timer_exit(1);
       tim.exit();
@@ -1914,192 +1934,206 @@ namespace sc {
       double* coulomb_2c_ints_ptr = allocate<double>(dfnbf*dfnbf);
       coulomb_2c_ints.convert(coulomb_2c_ints_ptr);
       EigenMatrixMap X_g_Y(coulomb_2c_ints_ptr, dfnbf, dfnbf);
-      timer_exit(2);
       //----------------------------------------//
       // loop over atom pairs...
-      timer_change("04 - loop over atom pairs", 2);
-      EigenMatrix C(dfnbf, brabs->nbasis() * ketbs->nbasis());
+      timer_change("06 - loop over basis functions", 2);
+      timer_enter("01 - setup", 3)
       EigenMatrix d_mu_siX(branbf, obsnbf*dfnbf);
       EigenMatrix gt_nu_siX(branbf, obsnbf*dfnbf);
-      C = EigenMatrix::Zero(dfnbf, brabs->nbasis() * ketbs->nbasis());
       d_mu_siX = EigenMatrix::Zero(branbf, obsnbf*dfnbf);
       gt_nu_siX = EigenMatrix::Zero(branbf, obsnbf*dfnbf);
-      for(int atomA=0; atomA < brabs->ncenter(); ++atomA){
-        //----------------------------------------//
-        // Convenience variables for atom A
-        const int nshA = brabs->nshell_on_center(atomA);
-        const int nbfA = brabs->nbasis_on_center(atomA);
-        const int shoffA = brabs->shell_on_center(atomA, 0);
-        const int bfoffA = brabs->shell_to_function(shoffA);
-        const int dfnshA = dfbs->nshell_on_center(atomA);
-        const int dfnbfA = dfbs->nbasis_on_center(atomA);
-        const int dfshoffA = dfbs->shell_on_center(atomA, 0);
-        const int dfbfoffA = dfbs->shell_to_function(dfshoffA);
-        //----------------------------------------//
-        // TODO Permutational symmetry
-        for(int atomB=0; atomB < ketbs->ncenter(); ++atomB){
+      if(munu_M_X->has_access(me)){
+        DecompositionMap decomps;
+        for(int ibf = 0; ibf < branbf; ++ibf){
+          if(not munu_M_X->is_local(0, ibf))
+            continue;
           //----------------------------------------//
-          // Convenience variables for atom B
-          const int nshB = ketbs->nshell_on_center(atomB);
-          const int nbfB = ketbs->nbasis_on_center(atomB);
-          const int shoffB = ketbs->shell_on_center(atomB, 0);
-          const int bfoffB = ketbs->shell_to_function(shoffB);
-          const int dfnshB = dfbs->nshell_on_center(atomB);
-          const int dfnbfB = dfbs->nbasis_on_center(atomB);
-          const int dfshoffB = dfbs->shell_on_center(atomB, 0);
-          const int dfbfoffB = dfbs->shell_to_function(dfshoffB);
-          int dfpart_size = dfnbfA;
-          if(atomA != atomB) dfpart_size += dfnbfB;
-          /*---------------------------------------------------------------*/
-          /*  Get ( X_(ab) | M | Y_(ab) ) into an Eigen Matrix        {{{2 */ #if 2 // begin fold
-          //===============================================================//
-          timer_enter("01 - get ( X_(ab) | M | Y_(ab) ) block", 3);
-          double* metric_2c_part_ptr = new double[dfpart_size*dfpart_size];
-          double** blockptr = new double*[dfpart_size];
-          //---------------------------------------------------------------//
-          // Get the block corresponding to (A|m|A)
-          for(int idfpart = 0; idfpart < dfnbfA; ++idfpart) {
-            blockptr[idfpart] = &(metric_2c_part_ptr[idfpart * dfpart_size]);
-          }
-          {
-            RefSCMatrix block = metric_2c_ints.get_subblock(
-                dfbfoffA, dfbfoffA+dfnbfA-1,
-                dfbfoffA, dfbfoffA+dfnbfA-1
+          // Convenience variables for atom A
+          const int ishA = brabs->function_to_shell(ibf);
+          const int atomA = brabs->shell_to_center(ishA);
+          const int nshA = brabs->nshell_on_center(atomA);
+          const int nbfA = brabs->nbasis_on_center(atomA);
+          const int shoffA = brabs->shell_on_center(atomA, 0);
+          const int bfoffA = brabs->shell_to_function(shoffA);
+          const int dfnshA = dfbs->nshell_on_center(atomA);
+          const int dfnbfA = dfbs->nbasis_on_center(atomA);
+          const int dfshoffA = dfbs->shell_on_center(atomA, 0);
+          const int dfbfoffA = dfbs->shell_to_function(dfshoffA);
+          //----------------------------------------//
+          // TODO Permutational symmetry
+          for(int jbf = 0; jbf < ketnbf; ++jbf){
+            //----------------------------------------//
+            // Convenience variables for atom B
+            const int jshB = ketbs->function_to_shell(jbf);
+            const int atomB = ketbs->shell_to_center(jshB);
+            const int nshB = ketbs->nshell_on_center(atomB);
+            const int nbfB = ketbs->nbasis_on_center(atomB);
+            const int shoffB = ketbs->shell_on_center(atomB, 0);
+            const int bfoffB = ketbs->shell_to_function(shoffB);
+            const int dfnshB = dfbs->nshell_on_center(atomB);
+            const int dfnbfB = dfbs->nbasis_on_center(atomB);
+            const int dfshoffB = dfbs->shell_on_center(atomB, 0);
+            const int dfbfoffB = dfbs->shell_to_function(dfshoffB);
+            int dfpart_size = dfnbfA;
+            if(atomA != atomB) dfpart_size += dfnbfB;
+            IntPair atomAB(atomA, atomB);
+            /*---------------------------------------------------------------*/
+            /*  Get and Decompose ( X_(ab) | M | Y_(ab) )               {{{2 */ #if 2 // begin fold
+            //===============================================================//
+            if(decomps.count(atomAB) == 0) {
+              timer_change("02 - get ( X_(ab) | M | Y_(ab) ) block", 3);
+              double* metric_2c_part_ptr = allocate<double>(dfpart_size*dfpart_size);
+              double** blockptr = allocate<double*>(dfpart_size);
+              //---------------------------------------------------------------//
+              // Get the block corresponding to (A|m|A)
+              for(int idfpart = 0; idfpart < dfnbfA; ++idfpart) {
+                blockptr[idfpart] = &(metric_2c_part_ptr[idfpart * dfpart_size]);
+              }
+              {
+                RefSCMatrix block = metric_2c_ints.get_subblock(
+                    dfbfoffA, dfbfoffA+dfnbfA-1,
+                    dfbfoffA, dfbfoffA+dfnbfA-1
+                );
+                block.convert(blockptr);
+              }
+              // if atomA == atomB, we're done.  Otherwise,
+              if(atomA != atomB){
+                // Get the block corresponding to (A|m|B)
+                for(int idfpart = 0; idfpart < dfnbfA; ++idfpart) {
+                  blockptr[idfpart] = &(metric_2c_part_ptr[idfpart * dfpart_size + dfnbfA]);
+                }
+                {
+                  RefSCMatrix block = metric_2c_ints.get_subblock(
+                      dfbfoffA, dfbfoffA+dfnbfA-1,
+                      dfbfoffB, dfbfoffB+dfnbfB-1
+                  );
+                  block.convert(blockptr);
+                }
+                //---------------------------------------------------------------//
+                // Get the block corresponding to (B|m|A)
+                for(int idfpart = 0; idfpart < dfnbfB; ++idfpart) {
+                  blockptr[idfpart] = &(metric_2c_part_ptr[(idfpart+dfnbfA) * dfpart_size]);
+                }
+                {
+                  RefSCMatrix block = metric_2c_ints.get_subblock(
+                      dfbfoffB, dfbfoffB+dfnbfB-1,
+                      dfbfoffA, dfbfoffA+dfnbfA-1
+                  );
+                  block.convert(blockptr);
+                }
+                //---------------------------------------------------------------//
+                // Get the block corresponding to (B|m|B)
+                for(int idfpart = 0; idfpart < dfnbfB; ++idfpart) {
+                  blockptr[idfpart] = &(metric_2c_part_ptr[(idfpart+dfnbfA) * dfpart_size + dfnbfA]);
+                }
+                {
+                  RefSCMatrix block = metric_2c_ints.get_subblock(
+                      dfbfoffB, dfbfoffB+dfnbfB-1,
+                      dfbfoffB, dfbfoffB+dfnbfB-1
+                  );
+                  block.convert(blockptr);
+                }
+              }
+              //-----------------------------------------------------------------//
+              EigenMatrixMap X_m_Y(metric_2c_part_ptr, dfpart_size, dfpart_size);
+              //for(int X = 0; X < dfpart_size; ++X){
+              //  for(int Y = 0; Y < dfpart_size; ++Y){
+              //    if(fabs(double(X_m_Y(X,Y))) < 1e-12){
+              //      X_m_Y(X,Y) = 0;
+              //    }
+              //  }
+              //}
+              timer_change("03 - decompose ( X(ab) | M | Y(ab) )", 3);
+              decomps[atomAB] = new Decomposition(X_m_Y);
+              /*---------------------------------------------------------------*/
+              timer_change("misc", 3);
+              deallocate(blockptr);
+              deallocate(metric_2c_part_ptr);
+              /*---------------------------------------------------------------*/
+            }
+            /*****************************************************************/ #endif //2}}}
+            /*---------------------------------------------------------------*/
+            timer_change("04 - solve equations", 3);
+            //----------------------------------------//
+            // set up the ij_M_X(AB) vector
+            timer_enter("01 - get ibfjbf_M_X", 4);
+            Eigen::VectorXd ibfjbf_M_X(dfpart_size);
+            //----------------------------------------//
+            // get ij_M_X(A)
+            double* ibfjbf_M_X_buffer_A = allocate<double>(dfnbfA);
+            VectorMap ibfjbf_M_X_A(ibfjbf_M_X_buffer_A, dfnbfA);
+            munu_M_X->retrieve_pair_subblock(
+                0, ibf,     // index in unit basis, index in mu
+                ints_type_idx,
+                jbf,        jbf+1,             // nu start, nu fence
+                dfbfoffA,   dfbfoffA + dfnbfA, // X start,  X fence
+                ibfjbf_M_X_buffer_A
             );
-            block.convert(blockptr);
-          }
-          // if atomA == atomB, we're done.  Otherwise,
-          if(atomA != atomB){
-            // Get the block corresponding to (A|m|B)
-            for(int idfpart = 0; idfpart < dfnbfA; ++idfpart) {
-              blockptr[idfpart] = &(metric_2c_part_ptr[idfpart * dfpart_size + dfnbfA]);
-            }
-            {
-              RefSCMatrix block = metric_2c_ints.get_subblock(
-                  dfbfoffA, dfbfoffA+dfnbfA-1,
-                  dfbfoffB, dfbfoffB+dfnbfB-1
-              );
-              block.convert(blockptr);
-            }
-            //---------------------------------------------------------------//
-            // Get the block corresponding to (B|m|A)
-            for(int idfpart = 0; idfpart < dfnbfB; ++idfpart) {
-              blockptr[idfpart] = &(metric_2c_part_ptr[(idfpart+dfnbfA) * dfpart_size]);
-            }
-            {
-              RefSCMatrix block = metric_2c_ints.get_subblock(
-                  dfbfoffB, dfbfoffB+dfnbfB-1,
-                  dfbfoffA, dfbfoffA+dfnbfA-1
-              );
-              block.convert(blockptr);
-            }
-            //---------------------------------------------------------------//
-            // Get the block corresponding to (B|m|B)
-            for(int idfpart = 0; idfpart < dfnbfB; ++idfpart) {
-              blockptr[idfpart] = &(metric_2c_part_ptr[(idfpart+dfnbfA) * dfpart_size + dfnbfA]);
-            }
-            {
-              RefSCMatrix block = metric_2c_ints.get_subblock(
-                  dfbfoffB, dfbfoffB+dfnbfB-1,
-                  dfbfoffB, dfbfoffB+dfnbfB-1
-              );
-              block.convert(blockptr);
-            }
-          }
-          //-----------------------------------------------------------------//
-          EigenMatrixMap X_m_Y(metric_2c_part_ptr, dfpart_size, dfpart_size);
-          //for(int X = 0; X < dfpart_size; ++X){
-          //  for(int Y = 0; Y < dfpart_size; ++Y){
-          //    if(fabs(double(X_m_Y(X,Y))) < 1e-12){
-          //      X_m_Y(X,Y) = 0;
-          //    }
-          //  }
-          //}
-          /*****************************************************************/ #endif //2}}}
-          /*---------------------------------------------------------------*/
-          timer_change("02 - decompose ( X(ab) | M | Y(ab) )", 3);
-          //Eigen::FullPivHouseholderQR<EigenMatrix> coefficient_solver(X_m_Y);
-          Eigen::HouseholderQR<EigenMatrix> coefficient_solver(X_m_Y);
-          //Eigen::JacobiSVD<EigenMatrix> coefficient_solver(X_m_Y);
-          /*---------------------------------------------------------------*/
-          timer_change("03 - solve equations", 3);
-          timer_enter("misc", 4);
-          double* ibfjbf_M_X_buffer_A = allocate<double>(dfnbfA);
-          VectorMap ibfjbf_M_X_A(ibfjbf_M_X_buffer_A, dfnbfA);
-          double* ibfjbf_M_X_buffer_B;
-          VectorMap ibfjbf_M_X_B(0, dfnbfB);
-          if(atomA != atomB){
-            ibfjbf_M_X_buffer_B = allocate<double>(dfnbfB);
-            new (&ibfjbf_M_X_B) VectorMap(ibfjbf_M_X_buffer_B, dfnbfB);
-          }
-          Eigen::VectorXd ibfjbf_M_X(dfpart_size);
-          // loop over the basis functions mu in A
-          for(int ibf = bfoffA; ibf < bfoffA + nbfA; ++ibf){
-            // loop over the basis functions mu in B
-            for(int jbf = bfoffB; jbf < bfoffB + nbfB; ++jbf){
-              timer_change("01 - get ibfjbf_M_X", 4);
+            ibfjbf_M_X.head(dfnbfA) = ibfjbf_M_X_A;
+            deallocate(ibfjbf_M_X_buffer_A);
+            //----------------------------------------//
+            // get ij_M_X(B)
+            if(atomA != atomB){
+              double* ibfjbf_M_X_buffer_B = allocate<double>(dfnbfB);
+              VectorMap ibfjbf_M_X_B(ibfjbf_M_X_buffer_B, dfnbfB);
               munu_M_X->retrieve_pair_subblock(
                   0, ibf,     // index in unit basis, index in mu
                   ints_type_idx,
                   jbf,        jbf+1,             // nu start, nu fence
-                  dfbfoffA,   dfbfoffA + dfnbfA, // X start,  X fence
-                  ibfjbf_M_X_buffer_A
+                  dfbfoffB,   dfbfoffB + dfnbfB, // X start,  X fence
+                  ibfjbf_M_X_buffer_B
               );
-              ibfjbf_M_X.head(dfnbfA) = ibfjbf_M_X_A;
-              if(atomA != atomB){
-                munu_M_X->retrieve_pair_subblock(
-                    0, ibf,     // index in unit basis, index in mu
-                    ints_type_idx,
-                    jbf,        jbf+1,             // nu start, nu fence
-                    dfbfoffB,   dfbfoffB + dfnbfB, // X start,  X fence
-                    ibfjbf_M_X_buffer_B
-                );
-                ibfjbf_M_X.tail(dfnbfB) = ibfjbf_M_X_B;
-              }
-              timer_change("02 - get Cpart", 4);
-              // Now solve A * x = b, with A = ( X_(ab) | M | Y_(ab) ) and b = ( ibf jbf | M | Y_(ab) )
-              Eigen::VectorXd Cpart(dfpart_size);
-              // The result will be dfpart_size rows and 1 column
-              Cpart = coefficient_solver.solve(ibfjbf_M_X);
-              //----------------------------------------//
-              // contract with X_g_Y to form gt_mu_siX
-              timer_change("03 - get gt_mu_siX", 4);
+              ibfjbf_M_X.tail(dfnbfB) = ibfjbf_M_X_B;
+              deallocate(ibfjbf_M_X_buffer_B);
+            }
+            //----------------------------------------//
+            timer_change("02 - get Cpart", 4);
+            // Now solve A * x = b, with A = ( X_(ab) | M | Y_(ab) )
+            //   and b = ( ibf jbf | M | Y_(ab) )
+            // The result will be dfpart_size rows and 1 column
+            Eigen::VectorXd Cpart(dfpart_size);
+            Cpart = decomps[atomAB]->solve(ibfjbf_M_X);
+            //----------------------------------------//
+            // contract with X_g_Y to form gt_mu_siX
+            timer_change("03 - get gt_mu_siX", 4);
+            gt_nu_siX.block(
+                ibf, jbf*dfnbf,
+                1, dfnbf
+            ) += Cpart.head(dfnbfA).transpose() * X_g_Y.middleRows(dfbfoffA, dfnbfA);
+            if(atomA != atomB){
               gt_nu_siX.block(
                   ibf, jbf*dfnbf,
                   1, dfnbf
-              ) += Cpart.head(dfnbfA).transpose() * X_g_Y.middleRows(dfbfoffA, dfnbfA);
+              ) += Cpart.tail(dfnbfB).transpose() * X_g_Y.middleRows(dfbfoffB, dfnbfB);
+            }
+            //----------------------------------------//
+            // contract with density and put it into d_mu_siX
+            timer_change("04 - get d_mu_siX", 4);
+            for(int sigma = 0; sigma < obsnbf; ++sigma){
+              d_mu_siX.block(
+                  ibf, sigma*dfnbf + dfbfoffA,
+                  1, dfnbfA
+              ) += D(jbf, sigma) * Cpart.head(dfnbfA).transpose();
               if(atomA != atomB){
-                gt_nu_siX.block(
-                    ibf, jbf*dfnbf,
-                    1, dfnbf
-                ) += Cpart.tail(dfnbfB).transpose() * X_g_Y.middleRows(dfbfoffB, dfnbfB);
-              }
-              //----------------------------------------//
-              // contract with density and put it into d_mu_siX
-              timer_change("04 - get d_mu_siX", 4);
-              for(int sigma = 0; sigma < obsnbf; ++sigma){
                 d_mu_siX.block(
-                    ibf, sigma*dfnbf + dfbfoffA,
-                    1, dfnbfA
-                ) += D(jbf, sigma) * Cpart.head(dfnbfA).transpose();
-                if(atomA != atomB){
-                  d_mu_siX.block(
-                      ibf, sigma*dfnbf + dfbfoffB,
-                      1, dfnbfB
-                  ) += D(jbf, sigma) * Cpart.tail(dfnbfB).transpose();
-                }
+                    ibf, sigma*dfnbf + dfbfoffB,
+                    1, dfnbfB
+                ) += D(jbf, sigma) * Cpart.tail(dfnbfB).transpose();
               }
-              //----------------------------------------//
-              timer_change("misc", 4);
-            } // end loop over basis functions in B (jbf)
-          } // end loop over basis functions in A (ibf)
-          deallocate(ibfjbf_M_X_buffer_A);
-          if(atomA != atomB)
-            deallocate(ibfjbf_M_X_buffer_B);
-          timer_exit(4);
-          timer_exit(3);
-        } // end loop over atomA
-      } // end loop over atomB
+            }
+            //----------------------------------------//
+            timer_exit(4);
+            timer_change("01 - setup", 3);
+          } // end loop over basis functions jbf
+        } // end loop over basis functions ibf
+        for(DMap_iter it=decomps.begin(); it != decomps.end(); ++it){
+          delete it->second;
+        }
+      } // end if has access(me)
+      timer_exit(3);
+      timer_change("07 - global sum C", 2);
+      msg->sum(d_mu_siX.data(), branbf * obsnbf * dfnbf);
+      msg->sum(gt_nu_siX.data(), branbf * obsnbf * dfnbf);
       timer_exit(2);
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
@@ -2117,6 +2151,8 @@ namespace sc {
       Ref<DistArray4> munu_g_X_D4 = munu_M_X;
       // Only need to recompute if we're using a non-coulomb kernel
       if(noncoulomb_kernel){
+        if (munu_M_X->data_persistent()) munu_M_X->deactivate();
+        munu_M_X = 0;
         const std::string munu_g_X_key = ParsedTwoBodyThreeCenterIntKey::key(
             braspace->id(),
             dfspace->id(),
@@ -2129,32 +2165,40 @@ namespace sc {
       }
       timer_change("03 - compute K_tilde", 2);
       timer_enter("misc", 3);
-      double* ibfjbf_g_X_buffer = allocate<double>(dfnbf);
-      VectorMap ibfjbf_g_X(ibfjbf_g_X_buffer, dfnbf);
-      for(int ibf = 0; ibf < branbf; ++ibf){
-        for(int jbf = 0; jbf < ketnbf; ++jbf){
-          timer_change("01 - get pair subblock", 3);
-          munu_g_X_D4->retrieve_pair_subblock(
-              0, ibf,      // unit basis index, mu_index
-              g_type_idx,
-              jbf, jbf+1,  // nu_start, nu_fence
-              0,   dfnbf,  // X_start, X_fence
-              ibfjbf_g_X_buffer
-          );
-          timer_change("02 - get K_tilde contribution", 3);
-          for(int mu = 0; mu < branbf; ++mu){
-            K_tilde(mu, ibf) += d_mu_siX.row(mu).segment(jbf*dfnbf, dfnbf) * ibfjbf_g_X;
+      if(munu_g_X_D4->has_access(me)){
+        double* ibfjbf_g_X_buffer = allocate<double>(dfnbf);
+        VectorMap ibfjbf_g_X(ibfjbf_g_X_buffer, dfnbf);
+        for(int ibf = 0; ibf < branbf; ++ibf){
+          if(not munu_g_X_D4->is_local(0, ibf))
+            continue;
+          for(int jbf = 0; jbf < ketnbf; ++jbf){
+            timer_change("01 - get pair subblock", 3);
+            munu_g_X_D4->retrieve_pair_subblock(
+                0, ibf,      // unit basis index, mu_index
+                g_type_idx,
+                jbf, jbf+1,  // nu_start, nu_fence
+                0,   dfnbf,  // X_start, X_fence
+                ibfjbf_g_X_buffer
+            );
+            timer_change("02 - get K_tilde contribution", 3);
+            K_tilde.row(ibf) += d_mu_siX.middleCols(jbf*dfnbf, dfnbf) * ibfjbf_g_X;
+            timer_change("misc", 3);
           }
-          timer_change("misc", 3);
         }
+        deallocate(ibfjbf_g_X_buffer);
       }
-      deallocate(ibfjbf_g_X_buffer);
+      timer_change("03 - global sum K_tilde", 3);
+      msg->sum(K_tilde.data(), branbf*ketnbf);
+      timer_change("misc", 3);
+      if(munu_g_X_D4->data_persistent()) munu_g_X_D4->deactivate();
+      munu_g_X_D4 = 0;
+      munu_M_X = 0;
       timer_exit(3);
       timer_exit(2);
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
       /* Compute K                                             		                        {{{1 */ #if 1 // begin fold
-      timer_change("05 - compute K", 1);
+      timer_change("04 - compute K", 1);
       timer_enter("01 - two body part", 2);
       K_tilde -= 0.5 * (d_mu_siX * gt_nu_siX.transpose());
       timer_change("02 - symmetrize", 2);
@@ -2180,7 +2224,7 @@ namespace sc {
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
       /* Cleanup stuff                                         		                        {{{1 */ #if 1 // begin fold
-      timer_change("06 - cleanup", 1);
+      timer_change("05 - cleanup", 1);
       deallocate(P_ptr);
       deallocate(coulomb_2c_ints_ptr);
       timer_exit(1);

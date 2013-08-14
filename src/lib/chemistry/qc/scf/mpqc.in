@@ -4,7 +4,9 @@ mpqc:(
 )
 
 nproc = 4
-molecule = $:water
+%molecule = $:ibuprofen
+%molecule = $:ethane_c1
+molecule = $:naphtalene
 coor = $:symcoor
 %message = $:messageShm
 %basis_matrixkit = $:replmatrixkit
@@ -23,9 +25,9 @@ mole<DFCLHF>: (
 
   df_basis<GaussianBasisSet>:(
     molecule = $..:molecule
-    name = "cc-pVDZ-JKFIT"
+    %name = "cc-pVDZ-JKFIT"
     %name = "aug-cc-pVTZ"
-    %name = "cc-pVTZ-RI"
+    name = "cc-pVTZ-RI"
     %name = "cc-pVDZ"
     %name = "6-31G"
     %puream=yes
@@ -53,7 +55,7 @@ mole<DFCLHF>: (
   molecule = $:molecule
   mbasis<GaussianBasisSet>: (
     molecule = $:molecule
-    name = "cc-pVDZ"
+    name = "cc-pVTZ"
     %name = "STO-3G"
     %puream=yes
     %matrixkit = $:basis_matrixkit
@@ -80,7 +82,6 @@ mole<DFCLHF>: (
   %debug = 4
 )
 
-integrals<IntegralLibint2>:()
 
 guess<CLHF>: (
   integral_storage=32000000
@@ -89,12 +90,15 @@ guess<CLHF>: (
   molecule = $:molecule
   coor = $:coor
 
-  basis = $:mole:basis
-  %basis<GaussianBasisSet>: (
-  %  matrixkit = $:basis_matrixkit
-  %  molecule = $:molecule
-  %  name = "STO-3G"
-  %)
+  %basis = $:mole:basis
+  mbasis<GaussianBasisSet>: (
+    molecule = $:molecule
+    name = "STO-3G"
+  )
+  basis<SplitBasisSet>:(
+    molecule = $..:molecule
+    basis = $..:mbasis
+  )
 )
 
 ehw_guess<ExtendedHuckelWfn>: (
@@ -487,6 +491,45 @@ ethane_c1<Molecule>: (
   }
 )
 
+ibuprofen<Molecule>: (
+  symmetry = c1
+  units = angstrom
+  { atoms geometry } = {
+    C   [   -0.36470000  -0.78370000  -1.35470000 ]
+    C   [   -0.52700000   0.45900000   0.68540000 ]
+    C   [    0.96180000  -1.06000000  -1.08080000 ]
+    C   [    0.79940000   0.18240000   0.95950000 ]
+    C   [    2.98980000  -0.87850000   0.37500000 ]
+    C   [   -2.75250000   1.79120000  -0.86140000 ]
+    C   [    3.58360000   1.54610000   0.47960000 ]
+    C   [    5.34570000  -0.15080000  -0.02840000 ]
+    C   [   -1.10910000  -0.02440000  -0.47140000 ]
+    C   [    1.54380000  -0.57690000   0.07620000 ]
+    O   [   -2.91640000  -0.85670000   1.26400000 ]
+    O   [   -4.75420000  -0.12620000   0.27790000 ]
+    C   [   -3.42150000  -0.27700000   0.33190000 ]
+    H   [   -5.26800000  -0.49840000   1.00770000 ]
+    C   [   -2.55530000   0.27670000  -0.76990000 ]
+    C   [    3.87360000   0.21810000  -0.22270000 ]
+    H   [   -2.83420000  -0.18390000  -1.71760000 ]
+    H   [   -0.81810000  -1.15730000  -2.26080000 ]
+    H   [   -1.10860000   1.05250000   1.37530000 ]
+    H   [   -3.79840000   2.00900000  -1.07730000 ]
+    H   [   -2.47360000   2.25180000   0.08630000 ]
+    H   [   -2.12590000   2.19170000  -1.65840000 ]
+    H   [    1.54340000  -1.65350000  -1.77070000 ]
+    H   [    1.25430000   0.56040000   1.86310000 ]
+    H   [    3.13760000  -0.91630000   1.45430000 ]
+    H   [    3.25830000  -1.84020000  -0.06230000 ]
+    H   [    3.66100000   0.31610000  -1.28730000 ]
+    H   [    3.79620000   1.44810000   1.54420000 ]
+    H   [    4.21320000   2.32740000   0.05380000 ]
+    H   [    2.53490000   1.80890000   0.34120000 ]
+    H   [    5.55220000  -1.09690000  -0.52870000 ]
+    H   [    5.97530000   0.63040000  -0.45420000 ]
+    H   [    5.55820000  -0.24880000   1.03620000 ]
+  }
+)
 
 taxol<Molecule>: (
   units = angstrom

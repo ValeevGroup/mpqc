@@ -108,6 +108,7 @@ DensityFittingRuntime::DensityFittingRuntime(const Ref<MOIntsRuntime>& r,
   moints_runtime_(r),
   dfparams_(dfp),
   results_(ResultRegistry::instance())
+  //coef_results_(CoefRegistry::instance())
 {
 }
 
@@ -119,6 +120,8 @@ DensityFittingRuntime::DensityFittingRuntime(StateIn& si)
   dfparams_ = dfp.pointer();
 
   results_ = ResultRegistry::restore_instance(si);
+  // CoefContainer is not a saveable state yet...
+  //coef_results_ = CoefRegistry::restore_instance(si));
 }
 
 void
@@ -127,6 +130,8 @@ DensityFittingRuntime::save_data_state(StateOut& so)
   SavableState::save_state(moints_runtime_.pointer(),so);
   SavableState::save_state(const_cast<DensityFittingParams*>(dfparams_),so);
   ResultRegistry::save_instance(results_,so);
+  // This probably won't work with Eigen::MatrixXd instances as values
+  //ResultRegistry::save_instance(coef_results_,so);
 }
 
 void

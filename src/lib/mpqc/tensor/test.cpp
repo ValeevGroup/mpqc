@@ -2,6 +2,8 @@
 #include "mpqc/tensor.hpp"
 #include "mpqc/tensor/permute.hpp"
 #include "mpqc/tensor/cast.hpp"
+#include "mpqc/blas.hpp"
+#include "mpqc/matrix.hpp"
 #include <iostream>
 
 using namespace mpqc;
@@ -46,7 +48,8 @@ int main() {
     }
 
     auto ut = matrix_cast<2,1>(u)*matrix_cast<1,2>(u);
-
+    Matrix b(N,N);
+    blas::gemm(1, matrix_cast<1,2>(u), matrix_cast<2,1>(u), 0, b);
 
     // for (int k : range(0,N)) {
     //     for (int j : range(0,N)) {

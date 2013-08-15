@@ -1,7 +1,8 @@
 #ifndef MPQC_MATH_TENSOR_HPP
 #define MPQC_MATH_TENSOR_HPP
 
-/// @defgroup Tensor mpqc.Math.Tensor
+/// @defgroup MathTensor mpqc.Math.Tensor
+/// @ingroup Math
 /// Tensor objects and functions
 
 #include "mpqc/math/tensor/ref.hpp"

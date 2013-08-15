@@ -20,7 +20,7 @@
 
 namespace mpqc {
 
-    /// @addtogroup Tensor
+    /// @addtogroup MathTensor
     /// @{
 
     /// Tensor base class.

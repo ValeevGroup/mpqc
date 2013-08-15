@@ -12,6 +12,7 @@ if(DOXYGEN_FOUND)
                       COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/doc/Doxyfile
                       MAIN_DEPENDENCY ${PROJECT_BINARY_DIR}/doc/Doxyfile ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
                       DEPENDS
+                        ${CMAKE_CURRENT_SOURCE_DIR}/DoxygenLayout.xml
                         ${CMAKE_CURRENT_SOURCE_DIR}/compile.dox
                         ${CMAKE_CURRENT_SOURCE_DIR}/develop.dox
                         ${CMAKE_CURRENT_SOURCE_DIR}/footer.html

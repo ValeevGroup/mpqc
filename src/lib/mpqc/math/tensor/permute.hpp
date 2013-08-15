@@ -9,7 +9,7 @@
 
 namespace mpqc {
  
-    /// @addtogroup Tensor
+    /// @addtogroup MathTensor
     /// @{
 
     template<typename T, class O>

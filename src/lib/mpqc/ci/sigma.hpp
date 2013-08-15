@@ -33,7 +33,7 @@ namespace mpqc {
       b = b >> (63 - n);
       size_t p = String::bitset(b).count();
       //size_t p = _mm_popcnt_u64(b);
-#ifdef DEBUG
+#ifndef NDEBUG
       assert(p < I.count());
       size_t q = 0;
       for (int k = std::min(i,j)+1; k < std::max(i,j); ++k) {

@@ -15,7 +15,7 @@
 
 namespace mpqc {
 
-    /// @addtogroup Tensor
+    /// @addtogroup MathTensor
     /// @{
 
     /// Tensor row major (i.e. last dimension is contiguous) storage order

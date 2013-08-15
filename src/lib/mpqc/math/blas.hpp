@@ -21,12 +21,12 @@ namespace numeric {
 namespace bindings {
 namespace detail {
 
-// specialize numeric bindings traits for Eigen::Map
+/// specialize numeric bindings traits for Eigen::Map
 template< class Matrix, typename Id, typename Enable>
 struct adaptor< Eigen::Map< Matrix >, Id, Enable >
     : adaptor<Matrix, Id, Enable> {};
 
-// specialize numeric bindings traits for mpqc::matrix
+/// specialize numeric bindings traits for mpqc::matrix
 template< typename T, int Options, typename Id, typename Enable>
 struct adaptor< mpqc::matrix<T, Options>, Id, Enable >
     : adaptor< typename mpqc::matrix<T, Options>::EigenType, Id, Enable> {};
@@ -38,8 +38,32 @@ struct adaptor< mpqc::matrix<T, Options>, Id, Enable >
 
 #endif // HAVE_BLAS
 
+/**
+   @defgroup MathBlas mpqc.Math.Blas
+   @ingroup Math
+   BLAS bindings.
+   The BLAS biding are meant to serve as a safer way to interface
+   C++ Matrix objects, namely Eigen::Matrix and mpqc::matrix, with
+   BLAS libraries, eg:
+
+   @code
+   auto a = MatrixXd::Map(data, m, k);
+   Eigen::MatrixXd b(k,n);
+   mpqc::Matrix c(m,n);
+   // c = 1.0*a*b + 0.0*c;
+   blas::gemm(1.0, a, b, 0.0, c);
+   @endcode
+
+   BLAS bindings are implemented on top of
+   <a href=http://svn.boost.org/svn/boost/sandbox/numeric_bindings/>
+   Boost.Numeric.Bindings</a>.
+ */
+
 namespace mpqc {
 namespace blas {
+
+    /// @addtogroup MathBlas
+    /// @{
 
     template<typename T>
     void clear(size_t n, T *x) {
@@ -71,6 +95,8 @@ namespace blas {
         c = alpha*a*b + beta*c;
 #endif // HAVE_BLAS
     }
+
+    /// @} // MathBlas
 
 }
 }

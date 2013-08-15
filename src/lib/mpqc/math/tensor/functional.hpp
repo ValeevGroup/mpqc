@@ -45,7 +45,7 @@ namespace Tensor {
         apply(f, t, u, boost::mpl::int_<N>(), boost::fusion::vector<>());
     }
 
-    /// @addtogroup Tensor
+    /// @addtogroup MathTensor
     /// @{
 
     struct assign {

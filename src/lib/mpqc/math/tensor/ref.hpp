@@ -6,7 +6,7 @@
 
 namespace mpqc {
 
-    /// @addtogroup Tensor
+    /// @addtogroup MathTensor
     /// @{
 
     /// Tensor reference class.

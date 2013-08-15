@@ -45,6 +45,7 @@ Some influential environment variables:
   F77         Fortran 77 compiler command  (e.g. F77='gfortran')
   FFLAGS      Fortran 77 compiler flags    (e.g. FFLAGS='-fdefault-integer-8')
   LDFLAGS     linker flags             (e.g. LDFLAGS=-L/libdir)
+  CMAKE       cmake command to use     (e.g. CMAKE='/opt/local/bin/cmake')
 '
   exit 10
 }
@@ -55,20 +56,32 @@ if [ $# -eq 1 -a "$1" = "cmake" ]; then
     exit
 fi
 
-# check if local cmake was built
-CMAKE=$TOPDIR/cmake/bin/cmake
+# use user-provided CMAKE
 if [ ! -x "$CMAKE" ]; then
-    CMAKE=`which cmake 2>/dev/null`
+
+  # else look for system cmake
+  CMAKE=`which cmake 2>/dev/null`
+  if [ ! -x "$CMAKE" ]; then
+
+    # else look for locally-built cmake
+    CMAKE=$TOPDIR/cmake/bin/cmake
+    if [ ! -x "$CMAKE" ]; then
+      echo 'cmake is not found; try building cmake by typing: ./configure cmake'
+      exit 11
+    fi
+    
+  fi
+  
 fi
 
 # if no local/system cmake exist, build!
-if [ -z "$CMAKE" ]; then
-    make -C cmake
-    CMAKE=$TOPDIR/cmake/bin/cmake
-fi
+#if [ -z "$CMAKE" ]; then
+#    make -C cmake
+#    CMAKE=$TOPDIR/cmake/bin/cmake
+#fi
 
 srcdir=`dirname $0`
-echo $srcdir
+#echo $srcdir
 args=""
 prefix=$PWD
 build="Release"

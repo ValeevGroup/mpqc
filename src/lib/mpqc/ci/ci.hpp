@@ -3,7 +3,7 @@
 
 #include <util/misc/formio.h>
 #include "mpqc/ci/string.hpp"
-#include "mpqc/matrix.hpp"
+#include "mpqc/math/matrix.hpp"
 #include "mpqc/file.hpp"
 #include "mpqc/array.hpp"
 

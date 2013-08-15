@@ -1,7 +1,7 @@
 #ifndef MPQC_CI_INTEGRALS_HPP
 #define MPQC_CI_INTEGRALS_HPP
 
-#include "mpqc/matrix.hpp"
+#include "mpqc/math/matrix.hpp"
 #include "mpqc/utility/foreach.hpp"
 
 #include <chemistry/qc/basis/tbint.h>

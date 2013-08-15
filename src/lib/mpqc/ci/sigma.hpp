@@ -2,7 +2,7 @@
 
 #include "mpqc/utility/timer.hpp"
 #include "mpqc/range.hpp"
-#include "mpqc/matrix.hpp"
+#include "mpqc/math/matrix.hpp"
 #include "mpqc/omp.hpp"
 
 #include "mpqc/array.hpp"

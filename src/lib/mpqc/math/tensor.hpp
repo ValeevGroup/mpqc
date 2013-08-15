@@ -1,10 +1,10 @@
-#ifndef MPQC_TENSOR_HPP
-#define MPQC_TENSOR_HPP
+#ifndef MPQC_MATH_TENSOR_HPP
+#define MPQC_MATH_TENSOR_HPP
 
 /// @defgroup Tensor mpqc.Math.Tensor
 /// Tensor objects and functions
 
-#include "mpqc/tensor/ref.hpp"
+#include "mpqc/math/tensor/ref.hpp"
 
 namespace mpqc {
 
@@ -56,4 +56,4 @@ namespace mpqc {
 
 }
 
-#endif /* MPQC_TENSOR_HPP */
+#endif /* MPQC_MATH_TENSOR_HPP */

@@ -2,7 +2,7 @@
 #define MPQC_ARRAY_FUNCTIONS_HPP
 
 #include "mpqc/array.hpp"
-#include "mpqc/matrix.hpp"
+#include "mpqc/math/matrix.hpp"
 
 namespace mpqc {
 

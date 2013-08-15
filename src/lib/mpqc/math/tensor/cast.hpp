@@ -1,8 +1,8 @@
-#ifndef MPQC_TENSOR_CAST_HPP
-#define MPQC_TENSOR_CAST_HPP
+#ifndef MPQC_MATH_TENSOR_CAST_HPP
+#define MPQC_MATH_TENSOR_CAST_HPP
 
-#include "mpqc/tensor/ref.hpp"
-#include "mpqc/tensor/order.hpp"
+#include "mpqc/math/tensor/ref.hpp"
+#include "mpqc/math/tensor/order.hpp"
 #include <Eigen/Dense>
 
 namespace mpqc {
@@ -52,4 +52,4 @@ namespace mpqc {
 } // mpqc
 
 
-#endif /* MPQC_TENSOR_CAST_HPP */
+#endif /* MPQC_MATH_TENSOR_CAST_HPP */

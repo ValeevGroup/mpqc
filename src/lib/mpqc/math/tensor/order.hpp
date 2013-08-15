@@ -1,5 +1,5 @@
-#ifndef MPQC_TENSOR_ORDER_HPP
-#define MPQC_TENSOR_ORDER_HPP
+#ifndef MPQC_MATH_TENSOR_ORDER_HPP
+#define MPQC_MATH_TENSOR_ORDER_HPP
 
 #include <boost/tuple/tuple.hpp>
 #include <boost/fusion/include/boost_tuple.hpp>
@@ -98,4 +98,4 @@ namespace mpqc {
 
 }
 
-#endif /* MPQC_TENSOR_ORDER_HPP */
+#endif /* MPQC_MATH_TENSOR_ORDER_HPP */

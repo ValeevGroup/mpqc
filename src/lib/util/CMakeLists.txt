@@ -24,4 +24,8 @@ endforeach()
 set(util/OBJECTS ${objects} PARENT_SCOPE)
 add_library(util ${objects})
 install(TARGETS util DESTINATION lib)
+
 target_link_libraries(util ${util_deplibs})
+# N.B. dlopen dependencies
+target_link_libraries(util ${CMAKE_DL_LIBS})
+ 

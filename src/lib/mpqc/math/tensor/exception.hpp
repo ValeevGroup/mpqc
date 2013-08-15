@@ -1,5 +1,5 @@
-#ifndef MPQC_TENSOR_EXCEPTION_HPP
-#define MPQC_TENSOR_EXCEPTION_HPP
+#ifndef MPQC_MATH_TENSOR_EXCEPTION_HPP
+#define MPQC_MATH_TENSOR_EXCEPTION_HPP
 
 #include <stdexcept>
 #include "mpqc/utility/string.hpp"
@@ -52,4 +52,4 @@ namespace mpqc {
 }
 
 
-#endif /* MPQC_TENSOR_EXCEPTION_HPP */
+#endif /* MPQC_MATH_TENSOR_EXCEPTION_HPP */

@@ -1,5 +1,5 @@
-#ifndef MPQC_BLAS_HPP
-#define MPQC_BLAS_HPP
+#ifndef MPQC_MATH_BLAS_HPP
+#define MPQC_MATH_BLAS_HPP
 
 #ifdef HAVE_CONFIG_H
 #include "mpqc_config.h"
@@ -12,7 +12,7 @@
 #endif
 #include <boost/numeric/bindings/blas.hpp>
 
-#include "mpqc/matrix.hpp"
+#include "mpqc/math/matrix.hpp"
 #include <Eigen/Core>
 #include <boost/numeric/bindings/eigen/matrix.hpp>
 
@@ -75,4 +75,4 @@ namespace blas {
 }
 }
 
-#endif /* MPQC_BLAS_HPP */
+#endif /* MPQC_MATH_BLAS_HPP */

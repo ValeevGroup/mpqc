@@ -1,8 +1,8 @@
-#ifndef MPQC_TENSOR_REF_HPP
-#define MPQC_TENSOR_REF_HPP
+#ifndef MPQC_MATH_TENSOR_REF_HPP
+#define MPQC_MATH_TENSOR_REF_HPP
 
-#include "mpqc/tensor/base.hpp"
-#include "mpqc/tensor/functional.hpp"
+#include "mpqc/math/tensor/base.hpp"
+#include "mpqc/math/tensor/functional.hpp"
 
 namespace mpqc {
 
@@ -88,4 +88,4 @@ namespace mpqc {
 }
 
 
-#endif /* MPQC_TENSOR_REF_HPP */
+#endif /* MPQC_MATH_TENSOR_REF_HPP */

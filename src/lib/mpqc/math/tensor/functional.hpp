@@ -1,8 +1,8 @@
-#ifndef MPQC_TENSOR_FUNCTIONAL_HPP
-#define MPQC_TENSOR_FUNCTIONAL_HPP
+#ifndef MPQC_MATH_TENSOR_FUNCTIONAL_HPP
+#define MPQC_MATH_TENSOR_FUNCTIONAL_HPP
 
-#include "mpqc/tensor/forward.hpp"
-#include "mpqc/tensor/exception.hpp"
+#include "mpqc/math/tensor/forward.hpp"
+#include "mpqc/math/tensor/exception.hpp"
 
 #include <boost/mpl/int.hpp>
 #include <boost/fusion/include/vector.hpp>
@@ -97,4 +97,4 @@ namespace Tensor {
 }
 }
 
-#endif /* MPQC_TENSOR_FUNCTIONAL_HPP */
+#endif /* MPQC_MATH_TENSOR_FUNCTIONAL_HPP */

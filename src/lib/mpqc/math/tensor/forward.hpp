@@ -1,7 +1,7 @@
-#ifndef MPQC_TENSOR_FORWARD_HPP
-#define MPQC_TENSOR_FORWARD_HPP
+#ifndef MPQC_MATH_TENSOR_FORWARD_HPP
+#define MPQC_MATH_TENSOR_FORWARD_HPP
 
-#include "mpqc/tensor/order.hpp"
+#include "mpqc/math/tensor/order.hpp"
 
 #include <boost/fusion/include/boost_tuple.hpp>
 #include <boost/mpl/accumulate.hpp>
@@ -79,4 +79,4 @@ namespace Tensor {
 } // mpqc
 
 
-#endif /* MPQC_TENSOR_FORWARD_HPP */
+#endif /* MPQC_MATH_TENSOR_FORWARD_HPP */

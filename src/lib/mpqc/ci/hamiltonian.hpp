@@ -2,7 +2,7 @@
 #define MPQC_CI_HAMILTONIAN_HPP
 
 #include "mpqc/ci/string.hpp"
-#include "mpqc/matrix.hpp"
+#include "mpqc/math/matrix.hpp"
 #include "mpqc/utility/foreach.hpp"
 
 // #define MPQC_PROFILE_ENABLE

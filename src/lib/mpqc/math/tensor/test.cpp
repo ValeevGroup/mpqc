@@ -1,9 +1,9 @@
-#include "mpqc/tensor/base.hpp"
-#include "mpqc/tensor.hpp"
-#include "mpqc/tensor/permute.hpp"
-#include "mpqc/tensor/cast.hpp"
-#include "mpqc/blas.hpp"
-#include "mpqc/matrix.hpp"
+#include "mpqc/math/tensor/base.hpp"
+#include "mpqc/math/tensor.hpp"
+#include "mpqc/math/tensor/permute.hpp"
+#include "mpqc/math/tensor/cast.hpp"
+#include "mpqc/math/blas.hpp"
+#include "mpqc/math/matrix.hpp"
 #include <iostream>
 
 using namespace mpqc;

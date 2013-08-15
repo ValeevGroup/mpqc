@@ -10,7 +10,7 @@
 #include "mpqc/ci/hamiltonian.hpp"
 #include "mpqc/ci/sigma.hpp"
 
-#include "mpqc/matrix.hpp"
+#include "mpqc/math/matrix.hpp"
 #include "mpqc/array.hpp"
 #include "mpqc/python.hpp"
 #include "mpqc/file.hpp"

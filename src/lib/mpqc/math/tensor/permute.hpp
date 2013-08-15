@@ -1,8 +1,8 @@
-#ifndef MPQC_TENSOR_PERMUTE_HPP
-#define MPQC_TENSOR_PERMUTE_HPP
+#ifndef MPQC_MATH_TENSOR_PERMUTE_HPP
+#define MPQC_MATH_TENSOR_PERMUTE_HPP
 
-#include "mpqc/tensor/forward.hpp"
-#include "mpqc/tensor/exception.hpp"
+#include "mpqc/math/tensor/forward.hpp"
+#include "mpqc/math/tensor/exception.hpp"
 
 #include <boost/mpl/int.hpp>
 #include <boost/mpl/vector_c.hpp>
@@ -50,4 +50,4 @@ namespace mpqc {
 
 }
 
-#endif /* MPQC_TENSOR_PERMUTE_HPP */
+#endif /* MPQC_MATH_TENSOR_PERMUTE_HPP */

@@ -1,5 +1,5 @@
-#ifndef MPQC_TENSOR_BASE_HPP
-#define MPQC_TENSOR_BASE_HPP
+#ifndef MPQC_MATH_TENSOR_BASE_HPP
+#define MPQC_MATH_TENSOR_BASE_HPP
 
 #include <algorithm>
 #include <assert.h>
@@ -14,9 +14,9 @@
 #include "mpqc/range/tie.hpp"
 #include "mpqc/utility/string.hpp"
 
-#include "mpqc/tensor/forward.hpp"
-#include "mpqc/tensor/functional.hpp"
-#include "mpqc/tensor/exception.hpp"
+#include "mpqc/math/tensor/forward.hpp"
+#include "mpqc/math/tensor/functional.hpp"
+#include "mpqc/math/tensor/exception.hpp"
 
 namespace mpqc {
 
@@ -78,7 +78,7 @@ namespace mpqc {
 
         // generate index operator of arity N
         // CV may be empty or const
-#define MPQC_TENSOR_INDEX_OPERATOR(Z, N, CV)                                    \
+#define MPQC_MATH_TENSOR_INDEX_OPERATOR(Z, N, CV)                                    \
         template< BOOST_PP_ENUM_PARAMS(N, class T) >                            \
         typename boost::enable_if                                               \
         < detail::Tensor::is_integral_tuple                                     \
@@ -91,7 +91,7 @@ namespace mpqc {
 
         // generate range operator of arity N
         // CV may be empty or const
-#define MPQC_TENSOR_RANGE_OPERATOR(Z, N, CV)                                    \
+#define MPQC_MATH_TENSOR_RANGE_OPERATOR(Z, N, CV)                                    \
         template< BOOST_PP_ENUM_PARAMS(N, class T) >                            \
         typename boost::disable_if                                              \
         < detail::Tensor::is_integral_tuple                                     \
@@ -102,10 +102,10 @@ namespace mpqc {
             return this->operator()(tie(boost::tie(BOOST_PP_ENUM_PARAMS(N,i)))); \
         }                                                                       \
         
-        BOOST_PP_REPEAT_FROM_TO(1, 5, MPQC_TENSOR_INDEX_OPERATOR,      )
-        BOOST_PP_REPEAT_FROM_TO(1, 5, MPQC_TENSOR_INDEX_OPERATOR, const)
-        BOOST_PP_REPEAT_FROM_TO(1, 5, MPQC_TENSOR_RANGE_OPERATOR,      )
-        BOOST_PP_REPEAT_FROM_TO(1, 5, MPQC_TENSOR_RANGE_OPERATOR, const)
+        BOOST_PP_REPEAT_FROM_TO(1, 5, MPQC_MATH_TENSOR_INDEX_OPERATOR,      )
+        BOOST_PP_REPEAT_FROM_TO(1, 5, MPQC_MATH_TENSOR_INDEX_OPERATOR, const)
+        BOOST_PP_REPEAT_FROM_TO(1, 5, MPQC_MATH_TENSOR_RANGE_OPERATOR,      )
+        BOOST_PP_REPEAT_FROM_TO(1, 5, MPQC_MATH_TENSOR_RANGE_OPERATOR, const)
 
     public:
         
@@ -199,4 +199,4 @@ namespace mpqc {
 }
 
 
-#endif /* MPQC_TENSOR_BASE_HPP */
+#endif /* MPQC_MATH_TENSOR_BASE_HPP */

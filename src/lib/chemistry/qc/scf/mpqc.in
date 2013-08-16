@@ -6,10 +6,9 @@ mpqc:(
 nproc = 4
 %molecule = $:ibuprofen
 %molecule = $:ethane_c1
-molecule = $:naphtalene
+%molecule = $:naphtalene
+molecule = $:h2o
 coor = $:symcoor
-%message = $:messageShm
-%basis_matrixkit = $:replmatrixkit
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -25,9 +24,10 @@ mole<DFCLHF>: (
 
   df_basis<GaussianBasisSet>:(
     molecule = $..:molecule
-    %name = "cc-pVDZ-JKFIT"
+    name = "cc-pVDZ-JKFIT"
+    %name = "cc-pVTZ-JKFIT"
     %name = "aug-cc-pVTZ"
-    name = "cc-pVTZ-RI"
+    %name = "cc-pVTZ-RI"
     %name = "cc-pVDZ"
     %name = "6-31G"
     %puream=yes
@@ -44,6 +44,7 @@ mole<DFCLHF>: (
   	df_local_exchange = yes
     store_ints = mem
     %store_ints = mpi
+    exact_diag_J = yes
   )
 
 
@@ -55,8 +56,8 @@ mole<DFCLHF>: (
   molecule = $:molecule
   mbasis<GaussianBasisSet>: (
     molecule = $:molecule
-    name = "cc-pVTZ"
-    %name = "STO-3G"
+    name = "cc-pVDZ"
+    name = "STO-3G"
     %puream=yes
     %matrixkit = $:basis_matrixkit
   )

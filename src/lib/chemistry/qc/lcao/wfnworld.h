@@ -186,6 +186,8 @@ private:
   std::string df_solver_;         //!< the density-fitting solver
   bool df_local_coulomb_;         //!< whether or not local density fitting should be employed for the coulomb operator
   bool df_local_exchange_;        //!< whether or not local density fitting should be employed for the exchange operator
+  bool exact_diag_J_;             //!< should the exact semidiagonal integrals (ab|ab) be used for coulomb operator?
+  bool exact_diag_K_;             //!< should the exact semidiagonal integrals (ab|ab) be used for exchange operator?
   Ref<MessageGrp> msg_;
   Ref<MemoryGrp> mem_;
   Ref<ThreadGrp> thr_;

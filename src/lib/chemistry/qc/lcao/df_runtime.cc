@@ -406,13 +406,17 @@ DensityFittingParams::DensityFittingParams(const Ref<GaussianBasisSet>& basis,
                                            const std::string& kernel,
                                            const std::string& solver,
                                            bool local_coulomb,
-                                           bool local_exchange
+                                           bool local_exchange,
+                                           bool exact_diag_J,
+                                           bool exact_diag_K
                                            ) :
                                            basis_(basis),
                                            kernel_(kernel),
                                            kernel_intparams_key_("default"),
                                            local_coulomb_(local_coulomb),
-                                           local_exchange_(local_exchange)
+                                           local_exchange_(local_exchange),
+                                           exact_diag_J_(exact_diag_J),
+                                           exact_diag_K_(exact_diag_K)
 {
   if (solver == "cholesky_inv")
     solver_ = DensityFitting::SolveMethod_InverseCholesky;

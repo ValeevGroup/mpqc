@@ -150,7 +150,9 @@ namespace sc {
                            const std::string& kernel = std::string("coulomb"),
                            const std::string& solver = std::string("cholesky_inv"),
                            bool local_coulomb = false,
-                           bool local_exchange = false);
+                           bool local_exchange = false,
+                           bool exact_diag_J = false,
+                           bool exact_diag_K = false);
       DensityFittingParams(StateIn&);
       ~DensityFittingParams();
       void save_data_state(StateOut&);
@@ -160,6 +162,8 @@ namespace sc {
       DensityFitting::SolveMethod solver() const { return solver_; }
       bool local_coulomb() const { return local_coulomb_; }
       bool local_exchange() const { return local_exchange_; }
+      bool exact_diag_J() const { return exact_diag_J_; }
+      bool exact_diag_K() const { return exact_diag_K_; }
       /// returns the TwoBodyInt::oper_type object that specifies
       /// the type of the operator kernel_key used for fitting the density
       TwoBodyOper::type kernel_otype() const;
@@ -184,6 +188,8 @@ namespace sc {
       mutable std::string kernel_intparams_key_;
       bool local_coulomb_;
       bool local_exchange_;
+      bool exact_diag_J_;
+      bool exact_diag_K_;
 
   };
 

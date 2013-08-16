@@ -1168,7 +1168,6 @@ namespace sc {
                                  const Ref<GaussianBasisSet>& ketbs,
                                  const Ref<GaussianBasisSet>& obs)
     {
-      // TODO Spacial Symmetry
       /*=======================================================================================*/
       /* Setup and stuff                                       		                        {{{1 */ #if 1 // begin fold
       //----------------------------------------//
@@ -1189,8 +1188,9 @@ namespace sc {
       const Ref<OrbitalSpace>& obs_space = ao_registry->value(obs);
       //----------------------------------------//
       const blasint dfnbf = dfspace->rank();
-      int branbf = brabs->nbasis();
-      int ketnbf = ketbs->nbasis();
+      const int branbf = brabs->nbasis();
+      const int ketnbf = ketbs->nbasis();
+      const int obsnbf = obs->nbasis();
       //----------------------------------------//
       const Ref<TwoBodyThreeCenterMOIntsRuntime>& int3c_rtime = df_rtime->moints_runtime()->runtime_3c();
       const Ref<TwoBodyTwoCenterMOIntsRuntime>& int2c_rtime = df_rtime->moints_runtime()->runtime_2c();
@@ -1334,19 +1334,8 @@ namespace sc {
               }
               //-----------------------------------------------------------------//
               EigenMatrixMap X_m_Y(metric_2c_part_ptr, dfpart_size, dfpart_size);
-              //for(int X = 0; X < dfpart_size; ++X){
-              //  for(int Y = 0; Y < dfpart_size; ++Y){
-              //    if(fabs(double(X_m_Y(X,Y))) < 1e-12){
-              //      X_m_Y(X,Y) = 0;
-              //    }
-              //  }
-              //}
               timer_change("02 - decompose ( X(ab) | M | Y(ab) )", 3);
-              //Decomposition solver(X_m_Y);
               decomps[atomAB] = new Decomposition(X_m_Y);
-              //decomps.insert(
-              //    std::pair<IntPair, Decomposition>(atomAB, Decomposition(X_m_Y))
-              //);
               deallocate(blockptr);
               deallocate(metric_2c_part_ptr);
             }
@@ -1412,7 +1401,6 @@ namespace sc {
       }
       timer_change("05 - global sum C", 2);
       msg->sum(C.data(), dfnbf * branbf * ketnbf);
-
       timer_exit(2);
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
@@ -1459,49 +1447,6 @@ namespace sc {
       if (munu_g_X_D4->data_persistent()) munu_g_X_D4->deactivate();
       munu_g_X_D4 = 0;
       timer_exit(2);
-      //----------------------------------------//
-      /* old code */ #if 0
-      Ref<TwoBodyThreeCenterIntDescr> coulomb_3c_eval_descr = int3c_rtime->get(coulomb3c_key)->intdescr();
-      coulomb_3c_eval_descr->factory()->set_basis(brabs, ketbs, dfbs, 0);
-      Ref<TwoBodyThreeCenterInt> coulomb_3c_eval = coulomb_3c_eval_descr->inteval();
-      const double* buffer = coulomb_3c_eval->buffer();
-      int ibfoff = 0;
-      for(int ish=0; ish < brabs->nshell(); ++ish){
-        int ibfoff = brabs->shell_to_function(ish);
-        int inbf = brabs->shell(ish).nfunction();
-        int jbfoff = 0;
-        for(int jsh=0; jsh < ketbs->nshell(); ++jsh){
-          int jnbf = ketbs->shell(jsh).nfunction();
-          for(int Xsh=0; Xsh < dfbs->nshell(); ++Xsh){
-            int Xbfoff = dfbs->shell_to_function(Xsh);
-            int Xnbf = dfbs->shell(Xsh).nfunction();
-            coulomb_3c_eval->compute_shell(ish, jsh, Xsh);
-            int buff_off = 0;
-            // Declare here and reassign as needed using placement new
-            //ConstEigenMatrixMap buffmap(buffer, jnbf, Xnbf);
-            for(int ibf=0; ibf < inbf; ++ibf){
-              // reassign the buffmap using placement new
-              // Eclipse doesn't like this, for some reason, so I'll leave
-              //   it out in case it knows something about compilers that I
-              //   don't.  Shouldn't save that much time anyway.
-              // new (&buffmap) ConstEigenMatrixMap(&buffer[buff_off], jnbf, Xnbf);
-              // Instead, just create a new buffmap each time
-              //ConstEigenMatrixMap buffmap(&buffer[buff_off], jnbf, Xnbf);
-              //munu_r12_X.block((ibfoff+ibf)*ketnbf + jbfoff, Xbfoff, jnbf, Xnbf) = buffmap;
-              //buff_off += Xnbf*jnbf;
-              for(int jbf=0; jbf < jnbf; ++jbf){
-                for(int Xbf=0; Xbf < Xnbf; ++Xbf){
-                  munu_r12_X((ibfoff+ibf)*ketnbf + jbfoff + jbf, Xbfoff + Xbf) = buffer[buff_off++];
-                }
-              }
-            }
-            // This doesn't work
-          }
-          jbfoff += jnbf;
-        }
-        ibfoff += inbf;
-      }
-      /* old code */ #endif
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
       /* Get ( X | g | Y )                                     		                        {{{1 */ #if 1 // begin fold
@@ -1539,10 +1484,168 @@ namespace sc {
       // C is X by (mu nu)
       // CD is X (by 1)
       // Dg is X (by 1)
+      Eigen::VectorXd GT(dfnbf);
+      GT = X_g_Y * CD;
       //----------------------------------------//
       J = C.transpose() * Dg;
       J += munu_g_X * CD;
       J -= CD.transpose() * X_g_Y * C;
+      //----------------------------------------//
+      // Include exact semidiagonal integral contributions
+      //   if that option is enabled
+      Ref<Integral> integral = int3c_rtime->factory()->integral();
+      integral->set_basis(brabs, obs, ketbs, obs);
+      Ref<TwoBodyInt> eri_eval = integral->electron_repulsion();
+      const double* buffer = eri_eval->buffer();
+      if(df_info->params()->exact_diag_J()){
+        for(int atomA = 0; atomA < brabs->ncenter(); ++atomA){
+          const int nshA = brabs->nshell_on_center(atomA);
+          const int nbfA = brabs->nbasis_on_center(atomA);
+          const int shoffA = brabs->shell_on_center(atomA, 0);
+          const int bfoffA = brabs->shell_to_function(shoffA);
+          const int dfnshA = dfbs->nshell_on_center(atomA);
+          const int dfnbfA = dfbs->nbasis_on_center(atomA);
+          const int dfshoffA = dfbs->shell_on_center(atomA, 0);
+          const int dfbfoffA = dfbs->shell_to_function(dfshoffA);
+          //----------------------------------------//
+          for(int atomB = 0; atomB < ketbs->ncenter(); ++atomB){
+            const int nshB = ketbs->nshell_on_center(atomB);
+            const int nbfB = ketbs->nbasis_on_center(atomB);
+            const int shoffB = ketbs->shell_on_center(atomB, 0);
+            const int bfoffB = ketbs->shell_to_function(shoffB);
+            const int dfnshB = dfbs->nshell_on_center(atomB);
+            const int dfnbfB = dfbs->nbasis_on_center(atomB);
+            const int dfshoffB = dfbs->shell_on_center(atomB, 0);
+            const int dfbfoffB = dfbs->shell_to_function(dfshoffB);
+            //----------------------------------------//
+            int dfpart_size = dfnbfA;
+            if(atomA != atomB) dfpart_size += dfnbfB;
+            Eigen::VectorXd dt(dfpart_size);
+            dt = Eigen::VectorXd::Zero(dfpart_size);
+            Eigen::VectorXd ct(dfpart_size);
+            ct = Eigen::VectorXd::Zero(dfpart_size);
+            const double perm_fact =  (atomA == atomB ? 1.0 : 2.0);
+            //----------------------------------------//
+            for(int ishA = shoffA; ishA < shoffA + nshA; ++ishA){
+              const int inbfA = brabs->shell(ishA).nfunction();
+              const int ibfoffA = brabs->shell_to_function(ishA);
+              for(int jshB = shoffB; jshB < shoffB + nshB; ++jshB){
+                const int jnbfB = ketbs->shell(jshB).nfunction();
+                const int jbfoffB = ketbs->shell_to_function(jshB);
+                //----------------------------------------//
+                for(int ibfA = 0; ibfA < inbfA; ++ibfA){
+                  const int mu = ibfoffA + ibfA;
+                  for(int jbfB = 0; jbfB < jnbfB; ++jbfB){
+                    const int nu = jbfoffB + jbfB;
+                    const int munu = mu*ketnbf + nu;
+                    //----------------------------------------//
+                    for(int XshA = dfshoffA; XshA < dfshoffA + dfnshA; ++XshA){
+                      const int XnbfA = dfbs->shell(XshA).nfunction();
+                      const int XbfoffA = dfbs->shell_to_function(XshA);
+                      for(int XbfA = 0; XbfA < XnbfA; ++XbfA){
+                        const int X = XbfoffA + XbfA;
+                        dt(XbfoffA - dfbfoffA + XbfA) += perm_fact * munu_g_X(munu, X) * D(munu);
+                        ct(XbfoffA - dfbfoffA + XbfA) += perm_fact * C(X, munu) * D(munu);
+                      }
+                    }
+                    //----------------------------------------//
+                    if(atomA != atomB){
+                      for(int XshB = dfshoffB; XshB < dfshoffB + dfnshB; ++XshB){
+                        const int XnbfB = dfbs->shell(XshB).nfunction();
+                        const int XbfoffB = dfbs->shell_to_function(XshB);
+                        for(int XbfB = 0; XbfB < XnbfB; ++XbfB){
+                          const int X = XbfoffB + XbfB;
+                          dt(XbfoffB - dfbfoffB + dfnbfA + XbfB) += perm_fact * munu_g_X(munu, X) * D(munu);
+                          ct(XbfoffB - dfbfoffB + dfnbfA + XbfB) += perm_fact * C(X, munu) * D(munu);
+                        }
+                      }
+                    }
+                    //----------------------------------------//
+                  }
+                }
+                //----------------------------------------//
+              }
+            }
+            Eigen::VectorXd gt(dfpart_size);
+            gt = Eigen::VectorXd::Constant(dfpart_size, 9e99);
+            gt.head(dfnbfA) = X_g_Y.block(
+                dfbfoffA, dfbfoffA,
+                dfnbfA, dfnbfA
+            ) * ct.head(dfnbfA);
+            if(atomA != atomB){
+              gt.head(dfnbfA) += X_g_Y.block(
+                  dfbfoffA, dfbfoffB,
+                  dfnbfA, dfnbfB
+              ) * ct.tail(dfnbfB);
+              gt.tail(dfnbfB) = X_g_Y.block(
+                  dfbfoffB, dfbfoffB,
+                  dfnbfB, dfnbfB
+              ) * ct.tail(dfnbfB);
+              gt.tail(dfnbfB) += X_g_Y.block(
+                  dfbfoffB, dfbfoffA,
+                  dfnbfB, dfnbfA
+              ) * ct.head(dfnbfA);
+            }
+            //----------------------------------------//
+            for(int ishA = shoffA; ishA < shoffA + nshA; ++ishA){
+              const int inbfA = brabs->shell(ishA).nfunction();
+              const int ibfoffA = brabs->shell_to_function(ishA);
+              for(int jshB = shoffB; jshB < shoffB + nshB; ++jshB){
+                const int jnbfB = ketbs->shell(jshB).nfunction();
+                const int jbfoffB = ketbs->shell_to_function(jshB);
+                //----------------------------------------//
+                for(int kshA = shoffA; kshA < shoffA + nshA; ++kshA){
+                  const int knbfA = obs->shell(kshA).nfunction();
+                  const int kbfoffA = obs->shell_to_function(kshA);
+                  for(int lshB = shoffB; lshB < shoffB + nshB; ++lshB){
+                    const int lnbfB = obs->shell(lshB).nfunction();
+                    const int lbfoffB = obs->shell_to_function(lshB);
+                    //----------------------------------------//
+                    // Compute shell (ishA jshB | kshA lshB) and add contributions to J
+                    eri_eval->compute_shell(ishA, jshB, kshA, lshB);
+                    int buff_off = 0;
+                    for(int ibfA = 0; ibfA < inbfA; ++ibfA){
+                      const int mu = ibfoffA + ibfA;
+                      for(int jbfB = 0; jbfB < jnbfB; ++jbfB){
+                        const int nu = jbfoffB + jbfB;
+                        const int munu = mu*ketnbf + nu;
+                        for(int kbfA = 0; kbfA < knbfA; ++kbfA){
+                          const int rho = kbfoffA + kbfA;
+                          for(int lbfB = 0; lbfB < lnbfB; ++lbfB){
+                            const int sigma = lbfoffB + lbfB;
+                            const int rhosigma = rho*obsnbf + sigma;
+                            //                    (mu nu | rho sigma) * D^(rho sigma)
+                            J(munu) += perm_fact * buffer[buff_off++] * D(rhosigma);
+                          }
+                        }
+                      }
+                    }
+                    //----------------------------------------//
+                  } // end loop over lshB
+                } // end loop over kshA
+                //----------------------------------------//
+                for(int ibfA = 0; ibfA < inbfA; ++ibfA){
+                  const int mu = ibfoffA + ibfA;
+                  for(int jbfB = 0; jbfB < jnbfB; ++jbfB){
+                    const int nu = jbfoffB + jbfB;
+                    const int munu = mu*ketnbf + nu;
+                    J(munu) -= dt.head(dfnbfA).transpose() * C.col(munu).segment(dfbfoffA,  dfnbfA);
+                    J(munu) -= munu_g_X.row(munu).segment(dfbfoffA, dfnbfA) * ct.head(dfnbfA);
+                    J(munu) += gt.head(dfnbfA).transpose() * C.col(munu).segment(dfbfoffA, dfnbfA);
+                    if(atomA != atomB){
+                      J(munu) -= dt.tail(dfnbfB).transpose() * C.col(munu).segment(dfbfoffB, dfnbfB);
+                      J(munu) -= munu_g_X.row(munu).segment(dfbfoffB, dfnbfB) * ct.tail(dfnbfB);
+                      J(munu) += gt.tail(dfnbfB).transpose() * C.col(munu).segment(dfbfoffB, dfnbfB);
+                    }
+                  }
+                }
+                //----------------------------------------//
+              }
+            }
+            //----------------------------------------//
+          }
+        }
+      }
       //----------------------------------------//
       Ref<Integral> localints = int3c_rtime->factory()->integral()->clone();
       localints->set_basis(brabs);

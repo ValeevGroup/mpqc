@@ -65,7 +65,7 @@ if (PSI3)
 
 endif()
 
-if ("${PSI3}" AND NOT PSI3_FOUND)
+if ("${PSI3}" AND NOT HAVE_PSI3)
 
   if (MPQC_EXPERT)
 

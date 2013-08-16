@@ -40,9 +40,8 @@ namespace mpqc{
     /// @addtogroup TiledArrayInterface
     /// @{
 
-    /**
-     * Helper class that returns the dimension of the type of integral in question.
-     */
+#ifndef DOXYGEN
+    // Helper class to get Integral Engine typetraits.
     template <typename IntegralEngine>
     struct EngineTypeTraits;
     template <> struct EngineTypeTraits<sc::Ref<sc::TwoBodyInt> > {
@@ -61,9 +60,13 @@ namespace mpqc{
         static const size_t ncenters = 1u;
     };
 
+    /*
+     * Does the dirty work of getting integrals into TA::Tiles
+     */
     namespace int_details {
         typedef std::vector<int> shell_range;
 
+        // Takes a shell_range, sc::Engine_Type, and a TensorRef map to a TA::Tile
         template<typename RefEngine>
         void
         get_integrals(const std::vector<shell_range> &s,
@@ -91,8 +94,9 @@ namespace mpqc{
 
     } // namespace int_details
 
-    /**
-     *
+
+    /*
+     * Computes shell ranges to pass to a TensorRef for getting integrals
      */
     template<typename Tile, typename RefEngine>
     void
@@ -140,7 +144,7 @@ namespace mpqc{
     void make_integral_task(It first, It last, const A &array,
                        RefPool pool);
 
-    /**
+    /*
      * Splits work in into manageable chunks by creating tasks. And then fills
      * each tile with integrals.
      */
@@ -177,7 +181,7 @@ namespace mpqc{
         }
     }
 
-    /**
+    /*
      * Spawns tasks to fill tiles with integrals.
      */
     template<typename RefPool, typename It, class A>
@@ -187,6 +191,8 @@ namespace mpqc{
         array.get_world().taskq.add(&integral_task<RefPool, It, A>, first,
                                     last, array, pool);
     }
+
+#endif //DOXYGEN
 
     /**
      * Initial function called to fill a TiledArray with integrals.

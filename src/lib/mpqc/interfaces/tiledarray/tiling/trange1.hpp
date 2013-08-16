@@ -32,12 +32,21 @@
 #include <chemistry/qc/basis/basis.h>
 #include <vector>
 
+/**
+ * @defgroup TaTiling mpqc.TiledArrayInterfaces.Tiling
+ * @ingroup TiledArrayInterface
+ * Tiling information and functions for the MPQC-TiledArray interface
+ *
+ */
+
 namespace mpqc {
 namespace tiling {
+    /// @addtogroup TaTiling
+    /// @{
 
     using RefBasis = sc::Ref<sc::GaussianBasisSet>;
     using TRange1 = TiledArray::TiledRange1;
-
+#ifndef DOXYGEN
     // Initialize the vector needed for TiledArray::TiledRange1 construction
     std::vector<std::size_t> vec_init(std::size_t size_guess){
         std::vector<std::size_t> vec_guess;
@@ -45,11 +54,11 @@ namespace tiling {
         vec_guess.push_back(0); // Tile 0 always starts at 0
         return vec_guess;
     }
+#endif // DOXYGEN
 
     /**
-     * Tile by shell will break the TiledArray tiles up such that each
-     * block corresponds to N single shells.  This is the smallest
-     * reasonable division of most integral types.
+     * Returns TiledArray::TiledRange1 that corresponds to integral shells.
+     * @param[in] basis Is a sc::GaussiangBasisSet
      */
     TRange1 tile_by_shell(const RefBasis &basis){
 
@@ -86,10 +95,11 @@ namespace tiling {
     }
 
     /**
-     * tile_by_atom returns a TiledArray::TiledRange1 where each block
+     * Returns a TiledArray::TiledRange1 where each block
      * corresponds to all the shells on a single atom.
+     * @param[in] basis Is a sc::GaussiangBasisSet
      */
-    TRange1 tile_by_atom(const RefBasis & basis){
+    TRange1 tile_by_atom(const RefBasis &basis){
 
         // Basis set information
         std::size_t ncenters = basis->ncenter();
@@ -148,6 +158,7 @@ namespace tiling {
     }
 #endif
 
+    /// @} // TaTiling
 } // namespace tiling
 
     typedef tiling::TRange1 (*TRange1Gen)(const tiling::RefBasis &);

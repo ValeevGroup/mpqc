@@ -13,7 +13,7 @@
 #include <chemistry/qc/basis/split.h>
 #include <chemistry/qc/basis/integral.h>
 #include <mpqc/integrals/integrals.hpp>
-#include <mpqc/integrals/integralenginepool.h>
+#include <mpqc/integrals/integralenginepool.hpp>
 #include <tiled_array.h>
 #include <mpqc/interfaces/tiledarray/array_ints.hpp>
 #include <string>

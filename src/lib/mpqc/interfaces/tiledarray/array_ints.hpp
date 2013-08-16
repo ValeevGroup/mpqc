@@ -29,8 +29,15 @@
 
 #include "tile_ints.hpp"
 
-/// @defgroup TiledArrayInterface mpqc.TiledArrayInterface
-/// Interface to fill TiledArray arrays with intgrals.
+/**
+ * @defgroup TiledArrayInterface mpqc.TiledArrayInterface
+ * Provides interface to get data from MPQC objects into TiledArray objects.
+ * Current usage is limited to integrals
+ * @code
+ * IntegralEnginePool<Engine_type> engine_pool(seed_engine);
+ * TiledArray<double, 2> array = Integrals(world, engine_pool);
+ * @endcode
+ */
 
 
 namespace TA = TiledArray;
@@ -39,12 +46,7 @@ namespace mpqc {
     /// @addtogroup TiledArrayInterface
     /// @{
 
-    /**
-     * Take an IntegralEnginePool and a pointer to a function
-     * that generates a TiledArray::TiledRange1 given a
-     * sc::GaussianBasisSet Reference. The dimension of the return array
-     * should be the same as the dimension of the Integral engine.
-     */
+    // Gets the blocking to cosntruct of TiledArray::TiledRange1
     template<std::size_t N, typename IntEngPool>
     std::array<tiling::TRange1, N>
     get_blocking(const IntEngPool &pool, const TRange1Gen &trange1gen){
@@ -62,8 +64,9 @@ namespace mpqc {
 
     /**
      * Returns a TiledArray filled with integrals.
-     * @param[in] world blah
-     * @warning If Fabijan go away
+     * @param[in] world madness::World object for construction of TiledArray::Array
+     * @param[in] pool IntegralEnginePool which contains the pool of engines needed for Tensor construction
+     * @param[in] trange1gen Function pointer to a function that generates TiledArray::TiledRange1 given a sc::GaussianBasisSet
      */
     template <typename IntEngPool>
     TA::Array<double, EngineTypeTraits<typename IntEngPool::engine_type>::ncenters >

@@ -9,19 +9,18 @@
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/integral.h>
 
+#include <mpqc/integral/shell.hpp>
+
+/**
+ * @defgroup Integrals mpqc.Integrals
+ * Provides new interface for old MPQC integrals.
+ * Currently has IntegralEnginePool which holds a pool of integral engine
+ * and a integral object that is a wrapper to integral engines.
+ */
 
 namespace mpqc {
 namespace integrals {
 namespace detail {
-
-    struct Shell : range {
-        Shell(int index, range r) : range(r), index_(index) {}
-        int index() const {
-            return index_;
-        }
-    private:
-        int index_;
-    };
 
     inline std::vector<Shell> pack(sc::Ref<sc::GaussianBasisSet> basis,
                                    const std::vector<int> &S) {
@@ -45,45 +44,6 @@ namespace detail {
     }
 
 
-    template<class RefEngine>
-    class Integrals {
-
-    public:
-        typedef TensorRef<const double,2, TensorRowMajor > Tensor2;
-        typedef TensorRef<const double,3, TensorRowMajor > Tensor3;
-        typedef TensorRef<const double,4, TensorRowMajor > Tensor4;
-
-        explicit Integrals(RefEngine integral)
-            : integral_(integral) {}
-
-        RefEngine& engine() {
-            return integral_;
-        }
-
-        Tensor2 operator()(Shell p, Shell q) {
-            size_t dims[] = {size_t(p.size()), size_t(q.size()) };
-            integral_->compute_shell(p.index(), q.index());
-            return Tensor2(integral_->buffer(), dims);
-        }
-
-        Tensor3 operator()(Shell p, Shell q, Shell r) {
-            size_t dims[] = {size_t( p.size()), size_t(q.size()),
-                             size_t(r.size()) };
-            integral_->compute_shell(p.index(), q.index(), r.index());
-            return Tensor3(integral_->buffer(), dims);
-        }
-
-        Tensor4 operator()(Shell p, Shell q, Shell r, Shell s) {
-            size_t dims[] = { size_t(p.size()), size_t(q.size()),
-                              size_t(r.size()), size_t(s.size()) };
-            integral_->compute_shell(p.index(), q.index(),
-                                     r.index(), s.index());
-            return Tensor4(integral_->buffer(), dims);
-        }
-
-    private:
-        RefEngine integral_;
-    };
 
     template<class Engine>
     void evaluate(Integrals<Engine> integral,
@@ -155,6 +115,58 @@ namespace detail {
 namespace mpqc {
 namespace integrals {
 
+    /// @addtogroup Integrals
+    /// @{
+    /**
+     * Wrapper to old mpqc integral engine
+     */
+    template<class RefEngine>
+    class Integrals {
+    public:
+        typedef TensorRef<const double,2, TensorRowMajor > Tensor2;
+        typedef TensorRef<const double,3, TensorRowMajor > Tensor3;
+        typedef TensorRef<const double,4, TensorRowMajor > Tensor4;
+
+        /**
+         * Constructor for Integrals
+         * @param integral is a sc::Ref of an old mpqc integral engine
+         */
+        explicit Integrals(RefEngine integral)
+            : integral_(integral) {}
+
+        RefEngine& engine() {
+            return integral_;
+        }
+
+        /**
+         * Calls old mpqc integral object on shells p and q and returns a
+         * TensorRef holding the integral buffer.
+         */
+        Tensor2 operator()(Shell p, Shell q) {
+            size_t dims[] = {size_t(p.size()), size_t(q.size()) };
+            integral_->compute_shell(p.index(), q.index());
+            return Tensor2(integral_->buffer(), dims);
+        }
+
+        Tensor3 operator()(Shell p, Shell q, Shell r) {
+            size_t dims[] = {size_t( p.size()), size_t(q.size()),
+                             size_t(r.size()) };
+            integral_->compute_shell(p.index(), q.index(), r.index());
+            return Tensor3(integral_->buffer(), dims);
+        }
+
+        Tensor4 operator()(Shell p, Shell q, Shell r, Shell s) {
+            size_t dims[] = { size_t(p.size()), size_t(q.size()),
+                              size_t(r.size()), size_t(s.size()) };
+            integral_->compute_shell(p.index(), q.index(),
+                                     r.index(), s.index());
+            return Tensor4(integral_->buffer(), dims);
+        }
+
+    private:
+        RefEngine integral_;
+    };
+
     /**
        Evaluate list of shell integrals (p|O|q)
        @param engine integral engine
@@ -197,6 +209,7 @@ namespace integrals {
     }
 
 
+    /// @} // Integrals
 } // namespace integrals
 } // namespace mpqc
 

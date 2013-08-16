@@ -54,6 +54,10 @@ struct adaptor< mpqc::matrix<T, Options>, Id, Enable >
    blas::gemm(1.0, a, b, 0.0, c);
    @endcode
 
+   BLAS bindings can be disabled and  Eigen expression equivalents will
+   be used instead by undefining <code>HAVE_BLAS</code> macro.  This gives
+   a good way to test if interface is working correctly.
+
    BLAS bindings are implemented on top of
    <a href=http://svn.boost.org/svn/boost/sandbox/numeric_bindings/>
    Boost.Numeric.Bindings</a>.

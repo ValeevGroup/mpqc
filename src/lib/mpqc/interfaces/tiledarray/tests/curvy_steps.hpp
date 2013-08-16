@@ -66,8 +66,8 @@ namespace curvy_steps {
         Array2 LHS = R("i,j");
 
         //Avoid computing factorial pieces
-        double Fac[] = {1.0, 0.5, 0.166667, 0.0416667, 0.00833333, 0.00138889,
-                        0.000198413, 0.0000248016, 2.75573e-6};
+        double Fac[] = {1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800,
+                        39916800};
 
         //Compute the first S comumator because we always want at least 1st order
         Array2 steps = Scom(R, X, S);
@@ -75,7 +75,7 @@ namespace curvy_steps {
             //add the next order approximation to R and then compute the one for the
             //next round.  This will always compute one more step than asked for right
             //now, but it only returns the number of steps asked for.
-            LHS("i,j") = LHS("i,j") + Fac[i] * steps("i,j");
+            LHS("i,j") = LHS("i,j") + 1/Fac[i] * steps("i,j");
             steps = Scom(steps, X, S);
         }
         R = LHS;

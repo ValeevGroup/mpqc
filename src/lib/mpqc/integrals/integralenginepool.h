@@ -3,7 +3,7 @@
 //
 // Copyright (C) 2013 Drew Lewis and Justus Calvin
 //
-// Authors: Drew Lewis and Justus Calvin <drew90@vt.edu>
+// Authors: Drew Lewis <drew90@vt.edu> and Justus Calvin
 // Maintainer: Drew Lewis and Edward Valeev
 //
 // This file is part of the MPQC Toolkit.
@@ -102,8 +102,6 @@ namespace mpqc {
             return *RefEngine;
 
         }
-
-
 
     private:
         /// Function to destroy the thread objects

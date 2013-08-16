@@ -87,7 +87,7 @@ namespace sc {
 #if LIBINT2_SUPPORT_G12
 # if LIBINT2_SUPPORT_T1G12
 	template<>
-	struct Int2eCrator<G12Libint2> {
+	struct Int2eCreator<G12Libint2> {
 	Ref<G12Libint2> operator()(Integral*integral,
 		     const Ref<GaussianBasisSet>& b1,
 		     const Ref<GaussianBasisSet>& b2,

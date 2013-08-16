@@ -381,32 +381,6 @@ Molecule::atom_label_to_index(const std::string &l) const
   return -1;
 }
 
-// only for use with sort_by_distance()
-struct dist_sort{
-
-   dist_sort(const SCVector3 &v = SCVector3(0,0,0)) : v_(v) {}
-
-   bool operator() (const Atom a1, const Atom a2) const {
-       const SCVector3 v1(a1.r());
-       const SCVector3 v2(a2.r());
-       double d1 = v_.dist(v1);
-       double d2 = v_.dist(v2);
-       return ((d1 < d2) ||
-               (d1 == d2 && v1[0] < v2[0]) ||
-               (d1 == d2 && v1[0] == v2[0] && v1[1] < v2[1]) ||
-               (d1 == d2 && v1[0] == v2[0] && v1[1] == v2[1] && v1[2] < v2[2])
-              );
-   }
-
-private:
-   SCVector3 v_;
-};
-
-void
-Molecule::sort_by_distance(){
-  std::sort( atoms_.begin(), atoms_.end(), dist_sort());
-}
-
 double*
 Molecule::charges() const
 {

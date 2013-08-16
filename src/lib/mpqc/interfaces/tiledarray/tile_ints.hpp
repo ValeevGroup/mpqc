@@ -25,11 +25,11 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef mpqc_interfaces_tiledarray_tileints_h
-#define mpqc_interfaces_tiledarray_tileints_h
+#ifndef mpqc_interfaces_tiledarray_tileints_hpp
+#define mpqc_interfaces_tiledarray_tileints_hpp
 
 #include <tiled_array.h>
-#include <mpqc/interfaces/tiledarray/trange1.hpp>
+#include <mpqc/interfaces/tiledarray/tiling/trange1.hpp>
 #include <chemistry/qc/basis/integral.h>
 #include <boost/ref.hpp>
 #include <mpqc/utility/foreach.hpp>
@@ -37,7 +37,12 @@
 
 namespace mpqc{
 
-    /// Helper class to return number of dimensions of an integral type
+    /// @addtogroup TiledArrayInterface
+    /// @{
+
+    /**
+     * Helper class that returns the dimension of the type of integral in question.
+     */
     template <typename IntegralEngine>
     struct EngineTypeTraits;
     template <> struct EngineTypeTraits<sc::Ref<sc::TwoBodyInt> > {
@@ -87,9 +92,7 @@ namespace mpqc{
     } // namespace int_details
 
     /**
-     * get_integrals takes a tile and a integral engine and calculates the
-     * shell offsets for that tile.  It then offloads the filling of the tile
-     * to the mpqc::TensorRef and mpqc::Integrals tools.
+     *
      */
     template<typename Tile, typename RefEngine>
     void
@@ -121,16 +124,10 @@ namespace mpqc{
             }
         }
 
-        //  Store the size and dimension of the tile for mpqc::TensorRef
-        std::size_t dim[rank];
-        //std::copy(tile.range().size().begin(), tile.range().size().end(),
-        //          dim);
-        for(auto i = 0; i < rank; ++i){
-            dim[i] = tile.range().size()[i];
-        }
-
-        //const std::size_t (&dim)[rank] = *reinterpret_cast<const std::size_t(*)[rank]>(
-        //                        tile.range().size().data());
+        // passes the TiledArray size into a fixed c-style array for Tensor class
+        const std::size_t (&dim)[rank] =
+                        *reinterpret_cast<const std::size_t(*)[rank]>(
+                                            tile.range().size().data());
 
         TensorRef<double, rank, TensorRowMajor > tile_map(tile.data(), dim);
 
@@ -139,18 +136,13 @@ namespace mpqc{
 
     }
 
-    /**
-     * make_integral_task spawns tasks to fill tiles with integrals.
-     */
     template<typename RefPool, typename It, class A>
     void make_integral_task(It first, It last, const A &array,
                        RefPool pool);
 
     /**
-     * integral_task takes a boost reference to a  IntegralEnginePool and
-     * first spawns new tasks until the problem is the correct size.
-     * Then it gets a thread local instance of an integral engine and uses it
-     * to fill tiles with data
+     * Splits work in into manageable chunks by creating tasks. And then fills
+     * each tile with integrals.
      */
     template<typename RefPool, typename It, class A>
     void
@@ -185,6 +177,9 @@ namespace mpqc{
         }
     }
 
+    /**
+     * Spawns tasks to fill tiles with integrals.
+     */
     template<typename RefPool, typename It, class A>
     void
     make_integral_task(It first, It last, const A &array,
@@ -195,8 +190,8 @@ namespace mpqc{
 
     /**
      * Initial function called to fill a TiledArray with integrals.
-     * It gets the pointers to the first and last tile and then sends the work
-     * off to tasks.
+     * @param[in,out] array is a TiledArray::Array that will be filled with data
+     * @param[in] pool is an IntegralEnginePool object to provide integrals.
      */
     template<typename IntEngPool, class A>
     void fill_tiles(A &array, const IntEngPool &pool){
@@ -205,11 +200,15 @@ namespace mpqc{
         auto begin = array.get_pmap()->begin();
         auto end = array.get_pmap()->end();
 
+        // Create tasks to fill tiles with data. Boost const reference is used
+        // because Integral Engine pool is not copyable, but when sent to the
+        // Madness task queue all objects are copied.
         make_integral_task(begin, end, array, boost::cref(pool));
     }
 
 } // namespace mpqc
 
 
+/// @}
 
-#endif /* mpqc_interfaces_tiledarray_tileints_h */
+#endif /* mpqc_interfaces_tiledarray_tileints_hpp */

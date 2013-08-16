@@ -8,7 +8,7 @@
 #ifndef mpqc_interfaces_tiledarray_symmscmat_hpp
 #define mpqc_interfaces_tiledarray_symmscmat_hpp
 
-#include <mpqc/interfaces/tiledarray/trange1.hpp>
+#include <mpqc/interfaces/tiledarray/tiling/trange1.hpp>
 #include <tiled_array.h>
 
 namespace TA = TiledArray;

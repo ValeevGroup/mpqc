@@ -311,11 +311,6 @@ class Molecule: public SavableState
         If the label cannot be found -1 is returned. */
     int atom_label_to_index(const std::string &label) const;
 
-    /** Sorts atoms based on distance from arbitrary point. First checks
-     *  distance, then if necesarry check x then
-     */
-    void sort_by_distance();
-
     /** Returns a double* containing the nuclear
         charges of the atoms.  The caller is responsible for
         freeing the return value. */

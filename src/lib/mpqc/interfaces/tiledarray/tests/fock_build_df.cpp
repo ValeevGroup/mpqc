@@ -38,8 +38,7 @@ int main(int argc, char** argv){
                  Eri3("i,n,X") * Inv_Eri2("X,Y") * Eri3("j,m,Y"));
 
     TA::Array<double, 2> F = H("i,j") + G("i,j");
-    double energy_guess = TA::expressions::dot(
-                    2.0 * H("i,j") + G("i,j"), D("i,j"));
+    double energy = TA::expressions::dot( 2.0 * H("i,j") + G("i,j"), D("i,j"));
 
     world.gop.fence();
 
@@ -50,7 +49,7 @@ int main(int argc, char** argv){
         std::cout << "\nF = \n" << F << std::endl;
     }
 
-    std::cout << "\nEnergy guess = " << energy_guess << std::endl;
+    std::cout << "\nEnergy guess = " << energy << std::endl;
 
     return 0;
 }

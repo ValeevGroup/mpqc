@@ -3,8 +3,7 @@
 
 #include <vector>
 
-#include <mpqc/range.hpp>
-#include <mpqc/tensor.hpp>
+#include <mpqc/math/tensor.hpp>
 #include <mpqc/utility/foreach.hpp>
 
 #include <chemistry/molecule/molecule.h>
@@ -14,7 +13,6 @@
 namespace mpqc {
 namespace integrals {
 namespace detail {
-
 
     struct Shell : range {
         Shell(int index, range r) : range(r), index_(index) {}
@@ -34,13 +32,6 @@ namespace detail {
             shells.push_back(Shell(s,range(f,f+n)));
             f += n;
         }
-        /*
-        for(std::vector<int>::const_iterator it = S.begin(); it != S.end(); ++it) {
-            int n = basis->shell(*it).nfunction();
-            shells.push_back(Shell(*it, range(f, f+n)));
-            f += n;
-        }
-        */
         return shells;
     }
 
@@ -50,18 +41,14 @@ namespace detail {
         foreach(Shell s, S){
             extent = std::max(extent, *s.end());
         }
-        /*
-        for(std::vector<Shell>::const_iterator it = S.begin(); it != S.end(); ++it) {
-            extent = std::max(extent, *(it->end()));
-        }
-        */
         return extent;
     }
 
 
     template<class RefEngine>
-    struct Integrals {
+    class Integrals {
 
+    public:
         typedef TensorRef<const double,2, TensorRowMajor > Tensor2;
         typedef TensorRef<const double,3, TensorRowMajor > Tensor3;
         typedef TensorRef<const double,4, TensorRowMajor > Tensor4;
@@ -114,15 +101,6 @@ namespace detail {
             }
         }
 
-        /*
-        for(std::vector<Shell>::const_iterator p_it = shells[0].begin(); p_it != shells[0].end(); ++p_it) {
-            const Shell& p = *p_it;
-            for(std::vector<Shell>::const_iterator q_it = shells[1].begin(); q_it != shells[1].end(); ++q_it) {
-                const Shell& q = *q_it;
-                ints(p,q) = integral(p,q);
-            }
-        }
-        */
     }
 
     template<class Engine>
@@ -143,18 +121,6 @@ namespace detail {
                 }
             }
         }
-        /*
-        for(std::vector<Shell>::const_iterator p_it = shells[0].begin(); p_it != shells[0].end(); ++p_it) {
-            const Shell& p = *p_it;
-            for(std::vector<Shell>::const_iterator q_it = shells[1].begin(); q_it != shells[1].end(); ++q_it) {
-                const Shell& q = *q_it;
-                for(std::vector<Shell>::const_iterator r_it = shells[2].begin(); r_it != shells[2].end(); ++r_it) {
-                    const Shell& r = *r_it;
-                    ints(p,q,r) = integral(p,q,r);
-                }
-            }
-        }
-        */
     }
 
     template<class Engine>
@@ -179,60 +145,7 @@ namespace detail {
                 }
             }
         }
-        /*
-        for(std::vector<Shell>::const_iterator p_it = shells[0].begin(); p_it != shells[0].end(); ++p_it) {
-            const Shell& p = *p_it;
-            for(std::vector<Shell>::const_iterator q_it = shells[1].begin(); q_it != shells[1].end(); ++q_it) {
-                const Shell& q = *q_it;
-                for(std::vector<Shell>::const_iterator r_it = shells[2].begin(); r_it != shells[2].end(); ++r_it) {
-                    const Shell& r = *r_it;
-                    for(std::vector<Shell>::const_iterator s_it = shells[3].begin(); s_it != shells[3].end(); ++s_it) {
-                        const Shell& s = *s_it;
-
-                        int p_in = p.index();
-                        int q_in = q.index();
-                        int r_in = r.index();
-                        int s_in = s.index();
-
-                        if(integral.engine()->log2_shell_bound(p_in, q_in, r_in, s_in) > 1e-8)
-                            ints(p,q,r,s) = integral(p,q,r,s);
-
-                    }
-                }
-            }
-        }
-        */
     }
-
-#if 0
-    template<class Engine>
-    void evaluate(Integral<Engine> integral,
-                  const std::vector<int> &P,
-                  const std::vector<int> &Q,
-                  const std::vector<int> &R,
-                  const std::vector<int> &S,
-                  const tensor<double,2> &D,
-                  tensor<double,2> &G) {
-        std::vector<Shell> shells[] = {
-             pack(integral.engine()->basis1(), P),
-             pack(integral.engine()->basis2(), Q),
-             pack(integral.engine()->basis3(), R),
-             pack(integral.engine()->basis4(), S),
-        };
-
-        BOOST_FOREACH (Shell p, shells[0]) {
-          BOOST_FOREACH (Shell q, shells[1]) {
-            BOOST_FOREACH (Shell r, shells[2]) {
-              BOOST_FOREACH (Shell s, shells[3]) {
-                tensor<double,4> J = integral(p,q,r,s);
-              }
-            }
-          }
-        }
-
-    }
-#endif
-
 
 } // namespace detail
 } // namespace integrals
@@ -283,19 +196,6 @@ namespace integrals {
                          P, Q, R, S, ints);
     }
 
-
-#if 0
-    void evaluate_direct(sc::Ref<sc::TwoBodyInt> engine,
-                  const std::vector<int> &P,
-                  const std::vector<int> &Q,
-                  const std::vector<int> &R,
-                  const std::vector<int> &S,
-                  const tensor<double,2> &D,
-                  tensor<double,2> &ints) {
-        detail::evaluate(detail::Integral<sc::TwoBodyInt>(engine),
-                         P, Q, R, S, D, ints);
-    }
-#endif
 
 } // namespace integrals
 } // namespace mpqc

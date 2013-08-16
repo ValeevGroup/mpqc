@@ -20,31 +20,37 @@ int main(int argc, char** argv) {
     R<Basis> basis = get_basis("3-21G", mol);
     R<Basis> basis_df = get_basis("cc-pVDZ", mol);
 
+    // Make an integral factory that will generate engines
     R<Integral> int_fac = get_integral_factory(argc, argv);
 
 
 
+    // Set basis for the overlap, hcore, and two electron integrals
     int_fac->set_basis(basis);
+    // Get the engine pools
     IntPool<R<sc::OneBodyInt> > overlap_pool(int_fac->overlap());
     IntPool<R<sc::OneBodyInt> > hcore_pool(int_fac->hcore());
     IntPool<R<sc::TwoBodyInt> > eri_pool(int_fac->electron_repulsion());
 
+    // Set basis for density fiting three center integrals.
     int_fac->set_basis(basis, basis, basis_df);
+    // Get three center pool
     IntPool<R<sc::TwoBodyThreeCenterInt> > eri3_pool(
                                            int_fac->electron_repulsion3());
+    // Set basis for density fitting two center integrals
     int_fac->set_basis(basis_df, basis_df);
+    // Get two center engine pool
     IntPool<R<sc::TwoBodyTwoCenterInt> > eri2_pool(
                                          int_fac->electron_repulsion2());
-    TA::Array<double, 2> S = Integrals(world, overlap_pool,
-                                       tiling::tile_by_atom);
-    TA::Array<double, 2> H = Integrals(world, hcore_pool,
-                                       tiling::tile_by_atom);
-    TA::Array<double, 4> Eri = Integrals(world, eri_pool,
-                                       tiling::tile_by_atom);
-    TA::Array<double, 3> Eri3 = Integrals(world, eri3_pool,
-                                          tiling::tile_by_atom);
-    TA::Array<double, 2> Eri2 = Integrals(world, eri2_pool,
-                                          tiling::tile_by_atom);
+
+    // Fill TiledArray's with data
+    TA::Array<double, 2> S = Integrals(world, overlap_pool);
+    TA::Array<double, 2> H = Integrals(world, hcore_pool);
+    TA::Array<double, 4> Eri = Integrals(world, eri_pool);
+    TA::Array<double, 3> Eri3 = Integrals(world, eri3_pool);
+    TA::Array<double, 2> Eri2 = Integrals(world, eri2_pool);
+
+    // Print TiledArrays
     std::cout << "S = \n" << S << std::endl;
     std::cout << "\nH = \n" << H << std::endl;
     std::cout << "\nEri = \n" << Eri << std::endl;

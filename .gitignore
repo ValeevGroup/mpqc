@@ -1,2 +1,5 @@
-/.cproject
-/.project
+.cproject
+.project
+CMakeCache.txt
+cmake_install.cmake
+install_manifest.txt

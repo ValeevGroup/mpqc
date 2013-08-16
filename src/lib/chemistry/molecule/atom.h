@@ -113,7 +113,7 @@ namespace sc {
     /// writes Atom to sc::StateOut
     void ToStateOut(const Atom &a, StateOut &so, int &count);
 
-    /// reads Atom from sc::StateOut
+    /// reads Atom from sc::StateIn
     void FromStateIn(Atom &a, StateIn &si, int &count);
 }
 

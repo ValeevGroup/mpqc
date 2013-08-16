@@ -94,9 +94,9 @@ if ("${PSI3}" AND NOT PSI3_FOUND)
         --prefix=${EXTERNAL_BUILD_DIR}/psi3
         --with-cc=${CMAKE_C_COMPILER}
         "CFLAGS=${CMAKE_C_FLAGS}"
-        --with-cxx=${CMAKE_CXX_COMPILER}
+        "--with-cxx=${CMAKE_CXX_COMPILER}"
         "CXXFLAGS=${CMAKE_CXX_FLAGS}"
-        --with-fc=${CMAKE_Fortran_COMPILER}
+        "--with-fc=${CMAKE_Fortran_COMPILER}"
         "--with-blas=${LAPACK_LIBRARIES} ${BLAS_LIBRARIES}"
         BUILD_COMMAND make SHELL=/bin/bash
         INSTALL_COMMAND make install SHELL=/bin/bash

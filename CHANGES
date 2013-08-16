@@ -3,6 +3,9 @@
 
 Following is a brief summary of changes made in each release of MPQC.
 
+  * 2013-08-16:
+     o Moved to GitHub!!!
+
   * 2006-03-22: MPQC-2.3.1
      o MCSearch added for cubic interpolation during quasi-Newton line
        searches.

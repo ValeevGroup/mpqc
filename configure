@@ -58,20 +58,17 @@ fi
 
 # use user-provided CMAKE
 if [ ! -x "$CMAKE" ]; then
-
-  # else look for system cmake
-  CMAKE=`which cmake 2>/dev/null`
-  if [ ! -x "$CMAKE" ]; then
-
-    # else look for locally-built cmake
-    CMAKE=$TOPDIR/cmake/bin/cmake
-    if [ ! -x "$CMAKE" ]; then
-      echo 'cmake is not found; try building cmake by typing: ./configure cmake'
-      exit 11
+    # look for locally-built cmake
+    if [ -x $TOPDIR/cmake/bin/cmake ]; then
+	CMAKE=$TOPDIR/cmake/bin/cmake
+    # else look for system cmake
+    else
+	CMAKE=`which cmake 2>/dev/null`
+	if [ ! -x "$CMAKE" ]; then
+	    echo 'cmake is not found; try building cmake by typing: ./configure cmake'
+	    exit 11
+	fi	
     fi
-    
-  fi
-  
 fi
 
 # if no local/system cmake exist, build!

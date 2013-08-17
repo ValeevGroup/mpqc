@@ -142,7 +142,7 @@ class type_info_key {
  are completed before main is entered.  See \ref class for
  more information.
 */
-class ClassDesc: public Identity {
+class ClassDesc {
     friend class ParentClasses;
   private:
     static std::map<std::string,ClassDescP> *all_;

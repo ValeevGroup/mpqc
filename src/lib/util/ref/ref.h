@@ -76,8 +76,6 @@
 #include <stdlib.h>
 #include <limits.h>
 
-#include <util/ref/identity.h>
-
 #ifdef HAVE_CONFIG_H
 #include <mpqc_config.h>
 #endif
@@ -189,7 +187,7 @@ typedef unsigned long refcount_t;
 
 */
 
-class RefCount: public Identity {
+class RefCount {
   private:
 #if REF_MANAGE
 #  define REF_MAX_NREF (UINT_MAX - 1)
@@ -219,6 +217,37 @@ class RefCount: public Identity {
     RefCount& operator=(const RefCount&) { return *this; }
   public:
     virtual ~RefCount();
+
+    /** Return the unique identifier for this object that can be compared for different objects of different types.
+        Usually this is just the value of the pointer to the RefCount base of the object.
+        Some might think that this method is not needed, i.e. that the pointer to object is a sufficient
+        means of establishing the identity. That's not so for the case of multiple inheritance.
+        Consider this code:
+        @code
+          struct A : virtual public RefCount { int a; };
+          struct B : virtual public RefCount { int b; };
+          struct C : public A, public B { int c; };
+
+          C c;
+          A* aptr = static_cast<A*>(&c);
+          B* aptr = static_cast<B*>(&c);
+          C* cptr = &c;
+          void* aptr_void = reinterpret_cast<void*>(aptr);
+          void* bptr_void = reinterpret_cast<void*>(bptr);
+          void* cptr_void = reinterpret_cast<void*>(cptr);
+
+          assert( c->indentifier() == aptr->identifier() ); // ok
+          assert( c->indentifier() == bptr->identifier() ); // ok
+          assert( cptr == aptr ); // ok
+          assert( cptr == bptr ); // ok! (implicit cast)
+          assert(cptr_void == aptr_void); // ok!
+          assert(cptr_void == bptr_void); // NOT ok!!!
+        @endcode
+        Thus for objects that are derived from RefCount
+        this will return pointer to the RefCount base; this allows to compare the identity of the objects pointed
+        by pointers to base and pointer to the object itself.
+        */
+    size_t identifier() const { return reinterpret_cast<const size_t>(this); }
 
     /// Lock this object.
     int lock_ptr() const;
@@ -393,24 +422,23 @@ class  Ref  : public RefBase {
     int null() const { return p == 0; }
     /// Return !null().
     int nonnull() const { return p != 0; }
-    /** A variety of ordering and equivalence operators are provided using
-        the Identity class. */
+    /** Ordering and equivalence operators are determined by the identifier. */
     template <class A> int operator==(const Ref<A>&a) const
-        { return eq(p,a.pointer()); }
+        { return p->identifier() == a->identifier(); }
     template <class A> int operator>=(const Ref<A>&a) const
-        { return ge(p,a.pointer()); }
+        { return p->identifier() >= a->identifier(); }
     template <class A> int operator<=(const Ref<A>&a) const
-        { return le(p,a.pointer()); }
+        { return p->identifier() <= a->identifier(); }
     template <class A> int operator>(const Ref<A>&a) const
-        { return gt(p,a.pointer()); }
+        { return p->identifier() > a->identifier(); }
     template <class A> int operator<(const Ref<A>&a) const
-        { return lt(p,a.pointer()); }
+        { return p->identifier() < a->identifier(); }
     template <class A> int operator!=(const Ref<A>&a) const
-        { return ne(p,a.pointer()); }
+        { return p->identifier() != a->identifier(); }
     /** Compare two objects returning -1, 0, or 1. Similar
         to the C library routine strcmp. */
     int compare(const Ref<T> &a) const {
-      return eq(p,a.p)?0:((lt(p,a.p)?-1:1));
+      return (p->identifier() == a->identifier())?0:(((p->identifier() < a->identifier())?-1:1));
     }
     /// Refer to the null object.
     void clear()

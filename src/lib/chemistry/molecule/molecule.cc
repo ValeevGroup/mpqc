@@ -46,11 +46,11 @@ using namespace sc;
 // Molecule
 
 static ClassDesc Molecule_cd(
-  typeid(Molecule),"Molecule",8,"public SavableState",
+  typeid(Molecule),"Molecule",9,"public SavableState",
   create<Molecule>, create<Molecule>, create<Molecule>);
 
 Molecule::Molecule():
-  natoms_(0), atoms_()
+  atoms_()
 {
   pg_ = new PointGroup;
   atominfo_ = new AtomInfo();
@@ -67,7 +67,7 @@ Molecule::Molecule():
 }
 
 Molecule::Molecule(const Molecule& mol):
- natoms_(0), atoms_()
+ atoms_()
 {
   nuniq_ = 0;
   equiv_ = 0;
@@ -93,7 +93,7 @@ Molecule::clear()
 void
 Molecule::throw_if_atom_duplicated(int begin, double tol)
 {
-  for (int i=begin; i<natoms_; i++) {
+  for (int i=begin; i<natom(); i++) {
       SCVector3 ri(atoms_[i].r());
       for (int j=0; j<i; j++) {
           SCVector3 rj(atoms_[j].r());
@@ -106,7 +106,7 @@ Molecule::throw_if_atom_duplicated(int begin, double tol)
 }
 
 Molecule::Molecule(const Ref<KeyVal>&input):
- natoms_(0), atoms_()
+ atoms_()
 {
   nuniq_ = 0;
   equiv_ = 0;
@@ -233,7 +233,6 @@ Molecule::operator=(const Molecule& mol)
   q_atoms_ = mol.q_atoms_;
   non_q_atoms_ = mol.non_q_atoms_;
 
-  natoms_ = mol.natoms_;
   atoms_ = mol.atoms_;
 
   std::copy(mol.ref_origin_, mol.ref_origin_+3, ref_origin_);
@@ -249,13 +248,13 @@ Molecule::add_atom(int Z,double x,double y,double z,
                    int have_charge, double charge,
                    int have_fragment, int fragment)
 {
+  const unsigned int this_atom = natom();
   atoms_.push_back(Atom(Z,x,y,z,label,mass, have_charge, charge, have_fragment,
                         fragment));
-  (Z == q_Z_) ? q_atoms_.push_back(natoms_) : 
-                non_q_atoms_.push_back(natoms_);
-  natoms_++;
+  (Z == q_Z_) ? q_atoms_.push_back(this_atom) :
+                non_q_atoms_.push_back(this_atom);
 
-  throw_if_atom_duplicated(natoms_-1);
+  throw_if_atom_duplicated(this_atom);
 }
 
 // Used to make input files.
@@ -381,12 +380,12 @@ Molecule::atom_label_to_index(const std::string &l) const
   return -1;
 }
 
-double*
+std::vector<double>
 Molecule::charges() const
 {
-  double*result = new double[natoms_];
+  std::vector<double> result(natom());
 
-  for(int a = 0; a < natoms_; ++a){
+  for(int a = 0; a < natom(); ++a){
       result[a] = atoms_[a].have_charge() ? atoms_[a].charge() : atoms_[a].Z();
   }
 
@@ -443,7 +442,6 @@ void Molecule::save_data_state(StateOut& so)
   so.put(include_q_);
   so.put(include_qq_);
   so.put(atoms_);
-  so.put(natoms_);
 
   SavableState::save_state(pg_.pointer(),so);
   SavableState::save_state(geometry_units_.pointer(),so);
@@ -454,9 +452,9 @@ void Molecule::save_data_state(StateOut& so)
 
 Molecule::Molecule(StateIn& si):
   SavableState(si),
-  natoms_(0), atoms_()
+  atoms_()
 {
-  if (si.version(::class_desc<Molecule>()) < 4) {
+  if (si.version(::class_desc<Molecule>()) < 9) {
       throw FileOperationFailed("cannot restore from old molecules",
                                 __FILE__, __LINE__, 0,
                                 FileOperationFailed::Corrupt,
@@ -471,7 +469,6 @@ Molecule::Molecule(StateIn& si):
     si.get(include_qq_);
   }
   si.get(atoms_);
-  si.get(natoms_);
   pg_ << SavableState::restore_state(si);
   geometry_units_ << SavableState::restore_state(si);
   atominfo_ << SavableState::restore_state(si);
@@ -484,7 +481,7 @@ Molecule::Molecule(StateIn& si):
     std::fill(ref_origin_, ref_origin_+3, 0.0);
   }
 
-  for (int i=0; i<natoms_; i++) {
+  for (int i=0; i<natom(); i++) {
       if (atoms_[i].Z() == q_Z_) {
           q_atoms_.push_back(i);
         }
@@ -670,7 +667,7 @@ Molecule::nuclear_charge_efield(const double *charges,
   for (int i=0; i<3; i++) efield[i] = 0.0;
 
   if (include_q_) {
-    for (int i=0; i<natoms_; i++) {
+    for (int i=0; i<natom(); i++) {
       SCVector3 a(r(i));
       tmp = 0.0;
       for (int j=0; j<3; j++) {
@@ -709,7 +706,7 @@ Molecule::nuclear_efield(const double *position, double *efield)
   for (int i=0; i<3; i++) efield[i] = 0.0;
 
   if (include_q_) {
-    for (int i=0; i<natoms_; i++) {
+    for (int i=0; i<natom(); i++) {
       SCVector3 a(r(i));
       tmp = 0.0;
       for (int j=0; j<3; j++) {
@@ -1340,7 +1337,7 @@ Molecule::atom_symbol(int iatom) const
 
 bool
 Molecule::any_atom_has_charge() const {
-   for(std::size_t i = 0; i < natoms_; ++i){
+   for(std::size_t i = 0; i < natom(); ++i){
        if(atoms_[i].have_charge()) return true;
    }
    return false;
@@ -1348,7 +1345,7 @@ Molecule::any_atom_has_charge() const {
 
 bool
 Molecule::any_atom_has_fragment() const {
-   for(std::size_t i = 0; i < natoms_; ++i){
+   for(std::size_t i = 0; i < natom(); ++i){
        if(atoms_[i].have_fragment()) return true;
    }
    return false;
@@ -1356,7 +1353,7 @@ Molecule::any_atom_has_fragment() const {
 
 bool
 Molecule::any_atom_has_label() const {
-   for(std::size_t i = 0; i < natoms_; ++i){
+   for(std::size_t i = 0; i < natom(); ++i){
        if(!atoms_[i].label().empty()) return true;
    }
    return false;

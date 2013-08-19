@@ -124,7 +124,6 @@ atoms so be careful.
 class Molecule: public SavableState
 {
   protected:
-    int natoms_;
     std::vector<Atom> atoms_;
     Ref<AtomInfo> atominfo_;
     Ref<PointGroup> pg_;
@@ -290,7 +289,7 @@ class Molecule: public SavableState
     Ref<Units> geometry_units() const { return geometry_units_; }
 
     /// Returns the number of atoms in the molecule.
-    int natom() const { return natoms_; }
+    unsigned int natom() const { return atoms_.size(); }
 
     int Z(int atom) const { return atoms_[atom].Z(); }
     double &r(int atom, int xyz) { return atoms_[atom].xyz(xyz); }
@@ -311,10 +310,9 @@ class Molecule: public SavableState
         If the label cannot be found -1 is returned. */
     int atom_label_to_index(const std::string &label) const;
 
-    /** Returns a double* containing the nuclear
-        charges of the atoms.  The caller is responsible for
-        freeing the return value. */
-    double *charges() const;
+    /** Returns a vector of the nuclear
+        charges of the atoms. */
+    std::vector<double> charges() const;
 
     /// Return the charge of the atom.
     double charge(int iatom) const;

@@ -172,7 +172,7 @@ class StateIn:  public DescribedClass {
     //@}
     /** @name StateIn::get(array)
      *  These restore data saved with StateOut's put()
-        members.  The data is allocated by StateIn. */
+        members.  The data is allocated by StateIn using new[]. */
     //@{
     virtual int get(char*&);
     virtual int get(unsigned int*&);

@@ -24,8 +24,8 @@ mole<DFCLHF>: (
 
   df_basis<GaussianBasisSet>:(
     molecule = $..:molecule
-    name = "cc-pVDZ-JKFIT"
-    %name = "cc-pVTZ-JKFIT"
+    %name = "cc-pVDZ-JKFIT"
+    name = "cc-pVTZ-JKFIT"
     %name = "aug-cc-pVTZ"
     %name = "cc-pVTZ-RI"
     %name = "cc-pVDZ"
@@ -41,23 +41,23 @@ mole<DFCLHF>: (
     df_kernel = "coulomb"
   	df_solver = "bunchkaufman_refine"
   	df_local_coulomb = yes
-  	df_local_exchange = yes
+  	df_local_exchange = no
     store_ints = mem
     %store_ints = mpi
-    exact_diag_J = yes
+    exact_diag_J = no
   )
 
 
   % Function
-  value_accuracy = 1e-5
+  value_accuracy = 1e-8
   gradient_accuracy = 1e-6
 
   % MolecularEnergy input
   molecule = $:molecule
   mbasis<GaussianBasisSet>: (
     molecule = $:molecule
-    name = "cc-pVDZ"
-    name = "STO-3G"
+    name = "cc-pVTZ"
+    %name = "STO-3G"
     %puream=yes
     %matrixkit = $:basis_matrixkit
   )

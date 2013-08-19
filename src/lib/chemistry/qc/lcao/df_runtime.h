@@ -31,6 +31,8 @@
 #include <chemistry/qc/lcao/df.h>
 #include <chemistry/qc/lcao/tbint_runtime.h>
 #include <Eigen/Dense>
+#include <math/mmisc/eigen.h>
+#include <memory>
 
 namespace sc {
 
@@ -52,7 +54,7 @@ namespace sc {
                              const std::string& fspace,
                              const std::string& kernel);
 
-    private:
+    protected:
       std::string key_;
       std::string space1_, space2_, fspace_, kernel_;
   };
@@ -69,14 +71,22 @@ namespace sc {
       typedef Ref<Result> ResultRef;
       typedef ParsedDensityFittingKey ParsedResultKey;
       typedef DensityFitting::MOIntsRuntime MOIntsRuntime;
-      typedef Eigen::MatrixXd CoefContainer;
+      typedef Eigen::VectorXd CoefResult;
+      typedef std::shared_ptr<Eigen::VectorXd> CoefResultRef;
       typedef std::pair<int, int> IntPair;
       typedef std::pair<std::string, IntPair> CoefKey;
+
 
       // uses MOIntsRuntime to evaluate integrals
       DensityFittingRuntime(const Ref<MOIntsRuntime>& moints_runtime,
                             const DensityFittingParams* dfparams);
       DensityFittingRuntime(StateIn& si);
+      ~DensityFittingRuntime(){
+        for(DecompositionMap::iterator it=decomps_.begin(); it != decomps_.end(); ++it){
+          delete it->second;
+          decomps_.erase(it);
+        }
+      }
       void save_data_state(StateOut& so);
 
       /// obsoletes this object
@@ -89,6 +99,10 @@ namespace sc {
         */
       bool exists(const std::string& key) const;
 
+      /** Returns true if the given coefficient block is available
+        */
+      bool exists(const CoefKey& key) const;
+
       /** Returns the DistArray4 object corresponding to this key.
 
           key must be in format recognized by ParsedDensityFittingKey.
@@ -97,11 +111,20 @@ namespace sc {
         */
       ResultRef get(const std::string& key);   // non-const: can compute something
 
+      /** Returns the Eigen::MatrixXd (a.k.a. CoefContainer) object corresponding
+       *  to the CoefKey key given.
+       */
+      const CoefResultRef get(const CoefKey& key);
+      const CoefResultRef get(const std::string& dfkey, int bf1, int bf2){ return get(CoefKey(dfkey, IntPair(bf1, bf2))); }
+
       /// returns the runtime used to compute results
       const Ref<MOIntsRuntime>& moints_runtime() const { return moints_runtime_; }
 
       /// removes all entries that contain this space
       void remove_if(const std::string& space_key);
+
+      // returns true if the block mu in < mu | M | nu X > is local for the key, false otherwise
+      //bool is_local(const std::string& key, int mu) const;
 
       /**
        * tries to translate a library basis set label to the corresponding default value for the DF basis
@@ -122,12 +145,17 @@ namespace sc {
       typedef Registry<std::string, ResultRef, detail::NonsingletonCreationPolicy > ResultRegistry;
       Ref<ResultRegistry> results_;
 
-      //typedef Registry<CoefKey, CoefContainer, detail::NonsingletonCreationPolicy > CoefRegistry;
-      //Ref<CoefRegistry> coef_results_;
+      typedef Registry<CoefKey, CoefResultRef, detail::NonsingletonCreationPolicy > CoefRegistry;
+      Ref<CoefRegistry> coef_results_;
 
+      typedef Eigen::HouseholderQR<Eigen::MatrixXd> Decomposition;
+      typedef std::map<IntPair, Decomposition*> DecompositionMap;
+      DecompositionMap decomps_;
 
       // creates the result for a given key
       const ResultRef& create_result(const std::string& key);
+
+      CoefResultRef get_coefficients(const CoefKey& key);
 
       static ClassDesc class_desc_;
 

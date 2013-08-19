@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#define EIGEN_NO_AUTOMATIC_RESIZING 1
-#define TIMER_DEPTH 5
+#define EIGEN_NO_AUTOMATIC_RESIZING 0
+#define TIMER_DEPTH 1
 #define timer_change(str, depth) \
   if(TIMER_DEPTH >= depth) tim.change(str);
 #define timer_enter(str, depth) \
@@ -40,6 +40,7 @@
 #  define eigenout(label, var)
 #endif
 
+#include <util/misc/sharedptr.h>
 #include <cfloat>
 #include<chemistry/qc/basis/symmint.h>
 #include<chemistry/qc/basis/orthog.h>
@@ -1194,16 +1195,7 @@ namespace sc {
       //----------------------------------------//
       const Ref<TwoBodyThreeCenterMOIntsRuntime>& int3c_rtime = df_rtime->moints_runtime()->runtime_3c();
       const Ref<TwoBodyTwoCenterMOIntsRuntime>& int2c_rtime = df_rtime->moints_runtime()->runtime_2c();
-      //TwoBodyOper::type kernel_oper = noncoulomb_kernel ? TwoBodyOper::r12_0_g12 : TwoBodyOper::eri;
-      //unsigned int ints_type_idx = TwoBodyOperSetDescr::instance(noncoulomb_kernel ? TwoBodyOperSet::G12NC : TwoBodyOperSet::ERI)->opertype(kernel_oper);
-      /*****************************************************************************************/ #endif //1}}}
-      /*=======================================================================================*/
-      /* Get the coefficients                                  		                        {{{1 */ #if 1 // begin fold
-      //========================================//
-      timer_change("02 - get coefficients", 1);
       //----------------------------------------//
-      // Setup
-      timer_enter("01 - (mu nu | M | X) setup", 2);
       std::string metric_key = df_info->params()->kernel_key();
       const bool noncoulomb_kernel = (metric_key.find("exp") != std::string::npos);
       std::string params_key = df_info->params()->intparams_key();
@@ -1213,6 +1205,16 @@ namespace sc {
       unsigned int ints_type_idx = TwoBodyOperSetDescr::instance(
           noncoulomb_kernel ? TwoBodyOperSet::G12NC : TwoBodyOperSet::ERI
       )->opertype(metric_oper);
+      /*****************************************************************************************/ #endif //1}}}
+      /*=======================================================================================*/
+      /* The old way                                           		                        {{{1 */ #if 0 // begin fold
+      /*=======================================================================================*/
+      /* Get the coefficients                                  		                        {{{1 */
+      //========================================//
+      timer_change("02 - get coefficients", 1);
+      //----------------------------------------//
+      // Setup
+      timer_enter("01 - (mu nu | M | X) setup", 2);
       //----------------------------------------//
       // Go ahead and compute them all for now.  It will be faster to
       //   compute only the ones we need and save them for later, but
@@ -1274,6 +1276,7 @@ namespace sc {
             const int dfbfoffB = dfbs->shell_to_function(dfshoffB);
             int dfpart_size = dfnbfA;
             if(atomA != atomB) dfpart_size += dfnbfB;
+            /* old code */ #if 0
             IntPair atomAB(atomA, atomB);
             /*---------------------------------------------------------------*/
             /*  Get and Decompose ( X_(ab) | M | Y_(ab) )               {{{2 */ #if 2 // begin fold
@@ -1378,17 +1381,20 @@ namespace sc {
             // The result will be dfpart_size rows and 1 column and needs to be stored in the big C
             Eigen::VectorXd Cpart(dfpart_size);
             Cpart = decomps[atomAB]->solve(ibfjbf_M_X);
+            #endif
             //----------------------------------------//
             // and store in the big C
+            std::string dfkey = ParsedDensityFittingKey::key(braspace->id(), ketspace->id(), dfspace->id(), metric_key);
+            const std::shared_ptr<Eigen::VectorXd> Cpart = df_info->runtime()->get(dfkey, ibf, jbf);
             C.block(
                 dfbfoffA, ibf*ketnbf + jbf,
                 dfnbfA, 1
-            ) = Cpart.head(dfnbfA);
+            ) = Cpart->head(dfnbfA);
             if(atomA != atomB) {
               C.block(
                   dfbfoffB, ibf*ketnbf + jbf,
                   dfnbfB, 1
-              ) = Cpart.tail(dfnbfB);
+              ) = Cpart->tail(dfnbfB);
             }
             //----------------------------------------//
             timer_exit(3);
@@ -1402,9 +1408,9 @@ namespace sc {
       timer_change("05 - global sum C", 2);
       msg->sum(C.data(), dfnbf * branbf * ketnbf);
       timer_exit(2);
-      /*****************************************************************************************/ #endif //1}}}
+      /*****************************************************************************************/
       /*=======================================================================================*/
-      /* Get ( mu nu | g | X )                                 		                        {{{1 */ #if 1 // begin fold
+      /* Get ( mu nu | g | X )                                 		                        {{{1 */
       //----------------------------------------//
       // < mu X | coulomb | nu >
       // in chemists notation: ( mu nu | coulomb | X )
@@ -1447,9 +1453,9 @@ namespace sc {
       if (munu_g_X_D4->data_persistent()) munu_g_X_D4->deactivate();
       munu_g_X_D4 = 0;
       timer_exit(2);
-      /*****************************************************************************************/ #endif //1}}}
+      /*****************************************************************************************/
       /*=======================================================================================*/
-      /* Get ( X | g | Y )                                     		                        {{{1 */ #if 1 // begin fold
+      /* Get ( X | g | Y )                                     		                        {{{1 */
       timer_change("04 - get (X | g | Y)", 1);
       // hopefully this doesn't do a copy?
       timer_enter("01 - setup", 2);
@@ -1468,9 +1474,9 @@ namespace sc {
       coulomb_2c_ints.convert(coulomb_2c_ints_ptr);
       EigenMatrixMap X_g_Y(coulomb_2c_ints_ptr, dfnbf, dfnbf);
       timer_exit(2);
-      /*****************************************************************************************/ #endif //1}}}
+      /*****************************************************************************************/
       /*=======================================================================================*/
-      /* Compute J                                             		                        {{{1 */ #if 1 // begin fold
+      /* Compute J                                             		                        {{{1 */
       timer_change("05 - compute J", 1);
       Eigen::VectorXd J(branbf*ketnbf);
       double *P_ptr = allocate<double>(branbf*ketnbf);
@@ -1647,6 +1653,195 @@ namespace sc {
         }
       }
       //----------------------------------------//
+      /*****************************************************************************************/ #endif //1}}}
+      /*=======================================================================================*/
+      /* BEGIN NEW APPROACH                                                                    */
+      /*=======================================================================================*/
+      /* Loop over basis function pairs to form C_tilde and d_tilde                       {{{1 */ #if 1 // begin fold
+      timer_change("02 - form C_tilde", 1);
+      timer_enter("misc", 2);
+      //----------------------------------------//
+      Eigen::VectorXd J(branbf*ketnbf);
+      J = Eigen::VectorXd::Zero(branbf*ketnbf);
+      double *P_ptr = allocate<double>(obsnbf*obsnbf);
+      {
+        RefSymmSCMatrix Ptmp = P.copy();
+        Ptmp.convert2RefSCMat().convert(P_ptr);
+      }
+      VectorMap D(P_ptr, obsnbf*obsnbf);
+      //----------------------------------------//
+      // Get the munu_g_X key and the munu_g_X_tform for later (we will need it now to
+      //   determine data locality)
+      timer_change("01 - compute (mu nu | g | X )", 2);
+      const std::string munu_g_X_key = ParsedTwoBodyThreeCenterIntKey::key(
+          braspace->id(),
+          dfspace->id(),
+          ketspace->id(),
+          "ERI", ""
+      );
+      //----------------------------------------//
+      const Ref<TwoBodyThreeCenterMOIntsTransform>& munu_g_X_tform = int3c_rtime->get(munu_g_X_key);
+      munu_g_X_tform->compute();
+      Ref<DistArray4> munu_g_X = munu_g_X_tform->ints_acc(); munu_g_X->activate();
+      //----------------------------------------//
+      timer_change("02 - compute Ctilde", 2);
+      timer_enter("misc", 3);
+      Eigen::VectorXd Ctilde(dfnbf);
+      Ctilde = Eigen::VectorXd::Zero(dfnbf);
+      std::string dfkey = ParsedDensityFittingKey::key(
+          braspace->id(),
+          ketspace->id(),
+          dfspace->id(),
+          metric_key
+      );
+      for(int mu = 0; mu < obsnbf; ++mu){
+        if(not munu_g_X->is_local(0, mu))
+          continue;
+        //----------------------------------------//
+        const int ishA = obs->function_to_shell(mu);
+        const int atomA = obs->shell_to_center(ishA);
+        const int dfnshA = dfbs->nshell_on_center(atomA);
+        const int dfnbfA = dfbs->nbasis_on_center(atomA);
+        const int dfshoffA = dfbs->shell_on_center(atomA, 0);
+        const int dfbfoffA = dfbs->shell_to_function(dfshoffA);
+        //----------------------------------------//
+        for(int nu = 0; nu < obsnbf; ++nu){
+          const int jshB = obs->function_to_shell(nu);
+          const int atomB = obs->shell_to_center(jshB);
+          const int dfnshB = dfbs->nshell_on_center(atomB);
+          const int dfnbfB = dfbs->nbasis_on_center(atomB);
+          const int dfshoffB = dfbs->shell_on_center(atomB, 0);
+          const int dfbfoffB = dfbs->shell_to_function(dfshoffB);
+          //----------------------------------------//
+          // Assume locality is the same for munu_g_X and the coefficients
+          timer_change("01 - get coefficients", 3);
+          std::shared_ptr<Eigen::VectorXd> Cpart = df_rtime->get(dfkey, mu, nu);
+          timer_change("02 - contract coefficients with D", 3);
+          Ctilde.segment(dfbfoffA, dfnbfA) += D(mu*obsnbf + nu) * Cpart->head(dfnbfA);
+          if(atomA != atomB){
+            Ctilde.segment(dfbfoffB, dfnbfB) += D(mu*obsnbf + nu) * Cpart->tail(dfnbfB);
+          }
+          //----------------------------------------//
+          timer_change("misc", 3);
+        } // end loop over nu
+      } // end loop over mu
+      timer_change("03 - global sum C_tilde", 3);
+      msg->sum(Ctilde.data(), dfnbf);
+      timer_exit(3);
+      timer_exit(2);
+      /*****************************************************************************************/ #endif //1}}}
+      /*=======================================================================================*/
+      /* Form gtilde                                           		                        {{{1 */ #if 1 // begin fold
+      timer_change("03 - Form gtilde", 1);
+      timer_enter("01 - compute (X | g | Y)", 2);
+      Eigen::VectorXd gtilde(dfnbf);
+      {
+        const std::string coulomb2c_key = ParsedTwoBodyTwoCenterIntKey::key(
+            dfspace->id(),
+            dfspace->id(),
+            "ERI", ""
+        );
+        RefSCMatrix coulomb_2c_ints = int2c_rtime->get(coulomb2c_key);
+        //----------------------------------------//
+        timer_change("02 - transfer (X | g | Y)", 2);
+        double* coulomb_2c_ints_ptr = allocate<double>(dfnbf*dfnbf);
+        coulomb_2c_ints.convert(coulomb_2c_ints_ptr);
+        EigenMatrixMap X_g_Y(coulomb_2c_ints_ptr, dfnbf, dfnbf);
+        //----------------------------------------//
+        timer_change("03 - contract with Ctilde", 2);
+        gtilde = X_g_Y * Ctilde;
+        deallocate(coulomb_2c_ints_ptr);
+      }
+      //----------------------------------------//
+      timer_exit(2);
+      /*****************************************************************************************/ #endif //1}}}
+      /*=======================================================================================*/
+      /* Loop over basis function pairs in (mu nu | g | X)     		                        {{{1 */ #if 1 // begin fold
+      timer_change("03 - loop over (mu nu | g | X)", 1);
+      unsigned int g_type_idx = TwoBodyOperSetDescr::instance(TwoBodyOperSet::ERI)->opertype(metric_oper);
+      Eigen::VectorXd gpart(dfnbf);
+      Eigen::VectorXd dtilde(dfnbf);
+      dtilde = Eigen::VectorXd::Zero(dfnbf);
+      for(int mu = 0; mu < obsnbf; ++mu){
+        if(not munu_g_X->is_local(0, mu))
+          continue;
+        //----------------------------------------//
+        const int ishA = obs->function_to_shell(mu);
+        const int atomA = obs->shell_to_center(ishA);
+        const int dfnshA = dfbs->nshell_on_center(atomA);
+        const int dfnbfA = dfbs->nbasis_on_center(atomA);
+        const int dfshoffA = dfbs->shell_on_center(atomA, 0);
+        const int dfbfoffA = dfbs->shell_to_function(dfshoffA);
+        //----------------------------------------//
+        for(int nu = 0; nu < obsnbf; ++nu){
+          const int jshB = obs->function_to_shell(nu);
+          const int atomB = obs->shell_to_center(jshB);
+          const int dfnshB = dfbs->nshell_on_center(atomB);
+          const int dfnbfB = dfbs->nbasis_on_center(atomB);
+          const int dfshoffB = dfbs->shell_on_center(atomB, 0);
+          const int dfbfoffB = dfbs->shell_to_function(dfshoffB);
+          //----------------------------------------//
+          munu_g_X->retrieve_pair_subblock(
+              0, mu,      // unit basis index, mu_index
+              g_type_idx,
+              nu, nu+1,  // nu_start, nu_fence
+              0,  dfnbf,  // X_start, X_fence
+              gpart.data()
+          );
+          //----------------------------------------//
+          // dtilde contribution
+          dtilde += D(mu*obsnbf + nu) * gpart;
+          //----------------------------------------//
+          // J contribution from second term
+          J(mu*obsnbf + nu) += Ctilde.transpose() * gpart;
+        }
+      }
+      // Global sum dtilde
+      timer_enter("global sum dtilde", 2);
+      msg->sum(dtilde.data(), dfnbf);
+      timer_exit(2);
+      /*****************************************************************************************/ #endif //1}}}
+      /*=======================================================================================*/
+      /* Loop over basis function pairs for first and third term contributions to J       {{{1 */ #if 1 // begin fold
+      timer_change("04 - contributions to J", 1);
+      // Combine dtilde and gtilde beforehand
+      dtilde -= gtilde;
+      // now the first and third terms can be done together
+      for(int mu = 0; mu < obsnbf; ++mu){
+        if(not munu_g_X->is_local(0, mu))
+          continue;
+        //----------------------------------------//
+        const int ishA = obs->function_to_shell(mu);
+        const int atomA = obs->shell_to_center(ishA);
+        const int dfnshA = dfbs->nshell_on_center(atomA);
+        const int dfnbfA = dfbs->nbasis_on_center(atomA);
+        const int dfshoffA = dfbs->shell_on_center(atomA, 0);
+        const int dfbfoffA = dfbs->shell_to_function(dfshoffA);
+        //----------------------------------------//
+        for(int nu = 0; nu < obsnbf; ++nu){
+          const int jshB = obs->function_to_shell(nu);
+          const int atomB = obs->shell_to_center(jshB);
+          const int dfnshB = dfbs->nshell_on_center(atomB);
+          const int dfnbfB = dfbs->nbasis_on_center(atomB);
+          const int dfshoffB = dfbs->shell_on_center(atomB, 0);
+          const int dfbfoffB = dfbs->shell_to_function(dfshoffB);
+          //----------------------------------------//
+          std::shared_ptr<Eigen::VectorXd> Cpart = df_rtime->get(dfkey, mu, nu);
+          //----------------------------------------//
+          // First and third term contributions to J added together
+          J(mu*obsnbf + nu) += Cpart->head(dfnbfA).transpose() * dtilde.segment(dfbfoffA, dfnbfA);
+          if(atomA != atomB){
+            J(mu*obsnbf + nu) += Cpart->tail(dfnbfB).transpose() * dtilde.segment(dfbfoffB, dfnbfB);
+          }
+        } // end loop over nu
+      } // end loop over mu
+      timer_enter("global sum J", 2);
+      msg->sum(J.data(), branbf*ketnbf);
+      timer_exit(2);
+      /*****************************************************************************************/ #endif //1}}}
+      /*=======================================================================================*/
+      /* Transfer J to a RefSCMatrix                           		                        {{{1 */ #if 1 // begin fold
+      timer_change("05 - transfer J to RefSCMatrix", 1);
       Ref<Integral> localints = int3c_rtime->factory()->integral()->clone();
       localints->set_basis(brabs);
       Ref<PetiteList> brapl = localints->petite_list();
@@ -1666,7 +1861,6 @@ namespace sc {
       //----------------------------------------//
       timer_change("06 - cleanup", 1);
       deallocate(P_ptr);
-      deallocate(coulomb_2c_ints_ptr);
       timer_exit(1);
       tim.exit();
       return result;

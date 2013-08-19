@@ -43,11 +43,6 @@ add_executable(dftest EXCLUDE_FROM_ALL
 target_link_libraries(
   dftest
   chemistry
-  math
-  util
-  chemistry
-  math
-  util
 )
 
 if (HAVE_LIBINT2)

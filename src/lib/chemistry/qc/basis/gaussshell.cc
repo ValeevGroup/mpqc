@@ -28,6 +28,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <vector>
+#include <cassert>
 
 #include <util/misc/formio.h>
 #include <util/misc/math.h>
@@ -308,7 +309,6 @@ GaussianShell::init_computed_data()
   contr_to_func_.resize(ncontraction());
   for (int i=0; i<ncontraction(); i++) {
       const unsigned am = l[i];
-      assert(am < 9);
       if (max < am) max = am;
       if (min > am) min = am;
 

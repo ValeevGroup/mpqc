@@ -288,8 +288,8 @@ DensityFittingRuntime::get_coefficients(const CoefKey& key)
   munu_M_X_tform->compute();
   Ref<DistArray4> munu_M_X = munu_M_X_tform->ints_acc(); munu_M_X->activate();
 
-  // Assume the caller did their homework and only asked for a key if the integrals are local
-  assert(munu_M_X->is_local(0, bf1));
+  // Don't require the integrals to be local
+  //assert(munu_M_X->is_local(0, bf1));
 
   // in chemists notation: ( X | metric | Y )
   tim.change("03 - (X | M | Y) compute");

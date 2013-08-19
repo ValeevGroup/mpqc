@@ -26,7 +26,7 @@
 //
 
 #define EIGEN_NO_AUTOMATIC_RESIZING 0
-#define TIMER_DEPTH 1
+#define TIMER_DEPTH 4
 #define timer_change(str, depth) \
   if(TIMER_DEPTH >= depth) tim.change(str);
 #define timer_enter(str, depth) \
@@ -2130,6 +2130,7 @@ namespace sc {
       return result;
     }
 
+#define OLD_K 0
     RefSCMatrix exchange_df_local(const Ref<DensityFittingInfo>& df_info,
                             const RefSymmSCMatrix& P,
                             SpinCase1 spin,
@@ -2178,13 +2179,6 @@ namespace sc {
       }
       EigenMatrixMap D(P_ptr, branbf, ketnbf);
       //----------------------------------------//
-      /*****************************************************************************************/ #endif //1}}}
-      /*=======================================================================================*/
-      /* Get the coefficients                                  		                        {{{1 */ #if 1 // begin fold
-      timer_change("02 - get coefficients", 1);
-      //----------------------------------------//
-      // Setup
-      timer_enter("01 - (mu nu | M | X) setup", 2);
       std::string metric_key = df_info->params()->kernel_key();
       const bool noncoulomb_kernel = (metric_key.find("exp") != std::string::npos);
       std::string params_key = df_info->params()->intparams_key();
@@ -2194,6 +2188,16 @@ namespace sc {
       unsigned int ints_type_idx = TwoBodyOperSetDescr::instance(
           noncoulomb_kernel ? TwoBodyOperSet::G12NC : TwoBodyOperSet::ERI
       )->opertype(metric_oper);
+      //----------------------------------------//
+      /*****************************************************************************************/ #endif //1}}}
+      /*=======================================================================================*/
+      /* BEGIN OLD METHOD                                                                      */
+      /*=======================================================================================*/
+      /* Get the coefficients                                  		                        {{{1 */ #if OLD_K // begin fold
+      timer_change("02 - get coefficients", 1);
+      //----------------------------------------//
+      // Setup
+      timer_enter("01 - (mu nu | M | X) setup", 2);
       //----------------------------------------//
       // Go ahead and compute them all for now.  It will be faster to
       //   compute only the ones we need and save them for later, but
@@ -2434,7 +2438,7 @@ namespace sc {
       timer_exit(2);
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
-      /* Get ( mu nu | g | X )                                		                        {{{1 */ #if 1 // begin fold
+      /* Get ( mu nu | g | X )                                		                        {{{1 */ #if OLD_K // begin fold
       //----------------------------------------//
       // < mu X | coulomb | nu >
       // in chemists notation: ( mu nu | coulomb | X )
@@ -2494,16 +2498,152 @@ namespace sc {
       timer_exit(2);
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
-      /* Compute K                                             		                        {{{1 */ #if 1 // begin fold
+      /* Compute K                                             		                        {{{1 */ #if OLD_K // begin fold
       timer_change("04 - compute K", 1);
       timer_enter("01 - two body part", 2);
       K_tilde -= 0.5 * (d_mu_siX * gt_nu_siX.transpose());
       timer_change("02 - symmetrize", 2);
       EigenMatrix K(branbf, ketnbf);
       K = K_tilde + K_tilde.transpose();
+      /*****************************************************************************************/ #endif //1}}}
+      /*=======================================================================================*/
+      /* BEGIN NEW METHOD                                                                 {{{1 */ #if OLD_K == 0 // begin fold
+      /*=======================================================================================*/
+      timer_change("misc", 1);
+      EigenMatrix Ktilde(branbf, ketnbf);
+      Ktilde = EigenMatrix::Zero(branbf, ketnbf);
       //----------------------------------------//
-      // Transfer K to a RefSCMatrix
-      timer_change("03 - transfer to RefSCMatrix", 2);
+      // Get the munu_g_X key and the munu_g_X_tform for later (we will need it now to
+      //   determine data locality)
+      timer_change("03 - compute (mu nu | g | X)", 1);
+      const std::string munu_g_X_key = ParsedTwoBodyThreeCenterIntKey::key(
+          braspace->id(),
+          dfspace->id(),
+          ketspace->id(),
+          "ERI", ""
+      );
+      //----------------------------------------//
+      const Ref<TwoBodyThreeCenterMOIntsTransform>& munu_g_X_tform = int3c_rtime->get(munu_g_X_key);
+      munu_g_X_tform->compute();
+      Ref<DistArray4> munu_g_X = munu_g_X_tform->ints_acc(); munu_g_X->activate();
+      std::string dfkey = ParsedDensityFittingKey::key(
+          braspace->id(),
+          ketspace->id(),
+          dfspace->id(),
+          metric_key
+      );
+      unsigned int g_type_idx = TwoBodyOperSetDescr::instance(TwoBodyOperSet::ERI)->opertype(metric_oper);
+      //----------------------------------------//
+      timer_change("04 - compute (X | g | Y)", 1);
+      const std::string coulomb2c_key = ParsedTwoBodyTwoCenterIntKey::key(
+          dfspace->id(),
+          dfspace->id(),
+          "ERI", ""
+      );
+      RefSCMatrix coulomb_2c_ints = int2c_rtime->get(coulomb2c_key);
+      //----------------------------------------//
+      double* coulomb_2c_ints_ptr = allocate<double>(dfnbf*dfnbf);
+      coulomb_2c_ints.convert(coulomb_2c_ints_ptr);
+      EigenMatrixMap X_g_Y(coulomb_2c_ints_ptr, dfnbf, dfnbf);
+      //========================================//
+      timer_change("05 - loop over mu", 1);
+      timer_enter("misc", 2);
+      for(int mu = 0; mu < branbf; ++mu){
+        if(not munu_g_X->is_local(0, mu))
+          continue;
+        //----------------------------------------//
+        const int ishA = obs->function_to_shell(mu);
+        const int atomA = obs->shell_to_center(ishA);
+        const int dfnshA = dfbs->nshell_on_center(atomA);
+        const int dfnbfA = dfbs->nbasis_on_center(atomA);
+        const int dfshoffA = dfbs->shell_on_center(atomA, 0);
+        const int dfbfoffA = dfbs->shell_to_function(dfshoffA);
+        //----------------------------------------//
+        timer_change("01 - compute dtilde_mu", 2);
+        EigenMatrix dtilde_mu(obsnbf, dfnbf);
+        dtilde_mu = EigenMatrix::Zero(obsnbf, dfnbf);
+        for(int rho = 0; rho < obsnbf; ++rho){
+          const int jshB = obs->function_to_shell(rho);
+          const int atomB = obs->shell_to_center(jshB);
+          const int dfnshB = dfbs->nshell_on_center(atomB);
+          const int dfnbfB = dfbs->nbasis_on_center(atomB);
+          const int dfshoffB = dfbs->shell_on_center(atomB, 0);
+          const int dfbfoffB = dfbs->shell_to_function(dfshoffB);
+          //----------------------------------------//
+          timer_enter("01 - get coefficients", 3);
+          std::shared_ptr<Eigen::VectorXd> Cpart = df_rtime->get(dfkey, mu, rho);
+          timer_change("02 - contract coefficients", 3);
+          for(int sigma = 0; sigma < obsnbf; ++sigma){
+            dtilde_mu.row(sigma).segment(dfbfoffA, dfnbfA) += D(rho, sigma) * Cpart->head(dfnbfA);
+            if(atomA != atomB){
+              dtilde_mu.row(sigma).segment(dfbfoffB, dfnbfB) += D(rho, sigma) * Cpart->tail(dfnbfB);
+            }
+          }
+          timer_exit(3);
+          //----------------------------------------//
+        }
+        //----------------------------------------//
+        timer_change("02 - compute gtilde_mu", 2);
+        EigenMatrix gtilde_mu(obsnbf, dfnbf);
+        gtilde_mu = dtilde_mu * X_g_Y;
+        //----------------------------------------//
+        timer_change("03 - compute K_tilde", 2);
+        timer_enter("misc", 3);
+        Eigen::VectorXd gpart_nu(obsnbf*dfnbf);
+        VectorMap dpart_mu(dtilde_mu.data(), obsnbf*dfnbf);
+        for(int nu = 0; nu < ketnbf; ++nu){
+          const int ishB = obs->function_to_shell(nu);
+          const int atomB = obs->shell_to_center(ishB);
+          const int dfnshB = dfbs->nshell_on_center(atomB);
+          const int dfnbfB = dfbs->nbasis_on_center(atomB);
+          const int dfshoffB = dfbs->shell_on_center(atomB, 0);
+          const int dfbfoffB = dfbs->shell_to_function(dfshoffB);
+          timer_change("01 - retrieve nu block", 3);
+          munu_g_X->retrieve_pair_block(0, nu, g_type_idx, gpart_nu.data());
+          timer_change("02 - 3 body contribution", 3);
+          for(int sigma = 0; sigma < obsnbf; ++sigma){
+            Ktilde(mu, nu) += dtilde_mu.row(sigma) * gpart_nu.segment(sigma*dfnbf, dfnbf);
+          }
+          timer_change("03 - 2 body contribution", 3);
+          timer_enter("misc", 4);
+          //----------------------------------------//
+          for(int sigma = 0; sigma < obsnbf; ++sigma){
+            //----------------------------------------//
+            const int jshC = obs->function_to_shell(sigma);
+            const int atomC = obs->shell_to_center(jshC);
+            const int dfnshC = dfbs->nshell_on_center(atomC);
+            const int dfnbfC = dfbs->nbasis_on_center(atomC);
+            const int dfshoffC = dfbs->shell_on_center(atomC, 0);
+            const int dfbfoffC = dfbs->shell_to_function(dfshoffC);
+            //----------------------------------------//
+            timer_change("01 - retrieve remote coeffs", 4);
+            std::shared_ptr<Eigen::VectorXd> Cpart = df_rtime->get(dfkey, nu, sigma);
+            timer_change("02 - contract", 4);
+            Ktilde(mu, nu) -= 0.5 * gtilde_mu.row(sigma).segment(dfbfoffB, dfnbfB) * Cpart->head(dfnbfB);
+            if(atomB != atomC){
+              Ktilde(mu, nu) -= 0.5 * gtilde_mu.row(sigma).segment(dfbfoffC, dfnbfC) * Cpart->tail(dfnbfC);
+            }
+            timer_change("misc", 4);
+          } // end loop over sigma
+          timer_exit(4);
+          timer_change("misc", 3);
+          //----------------------------------------//
+        } // end loop over nu
+        timer_exit(3);
+        timer_change("misc", 2);
+        //----------------------------------------//
+      } // End loop over mu
+      timer_exit(2);
+      // Global sum Ktilde
+      timer_change("06 - global sum", 1);
+      msg->sum(Ktilde.data(), branbf*ketnbf);
+      EigenMatrix K(branbf, ketnbf);
+      K = Ktilde + Ktilde.transpose();
+      //----------------------------------------//
+      /*****************************************************************************************/ #endif //1}}}
+      /*=======================================================================================*/
+      /* Transfer K to a RefSCMatrix                           		                        {{{1 */ #if 1 // begin fold
+      timer_change("07 - transfer to RefSCMatrix", 2);
       Ref<Integral> localints = int3c_rtime->factory()->integral()->clone();
       localints->set_basis(brabs);
       Ref<PetiteList> brapl = localints->petite_list();

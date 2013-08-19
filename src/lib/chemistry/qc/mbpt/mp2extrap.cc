@@ -69,9 +69,9 @@ MP2BasisExtrap::MP2BasisExtrap(const Ref<KeyVal> &keyval):
            << endl;
       abort();
     }
-  if (strcmp(mbpt[0]->basis()->name(),"cc-pVDZ")
-      ||strcmp(mbpt[1]->basis()->name(),"cc-pVTZ")
-      ||strcmp(mbpt[2]->basis()->name(),"cc-pVQZ")) {
+  if (mbpt[0]->basis()->name() == "cc-pVDZ"
+      || mbpt[1]->basis()->name() == "cc-pVTZ"
+      || mbpt[2]->basis()->name() == "cc-pVQZ") {
       ExEnv::out0() << "WARNING: MP2BasisExtrap:" << endl
            << "  given basis sets: "
            << mbpt[0]->basis()->name() << ", "

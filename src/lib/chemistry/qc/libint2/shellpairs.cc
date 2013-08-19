@@ -45,23 +45,6 @@ inline void fail()
 }
 
 /*----------------
-  ShellPairLibint2
-  ----------------*/
-ShellPairLibint2::ShellPairLibint2(const PrimPairsLibint2& p) : prim_pairs_(p)
-{
-}
-
-ShellPairLibint2::~ShellPairLibint2()
-{
-}
-
-void ShellPairLibint2::init(const int p1_offset, const int p2_offset)
-{
-  prim1_offset_ = p1_offset;
-  prim2_offset_ = p2_offset;
-}
-
-/*----------------
   ShellPairsLibint2
   ----------------*/
 static ClassDesc ShellPairsLibint2_cd(

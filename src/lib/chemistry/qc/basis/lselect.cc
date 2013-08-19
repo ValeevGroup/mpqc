@@ -57,7 +57,11 @@ LSelectBasisSet::LSelectBasisSet(const Ref<KeyVal>&keyval)
       if (nl < 1)
 	  throw InputError("l must be an array of at least 1 element",__FILE__, __LINE__);
       for(int c=0; c<nl; ++c) {
-	  l_.push_back(keyval->intvalue("l",c));
+        const int l = keyval->intvalue("l",c);
+        if (l < 0) {
+          throw InputError("l < 0", __FILE__, __LINE__);
+        }
+        l_.push_back(l);
       }
   }
   else {
@@ -65,9 +69,13 @@ LSelectBasisSet::LSelectBasisSet(const Ref<KeyVal>&keyval)
       if (lmin < 0) lmin = 0;
       int lmax = keyval->intvalue("lmax",KeyValValueint(basis->max_angular_momentum()));
       if (lmin > lmax)
-	  throw InputError("lmin > lmax",__FILE__, __LINE__);
+        throw InputError("lmin > lmax",__FILE__, __LINE__);
+      if (lmin < 0)
+        throw InputError("lmin < 0",__FILE__, __LINE__);
+      if (lmax < 0)
+        throw InputError("lmax < 0",__FILE__, __LINE__);
       for(int l=lmin; l<=lmax; ++l)
-	  l_.push_back(l);
+        l_.push_back(l);
   }
 
   lselect(basis);
@@ -88,146 +96,50 @@ LSelectBasisSet::save_data_state(StateOut&s)
 }
 
 namespace {
-    char *
-    name_conv(const char *name, const std::vector<int>& l_)
+    std::string
+    name_conv(const std::string& name, const std::vector<unsigned int>& l_)
     {
 	std::ostringstream oss;
-	if (name == 0) return 0;
+	if (name.empty()) return name;
 	oss << "LSelect(" << name << ":";
-	for(std::vector<int>::const_iterator am=l_.begin(); am!=l_.end(); ++am)
+	for(std::vector<unsigned int>::const_iterator am=l_.begin(); am!=l_.end(); ++am)
 	    oss << GaussianShell::amtypes[*am];
 	oss << ")";
 	const std::string& newname = oss.str();
-	return strcpy(new char[newname.size()+1],newname.c_str());
+	return newname;
     }
 
+}
 
-    class __shell_selector {
-    public:
-	__shell_selector(const std::vector<int>& l) : lbegin_(l.begin()), lend_(l.end()) {}
-
-	// return true if this contraction is in l_
-	bool selected(const GaussianShell& shell, int contraction) {
-	    const int l=shell.am(contraction);
-	    const std::vector<int>::const_iterator v = find(lbegin_,lend_,l);
-	    if (v != lend_)
-	      return true;
-	    else
-	      return false;
-	}
-
-	// return the number of contractions from shell that are found in l_
-	int num_selected(const GaussianShell& shell) {
-	    const int nc = shell.ncontraction();
-	    int nselected = 0;
-	    // check every angular momentum, if some are found in l_, return true
-	    for(int c=0; c<nc; ++c) {
-	      if (selected(shell,c)) ++nselected;
-	    }
-	    return nselected;
-	}
-
-	// might be useful someday?
-#if 0
-	// return true if only some contractions from shell are found in l_
-	bool select_some_only(const GaussianShell& shell) {
-	    // only generally contracted shells can return true
-	    const int nc = shell.ncontraction();
-	    if (nc == 1) return false;
-	    const int lmax = shell.max_angular_momentum();
-	    const int lmin = shell.min_angular_momentum();
-	    if (lmin == lmax) return false;
-	    // check every angular momentum, if only some are found in l_, return true
-	    bool found = false;
-	    bool not_found = false;
-	    for(int c=0; c<nc; ++c) {
-		const int l=shell.am(c);
-		const std::vector<int>::const_iterator v = find(lbegin_,lend_,l);
-		if (v != lend_)
-		    found = true;
-		else
-		    not_found = true;
-		if (found == true && not_found == true)
-		    return true;
-	    }
-	    return false;
-	}
-#endif
-    private:
-	const std::vector<int>::const_iterator lbegin_;
-	const std::vector<int>::const_iterator lend_;
-    };
+namespace {
+  struct lselect_filter {
+      lselect_filter(const std::vector<unsigned int>& l) : l_(l) {}
+      bool operator()(const GaussianShell& shell,
+                    unsigned int contr) {
+        return std::find(l_.begin(), l_.end(), shell.am(contr)) != l_.end();
+      }
+      const std::vector<unsigned int>& l_;
+  };
 }
 
 void
 LSelectBasisSet::lselect(const Ref<GaussianBasisSet>&basis)
 {
-    __shell_selector ss(l_);
-
-    // compute the number of shells on each center
-    std::vector<int> nshell_on_center(basis->ncenter(),0);
-    int nshell = 0;
-    for (int icenter=0; icenter<basis->ncenter(); icenter++) {
-	for (int ishell=0; ishell<basis->nshell_on_center(icenter);
-	     ++ishell) {
-	    if (ss.num_selected(basis->shell(icenter,ishell)))
-		nshell_on_center[icenter] += 1;
-        }
-	nshell += nshell_on_center[icenter];
-    }
+  molecule_ = basis->molecule();
 
     // create shells
-    GaussianShell **shells = new GaussianShell*[nshell];
-    int ishell = 0;
-    std::vector<int> shell_to_center(nshell);
-    for (int icenter=0, ishellall=0; icenter<basis->ncenter(); icenter++) {
-	for (int ishell=0; ishell<basis->nshell_on_center(icenter);
-	     ishell++) {
-	    const GaussianShell &shell = basis->shell(icenter,ishell);
-	    int ncon = ss.num_selected(shell);
-	    if (ncon == 0)
-		continue;
-	    int nprim = shell.nprimitive();
-	    shell_to_center[ishellall] = icenter;
+    std::vector<Shell> shells;
+    lselect_filter f(l_);
+    for (int s = 0; s < basis->nshell(); ++s) {
+      const GaussianShell &shell = basis->shell(s);
 
-	    // storage
-	    int *am = new int[ncon];
-	    int *pure = new int[ncon];
-	    double *exponents = new double[nprim];
-	    double **c = new double*[ncon];
-	    for(int i=0; i<ncon; ++i)
-	      c[i] = new double[nprim];
-
-	    // loop over all contractions of the original shell
-	    const int ncon_orig = shell.ncontraction();
-	    int icon = 0;
-	    for (int icon_orig=0; icon_orig<ncon_orig; ++icon_orig) {
-		if (!ss.selected(shell,icon_orig))
-		    continue;
-		am[icon] = shell.am(icon_orig);
-		pure[icon] = shell.is_pure(icon_orig);
-		for (int iprim=0; iprim<nprim; iprim++) {
-		    exponents[iprim] = shell.exponent(iprim);
-		    c[icon][iprim] = shell.coefficient_unnorm(icon_orig,iprim);
-                }
-		++icon;
-            }
-
-	    shells[ishellall]
-		= new GaussianShell(ncon, nprim, exponents, am,
-				    pure, c,
-				    GaussianShell::Unnormalized);
-	    ++ishellall;
-        }
+      shells.push_back(Shell(this, basis->shell_to_center(s), filter(shell, f)));
     }
-    
+
     init(name_conv(basis->name(),l_),
-	 name_conv(basis->label(),l_),
-	 basis->molecule(),
-	 basis->matrixkit(),
-	 basis->so_matrixkit(),
-	 shells,
-	 shell_to_center);
+         name_conv(basis->label(),l_),
+         basis->molecule(),
+         shells);
 
     if (debug()) {
       SCFormIO::setverbose(ExEnv::out0(), 1);

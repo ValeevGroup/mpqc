@@ -185,7 +185,7 @@ IntegralV3::hcore()
 Ref<OneBodyOneCenterInt>
 IntegralV3::point_charge1(const Ref<PointChargeData>& dat)
 {
-  Ref<GaussianBasisSet> unit(new GaussianBasisSet(GaussianBasisSet::Unit));
+  Ref<GaussianBasisSet> unit = GaussianBasisSet::unit();
   return new OneBodyOneCenterWrapper(new PointChargeIntV3(this, bs1_, unit ,dat));
 }
 

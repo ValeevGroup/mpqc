@@ -44,7 +44,7 @@ inline void fail()
 }
 
 PrimPairsLibint2::PrimPairsLibint2(const Ref<GaussianBasisSet>& bs1,
-				 const Ref<GaussianBasisSet>& bs2)
+                                   const Ref<GaussianBasisSet>& bs2)
 {
   bs1_ = bs1;
   bs2_ = bs2;
@@ -52,14 +52,25 @@ PrimPairsLibint2::PrimPairsLibint2(const Ref<GaussianBasisSet>& bs1,
   nprim2_ = bs2_->nprimitive();
   prim_pair_ = new prim_pair_t[nprim1_*nprim2_];
 
-  int nshell1 = bs1_->nshell();
-  int nshell2 = bs2_->nshell();
+  const unsigned int nshell1 = bs1_->nshell();
+  const unsigned int nshell2 = bs2_->nshell();
+
+  shell_to_prim1_.resize(nshell1);
+  for(size_t s=0, p=0; s<nshell1; ++s) {
+    shell_to_prim1_[s] = p;
+    p += bs1_->shell(s).nprimitive();
+  }
+  shell_to_prim2_.resize(nshell2);
+  for(size_t s=0, p=0; s<nshell2; ++s) {
+    shell_to_prim2_[s] = p;
+    p += bs2_->shell(s).nprimitive();
+  }
 
   double A[3], B[3];
   for(int s1=0; s1<nshell1; s1++) {
     GaussianShell& shell1 = bs1_->shell(s1);
     int np1 = shell1.nprimitive();
-    int p1_offset = bs1_->shell_to_primitive(s1);
+    int p1_offset = shell_to_prim1_[s1];
 
     for(int xyz=0; xyz<3; xyz++)
       A[xyz] = bs1_->molecule()->r(bs1_->shell_to_center(s1),xyz);
@@ -67,10 +78,10 @@ PrimPairsLibint2::PrimPairsLibint2(const Ref<GaussianBasisSet>& bs1,
     for(int s2=0; s2<nshell2; s2++) {
       GaussianShell& shell2 = bs2_->shell(s2);
       int np2 = shell2.nprimitive();
-      int p2_offset = bs2_->shell_to_primitive(s2);
+      int p2_offset = shell_to_prim2_[s2];
 
       for(int xyz=0; xyz<3; xyz++)
-	B[xyz] = bs2_->molecule()->r(bs2_->shell_to_center(s2),xyz);
+        B[xyz] = bs2_->molecule()->r(bs2_->shell_to_center(s2),xyz);
 
       double AB2 = (A[0]-B[0])*(A[0]-B[0]) + 
 	(A[1]-B[1])*(A[1]-B[1]) +

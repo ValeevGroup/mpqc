@@ -25,8 +25,9 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <stdlib.h>
-#include <math.h>
+#include <cstdlib>
+#include <cmath>
+#include <vector>
 
 #include <util/misc/formio.h>
 #include <util/misc/math.h>
@@ -44,8 +45,38 @@ const char* GaussianShell::amtypes = "spdfghiklmnoqrtuvwxyz";
 const char* GaussianShell::AMTYPES = "SPDFGHIKLMNOQRTUVWXYZ";
 
 static ClassDesc GaussianShell_cd(
-  typeid(GaussianShell),"GaussianShell",2,"public SavableState",
-  0, create<GaussianShell>, create<GaussianShell>);
+  typeid(GaussianShell),"GaussianShell",3,"public DescribedClass",
+  0, create<GaussianShell>, 0);
+
+sc::GaussianShell::GaussianShell(const std::vector<unsigned int>& am,
+                                 const std::vector<bool>& pur,
+                                 const std::vector<double>& exps,
+                                 const std::vector<double>& contr_coefs,
+                                 PrimitiveType pt,
+                                 bool norm_shell) :
+                                     l(am), puream(pur),
+                                     exp(exps),
+                                     coef_blk(contr_coefs)
+{
+  // Compute the number of basis functions in this shell
+    init_computed_data();
+
+    // Convert the coefficients to coefficients for unnormalized primitives,
+    // if needed.
+    if (pt == Normalized) convert_coef();
+
+    // Compute the normalization constants
+    if (norm_shell) normalize_shell();
+}
+
+GaussianShell
+GaussianShell::unit() {
+  return GaussianShell(std::vector<unsigned int>(1,0u),
+                       std::vector<bool>(1,false),
+                       std::vector<double>(1,0.0),
+                       std::vector<double>(1,1.0),
+                       Unnormalized, false);
+}
 
 // this GaussianShell ctor allocates and computes normalization constants
 // and computes nfunc
@@ -53,13 +84,15 @@ GaussianShell::GaussianShell(
   int ncn,int nprm,double*e,int*am,int*pure,double**c,PrimitiveType pt,
   bool do_normalize_shell
   ):
-nprim(nprm),
-ncon(ncn),
-l(am),
-puream(pure),
-exp(e),
-coef(c)
+l(am, am+ncn),
+puream(pure, pure+ncn),
+exp(e, e+nprm),
+coef_blk(0.0, nprm*ncn)
 {
+  for(int con=0, cp=0; con<ncn; ++con, cp+=nprm) {
+    std::copy(c[con], c[con] + nprm, coef_blk.begin() + cp);
+  }
+
   // Compute the number of basis functions in this shell
   init_computed_data();
 
@@ -76,15 +109,11 @@ coef(c)
 GaussianShell::GaussianShell(
   int ncn,int nprm,double*e,int*am,GaussianType pure,double**c,PrimitiveType pt
   ):
-  nprim(nprm),
-  ncon(ncn),
-  l(am),
-  exp(e),
-  coef(c)
+    l(am, am+ncn),
+    puream(pure == Pure, ncn),
+    exp(e, e+nprm),
+    coef_blk(0.0, nprm*ncn)
 {
-  puream = new int [ncontraction()];
-  for (int i=0; i<ncontraction(); i++) puream[i] = (pure == Pure);
-
   // Compute the number of basis functions in this shell
   init_computed_data();
 
@@ -97,69 +126,16 @@ GaussianShell::GaussianShell(
 }
 
 GaussianShell::GaussianShell(const GaussianShell & other) :
-  nprim(other.nprim), ncon(other.ncon)
+    l(other.l), puream(other.puream), exp(other.exp), coef_blk(other.coef_blk)
 {
-  l = new int[ncon];  std::copy(other.l, other.l + ncon, l);
-  puream = new int[ncon];  std::copy(other.puream, other.puream + ncon, puream);
-  exp = new double[nprim];  std::copy(other.exp, other.exp + nprim, exp);
-  coef = new double*[ncon];
-  for(int c=0; c<ncon; ++c) {
-    coef[c] = new double[nprim];
-    std::copy(other.coef[c], other.coef[c] + nprim, coef[c]);
-  }
-
   init_computed_data();
 }
 
-GaussianShell::GaussianShell(const Ref<KeyVal>&keyval)
+GaussianShell::GaussianShell(const Ref<KeyVal>&keyval, int pure)
 {
-  // read in the shell
-  PrimitiveType pt = keyval_init(keyval,0,0);
-
-  // Compute the number of basis functions in this shell
-  init_computed_data();
-
-  // Convert the coefficients to coefficients for unnormalized primitives,
-  // if needed.
-  if (pt == Normalized) convert_coef();
-
-  // Compute the normalization constants
-  normalize_shell();
-}
-
-GaussianShell::GaussianShell(StateIn&s):
-  SavableState(s)
-{
-  s.get(nprim);
-  s.get(ncon);
-  if (s.version(::class_desc<GaussianShell>()) < 2) s.get(nfunc);
-  s.get(l);
-  s.get(puream);
-  s.get(exp);
-  coef = new double*[ncon];
-  for (int i=0; i<ncon; i++) {
-      s.get(coef[i]);
-    }
-  init_computed_data();
-}
-
-void
-GaussianShell::save_data_state(StateOut&s)
-{
-  s.put(nprim);
-  s.put(ncon);
-  s.put(l,ncon);
-  s.put(puream,ncon);
-  s.put(exp,nprim);
-  for (int i=0; i<ncon; i++) {
-      s.put(coef[i],nprim);
-    }
-}
-
-GaussianShell::GaussianShell(const Ref<KeyVal>&keyval,int pure)
-{
-  // read in the shell
-  PrimitiveType pt = keyval_init(keyval,1,pure);
+  PrimitiveType pt = (pure == 0 || pure == 1)
+      ? keyval_init(keyval,1,pure)
+      : keyval_init(keyval,0,0);
 
   // Compute the number of basis functions in this shell
   init_computed_data();
@@ -175,57 +151,63 @@ GaussianShell::GaussianShell(const Ref<KeyVal>&keyval,int pure)
 GaussianShell::PrimitiveType
 GaussianShell::keyval_init(const Ref<KeyVal>& keyval,int havepure,int pure)
 {
-  ncon = keyval->count("type");
+  const int ncon = keyval->count("type");
   if (keyval->error() != KeyVal::OK) {
-      ExEnv::err0() << indent
-           << "GaussianShell couldn't find the \"type\" array:\n";
-      keyval->dump(ExEnv::err0());
-      abort();
-    }
-  nprim = keyval->count("exp");
+    ExEnv::err0() << indent
+        << "GaussianShell couldn't find the \"type\" array:\n";
+    keyval->dump(ExEnv::err0());
+    throw InputError("GaussianShell KeyVal ctor failed, couldn't find \"type\" array", __FILE__, __LINE__,
+                     "type");
+  }
+  const int nprim = keyval->count("exp");
   if (keyval->error() != KeyVal::OK) {
-      ExEnv::err0() << indent
-           << "GaussianShell couldn't find the \"exp\" array:\n";
-      keyval->dump(ExEnv::err0());
-      abort();
-    }
-  int normalized = keyval->booleanvalue("normalized");
+    ExEnv::err0() << indent
+        << "GaussianShell couldn't find the \"exp\" array:\n";
+    keyval->dump(ExEnv::err0());
+    throw InputError("GaussianShell KeyVal ctor failed, couldn't find \"exp\" array", __FILE__, __LINE__,
+                     "exp");
+  }
+  bool normalized = keyval->booleanvalue("normalized");
   if (keyval->error() != KeyVal::OK) normalized = 1;
   
-  l = new int[ncon];
-  puream = new int[ncon];
-  exp = new double[nprim];
-  coef = new double*[ncon];
+  l.resize(ncon);
+  puream.resize(ncon);
+  exp.resize(nprim);
+  coef_blk.resize(ncon * nprim);
 
-  int i,j;
-  for (i=0; i<nprim; i++) {
+  for (int i=0; i<nprim; i++) {
       exp[i] = keyval->doublevalue("exp",i);
       if (keyval->error() != KeyVal::OK) {
-          ExEnv::err0() << indent
-               << scprintf("GaussianShell: error reading exp:%d: %s\n",
+          std::ostringstream oss;
+          oss << scprintf("GaussianShell: error reading exp:%d: %s\n",
                            i,keyval->errormsg());
+          ExEnv::err0() << indent << oss.str();
           keyval->errortrace(ExEnv::err0());
-          exit(1);
+          throw InputError(oss.str().c_str(), __FILE__, __LINE__);
         }
     }
-  for (i=0; i<ncon; i++) {
+  for (int i=0; i<ncon; i++) {
       Ref<KeyVal> prefixkeyval = new PrefixKeyVal(keyval,"type",i);
-      coef[i] = new double[nprim];
       std::string am = prefixkeyval->stringvalue("am");
       if (prefixkeyval->error() != KeyVal::OK) {
-          ExEnv::err0() << indent
-               << scprintf("GaussianShell: error reading am: \"%s\"\n",
-                           prefixkeyval->errormsg());
-          prefixkeyval->errortrace(ExEnv::err0());
-          exit(1);
+        std::ostringstream oss;
+        oss << scprintf("GaussianShell: error reading am: \"%s\"\n",
+                        prefixkeyval->errormsg());
+        ExEnv::err0() << indent << oss.str();
+        prefixkeyval->errortrace(ExEnv::err0());
+        throw InputError(oss.str().c_str(), __FILE__, __LINE__);
         }
-      l[i] = -1;
+      bool found_am = false;
       if (am.size() > 0) {
-          for (int li=0; amtypes[li] != '\0'; li++) {
-              if (amtypes[li] == am[0] || AMTYPES[li] == am[0]) { l[i] = li; break; }
+          for (unsigned int li=0; amtypes[li] != '\0'; li++) {
+              if (amtypes[li] == am[0] || AMTYPES[li] == am[0]) {
+                l[i] = li;
+                found_am = true;
+                break;
+              }
             }
         }
-      if (l[i] == -1) {
+      if (not found_am) {
           ExEnv::err0() << indent
                << scprintf("GaussianShell: bad angular momentum: \"%s\"\n",
                            am.c_str());
@@ -240,22 +222,19 @@ GaussianShell::keyval_init(const Ref<KeyVal>& keyval,int havepure,int pure)
           puream[i] = prefixkeyval->booleanvalue("puream");
           if (prefixkeyval->error() != KeyVal::OK) {
               puream[i] = 0;
-              //ExEnv::err0() << indent
-              //     << scprintf("GaussianShell: error reading puream: \"%s\"\n",
-              //                 prefixkeyval->errormsg());
-              //exit(1);
             }
         }
-      for (j=0; j<nprim; j++) {
-        coef[i][j] = keyval->doublevalue("coef",i,j);
+      for (int j=0; j<nprim; j++) {
+        coef_blk[i * nprim + j] = keyval->doublevalue("coef",i,j);
         if (keyval->error() != KeyVal::OK) {
-            ExEnv::err0() << indent
-                 << scprintf("GaussianShell: error reading coef:%d:%d: %s\n",
-                             i,j,keyval->errormsg());
-            keyval->errortrace(ExEnv::err0());
-            exit(1);
-            }
+          std::ostringstream oss;
+          oss << scprintf("GaussianShell: error reading coef:%d:%d: %s\n",
+                          i,j,keyval->errormsg());
+          ExEnv::err0() << indent << oss.str().c_str();
+          keyval->errortrace(ExEnv::err0());
+          throw InputError(oss.str().c_str(), __FILE__, __LINE__);
         }
+      }
     }
 
   if (normalized) return Normalized;
@@ -263,21 +242,75 @@ GaussianShell::keyval_init(const Ref<KeyVal>& keyval,int havepure,int pure)
 }
 
 void
+GaussianShell::chomp(std::vector<double>& exp, std::vector<double>& coef_blk,
+                     unsigned int ncontr, double epsilon) {
+  const size_t nprim = exp.size();
+  std::vector<bool> chomp_prim(nprim, false);
+  bool have_prim_to_chomp = false;
+
+  // for each primitive, make sure that there is at least 1 nonzero coefficient
+  for(size_t p=0; p<nprim; ++p) {
+    assert(exp[p] >= 0.0);
+
+    bool have_nonzero_coef = false;
+    for(unsigned int c=0; c<ncontr; ++c) {
+      if (fabs(coef_blk[c*nprim + p]) >= epsilon) {
+        have_nonzero_coef = true;
+        break;
+      }
+    }
+
+    if (not have_nonzero_coef) {
+      chomp_prim[p] = true;
+      have_prim_to_chomp = true;
+    }
+  }
+
+  if (have_prim_to_chomp) {
+    size_t nprim_new = 0;
+    for(size_t p=0; p<nprim; ++p)
+      if (chomp_prim[p] == false)
+        ++nprim_new;
+
+    std::vector<double> exp_new;
+    std::vector<double> coef_blk_new(ncontr * nprim_new);
+    for(size_t p=0; p<nprim; ++p) {
+      if (chomp_prim[p] == false) {
+        exp_new.push_back(exp[p]);
+        const size_t p_new = exp_new.size() - 1;
+        for(size_t c=0; c<ncontr; ++c) {
+          coef_blk_new[c * nprim_new + p_new] = coef_blk[c * nprim + p];
+        }
+      }
+    }
+
+    exp.swap(exp_new);
+    coef_blk.swap(coef_blk_new);
+  }
+}
+
+void
 GaussianShell::init_computed_data()
 {
-  int max = 0;
-  int min = 0;
-  int nc = 0;
-  int nf = 0;
+  chomp(exp, coef_blk, ncontraction(), epsilon());
+
+  coef.resize(ncontraction());
+  for(int c=0; c<ncontraction(); ++c) {
+    coef[c] = &coef_blk[c * nprimitive()];
+  }
+
+  unsigned int max = 0;
+  unsigned int min = UINT_MAX;
+  unsigned int nc = 0;
+  unsigned int nf = 0;
   has_pure_ = 0;
   has_cartesian_ = 0;
-  contr_to_func_ = new int[ncontraction()];
+  contr_to_func_.resize(ncontraction());
   for (int i=0; i<ncontraction(); i++) {
-      int maxi = l[i];
-      if (max < maxi) max = maxi;
-
-      int mini = l[i];
-      if (min > mini || i == 0) min = mini;
+      const unsigned am = l[i];
+      assert(am < 9);
+      if (max < am) max = am;
+      if (min > am) min = am;
 
       nc += ncartesian(i);
 
@@ -293,7 +326,7 @@ GaussianShell::init_computed_data()
   nfunc = nf;
   
   // map functions back to contractions
-  func_to_contr_ = new int[nfunc];
+  func_to_contr_.resize(nfunc);
   int f_offset=0;
   for (int i=0; i<ncontraction(); i++) {
     const int nf = nfunction(i);
@@ -313,7 +346,7 @@ int GaussianShell::max_cartesian() const
   return max;
 }
 
-int GaussianShell::ncartesian_with_aminc(int aminc) const
+unsigned int GaussianShell::ncartesian_with_aminc(int aminc) const
 {
   int ret = 0;
   for (int i=0; i<ncontraction(); i++) {
@@ -337,25 +370,22 @@ norm(int x1,int x2,double c,double ss)
 
 void GaussianShell::convert_coef()
 {
-  int i,gc;
-  double c,ss;
-
   // Convert the contraction coefficients from coefficients over
   // normalized primitives to coefficients over unnormalized primitives
-  for (gc=0; gc<ncon; gc++) {
-      for (i=0; i<nprim; i++) {
-	  c = 0.25/exp[i];
-	  ss = pow(M_PI/(exp[i]+exp[i]),1.5);
-	  coef[gc][i]
+  for (int gc=0; gc<ncontraction(); gc++) {
+      for (int p=0; p<nprimitive(); p++) {
+	  const double c = 0.25/exp[p];
+	  const double ss = pow(M_PI/(exp[p]+exp[p]),1.5);
+	  coef[gc][p]
 	    *= 1.0/sqrt(::norm(l[gc],l[gc],c,ss));
 	}
-    }
+  }
 }
 
 double GaussianShell::coefficient_norm(int con,int prim) const
 {
-  double c = 0.25/exp[prim];
-  double ss = pow(M_PI/(exp[prim]+exp[prim]),1.5);
+  const double c = 0.25/exp[prim];
+  const double ss = pow(M_PI/(exp[prim]+exp[prim]),1.5);
   return coef[con][prim] * sqrt(::norm(l[con],l[con],c,ss));
 }
 
@@ -368,14 +398,11 @@ double GaussianShell::coefficient_norm(int con,int prim) const
 double
 GaussianShell::shell_normalization(int gc)
 {
-  int i,j;
-  double result,c,ss;
-
-  result = 0.0;
-  for (i=0; i<nprim; i++) {
-    for (j=0; j<nprim; j++) {
-      c = 0.50/(exp[i] + exp[j]);
-      ss = pow(M_PI/(exp[i]+exp[j]),1.5);
+  double result = 0.0;
+  for (int i=0; i<nprimitive(); i++) {
+    for (int j=0; j<nprimitive(); j++) {
+      const double c = 0.50/(exp[i] + exp[j]);
+      const double ss = pow(M_PI/(exp[i]+exp[j]),1.5);
       result += coef[gc][i] * coef[gc][j] *
                ::norm(l[gc],l[gc],c,ss);
       }
@@ -386,16 +413,13 @@ GaussianShell::shell_normalization(int gc)
  
 void GaussianShell::normalize_shell()
 {
-  int i,gc;
-
-  for (gc=0; gc<ncon; gc++) {
-      // Normalize the contraction coefficients
-      double normalization = shell_normalization(gc);
-      for (i=0; i<nprim; i++) {
-	  coef[gc][i] *= normalization;
+  for (int gc=0; gc<ncontraction(); gc++) {
+    // Normalize the contraction coefficients
+    const double normalization = shell_normalization(gc);
+    for (int p=0; p<nprimitive(); p++) {
+      coef[gc][p] *= normalization;
 	}
-    }
-
+  }
 }
 
 static int
@@ -481,28 +505,26 @@ GaussianShell::relative_overlap(const Ref<Integral>& ints,
 void
 GaussianShell::print(ostream& os) const
 {
-  int i,j;
-
   os << indent << "GaussianShell:\n" << incindent
-     << indent << "ncontraction = " << ncon << endl
-     << indent << "nprimitive = " << nprim << endl << indent
+     << indent << "ncontraction = " << ncontraction() << endl
+     << indent << "nprimitive = " << nprimitive() << endl << indent
      << "exponents:";
 
-  for (i=0; i<nprim; i++)
+  for (int i=0; i<nprimitive(); i++)
       os << scprintf(" %f",exp[i]);
 
   os << endl << indent << "l:";
-  for (i=0; i<ncon; i++)
+  for (int i=0; i<ncontraction(); i++)
       os << scprintf(" %d", l[i]);
 
   os << endl << indent << "type:";
-  for (i=0; i<ncon; i++)
+  for (int i=0; i<ncontraction(); i++)
       os << scprintf(" %s", puream[i]?"pure":"cart");
   os << endl;
 
-  for (i=0; i<ncon; i++) {
+  for (int i=0; i<ncontraction(); i++) {
       os << indent << scprintf("coef[%d]:",i);
-      for (j=0; j<nprim; j++)
+      for (int j=0; j<nprimitive(); j++)
           os << scprintf(" %f",coef[i][j]);
       os << endl;
     }
@@ -512,20 +534,9 @@ GaussianShell::print(ostream& os) const
 
 GaussianShell::~GaussianShell()
 {
-  delete[] l;
-  delete[] puream;
-  delete[] exp;
-  delete[] contr_to_func_;
-  delete[] func_to_contr_;
-
-  for (int i=0; i<ncon; i++) {
-      delete[] coef[i];
-    }
-
-  delete[] coef;
 }
 
-int
+unsigned int
 GaussianShell::nfunction(int con) const
 {
   return puream[con]?
@@ -533,23 +544,23 @@ GaussianShell::nfunction(int con) const
            (((l[con]+2)*(l[con]+1))>>1);
 }
 
-int
-GaussianShell::equiv(const GaussianShell* s) const
+bool
+GaussianShell::equiv(const GaussianShell& s) const
 {
-  if (nprim != s->nprim) return 0;
-  for (int i=0; i<nprim; i++) {
-      if (fabs((exp[i] - s->exp[i])/exp[i]) > 1.0e-13) return 0;
+  if (nprimitive() != s.nprimitive()) return 0;
+  for (int i=0; i<nprimitive(); i++) {
+      if (fabs((exp[i] - s.exp[i])/exp[i]) > epsilon()) return 0;
     }
-  if (ncon != s->ncon) return 0;
-  for (int i=0; i<ncon; i++) {
-      if (l[i] != s->l[i]) return 0;
-      if (puream[i] != s->puream[i]) return 0;
-      for (int j=0; j<nprim; j++) {
+  if (ncontraction() != s.ncontraction()) return 0;
+  for (int i=0; i<ncontraction(); i++) {
+      if (l[i] != s.l[i]) return 0;
+      if (puream[i] != s.puream[i]) return 0;
+      for (int j=0; j<nprimitive(); j++) {
         if (coef[i][j] != 0.0) { 
-          if (fabs((coef[i][j] - s->coef[i][j])/coef[i][j]) > 1.0e-13) return 0;
+          if (fabs((coef[i][j] - s.coef[i][j])/coef[i][j]) > epsilon()) return 0;
         }
         else {
-          if (fabs((coef[i][j] - s->coef[i][j])) > 1.0e-13) return 0;
+          if (fabs((coef[i][j] - s.coef[i][j])) > epsilon()) return 0;
         }
       }
     }
@@ -593,6 +604,58 @@ GaussianShell::extent(double threshold) const
         }
     }
   return r1;
+}
+
+
+void
+sc::ToStateOut(const GaussianShell &s, StateOut &so, int &count) {
+  ToStateOut(s.l, so, count);
+  ToStateOut(s.puream, so, count);
+  ToStateOut(s.exp,so, count);
+  ToStateOut(s.coef_blk,so, count);
+}
+
+void
+sc::FromStateIn(GaussianShell &s, StateIn &si, int &count){
+  // read old archive with great nuissance
+  if (si.version(::class_desc<GaussianShell>()) < 3) {
+    int nprim, ncon, nfunc;
+    count += si.get(nprim);
+    count += si.get(ncon);
+    if (si.version(::class_desc<GaussianShell>()) < 2) count += si.get(nfunc);
+
+
+    int* l_c;
+    count += si.get(l_c);
+    s.l.resize(ncon); std::copy(l_c, l_c+ncon, s.l.begin());
+    delete[] l_c;
+
+    int* puream_c;
+    count += si.get(puream_c);
+    s.puream.resize(ncon); std::copy(puream_c, puream_c + ncon, s.puream.begin());
+    delete[] puream_c;
+
+    double* exp_c;
+    count += si.get(exp_c);
+    s.exp.resize(nprim); std::copy(exp_c, exp_c + nprim, s.exp.begin());
+    delete[] exp_c;
+
+    s.coef_blk.resize(ncon * nprim);
+    for (int i=0; i<ncon; i++) {
+      double* coef_i_c;
+      count += si.get(coef_i_c);
+      std::copy(coef_i_c, coef_i_c + nprim, s.coef_blk.begin() + i*nprim);
+      delete[] coef_i_c;
+    }
+  }
+  else {
+    FromStateIn(s.l, si, count);
+    FromStateIn(s.puream, si, count);
+    FromStateIn(s.exp, si, count);
+    FromStateIn(s.coef_blk, si, count);
+  }
+
+  s.init_computed_data();
 }
 
 /////////////////////////////////////////////////////////////////////////////

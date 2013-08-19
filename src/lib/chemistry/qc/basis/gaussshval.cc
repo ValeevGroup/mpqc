@@ -75,14 +75,16 @@ GaussianShell::hessian_values(CartesianIter **civec,
   if (h_values) maxam++;
 
   // check limitations
-  if (nprim > MAX_NPRIM || ncon > MAX_NCON || maxam >= MAX_AM) {
-      ExEnv::err0() << indent
+  if (nprimitive() > MAX_NPRIM || ncontraction() > MAX_NCON || maxam >= MAX_AM) {
+      std::ostringstream oss;
+      oss
            << "GaussianShell::grad_values: limit exceeded:\n"
            << indent
            << scprintf(
                "ncon = %d (%d max) nprim = %d (%d max) maxam = %d (%d max)\n",
-               ncon,MAX_NCON,nprim,MAX_NPRIM,maxam,MAX_AM-1);
-      abort();
+               ncontraction(),MAX_NCON,nprimitive(),MAX_NPRIM,maxam,MAX_AM-1);
+      ExEnv::out0() << oss.str();
+      throw ProgrammingError(oss.str().c_str(), __FILE__, __LINE__);
     }
 
   // loop variables
@@ -118,15 +120,15 @@ GaussianShell::hessian_values(CartesianIter **civec,
 
   // precompute exponentials
   double exps[MAX_NPRIM];
-  for (i=0; i<nprim; i++) {
+  for (i=0; i<nprimitive(); i++) {
       exps[i]=::exp(-r2*exp[i]);
     }
 
   // precompute contractions over exponentials
   double precon[MAX_NCON];
-  for (i=0; i<ncon; i++) {
+  for (i=0; i<ncontraction(); i++) {
       precon[i] = 0.0;
-      for (j=0; j<nprim; j++) {
+      for (j=0; j<nprimitive(); j++) {
           precon[i] += coef[i][j] * exps[j];
         }
     }
@@ -134,9 +136,9 @@ GaussianShell::hessian_values(CartesianIter **civec,
   // precompute contractions over exponentials with exponent weighting
   double precon_g[MAX_NCON];
   if (g_values || h_values) {
-      for (i=0; i<ncon; i++) {
+      for (i=0; i<ncontraction(); i++) {
           precon_g[i] = 0.0;
-          for (j=0; j<nprim; j++) {
+          for (j=0; j<nprimitive(); j++) {
               precon_g[i] += exp[j] * coef[i][j] * exps[j];
             }
           precon_g[i] *= 2.0;
@@ -146,9 +148,9 @@ GaussianShell::hessian_values(CartesianIter **civec,
   // precompute contractions over exponentials with exponent^2 weighting
   double precon_h[MAX_NCON];
   if (h_values) {
-      for (i=0; i<ncon; i++) {
+      for (i=0; i<ncontraction(); i++) {
           precon_h[i] = 0.0;
-          for (j=0; j<nprim; j++) {
+          for (j=0; j<nprimitive(); j++) {
               precon_h[i] += exp[j] * exp[j] * coef[i][j] * exps[j];
             }
           precon_h[i] *= 4.0;
@@ -158,7 +160,7 @@ GaussianShell::hessian_values(CartesianIter **civec,
   // compute the shell values
   int i_basis=0;                // Basis function counter
   if (basis_values) {
-      for (i=0; i<ncon; i++) {
+      for (i=0; i<ncontraction(); i++) {
           // handle s functions with a special case to speed things up
           if (l[i] == 0) {
               basis_values[i_basis] = precon[i];
@@ -198,7 +200,7 @@ GaussianShell::hessian_values(CartesianIter **civec,
   // compute the gradient of the shell values
   if (g_values) {
       int i_grad=0;                // Basis function counter
-      for (i=0; i<ncon; i++) {
+      for (i=0; i<ncontraction(); i++) {
           // handle s functions with a special case to speed things up
           if (l[i] == 0) {
               double norm_precon_g = precon_g[i];
@@ -280,7 +282,7 @@ GaussianShell::hessian_values(CartesianIter **civec,
   // compute the hessian of the shell values
   if (h_values) {
       int i_hess=0;                // Basis function counter
-      for (i=0; i<ncon; i++) {
+      for (i=0; i<ncontraction(); i++) {
           // handle s functions with a special case to speed things up
           if (l[i] == 0) {
               double norm_precon_g = precon_g[i];
@@ -416,14 +418,15 @@ GaussianShell::test_monobound(double &r, double &bound) const
   int maxam = max_am() + 1;
 
   // check limitations
-  if (nprim > MAX_NPRIM || ncon > MAX_NCON || maxam >= MAX_AM) {
-      ExEnv::err0() << indent
-           << "GaussianShell::gaussshval: limit exceeded:\n"
+  if (nprimitive() > MAX_NPRIM || ncontraction() > MAX_NCON || maxam >= MAX_AM) {
+      std::ostringstream oss;
+      oss << "GaussianShell::gaussshval: limit exceeded:\n"
            << indent
            << scprintf(
                "ncon = %d (%d max) nprim = %d (%d max) maxam = %d (%d max)\n",
-               ncon,MAX_NCON,nprim,MAX_NPRIM,maxam,MAX_AM-1);
-      abort();
+               ncontraction(),MAX_NCON,nprimitive(),MAX_NPRIM,maxam,MAX_AM-1);
+      ExEnv::out0() << indent << oss.str();
+      throw ProgrammingError(oss.str().c_str(), __FILE__, __LINE__);
     }
 
   // loop variables
@@ -444,15 +447,15 @@ GaussianShell::test_monobound(double &r, double &bound) const
 
   // precompute exponentials
   double exps[MAX_NPRIM];
-  for (i=0; i<nprim; i++) {
+  for (i=0; i<nprimitive(); i++) {
       exps[i]=::exp(-r2*exp[i]);
     }
 
   // precompute contractions over exponentials
   double precon[MAX_NCON];
-  for (i=0; i<ncon; i++) {
+  for (i=0; i<ncontraction(); i++) {
       precon[i] = 0.0;
-      for (j=0; j<nprim; j++) {
+      for (j=0; j<nprimitive(); j++) {
           // using fabs since we want a monotonically decreasing bound
           precon[i] += fabs(coef[i][j]) * exps[j];
         }
@@ -460,16 +463,16 @@ GaussianShell::test_monobound(double &r, double &bound) const
 
   // precompute contractions over exponentials with exponent weighting
   double precon_w[MAX_NCON];
-  for (i=0; i<ncon; i++) {
+  for (i=0; i<ncontraction(); i++) {
       precon_w[i] = 0.0;
-      for (j=0; j<nprim; j++) {
+      for (j=0; j<nprimitive(); j++) {
           precon_w[i] += exp[j] * fabs(coef[i][j]) * exps[j];
         }
     }
 
   double max_bound = 0.0;
   bound = 0.0;
-  for (i=0; i<ncon; i++) {
+  for (i=0; i<ncontraction(); i++) {
       // using r^l since r^l >= x^a y^b z^c
       double component_bound = rs[l[i]]*precon[i];
       if (l[i] > 0) {

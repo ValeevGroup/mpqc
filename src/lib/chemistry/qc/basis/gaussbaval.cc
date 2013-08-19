@@ -70,7 +70,7 @@ GaussianBasisSet::hessian_values(const SCVector3& r, ValueData *v,
     double *g_values_i = 0;
 
     // calculate the value of each basis
-    for (int icenter=0; icenter < ncenter_; icenter++) 
+    for (int icenter=0; icenter < ncenter(); icenter++)
       {
         int nshell = center_to_nshell_[icenter];
 

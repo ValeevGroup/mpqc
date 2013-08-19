@@ -71,76 +71,55 @@ SplitBasisSet::save_data_state(StateOut&s)
 }
 
 static
-char *
-name_conv(const char *name)
+std::string
+name_conv(const std::string& name)
 {
-  if (name == 0) return 0;
+  if (name.empty()) return name;
   std::string newname = "Split(";
   newname += name;
   newname += ")";
-  return strcpy(new char[newname.size()+1],newname.c_str());
+  return newname;
+}
+
+namespace {
+  struct split_filter {
+      split_filter(unsigned int contr) : contr_(contr) {}
+      bool operator()(const GaussianShell& shell,
+                      unsigned int contr) {
+        return contr == contr_;
+      }
+      unsigned int contr_;
+  };
 }
 
 void
 SplitBasisSet::split(const Ref<GaussianBasisSet>&basis,
                      std::string name)
 {
-  std::vector<int> nshell_on_center(basis->ncenter());
-  std::fill(nshell_on_center.begin(), nshell_on_center.end(), 0);
+  molecule_ = basis->molecule();
 
-  int nshell = 0;
-  for (int icenter=0; icenter<basis->ncenter(); icenter++) {
-      for (int ishell=0; ishell<basis->nshell_on_center(icenter);
-           ishell++) {
-          nshell_on_center[icenter]
-              += basis->shell(icenter,ishell).ncontraction();
-        }
-      nshell += nshell_on_center[icenter];
+  // create shells
+  std::vector<Shell> shells;
+  for (int s = 0; s < basis->nshell(); ++s) {
+    const GaussianShell &shell = basis->shell(s);
+
+    for(unsigned int c=0; c<shell.ncontraction(); ++c) {
+      split_filter f(c);
+      shells.push_back(Shell(this, basis->shell_to_center(s), filter(shell, f)));
     }
-
-  GaussianShell **shells = new GaussianShell*[nshell];
-  int ishell = 0;
-
-  std::vector<int> shell_to_center(nshell);
-
-  for (int icenter=0, ishellall=0; icenter<basis->ncenter(); icenter++) {
-      for (int ishell=0; ishell<basis->nshell_on_center(icenter);
-           ishell++) {
-          const GaussianShell &shell = basis->shell(icenter,ishell);
-          int ncon = shell.ncontraction();
-          int nprim = shell.nprimitive();
-          for (int icon=0; icon<ncon; icon++, ishellall++) {
-              shell_to_center[ishellall] = icenter;
-              int *am = new int[1];
-              int *pure = new int[1];
-              *am = shell.am(icon);
-              *pure = shell.is_pure(icon);
-              double *exponents = new double[nprim];
-              double **c = new double*[1];
-              *c = new double[nprim];
-              for (int iprim=0; iprim<nprim; iprim++) {
-                  exponents[iprim] = shell.exponent(iprim);
-                  c[0][iprim] = shell.coefficient_unnorm(icon,iprim);
-                }
-              shells[ishellall] // is hell all???
-                  = new GaussianShell(1, nprim, exponents, am,
-                                      pure, c,
-                                      GaussianShell::Unnormalized);
-            }
-        }
-    }
+  }
 
   init((name.empty() ? name_conv(basis->name()) : const_cast<char*>(name.c_str())),
        name_conv(basis->label()),
        basis->molecule(),
-       basis->matrixkit(),
-       basis->so_matrixkit(),
-       shells,
-       shell_to_center);
+       shells);
 
-//   SCFormIO::setverbose(ExEnv::out0(), 1);
-//   basis->print();
-//   print();
+  if (debug()) {
+    SCFormIO::setverbose(ExEnv::out0(), 1);
+    basis->print();
+    print();
+    SCFormIO::setverbose(ExEnv::out0(), 0);
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////

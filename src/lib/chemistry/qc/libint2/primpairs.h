@@ -39,23 +39,29 @@ typedef struct {
       double ovlp;
 } prim_pair_t;
 
-/** PrimPairsLibint2 contains primitive pair data */
+/** PrimPairsLibint2 contains primitive pair data. The data can be viewed as a matrix,
+ * with row and column dimensions referring to the primitives of basis set 1 and 2, respectively.
+ * The ordering of primitives is in the order of appearance of shells in the basis sets. */
 class PrimPairsLibint2 : public RefCount {
+  friend class ShellPairLibint2;
   Ref<GaussianBasisSet> bs1_;
   Ref<GaussianBasisSet> bs2_;
-  int nprim1_;
-  int nprim2_;
+  unsigned int nprim1_;
+  unsigned int nprim2_;
   prim_pair_t *prim_pair_;
   
+  std::vector<unsigned int> shell_to_prim1_;
+  std::vector<unsigned int> shell_to_prim2_;
+
   public:
   PrimPairsLibint2(const Ref<GaussianBasisSet>&,
-		 const Ref<GaussianBasisSet>&);
+                   const Ref<GaussianBasisSet>&);
   ~PrimPairsLibint2();
 
-  prim_pair_t* prim_pair(int p1, int p2) const { return prim_pair_ + p1*nprim2_ + p2; };
-  double P(int p1, int p2, int xyz) const { return prim_pair_[p1*nprim2_ + p2].P[xyz]; };
-  double gamma(int p1, int p2) const { return prim_pair_[p1*nprim2_ + p2].gamma; };
-  double ovlp(int p1, int p2) const { return prim_pair_[p1*nprim2_ + p2].ovlp; };
+  prim_pair_t* prim_pair(unsigned int p1, unsigned int p2) const { return prim_pair_ + p1*nprim2_ + p2; };
+  double P(unsigned int p1, unsigned int p2, unsigned int xyz) const { return prim_pair_[p1*nprim2_ + p2].P[xyz]; };
+  double gamma(unsigned int p1, unsigned int p2) const { return prim_pair_[p1*nprim2_ + p2].gamma; };
+  double ovlp(unsigned int p1, unsigned int p2) const { return prim_pair_[p1*nprim2_ + p2].ovlp; };
 
 };
 

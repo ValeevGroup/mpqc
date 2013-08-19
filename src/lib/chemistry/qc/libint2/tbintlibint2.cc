@@ -325,7 +325,7 @@ TwoBodyThreeCenterIntLibint2::TwoBodyThreeCenterIntLibint2(Integral*integral,
     descr_(TwoBodyOperSetDescr::instance(int2etype)),
     params_(params)
 {
-  Ref<GaussianBasisSet> b4 = new GaussianBasisSet(GaussianBasisSet::Unit);
+  Ref<GaussianBasisSet> b4 = GaussianBasisSet::unit();
   using sc::libint2::Int2eCreator;
   // Which evaluator to use
   switch (int2etype_) {
@@ -513,7 +513,7 @@ TwoBodyTwoCenterIntLibint2::TwoBodyTwoCenterIntLibint2(Integral*integral,
     descr_(TwoBodyOperSetDescr::instance(int2etype)),
     params_(params)
 {
-  Ref<GaussianBasisSet> b2 = new GaussianBasisSet(GaussianBasisSet::Unit);
+  Ref<GaussianBasisSet> b2 = GaussianBasisSet::unit();
   Ref<GaussianBasisSet> b4 = b2;
   using sc::libint2::Int2eCreator;
   // Which evaluator to use

@@ -82,6 +82,8 @@ void
 CartesianBasisSet::convert(const Ref<GaussianBasisSet> & parent,
                            const Ref<Integral>& integral)
 {
+  molecule_ = parent->molecule();
+
   const int nshell = parent->nshell();
 
   if (parent->has_pure() == false) {
@@ -89,48 +91,22 @@ CartesianBasisSet::convert(const Ref<GaussianBasisSet> & parent,
   }
   else { // something to do
     // create shells
-    GaussianShell **shells = new GaussianShell*[nshell];
-    int ishell = 0;
-    std::vector<int> shell_to_center(nshell);
-    for (int s = 0; s < nshell; ++s)
-      shell_to_center[s] = parent->shell_to_center(s);
+    std::vector<Shell> shells;
 
     for (int s = 0; s < nshell; ++s) {
       const GaussianShell &shell = parent->shell(s);
-      const int ncon = shell.ncontraction();
-      if (shell.has_pure() == false)
-        shells[s] = new GaussianShell(shell);
-      else {
-        const int nprim = shell.nprimitive();
-
-        // storage
-        int* am = new int[ncon];
-        int* pure = new int[ncon]; std::fill(pure, pure+ncon, 0);
-        double* exponents = new double[nprim];
-        double **coefs = new double*[ncon];
-        for (int i=0; i<ncon; ++i)
-          coefs[i] = new double[nprim];
-
-        // copy shell data
-        for (int c = 0; c < ncon; ++c) {
-          am[c] = shell.am(c);
-          for (int iprim = 0; iprim < nprim; iprim++) {
-            exponents[iprim] = shell.exponent(iprim);
-            coefs[c][iprim] = shell.coefficient_unnorm(c, iprim);
-          }
-        }
-
-        shells[s] = new GaussianShell(ncon, nprim, exponents, am,
-                                      pure, coefs,
-                                      GaussianShell::Unnormalized);
-      }
+      std::vector<bool> puream(shell.ncontraction(), false);
+      shells.push_back(Shell(this, parent->shell_to_center(s), GaussianShell(shell.am(), puream,
+                                     shell.exponents(), shell.coefficient_unnorm_block(),
+                                     GaussianShell::Unnormalized)
+                            )
+                       );
     }
 
     std::ostringstream oss;
     oss << "Cartesian(" << parent->name() << ")";
-    char* name = strdup(oss.str().c_str());
-    init(name, name, parent->molecule(), parent->matrixkit(),
-         parent->so_matrixkit(), shells, shell_to_center);
+    std::string name = oss.str();
+    init(name, name, parent->molecule(), shells);
   }
 
 #if 0

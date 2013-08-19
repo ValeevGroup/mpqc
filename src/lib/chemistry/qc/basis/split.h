@@ -69,6 +69,10 @@ class SplitBasisSet: public GaussianBasisSet {
     SplitBasisSet(StateIn&);
 
     void save_data_state(StateOut&);
+
+    // set to 1 to debug
+    static int debug() { return 0; }
+
 };
 
 }

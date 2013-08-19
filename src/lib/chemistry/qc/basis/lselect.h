@@ -75,7 +75,7 @@ class LSelectBasisSet: public GaussianBasisSet {
   private:
 
     /// the angular momenta selected from the mother basis
-    std::vector<int> l_;
+    std::vector<unsigned int> l_;
 
     void lselect(const Ref<GaussianBasisSet>&);
     

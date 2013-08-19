@@ -151,7 +151,6 @@ namespace sc {
         .def("nshell_on_center",&GaussianBasisSet::nshell_on_center)
         .def("shell_on_center",&GaussianBasisSet::shell_on_center)
         .def("shell_to_center",&GaussianBasisSet::shell_to_center)
-        .def("shell_to_primitive",&GaussianBasisSet::shell_to_primitive)
         .def("nbasis",&GaussianBasisSet::nbasis)
         .def("nbasis_on_center",&GaussianBasisSet::nbasis_on_center)
         .def("nprimitive",&GaussianBasisSet::nprimitive)

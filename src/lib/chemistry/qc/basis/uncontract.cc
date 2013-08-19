@@ -70,14 +70,14 @@ UncontractedBasisSet::save_data_state(StateOut&s)
 }
 
 static
-char *
-name_conv(const char *name)
+std::string
+name_conv(std::string name)
 {
-  if (name == 0) return 0;
+  if (name.empty()) return name;
   std::string newname = "Uncontracted(";
   newname += name;
   newname += ")";
-  return strcpy(new char[newname.size()+1],newname.c_str());
+  return newname;
 }
 
 // using to order shells in terms of:
@@ -105,6 +105,8 @@ struct shelldesc_t {
 void
 UncontractedBasisSet::uncontract(const Ref<GaussianBasisSet>&basis)
 {
+  molecule_ = basis->molecule();
+
   std::set<shelldesc_t> shellinfo;
 
   shelldesc_t current;
@@ -136,36 +138,21 @@ UncontractedBasisSet::uncontract(const Ref<GaussianBasisSet>&basis)
   // convert the set shell structures
 
   int nshell = shellinfo.size();
-  GaussianShell **shell = new GaussianShell*[nshell];
-  int ishell = 0;
-
-  std::vector<int> shell_to_center(nshell);
+  std::vector<Shell> shells;
 
   for (std::set<shelldesc_t>::iterator iter = shellinfo.begin();
        iter != shellinfo.end(); iter++) {
-      double *exponents = new double[1];
-      int *am = new int[1];
-      *exponents = iter->exponent;
-      *am = iter->am;
-      double **c = new double*[1];
-      *c = new double[1];
-      **c = 1.0;
-      int *pure = new int[1];
-      if (iter->pure) *pure = 1;
-      else            *pure = 0;
-      shell[ishell] = new GaussianShell(1, 1, exponents, am,
-                                        pure, c);
-      shell_to_center[ishell] = iter->center;
-      ishell++;
-    }
+      std::vector<double> exponents(1, iter->exponent);
+      std::vector<unsigned int> am(1, iter->am);
+      std::vector<double> c(1, 1.0);
+      std::vector<bool> pure(1, iter->pure);
+      shells.push_back(Shell(this, iter->center, GaussianShell(am, pure, exponents, c)) );
+  }
 
   init(name_conv(basis->name()),
        name_conv(basis->label()),
        basis->molecule(),
-       basis->matrixkit(),
-       basis->so_matrixkit(),
-       shell,
-       shell_to_center);
+       shells);
 }
 
 /////////////////////////////////////////////////////////////////////////////

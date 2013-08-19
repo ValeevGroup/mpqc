@@ -86,6 +86,8 @@ UnionBasisSet::sum(const Ref<GaussianBasisSet>& A,
   if (a->molecule_.pointer() != b->molecule_.pointer())
     throw std::runtime_error("GaussianBasisSetSum::sum -- cannot sum basis sets, molecules are different");
 
+  molecule_ = a->molecule();
+
   Ref<SCMatrixKit> matrixkit = a->matrixkit();
   Ref<Molecule> molecule = a->molecule();
   const int ncenter = a->ncenter();
@@ -113,8 +115,8 @@ UnionBasisSet::sum(const Ref<GaussianBasisSet>& A,
       shell2_in_bs1[s2] = true;
   }
 
-  GaussianShell** shell = new GaussianShell*[nshell];
-  int* func_per_shell = new int[nshell];
+  std::vector<Shell> shells;
+  std::vector<int> func_per_shell(nshell);
 
   // now compute how many shells per each center we have
   // and compute maps from bs12 to bs1 and bs2
@@ -153,7 +155,6 @@ UnionBasisSet::sum(const Ref<GaussianBasisSet>& A,
   }
 
   // copy shells
-  std::vector<int> shell_to_center(nshell, -1);
   for(int c=0; c<ncenter; c++) {
 
     const int ns = center_to_nshell[c];
@@ -163,72 +164,37 @@ UnionBasisSet::sum(const Ref<GaussianBasisSet>& A,
     // ii is the absolute index
     for (int i=0; i<ns; i++) {
       const int ii = soff + i;
-      const GaussianShell* gsi;
-      if (shell_to_basis_[ii] == Basis2)
-        gsi = &b->shell( shell12_to_shell[ii] );
-      else
-        gsi = &a->shell( shell12_to_shell[ii] );
+      const Shell& gsi = (shell_to_basis_[ii] == Basis2) ?
+        b->shell( shell12_to_shell[ii] ) :
+        a->shell( shell12_to_shell[ii] );
 
-      shell_to_center[ii] = c;
-
-      int nc=gsi->ncontraction();
-      int np=gsi->nprimitive();
-      func_per_shell[ii] = gsi->nfunction();
-
-      int *ams = new int[nc];
-      int *pure = new int[nc];
-      double *exps = new double[np];
-      double **coefs = new double*[nc];
-
-      for (int j=0; j < nc; j++) {
-        ams[j] = gsi->am(j);
-        pure[j] = gsi->is_pure(j);
-        coefs[j] = new double[np];
-        for (int k=0; k < np; k++)
-        coefs[j][k] = gsi->coefficient_unnorm(j,k);
-      }
-
-      for (int j=0; j < np; j++)
-      exps[j] = gsi->exponent(j);
-
-      shell[ii] = new GaussianShell(nc, np, exps, ams, pure, coefs,
-          GaussianShell::Unnormalized);
+      shells.push_back(Shell(this, c, static_cast<const GaussianShell&>(gsi)));
     }
   }
 
-  const int nbasis = std::accumulate(func_per_shell, func_per_shell+nshell, 0);
-  RefSCDimension basisdim = new SCDimension(nbasis, nshell, func_per_shell, "basis set dimension");
+  int nbasis = 0;
+  for(size_t s=0; s<shells.size(); ++s)
+    nbasis += shells[s].nfunction();
 
-  const char* A_name = a->name();
-  const char* B_name = b->name();
-  char* AplusB_name = 0;
-  if (A_name && B_name) {
+  std::string A_name = a->name();
+  std::string B_name = b->name();
+  std::string AplusB_name;
+  {
     ostringstream oss;
     oss << "[" << A_name << "]+[" << B_name << "]";
-    std::string tmpname = oss.str();
-    AplusB_name = strcpy(new char[tmpname.size()+1],tmpname.c_str());
+    AplusB_name = oss.str();
   }
-  char* AplusB_label = 0;
-  if (AplusB_name) {
-    AplusB_label = AplusB_name;
-  }
-  else {
+  std::string AplusB_label;
+  {
     ostringstream oss;
-    const char* A_label = a->label();
-    const char* B_label = b->label();
+    std::string A_label = a->label();
+    std::string B_label = b->label();
     oss << "[" << A_label << "]+[" << B_label << "]";
-    std::string tmpname = oss.str();
-    AplusB_label = strcpy(new char[tmpname.size()+1],tmpname.c_str());
+    AplusB_label = oss.str();
   }
 
   this->init(AplusB_name, AplusB_label, molecule,
-             matrixkit, Ref<SCMatrixKit>(new BlockedSCMatrixKit(matrixkit)),
-             shell, shell_to_center);
-
-  delete[] func_per_shell;
-  delete[] AplusB_name;
-  if (AplusB_name != AplusB_label)
-  delete[] AplusB_label;
+             shells);
 
   //
   // compute the rest of the maps using shell_to_basis_

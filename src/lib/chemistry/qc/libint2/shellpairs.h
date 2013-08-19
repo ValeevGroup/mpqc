@@ -39,20 +39,24 @@ class ShellPairsLibint2;
 /** ShellPairLibint2 is an interface to PrimPairsLibint2. It provides all primitive pair data for a given shell pair */
 class ShellPairLibint2 {
   const PrimPairsLibint2& prim_pairs_;
-  int prim1_offset_;
-  int prim2_offset_;
+  unsigned int prim1_offset_;
+  unsigned int prim2_offset_;
 
   public:
-  ShellPairLibint2(const PrimPairsLibint2&);
-  ~ShellPairLibint2();
+  ShellPairLibint2(const PrimPairsLibint2& pp) : prim_pairs_(pp) {}
+  ~ShellPairLibint2() {}
 
-  void init(const int,
-	    const int);
+  /// after calling, this object refers to pair {s1,s2}
+  void init(const unsigned int s1,
+            const unsigned int s2) {
+    prim1_offset_ = prim_pairs_.shell_to_prim1_[s1];
+    prim2_offset_ = prim_pairs_.shell_to_prim2_[s2];
+  }
 
-  prim_pair_t* prim_pair(int p1, int p2) const { return prim_pairs_.prim_pair(p1+prim1_offset_,p2+prim2_offset_); };
-  double prim_pair_P(int p1, int p2, int xyz) const { return prim_pairs_.P(p1+prim1_offset_,p2+prim2_offset_,xyz); };
-  double prim_pair_gamma(int p1, int p2) const { return prim_pairs_.gamma(p1+prim1_offset_,p2+prim2_offset_); };
-  double prim_pair_ovlp(int p1, int p2) const { return prim_pairs_.ovlp(p1+prim1_offset_,p2+prim2_offset_); }
+  prim_pair_t* prim_pair(unsigned int p1, unsigned int p2) const { return prim_pairs_.prim_pair(p1+prim1_offset_,p2+prim2_offset_); };
+  double prim_pair_P(unsigned int p1, unsigned int p2, unsigned int xyz) const { return prim_pairs_.P(p1+prim1_offset_,p2+prim2_offset_,xyz); };
+  double prim_pair_gamma(unsigned int p1, unsigned int p2) const { return prim_pairs_.gamma(p1+prim1_offset_,p2+prim2_offset_); };
+  double prim_pair_ovlp(unsigned int p1, unsigned int p2) const { return prim_pairs_.ovlp(p1+prim1_offset_,p2+prim2_offset_); }
 };
 
 
@@ -74,8 +78,8 @@ class ShellPairsLibint2: virtual public SavableState {
 
   void save_data_state(StateOut&);
 
-  ShellPairLibint2* shell_pair(int si, int sj) const {
-    shell_pair_->init(bs1_->shell_to_primitive(si), bs2_->shell_to_primitive(sj));
+  ShellPairLibint2* shell_pair(unsigned int si, unsigned int sj) const {
+    shell_pair_->init(si, sj);
     return shell_pair_;
   }
 };

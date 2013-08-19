@@ -36,10 +36,25 @@ add_library(basis OBJECT
 
 # tests
 
-#set_property(SOURCE btest.cc PROPERTY COMPILE_DEFINITIONS
-#    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-#add_executable(btest EXCLUDE_FROM_ALL btest.cc $<TARGET_OBJECTS:basis>)
-#add_test(btest btest)
+set_property(SOURCE btest.cc PROPERTY COMPILE_DEFINITIONS
+    SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+add_executable(btest EXCLUDE_FROM_ALL btest.cc $<TARGET_OBJECTS:basis>)
+add_test(btest btest)
+
+target_link_libraries(
+  btest
+  chemistry
+)
+
+if (HAVE_LIBINT2)
+  target_link_libraries(btest ${LIBINT2_LIBRARY})
+endif()
+
+target_link_libraries(btest ${LAPACK_LIBRARIES})
+target_link_libraries(btest ${BLAS_LIBRARIES})
+
+target_link_libraries(btest ${LIBRARIES})
+target_link_libraries(btest ${CMAKE_DL_LIBS})
 
 #set_property(SOURCE tbint_batch_test.cc PROPERTY COMPILE_DEFINITIONS
 #    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")

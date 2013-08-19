@@ -228,7 +228,7 @@ class ClassDesc {
     Furthermore, the class's static ClassDesc can be obtained
     which permits several other operations.  See \ref class for
     more information. */
-class DescribedClass : public RefCount {
+class DescribedClass : virtual public RefCount {
   public:
     DescribedClass();
     DescribedClass(const DescribedClass&);

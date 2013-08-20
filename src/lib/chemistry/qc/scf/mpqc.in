@@ -5,9 +5,9 @@ mpqc:(
 
 nproc = 4
 %molecule = $:ibuprofen
-%molecule = $:ethane_c1
+molecule = $:ethane_c1
 %molecule = $:naphtalene
-molecule = $:h2o
+%molecule = $:he
 coor = $:symcoor
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -25,7 +25,7 @@ mole<DFCLHF>: (
   df_basis<GaussianBasisSet>:(
     molecule = $..:molecule
     %name = "cc-pVDZ-JKFIT"
-    %name = "cc-pVDZ-JKFIT"
+    name = "cc-pVTZ-JKFIT"
     %name = "aug-cc-pVTZ"
     %name = "cc-pVTZ-RI"
     name = "cc-pVDZ"
@@ -45,6 +45,7 @@ mole<DFCLHF>: (
     store_ints = mem
     %store_ints = mpi
     exact_diag_J = yes
+    exact_diag_K = yes
   )
 
 
@@ -56,8 +57,8 @@ mole<DFCLHF>: (
   molecule = $:molecule
   mbasis<GaussianBasisSet>: (
     molecule = $:molecule
-    name = "cc-pVDZ"
-    name = "STO-3G"
+    name = "cc-pVTZ"
+    %name = "STO-3G"
     %puream=yes
     %matrixkit = $:basis_matrixkit
   )
@@ -87,7 +88,7 @@ mole<DFCLHF>: (
 guess<CLHF>: (
   integral_storage=32000000
   integrals<IntegralLibint2>:()
-  value_accuracy = 1e-9
+  value_accuracy = 1e-5
   molecule = $:molecule
   coor = $:coor
 

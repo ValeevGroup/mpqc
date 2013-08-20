@@ -106,6 +106,12 @@ namespace sc {
     file_ << scprintf("%s = %s", keyword, value) << endl;
   }
 
+  void PsiInput::write_keyword(const char *keyword, const std::string& value) {
+    if (!can_run_on_me()) return;
+    write_indent();
+    file_ << keyword << " = " << value << endl;
+  }
+
   void PsiInput::write_keyword(const char *keyword, int value) {
     if (!can_run_on_me()) return;
     write_indent();

@@ -70,6 +70,7 @@ class PsiInput: public RefCount {
     void decindent(int);
     void write_comment(const char *);
     void write_keyword(const char *, const char *);
+    void write_keyword(const char *, const std::string&);
     void write_keyword(const char *, bool);
     void write_keyword(const char *, int);
     void write_keyword(const char *, double);

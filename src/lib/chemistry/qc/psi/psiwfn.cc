@@ -1827,8 +1827,8 @@ namespace sc {
     return reference_;
   }
 
-  int PsiCorrWavefunction::spin_polarized() {
-    return reference_->spin_polarized();
+  double PsiCorrWavefunction::magnetic_moment() const {
+    return reference_->magnetic_moment();
   }
 
   int PsiCorrWavefunction::nelectron() {

@@ -849,21 +849,6 @@ namespace sc {
     return static_cast<double>(multiplicity_ - 1);
   }
 
-  int
-  PsiRASCI::spin_polarized() {
-    // this is not correct -- Ms = 0 nonsinglet calculations are not spin-polarized, but this returns true
-    //return multiplicity_ != 1;
-
-    /// spin_polarized() for RAS-CI is true if M_s != 0
-    /// -> true if # of electrons is odd
-    /// -> true if starting from high-spin reference & S != 0
-    /// I'm not sure if this covers all cases ... we don't have enough experience with MRCI codes yet ...
-    const bool result = (this->nelectron() % 2 == 1) || (this->reference()->spin_polarized() && multiplicity_ != 1);
-
-    return result;
-  }
-
-
 //////////////////////////////////////////////////////////
 
   ClassDesc

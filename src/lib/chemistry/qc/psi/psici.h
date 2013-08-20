@@ -78,8 +78,6 @@ namespace sc {
       void print(std::ostream&) const;
 
       double magnetic_moment() const;
-      /// returns true if alpha<->beta swap leaves densities unchanged
-      int spin_polarized();
 
       /// returns vector that specifies the number of RAS1 orbitals in each irrep
       const std::vector<unsigned int>& ras1() const { return ras1_; }

@@ -1023,6 +1023,8 @@ R12Technology::init_from_kv(const Ref<KeyVal>& keyval,
   if (corrfactor == "r12" ||
       corrfactor == "R12") {
     corrfactor_ = new R12CorrelationFactor();
+    throw FeatureNotImplemented("Support for corr_factor=r12 not yet implemented in IntegralLibint2 object.",
+                                __FILE__, __LINE__);
   }
   //
   // g12 correlation factor?

@@ -196,7 +196,7 @@ namespace sc {
       void save_data_state(StateOut&);
 
       void print(std::ostream& os) const;
-      int spin_polarized();
+      double magnetic_moment() const;
       /// sets the desired value accuracy
       void set_desired_value_accuracy(double acc);
 

@@ -4,10 +4,10 @@ mpqc:(
 )
 
 nproc = 4
-molecule = $:ibuprofen
+%molecule = $:ibuprofen
 %molecule = $:ethane_c1
 %molecule = $:naphtalene
-%molecule = $:h2o
+molecule = $:h2o
 coor = $:symcoor
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -25,10 +25,10 @@ mole<DFCLHF>: (
   df_basis<GaussianBasisSet>:(
     molecule = $..:molecule
     %name = "cc-pVDZ-JKFIT"
-    name = "cc-pVDZ-JKFIT"
+    %name = "cc-pVDZ-JKFIT"
     %name = "aug-cc-pVTZ"
     %name = "cc-pVTZ-RI"
-    %name = "cc-pVDZ"
+    name = "cc-pVDZ"
     %name = "6-31G"
     %puream=yes
     %name = "6-31G"
@@ -44,7 +44,7 @@ mole<DFCLHF>: (
   	df_local_exchange = yes
     store_ints = mem
     %store_ints = mpi
-    exact_diag_J = no
+    exact_diag_J = yes
   )
 
 
@@ -57,7 +57,7 @@ mole<DFCLHF>: (
   mbasis<GaussianBasisSet>: (
     molecule = $:molecule
     name = "cc-pVDZ"
-    %name = "STO-3G"
+    name = "STO-3G"
     %puream=yes
     %matrixkit = $:basis_matrixkit
   )
@@ -122,36 +122,6 @@ xopt<QNewtonOpt>: (
 )
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-% matrix kits
-%
-%localmatrixkit<LocalSCMatrixKit>: (
-%  messagegrp = $:message
-%)
-%
-%replmatrixkit<ReplSCMatrixKit>: (
-%  messagegrp = $:message
-%)
-%
-%distmatrixkit<DistSCMatrixKit>: (
-%  messagegrp = $:message
-%)
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-% message types
-%
-
-xdebug<Debugger>: (
-)
-
-%messageMPI<MPIMessageGrp>: ()
-%message1<ProcMessageGrp>: ()
-%
-%messageShm<ShmMessageGrp>: (
-%  n = $:nproc
-%)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %

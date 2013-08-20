@@ -26,7 +26,7 @@
 //
 
 #define EIGEN_NO_AUTOMATIC_RESIZING 0
-#define TIMER_DEPTH 4
+#define TIMER_DEPTH 0
 #define timer_change(str, depth) \
   if(TIMER_DEPTH >= depth) tim.change(str);
 #define timer_enter(str, depth) \
@@ -1163,6 +1163,7 @@ namespace sc {
       return result;
     }
 
+#define OLD_J 0
     RefSCMatrix coulomb_df_local(const Ref<DensityFittingInfo>& df_info,
                                  const RefSymmSCMatrix& P,
                                  const Ref<GaussianBasisSet>& brabs,
@@ -1207,7 +1208,7 @@ namespace sc {
       )->opertype(metric_oper);
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
-      /* The old way                                           		                        {{{1 */ #if 0 // begin fold
+      /* The old way                                           		                        {{{1 */ #if OLD_J // begin fold
       /*=======================================================================================*/
       /* Get the coefficients                                  		                        {{{1 */
       //========================================//
@@ -1657,10 +1658,11 @@ namespace sc {
       /*=======================================================================================*/
       /* BEGIN NEW APPROACH                                                                    */
       /*=======================================================================================*/
-      /* Loop over basis function pairs to form C_tilde and d_tilde                       {{{1 */ #if 1 // begin fold
+      /* Loop over basis function pairs to form C_tilde and d_tilde                       {{{1 */ #if OLD_J == 0 // begin fold
       timer_change("02 - form C_tilde", 1);
       timer_enter("misc", 2);
       //----------------------------------------//
+      // Setup J and D
       Eigen::VectorXd J(branbf*ketnbf);
       J = Eigen::VectorXd::Zero(branbf*ketnbf);
       double *P_ptr = allocate<double>(obsnbf*obsnbf);
@@ -1669,6 +1671,11 @@ namespace sc {
         Ptmp.convert2RefSCMat().convert(P_ptr);
       }
       VectorMap D(P_ptr, obsnbf*obsnbf);
+      //----------------------------------------//
+      // Setup the exact diagonal maps
+      typedef std::map<IntPair, Eigen::VectorXd> AtomPairVectors;
+      AtomPairVectors Ctilde_ab, dtilde_ab, gtilde_ab;
+      const bool do_exact = df_info->params()->exact_diag_J();
       //----------------------------------------//
       // Get the munu_g_X key and the munu_g_X_tform for later (we will need it now to
       //   determine data locality)
@@ -1712,26 +1719,60 @@ namespace sc {
           const int dfnbfB = dfbs->nbasis_on_center(atomB);
           const int dfshoffB = dfbs->shell_on_center(atomB, 0);
           const int dfbfoffB = dfbs->shell_to_function(dfshoffB);
+          IntPair atomAB(atomA, atomB);
           //----------------------------------------//
           // Assume locality is the same for munu_g_X and the coefficients
           timer_change("01 - get coefficients", 3);
           std::shared_ptr<Eigen::VectorXd> Cpart = df_rtime->get(dfkey, mu, nu);
           timer_change("02 - contract coefficients with D", 3);
+          // TODO avoid contracting twice
           Ctilde.segment(dfbfoffA, dfnbfA) += D(mu*obsnbf + nu) * Cpart->head(dfnbfA);
           if(atomA != atomB){
             Ctilde.segment(dfbfoffB, dfnbfB) += D(mu*obsnbf + nu) * Cpart->tail(dfnbfB);
+          }
+          if(do_exact){
+            timer_enter("exact diagonal", 4);
+            const int dfnbfAB = atomA != atomB ? dfnbfA + dfnbfB : dfnbfA;
+            if(Ctilde_ab.count(atomAB) == 0){
+              Ctilde_ab[atomAB].resize(dfnbfAB);
+              Ctilde_ab[atomAB] = Eigen::VectorXd::Zero(dfnbfAB);
+            }
+            Ctilde_ab[atomAB].head(dfnbfA) += D(mu*obsnbf + nu) * Cpart->head(dfnbfA);
+            if(atomA != atomB){
+              Ctilde_ab[atomAB].tail(dfnbfB) += D(mu*obsnbf + nu) * Cpart->tail(dfnbfB);
+            }
+            timer_exit(4);
           }
           //----------------------------------------//
           timer_change("misc", 3);
         } // end loop over nu
       } // end loop over mu
-      timer_change("03 - global sum C_tilde", 3);
+      timer_change("03 - global sum Ctilde", 3);
       msg->sum(Ctilde.data(), dfnbf);
+      //cout << "====== Ctilde ======\n" << Ctilde << endl;
+      if(do_exact){
+        timer_enter("exact diagonal", 4);
+        for(int atomA = 0; atomA < obs->ncenter(); ++atomA){
+          const int dfnbfA = dfbs->nbasis_on_center(atomA);
+          for(int atomB = 0; atomB < obs->ncenter(); ++atomB){
+            const int dfnbfB = dfbs->nbasis_on_center(atomB);
+            IntPair atomAB(atomA, atomB);
+            const int dfnbfAB = atomA != atomB ? dfnbfA + dfnbfB : dfnbfA;
+            if(Ctilde_ab.count(atomAB) == 0){
+              Ctilde_ab[atomAB].resize(dfnbfAB);
+              Ctilde_ab[atomAB] = Eigen::VectorXd::Zero(dfnbfAB);
+            }
+            msg->sum(Ctilde_ab[atomAB].data(), dfnbfAB);
+            //cout << "====== Ctilde_(" << atomA << "," << atomB << ") ======\n" << Ctilde_ab[atomAB] << endl;
+          } // end loop over atomB
+        } // end loop over atomA
+        timer_exit(4);
+      }
       timer_exit(3);
       timer_exit(2);
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
-      /* Form gtilde                                           		                        {{{1 */ #if 1 // begin fold
+      /* Form gtilde                                           		                        {{{1 */ #if OLD_J == 0 // begin fold
       timer_change("03 - Form gtilde", 1);
       timer_enter("01 - compute (X | g | Y)", 2);
       Eigen::VectorXd gtilde(dfnbf);
@@ -1750,13 +1791,58 @@ namespace sc {
         //----------------------------------------//
         timer_change("03 - contract with Ctilde", 2);
         gtilde = X_g_Y * Ctilde;
+        //cout << "====== gtilde ======\n" << gtilde << endl;
+        //----------------------------------------//
+        if(do_exact){
+          timer_enter("exact diagonal", 3);
+          for(int atomA = 0; atomA < obs->ncenter(); ++atomA){
+            const int dfnbfA = dfbs->nbasis_on_center(atomA);
+            const int dfshoffA = dfbs->shell_on_center(atomA, 0);
+            const int dfbfoffA = dfbs->shell_to_function(dfshoffA);
+            for(int atomB = 0; atomB < obs->ncenter(); ++atomB){
+              //----------------------------------------//
+              const int dfnbfB = dfbs->nbasis_on_center(atomB);
+              const int dfshoffB = dfbs->shell_on_center(atomB, 0);
+              const int dfbfoffB = dfbs->shell_to_function(dfshoffB);
+              IntPair atomAB(atomA, atomB);
+              //----------------------------------------//
+              const int dfnbfAB = atomA != atomB ? dfnbfA + dfnbfB : dfnbfA;
+              if(gtilde_ab.count(atomAB) == 0){
+                gtilde_ab[atomAB].resize(dfnbfAB);
+                gtilde_ab[atomAB] = Eigen::VectorXd::Zero(dfnbfAB);
+              }
+              gtilde_ab[atomAB].head(dfnbfA) += X_g_Y.block(
+                  dfbfoffA, dfbfoffA,
+                  dfnbfA,   dfnbfA
+              ) * Ctilde_ab[atomAB].head(dfnbfA);
+              if(atomA != atomB){
+                gtilde_ab[atomAB].head(dfnbfA) += X_g_Y.block(
+                    dfbfoffA, dfbfoffB,
+                    dfnbfA,   dfnbfB
+                ) * Ctilde_ab[atomAB].tail(dfnbfB);
+                gtilde_ab[atomAB].tail(dfnbfB) += X_g_Y.block(
+                    dfbfoffB, dfbfoffA,
+                    dfnbfB,   dfnbfA
+                ) * Ctilde_ab[atomAB].head(dfnbfA);
+                gtilde_ab[atomAB].tail(dfnbfB) += X_g_Y.block(
+                    dfbfoffB, dfbfoffB,
+                    dfnbfB,   dfnbfB
+                ) * Ctilde_ab[atomAB].tail(dfnbfB);
+              }
+              //----------------------------------------//
+              //cout << "====== gtilde_(" << atomA << "," << atomB << ") ======\n" << gtilde_ab[atomAB] << endl;
+            } // end loop over atom B
+          } // end loop over atom A
+          timer_exit(3);
+        } // end if do_exact
+        //----------------------------------------//
         deallocate(coulomb_2c_ints_ptr);
       }
       //----------------------------------------//
       timer_exit(2);
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
-      /* Loop over basis function pairs in (mu nu | g | X)     		                        {{{1 */ #if 1 // begin fold
+      /* Loop over basis function pairs in (mu nu | g | X)     		                        {{{1 */ #if OLD_J == 0 // begin fold
       timer_change("03 - loop over (mu nu | g | X)", 1);
       unsigned int g_type_idx = TwoBodyOperSetDescr::instance(TwoBodyOperSet::ERI)->opertype(metric_oper);
       Eigen::VectorXd gpart(dfnbf);
@@ -1780,6 +1866,7 @@ namespace sc {
           const int dfnbfB = dfbs->nbasis_on_center(atomB);
           const int dfshoffB = dfbs->shell_on_center(atomB, 0);
           const int dfbfoffB = dfbs->shell_to_function(dfshoffB);
+          IntPair atomAB(atomA, atomB);
           //----------------------------------------//
           munu_g_X->retrieve_pair_subblock(
               0, mu,      // unit basis index, mu_index
@@ -1792,21 +1879,68 @@ namespace sc {
           // dtilde contribution
           dtilde += D(mu*obsnbf + nu) * gpart;
           //----------------------------------------//
+          if(do_exact){
+            timer_enter("exact diagonal", 2);
+            const int dfnbfAB = atomA != atomB ? dfnbfA + dfnbfB : dfnbfA;
+            if(dtilde_ab.count(atomAB) == 0){
+              dtilde_ab[atomAB].resize(dfnbfAB);
+              dtilde_ab[atomAB] = Eigen::VectorXd::Zero(dfnbfAB);
+            }
+            dtilde_ab[atomAB].head(dfnbfA) += gpart.segment(dfbfoffA, dfnbfA) * D(mu*obsnbf + nu);
+            if(atomA != atomB){
+              dtilde_ab[atomAB].tail(dfnbfB) += gpart.segment(dfbfoffB, dfnbfB) * D(mu*obsnbf + nu);
+            }
+            timer_exit(2);
+          }
+          //----------------------------------------//
           // J contribution from second term
           J(mu*obsnbf + nu) += Ctilde.transpose() * gpart;
-        }
-      }
+          //----------------------------------------//
+          if(do_exact){
+            timer_enter("exact diagonal", 2);
+            // To include both (ab|ab) and (ab|ba).  Note that
+            //   (ba|ba) and (ba|ab) will be handled by the
+            //   unrestricted loop.
+            const double perm_fact = atomA == atomB ? 1.0 : 2.0;
+            J(mu*obsnbf + nu) -=
+                perm_fact * Ctilde_ab[atomAB].head(dfnbfA).transpose() * gpart.segment(dfbfoffA, dfnbfA);
+            if(atomA != atomB){
+              J(mu*obsnbf + nu) -=
+                  perm_fact * Ctilde_ab[atomAB].tail(dfnbfB).transpose() * gpart.segment(dfbfoffB, dfnbfB);
+            }
+            timer_exit(2);
+          }
+          //----------------------------------------//
+        } // end loop over nu
+      } // end loop over mu
+      //----------------------------------------//
       // Global sum dtilde
       timer_enter("global sum dtilde", 2);
       msg->sum(dtilde.data(), dfnbf);
+      //cout << "====== dtilde ======\n" << dtilde << endl;
+      if(do_exact){
+        timer_enter("exact diagonal", 3);
+        for(int atomA = 0; atomA < obs->ncenter(); ++atomA){
+          const int dfnbfA = dfbs->nbasis_on_center(atomA);
+          for(int atomB = 0; atomB < obs->ncenter(); ++atomB){
+            const int dfnbfB = dfbs->nbasis_on_center(atomB);
+            IntPair atomAB(atomA, atomB);
+            const int dfnbfAB = atomA != atomB ? dfnbfA + dfnbfB : dfnbfA;
+            if(dtilde_ab.count(atomAB) == 0){
+              dtilde_ab[atomAB].resize(dfnbfAB);
+              dtilde_ab[atomAB] = Eigen::VectorXd::Zero(dfnbfAB);
+            }
+            msg->sum(dtilde_ab[atomAB].data(), dfnbfAB);
+            //cout << "====== dtilde_(" << atomA << "," << atomB << ") ======\n" << dtilde_ab[atomAB] << endl;
+          } // end loop over atomB
+        } // end loop over atomA
+        timer_exit(3);
+      }
       timer_exit(2);
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
-      /* Loop over basis function pairs for first and third term contributions to J       {{{1 */ #if 1 // begin fold
+      /* Loop over basis function pairs for first and third term contributions to J       {{{1 */ #if OLD_J == 0 // begin fold
       timer_change("04 - contributions to J", 1);
-      // Combine dtilde and gtilde beforehand
-      dtilde -= gtilde;
-      // now the first and third terms can be done together
       for(int mu = 0; mu < obsnbf; ++mu){
         if(not munu_g_X->is_local(0, mu))
           continue;
@@ -1828,11 +1962,36 @@ namespace sc {
           //----------------------------------------//
           std::shared_ptr<Eigen::VectorXd> Cpart = df_rtime->get(dfkey, mu, nu);
           //----------------------------------------//
-          // First and third term contributions to J added together
+          // First term contributions to J
           J(mu*obsnbf + nu) += Cpart->head(dfnbfA).transpose() * dtilde.segment(dfbfoffA, dfnbfA);
           if(atomA != atomB){
             J(mu*obsnbf + nu) += Cpart->tail(dfnbfB).transpose() * dtilde.segment(dfbfoffB, dfnbfB);
           }
+          // Third term contributions to J
+          J(mu*obsnbf + nu) -= Cpart->head(dfnbfA).transpose() * gtilde.segment(dfbfoffA, dfnbfA);
+          if(atomA != atomB){
+            J(mu*obsnbf + nu) -= Cpart->tail(dfnbfB).transpose() * gtilde.segment(dfbfoffB, dfnbfB);
+          }
+          //----------------------------------------//
+          if(do_exact) {
+            timer_enter("exact diagonal", 2);
+            IntPair atomAB(atomA, atomB);
+            const double perm_fact = atomA == atomB ? 1.0 : 2.0;
+            const int dfnbfAB = atomA != atomB ? dfnbfA + dfnbfB : dfnbfA;
+            //----------------------------------------//
+            J(mu*obsnbf + nu) -= perm_fact * dtilde_ab[atomAB].head(dfnbfA).transpose() * Cpart->head(dfnbfA);
+            if(atomA != atomB){
+              J(mu*obsnbf + nu) -= perm_fact * dtilde_ab[atomAB].tail(dfnbfB).transpose() * Cpart->tail(dfnbfB);
+            }
+            //----------------------------------------//
+            J(mu*obsnbf + nu) += perm_fact * gtilde_ab[atomAB].head(dfnbfA).transpose() * Cpart->head(dfnbfA);
+            if(atomA != atomB){
+              J(mu*obsnbf + nu) += perm_fact * gtilde_ab[atomAB].tail(dfnbfB).transpose() * Cpart->tail(dfnbfB);
+            }
+            //----------------------------------------//
+            timer_exit(2);
+          }
+          //----------------------------------------//
         } // end loop over nu
       } // end loop over mu
       timer_enter("global sum J", 2);
@@ -1840,8 +1999,86 @@ namespace sc {
       timer_exit(2);
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
+      /* Add back in the exact diagonal integrals             		                        {{{1 */ #if OLD_J == 0 // begin fold
+      if(do_exact) {
+        timer_change("05 - exact diagonal contributions", 1)
+        //----------------------------------------//
+        Ref<Integral> integral = int3c_rtime->factory()->integral();
+        integral->set_basis(brabs, obs, ketbs, obs);
+        Ref<TwoBodyInt> eri_eval = integral->electron_repulsion();
+        const double* buffer = eri_eval->buffer();
+        //----------------------------------------//
+        for(int atomA = 0; atomA < brabs->ncenter(); ++atomA){
+          const int nshA = brabs->nshell_on_center(atomA);
+          const int nbfA = brabs->nbasis_on_center(atomA);
+          const int shoffA = brabs->shell_on_center(atomA, 0);
+          const int bfoffA = brabs->shell_to_function(shoffA);
+          const int dfnshA = dfbs->nshell_on_center(atomA);
+          const int dfnbfA = dfbs->nbasis_on_center(atomA);
+          const int dfshoffA = dfbs->shell_on_center(atomA, 0);
+          const int dfbfoffA = dfbs->shell_to_function(dfshoffA);
+          //----------------------------------------//
+          for(int atomB = 0; atomB < ketbs->ncenter(); ++atomB){
+            const int nshB = ketbs->nshell_on_center(atomB);
+            const int nbfB = ketbs->nbasis_on_center(atomB);
+            const int shoffB = ketbs->shell_on_center(atomB, 0);
+            const int bfoffB = ketbs->shell_to_function(shoffB);
+            const int dfnshB = dfbs->nshell_on_center(atomB);
+            const int dfnbfB = dfbs->nbasis_on_center(atomB);
+            const int dfshoffB = dfbs->shell_on_center(atomB, 0);
+            const int dfbfoffB = dfbs->shell_to_function(dfshoffB);
+            //----------------------------------------//
+            const int dfpart_size = atomA != atomB ? dfnbfA + dfnbfB : dfnbfA;
+            const double perm_fact = atomA != atomB ? 2.0 : 1.0;
+            //----------------------------------------//
+            for(int ishA = shoffA; ishA < shoffA + nshA; ++ishA){
+              const int inbfA = brabs->shell(ishA).nfunction();
+              const int ibfoffA = brabs->shell_to_function(ishA);
+              for(int jshB = shoffB; jshB < shoffB + nshB; ++jshB){
+                const int jnbfB = ketbs->shell(jshB).nfunction();
+                const int jbfoffB = ketbs->shell_to_function(jshB);
+                //----------------------------------------//
+                for(int kshA = shoffA; kshA < shoffA + nshA; ++kshA){
+                  const int knbfA = obs->shell(kshA).nfunction();
+                  const int kbfoffA = obs->shell_to_function(kshA);
+                  for(int lshB = shoffB; lshB < shoffB + nshB; ++lshB){
+                    const int lnbfB = obs->shell(lshB).nfunction();
+                    const int lbfoffB = obs->shell_to_function(lshB);
+                    //----------------------------------------//
+                    // Compute shell (ishA jshB | kshA lshB) and add contributions to J
+                    eri_eval->compute_shell(ishA, jshB, kshA, lshB);
+                    int buff_off = 0;
+                    for(int ibfA = 0; ibfA < inbfA; ++ibfA){
+                      const int mu = ibfoffA + ibfA;
+                      for(int jbfB = 0; jbfB < jnbfB; ++jbfB){
+                        const int nu = jbfoffB + jbfB;
+                        const int munu = mu*ketnbf + nu;
+                        for(int kbfA = 0; kbfA < knbfA; ++kbfA){
+                          const int rho = kbfoffA + kbfA;
+                          for(int lbfB = 0; lbfB < lnbfB; ++lbfB){
+                            const int sigma = lbfoffB + lbfB;
+                            const int rhosigma = rho*obsnbf + sigma;
+                            //                    (mu nu | rho sigma) * D^(rho sigma)
+                            J(munu) += perm_fact * buffer[buff_off++] * D(rhosigma);
+                          }
+                        }
+                      }
+                    }
+                    //----------------------------------------//
+                  } // end loop over lshB
+                } // end loop over kshA
+                //----------------------------------------//
+              } // end loop over jshB
+            } // end loop over ishA
+            //----------------------------------------//
+          } // end loop over atomB
+        } // end loop over atomA
+        //----------------------------------------//
+      } // end if do_exact
+      /*****************************************************************************************/ #endif //1}}}
+      /*=======================================================================================*/
       /* Transfer J to a RefSCMatrix                           		                        {{{1 */ #if 1 // begin fold
-      timer_change("05 - transfer J to RefSCMatrix", 1);
+      timer_change("06 - transfer J to RefSCMatrix", 1);
       Ref<Integral> localints = int3c_rtime->factory()->integral()->clone();
       localints->set_basis(brabs);
       Ref<PetiteList> brapl = localints->petite_list();

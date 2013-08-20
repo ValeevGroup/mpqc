@@ -544,6 +544,11 @@ namespace sc {
     s.put(maxiter_);
   }
 
+  double PsiSCF::magnetic_moment() const {
+    return (const_cast<PsiSCF*>(this)->nocc(Alpha) -
+            const_cast<PsiSCF*>(this)->nocc(Beta));
+  }
+
   int PsiSCF::nelectron() {
     return nocc(Alpha) + nocc(Beta);
   }

@@ -315,6 +315,8 @@ namespace sc {
       ~PsiSCF();
       void save_data_state(StateOut&);
 
+      double magnetic_moment() const;
+
       /// imports occupations from obwfn. Will throw if docc_ and socc_ had been initialized
       /// and do not match obwfn.
       void import_occupations(const Ref<OneBodyWavefunction>& obwfn);
@@ -378,9 +380,6 @@ namespace sc {
       void print(std::ostream& os = ExEnv::out0()) const;
 
       void write_basic_input(int conv);
-      int spin_polarized() {
-        return 0;
-      }
       bool analytic_gradient_implemented() const {
         return true;
       }
@@ -402,9 +401,6 @@ namespace sc {
       void print(std::ostream& os = ExEnv::out0()) const;
 
       void write_basic_input(int conv);
-      int spin_polarized() {
-        return 1;
-      }
       bool analytic_gradient_implemented() const {
         return true;
       }
@@ -440,9 +436,6 @@ namespace sc {
       void print(std::ostream& os = ExEnv::out0()) const;
 
       void write_basic_input(int conv);
-      int spin_polarized() {
-        return 1;
-      }
       bool analytic_gradient_implemented() const {
         return true;
       }

@@ -77,6 +77,7 @@ class PsiInput: public RefCount {
     void write_keyword_array(const char *, int, int *);
     void write_keyword_array(const char *, int, double *);
     void write_string(const char *);
+    void write_string(const std::string&);
     void write_key_wq(const char *, const char *);
 
     /// Construct the "basis" keyword for input. All functions with angular momentum >= 1 must be Cartesian or all must be sph. harm.

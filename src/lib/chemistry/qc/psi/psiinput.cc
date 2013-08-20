@@ -151,6 +151,12 @@ namespace sc {
     file_ << s;
   }
 
+  void PsiInput::write_string(const std::string& s) {
+    if (!can_run_on_me()) return;
+    write_indent();
+    file_ << s;
+  }
+
   void PsiInput::write_key_wq(const char *keyword, const char *value) {
     if (!can_run_on_me()) return;
     write_indent();
@@ -221,16 +227,14 @@ namespace sc {
       int uatom = molecule->atom_to_unique(atom);
 
       // Replace all spaces with underscores in order for Psi libipv1 to parse properly
-      char *name = strdup(basis->name());
-      int len = strlen(name);
-      for (int i=0; i<len; i++)
+      std::string name = basis->name();
+      for (int i=0; i<name.size(); i++)
         if (name[i] == ' ')
           name[i] = '_';
 
-      char *basisname = new char[strlen(basis->name()) + ((int)ceil(log10((long double)uatom+2))) + 5];
-      sprintf(basisname, "\"%s%d\" \n", name, uatom);
-      write_string(basisname);
-      free(name);
+      std::ostringstream oss;
+      oss << "\"" << name << uatom << "\"";
+      write_string(oss.str());
     }
     decindent(2);
     write_string(")\n");
@@ -243,21 +247,19 @@ namespace sc {
     Ref<AtomInfo> atominfo = basis->molecule()->atominfo();
     int nunique = molecule->nunique();
 
+    // Replace all spaces with underscores in order for Psi libipv1 to parse properly
+    std::string name = basis->name();
+    for (int i=0; i<name.size(); i++)
+      if (name[i] == ' ')
+        name[i] = '_';
+
     for (int uatom=0; uatom<nunique; uatom++) {
       int atom = molecule->unique(uatom);
       std::string atomname = atominfo->name(molecule->Z(atom));
 
-      // Replace all spaces with underscores in order for Psi libipv1 to parse properly
-      char *name = strdup(basis->name());
-      int len = strlen(name);
-      for (int i=0; i<len; i++)
-        if (name[i] == ' ')
-          name[i] = '_';
-
-      char *psibasisname = new char[atomname.size() + strlen(basis->name()) + ((int)ceil(log10((long double)uatom+2))) + 9];
-      sprintf(psibasisname, "%s:\"%s%d\" = (\n", atomname.c_str(), name, uatom);
-      write_string(psibasisname);
-      free(name);
+      std::ostringstream oss;
+      oss << atomname << ":\"" << name << uatom << "\" = (" << std::endl;
+      write_string(oss.str());
       incindent(2);
       int nshell = basis->nshell_on_center(atom);
       for (int sh=0; sh<nshell; sh++) {
@@ -282,7 +284,6 @@ namespace sc {
       }
       decindent(2);
       write_string(")\n");
-      delete[] psibasisname;
     }
     end_section();
   }

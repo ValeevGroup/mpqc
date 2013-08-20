@@ -137,9 +137,9 @@ GPetiteList4::GPetiteList4(const Ref<GaussianBasisSet> &b1,
 
   const Ref<PointGroup>& pg = b1->molecule()->point_group();
   ng_ = pg->char_table().order();
-  if (b2->molecule()->point_group() != pg
-      || b3->molecule()->point_group() != pg
-      || b4->molecule()->point_group() != pg) {
+  if (not b2->molecule()->point_group()->equiv(pg)
+      || not b3->molecule()->point_group()->equiv(pg)
+      || not b4->molecule()->point_group()->equiv(pg)) {
     throw ProgrammingError("GenericPetiteList4: not all point groups are the same",__FILE__,__LINE__);
   }
   c1_ =  (ng_ == 1);

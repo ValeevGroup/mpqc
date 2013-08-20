@@ -609,6 +609,7 @@ GaussianShell::extent(double threshold) const
 
 void
 sc::ToStateOut(const GaussianShell &s, StateOut &so, int &count) {
+  so.put(sc::class_desc<GaussianShell>()->version());
   ToStateOut(s.l, so, count);
   ToStateOut(s.puream, so, count);
   ToStateOut(s.exp,so, count);
@@ -617,43 +618,18 @@ sc::ToStateOut(const GaussianShell &s, StateOut &so, int &count) {
 
 void
 sc::FromStateIn(GaussianShell &s, StateIn &si, int &count){
-  // read old archive with great nuissance
-  if (si.version(::class_desc<GaussianShell>()) < 3) {
-    int nprim, ncon, nfunc;
-    count += si.get(nprim);
-    count += si.get(ncon);
-    if (si.version(::class_desc<GaussianShell>()) < 2) count += si.get(nfunc);
-
-
-    int* l_c;
-    count += si.get(l_c);
-    s.l.resize(ncon); std::copy(l_c, l_c+ncon, s.l.begin());
-    delete[] l_c;
-
-    int* puream_c;
-    count += si.get(puream_c);
-    s.puream.resize(ncon); std::copy(puream_c, puream_c + ncon, s.puream.begin());
-    delete[] puream_c;
-
-    double* exp_c;
-    count += si.get(exp_c);
-    s.exp.resize(nprim); std::copy(exp_c, exp_c + nprim, s.exp.begin());
-    delete[] exp_c;
-
-    s.coef_blk.resize(ncon * nprim);
-    for (int i=0; i<ncon; i++) {
-      double* coef_i_c;
-      count += si.get(coef_i_c);
-      std::copy(coef_i_c, coef_i_c + nprim, s.coef_blk.begin() + i*nprim);
-      delete[] coef_i_c;
-    }
+  int version; si.get(version);
+  if (version < 3) {
+    throw FileOperationFailed("cannot restore from old GaussianShell archives",
+                              __FILE__, __LINE__, 0,
+                              FileOperationFailed::Corrupt,
+                              s.class_desc());
   }
-  else {
-    FromStateIn(s.l, si, count);
-    FromStateIn(s.puream, si, count);
-    FromStateIn(s.exp, si, count);
-    FromStateIn(s.coef_blk, si, count);
-  }
+
+  FromStateIn(s.l, si, count);
+  FromStateIn(s.puream, si, count);
+  FromStateIn(s.exp, si, count);
+  FromStateIn(s.coef_blk, si, count);
 
   s.init_computed_data();
 }

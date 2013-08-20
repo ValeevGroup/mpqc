@@ -211,7 +211,7 @@ GaussianBasisSet::operator+(const Ref<GaussianBasisSet>& B)
 GaussianBasisSet::GaussianBasisSet(StateIn&s):
   SavableState(s)
 {
-  if (s.version(::class_desc<Molecule>()) < 9) {
+  if (s.version(::class_desc<GaussianBasisSet>()) < 4) {
       throw FileOperationFailed("cannot restore from old GaussianBasisSet archives",
                                 __FILE__, __LINE__, 0,
                                 FileOperationFailed::Corrupt,

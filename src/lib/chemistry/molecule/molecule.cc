@@ -772,7 +772,7 @@ void
 Molecule::symmetrize(double tol)
 {
   // if molecule is c1, don't do anything
-  if (!strcmp(this->point_group()->symbol(),"c1")) {
+  if (this->point_group()->symbol() == "c1") {
     init_symmetry_info();
     return;
     }
@@ -961,7 +961,7 @@ void
 Molecule::cleanup_molecule(double tol)
 {
   // if symmetry is c1, do nothing else
-  if (!strcmp(point_group()->symbol(),"c1")) return;
+  if (point_group()->symbol() == "c1") return;
 
   int i;
   SCVector3 up,np,ap;

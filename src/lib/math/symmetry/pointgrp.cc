@@ -61,36 +61,32 @@ using namespace sc;
 ////////////////////////////////////////////////////////////////////////
 
 static ClassDesc PointGroup_cd(
-  typeid(PointGroup),"PointGroup",2,"public SavableState",
+  typeid(PointGroup),"PointGroup",3,"public SavableState",
   create<PointGroup>, create<PointGroup>, create<PointGroup>);
 
 PointGroup::PointGroup()
-  : symb(0)
 {
   set_symbol("c1");
   frame(0,0) = frame(1,1) = frame(2,2) = 1;
   origin_[0] = origin_[1] = origin_[2] =0;
 }
 
-PointGroup::PointGroup(const char *s)
-  : symb(0)
+PointGroup::PointGroup(std::string s)
 {
   set_symbol(s);
   frame(0,0) = frame(1,1) = frame(2,2) = 1;
   origin_[0] = origin_[1] = origin_[2] =0;
 }
 
-PointGroup::PointGroup(const char *s, SymmetryOperation& so)
-  : symb(0)
+PointGroup::PointGroup(std::string s, SymmetryOperation& so)
 {
   set_symbol(s);
   frame = so;
   origin_[0] = origin_[1] = origin_[2] =0;
 }
 
-PointGroup::PointGroup(const char *s, SymmetryOperation& so,
+PointGroup::PointGroup(std::string s, SymmetryOperation& so,
                        const SCVector3& origin)
-  : symb(0)
 {
   set_symbol(s);
   frame = so;
@@ -98,11 +94,10 @@ PointGroup::PointGroup(const char *s, SymmetryOperation& so,
 }
 
 PointGroup::PointGroup(const Ref<KeyVal>& kv)
-  : symb(0)
 {
   if (kv->exists("symmetry")) {
     std::string tmp = kv->stringvalue("symmetry");
-    set_symbol(tmp.c_str());
+    set_symbol(tmp);
   }
   else
     set_symbol("c1");
@@ -124,40 +119,44 @@ PointGroup::PointGroup(const Ref<KeyVal>& kv)
 }
 
 PointGroup::PointGroup(StateIn& si) :
-  SavableState(si),
-  symb(0)
+  SavableState(si)
 {
-  int i;
   if (si.version(::class_desc<PointGroup>()) < 2) {
     ExEnv::errn() << "PointGroup: checkpoint file is too old: cannot read"
                  << endl;
     abort();
   }
   else {
-    for (i=0; i<3; i++) si.get(origin_[i]);
+    for (int i=0; i<3; i++) si.get(origin_[i]);
   }
 
-  si.getstring(symb);
-  for (i=0; i < 3; i++)
+  if (si.version(::class_desc<PointGroup>()) < 3) {
+    char* tmpstr;
+    si.getstring(tmpstr);
+    symb = std::string(tmpstr);
+    delete[] tmpstr;
+  }
+  else {
+    si.get(symb);
+  }
+
+  for (int i=0; i < 3; i++)
     for (int j=0; j < 3; j++)
       si.get(frame(i,j));
 }
 
 PointGroup::PointGroup(const PointGroup& pg)
-  : symb(0)
 {
   *this = pg;
 }
 
 PointGroup::PointGroup(const Ref<PointGroup>& pg)
-  : symb(0)
 {
   *this = *pg.pointer();
 }
 
 PointGroup::~PointGroup()
 {
-  if (symb) { delete[] symb; symb=0; }
 }
 
 PointGroup&
@@ -170,14 +169,11 @@ PointGroup::operator=(const PointGroup& pg)
 }
 
 void
-PointGroup::set_symbol(const char *sym)
+PointGroup::set_symbol(std::string sym)
 {
-  if (sym) {
-    if (symb) delete[] symb;
-    int len;
-    symb = new char[(len=strlen(sym))+1];
-    for (int i=0; i<len; i++) symb[i] = (char) tolower(sym[i]);
-    symb[len] = '\0';
+  if (not sym.empty()) {
+    symb = sym;
+    for (int i=0; i<symb.size(); i++) symb[i] = (char) tolower(symb[i]);
   } else {
     set_symbol("c1");
   }
@@ -186,12 +182,11 @@ PointGroup::set_symbol(const char *sym)
 void
 PointGroup::save_data_state(StateOut& so)
 {
-  int i;
-  for (i=0; i<3; i++) so.put(origin_[i]);
+  for (int i=0; i<3; i++) so.put(origin_[i]);
 
-  so.putstring(symb);
+  so.put(symb);
 
-  for (i=0; i < 3; i++)
+  for (int i=0; i < 3; i++)
     for (int j=0; j < 3; j++)
       so.put(frame(i,j));
 }
@@ -199,24 +194,24 @@ PointGroup::save_data_state(StateOut& so)
 CharacterTable
 PointGroup::char_table() const
 {
-  CharacterTable ret(symb,frame);
+  CharacterTable ret(symb.c_str(),frame);
   return ret;
 }
 
-int
+bool
 PointGroup::equiv(const Ref<PointGroup> &grp, double tol) const
 {
-  if (strcmp(symb,grp->symb)) return 0;
+  if (symb != grp->symb) return false;
 
   for (int i=0; i < 3; i++) {
     // origin isn't realy used, so don't check
-    //if (fabs(origin_[i] - grp->origin_[i]) > tol) return 0;
+    //if (fabs(origin_[i] - grp->origin_[i]) > tol) return false;
     for (int j=0; j < 3; j++) {
-      if (fabs(frame(i,j) - grp->frame(i,j)) > tol) return 0;
+      if (fabs(frame(i,j) - grp->frame(i,j)) > tol) return false;
     }
   }
 
-  return 1;
+  return true;
 }
 
 void

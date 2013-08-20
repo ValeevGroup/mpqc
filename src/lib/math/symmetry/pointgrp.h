@@ -431,7 +431,7 @@ class CharacterTable {
  the origin to zero.  */
 class PointGroup: public SavableState {
   private:
-    char *symb;
+    std::string symb;
     SymmetryOperation frame;
     SCVector3 origin_;
 
@@ -439,13 +439,13 @@ class PointGroup: public SavableState {
     PointGroup();
     /** This constructor takes a string containing the Schoenflies symbol
         of the point group as its only argument. */
-    PointGroup(const char*);
+    PointGroup(std::string);
     /** Like the above, but this constructor also takes a frame of reference
         as an argument. */
-    PointGroup(const char*,SymmetryOperation&);
+    PointGroup(std::string,SymmetryOperation&);
     /** Like the above, but this constructor also takes a point of origin
         as an argument. */
-    PointGroup(const char*,SymmetryOperation&,const SCVector3&);
+    PointGroup(std::string,SymmetryOperation&,const SCVector3&);
     /** The PointGroup KeyVal constructor looks for three keywords:
        symmetry, symmetry_frame, and origin. symmetry is a string
        containing the Schoenflies symbol of the point group.  origin is an
@@ -492,13 +492,13 @@ class PointGroup: public SavableState {
     /// returns the order of the point group
     int order() const { return char_table().order(); }
 
-    /// Returns 1 if the point groups are equivalent, 0 otherwise.
-    int equiv(const Ref<PointGroup> &, double tol = 1.0e-6) const;
+    /// Returns true if the point groups are equivalent, false otherwise.
+    bool equiv(const Ref<PointGroup> &, double tol = 1.0e-6) const;
 
     /// Returns the CharacterTable for this point group.
     CharacterTable char_table() const;
     /// Returns the Schoenflies symbol for this point group.
-    const char * symbol() const { return symb; }
+    std::string symbol() const { return symb; }
     /// Returns the frame of reference for this point group.
     SymmetryOperation& symm_frame() { return frame; }
     /// A const version of the above
@@ -508,7 +508,7 @@ class PointGroup: public SavableState {
     const SCVector3& origin() const { return origin_; }
 
     /// Sets (or resets) the Schoenflies symbol.
-    void set_symbol(const char*);
+    void set_symbol(std::string);
 
     void save_data_state(StateOut& so);
 

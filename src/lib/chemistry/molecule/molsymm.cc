@@ -68,7 +68,7 @@ Molecule::init_symmetry_info(double tol)
   atom_to_uniq_ = new int[natom()];
   equiv_ = new int*[natom()];
 
-  if (!strcmp(point_group()->symbol(),"c1")) {
+  if (point_group()->symbol() == "c1") {
     nuniq_ = natom();
     for (int i=0; i < natom(); i++) {
       nequiv_[i]=1;

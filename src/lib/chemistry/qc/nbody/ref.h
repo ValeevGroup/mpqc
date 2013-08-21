@@ -193,9 +193,11 @@ namespace sc {
       /// @param world WavefunctionWorld to which this object belongs
       /// @param basis The basis set supporting the reference wave function
       /// @param integral The integral factory used to compute the reference wavefunction
+      /// @param Whether to override this object's density-fitting settings by those provided by @c world object
       RefWavefunction(const Ref<WavefunctionWorld>& world,
                       const Ref<GaussianBasisSet>& basis,
-                      const Ref<Integral>& integral);
+                      const Ref<Integral>& integral,
+                      bool use_world_df = false);
 
     public:
     ~RefWavefunction();

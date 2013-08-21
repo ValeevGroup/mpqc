@@ -442,8 +442,10 @@ RefWavefunction::RefWavefunction(const Ref<KeyVal>& kv) :
 
 RefWavefunction::RefWavefunction(const Ref<WavefunctionWorld>& world,
                                  const Ref<GaussianBasisSet>& basis,
-                                 const Ref<Integral>& integral) :
-  world_(world), basis_(basis),  integral_(integral->clone())
+                                 const Ref<Integral>& integral,
+                                 bool use_world_df) :
+  world_(world), basis_(basis),  integral_(integral->clone()),
+  use_world_dfinfo_(use_world_df)
 {
   for(int spin=0; spin<NSpinCases1; ++spin) spinspaces_[spin] = 0;
   integral_->set_basis(basis, basis, basis, basis);

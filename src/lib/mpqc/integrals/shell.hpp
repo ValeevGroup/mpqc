@@ -1,7 +1,7 @@
 //
 // shell.hpp
 //
-// Copyright (C) 2013 Drew Lewis
+// Copyright (C) 2013 Drew Lewis and Andrey Asadchev
 //
 // Authors: Drew Lewis
 // Maintainer: Drew Lewis and Edward Valeev

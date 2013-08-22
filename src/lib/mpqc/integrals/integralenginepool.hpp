@@ -34,6 +34,8 @@
 #include <util/misc/scexception.h>
 
 namespace mpqc {
+    /// @addtogroup Integrals
+    /// @{
 
     /**
      * IntegralEnginePool is a class that will take a Ref<Engine> as a prototype
@@ -61,8 +63,9 @@ namespace mpqc {
         {
             if(pthread_key_create(&key_, &destroy_thread_object) !=0 )
                 throw sc::SystemException(
-                                "IntegralEnginePool::IntegralEnginePool()"
-                                "Unable to register thread local storage key.",
+                                "IntegralEnginePool::IntegralEnginePool() "
+                                "Unable to register thread local storage key. "
+                                "Likely due to a limited number of keys.",
                                 __FILE__, __LINE__);
         }
 
@@ -119,5 +122,5 @@ namespace mpqc {
     }; // IntegralEnginePool
 
 } // namespace mpqc
-
+/// @} // Integrals
 #endif /* mpqc_integralenginepool_h */

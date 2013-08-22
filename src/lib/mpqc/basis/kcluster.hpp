@@ -25,15 +25,15 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef mpqc_interfaces_tiledarray_tiling_kcluster_hpp
-#define mpqc_interfaces_tiledarray_tiling_kcluster_hpp
+#ifndef MPQC_BASIS_KCLUSTER_HPP
+#define MPQC_BASIS_KCLUSTER_HPP
 
 #include <chemsitry/molecule/atom.h>
 #include <Eigen/Dense>
 #include <vector>
 
 namespace mpqc {
-namespace tiling {
+namespace basis {
 
     /**
      * class holds the information about the differnt clusters in k-means
@@ -102,8 +102,8 @@ namespace tiling {
         std::vector<Atom> atoms_;
     }; // KCluster
 
-} // namespace tiling
+} // namespace basis
 } // namespace mpqc
 
 
-#endif /* mpqc_interfaces_tiledarray_tiling_kcluster_hpp */
+#endif /* MPQC_BASIS_KCLUSTER_HPP */

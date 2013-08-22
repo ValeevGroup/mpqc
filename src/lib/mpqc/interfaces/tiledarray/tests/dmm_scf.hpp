@@ -20,6 +20,8 @@ namespace tests {
     using Array3 = TA::Array<double,3>;
     using Array4 = TA::Array<double,4>;
 
+    // Function that controls how the desnity will be updated, may change for
+    // Different methods. I should make an attemp to wrap this in class.
     void
     Density_Update(Array2 &R, const Array2 &S, const Array2 &F,
                    const std::size_t iter,

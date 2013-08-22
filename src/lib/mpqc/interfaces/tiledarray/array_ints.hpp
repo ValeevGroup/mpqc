@@ -71,7 +71,7 @@ namespace mpqc {
     template <typename IntEngPool>
     TA::Array<double, EngineTypeTraits<typename IntEngPool::engine_type>::ncenters >
     Integrals(madness::World &world, const IntEngPool &pool,
-              const TRange1Gen &trange1gen){
+              const TRange1Gen &trange1gen = tiling::by_grouped_hydrogens ){
 
         // Get the the type of integral that we are computing.
         typedef typename IntEngPool::engine_type engine_type;

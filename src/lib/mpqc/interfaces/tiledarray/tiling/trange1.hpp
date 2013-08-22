@@ -36,7 +36,6 @@
  * @defgroup TaTiling mpqc.TiledArrayInterfaces.Tiling
  * @ingroup TiledArrayInterface
  * Tiling information and functions for the MPQC-TiledArray interface
- *
  */
 
 namespace mpqc {
@@ -44,9 +43,12 @@ namespace tiling {
     /// @addtogroup TaTiling
     /// @{
 
+    using RefMol = sc::Ref<sc::Molecule>;
     using RefBasis = sc::Ref<sc::GaussianBasisSet>;
     using TRange1 = TiledArray::TiledRange1;
-#ifndef DOXYGEN
+
+namespace details {
+
     // Initialize the vector needed for TiledArray::TiledRange1 construction
     std::vector<std::size_t> vec_init(std::size_t size_guess){
         std::vector<std::size_t> vec_guess;
@@ -54,7 +56,22 @@ namespace tiling {
         vec_guess.push_back(0); // Tile 0 always starts at 0
         return vec_guess;
     }
-#endif // DOXYGEN
+
+    // Get the number of atoms in the system that are heavier than hydrogen.
+    std::size_t nheavy_atoms(const RefBasis &basis){
+        // copy Ref to work on it.
+        RefMol mol = basis->molecule();
+
+        // Return variable
+        std::size_t nheavies = 0;
+
+        // Loop over atoms and count how many are heavy.
+        for(auto i = 0; i < mol->natom(); ++i){
+            nheavies += (mol->Z(i) != 1) ? mol->Z(i) : 0;
+        }
+        return nheavies;
+    }
+} // namespace details
 
     /**
      * Returns TiledArray::TiledRange1 that corresponds to integral shells.
@@ -66,7 +83,7 @@ namespace tiling {
         std::size_t nshell = basis->nshell();
         std::size_t nbasis = basis->nbasis();
 
-        std::vector<std::size_t> tilesizes = vec_init(nshell);
+        std::vector<std::size_t> tilesizes = details::vec_init(nshell);
 
 
         // If we have some shells
@@ -87,7 +104,7 @@ namespace tiling {
             }
         }
         else {
-            std::cout << "ADD SOME EXCEPTION STUFF HERE PRONTO" << std::endl;
+            sc::ProgrammingError("The basis did not have any shells");
         }
 
         // construct TiledRange1
@@ -103,7 +120,7 @@ namespace tiling {
 
         // Basis set information
         std::size_t ncenters = basis->ncenter();
-        std::vector<std::size_t> tilesizes = vec_init(ncenters);
+        std::vector<std::size_t> tilesizes = details::vec_init(ncenters);
 
         // If we have atoms
         if(ncenters != 0){
@@ -117,44 +134,61 @@ namespace tiling {
             }
         }
         else {
-            std::cout << "ADD SOME EXCEPTION STUFF HERE PRONTO" << std::endl;
+            sc::ProgrammingError("The basis did not have any atoms");
         }
 
         // construct TiledRange1
         return TRange1(tilesizes.begin(), tilesizes.end());
     }
 
-#if 0
+#if 1
     /**
-     * creates a TiledArray::TiledRange1 that corresponds to
-     * atoms. With the exception that hydrogen gets added to the next heavy
-     * atom in the molecule. This is the default tiling stucture.
+     * creates a TiledArray::TiledRange1 that corresponds to atoms.
+     * With the exception that hydrogen gets added to the next heavy
+     * atom in the molecule. This will become the default tiling stucture.
+     * If a suitable heavy atom isn't around  group hydrogens together in pairs.
+     * This tiling does leave the posiblilty that the last tile in the
+     * TiledRange will be a single Hydrogen.
+     * @param[in] basis is a sc::GaussianBasisSet
+     * @warning Only for general use, if more control is needed either use
+     * custum function or use mpqc::ShellOrdering and the TiledRange constructor
+     * for integrals objects.
      */
-    TRange1 by_heavy_atom(const RefBasis &basis){
+    TRange1 by_grouped_hydrogens(const RefBasis &basis){
 
-        // Get number of atoms.
+        // Initialize the vector.
+        std::vector<std::size_t> tilesizes =
+                        details::vec_init(details::nheavy_atoms(basis));
+
         std::size_t ncenters = basis->ncenter();
-        std::vector<std::size_t> tilesizes = vec_init(ncenter);
 
-        // if we have atoms
-        if(ncneters != 0){
-            // Loop over atoms
-            for(auto i = 0; i < ncneters; ++i){
-                // Check if Hydrogen
-                std::size_t Z = basis->molecule()->Z(i);
-                if(Z != 1){
-                    tilesizes.push_back(
-                            tilesizes[i] + basis->nbasis_on_center(i)
-                            );
+        // Check for centers
+        if(ncenters){
+            // Loop over centers
+            for(auto i = 0; i < ncenters; ++i){
+                // If atom is heavy add its basis functions as normal
+                if(basis->molecule()->Z(i) !=1){
+                    tilesizes.push_back(tilesizes[i] +
+                                        basis->nbasis_on_center(i)
+                                        );
                 }
-                else {
-
+                // If atoms is H and not the last atom add its functions to
+                // atom i + 1
+                else if(i < (ncenters - 1)){
+                    tilesizes.push_back(tilesizes[i] +
+                                        basis->nbasis_on_center(i) +
+                                        basis->nbasis_on_center(++i)
+                                        );
+                }
+                // If atom is H and is the last atom it will be all by itself
+                else{
+                   tilesizes.push_back(tilesizes[i] +
+                                       basis->nbasis_on_center(i)
+                                      );
                 }
             }
         }
-
-
-
+        return TRange1(tilesizes.begin(), tilesizes.end());
     }
 #endif
 

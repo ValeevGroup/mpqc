@@ -422,19 +422,122 @@ class  Ref  : public RefBase {
     int null() const { return p == 0; }
     /// Return !null().
     int nonnull() const { return p != 0; }
-    /** Ordering and equivalence operators are determined by the identifier. */
+
+    /** Ordering and equivalence operators are determined by the identifier if
+     * both pointers are not null. If one or both of the pointers is null then
+     * we compare the pointers.
+     */
     template <class A> int operator==(const Ref<A>&a) const
-        { return p->identifier() == a->identifier(); }
+    {
+        // If both pointers are 0 then they are equal
+        if(p == 0 && a.pointer() == 0){
+            return 1;
+        }
+        // If one pointer is 0 and the other is not then they are different
+        else if((p != 0 && a.pointer() == 0) || (p == 0 && a.pointer() != 0)){
+            return 0;
+        }
+        // If both pointers are not 0 then we need to check the identifiers.
+        else{
+            return p->identifier() == a->identifier();
+        }
+    }
+
     template <class A> int operator>=(const Ref<A>&a) const
-        { return p->identifier() >= a->identifier(); }
+    {
+        // If both pointers are 0 then they are equal
+        if(p == 0 && a.pointer() == 0){
+            return 1;
+        }
+        // If p != 0 and a.p == 0 then the one that exists (p) is greater
+        else if((p != 0 && a.pointer() == 0)){
+            return 1;
+        }
+        // If p == 0 and a.p != 0 then the one that exists (a.p) is greater
+        else if((p == 0 && a.pointer() != 0)){
+            return 0;
+        }
+        // If both pointers are not 0 then we need to check the identifiers.
+        else{
+            return p->identifier() >= a->identifier();
+        }
+    }
+
     template <class A> int operator<=(const Ref<A>&a) const
-        { return p->identifier() <= a->identifier(); }
+    {
+        // If both pointers are 0 then they are equal
+        if(p == 0 && a.pointer() == 0){
+            return 1;
+        }
+        // If p != 0 and a.p == 0 then the one that exists (p) is greater
+        else if((p != 0 && a.pointer() == 0)){
+            return 0;
+        }
+        // If p == 0 and a.p != 0 then the one that exists (a.p) is greater
+        else if((p == 0 && a.pointer() != 0)){
+            return 1;
+        }
+        // If both pointers are not 0 then we need to check the identifiers.
+        else{
+            return p->identifier() <= a->identifier();
+        }
+    }
+
     template <class A> int operator>(const Ref<A>&a) const
-        { return p->identifier() > a->identifier(); }
+    {
+        // If both pointers are 0 then they are equal
+        if(p == 0 && a.pointer() == 0){
+            return 0;
+        }
+        // If p != 0 and a.p == 0 then the one that exists (p) is greater
+        else if((p != 0 && a.pointer() == 0)){
+            return 1;
+        }
+        // If p == 0 and a.p != 0 then the one that exists (a.p) is greater
+        else if((p == 0 && a.pointer() != 0)){
+            return 0;
+        }
+        // If both pointers are not 0 then we need to check the identifiers.
+        else{
+            return p->identifier() > a->identifier();
+        }
+    }
+
     template <class A> int operator<(const Ref<A>&a) const
-        { return p->identifier() < a->identifier(); }
+    {
+        // If both pointers are 0 then they are equal
+        if(p == 0 && a.pointer() == 0){
+            return 0;
+        }
+        // If p != 0 and a.p == 0 then the one that exists (p) is greater
+        else if((p != 0 && a.pointer() == 0)){
+            return 0;
+        }
+        // If p == 0 and a.p != 0 then the one that exists (a.p) is greater
+        else if((p == 0 && a.pointer() != 0)){
+            return 1;
+        }
+        // If both pointers are not 0 then we need to check the identifiers.
+        else{
+            return p->identifier() < a->identifier();
+        }
+    }
+
     template <class A> int operator!=(const Ref<A>&a) const
-        { return p->identifier() != a->identifier(); }
+    {
+        // If both pointers are 0 then equal
+        if(p == 0 && a.pointer() == 0){
+            return 0;
+        }
+        // If one pointer is 0 and one is not then they are not equal
+        else if((p != 0 && a.pointer() == 0) || (p == 0 && a.pointer() != 0)){
+            return 1;
+        }
+        // If both pointers are not 0 then check id.
+        else{
+            return p->identifier() != a->identifier();
+        }
+    }
     /** Compare two objects returning -1, 0, or 1. Similar
         to the C library routine strcmp. */
     int compare(const Ref<T> &a) const {

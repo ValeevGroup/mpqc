@@ -26,19 +26,20 @@ int main(int argc, char** argv) {
 
 
     // Set basis for the overlap, hcore, and two electron integrals
-    int_fac->set_basis(basis);
+    int_fac->set_basis(basis,basis,basis,basis);
     // Get the engine pools
     IntPool<R<sc::OneBodyInt> > overlap_pool(int_fac->overlap());
     IntPool<R<sc::OneBodyInt> > hcore_pool(int_fac->hcore());
     IntPool<R<sc::TwoBodyInt> > eri_pool(int_fac->electron_repulsion());
 
     // Set basis for density fiting three center integrals.
-    int_fac->set_basis(basis, basis, basis_df);
+    int_fac->set_basis(basis, basis, basis_df, basis_df);
     // Get three center pool
-    IntPool<R<sc::TwoBodyThreeCenterInt> > eri3_pool(
-                                           int_fac->electron_repulsion3());
+    sc::Ref<sc::TwoBodyThreeCenterInt> eri3 = int_fac->electron_repulsion3();
+    IntPool<R<sc::TwoBodyThreeCenterInt> > eri3_pool(eri3);
+
     // Set basis for density fitting two center integrals
-    int_fac->set_basis(basis_df, basis_df);
+    int_fac->set_basis(basis_df, basis_df, basis_df, basis_df);
     // Get two center engine pool
     IntPool<R<sc::TwoBodyTwoCenterInt> > eri2_pool(
                                          int_fac->electron_repulsion2());

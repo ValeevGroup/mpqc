@@ -21,6 +21,7 @@
 
 namespace mpqc {
 namespace tests {
+    // Typedefs and template alaises
     template<typename T> using R = sc::Ref<T>;
     using Molecule = sc::Molecule;
     using Basis = sc::GaussianBasisSet;
@@ -31,6 +32,8 @@ namespace tests {
     template<typename T> using IntPool = IntegralEnginePool<T>;
 
 namespace detail {
+    // Takes a std::string and will return a ref molecule either water or h2.
+    // You may provide your own if you would like.
     R<Molecule>
     get_molecule(const string &mol_name){
         R<Molecule> mol = new Molecule;
@@ -48,8 +51,12 @@ namespace detail {
 
         return mol;
     }
-   R<Basis>
-   get_basis(const string &basis_name, const R<Molecule> &mol){
+
+
+    // Returns a basis set for a molecule given a string with the basis set name
+    // and the ref<molecule> in that the basis is desired for.
+    R<Basis>
+    get_basis(const string &basis_name, const R<Molecule> &mol){
 
        R<AKeyVal> akv = new AKeyVal;
        akv->assign("name", basis_name);
@@ -63,12 +70,12 @@ namespace detail {
 
        return basis;
 
-   }
+    }
 
 }
 
-
-
+    // Get molecule.  Figure out which molecule we are getting and then call
+    // helper function.
     R<Molecule>
     get_molecule(const string &mol_name = ""){
         R<Molecule> mol;
@@ -94,8 +101,9 @@ namespace detail {
         return mol;
     }
 
-   R<Basis>
-   get_basis(const string &basis_name, const R<Molecule> &mol){
+    // Get basis set.  If empty basis set get STO-3G
+    R<Basis>
+    get_basis(const string &basis_name, const R<Molecule> &mol){
 
        R<Basis> basis;
 
@@ -109,16 +117,18 @@ namespace detail {
 
        return basis;
 
-   }
+    }
 
-   R<Integral>
-   get_integral_factory(int argc, char** argv){
+    // Make an integral factory for use in calculations.  This is where
+    // We get our engines from.
+    R<Integral>
+    get_integral_factory(int argc, char** argv){
        R<Integral> integral_fac = Integral::initial_integral(argc, argv);
        if(integral_fac.nonnull())
            Integral::set_default_integral(integral_fac);
        integral_fac = Integral::get_default_integral()->clone();
        return integral_fac;
-   }
+    }
 
 } // namespace mpqc
 } // namespace tests

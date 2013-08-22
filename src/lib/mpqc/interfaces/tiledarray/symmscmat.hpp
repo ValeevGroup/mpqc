@@ -117,9 +117,9 @@ namespace mpqc {
                             const sc::Ref<sc::SymmSCMatrix> &matrix,
                             const tiling::TRange1 &trange1){
 
-        TA::Array<double, 2> ta_array = init_ta_array<2>(world, trange1);
+        TA::Array<double, 2> ta_array = detail::init_ta_array<2>(world, trange1);
 
-        mat_to_array(matrix, ta_array);
+        detail::mat_to_array(matrix, ta_array);
 
         return ta_array;
     }

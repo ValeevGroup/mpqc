@@ -79,7 +79,7 @@ GaussianShell::unit() {
                        Unnormalized, false);
 }
 
-// this GaussianShell ctor allocates and computes normalization constants
+// this GaussianShell constructortor allocates and computes normalization constants
 // and computes nfunc
 GaussianShell::GaussianShell(
   int ncn,int nprm,double*e,int*am,int*pure,double**c,PrimitiveType pt,
@@ -88,7 +88,7 @@ GaussianShell::GaussianShell(
 l(am, am+ncn),
 puream(pure, pure+ncn),
 exp(e, e+nprm),
-coef_blk(0.0, nprm*ncn)
+coef_blk(nprm * ncn, 0.0) // Not initalizing with pointers.
 {
   for(int con=0, cp=0; con<ncn; ++con, cp+=nprm) {
     std::copy(c[con], c[con] + nprm, coef_blk.begin() + cp);
@@ -113,7 +113,7 @@ GaussianShell::GaussianShell(
     l(am, am+ncn),
     puream(pure == Pure, ncn),
     exp(e, e+nprm),
-    coef_blk(0.0, nprm*ncn)
+    coef_blk(nprm*ncn, 0.0) // Not initalizing with pointers.
 {
   // Compute the number of basis functions in this shell
   init_computed_data();

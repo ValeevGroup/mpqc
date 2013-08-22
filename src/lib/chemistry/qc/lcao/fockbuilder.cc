@@ -3165,6 +3165,75 @@ namespace sc {
       } // end if do_exact
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
+      /* "FOOLPROOF" CHECK OF K                                                                */ #if 1
+      Ref<Integral> integral = int3c_rtime->factory()->integral();
+      integral->set_basis(brabs, obs, ketbs, obs);
+      Ref<TwoBodyInt> eri_eval = integral->electron_repulsion();
+      const double* buffer = eri_eval->buffer();
+      Eigen::MatrixXd K_check(branbf, ketnbf);
+      for(int ishA = 0; ishA < brabs->nshell(); ++ishA){
+        const int atomA = brabs->shell_to_center(ishA);
+        const int nbfA = brabs->nbasis_on_center(atomA);
+        const int shoffA = obs->shell_on_center(atomA, 0);
+        const int bfoffA = obs->shell_to_function(shoffA);
+        const int dfnshA = dfbs->nshell_on_center(atomA);
+        const int dfnbfA = dfbs->nbasis_on_center(atomA);
+        const int dfshoffA = dfbs->shell_on_center(atomA, 0);
+        const int dfbfoffA = dfbs->shell_to_function(dfshoffA);
+        const int inbfA = brabs->shell(ishA).nfunction();
+        const int ibfoffA = brabs->shell_to_function(ishA);
+        //----------------------------------------//
+        for(int jshB = 0; jshB < ketbs->nshell(); ++jshB){
+          const int jnbfB = ketbs->shell(jshB).nfunction();
+          const int jbfoffB = ketbs->shell_to_function(jshB);
+          //----------------------------------------//
+          for(int kshC = 0; kshC < obs->nshell(); ++kshC){
+            const int knbfC = obs->shell(kshC).nfunction();
+            const int kbfoffC = obs->shell_to_function(kshC);
+            //----------------------------------------//
+            for(int lshD = 0; lshD < obs->nshell(); ++lshD){
+              const int lnbfD = obs->shell(lshD).nfunction();
+              const int lbfoffD = obs->shell_to_function(lshD);
+              //----------------------------------------//
+              // Compute shell (ishA jshB | kshA lshB) and add contributions to J
+              eri_eval->compute_shell(ishA, jshB, kshC, lshD);
+              int buff_off = 0;
+              for(int ibfA = 0; ibfA < inbfA; ++ibfA){
+                const int mu = ibfoffA + ibfA;
+                for(int jbfB = 0; jbfB < jnbfB; ++jbfB){
+                  const int nu = jbfoffB + jbfB;
+                  std::shared_ptr<Eigen::VectorXd> Cmn_part  = df_rtime->get(dfkey, mu, nu);
+                  for(int kbfA = 0; kbfA < knbfA; ++kbfA){
+                    const int rho = kbfoffA + kbfA;
+                    for(int lbfB = 0; lbfB < lnbfB; ++lbfB){
+                      const int sigma = lbfoffB + lbfB;
+                      std::shared_ptr<Eigen::VectorXd> Crs_part  = df_rtime->get(dfkey, rho, sigma);
+                      //----------------------------------------//
+                      // (ab|ab) contribution
+                      // K(mu_a rho_a) += (mu_a nu_b | rho_a sigma_b) * D^(nu_b sigma_b)
+                      K(mu, rho) += buffer[buff_off] * D(nu, sigma);
+                      //----------------------------------------//
+                      // (ab|ba) contribution
+                      // K(mu_a sigma_b) += (mu_a nu_b | sigma_b rho_a) * D^(nu_b rho_a)
+                      if(atomA != atomB){
+                        K(mu, sigma) += buffer[buff_off] * D(nu, rho);
+                      }
+                      //----------------------------------------//
+                      ++buff_off;
+                    } // end loop over lbfB
+                  } // end loop over kbfA
+                } // end loop over jbfB
+              } // end loop over ibfA
+              //----------------------------------------//
+            } // end loop over lshB
+          } // end loop over kshA
+          //----------------------------------------//
+        } // end loop over jshB
+      } // end loop over ishA
+
+
+      /*****************************************************************************************/ #endif //1}}}
+      /*=======================================================================================*/
       /* Transfer K to a RefSCMatrix                           		                        {{{1 */ #if 1 // begin fold
       timer_change("07 - transfer to RefSCMatrix", 2);
       Ref<Integral> localints = int3c_rtime->factory()->integral()->clone();

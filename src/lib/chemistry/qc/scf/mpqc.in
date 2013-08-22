@@ -5,9 +5,9 @@ mpqc:(
 
 nproc = 4
 %molecule = $:ibuprofen
-molecule = $:ethane_c1
+%molecule = $:ethane_c1
 %molecule = $:naphtalene
-%molecule = $:he
+molecule = $:h2o
 coor = $:symcoor
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -25,8 +25,8 @@ mole<DFCLHF>: (
   df_basis<GaussianBasisSet>:(
     molecule = $..:molecule
     %name = "cc-pVDZ-JKFIT"
-    name = "cc-pVTZ-JKFIT"
-    %name = "aug-cc-pVTZ"
+    %name = "cc-pVTZ-JKFIT"
+    %name = "aug-cc-pV6Z"
     %name = "cc-pVTZ-RI"
     name = "cc-pVDZ"
     %name = "6-31G"
@@ -44,7 +44,7 @@ mole<DFCLHF>: (
   	df_local_exchange = yes
     store_ints = mem
     %store_ints = mpi
-    exact_diag_J = yes
+    exact_diag_J = no
     exact_diag_K = yes
   )
 
@@ -57,7 +57,7 @@ mole<DFCLHF>: (
   molecule = $:molecule
   mbasis<GaussianBasisSet>: (
     molecule = $:molecule
-    name = "cc-pVTZ"
+    name = "cc-pVDZ"
     %name = "STO-3G"
     %puream=yes
     %matrixkit = $:basis_matrixkit
@@ -279,6 +279,13 @@ mikes<Molecule>: (
       H    [ -2.2401845905  -0.8546904115   0.8219769877 ]
       H    [ -0.2565439149  -2.4488485392  -0.9168923791 ]
       H    [ -0.3839420181  -2.5205753061   0.9045198698 ]
+  }
+)
+
+ne<Molecule>: (
+  symmetry=c1
+  { atoms geometry } = {
+     ne [ 0 0 0 ]
   }
 )
 
@@ -666,4 +673,4 @@ basis:(
 % Local Variables:
 % mode: keyval
 % End:
-%
+% vim: syn match Comment "\v\%.*$" :

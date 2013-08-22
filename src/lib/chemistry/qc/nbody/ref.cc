@@ -445,7 +445,7 @@ RefWavefunction::RefWavefunction(const Ref<WavefunctionWorld>& world,
                                  const Ref<Integral>& integral,
                                  bool use_world_df) :
   world_(world), basis_(basis),  integral_(integral->clone()),
-  use_world_dfinfo_(use_world_df)
+  use_world_dfinfo_(use_world_df), force_average_AB_rdm1_(false)
 {
   for(int spin=0; spin<NSpinCases1; ++spin) spinspaces_[spin] = 0;
   integral_->set_basis(basis, basis, basis, basis);

@@ -302,7 +302,6 @@ namespace sc {
     Ref<WavefunctionWorld> world_;   // who owns this?
     Ref<GaussianBasisSet> basis_;
     Ref<Integral> integral_;
-    bool omit_uocc_;
     bool use_world_dfinfo_; //!< \sa use_world_dfinfo()
     /// specifies the valence orbitals. Maximum overlap heuristics can be used to reorder orbs to match these.
     Ref<OrbitalSpace> valence_orbs_;

@@ -85,6 +85,7 @@ else()
     BUILD_COMMAND ./b2 --user-config=${EXTERNAL_BUILD_DIR}/boost/user-config.jam
     --toolset=${BOOST_TOOLSET}
     --with-thread
+    --with-test
     ${withpython}
     --with-system
     --link=static
@@ -97,6 +98,7 @@ else()
 
   list(APPEND Boost_LIBRARIES ${EXTERNAL_BUILD_DIR}/boost/src/boost/stage/lib/libboost_thread.a)
   list(APPEND Boost_LIBRARIES ${EXTERNAL_BUILD_DIR}/boost/src/boost/stage/lib/libboost_system.a)
+  list(APPEND Boost_LIBRARIES ${EXTERNAL_BUILD_DIR}/boost/src/boost/stage/lib/libboost_unit_test_framework.a)
   if (HAVE_PYTHON)
     list(APPEND Boost_LIBRARIES ${EXTERNAL_BUILD_DIR}/boost/src/boost/stage/lib/libboost_python.a)
   endif()

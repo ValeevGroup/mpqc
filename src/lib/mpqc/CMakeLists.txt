@@ -5,6 +5,7 @@
 #   ${CC_SOURCES}
 # )
 
+add_subdirectory(math)
 add_subdirectory(interfaces/tiledarray/tests)
 
 

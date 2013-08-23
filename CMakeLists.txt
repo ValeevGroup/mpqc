@@ -7,6 +7,9 @@ option(MPQC_EXPERT "MPQC Expert mode: disables automatically downloading or buil
 option(MPQC_NEW_FEATURES "Use new MPQC features (requires C++11)" OFF)
 option(MPQC_OPENMP "Use OpenMP" OFF)
 
+include(CTest)
+enable_testing()
+
 enable_language (CXX)
 if (NOT CMAKE_CXX_COMPILER)
   message(FATAL_ERROR "C++ compiler not found")

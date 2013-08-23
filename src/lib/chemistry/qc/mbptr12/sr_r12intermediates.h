@@ -304,6 +304,11 @@ namespace sc {
        */
       void set_T1_cabs(const RefSCMatrix& t1_cabs) { t1_cabs_ = t1_cabs; }
       /**
+       * provides T2 amplitudes
+       * @param t2 array of T2 amplitudes, for AlphaBeta, AlphaAlpha, and (optionally) BetaBeta
+       */
+      void set_T2(Ref<DistArray4> t2[NSpinCases2]) { std::copy(t2, t2+NSpinCases2, t2_); }
+      /**
        * provides (spin-free) RDM2
        * @param rdm2 a SpinFreeRDM<Two> object
        */
@@ -359,6 +364,7 @@ namespace sc {
       // extra data
       RefSCMatrix t1_;
       RefSCMatrix t1_cabs_;
+      Ref<DistArray4> t2_[NSpinCases2];
       Ref<SpinFreeRDM<Two> > rdm2_;
 
       // utilities

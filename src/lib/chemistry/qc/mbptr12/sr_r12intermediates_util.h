@@ -170,6 +170,7 @@ namespace sc {
     Ref<TwoBodyIntDescr> tbint_descr = r12world_->r12tech()->corrfactor()->tbintdescr(r12world_->integral(),0);
     std::string operset_label = "G12'[0]";
     bool rdm2 = false;
+    bool t2 = false;
     unsigned int oper_idx;
     if (pkey.oper() == "g")
       oper_idx = tbint_descr->intset(TwoBodyOper::eri);
@@ -189,6 +190,10 @@ namespace sc {
       rdm2 = true;
       oper_idx = 0;
     }
+    else if (pkey.oper() == "T2") {
+      t2 = true;
+      oper_idx = 0;
+    }
     else
       throw ProgrammingError("SingleReference_R12Intermediates<T>::ijxy : invalid operator key",__FILE__,__LINE__);
 
@@ -199,15 +204,7 @@ namespace sc {
     auto ket2 = to_space(pkey.ket2());
 
     Ref<DistArray4> darray4;
-    if (not rdm2) {
-      std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(bra1, bra2, ket1, ket2,
-                                                                 operset_label, "");
-
-      Ref<TwoBodyMOIntsTransform> tform = r12world_->world()->moints_runtime4()->get(tform_key);
-      tform->compute();
-      darray4 = tform->ints_distarray4();
-    }
-    else { // rdm2
+    if (rdm2) { // rdm2
       if (rdm2_.null())
         throw ProgrammingError("SingleReference_R12Intermediates<T>::ijxy: asked for rdm2, but it had not been given");
       // if requested spaces don't match exactly, make a new DistArray4
@@ -264,6 +261,25 @@ namespace sc {
         darray4 = darray4_mapped;
       }
     }
+    else if (t2) {
+      if (t2_[AlphaBeta].null())
+        throw ProgrammingError("SingleReference_R12Intermediates<T>::ijxy: asked for T2, but it had not been given");
+
+      assert(oreg->value(bra1) == r12world_->refwfn()->occ_act(Alpha));
+      assert(oreg->value(bra2) == r12world_->refwfn()->occ_act(Beta));
+      assert(oreg->value(ket1) == r12world_->refwfn()->uocc_act(Alpha));
+      assert(oreg->value(ket2) == r12world_->refwfn()->uocc_act(Beta));
+      darray4 = t2_[AlphaBeta];
+    }
+    else { // not rdm2 nor t2
+      std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(bra1, bra2, ket1, ket2,
+                                                                 operset_label, "");
+
+      Ref<TwoBodyMOIntsTransform> tform = r12world_->world()->moints_runtime4()->get(tform_key);
+      tform->compute();
+      darray4 = tform->ints_distarray4();
+    }
+
     darray4->activate();
 
     const size_t n1 = darray4->ni();
@@ -458,7 +474,7 @@ namespace sc {
       }
     }
     else if (pkey.oper() == "T1") {
-      if (ket_id == "a") { // if given t1_ explicitly (CC), make sure it's size matches
+      if (ket_id == "a") { // if given t1_ explicitly (CC), make sure its size matches
         if (t1_.nonnull()) {
           if (t1_.ncol() != oreg->value(ket_id)->rank())
             throw ProgrammingError("SingleReference_R12Intermediates::xy() -- T1.ncol() != nvir_act",

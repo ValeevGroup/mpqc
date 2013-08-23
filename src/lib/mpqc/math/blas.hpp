@@ -26,6 +26,29 @@ template< class Matrix, typename Id, typename Enable>
 struct adaptor< Eigen::Map< Matrix >, Id, Enable >
     : adaptor<Matrix, Id, Enable> {};
 
+template< typename T, int Rows, int Options,
+          typename Id, typename Enable >
+struct adaptor< Eigen::Matrix< T, Rows, 1, Options >, Id, Enable > {
+    typedef typename copy_const< Id, T >::type value_type;
+    typedef typename eigen_size_type< Rows >::type size_type1;
+    typedef mpl::map<
+        mpl::pair< tag::value_type, value_type >,
+        mpl::pair< tag::entity, tag::vector >,
+        mpl::pair< tag::size_type<1>, size_type1 >,
+        mpl::pair< tag::data_structure, tag::linear_array >,
+        mpl::pair< tag::stride_type<1>, tag::contiguous >
+    > property_map;
+    static std::ptrdiff_t size1( const Id& id ) {
+        return id.size();
+    }
+    static value_type* begin_value( Id& id ) {
+        return id.data();
+    }
+    static value_type* end_value( Id& id ) {
+        return id.data()+id.size();
+    }
+};
+
 /// specialize numeric bindings traits for mpqc::matrix
 template< typename T, int Options, typename Id, typename Enable>
 struct adaptor< mpqc::matrix<T, Options>, Id, Enable >
@@ -81,6 +104,17 @@ namespace blas {
  	return boost::numeric::bindings::blas::dot(a.derived(), b.derived());
 #else
  	return a.dot(b);
+#endif // HAVE_BLAS
+    }
+
+    template<typename Alpha, class A, class B>
+    void axpy(const Alpha &alpha,
+              const Eigen::MatrixBase<A> &a,
+              Eigen::MatrixBase<B> &b) {
+#ifdef HAVE_BLAS
+        boost::numeric::bindings::blas::axpy(alpha, a.derived(), b.derived());
+#else
+        b = alpha*a + b;
 #endif // HAVE_BLAS
     }
 

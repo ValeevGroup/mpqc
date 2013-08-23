@@ -11,8 +11,7 @@ BOOST_AUTO_TEST_CASE(dot) {
 
     using namespace mpqc;
 
-    size_t m = 1<<30;
-
+    size_t m = 1<<22;
     double tol = 1e-10;
     Vector a = Vector::Random(m);
     Vector b = Vector::Random(m);
@@ -26,14 +25,35 @@ BOOST_AUTO_TEST_CASE(dot) {
 
 }
 
+BOOST_AUTO_TEST_CASE(daxpy) {
+
+    using namespace mpqc;
+
+    size_t m = 1<<22;
+
+    double tol = 1e-10;
+    double alpha = 2.5;
+    Vector a = Vector::Random(m);
+    Vector b = Vector::Random(m);
+
+    BOOST_TEST_MESSAGE("Testing daxpy(a,b)");
+    {
+        Vector r = alpha*a + b;
+        blas::axpy(alpha, a, b);
+        for (int i = 0; i < m; ++i) {
+            BOOST_REQUIRE_SMALL(r(i)-b(i), tol);
+        }
+    }
+
+}
 
 BOOST_AUTO_TEST_CASE(gemm) {
 
     using namespace mpqc;
 
-    size_t m = 3;
-    size_t n = 2;
-    size_t k = 3;
+    size_t m = 300;
+    size_t n = 200;
+    size_t k = 300;
 
     double tol = 1e-10;
     double alpha = 2.5;
@@ -41,7 +61,7 @@ BOOST_AUTO_TEST_CASE(gemm) {
     Matrix a = Matrix::Random(m,k);
     Matrix b = Matrix::Random(k,n);
 
-    BOOST_TEST_MESSAGE("Testing alpha*a*b + beta*c");
+    BOOST_TEST_MESSAGE("gemm(alpha*a*b + beta*c)");
     {
         Matrix c = Matrix::Random(m,n);
         Matrix r = alpha*a*b + beta*c;
@@ -63,8 +83,6 @@ BOOST_AUTO_TEST_CASE(gemm) {
     //             BOOST_CHECK_SMALL(c(i,j)-r(i,j), 0.0);
     //         }
     //     }
-    // }
-
-    
+    // }   
 
 }

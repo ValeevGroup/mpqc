@@ -7,6 +7,26 @@
 #include "mpqc/math/blas.hpp"
 #include "mpqc/math/matrix.hpp"
 
+BOOST_AUTO_TEST_CASE(dot) {
+
+    using namespace mpqc;
+
+    size_t m = 1<<30;
+
+    double tol = 1e-10;
+    Vector a = Vector::Random(m);
+    Vector b = Vector::Random(m);
+
+    BOOST_TEST_MESSAGE("Testing dot(a,b)");
+    {
+        double c = blas::dot(a,b);
+        double r = a.dot(b);
+        BOOST_REQUIRE_SMALL(c-r, tol);
+    }
+
+}
+
+
 BOOST_AUTO_TEST_CASE(gemm) {
 
     using namespace mpqc;

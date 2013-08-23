@@ -81,13 +81,15 @@
       DOUBLE PRECISION   ZERO, ONE, TWO, THREE
       PARAMETER          ( ZERO = 0.0D0, ONE = 1.0D0, TWO = 2.0D0,
      $                   THREE = 3.0D0 )
-      INTEGER77        MAXIT
+      INTEGER77          IZERO, IONE, ITWO
+      PARAMETER          ( IZERO = 0, IONE = 1, ITWO = 2 )
+      INTEGER77          MAXIT
       PARAMETER          ( MAXIT = 30 )
 *     ..
 *     .. Local Scalars ..
       INTEGER77        I, ICOMPZ, II, ISCALE, J, JTOT, K, L, L1, LEND,
      $                   LENDM1, LENDP1, LENDSV, LM1, LSV, M, MM, MM1,
-     $                   NM1, NMAXIT, ITWO
+     $                   NM1, NMAXIT
       DOUBLE PRECISION   ANORM, B, C, EPS, EPS2, F, G, P, R, RT1, RT2,
      $                   S, SAFMAX, SAFMIN, SSFMAX, SSFMIN, TST
 *     ..
@@ -193,15 +195,19 @@
      $   GO TO 10
       IF( ANORM.GT.SSFMAX ) THEN
          ISCALE = 1
-         CALL PDLASCL( 'G', 0, 0, ANORM, SSFMAX, LEND-L+1, 1, D( L ), N,
+         CALL PDLASCL( 'G', IZERO, IZERO,
+     $                ANORM, SSFMAX, LEND-L+1, IONE, D( L ), N,
      $                INFO )
-         CALL PDLASCL( 'G', 0, 0, ANORM, SSFMAX, LEND-L, 1, E( L ), N,
+         CALL PDLASCL( 'G', IZERO, IZERO,
+     $                ANORM, SSFMAX, LEND-L, IONE, E( L ), N,
      $                INFO )
       ELSE IF( ANORM.LT.SSFMIN ) THEN
          ISCALE = 2
-         CALL PDLASCL( 'G', 0, 0, ANORM, SSFMIN, LEND-L+1, 1, D( L ), N,
+         CALL PDLASCL( 'G', IZERO, IZERO,
+     $                ANORM, SSFMIN, LEND-L+1, IONE, D( L ), N,
      $                INFO )
-         CALL PDLASCL( 'G', 0, 0, ANORM, SSFMIN, LEND-L, 1, E( L ), N,
+         CALL PDLASCL( 'G', IZERO, IZERO,
+     $                ANORM, SSFMIN, LEND-L, IONE, E( L ), N,
      $                INFO )
       END IF
 *
@@ -245,7 +251,6 @@
                CALL PDLAEV2( D( L ), E( L ), D( L+1 ), RT1, RT2, C, S )
                WORK( L ) = C
                WORK( N-1+L ) = S
-               ITWO = 2
                CALL PDLASR( 'R', 'V', 'B', nz, ITWO, WORK( L ),
      $                     WORK( N-1+L ), Z( 1, L ), nz )
             ELSE
@@ -353,7 +358,6 @@
                CALL PDLAEV2( D( L-1 ), E( L-1 ), D( L ), RT1, RT2, C,S)
                WORK( M ) = C
                WORK( N-1+M ) = S
-               ITWO = 2
                CALL PDLASR( 'R', 'V', 'F', nz, ITWO, WORK( M ),
      $                     WORK( N-1+M ), Z( 1, L-1 ), nz )
             ELSE
@@ -434,15 +438,15 @@
 *
   140 CONTINUE
       IF( ISCALE.EQ.1 ) THEN
-         CALL PDLASCL( 'G', 0, 0, SSFMAX, ANORM, LENDSV-LSV+1, 1,
-     $                D( LSV ), N, INFO )
-         CALL PDLASCL('G',0, 0, SSFMAX, ANORM, LENDSV-LSV, 1, E( LSV ),
-     $                N, INFO )
+         CALL PDLASCL('G', IZERO, IZERO, SSFMAX, ANORM,
+     $                LENDSV-LSV+1,IONE, D( LSV ), N, INFO )
+         CALL PDLASCL('G', IZERO, IZERO, SSFMAX, ANORM,
+     $                LENDSV-LSV, IONE, E( LSV ),  N, INFO )
       ELSE IF( ISCALE.EQ.2 ) THEN
-         CALL PDLASCL( 'G', 0, 0, SSFMIN, ANORM, LENDSV-LSV+1, 1,
-     $                D( LSV ), N, INFO )
-         CALL PDLASCL ('G',0, 0, SSFMIN, ANORM, LENDSV-LSV, 1, E( LSV ),
-     $                N, INFO )
+         CALL PDLASCL('G', IZERO, IZERO, SSFMIN, ANORM,
+     $                LENDSV-LSV+1, IONE, D( LSV ), N, INFO )
+         CALL PDLASCL('G', IZERO, IZERO, SSFMIN, ANORM,
+     $                LENDSV-LSV, IONE, E( LSV ), N, INFO )
       END IF
 *
 *     Check for no convergence to an eigenvalue after a total
@@ -1728,6 +1732,8 @@
 *     .. Parameters ..
       DOUBLE PRECISION   ONE, ZERO
       PARAMETER          ( ONE = 1.0D+0, ZERO = 0.0D+0 )
+      INTEGER77          IONE
+      PARAMETER          (IONE = 1)
 *     ..
 *     .. Local Scalars ..
       INTEGER77        I
@@ -1778,10 +1784,10 @@
          SCALE = ZERO
          SUM = ONE
          IF( N.GT.1 ) THEN
-            CALL PDLASSQ( N-1, E, 1, SCALE, SUM )
+            CALL PDLASSQ( N-1, E, IONE, SCALE, SUM )
             SUM = 2*SUM
          END IF
-         CALL PDLASSQ( N, D, 1, SCALE, SUM )
+         CALL PDLASSQ( N, D, IONE, SCALE, SUM )
          ANORM = SCALE*SQRT( SUM )
       END IF
 *

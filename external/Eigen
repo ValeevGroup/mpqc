@@ -17,33 +17,40 @@ endif()
 
 find_package(Eigen 3.0)
 
+set(EigenCompilesCxx "
+#include <Eigen/Core>
+#include <Eigen/Dense>
+#include <iostream>
+typedef Eigen::MatrixXd Matrix;
+template<class T>
+void test() {
+  Matrix m = Matrix::Random(5, 5);
+  Eigen::MatrixXd b = Matrix::Random(5, 5);
+  m.row(0) = b.col(0);
+  Eigen::SelfAdjointEigenSolver<Matrix> eig(m);
+  Matrix m_invsqrt = eig.operatorInverseSqrt();
+  std::cout << m_invsqrt << std::endl;
+}
+int main() { test<void>(); }
+")
+
+macro(EigenCompiles EIGEN_INCLUDE_DIR)
+  list(INSERT CMAKE_REQUIRED_INCLUDES 0 ${EIGEN_INCLUDE_DIR})
+  CHECK_CXX_SOURCE_COMPILES(${EigenCompilesCxx} EIGEN_COMPILES)
+  list(REMOVE_AT CMAKE_REQUIRED_INCLUDES 0) # Eigen install not usable
+  set(EIGEN_FOUND FALSE)
+endmacro(EigenCompiles)
+
 # if found, try sanity check: try compiling a simple program
 if (EIGEN_FOUND)
   set(Eigen_INCLUDE_DIR ${EIGEN_INCLUDE_DIR})
-  # this only works if Eigen has been installed
-  list(INSERT CMAKE_REQUIRED_INCLUDES 0 ${EIGEN_INCLUDE_DIR})
-  CHECK_CXX_SOURCE_COMPILES("
-    #include <Eigen/Core>
-    #include <Eigen/Dense>
-    #include <iostream>
-    typedef Eigen::MatrixXd Matrix;
-    template<class T>
-    void test() {
-        Matrix m = Matrix::Random(5, 5);
-        Eigen::MatrixXd b = Matrix::Random(5, 5);
-        m.row(0) = b.col(0);
-        Eigen::SelfAdjointEigenSolver<Matrix> eig(m);
-        Matrix m_invsqrt = eig.operatorInverseSqrt();
-        std::cout << m_invsqrt << std::endl;
-    }
-    int main() { test<void>(); }"
-    EIGEN_COMPILES)
+  EigenCompiles(${EIGEN_INCLUDE_DIR})
   if (NOT EIGEN_COMPILES)
     message("** Eigen found at ${Eigen_INCLUDE_DIR} but failed to compile")
     message("** See CMakeFiles/CMakeOutput.log for details")
     set(EIGEN_FOUND FALSE)
-    list(REMOVE_AT CMAKE_REQUIRED_INCLUDES 0) # Eigen install not usable
   else()
+    list(INSERT CMAKE_REQUIRED_INCLUDES 0 ${EIGEN_INCLUDE_DIR})
     include_directories(${Eigen_INCLUDE_DIR})
     set(HAVE_EIGEN TRUE)
   endif()
@@ -66,6 +73,11 @@ if (NOT EIGEN_FOUND)
     message(STATUS "Using Eigen archive ${EIGEN_URL}")
   endif()
 
+  add_dependencies(External Eigen)
+  set(Eigen_INCLUDE_DIR ${EXTERNAL_BUILD_DIR}/Eigen/include)
+  include_directories(${Eigen_INCLUDE_DIR})
+  set(HAVE_EIGEN TRUE)
+
   ExternalProject_Add(
     Eigen
     PREFIX ${EXTERNAL_BUILD_DIR}/Eigen
@@ -79,10 +91,13 @@ if (NOT EIGEN_FOUND)
       ${EXTERNAL_BUILD_DIR}/Eigen/include/Eigen/
   )
 
+  # external Eigen test target as we can't test it during configuration step
+  file(WRITE ${EXTERNAL_BUILD_DIR}/Eigen/EigenCompiles.cxx "${EigenCompilesCxx}")
+  add_executable(EigenCompiles EXCLUDE_FROM_ALL ${EXTERNAL_BUILD_DIR}/Eigen/EigenCompiles.cxx)
+  add_dependencies(EigenCompiles Eigen)
+
+  add_dependencies(External EigenCompiles)
   add_dependencies(External Eigen)
-  set(Eigen_INCLUDE_DIR ${EXTERNAL_BUILD_DIR}/Eigen/include)
-  include_directories(${Eigen_INCLUDE_DIR})
-  set(HAVE_EIGEN TRUE)
 
 endif()
 

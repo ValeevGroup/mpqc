@@ -1,6 +1,8 @@
+include(AddLibrary)
+
 # etrain library
 
-add_library(etrain OBJECT
+add_mpqc_object_library(etrain
   etrain.cc
 )
 

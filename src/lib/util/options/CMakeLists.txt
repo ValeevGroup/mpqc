@@ -1,6 +1,8 @@
+include(AddLibrary)
+
 # options library
 
-add_library(options OBJECT
+add_mpqc_object_library(options
   GetLongOpt.cc
 #  README.cc
 )

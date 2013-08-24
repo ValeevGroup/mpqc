@@ -1,6 +1,8 @@
+include(AddLibrary)
+
 # container library
 
-add_library(container OBJECT
+add_mpqc_object_library(container
   avl.cc
   bitarray.cc
   carray.cc)

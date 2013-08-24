@@ -1,6 +1,8 @@
+include(AddLibrary)
+
 # libint2 library
 
-add_library(libint2 OBJECT
+add_mpqc_object_library(libint2
   bounds.cc
   comp_eri.cc
   comp_g12.cc

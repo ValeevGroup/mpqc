@@ -1,3 +1,5 @@
+include(AddLibrary)
+
 set(subdirectories
   distarray4
   isosurf
@@ -7,12 +9,8 @@ set(subdirectories
   symmetry
   )
 
-foreach(s ${subdirectories})
-  add_subdirectory(${s})
-  list(APPEND objects $<TARGET_OBJECTS:${s}>)
-endforeach()
+add_mpqc_library(math ${subdirectories})
 
-add_library(math ${objects})
 add_dependencies(math util)
 target_link_libraries(math util ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
 set(math/OBJECTS ${objects} PARENT_SCOPE)

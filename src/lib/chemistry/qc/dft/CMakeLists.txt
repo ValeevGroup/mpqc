@@ -1,6 +1,8 @@
+include(AddLibrary)
+
 # dft library
 
-add_library(dft OBJECT
+add_mpqc_object_library(dft
   am05.cc
   clks.cc
   functional.cc

@@ -1,6 +1,8 @@
+include(AddLibrary)
+
 # lcao library
 
-add_library(lcao OBJECT
+add_mpqc_object_library(lcao
   clhfcontrib.cc
   compute_iRjS.cc
   compute_ijxy.cc

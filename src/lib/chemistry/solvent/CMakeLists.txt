@@ -1,6 +1,8 @@
+include(AddLibrary)
+
 # solvent library
 
-add_library(solvent OBJECT
+add_mpqc_object_library(solvent
   bem.cc
   disprep.cc
 )

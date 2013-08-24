@@ -1,6 +1,8 @@
+include(AddLibrary)
+
 # state library
 
-add_library(state OBJECT
+add_mpqc_object_library(state
   proxy.cc
   state.cc
   state_bin.cc
@@ -13,8 +15,8 @@ add_library(state OBJECT
 
 # tests
 
-set_property(SOURCE statetest.cc PROPERTY COMPILE_DEFINITIONS
-    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+set_property(SOURCE statetest.cc
+  PROPERTY COMPILE_DEFINITIONS -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
 add_executable(statetest EXCLUDE_FROM_ALL statetest.cc $<TARGET_OBJECTS:state>)
 add_test(statetest statetest)
 

@@ -1,6 +1,8 @@
+include(AddLibrary)
+
 # wfn library
 
-add_library(wfn OBJECT
+add_mpqc_object_library(wfn
   accum.cc
   density.cc
   densval.cc

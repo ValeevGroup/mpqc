@@ -1,6 +1,8 @@
+include(AddLibrary)
+
 # intv3 library
 
-add_library(intv3 OBJECT
+add_mpqc_object_library(intv3
   array.cc
 #  atominfo.cc
   bounds.cc

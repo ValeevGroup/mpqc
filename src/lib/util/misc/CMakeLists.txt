@@ -1,6 +1,8 @@
+include(AddLibrary)
+
 # misc library
 
-add_library(misc OBJECT
+add_mpqc_object_library(misc
   bug.cc
   compute.cc
   consumableresources.cc

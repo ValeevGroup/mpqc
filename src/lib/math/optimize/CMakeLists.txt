@@ -1,6 +1,8 @@
+include(AddLibrary)
+
 # optimize library
 
-add_library(optimize OBJECT
+add_mpqc_object_library(optimize
   conv.cc
   dfp.cc
   diis.cc

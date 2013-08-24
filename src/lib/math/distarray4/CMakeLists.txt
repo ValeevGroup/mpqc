@@ -1,3 +1,5 @@
+include(AddLibrary)
+
 # distarray4 library
 
 set(sources
@@ -10,7 +12,7 @@ if (HAVE_MPI)
   list(APPEND sources distarray4_mpiiofile.cc)
 endif()
 
-add_library(distarray4 OBJECT ${sources})
+add_mpqc_object_library(distarray4 ${sources})
 
 # tests
 

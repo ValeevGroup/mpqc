@@ -1,6 +1,8 @@
+include(AddLibrary)
+
 # scmat library
 
-add_library(scmat OBJECT
+add_mpqc_object_library(scmat
   abstract.cc
   blas.cc
   blkiter.cc

@@ -1,6 +1,8 @@
+include(AddLibrary)
+
 # render library
 
-add_library(render OBJECT
+add_mpqc_object_library(render
   algebra3.cc
   animate.cc
   appearance.cc

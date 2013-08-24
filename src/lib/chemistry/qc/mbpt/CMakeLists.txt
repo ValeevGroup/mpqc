@@ -1,6 +1,8 @@
+include(AddLibrary)
+
 # mbpt library
 
-add_library(mbpt OBJECT
+add_mpqc_object_library(mbpt
   bzerofast.c
   cscphf.cc
   csgmat.cc

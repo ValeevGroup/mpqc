@@ -1,6 +1,8 @@
+include(AddLibrary)
+
 # ccr12 library
 
-add_library(ccr12 OBJECT
+add_mpqc_object_library(ccr12
   ccr12.cc
   ccr12_info.cc
   ccr12_info_drivers.cc

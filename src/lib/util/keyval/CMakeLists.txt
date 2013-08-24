@@ -1,6 +1,8 @@
+include(AddLibrary)
+
 # keyval library
 
-add_library(keyval OBJECT
+add_mpqc_object_library(keyval
   ipv2.cc
   ipv2_alloc.cc
   ipv2_cwk.cc

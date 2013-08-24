@@ -1,8 +1,7 @@
-# class library
+include(AddLibrary)
 
-add_library(class OBJECT
-  class.cc
-)
+# class library
+add_mpqc_object_library(class class.cc)
 
 # tests
 

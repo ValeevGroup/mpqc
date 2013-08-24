@@ -1,3 +1,5 @@
+include(AddLibrary)
+
 set(subdirectories
   basis
   dft
@@ -28,9 +30,4 @@ if (HAVE_PSI3)
   list(APPEND subdirectories psi)
 endif()
 
-foreach(s ${subdirectories})
-  add_subdirectory(${s})
-  list(APPEND objects $<TARGET_OBJECTS:${s}>)
-endforeach()
-
-set(qc/OBJECTS ${objects} PARENT_SCOPE)
+add_mpqc_objects_target(qc ${subdirectories})

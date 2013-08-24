@@ -1,6 +1,8 @@
+include(AddLibrary)
+
 # psi library
 
-add_library(psi OBJECT
+add_mpqc_object_library(psi
   psicc.cc
   psicc_pt2r12.cc
   psici.cc

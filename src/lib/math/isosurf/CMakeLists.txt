@@ -1,6 +1,8 @@
+include(AddLibrary)
+
 # isosurf library
 
-add_library(isosurf OBJECT
+add_mpqc_object_library(isosurf
   edge.cc
   implicit.c
   isosurf.cc

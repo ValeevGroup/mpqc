@@ -1,6 +1,8 @@
+include(AddLibrary)
+
 # ref library
 
-add_library(ref OBJECT
+add_mpqc_object_library(ref
   ref.cc
   reftestx.cc)
 

@@ -32,6 +32,7 @@
 #include <chemistry/qc/wfn/orbital.h>
 #include <chemistry/qc/wfn/eht.h>
 #include <chemistry/qc/wfn/esp.h>
+#include <chemistry/qc/wfn/rdm.h>
 
 namespace sc {
 

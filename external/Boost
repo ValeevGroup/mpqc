@@ -15,15 +15,32 @@ if (DEFINED BOOST)
   set(BOOST_ROOT ${BOOST})
   set(Boost_NO_SYSTEM_PATHS TRUE)
   set(Boost_DETAILED_FAILURE_MSG TRUE)
-  if (PYTHONLIBS_FOUND)
-    set(pythoncomponent python)
-  else()
-    set(pythoncomponent )
+  find_package(Boost 1.48)
+  # COMPONENTS thread ${pythonlibs} system
+
+  # reset Boost_LIBRARIES
+  set(Boost_LIBRARIES "")
+
+  if (NOT Boost_THREAD_FOUND)
+    message("** Boost Thread not found")
+    set(Boost_FOUND FALSE)
   endif()
-  find_package(Boost 1.48 COMPONENTS thread ${pythonlibs} system)
+
+  if (NOT Boost_SYSTEM_FOUND)
+    message("** Boost System not found")
+    set(Boost_FOUND FALSE)
+  endif()
+
   if (NOT Boost_FOUND)
     message(FATAL_ERROR "Necessary Boost install not found in ${BOOST_ROOT}")
+  endif()  
+   
+  list(APPEND Boost_LIBRARIES ${Boost_THREAD_LIBRARY})
+  list(APPEND Boost_LIBRARIES ${Boost_SYSTEM_LIBRARY})
+  if (Boost_PYTHON_FOUND)
+    list(APPEND Boost_LIBRARIES ${Boost_PYTHON_LIBRARY})
   endif()
+
   set(HAVE_BOOST ON)
 
 elseif (MPQC_EXPERT)
@@ -60,7 +77,9 @@ else()
     set(BOOST_TOOLSET intel)
   endif()
 
-  set(BOOST_CONFIG "using ${BOOST_TOOLSET} : : ${CMAKE_CXX_COMPILER} : ${CMAKE_CXX_FLAGS} ;\n")
+  set(BOOST_CONFIG "using ${BOOST_TOOLSET} : : ${CMAKE_CXX_COMPILER} : 
+                    <cxxflags>\"${CMAKE_CXX_FLAGS}\"
+                    <linkflags>\"${CMAKE_CXX_FLAGS}\" ;\n")
 
   if (EXISTS ${EXTERNAL_BUILD_DIR}/boost/user-config.jam)
     file(READ ${EXTERNAL_BUILD_DIR}/boost/user-config.jam BOOST_CONFIG_JAM)
@@ -98,10 +117,10 @@ else()
 
   list(APPEND Boost_LIBRARIES ${EXTERNAL_BUILD_DIR}/boost/src/boost/stage/lib/libboost_thread.a)
   list(APPEND Boost_LIBRARIES ${EXTERNAL_BUILD_DIR}/boost/src/boost/stage/lib/libboost_system.a)
-  list(APPEND Boost_LIBRARIES ${EXTERNAL_BUILD_DIR}/boost/src/boost/stage/lib/libboost_unit_test_framework.a)
   if (HAVE_PYTHON)
     list(APPEND Boost_LIBRARIES ${EXTERNAL_BUILD_DIR}/boost/src/boost/stage/lib/libboost_python.a)
   endif()
+  set(Boost_TEST_LIBRARY ${EXTERNAL_BUILD_DIR}/boost/src/boost/stage/lib/libboost_unit_test_framework.a)
 
   set(HAVE_BOOST ON)
   

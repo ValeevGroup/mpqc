@@ -1,6 +1,8 @@
+include(AddLibrary)
+
 # molecule library
 
-add_library(molecule OBJECT
+add_mpqc_object_library(molecule
   atom.cc
   atominfo.cc
   bend.cc

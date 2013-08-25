@@ -1,6 +1,8 @@
+include(AddLibrary)
+
 # mbptr12 library
 
-add_library(mbptr12 OBJECT
+add_mpqc_object_library(mbptr12
 FxFgen.cc 
 Xgen.cc 
 approxApp.cc 

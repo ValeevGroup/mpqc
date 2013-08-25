@@ -1,6 +1,8 @@
+include(AddLibrary)
+
 # lmp2 library
 
-add_library(lmp2 OBJECT
+add_mpqc_object_library(lmp2
   collective.cc
   dgemminfo.cc
   domain.cc

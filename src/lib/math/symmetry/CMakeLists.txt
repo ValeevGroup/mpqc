@@ -1,6 +1,8 @@
+include(AddLibrary)
+
 # symmetry library
 
-add_library(symmetry OBJECT
+add_mpqc_object_library(symmetry
   chartab.cc
   corrtab.cc
   ico.cc

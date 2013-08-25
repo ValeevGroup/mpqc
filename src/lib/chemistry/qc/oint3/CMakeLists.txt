@@ -1,6 +1,8 @@
+include(AddLibrary)
+
 # oint3 library
 
-add_library(oint3 OBJECT
+add_mpqc_object_library(oint3
   build.cc
   i0100.cc
   i0100AB.cc

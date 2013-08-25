@@ -1,6 +1,8 @@
+include(AddLibrary)
+
 # basis library
 
-add_library(basis OBJECT
+add_mpqc_object_library(basis
   aotoso.cc
   cart.cc
   cartiter.cc

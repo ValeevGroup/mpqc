@@ -1,6 +1,8 @@
+include(AddLibrary)
+
 # ci library
 
-add_library(ci OBJECT
+add_mpqc_object_library(ci
   ci.cc
   compute.cc
 )

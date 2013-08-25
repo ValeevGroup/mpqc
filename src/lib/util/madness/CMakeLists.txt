@@ -1,6 +1,8 @@
+include(AddLibrary)
+
 # madness library
 
-add_library(madness OBJECT
+add_mpqc_object_library(madness
   init.cc
 )
 

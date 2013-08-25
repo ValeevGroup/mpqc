@@ -1,6 +1,8 @@
+include(AddLibrary)
+
 # scf library
 
-add_library(scf OBJECT
+add_mpqc_object_library(scf
   clhf.cc
   clscf.cc
   effh.cc

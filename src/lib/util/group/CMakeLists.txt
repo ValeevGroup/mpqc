@@ -1,3 +1,5 @@
+include(AddLibrary)
+
 # group library
 
 set(sources
@@ -36,7 +38,7 @@ endif()
 #   list(APPEND sources memarmci.cc)
 # endif()
 
-add_library(group OBJECT ${sources})
+add_mpqc_object_library(group ${sources})
 
 # tests
 

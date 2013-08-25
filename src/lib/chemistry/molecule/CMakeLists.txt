@@ -25,7 +25,6 @@ add_library(molecule OBJECT
   stors.cc
   stre.cc
   symmcoor.cc
-  symmetrize.cc
   taylor.cc
   tors.cc
 )

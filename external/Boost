@@ -60,7 +60,7 @@ else()
     set(BOOST_TOOLSET intel)
   endif()
 
-  set(BOOST_CONFIG "using ${BOOST_TOOLSET} : : ${CMAKE_CXX_COMPILER} : ${CMAKE_CXX_FLAGS};\n")
+  set(BOOST_CONFIG "using ${BOOST_TOOLSET} : : ${CMAKE_CXX_COMPILER} : ${CMAKE_CXX_FLAGS} ;\n")
 
   if (EXISTS ${EXTERNAL_BUILD_DIR}/boost/user-config.jam)
     file(READ ${EXTERNAL_BUILD_DIR}/boost/user-config.jam BOOST_CONFIG_JAM)

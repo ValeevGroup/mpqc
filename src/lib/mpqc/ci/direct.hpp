@@ -154,7 +154,7 @@ namespace ci {
                 {
                     MPQC_PROFILE_LINE;
                     double dd = 0;
-                    foreach (auto rb, local.block(alpha.size())) {
+                    foreach (auto rb, range(beta).block(1)) {
                         Matrix d = D.array(alpha,rb);
 
                         Vector aa(alpha.size());
@@ -188,7 +188,7 @@ namespace ci {
                     MPQC_PROFILE_LINE;
                     ci::Array &b = C;
                     b.vector(local).read(io.b[i]);
-                    orthonormalize(alpha, local, b.array(), D.array(), ci.comm);
+                    orthonormalize(alpha, beta, b.array(), D.array(), ci.comm);
                 }
                 D.sync();
 

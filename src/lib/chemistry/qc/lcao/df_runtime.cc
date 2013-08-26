@@ -418,6 +418,8 @@ DensityFittingRuntime::get_coefficients(const CoefKey& key)
     deallocate(ibfjbf_M_X_buffer_B);
   }
   //----------------------------------------//
+  if(munu_M_X->data_persistent()) munu_M_X->deactivate();
+  //----------------------------------------//
   // Now solve A * x = b, with A = ( X_(ab) | M | Y_(ab) ) and b = ( ibf jbf | M | Y_(ab) )
   // The result will be dfpart_size rows and 1 column and needs to be stored in the big C
   tim.change("06 - solve");

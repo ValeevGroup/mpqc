@@ -44,7 +44,7 @@ namespace mpqc{
     static sc::ClassDesc TiledBasisSet_cd(
                     typeid(TiledBasisSet), "TiledBasisSet", 1,
                     "public GaussianBasisSet",
-                    0,  create<TiledBasisSet>, create<TiledBasisSet>);
+                    0,  sc::create<TiledBasisSet>, sc::create<TiledBasisSet>);
 
     /**
      * Will create a basis using k-means clustering.

@@ -28,7 +28,7 @@
 #ifndef MPQC_BASIS_KCLUSTER_HPP
 #define MPQC_BASIS_KCLUSTER_HPP
 
-#include <chemsitry/molecule/atom.h>
+#include <chemistry/molecule/atom.h>
 #include <Eigen/Dense>
 #include <vector>
 
@@ -40,8 +40,8 @@ namespace basis {
         class ClusterAtom : public sc::Atom {
 
             // Takes the atom we want along with its molecular index.
-            Atom(const sc::Atom &atom, std::size_t index) :
-                atom_(atom),
+            ClusterAtom(const sc::Atom &atom, std::size_t index) :
+                sc::Atom(atom),
                 mol_index_(index)
             {}
 
@@ -50,9 +50,9 @@ namespace basis {
 
         private:
             // Don't use these
-            Atom();
-            Atom(const Atom &);
-            Atom& operator=(const Atom &);
+            ClusterAtom();
+            ClusterAtom(const Atom &);
+            ClusterAtom& operator=(const ClusterAtom &);
 
             std::size_t mol_index_;
         };
@@ -71,7 +71,7 @@ namespace basis {
          * Constructor takes an Eigen::Vector3d which designates the center
          * of the cluster.
          */
-        KCluster(const Vector3 &pos = Vector3(0,0,0)) : center_(pos){}
+        KCluster(const Vector3 &pos = Vector3(0,0,0)) : center_(pos)
         {}
 
         KCluster& operator=(const KCluster &rhs){

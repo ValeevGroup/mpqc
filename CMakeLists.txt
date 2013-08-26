@@ -236,7 +236,7 @@ set(INSTALLED_MPQC_DATA_PATH ${CMAKE_INSTALL_FULL_DATAROOTDIR}/mpqc/${MPQC_VERSI
 INSTALL(FILES ./lib/atominfo.kv DESTINATION ${MPQCDATAPATH})
 INSTALL(DIRECTORY ./lib/basis DESTINATION ${MPQCDATAPATH})
 
-include_directories("${PROJECT_BINARY_DIR}/src/lib")
+/include_directories("${PROJECT_BINARY_DIR}/src/lib")
 include_directories("${PROJECT_SOURCE_DIR}/src/lib")
 include_directories("${PROJECT_SOURCE_DIR}/include") # flex/lexer
 

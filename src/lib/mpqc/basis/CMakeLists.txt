@@ -1,10 +1,7 @@
-add_executable(tiledbasis_test tiledbasisset_test.cpp)
-
-
+add_executable(tiledbasis_test EXCLUDE_FROM_ALL tiledbasisset_test.cpp)
 
 target_link_libraries(tiledbasis_test
     chemistry
+    ${Boost_TEST_LIBRARY}
     ${Boost_LIBRARIES}
 )
-
-add_test(trange1 trange1_test)

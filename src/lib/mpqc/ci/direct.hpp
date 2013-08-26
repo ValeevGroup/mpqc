@@ -77,7 +77,7 @@ namespace ci {
                 C.vector(local).read(io.b[it]);
                 C.sync();
 
-                sigma(ci, h, V, C, D);
+                sigma(ci, h, V, C.array(), D.array());
                 D.sync();
 
                 D.vector(local).write(io.Hb[it]);
@@ -89,7 +89,7 @@ namespace ci {
             // augment G matrix
             {
                 Vector g = Vector::Zero(M);
-                foreach (auto r, local.block(128)) {
+                foreach (auto r, local.block(alpha.size())) {
                     Vector c(r.size());
                     const Vector &s = D.vector(r);
                     for (int j = 0; j < M; ++j) {
@@ -120,7 +120,7 @@ namespace ci {
                 //                 MPQC_PROFILE_LINE;
 
                 // update d part
-                foreach (auto r, local.block(128)) {
+                foreach (auto r, local.block(alpha.size())) {
                     Vector v(r.size());
                     Vector d(r.size());
                     d.fill(0);
@@ -139,7 +139,7 @@ namespace ci {
                 D.sync();
 
                 iters[it].E = lambda[0];
-                iters[it].D = norm(D, comm);
+                iters[it].D = norm(D.array(), comm);
 
                 if (comm.rank() == 0) {
                     double dc = fabs(iters[it - 1].D - iters[it].D);
@@ -154,8 +154,8 @@ namespace ci {
                 {
                     MPQC_PROFILE_LINE;
                     double dd = 0;
-                    foreach (auto rb, local.block(128)) {
-                        Matrix d = D(alpha,rb);
+                    foreach (auto rb, local.block(alpha.size())) {
+                        Matrix d = D.array(alpha,rb);
 
                         Vector aa(alpha.size());
                         for (int a = 0; a < alpha.size(); ++a) {
@@ -173,13 +173,13 @@ namespace ci {
                             }
                         }
 
-                        D(alpha,rb) << d;
+                        D.array(alpha,rb) << d;
                         dd += dot(d, d);
                     }
                     comm.sum(dd);
                     D.sync();
                     if (comm.rank() == 0)
-                        symmetrize(D, 1, 1 / sqrt(dd));
+                        symmetrize(D.array(), 1, 1 / sqrt(dd));
                     D.sync();
                 }
 
@@ -188,7 +188,7 @@ namespace ci {
                     MPQC_PROFILE_LINE;
                     ci::Array &b = C;
                     b.vector(local).read(io.b[i]);
-                    orthonormalize(alpha, local, b, D, ci.comm);
+                    orthonormalize(alpha, local, b.array(), D.array(), ci.comm);
                 }
                 D.sync();
 

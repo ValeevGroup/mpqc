@@ -306,7 +306,7 @@ namespace mpqc {
 
         MPI::Task task(ci.comm);
 
-        foreach (auto rj, ci.io.local.block(ci.block)) {
+        foreach (auto rj, range(beta).block(ci.block)) {
           MPQC_PROFILE_LINE;
 
           Matrix s, c;

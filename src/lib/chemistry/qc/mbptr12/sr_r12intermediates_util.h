@@ -265,6 +265,7 @@ namespace sc {
       if (t2_[AlphaBeta].null())
         throw ProgrammingError("SingleReference_R12Intermediates<T>::ijxy: asked for T2, but it had not been given");
 
+      auto oreg = r12world_->world()->tfactory()->orbital_registry();
       assert(oreg->value(bra1) == r12world_->refwfn()->occ_act(Alpha));
       assert(oreg->value(bra2) == r12world_->refwfn()->occ_act(Beta));
       assert(oreg->value(ket1) == r12world_->refwfn()->uocc_act(Alpha));

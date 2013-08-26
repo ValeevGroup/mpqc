@@ -111,7 +111,7 @@ namespace sc {
         */
       ResultRef get(const std::string& key);   // non-const: can compute something
 
-      /** Returns the Eigen::MatrixXd (a.k.a. CoefContainer) object corresponding
+      /** Returns the Eigen::MatrixXd (a.k.a. CoefResultRef) object corresponding
        *  to the CoefKey key given.
        */
       const CoefResultRef get(const CoefKey& key);

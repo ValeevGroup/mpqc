@@ -7,7 +7,7 @@ nproc = 4
 %molecule = $:ibuprofen
 %molecule = $:ethane_c1
 %molecule = $:naphtalene
-molecule = $:h2o
+molecule = $:h2o_dimer
 coor = $:symcoor
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -19,7 +19,7 @@ coor = $:symcoor
 
 mole<DFCLHF>: (
   %matrixkit = $:localmatrixkit
-  memory=32000000
+  memory = 32000000
   integrals<IntegralLibint2>:()
 
   df_basis<GaussianBasisSet>:(
@@ -44,21 +44,21 @@ mole<DFCLHF>: (
   	df_local_exchange = yes
     store_ints = mem
     %store_ints = mpi
-    exact_diag_J = no
+    exact_diag_J = yes
     exact_diag_K = yes
   )
 
 
   % Function
-  value_accuracy = 1e-5
+  value_accuracy = 1e-7
   gradient_accuracy = 1e-6
 
   % MolecularEnergy input
   molecule = $:molecule
   mbasis<GaussianBasisSet>: (
     molecule = $:molecule
-    name = "cc-pVDZ"
-    %name = "STO-3G"
+    %name = "cc-pVDZ"
+    name = "3-21G"
     %puream=yes
     %matrixkit = $:basis_matrixkit
   )
@@ -67,6 +67,8 @@ mole<DFCLHF>: (
     basis = $..:mbasis
   )
 
+  maxiter=20
+
   % comment out coor if molecule is an atom
   %coor = $:coor
 
@@ -74,13 +76,12 @@ mole<DFCLHF>: (
   %total_charge = 1
   %docc = [3 0 1 0]
   %socc = [0 0 0 1]
-  %maxiter=2
   %extrap<DIIS>: (
   %  n = 4
   %)
 
   %guess_wavefunction = "scftest.wfn"
-  guess_wavefunction = $:guess
+  %guess_wavefunction = $:guess
   %debug = 4
 )
 
@@ -108,7 +109,7 @@ ehw_guess<ExtendedHuckelWfn>: (
   molecule = $:molecule
   %basis = $:mole:basis
   basis<GaussianBasisSet>: (
-    molecule = $:molecule
+    molecule = $..:molecule
     name = "STO-6G"
   )
 )
@@ -296,7 +297,7 @@ he<Molecule>: (
   }
 )
 
-r = 5
+r = 2
 he2<Molecule>: (
   units=bohr
   symmetry=c1
@@ -306,14 +307,26 @@ he2<Molecule>: (
   }
 )
 
-r = 5
+r = 4
 he4<Molecule>: (
-  symmetry=c1
+  units=bohr
+  symmetry=auto
   { atoms geometry } = {
      he [ 0 0 0 ]
      he [ 0 0 $:r ]
      he [ 0 $:r 0 ]
      he [ 0 $:r $:r ]
+  }
+)
+
+h4<Molecule>: (
+  units=bohr
+  symmetry=c1
+  { atoms geometry } = {
+     h [ 0 0 0 ]
+     h [ 0 0 $:r ]
+     h [ 0 $:r 0 ]
+     h [ 0 $:r $:r ]
   }
 )
 
@@ -656,6 +669,19 @@ acetone_c1<Molecule>: (
   }
 )
 
+h2o_dimer<Molecule>: (
+  symmetry = c1
+  units = bohr
+  { atoms geometry } = {
+      O  [  -0.00000000  -0.11130487  -0.00000000 ]
+      H  [  -1.53256789   0.88382491   0.00000000 ]
+      H  [   1.53256789   0.88382491   0.00000000 ]
+      O  [   5.00000000  -0.11130487   0.00000000 ]
+      H  [   3.46743211   0.88382491   0.00000000 ]
+      H  [   6.53256789   0.88382491   0.00000000 ]
+  }
+)
+
 basis:(
   oxygen: "foo": [
     (type: [am = s]
@@ -673,4 +699,3 @@ basis:(
 % Local Variables:
 % mode: keyval
 % End:
-% vim: syn match Comment "\v\%.*$" :

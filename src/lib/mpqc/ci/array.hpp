@@ -54,6 +54,7 @@ namespace ci {
         }
 
         mpqc::Array<double> array(range ri, range rj) {
+            //std::cout << "array " << ri << "," << rj << std::endl;
             return data_(ri,rj);
         }
 
@@ -70,7 +71,7 @@ namespace ci {
         mpqc::Array<double> data_;
         static std::vector<size_t> extents(size_t m, size_t n) {
             std::vector<size_t> v{m,n};
-            std::cout << "v=" << v.size() << std::endl;
+            //std::cout << "v=" << v.size() << std::endl;
             return v;
         }
     };

@@ -34,13 +34,36 @@
 
 namespace mpqc {
 namespace basis {
+    namespace cluster {
+        // A wrapper around sc::Atom which also knows the atoms index in the
+        // molecule.
+        class ClusterAtom : public sc::Atom {
+
+            // Takes the atom we want along with its molecular index.
+            Atom(const sc::Atom &atom, std::size_t index) :
+                atom_(atom),
+                mol_index_(index)
+            {}
+
+            // return the index of the atom in the molecule.
+            std::size_t mol_index() const {return mol_index_;}
+
+        private:
+            // Don't use these
+            Atom();
+            Atom(const Atom &);
+            Atom& operator=(const Atom &);
+
+            std::size_t mol_index_;
+        };
+    }
 
     /**
      * class holds the information about the differnt clusters in k-means
      * tiling.
      */
     class KCluster {
-        using Atom = sc::Atom;
+        using Atom = cluster::ClusterAtom;
         using Vector3 = Eigen::Vector3d;
 
         /**
@@ -55,9 +78,9 @@ namespace basis {
             return *this;
         }
 
-        /// Adds an atom to the cluster.
-        void add_atom(const Atom &atom){
-            atoms_.push_back(atom);
+        /// Adds an atom to the cluster. Must know its index as well
+        void add_atom(const sc::Atom &atom, std::size_t index){
+            atoms_.push_back(Atom(atom, index));
         }
 
         /// Finds distance to any atom to the center of the cluster.
@@ -68,6 +91,7 @@ namespace basis {
         }
         /// Returns the position vector of the center of the cluster.
         const Vector3& center() const { return center_; }
+
 
         /// Returns the centorid of the cluster.
         Vector3 centroid(){
@@ -92,10 +116,20 @@ namespace basis {
 
         }
 
+        /// Move the center to the centroid of the cluster and forget members.
+        void guess_center(){
+            center_ = centroid();
+            atoms_.clear();
+        }
+
+        /// Return the index
+
         /// Returns the number of atoms in cluster.
         std::size_t n_atoms(){
             return atoms_.size();
         }
+
+        const std::vector<Atom>&  atoms() const { return  atoms_;}
 
     private:
         Vector3 center_;

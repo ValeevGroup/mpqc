@@ -81,7 +81,7 @@ namespace basis {
 
         /// Adds an atom to the cluster. Must know its index as well
         void add_atom(const sc::Atom &atom, std::size_t index){
-            atoms_.push_back(Atom(atom, index));
+            atoms_.push_back(ClusterAtom(atom, index));
         }
 
         /// Finds distance to any atom to the center of the cluster.
@@ -97,7 +97,7 @@ namespace basis {
         /// Returns the centorid of the cluster.
         Vector3 centroid(){
 
-            std::size_t n_atoms = n_atoms();
+            std::size_t n_atoms = natoms();
             Vector3 centroid(0,0,0);
 
             // Loop over all of the members of the cluster and total their
@@ -126,7 +126,7 @@ namespace basis {
         /// Return the index
 
         /// Returns the number of atoms in cluster.
-        std::size_t n_atoms(){
+        std::size_t natoms(){
             return atoms_.size();
         }
 

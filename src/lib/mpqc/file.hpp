@@ -526,6 +526,7 @@ namespace mpqc {
             assert(id() > 0);
             foreach (auto e, extents) {
                 range r = extent(e);
+                std::cout << "Dataset " << r << std::endl;
                 base_.push_back(*r.begin());
                 dims_.push_back(r.size());
             }
@@ -621,6 +622,7 @@ namespace mpqc {
                 std::vector<hsize_t> dims;
                 foreach (auto e, extents) {
                     dims.push_back(extent(e).size());
+                    std::cout << dims.back() << std::endl;
                 }
                 std::reverse(dims.begin(), dims.end());
 
@@ -648,6 +650,19 @@ namespace mpqc {
         //     return Dataset(H5Dopen1(parent.id(), name.c_str()));
         // }
 
+    protected:
+
+        /** Return range as is */
+        static range extent(const range &r) {
+            return r;
+        }
+
+        /** Return integral argument e as range(0,e) */
+        template <typename E>
+        static range extent(const E &e) {
+            return range(0,e);
+        }
+
     private:
 
         std::vector<size_t> base_; // base index
@@ -659,17 +674,6 @@ namespace mpqc {
         static void close(hid_t id) {
             // printf("H5Dclose(%i), ref=%i\n", id, H5Iget_ref(id));
             MPQC_FILE_VERIFY(H5Dclose(id));
-        }
-
-        /** Return range as is */
-        static range extent(const range &r) {
-            return r;
-        }
-
-        /** Return integral argument e as range(0,e) */
-        template <typename E>
-        static range extent(const E &e) {
-            return range(0,e);
         }
 
     };

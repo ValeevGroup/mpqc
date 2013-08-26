@@ -54,6 +54,7 @@ namespace mpqc{
     public:
         typedef basis::ShellOrder::Shell Shell;
         typedef sc::Ref<sc::GaussianBasisSet> Basis;
+        typedef basis::ShellOrder::ShellRange ShellRange;
 
         /**
          * Constructs a TiledBasisSet from a sc::Keyval object.
@@ -63,7 +64,7 @@ namespace mpqc{
          *     be divided into.
          */
         TiledBasisSet(const sc::Ref<sc::Keyval> &keyval, std::size_t nclusters):
-            nclusters_(nclusters),
+            nclusters_(nclusters), SRange()
         {
             Basis basis;
             basis << keyval->describedclassvalue("basis");
@@ -78,16 +79,17 @@ namespace mpqc{
 
             basis::ShellOrder ordering(basis);
             std::vector<Shell> shells = ordering.ordered_shells(nclusters_);
+            SRange = ordering.shell_ranges();
 
-            init(name_conv(basis->name()),
-                 name_conv(basis_-label()),
+            init(name_conv_TBS(basis->name()),
+                 name_conv_TBS(basis_-label()),
                  basis_->molecule(),
                  shells);
         }
 
         static
         std::string
-        name_conv(const std::string& name){
+        name_conv_TBS(const std::string& name){
             if(name.empty()) return name;
             std::string new_name = "TiledArray(";
             newname += name;
@@ -95,15 +97,30 @@ namespace mpqc{
             return newname;
         }
 
-        /*
+        /**
+         * Returns a TiledArray::TiledRange1 for tiles made by k-means clustering.
+         */
         TiledArray::TiledRange1
-        trange1(){
+        trange1() const {
+            std::vector<std::size_t> tilesizes;
+            tilesizes.reserve(nclusters_);
+
+            // Loop over clusters
+            for(auto i = 0; i < nclusters_; ++i){
+               // Get the first function in the shell
+               tilesizes.push_back(function_to_shell(SRange[i]));
+            }
+
+            // Get the last function in the shell since our loop doesn't cover it.
+            tilesizes.push_back(nbasis());
+
+            return TiledArray::TiledRange1(tilesizes.begin(), tilesizes.end());
 
         }
-        */
 
     private:
         std::size_t nclusters_;
+        ShellRange SRange_;
     };
 } // namespace mpqc
 

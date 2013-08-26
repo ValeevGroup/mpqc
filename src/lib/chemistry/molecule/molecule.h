@@ -278,6 +278,9 @@ class Molecule: public SavableState
                   int have_charge = 0, double charge = 0.0,
                   int have_fragment = 0, int fragment = 0);
 
+    Atom atom(int i){ return atoms_[i]; }
+    const std::vector<Atom>& atoms() const { return atoms_; }
+
     /// Print information about the molecule.
     virtual void print(std::ostream& =ExEnv::out0()) const;
     virtual void print_parsedkeyval(std::ostream& =ExEnv::out0(),

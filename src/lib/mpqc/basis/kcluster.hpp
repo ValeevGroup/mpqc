@@ -63,6 +63,7 @@ namespace basis {
      * tiling.
      */
     class KCluster {
+    public:
         using Atom = cluster::ClusterAtom;
         using Vector3 = Eigen::Vector3d;
 

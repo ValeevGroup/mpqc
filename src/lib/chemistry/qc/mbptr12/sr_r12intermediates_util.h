@@ -202,13 +202,13 @@ namespace sc {
     auto bra2 = to_space(pkey.bra2());
     auto ket1 = to_space(pkey.ket1());
     auto ket2 = to_space(pkey.ket2());
+    auto oreg = r12world_->world()->tfactory()->orbital_registry();
 
     Ref<DistArray4> darray4;
     if (rdm2) { // rdm2
       if (rdm2_.null())
         throw ProgrammingError("SingleReference_R12Intermediates<T>::ijxy: asked for rdm2, but it had not been given");
       // if requested spaces don't match exactly, make a new DistArray4
-      auto oreg = r12world_->world()->tfactory()->orbital_registry();
       auto bra1_space = oreg->value(bra1);
       auto bra2_space = oreg->value(bra2);
       auto ket1_space = oreg->value(ket1);

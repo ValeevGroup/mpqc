@@ -2,6 +2,7 @@
 #define MPQC_RANGE_HPP
 
 #include <iostream>
+#include <vector>
 
 #include <boost/range/irange.hpp>
 #include <boost/iterator/iterator_facade.hpp>

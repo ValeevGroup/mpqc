@@ -9,7 +9,7 @@ add_subdirectory(math)
 add_subdirectory(interfaces/tiledarray/tests)
 add_subdirectory(interfaces/tiledarray/tiling)
 add_subdirectory(basis)
-
+add_subdirectory(test)
 
 # # library headers
 # file(GLOB_RECURSE headers RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.hpp)
@@ -21,10 +21,6 @@ add_subdirectory(basis)
 # install(FILES ${CMAKE_CURRENT_BINARY_DIR}/config.h DESTINATION include/mpqc)
 
 install(FILES range.hpp DESTINATION include/mpqc)
-
-# tests
-
-add_executable(tensor.test EXCLUDE_FROM_ALL math/tensor/test.cpp)
 
 # target_link_libraries(test-mpqc ${Boost_LIBRARIES})
 # #target_link_libraries(test-mpqc ${LAPACK_LIBRARIES})

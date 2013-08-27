@@ -139,7 +139,7 @@ namespace ci {
                 D.sync();
 
                 iters[it].E = lambda[0];
-                iters[it].D = norm(D.array(), comm);
+                iters[it].D = norm(D, comm, local);
 
                 if (comm.rank() == 0) {
                     double dc = fabs(iters[it - 1].D - iters[it].D);
@@ -188,7 +188,8 @@ namespace ci {
                     MPQC_PROFILE_LINE;
                     ci::Array &b = C;
                     b.vector(local).read(io.b[i]);
-                    orthonormalize(alpha, beta, b.array(), D.array(), ci.comm);
+                    orthonormalize(b.vector(local), D.vector(local),
+                                   ci.comm, alpha.size());
                 }
                 D.sync();
 

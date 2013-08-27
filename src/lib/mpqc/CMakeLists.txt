@@ -28,3 +28,9 @@ install(FILES range.hpp DESTINATION include/mpqc)
 # target_link_libraries(test-mpqc ${LIBRARIES})
 # target_link_libraries(test-mpqc ${CMAKE_DL_LIBS})
 
+add_executable(file_test EXCLUDE_FROM_ALL file_test.cpp)
+target_link_libraries(file_test
+  mpqc_test
+  ${HDF5_LIBRARIES}
+)
+add_test(file file_test)

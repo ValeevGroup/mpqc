@@ -26,22 +26,46 @@
 //
 
 #include "tiledbasisset.hpp"
+#include <chemistry/qc/basis/integral.h>
+#include <mpqc/integrals/integralenginepool.hpp>
+#include <mpqc/interfaces/tiledarray/array_ints.hpp>
 
 using namespace mpqc;
-int main(){
+int main(int argc, char** argv){
+    madness::World &world = madness::initialize(argc, argv);
     sc::Ref<sc::Molecule>  mol = new sc::Molecule;
+    /*
     mol->add_atom( 6,     0,     0,    0);
     mol->add_atom( 9,    -1,    -1,    0);
     mol->add_atom( 1,   0.6,  -0.1,  0.9);
     mol->add_atom(17, -0.75,   1.5,    0);
     mol->add_atom(35,   1.1, -0.18, -1.5);
+    */
+    mol->add_atom( 1, 0, 1, -1);
+    mol->add_atom( 1, 0, 1, 1);
 
-    sc::Ref<AssignedKeyVal> akv = new  sc::AssignedKeyVal;
+    sc::Ref<sc::AssignedKeyVal> akv = new  sc::AssignedKeyVal;
     akv->assign("name", "3-21G");
     akv->assign("molecule", mol.pointer());
+    akv->assign("cluster_size", 2);
 
     sc::Ref<TiledBasisSet> tbasis =
-                    new TiledBasisSet(sc::Ref<sc::KeyVal>(akv), 2);
+                    new TiledBasisSet(sc::Ref<sc::KeyVal>(akv));
+
+    sc::Ref<sc::Integral> Int_fac = sc::Integral::initial_integral(argc, argv);
+    if(Int_fac.nonnull())
+        sc::Integral::set_default_integral(Int_fac);
+    Int_fac = sc::Integral::get_default_integral()->clone();
+    Int_fac->set_basis(tbasis);
+
+    IntegralEnginePool<sc::Ref<sc::OneBodyInt> > overlap_pool(Int_fac->overlap());
+    TiledArray::Array<double, 2> S = Integrals(world, overlap_pool,
+                                               tbasis);
+
+    world.gop.fence();
+    std::cout << "S = \n" << S << std::endl;
+
+
     return 0;
 }
 

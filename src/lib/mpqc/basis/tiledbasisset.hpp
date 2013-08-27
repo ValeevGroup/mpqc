@@ -32,19 +32,17 @@
 #include <vector>
 
 #include <chemistry/qc/basis/basis.h>
+#include <chemistry/qc/basis/gaussbas.h>
 #include <chemistry/molecule/atom.h>
 #include <chemistry/molecule/molecule.h>
 
 #include <Eigen/Dense>
 #include <mpqc/utility/foreach.hpp>
+#include "shellorder.hpp"
 #include "kcluster.hpp"
 #include <string>
 
 namespace mpqc{
-    static sc::ClassDesc TiledBasisSet_cd(
-                    typeid(TiledBasisSet), "TiledBasisSet", 1,
-                    "public GaussianBasisSet",
-                    0,  sc::create<TiledBasisSet>, sc::create<TiledBasisSet>);
 
     /**
      * Will create a basis using k-means clustering.
@@ -63,15 +61,16 @@ namespace mpqc{
          * @param[in] nclusters is the number of KClusters the molecule should
          *     be divided into.
          */
-        TiledBasisSet(const sc::Ref<sc::Keyval> &keyval, std::size_t nclusters):
-            nclusters_(nclusters), SRange()
+        TiledBasisSet(const sc::Ref<sc::KeyVal> &keyval):
+            SRange_(), nclusters_(keyval->intvalue("cluster_size",
+                                                   sc::KeyValValueint(2)))
         {
             Basis basis;
             basis << keyval->describedclassvalue("basis");
             if(basis.null()){
-                basis = new GaussianBasisSet(keyval);
+                basis = new sc::GaussianBasisSet(keyval);
                 if(basis.null()){
-                    throw InputError("Could not construct a GaussianBasisSet",
+                    throw sc::InputError("Could not construct a GaussianBasisSet",
                                      __FILE__, __LINE__,
                                      "basis", 0, class_desc());
                 }
@@ -79,11 +78,11 @@ namespace mpqc{
 
             basis::ShellOrder ordering(basis);
             std::vector<Shell> shells = ordering.ordered_shells(nclusters_);
-            SRange = ordering.shell_ranges();
+            SRange_ = ordering.shell_ranges();
 
             init(name_conv_TBS(basis->name()),
-                 name_conv_TBS(basis_-label()),
-                 basis_->molecule(),
+                 name_conv_TBS(basis->label()),
+                 basis->molecule(),
                  shells);
         }
 
@@ -92,9 +91,9 @@ namespace mpqc{
         name_conv_TBS(const std::string& name){
             if(name.empty()) return name;
             std::string new_name = "TiledArray(";
-            newname += name;
-            newname += ")";
-            return newname;
+            new_name += name;
+            new_name += ")";
+            return new_name;
         }
 
         /**
@@ -108,7 +107,7 @@ namespace mpqc{
             // Loop over clusters
             for(auto i = 0; i < nclusters_; ++i){
                // Get the first function in the shell
-               tilesizes.push_back(function_to_shell(SRange[i]));
+               tilesizes.push_back(shell_to_function(SRange_[i]));
             }
 
             // Get the last function in the shell since our loop doesn't cover it.
@@ -118,10 +117,23 @@ namespace mpqc{
 
         }
 
+        TiledBasisSet(sc::StateIn& s):
+            sc::SavableState(s), sc::GaussianBasisSet(s)
+        {}
+
+        void save_data_state(sc::StateOut& s){
+            sc::GaussianBasisSet::save_data_state(s);
+        }
+
     private:
         std::size_t nclusters_;
         ShellRange SRange_;
     };
+
+    static sc::ClassDesc TiledBasisSet_cd(
+                    typeid(TiledBasisSet), "TiledBasisSet", 1,
+                    "public GaussianBasisSet",
+                    0,  sc::create<TiledBasisSet>, sc::create<TiledBasisSet>);
 } // namespace mpqc
 
 

@@ -32,10 +32,9 @@
 #include<string>
 #include<cassert>
 
-#include<Eigen/Dense>
-#include<chemistry/moleucle/atom.h>
-#include<chemistry/molecule/molecule.h>
-#include<chemistry/qc/basis/basis.h>
+#include <Eigen/Dense>
+#include <chemistry/molecule/molecule.h>
+#include <chemistry/qc/basis/basis.h>
 
 #include <mpqc/utility/foreach.hpp>
 #include "kcluster.hpp"
@@ -43,25 +42,27 @@
 namespace mpqc{
 namespace basis{
 
+    namespace TA = TiledArray;
+
     /**
      * Determines the clustering of shells based on k-means clustering.
      */
     class ShellOrder {
-        using namespace TA = TiledArray;
 
     public:
-        using Shell = sc::Shell;
-        using Atom = cluster::Atom;
+        using Shell = sc::GaussianBasisSet::Shell;
+        using Atom = KCluster::Atom;
         /// Each element represents the shell a new tile starts on.  So if the
         /// vector looks like | 0, 5, 6 ) then tile 0 is from 0-4, tile 1 has 5,
         /// tile 3 has 6.
         using ShellRange = std::vector<std::size_t>;
+        using Vector3 = KCluster::Vector3;
 
         /**
          * Initializes ShellOrder with the atoms from the molecule and the shells
          * from the basis.
          */
-        ShellOrder(const sc::Ref<sc::GausianBasisSet> &basis) :
+        ShellOrder(const sc::Ref<sc::GaussianBasisSet> &basis) :
             clusters_(),
             atoms_(),
             basis_(basis)
@@ -93,7 +94,7 @@ namespace basis{
         /**
          * Returns a a ShellRange which specifies what shell each tile starts on.
          */
-        ShellRange shell_ranges(){
+        ShellRange shell_ranges() const {
             return compute_shell_ranges();
         }
 
@@ -118,8 +119,8 @@ namespace basis{
 
             // Initialize the kcluster guess at the position of the heaviest atoms.
             for(auto i = 0; i < nclusters_; ++i){
-                kclusters_.push_back(
-                    Vector3(atoms_[i].xyz(0), atoms_[i].xyz(1), atoms_[i],xyz(2))
+                clusters_.push_back(
+                    Vector3(atoms_[i].xyz(0), atoms_[i].xyz(1), atoms_[i].xyz(2))
                 );
             }
 
@@ -134,7 +135,7 @@ namespace basis{
             // Loop over all the atoms.
             foreach(const auto atom, atoms_){
                 // Guess that first cluster is closest
-                double smallest = kclusters_[0].distance(atom);
+                double smallest = clusters_[0].distance(atom);
 
                 // To which cluster the atom belongs.
                 std::size_t kindex = 0;
@@ -142,7 +143,7 @@ namespace basis{
                 // Loop over kclusters
                 for(auto i = 1; i < nclusters_; ++i){
                     // Compute distance from atom to next kcluster
-                    double dist = kclusters_[i].distance(atom);
+                    double dist = clusters_[i].distance(atom);
 
                     // if closer update index info
                     if(dist < smallest){
@@ -152,7 +153,7 @@ namespace basis{
                 }
 
                 // Add atom to the closest kcluster
-                kclusters_[kindex].add_member(atom);
+                clusters_[kindex].add_atom(atom);
             }
         }
 
@@ -165,7 +166,7 @@ namespace basis{
                // Recompute the center of the cluster using the centroid
                // the atoms.  Will lose information about which atoms
                // go with which center.
-               foreach(auto &cluster, kclusters_){ cluster.guess_center(); }
+               foreach(auto &cluster, clusters_){ cluster.guess_center(); }
 
                attach_to_closest_cluster();
            }
@@ -174,7 +175,7 @@ namespace basis{
         /*
          * Returns a vector of shells in the order they appear in the clusters.
          */
-        std::vector<Shell> cluster_shells(){
+        std::vector<Shell> cluster_shells() const {
 
             std::vector<Shell> shells;
             // Loop over clusters
@@ -189,7 +190,7 @@ namespace basis{
                     // Loop over the shells on the atom and pack them into
                     // shells.
                     for(auto i = 0; i < nshells_on_atom; ++i){
-                        shells.push_back(basis_(atom_index, i));
+                        shells.push_back(basis_->operator()(atom_index, i));
                     }
                 }
             }
@@ -200,7 +201,7 @@ namespace basis{
         /*
          * Returns a ShellRange that contains the shells included on each cluster.
          */
-        ShellRange compute_shell_ranges(){
+        ShellRange compute_shell_ranges() const {
             ShellRange range;
             range.reserve(nclusters_);
 
@@ -219,7 +220,7 @@ namespace basis{
                     shells_in_cluster += basis_->nshell_on_center(atom_index);
                 }
                 // Compute the Starting Shell of the next tile.
-                range.push_back(range[i - 1], shells_in_cluster);
+                range.push_back(range.at(i) + shells_in_cluster);
             }
 
             return  range;

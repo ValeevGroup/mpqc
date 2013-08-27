@@ -29,6 +29,7 @@
 #define MPQC_BASIS_KCLUSTER_HPP
 
 #include <chemistry/molecule/atom.h>
+#include <chemistry/qc/basis/gaussbas.h>
 #include <Eigen/Dense>
 #include <vector>
 
@@ -38,6 +39,7 @@ namespace basis {
         // A wrapper around sc::Atom which also knows the atoms index in the
         // molecule.
         class ClusterAtom : public sc::Atom {
+        public:
 
             // Takes the atom we want along with its molecular index.
             ClusterAtom(const sc::Atom &atom, std::size_t index) :
@@ -51,8 +53,6 @@ namespace basis {
         private:
             // Don't use these
             ClusterAtom();
-            ClusterAtom(const Atom &);
-            ClusterAtom& operator=(const ClusterAtom &);
 
             std::size_t mol_index_;
         };
@@ -81,7 +81,12 @@ namespace basis {
 
         /// Adds an atom to the cluster. Must know its index as well
         void add_atom(const sc::Atom &atom, std::size_t index){
-            atoms_.push_back(ClusterAtom(atom, index));
+            atoms_.push_back(Atom(atom, index));
+        }
+
+        /// Adds an atom to the cluster. Must know its index as well
+        void add_atom(const Atom &atom){
+            atoms_.push_back(atom);
         }
 
         /// Finds distance to any atom to the center of the cluster.
@@ -102,16 +107,16 @@ namespace basis {
 
             // Loop over all of the members of the cluster and total their
             // positions in each diminsion.
-            for(auto i = 0; i < n_members; ++i){
-                centroid[0] += members_[i].xyz(0);
-                centroid[1] += members_[i].xyz(1);
-                centroid[2] += members_[i].xyz(2);
+            for(auto i = 0; i < natoms(); ++i){
+                centroid[0] += atoms_[i].xyz(0);
+                centroid[1] += atoms_[i].xyz(1);
+                centroid[2] += atoms_[i].xyz(2);
             }
 
             // Get the average position in each dimension.
-            centroid[0] = centroid[0]/n_members;
-            centroid[1] = centroid[1]/n_members;
-            centroid[2] = centroid[2]/n_members;
+            centroid[0] = centroid[0]/natoms();
+            centroid[1] = centroid[1]/natoms();
+            centroid[2] = centroid[2]/natoms();
 
             return centroid;
 

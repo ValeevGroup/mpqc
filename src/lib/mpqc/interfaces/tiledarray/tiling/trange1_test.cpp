@@ -59,7 +59,7 @@ BOOST_AUTO_TEST_CASE(tile_by_atom) {
     {
         TA::TiledRange1 tr1 = tiling::tile_by_atom(basis);
         std::vector<std::pair<std::size_t, std::size_t> > ranges;
-        ranges.push_back(std::make_pair(0,8));
+        ranges.push_back(std::make_pair(0,9));
         ranges.push_back(std::make_pair(9,18));
         ranges.push_back(std::make_pair(18,20));
         ranges.push_back(std::make_pair(20,33));

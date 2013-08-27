@@ -16,41 +16,61 @@ namespace ci {
         }
 
         struct Vector {
+            // not correct in parallel runs, fix it
+            Vector operator()(range r) {
+                MPQC_CHECK(r.size() < r_.size());
+                auto begin = r_.front();
+                return Vector(data_, alpha_, beta_,
+                              range(r.front() + begin, r.back()+1+begin));
+            }
+            size_t size() const {
+                return r_.size();
+            }
             void read(mpqc::File::Dataspace<double> ds) {
-                mpqc::Vector v(this->size_);
+                mpqc::Vector v(this->size());
                 ds.read(v.data());
-                data_.put(v.data());
+                this->put(v);
             }
             void write(mpqc::File::Dataspace<double> ds) {
-                const mpqc::Vector &v = *this;
+                const mpqc::Vector &v = this->get();
                 ds.write(v.data());
             }
             operator mpqc::Vector() const {
-                mpqc::Vector v(this->size_);
-                data_.get(v.data());
-                return v;
+                return this->get();
             }
             void put(const mpqc::Vector &v) {
-                data_.put(v.data());
+                MPQC_CHECK(v.size() == this->size());
+                data_(r2()).put(v.data());
+            }
+            mpqc::Vector get() const {
+                mpqc::Vector v(this->size());
+                data_(r2()).get(v.data());
+                return v;
             }
         private:
             friend class Array;
-            Vector(Array *data, range r)
+            Vector(mpqc::Array<double> data, size_t alpha, size_t beta, range r)
+                : data_(data), alpha_(alpha), beta_(beta), r_(r)
             {
                 //std::cout << "range r = " << r << std::endl;
-                MPQC_CHECK(r.front()%data->rows_ == 0);
-                MPQC_CHECK(r.size()%data->rows_ == 0);
-                range ri = range(r.front()%data->cols_, 1+r.back()%data->cols_);
-                range rj = range(r.front()/data->cols_, 1+r.back()/data->cols_);
-                this->data_ = data->array(ri, rj);
-                this->size_ = r.size();
             }
+            std::vector<range> r2() const {
+                MPQC_CHECK(r_.front()%alpha_ == 0);
+                MPQC_CHECK(r_.size()%alpha_ == 0);
+                std::vector<range> r2;
+                r2.push_back(range(r_.front()%beta_, 1+r_.back()%beta_));
+                r2.push_back(range(r_.front()/beta_, 1+r_.back()/beta_));
+                return r2;
+                //std::cout << "r_[] = " << r_[0] << "," << r_[1] << std::endl;
+            }
+        private:
             mpqc::Array<double> data_;
-            size_t size_;
+            size_t alpha_, beta_;
+            range r_;
         };
 
         Vector vector(range r) {
-            return Vector(this, r);
+            return Vector(this->data_, rows_, cols_, r);
         }
 
         mpqc::Array<double> array(range ri, range rj) {
@@ -78,20 +98,6 @@ namespace ci {
 
     inline void operator<<(Array::Vector a, const mpqc::Vector &v) {
         a.put(v);
-    }
-
-    double norm(const mpqc::Array<double> &A, const MPI::Comm &comm) {
-        MPQC_PROFILE_LINE;
-        range r1 = range(0, A.dims()[0]);
-        auto r2 = range(0, A.dims()[1]).block(128);
-        double n = 0;
-        MPI::Task task(comm);
-        int j;
-        while ((j = task++) < r2.size()) {
-            n += norm(Matrix(A(r1, r2[j])));
-        }
-        comm.sum(n);
-        return n;
     }
 
     void symmetrize(Matrix &a, double phase, double scale) {
@@ -127,50 +133,54 @@ namespace ci {
         }
     }
 
+    double norm(ci::Array v, const MPI::Comm &comm, range local) {
+        double n = 0;
+        n += Vector(v.vector(local)).norm();
+        comm.sum(n);
+        return n;
+    }
+
     /**
      //     double db = dot(D, b);
      //     D = D - db*b;
      //     D *= 1/D.norm();
      //     @return <d,b>/||d||
      */
-    double orthonormalize(range alpha, range beta,
-                          const mpqc::Array<double> &b,
-                          mpqc::Array<double> &D,
-                          MPI::Comm &comm) {
-        MPQC_PROFILE_LINE;
+    double orthonormalize(ci::Array::Vector b, ci::Array::Vector D,
+                          MPI::Comm &comm, size_t block) {
+        MPQC_CHECK(b.size() == D.size());
+        range R(0, b.size());
         // db = d*B
         double db = 0;
         //#pragma omp parallel reduction(+:db)
-        foreach (auto j, beta.block(128)) {
-            //MPQC_PROFILE_LINE;
-            db += dot<double>(D(alpha,j), b(alpha,j));
+        foreach (auto rj, R.block(block)) {
+            Vector Dj = D(rj);
+            Vector bj = b(rj);
+            db += Dj.dot(bj);
         }
         comm.sum(db);
 
         // D = D - db*b;
         double dd = 0;
         // #pragma omp parallel reduction(+:dd)
-        foreach (auto j, beta.block(128)) {
-            //MPQC_PROFILE_LINE;
-            Matrix bj = b(alpha,j);
-            Matrix Dj = D(alpha,j);
+        foreach (auto rj, R.block(block)) {
+            Vector bj = b(rj);
+            Vector Dj = D(rj);
             Dj -= db*bj;
-            dd += dot(Dj, Dj);
-            D(alpha,j) << Dj;
+            dd += Dj.dot(Dj);
+            D(rj) << Dj;
         }
         comm.sum(dd);
 
         // D = D/||D||
-        dd = 1 / sqrt(dd);
+        dd = 1/sqrt(dd);
         //#pragma omp parallel
-        foreach (auto j, beta.block(128)) {
-            //MPQC_PROFILE_LINE;
-            Matrix Dj = D(alpha,j);
+        foreach (auto rj, R.block(block)) {
+            Vector Dj = D(rj);
             Dj *= dd;
-            //D(alpha,b) *= d;
-            D(alpha,j) << Dj;
+            D(rj) << Dj;
         }
-        return db * dd;
+        return db*dd;
     }
 
 

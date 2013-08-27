@@ -7,7 +7,7 @@
 #include "mpqc/utility/profile.hpp"
 
 #include "mpqc/ci/string.hpp"
-#include "mpqc/ci/hamiltonian.hpp"
+#include "mpqc/ci/preconditioner.hpp"
 #include "mpqc/ci/sigma.hpp"
 #include "mpqc/ci/array.hpp"
 
@@ -20,8 +20,6 @@ namespace ci {
 
     template<class Type>
     std::vector<double> direct(CI<Type> &ci, const Vector &h, const Matrix &V) {
-
-        MPQC_PROFILE_REGISTER_THREAD;
 
         Matrix lambda;
         Vector a, r;
@@ -44,8 +42,7 @@ namespace ci {
         iters[-1].E = iters[-1].D = 0;
 
         auto &comm = ci.comm;
-        auto &io = ci.io;
-        range local = ci.io.local;
+        range local = ci.vector.local;
 
         ci::Array C("ci.C", alpha.size(), beta.size(), comm);
         ci::Array D("ci.D", alpha.size(), beta.size(), comm);
@@ -74,17 +71,15 @@ namespace ci {
             }
 
             {
-                C.vector(local).read(io.b[it]);
+                C.vector(local).read(ci.vector.b[it]);
                 C.sync();
 
                 sigma(ci, h, V, C.array(), D.array());
                 D.sync();
 
-                D.vector(local).write(io.Hb[it]);
+                D.vector(local).write(ci.vector.Hb[it]);
                 comm.barrier();
             }
-
-            MPQC_PROFILE_RESET;
 
             // augment G matrix
             {
@@ -93,7 +88,7 @@ namespace ci {
                     Vector c(r.size());
                     const Vector &s = D.vector(r);
                     for (int j = 0; j < M; ++j) {
-                        io.b(r,j) >> c;
+                        ci.vector.b(r,j) >> c;
                         g(j) += c.dot(s);
                     }
                 }
@@ -117,21 +112,18 @@ namespace ci {
 
             for (int k = 0; k < R; ++k) {
 
-                //                 MPQC_PROFILE_LINE;
-
                 // update d part
                 foreach (auto r, local.block(alpha.size())) {
                     Vector v(r.size());
                     Vector d(r.size());
                     d.fill(0);
                     for (int i = 0; i < M; ++i) {
-                        MPQC_PROFILE_LINE;
-                        io.b(r,i) >> v;
+                        ci.vector.b(r,i) >> v;
                         double r = -a(i,k)*lambda(k);
                         d += r*v;
                     }
                     for (int i = 0; i < M; ++i) {
-                        io.Hb(r,i) >> v;
+                        ci.vector.Hb(r,i) >> v;
                         d += a(i,k)*v;
                     }
                     D.vector(r) << d;
@@ -139,61 +131,31 @@ namespace ci {
                 D.sync();
 
                 iters[it].E = lambda[0];
-                iters[it].D = norm(D, comm, local);
+                iters[it].D = norm(D, comm, local, alpha.size());
 
                 if (comm.rank() == 0) {
                     double dc = fabs(iters[it - 1].D - iters[it].D);
                     double de = fabs(iters[it - 1].E - iters[it].E);
                     sc::ExEnv::out0()
                         << sc::indent
-                        << sc::scprintf("CI iter. %3i, E=%15.12lf, del.E=%4.2e, del.C=%4.2e\n",
-                                        (int) it, lambda[0] + ci.e_ref + ci.e_core, de, dc);
+                        << sc::scprintf("CI iter. %3i, E=%15.12lf, "
+                                        "del.E=%4.2e, del.C=%4.2e\n",
+                                        (int)it, lambda[0] + ci.e_ref + ci.e_core,
+                                        de, dc);
                 }
 
-                // preconditioner
-                {
-                    MPQC_PROFILE_LINE;
-                    double dd = 0;
-                    foreach (auto rb, range(beta).block(1)) {
-                        Matrix d = D.array(alpha,rb);
-
-                        Vector aa(alpha.size());
-                        for (int a = 0; a < alpha.size(); ++a) {
-                            aa(a) = diagonal(alpha[a], h, V);
-                        }
-
-#pragma omp parallel for schedule(dynamic,1)
-                        for (int j = 0; j < rb.size(); ++j) {
-                            const String &bj = beta[rb[j]];
-                            double bb = diagonal(bj, h, V);
-                            for (int a = 0; a < alpha.size(); ++a) {
-                                double q = diagonal2(alpha[a], bj, V);
-                                q = (lambda[0] - (q + aa(a) + bb));
-                                d(a,j) = (fabs(q) > 1.0e-4) ? d(a,j)/q : 0;
-                            }
-                        }
-
-                        D.array(alpha,rb) << d;
-                        dd += dot(d, d);
-                    }
-                    comm.sum(dd);
-                    D.sync();
-                    if (comm.rank() == 0)
-                        symmetrize(D.array(), 1, 1 / sqrt(dd));
-                    D.sync();
-                }
+                preconditioner(ci, h, V, lambda[0], D);
 
                 // orthonormalize
                 for (int i = 0; i < M; ++i) {
                     MPQC_PROFILE_LINE;
                     ci::Array &b = C;
-                    b.vector(local).read(io.b[i]);
-                    orthonormalize(b.vector(local), D.vector(local),
-                                   ci.comm, alpha.size());
+                    b.vector(local).read(ci.vector.b[i]);
+                    orthonormalize(b, D, ci.comm, local, alpha.size());
                 }
                 D.sync();
 
-                D.vector(local).write(io.b[it + 1]);
+                D.vector(local).write(ci.vector.b[it + 1]);
 
             }
 

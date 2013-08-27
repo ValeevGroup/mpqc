@@ -59,6 +59,11 @@ namespace ci {
         bool test(const String &a, const String &b) const {
             return true;
         }
+    protected:
+        range local(MPI::Comm comm) const {
+            range r = range(beta.size()).split2(comm.size()).at(comm.rank());
+            return range(*r.begin()*alpha.size(), *r.end()*alpha.size());
+        }
     };
 
     template<class Index = ci::String::Index>
@@ -111,6 +116,10 @@ namespace ci {
         bool test(const String &a, const String &b) const {
             return (String::difference(a,b) <= this->rank_);
         }
+    protected:
+        range local(MPI::Comm) const {
+            throw;
+        }
     private:
         int rank_;
         struct SortByExcitation {
@@ -123,31 +132,20 @@ namespace ci {
         };
     };
 
-    template<class CI_>
-    struct CI : CI_, Config {
+    template<class Base>
+    struct CI : Base, Config {
 
-        using CI_::alpha;
-        using CI_::beta;
-        using CI_::dets;
+        using Base::alpha;
+        using Base::beta;
+        using Base::dets;
 
         struct IO : boost::noncopyable {
             range local;
             File::Dataset<double> b, Hb;
-            // IO(MPI::Comm comm, File::Group io, Distribution d, size_t N) {
-            //     std::vector<range> extents(2);
-            //     //extents[0] = range(0, size);
-            //     extents[2] = range(0, N);
-
-            //     extents[1] = extents[1].split2(comm.size()).at(comm.rank());
-            //     local = extents[1];
-
-            //     b = File::Dataset<double>(io, "b", extents);
-            //     Hb = File::Dataset<double>(io, "Hb", extents);
-            // }
         };
 
         CI(const Config &config, MPI::Comm comm, File::Group io) 
-            : Config(config), CI_(config), comm(comm)
+            : Config(config), Base(config), comm(comm)
         {
             sc::ExEnv::out0()
                 << sc::indent
@@ -157,46 +155,34 @@ namespace ci {
                 << sc::scprintf("alpha = %lu, beta = %lu, dets = %lu\n",
                                 alpha.size(), beta.size(), dets);
 
-            std::vector<size_t> extents{dets, config.max};
-            this->io.local = range(0,this->dets);
-            this->io.b = File::Dataset<double>(io, "b", extents);
-            this->io.Hb = File::Dataset<double>(io, "Hb", extents);
+            this->vector.local = Base::local(comm);
+            std::vector<range> extents{this->vector.local, range(0,config.max)};
+            this->vector.b = File::Dataset<double>(io, "b", extents);
+            this->vector.Hb = File::Dataset<double>(io, "Hb", extents);
 
             initialize();
             
         }
 
-        //void guess(Array<double> C) const {}
-
         bool test(const String &a) const {
-            return CI_::test(a, String(a.size(), a.count()));
+            return Base::test(a, String(a.size(), a.count()));
         }
 
         void initialize() {
             Vector one(1);
             one[0] = 1;
-            if (*io.local.begin() <= 0 && 0 < *io.local.end())
-                io.b(0,0) << one;
+            if (*vector.local.begin() <= 0 && 0 < *vector.local.end())
+                vector.b(0,0) << one;
             comm.barrier();
         }
 
     public:
         MPI::Comm comm;
-        IO io;
+        IO vector;
     };
 
     typedef CI< Full<> > FullCI;
     typedef CI< Truncated<> > TruncatedCI;
-
-    // template<>
-    // struct CI<Full> : CI<> {
-    //     CI(const Config &config, MPI::Comm comm, File::Group io)
-    //         : CI<>(config, comm, io,
-    //                ci::strings(config.orbitals, config.alpha),
-    //                ci::strings(config.orbitals, config.beta))
-    //     {
-    //     }
-    // };
 
     // template<>
     // struct CI<Truncated> : CI<> {
@@ -266,24 +252,20 @@ namespace ci {
 } // namespace mpqc
 
 
-namespace mpqc {
-namespace ci {
-
-}
-}
-
 namespace sc {
-  /// writes Config to sc::StateOut
-  inline void ToStateOut(const mpqc::ci::Config &a, StateOut &so, int &count) {
-    const char* a_cast = reinterpret_cast<const char*>(&a);
-    count += so.put(a_cast, sizeof(mpqc::ci::Config));
-  }
 
-  /// reads Config from sc::StateIn
-  inline void FromStateIn(mpqc::ci::Config &a, StateIn &si, int &count) {
-    char* a_cast = reinterpret_cast<char*>(&a);
-    count += si.get(a_cast);
-  }
+    /// writes Config to sc::StateOut
+    inline void ToStateOut(const mpqc::ci::Config &a, StateOut &so, int &count) {
+        const char* a_cast = reinterpret_cast<const char*>(&a);
+        count += so.put(a_cast, sizeof(mpqc::ci::Config));
+    }
+
+    /// reads Config from sc::StateIn
+    inline void FromStateIn(mpqc::ci::Config &a, StateIn &si, int &count) {
+        char* a_cast = reinterpret_cast<char*>(&a);
+        count += si.get(a_cast);
+    }
+
 }
 
 #endif // MPQC_CI_CONFIG_HPP

@@ -9,10 +9,11 @@ namespace ci {
 
     struct Array  {
         Array(const std::string &name, size_t m, size_t n, MPI::Comm comm)
-            : cols_(m), rows_(n),
-              data_(name, extents(m,n))
+            : data_(name, extents(m,n), comm),
+              alpha_(m), beta_(n)
+              
         {
-            std::cout << "m = " << m << ", n = " << n << std::endl;
+            //std::cout << "m = " << m << ", n = " << n << std::endl;
         }
 
         struct Vector {
@@ -70,7 +71,7 @@ namespace ci {
         };
 
         Vector vector(range r) {
-            return Vector(this->data_, rows_, cols_, r);
+            return Vector(this->data_, alpha_, beta_, r);
         }
 
         mpqc::Array<double> array(range ri, range rj) {
@@ -87,7 +88,7 @@ namespace ci {
         }
 
     private:
-        size_t cols_, rows_;
+        size_t alpha_, beta_;
         mpqc::Array<double> data_;
         static std::vector<size_t> extents(size_t m, size_t n) {
             std::vector<size_t> v{m,n};
@@ -133,9 +134,11 @@ namespace ci {
         }
     }
 
-    double norm(ci::Array v, const MPI::Comm &comm, range local) {
+    double norm(ci::Array v, const MPI::Comm &comm, range local, size_t block) {
         double n = 0;
-        n += Vector(v.vector(local)).norm();
+        foreach (auto r, local.block(block)) {
+            n += Vector(v.vector(r)).norm();
+        }
         comm.sum(n);
         return n;
     }
@@ -146,16 +149,15 @@ namespace ci {
      //     D *= 1/D.norm();
      //     @return <d,b>/||d||
      */
-    double orthonormalize(ci::Array::Vector b, ci::Array::Vector D,
-                          MPI::Comm &comm, size_t block) {
-        MPQC_CHECK(b.size() == D.size());
-        range R(0, b.size());
+    double orthonormalize(ci::Array b, ci::Array D,
+                          MPI::Comm &comm,
+                          range local, size_t block) {
         // db = d*B
         double db = 0;
         //#pragma omp parallel reduction(+:db)
-        foreach (auto rj, R.block(block)) {
-            Vector Dj = D(rj);
-            Vector bj = b(rj);
+        foreach (auto rj, local.block(block)) {
+            Vector Dj = D.vector(rj);
+            Vector bj = b.vector(rj);
             db += Dj.dot(bj);
         }
         comm.sum(db);
@@ -163,22 +165,22 @@ namespace ci {
         // D = D - db*b;
         double dd = 0;
         // #pragma omp parallel reduction(+:dd)
-        foreach (auto rj, R.block(block)) {
-            Vector bj = b(rj);
-            Vector Dj = D(rj);
+        foreach (auto rj, local.block(block)) {
+            Vector bj = b.vector(rj);
+            Vector Dj = D.vector(rj);
             Dj -= db*bj;
             dd += Dj.dot(Dj);
-            D(rj) << Dj;
+            D.vector(rj) << Dj;
         }
         comm.sum(dd);
 
         // D = D/||D||
         dd = 1/sqrt(dd);
         //#pragma omp parallel
-        foreach (auto rj, R.block(block)) {
-            Vector Dj = D(rj);
+        foreach (auto rj, local.block(block)) {
+            Vector Dj = D.vector(rj);
             Dj *= dd;
-            D(rj) << Dj;
+            D.vector(rj) << Dj;
         }
         return db*dd;
     }

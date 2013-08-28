@@ -1417,6 +1417,7 @@ namespace sc {
           const int dfbfoffB = dfbs->shell_to_function(dfshoffB);
           IntPair atomAB(atomA, atomB);
           //----------------------------------------//
+          munu_g_X->retrieve_pair_block(0, mu, g_type_idx);
           munu_g_X->retrieve_pair_subblock(
               0, mu,      // unit basis index, mu_index
               g_type_idx,
@@ -1460,6 +1461,7 @@ namespace sc {
             timer_exit(2);
           }
           //----------------------------------------//
+          munu_g_X->release_pair_block(0, mu, g_type_idx);
         } // end loop over nu
       } // end loop over mu
       //----------------------------------------//
@@ -2081,43 +2083,6 @@ namespace sc {
           }
           //matprint(dtilde_mu, "dtilde_mu");
           //----------------------------------------//
-          /* Old exact diagonal */ #if 0
-          if(do_exact){
-            timer_enter("exact diagonal", 4);
-            //----------------------------------------//
-            // Compute dtilde_ab
-            if(dtilde_ab.count(atomB) == 0) {
-              dtilde_ab[atomB].resize(nbfB, dfnbfAB);
-              dtilde_ab[atomB] = Eigen::MatrixXd::Zero(nbfB, dfnbfAB);
-            }
-            for(int sigmaB = 0; sigmaB < nbfB; ++sigmaB){
-              dtilde_ab[atomB].row(sigmaB).head(dfnbfA) += D(rho, bfoffB + sigmaB) * Cpart->head(dfnbfA);
-              if(atomA != atomB){
-                dtilde_ab[atomB].row(sigmaB).tail(dfnbfB) += D(rho, bfoffB + sigmaB) * Cpart->tail(dfnbfB);
-              }
-            }
-            //----------------------------------------//
-            if(atomA != atomB){
-              // Compute dtilde_ba
-              if(dtilde_ba.count(atomB) == 0) {
-                dtilde_ba[atomB].resize(nbfA, dfnbfAB);
-                dtilde_ba[atomB] = Eigen::MatrixXd::Zero(nbfA, dfnbfAB);
-              }
-              for(int sigmaA = 0; sigmaA < nbfA; ++sigmaA){
-                dtilde_ba[atomB].row(sigmaA).head(dfnbfA) += D(rho, bfoffA + sigmaA) * Cpart->head(dfnbfA);
-                if(atomA != atomB){
-                  dtilde_ba[atomB].row(sigmaA).tail(dfnbfB) += D(rho, bfoffA + sigmaA) * Cpart->tail(dfnbfB);
-                }
-              }
-            }
-            //----------------------------------------//
-            timer_exit(4);
-            //matprint(dtilde_ab[atomB], "dtilde_ab[" << atomB << "]");
-            //matprint(dtilde_ba[atomB], "dtilde_ba[" << atomB << "]");
-          } // end if do_exact
-          //----------------------------------------//
-          /* Old exact diagonal */ #endif
-          //----------------------------------------//
           if(do_exact){
             timer_change("03 - exact_diagonal", 3);
             //----------------------------------------//
@@ -2126,6 +2091,7 @@ namespace sc {
             timer_enter("01 - common", 4);
             Eigen::RowVectorXd gpart_nusigma_A(dfnbfA), gpart_nusigma_B(dfnbfB);
             Eigen::RowVectorXd gpart_murho_A(dfnbfA), gpart_murho_B(dfnbfB);
+            munu_g_X->retrieve_pair_block(0, mu, g_type_idx);
             munu_g_X->retrieve_pair_subblock(
                 0, mu,     // index in unit basis, index in mu
                 g_type_idx,
@@ -2179,6 +2145,7 @@ namespace sc {
             //----------------------------------------//
             for(int nu = bfoffA; nu < bfoffA + nbfA; ++nu){
               const int nuA = nu - bfoffA;
+              munu_g_X->retrieve_pair_block(0, nu, g_type_idx);
               for(int sigma = bfoffB; sigma < bfoffB + nbfB; ++sigma){
                 const int sigmaB = sigma - bfoffB;
                 //----------------------------------------//
@@ -2226,6 +2193,7 @@ namespace sc {
                   g_ab[rho](nuA, sigmaB) -= gtmp.transpose().tail(dfnbfB) * C_nu_sigma->tail(dfnbfB);
                 }
               } // end loop over basis functions in B (sigma)
+              munu_g_X->release_pair_block(0, nu, g_type_idx);
             } // end loop over basis functions in A (nu)
             //========================================//
             if(atomA != atomB){
@@ -2238,6 +2206,7 @@ namespace sc {
               //----------------------------------------//
               for(int nu = bfoffB; nu < bfoffB + nbfB; ++nu){
                 const int nuB = nu - bfoffB;
+                munu_g_X->retrieve_pair_block(0, nu, g_type_idx);
                 for(int sigma = bfoffA; sigma < bfoffA + nbfA; ++sigma){
                   const int sigmaA = sigma - bfoffA;
                   //----------------------------------------//
@@ -2283,10 +2252,14 @@ namespace sc {
                   g_ba[rho](nuB, sigmaA) -= gtmp.transpose().tail(dfnbfB) * C_nu_sigma->head(dfnbfB);
 
                 } // end loop over basis functions in atom A (sigma)
+                //----------------------------------------//
+                munu_g_X->release_pair_block(0, nu, g_type_idx);
+                //----------------------------------------//
               } // end loop over basis functions in atom B (nu)
               //----------------------------------------//
             } // end if atomA != atomB
             //----------------------------------------//
+            munu_g_X->release_pair_block(0, mu, g_type_idx);
             timer_exit(4);
           } // end if do exact
           //========================================//

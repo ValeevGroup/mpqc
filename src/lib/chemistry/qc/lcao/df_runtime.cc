@@ -393,6 +393,7 @@ DensityFittingRuntime::get_coefficients(const CoefKey& key)
   // get (ibf jbf | M | X(A) )
   double* ibfjbf_M_X_buffer_A = allocate<double>(dfnbfA);
   Eigen::Map<Eigen::VectorXd> ibfjbf_M_X_A(ibfjbf_M_X_buffer_A, dfnbfA);
+  munu_M_X->retrieve_pair_block(0, bf1, ints_type_idx);
   munu_M_X->retrieve_pair_subblock(
       0, bf1,     // index in unit basis, index in mu
       ints_type_idx,
@@ -417,6 +418,7 @@ DensityFittingRuntime::get_coefficients(const CoefKey& key)
     ibfjbf_M_X.tail(dfnbfB) = ibfjbf_M_X_B;
     deallocate(ibfjbf_M_X_buffer_B);
   }
+  munu_M_X->release_pair_block(0, bf1, ints_type_idx);
   //----------------------------------------//
   if(munu_M_X->data_persistent()) munu_M_X->deactivate();
   //----------------------------------------//

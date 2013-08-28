@@ -3,11 +3,11 @@ mpqc:(
   mole = $:mole
 )
 
-molecule = $:ibuprofen
+%molecule = $:ibuprofen
 %molecule = $:ethane_c1
 %molecule = $:naphtalene
-%molecule = $:h2o_dimer
-coor = $:symcoor
+molecule = $:h2o
+%coor = $:symcoor
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -23,7 +23,7 @@ mole<DFCLHF>: (
 
   df_basis<GaussianBasisSet>:(
     molecule = $..:molecule
-    name = "cc-pVTZ-JKFIT"
+    name = "cc-pVDZ-JKFIT"
     %name = "cc-pVTZ-JKFIT"
     %name = "aug-cc-pV6Z"
     %name = "cc-pVTZ-RI"
@@ -117,13 +117,13 @@ ehw_guess<ExtendedHuckelWfn>: (
 )
 
 
-xopt<QNewtonOpt>: (
-  convergence = 1.0e-6
-  max_iterations = 2
-  function = $:mole
-  transition_state=no
-  update<BFGSUpdate>:()
-)
+%xopt<QNewtonOpt>: (
+%  convergence = 1.0e-6
+%  max_iterations = 2
+%  function = $:mole
+%  transition_state=no
+%  update<BFGSUpdate>:()
+%)
 
 
 

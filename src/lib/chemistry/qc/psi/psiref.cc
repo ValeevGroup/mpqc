@@ -397,7 +397,7 @@ PsiRASCI_RefWavefunction::init_spaces()
   Ref<OrbitalSpace> mospace = wfn()->orbs_sb(Alpha);
   RefSCMatrix evecs_ao = mospace->coefs();
   RefDiagSCMatrix evals = mospace->evals();
-  const int nmo = evecs_ao.coldim().n();
+  int nmo = evecs_ao.coldim().n();
 
   // select occupied orbitals:
   // frozen-core is occupied
@@ -446,6 +446,7 @@ PsiRASCI_RefWavefunction::init_spaces()
     evecs_ao = occspace->coefs();
     evals = occspace->evals();
     occs = std::vector<double>(evals.n(), 1.0);
+    nmo = evals.n();
   }
 
   // compute active orbital mask

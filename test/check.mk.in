@@ -80,6 +80,27 @@ H2OMP2MASTER=h2omp2.qci
 H2OMP2INPUTS=$(shell $(MAKEIN) -p $(PROGRAM) -I$(TESTDIR) -e -d $(INP) $(H2OMP2MASTER))
 H2OMP2OUTPUTS = $(H2OMP2INPUTS:%.$(INSUF)=%.out)
 
+# this will keep track of "short" R12 tests suitable for quick check0 and check1
+SHORTR12INPUTS=
+ifeq ($(RUN_MBPTF12),yes)
+  SHORTR12INPUTS1 = mp2f12_hmp2cabssingles00ccpvqz.in \
+    pt2f12_scfc11ccpvdzaugccpvdzc2v.in \
+    mp2f12_ch2mp2f12slashc10ccpvdzccpvdzf12cabsccpvtzric2v_ansatz=diag,coupling=true_.in \
+    mp2f12_ch2mp2f12slashc10ccpvdzccpvdzf12cabsccpvtzric2v_ansatz=ijkl,coupling=true_.in
+  ifeq ($(RUN_CCR12),yes)
+    SHORTR12INPUTS2 = ccsdptpr12_df_ne.in
+  endif
+  ifeq ($(RUN_PSI),yes)
+    SHORTR12INPUTS3 = \
+      psiccsdpt2f12_h2opsiccsd_tf12ccpvdzccpvdzf12cabsccpvtzric2v_ansatz=diag,ebc=false_.in \
+      psiccsdpt2f12_h2opsiccsd_tf12ccpvdzccpvdzf12cabsccpvtzric2v_ansatz=ijkl,ebc=false_.in \
+      psipt2f12_casscfc11ccpvdzaugccpvdzc2v.in \
+      psipt2f12_mrcic10ccpvdzaugccpvdzc2v.in
+  endif
+  SHORTR12INPUTS = $(SHORTR12INPUTS1) $(SHORTR12INPUTS2) $(SHORTR12INPUTS3)
+endif
+SHORTR12INPUTS := $(SHORTR12INPUTS:%=$(INP)/%)
+
 MP2R12MASTER=mp2r12.qci
 MP2R12INPUTS=
 ifeq ($(RUN_MBPTR12),yes)
@@ -388,6 +409,7 @@ ifeq ($(MPQCRUN_INTEGRAL),cints)
   CHECK0INPUTS := $(filter $(CINTSFILTER),$(CHECK0INPUTS))
 endif
 ifeq ($(MPQCRUN_INTEGRAL),libint2)
+  CHECK0INPUTS := $(SHORTR12INPUTS)
   CHECK0INPUTS := $(filter $(LIBINT2FILTER),$(CHECK0INPUTS))
 endif
 CHECK0OUTPUTS := $(CHECK0INPUTS:%.$(INSUF)=%.out)
@@ -421,6 +443,7 @@ ifeq ($(MPQCRUN_INTEGRAL),cints)
   CHECK1INPUTS := $(filter $(CINTSFILTER),$(CHECK1INPUTS))
 endif
 ifeq ($(MPQCRUN_INTEGRAL),libint2)
+  CHECK1INPUTS := $(SHORTR12INPUTS)
   CHECK1INPUTS := $(filter $(LIBINT2FILTER),$(CHECK1INPUTS))
 endif
 CHECK1OUTPUTS := $(CHECK1INPUTS:%.$(INSUF)=%.out)

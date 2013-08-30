@@ -2034,6 +2034,8 @@ namespace sc {
       /* Loop over (local) basis functions mu		                                          {{{1 */ #if 1 // begin fold
       timer_change("05 - loop over mu", 1);
       timer_enter("misc", 2);
+      blasint prod_size = obsnbf*dfnbf;
+      blasint one = 1;
       for(int mu = 0; mu < branbf; ++mu){
         if(not munu_g_X->is_local(0, mu))
           continue;
@@ -2091,7 +2093,7 @@ namespace sc {
             timer_enter("01 - common", 4);
             Eigen::RowVectorXd gpart_nusigma_A(dfnbfA), gpart_nusigma_B(dfnbfB);
             Eigen::RowVectorXd gpart_murho_A(dfnbfA), gpart_murho_B(dfnbfB);
-            munu_g_X->retrieve_pair_block(0, mu, g_type_idx);
+            //munu_g_X->retrieve_pair_block(0, mu, g_type_idx);
             munu_g_X->retrieve_pair_subblock(
                 0, mu,     // index in unit basis, index in mu
                 g_type_idx,
@@ -2259,7 +2261,7 @@ namespace sc {
               //----------------------------------------//
             } // end if atomA != atomB
             //----------------------------------------//
-            munu_g_X->release_pair_block(0, mu, g_type_idx);
+            //munu_g_X->release_pair_block(0, mu, g_type_idx);
             timer_exit(4);
           } // end if do exact
           //========================================//
@@ -2271,81 +2273,17 @@ namespace sc {
         timer_change("02 - compute gtilde_mu", 2);
         EigenMatrix gtilde_mu(obsnbf, dfnbf);
         gtilde_mu = dtilde_mu * X_g_Y;
-        //matprint(gtilde_mu, "gtilde_mu");
-        /* Old exact diagonal */ #if 0
-        if(do_exact){
-          timer_enter("exact diagonal", 3);
-          for(int atomB = 0; atomB < obs->ncenter(); ++atomB) {
-            const int nbfB = obs->nbasis_on_center(atomB);
-            const int dfnbfB = dfbs->nbasis_on_center(atomB);
-            const int dfshoffB = dfbs->shell_on_center(atomB, 0);
-            const int dfbfoffB = dfbs->shell_to_function(dfshoffB);
-            const int dfnbfAB = atomA != atomB ? dfnbfA + dfnbfB : dfnbfA;
-            //----------------------------------------//
-              // Compute gtilde_ab
-              if(gtilde_ab.count(atomB) == 0) {
-                gtilde_ab[atomB].resize(nbfB, dfnbfAB);
-                gtilde_ab[atomB] = Eigen::MatrixXd::Zero(nbfB, dfnbfAB);
-              }
-              gtilde_ab[atomB].leftCols(dfnbfA) += dtilde_ab[atomB].leftCols(dfnbfA) * X_g_Y.block(
-                  dfbfoffA, dfbfoffA,
-                  dfnbfA,   dfnbfA
-              );
-              if(atomA != atomB){
-                gtilde_ab[atomB].leftCols(dfnbfA) += dtilde_ab[atomB].rightCols(dfnbfB) * X_g_Y.block(
-                    dfbfoffB, dfbfoffA,
-                    dfnbfB,   dfnbfA
-                );
-                gtilde_ab[atomB].rightCols(dfnbfB) += dtilde_ab[atomB].leftCols(dfnbfA) * X_g_Y.block(
-                    dfbfoffA, dfbfoffB,
-                    dfnbfA,   dfnbfB
-                );
-                gtilde_ab[atomB].rightCols(dfnbfB) += dtilde_ab[atomB].rightCols(dfnbfB) * X_g_Y.block(
-                    dfbfoffB, dfbfoffB,
-                    dfnbfB,   dfnbfB
-                );
-              }
-              //----------------------------------------//
-              // Compute gtilde_ba
-              if(atomA != atomB) {
-                if(gtilde_ba.count(atomB) == 0) {
-                  gtilde_ba[atomB].resize(nbfA, dfnbfAB);
-                  gtilde_ba[atomB] = Eigen::MatrixXd::Zero(nbfA, dfnbfAB);
-                }
-                gtilde_ba[atomB].leftCols(dfnbfA) += dtilde_ba[atomB].leftCols(dfnbfA) * X_g_Y.block(
-                    dfbfoffA, dfbfoffA,
-                    dfnbfA,   dfnbfA
-                );
-                if(atomA != atomB){
-                  gtilde_ba[atomB].leftCols(dfnbfA) += dtilde_ba[atomB].rightCols(dfnbfB) * X_g_Y.block(
-                      dfbfoffB, dfbfoffA,
-                      dfnbfB,   dfnbfA
-                  );
-                  gtilde_ba[atomB].rightCols(dfnbfB) += dtilde_ba[atomB].leftCols(dfnbfA) * X_g_Y.block(
-                      dfbfoffA, dfbfoffB,
-                      dfnbfA,   dfnbfB
-                  );
-                  gtilde_ba[atomB].rightCols(dfnbfB) += dtilde_ba[atomB].rightCols(dfnbfB) * X_g_Y.block(
-                      dfbfoffB, dfbfoffB,
-                      dfnbfB,   dfnbfB
-                  );
-                }
-              }
-            //----------------------------------------//
-            //----------------------------------------//
-          } // end loop over atomB
-          //matprint(gtilde_ab[atomB], "gtilde_ab[" << atomB << "]");
-          //matprint(gtilde_ba[atomB], "gtilde_ba[" << atomB << "]");
-          timer_exit(3);
-        } // end if do_exact
-        /* Old exact diagonal */ #endif
         /*******************************************************/ #endif //end fold
         /*-----------------------------------------------------*/
         /* Compute K_tilde                                {{{2 */ #if 2 // begin fold
         timer_change("03 - compute K_tilde", 2);
         timer_enter("misc", 3);
         Eigen::VectorXd gpart_nu(obsnbf*dfnbf);
-        VectorMap dpart_mu(dtilde_mu.data(), obsnbf*dfnbf);
+        // I have no idea why this works but map does not
+        Eigen::RowVectorXd dpart_mu(obsnbf*dfnbf);
+        for(int sigma = 0; sigma < obsnbf; ++sigma){
+          dpart_mu.segment(sigma*dfnbf, dfnbf) = dtilde_mu.row(sigma);
+        }
         for(int nu = 0; nu < ketnbf; ++nu){
           const int ishB = obs->function_to_shell(nu);
           const int atomB = obs->shell_to_center(ishB);
@@ -2361,67 +2299,9 @@ namespace sc {
           munu_g_X->retrieve_pair_block(0, nu, g_type_idx, gpart_nu.data());
           //----------------------------------------//
           timer_change("02 - 3 body contribution", 3);
-          for(int sigma = 0; sigma < obsnbf; ++sigma){
-            Ktilde(mu, nu) += dtilde_mu.row(sigma) * gpart_nu.segment(sigma*dfnbf, dfnbf);
-          }
-          //----------------------------------------//
-          /* Old exact diagonal */ #if 0
-          if(do_exact){
-            timer_enter("exact diagonal", 4);
-            //----------------------------------------//
-            // dtilde_ab contribution
-            if(atomA == atomB){
-              // Ktilde_{mu nu} -= d(c)_{mu_a sigma_c}^{X_ac} * (X_ac | nu_a sigma_c)
-              for(int atomC = 0; atomC < obs->ncenter(); ++atomC){
-                const int nbfC = obs->nbasis_on_center(atomC);
-                const int shoffC = obs->shell_on_center(atomC, 0);
-                const int bfoffC = obs->shell_to_function(shoffC);
-                const int dfnbfC = dfbs->nbasis_on_center(atomC);
-                const int dfshoffC = dfbs->shell_on_center(atomC, 0);
-                const int dfbfoffC = dfbs->shell_to_function(dfshoffC);
-                for(int sigmaC = 0; sigmaC < nbfC; ++sigmaC){
-                  const int sigma = bfoffC + sigmaC;
-                  Ktilde(mu, nu) -= dtilde_ab[atomC].row(sigmaC).head(dfnbfA) * gpart_nu.segment(
-                      sigma*dfnbf + dfbfoffA, dfnbfA
-                  );
-                  //Kapprox(mu, nu) -= dtilde_ab[atomC].row(sigmaC).head(dfnbfA) * gpart_nu.segment(
-                  //    sigma*dfnbf + dfbfoffA, dfnbfA
-                  //);
-                  if(atomA != atomC){
-                    Ktilde(mu, nu) -= dtilde_ab[atomC].row(sigmaC).tail(dfnbfC) * gpart_nu.segment(
-                        sigma*dfnbf + dfbfoffC, dfnbfC
-                    );
-                    //Kapprox(mu, nu) -= dtilde_ab[atomC].row(sigmaC).tail(dfnbfC) * gpart_nu.segment(
-                    //    sigma*dfnbf + dfbfoffC, dfnbfC
-                    //);
-                  }
-                } // end loop over sigmaC
-              } // end loop over atomC
-            } // end if atomA == atomB
-            //----------------------------------------//
-            // dtilde_ba contribution
-            // Ktilde_{mu nu} += g(b)_{mu_a sigma_a}^{X_ab} * (X_ab | nu_a sigma_a)
-            //   but only when (ab|ab) and (ab|ba) are distinct
-            if(atomA != atomB) {
-              for(int sigmaA = 0; sigmaA < nbfA; ++sigmaA){
-                Ktilde(mu, nu) += dtilde_ba[atomB].row(sigmaA).head(dfnbfA) * gpart_nu.segment(
-                    (bfoffA + sigmaA)*dfnbf + dfbfoffA, dfnbfA
-                );
-                Ktilde(mu, nu) += dtilde_ba[atomB].row(sigmaA).tail(dfnbfB) * gpart_nu.segment(
-                    (bfoffA + sigmaA)*dfnbf + dfbfoffB, dfnbfB
-                );
-                //Kapprox(mu, nu) += dtilde_ba[atomB].row(sigmaA).head(dfnbfA) * gpart_nu.segment(
-                //    (bfoffA + sigmaA)*dfnbf + dfbfoffA, dfnbfA
-                //);
-                //Kapprox(mu, nu) += dtilde_ba[atomB].row(sigmaA).tail(dfnbfB) * gpart_nu.segment(
-                //    (bfoffA + sigmaA)*dfnbf + dfbfoffB, dfnbfB
-                //);
-              }
-            }
-            //----------------------------------------//
-            timer_exit(4);
-          } // end if do exact
-          /* Old exact diagonal */ #endif
+          // Depending on openmp, one of these two should be faster
+          //Ktilde(mu, nu) += dpart_mu * gpart_nu;
+          Ktilde(mu, nu) += F77_DDOT(&prod_size, dpart_mu.data(), &one, gpart_nu.data(), &one);
           //----------------------------------------//
           timer_change("03 - 2 body contribution", 3);
           timer_enter("misc", 4);
@@ -2445,48 +2325,12 @@ namespace sc {
               Ktilde(mu, nu) -= 0.5 * gtilde_mu.row(sigma).segment(dfbfoffC, dfnbfC) * Cpart->tail(dfnbfC);
             }
             //----------------------------------------//
-            /* Old exact diagonal */ #if 0
-            if(do_exact){
-              timer_enter("exact diagonal", 5);
-              const int sigmaC = sigma - bfoffC;
-              //----------------------------------------//
-              // gtilde_ab contribution
-              if(atomA == atomB) {
-                // Ktilde_{mu nu} += 1/2 * g(c)_{mu_a sigma_c}^{X_ac} * (X_ac | nu_a sigma_c)
-                Ktilde(mu, nu) += 0.5 * gtilde_ab[atomC].row(sigmaC).head(dfnbfB) * Cpart->head(dfnbfB);
-                if(atomB != atomC){
-                  Ktilde(mu, nu) += 0.5 * gtilde_ab[atomC].row(sigmaC).tail(dfnbfC) * Cpart->tail(dfnbfC);
-                }
-                //Kapprox(mu, nu) += 0.5 * gtilde_ab[atomC].row(sigmaC).head(dfnbfB) * Cpart->head(dfnbfB);
-                //if(atomB != atomC){
-                //  Kapprox(mu, nu) += 0.5 * gtilde_ab[atomC].row(sigmaC).tail(dfnbfC) * Cpart->tail(dfnbfC);
-                //}
-              }
-              //----------------------------------------//
-              // gtilde_ba contribution
-              // Only do this part when (ab|ab) and (ab|ba) are distinct
-              if(atomA != atomB){
-                // Match (ab|ba), not (ab|bc)
-                if(atomC == atomA) {
-                  // Ktilde_{mu nu} += 1/2 * g(b)_{mu_a sigma_a}^{Y_ab} * C_{nu_b sigma_a}^{Y_ab}
-                  Ktilde(mu, nu) += 0.5 * gtilde_ba[atomB].row(sigmaC).head(dfnbfA) * Cpart->tail(dfnbfC);
-                  Ktilde(mu, nu) += 0.5 * gtilde_ba[atomB].row(sigmaC).tail(dfnbfB) * Cpart->head(dfnbfB);
-                  //Kapprox(mu, nu) += 0.5 * gtilde_ba[atomB].row(sigmaC).head(dfnbfA) * Cpart->tail(dfnbfC);
-                  //Kapprox(mu, nu) += 0.5 * gtilde_ba[atomB].row(sigmaC).tail(dfnbfB) * Cpart->head(dfnbfB);
-                  //Kapprox(mu, nu) += 0.5 * gtilde_ba[atomB].row(sigmaC).head(dfnbfA) * Cpart->head(dfnbfC);
-                  //Kapprox(mu, nu) += 0.5 * gtilde_ba[atomB].row(sigmaC).tail(dfnbfB) * Cpart->tail(dfnbfB);
-                }
-              }
-              //----------------------------------------//
-              timer_exit(5);
-            } // end if do exact
-            /* Old exact diagonal */ #endif
-            //----------------------------------------//
             timer_change("misc", 4);
           } // end loop over sigma
           timer_exit(4);
           timer_change("misc", 3);
           //----------------------------------------//
+          munu_g_X->release_pair_block(0, nu, g_type_idx);
         } // end loop over nu
         timer_exit(3);
         timer_change("misc", 2);

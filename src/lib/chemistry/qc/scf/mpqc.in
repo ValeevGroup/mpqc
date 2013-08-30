@@ -5,8 +5,8 @@ mpqc:(
 
 %molecule = $:ibuprofen
 %molecule = $:ethane_c1
-%molecule = $:naphtalene
-molecule = $:h2o
+molecule = $:naphtalene
+%molecule = $:h2o_dimer
 %coor = $:symcoor
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -43,15 +43,13 @@ mole<DFCLHF>: (
   	df_local_exchange = yes
     store_ints = mem
     %store_ints = mpi
-    exact_diag_J = yes
-    exact_diag_K = yes
-    %exact_diag_J = no
-    %exact_diag_K = no
+    exact_diag_J = no
+    exact_diag_K = no
   )
 
 
   % Function
-  value_accuracy = 1e-7
+  value_accuracy = 1e-4
   gradient_accuracy = 1e-6
 
   % MolecularEnergy input
@@ -78,9 +76,9 @@ mole<DFCLHF>: (
   %docc = [3 0 1 0]
   %socc = [0 0 0 1]
 
-  extrap<DIIS>: (
-    n = 4
-  )
+  %extrap<DIIS>: (
+  %  n = 4
+  %)
 
   %guess_wavefunction = "scftest.wfn"
   guess_wavefunction = $:guess

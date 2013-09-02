@@ -149,19 +149,23 @@ void sc::SuperpositionOfAtomicDensities::compute() {
       {
         Ref<AssignedKeyVal> akv = new AssignedKeyVal;
         akv->assign("wfn", Ref<DescribedClass>(minbasis_wfn));
-        // only Libint2 can do DF
 #ifdef HAVE_LIBINT2
+        // only Libint2 can do DF, and DF Basis sets not available for all atoms
         Ref<IntegralLibint2> intf_cast; intf_cast << intf;
         if (intf_cast.nonnull()) {
-          // use dz df basis
-          Ref<GaussianBasisSet> dfbs;
-          {
-            Ref<AssignedKeyVal> akv1 = new AssignedKeyVal;
-            akv1->assign("molecule", Ref<DescribedClass>(minbasis_wfn->molecule()));
-            akv1->assign("name", "cc-pVDZ-RI");
-            dfbs = new GaussianBasisSet(akv1);
+          try {
+            // use dz df basis
+            Ref<GaussianBasisSet> dfbs;
+            {
+              Ref<AssignedKeyVal> akv1 = new AssignedKeyVal;
+              akv1->assign("molecule", Ref<DescribedClass>(minbasis_wfn->molecule()));
+              akv1->assign("name", "cc-pVDZ-RI");
+              dfbs = new GaussianBasisSet(akv1);
+            }
+            akv->assign("df_basis", Ref<DescribedClass>(dfbs));
+          } catch (...) {
+            ExEnv::out0() << "Basis cc-pVDZ-RI not available for some atoms in molecule.  Density fitting will not be used for SuperpositionOfAtomicDensities" << std::endl;
           }
-          akv->assign("df_basis", Ref<DescribedClass>(dfbs));
         }
 #endif
         akv->assign("df_solver", "cholesky_inv");

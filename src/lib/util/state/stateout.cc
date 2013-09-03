@@ -191,8 +191,7 @@ StateOut::put_array_void(const void*p,int s)
 void
 StateOut::put_header()
 {
-  const char *magic = "\001SCSO\002";
-  put_array_char(magic,6);
+  putstring("\001MPQCSO\002");
 
   // Switch to the native format and get_header will figure it out when read
   delete translate_;

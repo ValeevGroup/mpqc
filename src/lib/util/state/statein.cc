@@ -785,14 +785,15 @@ StateIn::haveobject(int objnum,const Ref<SavableState> &p)
 void
 StateIn::get_header()
 {
-  const char *magic = "\001SCSO\002";
-  char tmp[7];
-  get_array_char(tmp,6);
-  tmp[6] = '\0';
-  if (strcmp(tmp,magic)) {
+  {
+    std::string tmp;
+    get(tmp);
+    if (tmp != "\001MPQCSO\002") {
       ExEnv::errn() << "StateIn: bad magic number" << endl;
-      abort();
+      throw FileOperationFailed("StateIn: bad magic number",
+                                __FILE__, __LINE__);
     }
+  }
 
   get_array_char(&format_,1);
   // switch to the new format
@@ -811,7 +812,8 @@ StateIn::get_header()
   get_array_int(&dir_loc_,1);
   if (dir_loc_ == -1) {
       ExEnv::errn() << "ERROR: StateIn: directory corrupted" << endl;
-      abort();
+      throw FileOperationFailed("StateIn: directory corrupted",
+                                __FILE__, __LINE__);
     }
 }
 

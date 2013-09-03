@@ -46,95 +46,10 @@ namespace ci {
         }
     };
 
-    template<class Index = ci::String::Index>
-    struct Full {
-        ci::String::List<Index> alpha, beta;
-        size_t dets;
-        explicit Full(const Config &config)
-            : alpha(ci::strings(config.orbitals, config.electrons.alpha, config.rank)),
-              beta(ci::strings(config.orbitals, config.electrons.beta, config.rank))
-        {
-            this->dets = alpha.size()*beta.size();
-        }
-        bool test(const String &a, const String &b) const {
-            return true;
-        }
-    protected:
-        range local(MPI::Comm comm) const {
-            range r = range(beta.size()).split2(comm.size()).at(comm.rank());
-            return range(*r.begin()*alpha.size(), *r.end()*alpha.size());
-        }
-    };
-
-    template<class Index = ci::String::Index>
-    struct Truncated {
-        ci::String::List<Index> alpha, beta;
-        size_t dets;
-        explicit Truncated(const Config &config)
-            : alpha(ci::strings(config.orbitals, config.electrons.alpha, config.rank)),
-              beta(ci::strings(config.orbitals, config.electrons.beta, config.rank)),
-              rank_(config.rank)
-        {
-            alpha.sort(SortByExcitation(alpha[0]));
-            beta.sort(SortByExcitation(beta[0]));
-            // int N = Config::rank+1; // number of excitation blocks
-            // std::vector<int> A(N, 0);
-            // std::vector<int> B(N, 0);
-            // // count # of strings in each alpha/beta excitation
-            // // and do some sanity checks
-            // {
-            //     int r = 0;
-            //     foreach (const String &s, this->alpha) {
-            //         int x = String::difference(s, alpha[0]); // excitation
-            //         std::cout << s << " rank = " << x << std::endl;
-            //         assert(x <= Config::rank);
-            //         assert(r <= x);
-            //         r = x;
-            //         ++A.at(x);
-            //     }
-            // }
-            // {
-            //     int r = 0;
-            //     foreach (const String &s, this->beta) {
-            //         int x = String::difference(s, beta[0]);
-            //         assert(x <= Config::rank);
-            //         assert(r <= x);
-            //         r = x;
-            //         ++B.at(x);
-            //     }
-            // }
-            // mpqc::matrix<int> AB(N,N);
-            // AB.fill(0);
-            // for (int j = 0; j < N; ++j) {
-            //     for (int i = 0; i < N-j; ++i) {
-            //         AB(i,j) = A.at(i)*B.at(j);
-            //         this->dets += AB(i,j);
-            //     }
-            // }
-            // std::cout << "AB = \n" << AB << std::endl;            
-        }
-        bool test(const String &a, const String &b) const {
-            return (String::difference(a,b) <= this->rank_);
-        }
-    protected:
-        range local(MPI::Comm) const {
-            throw;
-        }
-    private:
-        int rank_;
-        struct SortByExcitation {
-            explicit SortByExcitation(const String &ref) : ref_(ref) {}
-            bool operator()(const String &a, const String &b) const {
-                return (String::difference(a, ref_) < String::difference(b, ref_));
-            }
-        private:
-            String ref_;
-        };
-    };
-
     template<class Base>
     struct CI : Base, Config {
 
+        typedef typename Base::Array Array;
         using Base::alpha;
         using Base::beta;
         using Base::dets;
@@ -176,77 +91,14 @@ namespace ci {
             comm.barrier();
         }
 
+        Array array(const std::string &name) {
+            return Base::array(name);
+        }
+
     public:
         MPI::Comm comm;
         IO vector;
     };
-
-    typedef CI< Full<> > FullCI;
-    typedef CI< Truncated<> > TruncatedCI;
-
-    // template<>
-    // struct CI<Truncated> : CI<> {
-
-    //     CI(const Config &config, MPI::Comm comm, File::Group io)
-    //         : CI<>(config, comm, io,
-    //                ci::strings(config.orbitals, config.alpha, config.rank),
-    //                ci::strings(config.orbitals, config.alpha, config.rank)),
-    //           ref_(CI<>::alpha[0])
-    //     {
-    //         alpha.sort(Sort(this->ref_));
-    //         beta.sort(Sort(this->ref_));
-    //         int N = config.rank+1; // number of excitation blocks
-    //         std::vector<int> A(N, 0);
-    //         std::vector<int> B(N, 0);
-    //         // count # of strings in each alpha/beta excitation
-    //         // and do some sanity checks
-    //         {
-    //             int r;
-    //             r = 0;
-    //             foreach (const String &s, this->alpha) {
-    //                 int x = String::difference(s, ref_); // excitation
-    //                 ++A.at(x);
-    //                 //std::cout << s << " rank = " << x << std::endl;
-    //                 assert(r <= x);
-    //                 r = x;
-    //             }
-    //             r = 0;
-    //             foreach (const String &s, this->beta) {
-    //                 int x = String::difference(s, ref_);
-    //                 ++B.at(x);                
-    //                 assert(r <= x);
-    //                 r = x;
-    //             }
-    //         }
-    //         size_t determinants = 0;
-    //         mpqc::matrix<int> AB(N,N);
-    //         AB.fill(0);
-    //         for (int j = 0; j < N; ++j) {
-    //             for (int i = 0; i < N-j; ++i) {
-    //                 AB(i,j) = A.at(i)*B.at(j);
-    //                 determinants += AB(i,j);
-    //             }
-    //         }
-    //         std::cout << "AB = \n" << AB << std::endl;
-    //         std::cout << "# Dets: " << determinants << std::endl;
-    //     }
-
-    //     bool test(const String &ex) const {
-    //         //return 0;
-    //         if (String::difference(ex, ref_) > this->rank) return false;
-    //         return true;
-    //     }
-    // private:
-    //     String ref_;
-    //     struct Sort {
-    //         explicit Sort(const String &ref) : ref_(ref) {}
-    //         bool operator()(const String &a, const String &b) const {
-    //             return (String::difference(a, ref_) < String::difference(b, ref_));
-    //         }
-    //     private:
-    //         String ref_;
-    //     };
-    // };
 
 } // namespace ci
 } // namespace mpqc
@@ -268,4 +120,4 @@ namespace sc {
 
 }
 
-#endif // MPQC_CI_CONFIG_HPP
+#endif // MPQC_CI_CI_HPP

@@ -7,7 +7,10 @@
 #include "mpqc/utility/profile.hpp"
 
 #include <chemistry/qc/nbody/nbwfn.h>
+
 #include "mpqc/ci/integrals.hpp"
+#include "mpqc/ci/full.hpp"
+#include "mpqc/ci/restricted.hpp"
 #include "mpqc/ci/direct.hpp"
 #include "mpqc/utility/string.hpp"
 
@@ -121,8 +124,8 @@ std::vector<double> sc::CI::compute(const Ref<RefWavefunction> &wfn,
   std::vector<double> E;
 
   if (config.rank > 0) {
-      mpqc::ci::TruncatedCI ci(config, comm, file->group());
-      E = mpqc::ci::direct(ci, h, V);
+      //mpqc::ci::RestrictedCI ci(config, comm, file->group());
+      //E = mpqc::ci::direct(ci, h, V);
   } else {
       mpqc::ci::FullCI ci(config, comm, file->group());
       E = mpqc::ci::direct(ci, h, V);

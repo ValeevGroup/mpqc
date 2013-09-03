@@ -44,8 +44,8 @@ namespace ci {
         auto &comm = ci.comm;
         range local = ci.vector.local;
 
-        ci::Array C("ci.C", alpha.size(), beta.size(), comm);
-        ci::Array D("ci.D", alpha.size(), beta.size(), comm);
+        ci::Array< CI<Type> > C("ci.C", ci);
+        ci::Array< CI<Type> > D("ci.D", ci);
 
         // mpqc::Array<double> C("ci.C", ci.dims, ARRAY_FILE, comm);
         // mpqc::Array<double> D("ci.D", ci.dims, ARRAY_FILE, comm);

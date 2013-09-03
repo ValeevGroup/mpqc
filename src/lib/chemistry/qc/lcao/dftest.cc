@@ -265,7 +265,7 @@ int main(int argc, char **argv) {
     // need to use the unit basis .. check if it is already in the registry
     Ref<OrbitalSpace> unit_space;
     if (not oreg->key_exists("1")) {
-      unit_space = new AtomicOrbitalSpace("1", "AO(1)", new GaussianBasisSet(GaussianBasisSet::Unit), integral);
+      unit_space = new AtomicOrbitalSpace("1", "AO(1)", GaussianBasisSet::unit(), integral);
       oreg->add(make_keyspace_pair(unit_space));
       aoreg->add(unit_space->basis(), unit_space);
     }

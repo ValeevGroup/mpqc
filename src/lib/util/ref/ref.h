@@ -75,6 +75,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <limits.h>
+#include <cassert>
 
 #ifdef HAVE_CONFIG_H
 #include <mpqc_config.h>
@@ -407,16 +408,16 @@ class  Ref  : public RefBase {
     }
     /** Returns the reference counted object.  The behaviour is undefined if
         the object is null. */
-    T* operator->() const { return p; }
+    T* operator->() const { assert(p!=0); return p; }
     /// Returns a pointer the reference counted object.
     T* pointer() const { return p; }
     /// Implements the parentpointer pure virtual in the base class.
     RefCount *parentpointer() const { return p; }
 
-    operator T*() const { return p; }
+    operator T*() const { assert(p!=0); return p; }
     /** Returns a C++ reference to the reference counted object.
         The behaviour is undefined if the object is null. */
-    T& operator *() const { return *p; };
+    T& operator *() const { assert(p!=0); return *p; };
     /** Return 1 if this is a reference to a null object.  Otherwise
         return 0. */
     int null() const { return p == 0; }

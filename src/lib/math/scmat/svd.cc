@@ -730,10 +730,10 @@ namespace sc {
     if (info) {
       if (info < 0)
         throw std::runtime_error(
-                                 "lapack_cholesky_symmnondef() -- one of the arguments to F77_DPPTRF is invalid");
+                                 "lapack_cholesky_symmposdef() -- one of the arguments to F77_DPPTRF is invalid");
       if (info > 0)
         throw std::runtime_error(
-                                 "lapack_cholesky_symmnondef() -- matrix A has factors which are negative");
+                                 "lapack_cholesky_symmposdef() -- matrix A has factors which are negative");
       assert(false); // unreachable
     }
 
@@ -743,24 +743,24 @@ namespace sc {
     if (info) {
       if (info < 0)
         throw std::runtime_error(
-                                 "lapack_cholesky_symmnondef() -- one of the arguments to F77_DPPCON is invalid");
+                                 "lapack_cholesky_symmposdef() -- one of the arguments to F77_DPPCON is invalid");
       assert(false); // unreachable
     }
     // if the condition number is above the threshold or its inverse below the working precision, throw
     if (condition_number_threshold != 0.0) {
       if (condition_number_threshold < 0.0)
         ExEnv::out0() << indent
-            << "condition number estimate in lapack_cholesky_symmnondef() = "
+            << "condition number estimate in lapack_cholesky_symmposdef() = "
             << 1.0 / rcond << std::endl;
       else if (1.0 / rcond > condition_number_threshold)
         ExEnv::err0() << indent
-            << "WARNING: large condition number in lapack_cholesky_symmnondef(): threshold = "
+            << "WARNING: large condition number in lapack_cholesky_symmposdef(): threshold = "
             << condition_number_threshold << " actual = " << 1.0 / rcond
             << std::endl;
       const char epsilon = 'E';
       if (rcond < F77_DLAMCH(&epsilon))
         ExEnv::err0() << indent
-            << "WARNING: condition number in lapack_cholesky_symmnondef() exceeds the working precision"
+            << "WARNING: condition number in lapack_cholesky_symmposdef() exceeds the working precision"
             << std::endl;
     }
 

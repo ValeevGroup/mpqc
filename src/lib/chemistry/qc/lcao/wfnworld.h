@@ -104,6 +104,12 @@ public:
       <dt><tt>bunchkaufman</tt><dd> Use Bunch-Kaufman linear solver. Valid for any value of <tt>df_kernel</tt>.
       <dt><tt>bunchkaufman_refine</tt><dd> Use Bunch-Kaufman linear solver + iterative refinement. Valid for any value of <tt>df_kernel</tt>. Use this option
       if you want the maximum numerical precision of the density fitting.
+      <dt><tt>householder</tt><dd> Use HouseholderQR decomposition as implemented in Eigen.  Slow for now (doesn't make direct Lapack calls but rather uses Eigen).
+      Valid for any value of <tt>df_kernel</tt>.
+      <dt><tt>householder_colpiv</tt><dd> Use ColPivHouseholderQR decomposition as implemented in Eigen.  Slow for now (doesn't make direct Lapack calls but rather uses Eigen).
+      Valid for any value of <tt>df_kernel</tt>, more numerically stable than plain HouseholderQR
+      <dt><tt>householder_fullpiv</tt><dd> Use FullPivHouseholderQR decomposition as implemented in Eigen.  Slow for now (doesn't make direct Lapack calls but rather uses Eigen).
+      Valid for any value of <tt>df_kernel</tt>, more numerically stable than plain HouseholderQR or ColPivHouseholderQR
 
     </dl>
 

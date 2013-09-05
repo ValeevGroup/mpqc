@@ -679,6 +679,12 @@ DensityFittingParams::DensityFittingParams(const Ref<GaussianBasisSet>& basis,
       solver_ = DensityFitting::SolveMethod_BunchKaufman;
   else if (solver == "bunchkaufman_refine")
       solver_ = DensityFitting::SolveMethod_RefinedBunchKaufman;
+  else if (solver == "householder")
+      solver_ = DensityFitting::SolveMethod_HouseholderQR;
+  else if (solver == "householder_colpiv")
+      solver_ = DensityFitting::SolveMethod_ColPivHouseholderQR;
+  else if (solver == "householder_fullpiv")
+      solver_ = DensityFitting::SolveMethod_FullPivHouseholderQR;
   else
     throw ProgrammingError("invalid solver", __FILE__, __LINE__, class_desc());
 
@@ -727,6 +733,9 @@ DensityFittingParams::print(std::ostream& o) const {
       case DensityFitting::SolveMethod_InverseCholesky:      o << "Cholesky (inverse)"; break;
       case DensityFitting::SolveMethod_Cholesky:             o << "Cholesky"; break;
       case DensityFitting::SolveMethod_RefinedCholesky:      o << "Cholesky (refine)"; break;
+      case DensityFitting::SolveMethod_HouseholderQR:        o << "HouseholderQR"; break;
+      case DensityFitting::SolveMethod_ColPivHouseholderQR:  o << "ColPivHouseholderQR"; break;
+      case DensityFitting::SolveMethod_FullPivHouseholderQR: o << "FullPivHouseholderQR"; break;
       default: assert(false); // unreachable
     }
     o << std::endl;

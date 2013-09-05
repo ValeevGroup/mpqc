@@ -2147,6 +2147,7 @@ namespace sc {
             //----------------------------------------//
             for(int nu = bfoffA; nu < bfoffA + nbfA; ++nu){
               const int nuA = nu - bfoffA;
+              // THIS IS A BOTTLENECK!!!
               munu_g_X->retrieve_pair_block(0, nu, g_type_idx);
               for(int sigma = bfoffB; sigma < bfoffB + nbfB; ++sigma){
                 const int sigmaB = sigma - bfoffB;
@@ -2194,6 +2195,7 @@ namespace sc {
                   // approx ( mu_a rho_b | nu_a sigma_b ) -= gtmp^Yb * C_{nu_a, sigma_b}^Yb
                   g_ab[rho](nuA, sigmaB) -= gtmp.transpose().tail(dfnbfB) * C_nu_sigma->tail(dfnbfB);
                 }
+                timer_change("misc", 4);
               } // end loop over basis functions in B (sigma)
               munu_g_X->release_pair_block(0, nu, g_type_idx);
             } // end loop over basis functions in A (nu)

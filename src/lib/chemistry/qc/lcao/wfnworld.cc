@@ -78,6 +78,9 @@ WavefunctionWorld::WavefunctionWorld(const Ref<KeyVal>& keyval)
     if (df_solver_ != "bunchkaufman" &&
         df_solver_ != "bunchkaufman_inv" &&
         df_solver_ != "bunchkaufman_refine" &&
+        df_solver_ != "householder" &&
+        df_solver_ != "householder_colpiv" &&
+        df_solver_ != "householder_fullpiv" &&
         df_solver_ != "cholesky" &&
         df_solver_ != "cholesky_inv" &&
         df_solver_ != "cholesky_refine"

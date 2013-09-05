@@ -51,9 +51,25 @@ namespace std {
       T* get(){ assert(false && "should never get here"); return ptr_; }
       const T* get() const { assert(false && "should never get here"); return ptr_; }
 
-    private:
+    protected:
       T* ptr_;
   };
+  template <typename T>
+  class unique_ptr {
+    public:
+      // Act like a dumb pointer.  This should never actually get compiled.
+      shared_ptr(T* ptr){ assert(false && "should never get here"); ptr_ = ptr; }
+      T operator*(){ assert(false && "should never get here"); return *ptr_; }
+      const T operator*() const { assert(false && "should never get here"); return *ptr_; }
+      T* operator->(){ assert(false && "should never get here"); return ptr_; }
+      const T operator->() const { assert(false && "should never get here"); return *ptr_; }
+      T* get(){ assert(false && "should never get here"); return ptr_; }
+      const T* get() const { assert(false && "should never get here"); return ptr_; }
+
+    protected:
+      T* ptr_;
+  };
+
 }
 
 #endif

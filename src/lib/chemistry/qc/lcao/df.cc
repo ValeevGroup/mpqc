@@ -202,12 +202,13 @@ DensityFitting::compute()
       const int n3 = fbasis_->nbasis();
       // scratch for holding solution vectors
       std::vector<double> C_jR(n2 * n3);
-      Eigen::Map<Eigen::MatrixXd> C_jR_map(&(C_jR[0]), n2, n3);
 
       std::vector<double> kernel_i; // only needed for inverse method
       std::vector<double> kernel_packed;  // only needed for factorized methods
       std::vector<double> kernel_factorized;
       std::vector<blasint> ipiv;
+#if 0
+      Eigen::Map<Eigen::MatrixXd> C_jR_map(&(C_jR[0]), n2, n3);
       typedef Eigen::HouseholderQR<Eigen::MatrixXd> HQR_type;
       typedef Eigen::ColPivHouseholderQR<Eigen::MatrixXd> CPHQR_type;
       typedef Eigen::FullPivHouseholderQR<Eigen::MatrixXd> FPHQR_type;
@@ -222,6 +223,7 @@ DensityFitting::compute()
         kernel_mat = std::unique_ptr<Eigen::MatrixXd>(new Eigen::MatrixXd(n3, n3));
         kernel_.convert2RefSCMat().convert(kernel_mat->data());
       }
+#endif
 
       // factorize or invert kernel
       switch (solver_) {
@@ -278,6 +280,7 @@ DensityFitting::compute()
                                          &(ipiv[0]), 1e10);
         }
         break;
+#if 0
 
         case SolveMethod_HouseholderQR:
         {
@@ -297,6 +300,7 @@ DensityFitting::compute()
           solverFPHQR = std::unique_ptr<FPHQR_type>(new FPHQR_type(*kernel_mat));
         }
         break;
+#endif
 
         default:
           throw ProgrammingError("unknown solve method", __FILE__, __LINE__, class_desc());
@@ -309,7 +313,9 @@ DensityFitting::compute()
           continue;
 
         const double* cC_jR = cC_->retrieve_pair_block(0, i, ints_type_idx);
+#if 0
         Eigen::Map<const Eigen::MatrixXd> cC_jR_map(cC_jR, n2, n3);
+#endif
 
         bool refine_solution = true;
         // solve the linear system

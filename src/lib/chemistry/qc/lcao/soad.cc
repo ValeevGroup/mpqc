@@ -165,7 +165,7 @@ void sc::SuperpositionOfAtomicDensities::compute() {
           {
             Ref<AssignedKeyVal> akv1 = new AssignedKeyVal;
             akv1->assign("molecule", Ref<DescribedClass>(minbasis_wfn->molecule()));
-            akv1->assign("name", "cc-pVDZ-RI");
+            akv1->assign("name", "Def2-SV(P)/JK");
             dfbs = new GaussianBasisSet(akv1);
           }
           akv->assign("df_basis", Ref<DescribedClass>(dfbs));

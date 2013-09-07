@@ -1131,9 +1131,19 @@ Extern_RefWavefunction::Extern_RefWavefunction(const Ref<WavefunctionWorld>& wor
   }
 
   // how many electrons?
-  const double nelectron_double = alpha_1rdm.trace() + beta_1rdm.trace();
+  const double nelectron_alpha = alpha_1rdm.trace();
+  const double nelectron_beta = beta_1rdm.trace();
+  const double nelectron_double = nelectron_alpha + nelectron_beta;
   assert(nelectron_double > 0.0);
-  nelectron_ = nelectron_double;
+  nelectron_ = round(nelectron_double);
+  if (fabs((double)nelectron_ - nelectron_double) > 0.01)
+    throw InputError("Extern_RefWavefunction: input density trace is not integer, something is seriously wrong",
+                     __FILE__, __LINE__);
+  const double magmom_double = nelectron_alpha - nelectron_beta;
+  magmom_ = round(magmom_double);
+  if (fabs(magmom_ - magmom_double) > 0.01 )
+    throw InputError("Extern_RefWavefunction: input density magnetic moment is not half-integer, something is seriously wrong",
+                     __FILE__, __LINE__);
 
   // convert densities to AO basis
   { // Alpha spin
@@ -1211,9 +1221,19 @@ Extern_RefWavefunction::Extern_RefWavefunction(const Ref<WavefunctionWorld>& wor
   }
 
   // how many electrons?
-  const double nelectron_double = alpha_1rdm.trace() + beta_1rdm.trace();
+  const double nelectron_alpha = alpha_1rdm.trace();
+  const double nelectron_beta = beta_1rdm.trace();
+  const double nelectron_double = nelectron_alpha + nelectron_beta;
   assert(nelectron_double > 0.0);
-  nelectron_ = nelectron_double;
+  nelectron_ = round(nelectron_double);
+  if (fabs((double)nelectron_ - nelectron_double) > 0.01)
+    throw InputError("Extern_RefWavefunction: input density trace is not integer, something is seriously wrong",
+                     __FILE__, __LINE__);
+  const double magmom_double = nelectron_alpha - nelectron_beta;
+  magmom_ = round(magmom_double);
+  if (fabs(magmom_ - magmom_double) > 0.01 )
+    throw InputError("Extern_RefWavefunction: input density magnetic moment is not half-integer, something is seriously wrong",
+                     __FILE__, __LINE__);
 
   // convert densities to AO basis
   { // Alpha spin
@@ -1244,6 +1264,8 @@ Extern_RefWavefunction::Extern_RefWavefunction(StateIn& si) : RefWavefunction(si
   FromStateIn(rdm_[Beta], si, c);
   si.get(nfzc_);
   si.get(nfzv_);
+  si.get(nelectron_);
+  si.get(magmom_);
   si.get(omit_uocc_);
   si.get(ordm_idempotent_);
 }
@@ -1259,6 +1281,8 @@ Extern_RefWavefunction::save_data_state(StateOut& so) {
   ToStateOut(rdm_[Alpha], so, c);
   so.put(nfzc_);
   so.put(nfzv_);
+  so.put(nelectron_);
+  so.put(magmom_);
   so.put(omit_uocc_);
   so.put(ordm_idempotent_);
 }
@@ -1548,8 +1572,7 @@ Extern_RefWavefunction::init_spaces(const RefSCMatrix& coefs,
 
 double
 Extern_RefWavefunction::magnetic_moment() const {
-  assert((rdm_[Alpha] + rdm_[Beta]).trace() == nelectron_);
-  return (rdm_[Alpha] - rdm_[Beta]).trace();
+  return magmom_;
 }
 
 Ref<DensityFittingInfo>

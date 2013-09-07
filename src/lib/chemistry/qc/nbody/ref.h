@@ -513,6 +513,7 @@ namespace sc {
       unsigned int nfzc_;
       unsigned int nfzv_;
       unsigned int nelectron_;
+      unsigned int magmom_;
       bool omit_uocc_;
       mutable bool ordm_idempotent_;
 

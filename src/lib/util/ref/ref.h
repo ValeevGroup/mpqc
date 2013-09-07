@@ -423,6 +423,7 @@ class  Ref  : public RefBase {
     int null() const { return p == 0; }
     /// Return !null().
     int nonnull() const { return p != 0; }
+    explicit operator bool() const { return nonnull(); }
 
     /** Ordering and equivalence operators are determined by the identifier if
      * both pointers are not null. If one or both of the pointers is null then

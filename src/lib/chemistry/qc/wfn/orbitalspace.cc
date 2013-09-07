@@ -749,11 +749,11 @@ OrbitalSpaceUnion::OrbitalSpaceUnion(const std::string& id, const std::string& n
   Ref<GaussianBasisSet> bs = 0;
   try { std::vector<unsigned int> tmp = *(s1.basis()) << *(s2.basis()); bs = s1.basis(); }
   catch (...) { }
-  if (bs == 0) {
+  if (bs.null()) {
     try { std::vector<unsigned int> tmp = *(s2.basis()) << *(s1.basis()); bs = s2.basis(); }
     catch (...) { }
   }
-  if (bs == 0) {
+  if (bs.null()) {
     bs = s1.basis() + s2.basis();
   }
   const std::vector<unsigned int> map1 = (*bs) << (*s1.basis());

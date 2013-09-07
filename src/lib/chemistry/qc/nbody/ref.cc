@@ -1307,7 +1307,7 @@ Extern_RefWavefunction::sdref() const {
 RefSymmSCMatrix
 Extern_RefWavefunction::core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &basis,
                                                    const Ref<GaussianBasisSet> &p_basis) {
-  assert(p_basis == 0); // can only do nonrelativistic Hamiltonians now
+  assert(p_basis.null()); // can only do nonrelativistic Hamiltonians now
   Ref<OrbitalSpaceRegistry> oreg = this->world()->tfactory()->orbital_registry();
   Ref<AOSpaceRegistry> aoreg = this->world()->tfactory()->ao_registry();
   const bool need_to_add_aospace_temporarily = !aoreg->key_exists(basis);

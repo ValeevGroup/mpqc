@@ -232,7 +232,7 @@ namespace sc {
 
           <tr><td><tt>cabs_singles_h0</tt><td>string<td>dyall_1<td> the other options include dyall_2/complete/CI.
           dyall_1 uses Fock operator as H(1); dyall_2 includes both 1- and 2-particle operator in H(1), thus
-          more complete; 'complete' refers to the partition that all operators inducing (real and pesudo) one-partilce
+          more complete; 'complete' refers to the partition that all operators inducing (real and pseudo) one-partilce
           occ->CABS transition are taken as H(1) while the other operators are classified as H(0); CI refers
           to a CI diagonalization procedure to account basis incompleteness (for one state).
 

@@ -1,6 +1,7 @@
 #ifndef MPQC_FILE_HPP
 #define MPQC_FILE_HPP
 
+#include <set>
 #include <string>
 #include <cassert>
 #include <fstream>
@@ -29,9 +30,26 @@
 #include <util/misc/exenv.h>
 
 /**
- * @defgroup File mpqc.Core.File
- * Implementation of hierarchical file objects based on
- * <a href="http://www.hdfgroup.org/HDF5/">HDF5</a>.
+   @defgroup File mpqc.Core.File
+   Implementation of hierarchical file objects based on
+   <a href="http://www.hdfgroup.org/HDF5/">HDF5</a>.
+
+   To work with files:
+   - create a file object
+   - create a dataset in that file (where actual data resides)
+   - write/read data to/from the dataset
+   @code
+
+   File file("file.h5");
+   std::vector<size_t> dims{m,n};
+   File::Dataset<double> ds(file, "my dataset", dims);
+   Vector v(m*n);
+   ds.write(v.data());
+   ds.read(v.data());
+   // or
+   ds << v; // write v to ds
+   ds >> v; // read ds to v
+   @endcode
 */
 
 namespace mpqc {
@@ -376,7 +394,6 @@ namespace mpqc {
            This function is threadsafe
          */
         void write(const T *buffer) {
-            MPQC_PROFILE_LINE;
             timer t;
             apply(&H5Dwrite, this->parent_.id(), rebase(range_), (T*) buffer);
             // printf("File::write size=%lu bytes, %f mb/s\n",
@@ -389,7 +406,6 @@ namespace mpqc {
            This function is threadsafe
          */
         void read(T *buffer) const {
-            MPQC_PROFILE_LINE;
             timer t;
             apply(&H5Dread, this->parent_.id(), rebase(range_), buffer);
             // printf("File::read size=%lu bytes, rate=%f mb/s\n",
@@ -520,6 +536,32 @@ namespace mpqc {
         size_t rank() const {
             return dims_.size();
         }
+
+        std::vector<range> extents() const {
+            std::vector<range> r;
+            for (size_t i = 0; i < this->rank(); ++i) {
+                r.push_back(range(base_[i], base_[i]+dims_[i]));
+            }
+            return r;
+        }
+
+        /**
+           Writes contiguous buffer into dataset.
+           The size of buffer must be the same as size of dataset
+           This function is threadsafe
+         */
+        void write(const T *buffer) {
+            this->operator()(this->extents()).write(buffer);
+        }
+
+        /**
+           Reads contiguous buffer from dataset.
+           The size of buffer must be the same as size of dataset
+           This function is threadsafe
+         */
+        void read(T *buffer) const {
+            this->operator()(this->extents()).read(buffer);
+        }        
 
         /** Access dataspace of rank-1 */
         Dataspace<T> operator[](size_t index) {
@@ -685,6 +727,30 @@ namespace mpqc {
     }
 
     /**
+       Read from dataset into a generic container A.
+       @tparam A Container with member <c>T* A::data()</c>
+       @param ds Dataset to read from
+       @param a Container to read to.
+       @warning The pointer returned by A::data() must be contigous
+    */
+    template<typename T, class A>
+    void operator>>(File::Dataset<T> ds, A &a) {
+        ds.read(a.data());
+    }
+
+    /**
+       Write to dataset from a generic container A.
+       @tparam A Container with member <c>const T* A::data()</c>
+       @param ds Dataset to write to
+       @param a Container to read from.
+       @warning The pointer returned by A::data() must be contigous
+    */
+    template<typename T, class A>
+    void operator<<(File::Dataset<T> ds, const A &a) {
+        ds.write(a.data());
+    }
+
+    /**
        Read from dataspace into a generic container A.
        @tparam A Container with member <c>T* A::data()</c>
        @param ds Dataspace to read from
@@ -697,10 +763,10 @@ namespace mpqc {
     }
 
     /**
-       Read to dataspace from a generic container A.
+       Write to dataspace from a generic container A.
        @tparam A Container with member <c>const T* A::data()</c>
-       @param ds Dataspace to read from
-       @param a Container to read to.
+       @param ds Dataspace to write to
+       @param a Container to read from.
        @warning The pointer returned by A::data() must be contigous
     */
     template<typename T, class A>

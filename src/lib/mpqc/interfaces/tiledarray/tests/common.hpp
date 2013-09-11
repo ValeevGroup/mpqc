@@ -49,6 +49,15 @@ namespace detail {
             mol->add_atom(1, 0, 1, 1);
         }
 
+        else if (mol_name == "TRange1Test"){
+            mol->add_atom( 6,     0,     0,    0);
+            mol->add_atom( 9,    -1,    -1,    0);
+            mol->add_atom( 1,   0.6,  -0.1,  0.9);
+            mol->add_atom(17, -0.75,   1.5,    0);
+            mol->add_atom(35,   1.1, -0.18, -1.5);
+        }
+
+
         return mol;
     }
 
@@ -85,6 +94,9 @@ namespace detail {
                 mol = detail::get_molecule(mol_name);
             }
             else if(mol_name == "H2O"){
+                mol = detail::get_molecule(mol_name);
+            }
+            else if (mol_name == "TRange1Test"){
                 mol = detail::get_molecule(mol_name);
             }
             else{

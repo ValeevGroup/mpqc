@@ -28,6 +28,7 @@
 #define mpqc_interfaces_tiledarray_integrals_hpp
 
 #include "tile_ints.hpp"
+#include <mpqc/basis/tiledbasisset.hpp>
 
 /**
  * @defgroup TiledArrayInterface mpqc.TiledArrayInterface
@@ -71,7 +72,7 @@ namespace mpqc {
     template <typename IntEngPool>
     TA::Array<double, EngineTypeTraits<typename IntEngPool::engine_type>::ncenters >
     Integrals(madness::World &world, const IntEngPool &pool,
-              const TRange1Gen &trange1gen = tiling::by_grouped_hydrogens ){
+              const TRange1Gen &trange1gen = tiling::tile_by_atom){
 
         // Get the the type of integral that we are computing.
         typedef typename IntEngPool::engine_type engine_type;
@@ -82,6 +83,39 @@ namespace mpqc {
         // the TiledArray::TiledRange1 generator function.
         std::array<tiling::TRange1, rank> blocking =
                         get_blocking<rank>(pool, trange1gen);
+
+        // Construct the TiledArray::TiledRange object
+        TA::TiledRange trange(blocking.begin(), blocking.end());
+
+        // Initialize the TiledArray
+        TA::Array<double, rank> array(world, trange);
+
+        // Fill the TiledArray with data by looping over tiles and sending
+        // each tile to a madness task to be filled in parallel.
+        fill_tiles(array, pool);
+
+        return array;
+    }
+
+
+    template <typename IntEngPool>
+    TA::Array<double, EngineTypeTraits<typename IntEngPool::engine_type>::ncenters >
+    Integrals(madness::World &world, const IntEngPool &pool,
+              const sc::Ref<TiledBasisSet> &tbasis){
+
+
+
+        // Get the the type of integral that we are computing.
+        typedef typename IntEngPool::engine_type engine_type;
+        // Determine the dimensions of our integrals as well as our TiledArray
+        constexpr size_t rank = EngineTypeTraits<engine_type>::ncenters;
+
+        // Get the array to initialize the TiledArray::TiledRange using the
+        // TiledBasis
+        std::array<tiling::TRange1, rank> blocking;
+        for(auto i = 0; i < rank; ++i){
+            blocking[i] = tbasis->trange1();
+        }
 
         // Construct the TiledArray::TiledRange object
         TA::TiledRange trange(blocking.begin(), blocking.end());

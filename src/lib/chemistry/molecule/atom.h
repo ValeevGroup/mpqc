@@ -57,18 +57,23 @@ namespace sc {
         std::string label_;
 
     public:
-        Atom(int Z, double x, double y, double z, const char *label = 0,
-             double mass = 0, int have_charge = 0, double charge = 0,
-             int have_fragment = 0, int fragment = 0)
-             : Z_(Z), mass_(mass), label_(label ? label : ""), charge_(charge),
-               have_charge_(have_charge), have_fragment_(have_fragment),
-               fragment_(fragment)
-        {
-            r_[0] = x;
-            r_[1] = y;
-            r_[2] = z;
-        }
-
+        /**
+         * Creates an atom for use in the sc::Molecule class.
+         *
+         * @param Z Atomic charge of the nucleous.
+         * @param x x Coordinate of position vector.
+         * @param y y Coordinate of position vector.
+         * @param z z Coordinate of position vector.
+         * @param label A string which gives the atom a user defined label.
+         * @param mass The mass of the nuclous.
+         * @param have_charge A boolean which signals a charge different than Z
+         *      has been specified by the user.
+         * @param charge A user specified charge which is different than Z.
+         * @param have_fragment_ A boolean which specifies that the atom belongs
+         *      to a specific fragment.
+         * @param fragment Specifies to which fragment the atom belongs if
+         *      0 then the atom does not belong to a fragment.
+         */
         Atom(int Z, double x, double y, double z, const std::string &label,
              double mass = 0, int have_charge = 0, double charge = 0,
              int have_fragment = 0, int fragment = 0)
@@ -81,12 +86,45 @@ namespace sc {
             r_[2] = z;
         }
 
-        /* Default constructor supplied so that Atom will work with
+        /**
+         * Constructs an atom object that takes a c style char * array
+         */
+        Atom(int Z, double x, double y, double z, const char *label = 0,
+             double mass = 0, int have_charge = 0, double charge = 0,
+             int have_fragment = 0, int fragment = 0)
+             : Z_(Z), mass_(mass), label_(label ? label : ""), charge_(charge),
+               have_charge_(have_charge), have_fragment_(have_fragment),
+               fragment_(fragment)
+        {
+            r_[0] = x;
+            r_[1] = y;
+            r_[2] = z;
+        }
+
+
+        /**
+         * Default constructor supplied so that Atom will work with
          * sc::SavableState.  The user should not use this.
+         *
+         * @Warning Do not use, meant for sc::SavableState
          */
         Atom() : Z_(-1), mass_(-1), label_(), have_charge_(true), charge_(-1),
                         have_fragment_(true), fragment_(-1)
         { r_[0] = -1; r_[1] = -1; r_[2] = -1; }
+
+        Atom(const Atom &other) :
+            Z_(other.Z_),
+            mass_(other.mass_),
+            label_(other.label_),
+            have_charge_(other.have_charge_),
+            charge_(other.charge_),
+            have_fragment_(other.have_fragment_),
+            fragment_(other.fragment_)
+        {
+            r_[0] = other.r_[0];
+            r_[1] = other.r_[1];
+            r_[2] = other.r_[2];
+        }
 
         /// Returns a reference to the x,y, or z coordinate.
         double& xyz(int xyz){return r_[xyz];}

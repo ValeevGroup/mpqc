@@ -32,6 +32,7 @@
 #include <chemistry/qc/wfn/orbital.h>
 #include <chemistry/qc/wfn/eht.h>
 #include <chemistry/qc/wfn/esp.h>
+#include <chemistry/qc/wfn/rdm.h>
 
 namespace sc {
 
@@ -40,6 +41,8 @@ ForceLink<Orbital> wfn_force_link_b_;
 ForceLink<ExtendedHuckelWfn> wfn_force_link_d_;
 ForceLink<WriteElectrostaticPotential> wfn_force_link_e_;
 ForceLink<HCoreWfn> wfn_force_link_f_;
+ForceLink<OBWfnRDMOne> wfn_force_link_g_;
+ForceLink<OBWfnRDMTwo> wfn_force_link_h_;
 
 }
 

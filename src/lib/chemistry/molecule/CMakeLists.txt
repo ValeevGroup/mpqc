@@ -27,7 +27,6 @@ add_mpqc_object_library(molecule
   stors.cc
   stre.cc
   symmcoor.cc
-  symmetrize.cc
   taylor.cc
   tors.cc
 )

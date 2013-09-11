@@ -30,6 +30,18 @@ int main(){
     std::cout << "\nBasis Empty = " << std::endl;
     basis_empty->print();
 
+
+    std::cout << "TRange1 Check Tiled by Atom" << std::endl;
+    R<Molecule> mol_trange1 = get_molecule("TRange1Test");
+    R<Basis> basis_trange1 = get_basis("3-21G", mol_trange1);
+    mol_trange1->print();
+    TiledArray::TiledRange1 trange1 = tiling::tile_by_atom(basis_trange1);
+    basis_trange1->print();
+    std::cout << "TRange1 = " << std::endl;
+    for(auto tile : trange1){
+        std::cout << tile.first << " " << tile.second << std::endl;
+    }
+
     return 0;
 }
 

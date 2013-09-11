@@ -510,7 +510,7 @@ namespace mpqc {
             assert(id() > 0);
             foreach (auto e, extents) {
                 range r = extent(e);
-                std::cout << "Dataset " << r << std::endl;
+                //std::cout << "Dataset " << r << std::endl;
                 base_.push_back(*r.begin());
                 dims_.push_back(r.size());
             }
@@ -580,7 +580,7 @@ namespace mpqc {
                 std::vector<hsize_t> dims;
                 foreach (auto e, extents) {
                     dims.push_back(extent(e).size());
-                    std::cout << dims.back() << std::endl;
+                    //std::cout << dims.back() << std::endl;
                 }
                 std::reverse(dims.begin(), dims.end());
 

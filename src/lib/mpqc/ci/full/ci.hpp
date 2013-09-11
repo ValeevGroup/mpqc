@@ -11,19 +11,22 @@ namespace ci {
     struct Full {
         ci::String::List<Index> alpha, beta;
         size_t dets;
-        explicit Full(const Config &config)
+        struct {
+            range beta;
+            range determinants;
+        } local;
+        explicit Full(const Config &config, MPI::Comm comm)
             : alpha(ci::strings(config.orbitals, config.electrons.alpha, config.rank)),
               beta(ci::strings(config.orbitals, config.electrons.beta, config.rank))
         {
             this->dets = alpha.size()*beta.size();
+            this->local.beta =
+                range(beta.size()).split2(comm.size()).at(comm.rank());
+            this->local.determinants =
+                range(*local.beta.begin()*alpha.size(), *local.beta.end()*alpha.size());
         }
         bool test(const String &a, const String &b) const {
             return true;
-        }
-    protected:
-        range local(MPI::Comm comm) const {
-            range r = range(beta.size()).split2(comm.size()).at(comm.rank());
-            return range(*r.begin()*alpha.size(), *r.end()*alpha.size());
         }
     };
 
@@ -31,5 +34,7 @@ namespace ci {
 
 } // namespace ci
 } // namespace mpqc
+
+#include "mpqc/ci/full/vector.hpp"
 
 #endif // MPQC_CI_FULL_HPP

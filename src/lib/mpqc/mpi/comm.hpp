@@ -14,7 +14,7 @@ namespace MPI {
     struct Comm {
 
     protected:
-#ifdef MPQC_PARALLEL
+#ifdef HAVE_MPI
         // warning: comm_ must be initialized prior to cout
         MPI_Comm comm_;
 #endif
@@ -43,13 +43,15 @@ namespace MPI {
         }
 
         // serial "MPI" stubs, PTP aren't available in serial
-#ifndef MPQC_PARALLEL
+#ifndef HAVE_MPI
     public:
         static MPI::Comm Self() { return Comm(); }
         static MPI::Comm World() { return Comm(); }
+        static MPI::Comm dup(MPI::Comm comm) { return Comm(); }
         bool operator==(const Comm &comm) const {
             return true;
         }
+        void free() {}
         int rank() const { return 0; }
         int size() const { return 1; }
         void barrier() const {}
@@ -58,7 +60,7 @@ namespace MPI {
 #endif
 
         // following functions are used if MPI is available
-#ifdef MPQC_PARALLEL
+#ifdef HAVE_MPI
 
     public:
 
@@ -68,6 +70,19 @@ namespace MPI {
 
         static MPI::Comm World() {
             return Comm(MPI_COMM_WORLD);
+        }
+
+        /// Duplicate communicator
+        static MPI::Comm dup(MPI::Comm comm) {
+            MPI_Comm dup;
+            MPI_Comm_dup(comm, &dup);
+            return Comm(dup);
+        }
+
+        /// Free communicator
+        /// @warning currently no mechanism to ensure shared comms are freed properly
+        void free() {
+            MPI_Comm_free(&this->comm_);
         }
 
         explicit Comm(MPI_Comm comm)
@@ -162,7 +177,7 @@ namespace MPI {
             return request;
         }
 
-#endif // MPQC_PARALLEL
+#endif // HAVE_MPI
 
         // Collective calls, either MPI or serial stubs
 
@@ -170,21 +185,21 @@ namespace MPI {
 
         template <typename T>
         void broadcast(T &value, int root) const {
-#ifdef MPQC_PARALLEL
+#ifdef HAVE_MPI
             MPI_Bcast(&value, sizeof(T), MPI_BYTE, root, comm_);
 #endif
         }
 
         template <typename T>
         void broadcast(T *data, int count, int root) const {
-#ifdef MPQC_PARALLEL
+#ifdef HAVE_MPI
             MPI_Bcast(data, sizeof(T)*count, MPI_BYTE, root, comm_);
 #endif
         }
 
         bool any(const bool &value) const {
             int result = value;
-#ifdef MPQC_PARALLEL
+#ifdef HAVE_MPI
             MPI_Allreduce(MPI_IN_PLACE, &result, 1, MPI_INT, MPI_LOR, comm_);
 #endif
             return result;
@@ -192,7 +207,7 @@ namespace MPI {
 
         template <typename T>
         void sum(T *value, int count) const {
-#ifdef MPQC_PARALLEL
+#ifdef HAVE_MPI
             MPI_Allreduce(MPI_IN_PLACE, value, count, MPI::type<T>(), MPI_SUM, comm_);
 #endif
         }
@@ -206,7 +221,7 @@ namespace MPI {
         std::vector<T> allgather(T value) const {
             int bytes = sizeof(T);
             std::vector<T> data(this->size(), T());
-#ifdef MPQC_PARALLEL
+#ifdef HAVE_MPI
             MPI_Allgather(&value, bytes, MPI_BYTE, &data[0], bytes, MPI_BYTE, comm_);
 #else
             data[0] = value;

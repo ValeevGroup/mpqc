@@ -3,13 +3,10 @@
 
 #include <util/misc/formio.h>
 
-//#define MPQC_PROFILE_ENABLE
-#include "mpqc/utility/profile.hpp"
-
 #include "mpqc/ci/string.hpp"
 #include "mpqc/ci/preconditioner.hpp"
 #include "mpqc/ci/sigma.hpp"
-#include "mpqc/ci/array.hpp"
+#include "mpqc/ci/vector.hpp"
 
 #include "mpqc/math/matrix.hpp"
 #include "mpqc/python.hpp"
@@ -19,36 +16,36 @@ namespace mpqc {
 namespace ci {
 
     template<class Type>
-    std::vector<double> direct(CI<Type> &ci, const Vector &h, const Matrix &V) {
+    std::vector<double> direct(CI<Type> &ci,
+                               const mpqc::Vector &h,
+                               const mpqc::Matrix &V) {
 
-        Matrix lambda;
-        Vector a, r;
+        mpqc::Matrix lambda;
+        mpqc::Vector a, r;
         size_t MAX = ci.max;
         size_t R = ci.roots; // roots
         size_t M = 1;
 
         const auto &alpha = ci.alpha;
         const auto &beta = ci.beta;
+        size_t BLOCK = alpha.size()*ci.block;
 
-        Matrix G;
+        mpqc::Matrix G;
         struct Iter {
             double E, D;
             size_t M;
-            Matrix G;
-            Vector lambda;
-            Matrix a;
+            mpqc::Matrix G;
+            mpqc::Vector lambda;
+            mpqc::Matrix a;
         };
         std::map<int, Iter> iters;
         iters[-1].E = iters[-1].D = 0;
 
         auto &comm = ci.comm;
-        range local = ci.vector.local;
+        const auto &local = ci.local;
 
-        ci::Array< CI<Type> > C("ci.C", ci);
-        ci::Array< CI<Type> > D("ci.D", ci);
-
-        // mpqc::Array<double> C("ci.C", ci.dims, ARRAY_FILE, comm);
-        // mpqc::Array<double> D("ci.D", ci.dims, ARRAY_FILE, comm);
+        ci::Vector<Type> C("ci.C", ci);
+        ci::Vector<Type> D("ci.D", ci);
 
         comm.barrier();
 
@@ -63,7 +60,7 @@ namespace ci {
 
             // augment G
             {
-                Matrix g = G;
+                mpqc::Matrix g = G;
                 G.resize(M, M);
                 G.fill(0);
                 range m(0, M - 1);
@@ -71,22 +68,22 @@ namespace ci {
             }
 
             {
-                C.vector(local).read(ci.vector.b[it]);
+                C(local.determinants).read(ci.vector.b[it]);
                 C.sync();
 
-                sigma(ci, h, V, C.array(), D.array());
+                sigma(ci, h, V, C, D);
                 D.sync();
 
-                D.vector(local).write(ci.vector.Hb[it]);
+                D(local.determinants).write(ci.vector.Hb[it]);
                 comm.barrier();
             }
 
             // augment G matrix
             {
-                Vector g = Vector::Zero(M);
-                foreach (auto r, local.block(alpha.size())) {
-                    Vector c(r.size());
-                    const Vector &s = D.vector(r);
+                mpqc::Vector g = mpqc::Vector::Zero(M);
+                foreach (auto r, local.determinants.block(BLOCK)) {
+                    mpqc::Vector c(r.size());
+                    const mpqc::Vector &s = D(r);
                     for (int j = 0; j < M; ++j) {
                         ci.vector.b(r,j) >> c;
                         g(j) += c.dot(s);
@@ -99,8 +96,8 @@ namespace ci {
             }
 
             // solve G eigenvalue
-            Vector lambda = symmetric(G).eigenvalues();
-            Matrix a = symmetric(G).eigenvectors();
+            mpqc::Vector lambda = symmetric(G).eigenvalues();
+            mpqc::Matrix a = symmetric(G).eigenvectors();
 
             iters[it].M = M;
             iters[it].G = G;
@@ -113,9 +110,9 @@ namespace ci {
             for (int k = 0; k < R; ++k) {
 
                 // update d part
-                foreach (auto r, local.block(alpha.size())) {
-                    Vector v(r.size());
-                    Vector d(r.size());
+                foreach (auto r, local.determinants.block(BLOCK)) {
+                    mpqc::Vector v(r.size());
+                    mpqc::Vector d(r.size());
                     d.fill(0);
                     for (int i = 0; i < M; ++i) {
                         ci.vector.b(r,i) >> v;
@@ -126,12 +123,12 @@ namespace ci {
                         ci.vector.Hb(r,i) >> v;
                         d += a(i,k)*v;
                     }
-                    D.vector(r) << d;
+                    D(r).put(d);
                 }
                 D.sync();
 
                 iters[it].E = lambda[0];
-                iters[it].D = norm(D, comm, local, alpha.size());
+                iters[it].D = norm(D, comm, local.determinants, alpha.size());
 
                 if (comm.rank() == 0) {
                     double dc = fabs(iters[it - 1].D - iters[it].D);
@@ -148,14 +145,13 @@ namespace ci {
 
                 // orthonormalize
                 for (int i = 0; i < M; ++i) {
-                    MPQC_PROFILE_LINE;
-                    ci::Array &b = C;
-                    b.vector(local).read(ci.vector.b[i]);
-                    orthonormalize(b, D, ci.comm, local, alpha.size());
+                    ci::Vector<Type> &b = C;
+                    b(local.determinants).read(ci.vector.b[i]);
+                    orthonormalize(b, D, ci.comm, local.determinants, alpha.size());
                 }
                 D.sync();
 
-                D.vector(local).write(ci.vector.b[it + 1]);
+                D(local.determinants).write(ci.vector.b[it + 1]);
 
             }
 

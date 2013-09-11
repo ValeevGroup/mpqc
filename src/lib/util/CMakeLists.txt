@@ -14,13 +14,19 @@ set(subdirectories
 
 if (HAVE_MADNESS)
   list(APPEND subdirectories madness)
-  set(util_deplibs ${MADNESS_LIBRARIES})
 endif()
 
 add_mpqc_library(util ${subdirectories})
 install(TARGETS util DESTINATION lib)
 
-target_link_libraries(util ${util_deplibs})
+if (HAVE_MADNESS)
+  target_link_libraries(util ${MADNESS_LIBRARIES})
+endif()
+
+if (HAVE_MPI)
+  target_link_libraries(util ${MPI_LIBRARIES})
+endif()
+
 # N.B. dlopen dependencies
 target_link_libraries(util ${CMAKE_DL_LIBS})
  

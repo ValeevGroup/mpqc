@@ -49,18 +49,17 @@ namespace ci {
     template<class Base>
     struct CI : Base, Config {
 
-        typedef typename Base::Array Array;
         using Base::alpha;
         using Base::beta;
         using Base::dets;
+        using Base::local;
 
         struct IO : boost::noncopyable {
-            range local;
             File::Dataset<double> b, Hb;
         };
 
         CI(const Config &config, MPI::Comm comm, File::Group io) 
-            : Config(config), Base(config), comm(comm)
+            : Config(config), Base(config, comm), comm(comm)
         {
             sc::ExEnv::out0()
                 << sc::indent
@@ -70,8 +69,9 @@ namespace ci {
                 << sc::scprintf("alpha = %lu, beta = %lu, dets = %lu\n",
                                 alpha.size(), beta.size(), dets);
 
-            this->vector.local = Base::local(comm);
-            std::vector<range> extents{this->vector.local, range(0,config.max)};
+            // can't have size-0 datasets (size-0 has special meaning)
+            MPQC_CHECK(this->local.determinants.size() > 1);
+            std::vector<range> extents{this->local.determinants, range(0,config.max)};
             this->vector.b = File::Dataset<double>(io, "b", extents);
             this->vector.Hb = File::Dataset<double>(io, "Hb", extents);
 
@@ -86,13 +86,9 @@ namespace ci {
         void initialize() {
             Vector one(1);
             one[0] = 1;
-            if (*vector.local.begin() <= 0 && 0 < *vector.local.end())
+            if (*local.determinants.begin() <= 0 && 0 < *local.determinants.end())
                 vector.b(0,0) << one;
             comm.barrier();
-        }
-
-        Array array(const std::string &name) {
-            return Base::array(name);
         }
 
     public:

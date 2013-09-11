@@ -3,9 +3,15 @@
 
 #include "mpqc/array/forward.hpp"
 
-#ifdef MPQC_PARALLEL
+#include "mpqc_config.h"
+#ifdef HAVE_MPI
 #include "mpqc/array/parallel.hpp"
+#ifdef HAVE_ARMCI
+extern "C" {
+#include <armci.h>
+}
 #endif
+#endif // HAVE_MPI
 
 #include "mpqc/range.hpp"
 #include "mpqc/utility/foreach.hpp"
@@ -121,6 +127,7 @@ namespace detail {
 			    MPI::Comm comm)
             : ArrayBase(dims)
         {
+            // dont have code to use ARMCI groups yet
 	    assert(comm == MPI_COMM_WORLD);
 
 	    size_t size = 1;
@@ -136,6 +143,7 @@ namespace detail {
 	    
 	    std::vector<void*> data(comm.size(), NULL);
 	    check(ARMCI_Malloc(&data[0], size*sizeof(T)), "ARMCI_Malloc", comm);
+            data_ = data[comm.rank()];
 
 	    for (size_t i = 0; i < comm.size(); ++i) {
 		Tile tile;
@@ -153,7 +161,7 @@ namespace detail {
 	}
 
 	~array_parallel_impl() {
-	    //ARMCI_Free();
+            ARMCI_Free(this->data_);
 	}
 
 	void sync() {
@@ -175,6 +183,7 @@ namespace detail {
 	enum OP { PUT, GET };
 
         typedef array_tile<void*> Tile;
+        void *data_;
 	std::vector<Tile> tiles_;
 
 	static void check(int err, const std::string &func,
@@ -250,7 +259,7 @@ namespace detail {
 	}
 
     };
-#endif // MPQC_USE_ARMCI
+#endif // HAVE_ARMCI
 
 } // namespace detail
 } // namespace mpqc

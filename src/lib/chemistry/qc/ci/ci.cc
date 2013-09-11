@@ -33,6 +33,9 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/ci/ci.h>
 
+#include <mpqc/ci/ci.hpp>
+#include <mpqc/utility/string.hpp>
+
 namespace sc {
     static ClassDesc CI_cd(typeid(CI), "CI", 1, "public ManyBodyWavefunction", 0,
                            create<CI>, create<CI>);
@@ -70,11 +73,21 @@ CI::CI(const Ref<KeyVal> &kv)
     }
 
     config_.core = refwfn()->occ()->rank() - refwfn()->occ_act()->rank();
-    config_.orbitals = refwfn()->occ_act()->rank() + refwfn()->uocc_act()->rank();
+    config_.core = kv->intvalue("core", Int(config_.core));
 
-    const int nelectron = molecule()->total_Z() - charge - 2 * config_.core;
-    config_.electrons.alpha = (nelectron + magmom ) / 2;
-    config_.electrons.beta =  (nelectron - magmom ) / 2;
+    config_.orbitals = refwfn()->occ_act()->rank() + refwfn()->uocc_act()->rank();
+    config_.orbitals = kv->intvalue("orbitals", Int(config_.orbitals));
+
+    const int nelectron = molecule()->total_Z() - charge - 2*config_.core;
+    config_.electrons.alpha = (nelectron + magmom )/2;
+    config_.electrons.beta =  (nelectron - magmom )/2;
+
+    if (config_.orbitals <= (nelectron+magmom)/2) {
+        throw InputError(
+            ("electrons (" + mpqc::string_cast(nelectron) + ") => " +
+             "orbitals (" + mpqc::string_cast(config_.orbitals) + ")").c_str(),
+            __FILE__, __LINE__);
+    }
 
     config_.rank = kv->intvalue("rank", Int(0));
     // if (config_.rank != 0)

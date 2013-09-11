@@ -2,7 +2,7 @@
 #define MPQC_CI_PRECONDITIONER_HPP
 
 #include "mpqc/ci/hamiltonian.hpp"
-#include "mpqc/ci/array.hpp"
+#include "mpqc/ci/vector.hpp"
 #include "mpqc/math/matrix.hpp"
 #include "mpqc/utility/foreach.hpp"
 
@@ -11,18 +11,19 @@ namespace ci {
                 
     template<class Type>
     void preconditioner(CI<Type> &ci,
-                        const Vector &h, const Matrix &V,
-                        double lambda, ci::Array &D) {
+                        const mpqc::Vector &h, const mpqc::Matrix &V,
+                        double lambda, mpqc::Array<double> &D) {
         
         const auto &comm = ci.comm;
         const auto &alpha = ci.alpha;
         const auto &beta = ci.beta;
 
         double dd = 0;
-        foreach (auto rb, range(beta).block(1)) {
-            Matrix d = D.array(alpha,rb);
+        foreach (auto rb, range(ci.local.beta).block(ci.block)) {
+            //std::cout << rb << " out of " << local << std::endl;
+            mpqc::Matrix d = D(alpha,rb);
 
-            Vector aa(alpha.size());
+            mpqc::Vector aa(alpha.size());
             for (int a = 0; a < alpha.size(); ++a) {
                 aa(a) = diagonal(alpha[a], h, V);
             }
@@ -38,14 +39,14 @@ namespace ci {
                 }
             }
 
-            D.array(alpha,rb) << d;
+            D(alpha,rb) << d;
             dd += dot(d, d);
         }
         comm.sum(dd);
         D.sync();
-        if (comm.rank() == 0)
-            symmetrize(D.array(), 1, 1/sqrt(dd));
+        symmetrize(D, 1, 1/sqrt(dd), comm);
         D.sync();
+
     }
 
 } // namespace ci

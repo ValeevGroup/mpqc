@@ -37,7 +37,7 @@ namespace detail {
 			    const std::vector<size_t> &dims,
 			    MPI::Comm comm)
             : ArrayBase(dims),
-	      comm_(comm)
+	      comm_(MPI::Comm::dup(comm))
         {
 
             int np = comm.size();
@@ -79,6 +79,7 @@ namespace detail {
 	    foreach (Tile t, tiles_) {
 		if (t.local) delete t.data;
 	    }
+            MPI::Comm::free(comm_.comm_);
 	}
 
         void sync() {

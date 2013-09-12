@@ -3,7 +3,7 @@
 
 #include "mpqc_config.h"
 
-#ifdef MPQC_PARALLEL
+#ifdef HAVE_MPI
 #define OMPI_SKIP_MPICXX
 #define MPICH_SKIP_MPICXX
 #include <mpi.h>
@@ -25,15 +25,15 @@ namespace MPI {
     std::string get_processor_name();
 
     // MPI stubs
-#ifndef MPQC_PARALLEL
+#ifndef HAVE_MPI
 
     inline void initialize(int thread_level) {}
     inline void finalize() {}
     inline std::string get_processor_name() { return "localhost"; }
 
-#endif // MPQC_PARALLEL
+#endif // HAVE_MPI
     
-#ifdef MPQC_PARALLEL
+#ifdef HAVE_MPI
 
 #ifndef DOXYGEN
     /// RAII mutex::global lock
@@ -114,7 +114,7 @@ namespace MPI {
         }
     }
 
-#endif // MPQC_PARALLEL
+#endif // HAVE_MPI
 
     /// @}
 

@@ -2,12 +2,15 @@
 #define MPQC_ARRAY_FUNCTIONS_HPP
 
 #include "mpqc/array.hpp"
+#include "mpqc/mpi/task.hpp"
 #include "mpqc/math/matrix.hpp"
 
 namespace mpqc {
+namespace ci {
+namespace detail {
 
     template<typename T, typename U>
-    void symmetrize(Array<T> &A, U &counter, size_t B = 1024) {
+    void symmetrize(Array<T> &A, U &counter, size_t B) {
         assert(A.rank() == 2);
         assert(A.dims()[0] == A.dims()[1]);
 
@@ -35,12 +38,26 @@ namespace mpqc {
         }
     }
 
+}
+}
+}
+
+namespace mpqc {
+namespace ci {
+
     template<typename T>
-    void symmetrize(Array<T> &A, size_t block = 1024) {
-        size_t counter = 0;
-        symmetrize(A, counter);
+    void symmetrize(Array<T> &A, MPI::Comm comm, size_t B = 1024) {
+        MPI::Task task(comm);
+        detail::symmetrize(A, task, B);
     }
 
+    template<typename T>
+    void symmetrize(Array<T> &A, size_t B = 1024) {
+        size_t counter = 0;
+        detail::symmetrize(A, counter, B);
+    }
+
+}
 } // namespace mpqc
 
 #endif /* MPQC_ARRAY_FUNCTIONS_HPP */

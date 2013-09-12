@@ -33,6 +33,9 @@
 #include <chemistry/qc/basis/petite.h>
 #include <chemistry/qc/ci/ci.h>
 
+#include <mpqc/ci/ci.hpp>
+#include <mpqc/utility/string.hpp>
+
 namespace sc {
     static ClassDesc CI_cd(typeid(CI), "CI", 1, "public ManyBodyWavefunction", 0,
                            create<CI>, create<CI>);
@@ -58,26 +61,38 @@ CI::CI(const Ref<KeyVal> &kv)
       throw InputError("only SD_RefWavefunction has been tested with CI",
                        __FILE__, __LINE__, "reference");
 
-    const int charge = kv->intvalue("total_charge", Int(molecule()->total_Z() - refwfn()->nelectron()));
-    const int magmom = kv->intvalue("magnetic_moment", Int(refwfn()->magnetic_moment()));
+    const int charge =
+        kv->intvalue("total_charge", Int(molecule()->total_Z() - refwfn()->nelectron()));
+    const int magmom =
+        kv->intvalue("magnetic_moment", Int(refwfn()->magnetic_moment()));
     {
-    const int nelectron = molecule()->total_Z() - charge;
-    if (nelectron%2 != magmom%2)
-      throw InputError("charge and magnetic_moment inconsistent",
-                       __FILE__, __LINE__);
+        const int nelectron = molecule()->total_Z() - charge;
+        if (nelectron%2 != magmom%2)
+            throw InputError("charge and magnetic_moment inconsistent",
+                             __FILE__, __LINE__);
     }
 
     config_.core = refwfn()->occ()->rank() - refwfn()->occ_act()->rank();
+    config_.core = kv->intvalue("core", Int(config_.core));
+
     config_.orbitals = refwfn()->occ_act()->rank() + refwfn()->uocc_act()->rank();
+    config_.orbitals = kv->intvalue("orbitals", Int(config_.orbitals));
 
-    const int nelectron = molecule()->total_Z() - charge - 2 * config_.core;
-    config_.alpha = (nelectron + magmom ) / 2;
-    config_.beta =  (nelectron - magmom ) / 2;
+    const int nelectron = molecule()->total_Z() - charge - 2*config_.core;
+    config_.electrons.alpha = (nelectron + magmom )/2;
+    config_.electrons.beta =  (nelectron - magmom )/2;
 
-    config_.rank = kv->intvalue("max_ex_rank", Int(0));
-    if (config_.rank != 0)
-      throw FeatureNotImplemented("only max_ex_rank=0 currently supported (full CI)",
-                                  __FILE__, __LINE__);
+    if (config_.orbitals <= (nelectron+magmom)/2) {
+        throw InputError(
+            ("electrons (" + mpqc::string_cast(nelectron) + ") => " +
+             "orbitals (" + mpqc::string_cast(config_.orbitals) + ")").c_str(),
+            __FILE__, __LINE__);
+    }
+
+    config_.rank = kv->intvalue("rank", Int(0));
+    // if (config_.rank != 0)
+    //   throw FeatureNotImplemented("only max_ex_rank=0 currently supported (full CI)",
+    //                               __FILE__, __LINE__);
 
     config_.max = kv->intvalue("max", Int(30));
     config_.collapse = kv->intvalue("collapse", Int(config_.collapse));
@@ -122,11 +137,11 @@ int CI::value_implemented() const {
 }
 
 int CI::nelectron() {
-  return config_.alpha + config_.beta;
+  return config_.electrons.alpha + config_.electrons.beta;
 }
 
 double CI::magnetic_moment() const {
-  return config_.alpha - config_.beta;
+  return config_.electrons.alpha - config_.electrons.beta;
 }
 
 // /////////////////////////////////////////////////////////////////////////////

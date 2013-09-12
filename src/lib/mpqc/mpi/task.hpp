@@ -4,10 +4,14 @@
 #include "mpqc/mpi.hpp"
 #include "mpqc/utility/mutex.hpp"
 
-#ifdef MPQC_PARALLEL
+#ifdef HAVE_ARMCI
 extern "C" {
 #include <armci.h>
 }
+#endif
+
+#if (defined HAVE_MPI) && !(defined HAVE_ARMCI)
+#error mpqc::MPI::Task requires ARMCI if using MPI
 #endif
 
 namespace mpqc {
@@ -24,7 +28,7 @@ namespace MPI {
         explicit Task(MPI::Comm comm)
             : comm_(comm), data_(0)
         {
-#ifdef MPQC_PARALLEL
+#ifdef HAVE_ARMCI
             assert(comm == MPI_COMM_WORLD);
             ARMCI_Init();
             data_.resize(comm_.size());
@@ -36,7 +40,7 @@ namespace MPI {
         /// Destructor
         /// @warning NOT threadsafe
         ~Task() {
-#ifdef MPQC_PARALLEL
+#ifdef HAVE_ARMCI
             ARMCI_Free(data_[comm_.rank()]);
 #endif
         }
@@ -44,7 +48,7 @@ namespace MPI {
         /// Reset task
         void reset(const T &value = T(0)) {
             mutex::global::lock();
-#ifdef MPQC_PARALLEL
+#ifdef HAVE_ARMCI
             comm_.barrier();
             if (comm_.rank() == 0) {
                 ARMCI_PutValueInt(value, this->value(), 0);
@@ -61,7 +65,7 @@ namespace MPI {
         T operator++(int) {
             int next;
             mutex::global::lock();
-#ifdef MPQC_PARALLEL
+#ifdef HAVE_ARMCI
             ARMCI_Rmw(ARMCI_FETCH_AND_ADD, &next, this->value(), 1, 0);
 #else
             next = this->data_++;
@@ -79,7 +83,7 @@ namespace MPI {
     private:
 
         MPI::Comm comm_;
-#ifdef MPQC_PARALLEL
+#ifdef HAVE_ARMCI
         std::vector< void* > data_;
         T* value() {
             return (T*)data_[0];

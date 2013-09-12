@@ -96,10 +96,12 @@ namespace mpqc {
         }
 
         Array operator()(const std::vector<range> &r) {
+            MPQC_CHECK(this->rank() == r.size());
             return Array(*this, r);
         }
 
         Array operator()(const std::vector<range> &r) const {
+            MPQC_CHECK(this->rank() == r.size());
             return Array(*this, r);
         }
 
@@ -162,6 +164,7 @@ namespace mpqc {
             foreach (auto e, extents) {
                 range_.push_back(detail::ArrayBase::extent(e));
                 dims_.push_back(range_.back().size());
+                //std::cout << "extent=" << range_.back() << std::endl;
             }
 
 	    detail::ArrayBase *impl = NULL;
@@ -169,9 +172,12 @@ namespace mpqc {
 		impl = new detail::array_impl<T, Driver>(name, dims_);
 	    }
 	    else {
-#ifdef MPQC_PARALLEL
+#ifdef HAVE_MPI
 		impl = new detail::array_parallel_impl<T, Driver>(name, dims_, comm);
-#endif
+#else // HAVE_MPI
+                throw std::runtime_error("Parallel array not implemented: "
+                                         "library was compiled without MPI");
+#endif // HAVE_MPI
 	    }
 	    this->impl_.reset(impl);
 	}

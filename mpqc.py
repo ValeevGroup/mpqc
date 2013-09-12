@@ -119,6 +119,7 @@ def add_options(parser):
 
     parser.add_option("", "--valgrind", action="store_true", help="run valgrind")
     parser.add_option("", "--operf", action="store_true", help="run operf")
+    parser.add_option("", "--opgprof", action="store_true", help="run opgprof")
     parser.add_option("-g", "--debug", action="store_true", help="enable debug")
     parser.add_option("-G", "--debugger",
                       choices=["gdb", "idb", "tv", "dbx"],
@@ -314,6 +315,9 @@ class Scheduler:
 	# #     else:
         # script += "\n"
 
+        if len(filter(None, (options.valgrind, options.operf, options.opgprof))) > 1:
+            error("Only one of valgrind, operf, or opgprof can be selected")
+
         script += "cd %s\n" % (job.wdir)
 
 	if options.serial:
@@ -331,7 +335,7 @@ class Scheduler:
             args = options.mpi.getArgs(job, options)
 
 	if options.operf:
-	    cmd = "operf " + cmd
+	    cmd = "operf --callgraph " + cmd
 
         if stdout and (stdout == stderr):
             stderr = "&1"

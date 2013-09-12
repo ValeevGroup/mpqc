@@ -12,7 +12,9 @@
 namespace mpqc {
 namespace ci {
 
-    double diagonal(const String &alpha, const Vector &h, const Matrix &V) {
+    double diagonal(const String &alpha,
+                    const mpqc::Vector &h,
+                    const mpqc::Matrix &V) {
         //MPQC_PROFILE_LINE;
         double q = 0;
         const auto &o = alpha.occ();
@@ -30,9 +32,8 @@ namespace ci {
     }
 
     template<typename Index>
-    void diagonal2(const String::List<Index> &alpha,
-                   const String &beta, const Matrix &V,
-                   Vector &d) {
+    void diagonal2(const String::List<Index> &alpha, const String &beta,
+                   const mpqc::Matrix &V, mpqc::Vector &d) {
         //MPQC_PROFILE_LINE;
 	const auto &b = beta.occ();
         foreach (auto j, b) {
@@ -50,7 +51,8 @@ namespace ci {
         }
     }
 
-    double diagonal2(const String &alpha, const String &beta, const Matrix &V) {
+    double diagonal2(const String &alpha, const String &beta,
+                     const mpqc::Matrix &V) {
         //MPQC_PROFILE_LINE;
         double q = 0;
         const auto &a = alpha.occ();

@@ -1,104 +1,115 @@
-#ifndef MPQC_CI_ARRAY_HPP
-#define MPQC_CI_ARRAY_HPP
+#ifndef MPQC_CI_VECTOR_HPP
+#define MPQC_CI_VECTOR_HPP
 
 #include "mpqc/array.hpp"
-#include "mpqc/ci/full.hpp"
+#include "mpqc/ci/full/ci.hpp"
 #include "mpqc/mpi.hpp"
+#include "mpqc/mpi/task.hpp"
 
 namespace mpqc {
 namespace ci {
 
     template<class CI>
-    struct Array;
+    struct Vector;
 
     template<class CI>
-    inline void operator<<(Array<CI>::Vector a, const mpqc::Vector &v) {
+    inline void operator<<(Vector<CI> a, const mpqc::Vector &v) {
         a.put(v);
     }
 
     void symmetrize(Matrix &a, double phase, double scale) {
+        MPQC_CHECK(a.rows() == a.cols());
         for (size_t j = 0; j < a.cols(); ++j) {
-            a(j, j) *= scale;
+            a(j,j) *= scale;
             for (size_t i = 0; i < j; ++i) {
-                a(i, j) = scale * a(i, j); // + a(j,i));
-                a(j, i) = phase * a(i, j);
+                a(i,j) = scale*a(i,j); // + a(j,i));
+                a(j,i) = phase*a(i,j);
             }
         }
     }
 
-    void symmetrize(mpqc::Array<double> &A, double phase, double scale) {
-        size_t N = 512;
+    void symmetrize(mpqc::Array<double> &A,
+                    double phase, double scale,
+                    MPI::Comm comm,
+                    size_t block = 512) {
+        MPQC_CHECK(A.dims()[0] == A.dims()[1]);
         Matrix a;
-        std::vector<range> r = range::block(range(0, A.dims()[1]), N);
+        std::vector<range> r = range::block(range(0, A.dims()[1]), block);
+        MPI::Task task(comm);
+        int next = task++;
+        int ij = 0;
         for (auto rj = r.begin(); rj < r.end(); ++rj) {
             //std::cout << *rj << std::endl;
             size_t nj = rj->size();
-            for (auto ri = r.begin(); ri < rj; ++ri) {
+            for (auto ri = r.begin(); ri <= rj; ++ri) {
+                if (ij++ != next) continue;
+                next = task++;
                 size_t ni = ri->size();
                 a.resize(ni, nj);
-                A(*ri, *rj) >> a;
-                a *= scale;
-                A(*ri, *rj) << a;
-                a *= phase;
-                A(*rj, *ri) << Matrix(a.transpose());
+                if (ri == rj) {
+                    A(*ri,*ri) >> a;
+                    symmetrize(a, phase, scale);
+                    A(*ri,*ri) << a;
+                }
+                else {
+                    A(*ri,*rj) >> a;
+                    a *= scale;
+                    A(*ri,*rj) << a;
+                    a *= phase;
+                    A(*rj,*ri) << Matrix(a.transpose());
+                }
             }
-            a.resize(nj, nj);
-            A(*rj, *rj) >> a;
-            symmetrize(a, phase, scale);
-            A(*rj, *rj) << a;
         }
     }
 
     template<class CI>
-    double norm(ci::Array<CI> v, const MPI::Comm &comm, range local, size_t block) {
+    double norm(ci::Vector<CI> v, const MPI::Comm &comm, range local, size_t block) {
         double n = 0;
         foreach (auto r, local.block(block)) {
-            n += Vector(v.vector(r)).norm();
+            n += mpqc::Vector(v(r)).norm();
         }
         comm.sum(n);
         return n;
     }
 
-    /**
-     //     double db = dot(D, b);
-     //     D = D - db*b;
-     //     D *= 1/D.norm();
-     //     @return <d,b>/||d||
-     */
-
+    /// Schmidt orthogonalization
+    /// d' = normalized(d - <d,b>*b)
+    /// @return <d,b>*<d',d'>
     template<class CI>
-    double orthonormalize(ci::Array<CI> b, ci::Array<CI> D,
+    double orthonormalize(ci::Vector<CI> b, ci::Vector<CI> D,
                           MPI::Comm &comm,
                           range local, size_t block) {
+        // N.B. foreach doesn't work with openmp
+        // most likely not needed - I/O bound
         // db = d*B
         double db = 0;
-        //#pragma omp parallel reduction(+:db)
+        ////#pragma omp parallel reduction(+:db)
         foreach (auto rj, local.block(block)) {
-            Vector Dj = D.vector(rj);
-            Vector bj = b.vector(rj);
+            mpqc::Vector Dj = D(rj);
+            mpqc::Vector bj = b(rj);
             db += Dj.dot(bj);
         }
         comm.sum(db);
 
         // D = D - db*b;
         double dd = 0;
-        // #pragma omp parallel reduction(+:dd)
+        ////#pragma omp parallel reduction(+:dd)
         foreach (auto rj, local.block(block)) {
-            Vector bj = b.vector(rj);
-            Vector Dj = D.vector(rj);
+            mpqc::Vector bj = b(rj);
+            mpqc::Vector Dj = D(rj);
             Dj -= db*bj;
             dd += Dj.dot(Dj);
-            D.vector(rj) << Dj;
+            D(rj).put(Dj);
         }
         comm.sum(dd);
 
         // D = D/||D||
         dd = 1/sqrt(dd);
-        //#pragma omp parallel
+        ////#pragma omp parallel
         foreach (auto rj, local.block(block)) {
-            Vector Dj = D.vector(rj);
+            mpqc::Vector Dj = D(rj);
             Dj *= dd;
-            D.vector(rj) << Dj;
+            D(rj).put(Dj);
         }
         return db*dd;
     }
@@ -107,4 +118,4 @@ namespace ci {
 }
 }
 
-#endif /* MPQC_CI_ARRAY_HPP */
+#endif /* MPQC_CI_VECTOR_HPP */

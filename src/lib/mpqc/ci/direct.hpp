@@ -22,7 +22,6 @@ namespace ci {
 
         mpqc::Matrix lambda;
         mpqc::Vector a, r;
-        size_t MAX = ci.max;
         size_t R = ci.roots; // roots
         size_t M = 1;
 
@@ -55,7 +54,7 @@ namespace ci {
 
             timer t;
 
-            if (it + 1 > MAX)
+            if (it + 1 > ci.max)
                 throw std::runtime_error("CI failed to converge");
 
             // augment G
@@ -128,7 +127,7 @@ namespace ci {
                 D.sync();
 
                 iters[it].E = lambda[0];
-                iters[it].D = norm(D, comm, local.determinants, alpha.size());
+                iters[it].D = norm(D, comm, local.determinants, BLOCK);
 
                 if (comm.rank() == 0) {
                     double dc = fabs(iters[it - 1].D - iters[it].D);
@@ -140,14 +139,14 @@ namespace ci {
                                         (int)it, lambda[0] + ci.e_ref + ci.e_core,
                                         de, dc);
                 }
-
+                
                 preconditioner(ci, h, V, lambda[0], D);
 
                 // orthonormalize
                 for (int i = 0; i < M; ++i) {
                     ci::Vector<Type> &b = C;
                     b(local.determinants).read(ci.vector.b[i]);
-                    orthonormalize(b, D, ci.comm, local.determinants, alpha.size());
+                    orthonormalize(b, D, ci.comm, local.determinants, BLOCK);
                 }
                 D.sync();
 

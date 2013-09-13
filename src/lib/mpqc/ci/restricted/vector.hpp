@@ -1,58 +1,60 @@
 #ifndef MPQC_CI_BLOCK_ARRAY_HPP
 #define MPQC_CI_BLOCK_ARRAY_HPP
 
+#include "mpqc/ci/restricted/ci.hpp"
+#include "mpqc/ci/vector.hpp"
 #include "mpqc/array.hpp"
-#include "mpqc/math/matrix.hpp"
-#include "mpqc/mpi.hpp"
 
 namespace mpqc {
 namespace ci {
 
-    struct BlockArray  {
-        BlockArray(const std::string &name, mpqc::matrix<size_t> blocks)
+    template<class Index>
+    struct Vector< Restricted<Index> > {
+
+        Vector(std::string name, const CI< Restricted<Index> > &ci)
+            // : array_(name, dims(ci), ci.comm),
+            //   alpha_(ci.alpha.size()),
+            //   beta_(ci.beta.size())
         {
-            //std::cout << "m = " << m << ", n = " << n << std::endl;
+            data_.resize(ci.dets);
+            data_.fill(0);
         }
 
-        struct Vector {
+        struct Slice {
+        private:
+            friend class Vector;
+            Slice(mpqc::Vector &v, range r)
+                : data_(v.data() + r.front(), r.size()), r_(r) {}
+        public:
             size_t size() const {
-                return data_.size();
-            }
-            void read(mpqc::File::Dataspace<double> ds) {
-                mpqc::Vector v(this->size());
-                ds.read(v.data());
-                this->put(v);
-            }
-            void write(mpqc::File::Dataspace<double> ds) {
-                const mpqc::Vector &v = this->get();
-                ds.write(v.data());
+                return r_.size();
             }
             operator mpqc::Vector() const {
-                return this->get();
-            }
-            void put(const mpqc::Vector &v) {
-                MPQC_CHECK(v.size() == this->size());
-                //data_(r2()).put(v.data());
-            }
-            mpqc::Vector get() const {
                 return this->data_;
             }
-        private:
-            friend class BlockArray;
-            Vector(Eigen::Map<Eigen::VectorXd> data)
-                : data_(data)
-            {
-                //std::cout << "range r = " << r << std::endl;
+            void read(mpqc::File::Dataspace<double> ds) {
+                ds.read(this->data_.data());
+            }
+            void write(mpqc::File::Dataspace<double> ds) {
+                ds.write(this->data_.data());
+            }
+            void put(const mpqc::Vector &v) {
+                data_ = v;
             }
         private:
+            range r_;
             Eigen::Map<Eigen::VectorXd> data_;
         };
 
-        void sync() {
+        Slice operator()(range r) {
+            return Slice(this->data_, r);
         }
+
+        void sync() {}
 
     private:
         mpqc::Vector data_;
+
     };
 
 

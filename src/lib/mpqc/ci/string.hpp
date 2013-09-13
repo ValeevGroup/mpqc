@@ -44,6 +44,10 @@ namespace ci {
             int count_;
         };
 
+        /// Construct string with 'count' electrons,
+        /// eg String(4,2) will generate a string '0011'.
+        /// @param size number of orbitals
+        /// @param count number of electrons
         String(size_t size, size_t count) {
             assert(size < 64);
             //assert(count < size);

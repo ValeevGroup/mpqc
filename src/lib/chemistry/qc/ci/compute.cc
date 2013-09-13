@@ -10,7 +10,7 @@
 
 #include "mpqc/ci/integrals.hpp"
 #include "mpqc/ci/full/ci.hpp"
-//#include "mpqc/ci/restricted.hpp"
+#include "mpqc/ci/restricted/ci.hpp"
 #include "mpqc/ci/direct.hpp"
 #include "mpqc/utility/string.hpp"
 
@@ -124,8 +124,8 @@ std::vector<double> sc::CI::compute(const Ref<RefWavefunction> &wfn,
   std::vector<double> E;
 
   if (config.rank > 0) {
-      //mpqc::ci::RestrictedCI ci(config, comm, file->group());
-      //E = mpqc::ci::direct(ci, h, V);
+      mpqc::ci::RestrictedCI ci(config, comm, file->group());
+      E = mpqc::ci::direct(ci, h, V);
   } else {
       mpqc::ci::FullCI ci(config, comm, file->group());
       E = mpqc::ci::direct(ci, h, V);

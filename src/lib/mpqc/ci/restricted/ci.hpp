@@ -3,7 +3,6 @@
 
 #include "mpqc/ci/ci.hpp"
 #include "mpqc/ci/string.hpp"
-#include "mpqc/ci/block_array.hpp"
 
 #include "mpqc/math/matrix.hpp"
 #include "mpqc/file.hpp"
@@ -15,12 +14,16 @@ namespace ci {
     struct Restricted {
         ci::String::List<Index> alpha, beta;
         size_t dets;
-        explicit Restricted(const Config &config)
+        struct {
+            range determinants;
+            range alpha, beta;
+        } local;
+        explicit Restricted(const Config &config, MPI::Comm comm)
             : alpha(ci::strings(config.orbitals, config.electrons.alpha, config.rank)),
               beta(ci::strings(config.orbitals, config.electrons.beta, config.rank)),
               rank_(config.rank)
         {
-            int N = Config::rank+1; // number of excitation blocks
+            int N = rank_+1; // number of excitation blocks
             std::vector<int> A = reorder(alpha);
             std::vector<int> B = reorder(beta);
             assert(N == A.size());
@@ -39,25 +42,21 @@ namespace ci {
             return (String::difference(a,b) <= this->rank_);
         }
 
-        typedef BlockArray Array;
-        Array array(const std::string &name);
-
     protected:
 
-        range local(MPI::Comm) const {
-            throw;
+        int excitation(const String &a) const {
+            String r(a.size(), a.count());
+            return String::difference(a,r);
         }
-
-        int excitation(const String &a) const;
 
         std::vector<int> reorder(ci::String::List<Index> &S) const {
             S.sort(SortByExcitation(this));
-            std::vector<int> X;
+            std::vector<int> X(this->rank_+1);
             int r = 0;
             foreach (const String &s, S) {
                 int x = this->excitation(s); // excitation
                 //std::cout << s << " rank = " << x << std::endl;
-                assert(x <= Config::rank);
+                assert(x <= this->rank_);
                 assert(r <= x);
                 r = x;
                 ++X.at(x);
@@ -83,5 +82,7 @@ namespace ci {
 
 }
 }
+
+#include "mpqc/ci/restricted/vector.hpp"
 
 #endif // MPQC_CI_RESTRICTED_HPP

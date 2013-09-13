@@ -70,7 +70,7 @@ namespace ci {
                 C(local.determinants).read(ci.vector.b[it]);
                 C.sync();
 
-                sigma(ci, h, V, C, D);
+                //sigma(ci, h, V, C, D);
                 D.sync();
 
                 D(local.determinants).write(ci.vector.Hb[it]);
@@ -140,7 +140,7 @@ namespace ci {
                                         de, dc);
                 }
                 
-                preconditioner(ci, h, V, lambda[0], D);
+                //preconditioner(ci, h, V, lambda[0], D);
 
                 // orthonormalize
                 for (int i = 0; i < M; ++i) {

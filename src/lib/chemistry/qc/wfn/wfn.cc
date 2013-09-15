@@ -784,7 +784,7 @@ Wavefunction::core_hamiltonian_dk(int dk,
   V_skel = 0;
 
   // include contributions from external electric field, if needed
-  if (electric_field() != 0) {
+  if (electric_field().nonnull()) {
     RefSymmSCMatrix mu_so;
     RefSymmSCMatrix mu(p_ao_dim, p_kit);
     mu.assign(0.0);
@@ -1173,7 +1173,7 @@ Wavefunction::core_hamiltonian_nr(const Ref<GaussianBasisSet> &bas)
 
     // include contributions from external electric field, if needed
     RefSymmSCMatrix mu_so;
-    if (electric_field() != 0) {
+    if (electric_field().nonnull()) {
       {
         RefSymmSCMatrix mu = hao.clone();
         mu.assign(0.0);
@@ -1230,7 +1230,7 @@ Wavefunction::core_hamiltonian_nr(const Ref<GaussianBasisSet> &bas)
     RefSymmSCMatrix h(pl->SO_basisdim(), bas->so_matrixkit());
     pl->symmetrize(hao,h);
 
-    if (electric_field() != 0) {
+    if (electric_field().nonnull()) {
       h.accumulate(mu_so);
     }
 
@@ -1272,7 +1272,7 @@ Wavefunction::nuclear_repulsion_energy()
 {
   // include the energy of nuclei in the presence of electric field, if needed
   double ext_efield_contribution = 0.0;
-  if (electric_field() != 0) {
+  if (electric_field().nonnull()) {
     const int natoms = molecule()->natom();
     for(int a=0; a<natoms; ++a) {
       ext_efield_contribution -= electric_field()->get_element(0) * molecule()->charge(a) * molecule()->r(a, 0);

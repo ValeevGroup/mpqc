@@ -125,6 +125,10 @@ DensityFittingRuntime::DensityFittingRuntime(StateIn& si)
   coef_results_ = CoefRegistry::restore_instance(si);
 }
 
+DensityFittingRuntime::~DensityFittingRuntime(){
+
+}
+
 void
 DensityFittingRuntime::save_data_state(StateOut& so)
 {
@@ -138,10 +142,6 @@ void
 DensityFittingRuntime::obsolete() {
   results_->clear();
   coef_results_->clear();
-  for(DecompositionMap::iterator it=decomps_.begin(); it != decomps_.end(); ++it){
-    delete it->second;
-    decomps_.erase(it);
-  }
 }
 
 bool
@@ -381,7 +381,7 @@ DensityFittingRuntime::get_coefficients(const CoefKey& key)
     }
     //-----------------------------------------------------------------//
     Eigen::Map<Eigen::MatrixXd> X_m_Y(metric_2c_part_ptr, dfpart_size, dfpart_size);
-    decomps_[atomAB] = new Decomposition(X_m_Y);
+    decomps_[atomAB] = std::shared_ptr<Decomposition>(new Decomposition(X_m_Y));
     deallocate(blockptr);
     deallocate(metric_2c_part_ptr);
   }

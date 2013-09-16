@@ -5,9 +5,9 @@ mpqc:(
 
 %molecule = $:ibuprofen
 %molecule = $:ethane_c1
-molecule = $:naphtalene
+%molecule = $:naphtalene
 %molecule = $:h2o_dimer
-%molecule = $:he2
+molecule = $:he2
 %molecule = $:h2o_dimer
 %coor = $:symcoor
 
@@ -25,11 +25,11 @@ mole<DFCLHF>: (
 
   df_basis<GaussianBasisSet>:(
     molecule = $..:molecule
-    name = "cc-pVDZ/JKFIT"
+    %name = "cc-pVDZ/JKFIT"
     %name = "cc-pVTZ-JKFIT"
     %name = "aug-cc-pV6Z"
     %name = "cc-pVTZ-RI"
-    %name = "cc-pVDZ"
+    name = "cc-pVDZ"
     %name = "6-31G"
     %puream=yes
     %name = "6-31G"
@@ -45,7 +45,7 @@ mole<DFCLHF>: (
   	df_local_exchange = yes
     store_ints = mem
     %store_ints = mpi
-    exact_diag_J = yes
+    exact_diag_J = no
     exact_diag_K = yes
   )
 
@@ -58,8 +58,8 @@ mole<DFCLHF>: (
   molecule = $:molecule
   mbasis<GaussianBasisSet>: (
     molecule = $:molecule
-    name = "cc-pVDZ"
-    %name = "3-21G"
+    %name = "cc-pVDZ"
+    name = "3-21G"
     %puream=yes
     %matrixkit = $:basis_matrixkit
   )

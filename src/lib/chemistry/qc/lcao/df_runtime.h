@@ -32,7 +32,7 @@
 #include <chemistry/qc/lcao/tbint_runtime.h>
 #include <Eigen/Dense>
 #include <math/mmisc/eigen.h>
-#include <memory>
+#include <util/misc/sharedptr.h>
 
 namespace sc {
 
@@ -81,12 +81,7 @@ namespace sc {
       DensityFittingRuntime(const Ref<MOIntsRuntime>& moints_runtime,
                             const DensityFittingParams* dfparams);
       DensityFittingRuntime(StateIn& si);
-      ~DensityFittingRuntime(){
-        for(DecompositionMap::iterator it=decomps_.begin(); it != decomps_.end(); ++it){
-          delete it->second;
-          decomps_.erase(it);
-        }
-      }
+      ~DensityFittingRuntime();
       void save_data_state(StateOut& so);
 
       /// obsoletes this object
@@ -149,7 +144,7 @@ namespace sc {
       Ref<CoefRegistry> coef_results_;
 
       typedef Eigen::HouseholderQR<Eigen::MatrixXd> Decomposition;
-      typedef std::map<IntPair, Decomposition*> DecompositionMap;
+      typedef std::map<IntPair, std::shared_ptr<Decomposition> > DecompositionMap;
       DecompositionMap decomps_;
 
       // creates the result for a given key

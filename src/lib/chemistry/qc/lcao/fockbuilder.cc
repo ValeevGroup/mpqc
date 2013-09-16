@@ -1256,8 +1256,6 @@ namespace sc {
           metric_key
       );
       for(int mu = 0; mu < obsnbf; ++mu){
-        if(not munu_g_X->is_local(0, mu))
-          continue;
         //----------------------------------------//
         const int ishA = obs->function_to_shell(mu);
         const int atomA = obs->shell_to_center(ishA);
@@ -1265,6 +1263,12 @@ namespace sc {
         const int dfnbfA = dfbs->nbasis_on_center(atomA);
         const int dfshoffA = dfbs->shell_on_center(atomA, 0);
         const int dfbfoffA = dfbs->shell_to_function(dfshoffA);
+        if(not munu_g_X->is_local(0, mu))
+          if(me > obsnbf){
+            // For some reason, this fixes the problem arising from nproc > nbf
+            Ctilde.segment(dfbfoffA, dfnbfA) += Eigen::VectorXd::Zero(dfnbfA);
+          }
+          continue;
         //----------------------------------------//
         for(int nu = 0; nu < obsnbf; ++nu){
           const int jshB = obs->function_to_shell(nu);
@@ -1926,8 +1930,6 @@ namespace sc {
       return result;
     }
 
-#define OLD_K 0
-#define FACTORIZE_EXACT_DIAG 0 // Not working
     RefSCMatrix exchange_df_local(const Ref<DensityFittingInfo>& df_info,
                             const RefSymmSCMatrix& P,
                             SpinCase1 spin,
@@ -1947,9 +1949,6 @@ namespace sc {
       Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
       int me = msg->me();
       int nproc = msg->n();
-      //ExEnv::out0() << endl << indent
-      //         << "Entered Coulomb(DF) matrix evaluator" << endl;
-      //ExEnv::out0() << incindent;
       //----------------------------------------//
       const Ref<DensityFittingRuntime>& df_rtime = df_info->runtime();
       //----------------------------------------//
@@ -1994,8 +1993,6 @@ namespace sc {
       K = EigenMatrix::Zero(branbf, ketnbf);
       EigenMatrix Ktilde(branbf, ketnbf);
       Ktilde = EigenMatrix::Zero(branbf, ketnbf);
-      //EigenMatrix Kapprox(branbf, ketnbf);
-      //Kapprox = EigenMatrix::Zero(branbf, ketnbf);
       //----------------------------------------//
       // Get the munu_g_X key and the munu_g_X_tform for later (we will need it now to
       //   determine data locality)
@@ -2035,409 +2032,6 @@ namespace sc {
       /*#######################################################################################*/
       /*=======================================================================================*/
       /* Loop over (local) basis functions mu		                                          {{{1 */ #if 1 // begin fold
-      /*=======================================================================================*/
-      /* OLD K	                               	                                          {{{1 */ #if OLD_K // begin fold
-      timer_change("05 - loop over mu", 1);
-      timer_enter("misc", 2);
-      blasint prod_size = obsnbf*dfnbf;
-      blasint one = 1;
-      Eigen::MatrixXd Kex(branbf, ketnbf);
-      Kex = Eigen::MatrixXd::Zero(branbf, ketnbf);
-      Eigen::MatrixXd Kexba(branbf, ketnbf);
-      Kexba = Eigen::MatrixXd::Zero(branbf, ketnbf);
-      Eigen::MatrixXd Kexba3(branbf, ketnbf);
-      Kexba3 = Eigen::MatrixXd::Zero(branbf, ketnbf);
-      Eigen::MatrixXd Kexba2(branbf, ketnbf);
-      Kexba2 = Eigen::MatrixXd::Zero(branbf, ketnbf);
-      for(int mu = 0; mu < branbf; ++mu){
-        if(not munu_g_X->is_local(0, mu))
-          continue;
-        //----------------------------------------//
-        VectorOfMatrices g_ab(ketnbf), g_ba(ketnbf), g_ba3(ketnbf), g_ba2(ketnbf);
-        //----------------------------------------//
-        const int ishA = obs->function_to_shell(mu);
-        const int atomA = obs->shell_to_center(ishA);
-        const int nbfA = obs->nbasis_on_center(atomA);
-        const int shoffA = obs->shell_on_center(atomA, 0);
-        const int bfoffA = obs->shell_to_function(shoffA);
-        const int dfnshA = dfbs->nshell_on_center(atomA);
-        const int dfnbfA = dfbs->nbasis_on_center(atomA);
-        const int dfshoffA = dfbs->shell_on_center(atomA, 0);
-        const int dfbfoffA = dfbs->shell_to_function(dfshoffA);
-        //============================================================================//
-        /*-----------------------------------------------------*/
-        /* Compute dtilde_mu                              {{{2 */ #if 2 // begin fold
-        timer_change("01 - compute dtilde_mu", 2);
-        EigenMatrix dtilde_mu(obsnbf, dfnbf);
-        dtilde_mu = EigenMatrix::Zero(obsnbf, dfnbf);
-        for(int rho = 0; rho < obsnbf; ++rho){
-          const int jshB = obs->function_to_shell(rho);
-          const int atomB = obs->shell_to_center(jshB);
-          const int nbfB = obs->nbasis_on_center(atomB);
-          const int shoffB = obs->shell_on_center(atomB, 0);
-          const int bfoffB = obs->shell_to_function(shoffB);
-          const int dfnshB = dfbs->nshell_on_center(atomB);
-          const int dfnbfB = dfbs->nbasis_on_center(atomB);
-          const int dfshoffB = dfbs->shell_on_center(atomB, 0);
-          const int dfbfoffB = dfbs->shell_to_function(dfshoffB);
-          const int dfnbfAB = atomA != atomB ? dfnbfA + dfnbfB : dfnbfA;
-          //----------------------------------------//
-          timer_enter("01 - get coefficients", 3);
-          std::shared_ptr<Eigen::VectorXd> C_mu_rho = df_rtime->get(dfkey, mu, rho);
-          //----------------------------------------//
-          timer_change("02 - contract coefficients", 3);
-          for(int sigma = 0; sigma < obsnbf; ++sigma){
-            dtilde_mu.row(sigma).segment(dfbfoffA, dfnbfA) += D(rho, sigma) * C_mu_rho->head(dfnbfA);
-            if(atomA != atomB){
-              dtilde_mu.row(sigma).segment(dfbfoffB, dfnbfB) += D(rho, sigma) * C_mu_rho->tail(dfnbfB);
-            }
-          }
-          //----------------------------------------//
-          if(do_exact){
-            timer_change("03 - exact_diagonal", 3);
-            //----------------------------------------//
-            // Common to both (ab|ab) and (ab|ba)
-            //----------------------------------------//
-            timer_enter("01 - common", 4);
-            Eigen::RowVectorXd gpart_nusigma_A(dfnbfA), gpart_nusigma_B(dfnbfB);
-            Eigen::RowVectorXd gpart_murho_A(dfnbfA), gpart_murho_B(dfnbfB);
-            //munu_g_X->retrieve_pair_block(0, mu, g_type_idx);
-            munu_g_X->retrieve_pair_subblock(
-                0, mu,     // index in unit basis, index in mu
-                g_type_idx,
-                rho,        rho+1,             // rho start, rho fence
-                dfbfoffA,   dfbfoffA + dfnbfA, // X start,  X fence
-                gpart_murho_A.data()
-            );
-            if(atomA != atomB){
-              munu_g_X->retrieve_pair_subblock(
-                  0, mu,     // index in unit basis, index in mu
-                  g_type_idx,
-                  rho,        rho+1,             // rho start, rho fence
-                  dfbfoffB,   dfbfoffB + dfnbfB, // X start,  X fence
-                  gpart_murho_B.data()
-              );
-            }
-            //----------------------------------------//
-            // Two body term temporary intermediate
-            //----------------------------------------//
-            timer_change("02 - two body intermediate", 4);
-            Eigen::VectorXd gtmp(dfnbfAB);
-            // tmp^Ya = ( Ya | Xa ) C_{mu_a, rho_b}^Xa
-            gtmp.head(dfnbfA) = X_g_Y.block(
-                dfbfoffA, dfbfoffA,
-                dfnbfA,   dfnbfA
-            ) * C_mu_rho->head(dfnbfA);
-            if(atomA != atomB) {
-              // tmp^Yb = ( Yb | Xb ) C_{mu_a, rho_b}^Xb
-              gtmp.tail(dfnbfB) = X_g_Y.block(
-                  dfbfoffB, dfbfoffB,
-                  dfnbfB,   dfnbfB
-              ) * C_mu_rho->tail(dfnbfB);
-              // Cross terms:
-              // tmp^Ya += ( Ya | Xb ) C_{mu_a, rho_b}^Xb
-              gtmp.head(dfnbfA) += X_g_Y.block(
-                  dfbfoffA, dfbfoffB,
-                  dfnbfA,   dfnbfB
-              ) * C_mu_rho->tail(dfnbfB);
-              // tmp^Yb += ( Yb | Xa ) C_{mu_a, rho_b}^Xa
-              gtmp.tail(dfnbfB) += X_g_Y.block(
-                  dfbfoffB, dfbfoffA,
-                  dfnbfB,   dfnbfA
-              ) * C_mu_rho->head(dfnbfA);
-            }
-            //========================================//
-            // Compute the approximate ( mu_a rho_b | nu_a sigma_b )
-            //   and save it in g_ab[rho]
-            //   Note that (aa|aa) contributions are included in this part
-            g_ab[rho].resize(nbfA, nbfB);
-            g_ab[rho] = Eigen::MatrixXd::Zero(nbfA, nbfB);
-            //----------------------------------------//
-            for(int nu = bfoffA; nu < bfoffA + nbfA; ++nu){
-              const int nuA = nu - bfoffA;
-              // THIS IS A BOTTLENECK!!!
-              munu_g_X->retrieve_pair_block(0, nu, g_type_idx);
-              for(int sigma = bfoffB; sigma < bfoffB + nbfB; ++sigma){
-                const int sigmaB = sigma - bfoffB;
-                //----------------------------------------//
-                // Three body term 1
-                // Get ( X_a | g | nu_a sigma_b )
-                timer_change("04 - g_ab term 1", 4);
-                munu_g_X->retrieve_pair_subblock(
-                    0, nu,     // index in unit basis, index in nu
-                    g_type_idx,
-                    sigma,     sigma+1,          // sigma start, sigma fence
-                    dfbfoffA,   dfbfoffA + dfnbfA, // X start,  X fence
-                    gpart_nusigma_A.data()
-                );
-                // approx (mu_a rho_b | nu_a sigma_b) += C_{mu_a, rho_b}^Xa * ( Xa | nu_a sigma_b )
-                g_ab[rho](nu-bfoffA, sigma-bfoffB) += gpart_nusigma_A * C_mu_rho->head(dfnbfA);
-                if(atomA != atomB){
-                  // Get ( X_b | g | nu_a sigma_b )
-                  munu_g_X->retrieve_pair_subblock(
-                      0, nu,     // index in unit basis, index in nu
-                      g_type_idx,
-                      sigma,     sigma+1,          // sigma start, sigma fence
-                      dfbfoffB,   dfbfoffB + dfnbfB, // X start,  X fence
-                      gpart_nusigma_B.data()
-                  );
-                  g_ab[rho](nuA, sigmaB) += gpart_nusigma_B * C_mu_rho->tail(dfnbfB);
-                } // end if atomA != atomB
-                //----------------------------------------//
-                // Three body term 2
-                // Get C_{nu_a, sigma_b}^Y_ab
-                timer_change("05 - g_ab term 2", 4);
-                std::shared_ptr<Eigen::VectorXd> C_nu_sigma = df_rtime->get(dfkey, nu, sigma);
-                // approx (mu_a rho_b | nu_a sigma_b) += ( mu_a rho_b | Y_a ) C_{nu_a, sigma_b}^Ya
-                g_ab[rho](nuA, sigmaB) += gpart_murho_A * C_nu_sigma->head(dfnbfA);
-                if(atomA != atomB){
-                  // approx (mu_a rho_b | nu_a sigma_b) += ( mu_a rho_b | Y_b ) C_{nu_a, sigma_b}^Yb
-                  g_ab[rho](nuA, sigmaB) += gpart_murho_B * C_nu_sigma->tail(dfnbfB);
-                }
-                //========================================//
-                // Two body term
-                // approx ( mu_a rho_b | nu_a sigma_b ) -= gtmp^Ya * C_{nu_a, sigma_b}^Ya
-                timer_change("06 - g_ab term 3", 4);
-                g_ab[rho](nuA, sigmaB) -= gtmp.transpose().head(dfnbfA) * C_nu_sigma->head(dfnbfA);
-                if(atomA != atomB){
-                  // approx ( mu_a rho_b | nu_a sigma_b ) -= gtmp^Yb * C_{nu_a, sigma_b}^Yb
-                  g_ab[rho](nuA, sigmaB) -= gtmp.transpose().tail(dfnbfB) * C_nu_sigma->tail(dfnbfB);
-                }
-                timer_change("misc", 4);
-              } // end loop over basis functions in B (sigma)
-              munu_g_X->release_pair_block(0, nu, g_type_idx);
-            } // end loop over basis functions in A (nu)
-            //========================================//
-            if(atomA != atomB){
-              // same thing for (ab|ba)
-              //========================================//
-              // Compute the approximate ( mu_a rho_b | nu_a sigma_b )
-              //   and save it in g_ab[rho]
-              g_ba[rho].resize(nbfB, nbfA);
-              g_ba[rho] = Eigen::MatrixXd::Zero(nbfB, nbfA);
-              g_ba3[rho].resize(nbfB, nbfA);
-              g_ba3[rho] = Eigen::MatrixXd::Zero(nbfB, nbfA);
-              g_ba2[rho].resize(nbfB, nbfA);
-              g_ba2[rho] = Eigen::MatrixXd::Zero(nbfB, nbfA);
-              //----------------------------------------//
-              for(int nu = bfoffB; nu < bfoffB + nbfB; ++nu){
-                const int nuB = nu - bfoffB;
-                munu_g_X->retrieve_pair_block(0, nu, g_type_idx);
-                for(int sigma = bfoffA; sigma < bfoffA + nbfA; ++sigma){
-                  const int sigmaA = sigma - bfoffA;
-                  //----------------------------------------//
-                  // Three body term 1
-                  // Get ( X_a | g | nu_a sigma_b )
-                  timer_change("07 - g_ba term 1", 4);
-                  munu_g_X->retrieve_pair_subblock(
-                      0, nu,     // index in unit basis, index in nu
-                      g_type_idx,
-                      sigma,     sigma+1,          // sigma start, sigma fence
-                      dfbfoffA,   dfbfoffA + dfnbfA, // X start,  X fence
-                      gpart_nusigma_A.data()
-                  );
-                  // Get ( X_b | g | nu_a sigma_b )
-                  munu_g_X->retrieve_pair_subblock(
-                      0, nu,     // index in unit basis, index in nu
-                      g_type_idx,
-                      sigma,     sigma+1,            // sigma start, sigma fence
-                      dfbfoffB,   dfbfoffB + dfnbfB, // X start,  X fence
-                      gpart_nusigma_B.data()
-                  );
-                  // approx ( mu_a rho_b | nu_b sigma_a ) += ( nu_b sigma_a | Xa ) C_{mu_a, rho_b}^Xa
-                  g_ba[rho](nuB, sigmaA) += gpart_nusigma_A * C_mu_rho->head(dfnbfA);
-                  g_ba3[rho](nuB, sigmaA) += gpart_nusigma_A * C_mu_rho->head(dfnbfA);
-                  // approx ( mu_a rho_b | nu_b sigma_a ) += ( nu_b sigma_a | Xb ) C_{mu_a, rho_b}^Xb
-                  g_ba[rho](nuB, sigmaA) += gpart_nusigma_B * C_mu_rho->tail(dfnbfB);
-                  g_ba3[rho](nuB, sigmaA) += gpart_nusigma_B * C_mu_rho->tail(dfnbfB);
-                  //----------------------------------------//
-                  // Three body term 2
-                  // Get C_{nu_b, sigma_a}^Xba
-                  //   Note the switch of head and tail due to Xba rather than Xab!!!
-                  timer_change("08 - g_ba term 2", 4);
-                  std::shared_ptr<Eigen::VectorXd> C_nu_sigma = df_rtime->get(dfkey, nu, sigma);
-                  // approx ( mu_a rho_b | nu_b sigma_a ) += ( mu_a rho_b | Ya ) C_{nu_b, rho_a}^Ya
-                  g_ba[rho](nuB, sigmaA) += gpart_murho_A * C_nu_sigma->tail(dfnbfA);
-                  g_ba3[rho](nuB, sigmaA) += gpart_murho_A * C_nu_sigma->tail(dfnbfA);
-                  // approx ( mu_a rho_b | nu_b sigma_a ) += ( mu_a rho_b | Yb ) C_{nu_b, rho_a}^Yb
-                  g_ba[rho](nuB, sigmaA) += gpart_murho_B * C_nu_sigma->head(dfnbfB);
-                  g_ba3[rho](nuB, sigmaA) += gpart_murho_B * C_nu_sigma->head(dfnbfB);
-                  //========================================//
-                  // Two body term
-                  //   Note the switch of head and tail due to Xba rather than Xab!!!
-                  timer_change("09 - g_ba term 3", 4);
-                  // approx ( mu_a rho_b | nu_b sigma_a ) -= gtmp^Ya C_{nu_b sigma_a}^Ya
-                  g_ba[rho](nuB, sigmaA) -= gtmp.transpose().head(dfnbfA) * C_nu_sigma->tail(dfnbfA);
-                  g_ba2[rho](nuB, sigmaA) -= gtmp.transpose().head(dfnbfA) * C_nu_sigma->tail(dfnbfA);
-                  // approx ( mu_a rho_b | nu_b sigma_a ) -= gtmp^Yb C_{nu_b sigma_a}^Yb
-                  g_ba[rho](nuB, sigmaA) -= gtmp.transpose().tail(dfnbfB) * C_nu_sigma->head(dfnbfB);
-                  g_ba2[rho](nuB, sigmaA) -= gtmp.transpose().tail(dfnbfB) * C_nu_sigma->head(dfnbfB);
-
-                } // end loop over basis functions in atom A (sigma)
-                //----------------------------------------//
-                munu_g_X->release_pair_block(0, nu, g_type_idx);
-                //----------------------------------------//
-              } // end loop over basis functions in atom B (nu)
-              //----------------------------------------//
-            } // end if atomA != atomB
-            //----------------------------------------//
-            //munu_g_X->release_pair_block(0, mu, g_type_idx);
-            timer_exit(4);
-          } // end if do exact
-          //========================================//
-          timer_exit(3);
-        } // end loop over rho
-        /*******************************************************/ #endif //end fold
-        /*-----------------------------------------------------*/
-        /* Compute gtilde_mu                              {{{2 */ #if 2 // begin fold
-        timer_change("02 - compute gtilde_mu", 2);
-        EigenMatrix gtilde_mu(obsnbf, dfnbf);
-        gtilde_mu = dtilde_mu * X_g_Y;
-        /*******************************************************/ #endif //end fold
-        /*-----------------------------------------------------*/
-        /* Compute K_tilde                                {{{2 */ #if 2 // begin fold
-        timer_change("03 - compute K_tilde", 2);
-        timer_enter("misc", 3);
-        Eigen::VectorXd gpart_nu(obsnbf*dfnbf);
-        Eigen::MatrixXd g_nu(obsnbf, dfnbf);
-        // I have no idea why this works but map does not
-        Eigen::RowVectorXd dpart_mu(obsnbf*dfnbf);
-        for(int sigma = 0; sigma < obsnbf; ++sigma){
-          dpart_mu.segment(sigma*dfnbf, dfnbf) = dtilde_mu.row(sigma);
-        }
-        for(int nu = 0; nu < ketnbf; ++nu){
-          const int ishB = obs->function_to_shell(nu);
-          const int atomB = obs->shell_to_center(ishB);
-          const int nbfB = obs->nbasis_on_center(atomB);
-          const int shoffB = obs->shell_on_center(atomB, 0);
-          const int bfoffB = obs->shell_to_function(shoffB);
-          const int dfnshB = dfbs->nshell_on_center(atomB);
-          const int dfnbfB = dfbs->nbasis_on_center(atomB);
-          const int dfshoffB = dfbs->shell_on_center(atomB, 0);
-          const int dfbfoffB = dfbs->shell_to_function(dfshoffB);
-          //----------------------------------------//
-          timer_change("01 - retrieve nu block", 3);
-          munu_g_X->retrieve_pair_block(0, nu, g_type_idx, gpart_nu.data());
-          munu_g_X->retrieve_pair_block(0, nu, g_type_idx, g_nu.data());
-          Eigen::MatrixXd B_mu(obsnbf, dfnbf);
-          B_mu = EigenMatrix::Zero(obsnbf, dfnbf);
-          for(int rho = 0; rho < obsnbf; ++rho){
-            for(int sigma = 0; sigma < obsnbf; ++sigma){
-              for(int X = 0; X < dfnbf; ++X){
-                B_mu(rho, X) += gpart_nu(rho*dfnbf + X) * D(rho, sigma);
-              }
-            }
-          }
-          //B_mu = D * g_nu;
-          //----------------------------------------//
-          timer_change("02 - 3 body contribution", 3);
-          // Depending on openmp, one of these two should be faster
-          //Ktilde(mu, nu) += dpart_mu * gpart_nu;
-          Ktilde(mu, nu) += F77_DDOT(&prod_size, dpart_mu.data(), &one, gpart_nu.data(), &one);
-          //----------------------------------------//
-          timer_change("03 - 2 body contribution", 3);
-          timer_enter("misc", 4);
-          for(int sigma = 0; sigma < obsnbf; ++sigma){
-            //----------------------------------------//
-            const int jshC = obs->function_to_shell(sigma);
-            const int atomC = obs->shell_to_center(jshC);
-            const int shoffC = obs->shell_on_center(atomC, 0);
-            const int bfoffC = obs->shell_to_function(shoffC);
-            const int dfnshC = dfbs->nshell_on_center(atomC);
-            const int dfnbfC = dfbs->nbasis_on_center(atomC);
-            const int dfshoffC = dfbs->shell_on_center(atomC, 0);
-            const int dfbfoffC = dfbs->shell_to_function(dfshoffC);
-            //----------------------------------------//
-            timer_change("01 - retrieve remote coeffs", 4);
-            std::shared_ptr<Eigen::VectorXd> Cpart = df_rtime->get(dfkey, nu, sigma);
-            //----------------------------------------//
-            timer_change("02 - contract", 4);
-            Ktilde(mu, nu) -= 0.5 * gtilde_mu.row(sigma).segment(dfbfoffB, dfnbfB) * Cpart->head(dfnbfB);
-            if(atomB != atomC){
-              Ktilde(mu, nu) -= 0.5 * gtilde_mu.row(sigma).segment(dfbfoffC, dfnbfC) * Cpart->tail(dfnbfC);
-            }
-            //----------------------------------------//
-            timer_change("misc", 4);
-          } // end loop over sigma
-          timer_exit(4);
-          timer_change("misc", 3);
-          //----------------------------------------//
-          munu_g_X->release_pair_block(0, nu, g_type_idx);
-        } // end loop over nu
-        timer_exit(3);
-        timer_change("misc", 2);
-        /*******************************************************/ #endif //end fold
-        /*-----------------------------------------------------*/
-        /* If do_exact, subtract off approx semidiagonal  {{{2 */ #if 2 // begin fold
-        if(do_exact){
-          timer_change("04 - exact diagonal", 2);
-          timer_enter("misc", 3);
-          for(int nu = 0; nu < obsnbf; ++nu){
-            const int jshB = obs->function_to_shell(nu);
-            const int atomB = obs->shell_to_center(jshB);
-            const int nbfB = obs->nbasis_on_center(atomB);
-            const int shoffB = obs->shell_on_center(atomB, 0);
-            const int bfoffB = obs->shell_to_function(shoffB);
-            const int nuB = nu - bfoffB;
-            //----------------------------------------//
-            // First do the contributions to the K_aa part from (ab|ab)
-            if(atomA == atomB){
-              timer_change("01 - K_aa part", 3);
-              for(int rho = 0; rho < obsnbf; ++rho){
-                const int kshC = obs->function_to_shell(rho);
-                const int atomC = obs->shell_to_center(kshC);
-                const int nbfC = obs->nbasis_on_center(atomC);
-                const int shoffC = obs->shell_on_center(atomC, 0);
-                const int bfoffC = obs->shell_to_function(shoffC);
-                // Should be the correct vectorized form of the following, but doesn't work:
-                //  K(mu, nu) -= g_ab[rho].row(nuB).segment(bfoffC, nbfC) * D.col(rho).segment(bfoffC, nbfC);
-                for(int sigma = bfoffC; sigma < bfoffC + nbfC; ++sigma){
-                  const int sigmaC = sigma - bfoffC;
-                  // K_{mu_a, nu_a} -= ( mu_a rho_c | nu_a sigma_c )_approx * D_{sigma_c, rho_c}
-                  K(mu, nu) -= g_ab[rho](nuB, sigmaC) * D(sigma, rho);
-                  Kex(mu, nu) -= g_ab[rho](nuB, sigmaC) * D(sigma, rho);
-                }
-              } // end loop over rho
-            } // end if atomA == atomB
-            //----------------------------------------//
-            // Now the K_ab part from (ab|ba)
-            else{ // atomA != atomB
-              timer_change("02 - K_ab part", 3);
-              for(int rho = bfoffB; rho < bfoffB + nbfB; ++rho){
-                // Should be the correct vectorized form of the following, but doesn't work:
-                //   K(mu, nu) -= g_ba[rho].row(nuB).segment(bfoffA, nbfA) * D.col(rho).segment(bfoffA, nbfA);
-                for(int sigma = bfoffA; sigma < bfoffA + nbfA; ++sigma){
-                  const int sigmaA = sigma - bfoffA;
-                  // K_{mu_a, nu_b} -= D_{rho_b, sigma_a} * ( mu_a rho_b | nu_b sigma_a )_approx
-                  K(mu, nu) -= D(rho, sigma) * g_ba[rho](nuB, sigmaA);
-                  Kex(mu, nu) -= D(rho, sigma) * g_ba[rho](nuB, sigmaA);
-                  Kexba(mu, nu) -= D(rho, sigma) * g_ba[rho](nuB, sigmaA);
-                  Kexba3(mu, nu) -= D(rho, sigma) * g_ba3[rho](nuB, sigmaA);
-                  Kexba2(mu, nu) -= D(rho, sigma) * g_ba2[rho](nuB, sigmaA);
-                } // end loop over basis functions in A (sigma)
-              } // end loop over basis functions in B (rho)
-            } // end atomA != atomB section
-            //----------------------------------------//
-            timer_change("misc", 3);
-            //----------------------------------------//
-          } // end loop over nu
-          timer_exit(3);
-          timer_change("misc", 2);
-        } // end if do exact
-        /*******************************************************/ #endif //end fold
-        //============================================================================//
-      } // End loop over mu
-      //----------------------------------------//
-      if(munu_g_X->data_persistent()) munu_g_X->deactivate();
-      //----------------------------------------//
-      matprint(Kex, "Kex");
-      matprint(Kexba, "Kexba");
-      matprint(Kexba3, "Kexba3");
-      matprint(Kexba2, "Kexba2");
-      timer_exit(2);
-      /*****************************************************************************************/ #endif //1}}}
-      /*=======================================================================================*/
-      /* NEW K	                               	                                          {{{1 */ #if !OLD_K // begin fold
       timer_change("05 - loop over mu", 1);
       timer_enter("misc", 2);
       blasint prod_size = obsnbf*dfnbf;
@@ -2448,24 +2042,6 @@ namespace sc {
       VectorOfMatrices g_ab(ketnbf), g_ba(ketnbf);
       Eigen::MatrixXd Kex(branbf, ketnbf);
       Kex = Eigen::MatrixXd::Zero(branbf, ketnbf);
-      //----------------------------------------//
-      #if FACTORIZE_EXACT_DIAG
-      std::vector<Eigen::VectorXd> A_mu_aa(obsnbf), A_mu_ab(obsnbf);
-      std::vector<std::vector<Eigen::VectorXd> > A_mu_ba(obs->ncenter());
-      std::vector<std::vector<Eigen::VectorXd> > A_mu_ba3(obs->ncenter());
-      std::vector<std::vector<Eigen::VectorXd> > A_mu_ba2(obs->ncenter());
-      for(int atom = 0; atom < obs->ncenter(); ++atom){
-        A_mu_ba[atom].resize(obsnbf);
-        A_mu_ba3[atom].resize(obsnbf);
-        A_mu_ba2[atom].resize(obsnbf);
-      }
-      Eigen::MatrixXd Kexba(branbf, ketnbf);
-      Kexba = Eigen::MatrixXd::Zero(branbf, ketnbf);
-      Eigen::MatrixXd Kexba3(branbf, ketnbf);
-      Kexba3 = Eigen::MatrixXd::Zero(branbf, ketnbf);
-      Eigen::MatrixXd Kexba2(branbf, ketnbf);
-      Kexba2 = Eigen::MatrixXd::Zero(branbf, ketnbf);
-      #endif
       //----------------------------------------//
       for(int mu = 0; mu < branbf; ++mu){
         //----------------------------------------//
@@ -2578,151 +2154,6 @@ namespace sc {
                 }
               }
             }
-            //----------------------------------------//
-            #if FACTORIZE_EXACT_DIAG
-            //----------------------------------------------------------------------------//
-            // (aa|aa) and (ab|ba) cases
-            //----------------------------------------------------------------------------//
-            if(atomA == atomB){
-              A_mu_aa[sigma].resize(dfnbfA);
-              A_mu_aa[sigma] = Eigen::VectorXd::Zero(dfnbfA);
-              //----------------------------------------------------------------------------//
-              // (aa|aa) case
-              //----------------------------------------------------------------------------//
-              for(int rhoA = 0; rhoA < nbfA; ++rhoA){
-                const int rho = rhoA + bfoffA;
-                //----------------------------------------//
-                Eigen::VectorXd Ct(dfnbfAB);
-                Ct = Eigen::VectorXd::Zero(dfnbfAB);
-                std::shared_ptr<Eigen::VectorXd> C_mu_rho = df_rtime->get(dfkey, mu, rho);
-                Ct.head(dfnbfA) += X_g_Y.block(
-                    dfbfoffA, dfbfoffA,
-                    dfnbfA, dfnbfA
-                ) * C_mu_rho->head(dfnbfA);
-                //----------------------------------------//
-                for(int Xa = 0; Xa < dfnbfA; ++Xa){
-                  const int X = Xa + dfbfoffA;
-                  A_mu_aa[sigma](Xa) += g_mu_part[rho*dfnbf + X] * D(rho, sigma);
-                  A_mu_aa[sigma](Xa) -= 0.5 * Ct(Xa) * D(rho, sigma);
-                } // end loop over Xa
-              } // end loop over rhoA
-              //----------------------------------------------------------------------------//
-              // (ab|ba) case
-              //----------------------------------------------------------------------------//
-              for(int rho = 0; rho < obsnbf; ++rho){
-                const int kshC = obs->function_to_shell(rho);
-                const int atomC = obs->shell_to_center(kshC);
-                //if(atomA == atomC) continue;
-                const int nbfC = obs->nbasis_on_center(atomC);
-                const int shoffC = obs->shell_on_center(atomC, 0);
-                const int bfoffC = obs->shell_to_function(shoffC);
-                const int dfnshC = dfbs->nshell_on_center(atomC);
-                const int dfnbfC = dfbs->nbasis_on_center(atomC);
-                const int dfshoffC = dfbs->shell_on_center(atomC, 0);
-                const int dfbfoffC = dfbs->shell_to_function(dfshoffC);
-                const int dfnbfAC = atomA != atomC ? dfnbfA + dfnbfC : dfnbfA;
-                //----------------------------------------//
-                if(A_mu_ba[atomC][sigma].size() == 0){
-                  A_mu_ba[atomC][sigma].resize(dfnbfAC);
-                  A_mu_ba[atomC][sigma] = Eigen::VectorXd::Zero(dfnbfAC);
-                  A_mu_ba3[atomC][sigma].resize(dfnbfAC);
-                  A_mu_ba3[atomC][sigma] = Eigen::VectorXd::Zero(dfnbfAC);
-                  A_mu_ba2[atomC][sigma].resize(dfnbfAC);
-                  A_mu_ba2[atomC][sigma] = Eigen::VectorXd::Zero(dfnbfAC);
-                }
-                //----------------------------------------//
-                Eigen::VectorXd Ct(dfnbfAC);
-                Ct = Eigen::VectorXd::Zero(dfnbfAC);
-                std::shared_ptr<Eigen::VectorXd> C_mu_rho = df_rtime->get(dfkey, mu, rho);
-                Ct.head(dfnbfA) += X_g_Y.block(
-                    dfbfoffA, dfbfoffA,
-                    dfnbfA, dfnbfA
-                ) * C_mu_rho->head(dfnbfA);
-                Ct.head(dfnbfA) += X_g_Y.block(
-                    dfbfoffA, dfbfoffC,
-                    dfnbfA, dfnbfC
-                ) * C_mu_rho->tail(dfnbfC);
-                Ct.tail(dfnbfC) += X_g_Y.block(
-                    dfbfoffC, dfbfoffA,
-                    dfnbfC, dfnbfA
-                ) * C_mu_rho->head(dfnbfA);
-                Ct.tail(dfnbfC) += X_g_Y.block(
-                    dfbfoffC, dfbfoffC,
-                    dfnbfC, dfnbfC
-                ) * C_mu_rho->tail(dfnbfC);
-                //----------------------------------------//
-                for(int Xa = 0; Xa < dfnbfA; ++Xa){
-                  const int X = Xa + dfbfoffA;
-                  A_mu_ba[atomC][sigma](Xa) += g_mu_part[rho*dfnbf + X] * D(rho, sigma);
-                  A_mu_ba3[atomC][sigma](Xa) += g_mu_part[rho*dfnbf + X] * D(rho, sigma);
-                  A_mu_ba[atomC][sigma](Xa) -= 0.5 * Ct(Xa) * D(rho, sigma);
-                  A_mu_ba2[atomC][sigma](Xa) -= 0.5 * Ct(Xa) * D(rho, sigma);
-                }
-                // B_{mu_a, sigma_b}^{X_ab} = (X_ab | mu_a rho_b ) D^{rho_b sigma_b}
-                for(int Xc = dfnbfA; Xc < dfnbfA + dfnbfC; ++Xc){
-                  const int X = Xc - dfnbfA + dfbfoffC;
-                  A_mu_ba[atomC][sigma](Xc) += g_mu_part[rho*dfnbf + X] * D(rho, sigma);
-                  A_mu_ba3[atomC][sigma](Xc) += g_mu_part[rho*dfnbf + X] * D(rho, sigma);
-                  A_mu_ba[atomC][sigma](Xc) -= 0.5 * Ct(Xc) * D(rho, sigma);
-                  A_mu_ba2[atomC][sigma](Xc) -= 0.5 * Ct(Xc) * D(rho, sigma);
-                } // end loop over Xc
-              } // end loop over rho
-            }
-            else{ // atomA != atomB
-              //----------------------------------------------------------------------------//
-              // (ab|ab) case
-              //----------------------------------------------------------------------------//
-              A_mu_ab[sigma].resize(dfnbfAB);
-              A_mu_ab[sigma] = Eigen::VectorXd::Zero(dfnbfAB);
-              for(int rhoB = 0; rhoB < nbfB; ++rhoB){
-                const int rho = rhoB + bfoffB;
-                //----------------------------------------//
-                Eigen::VectorXd Ct(dfnbfAB);
-                Ct = Eigen::VectorXd::Zero(dfnbfAB);
-                std::shared_ptr<Eigen::VectorXd> C_mu_rho = df_rtime->get(dfkey, mu, rho);
-                Ct.head(dfnbfA) += X_g_Y.block(
-                    dfbfoffA, dfbfoffA,
-                    dfnbfA, dfnbfA
-                ) * C_mu_rho->head(dfnbfA);
-                if(atomA != atomB){
-                  Ct.head(dfnbfA) += X_g_Y.block(
-                      dfbfoffA, dfbfoffB,
-                      dfnbfA, dfnbfB
-                  ) * C_mu_rho->tail(dfnbfB);
-                  Ct.tail(dfnbfB) += X_g_Y.block(
-                      dfbfoffB, dfbfoffA,
-                      dfnbfB, dfnbfA
-                  ) * C_mu_rho->head(dfnbfA);
-                  Ct.tail(dfnbfB) += X_g_Y.block(
-                      dfbfoffB, dfbfoffB,
-                      dfnbfB, dfnbfB
-                  ) * C_mu_rho->tail(dfnbfB);
-                } // end if atomA != atomB
-                //----------------------------------------//
-                // B_{mu_a, sigma_a}^{X_ab} = (X_ab | mu_a rho_b ) D^{rho_b sigma_a}
-                for(int Xa = 0; Xa < dfnbfA; ++Xa){
-                  const int X = Xa + dfbfoffA;
-                  A_mu_ab[sigma](Xa) += g_mu_part[rho*dfnbf + X] * D(rho, sigma);
-                  A_mu_ab[sigma](Xa) -= 0.5 * Ct(Xa) * D(rho, sigma);
-                }
-                // B_{mu_a, sigma_b}^{X_ab} = (X_ab | mu_a rho_b ) D^{rho_b sigma_b}
-                for(int Xb = dfnbfA; Xb < dfnbfA + dfnbfB; ++Xb){
-                  const int X = Xb - dfnbfA + dfbfoffB;
-                  A_mu_ab[sigma](Xb) += g_mu_part[rho*dfnbf + X] * D(rho, sigma);
-                  A_mu_ab[sigma](Xb) -= 0.5 * Ct(Xb) * D(rho, sigma);
-                } // end loop over Xb
-              } // end loop over rhoB
-            } // end if atomA != atomB
-            //----------------------------------------//
-            //matprint(A_mu_aa[sigma], "A_aa(" << mu << "," << sigma << ")");
-            matprint(A_mu_ba[0][sigma], "A_ba[0](" << mu << "," << sigma << ")");
-            matprint(A_mu_ba[1][sigma], "A_ba[1](" << mu << "," << sigma << ")");
-            matprint(A_mu_ba3[0][sigma], "A_ba3[0](" << mu << "," << sigma << ")");
-            matprint(A_mu_ba3[1][sigma], "A_ba3[1](" << mu << "," << sigma << ")");
-            matprint(A_mu_ba2[0][sigma], "A_ba2[0](" << mu << "," << sigma << ")");
-            matprint(A_mu_ba2[1][sigma], "A_ba2[1](" << mu << "," << sigma << ")");
-            #endif
-            //----------------------------------------//
           } // end loop over sigma
           timer_exit(3);
         } // end if do_exact
@@ -2755,54 +2186,6 @@ namespace sc {
             }
           } // end loop over sigma
           //----------------------------------------//
-          // Compute the exact d_mu_a
-          #if 0 // Old code
-          if(do_exact){
-            for(int sigma = 0; sigma < obsnbf; ++sigma){
-              const int kshC = obs->function_to_shell(sigma);
-              const int atomC = obs->shell_to_center(kshC);
-              const int nbfC = obs->nbasis_on_center(atomC);
-              const int shoffC = obs->shell_on_center(atomC, 0);
-              const int bfoffC = obs->shell_to_function(shoffC);
-              const int dfnshC = dfbs->nshell_on_center(atomC);
-              const int dfnbfC = dfbs->nbasis_on_center(atomC);
-              const int dfshoffC = dfbs->shell_on_center(atomC, 0);
-              const int dfbfoffC = dfbs->shell_to_function(dfshoffC);
-              if(atomA == atomC){
-                d_mu_a[sigma].segment(dfbfoffA, dfnbfA) +=
-                    C_mu_rho->head(dfnbfA) * D(rho, sigma);
-                if(atomA != atomB){
-                  d_mu_a[sigma].segment(dfbfoffB, dfnbfB) +=
-                      C_mu_rho->tail(dfnbfB) * D(rho, sigma);
-                }
-              }
-              else { // atomA != atomC
-                if(atomB == atomC){
-                  d_mu_a[sigma].head(dfnbfA) += C_mu_rho->head(dfnbfA) * D(rho, sigma);
-                  d_mu_a[sigma].tail(dfnbfB) += C_mu_rho->tail(dfnbfB) * D(rho, sigma);
-                }
-              }
-
-            } // end loop over sigma
-            // d_{mu_a, sigma_a}^{X_ab} += C_{mu_a,rho_b}^{X_ab} D^{rho_b,sigma_ab}
-            //for(int sigmaA = 0; sigmaA < nbfA; ++sigmaA){
-            //  const int sigma = sigmaA + bfoffA;
-            //  d_mu_a[sigma].head(dfnbfA) += C_mu_rho->head(dfnbfA) * D(rho, sigma);
-            //  //if(atomA != atomB){
-            //  //  d_mu_a[sigma].tail(dfnbfB) += C_mu_rho->tail(dfnbfB) * D(rho, sigma);
-            //  //}
-            //} // end loop over sigmaA
-            //if(atomA != atomB){
-            //  // d_{mu_a, sigma_a}^{X_ab} += C_{mu_a,rho_b}^{X_ab} D^{rho_b,sigma_ab}
-            //  for(int sigmaB = 0; sigmaB < nbfB; ++sigmaB){
-            //    const int sigma = sigmaB + bfoffB;
-            //    d_mu_a[sigma].head(dfnbfA) += C_mu_rho->head(dfnbfA) * D(rho, sigma);
-            //    d_mu_a[sigma].tail(dfnbfB) += C_mu_rho->tail(dfnbfB) * D(rho, sigma);
-            //  } // end loop over sigmaA
-            //} // end if atomA != atomB
-          } // end if do_exact
-          #endif
-          //----------------------------------------//
           timer_exit(3);
         } // end loop over rho
         /*******************************************************/ #endif //end fold 2}}}
@@ -2810,84 +2193,12 @@ namespace sc {
         /* Compute gtilde_mu, add to the A intermediate   {{{2 */ #if 2 // begin fold
         timer_change("03 - compute A", 2);
         A_mu = B_mu - 0.5 * dt_mu * X_g_Y;
-        //matprint(A_mu, "A(" << mu << ")");
         //----------------------------------------//
-        #if 0 // Old code
-        if(do_exact){
-          for(int sigma = 0; sigma < obsnbf; ++sigma){
-            const int jshB = ketbs->function_to_shell(sigma);
-            const int atomB = ketbs->shell_to_center(jshB);
-            const int nbfB = ketbs->nbasis_on_center(atomB);
-            const int shoffB = ketbs->shell_on_center(atomB, 0);
-            const int bfoffB = ketbs->shell_to_function(shoffB);
-            const int dfnshB = dfbs->nshell_on_center(atomB);
-            const int dfnbfB = dfbs->nbasis_on_center(atomB);
-            const int dfshoffB = dfbs->shell_on_center(atomB, 0);
-            const int dfbfoffB = dfbs->shell_to_function(dfshoffB);
-            //----------------------------------------//
-            if(atomA == atomB){
-              gt_mu_a[sigma].segment(dfbfoffA, dfnbfA) += X_g_Y.block(
-                  dfbfoffA, dfbfoffA,
-                  dfnbfA,   dfnbfA
-              ) * d_mu_a[sigma].segment(dfbfoffA, dfnbfA);
-              for(int atomC = 0; atomC < obs->ncenter(); ++atomC){
-                if(atomA != atomC){
-                  const int dfnbfC = dfbs->nbasis_on_center(atomC);
-                  const int dfshoffC = dfbs->shell_on_center(atomC, 0);
-                  const int dfbfoffC = dfbs->shell_to_function(dfshoffC);
-                  gt_mu_a[sigma].segment(dfbfoffC, dfnbfC) += X_g_Y.block(
-                      dfbfoffC, dfbfoffC,
-                      dfnbfC,   dfnbfC
-                  ) * d_mu_a[sigma].segment(dfbfoffC, dfnbfC);
-                  gt_mu_a[sigma].segment(dfbfoffC, dfnbfC) += X_g_Y.block(
-                      dfbfoffC, dfbfoffA,
-                      dfnbfC,   dfnbfA
-                  ) * d_mu_a[sigma].segment(dfbfoffA, dfnbfA);
-                }
-              } // end loop over atomC
-            }
-            //----------------------------------------//
-            else{ // atomA != atomB
-              gt_mu_a[sigma].head(dfnbfA) += X_g_Y.block(
-                  dfbfoffA, dfbfoffA,
-                  dfnbfA,   dfnbfA
-              ) * d_mu_a[sigma].head(dfnbfA);
-              gt_mu_a[sigma].tail(dfnbfB) += X_g_Y.block(
-                  dfbfoffB, dfbfoffB,
-                  dfnbfB,   dfnbfB
-              ) * d_mu_a[sigma].tail(dfnbfB);
-              // cross terms
-              gt_mu_a[sigma].head(dfnbfA) += X_g_Y.block(
-                  dfbfoffA, dfbfoffB,
-                  dfnbfA,   dfnbfB
-              ) * d_mu_a[sigma].tail(dfnbfB);
-              gt_mu_a[sigma].tail(dfnbfB) += X_g_Y.block(
-                  dfbfoffB, dfbfoffA,
-                  dfnbfB,   dfnbfA
-              ) * d_mu_a[sigma].head(dfnbfA);
-            } // end if atomA != atomB
-            //----------------------------------------//
-            // now build A_mu_a
-            A_mu_a[sigma] -= 0.5 * gt_mu_a[sigma];
-            //if(atomA == atomB){
-            //  A_mu_a[sigma].segment(dfbfoffB, dfnbfB) -= 0.5 * gt_mu_a[sigma];
-            //}
-            //else { // atomA != atomB
-            //  A_mu_a[sigma] -= 0.5 * gt_mu_a[sigma];
-            //}
-            //matprint(A_mu_a[sigma], "A_a(" << mu << "," << sigma << ")");
-            //matprint(B_mu_a[sigma], "B_a(" << mu << "," << sigma << ")");
-            //matprint(gt_mu_a[sigma], "gt_a(" << mu << "," << sigma << ")");
-          } // end loop over sigma
-        } // end if do_exact
-        #endif
         /*******************************************************/ #endif //end fold 2}}}
         /*-----------------------------------------------------*/
         /* Compute K_tilde                                {{{2 */ #if 2 // begin fold
         timer_change("04 - compute K_tilde", 2);
         timer_enter("misc", 3);
-        //Eigen::VectorXd K3ex_mu(ketnbf);
-        //K3ex_mu = Eigen::VectorXd::Zero(ketnbf);
         for(int nu = 0; nu < ketnbf; ++nu){
           const int jshB = ketbs->function_to_shell(nu);
           const int atomB = ketbs->shell_to_center(jshB);
@@ -2933,7 +2244,6 @@ namespace sc {
                   for(int rhoA = 0; rhoA < nbfA; ++rhoA){
                     const int rho = rhoA + bfoffA;
                     Ktilde(mu, nu) -= g_ab[rho](nuA, sigmaA) * D(rho, sigma);
-                    Kex(mu, nu) -= g_ab[rho](nuA, sigmaA) * D(rho, sigma);
                   }
                 }
                 //----------------------------------------//
@@ -2942,9 +2252,7 @@ namespace sc {
                   const int nuB = nu - bfoffB;
                   for(int rhoB = 0; rhoB < nbfB; ++rhoB){
                     const int rho = rhoB + bfoffB;
-                    //cout << mu << "," << nu << "," << nuB << "," << rho << "," << sigma << "," << sigmaA << endl;
                     Ktilde(mu, nu) -= g_ba[rho](nuB, sigmaA) * D(rho, sigma);
-                    Kex(mu, nu) -= g_ba[rho](nuB, sigmaA) * D(rho, sigma);
                   }
                 }
               }
@@ -2957,76 +2265,20 @@ namespace sc {
                 for(int rhoC = 0; rhoC < nbfC; ++rhoC){
                   const int rho = rhoC + bfoffC;
                   Ktilde(mu, nu) -= g_ab[rho](nuA, sigmaC) * D(rho, sigma);
-                  Kex(mu, nu) -= g_ab[rho](nuA, sigmaC) * D(rho, sigma);
                 }
               }
-              #if FACTORIZE_EXACT_DIAG
-              if(atomA == atomB){
-                if(atomA == atomC){
-                  //----------------------------------------------------------------------------//
-                  // (aa|aa) case
-                  //----------------------------------------------------------------------------//
-                  Ktilde(mu, nu) -= C_nu_sigma->transpose() * A_mu_aa[sigma];
-                  Kex(mu, nu) -= C_nu_sigma->transpose() * A_mu_aa[sigma];
-                }
-                else{
-                  //----------------------------------------------------------------------------//
-                  // (ab|ab) case
-                  //----------------------------------------------------------------------------//
-                  Ktilde(mu, nu) -= C_nu_sigma->transpose() * A_mu_ab[sigma];
-                  Kex(mu, nu) -= C_nu_sigma->transpose() * A_mu_ab[sigma];
-                }
-              }
-              else if(atomA == atomC) { // atomA != atomB
-                //----------------------------------------------------------------------------//
-                // (ab|ba) case
-                //----------------------------------------------------------------------------//
-                Ktilde(mu, nu) -= C_nu_sigma->transpose().tail(dfnbfA) * A_mu_ba[atomB][sigma].head(dfnbfA);
-                Ktilde(mu, nu) -= C_nu_sigma->head(dfnbfB).transpose() * A_mu_ba[atomB][sigma].tail(dfnbfB);
-                Kex(mu, nu) -= C_nu_sigma->transpose().tail(dfnbfA) * A_mu_ba[atomB][sigma].head(dfnbfA);
-                Kex(mu, nu) -= C_nu_sigma->transpose().head(dfnbfB) * A_mu_ba[atomB][sigma].tail(dfnbfB);
-                Kexba(mu, nu) -= C_nu_sigma->transpose().tail(dfnbfA) * A_mu_ba[atomB][sigma].head(dfnbfA);
-                Kexba(mu, nu) -= C_nu_sigma->transpose().head(dfnbfB) * A_mu_ba[atomB][sigma].tail(dfnbfB);
-                Kexba3(mu, nu) -= C_nu_sigma->transpose().tail(dfnbfA) * A_mu_ba3[atomB][sigma].head(dfnbfA);
-                Kexba3(mu, nu) -= C_nu_sigma->transpose().head(dfnbfB) * A_mu_ba3[atomB][sigma].tail(dfnbfB);
-                Kexba2(mu, nu) -= C_nu_sigma->transpose().tail(dfnbfA) * A_mu_ba2[atomB][sigma].head(dfnbfA);
-                Kexba2(mu, nu) -= C_nu_sigma->transpose().head(dfnbfB) * A_mu_ba2[atomB][sigma].tail(dfnbfB);
-                matprint(Kexba3, "Kexba3 after " << mu << ", " << nu << "," << sigma << ":");
-              }
-              #endif
             } // end if do_exact
             timer_change("misc", 3);
             //----------------------------------------//
           } //end loop over sigma
           //----------------------------------------//
         } // end loop over nu
-        //matprint(Ktilde.row(mu), "Ktilde(" << mu << ")");
-        //matprint(K3ex_mu, "K3ex(" << mu << ")");
         timer_exit(3);
         timer_change("misc", 2);
         /*******************************************************/ #endif //end fold 2}}}
         /*-----------------------------------------------------*/
       } // end loop over mu
-      #if FACTORIZE_EXACT_DIAG
-      matprint(2*Kexba3, "Kexba3");
-      matprint(2*Kexba2, "Kexba2");
-      matprint(2*Kexba, "Kexba");
-      matprint(2*Kex, "Kex");
-      Kex = Kex + Kex.transpose().eval();
-      Kexba = Kexba + Kexba.transpose().eval();
-      Kexba3 = Kexba3 + Kexba3.transpose().eval();
-      Kexba2 = Kexba2 + Kexba2.transpose().eval();
-      matprint(Kexba, "Kexba");
-      matprint(Kexba3, "Kexba3");
-      matprint(Kexba2, "Kexba2");
-      matprint(Kex, "Kex");
-      #endif
-      matprint(2*Kex, "Kex");
-      Kex = Kex + Kex.transpose().eval();
-      matprint(Kex, "Kex");
       timer_exit(2);
-      /*=======================================================================================*/
-      /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
@@ -3085,15 +2337,11 @@ namespace sc {
                             // (ab|ab) contribution
                             // K(mu_a rho_a) += (mu_a nu_b | rho_a sigma_b) * D^(nu_b sigma_b)
                             K(mu, rho) += buffer[buff_off] * D(nu, sigma);
-                            //Kex(mu, rho) += buffer[buff_off] * D(nu, sigma);
-                            //cout << "( " << setw(2) << mu << " " << nu << " | " << rho << " " << sigma << "), ( " << atomA << " " << atomB << " | " << atomA << " " << atomB << ")" << endl;
                             //----------------------------------------//
                             // (ab|ba) contribution
                             // K(mu_a sigma_b) += (mu_a nu_b | sigma_b rho_a) * D^(nu_b rho_a)
                             if(atomA != atomB){
                               K(mu, sigma) += buffer[buff_off] * D(nu, rho);
-                              //Kex(mu, sigma) += buffer[buff_off] * D(nu, rho);
-                              //cout << "( " << setw(2) << mu << " " << nu << " | " << sigma << " " << rho << "), ( " << atomA << " " << atomB << " | " << atomB << " " << atomA << ")" << endl;
                             }
                             //----------------------------------------//
                             ++buff_off;
@@ -3136,10 +2384,6 @@ namespace sc {
           brabs->so_matrixkit()
       );
       result.assign(K.data());
-      //EigenMatrix Ktest(branbf, ketnbf);
-      //result.convert(Ktest.data());
-      //cout << "Should be 0: " << (K-Ktest).norm() << endl;
-      //assert((K-Ktest).norm()<1e-15);
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
       /* Cleanup stuff                                         		                        {{{1 */ #if 1 // begin fold

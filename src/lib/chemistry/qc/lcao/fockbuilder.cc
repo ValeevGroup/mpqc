@@ -1399,7 +1399,7 @@ namespace sc {
       /*=======================================================================================*/
       /* Loop over basis function pairs in (mu nu | g | X)     		                        {{{1 */ #if 1 // begin fold
       timer_change("03 - loop over (mu nu | g | X)", 1);
-      unsigned int g_type_idx = TwoBodyOperSetDescr::instance(TwoBodyOperSet::ERI)->opertype(metric_oper);
+      unsigned int g_type_idx = TwoBodyOperSetDescr::instance(TwoBodyOperSet::ERI)->opertype(TwoBodyOper::eri);
       Eigen::VectorXd gpart(dfnbf);
       Eigen::VectorXd dtilde(dfnbf);
       dtilde = Eigen::VectorXd::Zero(dfnbf);
@@ -2014,7 +2014,7 @@ namespace sc {
           dfspace->id(),
           metric_key
       );
-      unsigned int g_type_idx = TwoBodyOperSetDescr::instance(TwoBodyOperSet::ERI)->opertype(metric_oper);
+      unsigned int g_type_idx = TwoBodyOperSetDescr::instance(TwoBodyOperSet::ERI)->opertype(TwoBodyOper::eri);
       //----------------------------------------//
       timer_change("04 - compute (X | g | Y)", 1);
       const std::string coulomb2c_key = ParsedTwoBodyTwoCenterIntKey::key(

@@ -44,7 +44,7 @@ mole<DFCLHF>: (
   	df_local_exchange = yes
     store_ints = mem
     %store_ints = mpi
-    exact_diag_J = no
+    exact_diag_J = yes
     exact_diag_K = yes
   )
 

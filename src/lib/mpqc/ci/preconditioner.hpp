@@ -5,9 +5,17 @@
 #include "mpqc/ci/vector.hpp"
 #include "mpqc/math/matrix.hpp"
 #include "mpqc/utility/foreach.hpp"
+#include "mpqc/utility/exception.hpp"
 
 namespace mpqc {
 namespace ci {
+
+    template<class Index>
+    void preconditioner(CI< Restricted<Index> > &ci,
+                        const mpqc::Vector &h, const mpqc::Matrix &V,
+                        double lambda, Vector< Restricted<Index> > &D) {
+        throw MPQC_EXCEPTION("not implemented");
+    }
                 
     template<class Type>
     void preconditioner(CI<Type> &ci,

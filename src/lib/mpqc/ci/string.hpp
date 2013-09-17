@@ -44,37 +44,48 @@ namespace ci {
             int count_;
         };
 
+        /// Construct string with 'count' electrons,
+        /// eg String(4,2) will generate a string '0011'.
+        /// @param size number of orbitals
+        /// @param count number of electrons
         String(size_t size, size_t count) {
-            assert(size < 64);
-            //assert(count < size);
+            assert(0 < size && size < 64);
+            assert(0 < count && count < size);
             this->size_ = size;
             this->count_ = count;
-            std::string s(count, '1');
-            s.resize(size, '0');
-            //std::cout << s << std::endl;
-            this->value_ = bitset(s);
+            this->value_ = bitset((1 << count) - 1);
         }
-        explicit String(const std::string &value) {
+
+        /// Construct String from a char string.
+        /// @warning string is in "natural", NOT bit, order,
+        /// i.e. string[0] bit corresponds to String[0] bit
+        explicit String(std::string value) {
             //std::cout << "from str " <<  value << std::endl;
             assert(value.size() <= 64);
+            std::reverse(value.begin(), value.end());
             this->size_ = value.size();
             this->value_ = bitset(value);
             this->count_ = bitset(value).count();
         }
+
         String(const String &s) {
             this->size_ = s.size_;
             this->count_ = s.count_;
             this->value_ = s.value_;
         }
+
         const void* data() const {
             return (const char*) &this->value_;
         }
+
         bool operator[](size_t i) const {
             return this->value_[i];
         }
+
         size_t size() const {
             return this->size_;
         }
+
         size_t count() const {
             return this->count_;
         }
@@ -96,12 +107,14 @@ namespace ci {
             //std::swap(s.value_[i], s.value_[j]);
             return s;
         }
+        /// return string in bit *representation* order, lowest bit is right-most
         operator std::string() const {
-            std::string s(size_, '*');
-            for (size_t i = 0; i < size_; ++i) {
-                s[i] = "01"[this->operator[](i)];
+            std::string s(this->size_, '*');
+            for (size_t i = 0; i < this->size_; ++i) {
+                s[i] = ("01"[this->operator[](i)]);
             }
             return s;
+            //return this->value_.to_string<char, std::char_traits<char>, std::allocator<char>>();
         }
         size_t to_ulong() const {
             return this->value_.to_ulong();
@@ -117,7 +130,9 @@ namespace ci {
         }
         static size_t difference(const String &a, const String &b) {
             assert(a.size() == b.size());
+            assert(a.count() == b.count());
             size_t n = String::count(a ^ b);
+            //std::cout << std::string(a) << " ^ " << std::string(b) << std::endl;
             assert(!(n % 2));
             return n / 2;
         }
@@ -189,6 +204,7 @@ namespace ci {
                 perm_[this->index_[data_[i]]] = i;
             }
         }
+        const std::vector<String>& data() const { return data_; }
     private:
         std::vector<String> data_;
         std::vector<int> perm_;
@@ -316,15 +332,15 @@ namespace ci {
         std::string r = String(no, ne);
         std::string s = r;
         do {
-            // std::cout << String(r) << "->" << String(s)
-            //           << ": " << String::count(String(r) ^ String(s))
-            //           << std::endl;
             if (N && (String::difference(String(r), String(s))) > N)
                 continue;
             v.push_back(String(s));
             //std::cout << s << std::endl;
-        } while (std::next_permutation(s.begin(), s.end()));
-        //std::reverse(v.begin(), v.end());
+        }
+        // N.B. string representation is reversed
+        while (std::next_permutation(s.rbegin(), s.rend()));
+
+        //std::reverse(v.begin(), v.end()); // un-reverse order
         return String::List<String::Index>(v);
     }
 

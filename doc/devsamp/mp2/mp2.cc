@@ -20,7 +20,7 @@ class MP2: public Wavefunction {
     void obsolete(void);
     int nelectron(void);
     RefSymmSCMatrix density(void);
-    int spin_polarized(void);
+    double magnetic_moment() const;
     int value_implemented(void) const;
 };
 
@@ -87,9 +87,9 @@ MP2::density(void) {
   return 0;
 }
 
-int
-MP2::spin_polarized(void) {
-  return 0;
+double
+MP2::magnetic_moment() const {
+  return 0.0;
 }
 
 int

@@ -1263,12 +1263,13 @@ namespace sc {
         const int dfnbfA = dfbs->nbasis_on_center(atomA);
         const int dfshoffA = dfbs->shell_on_center(atomA, 0);
         const int dfbfoffA = dfbs->shell_to_function(dfshoffA);
-        if(not munu_g_X->is_local(0, mu))
+        if(not munu_g_X->is_local(0, mu)){
           if(me > obsnbf){
             // For some reason, this fixes the problem arising from nproc > nbf
             Ctilde.segment(dfbfoffA, dfnbfA) += Eigen::VectorXd::Zero(dfnbfA);
           }
           continue;
+        }
         //----------------------------------------//
         for(int nu = 0; nu < obsnbf; ++nu){
           const int jshB = obs->function_to_shell(nu);

@@ -6,7 +6,6 @@ mpqc:(
 %molecule = $:ibuprofen
 %molecule = $:ethane_c1
 %molecule = $:naphtalene
-%molecule = $:h2o_dimer
 %molecule = $:he2
 molecule = $:h2o_dimer
 %coor = $:symcoor

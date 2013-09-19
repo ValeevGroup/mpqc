@@ -94,7 +94,7 @@ chmod +x reconf.sh
 
 while test $# != 0; do
   case "$1" in
-  --help|-h) help ;;
+  --help|-h|-help) help ;;
   --prefix=*)      prefix="`arg \"$1\"`" ;;
   --new-features)  args="$args -DMPQC_NEW_FEATURES=TRUE" ;;
   --lapack=*)      lapack="`arg \"$1\"`"

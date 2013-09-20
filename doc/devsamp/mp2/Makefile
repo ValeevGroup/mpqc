@@ -15,7 +15,7 @@ LIBDIR  := $(shell $(MPQCCONFIG) --libdir)
 TARGET = mp2
 
 $(TARGET): $(TARGET).o
-	$(CXX) $(CXXFLAGS) -o $@ $^ -L$(LIBDIR) $(LIBS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ -L$(LIBDIR) -lmpqcmain $(LIBS)
 
 clean:
 	-rm -f $(TARGET) $(TARGET).o

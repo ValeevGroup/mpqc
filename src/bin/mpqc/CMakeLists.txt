@@ -1,6 +1,11 @@
 set(executable mpqc)
 
 add_library(
+  mpqcmain
+  mpqc.cc
+)
+
+add_library(
   mpqcinit
   mpqcin.cc
   mpqcinit.cc
@@ -11,6 +16,11 @@ add_library(
 add_executable(
   ${executable}
   mpqc.cc
+)
+
+target_link_libraries(
+  mpqcmain
+  mpqcinit
 )
 
 target_link_libraries(
@@ -37,3 +47,4 @@ foreach (_file ${headers})
 endforeach()
 
 install(TARGETS mpqcinit DESTINATION lib)
+install(TARGETS mpqcmain DESTINATION lib)

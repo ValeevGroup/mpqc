@@ -374,6 +374,10 @@ namespace detail {
             io<Message::READ>(data, object, r, rank);
         }
 
+        MPI::Comm comm() const {
+          return comm_;
+        }
+
     private:
 
         MPI::Comm comm_;

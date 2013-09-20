@@ -77,9 +77,9 @@ namespace detail {
 
 	~array_parallel_impl() {
 	    foreach (Tile t, tiles_) {
-		if (t.local) delete t.data;
+	      if (t.local) delete t.data;
 	    }
-            MPI::Comm::free(comm_.comm_);
+	    comm_.comm().free();
 	}
 
         void sync() {

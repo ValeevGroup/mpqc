@@ -78,6 +78,9 @@ WavefunctionWorld::WavefunctionWorld(const Ref<KeyVal>& keyval)
     if (df_solver_ != "bunchkaufman" &&
         df_solver_ != "bunchkaufman_inv" &&
         df_solver_ != "bunchkaufman_refine" &&
+        df_solver_ != "householder" &&
+        df_solver_ != "householder_colpiv" &&
+        df_solver_ != "householder_fullpiv" &&
         df_solver_ != "cholesky" &&
         df_solver_ != "cholesky_inv" &&
         df_solver_ != "cholesky_refine"
@@ -88,6 +91,11 @@ WavefunctionWorld::WavefunctionWorld(const Ref<KeyVal>& keyval)
                        "df_solver",
                        df_solver_.c_str(),
                        class_desc());
+
+    df_local_coulomb_ = keyval->booleanvalue("df_local_coulomb", KeyValValueboolean(false));
+    df_local_exchange_ = keyval->booleanvalue("df_local_exchange", KeyValValueboolean(false));
+    exact_diag_J_ = keyval->booleanvalue("exact_diag_J", KeyValValueboolean(false));
+    exact_diag_K_ = keyval->booleanvalue("exact_diag_K", KeyValValueboolean(false));
   }
 
   // Determine how to store MO integrals
@@ -256,7 +264,15 @@ WavefunctionWorld::initialize()
     // create MO integrals runtime
     Ref<DensityFittingParams> dfparams;
     if (bs_df_.nonnull()) {
-      dfparams = new DensityFittingParams(bs_df_, df_kernel_, df_solver_);
+      dfparams = new DensityFittingParams(
+          bs_df_,
+          df_kernel_,
+          df_solver_,
+          df_local_coulomb_,
+          df_local_exchange_,
+          exact_diag_J_,
+          exact_diag_K_
+      );
     }
     moints_runtime_ = new MOIntsRuntime(tfactory_, dfparams);
     tfactory_->df_info( const_cast<DensityFittingInfo*>(moints_runtime_->runtime_4c()->params()) );

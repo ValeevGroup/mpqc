@@ -37,6 +37,7 @@
 
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/basis/basis.h>
+#include <cassert>
 
 using namespace sc;
 

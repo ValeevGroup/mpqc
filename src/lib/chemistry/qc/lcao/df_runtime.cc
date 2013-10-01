@@ -286,7 +286,11 @@ DensityFittingRuntime::get_coefficients(const CoefKey& key)
                                                                        operset_key, params_key);
   const Ref<TwoBodyThreeCenterMOIntsTransform>& munu_M_X_tform = int3c_rtime->get(munu_M_X_key);
   munu_M_X_tform->compute();
-  Ref<DistArray4> munu_M_X = munu_M_X_tform->ints_acc(); munu_M_X->activate();
+  Ref<DistArray4> munu_M_X = munu_M_X_tform->ints_acc();
+  bool is_active = munu_M_X->is_active();
+  if(not is_active){
+    munu_M_X->activate();
+  }
 
   // Don't require the integrals to be local
   //assert(munu_M_X->is_local(0, bf1));
@@ -416,7 +420,10 @@ DensityFittingRuntime::get_coefficients(const CoefKey& key)
   }
   //munu_M_X->release_pair_block(0, bf1, ints_type_idx);
   //----------------------------------------//
-  if(munu_M_X->data_persistent()) munu_M_X->deactivate();
+  if(not is_active){
+    // Only deactivate it if we activated it ourselves...
+    if(munu_M_X->data_persistent()) munu_M_X->deactivate();
+  }
   //----------------------------------------//
   // Now solve A * x = b, with A = ( X_(ab) | M | Y_(ab) ) and b = ( ibf jbf | M | Y_(ab) )
   // The result will be dfpart_size rows and 1 column and needs to be stored in the big C

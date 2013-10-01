@@ -1280,7 +1280,6 @@ namespace sc {
           const int dfbfoffB = dfbs->shell_to_function(dfshoffB);
           IntPair atomAB(atomA, atomB);
           //----------------------------------------//
-          // Assume locality is the same for munu_g_X and the coefficients
           timer_change("01 - get coefficients", 3);
           std::shared_ptr<Eigen::VectorXd> Cpart = df_rtime->get(dfkey, mu, nu);
           timer_change("02 - contract coefficients with D", 3);
@@ -1407,6 +1406,8 @@ namespace sc {
         if(not munu_g_X->is_local(0, mu))
           continue;
         //----------------------------------------//
+        munu_g_X->retrieve_pair_block(0, mu, g_type_idx);
+        //----------------------------------------//
         const int ishA = obs->function_to_shell(mu);
         const int atomA = obs->shell_to_center(ishA);
         const int dfnshA = dfbs->nshell_on_center(atomA);
@@ -1423,7 +1424,6 @@ namespace sc {
           const int dfbfoffB = dfbs->shell_to_function(dfshoffB);
           IntPair atomAB(atomA, atomB);
           //----------------------------------------//
-          munu_g_X->retrieve_pair_block(0, mu, g_type_idx);
           munu_g_X->retrieve_pair_subblock(
               0, mu,      // unit basis index, mu_index
               g_type_idx,
@@ -1467,8 +1467,8 @@ namespace sc {
             timer_exit(2);
           }
           //----------------------------------------//
-          munu_g_X->release_pair_block(0, mu, g_type_idx);
         } // end loop over nu
+        munu_g_X->release_pair_block(0, mu, g_type_idx);
       } // end loop over mu
       //----------------------------------------//
       // Global sum dtilde

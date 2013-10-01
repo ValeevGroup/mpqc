@@ -18,7 +18,6 @@ molecule = $:h2o_dimer
 %
 
 mole<DFCLHF>: (
-  %matrixkit = $:localmatrixkit
   memory = 32000000
   integrals<IntegralLibint2>:()
 

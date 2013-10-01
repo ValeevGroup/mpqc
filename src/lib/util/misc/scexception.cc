@@ -71,7 +71,7 @@ SCException::SCException(const char *description,
                       << std::endl;
         }
       const size_t nframes_to_skip = 1;
-      //elaborate() << "backtrace:" << std::endl << backtrace_.str(nframes_to_skip);
+      elaborate() << "backtrace:" << std::endl << backtrace_.str(nframes_to_skip);
     }
   catch (...) {
       // info in the elaboration is incomplete, so delete it

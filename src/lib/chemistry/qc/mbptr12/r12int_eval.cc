@@ -2195,6 +2195,13 @@ R12IntEval::compute()
   if (evaluated_)
     return;
 
+#if 0
+  {
+    ExEnv::out0() << indent << "Trying out MPQC3-based R12 code" << std::endl;
+    V_diag_ta();
+  }
+#endif
+
   init_intermeds_();
 
   // different expressions hence codepaths depending on relationship between OBS, VBS, and RIBS

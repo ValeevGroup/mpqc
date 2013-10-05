@@ -284,6 +284,10 @@ void PsiCC_PT2R12::compute_ept2r12() {
   else { // diag = false:
          // compute dressed V intermediate of CC(2)_R12 method here explicitly if non-diagonal ansatz is used
          // (diagonal MP2-R12 energy evaluator computes all intermediates)
+#if 0
+    ExEnv::out0() << indent << "Trying out MPQC3-based R12 code" << std::endl;
+    r12eval()->compute_ccr12_1rdm(T1[Alpha], T2);
+#endif
 
     Ref<DistArray4> Vab[NSpinCases2];
     Ref<DistArray4> Via[NSpinCases2];

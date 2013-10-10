@@ -197,7 +197,7 @@ WavefunctionWorld::WavefunctionWorld(StateIn& si) : SavableState(si)
 
 WavefunctionWorld::~WavefunctionWorld()
 {
-    mem_->set_localsize(0);
+    //mem_->set_localsize(0);
 }
 
 void WavefunctionWorld::save_data_state(StateOut& so)

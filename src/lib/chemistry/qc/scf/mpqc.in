@@ -27,7 +27,7 @@ mole<DFCLHF>: (
     %name = "cc-pVTZ-JKFIT"
     %name = "aug-cc-pV6Z"
     %name = "cc-pVTZ-RI"
-    name = "cc-pVDZ"
+    name = "cc-pVTZ/JKFIT"
     %name = "6-31G"
     %puream=yes
     %name = "6-31G"
@@ -49,7 +49,7 @@ mole<DFCLHF>: (
 
 
   % Function
-  value_accuracy = 1e-4
+  value_accuracy = 1e-8
   gradient_accuracy = 1e-6
 
   % MolecularEnergy input
@@ -57,7 +57,7 @@ mole<DFCLHF>: (
   mbasis<GaussianBasisSet>: (
     molecule = $:molecule
     %name = "cc-pVDZ"
-    name = "3-21G"
+    name = "cc-pVTZ"
     %puream=yes
     %matrixkit = $:basis_matrixkit
   )

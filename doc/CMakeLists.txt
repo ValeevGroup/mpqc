@@ -19,6 +19,7 @@ if(DOXYGEN_FOUND)
                         ${CMAKE_CURRENT_SOURCE_DIR}/overview.dox
                         ${CMAKE_CURRENT_SOURCE_DIR}/sf_footer.html
                         ${CMAKE_CURRENT_SOURCE_DIR}/srctree.dox
+                        ${CMAKE_CURRENT_SOURCE_DIR}/modules.dox
                         ${CMAKE_CURRENT_SOURCE_DIR}/top.dox
                         ${CMAKE_SOURCE_DIR}/bin/mpqcrun.dox
                         ${CMAKE_SOURCE_DIR}/bin/mpqcrunning.dox
@@ -37,7 +38,6 @@ if(DOXYGEN_FOUND)
                         ${CMAKE_SOURCE_DIR}/src/lib/chemistry/qc/psi/mpqcpsi.dox
                         ${CMAKE_SOURCE_DIR}/src/lib/math/scmat/scmat.dox
                         ${CMAKE_SOURCE_DIR}/src/lib/math/symmetry/symmetry.dox
-                        ${CMAKE_SOURCE_DIR}/src/lib/mpqc/utility/utility.dox
                         ${CMAKE_SOURCE_DIR}/src/lib/util/class/class.dox
                         ${CMAKE_SOURCE_DIR}/src/lib/util/group/group.dox
                         ${CMAKE_SOURCE_DIR}/src/lib/util/keyval/keyval.dox

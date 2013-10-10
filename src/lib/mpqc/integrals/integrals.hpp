@@ -38,17 +38,10 @@
 
 #include "shell.hpp"
 
-/**
- * @defgroup Integrals mpqc.Integrals
- * Provides new interface for old MPQC integrals.
- * Currently has IntegralEnginePool which holds a pool of integral engine
- * and a integral object that is a wrapper to integral engines.
- */
-
 namespace mpqc {
 namespace integrals {
 
-    /// @addtogroup Integrals
+    /// @addtogroup ChemistryBasisIntegralRange
     /// @{
     /**
      * Wrapper to old mpqc integral engine
@@ -100,7 +93,7 @@ namespace integrals {
         RefEngine integral_;
     };
 
-    /// @} //Integrals
+    /// @} //ChemistryBasisIntegralRange
 namespace detail {
 
     /// Determines the number of functions in a given shell and returns a range
@@ -199,7 +192,7 @@ namespace detail {
 namespace mpqc {
 namespace integrals {
 
-    /// @addtogroup Integrals
+    /// @addtogroup ChemistryBasisIntegralRange
     /// @{
 
     /**
@@ -245,7 +238,7 @@ namespace integrals {
     }
 
 
-    /// @} // Integrals
+    /// @} // ChemistryBasisIntegralRange
 } // namespace integrals
 } // namespace mpqc
 

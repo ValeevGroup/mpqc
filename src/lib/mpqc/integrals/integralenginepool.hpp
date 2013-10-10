@@ -34,7 +34,7 @@
 #include <util/misc/scexception.h>
 
 namespace mpqc {
-    /// @addtogroup Integrals
+    /// @addtogroup ChemistryBasisIntegralTA
     /// @{
 
     /**

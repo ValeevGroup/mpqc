@@ -27,7 +27,8 @@
 
 #ifndef MPQC_INTEGRALS_SHELL_HPP
 #define MPQC_INTEGRALS_SHELL_HPP
-/// addtogroup Integrals
+
+/// addtogroup ChemistryBasisIntegralTA
 /// @{
 namespace mpqc {
 namespace integrals {
@@ -45,7 +46,7 @@ namespace integrals {
 
 } // namespace integrals
 } // namespace mpqc
-/// @} // Integrals
+/// @} // ChemistryBasisIntegralTA
 
 
 #endif /* MPQC_INTEGRALS_SHELL_HPP */

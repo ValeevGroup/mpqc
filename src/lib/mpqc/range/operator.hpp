@@ -11,7 +11,7 @@
 #include <boost/preprocessor/enum_params.hpp>
 #include <boost/preprocessor/tuple.hpp>
 
-/// @addtogroup Range
+/// @addtogroup MathRange
 /// @{ 
 
 #define MPQC_RANGE_CONST_OPERATOR(Z, N, DATA)                                   \

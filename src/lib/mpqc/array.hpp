@@ -14,12 +14,9 @@
 #include "mpqc/assert.hpp"
 #include "mpqc/utility/foreach.hpp"
 
-/// @defgroup Array mpqc.Math.Array
-/// Distributed/serial array implementation
-
 namespace mpqc {
 
-    /// @addtogroup Array
+    /// @addtogroup MathArray
     /// @{
 
 

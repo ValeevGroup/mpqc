@@ -10,22 +10,6 @@
 // #define EIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET
 // #include <Eigen/Sparse>
 
-/** @defgroup MathMatrix mpqc.Math.Matrix
-    @ingroup Math
-    Matrix and Vector classes and function,
-    derived from <a href="http://eigen.tuxfamily.org">Eigen</a>.
-    @anchor MatrixOperators
-    The matrix and vector objects overide <c>operator()</c>,
-    s.t. if one of the arguments is a range, a block is returned rather
-    than a single element.
-    Example:
-    @code
-    matrix(0,range(0,4)); // returns 1x4 sub-matrix (0,0:3)
-    matrix(0,0); // returns matrix element (0,0);
-    vector(range(2,4)); // returns sub-vector (2:3)
-    @endcode
-*/
-
 namespace mpqc {
 
     /// @addtogroup MathMatrix

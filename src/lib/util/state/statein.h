@@ -36,7 +36,7 @@
 
 namespace sc {
 
-  /** @ingroup State
+  /** @ingroup CoreState
    *  Helps to read user-defined types from StateIn. Overload/specialize
    * this function for each user-defined type not derived from SavableState
    * (if your class is derived from SavableState simply implement its "StateIn" constructor
@@ -73,7 +73,7 @@ class StateClassData {
     StateClassData &operator=(const StateClassData &d);
 };
 
-/** @ingroup State
+/** @ingroup CoreState
  * Restores fundamental and user-defined types from images created with StateOut. @sa StateOut
  */
 class StateIn:  public DescribedClass {
@@ -299,7 +299,7 @@ class StateIn:  public DescribedClass {
     const Ref<KeyVal> &override() const { return override_; }
   };
 
-  /// @addtogroup State
+  /// @addtogroup CoreState
   /// @{
   /// helper template to read from StateIn
   template <typename T> void FromStateIn(T& t, StateIn& so, int& count) {

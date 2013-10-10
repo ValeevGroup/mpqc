@@ -35,12 +35,6 @@
 #include <util/class/class.h>
 #include <util/keyval/keyval.h>
 
-/// @defgroup Chemistry mpqc.Chemistry
-/// Classes/functions related to the chemistry domain
-
-/// @defgroup ChemistryMolecule mpqc.Chemistry.Molecule
-/// Classes/functions related to Molecule class
-
 namespace sc {
 
   class Units;

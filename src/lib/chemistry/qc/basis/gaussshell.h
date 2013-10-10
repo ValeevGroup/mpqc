@@ -33,16 +33,6 @@
 #include <math/scmat/vector3.h>
 #include <util/keyval/keyval.h>
 
-/// @defgroup ChemistryBasis mpqc.Chemistry.Basis
-/// Classes/functions related to basis representations used in chemistry, i.e atomic basis functions
-
-/// @defgroup ChemistryBasisGaussian mpqc.Chemistry.Basis.Gaussian
-/// Classes/functions related to Gaussian basis representations
-
-/// @defgroup ChemistryBasisIntegral mpqc.Chemistry.Basis.Integral
-/// Classes/functions related to integrals over atomic basis function
-
-
 namespace sc {
 
 class CartesianIter;

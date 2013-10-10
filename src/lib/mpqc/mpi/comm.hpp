@@ -10,7 +10,7 @@ namespace mpqc {
 namespace MPI {
 
     /// MPI_Comm object wrapper/stub
-    /// @ingroup MPI
+    /// @ingroup CoreMPI
     struct Comm {
 
     protected:

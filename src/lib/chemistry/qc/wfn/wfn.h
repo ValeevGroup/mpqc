@@ -39,15 +39,6 @@
 #include <chemistry/qc/basis/orthog.h>
 #include <chemistry/qc/wfn/orbitalspace.h>
 
-/// @defgroup ChemistryElectronicStructure mpqc.Chemistry.ElectronicStructure
-/// Classes/functions related to state of electrons in Molecule
-
-/// @defgroup ChemistryElectronicStructureOneBody mpqc.Chemistry.ElectronicStructure.OneBody
-/// Classes/functions related to one-body models of electronic structure
-
-/// @defgroup ChemistryElectronicStructureNBody mpqc.Chemistry.ElectronicStructure.NBody
-/// Classes/functions related to many-body models of electronic structure
-
 namespace sc {
 
   /// @addtogroup ChemistryElectronicStructure

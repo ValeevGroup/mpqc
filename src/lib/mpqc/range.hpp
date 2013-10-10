@@ -13,12 +13,9 @@
 #include <boost/fusion/include/size.hpp>
 #include <boost/fusion/include/at_c.hpp>
 
-/// @defgroup Range mpqc.Math.Range
-/// Range objects for iterating or accessing slices of data
-
 namespace mpqc {
 
-/// @addtogroup Range
+/// @addtogroup MathRange
 /// @{
 
     struct range_block_iterator;

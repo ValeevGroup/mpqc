@@ -6,7 +6,7 @@
 
 namespace mpqc {
 
-    /// @addtogroup Utility
+    /// @addtogroup CoreUtility
     /// @{
     
     /// cast type T to string

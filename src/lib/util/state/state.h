@@ -32,15 +32,12 @@
 
 namespace sc {
 
-/// @defgroup State mpqc.Core.State
-/// Classes/functions used for serialization/deserialization
-
 class StateIn;
 class StateOut;
 class TranslateDataIn;
 class TranslateDataOut;
 
-/// @addtogroup State
+/// @addtogroup CoreState
 /// @{
 
 /** Base class for objects that can save/restore state.

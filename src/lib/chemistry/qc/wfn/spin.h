@@ -33,20 +33,23 @@
 
 namespace sc {
 
-  /// @addtogroup ChemistryElectronicStructure
-  /// @{
-
   typedef enum { NSpinCases1 = 2, NSpinCases2 = 3} NSpinCases;
   typedef enum { NPureSpinCases2 = 2 } NPureSpinCases;
-  typedef enum { AnySpinCase1 = -1, Alpha = 0, Beta = 1, InvalidSpinCase1 = 2} SpinCase1;
-  typedef enum { AnySpinCase2 = -1, AlphaBeta = 0, AlphaAlpha = 1, BetaBeta = 2, InvalidSpinCase2 = 3} SpinCase2;
-  typedef enum { AnyPureSpinCase2 = -1, Singlet = 0, Triplet = 1, InvalidPureSpinCase2 = 2} PureSpinCase2;
   /// Returns the number of unique spin cases (1 or 2)
   unsigned int nspincases1(bool spin_polarized);
   /// Returns the number of unique combinations of 2 spin cases (1 or 3)
   unsigned int nspincases2(bool spin_polarized);
   /// Returns the number of pure 2 spin cases
   unsigned int npurespincases2();
+  enum { ToLowerCase = true,
+     ToUpperCase = false };
+
+  /// @addtogroup ChemistryElectronicStructureSpin
+  /// @{
+
+  typedef enum { AnySpinCase1 = -1, Alpha = 0, Beta = 1, InvalidSpinCase1 = 2} SpinCase1;
+  typedef enum { AnySpinCase2 = -1, AlphaBeta = 0, AlphaAlpha = 1, BetaBeta = 2, InvalidSpinCase2 = 3} SpinCase2;
+  typedef enum { AnyPureSpinCase2 = -1, Singlet = 0, Triplet = 1, InvalidPureSpinCase2 = 2} PureSpinCase2;
   /// returns the first spin case of the 2-spin S
   SpinCase1 case1(SpinCase2 S);
   /// returns the second spin case of the 2-spin S
@@ -63,8 +66,6 @@ namespace sc {
   SpinCase2 to_spincase2(const std::string& key);
   PureSpinCase2 to_purespincase2(const std::string& key);
 
-  enum { ToLowerCase = true,
-	 ToUpperCase = false };
   /// Prepend string representation of S to R and return
   std::string prepend_spincase(SpinCase1 S, const std::string& R, bool lowercase = false);
   /// Prepend string representation of S to R and return

@@ -38,7 +38,7 @@
 
 namespace sc {
 
-/**  @ingroup State
+/**  @ingroup CoreState
  *   Writes state information to files.
  */
 class StateOutFile: public StateOut {
@@ -67,7 +67,7 @@ class StateOutFile: public StateOut {
     virtual void close();
   };
 
-/**  @ingroup State
+/**  @ingroup CoreState
  *   Reads state information from a file.
  */
 class StateInFile: public StateIn {

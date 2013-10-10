@@ -29,34 +29,11 @@
 
 #include <util/misc/exenv.h>
 
-/**
-   @defgroup File mpqc.Core.File
-   Implementation of hierarchical file objects based on
-   <a href="http://www.hdfgroup.org/HDF5/">HDF5</a>.
-
-   To work with files:
-   - create a file object
-   - create a dataset in that file (where actual data resides)
-   - write/read data to/from the dataset
-   @code
-
-   File file("file.h5");
-   std::vector<size_t> dims{m,n};
-   File::Dataset<double> ds(file, "my dataset", dims);
-   Vector v(m*n);
-   ds.write(v.data());
-   ds.read(v.data());
-   // or
-   ds << v; // write v to ds
-   ds >> v; // read ds to v
-   @endcode
-*/
-
 namespace mpqc {
 namespace detail {
 
 /** @brief implementation details
-    @ingroup File
+    @ingroup CoreFile
 */
 namespace File {
 
@@ -194,7 +171,7 @@ namespace File {
 
 namespace mpqc {
 
-    /** @addtogroup File
+    /** @addtogroup CoreFile
         @{ */
 
     /**

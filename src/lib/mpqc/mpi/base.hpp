@@ -17,7 +17,7 @@
 namespace mpqc {
 namespace MPI {
 
-/// @addtogroup MPI
+/// @addtogroup CoreMPI
 /// @{
 
     void initialize(int thread_level);

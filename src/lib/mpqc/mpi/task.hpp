@@ -18,7 +18,7 @@ namespace mpqc {
 namespace MPI {
 
     /// Distributed task
-    /// @ingroup MPI
+    /// @ingroup CoreMPI
     struct Task : boost::noncopyable {
 
         typedef int T;

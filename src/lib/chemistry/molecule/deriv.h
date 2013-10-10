@@ -37,6 +37,9 @@ namespace sc {
 
 class MolecularEnergy;
 
+/// @addtogroup ChemistryMolecule
+/// @{
+
 /** MolecularHessian is an abstract class that computes a molecule's second
     derivatives of the energy with respect to changes in the nuclear
     coordinates. */
@@ -253,6 +256,9 @@ class MolecularGradient: virtual public SavableState {
      */
     virtual double desired_accuracy() const;
 };
+
+/// @}
+// end of addtogroup ChemistryMolecule
 
 }
 

@@ -53,6 +53,9 @@ class SphericalTransform;
 class PointBag_double;
 class PetiteList;
 
+/// @addtogroup ChemistryBasisIntegral
+/// @{
+
 /// returns the type of the evaluator for evaluating this set of two-body integrals
 template <int NumCenters> struct TwoBodyIntEvalType;
 template <> struct TwoBodyIntEvalType<4> {
@@ -725,6 +728,9 @@ namespace detail {
   };
 
 };
+
+/// @}
+// end of addtogroup ChemistryBasisIntegral
 
 }
 

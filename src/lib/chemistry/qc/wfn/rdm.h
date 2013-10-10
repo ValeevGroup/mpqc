@@ -35,6 +35,9 @@
 
 namespace sc {
 
+  /// @addtogroup ChemistryElectronicStructure
+  /// @{
+
   /// Rank of the RDM
   typedef enum {Zero=0, One = 1, Two = 2, Three = 3, Four = 4} Rank;
 
@@ -465,6 +468,9 @@ namespace sc {
 
       static ClassDesc class_desc_;
   };
+
+  /// @}
+  // end of addtogroup ChemistryElectronicStructure
 
 } // end of namespace sc
 

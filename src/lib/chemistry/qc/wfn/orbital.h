@@ -35,8 +35,6 @@
 
 namespace sc {
 
-//class OneBodyWavefunction;
-
 class Orbital: public Volume {
   protected:
     Ref<OneBodyWavefunction> wfn_;

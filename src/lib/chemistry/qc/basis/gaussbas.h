@@ -50,6 +50,9 @@ class Integral;
 class CartesianIter;
 class SphericalTransformIter;
 
+/// @addtogroup ChemistryBasisGaussian
+/// @{
+
 /** The GaussianBasisSet class is used describe a basis set composed of atomic gaussian orbitals.
  *  Inputs for common basis sets are included in the MPQC distribution.  They have been obtained
  *  from the EMSL Basis Set Database and translated into the MPQC format.  The citation for this
@@ -657,6 +660,9 @@ class GaussianBasisSetMap : public RefCount {
     std::vector<int> fblock_size_;
 
 };
+
+/// @}
+// end of addtogroup ChemistryBasisGaussian
 
 }
 

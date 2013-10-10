@@ -33,6 +33,9 @@
 
 namespace sc {
 
+  /// @addtogroup ChemistryMolecule
+  /// @{
+
 // the molecular energy as a taylor expansion
 class TaylorMolecularEnergy: public MolecularEnergy {
   private:
@@ -70,6 +73,9 @@ class TaylorMolecularEnergy: public MolecularEnergy {
     void compute();
     int value_implemented() const;
 };
+
+/// @}
+// end of addtogroup ChemistryMolecule
 
 }
 

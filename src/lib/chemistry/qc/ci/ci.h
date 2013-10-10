@@ -9,6 +9,9 @@
 
 namespace sc {
 
+  /// @addtogroup ChemistryElectronicStructureNBody
+  /// @{
+
   /**
    * CI is a configuration interaction ManyBodyWavefunction. Currently only full CI is supported.
    */
@@ -62,6 +65,9 @@ namespace sc {
       static std::vector<double> compute(const Ref<RefWavefunction> &ref,
                                          const mpqc::ci::Config& config);
   };
+
+  /// @}
+  // end of addtogroup ChemistryElectronicStructureNBody
 
 }
 

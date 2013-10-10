@@ -32,6 +32,9 @@
 
 namespace sc {
 
+  /// @addtogroup ChemistryMolecule
+  /// @{
+
   /// MolecularFragment is a Molecule that is a fragment of another Molecule object
   class MolecularFragment : public Molecule {
     public:
@@ -110,6 +113,9 @@ namespace sc {
                                  std::set<int>& excludes_atoms,
                                  std::set<int>& atoms_in_frag);
   };
+
+  /// @}
+  // end of addtogroup ChemistryMolecule
 
 } // end of namespace sc
 

@@ -38,6 +38,9 @@ namespace sc {
 
   class Wavefunction;
 
+  /// @addtogroup ChemistryElectronicStructureOneBody
+  /// @{
+
   /// PopulatedOrbitalSpace is an OrbitalSpace populated with a density.
   /// It holds OrbitalSpaces representing subsets of the OrbitalSpace,
   /// for example, corresponding to various occupancies, or involved/not involved
@@ -568,6 +571,9 @@ namespace sc {
   void remove_ao_space(const Ref<GaussianBasisSet>& bs,
                        const Ref<AOSpaceRegistry>& aoreg,
                        const Ref<OrbitalSpaceRegistry> oreg);
+
+  /// @}
+  // end of addtogroup ChemistryElectronicStructureOneBody
 
 };
 

@@ -33,6 +33,9 @@
 
 namespace sc {
 
+  /// @addtogroup ChemistryElectronicStructure
+  /// @{
+
   typedef enum { NSpinCases1 = 2, NSpinCases2 = 3} NSpinCases;
   typedef enum { NPureSpinCases2 = 2 } NPureSpinCases;
   typedef enum { AnySpinCase1 = -1, Alpha = 0, Beta = 1, InvalidSpinCase1 = 2} SpinCase1;
@@ -69,6 +72,8 @@ namespace sc {
   /// Prepend string representation of S to R and return
   std::string prepend_spincase(PureSpinCase2 S, const std::string& R, bool lowercase = false);
 
+  /// @}
+  // end of addtogroup ChemistryElectronicStructure
 
 };
 

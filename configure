@@ -83,15 +83,13 @@ args=""
 prefix=$PWD
 build="Release"
 
-# log the command, preserving quotes
+# log the command-line args, preserving quotes
 log="#!/bin/sh\n# Last invoked on `date`:\n$0 "
 for token in "$@"
   do
     log="$log '$token'"
   done
-echo $log > reconf.sh
-chmod +x reconf.sh
-
+  
 while test $# != 0; do
   case "$1" in
   --help|-h|-help) help ;;
@@ -123,6 +121,10 @@ while test $# != 0; do
   esac
   shift
 done
+
+# dump command-line arguments into reconf.sh
+echo $log > reconf.sh
+chmod +x reconf.sh
 
 args="$args -DCMAKE_INSTALL_PREFIX=$prefix"
 args="$args -DCMAKE_BUILD_TYPE=$build"

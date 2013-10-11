@@ -1,4 +1,6 @@
 
+namespace sc {
+
 class LocalHSOSContribution {
   private:
     double * const gmat;
@@ -113,3 +115,5 @@ class LocalHSOSGradContribution {
         0.5*(pmato[ij]*pmat[kl] + pmat[ij]*pmato[kl] + pmato[ij]*pmato[kl]);
     }
 };
+
+} // namespace sc

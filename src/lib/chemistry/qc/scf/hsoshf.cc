@@ -173,11 +173,6 @@ HSOSHF::ao_fock(double accuracy)
 
     signed char * pmax = init_pmax(pmat);
   
-//      LocalHSOSContribution lclc(gmat, pmat, gmato, pmato);
-//      LocalGBuild<LocalHSOSContribution>
-//        gb(lclc, tbi_, pl, basis(), scf_grp_, pmax,
-//           desired_value_accuracy()/100.0);
-//      gb.run();
     int i;
     int nthread = threadgrp_->nthread();
     LocalGBuild<LocalHSOSContribution> **gblds =

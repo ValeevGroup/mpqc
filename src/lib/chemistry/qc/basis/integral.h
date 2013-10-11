@@ -444,6 +444,30 @@ class Integral : public SavableState {
       return EvalCreator::eval(this,p);
     }
 
+    /** Return a TwoBodyInt that computes two-electron integral specific
+        to explicitly correlated methods which use Gaussian geminals.
+
+
+        This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrG12NC.
+        Implementation for this kind of TwoBodyInt is optional. */
+    template <int NumCenters>
+    Ref< typename TwoBodyIntEvalType<NumCenters>::value > r12_k_g12(const Ref<IntParamsG12>& p, int k) {
+      if (k != -1 && k != 0) {
+        std::ostringstream oss;
+        oss << "Integral::r12_k_g12 can only be computed for k=-1 and 0 but k = " << k;
+        throw FeatureNotImplemented(oss.str().c_str(),
+                                    __FILE__, __LINE__);
+      }
+      if (k == 0) {
+        typedef typename detail::EvalCreator<NumCenters,TwoBodyOperSet::R12_0_G12>::value EvalCreator;
+        return EvalCreator::eval(this,p);
+      }
+      if (k == 1) {
+        typedef typename detail::EvalCreator<NumCenters,TwoBodyOperSet::R12_m1_G12>::value EvalCreator;
+        return EvalCreator::eval(this,p);
+      }
+    }
+
     /** Return a TwoBodyInt that computes 4-center integrals of a 2-electron delta function (i.e. 1-e overlap).
         This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrDelta. */
     template <int NumCenters>

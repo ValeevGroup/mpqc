@@ -34,7 +34,7 @@
 #include <util/misc/scexception.h>
 #include <chemistry/qc/libint2/int2e.h>
 
-namespace libint2 {
+namespace {
     template <typename T>
     struct abssqrt : public std::unary_function<const T&,T> {
 	T operator()(const T& x) {
@@ -85,7 +85,7 @@ namespace sc {
 		    
 		    int12->compute_quartet(&s1,&s2,&s1,&s2);
 		    
-		    std::transform(buf,buf+nf,buf,::libint2::abssqrt<double>());
+		    std::transform(buf,buf+nf,buf,abssqrt<double>());
 		    const double max_elem = *(std::max_element(buf,buf+nf));
 		    Q12_[f12] = Log2Bounds::bound_cast(max_elem);
 		}
@@ -121,7 +121,7 @@ namespace sc {
 
                     int34->compute_quartet(&s3,&s4,&s3,&s4);
 
-                    std::transform(buf,buf+nf,buf,::libint2::abssqrt<double>());
+                    std::transform(buf,buf+nf,buf,abssqrt<double>());
                     const double max_elem = *(std::max_element(buf,buf+nf));
                     Q34_[f34] = Log2Bounds::bound_cast(max_elem);
                 }

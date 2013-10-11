@@ -82,8 +82,9 @@ namespace detail {
 };
 
 
-/** The Integral abstract class acts as a factory to provide objects that
-compute one and two electron integrals.  */
+/** The Integral abstract class acts as a factory to provide objects that compute one and two electron integrals.
+
+  */
 class Integral : public SavableState {
   protected:
     /** Initialize the Integral object given a GaussianBasisSet for

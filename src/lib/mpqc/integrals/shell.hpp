@@ -33,7 +33,7 @@
 namespace mpqc {
 namespace integrals {
     /**
-     * Class holds shell range.
+     * Shell = a range of basis functions @sa GaussianBasisSet::Shell
      */
     struct Shell : range {
         Shell(int index, range r) : range(r), index_(index) {}

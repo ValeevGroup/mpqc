@@ -38,12 +38,60 @@
   @defgroup ChemistryBasisIntegral mpqc.Chemistry.Basis.Integral
   @ingroup ChemistryBasis
   Classes/functions related to integrals over atomic basis function.
+
+  Synopsis:
+    @code
+    // get the default Integral factory. MPQC supports several factories that
+    // may not be interoperable with each other, to be safe use the same one throughout
+    Ref<Integral> integral_factory = Integral::get_default_integral();
+
+    // need to compute overlap integrals between 2 basis sets?
+    integral_factory->set_basis(bs1, bs2);
+    Ref<OneBodyInt> overlap_12 = integral_factory->overlap();
+
+    // loop over shell combinations, call overlap_12->compute_shell()
+    const double* ints_buffer = overlap_12->buffer();
+    for(int s1=0; s1<bs1->nshell(); ++s1) {
+      for(int s2=0; s2<bs2->nshell(); ++s2) {
+        // compute shell block
+        overlap_12->compute_shell(s1, s2);
+
+        // read integrals from ints_buffer
+        for(int f1=0, f12=0; f1<bs1->shell(s1).nfunction(); ++f1) {
+          for(int f2=0; f2<bs2->shell(s2).nfunction(); ++f2, ++f12) {
+            const double v = ints_buffer[f12];
+            // integral in v corresponds to these basis functions:
+            // bra index = f1 + bs1->shell_to_function(s1)
+            // ket index = f2 + bs2->shell_to_function(s2)
+            // use v here
+          }
+        }
+
+      }
+    }
+    @endcode
+  In this example the computed integrals are extracted one-by-one. Often you want to copy the entire shell block
+  of integrals to another array. This can be done using new range-style access described
+  in @ref ChemistryBasisIntegralRange "mpqc.Chemistry.Basis.Integral.Range".
 */
 
 /**
    @defgroup ChemistryBasisIntegralRange mpqc.Chemistry.Basis.Integral.Range
    @ingroup ChemistryBasisIntegral
    Provides new range-style compute wrapper to the mpqc.Chemistry.Basis.Integral functionality.
+
+   Synopsys:
+   @code
+    // get the default Integral factory. MPQC supports several factories that
+    // may not be interoperable with each other, to be safe use the same one throughout
+    Ref<Integral> integral_factory = Integral::get_default_integral();
+
+    // need to compute overlap integrals between 2 basis sets?
+    integral_factory->set_basis(bs1, bs2);
+    Ref<OneBodyInt> overlap_12 = integral_factory->overlap();
+
+    // to be continued
+    @endcode
 */
 
 /**

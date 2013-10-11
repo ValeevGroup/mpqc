@@ -44,7 +44,7 @@ namespace integrals {
     /// @addtogroup ChemistryBasisIntegralRange
     /// @{
     /**
-     * Wrapper to old mpqc integral engine
+     * Wraps an MPQC integral engine (e.g. sc::TwoBodyInt)
      */
     template<class RefEngine>
     class Integrals {
@@ -55,48 +55,49 @@ namespace integrals {
 
         /**
          * Constructor for Integrals
-         * @param integral is a sc::Ref of an old mpqc integral engine
+         * @param engineptr is a sc::Ref to an MPQC integral engine
          */
-        explicit Integrals(RefEngine integral)
-            : integral_(integral) {}
+        explicit Integrals(RefEngine engineptr)
+            : engine_(engineptr) {}
 
         RefEngine& engine() {
-            return integral_;
+            return engine_;
         }
 
         /**
-         * Calls old mpqc integral object on shells p and q and returns a
+         * Calls the MPQC integral object on shells p and q and returns a
          * TensorRef holding the integral buffer.
          */
         Tensor2 operator()(Shell p, Shell q) {
             size_t dims[] = {size_t(p.size()), size_t(q.size()) };
-            integral_->compute_shell(p.index(), q.index());
-            return Tensor2(integral_->buffer(), dims);
+            engine_->compute_shell(p.index(), q.index());
+            return Tensor2(engine_->buffer(), dims);
         }
 
         Tensor3 operator()(Shell p, Shell q, Shell r) {
             size_t dims[] = {size_t( p.size()), size_t(q.size()),
                              size_t(r.size()) };
-            integral_->compute_shell(p.index(), q.index(), r.index());
-            return Tensor3(integral_->buffer(), dims);
+            engine_->compute_shell(p.index(), q.index(), r.index());
+            return Tensor3(engine_->buffer(), dims);
         }
 
         Tensor4 operator()(Shell p, Shell q, Shell r, Shell s) {
             size_t dims[] = { size_t(p.size()), size_t(q.size()),
                               size_t(r.size()), size_t(s.size()) };
-            integral_->compute_shell(p.index(), q.index(),
+            engine_->compute_shell(p.index(), q.index(),
                                      r.index(), s.index());
-            return Tensor4(integral_->buffer(), dims);
+            return Tensor4(engine_->buffer(), dims);
         }
 
     private:
-        RefEngine integral_;
+        RefEngine engine_;
     };
 
     /// @} //ChemistryBasisIntegralRange
-namespace detail {
 
-    /// Determines the number of functions in a given shell and returns a range
+  namespace detail {
+
+    /// Determines the number of functions in a given shell and returns a range of Shell objects
     /// for mpqc integrals.
     inline std::vector<Shell> pack(sc::Ref<sc::GaussianBasisSet> basis,
                                    const std::vector<int> &S) {
@@ -196,45 +197,45 @@ namespace integrals {
     /// @{
 
     /**
-       Evaluate list of shell integrals (p|O|q)
+       Evaluate set of shell blocks of integrals (p|O|q)
        @param[in] engine integral engine
        @param[in] P list of p shell indices
        @param[in] Q list of q shell indices
        @param[out] (p|O|q) integrals
      */
     inline void evaluate(sc::Ref<sc::OneBodyInt> &engine,
-                  const std::vector<int> &P,
-                  const std::vector<int> &Q,
-                  TensorRef<double,2, TensorRowMajor > &ints) {
-        detail::evaluate(Integrals<sc::Ref<sc::OneBodyInt> >(engine), P, Q,
-                         ints);
+                         const std::vector<int> &P,
+                         const std::vector<int> &Q,
+                         TensorRef<double,2, TensorRowMajor > &ints) {
+      detail::evaluate(Integrals<sc::Ref<sc::OneBodyInt> >(engine), P, Q,
+                       ints);
     }
 
     inline void evaluate(sc::Ref<sc::TwoBodyTwoCenterInt> &engine,
-                  const std::vector<int> &P,
-                  const std::vector<int> &Q,
-                  TensorRef<double,2, TensorRowMajor > &ints) {
-        detail::evaluate(Integrals<sc::Ref<sc::TwoBodyTwoCenterInt> >(engine),
-                         P, Q, ints);
+                         const std::vector<int> &P,
+                         const std::vector<int> &Q,
+                         TensorRef<double,2, TensorRowMajor > &ints) {
+      detail::evaluate(Integrals<sc::Ref<sc::TwoBodyTwoCenterInt> >(engine),
+                       P, Q, ints);
     }
 
     inline void evaluate(sc::Ref<sc::TwoBodyThreeCenterInt> &engine,
-                  const std::vector<int> &P,
-                  const std::vector<int> &Q,
-                  const std::vector<int> &R,
-                  TensorRef<double,3, TensorRowMajor > &ints) {
-        detail::evaluate(Integrals<sc::Ref<sc::TwoBodyThreeCenterInt> >(engine),
-                         P, Q, R, ints);
+                         const std::vector<int> &P,
+                         const std::vector<int> &Q,
+                         const std::vector<int> &R,
+                         TensorRef<double,3, TensorRowMajor > &ints) {
+      detail::evaluate(Integrals<sc::Ref<sc::TwoBodyThreeCenterInt> >(engine),
+                       P, Q, R, ints);
     }
 
     inline void evaluate(sc::Ref<sc::TwoBodyInt> engine,
-                  const std::vector<int> &P,
-                  const std::vector<int> &Q,
-                  const std::vector<int> &R,
-                  const std::vector<int> &S,
-                  TensorRef<double,4, TensorRowMajor > &ints) {
-        detail::evaluate(Integrals<sc::Ref<sc::TwoBodyInt> >(engine),
-                         P, Q, R, S, ints);
+                         const std::vector<int> &P,
+                         const std::vector<int> &Q,
+                         const std::vector<int> &R,
+                         const std::vector<int> &S,
+                         TensorRef<double,4, TensorRowMajor > &ints) {
+      detail::evaluate(Integrals<sc::Ref<sc::TwoBodyInt> >(engine),
+                       P, Q, R, S, ints);
     }
 
 

@@ -44,7 +44,9 @@
 #include <chemistry/qc/basis/cartit_cca.h>
 #include <chemistry/qc/libint2/libint2.h>
 #include <chemistry/qc/libint2/int2e.h>
-#include <chemistry/qc/cints/cints.h>
+
+#include <chemistry/qc/scf/linkage.h>
+#include <chemistry/qc/libint2/linkage.h>
 
 using namespace std;
 using namespace sc;
@@ -364,7 +366,7 @@ int main(int argc, char **argv) {
 }
 
 void compare_1e_libint2_vs_v3(Ref<OneBodyInt>& oblibint2, Ref<OneBodyInt>& obv3) {
-  Ref<GaussianBasisSet> basis = oblibint2->basis();
+  Ref<GaussianBasisSet> basis = oblibint2->basis(0);
   for (int sh1 = 4; sh1 < basis->nshell(); sh1++)
     for (int sh2 = 0; sh2 < basis->nshell(); sh2++) {
       int nbf2 = basis->shell(sh2).nfunction();
@@ -433,7 +435,7 @@ void compare_1e_libint2_vs_v3(Ref<OneBodyInt>& oblibint2, Ref<OneBodyInt>& obv3)
 
 void compare_1e3_libint2_vs_v3(Ref<OneBodyInt>& oblibint2,
                                Ref<OneBodyInt>& obv3) {
-  Ref<GaussianBasisSet> basis = oblibint2->basis();
+  Ref<GaussianBasisSet> basis = oblibint2->basis(0);
   for (int sh1 = 4; sh1 < basis->nshell(); sh1++)
     for (int sh2 = 0; sh2 < basis->nshell(); sh2++) {
       int nbf2 = basis->shell(sh2).nfunction();
@@ -508,6 +510,10 @@ void compare_1e3_libint2_vs_v3(Ref<OneBodyInt>& oblibint2,
 
 void compare_2e_libint2_vs_v3(Ref<TwoBodyInt>& tblibint2,
                               Ref<TwoBodyInt>& tbv3, bool print_all) {
+#if INTEGRALLIBINT2_NORMCONV != INTEGRALLIBINT2_NORMCONV_CCA
+  cout << "In IntegralLibint2 normalization convention != CCA, cannot compare Cartesian integrals vs IntegralV3" << endl;
+  return;
+#endif
   const double *bufferlibint2 = tblibint2->buffer();
   const double *bufferv3 = tbv3->buffer();
 

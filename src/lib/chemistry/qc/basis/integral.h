@@ -349,24 +349,33 @@ class Integral : public SavableState {
 
     /** Return a TwoBodyThreeCenterInt that computes electron repulsion
         integrals. Electron 1 corresponds to centers 1 and 2, electron 2
-        corresponds to center 3. If this is not re-implemented it will throw. */
-    virtual Ref<TwoBodyThreeCenterInt> electron_repulsion3();
+        corresponds to center 3. If this is not re-implemented it will throw.
+
+        @deprecated Use sc::Integral::coulomb<3>() instead.
+        */
+    DEPRECATED virtual Ref<TwoBodyThreeCenterInt> electron_repulsion3();
 
     /** Return a TwoBodyThreeCenterInt that computes electron repulsion
         integrals.  If this is not re-implemented it will throw. \sa electron_repulsion3() */
     virtual Ref<TwoBodyThreeCenterDerivInt> electron_repulsion3_deriv();
 
     /** Return a TwoBodyTwoCenterInt that computes electron repulsion
-        integrals. If this is not re-implemented it will throw. */
-    virtual Ref<TwoBodyTwoCenterInt> electron_repulsion2();
+        integrals. If this is not re-implemented it will throw.
+
+        @deprecated Use sc::Integral::coulomb<2>() instead.
+        */
+    DEPRECATED virtual Ref<TwoBodyTwoCenterInt> electron_repulsion2();
 
     /** Return a TwoBodyTwoCenterInt that computes electron repulsion
         integrals. If this is not re-implemented it will throw. */
     virtual Ref<TwoBodyTwoCenterDerivInt> electron_repulsion2_deriv();
 
     /** Return a TwoBodyInt that computes electron repulsion integrals.
-        This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrERI. */
-    virtual Ref<TwoBodyInt> electron_repulsion();
+        This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrERI.
+
+        @deprecated Use sc::Integral::coulomb<4>() instead.
+        */
+    DEPRECATED virtual Ref<TwoBodyInt> electron_repulsion();
 
     /// Return a TwoBodyDerivInt that computes electron repulsion derivatives.
     virtual Ref<TwoBodyDerivInt> electron_repulsion_deriv();
@@ -391,7 +400,17 @@ class Integral : public SavableState {
                                           const Ref<GaussianBasisSet> &b3 = 0,
                                           const Ref<GaussianBasisSet> &b4 = 0);
 
+    /** Return the evaluator of two-body integrals with Coulomb kernel:
+        \f$
+          r_{12}^{-1},
+        \f$
+        The evaluator will produce a set of integrals described by TwoBodyNCenterIntDescr<NumCenters,TwoBodyOperSet::ERI>.
 
+        @tparam NumCenters specifies the number of centers that carry basis functions.
+        Valid values are 4, 3, and 2.
+
+        @note Implementation of this function is optional. The default implementation will throw FeatureNotImplemented . It is implemented in sc::IntegralV3 and sc::IntegralLibint2 .
+      */
     template <int NumCenters>
     Ref< typename TwoBodyIntEvalType<NumCenters>::value > coulomb() {
       typedef typename detail::EvalCreator<NumCenters,TwoBodyOperSet::ERI>::value EvalCreator;
@@ -407,11 +426,11 @@ class Integral : public SavableState {
         Implementation for this kind of TwoBodyInt is
         optional.
 
-        NumCenters specifies the number of centers that carry basis functions.
+        @tparam NumCenters specifies the number of centers that carry basis functions.
         Valid values are 4, 3, and 2.
         */
     template <int NumCenters>
-    Ref< typename TwoBodyIntEvalType<NumCenters>::value > grt() {
+    DEPRECATED Ref< typename TwoBodyIntEvalType<NumCenters>::value > grt() {
       typedef typename detail::EvalCreator<NumCenters,TwoBodyOperSet::R12>::value EvalCreator;
       return EvalCreator::eval(this,new IntParamsVoid);
     }
@@ -420,7 +439,7 @@ class Integral : public SavableState {
         This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrG12.
         Implementation for this kind of TwoBodyInt is optional. */
     template <int NumCenters>
-    Ref< typename TwoBodyIntEvalType<NumCenters>::value > g12(const Ref<IntParamsG12>& p) {
+    DEPRECATED Ref< typename TwoBodyIntEvalType<NumCenters>::value > g12(const Ref<IntParamsG12>& p) {
       typedef typename detail::EvalCreator<NumCenters,TwoBodyOperSet::G12>::value EvalCreator;
       return EvalCreator::eval(this,p);
     }
@@ -430,7 +449,7 @@ class Integral : public SavableState {
         This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrG12NC.
         Implementation for this kind of TwoBodyInt is optional. */
     template <int NumCenters>
-    Ref< typename TwoBodyIntEvalType<NumCenters>::value > g12nc(const Ref<IntParamsG12>& p) {
+    DEPRECATED Ref< typename TwoBodyIntEvalType<NumCenters>::value > g12nc(const Ref<IntParamsG12>& p) {
       typedef typename detail::EvalCreator<NumCenters,TwoBodyOperSet::G12NC>::value EvalCreator;
       return EvalCreator::eval(this,p);
     }
@@ -444,12 +463,22 @@ class Integral : public SavableState {
       return EvalCreator::eval(this,p);
     }
 
-    /** Return a TwoBodyInt that computes two-electron integral specific
-        to explicitly correlated methods which use Gaussian geminals.
+    /** Return the evaluator of two-body integrals with kernel
+        \f$
+          r_{12}^k g_{12}, \, k=-1,0,
+        \f$
+        where \f$ g_{12} \f$ is a geminal described by the IntParamsG12 object.
+        These integrals are, for example, necessary in
+        explicitly correlated methods which use Gaussian geminals.
 
+        The evaluator will produce a set of integrals described by TwoBodyNCenterIntDescr<NumCenters,TwoBodyOperSet::R12_0_G12> for k=0
+        and TwoBodyNCenterIntDescr<4,TwoBodyOperSet::R12_m1_G12> for k=-1.
 
-        This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrG12NC.
-        Implementation for this kind of TwoBodyInt is optional. */
+        @tparam NumCenters specifies the number of centers that carry basis functions.
+        Valid values are 4, 3, and 2.
+
+        @note Implementation of this function is optional. The default implementation will throw FeatureNotImplemented .
+      */
     template <int NumCenters>
     Ref< typename TwoBodyIntEvalType<NumCenters>::value > r12_k_g12(const Ref<IntParamsG12>& p, int k) {
       if (k != -1 && k != 0) {
@@ -462,14 +491,46 @@ class Integral : public SavableState {
         typedef typename detail::EvalCreator<NumCenters,TwoBodyOperSet::R12_0_G12>::value EvalCreator;
         return EvalCreator::eval(this,p);
       }
-      if (k == 1) {
+      if (k == -1) {
         typedef typename detail::EvalCreator<NumCenters,TwoBodyOperSet::R12_m1_G12>::value EvalCreator;
         return EvalCreator::eval(this,p);
       }
     }
 
-    /** Return a TwoBodyInt that computes 4-center integrals of a 2-electron delta function (i.e. 1-e overlap).
-        This TwoBodyInt will produce a set of integrals described by TwoBodyIntDescrDelta. */
+    /** Return the evaluator of two-body integrals with kernel
+        \f$
+          [g_{12},[\hat{T}_1,g_{12}]]
+        \f$
+        where \f$ g_{12} \f$ is a geminal described by the IntParamsG12 object.
+        These integrals are, for example, necessary in
+        explicitly correlated methods which use Gaussian geminals.
+
+        The evaluator will produce a set of integrals described by TwoBodyNCenterIntDescr<NumCenters,TwoBodyOperSet::G12_T1_G12>.
+
+        @tparam NumCenters specifies the number of centers that carry basis functions.
+        Valid values are 4, 3, and 2.
+
+        @note Implementation of this function is optional. The default implementation will throw FeatureNotImplemented .
+      */
+    template <int NumCenters>
+    Ref< typename TwoBodyIntEvalType<NumCenters>::value > g12t1g12(const Ref<IntParamsG12>& p) {
+      typedef typename detail::EvalCreator<NumCenters,TwoBodyOperSet::G12_T1_G12>::value EvalCreator;
+      return EvalCreator::eval(this,p);
+    }
+
+    /** Return the evaluator of two-body integrals with kernel
+        \f$
+          \delta_3({\bf r}_1 - {\bf r}_2),
+        \f$
+        i.e. a one-electron overlap.
+
+        The evaluator will produce a set of integrals described by TwoBodyIntDescrDelta.
+
+        @tparam NumCenters specifies the number of centers that carry basis functions.
+        Valid values are 4, 3, and 2.
+
+        @note Implementation of this function is optional. The default implementation will throw sc::FeatureNotImplemented. Implemented in sc::IntegralLibint2
+      */
     template <int NumCenters>
     Ref< typename TwoBodyIntEvalType<NumCenters>::value > delta_function() {
       typedef typename detail::EvalCreator<NumCenters,TwoBodyOperSet::DeltaFunction>::value EvalCreator;

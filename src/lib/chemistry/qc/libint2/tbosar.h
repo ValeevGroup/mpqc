@@ -57,7 +57,7 @@ namespace sc {
         //const static double small_T = 1E-15;       /*--- Use only one term in Taylor expansion of Fj(T) if T < small_T ---*/
         ::libint2::FmEval_Chebyshev3 Fm_Eval_;
 
-        OSAR_CoreInts(unsigned int mmax) :   Fm_Eval_(mmax) {}
+        OSAR_CoreInts(unsigned int mmax, const Ref<IntParams>& params) :   Fm_Eval_(mmax) {}
 
         const double* eval(double* Fm_table, unsigned int mmax, double T, double rho = 0.0) const {
           static double oo2np1[] = {1.0,  1.0/3.0,  1.0/5.0,  1.0/7.0,  1.0/9.0,
@@ -79,25 +79,105 @@ namespace sc {
           }
         }
     };
+
+    namespace {
+      // this does common work for geminal-depenent kernels
+      struct OSAR_CoreInts_G12Base {
+          IntParamsG12::ContractedGeminal g12_;
+
+          OSAR_CoreInts_G12Base(const Ref<IntParams>& p) {
+
+            Ref<IntParamsG12> params = require_dynamic_cast<IntParamsG12*>(p, "");
+
+            const bool braonly = (params->ket() == IntParamsG12::null_geminal);
+            g12_ = braonly ? params->bra() : IntParamsG12::product(params->bra(), params->ket());
+          }
+
+          struct softcomparer {
+              softcomparer(double tol = DBL_EPSILON) : tol_(tol) {}
+              bool operator()(double a, double b) const { return a + tol_ < b; }
+              double tol_;
+          };
+
+          // reduce terms with common exponents
+          static IntParamsG12::ContractedGeminal
+          reduce(const IntParamsG12::ContractedGeminal& g12) {
+            softcomparer comp;
+            std::map<double, double, softcomparer> g12red(comp);
+            typedef std::map<double, double, softcomparer>::iterator iter;
+
+            const size_t np = g12.size();
+            for(size_t p=0; p<np; ++p) {
+              iter i = g12red.find(g12[p].first);
+              if (i != g12red.end()) {
+                i->second += g12[p].second;
+              }
+              else
+                g12red[g12[p].first] = g12[p].second;
+            }
+
+            IntParamsG12::ContractedGeminal result;
+            for(iter i=g12red.begin();
+                i != g12red.end();
+                ++i) {
+              result.push_back(*i);
+            }
+
+            return result;
+          }
+      };
+    } // namespace <anonymous>
+
     template <>
-    struct OSAR_CoreInts<TwoBodyOper::r12_0_g12> {
+    struct OSAR_CoreInts<TwoBodyOper::r12_0_g12> : OSAR_CoreInts_G12Base {
         ::libint2::GaussianGmEval<double, 0> Gm_Eval_;
-        OSAR_CoreInts(unsigned int mmax) : Gm_Eval_(mmax, 1e-14) {}
-        const double* eval(double* Fm_table, unsigned int mmax, double T, double rho = 0.0) const {
-          assert(false);
+        OSAR_CoreInts(unsigned int mmax, const Ref<IntParams>& params) :
+          Gm_Eval_(mmax, 1e-14), OSAR_CoreInts_G12Base(params)
+          {
+            g12_ = reduce(g12_);
+          }
+        double* eval(double* Fm_table, unsigned int mmax, double T, double rho = 0.0) {
+          Gm_Eval_.eval(Fm_table, rho, T, mmax, g12_);
+          return Fm_table;
         }
     };
     template <>
-    struct OSAR_CoreInts<TwoBodyOper::r12_m1_g12> {
+    struct OSAR_CoreInts<TwoBodyOper::r12_m1_g12> : OSAR_CoreInts_G12Base {
         ::libint2::GaussianGmEval<double, -1> Gm_Eval_;
-        OSAR_CoreInts(unsigned int mmax) : Gm_Eval_(mmax, 1e-14) {}
-        const double* eval(double* Fm_table, unsigned int mmax, double T, double rho = 0.0) const {
-          assert(false);
+        OSAR_CoreInts(unsigned int mmax, const Ref<IntParams>& params) :
+          Gm_Eval_(mmax, 1e-14), OSAR_CoreInts_G12Base(params)
+        {
+          g12_ = reduce(g12_);
+        }
+        double* eval(double* Fm_table, unsigned int mmax, double T, double rho = 0.0) {
+          Gm_Eval_.eval(Fm_table, rho, T, mmax, g12_);
+          return Fm_table;
         }
     };
+    template <>
+    struct OSAR_CoreInts<TwoBodyOper::g12t1g12> : OSAR_CoreInts_G12Base {
+        ::libint2::GaussianGmEval<double, 2> Gm_Eval_;
+        OSAR_CoreInts(unsigned int mmax, const Ref<IntParams>& params) :
+          Gm_Eval_(mmax, 1e-14), OSAR_CoreInts_G12Base(params)
+        {
+          // [exp(-a r_{12}^2),[T1,exp(-b r_{12}^2)]] = 4 a b (r_{12}^2 exp(- (a+b) r_{12}^2) )
+          // i.e. need to scale each coefficient by 4 a b
+          Ref<IntParamsG12> p = require_dynamic_cast<IntParamsG12*>(params, "");
+          const IntParamsG12::ContractedGeminal& gbra = p->bra();
+          const IntParamsG12::ContractedGeminal& gket = p->ket();
+          for(size_t b=0, bk=0; b<gbra.size(); ++b)
+            for(size_t k=0; k<gket.size(); ++k, ++bk)
+              g12_[bk].second *= 4.0 * gbra[b].first * gket[k].first;
+        }
+        double* eval(double* Fm_table, unsigned int mmax, double T, double rho = 0.0) {
+          Gm_Eval_.eval(Fm_table, rho, T, mmax, g12_);
+          return Fm_table;
+        }
+    };
+
     template <>
     struct OSAR_CoreInts<TwoBodyOper::delta> {
-        OSAR_CoreInts(unsigned int mmax) {}
+        OSAR_CoreInts(unsigned int mmax, const Ref<IntParams>& params) {}
         const double* eval(double* Fm_table, unsigned int mmax, double T, double rho = 0.0) const {
           const static double one_over_two_pi = 1.0 / (2.0 * M_PI);
           const double G0 = exp(-T) * rho * one_over_two_pi;
@@ -189,7 +269,8 @@ class TwoBodyOSARLibint2: public Int2eLibint2 {
 	     const Ref<GaussianBasisSet>&,
 	     const Ref<GaussianBasisSet>&,
 	     const Ref<GaussianBasisSet>&,
-	     size_t storage);
+	     size_t storage,
+	     const Ref<IntParams>& oper_params);
     ~TwoBodyOSARLibint2();
 
     double *buffer(unsigned int t = 0) const {
@@ -212,12 +293,14 @@ TwoBodyOSARLibint2<OperType>::TwoBodyOSARLibint2(Integral *integral,
            const Ref<GaussianBasisSet>& b2,
            const Ref<GaussianBasisSet>& b3,
            const Ref<GaussianBasisSet>& b4,
-           size_t storage) :
+           size_t storage,
+           const Ref<IntParams>& oper_params) :
   Int2eLibint2(integral,b1,b2,b3,b4,storage),
   coreints_(b1->max_angular_momentum() +
           b2->max_angular_momentum() +
           b3->max_angular_momentum() +
-          b4->max_angular_momentum())
+          b4->max_angular_momentum(),
+          oper_params)
 {
   // The static part of Libint's interface is automatically initialized in libint.cc
   int l1 = bs1_->max_angular_momentum();

@@ -208,6 +208,22 @@ namespace sc {
             typedef TwoBodyNCenterIntDescr<NumCenters,TwoBodyOperSet::G12DKH> ConcreteType;
             return new ConcreteType(integral,params);
           } break;
+          case TwoBodyOperSet::R12_0_G12: {
+            typedef TwoBodyNCenterIntDescr<NumCenters,TwoBodyOperSet::R12_0_G12> ConcreteType;
+            return new ConcreteType(integral,params);
+          } break;
+          case TwoBodyOperSet::R12_m1_G12: {
+            typedef TwoBodyNCenterIntDescr<NumCenters,TwoBodyOperSet::R12_m1_G12> ConcreteType;
+            return new ConcreteType(integral,params);
+          } break;
+          case TwoBodyOperSet::G12_T1_G12: {
+            typedef TwoBodyNCenterIntDescr<NumCenters,TwoBodyOperSet::G12_T1_G12> ConcreteType;
+            return new ConcreteType(integral,params);
+          } break;
+          case TwoBodyOperSet::DeltaFunction : {
+            typedef TwoBodyNCenterIntDescr<NumCenters,TwoBodyOperSet::DeltaFunction> ConcreteType;
+            return new ConcreteType(integral,params);
+          } break;
           default:
             assert(false);
         }

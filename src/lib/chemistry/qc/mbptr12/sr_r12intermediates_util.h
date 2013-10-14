@@ -121,22 +121,22 @@ namespace sc {
       ParsedTwoBodyFourCenterIntKey pkey(key);
 
       /// map operator to the index within the operator set
-      Ref<TwoBodyIntDescr> tbint_descr = r12world_->r12tech()->corrfactor()->tbintdescr(r12world_->integral(),0);
-      std::string operset_label = "G12'[0]";
-      unsigned int oper_idx;
-      if (pkey.oper() == "g")
-        oper_idx = tbint_descr->intset(TwoBodyOper::eri);
-      else if (pkey.oper() == "gr")
-        oper_idx = tbint_descr->intset(TwoBodyOper::r12_m1_g12);
-      else if (pkey.oper() == "r")
-        oper_idx = tbint_descr->intset(TwoBodyOper::r12_0_g12);
+      std::string operset_label;
+      const unsigned int oper_idx = 0;
+      if (pkey.oper() == "g") {
+        operset_label = "ERI";
+      }
+      else if (pkey.oper() == "gr") {
+        operset_label = "R12_m1_G12[0]";
+      }
+      else if (pkey.oper() == "r") {
+        operset_label = "R12_0_G12[0]";
+      }
       else if (pkey.oper() == "r2") {
-        oper_idx = tbint_descr->intset(TwoBodyOper::r12_0_g12);
-        operset_label = "G12'[0,0]";
+        operset_label = "R12_0_G12[0,0]";
       }
       else if (pkey.oper() == "rTr") {
-        oper_idx = tbint_descr->intset(TwoBodyOper::g12t1g12);
-        operset_label = "G12'[0,0]";
+        operset_label = "G12_T1_G12[0,0]";
       }
       else
         throw ProgrammingError("SingleReference_R12Intermediates<T>::_ : invalid operator key",__FILE__,__LINE__);
@@ -167,32 +167,30 @@ namespace sc {
     ParsedTwoBodyFourCenterIntKey pkey(key);
 
     /// map operator to the index within the operator set
-    Ref<TwoBodyIntDescr> tbint_descr = r12world_->r12tech()->corrfactor()->tbintdescr(r12world_->integral(),0);
-    std::string operset_label = "G12'[0]";
+    std::string operset_label;
     bool rdm2 = false;
     bool t2 = false;
-    unsigned int oper_idx;
-    if (pkey.oper() == "g")
-      oper_idx = tbint_descr->intset(TwoBodyOper::eri);
-    else if (pkey.oper() == "gr")
-      oper_idx = tbint_descr->intset(TwoBodyOper::r12_m1_g12);
-    else if (pkey.oper() == "r")
-      oper_idx = tbint_descr->intset(TwoBodyOper::r12_0_g12);
+    const unsigned int oper_idx = 0;
+    if (pkey.oper() == "g") {
+      operset_label = "ERI";
+    }
+    else if (pkey.oper() == "gr") {
+      operset_label = "R12_m1_G12[0]";
+    }
+    else if (pkey.oper() == "r") {
+      operset_label = "R12_0_G12[0]";
+    }
     else if (pkey.oper() == "r2") {
-      oper_idx = tbint_descr->intset(TwoBodyOper::r12_0_g12);
-      operset_label = "G12'[0,0]";
+      operset_label = "R12_0_G12[0,0]";
     }
     else if (pkey.oper() == "rTr") {
-      oper_idx = tbint_descr->intset(TwoBodyOper::g12t1g12);
-      operset_label = "G12'[0,0]";
+      operset_label = "G12_T1_G12[0,0]";
     }
     else if (pkey.oper() == "gamma") {
       rdm2 = true;
-      oper_idx = 0;
     }
     else if (pkey.oper() == "T2") {
       t2 = true;
-      oper_idx = 0;
     }
     else
       throw ProgrammingError("SingleReference_R12Intermediates<T>::ijxy : invalid operator key",__FILE__,__LINE__);
@@ -340,22 +338,22 @@ namespace sc {
     ParsedTwoBodyFourCenterIntKey pkey(key);
 
     /// map operator to the index within the operator set
-    Ref<TwoBodyIntDescr> tbint_descr = r12world_->r12tech()->corrfactor()->tbintdescr(r12world_->integral(),0);
-    std::string operset_label = "G12'[0]";
-    unsigned int oper_idx;
-    if (pkey.oper() == "g")
-      oper_idx = tbint_descr->intset(TwoBodyOper::eri);
-    else if (pkey.oper() == "gr")
-      oper_idx = tbint_descr->intset(TwoBodyOper::r12_m1_g12);
-    else if (pkey.oper() == "r")
-      oper_idx = tbint_descr->intset(TwoBodyOper::r12_0_g12);
+    std::string operset_label;
+    const unsigned int oper_idx = 0;
+    if (pkey.oper() == "g") {
+      operset_label = "ERI";
+    }
+    else if (pkey.oper() == "gr") {
+      operset_label = "R12_m1_G12[0]";
+    }
+    else if (pkey.oper() == "r") {
+      operset_label = "R12_0_G12[0]";
+    }
     else if (pkey.oper() == "r2") {
-      oper_idx = tbint_descr->intset(TwoBodyOper::r12_0_g12);
-      operset_label = "G12'[0,0]";
+      operset_label = "R12_0_G12[0,0]";
     }
     else if (pkey.oper() == "rTr") {
-      oper_idx = tbint_descr->intset(TwoBodyOper::g12t1g12);
-      operset_label = "G12'[0,0]";
+      operset_label = "G12_T1_G12[0,0]";
     }
     else
       throw ProgrammingError("SingleReference_R12Intermediates<T>::ij_xy : invalid operator key",__FILE__,__LINE__);

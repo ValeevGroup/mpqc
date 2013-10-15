@@ -290,7 +290,7 @@ namespace sc {
       /** Returns key that corresponds to descr.
           \sa params_key
         */
-      std::string descr_key(const Ref<TwoBodyIntDescr>& descr);
+      static std::string descr_key(const Ref<TwoBodyIntDescr>& descr);
 
       /// removes all entries that contain this space
       void remove_if(const std::string& space_key);
@@ -363,7 +363,7 @@ namespace sc {
   template <>
   struct ParsedTwoBodyMOIntsKeyInvolvesSpace<4> {
       ParsedTwoBodyMOIntsKeyInvolvesSpace(const std::string& skey) : space_key(skey) {}
-      bool operator()(const std::pair<std::string, typename detail::TwoBodyIntEval<4>::refvalue>& i) const {
+      bool operator()(const std::pair<std::string, detail::TwoBodyIntEval<4>::refvalue>& i) const {
         const ParsedTwoBodyFourCenterIntKey pkey(i.first);
         return pkey.bra1() == space_key ||
             pkey.bra2() == space_key ||
@@ -375,7 +375,7 @@ namespace sc {
   template <>
   struct ParsedTwoBodyMOIntsKeyInvolvesSpace<3> {
       ParsedTwoBodyMOIntsKeyInvolvesSpace(const std::string& skey) : space_key(skey) {}
-      bool operator()(const std::pair<std::string, typename detail::TwoBodyIntEval<3>::refvalue>& i) const {
+      bool operator()(const std::pair<std::string, detail::TwoBodyIntEval<3>::refvalue>& i) const {
         const ParsedTwoBodyThreeCenterIntKey pkey(i.first);
         return pkey.bra1() == space_key ||
             pkey.bra2() == space_key ||
@@ -386,7 +386,7 @@ namespace sc {
   template <>
   struct ParsedTwoBodyMOIntsKeyInvolvesSpace<2> {
       ParsedTwoBodyMOIntsKeyInvolvesSpace(const std::string& skey) : space_key(skey) {}
-      bool operator()(const std::pair<std::string, typename detail::TwoBodyIntEval<2>::refvalue>& i) const {
+      bool operator()(const std::pair<std::string, detail::TwoBodyIntEval<2>::refvalue>& i) const {
         const ParsedTwoBodyTwoCenterIntKey pkey(i.first);
         return pkey.bra1() == space_key ||
             pkey.bra2() == space_key;

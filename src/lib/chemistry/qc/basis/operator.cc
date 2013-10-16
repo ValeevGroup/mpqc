@@ -273,6 +273,34 @@ TwoBodyOper::to_string(TwoBodyOper::type t) {
   }
 }
 
+sc::TwoBodyOper::type sc::TwoBodyOper::to_type(const std::string& key) {
+  if (key == "g")
+    return TwoBodyOper::eri;
+  if (key == "r12")
+    return TwoBodyOper::r12;
+  if (key == "r12t1")
+    return TwoBodyOper::r12t1;
+  if (key == "r12t2")
+    return TwoBodyOper::r12t2;
+  if (key == "g12")
+    return TwoBodyOper::r12_0_g12;
+  if (key == "g12g")
+    return TwoBodyOper::r12_m1_g12;
+  if (key == "g12t1g12")
+    return TwoBodyOper::g12t1g12;
+  if (key == "t1g12")
+    return TwoBodyOper::t1g12;
+  if (key == "t2g12")
+    return TwoBodyOper::t2g12;
+  if (key == "delta")
+    return TwoBodyOper::delta;
+  std::ostringstream oss;
+  oss << "TwoBodyOper::to_type: unknown string " << key;
+  throw ProgrammingError(oss.str().c_str(), __FILE__, __LINE__);
+}
+
+//////////////////////////////////////////////////////
+
 TwoBodyOper::type TwoBodyOperSetTypeMap<TwoBodyOperSet::ERI>::value[] = {TwoBodyOper::eri};
 TwoBodyOper::type TwoBodyOperSetTypeMap<TwoBodyOperSet::R12>::value[] = {TwoBodyOper::eri,
                                                             TwoBodyOper::r12,
@@ -380,4 +408,41 @@ TwoBodyOperSetDescr::opertype(TwoBodyOper::type o) const
     if (o == value_[i])
       return i;
   abort();  // should be unreachable
+}
+
+std::string
+sc::TwoBodyOperSet::to_string(type t) {
+  Ref<TwoBodyOperSetDescr> descr = TwoBodyOperSetDescr::instance(t);
+  return descr->key();
+}
+
+sc::TwoBodyOperSet::type
+sc::TwoBodyOperSet::to_type(const std::string& key) {
+  for(int s=int(TwoBodyOperSet::ERI);
+      s<=int(TwoBodyOperSet::DeltaFunction);
+      ++s) {
+    if (key == to_string(static_cast<TwoBodyOperSet::type>(s)))
+      return static_cast<TwoBodyOperSet::type>(s);
+  }
+  std::ostringstream oss;
+  oss << "TwoBodyOperSet::to_type: unknown string " << key;
+  throw ProgrammingError(oss.str().c_str(), __FILE__, __LINE__);
+}
+
+sc::TwoBodyOperSet::type
+sc::TwoBodyOperSet::to_type(TwoBodyOper::type oper) {
+  if (oper == TwoBodyOper::eri)
+    return ERI;
+  if (oper == TwoBodyOper::r12_0_g12)
+    return R12_0_G12;
+  if (oper == TwoBodyOper::r12_m1_g12)
+    return R12_m1_G12;
+  if (oper == TwoBodyOper::g12t1g12)
+    return G12_T1_G12;
+  if (oper == TwoBodyOper::delta)
+    return DeltaFunction;
+
+  std::ostringstream oss;
+  oss << "TwoBodyOperSet::to_type: map from " << TwoBodyOper::to_string(oper) << " not defined";
+  throw ProgrammingError(oss.str().c_str(), __FILE__, __LINE__);
 }

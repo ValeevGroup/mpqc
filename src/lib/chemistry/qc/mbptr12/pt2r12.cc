@@ -1298,6 +1298,7 @@ void PT2R12::compute()
     r12eval_->ordm(Alpha)->print("ordm-alpha");
     r12eval_->ordm()->print("ordm");
   }
+  r12world()->cabs_space(Alpha); // make sure that CABS spaces are computed
 
   const double energy_ref = r12world()->refwfn()->energy();
   double energy_correction_r12 = 0.0;

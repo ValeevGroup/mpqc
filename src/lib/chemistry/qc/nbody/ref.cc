@@ -1559,7 +1559,7 @@ Extern_RefWavefunction::init_spaces(const RefSCMatrix& coefs,
                                                  integral(), C_ao, occnums,
                                                  actmask, evals);
   spinspaces_[Beta] = spinspaces_[Alpha];
-#if 1
+#if 0
   spinspaces_[Alpha]->occ_sb()->print_detail();
   spinspaces_[Alpha]->occ_act_sb()->print_detail();
   spinspaces_[Alpha]->uocc_sb()->print_detail();

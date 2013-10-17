@@ -927,12 +927,20 @@ namespace sc {
 
     auto oreg = r12world_->world()->tfactory()->orbital_registry();
     size_t rank = oreg->value(space_label)->rank();
-    std::vector<size_t> hashmarks(2,0); hashmarks[1] = rank;
-    if (space_label == "i" || space_label == "m") { // unit-tile occupied spaces
-      hashmarks.resize(rank+1);
+    std::vector<size_t> hashmarks(2,0); hashmarks[1] = rank;  // all spaces have 1 tile, except
+    if (space_label == "i" || space_label == "m") {           // occupied spaces, whose size is determined heuristically for now
+                                                              // TODO create a central registry of space tilings?
+      const int nproc = r12world_->world()->msg()->n();
+      const size_t desired_tilesize = std::max(4 ,
+                                               std::min( (int)floor((double)rank / sqrt((double)nproc)), 10)
+      );
+      const size_t ntiles = (rank+desired_tilesize-1)/desired_tilesize;
+      const size_t tilesize = (rank + ntiles - 1)/ ntiles;
+      hashmarks.resize(ntiles+1);
       hashmarks[0] = 0;
-      for(size_t i=1; i<=rank; ++i)
-        hashmarks[i] = hashmarks[i-1] + 1;
+      for(size_t i=1; i<ntiles; ++i)
+        hashmarks[i] = hashmarks[i-1] + tilesize;
+      hashmarks.back() = rank;
     }
 
     return hashmarks;

@@ -31,14 +31,35 @@
 #include <util/misc/scexception.h>
 #include <util/misc/consumableresources.h>
 #include <chemistry/qc/lcao/df_runtime.h>
+#include <math/optimize/gaussianfit.h>
+#include <math/optimize/gaussianfit.timpl.h>
 
 using namespace sc;
+
+namespace {
+  // pop off str from beginning up to token.
+  std::string
+  pop_till_token(std::string& str,
+                 char token) {
+    const size_t next_token_pos = str.find_first_of(token);
+    std::string result;
+    if (next_token_pos != std::string::npos) {
+      result = str.substr(0,next_token_pos);
+      str.erase(0,next_token_pos+1);
+    }
+    else {
+      result = str;
+      str.clear();
+    }
+    return result;
+  }
+}
 
 /*---------------
   WavefunctionWorld
  ---------------*/
 static ClassDesc WavefunctionWorld_cd(
-  typeid(WavefunctionWorld),"WavefunctionWorld",11,"virtual public SavableState",
+  typeid(WavefunctionWorld),"WavefunctionWorld",12,"virtual public SavableState",
   0, create<WavefunctionWorld>, create<WavefunctionWorld>);
 
 WavefunctionWorld::WavefunctionWorld(const Ref<KeyVal>& keyval)
@@ -48,30 +69,23 @@ WavefunctionWorld::WavefunctionWorld(const Ref<KeyVal>& keyval)
 
   wfn_ = dynamic_cast<Wavefunction*>(keyval->describedclassvalue("wfn").pointer());
 
+  df_ = keyval->booleanvalue("df", KeyValValueboolean(false));
+
   bs_df_ = require_dynamic_cast<GaussianBasisSet*>(
       keyval->describedclassvalue("df_basis").pointer(),
       "WavefunctionWorld::WavefunctionWorld\n"
       );
-  if (bs_df_.nonnull()) {
-    df_kernel_ = keyval->stringvalue("df_kernel", KeyValValuestring("coulomb"));
-    if (not (df_kernel_ == "coulomb" ||
-             df_kernel_.find("exp") != std::string::npos)
-       )
-      throw InputError("invalid value",
-                             __FILE__,
-                             __LINE__,
-                             "df_kernel",
-                             df_kernel_.c_str(),
-                             class_desc());
-    // in case of the exp kernel validate the kernel string format
-    if (df_kernel_.find("exp") != std::string::npos) {
-      if (not DensityFittingParams::valid_kernel(df_kernel_))
-        throw InputError("recognized, but invalid kernel",
-                               __FILE__,
-                               __LINE__,
-                               "df_kernel",
-                               df_kernel_.c_str(),
-                               class_desc());
+  if (bs_df_.nonnull())
+    df_ = true;
+  if (df_ == true) {
+    //std::string df_kernel = keyval->stringvalue("df_kernel", KeyValValuestring("coulomb"));
+    std::string df_kernel = keyval->stringvalue("df_kernel");
+    if (not df_kernel.empty()) {
+      std::pair<TwoBodyOperSet::type, Ref<IntParams> > kernel = init_df_kernel(df_kernel);
+      df_kernel_opertype_ = kernel.first;
+      df_kernel_params_ = kernel.second;
+      df_kernel_ = ParsedTwoBodyOperKey::key(TwoBodyOperSet::to_string(df_kernel_opertype_),
+                                             ParamsRegistry::instance()->key(df_kernel_params_));
     }
 
     df_solver_ = keyval->stringvalue("df_solver", KeyValValuestring("cholesky_inv"));
@@ -176,6 +190,13 @@ WavefunctionWorld::WavefunctionWorld(StateIn& si) : SavableState(si)
   tfactory_ << SavableState::restore_state(si);
   moints_runtime_ << SavableState::restore_state(si);
   fockbuild_runtime_ << SavableState::restore_state(si);
+
+  if (si.version(::class_desc<WavefunctionWorld>()) < 12)
+    throw FeatureNotImplemented("Cannot restore WavefunctionWorld from versions prior to 12",
+                                __FILE__, __LINE__);
+  else
+    si.get(df_);
+
   bs_df_ << SavableState::restore_state(si);
 
   // allocate MemoryGrp storage if will use it for integrals
@@ -206,6 +227,7 @@ void WavefunctionWorld::save_data_state(StateOut& so)
   SavableState::save_state(tfactory_.pointer(),so);
   SavableState::save_state(moints_runtime_.pointer(),so);
   SavableState::save_state(fockbuild_runtime_.pointer(),so);
+  so.put(df_);
   SavableState::save_state(bs_df_.pointer(),so);
 }
 
@@ -333,7 +355,7 @@ WavefunctionWorld::print(std::ostream& o) const {
   o << indent << "WavefunctionWorld:" << std::endl;
   o << incindent;
 
-  if (bs_df_.nonnull()) {
+  if (df_) {
     Ref<DensityFittingParams> dfparams = new DensityFittingParams(bs_df_, df_kernel_, df_solver_);
     dfparams->print(o);
   }
@@ -358,6 +380,98 @@ WavefunctionWorld::print(std::ostream& o) const {
   o << indent << "How to Store Transformed Integrals: " << ints_str << std::endl;
   o << indent << "Transformed Integrals file suffix: " << ints_file_ << std::endl;
   o << decindent << std::endl;
+}
+
+std::pair<TwoBodyOperSet::type, Ref<IntParams> >
+WavefunctionWorld::init_df_kernel(std::string kernel_key) {
+
+  if (not (kernel_key == "coulomb" ||
+           kernel_key == "delta" ||
+           kernel_key.find("exp") != std::string::npos)
+     )
+    throw InputError("invalid value",
+                           __FILE__,
+                           __LINE__,
+                           "df_kernel",
+                           kernel_key.c_str());
+
+  if (kernel_key == "coulomb") {
+    return std::make_pair(TwoBodyOperSet::ERI, ParamsRegistry::instance()->value("") );
+  }
+  if (kernel_key == "delta") {
+    return std::make_pair(TwoBodyOperSet::DeltaFunction, ParamsRegistry::instance()->value("") );
+  }
+
+  if (kernel_key.find("exp") != std::string::npos) {
+
+    std::string::size_type s = kernel_key.find("exp");
+    std::string exp_params;
+    std::string kernel = kernel_key;
+    pop_till_token(kernel, '(');
+    if (not kernel.empty() && kernel.find(')') != std::string::npos) {
+      std::string result = pop_till_token(kernel, ')');
+      if (kernel.empty())
+        exp_params = result;
+    }
+
+    if (exp_params.empty())
+      throw InputError("improperly formatted exponential df kernel",
+                       __FILE__,
+                       __LINE__,
+                       "df_kernel",
+                       kernel_key.c_str());
+    // exponential kernel_key must have positive lengthscale
+    std::istringstream iss(exp_params);
+    double lengthscale;
+    iss >> lengthscale;
+    double param;  iss >> param;
+    if (lengthscale <= 0.0)
+      throw InputError("exponential df kernel must have positive range",
+                       __FILE__,
+                       __LINE__,
+                       "df_kernel",
+                       kernel_key.c_str());
+    const double gamma = 1.0/lengthscale;
+
+    // for now, fit to 6 geminals
+    const int ngtg = 6;
+    typedef IntParamsG12::ContractedGeminal CorrParams;
+    CorrParams params;
+    using namespace sc::math;
+    // use exp(-gamma*r_{12}) as the weight also
+    PowerExponential1D* w = new PowerExponential1D(gamma,1,0);
+    typedef GaussianFit<Slater1D,PowerExponential1D> GTGFit;
+    // fit on [0,2*lengthscale]
+    GTGFit gtgfit(ngtg, *w, 0.0, 2*lengthscale, 1001);
+    delete w;
+
+    // fit exp(-gamma*r_{12})
+    Slater1D stg(gamma);
+    typedef GTGFit::Gaussians Gaussians;
+    Gaussians gtgs = gtgfit(stg);
+
+    // feed to the constructor of CorrFactor
+    typedef IntParamsG12::PrimitiveGeminal PrimitiveGeminal;
+    typedef IntParamsG12::ContractedGeminal ContractedGeminal;
+    ContractedGeminal geminal;
+    typedef Gaussians::const_iterator citer;
+    typedef Gaussians::iterator iter;
+    for (iter g = gtgs.begin(); g != gtgs.end(); ++g) {
+      geminal.push_back(*g);
+    }
+    Ref<IntParams> intparams = new IntParamsG12(geminal);
+
+    std::cout << "Fit exp(-" << gamma <<"*r) to " << ngtg << " Gaussians" << std::endl;
+    for(int g=0; g<ngtg; ++g) {
+      std::cout << "  " << geminal[g].first << " " << geminal[g].second << std::endl;
+    }
+
+    const std::string params_key = ParamsRegistry::instance()->add(intparams);
+    return std::make_pair(TwoBodyOperSet::R12_0_G12, ParamsRegistry::instance()->value(params_key));
+  }
+
+  // unreachable
+  assert(false);
 }
 
 /////////////////////////////////////////////////////////////////////////////

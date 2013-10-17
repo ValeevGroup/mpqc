@@ -109,6 +109,16 @@ namespace sc {
 
       virtual void compute();
 
+      /**
+       * Test whether a density-fitting kernel has definite sign.
+       * @note this is a preliminary implementation that makes common assumptions about the <tt>kernel_params</tt> argument
+       * @param kernel_type kernel type; only some operators are accepted as density fitting kernel
+       * @param kernel_params kernel parameters; must be in ParamsRegistry
+       * @return +1 if the kernel is positive-definite, -1 if the kernel is negative-definite, 0 otherwise
+       */
+      static int definite_kernel(TwoBodyOper::type kernel_type, const Ref<IntParams>& kernel_params);
+      static int definite_kernel(TwoBodyOper::type kernel_type, const std::string& kernel_params_key);
+
     private:
 
       Ref<MOIntsRuntime> runtime_;

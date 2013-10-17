@@ -83,12 +83,20 @@ public:
     If MPI-I/O is used then it is user's responsibility to ensure
     that the file resides on a file system that supports MPI-I/O.
 
-    <dt><tt>df_basis</tt><dd> This optional GaussianBasisSet object specifies the density-fitting basis.
-    There is no default (no density fitting will be performed).
+    <dt><tt>df</tt><dd> This optional boolean specifies whether to perform density fitting.
+    The default is to not perform density fitting, unless <tt>df_basis</tt> is provided.
+    @note The default is likely to change before MPQC 3 release.
 
-    <dt><tt>df_kernel</tt><dd> If df_basis is specified, this keyword will be queried to determine the kernel
-    for density-fitting. The only supported values are <tt>coulomb</tt> (the default; this corresponds to the fitting
-    the density to reproduce the electric field) and <tt>exp(X)</tt> (this corresponds to fitting the density to reproduce
+    <dt><tt>df_basis</tt><dd> This optional GaussianBasisSet object specifies the density-fitting basis
+    to use for all density fitting tasks. If <tt>df=true</tt>, the default is to (try to) find the matching
+    density fitting basis for the orbital basis.
+
+    <dt><tt>df_kernel</tt><dd> If density fitting is requsted, this keyword will be queried to determine the kernel
+    for density-fitting. By default this keyword is not needed as the DensityFittingRuntime and other runtime
+    components will try to determine the best density fitting method. If provided, this will provide
+    the world-wide choice for the density fitting kernel.
+    The only supported values are <tt>coulomb</tt> (this corresponds to the fitting
+    the density to reproduce the electric field), <tt>delta</tt> (the overlap), and <tt>exp(X)</tt> (this corresponds to fitting the density to reproduce
     the potential) where <tt>X</tt> is a positive parameter that determines the lengthscale of
     the region in which to fit the potential.
 
@@ -142,6 +150,7 @@ public:
   Wavefunction* wfn() const { return wfn_; }
   void set_wfn(Wavefunction* w);
 
+  bool df() const { return df_; }
   const Ref<GaussianBasisSet>& basis_df() const { return bs_df_; };
 
   const Ref<MemoryGrp>& mem() const { return mem_;};
@@ -175,8 +184,11 @@ private:
 
   /// whose World is it?
   Wavefunction* wfn_;
+  bool df_;                       //!< whether to do density fitting
   Ref<GaussianBasisSet> bs_df_;   //!< the density-fitting basis
   std::string df_kernel_;         //!< the density-fitting kernel
+  TwoBodyOperSet::type df_kernel_opertype_; //!< operator type of the density-fitting kernel
+  Ref<IntParams> df_kernel_params_;     //!< parameters of the density-fitting kernel
   std::string df_solver_;         //!< the density-fitting solver
   Ref<MessageGrp> msg_;
   Ref<MemoryGrp> mem_;
@@ -197,6 +209,10 @@ private:
   Ref<FockBuildRuntime> fockbuild_runtime_;
 
   void initialize(); // called by constructors
+
+  /// parses kernel key and converts to TwoBodyOper::type and IntParams objects
+  static std::pair<TwoBodyOperSet::type, Ref<IntParams> > init_df_kernel(std::string kernel_key);
+
 };
 
 } // end of namespace sc

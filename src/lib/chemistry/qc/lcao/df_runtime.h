@@ -33,8 +33,8 @@
 
 namespace sc {
 
-  /** Parsed representation of a string key that represents fitting of a product of space1 and space2 into fspace
-      Coulomb fitting kernel_key is the default. */
+  /** Parsed representation of a string key that represents fitting of a product of space1 and space2 into fspace.
+      kernel must be parsable by ParsedTwoBodyOperKey. */
   class ParsedDensityFittingKey {
     public:
       ParsedDensityFittingKey(const std::string& key);
@@ -43,7 +43,9 @@ namespace sc {
       const std::string& space1() const { return space1_; }
       const std::string& space2() const { return space2_; }
       const std::string& fspace() const { return fspace_; }
-      const std::string& kernel() const { return kernel_; }
+      const std::string& kernel() const { return kernel_pkey_.key(); }
+      const std::string& kernel_oper() const { return kernel_pkey_.oper(); }
+      const std::string& kernel_param() const { return kernel_pkey_.params(); }
 
       /// computes key from its components
       static std::string key(const std::string& space1,
@@ -53,7 +55,8 @@ namespace sc {
 
     private:
       std::string key_;
-      std::string space1_, space2_, fspace_, kernel_;
+      std::string space1_, space2_, fspace_;
+      ParsedTwoBodyOperKey kernel_pkey_;
   };
 
   class DensityFittingParams;
@@ -125,21 +128,22 @@ namespace sc {
 
   };
 
-  /// DensityFittingParams defines parameters needed to compute density fitting objects
+  /** DensityFittingParams defines parameters used by DensityFittingRuntime and other runtime components
+      to compute density fitting objects.
+    */
   class DensityFittingParams : virtual public SavableState {
     public:
     /**
-     * Encapsulates parameters used by all density fitting objects
-     * @param basis
-     * @param kernel_key A string describing the kernel_key. The only supported values are <tt>coulomb</tt> (the default; this corresponds to the fitting
-     *               the density to reproduce the electric field), <tt>delta</tt> (optimizes the overlap), and <tt>exp(X)</tt> (this corresponds to fitting the density to reproduce
-     *               the potential) where <tt>X</tt> is a positive parameter that determines the lengthscale of
-     *               the region in which to fit the potential.
-     * @param solver
-     * @return
+     * @param basis  The GaussianBasisSet object used to fit product densities. There is no default.
+     *               @note DensityFittingRuntime does not use this, but other runtime objects may use it
+     *               to set the global density fitting basis.
+     * @param kernel_key A string describing the kernel_key. It must be parsable by ParsedTwoBodyOperKey, or be empty (the default).
+     *               @note DensityFittingRuntime does not use this, but other runtime objects may use it to set the global density fitting method.
+     * @param solver A string describing the method of solving the density fitting equations. This is used by DensityFittingRuntime
+     *               to produce density fitting objects.
      */
       DensityFittingParams(const Ref<GaussianBasisSet>& basis,
-                           const std::string& kernel = std::string("coulomb"),
+                           const std::string& kernel = std::string(),
                            const std::string& solver = std::string("cholesky_inv"));
       DensityFittingParams(StateIn&);
       ~DensityFittingParams();
@@ -148,28 +152,14 @@ namespace sc {
       const Ref<GaussianBasisSet>& basis() const { return basis_; }
       const std::string& kernel_key() const { return kernel_; }
       DensityFitting::SolveMethod solver() const { return solver_; }
-      /// returns the TwoBodyInt::oper_type object that specifies
-      /// the type of the operator kernel_key used for fitting the density
-      TwoBodyOper::type kernel_otype() const;
-      /// returns the IntParams object corresponding to the fitting kernel_key
-      std::string intparams_key() const;
 
       void print(std::ostream& o) const;
-
-      /// @return true if kernel_key describes a valid kernel_key
-      static bool valid_kernel(const std::string& kernel);
-
-      /// @return string describing kernel_key params (the format depends on the kernel_key type)
-      static std::string kernel_params(std::string kernel);
-
     private:
       static ClassDesc class_desc_;
 
       Ref<GaussianBasisSet> basis_;
       std::string kernel_;
       DensityFitting::SolveMethod solver_;
-      mutable std::string kernel_intparams_key_;
-
   };
 
    inline bool operator==(const DensityFittingParams& A, const DensityFittingParams& B) {

@@ -35,6 +35,7 @@
 #include <util/ref/ref.h>
 #include <math/scmat/local.h>
 #include <chemistry/qc/lcao/transform_ixjy_df.h>
+#include <chemistry/qc/lcao/transform_ixjy.h>
 #include <chemistry/qc/lcao/transform_ijR.h>
 #include <chemistry/qc/lcao/transform_13inds.h>
 #include <chemistry/qc/lcao/df.h>
@@ -311,25 +312,47 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
 
   const bool equiv_12_34 = (*space1() == *space3() && *space2() == *space4());
 
+  const TwoBodyOperSet::type oset = intdescr()->operset();
+  Ref<TwoBodyOperSetDescr> oset_descr = TwoBodyOperSetDescr::instance(oset);
+  Ref<IntParams> params = intdescr()->params();
+
+  Ref<TwoBodyIntDescr> df_descr;
+  if (factory()->df_info()->params()->kernel_key().empty()) { // no world-wide density fitting method
+    df_descr = intdescr();
+  }
+  else {
+    const std::string kernel_key = factory()->df_info()->params()->kernel_key();
+    ParsedTwoBodyOperKey kernel_pkey(kernel_key);
+    TwoBodyOperSet::type operset = TwoBodyOperSet::to_type(kernel_pkey.oper());
+    df_descr = IntDescrFactory::make<4>(factory()->integral(),
+                                        operset,
+                                        ParamsRegistry::instance()->value(kernel_pkey.params()));
+  }
+  const TwoBodyOperSet::type df_operset = df_descr->operset();
+
   // Prerequivisites:
-  // 1) if computing a set of 1 integral types only && all operator types coincide with the operator used for fitting
+  // 1) if computing a set of definite (positive or negative) integral types (coulomb, yukawa, etc.)
   //    the simple formula is robust, hence only need DensityFitting object
-  //    Wr = cC12 * C34 (if density fitting bases for 12 and 34 are different, this does not work)
+  //    Wr = K12 * C34 (if density fitting bases for 12 and 34 are different, this does not work)
   // 2) otherwise, use explicitly robust formula need DensityFitting, as well as 2- and 3-center matrices
   //    Wr = K12 * C34 + C12 * K34 - C12 * k * C34
-  TwoBodyOperSet::type oset = intdescr()->operset();
-  Ref<TwoBodyOperSetDescr> oset_descr = TwoBodyOperSetDescr::instance(oset);
-  const std::string& kernel_key = this->factory()->df_info()->params()->kernel_key();
-  TwoBodyOper::type kernel_otype = this->factory()->df_info()->params()->kernel_otype();
+
   bool use_simple_formula = true;
   for(unsigned int o=0; o<oset_descr->size(); ++o) {
-    if (oset_descr->opertype(o) != kernel_otype) {
+    if (not (
+             oset_descr->opertype(o) == TwoBodyOperSetDescr::instance(df_operset)->opertype(0)
+             &&
+             DensityFitting::definite_kernel(oset_descr->opertype(o), df_descr->params()) != 0
+            )
+       ) {
       use_simple_formula = false;
       break;
     }
   }
-  if (use_simple_formula) // right now simple formula will only work for size-1 operator set (TwoBodyOperSet::ERI)
+  std::cout << "Transform_ixjy_df: using simple formula, df_kernel = " << TwoBodyOperSet::to_string(df_descr->operset()) << " sign = " << DensityFitting::definite_kernel(oset_descr->opertype(0), df_descr->params()) << std::endl;
+  if (use_simple_formula) // right now simple formula will only work for size-1 operator set
     assert(oset_descr->size() == 1);
+  const std::string kernel_key = ParsedTwoBodyOperKey::key<4>(df_descr);
 
   const Ref<AOSpaceRegistry>& aoidxreg = this->factory()->ao_registry();
 
@@ -341,6 +364,28 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
                                                              dfspace12->id(),
                                                              kernel_key);
     C12 = runtime()->get(C12_key);
+
+#if 0
+    if (use_simple_formula) {
+      // compute exact
+      Ref<TwoBodyMOIntsTransform_ixjy> debug_tform4 = new TwoBodyMOIntsTransform_ixjy("debug_tform4",
+                                                                                      this->factory(),
+                                                                          this->intdescr(),
+                                                                          space1(),
+                                                                          space2(),
+                                                                          space1(),
+                                                                          space2());
+
+      debug_tform4->compute();
+      Ref<DistArray4> result = debug_tform4->ints_distarray4();
+      const double* result_00 = result->retrieve_pair_block(0,0,0);
+      RefSCMatrix mat00 = SCMatrixKit::default_matrixkit()->matrix(new SCDimension(space2()->rank()),
+                                                                   new SCDimension(space2()->rank()));
+      mat00.assign(result_00);
+      mat00.print("debug DensityFitting: V(0j|0j) exact");
+      result->release_pair_block(0,0,0);
+    }
+#endif
   }
 
   Ref<DistArray4> C34;  // C34 only needed for robust density-fitting using the manifestly robust formula
@@ -358,7 +403,6 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
     }
   }
 
-  Ref<IntParams> params = intdescr()->params();
   Ref<TwoBodyThreeCenterIntDescr> descr = IntDescrFactory::make<3>(factory()->integral(),
       oset,
       params);
@@ -545,7 +589,8 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
                 0.0, xy_buf, rank4);
         cC34->release_pair_block(0, j, te_type);
 
-        if (opertype != kernel_otype) {
+        if (!use_simple_formula &&
+            opertype != df_descr->intset(te_type)) {
           if (cC12_buf == 0) cC12_buf = cC12->retrieve_pair_block(0, i, te_type);
           const double* C34_buf = C34->retrieve_pair_block(0, j, 0);
           C_DGEMM('n', 't', rank2, rank4, rankF, 1.0, cC12_buf, rankF, C34_buf, rankF,

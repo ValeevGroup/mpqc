@@ -918,11 +918,20 @@ namespace sc {
       const Ref<TwoBodyThreeCenterMOIntsRuntime>& int3c_rtime = df_rtime->moints_runtime()->runtime_3c();
 
       std::string kernel_key = df_info->params()->kernel_key();
-      const bool noncoulomb_kernel = (kernel_key.find("exp") != std::string::npos);
-      std::string params_key = df_info->params()->intparams_key();
-      std::string operset_key = noncoulomb_kernel ? "G12'" : "ERI";
-      TwoBodyOper::type kernel_oper = noncoulomb_kernel ? TwoBodyOper::r12_0_g12 : TwoBodyOper::eri;
-      unsigned int ints_type_idx = TwoBodyOperSetDescr::instance(noncoulomb_kernel ? TwoBodyOperSet::G12NC : TwoBodyOperSet::ERI)->opertype(kernel_oper);
+      TwoBodyOperSet::type operset;
+      std::string params_key;
+      if (kernel_key.empty()) {
+        operset = TwoBodyOperSet::ERI;
+        params_key = std::string();
+      }
+      else {
+        ParsedTwoBodyOperKey kernel_pkey(kernel_key);
+        operset = TwoBodyOperSet::to_type(kernel_pkey.oper());
+        params_key = kernel_pkey.params();
+      }
+      const std::string operset_key = TwoBodyOperSetDescr::instance(operset)->key();
+      assert(TwoBodyOperSetDescr::instance(operset)->size() == 1);
+      const unsigned int ints_type_idx = 0;
 
       std::vector<double> R(ndf,0.0);
       {
@@ -1156,6 +1165,10 @@ namespace sc {
                << "Entered exchange(DF) matrix evaluator" << endl;
       ExEnv::out0() << incindent;
 
+      std::string kernel_key = df_info->params()->kernel_key();
+      if (kernel_key.empty())
+        kernel_key = TwoBodyOperSet::to_string(TwoBodyOperSet::ERI);
+
       //////////////////////////////////////////////////////////////
       //
       // Evaluation of the exchange matrix proceeds as follows:
@@ -1247,7 +1260,7 @@ namespace sc {
       const std::string C_key = ParsedDensityFittingKey::key(braspace->id(),
                                                              Sspace->id(),
                                                              dfspace->id(),
-                                                             df_info->params()->kernel_key());
+                                                             kernel_key);
       Ref<DistArray4> C = df_rtime->get(C_key);  C->activate();
 //      {
 //        Ref<DistArray4> Ctmp = permute23(C);

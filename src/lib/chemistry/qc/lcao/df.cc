@@ -63,8 +63,8 @@ DensityFitting::DensityFitting(const Ref<MOIntsRuntime>& mointsruntime,
                                  kernel_key_(kernel_key),
                                  solver_(solver)
                                  {
-  if (not DensityFittingParams::valid_kernel(kernel_key_))
-    throw FeatureNotImplemented("Invalid or unsupported fitting kernel",__FILE__,__LINE__);
+  if (kernel_key_.empty())
+    throw ProgrammingError("DensityFitting: empty kernel_key", __FILE__, __LINE__);
 
   // fitting dimension
   RefSCDimension fdim = new SCDimension(fbasis_->nbasis(), "");
@@ -123,28 +123,23 @@ DensityFitting::compute()
   tim_label += name;
   Timer tim(tim_label);
 
-  const Ref<Integral>& integral = this->integral();
-
-  // this assumes there is only one nontrivial parameter
-  std::string params_key = runtime()->factory()->df_info()->params()->intparams_key();
-  TwoBodyOper::type kernel_oper;
-  TwoBodyOperSet::type operset;
-  if (kernel_key_ == "coulomb") {
-    operset = TwoBodyOperSet::ERI;
-    kernel_oper = TwoBodyOper::eri;
-    params_key = "";
-  }
-  else if (kernel_key_ == "delta") {
-    operset = TwoBodyOperSet::DeltaFunction;
-    kernel_oper = TwoBodyOper::delta;
-    params_key = "";
-  }
-  else if (kernel_key_.find("exp") != std::string::npos) {
-    operset = TwoBodyOperSet::G12NC;
-    kernel_oper = TwoBodyOper::r12_0_g12;
-  }
+  // convert kernel_key to operator and params
+  ParsedTwoBodyOperKey kernel_pkey(kernel_key_);
+  TwoBodyOperSet::type operset = TwoBodyOperSet::to_type(kernel_pkey.oper());
+  const std::string params_key = kernel_pkey.params();
   const std::string operset_key = TwoBodyOperSetDescr::instance(operset)->key();
-  const unsigned int ints_type_idx = TwoBodyOperSetDescr::instance(operset)->opertype(kernel_oper);
+  assert(TwoBodyOperSetDescr::instance(operset)->size() == 1);
+  const unsigned int ints_type_idx = 0;
+  const int definiteness = definite_kernel(TwoBodyOperSetDescr::instance(operset)->opertype(ints_type_idx),
+                                           params_key);
+  // If kernel is non-definite, cannot use Cholesky
+  const bool cholesky = (solver_ == SolveMethod_Cholesky || solver_ == SolveMethod_InverseCholesky
+                         || solver_ == SolveMethod_RefinedCholesky);
+  if (definiteness == 0 && cholesky)
+    throw ProgrammingError("Cholesky-based density-fitting can only be used for definite kernels, switch to Bunch-Kaufmann",
+                           __FILE__, __LINE__);
+  // if kernel is negative-definite + using Cholesky => use flip the kernel sign
+  const bool flip_kernel_sign = (definiteness == -1 && cholesky);
 
   // compute cC_ first
   std::string cC_key;
@@ -157,15 +152,17 @@ DensityFitting::compute()
   cC_ = tform->ints_acc();
 
   // compute the kernel second
+  std::string kernel_ints_key;
   {
-    std::string kernel_ints_key;
-
     kernel_ints_key = ParsedTwoBodyTwoCenterIntKey::key(aoidxreg->value(fbasis_)->id(),
                                                         aoidxreg->value(fbasis_)->id(),
                                                         operset_key, params_key);
     RefSCMatrix kernel_rect = runtime()->runtime_2c()->get(kernel_ints_key);
     const int nfbs = kernel_.dim().n();
     kernel_.assign_subblock(kernel_rect, 0, nfbs-1, 0, nfbs-1);
+
+    if (flip_kernel_sign)
+      kernel_.scale(-1.0);
   }
   //kernel_.print("DensityFitting::kernel");
 
@@ -212,15 +209,15 @@ DensityFitting::compute()
         case SolveMethod_InverseCholesky:
         {
           RefSymmSCMatrix kernel_i_mat;
-          if (not runtime_->runtime_2c_inv()->key_exists(fbasis_space_id)) {
+          if (not runtime_->runtime_2c_inv()->key_exists(kernel_ints_key)) {
             RefSymmSCMatrix kernel_i_mat = kernel_.copy();
             if (solver_ == SolveMethod_InverseBunchKaufman)
               lapack_invert_symmnondef(kernel_i_mat, 1e10);
             if (solver_ == SolveMethod_InverseCholesky)
               lapack_invert_symmposdef(kernel_i_mat, 1e10);
-            runtime_->runtime_2c_inv()->add(fbasis_space_id, kernel_i_mat);
+            runtime_->runtime_2c_inv()->add(kernel_ints_key, kernel_i_mat);
           }
-          kernel_i_mat = runtime_->runtime_2c_inv()->value(fbasis_space_id);
+          kernel_i_mat = runtime_->runtime_2c_inv()->value(kernel_ints_key);
 
           // convert kernel_i to dense rectangular form
           kernel_i.resize(n3 * n3);
@@ -243,8 +240,8 @@ DensityFitting::compute()
           // factorize kernel_ using diagonal pivoting from LAPACK's DSPTRF
           kernel_factorized.resize(n3 * (n3 + 1) / 2);
           sc::lapack_cholesky_symmposdef(kernel_,
-                                              &(kernel_factorized[0]),
-                                              1e10);
+                                         &(kernel_factorized[0]),
+                                         1e10);
         }
         break;
 
@@ -258,7 +255,7 @@ DensityFitting::compute()
           kernel_factorized.resize(n3 * (n3 + 1) / 2);
           ipiv.resize(n3);
           sc::lapack_dpf_symmnondef(kernel_, &(kernel_factorized[0]),
-                                         &(ipiv[0]), 1e10);
+                                    &(ipiv[0]), 1e10);
         }
         break;
 
@@ -280,9 +277,26 @@ DensityFitting::compute()
           case SolveMethod_InverseCholesky:
           case SolveMethod_InverseBunchKaufman:
           {
-            C_DGEMM('n', 'n', n2, n3, n3, 1.0, cC_jR, n3, &(kernel_i[0]), n3,
+            C_DGEMM('n', 'n', n2, n3, n3,
+                    (flip_kernel_sign ? -1.0 : 1.0),
+                    cC_jR, n3, &(kernel_i[0]), n3,
                     0.0, &(C_jR[0]), n3);
           }
+#if 0
+          if (i == 0) {
+            RefSCMatrix C_jR_mat = kernel_.kit()->matrix(new SCDimension(n2),
+                                                         new SCDimension(n3));
+            C_jR_mat.assign(&(C_jR[0]));
+            C_jR_mat.print("debug DensityFitting: C(0j|R)");
+
+            RefSCMatrix cC_jR_mat = kernel_.kit()->matrix(new SCDimension(n2),
+                                                          new SCDimension(n3));
+            cC_jR_mat.assign(cC_jR);
+
+            // reconstruct
+            (cC_jR_mat * C_jR_mat.t()).print("debug DensityFitting: V(0j|0j)");
+          }
+#endif
           break;
 
           case SolveMethod_Cholesky:
@@ -290,9 +304,17 @@ DensityFitting::compute()
           case SolveMethod_RefinedCholesky:
           {
             sc::lapack_linsolv_cholesky_symmposdef(&(kernel_packed[0]), n3,
-                                                        &(kernel_factorized[0]),
-                                                        &(C_jR[0]), cC_jR, n2,
-                                                        refine_solution);
+                                                   &(kernel_factorized[0]),
+                                                   &(C_jR[0]), cC_jR, n2,
+                                                   refine_solution);
+            if (flip_kernel_sign) { // kernel sign was flipped, but cC kept the sign ...
+                                    // apply the sign instead to the result
+              const blasint n23 = n2*n3;
+              const blasint one = 1;
+              const double minus_1 = -1.0;
+              F77_DSCAL(&n23, &minus_1, &(C_jR[0]), &one);
+            }
+
           }
           break;
 
@@ -330,6 +352,34 @@ DensityFitting::compute()
 
   tim.exit();
   ExEnv::out0() << indent << "Built DensityFitting: name = " << name << std::endl;
+}
+
+int
+DensityFitting::definite_kernel(TwoBodyOper::type kernel_type, const Ref<IntParams>& kernel_params) {
+
+  const std::string params_key = ParamsRegistry::instance()->key(kernel_params);
+  return definite_kernel(kernel_type, params_key);
+
+}
+
+int
+DensityFitting::definite_kernel(TwoBodyOper::type kernel_type, const std::string& params_key) {
+
+  switch(kernel_type) {
+    case TwoBodyOper::eri:
+    case TwoBodyOper::delta:
+    case TwoBodyOper::g12t1g12:
+      return +1;
+
+    case TwoBodyOper::r12_m1_g12:
+    case TwoBodyOper::r12_0_g12:
+      return (params_key == "[0,0]") ? +1 : -1;
+
+    default:
+      return 0;
+  }
+  assert(false); // unreachable
+  return 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////

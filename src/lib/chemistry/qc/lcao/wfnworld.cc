@@ -78,8 +78,8 @@ WavefunctionWorld::WavefunctionWorld(const Ref<KeyVal>& keyval)
   if (bs_df_.nonnull())
     df_ = true;
   if (df_ == true) {
-    //std::string df_kernel = keyval->stringvalue("df_kernel", KeyValValuestring("coulomb"));
-    std::string df_kernel = keyval->stringvalue("df_kernel");
+    std::string df_kernel = keyval->stringvalue("df_kernel", KeyValValuestring("coulomb"));
+    //std::string df_kernel = keyval->stringvalue("df_kernel");
     if (not df_kernel.empty()) {
       std::pair<TwoBodyOperSet::type, Ref<IntParams> > kernel = init_df_kernel(df_kernel);
       df_kernel_opertype_ = kernel.first;

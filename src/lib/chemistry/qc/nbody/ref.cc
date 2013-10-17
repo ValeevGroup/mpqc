@@ -1577,8 +1577,8 @@ Extern_RefWavefunction::magnetic_moment() const {
 
 Ref<DensityFittingInfo>
 Extern_RefWavefunction::dfinfo() const {
-  return use_world_dfinfo() ? const_cast<DensityFittingInfo*>(world()->tfactory()->df_info()) : 0;
-  //return const_cast<DensityFittingInfo*>(world()->tfactory()->df_info());
+  //return use_world_dfinfo() ? const_cast<DensityFittingInfo*>(world()->tfactory()->df_info()) : 0;
+  return const_cast<DensityFittingInfo*>(world()->tfactory()->df_info());
 }
 
 ///////////////////////////////////////////////////////////////////

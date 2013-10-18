@@ -32,6 +32,8 @@
 #include <chemistry/qc/wfn/obwfn.h>
 #include <chemistry/qc/wfn/orbitalspace.h>
 
+
+// TODO get this right for different types of integrals
 #define USE_OLD_SOLIDHARM_ORDERING 0
 #if not USE_OLD_SOLIDHARM_ORDERING // CCA ordering
 static inline int ipure(int l, int m) { return l+m; }
@@ -62,6 +64,9 @@ class WriteMolden: public Runnable {
     /** The KeyVal constructor
 
         <dl>
+        <dt><tt>obwfn</tt></dt><dd> The OneBodyWavefunction whose orbitals are printed in the Molden file.
+        There is no default for this option.</dd>
+
         <dt><tt>filename</tt></dt><dd> Specifies the filename of the file to
         write the output to. If "-" is given, the output will be written to the
         standard output. The default is "-".</dd>

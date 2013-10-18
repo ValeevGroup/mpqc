@@ -12,7 +12,8 @@ add_mpqc_object_library(misc
   regtime.cc
   runnable.cc
   scexception.cc
-  units.cc)
+  units.cc
+  xml.cc)
 
 # tests
 

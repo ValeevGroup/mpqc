@@ -27,6 +27,7 @@
 
 #include <math.h>
 
+#include <util/misc/consumableresources.h>
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 #include <math/scmat/matrix.h>
@@ -992,6 +993,19 @@ SCVector::save(StateOut&s)
       s.put(get_element(i));
     }
 }
+
+void
+SCVector::write_xml(boost::property_tree::ptree& pt)
+{
+  pt.put("SCVector.<xmlattr>.n", n());
+  pt.put("SCVector.data.<xmlattr>.compressed", true);
+
+  double* data = allocate<double>(n());
+  this->convert(data);
+  XMLDataStream<double> xds(data, n());
+  pt.put("SCVector.data", xds);
+}
+
 
 void
 SCVector::restore(StateIn& s)

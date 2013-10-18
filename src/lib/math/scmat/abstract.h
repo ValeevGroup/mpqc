@@ -33,6 +33,7 @@
 #include <util/state/state.h>
 #include <math/scmat/dim.h>
 #include <math/scmat/block.h>
+#include <util/misc/xml.h>
 #include <iostream>
 
 namespace sc {
@@ -91,7 +92,7 @@ class SCMatrixKit: public DescribedClass {
 
 /** The SCVector class is the abstract base class for
     double valued vectors. */
-class SCVector: public DescribedClass {
+class SCVector: public DescribedClass, public XMLWritable {
   protected:
     RefSCDimension d;
     Ref<SCMatrixKit> kit_;
@@ -101,6 +102,7 @@ class SCVector: public DescribedClass {
     /// Save and restore this in an implementation independent way.
     virtual void save(StateOut&);
     virtual void restore(StateIn&);
+    virtual void write_xml(boost::property_tree::ptree& pt);
 
     /// Return the SCMatrixKit used to create this object.
     Ref<SCMatrixKit> kit() const { return kit_; }

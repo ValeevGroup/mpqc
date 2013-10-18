@@ -168,6 +168,7 @@ namespace sc {
           for(size_t b=0, bk=0; b<gbra.size(); ++b)
             for(size_t k=0; k<gket.size(); ++k, ++bk)
               g12_[bk].second *= 4.0 * gbra[b].first * gket[k].first;
+          g12_ = reduce(g12_);
         }
         double* eval(double* Fm_table, unsigned int mmax, double T, double rho = 0.0) {
           Gm_Eval_.eval(Fm_table, rho, T, mmax, g12_);

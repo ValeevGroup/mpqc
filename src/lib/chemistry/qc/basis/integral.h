@@ -481,12 +481,6 @@ class Integral : public SavableState {
       */
     template <int NumCenters>
     Ref< typename TwoBodyIntEvalType<NumCenters>::value > r12_k_g12(const Ref<IntParamsG12>& p, int k) {
-      if (k != -1 && k != 0) {
-        std::ostringstream oss;
-        oss << "Integral::r12_k_g12 can only be computed for k=-1 and 0 but k = " << k;
-        throw FeatureNotImplemented(oss.str().c_str(),
-                                    __FILE__, __LINE__);
-      }
       if (k == 0) {
         typedef typename detail::EvalCreator<NumCenters,TwoBodyOperSet::R12_0_G12>::value EvalCreator;
         return EvalCreator::eval(this,p);
@@ -495,6 +489,10 @@ class Integral : public SavableState {
         typedef typename detail::EvalCreator<NumCenters,TwoBodyOperSet::R12_m1_G12>::value EvalCreator;
         return EvalCreator::eval(this,p);
       }
+      std::ostringstream oss;
+      oss << "Integral::r12_k_g12 can only be computed for k=-1 and 0 but k = " << k;
+      throw FeatureNotImplemented(oss.str().c_str(),
+                                  __FILE__, __LINE__);
     }
 
     /** Return the evaluator of two-body integrals with kernel

@@ -349,7 +349,6 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
       break;
     }
   }
-  std::cout << "Transform_ixjy_df: using simple formula, df_kernel = " << TwoBodyOperSet::to_string(df_descr->operset()) << " sign = " << DensityFitting::definite_kernel(oset_descr->opertype(0), df_descr->params()) << std::endl;
   if (use_simple_formula) // right now simple formula will only work for size-1 operator set
     assert(oset_descr->size() == 1);
   const std::string kernel_key = ParsedTwoBodyOperKey::key<4>(df_descr);

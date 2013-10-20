@@ -319,6 +319,10 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
   Ref<TwoBodyIntDescr> df_descr;
   if (factory()->df_info()->params()->kernel_key().empty()) { // no world-wide density fitting method
     df_descr = intdescr();
+    if (df_descr->num_sets() != 1)
+      df_descr = IntDescrFactory::make<4>(factory()->integral(),
+                                          TwoBodyOperSet::ERI,
+                                          ParamsRegistry::instance()->value(""));
   }
   else {
     const std::string kernel_key = factory()->df_info()->params()->kernel_key();
@@ -337,20 +341,14 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
   // 2) otherwise, use explicitly robust formula need DensityFitting, as well as 2- and 3-center matrices
   //    Wr = K12 * C34 + C12 * K34 - C12 * k * C34
 
-  bool use_simple_formula = true;
-  for(unsigned int o=0; o<oset_descr->size(); ++o) {
-    if (not (
-             oset_descr->opertype(o) == TwoBodyOperSetDescr::instance(df_operset)->opertype(0)
-             &&
-             DensityFitting::definite_kernel(oset_descr->opertype(o), df_descr->params()) != 0
-            )
-       ) {
-      use_simple_formula = false;
-      break;
-    }
+  bool use_simple_formula = false;
+  if (oset_descr->size() == 1) { // right now simple formula will only work for size-1 operator set
+    if (oset_descr->opertype(0) == TwoBodyOperSetDescr::instance(df_operset)->opertype(0)
+        &&
+        DensityFitting::definite_kernel(oset_descr->opertype(0), df_descr->params()) != 0
+    )
+      use_simple_formula = true;
   }
-  if (use_simple_formula) // right now simple formula will only work for size-1 operator set
-    assert(oset_descr->size() == 1);
   const std::string kernel_key = ParsedTwoBodyOperKey::key<4>(df_descr);
 
   const Ref<AOSpaceRegistry>& aoidxreg = this->factory()->ao_registry();
@@ -589,7 +587,7 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
         cC34->release_pair_block(0, j, te_type);
 
         if (!use_simple_formula &&
-            opertype != df_descr->intset(te_type)) {
+            opertype != df_descr->intset(0)) {
           if (cC12_buf == 0) cC12_buf = cC12->retrieve_pair_block(0, i, te_type);
           const double* C34_buf = C34->retrieve_pair_block(0, j, 0);
           C_DGEMM('n', 't', rank2, rank4, rankF, 1.0, cC12_buf, rankF, C34_buf, rankF,

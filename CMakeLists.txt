@@ -164,7 +164,8 @@ check_include_files(unistd.h HAVE_UNISTD_H)
 check_include_files(pwd.h HAVE_PWD_H)
 check_include_files(time.h HAVE_TIME_H)
 check_include_files(libunwind.h HAVE_LIBUNWIND_H)
-check_include_files(cxxabi.h HAVE_CXXABI_H)
+include(CheckIncludeFileCXX)
+CHECK_INCLUDE_FILE_CXX(cxxabi.h HAVE_CXXABI_H)
 check_include_files(execinfo.h HAVE_EXECINFO_H)
 
 include(CheckFunctionExists)
@@ -177,7 +178,17 @@ CHECK_FUNCTION_EXISTS (lstat             HAVE_LSTAT)
 CHECK_FUNCTION_EXISTS (time              HAVE_TIME)
 CHECK_FUNCTION_EXISTS (ctime             HAVE_CTIME)
 if (HAVE_CXXABI_H)
-  CHECK_FUNCTION_EXISTS (abi::__cxa_demangle     HAVE_CXA_DEMANGLE)
+  CHECK_CXX_SOURCE_COMPILES("
+    #include <cxxabi.h>
+    int main(int argc, char* argv[]) {
+      char* result = abi::__cxa_demangle(\"\", 0, 0, 0);
+      return 0;
+    }" HAVE_CXA_DEMANGLE)
+  if (HAVE_CXA_DEMANGLE)
+    message("-- Looking for abi::__cxa_demangle - found")
+  else()
+    message("-- Looking for abi::__cxa_demangle - not found")
+  endif()
 endif(HAVE_CXXABI_H)
 if (HAVE_LIBUNWIND_H)
   CHECK_FUNCTION_EXISTS (unw_init_local          HAVE_LIBUNWIND)

@@ -390,7 +390,6 @@ Ref<GaussianBasisSet>
 SuperpositionOfAtomicDensities::minimal_basis_set(const Ref<Molecule>& mol) {
   // make mother minimal basis
   Ref<GaussianBasisSet> mother;
-  // for some reason on our local linux cluster this breaks
   try {
     Ref<AssignedKeyVal> akv = new AssignedKeyVal;
     akv->assign("molecule", Ref<DescribedClass>(mol));
@@ -398,33 +397,15 @@ SuperpositionOfAtomicDensities::minimal_basis_set(const Ref<Molecule>& mol) {
     for (int a = 0; a < mol->natom(); ++a) {
       std::ostringstream oss;
       oss << "basis:" << a;
-      const char* keyword = oss.str().c_str();
+      const std::string keyword = oss.str();
       if (mol->Z(a) <= 38)
-        akv->assign(keyword, "STO-6G");
+        akv->assign(keyword.c_str(), "STO-6G");
       else
-        akv->assign(keyword, "WTBS");
+        akv->assign(keyword.c_str(), "WTBS");
     }
     mother = new GaussianBasisSet(akv);
   }
   catch(...) {}
-  if (mother.null()) {
-    try {
-      Ref<AssignedKeyVal> akv = new AssignedKeyVal;
-      akv->assign("molecule", Ref<DescribedClass>(mol));
-      akv->assign("name", "STO-6G");
-      mother = new GaussianBasisSet(akv);
-    }
-    catch (...) {}
-  }
-  if (mother.null()) {
-    try {
-      Ref<AssignedKeyVal> akv = new AssignedKeyVal;
-      akv->assign("molecule", Ref<DescribedClass>(mol));
-      akv->assign("name", "WTBS");
-      mother = new GaussianBasisSet(akv);
-    }
-    catch (...) {}
-  }
   if (mother.null())
     throw ProgrammingError("could not construct a minimal basis for SuperpositionOfAtomicDensities",
                            __FILE__, __LINE__);

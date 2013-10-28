@@ -36,6 +36,7 @@
 #include <chemistry/qc/scf/osshf.h>
 #include <chemistry/qc/scf/tchf.h>
 #include <chemistry/qc/scf/uhf.h>
+#include <chemistry/qc/scf/scf.h>
 
 #include <math/scmat/linkage.h>
 #include <chemistry/molecule/linkage.h>
@@ -53,6 +54,7 @@ ForceLink<OSSHF> scf_force_link_c_;
 ForceLink<TCHF> scf_force_link_d_;
 ForceLink<UHF> scf_force_link_e_;
 ForceLink<FockBuildCLHF> scf_force_link_f_;
+ForceLink<SCFIterationLogger> scf_force_link_g_;
 
 }
 

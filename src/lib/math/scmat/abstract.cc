@@ -139,6 +139,24 @@ SCMatrix::save(StateOut&s)
 }
 
 void
+SCMatrix::write_xml(
+    boost::property_tree::ptree& pt,
+    const XMLWriter& writer
+)
+{
+  using boost::property_tree::ptree;
+  ptree& my_tree = pt.add_child("SCMatrix", ptree());
+  my_tree.put("<xmlattr>.nrow", nrow());
+  my_tree.put("<xmlattr>.ncol", ncol());
+  ptree& data_tree = my_tree.add_child("data", ptree());
+  double* data = allocate<double>(nrow()*ncol());
+  this->convert(data);
+  // The XMLDataStream object created by this function call
+  //   owns the pointer data after this.
+  writer.put_binary_data<double>(data_tree, data, nrow()*ncol());
+}
+
+void
 SCMatrix::restore(StateIn& s)
 {
   int nrt, nr = nrow();
@@ -482,6 +500,25 @@ SymmSCMatrix::save(StateOut&s)
           s.put(get_element(i,j));
         }
     }
+}
+
+void
+SymmSCMatrix::write_xml(
+    boost::property_tree::ptree& pt,
+    const XMLWriter& writer
+)
+{
+  using boost::property_tree::ptree;
+  ptree& my_tree = pt.add_child("SymmSCMatrix", ptree());
+  my_tree.put("<xmlattr>.n", n());
+  my_tree.put("<xmlattr>.lower_triangle", true);
+  ptree& data_tree = my_tree.add_child("data", ptree());
+  long ndata = n() * (n()+1) / 2;
+  double* data = allocate<double>(ndata);
+  this->convert(data);
+  // The XMLDataStream object created by this function call
+  //   owns the pointer data after this.
+  writer.put_binary_data<double>(data_tree, data, ndata);
 }
 
 void
@@ -839,6 +876,23 @@ DiagSCMatrix::save(StateOut&s)
 }
 
 void
+DiagSCMatrix::write_xml(
+    boost::property_tree::ptree& pt,
+    const XMLWriter& writer
+)
+{
+  using boost::property_tree::ptree;
+  ptree& my_tree = pt.add_child("DiagSCMatrix", ptree());
+  my_tree.put("<xmlattr>.n", n());
+  ptree& data_tree = my_tree.add_child("data", ptree());
+  double* data = allocate<double>(n());
+  this->convert(data);
+  // The XMLDataStream object created by this function call
+  //   owns the pointer data after this.
+  writer.put_binary_data<double>(data_tree, data, n());
+}
+
+void
 DiagSCMatrix::restore(StateIn& s)
 {
   int nrt, nr = n();
@@ -995,15 +1049,20 @@ SCVector::save(StateOut&s)
 }
 
 void
-SCVector::write_xml(boost::property_tree::ptree& pt)
+SCVector::write_xml(
+    boost::property_tree::ptree& pt,
+    const XMLWriter& writer
+)
 {
-  pt.put("SCVector.<xmlattr>.n", n());
-  pt.put("SCVector.data.<xmlattr>.compressed", true);
-
+  using boost::property_tree::ptree;
+  ptree& my_tree = pt.add_child("SCVector", ptree());
+  my_tree.put("<xmlattr>.n", n());
+  ptree& data_tree = my_tree.add_child("data", ptree());
   double* data = allocate<double>(n());
   this->convert(data);
-  XMLDataStream<double> xds(data, n());
-  pt.put("SCVector.data", xds);
+  // The XMLDataStream object created by this function call
+  //   owns the pointer data after this.
+  writer.put_binary_data<double>(data_tree, data, n());
 }
 
 

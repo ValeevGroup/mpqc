@@ -32,6 +32,21 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include <util/misc/exenv.h>
 #include <util/misc/consumableresources.h>
+#include <util/misc/runnable.h>
+#ifndef NO_USE_BOOST_ENDIAN
+#  include <boost/detail/endian.hpp>
+#  if defined(BOOST_LITTLE_ENDIAN)
+#    define IS_BIG_ENDIAN false
+#  elif defined(BOOST_BIG_ENDIAN)
+#    define IS_BIG_ENDIAN true
+#  else
+#    include <arpa/inet.h>
+#    define IS_BIG_ENDIAN htonl(47) == 47
+#  endif
+#else
+#  include <arpa/inet.h>
+#  define IS_BIG_ENDIAN htonl(47) == 47
+#endif
 
 //TODO add option to gzip data streams
 
@@ -39,48 +54,11 @@ using boost::property_tree::ptree;
 
 namespace sc {
 
-  template<typename T>
-  inline void data_to_base64_chars(T* indata, char* outdata, int ndata, bool align=true, char fill_value=0){
-    ::memcpy(outdata, indata, sizeof(T)/sizeof(char)*ndata);
-    int nfill = sizeof(T)*ndata % 8*sizeof(char);
-    if(align and nfill != 0){
-      ::memset(outdata + (sizeof(T)*ndata / 8) * 8 * sizeof(char), fill_value, nfill);
-    }
-    else{
-      assert(false); // not implemented
-    }
-  }
+  // Forward Declarations
+  class XMLWritable;
+  class XMLReadable;
 
-  class XMLWritable {
-    public:
-      virtual void write_xml(ptree& pt) = 0;
-      virtual ~XMLWritable() {}
-  };
-
-  class XMLReadable {
-    public:
-      virtual void read_xml(ptree& pt) = 0;
-      virtual ~XMLReadable() {}
-  };
-
-  class XMLWriter {
-
-    protected:
-
-      std::ostream* out_;
-      ptree pt_;
-
-      void init();
-
-    public:
-
-      XMLWriter(std::ostream& out=ExEnv::out0());
-
-      XMLWriter(ptree& pt, std::ostream& out=ExEnv::out0());
-
-      XMLWriter(std::string filename);
-
-  };
+  ////////////////////////////////////////////////////////////////////////////////
 
   template<typename T>
   class XMLDataStream {
@@ -88,14 +66,21 @@ namespace sc {
     T* data_;
     unsigned long n_;
     bool deallocate_when_destroyed_;
+    bool human_readable_;
 
   public:
     XMLDataStream(
         T* data,
         unsigned long n,
+        bool human_readable=false,
         bool deallocate_when_destroyed=true
-    ) : data_(data), n_(n), deallocate_when_destroyed_(deallocate_when_destroyed)
+    ) :
+      data_(data),
+      n_(n),
+      deallocate_when_destroyed_(deallocate_when_destroyed),
+      human_readable_(human_readable)
     {
+
     }
 
     ~XMLDataStream(){
@@ -106,8 +91,151 @@ namespace sc {
 
     unsigned long n() const { return n_; }
     T* data() const { return data_; }
+    bool human_readable() const { return human_readable_; }
+
 
   };
+
+  ////////////////////////////////////////////////////////////////////////////////
+
+  // TODO gzip compression, turned on and off by the writer
+  // TODO write as data is received?
+  class XMLWriter : public Runnable {
+
+    protected:
+
+      std::ostream* out_;
+      ptree pt_;
+      bool delete_out_;
+      bool compress_data_;
+      bool pretty_print_;
+      bool human_readable_;
+      int pretty_print_spaces_;
+      char pretty_print_space_char_;
+      std::vector< Ref<XMLWritable> > data_;
+      boost::property_tree::xml_writer_settings<char> write_settings_;
+
+      void init();
+
+      void init_filename(const std::string& filename);
+
+
+    public:
+
+      XMLWriter(const Ref<KeyVal>& keyval);
+
+      XMLWriter(std::ostream& out=ExEnv::out0());
+
+      XMLWriter(ptree& pt, std::ostream& out=ExEnv::out0());
+
+      XMLWriter(const std::string& filename);
+
+      virtual ~XMLWriter();
+
+      template<typename T>
+      void
+      put_binary_data(
+          ptree& pt,
+          T* data,
+          long ndata
+      ) const
+      {
+        assert(!compress_data_); // Not implemented
+        if(!human_readable_){
+          pt.put("<xmlattr>.ndata", ndata);
+          pt.put("<xmlattr>.datum_size", sizeof(T));
+          pt.put("<xmlattr>.big_endian", IS_BIG_ENDIAN);
+          XMLDataStream<T> xds(data, ndata);
+          pt.put_value(xds);
+        }
+        else{
+          pt.put("<xmlattr>.ndata", ndata);
+          pt.put("<xmlattr>.human_readable", true);
+          XMLDataStream<T> xds(data, ndata,
+              /* human_readable = */ true
+          );
+          pt.put_value(xds);
+        }
+      }
+
+      ptree&
+      add_writable_child(
+          ptree& parent,
+          const std::string& name,
+          const Ref<XMLWritable>& child
+      ) const;
+
+
+      void add_data(const Ref<XMLWritable>& datum) { data_.push_back(datum); }
+
+      void run();
+
+
+  };
+
+  ////////////////////////////////////////////////////////////////////////////////
+
+  class XMLReader {
+
+  };
+
+  ////////////////////////////////////////////////////////////////////////////////
+
+  class XMLWritable : virtual public RefCount {
+    public:
+      virtual void write_xml(ptree& pt, const XMLWriter& writer) = 0;
+      virtual ~XMLWritable() {}
+  };
+
+  class DescribedXMLWritable : public XMLWritable, virtual public DescribedClass {
+    protected:
+      ptree* my_ptree_ = 0;
+      virtual ptree& get_my_ptree(ptree& parent, std::string name = "");
+  };
+
+  ////////////////////////////////////////////////////////////////////////////////
+
+  class XMLReadable {
+    public:
+      virtual void read_xml(ptree& pt, const XMLReader& reader) = 0;
+      virtual ~XMLReadable() {}
+  };
+
+
+  ////////////////////////////////////////////////////////////////////////////////
+
+  namespace detail {
+    std::string
+    get_human_readable_data(
+        double* data,
+        long ndata,
+        int nperline=8,
+        int precision=8,
+        int width=15
+    );
+
+    std::string
+    get_human_readable_data(
+        int* data,
+        long ndata,
+        int nperline=8,
+        int precision=8, // ignored
+        int width=15
+    );
+
+    template<typename T>
+    std::string
+    get_human_readable_data(
+        T* data,
+        long ndata,
+        int nperline=8,
+        int precision=8,
+        int width=15
+    )
+    {
+      assert(false); // not implemented
+    }
+  }
 
   template<typename T>
   struct XMLDataStreamTranslator {
@@ -134,15 +262,28 @@ namespace sc {
 
     boost::optional<internal_type> put_value(const external_type& xds)
     {
-      return boost::optional<internal_type>(
-          internal_type(
-              (char*)xds.data(),
-              xds.n()*sizeof(T)/sizeof(char)
-          )
-      );
+      if(xds.human_readable()){
+        return boost::optional<internal_type>(
+            detail::get_human_readable_data(
+                xds.data(),
+                xds.n()
+            )
+        );
+
+      }
+      else{
+        return boost::optional<internal_type>(
+            internal_type(
+                (char*)xds.data(),
+                xds.n()*sizeof(T)/sizeof(char)
+            )
+        );
+      }
 
     }
   };
+
+  ////////////////////////////////////////////////////////////////////////////////
 
 } // end namespace sc
 

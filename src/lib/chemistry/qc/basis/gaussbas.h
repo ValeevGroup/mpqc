@@ -134,7 +134,7 @@ class SphericalTransformIter;
  *  U.S. Department of Energy under contract DE-AC06-76RLO 1830. Contact David
  *  Feller or Karen Schuchardt for further information.
 */
-class GaussianBasisSet: virtual public SavableState
+class GaussianBasisSet: virtual public SavableState, virtual public DescribedXMLWritable
 {
   public:
 
@@ -162,6 +162,10 @@ class GaussianBasisSet: virtual public SavableState
         unsigned int center() const { return center_; }
 
         //const double[3]& r() const {}
+
+        virtual void write_xml(
+            boost::property_tree::ptree& parent, const XMLWriter& writer
+        );
 
       private:
         friend class GaussianBasisSet;
@@ -455,6 +459,11 @@ class GaussianBasisSet: virtual public SavableState
     GaussianBasisSet(StateIn& si);
     /// saves this to @c so
     void save_data_state(StateOut& so);
+
+    virtual void write_xml(
+        boost::property_tree::ptree& parent, const XMLWriter& writer
+    );
+
     ///@}
 
     virtual ~GaussianBasisSet();

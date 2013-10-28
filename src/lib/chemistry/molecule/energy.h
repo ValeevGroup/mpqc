@@ -35,13 +35,16 @@
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/molecule/coor.h>
 #include <chemistry/molecule/deriv.h>
+#include <util/misc/xml.h>
+
+using boost::property_tree::ptree;
 
 namespace sc {
 
 /** The MolecularEnergy abstract class inherits from the Function class.
 It computes the energy of the molecule as a function of the geometry.  The
 coordinate system used can be either internal or cartesian.  */
-class MolecularEnergy: public Function {
+class MolecularEnergy: public Function, virtual public DescribedXMLWritable {
   private:
     RefSCDimension moldim_; // the number of cartesian variables
     Ref<MolecularCoor> mc_;
@@ -95,6 +98,7 @@ class MolecularEnergy: public Function {
      * @return true (analytic hessian is available) or false (analytic hessian is not available, default)
      */
     virtual bool analytic_hessian_implemented() const;
+
 
   public:
     MolecularEnergy(const MolecularEnergy&);
@@ -159,6 +163,8 @@ class MolecularEnergy: public Function {
     ~MolecularEnergy();
 
     void save_data_state(StateOut&);
+
+    virtual void write_xml(boost::property_tree::ptree& parent, const XMLWriter& writer);
 
     /// Set up checkpointing
     void set_checkpoint();

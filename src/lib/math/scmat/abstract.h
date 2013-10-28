@@ -102,7 +102,7 @@ class SCVector: public DescribedClass, public XMLWritable {
     /// Save and restore this in an implementation independent way.
     virtual void save(StateOut&);
     virtual void restore(StateIn&);
-    virtual void write_xml(boost::property_tree::ptree& pt);
+    virtual void write_xml(boost::property_tree::ptree& pt, const XMLWriter& writer);
 
     /// Return the SCMatrixKit used to create this object.
     Ref<SCMatrixKit> kit() const { return kit_; }
@@ -191,7 +191,7 @@ class SCVector: public DescribedClass, public XMLWritable {
 /** The SCMatrix class is the abstract base class for general double valued
     n by m matrices.  For symmetric matrices use SymmSCMatrix and for
     diagonal matrices use DiagSCMatrix. */
-class SCMatrix: public DescribedClass {
+class SCMatrix: public DescribedClass, public XMLWritable {
   protected:
     RefSCDimension d1,d2;
     Ref<SCMatrixKit> kit_;
@@ -206,6 +206,7 @@ class SCMatrix: public DescribedClass {
     /// Save and restore this in an implementation independent way.
     virtual void save(StateOut&);
     virtual void restore(StateIn&);
+    virtual void write_xml(boost::property_tree::ptree& pt, const XMLWriter& writer);
 
     /// Return the SCMatrixKit used to create this object.
     Ref<SCMatrixKit> kit() const { return kit_; }
@@ -373,7 +374,7 @@ class SCMatrix: public DescribedClass {
 
 /** The SymmSCMatrix class is the abstract base class for symmetric
     double valued matrices. */
-class SymmSCMatrix: public DescribedClass {
+class SymmSCMatrix: public DescribedClass, public XMLWritable {
   protected:
     RefSCDimension d;
     Ref<SCMatrixKit> kit_;
@@ -387,6 +388,8 @@ class SymmSCMatrix: public DescribedClass {
     /// Save and restore this in an implementation independent way.
     virtual void save(StateOut&);
     virtual void restore(StateIn&);
+    virtual void write_xml(boost::property_tree::ptree& pt, const XMLWriter& writer);
+
     /// Return the maximum absolute value element of this vector.
     virtual double maxabs() const;
     /// Assign each element to a random number between -1 and 1
@@ -530,7 +533,7 @@ class SymmSCMatrix: public DescribedClass {
 
 /** The SymmSCMatrix class is the abstract base class for diagonal double
     valued matrices.  */
-class DiagSCMatrix: public DescribedClass {
+class DiagSCMatrix: public DescribedClass, public XMLWritable {
   protected:
     RefSCDimension d;
     Ref<SCMatrixKit> kit_;
@@ -544,6 +547,7 @@ class DiagSCMatrix: public DescribedClass {
     /// Save and restore this in an implementation independent way.
     virtual void save(StateOut&);
     virtual void restore(StateIn&);
+    virtual void write_xml(boost::property_tree::ptree& pt, const XMLWriter& writer);
 
     /// Return the maximum absolute value element of this vector.
     virtual double maxabs() const;

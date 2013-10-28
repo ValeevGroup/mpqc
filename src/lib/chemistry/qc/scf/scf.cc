@@ -191,6 +191,12 @@ SCF::SCF(const Ref<KeyVal>& keyval) :
     }
     ExEnv::out0() << decindent << decindent;
   }
+
+  // See if we have an iteration logger
+  if(keyval->exists("iter_log")) {
+    iter_log_ << keyval->describedclassvalue("iter_log");
+  }
+
 }
 
 SCF::~SCF()
@@ -217,6 +223,21 @@ SCF::save_data_state(StateOut& s)
   SavableState::save_state(extrap_.pointer(),s);
   SavableState::save_state(accumdih_.pointer(),s);
   SavableState::save_state(accumddh_.pointer(),s);
+}
+
+
+using boost::property_tree::ptree;
+void
+SCF::write_xml(
+    ptree& parent,
+    const XMLWriter& writer
+)
+{
+  ptree& child = this->get_my_ptree(parent);
+  if(iter_log_.nonnull()){
+    iter_log_->write_xml(child, writer);
+  }
+  OneBodyWavefunction::write_xml(parent, writer);
 }
 
 RefSCMatrix
@@ -784,6 +805,167 @@ SCF::initial_extrap_data()
 Ref<DensityFittingInfo>
 SCF::dfinfo() const {
   return 0;
+}
+
+///////////////////////////////////////////////////////////////////////////
+// SCFIterationLogger
+
+static ClassDesc SCFIterationLogger_cd(
+  typeid(SCFIterationLogger),"SCFIterationLogger",1,"public XMLWritable, public DescribedClass",
+  0, create<SCFIterationLogger>, 0);
+
+SCFIterationLogger::SCFIterationLogger(const Ref<KeyVal>& keyval) :
+    log_evals_(keyval->booleanvalue("log_evals", KeyValValueboolean(false))),
+    log_density_(keyval->booleanvalue("log_density", KeyValValueboolean(false))),
+    log_coeffs_(keyval->booleanvalue("log_coefficients", KeyValValueboolean(false)))
+{
+
+}
+
+void
+SCFIterationLogger::new_iteration(){
+  SCFIterationData iteration;
+  iteration.parent = this;
+  iteration.number = iterations_.size() + 1;
+  iterations_.push_back(iteration);
+
+}
+
+void
+SCFIterationLogger::log_density(
+    RefSymmSCMatrix density,
+    SpinCase1 spin
+) {
+  if(not log_density_) return;
+
+  switch (spin) {
+  case AnySpinCase1:
+    iterations_.back().density = density;
+    break;
+  case Alpha:
+    iterations_.back().alpha_density = density;
+    break;
+  case Beta:
+    iterations_.back().beta_density = density;
+    break;
+  case InvalidSpinCase1:
+    throw;
+  }
+}
+
+void
+SCFIterationLogger::log_evals(
+    RefDiagSCMatrix evals,
+    SpinCase1 spin
+) {
+  if(not log_evals_) return;
+
+  switch (spin) {
+  case AnySpinCase1:
+    iterations_.back().evals = evals;
+    break;
+  case Alpha:
+    iterations_.back().alpha_evals = evals;
+    break;
+  case Beta:
+    iterations_.back().beta_evals = evals;
+    break;
+  case InvalidSpinCase1:
+    throw;
+  }
+}
+
+void
+SCFIterationLogger::log_coeffs(
+    RefSCMatrix coeffs,
+    SpinCase1 spin
+) {
+  if(not log_evals_) return;
+
+  switch (spin) {
+  case AnySpinCase1:
+    iterations_.back().coeffs = coeffs;
+    break;
+  case Alpha:
+    iterations_.back().alpha_coeffs = coeffs;
+    break;
+  case Beta:
+    iterations_.back().beta_coeffs = coeffs;
+    break;
+  case InvalidSpinCase1:
+    throw;
+  }
+}
+
+
+void
+SCFIterationLogger::write_xml(
+    boost::property_tree::ptree& parent,
+    const XMLWriter& writer
+)
+{
+  using boost::property_tree::ptree;
+  ptree& iter_tree = parent.add_child("SCFIterationLogger.iterations", ptree());
+  parent.put("SCFIterationLogger.density_enabled", log_density_);
+  parent.put("SCFIterationLogger.coefficients_enabled", log_coeffs_);
+  parent.put("SCFIterationLogger.evals_enabled", log_evals_);
+
+  iter_tree.put("<xmlattr>.n", iterations_.size());
+  std::vector<SCFIterationData>::iterator it = iterations_.begin();
+  for(; it != iterations_.end(); ++it){
+    it->write_xml(iter_tree, writer);
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////
+// SCFIterationData
+
+void
+SCFIterationData::write_xml(
+    boost::property_tree::ptree& parent,
+    const XMLWriter& writer
+)
+{
+  using boost::property_tree::ptree;
+  ptree& my_tree = parent.add_child("iteration", ptree());
+
+  my_tree.put("<xmlattr>.number", number);
+
+  if(evals.nonnull()){
+    writer.add_writable_child(my_tree, "evals", evals);
+  }
+  if(alpha_evals.nonnull()){
+    ptree& child = writer.add_writable_child(my_tree, "evals", alpha_evals);
+    child.put("<xmlattr>.spin", "alpha");
+  }
+  if(beta_evals.nonnull()){
+    ptree& child = writer.add_writable_child(my_tree, "evals", beta_evals);
+    child.put("<xmlattr>.spin", "beta");
+  }
+  //----------------------------------------//
+  if(density.nonnull()){
+    ptree& child = writer.add_writable_child(my_tree, "density", density);
+  }
+  if(alpha_density.nonnull()){
+    ptree& child = writer.add_writable_child(my_tree, "density", alpha_density);
+    child.put("<xmlattr>.spin", "alpha");
+  }
+  if(beta_density.nonnull()){
+    ptree& child = writer.add_writable_child(my_tree, "density", beta_density);
+    child.put("<xmlattr>.spin", "beta");
+  }
+  //----------------------------------------//
+  if(coeffs.nonnull()){
+    ptree& child = writer.add_writable_child(my_tree, "coeffs", coeffs);
+  }
+  if(alpha_coeffs.nonnull()){
+    ptree& child = writer.add_writable_child(my_tree, "coeffs", alpha_coeffs);
+    child.put("<xmlattr>.spin", "alpha");
+  }
+  if(beta_coeffs.nonnull()){
+    ptree& child = writer.add_writable_child(my_tree, "coeffs", beta_coeffs);
+    child.put("<xmlattr>.spin", "beta");
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////

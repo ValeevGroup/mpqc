@@ -39,6 +39,7 @@
 #include <math/scmat/matrix.h>
 #include <chemistry/molecule/atominfo.h>
 #include <chemistry/molecule/atom.h>
+#include <util/misc/xml.h>
 
 namespace sc {
 
@@ -121,7 +122,7 @@ atoms can be given too, however, numerical errors in the
 geometry specification can result in the generation of extra
 atoms so be careful.
 */
-class Molecule: public SavableState
+class Molecule: public SavableState, virtual public DescribedXMLWritable
 {
   protected:
     std::vector<Atom> atoms_;
@@ -475,6 +476,10 @@ class Molecule: public SavableState
     SCVector3 ref_origin() const { return ref_origin_; }
 
     void save_data_state(StateOut&);
+    virtual void write_xml(
+        boost::property_tree::ptree& parent, const XMLWriter& writer
+    );
+
 };
 
 }

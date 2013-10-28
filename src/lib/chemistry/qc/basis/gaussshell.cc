@@ -607,6 +607,48 @@ GaussianShell::extent(double threshold) const
 }
 
 
+using boost::property_tree::ptree;
+void
+GaussianShell::write_xml(
+    ptree& parent,
+    const XMLWriter& writer
+)
+{
+  ptree& child = get_my_ptree(parent);
+  child.put("nprimitive", nprimitive());
+  child.put("ncontraction", ncontraction());
+  child.put("nfunction", nfunction());
+  child.put("has_pure", has_pure());
+  {
+    ptree& prims_tree = child.add_child("primitives", ptree());
+    for(int iprim = 0; iprim < nprimitive(); ++iprim){
+      ptree& prim_tree = prims_tree.add_child("primitive", ptree());
+      prim_tree.put("<xmlattr>.index", iprim);
+      prim_tree.put("exponent", exponent(iprim));
+    }
+  }
+  {
+    ptree& cons_tree = child.add_child("contractions", ptree());
+    for(int icon = 0; icon < ncontraction(); ++icon){
+      ptree& con_tree = cons_tree.add_child("contraction", ptree());
+      con_tree.put("<xmlattr>.index", icon);
+      con_tree.put("am", am(icon));
+      con_tree.put("amchar", amchar(icon));
+      con_tree.put("nfunction", nfunction(icon));
+      con_tree.put("ncartesian", ncartesian(icon));
+      con_tree.put("pure", is_pure(icon));
+      con_tree.put("function_offset", contraction_to_function(icon));
+      ptree& coeffs_tree = con_tree.add_child("coefficients", ptree());
+      for(int iprim = 0; iprim < nprimitive(); ++iprim){
+        ptree& coef_tree = coeffs_tree.add_child("coefficient", ptree());
+        coef_tree.put("<xmlattr>.index", iprim);
+        coef_tree.put("unnormalized", coefficient_unnorm(icon, iprim));
+        coef_tree.put("normalized", coefficient_norm(icon, iprim));
+      }
+    }
+  }
+}
+
 void
 sc::ToStateOut(const GaussianShell &s, StateOut &so, int &count) {
   so.put(sc::class_desc<GaussianShell>()->version());

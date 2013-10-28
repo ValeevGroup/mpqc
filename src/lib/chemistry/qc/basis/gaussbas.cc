@@ -78,6 +78,20 @@ bool sc::GaussianBasisSet::Shell::equiv(const Shell& s) const {
   return static_cast<const GaussianShell&>(*this).equiv(static_cast<const GaussianShell&>(s));
 }
 
+using boost::property_tree::ptree;
+void
+GaussianBasisSet::Shell::write_xml(
+    ptree& parent,
+    const XMLWriter& writer
+)
+{
+  // Give it a custom name to avoid writing the "::" in the XML
+  ptree& child = GaussianShell::get_my_ptree(parent, "GaussianBasisSetShell");
+  child.put("center", center());
+
+  GaussianShell::write_xml(parent, writer);
+}
+
 //////////////////////////////////////////////////
 
 static ClassDesc GaussianBasisSet_cd(
@@ -254,6 +268,35 @@ GaussianBasisSet::save_data_state(StateOut&s)
   }
   s.put(name_);
   s.put(label_);
+}
+
+using boost::property_tree::ptree;
+void
+GaussianBasisSet::write_xml(
+    ptree& parent,
+    const XMLWriter& writer
+)
+{
+  ptree& child = get_my_ptree(parent);
+  if(not name_.empty()){
+    child.put("name", name_);
+  }
+  else{
+    child.put("label", label_);
+  }
+  child.put("ncenter", ncenter());
+  child.put("nshell", nshell());
+  child.put("nbasis", nbasis());
+  child.put("nprimitive", nprimitive());
+  child.put("has_pure", has_pure());
+  ptree& shells_tree = child.add_child("shells", ptree());
+  for(int ish = 0; ish < nshell(); ++ish){
+    // Hack because shells don't have an index attribute
+    ptree& shell_parent = shells_tree.add_child("shell", ptree());
+    shell_parent.put("<xmlattr>.index", ish);
+    shell_parent.put("function_offset", shell_to_function(ish));
+    shell(ish).write_xml(shell_parent, writer);
+  }
 }
 
 GaussianBasisSet&

@@ -415,6 +415,38 @@ Wavefunction::save_data_state(StateOut&s)
   s.put(magnetic_moment_);
 }
 
+void
+Wavefunction::write_xml(
+    ptree& parent,
+    const XMLWriter& writer
+)
+{
+  ptree& child = get_my_ptree(parent);
+
+  if(natural_orbitals_.computed()){
+    writer.add_writable_child(
+        child, "natural_orbitals", natural_orbitals_.result_noupdate()
+    );
+  }
+  if(natural_density_.computed()){
+    writer.add_writable_child(
+        child, "natural_density", natural_density_.result_noupdate()
+    );
+  }
+  child.put("total_charge", total_charge());
+  child.put("spin_polarized", (bool)spin_polarized());
+  writer.add_writable_child(child, "basis", basis());
+  if(atom_basis().nonnull() and not atom_basis()->equiv(basis())){
+    ptree& atom_basis_tree = writer.add_writable_child(
+        child, "atom_basis", atom_basis()
+    );
+    atom_basis_tree.put("comment",
+        "basis set describing the nuclear charge distributions"
+    );
+  }
+  MolecularEnergy::write_xml(parent, writer);
+}
+
 double
 Wavefunction::total_charge() const
 {

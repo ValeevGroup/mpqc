@@ -149,6 +149,9 @@ SCF::compute_vector(double& eelec, double nucrep)
                 << "Beginning iterations.  Basis is "
                 << basis()->label() << '.' << std::endl;
   for (iter=0; iter < maxiter_; iter++, iter_since_reset++) {
+
+    if(iter_log_.nonnull()) iter_log_->new_iteration();
+
     // form the density from the current vector
     tim.enter("density");
     delta = new_density();
@@ -313,6 +316,25 @@ SCF::compute_vector(double& eelec, double nucrep)
 
     if (debug_>0) {
       evals.print("scf eigenvalues");
+    }
+
+    if (iter_log_.nonnull()){
+      iter_log_->log_evals(evals);
+
+      if (iter_log_->log_coeffs_enabled()){
+        // Get the mospace_ object from the OneBodyWavefunction
+        Ref<PetiteList> pl = integral()->petite_list();
+        RefSCMatrix aocoefs_full = pl->evecs_to_AO_basis((oso_scf_vector_.t() * so_to_orthog_so()).t());
+        Ref<OrbitalSpace> mospace = new OrbitalSpace("p", "energy-ordered MOs to evaluate",
+                                                     aocoefs_full, basis(), integral(),
+                                                     evals,
+                                                     0, 0,
+                                                     OrbitalSpace::energy);
+        iter_log_->log_coeffs(
+            mospace->coefs_nb()
+            //(oso_scf_vector_.t() * so_to_orthog_so() * (integral()->petite_list()->aotoso()).t()).t()
+        );
+      }
     }
 
     if (reset_occ_)

@@ -28,7 +28,10 @@
 #ifndef _chemistry_qc_scf_scf_h
 #define _chemistry_qc_scf_scf_h
 
+#include <boost/parameter/preprocessor.hpp>
+
 #include <util/group/thread.h>
+#include <util/misc/xml.h>
 
 #include <math/optimize/scextrap.h>
 
@@ -38,6 +41,7 @@
 
 namespace sc {
 
+  class SCFIterationLogger;
   class DensityFittingInfo;
 
 // //////////////////////////////////////////////////////////////////////////
@@ -130,6 +134,8 @@ class SCF: public OneBodyWavefunction {
     /// how much lower is the desired accuracy of the guess?
     static double guess_acc_ratio() { return 1e4; }
 
+    Ref<SCFIterationLogger> iter_log_;
+
   public:
     SCF(StateIn&);
     /** The KeyVal constructor.
@@ -204,11 +210,18 @@ class SCF: public OneBodyWavefunction {
         matrix that are summed in each iteration SCF procedure.  AccumH's
         that depend on the density must be given here.
 
+        <dt><tt>iter_log</tt><dd>Optional.  An SCFIterationLogger object
+        to log data on a per-iteration basis.  See the SCFIterationLogger
+        class for more information.
+
         </dl> */
     SCF(const Ref<KeyVal>&);
     ~SCF();
 
     void save_data_state(StateOut&);
+    virtual void write_xml(
+        boost::property_tree::ptree& parent, const XMLWriter& writer
+    );
 
     RefSCMatrix oso_eigenvectors();
     RefDiagSCMatrix eigenvalues();
@@ -293,6 +306,62 @@ class SCF: public OneBodyWavefunction {
     // to be used in low-rank reconstruction
     void svd_product_basis();
 };
+
+/////////////////////////////////////////////////////////////////////////////
+
+class SCFIterationData;
+
+class SCFIterationLogger : public XMLWritable, public DescribedClass {
+
+  bool log_evals_;
+  bool log_density_;
+  bool log_coeffs_;
+
+  std::vector<SCFIterationData> iterations_;
+
+  public:
+
+    SCFIterationLogger(const Ref<KeyVal>& keyval);
+
+    void write_xml(boost::property_tree::ptree& pt, const XMLWriter& writer);
+
+    // TODO handle alpha and beta for evals and density
+
+    void new_iteration();
+
+    void log_density(RefSymmSCMatrix density, SpinCase1 spin_case=AnySpinCase1);
+
+    void log_evals(RefDiagSCMatrix evals, SpinCase1 spin_case=AnySpinCase1);
+
+    void log_coeffs(RefSCMatrix evals, SpinCase1 spin_case=AnySpinCase1);
+
+    bool log_coeffs_enabled(){ return log_coeffs_; }
+
+};
+
+/////////////////////////////////////////////////////////////////////////////
+
+class SCFIterationData : public XMLWritable {
+
+  public:
+
+    SCFIterationLogger* parent;
+    int number;
+    RefDiagSCMatrix evals = 0;
+    RefDiagSCMatrix alpha_evals = 0;
+    RefDiagSCMatrix beta_evals = 0;
+    RefSymmSCMatrix density = 0;
+    RefSymmSCMatrix alpha_density = 0;
+    RefSymmSCMatrix beta_density = 0;
+    RefSCMatrix coeffs = 0;
+    RefSCMatrix alpha_coeffs = 0;
+    RefSCMatrix beta_coeffs = 0;
+
+    void write_xml(boost::property_tree::ptree& pt, const XMLWriter& writer);
+
+};
+
+
 
 }
 

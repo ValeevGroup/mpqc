@@ -30,6 +30,7 @@
 
 #include <string>
 #include <util/state/stateio.h>
+#include <util/misc/xml.h>
 
 namespace sc {
 
@@ -40,9 +41,9 @@ namespace sc {
      * atoms.
      *
      */
-    class Atom {
+    class Atom : public XMLWritable {
 
-    private:
+      private:
         /// Contains the vector to the atom in units determined by molecule.
         double r_[3];
         int Z_;
@@ -56,7 +57,7 @@ namespace sc {
         double mass_;
         std::string label_;
 
-    public:
+      public:
         /**
          * Creates an atom for use in the sc::Molecule class.
          *
@@ -145,6 +146,10 @@ namespace sc {
 
         // Made friend for direct access for sc::SavableState
         friend void FromStateIn(Atom &a, StateIn &so, int &count);
+
+        virtual void write_xml(
+            boost::property_tree::ptree& parent, const XMLWriter& writer
+        );
 
    };
 

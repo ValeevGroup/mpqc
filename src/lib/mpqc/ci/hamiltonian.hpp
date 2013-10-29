@@ -68,51 +68,6 @@ namespace ci {
         return q;
     }
 
-    // template<class Index>
-    // void diagonal(const String::List<Index> &alpha,
-    // 		  const String &beta,
-    // 		  const Vector &h, const Matrix &V,
-    // 		  Vector &H) {
-    // 	auto &b = beta;
-    // 	size_t k = 0;
-    // 	for (auto &a : alpha) {
-    // 	    double q = 0;
-    // 	    for (auto &i : a.occ()) {
-    // 	    	size_t ii = index(i,i);
-    // 	    	q += h(ii);
-    // 	    	for (auto &j : a.occ()) {
-    // 	    	    size_t jj = index(j,j);
-    // 	    	    size_t ij = index(i,j);
-    // 	    	    //q += V(ii,jj) - V(ij,ij);
-    // 	    	}
-    // 	    	for (auto &j : b.occ()) {
-    // 	    	    size_t jj = index(j,j);
-    // 	    	    size_t ij = index(i,j);
-    // 	    	    //q += V(ii,jj);
-    // 	    	}
-    // 	    }
-    // 	    for (int i : b.occ()) {
-    // 	    	size_t ii = index(i,i);
-    // 	    	q += h(ii);
-    // 	    	for (auto &j : b.occ()) {
-    // 	    	    size_t jj = index(j,j);
-    // 	    	    size_t ij = index(i,j);
-    // 	    	    //q += V(ii,jj) - V(ij,ij);
-    // 	    	}
-    // 	    }
-    // 	    H[k++] = q;
-    // 	}
-    // }
-
-    // template<class Index>
-    // Vector diagonal(const String::List<Index> &alpha,
-    // 		    const String &beta,
-    // 		    const Vector &h, const Matrix &V) {
-    // 	Vector H(alpha.size());
-    // 	diagonal(alpha, beta, h, V, H);
-    // 	return H;
-    // }
-
 } // namespace ci
 } // namespace mpqc
 

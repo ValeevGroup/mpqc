@@ -114,6 +114,10 @@ you can edit <tt>src/lib/mpqc_config.h</tt> and <tt>lib/LocalMakefile</tt> to
 suit your needs.  The next time you run configure, these files and
 all the makefiles will be overwritten.
 
+MPQC can be compiled with a number of compilers. Each compiler has its own quirks.
+For issues, tips, and workarounds for various compilers see @ref Compilers 
+
+
 \section compilecomp Compilation
 
  Now you are ready to build the libraries and executables.  Do this by

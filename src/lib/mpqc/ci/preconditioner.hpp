@@ -21,32 +21,48 @@ namespace ci {
 
         double dd = 0;
 
-        for (const auto &B : ci.subspace.beta()) {
-        for (auto rb : range::split(B & ci.local.beta, ci.block)) {
+        std::vector< Subspace<Alpha> > A = split(ci.subspace.alpha(), ci.block);
+        std::vector< Subspace<Beta> > B = split(ci.subspace.beta(), ci.block);
 
-            auto A = ci.allowed(B); // allowed alpha subspaces
-            for (range ra : A) {
-                //std::cout << rb << " out of " << local << std::endl;
-                mpqc::Matrix d = D(ra,rb);
-                mpqc::Vector aa(ra.size());
-                for (int a = 0; a < ra.size(); ++a) {
-                    aa(a) = diagonal(alpha[ra[a]], h, V);
-                }
-#pragma omp parallel for schedule(dynamic,1)
-                for (int j = 0; j < rb.size(); ++j) {
-                    const String &bj = beta[rb[j]];
-                    double bb = diagonal(bj, h, V);
-                    for (int a = 0; a < ra.size(); ++a) {
-                        double q = diagonal2(alpha[ra[a]], bj, V);
-                        q = (lambda - (q + aa(a) + bb));
-                        d(a,j) = (fabs(q) > 1.0e-4) ? d(a,j)/q : 0;
-                    }
-                }                
-                D(ra,rb) = d;
-                dd += dot(d, d);
+        struct Tuple {
+            int a, b;
+            Tuple(int a, int b) : a(a), b(b) {}
+        };
+        std::vector<Tuple> tuples;
+        // (a,b) block tuples
+        for (int b = 0; b < B.size(); ++b) {
+            for (int a = 0; a < A.size(); ++a) {
+                if (!ci.test(A.at(a), B.at(b))) continue;
+                tuples.push_back(Tuple(a,b));
             }
-
         }
+
+        MPI::Task task(comm);
+#pragma omp parallel
+        while (true) {
+
+            auto next = task.next(tuples.begin(), tuples.end());
+            if (next == tuples.end()) break;
+            auto Ia = A.at(next->a);
+            auto Ib = B.at(next->b);
+
+            //std::cout << rb << " out of " << local << std::endl;
+            mpqc::Matrix d = D(Ia,Ib);
+            mpqc::Vector aa(Ia.size());
+            for (int a = 0; a < Ia.size(); ++a) {
+                aa(a) = diagonal(alpha[*Ia.begin() + a], h, V);
+            }
+            for (int j = 0; j < Ib.size(); ++j) {
+                const String &bj = beta[*Ib.begin() + j];
+                double bb = diagonal(bj, h, V);
+                for (int a = 0; a < Ia.size(); ++a) {
+                    double q = diagonal2(alpha[*Ia.begin() + a], bj, V);
+                    q = (lambda - (q + aa(a) + bb));
+                    d(a,j) = (fabs(q) > 1.0e-4) ? d(a,j)/q : 0;
+                }
+            } 
+            D(Ia,Ib) = d;
+            dd += dot(d, d);
         }
 
         comm.sum(dd);

@@ -1,0 +1,37 @@
+/**
+   @page Compilers Compilers Issues
+   
+   @section GNU
+
+   To compile with GNU compilers:
+   @code
+   ./configure CXX=g++
+   @endcode
+
+   We are not aware of any significant issues with the GNU compilers.
+
+
+   @section Intel
+
+   To compile with Intel compilers, set appropriate CXX (and optionally C and FC):
+   @code
+   ./configure CXX=icpc
+   @endcode
+   
+   C++11 support is incomplete as of version 13.
+   See
+   <a href="http://software.intel.com/en-us/articles/c0x-features-supported-by-intel-c-compiler">
+   C++11 Features Supported by Intel® C++ Compiler
+   </a>
+
+   Compiling Eigen generates lots of warnings #2536 and #2196.  
+   Those can be disabled with <tt>-wd</tt> switch, eg:
+   @code
+   ./configure CXX=icpc CXXFLAGS="-wd2536,2196"
+   @endcode
+
+   Using for range loops and openmp causes Intel compilers (at least version 13.0.1) to segfault,
+   <tt>internal error: assertion failed at: "shared/cfe/edgcpfe/checkdir.c", line 5406<\tt>.
+   As a workaround in production code use @link foreach @endlink macro.
+
+*/

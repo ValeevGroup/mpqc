@@ -6,6 +6,8 @@
 #include "mpqc/math/matrix.hpp"
 #include "mpqc/mpi.hpp"
 #include "mpqc/file.hpp"
+
+#include "mpqc/utility/foreach.hpp"
 #include "mpqc/utility/check.hpp"
 #include "mpqc/utility/exception.hpp"
 
@@ -64,7 +66,7 @@ namespace ci {
         /// Split the subspace into a vector of subspaces
         std::vector<Subspace> split(size_t block) const {
             std::vector<Subspace> s;
-            for (auto r : mpqc::range::split(*this, block)) {
+            foreach (auto r, mpqc::range::split(*this, block)) {
                 s.push_back(Subspace(*this, r));
             }
             return s;
@@ -85,11 +87,22 @@ namespace ci {
         }
     };
 
+    template<class Spin>
+    std::vector< Subspace<Spin> > split(const std::vector< Subspace<Spin> > &V, size_t block) {
+        std::vector< Subspace<Spin> > S;
+        foreach (auto v, V) {
+            foreach (auto s, v.split(block)) {
+                S.push_back(s);
+            }
+        }
+        return S;
+    }
+
     /// Extent of the vector of subspace, ie the [0:last) range
     template<class Spin>
     mpqc::range extents(const std::vector< Subspace<Spin> > &R) {
         size_t last = 0;
-        for (auto r : R) {
+        foreach (auto r, R) {
             last = std::max<size_t>(last, *r.end());
         }
         return mpqc::range(0, last);
@@ -184,7 +197,7 @@ namespace ci {
             int begin = 0;
             if (V.size() != N)
                 throw MPQC_EXCEPTION("Subspace vector size must be equal to %i", N);
-            for (auto r : V) {
+            foreach (auto r, V) {
                 if (begin != *r.begin())
                     throw MPQC_EXCEPTION("Subspace vector is not contigous");
                 begin = *r.end();
@@ -197,7 +210,7 @@ namespace ci {
         /// @throws MPQC_EXCEPTION if string index does not belong to any subspace
         template<class Spin>
         Space<Spin> space(int idx, const std::vector< Subspace<Spin> > &V) const {
-            for (const auto &s : V) {
+            foreach (const auto &s, V) {
                 //std::cout << "idx=" << idx << " s=" << s.rank() << " " << mpqc::range(s) << std::endl;
                 if (*s.begin() <= idx && idx < *s.end()) return s;
             }

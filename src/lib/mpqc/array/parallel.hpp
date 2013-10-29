@@ -63,7 +63,7 @@ namespace detail {
                 if (tile.local) {
                     std::string suffix = ".part" + string_cast(comm.rank());
 		    try {
-			tile.data = new Impl(name + suffix, tile.extents);
+			tile.data = new Impl(this->name() + suffix, tile.extents);
 		    }
 		    catch (std::exception e) {
 			comm.cout << e.what() << std::endl;

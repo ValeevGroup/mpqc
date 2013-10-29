@@ -17,18 +17,6 @@
 namespace mpqc {
 namespace ci {
 
-    template<class Spin>
-    std::vector< Subspace<Spin> > split(const std::vector< Subspace<Spin> > &V, size_t block) {
-        std::vector< Subspace<Spin> > S;
-        for (auto v : V) {
-            for (auto s : v.split(block)) {
-                S.push_back(s);
-            }
-        }
-        return S;
-    }
-
-
     /// Computes sigma 1,2,3 contributions
     template<class Type, class Index>
     void sigma(const CI<Type, Index> &ci,
@@ -83,7 +71,7 @@ namespace ci {
             Matrix s = Matrix::Zero(Ia.size(), Ib.size()); //S(Ia, Ib);
 
             // sigma1
-            for (auto Jb : beta) {
+            foreach (auto Jb, beta) {
                 // only single and double excitations are allowed
                 if (!ci.test(Ia,Jb) || ci.diff(Ib,Jb) > 2) continue;
                 Matrix c = C(Ia,Jb);
@@ -98,7 +86,7 @@ namespace ci {
 
             // sigma2, need to transpose s, c
             s = Matrix(s.transpose());
-            for (auto Ja : alpha) {
+            foreach (auto Ja, alpha) {
                 if (!ci.test(Ja,Ib) || ci.diff(Ia,Ja) > 2) continue;
                 Matrix c = Matrix(C(Ja,Ib)).transpose();
                 timer t;
@@ -127,13 +115,13 @@ namespace ci {
 
             // excitations from Ib into each Jb subspace
             std::vector< Excitations<Beta> > BB;
-            for (auto Jb : beta) {
+            foreach (auto Jb, beta) {
                 BB.push_back(Excitations<Beta>(ci, Ib, Jb));
             }
 
             // excitations from Ia into each Ja subspace
             std::vector< Excitations<Alpha> > AA;
-            for (auto Ja : alpha) {
+            foreach (auto Ja, alpha) {
                 AA.push_back(Excitations<Alpha>(ci, Ia, Ja));
             }
             

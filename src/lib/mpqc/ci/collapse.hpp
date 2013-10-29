@@ -15,6 +15,8 @@
 namespace mpqc {
 namespace ci {
 
+    /// NOT finished
+
     void collapse() {
         // collapse
         if (ci.collapse && (M > ci.collapse)) {

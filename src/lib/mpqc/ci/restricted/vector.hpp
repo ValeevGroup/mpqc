@@ -226,7 +226,7 @@ namespace ci {
         static std::vector< Subspace<Spin> > slice(const std::vector< Subspace<Spin> > &V,
                                                 const std::vector<int> &indices) {
             std::vector< Subspace<Spin> > slice;
-            for (int i : indices) {
+            foreach (int i, indices) {
                 slice.push_back(V.at(i));
             }
             return slice;

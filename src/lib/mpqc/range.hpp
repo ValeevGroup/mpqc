@@ -15,14 +15,19 @@
 
 namespace mpqc {
 
-/// @addtogroup MathRange
-/// @{
+    /// @addtogroup MathRange
+    /// @{
 
     struct range_block_iterator;
 
     struct range : 
 	boost::iterator_range<boost::range_detail::integer_iterator<int> >
     {
+
+        // typedef boost::iterator_range<
+        //     boost::range_detail::integer_iterator<int>
+        //     >::iterator_category iterator_category;
+
 	typedef boost::iterator_range<
 	    boost::range_detail::integer_iterator<int> > iterator_range;
 

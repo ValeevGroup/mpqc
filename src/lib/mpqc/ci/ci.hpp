@@ -110,7 +110,7 @@ namespace ci {
         /// Allowed Alpha spaces given Beta space b.
         std::vector< Subspace<Alpha> > allowed(const Space<Beta> &b) const {
             std::vector< Subspace<Alpha> > A;
-            for (auto a : subspace.alpha()) {
+            foreach (auto a, subspace.alpha()) {
                 if (!test(a,b)) continue;
                 A.push_back(a);
             }
@@ -146,7 +146,9 @@ namespace ci {
         void initialize(File::Group io, range local) {
             // can't have size-0 datasets (size-0 has special meaning)
             MPQC_CHECK(local.size() > 1);
-            std::vector<range> extents{local, range(0,Config::max)};
+            std::vector<range> extents(2);
+	    extents[0] = local;
+	    extents[1] = range(0,Config::max);
             this->vector.b = File::Dataset<double>(io, "b", extents);
             this->vector.Hb = File::Dataset<double>(io, "Hb", extents);
             guess(local);
@@ -192,9 +194,9 @@ namespace ci {
             out << std::endl;
             // allowed excitation
             out << "allowed excitations" << std::endl;
-            for (auto a : subspace.alpha()) {
+            foreach (auto a, subspace.alpha()) {
                 out << "| ";
-                for (auto b : subspace.beta()) {
+                foreach (auto b, subspace.beta()) {
                     out << test(a,b) << " ";
                 }
                 out << "|" << std::endl;
@@ -212,7 +214,7 @@ namespace ci {
             int r = 0;
             std::vector< Subspace<Spin> > R;
             int begin = 0, end = 0;
-            for (const auto &s : S) {
+            foreach (const auto &s, S) {
                 int x = this->excitation(s);
                 if (x == r+1) {
                     R.push_back(Subspace<Spin>(Space<Spin>(r), mpqc::range(begin, end)));
@@ -242,21 +244,6 @@ namespace ci {
         private:
             const CI *ci_;
         };
-
-    protected:
-
-        // /// Returns allowed excitation range in space 2 given excitation of space 1.
-        // template<Spin S1, Spin S2>
-        // mpqc::range allowed(const Space<S1> &s1, const std::vector< Subspace<S2> > &s2) const {
-        //     int last = 0;
-        //     for (const Subspace<S2> &s : s2) {
-        //         if (!test(s,s1)) continue;
-        //         // must be contigous
-        //         MPQC_CHECK(last == *s.begin());
-        //         last += s.size();
-        //     }
-        //     return mpqc::range(0, last);
-        // }
 
     };
 

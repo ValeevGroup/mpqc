@@ -8,6 +8,44 @@
 
 namespace mpqc {
 namespace ci {
+namespace detail {
+
+    template<typename T, typename U>
+    void symmetrize(Array<T> &A, U &counter, size_t B) {
+        assert(A.rank() == 2);
+        assert(A.dims()[0] == A.dims()[1]);
+
+        size_t N = A.dims()[0];
+        matrix<T> Aij(B,B), Aji(B,B);
+
+        for (size_t j = 0, ij = 0, next = counter++; j < N; j += B) {
+            for (size_t i = 0; i <= j; i += B, ++ij) {
+
+                if (ij != next) continue;
+                next = counter++;
+
+                range ri(i, std::min(i+B,N));
+                range rj(j, std::min(j+B,N));
+
+                Aij.resize(ri.size(), rj.size());
+                Aji.resize(rj.size(), ri.size());
+                A(ri,rj) >> Aij;
+                A(rj,ri) >> Aji;
+                Aij = Aij + Aji.transpose();
+                Aji = Aij.transpose();
+                A(ri,rj) << Aij;
+                A(rj,ri) << Aji;                
+            }
+        }
+    }
+
+}
+}
+}
+
+
+namespace mpqc {
+namespace ci {
 
     template<class CI>
     struct Vector;
@@ -17,7 +55,31 @@ namespace ci {
         a.put(v);
     }
 
-    void symmetrize(Matrix &a, double phase, double scale) {
+    template<typename T>
+    void symmetrize(mpqc::Array<T> &A, MPI::Comm comm, size_t B = 1024) {
+        MPI::Task task(comm);
+        detail::symmetrize(A, task, B);
+    }
+
+    template<typename T>
+    void symmetrize(mpqc::Array<T> &A, size_t B = 1024) {
+        size_t counter = 0;
+        detail::symmetrize(A, counter, B);
+    }
+
+    template<class A>
+    void symmetrize(Eigen::MatrixBase<A> &a) {
+        MPQC_CHECK(a.rows() == a.cols());
+        for (size_t j = 0; j < a.cols(); ++j) {
+            for (size_t i = 0; i <= j; ++i) {
+                a(i,j) += a(j,i);
+                a(j,i) = a(i,j);
+            }
+        }
+    }
+
+    template<class A>
+    void symmetrize(Eigen::MatrixBase<A> &a, double phase, double scale) {
         MPQC_CHECK(a.rows() == a.cols());
         for (size_t j = 0; j < a.cols(); ++j) {
             a(j,j) *= scale;
@@ -34,7 +96,7 @@ namespace ci {
                     size_t block = 512) {
         MPQC_CHECK(A.dims()[0] == A.dims()[1]);
         Matrix a;
-        std::vector<range> r = range::block(range(0, A.dims()[1]), block);
+        std::vector<range> r = range::split(range(0, A.dims()[1]), block);
         MPI::Task task(comm);
         int next = task++;
         int ij = 0;
@@ -63,7 +125,7 @@ namespace ci {
     }
 
     template<class CI>
-    double norm(ci::Vector<CI> v, const MPI::Comm &comm, range local, size_t block) {
+    double norm(ci::Vector<CI> &v, const MPI::Comm &comm, range local, size_t block) {
         double n = 0;
         foreach (auto r, local.block(block)) {
             n += mpqc::Vector(v(r)).norm();
@@ -76,7 +138,7 @@ namespace ci {
     /// d' = normalized(d - <d,b>*b)
     /// @return <d,b>*<d',d'>
     template<class CI>
-    double orthonormalize(ci::Vector<CI> b, ci::Vector<CI> D,
+    double orthonormalize(ci::Vector<CI> &b, ci::Vector<CI> &D,
                           MPI::Comm &comm,
                           range local, size_t block) {
         // N.B. foreach doesn't work with openmp

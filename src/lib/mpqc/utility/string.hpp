@@ -15,6 +15,21 @@ namespace mpqc {
 	return boost::lexical_cast<std::string>(value);
     }
 
+    /// cstring-like object to cast a value to <c>const char*<\c> string.
+    struct cstring {
+        template <typename T>
+        explicit cstring(const T& value)
+            : str_(string_cast(value)) {}
+        operator const char*() const {
+            return this->str();
+        }
+        const char* str() const {
+            return str_.c_str();
+        }
+    private:
+        std::string str_;
+    };
+
     /// @}
 
 }

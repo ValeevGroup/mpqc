@@ -404,13 +404,13 @@ namespace detail {
             array_proxy ds(object, r);
 	    
 	    {
-		MPQC_PROFILE_LINE;
+		//MPQC_PROFILE_LINE;
 		//printf("message dst=%i tag=%i\n", proc, thread_->tag());
 		thread_->send(Message(tag, OP, ds.descriptor()), proc);
 	    }
 
 	    {
-		MPQC_PROFILE_LINE;
+		//MPQC_PROFILE_LINE;
 		//printf("descriptor dst=%i tag=%i\n", proc, tag);
 		thread_->send(&ds.data[0], ds.data.size(), MPI_INT, proc, tag);
 	    }
@@ -423,14 +423,14 @@ namespace detail {
             for (int i = 0; i < segments.size(); ++i) {
                 size_t size = segments[i].size;
                 if (OP == Message::READ) {
-		    MPQC_PROFILE_LINE;
+		    //MPQC_PROFILE_LINE;
 		    // printf("recv segment %i bytes=%lu proc=%i tag=%i\n",
 		    // 	   i, size*sizeof(T), proc, tag);
                     /*requests[i] = i*/
                     thread_->recv(buffer, size*sizeof(T), MPI_BYTE, proc, tag);
 		}
                 if (OP == Message::WRITE) {
-		    MPQC_PROFILE_LINE;
+		    //MPQC_PROFILE_LINE;
  		    // printf("send segment %i bytes=%lu proc=%i tag=%i\n",
 		    // 	   i, size*sizeof(T), proc, tag);
                     /*requests[i] = i*/

@@ -48,9 +48,7 @@ namespace MPI {
         static MPI::Comm Self() { return Comm(); }
         static MPI::Comm World() { return Comm(); }
         static MPI::Comm dup(MPI::Comm comm) { return Comm(); }
-        bool operator==(const Comm &comm) const {
-            return true;
-        }
+        bool operator==(const Comm &comm) const { return true; }
         void free() {}
         int rank() const { return 0; }
         int size() const { return 1; }

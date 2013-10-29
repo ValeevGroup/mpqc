@@ -8,19 +8,20 @@
 namespace mpqc {
 namespace ci {
 
-    template<class Index>
-    struct Vector< Full<Index> > {
+    template<>
+    struct Vector<Full> {
 
         typedef mpqc::Array<double> Array;
 
-        Vector(std::string name, const CI< Full<Index> > &ci)
+        template<class Index>
+        Vector(std::string name, const CI<Full, Index> &ci)
             : array_(name, dims(ci), ci.comm),
               alpha_(ci.alpha.size()),
               beta_(ci.beta.size())
         {
         }
 
-        struct Slice {
+        struct Slice1d {
             size_t size() const {
                 return range1d_.size();
             }
@@ -73,7 +74,7 @@ namespace ci {
             range range1d_;
             std::vector<range> range2d_;
             Array array_;
-            Slice(Vector &v, range r)
+            Slice1d(Vector &v, range r)
                 : range1d_(r), range2d_(range2d(v, r)),
                   array_(v.array_(range2d_)) {}
             static std::vector<range> range2d(const Vector &v, range r) {
@@ -88,22 +89,55 @@ namespace ci {
             }
         };
 
-        Slice operator()(range r) {
-            return Slice(*this, r);
+        Slice1d operator()(range r) {
+            return Slice1d(*this, r);
         }
 
-        operator Array&() {
-            return this->array_;
+        struct Slice2d : mpqc::Matrix::Assignable {
+        public:
+            void operator=(const mpqc::Matrix &m) {
+                this->array_ << m;
+            }
+            void assign_to(mpqc::Matrix &m) const {
+                m.resize(this->array_.dims()[0], this->array_.dims()[1]);
+                this->array_ >> m;
+            }
+        private:
+            friend class Vector;
+            Array array_;
+            Slice2d(const Array &a) : array_(a) {}
+        };
+
+        Slice2d operator()(range ri, range rj) {
+            return this->array_(ri,rj);
         }
+
+        Slice2d operator()(range ri, range rj) const {
+            return this->array_(ri,rj);
+        }
+
+        // operator Array&() {
+        //     return this->array_;
+        // }
 
         void sync() {
             array_.sync();
         }
 
+        void symmetrize(size_t block = 512) {
+            ci::symmetrize(this->array_, this->array_.comm(), block);
+        }
+
+        void symmetrize(double phase, double scale, size_t block = 512) {
+            const MPI::Comm &comm = this->array_.comm();
+            ci::symmetrize(this->array_, phase, scale, comm, block);
+        }
+
     private:
         Array array_;
         size_t alpha_, beta_;
-        static std::vector<size_t> dims(const CI< Full<Index> > &ci) {
+        template<class Index>
+        static std::vector<size_t> dims(const CI<Full, Index> &ci) {
             std::vector<size_t> v{ ci.alpha.size(), ci.beta.size() };
             //std::cout << "v=" << v.size() << std::endl;
             return v;

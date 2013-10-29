@@ -152,6 +152,41 @@ namespace ci {
         return os;
     }
 
+
+    /// Computes parity, 1 for even parity, -1 for odd
+    inline int sgn(size_t ij) {
+        return (ij % 2) ? -1 : 1;
+    }
+
+
+    /// Compute parity of exciting i to j (or j to i).
+    /// Counts number of set bits in open interval (i:j)
+    /// and returns parity of the pop count.
+    inline int sgn(const String &I, int i, int j) {
+        uint64_t b = I.to_ulong();
+        int n = std::abs(i - j);
+        if (j < i)
+            std::swap(i, j);
+        b = b << (63 - j);
+        b = b << 1;
+        b = b >> 2;
+        b = b >> (63 - n);
+        size_t p = String::bitset(b).count();
+        //size_t p = _mm_popcnt_u64(b);
+#ifndef NDEBUG
+        assert(p < I.count());
+        size_t q = 0;
+        for (int k = std::min(i,j)+1; k < std::max(i,j); ++k) {
+            q += I[k];
+        }
+        // printf("string %s(%lu) [%i,%i] b=%lu, p=%lu, q=%lu\n",
+        //        std::string(I).c_str(), I.to_ulong(), i,j, b, p, q);
+        assert(p == q);
+#endif
+        return sgn(p);
+    }
+
+
     /**
      * String::List represents a set of String objects.
      * The objects are stored as a sequence that can be accessed randomly.

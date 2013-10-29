@@ -13,6 +13,7 @@
 
 #include <stdio.h>
 #include <stdexcept>
+#include <boost/thread.hpp>
 
 namespace mpqc {
 namespace MPI {

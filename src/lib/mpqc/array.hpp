@@ -11,14 +11,14 @@
 #include "mpqc/array/parallel.hpp"
 #endif
 
-#include "mpqc/assert.hpp"
+#include "mpqc/utility/check.hpp"
 #include "mpqc/utility/foreach.hpp"
+#include "mpqc/utility/exception.hpp"
 
 namespace mpqc {
 
     /// @addtogroup MathArray
     /// @{
-
 
     /// Array implementation.
     /// Array can either be serial or parallel and reside in memory or filesystem.
@@ -54,6 +54,10 @@ namespace mpqc {
             range_ = a.range_;
             dims_ = a.dims_;
             impl_ = a.impl_;
+        }
+
+        const MPI::Comm& comm() const {
+            return impl_->comm();
         }
 
         /// Put buffer data into array
@@ -166,16 +170,17 @@ namespace mpqc {
 
 	    detail::ArrayBase *impl = NULL;
 	    if (comm == MPI::Comm::Self()) {
-		impl = new detail::array_impl<T, Driver>(name, dims_);
+		impl = new detail::array_impl<T, Driver>(name, dims_, comm);
 	    }
 	    else {
 #ifdef HAVE_MPI
 		impl = new detail::array_parallel_impl<T, Driver>(name, dims_, comm);
 #else // HAVE_MPI
-                throw std::runtime_error("Parallel array not implemented: "
-                                         "library was compiled without MPI");
+                throw MPQC_EXCEPTION("Parallel array not implemented: "
+                                     "library was compiled without proper MPI support");
 #endif // HAVE_MPI
 	    }
+            MPQC_CHECK(impl);
 	    this->impl_.reset(impl);
 	}
 

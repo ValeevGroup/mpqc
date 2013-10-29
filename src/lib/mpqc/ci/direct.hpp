@@ -27,7 +27,7 @@ namespace ci {
 
         const auto &alpha = ci.alpha;
         const auto &beta = ci.beta;
-        size_t BLOCK = alpha.size()*ci.block;
+        size_t BLOCK = ci.block*ci.block; //*omp::max_threads(); may not be same across nodes
 
         mpqc::Matrix G;
         struct Iter {
@@ -82,16 +82,16 @@ namespace ci {
                 mpqc::Vector g = mpqc::Vector::Zero(M);
                 foreach (auto r, local.determinants.block(BLOCK)) {
                     mpqc::Vector c(r.size());
-                    const mpqc::Vector &s = D(r);
+                    mpqc::Vector s = D(r);
                     for (int j = 0; j < M; ++j) {
                         ci.vector.b(r,j) >> c;
                         g(j) += c.dot(s);
                     }
                 }
-                //std::cout << "g: " << g << std::endl;
                 comm.sum(g.data(), M);
                 G.row(it) = g;
                 G.col(it) = g;
+                //std::cout << "G = \n" << G << std::endl;
             }
 
             // solve G eigenvalue
@@ -154,7 +154,7 @@ namespace ci {
 
             }
 
-            MPQC_PROFILE_DUMP(std::cout);
+            std::cout << "Davidson iteration time: " << t << std::endl;
 
             if (fabs(iters[it - 1].E - iters[it].E) < ci.convergence) {
                 E.push_back(iters[it].E);

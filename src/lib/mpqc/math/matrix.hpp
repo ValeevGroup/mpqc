@@ -14,6 +14,7 @@ namespace mpqc {
 
     /// @addtogroup MathMatrix
     /// @{
+    
 
     /// Matrix class derived from Eigen::Matrix with additional MPQC integration
     template<typename T, int Order = Eigen::ColMajor>
@@ -44,6 +45,21 @@ namespace mpqc {
         matrix(const sc::RefSymmSCMatrix &a) {
             this->resize(a.n(), a.n());
             apply(assign(), this->rows(), this->cols(), *this, a);
+        }
+
+        /// An interface to enable matrix assignment from other containers.
+        /// A container must implement assign_to function which will assign
+        /// its data to a matrix.
+        /// The purpose of this interface to avoid creating matrix intermediates.
+        struct Assignable {
+            virtual ~Assignable() {}
+            /// Assign data to matrix.
+            virtual void assign_to(matrix &m) const = 0;
+        };
+
+        /// Constructs matrix from an Assignable container
+        matrix(const Assignable &a) {
+            a.assign_to(*this);
         }
 
 #ifdef DOXYGEN

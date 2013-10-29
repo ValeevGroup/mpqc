@@ -47,9 +47,11 @@ namespace mpqc {
 
         boost::iterator_range<range_block_iterator> block(size_t N) const;
 
-        static std::vector<range> block(range r, size_t N) {
+        static std::vector<range> split(range r, size_t N) {
+            if (N >= r.size())
+                return std::vector<range>(1, r);
             std::vector<range> blocks;
-            for (int i = *r.begin(); i < *r.end(); i += N) {
+            for (auto i = *r.begin(); i < *r.end(); i += N) {
                 blocks.push_back(range(i, std::min<int>(i+N, *r.end())));
             }
             return blocks;

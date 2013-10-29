@@ -22,7 +22,7 @@
 #include "mpqc/range.hpp"
 #include "mpqc/range/operator.hpp"
 
-#include "mpqc/assert.hpp"
+#include "mpqc/utility/check.hpp"
 #include "mpqc/utility/foreach.hpp"
 #include "mpqc/utility/timer.hpp"
 #include "mpqc/utility/mutex.hpp"

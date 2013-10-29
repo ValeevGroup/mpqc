@@ -2,35 +2,72 @@
 #define MPQC_CI_FULL_HPP
 
 #include "mpqc/ci/ci.hpp"
-#include "mpqc/ci/string.hpp"
+#include "mpqc/utility/exception.hpp"
 
 namespace mpqc {
 namespace ci {    
 
-    template<class Index = ci::String::Index>
-    struct Full {
-        ci::String::List<Index> alpha, beta;
-        size_t dets;
+    struct Full;
+
+
+    template<class Index>
+    struct CI<Full, Index> : CI<void, Index> {
+
+        typedef CI<void, Index> Base;
+
         struct {
-            range beta;
             range determinants;
+            range alpha, beta;
         } local;
-        explicit Full(const Config &config, MPI::Comm comm)
-            : alpha(ci::strings(config.orbitals, config.electrons.alpha, config.rank)),
-              beta(ci::strings(config.orbitals, config.electrons.beta, config.rank))
+
+        CI(const Config &config, MPI::Comm comm, File::Group io)
+            : CI<void, Index>(config, comm)
         {
-            this->dets = alpha.size()*beta.size();
+            auto &alpha = Base::alpha;
+            auto &beta = Base::beta;
+
+            // // sort/space strings according to rank (excitation)
+            // Base::template sort<Alpha>(alpha);
+            // Base::template sort<Beta>(beta);
+            // mpqc::matrix<bool> allowed = mpqc::matrix<bool>::Constant(1, 1, true);
+            // std::vector< Subspace<Alpha> >
+            //     sa{ Subspace<Alpha>(Space<Alpha>(0), mpqc::range(0, alpha.size())) };
+            // std::vector< Subspace<Beta> >
+            //     sb{ Subspace<Beta>(Space<Beta>(0), mpqc::range(0, beta.size())) };
+
+            // sort/space strings according to rank (excitation)
+            const auto &sa = Base::template sort<Alpha>(alpha);
+            const auto &sb = Base::template sort<Beta>(beta);
+            mpqc::matrix<bool> allowed = mpqc::matrix<bool>::Constant(sa.size(), sb.size(), true);
+
+            Base::subspace = SubspaceGrid(sa, sb, allowed);
             this->local.beta =
-                range(beta.size()).split2(comm.size()).at(comm.rank());
+                range(beta.size()).split2(Base::comm.size()).at(Base::comm.rank());
             this->local.determinants =
-                range(*local.beta.begin()*alpha.size(), *local.beta.end()*alpha.size());
+                range(*local.beta.begin()*alpha.size(),
+                      *local.beta.end()*alpha.size());
+            Base::initialize(io, local.determinants);
+            Base::summary();
         }
+
+        using Base::test;
+
+        /// tests if the excitation to a is allowed
+        bool test(const String &a) const {
+            return true;
+        }
+
+        /// tests if simultaneous excitation to a and b is allowed
         bool test(const String &a, const String &b) const {
             return true;
         }
-    };
 
-    typedef CI< Full<> > FullCI;
+        /// tests if simultaneous excitation to space a and space b is allowed
+        bool test(const Space<Alpha> &a, const Space<Beta> &b) const {
+            return true;
+        }
+
+    };
 
 } // namespace ci
 } // namespace mpqc

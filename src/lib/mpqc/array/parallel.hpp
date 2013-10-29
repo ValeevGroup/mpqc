@@ -36,9 +36,12 @@ namespace detail {
 	array_parallel_impl(const std::string &name,
 			    const std::vector<size_t> &dims,
 			    MPI::Comm comm)
-            : ArrayBase(dims),
-	      comm_(MPI::Comm::dup(comm))
+            : ArrayBase(name, dims, MPI::Comm::dup(comm))
         {
+            initialize(ArrayBase::dims_, ArrayBase::comm_);
+        }
+
+        void initialize(const std::vector<size_t> &dims, const MPI::Comm &comm) {
 
             int np = comm.size();
             size_t block = (dims.back() + np - 1)/np;
@@ -84,6 +87,10 @@ namespace detail {
 
         void sync() {
             comm_.sync();
+        }
+
+        const MPI::Comm& comm() const {
+            return this->comm_;
         }
 
     protected:

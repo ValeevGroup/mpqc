@@ -123,11 +123,11 @@ std::vector<double> sc::CI::compute(const Ref<RefWavefunction> &wfn,
 
   std::vector<double> E;
 
-  if (config.rank > 0) {
-      mpqc::ci::RestrictedCI ci(config, comm, file->group());
+  if (config.rank) {
+      mpqc::ci::CI<mpqc::ci::Restricted> ci(config, comm, file->group());
       E = mpqc::ci::direct(ci, h, V);
   } else {
-      mpqc::ci::FullCI ci(config, comm, file->group());
+      mpqc::ci::CI<mpqc::ci::Full> ci(config, comm, file->group());
       E = mpqc::ci::direct(ci, h, V);
   }
 

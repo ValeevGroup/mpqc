@@ -25,7 +25,7 @@ namespace MPI {
 
         /// Construct new task
         /// @warning NOT threadsafe
-        explicit Task(MPI::Comm comm)
+        explicit Task(const MPI::Comm &comm)
             : comm_(comm), data_(0)
         {
 #ifdef HAVE_ARMCI
@@ -78,6 +78,17 @@ namespace MPI {
         mpqc::range next(range r, int block = 1) {            
             int i = block*((*this)++);
             return (r & mpqc::range(i, i+block));
+        }
+
+        template<typename Iterator>
+        Iterator next(Iterator begin, Iterator end) {
+            Iterator it = begin;
+            int n = (*this)++;
+            for (int i = 0; i < n; ++i) {
+                if (it == end) break;
+                ++it;
+            }
+            return it;
         }
 
     private:

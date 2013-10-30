@@ -1361,6 +1361,8 @@ void PT2R12::compute()
       cabs_singles_e = cabs_singles_Dyall();
     else if(cabs_singles_h0_ == string("dyall_2"))
       cabs_singles_e = cabs_singles_Dyall();
+    else if(cabs_singles_h0_ == string("fock"))
+    cabs_singles_e = cabs_singles_Fock();
     else
       throw InputError("invalid value for keyword cabs_singles_h0",
                        __FILE__, __LINE__,

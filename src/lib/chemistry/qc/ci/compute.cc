@@ -3,9 +3,6 @@
 #include <stdexcept>
 #include <cassert>
 
-//#define MPQC_PROFILE_ENABLE
-#include "mpqc/utility/profile.hpp"
-
 #include <chemistry/qc/nbody/nbwfn.h>
 
 #include "mpqc/ci/integrals.hpp"

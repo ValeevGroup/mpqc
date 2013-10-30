@@ -14,6 +14,9 @@
 #include "mpqc/array.hpp"
 #include "mpqc/array/functions.hpp"
 
+#define MPQC_PROFILE_ENABLE
+#include "mpqc/utility/profile.hpp"
+
 namespace mpqc {
 namespace ci {
 
@@ -22,6 +25,8 @@ namespace ci {
     void sigma(const CI<Type, Index> &ci,
                const mpqc::Vector &h, const Matrix &V,
                ci::Vector<Type> &C, ci::Vector<Type> &S) {
+
+        MPQC_PROFILE_REGISTER_THREAD;
 
         struct { double s1, s2, s3; timer t; } time = { };
 
@@ -46,16 +51,21 @@ namespace ci {
 
         struct Tuple {
             int a, b;
-            Tuple(int a, int b) : a(a), b(b) {}
+            size_t size;
+            Tuple(int a, int b, size_t size) : a(a), b(b), size(size) {}
+            bool operator<(const Tuple &o) const {
+                return this->size > o.size;
+            }
         };
         std::vector<Tuple> tuples;
         // (a,b) block tuples
         for (int b = 0; b < beta.size(); ++b) {
             for (int a = 0; a < alpha.size(); ++a) {
                 if (!ci.test(alpha.at(a), beta.at(b))) continue;
-                tuples.push_back(Tuple(a,b));
+                tuples.push_back(Tuple(a, b, alpha.at(a).size()*beta.at(b).size()));
             }
         }
+        std::sort(tuples.begin(), tuples.end());
 
         std::auto_ptr<MPI::Task> task;
 
@@ -72,6 +82,7 @@ namespace ci {
 
             // sigma1
             foreach (auto Jb, beta) {
+                MPQC_PROFILE_LINE;
                 // only single and double excitations are allowed
                 if (!ci.test(Ia,Jb) || ci.diff(Ib,Jb) > 2) continue;
                 Matrix c = C(Ia,Jb);
@@ -87,6 +98,7 @@ namespace ci {
             // sigma2, need to transpose s, c
             s = Matrix(s.transpose());
             foreach (auto Ja, alpha) {
+                MPQC_PROFILE_LINE;
                 if (!ci.test(Ja,Ib) || ci.diff(Ia,Ja) > 2) continue;
                 Matrix c = Matrix(C(Ja,Ib)).transpose();
                 timer t;
@@ -116,12 +128,14 @@ namespace ci {
             // excitations from Ib into each Jb subspace
             std::vector< Excitations<Beta> > BB;
             foreach (auto Jb, beta) {
+                MPQC_PROFILE_LINE;
                 BB.push_back(Excitations<Beta>(ci, Ib, Jb));
             }
 
             // excitations from Ia into each Ja subspace
             std::vector< Excitations<Alpha> > AA;
             foreach (auto Ja, alpha) {
+                MPQC_PROFILE_LINE;
                 AA.push_back(Excitations<Alpha>(ci, Ia, Ja));
             }
             
@@ -132,6 +146,7 @@ namespace ci {
                 s += Matrix(s).transpose();
 
             for (auto bb = BB.begin(); bb != BB.end(); ++bb) {
+                MPQC_PROFILE_LINE;
                 //if (!bb->size()) continue; // no beta excitations
                 auto Jb = bb->J();
                 for (auto aa = AA.begin(); aa != AA.end(); ++aa) {
@@ -148,17 +163,23 @@ namespace ci {
 
             // if symmetric CI, symmetrize off-diagonal blocks S(Ia,Ib) and S(Ib,Ia)
             if (ms == 0 && next->a != next->b) {
+                MPQC_PROFILE_LINE;
                 Matrix t = S(Ib,Ia);
                 t += s.transpose();
                 s = t.transpose();
                 S(Ib,Ia) = t;
             }
-            
-            S(Ia,Ib) = s;
+
+            {
+                MPQC_PROFILE_LINE;
+                S(Ia,Ib) = s;
+            }
 
         }
 
         S.sync();
+
+        MPQC_PROFILE_DUMP(std::cout);
 
         std::cout << "sigma took " << double(time.t) << std::endl;
         std::cout << "  sigma1: " << time.s1 << std::endl;

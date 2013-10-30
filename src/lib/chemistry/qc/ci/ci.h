@@ -2,9 +2,6 @@
 #define _chemistry_qc_ci_ci_h
 
 #include <chemistry/qc/nbody/nbwfn.h>
-
-//#define MPQC_PROFILE_ENABLE
-#include "mpqc/utility/profile.hpp"
 #include "mpqc/ci/ci.hpp"
 
 namespace sc {

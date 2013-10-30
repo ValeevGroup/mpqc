@@ -27,7 +27,7 @@ namespace ci {
 
         const auto &alpha = ci.alpha;
         const auto &beta = ci.beta;
-        size_t BLOCK = ci.block*ci.block; //*omp::max_threads(); may not be same across nodes
+        const size_t BLOCK = alpha.size()*std::max<size_t>(1, (ci.block*ci.block)/alpha.size());
 
         mpqc::Matrix G;
         struct Iter {

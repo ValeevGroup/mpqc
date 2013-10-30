@@ -80,6 +80,8 @@ namespace ci {
             static std::vector<range> range2d(const Vector &v, range r) {
                 size_t alpha = v.alpha_;
                 size_t beta = v.beta_;
+                // for time being must read/write entire columns.
+                // need to relax this requirement in the future
                 MPQC_CHECK(r.front()%alpha == 0);
                 MPQC_CHECK(r.size()%alpha == 0);
                 std::vector<range> r2;

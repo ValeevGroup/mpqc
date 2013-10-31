@@ -43,8 +43,6 @@ namespace ci {
             }
         }
 
-        const int ms = 0;
-
         const std::vector< Subspace<Alpha> > &alpha = ci.subspace.alpha();
         const std::vector< Subspace<Beta> > &beta = ci.subspace.beta();
         const auto &blocks = ci::blocks(alpha, beta);
@@ -77,7 +75,7 @@ namespace ci {
             }
 
             // with ms == 0 symmetry, S is symmetrized in sigma3 step
-            if (ms == 0) goto end;
+            if (ci.ms == 0) goto end;
 
             // sigma2, need to transpose s, c
             s = Matrix(s.transpose());
@@ -100,10 +98,12 @@ namespace ci {
 #pragma omp parallel
         while (true) {
 
+            timer t;
+
             auto next = task->next(blocks.begin(), blocks.end());
             if (next == blocks.end()) break;
 
-            if (ms == 0 && next->alpha > next->beta) continue;
+            if (ci.ms == 0 && next->alpha > next->beta) continue;
 
             auto Ia = alpha.at(next->alpha);
             auto Ib = beta.at(next->beta);
@@ -126,15 +126,15 @@ namespace ci {
             Matrix s = S(Ia,Ib);
 
             // if symmetric CI, symmetrize diagonal block
-            if (ms == 0 && next->alpha == next->beta) 
+            if (ci.ms == 0 && next->alpha == next->beta) 
                 s += Matrix(s).transpose();
 
             for (auto bb = BB.begin(); bb != BB.end(); ++bb) {
                 MPQC_PROFILE_LINE;
-                //if (!bb->size()) continue; // no beta excitations
+                if (!bb->size()) continue; // no beta excitations
                 auto Jb = bb->J();
                 for (auto aa = AA.begin(); aa != AA.end(); ++aa) {
-                    //if (!aa->size()) continue; // no alpha excitations
+                    if (!aa->size()) continue; // no alpha excitations
                     auto Ja = aa->J();
                     if (!ci.test(Ja,Jb)) continue; // forbidden block
                     Matrix c = C(Ja,Jb);
@@ -146,7 +146,7 @@ namespace ci {
             }
 
             // if symmetric CI, symmetrize off-diagonal blocks S(Ia,Ib) and S(Ib,Ia)
-            if (ms == 0 && next->alpha != next->beta) {
+            if (ci.ms == 0 && next->alpha != next->beta) {
                 MPQC_PROFILE_LINE;
                 Matrix t = S(Ib,Ia);
                 t += s.transpose();
@@ -158,7 +158,7 @@ namespace ci {
                 MPQC_PROFILE_LINE;
                 S(Ia,Ib) = s;
             }
-
+            
         }
 
         S.sync();

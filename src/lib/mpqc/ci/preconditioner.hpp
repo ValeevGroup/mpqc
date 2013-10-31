@@ -30,7 +30,6 @@ namespace ci {
         const auto &comm = ci.comm;
         const auto &alpha = ci.alpha;
         const auto &beta = ci.beta;
-        const int ms = 0;
 
         double dd = 0;
 
@@ -71,7 +70,9 @@ namespace ci {
         comm.sum(dd);
         D.sync();
 
-        if (ms != 0) return;
+        if (ci.ms != 0) {
+            throw MPQC_EXCEPTION("Preconditioner not yet implemented for ci.ms != 0");
+        }
  
         double phase = 1.0;
         double scale = 1.0/sqrt(dd);

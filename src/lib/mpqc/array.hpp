@@ -130,31 +130,6 @@ namespace mpqc {
         MPQC_RANGE_CONST_OPERATORS(4, Array, this->operator())
 #endif
 
-        /// Write array data to File::Dataspace
-        void write(File::Dataspace<T> f) const {
-            assert(this->rank() == 2);
-            size_t B = block();
-            range ri = range_[0];
-            vector<T> block(ri.size()*B);
-            foreach (auto rj, range_[1].block(B)) {
-                this->operator()(ri,rj) >> block;
-                f(ri,rj) << block;
-            }
-        }
-
-        /// Read array data from File::Dataspace
-        void read(File::Dataspace<T> f) {
-            assert(this->rank() == 2);
-            size_t B = block();
-            range ri = range_[0];
-            vector<T> block(ri.size()*B);
-            foreach (auto rj, range_[1].block(B)) {
-                f(ri,rj) >> block;
-		//printf("read %lu*%lu, data=%p\n", ri.size(), rj.size(), block.data());
-                this->operator()(ri,rj) << block;
-            }
-        }
-
     protected:
 
 	template<class Extent, class Driver>

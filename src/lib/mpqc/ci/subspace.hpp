@@ -66,7 +66,7 @@ namespace ci {
         /// Split the subspace into a vector of subspaces
         std::vector<Subspace> split(size_t block) const {
             std::vector<Subspace> s;
-            foreach (auto r, mpqc::range::split(*this, block)) {
+            foreach (auto r, mpqc::range::split2(*this, block)) {
                 s.push_back(Subspace(*this, r));
             }
             return s;
@@ -242,6 +242,10 @@ namespace ci {
         }
         std::sort(blocks.begin(), blocks.end(), SubspaceBlock::Sort(A,B));
         std::reverse(blocks.begin(), blocks.end());
+        // foreach (auto s, blocks) {
+        //     std::cout << "block " << s.alpha << "," << s.beta << " "
+        //               << A.at(s.alpha).size()*B.at(s.beta).size() << std::endl;
+        // }
         return blocks;
     }
 

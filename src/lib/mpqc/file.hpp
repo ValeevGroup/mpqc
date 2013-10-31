@@ -394,21 +394,21 @@ namespace mpqc {
         Object parent_;
         size_t ndims_, size_;
         std::vector<size_t> base_;
-        std::vector<range> range_;
+        std::vector<mpqc::range> range_;
         friend class Dataset<T> ;
 
         Dataspace(const Object &parent, const std::vector<size_t> &base,
-                  const std::vector<range> &r, size_t ndims) :
+                  const std::vector<mpqc::range> &r, size_t ndims) :
             parent_(parent),
             base_(base),
             range_(r),
             ndims_(ndims)
         {
-            assert(ndims <= r.size());
+            assert(ndims <= range_.size());
             size_ = (r.size() ? 1 : 0);
-            for (int i = 0; i < r.size(); ++i) {
-                //std::cout << "r = " << r[i] << std::endl;
-                size_ *= r[i].size();
+            for (int i = 0; i < range_.size(); ++i) {
+                size_ *= range_[i].size();
+                //std::cout << "range_[i] = " << range_[i] << std::endl;
             }
         }
 
@@ -428,7 +428,7 @@ namespace mpqc {
             assert(r.size() == base_.size());
             std::vector<range> v;
             for (int i = 0; i < base_.size(); ++i) {
-                int begin = *r[i].begin() - base_[i];
+                auto begin = *r[i].begin() - base_[i];
                 v.push_back(range(begin, begin + r[i].size()));
             }
             return v;
@@ -465,7 +465,9 @@ namespace mpqc {
             for (size_t i = 0, j = N - 1; i < N; ++i, --j) {
                 fstart[i] = *r[j].begin();
                 fcount[i] = r[j].size();
-                //printf("%i:%i,", fstart[i], fstart[i]+fcount[i]);
+                // std::cout << "r[j] = " << r[j]
+                //           << " fstart=" << fstart[i]
+                //           << ", fcount[i]=" << fcount[i] << std::endl;
                 fstride[i] = 1;
                 fblock[i] = 1;
                 size *= fcount[i];

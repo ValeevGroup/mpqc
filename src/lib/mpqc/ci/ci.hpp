@@ -26,6 +26,7 @@ namespace ci {
         struct {
             size_t alpha, beta;
         } electrons; //!< number of electrons of each spin in CI
+        size_t ms;
         size_t rank;
         size_t roots;
         size_t max;
@@ -40,6 +41,7 @@ namespace ci {
             orbitals = 0;
             electrons.alpha = 0;
             electrons.beta = 0;
+            ms = 0;
             rank = 0;
             roots = 1;
             max = 10;
@@ -48,7 +50,7 @@ namespace ci {
             e_core = 0.0;
             convergence = 1e-10;
             cutoff = convergence;
-            block = 4096;
+            block = 1024*4;
         }
         void print(std::ostream& o = sc::ExEnv::out0()) const {
             o << sc::indent << "rank       = " << rank << std::endl;
@@ -149,7 +151,8 @@ namespace ci {
             // I/O
             {
                 size_t dets = this->subspace.dets();
-                this->local_ = range(0, dets).split2(this->comm.size()).at(this->comm.rank());
+                this->local_ = mpqc::range::split2(mpqc::range(0, dets), this->comm.size())
+                    .at(this->comm.rank()); // segment belonging to this node
                 MPQC_CHECK(this->local_.size() > 0);
                 std::vector<range> extents(2);
                 extents[0] = this->local_;

@@ -43,7 +43,7 @@ namespace ArrayServer {
                 block *= r[i].size();
             assert(block < N);
             
-            foreach (range rj, r.back().block(N/block)) {
+            foreach (range rj, range::split(r.back(), N/block)) {
                 for (int i = 0; i < rank-1; ++i) {
                     data.push_back(*r[i].begin());
                     data.push_back(*r[i].end());

@@ -6,8 +6,8 @@
 #include <chemistry/qc/nbody/nbwfn.h>
 
 #include "mpqc/ci/integrals.hpp"
-#include "mpqc/ci/full/ci.hpp"
-#include "mpqc/ci/restricted/ci.hpp"
+#include "mpqc/ci/full.hpp"
+#include "mpqc/ci/restricted.hpp"
 #include "mpqc/ci/direct.hpp"
 #include "mpqc/utility/string.hpp"
 

@@ -3,15 +3,10 @@
 
 #include "mpqc/ci/string.hpp"
 #include "mpqc/ci/ci.hpp"
-#include "mpqc/ci/full/ci.hpp"
 
 #include "mpqc/utility/timer.hpp"
 #include "mpqc/range.hpp"
 #include "mpqc/math/matrix.hpp"
-#include "mpqc/omp.hpp"
-
-#include "mpqc/array.hpp"
-#include "mpqc/array/functions.hpp"
 
 namespace mpqc {
 namespace ci {

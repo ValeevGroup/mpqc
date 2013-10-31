@@ -5,46 +5,51 @@
 #include "mpqc/ci/vector.hpp"
 #include "mpqc/math/matrix.hpp"
 #include "mpqc/utility/foreach.hpp"
-#include "mpqc/utility/exception.hpp"
+#include "mpqc/mpi.hpp"
+#include "mpqc/mpi/task.hpp"
 
 namespace mpqc {
 namespace ci {
-    
+
+    void symmetrize(mpqc::Matrix &a, double phase, double scale) {
+        MPQC_CHECK(a.rows() == a.cols());
+        for (size_t j = 0; j < a.cols(); ++j) {
+            a(j,j) *= scale;
+            for (size_t i = 0; i < j; ++i) {
+                a(i,j) = scale*a(i,j); // + a(j,i));
+                a(j,i) = phase*a(i,j);
+            }
+        }
+    }
+
     template<class Type, class Index>
     void preconditioner(CI<Type, Index> &ci,
                         const mpqc::Vector &h, const mpqc::Matrix &V,
-                        double lambda, ci::Vector<Type> &D) {
+                        double lambda, ci::BlockVector &D) {
 
         const auto &comm = ci.comm;
         const auto &alpha = ci.alpha;
         const auto &beta = ci.beta;
+        const int ms = 0;
 
         double dd = 0;
 
-        std::vector< Subspace<Alpha> > A = split(ci.subspace.alpha(), ci.block);
-        std::vector< Subspace<Beta> > B = split(ci.subspace.beta(), ci.block);
+        const std::vector< Subspace<Alpha> > &A = ci.subspace.alpha();
+        const std::vector< Subspace<Beta> > &B = ci.subspace.beta();
+        const auto &blocks = ci::blocks(A, B);
 
-        struct Tuple {
-            int a, b;
-            Tuple(int a, int b) : a(a), b(b) {}
-        };
-        std::vector<Tuple> tuples;
-        // (a,b) block tuples
-        for (int b = 0; b < B.size(); ++b) {
-            for (int a = 0; a < A.size(); ++a) {
-                if (!ci.test(A.at(a), B.at(b))) continue;
-                tuples.push_back(Tuple(a,b));
-            }
-        }
+        std::auto_ptr<MPI::Task> task;
 
-        MPI::Task task(comm);
+        task.reset(new MPI::Task(comm));
 #pragma omp parallel
         while (true) {
 
-            auto next = task.next(tuples.begin(), tuples.end());
-            if (next == tuples.end()) break;
-            auto Ia = A.at(next->a);
-            auto Ib = B.at(next->b);
+            auto next = task->next(blocks.begin(), blocks.end());
+            if (next == blocks.end()) break;
+
+            auto Ia = A.at(next->alpha);
+            auto Ib = B.at(next->beta);
+            if (!ci.test(Ia,Ib)) continue;
 
             //std::cout << rb << " out of " << local << std::endl;
             mpqc::Matrix d = D(Ia,Ib);
@@ -64,10 +69,41 @@ namespace ci {
             D(Ia,Ib) = d;
             dd += dot(d, d);
         }
-
         comm.sum(dd);
         D.sync();
-        D.symmetrize(1.0, 1.0/sqrt(dd));
+
+        if (ms != 0) return;
+ 
+        double phase = 1.0;
+        double scale = 1.0/sqrt(dd);
+
+        task.reset(new MPI::Task(comm));
+#pragma omp parallel
+        while (true) {
+
+            auto next = task->next(blocks.begin(), blocks.end());
+            if (next == blocks.end()) break;
+
+            auto Ia = A.at(next->alpha);
+            auto Ib = B.at(next->beta);
+            if (!ci.test(Ia,Ib)) continue;
+
+            if (next->alpha == next->beta) {
+                Matrix aa = D(Ia,Ib);
+                ci::symmetrize(aa, phase, scale);
+                D(Ia,Ib) = aa;
+            }
+
+            if (next->alpha < next->beta) {
+                Matrix ab = D(Ia,Ib);
+                Matrix ba = D(Ib,Ia);
+                ab *= scale;
+                ba  = phase*(ab.transpose());
+                D(Ia,Ib) = ab;
+                D(Ib,Ia) = ba;
+            }
+
+        }
         D.sync();
 
     }

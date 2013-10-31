@@ -133,18 +133,17 @@ namespace ci {
             }
             std::vector< Subspace<Any> > a(alpha_.begin(), alpha_.end());
             std::vector< Subspace<Any> > b(beta_.begin(), beta_.end());
-            this->symm_ = ((a == b) && (mask_ == mask_.transpose()));
         }
 
-        /// Resolve string index to its alpha space
-        Space<Alpha> alpha_string_space(int idx) const {
-            return space(idx, this->alpha_);
-        }
+        // /// Resolve string index to its alpha space
+        // Space<Alpha> alpha_string_space(int idx) const {
+        //     return space(idx, this->alpha_);
+        // }
 
-        /// Resolve string index to its beta space
-        Space<Beta> beta_string_space(int idx) const {
-            return space(idx, this->beta_);
-        }
+        // /// Resolve string index to its beta space
+        // Space<Beta> beta_string_space(int idx) const {
+        //     return space(idx, this->beta_);
+        // }
 
         /// Returns whenever a subspace alpha/beta block is allowed
         bool allowed(int a, int b) const {
@@ -171,11 +170,6 @@ namespace ci {
             return beta_.at(i);
         }
 
-        /// Returns true if the grid is symmetric
-        bool symmetric() const {
-            return this->symm_;
-        }
-
         /// Returns number of determinants in the grid
         size_t dets() const {
             return this->dets_;
@@ -186,7 +180,6 @@ namespace ci {
         std::vector< Subspace<Beta> > beta_;
         mpqc::matrix<bool> mask_;
         size_t dets_;
-        bool symm_;
 
     private:
 
@@ -219,6 +212,38 @@ namespace ci {
         } 
 
     };
+
+    struct SubspaceBlock {
+        int alpha, beta;
+        struct Sort {
+            const std::vector< Subspace<Alpha> > &A;
+            const std::vector< Subspace<Beta> > &B;
+            Sort(const std::vector< Subspace<Alpha> > &A,
+                 const std::vector< Subspace<Beta> > &B)
+                : A(A), B(B)
+            {
+            }
+            bool operator()(const SubspaceBlock &i, const SubspaceBlock &j) const {
+                return (A.at(i.alpha).size()*B.at(i.beta).size() <
+                        A.at(j.alpha).size()*B.at(j.beta).size());
+            }
+        };
+    };
+
+    inline std::vector<SubspaceBlock> blocks(const std::vector< Subspace<Alpha> > &A,
+                                             const std::vector< Subspace<Beta> > &B)
+    {
+        std::vector<SubspaceBlock> blocks;
+        for (int b = 0; b < B.size(); ++b) {
+            for (int a = 0; a < A.size(); ++a) {
+                SubspaceBlock block = { a, b };
+                blocks.push_back(block);
+            }
+        }
+        std::sort(blocks.begin(), blocks.end(), SubspaceBlock::Sort(A,B));
+        std::reverse(blocks.begin(), blocks.end());
+        return blocks;
+    }
 
     /// @}
 

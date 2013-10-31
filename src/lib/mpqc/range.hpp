@@ -44,6 +44,10 @@ namespace mpqc {
             return (r.begin() == begin() && r.end() == end());
         }
 
+        bool test(int value) const {
+            return ((*this->begin() <= value) && (value < *this->end()));
+        }
+
         static range intersection(const range &a, const range &b) {
             int begin = std::max(*a.begin(), *b.begin());
             int end = std::min(*a.end(), *b.end());

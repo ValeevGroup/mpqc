@@ -5,14 +5,13 @@
 #include "mpqc/ci/string.hpp"
 #include "mpqc/ci/sigma2.hpp"
 #include "mpqc/ci/sigma3.hpp"
+#include "mpqc/ci/vector.hpp"
 
 #include "mpqc/utility/timer.hpp"
 #include "mpqc/range.hpp"
 #include "mpqc/math/matrix.hpp"
-#include "mpqc/omp.hpp"
-
-#include "mpqc/array.hpp"
-#include "mpqc/array/functions.hpp"
+#include "mpqc/mpi.hpp"
+#include "mpqc/mpi/task.hpp"
 
 #define MPQC_PROFILE_ENABLE
 #include "mpqc/utility/profile.hpp"
@@ -24,7 +23,7 @@ namespace ci {
     template<class Type, class Index>
     void sigma(const CI<Type, Index> &ci,
                const mpqc::Vector &h, const Matrix &V,
-               ci::Vector<Type> &C, ci::Vector<Type> &S) {
+               ci::BlockVector &C, ci::BlockVector &S) {
 
         MPQC_PROFILE_REGISTER_THREAD;
 
@@ -46,26 +45,9 @@ namespace ci {
 
         const int ms = 0;
 
-        std::vector< Subspace<Alpha> > alpha = split(ci.subspace.alpha(), ci.block);
-        std::vector< Subspace<Beta> > beta = split(ci.subspace.beta(), ci.block);
-
-        struct Tuple {
-            int a, b;
-            size_t size;
-            Tuple(int a, int b, size_t size) : a(a), b(b), size(size) {}
-            bool operator<(const Tuple &o) const {
-                return this->size > o.size;
-            }
-        };
-        std::vector<Tuple> tuples;
-        // (a,b) block tuples
-        for (int b = 0; b < beta.size(); ++b) {
-            for (int a = 0; a < alpha.size(); ++a) {
-                if (!ci.test(alpha.at(a), beta.at(b))) continue;
-                tuples.push_back(Tuple(a, b, alpha.at(a).size()*beta.at(b).size()));
-            }
-        }
-        std::sort(tuples.begin(), tuples.end());
+        const std::vector< Subspace<Alpha> > &alpha = ci.subspace.alpha();
+        const std::vector< Subspace<Beta> > &beta = ci.subspace.beta();
+        const auto &blocks = ci::blocks(alpha, beta);
 
         std::auto_ptr<MPI::Task> task;
 
@@ -73,10 +55,12 @@ namespace ci {
 #pragma omp parallel
         while (true) {
 
-            auto next = task->next(tuples.begin(), tuples.end());
-            if (next == tuples.end()) break;
-            auto Ia = alpha.at(next->a);
-            auto Ib = beta.at(next->b);
+            auto next = task->next(blocks.begin(), blocks.end());
+            if (next == blocks.end()) break;
+
+            auto Ia = alpha.at(next->alpha);
+            auto Ib = beta.at(next->beta);
+            if (!ci.test(Ia,Ib)) continue;
 
             Matrix s = Matrix::Zero(Ia.size(), Ib.size()); //S(Ia, Ib);
 
@@ -116,13 +100,13 @@ namespace ci {
 #pragma omp parallel
         while (true) {
 
-            auto next = task->next(tuples.begin(), tuples.end());
-            if (next == tuples.end()) break;
+            auto next = task->next(blocks.begin(), blocks.end());
+            if (next == blocks.end()) break;
 
-            if (ms == 0 && next->a > next->b) continue;
+            if (ms == 0 && next->alpha > next->beta) continue;
 
-            auto Ia = alpha.at(next->a);
-            auto Ib = beta.at(next->b);
+            auto Ia = alpha.at(next->alpha);
+            auto Ib = beta.at(next->beta);
             if (!ci.test(Ia,Ib)) continue;
 
             // excitations from Ib into each Jb subspace
@@ -142,7 +126,7 @@ namespace ci {
             Matrix s = S(Ia,Ib);
 
             // if symmetric CI, symmetrize diagonal block
-            if (ms == 0 && next->a == next->b) 
+            if (ms == 0 && next->alpha == next->beta) 
                 s += Matrix(s).transpose();
 
             for (auto bb = BB.begin(); bb != BB.end(); ++bb) {
@@ -162,7 +146,7 @@ namespace ci {
             }
 
             // if symmetric CI, symmetrize off-diagonal blocks S(Ia,Ib) and S(Ib,Ia)
-            if (ms == 0 && next->a != next->b) {
+            if (ms == 0 && next->alpha != next->beta) {
                 MPQC_PROFILE_LINE;
                 Matrix t = S(Ib,Ia);
                 t += s.transpose();

@@ -59,12 +59,12 @@ namespace ci {
 
     /// CI class template.
     /// Specific CI cases should specialize this template.
-    template<class Type, class Index = String::Index>
+    template<class CIFunctor, class Index = String::Index>
     struct CI;
 
     /// Base CI class, specific CIs (Full, Restricted, etc) should be derived from this base.
-    template<class Index>
-    struct CI<void, Index> : Config, boost::noncopyable {
+    template<class CIFunctor, class Index>
+    struct CI : Config, boost::noncopyable {
 
     public:
 
@@ -85,6 +85,9 @@ namespace ci {
             File::Dataset<double> b, Hb;
         } vector;
 
+    protected:
+        mpqc::range local_; // range of local determinants
+
     public:
 
         template<class Spin>
@@ -101,25 +104,67 @@ namespace ci {
         size_t dets() const {
             return subspace.dets();
         }
+
+        std::vector<mpqc::range> local() const {
+            return mpqc::range::split(this->local_, Config::block*Config::block);
+        }
         
         /// rank/excitation of the string relative to its ground state, ie [11..00]
         int excitation(const String &s) const {
             return String::difference(s, String(s.size(), s.count()));
         }
 
-        /// Allowed Alpha spaces given Beta space b.
-        std::vector< Subspace<Alpha> > allowed(const Space<Beta> &b) const {
-            std::vector< Subspace<Alpha> > A;
-            foreach (auto a, subspace.alpha()) {
-                if (!test(a,b)) continue;
-                A.push_back(a);
-            }
-            return A;
-        }
-
     public:
+        
+        /// Construct CI base given configuration and communicator.
+        /// Strings will be sorted lexicographically AND by excitation
+        CI(const Config &config, MPI::Comm comm, File::Group io) 
+            : Config(config),
+              alpha(ci::strings(config.orbitals, config.electrons.alpha, config.rank)),
+              beta(ci::strings(config.orbitals, config.electrons.beta, config.rank)),
+              comm(comm)
+        {
+            // sort/space strings according to rank (excitation)
+            auto sa = sort<Alpha>(this->alpha);
+            auto sb = sort<Beta>(this->beta);
 
-        virtual ~CI() {}
+            this->subspace = CIFunctor::grid(*this,
+                                             split(sa, Config::block),
+                                             split(sb, Config::block));
+            
+            {
+                auto &out = sc::ExEnv::out0();
+                // general
+                out << sc::indent
+                    << sc::scprintf("CI space = (%lu %lu): ",
+                                    Config::orbitals, (Config::electrons.alpha+
+                                                       Config::electrons.beta))
+                    << sc::scprintf("alpha = %lu, beta = %lu, dets = %lu\n",
+                                    alpha.size(), beta.size(), this->subspace.dets())
+                    << std::endl;
+                // alpha
+                print(out, "Alpha excitations:\n", sb);
+                print(out, "Beta excitations:\n", sa);
+            }
+            
+            // I/O
+            {
+                size_t dets = this->subspace.dets();
+                this->local_ = range(0, dets).split2(this->comm.size()).at(this->comm.rank());
+                MPQC_CHECK(this->local_.size() > 0);
+                std::vector<range> extents(2);
+                extents[0] = this->local_;
+                extents[1] = range(0,Config::max);
+                this->vector.b = File::Dataset<double>(io, "b", extents);
+                this->vector.Hb = File::Dataset<double>(io, "Hb", extents);
+            }
+
+            // initial guess
+            {
+                guess();
+            }
+
+        }
 
         /// test if space configuration is allowed
         template<class Spin>
@@ -127,79 +172,44 @@ namespace ci {
             return abs(a.rank() - b.rank());
         }
 
+        /// test if string is allowed
+        bool test(const String &a) const {
+            CIFunctor::test(*this, a);
+        }
+
         /// test if space configuration is allowed
-        virtual bool test(const Space<Alpha> &a, const Space<Beta> &b) const = 0;
+        bool test(const Space<Alpha> &a, const Space<Beta> &b) const {
+            CIFunctor::test(*this, a, b);
+        }
+
 
     protected:
-        
-        /// Construct CI base given configuration and communicator.
-        /// Strings will be sorted lexicographically AND by excitation
-        CI(const Config &config, MPI::Comm comm) 
-            : Config(config),
-              alpha(ci::strings(config.orbitals, config.electrons.alpha, config.rank)),
-              beta(ci::strings(config.orbitals, config.electrons.beta, config.rank)),
-              comm(comm)
-        {
-        }
 
-        /// initialize IO
-        void initialize(File::Group io, range local) {
-            // can't have size-0 datasets (size-0 has special meaning)
-            MPQC_CHECK(local.size() > 1);
-            std::vector<range> extents(2);
-	    extents[0] = local;
-	    extents[1] = range(0,Config::max);
-            this->vector.b = File::Dataset<double>(io, "b", extents);
-            this->vector.Hb = File::Dataset<double>(io, "Hb", extents);
-            guess(local);
-        }
+        // /// initialize IO
+        // void initialize(File::Group io, range local) {
+        //     std::cout << "local = " << local << std::endl;
+        //     // can't have size-0 datasets (size-0 has special meaning)
+        // }
 
         /// initialize guess vector
-        void guess(range local) {
+        void guess() {
             Vector one(1);
             one[0] = 1;
-            if (*local.begin() <= 0 && *local.end() > 0)
+            if (this->local_.test(0))
                 vector.b(0,0) << one;
             comm.barrier();
         }
 
         /// prints CI configuration summary
-        void summary() const {
-            auto &out = sc::ExEnv::out0();
-            // general
-            out << sc::indent
-                << sc::scprintf("CI space = (%lu %lu): ",
-                                Config::orbitals, (Config::electrons.alpha+
-                                                   Config::electrons.beta))
-                << sc::scprintf("alpha = %lu, beta = %lu, dets = %lu\n",
-                                alpha.size(), beta.size(), dets())
-                << std::endl;
-            // alpha
-            out << "alpha excitation population" << std::endl;
-            for (int i = 0; i < subspace.alpha().size(); ++i) {
-                range r = subspace.alpha(i);
-                out << sc::scprintf("%i: size = %lu, \t range = ", i, r.size())
-                    << r
-                    << std::endl;
-            }
-            out << std::endl;
-            // beta
-            out << "beta excitation population" << std::endl;
-            for (int i = 0; i < subspace.beta().size(); ++i) {
-                range r = subspace.beta(i);
-                out << sc::scprintf("%i: size = %lu, \t range = ", i, r.size())
-                    << r
-                    << std::endl;
-            }
-            out << std::endl;
-            // allowed excitation
-            out << "allowed excitations" << std::endl;
-            foreach (auto a, subspace.alpha()) {
-                out << "| ";
-                foreach (auto b, subspace.beta()) {
-                    out << test(a,b) << " ";
-                }
-                out << "|" << std::endl;
+        template<class Spin>
+        static void print(std::ostream &out, const std::string &header,
+                          const std::vector< Subspace<Spin> > &S)
+        {
+            out << header;
+            for (int i = 0; i < S.size(); ++i) {
+                range r = S.at(i);
+                out << sc::scprintf("%i: size = %lu, \t range = %s\n",
+                                    i, r.size(), string_cast(r).c_str());
             }
             out << std::endl;
         }

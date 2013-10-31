@@ -4,16 +4,36 @@
 #include <util/misc/formio.h>
 
 #include "mpqc/ci/string.hpp"
-#include "mpqc/ci/preconditioner.hpp"
-#include "mpqc/ci/sigma.hpp"
 #include "mpqc/ci/vector.hpp"
+#include "mpqc/ci/sigma.hpp"
+#include "mpqc/ci/preconditioner.hpp"
 
 #include "mpqc/math/matrix.hpp"
-#include "mpqc/python.hpp"
 #include "mpqc/file.hpp"
 
 namespace mpqc {
 namespace ci {
+
+    // read local segments into V from F
+    inline void read(ci::BlockVector &V, File::Dataspace<double> F,
+                     const std::vector<mpqc::range> &local) {
+        foreach (auto r, local) {
+            mpqc::Vector v(r.size());
+            F(r) >> v;
+            V(r) << v;
+        }
+    }
+
+    // write local segments of V to F
+    inline void write(ci::BlockVector &V, File::Dataspace<double> F,
+                      const std::vector<mpqc::range> &local) {
+        foreach (auto r, local) {
+            mpqc::Vector v(r.size());
+            V(r) >> v;
+            F(r) << v;
+        }
+    }
+
 
     template<class Type>
     std::vector<double> direct(CI<Type> &ci,
@@ -27,7 +47,6 @@ namespace ci {
 
         const auto &alpha = ci.alpha;
         const auto &beta = ci.beta;
-        const size_t BLOCK = alpha.size()*std::max<size_t>(1, (ci.block*ci.block)/alpha.size());
 
         mpqc::Matrix G;
         struct Iter {
@@ -41,10 +60,9 @@ namespace ci {
         iters[-1].E = iters[-1].D = 0;
 
         auto &comm = ci.comm;
-        const auto &local = ci.local;
 
-        ci::Vector<Type> C("ci.C", ci);
-        ci::Vector<Type> D("ci.D", ci);
+        ci::BlockVector C("ci.C", ci.subspace, ci.comm);
+        ci::BlockVector D("ci.D", ci.subspace, ci.comm);
 
         comm.barrier();
 
@@ -53,9 +71,6 @@ namespace ci {
         for (size_t it = 0;; ++it) {
 
             timer t;
-
-            if (it + 1 > ci.max)
-                throw std::runtime_error("CI failed to converge");
 
             // augment G
             {
@@ -67,22 +82,25 @@ namespace ci {
             }
 
             {
-                C(local.determinants).read(ci.vector.b[it]);
+                // read local segments of b(it) to C
+                read(C, ci.vector.b[it], ci.local());
                 C.sync();
 
                 sigma(ci, h, V, C, D);
                 D.sync();
 
-                D(local.determinants).write(ci.vector.Hb[it]);
-                comm.barrier();
+                // write local segments of D to Hb(it)
+                write(D, ci.vector.Hb[it], ci.local());
+                D.sync();
             }
 
             // augment G matrix
             {
                 mpqc::Vector g = mpqc::Vector::Zero(M);
-                foreach (auto r, local.determinants.block(BLOCK)) {
+                foreach (auto r, ci.local()) {
                     mpqc::Vector c(r.size());
-                    mpqc::Vector s = D(r);
+                    mpqc::Vector s(r.size());
+                    D(r) >> s;
                     for (int j = 0; j < M; ++j) {
                         ci.vector.b(r,j) >> c;
                         g(j) += c.dot(s);
@@ -109,7 +127,7 @@ namespace ci {
             for (int k = 0; k < R; ++k) {
 
                 // update d part
-                foreach (auto r, local.determinants.block(BLOCK)) {
+                for (auto r : ci.local()) {
                     mpqc::Vector v(r.size());
                     mpqc::Vector d(r.size());
                     d.fill(0);
@@ -122,12 +140,12 @@ namespace ci {
                         ci.vector.Hb(r,i) >> v;
                         d += a(i,k)*v;
                     }
-                    D(r).put(d);
+                    D(r) << d;
                 }
                 D.sync();
 
                 iters[it].E = lambda[0];
-                iters[it].D = norm(D, comm, local.determinants, BLOCK);
+                iters[it].D = norm(D, ci.local(), comm);
 
                 if (comm.rank() == 0) {
                     double dc = fabs(iters[it - 1].D - iters[it].D);
@@ -144,13 +162,16 @@ namespace ci {
 
                 // orthonormalize
                 for (int i = 0; i < M; ++i) {
-                    ci::Vector<Type> &b = C;
-                    b(local.determinants).read(ci.vector.b[i]);
-                    orthonormalize(b, D, ci.comm, local.determinants, BLOCK);
+                    ci::BlockVector &b = C;
+                    read(b, ci.vector.b[i], ci.local());
+                    orthonormalize(b, D, ci.local(), ci.comm);
                 }
                 D.sync();
 
-                D(local.determinants).write(ci.vector.b[it + 1]);
+                if (it+1 == ci.max) break;
+
+                write(D, ci.vector.b[it+1], ci.local());
+                D.sync();
 
             }
 
@@ -159,6 +180,10 @@ namespace ci {
             if (fabs(iters[it - 1].E - iters[it].E) < ci.convergence) {
                 E.push_back(iters[it].E);
                 break;
+            }
+
+            if (it+1 == ci.max) {
+                throw MPQC_EXCEPTION("CI failed to converge");
             }
 
             ++M;

@@ -48,8 +48,7 @@ namespace ci {
             e_core = 0.0;
             convergence = 1e-10;
             cutoff = convergence;
-            block = 128;
-            block2 = 128;
+            block = 4096;
         }
         void print(std::ostream& o = sc::ExEnv::out0()) const {
             o << sc::indent << "rank       = " << rank << std::endl;
@@ -174,12 +173,12 @@ namespace ci {
 
         /// test if string is allowed
         bool test(const String &a) const {
-            CIFunctor::test(*this, a);
+            return CIFunctor::test(*this, a);
         }
 
         /// test if space configuration is allowed
         bool test(const Space<Alpha> &a, const Space<Beta> &b) const {
-            CIFunctor::test(*this, a, b);
+            return CIFunctor::test(*this, a, b);
         }
 
 

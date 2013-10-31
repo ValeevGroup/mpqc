@@ -13,7 +13,7 @@
 #include "mpqc/mpi.hpp"
 #include "mpqc/mpi/task.hpp"
 
-#define MPQC_PROFILE_ENABLE
+//#define MPQC_PROFILE_ENABLE
 #include "mpqc/utility/profile.hpp"
 
 namespace mpqc {
@@ -49,7 +49,7 @@ namespace ci {
         const std::vector< Subspace<Beta> > &beta = ci.subspace.beta();
         const auto &blocks = ci::blocks(alpha, beta);
 
-        std::auto_ptr<MPI::Task> task;
+        std::unique_ptr<MPI::Task> task;
 
         task.reset(new MPI::Task(comm));
 #pragma omp parallel

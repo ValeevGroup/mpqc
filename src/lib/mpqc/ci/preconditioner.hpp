@@ -38,7 +38,7 @@ namespace ci {
         const std::vector< Subspace<Beta> > &B = ci.subspace.beta();
         const auto &blocks = ci::blocks(A, B);
 
-        std::auto_ptr<MPI::Task> task;
+        std::unique_ptr<MPI::Task> task;
 
         task.reset(new MPI::Task(comm));
 #pragma omp parallel
@@ -51,7 +51,6 @@ namespace ci {
             auto Ib = B.at(next->beta);
             if (!ci.test(Ia,Ib)) continue;
 
-            //std::cout << rb << " out of " << local << std::endl;
             mpqc::Matrix d = D(Ia,Ib);
             mpqc::Vector aa(Ia.size());
             for (int a = 0; a < Ia.size(); ++a) {

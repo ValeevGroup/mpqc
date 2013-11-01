@@ -193,6 +193,7 @@ namespace sc {
       return v->second;
     }
     else {
+      lh.unlock();
       this->print(ExEnv::out0());
       throw not_found("key not found");
     }

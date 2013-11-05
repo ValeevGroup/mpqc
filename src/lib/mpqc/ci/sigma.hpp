@@ -13,7 +13,6 @@
 #include "mpqc/mpi.hpp"
 #include "mpqc/mpi/task.hpp"
 
-//#define MPQC_PROFILE_ENABLE
 #include "mpqc/utility/profile.hpp"
 
 namespace mpqc {
@@ -23,9 +22,7 @@ namespace ci {
     template<class Type, class Index>
     void sigma(const CI<Type, Index> &ci,
                const mpqc::Vector &h, const Matrix &V,
-               ci::BlockVector &C, ci::BlockVector &S) {
-
-        MPQC_PROFILE_REGISTER_THREAD;
+               ci::Vector &C, ci::Vector &S) {
 
         struct { double s1, s2, s3; timer t; } time = { };
 
@@ -162,8 +159,6 @@ namespace ci {
         }
 
         S.sync();
-
-        MPQC_PROFILE_DUMP(std::cout);
 
         std::cout << "sigma took " << double(time.t) << std::endl;
         std::cout << "  sigma1: " << time.s1 << std::endl;

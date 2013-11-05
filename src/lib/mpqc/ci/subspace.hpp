@@ -66,7 +66,7 @@ namespace ci {
         /// Split the subspace into a vector of subspaces
         std::vector<Subspace> split(size_t block) const {
             std::vector<Subspace> s;
-            foreach (auto r, mpqc::range::split2(*this, block)) {
+            foreach (auto r, balanced_split(*this, block)) {
                 s.push_back(Subspace(*this, r));
             }
             return s;
@@ -196,20 +196,6 @@ namespace ci {
                 begin = *r.end();
             }
         }
-
-    private:
-
-        /// Resolves string index to a subspace in V
-        /// @throws MPQC_EXCEPTION if string index does not belong to any subspace
-        template<class Spin>
-        Space<Spin> space(int idx, const std::vector< Subspace<Spin> > &V) const {
-            foreach (const auto &s, V) {
-                //std::cout << "idx=" << idx << " s=" << s.rank() << " " << mpqc::range(s) << std::endl;
-                if (*s.begin() <= idx && idx < *s.end()) return s;
-            }
-            throw MPQC_EXCEPTION("String index %i does not belong to any subspace\n", idx);
-            return Space<Spin>(-1);
-        } 
 
     };
 

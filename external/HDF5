@@ -41,7 +41,7 @@ if (NOT HDF5_FOUND)
       --enable-threadsafe
       --enable-unsupported
       --with-pthread
-      CC=${CMAKE_C_COMPILER} CPPFLAGS=-D_GNU_SOURCE
+      CC=${CMAKE_C_COMPILER} CFLAGS=${CMAKE_C_FLAGS} CPPFLAGS=-D_GNU_SOURCE
       BUILD_COMMAND make
       INSTALL_COMMAND make install
       )

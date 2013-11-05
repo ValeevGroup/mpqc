@@ -56,10 +56,6 @@ namespace mpqc {
             impl_ = a.impl_;
         }
 
-        const MPI::Comm& comm() const {
-            return impl_->comm();
-        }
-
         /// Put buffer data into array
         /// @warning buffer must be contigous
 	void put(const T *buffer) {
@@ -145,7 +141,7 @@ namespace mpqc {
 
 	    detail::ArrayBase *impl = NULL;
 	    if (comm == MPI::Comm::Self()) {
-		impl = new detail::array_impl<T, Driver>(name, dims_, comm);
+		impl = new detail::array_impl<T, Driver>(name, dims_);
 	    }
 	    else {
 #ifdef HAVE_MPI

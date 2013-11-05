@@ -19,7 +19,7 @@ namespace detail {
         template<typename Extent>
 	array_impl(const std::string &name,
                    const std::vector<Extent> &extents)
-            : ArrayBase(extents)
+            : ArrayBase(name, extents)
         {
             mpqc::File file(name + ".h5");
             data_.reset(new mpqc::File::Dataset<T>(file, "data", this->dims_));

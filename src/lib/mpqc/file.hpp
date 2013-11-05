@@ -73,6 +73,19 @@ namespace File {
         return hid_t();
     }
 
+    struct Properties : boost::noncopyable {
+        explicit Properties(hid_t props) {
+            props_ = H5Pcreate(props);
+        }
+        ~Properties() {
+            H5Pclose(props_);
+        }
+        hid_t id() const {
+            return props_;
+        }
+    private:
+        hid_t props_;
+    };
 
     /**
        A reference-counted HDF5 handle object,
@@ -184,6 +197,7 @@ namespace mpqc {
 
         typedef detail::File::Object Object;
         typedef detail::File::Attribute Attribute;
+        typedef detail::File::Properties Properties;
         
         struct Group;
 
@@ -497,10 +511,9 @@ namespace mpqc {
             The size of collection determines dataset rank.
         */
         template<typename Extents>
-        Dataset(const Object &parent, const std::string &name,
-                const Extents &extents, const std::vector<size_t> &chunk =
-                std::vector<size_t>())
-            : Object(Dataset::create(parent, name, extents, chunk))
+        Dataset(const Object &parent, const std::string &name, const Extents &extents,
+                const File::Properties &dcpl = File::Properties(H5P_DATASET_CREATE))
+            : Object(Dataset::create(parent, name, extents, dcpl))
         {
             assert(id() > 0);
             foreach (auto e, extents) {
@@ -591,7 +604,7 @@ namespace mpqc {
         static Object create(const Object &parent,
                              const std::string &name,
                              const Extents &extents,
-                             const std::vector<size_t> &chunk) {
+                             const Properties &dcpl) {
 
             hid_t id;
             // Object constructor may also obtain mutex
@@ -607,20 +620,13 @@ namespace mpqc {
 
                 hid_t fspace = H5Screate_simple(dims.size(), &dims[0], NULL);
                 hid_t type = detail::File::h5t<T>();
-                hid_t dcpl = H5Pcreate(H5P_DATASET_CREATE);
-                if (chunk.size()) {
-                    assert(chunk.size() == dims.size());
-                    std::vector<hsize_t> block(chunk.rbegin(), chunk.rend());
-                    H5Pset_chunk(dcpl, block.size(), &block[0]);
-                }
                 //printf("parent.id() = %i, name=%s\n", parent.id(), name.c_str());
 #if H5_VERS_MAJOR == 1 && H5_VERS_MINOR < 8
-                id = H5Dcreate(parent.id(), name.c_str(), type, fspace, dcpl);
+                id = H5Dcreate(parent.id(), name.c_str(), type, fspace, dcpl.id());
 #else
-                id = H5Dcreate1(parent.id(), name.c_str(), type, fspace, dcpl);
+                id = H5Dcreate1(parent.id(), name.c_str(), type, fspace, dcpl.id());
 #endif
                 MPQC_FILE_VERIFY(id);
-                MPQC_FILE_VERIFY(H5Pclose(dcpl));
             }
             return Object(parent, id, &Dataset::close, false);
         }

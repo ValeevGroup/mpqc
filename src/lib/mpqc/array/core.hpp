@@ -35,12 +35,9 @@ namespace detail {
 
         template<typename Extent>
 	array_impl(const std::string &name,
-                   const std::vector<Extent> &extents,
-                   const MPI::Comm &comm)
-            : ArrayBase(name, extents, comm)
+                   const std::vector<Extent> &extents)
+            : ArrayBase(name, extents)
         {
-            if (!(ArrayBase::comm_ == MPI::Comm::Self()))
-                throw MPQC_EXCEPTION("Serial Array implementation must use MPI_COMM_SELF");
             data_.resize(this->size());
 	}
 
@@ -130,9 +127,9 @@ namespace detail {
 	array_parallel_impl(const std::string &name,
 			    const std::vector<size_t> &dims,
 			    const MPI::Comm &comm)
-            : ArrayBase(name, dims, comm)
+            : ArrayBase(name, dims)
         {
-            initialize(ArrayBase::dims_, ArrayBase::comm_);
+            initialize(ArrayBase::dims_, comm);
         }
 
     private:
@@ -140,7 +137,7 @@ namespace detail {
         void initialize(const std::vector<size_t> &dims, const MPI::Comm &comm) {
 
             // dont have code to use ARMCI groups yet
-	    assert(ArrayBase::comm_ == MPI::Comm::World());
+	    MPQC_CHECK(comm == MPI::Comm::World());
 
 	    size_t size = 1;
 	    std::vector<range> extents;

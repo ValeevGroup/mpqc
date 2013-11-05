@@ -43,59 +43,69 @@ namespace mpqc {
             return end() - begin();
         }
 
-        bool operator==(const range &r) const {
-            return (r.begin() == begin() && r.end() == end());
-        }
-
         bool test(int64_t value) const {
             return ((*this->begin() <= value) && (value < *this->end()));
         }
 
-        static range intersection(const range &a, const range &b) {
-            int64_t begin = std::max(*a.begin(), *b.begin());
-            int64_t end = std::min(*a.end(), *b.end());
-            return (begin < end) ? range(begin, end) : range();
-        }
-
-        static std::vector<range> split(range r, size_t N) {
-            if (N >= r.size())
-                return std::vector<range>(1, r);
-            std::vector<range> blocks;
-            for (auto i = *r.begin(); i < *r.end(); i += N) {
-                blocks.push_back(range(i, std::min<int64_t>(i+N, *r.end())));
-            }
-            return blocks;
-        }
-
-        static std::vector<range> split2(range R, size_t N) {
-            std::vector<range> v;
-            int64_t m = R.size()%N;
-            int64_t b = R.size()/N;
-            int64_t r = 0;
-            for (int64_t i = 0; i < m; ++i) {
-                v.push_back(range(r, r+b+1));
-                r += b+1;
-            }
-            for (int64_t i = m; i < N; ++i) {
-                v.push_back(range(r, r+b));
-                r += b;
-            }
-            assert(r == R.size());
-            return v;
-        }
-
     };
-
-    /// Range intersection
-    inline range operator&(const range &a, const range &b) {
-        return range::intersection(a,b);
-    }
 
     /// print range as "begin:end"
     inline std::ostream& operator<<(std::ostream &os, const range &r) {
         os << *r.begin() << ":" << *r.end();
         return os;
     }
+
+    inline bool operator==(const range &a, const range &b) {
+        return (a.begin() == b.begin() && a.end() == b.end());
+    }
+
+    inline range intersection(const range &a, const range &b) {
+        int64_t begin = std::max(*a.begin(), *b.begin());
+        int64_t end = std::min(*a.end(), *b.end());
+        return (begin < end) ? range(begin, end) : range();
+    }
+
+    /// Range intersection
+    inline range operator&(const range &a, const range &b) {
+        return intersection(a,b);
+    }
+
+
+    /// Partition range into N blocks
+    inline std::vector<range> partition(const range &R, size_t N) {
+        std::vector<range> v;
+        size_t m = R.size()%N;
+        size_t b = R.size()/N;
+        int64_t r = *R.begin();
+        for (size_t i = 0; i < m; ++i) {
+            v.push_back(range(r, r+b+1));
+            r += b+1;
+        }
+        for (size_t i = m; i < N; ++i) {
+            v.push_back(range(r, r+b));
+            r += b;
+        }
+        assert(r == *R.end());
+        return v;
+    }
+
+    /// Split range into blocks of size N
+    inline std::vector<range> split(range r, size_t N) {
+        if (N >= r.size())
+            return std::vector<range>(1, r);
+        std::vector<range> blocks;
+        for (int64_t i = *r.begin(); i < *r.end(); i += N) {
+            blocks.push_back(range(i, std::min<int64_t>(i+N, *r.end())));
+        }
+        return blocks;
+    }
+
+    /// Split range into roughly equal blocks of size N or less
+    inline std::vector<range> balanced_split(const range &r, size_t N) {
+        size_t nb = (r.size() + N-1)/N; // number of blocks
+        return partition(r, nb);
+    }
+
 
     /// print range vector as "[ begin:end, ... ]"
     inline std::ostream& operator<<(std::ostream &os, const std::vector<range> &r) {
@@ -106,6 +116,7 @@ namespace mpqc {
         os << " ]";
         return os;
     }
+
 
     /// Cast range to range, return argument unchanged
     inline range range_cast(const range &r) {

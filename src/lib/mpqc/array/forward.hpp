@@ -45,10 +45,9 @@ namespace detail {
 
         template<typename Extent>
 	ArrayBase(const std::string &name,
-                  const std::vector<Extent> &extents,
-                  const MPI::Comm &comm)
-            : name_(name), comm_(comm)
+                  const std::vector<Extent> &extents)
         {
+            name_ = name;
             for (size_t i = 0; i < extents.size(); ++i) {
                 range r = extent(extents.at(i));
                 base_.push_back(*r.begin());
@@ -58,10 +57,6 @@ namespace detail {
 
         const std::string name() const {
             return this->name_;
-        }
-
-        const MPI::Comm& comm() const {
-            return this->comm_;
         }
 
         size_t rank() const {
@@ -88,7 +83,6 @@ namespace detail {
     protected:
 
         std::string name_;
-        MPI::Comm comm_;
         std::vector<size_t> dims_;
         std::vector<size_t> base_;
 

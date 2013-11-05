@@ -11,27 +11,43 @@
 #include "mpqc/math/matrix.hpp"
 #include "mpqc/file.hpp"
 
+#include "mpqc/utility/profile.hpp"
+
+//#define MPQC_CI_VERBOSE 1
+
 namespace mpqc {
 namespace ci {
 
     // read local segments into V from F
-    inline void read(ci::BlockVector &V, File::Dataspace<double> F,
+    inline void read(ci::Vector &V, File::Dataspace<double> F,
                      const std::vector<mpqc::range> &local) {
+        timer t;
+        size_t count = 0;
         foreach (auto r, local) {
             mpqc::Vector v(r.size());
             F(r) >> v;
             V(r) << v;
+            count += r.size();
         }
+#if MPQC_CI_VERBOSE
+        printf("read took %f s, %f mb/s\n", (double)t, count*sizeof(double)/(t*(1<<20)));
+#endif
     }
 
     // write local segments of V to F
-    inline void write(ci::BlockVector &V, File::Dataspace<double> F,
+    inline void write(ci::Vector &V, File::Dataspace<double> F,
                       const std::vector<mpqc::range> &local) {
+        timer t;
+        size_t count = 0;
         foreach (auto r, local) {
             mpqc::Vector v(r.size());
             V(r) >> v;
             F(r) << v;
+            count += r.size();
         }
+#if MPQC_CI_VERBOSE
+        printf("write took %f s, %f mb/s\n", (double)t, count*sizeof(double)/(t*(1<<20)));
+#endif
     }
 
 
@@ -39,6 +55,8 @@ namespace ci {
     std::vector<double> direct(CI<Type> &ci,
                                const mpqc::Vector &h,
                                const mpqc::Matrix &V) {
+
+        MPQC_PROFILE_REGISTER_THREAD;
 
         mpqc::Matrix lambda;
         mpqc::Vector a, r;
@@ -61,8 +79,8 @@ namespace ci {
 
         auto &comm = ci.comm;
 
-        ci::BlockVector C("ci.C", ci.subspace, ci.comm);
-        ci::BlockVector D("ci.D", ci.subspace, ci.comm);
+        ci::Vector C("ci.C", ci.subspace, comm, (ci.incore >= 1));
+        ci::Vector D("ci.D", ci.subspace, comm, (ci.incore >= 2));
 
         comm.barrier();
 
@@ -96,6 +114,7 @@ namespace ci {
 
             // augment G matrix
             {
+                MPQC_PROFILE_LINE;
                 mpqc::Vector g = mpqc::Vector::Zero(M);
                 foreach (auto r, ci.local()) {
                     mpqc::Vector c(r.size());
@@ -128,6 +147,7 @@ namespace ci {
 
                 // update d part
                 for (auto r : ci.local()) {
+                    MPQC_PROFILE_LINE;
                     mpqc::Vector v(r.size());
                     mpqc::Vector d(r.size());
                     d.fill(0);
@@ -162,7 +182,7 @@ namespace ci {
 
                 // orthonormalize
                 for (int i = 0; i < M; ++i) {
-                    ci::BlockVector &b = C;
+                    ci::Vector &b = C;
                     read(b, ci.vector.b[i], ci.local());
                     orthonormalize(b, D, ci.local(), ci.comm);
                 }
@@ -174,6 +194,8 @@ namespace ci {
                 D.sync();
 
             }
+
+            MPQC_PROFILE_DUMP(std::cout);
 
             std::cout << "Davidson iteration time: " << t << std::endl;
 

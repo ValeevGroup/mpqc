@@ -101,6 +101,11 @@ CI::CI(const Ref<KeyVal> &kv)
 
     config_.convergence = this->desired_value_accuracy();
     config_.e_ref = molecule()->nuclear_repulsion_energy();
+
+    config_.incore = kv->intvalue("incore", Int(config_.incore));
+    config_.hdf5.chunk = kv->intvalue("hdf5.chunk", Int(config_.hdf5.chunk));
+    config_.hdf5.compress = kv->intvalue("hdf5.compress", Int(config_.hdf5.compress));
+    
   }
 }
 

@@ -17,7 +17,7 @@ namespace detail {
 	std::vector<range> subset(const std::vector<range> &ranges) const {
 	    std::vector<range> s;
 	    for (int i = 0; i < ranges.size(); ++i) {
-		range r = range::intersection(ranges[i], this->extents[i]);
+		range r = (ranges[i] & this->extents[i]);
 		if (!r.size()) return std::vector<range>();
 		s.push_back(r);
 	    }
@@ -36,9 +36,9 @@ namespace detail {
 	array_parallel_impl(const std::string &name,
 			    const std::vector<size_t> &dims,
 			    MPI::Comm comm)
-            : ArrayBase(name, dims, MPI::Comm::dup(comm))
+            : ArrayBase(name, dims), thread_comm_(comm)
         {
-            initialize(ArrayBase::dims_, ArrayBase::comm_);
+            initialize(ArrayBase::dims_, comm);
         }
 
         void initialize(const std::vector<size_t> &dims, const MPI::Comm &comm) {
@@ -82,15 +82,11 @@ namespace detail {
 	    foreach (Tile t, tiles_) {
 	      if (t.local) delete t.data;
 	    }
-	    comm_.comm().free();
+	    thread_comm_.comm().free();
 	}
 
         void sync() {
-            comm_.sync();
-        }
-
-        const MPI::Comm& comm() const {
-            return this->comm_;
+            thread_comm_.sync();
         }
 
     protected:
@@ -118,7 +114,7 @@ namespace detail {
                     // MPQC_PROFILE_LINE;
                     // printf("comm::write\n");
                     //if (tile.proc == 0)
-                    comm_.write(buffer + count, tile.data, x, tile.proc);
+                    thread_comm_.write(buffer + count, tile.data, x, tile.proc);
                     // //}
                     count += size(x);
                 }
@@ -140,7 +136,7 @@ namespace detail {
                     // printf("comm::read\n");
                     //if (tile.proc == 0)
                     // std::cout << "read " << x << " from " << tile.proc << std::endl;
-                    comm_.read(buffer + count, tile.data, x, tile.proc);
+                    thread_comm_.read(buffer + count, tile.data, x, tile.proc);
                     count += size(x);
                     // //}
                 }
@@ -160,7 +156,7 @@ namespace detail {
         }
 
 	std::vector<Tile> tiles_;
-        array_thread_comm comm_;
+        array_thread_comm thread_comm_;
 
     };
 

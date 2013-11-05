@@ -35,7 +35,9 @@ namespace ci {
         mutable double e_core;
         double convergence;
         double cutoff;
-        size_t block, block2;
+        size_t block;
+        int incore;
+        struct { int chunk, compress; } hdf5;
         Config() {
             core = 0;
             orbitals = 0;
@@ -51,6 +53,9 @@ namespace ci {
             convergence = 1e-10;
             cutoff = convergence;
             block = 1024*4;
+            incore = 2;
+            hdf5.chunk = 0;
+            hdf5.compress = 0;            
         }
         void print(std::ostream& o = sc::ExEnv::out0()) const {
             o << sc::indent << "rank       = " << rank << std::endl;
@@ -87,7 +92,7 @@ namespace ci {
         } vector;
 
     protected:
-        mpqc::range local_; // range of local determinants
+        std::vector<mpqc::range> locals_; // range of local determinants
 
     public:
 
@@ -106,8 +111,8 @@ namespace ci {
             return subspace.dets();
         }
 
-        std::vector<mpqc::range> local() const {
-            return mpqc::range::split(this->local_, Config::block*Config::block);
+        const std::vector<mpqc::range>& local() const {
+            return this->locals_;
         }
         
         /// rank/excitation of the string relative to its ground state, ie [11..00]
@@ -151,14 +156,24 @@ namespace ci {
             // I/O
             {
                 size_t dets = this->subspace.dets();
-                this->local_ = mpqc::range::split2(mpqc::range(0, dets), this->comm.size())
-                    .at(this->comm.rank()); // segment belonging to this node
-                MPQC_CHECK(this->local_.size() > 0);
+                mpqc::range locals =
+                    partition(mpqc::range(0, dets), this->comm.size()).at(this->comm.rank());
+                MPQC_CHECK(locals.size() > 0);
                 std::vector<range> extents(2);
-                extents[0] = this->local_;
+                extents[0] = locals;
                 extents[1] = range(0,Config::max);
-                this->vector.b = File::Dataset<double>(io, "b", extents);
-                this->vector.Hb = File::Dataset<double>(io, "Hb", extents);
+                File::Properties dcpl(H5P_DATASET_CREATE);
+                if (Config::hdf5.chunk) {
+                    hsize_t chunk[] = { 1, std::min<hsize_t>(locals.size(), Config::hdf5.chunk) };
+                    H5Pset_chunk(dcpl.id(), 2, chunk);
+                }
+                if (Config::hdf5.compress) {
+                    //H5Pset_szip(dcpl.id(), H5_SZIP_NN_OPTION_MASK, 64);
+                    H5Pset_deflate (dcpl.id(), Config::hdf5.compress);
+                }
+                this->vector.b = File::Dataset<double>(io, "b", extents, dcpl);
+                this->vector.Hb = File::Dataset<double>(io, "Hb", extents, dcpl);
+                this->locals_ = split(locals, Config::block*Config::block);
             }
 
             // initial guess
@@ -195,10 +210,11 @@ namespace ci {
 
         /// initialize guess vector
         void guess() {
-            Vector one(1);
-            one[0] = 1;
-            if (this->local_.test(0))
-                vector.b(0,0) << one;
+            foreach (auto r, this->local()) {
+                mpqc::Vector b = mpqc::Vector::Zero(r.size());
+                if (r.test(0)) b(0) = 1;
+                vector.b(r,0) << b;
+            }
             comm.barrier();
         }
 

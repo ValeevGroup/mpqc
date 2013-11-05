@@ -8,6 +8,8 @@
 #include "mpqc/mpi.hpp"
 #include "mpqc/mpi/task.hpp"
 
+#include "mpqc/utility/profile.hpp"
+
 namespace mpqc {
 namespace ci {
 
@@ -25,7 +27,9 @@ namespace ci {
     template<class Type, class Index>
     void preconditioner(CI<Type, Index> &ci,
                         const mpqc::Vector &h, const mpqc::Matrix &V,
-                        double lambda, ci::BlockVector &D) {
+                        double lambda, ci::Vector &D) {
+
+        MPQC_PROFILE_LINE;
 
         const auto &comm = ci.comm;
         const auto &alpha = ci.alpha;

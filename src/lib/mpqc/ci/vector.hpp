@@ -5,15 +5,17 @@
 #include "mpqc/array.hpp"
 #include "mpqc/mpi.hpp"
 
+#include "mpqc/utility/profile.hpp"
+
 namespace mpqc {
 namespace ci {
 
     /// Block CI Vector.
     /// This Vector should be renamed Block Sparse Vector as it is applicable beyond R-CI.
     /// Matrix access spanning more than one block is not allowed.
-    struct BlockVector : boost::noncopyable {
+    struct Vector : boost::noncopyable {
 
-        BlockVector(std::string name, const SubspaceGrid &G, MPI::Comm comm) {
+        Vector(std::string name, const SubspaceGrid &G, MPI::Comm comm, bool incore) {
             blocks_.resize(G.alpha().size(), G.beta().size());
             size_t dets = 0;
             for (size_t j = 0; j < G.beta().size(); ++j) {
@@ -36,15 +38,17 @@ namespace ci {
                 this->beta_.push_back(s);
             std::vector<size_t> extents;
             extents.push_back(dets);
-            this->array_ = Array<double>(name, extents, comm);
+            this->array_ = (incore)
+                ? Array<double>(name, extents, ARRAY_CORE, comm)
+                : Array<double>(name, extents, ARRAY_FILE, comm);
         }
 
 
         struct Block1d {
             Block1d(Array<double> array)
                 : array_(array) {}
-            friend void operator<<(BlockVector::Block1d block, const mpqc::Vector &v);
-            friend void operator>>(BlockVector::Block1d block, mpqc::Vector &v);
+            friend void operator<<(Vector::Block1d block, const mpqc::Vector &v);
+            friend void operator>>(Vector::Block1d block, mpqc::Vector &v);
         private:
             Array<double> array_;
         };
@@ -77,7 +81,9 @@ namespace ci {
         }
 
 
-        void sync() {}
+        void sync() {
+            this->array_.sync();
+        }
 
     private:
 
@@ -121,16 +127,16 @@ namespace ci {
     };
 
 
-    void operator<<(BlockVector::Block1d block, const mpqc::Vector &v) {
+    void operator<<(Vector::Block1d block, const mpqc::Vector &v) {
         block.array_ << v;
     }
 
-    void operator>>(BlockVector::Block1d block, mpqc::Vector &v) {
+    void operator>>(Vector::Block1d block, mpqc::Vector &v) {
         block.array_ >> v;
     }
 
 
-    double norm(ci::BlockVector &V,
+    double norm(ci::Vector &V,
                 const std::vector<mpqc::range> &local,
                 const MPI::Comm &comm) {
         double norm = 0;
@@ -146,16 +152,15 @@ namespace ci {
     /// Schmidt orthogonalization
     /// d' = normalized(d - <d,b>*b)
     /// @return <d,b>*<d',d'>
-    double orthonormalize(ci::BlockVector &b, ci::BlockVector &D,
+    double orthonormalize(ci::Vector &b, ci::Vector &D,
                           const std::vector<mpqc::range> &local,
                           const MPI::Comm &comm)
     {
-        // N.B. foreach doesn't work with openmp
-        // most likely not needed - I/O bound
-        // db = d*B
+        MPQC_PROFILE_LINE;
         double db = 0;
-        ////#pragma omp parallel reduction(+:db)
-        foreach (auto rj, local) {
+#pragma omp parallel for reduction(+:db)
+        for (int j = 0; j < local.size(); ++j) {
+            mpqc::range rj = local.at(j);
             mpqc::Vector Dj(rj.size()), bj(rj.size());
             D(rj) >> Dj;
             b(rj) >> bj;
@@ -165,8 +170,9 @@ namespace ci {
 
         // D = D - db*b;
         double dd = 0;
-        ////#pragma omp parallel reduction(+:dd)
-        foreach (auto rj, local) {
+#pragma omp parallel for reduction(+:dd)
+        for (int j = 0; j < local.size(); ++j) {
+            mpqc::range rj = local.at(j);
             mpqc::Vector Dj(rj.size()), bj(rj.size());
             D(rj) >> Dj;
             b(rj) >> bj;
@@ -178,8 +184,9 @@ namespace ci {
 
         // D = D/||D||
         dd = 1/sqrt(dd);
-        ////#pragma omp parallel
-        foreach (auto rj, local) {
+#pragma omp parallel for
+        for (int j = 0; j < local.size(); ++j) {
+            mpqc::range rj = local.at(j);
             mpqc::Vector Dj(rj.size());
             D(rj) >> Dj;
             Dj *= dd;

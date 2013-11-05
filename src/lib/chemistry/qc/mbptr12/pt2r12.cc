@@ -38,6 +38,8 @@
 #include <chemistry/qc/mbptr12/creator.h>
 #include <chemistry/qc/mbptr12/container.h>
 
+#include <TiledArray/algebra/conjgrad.h>
+
 #if defined(HAVE_MPQC3_RUNTIME)
 #  include <chemistry/qc/mbptr12/sr_r12intermediates.h>
 #endif
@@ -1875,6 +1877,118 @@ double PT2R12::cabs_singles_Dyall()
   return E;
 }
 
+namespace{
+template<typename T>
+	struct _CABS_singles_Fock {
+
+		typedef TA::Array<T, 4> Array4;
+		typedef TA::Array<T, 2> Array2;
+
+	    const Array4& Bmatrix;
+
+		_CABS_singles_Fock(const Array4& B) : Bmatrix(B){
+		}
+
+		/**
+		 * @param[in] C
+		 * @param[out] BC
+		 */
+		void operator()(const Array2& C, Array2& BC) {
+			BC("m1,B'") = Bmatrix("A',B',m1,n1") * C("n1,A'");
+		}
+	};
+}
+
+namespace {
+  /// makes a diagonal 2-index preconditioner: pc_x^y = -1/ ( <x|O1|x> - <y|O2|y> )
+  template <typename T>
+  struct diag_precond2 {
+    typedef Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> EigenMatrixX;
+    diag_precond2(const EigenMatrixX& O1_mat,
+                  const EigenMatrixX& O2_mat) :
+                      O1_mat_(O1_mat), O2_mat_(O2_mat) {
+    }
+    template <typename Index> T operator()(const Index& i) {
+      return 1.0 / (- O1_mat_(i[0], i[0]) + O2_mat_(i[1], i[1]));
+    }
+
+    private:
+      EigenMatrixX O1_mat_;
+      EigenMatrixX O2_mat_;
+  };
+}
+
+double PT2R12::cabs_singles_Fock()
+{
+	/*"Perturbative Correction for the Basis Set Incompleteness Error of CASSCF",
+	 * L. Kong and E.~F.~Valeev,  J. Chem. Phys. 133, 174126 (2010),
+	 * http://dx.doi.org/10.1063/1.3499600.
+	 * */
+
+    ExEnv::out0() << std::endl << std::endl << indent << "Entered PT2R12::cabs_single_Fock\n";
+	typedef SingleReference_R12Intermediates<double>::TArray4 TArray4;
+	typedef SingleReference_R12Intermediates<double>::TArray2 TArray2;
+
+	SingleReference_R12Intermediates<double> srr12intrmds(madness::World::get_default(),
+	                                                        this->r12world());
+	srr12intrmds.set_rdm2(this->rdm2_);
+
+    TArray2 rdm1_oo = srr12intrmds._2("<m|gamma|n>");
+    TArray2 rdm1_aa = srr12intrmds._2("<n1|gamma|m1>");
+    TArray2 rdm1_oa = srr12intrmds._2("<n|gamma|m1>");
+
+    TArray2 Fmn = srr12intrmds._2("<m|F|n>");
+    TArray2 FAB = srr12intrmds._2("<A'|F|B'>");
+
+
+    TArray4 lambda = - rdm1_aa("n1,m1")*rdm1_oo("m,n") + srr12intrmds._4("<n1 m|gamma|m1 n>");
+    // B matrix in Equation (18)
+    TArray4 firstpart = srr12intrmds._2("<B'|I|A'>") * srr12intrmds._2("<n|F|m>")
+      * lambda("n1,m,m1,n");
+    TArray4 secondpart = srr12intrmds._2("<B'|F|A'>") * rdm1_aa("n1,m1");
+    TArray4 B = firstpart("A',B',m1,n1") + secondpart("A',B',m1,n1");
+    //
+    //  solve the linear algebra problem a(x)=b in Equation (15)
+    //
+    // x we trying to solve, C
+    TArray2 x =  rdm1_oa("n,m1")*srr12intrmds._2("<c'|F|n>")*srr12intrmds._2("<B'|I|c'>");
+    // b in a(x) = b
+    TArray2 b = - x("m1,B'");
+
+    // make preconditioner: inverse of diagonal elements <A'|F|A'> - <m|F|m>
+    typedef detail::diag_precond2<double> pceval_type; //!< evaluator of preconditioner
+    typedef TA::Array<double, 2, LazyTensor<double, 2, pceval_type > > TArray2d;
+    TArray2d Delta_iA(b.get_world(), b.trange());
+
+    pceval_type Delta_iA_gen(TA::array_to_eigen(Fmn),
+                             TA::array_to_eigen(FAB));
+    // construct local tiles
+    for(auto t=Delta_iA.trange().tiles().begin();
+        t!=Delta_iA.trange().tiles().end();
+        ++t){
+      if (Delta_iA.is_local(*t)) {
+        std::array<std::size_t, 2> index; std::copy(t->begin(), t->end(), index.begin());
+        madness::Future < typename TArray2d::value_type >
+        tile((LazyTensor<double, 2, pceval_type >(&Delta_iA, index, &Delta_iA_gen)
+        ));
+
+        // Insert the tile into the array
+        Delta_iA.set(*t, tile);
+      }
+    }
+    TArray2 preconditioner  = Delta_iA("m,A'");
+
+    _CABS_singles_Fock<double> cabs_singles_fock(B);  // initialize the function a(x)
+    TA::ConjugateGradientSolver<TArray2, _CABS_singles_Fock<double> > cg_solver; // linear solver object
+
+    // solve the linear system, a(x) = b, cabs_singles_fock is a(x); x is x. b is b in a(x) = b
+    auto resnorm = cg_solver( cabs_singles_fock, b, x, preconditioner, 1e-5);
+    //std::cout << "Converged CG to " << resnorm << std::endl;
+
+    //calculate the second order energy based on Equation (16)
+    double E = dot( x("n,A'") * srr12intrmds._2("<m|F|A'>") , srr12intrmds._2("<n|gamma|m>"));
+    return  E;
+}
 
 
 RefSymmSCMatrix PT2R12::density()

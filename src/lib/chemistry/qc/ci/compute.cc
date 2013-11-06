@@ -116,7 +116,12 @@ std::vector<double> sc::CI::compute(const Ref<RefWavefunction> &wfn,
       SCFormIO::fileext_to_filename(".h5");
 
   std::auto_ptr<mpqc::File> file;
-  file.reset(new mpqc::File(fname + "." + mpqc::string_cast(comm.rank())));
+  std::unique_ptr<mpqc::File::Driver> driver(new mpqc::File::Driver());
+  if (config.hdf5.direct) {
+      std::cout << "hdf5.direct=" << config.hdf5.direct << std::endl;
+      driver.reset(new mpqc::File::Driver::Direct());
+  }
+  file.reset(new mpqc::File(fname + "." + mpqc::string_cast(comm.rank()), *driver));
 
   std::vector<double> E;
 

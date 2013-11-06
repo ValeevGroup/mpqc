@@ -211,14 +211,25 @@ namespace mpqc {
            Default file driver
            @warning This class needs work to accomodate different HDF5 drivers better
          */
-        struct Driver {
+        struct Driver : boost::noncopyable {
             struct Core;
-            Driver() : fapl_(H5P_DEFAULT) {}
+            struct Direct;
+            Driver() {
+                this->fapl_ = H5Pcreate(H5P_FILE_ACCESS);
+                MPQC_FILE_VERIFY(this->fapl_);
+            }
             hid_t fapl() const {
                 return fapl_;
             }
-        private:
+        protected:
             hid_t fapl_;
+        };
+
+        struct Driver::Direct : Driver {
+            Direct() : Driver()
+            {
+                MPQC_FILE_VERIFY(H5Pset_fapl_direct(Driver::fapl_, 1024, 4096, 8*4096));
+            }
         };
 
         /**

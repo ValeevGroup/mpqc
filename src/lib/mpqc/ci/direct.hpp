@@ -197,7 +197,7 @@ namespace ci {
 
             MPQC_PROFILE_DUMP(std::cout);
 
-            std::cout << "Davidson iteration time: " << t << std::endl;
+            sc::ExEnv::out0() << sc::indent << "Davidson iteration time: " << t << std::endl;
 
             if (fabs(iters[it - 1].E - iters[it].E) < ci.convergence) {
                 E.push_back(iters[it].E);

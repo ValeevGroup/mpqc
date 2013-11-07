@@ -160,10 +160,10 @@ namespace ci {
 
         S.sync();
 
-        std::cout << "sigma took " << double(time.t) << std::endl;
-        std::cout << "  sigma1: " << time.s1 << std::endl;
-        std::cout << "  sigma2: " << time.s2 << std::endl;
-        std::cout << "  sigma3: " << time.s3 << std::endl;
+        sc::ExEnv::out0() << sc::indent << "sigma took " << double(time.t) << std::endl;
+        sc::ExEnv::out0() << sc::indent << "  sigma1: " << time.s1 << std::endl;
+        sc::ExEnv::out0() << sc::indent << "  sigma2: " << time.s2 << std::endl;
+        sc::ExEnv::out0() << sc::indent << "  sigma3: " << time.s3 << std::endl;
 
 
     }

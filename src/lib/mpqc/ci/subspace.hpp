@@ -98,16 +98,6 @@ namespace ci {
         return S;
     }
 
-    /// Extent of the vector of subspace, ie the [0:last) range
-    template<class Spin>
-    mpqc::range extents(const std::vector< Subspace<Spin> > &R) {
-        size_t last = 0;
-        foreach (auto r, R) {
-            last = std::max<size_t>(last, *r.end());
-        }
-        return mpqc::range(0, last);
-    }
-
     /// Grid of subspaces, represented as blocks of determinants defined by alpha/beta pair,
     /// along with sparsity information.
     struct SubspaceGrid {

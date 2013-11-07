@@ -13,7 +13,7 @@
 
 namespace mpqc {
     
-    /// @addtogroup Utility
+    /// @addtogroup CoreUtility
     /// @{
 
     /// MPQC exception class
@@ -45,7 +45,7 @@ namespace mpqc {
 
 }
 
-/// @ingroup Utility
+/// @ingroup CoreUtility
 /// Constructs mpqc::Exception with file, line information
 /// and an optional printf-style format and arguments
 #define MPQC_EXCEPTION(...) mpqc::Exception(__FILE__, __LINE__, __VA_ARGS__)

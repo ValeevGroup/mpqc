@@ -25,19 +25,22 @@ namespace ci {
         size_t core, orbitals;
         struct {
             size_t alpha, beta;
-        } electrons; //!< number of electrons of each spin in CI
-        size_t ms;
-        size_t rank;
-        size_t roots;
-        size_t max;
+        } electrons;   //!< number of electrons of each spin in CI
+        size_t ms;     //!< magnetic moment/Ms
+        size_t rank;   //!< Restricted CI order, rank=0 implies Full CI
+        size_t roots;  //!< number of roots to find
+        size_t max;    //!< maximum number of iterations
         size_t collapse;
         double e_ref;
         mutable double e_core;
-        double convergence;
-        double cutoff;
-        size_t block;
-        int incore;
-        struct { int chunk, compress; } hdf5;
+        double convergence; //!< energy convergence criteria
+        size_t block;       //!< CI matrix blocking factor (values 1024 to 8192 are ok)
+        int incore;         //!< determines if arrays C+S (2), C (1), or none(0) will be in core
+        struct {
+            int chunk;    //!< HDF5 chunking (should be about 256k)
+            int compress; //!< GZIP compress level (0 to 9)
+            int direct;   //!< HDF5 direct I/O
+        } hdf5;
         Config() {
             core = 0;
             orbitals = 0;
@@ -51,11 +54,11 @@ namespace ci {
             e_ref = 0.0;
             e_core = 0.0;
             convergence = 1e-10;
-            cutoff = convergence;
             block = 1024*4;
             incore = 2;
             hdf5.chunk = 0;
             hdf5.compress = 0;            
+            hdf5.direct = 0;
         }
         void print(std::ostream& o = sc::ExEnv::out0()) const {
             o << sc::indent << "rank       = " << rank << std::endl;
@@ -70,26 +73,22 @@ namespace ci {
 
     /// Base CI class, specific CIs (Full, Restricted, etc) should be derived from this base.
     template<class CIFunctor, class Index>
-    struct CI : Config, boost::noncopyable {
+    struct CI : boost::noncopyable {
 
     public:
 
-        ci::String::List<Index> alpha; /// Alpha string list
-        ci::String::List<Index> beta; /// Beta string list
+        const ci::Config config; //!< CI configuration
 
-        // /// alpha/beta subspaces
-        // struct {
-        //     std::vector< Subspace<Alpha> > alpha;
-        //     std::vector< Subspace<Beta> > beta;
-        // } space;
-        SubspaceGrid subspace;
+        ci::String::List<Index> alpha; //!< Alpha string list
+        ci::String::List<Index> beta; //!< Beta string list
 
-        MPI::Comm comm;
+        SubspaceGrid subspace; //!< CI subspaces grid
+
+        MPI::Comm comm; //!< CI communicator
         
-        /// CI vectors b(C), Hb(sigma) file datasets.
         struct IO : boost::noncopyable {
             File::Dataset<double> b, Hb;
-        } vector;
+        } vector; //!< CI vectors b (aka C), Hb (aka sigma) file datasets.
 
     protected:
         std::vector<mpqc::range> locals_; // range of local determinants
@@ -125,7 +124,7 @@ namespace ci {
         /// Construct CI base given configuration and communicator.
         /// Strings will be sorted lexicographically AND by excitation
         CI(const Config &config, MPI::Comm comm, File::Group io) 
-            : Config(config),
+            : config(config),
               alpha(ci::strings(config.orbitals, config.electrons.alpha, config.rank)),
               beta(ci::strings(config.orbitals, config.electrons.beta, config.rank)),
               comm(comm)
@@ -135,16 +134,16 @@ namespace ci {
             auto sb = sort<Beta>(this->beta);
 
             this->subspace = CIFunctor::grid(*this,
-                                             split(sa, Config::block),
-                                             split(sb, Config::block));
+                                             split(sa, this->config.block),
+                                             split(sb, this->config.block));
             
             {
                 auto &out = sc::ExEnv::out0();
                 // general
                 out << sc::indent
                     << sc::scprintf("CI space = (%lu %lu): ",
-                                    Config::orbitals, (Config::electrons.alpha+
-                                                       Config::electrons.beta))
+                                    this->config.orbitals, (this->config.electrons.alpha+
+                                                       this->config.electrons.beta))
                     << sc::scprintf("alpha = %lu, beta = %lu, dets = %lu\n",
                                     alpha.size(), beta.size(), this->subspace.dets())
                     << std::endl;
@@ -161,19 +160,21 @@ namespace ci {
                 MPQC_CHECK(locals.size() > 0);
                 std::vector<range> extents(2);
                 extents[0] = locals;
-                extents[1] = range(0,Config::max);
+                extents[1] = range(0,this->config.max);
                 File::Properties dcpl(H5P_DATASET_CREATE);
-                if (Config::hdf5.chunk) {
-                    hsize_t chunk[] = { 1, std::min<hsize_t>(locals.size(), Config::hdf5.chunk) };
+                if (this->config.hdf5.chunk) {
+                    hsize_t chunk[] = { 1, std::min<hsize_t>(locals.size(), this->config.hdf5.chunk) };
                     H5Pset_chunk(dcpl.id(), 2, chunk);
+                    std::cout << "hdf5.chunk=" << this->config.hdf5.chunk << std::endl;
                 }
-                if (Config::hdf5.compress) {
+                if (this->config.hdf5.compress) {
                     //H5Pset_szip(dcpl.id(), H5_SZIP_NN_OPTION_MASK, 64);
-                    H5Pset_deflate (dcpl.id(), Config::hdf5.compress);
+                    H5Pset_deflate (dcpl.id(), this->config.hdf5.compress);
+                    std::cout << "hdf5.compress=" << this->config.hdf5.compress << std::endl;
                 }
                 this->vector.b = File::Dataset<double>(io, "b", extents, dcpl);
                 this->vector.Hb = File::Dataset<double>(io, "Hb", extents, dcpl);
-                this->locals_ = split(locals, Config::block*Config::block);
+                this->locals_ = split(locals, this->config.block*this->config.block);
             }
 
             // initial guess
@@ -253,7 +254,7 @@ namespace ci {
                     /* do nothing */
                 }
                 else {
-                    throw MPQC_EXCEPTION("internal error");
+                    throw MPQC_EXCEPTION("internal error in CI::sort");
                 }
                 ++end;
             }

@@ -74,7 +74,7 @@ namespace ci {
         comm.sum(dd);
         D.sync();
 
-        if (ci.ms != 0) {
+        if (ci.config.ms != 0) {
             throw MPQC_EXCEPTION("Preconditioner not yet implemented for ci.ms != 0");
         }
  

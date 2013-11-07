@@ -207,24 +207,31 @@ namespace mpqc {
         template<typename T>
         struct Dataspace;
 
-        /**
-           Default file driver
-           @warning This class needs work to accomodate different HDF5 drivers better
-         */
-        struct Driver {
+        /// Default file driver
+        struct Driver : boost::noncopyable {
             struct Core;
-            Driver() : fapl_(H5P_DEFAULT) {}
+            struct Direct;
+            Driver() {
+                this->fapl_ = H5Pcreate(H5P_FILE_ACCESS);
+                MPQC_FILE_VERIFY(this->fapl_);
+            }
             hid_t fapl() const {
                 return fapl_;
             }
-        private:
+        protected:
             hid_t fapl_;
         };
 
-        /**
-           Constructs a null file object.
-           Creating objects with this file as parent will fail
-         */
+        /// Direct I/O file driver
+        struct Driver::Direct : Driver {
+            Direct() : Driver()
+            {
+                MPQC_FILE_VERIFY(H5Pset_fapl_direct(Driver::fapl_, 1024, 4096, 8*4096));
+            }
+        };
+
+        /// Constructs a null file object.
+        /// Creating objects with this file as parent will fail
         File() {}
 
         /**

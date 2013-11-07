@@ -1,5 +1,6 @@
 #ifndef MPQC_CI_VECTOR_HPP
 #define MPQC_CI_VECTOR_HPP
+
 #include "mpqc/ci/subspace.hpp"
 #include "mpqc/math/matrix.hpp"
 #include "mpqc/array.hpp"
@@ -10,11 +11,17 @@
 namespace mpqc {
 namespace ci {
 
-    /// Block CI Vector.
-    /// This Vector should be renamed Block Sparse Vector as it is applicable beyond R-CI.
-    /// Matrix access spanning more than one block is not allowed.
+    /// @addtogroup CI
+    /// @{
+
+    /// Block CI Vector, with 1-d (vector) and 2-d (matrix) access.
     struct Vector : boost::noncopyable {
 
+        /// Construct vector
+        /// @param name vector name
+        /// @param G vector grid (blocking and sparsity)
+        /// @param comm MPI communicator
+        /// @param incore store vector in core (incore=true) or in file
         Vector(std::string name, const SubspaceGrid &G, MPI::Comm comm, bool incore) {
             blocks_.resize(G.alpha().size(), G.beta().size());
             size_t dets = 0;
@@ -43,43 +50,52 @@ namespace ci {
                 : Array<double>(name, extents, ARRAY_FILE, comm);
         }
 
-
+        
+        /// 1-d vector sub-block
         struct Block1d {
-            Block1d(Array<double> array)
-                : array_(array) {}
+        private:
+            Array<double> array_;
             friend void operator<<(Vector::Block1d block, const mpqc::Vector &v);
             friend void operator>>(Vector::Block1d block, mpqc::Vector &v);
         private:
-            Array<double> array_;
+            friend class Vector;
+            Block1d(Array<double> array) : array_(array) {}
         };
 
+        /// Returns 1-d sub-block of vector
+        /// @param r sub-block range
         Block1d operator()(range r) {
             return Block1d(this->array_(r));
         }
 
 
+        /// 2-d vector sub-block
         struct Block2d : mpqc::Matrix::Assignable {
-            Block2d(Array<double> array, size_t rows, size_t cols)
-                : array_(array), rows_(rows), cols_(cols) {}
+            /// Assign matrix to this sub-block
             void operator=(const mpqc::Matrix &m) const {
                 MPQC_CHECK(m.rows() == this->rows_);
                 MPQC_CHECK(m.cols() == this->cols_);
                 this->array_ << m;
             }
+            /// mpqc::Matrix::Assignable::assign_to implementation
             void assign_to(mpqc::Matrix &m) const {
                 m.resize(this->rows_, this->cols_);
                 this->array_ >> m;
             }
         private:
+            friend class Vector;
+            Block2d(Array<double> array, size_t rows, size_t cols)
+                : array_(array), rows_(rows), cols_(cols) {}
+        private:
             Array<double> array_;
             size_t rows_, cols_;
         };
 
+        /// Returns 2-d sub-block of vector
         Block2d operator()(mpqc::range A, mpqc::range B) {
             Block b = this->block(A,B);
             return Block2d(this->array_(b.range()), b.rows, b.cols);
         }
-
 
         void sync() {
             this->array_.sync();
@@ -103,6 +119,7 @@ namespace ci {
 
     private:
 
+        /// resolve (A,B) into block
         Block block(mpqc::range A, mpqc::range B) const {
             size_t i = range_to_block(A, this->alpha_);
             size_t j = range_to_block(B, this->beta_);
@@ -126,16 +143,20 @@ namespace ci {
 
     };
 
-
+    /// Set vector block to v
     void operator<<(Vector::Block1d block, const mpqc::Vector &v) {
         block.array_ << v;
     }
 
+    /// Get vector block into v
     void operator>>(Vector::Block1d block, mpqc::Vector &v) {
         block.array_ >> v;
     }
 
-
+    /// Compute CI vector norm
+    /// @param[in] V CI Vector
+    /// @param local vector of sub-blocks the node will process (implies parallelization)
+    /// @param comm MPI comm
     double norm(ci::Vector &V,
                 const std::vector<mpqc::range> &local,
                 const MPI::Comm &comm) {
@@ -151,6 +172,10 @@ namespace ci {
 
     /// Schmidt orthogonalization
     /// d' = normalized(d - <d,b>*b)
+    /// @param[in] b orthonormal CI Vector (notice ortho*normal* - MUST be norm-1)
+    /// @param[in,out] d CI Vector to orthonormalize
+    /// @param local vector of sub-blocks the node will process (implies parallelization)
+    /// @param comm MPI comm
     /// @return <d,b>*<d',d'>
     double orthonormalize(ci::Vector &b, ci::Vector &D,
                           const std::vector<mpqc::range> &local,
@@ -195,6 +220,7 @@ namespace ci {
         return db*dd;
     }
 
+    /// @}
 
 }
 }

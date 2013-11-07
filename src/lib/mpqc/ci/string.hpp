@@ -165,12 +165,9 @@ namespace ci {
     inline int sgn(const String &I, int i, int j) {
         uint64_t b = I.to_ulong();
         int n = std::abs(i - j);
-        if (j < i)
-            std::swap(i, j);
-        b = b << (63 - j);
-        b = b << 1;
-        b = b >> 2;
-        b = b >> (63 - n);
+        if (j < i) std::swap(i, j);
+        b = b & ((uint64_t(1) << j) - 1); // clear high bits
+        b = b >> i; // clear low bits by shifting
         size_t p = String::bitset(b).count();
         //size_t p = _mm_popcnt_u64(b);
 #ifndef NDEBUG

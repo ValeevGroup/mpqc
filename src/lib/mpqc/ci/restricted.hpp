@@ -6,9 +6,14 @@
 #include "mpqc/math/matrix.hpp"
 
 namespace mpqc {
-namespace ci {    
+namespace ci {
+    
+    /// @addtogroup CI
+    /// @{
 
+    /// Restricted CI Functor
     struct Restricted {
+        /// Create Restricted CI subspace grid
         template<class Index>
         static SubspaceGrid grid(const CI<Restricted, Index> &ci,
                                  const std::vector< Subspace<Alpha> > &A,
@@ -27,7 +32,7 @@ namespace ci {
         static bool test(const CI<Restricted, Index> &ci,
                          const String &a)
         {
-            return (ci.excitation(a) <= ci.rank);
+            return (ci.excitation(a) <= ci.config.rank);
         }
         /// tests if simultaneous excitation to space a and space b is allowed
         template<class Index>
@@ -35,9 +40,11 @@ namespace ci {
                          const Space<Alpha> &a,
                          const Space<Beta> &b)
         {
-            return ((a.rank() + b.rank()) <= ci.rank);
+            return ((a.rank() + b.rank()) <= ci.config.rank);
         }
     };
+    
+    /// @}
 
 } // namespace ci
 } // namespace mpqc

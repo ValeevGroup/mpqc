@@ -1669,8 +1669,9 @@ double PT2R12::cabs_singles_Complete()
 
 double PT2R12::cabs_singles_Dyall()
 {
-# define DEBUGG false
-
+# define DEBUGG true
+  ExEnv::out0() << std::endl << std::endl << indent
+      << "PT2R12::cabs_singles_Dyall\n";
   const SpinCase1 spin = Alpha;
   Ref<OrbitalSpace> pspace = this->r12world()->refwfn()->occ_sb();
   Ref<OrbitalSpace> vspace = this->r12world()->refwfn()->uocc_act_sb(spin);
@@ -1823,6 +1824,7 @@ double PT2R12::cabs_singles_Dyall()
      b_bar->accumulate(gamma1* fock_iA);
 #if DEBUGG
      gamma1.print(string("gamma1").c_str());
+     gamma2.print(string("gamma2").c_str());
      hcore_iA.print(string("hcore iA").c_str());
      b_bar.print(string("b_bar term1").c_str());
 #endif
@@ -1867,6 +1869,9 @@ double PT2R12::cabs_singles_Dyall()
   RefSCMatrix B2 = B1.copy().t();
   RefSCMatrix B = B1 + B2;
   B.scale(0.5);
+#if DEBUGG
+  B.print(string("B matrix").c_str());
+#endif
   RefSCVector X = b->clone();
   X.assign(0.0);
   RefSymmSCMatrix Bsymm = B.kit()->symmmatrix(dimiA);
@@ -1894,7 +1899,7 @@ template<typename T>
 		 * @param[out] BC
 		 */
 		void operator()(const Array2& C, Array2& BC) {
-			BC("m1,B'") = Bmatrix("A',B',m1,n1") * C("n1,A'");
+			BC("m1,B'") = Bmatrix("B',A',n1,m1") * C("n1,A'");
 		}
 	};
 }
@@ -1918,76 +1923,96 @@ namespace {
   };
 }
 
-double PT2R12::cabs_singles_Fock()
-{
-	/*"Perturbative Correction for the Basis Set Incompleteness Error of CASSCF",
-	 * L. Kong and E.~F.~Valeev,  J. Chem. Phys. 133, 174126 (2010),
-	 * http://dx.doi.org/10.1063/1.3499600.
-	 * */
+double PT2R12::cabs_singles_Fock() {
+  /*"Perturbative Correction for the Basis Set Incompleteness Error of CASSCF",
+   * L. Kong and E.~F.~Valeev,  J. Chem. Phys. 133, 174126 (2010),
+   * http://dx.doi.org/10.1063/1.3499600.
+   * */
+#define DEBUGG true
+  ExEnv::out0() << std::endl << indent
+      << "Entered PT2R12::cabs_single_Fock\n";
+  typedef SingleReference_R12Intermediates<double>::TArray4 TArray4;
+  typedef SingleReference_R12Intermediates<double>::TArray2 TArray2;
 
-    ExEnv::out0() << std::endl << std::endl << indent << "Entered PT2R12::cabs_single_Fock\n";
-	typedef SingleReference_R12Intermediates<double>::TArray4 TArray4;
-	typedef SingleReference_R12Intermediates<double>::TArray2 TArray2;
+  SingleReference_R12Intermediates<double> srr12intrmds(
+      madness::World::get_default(), this->r12world());
+  srr12intrmds.set_rdm2(this->rdm2_);
 
-	SingleReference_R12Intermediates<double> srr12intrmds(madness::World::get_default(),
-	                                                        this->r12world());
-	srr12intrmds.set_rdm2(this->rdm2_);
+  // make all the matrixes that needed
+  TArray2 gamma2 = srr12intrmds._2("<m|gamma|n>");
+#if DEBUGG
+  std::cout << "gamma2: \n" << gamma2 << std::endl;
+#endif
 
-    TArray2 rdm1_oo = srr12intrmds._2("<m|gamma|n>");
-    TArray2 rdm1_aa = srr12intrmds._2("<n1|gamma|m1>");
-    TArray2 rdm1_oa = srr12intrmds._2("<n|gamma|m1>");
+  TArray2 Fmn = srr12intrmds._2("<m|F|n>");
+  TArray2 FmA = srr12intrmds._2("<m|F|A'>");
+  TArray2 Fcn = srr12intrmds._2("<c'|F|n>");
+  TArray2 FAB = srr12intrmds._2("<A'|F|B'>");
 
-    TArray2 Fmn = srr12intrmds._2("<m|F|n>");
-    TArray2 FAB = srr12intrmds._2("<A'|F|B'>");
+  TArray2 IAB = srr12intrmds._2("<B'|I|A'>");
+  TArray2 IBc = srr12intrmds._2("<B'|I|c'>");
 
+  TArray4 gamma4 = srr12intrmds._4("<n1 m|gamma|m1 n>");
 
-    TArray4 lambda = - rdm1_aa("n1,m1")*rdm1_oo("m,n") + srr12intrmds._4("<n1 m|gamma|m1 n>");
-    // B matrix in Equation (18)
-    TArray4 firstpart = srr12intrmds._2("<B'|I|A'>") * srr12intrmds._2("<n|F|m>")
-      * lambda("n1,m,m1,n");
-    TArray4 secondpart = srr12intrmds._2("<B'|F|A'>") * rdm1_aa("n1,m1");
-    TArray4 B = firstpart("A',B',m1,n1") + secondpart("A',B',m1,n1");
-    //
-    //  solve the linear algebra problem a(x)=b in Equation (15)
-    //
-    // x we trying to solve, C
-    TArray2 x =  rdm1_oa("n,m1")*srr12intrmds._2("<c'|F|n>")*srr12intrmds._2("<B'|I|c'>");
-    // b in a(x) = b
-    TArray2 b = - x("m1,B'");
+  // make B matrix in Equation (18)
+  // term1
+  TArray4 term1 = FAB("B',A'") * gamma2("n1,m1");
+  // term2
+  TArray4 term2 = IAB("B',A'") * Fmn("n,m") * gamma4("n1,m,m1,n");
+  // term3
+  TArray4 term3 = - IAB("B',A'") * Fmn("n,m") * gamma2("n1,m1") * gamma2("m,n") ;
+  // B
+  TArray4 B = term1("B',A',n1,m1") + term2("B',A',n1,m1") + term3("B',A',n1,m1");
+#if DEBUGG
+  std::cout << "B matrix: \n" << B << std::endl;
+#endif
+  //
+  //  solve the linear algebra problem a(x)=b in Equation (15)
+  //
+  // x we trying to solve, C
+  TArray2 x = gamma2("n,m1") * Fcn("c',n") * IBc("B',c'");
+  // b in a(x) = b
+  TArray2 b = -x("m1,B'");
+#if DEBUGG
+  std::cout << "b matrix: \n" << b << std::endl;
+#endif
 
-    // make preconditioner: inverse of diagonal elements <A'|F|A'> - <m|F|m>
-    typedef detail::diag_precond2<double> pceval_type; //!< evaluator of preconditioner
-    typedef TA::Array<double, 2, LazyTensor<double, 2, pceval_type > > TArray2d;
-    TArray2d Delta_iA(b.get_world(), b.trange());
+  // make preconditioner: inverse of diagonal elements <A'|F|A'> - <m|F|m>
+  typedef detail::diag_precond2<double> pceval_type; //!< evaluator of preconditioner
+  typedef TA::Array<double, 2, LazyTensor<double, 2, pceval_type> > TArray2d;
+  TArray2d Delta_iA(b.get_world(), b.trange());
 
-    pceval_type Delta_iA_gen(TA::array_to_eigen(Fmn),
-                             TA::array_to_eigen(FAB));
-    // construct local tiles
-    for(auto t=Delta_iA.trange().tiles().begin();
-        t!=Delta_iA.trange().tiles().end();
-        ++t){
-      if (Delta_iA.is_local(*t)) {
-        std::array<std::size_t, 2> index; std::copy(t->begin(), t->end(), index.begin());
-        madness::Future < typename TArray2d::value_type >
-        tile((LazyTensor<double, 2, pceval_type >(&Delta_iA, index, &Delta_iA_gen)
-        ));
+  pceval_type Delta_iA_gen(TA::array_to_eigen(Fmn), TA::array_to_eigen(FAB));
+  // construct local tiles
+  for (auto t = Delta_iA.trange().tiles().begin();
+      t != Delta_iA.trange().tiles().end(); ++t) {
+    if (Delta_iA.is_local(*t)) {
+      std::array<std::size_t, 2> index;
+      std::copy(t->begin(), t->end(), index.begin());
+      madness::Future<typename TArray2d::value_type> tile(
+          (LazyTensor<double, 2, pceval_type>(&Delta_iA, index, &Delta_iA_gen)));
 
-        // Insert the tile into the array
-        Delta_iA.set(*t, tile);
-      }
+      // Insert the tile into the array
+      Delta_iA.set(*t, tile);
     }
-    TArray2 preconditioner  = Delta_iA("m,A'");
+  }
+  TArray2 preconditioner = Delta_iA("m,A'");
+#if DEBUGG
+  std::cout << "preconditioner: \n" << preconditioner << std::endl;
+#endif
+  _CABS_singles_Fock<double> cabs_singles_fock(B); // initialize the function a(x)
+  TA::ConjugateGradientSolver<TArray2, _CABS_singles_Fock<double> > cg_solver; // linear solver object
 
-    _CABS_singles_Fock<double> cabs_singles_fock(B);  // initialize the function a(x)
-    TA::ConjugateGradientSolver<TArray2, _CABS_singles_Fock<double> > cg_solver; // linear solver object
+  // solve the linear system, a(x) = b, cabs_singles_fock is a(x); x is x. b is b in a(x) = b
+  auto resnorm = cg_solver(cabs_singles_fock, b, x, preconditioner, 1e-5);
+  //std::cout << "Converged CG to " << resnorm << std::endl;
 
-    // solve the linear system, a(x) = b, cabs_singles_fock is a(x); x is x. b is b in a(x) = b
-    auto resnorm = cg_solver( cabs_singles_fock, b, x, preconditioner, 1e-5);
-    //std::cout << "Converged CG to " << resnorm << std::endl;
-
-    //calculate the second order energy based on Equation (16)
-    double E = dot( x("n,A'") * srr12intrmds._2("<m|F|A'>") , srr12intrmds._2("<n|gamma|m>"));
-    return  E;
+#if DEBUGG
+  std::cout << "C: \n" << x << std::endl;
+#endif
+  //calculate the second order energy based on Equation (16)
+  double E = dot(x("n,A'") * FmA("m,A'"), gamma2("n,m"));
+  return E;
 }
 
 

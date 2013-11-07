@@ -207,10 +207,7 @@ namespace mpqc {
         template<typename T>
         struct Dataspace;
 
-        /**
-           Default file driver
-           @warning This class needs work to accomodate different HDF5 drivers better
-         */
+        /// Default file driver
         struct Driver : boost::noncopyable {
             struct Core;
             struct Direct;
@@ -225,6 +222,7 @@ namespace mpqc {
             hid_t fapl_;
         };
 
+        /// Direct I/O file driver
         struct Driver::Direct : Driver {
             Direct() : Driver()
             {
@@ -232,10 +230,8 @@ namespace mpqc {
             }
         };
 
-        /**
-           Constructs a null file object.
-           Creating objects with this file as parent will fail
-         */
+        /// Constructs a null file object.
+        /// Creating objects with this file as parent will fail
         File() {}
 
         /**

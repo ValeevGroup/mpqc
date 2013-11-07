@@ -16,6 +16,38 @@
 #include <boost/preprocessor/stringize.hpp>
 #include <boost/typeof/typeof.hpp>
 
+/**
+   @defgroup UtilityProfiler Profile
+   @ingroup CoreUtility
+
+   Profile module is a set of macros to measure time spent in a particular scope on the fly.
+   To use it, first compile the code with MPQC_PROFILE_ENABLE defined.
+   Register the thread before you start profiling by putting somewhere in the beginning
+   @code
+   MPQC_PROFILE_REGISTER_THREAD;
+   @endcode
+   Insert MPQC_PROFILE_LINE in the scope of the code you want profiled, eg
+   @code
+   {
+       MPQC_PROFILE_LINE;
+       do_lots_of_work_function();
+   }
+   @endcode
+   Dump (and reset/clear) profiling data with MPQC_PROFILE_DUMP(cout), eg:
+   @code
+   MPQC_PROFILE_DUMP(std::cout);
+   @endcode
+   The output will be grouped by thread id and will contain file:line keys followed by total
+   time spent in the scope and the number of time the scope was entered.
+   
+   @warning Dump/reset/clear profiler only after the events have finished, otherwise
+   there will be difficult to track segfaults.  Better yet, one needs to fix profiler
+   to generate error in those cases.
+
+*/
+
+#ifndef DOXYGEN
+
 #define MPQC_PROFILE__(tag) BOOST_PP_CAT(boost_profile__,  tag)
 
 #ifdef MPQC_PROFILE_ENABLE
@@ -203,5 +235,6 @@ namespace mpqc {
 
 }
 
+#endif // DOXYGEN
 
 #endif // MPQC_PROFILE_HPP

@@ -11,9 +11,6 @@
 #include "mpqc/utility/exception.hpp"
 
 
-/// @defgroup CI mpqc.CI
-/// Configuration Interaction (CI) implementation 
-
 namespace mpqc {
 namespace ci {
 
@@ -39,7 +36,7 @@ namespace ci {
         struct {
             int chunk;    //!< HDF5 chunking (should be about 256k)
             int compress; //!< GZIP compress level (0 to 9)
-            int direct;   //!< HDF5 direct I/O
+            bool direct;  //!< HDF5 direct I/O
         } hdf5;
         Config() {
             core = 0;
@@ -58,11 +55,13 @@ namespace ci {
             incore = 2;
             hdf5.chunk = 0;
             hdf5.compress = 0;            
-            hdf5.direct = 0;
+            hdf5.direct = false;
         }
         void print(std::ostream& o = sc::ExEnv::out0()) const {
-            o << sc::indent << "rank       = " << rank << std::endl;
-            o << sc::indent << "# of roots = " << roots << std::endl;
+            o << sc::indent << "rank                 = " << rank << std::endl;
+            o << sc::indent << "# of roots           = " << roots << std::endl;
+            o << sc::indent << "# of electrons       = {" << electrons.alpha << "," << electrons.beta << "}" << std::endl;
+            o << sc::indent << "magnetic moment      = " << ms << std::endl;
         }
     };
 

@@ -54,6 +54,7 @@ CI::CI(const Ref<KeyVal> &kv)
     : ManyBodyWavefunction(kv) {
   {
     typedef KeyValValueint Int;
+    typedef KeyValValuebool Bool;
 
     /// only SD_RefWavefunction is tested for now
     Ref<SD_RefWavefunction> sd_refwfn; sd_refwfn << refwfn();
@@ -104,7 +105,7 @@ CI::CI(const Ref<KeyVal> &kv)
     config_.incore = kv->intvalue("incore", Int(config_.incore));
     config_.hdf5.chunk = kv->intvalue("hdf5.chunk", Int(config_.hdf5.chunk));
     config_.hdf5.compress = kv->intvalue("hdf5.compress", Int(config_.hdf5.compress));
-    config_.hdf5.direct = kv->intvalue("hdf5.direct", Int(config_.hdf5.direct));
+    config_.hdf5.direct = kv->intvalue("hdf5.direct", Bool(config_.hdf5.direct));
     
   }
 }

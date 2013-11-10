@@ -124,6 +124,12 @@
 */
 
 /**
+  @defgroup CI mpqc.Chemistry.ElectronicStructure.NBody.CI
+  @ingroup ChemistryElectronicStructureNBody
+  Configuration Interaction (CI) implementation 
+*/
+
+/**
   @defgroup ChemistryElectronicStructureSpin mpqc.Chemistry.ElectronicStructure.Spin
   @ingroup ChemistryElectronicStructure
   Functionality related to spin states of electrons.

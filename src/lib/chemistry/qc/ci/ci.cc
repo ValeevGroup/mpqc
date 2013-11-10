@@ -54,7 +54,7 @@ CI::CI(const Ref<KeyVal> &kv)
     : ManyBodyWavefunction(kv) {
   {
     typedef KeyValValueint Int;
-    typedef KeyValValuebool Bool;
+    typedef KeyValValueboolean Bool;
 
     /// only SD_RefWavefunction is tested for now
     Ref<SD_RefWavefunction> sd_refwfn; sd_refwfn << refwfn();

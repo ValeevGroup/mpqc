@@ -116,10 +116,15 @@ std::vector<double> sc::CI::compute(const Ref<RefWavefunction> &wfn,
       SCFormIO::fileext_to_filename(".h5");
 
   std::auto_ptr<mpqc::File> file;
-  std::unique_ptr<mpqc::File::Driver> driver(new mpqc::File::Driver());
+  std::unique_ptr<mpqc::File::Driver> driver(new mpqc::File::POSIXDriver);
   if (config.hdf5.direct) {
+#ifdef H5_HAVE_DIRECT
       std::cout << "hdf5.direct=" << config.hdf5.direct << std::endl;
-      driver.reset(new mpqc::File::Driver::Direct());
+      driver.reset(new mpqc::File::DirectDriver);
+#else
+      throw FeatureNotImplemented("CI::CI: hdf5.direct = true but direct driver is not supported by the installed version of HDF5 or your platform",
+                                  __FILE__, __LINE__);
+#endif
   }
   file.reset(new mpqc::File(fname + "." + mpqc::string_cast(comm.rank()), *driver));
 

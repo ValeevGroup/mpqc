@@ -167,17 +167,18 @@ namespace ci {
         int n = std::abs(i - j);
         if (j < i) std::swap(i, j);
         b = b & ((uint64_t(1) << j) - 1); // clear high bits
-        b = b >> i; // clear low bits by shifting
+        b = b >> i;  b = b >> 1; // clear low bits by shifting
         size_t p = String::bitset(b).count();
         //size_t p = _mm_popcnt_u64(b);
-#ifndef NDEBUG
+#if 0
         assert(p < I.count());
         size_t q = 0;
         for (int k = std::min(i,j)+1; k < std::max(i,j); ++k) {
             q += I[k];
         }
-        // printf("string %s(%lu) [%i,%i] b=%lu, p=%lu, q=%lu\n",
-        //        std::string(I).c_str(), I.to_ulong(), i,j, b, p, q);
+        if (p != q)
+          sc::ExEnv::err0() << sc::scprintf("string %s(%lu) [%i,%i] b=%lu, p=%lu, q=%lu\n",
+                                    std::string(I).c_str(), I.to_ulong(), i,j, b, p, q);
         assert(p == q);
 #endif
         return sgn(p);

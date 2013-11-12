@@ -36,6 +36,7 @@
 #include <util/misc/regtime.h>
 #include <util/misc/formio.h>
 #include <util/misc/autovec.h>
+#include <util/misc/xmlwriter.h>
 #include <util/state/stateio.h>
 #include <util/misc/scexception.h>
 #include <chemistry/qc/basis/uncontract.h>
@@ -415,7 +416,7 @@ Wavefunction::save_data_state(StateOut&s)
   s.put(magnetic_moment_);
 }
 
-void
+ptree&
 Wavefunction::write_xml(
     ptree& parent,
     const XMLWriter& writer
@@ -424,27 +425,27 @@ Wavefunction::write_xml(
   ptree& child = get_my_ptree(parent);
 
   if(natural_orbitals_.computed()){
-    writer.add_writable_child(
-        child, "natural_orbitals", natural_orbitals_.result_noupdate()
+    writer.insert_child(
+        child, natural_orbitals_.result_noupdate(), "natural_orbitals"
     );
   }
   if(natural_density_.computed()){
-    writer.add_writable_child(
-        child, "natural_density", natural_density_.result_noupdate()
+    writer.insert_child(
+        child, natural_density_.result_noupdate(), "natural_density"
     );
   }
   child.put("total_charge", total_charge());
   child.put("spin_polarized", (bool)spin_polarized());
-  writer.add_writable_child(child, "basis", basis());
+  writer.insert_child(child, basis(), "basis");
   if(atom_basis().nonnull() and not atom_basis()->equiv(basis())){
-    ptree& atom_basis_tree = writer.add_writable_child(
-        child, "atom_basis", atom_basis()
+    ptree& atom_basis_tree = writer.insert_child(
+        child, atom_basis(), "atom_basis"
     );
     atom_basis_tree.put("comment",
         "basis set describing the nuclear charge distributions"
     );
   }
-  MolecularEnergy::write_xml(parent, writer);
+  return MolecularEnergy::write_xml(parent, writer);
 }
 
 double

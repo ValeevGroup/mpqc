@@ -34,6 +34,8 @@
 #include <util/misc/formio.h>
 #include <util/state/stateio.h>
 #include <util/group/mstate.h>
+#include <util/misc/xmlwriter.h>
+#include <util/misc/xml.h>
 
 #include <math/scmat/local.h>
 #include <math/scmat/repl.h>
@@ -227,17 +229,17 @@ SCF::save_data_state(StateOut& s)
 
 
 using boost::property_tree::ptree;
-void
+ptree&
 SCF::write_xml(
     ptree& parent,
     const XMLWriter& writer
 )
 {
-  ptree& child = this->get_my_ptree(parent);
+  ptree& my_tree = this->get_my_ptree(parent);
   if(iter_log_.nonnull()){
-    iter_log_->write_xml(child, writer);
+    writer.insert_child(my_tree, iter_log_, "iteration_log");
   }
-  OneBodyWavefunction::write_xml(parent, writer);
+  return OneBodyWavefunction::write_xml(parent, writer);
 }
 
 RefSCMatrix
@@ -898,74 +900,97 @@ SCFIterationLogger::log_coeffs(
 }
 
 
-void
+using boost::property_tree::ptree;
+ptree&
 SCFIterationLogger::write_xml(
     boost::property_tree::ptree& parent,
     const XMLWriter& writer
 )
 {
-  using boost::property_tree::ptree;
-  ptree& iter_tree = parent.add_child("SCFIterationLogger.iterations", ptree());
-  parent.put("SCFIterationLogger.density_enabled", log_density_);
-  parent.put("SCFIterationLogger.coefficients_enabled", log_coeffs_);
-  parent.put("SCFIterationLogger.evals_enabled", log_evals_);
+  ptree* tmp;
+  if(writer.fold_in_class_name()){
+    tmp = &parent;
+    tmp->put("<xmlattr>.typename", "SCFIterationLogger");
+  }
+  else{
+    ptree& tmpref = parent.add_child("SCFIterationLogger", ptree());
+    tmp = &tmpref;
+
+  }
+  ptree& child = *tmp;
+  child.put("density_enabled", log_density_);
+  child.put("coefficients_enabled", log_coeffs_);
+  child.put("evals_enabled", log_evals_);
+  ptree& iter_tree = child.add_child("iterations", ptree());
 
   iter_tree.put("<xmlattr>.n", iterations_.size());
   std::vector<SCFIterationData>::iterator it = iterations_.begin();
   for(; it != iterations_.end(); ++it){
-    it->write_xml(iter_tree, writer);
+    SCFIterationData& itdata = *it;
+    writer.insert_child(iter_tree, itdata, "iteration");
   }
+  return child;
 }
 
 ///////////////////////////////////////////////////////////////////////////
 // SCFIterationData
 
-void
+ptree&
 SCFIterationData::write_xml(
     boost::property_tree::ptree& parent,
     const XMLWriter& writer
 )
 {
-  using boost::property_tree::ptree;
-  ptree& my_tree = parent.add_child("iteration", ptree());
+  ptree* tmp;
+  if(writer.fold_in_class_name()){
+    tmp = &parent;
+    tmp->put("<xmlattr>.typename", "SCFIterationData");
+  }
+  else{
+    ptree& tmpref = parent.add_child("SCFIterationData", ptree());
+    tmp = &tmpref;
+  }
+  ptree& my_tree = *tmp;
 
   my_tree.put("<xmlattr>.number", number);
 
   if(evals.nonnull()){
-    writer.add_writable_child(my_tree, "evals", evals);
+    writer.insert_child(my_tree, evals, "evals");
   }
   if(alpha_evals.nonnull()){
-    ptree& child = writer.add_writable_child(my_tree, "evals", alpha_evals);
+    ptree& child = writer.insert_child(my_tree, alpha_evals, "evals");
     child.put("<xmlattr>.spin", "alpha");
   }
   if(beta_evals.nonnull()){
-    ptree& child = writer.add_writable_child(my_tree, "evals", beta_evals);
+    ptree& child = writer.insert_child(my_tree, beta_evals, "evals");
     child.put("<xmlattr>.spin", "beta");
   }
   //----------------------------------------//
   if(density.nonnull()){
-    ptree& child = writer.add_writable_child(my_tree, "density", density);
+    ptree& child = writer.insert_child(my_tree, density, "density");
   }
   if(alpha_density.nonnull()){
-    ptree& child = writer.add_writable_child(my_tree, "density", alpha_density);
+    ptree& child = writer.insert_child(my_tree, alpha_density, "density");
     child.put("<xmlattr>.spin", "alpha");
   }
   if(beta_density.nonnull()){
-    ptree& child = writer.add_writable_child(my_tree, "density", beta_density);
+    ptree& child = writer.insert_child(my_tree, beta_density, "density");
     child.put("<xmlattr>.spin", "beta");
   }
   //----------------------------------------//
   if(coeffs.nonnull()){
-    ptree& child = writer.add_writable_child(my_tree, "coeffs", coeffs);
+    ptree& child = writer.insert_child(my_tree, coeffs, "coefficients");
   }
   if(alpha_coeffs.nonnull()){
-    ptree& child = writer.add_writable_child(my_tree, "coeffs", alpha_coeffs);
+    ptree& child = writer.insert_child(my_tree, alpha_coeffs, "coefficients");
     child.put("<xmlattr>.spin", "alpha");
   }
   if(beta_coeffs.nonnull()){
-    ptree& child = writer.add_writable_child(my_tree, "coeffs", beta_coeffs);
+    ptree& child = writer.insert_child(my_tree, beta_coeffs, "coefficients");
     child.put("<xmlattr>.spin", "beta");
   }
+
+  return my_tree;
 }
 
 /////////////////////////////////////////////////////////////////////////////

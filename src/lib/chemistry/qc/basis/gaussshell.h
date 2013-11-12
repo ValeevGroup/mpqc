@@ -34,6 +34,8 @@
 #include <util/keyval/keyval.h>
 #include <util/misc/xml.h>
 
+using boost::property_tree::ptree;
+
 namespace sc {
 
 class CartesianIter;
@@ -274,8 +276,8 @@ class GaussianShell: public DescribedXMLWritable
 
     void print(std::ostream& =ExEnv::out0()) const;
 
-    virtual void write_xml(
-        boost::property_tree::ptree& parent, const XMLWriter& writer
+    virtual ptree& write_xml(
+        ptree& parent, const XMLWriter& writer
     );
 };
 

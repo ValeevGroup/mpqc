@@ -41,6 +41,7 @@
 #include <chemistry/molecule/atom.h>
 #include <util/misc/xml.h>
 
+using boost::property_tree::ptree;
 namespace sc {
 
 /**
@@ -476,9 +477,8 @@ class Molecule: public SavableState, virtual public DescribedXMLWritable
     SCVector3 ref_origin() const { return ref_origin_; }
 
     void save_data_state(StateOut&);
-    virtual void write_xml(
-        boost::property_tree::ptree& parent, const XMLWriter& writer
-    );
+
+    virtual ptree& write_xml(ptree& parent, const XMLWriter& writer);
 
 };
 

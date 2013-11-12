@@ -608,7 +608,7 @@ GaussianShell::extent(double threshold) const
 
 
 using boost::property_tree::ptree;
-void
+ptree&
 GaussianShell::write_xml(
     ptree& parent,
     const XMLWriter& writer
@@ -647,6 +647,7 @@ GaussianShell::write_xml(
       }
     }
   }
+  return child;
 }
 
 void

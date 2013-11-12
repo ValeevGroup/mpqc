@@ -36,6 +36,14 @@
 
 namespace sc {
 
+  class DensityFittingRuntimeBase : virtual public SavableState {
+    public:
+
+      virtual void obsolete() =0;
+
+
+  };
+
   /** Parsed representation of a string key that represents fitting of a product of space1 and space2 into fspace
       Coulomb fitting kernel_key is the default. */
   class ParsedDensityFittingKey {
@@ -64,7 +72,7 @@ namespace sc {
   /**
    *    Smart runtime support for managing DensityFitting objects
    */
-  class DensityFittingRuntime : virtual public SavableState {
+  class DensityFittingRuntime : public DensityFittingRuntimeBase {
     public:
       typedef DensityFittingRuntime this_type;
       typedef DistArray4 Result;

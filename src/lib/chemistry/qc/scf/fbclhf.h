@@ -84,6 +84,9 @@ class DFCLHF: public CLHF {
     void print(std::ostream&o=ExEnv::out0()) const;
     const Ref<WavefunctionWorld>& world() const { return world_; }
     Ref<DensityFittingInfo> dfinfo() const;
+    virtual ptree& write_xml(
+        boost::property_tree::ptree& parent, const XMLWriter& writer
+    );
   private:
     RefSymmSCMatrix gmat_;
     Ref<WavefunctionWorld> world_;

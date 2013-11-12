@@ -1,7 +1,7 @@
 //
 // localdf_runtime.h
 //
-// Copyright (C) 2013 MPQC Developers
+// Copyright (C) 2013 David Hollman
 //
 // Author: David Hollman <dhollman@vt.edu>
 // Maintainer: DSH
@@ -25,33 +25,31 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _mpqc_src_lib_chemistry_qc_df_localdf_runtime_h
-#define _mpqc_src_lib_chemistry_qc_df_localdf_runtime_h
+#ifndef _mpqc_src_lib_chemistry_qc_lcao_localdf_runtime_h
+#define _mpqc_src_lib_chemistry_qc_lcao_localdf_runtime_h
 
-#include <chemistry/qc/lcao/df.h>
+#include <chemistry/qc/lcao/df_runtime.h>
 #include <chemistry/qc/lcao/tbint_runtime.h>
 
 namespace sc {
 
-  /** Parsed representation of a string key that represents fitting of a product of space1 and space2 into fspace
-      Coulomb fitting kernel_key is the default. */
-  class ParsedLocalDensityFittingKey : ParsedDensityFittingKey {
+  class LocalDensityFittingRuntime : public DensityFittingRuntimeBase {
     public:
-      ParsedLocalDensityFittingKey(const std::string& key)
-        : ParsedDensityFittingKey(key) {
-      };
+      typedef LocalDensityFittingRuntime this_type;
+
+      LocalDensityFittingRuntime(StateIn& si);
+
+      void save_data_state(StateOut& so);
+
+    protected:
+
+      typedef Eigen::HouseholderQR<Eigen::MatrixXd> Decomposition;
+      typedef std::map<std::pair<int, int>, std::shared_ptr<Decomposition> > DecompositionMap;
+      DecompositionMap decomps_;
+
 
   };
 
-}
-
-class LocalDensityFittingRuntime : virtual public SavableState {
-  public:
-    typedef LocalDensityFittingRuntime this_type;
-
-    // TODO Finish moving stuff over to this new class
-
-
-};
+} // end namespace sc
 
 #endif

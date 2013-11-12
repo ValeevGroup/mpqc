@@ -13,7 +13,8 @@ add_mpqc_object_library(misc
   runnable.cc
   scexception.cc
   units.cc
-  xml.cc)
+  xml.cc
+  xmlwriter.cc)
 
 # tests
 

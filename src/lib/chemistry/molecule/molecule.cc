@@ -1360,7 +1360,7 @@ Molecule::any_atom_has_label() const {
 }
 
 using boost::property_tree::ptree;
-void
+ptree&
 Molecule::write_xml(
     ptree& parent,
     const XMLWriter& writer

@@ -32,6 +32,8 @@
 #include <util/state/stateio.h>
 #include <util/misc/xml.h>
 
+using boost::property_tree::ptree;
+
 namespace sc {
 
     /**
@@ -147,9 +149,7 @@ namespace sc {
         // Made friend for direct access for sc::SavableState
         friend void FromStateIn(Atom &a, StateIn &so, int &count);
 
-        virtual void write_xml(
-            boost::property_tree::ptree& parent, const XMLWriter& writer
-        );
+        virtual ptree& write_xml(ptree& parent, const XMLWriter& writer);
 
    };
 

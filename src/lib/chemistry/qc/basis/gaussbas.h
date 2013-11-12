@@ -37,10 +37,13 @@
 #include <math/scmat/vector3.h>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/gaussshell.h>
+#include <math/mmisc/grid.h>
 
 #ifdef MPQC_NEW_FEATURES
 #include "mpqc/range.hpp"
 #endif
+
+using boost::property_tree::ptree;
 
 namespace sc {
 
@@ -163,9 +166,8 @@ class GaussianBasisSet: virtual public SavableState, virtual public DescribedXML
 
         //const double[3]& r() const {}
 
-        virtual void write_xml(
-            boost::property_tree::ptree& parent, const XMLWriter& writer
-        );
+
+        virtual ptree& write_xml(ptree& parent, const XMLWriter& writer);
 
       private:
         friend class GaussianBasisSet;
@@ -460,9 +462,7 @@ class GaussianBasisSet: virtual public SavableState, virtual public DescribedXML
     /// saves this to @c so
     void save_data_state(StateOut& so);
 
-    virtual void write_xml(
-        boost::property_tree::ptree& parent, const XMLWriter& writer
-    );
+    virtual ptree& write_xml(ptree& parent, const XMLWriter& writer);
 
     ///@}
 
@@ -667,7 +667,46 @@ class GaussianBasisSetMap : public RefCount {
 
 };
 
-}
+
+class WriteBasisGrid : public WriteVectorGrid {
+  private:
+    struct BasisFunctionMap : public DimensionMap {
+      std::vector<int> map;
+      int operator()(int o) const { return map[o]; }
+      std::size_t ndim() const { return map.size(); }
+    };
+    Ref<GaussianBasisSet> basis_;
+    Ref<Integral> integral_;
+
+  protected:
+    BasisFunctionMap bfmap_;
+
+    void label(char* buffer);
+    Ref<Molecule> get_molecule() { return basis_->molecule(); }
+    void calculate_values(const std::vector<SCVector3>& Points, std::vector<double>& Values);
+    const DimensionMap& dimension_map() const { return bfmap_; }
+    std::size_t ndim() const { return bfmap_.ndim(); }
+    void initialize();
+
+    static Ref<KeyVal> process_keyval_for_base_class(const Ref<KeyVal>& kv);
+
+  public:
+
+    WriteBasisGrid(const Ref<KeyVal>& keyval);
+    WriteBasisGrid(
+        const Ref<GaussianBasisSet>& basis,
+        const Ref<Grid>& grid,
+        std::string gridformat,
+        std::string gridfile
+    );
+
+    virtual ~WriteBasisGrid();
+
+    virtual ptree& write_xml(ptree& parent, const XMLWriter& writer);
+
+};
+
+} // end namespace sc
 
 #endif
 

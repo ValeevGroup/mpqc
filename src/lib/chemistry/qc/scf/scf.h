@@ -39,6 +39,8 @@
 #include <chemistry/qc/wfn/accum.h>
 #include <chemistry/qc/wfn/obwfn.h>
 
+using boost::property_tree::ptree;
+
 namespace sc {
 
   class SCFIterationLogger;
@@ -219,9 +221,8 @@ class SCF: public OneBodyWavefunction {
     ~SCF();
 
     void save_data_state(StateOut&);
-    virtual void write_xml(
-        boost::property_tree::ptree& parent, const XMLWriter& writer
-    );
+
+    ptree& write_xml(ptree& parent, const XMLWriter& writer);
 
     RefSCMatrix oso_eigenvectors();
     RefDiagSCMatrix eigenvalues();
@@ -323,7 +324,7 @@ class SCFIterationLogger : public XMLWritable, public DescribedClass {
 
     SCFIterationLogger(const Ref<KeyVal>& keyval);
 
-    void write_xml(boost::property_tree::ptree& pt, const XMLWriter& writer);
+    ptree& write_xml(ptree& parent, const XMLWriter& writer);
 
     // TODO handle alpha and beta for evals and density
 
@@ -357,7 +358,8 @@ class SCFIterationData : public XMLWritable {
     RefSCMatrix alpha_coeffs = 0;
     RefSCMatrix beta_coeffs = 0;
 
-    void write_xml(boost::property_tree::ptree& pt, const XMLWriter& writer);
+
+    ptree& write_xml(ptree& parent, const XMLWriter& writer);
 
 };
 

@@ -30,15 +30,18 @@
 #include <chemistry/qc/basis/petite.h>
 #include <util/misc/scexception.h>
 #include <util/misc/consumableresources.h>
+#include <util/misc/xmlwriter.h>
 #include <chemistry/qc/lcao/df_runtime.h>
+#include <Eigen/Dense>
 
 using namespace sc;
+using boost::property_tree::ptree;
 
 /*---------------
   WavefunctionWorld
  ---------------*/
 static ClassDesc WavefunctionWorld_cd(
-  typeid(WavefunctionWorld),"WavefunctionWorld",11,"virtual public SavableState",
+  typeid(WavefunctionWorld),"WavefunctionWorld",12,"virtual public SavableState",
   0, create<WavefunctionWorld>, create<WavefunctionWorld>);
 
 WavefunctionWorld::WavefunctionWorld(const Ref<KeyVal>& keyval)
@@ -96,6 +99,33 @@ WavefunctionWorld::WavefunctionWorld(const Ref<KeyVal>& keyval)
     df_local_exchange_ = keyval->booleanvalue("df_local_exchange", KeyValValueboolean(false));
     exact_diag_J_ = keyval->booleanvalue("exact_diag_J", KeyValValueboolean(false));
     exact_diag_K_ = keyval->booleanvalue("exact_diag_K", KeyValValueboolean(false));
+
+    int nout_data = keyval->count("xml_data");
+    for(int i = 0; i < nout_data; ++i){
+      std::string data_name = keyval->stringvalue("xml_data", i);
+      if(data_name == "df_basis"){
+        out_data_.push_back(DFBasis);
+      }
+      else if(data_name == "df_coefficients"){
+        out_data_.push_back(DFCoefficients);
+      }
+      else if(data_name == "df_integrals_eri"){
+        out_data_.push_back(DFIntegralsERI);
+      }
+      else if(data_name == "exact_integrals_eri"){
+        out_data_.push_back(ExactIntegralsERI);
+      }
+      else{
+        throw InputError("invalid value",
+                         __FILE__,
+                         __LINE__,
+                         "xml_data",
+                         data_name.c_str(),
+                         class_desc());
+
+      }
+
+    }
   }
 
   // Determine how to store MO integrals
@@ -180,6 +210,10 @@ WavefunctionWorld::WavefunctionWorld(StateIn& si) : SavableState(si)
   si.get(dynamic_);
   si.get(print_percent_);
   si.get(ints_precision_);
+  si.get(df_local_coulomb_);
+  si.get(exact_diag_J_);
+  si.get(df_local_exchange_);
+  si.get(exact_diag_K_);
 
   tfactory_ << SavableState::restore_state(si);
   moints_runtime_ << SavableState::restore_state(si);
@@ -210,6 +244,10 @@ void WavefunctionWorld::save_data_state(StateOut& so)
   so.put(dynamic_);
   so.put(print_percent_);
   so.put(ints_precision_);
+  so.put(df_local_coulomb_);
+  so.put(exact_diag_J_);
+  so.put(df_local_exchange_);
+  so.put(exact_diag_K_);
 
   SavableState::save_state(tfactory_.pointer(),so);
   SavableState::save_state(moints_runtime_.pointer(),so);
@@ -346,6 +384,7 @@ const std::string& WavefunctionWorld::ints_file() const
 void
 WavefunctionWorld::print(std::ostream& o) const {
 
+
   o << indent << "WavefunctionWorld:" << std::endl;
   o << incindent;
 
@@ -374,6 +413,414 @@ WavefunctionWorld::print(std::ostream& o) const {
   o << indent << "How to Store Transformed Integrals: " << ints_str << std::endl;
   o << indent << "Transformed Integrals file suffix: " << ints_file_ << std::endl;
   o << decindent << std::endl;
+}
+
+ptree&
+WavefunctionWorld::write_xml(
+    ptree& parent,
+    const XMLWriter& writer
+)
+{
+  //----------------------------------------------------------------------------//
+  // Only run this on master (should only be doing that anyway)
+  ptree& child = get_my_ptree(parent);
+  //----------------------------------------------------------------------------//
+  for(int idata = 0; idata < out_data_.size(); ++idata){
+    switch(out_data_[idata]){
+    case DFBasis:
+      writer.insert_child(child, bs_df_, "df_basis");
+      break;
+    case DFCoefficients:
+    {
+      /*=======================================================================================*/
+      /* DFCoefficients (local and non-local)                 		                        {{{1 */ #if 1 // begin fold
+      const Ref<DensityFittingInfo>& df_info = fockbuild_runtime()->dfinfo();
+      std::string metric_key = df_info->params()->kernel_key();
+      //----------------------------------------------------------------------------//
+      bool did_local = false;
+      if(df_local_coulomb_ || df_local_exchange_){
+        did_local = true;
+        ptree& df_tree = child.add_child("df_coefficients", ptree());
+        df_tree.put("<xmlattr>.local", true);
+        xml_data_local(false, df_tree, writer);
+        df_tree.put("metric", metric_key);
+      }
+      //----------------------------------------------------------------------------//
+      if(!df_local_coulomb_ || !df_local_exchange_){
+        ptree& df_tree = child.add_child("df_coefficients", ptree());
+        df_tree.put("<xmlattr>.local", false);
+        xml_data_nonlocal(false, df_tree, writer);
+        df_tree.put("metric", metric_key);
+      }
+      //----------------------------------------------------------------------------//
+      break;
+      /*****************************************************************************************/ #endif //1}}}
+      /*=======================================================================================*/
+
+    }
+    case DFIntegralsERI:
+    {
+      /*=======================================================================================*/
+      /* DFIntegralsERI (local and non-local)                  		                        {{{1 */ #if 1 // begin fold
+      const Ref<DensityFittingInfo>& df_info = fockbuild_runtime()->dfinfo();
+      std::string metric_key = df_info->params()->kernel_key();
+      //----------------------------------------------------------------------------//
+      bool did_local = false;
+      if(df_local_coulomb_ || df_local_exchange_){
+        did_local = true;
+        ptree& df_tree = child.add_child("df_integrals_eri", ptree());
+        df_tree.put("<xmlattr>.local", true);
+        xml_data_local(true, df_tree, writer);
+        df_tree.put("metric", metric_key);
+      }
+      //----------------------------------------------------------------------------//
+      if(!df_local_coulomb_ || !df_local_exchange_){
+        ptree& df_tree = child.add_child("df_integrals_eri", ptree());
+        df_tree.put("<xmlattr>.local", false);
+        xml_data_nonlocal(true, df_tree, writer);
+        df_tree.put("metric", metric_key);
+      }
+      //----------------------------------------------------------------------------//
+      break;
+      /*****************************************************************************************/ #endif //1}}}
+      /*=======================================================================================*/
+    }
+    case ExactIntegralsERI:
+    {
+      /*=======================================================================================*/
+      /* ExactIntegralsERI                                    		                        {{{1 */ #if 1 // begin fold
+      ptree& eri_tree = child.add_child("eri_integrals", ptree());
+      //----------------------------------------//
+      const Ref<DensityFittingInfo>& df_info = fockbuild_runtime()->dfinfo();
+      std::string metric_key = df_info->params()->kernel_key();
+      const Ref<GaussianBasisSet> obs = wfn()->basis();
+      // convenient alias for comparing with code in coulomb_df_local() and exchange_df_local() methods
+      const Ref<GaussianBasisSet> dfbs = bs_df_;
+      //----------------------------------------//
+      const Ref<AOSpaceRegistry> ao_registry = moints_runtime()->factory()->ao_registry();
+      const Ref<OrbitalSpace>& obs_space = ao_registry->value(obs);
+      //----------------------------------------//
+      const int obsnbf = obs->nbasis();
+      //----------------------------------------//
+      const std::string eri_key = ParsedTwoBodyFourCenterIntKey::key(
+          obs_space->id(),
+          obs_space->id(),
+          obs_space->id(),
+          obs_space->id(),
+          "ERI",
+          TwoBodyIntLayout::b1k1_b2k2 // Chemists' notation
+      );
+      //----------------------------------------------------------------------------//
+      const Ref<TwoBodyMOIntsTransform>& eri_tform = moints_runtime4()->get(eri_key);
+      eri_tform->compute();
+      Ref<DistArray4> g = eri_tform->ints_distarray4();  g->activate();
+      unsigned int g_type_idx = TwoBodyOperSetDescr::instance(TwoBodyOperSet::ERI)->opertype(TwoBodyOper::eri);
+      //----------------------------------------//
+      for(int mu = 0; mu < obsnbf; ++mu){
+        for(int nu = 0; nu <= mu; ++nu){
+          const double* g_mu_nu_ptr = g->retrieve_pair_block(mu, nu, g_type_idx);
+          Eigen::MatrixXd g_mu_nu(obsnbf, obsnbf);
+          g_mu_nu = Eigen::MatrixXd::Zero(obsnbf, obsnbf);
+          for(int la = 0; la < obsnbf; ++la){
+            for(int si = 0; si < obsnbf; ++si){
+              g_mu_nu(la, si) = g_mu_nu_ptr[la*obsnbf + si];
+            }
+          }
+          ptree& int_parent = eri_tree.add_child("integral_block", ptree());
+          int_parent.put("<xmlattr>.ao_index1", mu);
+          int_parent.put("<xmlattr>.ao_index2", nu);
+          writer.write_to_xml(g_mu_nu, int_parent);
+          g->release_pair_block(mu, nu, g_type_idx);
+        }
+      }
+      g->deactivate();
+      break;
+      /*****************************************************************************************/ #endif //1}}}
+      /*=======================================================================================*/
+    }
+    };
+  }
+  return child;
+}
+
+//----------------------------------------------------------------------------//
+// WavefunctionWorld::write_xml() helper functions
+
+void
+WavefunctionWorld::xml_data_local(bool do_integrals, ptree& pt, const XMLWriter& writer)
+{
+  /*=======================================================================================*/
+  /* Setup                                                		                        {{{1 */ #if 1 // begin fold
+  //----------------------------------------------------------------------------//
+  const Ref<DensityFittingInfo>& df_info = fockbuild_runtime()->dfinfo();
+  std::string metric_key = df_info->params()->kernel_key();
+  const Ref<GaussianBasisSet> obs = wfn()->basis();
+  const Ref<GaussianBasisSet> dfbs = bs_df_;
+  //----------------------------------------//
+  const Ref<DensityFittingRuntime> df_rtime = df_info->runtime();
+  const Ref<TwoBodyThreeCenterMOIntsRuntime> int3c_rtime = df_rtime->moints_runtime()->runtime_3c();
+  const Ref<TwoBodyTwoCenterMOIntsRuntime> int2c_rtime = df_rtime->moints_runtime()->runtime_2c();
+  //----------------------------------------//
+  const Ref<AOSpaceRegistry> ao_registry = moints_runtime()->factory()->ao_registry();
+  const Ref<OrbitalSpace>& obs_space = ao_registry->value(obs);
+  const Ref<OrbitalSpace>& df_space = ao_registry->value(bs_df_);
+  //----------------------------------------//
+  const bool noncoulomb_kernel = (metric_key.find("exp") != std::string::npos);
+  std::string params_key = df_info->params()->intparams_key();
+  std::string operset_key = noncoulomb_kernel ? "G12'" : "ERI";
+  TwoBodyOper::type metric_oper =
+      noncoulomb_kernel ? TwoBodyOper::r12_0_g12 : TwoBodyOper::eri;
+  unsigned int ints_type_idx = TwoBodyOperSetDescr::instance(
+      noncoulomb_kernel ? TwoBodyOperSet::G12NC : TwoBodyOperSet::ERI
+  )->opertype(metric_oper);
+  //----------------------------------------------------------------------------//
+  std::string dfkey = ParsedDensityFittingKey::key(
+      obs_space->id(),
+      obs_space->id(),
+      df_space->id(),
+      metric_key
+  );
+  //----------------------------------------------------------------------------//
+  const int obsnbf = obs->nbasis();
+  const int dfnbf = dfbs->nbasis();
+  //----------------------------------------------------------------------------//
+  /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
+  /* Transform ket if we're doing integrals               		                        {{{1 */ #if 1 // begin fold
+  std::vector<std::shared_ptr<Eigen::MatrixXd> > g_tilde(obsnbf);
+  if(do_integrals){
+    //----------------------------------------//
+    // Get the (X|Y) integrals
+    const std::string coulomb2c_key = ParsedTwoBodyTwoCenterIntKey::key(
+        df_space->id(),
+        df_space->id(),
+        "ERI", ""
+    );
+    RefSCMatrix coulomb_2c_ints = int2c_rtime->get(coulomb2c_key);
+    //----------------------------------------//
+    double* coulomb_2c_ints_ptr = allocate<double>(dfnbf*dfnbf);
+    coulomb_2c_ints.convert(coulomb_2c_ints_ptr);
+    Eigen::Map<Eigen::MatrixXd> X_g_Y(coulomb_2c_ints_ptr, dfnbf, dfnbf);
+    //----------------------------------------//
+    // Contract C_mu_nu^X with (X|Y)
+    //----------------------------------------//
+    for(int mu = 0; mu < obsnbf; ++mu){
+      const int ishA = obs->function_to_shell(mu);
+      const int atomA = obs->shell_to_center(ishA);
+      const int dfnbfA = dfbs->nbasis_on_center(atomA);
+      const int dfshoffA = dfbs->shell_on_center(atomA, 0);
+      const int dfbfoffA = dfbs->shell_to_function(dfshoffA);
+      //----------------------------------------//
+      std::shared_ptr<Eigen::MatrixXd> gtilde_mu(new Eigen::MatrixXd(obsnbf, dfnbf));
+      *gtilde_mu = Eigen::MatrixXd::Zero(obsnbf, dfnbf);
+      //----------------------------------------//
+      // note: only loop over nu <= mu
+      for(int nu = 0; nu < obsnbf; ++nu){
+        const int jshB = obs->function_to_shell(nu);
+        const int atomB = obs->shell_to_center(jshB);
+        const int dfnbfB = dfbs->nbasis_on_center(atomB);
+        const int dfshoffB = dfbs->shell_on_center(atomB, 0);
+        const int dfbfoffB = dfbs->shell_to_function(dfshoffB);
+        //----------------------------------------//
+        Eigen::VectorXd C(dfnbf);
+        C = Eigen::VectorXd::Zero(dfnbf);
+        std::shared_ptr<Eigen::VectorXd> Cpart = df_rtime->get(dfkey, mu, nu);
+        C.segment(dfbfoffA, dfnbfA) += Cpart->head(dfnbfA);
+        if(atomA != atomB){
+          C.segment(dfbfoffB, dfnbfB) += Cpart->tail(dfnbfB);
+        }
+        //----------------------------------------//
+        gtilde_mu->row(nu) += X_g_Y * C;
+      }
+      g_tilde[mu] = gtilde_mu;
+    }
+    deallocate(coulomb_2c_ints_ptr);
+  }
+  /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
+  /* Get the coefficients (and transform the bra if we're doing integrals)            {{{1 */ #if 1 // begin fold
+  //----------------------------------------------------------------------------//
+  for(int mu = 0; mu < obsnbf; ++mu){
+    const int ishA = obs->function_to_shell(mu);
+    const int atomA = obs->shell_to_center(ishA);
+    const int dfnbfA = dfbs->nbasis_on_center(atomA);
+    const int dfshoffA = dfbs->shell_on_center(atomA, 0);
+    const int dfbfoffA = dfbs->shell_to_function(dfshoffA);
+    //----------------------------------------//
+    // note: only loop over nu <= mu
+    for(int nu = 0; nu <= mu; ++nu){
+      const int jshB = obs->function_to_shell(nu);
+      const int atomB = obs->shell_to_center(jshB);
+      const int dfnbfB = dfbs->nbasis_on_center(atomB);
+      const int dfshoffB = dfbs->shell_on_center(atomB, 0);
+      const int dfbfoffB = dfbs->shell_to_function(dfshoffB);
+      //----------------------------------------//
+      Eigen::VectorXd C(dfnbf);
+      C = Eigen::VectorXd::Zero(dfnbf);
+      std::shared_ptr<Eigen::VectorXd> Cpart = df_rtime->get(dfkey, mu, nu);
+      C.segment(dfbfoffA, dfnbfA) += Cpart->head(dfnbfA);
+      if(atomA != atomB){
+        C.segment(dfbfoffB, dfnbfB) += Cpart->tail(dfnbfB);
+      }
+      if(not do_integrals){
+        ptree& coeff_parent = pt.add_child("coefficient_vector", ptree());
+        coeff_parent.put("<xmlattr>.ao_index1", mu);
+        coeff_parent.put("<xmlattr>.ao_index2", nu);
+        writer.write_to_xml(C, coeff_parent);
+      }
+      else{
+        Eigen::MatrixXd g_mu_nu(obsnbf, obsnbf);
+        g_mu_nu = Eigen::MatrixXd::Zero(obsnbf, obsnbf);
+        for(int la = 0; la < obsnbf; ++la){
+          for(int si = 0; si < obsnbf; ++si){
+            g_mu_nu(la, si) += g_tilde[la]->row(si) * C;
+          }
+        }
+        //----------------------------------------//
+        ptree& int_parent = pt.add_child("integral_block", ptree());
+        int_parent.put("<xmlattr>.ao_index1", mu);
+        int_parent.put("<xmlattr>.ao_index2", nu);
+        writer.write_to_xml(g_mu_nu, int_parent);
+      }
+    } // end loop over nu
+  } // end loop over mu
+  /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
+}
+
+void
+WavefunctionWorld::xml_data_nonlocal(
+    bool do_integrals, ptree& pt, const XMLWriter& writer
+)
+{
+  /*=======================================================================================*/
+  /* Setup                                                		                        {{{1 */ #if 1 // begin fold
+  const Ref<DensityFittingInfo>& df_info = fockbuild_runtime()->dfinfo();
+  std::string metric_key = df_info->params()->kernel_key();
+  const Ref<GaussianBasisSet> obs = wfn()->basis();
+  // convenient alias for comparing with code in coulomb_df_local() and exchange_df_local() methods
+  const Ref<GaussianBasisSet> dfbs = bs_df_;
+  //----------------------------------------//
+  const Ref<DensityFittingRuntime> df_rtime = df_info->runtime();
+  const Ref<TwoBodyTwoCenterMOIntsRuntime> int2c_rtime = df_rtime->moints_runtime()->runtime_2c();
+  //----------------------------------------//
+  const Ref<AOSpaceRegistry> ao_registry = moints_runtime()->factory()->ao_registry();
+  const Ref<OrbitalSpace>& obs_space = ao_registry->value(obs);
+  const Ref<OrbitalSpace>& df_space = ao_registry->value(bs_df_);
+  //----------------------------------------//
+  const bool noncoulomb_kernel = (metric_key.find("exp") != std::string::npos);
+  std::string params_key = df_info->params()->intparams_key();
+  std::string operset_key = noncoulomb_kernel ? "G12'" : "ERI";
+  TwoBodyOper::type metric_oper =
+      noncoulomb_kernel ? TwoBodyOper::r12_0_g12 : TwoBodyOper::eri;
+  unsigned int ints_type_idx = TwoBodyOperSetDescr::instance(
+      noncoulomb_kernel ? TwoBodyOperSet::G12NC : TwoBodyOperSet::ERI
+  )->opertype(metric_oper);
+  //----------------------------------------------------------------------------//
+  const int obsnbf = obs->nbasis();
+  const int dfnbf = dfbs->nbasis();
+  //----------------------------------------------------------------------------//
+  const std::string C_key = ParsedDensityFittingKey::key(
+      obs_space->id(),
+      obs_space->id(),
+      df_space->id(),
+      metric_key
+  );
+  //----------------------------------------------------------------------------//
+  Ref<DistArray4> C = df_rtime->get(C_key); C->activate();
+  /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
+  /* Transform ket if we're doing integrals               		                        {{{1 */ #if 1 // begin fold
+  std::vector<std::shared_ptr<Eigen::MatrixXd> > g_tilde(obsnbf);
+  if(do_integrals){
+    //----------------------------------------//
+    // Get the (X|Y) integrals
+    const std::string coulomb2c_key = ParsedTwoBodyTwoCenterIntKey::key(
+        df_space->id(),
+        df_space->id(),
+        "ERI", ""
+    );
+    RefSCMatrix coulomb_2c_ints = int2c_rtime->get(coulomb2c_key);
+    //----------------------------------------//
+    double* coulomb_2c_ints_ptr = allocate<double>(dfnbf*dfnbf);
+    coulomb_2c_ints.convert(coulomb_2c_ints_ptr);
+    Eigen::Map<Eigen::MatrixXd> X_g_Y(coulomb_2c_ints_ptr, dfnbf, dfnbf);
+    //----------------------------------------//
+    // Contract C_mu_nu^X with (X|Y)
+    for(int mu = 0; mu < obsnbf; ++mu){
+      const double* C_mu = C->retrieve_pair_block(0, mu, ints_type_idx);
+      //----------------------------------------//
+      std::shared_ptr<Eigen::MatrixXd> gtilde_mu(new Eigen::MatrixXd(obsnbf, dfnbf));
+      *gtilde_mu = Eigen::MatrixXd::Zero(obsnbf, dfnbf);
+      //----------------------------------------//
+      for(int nu = 0; nu < obsnbf; ++nu){
+        const double* C_mu_nu = C_mu + nu*dfnbf;
+        //----------------------------------------//
+        // transfer one-by-one for now since the Eigen map doesn't seem to
+        //   work like I think it does
+        Eigen::VectorXd Cvect(dfnbf);
+        for(int X = 0; X < dfnbf; ++X){
+          Cvect(X) = C_mu_nu[X];
+        }
+        //----------------------------------------//
+        gtilde_mu->row(nu) += X_g_Y * Cvect;
+      }
+      g_tilde[mu] = gtilde_mu;
+      C->release_pair_block(0, mu, ints_type_idx);
+    }
+    //----------------------------------------//
+    deallocate(coulomb_2c_ints_ptr);
+  }
+  /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
+  /* Get the coefficients (and transform the bra if we're doing integrals)            {{{1 */ #if 1 // begin fold
+  //----------------------------------------------------------------------------//
+  for(int mu = 0; mu < obsnbf; ++mu){
+    const double* C_mu = C->retrieve_pair_block(0, mu, ints_type_idx);
+    for(int nu = 0; nu < obsnbf; ++nu){
+      const double* C_mu_nu = C_mu + nu*dfnbf;
+      //----------------------------------------//
+      std::shared_ptr<Eigen::MatrixXd> gtilde_mu(new Eigen::MatrixXd(obsnbf, dfnbf));
+      *gtilde_mu = Eigen::MatrixXd::Zero(obsnbf, dfnbf);
+      //----------------------------------------//
+      // transfer one-by-one for now since the Eigen map doesn't seem to
+      //   work like I think it does
+      Eigen::VectorXd Cvect(dfnbf);
+      Cvect = Eigen::VectorXd::Zero(dfnbf);
+      for(int X = 0; X < dfnbf; ++X){
+        Cvect(X) = C_mu_nu[X];
+      }
+      if(not do_integrals){
+        ptree& coeff_parent = pt.add_child("coefficient_vector", ptree());
+        coeff_parent.put("<xmlattr>.ao_index1", mu);
+        coeff_parent.put("<xmlattr>.ao_index2", nu);
+        writer.write_to_xml(Cvect, coeff_parent);
+      }
+      else{
+        Eigen::MatrixXd g_mu_nu(obsnbf, obsnbf);
+        g_mu_nu = Eigen::MatrixXd::Zero(obsnbf, obsnbf);
+        for(int la = 0; la < obsnbf; ++la){
+          for(int si = 0; si < obsnbf; ++si){
+            g_mu_nu(la, si) += g_tilde[la]->row(si) * Cvect;
+          }
+        }
+        //----------------------------------------//
+        ptree& int_parent = pt.add_child("integral_block", ptree());
+        int_parent.put("<xmlattr>.ao_index1", mu);
+        int_parent.put("<xmlattr>.ao_index2", nu);
+        writer.write_to_xml(g_mu_nu, int_parent);
+      }
+    }
+    C->release_pair_block(0, mu, ints_type_idx);
+  }
+  /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
+  /* Clean up                                             		                        {{{1 */ #if 1 // begin fold
+  C->deactivate();
+  /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
+
+
 }
 
 /////////////////////////////////////////////////////////////////////////////

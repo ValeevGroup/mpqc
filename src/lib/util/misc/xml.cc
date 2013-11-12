@@ -1,5 +1,5 @@
 //
-// xml.h
+// xml.cc
 //
 // Copyright (C) 2013 MPQC authors
 //
@@ -28,140 +28,13 @@
 
 
 #include <util/misc/xml.h>
+#include <util/misc/xmlwriter.h>
 
 using namespace std;
 using namespace sc;
 using boost::property_tree::ptree;
 using boost::property_tree::xml_writer_settings;
 
-static ClassDesc XMLWriter_cd(
-  typeid(XMLWriter), "XMLWriter", 1, "public Runnable",
-  0, create<XMLWriter>, 0);
-
-XMLWriter::XMLWriter(const Ref<KeyVal>& keyval) :
-    out_(0),
-    pt_(ptree()),
-    delete_out_(false),
-    compress_data_(false),
-    pretty_print_(false),
-    pretty_print_spaces_(2),
-    pretty_print_space_char_(' '),
-    data_()
-{
-  compress_data_ = keyval->booleanvalue("compress_data", KeyValValueboolean(false));
-  pretty_print_ = keyval->booleanvalue("pretty_print", KeyValValueboolean(true));
-  pretty_print_spaces_ = keyval->intvalue("indent_spaces", KeyValValueint(2));
-  pretty_print_space_char_ = keyval->booleanvalue("use_tabs", KeyValValueboolean(false)) ? '\t' : ' ';
-  human_readable_ = keyval->booleanvalue("human_readable", KeyValValueboolean(false));
-  string filename = keyval->stringvalue("filename", KeyValValuestring("-"));
-  if(keyval->exists("data")){
-    int key_count = keyval->count("data");
-    for(int idat = 0; idat < key_count; ++idat){
-      Ref<XMLWritable> to_write;
-      to_write << keyval->describedclassvalue("data", idat);
-      data_.push_back(to_write);
-    }
-  }
-  assert(false);
-
-  init_filename(filename);
-  init();
-}
-
-
-XMLWriter::XMLWriter(ostream& out) :
-    out_(&out),
-    pt_(ptree()),
-    delete_out_(false),
-    compress_data_(false),
-    pretty_print_(false),
-    pretty_print_spaces_(2),
-    pretty_print_space_char_(' '),
-    data_()
-{
-  init();
-}
-
-
-XMLWriter::XMLWriter(ptree& pt, ostream& out) :
-    out_(&out),
-    pt_(pt),
-    delete_out_(false),
-    compress_data_(false),
-    pretty_print_(false),
-    pretty_print_spaces_(2),
-    pretty_print_space_char_(' '),
-    data_()
-{
-  init();
-}
-
-
-XMLWriter::XMLWriter(const string& filename) :
-    out_(0),
-    pt_(ptree()),
-    delete_out_(false),
-    compress_data_(false),
-    pretty_print_(false),
-    pretty_print_spaces_(2),
-    pretty_print_space_char_(' '),
-    data_()
-{
-  init_filename(filename);
-  init();
-}
-
-void
-XMLWriter::init_filename(const string& filename){
-  // TODO delay opening of file pointer until the data is actually written
-  if (filename == "-") {
-      out_ = &(ExEnv::out0());
-  }
-  else {
-      out_ = new std::ofstream(filename.c_str());
-      delete_out_ = true;
-  }
-}
-
-void
-XMLWriter::init(){
-  if(pretty_print_){
-    write_settings_ = xml_writer_settings<char>(pretty_print_space_char_, pretty_print_spaces_);
-  }
-  else{
-    write_settings_ = xml_writer_settings<char>();
-  }
-}
-
-
-XMLWriter::~XMLWriter()
-{
-  if(delete_out_){
-    delete out_;
-  }
-}
-
-ptree&
-XMLWriter::add_writable_child(
-    ptree& parent,
-    const std::string& name,
-    const Ref<XMLWritable>& child
-) const
-{
-  ptree& child_tree = parent.add_child(name, ptree());
-  child->write_xml(child_tree, *this);
-  return child_tree;
-}
-
-void
-XMLWriter::run()
-{
-  std::vector< Ref<XMLWritable> >::iterator it;
-  for(it = data_.begin(); it != data_.end(); ++it){
-    (*it)->write_xml(pt_, *this);
-  }
-  boost::property_tree::write_xml(*out_, pt_, write_settings_);
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 // write_human_readable_data overloads
@@ -231,5 +104,14 @@ DescribedXMLWritable::get_my_ptree(ptree& parent, std::string name)
   return *my_ptree_;
 
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+//boost::optional<std::string>
+//XMLDataStreamTranslator<double>::put_value(const XMLDataStream<double> xds)
+//{
+//
+//}
+
 
 

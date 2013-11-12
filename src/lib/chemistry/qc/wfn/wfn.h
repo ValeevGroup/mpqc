@@ -40,6 +40,8 @@
 #include <chemistry/qc/wfn/orbitalspace.h>
 #include <util/misc/xml.h>
 
+using boost::property_tree::ptree;
+
 namespace sc {
 
 /** A Wavefunction is a MolecularEnergy that utilizies a GaussianBasisSet. */
@@ -173,9 +175,7 @@ class Wavefunction: public MolecularEnergy {
     virtual ~Wavefunction();
 
     void save_data_state(StateOut&);
-    virtual void write_xml(
-        boost::property_tree::ptree& parent, const XMLWriter& writer
-    );
+    virtual ptree& write_xml(ptree& parent, const XMLWriter& writer);
 
     double density(const SCVector3&);
     double density_gradient(const SCVector3&,double*);

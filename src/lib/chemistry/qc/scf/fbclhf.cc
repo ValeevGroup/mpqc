@@ -293,3 +293,16 @@ DFCLHF::dfinfo() const {
   Ref<DensityFittingInfo> result = const_cast<DensityFittingInfo*>(world_->tfactory()->df_info());
   return result;
 }
+
+
+using boost::property_tree::ptree;
+ptree&
+DFCLHF::write_xml(
+    ptree& parent,
+    const XMLWriter& writer
+)
+{
+  ptree& child = get_my_ptree(parent);
+  world()->write_xml(child, writer);
+  return CLHF::write_xml(parent, writer);
+}

@@ -164,7 +164,9 @@ class MolecularEnergy: public Function, virtual public DescribedXMLWritable {
 
     void save_data_state(StateOut&);
 
-    virtual void write_xml(boost::property_tree::ptree& parent, const XMLWriter& writer);
+
+
+    virtual ptree& write_xml(ptree& parent, const XMLWriter& writer);
 
     /// Set up checkpointing
     void set_checkpoint();

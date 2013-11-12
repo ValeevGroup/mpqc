@@ -54,7 +54,7 @@ sc::FromStateIn(Atom &a, StateIn &si, int &count){
 using boost::property_tree::ptree;
 using namespace sc;
 
-void
+ptree&
 Atom::write_xml(
     ptree& parent,
     const XMLWriter& writer
@@ -69,4 +69,5 @@ Atom::write_xml(
   child.put("mass", mass());
   if(have_fragment()) child.put("fragment", fragment());
   if(have_charge()) child.put("charge", charge());
+  return child;
 }

@@ -10,6 +10,7 @@ add_mpqc_object_library(lcao
   compute_ixjy.cc
   df.cc
   df_runtime.cc
+  localdf_runtime.cc
   fockbuild.cc
   fockbuild_runtime.cc
   fockbuilder.cc

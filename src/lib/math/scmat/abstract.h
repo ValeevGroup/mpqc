@@ -35,7 +35,7 @@
 #include <math/scmat/block.h>
 #include <util/misc/xml.h>
 #include <iostream>
-
+using boost::property_tree::ptree;
 namespace sc {
 
 class SCMatrix;
@@ -92,7 +92,7 @@ class SCMatrixKit: public DescribedClass {
 
 /** The SCVector class is the abstract base class for
     double valued vectors. */
-class SCVector: public DescribedClass, public XMLWritable {
+class SCVector: public DescribedClass {
   protected:
     RefSCDimension d;
     Ref<SCMatrixKit> kit_;
@@ -102,7 +102,6 @@ class SCVector: public DescribedClass, public XMLWritable {
     /// Save and restore this in an implementation independent way.
     virtual void save(StateOut&);
     virtual void restore(StateIn&);
-    virtual void write_xml(boost::property_tree::ptree& pt, const XMLWriter& writer);
 
     /// Return the SCMatrixKit used to create this object.
     Ref<SCMatrixKit> kit() const { return kit_; }
@@ -206,7 +205,8 @@ class SCMatrix: public DescribedClass, public XMLWritable {
     /// Save and restore this in an implementation independent way.
     virtual void save(StateOut&);
     virtual void restore(StateIn&);
-    virtual void write_xml(boost::property_tree::ptree& pt, const XMLWriter& writer);
+
+    virtual ptree& write_xml(ptree& parent, const XMLWriter& writer);
 
     /// Return the SCMatrixKit used to create this object.
     Ref<SCMatrixKit> kit() const { return kit_; }
@@ -388,7 +388,8 @@ class SymmSCMatrix: public DescribedClass, public XMLWritable {
     /// Save and restore this in an implementation independent way.
     virtual void save(StateOut&);
     virtual void restore(StateIn&);
-    virtual void write_xml(boost::property_tree::ptree& pt, const XMLWriter& writer);
+
+    virtual ptree& write_xml(ptree& parent, const XMLWriter& writer);
 
     /// Return the maximum absolute value element of this vector.
     virtual double maxabs() const;
@@ -547,7 +548,7 @@ class DiagSCMatrix: public DescribedClass, public XMLWritable {
     /// Save and restore this in an implementation independent way.
     virtual void save(StateOut&);
     virtual void restore(StateIn&);
-    virtual void write_xml(boost::property_tree::ptree& pt, const XMLWriter& writer);
+    virtual ptree& write_xml(ptree& parent, const XMLWriter& writer);
 
     /// Return the maximum absolute value element of this vector.
     virtual double maxabs() const;

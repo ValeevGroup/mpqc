@@ -52,7 +52,7 @@ namespace sc {
 
       /// factory for creating AO->MO transforms for 2-body integrals
       const Ref<MOIntsTransformFactory>& factory() const { return factory_; }
-      /// density fitting basis set. May be null.
+      /// density fitting parameters
       const Ref<DensityFittingParams>& dfparams() const { return dfparams_; }
       /// runtime for density fitting matrices. Returns null if density fitting basis was not given.
       const Ref<DensityFittingRuntime>& runtime_df() const { return runtime_df_; }

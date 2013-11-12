@@ -764,7 +764,7 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
                              - rdm1_oo("m,n") * rdm1_aa("k,l")
                              - srr12intrmds._4("<m l|gamma|k n>")
                             );
-      auto Trf_gamma_Tr_1 = Tr("l,i2,a',n") * Trf("i1,k,a',m") * rdm1_aa("i1,i2");
+      auto Trf_gamma_Tr_1 = Tr("l,i2,a',n") * (rdm1_aa("i2,i1") * Trf("i1,k,a',m"));
       TArray4 Trf_gamma_Tr_1_ta(lambda_1.get_world(), lambda_1.trange());
       Trf_gamma_Tr_1_ta("m,k,l,n") = Trf_gamma_Tr_1;
       Delta += dot(Trf_gamma_Tr_1_ta("m,k,l,n"), lambda_1("m,k,l,n"));
@@ -776,7 +776,7 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
                              - 0.25 * rdm1_oa("m,k") * rdm1_ao("l,n")
                              - 0.5 * srr12intrmds._4("<m l|gamma|n k>")
                             );
-      auto Trf_gamma_Tr_2 = Tr("l,i2,a',n") * Trf("k,i1,a',m") * rdm1_aa("i1,i2");
+      auto Trf_gamma_Tr_2 = Tr("l,i2,a',n") * (rdm1_aa("i2,i1") * Trf("k,i1,a',m"));
       TArray4 Trf_gamma_Tr_2_ta(lambda_2.get_world(), lambda_2.trange());
       Trf_gamma_Tr_2_ta("m,n,l,k") = Trf_gamma_Tr_2;
       Delta += dot(Trf_gamma_Tr_2_ta("m,n,l,k"), lambda_2("m,n,l,k"));
@@ -788,7 +788,7 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
                              - rdm1_oa("m,k") * rdm1_ao("l,n")
                             );
       {
-        auto Trf_gamma_Tr_3 = Tr("i2,l,a',n") * Trf("i1,k,a',m") * rdm1_aa("i1,i2");
+        auto Trf_gamma_Tr_3 = Tr("i2,l,a',n") * (rdm1_aa("i2,i1") * Trf("i1,k,a',m"));
         TArray4 Trf_gamma_Tr_3_ta(lambda_3.get_world(), lambda_3.trange());
         Trf_gamma_Tr_3_ta("m,l,k,n") = Trf_gamma_Tr_3;
         Delta += dot(Trf_gamma_Tr_3_ta("m,l,k,n"), lambda_3("m,l,k,n"));
@@ -797,7 +797,7 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
 
       {
         // lambda_4 = -0.5 lambda_3
-        auto Trf_gamma_Tr_4 = Tr("i2,l,a',n") * Trf("k,i1,a',m") * rdm1_aa("i1,i2");
+        auto Trf_gamma_Tr_4 = Tr("i2,l,a',n") * (rdm1_aa("i2,i1") * Trf("k,i1,a',m"));
         TArray4 Trf_gamma_Tr_4_ta(lambda_3.get_world(), lambda_3.trange());
         Trf_gamma_Tr_4_ta("m,l,k,n") = Trf_gamma_Tr_4;
         Delta += -0.5 * dot(Trf_gamma_Tr_4_ta("m,l,k,n"), lambda_3("m,l,k,n"));
@@ -1284,7 +1284,7 @@ RefSymmSCMatrix PT2R12::rdm2()
 void PT2R12::compute()
 {
   r12world()->initialize();
-  const bool debug_printing = true;
+  const bool debug_printing = false;
   if(debug_printing)
   {
 //    basis->print();
@@ -1298,6 +1298,7 @@ void PT2R12::compute()
     r12eval_->ordm(Alpha)->print("ordm-alpha");
     r12eval_->ordm()->print("ordm");
   }
+  r12world()->cabs_space(Alpha); // make sure that CABS spaces are computed
 
   const double energy_ref = r12world()->refwfn()->energy();
   double energy_correction_r12 = 0.0;

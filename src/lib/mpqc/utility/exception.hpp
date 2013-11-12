@@ -5,34 +5,49 @@
 #include <stdarg.h>
 
 #include <string>
-#include <stdexcept>
+#include <exception>
 #include <iostream>
 #include <sstream>
-//#include <boost/current_function.hpp>
+
+#include "mpqc/utility/string.hpp"
 
 namespace mpqc {
+    
+    /// @addtogroup CoreUtility
+    /// @{
 
-    struct Exception : std::runtime_error {
-        Exception(const char *file, long line, const char *fmt = NULL, ...)
-            : std::runtime_error(str(file, line, fmt)) {}
-    private:
-        static std::string str(char const *file, long line, char const *fmt, ...) {
-            std::string str;
-            str = str + file + ":" + string_cast(line);
+    /// MPQC exception class
+    struct Exception : std::exception {
+        /// Constructs exception
+        explicit Exception(const std::string &msg = "")
+            : what_(msg) {}
+        /// Constructs exceptin with an optional printf-style format and arguments
+        explicit Exception(char const *file, long line, const char *fmt = NULL, ...) {
+            what_ = what_ + file + ":" + string_cast(line);
             if (fmt) {
                 char buffer[1024] = { };
                 va_list args;
                 va_start(args, fmt);
                 vsnprintf(buffer, 1024-1, fmt, args);
                 va_end(args);
-                str = str + ": " + buffer;
+                what_ = what_ + ": " + buffer;
             }
-            return str;
         }
+        ~Exception() throw() {}
+        const char* what() const throw() {
+            return what_.c_str();
+        }
+    private:
+        std::string what_;
     };
+
+    /// @}
 
 }
 
+/// @ingroup CoreUtility
+/// Constructs mpqc::Exception with file, line information
+/// and an optional printf-style format and arguments
 #define MPQC_EXCEPTION(...) mpqc::Exception(__FILE__, __LINE__, __VA_ARGS__)
 
 #endif /* MPQC_UTILITY_EXCEPTION_HPP */

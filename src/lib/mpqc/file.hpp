@@ -22,41 +22,18 @@
 #include "mpqc/range.hpp"
 #include "mpqc/range/operator.hpp"
 
-#include "mpqc/assert.hpp"
+#include "mpqc/utility/check.hpp"
 #include "mpqc/utility/foreach.hpp"
 #include "mpqc/utility/timer.hpp"
 #include "mpqc/utility/mutex.hpp"
 
 #include <util/misc/exenv.h>
 
-/**
-   @defgroup File mpqc.Core.File
-   Implementation of hierarchical file objects based on
-   <a href="http://www.hdfgroup.org/HDF5/">HDF5</a>.
-
-   To work with files:
-   - create a file object
-   - create a dataset in that file (where actual data resides)
-   - write/read data to/from the dataset
-   @code
-
-   File file("file.h5");
-   std::vector<size_t> dims{m,n};
-   File::Dataset<double> ds(file, "my dataset", dims);
-   Vector v(m*n);
-   ds.write(v.data());
-   ds.read(v.data());
-   // or
-   ds << v; // write v to ds
-   ds >> v; // read ds to v
-   @endcode
-*/
-
 namespace mpqc {
 namespace detail {
 
 /** @brief implementation details
-    @ingroup File
+    @ingroup CoreFile
 */
 namespace File {
 
@@ -96,6 +73,19 @@ namespace File {
         return hid_t();
     }
 
+    struct Properties : boost::noncopyable {
+        explicit Properties(hid_t props) {
+            props_ = H5Pcreate(props);
+        }
+        ~Properties() {
+            H5Pclose(props_);
+        }
+        hid_t id() const {
+            return props_;
+        }
+    private:
+        hid_t props_;
+    };
 
     /**
        A reference-counted HDF5 handle object,
@@ -194,7 +184,7 @@ namespace File {
 
 namespace mpqc {
 
-    /** @addtogroup File
+    /** @addtogroup CoreFile
         @{ */
 
     /**
@@ -207,6 +197,7 @@ namespace mpqc {
 
         typedef detail::File::Object Object;
         typedef detail::File::Attribute Attribute;
+        typedef detail::File::Properties Properties;
         
         struct Group;
 
@@ -216,24 +207,37 @@ namespace mpqc {
         template<typename T>
         struct Dataspace;
 
-        /**
-           Default file driver
-           @warning This class needs work to accomodate different HDF5 drivers better
-         */
-        struct Driver {
-            struct Core;
-            Driver() : fapl_(H5P_DEFAULT) {}
+        /// Base file driver
+        struct Driver : boost::noncopyable {
             hid_t fapl() const {
                 return fapl_;
             }
-        private:
+        protected:
+            Driver() {
+                this->fapl_ = H5Pcreate(H5P_FILE_ACCESS);
+                MPQC_FILE_VERIFY(this->fapl_);
+            }
             hid_t fapl_;
         };
 
-        /**
-           Constructs a null file object.
-           Creating objects with this file as parent will fail
-         */
+        /// POSIX I/O file driver, the default
+        struct POSIXDriver : Driver {
+            POSIXDriver() : Driver() {
+          }
+        };
+
+#ifdef H5_HAVE_DIRECT
+        /// Direct I/O file driver
+        struct DirectDriver : Driver {
+          DirectDriver() : Driver()
+            {
+                MPQC_FILE_VERIFY(H5Pset_fapl_direct(Driver::fapl_, 1024, 4096, 8*4096));
+            }
+        };
+#endif
+
+        /// Constructs a null file object.
+        /// Creating objects with this file as parent will fail
         File() {}
 
         /**
@@ -245,7 +249,7 @@ namespace mpqc {
            @warning NOT threadsafe
            @details The list of opened files is stored internally in a static set
         */
-        explicit File(const std::string &name, const Driver &driver = Driver()) {
+        explicit File(const std::string &name, const Driver &driver = POSIXDriver()) {
             initialize(name, driver);
         }
 
@@ -417,21 +421,21 @@ namespace mpqc {
         Object parent_;
         size_t ndims_, size_;
         std::vector<size_t> base_;
-        std::vector<range> range_;
+        std::vector<mpqc::range> range_;
         friend class Dataset<T> ;
 
         Dataspace(const Object &parent, const std::vector<size_t> &base,
-                  const std::vector<range> &r, size_t ndims) :
+                  const std::vector<mpqc::range> &r, size_t ndims) :
             parent_(parent),
             base_(base),
             range_(r),
             ndims_(ndims)
         {
-            assert(ndims <= r.size());
+            assert(ndims <= range_.size());
             size_ = (r.size() ? 1 : 0);
-            for (int i = 0; i < r.size(); ++i) {
-                //std::cout << "r = " << r[i] << std::endl;
-                size_ *= r[i].size();
+            for (int i = 0; i < range_.size(); ++i) {
+                size_ *= range_[i].size();
+                //std::cout << "range_[i] = " << range_[i] << std::endl;
             }
         }
 
@@ -451,7 +455,7 @@ namespace mpqc {
             assert(r.size() == base_.size());
             std::vector<range> v;
             for (int i = 0; i < base_.size(); ++i) {
-                int begin = *r[i].begin() - base_[i];
+                auto begin = *r[i].begin() - base_[i];
                 v.push_back(range(begin, begin + r[i].size()));
             }
             return v;
@@ -488,7 +492,9 @@ namespace mpqc {
             for (size_t i = 0, j = N - 1; i < N; ++i, --j) {
                 fstart[i] = *r[j].begin();
                 fcount[i] = r[j].size();
-                //printf("%i:%i,", fstart[i], fstart[i]+fcount[i]);
+                // std::cout << "r[j] = " << r[j]
+                //           << " fstart=" << fstart[i]
+                //           << ", fcount[i]=" << fcount[i] << std::endl;
                 fstride[i] = 1;
                 fblock[i] = 1;
                 size *= fcount[i];
@@ -518,10 +524,9 @@ namespace mpqc {
             The size of collection determines dataset rank.
         */
         template<typename Extents>
-        Dataset(const Object &parent, const std::string &name,
-                const Extents &extents, const std::vector<size_t> &chunk =
-                std::vector<size_t>())
-            : Object(Dataset::create(parent, name, extents, chunk))
+        Dataset(const Object &parent, const std::string &name, const Extents &extents,
+                const File::Properties &dcpl = File::Properties(H5P_DATASET_CREATE))
+            : Object(Dataset::create(parent, name, extents, dcpl))
         {
             assert(id() > 0);
             foreach (auto e, extents) {
@@ -612,7 +617,7 @@ namespace mpqc {
         static Object create(const Object &parent,
                              const std::string &name,
                              const Extents &extents,
-                             const std::vector<size_t> &chunk) {
+                             const Properties &dcpl) {
 
             hid_t id;
             // Object constructor may also obtain mutex
@@ -628,20 +633,13 @@ namespace mpqc {
 
                 hid_t fspace = H5Screate_simple(dims.size(), &dims[0], NULL);
                 hid_t type = detail::File::h5t<T>();
-                hid_t dcpl = H5Pcreate(H5P_DATASET_CREATE);
-                if (chunk.size()) {
-                    assert(chunk.size() == dims.size());
-                    std::vector<hsize_t> block(chunk.rbegin(), chunk.rend());
-                    H5Pset_chunk(dcpl, block.size(), &block[0]);
-                }
                 //printf("parent.id() = %i, name=%s\n", parent.id(), name.c_str());
 #if H5_VERS_MAJOR == 1 && H5_VERS_MINOR < 8
-                id = H5Dcreate(parent.id(), name.c_str(), type, fspace, dcpl);
+                id = H5Dcreate(parent.id(), name.c_str(), type, fspace, dcpl.id());
 #else
-                id = H5Dcreate1(parent.id(), name.c_str(), type, fspace, dcpl);
+                id = H5Dcreate1(parent.id(), name.c_str(), type, fspace, dcpl.id());
 #endif
                 MPQC_FILE_VERIFY(id);
-                MPQC_FILE_VERIFY(H5Pclose(dcpl));
             }
             return Object(parent, id, &Dataset::close, false);
         }

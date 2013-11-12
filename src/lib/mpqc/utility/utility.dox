@@ -1,7 +1,0 @@
-#ifndef MPQC_UTILITY_UTILITY_HPP
-#define MPQC_UTILITY_UTILITY_HPP
-
-/// @defgroup Utility mpqc.Util.Misc
-/// Miscellaneous utilities
-
-#endif /* MPQC_UTILITY_UTILITY_HPP */

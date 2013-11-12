@@ -1,0 +1,31 @@
+% emacs should use -*- KeyVal -*- mode
+% molecule specification
+molecule<Molecule>: (
+  symmetry = C2V
+  unit = angstrom
+  { atoms geometry } = {
+    O     [     0.00000000     0.00000000     0.37000000 ]
+    H     [     0.78000000     0.00000000    -0.18000000 ]
+    H     [    -0.78000000     0.00000000    -0.18000000 ]
+  }
+)
+mpqc: (
+  checkpoint = no
+  savestate = no
+  run = [ $:plot ]
+)
+
+plot<WriteOrbitals>: (
+ filename = "methods_run_writeorbitals.cube"
+  first = 1
+  last = 7
+  obwfn = $..:clhf
+)
+clhf<CLHF>: (
+  molecule = $:molecule
+  basis<GaussianBasisSet>: (
+    name = "6-31G*"
+    molecule = $:molecule
+  )
+  memory = 16000000
+)

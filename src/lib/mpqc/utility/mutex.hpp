@@ -6,7 +6,7 @@
 
 namespace mpqc {
 
-    /// @addtogroup Utility
+    /// @addtogroup CoreUtility
     /// @{
 
     /// Static mutex factory

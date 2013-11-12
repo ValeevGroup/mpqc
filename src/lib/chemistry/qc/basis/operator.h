@@ -249,8 +249,10 @@ namespace sc {
     static int max_ntypes;
     /// Returns a descriptor for integral type t
     static Ref<TwoBodyOperDescr> descr(TwoBodyOper::type t);
-    /// converts type to string
+    /// converts type to string representation
     static std::string to_string(type t);
+    /// converts string representation to type
+    static type to_type(const std::string& key);
   };
 
   /// Known two-body operator sets
@@ -264,9 +266,18 @@ namespace sc {
       R12_0_G12, //!< {r12_0_g12}
       R12_m1_G12,//!< {r12_m1_g12}
       G12_T1_G12,//!< {g12t1g12}
-      DeltaFunction, //!< {delta}
-
+      DeltaFunction //!< {delta}
     };
+
+    /// converts type to string representation
+    static std::string to_string(type t);
+    /// converts string representation to type
+    static type to_type(const std::string& key);
+
+    /// maps TwoBodyOper::type to type
+    /// @note only succeeds if the map is unequivocal
+    static type to_type(TwoBodyOper::type oper);
+
   };
 
   /// Describes sets of two-body operators (\sa TwoBodyOper)

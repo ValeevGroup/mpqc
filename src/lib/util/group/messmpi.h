@@ -50,7 +50,8 @@ class MPIMessageGrp: public MessageGrp {
     /// Number of MPIMessageGrp's currently in use.
     static int nmpi_grps;
     /// lock to access nmpi_grps variable
-    static Ref<ThreadLock> grplock;
+    /// @note lifetime is managed manually to avoid destruction of lock before calling all MPIMessageGrp destructors
+    static ThreadLock* grplock;
     /// Was MPI_Init called by one of MPIMessagrGrp? Will also call MPI_Finalize, if so
     static bool mpi_init_called;
 

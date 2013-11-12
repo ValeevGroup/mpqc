@@ -4,6 +4,7 @@
 #include "mpqc/array/forward.hpp"
 
 #include "mpqc_config.h"
+#include "mpqc/mpi.hpp"
 #ifdef HAVE_MPI
 #include "mpqc/array/parallel.hpp"
 #ifdef HAVE_ARMCI
@@ -16,6 +17,7 @@ extern "C" {
 #include "mpqc/range.hpp"
 #include "mpqc/utility/foreach.hpp"
 #include "mpqc/utility/mutex.hpp"
+#include "mpqc/utility/exception.hpp"
 
 #include <boost/noncopyable.hpp>
 
@@ -34,7 +36,7 @@ namespace detail {
         template<typename Extent>
 	array_impl(const std::string &name,
                    const std::vector<Extent> &extents)
-            : ArrayBase(extents)
+            : ArrayBase(name, extents)
         {
             data_.resize(this->size());
 	}
@@ -124,11 +126,18 @@ namespace detail {
 
 	array_parallel_impl(const std::string &name,
 			    const std::vector<size_t> &dims,
-			    MPI::Comm comm)
-            : ArrayBase(dims)
+			    const MPI::Comm &comm)
+            : ArrayBase(name, dims)
         {
+            initialize(ArrayBase::dims_, comm);
+        }
+
+    private:
+
+        void initialize(const std::vector<size_t> &dims, const MPI::Comm &comm) {
+
             // dont have code to use ARMCI groups yet
-	    assert(comm == MPI_COMM_WORLD);
+	    MPQC_CHECK(comm == MPI::Comm::World());
 
 	    size_t size = 1;
 	    std::vector<range> extents;
@@ -167,6 +176,10 @@ namespace detail {
 	void sync() {
 	    ARMCI_Barrier();
 	}
+
+        const MPI::Comm& comm() const {
+            return this->comm_;
+        }
 
     protected:
 

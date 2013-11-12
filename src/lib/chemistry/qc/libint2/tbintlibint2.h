@@ -213,7 +213,7 @@ class TwoBodyDerivIntLibint2 : public TwoBodyDerivInt {
 		     const Ref<GaussianBasisSet>& b4,
 		     size_t storage,
 		     const Ref<IntParams>& params) {
-            return new Int2e(integral,b1,b2,b3,b4,storage);
+            return new Int2e(integral,b1,b2,b3,b4,storage,params);
           }
       };
 

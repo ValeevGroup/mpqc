@@ -133,8 +133,8 @@ class TwoBodyInt : public RefCount {
 
     /** The computed shell integrals will be put in the buffer returned
         by this member.  Some TwoBodyInt specializations have more than
-	one buffer:  The type arguments selects which buffer is returned.
-	If the requested type is not supported, then 0 is returned. */
+	    one buffer:  The type arguments selects which buffer is returned.
+	    If the requested type is not supported, then 0 is returned. */
     virtual const double * buffer(TwoBodyOper::type type = TwoBodyOper::eri) const;
 
     /** Given four shell indices, integrals will be computed and placed in

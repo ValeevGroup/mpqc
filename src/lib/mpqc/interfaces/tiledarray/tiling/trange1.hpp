@@ -32,20 +32,12 @@
 #include <chemistry/qc/basis/basis.h>
 #include <vector>
 
-/**
- * @defgroup TaTiling mpqc.TiledArrayInterfaces.Tiling
- * @ingroup TiledArrayInterface
- * Tiling information and functions for the MPQC-TiledArray interface
- */
-
 namespace mpqc {
 namespace tiling {
-    /// @addtogroup TaTiling
+    /// @addtogroup ChemistryBasisIntegralTA
     /// @{
 
-    using RefMol = sc::Ref<sc::Molecule>;
-    using RefBasis = sc::Ref<sc::GaussianBasisSet>;
-    using TRange1 = TiledArray::TiledRange1;
+  namespace TA = TiledArray;
 
 namespace details {
 
@@ -58,9 +50,9 @@ namespace details {
     }
 
     // Get the number of atoms in the system that are heavier than hydrogen.
-    std::size_t nheavy_atoms(const RefBasis &basis){
+    std::size_t nheavy_atoms(const sc::Ref<sc::GaussianBasisSet> &basis){
         // copy Ref to work on it.
-        RefMol mol = basis->molecule();
+      sc::Ref<sc::Molecule> mol = basis->molecule();
 
         // Return variable
         std::size_t nheavies = 0;
@@ -77,7 +69,7 @@ namespace details {
      * Returns TiledArray::TiledRange1 that corresponds to integral shells.
      * @param[in] basis Is a sc::GaussiangBasisSet
      */
-    TRange1 tile_by_shell(const RefBasis &basis){
+    TA::TiledRange1 tile_by_shell(const sc::Ref<sc::GaussianBasisSet> &basis){
 
         // Shell and basis set information
         std::size_t nshell = basis->nshell();
@@ -108,7 +100,7 @@ namespace details {
         }
 
         // construct TiledRange1
-        return TRange1(tilesizes.begin(), tilesizes.end());
+        return TA::TiledRange1(tilesizes.begin(), tilesizes.end());
     }
 
     /**
@@ -116,7 +108,7 @@ namespace details {
      * corresponds to all the shells on a single atom.
      * @param[in] basis Is a sc::GaussiangBasisSet
      */
-    TRange1 tile_by_atom(const RefBasis &basis){
+    TA::TiledRange1 tile_by_atom(const sc::Ref<sc::GaussianBasisSet> &basis){
 
         // Basis set information
         std::size_t ncenters = basis->ncenter();
@@ -138,7 +130,7 @@ namespace details {
         }
 
         // construct TiledRange1
-        return TRange1(tilesizes.begin(), tilesizes.end());
+        return TA::TiledRange1(tilesizes.begin(), tilesizes.end());
     }
 
 #if 1
@@ -154,7 +146,7 @@ namespace details {
      * custum function or use mpqc::ShellOrdering and the TiledRange constructor
      * for integrals objects.
      */
-    TRange1 by_grouped_hydrogens(const RefBasis &basis){
+    TA::TiledRange1 by_grouped_hydrogens(const sc::Ref<sc::GaussianBasisSet> &basis){
 
         // Initialize the vector.
         std::vector<std::size_t> tilesizes =
@@ -188,14 +180,14 @@ namespace details {
                 }
             }
         }
-        return TRange1(tilesizes.begin(), tilesizes.end());
+        return TA::TiledRange1(tilesizes.begin(), tilesizes.end());
     }
 #endif
 
-    /// @} // TaTiling
+    /// @} // ChemistryBasisIntegralTA
 } // namespace tiling
 
-    typedef tiling::TRange1 (*TRange1Gen)(const tiling::RefBasis &);
+    typedef TA::TiledRange1 (*TRange1Gen)(const sc::Ref<sc::GaussianBasisSet> &);
 
 } // namespace mpqc
 

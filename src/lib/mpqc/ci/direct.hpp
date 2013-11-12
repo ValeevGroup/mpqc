@@ -4,30 +4,73 @@
 #include <util/misc/formio.h>
 
 #include "mpqc/ci/string.hpp"
-#include "mpqc/ci/preconditioner.hpp"
-#include "mpqc/ci/sigma.hpp"
 #include "mpqc/ci/vector.hpp"
+#include "mpqc/ci/sigma.hpp"
+#include "mpqc/ci/preconditioner.hpp"
 
 #include "mpqc/math/matrix.hpp"
-#include "mpqc/python.hpp"
 #include "mpqc/file.hpp"
+
+#include "mpqc/utility/profile.hpp"
+
+#define MPQC_CI_VERBOSE 0
 
 namespace mpqc {
 namespace ci {
 
-    template<class Type>
-    std::vector<double> direct(CI<Type> &ci,
+    /// @addtogroup CI
+    /// @{
+
+    /// read local segments into V from F
+    inline void read(ci::Vector &V, File::Dataspace<double> F,
+                     const std::vector<mpqc::range> &local) {
+        timer t;
+        size_t count = 0;
+        foreach (auto r, local) {
+            mpqc::Vector v(r.size());
+            F(r) >> v;
+            V(r) << v;
+            count += r.size();
+        }
+#if MPQC_CI_VERBOSE
+        printf("read took %f s, %f mb/s\n", (double)t, count*sizeof(double)/(t*(1<<20)));
+#endif
+    }
+
+    /// write local segments of V to F
+    inline void write(ci::Vector &V, File::Dataspace<double> F,
+                      const std::vector<mpqc::range> &local) {
+        timer t;
+        size_t count = 0;
+        foreach (auto r, local) {
+            mpqc::Vector v(r.size());
+            V(r) >> v;
+            F(r) << v;
+            count += r.size();
+        }
+#if MPQC_CI_VERBOSE
+        printf("write took %f s, %f mb/s\n", (double)t, count*sizeof(double)/(t*(1<<20)));
+#endif
+    }
+
+    /// Direct Davidson
+    /// @param h one-electron MO integrals (packed symmetric)
+    /// @param V two-electron MO integrals (packed symmetric)
+    /// @param[in,out] ci CI object
+    template<class Type, class Index>
+    std::vector<double> direct(CI<Type,Index> &ci,
                                const mpqc::Vector &h,
                                const mpqc::Matrix &V) {
 
+        MPQC_PROFILE_REGISTER_THREAD;
+
         mpqc::Matrix lambda;
         mpqc::Vector a, r;
-        size_t R = ci.roots; // roots
+        size_t R = ci.config.roots; // roots
         size_t M = 1;
 
         const auto &alpha = ci.alpha;
         const auto &beta = ci.beta;
-        size_t BLOCK = alpha.size()*ci.block;
 
         mpqc::Matrix G;
         struct Iter {
@@ -41,10 +84,9 @@ namespace ci {
         iters[-1].E = iters[-1].D = 0;
 
         auto &comm = ci.comm;
-        const auto &local = ci.local;
 
-        ci::Vector<Type> C("ci.C", ci);
-        ci::Vector<Type> D("ci.D", ci);
+        ci::Vector C("ci.C", ci.subspace, comm, (ci.config.incore >= 1));
+        ci::Vector D("ci.D", ci.subspace, comm, (ci.config.incore >= 2));
 
         comm.barrier();
 
@@ -53,9 +95,6 @@ namespace ci {
         for (size_t it = 0;; ++it) {
 
             timer t;
-
-            if (it + 1 > ci.max)
-                throw std::runtime_error("CI failed to converge");
 
             // augment G
             {
@@ -67,31 +106,35 @@ namespace ci {
             }
 
             {
-                C(local.determinants).read(ci.vector.b[it]);
+                // read local segments of b(it) to C
+                read(C, ci.vector.b[it], ci.local());
                 C.sync();
 
                 sigma(ci, h, V, C, D);
                 D.sync();
 
-                D(local.determinants).write(ci.vector.Hb[it]);
-                comm.barrier();
+                // write local segments of D to Hb(it)
+                write(D, ci.vector.Hb[it], ci.local());
+                D.sync();
             }
 
             // augment G matrix
             {
+                MPQC_PROFILE_LINE;
                 mpqc::Vector g = mpqc::Vector::Zero(M);
-                foreach (auto r, local.determinants.block(BLOCK)) {
+                foreach (auto r, ci.local()) {
                     mpqc::Vector c(r.size());
-                    const mpqc::Vector &s = D(r);
+                    mpqc::Vector s(r.size());
+                    D(r) >> s;
                     for (int j = 0; j < M; ++j) {
                         ci.vector.b(r,j) >> c;
                         g(j) += c.dot(s);
                     }
                 }
-                //std::cout << "g: " << g << std::endl;
                 comm.sum(g.data(), M);
                 G.row(it) = g;
                 G.col(it) = g;
+                //std::cout << "G = \n" << G << std::endl;
             }
 
             // solve G eigenvalue
@@ -109,7 +152,8 @@ namespace ci {
             for (int k = 0; k < R; ++k) {
 
                 // update d part
-                foreach (auto r, local.determinants.block(BLOCK)) {
+                for (auto r : ci.local()) {
+                    MPQC_PROFILE_LINE;
                     mpqc::Vector v(r.size());
                     mpqc::Vector d(r.size());
                     d.fill(0);
@@ -122,12 +166,12 @@ namespace ci {
                         ci.vector.Hb(r,i) >> v;
                         d += a(i,k)*v;
                     }
-                    D(r).put(d);
+                    D(r) << d;
                 }
                 D.sync();
 
                 iters[it].E = lambda[0];
-                iters[it].D = norm(D, comm, local.determinants, BLOCK);
+                iters[it].D = norm(D, ci.local(), comm);
 
                 if (comm.rank() == 0) {
                     double dc = fabs(iters[it - 1].D - iters[it].D);
@@ -136,7 +180,8 @@ namespace ci {
                         << sc::indent
                         << sc::scprintf("CI iter. %3i, E=%15.12lf, "
                                         "del.E=%4.2e, del.C=%4.2e\n",
-                                        (int)it, lambda[0] + ci.e_ref + ci.e_core,
+                                        (int)it,
+                                        lambda[0] + ci.config.e_ref + ci.config.e_core,
                                         de, dc);
                 }
                 
@@ -144,21 +189,30 @@ namespace ci {
 
                 // orthonormalize
                 for (int i = 0; i < M; ++i) {
-                    ci::Vector<Type> &b = C;
-                    b(local.determinants).read(ci.vector.b[i]);
-                    orthonormalize(b, D, ci.comm, local.determinants, BLOCK);
+                    ci::Vector &b = C;
+                    read(b, ci.vector.b[i], ci.local());
+                    orthonormalize(b, D, ci.local(), ci.comm);
                 }
                 D.sync();
 
-                D(local.determinants).write(ci.vector.b[it + 1]);
+                if (it+1 == ci.config.max) break;
+
+                write(D, ci.vector.b[it+1], ci.local());
+                D.sync();
 
             }
 
             MPQC_PROFILE_DUMP(std::cout);
 
-            if (fabs(iters[it - 1].E - iters[it].E) < ci.convergence) {
+            sc::ExEnv::out0() << sc::indent << "Davidson iteration time: " << t << std::endl;
+
+            if (fabs(iters[it - 1].E - iters[it].E) < ci.config.convergence) {
                 E.push_back(iters[it].E);
                 break;
+            }
+
+            if (it+1 == ci.config.max) {
+                throw MPQC_EXCEPTION("CI failed to converge");
             }
 
             ++M;
@@ -167,6 +221,8 @@ namespace ci {
         return E;
 
     }
+
+    /// @}
 
 } // namespace ci
 } // namespace mpqc

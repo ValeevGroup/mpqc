@@ -54,7 +54,7 @@ class ImplicitSurfacePolygonizer: public IsosurfaceGen {
     // C-language functions.
   public:
     /// For internal use only.
-    static int add_triangle_to_current(int,int,int,VERTICES);
+    static int add_triangle_to_current(int,int,int,sc::detail::VERTICES);
     /// For internal use only.
     static double value_of_current(double x, double y, double z);
   protected:

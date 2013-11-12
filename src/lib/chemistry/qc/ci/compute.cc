@@ -3,14 +3,11 @@
 #include <stdexcept>
 #include <cassert>
 
-//#define MPQC_PROFILE_ENABLE
-#include "mpqc/utility/profile.hpp"
-
 #include <chemistry/qc/nbody/nbwfn.h>
 
 #include "mpqc/ci/integrals.hpp"
-#include "mpqc/ci/full/ci.hpp"
-#include "mpqc/ci/restricted/ci.hpp"
+#include "mpqc/ci/full.hpp"
+#include "mpqc/ci/restricted.hpp"
 #include "mpqc/ci/direct.hpp"
 #include "mpqc/utility/string.hpp"
 
@@ -119,15 +116,25 @@ std::vector<double> sc::CI::compute(const Ref<RefWavefunction> &wfn,
       SCFormIO::fileext_to_filename(".h5");
 
   std::auto_ptr<mpqc::File> file;
-  file.reset(new mpqc::File(fname + "." + mpqc::string_cast(comm.rank())));
+  std::unique_ptr<mpqc::File::Driver> driver(new mpqc::File::POSIXDriver);
+  if (config.hdf5.direct) {
+#ifdef H5_HAVE_DIRECT
+      std::cout << "hdf5.direct=" << config.hdf5.direct << std::endl;
+      driver.reset(new mpqc::File::DirectDriver);
+#else
+      throw FeatureNotImplemented("CI::CI: hdf5.direct = true but direct driver is not supported by the installed version of HDF5 or your platform",
+                                  __FILE__, __LINE__);
+#endif
+  }
+  file.reset(new mpqc::File(fname + "." + mpqc::string_cast(comm.rank()), *driver));
 
   std::vector<double> E;
 
-  if (config.rank > 0) {
-      mpqc::ci::RestrictedCI ci(config, comm, file->group());
+  if (config.rank) {
+      mpqc::ci::CI<mpqc::ci::Restricted> ci(config, comm, file->group());
       E = mpqc::ci::direct(ci, h, V);
   } else {
-      mpqc::ci::FullCI ci(config, comm, file->group());
+      mpqc::ci::CI<mpqc::ci::Full> ci(config, comm, file->group());
       E = mpqc::ci::direct(ci, h, V);
   }
 

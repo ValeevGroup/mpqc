@@ -43,11 +43,8 @@
 
 namespace sc {
 
-  /// @defgroup KeyVal mpqc.Core.KeyVal
-  /// Classes/functions for managing structured sets of keyword-value associations, such as encoded in the MPQC object-oriented input format.
-
 /**
- * @ingroup KeyVal
+ * @ingroup CoreKeyVal
  The KeyVal class is designed to simplify the process of allowing
  a user to specify keyword/value associations to a C++ program.  A
  flexible input style and ease of use for the programmer is achieved with
@@ -337,7 +334,7 @@ class KeyVal: public RefCount {
 
 
 
-/** @ingroup KeyVal
+/** @ingroup CoreKeyVal
  *  This class allows keyval associations to be set up by the program,
     rather than determined by an external file. */
 class AssignedKeyVal: public KeyVal {
@@ -387,7 +384,7 @@ class AssignedKeyVal: public KeyVal {
     }
 };
 
-/** @ingroup KeyVal
+/** @ingroup CoreKeyVal
  *  StringKeyVal is a base class for KeyVal implementations
     that store all values in a string format.  These are
     converted to other data types through KeyValValue.
@@ -426,7 +423,7 @@ class StringKeyVal: public KeyVal {
     //@}
 };
 
-/** @ingroup KeyVal
+/** @ingroup CoreKeyVal
  *  This takes several KeyVal objects and makes them look like
     one KeyVal object.  When a key is sought first KeyVal, then
     the next, and so on is searched until the keyword is found.
@@ -465,7 +462,7 @@ class AggregateKeyVal : public KeyVal {
     void dump(std::ostream&fp=ExEnv::err0());
 };
 
-/** @ingroup KeyVal
+/** @ingroup CoreKeyVal
  *  PrefixKeyVal is a KeyVal that searches a different KeyVal using
     modified keys.  This is convenient for reading keys grouped together
     with a common prefix.  Consider the following code:
@@ -542,7 +539,7 @@ class PrefixKeyVal : public KeyVal {
 };
 
 class IPV2;
-/** @ingroup KeyVal
+/** @ingroup CoreKeyVal
  *  Converts textual information into keyword/value assocations.  The
     parsing is done with an IPV2 object.  The \ref keyval for more
     information on the input format.  */
@@ -669,7 +666,7 @@ namespace detail {
   };
 }
 
-/** @ingroup KeyVal
+/** @ingroup CoreKeyVal
  * Provides convenient way to fill standard containers from KeyVal
  */
 class Keyword {

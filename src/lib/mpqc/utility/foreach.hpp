@@ -3,7 +3,7 @@
 
 #include <boost/foreach.hpp>
 
-/// @ingroup Utility
+/// @ingroup CoreUtility
 /// @brief foreach loop construct, short-hand for BOOST_FOREACH.
 /// Example:
 /// @code

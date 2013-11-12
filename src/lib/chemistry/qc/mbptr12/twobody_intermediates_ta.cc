@@ -67,6 +67,16 @@ R12IntEval::V_diag_ta() {
   auto rdm1 = srr12intrmds.rdm1();
 }
 
+void
+R12IntEval::compute_ccr12_1rdm(const RefSCMatrix& T1, const Ref<DistArray4> (&T2)[NSpinCases2])
+{
+  SingleReference_R12Intermediates<double> srr12intrmds(madness::World::get_default(),
+                                                        this->r12world());
+  srr12intrmds.set_T1(T1);
+  srr12intrmds.set_T2(T2);
+  auto rdm1 = srr12intrmds.rdm1();
+}
+
 #endif
 
 /////////////////////////////////////////////////////////////////////////////

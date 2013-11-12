@@ -38,6 +38,9 @@
 
 namespace sc {
 
+  /// @addtogroup ChemistryMolecule
+  /// @{
+
 /** The MolecularEnergy abstract class inherits from the Function class.
 It computes the energy of the molecule as a function of the geometry.  The
 coordinate system used can be either internal or cartesian.  */
@@ -338,6 +341,9 @@ class MolEnergyConvergence: public Convergence {
 
     void print(std::ostream& = ExEnv::out0()) const;
 };
+
+/// @}
+// end of addtogroup ChemistryMolecule
 
 }
 

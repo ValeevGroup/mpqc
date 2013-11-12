@@ -10,7 +10,7 @@
 namespace mpqc {
 
     /// boost::tuple tie wrapper
-    /// @ingroup Range
+    /// @ingroup MathRange
     template<class Tuple>
     struct range::tie : Tuple {
         static const int N = boost::tuples::length<Tuple>::value;

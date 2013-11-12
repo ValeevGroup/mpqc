@@ -13,11 +13,12 @@
 
 #include <stdio.h>
 #include <stdexcept>
+#include <boost/thread.hpp>
 
 namespace mpqc {
 namespace MPI {
 
-/// @addtogroup MPI
+/// @addtogroup CoreMPI
 /// @{
 
     void initialize(int thread_level);

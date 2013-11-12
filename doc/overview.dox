@@ -3,10 +3,10 @@
 
 The Massively Parallel Quantum Chemistry (MPQC) is a collection of C++ libraries
 for computation of molecular electronic structure (aka quantum chemistry).
-The domain-specific QC C++ libraries, known collectively as <a href="modules.html">mpqc.QC</a>, are supported by two C++ code layers:
-  - <a href="modules.html">mpqc.Core</a>, also known as the Scientific Toolkit (SC) in the past: core libraries for managing memory,
+The domain-specific QC C++ libraries, known collectively as @ref labelmpqcChemistry "mpqc.Chemistry", are supported by two C++ code layers:
+  - @ref labelmpqcCore "mpqc.Core", also known as the Scientific Toolkit (SC) in the past: core libraries for managing memory,
       saving and restoring the state of objects, reading objects from an input file, parallel communication, among others.
-  - <a href="modules.html">mpqc.Math</a>: libraries for data containers (matrix and multidimensional array/tensor) and associated algebra, such as
+  - @ref labelmpqcMath "mpqc.Math": libraries for data containers (matrix and multidimensional array/tensor) and associated algebra, such as
       solving linear and nonlinear equations expressed in terms of these data containers.
 
 The \ref mpqc "MPQC" program is the end-user code for practical

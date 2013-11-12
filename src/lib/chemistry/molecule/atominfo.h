@@ -37,7 +37,10 @@
 
 namespace sc {
 
-class Units;
+  class Units;
+
+  /// @addtogroup ChemistryMolecule
+  /// @{
 
 /** The AtomInfo class provides information about atoms.  The information
     is kept in a file named atominfo.kv in the SC library directory.  That
@@ -219,6 +222,9 @@ class AtomInfo: public SavableState {
     /// prints out the contents of AtomInfo to ostream os
     void print(std::ostream& os = ExEnv::out0()) const;
 };
+
+/// @}
+// end of addtogroup ChemistryMolecule
 
 }
 

@@ -42,7 +42,7 @@ ImplicitSurfacePolygonizer* ImplicitSurfacePolygonizer::current = 0;
 // in Graphics Gems IV.
 extern "C" int
 ImplicitSurfacePolygonizer_add_triangle_to_current(int i1, int i2, int i3,
-                                                   VERTICES v)
+                                                   sc::detail::VERTICES v)
 {
   return ImplicitSurfacePolygonizer::add_triangle_to_current(i1, i2, i3, v);
 }
@@ -205,7 +205,7 @@ ImplicitSurfacePolygonizer::value_of_current(double x,double y,double z)
 
 int
 ImplicitSurfacePolygonizer::add_triangle_to_current(int i1, int i2, int i3,
-                                                    VERTICES v)
+                                                    sc::detail::VERTICES v)
 {
   int oldlength = current->_tmp_vertices.size();
   current->_tmp_vertices.resize(v.count);

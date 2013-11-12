@@ -52,7 +52,7 @@ using namespace sc;
 ///////////////////////////////////////////////////////////////////////
 
 int MPIMessageGrp::nmpi_grps=0;
-Ref<ThreadLock> MPIMessageGrp::grplock;
+ThreadLock* MPIMessageGrp::grplock=0;
 bool MPIMessageGrp::mpi_init_called=false;
 
 static
@@ -205,13 +205,18 @@ MPIMessageGrp::init(MPI_Comm comm, int *argc, char ***argv)
 
   MPI_Errhandler_set(commgrp, MPI_ERRORS_ARE_FATAL);
 
-   if (!nmpi_grps) {
-      threadgrp = ThreadGrp::get_default_threadgrp();
-      grplock = threadgrp->new_lock();
-     }
-      grplock->lock();
-      nmpi_grps++;
-      grplock->unlock();
+  if (!nmpi_grps) {
+    threadgrp = ThreadGrp::get_default_threadgrp();
+    Ref<ThreadLock> glock = threadgrp->new_lock();
+    // to avoid auto-deletion of grplock
+    glock->reference();
+    grplock = glock.pointer();
+  }
+  {
+    grplock->lock();
+    nmpi_grps++;
+    grplock->unlock();
+  }
 
   MPI_Comm_rank(commgrp,&me);
   MPI_Comm_size(commgrp, &nproc);
@@ -242,15 +247,20 @@ MPIMessageGrp::~MPIMessageGrp()
   //MPI_Buffer_detach(&buf, &bufsize);
   delete[] (char*) buf;
 
-  grplock->lock();
-  nmpi_grps--;
-  if (!nmpi_grps && mpi_init_called) {
-    MPI_Finalize();
-    mpi_init_called = false;
+  {
+    Ref<ThreadLock> lock = grplock;
+    lock->lock();
+    nmpi_grps--;
+    if (nmpi_grps==0 && mpi_init_called) {
+      MPI_Finalize();
+      mpi_init_called = false;
+      // grplock will be cleaned up after this
+      grplock->dereference();
+    }
+    else
+      MPI_Comm_free(&commgrp);
+    lock->unlock();
   }
-  else MPI_Comm_free(&commgrp);
-  grplock->unlock();
-  
 }
 
 Ref<MessageGrp> MPIMessageGrp::clone(void)

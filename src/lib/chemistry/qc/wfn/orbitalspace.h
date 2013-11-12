@@ -45,6 +45,9 @@
 
 namespace sc {
 
+  /// @addtogroup ChemistryElectronicStructureOneBody
+  /// @{
+
   /// Orbital = index + attributes
   template <typename Attributes>
   class DecoratedOrbital {
@@ -825,6 +828,9 @@ namespace sc {
     private:
       static ClassDesc class_desc_;
   };
+
+  /// @}
+  // end of addtogroup ChemistryElectronicStructureOneBody
 
 }
 

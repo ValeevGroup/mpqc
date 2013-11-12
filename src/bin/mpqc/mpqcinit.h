@@ -12,9 +12,6 @@
 
 namespace sc {
 
-  /// @defgroup Init mpqc.Init
-  /// Classes/functions used for initialization of MPQC.
-
   /// @addtogroup Init
   /// @{
 

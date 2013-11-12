@@ -138,13 +138,19 @@ namespace sc {
       bool equiv(const IntParams& other) const;
   };
 
-  /** Passes params to Integral::g12() */
+  /** Used to pass params to Integral::g12().
+      Represents (a pair of) linear combinations of exponentials:
+      \f$
+         \sum_i c_i \exp( - g_i x )
+      \f$
+      where \f$ x \f$ is \f$ r_{12}^2 \f$ for Gaussian geminals.
+    */
   class IntParamsG12 : public IntParams {
     public:
-      ///     std::pair<  g,     c   >  as in c * exp( - g*r12)
+      ///     std::pair<  g,     c   >  as in c * exp( - g*r12^2)
       typedef std::pair<double,double> PrimitiveGeminal;
       typedef std::vector<PrimitiveGeminal> ContractedGeminal;
-      /// 1 = e^(-0.0 * r_{12})
+      /// 1 = e^(-0.0 * r_{12}^2)
       static ContractedGeminal zero_exponent_geminal;
       /// null (i.e., invalid) geminal
       static ContractedGeminal null_geminal;

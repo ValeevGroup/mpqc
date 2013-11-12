@@ -39,6 +39,9 @@
 
 namespace sc {
 
+  /// @addtogroup ChemistryMolecule
+  /// @{
+
   /// Maps displacements in terms of symmetrized coordinates to property values
   /// @tparam Value the property
   template <typename Value>
@@ -775,6 +778,9 @@ class MolecularPropertyDerivative: virtual public SavableState {
     RefSCDimension d3natom() const { return mole_->moldim(); }
 };
 #endif
+
+/// @}
+// end of addtogroup ChemistryMolecule
 
 }
 

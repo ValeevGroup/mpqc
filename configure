@@ -34,9 +34,9 @@ Configuration:
   --expert                Expert mode: disables building dependencies (MPQC_EXPERT=TRUE)
   --openmp                Enable OpenMP (MPQC_OPENMP=TRUE)
   --ci=                   Enable/disable CI
-  -D*                     passed verbatim to cmake command
+  -D*                     defines cmake variables, passed verbatim to cmake command
 
-Some influential environment variables:
+Environment variables:
   CC          C compiler command       (e.g. CC='mpicc')
   CFLAGS      C compiler flags         (e.g. CFLAGS='-O0 -g -std=c11')
   CXX         C++ compiler command     (e.g. CXX='mpicxx')
@@ -46,6 +46,10 @@ Some influential environment variables:
   FFLAGS      Fortran 77 compiler flags    (e.g. FFLAGS='-fdefault-integer-8')
   LDFLAGS     linker flags             (e.g. LDFLAGS=-L/libdir)
   CMAKE       cmake command to use     (e.g. CMAKE='/opt/local/bin/cmake')
+
+MPQC-specific cmake variables:
+  INTEGRALLIBINT2_NORMCONV          Normalization convention of IntegralLibint2, 1(cca; default) or 2(exact)
+  DEFAULT_MPQC_MEMORY               Limit for how much memory to use by default, in bytes (default=536870912).
 '
   exit 10
 }
@@ -83,15 +87,13 @@ args=""
 prefix=$PWD
 build="Release"
 
-# log the command, preserving quotes
+# log the command-line args, preserving quotes
 log="#!/bin/sh\n# Last invoked on `date`:\n$0 "
 for token in "$@"
   do
     log="$log '$token'"
   done
-echo $log > reconf.sh
-chmod +x reconf.sh
-
+  
 while test $# != 0; do
   case "$1" in
   --help|-h|-help) help ;;
@@ -123,6 +125,10 @@ while test $# != 0; do
   esac
   shift
 done
+
+# dump command-line arguments into reconf.sh
+echo $log > reconf.sh
+chmod +x reconf.sh
 
 args="$args -DCMAKE_INSTALL_PREFIX=$prefix"
 args="$args -DCMAKE_BUILD_TYPE=$build"

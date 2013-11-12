@@ -37,6 +37,9 @@
 
 namespace sc {
 
+  /// @addtogroup ChemistryMolecule
+  /// @{
+
 /** The IntCoor abstract class describes an internal coordinate of a
 molecule. */
 class IntCoor: public SavableState {
@@ -788,6 +791,9 @@ class CartMolecularCoor: public MolecularCoor
     void guess_hessian(RefSymmSCMatrix&hessian);
     RefSymmSCMatrix inverse_hessian(RefSymmSCMatrix&);
 };
+
+/// @}
+// end of addtogroup ChemistryMolecule
 
 }
 

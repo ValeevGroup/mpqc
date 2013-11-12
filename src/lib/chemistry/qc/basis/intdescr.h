@@ -45,9 +45,13 @@ namespace sc {
     typedef TwoBodyOperSet::type value;
   };
 
-  /** For a set of integrals (e.g. 1/r12 and exp(-gamma*r12)), IntegralSetDescr describes properties of
-      integral types, their parameters (e.g. gamma), and how to construct an evaluator object.
-      IntEval is the base evaluator type (e.g. TwoBodyInt) for all integrals in the integral set. */
+  /** IntegralSetDescr contains all information necessary to construct an IntEval object that computes
+      a particular set of integrals using an Integral factory. This means that it must provide all parameters
+      necessary to construct such set (i.e. geminal exponents, etc.).
+      It also allows to programmatically (at runtime) to examine the set (i.e. ask what
+      is the first integral type?).
+
+      @tparam IntEval the base evaluator type (e.g. TwoBodyInt) for all integrals in the integral set. */
   template <typename IntEval>
   class IntegralSetDescr : public RefCount {
     public:
@@ -202,6 +206,22 @@ namespace sc {
           } break;
           case TwoBodyOperSet::G12DKH: {
             typedef TwoBodyNCenterIntDescr<NumCenters,TwoBodyOperSet::G12DKH> ConcreteType;
+            return new ConcreteType(integral,params);
+          } break;
+          case TwoBodyOperSet::R12_0_G12: {
+            typedef TwoBodyNCenterIntDescr<NumCenters,TwoBodyOperSet::R12_0_G12> ConcreteType;
+            return new ConcreteType(integral,params);
+          } break;
+          case TwoBodyOperSet::R12_m1_G12: {
+            typedef TwoBodyNCenterIntDescr<NumCenters,TwoBodyOperSet::R12_m1_G12> ConcreteType;
+            return new ConcreteType(integral,params);
+          } break;
+          case TwoBodyOperSet::G12_T1_G12: {
+            typedef TwoBodyNCenterIntDescr<NumCenters,TwoBodyOperSet::G12_T1_G12> ConcreteType;
+            return new ConcreteType(integral,params);
+          } break;
+          case TwoBodyOperSet::DeltaFunction : {
+            typedef TwoBodyNCenterIntDescr<NumCenters,TwoBodyOperSet::DeltaFunction> ConcreteType;
             return new ConcreteType(integral,params);
           } break;
           default:

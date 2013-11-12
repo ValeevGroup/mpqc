@@ -11,6 +11,8 @@ add_subdirectory(interfaces/tiledarray/tiling)
 add_subdirectory(basis)
 add_subdirectory(test)
 
+add_subdirectory(ci)
+
 # # library headers
 # file(GLOB_RECURSE headers RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.hpp)
 # foreach (_file ${headers})

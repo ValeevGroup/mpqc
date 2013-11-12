@@ -32,6 +32,9 @@
 
 namespace sc {
 
+  /// @addtogroup ChemistryElectronicStructureOneBody
+  /// @{
+
 /** This computes the extended Huckel energy and wavefunction.  It is useful
    as a quick initial guess for other one body wavefunctions.  */
 class ExtendedHuckelWfn: public OneBodyWavefunction {
@@ -87,6 +90,9 @@ class ExtendedHuckelWfn: public OneBodyWavefunction {
 
     int value_implemented() const;
 };
+
+/// @}
+// end of addtogroup ChemistryElectronicStructureOneBody
 
 }
 

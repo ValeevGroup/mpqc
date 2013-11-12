@@ -122,6 +122,8 @@ class IntegralLibint2 : public Integral {
     Ref<TwoBodyThreeCenterInt> electron_repulsion3();
     Ref<TwoBodyTwoCenterInt> electron_repulsion2();
 
+    Ref<TwoBodyDerivInt> electron_repulsion_deriv();
+
     Ref<TwoBodyInt> g12_4(const Ref<IntParamsG12>& p);
 
     Ref<TwoBodyInt> g12nc_4(const Ref<IntParamsG12>& p);
@@ -130,8 +132,21 @@ class IntegralLibint2 : public Integral {
 
     Ref<TwoBodyInt> g12dkh_4(const Ref<IntParamsG12>& p);
 
+    Ref<TwoBodyInt> r120g12_4(const Ref<IntParamsG12>& p);
+    Ref<TwoBodyThreeCenterInt> r120g12_3(const Ref<IntParamsG12>& p);
+    Ref<TwoBodyTwoCenterInt> r120g12_2(const Ref<IntParamsG12>& p);
+
+    Ref<TwoBodyInt> r12m1g12_4(const Ref<IntParamsG12>& p);
+    Ref<TwoBodyThreeCenterInt> r12m1g12_3(const Ref<IntParamsG12>& p);
+    Ref<TwoBodyTwoCenterInt> r12m1g12_2(const Ref<IntParamsG12>& p);
+
+    Ref<TwoBodyInt> g12t1g12_4(const Ref<IntParamsG12>& p);
+    Ref<TwoBodyThreeCenterInt> g12t1g12_3(const Ref<IntParamsG12>& p);
+    Ref<TwoBodyTwoCenterInt> g12t1g12_2(const Ref<IntParamsG12>& p);
+
     Ref<TwoBodyInt> delta_function_4();
     Ref<TwoBodyThreeCenterInt> delta_function_3();
+    Ref<TwoBodyTwoCenterInt> delta_function_2();
 
     void set_basis(const Ref<GaussianBasisSet> &b1,
                    const Ref<GaussianBasisSet> &b2 = 0,

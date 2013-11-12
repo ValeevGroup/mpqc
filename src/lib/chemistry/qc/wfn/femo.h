@@ -33,6 +33,9 @@
 
 namespace sc {
 
+  /// @addtogroup ChemistryElectronicStructureOneBody
+  /// @{
+
   /** Describes a simple the free-electron molecular orbital model that can be
       used to guess the lowest-energy orbital configuration. */
   class FEMO : public RefCount {
@@ -84,6 +87,9 @@ namespace sc {
       Ref<FEMO> result_;
   };
   
+  /// @}
+  // end of addtogroup ChemistryElectronicStructureOneBody
+
 }
 
 #endif /* header guard */

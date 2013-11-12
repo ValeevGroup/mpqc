@@ -32,7 +32,7 @@
 
 namespace sc {
 
-/**  @ingroup State
+/**  @ingroup CoreState
  *   Save state to a binary file.
  */
 class StateOutBin: public StateOutFile {
@@ -61,7 +61,7 @@ class StateOutBin: public StateOutFile {
     int seekable();
   };
 
-/**  @ingroup State
+/**  @ingroup CoreState
  *   Read objects written with StateOutBin.
  */
 class StateInBin: public StateInFile {

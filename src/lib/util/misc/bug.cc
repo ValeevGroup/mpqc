@@ -43,14 +43,14 @@
 #include <sstream>
 #include <iterator>
 
-#if HAVE_LIBUNWIND
+#if defined(HAVE_LIBUNWIND)
 #  define UNW_LOCAL_ONLY
 #  include <libunwind.h>
-#elif HAVE_BACKTRACE
+#elif defined(HAVE_BACKTRACE)
 #  include <execinfo.h>
 #endif
 
-#if HAVE_CXA_DEMANGLE
+#ifdef HAVE_CXA_DEMANGLE
 #include <cxxabi.h>
 #endif
 
@@ -456,12 +456,12 @@ Debugger::__traceback(const std::string& prefix, const char *reason)
 {
   Backtrace result(prefix);
   const size_t nframes_to_skip = 2;
-#if HAVE_LIBUNWIND
+#if defined(HAVE_LIBUNWIND)
   ExEnv::outn() << prefix << "Debugger::traceback(using libunwind):";
-#elif HAVE_BACKTRACE // !HAVE_LIBUNWIND
+#elif defined(HAVE_BACKTRACE) // !HAVE_LIBUNWIND
   ExEnv::outn() << prefix << "Debugger::traceback(using backtrace):";
 #else // !HAVE_LIBUNWIND && !HAVE_BACKTRACE
-# if SIMPLE_STACK
+# if defined(SIMPLE_STACK)
   ExEnv::outn() << prefix << "Debugger::traceback:";
 # else
   ExEnv::outn() << prefix << "traceback not available for this arch" << endl;
@@ -483,7 +483,7 @@ Debugger::__traceback(const std::string& prefix, const char *reason)
 
 Debugger::Backtrace::Backtrace(const std::string& prefix) : prefix_(prefix)
 {
-#if HAVE_LIBUNWIND
+#ifdef HAVE_LIBUNWIND
   {
     unw_cursor_t cursor; unw_context_t uc;
     unw_word_t ip, sp, offp;
@@ -505,7 +505,7 @@ Debugger::Backtrace::Backtrace(const std::string& prefix) : prefix_(prefix)
       ++frame;
     }
   }
-#elif HAVE_BACKTRACE // !HAVE_LIBUNWIND
+#elif defined(HAVE_BACKTRACE) // !HAVE_LIBUNWIND
   void* stack_addrs[1024];
   const int naddrs = backtrace(stack_addrs, 1024);
   char** frame_symbols = backtrace_symbols(stack_addrs, naddrs);
@@ -528,7 +528,7 @@ Debugger::Backtrace::Backtrace(const std::string& prefix) : prefix_(prefix)
   }
   free(frame_symbols);
 #else // !HAVE_LIBUNWIND && !HAVE_BACKTRACE
-#if SIMPLE_STACK
+#if defined(SIMPLE_STACK)
   int bottom = 0x1234;
   void **topstack = (void**)0xffffffffL;
   void **botstack = (void**)0x70000000L;
@@ -547,7 +547,7 @@ Debugger::Backtrace::Backtrace(const std::string& prefix) : prefix_(prefix)
   botstack = (void**)0x70000000;
 #endif
 
-#if SIMPLE_STACK
+#if defined(SIMPLE_STACK)
   // This will go through the stack assuming a simple linked list
   // of pointers to the previous frame followed by the return address.
   // It trys to be careful and avoid creating new execptions, but there
@@ -588,7 +588,7 @@ Debugger::Backtrace::str(size_t nframes_to_skip) const {
 std::string
 Debugger::Backtrace::__demangle(const std::string& symbol) {
   std::string dsymbol;
-#if HAVE_CXA_DEMANGLE
+#ifdef HAVE_CXA_DEMANGLE
   {
     int status;
     char* dsymbol_char = abi::__cxa_demangle(symbol.c_str(), 0, 0, &status);

@@ -1,0 +1,316 @@
+
+                    MPQC: Massively Parallel Quantum Chemistry
+                                Version 3.0.0-alpha
+
+  Machine:    Darwin-i386
+  User:       evaleev@EdBookPro.local
+  Start Time: Wed Nov  6 18:09:11 2013
+
+  Using MPIMessageGrp for message passing (number of nodes = 1).
+  Using PthreadThreadGrp for threading (number of threads = 1).
+  Using MTMPIMemoryGrp for distributed shared memory.
+  Total number of processors = 1
+
+  Using IntegralV3 by default for molecular integrals evaluation
+  Given resources: ConsumableResources: ( memory = 1.07GB disk = [./ unlimited] )
+
+  Reading file /Users/evaleev/Development/workspace/install/mpqc-clang-opt/share/mpqc/3.0.0-alpha/atominfo.kv.
+  Reading file /Users/evaleev/Development/workspace/install/mpqc-clang-opt/share/mpqc/3.0.0-alpha/basis/sto-3g.kv.
+  ints_file = ./methods_cisdt.moints
+
+  CLSCF::init: total charge = 0
+
+  Using symmetric orthogonalization.
+  n(basis):            12
+  Maximum orthogonalization residual = 3.53586
+  Minimum orthogonalization residual = 0.16907
+  Using symmetric orthogonalization.
+  n(basis):            12
+  Maximum orthogonalization residual = 3.53586
+  Minimum orthogonalization residual = 0.16907
+  Using SuperpositionOfAtomicDensities guess wavefunction as starting vector
+    Reading file /Users/evaleev/Development/workspace/install/mpqc-clang-opt/share/mpqc/3.0.0-alpha/basis/sto-6g.kv.
+    ints_file = ./methods_cisdt.moints
+    Int2eV3: wanted more storage than given
+      given  storage = 0
+      build  storage = 116
+      shift  storage = 0
+      used   storage = 72836
+      O(N)   storage = 144
+      O(N^2) storage = 72576
+
+    Int2eV3: wanted more storage than given
+      given  storage = 0
+      build  storage = 116
+      shift  storage = 0
+      used   storage = 72836
+      O(N)   storage = 144
+      O(N^2) storage = 72576
+
+
+  docc = [ 6 ]
+  nbasis = 12
+
+  SCF::compute: energy accuracy = 1.0000000e-14
+
+  nuclear repulsion energy =   21.6857347476
+
+  integral intermediate storage = 72914 bytes
+  integral cache = 536796750 bytes
+  Beginning iterations.  Basis is STO-3G.
+                  3035 integrals
+  iter     1 energy =   -5.6236368320 delta = 4.49382e-01
+                  3081 integrals
+  iter     2 energy =   -5.6303791616 delta = 2.46386e-02
+                  3046 integrals
+  iter     3 energy =   -5.6310094712 delta = 7.96862e-03
+                  3081 integrals
+  iter     4 energy =   -5.6310234278 delta = 1.51697e-03
+                  3081 integrals
+  iter     5 energy =   -5.6310235447 delta = 9.76344e-05
+                  3011 integrals
+  iter     6 energy =   -5.6310235199 delta = 1.56017e-05
+                  3081 integrals
+  iter     7 energy =   -5.6310235481 delta = 1.13167e-06
+                  2999 integrals
+  iter     8 energy =   -5.6310235480 delta = 2.07542e-07
+                  3081 integrals
+  iter     9 energy =   -5.6310235481 delta = 1.26775e-08
+                  2981 integrals
+  iter    10 energy =   -5.6310235481 delta = 1.88594e-09
+                  3081 integrals
+  iter    11 energy =   -5.6310235481 delta = 1.81655e-10
+                  3041 integrals
+  iter    12 energy =   -5.6310235481 delta = 4.46557e-11
+                  3081 integrals
+  iter    13 energy =   -5.6310235481 delta = 1.17657e-11
+                  3043 integrals
+  iter    14 energy =   -5.6310235481 delta = 3.14256e-12
+                  3081 integrals
+  iter    15 energy =   -5.6310235481 delta = 8.84822e-13
+                  3058 integrals
+  iter    16 energy =   -5.6310235481 delta = 2.60993e-13
+                  3081 integrals
+  iter    17 energy =   -5.6310235481 delta = 8.04722e-14
+                  3058 integrals
+  iter    18 energy =   -5.6310235481 delta = 2.60154e-14
+                  2996 integrals
+  iter    19 energy =   -5.6310235481 delta = 8.66706e-15
+
+  HOMO is     6   A =  -0.091516
+  LUMO is     7   A =   0.268118
+
+  total scf energy =   -5.6310235481
+
+  Molecular formula H12
+
+  MPQC options:
+    matrixkit       = <ReplSCMatrixKit>
+    filename        = methods_cisdt
+    restart_file    = methods_cisdt.ckpt
+    restart         = yes
+    checkpoint      = no
+    savestate       = no
+    do_energy       = yes
+    do_gradient     = no
+    do_freq         = no
+    optimize        = no
+    write_pdb       = no
+    print_mole      = yes
+    print_timings   = yes
+    print_resources = yes
+
+    Beginning CI
+  Int2eV3: wanted more storage than given
+    given  storage = 0
+    build  storage = 116
+    shift  storage = 0
+    used   storage = 72836
+    O(N)   storage = 144
+    O(N^2) storage = 72576
+
+  Int2eV3: wanted more storage than given
+    given  storage = 0
+    build  storage = 116
+    shift  storage = 0
+    used   storage = 72836
+    O(N)   storage = 144
+    O(N^2) storage = 72576
+
+  CI space = (10 8): alpha = 195, beta = 195, dets = 5285
+
+Alpha excitations:
+0: size = 1, 	 range = 0:1
+1: size = 24, 	 range = 1:25
+2: size = 90, 	 range = 25:115
+3: size = 80, 	 range = 115:195
+
+Beta excitations:
+0: size = 1, 	 range = 0:1
+1: size = 24, 	 range = 1:25
+2: size = 90, 	 range = 25:115
+3: size = 80, 	 range = 115:195
+
+sigma took 0.014072
+  sigma1: 0.008357
+  sigma2: 0
+  sigma3: 0.003064
+  CI iter.   0, E=-5.631023548087, del.E=1.18e+01, del.C=4.40e-01
+Davidson iteration time: 0.01618
+sigma took 0.011878
+  sigma1: 0.006604
+  sigma2: 0
+  sigma3: 0.002991
+  CI iter.   1, E=-5.752560450436, del.E=1.22e-01, del.C=2.76e-01
+Davidson iteration time: 0.014076
+sigma took 0.012085
+  sigma1: 0.006721
+  sigma2: 0
+  sigma3: 0.003048
+  CI iter.   2, E=-5.768371270448, del.E=1.58e-02, del.C=1.13e-01
+Davidson iteration time: 0.014385
+sigma took 0.012004
+  sigma1: 0.006544
+  sigma2: 0
+  sigma3: 0.00313
+  CI iter.   3, E=-5.769780420381, del.E=1.41e-03, del.C=3.51e-02
+Davidson iteration time: 0.014537
+sigma took 0.011898
+  sigma1: 0.006564
+  sigma2: 0
+  sigma3: 0.003001
+  CI iter.   4, E=-5.769940449073, del.E=1.60e-04, del.C=1.01e-02
+Davidson iteration time: 0.014632
+sigma took 0.011798
+  sigma1: 0.006554
+  sigma2: 0
+  sigma3: 0.002991
+  CI iter.   5, E=-5.769965196516, del.E=2.47e-05, del.C=3.37e-03
+Davidson iteration time: 0.014678
+sigma took 0.011917
+  sigma1: 0.006617
+  sigma2: 0
+  sigma3: 0.003017
+  CI iter.   6, E=-5.769968830106, del.E=3.63e-06, del.C=1.54e-03
+Davidson iteration time: 0.014957
+sigma took 0.011995
+  sigma1: 0.006753
+  sigma2: 0
+  sigma3: 0.00299
+  CI iter.   7, E=-5.769969315099, del.E=4.85e-07, del.C=5.73e-04
+Davidson iteration time: 0.015182
+sigma took 0.012072
+  sigma1: 0.006767
+  sigma2: 0
+  sigma3: 0.002999
+  CI iter.   8, E=-5.769969370753, del.E=5.57e-08, del.C=2.14e-04
+Davidson iteration time: 0.015432
+sigma took 0.011916
+  sigma1: 0.006619
+  sigma2: 0
+  sigma3: 0.003011
+  CI iter.   9, E=-5.769969376164, del.E=5.41e-09, del.C=6.95e-05
+Davidson iteration time: 0.015445
+sigma took 0.012135
+  sigma1: 0.006815
+  sigma2: 0
+  sigma3: 0.003036
+  CI iter.  10, E=-5.769969376705, del.E=5.42e-10, del.C=1.99e-05
+Davidson iteration time: 0.015868
+sigma took 0.011976
+  sigma1: 0.006663
+  sigma2: 0
+  sigma3: 0.003044
+  CI iter.  11, E=-5.769969376767, del.E=6.14e-11, del.C=6.79e-06
+Davidson iteration time: 0.015912
+sigma took 0.011937
+  sigma1: 0.006573
+  sigma2: 0
+  sigma3: 0.003065
+  CI iter.  12, E=-5.769969376773, del.E=5.82e-12, del.C=2.20e-06
+Davidson iteration time: 0.016007
+sigma took 0.01204
+  sigma1: 0.006556
+  sigma2: 0
+  sigma3: 0.003151
+  CI iter.  13, E=-5.769969376773, del.E=4.33e-13, del.C=6.28e-07
+Davidson iteration time: 0.016328
+Value of the MolecularEnergy:   -5.7699693768
+
+  CI:
+    rank       = 3
+    # of roots = 1
+    ManyBodyWavefunction:
+      Function Parameters:
+        value_accuracy    = 0.000000e+00 (1.000000e-12) (computed)
+        gradient_accuracy = 0.000000e+00 (1.000000e-06)
+        hessian_accuracy  = 0.000000e+00 (1.000000e-04)
+
+      Molecule:
+        Molecular formula: H12
+        molecule<Molecule>: (
+          symmetry = c1
+          unit = "angstrom"
+          {  n atoms                        geometry                     }={
+             1     H [    1.5000000000    -1.0000000000     0.0000000000]
+             2     H [    0.5000000000    -1.0000000000     0.0000000000]
+             3     H [   -0.5000000000    -1.0000000000     0.0000000000]
+             4     H [   -1.5000000000    -1.0000000000     0.0000000000]
+             5     H [    1.5000000000     0.0000000000     0.0000000000]
+             6     H [    0.5000000000     0.0000000000     0.0000000000]
+             7     H [   -0.5000000000     0.0000000000     0.0000000000]
+             8     H [   -1.5000000000     0.0000000000     0.0000000000]
+             9     H [    1.5000000000     1.0000000000     0.0000000000]
+            10     H [    0.5000000000     1.0000000000     0.0000000000]
+            11     H [   -0.5000000000     1.0000000000     0.0000000000]
+            12     H [   -1.5000000000     1.0000000000     0.0000000000]
+          }
+        )
+        Atomic Masses:
+            1.00783    1.00783    1.00783    1.00783    1.00783
+            1.00783    1.00783    1.00783    1.00783    1.00783
+            1.00783    1.00783
+        Reference origin =  [    0.0000000000     0.0000000000     0.0000000000]
+
+      Electronic basis:
+        GaussianBasisSet:
+          nbasis = 12
+          nshell = 12
+          nprim  = 36
+          name = "STO-3G"
+      magnetic moment = 0
+      Reference Wavefunction:
+        SD_RefWavefunction:
+          spin_restricted = true
+          # frozen core   = 2
+          # frozen virt   = 0
+          occ_orbitals    = canonical
+
+
+  ConsumableResources: (
+    memory = 1.07GB ( max used: 716MB )
+    disk = [./ unlimited] ( max used: 0B )
+  )
+                          CPU Wall
+mpqc:                    0.83 0.83
+  calc:                  0.44 0.44
+  input:                 0.39 0.39
+    build_only:          0.30 0.30
+      FockBuildThreads:  0.33 0.33
+    vector:              0.04 0.04
+      density:           0.00 0.00
+      evals:             0.00 0.00
+      extrap:            0.00 0.00
+      fock:              0.03 0.03
+        accum:           0.00 0.00
+        ao_gmat:         0.02 0.02
+          start thread:  0.02 0.02
+          stop thread:   0.00 0.00
+        init pmax:       0.00 0.00
+        local data:      0.00 0.00
+        setup:           0.00 0.00
+        sum:             0.00 0.00
+        symm:            0.00 0.00
+
+  End Time: Wed Nov  6 18:09:12 2013
+

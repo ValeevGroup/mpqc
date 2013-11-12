@@ -134,7 +134,7 @@ IntegralLibint2::storage_required_eri(const Ref<GaussianBasisSet> &b1,
 #if LIBINT2_SUPPORT_ERI
   return EriLibint2::storage_required(b1,b2,b3,b4);
 #else
-  throw InputError("IntegralLibint2::storage_required_eri() -- libint2 library included in this executable does not support computation of ERI",__FILE__,__LINE__);
+  throw FeatureNotImplemented("IntegralLibint2::storage_required_eri() -- libint2 library included in this executable does not support computation of ERI",__FILE__,__LINE__);
 #endif
 }
 
@@ -147,7 +147,7 @@ IntegralLibint2::storage_required_g12(const Ref<GaussianBasisSet> &b1,
 #if LIBINT2_SUPPORT_G12 && LIBINT2_SUPPORT_T1G12
   return G12Libint2::storage_required(b1,b2,b3,b4);
 #else
-  throw InputError("IntegralLibint2::storage_required_g12() -- libint2 library included in this executable does not support computation of G12",__FILE__,__LINE__);
+  throw FeatureNotImplemented("IntegralLibint2::storage_required_g12() -- libint2 library included in this executable does not support computation of G12",__FILE__,__LINE__);
 #endif
 }
 
@@ -157,10 +157,10 @@ IntegralLibint2::storage_required_g12nc(const Ref<GaussianBasisSet> &b1,
 				     const Ref<GaussianBasisSet> &b3,
 				     const Ref<GaussianBasisSet> &b4)
 {
-#if LIBINT2_SUPPORT_G12 && !LIBINT2_SUPPORT_T1G12
+#if LIBINT2_SUPPORT_ERI
   return G12NCLibint2::storage_required(b1,b2,b3,b4);
 #else
-  throw InputError("IntegralLibint2::storage_required_g12nc() -- libint2 library included in this executable does not support computation of G12NC",__FILE__,__LINE__);
+  throw FeatureNotImplemented("IntegralLibint2::storage_required_g12nc() -- libint2 library included in this executable does not support computation of G12NC",__FILE__,__LINE__);
 #endif
 }
 
@@ -173,7 +173,7 @@ IntegralLibint2::storage_required_g12dkh(const Ref<GaussianBasisSet> &b1,
 #if LIBINT2_SUPPORT_G12DKH
   return G12DKHLibint2::storage_required(b1,b2,b3,b4);
 #else
-  throw InputError("IntegralLibint2::storage_required_g12dkh() -- libint2 library included in this executable does not support computation of G12DKH",__FILE__,__LINE__);
+  throw FeatureNotImplemented("IntegralLibint2::storage_required_g12dkh() -- libint2 library included in this executable does not support computation of G12DKH",__FILE__,__LINE__);
 #endif
 }
 
@@ -374,7 +374,7 @@ IntegralLibint2::electron_repulsion()
   Ref<IntParamsVoid> params = new IntParamsVoid;  // these are dummy params for this evaluator anyway
   return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_, TwoBodyOperSet::ERI, params);
 #else
-  throw InputError("IntegralLibint2::electron_repulsion() -- libint2 library included in this executable does not support computation of ERI",__FILE__,__LINE__);
+  throw FeatureNotImplemented("IntegralLibint2::electron_repulsion() -- libint2 library included in this executable does not support computation of ERI",__FILE__,__LINE__);
 #endif
 }
 
@@ -385,7 +385,7 @@ IntegralLibint2::electron_repulsion3()
   Ref<IntParamsVoid> params = new IntParamsVoid;  // these are dummy params for this evaluator anyway
   return new TwoBodyThreeCenterIntLibint2(this, bs1_, bs2_, bs3_, storage_, TwoBodyOperSet::ERI, params);
 #else
-  throw InputError("IntegralLibint2::electron_repulsion3() -- libint2 library included in this executable does not support computation of ERI",__FILE__,__LINE__);
+  throw FeatureNotImplemented("IntegralLibint2::electron_repulsion3() -- libint2 library included in this executable does not support computation of ERI",__FILE__,__LINE__);
 #endif
 }
 
@@ -396,8 +396,18 @@ IntegralLibint2::electron_repulsion2()
   Ref<IntParamsVoid> params = new IntParamsVoid;  // these are dummy params for this evaluator anyway
   return new TwoBodyTwoCenterIntLibint2(this, bs1_, bs2_, storage_, TwoBodyOperSet::ERI, params);
 #else
-  throw InputError("IntegralLibint2::electron_repulsion2() -- libint2 library included in this executable does not support computation of ERI",__FILE__,__LINE__);
+  throw FeatureNotImplemented("IntegralLibint2::electron_repulsion2() -- libint2 library included in this executable does not support computation of ERI",__FILE__,__LINE__);
 #endif
+}
+
+Ref<TwoBodyDerivInt>
+IntegralLibint2::electron_repulsion_deriv()
+{
+#if LIBINT2_SUPPORT_ERI && LIBINT2_DERIV_ERI_ORDER >= 1
+  //Ref<IntParamsVoid> params = new IntParamsVoid;  // these are dummy params for this evaluator anyway
+  //return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_, TwoBodyOperSet::ERI, params);
+#endif
+  throw FeatureNotImplemented("IntegralLibint2::electron_repulsion() -- libint2 library included in this executable does not support computation of derivative ERI",__FILE__,__LINE__);
 }
 
 Ref<TwoBodyInt>
@@ -407,7 +417,7 @@ IntegralLibint2::g12_4(const Ref<IntParamsG12>& params)
   return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_,
                                TwoBodyOperSet::G12, static_cast<IntParams*>(params.pointer()));
 #else
-  throw InputError("IntegralLibint2::g12_4() -- libint2 library included in this executable does not support computation of G12 integrals",__FILE__,__LINE__);
+  throw FeatureNotImplemented("IntegralLibint2::g12_4() -- libint2 library included in this executable does not support computation of G12 integrals",__FILE__,__LINE__);
 #endif
 }
 
@@ -418,7 +428,7 @@ IntegralLibint2::g12nc_4(const Ref<IntParamsG12>& params)
   return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_,
                                TwoBodyOperSet::G12NC, static_cast<IntParams*>(params.pointer()));
 #else
-  throw InputError("IntegralLibint2::g12nc_4() -- libint2 library included in this executable does not support computation of ERI, and hence G12NC, integrals",__FILE__,__LINE__);
+  throw FeatureNotImplemented("IntegralLibint2::g12nc_4() -- libint2 library included in this executable does not support computation of ERI, and hence G12NC, integrals",__FILE__,__LINE__);
 #endif
 }
 
@@ -429,7 +439,7 @@ IntegralLibint2::g12nc_3(const Ref<IntParamsG12>& params)
   return new TwoBodyThreeCenterIntLibint2(this, bs1_, bs2_, bs3_, storage_,
                                           TwoBodyOperSet::G12NC, static_cast<IntParams*>(params.pointer()));
 #else
-  throw InputError("IntegralLibint2::g12nc_3() -- libint2 library included in this executable does not support computation of ERI, and hence G12NC, integrals",__FILE__,__LINE__);
+  throw FeatureNotImplemented("IntegralLibint2::g12nc_3() -- libint2 library included in this executable does not support computation of ERI, and hence G12NC, integrals",__FILE__,__LINE__);
 #endif
 }
 
@@ -440,7 +450,7 @@ IntegralLibint2::g12nc_2(const Ref<IntParamsG12>& params)
   return new TwoBodyTwoCenterIntLibint2(this, bs1_, bs2_, storage_,
                                         TwoBodyOperSet::G12NC, static_cast<IntParams*>(params.pointer()));
 #else
-  throw InputError("IntegralLibint2::g12nc_2() -- libint2 library included in this executable does not support computation of ERI, and hence G12NC, integrals",__FILE__,__LINE__);
+  throw FeatureNotImplemented("IntegralLibint2::g12nc_2() -- libint2 library included in this executable does not support computation of ERI, and hence G12NC, integrals",__FILE__,__LINE__);
 #endif
 }
 
@@ -451,7 +461,97 @@ IntegralLibint2::g12dkh_4(const Ref<IntParamsG12>& params)
   return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_,
                                TwoBodyOperSet::G12DKH, static_cast<IntParams*>(params.pointer()));
 #else
-  throw InputError("IntegralLibint2::g12dkh_4() -- libint2 library included in this executable does not support computation of G12DKH integrals",__FILE__,__LINE__);
+  throw FeatureNotImplemented("IntegralLibint2::g12dkh_4() -- libint2 library included in this executable does not support computation of G12DKH integrals",__FILE__,__LINE__);
+#endif
+}
+
+Ref<TwoBodyInt>
+IntegralLibint2::r120g12_4(const Ref<IntParamsG12>& p)
+{
+#if LIBINT2_SUPPORT_ERI
+  return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_, TwoBodyOperSet::R12_0_G12, p);
+#else
+  throw FeatureNotImplemented("IntegralLibint2::r120g12_4() -- libint2 library included in this executable does not support computation of ERI, hence this feature is not available",__FILE__,__LINE__);
+#endif
+}
+
+Ref<TwoBodyThreeCenterInt>
+IntegralLibint2::r120g12_3(const Ref<IntParamsG12>& p)
+{
+#if LIBINT2_SUPPORT_ERI
+  return new TwoBodyThreeCenterIntLibint2(this, bs1_, bs2_, bs3_, storage_, TwoBodyOperSet::R12_0_G12, p);
+#else
+  throw FeatureNotImplemented("IntegralLibint2::r120g12_3() -- libint2 library included in this executable does not support computation of ERI, hence this feature is not available",__FILE__,__LINE__);
+#endif
+}
+
+Ref<TwoBodyTwoCenterInt>
+IntegralLibint2::r120g12_2(const Ref<IntParamsG12>& p)
+{
+#if LIBINT2_SUPPORT_ERI
+  return new TwoBodyTwoCenterIntLibint2(this, bs1_, bs2_, storage_, TwoBodyOperSet::R12_0_G12, p);
+#else
+  throw FeatureNotImplemented("IntegralLibint2::r120g12_2() -- libint2 library included in this executable does not support computation of ERI, hence this feature is not available",__FILE__,__LINE__);
+#endif
+}
+
+Ref<TwoBodyInt>
+IntegralLibint2::r12m1g12_4(const Ref<IntParamsG12>& p)
+{
+#if LIBINT2_SUPPORT_ERI
+  return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_, TwoBodyOperSet::R12_m1_G12, p);
+#else
+  throw FeatureNotImplemented("IntegralLibint2::r12m1g12_4() -- libint2 library included in this executable does not support computation of ERI, hence this feature is not available",__FILE__,__LINE__);
+#endif
+}
+
+Ref<TwoBodyThreeCenterInt>
+IntegralLibint2::r12m1g12_3(const Ref<IntParamsG12>& p)
+{
+#if LIBINT2_SUPPORT_ERI
+  return new TwoBodyThreeCenterIntLibint2(this, bs1_, bs2_, bs3_, storage_, TwoBodyOperSet::R12_m1_G12, p);
+#else
+  throw FeatureNotImplemented("IntegralLibint2::r12m1g12_3() -- libint2 library included in this executable does not support computation of ERI, hence this feature is not available",__FILE__,__LINE__);
+#endif
+}
+
+Ref<TwoBodyTwoCenterInt>
+IntegralLibint2::r12m1g12_2(const Ref<IntParamsG12>& p)
+{
+#if LIBINT2_SUPPORT_ERI
+  return new TwoBodyTwoCenterIntLibint2(this, bs1_, bs2_, storage_, TwoBodyOperSet::R12_m1_G12, p);
+#else
+  throw FeatureNotImplemented("IntegralLibint2::r12m1g12_2() -- libint2 library included in this executable does not support computation of ERI, hence this feature is not available",__FILE__,__LINE__);
+#endif
+}
+
+Ref<TwoBodyInt>
+IntegralLibint2::g12t1g12_4(const Ref<IntParamsG12>& p)
+{
+#if LIBINT2_SUPPORT_ERI
+  return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_, TwoBodyOperSet::G12_T1_G12, p);
+#else
+  throw FeatureNotImplemented("IntegralLibint2::g12t1g12_4() -- libint2 library included in this executable does not support computation of ERI, hence this feature is not available",__FILE__,__LINE__);
+#endif
+}
+
+Ref<TwoBodyThreeCenterInt>
+IntegralLibint2::g12t1g12_3(const Ref<IntParamsG12>& p)
+{
+#if LIBINT2_SUPPORT_ERI
+  return new TwoBodyThreeCenterIntLibint2(this, bs1_, bs2_, bs3_, storage_, TwoBodyOperSet::G12_T1_G12, p);
+#else
+  throw FeatureNotImplemented("IntegralLibint2::g12t1g12_3() -- libint2 library included in this executable does not support computation of ERI, hence this feature is not available",__FILE__,__LINE__);
+#endif
+}
+
+Ref<TwoBodyTwoCenterInt>
+IntegralLibint2::g12t1g12_2(const Ref<IntParamsG12>& p)
+{
+#if LIBINT2_SUPPORT_ERI
+  return new TwoBodyTwoCenterIntLibint2(this, bs1_, bs2_, storage_, TwoBodyOperSet::G12_T1_G12, p);
+#else
+  throw FeatureNotImplemented("IntegralLibint2::g12t1g12_2() -- libint2 library included in this executable does not support computation of ERI, hence this feature is not available",__FILE__,__LINE__);
 #endif
 }
 
@@ -462,7 +562,7 @@ IntegralLibint2::delta_function_4()
   Ref<IntParamsVoid> params = new IntParamsVoid;  // these are dummy params for this evaluator anyway
   return new TwoBodyIntLibint2(this, bs1_, bs2_, bs3_, bs4_, storage_, TwoBodyOperSet::DeltaFunction, params);
 #else
-  throw InputError("IntegralLibint2::delta_function() -- libint2 library included in this executable does not support computation of ERI, hence this feature is not available",__FILE__,__LINE__);
+  throw FeatureNotImplemented("IntegralLibint2::delta_function() -- libint2 library included in this executable does not support computation of ERI, hence this feature is not available",__FILE__,__LINE__);
 #endif
 }
 
@@ -473,7 +573,18 @@ IntegralLibint2::delta_function_3()
   Ref<IntParamsVoid> params = new IntParamsVoid;  // these are dummy params for this evaluator anyway
   return new TwoBodyThreeCenterIntLibint2(this, bs1_, bs2_, bs3_, storage_, TwoBodyOperSet::DeltaFunction, params);
 #else
-  throw InputError("IntegralLibint2::delta_function() -- libint2 library included in this executable does not support computation of ERI, hence this feature is not available",__FILE__,__LINE__);
+  throw FeatureNotImplemented("IntegralLibint2::delta_function_3() -- libint2 library included in this executable does not support computation of ERI, hence this feature is not available",__FILE__,__LINE__);
+#endif
+}
+
+Ref<TwoBodyTwoCenterInt>
+IntegralLibint2::delta_function_2()
+{
+#if LIBINT2_SUPPORT_ERI
+  Ref<IntParamsVoid> params = new IntParamsVoid;  // these are dummy params for this evaluator anyway
+  return new TwoBodyTwoCenterIntLibint2(this, bs1_, bs2_, storage_, TwoBodyOperSet::DeltaFunction, params);
+#else
+  throw FeatureNotImplemented("IntegralLibint2::delta_function_2() -- libint2 library included in this executable does not support computation of ERI, hence this feature is not available",__FILE__,__LINE__);
 #endif
 }
 

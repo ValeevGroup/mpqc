@@ -30,21 +30,11 @@
 #include "tile_ints.hpp"
 #include <mpqc/basis/tiledbasisset.hpp>
 
-/**
- * @defgroup TiledArrayInterface mpqc.TiledArrayInterface
- * Provides interface to get data from MPQC objects into TiledArray objects.
- * Current usage is limited to integrals
- * @code
- * IntegralEnginePool<Engine_type> engine_pool(seed_engine);
- * TiledArray<double, 2> array = Integrals(world, engine_pool);
- * @endcode
- */
-
 
 namespace TA = TiledArray;
 namespace mpqc {
 
-    /// @addtogroup TiledArrayInterface
+    /// @addtogroup ChemistryBasisIntegralTA
     /// @{
 
     // Gets the blocking to cosntruct of TiledArray::TiledRange1
@@ -64,7 +54,7 @@ namespace mpqc {
     }
 
     /**
-     * Returns a TiledArray filled with integrals.
+     * Returns a TA::Array filled with integrals.
      * @param[in] world madness::World object for construction of TiledArray::Array
      * @param[in] pool IntegralEnginePool which contains the pool of engines needed for Tensor construction
      * @param[in] trange1gen Function pointer to a function that generates TiledArray::TiledRange1 given a sc::GaussianBasisSet
@@ -131,7 +121,7 @@ namespace mpqc {
     }
 
 
-    /// @} // TiledArrayInterface
+    /// @} // ChemistryBasisIntegralTA
 
 } // namespace mpqc
 

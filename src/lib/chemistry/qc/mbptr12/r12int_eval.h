@@ -988,6 +988,8 @@ public:
    */
   void V_diag_ta();
 
+  void compute_ccr12_1rdm(const RefSCMatrix& T1, const Ref<DistArray4> (&T2)[NSpinCases2]);
+
   /// returns the OrbitalSpaceRegistry object
   const Ref<OrbitalSpaceRegistry>& orbital_registry() const {
     return this->r12world()->world()->tfactory()->orbital_registry();

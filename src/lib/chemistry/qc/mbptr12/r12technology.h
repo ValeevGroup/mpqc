@@ -456,40 +456,6 @@ class R12Technology: virtual public SavableState {
         return new CF(corrparams);
       }
 
-  template<class CorrFactor, class Fitter>
-      static Ref<CorrelationFactor> stg_to_g12(const Fitter& fitter,
-                                               double gamma, int k,
-                                               double scale = 1.0) {
-
-        using sc::math::Slater1D;
-        typedef typename Fitter::Gaussians Gaussians;
-        Slater1D stg(gamma, k, scale);
-        Gaussians gtgs = fitter(stg);
-
-        // feed to the constructor of CorrFactor
-        typedef IntParamsG12::PrimitiveGeminal PrimitiveGeminal;
-        typedef IntParamsG12::ContractedGeminal ContractedGeminal;
-        ContractedGeminal geminal;
-        typedef typename Gaussians::const_iterator citer;
-        typedef typename Gaussians::iterator iter;
-        for (iter g = gtgs.begin(); g != gtgs.end(); ++g) {
-          geminal.push_back(*g);
-        }
-        std::vector<ContractedGeminal> geminals(1, geminal);
-
-        Ref<CorrelationFactor> cf = new CorrFactor(geminals);
-        return cf;
-      }
-
-#if 0
-  /// fits r_{12}^k * exp(-gamma*r_{12}) using the provided fitter. The fitter must implement GaussianFit interface.
-  template <class CorrFactor, class Fitter>
-  Ref<CorrelationFactor> stg_to_g12(const Fitter& fitter, double gamma, int k=0);
-
-  /// direct product of 2 correlation factors A and B
-  template <class CF> Ref<CF> direct_product(const Ref<CF>& A, const Ref<CF>& B);
-#endif
-
   private:
 
     // implements KeyVal constructor

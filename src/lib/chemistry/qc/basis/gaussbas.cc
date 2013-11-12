@@ -634,10 +634,11 @@ GaussianBasisSet::count_shells_(Ref<KeyVal>& keyval, const char* element, const 
     exists = keyval->exists(keyword);
     if (!exists) {
       if (missing_ok) return 0;
-      ExEnv::err0() << indent
-                    << scprintf("GaussianBasisSet::count_shells_ couldn't find \"%s\":\n", keyword);
+      std::ostringstream oss;
+      oss << scprintf("GaussianBasisSet::count_shells_ couldn't find \"%s\":\n", keyword);
+      ExEnv::err0() << indent << oss.str();
       keyval->errortrace(ExEnv::err0());
-      throw std::runtime_error("GaussianBasisSet::count_shells_ -- couldn't find the basis set");
+      throw InputError(oss.str().c_str(), __FILE__, __LINE__);
     }
   }
 
@@ -867,10 +868,11 @@ GaussianBasisSet::
   count = keyval->count(keyword);
   if (keyval->error() != KeyVal::OK) {
       if (missing_ok) return;
-      ExEnv::err0() << indent
-           << scprintf("GaussianBasisSet:: couldn't find \"%s\":\n", keyword);
+      std::ostringstream oss;
+      oss << scprintf("GaussianBasisSet::count_shells_ couldn't find \"%s\":\n", keyword);
+      ExEnv::err0() << indent << oss.str();
       keyval->errortrace(ExEnv::err0());
-      throw std::runtime_error("GaussianBasisSet::recursively_get_shell -- couldn't find the basis set");
+      throw InputError(oss.str().c_str(), __FILE__, __LINE__);
     }
   if (!count) return;
   for (int j=0; j<count; j++) {

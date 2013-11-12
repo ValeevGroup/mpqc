@@ -161,6 +161,36 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
     int2elibint2_->bounds(bounds);
     break;
   }
+  case TwoBodyOperSet::R12_0_G12:
+  {
+    typedef TwoBodyOSARLibint2<TwoBodyOper::r12_0_g12> Int2e;
+    typedef BoundsLibint2<Int2e> Bounds;
+    Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
+    int2elibint2_->bounds(bounds);
+    break;
+  }
+  case TwoBodyOperSet::R12_m1_G12:
+  {
+    typedef TwoBodyOSARLibint2<TwoBodyOper::r12_m1_g12> Int2e;
+    typedef BoundsLibint2<Int2e> Bounds;
+    Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
+    int2elibint2_->bounds(bounds);
+    break;
+  }
+  case TwoBodyOperSet::G12_T1_G12:
+  {
+    typedef TwoBodyOSARLibint2<TwoBodyOper::g12t1g12> Int2e;
+    typedef BoundsLibint2<Int2e> Bounds;
+    Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
+    int2elibint2_->bounds(bounds);
+    break;
+  }
   case TwoBodyOperSet::DeltaFunction:
   {
     typedef TwoBodyOSARLibint2<TwoBodyOper::delta> Int2e;
@@ -230,6 +260,30 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
   case TwoBodyOperSet::G12NC:
   {
     typedef G12NCLibint2 Int2e;
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
+    int2elibint2_->bounds(bounds);
+    break;
+  }
+  case TwoBodyOperSet::R12_0_G12:
+  {
+    typedef TwoBodyOSARLibint2<TwoBodyOper::r12_0_g12> Int2e;
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
+    int2elibint2_->bounds(bounds);
+    break;
+  }
+  case TwoBodyOperSet::R12_m1_G12:
+  {
+    typedef TwoBodyOSARLibint2<TwoBodyOper::r12_m1_g12> Int2e;
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
+    int2elibint2_->bounds(bounds);
+    break;
+  }
+  case TwoBodyOperSet::G12_T1_G12:
+  {
+    typedef TwoBodyOSARLibint2<TwoBodyOper::g12t1g12> Int2e;
     Int2eCreator<Int2e> creator;
     int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
     int2elibint2_->bounds(bounds);
@@ -332,7 +386,8 @@ TwoBodyThreeCenterIntLibint2::TwoBodyThreeCenterIntLibint2(Integral*integral,
 #if LIBINT2_SUPPORT_ERI
   case TwoBodyOperSet::ERI:
   {
-    typedef EriLibint2 Int2e;
+    //typedef EriLibint2 Int2e;
+    typedef TwoBodyOSARLibint2<TwoBodyOper::eri> Int2e;
     typedef BoundsLibint2<Int2e> Bounds;
     Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
     Int2eCreator<Int2e> creator;
@@ -343,6 +398,36 @@ TwoBodyThreeCenterIntLibint2::TwoBodyThreeCenterIntLibint2(Integral*integral,
   case TwoBodyOperSet::G12NC:
   {
     typedef G12NCLibint2 Int2e;
+    typedef BoundsLibint2<Int2e> Bounds;
+    Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
+    int2elibint2_->bounds(bounds);
+    break;
+  }
+  case TwoBodyOperSet::R12_0_G12:
+  {
+    typedef TwoBodyOSARLibint2<TwoBodyOper::r12_0_g12> Int2e;
+    typedef BoundsLibint2<Int2e> Bounds;
+    Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
+    int2elibint2_->bounds(bounds);
+    break;
+  }
+  case TwoBodyOperSet::R12_m1_G12:
+  {
+    typedef TwoBodyOSARLibint2<TwoBodyOper::r12_m1_g12> Int2e;
+    typedef BoundsLibint2<Int2e> Bounds;
+    Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
+    int2elibint2_->bounds(bounds);
+    break;
+  }
+  case TwoBodyOperSet::G12_T1_G12:
+  {
+    typedef TwoBodyOSARLibint2<TwoBodyOper::g12t1g12> Int2e;
     typedef BoundsLibint2<Int2e> Bounds;
     Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
     Int2eCreator<Int2e> creator;
@@ -409,7 +494,8 @@ TwoBodyThreeCenterIntLibint2::TwoBodyThreeCenterIntLibint2(Integral*integral,
 #if LIBINT2_SUPPORT_ERI
   case TwoBodyOperSet::ERI:
   {
-    typedef EriLibint2 Int2e;
+    //typedef EriLibint2 Int2e;
+    typedef TwoBodyOSARLibint2<TwoBodyOper::eri> Int2e;
     Int2eCreator<Int2e> creator;
     int2elibint2_ = creator(integral,b1,b2,b3,bunit,storage,params);
     int2elibint2_->bounds(bounds);
@@ -418,6 +504,30 @@ TwoBodyThreeCenterIntLibint2::TwoBodyThreeCenterIntLibint2(Integral*integral,
   case TwoBodyOperSet::G12NC:
   {
     typedef G12NCLibint2 Int2e;
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,bunit,storage,params);
+    int2elibint2_->bounds(bounds);
+    break;
+  }
+  case TwoBodyOperSet::R12_0_G12:
+  {
+    typedef TwoBodyOSARLibint2<TwoBodyOper::r12_0_g12> Int2e;
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,bunit,storage,params);
+    int2elibint2_->bounds(bounds);
+    break;
+  }
+  case TwoBodyOperSet::R12_m1_G12:
+  {
+    typedef TwoBodyOSARLibint2<TwoBodyOper::r12_m1_g12> Int2e;
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,bunit,storage,params);
+    int2elibint2_->bounds(bounds);
+    break;
+  }
+  case TwoBodyOperSet::G12_T1_G12:
+  {
+    typedef TwoBodyOSARLibint2<TwoBodyOper::g12t1g12> Int2e;
     Int2eCreator<Int2e> creator;
     int2elibint2_ = creator(integral,b1,b2,b3,bunit,storage,params);
     int2elibint2_->bounds(bounds);
@@ -521,7 +631,8 @@ TwoBodyTwoCenterIntLibint2::TwoBodyTwoCenterIntLibint2(Integral*integral,
 #if LIBINT2_SUPPORT_ERI
   case TwoBodyOperSet::ERI:
   {
-    typedef EriLibint2 Int2e;
+    //typedef EriLibint2 Int2e;
+    typedef TwoBodyOSARLibint2<TwoBodyOper::eri> Int2e;
     Int2eCreator<Int2e> creator;
     int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
     break;
@@ -531,6 +642,46 @@ TwoBodyTwoCenterIntLibint2::TwoBodyTwoCenterIntLibint2(Integral*integral,
     typedef G12NCLibint2 Int2e;
     Int2eCreator<Int2e> creator;
     int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
+    break;
+  }
+  case TwoBodyOperSet::R12_0_G12:
+  {
+    typedef TwoBodyOSARLibint2<TwoBodyOper::r12_0_g12> Int2e;
+    typedef BoundsLibint2<Int2e> Bounds;
+    Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
+    int2elibint2_->bounds(bounds);
+    break;
+  }
+  case TwoBodyOperSet::R12_m1_G12:
+  {
+    typedef TwoBodyOSARLibint2<TwoBodyOper::r12_m1_g12> Int2e;
+    typedef BoundsLibint2<Int2e> Bounds;
+    Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
+    int2elibint2_->bounds(bounds);
+    break;
+  }
+  case TwoBodyOperSet::G12_T1_G12:
+  {
+    typedef TwoBodyOSARLibint2<TwoBodyOper::g12t1g12> Int2e;
+    typedef BoundsLibint2<Int2e> Bounds;
+    Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
+    int2elibint2_->bounds(bounds);
+    break;
+  }
+  case TwoBodyOperSet::DeltaFunction:
+  {
+    typedef TwoBodyOSARLibint2<TwoBodyOper::delta> Int2e;
+    typedef BoundsLibint2<Int2e> Bounds;
+    Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
+    int2elibint2_->bounds(bounds);
     break;
   }
 #endif
@@ -581,7 +732,8 @@ TwoBodyTwoCenterIntLibint2::TwoBodyTwoCenterIntLibint2(Integral*integral,
 #if LIBINT2_SUPPORT_ERI
   case TwoBodyOperSet::ERI:
   {
-    typedef EriLibint2 Int2e;
+    //typedef EriLibint2 Int2e;
+    typedef TwoBodyOSARLibint2<TwoBodyOper::eri> Int2e;
     Int2eCreator<Int2e> creator;
     int2elibint2_ = creator(integral,b1,bunit,b3,bunit,storage,params);
     int2elibint2_->bounds(bounds);
@@ -590,6 +742,38 @@ TwoBodyTwoCenterIntLibint2::TwoBodyTwoCenterIntLibint2(Integral*integral,
   case TwoBodyOperSet::G12NC:
   {
     typedef G12NCLibint2 Int2e;
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,bunit,b3,bunit,storage,params);
+    int2elibint2_->bounds(bounds);
+    break;
+  }
+  case TwoBodyOperSet::R12_0_G12:
+  {
+    typedef TwoBodyOSARLibint2<TwoBodyOper::r12_0_g12> Int2e;
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,bunit,b3,bunit,storage,params);
+    int2elibint2_->bounds(bounds);
+    break;
+  }
+  case TwoBodyOperSet::R12_m1_G12:
+  {
+    typedef TwoBodyOSARLibint2<TwoBodyOper::r12_m1_g12> Int2e;
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,bunit,b3,bunit,storage,params);
+    int2elibint2_->bounds(bounds);
+    break;
+  }
+  case TwoBodyOperSet::G12_T1_G12:
+  {
+    typedef TwoBodyOSARLibint2<TwoBodyOper::g12t1g12> Int2e;
+    Int2eCreator<Int2e> creator;
+    int2elibint2_ = creator(integral,b1,bunit,b3,bunit,storage,params);
+    int2elibint2_->bounds(bounds);
+    break;
+  }
+  case TwoBodyOperSet::DeltaFunction:
+  {
+    typedef TwoBodyOSARLibint2<TwoBodyOper::delta> Int2e;
     Int2eCreator<Int2e> creator;
     int2elibint2_ = creator(integral,b1,bunit,b3,bunit,storage,params);
     int2elibint2_->bounds(bounds);

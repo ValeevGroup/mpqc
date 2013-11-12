@@ -107,7 +107,7 @@ def add_options(parser):
 
     parser.add_option("-S", "--scheduler",
                       choices=["sge", "pbs"],
-                      help="Scheduler")
+                      help="Scheduler, choose sge or pbs")
 
     parser.add_option("-w", "--wtime", help="wall clock time", metavar="X")
     parser.add_option("-q", "--queue", help="queue")

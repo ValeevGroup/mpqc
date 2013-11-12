@@ -328,7 +328,7 @@ qmmm2.in       clhfdk1.in            clhfdk2.in \
 clks_kmlyp.in  hsosks_kmlyp.in       uks_kmlyp.in
 
 ifeq (@MAKE_ASSUME_CI@,yes)
-  METHODSINPUTS += fci.in fci_fzc.in
+  METHODSINPUTS += fci.in fci_fzc.in cisdt.in cisdt_fzc.in
 endif
 
 ifeq ($(RUN_MBPTR12),yes)
@@ -404,6 +404,7 @@ CHECK0FILTER += $(INP)/basis2_% $(INP)/dft_% $(INP)/symm1_cub%
 CHECK0FILTER += $(INP)/mbpt_mp2r12_c6h6_multipass.in
 CHECK0FILTER += $(INP)/lmp2_c8h18.631gs.lmp2.in
 CHECK0FILTER += $(INP)/lmp2_c12h26.lmp2.ccpvdz.in
+CHECK0FILTER += $(INP)/methods_fci.in $(INP)/methods_fci_fzc.in
 CHECK0INPUTS := $(filter-out $(CHECK0FILTER),$(CHECK0INPUTS))
 ifeq ($(MPQCRUN_INTEGRAL),cints)
   CHECK0INPUTS := $(filter $(CINTSFILTER),$(CHECK0INPUTS))

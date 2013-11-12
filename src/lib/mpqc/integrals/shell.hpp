@@ -27,12 +27,13 @@
 
 #ifndef MPQC_INTEGRALS_SHELL_HPP
 #define MPQC_INTEGRALS_SHELL_HPP
-/// addtogroup Integrals
-/// @{
+
 namespace mpqc {
 namespace integrals {
+
     /**
-     * Class holds shell range.
+     * @addtogroup ChemistryBasisIntegralTA
+     * Shell = a range of basis functions @sa GaussianBasisSet::Shell
      */
     struct Shell : range {
         Shell(int index, range r) : range(r), index_(index) {}
@@ -45,7 +46,6 @@ namespace integrals {
 
 } // namespace integrals
 } // namespace mpqc
-/// @} // Integrals
 
 
 #endif /* MPQC_INTEGRALS_SHELL_HPP */

@@ -61,35 +61,10 @@ struct adaptor< mpqc::matrix<T, Options>, Id, Enable >
 
 #endif // HAVE_BLAS
 
-/**
-   @defgroup MathBlas mpqc.Math.Blas
-   @ingroup Math
-   BLAS bindings.
-   The BLAS biding are meant to serve as a safer way to interface
-   C++ Matrix objects, namely Eigen::Matrix and mpqc::matrix, with
-   BLAS libraries, eg:
-
-   @code
-   auto a = MatrixXd::Map(data, m, k);
-   Eigen::MatrixXd b(k,n);
-   mpqc::Matrix c(m,n);
-   // c = 1.0*a*b + 0.0*c;
-   blas::gemm(1.0, a, b, 0.0, c);
-   @endcode
-
-   BLAS bindings can be disabled and  Eigen expression equivalents will
-   be used instead by undefining <code>HAVE_BLAS</code> macro.  This gives
-   a good way to test if interface is working correctly.
-
-   BLAS bindings are implemented on top of
-   <a href=http://svn.boost.org/svn/boost/sandbox/numeric_bindings/>
-   Boost.Numeric.Bindings</a>.
- */
-
 namespace mpqc {
 namespace blas {
 
-    /// @addtogroup MathBlas
+    /// @addtogroup MathBLAS
     /// @{
 
     template<typename T>
@@ -134,7 +109,7 @@ namespace blas {
 #endif // HAVE_BLAS
     }
 
-    /// @} // MathBlas
+    /// @} // MathBLAS
 
 }
 }

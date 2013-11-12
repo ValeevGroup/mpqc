@@ -36,6 +36,9 @@
 
 namespace sc {
 
+  /// @addtogroup ChemistryElectronicStructureNBody
+  /// @{
+
   /**
    * ManyBodyWavefunction is a Wavefunction obtained from
    * a reference OneBodyWavefunction (its orbitals or more).
@@ -96,6 +99,9 @@ namespace sc {
       Ref<WavefunctionWorld> world_;
       Ref<RefWavefunction> refwfn_;
   };
+
+  /// @}
+  // end of addtogroup ChemistryElectronicStructureNBody
 
 } // end of namespace sc
 

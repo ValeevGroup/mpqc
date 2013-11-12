@@ -44,6 +44,9 @@ using boost::property_tree::ptree;
 
 namespace sc {
 
+  /// @addtogroup ChemistryElectronicStructure
+  /// @{
+
 /** A Wavefunction is a MolecularEnergy that utilizies a GaussianBasisSet. */
 class Wavefunction: public MolecularEnergy {
 
@@ -325,6 +328,9 @@ class Wavefunction: public MolecularEnergy {
      */
     void writeorbitals();
 };
+
+/// @}
+// end of addtogroup ChemistryElectronicStructure
 
 }
 

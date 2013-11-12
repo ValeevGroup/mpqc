@@ -82,7 +82,7 @@ namespace sc {
   };
 
   namespace math {
-    /// Slater1D(k,x) = c x^k exp(-a*x)
+    /// Slater1D(k,x) = \f$ c x^k \exp(-a*x) \f$
     class Slater1D {
       public:
         Slater1D(double a, int k = 0, double c = 1.0) :

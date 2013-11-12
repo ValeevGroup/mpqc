@@ -35,6 +35,26 @@ if (MADNESS_LIBRARIES)
   if (NOT MADNESS_COMPILES)
     message(FATAL_ERROR "Could not compile MADNESS test program")
   endif()
+  
+  # check that MADNESS BLAS/LAPACK interface width agrees with what MPQC assumed
+  set(CMAKE_REQUIRED_DEFINITIONS "-DF77_INTEGER_WIDTH=${F77_INTEGER_WIDTH}")
+  CHECK_CXX_SOURCE_COMPILES(
+    "
+    #include <madness_config.h>
+    #if MADNESS_FORTRAN_DEFAULT_INTEGER_SIZE != F77_INTEGER_WIDTH
+    # error \"MADNESS FORTRAN integer width differs from that of MPQC\"
+    #endif
+    int main(int argc, char** argv) {
+      return 0;
+    }
+    "  MADNESS_FORTRAN_INTEGER_WIDTH_COMPATIBLE)
+  if (NOT MADNESS_FORTRAN_INTEGER_WIDTH_COMPATIBLE)
+    if (${F77_INTEGER_WIDTH} STREQUAL 8)
+      message(FATAL_ERROR "MADNESS default FORTRAN integer width does not match that of MPQC. You need to omit --integer8 configure flag.")
+    else()
+      message(FATAL_ERROR "MADNESS default FORTRAN integer width does not match that of MPQC. You need to add --integer8 configure flag.")
+    endif()
+  endif()
     
   set(HAVE_MADNESS TRUE)
   message(STATUS "Found MADNESS:")

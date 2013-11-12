@@ -39,6 +39,9 @@ namespace sc {
 
 class MolFreqAnimate;
 
+/// @addtogroup ChemistryMolecule
+/// @{
+
 /** The MolecularFrequencies class is used to compute the molecular
 frequencies and thermodynamic information. */
 class MolecularFrequencies: public SavableState {
@@ -144,6 +147,9 @@ class MolFreqAnimate: public AnimatedObject {
     int nobject();
     Ref<RenderedObject> object(int iobject);
 };
+
+/// @}
+// end of addtogroup ChemistryMolecule
 
 }
 

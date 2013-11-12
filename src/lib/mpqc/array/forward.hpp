@@ -2,7 +2,7 @@
 #define MPQC_ARRAY_FORWARD_HPP
 
 #include "mpqc/range.hpp"
-
+ #include "mpqc/utility/debug.hpp"
 
 namespace mpqc {
 
@@ -44,13 +44,20 @@ namespace detail {
         virtual void sync() = 0;
 
         template<typename Extent>
-	ArrayBase(const std::vector<Extent> &extents) {
+	ArrayBase(const std::string &name,
+                  const std::vector<Extent> &extents)
+        {
+            name_ = name;
             for (size_t i = 0; i < extents.size(); ++i) {
                 range r = extent(extents.at(i));
                 base_.push_back(*r.begin());
                 dims_.push_back(r.size());
             }
 	}
+
+        const std::string name() const {
+            return this->name_;
+        }
 
         size_t rank() const {
             assert(dims_.size() == base_.size());
@@ -75,6 +82,7 @@ namespace detail {
 
     protected:
 
+        std::string name_;
         std::vector<size_t> dims_;
         std::vector<size_t> base_;
 

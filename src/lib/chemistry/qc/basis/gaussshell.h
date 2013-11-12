@@ -42,6 +42,9 @@ class CartesianIter;
 class SphericalTransformIter;
 class Integral;
 
+/// @addtogroup ChemistryBasisGaussian
+/// @{
+
 /// A shell of Gaussian functions. A shell is a set of functions with same quantum numbers, contraction coefficients,
 /// and exponents, and located on the common origin. GaussianShell does include the origin information.
 /// @sa GaussianBasisSet::Shell
@@ -322,6 +325,9 @@ void ToStateOut(const GaussianShell &s, StateOut &so, int &count);
 
 /// reads GaussianShell from sc::StateIn
 void FromStateIn(GaussianShell &s, StateIn &si, int &count);
+
+/// @}
+// end of addtogroup ChemistryBasisGaussian
 
 } // namespace sc
 

@@ -32,8 +32,10 @@
 #include <chemistry/qc/wfn/wfn.h>
 #include <util/misc/xml.h>
 
-
 namespace sc {
+
+  /// @addtogroup ChemistryElectronicStructureOneBody
+  /// @{
 
 /**A OneBodyWavefunction is a MolecularEnergy that solves an effective
 one-body problem. */
@@ -249,6 +251,9 @@ class HCoreWfn: public OneBodyWavefunction {
 
     int value_implemented() const;
 };
+
+/// @}
+// end of addtogroup ChemistryElectronicStructureOneBody
 
 }
 

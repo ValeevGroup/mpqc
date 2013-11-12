@@ -1,9 +1,6 @@
 #ifndef MPQC_MPI_HPP
 #define MPQC_MPI_HPP
 
-/// @defgroup MPI mpqc.Core.MPI
-/// <a href=http://www.mpi-forum.org>MPI</a> wrappers/stubs
-
 #include "mpqc_config.h"
 
 #ifndef HAVE_MPI

@@ -21,8 +21,8 @@ if (NOT HDF5_FOUND)
 
   else()
     
-    set(HDF5_URL http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.10-patch1/src/hdf5-1.8.10-patch1.tar.gz)
-    set(HDF5_URL_HASH MD5=2147a289fb33c887464ad2b6c5a8ae4c)
+    set(HDF5_URL http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.12/src/hdf5-1.8.12.tar.bz2)
+    set(HDF5_URL_HASH MD5=75829af785e54332cdef6ad5a4a96607)
 
     if (EXISTS ${EXTERNAL_SOURCE_DIR}/hdf5.tar.gz)
       set(HDF5_URL ${EXTERNAL_SOURCE_DIR}/hdf5.tar.gz)
@@ -41,7 +41,7 @@ if (NOT HDF5_FOUND)
       --enable-threadsafe
       --enable-unsupported
       --with-pthread
-      CC=${CMAKE_C_COMPILER} CPPFLAGS=-D_GNU_SOURCE
+      CC=${CMAKE_C_COMPILER} CFLAGS=${CMAKE_C_FLAGS} CPPFLAGS=-D_GNU_SOURCE
       BUILD_COMMAND make
       INSTALL_COMMAND make install
       )

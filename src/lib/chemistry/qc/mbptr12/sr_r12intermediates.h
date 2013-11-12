@@ -270,6 +270,12 @@ namespace sc {
       TArray2 Bpk_qk(const char* p, const char* q);
       TArray4 Bpr_qs(const char* p, const char* q);
 
+      // compute V^pq_rs
+      TArray4 Vpq_rs(const char* p, const char* q,
+                     const char* r, const char* s);
+      // V^rk_sk which is summed over k
+      TArray2 Vrk_sk(const char* r, const char* s);
+
       /** returns the 2-particle density matrix
       * @return \f$ \gamma^{pq}_{rs} \f$, respectively
       */
@@ -307,7 +313,7 @@ namespace sc {
        * provides T2 amplitudes
        * @param t2 array of T2 amplitudes, for AlphaBeta, AlphaAlpha, and (optionally) BetaBeta
        */
-      void set_T2(Ref<DistArray4> t2[NSpinCases2]) { std::copy(t2, t2+NSpinCases2, t2_); }
+      void set_T2(const Ref<DistArray4> (&t2)[NSpinCases2]) { std::copy(t2, t2+NSpinCases2, t2_); }
       /**
        * provides (spin-free) RDM2
        * @param rdm2 a SpinFreeRDM<Two> object

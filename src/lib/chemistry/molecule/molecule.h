@@ -44,6 +44,9 @@
 using boost::property_tree::ptree;
 namespace sc {
 
+  /// @addtogroup ChemistryMolecule
+  /// @{
+
 /**
 The Molecule class contains information about molecules.  It has a
 KeyVal constructor that can create a new molecule from either a
@@ -481,6 +484,9 @@ class Molecule: public SavableState, virtual public DescribedXMLWritable
     virtual ptree& write_xml(ptree& parent, const XMLWriter& writer);
 
 };
+
+/// @}
+// end of addtogroup ChemistryMolecule
 
 }
 

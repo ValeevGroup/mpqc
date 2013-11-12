@@ -38,7 +38,7 @@
 
 namespace sc {
 
-  /** @ingroup State
+  /** @ingroup CoreState
    * Helps to write user-defined types to StateOut. Overload/specialize
    * this function for each user-defined type not derived from SavableState
    * (if your class is derived from SavableState simply implement its save_data_state()
@@ -61,7 +61,7 @@ class StateOutData {
     StateOutData(): num(0), size(0), type(0), offset(0) {}
 };
 
-/** @ingroup State
+/** @ingroup CoreState
  * Serializes fundamental and user-defined types.
    A special ability, and the primary reason for the existence of StateOut and StateIn,
    is being able to serialize/deserialize graphs of Ref pointers to SavableState objects so that two references to the same
@@ -258,7 +258,7 @@ class StateOut: public DescribedClass {
     virtual int seekable();
   };
 
-  /// @addtogroup State
+  /// @addtogroup CoreState
   /// @{
   /// helper class to save to StateOut
   template <typename T> void ToStateOut(const T& t, StateOut& so, int& count){

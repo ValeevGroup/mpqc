@@ -36,12 +36,13 @@ using boost::property_tree::ptree;
 
 namespace sc {
 
+  /// @addtogroup ChemistryMolecule
+  /// @{
+
     /**
-     * The atom class constains information about atoms. Its construction
-     * follows the form of add_atom in molecule.  Atom was intended to be
-     * a replacement for standalone arrays holding information about
-     * atoms.
-     *
+     * Atom represents an atom in a Molecule. Its position is defined relative to the
+     * coordinate system of the Molecule. It also has an atomic number. Optionally, it can
+     * has a charge, mass, and it can belong to a fragment.
      */
     class Atom : public XMLWritable {
 
@@ -158,6 +159,10 @@ namespace sc {
 
     /// reads Atom from sc::StateIn
     void FromStateIn(Atom &a, StateIn &si, int &count);
+
+    /// @}
+    // end of addtogroup ChemistryMolecule
+
 }
 
 

@@ -2,12 +2,12 @@
 #define _chemistry_qc_ci_ci_h
 
 #include <chemistry/qc/nbody/nbwfn.h>
-
-//#define MPQC_PROFILE_ENABLE
-#include "mpqc/utility/profile.hpp"
 #include "mpqc/ci/ci.hpp"
 
 namespace sc {
+
+  /// @addtogroup ChemistryElectronicStructureNBody
+  /// @{
 
   /**
    * CI is a configuration interaction ManyBodyWavefunction. Currently only full CI is supported.
@@ -62,6 +62,9 @@ namespace sc {
       static std::vector<double> compute(const Ref<RefWavefunction> &ref,
                                          const mpqc::ci::Config& config);
   };
+
+  /// @}
+  // end of addtogroup ChemistryElectronicStructureNBody
 
 }
 

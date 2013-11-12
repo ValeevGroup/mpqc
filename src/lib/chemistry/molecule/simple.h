@@ -36,6 +36,9 @@ namespace sc {
 
 // ////////////////////////////////////////////////////////////////////////
 
+  /// @addtogroup ChemistryMolecule
+  /// @{
+
 /**
 The SimpleCo abstract class describes a simple internal coordinate
 of a molecule.  The number atoms involved can be 2, 3 or 4 and is
@@ -131,8 +134,6 @@ class SimpleCo : public IntCoor {
         This is false if the atoms don't match. */
     int equivalent(Ref<IntCoor>&);
   };
-
-
 
 // ///////////////////////////////////////////////////////////////////////
 
@@ -542,6 +543,9 @@ class LinOPSimpleCo : public SimpleCo {
   };
 
 typedef LinOPSimpleCo LinOP;
+
+/// @}
+// end of addtogroup ChemistryMolecule
 
 }
 

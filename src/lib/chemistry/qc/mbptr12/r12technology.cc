@@ -1161,14 +1161,13 @@ R12Technology::init_from_kv(const Ref<KeyVal>& keyval,
       const int k = 0;
       assert(k < 2 && k >= 0);
       const double gamma = stg_exponents[f];
-      Ref<G12CorrelationFactor> cf;
       double scale;
       if (k == 0) // fit - e^{-\gamma r12} / \gamma
         scale = -1.0/gamma;
       if (k == 1) // fit r12 e^{-\gamma r12}
         scale = 1.0;
-      cf << stg_to_g12<G12CorrelationFactor,GTGFit>(gtgfit,gamma,k,scale);
-      params.push_back(cf->function(0));
+      Slater1D stg(gamma,k,scale);
+      params.push_back( gtgfit(stg) );
       delete w;
     }
 

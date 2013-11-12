@@ -37,7 +37,7 @@
 
 namespace mpqc{
 
-    /// @addtogroup TiledArrayInterface
+    /// @addtogroup ChemistryBasisIntegralTA
     /// @{
 
 #ifndef DOXYGEN

@@ -6,6 +6,8 @@
   <li> \ref compilepre   
   <li> \ref compilepreopt
   <li> \ref compileconf  
+  <li> \ref Compilers  
+  <li> \ref Libraries  
   <li> \ref compilecomp
   <li> \ref compilecheck
 </ul>
@@ -113,6 +115,70 @@ hence most, if not all, prerequisites will be checked and built, if needed.
 you can edit <tt>src/lib/mpqc_config.h</tt> and <tt>lib/LocalMakefile</tt> to
 suit your needs.  The next time you run configure, these files and
 all the makefiles will be overwritten.
+
+
+@section Compilers Compilers
+   
+   @subsection GNU
+
+   To compile with GNU compilers:
+   @code
+   ./configure CXX=g++
+   @endcode
+
+   We are not aware of any significant issues with the GNU compilers.
+
+
+   @subsection Intel
+
+   To compile with Intel compilers, set appropriate CXX (and optionally C and FC):
+   @code
+   ./configure CXX=icpc
+   @endcode
+   
+   C++11 support is incomplete as of version 13.
+   See
+   <a href="http://software.intel.com/en-us/articles/c0x-features-supported-by-intel-c-compiler">
+   C++11 Features Supported by Intel® C++ Compiler
+   </a>
+
+   Compiling Eigen generates lots of warnings #2536 and #2196.  
+   Those can be disabled with <tt>-wd</tt> switch, eg:
+   @code
+   ./configure CXX=icpc CXXFLAGS="-wd2536,2196"
+   @endcode
+
+   Using for range loops and openmp causes Intel compilers (at least version 13.0.1) to segfault,
+   <tt>internal error: assertion failed at: "shared/cfe/edgcpfe/checkdir.c", line 5406<\tt>.
+   As a workaround in production code use @link foreach @endlink macro.
+
+@section Libraries Libraries
+   
+   @subsection LibrariesMath BLAS/LAPACK Math Libraries
+
+   CMake will try to find BLAS/LAPACK autoomatically.
+   If it fails, a Netlib Lapack will be built and used.
+   You can also specify BLAS/LAPACK libraries with \c --lapack option.
+
+   BLAS/LAPACK libraries have \c INTEGER types that do not necessarily map to
+   default C/C++ \c int type.  The default is to assume that \c INTEGER
+   type is 4-bytes.
+   In case the BLAS/LAPACK library uses 8-byte types add \c --integer8 flag:
+   @code
+   ./configure --integer8
+   @endcode
+
+   To use MKL (with GNU gfortran, GNU OpenMP, and 8-byte integers):
+   @code
+   ./configure --integer8 \
+       --lapack="-Wl,--start-group  $(MKLROOT)/lib/intel64/libmkl_gf_ilp64.a $(MKLROOT)/lib/intel64/libmkl_core.a $(MKLROOT)/lib/intel64/libmkl_gnu_thread.a -Wl,--end-group -ldl -lpthread -lm"
+   @endcode
+
+   To use MKL with Intel compiler:
+   @code
+   ./configure --lapack="-mkl"
+   @endcode
+
 
 \section compilecomp Compilation
 

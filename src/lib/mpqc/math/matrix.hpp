@@ -10,26 +10,11 @@
 // #define EIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET
 // #include <Eigen/Sparse>
 
-/** @defgroup MathMatrix mpqc.Math.Matrix
-    @ingroup Math
-    Matrix and Vector classes and function,
-    derived from <a href="http://eigen.tuxfamily.org">Eigen</a>.
-    @anchor MatrixOperators
-    The matrix and vector objects overide <c>operator()</c>,
-    s.t. if one of the arguments is a range, a block is returned rather
-    than a single element.
-    Example:
-    @code
-    matrix(0,range(0,4)); // returns 1x4 sub-matrix (0,0:3)
-    matrix(0,0); // returns matrix element (0,0);
-    vector(range(2,4)); // returns sub-vector (2:3)
-    @endcode
-*/
-
 namespace mpqc {
 
     /// @addtogroup MathMatrix
     /// @{
+    
 
     /// Matrix class derived from Eigen::Matrix with additional MPQC integration
     template<typename T, int Order = Eigen::ColMajor>
@@ -60,6 +45,21 @@ namespace mpqc {
         matrix(const sc::RefSymmSCMatrix &a) {
             this->resize(a.n(), a.n());
             apply(assign(), this->rows(), this->cols(), *this, a);
+        }
+
+        /// An interface to enable matrix assignment from other containers.
+        /// A container must implement assign_to function which will assign
+        /// its data to a matrix.
+        /// The purpose of this interface to avoid creating matrix intermediates.
+        struct Assignable {
+            virtual ~Assignable() {}
+            /// Assign data to matrix.
+            virtual void assign_to(matrix &m) const = 0;
+        };
+
+        /// Constructs matrix from an Assignable container
+        matrix(const Assignable &a) {
+            a.assign_to(*this);
         }
 
 #ifdef DOXYGEN

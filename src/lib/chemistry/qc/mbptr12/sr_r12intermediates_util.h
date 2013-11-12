@@ -121,22 +121,22 @@ namespace sc {
       ParsedTwoBodyFourCenterIntKey pkey(key);
 
       /// map operator to the index within the operator set
-      Ref<TwoBodyIntDescr> tbint_descr = r12world_->r12tech()->corrfactor()->tbintdescr(r12world_->integral(),0);
-      std::string operset_label = "G12'[0]";
-      unsigned int oper_idx;
-      if (pkey.oper() == "g")
-        oper_idx = tbint_descr->intset(TwoBodyOper::eri);
-      else if (pkey.oper() == "gr")
-        oper_idx = tbint_descr->intset(TwoBodyOper::r12_m1_g12);
-      else if (pkey.oper() == "r")
-        oper_idx = tbint_descr->intset(TwoBodyOper::r12_0_g12);
+      std::string operset_label;
+      const unsigned int oper_idx = 0;
+      if (pkey.oper() == "g") {
+        operset_label = "ERI";
+      }
+      else if (pkey.oper() == "gr") {
+        operset_label = "R12_m1_G12[0]";
+      }
+      else if (pkey.oper() == "r") {
+        operset_label = "R12_0_G12[0]";
+      }
       else if (pkey.oper() == "r2") {
-        oper_idx = tbint_descr->intset(TwoBodyOper::r12_0_g12);
-        operset_label = "G12'[0,0]";
+        operset_label = "R12_0_G12[0,0]";
       }
       else if (pkey.oper() == "rTr") {
-        oper_idx = tbint_descr->intset(TwoBodyOper::g12t1g12);
-        operset_label = "G12'[0,0]";
+        operset_label = "G12_T1_G12[0,0]";
       }
       else
         throw ProgrammingError("SingleReference_R12Intermediates<T>::_ : invalid operator key",__FILE__,__LINE__);
@@ -167,32 +167,30 @@ namespace sc {
     ParsedTwoBodyFourCenterIntKey pkey(key);
 
     /// map operator to the index within the operator set
-    Ref<TwoBodyIntDescr> tbint_descr = r12world_->r12tech()->corrfactor()->tbintdescr(r12world_->integral(),0);
-    std::string operset_label = "G12'[0]";
+    std::string operset_label;
     bool rdm2 = false;
     bool t2 = false;
-    unsigned int oper_idx;
-    if (pkey.oper() == "g")
-      oper_idx = tbint_descr->intset(TwoBodyOper::eri);
-    else if (pkey.oper() == "gr")
-      oper_idx = tbint_descr->intset(TwoBodyOper::r12_m1_g12);
-    else if (pkey.oper() == "r")
-      oper_idx = tbint_descr->intset(TwoBodyOper::r12_0_g12);
+    const unsigned int oper_idx = 0;
+    if (pkey.oper() == "g") {
+      operset_label = "ERI";
+    }
+    else if (pkey.oper() == "gr") {
+      operset_label = "R12_m1_G12[0]";
+    }
+    else if (pkey.oper() == "r") {
+      operset_label = "R12_0_G12[0]";
+    }
     else if (pkey.oper() == "r2") {
-      oper_idx = tbint_descr->intset(TwoBodyOper::r12_0_g12);
-      operset_label = "G12'[0,0]";
+      operset_label = "R12_0_G12[0,0]";
     }
     else if (pkey.oper() == "rTr") {
-      oper_idx = tbint_descr->intset(TwoBodyOper::g12t1g12);
-      operset_label = "G12'[0,0]";
+      operset_label = "G12_T1_G12[0,0]";
     }
     else if (pkey.oper() == "gamma") {
       rdm2 = true;
-      oper_idx = 0;
     }
     else if (pkey.oper() == "T2") {
       t2 = true;
-      oper_idx = 0;
     }
     else
       throw ProgrammingError("SingleReference_R12Intermediates<T>::ijxy : invalid operator key",__FILE__,__LINE__);
@@ -265,11 +263,11 @@ namespace sc {
       if (t2_[AlphaBeta].null())
         throw ProgrammingError("SingleReference_R12Intermediates<T>::ijxy: asked for T2, but it had not been given");
 
-      auto oreg = r12world_->world()->tfactory()->orbital_registry();
-      assert(oreg->value(bra1) == r12world_->refwfn()->occ_act(Alpha));
-      assert(oreg->value(bra2) == r12world_->refwfn()->occ_act(Beta));
-      assert(oreg->value(ket1) == r12world_->refwfn()->uocc_act(Alpha));
-      assert(oreg->value(ket2) == r12world_->refwfn()->uocc_act(Beta));
+//      auto oreg = r12world_->world()->tfactory()->orbital_registry();
+//      assert(oreg->value(bra1) == r12world_->refwfn()->occ_act(Alpha));
+//      assert(oreg->value(bra2) == r12world_->refwfn()->occ_act(Beta));
+//      assert(oreg->value(ket1) == r12world_->refwfn()->uocc_act(Alpha));
+//      assert(oreg->value(ket2) == r12world_->refwfn()->uocc_act(Beta));
       darray4 = t2_[AlphaBeta];
     }
     else { // not rdm2 nor t2
@@ -340,22 +338,22 @@ namespace sc {
     ParsedTwoBodyFourCenterIntKey pkey(key);
 
     /// map operator to the index within the operator set
-    Ref<TwoBodyIntDescr> tbint_descr = r12world_->r12tech()->corrfactor()->tbintdescr(r12world_->integral(),0);
-    std::string operset_label = "G12'[0]";
-    unsigned int oper_idx;
-    if (pkey.oper() == "g")
-      oper_idx = tbint_descr->intset(TwoBodyOper::eri);
-    else if (pkey.oper() == "gr")
-      oper_idx = tbint_descr->intset(TwoBodyOper::r12_m1_g12);
-    else if (pkey.oper() == "r")
-      oper_idx = tbint_descr->intset(TwoBodyOper::r12_0_g12);
+    std::string operset_label;
+    const unsigned int oper_idx = 0;
+    if (pkey.oper() == "g") {
+      operset_label = "ERI";
+    }
+    else if (pkey.oper() == "gr") {
+      operset_label = "R12_m1_G12[0]";
+    }
+    else if (pkey.oper() == "r") {
+      operset_label = "R12_0_G12[0]";
+    }
     else if (pkey.oper() == "r2") {
-      oper_idx = tbint_descr->intset(TwoBodyOper::r12_0_g12);
-      operset_label = "G12'[0,0]";
+      operset_label = "R12_0_G12[0,0]";
     }
     else if (pkey.oper() == "rTr") {
-      oper_idx = tbint_descr->intset(TwoBodyOper::g12t1g12);
-      operset_label = "G12'[0,0]";
+      operset_label = "G12_T1_G12[0,0]";
     }
     else
       throw ProgrammingError("SingleReference_R12Intermediates<T>::ij_xy : invalid operator key",__FILE__,__LINE__);
@@ -929,12 +927,20 @@ namespace sc {
 
     auto oreg = r12world_->world()->tfactory()->orbital_registry();
     size_t rank = oreg->value(space_label)->rank();
-    std::vector<size_t> hashmarks(2,0); hashmarks[1] = rank;
-    if (space_label == "i" || space_label == "m") { // unit-tile occupied spaces
-      hashmarks.resize(rank+1);
+    std::vector<size_t> hashmarks(2,0); hashmarks[1] = rank;  // all spaces have 1 tile, except
+    if (space_label == "i" || space_label == "m") {           // occupied spaces, whose size is determined heuristically for now
+                                                              // TODO create a central registry of space tilings?
+      const int nproc = r12world_->world()->msg()->n();
+      const size_t desired_tilesize = std::max(4 ,
+                                               std::min( (int)floor((double)rank / sqrt((double)nproc)), 10)
+      );
+      const size_t ntiles = (rank+desired_tilesize-1)/desired_tilesize;
+      const size_t tilesize = (rank + ntiles - 1)/ ntiles;
+      hashmarks.resize(ntiles+1);
       hashmarks[0] = 0;
-      for(size_t i=1; i<=rank; ++i)
-        hashmarks[i] = hashmarks[i-1] + 1;
+      for(size_t i=1; i<ntiles; ++i)
+        hashmarks[i] = hashmarks[i-1] + tilesize;
+      hashmarks.back() = rank;
     }
 
     return hashmarks;

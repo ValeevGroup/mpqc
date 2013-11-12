@@ -60,3 +60,14 @@ LocalDensityFittingRuntime::save_data_state(StateOut& so)
   );
 
 }
+
+void
+LocalDensityFittingRuntime::obsolete()
+{
+  throw FeatureNotImplemented("LocalDensityFittingRuntime::obsolete()",
+      __FILE__,
+      __LINE__,
+      class_desc()
+  );
+
+}

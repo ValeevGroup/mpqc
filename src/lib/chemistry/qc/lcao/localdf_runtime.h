@@ -41,6 +41,8 @@ namespace sc {
 
       void save_data_state(StateOut& so);
 
+      void obsolete();
+
     protected:
 
       typedef Eigen::HouseholderQR<Eigen::MatrixXd> Decomposition;

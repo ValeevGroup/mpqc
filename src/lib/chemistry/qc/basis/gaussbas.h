@@ -708,11 +708,11 @@ class WriteBasisGrid : public WriteVectorGrid {
 
 };
 
-} // end namespace sc
 /// @}
 // end of addtogroup ChemistryBasisGaussian
 
-}
+} // end namespace sc
+
 
 #endif
 

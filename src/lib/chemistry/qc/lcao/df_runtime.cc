@@ -755,6 +755,19 @@ DensityFittingParams::print(std::ostream& o) const {
   o << decindent;
 }
 
+std::string
+DensityFittingParams::intparams_key() const
+{
+  if (kernel_key().empty()) {
+    return std::string();
+  }
+  else {
+    ParsedTwoBodyOperKey kernel_pkey(kernel_key());
+    return kernel_pkey.params();
+  }
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 ClassDesc

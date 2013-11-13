@@ -1706,12 +1706,11 @@ double PT2R12::cabs_singles_Dyall()
    * L. Kong and E.~F.~Valeev,  J. Chem. Phys. 133, 174126 (2010),
    * http://dx.doi.org/10.1063/1.3499600.
    * */
-# define DEBUGG true
+# define DEBUGG false
 
-//#if defined(HAVE_MPQC3_RUNTIME)
-#if 0
+#if defined(HAVE_MPQC3_RUNTIME)
   ExEnv::out0() << std::endl << std::endl << indent
-  << "New PT2R12::cabs_singles_Dyall\n";
+  << "MPQC3_RUNTIME:  PT2R12::cabs_singles_Dyall\n";
   std::cout<< "  DEBUGG = " << DEBUGG << std::endl;
   typedef SingleReference_R12Intermediates<double>::TArray4 TArray4;
   typedef SingleReference_R12Intermediates<double>::TArray2 TArray2;
@@ -1725,6 +1724,8 @@ double PT2R12::cabs_singles_Dyall()
   TArray4 gamma4 = srr12intrmds._4("<m n|gamma|m1 n1>");
 
   TArray4 g = srr12intrmds._4("<n1 m1|g|m n>");
+
+  TArray2 h = srr12intrmds._2("<m|h|n>");
 
   TArray2 Fmn = srr12intrmds._2("<m|F|n>");
   TArray2 FmA = srr12intrmds._2("<m|F|A'>");
@@ -1741,20 +1742,18 @@ double PT2R12::cabs_singles_Dyall()
     std::cout << "term1 of B: \n" << term1 << std::endl;
   #endif
   // term2
-  TArray4 lamda = gamma4("i,j,x,k") - gamma2("i,x")*gamma2("j,k") + gamma2("j,x")*gamma2("i,k");
-  TArray4 term2 = - (1/2) * IAB("B',A'") * g("y,k,i,j") * lamda("i,j,x,k");
+  TArray4 term2 = - IAB("B',A'") * g("y,k,i,j") * gamma4("i,j,x,k");
   TArray4 term12 = term1("B',A',y,x") + term2("B',A',y,x");
   #if DEBUGG
     std::cout << "term12 of B: \n" << term12 << std::endl;
   #endif
   // term3
-  TArray4 term3 = - IAB("B',A'") * Fmn("y,i") * gamma2("i,x");
-  // sum 3 terms to get B
+  TArray4 term3 = - IAB("B',A'") * h("y,i") * gamma2("i,x");
+  // sum 3 terms
   TArray4 B = term12("B',A',y,x") + term3("B',A',y,x");
-
-  #if DEBUGG
-    std::cout << "B matrix: \n" << B << std::endl;
-  #endif
+#if DEBUGG
+  std::cout << "term123 of B: \n" << B << std::endl;
+#endif
 
   //
   //  solve the linear algebra problem a(x)=b in Equation (15)
@@ -1762,6 +1761,8 @@ double PT2R12::cabs_singles_Dyall()
 
   //compute b matrix in a(x) = b
   TArray2 b = gamma2("j,x") * Fcn("c',j") * IBc("B',c'");
+  // x we trying to solve, C
+  TArray2 x = b("x,B'");
   if (cabs_singles_h0_ == string("dyall_1")) {
     // compute b based on Equation(15)
     b = -b("x,B'");
@@ -1775,9 +1776,6 @@ double PT2R12::cabs_singles_Dyall()
   #if DEBUGG
     std::cout << "b matrix: \n" << b << std::endl;
   #endif
-
-  // x we trying to solve, C
-  TArray2 x = -b("x,B'");
 
   // make preconditioner: inverse of diagonal elements <A'|F|A'> - <m|F|m>
    typedef detail::diag_precond2<double> pceval_type; //!< evaluator of preconditioner
@@ -1800,10 +1798,6 @@ double PT2R12::cabs_singles_Dyall()
    }
    TArray2 preconditioner = Delta_iA("i,A'");
 
-   #if DEBUGG
-     std::cout << "preconditioner: \n" << preconditioner << std::endl;
-   #endif
-
    // initialize the function a(x)
    _CABS_singles_Fock<double> cabs_singles_fock(B);
    // linear solver object
@@ -1817,7 +1811,7 @@ double PT2R12::cabs_singles_Dyall()
    #endif
 
    //calculate the second order energy based on Equation (16)
-   double E = dot(x("j,A'") * FmA("i,A'"), gamma2("j,i"));
+   double E = -1.0*dot(x("j,A'"), b("j,A'"));
    return E;
 #else
   ExEnv::out0() << std::endl << std::endl << indent
@@ -1966,14 +1960,15 @@ double PT2R12::cabs_singles_Dyall()
     matrix_to_vector(vec_ii, hd);
     B_bar->accumulate_outer_product(vec_AA, vec_ii);
   }
-
+#if DEBUGG
+  B_bar.print(string("term123 B matrix").c_str());
+#endif
   //compute b_bar
   if (cabs_singles_h0_ == string("dyall_1")) {
     // - \Gamma^j_k F^k_beta
     b_bar->accumulate(gamma1 * fock_iA);
 #if DEBUGG
     gamma1.print(string("gamma1").c_str());
-    gamma2.print(string("gamma2").c_str());
     hcore_iA.print(string("hcore iA").c_str());
     b_bar.print(string("b_bar term1").c_str());
 #endif
@@ -2006,11 +2001,10 @@ double PT2R12::cabs_singles_Dyall()
     }
   }
 
-#if DEBUGG
-  b_bar.print(string("b_bar after zero").c_str());
-#endif
   matrix_to_vector(b, b_bar);
-
+#if DEBUGG
+  b.print(string("b matrix").c_str());
+#endif
   RefSCMatrix B1 = RefSCMAT4_permu<Permute14>(B_bar, Aspace, Aspace, pspace,
                                               pspace);
   RefSCMatrix B2 = B1.copy().t();
@@ -2025,6 +2019,9 @@ double PT2R12::cabs_singles_Dyall()
   Bsymm.assign_subblock(B, 0, ni * nA - 1, 0, ni * nA - 1);
   //lapack_linsolv_symmnondef(Bsymm, X, b);
   linsolv_symmnondef_cg(Bsymm, X, b);
+#if DEBUGG
+  X.print(string("C matrix").c_str());
+#endif
   double E = -1.0 * (X.dot(b));
   return E;
 #endif
@@ -2037,9 +2034,9 @@ double PT2R12::cabs_singles_Fock() {
    * */
 #if defined(HAVE_MPQC3_RUNTIME)
 
-#define DEBUGG true
+#define DEBUGG false
   ExEnv::out0() << std::endl << indent
-      << "Entered PT2R12::cabs_single_Fock\n";
+      << "MPQC3_RUNTIME: PT2R12::cabs_single_Fock\n";
   typedef SingleReference_R12Intermediates<double>::TArray4 TArray4;
   typedef SingleReference_R12Intermediates<double>::TArray2 TArray2;
 
@@ -2121,7 +2118,7 @@ double PT2R12::cabs_singles_Fock() {
 #endif
 
   //calculate the second order energy based on Equation (16)
-  double E = dot(x("n,A'") * FmA("m,A'"), gamma2("n,m"));
+  double E = -1.0* dot(x("n,A'"),b("n,A'"));
   return E;
 #else
   throw ProgrammingError("PT2R12::cabs_singles_Fock() called but MPQC3 runtime is not available",

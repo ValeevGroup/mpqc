@@ -1709,6 +1709,7 @@ double PT2R12::cabs_singles_Dyall()
 # define DEBUGG false
 
 #if defined(HAVE_MPQC3_RUNTIME)
+
   ExEnv::out0() << std::endl << std::endl << indent
   << "MPQC3_RUNTIME:  PT2R12::cabs_singles_Dyall\n";
   std::cout<< "  DEBUGG = " << DEBUGG << std::endl;
@@ -1739,6 +1740,9 @@ double PT2R12::cabs_singles_Dyall()
   // term1
   TArray4 term1 = FAB("B',A'") * gamma2("y,x");
   #if DEBUGG
+    // set the cout precision to 10 decimal digits
+    std::cout.setf(ios::fixed);
+    std::cout.precision(10);
     std::cout << "term1 of B: \n" << term1 << std::endl;
   #endif
   // term2
@@ -1753,6 +1757,11 @@ double PT2R12::cabs_singles_Dyall()
   TArray4 B = term12("B',A',y,x") + term3("B',A',y,x");
 #if DEBUGG
   std::cout << "term123 of B: \n" << B << std::endl;
+  ofstream foutB("new_term123");
+  foutB.setf(ios::fixed);
+  foutB.precision(10);
+  foutB << setprecision(10) << B << std::endl;
+  foutB.close();
 #endif
 
   //
@@ -1775,6 +1784,10 @@ double PT2R12::cabs_singles_Dyall()
 
   #if DEBUGG
     std::cout << "b matrix: \n" << b << std::endl;
+    ofstream foutb("new_bmatrix");
+    foutb.setf(ios::fixed);
+    foutb.precision(10);
+    foutb << setprecision(10) << b << std::endl;
   #endif
 
   // make preconditioner: inverse of diagonal elements <A'|F|A'> - <m|F|m>
@@ -1803,7 +1816,7 @@ double PT2R12::cabs_singles_Dyall()
    // linear solver object
    TA::ConjugateGradientSolver<TArray2, _CABS_singles_Fock<double> > cg_solver;
    // solve the linear system, a(x) = b, cabs_singles_fock is a(x); x is x. b is b in a(x) = b
-   auto resnorm = cg_solver(cabs_singles_fock, b, x, preconditioner, 1e-5);
+   auto resnorm = cg_solver(cabs_singles_fock, b, x, preconditioner, 1e-12);
    //std::cout << "Converged CG to " << resnorm << std::endl;
 
    #if DEBUGG
@@ -1962,6 +1975,9 @@ double PT2R12::cabs_singles_Dyall()
   }
 #if DEBUGG
   B_bar.print(string("term123 B matrix").c_str());
+  ofstream foutB("term123");
+  B_bar.print(foutB);
+  foutB.close();
 #endif
   //compute b_bar
   if (cabs_singles_h0_ == string("dyall_1")) {
@@ -2004,6 +2020,9 @@ double PT2R12::cabs_singles_Dyall()
   matrix_to_vector(b, b_bar);
 #if DEBUGG
   b.print(string("b matrix").c_str());
+  ofstream foutb("bmatrix");
+  b.print(foutb);
+  foutb.close();
 #endif
   RefSCMatrix B1 = RefSCMAT4_permu<Permute14>(B_bar, Aspace, Aspace, pspace,
                                               pspace);
@@ -2110,7 +2129,7 @@ double PT2R12::cabs_singles_Fock() {
   TA::ConjugateGradientSolver<TArray2, _CABS_singles_Fock<double> > cg_solver; // linear solver object
 
   // solve the linear system, a(x) = b, cabs_singles_fock is a(x); x is x. b is b in a(x) = b
-  auto resnorm = cg_solver(cabs_singles_fock, b, x, preconditioner, 1e-5);
+  auto resnorm = cg_solver(cabs_singles_fock, b, x, preconditioner, 1e-12);
   //std::cout << "Converged CG to " << resnorm << std::endl;
 
 #if DEBUGG

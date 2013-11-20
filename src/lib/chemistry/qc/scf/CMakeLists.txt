@@ -5,6 +5,7 @@ include(AddLibrary)
 add_mpqc_object_library(scf
   clhf.cc
   clscf.cc
+  cadfclhf.cc
   effh.cc
   fbclhf.cc
   hsoshf.cc

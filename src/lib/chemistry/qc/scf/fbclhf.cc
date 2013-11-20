@@ -239,9 +239,10 @@ DFCLHF::ao_fock(double accuracy)
     oreg->add(make_keyspace_pair(aospace));
   }
   // feed the spin densities to the builder, cl_dens_diff_ includes total density right now, so halve it
-  Ref<FockBuildRuntime> fb_rtime = world_->fockbuild_runtime();
   RefSymmSCMatrix Pa = cl_dens_diff_.copy(); Pa.scale(0.5);
   RefSymmSCMatrix Pb = Pa;
+
+  Ref<FockBuildRuntime> fb_rtime = world_->fockbuild_runtime();
   fb_rtime->set_densities(Pa, Pb);
 
   step_tim.change("build");

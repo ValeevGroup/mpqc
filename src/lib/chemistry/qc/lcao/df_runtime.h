@@ -230,7 +230,6 @@ namespace sc {
     return A.basis()->equiv(B.basis()) && A.kernel_key() == B.kernel_key() && A.solver() == B.solver();
   }
 
-
   /// this class encapsulates objects needed to perform density fitting of a 4-center integral
   struct DensityFittingInfo : virtual public SavableState {
     public:

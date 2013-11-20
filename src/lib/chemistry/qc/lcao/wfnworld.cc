@@ -843,7 +843,6 @@ WavefunctionWorld::xml_data_nonlocal(
   /*=======================================================================================*/
 }
 
-
 std::pair<TwoBodyOperSet::type, Ref<IntParams> >
 WavefunctionWorld::init_df_kernel(std::string kernel_key) {
 

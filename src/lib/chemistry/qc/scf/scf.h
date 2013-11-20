@@ -68,7 +68,6 @@ class SCF: public OneBodyWavefunction {
     int miniter_;
     int dens_reset_freq_;
     int reset_occ_;
-    int local_dens_;
     size_t storage_;
     int print_all_evals_;
     int print_occ_evals_;
@@ -77,7 +76,12 @@ class SCF: public OneBodyWavefunction {
 
     Ref<MessageGrp> scf_grp_;
     Ref<ThreadGrp> threadgrp_;
+
+    // Whether or not the matrix kit creates local matrices (int functioning as a bool)
     int local_;
+
+    // Whether or not the density can be stored locally (int functioning as a bool)
+    int local_dens_;
 
     Ref<TwoBodyInt>* tbis_; // a two body integral evaluator for each thread
     virtual void init_threads();

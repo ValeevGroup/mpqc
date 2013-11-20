@@ -90,52 +90,6 @@ using std::lock;
 using std::defer_lock;
 #endif
 
-using std::make_pair;
-
-// A copy-constructable Lockable type
-//template<typename lock_type, typename mutex_type>
-//struct lock_wrapper {
-//  public:
-//    lock_wrapper() : lock_(mutex_type(), defer_lock) { }
-//    lock_wrapper(lock_wrapper& lock_w) : lock_(std::move(lock_w.lock_)) { }
-//    lock_wrapper(mutex_type&& mtx) : lock_(std::forward<mutex_type>(mtx)) { }
-//    lock_wrapper& operator=(lock_wrapper& other) { lock_.swap(other.lock_); return this; }
-//    auto lock() -> decltype(this->lock_.lock()) { return lock_.lock(); }
-//    auto unlock() -> decltype(this->lock_.unlock()) { return lock_.unlock(); }
-//    auto try_lock() -> decltype(this->lock_.try_lock()) { return lock_.try_lock(); }
-//    void set_mutex(mutex_type&& mtx) { lock_.swap(mtx); }
-//  private:
-//    lock_type lock_;
-//};
-/*
- *
-    using boost::fusion::begin; \
-    using boost::fusion::end; \
-    using boost::fusion::next; \
-    auto key_it = begin(key_tup);\
-    auto mut_it = begin(mutexes_); \
-    const int length = boost::tuples::length<key_tuple>::value; \
-    for(int __ikey = 0; __ikey < length; ++__ikey) {\
-      auto& keyi = *key_it; \
-      auto& mtx_map = *mut_it; \
-      auto found_spot = mtx_map.find(keyi); \
-      if(found_spot == mtx_map.end()){ \
-        mtx_map.emplace( \
-            std::piecewise_construct, \
-            std::forward_as_tuple(keyi), \
-            std::forward_as_tuple() \
-        );\
-      }\
-      __locks.emplace_back(\
-          mtx_map[keyi],\
-          defer_lock\
-      );\
-      if(__ikey != length-1) { \
-        key_it = next(key_it); \
-        mut_it = next(mut_it); \
-      } \
-    } \
- */
 
 #define LOCK_IMPL(ltype, key_tup) \
   std::vector<ltype> __locks; \
@@ -147,136 +101,9 @@ using std::make_pair;
 #define READ_LOCK(key_tup) LOCK_IMPL(read_lock, key_tup)
 #define WRITE_LOCK(key_tup) LOCK_IMPL(write_lock, key_tup)
 
-
 namespace sc {
 
-// TODO arbitrary number/types of keys using the variable length template arguments in C++11
-// TODO a number of other generalizations need to be made
-/**
- * A cache of objects that can be safely accessed concurrently by threads that share memory.
- * For now, a simple two-key version is implemented
- */
-//template <typename T, typename key_type_1, typename key_type_2>
-//class ConcurrentCache2 {
-
-//  public:
-//    typedef T value_type;
-//    typedef shared_mutex mutex_type;
-//    typedef std::map<key_type_1, mutex_type> mutex_map_1;
-//    typedef std::map<key_type_2, mutex_type> mutex_map_2;
-//    template<typename... Types> using tuple_type = std::pair<Types...>;
-//    typedef tuple_type<key_type_1, key_type_2> key_tuple;
-//    typedef shared_lock<mutex_type> read_lock;
-//    typedef unique_lock<mutex_type> write_lock;
-
-//    // constness may change if LRU capabilities are implemented
-//    bool contains(const key_type_1& k1, const key_type_2& k2) const {
-//      READ_LOCK(k1, k2);
-//      key_tuple k(k1, k2);
-//      auto found_spot = cached_values_.find(k);
-//      return found_spot != cached_values_.end();
-//    }
-
-//    // constness may change if LRU capabilities are implemented
-//    boost::optional<value_type> get(const key_type_1& k1, const key_type_2& k2) const {
-//      READ_LOCK(k1, k2);
-//      key_tuple k(k1, k2);
-//      auto found_spot = cached_values_.find(k);
-//      if(found_spot == cached_values_.end()){
-//        return boost::optional<value_type>();
-//      }
-//      else{
-//        return boost::optional<value_type>(found_spot->second);
-//      }
-//    }
-
-//    value_type get(
-//        const key_type_1& k1, const key_type_2& k2,
-//        const function<value_type()>& compute_fxn
-//    )
-//    {
-//      key_tuple k(k1, k2);
-//      {
-//        READ_LOCK(k1, k2);
-//        auto found_spot = cached_values_.find(k);
-//        if(found_spot != cached_values_.end()){
-//          return found_spot->second;
-//        }
-//      } // Release the read lock
-//      //----------------------------------------//
-//      // If we haven't returned at this point, we need to
-//      //   compute the value
-//      {
-//        // All threads that get here will have
-//        //   to wait for the one thread doing
-//        //   the computing.  Threads that call
-//        //   get() after the call_once() call
-//        //   has completed will exit after the
-//        //   read lock section.
-//        WRITE_LOCK(k1, k2);
-//        // Check again, in case another thread already
-//        //   did the compute
-//        auto found_spot = cached_values_.find(k);
-//        if(found_spot != cached_values_.end()){
-//          return found_spot->second;
-//        }
-//        else {
-//          // Looks like we're the lucky ones who get
-//          //   to do the compute.
-//          cached_values_[k] = compute_fxn();
-//        }
-//      }
-//      //----------------------------------------//
-//      return cached_values_[k];
-//    }
-
-//    void set(
-//        const key_type_1& k1, const key_type_2& k2,
-//        const value_type& val
-//    )
-//    {
-//      key_tuple k(k1, k2);
-//      WRITE_LOCK(k1, k2);
-//      cached_values_[k] = val;
-//    }
-
-
-
-//  private:
-
-//    inline mutex_type& get_mutex_1(const key_type_1& k1){
-//      auto found_spot = mutexes_.first.find(k1);
-//      if(found_spot == mutexes_.first.end()){
-//        // This is a mess, and probably could be
-//        //   written less confusingly, but it works
-//        mutexes_.first.emplace(
-//            std::piecewise_construct,
-//            std::forward_as_tuple(k1),
-//            std::forward_as_tuple()
-//        );
-//      }
-//      return mutexes_.first[k1];
-//    }
-
-//    inline mutex_type& get_mutex_2(const key_type_2& k2){
-//      auto found_spot = mutexes_.second.find(k2);
-//      if(found_spot == mutexes_.second.end()){
-//        // This is a mess, and probably could be
-//        //   written less confusingly, but it works
-//        mutexes_.second.emplace(
-//            std::piecewise_construct,
-//            std::forward_as_tuple(k2),
-//            std::forward_as_tuple()
-//        );
-//      }
-//      return mutexes_.second[k2];
-//    }
-
-//    tuple_type<mutex_map_1, mutex_map_2> mutexes_;
-//    std::map<key_tuple, value_type> cached_values_;
-
-
-//};
+////////////////////////////////////////////////////////////////////////////////
 
 namespace mpl_ext{
 // mpl_ext::apply "splats" an mpl::vector (or any mpl back extensible sequence) into C++11 variadic
@@ -292,6 +119,8 @@ template<template<typename...> class T,typename C, typename... Types> struct app
 
 template<template<typename...> class T,typename C> struct apply : apply_helper<T, boost::mpl::empty<C>::value, C> {};
 } // end namespace mpl_ext
+
+////////////////////////////////////////////////////////////////////////////////
 
 namespace boost_ext{
 
@@ -324,6 +153,11 @@ for_each(FuncT f, tuple_types&... tups)
 
 } // end namespace boost_ext
 
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * A cache of objects that can be safely accessed concurrently by threads that share memory.
+ */
 template <typename val_type_param, typename... key_types>
 class ConcurrentCache {
 

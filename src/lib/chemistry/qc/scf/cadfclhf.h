@@ -30,11 +30,15 @@
 #ifndef _chemistry_qc_scf_cadfclhf_h
 #define _chemistry_qc_scf_cadfclhf_h
 
+#include <boost/thread/thread.hpp>
+#include <boost/range/irange.hpp>
 #include <chemistry/qc/scf/clhf.h>
 #include <util/container/conc_cache.h>
 #include <atomic>
 #include <future>
 #include <Eigen/Dense>
+
+typedef typename boost::integer_range<int> int_range;
 
 
 namespace sc {
@@ -43,6 +47,7 @@ namespace sc {
 class CADFCLHF;
 
 namespace detail {
+   // TODO get rid of this.  Lambdas will be used instead
 
   struct compute_task {
     public:
@@ -60,9 +65,6 @@ namespace detail {
     void operator()();
   };
 
-  struct compute_coefs_task : compute_task {
-    void operator()();
-  };
 }
 
 /**
@@ -78,14 +80,24 @@ class CADFCLHF: public CLHF {
   public:
 
     // This will later be changed to simple double* to allow for direct BLAS calls
-    typedef Eigen::Map<Eigen::VectorXd> CoefContainer;
+    typedef std::shared_ptr<Eigen::Map<Eigen::VectorXd>> CoefContainer;
 
     typedef std::map<std::pair<int, int>, std::pair<CoefContainer, CoefContainer>> CoefMap;
-    typedef std::shared_ptr<Eigen::MatrixXd> IntContainer2;
-    typedef std::vector<std::vector<Eigen::VectorXd>> IntContainer3;
     typedef Eigen::HouseholderQR<Eigen::MatrixXd> Decomposition;
-    typedef ConcurrentCache<std::shared_ptr<Decomposition>, int, int> DecompositionCache;
-    typedef ConcurrentCache<std::shared_ptr<Eigen::MatrixXd>, int, int> TwoCenterIntCache;
+    // Shared mutexes take up too much memory to have one per shell
+    //   In really large cases, we may have to switch to row-locked caches,
+    //   which only create k*N mutexes but are much less efficient.
+    typedef ElementLockedExclusiveReadCache<
+        std::shared_ptr<Eigen::MatrixXd>,
+        int, int, TwoBodyOper::type
+    > TwoCenterIntCache;
+    typedef ElementLockedSharedReadCache<
+        std::shared_ptr<Eigen::MatrixXd>,
+        int, int, int, TwoBodyOper::type
+    > ThreeCenterIntCache;
+    // In the case of the Natom x Natom decomposition cache, it's probably
+    //   safe to use shared mutexes.
+    typedef ElementLockedExclusiveReadCache<std::shared_ptr<Decomposition>, int, int> DecompositionCache;
 
     CADFCLHF(StateIn&);
 
@@ -119,8 +131,15 @@ class CADFCLHF: public CLHF {
       }
     }
 
+    RefSCMatrix D_;
+
     // For now, just do static load balancing
     bool dynamic_ = false;
+
+    TwoBodyOper::type metric_oper_type_;
+
+    // Convenience variable for better code readibility
+    static const TwoBodyOper::type coulomb_oper_type_ = TwoBodyOper::eri;
 
     bool get_shell_pair(int& mu, int& nu);
 
@@ -135,10 +154,26 @@ class CADFCLHF: public CLHF {
     void init_threads();
 
     /// returns shell ints in inbf x jnbf Eigen Matrix pointer
-    std::shared_ptr<Eigen::MatrixXd> ints_to_eigen(int ish, int jsh, Ref<TwoBodyTwoCenterInt> ints);
+    std::shared_ptr<Eigen::MatrixXd> ints_to_eigen(
+        int ish, int jsh,
+        Ref<TwoBodyTwoCenterInt> ints,
+        TwoBodyOper::type ints_type
+    );
 
-    /// returns ints for shell in (inbf, jnbf) x kdfnbf matrix
-    std::shared_ptr<Eigen::MatrixXd> ints_to_eigen(int ish, int jsh, int ksh, Ref<TwoBodyThreeCenterInt> ints);
+    /// Range version of the above
+    std::shared_ptr<Eigen::MatrixXd> ints_to_eigen(
+        int_range&& ishs,
+        int_range&& jshs,
+        Ref<TwoBodyTwoCenterInt> ints,
+        TwoBodyOper::type ints_type
+    );
+
+    /// returns ints for shell in (inbf, jnbf) x kdfnbf matrix in chemists' notation
+    std::shared_ptr<Eigen::MatrixXd> ints_to_eigen(
+        int ish, int jsh, int ksh,
+        Ref<TwoBodyThreeCenterInt> ints,
+        TwoBodyOper::type ints_type
+    );
 
     std::shared_ptr<Decomposition> get_decomposition(int ish, int jsh, Ref<TwoBodyTwoCenterInt> ints);
 
@@ -181,12 +216,12 @@ class CADFCLHF: public CLHF {
 
     DecompositionCache decomps_;
     TwoCenterIntCache ints2_;
+    ThreeCenterIntCache ints3_;
 
     static ClassDesc cd_;
 
     friend struct detail::compute_J_task;
     friend struct detail::compute_K_task;
-    friend struct detail::compute_coefs_task;
 
 };
 

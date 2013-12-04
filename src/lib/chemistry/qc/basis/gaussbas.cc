@@ -1446,6 +1446,418 @@ WriteBasisGrid::~WriteBasisGrid()
 
 }
 
+/////////////////////////////////////////////////////////////////////////////
+// Iterator stuff
+
+//============================================================================//
+// ShellIter
+
+ShellIter::ShellIter(
+    const Ref<GaussianBasisSet>& basis,
+    int position
+) : pos_(position),
+    basis_(basis),
+    dfbasis_(0)
+{
+
+}
+
+ShellIter::ShellIter(
+    const Ref<GaussianBasisSet>& basis,
+    const Ref<GaussianBasisSet>& dfbasis,
+    int position
+) : pos_(position),
+    basis_(basis),
+    dfbasis_(dfbasis)
+{
+
+}
+
+bool
+ShellIter::operator!=(const ShellIter& other) const
+{
+  return pos_ != other.pos_;
+  // This doesn't seem to work. Maybe there's a mistake?  It's not that important
+  //    or not basis_->equiv(other.basis_)
+  //    or (dfbasis_.nonnull() and not other.basis_.nonnull())
+  //    or (dfbasis_.null() and not other.basis_.null())
+  //    or (dfbasis_.nonnull() and not dfbasis_->equiv(other.dfbasis_));
+}
+
+const ShellIter&
+ShellIter::operator++()
+{
+  ++pos_;
+  return *this;
+}
+
+const ShellData
+ShellIter::operator*() const
+{
+  if(dfbasis_.nonnull()) {
+    ShellData rv(pos_, basis_, dfbasis_);
+    return rv;
+  }
+  else {
+    ShellData rv(pos_, basis_);
+    return rv;
+  }
+
+}
+
+//============================================================================//
+// BasisFunctionIter
+
+BasisFunctionIter::BasisFunctionIter(
+    const Ref<GaussianBasisSet>& basis,
+    int position
+) : pos_(position),
+    basis_(basis),
+    dfbasis_(0)
+{
+
+}
+
+BasisFunctionIter::BasisFunctionIter(
+    const Ref<GaussianBasisSet>& basis,
+    const Ref<GaussianBasisSet>& dfbasis,
+    int position
+) : pos_(position),
+    basis_(basis),
+    dfbasis_(dfbasis)
+{
+
+}
+
+bool
+BasisFunctionIter::operator!=(const BasisFunctionIter& other) const
+{
+  return pos_ != other.pos_;
+  // This doesn't seem to work. Maybe there's a mistake?  It's not that important
+  //    or not basis_->equiv(other.basis_)
+  //    or (dfbasis_.nonnull() and not other.basis_.nonnull())
+  //    or (dfbasis_.null() and not other.basis_.null())
+  //    or (dfbasis_.nonnull() and not dfbasis_->equiv(other.dfbasis_));
+}
+
+const BasisFunctionIter&
+BasisFunctionIter::operator++()
+{
+  ++pos_;
+  return *this;
+}
+
+const BasisFunctionData
+BasisFunctionIter::operator*() const
+{
+  if(dfbasis_.nonnull()) {
+    BasisFunctionData rv(pos_, basis_, dfbasis_);
+    return rv;
+  }
+  else {
+    BasisFunctionData rv(pos_, basis_);
+    return rv;
+  }
+}
+
+//============================================================================//
+// ShellData
+
+ShellData::ShellData(
+    int idx,
+    const Ref<GaussianBasisSet>& basis,
+    const Ref<GaussianBasisSet>& dfbasis
+) : shell(&(basis->shell(idx))),
+    index(idx)
+{
+  center = basis->shell_to_center(index);
+  bfoff = basis->shell_to_function(index);
+  nbf = shell->nfunction();
+  last_function = bfoff + nbf - 1;
+  atom_shoff = basis->shell_on_center(center, 0);
+  atom_bfoff = basis->shell_to_function(atom_shoff);
+  atom_nsh = basis->nshell_on_center(center);
+  atom_nbf = basis->nbasis_on_center(center);
+  shoff_in_atom = index - atom_shoff;
+  bfoff_in_atom = bfoff - atom_bfoff;
+  atom_last_function = atom_bfoff + atom_nbf - 1;
+  atom_last_shell = atom_shoff + atom_nsh - 1;
+  if(dfbasis.nonnull()){
+    atom_dfshoff = dfbasis->shell_on_center(center, 0);
+    atom_dfbfoff = dfbasis->shell_to_function(atom_dfshoff);
+    atom_dfnsh = dfbasis->nshell_on_center(center);
+    atom_dfnbf = dfbasis->nbasis_on_center(center);
+    atom_df_last_function = atom_dfbfoff + atom_dfnbf - 1;
+    atom_df_last_shell = atom_dfshoff + atom_dfnsh - 1;
+  }
+}
+
+//============================================================================//
+// BasisFunctionData
+
+BasisFunctionData::BasisFunctionData(
+    int idx,
+    const Ref<GaussianBasisSet>& basis,
+    const Ref<GaussianBasisSet>& dfbasis
+) : shell(&(basis->shell(basis->function_to_shell(idx)))),
+    index(idx)
+{
+  shell_index = basis->function_to_shell(index);
+  center = basis->shell_to_center(shell_index);
+  shell_bfoff = basis->shell_to_function(shell_index);
+  shell_nbf = shell->nfunction();
+  atom_shoff = basis->shell_on_center(center, 0);
+  atom_bfoff = basis->shell_to_function(atom_shoff);
+  atom_nsh = basis->nshell_on_center(center);
+  atom_nbf = basis->nbasis_on_center(center);
+  bfoff_in_atom = index - atom_bfoff;
+  bfoff_in_shell = index - shell_bfoff;
+  shoff_in_atom = shell_index - atom_shoff;
+  atom_last_function = atom_bfoff + atom_nbf - 1;
+  atom_last_shell = atom_shoff + atom_nsh - 1;
+
+  if(dfbasis.nonnull()){
+    atom_dfshoff = dfbasis->shell_on_center(center, 0);
+    atom_dfbfoff = dfbasis->shell_to_function(atom_dfshoff);
+    atom_dfnsh = dfbasis->nshell_on_center(center);
+    atom_dfnbf = dfbasis->nbasis_on_center(center);
+    atom_df_last_function = atom_dfbfoff + atom_dfnbf - 1;
+    atom_df_last_shell = atom_dfshoff + atom_dfnsh - 1;
+  }
+}
+
+//============================================================================//
+// GaussianBasisSet::shell_iterator_wrapper
+
+GaussianBasisSet::shell_iter_wrapper::shell_iter_wrapper(
+    const Ref<GaussianBasisSet>& basis,
+    const Ref<GaussianBasisSet>& dfbasis,
+    int first_shell,
+    int last_shell
+) : basis_(basis),
+    dfbasis_(dfbasis),
+    first_shell_(first_shell),
+    last_shell_(last_shell)
+{
+
+}
+
+ShellIter
+GaussianBasisSet::shell_iter_wrapper::begin() const
+{
+  if(dfbasis_.nonnull()){
+    ShellIter rv(basis_, dfbasis_, first_shell_);
+    return rv;
+  }
+  else{
+    ShellIter rv(basis_, first_shell_);
+    return rv;
+  }
+}
+
+ShellIter
+GaussianBasisSet::shell_iter_wrapper::end() const
+{
+  if(dfbasis_.nonnull()){
+    ShellIter rv(basis_, dfbasis_, last_shell_ == -1 ? basis_->nbasis() : last_shell_ + 1);
+    return rv;
+  }
+  else{
+    ShellIter rv(basis_, last_shell_ == -1 ? basis_->nbasis() : last_shell_ + 1);
+    return rv;
+  }
+}
+
+//============================================================================//
+// GaussianBasisSet::function_iterator_wrapper
+
+GaussianBasisSet::function_iter_wrapper::function_iter_wrapper(
+    const Ref<GaussianBasisSet>& basis,
+    const Ref<GaussianBasisSet>& dfbasis,
+    int first_function,
+    int last_function
+) : basis_(basis),
+    dfbasis_(dfbasis),
+    first_function_(first_function),
+    last_function_(last_function)
+{
+
+}
+
+BasisFunctionIter
+GaussianBasisSet::function_iter_wrapper::begin() const
+{
+  if(dfbasis_.nonnull()){
+    BasisFunctionIter rv(basis_, dfbasis_, first_function_);
+    return rv;
+  }
+  else{
+    BasisFunctionIter rv(basis_, first_function_);
+    return rv;
+  }
+}
+
+BasisFunctionIter
+GaussianBasisSet::function_iter_wrapper::end() const
+{
+  if(dfbasis_.nonnull()){
+    BasisFunctionIter rv(basis_, dfbasis_, last_function_ == -1 ? basis_->nbasis() : last_function_ + 1);
+    return rv;
+  }
+  else{
+    BasisFunctionIter rv(basis_, last_function_ == -1 ? basis_->nbasis() : last_function_ + 1);
+    return rv;
+  }
+}
+
+//============================================================================//
+// GaussianBasisSet::shell_iterator
+
+const GaussianBasisSet::shell_iter_wrapper
+GaussianBasisSet::shell_iterator(
+    const Ref<GaussianBasisSet>& dfbasis
+)
+{
+  return GaussianBasisSet::shell_iter_wrapper(this, dfbasis, 0, -1);
+}
+
+const GaussianBasisSet::shell_iter_wrapper
+GaussianBasisSet::shell_iterator(
+    int last_shell
+)
+{
+  return GaussianBasisSet::shell_iter_wrapper(this, 0, 0, last_shell);
+}
+
+const GaussianBasisSet::shell_iter_wrapper
+GaussianBasisSet::shell_iterator(
+    int first_shell,
+    int last_shell
+)
+{
+  return GaussianBasisSet::shell_iter_wrapper(this, 0, first_shell, last_shell);
+}
+
+const GaussianBasisSet::shell_iter_wrapper
+GaussianBasisSet::shell_iterator(
+    const Ref<GaussianBasisSet>& dfbasis,
+    int last_shell
+)
+{
+  return GaussianBasisSet::shell_iter_wrapper(this, dfbasis, 0, last_shell);
+}
+
+const GaussianBasisSet::shell_iter_wrapper
+GaussianBasisSet::shell_iterator(
+    const Ref<GaussianBasisSet>& dfbasis,
+    int first_shell,
+    int last_shell
+)
+{
+  return GaussianBasisSet::shell_iter_wrapper(this, dfbasis, first_shell, last_shell);
+}
+
+//============================================================================//
+// GaussianBasisSet::function_iterator
+
+const GaussianBasisSet::function_iter_wrapper
+GaussianBasisSet::function_iterator(
+    const Ref<GaussianBasisSet>& dfbasis
+)
+{
+  return GaussianBasisSet::function_iter_wrapper(this, dfbasis, 0, -1);
+}
+
+const GaussianBasisSet::function_iter_wrapper
+GaussianBasisSet::function_iterator(
+    int last_function
+)
+{
+  return GaussianBasisSet::function_iter_wrapper(this, 0, 0, last_function);
+}
+
+const GaussianBasisSet::function_iter_wrapper
+GaussianBasisSet::function_iterator(
+    int first_function,
+    int last_function
+)
+{
+  return GaussianBasisSet::function_iter_wrapper(this, 0, first_function, last_function);
+}
+
+const GaussianBasisSet::function_iter_wrapper
+GaussianBasisSet::function_iterator(
+    const Ref<GaussianBasisSet>& dfbasis,
+    int last_function
+)
+{
+  return GaussianBasisSet::function_iter_wrapper(this, dfbasis, 0, last_function);
+}
+
+const GaussianBasisSet::function_iter_wrapper
+GaussianBasisSet::function_iterator(
+    const Ref<GaussianBasisSet>& dfbasis,
+    int first_function,
+    int last_function
+)
+{
+  return GaussianBasisSet::function_iter_wrapper(this, dfbasis, first_function, last_function);
+}
+
+//============================================================================//
+
+const ShellData
+GaussianBasisSet::shell_data(
+    int ish, const Ref<GaussianBasisSet>& dfbasis
+)
+{
+  return ShellData(ish, this, dfbasis);
+}
+
+const BasisFunctionData
+GaussianBasisSet::function_data(
+    int ish, const Ref<GaussianBasisSet>& dfbasis
+)
+{
+  return BasisFunctionData(ish, this, dfbasis);
+}
+
+const GaussianBasisSet::shell_iter_wrapper
+GaussianBasisSet::iter_shells_on_center(
+    int center,
+    const Ref<GaussianBasisSet>& dfbasis
+)
+{
+  ShellData sh(shell_on_center(center, 0), this, dfbasis);
+  return GaussianBasisSet::shell_iter_wrapper(
+      this, dfbasis, sh.atom_shoff, sh.atom_last_shell
+  );
+}
+
+const GaussianBasisSet::function_iter_wrapper
+GaussianBasisSet::iter_functions_on_center(
+    int center,
+    const Ref<GaussianBasisSet>& dfbasis
+)
+{
+  ShellData sh(shell_on_center(center, 0), this, dfbasis);
+  return GaussianBasisSet::function_iter_wrapper(
+      this, dfbasis, sh.atom_bfoff, sh.atom_last_function
+  );
+}
+
+const GaussianBasisSet::function_iter_wrapper
+GaussianBasisSet::iter_functions_in_shell(
+    int shell,
+    const Ref<GaussianBasisSet>& dfbasis
+)
+{
+  ShellData sh(shell, this, dfbasis);
+  return GaussianBasisSet::function_iter_wrapper(
+      this, dfbasis, sh.bfoff, sh.last_function
+  );
+}
+
 // Local Variables:
 // mode: c++
 // c-file-style: "CLJ"

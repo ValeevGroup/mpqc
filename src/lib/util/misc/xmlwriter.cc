@@ -37,13 +37,19 @@ static ClassDesc XMLWriter_cd(
   typeid(XMLWriter), "XMLWriter", 1, "public Runnable",
   0, create<XMLWriter>, 0);
 
+Ref<XMLWriter> XMLWriter::current_writer = 0;
+std::stack<Ref<XMLWriter>> XMLWriter::writer_stack = {};
+std::string XMLWriter::current_context_name = "";
+std::stack<std::string> XMLWriter::context_name_stack = {};
+
 XMLWriter::XMLWriter(const Ref<KeyVal>& keyval) :
     out_(0),
-    pt_(ptree()),
+    current_root_(new ptree()),
     delete_out_(false),
     compress_data_(false),
     pretty_print_(false),
-    data_()
+    data_(),
+    delete_pt_(true)
 {
   compress_data_ = keyval->booleanvalue("compress_data", KeyValValueboolean(false));
   pretty_print_ = keyval->booleanvalue("pretty_print", KeyValValueboolean(true));
@@ -69,44 +75,45 @@ XMLWriter::XMLWriter(const Ref<KeyVal>& keyval) :
   init();
 }
 
-
 XMLWriter::XMLWriter(ostream& out) :
     out_(&out),
-    pt_(ptree()),
+    current_root_(new ptree()),
     delete_out_(false),
     compress_data_(false),
     pretty_print_(false),
     pretty_print_spaces_(2),
     pretty_print_space_char_(' '),
-    data_()
+    data_(),
+    delete_pt_(true)
 {
   init();
 }
 
-
-XMLWriter::XMLWriter(ptree& pt, ostream& out) :
+XMLWriter::XMLWriter(ptree* pt, ostream& out) :
     out_(&out),
-    pt_(pt),
+    current_root_(pt),
     delete_out_(false),
     compress_data_(false),
     pretty_print_(false),
     pretty_print_spaces_(2),
     pretty_print_space_char_(' '),
-    data_()
+    filename_(XMLWRITER_FILENAME_NOT_GIVEN),
+    data_(),
+    delete_pt_(false)
 {
   init();
 }
-
 
 XMLWriter::XMLWriter(const string& filename) :
     out_(0),
-    pt_(ptree()),
+    current_root_(new ptree()),
     delete_out_(false),
     compress_data_(false),
     pretty_print_(false),
     pretty_print_spaces_(2),
     pretty_print_space_char_(' '),
-    data_()
+    data_(),
+    delete_pt_(true)
 {
   init_filename(filename);
   init();
@@ -114,7 +121,7 @@ XMLWriter::XMLWriter(const string& filename) :
 
 void
 XMLWriter::init_filename(const string& filename){
-  // TODO delay opening of file pointer until the data is actually written
+  filename_ = filename;
   if (filename == "-") {
       out_ = &(ExEnv::out0());
   }
@@ -132,26 +139,81 @@ XMLWriter::init(){
   else{
     write_settings_ = xml_writer_settings<char>();
   }
+
+  pt_stack_.push(current_root_);
 }
 
 XMLWriter::~XMLWriter()
 {
+  if(pt_stack_.size() != 1) {
+    throw ProgrammingError(
+        "mismatched transparent contexts in XMLWriter: destructor reached with missing ends",
+        __FILE__,
+        __LINE__
+    );
+  }
+
+  if(not writing_done_)
+    do_write();
+
   if(delete_out_){
+    out_->flush();
     delete out_;
   }
+
+  if(delete_pt_)
+    delete current_root_;
 }
 
 void
 XMLWriter::run()
 {
-  ptree& pt_root = pt_.add_child("mpqc", ptree());
+  begin_writing_context("mpqc");
   std::vector< Ref<XMLWritable> >::iterator it;
   for(it = data_.begin(); it != data_.end(); ++it){
-    (*it)->write_xml(pt_root, *this);
+    ptree& tmp = *current_root_;
+    (*it)->write_xml(tmp, *this);
   }
+  end_writing_context();
+  do_write();
+}
+
+void
+XMLWriter::do_write()
+{
+  if(writing_done_) {
+    throw ProgrammingError(
+        "already wrote xml to output",
+        __FILE__,
+        __LINE__
+    );
+  }
+
   Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
   if(msg->me() != 0) return;
-  boost::property_tree::write_xml(*out_, pt_, write_settings_);
+  boost::property_tree::write_xml(*out_, *current_root_, write_settings_);
+  writing_done_ = true;
+
+}
+
+void
+XMLWriter::begin_writing_context(const std::string& root_name)
+{
+  assert(not writing_done_);
+  ptree& tmp_root = current_root_->add_child(root_name, ptree());
+  current_root_ = &tmp_root;
+  pt_stack_.push(current_root_);
+}
+
+void
+XMLWriter::end_writing_context()
+{
+  assert(not writing_done_);
+  if(pt_stack_.size() == 1) {
+    throw ProgrammingError("mismatched transparent contexts in XMLWriter: too many ends", __FILE__, __LINE__);
+  }
+  pt_stack_.pop();
+  current_root_ = pt_stack_.top();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

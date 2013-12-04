@@ -813,10 +813,13 @@ WavefunctionWorld::xml_data_nonlocal(
         Cvect(X) = C_mu_nu[X];
       }
       if(not do_integrals){
-        ptree& coeff_parent = pt.add_child("coefficient_vector", ptree());
-        coeff_parent.put("<xmlattr>.ao_index1", mu);
-        coeff_parent.put("<xmlattr>.ao_index2", nu);
-        writer.write_to_xml(Cvect, coeff_parent);
+        if(nu <= mu) {
+          // only write the permutationally unique coefficients
+          ptree& coeff_parent = pt.add_child("coefficient_vector", ptree());
+          coeff_parent.put("<xmlattr>.ao_index1", mu);
+          coeff_parent.put("<xmlattr>.ao_index2", nu);
+          writer.write_to_xml(Cvect, coeff_parent);
+        }
       }
       else{
         Eigen::MatrixXd g_mu_nu(obsnbf, obsnbf);

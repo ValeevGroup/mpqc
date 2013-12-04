@@ -28,8 +28,6 @@
 #ifndef _chemistry_qc_scf_scf_h
 #define _chemistry_qc_scf_scf_h
 
-#include <boost/parameter/preprocessor.hpp>
-
 #include <util/group/thread.h>
 #include <util/misc/xml.h>
 

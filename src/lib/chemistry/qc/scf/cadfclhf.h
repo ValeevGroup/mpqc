@@ -43,29 +43,8 @@ typedef typename boost::integer_range<int> int_range;
 
 namespace sc {
 
-// Forward declaration
-class CADFCLHF;
-
-namespace detail {
-   // TODO get rid of this.  Lambdas will be used instead
-
-  struct compute_task {
-    public:
-      compute_task(Ref<CADFCLHF> wfn, int ithr) : wfn_(wfn), ithr_(ithr) { }
-    protected:
-      Ref<CADFCLHF> wfn_;
-      int ithr_;
-  };
-
-  struct compute_J_task : compute_task {
-    void operator()();
-  };
-
-  struct compute_K_task : compute_task {
-    void operator()();
-  };
-
-}
+// Forward declarations
+struct ShellData;
 
 /**
  * A specialization of CLHF that uses concentric atomic
@@ -141,7 +120,7 @@ class CADFCLHF: public CLHF {
     // Convenience variable for better code readibility
     static const TwoBodyOper::type coulomb_oper_type_ = TwoBodyOper::eri;
 
-    bool get_shell_pair(int& mu, int& nu);
+    bool get_shell_pair(ShellData& mu, ShellData& nu);
 
     RefSCMatrix compute_J();
 
@@ -219,9 +198,6 @@ class CADFCLHF: public CLHF {
     ThreeCenterIntCache ints3_;
 
     static ClassDesc cd_;
-
-    friend struct detail::compute_J_task;
-    friend struct detail::compute_K_task;
 
 };
 

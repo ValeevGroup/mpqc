@@ -70,6 +70,8 @@ namespace std {
       T* ptr_;
   };
 
+  template <typename T> using weak_ptr = shared_ptr<T>;
+
 }
 
 #endif

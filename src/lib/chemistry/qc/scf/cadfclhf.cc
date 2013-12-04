@@ -31,18 +31,68 @@
 #include <util/misc/regtime.h>
 #include <util/misc/scexception.h>
 #include <chemistry/qc/scf/cadfclhf.h>
+#include <util/misc/xmlwriter.h>
+#include <boost/tuple/tuple_io.hpp>
+#include <chemistry/qc/basis/gaussbas.h>
 #include <memory>
 
 using namespace sc;
 using namespace std;
 using boost::thread;
 using boost::thread_group;
+using namespace sc::parameter;
 using std::make_shared;
 
 typedef std::pair<int, int> IntPair;
 typedef CADFCLHF::CoefContainer CoefContainer;
 typedef CADFCLHF::Decomposition Decomposition;
 typedef std::pair<CoefContainer, CoefContainer> CoefPair;
+
+static boost::mutex debug_print_mutex;
+
+////////////////////////////////////////////////////////////////////////////////
+// Debugging asserts and outputs
+
+#define M_ROW_ASSERT(M1, M2) \
+  if(M1.rows() != M2.rows()) { \
+    boost::lock_guard<boost::mutex> _tmp(debug_print_mutex); \
+    cout << "assertion failed.  Rows not equal:  M1 => " << M1.rows() << " x " << M1.cols() << ", M2 => " << M2.rows() << " x " << M2.cols() << endl; \
+    assert(false); \
+  }
+#define M_COL_ASSERT(M1, M2) \
+  if(M1.cols() != M2.cols()) { \
+    boost::lock_guard<boost::mutex> _tmp(debug_print_mutex); \
+    cout << "assertion failed. Cols not equal:  M1 => " << M1.rows() << " x " << M1.cols() << ", M2 => " << M2.rows() << " x " << M2.cols() << endl; \
+    assert(false); \
+  }
+
+#define DECOMP_PRINT(D, M) \
+  {\
+    boost::lock_guard<boost::mutex> _tmp(debug_print_mutex); \
+    cout << "Decomposition:  " << D.matrixQR().rows() << " x " << D.matrixQR().cols() << ", M => " << M.rows() << " x " << M.cols() << endl; \
+  }
+
+#define M_EQ_ASSERT(M1, M2) M_ROW_ASSERT(M1, M2); M_COL_ASSERT(M1, M2);
+
+#define M_BLOCK_ASSERT(M, b1a, b1b, b2a, b2b) \
+  if(b1a < 0) { \
+    boost::lock_guard<boost::mutex> _tmp(debug_print_mutex); \
+    cout << "assertion 1 failed.  data: " << boost::make_tuple(M.rows(), M.cols(), b1a, b1b, b2a, b2b) << endl; \
+  } \
+  else if(b1b < 0) { \
+    boost::lock_guard<boost::mutex> _tmp(debug_print_mutex); \
+    cout << "assertion 2 failed.  data: " << boost::make_tuple(M.rows(), M.cols(), b1a, b1b, b2a, b2b) << endl; \
+  } \
+  else if(b1a > M.rows() - b2a) { \
+    boost::lock_guard<boost::mutex> _tmp(debug_print_mutex); \
+    cout << "assertion 3 failed.  data: " << boost::make_tuple(M.rows(), M.cols(), b1a, b1b, b2a, b2b) << endl; \
+  } \
+  else if(b1b > M.cols() - b2b) { \
+    boost::lock_guard<boost::mutex> _tmp(debug_print_mutex); \
+    cout << "assertion 4 failed.  data: " << boost::make_tuple(M.rows(), M.cols(), b1a, b1b, b2a, b2b) << endl; \
+  }
+
+////////////////////////////////////////////////////////////////////////////////
 
 ClassDesc CADFCLHF::cd_(
     typeid(CADFCLHF),
@@ -121,6 +171,7 @@ CADFCLHF::initialize()
   // Determine if the message group is an instance of MPIMessageGrp
   using_mpi_ = dynamic_cast<MPIMessageGrp*>(scf_grp_.pointer()) ? true : false;
   //----------------------------------------------------------------------------//
+  have_coefficients_ = false;
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -233,6 +284,7 @@ CADFCLHF::ao_fock(double accuracy)
   if(not have_coefficients_) {
     Timer coeff_tim("compute coefficients");
     compute_coefficients();
+    assert(false);
   } // Timer coeff_tim destroyed, causing it to stop
   //---------------------------------------------------------------------------------------//
   Timer routine_tim("ao_fock");
@@ -354,7 +406,7 @@ CADFCLHF::compute_J()
         /* C_tilde compute thread                         {{{2 */ #if 2 // begin fold
         Eigen::VectorXd Ct(dfnbf);
         Ct = Eigen::VectorXd::Zero(dfnbf);
-        int ish = 0, jsh = 0;
+        ShellData ish, jsh;
         //----------------------------------------//
         while(get_shell_pair(ish, jsh)){
           //----------------------------------------//
@@ -440,7 +492,7 @@ CADFCLHF::compute_J()
         Eigen::MatrixXd jpart(nbf, nbf);
         jpart = Eigen::MatrixXd::Zero(nbf, nbf);
         //----------------------------------------//
-        int ish = 0, jsh = 0;
+        ShellData ish, jsh;
         while(get_shell_pair(ish, jsh)){
           //----------------------------------------//
           const int atomA = obs.shell_to_center(ish);
@@ -521,7 +573,7 @@ CADFCLHF::compute_J()
         Eigen::MatrixXd jpart(nbf, nbf);
         jpart = Eigen::MatrixXd::Zero(nbf, nbf);
         //----------------------------------------//
-        int ish = 0, jsh = 0;
+        ShellData ish, jsh;
         while(get_shell_pair(ish, jsh)){
           //----------------------------------------//
           const int atomA = obs.shell_to_center(ish);
@@ -626,12 +678,13 @@ CADFCLHF::compute_K()
   int nthread = threadgrp_->nthread();
   // reset the iteration over local pairs
   local_pairs_spot_ = 0;
+  assert(false);
 }
 
 //////////////////////////////////////////////////////////////////////////////////
 
 bool
-CADFCLHF::get_shell_pair(int& mu, int& nu)
+CADFCLHF::get_shell_pair(ShellData& mu, ShellData& nu)
 {
   // Atomicly access and increment
   int spot = local_pairs_spot_++;
@@ -644,12 +697,10 @@ CADFCLHF::get_shell_pair(int& mu, int& nu)
       throw FeatureNotImplemented("dynamic load balancing", __FILE__, __LINE__, class_desc());
     }
     //----------------------------------------//
-    mu = next_pair.first;
-    nu = next_pair.second;
+    mu = basis()->shell_data(next_pair.first, dfbs_);
+    nu = basis()->shell_data(next_pair.second, dfbs_);
   }
   else{
-    mu = NoMorePairs;
-    nu = NoMorePairs;
     return false;
   }
   return true;
@@ -660,6 +711,8 @@ CADFCLHF::get_shell_pair(int& mu, int& nu)
 void
 CADFCLHF::compute_coefficients()
 {
+  using namespace sc::parameter;
+  static constexpr bool xml_debug = true;
   /*=======================================================================================*/
   /* Setup                                                		                        {{{1 */ #if 1 // begin fold
   //---------------------------------------------------------------------------------------//
@@ -737,81 +790,57 @@ CADFCLHF::compute_coefficients()
       compute_threads.create_thread([&,ithr](){
         /*-----------------------------------------------------*/
         /* Coefficient compute thread                     {{{2 */ #if 2 // begin fold
-        int ish = 0, jsh = 0;
+        ShellData ish, jsh;
         while(get_shell_pair(ish, jsh)){
-          //----------------------------------------//
-          const int atomA = obs.shell_to_center(ish);
-          const int nbfi = obs.shell(ish).nfunction();
-          const int bfoffi = obs.shell_to_function(ish);
-          //----------------------------------------//
-          const int atomB = obs.shell_to_center(jsh);
-          const int nbfj = obs.shell(jsh).nfunction();
-          const int bfoffj = obs.shell_to_function(jsh);
-          //----------------------------------------//
-          const int dfnshA = dfbs.nshell_on_center(atomA);
-          const int dfnbfA = dfbs.nbasis_on_center(atomA);
-          const int dfshoffA = dfbs.shell_on_center(atomA, 0);
-          const int dfbfoffA = dfbs.shell_to_function(dfshoffA);
-          //----------------------------------------//
-          const int dfnshB = dfbs.nshell_on_center(atomB);
-          const int dfnbfB = dfbs.nbasis_on_center(atomB);
-          const int dfshoffB = dfbs.shell_on_center(atomB, 0);
-          const int dfbfoffB = dfbs.shell_to_function(dfshoffB);
           //----------------------------------------//
           std::shared_ptr<Decomposition> decomp = get_decomposition(
               ish, jsh, metric_ints_2c_[ithr]
           );
           //----------------------------------------//
-          Eigen::MatrixXd ij_M_X(nbfi*nbfj, dfnbfA + dfnbfB);
-          int bfoffset = 0;
-          for(int kshA = 0; kshA < dfnshA; ++kshA){
-            const int ksh = kshA + dfshoffA;
-            const int dfnbfk = dfbs.shell(ksh).nfunction();
+          const int dfnbfAB = ish.center == jsh.center ? ish.atom_dfnbf : ish.atom_dfnbf + jsh.atom_dfnbf;
+          Eigen::MatrixXd ij_M_X(ish.nbf*jsh.nbf, dfnbfAB);
+          for(auto ksh : dfbs.iter_shells_on_center(ish.center)){
             std::shared_ptr<Eigen::MatrixXd> ij_M_k = ints_to_eigen(
                 ish, jsh, ksh,
                 metric_ints_3c_[ithr],
                 metric_oper_type_
             );
-            for(int ibf = 0; ibf < nbfi; ++ibf){
-              for(int jbf = 0; jbf < nbfj; ++jbf){
-                const int ijbf = ibf*nbfj + jbf;
-                ij_M_X.row(ijbf).segment(bfoffset, dfnbfk) = ij_M_k->row(ijbf);
-              }
-            }
-            bfoffset += dfnbfk;
-          }
-          if(atomA != atomB){
-            for(int kshB = 0; kshB < dfnshB; ++kshB){
-              const int ksh = kshB + dfshoffB;
-              const int dfnbfk = dfbs.shell(ksh).nfunction();
+            for(auto ibf : obs.iter_functions_in_shell(ish)){
+              for(auto jbf : obs.iter_functions_in_shell(jsh)){
+                const int ijbf = ibf.bfoff_in_shell * jsh.nbf + jbf.bfoff_in_shell;
+                ij_M_X.row(ijbf).segment(ksh.bfoff_in_atom, ksh.nbf) = ij_M_k->row(ijbf);
+              } // end loop over functions in jsh
+            } // end loop over functions in ish
+          } // end loop over shells on ish.center
+          if(ish.center != jsh.center){
+            for(auto ksh : dfbs.iter_shells_on_center(jsh.center)){
               std::shared_ptr<Eigen::MatrixXd> ij_M_k = ints_to_eigen(
                   ish, jsh, ksh,
                   metric_ints_3c_[ithr],
                   metric_oper_type_
               );
-              for(int ibf = 0; ibf < nbfi; ++ibf){
-                for(int jbf = 0; jbf < nbfj; ++jbf){
-                  const int ijbf = ibf*nbfj + jbf;
-                  ij_M_X.row(ijbf).segment(bfoffset, dfnbfk) = ij_M_k->row(ijbf);
-                }
-              }
-              bfoffset += dfnbfk;
-            }
-          }
+              for(auto ibf : obs.iter_functions_in_shell(ish)){
+                for(auto jbf : obs.iter_functions_in_shell(jsh)){
+                  const int ijbf = ibf.bfoff_in_shell * jsh.nbf + jbf.bfoff_in_shell;
+                  const int dfbfoff = ish.atom_dfnbf + ksh.bfoff_in_atom;
+                  ij_M_X.row(ijbf).segment(dfbfoff, ksh.nbf) = ij_M_k->row(ijbf);
+                } // end loop over functions in jsh
+              } // end loop over functions in ish
+            } // end loop over shells on jsh.center
+          } // end if ish.center != jsh.center
           //----------------------------------------//
-          const int dfsizeAB = bfoffset;
-          for(int ibf = 0; ibf < nbfi; ++ibf){
+          for(int ibf = 0; ibf < ish.nbf; ++ibf){
             // Since coefficients are only stored jbf <= ibf,
             //   we need to figure out how many jbf's to do
-            const int jmax = ish == jsh ? ibf : nbfj-1;
+            const int jmax = ish == jsh ? ibf : jsh.nbf-1;
             for(int jbf = 0; jbf <= jmax; ++jbf){
-              const int ijbf = ibf*nbfj + jbf;
-              IntPair ij(ibf + bfoffi, jbf + bfoffj);
-              Eigen::VectorXd Ctmp(dfsizeAB);
+              const int ijbf = ibf*jsh.nbf + jbf;
+              IntPair ij(ibf + ish.bfoff, jbf + jsh.bfoff);
+              Eigen::VectorXd Ctmp(dfnbfAB);
               Ctmp = decomp->solve(ij_M_X.row(ijbf).transpose());
-              *(coefs_[ij].first) = Ctmp.head(dfnbfA);
-              if(atomA != atomB){
-                *(coefs_[ij].second) = Ctmp.tail(dfnbfB);
+              *(coefs_[ij].first) = Ctmp.head(ish.atom_dfnbf);
+              if(ish.center != jsh.center){
+                *(coefs_[ij].second) = Ctmp.tail(jsh.atom_dfnbf);
               }
             } // end jbf loop
           } // end ibf loop
@@ -829,6 +858,40 @@ CADFCLHF::compute_coefficients()
   scf_grp_->sum(coefficients_data_, ncoefs);
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
+  /* Debugging output                                     		                        {{{1 */ #if 1 // begin fold
+  if(xml_debug) {
+    begin_xml_context(
+        "df_coefficients",
+        "coefficients.xml"
+    );
+    for(auto mu : obs.function_iterator(&dfbs)){
+      for(auto nu : obs.function_iterator(&dfbs, mu)) {
+        IntPair mn(mu, nu);
+        auto cpair = coefs_[mn];
+        auto& Ca = *(cpair.first);
+        auto& Cb = *(cpair.second);
+        //----------------------------------------//
+        // Fill in the zeros for easy comparison
+        Eigen::VectorXd coefs(dfnbf);
+        coefs = Eigen::VectorXd::Zero(dfnbf);
+        coefs.segment(mu.atom_dfbfoff, mu.atom_dfnbf) = Ca;
+        if(mu.center != nu.center){
+          coefs.segment(nu.atom_dfbfoff, nu.atom_dfnbf) = Cb;
+        }
+        write_as_xml(
+            "coefficient_vector",
+            coefs,
+            std::map<std::string, int>{
+              { "ao_index1", mu },
+              { "ao_index2", nu }
+            }
+        );
+      }
+    }
+    end_xml_context("df_coefficients");
+  }
+  /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
   /* Clean up                                              		                        {{{1 */ #if 1 // begin fold
   //---------------------------------------------------------------------------------------//
   have_coefficients_ = true;
@@ -836,13 +899,14 @@ CADFCLHF::compute_coefficients()
   /*=======================================================================================*/
 }
 
+//////////////////////////////////////////////////////////////////////////////////
 
 std::shared_ptr<Decomposition>
 CADFCLHF::get_decomposition(int ish, int jsh, Ref<TwoBodyTwoCenterInt> ints)
 {
+  // TODO atom swap symmetry
   const int atomA = basis()->shell_to_center(ish);
   const int atomB = basis()->shell_to_center(jsh);
-  assert(atomA <= atomB); // for now; could also handle the opposite case and rearrange
   //----------------------------------------//
   return decomps_.get(atomA, atomB, [&](){
     // Make the decomposition
@@ -859,27 +923,80 @@ CADFCLHF::get_decomposition(int ish, int jsh, Ref<TwoBodyTwoCenterInt> ints)
     const int dfbfoffB = dfbs_->shell_to_function(dfshoffB);
     //----------------------------------------//
     // Compute the integrals we need
-    Eigen::MatrixXd g2AB;
+    const int nrows = atomA == atomB ? dfnbfA : dfnbfA + dfnbfB;
+    Eigen::MatrixXd g2AB(nrows, nrows);
+    // AA integrals
     for(int ishA = dfshoffA; ishA < dfshoffA + dfnshA; ++ishA){
       const int dfbfoffiA = dfbs_->shell_to_function(ishA);
       const int dfnbfiA = dfbs_->shell(ishA).nfunction();
-      for(int jshB = dfshoffA; jshB <= dfshoffA + dfnshB; ++jshB){
-        const int dfbfoffjB = dfbs_->shell_to_function(jshB);
-        const int dfnbfjB = dfbs_->shell(jshB).nfunction();
+      for(int jshA = dfshoffA; jshA < dfshoffA + dfnshA; ++jshA){
+        const int dfbfoffjA = dfbs_->shell_to_function(jshA);
+        const int dfnbfjA = dfbs_->shell(jshA).nfunction();
         std::shared_ptr<Eigen::MatrixXd> shell_ints = ints_to_eigen(
-            ishA, jshB, ints,
+            ishA, jshA, ints,
             metric_oper_type_
         );
         g2AB.block(
-            dfbfoffiA - dfbfoffA, dfbfoffjB - dfbfoffB,
-            dfnbfiA, dfnbfjB
+            dfbfoffiA - dfbfoffA, dfbfoffjA - dfbfoffA,
+            dfnbfiA, dfnbfjA
         ) = *shell_ints;
+        g2AB.block(
+            dfbfoffjA - dfbfoffA, dfbfoffiA - dfbfoffA,
+            dfnbfjA, dfnbfiA
+        ) = shell_ints->transpose();
+      }
+    }
+    if(atomA != atomB) {
+      // AB integrals
+      for(int ishA = dfshoffA; ishA < dfshoffA + dfnshA; ++ishA){
+        const int dfbfoffiA = dfbs_->shell_to_function(ishA);
+        const int dfnbfiA = dfbs_->shell(ishA).nfunction();
+        for(int jshB = dfshoffB; jshB < dfshoffB + dfnshB; ++jshB){
+          const int dfbfoffjB = dfbs_->shell_to_function(jshB);
+          const int dfnbfjB = dfbs_->shell(jshB).nfunction();
+          std::shared_ptr<Eigen::MatrixXd> shell_ints = ints_to_eigen(
+              ishA, jshB, ints,
+              metric_oper_type_
+          );
+          g2AB.block(
+              dfbfoffiA - dfbfoffA, dfbfoffjB - dfbfoffB + dfnbfA,
+              dfnbfiA, dfnbfjB
+          ) = *shell_ints;
+          g2AB.block(
+              dfbfoffjB - dfbfoffB + dfnbfA, dfbfoffiA - dfbfoffA,
+              dfnbfjB, dfnbfiA
+          ) = shell_ints->transpose();
+        }
+      }
+      // BB integrals
+      for(int ishB = dfshoffB; ishB < dfshoffB + dfnshB; ++ishB){
+        const int dfbfoffiB = dfbs_->shell_to_function(ishB);
+        const int dfnbfiB = dfbs_->shell(ishB).nfunction();
+        for(int jshB = dfshoffB; jshB < dfshoffB + dfnshB; ++jshB){
+          const int dfbfoffjB = dfbs_->shell_to_function(jshB);
+          const int dfnbfjB = dfbs_->shell(jshB).nfunction();
+          std::shared_ptr<Eigen::MatrixXd> shell_ints = ints_to_eigen(
+              ishB, jshB, ints,
+              metric_oper_type_
+          );
+          g2AB.block(
+              dfbfoffiB - dfbfoffB + dfnbfA, dfbfoffjB - dfbfoffB + dfnbfA,
+              dfnbfiB, dfnbfjB
+          ) = *shell_ints;
+          g2AB.block(
+              dfbfoffjB - dfbfoffB + dfnbfA, dfbfoffiB - dfbfoffB + dfnbfA,
+              dfnbfjB, dfnbfiB
+          ) = shell_ints->transpose();
+        }
       }
     }
     return std::shared_ptr<Decomposition>(new Decomposition(g2AB));
   });
 }
 
+//////////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////////
 std::shared_ptr<Eigen::MatrixXd>
 CADFCLHF::ints_to_eigen(int ish, int jsh, Ref<TwoBodyTwoCenterInt> ints, TwoBodyOper::type int_type){
   // TODO permutational symmetry; keep in mind that a transpose is needed
@@ -942,9 +1059,9 @@ std::shared_ptr<Eigen::MatrixXd>
 CADFCLHF::ints_to_eigen(int ish, int jsh, int ksh, Ref<TwoBodyThreeCenterInt> ints, TwoBodyOper::type int_type){
   // TODO permutational symmetry; keep in mind that a transpose is needed
   return ints3_.get(ish, jsh, ksh, int_type, [&]{
-    const int nbfi = basis()->shell(ish).nfunction();
-    const int nbfj = basis()->shell(jsh).nfunction();
-    const int dfnbfk = basis()->shell(ksh).nfunction();
+    const int nbfi = ints->basis1()->shell(ish).nfunction();
+    const int nbfj = ints->basis2()->shell(jsh).nfunction();
+    const int dfnbfk = ints->basis3()->shell(ksh).nfunction();
     std::shared_ptr<Eigen::MatrixXd> rv(
         new Eigen::MatrixXd(nbfi * nbfj, dfnbfk)
     );

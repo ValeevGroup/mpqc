@@ -42,6 +42,7 @@ using boost::thread;
 using boost::thread_group;
 using namespace sc::parameter;
 using std::make_shared;
+static constexpr bool xml_debug = true;
 
 typedef std::pair<int, int> IntPair;
 typedef CADFCLHF::CoefContainer CoefContainer;
@@ -213,6 +214,7 @@ CADFCLHF::init_threads()
         // ints3_ mutexes
         // This avoids dynamic mutex creation which requires
         //   a global thread lock
+        /*
         for(int kshdf = 0; kshdf < dfbs_->nshell(); ++kshdf){
           ints3_.init_mutex(it.first.first, it.first.second, kshdf, coulomb_oper_type_);
           if(coulomb_oper_type_ != metric_oper_type_){
@@ -229,17 +231,18 @@ CADFCLHF::init_threads()
             }
           }
         }
+        */
         //----------------------------------------//
         // Finally, one mutex for the decomposition
-        decomps_.init_mutex(atomA, atomB);
+        //decomps_.init_mutex(atomA, atomB);
       }
     }
     // We need to be able to lock all of the coulomb ints2_ (for now)
-    for(int ishdf = 0; ishdf < dfnsh; ++ishdf){
-      for(int jshdf = 0; jshdf < dfnsh; ++jshdf){
-        ints2_.init_mutex(ishdf, jshdf, coulomb_oper_type_);
-      }
-    }
+    //for(int ishdf = 0; ishdf < dfnsh; ++ishdf){
+    //  for(int jshdf = 0; jshdf < dfnsh; ++jshdf){
+    //    ints2_.init_mutex(ishdf, jshdf, coulomb_oper_type_);
+    //  }
+    //}
   }
   //----------------------------------------------------------------------------//
   // initialize the two electron integral classes
@@ -284,7 +287,6 @@ CADFCLHF::ao_fock(double accuracy)
   if(not have_coefficients_) {
     Timer coeff_tim("compute coefficients");
     compute_coefficients();
-    assert(false);
   } // Timer coeff_tim destroyed, causing it to stop
   //---------------------------------------------------------------------------------------//
   Timer routine_tim("ao_fock");
@@ -311,8 +313,19 @@ CADFCLHF::ao_fock(double accuracy)
   step_tim.change("build");
   RefSCMatrix G;
   {
+    if(xml_debug){
+      begin_xml_context(
+          "compute_J",
+          "compute_J.xml"
+      );
+    }
     RefSCMatrix J = compute_J();
+    if(xml_debug){
+      write_as_xml("J", J);
+      end_xml_context("compute_J");
+    }
     G = J.copy();
+    assert(false);
   }
   {
     RefSCMatrix K = compute_K();
@@ -435,7 +448,7 @@ CADFCLHF::compute_J()
             for(int jbf = 0; jbf <= jmax; ++jbf){
               const int nu = bfoffj + jbf;
               if(ibf == jbf) bf_perm_fact = 1.0;
-              IntPair ij(ibf, jbf);
+              IntPair ij(mu, nu);
               auto cpair = coefs_[ij];
               VectorMap& Ca = *(cpair.first);
               VectorMap& Cb = *(cpair.second);
@@ -460,19 +473,25 @@ CADFCLHF::compute_J()
   //----------------------------------------//
   // Global sum C_tilde
   msg.sum(C_tilde.data(), dfnbf);
+  if(xml_debug) {
+    write_as_xml("C_tilde", C_tilde);
+  }
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
   /* Form g_tilde                                          		                        {{{1 */ #if 1 // begin fold
   //----------------------------------------//
   // TODO Thread this
   shared_ptr<Eigen::MatrixXd> X_g_Y = ints_to_eigen(
-    boost::irange(0, dfnbf),
-    boost::irange(0, dfnbf),
+    boost::irange(0, (int)dfbs.nshell()),
+    boost::irange(0, (int)dfbs.nshell()),
     eris_2c_[0],
     coulomb_oper_type_
   );
   Eigen::VectorXd g_tilde(dfnbf);
   g_tilde = (*X_g_Y) * C_tilde;
+  if(xml_debug) {
+    write_as_xml("g_tilde", g_tilde);
+  }
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
   /* Form dtilde and add in Ctilde contribution to J       		                        {{{1 */ #if 1 // begin fold
@@ -481,6 +500,9 @@ CADFCLHF::compute_J()
   {
     boost::mutex tmp_mutex;
     boost::thread_group compute_threads;
+    //----------------------------------------//
+    // reset the iteration over local pairs
+    local_pairs_spot_ = 0;
     // Loop over number of threads
     for(int ithr = 0; ithr < nthread; ++ithr) {
       // ...and create each thread that computes pairs
@@ -513,7 +535,7 @@ CADFCLHF::compute_J()
           //----------------------------------------//
           double perm_fact = ish == jsh ? 1.0 : 2.0;
           //----------------------------------------//
-          for(int kshdf = 0; kshdf < dfnbf; ++kshdf){
+          for(int kshdf = 0; kshdf < dfbs.nshell(); ++kshdf){
             std::shared_ptr<Eigen::MatrixXd> g_part = ints_to_eigen(
                 ish, jsh, kshdf,
                 eris_3c_[ithr],
@@ -537,7 +559,7 @@ CADFCLHF::compute_J()
                 // add C_tilde * g_part to J
                 if(nu <= mu){
                   // only constructing the lower triangle of the J matrix
-                  jpart(mu, nu) += g_part->row(ijbf) * C_tilde.segment(dfbfoffk, dfnbfk);
+                  jpart(mu, nu) += 0.5 * g_part->row(ijbf) * C_tilde.segment(dfbfoffk, dfnbfk);
                 }
                 //----------------------------------------//
               } // end loop over jbf
@@ -558,12 +580,18 @@ CADFCLHF::compute_J()
   //----------------------------------------//
   // Global sum d_tilde
   msg.sum(d_tilde.data(), dfnbf);
+  if(xml_debug) {
+    write_as_xml("d_tilde", d_tilde);
+  }
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
   /* Add in first and third term contributions to J       		                        {{{1 */ #if 1 // begin fold
   {
     boost::mutex tmp_mutex;
     boost::thread_group compute_threads;
+    //----------------------------------------//
+    // reset the iteration over local pairs
+    local_pairs_spot_ = 0;
     // Loop over number of threads
     for(int ithr = 0; ithr < nthread; ++ithr) {
       // ...and create each thread that computes pairs
@@ -592,18 +620,18 @@ CADFCLHF::compute_J()
           const int dfshoffB = dfbs.shell_on_center(atomB, 0);
           const int dfbfoffB = dfbs.shell_to_function(dfshoffB);
           //----------------------------------------//
-          double perm_fact = ish == jsh ? 1.0 : 2.0;
+          double perm_fact = (ish == jsh ? 0.5 : 1.0);
           //----------------------------------------//
           for(int ibf = 0; ibf < nbfi; ++ibf){
             const int jmax = ish == jsh ? ibf : nbfj-1;
-            double bf_perm_fact = ish == jsh ? 2.0 : 1.0;
+            double bf_perm_fact = (ish == jsh ? 1.0 : 0.5);
             const int mu = bfoffi + ibf;
-            for(int jbf = 0; jbf < nbfj; ++jbf){
+            for(int jbf = 0; jbf <= jmax; ++jbf){
               const int nu = bfoffj + jbf;
               if(mu == nu) bf_perm_fact = 1.0;
               const double pf = perm_fact * bf_perm_fact;
               const int ijbf = ibf*nbfj + jbf;
-              IntPair ij(ibf, jbf);
+              IntPair ij(mu, nu);
               //----------------------------------------//
               auto cpair = coefs_[ij];
               VectorMap& Ca = *(cpair.first);
@@ -616,9 +644,9 @@ CADFCLHF::compute_J()
               }
               //----------------------------------------//
               // Third term contribution
-              jpart(mu, nu) += pf * g_tilde.segment(dfbfoffA, dfnbfA).transpose() * Ca;
+              jpart(mu, nu) -= pf * g_tilde.segment(dfbfoffA, dfnbfA).transpose() * Ca;
               if(atomA != atomB){
-                jpart(mu, nu) += pf * g_tilde.segment(dfbfoffB, dfnbfB).transpose() * Cb;
+                jpart(mu, nu) -= pf * g_tilde.segment(dfbfoffB, dfnbfB).transpose() * Cb;
               }
               //----------------------------------------//
 
@@ -712,7 +740,6 @@ void
 CADFCLHF::compute_coefficients()
 {
   using namespace sc::parameter;
-  static constexpr bool xml_debug = true;
   /*=======================================================================================*/
   /* Setup                                                		                        {{{1 */ #if 1 // begin fold
   //---------------------------------------------------------------------------------------//
@@ -748,28 +775,20 @@ CADFCLHF::compute_coefficients()
     }
   }
   coefficients_data_ = allocate<double>(ncoefs);
+  memset(coefficients_data_, 0, ncoefs * sizeof(double));
   double *spot = coefficients_data_;
-  for(int ibf = 0; ibf < nbf; ++ibf){
-    const int ishA = obs.function_to_shell(ibf);
-    const int atomA = obs.shell_to_center(ishA);
-    const int dfnbfA = dfbs.nbasis_on_center(atomA);
-    for(int jbf = 0; jbf <= ibf; ++jbf){
-      const int jshB = obs.function_to_shell(jbf);
-      const int atomB = obs.shell_to_center(jshB);
-      int dfnbfB = dfbs.nbasis_on_center(atomB);
+  for(auto ibf : obs.function_iterator(&dfbs)){
+    for(auto jbf : obs.function_iterator(&dfbs, 0, ibf)){
       double *data_spot_a = spot;
-      IntPair ij(ibf, jbf);
-      spot += dfnbfA;
+      spot += ibf.atom_dfnbf;
       double *data_spot_b = spot;
-      if(atomA != atomB){
-        spot += dfnbfB;
+      if(ibf.center != jbf.center){
+        spot += jbf.atom_dfnbf;
       }
-      else {
-        // length 0 second vector
-        dfnbfB = 0;
-      }
-      CoefContainer coefs_a(new Eigen::Map<Eigen::VectorXd>(data_spot_a, dfnbfA));
-      CoefContainer coefs_b(new Eigen::Map<Eigen::VectorXd>(data_spot_b, dfnbfB));
+      IntPair ij(ibf, jbf);
+      CoefContainer coefs_a = make_shared<Eigen::Map<Eigen::VectorXd>>(data_spot_a, ibf.atom_dfnbf);
+      CoefContainer coefs_b = make_shared<Eigen::Map<Eigen::VectorXd>>(
+          data_spot_b, ibf.center == jbf.center ? 0 : jbf.atom_dfnbf);
       coefs_.emplace(ij, std::make_pair(coefs_a, coefs_b));
     }
   }
@@ -990,34 +1009,35 @@ CADFCLHF::get_decomposition(int ish, int jsh, Ref<TwoBodyTwoCenterInt> ints)
         }
       }
     }
-    return std::shared_ptr<Decomposition>(new Decomposition(g2AB));
+    return make_shared<Decomposition>(g2AB);
   });
 }
 
 //////////////////////////////////////////////////////////////////////////////////
 
-//////////////////////////////////////////////////////////////////////////////////
 std::shared_ptr<Eigen::MatrixXd>
 CADFCLHF::ints_to_eigen(int ish, int jsh, Ref<TwoBodyTwoCenterInt> ints, TwoBodyOper::type int_type){
   // TODO permutational symmetry; keep in mind that a transpose is needed
-  return ints2_.get(ish, jsh, int_type, [&]{
-    const int dfnbfi = dfbs_->shell(ish).nfunction();
-    const int dfnbfj = dfbs_->shell(jsh).nfunction();
-    std::shared_ptr<Eigen::MatrixXd> rv(
-        new Eigen::MatrixXd(dfnbfi, dfnbfj)
-    );
+  return ints2_.get(ish, jsh, int_type, [ish, jsh, int_type, &ints](){
+    GaussianBasisSet& ibs = *(ints->basis1());
+    GaussianBasisSet& jbs = *(ints->basis2());
+    const int nbfi = ibs.shell(ish).nfunction();
+    const int nbfj = jbs.shell(jsh).nfunction();
+    auto rv = make_shared<Eigen::MatrixXd>(nbfi, nbfj);
     ints->compute_shell(ish, jsh);
     const double* buffer = ints->buffer(int_type);
     // TODO vectorized copy
     int buffer_spot = 0;
-    for(int ibf = 0; ibf < dfnbfi; ++ibf){
-      for(int jbf = 0; jbf < dfnbfj; ++jbf){
+    for(int ibf = 0; ibf < nbfi; ++ibf){
+      for(int jbf = 0; jbf < nbfj; ++jbf){
         (*rv)(ibf, jbf) = buffer[buffer_spot++];
       }
     }
     return rv;
   });
 }
+
+//////////////////////////////////////////////////////////////////////////////////
 
 std::shared_ptr<Eigen::MatrixXd>
 CADFCLHF::ints_to_eigen(
@@ -1032,11 +1052,13 @@ CADFCLHF::ints_to_eigen(
   //----------------------------------------//
   // First figure out the sizes
   int nbfis = 0;
-  for(int ish : ishs) nbfis += ibs.shell(ish).nfunction();
+  for(auto ish : ishs)
+    nbfis += ibs.shell(ish).nfunction();
   int nbfjs = 0;
-  for(int jsh : jshs) nbfjs += jbs.shell(jsh).nfunction();
+  for(auto jsh : jshs)
+    nbfjs += jbs.shell(jsh).nfunction();
   //----------------------------------------//
-  std::shared_ptr<Eigen::MatrixXd> rv(new Eigen::MatrixXd(nbfis, nbfjs));
+  auto rv = make_shared<Eigen::MatrixXd>(nbfis, nbfjs);
   //----------------------------------------//
   int ioffset = 0, joffset = 0;
   for(int ish : ishs) {
@@ -1055,16 +1077,16 @@ CADFCLHF::ints_to_eigen(
   return rv;
 }
 
+//////////////////////////////////////////////////////////////////////////////////
+
 std::shared_ptr<Eigen::MatrixXd>
 CADFCLHF::ints_to_eigen(int ish, int jsh, int ksh, Ref<TwoBodyThreeCenterInt> ints, TwoBodyOper::type int_type){
   // TODO permutational symmetry; keep in mind that a transpose is needed
-  return ints3_.get(ish, jsh, ksh, int_type, [&]{
+  return ints3_.get(ish, jsh, ksh, int_type, [ish, jsh, ksh, int_type, &ints](){
     const int nbfi = ints->basis1()->shell(ish).nfunction();
     const int nbfj = ints->basis2()->shell(jsh).nfunction();
     const int dfnbfk = ints->basis3()->shell(ksh).nfunction();
-    std::shared_ptr<Eigen::MatrixXd> rv(
-        new Eigen::MatrixXd(nbfi * nbfj, dfnbfk)
-    );
+    auto rv = make_shared<Eigen::MatrixXd>(nbfi * nbfj, dfnbfk);
     ints->compute_shell(ish, jsh, ksh);
     const double* buffer = ints->buffer(int_type);
     // TODO vectorized copy

@@ -40,6 +40,9 @@
 #  define eigenout(label, var)
 #endif
 
+
+static constexpr bool xml_debug = true;
+
 #define matprint(var, label) //cout << "====== " label " ======" << endl << var << endl
 
 #include <util/misc/sharedptr.h>
@@ -52,6 +55,7 @@
 #include<chemistry/qc/lcao/fockbuilder.h>
 #include<util/misc/consumableresources.h>
 #include<Eigen/Dense>
+#include <util/misc/xmlwriter.h>
 
 typedef Eigen::Map<Eigen::MatrixXd> EigenMatrixMap;
 typedef Eigen::Map<const Eigen::MatrixXd> ConstEigenMatrixMap;
@@ -1317,6 +1321,9 @@ namespace sc {
       } // end loop over mu
       timer_change("03 - global sum Ctilde", 3);
       msg->sum(Ctilde.data(), dfnbf);
+      if(xml_debug) {
+        write_as_xml("C_tilde", Ctilde);
+      }
       if(do_exact){
         timer_enter("exact diagonal", 4);
         for(int atomA = 0; atomA < obs->ncenter(); ++atomA){
@@ -1403,6 +1410,9 @@ namespace sc {
         deallocate(coulomb_2c_ints_ptr);
       }
       //----------------------------------------//
+      if(xml_debug) {
+        write_as_xml("g_tilde", gtilde);
+      }
       timer_exit(2);
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
@@ -1484,6 +1494,9 @@ namespace sc {
       // Global sum dtilde
       timer_enter("global sum dtilde", 2);
       msg->sum(dtilde.data(), dfnbf);
+      if(xml_debug) {
+        write_as_xml("d_tilde", dtilde);
+      }
       if(do_exact){
         timer_enter("exact diagonal", 3);
         for(int atomA = 0; atomA < obs->ncenter(); ++atomA){

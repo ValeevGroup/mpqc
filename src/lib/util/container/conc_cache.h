@@ -43,6 +43,10 @@
 #include <boost/tuple/tuple_comparison.hpp>
 #include <boost/utility.hpp>
 #include <boost/type_traits.hpp>
+#include <boost/thread/future.hpp>
+
+#include <world/worldhashmap.h>
+#include <world/worldfut.h>
 
 
 #ifndef _util_container_conc_cache_h
@@ -83,9 +87,77 @@ using std::upgrade_lock;
 using std::upgrade_to_unique_lock;
 #endif
 
-namespace sc {
+
+namespace boost_ext{
+  // for_each that loops over several boost::tuples together
+
+  // base case
+  template<typename FuncT, int I = 0, typename... tuple_types>
+  inline typename boost::enable_if_c<
+      I == boost::tuples::length<
+          typename mpl::at<
+              typename mpl::vector<tuple_types...>::type, mpl::int_<0>
+          >::type
+      >::value,
+      void
+  >::type
+  for_each(FuncT, tuple_types&...)
+  { }
+
+  template<typename FuncT, int I = 0, typename... tuple_types>
+  inline typename boost::enable_if_c<
+      I <= boost::tuples::length<
+          typename mpl::at<
+              typename mpl::vector<tuple_types...>::type, mpl::int_<0>
+          >::type
+      >::value - 1,
+      void
+  >::type
+  for_each(FuncT f, tuple_types&... tups)
+  {
+    f(boost::get<I>(tups)...);
+    for_each<FuncT, I + 1, tuple_types...>(f, tups...);
+  }
+} // end namespace boost_ext
+
+
+namespace sc{
+  namespace detail{
+    struct hash_accumulate {
+        madness::hashT& key_;
+        hash_accumulate(madness::hashT& key) : key_(key) {}
+        template <typename T>
+        inline typename boost::enable_if<boost::is_convertible<T, int>, void>::type
+        operator()(const T& item){
+          madness::hash_combine(key_, (int)item);
+        }
+        template <typename T>
+        inline typename boost::enable_if<mpl::not_<boost::is_convertible<T, int>>, void>::type
+        operator()(const T& item){
+          madness::hash_combine(key_, item);
+        }
+    };
+  }
+}
+
+namespace boost {
+  namespace tuples{
+    template<typename... key_types>
+    inline madness::hashT
+    hash_value(boost::tuple<key_types...> keys) {
+      using madness::hashT;
+      madness::hashT key = 0;
+      sc::detail::hash_accumulate hacc(key);
+      boost_ext::for_each(hacc, keys);
+      return key;
+    }
+  }
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
+
+namespace sc {
 
 namespace mpl_ext{
 // mpl_ext::apply "splats" an mpl::vector (or any mpl back extensible sequence) into C++11 variadic
@@ -116,38 +188,6 @@ struct repeated_vector{
 
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace boost_ext{
-
-template<typename FuncT, int I = 0, typename... tuple_types>
-inline typename boost::enable_if_c<
-    I == boost::tuples::length<
-        typename mpl::at<
-            typename mpl::vector<tuple_types...>::type, mpl::int_<0>
-        >::type
-    >::value,
-    void
->::type
-for_each(FuncT, tuple_types&...)
-{ }
-
-template<typename FuncT, int I = 0, typename... tuple_types>
-inline typename boost::enable_if_c<
-    I <= boost::tuples::length<
-        typename mpl::at<
-            typename mpl::vector<tuple_types...>::type, mpl::int_<0>
-        >::type
-    >::value - 1,
-    void
->::type
-for_each(FuncT f, tuple_types&... tups)
-{
-  f(boost::get<I>(tups)...);
-  for_each<FuncT, I + 1, tuple_types...>(f, tups...);
-}
-
-} // end namespace boost_ext
-
-////////////////////////////////////////////////////////////////////////////////
 
 // TODO This has a serious bug.  STL maps do not support simultaneous writes, even of different objects.
 //        Thus, this class needs to lock the whole value map when writing, killing efficiency.
@@ -162,357 +202,55 @@ for_each(FuncT f, tuple_types&... tups)
  */
 template <
     typename val_type,
-    bool row_locked,
-    bool shared_read,
     typename... key_types
 >
-class ConcurrentCacheBase {
+class ConcurrentCache {
 
   public:
-    template<typename K, typename V> using map_type = std::map<K, V>;
     //----------------------------------------//
     // types for keys
     template<typename... Types> using tuple_type = boost::tuple<Types...>;
     typedef tuple_type<key_types...> key_tuple;
     //----------------------------------------//
-    // Types for the mutexes and locks on mutexes
-    typedef typename mpl::if_c<
-        shared_read,
-        shared_mutex,
-        mutex
-    >::type mutex_type;
-    template<int keynum>
-    struct mutex_map {
-      typedef typename std::map<
-        mpl::at<mpl::vector<key_types...>, mpl::int_<keynum>>,
-        mutex_type
-      > type;
-    };
-    typedef typename mpl::if_c<
-        shared_read,
-        shared_lock<mutex_type>,
-        unique_lock<mutex_type>
-    >::type read_lock;
-    typedef unique_lock<mutex_type> write_lock;
-    template<typename lock_type> using lock_set_container = std::vector<lock_type>;
-    template<typename lock_type> using lock_set = typename mpl::if_c<
-        row_locked,
-        lock_set_container<lock_type>,
-        lock_type
-    >::type;
-    typedef lock_set<read_lock> read_lock_set;
-    typedef lock_set<write_lock> write_lock_set;
-    typedef typename mpl::if_c<
-      row_locked,
-      typename mpl_ext::apply<
-        tuple_type,
-        typename mpl::transform<mpl::vector<key_types...>, map_type<mpl::_, mutex_type>>::type
-      >::type,
-      map_type<key_tuple, mutex_type>
-    >::type mutex_map_set;
-    //----------------------------------------//
-    // types for mutexes to lock the mutex_map
-    typedef upgrade_mutex mutex_mutex_type;
-    typedef typename mpl::if_c<
-      row_locked,
-      typename mpl_ext::apply<
-        tuple_type,
-        typename mpl_ext::repeated_vector<
-          mutex_mutex_type,
-          mpl::size<mpl::vector<key_types...>>::value
-        >::type
-      >::type,
-      mutex_mutex_type
-    >::type mutex_set;
-    //----------------------------------------//
     // types for map of values
     typedef val_type value_type;
-    typedef map_type<key_tuple, value_type> value_map;
+    typedef boost::shared_future<value_type> future_value;
+    typedef madness::ConcurrentHashMap<key_tuple, future_value, boost::hash<key_tuple>> future_map;
+    typedef typename future_map::accessor future_map_accessor;
+    typedef typename future_map::const_accessor future_map_const_accessor;
 
-
-    // constness may change if LRU capabilities are implemented
-    bool contains(key_types... keys) const {
-      key_tuple k(boost::forward<key_types>(keys)...);
-      read_lock_set locks = get_read_locks(k);
-      auto found_spot = cached_values_.find(k);
-      return found_spot != cached_values_.end();
-    }
-
-    // constness may change if LRU capabilities are implemented
-    boost::optional<value_type> get(key_types... keys) const {
-      key_tuple k(boost::forward<key_types>(keys)...);
-      read_lock_set locks = get_read_locks(k);
-      auto found_spot = cached_values_.find(k);
-      if(found_spot == cached_values_.end()){
-        return boost::optional<value_type>();
-      }
-      else{
-        return boost::optional<value_type>(found_spot->second);
-      }
-    }
 
     value_type get(
         key_types... keys,
         const function<value_type()>& compute_fxn
     )
     {
-      // TODO We should probably use upgrade locks and upgrade mutexes in this method,
-      //   but that would require implementing a separate get_locks function
-      //   for the upgrade_to_unique_locks, which takes a little bit of effort
       key_tuple k(boost::forward<key_types>(keys)...);
-      {
-        read_lock_set locks = get_read_locks(k);
-        auto found_spot = cached_values_.find(k);
-        if(found_spot != cached_values_.end()){
-          return found_spot->second;
-        }
-      } // Release the read lock
-      //----------------------------------------//
-      // If we haven't returned at this point, we need to
-      //   compute the value
-      {
-        // All threads that get here will have to wait for the one thread doing
-        //   the computing.  Threads that call get() after the compute has
-        //   completed will exit after the read lock section above.
-        write_lock_set locks = get_write_locks(k);
-        // Check again to make sure another thread didn't get here before us.
-        //   This is known as the "singleton with double-checked locking pattern"
-        //   or simply the "double-checked locking pattern"
-        auto found_spot = cached_values_.find(k);
-        if(found_spot != cached_values_.end()){
-          return found_spot->second;
-        }
-        else {
-          // Looks like we're the lucky ones who get
-          //   to do the compute.
-          cached_values_[k] = compute_fxn();
-        }
+      future_map_accessor a;
+      /* Madness futures version:
+           if(cached_values_.insert(a,
+                 std::make_pair(k, future_value::default_initializer())
+           )){
+             a->second = future_value();
+             a->second.set(compute_fxn());
+           }
+      */
+      // Boost version
+      if(cached_values_.insert(a, std::make_pair(k, future_value()))){
+        boost::promise<value_type> p;
+        p.set_value(compute_fxn());
+        a->second = p.get_future().share();
       }
-      //----------------------------------------//
-      return cached_values_[k];
-    }
+      return a->second.get();
 
-
-    void set(
-        key_types... keys,
-        const value_type& val
-    )
-    {
-      key_tuple k(boost::forward<key_types>(keys)...);
-      write_lock_set locks = get_write_locks(k);
-      cached_values_[k] = val;
-    }
-
-    void
-    init_mutex_impl(
-        key_types... keys
-    )
-    {
-      key_tuple key_tup(boost::forward<key_types>(keys)...);
-      write_lock mtxs_lock(mutex_map_mutexes_);
-      auto found_spot = mutexes_.find(key_tup);
-      if(found_spot == mutexes_.end()){
-        mutexes_.emplace(
-            std::piecewise_construct,
-            std::forward_as_tuple(key_tup),
-            std::forward_as_tuple()
-        );
-      }
-    }
-
-    void init_mutex(
-        key_types... keys
-    )
-    {
-      init_mutex_impl(keys..., boost::mpl::bool_<row_locked>());
     }
 
   protected:
 
-    // map of keys to mutexes.  If row_locked is true, this is a
-    //   tuple of maps to mutexes, one for each key type
-    mutex_map_set mutexes_;
-
-    // Creation locks for the mutexes in the (tuple of) mutex maps
-    mutex_set mutex_map_mutexes_;
-
     // The actual map from key tuples to values
-    value_map cached_values_;
-
-    template<typename row_locked_type>
-    inline typename boost::enable_if<row_locked_type, void>::type
-    init_mutex_impl(key_types... keys, row_locked_type row_locked_true)
-    {
-      key_tuple key_tup(boost::forward<key_types>(keys)...);
-      boost_ext::for_each(mutex_initializer(), key_tup, mutex_map_mutexes_, mutexes_);
-    }
-
-    template<typename row_locked_type>
-    inline typename boost::enable_if<mpl::not_<row_locked_type>, void>::type
-    init_mutex_impl(key_types... keys, row_locked_type row_locked_false)
-    {
-      key_tuple key_tup(boost::forward<key_types>(keys)...);
-      unique_lock<mutex_mutex_type> mtxs_lock(mutex_map_mutexes_);
-      auto found_spot = mutexes_.find(key_tup);
-      if(found_spot == mutexes_.end()){
-        mutexes_.emplace(
-            std::piecewise_construct,
-            std::forward_as_tuple(key_tup),
-            std::forward_as_tuple()
-        );
-      }
-    }
-
-    template<typename lock_set_type>
-    inline typename boost::enable_if_c<row_locked, lock_set_type>::type
-    get_locks(const key_tuple& key_tup){
-      lock_set_type locks;
-      {
-        boost_ext::for_each(
-            key_row_locker<decltype(locks)>(&locks),
-            key_tup,
-            mutex_map_mutexes_,
-            mutexes_
-        );
-        boost::lock(locks.begin(), locks.end());
-      }
-      // This return will use move semantics, since lock_set_type won't be copyable
-      return locks;
-    }
-
-    template<typename lock_set_type>
-    inline typename boost::enable_if_c<not row_locked, lock_set_type>::type
-    get_locks(const key_tuple& key_tup){
-      upgrade_lock<mutex_mutex_type> mtxs_read_lock(mutex_map_mutexes_);
-      auto found_spot = mutexes_.find(key_tup);
-      if(found_spot == mutexes_.end()){
-        #if ALLOW_DYNAMIC_MUTEX_CREATION == 0
-        assert(false);
-        #else
-        upgrade_to_unique_lock<mutex_mutex_type> mtxs_write_lock(mtxs_read_lock);
-        // Check again to make sure another thread didn't get here before us.
-        //   This is known as the "singleton with double-checked locking pattern"
-        //   or simply the "double-checked locking pattern"
-        auto found_spot = mutexes_.find(key_tup);
-        if(found_spot == mutexes_.end()){
-          mutexes_.emplace(
-              std::piecewise_construct,
-              std::forward_as_tuple(key_tup),
-              std::forward_as_tuple()
-          );
-        }
-        #endif
-      }
-      // No need to defer locking, since we're only locking one thing
-      lock_set_type lock(mutexes_[key_tup]);
-      // This return will use move semantics, since lock_set_type won't be copyable
-      return lock;
-    }
-
-    inline read_lock_set get_read_locks(const key_tuple& key_tup){
-      return get_locks<read_lock_set>(key_tup);
-    }
-
-    inline write_lock_set get_write_locks(const key_tuple& key_tup){
-      return get_locks<write_lock_set>(key_tup);
-    }
-
-    struct mutex_initializer {
-      template<typename key_type, typename mutex_map_mtx_type, typename mutex_map_type>
-      void operator()(
-          key_type& key,
-          mutex_map_mtx_type& mtx_map_mtx,
-          mutex_map_type& mtx_map
-      ) const
-      {
-        unique_lock<mutex_mutex_type> mtxs_lock(mtx_map_mtx);
-        auto found_spot = mtx_map.find(key);
-        if(found_spot == mtx_map.end()){
-          mtx_map.emplace(
-              std::piecewise_construct,
-              std::forward_as_tuple(key),
-              std::forward_as_tuple()
-          );
-        }
-      }
-    };
-
-    template <typename lock_vector>
-    struct key_row_locker {
-      private:
-        lock_vector* lockv_;
-      public:
-        key_row_locker(lock_vector* v) : lockv_(v) { }
-
-        template<typename key_type, typename mutex_map_mtx_type, typename mutex_map_type>
-        void operator()(
-            key_type& key,
-            mutex_map_mtx_type& mtx_map_mtx,
-            mutex_map_type& mtx_map
-        ) const
-        {
-          upgrade_lock<mutex_mutex_type> mtxs_read_lock(mtx_map_mtx);
-          auto found_spot = mtx_map.find(key);
-          if(found_spot == mtx_map.end()){
-            #if ALLOW_DYNAMIC_MUTEX_CREATION == 0
-            assert(false);
-            #else
-            upgrade_to_unique_lock<mutex_mutex_type> mtxs_write_lock(mtxs_read_lock);
-            // Check again to make sure another thread didn't get here before us.
-            //   This is known as the "singleton with double-checked locking pattern"
-            //   or simply the "double-checked locking pattern"
-            auto found_spot = mtx_map.find(key);
-            if(found_spot == mtx_map.end()){
-              mtx_map.emplace(
-                  std::piecewise_construct,
-                  std::forward_as_tuple(key),
-                  std::forward_as_tuple()
-              );
-            }
-            #endif
-          }
-
-          (*lockv_).emplace_back(
-              mtx_map[key],
-              defer_lock
-          );
-        }
-    };
+    future_map cached_values_;
 
 };
-
-/*
- * Different ways of dealing with the problem that mutexes can be kind of
- *   large (shared_mutex is 408 bytes in my boost implementation).  Either
- *   we can lock a mutex for each key ("row locking") and thus have
- *   k*n mutexes, or we can lock a mutex for each tuple of keys
- *   ("element locking").  We can further reduce memory cost by
- *   using a plain mutex ("exclusive read") rather than a shared_mutex
- *   (boost::mutex is only 64 bytes on my machine), which may
- *   speed things up.
- */
-
-template <typename val_type, typename... key_types>
-class RowLockedSharedReadCache
-    : public ConcurrentCacheBase<val_type, true, true, key_types...>
-{ };
-
-template <typename val_type, typename... key_types>
-class ElementLockedSharedReadCache
-    : public ConcurrentCacheBase<val_type, false, true, key_types...>
-{ };
-
-template <typename val_type, typename... key_types>
-class RowLockedExclusiveReadCache
-    : public ConcurrentCacheBase<val_type, true, false, key_types...>
-{ };
-
-template <typename val_type, typename... key_types>
-class ElementLockedExclusiveReadCache
-    : public ConcurrentCacheBase<val_type, false, false, key_types...>
-{ };
-
-
 
 } // end namespace sc
 #endif /* _util_container_conc_cache_h */

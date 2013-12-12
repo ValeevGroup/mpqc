@@ -63,20 +63,15 @@ class CADFCLHF: public CLHF {
 
     typedef std::map<std::pair<int, int>, std::pair<CoefContainer, CoefContainer>> CoefMap;
     typedef Eigen::HouseholderQR<Eigen::MatrixXd> Decomposition;
-    // Shared mutexes take up too much memory to have one per shell
-    //   In really large cases, we may have to switch to row-locked caches,
-    //   which only create k*N mutexes but are much less efficient.
-    typedef ElementLockedExclusiveReadCache<
+    typedef ConcurrentCache<
         std::shared_ptr<Eigen::MatrixXd>,
         int, int, TwoBodyOper::type
     > TwoCenterIntCache;
-    typedef ElementLockedSharedReadCache<
+    typedef ConcurrentCache<
         std::shared_ptr<Eigen::MatrixXd>,
         int, int, int, TwoBodyOper::type
     > ThreeCenterIntCache;
-    // In the case of the Natom x Natom decomposition cache, it's probably
-    //   safe to use shared mutexes.
-    typedef ElementLockedExclusiveReadCache<std::shared_ptr<Decomposition>, int, int> DecompositionCache;
+    typedef ConcurrentCache<std::shared_ptr<Decomposition>, int, int> DecompositionCache;
 
     CADFCLHF(StateIn&);
 

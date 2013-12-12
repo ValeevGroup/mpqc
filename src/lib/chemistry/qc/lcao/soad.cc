@@ -171,7 +171,7 @@ void sc::SuperpositionOfAtomicDensities::compute() {
             }
             akv->assign("df_basis", Ref<DescribedClass>(dfbs));
           } catch (...) {
-            ExEnv::out0() << "Basis cc-pVDZ-RI not available for some atoms in molecule.  Density fitting will not be used for SuperpositionOfAtomicDensities" << std::endl;
+            ExEnv::out0() << "Basis Def2-SV(P)/JK not available for some atoms in molecule.  Density fitting will not be used for SuperpositionOfAtomicDensities" << std::endl;
           }
         }
 #endif

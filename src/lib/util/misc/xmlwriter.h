@@ -275,9 +275,7 @@ namespace sc {
       }
 
       template <typename T, typename... Args>
-      typename boost::enable_if<
-        boost::mpl::not_<boost::is_convertible<T, ptree>>, ptree&
-      >::type insert_child(
+      ptree& insert_child_default(
           T obj,
           Args... args
       ) const
@@ -312,11 +310,11 @@ namespace sc {
         return write_to_xml_impl(obj, parent, boost::is_base_of<XMLWritable, T>());
       }
 
-      template<typename T>
+      /*template<typename T>
       inline typename boost::enable_if<boost::mpl::not_<boost::is_base_of<RefCount, T>>, ptree&>::type
       write_to_xml(T obj, ptree& parent) const {
         return write_to_xml(obj, parent);
-      }
+      }*/
 
       template<typename T>
       inline ptree&
@@ -491,14 +489,14 @@ namespace sc {
   inline typename boost::enable_if<is_convertible<MapType, bool>, void>::type
   _write_as_xml_impl(T object, const std::string& tag_name, const MapType& attrs)
   {
-     XMLWriter::current_writer->insert_child(object, tag_name);
+     XMLWriter::current_writer->insert_child_default(object, tag_name);
   }
 
   template <typename T, typename MapType>
   inline typename boost::enable_if<boost::mpl::not_<is_convertible<MapType, bool>>, void>::type
   _write_as_xml_impl(T object, const std::string& tag_name, const MapType& attrs)
   {
-     XMLWriter::current_writer->insert_child(object, tag_name, attrs);
+     XMLWriter::current_writer->insert_child_default(object, tag_name, attrs);
   }
 
   BOOST_PARAMETER_FUNCTION(

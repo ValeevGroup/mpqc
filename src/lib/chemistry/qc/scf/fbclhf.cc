@@ -15,8 +15,12 @@
 #include <chemistry/qc/lcao/fockbuild_runtime.h>
 #include <chemistry/qc/lcao/clhfcontrib.h>
 
+#include <util/misc/xmlwriter.h>
+
 using namespace std;
 using namespace sc;
+
+static constexpr bool xml_debug = true;
 
 static ClassDesc FockBuildCLHF_cd(
   typeid(FockBuildCLHF),"FockBuildCLHF",1,"public CLHF",
@@ -250,7 +254,15 @@ DFCLHF::ao_fock(double accuracy)
   RefSCMatrix G;
   {
     const std::string jkey = ParsedOneBodyIntKey::key(aospace->id(),aospace->id(),std::string("J"));
+    if(xml_debug){
+      begin_xml_context("compute_J", "compute_J.xml");
+    }
     RefSCMatrix J = fb_rtime->get(jkey);
+    if(xml_debug){
+      write_as_xml("J", J);
+      end_xml_context("compute_J");
+      assert(false);
+    }
     G = J.copy();
   }
   {

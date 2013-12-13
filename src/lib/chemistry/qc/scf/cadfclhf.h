@@ -37,6 +37,7 @@
 #include <atomic>
 #include <future>
 #include <Eigen/Dense>
+#include <util/misc/property.h>
 
 typedef typename boost::integer_range<int> int_range;
 
@@ -44,7 +45,250 @@ typedef typename boost::integer_range<int> int_range;
 namespace sc {
 
 // Forward declarations
-struct ShellData;
+class ShellData;
+class BasisFunctionData;
+
+class shell_iter_wrapper {
+    Ref<GaussianBasisSet> basis_;
+    Ref<GaussianBasisSet> dfbasis_;
+    int first_shell_;
+    int last_shell_;
+  public:
+    shell_iter_wrapper(
+        const Ref<GaussianBasisSet>& basis,
+        const Ref<GaussianBasisSet>& dfbasis = 0,
+        int first_shell = 0,
+        int last_shell = -1
+    );
+    ShellIter begin() const;
+    ShellIter end() const;
+};
+
+class function_iter_wrapper {
+    Ref<GaussianBasisSet> basis_;
+    Ref<GaussianBasisSet> dfbasis_;
+    int first_function_;
+    int last_function_;
+  public:
+    function_iter_wrapper(
+        const Ref<GaussianBasisSet>& basis,
+        const Ref<GaussianBasisSet>& dfbasis = 0,
+        int first_function = 0,
+        int last_function = -1
+    );
+    BasisFunctionIter begin() const;
+    BasisFunctionIter end() const;
+};
+
+class ShellIter {
+
+  public:
+
+    ShellIter() = delete;
+
+    ShellIter(const Ref<GaussianBasisSet>& basis, int position);
+    ShellIter(const Ref<GaussianBasisSet>& basis, const Ref<GaussianBasisSet>& dfbasis, int position);
+
+    bool operator!=(const ShellIter& other) const;
+
+    const ShellIter& operator++();
+
+    const ShellData operator*() const;
+
+  private:
+
+    int pos_;
+    Ref<GaussianBasisSet> basis_;
+    Ref<GaussianBasisSet> dfbasis_;
+
+};
+
+class BasisFunctionIter {
+
+  public:
+
+    BasisFunctionIter() = delete;
+
+    BasisFunctionIter(const Ref<GaussianBasisSet>& basis, int position);
+    BasisFunctionIter(const Ref<GaussianBasisSet>& basis, const Ref<GaussianBasisSet>& dfbasis, int position);
+
+    bool operator!=(const BasisFunctionIter& other) const;
+
+    const BasisFunctionIter& operator++();
+
+    const BasisFunctionData operator*() const;
+
+  private:
+
+    int pos_;
+    Ref<GaussianBasisSet> basis_;
+    Ref<GaussianBasisSet> dfbasis_;
+
+};
+
+
+#define ASSERT_SHELL_BOUNDS \
+  assert(basis_.nonnull() && "null basis"); \
+  assert(index < basis_->nshell() && "index larger than nshell()"); \
+  assert(index >= 0 && "index less than 0")
+
+struct ShellData {
+
+    ShellData();
+
+    ShellData(
+        int idx,
+        Ref<GaussianBasisSet> basis,
+        Ref<GaussianBasisSet> dfbasis = 0
+    );
+
+    ShellData(const ShellData&);
+
+    ShellData& operator=(const ShellData& other);
+
+    int index;
+    property<ShellData, int> bfoff;
+    property<ShellData, int> nbf;
+    property<ShellData, int> center;
+    property<ShellData, int> atom_bfoff;
+    property<ShellData, int> atom_shoff;
+    property<ShellData, int> atom_nsh;
+    property<ShellData, int> atom_nbf;
+    property<ShellData, int> bfoff_in_atom;
+    property<ShellData, int> shoff_in_atom;
+    property<ShellData, int> atom_last_function;
+    property<ShellData, int> atom_last_shell;
+    property<ShellData, int> last_function;
+
+    // Used when an auxiliary basis is set in the parent ShellIter.  Otherwise, set to -1
+    property<ShellData, int> atom_dfshoff;
+    property<ShellData, int> atom_dfbfoff;
+    property<ShellData, int> atom_dfnbf;
+    property<ShellData, int> atom_dfnsh;
+    property<ShellData, int> atom_df_last_function;
+    property<ShellData, int> atom_df_last_shell;
+
+    operator int() { ASSERT_SHELL_BOUNDS; return index; }
+
+  private:
+    Ref<GaussianBasisSet> basis_;
+    Ref<GaussianBasisSet> dfbasis_;
+    inline int get_nbf() const { ASSERT_SHELL_BOUNDS; return basis_->shell(index).nfunction(); }
+    inline int get_bfoff() const { ASSERT_SHELL_BOUNDS; return basis_->shell_to_function(index); }
+    inline int get_center() const { ASSERT_SHELL_BOUNDS; return basis_->shell_to_center(index); }
+    inline int get_atom_bfoff() const { ASSERT_SHELL_BOUNDS; return basis_->shell_to_function(atom_shoff); }
+    inline int get_atom_shoff() const { ASSERT_SHELL_BOUNDS; return basis_->shell_on_center(center, 0); }
+    inline int get_atom_nsh() const { ASSERT_SHELL_BOUNDS; return basis_->nshell_on_center(center); }
+    inline int get_atom_nbf() const { ASSERT_SHELL_BOUNDS; return basis_->nbasis_on_center(center); }
+    inline int get_shoff_in_atom() const { ASSERT_SHELL_BOUNDS; return index - atom_shoff; }
+    inline int get_bfoff_in_atom() const { ASSERT_SHELL_BOUNDS; return bfoff - atom_bfoff; }
+    inline int get_atom_last_function() const { ASSERT_SHELL_BOUNDS; return atom_bfoff + atom_nbf - 1; }
+    inline int get_last_function() const { ASSERT_SHELL_BOUNDS; return bfoff + nbf - 1; }
+    inline int get_atom_last_shell() const { ASSERT_SHELL_BOUNDS; return atom_shoff + atom_nsh - 1; }
+    inline int get_atom_dfshoff() const { assert(dfbasis_.nonnull()); return dfbasis_->shell_on_center(center, 0); }
+    inline int get_atom_dfbfoff() const { assert(dfbasis_.nonnull()); return dfbasis_->shell_to_function(atom_dfshoff); }
+    inline int get_atom_dfnsh() const { assert(dfbasis_.nonnull()); return dfbasis_->nshell_on_center(center); }
+    inline int get_atom_dfnbf() const { assert(dfbasis_.nonnull()); return dfbasis_->nbasis_on_center(center); }
+    inline int get_atom_df_last_function() const { assert(dfbasis_.nonnull()); return atom_dfbfoff + atom_dfnbf - 1; }
+    inline int get_atom_df_last_shell() const { assert(dfbasis_.nonnull()); return atom_dfshoff + atom_dfnsh - 1; }
+    inline int assert_not_initialized() const { assert(false && "ShellData object not initialized"); return -1; }
+
+};
+
+
+struct BasisFunctionData {
+
+    BasisFunctionData(
+        int idx,
+        const Ref<GaussianBasisSet>& basis,
+        const Ref<GaussianBasisSet>& dfbasis = 0
+    );
+
+    BasisFunctionData() { }
+
+    int index;
+    int shell_index;
+    int shell_nbf;
+    int shell_bfoff;
+    int center;
+    int atom_bfoff;
+    int atom_shoff;
+    int atom_nsh;
+    int atom_nbf;
+    int bfoff_in_atom;
+    int bfoff_in_shell;
+    int shoff_in_atom;
+    int atom_last_function;
+    int atom_last_shell;
+
+    GaussianBasisSet::Shell* shell;
+
+    // Used when an auxiliary basis is set in the parent BasisFunctionIter.  Otherwise, set to -1
+    int atom_dfshoff = -1;
+    int atom_dfbfoff = -1;
+    int atom_dfnbf = -1;
+    int atom_dfnsh = -1;
+    int atom_df_last_function = -1;
+    int atom_df_last_shell = -1;
+
+    operator int() { return index; }
+
+};
+
+//============================================================================//
+// shell_iterator
+
+const shell_iter_wrapper
+shell_iterator(const Ref<GaussianBasisSet>& basis, const Ref<GaussianBasisSet>& dfbasis = 0);
+
+const shell_iter_wrapper
+shell_iterator(const Ref<GaussianBasisSet>& basis, int last_shell);
+
+const shell_iter_wrapper
+shell_iterator(const Ref<GaussianBasisSet>& basis, int first_shell, int last_shell);
+
+const shell_iter_wrapper
+shell_iterator(const Ref<GaussianBasisSet>& basis, const Ref<GaussianBasisSet>& dfbasis, int last_shell);
+
+const shell_iter_wrapper
+shell_iterator(const Ref<GaussianBasisSet>& basis, const Ref<GaussianBasisSet>& dfbasis, int first_shell, int last_shell);
+
+//============================================================================//
+// function_iterator
+
+const function_iter_wrapper
+function_iterator(const Ref<GaussianBasisSet>& basis, const Ref<GaussianBasisSet>& dfbasis = 0);
+
+const function_iter_wrapper
+function_iterator(const Ref<GaussianBasisSet>& basis, int last_function, const Ref<GaussianBasisSet>& dfbasis = 0);
+
+const function_iter_wrapper
+function_iterator(const Ref<GaussianBasisSet>& basis, int first_function, int last_function, const Ref<GaussianBasisSet>& dfbasis);
+
+const function_iter_wrapper
+function_iterator(const Ref<GaussianBasisSet>& basis, const Ref<GaussianBasisSet>& dfbasis, int first_function, int last_function);
+
+const function_iter_wrapper
+function_iterator(const Ref<GaussianBasisSet>& basis, const Ref<GaussianBasisSet>& dfbasis, int last_function);
+
+//============================================================================//
+
+const shell_iter_wrapper
+iter_shells_on_center(const Ref<GaussianBasisSet>& basis, int center, const Ref<GaussianBasisSet>& dfbasis = 0);
+
+const function_iter_wrapper
+iter_functions_on_center(const Ref<GaussianBasisSet>& basis, int center, const Ref<GaussianBasisSet>& dfbasis = 0);
+
+const function_iter_wrapper
+iter_functions_in_shell(const Ref<GaussianBasisSet>& basis, int shell, const Ref<GaussianBasisSet>& dfbasis = 0);
+
+ShellData shell_data(Ref<GaussianBasisSet> basis, int ish, Ref<GaussianBasisSet> dfbasis = 0);
+
+const BasisFunctionData function_data(const Ref<GaussianBasisSet>& basis, int ish, const Ref<GaussianBasisSet>& dfbasis = 0);
+
+//============================================================================//
+//============================================================================//
+//============================================================================//
 
 /**
  * A specialization of CLHF that uses concentric atomic

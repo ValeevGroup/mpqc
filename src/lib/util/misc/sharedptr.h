@@ -70,6 +70,17 @@ namespace std {
       T* ptr_;
   };
 
+  template <typename T>
+  struct make_shared {
+      template<typename... Args>
+      static shared_ptr<T>
+      operator()(Args args...){
+        return shared_ptr<T>(new T(args...));
+      }
+  };
+
+
+
   template <typename T> using weak_ptr = shared_ptr<T>;
 
 }

@@ -630,8 +630,9 @@ namespace sc {
 
     TArray2 mu_z_apb = _2("<a'|mu_z|b>");
     const double mu_z_RT2 = dot(mu_z_apb("a',b"), RT_apb("a',b"));
-    std::cout << std::endl << "mu_z (CT2) = "
-              << scprintf("%12.10f", - mu_z_RT2 * 4.0) << std::endl;
+    std::cout << std::endl
+              << "mu_z (CT2) = " << scprintf("%12.10f", - mu_z_RT2 * 4.0)
+              << std::endl << std::endl;
 
     // Xai contribution from MP2 part & MP2 F12 coulping part
     TArray4 g_akij = _4("<a k|g|i j>");
@@ -719,22 +720,22 @@ namespace sc {
     std::cout << std::endl << "mu_z (E2) = "
               << scprintf("%12.10f", - mu_z_e2 * 2.0) << std::endl;
 
-    TArray4 g_aAim = _4("<a A'|g|i m>");
-    TArray4 g_anim = _4("<a n|g|i m>");
+    TArray4 g_aAij = _4("<a A'|g|i j>");
+    TArray4 g_akil = _4("<a k|g|i l>");
     TArray2 Xai_E2 = 2.0 * (
                      - _2("<A'|F|a>") * TiA("i,A'")
-                     + Tia("m,a") * _2("<i|F|m>")
-                     + (TiA("m,A'") * Tia("m,a")) * _2("<i|F|A'>")
+                     + Tia("j,a") * _2("<i|F|j>")
+                     + (TiA("j,A'") * Tia("j,a")) * _2("<i|F|A'>")
                      //
-                     - ( 2.0 * _4("<a m|g|i A'>") - _4("<a m|g|A' i>")
-                       + 2.0 * g_aAim("a,A',i,m") - g_aAim("a,A',m,i")
-                       ) * TiA("m,A'")
+                     - ( 2.0 * _4("<a j|g|i A'>") - _4("<a j|g|A' i>")
+                       + 2.0 * g_aAij("a,A',i,j") - g_aAij("a,A',j,i")
+                       ) * TiA("j,A'")
                      //
                      - (2.0 * _4("<a A'|g|i B'>") - _4("<a A'|g|B' i>"))
                        * D_e2_AB("A',B'")
                      //
-                     + (2.0 * g_anim("a,n,i,m") - g_anim("a,n,m,i"))
-                       * D_e2_ij("m,n")
+                     + (2.0 * g_akil("a,k,i,l") - g_akil("a,k,l,i"))
+                       * D_e2_ij("k,l")
                      );
     return Xai_E2;
   }
@@ -1043,44 +1044,44 @@ namespace sc {
   typename SingleReference_R12Intermediates<T>::TArray2
   SingleReference_R12Intermediates<T>::rdm1() {
 
-    if (0) {
-      {
-      typedef TiledArray::Array<T,2> Array;
-      Array FiA = _2("<i|F|A'>");
-      Array FAi = _2("<A'|F|i>");
-      std::cout << "<i|F|A'>:" << std::endl << FiA << std::endl;
-      std::cout << "<A'|F|i>:" << std::endl << FAi << std::endl;
-      Array FiA_2(FiA.get_world(), FiA.trange());
-      FiA_2("i,A'") = FAi("A',i");
-      std::cout << "<i|F|A'>=Perm(<A'|F|i>):" << std::endl << FiA_2 << std::endl;
-      }
-      {
-      typedef TiledArray::Array<T,4> Array;
-      Array g_ij_ab = _4("<i j|g|a b>");
-      Array g_ab_ij = _4("<a b|g|i j>");
-      std::cout << "<i j|g|a b>:" << std::endl << g_ij_ab << std::endl;
-      std::cout << "<a b|g|i j>:" << std::endl << g_ab_ij << std::endl;
-      Array g_ij_ab_2(g_ij_ab.get_world(), g_ij_ab.trange());
-      g_ij_ab_2("i,j,a,b") = g_ab_ij("a,b,i,j");
-      std::cout << "<i j|g|a b>=Perm(<a b|g|i j>):" << std::endl << g_ij_ab_2 << std::endl;
-      Array should_be_zero = g_ij_ab("i,j,a,b") - g_ab_ij("a,b,i,j");
-      std::cout << "<i j|g|a b> - Perm(<a b|g|i j>):" << std::endl << should_be_zero << std::endl;
-      const double max_nonzero = norminf(should_be_zero("i,j,a,b"));
-      std::cout << "|| <i j|g|a b> - Perm(<a b|g|i j>) ||_\infty = " << max_nonzero << std::endl;
-      }
-      {
-      typedef TiledArray::Array<T,2> Array;
-      Array mu_z_ij = _2("<i|mu_z|j>");
-      Array gamma_ij = _2("<i|gamma|j>");
-      const double mu_z_e = dot(mu_z_ij("i,j"), gamma_ij("i,j"));
-      double mu_z_n = 0.0;
-      Ref<Molecule> mol = r12world_->basis()->molecule();
-      for(int a=0; a<mol->natom(); ++a) {
-        mu_z_n += mol->Z(a) * mol->r(a, 2);
-      }
-      std::cout << "mu_z = " << -mu_z_e+mu_z_n << std::endl;
-      }
-    }
+//    if (0) {
+//      {
+//      typedef TiledArray::Array<T,2> Array;
+//      Array FiA = _2("<i|F|A'>");
+//      Array FAi = _2("<A'|F|i>");
+//      std::cout << "<i|F|A'>:" << std::endl << FiA << std::endl;
+//      std::cout << "<A'|F|i>:" << std::endl << FAi << std::endl;
+//      Array FiA_2(FiA.get_world(), FiA.trange());
+//      FiA_2("i,A'") = FAi("A',i");
+//      std::cout << "<i|F|A'>=Perm(<A'|F|i>):" << std::endl << FiA_2 << std::endl;
+//      }
+//      {
+//      typedef TiledArray::Array<T,4> Array;
+//      Array g_ij_ab = _4("<i j|g|a b>");
+//      Array g_ab_ij = _4("<a b|g|i j>");
+//      std::cout << "<i j|g|a b>:" << std::endl << g_ij_ab << std::endl;
+//      std::cout << "<a b|g|i j>:" << std::endl << g_ab_ij << std::endl;
+//      Array g_ij_ab_2(g_ij_ab.get_world(), g_ij_ab.trange());
+//      g_ij_ab_2("i,j,a,b") = g_ab_ij("a,b,i,j");
+//      std::cout << "<i j|g|a b>=Perm(<a b|g|i j>):" << std::endl << g_ij_ab_2 << std::endl;
+//      Array should_be_zero = g_ij_ab("i,j,a,b") - g_ab_ij("a,b,i,j");
+//      std::cout << "<i j|g|a b> - Perm(<a b|g|i j>):" << std::endl << should_be_zero << std::endl;
+//      const double max_nonzero = norminf(should_be_zero("i,j,a,b"));
+//      std::cout << "|| <i j|g|a b> - Perm(<a b|g|i j>) ||_\infty = " << max_nonzero << std::endl;
+//      }
+//      {
+//      typedef TiledArray::Array<T,2> Array;
+//      Array mu_z_ij = _2("<i|mu_z|j>");
+//      Array gamma_ij = _2("<i|gamma|j>");
+//      const double mu_z_e = dot(mu_z_ij("i,j"), gamma_ij("i,j"));
+//      double mu_z_n = 0.0;
+//      Ref<Molecule> mol = r12world_->basis()->molecule();
+//      for(int a=0; a<mol->natom(); ++a) {
+//        mu_z_n += mol->Z(a) * mol->r(a, 2);
+//      }
+//      std::cout << "mu_z = " << -mu_z_e+mu_z_n << std::endl;
+//      }
+//    }
 
     // can only ask for T1 with i in bra!
     // since we computed T1 CABS, they are expressed in terms of all virtuals = A'
@@ -1460,9 +1461,6 @@ namespace sc {
     }
 #endif
 
-    /// this is just an example of how to compute the density
-    TArray2 r2_i_j = _4("<i j|r|p q>") * _4("<k_F(p) j|r|p q>");
-
     // Nuclear dipole
     double mu_z_n = 0.0;
     Ref<Molecule> mol = r12world_->basis()->molecule();
@@ -1470,14 +1468,12 @@ namespace sc {
       mu_z_n += mol->Z(a) * mol->r(a, 2);
     }
     std::cout << std::endl
-              << "mu_z (N) = " << mu_z_n //scprintf("%12.10f",mu_z_n)
+              << "mu_z (N) = " << scprintf("%12.10f", mu_z_n)
               << std::endl;
     // electron charge = -1
 
     // SCF contribution to electronic dipole
-    TArray2 mu_z_ij = _2("<i|mu_z|j>");
-    TArray2 Iij = _2("<i|I|j>");
-    const double mu_z_scf = dot(mu_z_ij("i,j"), Iij("i,j"));
+    const double mu_z_scf = dot(_2("<m|mu_z|n>"), _2("<m|I|n>"));
     std::cout << std::endl
               << "mu_z (SCF) = " << scprintf("%12.10f", - mu_z_scf * 2.0)
               << std::endl;
@@ -1491,7 +1487,7 @@ namespace sc {
     TArray4 A_bjai = - _4("<b j|g|a i>")
                      - g_ijab("i,j,b,a")
                      +  4.0 * g_ijab("j,i,b,a")
-                     + _2("<b|F|a>") * Iij("i,j")
+                     + _2("<b|F|a>") * _2("<i|I|j>")
                      - _2("<a|I|b>") * _2("<i|F|j>")
                      ;
 
@@ -1535,13 +1531,14 @@ namespace sc {
     TA::ConjugateGradientSolver<TiledArray::Array<T,2>,
                                 detail::Orbital_relaxation_Abjai<double> > cg_solver2;
 
-    std::cout << std::endl << "*** start calculating X_ai" << std::endl;
+    std::cout << std::endl << "*** start calculating X_ai ***" << std::endl;
 
     TArray2 mu_z_ai = _2("<a|mu_z|i>");
 
     // CABS Singles orbital relaxation
 #if 1
     {
+    double tmp1 = madness::wall_time();
     TArray2 Xai_E2 = Xai_CabsSingles();
     TArray2 Dbj_E2(Xai_E2.get_world(), Xai_E2.trange());
 
@@ -1553,13 +1550,22 @@ namespace sc {
                                  1e-10);
 
     const double mu_z_E2 = dot(mu_z_ai("a,i"), Dbj_E2("a,i"));
-    std::cout << "mu_z (E2 orbital response) = "
-              << scprintf("%12.10f", - mu_z_E2 * 2.0) << std::endl;
+    std::cout << std::endl << std::endl
+              << "** mu_z (E2 orbital response) = " << scprintf("%12.10f", - mu_z_E2 * 2.0)
+              << std::endl << std::endl;
+
+    double tmp2 = madness::wall_time();
+    double t_CabsSingles = tmp2 - tmp1;
+    std::cout << std::endl
+              << "Time used for CABS Singles:" << t_CabsSingles
+              << std::endl << std::endl;
     }
     world_.gop.fence();
 #endif
 
     // MP2 and its orbital response
+    double tmp1 = madness::wall_time();
+
     // Delta_ijab = - 1 / (- <i|F|i> - <j|F|j> + <a|F|a> + <b|F|b>)
     typedef detail::diag_precond4<double> pc4eval_type;
     typedef TA::Array<T, 4, LazyTensor<T, 4, pc4eval_type > > TArray4d;
@@ -1593,12 +1599,18 @@ namespace sc {
                                   Dbj_mp2,
                                   preconditioner,
                                   1e-10);
-    std::cout << std::endl << "Converged CG to " << resnorm_mp2 << std::endl;
+    //std::cout << std::endl << "Converged CG to " << resnorm_mp2 << std::endl;
     const double mu_z_mp2or = dot(mu_z_ai("a,i"), Dbj_mp2("a,i"));
     std::cout << std::endl
-              << "mu_z (MP2 orbital response) = "<< scprintf("%12.10f", - mu_z_mp2or * 2.0)
+              << "** mu_z (MP2 orbital response) = "<< scprintf("%12.10f", - mu_z_mp2or * 2.0)
               << std::endl;
 #endif
+
+    double tmp2 = madness::wall_time();
+    double t_mp2 = tmp2 - tmp1;
+    std::cout << std::endl << "Time used for MP2:" << t_mp2
+              << std::endl << std::endl;
+
 
     // F12 and its orbital relaxation contributions
 #if 1
@@ -1606,11 +1618,31 @@ namespace sc {
     const double C_0 = 1.0 / 2.0;
     const double C_1 = 1.0 / 4.0;
 
-    // MP2 & MP2 F12 coupling part
+    // MP2 F12 coupling part
+    double tmp2 = madness::wall_time();
+
     TArray4 C_ijab = _4("<i j|r|a_F(a') b>") + _4("<i j|r|a b_F(a')>");
     TArray4 A_ijab = TA::expressions::multiply(C_ijab("i,j,a,b"), Delta_ijab("i,j,a,b"));
-    TArray2 Xmp2f12_contri = Xai_Cmp2f12(C_0,C_1,T2_ijab, A_ijab);
+    TArray2 Xmp2f12_contri = Xai_Cmp2f12(C_0,C_1,T2_ijab,A_ijab);
 
+    TArray2 Dbj_mp2f12(Xmp2f12_contri.get_world(), Xmp2f12_contri.trange());
+    auto resnorm_mp2f12 = cg_solver2(Orbital_relaxation_Abjai,
+                                  Xmp2f12_contri,
+                                  Dbj_mp2f12,
+                                  preconditioner,
+                                  1e-10);
+    const double mu_z_Xai_mp2f12 = dot(mu_z_ai("a,m"), Dbj_mp2f12("a,m"));
+    std::cout << std::endl
+              << "** mu_z (MP2-F12 coupling orbital response) = " << scprintf("%12.10f", - mu_z_Xai_mp2f12 * 4.0)
+              << std::endl;
+
+    double tmp3 = madness::wall_time();
+    double t_mp2f12coulpling = tmp3 - tmp2;
+    std::cout << std::endl
+              << "Time used for MP2-F12 coupling part:" << t_mp2f12coulpling
+              << std::endl << std::endl;
+
+    double tmp4 = madness::wall_time();
     // V contribution to F12 Xai
     TArray2 Xai_Vcontri = Xai_V(C_0,C_1);
 
@@ -1622,7 +1654,7 @@ namespace sc {
 
     // contribution from f12 density
     // which results from X and B terms
-#if 0
+#if 1
     const double RR_C1 = 0.5 * C_0 * C_0 + 1.5 * C_1 * C_1;
     const double RR_C2 = 0.5 * C_0 * C_0 - 1.5 * C_1 * C_1;
 
@@ -1656,6 +1688,7 @@ namespace sc {
     TArray2 D_f12_apb = (RR_C1 * r_apcpkl("a',c',k,l") + RR_C2 * r_apcpkl("a',c',l,k"))
                         * r_acpkl("b,c',k,l");
 
+    TArray2 mu_z_ij = _2("<i|mu_z|j>");
     TArray2 mu_z_ab = _2("<a|mu_z|b>");
     TArray2 mu_z_apbp = _2("<a'|mu_z|b'>");
     TArray2 mu_z_apb = _2("<a'|mu_z|b>");
@@ -1664,7 +1697,9 @@ namespace sc {
                             + dot(mu_z_apbp("a',b'"), D_f12_apbp("a',b'"))
                             + dot(mu_z_apb("a',b"), D_f12_apb("a',b")) * 2.0
                             ;
-    std::cout << std::endl << "mu_z (F12) = " << - mu_z_f12 * 2.0 << std::endl;
+    std::cout << std::endl
+              << "** mu_z (F12) = " << - mu_z_f12 * 2.0
+              << std::endl << std::endl;
 
     TArray4 g_akil = _4("<a k|g|i l>");
     TArray4 g_abic = _4("<a b|g|i c>");
@@ -1818,15 +1853,13 @@ namespace sc {
 #endif
 
     TArray2 Xai_f12 = 2.0 * (
-//                             Xai_Vcontri("a,i")
-//                           - Xai_Xcontri("a,i")
-//                           + Xai_Bcontri("a,i")
-//                           + gdf12_ai("a,i")  // F12 density terms
-//                           +
-        Xmp2f12_contri("a,i")  // MP2 & MP2 F12 coupling terms
+                             Xai_Vcontri("a,i")
+                           - Xai_Xcontri("a,i")
+                           + Xai_Bcontri("a,i")
+                           + gdf12_ai("a,i")  // F12 density terms
+                           //+ Xmp2f12_contri("a,i")  // MP2 F12 coupling terms
                            // CT2_ai("a,i") + VT1_ai("a,i")+ VT2_ai("a,i") // CC F12 coupling terms
-                             )
-                           ;
+                             );
 
     TArray2 Dbj_f12(Xai_f12.get_world(), Xai_f12.trange());
     auto resnorm_f12 = cg_solver2(Orbital_relaxation_Abjai,
@@ -1835,14 +1868,21 @@ namespace sc {
                                   preconditioner,
                                   1e-10);
     const double mu_z_Xai_f12 = dot(mu_z_ai("a,m"), Dbj_f12("a,m"));
-    std::cout << std::endl << "***  "
-              << "mu_z (F12 orbital response) = " << scprintf("%12.10f", - mu_z_Xai_f12 * 2.0)
-              << "  ***"<< std::endl;
+    std::cout << std::endl
+              << "** mu_z (F12 orbital response) = " << scprintf("%12.10f", - mu_z_Xai_f12 * 2.0)
+              << std::endl << std::endl;
+
+    double tmp5 = madness::wall_time();
+    double t_f12 = tmp5 - tmp4;
+    std::cout << std::endl << "Time used for F12 part:" << t_f12 << std::endl;
     }
 #endif
 
     }
     world_.gop.fence();
+
+    /// this is just an example of how to compute the density
+    TArray2 r2_i_j = _4("<i j|r|p q>") * _4("<k_F(p) j|r|p q>");
 
     return r2_i_j;
   }

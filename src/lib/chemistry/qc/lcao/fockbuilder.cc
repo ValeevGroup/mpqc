@@ -2103,6 +2103,9 @@ namespace sc {
           }
         }
         deallocate(bdata);
+        if(xml_debug){
+          write_as_xml("B", B_mu, std::map<std::string, int>{ {"mu", mu} });
+        }
         // This should be right?!?
         //B_mu = D * g_mu;
         //----------------------------------------//

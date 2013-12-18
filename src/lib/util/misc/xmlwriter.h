@@ -201,6 +201,7 @@ namespace sc {
       bool fold_in_class_name() const { return fold_in_class_name_; }
       const std::string& filename() const { return filename_; }
       bool writing_done() const { return writing_done_; }
+      bool has_active_context() const { return pt_stack_.size() > 1; }
 
       template<typename T>
       void
@@ -469,12 +470,14 @@ namespace sc {
         and not XMLWriter::context_name_stack.empty()
     ) {
       XMLWriter::current_writer->end_writing_context();
-      if(not XMLWriter::writer_stack.empty()){
-        XMLWriter::current_writer = XMLWriter::writer_stack.top();
-        XMLWriter::writer_stack.pop();
-      }
-      else{
-        XMLWriter::current_writer = 0;
+      if(not XMLWriter::current_writer->has_active_context()){
+        if(XMLWriter::writer_stack.size() > 0) {
+          XMLWriter::current_writer = XMLWriter::writer_stack.top();
+          XMLWriter::writer_stack.pop();
+        }
+        else{
+          XMLWriter::current_writer = 0;
+        }
       }
     }
     else {

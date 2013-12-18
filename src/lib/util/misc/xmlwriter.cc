@@ -253,8 +253,8 @@ ptree&
 XMLWriter::write_to_xml(const Eigen::MatrixXd& obj, ptree& parent) const
 {
   ptree& child = parent.add_child("EigenMatrixXd", ptree());
-  const int nrow = obj.outerSize();
-  const int ncol = obj.innerSize();
+  const int nrow = obj.rows();
+  const int ncol = obj.cols();
   child.put("<xmlattr>.nrow", nrow);
   child.put("<xmlattr>.ncol", ncol);
   child.put("<xmlattr>.row_major", true);

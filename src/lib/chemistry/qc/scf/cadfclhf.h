@@ -128,8 +128,8 @@ class BasisFunctionIter {
 
 
 #define ASSERT_SHELL_BOUNDS \
-  assert(basis_.nonnull() && "null basis"); \
-  assert(index < basis_->nshell() && "index larger than nshell()"); \
+  assert(basis.nonnull() && "null basis"); \
+  assert(index < basis->nshell() && "index larger than nshell()"); \
   assert(index >= 0 && "index less than 0")
 
 struct ShellData {
@@ -170,27 +170,28 @@ struct ShellData {
 
     operator int() { ASSERT_SHELL_BOUNDS; return index; }
 
+    Ref<GaussianBasisSet> basis;
+    Ref<GaussianBasisSet> dfbasis;
+
   private:
-    Ref<GaussianBasisSet> basis_;
-    Ref<GaussianBasisSet> dfbasis_;
-    inline int get_nbf() const { ASSERT_SHELL_BOUNDS; return basis_->shell(index).nfunction(); }
-    inline int get_bfoff() const { ASSERT_SHELL_BOUNDS; return basis_->shell_to_function(index); }
-    inline int get_center() const { ASSERT_SHELL_BOUNDS; return basis_->shell_to_center(index); }
-    inline int get_atom_bfoff() const { ASSERT_SHELL_BOUNDS; return basis_->shell_to_function(atom_shoff); }
-    inline int get_atom_shoff() const { ASSERT_SHELL_BOUNDS; return basis_->shell_on_center(center, 0); }
-    inline int get_atom_nsh() const { ASSERT_SHELL_BOUNDS; return basis_->nshell_on_center(center); }
-    inline int get_atom_nbf() const { ASSERT_SHELL_BOUNDS; return basis_->nbasis_on_center(center); }
+    inline int get_nbf() const { ASSERT_SHELL_BOUNDS; return basis->shell(index).nfunction(); }
+    inline int get_bfoff() const { ASSERT_SHELL_BOUNDS; return basis->shell_to_function(index); }
+    inline int get_center() const { ASSERT_SHELL_BOUNDS; return basis->shell_to_center(index); }
+    inline int get_atom_bfoff() const { ASSERT_SHELL_BOUNDS; return basis->shell_to_function(atom_shoff); }
+    inline int get_atom_shoff() const { ASSERT_SHELL_BOUNDS; return basis->shell_on_center(center, 0); }
+    inline int get_atom_nsh() const { ASSERT_SHELL_BOUNDS; return basis->nshell_on_center(center); }
+    inline int get_atom_nbf() const { ASSERT_SHELL_BOUNDS; return basis->nbasis_on_center(center); }
     inline int get_shoff_in_atom() const { ASSERT_SHELL_BOUNDS; return index - atom_shoff; }
     inline int get_bfoff_in_atom() const { ASSERT_SHELL_BOUNDS; return bfoff - atom_bfoff; }
     inline int get_atom_last_function() const { ASSERT_SHELL_BOUNDS; return atom_bfoff + atom_nbf - 1; }
     inline int get_last_function() const { ASSERT_SHELL_BOUNDS; return bfoff + nbf - 1; }
     inline int get_atom_last_shell() const { ASSERT_SHELL_BOUNDS; return atom_shoff + atom_nsh - 1; }
-    inline int get_atom_dfshoff() const { assert(dfbasis_.nonnull()); return dfbasis_->shell_on_center(center, 0); }
-    inline int get_atom_dfbfoff() const { assert(dfbasis_.nonnull()); return dfbasis_->shell_to_function(atom_dfshoff); }
-    inline int get_atom_dfnsh() const { assert(dfbasis_.nonnull()); return dfbasis_->nshell_on_center(center); }
-    inline int get_atom_dfnbf() const { assert(dfbasis_.nonnull()); return dfbasis_->nbasis_on_center(center); }
-    inline int get_atom_df_last_function() const { assert(dfbasis_.nonnull()); return atom_dfbfoff + atom_dfnbf - 1; }
-    inline int get_atom_df_last_shell() const { assert(dfbasis_.nonnull()); return atom_dfshoff + atom_dfnsh - 1; }
+    inline int get_atom_dfshoff() const { assert(dfbasis.nonnull()); return dfbasis->shell_on_center(center, 0); }
+    inline int get_atom_dfbfoff() const { assert(dfbasis.nonnull()); return dfbasis->shell_to_function(atom_dfshoff); }
+    inline int get_atom_dfnsh() const { assert(dfbasis.nonnull()); return dfbasis->nshell_on_center(center); }
+    inline int get_atom_dfnbf() const { assert(dfbasis.nonnull()); return dfbasis->nbasis_on_center(center); }
+    inline int get_atom_df_last_function() const { assert(dfbasis.nonnull()); return atom_dfbfoff + atom_dfnbf - 1; }
+    inline int get_atom_df_last_shell() const { assert(dfbasis.nonnull()); return atom_dfshoff + atom_dfnsh - 1; }
     inline int assert_not_initialized() const { assert(false && "ShellData object not initialized"); return -1; }
 
 };
@@ -263,13 +264,16 @@ const function_iter_wrapper
 function_iterator(const Ref<GaussianBasisSet>& basis, int last_function, const Ref<GaussianBasisSet>& dfbasis = 0);
 
 const function_iter_wrapper
-function_iterator(const Ref<GaussianBasisSet>& basis, int first_function, int last_function, const Ref<GaussianBasisSet>& dfbasis);
+function_iterator(const Ref<GaussianBasisSet>& basis, int first_function, int last_function, const Ref<GaussianBasisSet>& dfbasis = 0);
 
 const function_iter_wrapper
 function_iterator(const Ref<GaussianBasisSet>& basis, const Ref<GaussianBasisSet>& dfbasis, int first_function, int last_function);
 
 const function_iter_wrapper
 function_iterator(const Ref<GaussianBasisSet>& basis, const Ref<GaussianBasisSet>& dfbasis, int last_function);
+
+const function_iter_wrapper
+function_iterator(const ShellData& ish);
 
 //============================================================================//
 

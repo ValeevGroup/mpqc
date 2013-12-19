@@ -41,7 +41,7 @@
 #endif
 
 
-static constexpr bool xml_debug = true;
+static constexpr bool xml_debug = false;
 
 #define matprint(var, label) //cout << "====== " label " ======" << endl << var << endl
 

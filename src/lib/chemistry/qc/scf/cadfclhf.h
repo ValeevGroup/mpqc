@@ -36,259 +36,152 @@
 #include <util/container/conc_cache.h>
 #include <atomic>
 #include <future>
+#include <functional>
 #include <Eigen/Dense>
 #include <util/misc/property.h>
+#include <chemistry/qc/scf/cadf_iters.h>
 
 typedef typename boost::integer_range<int> int_range;
 
 
 namespace sc {
 
-// Forward declarations
-class ShellData;
-class BasisFunctionData;
+template <typename... Args>
+void
+do_threaded(int nthread, Args... args, const std::function<void(int, Args...)>& f){
+  boost::thread_group compute_threads;
+  // Loop over number of threads
+  for(int ithr = 0; ithr < nthread; ++ithr) {
+    // create each thread that runs f
+    compute_threads.create_thread([&, ithr](){
+      // run the work
+      f(ithr, args...);
+    });
+  }
+  // join the created threads
+  compute_threads.join_all();
+}
 
-class shell_iter_wrapper {
-    Ref<GaussianBasisSet> basis_;
-    Ref<GaussianBasisSet> dfbasis_;
-    int first_shell_;
-    int last_shell_;
-  public:
-    shell_iter_wrapper(
-        const Ref<GaussianBasisSet>& basis,
-        const Ref<GaussianBasisSet>& dfbasis = 0,
-        int first_shell = 0,
-        int last_shell = -1
-    );
-    ShellIter begin() const;
-    ShellIter end() const;
-};
+/*
+namespace {
 
-class function_iter_wrapper {
-    Ref<GaussianBasisSet> basis_;
-    Ref<GaussianBasisSet> dfbasis_;
-    int first_function_;
-    int last_function_;
-  public:
-    function_iter_wrapper(
-        const Ref<GaussianBasisSet>& basis,
-        const Ref<GaussianBasisSet>& dfbasis = 0,
-        int first_function = 0,
-        int last_function = -1
-    );
-    BasisFunctionIter begin() const;
-    BasisFunctionIter end() const;
-};
+  // Forward declaration
+  template <typename Iterable> struct threaded_iter_impl;
 
-class ShellIter {
+  template <typename Iterable>
+  struct thr_iter {
 
-  public:
+      typedef thr_iter<Iterable> self_type;
+      typedef threaded_iter_impl<Iterable> parent_type;
 
-    ShellIter() = delete;
+    private:
+      const parent_type* parent;
+      int pos_;
 
-    ShellIter(const Ref<GaussianBasisSet>& basis, int position);
-    ShellIter(const Ref<GaussianBasisSet>& basis, const Ref<GaussianBasisSet>& dfbasis, int position);
-
-    bool operator!=(const ShellIter& other) const;
-
-    const ShellIter& operator++();
-
-    const ShellData operator*() const;
-
-  private:
-
-    int pos_;
-    Ref<GaussianBasisSet> basis_;
-    Ref<GaussianBasisSet> dfbasis_;
-
-};
-
-class BasisFunctionIter {
-
-  public:
-
-    BasisFunctionIter() = delete;
-
-    BasisFunctionIter(const Ref<GaussianBasisSet>& basis, int position);
-    BasisFunctionIter(const Ref<GaussianBasisSet>& basis, const Ref<GaussianBasisSet>& dfbasis, int position);
-
-    bool operator!=(const BasisFunctionIter& other) const;
-
-    const BasisFunctionIter& operator++();
-
-    const BasisFunctionData operator*() const;
-
-  private:
-
-    int pos_;
-    Ref<GaussianBasisSet> basis_;
-    Ref<GaussianBasisSet> dfbasis_;
-
-};
+    public:
 
 
-#define ASSERT_SHELL_BOUNDS \
-  assert(basis.nonnull() && "null basis"); \
-  assert(index < basis->nshell() && "index larger than nshell()"); \
-  assert(index >= 0 && "index less than 0")
+      thr_iter(const parent_type* parent, int pos)
+        : parent(parent), pos_(pos)
+      { }
 
-struct ShellData {
+      bool operator!=(const thr_iter& other) const { return pos_ == other.pos_; }
 
-    ShellData();
+      auto operator*() const -> decltype(decltype(parent->iter_.begin())().operator*());
 
-    ShellData(
-        int idx,
-        Ref<GaussianBasisSet> basis,
-        Ref<GaussianBasisSet> dfbasis = 0
-    );
+      const self_type& operator++();
 
-    ShellData(const ShellData&);
+  };
 
-    ShellData& operator=(const ShellData& other);
+  template <typename Iterable>
+  struct threaded_iter_impl {
+      threaded_iter_impl(
+          const Iterable& iter,
+          int ithr,
+          int nthr,
+          bool contiguous = true
+      ) : ithr_(ithr), nthr_(nthr), iter_(iter), contig_(contiguous)
+      {
+        iter_size_ = std::distance(iter_.begin(), iter_.end());
+        n_per_thr_ = iter_size_ / nthr_;
+        if(iter_size_ % nthr_ == 0){
+          n_last_thr_ = n_per_thr_;
+        }
+        else{
+          // TODO FINISH THIS
+        }
 
-    int index;
-    property<ShellData, int> bfoff;
-    property<ShellData, int> nbf;
-    property<ShellData, int> center;
-    property<ShellData, int> atom_bfoff;
-    property<ShellData, int> atom_shoff;
-    property<ShellData, int> atom_nsh;
-    property<ShellData, int> atom_nbf;
-    property<ShellData, int> bfoff_in_atom;
-    property<ShellData, int> shoff_in_atom;
-    property<ShellData, int> atom_last_function;
-    property<ShellData, int> atom_last_shell;
-    property<ShellData, int> last_function;
+      }
 
-    // Used when an auxiliary basis is set in the parent ShellIter.  Otherwise, set to -1
-    property<ShellData, int> atom_dfshoff;
-    property<ShellData, int> atom_dfbfoff;
-    property<ShellData, int> atom_dfnbf;
-    property<ShellData, int> atom_dfnsh;
-    property<ShellData, int> atom_df_last_function;
-    property<ShellData, int> atom_df_last_shell;
+      thr_iter<Iterable> begin() const
+      {
+        if(contig_){
+          return thr_iter<Iterable>(this, ithr_ * n_per_thr_);
+        }
+        else{
+          return thr_iter<Iterable>(this, ithr_);
+        }
+      }
 
-    operator int() { ASSERT_SHELL_BOUNDS; return index; }
+      thr_iter<Iterable> end() const
+      {
+        if(contig_){
+          if(n_last_thr_ == 0 or )
+          return thr_iter<Iterable>(this, ithr_ * n_per_thr_);
+        }
+        else{
+          return thr_iter<Iterable>(this, ithr_);
+        }
+      }
 
-    Ref<GaussianBasisSet> basis;
-    Ref<GaussianBasisSet> dfbasis;
+    private:
+      int ithr_;
+      int iter_size_;
+      int nthr_;
+      int n_per_thr_;
+      int n_last_thr_;
+      Iterable iter_;
+      bool contig_;
+      friend struct thr_iter<Iterable>;
+  };
 
-  private:
-    inline int get_nbf() const { ASSERT_SHELL_BOUNDS; return basis->shell(index).nfunction(); }
-    inline int get_bfoff() const { ASSERT_SHELL_BOUNDS; return basis->shell_to_function(index); }
-    inline int get_center() const { ASSERT_SHELL_BOUNDS; return basis->shell_to_center(index); }
-    inline int get_atom_bfoff() const { ASSERT_SHELL_BOUNDS; return basis->shell_to_function(atom_shoff); }
-    inline int get_atom_shoff() const { ASSERT_SHELL_BOUNDS; return basis->shell_on_center(center, 0); }
-    inline int get_atom_nsh() const { ASSERT_SHELL_BOUNDS; return basis->nshell_on_center(center); }
-    inline int get_atom_nbf() const { ASSERT_SHELL_BOUNDS; return basis->nbasis_on_center(center); }
-    inline int get_shoff_in_atom() const { ASSERT_SHELL_BOUNDS; return index - atom_shoff; }
-    inline int get_bfoff_in_atom() const { ASSERT_SHELL_BOUNDS; return bfoff - atom_bfoff; }
-    inline int get_atom_last_function() const { ASSERT_SHELL_BOUNDS; return atom_bfoff + atom_nbf - 1; }
-    inline int get_last_function() const { ASSERT_SHELL_BOUNDS; return bfoff + nbf - 1; }
-    inline int get_atom_last_shell() const { ASSERT_SHELL_BOUNDS; return atom_shoff + atom_nsh - 1; }
-    inline int get_atom_dfshoff() const { assert(dfbasis.nonnull()); return dfbasis->shell_on_center(center, 0); }
-    inline int get_atom_dfbfoff() const { assert(dfbasis.nonnull()); return dfbasis->shell_to_function(atom_dfshoff); }
-    inline int get_atom_dfnsh() const { assert(dfbasis.nonnull()); return dfbasis->nshell_on_center(center); }
-    inline int get_atom_dfnbf() const { assert(dfbasis.nonnull()); return dfbasis->nbasis_on_center(center); }
-    inline int get_atom_df_last_function() const { assert(dfbasis.nonnull()); return atom_dfbfoff + atom_dfnbf - 1; }
-    inline int get_atom_df_last_shell() const { assert(dfbasis.nonnull()); return atom_dfshoff + atom_dfnsh - 1; }
-    inline int assert_not_initialized() const { assert(false && "ShellData object not initialized"); return -1; }
+  template <typename Iterable>
+  auto thr_iter<Iterable>::operator*() const -> decltype(decltype(parent->iter_.begin())().operator*())
+  {
+    return *(parent->iter_.begin() + pos_);
+  }
 
-};
+  template <typename Iterable>
+  const thr_iter<Iterable>&
+  thr_iter<Iterable>::operator++(){
+    if(parent->contig_){
+      pos_++;
+    }
+    else{
+      pos_ += parent->nthr_;
+    }
+  }
 
 
-struct BasisFunctionData {
+}
+*/
 
-    BasisFunctionData(
-        int idx,
-        const Ref<GaussianBasisSet>& basis,
-        const Ref<GaussianBasisSet>& dfbasis = 0
-    );
-
-    BasisFunctionData() { }
-
-    int index;
-    int shell_index;
-    int shell_nbf;
-    int shell_bfoff;
-    int center;
-    int atom_bfoff;
-    int atom_shoff;
-    int atom_nsh;
-    int atom_nbf;
-    int bfoff_in_atom;
-    int bfoff_in_shell;
-    int shoff_in_atom;
-    int atom_last_function;
-    int atom_last_shell;
-
-    GaussianBasisSet::Shell* shell;
-
-    // Used when an auxiliary basis is set in the parent BasisFunctionIter.  Otherwise, set to -1
-    int atom_dfshoff = -1;
-    int atom_dfbfoff = -1;
-    int atom_dfnbf = -1;
-    int atom_dfnsh = -1;
-    int atom_df_last_function = -1;
-    int atom_df_last_shell = -1;
-
-    operator int() { return index; }
-
-};
-
-//============================================================================//
-// shell_iterator
-
-const shell_iter_wrapper
-shell_iterator(const Ref<GaussianBasisSet>& basis, const Ref<GaussianBasisSet>& dfbasis = 0);
-
-const shell_iter_wrapper
-shell_iterator(const Ref<GaussianBasisSet>& basis, int last_shell);
-
-const shell_iter_wrapper
-shell_iterator(const Ref<GaussianBasisSet>& basis, int first_shell, int last_shell);
-
-const shell_iter_wrapper
-shell_iterator(const Ref<GaussianBasisSet>& basis, const Ref<GaussianBasisSet>& dfbasis, int last_shell);
-
-const shell_iter_wrapper
-shell_iterator(const Ref<GaussianBasisSet>& basis, const Ref<GaussianBasisSet>& dfbasis, int first_shell, int last_shell);
-
-//============================================================================//
-// function_iterator
-
-const function_iter_wrapper
-function_iterator(const Ref<GaussianBasisSet>& basis, const Ref<GaussianBasisSet>& dfbasis = 0);
-
-const function_iter_wrapper
-function_iterator(const Ref<GaussianBasisSet>& basis, int last_function, const Ref<GaussianBasisSet>& dfbasis = 0);
-
-const function_iter_wrapper
-function_iterator(const Ref<GaussianBasisSet>& basis, int first_function, int last_function, const Ref<GaussianBasisSet>& dfbasis = 0);
-
-const function_iter_wrapper
-function_iterator(const Ref<GaussianBasisSet>& basis, const Ref<GaussianBasisSet>& dfbasis, int first_function, int last_function);
-
-const function_iter_wrapper
-function_iterator(const Ref<GaussianBasisSet>& basis, const Ref<GaussianBasisSet>& dfbasis, int last_function);
-
-const function_iter_wrapper
-function_iterator(const ShellData& ish);
-
-//============================================================================//
-
-const shell_iter_wrapper
-iter_shells_on_center(const Ref<GaussianBasisSet>& basis, int center, const Ref<GaussianBasisSet>& dfbasis = 0);
-
-const function_iter_wrapper
-iter_functions_on_center(const Ref<GaussianBasisSet>& basis, int center, const Ref<GaussianBasisSet>& dfbasis = 0);
-
-const function_iter_wrapper
-iter_functions_in_shell(const Ref<GaussianBasisSet>& basis, int shell, const Ref<GaussianBasisSet>& dfbasis = 0);
-
-ShellData shell_data(Ref<GaussianBasisSet> basis, int ish, Ref<GaussianBasisSet> dfbasis = 0);
-
-const BasisFunctionData function_data(const Ref<GaussianBasisSet>& basis, int ish, const Ref<GaussianBasisSet>& dfbasis = 0);
+/*
+void
+do_threaded(int nthread, std::function<void(int)> f){
+  boost::thread_group compute_threads;
+  // Loop over number of threads
+  for(int ithr = 0; ithr < nthread; ++ithr) {
+    // create each thread that runs f
+    compute_threads.create_thread([&, ithr](){
+      // run the work
+      f(ithr);
+    });
+  }
+  // join the created threads
+  compute_threads.join_all();
+}
+*/
 
 //============================================================================//
 //============================================================================//
@@ -319,6 +212,10 @@ class CADFCLHF: public CLHF {
         std::shared_ptr<Eigen::MatrixXd>,
         int, int, int, TwoBodyOper::type
     > ThreeCenterIntCache;
+    typedef ConcurrentCache<
+        double,
+        int, int, int, int, TwoBodyOper::type
+    > FourCenterMaxIntCache;
     typedef ConcurrentCache<std::shared_ptr<Decomposition>, int, int> DecompositionCache;
 
     CADFCLHF(StateIn&);
@@ -338,6 +235,10 @@ class CADFCLHF: public CLHF {
 
   private:
 
+    typedef enum {
+      AllPairs = 0,
+      SignificantPairs = 1
+    } PairSet;
 
     enum {
       NoMorePairs = -1
@@ -363,7 +264,23 @@ class CADFCLHF: public CLHF {
     // Convenience variable for better code readibility
     static const TwoBodyOper::type coulomb_oper_type_ = TwoBodyOper::eri;
 
-    bool get_shell_pair(ShellData& mu, ShellData& nu);
+    bool get_shell_pair(ShellData& mu, ShellData& nu, PairSet pset = AllPairs);
+
+    void loop_shell_pairs_threaded(PairSet pset,
+        const std::function<void(int, const ShellData&, const ShellData&)>& f
+    );
+
+    void loop_shell_pairs_threaded(
+        const std::function<void(int, const ShellData&, const ShellData&)>& f
+    );
+    /*
+
+    void loop_shell_pairs_threaded(
+        PairSet pset,
+        const std::function<void(int, const ShellData&, const ShellData&)>& f,
+        const std::function<void(int)>& when_done
+    );
+    */
 
     RefSCMatrix compute_J();
 
@@ -372,6 +289,8 @@ class CADFCLHF: public CLHF {
     void compute_coefficients();
 
     void initialize();
+
+    void init_significant_pairs();
 
     void init_threads();
 
@@ -402,6 +321,9 @@ class CADFCLHF: public CLHF {
     // Non-blocked version of cl_gmat_
     RefSymmSCMatrix gmat_;
 
+    /// The threshold for including pairs in the pair list using half of the schwarz bound
+    double pair_thresh_;
+
     // Whether or not the MessageGrp is an instance of MPIMessageGrp
     bool using_mpi_;
 
@@ -412,10 +334,13 @@ class CADFCLHF: public CLHF {
     Ref<GaussianBasisSet> dfbs_ = 0;
 
     // Where are the shell pairs being evaluated?
-    std::map<std::pair<int, int>, int> pair_assignments_;
+    std::map<PairSet, std::map<std::pair<int, int>, int>> pair_assignments_;
 
-    // What shell pairs are being evaluated on the current node?
-    std::vector<std::pair<int, int> > local_pairs_;
+    // What pairs are being evaluated on the current node?
+    std::map<PairSet, std::vector<std::pair<int, int>>> local_pairs_;
+
+    // List of the pairs with half-schwarz bounds larger than pair_thresh_
+    std::vector<std::pair<int, int>> sig_pairs_;
 
     // Where are we in the iteration over the local_pairs_?
     std::atomic<int> local_pairs_spot_;
@@ -439,6 +364,9 @@ class CADFCLHF: public CLHF {
     DecompositionCache decomps_;
     TwoCenterIntCache ints2_;
     ThreeCenterIntCache ints3_;
+    FourCenterMaxIntCache ints4maxes_;
+
+    bool threads_initialized_ = false;
 
     static ClassDesc cd_;
 

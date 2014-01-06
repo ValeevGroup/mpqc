@@ -276,22 +276,25 @@ namespace sc {
       // V^rk_sk which is summed over k
       TArray2 Vrk_sk(const char* r, const char* s);
 
-      // compute Xai contribution from MP2 F12 coulping part
-      TArray2 Xai_Cmp2f12(const double C_0, const double C_1,
-                          const TArray4& T2_ijab, const TArray4& A_ijab);
+      // compute Xam contribution from CABS Singles
+      TArray2 Xam_CabsSingles(const TArray2& TmA, const TArray2& Tma);
 
-      // compute Xai contribution from MP2
-      TArray2 Xai_mp2(const TArray4& T2_ijab);
+      // compute Xam contribution from MP2
+      TArray2 Xam_mp2(const TArray4& T2_ijab,
+                      const TArray2& Dij, const TArray2& Dab);
 
-      // compute Xai contribution from CABS Singles
-      TArray2 Xai_CabsSingles();
+      // compute Xam contribution from MP2 F12 coulping part
+      TArray2 Xam_Cmp2f12(const double C_0, const double C_1,
+                          const TArray4& T2_ijab, const TArray4& A_ijab,
+                          const TArray2& Dij, const TArray2& Dab,
+                          const TArray2& RT_apb);
 
-      // compute Xai contribution from F12 V part
-      TArray2 Xai_V(const double C_0, const double C_1);
-      // compute Xai contribution from F12 X part
-      TArray2 Xai_X(const double C_0, const double C_1);
-      // compute Xai contribution from F12 B part
-      TArray2 Xai_B(const double C_0, const double C_1);
+      // compute Xam contribution from F12 V part
+      TArray2 Xam_V(const double C_0, const double C_1);
+      // compute Xam contribution from F12 X part
+      TArray2 Xam_X(const double C_0, const double C_1);
+      // compute Xam contribution from F12 B part
+      TArray2 Xam_B(const double C_0, const double C_1);
 
       /** returns the 2-particle density matrix
       * @return \f$ \gamma^{pq}_{rs} \f$, respectively

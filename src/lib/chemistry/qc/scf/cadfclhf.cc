@@ -37,9 +37,16 @@
 #include <memory>
 #include <math.h>
 
+#define EIGEN_NO_AUTOMATIC_RESIZING 1
+
 #ifdef ECLIPSE_PARSER_ONLY
 #include <util/misc/sharedptr.h>
 #endif
+
+
+#define DUMP(expr) cout << #expr << " = " << (expr) << endl;
+
+
 
 using namespace sc;
 using namespace std;
@@ -311,6 +318,7 @@ CADFCLHF::init_significant_pairs()
   scf_grp_->max(max_schwarz);
   //----------------------------------------//
   // Now go through the list and figure out which ones are significant
+  shell_to_sig_shells_.resize(basis()->nshell());
   do_threaded(nthread, [&](int ithr){
     std::vector<IntPair> my_sig_pairs;
     for(int i = ithr; i < pair_values.size(); i += nthread){
@@ -325,6 +333,9 @@ CADFCLHF::init_significant_pairs()
     boost::lock_guard<boost::mutex> lg(pair_mutex);
     for(auto item : my_sig_pairs){
       sig_pairs_.push_back(item);
+      shell_to_sig_shells_[item.first].push_back(item.second);
+      if(item.first != item.second)
+        shell_to_sig_shells_[item.second].push_back(item.first);
     }
   });
   //----------------------------------------//
@@ -453,10 +464,9 @@ CADFCLHF::compute_J()
   const int nthread = threadgrp_->nthread();
   const int me = msg.me();
   const int n_node = msg.n();
-  GaussianBasisSet& obs = *basis();
-  GaussianBasisSet& dfbs = *dfbs_;
-  const int nbf = obs.nbasis();
-  const int dfnbf = dfbs.nbasis();
+  const Ref<GaussianBasisSet>& obs = basis();
+  const int nbf = obs->nbasis();
+  const int dfnbf = dfbs_->nbasis();
   //----------------------------------------//
   // Get the density in an Eigen::Map form
   double *D_ptr = allocate<double>(nbf*nbf);
@@ -477,6 +487,7 @@ CADFCLHF::compute_J()
   /*=======================================================================================*/
   /* Form C_tilde and d_tilde                              		                        {{{1 */ #if 1 // begin fold
   //----------------------------------------//
+  timer.enter("compute C_tilde");
   Eigen::VectorXd C_tilde(dfnbf);
   C_tilde = Eigen::VectorXd::Zero(dfnbf);
   {
@@ -499,8 +510,8 @@ CADFCLHF::compute_J()
           double pf = (ish == jsh) ? 2.0 : 4.0;
           //----------------------------------------//
           if(ithr == 0) timer.change("loop functions");
-          for(auto mu : function_iterator(ish)){
-            for(auto nu : function_iterator(jsh)){
+          for(int mu = ish.bfoff; mu <= ish.last_function; ++mu){
+            for(int nu = jsh.bfoff; nu <= jsh.last_function; ++nu){
               IntPair ij(mu, nu);
               auto cpair = coefs_[ij];
               VectorMap& Ca = *(cpair.first);
@@ -532,14 +543,16 @@ CADFCLHF::compute_J()
   if(xml_debug) {
     write_as_xml("C_tilde", C_tilde);
   }
+  timer.exit("compute C_tilde");
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
   /* Form g_tilde                                          		                        {{{1 */ #if 1 // begin fold
   //----------------------------------------//
   // TODO Thread this
+  timer.enter("compute g_tilde");
   shared_ptr<Eigen::MatrixXd> X_g_Y = ints_to_eigen(
-    boost::irange(0, (int)dfbs.nshell()),
-    boost::irange(0, (int)dfbs.nshell()),
+    boost::irange(0, (int)dfbs_->nshell()),
+    boost::irange(0, (int)dfbs_->nshell()),
     eris_2c_[0],
     coulomb_oper_type_
   );
@@ -548,9 +561,11 @@ CADFCLHF::compute_J()
   if(xml_debug) {
     write_as_xml("g_tilde", g_tilde);
   }
+  timer.exit("compute g_tilde");
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
   /* Form dtilde and add in Ctilde contribution to J       		                        {{{1 */ #if 1 // begin fold
+  timer.enter("compute d_tilde");
   Eigen::VectorXd d_tilde(dfnbf);
   d_tilde = Eigen::VectorXd::Zero(dfnbf);
   {
@@ -576,24 +591,25 @@ CADFCLHF::compute_J()
           double perm_fact = (ish == jsh) ? 2.0 : 4.0;
           //----------------------------------------//
           //for(int kshdf = 0; kshdf < dfbs.nshell(); ++kshdf){
-          for(auto kshdf : shell_iterator(&dfbs)){
+          for(auto kshdf : shell_iterator(dfbs_)){
             std::shared_ptr<Eigen::MatrixXd> g_part = ints_to_eigen(
                 ish, jsh, kshdf,
                 eris_3c_[ithr],
                 coulomb_oper_type_
             );
-            for(auto ibf : function_iterator(ish)){
-              for(auto jbf : function_iterator(jsh)){
+            for(int ibf = 0, mu = ish.bfoff; ibf < ish.nbf; ++ibf, ++mu){
+              //for(auto jbf : function_iterator(jsh)){
+              for(int jbf = 0, nu = jsh.bfoff; jbf < jsh.nbf; ++jbf, ++nu){
                 //----------------------------------------//
-                const int ijbf = ibf.bfoff_in_shell*jsh.nbf + jbf.bfoff_in_shell;
+                const int ijbf = ibf*jsh.nbf + jbf;
                 //----------------------------------------//
                 // compute dtilde contribution
-                dt.segment(kshdf.bfoff, kshdf.nbf) += perm_fact * D(ibf, jbf) * g_part->row(ijbf);
+                dt.segment(kshdf.bfoff, kshdf.nbf) += perm_fact * D(mu, nu) * g_part->row(ijbf);
                 //----------------------------------------//
                 // add C_tilde * g_part to J
-                if(jbf <= ibf){
+                if(nu <= mu){
                   // only constructing the lower triangle of the J matrix
-                  jpart(ibf, jbf) += g_part->row(ijbf) * C_tilde.segment(kshdf.bfoff, kshdf.nbf);
+                  jpart(mu, nu) += g_part->row(ijbf) * C_tilde.segment(kshdf.bfoff, kshdf.nbf);
                 }
                 //----------------------------------------//
               } // end loop over jbf
@@ -617,10 +633,12 @@ CADFCLHF::compute_J()
   if(xml_debug) {
     write_as_xml("d_tilde", d_tilde);
   }
+  timer.exit("compute d_tilde");
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
   /* Add in first and third term contributions to J       		                        {{{1 */ #if 1 // begin fold
   {
+    timer.enter("J contributions");
     boost::mutex tmp_mutex;
     boost::thread_group compute_threads;
     //----------------------------------------//
@@ -669,6 +687,7 @@ CADFCLHF::compute_J()
       }); // end create_thread
     } // end enumeration of threads
     compute_threads.join_all();
+    timer.exit("J contributions");
   } // compute_threads is destroyed here
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
@@ -687,13 +706,13 @@ CADFCLHF::compute_J()
   /*=======================================================================================*/
   /* Transfer J to a RefSCMatrix                           		                        {{{1 */ #if 1 // begin fold
   Ref<Integral> localints = integral()->clone();
-  localints->set_basis(&obs);
+  localints->set_basis(obs);
   Ref<PetiteList> pl = localints->petite_list();
   RefSCDimension obsdim = pl->AO_basisdim();
   RefSCMatrix result(
       obsdim,
       obsdim,
-      obs.so_matrixkit()
+      obs->so_matrixkit()
   );
   result.assign(J.data());
   /*****************************************************************************************/ #endif //1}}}
@@ -720,10 +739,11 @@ CADFCLHF::compute_K()
   const int nthread = threadgrp_->nthread();
   const int me = msg.me();
   const int n_node = msg.n();
-  GaussianBasisSet& obs = *basis();
-  GaussianBasisSet& dfbs = *dfbs_;
-  const int nbf = obs.nbasis();
-  const int dfnbf = dfbs.nbasis();
+  const Ref<GaussianBasisSet>& obs = basis();
+  GaussianBasisSet* obsptr = basis();
+  GaussianBasisSet* dfbsptr = dfbs_;
+  const int nbf = obs->nbasis();
+  const int dfnbf = dfbs_->nbasis();
   //----------------------------------------//
   // Get the density in an Eigen::Map form
   double *D_ptr = allocate<double>(nbf*nbf);
@@ -736,8 +756,12 @@ CADFCLHF::compute_K()
   // Match density scaling in old code:
   D *= 0.5;
   //----------------------------------------//
-  Eigen::MatrixXd Kt(obs.nbasis(), obs.nbasis());
-  Kt = Eigen::MatrixXd::Zero(obs.nbasis(), obs.nbasis());
+  Eigen::MatrixXd Kt(nbf, nbf);
+  Eigen::MatrixXd Kt2(nbf, nbf);
+  Eigen::MatrixXd K2(nbf, nbf);
+  Kt = Eigen::MatrixXd::Zero(nbf, nbf);
+  Kt2 = Eigen::MatrixXd::Zero(nbf, nbf);
+  K2 = Eigen::MatrixXd::Zero(nbf, nbf);
   //----------------------------------------//
   // reset the iteration over local pairs
   local_pairs_spot_ = 0;
@@ -746,16 +770,18 @@ CADFCLHF::compute_K()
   //   problems, this might not fit in memory and
   //   this would need to be revised
   std::shared_ptr<Eigen::MatrixXd> g2_ptr = ints_to_eigen(
-      int_range(0, dfbs.nshell()),
-      int_range(0, dfbs.nshell()),
+      int_range(0, dfbs_->nshell()),
+      int_range(0, dfbs_->nshell()),
       eris_2c_[0], coulomb_oper_type_
   );
   Eigen::MatrixXd& g2 = *g2_ptr;
+  //Eigen::Map<Eigen::MatrixXd> g2(g2_ptr->data(), dfnbf, dfnbf);
   //----------------------------------------//
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
-  /* Loop over local shell pairs                           		                        {{{1 */ #if 1 // begin fold
+  /* Loop over local shell pairs for three body contributions                         {{{1 */ #if 1 // begin fold
   {
+    Timer timer("three body contributions");
     boost::mutex tmp_mutex;
     boost::thread_group compute_threads;
     //----------------------------------------//
@@ -765,45 +791,51 @@ CADFCLHF::compute_K()
     for(int ithr = 0; ithr < nthread; ++ithr) {
       // ...and create each thread that computes pairs
       compute_threads.create_thread([&,ithr](){
-        Eigen::MatrixXd Kt_part(obs.nbasis(), obs.nbasis());
-        Kt_part = Eigen::MatrixXd::Zero(obs.nbasis(), obs.nbasis());
+        Eigen::MatrixXd Kt_part(nbf, nbf);
+        Kt_part = Eigen::MatrixXd::Zero(nbf, nbf);
         ShellData ish, jsh;
         while(get_shell_pair(ish, jsh, SignificantPairs)){
           const double pf = 2.0;
           /*-----------------------------------------------------*/
           /* Setup                                          {{{2 */ #if 2 // begin fold
+          std::vector<Eigen::MatrixXd> A_mus(ish.nbf);
+          std::vector<Eigen::MatrixXd> A_rhos((ish == jsh) ? 0 : (int)jsh.nbf);
           std::vector<Eigen::MatrixXd> B_mus(ish.nbf);
           std::vector<Eigen::MatrixXd> B_rhos((ish == jsh) ? 0 : (int)jsh.nbf);
           std::vector<Eigen::MatrixXd> dt_mus(ish.nbf);
           std::vector<Eigen::MatrixXd> dt_rhos((ish == jsh) ? 0 : (int)jsh.nbf);
           std::vector<Eigen::MatrixXd> gt_mus(ish.nbf);
           std::vector<Eigen::MatrixXd> gt_rhos((ish == jsh) ? 0 : (int)jsh.nbf);
-          for(auto mu : iter_functions_in_shell(&obs, ish)){
-            B_mus[mu.bfoff_in_shell].resize(obs.nbasis(), dfbs.nbasis());
-            B_mus[mu.bfoff_in_shell] = Eigen::MatrixXd::Zero(obs.nbasis(), dfbs.nbasis());
-            dt_mus[mu.bfoff_in_shell].resize(obs.nbasis(), dfbs.nbasis());
-            dt_mus[mu.bfoff_in_shell] = Eigen::MatrixXd::Zero(obs.nbasis(), dfbs.nbasis());
-            gt_mus[mu.bfoff_in_shell].resize(obs.nbasis(), dfbs.nbasis());
-            gt_mus[mu.bfoff_in_shell] = Eigen::MatrixXd::Zero(obs.nbasis(), dfbs.nbasis());
+          for(auto mu : function_iterator(ish)){
+            A_mus[mu.bfoff_in_shell].resize(nbf, dfnbf);
+            A_mus[mu.bfoff_in_shell] = Eigen::MatrixXd::Zero(nbf, dfnbf);
+            B_mus[mu.bfoff_in_shell].resize(nbf, dfnbf);
+            B_mus[mu.bfoff_in_shell] = Eigen::MatrixXd::Zero(nbf, dfnbf);
+            dt_mus[mu.bfoff_in_shell].resize(nbf, dfnbf);
+            dt_mus[mu.bfoff_in_shell] = Eigen::MatrixXd::Zero(nbf, dfnbf);
+            gt_mus[mu.bfoff_in_shell].resize(nbf, dfnbf);
+            gt_mus[mu.bfoff_in_shell] = Eigen::MatrixXd::Zero(nbf, dfnbf);
           }
           if(ish != jsh){
-            for(auto rho : iter_functions_in_shell(&obs, jsh)){
-              B_rhos[rho.bfoff_in_shell].resize(obs.nbasis(), dfbs.nbasis());
-              B_rhos[rho.bfoff_in_shell] = Eigen::MatrixXd::Zero(obs.nbasis(), dfbs.nbasis());
-              dt_rhos[rho.bfoff_in_shell].resize(obs.nbasis(), dfbs.nbasis());
-              dt_rhos[rho.bfoff_in_shell] = Eigen::MatrixXd::Zero(obs.nbasis(), dfbs.nbasis());
-              gt_rhos[rho.bfoff_in_shell].resize(obs.nbasis(), dfbs.nbasis());
-              gt_rhos[rho.bfoff_in_shell] = Eigen::MatrixXd::Zero(obs.nbasis(), dfbs.nbasis());
+            for(auto rho : function_iterator(jsh)){
+              A_rhos[rho.bfoff_in_shell].resize(nbf, dfnbf);
+              A_rhos[rho.bfoff_in_shell] = Eigen::MatrixXd::Zero(nbf, dfnbf);
+              B_rhos[rho.bfoff_in_shell].resize(nbf, dfnbf);
+              B_rhos[rho.bfoff_in_shell] = Eigen::MatrixXd::Zero(nbf, dfnbf);
+              dt_rhos[rho.bfoff_in_shell].resize(nbf, dfnbf);
+              dt_rhos[rho.bfoff_in_shell] = Eigen::MatrixXd::Zero(nbf, dfnbf);
+              gt_rhos[rho.bfoff_in_shell].resize(nbf, dfnbf);
+              gt_rhos[rho.bfoff_in_shell] = Eigen::MatrixXd::Zero(nbf, dfnbf);
             }
           }
           /*******************************************************/ #endif //2}}}
           /*-----------------------------------------------------*/
           /* Compute B for functions in ish, jsh            {{{2 */ #if 2 // begin fold
           if(ithr == 0) timer.enter("build B");
-          //for(auto kshdf : shell_iterator(&dfbs)){
-          for(int kshdf = 0; kshdf < dfbs.nshell(); ++kshdf){
-            const int kshdf_bfoff = dfbs.shell_to_function(kshdf);
-            const int kshdf_nbf = dfbs.shell(kshdf).nfunction();
+          for(int kshdf = 0; kshdf < dfbs_->nshell(); ++kshdf){
+            const int kshdf_bfoff = dfbs_->shell_to_function(kshdf);
+            const int kshdf_nbf = dfbs_->shell(kshdf).nfunction();
+            //----------------------------------------//
             // Get the integrals for ish, jsh, ksh
             if(ithr == 0) timer.enter("compute ints");
             std::shared_ptr<Eigen::MatrixXd> g_part = ints_to_eigen(
@@ -811,34 +843,19 @@ CADFCLHF::compute_K()
                 eris_3c_[ithr],
                 coulomb_oper_type_
             );
+            //----------------------------------------//
+            // B_mus
             if(ithr == 0) timer.change("B_mus");
-            /*
-            for(auto mu : function_iterator(ish)){
-              for(auto sigma : function_iterator(&obs)){
-                //----------------------------------------//
-                // B_mus
-                B_mus[mu.bfoff_in_shell].row(sigma).segment(kshdf.bfoff, kshdf.nbf) +=
-                    pf * D.row(sigma).segment(jsh.bfoff, jsh.nbf)
-                      * g_part->middleRows(mu.bfoff_in_shell * jsh.nbf, jsh.nbf);
-                //----------------------------------------//
-              } // End loop over sigma
-            } // end loop over mu
-            */
-            //for(auto mu : function_iterator(ish)){
             for(int ibf = 0; ibf < ish.nbf; ++ibf){
-              //----------------------------------------//
-              // B_mus
               B_mus[ibf].middleCols(kshdf_bfoff, kshdf_nbf) +=
                   pf * D.middleCols(jsh.bfoff, jsh.nbf)
                     * g_part->middleRows(ibf * jsh.nbf, jsh.nbf);
-              //----------------------------------------//
             } // end loop over mu
+            //----------------------------------------//
             if(ithr == 0) timer.change("B_rhos");
             if(ish != jsh) {
               // Do the contribution to the other way around
-              //for(auto mu : function_iterator(ish)){
               for(int ibf = 0, mu = ish.bfoff; ibf < ish.nbf; ++ibf, ++mu){
-                //for(auto rho : function_iterator(jsh)){
                 for(int jbf = 0; jbf < jsh.nbf; ++jbf){
                   //----------------------------------------//
                   B_rhos[jbf].middleCols(kshdf_bfoff, kshdf_nbf) +=
@@ -846,9 +863,11 @@ CADFCLHF::compute_K()
                   //----------------------------------------//
                 }
               }
-            }
+            } // end if ish != jsh
+            //----------------------------------------//
             if(ithr == 0) timer.exit();
           } // end loop over kshdf
+          //----------------------------------------//
           if(xml_debug) {
             for(auto mu : function_iterator(ish)){
               write_as_xml("B_part", B_mus[mu.bfoff_in_shell], std::map<std::string, int>{ {"mu", mu}, {"jsh", jsh} } );
@@ -859,54 +878,55 @@ CADFCLHF::compute_K()
               }
             }
           }
-           if(ithr == 0) timer.exit("build B");
+          //----------------------------------------//
+          if(ithr == 0) timer.exit("build B");
           /*******************************************************/ #endif //2}}}
           /*-----------------------------------------------------*/
           /* Compute d_tilde and g_tilde for bfs in ish,jsh {{{2 */ #if 2 // begin fold
-           if(ithr == 0) timer.enter("build d_tilde");
-          for(auto mu : function_iterator(ish)){
-            //----------------------------------------//
-            // Compute d_tilde for a given mu
-            for(auto rho : function_iterator(jsh)){
-              //----------------------------------------//
-              // Get the coefficients
-              IntPair mu_rho(mu, rho);
-              auto cpair = coefs_[mu_rho];
-              VectorMap& Ca = *(cpair.first);
-              VectorMap& Cb = *(cpair.second);
-              //----------------------------------------//
-              // dt_mus
-              // column of D times Ca as row vector
-              dt_mus[mu.bfoff_in_shell].middleCols(ish.atom_dfbfoff, ish.atom_dfnbf) +=
-                  pf * D.row(rho).transpose() * Ca.transpose();
-              if(ish.center != jsh.center) {
-                dt_mus[mu.bfoff_in_shell].middleCols(jsh.atom_dfbfoff, jsh.atom_dfnbf) +=
-                    pf * D.row(rho).transpose() * Cb.transpose();
-              }
-              //----------------------------------------//
-              if(ish != jsh) {
-                // dt_rhos
-                // same thing, utilizing C_{mu,rho} = C_{rho,mu} (accounting for ordering, etc.)
-                dt_rhos[rho.bfoff_in_shell].middleCols(ish.atom_dfbfoff, ish.atom_dfnbf) +=
-                    pf * D.row(mu).transpose() * Ca.transpose();
-                if(ish.center != jsh.center) {
-                  dt_rhos[rho.bfoff_in_shell].middleCols(jsh.atom_dfbfoff, jsh.atom_dfnbf) +=
-                      pf * D.row(mu).transpose() * Cb.transpose();
-                }
-              }
-              //----------------------------------------//
-            } // end loop over rho
-            //----------------------------------------//
-          } // end loop over mu
-           if(ithr == 0) timer.exit("build d_tilde");
+          //if(ithr == 0) timer.enter("build d_tilde");
+          //for(auto mu : function_iterator(ish)){
+          //  //----------------------------------------//
+          //  // Compute d_tilde for a given mu
+          //  for(auto rho : function_iterator(jsh)){
+          //    //----------------------------------------//
+          //    // Get the coefficients
+          //    IntPair mu_rho(mu, rho);
+          //    auto cpair = coefs_[mu_rho];
+          //    VectorMap& Ca = *(cpair.first);
+          //    VectorMap& Cb = *(cpair.second);
+          //    //----------------------------------------//
+          //    // dt_mus
+          //    // column of D times Ca as row vector
+          //    dt_mus[mu.bfoff_in_shell].middleCols(ish.atom_dfbfoff, ish.atom_dfnbf) +=
+          //        pf * D.row(rho).transpose() * Ca.transpose();
+          //    if(ish.center != jsh.center) {
+          //      dt_mus[mu.bfoff_in_shell].middleCols(jsh.atom_dfbfoff, jsh.atom_dfnbf) +=
+          //          pf * D.row(rho).transpose() * Cb.transpose();
+          //    }
+          //    //----------------------------------------//
+          //    if(ish != jsh) {
+          //      // dt_rhos
+          //      // same thing, utilizing C_{mu,rho} = C_{rho,mu} (accounting for ordering, etc.)
+          //      dt_rhos[rho.bfoff_in_shell].middleCols(ish.atom_dfbfoff, ish.atom_dfnbf) +=
+          //          pf * D.row(mu).transpose() * Ca.transpose();
+          //      if(ish.center != jsh.center) {
+          //        dt_rhos[rho.bfoff_in_shell].middleCols(jsh.atom_dfbfoff, jsh.atom_dfnbf) +=
+          //            pf * D.row(mu).transpose() * Cb.transpose();
+          //      }
+          //    }
+          //    //----------------------------------------//
+          //  } // end loop over rho
+          //  //----------------------------------------//
+          //} // end loop over mu
+          //if(ithr == 0) timer.exit("build d_tilde");
           /*******************************************************/ #endif //2}}}
           /*-----------------------------------------------------*/
           /* Get g_tilde contribution for bfs in ish,jsh    {{{2 */ #if 2 // begin fold
-           if(ithr == 0) timer.enter("build g");
+          //if(ithr == 0) timer.enter("build g");
           /* TODO optimally, this needs to compute blocks of several shells at once and contract these blocks
-          for(auto Ysh : shell_iterator(&dfbs)) {
-            for(auto Xsh : shell_iterator(&dfbs, 0, Ysh)) {
-              timer.enter("compute ints");
+          for(auto Ysh : shell_iterator(dfbs_)) {
+            for(auto Xsh : shell_iterator(dfbs_, 0, Ysh)) {
+              if(ithr == 0) timer.enter("compute ints");
               const double dfpf = Xsh == Ysh ? 1.0 : 2.0;
               Eigen::MatrixXd& g2_part = *ints_to_eigen(
                 Xsh, Ysh,
@@ -914,63 +934,58 @@ CADFCLHF::compute_K()
                 coulomb_oper_type_
               );
               //----------------------------------------//
-              timer.change("gt_mu");
+              if(ithr == 0) timer.change("gt_mu");
               for(auto mu : function_iterator(ish)) {
                 gt_mus[mu.bfoff_in_shell].middleCols(Ysh.bfoff, Ysh.nbf).noalias() +=
                     dfpf * dt_mus[mu.bfoff_in_shell].middleCols(Xsh.bfoff, Xsh.nbf) * g2_part;
               }
               //----------------------------------------//
               if(ish != jsh){
-                timer.change("gt_rho");
+                if(ithr == 0) timer.change("gt_rho");
                 for(auto rho : function_iterator(jsh)) {
                   gt_rhos[rho.bfoff_in_shell].middleCols(Ysh.bfoff, Ysh.nbf).noalias() +=
                       dfpf * dt_rhos[rho.bfoff_in_shell].middleCols(Xsh.bfoff, Xsh.nbf) * g2_part;
                 } // end loop over rho
               }
               //----------------------------------------//
-              timer.exit();
+              if(ithr == 0) timer.exit();
             } // end loop over Xsh
           } // end loop over Ysh
           */
-           if(ithr == 0) timer.enter("gt_mu");
-          for(int mu = 0; mu < ish.nbf; ++mu){
-            gt_mus[mu].noalias() += dt_mus[mu] * g2;
-          }
-          //----------------------------------------//
-          if(ish != jsh){
-             if(ithr == 0) timer.change("gt_rho");
-            for(int rho = 0; rho < jsh.nbf; ++rho) {
-              gt_rhos[rho].noalias() += dt_rhos[rho] * g2;
-            } // end loop over rho
-          }
-           if(ithr == 0) timer.exit();
+          //if(ithr == 0) timer.enter("gt_mu");
+          //for(int mu = 0; mu < ish.nbf; ++mu){
+          //  //gt_mus[mu].noalias() += dt_mus[mu] * g2;
+          //  gt_mus[mu] = dt_mus[mu] * g2;
+          //} // end loop over mu
+          ////----------------------------------------//
+          //if(ish != jsh){
+          //  if(ithr == 0) timer.change("gt_rho");
+          //  for(int rho = 0; rho < jsh.nbf; ++rho) {
+          //    //gt_rhos[rho].noalias() += dt_rhos[rho] * g2;
+          //    gt_rhos[rho] = dt_rhos[rho] * g2;
+          //  } // end loop over rho
+          //}
           //----------------------------------------//
           // Subtract off the term three contribution to B_mus and B_rhos (result is called A in notes)
-          for(auto mu : function_iterator(ish)) {
-            B_mus[mu.bfoff_in_shell] -= 0.5 * gt_mus[mu.bfoff_in_shell];
-          }
-          if(ish != jsh) {
-            for(auto rho : function_iterator(jsh)) {
-              B_rhos[rho.bfoff_in_shell] -= 0.5 * gt_rhos[rho.bfoff_in_shell];
-            }
-          }
-           if(ithr == 0) timer.exit("build g");
+          //if(ithr == 0) timer.enter("compute A");
+          //for(auto mu : function_iterator(ish)) {
+          //  A_mus[mu.bfoff_in_shell] = B_mus[mu.bfoff_in_shell] - 0.5 * dt_mus[mu.bfoff_in_shell] * g2; //gt_mus[mu.bfoff_in_shell];
+          //}
+          //if(ish != jsh) {
+          //  for(auto rho : function_iterator(jsh)) {
+          //    A_rhos[rho.bfoff_in_shell] = B_rhos[rho.bfoff_in_shell] - 0.5 * dt_rhos[rho.bfoff_in_shell] * g2; // gt_rhos[rho.bfoff_in_shell];
+          //  }
+          //}
+          //if(ithr == 0) timer.exit("compute A");
+          //if(ithr == 0) timer.exit("build g");
           /*******************************************************/ #endif //2}}}
           /*-----------------------------------------------------*/
           /* Compute K contributions                        {{{2 */ #if 2 // begin fold
-           if(ithr == 0) timer.enter("K contributions");
-          //for(auto nu : function_iterator(&obs, &dfbs)) {
-          for(int nu = 0; nu < nbf; ++nu) {
-            const int nu_center = obs.shell_to_center(obs.function_to_shell(nu));
-            const int nu_atom_dfbfoff = dfbs.shell_to_function(dfbs.shell_on_center(nu_center, 0));
-            const int nu_atom_dfnbf = dfbs.nbasis_on_center(nu_center);
-            //for(auto sigma : function_iterator(&obs, &dfbs, 0, nu)) {
-            for(int sigma = 0; sigma <= nu; ++sigma) {
-              const int sigma_center = obs.shell_to_center(obs.function_to_shell(sigma));
-              const int sigma_atom_dfbfoff = dfbs.shell_to_function(dfbs.shell_on_center(sigma_center, 0));
-              const int sigma_atom_dfnbf = dfbs.nbasis_on_center(sigma_center);
+          if(ithr == 0) timer.enter("K contributions");
+          //if(ithr == 0) timer.enter("misc");
+          for(auto nu : function_iterator(obs, dfbs_)) {
+            for(auto sigma : function_iterator(obsptr, dfbsptr, 0, nu)) {
               //----------------------------------------//
-              //timer.change("coefficient retrieval");
               // Get the coefficients
               IntPair nu_sigma(nu, sigma);
               auto cpair = coefs_[nu_sigma];
@@ -978,42 +993,46 @@ CADFCLHF::compute_K()
               VectorMap& Cb = *(cpair.second);
               //----------------------------------------//
               // Add in the contribution to Kt(mu, nu)
-              //if(ish != jsh) timer.change("int iter version");
-              for(int ibf = 0; ibf < ish.nbf; ++ibf) {
-                const int mu = ibf + ish.bfoff;
-                Kt_part(mu, nu) += B_mus[ibf].row(sigma).segment(nu_atom_dfbfoff, nu_atom_dfnbf) * Ca;
+              for(auto mu : function_iterator(ish)) {
+                Kt_part(mu, nu) +=
+                    B_mus[mu.bfoff_in_shell].row(sigma).segment(nu.atom_dfbfoff, nu.atom_dfnbf) * Ca;
                 if(nu != sigma){
-                  Kt_part(mu, sigma) += B_mus[ibf].row(nu).segment(nu_atom_dfbfoff, nu_atom_dfnbf) * Ca;
+                  Kt_part(mu, sigma) +=
+                      B_mus[mu.bfoff_in_shell].row(nu).segment(nu.atom_dfbfoff, nu.atom_dfnbf) * Ca;
                 }
-                if(nu_center != sigma_center) {
-                  Kt_part(mu, nu) += B_mus[ibf].row(sigma).segment(sigma_atom_dfbfoff, sigma_atom_dfnbf) * Cb;
+                if(nu.center != sigma.center) {
+                  Kt_part(mu, nu) +=
+                      B_mus[mu.bfoff_in_shell].row(sigma).segment(sigma.atom_dfbfoff, sigma.atom_dfnbf) * Cb;
                   if(nu != sigma){
-                    Kt_part(mu, sigma) += B_mus[ibf].row(nu).segment(sigma_atom_dfbfoff, sigma_atom_dfnbf) * Cb;
+                    Kt_part(mu, sigma) +=
+                        B_mus[mu.bfoff_in_shell].row(nu).segment(sigma.atom_dfbfoff, sigma.atom_dfnbf) * Cb;
                   }
                 }
               } // end loop over mu
-              //timer.change("misc");
               //----------------------------------------//
               // Add in the contribution to Kt(rho, nu)
               if(ish != jsh){
-                for(int jbf = 0; jbf < jsh.nbf; ++jbf) {
-                  const int rho = jbf + jsh.bfoff;
-                  Kt_part(rho, nu) += B_rhos[jbf].row(sigma).segment(nu_atom_dfbfoff, nu_atom_dfnbf) * Ca;
+                for(auto rho : function_iterator(jsh)) {
+                  Kt_part(rho, nu) +=
+                      B_rhos[rho.bfoff_in_shell].row(sigma).segment(nu.atom_dfbfoff, nu.atom_dfnbf) * Ca;
                   if(nu != sigma){
-                    Kt_part(rho, sigma) += B_rhos[jbf].row(nu).segment(nu_atom_dfbfoff, nu_atom_dfnbf) * Ca;
+                    Kt_part(rho, sigma) +=
+                        B_rhos[rho.bfoff_in_shell].row(nu).segment(nu.atom_dfbfoff, nu.atom_dfnbf) * Ca;
                   }
-                  if(nu_center != sigma_center) {
-                    Kt_part(rho, nu) += B_rhos[jbf].row(sigma).segment(sigma_atom_dfbfoff, sigma_atom_dfnbf) * Cb;
+                  if(nu.center != sigma.center) {
+                    Kt_part(rho, nu) +=
+                        B_rhos[rho.bfoff_in_shell].row(sigma).segment(sigma.atom_dfbfoff, sigma.atom_dfnbf) * Cb;
                     if(nu != sigma){
-                      Kt_part(rho, sigma) += B_rhos[jbf].row(nu).segment(sigma_atom_dfbfoff, sigma_atom_dfnbf) * Cb;
+                      Kt_part(rho, sigma) +=
+                          B_rhos[rho.bfoff_in_shell].row(nu).segment(sigma.atom_dfbfoff, sigma.atom_dfnbf) * Cb;
                     }
-                  }
+                  } // end if nu.center != sigma.center
                 } // end loop over rho
-              }
+              } // end if ish != jsh
               //----------------------------------------//
             } // end loop over sigma
           } // end loop over nu
-           if(ithr == 0) timer.exit("K contributions");
+          if(ithr == 0) timer.exit("K contributions");
           /*******************************************************/ #endif //2}}}
           /*-----------------------------------------------------*/
         } // end while get_shell_pair(ish, jsh)
@@ -1027,25 +1046,292 @@ CADFCLHF::compute_K()
   } // compute_threads is destroyed here
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
+  /* Loop over local shell pairs and compute two body part 		                        {{{1 */ #if 1 // begin fold
+  {
+    Timer timer("two body contributions");
+    boost::mutex tmp_mutex;
+    boost::thread_group compute_threads;
+    //----------------------------------------//
+    // reset the iteration over local pairs
+    local_pairs_spot_ = 0;
+    // Loop over number of threads
+    for(int ithr = 0; ithr < nthread; ++ithr) {
+      // ...and create each thread that computes pairs
+      compute_threads.create_thread([&,ithr](){
+        Eigen::MatrixXd Kt_part(nbf, nbf);
+        Kt_part = Eigen::MatrixXd::Zero(nbf, nbf);
+        ShellData ish, jsh;
+        while(get_shell_pair(ish, jsh, SignificantPairs)){
+          // Later we can also distribute over Ysh or even DF atom blocks
+          for(auto Ysh : shell_iterator(dfbs_)) {
+            //----------------------------------------//
+            std::vector<Eigen::MatrixXd> Ct_mus(ish.nbf);
+            for(auto mu : function_iterator(ish)) {
+              Ct_mus[mu.bfoff_in_shell].resize(jsh.nbf, Ysh.nbf);
+              Ct_mus[mu.bfoff_in_shell] = Eigen::MatrixXd::Zero(jsh.nbf, Ysh.nbf);
+            }
+            /*-----------------------------------------------------*/
+            /* Form Ct_mu for each mu in ish                  {{{2 */ #if 2 // begin fold
+            if(ithr == 0) timer.enter("form Ct_mu");
+            for(auto Xsh : iter_shells_on_center(dfbs_, ish.center)) {
+              Eigen::MatrixXd& g2_part = *ints_to_eigen(
+                Ysh, Xsh,
+                eris_2c_[ithr],
+                coulomb_oper_type_
+              );
+              for(auto mu : function_iterator(ish)){
+                for(auto rho : function_iterator(jsh)){
+                  //----------------------------------------//
+                  // Get the coefficients
+                  IntPair mu_rho(mu, rho);
+                  auto cpair = coefs_[mu_rho];
+                  VectorMap& Ca = *(cpair.first);
+                  //----------------------------------------//
+                  Ct_mus[mu.bfoff_in_shell].row(rho.bfoff_in_shell).transpose() +=
+                      g2_part * Ca.segment(Xsh.bfoff_in_atom, Xsh.nbf);
+                  //----------------------------------------//
+                } // end loop over functions rho in jsh
+              } // end loop over functions mu in ish
+            } // end loop of Xsh over shells on ish.center
+            //----------------------------------------//
+            if(ish.center != jsh.center){
+              for(auto Xsh : iter_shells_on_center(dfbs_, jsh.center)) {
+                Eigen::MatrixXd& g2_part = *ints_to_eigen(
+                  Ysh, Xsh,
+                  eris_2c_[ithr],
+                  coulomb_oper_type_
+                );
+                for(auto mu : function_iterator(ish)){
+                  for(auto rho : function_iterator(jsh)){
+                    //----------------------------------------//
+                    // Get the coefficients
+                    IntPair mu_rho(mu, rho);
+                    auto cpair = coefs_[mu_rho];
+                    VectorMap& Cb = *(cpair.second);
+                    //----------------------------------------//
+                    Ct_mus[mu.bfoff_in_shell].row(rho.bfoff_in_shell).transpose() +=
+                        g2_part * Cb.segment(Xsh.bfoff_in_atom, Xsh.nbf);
+                    //----------------------------------------//
+                  } // end loop over functions rho in jsh
+                } // end loop over functions mu in ish
+              } // end loop of Xsh over shells on jsh.center
+            } // end if ish.center != jsh.center
+            //----------------------------------------//
+            /********************************************************/ #endif //2}}}
+            /*-----------------------------------------------------*/
+            /* Form dt_mu, dt_rho for functions in ish, jsh   {{{2 */ #if 2 // begin fold
+            if(ithr == 0) timer.change("form dt_mu, dt_rho");
+            std::vector<Eigen::MatrixXd> dt_mus(ish.nbf);
+            std::vector<Eigen::MatrixXd> dt_rhos((ish == jsh) ? 0 : (int)jsh.nbf);
+            for(auto mu : function_iterator(ish)) {
+              dt_mus[mu.bfoff_in_shell].resize(nbf, Ysh.nbf);
+              dt_mus[mu.bfoff_in_shell] = 2.0 * D.middleCols(jsh.bfoff, jsh.nbf) * Ct_mus[mu.bfoff_in_shell];
+              if(xml_debug) {
+                /*
+                Eigen::MatrixXd tmp(nbf, dfnbf);
+                tmp = Eigen::MatrixXd::Zero(nbf, dfnbf);
+                tmp.middleCols(Ysh.bfoff, Ysh.nbf) = dt_mus[mu.bfoff_in_shell];
+                write_as_xml(
+                    "new_dt_part", tmp,
+                    std::map<std::string, int>{ {"mu", mu}, {"jsh", jsh} }
+                );
+                */
+              }
+            }
+            if(ish != jsh){
+              for(auto rho : function_iterator(jsh)) {
+                dt_rhos[rho.bfoff_in_shell].resize(nbf, Ysh.nbf);
+                dt_rhos[rho.bfoff_in_shell] = Eigen::MatrixXd::Zero(nbf, Ysh.nbf);
+                for(auto mu : function_iterator(ish)) {
+                  dt_rhos[rho.bfoff_in_shell] += 2.0 * D.col(mu) * Ct_mus[mu.bfoff_in_shell].row(rho.bfoff_in_shell);
+                }
+                if(xml_debug) {
+                  /*
+                  Eigen::MatrixXd tmp(nbf, dfnbf);
+                  tmp = Eigen::MatrixXd::Zero(nbf, dfnbf);
+                  tmp.middleCols(Ysh.bfoff, Ysh.nbf) = dt_rhos[rho.bfoff_in_shell];
+                  write_as_xml(
+                      "new_dt_part", tmp,
+                      std::map<std::string, int>{ {"mu", rho}, {"jsh", ish} }
+                  );
+                  */
+                }
+              }
+            }
+            /********************************************************/ #endif //2}}}
+            /*-----------------------------------------------------*/
+            /* Add contributions to Kt_part                   {{{2 */ #if 2 // begin fold
+            if(ithr == 0) timer.change("K contributions");
+            //----------------------------------------//
+            for(auto Y : function_iterator(Ysh)) {
+              Eigen::MatrixXd& C_Y = coefs_transpose_[Y];
+              const int obs_atom_bfoff = obs->shell_to_function(obs->shell_on_center(Y.center, 0));
+              const int obs_atom_nbf = obs->nbasis_on_center(Y.center);
+              for(auto mu : function_iterator(ish)) {
+                // dt_mus[mu.bfoff_in_shell] is (nbf x Ysh.nbf)
+                // C_Y is (Y.{obs_}atom_nbf x nbf)
+                // result should be (Y.{obs_}atom_nbf x 1)
+                Kt_part.row(mu).segment(obs_atom_bfoff, obs_atom_nbf).transpose() -=
+                    0.5 * C_Y * dt_mus[mu.bfoff_in_shell].col(Y.bfoff_in_shell);
+                // The sigma <-> nu term
+                Kt_part.row(mu).transpose() -= 0.5
+                    * C_Y.transpose()
+                    * dt_mus[mu.bfoff_in_shell].col(Y.bfoff_in_shell).segment(obs_atom_bfoff, obs_atom_nbf);
+                // Add back in the nu.center == Y.center part
+                Kt_part.row(mu).segment(obs_atom_bfoff, obs_atom_nbf).transpose() += 0.5
+                    * C_Y.middleCols(obs_atom_bfoff, obs_atom_nbf).transpose()
+                    * dt_mus[mu.bfoff_in_shell].col(Y.bfoff_in_shell).segment(obs_atom_bfoff, obs_atom_nbf);
+                //----------------------------------------//
+                // Failsafe version:
+                //for(auto nu : iter_functions_on_center(obs, Y.center)) {
+                //  //for(auto sigma : function_iterator(obs)) {
+                //  //  Kt_part(mu, nu) -= 0.5 * C_Y(nu.bfoff_in_atom, sigma) * dt_mus[mu.bfoff_in_shell](sigma, Y.bfoff_in_shell);
+                //  //}
+                //  Kt_part(mu, nu) -= 0.5 * C_Y.row(nu.bfoff_in_atom) * dt_mus[mu.bfoff_in_shell].col(Y.bfoff_in_shell);
+                //}
+                //----------------------------------------//
+                //for(auto nu : function_iterator(obs)) {
+                //  if(nu.center != Y.center) {
+                //    //for(auto sigma : iter_functions_on_center(obs, Y.center)) {
+                //    //  Kt_part(mu, nu) -= 0.5 * C_Y(sigma.bfoff_in_atom, nu) * dt_mus[mu.bfoff_in_shell](sigma, Y.bfoff_in_shell);
+                //    //}
+                //    Kt_part(mu, nu) -= 0.5 * C_Y.col(nu).transpose() * dt_mus[mu.bfoff_in_shell].col(Y.bfoff_in_shell).segment(
+                //      obs->shell_to_function(obs->shell_on_center(Y.center, 0)),
+                //      obs->nbasis_on_center(Y.center)
+                //    );
+                //  }
+                //}
+                //----------------------------------------//
+              }
+              if(ish != jsh){
+                for(auto rho : function_iterator(jsh)) {
+                  // dt_rhos[rho.bfoff_in_shell] is (nbf x Ysh.nbf)
+                  // C_Y is (Y.{obs_}atom_nbf x nbf)
+                  // result should be (Y.{obs_}atom_nbf x 1)
+                  //Kt_part.col(rho).segment(
+                  //    obs->shell_to_function(obs->shell_on_center(Y.center, 0)),
+                  //    obs->nbasis_on_center(Y.center)
+                  //) -= 0.5 * C_Y * dt_rhos[rho.bfoff_in_shell].col(Y.bfoff_in_shell);
+                  Kt_part.row(rho).segment(obs_atom_bfoff, obs_atom_nbf).transpose() -=
+                      0.5 * C_Y * dt_rhos[rho.bfoff_in_shell].col(Y.bfoff_in_shell);
+                  // The sigma <-> nu term
+                  Kt_part.row(rho).transpose() -= 0.5
+                      * C_Y.transpose()
+                      * dt_rhos[rho.bfoff_in_shell].col(Y.bfoff_in_shell).segment(obs_atom_bfoff, obs_atom_nbf);
+                  // Add back in the nu.center == Y.center part
+                  Kt_part.row(rho).segment(obs_atom_bfoff, obs_atom_nbf).transpose() += 0.5
+                      * C_Y.middleCols(obs_atom_bfoff, obs_atom_nbf).transpose()
+                      * dt_rhos[rho.bfoff_in_shell].col(Y.bfoff_in_shell).segment(obs_atom_bfoff, obs_atom_nbf);
+                  //----------------------------------------//
+                  //for(auto nu : function_iterator(obs)) {
+                  //  for(auto sigma : function_iterator(obs)) {
+                  //    if(nu.center == Y.center){
+                  //      Kt_part(rho, nu) -= 0.5 * C_Y(nu.bfoff_in_atom, sigma) * dt_rhos[rho.bfoff_in_shell](sigma, Y.bfoff_in_shell);
+                  //    }
+                  //    else if(sigma.center == Y.center){
+                  //      Kt_part(rho, nu) -= 0.5 * C_Y(sigma.bfoff_in_atom, nu) * dt_rhos[rho.bfoff_in_shell](sigma, Y.bfoff_in_shell);
+                  //    }
+                  //  }
+                  //}
+                  //----------------------------------------//
+                }
+              }
+            }
+            /*
+            for(auto ksh : shell_iterator(obs, dfbs_)) {
+              for(auto lsh : shell_iterator(obs, dfbs_, 0, ksh)) {
+              //for(auto lsh : iter_significant_partners(ksh)) {
+                if(ksh.center != Ysh.center and lsh.center != Ysh.center) continue;
+                //----------------------------------------//
+                //const double pf = ksh == lsh ? 1.0 : 2.0;
+                //----------------------------------------//
+                //for(int nu = ksh.bfoff; nu <= ksh.last_function; ++nu){ // function_iterator(ksh)) {
+                //  for(int sigma = lsh.bfoff; sigma <= lsh.last_function; ++sigma){ // function_iterator(ksh)) {
+                for(auto nu : function_iterator(ksh)) {
+                  for(auto sigma : function_iterator(lsh)) {
+                    //----------------------------------------//
+                    // Get the coefficients
+                    IntPair nu_sigma(nu, sigma);
+                    auto cpair = coefs_[nu_sigma];
+                    VectorMap& C = (Ysh.center == ksh.center) ? *(cpair.first) : *(cpair.second);
+                    //----------------------------------------//
+                    //for(auto Y : function_iterator(Ysh)) {
+                    //  auto& C_Y = coefs_transpose_[Y];
+                    //  for(auto mu : function_iterator(ish)) {
+                    //    Kt_part(mu, nu) -= 0.5
+                    //        * dt_mus[mu.bfoff_in_shell].row(sigma)
+                    //        * C_Y(nu.bfoff_in_atom, sigma);
+                    //  }
+                    //}
+                    //----------------------------------------//
+                    for(auto mu : function_iterator(ish)) {
+                      Kt_part(mu, nu) -= 0.5
+                          * dt_mus[mu.bfoff_in_shell].row(sigma)
+                          * C.segment(Ysh.bfoff_in_atom, Ysh.nbf);
+                      if(ksh != lsh){
+                        Kt_part(mu, sigma) -= 0.5
+                            * dt_mus[mu.bfoff_in_shell].row(nu)
+                            * C.segment(Ysh.bfoff_in_atom, Ysh.nbf);
+                      }
+                    } // end loop over mu in ish
+                    //----------------------------------------//
+                    if(ish != jsh){
+                      for(auto rho : function_iterator(jsh)) {
+                        Kt_part(rho, nu) -= 0.5
+                            * dt_rhos[rho.bfoff_in_shell].row(sigma)
+                            * C.segment(Ysh.bfoff_in_atom, Ysh.nbf);
+                        if(ksh != lsh){
+                          Kt_part(rho, sigma) -= 0.5
+                              * dt_rhos[rho.bfoff_in_shell].row(nu)
+                              * C.segment(Ysh.bfoff_in_atom, Ysh.nbf);
+                        }
+                      } // end loop over rho in jsh
+                    } // end if ish != jsh
+                    //----------------------------------------//
+                  } // end loop over sigma in lsh
+                } // end loop over nu in ksh
+                //----------------------------------------//
+              } // end loop over lsh
+            } // end loop over ksh
+            */
+            if(ithr == 0) timer.exit();
+            /********************************************************/ #endif //2}}}
+            /*-----------------------------------------------------*/
+          } // end loop over shells Ysh
+        } // end while get_shell_pair(ish, jsh)
+        //----------------------------------------//
+        // Sum Kt parts within node
+        boost::lock_guard<boost::mutex> lg(tmp_mutex);
+        Kt += Kt_part;
+        Kt2 += Kt_part;
+      }); // end create_thread
+    } // end enumeration of threads
+    compute_threads.join_all();
+  } // compute_threads is destroyed here
+  /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
   /* Global sum K                                         		                        {{{1 */ #if 1 // begin fold
   //----------------------------------------//
   msg.sum(Kt.data(), nbf*nbf);
+  msg.sum(Kt2.data(), nbf*nbf);
   //----------------------------------------//
   // Symmetrize K
   Eigen::MatrixXd K(nbf, nbf);
   K = Kt + Kt.transpose();
+  K2 = Kt2 + Kt2.transpose();
+  if(xml_debug) write_as_xml("K2", K2);
   //----------------------------------------//
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
   /* Transfer K to a RefSCMatrix                           		                        {{{1 */ #if 1 // begin fold
   Ref<Integral> localints = integral()->clone();
-  localints->set_basis(&obs);
+  localints->set_basis(obs);
   Ref<PetiteList> pl = localints->petite_list();
   RefSCDimension obsdim = pl->AO_basisdim();
   RefSCMatrix result(
       obsdim,
       obsdim,
-      obs.so_matrixkit()
+      obs->so_matrixkit()
   );
   result.assign(K.data());
   /*****************************************************************************************/ #endif //1}}}
@@ -1106,8 +1392,8 @@ CADFCLHF::get_shell_pair(ShellData& mu, ShellData& nu, PairSet pset)
       throw FeatureNotImplemented("dynamic load balancing", __FILE__, __LINE__, class_desc());
     }
     //----------------------------------------//
-    mu = ShellData(next_pair.first, basis(), dfbs_);
-    nu = ShellData(next_pair.second, basis(), dfbs_);
+    mu = ShellData(next_pair.first, basis().pointer(), dfbs_.pointer());
+    nu = ShellData(next_pair.second, basis().pointer(), dfbs_.pointer());
   }
   else{
     return false;
@@ -1124,20 +1410,19 @@ CADFCLHF::compute_coefficients()
   /* Setup                                                		                        {{{1 */ #if 1 // begin fold
   //---------------------------------------------------------------------------------------//
   // References for speed
-  GaussianBasisSet& obs = *(basis());
-  GaussianBasisSet& dfbs = *(dfbs_);
+  const Ref<GaussianBasisSet>& obs = basis();
   // Constants for convenience
-  const int nbf = obs.nbasis();
-  const int dfnbf = dfbs.nbasis();
-  const int natom = obs.ncenter();
+  const int nbf = obs->nbasis();
+  const int dfnbf = dfbs_->nbasis();
+  const int natom = obs->ncenter();
   /*-----------------------------------------------------*/
   /* Initialize coefficient memory                  {{{2 */ #if 2 // begin fold
   // Now initialize the coefficient memory.
   // First, compute the amount of memory needed
   // Coefficients will be stored jbf <= ibf
   int ncoefs = 0;
-  for(auto ibf : function_iterator(&obs, &dfbs)){
-    for(auto jbf : function_iterator(&obs, &dfbs, 0, ibf)){
+  for(auto ibf : function_iterator(obs, dfbs_)){
+    for(auto jbf : function_iterator(obs, dfbs_, 0, ibf)){
       ncoefs += ibf.atom_dfnbf;
       if(ibf.center != jbf.center){
         ncoefs += jbf.atom_dfnbf;
@@ -1147,8 +1432,8 @@ CADFCLHF::compute_coefficients()
   coefficients_data_ = allocate<double>(ncoefs);
   memset(coefficients_data_, 0, ncoefs * sizeof(double));
   double *spot = coefficients_data_;
-  for(auto ibf : function_iterator(&obs, &dfbs)){
-    for(auto jbf : function_iterator(&obs, &dfbs, 0, ibf)){
+  for(auto ibf : function_iterator(obs, dfbs_)){
+    for(auto jbf : function_iterator(obs, dfbs_, 0, ibf)){
       double *data_spot_a = spot;
       spot += ibf.atom_dfnbf;
       double *data_spot_b = spot;
@@ -1165,9 +1450,9 @@ CADFCLHF::compute_coefficients()
   //----------------------------------------//
   // We can save a lot of mess by storing references
   //   to the jbf > ibf pairs for the ish == jsh cases only
-  for(auto ish : shell_iterator(&obs)){
+  for(auto ish : shell_iterator(obs)){
     for(auto ibf : function_iterator(ish)){
-      for(auto jbf : function_iterator(&obs, ibf + 1, ish.last_function)){
+      for(auto jbf : function_iterator(obs, ibf + 1, ish.last_function)){
         IntPair ij(ibf, jbf);
         IntPair ji(jbf, ibf);
         // This will do a copy, but not of the data, just of the map
@@ -1175,6 +1460,12 @@ CADFCLHF::compute_coefficients()
         coefs_.emplace(ij, coefs_[ji]);
       }
     }
+  }
+  //----------------------------------------//
+  // Now make the transposes, for more efficient use later
+  coefs_transpose_.resize(dfnbf);
+  for(auto Y : function_iterator(dfbs_)){
+    coefs_transpose_[Y].resize(obs->nbasis_on_center(Y.center), nbf);
   }
   /********************************************************/ #endif //2}}}
   /*-----------------------------------------------------*/
@@ -1202,28 +1493,28 @@ CADFCLHF::compute_coefficients()
           );
           //----------------------------------------//
           Eigen::MatrixXd ij_M_X(ish.nbf*jsh.nbf, dfnbfAB);
-          for(auto ksh : iter_shells_on_center(&dfbs, ish.center)){
+          for(auto ksh : iter_shells_on_center(dfbs_, ish.center)){
             std::shared_ptr<Eigen::MatrixXd> ij_M_k = ints_to_eigen(
                 ish, jsh, ksh,
                 metric_ints_3c_[ithr],
                 metric_oper_type_
             );
-            for(auto ibf : iter_functions_in_shell(&obs, ish)){
-              for(auto jbf : iter_functions_in_shell(&obs, jsh)){
+            for(auto ibf : function_iterator(ish)){
+              for(auto jbf : function_iterator(jsh)){
                 const int ijbf = ibf.bfoff_in_shell * jsh.nbf + jbf.bfoff_in_shell;
                 ij_M_X.row(ijbf).segment(ksh.bfoff_in_atom, ksh.nbf) = ij_M_k->row(ijbf);
               } // end loop over functions in jsh
             } // end loop over functions in ish
           } // end loop over shells on ish.center
           if(ish.center != jsh.center){
-            for(auto ksh : iter_shells_on_center(&dfbs, jsh.center)){
+            for(auto ksh : iter_shells_on_center(dfbs_, jsh.center)){
               std::shared_ptr<Eigen::MatrixXd> ij_M_k = ints_to_eigen(
                   ish, jsh, ksh,
                   metric_ints_3c_[ithr],
                   metric_oper_type_
               );
-              for(auto ibf : iter_functions_in_shell(&obs, ish)){
-                for(auto jbf : iter_functions_in_shell(&obs, jsh)){
+              for(auto ibf : function_iterator(ish)){
+                for(auto jbf : function_iterator(jsh)){
                   const int ijbf = ibf.bfoff_in_shell * jsh.nbf + jbf.bfoff_in_shell;
                   const int dfbfoff = ish.atom_dfnbf + ksh.bfoff_in_atom;
                   ij_M_X.row(ijbf).segment(dfbfoff, ksh.nbf) = ij_M_k->row(ijbf);
@@ -1232,18 +1523,18 @@ CADFCLHF::compute_coefficients()
             } // end loop over shells on jsh.center
           } // end if ish.center != jsh.center
           //----------------------------------------//
-          for(int ibf = 0; ibf < ish.nbf; ++ibf){
+          for(auto mu : function_iterator(ish)){
             // Since coefficients are only stored jbf <= ibf,
             //   we need to figure out how many jbf's to do
-            const int jmax = (ish == jsh) ? ibf : jsh.nbf-1;
-            for(int jbf = 0; jbf <= jmax; ++jbf){
-              const int ijbf = ibf*jsh.nbf + jbf;
-              IntPair ij(ibf + ish.bfoff, jbf + jsh.bfoff);
+            for(auto nu : function_iterator(jsh)){
+              if(ish == jsh and nu > mu) continue;
+              const int ijbf = mu.bfoff_in_shell*jsh.nbf + nu.bfoff_in_shell;
+              IntPair mu_nu(mu, nu);
               Eigen::VectorXd Ctmp(dfnbfAB);
               Ctmp = decomp->solve(ij_M_X.row(ijbf).transpose());
-              *(coefs_[ij].first) = Ctmp.head(ish.atom_dfnbf);
+              *(coefs_[mu_nu].first) = Ctmp.head(ish.atom_dfnbf);
               if(ish.center != jsh.center){
-                *(coefs_[ij].second) = Ctmp.tail(jsh.atom_dfnbf);
+                *(coefs_[mu_nu].second) = Ctmp.tail(jsh.atom_dfnbf);
               }
             } // end jbf loop
           } // end ibf loop
@@ -1261,14 +1552,43 @@ CADFCLHF::compute_coefficients()
   scf_grp_->sum(coefficients_data_, ncoefs);
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
+  /* Store the transpose coefficients                     		                        {{{1 */ #if 1 // begin fold
+  //---------------------------------------------------------------------------------------//
+  for(auto Y : function_iterator(dfbs_)){
+    for(auto ish : iter_shells_on_center(obs, Y.center)){
+      for(auto mu : function_iterator(ish)){
+        for(auto nu : function_iterator(obs)){
+          //----------------------------------------//
+          if(nu <= mu){
+            auto& C = *(coefs_[IntPair(mu, nu)].first);
+            coefs_transpose_[Y](mu.bfoff_in_atom, nu) = C[Y.bfoff_in_atom];
+          }
+          else{
+            auto cpair = coefs_[IntPair(nu, mu)];
+            if(mu.center != nu.center){
+              auto& C = *(cpair.second);
+              coefs_transpose_[Y](mu.bfoff_in_atom, nu) = C[Y.bfoff_in_atom];
+            }
+            else{
+              auto& C = *(cpair.first);
+              coefs_transpose_[Y](mu.bfoff_in_atom, nu) = C[Y.bfoff_in_atom];
+            }
+          }
+          //----------------------------------------//
+        }
+      }
+    }
+  }
+  /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
   /* Debugging output                                     		                        {{{1 */ #if 1 // begin fold
   if(xml_debug) {
     begin_xml_context(
         "df_coefficients",
         "coefficients.xml"
     );
-    for(auto mu : function_iterator(&obs, &dfbs)){
-      for(auto nu : function_iterator(&obs, &dfbs, mu)) {
+    for(auto mu : function_iterator(obs, dfbs_)){
+      for(auto nu : function_iterator(obs, dfbs_, mu)) {
         IntPair mn(mu, nu);
         auto cpair = coefs_[mn];
         auto& Ca = *(cpair.first);

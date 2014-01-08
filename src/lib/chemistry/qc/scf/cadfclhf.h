@@ -37,9 +37,11 @@
 #include <atomic>
 #include <future>
 #include <functional>
+#include <type_traits>
 #include <Eigen/Dense>
 #include <util/misc/property.h>
 #include <chemistry/qc/scf/cadf_iters.h>
+#include <boost/static_assert.hpp>
 
 typedef typename boost::integer_range<int> int_range;
 
@@ -233,6 +235,7 @@ class CADFCLHF: public CLHF {
 
     void save_data_state(StateOut&);
 
+
   private:
 
     typedef enum {
@@ -281,6 +284,8 @@ class CADFCLHF: public CLHF {
         const std::function<void(int)>& when_done
     );
     */
+
+
 
     RefSCMatrix compute_J();
 
@@ -342,6 +347,9 @@ class CADFCLHF: public CLHF {
     // List of the pairs with half-schwarz bounds larger than pair_thresh_
     std::vector<std::pair<int, int>> sig_pairs_;
 
+    // The same as sig_pairs_, but organized differently
+    std::vector<std::vector<int>> shell_to_sig_shells_;
+
     // Where are we in the iteration over the local_pairs_?
     std::atomic<int> local_pairs_spot_;
 
@@ -361,6 +369,8 @@ class CADFCLHF: public CLHF {
 
     CoefMap coefs_;
 
+    std::vector<Eigen::MatrixXd> coefs_transpose_;
+
     DecompositionCache decomps_;
     TwoCenterIntCache ints2_;
     ThreeCenterIntCache ints3_;
@@ -370,7 +380,20 @@ class CADFCLHF: public CLHF {
 
     static ClassDesc cd_;
 
+    shell_iter_arbitrary_wrapper<std::vector<int>>
+    iter_significant_partners(
+        const ShellData& ish
+    )
+    {
+      return shell_iter_arbitrary_wrapper<std::vector<int>>(
+          shell_to_sig_shells_[ish.index],
+          ish.basis,
+          ish.dfbasis
+      );
+    }
+
 };
+
 
 } // end namespace sc
 

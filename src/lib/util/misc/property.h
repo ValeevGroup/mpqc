@@ -65,9 +65,7 @@ public:
   };
 
   // Delete the default copy and move constructors, since they will make this refer to an old instance
-  property(self&) = delete;
-  property(const self&) = delete;
-  property(self&&) = delete;
+  property(self&& other) : target(std::move(other.target)), getter(std::move(other.getter)), setter(std::move(other.setter)) { }
   self& operator=(self&) = delete;
   self& operator=(const self&) = delete;
 

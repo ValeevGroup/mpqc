@@ -2065,12 +2065,14 @@ namespace sc {
       timer_enter("misc", 2);
       blasint prod_size = obsnbf*dfnbf;
       blasint one = 1;
-      Eigen::MatrixXd B_mu(obsnbf, dfnbf);//, g_mu(obsnbf, dfnbf);
-      Eigen::VectorXd g_mu(obsnbf*dfnbf);
+      Eigen::MatrixXd B_mu(obsnbf, dfnbf), g_mu(obsnbf, dfnbf), new_dt_mu(obsnbf, dfnbf);
+      //Eigen::VectorXd g_mu(obsnbf*dfnbf);
       Eigen::MatrixXd dt_mu(obsnbf, dfnbf), A_mu(obsnbf, dfnbf);
       VectorOfMatrices g_ab(ketnbf), g_ba(ketnbf);
-      Eigen::MatrixXd Kex(branbf, ketnbf);
-      Kex = Eigen::MatrixXd::Zero(branbf, ketnbf);
+      Eigen::MatrixXd K2(branbf, ketnbf);
+      Eigen::MatrixXd K2t(branbf, ketnbf);
+      K2 = Eigen::MatrixXd::Zero(branbf, ketnbf);
+      K2t = Eigen::MatrixXd::Zero(branbf, ketnbf);
       //----------------------------------------//
       for(int mu = 0; mu < branbf; ++mu){
         //----------------------------------------//
@@ -2224,6 +2226,14 @@ namespace sc {
         /*-----------------------------------------------------*/
         /* Compute gtilde_mu, add to the A intermediate   {{{2 */ #if 2 // begin fold
         timer_change("03 - compute A", 2);
+        g_mu = -0.5 * dt_mu * X_g_Y;
+        if(xml_debug){
+          new_dt_mu = -2.0 * g_mu;
+          write_as_xml(
+              "new_dt", new_dt_mu,
+              std::map<std::string, int>{ {"mu", mu} }
+          );
+        }
         A_mu = B_mu - 0.5 * dt_mu * X_g_Y;
         //----------------------------------------//
         /*******************************************************/ #endif //end fold 2}}}
@@ -2259,8 +2269,10 @@ namespace sc {
             //----------------------------------------//
             timer_change("02 - contract C with A", 3);
             Ktilde(mu, nu) += A_mu.row(sigma).segment(dfbfoffB, dfnbfB) * C_nu_sigma->head(dfnbfB);
+            K2t(mu, nu) += g_mu.row(sigma).segment(dfbfoffB, dfnbfB) * C_nu_sigma->head(dfnbfB);
             if(atomB != atomC){
               Ktilde(mu, nu) += A_mu.row(sigma).segment(dfbfoffC, dfnbfC) * C_nu_sigma->tail(dfnbfC);
+              K2t(mu, nu) += g_mu.row(sigma).segment(dfbfoffC, dfnbfC) * C_nu_sigma->tail(dfnbfC);
             }
             //----------------------------------------//
             if(do_exact){
@@ -2398,7 +2410,10 @@ namespace sc {
       timer_change("07 - global sum", 1);
       msg->sum(K.data(), branbf*ketnbf);
       msg->sum(Ktilde.data(), branbf*ketnbf);
+      msg->sum(K2t.data(), branbf*ketnbf);
       K += Ktilde + Ktilde.transpose();
+      K2 = K2t + K2t.transpose();
+      if(xml_debug) write_as_xml("K2", K2);
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
       /* Transfer K to a RefSCMatrix                           		                        {{{1 */ #if 1 // begin fold

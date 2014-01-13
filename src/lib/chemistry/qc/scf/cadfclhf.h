@@ -302,7 +302,19 @@ class CADFCLHF: public CLHF {
     /// returns shell ints in inbf x jnbf Eigen Matrix pointer
     std::shared_ptr<Eigen::MatrixXd> ints_to_eigen(
         int ish, int jsh,
-        Ref<TwoBodyTwoCenterInt> ints,
+        Ref<TwoBodyTwoCenterInt>& ints,
+        TwoBodyOper::type ints_type
+    );
+
+    std::shared_ptr<Eigen::MatrixXd> ints_to_eigen(
+        const ShellBlockData& ish, const ShellBlockData& jsh,
+        Ref<TwoBodyTwoCenterInt>& ints,
+        TwoBodyOper::type ints_type
+    );
+
+    std::shared_ptr<Eigen::MatrixXd> ints_to_eigen(
+        const ShellBlockData& ish, const ShellData& jsh,
+        Ref<TwoBodyTwoCenterInt>& ints,
         TwoBodyOper::type ints_type
     );
 
@@ -310,14 +322,14 @@ class CADFCLHF: public CLHF {
     std::shared_ptr<Eigen::MatrixXd> ints_to_eigen(
         int_range&& ishs,
         int_range&& jshs,
-        Ref<TwoBodyTwoCenterInt> ints,
+        Ref<TwoBodyTwoCenterInt>& ints,
         TwoBodyOper::type ints_type
     );
 
     /// returns ints for shell in (inbf, jnbf) x kdfnbf matrix in chemists' notation
     std::shared_ptr<Eigen::MatrixXd> ints_to_eigen(
         int ish, int jsh, int ksh,
-        Ref<TwoBodyThreeCenterInt> ints,
+        Ref<TwoBodyThreeCenterInt>& ints,
         TwoBodyOper::type ints_type
     );
 

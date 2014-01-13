@@ -52,10 +52,6 @@ class Integral;
 
 class CartesianIter;
 class SphericalTransformIter;
-class ShellIter;
-class ShellData;
-class BasisFunctionIter;
-class BasisFunctionData;
 
 /// @addtogroup ChemistryBasisGaussian
 /// @{

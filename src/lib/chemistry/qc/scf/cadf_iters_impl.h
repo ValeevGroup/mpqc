@@ -87,6 +87,12 @@ function_iterator::function_iterator(const ShellData& ish)
 { }
 
 inline BasisFunctionData
+function_iterator::begin() const
+{
+  return BasisFunctionData(first_index_, basis_, dfbasis_, block_offset);
+}
+
+inline BasisFunctionData
 function_iterator::end() const
 {
   return BasisFunctionData(last_index_ == -1 ? basis_->nbasis() : last_index_ + 1, basis_, dfbasis_);
@@ -232,7 +238,8 @@ function_iterator::function_iterator(
       block.dfbasis,
       block.bfoff,
       block.last_function
-    )
+    ),
+    block_offset(block.bfoff)
 { }
 
 //============================================================================//

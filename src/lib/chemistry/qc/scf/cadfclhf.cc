@@ -531,7 +531,7 @@ CADFCLHF::compute_J()
           for(int mu = ish.bfoff; mu <= ish.last_function; ++mu){
             for(int nu = jsh.bfoff; nu <= jsh.last_function; ++nu){
               IntPair ij(mu, nu);
-              auto cpair = coefs_[ij];
+              auto& cpair = coefs_[ij];
               VectorMap& Ca = *(cpair.first);
               VectorMap& Cb = *(cpair.second);
               Ct.segment(ish.atom_dfbfoff, ish.atom_dfnbf) += pf * D(mu, nu) * Ca;
@@ -1002,7 +1002,6 @@ CADFCLHF::compute_K()
           if(ithr == 0) timer.enter("K contributions");
           //if(ithr == 0) timer.enter("misc");
           for(auto Y : function_iterator(dfbs_)) {
-            const int Y_blk_bfoff = Y;
             Eigen::MatrixXd& C_Y = coefs_transpose_[Y];
             const int obs_atom_bfoff = obs->shell_to_function(obs->shell_on_center(Y.center, 0));
             const int obs_atom_nbf = obs->nbasis_on_center(Y.center);
@@ -1011,14 +1010,14 @@ CADFCLHF::compute_K()
               // C_Y is (Y.{obs_}atom_nbf x nbf)
               // result should be (Y.{obs_}atom_nbf x 1)
               Kt_part.row(mu).segment(obs_atom_bfoff, obs_atom_nbf).transpose() +=
-                  C_Y * B_mus[mu.bfoff_in_shell].col(Y_blk_bfoff);
+                  C_Y * B_mus[mu.bfoff_in_shell].col(Y);
               // The sigma <-> nu term
               Kt_part.row(mu).transpose() += C_Y.transpose()
-                  * B_mus[mu.bfoff_in_shell].col(Y_blk_bfoff).segment(obs_atom_bfoff, obs_atom_nbf);
+                  * B_mus[mu.bfoff_in_shell].col(Y).segment(obs_atom_bfoff, obs_atom_nbf);
               // Add back in the nu.center == Y.center part
               Kt_part.row(mu).segment(obs_atom_bfoff, obs_atom_nbf).transpose() -=
                   C_Y.middleCols(obs_atom_bfoff, obs_atom_nbf).transpose()
-                  * B_mus[mu.bfoff_in_shell].col(Y_blk_bfoff).segment(obs_atom_bfoff, obs_atom_nbf);
+                  * B_mus[mu.bfoff_in_shell].col(Y).segment(obs_atom_bfoff, obs_atom_nbf);
               //----------------------------------------//
               /* Failsafe version:
               //for(auto nu : iter_functions_on_center(obs, Y.center)) {
@@ -1048,14 +1047,14 @@ CADFCLHF::compute_K()
                 // C_Y is (Y.{obs_}atom_nbf x nbf)
                 // result should be (Y.{obs_}atom_nbf x 1)
                 Kt_part.row(rho).segment(obs_atom_bfoff, obs_atom_nbf).transpose() +=
-                    C_Y * B_rhos[rho.bfoff_in_shell].col(Y_blk_bfoff);
+                    C_Y * B_rhos[rho.bfoff_in_shell].col(Y);
                 // The sigma <-> nu term
                 Kt_part.row(rho).transpose() += C_Y.transpose()
-                    * B_rhos[rho.bfoff_in_shell].col(Y_blk_bfoff).segment(obs_atom_bfoff, obs_atom_nbf);
+                    * B_rhos[rho.bfoff_in_shell].col(Y).segment(obs_atom_bfoff, obs_atom_nbf);
                 // Add back in the nu.center == Y.center part
                 Kt_part.row(rho).segment(obs_atom_bfoff, obs_atom_nbf).transpose() -=
                     C_Y.middleCols(obs_atom_bfoff, obs_atom_nbf).transpose()
-                    * B_rhos[rho.bfoff_in_shell].col(Y_blk_bfoff).segment(obs_atom_bfoff, obs_atom_nbf);
+                    * B_rhos[rho.bfoff_in_shell].col(Y).segment(obs_atom_bfoff, obs_atom_nbf);
                 //----------------------------------------//
                 /* Failsafe version:
                 //for(auto nu : function_iterator(obs)) {
@@ -1164,12 +1163,15 @@ CADFCLHF::compute_K()
             /*-----------------------------------------------------*/
             /* Form Ct_mu for each mu in ish                  {{{2 */ #if 2 // begin fold
             if(ithr == 0) timer.enter("form Ct_mu");
-            for(auto Xsh : iter_shells_on_center(dfbs_, ish.center)) {
+            //for(auto Xsh : iter_shells_on_center(dfbs_, ish.center)) {
+            for(auto Xblk : iter_shell_blocks_on_center(dfbs_, ish.center)) {
+              if(ithr == 0) timer.enter("compute ints");
               auto g2_part_ptr = ints_to_eigen(
-                Yblk, Xsh,
+                Yblk, Xblk,
                 eris_2c_[ithr],
                 coulomb_oper_type_
               );
+              if(ithr == 0) timer.exit("compute ints");
               const auto& g2_part = *g2_part_ptr;
               for(auto mu : function_iterator(ish)){
                 for(auto rho : function_iterator(jsh)){
@@ -1180,16 +1182,16 @@ CADFCLHF::compute_K()
                   VectorMap& Ca = *(cpair.first);
                   //----------------------------------------//
                   Ct_mus[mu.bfoff_in_shell].row(rho.bfoff_in_shell).transpose() +=
-                      g2_part * Ca.segment(Xsh.bfoff_in_atom, Xsh.nbf);
+                      g2_part * Ca.segment(Xblk.bfoff_in_atom, Xblk.nbf);
                   //----------------------------------------//
                 } // end loop over functions rho in jsh
               } // end loop over functions mu in ish
             } // end loop of Xsh over shells on ish.center
             //----------------------------------------//
             if(ish.center != jsh.center){
-              for(auto Xsh : iter_shells_on_center(dfbs_, jsh.center)) {
+              for(auto Xblk : iter_shell_blocks_on_center(dfbs_, jsh.center)) {
                 auto g2_part_ptr = ints_to_eigen(
-                  Yblk, Xsh,
+                  Yblk, Xblk,
                   eris_2c_[ithr],
                   coulomb_oper_type_
                 );
@@ -1203,7 +1205,7 @@ CADFCLHF::compute_K()
                     VectorMap& Cb = *(cpair.second);
                     //----------------------------------------//
                     Ct_mus[mu.bfoff_in_shell].row(rho.bfoff_in_shell).transpose() +=
-                        g2_part * Cb.segment(Xsh.bfoff_in_atom, Xsh.nbf);
+                        g2_part * Cb.segment(Xblk.bfoff_in_atom, Xblk.nbf);
                     //----------------------------------------//
                   } // end loop over functions rho in jsh
                 } // end loop over functions mu in ish
@@ -1219,8 +1221,8 @@ CADFCLHF::compute_K()
             for(auto mu : function_iterator(ish)) {
               dt_mus[mu.bfoff_in_shell].resize(nbf, Yblk.nbf);
               dt_mus[mu.bfoff_in_shell] = 2.0 * D.middleCols(jsh.bfoff, jsh.nbf) * Ct_mus[mu.bfoff_in_shell];
+              /*
               if(xml_debug) {
-                /*
                 Eigen::MatrixXd tmp(nbf, dfnbf);
                 tmp = Eigen::MatrixXd::Zero(nbf, dfnbf);
                 tmp.middleCols(Ysh.bfoff, Ysh.nbf) = dt_mus[mu.bfoff_in_shell];
@@ -1228,8 +1230,8 @@ CADFCLHF::compute_K()
                     "new_dt_part", tmp,
                     std::map<std::string, int>{ {"mu", mu}, {"jsh", jsh} }
                 );
-                */
               }
+              */
             }
             if(ish != jsh){
               for(auto rho : function_iterator(jsh)) {
@@ -1238,8 +1240,8 @@ CADFCLHF::compute_K()
                 for(auto mu : function_iterator(ish)) {
                   dt_rhos[rho.bfoff_in_shell] += 2.0 * D.col(mu) * Ct_mus[mu.bfoff_in_shell].row(rho.bfoff_in_shell);
                 }
+                /*
                 if(xml_debug) {
-                  /*
                   Eigen::MatrixXd tmp(nbf, dfnbf);
                   tmp = Eigen::MatrixXd::Zero(nbf, dfnbf);
                   tmp.middleCols(Ysh.bfoff, Ysh.nbf) = dt_rhos[rho.bfoff_in_shell];
@@ -1247,8 +1249,8 @@ CADFCLHF::compute_K()
                       "new_dt_part", tmp,
                       std::map<std::string, int>{ {"mu", rho}, {"jsh", ish} }
                   );
-                  */
                 }
+                */
               }
             }
             /********************************************************/ #endif //2}}}
@@ -1257,7 +1259,6 @@ CADFCLHF::compute_K()
             if(ithr == 0) timer.change("K contributions");
             //----------------------------------------//
             for(auto Y : function_iterator(Yblk)) {
-              const int Y_blk_bfoff = Y - Yblk.bfoff;
               Eigen::MatrixXd& C_Y = coefs_transpose_[Y];
               const int obs_atom_bfoff = obs->shell_to_function(obs->shell_on_center(Y.center, 0));
               const int obs_atom_nbf = obs->nbasis_on_center(Y.center);
@@ -1266,15 +1267,15 @@ CADFCLHF::compute_K()
                 // C_Y is (Y.{obs_}atom_nbf x nbf)
                 // result should be (Y.{obs_}atom_nbf x 1)
                 Kt_part.row(mu).segment(obs_atom_bfoff, obs_atom_nbf).transpose() -=
-                    0.5 * C_Y * dt_mus[mu.bfoff_in_shell].col(Y_blk_bfoff);
+                    0.5 * C_Y * dt_mus[mu.bfoff_in_shell].col(Y.bfoff_in_block);
                 // The sigma <-> nu term
                 Kt_part.row(mu).transpose() -= 0.5
                     * C_Y.transpose()
-                    * dt_mus[mu.bfoff_in_shell].col(Y_blk_bfoff).segment(obs_atom_bfoff, obs_atom_nbf);
+                    * dt_mus[mu.bfoff_in_shell].col(Y.bfoff_in_block).segment(obs_atom_bfoff, obs_atom_nbf);
                 // Add back in the nu.center == Y.center part
                 Kt_part.row(mu).segment(obs_atom_bfoff, obs_atom_nbf).transpose() += 0.5
                     * C_Y.middleCols(obs_atom_bfoff, obs_atom_nbf).transpose()
-                    * dt_mus[mu.bfoff_in_shell].col(Y_blk_bfoff).segment(obs_atom_bfoff, obs_atom_nbf);
+                    * dt_mus[mu.bfoff_in_shell].col(Y.bfoff_in_block).segment(obs_atom_bfoff, obs_atom_nbf);
                 //----------------------------------------//
                 /* Failsafe version:
                 //for(auto nu : iter_functions_on_center(obs, Y.center)) {
@@ -1304,15 +1305,15 @@ CADFCLHF::compute_K()
                   // C_Y is (Y.{obs_}atom_nbf x nbf)
                   // result should be (Y.{obs_}atom_nbf x 1)
                   Kt_part.row(rho).segment(obs_atom_bfoff, obs_atom_nbf).transpose() -=
-                      0.5 * C_Y * dt_rhos[rho.bfoff_in_shell].col(Y_blk_bfoff);
+                      0.5 * C_Y * dt_rhos[rho.bfoff_in_shell].col(Y.bfoff_in_block);
                   // The sigma <-> nu term
                   Kt_part.row(rho).transpose() -= 0.5
                       * C_Y.transpose()
-                      * dt_rhos[rho.bfoff_in_shell].col(Y_blk_bfoff).segment(obs_atom_bfoff, obs_atom_nbf);
+                      * dt_rhos[rho.bfoff_in_shell].col(Y.bfoff_in_block).segment(obs_atom_bfoff, obs_atom_nbf);
                   // Add back in the nu.center == Y.center part
                   Kt_part.row(rho).segment(obs_atom_bfoff, obs_atom_nbf).transpose() += 0.5
                       * C_Y.middleCols(obs_atom_bfoff, obs_atom_nbf).transpose()
-                      * dt_rhos[rho.bfoff_in_shell].col(Y_blk_bfoff).segment(obs_atom_bfoff, obs_atom_nbf);
+                      * dt_rhos[rho.bfoff_in_shell].col(Y.bfoff_in_block).segment(obs_atom_bfoff, obs_atom_nbf);
                   //----------------------------------------//
                   /* Failsafe version:
                   //for(auto nu : function_iterator(obs)) {

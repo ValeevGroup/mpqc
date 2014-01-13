@@ -41,6 +41,8 @@ namespace sc {
 #define DUMP(expr) std::cout << #expr << " = " << (expr) << std::endl;
 #define out_assert(a, op, b) assert(a op b || ((std::cout << "Failed assertion output: " << #a << " ( = " << a << ") " << #op << " " << #b <<  " ( = " << b << ")" << std::endl), false))
 
+#define NOT_ASSIGNED -1
+
 // Forward declarations
 class ShellData;
 class BasisFunctionData;
@@ -169,6 +171,8 @@ iter_shells_on_center(
 
 class function_iterator : public detail::basis_iterator<BasisFunctionData> {
 
+    int block_offset = NOT_ASSIGNED;
+
   public:
 
     using detail::basis_iterator<BasisFunctionData>::basis_iterator;
@@ -176,6 +180,8 @@ class function_iterator : public detail::basis_iterator<BasisFunctionData> {
     function_iterator(const ShellData&);
 
     function_iterator(const ShellBlockData& block);
+
+    BasisFunctionData begin() const;
 
     BasisFunctionData end() const;
 
@@ -198,14 +204,16 @@ iter_functions_on_center(
 
 class shell_block_iterator : public detail::basis_iterator<ShellBlockData> {
 
-    BlockCompositionRequirement reqs = SameCenter;
     int target_size = DEFAULT_TARGET_BLOCK_SIZE;
+
+    // Composed using bitwise or of BlockCompositionRequirement enums
+    int reqs = SameCenter;
 
   public:
 
     using detail::basis_iterator<ShellBlockData>::basis_iterator;
 
-    const shell_block_iterator& requiring(BlockCompositionRequirement in_reqs) {
+    const shell_block_iterator& requiring(int in_reqs) {
       reqs = in_reqs;
       return *this;
     }
@@ -218,6 +226,21 @@ class shell_block_iterator : public detail::basis_iterator<ShellBlockData> {
     ShellBlockData begin() const;
     ShellBlockData end() const;
 };
+
+inline const shell_block_iterator
+iter_shell_blocks_on_center(
+    const Ref<GaussianBasisSet>& basis,
+    int center,
+    const Ref<GaussianBasisSet>& dfbasis = 0,
+    int reqs = SameCenter
+)
+{
+  const int shoff = basis->shell_on_center(center, 0);
+  return shell_block_iterator(
+      basis, dfbasis,
+      shoff, shoff + basis->nshell_on_center(center) - 1
+  ).requiring(reqs|SameCenter);
+}
 
 //############################################################################//
 
@@ -256,8 +279,6 @@ struct BasisElementData {
 
 };
 
-
-#define ShellData_USE_PROPERTIES 0
 struct ShellData : public BasisElementData {
 
     ShellData(
@@ -265,149 +286,58 @@ struct ShellData : public BasisElementData {
         GaussianBasisSet* basis,
         GaussianBasisSet* dfbasis = 0
     ) : BasisElementData(idx, basis, dfbasis)
-        #if ShellData_USE_PROPERTIES
-        ,
-        bfoff(this, &ShellData::get_bfoff),
-        nbf(this, &ShellData::get_nbf),
-        center(this, &ShellData::get_center),
-        atom_bfoff(this, &ShellData::get_atom_bfoff),
-        atom_shoff(this, &ShellData::get_atom_shoff),
-        atom_nsh(this, &ShellData::get_atom_nsh),
-        atom_nbf(this, &ShellData::get_atom_nbf),
-        bfoff_in_atom(this, &ShellData::get_bfoff_in_atom),
-        shoff_in_atom(this, &ShellData::get_shoff_in_atom),
-        atom_last_function(this, &ShellData::get_atom_last_function),
-        atom_last_shell(this, &ShellData::get_atom_last_shell),
-        last_function(this, &ShellData::get_last_function),
-        atom_dfshoff(this, &ShellData::get_atom_dfshoff),
-        atom_dfbfoff(this, &ShellData::get_atom_dfbfoff),
-        atom_dfnbf(this, &ShellData::get_atom_dfnbf),
-        atom_dfnsh(this, &ShellData::get_atom_dfnsh),
-        atom_df_last_function(this, &ShellData::get_atom_df_last_function),
-        atom_df_last_shell(this, &ShellData::get_atom_df_last_shell)
-        #endif
     {
-      #if !ShellData_USE_PROPERTIES
       init();
-      #endif
     }
 
     ShellData()
       : ShellData(NotAssigned, 0, 0)
     { }
 
-    ShellData(const ShellData& other)
-      : ShellData(other.index, other.basis, other.dfbasis)
-    { }
-
-    bool operator!=(const ShellData& other) const
-    {
-      return index != other.index;
-    }
-
     const ShellData& operator++()
     {
       ++index;
-      #if !ShellData_USE_PROPERTIES
       init();
-      #endif
       return *this;
     }
 
     void set_index(int idx) {
       index = idx;
-      #if !ShellData_USE_PROPERTIES
       init();
-      #endif
     }
 
     const ShellData& operator*() const { return *this; }
 
-    ShellData&
-    operator=(const ShellData& other)
-    {
-      index = other.index;
-      basis = other.basis;
-      dfbasis = other.dfbasis;
-      #if ShellData_USE_PROPERTIES
-      bfoff.set_target(this);
-      nbf.set_target(this);
-      center.set_target(this);
-      atom_bfoff.set_target(this);
-      atom_shoff.set_target(this);
-      atom_nsh.set_target(this);
-      atom_nbf.set_target(this);
-      bfoff_in_atom.set_target(this);
-      shoff_in_atom.set_target(this);
-      atom_last_function.set_target(this);
-      atom_last_shell.set_target(this);
-      last_function.set_target(this);
-      atom_dfshoff.set_target(this);
-      atom_dfbfoff.set_target(this);
-      atom_dfnbf.set_target(this);
-      atom_dfnsh.set_target(this);
-      atom_df_last_function.set_target(this);
-      atom_df_last_shell.set_target(this);
-      #else
-      init();
-      #endif
-      return *this;
-    }
-
-    #if ShellData_USE_PROPERTIES
-    template<typename t1, typename t2> using _property = property<t1, t2>;
-    #else
-    template<typename t1, typename t2> using _property = t2;
-    #endif
-    _property<const ShellData, int> bfoff;
-    _property<const ShellData, int> nbf;
-    _property<const ShellData, int> center;
-    _property<const ShellData, int> atom_bfoff;
-    _property<const ShellData, int> atom_shoff;
-    _property<const ShellData, int> atom_nsh;
-    _property<const ShellData, int> atom_nbf;
-    _property<const ShellData, int> bfoff_in_atom;
-    _property<const ShellData, int> shoff_in_atom;
-    _property<const ShellData, int> atom_last_function;
-    _property<const ShellData, int> atom_last_shell;
-    _property<const ShellData, int> last_function;
+    int bfoff = NotAssigned;
+    int nbf = NotAssigned;
+    int center = NotAssigned;
+    int atom_bfoff = NotAssigned;
+    int atom_shoff = NotAssigned;
+    int atom_nsh = NotAssigned;
+    int atom_nbf = NotAssigned;
+    int bfoff_in_atom = NotAssigned;
+    int shoff_in_atom = NotAssigned;
+    int atom_last_function = NotAssigned;
+    int atom_last_shell = NotAssigned;
+    int last_function = NotAssigned;
 
     // Used when an auxiliary basis is set in the parent ShellIter.  Otherwise, set to -1
-    _property<const ShellData, int> atom_dfshoff;
-    _property<const ShellData, int> atom_dfbfoff;
-    _property<const ShellData, int> atom_dfnbf;
-    _property<const ShellData, int> atom_dfnsh;
-    _property<const ShellData, int> atom_df_last_function;
-    _property<const ShellData, int> atom_df_last_shell;
+    int atom_dfshoff = NotAssigned;
+    int atom_dfbfoff = NotAssigned;
+    int atom_dfnbf = NotAssigned;
+    int atom_dfnsh = NotAssigned;
+    int atom_df_last_function = NotAssigned;
+    int atom_df_last_shell = NotAssigned;
 
     operator int() { ASSERT_SHELL_BOUNDS; return index; }
     operator const int() const { ASSERT_SHELL_BOUNDS; return index; }
 
   private:
 
-    #if ShellData_USE_PROPERTIES
-    int get_nbf() const { ASSERT_SHELL_BOUNDS; return basis->shell(index).nfunction(); }
-    int get_bfoff() const { ASSERT_SHELL_BOUNDS; return basis->shell_to_function(index); }
-    int get_center() const { ASSERT_SHELL_BOUNDS; return basis->shell_to_center(index); }
-    int get_atom_bfoff() const { ASSERT_SHELL_BOUNDS; return basis->shell_to_function(atom_shoff); }
-    int get_atom_shoff() const { ASSERT_SHELL_BOUNDS; return basis->shell_on_center(center, 0); }
-    int get_atom_nsh() const { ASSERT_SHELL_BOUNDS; return basis->nshell_on_center(center); }
-    int get_atom_nbf() const { ASSERT_SHELL_BOUNDS; return basis->nbasis_on_center(center); }
-    int get_shoff_in_atom() const { ASSERT_SHELL_BOUNDS; return index - atom_shoff; }
-    int get_bfoff_in_atom() const { ASSERT_SHELL_BOUNDS; return bfoff - atom_bfoff; }
-    int get_atom_last_function() const { ASSERT_SHELL_BOUNDS; return atom_bfoff + atom_nbf - 1; }
-    int get_last_function() const { ASSERT_SHELL_BOUNDS; return bfoff + nbf - 1; }
-    int get_atom_last_shell() const { ASSERT_SHELL_BOUNDS; return atom_shoff + atom_nsh - 1; }
-    int get_atom_dfshoff() const { assert(dfbasis != 0); return dfbasis->shell_on_center(center, 0); }
-    int get_atom_dfbfoff() const { assert(dfbasis != 0); return dfbasis->shell_to_function(atom_dfshoff); }
-    int get_atom_dfnsh() const { assert(dfbasis != 0); return dfbasis->nshell_on_center(center); }
-    int get_atom_dfnbf() const { assert(dfbasis != 0); return dfbasis->nbasis_on_center(center); }
-    int get_atom_df_last_function() const { assert(dfbasis != 0); return atom_dfbfoff + atom_dfnbf - 1; }
-    int get_atom_df_last_shell() const { assert(dfbasis != 0); return atom_dfshoff + atom_dfnsh - 1; }
-    int assert_not_initialized() const { assert(false && "ShellData object not initialized"); return -1; }
-    #else
     void init(){
       if(index == NotAssigned || index == basis->nshell()) return;
+
+      ASSERT_SHELL_BOUNDS;
 
       nbf = basis->shell(index).nfunction(); 
       bfoff = basis->shell_to_function(index); 
@@ -430,221 +360,80 @@ struct ShellData : public BasisElementData {
         atom_df_last_shell = atom_dfshoff + atom_dfnsh - 1; 
       }
     }
-    #endif
 };
 
-
-#define BFD_USE_PROPERTIES 0
-struct BasisFunctionData {
-
-    BasisFunctionData()
-      : index(-1),
-        basis(0),
-        dfbasis(0)
-        #if BFD_USE_PROPERTIES
-        ,
-        shell_index(this, &BasisFunctionData::assert_not_initialized),
-        shell_bfoff(this, &BasisFunctionData::assert_not_initialized),
-        center(this, &BasisFunctionData::assert_not_initialized),
-        bfoff_in_shell(this, &BasisFunctionData::assert_not_initialized),
-        atom_dfshoff(this, &BasisFunctionData::assert_not_initialized),
-        atom_dfbfoff(this, &BasisFunctionData::assert_not_initialized),
-        atom_dfnbf(this, &BasisFunctionData::assert_not_initialized),
-        bfoff_in_atom(this, &BasisFunctionData::assert_not_initialized),
-        atom_bfoff(this, &BasisFunctionData::assert_not_initialized),
-        atom_shoff(this, &BasisFunctionData::assert_not_initialized)
-        //shell_nbf(this, &BasisFunctionData::assert_not_initialized),
-        //atom_nsh(this, &BasisFunctionData::assert_not_initialized),
-        //atom_nbf(this, &BasisFunctionData::assert_not_initialized),
-        //shoff_in_atom(this, &BasisFunctionData::assert_not_initialized),
-        //atom_last_function(this, &BasisFunctionData::assert_not_initialized),
-        //atom_last_shell(this, &BasisFunctionData::assert_not_initialized),
-        //atom_dfnsh(this, &BasisFunctionData::assert_not_initialized),
-        //atom_df_last_function(this, &BasisFunctionData::assert_not_initialized),
-        //atom_df_last_shell(this, &BasisFunctionData::assert_not_initialized)
-        #endif
-    {
-
-    }
+struct BasisFunctionData : public BasisElementData {
 
     BasisFunctionData(
         int idx,
         GaussianBasisSet* basis,
-        GaussianBasisSet* dfbasis
-    ) : index(idx),
-        basis(basis),
-        dfbasis(dfbasis)
-        #if BFD_USE_PROPERTIES
-        ,
-        shell_index(this, &BasisFunctionData::get_shell_index),
-        shell_bfoff(this, &BasisFunctionData::get_shell_bfoff),
-        center(this, &BasisFunctionData::get_center),
-        bfoff_in_shell(this, &BasisFunctionData::get_bfoff_in_shell),
-        atom_dfshoff(this, &BasisFunctionData::get_atom_dfshoff),
-        atom_dfbfoff(this, &BasisFunctionData::get_atom_dfbfoff),
-        atom_dfnbf(this, &BasisFunctionData::get_atom_dfnbf),
-        bfoff_in_atom(this, &BasisFunctionData::get_bfoff_in_atom),
-        atom_bfoff(this, &BasisFunctionData::get_atom_bfoff),
-        atom_shoff(this, &BasisFunctionData::get_atom_shoff)
-        //shell_nbf(this, &BasisFunctionData::get_shell_nbf),
-        //atom_nsh(this, &BasisFunctionData::get_atom_nsh),
-        //atom_nbf(this, &BasisFunctionData::get_atom_nbf),
-        //shoff_in_atom(this, &BasisFunctionData::get_shoff_in_atom),
-        //atom_last_function(this, &BasisFunctionData::get_atom_last_function),
-        //atom_last_shell(this, &BasisFunctionData::get_atom_last_shell),
-        //atom_dfnsh(this, &BasisFunctionData::get_atom_dfnsh),
-        //atom_df_last_function(this, &BasisFunctionData::get_atom_df_last_function),
-        //atom_df_last_shell(this, &BasisFunctionData::get_atom_df_last_shell)
-        #endif
+        GaussianBasisSet* dfbasis,
+        int block_offset = NotAssigned
+    ) : BasisElementData(idx, basis, dfbasis),
+        block_offset(block_offset)
     {
-      #if BFD_USE_PROPERTIES == 0
       init();
-      #endif
     }
 
-    BasisFunctionData(
-        const BasisFunctionData& other
-    ) : index(other.index),
-        basis(other.basis),
-        dfbasis(other.dfbasis)
-        #if BFD_USE_PROPERTIES
-        ,
-        shell_index(this, &BasisFunctionData::get_shell_index),
-        shell_bfoff(this, &BasisFunctionData::get_shell_bfoff),
-        center(this, &BasisFunctionData::get_center),
-        bfoff_in_shell(this, &BasisFunctionData::get_bfoff_in_shell),
-        atom_dfshoff(this, &BasisFunctionData::get_atom_dfshoff),
-        atom_dfbfoff(this, &BasisFunctionData::get_atom_dfbfoff),
-        atom_dfnbf(this, &BasisFunctionData::get_atom_dfnbf),
-        bfoff_in_atom(this, &BasisFunctionData::get_bfoff_in_atom),
-        atom_bfoff(this, &BasisFunctionData::get_atom_bfoff),
-        atom_shoff(this, &BasisFunctionData::get_atom_shoff)
-        //shell_nbf(this, &BasisFunctionData::get_shell_nbf),
-        //atom_nsh(this, &BasisFunctionData::get_atom_nsh),
-        //atom_nbf(this, &BasisFunctionData::get_atom_nbf),
-        //shoff_in_atom(this, &BasisFunctionData::get_shoff_in_atom),
-        //atom_last_function(this, &BasisFunctionData::get_atom_last_function),
-        //atom_last_shell(this, &BasisFunctionData::get_atom_last_shell),
-        //atom_dfnsh(this, &BasisFunctionData::get_atom_dfnsh),
-        //atom_df_last_function(this, &BasisFunctionData::get_atom_df_last_function),
-        //atom_df_last_shell(this, &BasisFunctionData::get_atom_df_last_shell)
-        #endif
-    {
-      #if BFD_USE_PROPERTIES == 0
-      init();
-      #endif
-    }
-
-    bool operator!=(const BasisFunctionData& other) const
-    {
-      return index != other.index;
-    }
+    BasisFunctionData()
+      : BasisFunctionData(NotAssigned, 0, 0)
+    { }
 
     const BasisFunctionData& operator++()
     {
       ++index;
-      #if BFD_USE_PROPERTIES == 0
       init();
-      #endif
       return *this;
     }
 
     const BasisFunctionData& operator*() const { return *this; }
 
-    int index;
-
-    #if BFD_USE_PROPERTIES
-    property<BasisFunctionData, int> shell_index;
-    property<BasisFunctionData, int> shell_bfoff;
-    property<BasisFunctionData, int> center;
-    property<BasisFunctionData, int> bfoff_in_shell;
-    property<BasisFunctionData, int> atom_dfshoff;
-    property<BasisFunctionData, int> atom_dfbfoff;
-    property<BasisFunctionData, int> atom_dfnbf;
-    property<BasisFunctionData, int> bfoff_in_atom;
-    property<BasisFunctionData, int> atom_bfoff;
-    property<BasisFunctionData, int> atom_shoff;
-    //property<BasisFunctionData, int> shell_nbf;
-    //property<BasisFunctionData, int> atom_nsh;
-    //property<BasisFunctionData, int> atom_nbf;
-    //property<BasisFunctionData, int> shoff_in_atom;
-    //property<BasisFunctionData, int> atom_last_function;
-    //property<BasisFunctionData, int> atom_last_shell;
-    //property<BasisFunctionData, int> atom_dfnsh;
-    //property<BasisFunctionData, int> atom_df_last_function;
-    //property<BasisFunctionData, int> atom_df_last_shell;
-    #else
-    int shell_index = -1;
-    int shell_bfoff = -1;
-    int center = -1;
-    int bfoff_in_shell = -1;
-    int atom_dfshoff = -1;
-    int atom_dfbfoff = -1;
-    int atom_dfnbf = -1;
-    int bfoff_in_atom = -1;
-    int atom_shoff = -1;
-    int atom_bfoff = -1;
-    #endif
+    int shell_index = NotAssigned;
+    int shell_bfoff = NotAssigned;
+    int center = NotAssigned;
+    int bfoff_in_shell = NotAssigned;
+    int atom_dfshoff = NotAssigned;
+    int atom_dfbfoff = NotAssigned;
+    int atom_dfnbf = NotAssigned;
+    int bfoff_in_atom = NotAssigned;
+    int atom_shoff = NotAssigned;
+    int atom_bfoff = NotAssigned;
+    int block_offset = NotAssigned;
+    int bfoff_in_block = NotAssigned;
 
     operator int() { return index; }
 
-    GaussianBasisSet* basis;
-    GaussianBasisSet* dfbasis;
-
   private:
 
-    #if not BFD_USE_PROPERTIES
     void init()
     {
-      //std::cout << "index = " << index << ", " << "nbasis() = " << basis->nbasis() << std::endl;
-      if(index < basis->nbasis() && index >= 0){
-        shell_index = get_shell_index();
-        //std::cout << "  shell_index = " << shell_index << std::endl;
-        shell_bfoff = get_shell_bfoff();
-        center = get_center();
-        bfoff_in_shell = get_bfoff_in_shell();
-        atom_shoff = get_atom_shoff();
-        atom_bfoff = get_atom_bfoff();
-        bfoff_in_atom = get_bfoff_in_atom();
-        if(dfbasis != 0){
-          atom_dfshoff = get_atom_dfshoff();
-          atom_dfbfoff = get_atom_dfbfoff();
-          atom_dfnbf = get_atom_dfnbf();
-        }
+      if(index == NotAssigned || index == basis->nbasis()) return;
+
+      shell_index = basis->function_to_shell(index);
+      shell_bfoff = basis->shell_to_function(shell_index);
+      center = basis->shell_to_center(shell_index);
+      bfoff_in_shell = index - shell_bfoff;
+      atom_shoff = basis->shell_on_center(center, 0);
+      atom_bfoff =  basis->shell_to_function(atom_shoff);
+      bfoff_in_atom = index - atom_bfoff;
+      if(dfbasis != 0){
+        atom_dfshoff = dfbasis->shell_on_center(center, 0);
+        atom_dfbfoff = dfbasis->shell_to_function(atom_dfshoff);
+        atom_dfnbf = dfbasis->nbasis_on_center(center);
+      }
+      if(block_offset != NotAssigned) {
+        bfoff_in_block = index - block_offset;
       }
     }
-    #endif
-
-    int get_shell_index() const { return basis->function_to_shell(index); }
-    int get_shell_bfoff() const { return basis->shell_to_function(shell_index); }
-    int get_center() const { return basis->shell_to_center(shell_index); }
-    int get_bfoff_in_shell() const { return index - shell_bfoff; }
-    int get_atom_dfshoff() const { assert(dfbasis != 0); return dfbasis->shell_on_center(center, 0); }
-    int get_atom_dfbfoff() const { assert(dfbasis != 0); return dfbasis->shell_to_function(atom_dfshoff); }
-    int get_atom_dfnbf() const { assert(dfbasis != 0); return dfbasis->nbasis_on_center(center); }
-    int assert_not_initialized() const { assert(false && "ShellData object not initialized"); return -1; }
-    int get_bfoff_in_atom() const { return index - atom_bfoff; }
-    int get_atom_bfoff() const { return basis->shell_to_function(atom_shoff); }
-    int get_atom_shoff() const { return basis->shell_on_center(center, 0); }
-    //int get_shell_nbf() const { return basis->shell(shell_index).nfunction(); }
-    //int get_atom_nsh() const { return basis->nshell_on_center(center); }
-    //int get_atom_nbf() const { return basis->nbasis_on_center(center); }
-    //int get_shoff_in_atom() const { return shell_index - atom_shoff; }
-    //int get_atom_last_function() const { return atom_bfoff + atom_nbf - 1; }
-    //int get_atom_last_shell() const { return atom_shoff + atom_nsh - 1; }
-    //int get_atom_dfnsh() const { assert(dfbasis.nonnull()); return dfbasis->nshell_on_center(center); }
-    //int get_atom_df_last_function() const { assert(dfbasis.nonnull()); return atom_dfbfoff + atom_dfnbf - 1; }
-    //int get_atom_df_last_shell() const { assert(dfbasis.nonnull()); return atom_dfshoff + atom_dfnsh - 1; }
 };
 
 struct ShellBlockData {
-
 
     ShellBlockData(
         int first_shell,
         GaussianBasisSet* basis,
         GaussianBasisSet* dfbasis,
-        BlockCompositionRequirement reqs = SameCenter,
+        int reqs = SameCenter,
         int target_size = DEFAULT_TARGET_BLOCK_SIZE
     ) : first_index(first_shell),
         basis(basis),
@@ -713,7 +502,7 @@ struct ShellBlockData {
     int last_index;
     //std::vector<int>* shell_list = 0;
     int target_size;
-    BlockCompositionRequirement reqs;
+    int reqs;
 
     void init();
 

@@ -515,7 +515,9 @@ class ShellBlockData {
     GaussianBasisSet* dfbasis;
     int restrictions;
 
-    ShellBlockData(const ShellBlockSkeleton<Range>&, int restrictions);
+    ShellBlockData() : restrictions(-1) { }
+
+    ShellBlockData(const ShellBlockSkeleton<Range>&);
     
     explicit ShellBlockData(
         GaussianBasisSet* basis,
@@ -581,16 +583,19 @@ class ShellBlockSkeleton {
 
     Range shell_range;
     int first_index;
+    int restrictions;
 
     ShellBlockSkeleton() : nshell(0), nbf(0), first_index(-1) { }
 
     ShellBlockSkeleton(const ShellBlockData<Range>& shbd)
       : shell_range(shbd.shell_range), nshell(shbd.nshell), nbf(shbd.nbf),
+        restrictions(shbd.restrictions),
         first_index((*shell_range.begin()).index)
     { }
 
-    ShellBlockSkeleton(Range range, int nsh, int nbas)
+    ShellBlockSkeleton(Range range, int nsh, int nbas, int restrictions)
       : shell_range(range), nshell(nsh), nbf(nbas),
+        restrictions(restrictions),
         first_index((*shell_range.begin()).index)
     { }
 
@@ -629,7 +634,7 @@ class shell_block_iterator
   : public boost::iterator_facade<
       shell_block_iterator<ShellIterator>,
       ShellBlockSkeleton<range_of<ShellData, ShellIterator>>,
-      std::input_iterator_tag, //boost::forward_traversal_tag,
+      boost::forward_traversal_tag,
       ShellBlockData<range_of<ShellData, ShellIterator>>
     >
 {
@@ -655,8 +660,7 @@ class shell_block_iterator
 
     value_reference dereference() const {
       return value_reference(
-          current_skeleton,
-          restrictions
+          current_skeleton
       );
     }
 

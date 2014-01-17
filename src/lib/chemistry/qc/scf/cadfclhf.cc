@@ -143,8 +143,7 @@ CADFCLHF::CADFCLHF(StateIn& s) :
 
 CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
     CLHF(keyval),
-    local_pairs_spot_(0),
-    is_fetching_pairs_(false)
+    local_pairs_spot_(0)
 {
   //----------------------------------------------------------------------------//
   // Get the auxiliary basis set
@@ -260,18 +259,27 @@ CADFCLHF::init_threads()
   init_significant_pairs();
   //----------------------------------------------------------------------------//
   if(not dynamic_){
+    const int me = scf_grp_->me();
     int inode = 0;
     for(auto sig_pair : sig_pairs_) {
-      pair_assignments_[SignificantPairs][sig_pair] = inode % n_node;
+      const int assignment = inode % n_node;
+      pair_assignments_[SignificantPairs][sig_pair] = assignment;
+      if(assignment == me){
+        local_pairs_[SignificantPairs].push_back(sig_pair);
+      }
       ++inode;
     }
-    // Make the backwards mapping for the current node
-    const int me = scf_grp_->me();
-    for(auto it : pair_assignments_[SignificantPairs]){
-      if(it.second == me){
-        local_pairs_[SignificantPairs].push_back(it.first);
-      }
-    }
+    // Make the assignments for the mu, X pairs in K
+    for(int mu_set = 0; mu_set < sig_blocks_.size(); ++mu_set) {
+      for(auto sig_block : sig_blocks_[mu_set]) {
+        const int assignment = inode % n_node;
+        auto pair = std::make_pair(mu_set, sig_block);
+        pair_assignments_k_[pair] = assignment;
+        if(assignment == me) {
+          local_pairs_k_.push_back(pair);
+        }
+      } // end loop over blocks for mu
+    } // in loop over mu sets
   }
   //----------------------------------------------------------------------------//
   threads_initialized_ = true;
@@ -763,6 +771,8 @@ CADFCLHF::compute_J()
 
 //////////////////////////////////////////////////////////////////////////////////
 
+#define OLD_K 0
+
 RefSCMatrix
 CADFCLHF::compute_K()
 {
@@ -828,7 +838,148 @@ CADFCLHF::compute_K()
       compute_threads.create_thread([&,ithr](){
         Eigen::MatrixXd Kt_part(nbf, nbf);
         Kt_part = Eigen::MatrixXd::Zero(nbf, nbf);
-        ShellData ish, jsh;
+        //----------------------------------------//
+        ShellData ish;
+        ShellBlockData<> Xblk;
+        auto get_ish_Xblk_pair = [&]() -> bool {
+          int spot = local_pairs_spot_++;
+          if(spot < local_pairs_k_.size()){
+            auto& sig_pair = local_pairs_k_[spot];
+            ish = ShellData(sig_pair.first, basis(), dfbs_);
+            Xblk = sig_pair.second;
+            return true;
+          }
+          else{
+            return false;
+          }
+        };
+        //----------------------------------------//
+        while(get_ish_Xblk_pair()) {
+          /*-----------------------------------------------------*/
+          /* Compute B intermediate                         {{{2 */ #if 2 // begin fold
+          std::vector<Eigen::MatrixXd> B_mus(ish.nbf);
+          for(auto mu : function_range(ish)) {
+            B_mus[mu.bfoff_in_shell].resize(nbf, Xblk.nbf);
+            B_mus[mu.bfoff_in_shell] = Eigen::MatrixXd::Zero(nbf, Xblk.nbf);
+          }
+          for(ShellData jsh : iter_significant_partners(ish)){
+            auto g3_ptr = ints_to_eigen(
+                ish, jsh, Xblk,
+                eris_3c_[ithr], coulomb_oper_type_
+            );
+            auto& g3 = *g3_ptr;
+            for(auto mu : function_range(ish)) {
+              B_mus[mu.bfoff_in_shell] += 2.0 *
+                  D.middleRows(jsh.bfoff, jsh.nbf).transpose() *
+                  g3.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf);
+              /* Fail-safe explicit loops version
+              //for(auto sigma : function_range(obs)) {
+              //  B_mus[mu.bfoff_in_shell].row(sigma) += 2.0 *
+              //      D.row(sigma).segment(jsh.bfoff, jsh.nbf) *
+              //      g3.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf);
+              //  //for(auto X : function_range(Xblk)) {
+              //  //  B_mus[mu.bfoff_in_shell](sigma, X.bfoff_in_block) += 2.0 *
+              //  //      D.row(sigma).segment(jsh.bfoff, jsh.nbf) *
+              //  //      g3.col(X.bfoff_in_block).segment(mu.bfoff_in_shell*jsh.nbf, jsh.nbf);
+              //  //  //for(auto rho : function_range(jsh)) {
+              //  //  //  B_mus[mu.bfoff_in_shell](sigma, X.bfoff_in_block) += 2.0 *
+              //  //  //      g3(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell, X.bfoff_in_block)
+              //  //  //      * D(rho, sigma);
+              //  //  //}
+              //  //
+              //  //}
+              //}
+               */
+            } // end loop over mu
+          } // end loop over jsh
+          if(xml_debug) {
+            for(auto mu : function_range(ish)){
+              write_as_xml("B_part", B_mus[mu.bfoff_in_shell], std::map<std::string, int>{
+                {"mu", mu}, {"Xbfoff", Xblk.bfoff},
+                {"Xnbf", Xblk.nbf}, {"dfnbf", dfbs_->nbasis()}
+              });
+            }
+          }
+          /*******************************************************/ #endif //2}}}
+          /*-----------------------------------------------------*/
+          /* Compute K contributions                        {{{2 */ #if 2 // begin fold
+          const int obs_atom_bfoff = obs->shell_to_function(obs->shell_on_center(Xblk.center, 0));
+          const int obs_atom_nbf = obs->nbasis_on_center(Xblk.center);
+          for(auto X : function_range(Xblk)) {
+            Eigen::MatrixXd& C_X = coefs_transpose_[X];
+            for(auto mu : function_range(ish)) {
+              // B_mus[mu.bfoff_in_shell] is (nbf x Ysh.nbf)
+              // C_Y is (Y.{obs_}atom_nbf x nbf)
+              // result should be (Y.{obs_}atom_nbf x 1)
+              Kt_part.row(mu).segment(obs_atom_bfoff, obs_atom_nbf).transpose() +=
+                  C_X * B_mus[mu.bfoff_in_shell].col(X.bfoff_in_block);
+              // The sigma <-> nu term
+              Kt_part.row(mu).transpose() += C_X.transpose()
+                  * B_mus[mu.bfoff_in_shell].col(X.bfoff_in_block).segment(obs_atom_bfoff, obs_atom_nbf);
+              // Add back in the nu.center == Y.center part
+              Kt_part.row(mu).segment(obs_atom_bfoff, obs_atom_nbf).transpose() -=
+                  C_X.middleCols(obs_atom_bfoff, obs_atom_nbf).transpose()
+                  * B_mus[mu.bfoff_in_shell].col(X.bfoff_in_block).segment(obs_atom_bfoff, obs_atom_nbf);
+              //----------------------------------------//
+              /* Failsafe version:
+              //for(auto nu : iter_functions_on_center(obs, Y.center)) {
+              //  //for(auto sigma : function_range(obs)) {
+              //  //  Kt_part(mu, nu) -= 0.5 * C_Y(nu.bfoff_in_atom, sigma) * B_mus[mu.bfoff_in_shell](sigma, Y.bfoff_in_shell);
+              //  //}
+              //  Kt_part(mu, nu) -= 0.5 * C_Y.row(nu.bfoff_in_atom) * B_mus[mu.bfoff_in_shell].col(Y.bfoff_in_shell);
+              //}
+              //----------------------------------------//
+              //for(auto nu : function_range(obs)) {
+              //  if(nu.center != Y.center) {
+              //    //for(auto sigma : iter_functions_on_center(obs, Y.center)) {
+              //    //  Kt_part(mu, nu) -= 0.5 * C_Y(sigma.bfoff_in_atom, nu) * B_mus[mu.bfoff_in_shell](sigma, Y.bfoff_in_shell);
+              //    //}
+              //    Kt_part(mu, nu) -= 0.5 * C_Y.col(nu).transpose() * B_mus[mu.bfoff_in_shell].col(Y.bfoff_in_shell).segment(
+              //      obs->shell_to_function(obs->shell_on_center(Y.center, 0)),
+              //      obs->nbasis_on_center(Y.center)
+              //    );
+              //  }
+              //}
+              */
+              //----------------------------------------//
+            }
+          }
+          #if OLD_K
+          for(auto ksh : shell_range(obs, dfbs_)) {
+            for(auto lsh : iter_significant_partners(ksh)) {
+              if(ksh.center != Xblk.center && lsh.center != Xblk.center) continue;
+              for(auto nu : function_range(ksh)) {
+                for(auto sigma : function_range(lsh)) {
+                  CoefContainer c_ptr;
+                  if(lsh <= ksh) {
+                    IntPair nu_sigma(nu, sigma);
+                    assert(coefs_.find(nu_sigma) != coefs_.end());
+                    auto coef_pair = coefs_[nu_sigma];
+                    c_ptr = ksh.center == Xblk.center ? coef_pair.first : coef_pair.second;
+                  }
+                  else {
+                    IntPair nu_sigma(sigma, nu);
+                    assert(coefs_.find(nu_sigma) != coefs_.end());
+                    auto coef_pair = coefs_[nu_sigma];
+                    c_ptr = lsh.center == Xblk.center ? coef_pair.first : coef_pair.second;
+                  }
+                  auto& C = *c_ptr;
+                  for(auto X : function_range(Xblk)) {
+                    for(auto mu : function_range(ish)) {
+                      Kt_part(mu, nu) += C[X.bfoff_in_atom] * B_mus[mu.bfoff_in_shell](sigma, X.bfoff_in_block);
+                    } // end loop over mu in ish
+                  } // end loop over X in Xblk
+                } // end loop over sigma in lsh
+              } // end loop over nu in ksh
+            } // end loop over lsh
+          } // end loop over ksh
+          #endif
+          /*******************************************************/ #endif //2}}}
+          /*-----------------------------------------------------*/
+        } // end while get ish Xblk pair
+        //============================================================================//
+        #if OLD_K
+        ShellData jsh;
         while(get_shell_pair(ish, jsh, SignificantPairs)){
           const double pf = 2.0;
           /*-----------------------------------------------------*/
@@ -1143,7 +1294,8 @@ CADFCLHF::compute_K()
           if(ithr == 0) timer.exit("K contributions");
           /*******************************************************/ #endif //2}}}
           /*-----------------------------------------------------*/
-        } // end while get_shell_pair(ish, jsh)
+        } // end while get_shelsh)
+        #endif
         //----------------------------------------//
         // Sum Kt parts within node
         boost::lock_guard<boost::mutex> lg(tmp_mutex);
@@ -1838,7 +1990,6 @@ CADFCLHF::get_decomposition(int ish, int jsh, Ref<TwoBodyTwoCenterInt> ints)
 
 //////////////////////////////////////////////////////////////////////////////////
 
-
 std::shared_ptr<Eigen::MatrixXd>
 CADFCLHF::ints_to_eigen(int ish, int jsh, Ref<TwoBodyTwoCenterInt>& ints, TwoBodyOper::type int_type){
   return ints2_.get(ish, jsh, int_type, [ish, jsh, int_type, &ints](){
@@ -1860,48 +2011,6 @@ CADFCLHF::ints_to_eigen(int ish, int jsh, Ref<TwoBodyTwoCenterInt>& ints, TwoBod
     return rv;
   });
 }
-
-//////////////////////////////////////////////////////////////////////////////////
-
-/*
-std::shared_ptr<Eigen::MatrixXd>
-CADFCLHF::ints_to_eigen(
-    int_range&& ishs,
-    int_range&& jshs,
-    Ref<TwoBodyTwoCenterInt>& ints,
-    TwoBodyOper::type int_type
-)
-{
-  GaussianBasisSet& ibs = *(ints->basis1());
-  GaussianBasisSet& jbs = *(ints->basis2());
-  //----------------------------------------//
-  // First figure out the sizes
-  int nbfis = 0;
-  for(auto ish : ishs)
-    nbfis += ibs.shell(ish).nfunction();
-  int nbfjs = 0;
-  for(auto jsh : jshs)
-    nbfjs += jbs.shell(jsh).nfunction();
-  //----------------------------------------//
-  auto rv = make_shared<Eigen::MatrixXd>(nbfis, nbfjs);
-  //----------------------------------------//
-  int ioffset = 0, joffset = 0;
-  for(int ish : ishs) {
-    const int nbfi = ibs.shell(ish).nfunction();
-    joffset = 0;
-    for(int jsh : jshs) {
-      const int nbfj = jbs.shell(jsh).nfunction();
-      rv->block(
-          ioffset, joffset,
-          nbfi, nbfj
-      ) = *(ints_to_eigen(ish, jsh, ints, int_type));
-      joffset += nbfj;
-    }
-    ioffset += nbfi;
-  }
-  return rv;
-}
-*/
 
 //////////////////////////////////////////////////////////////////////////////////
 

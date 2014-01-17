@@ -37,12 +37,11 @@ namespace sc {
 
 template<typename Range>
 ShellBlockData<Range>::ShellBlockData(
-    const ShellBlockSkeleton<Range>& sk,
-    int restrictions
+    const ShellBlockSkeleton<Range>& sk
 ) : ShellBlockData<Range>(
       sk.shell_range,
       sk.nshell, sk.nbf,
-      restrictions
+      sk.restrictions
     )
 { }
 
@@ -106,7 +105,7 @@ shell_block_iterator<ShellIterator>::init()
     const auto& begin = all_shells.begin();
     const auto& end = all_shells.end();
     current_skeleton = ShellBlockSkeleton<ShellRange>(
-        shell_range(*(all_shells.begin()), *(all_shells.end())), 0, 0
+        shell_range(*(all_shells.begin()), *(all_shells.end())), 0, 0, restrictions
     );
     return;
   }
@@ -138,7 +137,7 @@ shell_block_iterator<ShellIterator>::init()
   //----------------------------------------//
   current_skeleton = ShellBlockSkeleton<ShellRange>(
       shell_range(first_shell, first_shell.iterator + block_nshell),
-      block_nshell, block_nbf
+      block_nshell, block_nbf, restrictions
   );
   //----------------------------------------//
 }

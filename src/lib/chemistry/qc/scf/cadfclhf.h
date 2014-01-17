@@ -200,6 +200,25 @@ class CADFCLHF: public CLHF {
         TwoBodyOper::type ints_type
     );
 
+    /// returns ints for shell in (inbf, jnbf) x kblk.nbf matrix in chemists' notation
+    template <typename ShellRange>
+    std::shared_ptr<Eigen::MatrixXd> ints_to_eigen(
+        const ShellData& ish, const ShellData& jsh,
+        const ShellBlockData<ShellRange>& kblk,
+        Ref<TwoBodyThreeCenterInt>& ints,
+        TwoBodyOper::type ints_type
+    );
+
+    /// returns ints for shell in (inbf, jblk.nbf) x kblk.nbf matrix in chemists' notation
+    template <typename ShellRange1, typename ShellRange2>
+    std::shared_ptr<Eigen::MatrixXd> ints_to_eigen(
+        const ShellBlockData<ShellRange1>& ish,
+        const ShellData& jsh,
+        const ShellBlockData<ShellRange2>& kblk,
+        Ref<TwoBodyThreeCenterInt>& ints,
+        TwoBodyOper::type ints_type
+    );
+
     std::shared_ptr<Decomposition> get_decomposition(int ish, int jsh, Ref<TwoBodyTwoCenterInt> ints);
 
     // Non-blocked version of cl_gmat_
@@ -220,8 +239,19 @@ class CADFCLHF: public CLHF {
     // Where are the shell pairs being evaluated?
     std::map<PairSet, std::map<std::pair<int, int>, int>> pair_assignments_;
 
+    // Pair assignments for K
+    std::map<
+      std::pair<int, ShellBlockSkeleton<>>,
+      int
+    > pair_assignments_k_;
+
     // What pairs are being evaluated on the current node?
     std::map<PairSet, std::vector<std::pair<int, int>>> local_pairs_;
+
+    // What pairs are being evaluated on the current node?
+    std::vector<
+      std::pair<int, ShellBlockSkeleton<>>
+    > local_pairs_k_;
 
     // List of the permutationally unique pairs with half-schwarz bounds larger than pair_thresh_
     std::vector<std::pair<int, int>> sig_pairs_;
@@ -234,9 +264,6 @@ class CADFCLHF: public CLHF {
 
     // Where are we in the iteration over the local_pairs_?
     std::atomic<int> local_pairs_spot_;
-
-    // Is the pair fetch process in progress?  Only used when dynamic_ is true
-    std::atomic<bool> is_fetching_pairs_;
 
     // TwoBodyThreeCenterInt integral objects for each thread
     std::vector<Ref<TwoBodyThreeCenterInt>> eris_3c_;
@@ -262,6 +289,21 @@ class CADFCLHF: public CLHF {
 
     static ClassDesc cd_;
 
+    typedef typename decltype(sig_partners_)::value_type::iterator sig_partners_iter_t;
+    typedef range_of<ShellData, sig_partners_iter_t> sig_partners_range_t;
+
+    sig_partners_range_t
+    iter_significant_partners(const ShellData& ish){
+      const auto& sig_parts = sig_partners_[ish];
+      return boost::make_iterator_range(
+          basis_element_iterator<ShellData, sig_partners_iter_t>(
+              ish.basis, ish.dfbasis, sig_parts.begin()
+          ),
+          basis_element_iterator<ShellData, sig_partners_iter_t>(
+              ish.basis, ish.dfbasis, sig_parts.end()
+          )
+      );
+    }
     /*
     shell_iter_arbitrary_wrapper<std::vector<int>>
     iter_significant_partners(
@@ -308,6 +350,50 @@ CADFCLHF::ints_to_eigen(
   for(auto ish : shell_range(iblk)) {
     const auto& ints_ptr = ints_to_eigen(ish, jsh, ints, int_type);
     rv->block(ish.bfoff - iblk.bfoff, 0, ish.nbf, jsh.nbf) = *ints_ptr;
+  }
+  return rv;
+}
+
+template <typename ShellRange>
+std::shared_ptr<Eigen::MatrixXd>
+CADFCLHF::ints_to_eigen(
+    const ShellData& ish, const ShellData& jsh,
+    const ShellBlockData<ShellRange>& Xblk,
+    Ref<TwoBodyThreeCenterInt>& ints,
+    TwoBodyOper::type int_type
+){
+  auto rv = std::make_shared<Eigen::MatrixXd>(
+      ish.nbf * jsh.nbf,
+      Xblk.nbf
+  );
+  for(auto Xsh : shell_range(Xblk)) {
+    const auto& ints_ptr = ints_to_eigen(ish, jsh, Xsh, ints, int_type);
+    rv->middleCols(Xsh.bfoff - Xblk.bfoff, Xsh.nbf) = *ints_ptr;
+  }
+  return rv;
+}
+
+template <typename ShellRange1, typename ShellRange2>
+std::shared_ptr<Eigen::MatrixXd>
+CADFCLHF::ints_to_eigen(
+    const ShellBlockData<ShellRange1>& iblk,
+    const ShellData& jsh,
+    const ShellBlockData<ShellRange2>& Xblk,
+    Ref<TwoBodyThreeCenterInt>& ints,
+    TwoBodyOper::type int_type
+){
+  auto rv = std::make_shared<Eigen::MatrixXd>(
+      iblk.nbf * jsh.nbf,
+      Xblk.nbf
+  );
+  for(auto ish: shell_range(iblk)) {
+    for(auto Xsh : shell_range(Xblk)) {
+      const auto& ints_ptr = ints_to_eigen(ish, jsh, Xsh, ints, int_type);
+      rv->block(
+          (ish.bfoff - iblk.bfoff) * jsh.nbf, Xsh.bfoff - Xblk.bfoff,
+          ish.nbf*jsh.nbf, Xsh.nbf
+      ) = *ints_ptr;
+    }
   }
   return rv;
 }

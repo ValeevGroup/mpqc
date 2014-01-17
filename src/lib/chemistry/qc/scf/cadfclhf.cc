@@ -287,10 +287,13 @@ CADFCLHF::init_significant_pairs()
   const int nthread = threadgrp_->nthread();
   boost::mutex pair_mutex;
   std::vector<std::pair<double, IntPair>> pair_values;
+  //----------------------------------------//
   local_pairs_spot_ = 0;
   do_threaded(nthread, [&](int ithr){
+
     ShellData ish, jsh;
     std::vector<std::pair<double, IntPair>> my_pair_vals;
+
     while(get_shell_pair(ish, jsh, AllPairs)){
       const double max_val = ints4maxes_.get(ish, jsh, ish, jsh, coulomb_oper_type_, [&]() -> double {
         tbis_[ithr]->compute_shell(ish, jsh, ish, jsh);
@@ -307,6 +310,7 @@ CADFCLHF::init_significant_pairs()
     for(auto item : my_pair_vals){
       pair_values.push_back(item);
     }
+
   });
   //----------------------------------------//
   double max_schwarz = std::max_element(pair_values.begin(), pair_values.end())->first;
@@ -329,10 +333,6 @@ CADFCLHF::init_significant_pairs()
     boost::lock_guard<boost::mutex> lg(pair_mutex);
     for(auto item : my_sig_pairs){
       sig_pairs_.push_back(item);
-      // TODO this needs to be done after the all to all, below
-      shell_to_sig_shells_[item.first].push_back(item.second);
-      if(item.first != item.second)
-        shell_to_sig_shells_[item.second].push_back(item.first);
     }
   });
   //----------------------------------------//
@@ -359,6 +359,25 @@ CADFCLHF::init_significant_pairs()
   sig_pairs_.clear();
   for(int ipair = 0; ipair < n_sig; ++ipair){
     sig_pairs_.push_back(IntPair(sig_data[2*ipair], sig_data[2*ipair + 1]));
+  }
+  //----------------------------------------//
+  // Now compute the significant pairs for the outer loop of the exchange and the sig_partners_ array
+  sig_partners_.resize(basis()->nbasis());
+  sig_blocks_.resize(basis()->nbasis());
+  for(auto pair : sig_pairs_) {
+    ShellData mu(pair.first, basis()), rho(pair.second, basis());
+    sig_partners_[mu].insert(rho);
+    if(mu != rho) {
+      sig_partners_[rho].insert(mu);
+    }
+    for(auto Xblk : iter_shell_blocks_on_center(dfbs_, mu.center)) {
+      sig_blocks_[mu].insert(Xblk);
+      sig_blocks_[rho].insert(Xblk);
+    }
+    for(auto Xblk : iter_shell_blocks_on_center(dfbs_, rho.center)) {
+      sig_blocks_[mu].insert(Xblk);
+      sig_blocks_[rho].insert(Xblk);
+    }
   }
   //----------------------------------------//
   ExEnv::out0() << "  Number of significant shell pairs:  " << n_sig << endl;
@@ -569,8 +588,7 @@ CADFCLHF::compute_J()
   // TODO Thread this
   timer.enter("compute g_tilde");
   shared_ptr<Eigen::MatrixXd> X_g_Y = ints_to_eigen(
-    boost::irange(0, (int)dfbs_->nshell()),
-    boost::irange(0, (int)dfbs_->nshell()),
+    ShellBlockData<>(dfbs_), ShellBlockData<>(dfbs_),
     eris_2c_[0],
     coulomb_oper_type_
   );
@@ -609,14 +627,14 @@ CADFCLHF::compute_J()
           double perm_fact = (ish == jsh) ? 2.0 : 4.0;
           //----------------------------------------//
           //for(int kshdf = 0; kshdf < dfbs.nshell(); ++kshdf){
-          for(auto kshdf : shell_iterator(dfbs_)){
+          for(auto kshdf : shell_range(dfbs_)){
             std::shared_ptr<Eigen::MatrixXd> g_part = ints_to_eigen(
                 ish, jsh, kshdf,
                 eris_3c_[ithr],
                 coulomb_oper_type_
             );
             for(int ibf = 0, mu = ish.bfoff; ibf < ish.nbf; ++ibf, ++mu){
-              //for(auto jbf : function_iterator(jsh)){
+              //for(auto jbf : function_range(jsh)){
               for(int jbf = 0, nu = jsh.bfoff; jbf < jsh.nbf; ++jbf, ++nu){
                 //----------------------------------------//
                 const int ijbf = ibf*jsh.nbf + jbf;
@@ -674,8 +692,8 @@ CADFCLHF::compute_J()
         ShellData ish, jsh;
         while(get_shell_pair(ish, jsh, SignificantPairs)){
           //----------------------------------------//
-          for(auto mu : function_iterator(ish)){
-            for(auto nu : function_iterator(jsh)){
+          for(auto mu : function_range(ish)){
+            for(auto nu : function_range(jsh)){
               //----------------------------------------//
               IntPair ij(mu, nu);
               auto cpair = coefs_[ij];
@@ -788,8 +806,7 @@ CADFCLHF::compute_K()
   //   problems, this might not fit in memory and
   //   this would need to be revised
   std::shared_ptr<Eigen::MatrixXd> g2_ptr = ints_to_eigen(
-      int_range(0, dfbs_->nshell()),
-      int_range(0, dfbs_->nshell()),
+      ShellBlockData<>(dfbs_), ShellBlockData<>(dfbs_),
       eris_2c_[0], coulomb_oper_type_
   );
   Eigen::MatrixXd& g2 = *g2_ptr;
@@ -824,7 +841,7 @@ CADFCLHF::compute_K()
           std::vector<Eigen::MatrixXd> dt_rhos((ish == jsh) ? 0 : (int)jsh.nbf);
           std::vector<Eigen::MatrixXd> gt_mus(ish.nbf);
           std::vector<Eigen::MatrixXd> gt_rhos((ish == jsh) ? 0 : (int)jsh.nbf);
-          for(auto mu : function_iterator(ish)){
+          for(auto mu : function_range(ish)){
             A_mus[mu.bfoff_in_shell].resize(nbf, dfnbf);
             A_mus[mu.bfoff_in_shell] = Eigen::MatrixXd::Zero(nbf, dfnbf);
             B_mus[mu.bfoff_in_shell].resize(nbf, dfnbf);
@@ -835,7 +852,7 @@ CADFCLHF::compute_K()
             gt_mus[mu.bfoff_in_shell] = Eigen::MatrixXd::Zero(nbf, dfnbf);
           }
           if(ish != jsh){
-            for(auto rho : function_iterator(jsh)){
+            for(auto rho : function_range(jsh)){
               A_rhos[rho.bfoff_in_shell].resize(nbf, dfnbf);
               A_rhos[rho.bfoff_in_shell] = Eigen::MatrixXd::Zero(nbf, dfnbf);
               B_rhos[rho.bfoff_in_shell].resize(nbf, dfnbf);
@@ -887,11 +904,11 @@ CADFCLHF::compute_K()
           } // end loop over kshdf
           //----------------------------------------//
           if(xml_debug) {
-            for(auto mu : function_iterator(ish)){
+            for(auto mu : function_range(ish)){
               write_as_xml("B_part", B_mus[mu.bfoff_in_shell], std::map<std::string, int>{ {"mu", mu}, {"jsh", jsh} } );
             }
             if(ish != jsh){
-              for(auto rho : function_iterator(jsh)){
+              for(auto rho : function_range(jsh)){
                 write_as_xml("B_part", B_rhos[rho.bfoff_in_shell], std::map<std::string, int>{ {"mu", rho}, {"jsh", jsh} } );
               }
             }
@@ -902,10 +919,10 @@ CADFCLHF::compute_K()
           /*-----------------------------------------------------*/
           /* Compute d_tilde and g_tilde for bfs in ish,jsh {{{2 */ #if 2 // begin fold
           //if(ithr == 0) timer.enter("build d_tilde");
-          //for(auto mu : function_iterator(ish)){
+          //for(auto mu : function_range(ish)){
           //  //----------------------------------------//
           //  // Compute d_tilde for a given mu
-          //  for(auto rho : function_iterator(jsh)){
+          //  for(auto rho : function_range(jsh)){
           //    //----------------------------------------//
           //    // Get the coefficients
           //    IntPair mu_rho(mu, rho);
@@ -942,8 +959,8 @@ CADFCLHF::compute_K()
           /* Get g_tilde contribution for bfs in ish,jsh    {{{2 */ #if 2 // begin fold
           //if(ithr == 0) timer.enter("build g");
           /* TODO optimally, this needs to compute blocks of several shells at once and contract these blocks
-          for(auto Ysh : shell_iterator(dfbs_)) {
-            for(auto Xsh : shell_iterator(dfbs_, 0, Ysh)) {
+          for(auto Ysh : shell_range(dfbs_)) {
+            for(auto Xsh : shell_range(dfbs_, 0, Ysh)) {
               if(ithr == 0) timer.enter("compute ints");
               const double dfpf = Xsh == Ysh ? 1.0 : 2.0;
               Eigen::MatrixXd& g2_part = *ints_to_eigen(
@@ -953,14 +970,14 @@ CADFCLHF::compute_K()
               );
               //----------------------------------------//
               if(ithr == 0) timer.change("gt_mu");
-              for(auto mu : function_iterator(ish)) {
+              for(auto mu : function_range(ish)) {
                 gt_mus[mu.bfoff_in_shell].middleCols(Ysh.bfoff, Ysh.nbf).noalias() +=
                     dfpf * dt_mus[mu.bfoff_in_shell].middleCols(Xsh.bfoff, Xsh.nbf) * g2_part;
               }
               //----------------------------------------//
               if(ish != jsh){
                 if(ithr == 0) timer.change("gt_rho");
-                for(auto rho : function_iterator(jsh)) {
+                for(auto rho : function_range(jsh)) {
                   gt_rhos[rho.bfoff_in_shell].middleCols(Ysh.bfoff, Ysh.nbf).noalias() +=
                       dfpf * dt_rhos[rho.bfoff_in_shell].middleCols(Xsh.bfoff, Xsh.nbf) * g2_part;
                 } // end loop over rho
@@ -986,11 +1003,11 @@ CADFCLHF::compute_K()
           //----------------------------------------//
           // Subtract off the term three contribution to B_mus and B_rhos (result is called A in notes)
           //if(ithr == 0) timer.enter("compute A");
-          //for(auto mu : function_iterator(ish)) {
+          //for(auto mu : function_range(ish)) {
           //  A_mus[mu.bfoff_in_shell] = B_mus[mu.bfoff_in_shell] - 0.5 * dt_mus[mu.bfoff_in_shell] * g2; //gt_mus[mu.bfoff_in_shell];
           //}
           //if(ish != jsh) {
-          //  for(auto rho : function_iterator(jsh)) {
+          //  for(auto rho : function_range(jsh)) {
           //    A_rhos[rho.bfoff_in_shell] = B_rhos[rho.bfoff_in_shell] - 0.5 * dt_rhos[rho.bfoff_in_shell] * g2; // gt_rhos[rho.bfoff_in_shell];
           //  }
           //}
@@ -1001,11 +1018,11 @@ CADFCLHF::compute_K()
           /* Compute K contributions                        {{{2 */ #if 2 // begin fold
           if(ithr == 0) timer.enter("K contributions");
           //if(ithr == 0) timer.enter("misc");
-          for(auto Y : function_iterator(dfbs_)) {
+          for(auto Y : function_range(dfbs_)) {
             Eigen::MatrixXd& C_Y = coefs_transpose_[Y];
             const int obs_atom_bfoff = obs->shell_to_function(obs->shell_on_center(Y.center, 0));
             const int obs_atom_nbf = obs->nbasis_on_center(Y.center);
-            for(auto mu : function_iterator(ish)) {
+            for(auto mu : function_range(ish)) {
               // B_mus[mu.bfoff_in_shell] is (nbf x Ysh.nbf)
               // C_Y is (Y.{obs_}atom_nbf x nbf)
               // result should be (Y.{obs_}atom_nbf x 1)
@@ -1021,13 +1038,13 @@ CADFCLHF::compute_K()
               //----------------------------------------//
               /* Failsafe version:
               //for(auto nu : iter_functions_on_center(obs, Y.center)) {
-              //  //for(auto sigma : function_iterator(obs)) {
+              //  //for(auto sigma : function_range(obs)) {
               //  //  Kt_part(mu, nu) -= 0.5 * C_Y(nu.bfoff_in_atom, sigma) * B_mus[mu.bfoff_in_shell](sigma, Y.bfoff_in_shell);
               //  //}
               //  Kt_part(mu, nu) -= 0.5 * C_Y.row(nu.bfoff_in_atom) * B_mus[mu.bfoff_in_shell].col(Y.bfoff_in_shell);
               //}
               //----------------------------------------//
-              //for(auto nu : function_iterator(obs)) {
+              //for(auto nu : function_range(obs)) {
               //  if(nu.center != Y.center) {
               //    //for(auto sigma : iter_functions_on_center(obs, Y.center)) {
               //    //  Kt_part(mu, nu) -= 0.5 * C_Y(sigma.bfoff_in_atom, nu) * B_mus[mu.bfoff_in_shell](sigma, Y.bfoff_in_shell);
@@ -1042,7 +1059,7 @@ CADFCLHF::compute_K()
               //----------------------------------------//
             }
             if(ish != jsh){
-              for(auto rho : function_iterator(jsh)) {
+              for(auto rho : function_range(jsh)) {
                 // B_rhos[rho.bfoff_in_shell] is (nbf x Ysh.nbf)
                 // C_Y is (Y.{obs_}atom_nbf x nbf)
                 // result should be (Y.{obs_}atom_nbf x 1)
@@ -1057,8 +1074,8 @@ CADFCLHF::compute_K()
                     * B_rhos[rho.bfoff_in_shell].col(Y).segment(obs_atom_bfoff, obs_atom_nbf);
                 //----------------------------------------//
                 /* Failsafe version:
-                //for(auto nu : function_iterator(obs)) {
-                //  for(auto sigma : function_iterator(obs)) {
+                //for(auto nu : function_range(obs)) {
+                //  for(auto sigma : function_range(obs)) {
                 //    if(nu.center == Y.center){
                 //      Kt_part(rho, nu) -= 0.5 * C_Y(nu.bfoff_in_atom, sigma) * dt_rhos[rho.bfoff_in_shell](sigma, Y.bfoff_in_shell);
                 //    }
@@ -1073,8 +1090,8 @@ CADFCLHF::compute_K()
             }
           }
           /* Old version
-          for(auto nu : function_iterator(obs, dfbs_)) {
-            for(auto sigma : function_iterator(obsptr, dfbsptr, 0, nu)) {
+          for(auto nu : function_range(obs, dfbs_)) {
+            for(auto sigma : function_range(obsptr, dfbsptr, 0, nu)) {
               //----------------------------------------//
               // Get the coefficients
               IntPair nu_sigma(nu, sigma);
@@ -1083,7 +1100,7 @@ CADFCLHF::compute_K()
               VectorMap& Cb = *(cpair.second);
               //----------------------------------------//
               // Add in the contribution to Kt(mu, nu)
-              for(auto mu : function_iterator(ish)) {
+              for(auto mu : function_range(ish)) {
                 Kt_part(mu, nu) +=
                     B_mus[mu.bfoff_in_shell].row(sigma).segment(nu.atom_dfbfoff, nu.atom_dfnbf) * Ca;
                 if(nu != sigma){
@@ -1102,7 +1119,7 @@ CADFCLHF::compute_K()
               //----------------------------------------//
               // Add in the contribution to Kt(rho, nu)
               if(ish != jsh){
-                for(auto rho : function_iterator(jsh)) {
+                for(auto rho : function_range(jsh)) {
                   Kt_part(rho, nu) +=
                       B_rhos[rho.bfoff_in_shell].row(sigma).segment(nu.atom_dfbfoff, nu.atom_dfnbf) * Ca;
                   if(nu != sigma){
@@ -1153,10 +1170,10 @@ CADFCLHF::compute_K()
         Kt_part = Eigen::MatrixXd::Zero(nbf, nbf);
         ShellData ish, jsh;
         while(get_shell_pair(ish, jsh, SignificantPairs)){
-          for(auto Yblk : shell_block_iterator(dfbs_).requiring(NoRestrictions)) {
+          for(auto Yblk : shell_block_range(dfbs_, 0, 0, NoLastIndex, NoRestrictions)) {
             //----------------------------------------//
             std::vector<Eigen::MatrixXd> Ct_mus(ish.nbf);
-            for(auto mu : function_iterator(ish)) {
+            for(auto mu : function_range(ish)) {
               Ct_mus[mu.bfoff_in_shell].resize(jsh.nbf, Yblk.nbf);
               Ct_mus[mu.bfoff_in_shell] = Eigen::MatrixXd::Zero(jsh.nbf, Yblk.nbf);
             }
@@ -1173,8 +1190,8 @@ CADFCLHF::compute_K()
               );
               if(ithr == 0) timer.exit("compute ints");
               const auto& g2_part = *g2_part_ptr;
-              for(auto mu : function_iterator(ish)){
-                for(auto rho : function_iterator(jsh)){
+              for(auto mu : function_range(ish)){
+                for(auto rho : function_range(jsh)){
                   //----------------------------------------//
                   // Get the coefficients
                   IntPair mu_rho(mu, rho);
@@ -1196,8 +1213,8 @@ CADFCLHF::compute_K()
                   coulomb_oper_type_
                 );
                 const auto& g2_part = *g2_part_ptr;
-                for(auto mu : function_iterator(ish)){
-                  for(auto rho : function_iterator(jsh)){
+                for(auto mu : function_range(ish)){
+                  for(auto rho : function_range(jsh)){
                     //----------------------------------------//
                     // Get the coefficients
                     IntPair mu_rho(mu, rho);
@@ -1218,7 +1235,7 @@ CADFCLHF::compute_K()
             if(ithr == 0) timer.change("form dt_mu, dt_rho");
             std::vector<Eigen::MatrixXd> dt_mus(ish.nbf);
             std::vector<Eigen::MatrixXd> dt_rhos((ish == jsh) ? 0 : (int)jsh.nbf);
-            for(auto mu : function_iterator(ish)) {
+            for(auto mu : function_range(ish)) {
               dt_mus[mu.bfoff_in_shell].resize(nbf, Yblk.nbf);
               dt_mus[mu.bfoff_in_shell] = 2.0 * D.middleCols(jsh.bfoff, jsh.nbf) * Ct_mus[mu.bfoff_in_shell];
               /*
@@ -1234,10 +1251,10 @@ CADFCLHF::compute_K()
               */
             }
             if(ish != jsh){
-              for(auto rho : function_iterator(jsh)) {
+              for(auto rho : function_range(jsh)) {
                 dt_rhos[rho.bfoff_in_shell].resize(nbf, Yblk.nbf);
                 dt_rhos[rho.bfoff_in_shell] = Eigen::MatrixXd::Zero(nbf, Yblk.nbf);
-                for(auto mu : function_iterator(ish)) {
+                for(auto mu : function_range(ish)) {
                   dt_rhos[rho.bfoff_in_shell] += 2.0 * D.col(mu) * Ct_mus[mu.bfoff_in_shell].row(rho.bfoff_in_shell);
                 }
                 /*
@@ -1258,11 +1275,11 @@ CADFCLHF::compute_K()
             /* Add contributions to Kt_part                   {{{2 */ #if 2 // begin fold
             if(ithr == 0) timer.change("K contributions");
             //----------------------------------------//
-            for(auto Y : function_iterator(Yblk)) {
+            for(auto Y : function_range(Yblk)) {
               Eigen::MatrixXd& C_Y = coefs_transpose_[Y];
               const int obs_atom_bfoff = obs->shell_to_function(obs->shell_on_center(Y.center, 0));
               const int obs_atom_nbf = obs->nbasis_on_center(Y.center);
-              for(auto mu : function_iterator(ish)) {
+              for(auto mu : function_range(ish)) {
                 // dt_mus[mu.bfoff_in_shell] is (nbf x Ysh.nbf)
                 // C_Y is (Y.{obs_}atom_nbf x nbf)
                 // result should be (Y.{obs_}atom_nbf x 1)
@@ -1279,13 +1296,13 @@ CADFCLHF::compute_K()
                 //----------------------------------------//
                 /* Failsafe version:
                 //for(auto nu : iter_functions_on_center(obs, Y.center)) {
-                //  //for(auto sigma : function_iterator(obs)) {
+                //  //for(auto sigma : function_range(obs)) {
                 //  //  Kt_part(mu, nu) -= 0.5 * C_Y(nu.bfoff_in_atom, sigma) * dt_mus[mu.bfoff_in_shell](sigma, Y.bfoff_in_shell);
                 //  //}
                 //  Kt_part(mu, nu) -= 0.5 * C_Y.row(nu.bfoff_in_atom) * dt_mus[mu.bfoff_in_shell].col(Y.bfoff_in_shell);
                 //}
                 //----------------------------------------//
-                //for(auto nu : function_iterator(obs)) {
+                //for(auto nu : function_range(obs)) {
                 //  if(nu.center != Y.center) {
                 //    //for(auto sigma : iter_functions_on_center(obs, Y.center)) {
                 //    //  Kt_part(mu, nu) -= 0.5 * C_Y(sigma.bfoff_in_atom, nu) * dt_mus[mu.bfoff_in_shell](sigma, Y.bfoff_in_shell);
@@ -1300,7 +1317,7 @@ CADFCLHF::compute_K()
                 //----------------------------------------//
               }
               if(ish != jsh){
-                for(auto rho : function_iterator(jsh)) {
+                for(auto rho : function_range(jsh)) {
                   // dt_rhos[rho.bfoff_in_shell] is (nbf x Ysh.nbf)
                   // C_Y is (Y.{obs_}atom_nbf x nbf)
                   // result should be (Y.{obs_}atom_nbf x 1)
@@ -1316,8 +1333,8 @@ CADFCLHF::compute_K()
                       * dt_rhos[rho.bfoff_in_shell].col(Y.bfoff_in_block).segment(obs_atom_bfoff, obs_atom_nbf);
                   //----------------------------------------//
                   /* Failsafe version:
-                  //for(auto nu : function_iterator(obs)) {
-                  //  for(auto sigma : function_iterator(obs)) {
+                  //for(auto nu : function_range(obs)) {
+                  //  for(auto sigma : function_range(obs)) {
                   //    if(nu.center == Y.center){
                   //      Kt_part(rho, nu) -= 0.5 * C_Y(nu.bfoff_in_atom, sigma) * dt_rhos[rho.bfoff_in_shell](sigma, Y.bfoff_in_shell);
                   //    }
@@ -1333,33 +1350,33 @@ CADFCLHF::compute_K()
             }
             //----------------------------------------//
             /* Old version
-            for(auto ksh : shell_iterator(obs, dfbs_)) {
-              for(auto lsh : shell_iterator(obs, dfbs_, 0, ksh)) {
+            for(auto ksh : shell_range(obs, dfbs_)) {
+              for(auto lsh : shell_range(obs, dfbs_, 0, ksh)) {
               //for(auto lsh : iter_significant_partners(ksh)) {
                 if(ksh.center != Ysh.center and lsh.center != Ysh.center) continue;
                 //----------------------------------------//
                 //const double pf = ksh == lsh ? 1.0 : 2.0;
                 //----------------------------------------//
-                //for(int nu = ksh.bfoff; nu <= ksh.last_function; ++nu){ // function_iterator(ksh)) {
-                //  for(int sigma = lsh.bfoff; sigma <= lsh.last_function; ++sigma){ // function_iterator(ksh)) {
-                for(auto nu : function_iterator(ksh)) {
-                  for(auto sigma : function_iterator(lsh)) {
+                //for(int nu = ksh.bfoff; nu <= ksh.last_function; ++nu){ // function_range(ksh)) {
+                //  for(int sigma = lsh.bfoff; sigma <= lsh.last_function; ++sigma){ // function_range(ksh)) {
+                for(auto nu : function_range(ksh)) {
+                  for(auto sigma : function_range(lsh)) {
                     //----------------------------------------//
                     // Get the coefficients
                     IntPair nu_sigma(nu, sigma);
                     auto cpair = coefs_[nu_sigma];
                     VectorMap& C = (Ysh.center == ksh.center) ? *(cpair.first) : *(cpair.second);
                     //----------------------------------------//
-                    //for(auto Y : function_iterator(Ysh)) {
+                    //for(auto Y : function_range(Ysh)) {
                     //  auto& C_Y = coefs_transpose_[Y];
-                    //  for(auto mu : function_iterator(ish)) {
+                    //  for(auto mu : function_range(ish)) {
                     //    Kt_part(mu, nu) -= 0.5
                     //        * dt_mus[mu.bfoff_in_shell].row(sigma)
                     //        * C_Y(nu.bfoff_in_atom, sigma);
                     //  }
                     //}
                     //----------------------------------------//
-                    for(auto mu : function_iterator(ish)) {
+                    for(auto mu : function_range(ish)) {
                       Kt_part(mu, nu) -= 0.5
                           * dt_mus[mu.bfoff_in_shell].row(sigma)
                           * C.segment(Ysh.bfoff_in_atom, Ysh.nbf);
@@ -1371,7 +1388,7 @@ CADFCLHF::compute_K()
                     } // end loop over mu in ish
                     //----------------------------------------//
                     if(ish != jsh){
-                      for(auto rho : function_iterator(jsh)) {
+                      for(auto rho : function_range(jsh)) {
                         Kt_part(rho, nu) -= 0.5
                             * dt_rhos[rho.bfoff_in_shell].row(sigma)
                             * C.segment(Ysh.bfoff_in_atom, Ysh.nbf);
@@ -1466,6 +1483,7 @@ CADFCLHF::loop_shell_pairs_threaded(
   compute_threads.join_all();
 }
 
+/*
 void
 CADFCLHF::loop_shell_pairs_threaded(
     const std::function<void(int, const ShellData&, const ShellData&)>& f
@@ -1473,6 +1491,7 @@ CADFCLHF::loop_shell_pairs_threaded(
 {
   loop_shell_pairs_threaded(AllPairs, f);
 }
+*/
 
 bool
 CADFCLHF::get_shell_pair(ShellData& mu, ShellData& nu, PairSet pset)
@@ -1518,8 +1537,8 @@ CADFCLHF::compute_coefficients()
   // First, compute the amount of memory needed
   // Coefficients will be stored jbf <= ibf
   int ncoefs = 0;
-  for(auto ibf : function_iterator(obs, dfbs_)){
-    for(auto jbf : function_iterator(obs, dfbs_, 0, ibf)){
+  for(auto ibf : function_range(obs, dfbs_)){
+    for(auto jbf : function_range(obs, dfbs_, 0, ibf)){
       ncoefs += ibf.atom_dfnbf;
       if(ibf.center != jbf.center){
         ncoefs += jbf.atom_dfnbf;
@@ -1529,8 +1548,8 @@ CADFCLHF::compute_coefficients()
   coefficients_data_ = allocate<double>(ncoefs);
   memset(coefficients_data_, 0, ncoefs * sizeof(double));
   double *spot = coefficients_data_;
-  for(auto ibf : function_iterator(obs, dfbs_)){
-    for(auto jbf : function_iterator(obs, dfbs_, 0, ibf)){
+  for(auto ibf : function_range(obs, dfbs_)){
+    for(auto jbf : function_range(obs, dfbs_, 0, ibf)){
       double *data_spot_a = spot;
       spot += ibf.atom_dfnbf;
       double *data_spot_b = spot;
@@ -1547,9 +1566,9 @@ CADFCLHF::compute_coefficients()
   //----------------------------------------//
   // We can save a lot of mess by storing references
   //   to the jbf > ibf pairs for the ish == jsh cases only
-  for(auto ish : shell_iterator(obs)){
-    for(auto ibf : function_iterator(ish)){
-      for(auto jbf : function_iterator(obs, ibf + 1, ish.last_function)){
+  for(auto ish : shell_range(obs)){
+    for(auto ibf : function_range(ish)){
+      for(auto jbf : function_range(obs, ibf + 1, ish.last_function)){
         IntPair ij(ibf, jbf);
         IntPair ji(jbf, ibf);
         // This will do a copy, but not of the data, just of the map
@@ -1561,7 +1580,7 @@ CADFCLHF::compute_coefficients()
   //----------------------------------------//
   // Now make the transposes, for more efficient use later
   coefs_transpose_.resize(dfnbf);
-  for(auto Y : function_iterator(dfbs_)){
+  for(auto Y : function_range(dfbs_)){
     coefs_transpose_[Y].resize(obs->nbasis_on_center(Y.center), nbf);
   }
   /********************************************************/ #endif //2}}}
@@ -1596,8 +1615,8 @@ CADFCLHF::compute_coefficients()
                 metric_ints_3c_[ithr],
                 metric_oper_type_
             );
-            for(auto ibf : function_iterator(ish)){
-              for(auto jbf : function_iterator(jsh)){
+            for(auto ibf : function_range(ish)){
+              for(auto jbf : function_range(jsh)){
                 const int ijbf = ibf.bfoff_in_shell * jsh.nbf + jbf.bfoff_in_shell;
                 ij_M_X.row(ijbf).segment(ksh.bfoff_in_atom, ksh.nbf) = ij_M_k->row(ijbf);
               } // end loop over functions in jsh
@@ -1610,8 +1629,8 @@ CADFCLHF::compute_coefficients()
                   metric_ints_3c_[ithr],
                   metric_oper_type_
               );
-              for(auto ibf : function_iterator(ish)){
-                for(auto jbf : function_iterator(jsh)){
+              for(auto ibf : function_range(ish)){
+                for(auto jbf : function_range(jsh)){
                   const int ijbf = ibf.bfoff_in_shell * jsh.nbf + jbf.bfoff_in_shell;
                   const int dfbfoff = ish.atom_dfnbf + ksh.bfoff_in_atom;
                   ij_M_X.row(ijbf).segment(dfbfoff, ksh.nbf) = ij_M_k->row(ijbf);
@@ -1620,15 +1639,18 @@ CADFCLHF::compute_coefficients()
             } // end loop over shells on jsh.center
           } // end if ish.center != jsh.center
           //----------------------------------------//
-          for(auto mu : function_iterator(ish)){
+          for(auto mu : function_range(ish)){
             // Since coefficients are only stored jbf <= ibf,
             //   we need to figure out how many jbf's to do
-            for(auto nu : function_iterator(jsh)){
+            for(auto nu : function_range(jsh)){
               if(ish == jsh and nu > mu) continue;
               const int ijbf = mu.bfoff_in_shell*jsh.nbf + nu.bfoff_in_shell;
               IntPair mu_nu(mu, nu);
               Eigen::VectorXd Ctmp(dfnbfAB);
               Ctmp = decomp->solve(ij_M_X.row(ijbf).transpose());
+              assert((coefs_.find(mu_nu) != coefs_.end())
+                  || ((cout << "couldn't find coefficients for " << mu << ", " << nu << endl), false));
+              //    || ((cout << "couldn't find coefficients for " << mu << ", " << nu << endl ), false);
               *(coefs_[mu_nu].first) = Ctmp.head(ish.atom_dfnbf);
               if(ish.center != jsh.center){
                 *(coefs_[mu_nu].second) = Ctmp.tail(jsh.atom_dfnbf);
@@ -1651,10 +1673,10 @@ CADFCLHF::compute_coefficients()
   /*=======================================================================================*/
   /* Store the transpose coefficients                     		                        {{{1 */ #if 1 // begin fold
   //---------------------------------------------------------------------------------------//
-  for(auto Y : function_iterator(dfbs_)){
+  for(auto Y : function_range(dfbs_)){
     for(auto ish : iter_shells_on_center(obs, Y.center)){
-      for(auto mu : function_iterator(ish)){
-        for(auto nu : function_iterator(obs)){
+      for(auto mu : function_range(ish)){
+        for(auto nu : function_range(obs)){
           //----------------------------------------//
           if(nu <= mu){
             auto& C = *(coefs_[IntPair(mu, nu)].first);
@@ -1684,8 +1706,8 @@ CADFCLHF::compute_coefficients()
         "df_coefficients",
         "coefficients.xml"
     );
-    for(auto mu : function_iterator(obs, dfbs_)){
-      for(auto nu : function_iterator(obs, dfbs_, mu)) {
+    for(auto mu : function_range(obs, dfbs_)){
+      for(auto nu : function_range(obs, dfbs_, mu)) {
         IntPair mn(mu, nu);
         auto cpair = coefs_[mn];
         auto& Ca = *(cpair.first);
@@ -1816,27 +1838,6 @@ CADFCLHF::get_decomposition(int ish, int jsh, Ref<TwoBodyTwoCenterInt> ints)
 
 //////////////////////////////////////////////////////////////////////////////////
 
-std::shared_ptr<Eigen::MatrixXd>
-CADFCLHF::ints_to_eigen(const ShellBlockData& iblk, const ShellBlockData& jblk, Ref<TwoBodyTwoCenterInt>& ints, TwoBodyOper::type int_type){
-  auto rv = make_shared<Eigen::MatrixXd>(iblk.nbf, jblk.nbf);
-  for(auto ish : shell_iterator(iblk)) {
-    for(auto jsh : shell_iterator(jblk)) {
-      const auto& ints_ptr = ints_to_eigen(ish, jsh, ints, int_type);
-      rv->block(ish.bfoff - iblk.bfoff, jsh.bfoff - jblk.bfoff, ish.nbf, jsh.nbf) = *ints_ptr;
-    }
-  }
-  return rv;
-}
-
-std::shared_ptr<Eigen::MatrixXd>
-CADFCLHF::ints_to_eigen(const ShellBlockData& iblk, const ShellData& jsh, Ref<TwoBodyTwoCenterInt>& ints, TwoBodyOper::type int_type){
-  auto rv = make_shared<Eigen::MatrixXd>((const int)iblk.nbf, (const int)jsh.nbf);
-  for(auto ish : shell_iterator(iblk)) {
-    const auto& ints_ptr = ints_to_eigen(ish, jsh, ints, int_type);
-    rv->block(ish.bfoff - iblk.bfoff, 0, ish.nbf, jsh.nbf) = *ints_ptr;
-  }
-  return rv;
-}
 
 std::shared_ptr<Eigen::MatrixXd>
 CADFCLHF::ints_to_eigen(int ish, int jsh, Ref<TwoBodyTwoCenterInt>& ints, TwoBodyOper::type int_type){
@@ -1862,6 +1863,7 @@ CADFCLHF::ints_to_eigen(int ish, int jsh, Ref<TwoBodyTwoCenterInt>& ints, TwoBod
 
 //////////////////////////////////////////////////////////////////////////////////
 
+/*
 std::shared_ptr<Eigen::MatrixXd>
 CADFCLHF::ints_to_eigen(
     int_range&& ishs,
@@ -1899,6 +1901,7 @@ CADFCLHF::ints_to_eigen(
   }
   return rv;
 }
+*/
 
 //////////////////////////////////////////////////////////////////////////////////
 

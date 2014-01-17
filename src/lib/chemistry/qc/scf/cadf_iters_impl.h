@@ -29,10 +29,22 @@
 #ifndef _chemistry_qc_scf_cadf_iters_impl_h
 #define _chemistry_qc_scf_cadf_iters_impl_h
 
+#include <util/misc/scexception.h>
 
 #define out_assert(a, op, b) assert(a op b || ((std::cout << "Failed assertion output: " << #a << " ( = " << a << ") " << #op << " " << #b <<  " ( = " << b << ")" << std::endl), false))
 
 namespace sc {
+
+template<typename Range>
+ShellBlockData<Range>::ShellBlockData(
+    const ShellBlockSkeleton<Range>& sk,
+    int restrictions
+) : ShellBlockData<Range>(
+      sk.shell_range,
+      sk.nshell, sk.nbf,
+      restrictions
+    )
+{ }
 
 //============================================================================//
 // ShellData
@@ -55,148 +67,15 @@ function_data(
   return BasisFunctionData(ish, basis, dfbasis);
 }
 
-template <typename DataContainer>
-inline typename detail::basis_iterator<DataContainer>::value_type
-detail::basis_iterator<DataContainer>::begin() const
-{
-  return detail::basis_iterator<DataContainer>::value_type(first_index_, basis_, dfbasis_);
-}
-
-template <typename DataContainer>
-inline typename detail::basis_iterator<DataContainer>::value_type
-detail::basis_iterator<DataContainer>::end() const
-{
-  assert(last_index_ != NoLastIndex);
-  return detail::basis_iterator<DataContainer>::value_type(last_index_, basis_, dfbasis_);
-}
-
-inline ShellData
-shell_iterator::end() const
-{
-  return ShellData(last_index_ == NoLastIndex ? basis_->nshell() : last_index_ + 1, basis_, dfbasis_);
-}
-
-inline
-function_iterator::function_iterator(const ShellData& ish)
-  : detail::basis_iterator<BasisFunctionData>(
-      ish.basis,
-      ish.dfbasis,
-      ish.bfoff,
-      ish.last_function
-    )
-{ }
-
-inline BasisFunctionData
-function_iterator::begin() const
-{
-  return BasisFunctionData(first_index_, basis_, dfbasis_, block_offset);
-}
-
-inline BasisFunctionData
-function_iterator::end() const
-{
-  return BasisFunctionData(last_index_ == -1 ? basis_->nbasis() : last_index_ + 1, basis_, dfbasis_);
-}
-
 //============================================================================//
 
-template <typename Iterator>
-struct shell_iter_arbitrary {
-
-    shell_iter_arbitrary(
-        Iterator iter,
-        GaussianBasisSet* basis,
-        GaussianBasisSet* dfbasis = 0
-    ) : iter_(iter),
-        sd((const int)*iter, basis, dfbasis)
-    { }
-
-    const shell_iter_arbitrary& operator++() {
-      ++iter_;
-      sd.set_index((int)(*iter_));
-      return *this;
-    }
-
-    bool operator!=(const shell_iter_arbitrary& other) const {
-      return iter_ != other.iter_;
-    }
-
-    const ShellData& operator*() const { return sd; }
-
-  private:
-    ShellData sd;
-    Iterator iter_;
-
-    BOOST_STATIC_ASSERT(
-        (std::is_convertible<decltype(iter_.operator*()), int>::value)
-    );
-};
-
-template <typename Iterable>
-struct shell_iter_arbitrary_wrapper {
-    shell_iter_arbitrary_wrapper(
-        const Iterable& iterable,
-        GaussianBasisSet* basis,
-        GaussianBasisSet* dfbasis
-    ) : iterable(iterable), basis(basis), dfbasis(dfbasis)
-    {
-
-    }
-
-    shell_iter_arbitrary<typename Iterable::const_iterator>
-    begin() const {
-      return shell_iter_arbitrary<typename Iterable::const_iterator>(
-          iterable.begin(), basis, dfbasis);
-    }
-
-    shell_iter_arbitrary<typename Iterable::const_iterator>
-    end() const {
-      return shell_iter_arbitrary<typename Iterable::const_iterator>(
-          iterable.end(), basis, dfbasis);
-    }
-
-  private:
-    const Iterable& iterable;
-    GaussianBasisSet* basis;
-    GaussianBasisSet* dfbasis;
-};
-
-//============================================================================//
-
+template<typename Range>
 inline void
-ShellBlockData::init()
+ShellBlockData<Range>::init()
 {
-  // Treat the end iterator specially
-  if(first_index == basis->nshell()){
-    last_index = first_index;
-    return;
-  }
-  //----------------------------------------//
-  first_shell = ShellData(first_index, basis, dfbasis);
-  nbf = 0;
-  int nshell = 0;
-  const int first_center = first_shell.center;
-  auto& first_am = basis->shell(first_shell).am();
-  for(auto ish : shell_iterator(basis, dfbasis, first_index, basis->nshell() - 1)){
-    if(
-        ((reqs & SameCenter) and ish.center != first_center) or
-        ((reqs & SameAngularMomentum) and
-            basis->shell(ish).am() != first_am)
-    ){
-      break;
-    }
-    else{
-      ++nshell;
-      nbf += ish.nbf;
-      if(nbf >= target_size and target_size != -1) break;
-    }
-  }
-  last_index = first_index + nshell - 1;
-  last_shell = ShellData(last_index, basis, dfbasis);
-  //----------------------------------------//
   bfoff = first_shell.bfoff;
   last_function = last_shell.last_function;
-  if(reqs & SameCenter) {
+  if(restrictions & SameCenter) {
     center = first_shell.center;
     atom_bfoff = first_shell.atom_bfoff;
     atom_shoff = first_shell.atom_shoff;
@@ -217,46 +96,82 @@ ShellBlockData::init()
   }
 }
 
-//============================================================================//
-
-inline
-shell_iterator::shell_iterator(
-    const ShellBlockData& block
-) : detail::basis_iterator<ShellData>(
-      block.basis,
-      block.dfbasis,
-      block.first_shell.index,
-      block.last_shell.index
-    )
-{ }
-
-inline
-function_iterator::function_iterator(
-    const ShellBlockData& block
-) : detail::basis_iterator<BasisFunctionData>(
-      block.basis,
-      block.dfbasis,
-      block.bfoff,
-      block.last_function
-    ),
-    block_offset(block.bfoff)
-{ }
-
-//============================================================================//
-
-inline ShellBlockData
-shell_block_iterator::begin() const
+template<typename ShellIterator>
+inline void
+shell_block_iterator<ShellIterator>::init()
 {
-  return ShellBlockData(first_index_, basis_, dfbasis_, reqs, target_size);
+  typedef range_of<ShellData, ShellIterator> ShellRange;
+  //----------------------------------------//
+  if(all_shells.begin() == all_shells.end()){
+    const auto& begin = all_shells.begin();
+    const auto& end = all_shells.end();
+    current_skeleton = ShellBlockSkeleton<ShellRange>(
+        shell_range(*(all_shells.begin()), *(all_shells.end())), 0, 0
+    );
+    return;
+  }
+  //----------------------------------------//
+  auto first_shell = *(all_shells.begin());
+  int first_center = first_shell.center;
+  auto first_am = basis->shell(first_shell).am();
+  int block_nbf = 0;
+  int block_nshell = 0;
+  for(auto ish : all_shells){
+    if(
+        // Same center condition
+        ((restrictions & SameCenter) and ish.center != first_center)
+        or
+        // Same angular momentum condition
+        ((restrictions & SameAngularMomentum) and
+            basis->shell(ish).am() != first_am) or
+        // Maximum block size overflow condition
+        (target_size != NoMaximumBlockSize and block_nbf >= target_size)
+    ){
+      // Store the current block
+      break;
+    }
+    else{
+      ++block_nshell;
+      block_nbf += ish.nbf;
+    }
+  }
+  //----------------------------------------//
+  current_skeleton = ShellBlockSkeleton<ShellRange>(
+      shell_range(first_shell, first_shell.iterator + block_nshell),
+      block_nshell, block_nbf
+  );
+  //----------------------------------------//
 }
 
-inline ShellBlockData
-shell_block_iterator::end() const
+
+//============================================================================//
+
+template<typename Iterator>
+inline auto
+shell_range(
+    const ShellBlockData<Iterator>& block
+) -> const decltype(block.shell_range)&
 {
-  const int end_shell = last_index_ == -1 ? basis_->nshell() : last_index_ + 1;
-  return ShellBlockData(end_shell, basis_, dfbasis_, reqs, target_size);
+  return block.shell_range;
 }
 
+template<typename ShellRange>
+inline range_of<BasisFunctionData>
+function_range(
+    const ShellBlockData<ShellRange>& block
+)
+{
+  throw FeatureNotImplemented("function iteration over arbitrary shell block ranges", __FILE__, __LINE__);
+}
+
+template<>
+inline range_of<BasisFunctionData>
+function_range(
+    const ShellBlockData<range_of<ShellData>>& block
+)
+{
+  return function_range(block.basis, block.dfbasis, block.bfoff, block.last_function, block.bfoff);
+}
 
 //============================================================================//
 

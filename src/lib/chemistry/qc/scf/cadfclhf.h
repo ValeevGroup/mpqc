@@ -64,127 +64,6 @@ do_threaded(int nthread, Args... args, const std::function<void(int, Args...)>& 
   compute_threads.join_all();
 }
 
-/*
-namespace {
-
-  // Forward declaration
-  template <typename Iterable> struct threaded_iter_impl;
-
-  template <typename Iterable>
-  struct thr_iter {
-
-      typedef thr_iter<Iterable> self_type;
-      typedef threaded_iter_impl<Iterable> parent_type;
-
-    private:
-      const parent_type* parent;
-      int pos_;
-
-    public:
-
-
-      thr_iter(const parent_type* parent, int pos)
-        : parent(parent), pos_(pos)
-      { }
-
-      bool operator!=(const thr_iter& other) const { return pos_ == other.pos_; }
-
-      auto operator*() const -> decltype(decltype(parent->iter_.begin())().operator*());
-
-      const self_type& operator++();
-
-  };
-
-  template <typename Iterable>
-  struct threaded_iter_impl {
-      threaded_iter_impl(
-          const Iterable& iter,
-          int ithr,
-          int nthr,
-          bool contiguous = true
-      ) : ithr_(ithr), nthr_(nthr), iter_(iter), contig_(contiguous)
-      {
-        iter_size_ = std::distance(iter_.begin(), iter_.end());
-        n_per_thr_ = iter_size_ / nthr_;
-        if(iter_size_ % nthr_ == 0){
-          n_last_thr_ = n_per_thr_;
-        }
-        else{
-          // TODO FINISH THIS
-        }
-
-      }
-
-      thr_iter<Iterable> begin() const
-      {
-        if(contig_){
-          return thr_iter<Iterable>(this, ithr_ * n_per_thr_);
-        }
-        else{
-          return thr_iter<Iterable>(this, ithr_);
-        }
-      }
-
-      thr_iter<Iterable> end() const
-      {
-        if(contig_){
-          if(n_last_thr_ == 0 or )
-          return thr_iter<Iterable>(this, ithr_ * n_per_thr_);
-        }
-        else{
-          return thr_iter<Iterable>(this, ithr_);
-        }
-      }
-
-    private:
-      int ithr_;
-      int iter_size_;
-      int nthr_;
-      int n_per_thr_;
-      int n_last_thr_;
-      Iterable iter_;
-      bool contig_;
-      friend struct thr_iter<Iterable>;
-  };
-
-  template <typename Iterable>
-  auto thr_iter<Iterable>::operator*() const -> decltype(decltype(parent->iter_.begin())().operator*())
-  {
-    return *(parent->iter_.begin() + pos_);
-  }
-
-  template <typename Iterable>
-  const thr_iter<Iterable>&
-  thr_iter<Iterable>::operator++(){
-    if(parent->contig_){
-      pos_++;
-    }
-    else{
-      pos_ += parent->nthr_;
-    }
-  }
-
-
-}
-*/
-
-/*
-void
-do_threaded(int nthread, std::function<void(int)> f){
-  boost::thread_group compute_threads;
-  // Loop over number of threads
-  for(int ithr = 0; ithr < nthread; ++ithr) {
-    // create each thread that runs f
-    compute_threads.create_thread([&, ithr](){
-      // run the work
-      f(ithr);
-    });
-  }
-  // join the created threads
-  compute_threads.join_all();
-}
-*/
-
 //============================================================================//
 //============================================================================//
 //============================================================================//
@@ -230,6 +109,7 @@ class CADFCLHF: public CLHF {
           </table>
 
      */
+
     CADFCLHF(const Ref<KeyVal>&);
     ~CADFCLHF();
 
@@ -240,7 +120,8 @@ class CADFCLHF: public CLHF {
 
     typedef enum {
       AllPairs = 0,
-      SignificantPairs = 1
+      SignificantPairs = 1,
+      ExchangeOuterLoopPairs = 2
     } PairSet;
 
     enum {
@@ -276,15 +157,6 @@ class CADFCLHF: public CLHF {
     void loop_shell_pairs_threaded(
         const std::function<void(int, const ShellData&, const ShellData&)>& f
     );
-    /*
-
-    void loop_shell_pairs_threaded(
-        PairSet pset,
-        const std::function<void(int, const ShellData&, const ShellData&)>& f,
-        const std::function<void(int)>& when_done
-    );
-    */
-
 
 
     RefSCMatrix compute_J();
@@ -306,22 +178,17 @@ class CADFCLHF: public CLHF {
         TwoBodyOper::type ints_type
     );
 
+    template <typename ShellRange>
     std::shared_ptr<Eigen::MatrixXd> ints_to_eigen(
-        const ShellBlockData& ish, const ShellBlockData& jsh,
+        const ShellBlockData<ShellRange>& ish,
+        const ShellBlockData<ShellRange>& jsh,
         Ref<TwoBodyTwoCenterInt>& ints,
         TwoBodyOper::type ints_type
     );
 
+    template <typename ShellRange>
     std::shared_ptr<Eigen::MatrixXd> ints_to_eigen(
-        const ShellBlockData& ish, const ShellData& jsh,
-        Ref<TwoBodyTwoCenterInt>& ints,
-        TwoBodyOper::type ints_type
-    );
-
-    /// Range version of the above
-    std::shared_ptr<Eigen::MatrixXd> ints_to_eigen(
-        int_range&& ishs,
-        int_range&& jshs,
+        const ShellBlockData<ShellRange>& ish, const ShellData& jsh,
         Ref<TwoBodyTwoCenterInt>& ints,
         TwoBodyOper::type ints_type
     );
@@ -356,8 +223,11 @@ class CADFCLHF: public CLHF {
     // What pairs are being evaluated on the current node?
     std::map<PairSet, std::vector<std::pair<int, int>>> local_pairs_;
 
-    // List of the pairs with half-schwarz bounds larger than pair_thresh_
+    // List of the permutationally unique pairs with half-schwarz bounds larger than pair_thresh_
     std::vector<std::pair<int, int>> sig_pairs_;
+
+    std::vector<std::set<int>> sig_partners_;
+    std::vector<std::set<ShellBlockSkeleton<>>> sig_blocks_;
 
     // The same as sig_pairs_, but organized differently
     std::vector<std::vector<int>> shell_to_sig_shells_;
@@ -392,6 +262,7 @@ class CADFCLHF: public CLHF {
 
     static ClassDesc cd_;
 
+    /*
     shell_iter_arbitrary_wrapper<std::vector<int>>
     iter_significant_partners(
         const ShellData& ish
@@ -403,9 +274,43 @@ class CADFCLHF: public CLHF {
           ish.dfbasis
       );
     }
+    */
 
 };
 
+template <typename ShellRange>
+std::shared_ptr<Eigen::MatrixXd>
+CADFCLHF::ints_to_eigen(
+    const ShellBlockData<ShellRange>& iblk,
+    const ShellBlockData<ShellRange>& jblk,
+    Ref<TwoBodyTwoCenterInt>& ints,
+    TwoBodyOper::type int_type
+){
+  auto rv = std::make_shared<Eigen::MatrixXd>(iblk.nbf, jblk.nbf);
+  for(auto ish : shell_range(iblk)) {
+    for(auto jsh : shell_range(jblk)) {
+      const auto& ints_ptr = ints_to_eigen(ish, jsh, ints, int_type);
+      rv->block(ish.bfoff - iblk.bfoff, jsh.bfoff - jblk.bfoff, ish.nbf, jsh.nbf) = *ints_ptr;
+    }
+  }
+  return rv;
+}
+
+template <typename ShellRange>
+std::shared_ptr<Eigen::MatrixXd>
+CADFCLHF::ints_to_eigen(
+    const ShellBlockData<ShellRange>& iblk,
+    const ShellData& jsh,
+    Ref<TwoBodyTwoCenterInt>& ints,
+    TwoBodyOper::type int_type
+){
+  auto rv = std::make_shared<Eigen::MatrixXd>((const int)iblk.nbf, (const int)jsh.nbf);
+  for(auto ish : shell_range(iblk)) {
+    const auto& ints_ptr = ints_to_eigen(ish, jsh, ints, int_type);
+    rv->block(ish.bfoff - iblk.bfoff, 0, ish.nbf, jsh.nbf) = *ints_ptr;
+  }
+  return rv;
+}
 
 } // end namespace sc
 

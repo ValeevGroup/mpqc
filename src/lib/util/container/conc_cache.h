@@ -189,14 +189,6 @@ struct repeated_vector{
 ////////////////////////////////////////////////////////////////////////////////
 
 
-// TODO This has a serious bug.  STL maps do not support simultaneous writes, even of different objects.
-//        Thus, this class needs to lock the whole value map when writing, killing efficiency.
-//        A workaround would be to add a boolean template parameter that only allows adding or changing
-//        of keys in a setup phase, similarly to how mutex_map_mutexes_ functions now.  A more
-//        perminant solution is going to be using Intel's Thread Building Blocks (TBB) library,
-//        with the current implementation as a fallback when the compilation doesn't have TBB
-//        available.
-
 /**
  * A cache of objects that can be safely accessed concurrently by threads that share memory.
  */

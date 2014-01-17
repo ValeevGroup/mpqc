@@ -241,16 +241,22 @@ class CADFCLHF: public CLHF {
 
     // Pair assignments for K
     std::map<
-      std::pair<int, ShellBlockSkeleton<>>,
-      int
+      PairSet,
+      std::map<
+        std::pair<int, ShellBlockSkeleton<>>,
+        int
+      >
     > pair_assignments_k_;
 
     // What pairs are being evaluated on the current node?
     std::map<PairSet, std::vector<std::pair<int, int>>> local_pairs_;
 
     // What pairs are being evaluated on the current node?
-    std::vector<
-      std::pair<int, ShellBlockSkeleton<>>
+    std::map<
+      PairSet,
+      std::vector<
+        std::pair<int, ShellBlockSkeleton<>>
+      >
     > local_pairs_k_;
 
     // List of the permutationally unique pairs with half-schwarz bounds larger than pair_thresh_

@@ -310,19 +310,6 @@ class CADFCLHF: public CLHF {
           )
       );
     }
-    /*
-    shell_iter_arbitrary_wrapper<std::vector<int>>
-    iter_significant_partners(
-        const ShellData& ish
-    )
-    {
-      return shell_iter_arbitrary_wrapper<std::vector<int>>(
-          shell_to_sig_shells_[ish.index],
-          ish.basis,
-          ish.dfbasis
-      );
-    }
-    */
 
 };
 

@@ -41,7 +41,7 @@
 #include <memory>
 #include <iterator>
 
-#define DEFAULT_TARGET_BLOCK_SIZE 1000  // functions
+#define DEFAULT_TARGET_BLOCK_SIZE 100  // functions
 
 
 namespace sc {

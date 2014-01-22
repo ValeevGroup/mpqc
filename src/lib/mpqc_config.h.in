@@ -322,8 +322,6 @@
 /* Determines the width of the integer use by BLAS F77 interface */
 #cmakedefine F77_INTEGER_WIDTH @F77_INTEGER_WIDTH@
 
-#cmakedefine HAVE_BLAS
-
 /* Define if you have the Scalable BLAS package and everything needed for it.
  */
 #cmakedefine HAVE_SCALABLE_BLAS

@@ -331,6 +331,7 @@
 /* Define if machine byte order is big endian. */
 #cmakedefine WORDS_BIGENDIAN
 
+/* Define if have Python language support. */
 #cmakedefine HAVE_PYTHON
 
 /* The host architecture. */

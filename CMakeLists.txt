@@ -124,13 +124,6 @@ if(USE_STATIC_LIBS)
   set(CMAKE_FIND_LIBRARY_SUFFIXES .a ${CMAKE_FIND_LIBRARY_SUFFIXES})
 ENDIF()
 
-# find_package(PythonLibs)
-# if(PYTHONLIBS_FOUND)
-#   set(HAVE_PYTHON TRUE)
-#   include_directories(${PYTHON_INCLUDE_DIR})
-# endif()
-
-
 find_package(Threads)
 if (Threads_FOUND)
   #message(STATUS "Threads: ${CMAKE_THREAD_LIBS_INIT}")

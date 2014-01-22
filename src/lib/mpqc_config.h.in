@@ -34,7 +34,7 @@
 #cmakedefine HAVE_SYS_STAT_H
 
 /* Define if you have <sys/types.h>.  */
-#cmakedefine HAVE_SYS_TYPES_H
+#cmakedefine HAVE_SYS_TYPES_H @HAVE_SYS_TIMES_H@
 
 /* Define if you have <pwd.h>.  */
 #cmakedefine HAVE_PWD_H

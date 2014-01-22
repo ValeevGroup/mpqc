@@ -6,6 +6,7 @@ project (MPQC)
 option(MPQC_EXPERT "MPQC Expert mode: disables automatically downloading or building dependencies" OFF)
 option(MPQC_NEW_FEATURES "Use new MPQC features (requires C++11)" OFF)
 option(MPQC_OPENMP "Use OpenMP" OFF)
+set(MPQC_MEMORY_CHECK 1) # How to check memory use (see mpqc_config.h for details)
 
 include(CTest)
 enable_testing()

@@ -32,6 +32,7 @@
 #include <limits>
 #include <assert.h>
 #include <iterator>
+#include <mpqc_config.h>
 #include <util/keyval/keyval.h>
 #include <util/state/statein.h>
 #include <util/state/stateout.h>
@@ -43,11 +44,6 @@ namespace sc {
 
   /// ConsumableResources keeps track of consumable resources (memory, disk).
   class ConsumableResources : virtual public SavableState {
-      // change return value to 1 to debug member functions of this class
-      static int debug_class() { return 0; }
-      // change return value to true to profile resource usage
-      static bool profiling() { return true; }
-
     public:
       /** A KeyVal constructor is used to generate a ConsumableResources
           object from the input. The full list of keywords
@@ -133,43 +129,48 @@ namespace sc {
           throw MemAllocFailed(oss.str().c_str(),__FILE__,__LINE__,size*sizeof(T));
         }
 
-        size *= sizeof(T);
-        try {
-          consume_memory_(size);
-        }
-        catch (LimitExceeded<size_t>&) {
-          if (size > sizeof(T)) delete[] array;
-          else delete array;
-          this->print_summary(ExEnv::out0(), true, true);
-          throw;
+        if (do_profile()) {
+          size *= sizeof(T);
+          try {
+            consume_memory_(size);
+          }
+          catch (LimitExceeded<size_t>&) {
+            if (size > sizeof(T)) delete[] array;
+            else delete array;
+            this->print_summary(ExEnv::out0(), true, true);
+            throw;
+          }
+
+          void* array_ptr = static_cast<void*>(array);
+          if (debug()) {
+            ExEnv::out0() << indent << "ConsumableResources::allocate(size="
+                << size << ") => array=" << array_ptr << std::endl;
+            // make sure the pointer is not managed (may happen if delete was called directly, not deallocate on a managed buffer before)
+            std::map<void*, ResourceAttribites>::iterator pos =
+                managed_arrays_.find(array_ptr);
+            if (pos != managed_arrays_.end()) {
+              ExEnv::out0() << indent << "WARNING: " << array_ptr
+                  << " is on the list of managed buffers. size="
+                  << managed_arrays_[array_ptr].size << std::endl;
+            }
+          }
+          ResourceAttribites attr(size);
+          managed_arrays_[array_ptr] = attr;
         }
 
-        void* array_ptr = static_cast<void*>(array);
-        if (debug_class() > 0) {
-          ExEnv::out0() << indent << "ConsumableResources::allocate(size=" << size << ") => array="
-                        << array_ptr << std::endl;
-          // make sure the pointer is not managed (may happen if delete was called directly, not deallocate on a managed buffer before)
-          std::map<void*, ResourceAttribites>::iterator pos = managed_arrays_.find(array_ptr);
-          if (pos != managed_arrays_.end()) {
-            ExEnv::out0() << indent << "WARNING: " << array_ptr << " is on the list of managed buffers. size="
-                          << managed_arrays_[array_ptr].size << std::endl;
-          }
-        }
-        ResourceAttribites attr(size);
-        managed_arrays_[array_ptr] = attr;
         return array;
       }
       //@{
       /// deallocate array of T that was allocated using ConsumableResources::allocate() using operator delete[] (keeps track of memory)
       /// will throw ProgrammingError if this array is not managed by ConsumableResources (i.e. not allocated using allocate() )
       template <typename T> void deallocate(T* const & array) {
-        if (this == 0) { // if smart pointers failed this method will get called on null object
-                         // warn the user here and return
-          ExEnv::err0() << indent << "WARNING: ConsumableResources object is gone but deallocate() called" << std::endl
-                        << indent << "         This suggests a programming error (likely, cycles of smart pointers)"
-                        << std::endl;
+        if (object_is_gone()) return;
+
+        if (not do_profile()) {
+          delete[] array;
           return;
         }
+
         if (array != 0) {
           ThreadLockHolder lh(lock_);
           void* array_ptr = static_cast<void*>(array);
@@ -180,7 +181,7 @@ namespace sc {
             if (size > sizeof(T)) delete[] array;
             else delete array;
             release_memory_(size);
-            if (debug_class() > 0) {
+            if (debug()) {
               ExEnv::out0() << indent << "ConsumableResources::deallocate(array=" << array_ptr << "): size=" << size << std::endl;
             }
             managed_arrays_.erase(pos);
@@ -192,13 +193,8 @@ namespace sc {
       }
       /// same as  before, but will set array to 0 after deallocation
       template <typename T> void deallocate(T*& array) {
-        if (this == 0) { // if smart pointers failed this method will get called on null object
-                         // warn the user here and return
-          ExEnv::err0() << indent << "WARNING: ConsumableResources object is gone but deallocate() called" << std::endl
-                        << indent << "         This suggests a programming error (likely, cycles of smart pointers)"
-                        << std::endl;
-          return;
-        }
+        if (object_is_gone()) return;
+
         if (array != 0) {
           deallocate<T>(const_cast<T* const &>(array));
           array = 0;
@@ -206,8 +202,13 @@ namespace sc {
       }
       //@}
 
+
       /// adds array to the list of managed arrays and decrements the memory counter
+
+      /// this is useful if need to do special memory allocation, e.g. in pinned memory buffer, etc.
       template <typename T> void manage_array(T* const & array, std::size_t size) {
+        if (not do_profile()) return;
+
         if (array != 0) {
           ThreadLockHolder lh(lock_);
           size *= sizeof(T);
@@ -231,20 +232,16 @@ namespace sc {
 
           ResourceAttribites attr(size);
           managed_arrays_[array_ptr] = attr;
-          if (debug_class() > 0) {
+          if (debug()) {
             ExEnv::out0() << indent << "ConsumableResources::manage_array(array=" << array_ptr << ", size=" << size << ")" << std::endl;
           }
         }
       }
       /// removes array to the list of managed arrays and increments the memory counter
       template <typename T> void unmanage_array(T* const & array) {
-        if (this == 0) { // if smart pointers failed this method will get called on null object
-                         // warn the user here and return
-          ExEnv::err0() << indent << "WARNING: ConsumableResources object is gone but deallocate() called" << std::endl
-                        << indent << "         This suggests a programming error (likely, cycles of smart pointers)"
-                        << std::endl;
-          return;
-        }
+        if (object_is_gone()) return;
+        if (not do_profile()) return;
+
         if (array != 0) {
           ThreadLockHolder lh(lock_);
           void* array_ptr = static_cast<void*>(array);
@@ -253,7 +250,7 @@ namespace sc {
           if (pos != managed_arrays_.end()) {
             const size_t size = pos->second.size;
             release_memory_(size);
-            if (debug_class() > 0) {
+            if (debug()) {
               ExEnv::out0() << indent << "ConsumableResources::unmanage_array(array=" << array_ptr << ": size=" << size << ")" << std::endl;
             }
             managed_arrays_.erase(pos);
@@ -268,6 +265,10 @@ namespace sc {
         }
       }
 
+      // need to check and report any anomalous events?
+      static bool debug() { return MPQC_MEMORY_CHECK >= 3; }
+      // need to profile resource usage?
+      static bool do_profile() { return MPQC_MEMORY_CHECK >= 1; }
 
     private:
       static ClassDesc class_desc_;
@@ -279,10 +280,15 @@ namespace sc {
       //@}
 
       //@{ these do not lock
-      /// release resouce, may throw ProgrammingError if releasing more resource than how much has been consumed to this point
+      /// release resource, may throw ProgrammingError if releasing more resource than how much has been consumed to this point
       void release_memory_(size_t value);
       void release_disk_(size_t value);
       //@}
+
+      /// return true, and print a warning to stderr, if this object is gone
+      bool object_is_gone();
+      /// return true, and print a warning to stderr, if the default instance of this class is gone
+      static bool default_object_is_gone();
 
       /**
        * Checks that there are no outstanding debts
@@ -414,12 +420,16 @@ namespace sc {
           ResourceAttribites(std::size_t s) : size(s) {
           }
           std::size_t size;
-          //Debugger::Backtrace backtrace;
+#if MPQC_MEMORY_CHECK >= 2
+          Debugger::Backtrace backtrace;
+#endif
           operator std::string() const {
             std::ostringstream oss;
             oss << "size=" << size;
-            //const size_t nframes_to_skip = 1;
-            //oss << " allocated at:" << std::endl << backtrace.str(nframes_to_skip);
+#if MPQC_MEMORY_CHECK >= 2
+            const size_t nframes_to_skip = 1;
+            oss << " allocated at:" << std::endl << backtrace.str(nframes_to_skip);
+#endif
             return oss.str();
           }
       };
@@ -440,10 +450,12 @@ namespace sc {
   }
   /// this version will set array to 0 upon return \sa deallocate
   template <typename T> void deallocate(T*& array) {
-    ConsumableResources::get_default_instance()->deallocate(array);
+    // deallocation after this is gone is OK, .pointer() ensures that dereferencing does not abort
+    ConsumableResources::get_default_instance().pointer()->deallocate(array);
   }
   template <typename T> void deallocate(T* const & array) {
-    ConsumableResources::get_default_instance()->deallocate(array);
+    // deallocation after this is gone is OK, .pointer() ensures that dereferencing does not abort
+    ConsumableResources::get_default_instance().pointer()->deallocate(array);
   }
   //@}
 

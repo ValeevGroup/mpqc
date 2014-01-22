@@ -429,6 +429,23 @@
 
 #cmakedefine HAVE_PAPI
 
+////////////////////////////////////////////////////////////////////////////////
+// User-configurable macros that control program behavior
+////////////////////////////////////////////////////////////////////////////////
+
+/* how to check memory allocation/deallocation;
+   turn on if need memory management checking, and valgring is not available or not affordable.
+
+   0 - no profiling or tracing
+   1 - profile memory use (pring sizes, but without detailed trace info), at slight runtime and memory overhead; this is the default
+   2 - trace memory use, using backtrace (if available) to detect the location of memory operations; performance impact can be significant,
+       especially on memory use
+*/
+#cmakedefine MPQC_MEMORY_CHECK @MPQC_MEMORY_CHECK@
+#ifndef MPQC_MEMORY_CHECK
+# define MPQC_MEMORY_CHECK 1
+#endif
+
 #endif /* MPQCCONFIG_H */
 
 /* 

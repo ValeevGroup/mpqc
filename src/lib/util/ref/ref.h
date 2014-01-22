@@ -406,8 +406,7 @@ class  Ref  : public RefBase {
     {
       clear();
     }
-    /** Returns the reference counted object.  The behaviour is undefined if
-        the object is null. */
+    /** Returns the reference counted object. Will abort if object is null. */
     T* operator->() const { assert(p!=0); return p; }
     /// Returns a pointer the reference counted object.
     T* pointer() const { return p; }

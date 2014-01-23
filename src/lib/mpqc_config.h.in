@@ -437,13 +437,42 @@
    turn on if need memory management checking, and valgring is not available or not affordable.
 
    0 - no profiling or tracing
-   1 - profile memory use (pring sizes, but without detailed trace info), at slight runtime and memory overhead; this is the default
+   1 - profile memory use (pring sizes, but without detailed trace info), at slight runtime and memory overhead
    2 - trace memory use, using backtrace (if available) to detect the location of memory operations; performance impact can be significant,
        especially on memory use
+   -1 - pick the default: ifdef NDEBUG ? 0 : 1
 */
 #cmakedefine MPQC_MEMORY_CHECK @MPQC_MEMORY_CHECK@
 #ifndef MPQC_MEMORY_CHECK
-# define MPQC_MEMORY_CHECK 1
+# define MPQC_MEMORY_CHECK -1
+#endif
+#if MPQC_MEMORY_CHECK == -1
+# undef MPQC_MEMORY_CHECK
+# ifdef NDEBUG
+#  define MPQC_MEMORY_CHECK 0
+# else
+#  define MPQC_MEMORY_CHECK 1
+# endif
+#endif
+
+/* Controls behavior of MPQC assertions.
+
+   0 - assertions disabled
+   1 - assert()
+   2 - throw std::exception()
+   -1 - pick the default: ifdef NDEBUG ? 0 : 2
+ */
+#cmakedefine MPQC_ASSERT_MODE @MPQC_ASSERT_MODE@
+#ifndef MPQC_ASSERT_MODE
+# define MPQC_ASSERT_MODE 1
+#endif
+#if MPQC_ASSERT_MODE == -1
+# undef MPQC_ASSERT_MODE
+# ifdef NDEBUG
+#  define MPQC_ASSERT_MODE 0
+# else
+#  define MPQC_ASSERT_MODE 2
+# endif
 #endif
 
 #endif /* MPQCCONFIG_H */

@@ -33,6 +33,8 @@ Configuration:
                           (CMAKE_PREFIX_PATH=)
   --expert                Expert mode: disables building dependencies (MPQC_EXPERT=TRUE)
   --openmp                Enable OpenMP (MPQC_OPENMP=TRUE)
+  --python                Enable Python bindings; uses default python executable ('env python')
+                          if want specific executable, set cmake variable PYTHON_EXECUTABLE
   --ci=                   Enable/disable CI
   -D*                     defines cmake variables, passed verbatim to cmake command
 
@@ -111,6 +113,7 @@ while test $# != 0; do
   --boost=*)       args="$args -DBOOST=`arg \"$1\"`" ;;
   --expert)        args="$args -DMPQC_EXPERT=TRUE" ;;
   --openmp)        args="$args -DMPQC_OPENMP=TRUE" ;;
+  --python)        args="$args -DPYTHON=TRUE" ;;
   --ci=*)          args="$args -DMPQC_CI=`arg \"$1\"`" ;;
   -D*) args="$args $1" ;; # raw  cmake arg
   CC=*) CC="`arg \"$1\"`" ;;

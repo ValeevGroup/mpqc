@@ -207,24 +207,37 @@ namespace mpqc {
         template<typename T>
         struct Dataspace;
 
-        /**
-           Default file driver
-           @warning This class needs work to accomodate different HDF5 drivers better
-         */
-        struct Driver {
-            struct Core;
-            Driver() : fapl_(H5P_DEFAULT) {}
+        /// Base file driver
+        struct Driver : boost::noncopyable {
             hid_t fapl() const {
                 return fapl_;
             }
-        private:
+        protected:
+            Driver() {
+                this->fapl_ = H5Pcreate(H5P_FILE_ACCESS);
+                MPQC_FILE_VERIFY(this->fapl_);
+            }
             hid_t fapl_;
         };
 
-        /**
-           Constructs a null file object.
-           Creating objects with this file as parent will fail
-         */
+        /// POSIX I/O file driver, the default
+        struct POSIXDriver : Driver {
+            POSIXDriver() : Driver() {
+          }
+        };
+
+#ifdef H5_HAVE_DIRECT
+        /// Direct I/O file driver
+        struct DirectDriver : Driver {
+          DirectDriver() : Driver()
+            {
+                MPQC_FILE_VERIFY(H5Pset_fapl_direct(Driver::fapl_, 1024, 4096, 8*4096));
+            }
+        };
+#endif
+
+        /// Constructs a null file object.
+        /// Creating objects with this file as parent will fail
         File() {}
 
         /**
@@ -236,7 +249,7 @@ namespace mpqc {
            @warning NOT threadsafe
            @details The list of opened files is stored internally in a static set
         */
-        explicit File(const std::string &name, const Driver &driver = Driver()) {
+        explicit File(const std::string &name, const Driver &driver = POSIXDriver()) {
             initialize(name, driver);
         }
 

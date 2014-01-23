@@ -124,6 +124,12 @@
 */
 
 /**
+  @defgroup CI mpqc.Chemistry.ElectronicStructure.NBody.CI
+  @ingroup ChemistryElectronicStructureNBody
+  Configuration Interaction (CI) implementation 
+*/
+
+/**
   @defgroup ChemistryElectronicStructureSpin mpqc.Chemistry.ElectronicStructure.Spin
   @ingroup ChemistryElectronicStructure
   Functionality related to spin states of electrons.
@@ -242,7 +248,7 @@
    @endcode
 
    BLAS bindings can be disabled and  Eigen expression equivalents will
-   be used instead by undefining <code>HAVE_BLAS</code> macro.  This gives
+   be used instead by setting the value of <code>MPQCMATH_USE_BLAS</code> macro to 0.  This gives
    a good way to test if interface is working correctly.
 
    BLAS bindings are implemented on top of

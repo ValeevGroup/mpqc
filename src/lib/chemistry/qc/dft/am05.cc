@@ -41,8 +41,7 @@ using namespace sc;
 inline static double
 norm(double v[3])
 {
-  double x,y,z;
-  return sqrt((x=v[0])*x + (y=v[1])*y + (z=v[2])*z);
+  return sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 }
 
 inline static double

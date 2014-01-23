@@ -28,8 +28,7 @@
 #ifndef _util_misc_scexception_h
 #define _util_misc_scexception_h
 
-#include <stddef.h>
-#include <exception>
+#include <util/misc/exception.h>
 #include <sstream>
 #include <vector>
 #include <util/class/class.h>
@@ -37,13 +36,10 @@
 
 namespace sc {
 
-/** This is a std::exception specialization that records information
-    about where an exception took place.
+/** This is a sc::Exception specialization that keeps track of the ClassDesc for the MPQC object from
+ *  which it is thrown, and optional sc::Debugger::Backtrace object.
  */
-class SCException: public std::exception {
-    const char *description_;
-    const char *file_;
-    int line_;
+class SCException: public Exception {
     const ClassDesc* class_desc_;
     const char *exception_type_;
     mutable char *elaboration_c_str_;
@@ -68,28 +64,18 @@ class SCException: public std::exception {
                 const char *file = 0,
                 int line = 0,
                 const ClassDesc *class_desc = 0,
-                const char *exception_type = "SCException") throw();
-    SCException(const SCException&) throw();
-    ~SCException() throw();
+                const char *exception_type = "SCException") MPQC__NOEXCEPT;
+    SCException(const SCException&) MPQC__NOEXCEPT;
+    ~SCException() MPQC__NOEXCEPT;
 
-    /** Reimplementation of std::exception::what().  The returned
-        std::string is only valid for the lifetime of this object. */
-    const char* what() const throw();
+    /// overload of Exception::what()
+    const char* what() const MPQC__NOEXCEPT;
 
-    /// Returns a description of what caused the exception.  May return
-    /// null.
-    const char *description() const throw() { return description_; }
-    /// Returns the name of the file in which the exception was created.
-    /// May return null.
-    const char *file() const throw() { return file_; }
-    /// Returns the line number where the exception was created.
-    /// May return 0, if unknown.
-    int line() const throw() { return line_; }
     /// Returns the class descriptor of the object which generated the
     /// exception. May return null.
-    const ClassDesc *class_desc() const throw() { return class_desc_; }
+    const ClassDesc *class_desc() const MPQC__NOEXCEPT { return class_desc_; }
     /// Returns the classname of the exception.  May return null.
-    const char *exception_type() const throw() { return exception_type_; }
+    const char *exception_type() const MPQC__NOEXCEPT { return exception_type_; }
 
     /** Returns a stream where additional information about the exception can
         be written.  This will throw if a valid stream cannot be returned
@@ -122,9 +108,9 @@ class ProgrammingError: public SCException {
                      const char *file = 0,
                      int line = 0,
                      const ClassDesc *class_desc = 0,
-                     const char *exception_type = "ProgrammingError") throw();
-    ProgrammingError(const ProgrammingError&) throw();
-    ~ProgrammingError() throw();
+                     const char *exception_type = "ProgrammingError") MPQC__NOEXCEPT;
+    ProgrammingError(const ProgrammingError&) MPQC__NOEXCEPT;
+    ~ProgrammingError() MPQC__NOEXCEPT;
 };
 
 /** This is thrown when an attempt is made to use a feature that
@@ -151,9 +137,9 @@ class FeatureNotImplemented: public ProgrammingError {
                           int line = 0,
                           const ClassDesc *class_desc = 0,
                           const char *exception_type = "FeatureNotImplemented")
-        throw();
-    FeatureNotImplemented(const FeatureNotImplemented&) throw();
-    ~FeatureNotImplemented() throw();
+        MPQC__NOEXCEPT;
+    FeatureNotImplemented(const FeatureNotImplemented&) MPQC__NOEXCEPT;
+    ~FeatureNotImplemented() MPQC__NOEXCEPT;
 };
 
 // ///////////////////////////////////////////////////////////////////////
@@ -189,14 +175,14 @@ class InputError: public SCException {
                const char *keyword = 0,
                const char *value = 0,
                const ClassDesc *class_desc = 0,
-               const char *exception_type = "InputError") throw();
-    InputError(const InputError&) throw();
-    ~InputError() throw();
+               const char *exception_type = "InputError") MPQC__NOEXCEPT;
+    InputError(const InputError&) MPQC__NOEXCEPT;
+    ~InputError() MPQC__NOEXCEPT;
     /// Return the keyword having an erroneous value.
-    const char *keyword() const throw() { return keyword_; }
+    const char *keyword() const MPQC__NOEXCEPT { return keyword_; }
     /// Return the erroneous value which caused this exception to be
     /// thrown.
-    const char *value() const throw() { return value_; }
+    const char *value() const MPQC__NOEXCEPT { return value_; }
 };
 
 // ///////////////////////////////////////////////////////////////////////
@@ -224,9 +210,9 @@ class SystemException: public SCException {
                     const char *file = 0,
                     int line = 0,
                     const ClassDesc *class_desc = 0,
-                    const char *exception_type = "SystemException") throw();
-    SystemException(const SystemException&) throw();
-    ~SystemException() throw();
+                    const char *exception_type = "SystemException") MPQC__NOEXCEPT;
+    SystemException(const SystemException&) MPQC__NOEXCEPT;
+    ~SystemException() MPQC__NOEXCEPT;
 };
 
 /** This is thrown when a memory allocation fails.
@@ -254,12 +240,12 @@ class MemAllocFailed: public SystemException {
                    int line = 0,
                    size_t nbyte = 0,
                    const ClassDesc *class_desc = 0,
-                   const char *exception_type = "MemAllocFailed") throw();
-    MemAllocFailed(const MemAllocFailed&) throw();
-    ~MemAllocFailed() throw();
+                   const char *exception_type = "MemAllocFailed") MPQC__NOEXCEPT;
+    MemAllocFailed(const MemAllocFailed&) MPQC__NOEXCEPT;
+    ~MemAllocFailed() MPQC__NOEXCEPT;
 
     /// Returns the number of bytes used in the failed allocation attempt.
-    size_t nbyte() const throw() { return nbyte_; }
+    size_t nbyte() const MPQC__NOEXCEPT { return nbyte_; }
 };
 
 /** This is thrown when an operation on a file fails.
@@ -296,15 +282,15 @@ class FileOperationFailed: public SystemException {
                    const char *filename = 0,
                    FileOperation operation = Unknown,
                    const ClassDesc *class_desc = 0,
-                   const char *exception_type = "FileOperationFailed") throw();
-    FileOperationFailed(const FileOperationFailed&) throw();
-    ~FileOperationFailed() throw();
+                   const char *exception_type = "FileOperationFailed") MPQC__NOEXCEPT;
+    FileOperationFailed(const FileOperationFailed&) MPQC__NOEXCEPT;
+    ~FileOperationFailed() MPQC__NOEXCEPT;
 
     /** Returns the file name of the file that caused the error, if known.
         Otherwise 0 is returned. */
-    const char * filename() const throw() { return filename_; }
+    const char * filename() const MPQC__NOEXCEPT { return filename_; }
     /// Return the file operation that failed as a FileOperation enum.
-    FileOperation operation() const throw() { return operation_; }
+    FileOperation operation() const MPQC__NOEXCEPT { return operation_; }
 };
 
 /** This is thrown when an system call fails with an errno.
@@ -335,15 +321,15 @@ class SyscallFailed: public SystemException {
                   const char *syscall = 0,
                   int err = 0, 
                   const ClassDesc *class_desc = 0,
-                  const char *exception_type = "SyscallFailed") throw();
-    SyscallFailed(const SyscallFailed&) throw();
-    ~SyscallFailed() throw();
+                  const char *exception_type = "SyscallFailed") MPQC__NOEXCEPT;
+    SyscallFailed(const SyscallFailed&) MPQC__NOEXCEPT;
+    ~SyscallFailed() MPQC__NOEXCEPT;
 
     /** Returns the file name of the file that caused the error, if known.
         Otherwise 0 is returned. */
-    const char * syscall() const throw() { return syscall_; }
+    const char * syscall() const MPQC__NOEXCEPT { return syscall_; }
     /// Return the error code that the system call returned.
-    int err() const throw() { return err_; }
+    int err() const MPQC__NOEXCEPT { return err_; }
 };
 
 // ///////////////////////////////////////////////////////////////////////
@@ -373,9 +359,9 @@ class AlgorithmException: public SCException {
                        int line = 0,
                        const ClassDesc *class_desc = 0,
                        const char *exception_type = "AlgorithmException")
-        throw();
-    AlgorithmException(const AlgorithmException&) throw();
-    ~AlgorithmException() throw();
+        MPQC__NOEXCEPT;
+    AlgorithmException(const AlgorithmException&) MPQC__NOEXCEPT;
+    ~AlgorithmException() MPQC__NOEXCEPT;
 };
 
 /** This is thrown when an iterative algorithm attempts to use more
@@ -404,12 +390,12 @@ class MaxIterExceeded: public AlgorithmException {
                     int line = 0,
                     int maxiter = 0,
                     const ClassDesc *class_desc = 0,
-                    const char *exception_type = "MaxIterExceeded") throw();
-    MaxIterExceeded(const MaxIterExceeded&) throw();
-    ~MaxIterExceeded() throw();
+                    const char *exception_type = "MaxIterExceeded") MPQC__NOEXCEPT;
+    MaxIterExceeded(const MaxIterExceeded&) MPQC__NOEXCEPT;
+    ~MaxIterExceeded() MPQC__NOEXCEPT;
 
     /// Return the maximum number of iterations.
-    int max_iter() const throw() { return max_iter_; }
+    int max_iter() const MPQC__NOEXCEPT { return max_iter_; }
 };
 
 /** This is thrown when when some tolerance is exceeded.
@@ -440,13 +426,13 @@ public:
                       double tol=0,
                       double val=0,
                       const ClassDesc *class_desc = 0,
-                      const char *exception_type = "ToleranceExceeded") throw();
-    ToleranceExceeded(const ToleranceExceeded&) throw();
-    ~ToleranceExceeded() throw();
+                      const char *exception_type = "ToleranceExceeded") MPQC__NOEXCEPT;
+    ToleranceExceeded(const ToleranceExceeded&) MPQC__NOEXCEPT;
+    ~ToleranceExceeded() MPQC__NOEXCEPT;
     /// Return the required tolerance.
-    double tolerance() throw() { return tolerance_; }
+    double tolerance() MPQC__NOEXCEPT { return tolerance_; }
     /// Return the value which was obtained.
-    double value() throw() { return value_; }
+    double value() MPQC__NOEXCEPT { return value_; }
 };
 
 // ///////////////////////////////////////////////////////////////////////
@@ -484,7 +470,7 @@ public:
                   T val,
                   const ClassDesc *class_desc = 0,
                   const char *exception_type = strdup((std::string("LimitExceeded<") + std::string(typeid(T).name()) + std::string(">")).c_str())
-                 ) throw():
+                 ) MPQC__NOEXCEPT:
       SCException(description, file, line, class_desc, exception_type),
       limit_(lim), value_(val)
         {
@@ -497,16 +483,16 @@ public:
           catch(...) {
             }
         }
-    LimitExceeded(const LimitExceeded&ref) throw():
+    LimitExceeded(const LimitExceeded&ref) MPQC__NOEXCEPT:
       SCException(ref),
       limit_(ref.limit_), value_(ref.value_)
         {
         }
-    ~LimitExceeded() throw() {}
+    ~LimitExceeded() MPQC__NOEXCEPT {}
     /// The limit which was exceeded.
-    T tolerance() throw() { return limit_; }
+    T tolerance() MPQC__NOEXCEPT { return limit_; }
     /// The value which exceeded the limit.
-    T value() throw() { return value_; }
+    T value() MPQC__NOEXCEPT { return value_; }
 };
 
 }

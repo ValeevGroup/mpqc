@@ -888,7 +888,11 @@ namespace sc {
   template<typename T>
   std::string SingleReference_R12Intermediates<T>::to_space_(std::string index) {
 
-    index.erase(std::remove_if(index.begin(), index.end(), &isdigit), index.end());
+    index.erase(std::remove_if(index.begin(), index.end(),
+                               [](char c){
+                                 return c >= '0' && c<='9';
+                               }
+                              ), index.end());
 
     if (index == "i" || index == "j" || index == "k" || index == "l")
       return "i";

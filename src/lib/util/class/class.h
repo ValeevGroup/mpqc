@@ -40,6 +40,7 @@
 #include <typeinfo>
 #include <util/ref/ref.h>
 #include <util/misc/exenv.h>
+#include <util/misc/exception.h>
 
 namespace sc {
 
@@ -236,7 +237,7 @@ class DescribedClass : virtual public RefCount {
     virtual ~DescribedClass();
     /** This returns the unique pointer to the ClassDesc corresponding
         to the given type_info object.  Null is returned if it fails. */
-    ClassDesc* class_desc() const throw();
+    ClassDesc* class_desc() const MPQC__NOEXCEPT;
     /// Return the name of the object's exact type.
     const char* class_name() const;
     /// Return the version of the class.

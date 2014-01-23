@@ -18,7 +18,14 @@
 namespace mpqc {
 namespace ci {
 
+    /// @addtogroup CI
+    /// @{
+
     /// Computes sigma 1,2,3 contributions
+    /// @param h one-electron MO integrals (packed symmetric)
+    /// @param V two-electron MO integrals (packed symmetric)
+    /// @param[in] C C vector
+    /// @param[out] S Sigma vector
     template<class Type, class Index>
     void sigma(const CI<Type, Index> &ci,
                const mpqc::Vector &h, const Matrix &V,
@@ -72,7 +79,7 @@ namespace ci {
             }
 
             // with ms == 0 symmetry, S is symmetrized in sigma3 step
-            if (ci.ms == 0) goto end;
+            if (ci.config.ms == 0) goto end;
 
             // sigma2, need to transpose s, c
             s = Matrix(s.transpose());
@@ -87,6 +94,7 @@ namespace ci {
             s = Matrix(s.transpose());
 
         end:
+            //s = Matrix::Random(Ia.size(), Ib.size());
             S(Ia,Ib) = s;
 
         }
@@ -100,7 +108,7 @@ namespace ci {
             auto next = task->next(blocks.begin(), blocks.end());
             if (next == blocks.end()) break;
 
-            if (ci.ms == 0 && next->alpha > next->beta) continue;
+            if (ci.config.ms == 0 && next->alpha > next->beta) continue;
 
             auto Ia = alpha.at(next->alpha);
             auto Ib = beta.at(next->beta);
@@ -123,7 +131,7 @@ namespace ci {
             Matrix s = S(Ia,Ib);
 
             // if symmetric CI, symmetrize diagonal block
-            if (ci.ms == 0 && next->alpha == next->beta) 
+            if (ci.config.ms == 0 && next->alpha == next->beta) 
                 s += Matrix(s).transpose();
 
             for (auto bb = BB.begin(); bb != BB.end(); ++bb) {
@@ -141,9 +149,11 @@ namespace ci {
                     time.s3 += t;
                 }
             }
+            
+            //s = Matrix::Random(Ia.size(), Ib.size());
 
             // if symmetric CI, symmetrize off-diagonal blocks S(Ia,Ib) and S(Ib,Ia)
-            if (ci.ms == 0 && next->alpha != next->beta) {
+            if (ci.config.ms == 0 && next->alpha != next->beta) {
                 MPQC_PROFILE_LINE;
                 Matrix t = S(Ib,Ia);
                 t += s.transpose();
@@ -160,13 +170,15 @@ namespace ci {
 
         S.sync();
 
-        std::cout << "sigma took " << double(time.t) << std::endl;
-        std::cout << "  sigma1: " << time.s1 << std::endl;
-        std::cout << "  sigma2: " << time.s2 << std::endl;
-        std::cout << "  sigma3: " << time.s3 << std::endl;
+        sc::ExEnv::out0() << sc::indent << "sigma took " << double(time.t) << std::endl;
+        sc::ExEnv::out0() << sc::indent << "  sigma1: " << time.s1 << std::endl;
+        sc::ExEnv::out0() << sc::indent << "  sigma2: " << time.s2 << std::endl;
+        sc::ExEnv::out0() << sc::indent << "  sigma3: " << time.s3 << std::endl;
 
 
     }
+
+    /// @}
 
 }
 }

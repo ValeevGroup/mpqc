@@ -1,0 +1,47 @@
+% emacs should use -*- KeyVal -*- mode
+molecule = $:h12
+
+h12<Molecule>:(
+  symmetry = C1
+  unit = angstrom
+  { atoms geometry } = {
+    H   [     1.500000000000    -1.000000000000     0.000000000000 ]
+    H   [     0.500000000000    -1.000000000000     0.000000000000 ]
+    H   [    -0.500000000000    -1.000000000000     0.000000000000 ]
+    H   [    -1.500000000000    -1.000000000000     0.000000000000 ]
+    H   [     1.500000000000     0.000000000000     0.000000000000 ]
+    H   [     0.500000000000     0.000000000000     0.000000000000 ]
+    H   [    -0.500000000000     0.000000000000     0.000000000000 ]
+    H   [    -1.500000000000     0.000000000000     0.000000000000 ]
+    H   [     1.500000000000     1.000000000000     0.000000000000 ]
+    H   [     0.500000000000     1.000000000000     0.000000000000 ]
+    H   [    -0.500000000000     1.000000000000     0.000000000000 ]
+    H   [    -1.500000000000     1.000000000000     0.000000000000 ]
+  }
+)
+
+
+basis<GaussianBasisSet>: (
+  %name = "cc-pVDZ"
+  %name = "DZ (Dunning)"
+  name = "STO-3G"
+  molecule = $:molecule
+)
+mpqc: (
+  checkpoint = no
+  savestate = no
+  mole<CI>: (
+    molecule = $:molecule
+    basis = $:basis
+    rank = 3
+    value_accuracy = 1e-12
+    reference<SD_RefWavefunction>: (
+      nfzc = 2
+      obwfn<CLHF>: (
+        molecule = $:molecule
+        basis = $:basis
+      )
+    )
+  )
+)
+

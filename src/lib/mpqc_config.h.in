@@ -34,7 +34,7 @@
 #cmakedefine HAVE_SYS_STAT_H
 
 /* Define if you have <sys/types.h>.  */
-#cmakedefine HAVE_SYS_TYPES_H
+#cmakedefine HAVE_SYS_TYPES_H @HAVE_SYS_TIMES_H@
 
 /* Define if you have <pwd.h>.  */
 #cmakedefine HAVE_PWD_H
@@ -322,8 +322,6 @@
 /* Determines the width of the integer use by BLAS F77 interface */
 #cmakedefine F77_INTEGER_WIDTH @F77_INTEGER_WIDTH@
 
-#cmakedefine HAVE_BLAS
-
 /* Define if you have the Scalable BLAS package and everything needed for it.
  */
 #cmakedefine HAVE_SCALABLE_BLAS
@@ -331,6 +329,7 @@
 /* Define if machine byte order is big endian. */
 #cmakedefine WORDS_BIGENDIAN
 
+/* Define if have Python language support. */
 #cmakedefine HAVE_PYTHON
 
 /* The host architecture. */
@@ -429,6 +428,52 @@
 #endif
 
 #cmakedefine HAVE_PAPI
+
+////////////////////////////////////////////////////////////////////////////////
+// User-configurable macros that control program behavior
+////////////////////////////////////////////////////////////////////////////////
+
+/* how to check memory allocation/deallocation;
+   turn on if need memory management checking, and valgring is not available or not affordable.
+
+   0 - no profiling or tracing
+   1 - profile memory use (pring sizes, but without detailed trace info), at slight runtime and memory overhead
+   2 - trace memory use, using backtrace (if available) to detect the location of memory operations; performance impact can be significant,
+       especially on memory use
+   -1 - pick the default: ifdef NDEBUG ? 0 : 1
+*/
+#cmakedefine MPQC_MEMORY_CHECK @MPQC_MEMORY_CHECK@
+#ifndef MPQC_MEMORY_CHECK
+# define MPQC_MEMORY_CHECK -1
+#endif
+#if MPQC_MEMORY_CHECK == -1
+# undef MPQC_MEMORY_CHECK
+# ifdef NDEBUG
+#  define MPQC_MEMORY_CHECK 0
+# else
+#  define MPQC_MEMORY_CHECK 1
+# endif
+#endif
+
+/* Controls behavior of MPQC assertions.
+
+   0 - assertions disabled
+   1 - assert()
+   2 - throw std::exception()
+   -1 - pick the default: ifdef NDEBUG ? 0 : 2
+ */
+#cmakedefine MPQC_ASSERT_MODE @MPQC_ASSERT_MODE@
+#ifndef MPQC_ASSERT_MODE
+# define MPQC_ASSERT_MODE 1
+#endif
+#if MPQC_ASSERT_MODE == -1
+# undef MPQC_ASSERT_MODE
+# ifdef NDEBUG
+#  define MPQC_ASSERT_MODE 0
+# else
+#  define MPQC_ASSERT_MODE 2
+# endif
+#endif
 
 #endif /* MPQCCONFIG_H */
 

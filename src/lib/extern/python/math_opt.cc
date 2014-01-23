@@ -6,7 +6,7 @@
 #include <math/optimize/scextrap.h>
 #include <math/optimize/diis.h>
 #include <math/optimize/scextrapmat.h>
-#include "util.h"
+#include <extern/python/util.h>
 
 using namespace boost::python;
 using namespace sc;

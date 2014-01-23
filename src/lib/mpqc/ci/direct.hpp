@@ -13,12 +13,15 @@
 
 #include "mpqc/utility/profile.hpp"
 
-//#define MPQC_CI_VERBOSE 1
+#define MPQC_CI_VERBOSE 0
 
 namespace mpqc {
 namespace ci {
 
-    // read local segments into V from F
+    /// @addtogroup CI
+    /// @{
+
+    /// read local segments into V from F
     inline void read(ci::Vector &V, File::Dataspace<double> F,
                      const std::vector<mpqc::range> &local) {
         timer t;
@@ -34,7 +37,7 @@ namespace ci {
 #endif
     }
 
-    // write local segments of V to F
+    /// write local segments of V to F
     inline void write(ci::Vector &V, File::Dataspace<double> F,
                       const std::vector<mpqc::range> &local) {
         timer t;
@@ -50,9 +53,12 @@ namespace ci {
 #endif
     }
 
-
-    template<class Type>
-    std::vector<double> direct(CI<Type> &ci,
+    /// Direct Davidson
+    /// @param h one-electron MO integrals (packed symmetric)
+    /// @param V two-electron MO integrals (packed symmetric)
+    /// @param[in,out] ci CI object
+    template<class Type, class Index>
+    std::vector<double> direct(CI<Type,Index> &ci,
                                const mpqc::Vector &h,
                                const mpqc::Matrix &V) {
 
@@ -60,7 +66,7 @@ namespace ci {
 
         mpqc::Matrix lambda;
         mpqc::Vector a, r;
-        size_t R = ci.roots; // roots
+        size_t R = ci.config.roots; // roots
         size_t M = 1;
 
         const auto &alpha = ci.alpha;
@@ -79,8 +85,8 @@ namespace ci {
 
         auto &comm = ci.comm;
 
-        ci::Vector C("ci.C", ci.subspace, comm, (ci.incore >= 1));
-        ci::Vector D("ci.D", ci.subspace, comm, (ci.incore >= 2));
+        ci::Vector C("ci.C", ci.subspace, comm, (ci.config.incore >= 1));
+        ci::Vector D("ci.D", ci.subspace, comm, (ci.config.incore >= 2));
 
         comm.barrier();
 
@@ -174,7 +180,8 @@ namespace ci {
                         << sc::indent
                         << sc::scprintf("CI iter. %3i, E=%15.12lf, "
                                         "del.E=%4.2e, del.C=%4.2e\n",
-                                        (int)it, lambda[0] + ci.e_ref + ci.e_core,
+                                        (int)it,
+                                        lambda[0] + ci.config.e_ref + ci.config.e_core,
                                         de, dc);
                 }
                 
@@ -188,7 +195,7 @@ namespace ci {
                 }
                 D.sync();
 
-                if (it+1 == ci.max) break;
+                if (it+1 == ci.config.max) break;
 
                 write(D, ci.vector.b[it+1], ci.local());
                 D.sync();
@@ -197,14 +204,14 @@ namespace ci {
 
             MPQC_PROFILE_DUMP(std::cout);
 
-            std::cout << "Davidson iteration time: " << t << std::endl;
+            sc::ExEnv::out0() << sc::indent << "Davidson iteration time: " << t << std::endl;
 
-            if (fabs(iters[it - 1].E - iters[it].E) < ci.convergence) {
+            if (fabs(iters[it - 1].E - iters[it].E) < ci.config.convergence) {
                 E.push_back(iters[it].E);
                 break;
             }
 
-            if (it+1 == ci.max) {
+            if (it+1 == ci.config.max) {
                 throw MPQC_EXCEPTION("CI failed to converge");
             }
 
@@ -214,6 +221,8 @@ namespace ci {
         return E;
 
     }
+
+    /// @}
 
 } // namespace ci
 } // namespace mpqc

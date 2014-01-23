@@ -6,6 +6,8 @@ project (MPQC)
 option(MPQC_EXPERT "MPQC Expert mode: disables automatically downloading or building dependencies" OFF)
 option(MPQC_NEW_FEATURES "Use new MPQC features (requires C++11)" OFF)
 option(MPQC_OPENMP "Use OpenMP" OFF)
+set(MPQC_MEMORY_CHECK -1) # How to check memory use (see mpqc_config.h for details)
+set(MPQC_ASSERT_MODE -1) # How to implement assertions (see mpqc_config.h for details)
 
 include(CTest)
 enable_testing()
@@ -123,13 +125,6 @@ option(USE_STATIC_LIBS "use static libraries" OFF)
 if(USE_STATIC_LIBS)
   set(CMAKE_FIND_LIBRARY_SUFFIXES .a ${CMAKE_FIND_LIBRARY_SUFFIXES})
 ENDIF()
-
-# find_package(PythonLibs)
-# if(PYTHONLIBS_FOUND)
-#   set(HAVE_PYTHON TRUE)
-#   include_directories(${PYTHON_INCLUDE_DIR})
-# endif()
-
 
 find_package(Threads)
 if (Threads_FOUND)

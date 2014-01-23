@@ -43,10 +43,8 @@ SCException::SCException(const char *description,
                          const char *file,
                          int line,
                          const ClassDesc *class_desc,
-                         const char *exception_type) throw():
-  description_(description),
-  file_(file),
-  line_(line),
+                         const char *exception_type) MPQC__NOEXCEPT:
+  Exception(description, file, line),
   class_desc_(class_desc),
   exception_type_(exception_type),
   elaboration_c_str_(0),
@@ -58,12 +56,12 @@ SCException::SCException(const char *description,
           elaborate() << "exception:   " << exception_type_
                       << std::endl;
         }
-      if (description_) {
-           elaborate() << "description: " << description
+      if (Exception::description()) {
+           elaborate() << "description: " << Exception::description()
                       << std::endl;
         }
-      if (file_) {
-          elaborate() << "location:    " << file << ":" << line
+      if (Exception::file()) {
+          elaborate() << "location:    " << Exception::file() << ":" << line
                       << std::endl;
         }
       if (class_desc_) {
@@ -81,10 +79,8 @@ SCException::SCException(const char *description,
     }
 }
 
-SCException::SCException(const SCException& ref) throw(): 
-  description_(ref.description_),
-  file_(ref.file_),
-  line_(ref.line_),
+SCException::SCException(const SCException& ref) MPQC__NOEXCEPT:
+  Exception(ref),
   class_desc_(ref.class_desc_),
   backtrace_(ref.backtrace_)
 {
@@ -102,7 +98,7 @@ SCException::SCException(const SCException& ref) throw():
     }
 }
 
-SCException::~SCException() throw()
+SCException::~SCException() MPQC__NOEXCEPT
 {
   try{ ExEnv::out0().flush(); ExEnv::err0().flush(); }
   catch(...) {}
@@ -111,7 +107,7 @@ SCException::~SCException() throw()
 }
 
 const char* 
-SCException::what() const throw()
+SCException::what() const MPQC__NOEXCEPT
 {
   try {
       if (elaboration_) {
@@ -127,10 +123,7 @@ SCException::what() const throw()
   catch (...) {
       // Ignore the exception and return the next available string.
     }
-  if (description_) {
-      return description_;
-    }
-  return "No information available for SCException";
+  return Exception::what();
 }
 
 std::ostream &
@@ -152,7 +145,7 @@ InputError::InputError(
     const char *keyword,
     const char *value,
     const ClassDesc *class_desc,
-    const char *exception_type) throw():
+    const char *exception_type) MPQC__NOEXCEPT:
   SCException(description, file, line, class_desc, exception_type),
   keyword_(keyword)
 {
@@ -179,13 +172,13 @@ InputError::InputError(
     }
 }
   
-InputError::InputError(const InputError& ref) throw():
+InputError::InputError(const InputError& ref) MPQC__NOEXCEPT:
   SCException(ref),
   keyword_(ref.keyword_)
 {
 }
 
-InputError::~InputError() throw()
+InputError::~InputError() MPQC__NOEXCEPT
 {
   delete[] value_;
 }
@@ -198,17 +191,17 @@ ProgrammingError::ProgrammingError(
     const char *file,
     int line,
     const ClassDesc *class_desc,
-    const char *exception_type) throw():
+    const char *exception_type) MPQC__NOEXCEPT:
   SCException(description, file, line, class_desc, exception_type)
 {
 }
   
-ProgrammingError::ProgrammingError(const ProgrammingError& ref) throw():
+ProgrammingError::ProgrammingError(const ProgrammingError& ref) MPQC__NOEXCEPT:
   SCException(ref)
 {
 }
 
-ProgrammingError::~ProgrammingError() throw()
+ProgrammingError::~ProgrammingError() MPQC__NOEXCEPT
 {
 }
 
@@ -220,18 +213,18 @@ FeatureNotImplemented::FeatureNotImplemented(
     const char *file,
     int line,
     const ClassDesc *class_desc,
-    const char *exception_type) throw():
+    const char *exception_type) MPQC__NOEXCEPT:
   ProgrammingError(description, file, line, class_desc, exception_type)
 {
 }
   
 FeatureNotImplemented::FeatureNotImplemented(const FeatureNotImplemented& ref)
-    throw():
+    MPQC__NOEXCEPT:
   ProgrammingError(ref)
 {
 }
 
-FeatureNotImplemented::~FeatureNotImplemented() throw()
+FeatureNotImplemented::~FeatureNotImplemented() MPQC__NOEXCEPT
 {
 }
 
@@ -243,17 +236,17 @@ SystemException::SystemException(
     const char *file,
     int line,
     const ClassDesc *class_desc,
-    const char *exception_type) throw():
+    const char *exception_type) MPQC__NOEXCEPT:
   SCException(description, file, line, class_desc, exception_type)
 {
 }
   
-SystemException::SystemException(const SystemException& ref) throw():
+SystemException::SystemException(const SystemException& ref) MPQC__NOEXCEPT:
   SCException(ref)
 {
 }
 
-SystemException::~SystemException() throw()
+SystemException::~SystemException() MPQC__NOEXCEPT
 {
 }
 
@@ -265,7 +258,7 @@ MemAllocFailed::MemAllocFailed(const char *description,
                                int line,
                                size_t nbyte,
                                const ClassDesc *class_desc,
-                               const char *exception_type) throw():
+                               const char *exception_type) MPQC__NOEXCEPT:
   SystemException(description, file, line, class_desc, exception_type),
   nbyte_(nbyte)
 { 
@@ -280,12 +273,12 @@ MemAllocFailed::MemAllocFailed(const char *description,
     }
 }
 
-MemAllocFailed::MemAllocFailed(const MemAllocFailed& ref) throw():
+MemAllocFailed::MemAllocFailed(const MemAllocFailed& ref) MPQC__NOEXCEPT:
   SystemException(ref), nbyte_(ref.nbyte_)
 { 
 }
 
-MemAllocFailed::~MemAllocFailed() throw()
+MemAllocFailed::~MemAllocFailed() MPQC__NOEXCEPT
 {
 }
 
@@ -298,7 +291,7 @@ FileOperationFailed::FileOperationFailed(const char *description,
                                          const char *filename,
                                          FileOperation op,
                                          const ClassDesc *class_desc,
-                                         const char *exception_type) throw():
+                                         const char *exception_type) MPQC__NOEXCEPT:
   SystemException(description, file, line, class_desc, exception_type),
   filename_(filename),
   operation_(op)
@@ -347,12 +340,12 @@ FileOperationFailed::FileOperationFailed(const char *description,
     }
 }
 
-FileOperationFailed::FileOperationFailed(const FileOperationFailed& ref) throw():
+FileOperationFailed::FileOperationFailed(const FileOperationFailed& ref) MPQC__NOEXCEPT:
   SystemException(ref), filename_(ref.filename_), operation_(ref.operation_)
 { 
 }
 
-FileOperationFailed::~FileOperationFailed() throw()
+FileOperationFailed::~FileOperationFailed() MPQC__NOEXCEPT
 {
 }
 
@@ -365,7 +358,7 @@ SyscallFailed::SyscallFailed(const char *description,
                              const char *syscall,
                              int err,
                              const ClassDesc *class_desc,
-                             const char *exception_type) throw():
+                             const char *exception_type) MPQC__NOEXCEPT:
   SystemException(description, file, line, class_desc, exception_type),
   syscall_(syscall),
   err_(err)
@@ -388,12 +381,12 @@ SyscallFailed::SyscallFailed(const char *description,
     }
 }
 
-SyscallFailed::SyscallFailed(const SyscallFailed& ref) throw():
+SyscallFailed::SyscallFailed(const SyscallFailed& ref) MPQC__NOEXCEPT:
   SystemException(ref), syscall_(ref.syscall_), err_(ref.err_)
 { 
 }
 
-SyscallFailed::~SyscallFailed() throw()
+SyscallFailed::~SyscallFailed() MPQC__NOEXCEPT
 {
 }
 
@@ -405,17 +398,17 @@ AlgorithmException::AlgorithmException(
     const char *file,
     int line,
     const ClassDesc *class_desc,
-    const char *exception_type) throw():
+    const char *exception_type) MPQC__NOEXCEPT:
   SCException(description, file, line, class_desc, exception_type)
 {
 }
   
-AlgorithmException::AlgorithmException(const AlgorithmException& ref) throw():
+AlgorithmException::AlgorithmException(const AlgorithmException& ref) MPQC__NOEXCEPT:
   SCException(ref)
 {
 }
 
-AlgorithmException::~AlgorithmException() throw()
+AlgorithmException::~AlgorithmException() MPQC__NOEXCEPT
 {
 }
 
@@ -427,7 +420,7 @@ MaxIterExceeded::MaxIterExceeded(const char *description,
                                  int line,
                                  int maxiter,
                                  const ClassDesc *class_desc,
-                                 const char *exception_type) throw():
+                                 const char *exception_type) MPQC__NOEXCEPT:
   AlgorithmException(description, file, line, class_desc, exception_type),
   max_iter_(maxiter)
 { 
@@ -440,12 +433,12 @@ MaxIterExceeded::MaxIterExceeded(const char *description,
     }
 }
 
-MaxIterExceeded::MaxIterExceeded(const MaxIterExceeded& ref) throw():
+MaxIterExceeded::MaxIterExceeded(const MaxIterExceeded& ref) MPQC__NOEXCEPT:
   AlgorithmException(ref), max_iter_(ref.max_iter_)
 { 
 }
 
-MaxIterExceeded::~MaxIterExceeded() throw()
+MaxIterExceeded::~MaxIterExceeded() MPQC__NOEXCEPT
 {
 }
 
@@ -458,7 +451,7 @@ ToleranceExceeded::ToleranceExceeded(const char *description,
                                      double tol,
                                      double val,
                                      const ClassDesc *class_desc,
-                                     const char *exception_type) throw():
+                                     const char *exception_type) MPQC__NOEXCEPT:
   AlgorithmException(description, file, line, class_desc, exception_type),
   tolerance_(tol), value_(val)
 {
@@ -472,12 +465,12 @@ ToleranceExceeded::ToleranceExceeded(const char *description,
     }
 }
 
-ToleranceExceeded::ToleranceExceeded(const ToleranceExceeded& ref) throw():
+ToleranceExceeded::ToleranceExceeded(const ToleranceExceeded& ref) MPQC__NOEXCEPT:
   AlgorithmException(ref),
   tolerance_(ref.tolerance_), value_(ref.value_)
 {
 }
 
-ToleranceExceeded::~ToleranceExceeded() throw()
+ToleranceExceeded::~ToleranceExceeded() MPQC__NOEXCEPT
 {
 }

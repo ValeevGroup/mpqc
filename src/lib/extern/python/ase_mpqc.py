@@ -1,14 +1,14 @@
 
 import numpy
-from mpqc import *
+from pympqc import *
 from ase.units import Bohr, Hartree
+from ase.visualize import view
 
 def atoms_to_molecule(atoms):
     # ASE uses Angstrom throughout, but by default Molecule uses Bohr; apply conversion factors below
     m = Molecule()
 
     zs = atoms.get_atomic_numbers()
-    cs = atoms.get_charges()
     ps = atoms.get_positions()
 
     # label='X' is needed to avoid segfault -- passing arguments by reference is not yet implemented properly
@@ -16,7 +16,6 @@ def atoms_to_molecule(atoms):
         m.add_atom(int(zs[i]), ps[i,0] * Bohr, ps[i,1] * Bohr, ps[i,2] * Bohr, label='X');
 
     return m
-
 
 class Calculator:
     """This is the ASE-calculator frontend for doing an MPQC calculation.
@@ -58,3 +57,26 @@ class Calculator:
     def get_stress(self, atoms):
         return self.stress
 
+def which(program):
+    import os
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+    
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            path = path.strip('"')
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+    
+    return None
+
+def ase_gui_view(atoms):
+    if which("ase-gui") == None:
+        print "ase-gui is not found in PATH, will skip visualization"
+    else:
+        view(atoms)

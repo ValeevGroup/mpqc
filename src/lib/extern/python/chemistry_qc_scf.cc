@@ -5,7 +5,7 @@
 #include <chemistry/qc/scf/clhf.h>
 #include <chemistry/qc/lcao/fockbuild.h>
 #include <chemistry/qc/lcao/clhfcontrib.h>
-#include "util.h"
+#include <extern/python/util.h>
 
 using namespace boost::python;
 using namespace sc;

@@ -1,0 +1,159 @@
+#!/usr/bin/env @PYTHON_EXECUTABLE@
+
+import sys
+import numpy
+import numpy.numarray
+import numpy.linalg
+from numpy.numarray import matrixmultiply
+from pympqc import *
+
+def transform(mat1,op,mat2):
+    r = matrixmultiply(matrixmultiply(mat1,op),mat2)
+    return r
+
+mol = Molecule(atoms = [ 'o', 'h', 'h' ],
+               geometry = [ [ 0.0, 0.0, 0.0 ],
+                            [ 1.0, 0.0,-1.0 ],
+                            [ 1.0, 0.0, 1.0 ] ])
+occs = [ 2, 2, 2, 2, 2 ]
+
+#mol = Molecule(atoms = [ 'he' ],
+#               geometry = [ [ 0.0, 0.0, 0.0 ] ])
+#occs = [ 2 ]
+
+basis = GaussianBasisSet(molecule = mol,
+                         name = '3-21G')
+
+
+integral = IntegralV3(basis,basis,basis,basis)
+
+overlap = integral.overlap()
+
+pl = integral.petite_list()
+integral.set_storage(32000000);
+Integral.set_default_integral(integral);
+
+nshell = basis.nshell()
+nbasis = basis.nbasis()
+overlap_ao = numpy.zeros((nbasis,nbasis))
+hcore_ao = numpy.zeros((nbasis,nbasis))
+overlap_int = integral.overlap()
+hcore_int = integral.hcore()
+for i in range(nshell):
+    ioff = basis.shell_to_function(i)
+    for j in range(nshell):
+        joff = basis.shell_to_function(j)
+        shell_values = overlap_int.compute_shell_array(i,j)
+        d = shell_values.shape
+        overlap_ao[ioff:ioff+d[0],joff:joff+d[1]] = shell_values
+        shell_values = hcore_int.compute_shell_array(i,j)
+        hcore_ao[ioff:ioff+d[0],joff:joff+d[1]] = shell_values
+
+overlap_ao_evals, overlap_ao_evecs = numpy.linalg.eig(overlap_ao)
+
+X = matrixmultiply(
+      matrixmultiply(
+        overlap_ao_evecs,
+        numpy.diag(numpy.power(overlap_ao_evals,-0.5))),
+      overlap_ao_evecs.transpose()
+      )
+
+Xinv = matrixmultiply(
+         matrixmultiply(
+           overlap_ao_evecs,
+           numpy.diag(numpy.power(overlap_ao_evals,0.5))),
+         overlap_ao_evecs.transpose()
+         )
+
+unsorted_evals, unsorted_vector = numpy.linalg.eig(transform(X,hcore_ao,X))
+
+# sort the eigenvalues in ascending order
+ix = numpy.argsort(unsorted_evals)
+evals = unsorted_evals[ix]
+vector = unsorted_vector[:,ix]
+
+#print "hcore_evals:"
+#print evals
+
+occ = numpy.zeros((nbasis,nbasis))
+for i in range(len(occs)):
+    occ[i,i] = occs[i]
+
+density = transform(vector, occ, vector.transpose())
+density_ao = transform(X,density,X)
+
+#print 'nelectron'
+#print matrixmultiply(density_ao,overlap_ao).trace()
+
+tbint = integral.electron_repulsion()
+
+for i in range(20):
+
+    # initialize the G matrix
+    g_ao = numpy.zeros((nbasis,nbasis))
+
+    # loop over shell quartets
+    for i in range(nshell):
+        ioff = basis.shell_to_function(i)
+        for j in range(nshell):
+            joff = basis.shell_to_function(j)
+            for k in range(nshell):
+                koff = basis.shell_to_function(k)
+                for l in range(nshell):
+                    loff = basis.shell_to_function(l)
+                    tbints = tbint.compute_shell_arrays(i,j,k,l)
+                    eri = tbints[TwoBodyOper.type.eri]
+                    dims = eri.shape
+                    # loop over the integrals for this shell quartet
+                    for a in range(dims[0]):
+                        for b in range(dims[1]):
+                            for c in range(dims[2]):
+                                for d in range(dims[3]):
+                                    # add the coulomb term to G
+                                    g_ao[ioff+a,joff+b] \
+                                        += density_ao[koff+c,loff+d]*eri[a,b,c,d]
+                                    # add the exchange term to G
+                                    g_ao[ioff+a,koff+c] \
+                                        -= 0.5*density_ao[joff+b,loff+d]*eri[a,b,c,d]
+
+    #print density_ao
+    #print g_ao
+
+    # construct the fock matrix
+    f_ao = hcore_ao + g_ao
+
+    #print f_ao
+      
+    # transform the fock matrix into the orthogonal basis
+    f = transform(X,f_ao,X)
+
+    #print f
+
+    # Diagonalize the fock matrix
+    unsorted_evals, unsorted_vector = numpy.linalg.eig(f)
+
+    # sort the eigenvalues in ascending order
+    ix = numpy.argsort(unsorted_evals)
+    evals = unsorted_evals[ix]
+    vector = unsorted_vector[:,ix]
+
+    #print evals
+
+    # Compute the density matrix
+    vector_ao = matrixmultiply(X,vector)
+    density_ao = transform(vector_ao,occ,vector_ao.transpose())
+
+    #print vector_ao
+    #print density_ao
+
+    #print density_ao
+    #print hcore_ao
+    #print f_ao
+
+    nucrep_energy = basis.molecule().nuclear_repulsion_energy()
+
+    elec_energy = 0.5*(matrixmultiply(density_ao,(hcore_ao + f_ao))).trace()
+
+    energy = nucrep_energy + elec_energy
+
+    print "energy = %14.8f" % (energy)

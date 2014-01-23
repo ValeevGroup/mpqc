@@ -1,7 +1,7 @@
 
 #include <Python.h>
 #include <numpy/arrayobject.h>
-#include "util.h"
+#include <extern/python/util.h>
 #include <boost/python.hpp>
 #include <chemistry/qc/basis/tbint.h>
 
@@ -120,7 +120,7 @@ namespace sc {
 
 }
 
-BOOST_PYTHON_MODULE(mpqc)
+BOOST_PYTHON_MODULE(libmpqc_py)
 {
   import_array();
 

@@ -5,7 +5,7 @@
 #include <boost/python/implicit.hpp>
 #include <math/scmat/matrix.h>
 #include <math/scmat/elemop.h>
-#include "util.h"
+#include <extern/python/util.h>
 
 using namespace boost::python;
 using namespace sc;

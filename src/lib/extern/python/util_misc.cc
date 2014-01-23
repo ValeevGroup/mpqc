@@ -5,7 +5,7 @@
 #include <util/misc/exenv.h>
 #include <util/misc/compute.h>
 #include <util/misc/units.h>
-#include "util.h"
+#include <extern/python/util.h>
 
 using namespace boost::python;
 using namespace sc;

@@ -194,8 +194,8 @@ ClassDesc FinDispMolecularHessian::Impl::class_desc_(
 
 FinDispMolecularHessian::Impl::Impl(const Ref<MolecularEnergy>& e,
                                     const Ref<Params>& params) :
-  mole_(e),
-  params_(params)
+  params_(params),
+  mole_(e)
 {
   init();
 }

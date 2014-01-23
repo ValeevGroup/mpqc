@@ -81,11 +81,11 @@ class FockBuildMatrixRectElemOp: public SCElementOp {
                               const Ref<SCBlockInfo> &colbi):
       symm_(symm),
       data_to_mat_(data_to_mat),
-      rowbi_(rowbi),
-      colbi_(colbi),
       blocks_(blocks),
       ndata_(ndata),
-      defer_collect_(false) {
+      defer_collect_(false),
+      rowbi_(rowbi),
+      colbi_(colbi) {
       double *data = blocks_[0];
       if (!data_to_mat_) for (int i=0; i<ndata; i++) data[i] = 0;
 #if DEBUG
@@ -164,9 +164,9 @@ FockBuildMatrix::FockBuildMatrix(const FockBuildMatrix&fbm)
 }
 
 FockBuildMatrix::FockBuildMatrix(const Ref<MessageGrp> &msg):
+  msg_(msg),
   nI_(0),
-  nJ_(0),
-  msg_(msg)
+  nJ_(0)
 {
   me_ = msg->me();
   nproc_ = msg->n();

@@ -444,8 +444,8 @@ RefWavefunction::RefWavefunction(const Ref<WavefunctionWorld>& world,
                                  const Ref<GaussianBasisSet>& basis,
                                  const Ref<Integral>& integral,
                                  bool use_world_df) :
-  world_(world), basis_(basis),  integral_(integral->clone()),
-  use_world_dfinfo_(use_world_df), force_average_AB_rdm1_(false)
+  force_average_AB_rdm1_(false), world_(world), basis_(basis),  integral_(integral->clone()),
+  use_world_dfinfo_(use_world_df)
 {
   for(int spin=0; spin<NSpinCases1; ++spin) spinspaces_[spin] = 0;
   integral_->set_basis(basis, basis, basis, basis);
@@ -774,11 +774,11 @@ SD_RefWavefunction::SD_RefWavefunction(const Ref<WavefunctionWorld>& world,
                                                                 obwfn->basis(),
                                                                 obwfn->integral()),
                                              obwfn_(obwfn),
-                                             spin_restricted_(spin_restricted),
-                                             nfzc_(nfzc),
-                                             nfzv_(nfzv),
                                              vir_space_(vir_space),
-                                             occ_orbitals_(occ_orbitals)
+                                             spin_restricted_(spin_restricted),
+                                             occ_orbitals_(occ_orbitals),
+                                             nfzc_(nfzc),
+                                             nfzv_(nfzv)
 {
   // spin_restricted is a recommendation only -> make sure it is realizable
   if (obwfn_->spin_polarized() == false) spin_restricted_ = true;

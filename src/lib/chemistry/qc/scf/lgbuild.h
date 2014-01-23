@@ -58,7 +58,7 @@ class LocalGBuild : public GBuild<T> {
                 const Ref<GaussianBasisSet>& bs, const Ref<MessageGrp>& g,
                 signed char *pm, double acc, int nt=1, int tn=0) :
       GBuild<T>(t),
-      pmax(pm), nthread_(nt), threadno_(tn), accuracy_(acc)
+      pmax(pm), threadno_(tn), nthread_(nt), accuracy_(acc)
     {
       grp_ = g.pointer();
       tbi_ = tbi.pointer();

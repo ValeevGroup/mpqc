@@ -765,9 +765,10 @@ RegionTimer::set_default_regiontimer(const Ref<RegionTimer>& t)
 // Timer functions
 
 Timer::Timer(const char *name):
-  default_entered_(false),
+  timer_(),
   depth_(0),
-  default_depth_(0)
+  default_depth_(0),
+  default_entered_(false)
 {
   timer_ = RegionTimer::default_regiontimer();
   if (timer_.nonnull() && name != 0) {
@@ -776,10 +777,10 @@ Timer::Timer(const char *name):
 }
 
 Timer::Timer(const Ref<RegionTimer>&t, const char *name):
-  default_entered_(false),
+  timer_(t),
   depth_(0),
   default_depth_(0),
-  timer_(t)
+  default_entered_(false)
 {
   if (timer_.nonnull() && name != 0) {
       enter(name);
@@ -787,9 +788,10 @@ Timer::Timer(const Ref<RegionTimer>&t, const char *name):
 }
 
 Timer::Timer(const std::string &name):
-  default_entered_(false),
+  timer_(),
   depth_(0),
-  default_depth_(0)
+  default_depth_(0),
+  default_entered_(false)
 {
   timer_ = RegionTimer::default_regiontimer();
   if (timer_.nonnull()) {
@@ -798,10 +800,10 @@ Timer::Timer(const std::string &name):
 }
 
 Timer::Timer(const Ref<RegionTimer>&t, const std::string &name):
-  default_entered_(false),
-  depth_(0),
-  default_depth_(0),
-  timer_(t)
+      timer_(t),
+      depth_(0),
+      default_depth_(0),
+      default_entered_(false)
 {
   if (timer_.nonnull()) {
       enter(name);
@@ -809,17 +811,18 @@ Timer::Timer(const Ref<RegionTimer>&t, const std::string &name):
 }
 
 Timer::Timer(const Ref<RegionTimer>&t):
-  default_entered_(false),
-  depth_(0),
-  default_depth_(0),
-  timer_(t)
+          timer_(t),
+          depth_(0),
+          default_depth_(0),
+          default_entered_(false)
 {
 }
 
 Timer::Timer():
-  default_entered_(false),
-  depth_(0),
-  default_depth_(0)
+          timer_(),
+          depth_(0),
+          default_depth_(0),
+          default_entered_(false)
 {
   timer_ = RegionTimer::default_regiontimer();
 }

@@ -57,9 +57,9 @@ DensityFitting::DensityFitting(const Ref<MOIntsRuntime>& mointsruntime,
                                const Ref<OrbitalSpace>& space2,
                                const Ref<GaussianBasisSet>& fitting_basis) :
                                  runtime_(mointsruntime),
+                                 fbasis_(fitting_basis),
                                  space1_(space1),
                                  space2_(space2),
-                                 fbasis_(fitting_basis),
                                  kernel_key_(kernel_key),
                                  solver_(solver)
                                  {

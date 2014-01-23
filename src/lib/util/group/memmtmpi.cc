@@ -199,8 +199,8 @@ static ClassDesc MTMPIMemoryGrp_cd(
 MTMPIMemoryGrp::MTMPIMemoryGrp(const Ref<MessageGrp>& msg,
                                const Ref<ThreadGrp>& th,
                                MPI_Comm comm):
-  nbuffer_(0),
-  ActiveMsgMemoryGrp(msg)
+  ActiveMsgMemoryGrp(msg),
+  nbuffer_(0)
 {
   if (debug_) ExEnv::outn() << "MTMPIMemoryGrp CTOR entered" << endl;
 

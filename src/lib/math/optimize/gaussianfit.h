@@ -86,7 +86,7 @@ namespace sc {
     class Slater1D {
       public:
         Slater1D(double a, int k = 0, double c = 1.0) :
-          a_(a), k_(k), c_(c) {
+          k_(k), a_(a), c_(c) {
         }
         double operator()(double x) const {
           return c_ * std::pow(x, k_) * std::exp(-a_ * x);
@@ -100,7 +100,7 @@ namespace sc {
     class Gaussian1D {
       public:
         Gaussian1D(double a, int k = 0, double c = 1.0) :
-          a_(a), k_(k), c_(c) {
+          k_(k), a_(a), c_(c) {
         }
         double operator()(double x) const {
           return c_ * std::pow(x, k_) * std::exp(-a_ * x * x);
@@ -114,7 +114,7 @@ namespace sc {
     class PowerExponential1D {
       public:
         PowerExponential1D(double a, int l = 2, int k = 0, double c = 1.0) :
-          a_(a), k_(k), l_(l), c_(c) {
+          k_(k), l_(l), a_(a), c_(c) {
         }
         double operator()(double x) const {
           return c_ * std::pow(x, k_) * std::exp(-a_ * std::pow(x, l_));

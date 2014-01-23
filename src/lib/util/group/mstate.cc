@@ -427,8 +427,8 @@ MsgStateRecv::get(double*& d)
 
 StateSend::StateSend(const Ref<MessageGrp>&grp_):
   MsgStateSend(grp_),
-  target_(0),
-  type_(0)
+  type_(0),
+  target_(0)
 {
 }
 
@@ -467,8 +467,8 @@ StateRecv::StateRecv(const Ref<MessageGrp>&grp_):
   MsgStateRecv(grp_),
   source_(0),
   type_(-1),
-  last_type_(-1),
-  last_source_(-1)
+  last_source_(-1),
+  last_type_(-1)
 {
 }
 

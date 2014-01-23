@@ -24,7 +24,7 @@ class NestedException: public SCException {
         const char *file = 0,
         int line = 0,
         const ClassDesc *class_desc = 0,
-        const char *exception_type = "NestedException") throw():
+        const char *exception_type = "NestedException") MPQC__NOEXCEPT:
       SCException(description, file, line, class_desc, exception_type)
         {
           try {
@@ -34,7 +34,7 @@ class NestedException: public SCException {
           catch (...) {}
         }
   
-    NestedException(const NestedException& ref) throw():
+    NestedException(const NestedException& ref) MPQC__NOEXCEPT:
       SCException(ref)
         {
           try {
@@ -44,7 +44,7 @@ class NestedException: public SCException {
           catch (...) {}
         }
 
-    ~NestedException() throw()
+    ~NestedException() MPQC__NOEXCEPT
         {
           try {
               if (description()) throw NestedException();

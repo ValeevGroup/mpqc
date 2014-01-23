@@ -639,7 +639,7 @@ DescribedClass::~DescribedClass()
 }
 
 ClassDesc*
-DescribedClass::class_desc() const throw()
+DescribedClass::class_desc() const MPQC__NOEXCEPT
 {
   ClassDesc *cd;
   try {

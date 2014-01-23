@@ -48,6 +48,7 @@
 #define _util_misc_autovec_h
 
 #include <stddef.h>
+#include <util/misc/exception.h>
 
 namespace sc {
 
@@ -63,38 +64,38 @@ class auto_vec {
     /** Creates a new auto_vec for a vector, d, of type T.
         The d argument must be created with the vector new
         operator: new T[...]. */
-    explicit auto_vec(T*d = 0) throw(): d_(d) {}
+    explicit auto_vec(T*d = 0) MPQC__NOEXCEPT: d_(d) {}
 
     /** Create a auto_vec, transferring the storage from another. */
-    auto_vec(auto_vec &av) throw(): d_(av.release()) {}
+    auto_vec(auto_vec &av) MPQC__NOEXCEPT: d_(av.release()) {}
 
     /** This will delete the vector. */
-    ~auto_vec() throw() { delete[] d_; }
+    ~auto_vec() MPQC__NOEXCEPT { delete[] d_; }
 
     /** This member transfers the data from av to this. */
-    auto_vec &operator = (auto_vec &av) throw() {
+    auto_vec &operator = (auto_vec &av) MPQC__NOEXCEPT {
       reset(av.release());
       return *this;
     }
 
     /** Returns the pointer. */
-    T* get() const throw() { return d_; }
+    T* get() const MPQC__NOEXCEPT { return d_; }
 
     /** Returns the i'th element. */
-    T &operator[](size_t i) throw() { return d_[i]; }
+    T &operator[](size_t i) MPQC__NOEXCEPT { return d_[i]; }
 
     /** Returns the i'th element. */
-    const T &operator[](size_t i) const throw() { return d_[i]; }
+    const T &operator[](size_t i) const MPQC__NOEXCEPT { return d_[i]; }
 
     /** Release ownership. */
-    T* release() throw() {
+    T* release() MPQC__NOEXCEPT {
       T *r = d_;
       d_ = 0;
       return r;
     }
 
     /** Assign to a new value. */
-    void reset(T*d=0) throw() {
+    void reset(T*d=0) MPQC__NOEXCEPT {
       if (d != d_) {
           delete[] d_;
           d_ = d;

@@ -289,7 +289,7 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
 //  }
 
   // Making initial guess for t2.
-  if (!need_gt2() || need_gt2() && (perturbative_ == "(T)R12" || perturbative_ == "(2)R12")) {
+  if (!need_gt2() || (need_gt2() && (perturbative_ == "(T)R12" || perturbative_ == "(2)R12"))) {
     guess_t2(d_t2);
   } else if (r12world_->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_fullopt) {
     // assuming d_gt2 is already filled in.

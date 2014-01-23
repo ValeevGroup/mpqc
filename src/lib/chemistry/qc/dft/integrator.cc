@@ -61,10 +61,15 @@ template Ref<AngularIntegrator>***
 // utility functions
 
 inline static double
+dot(double v[3], double w[3])
+{
+  return v[0]*w[0] + v[1]*w[1] + v[2]*w[2];
+}
+
+inline static double
 norm(double v[3])
 {
-  double x,y,z;
-  return sqrt((x=v[0])*x + (y=v[1])*y + (z=v[2])*z);
+  return sqrt(dot(v,v));
 }
 
 static double

@@ -52,12 +52,20 @@ delta(double u[], const double a[], const double b[])
 
 // /////////////////////////////////////////////////////////
 
+inline static double
+dot(double v[3], double w[3])
+{
+  return v[0]*w[0] + v[1]*w[1] + v[2]*w[2];
+}
+
+// /////////////////////////////////////////////////////////
+
 // returns the distance between two points
 static inline double
 dist(const double a[], const double b[])
 {
-  double x,y,z;
-  return (sqrt((x=a[0]-b[0])*x + (y=a[1]-b[1])*y + (z=a[2]-b[2])*z));
+  double ab[3];  delta(ab, a, b);
+  return sqrt(dot(ab,ab));
 }
 
 // /////////////////////////////////////////////////////////

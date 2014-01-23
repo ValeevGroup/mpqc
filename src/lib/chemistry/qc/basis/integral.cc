@@ -239,6 +239,7 @@ size_t Integral::storage_required(TwoBodyOper::type opertype,
                                   const Ref<GaussianBasisSet> &b3,
                                   const Ref<GaussianBasisSet> &b4) {
   MPQC_ASSERT(false); // not implemented
+  return 0;
 }
 
 size_t
@@ -394,6 +395,7 @@ Integral::make_eval(TwoBodyOper::type opertype,
                     const Ref<GaussianBasisSet> &b3,
                     const Ref<GaussianBasisSet> &b4) {
   MPQC_ASSERT(false); // not implemented yet
+  return 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////

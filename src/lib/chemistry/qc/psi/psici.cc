@@ -696,7 +696,7 @@ namespace sc {
 
       return result;
     }
-    assert(false); // unreachable
+    MPQC_ASSERT(false); // unreachable
   }
 
   RefSymmSCMatrix PsiRASCI::onepdm_occ(SpinCase1 spin) {

@@ -333,7 +333,7 @@ namespace sc {
                       const Ref<OrbitalSpace>& ket2)
     {
       // doesn't make sense if Asymm == A
-      assert(&Asymm != &A);
+      MPQC_ASSERT(&Asymm != &A);
       using namespace sc::fastpairiter;
       using sc::fastpairiter::MOPairIter;
 

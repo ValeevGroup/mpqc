@@ -1052,7 +1052,7 @@ void compute_RG_SigmaDelta(SpinCase1 spin, const double C_0, const double C_1,
       // Vpq_ij
       const SpinCase2 spincase2 = (spin == Alpha? AlphaAlpha : BetaBeta);
       std::vector< Ref<DistArray4> > Vpq_vec = r12eval->V_distarray4(spincase2, orbs, orbs);
-      assert(Vpq_vec.size() == 1);
+      MPQC_ASSERT(Vpq_vec.size() == 1);
       Ref<DistArray4> Vpq_ij = Vpq_vec[0];
       Ref<DistArray4> Vaj_ij;
       sc::map(Vpq_ij, occ, occ, orbs, orbs, Vaj_ij, occ, occ, vir, occ);
@@ -1169,7 +1169,7 @@ void compute_RG_SigmaDelta(SpinCase1 spin, const double C_0, const double C_1,
          // Vpq_ij
          //const SpinCase2 spincase2 = static_cast<SpinCase2>(spin+1);
          std::vector< Ref<DistArray4> > Vpq_vec = r12eval->V_distarray4(AlphaBeta, orbs1, orbs2);
-         assert(Vpq_vec.size() == 1);
+         MPQC_ASSERT(Vpq_vec.size() == 1);
          Ref<DistArray4> Vpq_ij = Vpq_vec[0];
          Ref<DistArray4> Vaj_ij;
          sc::map(Vpq_ij, occ1, occ2, orbs1, orbs2, Vaj_ij, occ1, occ2, vir1, occ2);
@@ -1240,7 +1240,7 @@ void compute_RG_SigmaDelta(SpinCase1 spin, const double C_0, const double C_1,
            // Vpq_ij
            //const SpinCase2 spincase2 = static_cast<SpinCase2>(spin+1);
            std::vector< Ref<DistArray4> > Vpq_vec = r12eval->V_distarray4(AlphaBeta, orbs1, orbs2);
-           assert(Vpq_vec.size() == 1);
+           MPQC_ASSERT(Vpq_vec.size() == 1);
            Ref<DistArray4> Vpq_ij = Vpq_vec[0];
            Ref<DistArray4> Vaj_ij;
            sc::map(Vpq_ij, occ1, occ2, orbs1, orbs2, Vaj_ij, occ1, occ2, occ1, vir2);
@@ -2124,7 +2124,7 @@ void compute_RG_SigmaDelta2(SpinCase1 spin, const double C_0, const double C_1,
 //      // Vpq_ij
 //      //const SpinCase2 spincase2 = static_cast<SpinCase2>(spin+1);
 //      std::vector< Ref<DistArray4> > Vpq_vec = r12eval->V_distarray4(AlphaAlpha, orbs, orbs);
-//      assert(Vpq_vec.size() == 1);
+//      MPQC_ASSERT(Vpq_vec.size() == 1);
 //      Ref<DistArray4> Vpq_ij = Vpq_vec[0];
 //      Ref<DistArray4> Vaj_ij;
 //      sc::map(Vpq_ij, occ, occ, orbs, orbs, Vaj_ij, occ, occ, vir, occ);

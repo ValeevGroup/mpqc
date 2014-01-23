@@ -659,7 +659,7 @@ MBPT2_R12::mp1_pno(SpinCase2 spin,
     const Ref<OrbitalSpace>& cabs2 = r12world()->cabs_space(spin2);
     const Ref<OrbitalSpace>& uocc1_act = r12world()->refwfn()->uocc_act(spin1);
     const Ref<OrbitalSpace>& uocc2_act = r12world()->refwfn()->uocc_act(spin2);
-    assert(uocc1_act == uocc2_act); // not ready to handle UHF yet
+    MPQC_ASSERT(uocc1_act == uocc2_act); // not ready to handle UHF yet
 
     // compute the vv block of MP1 (not MP2-R12) 1-RDM for each ij
     // \gamma_a^b = T^ij_ac T_ij^bc
@@ -673,7 +673,7 @@ MBPT2_R12::mp1_pno(SpinCase2 spin,
     RefSCMatrix Fvv = amps->Fvv(spincase2);
     RefSCMatrix Fox = amps->Fox(spincase2);
     RefSCMatrix Fxo = amps->Fxo(spincase2);
-    assert(this->r12world()->r12tech()->ansatz()->diag() == true);  // assuming diagonal ansatz
+    MPQC_ASSERT(this->r12world()->r12tech()->ansatz()->diag() == true);  // assuming diagonal ansatz
     RefSCMatrix Tg = Fvv.kit()->matrix(Fvv.rowdim(),Fvv.rowdim()); Tg.assign(0.0);
     firstorder_cusp_coefficients(spincase2, Tg, occ1_act, occ2_act, this->r12world()->r12tech()->corrfactor());
     Fvv = Tg * Fvv;   // to obtain amplitudes we need to contract in cusp coefficients

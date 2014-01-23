@@ -163,7 +163,7 @@ TwoBodyMOIntsTransform_ijxy::init_acc()
                                            memgrp_blksize());
     }
 #else
-    assert(false);
+    MPQC_ASSERT(false);
 #endif
     break;
 
@@ -178,7 +178,7 @@ TwoBodyMOIntsTransform_ijxy::init_acc()
                                              space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank(),
                                              memgrp_blksize());
 #else
-        assert(false);
+        MPQC_ASSERT(false);
 #endif
         break;
       }
@@ -203,7 +203,7 @@ TwoBodyMOIntsTransform_ijxy::init_acc()
                                              space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank(),
                                              memgrp_blksize());
 #else
-        assert(false);
+        MPQC_ASSERT(false);
 #endif
         break;
       }
@@ -216,7 +216,7 @@ TwoBodyMOIntsTransform_ijxy::init_acc()
     ints_acc_ = new DistArray4_MPIIOFile_Ind((file_prefix_+"."+name_).c_str(), num_te_types(),
                                              space1_->rank(), space2_->rank(), space3_->rank(), space4_->rank());
 #else
-    assert(false);
+    MPQC_ASSERT(false);
 #endif
     break;
 #endif

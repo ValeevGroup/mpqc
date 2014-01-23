@@ -132,7 +132,7 @@ void DistArray4_MemoryGrp::init() {
 void
 DistArray4_MemoryGrp::store_pair_block(int i, int j, tbint_type oper_type, const double *ints)
 {
-  assert(this->active());  //make sure we are active
+  MPQC_ASSERT(this->active());  //make sure we are active
 
   const int ij = ij_index(i,j);
   struct PairBlkInfo *pb = &pairblk_[ij];
@@ -158,8 +158,8 @@ DistArray4_MemoryGrp::store_pair_subblock(int i, int j, tbint_type oper_type,
                                           int xstart, int xfence, int ystart, int yfence,
                                           const double *buf)
 {
-  assert(this->active());  //make sure we are active
-  assert(is_local(i,j));   // store blocks local to this node ONLY
+  MPQC_ASSERT(this->active());  //make sure we are active
+  MPQC_ASSERT(is_local(i,j));   // store blocks local to this node ONLY
 
   const bool contiguous = (ystart == 0) && (yfence == ny());
   const int xsize = xfence - xstart;
@@ -194,7 +194,7 @@ const double *
 DistArray4_MemoryGrp::retrieve_pair_block(int i, int j, tbint_type oper_type,
                                           double* buf) const
 {
-  assert(this->active());  //make sure we are active
+  MPQC_ASSERT(this->active());  //make sure we are active
   const int ij = ij_index(i,j);
   struct PairBlkInfo *pb = &pairblk_[ij];
   // if it's local all is easy
@@ -233,7 +233,7 @@ DistArray4_MemoryGrp::retrieve_pair_subblock(int i, int j, tbint_type oper_type,
                                              int xstart, int xfence, int ystart, int yfence,
                                              double* buf) const
 {
-  assert(this->active());  //make sure we are active
+  MPQC_ASSERT(this->active());  //make sure we are active
   const bool contiguous = (ystart == 0) && (yfence == ny());
   const int xsize = xfence - xstart;
   const int ysize = yfence - ystart;
@@ -284,7 +284,7 @@ DistArray4_MemoryGrp::retrieve_pair_subblock(int i, int j, tbint_type oper_type,
 void
 DistArray4_MemoryGrp::release_pair_block(int i, int j, tbint_type oper_type) const
 {
-  assert(this->active());  //make sure we are active
+  MPQC_ASSERT(this->active());  //make sure we are active
   int ij = ij_index(i,j);
   struct PairBlkInfo *pb = &pairblk_[ij];
   if (pb->refcount_[oper_type] <= 0) {

@@ -41,7 +41,7 @@ std::string xyzstring(unsigned int xyz) {
     case 0: return "x";
     case 1: return "y";
     case 2: return "z";
-    default: assert(false);
+    default: MPQC_ASSERT(false);
   }
   return "";   // unreachable
 }

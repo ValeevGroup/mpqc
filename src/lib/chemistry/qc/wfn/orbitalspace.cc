@@ -739,7 +739,7 @@ OrbitalSpaceUnion::OrbitalSpaceUnion(const std::string& id, const std::string& n
 
   // if trying to add a space to itself and blocks to be merged, throw
   if (merge_blocks && &s1 == &s2)
-    assert(false);
+    MPQC_ASSERT(false);
 
   // compute the basis set
   // try 3 cases:

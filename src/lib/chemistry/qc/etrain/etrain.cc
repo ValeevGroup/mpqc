@@ -202,7 +202,7 @@ ETraIn::compute(void)
 void
 ip_print(const char *title1, const char *title2, std::ostream& os, int prec, double conv, RefDiagSCMatrix m1, RefDiagSCMatrix m2)
 {
-  assert(m1.n() == m2.n()); // meant to print 2 matrices side by side
+  MPQC_ASSERT(m1.n() == m2.n()); // meant to print 2 matrices side by side
 
   double max = std::max(m1->maxabs()*conv, m2->maxabs()*conv);
   max = (max==0.0) ? 1.0 : log10(max);
@@ -243,8 +243,8 @@ ip_print(const char *title1, const char *title2, const char *title3,
        RefDiagSCMatrix m1, RefDiagSCMatrix m2, RefDiagSCMatrix m3
       )
 {
-  assert(m1.n() == m2.n()); // meant to print 3 matrices side by side
-  assert(m1.n() == m3.n());
+  MPQC_ASSERT(m1.n() == m2.n()); // meant to print 3 matrices side by side
+  MPQC_ASSERT(m1.n() == m3.n());
 
   double max = sc::max(m1->maxabs()*conv, m2->maxabs()*conv, m3->maxabs()*conv);
   max = (max==0.0) ? 1.0 : log10(max);
@@ -687,7 +687,7 @@ ETraIn::read_ip(const Ref<KeyVal> & kv, const std::string & ip_key, IPs& ip,
       ExEnv::out0() << indent << "WARNING: could not understand value for the optional keyword " << ip_orbs_key << ", will ignore";
     else {
       const int nocc = ip_orbs_wfn->nelectron() / 2;
-      assert(ip_orbs_wfn->nelectron() % 2 == 0);
+      MPQC_ASSERT(ip_orbs_wfn->nelectron() % 2 == 0);
       const int norbs = ip_orbs_wfn->so_dimension().n();
       const int nuocc = norbs - nocc;
 
@@ -697,7 +697,7 @@ ETraIn::read_ip(const Ref<KeyVal> & kv, const std::string & ip_key, IPs& ip,
 
       ip_orbs = new OrbitalSpace(ip_key.c_str(), ip_key.c_str(), vec, ip_orbs_wfn->basis(), ip_orbs_wfn->integral(),
                                  ip_orbs_wfn->eigenvalues(), 0, nuocc);
-      assert(false); // not implemented yet
+      MPQC_ASSERT(false); // not implemented yet
     }
   }
 }

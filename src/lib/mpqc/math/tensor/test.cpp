@@ -42,7 +42,7 @@ int main() {
         for (int j : range(0,2)) {
             for (int i : range(0,2)) {
                 std::cout << boost::tie(i,j,k) << ":" << u(i,j,k) << std::endl;
-                assert(u(i,j,k) == i+j*2+k*2*2);
+                MPQC_ASSERT(u(i,j,k) == i+j*2+k*2*2);
             }
         }
     }
@@ -55,7 +55,7 @@ int main() {
     //     for (int j : range(0,N)) {
     //         for (int i : range(0,N)) {
     //             std::cout << boost::tie(i,j,k) << ":" << u(i,j,k) << " " << i+j*N << std::endl;
-    //             assert(u(i,j,k) == i+j*N);
+    //             MPQC_ASSERT(u(i,j,k) == i+j*N);
     //         }
     //     }
     // }

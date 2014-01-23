@@ -57,7 +57,7 @@ namespace sc {
                                     double convergence_target = -1.0) {
 
     const size_t n = x.nrow() * x.ncol();
-    assert(n == (preconditioner.nrow() * preconditioner.ncol()));
+    MPQC_ASSERT(n == (preconditioner.nrow() * preconditioner.ncol()));
 
     // solution vector
     RefSCMatrix XX_i;
@@ -271,7 +271,7 @@ namespace sc {
                value_type convergence_target = -1.0) {
 
       const size_t n = size(x);
-      assert(n == size(preconditioner));
+      MPQC_ASSERT(n == size(preconditioner));
 
       // solution vector
       D XX_i;

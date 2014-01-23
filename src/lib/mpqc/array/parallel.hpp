@@ -119,7 +119,7 @@ namespace detail {
                     count += size(x);
                 }
             }
-            assert(total == count);
+            MPQC_ASSERT(total == count);
 	}
 
 	void _get(const std::vector<range> &r, T *buffer) const {
@@ -141,7 +141,7 @@ namespace detail {
                     // //}
                 }
             }
-            assert(total == count);
+            MPQC_ASSERT(total == count);
 	}
 
     private:

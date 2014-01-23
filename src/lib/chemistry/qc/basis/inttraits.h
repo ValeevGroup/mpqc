@@ -109,7 +109,7 @@ namespace sc {
     }
     /// maps index of the integral type within this set to TwoBodyOper::type
     static TwoBodyOper::type intset(unsigned int t) {
-      assert(t < size);
+      MPQC_ASSERT(t < size);
       return TypeMap::value[t];
     }
     /// inverse of the above intset

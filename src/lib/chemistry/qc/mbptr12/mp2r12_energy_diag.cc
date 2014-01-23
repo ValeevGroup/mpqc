@@ -2435,7 +2435,7 @@ void MP2R12Energy_Diag::compute_ef12() {
 
       // Vpq_ij
       std::vector< Ref<DistArray4> > Vpq_vec = r12eval()->V_distarray4(spincase2, p1, p2);
-      assert(Vpq_vec.size() == 1);
+      MPQC_ASSERT(Vpq_vec.size() == 1);
       Ref<DistArray4> Vpq_ij = Vpq_vec[0];
       // V^qp_ij (V^p2p1_i1i2) for open-shell alpha-beta case
       Ref<DistArray4> Vqp_ij = NULL;
@@ -2463,7 +2463,7 @@ void MP2R12Energy_Diag::compute_ef12() {
         if (num_unique_spincases2 == 3) {
           // V^qp_ij (V^p2p1_i1i2)
           std::vector< Ref<DistArray4> > Vqp_vec = r12eval()->V_distarray4(spincase2, p2, p1);
-          assert(Vqp_vec.size() == 1);
+          MPQC_ASSERT(Vqp_vec.size() == 1);
           Vqp_ij = Vqp_vec[0];
 
           // extract Vba_ij from Vqp_ij

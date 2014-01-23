@@ -49,8 +49,8 @@ namespace sc {
     // this only works if all nodes can read integrals
     std::vector<int> tasks_with_access;
     const int ntasks_with_access = darray4->tasks_with_access(tasks_with_access);
-    assert(ntasks_with_access == world_.nproc());
-    assert(ntasks_with_access == r12world_->world()->msg()->n());
+    MPQC_ASSERT(ntasks_with_access == world_.nproc());
+    MPQC_ASSERT(ntasks_with_access == r12world_->world()->msg()->n());
 
     const size_t n1 = darray4->ni();
     const size_t n2 = darray4->nj();
@@ -264,10 +264,10 @@ namespace sc {
         throw ProgrammingError("SingleReference_R12Intermediates<T>::ijxy: asked for T2, but it had not been given");
 
 //      auto oreg = r12world_->world()->tfactory()->orbital_registry();
-//      assert(oreg->value(bra1) == r12world_->refwfn()->occ_act(Alpha));
-//      assert(oreg->value(bra2) == r12world_->refwfn()->occ_act(Beta));
-//      assert(oreg->value(ket1) == r12world_->refwfn()->uocc_act(Alpha));
-//      assert(oreg->value(ket2) == r12world_->refwfn()->uocc_act(Beta));
+//      MPQC_ASSERT(oreg->value(bra1) == r12world_->refwfn()->occ_act(Alpha));
+//      MPQC_ASSERT(oreg->value(bra2) == r12world_->refwfn()->occ_act(Beta));
+//      MPQC_ASSERT(oreg->value(ket1) == r12world_->refwfn()->uocc_act(Alpha));
+//      MPQC_ASSERT(oreg->value(ket2) == r12world_->refwfn()->uocc_act(Beta));
       darray4 = t2_[AlphaBeta];
     }
     else { // not rdm2 nor t2
@@ -289,8 +289,8 @@ namespace sc {
     // this only works if all nodes can read integrals
     std::vector<int> tasks_with_access;
     const int ntasks_with_access = darray4->tasks_with_access(tasks_with_access);
-    assert(ntasks_with_access == world_.nproc());
-    assert(ntasks_with_access == r12world_->world()->msg()->n());
+    MPQC_ASSERT(ntasks_with_access == world_.nproc());
+    MPQC_ASSERT(ntasks_with_access == r12world_->world()->msg()->n());
 
     // make tiled ranges
     std::vector<size_t> i_hashmarks = space_hashmarks(bra1);
@@ -380,8 +380,8 @@ namespace sc {
     // this only works if all nodes can read integrals
     std::vector<int> tasks_with_access;
     const int ntasks_with_access = darray4->tasks_with_access(tasks_with_access);
-    assert(ntasks_with_access == world_.nproc());
-    assert(ntasks_with_access == r12world_->world()->msg()->n());
+    MPQC_ASSERT(ntasks_with_access == world_.nproc());
+    MPQC_ASSERT(ntasks_with_access == r12world_->world()->msg()->n());
 
     // make tiled ranges
     // N.B. using little trickery using partial sum to create tilesize=1 range
@@ -486,7 +486,7 @@ namespace sc {
                                    __FILE__, __LINE__);
           Ref<OrbitalSpace> vir_act = oreg->value("a");
           Ref<OrbitalSpace> allvir = oreg->value("A'"); // should exist since t1_cabs_ spans more than just CABS
-          assert(t1_cabs_.ncol() == allvir->rank()); // this should be the only other possibility
+          MPQC_ASSERT(t1_cabs_.ncol() == allvir->rank()); // this should be the only other possibility
           RefSCMatrix t1_subblock = t1_cabs_.kit()->matrix(t1_cabs_.rowdim(),
                                                            vir_act->coefs()->coldim());
           std::vector<int> vir_to_allvir = sc::map(*allvir, *vir_act, false);
@@ -502,9 +502,9 @@ namespace sc {
         }
       }
       else {
-        assert(ket_id == "a'" || ket_id == "A'");
-        assert(t1_cabs_.nonnull());
-        assert(oreg->value(ket_id)->rank() == t1_cabs_.ncol());
+        MPQC_ASSERT(ket_id == "a'" || ket_id == "A'");
+        MPQC_ASSERT(t1_cabs_.nonnull());
+        MPQC_ASSERT(oreg->value(ket_id)->rank() == t1_cabs_.ncol());
         operator_matrix = t1_cabs_;
       }
     }
@@ -1012,7 +1012,7 @@ namespace sc {
 
             if (cc != -1) {
 
-              assert(false);
+              MPQC_ASSERT(false);
 
             }
           }
@@ -1042,10 +1042,10 @@ namespace sc {
         break;
       }
     }
-    assert(input_key.empty() == false);
+    MPQC_ASSERT(input_key.empty() == false);
 
     std::vector<std::string> output_space_keys = split(output_annotation, ',');
-    assert(output_space_keys.size() == 2);
+    MPQC_ASSERT(output_space_keys.size() == 2);
 
     ParsedOneBodyIntKey input_pkey(input_key);
     ParsedOneBodyIntKey output_pkey(ParsedOneBodyIntKey::key(output_space_keys[0],
@@ -1087,7 +1087,7 @@ namespace sc {
 
           // map t to the index of the tile that contains the data needed for t
           auto t_input = *t;
-          assert(false);
+          MPQC_ASSERT(false);
 
           world_.taskq.add(& detail::sieve_tensor,
                            &result, *t, input.find(t_input), &bra_map, &ket_map);

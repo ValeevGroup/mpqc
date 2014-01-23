@@ -136,11 +136,11 @@ TwoBodyMOIntsTransform_123Inds::run()
       const TwoBodyOper::type ttype = descr->opertype(t);
       Ref<TwoBodyOperDescr> intdescr = TwoBodyOper::descr(ttype);
       if (intdescr->perm_symm(1) == -1) {
-        assert(tbtype_anti1 == -1);
+        MPQC_ASSERT(tbtype_anti1 == -1);
         tbtype_anti1 = t;
       }
       if (intdescr->perm_symm(2) == -1) {
-        assert(tbtype_anti2 == -1);
+        MPQC_ASSERT(tbtype_anti2 == -1);
         tbtype_anti2 = t;
       }
   }

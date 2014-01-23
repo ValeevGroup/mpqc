@@ -96,7 +96,7 @@ SpinOrbitalPT2R12::SpinOrbitalPT2R12(const Ref<KeyVal> &keyval) : Wavefunction(k
     Ref<Wavefunction> reference;
     reference << keyval->describedclassvalue("reference");
     if (reference.nonnull()) {
-      assert(reference == rdm2_->wfn());
+      MPQC_ASSERT(reference == rdm2_->wfn());
       ref = RefWavefunctionFactory::make(world, reference, spin_restricted,
                                          nfzc_, 0, virspace);
     }
@@ -742,7 +742,7 @@ RefSCMatrix SpinOrbitalPT2R12::transform_MO() //transformation matrix between oc
   int num_occ_act = unscreen_occ_act->rank();
   int num_occ = occ->rank();
   int rdmdim = mo_density->n();
-  assert(rdmdim == num_occ);
+  MPQC_ASSERT(rdmdim == num_occ);
   std::vector<int> occ_act_inds;
   std::vector<int> occ_act_mask(num_occ, 0);
   for (int i = 0; i < num_occ_act; ++i)
@@ -1661,8 +1661,8 @@ void SpinOrbitalPT2R12::brillouin_matrix() {
   }
   const int nmo = pspace[Alpha]->rank();
   const int nocc = mspace[Alpha]->rank();
-  assert(mspace[Alpha]->rank() == mspace[Beta]->rank());
-  assert(pspace[Alpha]->rank() == pspace[Beta]->rank());
+  MPQC_ASSERT(mspace[Alpha]->rank() == mspace[Beta]->rank());
+  MPQC_ASSERT(pspace[Alpha]->rank() == pspace[Beta]->rank());
 
   for(int i=0; i<NSpinCases2; i++) {
     SpinCase2 S = static_cast<SpinCase2>(i);
@@ -2162,7 +2162,7 @@ RefSymmSCMatrix SpinOrbitalPT2R12::phi_cumulant(SpinCase2 spin12) {
       const int PQ = PQ_iter.ij();
       const int pp = P;
       const int qq = Q;
-      assert(pp >= qq);
+      MPQC_ASSERT(pp >= qq);
       const int pq = pp * (pp - 1) / 2 + qq;
 
       for(UV_iter.start(); int(UV_iter); UV_iter.next()) {
@@ -2171,7 +2171,7 @@ RefSymmSCMatrix SpinOrbitalPT2R12::phi_cumulant(SpinCase2 spin12) {
         const int UV = UV_iter.ij();
         const int uu = U;
         const int vv = V;
-        assert(uu >= vv);
+        MPQC_ASSERT(uu >= vv);
         const int uv = uu * (uu - 1) / 2 + vv;
 
         // first term is easy
@@ -2237,7 +2237,7 @@ RefSymmSCMatrix SpinOrbitalPT2R12::phi_cumulant(SpinCase2 spin12) {
     }
   }
   else { // invalid spin12
-    assert(false);
+    MPQC_ASSERT(false);
   }
 
   if(debug_>=DefaultPrintThresholds::mostO4) {

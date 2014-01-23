@@ -49,7 +49,7 @@ TwoBodyInt::TwoBodyInt(Integral *integral,
   integral_(integral),
   bs1_(b1), bs2_(b2), bs3_(b3), bs4_(b4), redundant_(1)
 {
-  assert(bs1_.nonnull() && bs2_.nonnull() && bs3_.nonnull() && bs4_.nonnull());
+  MPQC_ASSERT(bs1_.nonnull() && bs2_.nonnull() && bs3_.nonnull() && bs4_.nonnull());
   integral_->reference();
   buffer_ = 0;
   log2_to_double_ = init_log2_to_double();
@@ -133,7 +133,7 @@ TwoBodyInt::basis(size_t c)
     case 1: return bs2_; break;
     case 2: return bs3_; break;
     case 3: return bs4_; break;
-    default: assert(false); // unreachable
+    default: MPQC_ASSERT(false); // unreachable
   }
   return 0; // unreachable
 }
@@ -302,7 +302,7 @@ TwoBodyThreeCenterInt::basis(size_t c)
     case 0: return bs1_; break;
     case 1: return bs2_; break;
     case 2: return bs3_; break;
-    default: assert(false); // unreachable
+    default: MPQC_ASSERT(false); // unreachable
   }
   return 0; // unreachable
 }
@@ -425,7 +425,7 @@ TwoBodyTwoCenterInt::basis(size_t c)
   switch (c) {
     case 0: return bs1_; break;
     case 1: return bs2_; break;
-    default: assert(false); // unreachable
+    default: MPQC_ASSERT(false); // unreachable
   }
   return 0; // unreachable
 }

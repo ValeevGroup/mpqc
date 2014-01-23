@@ -388,7 +388,7 @@ void MP2R12Energy::print_pair_energies(bool spinadapted,
                                        std::ostream& so)
 {
   // if CABS singles are requested, OBS singles are included in the CABS singles correction
-  if (emp2_cabs_singles_energy != 0.0) assert(include_obs_singles_ == false);
+  if (emp2_cabs_singles_energy != 0.0) MPQC_ASSERT(include_obs_singles_ == false);
 
   compute();
 
@@ -444,7 +444,7 @@ void MP2R12Energy::print_pair_energies(bool spinadapted,
     }
   }
   else {
-    assert(r12eval()->dim_oo(AlphaBeta) == r12eval()->dim_gg(AlphaBeta));
+    MPQC_ASSERT(r12eval()->dim_oo(AlphaBeta) == r12eval()->dim_gg(AlphaBeta));
     Ref<SCMatrixKit> localkit = C_[AlphaAlpha].kit();
 
     const Ref<OrbitalSpace> gspace = r12eval()->ggspace(Alpha);

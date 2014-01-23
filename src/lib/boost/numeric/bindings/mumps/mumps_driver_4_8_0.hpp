@@ -221,7 +221,7 @@ namespace boost { namespace numeric { namespace bindings { namespace mumps {
     typedef typename bindings::result_of::index_base<M>::type index_b ;
     BOOST_STATIC_ASSERT(index_b::value == 1) ;
     data.n = bindings::size_row( m ) ;
-    assert( bindings::size_column( m ) == data.n ) ;
+    MPQC_ASSERT( bindings::size_column( m ) == data.n ) ;
 
     data.nz = bindings::end_value( m ) - bindings::begin_value( m ) ;
     detail::indices( bindings::data_order(m), data.irn, data.jcn, m ) ;
@@ -258,10 +258,10 @@ namespace boost { namespace numeric { namespace bindings { namespace mumps {
   //
   template <typename M>
   int driver( mumps<M>& data ) {
-    assert( data.job>=1 ? data.irn!=0 : true ) ;
-    assert( data.job>=1 ? data.jcn!=0 : true ) ;
-    assert( data.job>=2 ? data.a!=0 : true ) ;
-    assert( data.job==3 || data.job==5 ? data.rhs!=0 : true ) ;
+    MPQC_ASSERT( data.job>=1 ? data.irn!=0 : true ) ;
+    MPQC_ASSERT( data.job>=1 ? data.jcn!=0 : true ) ;
+    MPQC_ASSERT( data.job>=2 ? data.a!=0 : true ) ;
+    MPQC_ASSERT( data.job==3 || data.job==5 ? data.rhs!=0 : true ) ;
     detail::mumps_call<typename M::value_type>() ( static_cast<typename mumps<M>::c_struct_type&>( data ) ) ;
     return data.info[0] ;
   } // driver()

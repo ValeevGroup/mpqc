@@ -152,7 +152,7 @@ namespace sc {
       }
 
       FermionOccupationNBitString operator+(const FermionOccupationNBitString& other) {
-        assert(nstates_+other.nstates_ <= Ns);
+        MPQC_ASSERT(nstates_+other.nstates_ <= Ns);
         FermionOccupationNBitString result(nstates_+other.nstates_);
         size_t pos=0;
         for(size_t pos1=0; pos1<nstates_; ++pos1, ++pos)
@@ -429,7 +429,7 @@ namespace sc {
         // 3) state is the only one in the block -- delete the occupied block, merge the unoccupied blocks
         auto ub_iter = blocks_.upper_bound(Block(from));
         auto result_iter = --ub_iter;
-        assert(result_iter->occ == true);
+        MPQC_ASSERT(result_iter->occ == true);
 
         if (result_iter->length == 1) { // only
           auto uocc_block = this->block_erase(result_iter);
@@ -470,7 +470,7 @@ namespace sc {
         // 3) state is the only one in the block -- delete the occupied block, merge the unoccupied blocks
         auto ub_iter = blocks_.upper_bound(Block(to));
         auto result_iter = --ub_iter;
-        assert(result_iter->occ == false);
+        MPQC_ASSERT(result_iter->occ == false);
 
         if (result_iter->length == 1) { // only
           auto occ_block = this->block_replace(result_iter, Block(to,1,true));
@@ -506,7 +506,7 @@ namespace sc {
        */
       size_t count(size_t pos1, size_t pos2) const {
         // to_ determine the number of particles crossed count the number of particles between to_ and from_
-        assert(pos1 <= pos2);
+        MPQC_ASSERT(pos1 <= pos2);
         auto ub1_iter = blocks_.upper_bound(Block(pos1));
         auto blk1_iter = --ub1_iter;
         auto ub2_iter = blocks_.upper_bound(Block(pos2));
@@ -535,7 +535,7 @@ namespace sc {
 
       /// XORs two strings
       FermionOccupationBlockString operator^(const FermionOccupationBlockString& other) const {
-        assert(size() == other.size());
+        MPQC_ASSERT(size() == other.size());
         Blocks result_blocks;
         auto w = result_blocks.begin();
         auto u = other.blocks().begin();
@@ -574,7 +574,7 @@ namespace sc {
       }
 
       bool operator==(const FermionOccupationBlockString& other) const {
-        assert(nstates_ == other.nstates_);
+        MPQC_ASSERT(nstates_ == other.nstates_);
         return blocks_ == other.blocks_;
       }
 
@@ -586,8 +586,8 @@ namespace sc {
       FermionOccupationBlockString& append(const FermionOccupationBlockString& other) {
         const size_t other_offset = nstates_;
         nstates_ += other.nstates_;
-        assert(not other.blocks_.empty());
-        assert(not blocks_.empty());
+        MPQC_ASSERT(not other.blocks_.empty());
+        MPQC_ASSERT(not blocks_.empty());
         auto back_iter = (--blocks_.end());
         if (back_iter->occ == other.blocks_.begin()->occ) {
           Block merged_block(back_iter->offset, back_iter->length+other.blocks_.begin()->length, back_iter->occ);
@@ -647,7 +647,7 @@ namespace sc {
                                            const Block& new_block) {
         blocks_.erase(block);
         auto result = blocks_.insert(new_block);
-        assert(result.second == true);
+        MPQC_ASSERT(result.second == true);
         return result.first;
       }
 
@@ -681,7 +681,7 @@ namespace sc {
           blocks_.insert(Block(0,nstates_,false));
           return blocks_.begin();
         }
-        assert(false); // unreachable
+        MPQC_ASSERT(false); // unreachable
         return blocks_.begin();
       }
 
@@ -770,12 +770,12 @@ namespace sc {
 
       const_iterator insert(const FString& s) {
         auto result = strings_.insert(s);
-        assert(result.second == true);
+        MPQC_ASSERT(result.second == true);
         return result.first;
       }
       const_iterator insert(FString&& s) {
         auto result = strings_.insert(s);
-        assert(result.second == true);
+        MPQC_ASSERT(result.second == true);
         return result.first;
       }
 
@@ -987,12 +987,12 @@ namespace sc {
       }
 
       StringReplacementListIterator& operator++() {
-        assert(false); // not implemented yet
+        MPQC_ASSERT(false); // not implemented yet
         return *this;
       }
 
       const FString& operator*() const {
-        assert(false);
+        MPQC_ASSERT(false);
         return str_;
       }
 
@@ -1068,7 +1068,7 @@ namespace sc {
        * @param n number of particles
        */
       FullFermionStringSetBuild(size_t m, size_t n) : nparticles_(n), nstates_(m) {
-        assert(nparticles_ <= nstates_); // these are 1-particle states
+        MPQC_ASSERT(nparticles_ <= nstates_); // these are 1-particle states
       }
 
       void operator()(FermionStringSet& sset) {

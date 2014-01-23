@@ -435,13 +435,13 @@ Int2eV3::add_store(void *p)
 {
   if (!store) {
     store = (store_list_t*) malloc(sizeof(store_list_t));
-    assert(store);
+    MPQC_ASSERT(store);
     store->p = 0;
     n_store_last = 0;
     }
   if (n_store_last >= STORAGE_CHUNK) {
     store_list_t* tmp = (store_list_t*) malloc(sizeof(store_list_t));
-    assert(tmp);
+    MPQC_ASSERT(tmp);
     tmp->p = store;
     store = tmp;
     n_store_last = 0;

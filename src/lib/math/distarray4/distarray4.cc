@@ -501,11 +501,11 @@ namespace sc {
             const Ref<DistArray4>& Y,
             double scale) {
 
-    assert( X->num_te_types() == Y->num_te_types() );
-    assert( X->ni() == Y->ni() );
-    assert( X->nj() == Y->nj() );
-    assert( X->nx() == Y->nx() );
-    assert( X->ny() == Y->ny() );
+    MPQC_ASSERT( X->num_te_types() == Y->num_te_types() );
+    MPQC_ASSERT( X->ni() == Y->ni() );
+    MPQC_ASSERT( X->nj() == Y->nj() );
+    MPQC_ASSERT( X->nx() == Y->nx() );
+    MPQC_ASSERT( X->ny() == Y->ny() );
     const int nt = Y->num_te_types();
     const int ni = Y->ni();
     const int nj = Y->nj();
@@ -583,12 +583,12 @@ namespace sc {
     const unsigned int nk2 = ket->nj();
     const unsigned int n1 =  bra->nx();
     const unsigned int n2 =  bra->ny();
-    assert(n1 == ket->nx());
-    assert(n2 == ket->ny());
-    assert(braket->ni() == nb1);
-    assert(braket->nj() == nb2);
-    assert(braket->nx() == nk1);
-    assert(braket->ny() == nk2);
+    MPQC_ASSERT(n1 == ket->nx());
+    MPQC_ASSERT(n2 == ket->ny());
+    MPQC_ASSERT(braket->ni() == nb1);
+    MPQC_ASSERT(braket->nj() == nb2);
+    MPQC_ASSERT(braket->nx() == nk1);
+    MPQC_ASSERT(braket->ny() == nk2);
 
     // Using spinorbital iterators means I don't take into account perm symmetry
     // More efficient algorithm will require generic code
@@ -835,10 +835,10 @@ namespace sc {
     const unsigned int nk2 = MatBra2Dim;
     const unsigned int n1 =  bra->nx();
     const unsigned int n2 =  bra->ny();
-    assert(braket->ni() == nb1);
-    assert(braket->nj() == nb2);
-    assert(braket->nx() == MatBra1Dim);
-    assert(braket->ny() == MatBra2Dim);
+    MPQC_ASSERT(braket->ni() == nb1);
+    MPQC_ASSERT(braket->nj() == nb2);
+    MPQC_ASSERT(braket->nx() == MatBra1Dim);
+    MPQC_ASSERT(braket->ny() == MatBra2Dim);
 //    abort();
 
     // Using spinorbital iterators means I don't take into account perm symmetry
@@ -1021,13 +1021,13 @@ namespace sc {
         dest = src->clone(dest_dims);
       }
 
-      assert(src->num_te_types() == dest->num_te_types());
-      assert(src->ni() == dest->ni());
-      assert(src->nj() == dest->nj());
-      assert(src->nx() == ((ContrIndex == Index3) ? tform.nrow() : dest->nx()));
-      assert(src->ny() == ((ContrIndex == Index4) ? tform.nrow() : dest->ny()));
-      assert(dest->nx() == ((ContrIndex == Index3) ? tform.ncol() : src->nx()));
-      assert(dest->ny() == ((ContrIndex == Index4) ? tform.ncol() : src->ny()));
+      MPQC_ASSERT(src->num_te_types() == dest->num_te_types());
+      MPQC_ASSERT(src->ni() == dest->ni());
+      MPQC_ASSERT(src->nj() == dest->nj());
+      MPQC_ASSERT(src->nx() == ((ContrIndex == Index3) ? tform.nrow() : dest->nx()));
+      MPQC_ASSERT(src->ny() == ((ContrIndex == Index4) ? tform.nrow() : dest->ny()));
+      MPQC_ASSERT(dest->nx() == ((ContrIndex == Index3) ? tform.ncol() : src->nx()));
+      MPQC_ASSERT(dest->ny() == ((ContrIndex == Index4) ? tform.ncol() : src->ny()));
 
       // copy T to an array
       double* tform_buf = allocate<double>(tform.nrow() * tform.ncol());
@@ -1085,8 +1085,8 @@ namespace sc {
     void
     _symmetrize(const Ref<DistArray4>& A)
     {
-      assert(A->ni() == A->nj());
-      assert(A->nx() == A->ny());
+      MPQC_ASSERT(A->ni() == A->nj());
+      MPQC_ASSERT(A->nx() == A->ny());
 
       A->activate();
 
@@ -1158,7 +1158,7 @@ namespace sc {
   Ref<DistArray4> extract(const Ref<DistArray4>& A,
                           unsigned int te_type,
                           double scale) {
-    assert(te_type < A->num_te_types());
+    MPQC_ASSERT(te_type < A->num_te_types());
 
     DistArray4Dimensions dims(1, A->ni(), A->nj(), A->nx(), A->ny());
     Ref<DistArray4> result = A->clone(dims);
@@ -1200,19 +1200,19 @@ namespace sc {
   copy_to_RefSCMat(RefSCMatrix& dst,
                           const Ref<DistArray4>& src, const int tensor_index)
   {
-    assert(src->has_access(src->msg()->me()));
+    MPQC_ASSERT(src->has_access(src->msg()->me()));
 
     // is dst bra packed?
     bool bra_packed = false;
     const size_t nbra_sq = src->ni() * src->nj();
     const size_t nbra_tri = src->ni() * (src->ni() - 1) / 2;
     if (src->ni() != src->nj()) // no
-      assert(dst.nrow() == nbra_sq);
+      MPQC_ASSERT(dst.nrow() == nbra_sq);
     else { // maybe
       if (dst.nrow() == nbra_tri)
         bra_packed = true;
       else
-        assert(dst.nrow() == nbra_sq);
+        MPQC_ASSERT(dst.nrow() == nbra_sq);
     }
 
     // is dst ket packed?
@@ -1220,12 +1220,12 @@ namespace sc {
     const size_t nket_sq = src->nx() * src->ny();
     const size_t nket_tri = src->nx() * (src->nx() - 1) / 2;
     if (src->nx() != src->ny()) // no
-      assert(dst.ncol() == nket_sq);
+      MPQC_ASSERT(dst.ncol() == nket_sq);
     else { // maybe
       if (dst.ncol() == nket_tri)
         ket_packed = true;
       else
-        assert(dst.ncol() == nket_sq);
+        MPQC_ASSERT(dst.ncol() == nket_sq);
     }
 
     RefSCVector row = dst.kit()->vector(dst.coldim());
@@ -1274,7 +1274,7 @@ namespace sc {
  RefSCMatrix &
   operator<<(RefSCMatrix& dst, const Ref<DistArray4>& src)
   {
-    assert(src->num_te_types() == 1);
+    MPQC_ASSERT(src->num_te_types() == 1);
     copy_to_RefSCMat(dst, src, 0);
     return dst;
   }

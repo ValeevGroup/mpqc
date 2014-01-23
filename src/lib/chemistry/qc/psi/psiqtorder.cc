@@ -147,7 +147,7 @@ namespace sc {
   std::vector<unsigned int> index_map_inverse(const std::vector<unsigned int>& map) {
     typedef std::vector<unsigned int>::iterator iter;
     const unsigned int min_index = * min_element(map.begin(), map.end());
-    assert(min_index == 0);
+    MPQC_ASSERT(min_index == 0);
     const unsigned int max_index = * max_element(map.begin(), map.end());
 
     std::vector<unsigned int> imap(max_index+1, UINT_MAX);
@@ -156,7 +156,7 @@ namespace sc {
       imap[map[i]] = i;
 
     // make sure the map is isomorphic and can be inverted
-    assert( *max_element(imap.begin(), imap.end()) != UINT_MAX);
+    MPQC_ASSERT( *max_element(imap.begin(), imap.end()) != UINT_MAX);
 
     return imap;
   }

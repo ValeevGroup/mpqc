@@ -40,10 +40,10 @@ using namespace sc;
 void CCR12_Info::fill_in_iiii() {
 
   // only RHF is handled right now
-  assert(restricted_);
+  MPQC_ASSERT(restricted_);
 
   // fill in X, B and P intermediates, as well as geminal T amplitudes
-  assert(need_w1());
+  MPQC_ASSERT(need_w1());
 
   // intermediates are computed in GGspace(Alpha) space
   // map corr_space_ to it
@@ -139,10 +139,10 @@ void CCR12_Info::fill_in_iiii() {
 void CCR12_Info::fill_in_vr_and_vd() {
 
   // only RHF is handled so far
-  assert(restricted_);
+  MPQC_ASSERT(restricted_);
 
   // for V intermediate (denoted as d_vr2 in smith; its transpose is d_vd2)
-  assert(need_w1());
+  MPQC_ASSERT(need_w1());
 
   // intermediates are computed using i indices from GGspace(Alpha) space
   // map corr_space_ to it
@@ -204,7 +204,7 @@ void CCR12_Info::fill_in_vr_and_vd() {
 void CCR12_Info::fill_in_vd2_gen(bool need_cabs, bool need_xx) {
 
   // only RHF is handled so far
-  assert(restricted_);
+  MPQC_ASSERT(restricted_);
 
   // intermediates are computed using i indices from GGspace(Alpha) space
   // map corr_space_ to it
@@ -250,8 +250,8 @@ void CCR12_Info::fill_in_fr_and_fd() {
 
 
   // only RHF is handled so far
-  assert(restricted_);
-  assert(need_w1());
+  MPQC_ASSERT(restricted_);
+  MPQC_ASSERT(need_w1());
 
   // intermediates are computed using i indices from occ_act_sb(Alpha) space
   // map corr_space_ to it
@@ -296,7 +296,7 @@ void CCR12_Info::fill_in_fr_and_fd() {
     aAii_erange[3] = MTensor<4>::element_range(0, nocc_act);
     const bool transpose_23_01 = true;
     Ref<TwoBodyIntDescr> tbintdescr = r12world()->r12tech()->corrfactor()->tbintdescr(r12world()->integral(), 0);
-    assert(r12world()->r12tech()->corrfactor()->nfunctions() == 1);
+    MPQC_ASSERT(r12world()->r12tech()->corrfactor()->nfunctions() == 1);
     F.convert(iiaA_acc_[AlphaBeta], tbintdescr->intset( r12world()->r12tech()->corrfactor()->tbint_type_f12() ),
               aamap, aAmap, aimap, aimap, &aAii_erange, transpose_23_01);
   }
@@ -315,7 +315,7 @@ void CCR12_Info::fill_in_fr_and_fd() {
     iiaA_erange[2] = MTensor<4>::element_range(0, nvir_act);
     iiaA_erange[3] = MTensor<4>::element_range(0, ncabs);
     Ref<TwoBodyIntDescr> tbintdescr = r12world()->r12tech()->corrfactor()->tbintdescr(r12world()->integral(), 0);
-    assert(r12world()->r12tech()->corrfactor()->nfunctions() == 1);
+    MPQC_ASSERT(r12world()->r12tech()->corrfactor()->nfunctions() == 1);
     F.convert(iiaA_acc_[AlphaBeta], tbintdescr->intset( r12world()->r12tech()->corrfactor()->tbint_type_f12() ),
               aimap, aimap, aamap, aAmap, &iiaA_erange);
   }

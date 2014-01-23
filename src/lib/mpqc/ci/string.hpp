@@ -49,8 +49,8 @@ namespace ci {
         /// @param size number of orbitals
         /// @param count number of electrons
         String(size_t size, size_t count) {
-            assert(0 < size && size < 64);
-            assert(0 < count && count < size);
+            MPQC_ASSERT(0 < size && size < 64);
+            MPQC_ASSERT(0 < count && count < size);
             this->size_ = size;
             this->count_ = count;
             this->value_ = bitset((1 << count) - 1);
@@ -61,7 +61,7 @@ namespace ci {
         /// i.e. string[0] bit corresponds to String[0] bit
         explicit String(std::string value) {
             //std::cout << "from str " <<  value << std::endl;
-            assert(value.size() <= 64);
+            MPQC_ASSERT(value.size() <= 64);
             std::reverse(value.begin(), value.end());
             this->size_ = value.size();
             this->value_ = bitset(value);
@@ -101,7 +101,7 @@ namespace ci {
         }
         String swap(size_t i, size_t j) const {
             String s = *this;
-            //assert(s[i] != s[j]);
+            //MPQC_ASSERT(s[i] != s[j]);
             s.flip(i);
             s.flip(j);
             //std::swap(s.value_[i], s.value_[j]);
@@ -129,11 +129,11 @@ namespace ci {
             return (b & this->to_ulong());
         }
         static size_t difference(const String &a, const String &b) {
-            assert(a.size() == b.size());
-            assert(a.count() == b.count());
+            MPQC_ASSERT(a.size() == b.size());
+            MPQC_ASSERT(a.count() == b.count());
             size_t n = String::count(a ^ b);
             //std::cout << std::string(a) << " ^ " << std::string(b) << std::endl;
-            assert(!(n % 2));
+            MPQC_ASSERT(!(n % 2));
             return n / 2;
         }
         static size_t count(size_t b) {
@@ -171,7 +171,7 @@ namespace ci {
         size_t p = String::bitset(b).count();
         //size_t p = _mm_popcnt_u64(b);
 #if 0
-        assert(p < I.count());
+        MPQC_ASSERT(p < I.count());
         size_t q = 0;
         for (int k = std::min(i,j)+1; k < std::max(i,j); ++k) {
             q += I[k];
@@ -179,7 +179,7 @@ namespace ci {
         if (p != q)
           sc::ExEnv::err0() << sc::scprintf("string %s(%lu) [%i,%i] b=%lu, p=%lu, q=%lu\n",
                                     std::string(I).c_str(), I.to_ulong(), i,j, b, p, q);
-        assert(p == q);
+        MPQC_ASSERT(p == q);
 #endif
         return sgn(p);
     }
@@ -320,7 +320,7 @@ namespace ci {
                 if (this->operator[](s) == i)
                     continue;
                 std::cout << i << " != " << this->operator[](s) << std::endl;
-                assert(0);
+                MPQC_ASSERT(0);
             }
         }
         size_t operator[](const String &s) const {
@@ -359,8 +359,8 @@ namespace ci {
     };
 
     inline String::List<String::Index> strings(size_t no, size_t ne, size_t N = 0) {
-        assert(no > ne);
-        assert(ne > 0);
+        MPQC_ASSERT(no > ne);
+        MPQC_ASSERT(ne > 0);
         std::vector<String> v;
         std::string r = String(no, ne);
         std::string s = r;

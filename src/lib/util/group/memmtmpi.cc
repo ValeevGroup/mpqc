@@ -114,14 +114,14 @@ MTMPIThread::run_one()
       mem_->print_lock_->unlock();
     }
   if (req.touches_data()) {
-      assert(req.size() >= 0);
+      MPQC_ASSERT(req.size() >= 0);
       if (req.offset()+req.size() > mem_->localsize()) {
           mem_->print_lock_->lock();
           req.print("BAD RECV");
           ExEnv::outn() << "mem_->localsize() = " << mem_->localsize() << endl;
           mem_->print_lock_->lock();
         }
-      assert(req.offset()+req.size() <= mem_->localsize());
+      MPQC_ASSERT(req.offset()+req.size() <= mem_->localsize());
     }
   Timer tim2(timer_);
   if (timer_.nonnull()) tim2.enter(req.request_string());

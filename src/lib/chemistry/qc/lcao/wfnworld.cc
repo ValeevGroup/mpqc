@@ -471,7 +471,7 @@ WavefunctionWorld::init_df_kernel(std::string kernel_key) {
   }
 
   // unreachable
-  assert(false);
+  MPQC_ASSERT(false);
 }
 
 /////////////////////////////////////////////////////////////////////////////

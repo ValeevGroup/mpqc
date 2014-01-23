@@ -75,7 +75,7 @@ namespace sc {
     /// \param ar The serialization archive
     template <typename Archive>
     void serialize(Archive& ar) {
-      assert(false);
+      MPQC_ASSERT(false);
     }
 
   };
@@ -111,7 +111,7 @@ namespace sc {
     /// \param ar The serialization archive
     template <typename Archive>
     void serialize(Archive& ar) {
-      assert(false);
+      MPQC_ASSERT(false);
     }
 
   };
@@ -168,7 +168,7 @@ namespace sc {
     /// \param ar The serialization archive
     template <typename Archive>
     void serialize(Archive& ar) {
-      assert(false);
+      MPQC_ASSERT(false);
     }
 
   };
@@ -182,7 +182,7 @@ namespace sc {
     struct TGeminalGenerator {
         /// @param spin 0(singlet) or 1(triplet)
         TGeminalGenerator(unsigned int spin = 0) : s_(spin) {
-          assert(s_ == 0 || s_ == 1);
+          MPQC_ASSERT(s_ == 0 || s_ == 1);
         }
 
         template <typename Index> T operator()(const Index& i) {

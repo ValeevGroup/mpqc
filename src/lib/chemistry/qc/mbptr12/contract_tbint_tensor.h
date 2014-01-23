@@ -548,8 +548,8 @@ namespace sc {
                                          const std::vector<std::string>& tformkeys_bra,
                                          const std::vector<std::string>& tformkeys_ket) {
 
-    assert(tformkeys_bra.size() == 1);
-    assert(tformkeys_ket.size() == 1);
+    MPQC_ASSERT(tformkeys_bra.size() == 1);
+    MPQC_ASSERT(tformkeys_ket.size() == 1);
 
     std::vector< Ref<DistArray4> > results;
     contract_tbint_tensor<CorrFactorInBra, CorrFactorInKet>(
@@ -684,7 +684,7 @@ namespace sc {
           if (!parb.empty()) { // remove [ and ]
             const std::string::size_type lbpos = parb.find_first_of('[');
             const std::string::size_type rbpos = parb.find_last_of(']');
-            assert(lbpos < rbpos);
+            MPQC_ASSERT(lbpos < rbpos);
             params_bra = parb.substr(lbpos + 1, (rbpos - lbpos - 1));
           }
 
@@ -696,7 +696,7 @@ namespace sc {
             if (!park.empty()) { // remove [ and ]
               const std::string::size_type lbpos = park.find_first_of('[');
               const std::string::size_type rbpos = park.find_last_of(']');
-              assert(lbpos < rbpos);
+              MPQC_ASSERT(lbpos < rbpos);
               params_ket = park.substr(lbpos + 1, (rbpos - lbpos - 1));
             }
 
@@ -733,14 +733,14 @@ namespace sc {
       accumulate = true;
       // make sure they have expected shape
       const size_t nresults = results.size();
-      assert(nresults == num_tforms_bra*num_tforms_ket);
+      MPQC_ASSERT(nresults == num_tforms_bra*num_tforms_ket);
       for(int r=0; r<nresults; ++r) {
-        assert(results[r]->num_te_types() == 1);
-        assert(results[r]->ni() == space1_bra->rank());
-        assert(results[r]->nj() == space2_bra->rank());
-        assert(results[r]->nx() == space1_ket->rank());
-        assert(results[r]->ny() == space2_ket->rank());
-        assert(results[r]->storage() == DistArray4Storage_XY);
+        MPQC_ASSERT(results[r]->num_te_types() == 1);
+        MPQC_ASSERT(results[r]->ni() == space1_bra->rank());
+        MPQC_ASSERT(results[r]->nj() == space2_bra->rank());
+        MPQC_ASSERT(results[r]->nx() == space1_ket->rank());
+        MPQC_ASSERT(results[r]->ny() == space2_ket->rank());
+        MPQC_ASSERT(results[r]->storage() == DistArray4Storage_XY);
       }
 
       for(int r=0; r<nresults; ++r) {
@@ -788,14 +788,14 @@ namespace sc {
       Ref<OrbitalSpace> tspace2_ket = transforms_ket[0]->space3();
       Ref<OrbitalSpace> tspace1_intk = transforms_ket[0]->space2();
       Ref<OrbitalSpace> tspace2_intk = transforms_ket[0]->space4();
-      assert(tspace1_bra == space1_bra);
-      assert(tspace2_bra == space2_bra);
-      assert(tspace1_ket == space1_ket);
-      assert(tspace2_ket == space2_ket);
-      assert(tspace1_intb == space1_intb);
-      assert(tspace2_intb == space2_intb);
-      assert(tspace1_intk == space1_intk);
-      assert(tspace2_intk == space2_intk);
+      MPQC_ASSERT(tspace1_bra == space1_bra);
+      MPQC_ASSERT(tspace2_bra == space2_bra);
+      MPQC_ASSERT(tspace1_ket == space1_ket);
+      MPQC_ASSERT(tspace2_ket == space2_ket);
+      MPQC_ASSERT(tspace1_intb == space1_intb);
+      MPQC_ASSERT(tspace2_intb == space2_intb);
+      MPQC_ASSERT(tspace1_intk == space1_intk);
+      MPQC_ASSERT(tspace2_intk == space2_intk);
     }
 
     //

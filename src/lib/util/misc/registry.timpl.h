@@ -179,7 +179,7 @@ namespace sc {
       throw not_found("value not found");
     }
     // unreachable
-    assert(false);
+    MPQC_ASSERT(false);
   }
 
   template <typename Key, typename Value, template <typename> class CreationPolicy, typename KeyEqual, typename ValueEqual >
@@ -197,7 +197,7 @@ namespace sc {
       throw not_found("key not found");
     }
     // unreachable
-    assert(false);
+    MPQC_ASSERT(false);
   }
 
   template <typename Key, typename Value, template <typename> class CreationPolicy, typename KeyEqual, typename ValueEqual >

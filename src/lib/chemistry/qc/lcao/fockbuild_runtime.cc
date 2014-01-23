@@ -535,7 +535,7 @@ FockBuildRuntime::get(const std::string& key) {
 RefSCMatrix
 FockBuildRuntime::electric_field_contribution(std::string bra_key,
                                               std::string ket_key) {
-  assert(electric_field().nonnull());
+  MPQC_ASSERT(electric_field().nonnull());
 
   // only AO matrices will be cached
 
@@ -617,7 +617,7 @@ ParsedOneBodyIntKey::ParsedOneBodyIntKey(const std::string& key) :
   std::string keycopy(key);
 
   // pop off the leading '<'
-  assert(keycopy[0] == '<');
+  MPQC_ASSERT(keycopy[0] == '<');
   keycopy.erase(keycopy.begin());
   // get bra
   bra_ = pop_till_token(keycopy, '|');

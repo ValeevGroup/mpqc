@@ -236,7 +236,7 @@ try_main(int argc, char *argv[])
   // set the working dir
   if (strcmp(options.retrieve("W"),".")) {
       int err = chdir(options.retrieve("W"));
-      assert(!err);
+      MPQC_ASSERT(!err);
   }
 
   // initialize keyval input
@@ -699,7 +699,7 @@ try_main(int argc, char *argv[])
         }
       }
       else { // use molgrad
-        assert(molgrad.nonnull());
+        MPQC_ASSERT(molgrad.nonnull());
         mole->set_molgrad(molgrad);
         grad = mole->gradient();
         mole->set_molgrad(0);

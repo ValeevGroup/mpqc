@@ -231,7 +231,7 @@ DistArray4_Node0File::deactivate()
 void
 DistArray4_Node0File::store_pair_block(int i, int j, tbint_type oper_type, const double *data)
 {
-  assert(this->active());  //make sure we are active
+  MPQC_ASSERT(this->active());  //make sure we are active
   // Can write blocks?
   if (!is_avail(i,j))
     throw ProgrammingError("DistArray4_Node0File::store_pair_block -- can only be called on node 0",
@@ -269,7 +269,7 @@ DistArray4_Node0File::store_pair_subblock(int i, int j, tbint_type oper_type,
                                           int xstart, int xfence, int ystart, int yfence,
                                           const double *buf)
 {
-  assert(this->active());  //make sure we are active
+  MPQC_ASSERT(this->active());  //make sure we are active
   // Can write blocks?
   if (!is_avail(i,j))
     throw ProgrammingError("DistArray4_Node0File::store_pair_block -- can only be called on node 0",
@@ -413,7 +413,7 @@ DistArray4_Node0File::retrieve_pair_subblock(int i, int j, tbint_type oper_type,
                                              int xstart, int xfence, int ystart, int yfence,
                                              double* buf) const
 {
-  assert(this->active());  //make sure we are active
+  MPQC_ASSERT(this->active());  //make sure we are active
   static ScratchBuffer<char> scratch;
   static Ref<ThreadLock> read_lock = ThreadGrp::get_default_threadgrp()->new_lock();
 
@@ -496,7 +496,7 @@ DistArray4_Node0File::retrieve_pair_subblock(int i, int j, tbint_type oper_type,
 void
 DistArray4_Node0File::release_pair_block(int i, int j, tbint_type oper_type) const
 {
-  assert(this->active());  //make sure we are active
+  MPQC_ASSERT(this->active());  //make sure we are active
   if (is_avail(i,j)) {
     const int ij = ij_index(i,j);
     const PairBlkInfo *pb = &pairblk_[ij];

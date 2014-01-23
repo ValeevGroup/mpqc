@@ -107,9 +107,9 @@ TwoBodyGrid::TwoBodyGrid(const Ref<KeyVal>& keyval)
     SCVector3 R1;
     const int dim = keyval->count("r1",i);
     if (dim != 3) {
-      std::string errmsg("TwoBodyGrid::TwoBodyGrid() -- keyword r1:");
-      errmsg += i + "must be an array of 3 elements";
-      throw std::runtime_error(errmsg.c_str());
+      std::ostringstream oss;
+      oss << "value for keyword r1:" << i << " must be an array of 3 elements";
+      throw InputError(oss.str().c_str(),__FILE__,__LINE__);
     }
     for(int xyz=0; xyz<3; xyz++)
       R1.elem(xyz) = keyval->doublevalue("r1",i,xyz);
@@ -124,9 +124,9 @@ TwoBodyGrid::TwoBodyGrid(const Ref<KeyVal>& keyval)
     SCVector3 R2;
     const int dim = keyval->count("r2",i);
     if (dim != 3) {
-      std::string errmsg("TwoBodyGrid::TwoBodyGrid() -- keyword r2:");
-      errmsg += i + "must be an array of 3 elements";
-      throw std::runtime_error(errmsg.c_str());
+      std::ostringstream oss;
+      oss << "value for keyword r2:" << i << " must be an array of 3 elements";
+      throw InputError(oss.str().c_str(),__FILE__,__LINE__);
     }
     for(int xyz=0; xyz<3; xyz++)
       R2.elem(xyz) = keyval->doublevalue("r2",i,xyz);

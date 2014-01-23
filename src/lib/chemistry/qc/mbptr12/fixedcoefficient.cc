@@ -35,8 +35,8 @@ namespace sc {
   double CuspConsistentGeminalCoefficient::C(unsigned int O, unsigned int W,
                                              unsigned int P, unsigned int Q) {
     // only C_ij_ij or C_ij_ji are nonzero
-    if( !((O==P) && (W==Q) ||
-          (O==Q) && (W==P)) ) {
+    if( !(((O==P) && (W==Q)) ||
+          ((O==Q) && (W==P))) ) {
       return(0.0);
     }
 

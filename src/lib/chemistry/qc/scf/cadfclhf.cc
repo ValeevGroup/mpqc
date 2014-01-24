@@ -649,13 +649,11 @@ CADFCLHF::compute_J()
         Ct = Eigen::VectorXd::Zero(dfnbf);
         ShellData ish, jsh;
         //----------------------------------------//
-        if(ithr == 0) timer.enter("get_shell_pair");
         while(get_shell_pair(ish, jsh, SignificantPairs)){
           //----------------------------------------//
           // Permutation prefactor
           double pf = (ish == jsh) ? 2.0 : 4.0;
           //----------------------------------------//
-          if(ithr == 0) timer.change("loop functions");
           for(int mu = ish.bfoff; mu <= ish.last_function; ++mu){
             for(int nu = jsh.bfoff; nu <= jsh.last_function; ++nu){
               IntPair ij(mu, nu);
@@ -668,14 +666,11 @@ CADFCLHF::compute_J()
               }
             } // end loop over mu
           } // end loop over nu
-          if(ithr == 0) timer.change("get_shell_pair");
         } // end while get shell pair
         //----------------------------------------//
         // add our contribution to the node level C_tilde
-        if(ithr == 0) timer.change("wait for lock");
         boost::lock_guard<boost::mutex> Ctlock(C_tilde_mutex);
         C_tilde += Ct;
-        if(ithr == 0) timer.exit();
         //----------------------------------------//
         /********************************************************/ #endif //2}}}
         /*-----------------------------------------------------*/

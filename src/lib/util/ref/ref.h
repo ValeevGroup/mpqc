@@ -363,6 +363,10 @@ class  Ref  : public RefBase {
     typedef T element_type;
   private:
     T* p;
+
+    typedef void (Ref::*bool_type)() const;
+    void this_type_does_not_support_comparisons() const {}
+
   public:
     /// Create a reference to a null object.
     Ref(): p(0) {}
@@ -423,7 +427,12 @@ class  Ref  : public RefBase {
     int null() const { return p == 0; }
     /// Return !null().
     int nonnull() const { return p != 0; }
-    explicit operator bool() const { return nonnull(); }
+
+    operator bool_type() const {
+      return nonnull() ?
+          &Ref::this_type_does_not_support_comparisons : 0;
+    }
+
 
     /** Ordering and equivalence operators are determined by the identifier if
      * both pointers are not null. If one or both of the pointers is null then
@@ -636,6 +645,13 @@ class  Ref  : public RefBase {
     /// Print a warning concerning the reference.
     void warn(const char*s) const { RefBase::warn(s); }
 };
+
+template <class T>
+std::ostream&
+operator<<(std::ostream& os, const Ref<T>& r) {
+  r.ref_info(os);
+  return os;
+}
 
 /** this functor can be used as a binary predicate for standard algorithms. For example,
     it can be used as an argument to std::hash_map that uses keys of sc::Ref<T> type.

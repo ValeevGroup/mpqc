@@ -37,7 +37,7 @@
 #include <memory>
 #include <math.h>
 
-#define USE_INTEGRAL_CACHE 0
+#define USE_INTEGRAL_CACHE 1
 #define EIGEN_NO_AUTOMATIC_RESIZING 1
 
 #ifdef ECLIPSE_PARSER_ONLY
@@ -233,11 +233,14 @@ CADFCLHF::init_threads()
   // initialize the two electron integral classes
   // ThreeCenter versions
   integral()->set_basis(basis(), basis(), dfbs_);
+  eris_3c_.resize(nthread);
+  do_threaded(nthread, [&](int ithr){
+    eris_3c_[ithr] = (integral()->coulomb<3>());
+  });
   for (int i=0; i < nthread; i++) {
-    eris_3c_.push_back(integral()->coulomb<3>());
     // TODO different fitting metrics
     if(metric_oper_type_ == coulomb_oper_type_){
-      metric_ints_3c_.push_back(eris_3c_.back());
+      metric_ints_3c_.push_back(eris_3c_[i]);
     }
     else{
       throw FeatureNotImplemented("non-coulomb metrics in CADFCLHF", __FILE__, __LINE__, class_desc());
@@ -245,10 +248,13 @@ CADFCLHF::init_threads()
   }
   // TwoCenter versions
   integral()->set_basis(dfbs_, dfbs_);
+  eris_2c_.resize(nthread);
+  do_threaded(nthread, [&](int ithr){
+    eris_2c_[ithr] = integral()->coulomb<2>();
+  });
   for (int i=0; i < nthread; i++) {
-    eris_2c_.push_back(integral()->coulomb<2>());
     if(metric_oper_type_ == coulomb_oper_type_){
-      metric_ints_2c_.push_back(eris_2c_.back());
+      metric_ints_2c_.push_back(eris_2c_[i]);
     }
     else{
       throw FeatureNotImplemented("non-coulomb metrics in CADFCLHF", __FILE__, __LINE__, class_desc());
@@ -1199,6 +1205,11 @@ CADFCLHF::compute_K()
     // reset the iteration over local pairs
     local_pairs_spot_ = 0;
     // Loop over number of threads
+    auto g2_full_ptr = ints_to_eigen(
+        ShellBlockData<>(dfbs_),
+        ShellBlockData<>(dfbs_),
+        eris_2c_[0], coulomb_oper_type_
+    );
     for(int ithr = 0; ithr < nthread; ++ithr) {
       // ...and create each thread that computes pairs
       compute_threads.create_thread([&,ithr](){
@@ -1213,11 +1224,11 @@ CADFCLHF::compute_K()
             Ct_mus[mu.bfoff_in_shell] = Eigen::MatrixXd::Zero(nbf, Yblk.nbf);
           }
           for(auto Xblk : shell_block_range(dfbs_, 0, 0, NoLastIndex, SameCenter)){
-            auto g2_ptr = ints_to_eigen(
-                Yblk, Xblk,
-                eris_2c_[ithr], coulomb_oper_type_
-            );
-            const auto& g2 = *g2_ptr;
+            //auto g2_ptr = ints_to_eigen(
+            //    Yblk, Xblk,
+            //    eris_2c_[ithr], coulomb_oper_type_
+            //);
+            const auto& g2 = g2_full_ptr->block(Yblk.bfoff, Xblk.bfoff, Yblk.nbf, Xblk.nbf);
             for(auto jsh : iter_significant_partners(ish)) {
               for(auto mu : function_range(ish)) {
                 for(auto rho : function_range(jsh)) {

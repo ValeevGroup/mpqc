@@ -621,7 +621,7 @@ namespace sc {
       if (info > 0)
         throw std::runtime_error(
                                  "lapack_invert_symmnondef() -- matrix A has factors which are exactly zero");
-      assert(false); // unreachable
+      MPQC_ASSERT(false); // unreachable
     }
 
     A.assign(&(AF[0]));
@@ -650,7 +650,7 @@ namespace sc {
       if (info > 0)
         throw std::runtime_error(
                                  "lapack_dpf_symmnondef() -- matrix A has factors which are exactly zero");
-      assert(false); // unreachable
+      MPQC_ASSERT(false); // unreachable
     }
 
     // estimate the condition number
@@ -661,7 +661,7 @@ namespace sc {
       if (info < 0)
         throw std::runtime_error(
                                  "lapack_dpf_symmnondef() -- one of the arguments to F77_DSPCON is invalid");
-      assert(false); // unreachable
+      MPQC_ASSERT(false); // unreachable
     }
     // if the condition number is above the threshold or its inverse below the working precision, throw
     if (condition_number_threshold != 0.0) {
@@ -734,7 +734,7 @@ namespace sc {
       if (info > 0)
         throw std::runtime_error(
                                  "lapack_cholesky_symmposdef() -- matrix A has factors which are negative");
-      assert(false); // unreachable
+      MPQC_ASSERT(false); // unreachable
     }
 
     // estimate the condition number
@@ -744,7 +744,7 @@ namespace sc {
       if (info < 0)
         throw std::runtime_error(
                                  "lapack_cholesky_symmposdef() -- one of the arguments to F77_DPPCON is invalid");
-      assert(false); // unreachable
+      MPQC_ASSERT(false); // unreachable
     }
     // if the condition number is above the threshold or its inverse below the working precision, throw
     if (condition_number_threshold != 0.0) {
@@ -815,7 +815,7 @@ namespace sc {
       if (info > 0)
         throw std::runtime_error(
                                  "lapack_invert_symmposdef() -- matrix A has factors which are exactly zero");
-      assert(false); // unreachable
+      MPQC_ASSERT(false); // unreachable
     }
 
     A.assign(&(AF[0]));

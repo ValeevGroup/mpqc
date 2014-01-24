@@ -3,7 +3,7 @@
 #include <boost/python.hpp>
 #include <boost/python/implicit.hpp>
 #include <chemistry/qc/wfn/obwfn.h>
-#include "util.h"
+#include <extern/python/util.h>
 
 using namespace boost::python;
 using namespace sc;

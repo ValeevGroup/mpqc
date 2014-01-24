@@ -62,7 +62,7 @@ SCBlockInfo::SCBlockInfo(int n, int nblocks, const int *blocksizes):
   // validate input
   if (blocksizes) {
     const int nn = std::accumulate(blocksizes, blocksizes+nblocks, 0);
-    assert(n == nn);
+    MPQC_ASSERT(n == nn);
   }
 
   if (n_ != 0 && nblocks_ == 0) {

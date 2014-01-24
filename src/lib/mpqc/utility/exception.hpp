@@ -21,7 +21,7 @@ namespace mpqc {
         /// Constructs exception
         explicit Exception(const std::string &msg = "")
             : what_(msg) {}
-        /// Constructs exceptin with an optional printf-style format and arguments
+        /// Constructs exception with an optional printf-style format and arguments
         explicit Exception(char const *file, long line, const char *fmt = NULL, ...) {
             what_ = what_ + file + ":" + string_cast(line);
             if (fmt) {
@@ -33,8 +33,8 @@ namespace mpqc {
                 what_ = what_ + ": " + buffer;
             }
         }
-        ~Exception() throw() {}
-        const char* what() const throw() {
+        ~Exception() noexcept {}
+        const char* what() const noexcept {
             return what_.c_str();
         }
     private:

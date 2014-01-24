@@ -7342,7 +7342,7 @@ void MP2R12Energy_Diag::compute_T2abij_f12corr(const SpinCase2 spincase,
               const double Fjj = evals_i1(j);       // F^j_j
 
               const double denom = 1.0 / (Fii+ Fjj - Faa - Fbb);
-              *iter_T2 =  ( C_1 * (*R_afb_ij - *R_abf_ji
+              *iter_T2 =  ( C_1 * (*R_afb_ij - *R_afb_ji
                                  + *R_abf_ij - *R_abf_ji)
                           ) * denom;
 
@@ -7803,15 +7803,15 @@ RefSCMatrix MP2R12Energy_Diag::compute_D_CABS(SpinCase1 spin) {
    occoff[0] = 0;
    viroff[0] = 0;
    cabsoff[0] = 0;
-   ExEnv::out0() << endl << "  occpi vir cabspi:" << endl
-                         << 0 << "  " << occpi[0] << "  " << virpi[0] << "  " << cabspi[0] <<  endl;
+//   ExEnv::out0() << endl << "  occpi vir cabspi:" << endl
+//                         << 0 << "  " << occpi[0] << "  " << virpi[0] << "  " << cabspi[0] <<  endl;
 
    for (unsigned int irrep = 1; irrep < nirreps; ++irrep) {
      occoff[irrep] = occoff[irrep-1] + occpi[irrep-1];
      viroff[irrep] = viroff[irrep-1] + virpi[irrep-1];
      cabsoff[irrep] = cabsoff[irrep-1] + cabspi[irrep-1];
      vir_comoff[irrep] = viroff[irrep] + cabsoff[irrep];
-     ExEnv::out0() << irrep << "   " << occpi[irrep] << "  " << virpi[irrep] << "  " << cabspi[irrep] << endl;
+     //ExEnv::out0() << irrep << "   " << occpi[irrep] << "  " << virpi[irrep] << "  " << cabspi[irrep] << endl;
    }
 
    for (int h = 0; h < nirreps; ++h) {

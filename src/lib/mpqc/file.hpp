@@ -108,14 +108,14 @@ namespace File {
            @param increment Flag to increment (or not) the reference count
          */
         Object(const Object &parent, hid_t id, void (*close)(hid_t), bool increment) {
-            assert(id);
+            MPQC_ASSERT(id);
             parent_.reset(new Object(parent));
             update(id, close, increment);
         }
 
         ~Object() {
             if (!id_) return;
-            assert(close_);
+            MPQC_ASSERT(close_);
             MPQC_FILE_THREADSAFE;
             close_(id_);
         }
@@ -431,7 +431,7 @@ namespace mpqc {
             range_(r),
             ndims_(ndims)
         {
-            assert(ndims <= range_.size());
+            MPQC_ASSERT(ndims <= range_.size());
             size_ = (r.size() ? 1 : 0);
             for (int i = 0; i < range_.size(); ++i) {
                 size_ *= range_[i].size();
@@ -442,7 +442,7 @@ namespace mpqc {
         /// extend ranges to the full rank of the parent <i>dataset</i> 
         std::vector<range> extend(const std::vector<range> &r) const {
             //std::cout << r.size() << " " << ndims_ << std::endl;
-            assert(r.size() == ndims_);
+            MPQC_ASSERT(r.size() == ndims_);
             std::vector<range> x = r;
             for (size_t i = ndims_; i < range_.size(); ++i) {
                 x.push_back(range_[i]);
@@ -452,7 +452,7 @@ namespace mpqc {
 
         /// shift ranges to match layout of the parent <i>dataset</i>
         std::vector<range> rebase(const std::vector<range> &r) const {
-            assert(r.size() == base_.size());
+            MPQC_ASSERT(r.size() == base_.size());
             std::vector<range> v;
             for (int i = 0; i < base_.size(); ++i) {
                 auto begin = *r[i].begin() - base_[i];
@@ -528,7 +528,7 @@ namespace mpqc {
                 const File::Properties &dcpl = File::Properties(H5P_DATASET_CREATE))
             : Object(Dataset::create(parent, name, extents, dcpl))
         {
-            assert(id() > 0);
+            MPQC_ASSERT(id() > 0);
             foreach (auto e, extents) {
                 range r = extent(e);
                 //std::cout << "Dataset " << r << std::endl;
@@ -580,13 +580,13 @@ namespace mpqc {
         /** Access dataspace of same rank */
         Dataspace<T> operator()(const std::vector<range> &r) {
             //std::cout << this->extents_.size() << " " << r.size() << std::endl;
-            assert(this->rank() == r.size());
+            MPQC_ASSERT(this->rank() == r.size());
             return Dataspace<T>(*this, base_, r, r.size());
         }
 
         /** Access dataspace of same rank */
         Dataspace<const T> operator()(const std::vector<range> &r) const {
-            assert(this->rank() == r.size());
+            MPQC_ASSERT(this->rank() == r.size());
             return Dataspace<const T>(*this, base_, r, r.size());
         }
 

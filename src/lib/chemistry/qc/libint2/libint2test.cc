@@ -774,13 +774,13 @@ void compare_2e(Ref<TwoBodyInt>& tb1,
                 Ref<TwoBodyInt>& tb2,
                 TwoBodyOper::type otype,
                 bool print_all) {
-  const double *buf1 = tb1->buffer(otype); assert(buf1 != 0);
-  const double *buf2 = tb2->buffer(otype); assert(buf2 != 0);
+  const double *buf1 = tb1->buffer(otype); MPQC_ASSERT(buf1 != 0);
+  const double *buf2 = tb2->buffer(otype); MPQC_ASSERT(buf2 != 0);
 
-  Ref<GaussianBasisSet> basis1 = tb1->basis1(); assert(basis1 == tb2->basis1());
-  Ref<GaussianBasisSet> basis2 = tb1->basis2(); assert(basis2 == tb2->basis2());
-  Ref<GaussianBasisSet> basis3 = tb1->basis3(); assert(basis3 == tb2->basis3());
-  Ref<GaussianBasisSet> basis4 = tb1->basis4(); assert(basis4 == tb2->basis4());
+  Ref<GaussianBasisSet> basis1 = tb1->basis1(); MPQC_ASSERT(basis1 == tb2->basis1());
+  Ref<GaussianBasisSet> basis2 = tb1->basis2(); MPQC_ASSERT(basis2 == tb2->basis2());
+  Ref<GaussianBasisSet> basis3 = tb1->basis3(); MPQC_ASSERT(basis3 == tb2->basis3());
+  Ref<GaussianBasisSet> basis4 = tb1->basis4(); MPQC_ASSERT(basis4 == tb2->basis4());
   for (int sh1 = 0; sh1 < basis1->nshell(); sh1++)
     for (int sh2 = 0; sh2 < basis2->nshell(); sh2++)
       for (int sh3 = 0; sh3 < basis3->nshell(); sh3++)

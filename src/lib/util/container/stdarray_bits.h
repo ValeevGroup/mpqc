@@ -174,9 +174,9 @@ namespace sc {
 
               private:
                 // helper for operations that have undefined behaviour for 0-size arrays,
-                //  assert( false ); added to make lack of support clear
+                //  MPQC_ASSERT( false ); added to make lack of support clear
                 static void makes_no_sense () {
-                    //assert(true);
+                    //MPQC_ASSERT(true);
                     throw std::out_of_range("array<0>: index out of range");
                 }
             };

@@ -1,0 +1,76 @@
+#!/usr/bin/env @PYTHON_EXECUTABLE@
+
+import sys
+from pympqc import *
+
+mol = Molecule(atoms = [ 'o', 'h', 'h' ],
+               geometry = [ [ 0.0, 0.0, 0.0 ],
+                            [ 1.0, 0.0,-1.0 ],
+                            [ 1.0, 0.0, 1.0 ] ])
+
+basis = GaussianBasisSet(molecule = mol,
+                         name = 'STO-3G')
+
+if "@HAVE_LIBINT2@" == "TRUE":
+    print 'testing IntegralLibint2'
+
+    integral2 = IntegralLibint2(basis,basis,basis,basis)
+    overlap2 = integral2.overlap()
+    print overlap2
+
+print 'testing IntegralV3'
+
+integral = IntegralV3(basis,basis,basis,basis)
+
+overlap = integral.overlap()
+
+print overlap
+
+print '-'*72
+t = TestArray1(0)
+print '-'*72
+t = TestArray1(1)
+print '-'*72
+t = TestArray1(2)
+print '-'*72
+t = TestArray1(3)
+print '-'*72
+
+r = t.result()
+
+print 'len(r) = %d' % len(r)
+for i in range(len(r)):
+    print 'r[%d] = %12.6f' % ( i, r[i] )
+
+print '-'*72
+t = None
+print 'len(r) = %d' % len(r)
+for i in range(len(r)):
+    print 'r[%d] = %12.6f' % ( i, r[i] )
+
+print '-'*72
+
+t2 = TestArray2(2,3).result()
+
+for i in range(len(t2)):
+    for j in range(len(t2[i])):
+        print "t2[%d,%d] = %12.6f" % (i,j,t2[i,j])
+
+print '-'*72
+
+pl = integral.petite_list()
+integral.set_storage(32000000);
+Integral.set_default_integral(integral);
+
+basisdim = basis.basisdim()
+basiskit = basis.matrixkit()
+s_skel =  SymmSCMatrix(basisdim, basiskit)
+s_op = OneBodyIntOp(SymmOneBodyIntIter(integral.overlap(), pl));
+
+s_skel.assign(0.0);
+s_skel.element_op(s_op);
+
+s_SO= SymmSCMatrix(pl.SO_basisdim(), basis.so_matrixkit())
+pl.symmetrize(s_skel,s_SO)
+
+s_SO.mprint(out0())

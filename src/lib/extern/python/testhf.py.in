@@ -1,0 +1,141 @@
+#!/usr/bin/env @PYTHON_EXECUTABLE@
+
+import sys
+from pympqc import *
+
+mol = Molecule(atoms = [ 'o', 'h', 'h' ],
+               geometry = [ [ 0.0, 0.0, 0.0 ],
+                            [ 1.0, 0.0,-1.0 ],
+                            [ 1.0, 0.0, 1.0 ] ])
+occs = [ 2, 2, 2, 2, 2 ]
+
+basis = GaussianBasisSet(molecule = mol,
+                         name = '3-21G')
+
+integral = IntegralV3(basis,basis,basis,basis)
+
+overlap = integral.overlap()
+
+pl = integral.petite_list()
+integral.set_storage(32000000)
+Integral.set_default_integral(integral)
+
+basisdim = basis.basisdim()
+basiskit = basis.matrixkit()
+s_skel =  SymmSCMatrix(basisdim, basiskit)
+s_op = OneBodyIntOp(SymmOneBodyIntIter(integral.overlap(), pl))
+
+s_skel.assign(0.0)
+s_skel.element_op(s_op)
+
+s_SO= SymmSCMatrix(pl.SO_basisdim(), basis.so_matrixkit())
+pl.symmetrize(s_skel,s_SO)
+
+orthog = OverlapOrthog(method=OverlapOrthog.OrthogMethod.Symmetric,
+                       overlap=s_SO,
+                       result_kit=basis.so_matrixkit(),
+                       lindep_tolerance=1.0e-6, debug=0)
+
+orthog.dcprint(out0())
+s_SO.mprint(out0())
+
+hcore_skel = SymmSCMatrix(basis.basisdim(), basis.matrixkit())
+hcore_op = OneBodyIntOp(SymmOneBodyIntIter(integral.hcore(), pl))
+
+hcore_skel.assign(0.0)
+hcore_skel.element_op(hcore_op)
+
+hcore_SO = SymmSCMatrix(pl.SO_basisdim(), basis.so_matrixkit())
+pl.symmetrize(hcore_skel,hcore_SO)
+
+density_AO = SymmSCMatrix(pl.AO_basisdim(), basis.so_matrixkit())
+density_AO.assign(0.0)
+
+vector_OSO = SCMatrix(pl.SO_basisdim(), orthog.orthog_dim(), basis.so_matrixkit())
+vector_OSO.assign(0.0)
+
+evals = DiagSCMatrix(orthog.orthog_dim(), basis.so_matrixkit())
+
+density_SO = SymmSCMatrix(pl.SO_basisdim(), basis.so_matrixkit())
+
+extrap = DIIS()
+extrap.set_tolerance(1.0e-6)
+
+occ = SymmSCMatrix(orthog.orthog_dim(), basis.so_matrixkit())
+occ.assign(0.0)
+for i in range(len(occs)):
+    occ.set_element(i,i,occs[i])
+
+# construct the initial guess to vector_OSO and density_AO
+hcore_OSO = SymmSCMatrix(orthog.orthog_dim(), basis.so_matrixkit())
+hcore_OSO.assign(0.0)
+hcore_OSO.accumulate_transform(orthog.basis_to_orthog_basis(),hcore_SO,
+                               SCMatrix.Transform.NormalTransform)
+hcore_OSO.diagonalize(evals, vector_OSO)
+
+density_SO.assign(0.0)
+vector_SO = orthog.basis_to_orthog_basis().t() * vector_OSO
+density_SO.accumulate_transform(vector_SO, occ,
+                                SCMatrix.Transform.NormalTransform)
+density_AO = pl.to_AO_basis(density_SO)
+
+while not extrap.converged():
+    # construct the G matrix
+    g_skel = SymmSCMatrix(basis.basisdim(), basis.matrixkit())
+    g_skel.assign(0.0)
+    g_contrib = CLHFContribution(basis,basis,basis,"replicated")
+    g_contrib.set_fmat(0, g_skel)
+    g_contrib.set_pmat(0, density_AO)
+    fockdist = FockDistribution()
+    fb = FockBuild(fockdist, g_contrib, 0, basis, basis, basis)
+    fb.set_accuracy(1e-12)
+    fb.build()
+  
+    g_skel.scale(1.0/pl.order())
+
+    g_SO = SymmSCMatrix(pl.SO_basisdim(), basis.so_matrixkit())
+    pl.symmetrize(g_skel,g_SO)
+
+    # construct the fock matrix
+    f_SO = hcore_SO + g_SO
+      
+    # transform the fock matrix into the orthogonal basis
+    f_OSO = SymmSCMatrix(orthog.orthog_dim(), basis.so_matrixkit())
+    f_OSO.assign(0.0)
+    f_OSO.accumulate_transform(orthog.basis_to_orthog_basis(),f_SO,
+                               SCMatrix.Transform.NormalTransform)
+
+    # Extrapolate the fock matrix
+    data = SymmSCMatrixSCExtrapData(f_OSO)
+    error_MO = SymmSCMatrix(orthog.orthog_dim(), basis.so_matrixkit())
+    error_MO.assign(0.0)
+    error_MO.accumulate_transform(vector_OSO.t(),f_OSO,
+                                  SCMatrix.Transform.NormalTransform)
+    # Note: should really zero occupied and virtual blocks:
+    error_MO.scale_diagonal(0.0)
+  
+    error_SO = SymmSCMatrix(pl.SO_basisdim(), basis.so_matrixkit())
+    error_SO.assign(0.0)
+    error_SO.accumulate_transform(orthog.basis_to_orthog_basis().t()*vector_OSO,
+                                  error_MO,
+                                  SCMatrix.Transform.NormalTransform)
+    error = SymmSCMatrixSCExtrapError(error_SO)
+    extrap.extrapolate(data, error)
+
+    # Diagonalize the fock matrix
+    f_OSO.diagonalize(evals, vector_OSO)
+
+    # Compute the density matrix
+    density_SO.assign(0.0)
+    vector_SO = orthog.basis_to_orthog_basis().t() * vector_OSO
+    density_SO.accumulate_transform(vector_SO, occ,
+                                    SCMatrix.Transform.NormalTransform)
+    density_AO = pl.to_AO_basis(density_SO)
+
+    #vector_OSO.mprint(out0()) # "OSO vector")
+    #vector_SO.mprint(out0()) # "SO vector")
+    #density_AO.mprint(out0()) # "AO density")
+
+    energy = basis.molecule().nuclear_repulsion_energy() + (density_SO * 0.5 * (hcore_SO + f_SO)).trace()
+
+    print "energy = %14.8f, error = %10.8f" % (energy, extrap.error())

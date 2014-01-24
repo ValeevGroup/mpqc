@@ -60,7 +60,7 @@ namespace detail {
         }
 
         size_t rank() const {
-            assert(dims_.size() == base_.size());
+            MPQC_ASSERT(dims_.size() == base_.size());
             return dims_.size();
         }
 
@@ -87,12 +87,12 @@ namespace detail {
         std::vector<size_t> base_;
 
         void check_range(const std::vector<range> &R) const {
-            assert(this->rank() == R.size());
+            MPQC_ASSERT(this->rank() == R.size());
             for (size_t i = 0; i < this->rank(); ++i) {
                 range r = R.at(i);
                 //std::cout << "range = " << r << "base = " << base_.at(i) << std::endl;
-                assert(base_.at(i) <= *r.begin());
-                assert(*r.end() <= base_.at(i) + dims_.at(i));
+                MPQC_ASSERT(base_.at(i) <= *r.begin());
+                MPQC_ASSERT(*r.end() <= base_.at(i) + dims_.at(i));
             }
         }
 

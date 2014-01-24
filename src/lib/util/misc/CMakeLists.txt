@@ -6,6 +6,7 @@ add_mpqc_object_library(misc
   bug.cc
   compute.cc
   consumableresources.cc
+  exception.cc
   exenv.cc
   formio.cc
   ieee.cc

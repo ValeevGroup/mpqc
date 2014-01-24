@@ -29,7 +29,7 @@ namespace MPI {
             : comm_(comm), data_(0)
         {
 #ifdef HAVE_ARMCI
-            assert(comm == MPI_COMM_WORLD);
+            MPQC_ASSERT(comm == MPI_COMM_WORLD);
             ARMCI_Init();
             data_.resize(comm_.size());
             ARMCI_Malloc(&data_[0], sizeof(T));

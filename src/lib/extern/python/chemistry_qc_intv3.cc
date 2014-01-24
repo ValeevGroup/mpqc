@@ -4,7 +4,7 @@
 #include <boost/python.hpp>
 #include <boost/python/implicit.hpp>
 #include <chemistry/qc/intv3/intv3.h>
-#include "util.h"
+#include <extern/python/util.h>
 
 using namespace boost::python;
 using namespace sc;

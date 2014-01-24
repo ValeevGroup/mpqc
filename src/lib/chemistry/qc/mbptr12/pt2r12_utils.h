@@ -253,7 +253,7 @@ namespace {
     AA.print(prepend_spincase(AlphaBeta, "transform_one_ind: AA").c_str());
     BB.print(prepend_spincase(AlphaBeta, "transform_one_ind: BB").c_str());
 #endif
-    assert(((onedim*onedim) == BB->nrow()) and (BB->nrow() == BB->ncol()));
+    MPQC_ASSERT(((onedim*onedim) == BB->nrow()) and (BB->nrow() == BB->ncol()));
     RefSCMatrix res = BB->clone();
     res.assign(0.0);
     int ext_ind, int_ind, row, col, Ap, Bp, Cp, Dp, A, B, C, D, a, b, c, d, f;

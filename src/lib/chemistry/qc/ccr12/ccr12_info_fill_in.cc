@@ -203,7 +203,7 @@ void CCR12_Info::compute_corr_space() {
 
 void
 CCR12_Info::compute_source_integrals_rhf_r12() {
-  assert(need_w1());
+  MPQC_ASSERT(need_w1());
 
   Ref<OrbitalSpace> occs = r12world()->refwfn()->occ_sb();
   Ref<OrbitalSpace> orbs = r12world()->refwfn()->orbs_sb();
@@ -282,7 +282,7 @@ CCR12_Info::compute_source_integrals_rhf() {
 
     Ref<R12Technology::CorrelationFactor> corrfactor = r12world()->r12tech()->corrfactor();
     // only 1 correlation factor can be handled
-    assert(corrfactor->nfunctions() == 1);
+    MPQC_ASSERT(corrfactor->nfunctions() == 1);
     Ref<TwoBodyIntDescr> tbdescr = corrfactor->tbintdescr(r12world()->integral(),0);
     const std::string descr_key = r12world()->world()->moints_runtime4()->descr_key(tbdescr);
     {
@@ -305,7 +305,7 @@ CCR12_Info::compute_source_integrals_rhf() {
 void
 CCR12_Info::compute_source_integrals_uhf() {
 
-  assert(false);
+  MPQC_ASSERT(false);
 
   // this function should only be called for rohf or uhf
   if (!r12world()->refwfn()->spin_polarized())
@@ -576,7 +576,7 @@ void CCR12_Info::fill_in_f1(){
 
 void CCR12_Info::fill_in_v2() {
 
-  assert(restricted_);
+  MPQC_ASSERT(restricted_);
 
   // compute map from indices in full spin-orbital space to indices in the respective spin spaces
   vector<long> amap;

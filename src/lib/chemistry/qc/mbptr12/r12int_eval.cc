@@ -303,7 +303,7 @@ R12IntEval::V(SpinCase2 S) {
 
 const RefSCMatrix&
 R12IntEval::V() {
-  assert(r12world()->spinadapted() == true);
+  MPQC_ASSERT(r12world()->spinadapted() == true);
   compute();
   return V_[AlphaBeta];
 }
@@ -341,7 +341,7 @@ R12IntEval::X(SpinCase2 S) {
 
 RefSymmSCMatrix
 R12IntEval::X() {
-  assert(r12world()->spinadapted() == true);
+  MPQC_ASSERT(r12world()->spinadapted() == true);
   compute();
   return to_lower_triangle(X_[AlphaBeta]);
 }
@@ -358,7 +358,7 @@ R12IntEval::B(SpinCase2 S) {
 
 RefSymmSCMatrix
 R12IntEval::B() {
-  assert(r12world()->spinadapted() == true);
+  MPQC_ASSERT(r12world()->spinadapted() == true);
   compute();
   return to_lower_triangle(B_[AlphaBeta]);
 }
@@ -494,7 +494,7 @@ R12IntEval::emp2_cabs_singles(bool vir_cabs_coupling)
 double
 R12IntEval::emp2_cabs_singles(const RefSCMatrix& T1_ia_alpha,
                               const RefSCMatrix& T1_ia_beta) {
-  assert(r12world()->sdref() == true);
+  MPQC_ASSERT(r12world()->sdref() == true);
   if (emp2_cabs_singles_ == 1.0)
     emp2_cabs_singles_ = compute_emp2_cabs_singles_noncanonical_ccsd(T1_ia_alpha,T1_ia_beta);
   return emp2_cabs_singles_;
@@ -502,8 +502,8 @@ R12IntEval::emp2_cabs_singles(const RefSCMatrix& T1_ia_alpha,
 
 const RefSCMatrix&
 R12IntEval::T1_cabs(SpinCase1 spin) const {
-  assert(r12world()->sdref() == true);
-  assert(emp2_cabs_singles_ != 1.0);
+  MPQC_ASSERT(r12world()->sdref() == true);
+  MPQC_ASSERT(emp2_cabs_singles_ != 1.0);
   return T1_cabs_[spin];
 }
 
@@ -1451,7 +1451,7 @@ R12IntEval::h_P_P(SpinCase1 spin)
 
 const Ref<OrbitalSpace>&
 R12IntEval::gamma_p_p(SpinCase1 S) {
-  assert(!r12world()->spinadapted());
+  MPQC_ASSERT(!r12world()->spinadapted());
   if (!spin_polarized() && S == Beta)
     return gamma_p_p(Alpha);
 
@@ -1475,7 +1475,7 @@ R12IntEval::gamma_p_p(SpinCase1 S) {
 
 const Ref<OrbitalSpace>&
 R12IntEval::gamma_p_p_av() {
-  assert(r12world()->spinadapted());
+  MPQC_ASSERT(r12world()->spinadapted());
   if (gamma_p_p_[Alpha].null()) {
     const Ref<OrbitalSpace>& extspace = this->orbs(Alpha);
     const Ref<OrbitalSpace>& intspace = this->orbs(Alpha);
@@ -1490,7 +1490,7 @@ R12IntEval::gamma_p_p_av() {
 
 const Ref<OrbitalSpace>&
 R12IntEval::gamma_m_m_av() {
-  assert(r12world()->spinadapted());
+  MPQC_ASSERT(r12world()->spinadapted());
   if (gamma_m_m_[Alpha].null()) {
     const Ref<OrbitalSpace>& extspace = this->occ(Alpha);
     const Ref<OrbitalSpace>& intspace = this->occ(Alpha);
@@ -1505,7 +1505,7 @@ R12IntEval::gamma_m_m_av() {
 
 const Ref<OrbitalSpace>&
 R12IntEval::gammaFgamma_p_p(SpinCase1 S) {
-  assert(!r12world()->spinadapted());
+  MPQC_ASSERT(!r12world()->spinadapted());
   if (!spin_polarized() && S == Beta)
     return gammaFgamma_p_p(Alpha);
 
@@ -1527,7 +1527,7 @@ R12IntEval::gammaFgamma_p_p(SpinCase1 S) {
 
 const Ref<OrbitalSpace>&
 R12IntEval::gammaFgamma_p_p() {
-  assert(r12world()->spinadapted());
+  MPQC_ASSERT(r12world()->spinadapted());
   if (gammaFgamma_p_p_[Alpha].null()) {
     const Ref<OrbitalSpace>& extspace = this->orbs(Alpha);
     const Ref<OrbitalSpace>& intspace = this->orbs(Alpha);
@@ -1544,7 +1544,7 @@ R12IntEval::gammaFgamma_p_p() {
 
 const Ref<OrbitalSpace>&
 R12IntEval::Fgamma_p_P(SpinCase1 S) {
-  assert(!r12world()->spinadapted());
+  MPQC_ASSERT(!r12world()->spinadapted());
   if (!spin_polarized() && S == Beta)
     return(Fgamma_p_P(Alpha));
   if(Fgamma_p_P_[S].null()) {
@@ -1566,7 +1566,7 @@ R12IntEval::Fgamma_p_P(SpinCase1 S) {
 
 const Ref<OrbitalSpace>&
 R12IntEval::Fgamma_p_P() {
-  assert(r12world()->spinadapted());
+  MPQC_ASSERT(r12world()->spinadapted());
   if(Fgamma_p_P_[Alpha].null()) {
     const Ref<OrbitalSpace>& extspace = this->orbs(Alpha);
     const Ref<OrbitalSpace>& intspace = r12world()->ribs_space();
@@ -2499,7 +2499,7 @@ R12IntEval::ordm(SpinCase1 S) const {
 
 RefSymmSCMatrix
 R12IntEval::ordm() const {
-  assert(r12world()->spinadapted());
+  MPQC_ASSERT(r12world()->spinadapted());
   if (ordm_[Alpha].nonnull())
     return ordm_[Alpha];
 
@@ -2512,7 +2512,7 @@ R12IntEval::ordm() const {
 
 RefSymmSCMatrix
 R12IntEval::ordm_av() const {
-  assert(r12world()->spinadapted());
+  MPQC_ASSERT(r12world()->spinadapted());
   RefSymmSCMatrix ordm_av = r12world()->refwfn()->ordm_orbs_sb(Alpha).copy();
   ordm_av.accumulate(r12world()->refwfn()->ordm_orbs_sb(Beta));
   ordm_av.scale(0.5);
@@ -2526,7 +2526,7 @@ R12IntEval::ordm_av() const {
 
 RefSymmSCMatrix
 R12IntEval::ordm_occ_av() const {
-  assert(r12world()->spinadapted());
+  MPQC_ASSERT(r12world()->spinadapted());
   RefSymmSCMatrix ordm_av = r12world()->refwfn()->ordm_occ_sb(Alpha).copy();
   ordm_av.accumulate(r12world()->refwfn()->ordm_occ_sb(Beta));
   ordm_av.scale(0.5);
@@ -2784,7 +2784,7 @@ namespace {
         case AlphaBeta:  return "ab";
         case AlphaAlpha:  return "aa";
         case BetaBeta:  return "bb";
-        default: assert(false); // unreachable
+        default: MPQC_ASSERT(false); // unreachable
       }
       return std::string(); // dummy return statement to pacify picky compilers
     }

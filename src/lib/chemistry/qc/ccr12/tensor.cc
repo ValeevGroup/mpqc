@@ -57,7 +57,7 @@ Tensor::Tensor(string filename, const Ref<MemoryGrp>& mem): mem_(mem) {
 }
 
 Tensor::~Tensor(){
-  assert(file_allocated_);
+  MPQC_ASSERT(file_allocated_);
   deletefile();
 }
 
@@ -68,7 +68,7 @@ void Tensor::input_offset(long tag, long offset){
 
 
 void Tensor::set_filesize(long i){
-  assert(hash_table_.size() > 0);
+  MPQC_ASSERT(hash_table_.size() > 0);
   filesize_ = i;
   long tag = LONG_MAX - 1;
   hash_table_.insert(std::map<long, long>::value_type(tag, i));
@@ -93,7 +93,7 @@ void Tensor::createfile(){
 #else
  // create a zero-cleared file of the specified size
  file_ = new fstream(filename_.c_str(), fstream::out | fstream::binary); 
- assert(file()->is_open());
+ MPQC_ASSERT(file()->is_open());
  double* aux_array = new double[cachesize];
  fill(aux_array, aux_array + cachesize, 0.0);
  long size_back = filesize_; 
@@ -132,7 +132,7 @@ vector<long> Tensor::determine_filesizes(){
     current = thresh < (k->second) - thresh ? hash_table_.begin()->second : k->second;
   } else if (j == (--hash_table_.end())) {
     current = j->second;
-    assert(current == filesize_);
+    MPQC_ASSERT(current == filesize_);
   } else {
     std::map<long, long>::iterator k = j; k++;
     current = thresh - (j->second) <= (k->second) - thresh ? j->second : k->second;
@@ -153,7 +153,7 @@ void Tensor::deletefile(){
 /// routines called from one node (i.e. inside the loops) >>>>>>>>>>>>>>>>>>>>>>>>>
 void Tensor::get_block(long tag, double* data){
   std::map<long, long>::iterator iter = hash_table_.find(tag);
-  assert(iter != hash_table_.end());
+  MPQC_ASSERT(iter != hash_table_.end());
   long doffset = iter->second;
   long dsize   = (++iter)->second-doffset;
   distsize_t offset = (distsize_t)doffset * sizeof(double);
@@ -173,7 +173,7 @@ void Tensor::get_block(long tag, double* data){
 
 void Tensor::put_block(long tag, double* data){
   std::map<long,long>::iterator iter = hash_table_.find(tag);
-  assert(iter != hash_table_.end());
+  MPQC_ASSERT(iter != hash_table_.end());
   long doffset = iter->second;
   long dsize   = (++iter)->second - doffset;
   distsize_t offset = (distsize_t)doffset * sizeof(double);
@@ -196,7 +196,7 @@ void Tensor::add_block(long tag, double* data){
 // probably it is ok (in smith codes, k_a and k_a_sort are
 // already deallocated at the time this is called)...
   std::map<long,long>::iterator iter = hash_table_.find(tag);
-  assert(iter != hash_table_.end());
+  MPQC_ASSERT(iter != hash_table_.end());
   long doffset = iter->second;
   blasint dsize    = (int)((++iter)->second - doffset);
   distsize_t offset = (distsize_t) doffset * sizeof(double);
@@ -325,7 +325,7 @@ void Tensor::daxpy(const Ref<Tensor>& other, double a){ // add to self
   const blasint unit = 1;
 #ifndef DISK_BASED_SMITH
   const blasint dsize = file_->localsize() / sizeof(double);
-  assert(dsize == other->file()->localsize() / sizeof(double));
+  MPQC_ASSERT(dsize == other->file()->localsize() / sizeof(double));
   double* buffer1 = (double *) file_->localdata();
   const double* buffer2 = (double *) other->file()->localdata();
   F77_DAXPY(&dsize, &a, buffer2, &unit, buffer1, &unit);
@@ -376,7 +376,7 @@ Ref<Tensor> Tensor::copy() const{
 
 #ifndef DISK_BASED_SMITH
   int size = file_->localsize();
-  assert(size == other->file()->localsize());
+  MPQC_ASSERT(size == other->file()->localsize());
   double* buffer1 = (double *) file_->localdata();
   double* buffer2 = (double *) other->file()->localdata();
   ::memcpy((void*) buffer2, (void*) buffer1, size);
@@ -451,7 +451,7 @@ double Tensor::ddot(Ref<Tensor>& other) const {
   const double* buffer1 = (double *)        file_->localdata();
   const double* buffer2 = (double *) other->file()->localdata();
   const blasint dsize = file_->localsize() / sizeof(double);
-  assert(file()->localsize() == other->file()->localsize());
+  MPQC_ASSERT(file()->localsize() == other->file()->localsize());
   double ddotproduct = F77_DDOT(&dsize, buffer1, &unit, buffer2, &unit);
 
   sync();

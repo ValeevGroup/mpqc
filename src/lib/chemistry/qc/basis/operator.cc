@@ -126,7 +126,7 @@ OneBodyOperDescr::num_particles() const {
 
 int
 OneBodyOperDescr::perm_symm(unsigned int i) const {
-  assert(i == 0);
+  MPQC_ASSERT(i == 0);
   return perm_;
 }
 
@@ -183,7 +183,7 @@ OneBodyOperSetDescr::instance(OneBodyOperSet::type oset)
                                      OneBodyOperSetTypeMap<OneBodyOperSet::p4>::value);
       break;
     default:
-      assert(false);
+      MPQC_ASSERT(false);
   }
   return Ref<OneBodyOperSetDescr>(); // unreachable
 }
@@ -191,7 +191,7 @@ OneBodyOperSetDescr::instance(OneBodyOperSet::type oset)
 OneBodyOper::type
 OneBodyOperSetDescr::opertype(unsigned int o) const
 {
-  assert(o < size_);
+  MPQC_ASSERT(o < size_);
   return value_[o];
 }
 
@@ -389,7 +389,7 @@ TwoBodyOperSetDescr::instance(TwoBodyOperSet::type oset)
       break;
 
     default:
-      assert(false);
+      MPQC_ASSERT(false);
   }
   return Ref<TwoBodyOperSetDescr>(); // unreachable
 }
@@ -397,7 +397,7 @@ TwoBodyOperSetDescr::instance(TwoBodyOperSet::type oset)
 TwoBodyOper::type
 TwoBodyOperSetDescr::opertype(unsigned int o) const
 {
-  assert(o < size_);
+  MPQC_ASSERT(o < size_);
   return value_[o];
 }
 

@@ -41,8 +41,7 @@ using namespace sc;
 inline static double
 norm(double v[3])
 {
-  double x,y,z;
-  return sqrt((x=v[0])*x + (y=v[1])*y + (z=v[2])*z);
+  return sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 }
 
 inline static double
@@ -158,7 +157,7 @@ AM05Functional::am05xc(double rho,double gam,
       double fxlda = 2.0*fx0;
       double fclda,vclda,vc0b;
       pw(0.5*rho,0.5*rho,fclda,vclda,vc0b);
-      assert(vclda == vc0b);
+      MPQC_ASSERT(vclda == vc0b);
       // Interpolation index
       double X = 1.0/(1.0 + a*s2);
        double w = am05_lambertw(pow(s,3./2.)/sqrt(24.0));
@@ -201,7 +200,7 @@ AM05Functional::am05_lambertw(double z)
 {
   double result;
   // Used only in am05xc. AEM June, 2006.
-  assert(z >= 0.0);
+  MPQC_ASSERT(z >= 0.0);
   // If z small, go with the first term of the power expansion, z
   if (z < 1.e-20) {
       result = z;
@@ -231,7 +230,7 @@ AM05Functional::am05_lambertw(double z)
             }
            result = result - t;
            if (fabs(t) < (2.48*1.e-14)*(1.0 + fabs(result))) break;
-           assert(i != 10);
+           MPQC_ASSERT(i != 10);
          }
     }
   return result;

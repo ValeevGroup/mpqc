@@ -62,7 +62,7 @@ R12IntEval::V_diag_ta() {
   this->compute_emp2_cabs_singles_noncanonical(vir_cabs_coupling);
   srr12intrmds.set_T1_cabs(this->T1_cabs_[Alpha]);
 
-  assert(this->orbital_registry()->key_exists("A'"));
+  MPQC_ASSERT(this->orbital_registry()->key_exists("A'"));
 
   auto rdm1 = srr12intrmds.rdm1();
 }

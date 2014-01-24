@@ -259,7 +259,7 @@ namespace ci {
             }
             if (begin != end)
                 R.push_back(Subspace<Spin>(Space<Spin>(r), mpqc::range(begin, end)));
-            assert(S.size() == *R.back().end());
+            MPQC_ASSERT(S.size() == *R.back().end());
             return R;
         }
 

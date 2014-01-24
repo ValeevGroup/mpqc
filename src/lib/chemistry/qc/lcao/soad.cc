@@ -193,7 +193,7 @@ void sc::SuperpositionOfAtomicDensities::compute() {
               aospace_id, "SuperpositionOfAtomicDensities minimal AO basis set",
               minbasis, integral());
           aoreg->add(minbasis, aospace);
-          assert(oreg->key_exists(aospace_id) == false);
+          MPQC_ASSERT(oreg->key_exists(aospace_id) == false);
           // should be ensured by using new_unique_key
           oreg->add(make_keyspace_pair(aospace));
         }
@@ -205,7 +205,7 @@ void sc::SuperpositionOfAtomicDensities::compute() {
               aospace_id, "SuperpositionOfAtomicDensities AO basis set",
               basis(), integral());
           aoreg->add(basis(), aospace);
-          assert(oreg->key_exists(aospace_id) == false);
+          MPQC_ASSERT(oreg->key_exists(aospace_id) == false);
           // should be ensured by using new_unique_key
           oreg->add(make_keyspace_pair(aospace));
         }
@@ -499,7 +499,7 @@ SuperpositionOfAtomicDensities::guess_minimal_density(const Ref<GaussianBasisSet
         const int nocc_shells_of_this_l = shell_occs[l].size();
         // if this fails, aufbau produced more occupied shells than in the basis
         // either aufbau algorithm is broken or the basis is broken
-        assert(nocc_shells_of_this_l <= shells.size());
+        MPQC_ASSERT(nocc_shells_of_this_l <= shells.size());
         for (int s = 0; s < nocc_shells_of_this_l; ++s) {
           const int nelectrons_in_shell = shell_occs[l].at(s);
           const double nelectrons_per_bf =
@@ -578,7 +578,7 @@ double sc::SuperpositionOfAtomicDensities::occupation(int irrep,
       require_dynamic_cast<BlockedDiagSCMatrix*>(occs.pointer(),
           "OneBodyWavefunction::projected_eigenvalues: val"
           );
-  assert(irrep >= 0 && irrep < occs_blk->nblocks());
+  MPQC_ASSERT(irrep >= 0 && irrep < occs_blk->nblocks());
   double occ = 0.0;
   if (occs_blk->block(irrep).nonnull()) {
     if (vectornum < occs_blk->block(irrep)->n()) {

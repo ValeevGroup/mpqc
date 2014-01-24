@@ -194,8 +194,8 @@ ClassDesc FinDispMolecularHessian::Impl::class_desc_(
 
 FinDispMolecularHessian::Impl::Impl(const Ref<MolecularEnergy>& e,
                                     const Ref<Params>& params) :
-  mole_(e),
-  params_(params)
+  params_(params),
+  mole_(e)
 {
   init();
 }
@@ -442,9 +442,9 @@ unsigned int
 FinDispMolecularHessian::Impl::coor_to_irrep(unsigned int symm_coord) const {
   // row dimension of symbasis_ is blocked according to irreps -> map row to block # -> voila!
   RefSCDimension dsym = symbasis_.rowdim();
-  assert(symm_coord < dsym.n());
+  MPQC_ASSERT(symm_coord < dsym.n());
   Ref<SCBlockInfo> bsym = dsym->blocks();
-  assert(bsym.nonnull());
+  MPQC_ASSERT(bsym.nonnull());
   int block, offset;
   bsym->elem_to_block(symm_coord, block, offset);
   return block;
@@ -529,7 +529,7 @@ FinDispMolecularHessian::GradientsImpl::set_gradient(const Displacement& disp, d
   // what's the irrep of the displacement? Only single-coordinate displacements are needed to compute hessian from gradients
   int irrep = 0;
   if (!disp.empty()) {
-    assert(disp.size() == 1);
+    MPQC_ASSERT(disp.size() == 1);
     const int int_coor = disp[0].first;
     irrep = coor_to_irrep(int_coor);
   }

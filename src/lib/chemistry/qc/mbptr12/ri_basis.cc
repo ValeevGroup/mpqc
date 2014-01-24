@@ -206,7 +206,7 @@ R12WavefunctionWorld::construct_ortho_comp_svd_()
       cabs_space_[Beta] = orthog_comp(refwfn()->uocc_sb(Beta), tmp_b, key_b, "CABS (Beta)", tol);
     }
     else // old orbitalspace key no longer supported
-      assert(false);
+      MPQC_ASSERT(false);
 
     idxreg->add(make_keyspace_pair(cabs_space_[Alpha]));
     idxreg->add(make_keyspace_pair(cabs_space_[Beta]));

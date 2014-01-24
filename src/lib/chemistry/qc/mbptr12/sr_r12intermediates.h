@@ -75,7 +75,7 @@ namespace sc {
     /// \param ar The serialization archive
     template <typename Archive>
     void serialize(Archive& ar) {
-      assert(false);
+      MPQC_ASSERT(false);
     }
 
   };
@@ -111,7 +111,7 @@ namespace sc {
     /// \param ar The serialization archive
     template <typename Archive>
     void serialize(Archive& ar) {
-      assert(false);
+      MPQC_ASSERT(false);
     }
 
   };
@@ -168,7 +168,7 @@ namespace sc {
     /// \param ar The serialization archive
     template <typename Archive>
     void serialize(Archive& ar) {
-      assert(false);
+      MPQC_ASSERT(false);
     }
 
   };
@@ -182,7 +182,7 @@ namespace sc {
     struct TGeminalGenerator {
         /// @param spin 0(singlet) or 1(triplet)
         TGeminalGenerator(unsigned int spin = 0) : s_(spin) {
-          assert(s_ == 0 || s_ == 1);
+          MPQC_ASSERT(s_ == 0 || s_ == 1);
         }
 
         template <typename Index> T operator()(const Index& i) {
@@ -275,6 +275,26 @@ namespace sc {
                      const char* r, const char* s);
       // V^rk_sk which is summed over k
       TArray2 Vrk_sk(const char* r, const char* s);
+
+      // compute Xam contribution from CABS Singles
+      TArray2 Xam_CabsSingles(const TArray2& TmA, const TArray2& Tma);
+
+      // compute Xam contribution from MP2
+      TArray2 Xam_mp2(const TArray4& T2_ijab,
+                      const TArray2& Dij, const TArray2& Dab);
+
+      // compute Xam contribution from MP2 F12 coulping part
+      TArray2 Xam_Cmp2f12(const double C_0, const double C_1,
+                          const TArray4& T2_ijab, const TArray4& A_ijab,
+                          const TArray2& Dij, const TArray2& Dab,
+                          const TArray2& RT_apb);
+
+      // compute Xam contribution from F12 V part
+      TArray2 Xam_V(const double C_0, const double C_1);
+      // compute Xam contribution from F12 X part
+      TArray2 Xam_X(const double C_0, const double C_1);
+      // compute Xam contribution from F12 B part
+      TArray2 Xam_B(const double C_0, const double C_1);
 
       /** returns the 2-particle density matrix
       * @return \f$ \gamma^{pq}_{rs} \f$, respectively

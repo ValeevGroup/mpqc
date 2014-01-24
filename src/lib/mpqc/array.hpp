@@ -168,7 +168,7 @@ namespace mpqc {
         }
 
         size_t block() const { 
-            assert(this->rank() == 2);
+            MPQC_ASSERT(this->rank() == 2);
             range ri = range_[0];
             return std::max<size_t>((8 << 20)/(sizeof(T)*ri.size()), 1);
         }

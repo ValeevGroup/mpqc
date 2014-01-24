@@ -388,7 +388,7 @@ void MP2R12Energy::print_pair_energies(bool spinadapted,
                                        std::ostream& so)
 {
   // if CABS singles are requested, OBS singles are included in the CABS singles correction
-  if (emp2_cabs_singles_energy != 0.0) assert(include_obs_singles_ == false);
+  if (emp2_cabs_singles_energy != 0.0) MPQC_ASSERT(include_obs_singles_ == false);
 
   compute();
 
@@ -444,7 +444,7 @@ void MP2R12Energy::print_pair_energies(bool spinadapted,
     }
   }
   else {
-    assert(r12eval()->dim_oo(AlphaBeta) == r12eval()->dim_gg(AlphaBeta));
+    MPQC_ASSERT(r12eval()->dim_oo(AlphaBeta) == r12eval()->dim_gg(AlphaBeta));
     Ref<SCMatrixKit> localkit = C_[AlphaAlpha].kit();
 
     const Ref<OrbitalSpace> gspace = r12eval()->ggspace(Alpha);
@@ -630,13 +630,16 @@ MP2R12Energy::compute_pair_function(unsigned int i, unsigned int j, SpinCase2 sp
   case AlphaBeta:  ij = i*occ2_act->rank() + j; break;
   case AlphaAlpha:
   case BetaBeta:
+  {
     // Cannot violate Pauli exclusion principle
     if (i == j)
       return;
     const unsigned int ii = std::max(i,j);
     const unsigned int jj = std::min(i,j);
     ij = ii*(ii-1)/2 + jj;
-    break;
+  }
+  break;
+  default: MPQC_ASSERT(false);
   }
 
   const Ref<R12Technology::CorrelationFactor> corrfactor = r12world->r12tech()->corrfactor();
@@ -676,6 +679,7 @@ MP2R12Energy::compute_pair_function(unsigned int i, unsigned int j, SpinCase2 sp
   case AlphaBeta: spinlabel = "ab"; break;
   case AlphaAlpha: spinlabel = "aa"; break;
   case BetaBeta: spinlabel = "bb"; break;
+  default: MPQC_ASSERT(false);
   }
   std::stringstream output_file_name;
   output_file_name << SCFormIO::default_basename() << ".pair_function." << tbgrid->name() << "." << spinlabel << "."

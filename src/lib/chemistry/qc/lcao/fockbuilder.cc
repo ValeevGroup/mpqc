@@ -967,7 +967,7 @@ namespace sc {
         params_key = kernel_pkey.params();
       }
       const std::string operset_key = TwoBodyOperSetDescr::instance(operset)->key();
-      assert(TwoBodyOperSetDescr::instance(operset)->size() == 1);
+      MPQC_ASSERT(TwoBodyOperSetDescr::instance(operset)->size() == 1);
       const unsigned int ints_type_idx = 0;
 
       std::vector<double> R(ndf,0.0);
@@ -1746,7 +1746,7 @@ namespace sc {
         int Srank = 0;
         for(int ao=0; ao<nao; ++ao) {
           const double value = Pevals(ao);
-          assert(value > -1e-8); // Negative eigenvalues? BAD
+          MPQC_ASSERT(value > -1e-8); // Negative eigenvalues? BAD
           if (value > Peval_threshold)
             ++Srank;
         }

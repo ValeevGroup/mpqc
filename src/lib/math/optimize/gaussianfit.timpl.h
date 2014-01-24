@@ -64,8 +64,8 @@ namespace sc {
                                                                                            double left,
                                                                                            double right,
                                                                                            unsigned int NP) :
-    weight_(W), p_(new double[2*N]), scratch_(new double[NP]), npts_(NP),
-        left_(left), right_(right) {
+    weight_(W), gaussians_(), left_(left), right_(right), npts_(NP), p_(new double[2*N]), scratch_(new double[NP])
+        {
     if (left < 0.0 || right < 0.0 || left >= right || N < 1 || NP < 2)
       throw sc::ProgrammingError("GaussianFit::GaussianFit() -- invalid parameters",__FILE__,__LINE__);
     

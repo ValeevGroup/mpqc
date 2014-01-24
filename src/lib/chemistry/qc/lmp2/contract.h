@@ -183,11 +183,12 @@ class RepackScheme {
                  const IndexList &fixC, const BlockInfo<NC> *fixvalC,
                  int n_C_repack
         ):
-      A_(A), extA_(extA), intA_(intA), fixA_(fixA), fixvalA_(fixvalA),
-      B_(B), intB_(intB), extB_(extB), fixB_(fixB), fixvalB_(fixvalB),
-      C_(C), extCA_(extCA), extCB_(extCB), fixC_(fixC), fixvalC_(fixvalC),
-      n_C_repack_(n_C_repack),
-      cost_(0.0) {
+      cost_(0.0),
+      extA_(extA), intA_(intA), fixA_(fixA), fixvalA_(fixvalA),
+      extB_(extB), intB_(intB), fixB_(fixB), fixvalB_(fixvalB),
+      extCA_(extCA), extCB_(extCB), fixC_(fixC), fixvalC_(fixvalC),
+      A_(A), B_(B), C_(C),
+      n_C_repack_(n_C_repack) {
       init();
     }
     /// Set the array that determines the index ordering to C (i==0), A (i==1), or B (i==2)

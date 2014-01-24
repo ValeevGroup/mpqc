@@ -246,8 +246,10 @@ MOIntsTransformFactory::twobody_transform(MOIntsTransform::TwoBodyTransformType 
       return twobody_transform<TwoBodyMOIntsTransform_ijxy>(name,descrarg);
     case MOIntsTransform::TwoBodyTransformType_iRjS:
       return twobody_transform<TwoBodyMOIntsTransform_iRjS>(name,descrarg);
+    case MOIntsTransform::TwoBodyTransformType_ijR:
+      MPQC_ASSERT(false);
   }
-  assert(false); // should be unreachable
+  MPQC_ASSERT(false); // should be unreachable
   return Ref<TwoBodyMOIntsTransform>(); // dummy return statement to pacify picky compilers
 }
 #endif
@@ -260,8 +262,10 @@ MOIntsTransformFactory::twobody_transform(MOIntsTransform::TwoBodyTransformType 
   switch (T) {
     case MOIntsTransform::TwoBodyTransformType_ijR:
       return twobody_transform<TwoBodyThreeCenterMOIntsTransform_ijR>(name,descrarg);
+    default:
+      ;
   }
-  assert(false);  // should be unreachable
+  MPQC_ASSERT(false);  // should be unreachable
   return Ref<TwoBodyThreeCenterMOIntsTransform>(); // dummy return statement to pacify picky compilers
 }
 

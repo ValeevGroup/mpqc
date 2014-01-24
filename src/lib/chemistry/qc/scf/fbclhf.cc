@@ -239,7 +239,7 @@ DFCLHF::ao_fock(double accuracy)
   if (aoreg->key_exists(basis()) == false) {
     Ref<OrbitalSpace> aospace = new AtomicOrbitalSpace(aospace_id, "DFCLHF AO basis set", basis(), integral());
     aoreg->add(basis(), aospace);
-    assert(oreg->key_exists(aospace_id) == false); // should be ensured by using new_unique_key
+    MPQC_ASSERT(oreg->key_exists(aospace_id) == false); // should be ensured by using new_unique_key
     oreg->add(make_keyspace_pair(aospace));
   }
   // feed the spin densities to the builder, cl_dens_diff_ includes total density right now, so halve it

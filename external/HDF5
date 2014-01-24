@@ -9,7 +9,7 @@ find_package(HDF5)
 
 if (HDF5_FOUND)
   include_directories(${HDF5_INCLUDE_DIRS})
-  set(HDF5_LIBRARIES "${HDF5_LIBRARIES_RELEASE}")
+  #set(HDF5_LIBRARIES "${HDF5_LIBRARIES_RELEASE}")
 endif()
 
 if (NOT HDF5_FOUND)

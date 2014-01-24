@@ -1,22 +1,29 @@
 
 /** \page overview Overview
 
-The Massively Parallel Quantum Chemistry (MPQC) is a collection of C++ libraries
-for computation of molecular electronic structure (aka quantum chemistry).
-The domain-specific QC C++ libraries, known collectively as @ref labelmpqcChemistry "mpqc.Chemistry", are supported by two C++ code layers:
+The Massively Parallel Quantum Chemistry (MPQC) package has two components:
+  - a set of C++ libraries intended for use in molecular electronic structure (aka <em>quantum chemistry</em>, QC), and
+  - the end-user program for performing QC computations.
+The former is of interest to the developers of QC (and other) software, whereas the latter is of interest to those wishing
+to use the standard QC methods for practical computations.
+
+The software developers using MPQC will primarily be interested in the QC-specific C++ libraries,
+known collectively as @ref labelmpqcChemistry "mpqc.Chemistry"; these libraries can be used to implement existing and new
+QC methods easily. In turn, @ref labelmpqcChemistry "mpqc.Chemistry" libraries are supported by two sets of C++ libraries:
   - @ref labelmpqcCore "mpqc.Core", also known as the Scientific Toolkit (SC) in the past: core libraries for managing memory,
       saving and restoring the state of objects, reading objects from an input file, parallel communication, among others.
   - @ref labelmpqcMath "mpqc.Math": libraries for data containers (matrix and multidimensional array/tensor) and associated algebra, such as
       solving linear and nonlinear equations expressed in terms of these data containers.
 
 The \ref mpqc "MPQC" program is the end-user code for practical
-application of the variety of quantum chemistry methods implemented in SC.
+application of the variety of quantum chemistry methods implemented using @ref labelmpqcCore "mpqc.Core".
 Although MPQC lacks many features demanded by many mainstream users of quantum chemistry,
 it can be used by non-experts for applications of routine (Hartree-Fock, Density Functional Theory,
 MP2) as well as some unique advanced quantum chemistry methods (explicitly-correlated
 coupled-cluster and multireference methods). MPQC is also
-well-suited for learning quantum chemistry by advanced undergraduate
-and beginning graduate students.
+suitable for learning quantum chemistry by advanced undergraduate
+and beginning graduate students. Lastly, MPQC includes unique emerging functionality that is
+not yet accessible by non-experts.
 
 Although the development of MPQC has been ongoing since 1993, the code is constantly evolving.
 MPQC is fundamentally an experimental/research code that is
@@ -28,7 +35,7 @@ unfinished work that are intended to provide new functionality in later
 releases.
 
 MPQC runs on Unix platforms of all kinds, from a laptop running
-Linux or Apple OS X to a massively-parallel distributed-memory computer such as
-IBM BlueGene/P or Cray XT/XE.
+Linux or Apple OS X to a basic lab-scale Unix cluster to a high-end supercomputer such as
+IBM BlueGene/Q.
 
 */

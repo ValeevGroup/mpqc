@@ -393,7 +393,7 @@ G12NCLibint2::compute_quartet(int *psh1, int *psh2, int *psh3, int *psh4)
       case 1: otype = braonly ? f12 : f12_2; break;
       case 2: otype = f12_coulomb; break;
       case 3: otype = f12_T1_f12; break;
-      default: assert(false); // unreachable
+      default: MPQC_ASSERT(false); // unreachable
     }
     // no need f12/r12 when have 2 geminals
     if (otype == f12_coulomb && !braonly)

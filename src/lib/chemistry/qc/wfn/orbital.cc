@@ -236,8 +236,8 @@ WriteOrbitals::WriteOrbitals(const Ref<KeyVal> &keyval):
 
   int first = keyval->intvalue("first", KeyValValueint(1));
   const int last = keyval->intvalue("last", KeyValValueint(obwfn_->oso_dimension().n()));
-  assert(first < obwfn_->oso_dimension().n());
-  assert(last <= obwfn_->oso_dimension().n());
+  MPQC_ASSERT(first < obwfn_->oso_dimension().n());
+  MPQC_ASSERT(last <= obwfn_->oso_dimension().n());
   const int nmo = last - first + 1;
   for(int o=0; o<nmo; ++o)
     omap_.map.push_back(first++);
@@ -253,7 +253,7 @@ WriteOrbitals::WriteOrbitals(const Ref<OrbitalSpace> & orbs,
                                                      orbs_(orbs)
 {
   if (labels.empty() == false) {
-    assert(orbs_->rank() == labels.size());
+    MPQC_ASSERT(orbs_->rank() == labels.size());
     omap_.map = labels;
   }
   else {

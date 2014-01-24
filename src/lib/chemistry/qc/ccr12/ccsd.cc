@@ -65,8 +65,12 @@ CCSD::CCSD(StateIn& s): CCR12(s){
 CCSD::CCSD(const Ref<KeyVal>& keyval): CCR12(keyval){
   string theory("CCSD");
   theory_ = theory;
+
   perturbative_ = keyval->stringvalue("perturbative", KeyValValuestring(""));
-  transform(perturbative_.begin(), perturbative_.end(), perturbative_.begin(), (int (*)(int))std::toupper);
+  ostringstream oss; oss.setf(ios_base::uppercase);
+  oss << perturbative_;
+  perturbative_ = oss.str();
+
   print_theory();
 
   // validate user input

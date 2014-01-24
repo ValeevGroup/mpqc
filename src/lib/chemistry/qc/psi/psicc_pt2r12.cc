@@ -314,7 +314,7 @@ void PsiCC_PT2R12::compute_ept2r12() {
       const Ref<OrbitalSpace>& o2 = r12eval()->occ_act(spin2);
 
       std::vector< Ref<DistArray4> > Vpq_vec = r12eval()->V_distarray4(spincase2, p1, p2);
-      assert(Vpq_vec.size() == 1);
+      MPQC_ASSERT(Vpq_vec.size() == 1);
       Ref<DistArray4> Vpq = Vpq_vec[0];
 #define SKIP_R12INTEVAL_COMPUTE 0
 #if !SKIP_R12INTEVAL_COMPUTE

@@ -187,7 +187,7 @@ ExternMOInfo::ExternMOInfo(std::string filename,
       extern_to_mpqc_irrep_map.push_back(irreplabel_to_index[irreplabel]);
       //std::cout << "irreplabel = " << irreplabel << " (first char = '" << irreplabel[0] << "') irrep_labels = " << irrep_labels << std::endl;
     }
-    assert(extern_to_mpqc_irrep_map.size() == nirrep);
+    MPQC_ASSERT(extern_to_mpqc_irrep_map.size() == nirrep);
     in >> strjunk;
     std::cout << strjunk << std::endl;
   } else { // irrep labels are not given? assume everything same as in MPQC
@@ -425,7 +425,7 @@ ExternMOInfo::ExternMOInfo(std::string filename,
 
   skipeol(in);
   std::string token = readline(in);
-  std::vector<unsigned int> orbsym = parse<unsigned int>(token);  assert(orbsym.size() == nmo);
+  std::vector<unsigned int> orbsym = parse<unsigned int>(token);  MPQC_ASSERT(orbsym.size() == nmo);
   // map irrep indices to MPQC order; N.B. for MOs start from 1, hence subtraction of 1
   for(std::vector<unsigned int>::iterator i=orbsym.begin();
       i!=orbsym.end();
@@ -466,12 +466,12 @@ ExternMOInfo::ExternMOInfo(std::string filename,
 
   skipeol(in);
   std::string token;
-  token = readline(in);  mopi_    = parse<unsigned int>(token); assert(mopi_.size() == pg->order());
-  token = readline(in);  fzcpi_   = parse<unsigned int>(token); assert(fzcpi_.size() == pg->order());
-  token = readline(in);  inactpi_ = parse<unsigned int>(token); assert(inactpi_.size() == pg->order());
-  token = readline(in);  actpi_   = parse<unsigned int>(token); assert(actpi_.size() == pg->order());
-  token = readline(in);  fzvpi_   = parse<unsigned int>(token); assert(fzvpi_.size() == pg->order());
-  assert(std::accumulate(mopi_.begin(), mopi_.end(), 0) == nmo);
+  token = readline(in);  mopi_    = parse<unsigned int>(token); MPQC_ASSERT(mopi_.size() == pg->order());
+  token = readline(in);  fzcpi_   = parse<unsigned int>(token); MPQC_ASSERT(fzcpi_.size() == pg->order());
+  token = readline(in);  inactpi_ = parse<unsigned int>(token); MPQC_ASSERT(inactpi_.size() == pg->order());
+  token = readline(in);  actpi_   = parse<unsigned int>(token); MPQC_ASSERT(actpi_.size() == pg->order());
+  token = readline(in);  fzvpi_   = parse<unsigned int>(token); MPQC_ASSERT(fzvpi_.size() == pg->order());
+  MPQC_ASSERT(std::accumulate(mopi_.begin(), mopi_.end(), 0) == nmo);
   unsigned int junk; in >> junk; // fzcpi_ etc are in molcas symmetry order
 
   // by default correlate all inactive and active orbitals

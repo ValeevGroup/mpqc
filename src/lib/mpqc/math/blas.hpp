@@ -5,7 +5,11 @@
 #include "mpqc_config.h"
 #endif
 
-#ifdef HAVE_BLAS
+#ifndef MPQCMATH_USE_BLAS
+# define MPQCMATH_USE_BLAS 1
+#endif
+
+#if MPQCMATH_USE_BLAS
 
 #if (F77_INTEGER_WIDTH == 8)
 #define BIND_FORTRAN_INTEGER_8 // or not
@@ -59,7 +63,7 @@ struct adaptor< mpqc::matrix<T, Options>, Id, Enable >
 } // namespace numeric
 } // namespace boost
 
-#endif // HAVE_BLAS
+#endif // MPQCMATH_USE_BLAS
 
 namespace mpqc {
 namespace blas {
@@ -75,22 +79,22 @@ namespace blas {
     template<class A, class B>
     typename A::Scalar dot(const Eigen::MatrixBase<A> &a,
                            const Eigen::MatrixBase<B> &b) {
-#ifdef HAVE_BLAS
+#if MPQCMATH_USE_BLAS
  	return boost::numeric::bindings::blas::dot(a.derived(), b.derived());
 #else
  	return a.dot(b);
-#endif // HAVE_BLAS
+#endif // MPQCMATH_USE_BLAS
     }
 
     template<typename Alpha, class A, class B>
     void axpy(const Alpha &alpha,
               const Eigen::MatrixBase<A> &a,
               Eigen::MatrixBase<B> &b) {
-#ifdef HAVE_BLAS
+#if MPQCMATH_USE_BLAS
         boost::numeric::bindings::blas::axpy(alpha, a.derived(), b.derived());
 #else
         b = alpha*a + b;
-#endif // HAVE_BLAS
+#endif // MPQCMATH_USE_BLAS
     }
 
     template<typename Alpha, class A, class B, typename Beta, class C>
@@ -99,14 +103,14 @@ namespace blas {
               const Eigen::MatrixBase<B> &b,
               const Beta &beta,
               Eigen::MatrixBase<C> &c) {
-#ifdef HAVE_BLAS
+#if MPQCMATH_USE_BLAS
 	boost::numeric::bindings::blas::gemm(alpha, a.derived(), b.derived(),
                                              beta, c.derived());
 #else
         // N.B. fill (rather than scale) by zero to clear NaN/Inf
 	if (beta == Beta(0)) c.fill(Beta(0));
         c = alpha*a*b + beta*c;
-#endif // HAVE_BLAS
+#endif // MPQCMATH_USE_BLAS
     }
 
     /// @} // MathBLAS

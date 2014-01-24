@@ -1073,7 +1073,7 @@ SD_RefWavefunction::dfinfo() const {
     result = const_cast<DensityFittingInfo*>(world()->tfactory()->df_info());
   else {
     Ref<SCF> scf_ptr; scf_ptr << this->obwfn();
-    result = (scf_ptr.nonnull()) ? scf_ptr->dfinfo() : 0;
+    result = (scf_ptr.nonnull()) ? scf_ptr->dfinfo() : Ref<DensityFittingInfo>();
   }
   return result;
 }

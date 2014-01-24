@@ -83,15 +83,19 @@ class CADFCLHF: public CLHF {
 
     // This will later be changed to simple double* to allow for direct BLAS calls
     typedef std::shared_ptr<Eigen::Map<Eigen::VectorXd>> CoefContainer;
+    typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> TwoCenterIntContainer;
+    typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> ThreeCenterIntContainer;
+    typedef std::shared_ptr<TwoCenterIntContainer> TwoCenterIntContainerPtr;
+    typedef std::shared_ptr<ThreeCenterIntContainer> ThreeCenterIntContainerPtr;
 
     typedef std::map<std::pair<int, int>, std::pair<CoefContainer, CoefContainer>> CoefMap;
     typedef Eigen::HouseholderQR<Eigen::MatrixXd> Decomposition;
     typedef ConcurrentCache<
-        std::shared_ptr<Eigen::MatrixXd>,
+        TwoCenterIntContainerPtr,
         int, int, TwoBodyOper::type
     > TwoCenterIntCache;
     typedef ConcurrentCache<
-        std::shared_ptr<Eigen::MatrixXd>,
+        ThreeCenterIntContainerPtr,
         int, int, int, TwoBodyOper::type
     > ThreeCenterIntCache;
     typedef ConcurrentCache<
@@ -173,14 +177,14 @@ class CADFCLHF: public CLHF {
     void init_threads();
 
     /// returns shell ints in inbf x jnbf Eigen Matrix pointer
-    std::shared_ptr<Eigen::MatrixXd> ints_to_eigen(
+    TwoCenterIntContainerPtr ints_to_eigen(
         int ish, int jsh,
         Ref<TwoBodyTwoCenterInt>& ints,
         TwoBodyOper::type ints_type
     );
 
     template <typename ShellRange>
-    std::shared_ptr<Eigen::MatrixXd> ints_to_eigen(
+    TwoCenterIntContainerPtr ints_to_eigen(
         const ShellBlockData<ShellRange>& ish,
         const ShellBlockData<ShellRange>& jsh,
         Ref<TwoBodyTwoCenterInt>& ints,
@@ -188,14 +192,14 @@ class CADFCLHF: public CLHF {
     );
 
     template <typename ShellRange>
-    std::shared_ptr<Eigen::MatrixXd> ints_to_eigen(
+    ThreeCenterIntContainerPtr ints_to_eigen(
         const ShellBlockData<ShellRange>& ish, const ShellData& jsh,
         Ref<TwoBodyTwoCenterInt>& ints,
         TwoBodyOper::type ints_type
     );
 
     /// returns ints for shell in (inbf, jnbf) x kdfnbf matrix in chemists' notation
-    std::shared_ptr<Eigen::MatrixXd> ints_to_eigen(
+    ThreeCenterIntContainerPtr ints_to_eigen(
         int ish, int jsh, int ksh,
         Ref<TwoBodyThreeCenterInt>& ints,
         TwoBodyOper::type ints_type
@@ -203,7 +207,7 @@ class CADFCLHF: public CLHF {
 
     /// returns ints for shell in (inbf, jnbf) x kblk.nbf matrix in chemists' notation
     template <typename ShellRange>
-    std::shared_ptr<Eigen::MatrixXd> ints_to_eigen(
+    ThreeCenterIntContainerPtr ints_to_eigen(
         const ShellData& ish, const ShellData& jsh,
         const ShellBlockData<ShellRange>& kblk,
         Ref<TwoBodyThreeCenterInt>& ints,
@@ -212,7 +216,7 @@ class CADFCLHF: public CLHF {
 
     /// returns ints for shell in (inbf, jblk.nbf) x kblk.nbf matrix in chemists' notation
     template <typename ShellRange1, typename ShellRange2>
-    std::shared_ptr<Eigen::MatrixXd> ints_to_eigen(
+    ThreeCenterIntContainerPtr ints_to_eigen(
         const ShellBlockData<ShellRange1>& ish,
         const ShellData& jsh,
         const ShellBlockData<ShellRange2>& kblk,
@@ -363,14 +367,14 @@ class CADFCLHF: public CLHF {
 };
 
 template <typename ShellRange>
-std::shared_ptr<Eigen::MatrixXd>
+CADFCLHF::TwoCenterIntContainerPtr
 CADFCLHF::ints_to_eigen(
     const ShellBlockData<ShellRange>& iblk,
     const ShellBlockData<ShellRange>& jblk,
     Ref<TwoBodyTwoCenterInt>& ints,
     TwoBodyOper::type int_type
 ){
-  auto rv = std::make_shared<Eigen::MatrixXd>(iblk.nbf, jblk.nbf);
+  auto rv = std::make_shared<TwoCenterIntContainer>(iblk.nbf, jblk.nbf);
   for(auto ish : shell_range(iblk)) {
     for(auto jsh : shell_range(jblk)) {
       const auto& ints_ptr = ints_to_eigen(ish, jsh, ints, int_type);
@@ -381,14 +385,14 @@ CADFCLHF::ints_to_eigen(
 }
 
 template <typename ShellRange>
-std::shared_ptr<Eigen::MatrixXd>
+CADFCLHF::ThreeCenterIntContainerPtr
 CADFCLHF::ints_to_eigen(
     const ShellBlockData<ShellRange>& iblk,
     const ShellData& jsh,
     Ref<TwoBodyTwoCenterInt>& ints,
     TwoBodyOper::type int_type
 ){
-  auto rv = std::make_shared<Eigen::MatrixXd>((const int)iblk.nbf, (const int)jsh.nbf);
+  auto rv = std::make_shared<ThreeCenterIntContainer>((const int)iblk.nbf, (const int)jsh.nbf);
   for(auto ish : shell_range(iblk)) {
     const auto& ints_ptr = ints_to_eigen(ish, jsh, ints, int_type);
     rv->block(ish.bfoff - iblk.bfoff, 0, ish.nbf, jsh.nbf) = *ints_ptr;
@@ -397,19 +401,18 @@ CADFCLHF::ints_to_eigen(
 }
 
 template <typename ShellRange>
-std::shared_ptr<Eigen::MatrixXd>
+CADFCLHF::ThreeCenterIntContainerPtr
 CADFCLHF::ints_to_eigen(
     const ShellData& ish, const ShellData& jsh,
     const ShellBlockData<ShellRange>& Xblk,
     Ref<TwoBodyThreeCenterInt>& ints,
     TwoBodyOper::type int_type
 ){
-  auto rv = std::make_shared<Eigen::MatrixXd>(
+  auto rv = std::make_shared<ThreeCenterIntContainer>(
       ish.nbf * jsh.nbf,
       Xblk.nbf
   );
   for(auto Xsh : shell_range(Xblk)) {
-    out_assert(ints->basis3()->nbasis(), ==, Xsh.basis->nbasis());
     const auto& ints_ptr = ints_to_eigen(ish, jsh, Xsh, ints, int_type);
     rv->middleCols(Xsh.bfoff - Xblk.bfoff, Xsh.nbf) = *ints_ptr;
   }
@@ -417,7 +420,7 @@ CADFCLHF::ints_to_eigen(
 }
 
 template <typename ShellRange1, typename ShellRange2>
-std::shared_ptr<Eigen::MatrixXd>
+CADFCLHF::ThreeCenterIntContainerPtr
 CADFCLHF::ints_to_eigen(
     const ShellBlockData<ShellRange1>& iblk,
     const ShellData& jsh,
@@ -425,7 +428,7 @@ CADFCLHF::ints_to_eigen(
     Ref<TwoBodyThreeCenterInt>& ints,
     TwoBodyOper::type int_type
 ){
-  auto rv = std::make_shared<Eigen::MatrixXd>(
+  auto rv = std::make_shared<ThreeCenterIntContainer>(
       iblk.nbf * jsh.nbf,
       Xblk.nbf
   );

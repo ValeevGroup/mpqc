@@ -37,7 +37,7 @@
 #include <memory>
 #include <math.h>
 
-#define USE_INTEGRAL_CACHE 1
+#define USE_INTEGRAL_CACHE 0
 #define EIGEN_NO_AUTOMATIC_RESIZING 1
 
 #ifdef ECLIPSE_PARSER_ONLY
@@ -221,6 +221,7 @@ CADFCLHF::initialize()
 void
 CADFCLHF::init_threads()
 {
+  Timer timer("init threads");
   assert(not threads_initialized_);
   //----------------------------------------------------------------------------//
   // TODO fix this so that deallocating the tbis_ array doesn't cause a seg fault when this isn't called (we don't need it)
@@ -318,6 +319,7 @@ CADFCLHF::init_threads()
 void
 CADFCLHF::init_significant_pairs()
 {
+  Timer timer("init significant pairs");
   ExEnv::out0() << "  Computing significant shell pairs" << endl;
   std::atomic_int n_significant_pairs(0);
   const int nthread = threadgrp_->nthread();
@@ -691,7 +693,7 @@ CADFCLHF::compute_J()
   //----------------------------------------//
   // TODO Thread this
   timer.enter("compute g_tilde");
-  shared_ptr<Eigen::MatrixXd> X_g_Y = ints_to_eigen(
+  auto X_g_Y = ints_to_eigen(
     ShellBlockData<>(dfbs_), ShellBlockData<>(dfbs_),
     eris_2c_[0],
     coulomb_oper_type_
@@ -730,31 +732,23 @@ CADFCLHF::compute_J()
           //----------------------------------------//
           double perm_fact = (ish == jsh) ? 2.0 : 4.0;
           //----------------------------------------//
-          //for(int kshdf = 0; kshdf < dfbs.nshell(); ++kshdf){
-          for(auto kshdf : shell_range(dfbs_)){
-            std::shared_ptr<Eigen::MatrixXd> g_part = ints_to_eigen(
-                ish, jsh, kshdf,
+          for(auto Xblk : shell_block_range(dfbs_)){
+            auto g_part = ints_to_eigen(
+                ish, jsh, Xblk,
                 eris_3c_[ithr],
                 coulomb_oper_type_
             );
-            for(int ibf = 0, mu = ish.bfoff; ibf < ish.nbf; ++ibf, ++mu){
-              //for(auto jbf : function_range(jsh)){
-              for(int jbf = 0, nu = jsh.bfoff; jbf < jsh.nbf; ++jbf, ++nu){
-                //----------------------------------------//
-                const int ijbf = ibf*jsh.nbf + jbf;
-                //----------------------------------------//
-                // compute dtilde contribution
-                dt.segment(kshdf.bfoff, kshdf.nbf) += perm_fact * D(mu, nu) * g_part->row(ijbf);
-                //----------------------------------------//
-                // add C_tilde * g_part to J
-                if(nu <= mu){
-                  // only constructing the lower triangle of the J matrix
-                  jpart(mu, nu) += g_part->row(ijbf) * C_tilde.segment(kshdf.bfoff, kshdf.nbf);
-                }
-                //----------------------------------------//
-              } // end loop over jbf
-            } // end loop over ibf
+            for(auto mu : function_range(ish)) {
+              dt.segment(Xblk.bfoff, Xblk.nbf).transpose() += perm_fact * D.row(mu).segment(jsh.bfoff, jsh.nbf)
+                  * g_part->middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf);
+              //----------------------------------------//
+              jpart.row(mu).segment(jsh.bfoff, jsh.nbf).transpose() +=
+                  g_part->middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf)
+                  * C_tilde.segment(Xblk.bfoff, Xblk.nbf);
+            }
           } // end loop over kshbf
+          // only constructing the lower triangle of the J matrix, so zero the strictly upper part
+          jpart.triangularView<Eigen::StrictlyUpper>().setZero();
         } // end while get_shell_pair
         //----------------------------------------//
         // add our contribution to the node level d_tilde
@@ -1482,7 +1476,7 @@ CADFCLHF::compute_coefficients()
           //----------------------------------------//
           Eigen::MatrixXd ij_M_X(ish.nbf*jsh.nbf, dfnbfAB);
           for(auto ksh : iter_shells_on_center(dfbs_, ish.center)){
-            std::shared_ptr<Eigen::MatrixXd> ij_M_k = ints_to_eigen(
+            auto ij_M_k = ints_to_eigen(
                 ish, jsh, ksh,
                 metric_ints_3c_[ithr],
                 metric_oper_type_
@@ -1496,7 +1490,7 @@ CADFCLHF::compute_coefficients()
           } // end loop over shells on ish.center
           if(ish.center != jsh.center){
             for(auto ksh : iter_shells_on_center(dfbs_, jsh.center)){
-              std::shared_ptr<Eigen::MatrixXd> ij_M_k = ints_to_eigen(
+              auto ij_M_k = ints_to_eigen(
                   ish, jsh, ksh,
                   metric_ints_3c_[ithr],
                   metric_oper_type_
@@ -1609,7 +1603,7 @@ CADFCLHF::compute_coefficients()
   /* Make the CADF-LinK lists                                                         {{{1 */ #if 1 // begin fold
   schwarz_df_.resize(dfbs_->nshell());
   for(auto Xsh : shell_range(dfbs_)){
-    const auto& g_XX_ptr = ints_to_eigen(
+    auto g_XX_ptr = ints_to_eigen(
         Xsh, Xsh, eris_2c_[0], coulomb_oper_type_
     );
     auto& g_XX = *g_XX_ptr;
@@ -1641,7 +1635,7 @@ CADFCLHF::compute_coefficients()
             auto& cpair = coefs_[mu_sigma];
             for(auto Xsh : iter_shells_on_center(dfbs_, first.center)){
               auto& C = *cpair.first;
-              const auto& g_XX_ptr = ints_to_eigen(
+              auto g_XX_ptr = ints_to_eigen(
                   Xsh, Xsh, eris_2c_[0], coulomb_oper_type_
               );
               auto& g_XX = *g_XX_ptr;
@@ -1653,7 +1647,7 @@ CADFCLHF::compute_coefficients()
             if(first.center != second.center) {
               for(auto Xsh : iter_shells_on_center(dfbs_, second.center)){
                 auto& C = *cpair.second;
-                const auto& g_XX_ptr = ints_to_eigen(
+                auto g_XX_ptr = ints_to_eigen(
                     Xsh, Xsh, eris_2c_[0], coulomb_oper_type_
                 );
                 auto& g_XX = *g_XX_ptr;
@@ -1745,7 +1739,7 @@ CADFCLHF::get_decomposition(int ish, int jsh, Ref<TwoBodyTwoCenterInt> ints)
       for(int jshA = dfshoffA; jshA < dfshoffA + dfnshA; ++jshA){
         const int dfbfoffjA = dfbs_->shell_to_function(jshA);
         const int dfnbfjA = dfbs_->shell(jshA).nfunction();
-        std::shared_ptr<Eigen::MatrixXd> shell_ints = ints_to_eigen(
+        auto shell_ints = ints_to_eigen(
             ishA, jshA, ints,
             metric_oper_type_
         );
@@ -1767,7 +1761,7 @@ CADFCLHF::get_decomposition(int ish, int jsh, Ref<TwoBodyTwoCenterInt> ints)
         for(int jshB = dfshoffB; jshB < dfshoffB + dfnshB; ++jshB){
           const int dfbfoffjB = dfbs_->shell_to_function(jshB);
           const int dfnbfjB = dfbs_->shell(jshB).nfunction();
-          std::shared_ptr<Eigen::MatrixXd> shell_ints = ints_to_eigen(
+          auto shell_ints = ints_to_eigen(
               ishA, jshB, ints,
               metric_oper_type_
           );
@@ -1788,7 +1782,7 @@ CADFCLHF::get_decomposition(int ish, int jsh, Ref<TwoBodyTwoCenterInt> ints)
         for(int jshB = dfshoffB; jshB < dfshoffB + dfnshB; ++jshB){
           const int dfbfoffjB = dfbs_->shell_to_function(jshB);
           const int dfnbfjB = dfbs_->shell(jshB).nfunction();
-          std::shared_ptr<Eigen::MatrixXd> shell_ints = ints_to_eigen(
+          auto shell_ints = ints_to_eigen(
               ishB, jshB, ints,
               metric_oper_type_
           );
@@ -1809,7 +1803,7 @@ CADFCLHF::get_decomposition(int ish, int jsh, Ref<TwoBodyTwoCenterInt> ints)
 
 //////////////////////////////////////////////////////////////////////////////////
 
-std::shared_ptr<Eigen::MatrixXd>
+CADFCLHF::TwoCenterIntContainerPtr
 CADFCLHF::ints_to_eigen(int ish, int jsh, Ref<TwoBodyTwoCenterInt>& ints, TwoBodyOper::type int_type){
 #if USE_INTEGRAL_CACHE
   return ints2_.get(ish, jsh, int_type, [ish, jsh, int_type, &ints, this](){
@@ -1818,17 +1812,14 @@ CADFCLHF::ints_to_eigen(int ish, int jsh, Ref<TwoBodyTwoCenterInt>& ints, TwoBod
     GaussianBasisSet& jbs = *(ints->basis2());
     const int nbfi = ibs.shell(ish).nfunction();
     const int nbfj = jbs.shell(jsh).nfunction();
-    auto rv = make_shared<Eigen::MatrixXd>(nbfi, nbfj);
+    auto rv = make_shared<TwoCenterIntContainer>(nbfi, nbfj);
+    //----------------------------------------//
     ints->compute_shell(ish, jsh);
     const double* buffer = ints->buffer(int_type);
-    // TODO vectorized copy
-    //::memcpy(rv->data(), buffer, nbfi*nbfj);
-    int buffer_spot = 0;
-    for(int ibf = 0; ibf < nbfi; ++ibf){
-      for(int jbf = 0; jbf < nbfj; ++jbf){
-        (*rv)(ibf, jbf) = buffer[buffer_spot++];
-      }
-    }
+    //::memcpy(rv->data(), buffer, nbfi*nbfj * sizeof(double));
+    std::copy(buffer, buffer + nbfi*nbfj, rv->data());
+    //std::move(buffer, buffer + nbfi*nbfj, rv->data());
+    //----------------------------------------//
     ints_computed_locally_ += nbfi * nbfj;
     return rv;
 #if USE_INTEGRAL_CACHE
@@ -1838,7 +1829,7 @@ CADFCLHF::ints_to_eigen(int ish, int jsh, Ref<TwoBodyTwoCenterInt>& ints, TwoBod
 
 //////////////////////////////////////////////////////////////////////////////////
 
-std::shared_ptr<Eigen::MatrixXd>
+CADFCLHF::ThreeCenterIntContainerPtr
 CADFCLHF::ints_to_eigen(int ish, int jsh, int ksh, Ref<TwoBodyThreeCenterInt>& ints, TwoBodyOper::type int_type){
   #if USE_INTEGRAL_CACHE
   return ints3_.get(ish, jsh, ksh, int_type, [ish, jsh, ksh, int_type, &ints, this](){
@@ -1846,18 +1837,14 @@ CADFCLHF::ints_to_eigen(int ish, int jsh, int ksh, Ref<TwoBodyThreeCenterInt>& i
     const int nbfi = ints->basis1()->shell(ish).nfunction();
     const int nbfj = ints->basis2()->shell(jsh).nfunction();
     const int nbfk = ints->basis3()->shell(ksh).nfunction();
-    auto rv = make_shared<Eigen::MatrixXd>(nbfi * nbfj, nbfk);
+    auto rv = make_shared<ThreeCenterIntContainer>(nbfi * nbfj, nbfk);
+    //----------------------------------------//
     ints->compute_shell(ish, jsh, ksh);
     const double* buffer = ints->buffer(int_type);
-    // TODO vectorized copy
-    int buffer_spot = 0;
-    for(int ibf = 0; ibf < nbfi; ++ibf){
-      for(int jbf = 0; jbf < nbfj; ++jbf){
-        for(int kbf = 0; kbf < nbfk; ++kbf){
-          (*rv)(ibf*nbfj + jbf, kbf) = buffer[buffer_spot++];
-        }
-      }
-    }
+    //::memcpy(rv->data(), buffer, nbfi*nbfj*nbfk * sizeof(double));
+    std::copy(buffer, buffer + nbfi*nbfj*nbfk, rv->data());
+    //std::move(buffer, buffer + nbfi*nbfj*nbfk, rv->data());
+    //----------------------------------------//
     ints_computed_locally_ += nbfi * nbfj * nbfk;
     return rv;
 #if USE_INTEGRAL_CACHE

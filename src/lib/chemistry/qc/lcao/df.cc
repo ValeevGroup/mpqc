@@ -38,6 +38,8 @@
 #include <math/optimize/gaussianfit.h>
 #include <math/optimize/gaussianfit.timpl.h>
 #include <chemistry/qc/lcao/fockbuilder.h>
+#include <Eigen/Dense>
+#include <util/misc/sharedptr.h>
 
 #define USE_KERNEL_INVERSE 0
 
@@ -202,6 +204,23 @@ DensityFitting::compute()
       std::vector<double> kernel_packed;  // only needed for factorized methods
       std::vector<double> kernel_factorized;
       std::vector<blasint> ipiv;
+#if 0
+      Eigen::Map<Eigen::MatrixXd> C_jR_map(&(C_jR[0]), n2, n3);
+      typedef Eigen::HouseholderQR<Eigen::MatrixXd> HQR_type;
+      typedef Eigen::ColPivHouseholderQR<Eigen::MatrixXd> CPHQR_type;
+      typedef Eigen::FullPivHouseholderQR<Eigen::MatrixXd> FPHQR_type;
+      std::unique_ptr<HQR_type> solverHQR = 0;
+      std::unique_ptr<CPHQR_type> solverCPHQR = 0;
+      std::unique_ptr<FPHQR_type> solverFPHQR = 0;
+      std::unique_ptr<Eigen::MatrixXd> kernel_mat = 0;
+      if(solver_ > 100) { // Eigen based solvers
+        // TODO call lapack directly and stop using Eigen as an intermediary
+        // TODO use a map to wrap pointer if matrix is local or replicated
+        assert(kernel_.n()==n3);
+        kernel_mat = std::unique_ptr<Eigen::MatrixXd>(new Eigen::MatrixXd(n3, n3));
+        kernel_.convert2RefSCMat().convert(kernel_mat->data());
+      }
+#endif
 
       // factorize or invert kernel
       switch (solver_) {
@@ -258,6 +277,27 @@ DensityFitting::compute()
                                     &(ipiv[0]), 1e10);
         }
         break;
+#if 0
+
+        case SolveMethod_HouseholderQR:
+        {
+          solverHQR = std::unique_ptr<HQR_type>(new HQR_type(*kernel_mat));
+        }
+        break;
+
+        case SolveMethod_ColPivHouseholderQR:
+        {
+          // Make an Eigen matrix
+          solverCPHQR = std::unique_ptr<CPHQR_type>(new CPHQR_type(*kernel_mat));
+        }
+        break;
+
+        case SolveMethod_FullPivHouseholderQR:
+        {
+          solverFPHQR = std::unique_ptr<FPHQR_type>(new FPHQR_type(*kernel_mat));
+        }
+        break;
+#endif
 
         default:
           throw ProgrammingError("unknown solve method", __FILE__, __LINE__, class_desc());
@@ -270,6 +310,9 @@ DensityFitting::compute()
           continue;
 
         const double* cC_jR = cC_->retrieve_pair_block(0, i, ints_type_idx);
+#if 0
+        Eigen::Map<const Eigen::MatrixXd> cC_jR_map(cC_jR, n2, n3);
+#endif
 
         bool refine_solution = true;
         // solve the linear system
@@ -329,6 +372,26 @@ DensityFitting::compute()
                                                    refine_solution);
           }
           break;
+
+#if 0 // Doesn't work
+          case SolveMethod_HouseholderQR:
+          {
+            C_jR_map.transpose() = solverHQR->solve(cC_jR_map.transpose());
+          }
+          break;
+
+          case SolveMethod_ColPivHouseholderQR:
+          {
+            C_jR_map.transpose() = solverCPHQR->solve(cC_jR_map.transpose());
+          }
+          break;
+
+          case SolveMethod_FullPivHouseholderQR:
+          {
+            C_jR_map.transpose() = solverFPHQR->solve(cC_jR_map.transpose());
+          }
+          break;
+#endif
 
           default:
             throw ProgrammingError("unknown solve method", __FILE__, __LINE__, class_desc());

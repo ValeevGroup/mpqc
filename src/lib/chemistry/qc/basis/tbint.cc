@@ -34,6 +34,7 @@
 #include <chemistry/qc/basis/tbint.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/basis.h>
+#include <cassert>
 
 using namespace sc;
 

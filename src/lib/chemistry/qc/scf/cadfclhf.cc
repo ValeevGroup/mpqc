@@ -37,6 +37,7 @@
 #include <memory>
 #include <math.h>
 
+#define USE_INTEGRAL_CACHE 1
 #define EIGEN_NO_AUTOMATIC_RESIZING 1
 
 #ifdef ECLIPSE_PARSER_ONLY
@@ -56,10 +57,17 @@ typedef CADFCLHF::CoefContainer CoefContainer;
 typedef CADFCLHF::Decomposition Decomposition;
 typedef std::pair<CoefContainer, CoefContainer> CoefPair;
 
+#if LINK_TIME_LIST_INSERTIONS
+std::atomic_uint_fast64_t OrderedShellList::insertion_time_nanos = ATOMIC_VAR_INIT(0);
+std::atomic_uint_fast64_t OrderedShellList::n_insertions = ATOMIC_VAR_INIT(0);
+#endif
+
 static boost::mutex debug_print_mutex;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Debugging asserts and outputs
+
+#define M_DUMP(M) std::cout << #M << " is " << M.rows() << " x " << M.cols() << std::endl;
 
 #define M_ROW_ASSERT(M1, M2) \
   if(M1.rows() != M2.rows()) { \
@@ -143,6 +151,9 @@ CADFCLHF::CADFCLHF(StateIn& s) :
 
 CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
     CLHF(keyval),
+    // TODO Initialize the number of bins to a more reasonable size, check for enough memory, etc
+    ints3_(basis()->nshell() * basis()->nshell() * basis()->nshell() / scf_grp_->n() / std::min((unsigned int)50, basis()->nbasis())),
+    ints2_(basis()->nshell() * basis()->nshell() / scf_grp_->n() / std::min((unsigned int)50, basis()->nbasis())),
     local_pairs_spot_(0)
 {
   //----------------------------------------------------------------------------//
@@ -156,10 +167,17 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   // get the bound for filtering pairs.  This should be smaller than the general
   //   Schwarz bound.
   // TODO Figure out a reasonable default value for this
-  pair_thresh_ = keyval->doublevalue("pair_thresh", KeyValValuedouble(1e-8));
+  pair_screening_thresh_ = keyval->doublevalue("pair_screening_thresh", KeyValValuedouble(1e-8));
+  density_screening_thresh_ = keyval->doublevalue("density_screening_thresh", KeyValValuedouble(1e-8));
+  full_screening_thresh_ = keyval->doublevalue("full_screening_thresh", KeyValValuedouble(1e-8));
+  coef_screening_thresh_ = keyval->doublevalue("coef_screening_thresh", KeyValValuedouble(1e-8));
   //----------------------------------------------------------------------------//
   // For now, use coulomb metric.  We can easily make this a keyword later
   metric_oper_type_ = TwoBodyOper::eri;
+  //----------------------------------------------------------------------------//
+  do_linK_ = keyval->booleanvalue("do_linK", KeyValValueboolean(false));
+  //----------------------------------------------------------------------------//
+  print_screening_stats_ = keyval->booleanvalue("print_screening_stats", KeyValValueboolean(false));
   //----------------------------------------------------------------------------//
   initialize();
   //----------------------------------------------------------------------------//
@@ -316,9 +334,15 @@ CADFCLHF::init_significant_pairs()
       const double max_val = ints4maxes_.get(ish, jsh, ish, jsh, coulomb_oper_type_, [&]() -> double {
         tbis_[ithr]->compute_shell(ish, jsh, ish, jsh);
         const double* buffer = tbis_[ithr]->buffer(coulomb_oper_type_);
+        /*
         return *std::max_element(buffer, buffer + ish.nbf * jsh.nbf * ish.nbf * jsh.nbf,
             [](double a, double b){ return fabs(a) < fabs(b); }
-        );
+        );*/
+        double frob_val = 0.0;
+        for(int i = 0; i < ish.nbf*jsh.nbf*ish.nbf*jsh.nbf; ++i) {
+          frob_val += fabs(buffer[i]);
+        }
+        return sqrt(frob_val);
       });
       my_pair_vals.push_back(make_pair(sqrt(fabs(max_val)), IntPair(ish, jsh)));
     } // end while get shell pair
@@ -337,25 +361,37 @@ CADFCLHF::init_significant_pairs()
   //----------------------------------------//
   // Now go through the list and figure out which ones are significant
   shell_to_sig_shells_.resize(basis()->nshell());
+  std::vector<double> sig_values;
+  schwarz_frob_.resize(basis()->nshell(), basis()->nshell());
+  schwarz_frob_ = Eigen::MatrixXd::Zero(basis()->nshell(), basis()->nshell());
   do_threaded(nthread, [&](int ithr){
     std::vector<IntPair> my_sig_pairs;
+    std::vector<double> my_sig_values;
     for(int i = ithr; i < pair_values.size(); i += nthread){
       auto item = pair_values[i];
-      if(item.first * max_schwarz > pair_thresh_){
+      schwarz_frob_(item.second.first, item.second.second) = item.first;
+      schwarz_frob_(item.second.second, item.second.first) = item.first;
+      if(item.first * max_schwarz > pair_screening_thresh_){
         my_sig_pairs.push_back(item.second);
+        my_sig_values.push_back(item.first);
         ++n_significant_pairs;
       }
     }
     //----------------------------------------//
     // put our values on the node-level vector
     boost::lock_guard<boost::mutex> lg(pair_mutex);
+    using boost_ext::zip;
     for(auto item : my_sig_pairs){
       sig_pairs_.push_back(item);
+    }
+    for(auto item : my_sig_values){
+      sig_values.push_back(item);
     }
   });
   //----------------------------------------//
   // Now all-to-all the significant pairs
   // This should be done with an MPI_alltoall_v or something like that
+  scf_grp_->sum(schwarz_frob_.data(), basis()->nshell() * basis()->nshell());
   int n_sig = n_significant_pairs;
   int my_n_sig = n_significant_pairs;
   int n_sig_pairs[scf_grp_->n()];
@@ -363,39 +399,76 @@ CADFCLHF::init_significant_pairs()
   n_sig_pairs[scf_grp_->me()] = n_sig;
   scf_grp_->sum(n_sig_pairs, scf_grp_->n());
   scf_grp_->sum(n_sig);
-  int sig_data[n_sig*2];
-  for(int inode = 0; inode < n_sig*2; sig_data[inode++] = 0);
-  int data_offset = 0;
-  for(int inode = 0; inode < scf_grp_->me(); inode++){
-    data_offset += 2 * n_sig_pairs[inode];
-  }
-  for(int ipair = 0; ipair < my_n_sig; ++ipair) {
-    sig_data[data_offset + 2 * ipair] = sig_pairs_[ipair].first;
-    sig_data[data_offset + 2 * ipair + 1] = sig_pairs_[ipair].second;
-  }
-  scf_grp_->sum(sig_data, n_sig*2);
-  sig_pairs_.clear();
-  for(int ipair = 0; ipair < n_sig; ++ipair){
-    sig_pairs_.push_back(IntPair(sig_data[2*ipair], sig_data[2*ipair + 1]));
-  }
+  {
+    int sig_data[n_sig*2];
+    double sig_vals[n_sig];
+    for(int inode = 0; inode < n_sig*2; sig_vals[inode] = 0.0, sig_data[inode++] = 0);
+    int data_offset = 0;
+    for(int inode = 0; inode < scf_grp_->me(); inode++){
+      data_offset += 2 * n_sig_pairs[inode];
+    }
+    for(int ipair = 0; ipair < my_n_sig; ++ipair) {
+      sig_data[data_offset + 2 * ipair] = sig_pairs_[ipair].first;
+      sig_data[data_offset + 2 * ipair + 1] = sig_pairs_[ipair].second;
+      sig_vals[data_offset/2 + ipair] = sig_values[ipair];
+    }
+    scf_grp_->sum(sig_data, n_sig*2);
+    scf_grp_->sum(sig_vals, n_sig);
+    sig_pairs_.clear();
+    sig_values.clear();
+    for(int ipair = 0; ipair < n_sig; ++ipair){
+      sig_pairs_.push_back(IntPair(sig_data[2*ipair], sig_data[2*ipair + 1]));
+      sig_values.push_back(sig_vals[ipair]);
+    }
+  } // get rid of sig_data and sig_vals
   //----------------------------------------//
   // Now compute the significant pairs for the outer loop of the exchange and the sig_partners_ array
   sig_partners_.resize(basis()->nbasis());
   sig_blocks_.resize(basis()->nbasis());
+  int pair_index = 0;
   for(auto pair : sig_pairs_) {
-    ShellData mu(pair.first, basis()), rho(pair.second, basis());
-    sig_partners_[mu].insert(rho);
-    if(mu != rho) {
-      sig_partners_[rho].insert(mu);
+    ShellData ish(pair.first, basis()), jsh(pair.second, basis());
+    sig_partners_[ish].insert(jsh);
+    L_schwarz[ish].insert(jsh, sig_values[pair_index]);
+    if(ish != jsh) {
+      sig_partners_[jsh].insert(ish);
+      L_schwarz[jsh].insert(ish, sig_values[pair_index]);
     }
-    for(auto Xblk : iter_shell_blocks_on_center(dfbs_, mu.center)) {
-      sig_blocks_[mu].insert(Xblk);
-      sig_blocks_[rho].insert(Xblk);
+    for(auto Xblk : iter_shell_blocks_on_center(dfbs_, ish.center)) {
+      sig_blocks_[ish].insert(Xblk);
+      sig_blocks_[jsh].insert(Xblk);
     }
-    for(auto Xblk : iter_shell_blocks_on_center(dfbs_, rho.center)) {
-      sig_blocks_[mu].insert(Xblk);
-      sig_blocks_[rho].insert(Xblk);
+    for(auto Xblk : iter_shell_blocks_on_center(dfbs_, jsh.center)) {
+      sig_blocks_[ish].insert(Xblk);
+      sig_blocks_[jsh].insert(Xblk);
     }
+    //----------------------------------------//
+    ++pair_index;
+  }
+  out_assert(L_schwarz.size(), >, 0);
+  //----------------------------------------//
+  #if !LINK_SORTED_INSERTION
+  do_threaded(nthread, [&](int ithr){
+    auto L_schwarz_iter = L_schwarz.begin();
+    const auto& L_schwarz_end = L_schwarz.end();
+    L_schwarz_iter.advance(ithr);
+    while(L_schwarz_iter != L_schwarz_end) {
+      L_schwarz_iter->second.sort();
+      L_schwarz_iter.advance(nthread);
+    }
+  });
+  out_assert(L_schwarz[0].size(), >, 0);
+  #endif
+  //----------------------------------------//
+  max_schwarz_.resize(basis()->nshell());
+  for(auto ish : shell_range(basis())) {
+    double max_val = 0.0;
+    for(auto ish : L_schwarz[ish]) {
+      if(ish.value > max_val) {
+        max_val = ish.value;
+      }
+    }
+    max_schwarz_[ish] = max_val;
   }
   //----------------------------------------//
   ExEnv::out0() << "  Number of significant shell pairs:  " << n_sig << endl;
@@ -427,7 +500,13 @@ CADFCLHF::ao_fock(double accuracy)
   Timer timer("ao_fock");
   //---------------------------------------------------------------------------------------//
   if(not have_coefficients_) {
+    ints_computed_locally_ = 0;
     compute_coefficients();
+    ints_computed_ = ints_computed_locally_;
+    scf_grp_->sum(ints_computed_);
+    if(scf_grp_->me() == 0) {
+      ExEnv::out0() << "  Computed " << ints_computed_ << " integrals to determine coefficients." << endl;
+    }
   }
   //---------------------------------------------------------------------------------------//
   timer.enter("misc");
@@ -455,16 +534,28 @@ CADFCLHF::ao_fock(double accuracy)
   }
   RefSCMatrix G;
   {
+    ints_computed_locally_ = 0;
     if(xml_debug) begin_xml_context("compute_J");
     RefSCMatrix J = compute_J();
     if(xml_debug) write_as_xml("J", J), end_xml_context("compute_J");
     G = J.copy();
+    ints_computed_ = ints_computed_locally_;
+    scf_grp_->sum(ints_computed_);
+    if(scf_grp_->me() == 0) {
+      ExEnv::out0() << "        Computed " << ints_computed_ << " integrals for J part" << endl;
+    }
   }
   {
+    ints_computed_locally_ = 0;
     if(xml_debug) begin_xml_context("compute_K");
     RefSCMatrix K = compute_K();
     if(xml_debug) write_as_xml("K", K), end_xml_context("compute_K");
     G.accumulate( -1.0 * K);
+    ints_computed_ = ints_computed_locally_;
+    scf_grp_->sum(ints_computed_);
+    if(scf_grp_->me() == 0) {
+      ExEnv::out0() << "        Computed " << ints_computed_ << " integrals for K part" << endl;
+    }
   }
   if(xml_debug) end_xml_context("compute_fock"), assert(false);
   //---------------------------------------------------------------------------------------//
@@ -781,8 +872,6 @@ CADFCLHF::compute_J()
 
 //////////////////////////////////////////////////////////////////////////////////
 
-#define OLD_K 0
-
 RefSCMatrix
 CADFCLHF::compute_K()
 {
@@ -835,22 +924,157 @@ CADFCLHF::compute_K()
     }
   };
   //----------------------------------------//
-  // Get the (X|g|Y) matrix.  For very, very large
-  //   problems, this might not fit in memory and
-  //   this would need to be revised
-  std::shared_ptr<Eigen::MatrixXd> g2_ptr = ints_to_eigen(
-      ShellBlockData<>(dfbs_), ShellBlockData<>(dfbs_),
-      eris_2c_[0], coulomb_oper_type_
-  );
-  Eigen::MatrixXd& g2 = *g2_ptr;
-  //Eigen::Map<Eigen::MatrixXd> g2(g2_ptr->data(), dfnbf, dfnbf);
-  //----------------------------------------//
+  /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
+  /* Make the CADF-LinK lists                                                         {{{1 */ #if 1 // begin fold
+  if(do_linK_){
+    timer.enter("LinK lists");
+    // First clear all of the lists
+    L_D.clear();
+    L_3.clear();
+    //for(auto L4_key : L_4_keys) {
+    //  L_4(L4_key.first, L4_key.second).clear();
+    //}
+    //L_4_keys.clear();
+    //============================================================================//
+    std::vector<Eigen::Vector3d> positions;
+    auto& atoms = molecule()->atoms();
+    positions.resize(atoms.size());
+    int i = 0;
+    for(auto& atom : atoms) {
+      positions[i++] << atom.xyz(0), atom.xyz(1), atom.xyz(2);
+    }
+    Eigen::MatrixXd D_frob(obs->nshell(), obs->nshell());
+    // TODO Distribute over MPI processes as well
+    #if LINK_TIME_LIST_INSERTIONS
+    std::atomic_uint_fast64_t run_time{ 0 };
+    OrderedShellList::insertion_time_nanos = 0;
+    OrderedShellList::n_insertions = 0;
+    //int n_insertions = 0;
+    auto start_link = std::chrono::high_resolution_clock::now();
+    #endif
+    do_threaded(nthread, [&](int ithr){
+      #if LINK_TIME_LIST_INSERTIONS
+      auto inner_timer = make_auto_timer(run_time);
+      #endif
+      for(int lsh_index = ithr; lsh_index < obs->nshell(); lsh_index += nthread) {
+        ShellData lsh(lsh_index, obs, dfbs_);
+        for(auto jsh : shell_range(obs)) {
+          double dnorm = D.block(lsh.bfoff, jsh.bfoff, lsh.nbf, jsh.nbf).norm();
+          D_frob(lsh, jsh) = dnorm;
+          double screen_val = fabs(dnorm * max_schwarz_[lsh] * max_schwarz_[jsh]);
+          // NOTE!!! This is not an exact condition, so it may cause differences in
+          //   very small decimal places.
+          if(screen_val > density_screening_thresh_) {
+            L_D[lsh].insert(jsh, screen_val);
+          }
+        } // end loop over jsh
+        #if !LINK_SORTED_INSERTION
+        L_D[lsh].sort();
+        #endif
+        //----------------------------------------//
+        for(auto ksh : L_coefs[lsh]) {
+          //----------------------------------------//
+          bool lists_changed_outer = false;
+          for(auto Xsh : iter_shells_on_centers(dfbs_, lsh.center, ksh.center)) {
+            const double CXnorm = lsh.center == Xsh.center ?
+                C_trans_frob_[Xsh](lsh.shoff_in_atom, ksh)
+                : C_trans_frob_[Xsh](ksh.shoff_in_atom, lsh);
+            bool lists_changed_inner = false;
+            //------------------------------------------//
+            for(auto jsh : L_D[lsh]) {
+              bool mu_added = false;
+              //----------------------------------------//
+              for(auto ish : L_schwarz[jsh]) {
+                const double screen_val = fabs(
+                    CXnorm
+                    * schwarz_df_[Xsh]
+                    * D_frob(lsh, jsh)
+                    * schwarz_frob_(ish, jsh)
+                );
+                if(screen_val > full_screening_thresh_) {
+                  mu_added = true; lists_changed_outer = true; lists_changed_inner = true;
+                  L_3[{ish, Xsh}].insert(jsh, screen_val);
+                  //L_4((int)ish, jsh).insert(lsh, screen_val);
+                }
+              } // end loop over ish_w_val (a.k.a. mu)
+              //----------------------------------------//
+              if(not mu_added) break;
+            //----------------------------------------//
+            } // end loop over jsh (a.k.a. rho)
+            //if(lists_changed_inner) {
+            //  L_K(lsh, Xsh).insert(ksh, 0);
+            //  L_K_keys.emplace(lsh, Xsh);
+            //}
+          } // end loop over Xsh
+          //----------------------------------------//
+          if(not lists_changed_outer) break;
+        } // end loop over ksh (a.k.a. nu)
+        //----------------------------------------//
+      } // end loop over lsh
+    });
+    #if not LINK_SORTED_INSERTION
+    do_threaded(nthread, [&](int ithr){
+      auto L_3_iter = L_3.begin();
+      const auto& L_3_end = L_3.end();
+      L_3_iter.advance(ithr);
+      while(L_3_iter != L_3_end) {
+        L_3_iter->second.sort();
+        L_3_iter.advance(nthread);
+      }
+    });
+    #endif
+    #if LINK_TIME_LIST_INSERTIONS
+    auto end_link = std::chrono::high_resolution_clock::now();
+    static std::locale loc("");
+    auto old_loc = std::cout.getloc();
+    std::cout.imbue(loc);
+    cout << "        LinK list insertions took "
+        << double(OrderedShellList::insertion_time_nanos)/1e6
+        << " milliseconds to do " << OrderedShellList::n_insertions
+        << " insertions"
+        << endl
+        << "            ( = "
+        << double(OrderedShellList::insertion_time_nanos) / double(OrderedShellList::n_insertions)
+        << " ns per insertion)"
+        << endl;
+    cout << "        LinK list build took "
+        << double(run_time)/1e6
+        << " milliseconds ("
+        << double(std::chrono::duration_cast<std::chrono::nanoseconds>(end_link - start_link).count())/1e6 * double(nthread)
+        << " ms ideal)"
+        << endl;
+    std::cout.imbue(old_loc);
+    #endif
+    timer.exit("LinK lists");
+    if(print_screening_stats_ and scf_grp_->me() == 0) {
+      int n_LD = 0, n_L3 = 0, n_L4 = 0;
+      const int n_LD_max = obs->nshell() * obs->nshell();
+      int n_L3_max = 0;
+      for(auto L_D_item : L_D) {
+        n_LD += L_D_item.second.size();
+      }
+      ExEnv::out0() << "        Density pairs skipped: " << (n_LD_max - n_LD)
+          << "/" << n_LD_max << " (= " << setprecision(2) << (100 * double(n_LD_max - n_LD)/double(n_LD_max)) << "%)"
+          << endl;
+      const int max_L3_keys = obs->nshell() * dfbs_->nshell();
+      const int n_L3_keys = L_3.size();
+      ExEnv::out0() << "        obs/dfbs pairs skipped in K: " << (max_L3_keys - n_L3_keys)
+          << "/" << max_L3_keys << " (= "
+          << setprecision(2) << (100.0 * double(max_L3_keys - n_L3_keys)/double(max_L3_keys)) << "%)"
+          << endl;
+    }
+  } // end if do_linK_
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
   /* Loop over local shell pairs for three body contributions                         {{{1 */ #if 1 // begin fold
   {
     Timer timer("three body contributions");
-    boost::mutex tmp_mutex;
+    boost::mutex tmp_mutex, L_3_mutex;
+    auto L_3_key_iter = L_3.begin();
+    for(int i = 0; i < scf_grp_->me(); ++i, ++L_3_key_iter);
+    if(scf_grp_->me() >= L_3.size()) L_3_key_iter = L_3.end();
+    const int n_node = scf_grp_->n();
     boost::thread_group compute_threads;
     //----------------------------------------//
     // reset the iteration over local pairs
@@ -865,7 +1089,35 @@ CADFCLHF::compute_K()
         ShellData ish;
         ShellBlockData<> Xblk;
         //----------------------------------------//
-        while(get_ish_Xblk_pair(ish, Xblk, SignificantPairs)) {
+        auto get_ish_Xblk_3 = [&]() -> bool {
+          if(do_linK_) {
+            boost::lock_guard<boost::mutex> lg(L_3_mutex);
+            if(L_3_key_iter == L_3.end()) {
+              return false;
+            }
+            else {
+              auto& pair = L_3_key_iter->first;
+              L_3_key_iter.advance(n_node);
+              ish = ShellData(pair.first, basis(), dfbs_);
+              Xblk = ShellBlockData<>(ShellData(pair.second, dfbs_, basis()));
+              return true;
+            }
+          }
+          else {
+            int spot = local_pairs_spot_++;
+            if(spot < local_pairs_k_[SignificantPairs].size()){
+              auto& sig_pair = local_pairs_k_[SignificantPairs][spot];
+              ish = ShellData(sig_pair.first, basis(), dfbs_);
+              Xblk = sig_pair.second;
+              return true;
+            }
+            else{
+              return false;
+            }
+          }
+        };
+        //----------------------------------------//
+        while(get_ish_Xblk_3()) {
           /*-----------------------------------------------------*/
           /* Compute B intermediate                         {{{2 */ #if 2 // begin fold
           std::vector<Eigen::MatrixXd> B_mus(ish.nbf);
@@ -873,18 +1125,37 @@ CADFCLHF::compute_K()
             B_mus[mu.bfoff_in_shell].resize(nbf, Xblk.nbf);
             B_mus[mu.bfoff_in_shell] = Eigen::MatrixXd::Zero(nbf, Xblk.nbf);
           }
-          for(ShellData jsh : iter_significant_partners(ish)){
-            auto g3_ptr = ints_to_eigen(
-                ish, jsh, Xblk,
-                eris_3c_[ithr], coulomb_oper_type_
-            );
-            auto& g3 = *g3_ptr;
-            for(auto mu : function_range(ish)) {
-              B_mus[mu.bfoff_in_shell] += 2.0 *
-                  D.middleRows(jsh.bfoff, jsh.nbf).transpose() *
-                  g3.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf);
-            } // end loop over mu
-          } // end loop over jsh
+          if(do_linK_){
+            for(auto Xsh : shell_range(Xblk)) {
+              for(ShellData jsh : L_3[{ish, Xsh}]){
+                assert(Xblk.nshell == 1);
+                auto g3_ptr = ints_to_eigen(
+                    ish, jsh, Xsh,
+                    eris_3c_[ithr], coulomb_oper_type_
+                );
+                auto& g3 = *g3_ptr;
+                for(auto mu : function_range(ish)) {
+                  B_mus[mu.bfoff_in_shell] += 2.0 *
+                      D.middleRows(jsh.bfoff, jsh.nbf).transpose() *
+                      g3.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf);
+                } // end loop over mu
+              } // end loop over jsh
+            }
+          }
+          else {
+            for(ShellData jsh : iter_significant_partners(ish)){
+              auto g3_ptr = ints_to_eigen(
+                  ish, jsh, Xblk,
+                  eris_3c_[ithr], coulomb_oper_type_
+              );
+              auto& g3 = *g3_ptr;
+              for(auto mu : function_range(ish)) {
+                B_mus[mu.bfoff_in_shell] += 2.0 *
+                    D.middleRows(jsh.bfoff, jsh.nbf).transpose() *
+                    g3.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf);
+              } // end loop over mu
+            } // end loop over jsh
+          }
           if(xml_debug) {
             for(auto mu : function_range(ish)){
               write_as_xml("B_part", B_mus[mu.bfoff_in_shell], std::map<std::string, int>{
@@ -1340,6 +1611,105 @@ CADFCLHF::compute_coefficients()
   }
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
+  /* Make the CADF-LinK lists                                                         {{{1 */ #if 1 // begin fold
+  schwarz_df_.resize(dfbs_->nshell());
+  for(auto Xsh : shell_range(dfbs_)){
+    const auto& g_XX_ptr = ints_to_eigen(
+        Xsh, Xsh, eris_2c_[0], coulomb_oper_type_
+    );
+    auto& g_XX = *g_XX_ptr;
+    double frob_norm = 0.0;
+    for(auto X : function_range(Xsh)) {
+      frob_norm += g_XX(X.bfoff_in_shell, X.bfoff_in_shell);
+    }
+    schwarz_df_[Xsh] = sqrt(frob_norm);
+  }
+  if(do_linK_) {
+    for(auto lsh : shell_range(obs)) {
+      out_assert(L_schwarz[lsh].size(), >, 0);
+      for(auto ksh : L_schwarz[lsh]) {
+        double Ct = 0.0;
+        //----------------------------------------//
+        for(auto sigma : function_range(lsh)) {
+          for(auto nu : function_range(ksh)) {
+            BasisFunctionData first, second;
+            if(ksh <= lsh) {
+              first = sigma;
+              second = nu;
+            }
+            else {
+              first = nu;
+              second = sigma;
+            }
+            IntPair mu_sigma(first, second);
+            assert(coefs_.find(mu_sigma) != coefs_.end());
+            auto& cpair = coefs_[mu_sigma];
+            for(auto Xsh : iter_shells_on_center(dfbs_, first.center)){
+              auto& C = *cpair.first;
+              const auto& g_XX_ptr = ints_to_eigen(
+                  Xsh, Xsh, eris_2c_[0], coulomb_oper_type_
+              );
+              auto& g_XX = *g_XX_ptr;
+              for(auto X : function_range(Xsh)) {
+
+                Ct += C[X.bfoff_in_atom] * C[X.bfoff_in_atom] * g_XX(X.bfoff_in_shell, X.bfoff_in_shell);
+              }
+            }
+            if(first.center != second.center) {
+              for(auto Xsh : iter_shells_on_center(dfbs_, second.center)){
+                auto& C = *cpair.second;
+                const auto& g_XX_ptr = ints_to_eigen(
+                    Xsh, Xsh, eris_2c_[0], coulomb_oper_type_
+                );
+                auto& g_XX = *g_XX_ptr;
+                for(auto X : function_range(Xsh)) {
+                  Ct += C[X.bfoff_in_atom] * C[X.bfoff_in_atom] * g_XX(X.bfoff_in_shell, X.bfoff_in_shell);
+                }
+              }
+            }
+          } // end loop over nu
+        } // end loop over sigma
+        //----------------------------------------//
+        L_coefs[lsh].insert(ksh, sqrt(Ct));
+        //----------------------------------------//
+      } // end loop over ksh
+    } // end loop over lsh
+    #if !LINK_SORTED_INSERTION
+    do_threaded(nthread, [&](int ithr){
+      auto L_coefs_iter = L_coefs.begin();
+      const auto& L_coefs_end = L_coefs.end();
+      L_coefs_iter.advance(ithr);
+      while(L_coefs_iter != L_coefs_end) {
+        L_coefs_iter->second.sort();
+        L_coefs_iter.advance(nthread);
+      }
+    });
+    #endif
+    //----------------------------------------//
+    // Compute the Frobenius norm of C_transpose_ blocks
+    C_trans_frob_.resize(dfbs_->nshell());
+    for(auto Xsh : shell_range(dfbs_, obs)) {
+      // obs is being used as the aux basis, so atom_dfnsh is the number
+      //   of shells on the same center in the orbital basis
+      C_trans_frob_[Xsh].resize(Xsh.atom_dfnsh, obs->nshell());
+      for(auto ish : iter_shells_on_center(obs, Xsh.center)) {
+        for(auto jsh : shell_range(obs)) {
+          double frob_val = 0.0;
+          for(auto X : function_range(Xsh)) {
+            for(auto mu : function_range(ish)) {
+              for(auto rho : function_range(jsh)) {
+                const double cval = coefs_transpose_[X](mu.bfoff_in_atom, rho);
+                frob_val += cval * cval;
+              }
+            }
+          } // end loop over X in Xsh
+          C_trans_frob_[Xsh](ish.shoff_in_atom, jsh) = sqrt(frob_val);
+        } // end loop over jsh
+      } // end loop over ish
+    } // end loop over Xsh
+  } // end if do_linK
+  /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
   /* Clean up                                              		                        {{{1 */ #if 1 // begin fold
   //---------------------------------------------------------------------------------------//
   have_coefficients_ = true;
@@ -1446,7 +1816,9 @@ CADFCLHF::get_decomposition(int ish, int jsh, Ref<TwoBodyTwoCenterInt> ints)
 
 std::shared_ptr<Eigen::MatrixXd>
 CADFCLHF::ints_to_eigen(int ish, int jsh, Ref<TwoBodyTwoCenterInt>& ints, TwoBodyOper::type int_type){
-  return ints2_.get(ish, jsh, int_type, [ish, jsh, int_type, &ints](){
+#if USE_INTEGRAL_CACHE
+  return ints2_.get(ish, jsh, int_type, [ish, jsh, int_type, &ints, this](){
+#endif
     GaussianBasisSet& ibs = *(ints->basis1());
     GaussianBasisSet& jbs = *(ints->basis2());
     const int nbfi = ibs.shell(ish).nfunction();
@@ -1462,15 +1834,20 @@ CADFCLHF::ints_to_eigen(int ish, int jsh, Ref<TwoBodyTwoCenterInt>& ints, TwoBod
         (*rv)(ibf, jbf) = buffer[buffer_spot++];
       }
     }
+    ints_computed_locally_ += nbfi * nbfj;
     return rv;
+#if USE_INTEGRAL_CACHE
   });
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////////////
 
 std::shared_ptr<Eigen::MatrixXd>
 CADFCLHF::ints_to_eigen(int ish, int jsh, int ksh, Ref<TwoBodyThreeCenterInt>& ints, TwoBodyOper::type int_type){
-  return ints3_.get(ish, jsh, ksh, int_type, [ish, jsh, ksh, int_type, &ints](){
+  #if USE_INTEGRAL_CACHE
+  return ints3_.get(ish, jsh, ksh, int_type, [ish, jsh, ksh, int_type, &ints, this](){
+  #endif
     const int nbfi = ints->basis1()->shell(ish).nfunction();
     const int nbfj = ints->basis2()->shell(jsh).nfunction();
     const int nbfk = ints->basis3()->shell(ksh).nfunction();
@@ -1486,7 +1863,10 @@ CADFCLHF::ints_to_eigen(int ish, int jsh, int ksh, Ref<TwoBodyThreeCenterInt>& i
         }
       }
     }
+    ints_computed_locally_ += nbfi * nbfj * nbfk;
     return rv;
+#if USE_INTEGRAL_CACHE
   });
+#endif
 }
 

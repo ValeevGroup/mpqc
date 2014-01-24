@@ -32,6 +32,7 @@
 
 #include <boost/thread/thread.hpp>
 #include <boost/range/irange.hpp>
+#include <boost/functional/hash.hpp>
 #include <chemistry/qc/scf/clhf.h>
 #include <util/container/conc_cache.h>
 #include <atomic>
@@ -225,7 +226,12 @@ class CADFCLHF: public CLHF {
     RefSymmSCMatrix gmat_;
 
     /// The threshold for including pairs in the pair list using half of the schwarz bound
-    double pair_thresh_;
+    double pair_screening_thresh_;
+    double density_screening_thresh_;
+    double full_screening_thresh_;
+    double coef_screening_thresh_;
+
+    bool print_screening_stats_;
 
     // Whether or not the MessageGrp is an instance of MPIMessageGrp
     bool using_mpi_;
@@ -268,8 +274,14 @@ class CADFCLHF: public CLHF {
     // The same as sig_pairs_, but organized differently
     std::vector<std::vector<int>> shell_to_sig_shells_;
 
+    std::vector<double> max_schwarz_;
+    std::vector<double> schwarz_df_;
+
     // Where are we in the iteration over the local_pairs_?
     std::atomic<int> local_pairs_spot_;
+
+    Eigen::MatrixXd schwarz_frob_;
+    std::vector<Eigen::MatrixXd> C_trans_frob_;
 
     // TwoBodyThreeCenterInt integral objects for each thread
     std::vector<Ref<TwoBodyThreeCenterInt>> eris_3c_;
@@ -278,6 +290,10 @@ class CADFCLHF: public CLHF {
     // TwoBodyTwoCenterInt integral objects for each thread
     std::vector<Ref<TwoBodyTwoCenterInt>> eris_2c_;
     std::vector<Ref<TwoBodyTwoCenterInt>> metric_ints_2c_;
+
+    // Integrals computed locally this iteration
+    std::atomic<int> ints_computed_locally_;
+    int ints_computed_;
 
     // Coefficients storage.  Not accessed directly
     double* coefficients_data_ = 0;
@@ -310,6 +326,39 @@ class CADFCLHF: public CLHF {
           )
       );
     }
+
+    bool do_linK_ = false;
+
+    // CADF-LinK lists
+    template <typename T> struct hash_;
+    template<typename A, typename B>
+    struct hash_<std::pair<A, B>>{
+      std::size_t operator()(const std::pair<A, B>& val) const {
+        std::size_t seed = 0;
+        boost::hash_combine(seed, val.first);
+        boost::hash_combine(seed, val.second);
+        return seed;
+      }
+    };
+    typedef madness::ConcurrentHashMap<int, OrderedShellList> IndexListMap;
+    typedef madness::ConcurrentHashMap<
+        std::pair<int, int>,
+        OrderedShellList,
+        hash_<std::pair<int, int>>
+    > IndexListMap2;
+    //typedef ConcurrentMap<OrderedShellList, int, int, int> LinKListCache3;
+
+    IndexListMap L_schwarz;
+    IndexListMap L_coefs;
+    IndexListMap L_D;
+    IndexListMap2 L_3;
+    /*
+    LinKListCache2 L_4;
+    std::set<std::pair<int, int>> L_4_keys;
+    LinKListCache2 L_K;
+    std::set<std::pair<int, int>> L_K_keys;
+    LinKListCache2 L_5;
+    */
 
 };
 
@@ -360,6 +409,7 @@ CADFCLHF::ints_to_eigen(
       Xblk.nbf
   );
   for(auto Xsh : shell_range(Xblk)) {
+    out_assert(ints->basis3()->nbasis(), ==, Xsh.basis->nbasis());
     const auto& ints_ptr = ints_to_eigen(ish, jsh, Xsh, ints, int_type);
     rv->middleCols(Xsh.bfoff - Xblk.bfoff, Xsh.nbf) = *ints_ptr;
   }

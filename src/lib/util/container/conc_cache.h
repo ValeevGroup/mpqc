@@ -33,6 +33,7 @@
 #include <boost/mpl/back.hpp>
 #include <boost/mpl/assert.hpp>
 #include <boost/mpl/vector.hpp>
+#include <boost/mpl/front.hpp>
 #include <boost/mpl/at.hpp>
 #include <boost/mpl/bool.hpp>
 #include <boost/mpl/transform.hpp>
@@ -44,6 +45,8 @@
 #include <boost/utility.hpp>
 #include <boost/type_traits.hpp>
 #include <boost/thread/future.hpp>
+#include <boost/utility/enable_if.hpp>
+
 
 #include <world/worldhashmap.h>
 #include <world/worldfut.h>
@@ -211,6 +214,11 @@ class ConcurrentCache {
     typedef typename future_map::accessor future_map_accessor;
     typedef typename future_map::const_accessor future_map_const_accessor;
 
+    ConcurrentCache() : cached_values_()
+    { }
+
+    ConcurrentCache(int nbins) : cached_values_(nbins)
+    { }
 
     value_type get(
         key_types... keys,
@@ -243,6 +251,68 @@ class ConcurrentCache {
     future_map cached_values_;
 
 };
+
+/* A concurrent map from a tuple of keys to a value.
+ * Differs from the above in that it is default constructed
+ * if it doesn't exist rather than computed by a future.
+ * In the future we should probably just use madness::ConcurrentHashMap directly
+ */
+template <
+    typename val_type,
+    typename... key_types
+>
+class ConcurrentMap {
+
+  public:
+    //----------------------------------------//
+    // types for keys
+    template<typename... Types> using tuple_type = boost::tuple<Types...>;
+    typedef tuple_type<key_types...> key_tuple;
+    //----------------------------------------//
+    // types for map of values
+    typedef val_type value_type;
+    typedef madness::ConcurrentHashMap<key_tuple, value_type, boost::hash<key_tuple>> value_map;
+    typedef typename value_map::accessor value_map_accessor;
+    typedef typename value_map::const_accessor value_map_const_accessor;
+
+
+    value_type& get(
+        key_types... keys
+    )
+    {
+      key_tuple k(boost::forward<key_types>(keys)...);
+      return values[k];
+    }
+
+    value_type& operator()(
+        key_types... keys
+    )
+    {
+      return get(boost::forward<key_types>(keys)...);
+    }
+
+    /*
+    template<typename keyT,
+    typename boost::enable_if_c<
+      sizeof...(key_types) == 1
+      && boost::is_convertible<keyT,
+          typename mpl::front<mpl::vector<key_types...>>::type
+      >::value, int >::type = 0
+    >
+    value_type& operator[](keyT keys)
+    {
+      return get(boost::forward<key_types>(keys)...);
+    }
+    */
+
+    // The actual map from key tuples to values
+    value_map values;
+
+
+
+
+};
+
 
 } // end namespace sc
 #endif /* _util_container_conc_cache_h */

@@ -1,4 +1,3 @@
-//
 
 // cadf_iters.h
 //
@@ -32,7 +31,9 @@
 
 #include <chemistry/qc/scf/clhf.h>
 #include <util/misc/property.h>
+#include <boost/iterator/zip_iterator.hpp>
 #include <boost/range.hpp>
+#include <boost/range/join.hpp>
 #include <boost/range/counting_range.hpp>
 #include <boost/iterator/iterator_adaptor.hpp>
 #include <boost/iterator/iterator_facade.hpp>
@@ -40,20 +41,49 @@
 #include <type_traits>
 #include <memory>
 #include <iterator>
+#include <atomic>
+#include <chrono>
+#include <unordered_set>
 
 #define DEFAULT_TARGET_BLOCK_SIZE 100  // functions
+#define LINK_TIME_LIST_INSERTIONS 1
+#define LINK_SORTED_INSERTION 0
 
+// Relatively trivial boost extensions that promote readability without loss of performance
+namespace boost_ext {
+
+// From http://stackoverflow.com/questions/8511035/sequence-zip-function-for-c11
+// Make sure the containers are the same length.  Behaviour is undefined otherwise
+template <typename... T>
+auto zip(const T&... containers) -> boost::iterator_range<boost::zip_iterator<decltype(boost::make_tuple(std::begin(containers)...))>>
+{
+    auto zip_begin = boost::make_zip_iterator(boost::make_tuple(std::begin(containers)...));
+    auto zip_end = boost::make_zip_iterator(boost::make_tuple(std::end(containers)...));
+    return boost::make_iterator_range(zip_begin, zip_end);
+}
+
+}
 
 namespace sc {
 
 #define DUMP(expr) std::cout << #expr << " = " << (expr) << std::endl;
+#define DUMP2(expr1, expr2) std::cout << #expr1 << " = " << (expr1) << ", " << #expr2 << " = " << (expr2) << std::endl;
+#define DUMP3(expr1, expr2, expr3) std::cout << #expr1 << " = " << (expr1) << ", " << #expr2 << " = " << (expr2) << ", " << #expr3 << " = " << (expr3) << std::endl;
+#define DUMP4(expr1, expr2, expr3, expr4) std::cout << #expr1 << " = " << (expr1) << ", " << #expr2 << " = " << (expr2) << ", " << #expr3 << " = " << (expr3) << ", " << #expr4 << " = " << (expr4) << std::endl;
+#define DUMP5(expr1, expr2, expr3, expr4, expr5) std::cout << #expr1 << " = " << (expr1) << ", " << #expr2 << " = " << (expr2) << ", " << #expr3 << " = " << (expr3) << ", " << #expr4 << " = " << (expr4) << ", " << #expr5 << " = " << (expr5) << std::endl;
 #define out_assert(a, op, b) assert(a op b || ((std::cout << "Failed assertion output: " << #a << " ( = " << a << ") " << #op << " " << #b <<  " ( = " << b << ")" << std::endl), false))
 
-#define NOT_ASSIGNED -1
+enum {
+  NotAssigned = -998,
+  NoLastIndex = -999,
+  NoMaximumBlockSize = -1001,
+  IndicesEnd = -1002
+};
 
 // Forward declarations
 class ShellData;
 class BasisFunctionData;
+class ShellIndexWithValue;
 template<typename range_type> class ShellBlockIterator;
 template<typename Iterator, typename ParentContainer> class IterableBasisElementData;
 
@@ -84,6 +114,105 @@ typedef enum {
 
 //############################################################################//
 
+template<
+  typename DurationType = std::chrono::nanoseconds,
+  typename ClockType = std::chrono::high_resolution_clock,
+  typename AccumulateToType = std::atomic_uint_fast64_t
+>
+class auto_time_accumulator {
+
+  public:
+
+    typedef DurationType duration_type;
+    typedef ClockType clock_type;
+    typedef AccumulateToType accumulate_to_type;
+    typedef auto_time_accumulator<
+        duration_type, clock_type, accumulate_to_type
+    > self_type;
+
+    auto_time_accumulator() = delete;
+    auto_time_accumulator(self_type&) = delete;
+    auto_time_accumulator(const self_type&) = delete;
+    void* operator new(size_t) = delete;
+
+    auto_time_accumulator(accumulate_to_type& dest)
+      : dest_(dest)
+    {
+      start_ = clock_type::now();
+    }
+
+    auto_time_accumulator(self_type&& other) = default;
+    //  : start_(other.start_),
+    //    dest_(other.dest_)
+    //{ }
+
+    ~auto_time_accumulator()
+    {
+      auto end = clock_type::now();
+      dest_ += std::chrono::duration_cast<DurationType>(end - start_).count();
+    }
+
+  private:
+    typename clock_type::time_point start_;
+    accumulate_to_type& dest_;
+};
+
+template<
+  typename AccumulateToType = std::atomic_uint_fast64_t
+>
+auto_time_accumulator<
+  std::chrono::nanoseconds,
+  std::chrono::high_resolution_clock,
+  AccumulateToType
+>
+make_auto_timer(AccumulateToType& dest) {
+  return auto_time_accumulator<
+    std::chrono::nanoseconds,
+    std::chrono::high_resolution_clock,
+    AccumulateToType
+  >(dest);
+}
+
+template<
+  typename DurationType = std::chrono::nanoseconds,
+  typename ClockType = std::chrono::high_resolution_clock,
+  typename AccumulateToType = std::atomic_uint_fast64_t
+>
+class time_accumulator_factory {
+
+  public:
+
+    typedef DurationType duration_type;
+    typedef ClockType clock_type;
+    typedef AccumulateToType accumulate_to_type;
+    typedef time_accumulator_factory<
+        duration_type, clock_type, accumulate_to_type
+    > self_type;
+    typedef auto_time_accumulator<
+        duration_type, clock_type, accumulate_to_type
+    > generated_type;
+    typedef decltype(accumulate_to_type().load()) accumulated_value_type;
+
+    time_accumulator_factory() = delete;
+
+    time_accumulator_factory(accumulate_to_type& dest)
+      : dest_(dest)
+    { }
+
+    generated_type create() const {
+      return generated_type(dest_);
+    }
+
+    accumulated_value_type total_time() const {
+      return dest_.load();
+    }
+
+  private:
+
+    accumulate_to_type& dest_;
+
+};
+
 //############################################################################//
 
 template <typename Iterator, typename DataContainer> struct BasisElementIteratorDereference;
@@ -102,8 +231,6 @@ class BasisElementData {
     { }
 
     BasisElementData() = delete;
-
-    enum { NotAssigned = -1 };
 
     GaussianBasisSet* basis;
     GaussianBasisSet* dfbasis;
@@ -166,6 +293,7 @@ struct ShellData : public BasisElementData {
     int atom_df_last_function = NotAssigned;
     int atom_df_last_shell = NotAssigned;
 
+
     // Reserved for future use
     int block_offset = NotAssigned;
 
@@ -183,6 +311,8 @@ struct ShellData : public BasisElementData {
   protected:
 
     void init(){
+
+      assert(basis);
 
       if(index == NotAssigned || index == basis->nshell()) return;
 
@@ -285,7 +415,6 @@ struct BasisFunctionData : public BasisElementData {
     }
 };
 
-
 template <typename DataContainer, typename Iterator>
 struct BasisElementIteratorDereference : DataContainer {
 
@@ -304,12 +433,8 @@ struct BasisElementIteratorDereference : DataContainer {
 
 };
 
-
-//############################################################################//
-//############################################################################//
 //############################################################################//
 
-enum { NotAssigned = -1 };
 
 template <typename DataContainer, typename Iterator=int_range::iterator>
 class basis_element_iterator
@@ -329,10 +454,10 @@ class basis_element_iterator
          self_t, Iterator, boost::use_default, boost::bidirectional_traversal_tag,
          BasisElementIteratorDereference<DataContainer, Iterator>
      > super_t;
-    typedef BasisElementIteratorDereference<DataContainer, Iterator> value_reference_t;
+    typedef typename DataContainer::template with_iterator<Iterator> value_reference_t;
 
 
-  private:
+  protected:
 
     GaussianBasisSet* basis;
     GaussianBasisSet* dfbasis;
@@ -367,6 +492,59 @@ class basis_element_iterator
 
 };
 
+template <typename DataContainer, typename Iterator=int_range::iterator>
+class basis_element_with_value_iterator
+  : public boost::iterator_adaptor<
+      basis_element_with_value_iterator<DataContainer, Iterator>,
+      Iterator,
+      boost::use_default,
+      boost::bidirectional_traversal_tag,
+      BasisElementIteratorDereference<DataContainer, Iterator>
+    >
+{
+
+  public:
+
+    typedef basis_element_with_value_iterator<DataContainer, Iterator> self_t;
+    typedef boost::iterator_adaptor<
+         self_t, Iterator, boost::use_default, boost::bidirectional_traversal_tag,
+         BasisElementIteratorDereference<DataContainer, Iterator>
+     > super_t;
+    typedef BasisElementIteratorDereference<DataContainer, Iterator> value_reference_t;
+
+    basis_element_with_value_iterator() : basis(0), dfbasis(0) { }
+
+    basis_element_with_value_iterator(
+        GaussianBasisSet* basis,
+        GaussianBasisSet* dfbasis,
+        Iterator iter,
+        int block_offset = NotAssigned
+    ) : super_t(iter),
+        basis(basis),
+        dfbasis(dfbasis),
+        block_offset(block_offset)
+    { }
+
+  private:
+
+    GaussianBasisSet* basis;
+    GaussianBasisSet* dfbasis;
+    int block_offset = NotAssigned;
+
+    friend class boost::iterator_core_access;
+
+    value_reference_t dereference() const {
+      auto base_spot = super_t::base();
+      return value_reference_t(
+        base_spot,
+        (*base_spot).index,
+        (*base_spot).value,
+        basis, dfbasis,
+        block_offset
+      );
+    }
+};
+
 template<typename Iterator=int_range::iterator>
     using shell_iterator = basis_element_iterator<ShellData, Iterator>;
 
@@ -374,15 +552,13 @@ template<typename Iterator=int_range::iterator>
     using function_iterator = basis_element_iterator<BasisFunctionData, Iterator>;
 
 
+//############################################################################//
+
 template<typename DataContainer, typename Iterator=int_range::iterator>
     using range_of = decltype(boost::make_iterator_range(
         basis_element_iterator<DataContainer, Iterator>(),
         basis_element_iterator<DataContainer, Iterator>()
     ));
-
-enum {
-  NoLastIndex = -1
-};
 
 template <typename DataContainer>
 inline range_of<DataContainer>
@@ -435,7 +611,6 @@ basis_element_range(
 {
   return basis_element_range<DataContainer>(basis, 0, first_index, last_index);
 }
-
 
 template <typename Iterator>
 inline range_of<ShellData, Iterator>
@@ -496,6 +671,7 @@ function_range(const ShellData& ish) {
   );
 }
 
+//############################################################################//
 
 template<typename Iterator> class ShellBlockSkeleton;
 
@@ -506,8 +682,6 @@ class ShellBlockData {
 
   public:
 
-    enum { NotAssigned = -1 };
-
     Range shell_range;
     ShellData first_shell;
     ShellData last_shell;
@@ -515,7 +689,7 @@ class ShellBlockData {
     GaussianBasisSet* dfbasis;
     int restrictions;
 
-    ShellBlockData() : restrictions(-1) { }
+    ShellBlockData() : restrictions(NotAssigned) { }
 
     ShellBlockData(const ShellBlockSkeleton<Range>&);
     
@@ -526,6 +700,14 @@ class ShellBlockData {
           sc::shell_range(basis, dfbasis, 0, basis->nshell() - 1),
           basis->nshell(), basis->nbasis(),
           NoRestrictions
+        )
+    { }
+
+    // Construct a one-shell shell block
+    ShellBlockData(const ShellData& ish)
+      : ShellBlockData(
+          sc::shell_range(ish.basis, ish.dfbasis, ish, ish),
+          1, ish.nbf, SameCenter|SameAngularMomentum
         )
     { }
 
@@ -585,7 +767,7 @@ class ShellBlockSkeleton {
     int first_index;
     int restrictions;
 
-    ShellBlockSkeleton() : nshell(0), nbf(0), first_index(-1) { }
+    ShellBlockSkeleton() : nshell(0), nbf(0), first_index(NotAssigned) { }
 
     ShellBlockSkeleton(const ShellBlockData<Range>& shbd)
       : shell_range(shbd.shell_range), nshell(shbd.nshell), nbf(shbd.nbf),
@@ -678,10 +860,6 @@ class shell_block_iterator
 
   public:
 
-    enum {
-      NoLastShell = -1,
-      NoMaximumBlockSize = -2
-    };
 
     shell_block_iterator() : basis(0), dfbasis(0), restrictions(0), target_size(0) { }
 
@@ -689,7 +867,7 @@ class shell_block_iterator
         GaussianBasisSet* basis,
         GaussianBasisSet* dfbasis = 0,
         int first_index = 0,
-        int last_index = NoLastShell,
+        int last_index = NoLastIndex,
         int requirements = SameCenter,
         int target_size = DEFAULT_TARGET_BLOCK_SIZE
     ) : basis(basis),
@@ -698,7 +876,7 @@ class shell_block_iterator
         target_size(target_size),
         all_shells(shell_range(
             basis, dfbasis, first_index,
-            last_index == NoLastShell ? ShellData::max_index(basis) - 1 : last_index
+            last_index == NoLastIndex ? ShellData::max_index(basis) - 1 : last_index
         ))
     {
       init();
@@ -753,6 +931,57 @@ shell_block_range(
 
 }
 
+inline std::ostream&
+operator << (std::ostream& out, const ShellData& ish)
+{
+  out << "ShellData: {"
+      << "index = " << ish.index << ", ";
+  out << "center = ";
+  if(ish.center == NotAssigned) out << "NotAssigned, ";
+  else out << ish.center << ", ";
+  out << "bfoff = ";
+  if(ish.bfoff == NotAssigned) out << "NotAssigned, ";
+  else out << ish.bfoff << ", ";
+  out << "nbf = ";
+  if(ish.nbf == NotAssigned) out << "NotAssigned, ";
+  else out << ish.nbf << ", ";
+  out << "last_function = ";
+  if(ish.nbf == NotAssigned) out << "NotAssigned";
+  else out << ish.last_function;
+  out << "}";
+  return out;
+}
+
+template<typename Range>
+std::ostream&
+operator << (std::ostream& out, const ShellBlockData<Range>& blk)
+{
+  auto write_if_assigned = [&](int val) {
+    if(val == NotAssigned) out << "NotAssigned";
+    else out << val;
+  };
+  out << "\nShellBlockData: {"
+      << "\n  nshell: " << blk.nshell
+      << ", nbf: " << blk.nbf;
+  out << "\n  shoff: ";
+  write_if_assigned(blk.first_shell.index);
+  out << ", bfoff: ";
+  write_if_assigned(blk.bfoff);
+  out << "\n  (basis nshell = "
+      << blk.basis->nshell()
+      << ", nbf = "
+      << blk.basis->nbasis()
+      << ")"
+      << "\n  center: ";
+  write_if_assigned(blk.center);
+  out << "\n  shells:";
+  for(auto sh : shell_range(blk)) {
+    out << "\n    " << sh;
+  }
+  out << "\n}" << std::endl;
+  return out;
+}
+
 //############################################################################//
 
 inline range_of<BasisFunctionData>
@@ -784,6 +1013,51 @@ iter_shells_on_center(
   );
 }
 
+template<typename DataContainer, typename Iterator=int_range::iterator>
+using joined_range_of = decltype(
+    boost::join(
+        range_of<DataContainer, Iterator>(),
+        range_of<DataContainer, Iterator>()
+    )
+);
+
+inline joined_range_of<ShellData>
+iter_shells_on_centers(
+    const Ref<GaussianBasisSet>& basis,
+    int center1,
+    int center2,
+    const OptionalRefParameter<GaussianBasisSet>& dfbasis = 0
+)
+{
+  const int shoff1 = basis->shell_on_center(center1, 0);
+  const int shoff2 = basis->shell_on_center(center2, 0);
+  if(center1 == center2) {
+    return boost::join(
+      shell_range(
+        basis, dfbasis,
+        shoff1, shoff1 + basis->nshell_on_center(center1) - 1
+      ),
+      // An empty range
+      shell_range(
+        basis, dfbasis,
+        shoff1, shoff1 - 1
+      )
+    );
+  }
+  else {
+    return boost::join(
+      shell_range(
+        basis, dfbasis,
+        shoff1, shoff1 + basis->nshell_on_center(center1) - 1
+      ),
+      shell_range(
+        basis, dfbasis,
+        shoff2, shoff2 + basis->nshell_on_center(center2) - 1
+      )
+    );
+  }
+}
+
 inline range_of_shell_blocks<>
 iter_shell_blocks_on_center(
     const Ref<GaussianBasisSet>& basis,
@@ -803,7 +1077,259 @@ iter_shell_blocks_on_center(
   );
 }
 
+//############################################################################//
 
+struct ShellDataWithValue : public ShellData {
+
+    template<typename Iterator> using with_iterator =
+        BasisElementIteratorDereference<ShellDataWithValue, Iterator>;
+
+    double value;
+
+    ShellDataWithValue(
+        int index,
+        double value,
+        GaussianBasisSet* basis,
+        GaussianBasisSet* dfbasis,
+        int block_offset = NotAssigned
+    ) : ShellData(index, basis, dfbasis), value(value)
+    { }
+
+    ShellDataWithValue(
+        const ShellData& ish,
+        double value
+    ) : ShellData(ish), value(value)
+    { }
+
+};
+
+struct ShellIndexWithValue{
+
+    int index;
+    mutable double value;
+
+    ShellIndexWithValue() = default;
+
+    ShellIndexWithValue(int index)
+      : index(index), value(0.0)
+    { }
+
+    ShellIndexWithValue(int index, double value)
+      : index(index), value(value)
+    { }
+
+    bool operator==(const ShellIndexWithValue& other) {
+      return index == other.index;
+    }
+
+    operator int() const {
+      return index;
+    }
+};
+
+namespace {
+  template<typename T>
+  struct hash_;
+
+  template<>
+  struct hash_<ShellIndexWithValue> {
+
+      std::size_t operator()(const ShellIndexWithValue& v) const {
+        return std::hash<int>()(v.index);
+      }
+
+  };
+
+  struct index_equal_ {
+      bool operator()(const ShellIndexWithValue& a, const ShellIndexWithValue& b) {
+        return a.index == b.index;
+      }
+  };
+}
+
+class OrderedShellList {
+
+    struct index_compare {
+        bool operator()(const ShellIndexWithValue& a, const ShellIndexWithValue& b) const {
+          return a.index < b.index;
+        }
+    };
+
+    struct value_compare {
+        bool operator()(const ShellIndexWithValue& a, const ShellIndexWithValue& b) const {
+          return a.value > b.value or (a.value == b.value && a.index > b.index);
+        }
+    };
+
+  public:
+    #if LINK_SORTED_INSERTION
+    typedef std::set<ShellIndexWithValue, value_compare> index_list;
+    #else
+    typedef std::vector<ShellIndexWithValue> index_list;
+    typedef std::unordered_set<
+        ShellIndexWithValue,
+        hash_<ShellIndexWithValue>,
+        index_equal_
+    > index_set;
+    #endif
+    typedef index_list::const_iterator index_iterator;
+    typedef basis_element_with_value_iterator<ShellDataWithValue, index_iterator> iterator;
+
+  private:
+
+    boost::mutex get_next_mtx_;
+    boost::mutex insert_mtx_;
+    GaussianBasisSet* basis_ = 0;
+    GaussianBasisSet* dfbasis_ = 0;
+
+
+
+    #if LINK_SORTED_INSERTION
+    index_list indices_{ value_compare() };
+    std::set<ShellIndexWithValue, index_compare> index_ordered_{ index_compare() };
+    #else
+    index_list indices_;
+    index_set idx_set_;
+    bool sorted_ = false;
+    #endif
+
+
+  public:
+
+    #if LINK_TIME_LIST_INSERTIONS
+    static std::atomic_uint_fast64_t insertion_time_nanos;
+    static std::atomic_uint_fast64_t n_insertions;
+    time_accumulator_factory<> insertion_timer{ insertion_time_nanos };
+    #endif
+
+    OrderedShellList()
+    { }
+
+    OrderedShellList(const OrderedShellList& other)
+      : indices_(other.indices_)
+        #if LINK_SORTED_INSERTION
+        , index_ordered_(other.index_ordered_)
+        #else
+        , idx_set_(other.idx_set_)
+        , sorted_(other.sorted_)
+        #endif
+
+    { }
+    
+    void set_basis(GaussianBasisSet* basis, GaussianBasisSet* dfbasis = 0)
+    {
+      basis_ = basis;
+      if(dfbasis) dfbasis_ = dfbasis;
+    }
+
+    void insert(const ShellData& ish, double value) {
+      #if LINK_TIME_LIST_INSERTIONS
+      ++n_insertions;
+      auto timer = insertion_timer.create();
+      #endif
+      //----------------------------------------//
+      assert(basis_ == 0 || ish.basis == basis_);
+      assert(ish.basis);
+      if(basis_ == 0) basis_ = ish.basis;
+      assert(dfbasis_ == 0 || ish.dfbasis == dfbasis_);
+      if(dfbasis_ == 0) dfbasis_ = ish.dfbasis;
+      //----------------------------------------//
+      boost::lock_guard<boost::mutex> lg(insert_mtx_);
+      #if LINK_SORTED_INSERTION
+      ShellIndexWithValue insert_val((int)ish, value);
+      const auto& found = index_ordered_.find(insert_val);
+      if(found != index_ordered_.end()) {
+        const auto& found_old = indices_.find(*found);
+        assert(found_old != indices_.end());
+        const double old_value = found_old->value;
+        if(value > old_value) {
+          found->value = value;
+          indices_.erase(found_old);
+          indices_.insert(insert_val);
+        }
+      }
+      else{
+        index_ordered_.insert(insert_val);
+        indices_.insert(insert_val);
+      }
+      #else
+      sorted_ = false;
+      ShellIndexWithValue insert_val(ish, value);
+      const auto& found = idx_set_.find(insert_val);
+      if(found != idx_set_.end()) {
+        const double old_val = found->value;
+        if(value > old_val) found->value = value;
+      }
+      else {
+        idx_set_.insert(insert_val);
+      }
+      #endif
+    }
+
+    #if !LINK_SORTED_INSERTION
+    void sort() {
+      std::move(idx_set_.begin(), idx_set_.end(), std::back_inserter(indices_));
+      std::sort(indices_.begin(), indices_.end(),
+          [](const ShellIndexWithValue& a, const ShellIndexWithValue& b){
+            return a.value > b.value;
+          }
+      );
+      sorted_ = true;
+    }
+    #endif
+
+
+    iterator begin() const
+    {
+      #if !LINK_SORTED_INSERTION
+      assert(sorted_);
+      #endif
+      return iterator(
+          basis_, dfbasis_,
+          indices_.cbegin()
+      );
+    }
+    iterator end() const
+    {
+      #if !LINK_SORTED_INSERTION
+      assert(sorted_);
+      #endif
+      return iterator(
+          basis_, dfbasis_,
+          indices_.cend()
+      );
+    }
+
+    auto size() -> decltype(indices_.size())
+    {
+      #if !LINK_SORTED_INSERTION
+      assert(sorted_);
+      #endif
+      return indices_.size();
+    }
+
+    void clear()
+    {
+      indices_.clear();
+      #if LINK_SORTED_INSERTION
+      index_ordered_.clear();
+      #else
+      idx_set_.clear();
+      #endif
+    }
+
+};
+
+inline
+std::ostream&
+operator <<(std::ostream& out, const OrderedShellList& list) {
+  out << "\nOrderedShellList: {";
+  for(auto ish : list) {
+    out << "\n  " << ish << ", with value " << ish.value;
+  }
+  out << "\n}" << std::endl;
+  return out;
+}
 
 } // end namespace sc
 

@@ -60,8 +60,10 @@ init_mp(const Ref<KeyVal>& keyval)
 {
   // if we are on a paragon then use a ParagonMessageGrp
   // otherwise read the message group from the input file
-  //grp << keyval->describedclassvalue("message");
+  grp << keyval->describedclassvalue("message");
 
+  if (grp.nonnull()) MessageGrp::set_default_messagegrp(grp);
+  else grp = MessageGrp::get_default_messagegrp();
 
   Ref<Debugger> debugger; debugger << keyval->describedclassvalue(":debug");
   // Let the debugger know the name of the executable and the node
@@ -93,11 +95,6 @@ main(int argc, char**argv)
   // open keyval input
   Ref<KeyVal> rpkv(new ParsedKeyVal(input));
 
-  grp = MessageGrp::initial_messagegrp(argc, argv);
-  if (grp.nonnull()) MessageGrp::set_default_messagegrp(grp);
-  else grp = MessageGrp::get_default_messagegrp();
-  MessageGrp::set_default_messagegrp(grp);
-
   init_mp(rpkv);
 
   Timer tim;
@@ -128,25 +125,22 @@ main(int argc, char**argv)
   tim.exit("input");
 
   if (mole.nonnull()) {
-    ExEnv::out0() << indent
-         << scprintf("value of mole is %15.10f\n\n", mole->energy());
-
-    //if (mole->gradient_implemented()) {
-    //  if (opt.nonnull()) {
-    //    opt->optimize();
-    //  } else {
-    //    mole->gradient().print("gradient");
-    //  }
-    //} else if (mole->value_implemented()) {
-    //  ExEnv::out0() << indent
-    //       << scprintf("value of mole is %15.10f\n\n", mole->energy());
-    //}
+    if (mole->gradient_implemented()) {
+      if (opt.nonnull()) {
+        opt->optimize();
+      } else {
+        mole->gradient().print("gradient");
+      }
+    } else if (mole->value_implemented()) {
+      ExEnv::out0() << indent
+           << scprintf("value of mole is %15.10f\n\n", mole->energy());
+    }
   }
 
   mole->print(ExEnv::out0());
 
-  //StateOutBin so("scftest.wfn");
-  //SavableState::save_state(mole.pointer(),so);
+  StateOutBin so("scftest.wfn");
+  SavableState::save_state(mole.pointer(),so);
   
   tim.print(ExEnv::out0());
 

@@ -1,6 +1,5 @@
 .cproject
 .project
-.settings
 CMakeCache.txt
 cmake_install.cmake
 install_manifest.txt

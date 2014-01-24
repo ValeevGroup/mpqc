@@ -30,7 +30,6 @@
 
 #include <string>
 #include <map>
-#include <cassert>
 
 #include <util/state/state.h>
 #include <util/keyval/keyval.h>
@@ -195,13 +194,6 @@ class StateIn:  public DescribedClass {
     virtual int get_array_float(float*p,int size);
     virtual int get_array_double(double*p,int size);
     //@}
-    ///
-    /** @name StateIn::get_array()
-     *  Templated get_array() with specializations that call get_array_<type>()
-     */
-    //@{
-    //template <typename T> int get_array(T* p, int size) { assert(false && "not implemented"); };
-    //@}
 
     /** @name StateIn::get(std::container)
      *  Read standard C++ library containers. All methods work with value (and/or key) type either a Ref to a SavableState or one of built-in types.
@@ -319,14 +311,6 @@ class StateIn:  public DescribedClass {
     t << SavableState::restore_state(so);
   }
   /// @}
-
-  //template <> int StateIn::get_array<char>(char* p, int size){ return get_array_char(p, size); }
-  //template <> int StateIn::get_array<unsigned int>(unsigned int* p, int size){ return get_array_uint(p, size); }
-  //template <> int StateIn::get_array<int>(int* p, int size){ return get_array_int(p, size); }
-  //template <> int StateIn::get_array<unsigned long>(unsigned long* p, int size){ return get_array_ulong(p, size); }
-  //template <> int StateIn::get_array<long>(long* p, int size){ return get_array_long(p, size); }
-  //template <> int StateIn::get_array<float>(float* p, int size){ return get_array_float(p, size); }
-  //template <> int StateIn::get_array<double>(double* p, int size){ return get_array_double(p, size); }
 
 } // namespace sc
 

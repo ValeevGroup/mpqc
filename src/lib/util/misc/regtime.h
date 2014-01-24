@@ -200,13 +200,6 @@ class Timer {
     void change(const char *region);
     void change(const std::string &region) { change(region.c_str()); }
     //@}
-    /** Change the current timing region numbered in ascending order for
-        a given subregion.  The same as change(<current number> + region).
-        \sa change() */
-    //@{
-    void change_numbered(const char *region);
-    void change_numbered(const std::string &region) { change(region.c_str()); }
-    //@}
     /** Exit the current timing region.  The name optionally can be given
         for a consistency check. */
     //@{

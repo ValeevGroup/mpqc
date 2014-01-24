@@ -34,12 +34,7 @@
 #include <util/state/stateout.h>
 #include <util/misc/registry.h>
 
-
 namespace sc {
-
-  inline std::ostream& operator<<(std::ostream &o, const std::pair<std::string, std::pair<int, int> >& p) {
-    return o << "{ " << p.first << ", " << " (" << p.second.first << ", " << p.second.second << ") }";
-  }
 
   template <typename Key, typename Value, template <typename> class CreationPolicy, typename KeyEqual, typename ValueEqual >
   Ref< Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual> >
@@ -248,7 +243,6 @@ namespace sc {
   }
 
 } // end of namespace sc
-
 
 #endif // end of header guard
 

@@ -1296,7 +1296,7 @@ namespace sc {
      const std::string basename = SCFormIO::fileext_to_filename(".moints");
      const std::string dir = ConsumableResources::get_default_instance()->disk_location();
      const std::string fname(tempnam(dir.c_str(), basename.c_str()));
-//#ifdef HAVE_MPIIO
+//#if HAVE_MPIIO
 //     return new DistArray4_MPIIOFile_Ind(fname.c_str(), num_te_types, ni, nj, nx, ny, storage);
 //#else
      return new DistArray4_Node0File(fname.c_str(), num_te_types, ni, nj, nx, ny, storage);

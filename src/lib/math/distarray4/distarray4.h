@@ -173,7 +173,6 @@ class DistArray4: virtual public SavableState {
 
     const Ref<MessageGrp>& msg() const { return msg_; }
 
-    bool is_active() const { return active(); };
 
   private:
     /// Set to nonzero to debug this and derived classes

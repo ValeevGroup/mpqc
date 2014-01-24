@@ -66,11 +66,7 @@ namespace sc {
         SolveMethod_RefinedCholesky = 2,
         SolveMethod_InverseBunchKaufman = 3,
         SolveMethod_BunchKaufman = 4,
-        SolveMethod_RefinedBunchKaufman = 5,
-        // Solvers that rely on Eigen start at 100
-        SolveMethod_HouseholderQR = 101,
-        SolveMethod_ColPivHouseholderQR = 102,
-        SolveMethod_FullPivHouseholderQR = 103,
+        SolveMethod_RefinedBunchKaufman = 5
       };
 
       typedef TwoBodyMOIntsRuntimeUnion23 MOIntsRuntime;

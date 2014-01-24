@@ -64,7 +64,7 @@ GaussianBasisSet::Shell::Shell(const GaussianBasisSet* basis,
                                  basis_(basis),
                                  center_(center)
 {
-  assert(center < basis->ncenter());
+  MPQC_ASSERT(center < basis->ncenter());
 }
 
 bool sc::GaussianBasisSet::Shell::equiv(const Shell& s) const {
@@ -226,7 +226,7 @@ GaussianBasisSet::GaussianBasisSet(StateIn&s):
     FromStateIn(gshells, s, counter);
     std::vector<unsigned int> shell_to_center;
     FromStateIn(shell_to_center, s, counter);
-    assert(shell_to_center.size() == gshells.size());
+    MPQC_ASSERT(shell_to_center.size() == gshells.size());
 
     for(size_t s=0; s<gshells.size(); ++s)
       shells_.push_back(Shell(this, shell_to_center[s], gshells[s]));

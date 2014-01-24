@@ -51,6 +51,7 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
   // test for 1e density matrix
   double E_V_tot = 0.0;
   double E_Vcoupling_tot = 0.0;
+  double E_Bcoupling_tot = 0.0;
   double E_X_tot = 0.0;
   double E_B_tot = 0.0;
   double E_X_noca_tot = 0.0;
@@ -1909,6 +1910,7 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
       // print out the V coupling, X, and B contributions
       double E_V = 0.0;
       double E_Vcoupling = 0.0;
+      double E_Bcoupling = 0.0;
       double E_X = 0.0;
       double E_B = 0.0;
       // X terms using non-canonical orbitals
@@ -1932,6 +1934,9 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
                 || this->r12eval()->ebc() == false) {
               E_Vcoupling += 2.0 * C_1
                   * (Vij_ij_coupling[ij] - Vij_ji_coupling[ij]);
+
+              if (do_mp2 && this->r12eval()->coupling())
+                E_Bcoupling += C_1 * C_1 * (Bij_ij_coupling[ij] - Bij_ji_coupling[ij]);
             }
 
           }
@@ -1942,12 +1947,14 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
           E_B_tot += E_B * 2.0;
           E_X_noca_tot += E_X_noca * 2.0;
           E_Vcoupling_tot += E_Vcoupling * 2.0;
+          E_Bcoupling_tot += E_Bcoupling * 2.0;
         } else {
             E_V_tot += E_V;
             E_X_tot += E_X;
             E_B_tot += E_B;
             E_X_noca_tot = +E_X_noca;
             E_Vcoupling_tot += E_Vcoupling;
+            E_Bcoupling_tot += E_Bcoupling;
         }
       } else if (num_unique_spincases2 == 2) {
         // Alpha_beta case for closed shell
@@ -1979,6 +1986,13 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
               E_Vcoupling += 2.0
                   * (0.5 * (C_0 + C_1) * Vij_ij_coupling[ij]
                       + 0.5 * (C_0 - C_1) * Vij_ji_coupling[ij]);
+              if (do_mp2 && this->r12eval()->coupling())
+                E_Bcoupling += (pow(0.5 * (C_0 + C_1), 2)
+                    * Bij_ij_coupling[ij]
+                    + 0.25 * (C_0 * C_0 - C_1 * C_1)
+                        * (2.0 * Bij_ji_coupling[ij])
+                    + pow(0.5 * (C_0 - C_1), 2)
+                        * (Bij_ij_coupling[ij]));
             }
 
           }
@@ -1988,6 +2002,7 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
         E_B_tot += E_B;
         E_X_noca_tot = +E_X_noca;
         E_Vcoupling_tot += E_Vcoupling;
+        E_Bcoupling_tot += E_Bcoupling;
       } else {
         // Alpha_beta case for open shell
         for (int i1 = 0; i1 < nocc1_act; ++i1) {
@@ -2023,6 +2038,14 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
               E_Vcoupling += 2.0
                               * (0.5 * (C_0 + C_1) * Vij_ij_coupling[ij]
                                + 0.5 * (C_0 - C_1) * Vij_ji_coupling[ij]);
+              if (do_mp2 && this->r12eval()->coupling())
+                E_Bcoupling += (pow(0.5 * (C_0 + C_1), 2)
+                                  * (Bij_ij_coupling[ij])
+                                  + 0.25 * (C_0 * C_0 - C_1 * C_1)
+                                      * ((Bij_ji_coupling[ij] + Bji_ij_coupling[ji])
+                                        )
+                                  + pow(0.5 * (C_0 - C_1), 2)
+                                      * (Bji_ji_coupling[ji]));
             }
           }
         }
@@ -2031,6 +2054,7 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
         E_B_tot += E_B;
         E_X_noca_tot = +E_X_noca;
         E_Vcoupling_tot += E_Vcoupling;
+        E_Bcoupling_tot += E_Bcoupling;
       }
       delete[] Xioccj_ij;
       delete[] Xioccj_ji;
@@ -2482,7 +2506,7 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
       // Vpq_ij
       std::vector<Ref<DistArray4> > Vpq_vec = r12eval()->V_distarray4(spincase2,
                                                                       p1, p2);
-      assert(Vpq_vec.size() == 1);
+      MPQC_ASSERT(Vpq_vec.size() == 1);
       Ref<DistArray4> Vpq_ij = Vpq_vec[0];
       // V^qp_ij (V^p2p1_i1i2) for open-shell alpha-beta case
       Ref<DistArray4> Vqp_ij = NULL;
@@ -2508,7 +2532,7 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
           // V^qp_ij (V^p2p1_i1i2)
           std::vector<Ref<DistArray4> > Vqp_vec = r12eval()->V_distarray4(
               spincase2, p2, p1);
-          assert(Vqp_vec.size() == 1);
+          MPQC_ASSERT(Vqp_vec.size() == 1);
           Vqp_ij = Vqp_vec[0];
 
           // extract Vba_ij from Vqp_ij
@@ -2729,6 +2753,7 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
     ExEnv::out0() << endl << "Individual contributions to the R12 energy:"
                   << endl << "E_V = " << scprintf("%12.10f", E_V_tot)
                   << endl << "E_Vcoupling = " << scprintf("%12.10f", E_Vcoupling_tot)
+                  << endl << "E_Bcoupling = " << scprintf("%12.10f", E_Bcoupling_tot)
                   << endl << "E_X = " << scprintf("%12.10f", E_X_tot)
                   << endl << "E_X (non canonical orbitals) = " << scprintf("%12.10f", E_X_noca_tot)
                   << endl << "E_B = " << scprintf("%12.10f", E_B_tot)

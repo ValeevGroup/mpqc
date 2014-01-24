@@ -367,7 +367,7 @@ RefSymmSCMatrix sc::PsiSpinFreeRDMTwo::scmat() const {
     Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
     const RefSymmSCMatrix opdm_a = psiscfwfn_->mo_density(Alpha);
     const RefSymmSCMatrix opdm_b = psiscfwfn_->mo_density(Beta);
-    assert(opdm_a.n() == opdm_b.n());
+    MPQC_ASSERT(opdm_a.n() == opdm_b.n());
     const int n = opdm_a.n();
 
     RefSCDimension dim = new SCDimension(n*n);
@@ -417,7 +417,7 @@ PsiSpinFreeRDMTwo::da4() const {
     if (psiciwfn_.nonnull()) {
       RefSymmSCMatrix rdm2_scmat = psiciwfn_->twopdm_occ();
       const int n = psiciwfn_->occ(Alpha)->rank();
-      assert(n == int(sqrt(rdm2_scmat.n())));
+      MPQC_ASSERT(n == int(sqrt(rdm2_scmat.n())));
       da4_ = make_distarray4(1, n, n, n, n);
       da4_->activate();
 
@@ -451,7 +451,7 @@ PsiSpinFreeRDMTwo::da4() const {
     if (psiscfwfn_.nonnull()) {
       const RefSymmSCMatrix opdm_a = psiscfwfn_->mo_density(Alpha);
       const RefSymmSCMatrix opdm_b = psiscfwfn_->mo_density(Beta);
-      assert(opdm_a.n() == opdm_b.n());
+      MPQC_ASSERT(opdm_a.n() == opdm_b.n());
       const int n = opdm_a.n();
 
       da4_ = make_distarray4(1, n, n, n, n);

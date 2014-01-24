@@ -156,8 +156,8 @@ namespace sc {
 
     // validate input
     const size_t norbs = coefs_a.coldim().n();
-    assert(norbs != 0);
-    assert(norbs == coefs_b.coldim().n());
+    MPQC_ASSERT(norbs != 0);
+    MPQC_ASSERT(norbs == coefs_b.coldim().n());
     const unsigned int max_orbsym_a = *(std::max_element(orbsyms_a.begin(), orbsyms_a.end()));
     const unsigned int min_orbsym_a = *(std::min_element(orbsyms_a.begin(), orbsyms_a.end()));
     const unsigned int max_orbsym_b = *(std::max_element(orbsyms_b.begin(), orbsyms_b.end()));

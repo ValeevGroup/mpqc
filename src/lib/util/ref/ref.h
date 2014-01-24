@@ -76,6 +76,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <cassert>
+#include <util/misc/assert.h>
 
 #ifdef HAVE_CONFIG_H
 #include <mpqc_config.h>
@@ -237,12 +238,12 @@ class RefCount {
           void* bptr_void = reinterpret_cast<void*>(bptr);
           void* cptr_void = reinterpret_cast<void*>(cptr);
 
-          assert( c->indentifier() == aptr->identifier() ); // ok
-          assert( c->indentifier() == bptr->identifier() ); // ok
-          assert( cptr == aptr ); // ok
-          assert( cptr == bptr ); // ok! (implicit cast)
-          assert(cptr_void == aptr_void); // ok!
-          assert(cptr_void == bptr_void); // NOT ok!!!
+          MPQC_ASSERT( c->indentifier() == aptr->identifier() ); // ok
+          MPQC_ASSERT( c->indentifier() == bptr->identifier() ); // ok
+          MPQC_ASSERT( cptr == aptr ); // ok
+          MPQC_ASSERT( cptr == bptr ); // ok! (implicit cast)
+          MPQC_ASSERT(cptr_void == aptr_void); // ok!
+          MPQC_ASSERT(cptr_void == bptr_void); // NOT ok!!!
         @endcode
         Thus for objects that are derived from RefCount
         this will return pointer to the RefCount base; this allows to compare the identity of the objects pointed
@@ -406,18 +407,17 @@ class  Ref  : public RefBase {
     {
       clear();
     }
-    /** Returns the reference counted object.  The behaviour is undefined if
-        the object is null. */
-    T* operator->() const { assert(p!=0); return p; }
+    /** Returns the reference counted object. Will abort if object is null. */
+    T* operator->() const { MPQC_ASSERT(p!=0); return p; }
     /// Returns a pointer the reference counted object.
     T* pointer() const { return p; }
     /// Implements the parentpointer pure virtual in the base class.
     RefCount *parentpointer() const { return p; }
 
-    operator T*() const { assert(p!=0); return p; }
+    operator T*() const { MPQC_ASSERT(p!=0); return p; }
     /** Returns a C++ reference to the reference counted object.
         The behaviour is undefined if the object is null. */
-    T& operator *() const { assert(p!=0); return *p; };
+    T& operator *() const { MPQC_ASSERT(p!=0); return *p; };
     /** Return 1 if this is a reference to a null object.  Otherwise
         return 0. */
     int null() const { return p == 0; }

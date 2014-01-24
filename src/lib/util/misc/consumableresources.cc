@@ -96,6 +96,8 @@ ConsumableResources::~ConsumableResources() {
 
 void
 ConsumableResources::summarize_unreleased_resources(std::ostream& os) const {
+  if (not do_profile()) return;
+
   if (!managed_arrays_.empty()) {
     std::size_t total_unfreed_memory = 0;
     for(std::map<void*, ResourceAttribites>::const_iterator v=managed_arrays_.begin();
@@ -104,24 +106,23 @@ ConsumableResources::summarize_unreleased_resources(std::ostream& os) const {
       total_unfreed_memory += v->second.size;
     if (total_unfreed_memory > 0) {
       os << indent << scprintf("WARNING: %ld bytes managed by ConsumableResources was not explicitly deallocated!", total_unfreed_memory) << std::endl;
-      if (profiling()) {
-        os << indent << scprintf("ConsumableResources: list of stranded pointers") << std::endl << incindent;
-        // sort by size and print out attributes
-        typedef std::map<void*, ResourceAttribites>::const_iterator citer_t;
-        typedef std::multiset<citer_t, SizeCompare<citer_t> > iterset_t;
-        iterset_t iset;
-        for(std::map<void*, ResourceAttribites>::const_iterator v=managed_arrays_.begin();
-            v != managed_arrays_.end();
-            ++v) {
-          iset.insert(v);
-        }
-        for(iterset_t::const_iterator v=iset.begin();
-            v != iset.end();
-            ++v) {
-          os << indent << "ptr=" << (*v)->first << " " << std::string((*v)->second) << std::endl;
-        }
-        os << decindent;
+
+      os << indent << scprintf("ConsumableResources: list of stranded pointers") << std::endl << incindent;
+      // sort by size and print out attributes
+      typedef std::map<void*, ResourceAttribites>::const_iterator citer_t;
+      typedef std::multiset<citer_t, SizeCompare<citer_t> > iterset_t;
+      iterset_t iset;
+      for(std::map<void*, ResourceAttribites>::const_iterator v=managed_arrays_.begin();
+          v != managed_arrays_.end();
+          ++v) {
+            iset.insert(v);
       }
+      for(iterset_t::const_iterator v=iset.begin();
+          v != iset.end();
+          ++v) {
+            os << indent << "ptr=" << (*v)->first << " " << std::string((*v)->second) << std::endl;
+      }
+      os << decindent;
     }
   }
 }
@@ -216,6 +217,7 @@ ConsumableResources::set_default_instance(const Ref<ConsumableResources>& inst)
 const Ref<ConsumableResources>&
 ConsumableResources::get_default_instance()
 {
+  default_object_is_gone();
   return default_instance_;
 }
 
@@ -232,20 +234,32 @@ ConsumableResources::print_summary(std::ostream& o, bool print_state, bool print
   o << indent << "ConsumableResources: (" << std::endl << incindent;
 
   o << indent << "memory = " << rsize::value_to_string(memory_.max_value());
-  if (print_state || print_stats) {
-    o << " (";
-    if (print_state) o << " avail: " << rsize::value_to_string(memory_.value()) << " ";
-    if (print_stats) o << " max used: " << rsize::difference_to_string(memory_.max_value() - memory_.lowest_value()) << " ";
-    o << ")";
+  if (do_profile()) {
+    if (print_state || print_stats) {
+      o << " (";
+      if (print_state)
+        o << " avail: " << rsize::value_to_string(memory_.value()) << " ";
+      if (print_stats)
+        o << " max used: "
+            << rsize::difference_to_string(
+                memory_.max_value() - memory_.lowest_value()) << " ";
+      o << ")";
+    }
   }
   o << std::endl;
 
   o << indent << "disk = [" << disk_.first << " " << rsize::value_to_string(disk_.second.max_value()) <<"]";
-  if (print_state || print_stats) {
-    o << " (";
-    if (print_state) o << " avail: " << rsize::value_to_string(disk_.second.value()) << " ";
-    if (print_stats) o << " max used: " << rsize::difference_to_string(disk_.second.max_value() - disk_.second.lowest_value()) << " ";
-    o << ")";
+  if (do_profile()) {
+    if (print_state || print_stats) {
+      o << " (";
+      if (print_state)
+        o << " avail: " << rsize::value_to_string(disk_.second.value()) << " ";
+      if (print_stats)
+        o << " max used: "
+            << rsize::difference_to_string(
+                disk_.second.max_value() - disk_.second.lowest_value()) << " ";
+      o << ")";
+    }
   }
   o << std::endl << decindent;
 
@@ -325,6 +339,31 @@ void ConsumableResources::release_disk_(size_t value) {
 }
 
 const std::string& ConsumableResources::disk_location() const { return disk_.first; }
+
+namespace {
+  void _warn(bool is_default = true) {
+    if (ConsumableResources::debug()) {
+      ExEnv::err0() << indent << "WARNING: use of a missing "
+                    << (is_default ? "default" : "") << " ConsumableResources object" << std::endl
+                    << indent << "         this suggests a programming error (perhaps, cycles of smart pointers)"
+                    << std::endl;
+    }
+  }
+}
+
+bool
+ConsumableResources::object_is_gone() {
+  const bool result = (this == 0);
+  if (result) _warn(false);
+  return result;
+}
+
+bool
+ConsumableResources::default_object_is_gone() {
+  const bool result = default_instance_.null();
+  if (result) _warn();
+  return result;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 

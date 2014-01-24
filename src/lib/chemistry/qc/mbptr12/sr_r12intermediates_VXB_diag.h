@@ -45,6 +45,31 @@ namespace sc {
     return (array.find(tile_idx).get()[ele_idx]);
   }
 
+  inline TA::Array<double, 2 > XaiAddToXam(const TA::Array<double, 2 >& Xam,
+                                           const TA::Array<double, 2 >& Xai) {
+    MPQC_ASSERT(Xam.size() == 1);
+
+    typedef TA::Array<double, 2> TArray2;
+    typename TArray2::value_type tile_X =
+    static_cast<const typename TArray2::value_type&>(Xam.find(0)).clone();
+    typename TArray2::value_type tile_Xai = Xai.find(0);
+    const std::size_t zero_cols = tile_X.range().size()[1] - tile_Xai.range().size()[1];
+
+    std::array<std::size_t, 2> i = {{0, 0}};
+    std::size_t ix = 0;
+    for(i[0] = tile_X.range().start()[0];
+      i[0] < tile_X.range().finish()[0]; ++i[0]) {
+      for(i[1] = zero_cols + tile_X.range().start()[1];
+        i[1] < tile_X.range().finish()[1]; ++i[1], ++ix) {
+        tile_X[i] +=  tile_Xai[ix];
+      }
+    }
+
+    TArray2 X(Xam.get_world(), Xam.trange());
+    X.set(0, tile_X);
+    return X;
+  }
+
   template <typename T>
   typename SingleReference_R12Intermediates<T>::TArray2
   SingleReference_R12Intermediates<T>::Bpk_qk(const char* p, const char* q) {
@@ -569,53 +594,439 @@ namespace sc {
 
   } // namespace sc::detail
 
+  // Xam contribution from CABS Singles
+  template <typename T>
+  typename SingleReference_R12Intermediates<T>::TArray2
+  SingleReference_R12Intermediates<T>::Xam_CabsSingles(const TArray2& TmA,
+                                                       const TArray2& Tma) {
+    // density from CABS Singles contribution
+    // D^m_n =  t^m_A' * t^A'_n
+    TArray2 D_e2_mn = TmA("m,A'") * TmA("n,A'");
+    // D^A'_B' = t^A'_m * t^m_B'
+    TArray2 D_e2_AB = TmA("m,A'") * TmA("m,B'");
+
+    TArray4 g_aAmn = _4("<a A'|g|m n>");
+    TArray4 g_ammn = _4("<a m|g|m1 n>");
+    TArray2 Xam_E2 = 2.0 * (
+                     - _2("<A'|F|a>") * TmA("m,A'")
+                     + Tma("n,a") * _2("<m|F|n>")
+                     + (TmA("n,A'") * Tma("n,a")) * _2("<m|F|A'>")
+                     //
+                     - ( 2.0 * _4("<a n|g|m A'>") - _4("<a n|g|A' m>")
+                       + 2.0 * g_aAmn("a,A',m,n") - g_aAmn("a,A',n,m")
+                       ) * TmA("n,A'")
+                     //
+                     - (2.0 * _4("<a A'|g|m B'>") - _4("<a A'|g|B' m>"))
+                       * D_e2_AB("A',B'")
+                     //
+                     + (2.0 * g_ammn("a,n1,m,n2") - g_ammn("a,n1,n2,m"))
+                       * D_e2_mn("n1,n2")
+                     );
+    return Xam_E2;
+  }
+
+  // Xam contribution from MP2
+  template <typename T>
+  typename SingleReference_R12Intermediates<T>::TArray2
+  SingleReference_R12Intermediates<T>::Xam_mp2(const TArray4& T2_ijab,
+                                               const TArray2& Dij,
+                                               const TArray2& Dab) {
+
+    // Xai contribution from MP2 part
+    TArray2 Xai_mp2 = 2.0 * (
+                      // derivatives of 1/4 g^kl_cd T^cd_kl
+                      // g^al_cd T^cd_il
+                      - _4("<a l|g|c d>")
+                        * (2.0 * T2_ijab("i,l,c,d") - T2_ijab("l,i,c,d"))
+                      );
+    TArray2 Xam_mp2 = 2.0 * (
+                      // derivatives of 1/4 g^kl_cd T^cd_kl
+                      // g_mc^kl T^ac_kl
+                       (2.0 * T2_ijab("k,l,a,c") - T2_ijab("k,l,c,a"))
+                       * _4("<m c|g|k l>")
+
+                      // derivatives of 1/2 F^c_d D^d_c - 1/2 F^l_k D^k_l
+                      // g^ac_md D^d_c
+                      - (2.0 * _4("<a c|g|m d>") - _4("<a c|g|d m>"))
+                        * Dab("d,c")
+                      // g^al_mk D^k_l
+                      + (2.0 * _4("<a l|g|m k>") - _4("<a l|g|k m>"))
+                        * Dij("k,l")
+                      );
+
+//    const std::size_t zero_cols = Xam_mp2.range().size()[1] - Xai_mp2.range().size()[1];
+//    for(auto t = X_mp2.begin(); t != X_mp2.end(); ++t) {
+//      typename TArray2::range_type::index i = t.index();
+//      typename TArray2::value_type tile = Xam_mp2.find(i);
+//
+//      if(i[1] >= zero_cols) {
+//        std::array<std::size_t, 2> source_index = {{i[0], i[1] - zero_cols}};
+//        const typename TArray2::value_type source_t = Xai_mp2.find(source_index);
+//        *t = typename TArray2::value_type(tile.range(), tile.begin(), source_t.begin(), std::plus<double>());
+//      } else {
+//        *t = tile.clone();
+//      }
+//    }
+    TArray2 X_mp2 = XaiAddToXam(Xam_mp2, Xai_mp2);
+
+    return X_mp2;
+  }
+
+  // Xai contribution from MP2 F12 coulping part
+  template <typename T>
+  typename SingleReference_R12Intermediates<T>::TArray2
+  SingleReference_R12Intermediates<T>::Xam_Cmp2f12(const double C_0, const double C_1,
+                                         const TArray4& T2_ijab, const TArray4& A_ijab,
+                                         const TArray2& Dij, const TArray2& Dab,
+                                         const TArray2& RT_apb) {
+
+    const double R_C1 = (0.5 * C_0 + 1.5 * C_1);
+    const double R_C2 = (0.5 * C_0 - 1.5 * C_1);
+    const double RR_C1 = 0.5 * C_0 * C_0 + 1.5 * C_1 * C_1;
+    const double RR_C2 = 0.5 * C_0 * C_0 - 1.5 * C_1 * C_1;
+
+    // Xai contribution from MP2 part & MP2 F12 coulping part
+    TArray2 Xai_mp2f12 =
+                        // derivatives of 1/4 g^kl_cd \tilde{T}^cd_kl
+                        // g^al_cd \tilde{T}^cd_il
+                        -  _4("<a l|g|c d>")
+                           * (R_C1 * A_ijab("i,l,c,d") + R_C2 * A_ijab("l,i,c,d"))
+
+                        // F^a'_b R^al_a'c \tilde{T}^bc_il
+                      - _4("<a l|r|b_F(a') c>")
+                        * (  R_C1 * T2_ijab("i,l,b,c") + R_C2 * T2_ijab("l,i,b,c")
+                           + RR_C1 * A_ijab("i,l,b,c") + RR_C2 * A_ijab("l,i,b,c"))
+                      - _4("<a l|r|c b_F(a')>")
+                        * (  R_C1 * T2_ijab("i,l,c,b") + R_C2 * T2_ijab("l,i,c,b")
+                           + RR_C1 * A_ijab("i,l,c,b") + RR_C2 * A_ijab("l,i,c,b"));
+    TArray2 Xam_mp2f12 =
+                        // derivatives of 1/4 g^kl_cd \tilde{T}^cd_kl
+                        // g_ic^kl \tilde{T}^Ac_kl
+                          (R_C1 * A_ijab("k,l,a,c") + R_C2 * A_ijab("k,l,c,a"))
+                          * _4("<m c|g|k l>")
+
+                        // derivatives of 1/2 F^c_d D^d_c - 1/2 F^l_k D^k_l
+                        // g^ac_md D^d_c
+                        - (2.0 * _4("<a c|g|m d>") - _4("<a c|g|d m>"))
+                          * Dab("d,c")
+                        // g^al_mk D^k_l
+                        + (2.0 * _4("<a l|g|m k>") - _4("<a l|g|k m>"))
+                          * Dij("k,l")
+
+                        // derivatives of 1/2 F^a'_b R^kl_a'c \tilde{T}^bc_kl
+                        //   1/2 F^a'_m R^kl_a'b \tilde{T}^ab_kl
+                        // & 1/2 F^a'_b R^kl_ma' \tilde{T}^ab_kl
+                        + (  R_C1 * T2_ijab("k,l,a,b") + R_C2 * T2_ijab("k,l,b,a")
+                           + RR_C1 * A_ijab("k,l,a,b") + RR_C2 * A_ijab("k,l,b,a"))
+                          * (_4("<k l|r|m_F(a') b>") + _4("<k l|r|m b_F(a')>"))
+
+                       //   g^aa'_mb 1/2 R^kl_a'c \tilde{T}^bc_kl
+                       // & g^ab_ma' 1/2 R^kl_a'c \tilde{T}^bc_kl
+                        - (  2.0 * _4("<a a'|g|m b>") - _4("<a a'|g|b m>")
+                           + 2.0 * _4("<a b|g|m a'>") - _4("<a b|g|a' m>"))
+                          * RT_apb("a',b");
+
+    //std::cout << std::endl << "Xam_mp2f12:\n" << Xam_mp2f12 << std::endl;
+    TArray2 X_mp2f12 = XaiAddToXam(Xam_mp2f12, Xai_mp2f12);
+
+    return X_mp2f12;
+  }
+
+  // Xam contribution from F12 V part
+  template <typename T>
+  typename SingleReference_R12Intermediates<T>::TArray2
+  SingleReference_R12Intermediates<T>::Xam_V(const double C_0, const double C_1) {
+
+    const double R_C1 = (0.5 * C_0 + 1.5 * C_1);
+    const double R_C2 = (0.5 * C_0 - 1.5 * C_1);
+
+    TArray4 gr_ak_ij = _4("<a k|gr|i j>");
+    TArray4 rpq_kl = _4("<p q|r|k l>");
+    TArray4 rapn_kl = _4("<a' n|r|k l>");
+    TArray4 rnap_kl = _4("<n a'|r|k l>");
+
+    TArray4 raap_kl = _4("<a a'|r|k l>");
+    TArray4 rmap_kl = _4("<m a'|r|k l>");
+    TArray2 Ikl = _2("<k|I|l>");
+
+    TArray4 rpq_ak = _4("<p q|r|a k>");
+    TArray2 Xai_V = // 1/2 R^ik_AC g^AC_ak
+                  - ( (R_C1 * gr_ak_ij("a,k,i,l") + R_C2 * gr_ak_ij("a,k,l,i"))
+                      * Ikl("k,l")
+                    - _4("<a k|g|p q>")
+                       * ( R_C1 * rpq_kl("p,q,i,k") + R_C2 * rpq_kl("p,q,k,i") )
+                    - _4("<a k|g|a' n>")
+                       * ( R_C1 * rapn_kl("a',n,i,k") + R_C2 * rapn_kl("a',n,k,i"))
+                    - _4("<a k|g|n a'>")
+                       * ( R_C1 * rnap_kl("n,a',i,k") + R_C2 * rnap_kl("n,a',k,i"))
+                    )
+                    // 1/2 R^ak_AC g^AC_ik
+                  - ( (R_C1 * gr_ak_ij("a,l,i,k") + R_C2 * gr_ak_ij("a,l,k,i"))
+                      * Ikl("k,l")
+                  - _4("<i k|g|p q>")
+                    * ( R_C1 * rpq_ak("p,q,a,k") + R_C2 * rpq_ak("q,p,a,k"))
+                  - _4("<i k|g|a' n>")
+                     * ( R_C1 * _4("<a' n|r|a k>") + R_C2 * _4("<a' n|r|k a>"))
+                  - _4("<i k|g|n a'>")
+                     * ( R_C1 * _4("<n a'|r|a k>") + R_C2 * _4("<n a'|r|k a>"))
+                    );
+    TArray2 Xam_V =  // 1/2 R^kl_ac' g^mc'_kl
+                    ( R_C1 * raap_kl("a,a',k,l") + R_C2 * raap_kl("a,a',l,k"))
+                    * _4("<k l|g|m a'>")
+                    // 1/2 R^kl_mc' g^ac'_kl
+                  + ( R_C1 * rmap_kl("m,a',k,l") + R_C2 * rmap_kl("m,a',l,k"))
+                    * _4("<k l|g|a a'>");
+    TArray2 X_V = XaiAddToXam(Xam_V, Xai_V);
+
+    return X_V;
+  }
+
+  // Xam contribution from F12 X part
+  template <typename T>
+  typename SingleReference_R12Intermediates<T>::TArray2
+  SingleReference_R12Intermediates<T>::Xam_X(const double C_0, const double C_1) {
+
+    const double RR_C1 = 0.5 * C_0 * C_0 + 1.5 * C_1 * C_1;
+    const double RR_C2 = 0.5 * C_0 * C_0 - 1.5 * C_1 * C_1;
+
+    TArray4 r2_akjl = _4("<a k|r2|j l>");
+    TArray4 r2_kajl = _4("<k a|r2|j l>");
+    TArray2 F_ij = _2("<i|F|j>");
+
+    TArray4 r_pqjk = _4("<p q|r|j k>");
+    TArray4 r_apnjk = _4("<a' n|r|j k>");
+    TArray4 r_napjk = _4("<n a'|r|j k>");
+
+    // - 1/2 (F^i_i + F^k_k) R^ak_alpha beta R_ik^alpha beta
+    TArray2 X_ai =  - (RR_C1 * r2_akjl("a,k,j,l") + RR_C2 * r2_kajl("k,a,j,l"))
+                      * _2("<l|I|k>") * F_ij("j,i")
+
+                    - (RR_C1 * r2_akjl("a,k,i,l") + RR_C2 * r2_kajl("k,a,i,l"))
+                      * F_ij("l,k")
+
+                    + (RR_C1 * _4("<a k|r|p q>") + RR_C2 * _4("<k a|r|p q>"))
+                      * ( r_pqjk("p,q,j,k") * F_ij("j,i")
+                        + r_pqjk("p,q,i,l") * F_ij("l,k"))
+
+                    + (RR_C1 * _4("<a k|r|a' n>") + RR_C2 * _4("<k a|r|a' n>"))
+                      * ( r_apnjk("a',n,j,k") * F_ij("j,i")
+                        + r_apnjk("a',n,i,l") * F_ij("l,k"))
+
+                    + (RR_C1 * _4("<a k|r|n a'>") + RR_C2 * _4("<k a|r|n a'>"))
+                      * ( r_napjk("n,a',j,k") * F_ij("j,i")
+                        + r_napjk("n,a',i,l") * F_ij("l,k"));
+
+    // 1/2 (F^k_k + F^l_l) R^ab'_kl R_mb'^kl
+    TArray4 r_aapkl = _4("<a a'|r|k l>");
+    TArray4 r_klmap = _4("<k l|r|m a'>");
+    TArray2 X_am = (RR_C1 * r_aapkl("a,b',k,l") + RR_C2 * r_aapkl("a,b',l,k"))
+                    * ( r_klmap("j,l,m,b'") * F_ij("j,k")
+                      + r_klmap("k,j,m,b'") * F_ij("j,l"));
+    TArray2 X = XaiAddToXam(X_am, X_ai);
+
+    return X;
+  }
+
+  // Xam contribution from F12 B part
+  template <typename T>
+  typename SingleReference_R12Intermediates<T>::TArray2
+  SingleReference_R12Intermediates<T>::Xam_B(const double C_0, const double C_1) {
+
+    const double B_C1 = 0.5 * C_0 * C_0 + 1.5 * C_1 * C_1;
+    const double B_C2 = 0.5 * C_0 * C_0 - 1.5 * C_1 * C_1;
+
+    // 1st parts of B_ai:
+    // - R^ak_A'B' F^A'_C' R^ik_C'B' (A': all virtual orbital index)
+
+    TArray4 r_akPQ = _4("<a k|r|p' q'>");
+    TArray4 r_kaPQ = _4("<k a|r|p' q'>");
+    TArray4 rik_PKQ = _4("<i k|r|p'_K(r') q'>");
+
+    TArray4 r_akPn = _4("<a k|r|p' n>");
+    TArray4 r_kaPn = _4("<k a|r|p' n>");
+    TArray4 rik_PFn = _4("<i k|r|p'_F(r') n>");
+
+    TArray4 r_akmA = _4("<a k|r|m a'>");
+    TArray4 r_kamA = _4("<k a|r|m a'>");
+    TArray4 rik_mFA = _4("<i k|r|m_F(n) a'>");
+
+    TArray4 r_akpq = _4("<a k|r|p b>");
+    TArray4 r_kapq = _4("<k a|r|p b>");
+    TArray4 rik_pFb = _4("<i k|r|p_F(r) b>");
+
+    TArray4 rik_nFA = _4("<i k|r|n_F(p') a'>");
+    //
+    TArray4 r_ikmA = _4("<i k|r|m a'>");
+    TArray4 rak_nFA = _4("<a k|r|n_F(p') a'>");
+    TArray4 rka_nFA = _4("<k a|r|n_F(p') a'>");
+
+    TArray4 r_akAb  = _4("<a k|r|a' b>");
+    TArray4 r_kaAb  = _4("<k a|r|a' b>");
+    TArray4 rik_AFb = _4("<i k|r|a'_F(q) b>");
+    //
+    TArray4 r_ikAb  = _4("<i k|r|a' b>");
+    TArray4 rak_AFb = _4("<a k|r|a'_F(q) b>");
+    TArray4 rka_AFb = _4("<k a|r|a'_F(q) b>");
+
+    TArray2 B_ai = //          diag
+                   - ( B_C1 * _4("<a k|rTr|i l>") + B_C2 * _4("<k a|rTr|i l>")
+                     //           Q
+                     + ( B_C1 * (_4("<a_hJ(p') l|r2|i k>") + _4("<a l_hJ(p')|r2|i k>")
+                               + _4("<a l|r2|i_hJ(p') k>") + _4("<a l|r2|i k_hJ(p')>"))
+
+                       + B_C2 * (_4("<l a_hJ(p')|r2|i k>") + _4("<l_hJ(p') a|r2|i k>")
+                               + _4("<l a|r2|i_hJ(p') k>") + _4("<l a|r2|i k_hJ(p')>"))
+                       ) * 0.5
+                     ) * _2("<k|I|l>")
+                   //           rKr_p'q'
+                   + ( B_C1 * (r_akPQ("a,k,p',q'") * rik_PKQ("i,k,p',q'")
+                             + r_kaPQ("k,a,p',q'") * rik_PKQ("k,i,p',q'"))
+
+                     + B_C2 * (r_kaPQ("k,a,p',q'") * rik_PKQ("i,k,p',q'")
+                             + r_akPQ("a,k,p',q'") * rik_PKQ("k,i,p',q'"))
+                     )
+                   //           rFr_p'n
+                   + ( B_C1 * (r_akPn("a,k,p',n") * rik_PFn("i,k,p',n")
+                             + r_kaPn("k,a,p',n") * rik_PFn("k,i,p',n"))
+
+                     + B_C2 * (r_kaPn("k,a,p',n") * rik_PFn("i,k,p',n")
+                             + r_akPn("a,k,p',n") * rik_PFn("k,i,p',n"))
+                     )
+                   //           rFr_mA
+                   - ( B_C1 * (r_akmA("a,k,m,a'") * rik_mFA("i,k,m,a'")
+                             + r_kamA("k,a,m,a'") * rik_mFA("k,i,m,a'"))
+
+                     + B_C2 * (r_kamA("k,a,m,a'") * rik_mFA("i,k,m,a'")
+                             + r_akmA("a,k,m,a'") * rik_mFA("k,i,m,a'"))
+                     )
+                   //           rFr_pb
+                   + ( B_C1 * (r_akpq("a,k,p,b") * rik_pFb("i,k,p,b")
+                             + r_kapq("k,a,p,b") * rik_pFb("k,i,p,b"))
+
+                     + B_C2 * (r_kapq("k,a,p,b") * rik_pFb("i,k,p,b")
+                             + r_akpq("a,k,p,b") * rik_pFb("k,i,p,b"))
+                     )
+                   //
+                   + ( B_C1 * (r_akmA("a,k,n,a'") * rik_nFA("i,k,n,a'")
+                             + r_kamA("k,a,n,a'") * rik_nFA("k,i,n,a'"))
+
+                     + B_C2 * (r_kamA("k,a,n,a'") * rik_nFA("i,k,n,a'")
+                             + r_akmA("a,k,n,a'") * rik_nFA("k,i,n,a'"))
+
+                     + B_C1 * (r_ikmA("i,k,n,a'") * rak_nFA("a,k,n,a'")
+                             + r_ikmA("k,i,n,a'") * rka_nFA("k,a,n,a'"))
+
+                     + B_C2 * (r_ikmA("k,i,n,a'") * rak_nFA("a,k,n,a'")
+                             + r_ikmA("i,k,n,a'") * rka_nFA("k,a,n,a'"))
+                     )
+                   //
+                   + ( B_C1 * (r_akAb("a,k,a',b") * rik_AFb("i,k,a',b")
+                             + r_kaAb("k,a,a',b") * rik_AFb("k,i,a',b"))
+
+                     + B_C2 * (r_kaAb("k,a,a',b") * rik_AFb("i,k,a',b")
+                             + r_akAb("a,k,a',b") * rik_AFb("k,i,a',b"))
+
+                    + B_C1 * (r_ikAb("i,k,a',b") * rak_AFb("a,k,a',b")
+                            + r_ikAb("k,i,a',b") * rka_AFb("k,a,a',b"))
+
+                    + B_C2 * (r_ikAb("k,i,a',b") * rak_AFb("a,k,a',b")
+                            + r_ikAb("i,k,a',b") * rka_AFb("k,a,a',b"))
+                    );
+
+//    // test codes for computing B_ai for H2O molecule
+//   const char* a = "a";
+//   const char* i = "i";
+//   TArray2 B_ia = Bpk_qk(i,a);
+//   TArray2 B_ai = Bpk_qk(a,i);
+//   TArray2 B_ai2 = B_ai("a,i") + B_ia("i,a");
+//
+//   TArray4 B_akil = Bpr_qs(a,i);
+//   TArray2 B_ai2 = B_akil("a,k,i,l") * _2("<k|I|l");
+//
+//   const char* i = "i";
+//   const char* j = "j";
+//   TArray4 B_ijkl = Bpr_qs(i,j);
+//
+//   double sum_Bijij = 0;
+//   std::cout << "B_ijkl" << std::endl;
+//   for (std::size_t i = 0; i < 5; ++i) {
+//     for (std::size_t j = 0; j < 5; ++j) {
+//       std::vector<std::size_t> indices(4);
+//       indices[0] = indices[2] = i;
+//       indices[1] = indices[3] = j;
+//       sum_Bijij += get_element(B_ijkl, indices);
+//     }
+//   }
+//   std::cout << "Bijkl sum: " << sum_Bijij << std::endl;
+
+    // 2nd parts of B_ai:
+    //    1/2 R^ab'_kl F^c'_m R^c'b'_kl
+    // + (1/2 R^mb'_kl F^C'_a R^C'b'_kl + 1/2 R^mb'_kl F^c'_b' R^ab'_kl)
+    TArray4 r_abpkl = _4("<a b'|r|k l>");
+    TArray4 raFpbp_kl = _4("<a_F(c') b'|r|k l>");
+    TArray4 raFbp_kl = _4("<a_F(c) b'|r|k l>");
+    TArray4 rabpFp_kl = _4("<a b'_F(c')|r|k l>") ;
+
+    TArray2 B_am = (B_C1 * r_abpkl("a,b',k,l") + B_C2 * r_abpkl("a,b',l,k"))
+                    * _4("<k l|r|m_F(c') b'>")
+                    //
+                  //+ (B_C1 * _4("<a_F(C') b'|r|k l>") + B_C2 *_4("<b' a_F(C')|r|k l>"))
+                  //   * _4("<k l|r|i b'>") // do not work for CCR12
+                  + (  B_C1 * raFpbp_kl("a,b',k,l") + B_C2 * raFpbp_kl("a,b',l,k")
+                     + B_C1 * raFbp_kl("a,b',k,l") + B_C2 * raFbp_kl("a,b',l,k"))
+                    * _4("<k l|r|m b'>")
+                    //
+                  + (B_C1 * rabpFp_kl("a,b',k,l") + B_C2 * rabpFp_kl("a,b',l,k"))
+                     * _4("<k l|r|m b'>")
+                    ;
+
+    TArray2 X_B = XaiAddToXam(B_am, B_ai);
+
+    return X_B;
+  }
+
   template <typename T>
   typename SingleReference_R12Intermediates<T>::TArray2
   SingleReference_R12Intermediates<T>::rdm1() {
 
-    if (0) {
-      {
-      typedef TiledArray::Array<T,2> Array;
-      Array FiA = _2("<i|F|A'>");
-      Array FAi = _2("<A'|F|i>");
-      std::cout << "<i|F|A'>:" << std::endl << FiA << std::endl;
-      std::cout << "<A'|F|i>:" << std::endl << FAi << std::endl;
-      Array FiA_2(FiA.get_world(), FiA.trange());
-      FiA_2("i,A'") = FAi("A',i");
-      std::cout << "<i|F|A'>=Perm(<A'|F|i>):" << std::endl << FiA_2 << std::endl;
-      }
-      {
-      typedef TiledArray::Array<T,4> Array;
-      Array g_ij_ab = _4("<i j|g|a b>");
-      Array g_ab_ij = _4("<a b|g|i j>");
-      std::cout << "<i j|g|a b>:" << std::endl << g_ij_ab << std::endl;
-      std::cout << "<a b|g|i j>:" << std::endl << g_ab_ij << std::endl;
-      Array g_ij_ab_2(g_ij_ab.get_world(), g_ij_ab.trange());
-      g_ij_ab_2("i,j,a,b") = g_ab_ij("a,b,i,j");
-      std::cout << "<i j|g|a b>=Perm(<a b|g|i j>):" << std::endl << g_ij_ab_2 << std::endl;
-      Array should_be_zero = g_ij_ab("i,j,a,b") - g_ab_ij("a,b,i,j");
-      std::cout << "<i j|g|a b> - Perm(<a b|g|i j>):" << std::endl << should_be_zero << std::endl;
-      const double max_nonzero = norminf(should_be_zero("i,j,a,b"));
-      std::cout << "|| <i j|g|a b> - Perm(<a b|g|i j>) ||_\infty = " << max_nonzero << std::endl;
-      }
-      {
-      typedef TiledArray::Array<T,2> Array;
-      Array mu_z_ij = _2("<i|mu_z|j>");
-      Array gamma_ij = _2("<i|gamma|j>");
-      const double mu_z_e = dot(mu_z_ij("i,j"), gamma_ij("i,j"));
-      double mu_z_n = 0.0;
-      Ref<Molecule> mol = r12world_->basis()->molecule();
-      for(int a=0; a<mol->natom(); ++a) {
-        mu_z_n += mol->Z(a) * mol->r(a, 2);
-      }
-      std::cout << "mu_z = " << -mu_z_e+mu_z_n << std::endl;
-      }
-    }
-
-//    TArray2 Fab = _2("<a|F|b>");
-//    TArray2 Iij = _2("<i|I|j>");
-    //std::cout << "Fock(vir,vir)\n" << Fab << std::endl;
-    //std::cout << "Idenity(occ,occ)\n" << Iij << std::endl;
+//    if (0) {
+//      {
+//      typedef TiledArray::Array<T,2> Array;
+//      Array FiA = _2("<i|F|A'>");
+//      Array FAi = _2("<A'|F|i>");
+//      std::cout << "<i|F|A'>:" << std::endl << FiA << std::endl;
+//      std::cout << "<A'|F|i>:" << std::endl << FAi << std::endl;
+//      Array FiA_2(FiA.get_world(), FiA.trange());
+//      FiA_2("i,A'") = FAi("A',i");
+//      std::cout << "<i|F|A'>=Perm(<A'|F|i>):" << std::endl << FiA_2 << std::endl;
+//      }
+//      {
+//      typedef TiledArray::Array<T,4> Array;
+//      Array g_ij_ab = _4("<i j|g|a b>");
+//      Array g_ab_ij = _4("<a b|g|i j>");
+//      std::cout << "<i j|g|a b>:" << std::endl << g_ij_ab << std::endl;
+//      std::cout << "<a b|g|i j>:" << std::endl << g_ab_ij << std::endl;
+//      Array g_ij_ab_2(g_ij_ab.get_world(), g_ij_ab.trange());
+//      g_ij_ab_2("i,j,a,b") = g_ab_ij("a,b,i,j");
+//      std::cout << "<i j|g|a b>=Perm(<a b|g|i j>):" << std::endl << g_ij_ab_2 << std::endl;
+//      Array should_be_zero = g_ij_ab("i,j,a,b") - g_ab_ij("a,b,i,j");
+//      std::cout << "<i j|g|a b> - Perm(<a b|g|i j>):" << std::endl << should_be_zero << std::endl;
+//      const double max_nonzero = norminf(should_be_zero("i,j,a,b"));
+//      std::cout << "|| <i j|g|a b> - Perm(<a b|g|i j>) ||_\infty = " << max_nonzero << std::endl;
+//      }
+//      {
+//      typedef TiledArray::Array<T,2> Array;
+//      Array mu_z_ij = _2("<i|mu_z|j>");
+//      Array gamma_ij = _2("<i|gamma|j>");
+//      const double mu_z_e = dot(mu_z_ij("i,j"), gamma_ij("i,j"));
+//      double mu_z_n = 0.0;
+//      Ref<Molecule> mol = r12world_->basis()->molecule();
+//      for(int a=0; a<mol->natom(); ++a) {
+//        mu_z_n += mol->Z(a) * mol->r(a, 2);
+//      }
+//      std::cout << "mu_z = " << -mu_z_e+mu_z_n << std::endl;
+//      }
+//    }
 
     // can only ask for T1 with i in bra!
     // since we computed T1 CABS, they are expressed in terms of all virtuals = A'
@@ -995,214 +1406,307 @@ namespace sc {
     }
 #endif
 
-    // this now works ... thanks Justus!
-#if 1
-    //TArray4 A = _2("<i|I|j>") * _2("<a|F|b>") - _4("<i j|g|a b>");
-    //std::cout << "A\n" << A << std::endl;
-#endif
+    // Nuclear dipole
+    double mu_z_n = 0.0;
+    Ref<Molecule> mol = r12world_->basis()->molecule();
+    for(int a = 0; a < mol->natom(); ++a) {
+      mu_z_n += mol->Z(a) * mol->r(a, 2);
+    }
+    std::cout << std::endl
+              << "mu_z (N) = " << scprintf("%12.10f", mu_z_n)
+              << std::endl;
+    // electron charge = -1
 
-    /// this is just an example of how to compute the density
-    TArray2 r2_i_j = _4("<i j|r|p q>") * _4("<k_F(p) j|r|p q>");
-    //std::cout << "<ij|r|pq> . <kj|r|pq>\n" << r2_i_j << std::endl;
+    // Dipole integrals
+    TArray2 mu_z_mn = _2("<m|mu_z|n>");
+    TArray2 mu_z_ij = _2("<i|mu_z|j>");
+    TArray2 mu_z_ab = _2("<a|mu_z|b>");
+    TArray2 mu_z_apbp = _2("<a'|mu_z|b'>");
+    TArray2 mu_z_AB = _2("<A'|mu_z|B'>");
 
-    // this is another random contraction, useful for non-diagonal X intermediate
-    //TArray4 x = _4("<i j|r|p q>") * _4("<k l|r|p q>");
+    TArray2 mu_z_mA = _2("<m|mu_z|A'>");
+    TArray2 mu_z_am = _2("<a|mu_z|m>");
+    TArray2 mu_z_apb = _2("<a'|mu_z|b>");
 
-    // compute orbital relaxation contribution to 1e density
-    // i.e. solve Abjai Dbj = Xai
-    // close shell formula
+    // SCF contribution to electronic dipole
+    const double mu_z_scf = dot(mu_z_mn("m,n"), _2("<m|I|n>"));
+    std::cout << std::endl
+              << "mu_z (SCF) = " << scprintf("%12.10f", - mu_z_scf * 2.0)
+              << std::endl;
+
+    // Compute orbital relaxation contribution to 1e density
+    // i.e. solve Abnam Dbn = Xam (close-shell formula)
     {
-    std::cout << std::endl << "*** start calculating A_bjai ***" << std::endl;
-    //
-    TArray4 A_bjai = - _4("<b j|g|a i>")
-                     - _4("<i j|g|b a>")
-                     +  4.0 * _4("<j i|g|b a>")
-                     + _2("<b|F|a>") * _2("<i|I|j>")
-                     - _2("<a|I|b>") * _2("<i|F|j>")
+    TArray4 g_mnab = _4("<m n|g|a b>");
+    TArray4 A_bnam = - _4("<b n|g|a m>") - g_mnab("m,n,b,a") + 4.0 * g_mnab("n,m,b,a")
+                     + _2("<b|F|a>") * _2("<m|I|n>") - _2("<a|I|b>") * _2("<m|F|n>")
                      ;
-    //std::cout << "A^bj_ai from PSI formula \n" << A_bjai << std::endl;
 
-//    TArray4 g_ij_ab = _4("<i j|g|a b>");
-//    TArray4 g_ab_ij = _4("<a b|g|i j>");
-//    TArray4 should_be_zero = g_ij_ab("i,j,a,b") - g_ab_ij("a,b,i,j");
-//    TArray4 should_be_zero = _4("<b j|g|a i>") - _4("<b i|g|a j>");
-//    std::cout << "<i j|g|a b> - Perm(<a b|g|i j>):" << std::endl << should_be_zero << std::endl;
-//    const double max_nonzero = TiledArray::expressions::norminf(should_be_zero("b,j,a,i"));
-//    std::cout << "|| <b j|g|a i> - <b i|g|a j> || infty = " << max_nonzero << std::endl;
-
-    std::cout << std::endl << "*** end of calculating A_bjai ***" << std::endl;
-
-    // make preconditioner: Delta_ai = 1 / (<a|F|a> - <i|F|i>)
-    TArray2 mFij = - _2("<i|F|j>");
+    // Make preconditioner: Delta_am = 1 / (<a|F|a> - <m|F|m>) for
+    // solving k_bn A_bnam = X_am
+    TArray2 mFmn = - _2("<m|F|n>");
     TArray2 mFab = - _2("<a|F|b>");
-    TArray2 Fai = _2("<a|F|i>");
     typedef detail::diag_precond2<double> pceval_type; //!< evaluator of preconditioner
-    pceval_type Delta_ai_gen(TA::array_to_eigen(mFab),
-                             TA::array_to_eigen(mFij));
+    pceval_type Delta_am_gen(TA::array_to_eigen(mFab), TA::array_to_eigen(mFmn));
 
     typedef TA::Array<T, 2, LazyTensor<T, 2, pceval_type > > TArray2d;
-    TArray2d Delta_ai(Fai.get_world(), Fai.trange());
+    TArray2d Delta_am(mu_z_am.get_world(), mu_z_am.trange());
 
     // construct local tiles
-    for(auto t = Delta_ai.trange().tiles().begin();
-        t != Delta_ai.trange().tiles().end(); ++t)
-      if (Delta_ai.is_local(*t)) {
+    for(auto t = Delta_am.trange().tiles().begin();
+        t != Delta_am.trange().tiles().end(); ++t)
+      if (Delta_am.is_local(*t)) {
         std::array<std::size_t, 2> index;
         std::copy(t->begin(), t->end(), index.begin());
         madness::Future < typename TArray2d::value_type >
-          tile((LazyTensor<T, 2, pceval_type >(&Delta_ai, index, &Delta_ai_gen)
+          tile((LazyTensor<T, 2, pceval_type >(&Delta_am, index, &Delta_am_gen)
               ));
 
         // Insert the tile into the array
-        Delta_ai.set(*t, tile);
+        Delta_am.set(*t, tile);
       }
-    TArray2 preconditioner = Delta_ai("a,i");
+    TArray2 preconditioner = Delta_am("a,m");
 
-    detail::Orbital_relaxation_Abjai<double> Orbital_relaxation_Abjai(A_bjai);
+    detail::Orbital_relaxation_Abjai<double> Orbital_relaxation_Abnam(A_bnam);
     TA::ConjugateGradientSolver<TiledArray::Array<T,2>,
                                 detail::Orbital_relaxation_Abjai<double> > cg_solver2;
 
-    TArray2 mu_z_ai = _2("<a|mu_z|m>");
-//    double mu_z_n = 0.0;
-//    Ref<Molecule> mol = r12world_->basis()->molecule();
-//    for(int a=0; a<mol->natom(); ++a) {
-//      mu_z_n += mol->Z(a) * mol->r(a, 2);
-//    }
-    // electron charge = -1
-
-    std::cout << std::endl << "*** start calculating X_ai" << std::endl;
     // CABS Singles orbital relaxation
-#if 0
-    TArray2 Xai_E2 = 2.0 * (
-                       _2("<A'|F|a>") * TiA("i,A'")
-                     - Tia("m,a") * _2("<i|F|m>")
-                     - (TiA("m,A'")* Tia("m,a")) * _2("<i|F|A'>")
-                     //
-                     + (2.0 * _4("<a m|g|i A'>") - _4("<a m|g|A' i>")
-                       + 2.0 * _4("<a A'|g|i m>") - _4("<a A'|g|m i>")
-                       ) * TiA("m,A'")
-                     //
-                     + (2.0 * _4("<a A'|g|i B'>") - _4("<a A'|g|B' i>"))
-                       * TiA("m,A'") * TiA("m,B'")
-                     //
-                     - (2.0 *_4("<a n|g|i m>") - _4("<a n|g|m i>"))
-                       * TiA("m,A'") * TiA("n,A'")
-                     )
-                     ;
-    //std::cout << "X^a_i\n" << X_ai << std::endl;
-    std::cout << "*** end calculating X_ai" << std::endl;
+#if 1
+    {
+    double tmp1 = madness::wall_time();
 
-    // solve k_bj A_bjai = X_ai
-    TArray2 Dbj_E2(Xai_E2.get_world(), Xai_E2.trange());
-    auto resnorm_E2 = cg_solver2(Orbital_relaxation_Abjai,
-                               Xai_E2,
-                               Dbj_E2,
-                               preconditioner,
-                               1e-10);
-//    std::cout << "Dbj " << Dbj << std::endl;
-    std::cout << "(E2) Converged CG2 to " << resnorm_E2 << std::endl;
+    TArray2 TmA = _2("<m|T1|A'>");
+    TArray2 Tma = _2("<m|T1|a>");
+    // density from CABS Singles contribution
+    // D^m_n =  t^m_A' * t^A'_n
+    TArray2 D_e2_mn = TmA("m,A'") * TmA("n,A'");
+    // D^A'_B' = t^A'_m * t^m_B'
+    TArray2 D_e2_AB = TmA("m,A'") * TmA("m,B'");
+    // D^A'_m = t^A'_m
 
-    const double mu_z_E2 = dot(mu_z_ai("a,m"), Dbj_E2("a,m"));
-    std::cout << "mu_z (E2) = " << -mu_z_E2 * 2.0<< std::endl;
+    const double mu_z_e2 = - dot(mu_z_mn("m,n"), D_e2_mn("m,n"))
+                           + dot(mu_z_AB("A',B'"), D_e2_AB("A',B'"))
+                           + dot(mu_z_mA("m,A'"), TmA("m,A'")) * 2.0
+                           ;
+    std::cout << std::endl << "mu_z (E2) = "
+              << scprintf("%12.10f", - mu_z_e2 * 2.0) << std::endl;
+
+    TArray2 Xam_E2 = Xam_CabsSingles(TmA, Tma);
+    TArray2 Dbn_E2(Xam_E2.get_world(), Xam_E2.trange());
+    // solve k_bn A_bnam = X_am
+    auto resnorm_E2 = cg_solver2(Orbital_relaxation_Abnam,
+                                 Xam_E2,
+                                 Dbn_E2,
+                                 preconditioner,
+                                 1e-10);
+
+    const double mu_z_E2 = dot(mu_z_am("a,m"), Dbn_E2("a,m"));
+    std::cout << std::endl << std::endl
+              << "mu_z (E2 orbital response) = " << scprintf("%12.10f", - mu_z_E2 * 2.0)
+              << std::endl << std::endl;
+
+    double tmp2 = madness::wall_time();
+    double t_CabsSingles = tmp2 - tmp1;
+    std::cout << std::endl
+              << "Time used for CABS Singles:" << t_CabsSingles
+              << std::endl << std::endl;
+    }
+    world_.gop.fence();
 #endif
 
-    // MP2 orbital response
-#if 0
-    //  Delta_ijab = - 1 / (<a|F|a> - <i|F|i> + <b|F|b> - <j|F|j>)
+    // MP2 and its orbital response
+    double tmp1 = madness::wall_time();
+
+    // Delta_ijab = - 1 / (- <i|F|i> - <j|F|j> + <a|F|a> + <b|F|b>)
+    TArray2 mFij = - _2("<i|F|j>");
+    TArray4 g_ijab = _4("<i j|g|a b>");
+
     typedef detail::diag_precond4<double> pc4eval_type;
     typedef TA::Array<T, 4, LazyTensor<T, 4, pc4eval_type > > TArray4d;
-    TArray4d Delta_aibj(A_bjai.get_world(), A_bjai.trange());
-
-    TArray2 Fij = _2("<i|F|j>");
-    TArray2 Fab = _2("<a|F|b>");
-    pc4eval_type Delta_aibj_gen(TA::array_to_eigen(Fab), TA::array_to_eigen(mFij),
-                                TA::array_to_eigen(mFab), TA::array_to_eigen(Fij));
-
+    TArray4d Delta_ijab(g_ijab.get_world(), g_ijab.trange());
+    pc4eval_type Delta_ijab_gen(TA::array_to_eigen(mFij), TA::array_to_eigen(mFij),
+                                TA::array_to_eigen(mFab),TA::array_to_eigen(mFab));
     // construct local tiles
-    for(auto t = Delta_aibj.trange().tiles().begin();
-        t != Delta_aibj.trange().tiles().end(); ++t)
-      if (Delta_aibj.is_local(*t)) {
+    for(auto t = Delta_ijab.trange().tiles().begin();
+        t != Delta_ijab.trange().tiles().end(); ++t)
+      if (Delta_ijab.is_local(*t)) {
         std::array<std::size_t, 4> index;
         std::copy(t->begin(), t->end(), index.begin());
         madness::Future < typename TArray4d::value_type >
-          tile((LazyTensor<T, 4, pc4eval_type >(&Delta_aibj, index, &Delta_aibj_gen)
+          tile((LazyTensor<T, 4, pc4eval_type >(&Delta_ijab, index, &Delta_ijab_gen)
               ));
 
         // Insert the tile into the array
-        Delta_aibj.set(*t, tile);
+        Delta_ijab.set(*t, tile);
       }
 
-    // MP2 T2 amplitues
-    TArray4 T2_abij = TA::expressions::multiply(_4("<a b|g|i j>"), Delta_aibj("a,i,b,j"));
-    TArray2 D_mp2_ij =  (2.0 * T2_abij("a,b,m,i") - T2_abij("a,b,i,m"))
-                        * T2_abij("a,b,m,j");
-    TArray2 D_mp2_ab =  (2.0 * T2_abij("a,c,i,j") - T2_abij("c,a,i,j"))
-                        * T2_abij("b,c,i,j");
+    // MP2 amplitues:
+    TArray4 T2_ijab = TA::expressions::multiply(g_ijab("i,j,a,b"), Delta_ijab("i,j,a,b"));
 
-    TArray2 Xai_mp2 = 2.0 * (
-                    (2.0 * _4("<a m|g|c d>") - _4("<m a|g|c d>"))
-                    * T2_abij("c,d,i,m")
-                  //
-                  - T2_abij("a,c,m,n")
-                    * (2.0 * _4("<i c|g|m n>") - _4("<c i|g|m n>"))
-                  //
-                  - (2.0 *_4("<a n|g|i m>") - _4("<a n|g|m i>"))
-                      * D_mp2_ij("n,m")
-                   //
-                  + (2.0 * _4("<a c|g|i d>") - _4("<a c|g|d i>"))
-                     * D_mp2_ab("c,d")
-                  )
-                  ;
+#if 1
+    // MP2 density
+    TArray2 D_mp2_ij = (2.0 * T2_ijab("i,k,a,b") - T2_ijab("k,i,a,b"))
+                          * T2_ijab("j,k,a,b");
+    TArray2 D_mp2_ab = (2.0 * T2_ijab("i,j,a,c") - T2_ijab("i,j,c,a"))
+                          * T2_ijab("i,j,b,c");
 
-    TArray2 Dbj_mp2(Xai_mp2.get_world(), Xai_mp2.trange());
-    auto resnorm_mp2 = cg_solver2(Orbital_relaxation_Abjai,
-                               Xai_mp2,
-                               Dbj_mp2,
-                               preconditioner,
-                               1e-10);
-    std::cout << "(MP2) Converged CG2 to " << resnorm_mp2 << std::endl;
-    const double mu_z_mp2 = dot(mu_z_ai("a,m"), Dbj_mp2("a,m"));
-    std::cout << "mu_z (MP2) = " << -mu_z_mp2 * 2.0<< std::endl;
+    // dipole from density
+    const double mu_z_mp2 = - dot(mu_z_ij("i,j"), D_mp2_ij("i,j"))
+                            + dot(mu_z_ab("a,b"), D_mp2_ab("a,b"));
+    std::cout << std::endl << "mu_z (MP2) = "
+              << scprintf("%12.10f", - mu_z_mp2 * 2.0) << std::endl;
+
+    TArray2 X_mp2 = Xam_mp2(T2_ijab, D_mp2_ij, D_mp2_ab);
+    TArray2 Dbn_mp2(X_mp2.get_world(), X_mp2.trange());
+    auto resnorm_mp2 = cg_solver2(Orbital_relaxation_Abnam,
+                                  X_mp2,
+                                  Dbn_mp2,
+                                  preconditioner,
+                                  1e-10);
+    //std::cout << std::endl << "Converged CG to " << resnorm_mp2 << std::endl;
+    const double mu_z_mp2or = dot(mu_z_am("a,m"), Dbn_mp2("a,m"));
+    std::cout << std::endl
+              << "mu_z (MP2 orbital response) = "<< scprintf("%12.10f", - mu_z_mp2or * 2.0)
+              << std::endl;
 #endif
 
-    // F12 orbital relaxation
-    {
+    // F12 and its orbital relaxation contributions
     const double C_0 = 1.0 / 2.0;
     const double C_1 = 1.0 / 4.0;
+    const double R_C1 = (0.5 * C_0 + 1.5 * C_1);
+    const double R_C2 = (0.5 * C_0 - 1.5 * C_1);
+    const double RR_C1 = 0.5 * C_0 * C_0 + 1.5 * C_1 * C_1;
+    const double RR_C2 = 0.5 * C_0 * C_0 - 1.5 * C_1 * C_1;
 
-    // V contribution to F12 Xai
-    const double V_C1 = (0.5 * C_0 + 1.5 * C_1);
-    const double V_C2 = (0.5 * C_0 - 1.5 * C_1);
-#if 0
-    TArray2 V_ai =  ( V_C1 * _4("<a a'|r|m n>") + V_C2 * _4("<a' a|r|m n>"))
-                     * _4("<m n|g|i a'>")
-                  + ( V_C1 * _4("<i a'|r|m n>") + V_C2 * _4("<a' i|r|m n>"))
-                     * _4("<m n|g|a a'>")
-                  //
-                  - ( (V_C1 * _4("<a m|gr|i n>") + V_C2 * _4("<m a|gr|i n>"))
-                      * _2("<n|I|m>")
-                    - _4("<a m|g|p q>")
-                       * ( V_C1 * _4("<p q|r|i m>") + V_C2 * _4("<p q|r|m i>") )
-                    - _4("<a m|g|a' n>")
-                       * ( V_C1 * _4("<a' n|r|i m>") + V_C2 * _4("<a' n|r|m i>"))
-                    - _4("<a m|g|n a'>")
-                       * ( V_C1 * _4("<n a'|r|i m>") + V_C2 * _4("<n a'|r|m i>"))
-                    )
-                    //
-                  - ( (V_C1* _4("<i m|gr|a n>") + V_C2 * _4("<m i|gr|a n>"))
-                      * _2("<n|I|m>")
-                  - _4("<i m|g|p q>")
-                    * ( V_C1 * _4("<p q|r|a m>") + V_C2 * _4("<p q|r|m a>") )
-                  - _4("<i m|g|a' n>")
-                     * ( V_C1 * _4("<a' n|r|a m>") + V_C2 * _4("<a' n|r|m a>"))
-                  - _4("<i m|g|n a'>")
-                     * ( V_C1 * _4("<n a'|r|a m>") + V_C2 * _4("<n a'|r|m a>"))
-                    );
+    // MP2 F12 coupling part
+#if 1
+    {
+    TArray4 C_ijab = _4("<i j|r|a_F(a') b>") + _4("<i j|r|a b_F(a')>");
+    TArray4 A_ijab = TA::expressions::multiply(C_ijab("i,j,a,b"), Delta_ijab("i,j,a,b"));
+
+    // Coupling and F12 part of MP2F12 density
+    TArray2 D_mp2f12_ij =  (R_C1 * A_ijab("i,k,a,b") + R_C2 * A_ijab("k,i,a,b"))
+                           * T2_ijab("j,k,a,b")
+                         // A_jk^ab T_ab^ik
+                         + (R_C1 * A_ijab("j,k,a,b") + R_C2 * A_ijab("k,j,a,b"))
+                           * T2_ijab("i,k,a,b")
+                         // A^ik_ab A^ab_jk
+                         + (RR_C1 * A_ijab("i,k,a,b") + RR_C2 * A_ijab("k,i,a,b"))
+                           * A_ijab("j,k,a,b");
+    TArray2 D_mp2f12_ab =  (R_C1 * T2_ijab("i,j,a,c") + R_C2 * T2_ijab("i,j,c,a"))
+                           * A_ijab("i,j,b,c")
+                         // A^ac_ij T^ij_bc
+                         + (R_C1 * T2_ijab("i,j,b,c") + R_C2 * T2_ijab("i,j,c,b"))
+                           * A_ijab("i,j,a,c")
+                         //  A_ac^ij A_ij^bc
+                         + (RR_C1 * A_ijab("i,j,a,c") + RR_C2 * A_ijab("i,j,c,a"))
+                           * A_ijab("i,j,b,c");
+
+    // 1/2 R^kl_a'c \tilde{T}^bc_kl
+    TArray2 RT_apb = _4("<a' c|r|k l>")
+                     * ( R_C1 * T2_ijab("k,l,b,c") + R_C2 * T2_ijab("k,l,c,b")
+                       + RR_C1 * A_ijab("k,l,b,c") + RR_C2 * A_ijab("k,l,c,b")
+                       );
+
+    // Dipole from density above
+    const double mu_z_mp2f12 = - dot(mu_z_ij("i,j"), D_mp2f12_ij("i,j"))
+                               + dot(mu_z_ab("a,b"), D_mp2f12_ab("a,b"));
+    std::cout << std::endl << "mu_z (MP2F12 coupling) = "
+              << scprintf("%12.10f", - mu_z_mp2f12 * 2.0) << std::endl;
+
+    const double mu_z_RT2 = dot(mu_z_apb("a',b"), RT_apb("a',b"));
+    std::cout << std::endl
+              << "mu_z (CT2) = " << scprintf("%12.10f", - mu_z_RT2 * 4.0)
+              << std::endl << std::endl;
+
+    // Compute orbital response
+    TArray2 Xmp2f12_contri = Xam_Cmp2f12(C_0, C_1,T2_ijab, A_ijab,
+                                         D_mp2f12_ij, D_mp2f12_ab, RT_apb);
+    TArray2 Dbn_mp2f12(Xmp2f12_contri.get_world(), Xmp2f12_contri.trange());
+    auto resnorm_mp2f12 = cg_solver2(Orbital_relaxation_Abnam,
+                                     Xmp2f12_contri,
+                                     Dbn_mp2f12,
+                                     preconditioner,
+                                     1e-10);
+    const double mu_z_Xam_mp2f12 = dot(mu_z_am("a,m"), Dbn_mp2f12("a,m"));
+    std::cout << std::endl
+              << "mu_z (MP2-F12 coupling orbital response) = " << scprintf("%12.10f", - mu_z_Xam_mp2f12 * 4.0)
+              << std::endl;
+    }
+    world_.gop.fence();
 #endif
 
-    // CT2 coupling contribution to F12 Xai
-    // CC CT2
 #if 1
+    {
+    // V contribution to F12 Xam
+    TArray2 Xam_Vcontri = Xam_V(C_0,C_1);
+
+    // X contribution to F12 Xam
+    TArray2 Xam_Xcontri = Xam_X(C_0,C_1);
+
+    // B contribution to F12 Xam
+    TArray2 Xam_Bcontri = Xam_B(C_0,C_1);
+
+    // contribution from f12 density
+    // which results from X and B terms
+#if 1
+    // Dij = 1/2 R^ik_A'B' R^A'B'_kl (A': all virtual)
+    TArray4 r2_ijkl = _4("<i j|r2|k l>");
+    TArray4 r_ijpq = _4("<i j|r|p q>");
+    TArray4 r_ijapn = _4("<i j|r|a' n>");
+    TArray4 r_ijnap = _4("<i j|r|n a'>");
+
+    TArray2 D_f12_ij =  (RR_C1 * r2_ijkl("i,k,j,l") + RR_C2 * r2_ijkl("k,i,j,l"))
+                        * _2("<k|I|l>")
+                      - (RR_C1 * r_ijpq("i,k,p,q") + RR_C2 * r_ijpq("k,i,p,q"))
+                        * r_ijpq("j,k,p,q")
+                      - (RR_C1 * r_ijapn("i,k,a',n") + RR_C2 * r_ijapn("k,i,a',n"))
+                        * r_ijapn("j,k,a',n")
+                      - (RR_C1 * r_ijnap("i,k,n,a'") + RR_C2 * r_ijnap("k,i,n,a'"))
+                        * r_ijnap("j,k,n,a'");
+
+    // DA'B' = 1/2 R^A'C'_kl R^kl_B'C' (A': all virtual)
+    TArray4 r_acpkl = _4("<a c'|r|k l>");
+    TArray2 D_f12_ab = (RR_C1 * r_acpkl("a,c',k,l") + RR_C2 * r_acpkl("a,c',l,k"))
+                       * r_acpkl("b,c',k,l");
+
+    TArray4 r_apcpkl = _4("<a' c'|r|k l>");
+    TArray2 D_f12_apbp = (RR_C1 * r_acpkl("c,a',l,k") + RR_C2 * r_acpkl("c,a',k,l"))
+                         * r_acpkl("c,b',l,k")
+                       + (RR_C1 * r_apcpkl("a',c',k,l") + RR_C2 * r_apcpkl("a',c',l,k"))
+                         * r_apcpkl("b',c',k,l");
+
+    TArray2 D_f12_apb = (RR_C1 * r_apcpkl("a',c',k,l") + RR_C2 * r_apcpkl("a',c',l,k"))
+                        * r_acpkl("b,c',k,l");
+
+    const double mu_z_f12 = - dot(mu_z_ij("i,j"), D_f12_ij("i,j"))
+                            + dot(mu_z_ab("a,b"), D_f12_ab("a,b"))
+                            + dot(mu_z_apbp("a',b'"), D_f12_apbp("a',b'"))
+                            + dot(mu_z_apb("a',b"), D_f12_apb("a',b")) * 2.0;
+    std::cout << std::endl
+              << "** mu_z (F12) = " << - mu_z_f12 * 2.0
+              << std::endl << std::endl;
+
+    TArray4 g_abmc = _4("<a b|g|m c>");
+    TArray2 gdf12_am =   (2.0 * _4("<a k|g|m l>") - _4("<a k|g|l m>"))
+                         * D_f12_ij("k,l")
+                       //
+                       - (2.0 * g_abmc("a,b,m,c") - g_abmc("b,a,m,c"))
+                         * D_f12_ab("b,c")
+                       //
+                       - (2.0 * _4("<a b'|g|m c'>") - _4("<a b'|g|c' m>"))
+                         * D_f12_apbp("b',c'")
+                       //
+                       - (2.0 * _4("<a b'|g|m c>") - _4("<a b'|g|c m>"))
+                         * D_f12_apb("b',c")
+                       - (2.0 * _4("<a b|g|m c'>") - _4("<a b|g|c' m>"))
+                         * D_f12_apb("c',b");
+#endif
+
+    // CC F12 coupling contribution to Xai
+#if 0
+    // CC CT2
     TArray4 T2_ijab = _4("<i j|T2|a b>");
     // 1/2 R^kl_a'c T2^bc_kl
     TArray2 RT2_apb = _4("<a' c|r|k l>")
@@ -1234,10 +1738,9 @@ namespace sc {
                   + _4("<a l|r|c b_F(a')>")
                     * (V_C1 * T2_ijab("i,l,c,b") + V_C2 * T2_ijab("l,i,c,b"))
                  ;
-#endif
 
     // VT1 & VT2 coupling contribution to F12 Xai
-#if 0
+
     const char* a = "a";
     const char* c = "c";
     const char* d = "d";
@@ -1334,330 +1837,31 @@ namespace sc {
 
 #endif
 
-    // X contribution to F12 Xai
-    const double RR_C1 = 0.5 * C_0 * C_0 + 1.5 * C_1 * C_1;
-    const double RR_C2 = 0.5 * C_0 * C_0 - 1.5 * C_1 * C_1;
+    TArray2 Xam_f12 = 2.0 * ( Xam_Vcontri("a,m")
+                            - Xam_Xcontri("a,m")
+                            + Xam_Bcontri("a,m")
+                            + gdf12_am("a,m")  // F12 density terms
+                            // CT2_ai("a,i") + VT1_ai("a,i")+ VT2_ai("a,i") // CC F12 coupling terms
+                            );
 
-#if 0
-    TArray4 r2_akjl = _4("<a k|r2|j l>");
-    TArray4 r2_kajl = _4("<k a|r2|j l>");
-    TArray2 F_ij = _2("<i|F|j>");
-
-    TArray4 r_pqjk = _4("<p q|r|j k>");
-    TArray4 r_apnjk = _4("<a' n|r|j k>");
-    TArray4 r_napjk = _4("<n a'|r|j k>");
-
-    // 1/2 (F^i_i + F^k_k) R^ak_alpha beta R_ik^alpha beta
-    TArray2 X_ai1 =  (RR_C1 * r2_akjl("a,k,j,l") + RR_C2 * r2_kajl("k,a,j,l"))
-                     * _2("<l|I|k>") * F_ij("j,i")
-                   + (RR_C1 * r2_akjl("a,k,i,l") + RR_C2 * r2_kajl("k,a,i,l"))
-                     * F_ij("l,k")
-
-                    - (RR_C1 * _4("<a k|r|p q>") + RR_C2 * _4("<k a|r|p q>"))
-                      * ( r_pqjk("p,q,j,k") * F_ij("j,i")
-                        + r_pqjk("p,q,i,l") * F_ij("l,k"))
-
-                    - (RR_C1 * _4("<a k|r|a' n>") + RR_C2 * _4("<k a|r|a' n>"))
-                      * ( r_apnjk("a',n,j,k") * F_ij("j,i")
-                        + r_apnjk("a',n,i,l") * F_ij("l,k"))
-
-                    - (RR_C1 * _4("<a k|r|n a'>") + RR_C2 * _4("<k a|r|n a'>"))
-                      * ( r_napjk("n,a',j,k") * F_ij("j,i")
-                        + r_napjk("n,a',i,l") * F_ij("l,k"))
-                    ;
-
-    // 1/2 (F^m_m + F^n_n) R^ab'_mn R_ib'^mn
-    TArray2 X_ai2 = (RR_C1 * _4("<a b'|r|m n>") + RR_C2 * _4("<b' a|r|m n>"))
-                  * ( _4("<k n|r|i b'>") * _2("<k|F|m>")
-                    + _4("<m l|r|i b'>") * _2("<l|F|n>"));
-
-    TArray2 X_ai = - X_ai1("a,i")
-                   + X_ai2("a,i")
-                 ;
-#endif
-
-    // B contribution to F12 Xai
-    const double B_C1 = RR_C1;
-    const double B_C2 = RR_C2;
-#if 0
-    // 1st parts of B_ai:
-    // R^ak_A'B' F^A'_C' R^ik_C'B' (A': all virtual orbital index)
-
-    TArray4 r_akPQ = _4("<a k|r|p' q'>");
-    TArray4 r_kaPQ = _4("<k a|r|p' q'>");
-    TArray4 rik_PKQ = _4("<i k|r|p'_K(r') q'>");
-
-    TArray4 r_akPn = _4("<a k|r|p' n>");
-    TArray4 r_kaPn = _4("<k a|r|p' n>");
-    TArray4 rik_PFn = _4("<i k|r|p'_F(r') n>");
-
-    TArray4 r_akmA = _4("<a k|r|m a'>");
-    TArray4 r_kamA = _4("<k a|r|m a'>");
-    TArray4 rik_mFA = _4("<i k|r|m_F(n) a'>");
-
-    TArray4 r_akpq = _4("<a k|r|p b>");
-    TArray4 r_kapq = _4("<k a|r|p b>");
-    TArray4 rik_pFb = _4("<i k|r|p_F(r) b>");
-
-    TArray4 rik_nFA = _4("<i k|r|n_F(p') a'>");
-    //
-    TArray4 r_ikmA = _4("<i k|r|m a'>");
-    TArray4 rak_nFA = _4("<a k|r|n_F(p') a'>");
-    TArray4 rka_nFA = _4("<k a|r|n_F(p') a'>");
-
-    TArray4 r_akAb  = _4("<a k|r|a' b>");
-    TArray4 r_kaAb  = _4("<k a|r|a' b>");
-    TArray4 rik_AFb = _4("<i k|r|a'_F(q) b>");
-    //
-    TArray4 r_ikAb  = _4("<i k|r|a' b>");
-    TArray4 rak_AFb = _4("<a k|r|a'_F(q) b>");
-    TArray4 rka_AFb = _4("<k a|r|a'_F(q) b>");
-
-    TArray2 B_ai1 =
-          //          diag
-          (  (B_C1 * _4("<a k|rTr|i l>") + B_C2 * _4("<k a|rTr|i l>"))
-          //           Q
-          + 0.5 * (
-              B_C1 * (_4("<a_hJ(p') l|r2|i k>") + _4("<a l_hJ(p')|r2|i k>")
-                    + _4("<a l|r2|i_hJ(p') k>") + _4("<a l|r2|i k_hJ(p')>"))
-
-            + B_C2 * (_4("<l a_hJ(p')|r2|i k>") + _4("<l_hJ(p') a|r2|i k>")
-                    + _4("<l a|r2|i_hJ(p') k>") + _4("<l a|r2|i k_hJ(p')>"))
-                  )
-           ) * _2("<k|I|l>")
-          //           rKr_p'q'
-          - ( B_C1 * (r_akPQ("a,k,p',q'") * rik_PKQ("i,k,p',q'")
-                    + r_kaPQ("k,a,p',q'") * rik_PKQ("k,i,p',q'"))
-
-            + B_C2 * (r_kaPQ("k,a,p',q'") * rik_PKQ("i,k,p',q'")
-                    + r_akPQ("a,k,p',q'") * rik_PKQ("k,i,p',q'"))
-            )
-          //           rFr_p'n
-          - ( B_C1 * (r_akPn("a,k,p',n") * rik_PFn("i,k,p',n")
-                    + r_kaPn("k,a,p',n") * rik_PFn("k,i,p',n"))
-
-            + B_C2 * (r_kaPn("k,a,p',n") * rik_PFn("i,k,p',n")
-                    + r_akPn("a,k,p',n") * rik_PFn("k,i,p',n"))
-             )
-          //           rFr_mA
-          + ( B_C1 * (r_akmA("a,k,m,a'") * rik_mFA("i,k,m,a'")
-                    + r_kamA("k,a,m,a'") * rik_mFA("k,i,m,a'"))
-
-            + B_C2 * (r_kamA("k,a,m,a'") * rik_mFA("i,k,m,a'")
-                    + r_akmA("a,k,m,a'") * rik_mFA("k,i,m,a'"))
-            )
-          //           rFr_pb
-          - ( B_C1 * (r_akpq("a,k,p,b") * rik_pFb("i,k,p,b")
-                    + r_kapq("k,a,p,b") * rik_pFb("k,i,p,b"))
-
-            + B_C2 * (r_kapq("k,a,p,b") * rik_pFb("i,k,p,b")
-                    + r_akpq("a,k,p,b") * rik_pFb("k,i,p,b"))
-            )
-          //
-          -      ( B_C1 * (r_akmA("a,k,n,a'") * rik_nFA("i,k,n,a'")
-                         + r_kamA("k,a,n,a'") * rik_nFA("k,i,n,a'"))
-
-                 + B_C2 * (r_kamA("k,a,n,a'") * rik_nFA("i,k,n,a'")
-                         + r_akmA("a,k,n,a'") * rik_nFA("k,i,n,a'"))
-
-                 + B_C1 * (r_ikmA("i,k,n,a'") * rak_nFA("a,k,n,a'")
-                         + r_ikmA("k,i,n,a'") * rka_nFA("k,a,n,a'"))
-
-                 + B_C2 * (r_ikmA("k,i,n,a'") * rak_nFA("a,k,n,a'")
-                         + r_ikmA("i,k,n,a'") * rka_nFA("k,a,n,a'"))
-                  )
-         //
-         -      ( B_C1 * (r_akAb("a,k,a',b") * rik_AFb("i,k,a',b")
-                        + r_kaAb("k,a,a',b") * rik_AFb("k,i,a',b"))
-
-                + B_C2 * (r_kaAb("k,a,a',b") * rik_AFb("i,k,a',b")
-                        + r_akAb("a,k,a',b") * rik_AFb("k,i,a',b"))
-                        //
-                + B_C1 * (r_ikAb("i,k,a',b") * rak_AFb("a,k,a',b")
-                        + r_ikAb("k,i,a',b") * rka_AFb("k,a,a',b"))
-
-                + B_C2 * (r_ikAb("k,i,a',b") * rak_AFb("a,k,a',b")
-                        + r_ikAb("i,k,a',b") * rka_AFb("k,a,a',b"))
-                 )
-          ;
-
-//    // test codes for computing B_ai for H2O molecule
-//   const char* a = "a";
-//   const char* i = "i";
-//   TArray2 B_ia = Bpk_qk(i,a);
-//   TArray2 B_ai = Bpk_qk(a,i);
-//   TArray2 B_ai2 = B_ai("a,i") + B_ia("i,a");
-//
-//   TArray4 B_akil = Bpr_qs(a,i);
-//   TArray2 B_ai2 = B_akil("a,k,i,l") * _2("<k|I|l");
-//
-//   const char* i = "i";
-//   const char* j = "j";
-//   TArray4 B_ijkl = Bpr_qs(i,j);
-//
-//   double sum_Bijij = 0;
-//   std::cout << "B_ijkl" << std::endl;
-//   for (std::size_t i = 0; i < 5; ++i) {
-//     for (std::size_t j = 0; j < 5; ++j) {
-//       std::vector<std::size_t> indices(4);
-//       indices[0] = indices[2] = i;
-//       indices[1] = indices[3] = j;
-//       sum_Bijij += get_element(B_ijkl, indices);
-//     }
-//   }
-//   std::cout << "Bijkl sum: " << sum_Bijij << std::endl;
-
-    // 2nd parts of B_ai:
-    //    1/2 R^ab'_ow F^c'_i R^c'b'_ow
-    // + (1/2 R^ib'_ow F^C'_a R^C'b'_ow + 1/2 R^ib'_ow F^c'_b' R^ab'_ow)
-
-    TArray2 B_ai2 = (B_C1 * _4("<a b'|r|m n>") + B_C2 * _4("<b' a|r|m n>"))
-                    * _4("<m n|r|i_F(c') b'>")
-                    //
-                  //+ (B_C1 * _4("<a_F(C') b'|r|m n>") + B_C2 *_4("<b' a_F(C')|r|m n>"))
-                  //   * _4("<m n|r|i b'>") // do not work for CCR12
-                  + (B_C1 * _4("<a_F(c') b'|r|m n>") + B_C2 *_4("<b' a_F(c')|r|m n>"))
-                    * _4("<m n|r|i b'>")
-                  + (B_C1 * _4("<a_F(c) b'|r|m n>") + B_C2 *_4("<b' a_F(c)|r|m n>"))
-                    * _4("<m n|r|i b'>")
-                    //
-                  + (B_C1 * _4("<a b'_F(c')|r|m n>") + B_C2 * _4("<b'_F(c') a|r|m n>"))
-                     * _4("<m n|r|i b'>")
-                    ;
-    // sum of part 1 and 2 from B contribution to Xai
-    TArray2 B_ai = B_ai1("a,i") - B_ai2("a,i");
-#endif
-
-#if 0
-    // Formula 2 for B part2: using Approximation C
-    const double RFR_C1 = C_0 * C_0 + 3.0 * C_1 * C_1;
-    const double RFR_C2 = C_0 * C_0 - 3.0 * C_1 * C_1;
-
-    TArray2 B_ai2_C =
-                  // - R F^p'_r' R
-                  - (RFR_C1 * _4("<a p'|r|m n>") + RFR_C2 * _4("<p' a|r|m n>"))
-                    * _4("<m n|r|i p'_F(r')>")
-
-                  //   R F^n_m R
-                  + (RFR_C1 * _4("<a b'|r|m n>") + RFR_C2 * _4("<b' a|r|m n>"))
-                    * _4("<m n|r|i_F(n) b'>")
-
-                  // - R F^r_p R
-                  - (RFR_C1 * _4("<a p|r|m n>") + RFR_C2 * _4("<p a|r|m n>"))
-                    * _4("<m n|r|i p_F(r)>")
-
-                  // - R F^p'_m R
-                  - (RFR_C1 * _4("<a b'|r|m n>") + RFR_C2 * _4("<b' a|r|m n>"))
-                    * _4("<m n|r|i_F(p') b'>")
-                    //
-                  - _4("<a_F(p') b'|r|m n>")
-                    * (RFR_C1 * _4("<m n|r|i b'>") + RFR_C2 * _4("<m n|r|b' i>"))
-
-                  // - R F^q_c' R
-                  - (RFR_C1 * _4("<a b'|r|m n>") + RFR_C2 * _4("<b' a|r|m n>"))
-                    * _4("<m n|r|i b'_F(q)>")
-                    //
-                  - _4("<a b'_F(q)|r|m n>")
-                    * (RFR_C1 * _4("<m n|r|i b'>") + RFR_C2 * _4("<m n|r|b' i>"))
-                    ;
-    //TArray2 B_ai = (B_ai1("a,i") + B_ai2_C("a,i")) * 2.0;
-#endif
-
-    // contribution from f12 density
-    // which results from X and B terms
-#if 0
-    TArray2 D_f12_ij =  (RR_C1 * _4("<i k|r2|j l>") + RR_C2 * _4("<k i|r2|j l>"))
-                        * _2("<k|I|l>")
-                      - (RR_C1 * _4("<i k|r|p q>") + RR_C2 * _4("<k i|r|p q>"))
-                        * _4("<p q|r|j k>")
-                      - (RR_C1 * _4("<i k|r|a' n>") + RR_C2 * _4("<k i|r|a' n>"))
-                        * _4("<a' n|r|j k>")
-                      - (RR_C1 * _4("<i k|r|n a'>") + RR_C2 * _4("<k i|r|n a'>"))
-                        * _4("<n a'|r|j k>");
-
-    TArray2 D_f12_ab = (RR_C1 * _4("<a c'|r|m n>") + RR_C2 * _4("<c' a|r|m n>"))
-                        * _4("<m n|r|b c'>");
-
-    TArray2 D_f12_apbp = (RR_C1 * _4("<a' c|r|m n>") + RR_C2 * _4("<c a'|r|m n>"))
-                         * _4("<m n|r|b' c>")
-                       + (RR_C1 * _4("<a' c'|r|m n>") + RR_C2 * _4("<c' a'|r|m n>"))
-                         * _4("<m n|r|b' c'>")
-                        ;
-
-    TArray2 D_f12_apb = (RR_C1 * _4("<a' c'|r|m n>") + RR_C2 * _4("<c' a'|r|m n>"))
-                        * _4("<m n|r|b c'>");
-
-    // test for f12 density using H2O
-//    double sum_D_f12_ij = 0;
-//    std::cout << "D_f12_ij" << std::endl;
-//    for (std::size_t i = 0; i < 5; ++i) {
-//      std::vector<std::size_t> indices(2);
-//      indices[0] = indices[1] = i;
-//      sum_D_f12_ij += get_element(D_f12_ij, indices);
-//    }
-//    std::cout << "D_f12_ij sum: " << sum_D_f12_ij << std::endl;
-//
-//    double sum_D_f12_ab = 0;
-//    std::cout << "D_f12_ab" << std::endl;
-//    for (std::size_t a = 0; a < 36; ++a) {
-//      std::vector<std::size_t> indices(2);
-//      indices[0] = indices[1] = a;
-//      sum_D_f12_ab += get_element(D_f12_ab, indices);
-//    }
-//    std::cout << "D_f12_ab sum: " << sum_D_f12_ab << std::endl;
-//
-//    double sum_D_f12_apbp = 0;
-//    std::cout << "D_f12_apbp" << std::endl;
-//    for (std::size_t ap = 0; ap < 113; ++ap) {
-//      std::vector<std::size_t> indices(2);
-//      indices[0] = indices[1] = ap;
-//      sum_D_f12_apbp += get_element(D_f12_apbp, indices);
-//    }
-//    std::cout << "D_f12_apbp sum: " << sum_D_f12_apbp << std::endl;
-
-    TArray2 gdf12_ai = //- (2.0 *_4("<a n|g|i m>") - _4("<a n|g|m i>"))
-                       //  * D_f12_ij("n,m")
-                       //
-                        (2.0 * _4("<a b|g|i c>") - _4("<a b|g|c i>"))
-                         * D_f12_ab("b,c")
-                       //
-                       + (2.0 * _4("<a b'|g|i c'>") - _4("<a b'|g|c' i>"))
-                         * D_f12_apbp("b',c'")
-                       //
-                       + (2.0 * _4("<a b'|g|i c>") - _4("<a b'|g|c i>"))
-                         * D_f12_apb("b',c")
-                       + (2.0 * _4("<a b|g|i c'>") - _4("<a b|g|c' i>"))
-                         * D_f12_apb("c',b")
-                       ;
-#endif
-
-    TArray2 Xai_f12 = 2.0 * (
-                           // V_ai("a,i")
-                           // X_ai("a,i")
-                           //   B_ai("a,i")
-                           // gdf12_ai("a,i")
-                            CT2_ai("a,i")
-                           // VT1_ai("a,i")
-                           //VT2_ai("a,i")
-                           //VT1_ai("a,i")
-                           //VT2_ai("a,i")
-                             )
-                           ;
-
-    TArray2 Dbj_f12(Xai_f12.get_world(), Xai_f12.trange());
-    auto resnorm_f12 = cg_solver2(Orbital_relaxation_Abjai,
-                                  Xai_f12,
-                                  Dbj_f12,
+    TArray2 Dbn_f12(Xam_f12.get_world(), Xam_f12.trange());
+    auto resnorm_f12 = cg_solver2(Orbital_relaxation_Abnam,
+                                  Xam_f12,
+                                  Dbn_f12,
                                   preconditioner,
                                   1e-10);
-    const double mu_z_f12 = dot(mu_z_ai("a,m"), Dbj_f12("a,m"));
-    std::cout << std::endl << "***  "
-              << "mu_z (F12) = " << - mu_z_f12 * 2.0
-              << "  ***"<< std::endl;
+    const double mu_z_Xam_f12 = dot(mu_z_am("a,m"), Dbn_f12("a,m"));
+    std::cout << std::endl
+              << "mu_z (F12 orbital response) = " << scprintf("%12.10f", - mu_z_Xam_f12 * 2.0)
+              << std::endl << std::endl;
     }
+#endif
 
     }
     world_.gop.fence();
+
+    /// this is just an example of how to compute the density
+    TArray2 r2_i_j = _4("<i j|r|p q>") * _4("<k_F(p) j|r|p q>");
 
     return r2_i_j;
   }

@@ -185,7 +185,7 @@ namespace mpqc {
     template<class T>
     T dot(const matrix<T> &a, const matrix<T> &b) {
 	T q = 0;
-	assert(a.cols() == b.cols());
+	MPQC_ASSERT(a.cols() == b.cols());
 	for (size_t j = 0; j < a.cols(); ++j) {
 	    q += a.col(j).dot(b.col(j));
 	}

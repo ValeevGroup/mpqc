@@ -1,0 +1,53 @@
+#!/usr/bin/env @PYTHON_EXECUTABLE@
+
+import sys
+from pympqc import *
+
+x = AssignedKeyVal()
+x.assignfloat('f',1.2345)
+x.assigndouble('d',1.234523452345)
+
+print 'value of f is ' + str(x.floatvalue('f',KeyValValuefloat(9.8765))) + ' (should be 1.2345)'
+
+print 'value of d is ' + str(x.doublevalue('d',KeyValValuedouble(9.8765))) + ' (should be 1.234523452345)'
+
+print 'value of x is ' + str(x.floatvalue('x',KeyValValuefloat(9.8765))) + ' (should be 9.8765)'
+
+if x.exists('d'):
+    print 'd exists (expected)'
+else:
+    print 'd does not exist (unexpected)'
+
+if x.exists('x'):
+    print 'x exists (unexpected)'
+else:
+    print 'x does not exist (expected)'
+
+
+m = Molecule()
+m.add_atom(8, 0.0, 0.0, 0.0, label='O');
+m.add_atom(1, 1.0, 0.0, 1.0, label='H1');
+m.add_atom(1, 1.0, 0.0,-1.0, label='H2');
+print '\nThis molecule was constructed programmatically:'
+m.dcprint(out0())
+
+read_m2_input = ParsedKeyVal("@CMAKE_CURRENT_SOURCE_DIR@/testbasic.in")
+read_m2 = Molecule(read_m2_input)
+print '\nThis molecule was constructed from a ParsedKeyVal in @CMAKE_CURRENT_SOURCE_DIR@/testbasic.in:'
+read_m2.dcprint(out0())
+print '\n'
+
+mol = Molecule(atoms = [ 'o', 'h', 'h' ],
+               geometry = [ [ 0.0, 0.0, 0.0 ],
+                            [ 1.0, 0.0,-1.0 ],
+                            [ 1.0, 0.0, 1.0 ] ])
+mol.dcprint(out0())
+basis = GaussianBasisSet(molecule = mol,
+                         name = 'STO-3G')
+basis.dcprint(out0())
+hf = CLHF(basis = basis, molecule = mol)
+
+grad = hf.gradient()
+print 'gradient:'
+grad.vprint(out0())
+print 'energy = ' + str(hf.energy())

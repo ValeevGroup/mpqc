@@ -136,9 +136,9 @@ RDM<Two>::ndim(SpinCase2 spincase) const {
     case AlphaBeta:
       return n1 * n2;
     default:
-      assert(false); // should not be reachable
+      MPQC_ASSERT(false); // should not be reachable
   }
-  assert(false);  // not reachable
+  MPQC_ASSERT(false);  // not reachable
   return 0;  // dummy return statement to pacify picky compilers
 }
 

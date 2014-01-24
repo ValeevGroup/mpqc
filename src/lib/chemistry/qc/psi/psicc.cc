@@ -916,8 +916,8 @@ namespace sc {
 
     // psi ccsd one-particle density does not work for frozen core
     // this code does not work for ROHF
-//    assert(nfzc_ == 0 && reference()->reftype() != PsiSCF::hsoshf);
-    assert(reference()->reftype() != PsiSCF::hsoshf);
+//    MPQC_ASSERT(nfzc_ == 0 && reference()->reftype() != PsiSCF::hsoshf);
+    MPQC_ASSERT(reference()->reftype() != PsiSCF::hsoshf);
 
     // get # of occupied and unoccupied orbitals of spin S per irrep
     const std::vector<unsigned int>& occpi = reference()->occpi(spin);
@@ -1462,10 +1462,10 @@ namespace sc {
                                   const RefSCMatrix& vir2_act_tform,
                                   const RefSCMatrix& T2,
                                   const Ref<SCMatrixKit>& kit) const {
-    assert(occ1_act_tform.rowdim().n() == occ1_act_tform.coldim().n());
-    assert(occ2_act_tform.rowdim().n() == occ2_act_tform.coldim().n());
-    assert(vir1_act_tform.rowdim().n() == vir1_act_tform.coldim().n());
-    assert(vir2_act_tform.rowdim().n() == vir2_act_tform.coldim().n());
+    MPQC_ASSERT(occ1_act_tform.rowdim().n() == occ1_act_tform.coldim().n());
+    MPQC_ASSERT(occ2_act_tform.rowdim().n() == occ2_act_tform.coldim().n());
+    MPQC_ASSERT(vir1_act_tform.rowdim().n() == vir1_act_tform.coldim().n());
+    MPQC_ASSERT(vir2_act_tform.rowdim().n() == vir2_act_tform.coldim().n());
 
     // convert to raw storage
     double* t2 = new double[T2.rowdim().n() * T2.coldim().n()];

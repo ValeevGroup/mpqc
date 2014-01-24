@@ -38,7 +38,7 @@ using namespace sc;
 class TwoBodyEvalThread : public Thread {
   public:
     TwoBodyEvalThread(const Ref<TwoBodyInt>& eval) : eval_(eval) {
-      assert(eval.nonnull());
+      MPQC_ASSERT(eval.nonnull());
     }
     virtual ~Thread();
 

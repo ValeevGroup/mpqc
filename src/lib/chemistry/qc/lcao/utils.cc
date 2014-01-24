@@ -147,15 +147,15 @@ sc::map(const Ref<DistArray4>& src,
     dest = src->clone(dest_dims);
   }
 
-  assert( src->num_te_types() == dest->num_te_types() );
-  assert( src->ni() == isrc->rank() );
-  assert( src->nj() == jsrc->rank() );
-  assert( src->nx() == xsrc->rank() );
-  assert( src->ny() == ysrc->rank() );
-  assert( dest->ni() == idest->rank() );
-  assert( dest->nj() == jdest->rank() );
-  assert( dest->nx() == xdest->rank() );
-  assert( dest->ny() == ydest->rank() );
+  MPQC_ASSERT( src->num_te_types() == dest->num_te_types() );
+  MPQC_ASSERT( src->ni() == isrc->rank() );
+  MPQC_ASSERT( src->nj() == jsrc->rank() );
+  MPQC_ASSERT( src->nx() == xsrc->rank() );
+  MPQC_ASSERT( src->ny() == ysrc->rank() );
+  MPQC_ASSERT( dest->ni() == idest->rank() );
+  MPQC_ASSERT( dest->nj() == jdest->rank() );
+  MPQC_ASSERT( dest->nx() == xdest->rank() );
+  MPQC_ASSERT( dest->ny() == ydest->rank() );
 
   MOIndexMap imap(*isrc << *idest);
   MOIndexMap jmap(*jsrc << *jdest);

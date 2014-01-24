@@ -13,7 +13,7 @@ namespace mpqc {
         }
 
         block_list(const std::vector<range> &dims, size_t N) {
-            assert(N > 0);
+            MPQC_ASSERT(N > 0);
             std::vector<size_t> block(dims.size(), 1);
             for (size_t i = 0; i < dims.size(); ++i) {
                 block[i] = std::min<size_t>(dims[i].size(), N);
@@ -28,7 +28,7 @@ namespace mpqc {
         }
 
         std::vector<range> operator[](size_t index) const {
-            assert(index < size_);
+            MPQC_ASSERT(index < size_);
             size_t N = dims_.size();
             std::vector<size_t> t(N);
             for (size_t i = N; i > 0; ) {

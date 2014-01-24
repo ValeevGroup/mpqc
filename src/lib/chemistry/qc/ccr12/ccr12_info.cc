@@ -48,7 +48,7 @@ CCR12_Info::CCR12_Info(const Ref<R12WavefunctionWorld>& r12world,
 r12world_(r12world), mem_(mem), ref_(reference), nfzc_(nfc),
 nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_(per), maxtilesize_(tilef)
 {
-  assert(r12world_->r12tech()->corrfactor()->nfunctions() == 1);
+  MPQC_ASSERT(r12world_->r12tech()->corrfactor()->nfunctions() == 1);
   restricted_ = !ref()->spin_polarized();
 
   needs();
@@ -56,8 +56,8 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
   set_naocc(r12world_->refwfn()->occ_act_sb(Alpha)->rank(),
             r12world_->refwfn()->occ_act_sb(Beta )->rank());
 
-//assert(r12world_->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_fullopt);
-  assert(r12world_->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_scaledfixed);
+//MPQC_ASSERT(r12world_->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_fullopt);
+  MPQC_ASSERT(r12world_->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_scaledfixed);
   set_fixed(r12world_->r12tech()->ansatz()->amplitudes() == R12Technology::GeminalAmplitudeAnsatz_fixed);
   set_navir(r12world_->refwfn()->orbs(Alpha)->rank() - naoa() - nfzc() - nfzv(),
             r12world_->refwfn()->orbs(Beta )->rank() - naob() - nfzc() - nfzv());
@@ -136,7 +136,7 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
   }
 
   if (need_gt2()){
-    assert(need_w1());
+    MPQC_ASSERT(need_w1());
 
     d_gt2 = new Tensor("gt2", mem_);
     offset_gt2(d_gt2, true);
@@ -289,7 +289,7 @@ nfzv_(nfv), nirrep_(nirr), workmemsize_(workmem), theory_(theory), perturbative_
 //  }
 
   // Making initial guess for t2.
-  if (!need_gt2() || need_gt2() && (perturbative_ == "(T)R12" || perturbative_ == "(2)R12")) {
+  if (!need_gt2() || (need_gt2() && (perturbative_ == "(T)R12" || perturbative_ == "(2)R12"))) {
     guess_t2(d_t2);
   } else if (r12world_->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_fullopt) {
     // assuming d_gt2 is already filled in.

@@ -3,9 +3,22 @@
 cmake_minimum_required (VERSION 2.8.8)
 project (MPQC)
 
+#####################
+# Options
+#####################
+# boolean
 option(MPQC_EXPERT "MPQC Expert mode: disables automatically downloading or building dependencies" OFF)
 option(MPQC_NEW_FEATURES "Use new MPQC features (requires C++11)" OFF)
 option(MPQC_OPENMP "Use OpenMP" OFF)
+# non-boolean
+if (NOT DEFINED MPQC_MEMORY_CHECK)
+  set(MPQC_MEMORY_CHECK -1) # How to check memory use (see mpqc_config.h for details)
+else()
+  message("MPQC_MEMORY_CHECK = ${MPQC_MEMORY_CHECK}")
+endif()
+if (NOT DEFINED MPQC_ASSERT_MODE)
+  set(MPQC_ASSERT_MODE -1) # How to implement assertions (see mpqc_config.h for details)
+endif()
 
 include(CTest)
 enable_testing()
@@ -123,13 +136,6 @@ option(USE_STATIC_LIBS "use static libraries" OFF)
 if(USE_STATIC_LIBS)
   set(CMAKE_FIND_LIBRARY_SUFFIXES .a ${CMAKE_FIND_LIBRARY_SUFFIXES})
 ENDIF()
-
-# find_package(PythonLibs)
-# if(PYTHONLIBS_FOUND)
-#   set(HAVE_PYTHON TRUE)
-#   include_directories(${PYTHON_INCLUDE_DIR})
-# endif()
-
 
 find_package(Threads)
 if (Threads_FOUND)

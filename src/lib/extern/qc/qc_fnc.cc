@@ -101,7 +101,7 @@ void init_molecule_(int natoms, const double* Z, const double* xyz, int use_symm
 }
 
 void init_molecule_xyz_(const char* fname, int use_symmetry, int fname_nchar) {
-  assert(false);
+  MPQC_ASSERT(false);
 }
 
 void init_basis_set_(const char* basis_name, int basis_name_nchar) {
@@ -133,7 +133,7 @@ void init_basis_set_(const char* basis_name, int basis_name_nchar) {
 }
 
 void init_basis_set_g94_(const char* fname, int fname_nchar) {
-  assert(false);
+  MPQC_ASSERT(false);
   qc_obs_data = gbs_data(qc_obs);
 }
 

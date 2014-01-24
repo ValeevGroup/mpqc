@@ -65,7 +65,7 @@ SpatialMOPairIter_eq::~SpatialMOPairIter_eq()
 SpatialMOPairIter_neq::SpatialMOPairIter_neq(unsigned int n_i, unsigned int n_j) :
 SpatialMOPairIter(n_i, n_j)
 {
-  assert(n_i == n_j);
+  MPQC_ASSERT(n_i == n_j);
   nij_ = ni_*nj_;
   ij_ = 0;
   IJ_ = 0;
@@ -81,7 +81,7 @@ SpinMOPairIter::SpinMOPairIter(unsigned int n_i, unsigned int n_j, bool i_eq_j) 
   MOPairIter(n_i, n_j), IJ_(0), i_eq_j_(i_eq_j)
 {
   if (i_eq_j_) {
-    assert(n_i == n_j);
+    MPQC_ASSERT(n_i == n_j);
     nij_ = (ni_ * (ni_-1))/2;
     ij_ = 0;
     i_ = 1;
@@ -241,14 +241,14 @@ namespace sc { namespace fastpairiter {
 
   template<> MOPairIter<Symm>::MOPairIter(int nI, int nJ) :
     nI_(nI), nJ_(nJ), IJ_(0), nIJ_(0), I_(0), J_(0) {
-    assert(nI == nJ);
+    MPQC_ASSERT(nI == nJ);
     nIJ_ = nI_ * (nI_ + 1)/2;
     init();
   }
       
   template<> MOPairIter<AntiSymm>::MOPairIter(int nI, int nJ) :
       nI_(nI), nJ_(nJ), IJ_(0), nIJ_(0), I_(0), J_(0) {
-      assert(nI == nJ);
+      MPQC_ASSERT(nI == nJ);
       nIJ_ = nI_ * (nI_ - 1)/2;
     }
     
@@ -297,7 +297,7 @@ namespace sc { namespace fastpairiter {
     }
     
     template<> std::size_t npair<AntiSymm>(unsigned int nI, unsigned int nJ) {
-      assert(nI == nJ);
+      MPQC_ASSERT(nI == nJ);
       return nI * (std::size_t)(nI-1)/2;
     }
     
@@ -306,7 +306,7 @@ namespace sc { namespace fastpairiter {
     }
     
     template<> std::size_t npair<Symm>(unsigned int nI, unsigned int nJ) {
-      assert(nI == nJ);
+      MPQC_ASSERT(nI == nJ);
       return nI * (std::size_t)(nI+1)/2;
     }
 

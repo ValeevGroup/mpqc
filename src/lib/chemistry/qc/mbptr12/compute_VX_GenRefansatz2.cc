@@ -312,7 +312,7 @@ void R12IntEval::contrib_to_VX_GenRefansatz2_() {
 
 
 void R12IntEval::contrib_to_VX_GenRefansatz2_spinfree_() {
-  assert(r12world()->spinadapted());
+  MPQC_ASSERT(r12world()->spinadapted());
   if (evaluated_)
     return;
 

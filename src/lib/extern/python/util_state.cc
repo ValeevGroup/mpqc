@@ -1,6 +1,6 @@
 
 #include <Python.h>
-#include "util.h"
+#include <extern/python/util.h>
 #include <boost/python.hpp>
 #include <boost/python/implicit.hpp>
 #include <util/state/state.h>

@@ -33,7 +33,7 @@ std::vector<double> sc::CI::compute(const Ref<RefWavefunction> &wfn,
     range core_orbs(0, config.core);
     range ao(0, C.cols());
     
-    assert(act_orbs.size() <= C.rows());
+    MPQC_ASSERT(act_orbs.size() <= C.rows());
     
     const auto &basis = wfn->basis();
     

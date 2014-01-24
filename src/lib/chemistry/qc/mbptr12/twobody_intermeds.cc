@@ -336,7 +336,7 @@ RefSCMatrix
 R12IntEval::V_genref_spinfree(const Ref<OrbitalSpace>& p1,
                    const Ref<OrbitalSpace>& p2)
 {
-  assert(r12world()->spinadapted());
+  MPQC_ASSERT(r12world()->spinadapted());
   ExEnv::out0() << std::endl << std::endl << indent << "Entered V_genref_spinfree\n\n";
 
   const bool debugprint = true;
@@ -483,7 +483,7 @@ std::vector<Ref<DistArray4> > R12IntEval::V_distarray4(
   Ref<R12Technology::R12CorrelationFactor> r12ptr;
   r12ptr << corrfactor();
   if (r12ptr.nonnull()) {
-    assert(false);
+    MPQC_ASSERT(false);
 #if 0
     RefSCMatrix I = compute_I_(x1,x2,p1,p2);
     V.accumulate(I);
@@ -892,14 +892,14 @@ R12IntEval::U_distarray4(
                                         x1, p1, occ2, cabs2, false,
                                         tforms_x2p2_i2A2, tforms_x1i2_p1A2);
     // add U_b2k2_b1k1 to U
-    assert(false);
+    MPQC_ASSERT(false);
   }
   else {
     // spin-restricted closed-shell case -- scale U_b1k1_b2k2 by 2
-    assert(false);
+    MPQC_ASSERT(false);
   }
   // add U_b1k1_b2k2 to U
-  assert(false);
+  MPQC_ASSERT(false);
 
   std::vector<std::string> tforms_x2p1_i2A1;
   std::vector<std::string> tforms_p2x1_i2A1;
@@ -950,15 +950,15 @@ R12IntEval::U_distarray4(
                                         x1, p2, occ1, cabs2, false,
                                         tforms_p1x2_i1A2, tforms_x1p2_i1A2);
     // add U_k1b2_b1k2 to U
-    assert(false);
+    MPQC_ASSERT(false);
   }
   else {
     // scale U_k2b1_b2k1 by 2
-    assert(false);
+    MPQC_ASSERT(false);
   }
 
   // add U_k2b1_b2k1 to U
-  assert(false);
+  MPQC_ASSERT(false);
 
   if (!antisymmetrize && part1_equiv_part2) {
     for(int s=0; s<U.size(); ++s)

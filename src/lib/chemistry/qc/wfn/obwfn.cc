@@ -618,7 +618,7 @@ OneBodyWavefunction::nelectron()
       tocc += alpha_occupation(i) + beta_occupation(i);
     }
   }
-  assert((tocc - static_cast<int>(tocc)) < 1e-8);
+  MPQC_ASSERT((tocc - static_cast<int>(tocc)) < 1e-8);
   return static_cast<int>(tocc);
 }
 

@@ -60,7 +60,7 @@ ParsedDensityFittingKey::ParsedDensityFittingKey(const std::string& key) :
   std::string keycopy(key);
 
   // pop off the leading '('
-  assert(keycopy[0] == '(');
+  MPQC_ASSERT(keycopy[0] == '(');
   keycopy.erase(keycopy.begin());
   // get space1
   space1_ = pop_till_token(keycopy,' ');
@@ -191,7 +191,7 @@ DensityFittingRuntime::get(const std::string& key)
     const ResultRef& result = create_result(key);
     return result;
   }
-  assert(false); // unreachable
+  MPQC_ASSERT(false); // unreachable
 }
 
 const DensityFittingRuntime::CoefResultRef
@@ -613,7 +613,7 @@ DensityFittingRuntime::create_result(const std::string& key)
     }
   }
 
-  assert(false);  // unreachable
+  MPQC_ASSERT(false);  // unreachable
 }
 
 std::string
@@ -749,7 +749,7 @@ DensityFittingParams::print(std::ostream& o) const {
       case DensityFitting::SolveMethod_HouseholderQR:        o << "HouseholderQR"; break;
       case DensityFitting::SolveMethod_ColPivHouseholderQR:  o << "ColPivHouseholderQR"; break;
       case DensityFitting::SolveMethod_FullPivHouseholderQR: o << "FullPivHouseholderQR"; break;
-      default: assert(false); // unreachable
+      default: MPQC_ASSERT(false); // unreachable
     }
     o << std::endl;
   o << decindent;

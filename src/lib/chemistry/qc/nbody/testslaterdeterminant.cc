@@ -257,7 +257,7 @@ int try_main(int argc, char **argv) {
         break;
 
       default:
-        assert(false);
+        MPQC_ASSERT(false);
         break;
     }
 

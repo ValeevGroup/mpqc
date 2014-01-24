@@ -12,7 +12,7 @@
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/basis/tbint.h>
 #include <chemistry/qc/basis/symmint.h>
-#include "util.h"
+#include <extern/python/util.h>
 
 using namespace boost::python;
 using namespace sc;
@@ -140,9 +140,6 @@ namespace sc {
     }
 
     {
-      int (GaussianBasisSet::*max_ncartesian_in_shell)(int) const
-        = &GaussianBasisSet::max_ncartesian_in_shell;
-      
       class_<GaussianBasisSet, Ref<GaussianBasisSet>, bases<SavableState>,
         boost::noncopyable >
         ("GaussianBasisSet", init<Ref<KeyVal> >())
@@ -155,7 +152,7 @@ namespace sc {
         .def("nbasis_on_center",&GaussianBasisSet::nbasis_on_center)
         .def("nprimitive",&GaussianBasisSet::nprimitive)
         .def("has_pure",&GaussianBasisSet::has_pure)
-        .def("max_ncartesian_in_shell",max_ncartesian_in_shell,
+        .def("max_ncartesian_in_shell",&GaussianBasisSet::max_ncartesian_in_shell,
              (arg("aminc")=0))
         .def("max_nfunction_in_shell",&GaussianBasisSet::max_nfunction_in_shell)
         .def("max_nprimitive_in_shell",&GaussianBasisSet::max_nprimitive_in_shell)

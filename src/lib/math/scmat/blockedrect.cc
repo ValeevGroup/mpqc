@@ -249,8 +249,8 @@ BlockedSCMatrix::convert_accumulate(SCMatrix*a)
   // ok, are we converting a non-blocked matrix to a blocked one, or are
   // we converting a blocked matrix from one specialization to another?
 
-  assert(a->nrow() == this->nrow());
-  assert(a->ncol() == this->ncol());
+  MPQC_ASSERT(a->nrow() == this->nrow());
+  MPQC_ASSERT(a->ncol() == this->ncol());
 
   if (dynamic_cast<BlockedSCMatrix*>(a)) {
     BlockedSCMatrix *ba = dynamic_cast<BlockedSCMatrix*>(a);

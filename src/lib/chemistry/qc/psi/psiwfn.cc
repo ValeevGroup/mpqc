@@ -134,7 +134,7 @@ namespace sc {
 
     template <typename T>
     T lowerupper_index(T p, T q) {
-      assert(p!=q);
+      MPQC_ASSERT(p!=q);
       T result = (p>q) ? p*(p-1)/2+q : q*(q-1)/2+p;
       return result;
     }
@@ -2054,7 +2054,7 @@ namespace sc {
                                      Ref<SCMatrixKit> kit) {
 
     if (spinfree)
-      assert(pairspin == AlphaBeta);
+      MPQC_ASSERT(pairspin == AlphaBeta);
 
     const string pairspin_str = to_string(pairspin);
     iwlbuf tpdm_buf;
@@ -2107,7 +2107,7 @@ namespace sc {
       case AlphaBeta:  TPDM_FILE = spinfree ? PSIF_MO_TPDM : PSIF_MO_AB_TPDM; break;
       case AlphaAlpha: TPDM_FILE = PSIF_MO_AA_TPDM; break;
       case BetaBeta:   TPDM_FILE = PSIF_MO_BB_TPDM; break;
-      default: assert(false);
+      default: MPQC_ASSERT(false);
     }
     iwl_buf_init(&tpdm_buf,TPDM_FILE,0.0,1,1);
     if(pairspin==AlphaBeta) {

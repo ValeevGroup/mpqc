@@ -33,7 +33,7 @@ using namespace sc;
 
 FEMO::FEMO(int nalpha, int nbeta,
            const RefDiagSCMatrix& evalsa, const RefDiagSCMatrix& evalsb) :
-             nalpha_(nalpha), nbeta_(nbeta), E_(0.0)
+        E_(0.0), nalpha_(nalpha), nbeta_(nbeta)
 {
   // first convert evals to something we can deal with easily
   BlockedDiagSCMatrix *bevalsa = require_dynamic_cast<BlockedDiagSCMatrix*>(evalsa, "FEMO::FEMO");

@@ -1,0 +1,31 @@
+#!/usr/bin/env @PYTHON_EXECUTABLE@
+
+from pympqc import *
+from pympqc.ase_mpqc import *
+from ase import Atoms
+from ase.optimize import QuasiNewton
+from ase.visualize import view
+
+ase_h2o = Atoms('OHH', positions=[(0, 0, 0), (1, 0, 1), (1, 0, -1)])
+
+mpqc_h2o = atoms_to_molecule(ase_h2o);
+basis = GaussianBasisSet(molecule = mpqc_h2o,
+                         name = 'STO-3G')
+basis.dcprint(out0())
+hf = CLHF(basis = basis, molecule = mpqc_h2o)
+
+ase_hf = Calculator(mole=hf)
+
+ase_h2o.set_calculator(ase_hf)
+
+dyn = QuasiNewton(ase_h2o)
+dyn.run(fmax=0.001)
+
+from ase.vibrations import Vibrations
+vib = Vibrations(ase_h2o)
+vib.run()
+
+vib.summary()
+
+# view(ase_h2o) # will fail if ase-gui is not in PATH, instead use the same version from pympqc.ase_mpqc
+ase_gui_view(ase_h2o)

@@ -51,8 +51,12 @@ CCSD_R12::CCSD_R12(StateIn& s): CCR12(s){
 CCSD_R12::CCSD_R12(const Ref<KeyVal>& keyval): CCR12(keyval){
   string theory("CCSD-R12");
   theory_ = theory;
+
   perturbative_ = keyval->stringvalue("perturbative", KeyValValuestring(""));
-  transform(perturbative_.begin(), perturbative_.end(), perturbative_.begin(), (int (*)(int))std::toupper);
+  ostringstream oss; oss.setf(ios_base::uppercase);
+  oss << perturbative_;
+  perturbative_ = oss.str();
+
   print_theory();
 }
 
@@ -81,8 +85,8 @@ void CCSD_R12::compute(){
   print_iteration_header(theory_);
 
   // only fixed amplitude ansatz is supported at the moment
-  assert(ccr12_info_->r12world()->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_fullopt);
-  assert(ccr12_info_->r12world()->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_scaledfixed);
+  MPQC_ASSERT(ccr12_info_->r12world()->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_fullopt);
+  MPQC_ASSERT(ccr12_info_->r12world()->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_scaledfixed);
 
   timer_->enter("CCR12 iterations");
   double iter_start = 0.0;
@@ -144,7 +148,7 @@ void CCSD_R12::compute(){
 
   // if not fully optimized, we need to add the geminal-lambda contribution.
   if (ccr12_info_->r12world()->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_fullopt) {
-    assert(false);
+    MPQC_ASSERT(false);
     timer_->enter("Lambda contribution");
     iter_start = timer_->get_wall_time();
 

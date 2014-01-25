@@ -83,7 +83,7 @@ namespace sc {
             return 0;
         }
         static void save_instance(const Ref<T>& instance, StateOut& so) {
-          if (instance.nonnull()) {
+          if (instance) {
             so.put(true);
             instance->save_data_state(so);
           }

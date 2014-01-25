@@ -332,7 +332,7 @@ WavefunctionWorld::initialize_ao_spaces()
     idxreg->add(make_keyspace_pair(mu));
     aoidxreg->add(mu->basis(),mu);
   }
-  if (bs_df_.nonnull()) { // DF-BS
+  if (bs_df_) { // DF-BS
     if (aoidxreg->key_exists(bs_df_) == false &&
         idxreg->key_exists("Mu") == false) {
       Ref<Integral> localints = integral()->clone();

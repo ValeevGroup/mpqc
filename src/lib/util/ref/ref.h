@@ -363,10 +363,6 @@ class  Ref  : public RefBase {
     typedef T element_type;
   private:
     T* p;
-
-    typedef void (Ref::*bool_type)() const;
-    void this_type_does_not_support_comparisons() const {}
-
   public:
     /// Create a reference to a null object.
     Ref(): p(0) {}
@@ -418,7 +414,7 @@ class  Ref  : public RefBase {
     /// Implements the parentpointer pure virtual in the base class.
     RefCount *parentpointer() const { return p; }
 
-    operator T*() const { MPQC_ASSERT(p!=0); return p; }
+    operator T*() const { return p; }
     /** Returns a C++ reference to the reference counted object.
         The behaviour is undefined if the object is null. */
     T& operator *() const { MPQC_ASSERT(p!=0); return *p; };
@@ -427,11 +423,6 @@ class  Ref  : public RefBase {
     int null() const { return p == 0; }
     /// Return !null().
     int nonnull() const { return p != 0; }
-
-    operator bool_type() const {
-      return nonnull() ?
-          &Ref::this_type_does_not_support_comparisons : 0;
-    }
     bool operator!() const {
       return null();
     }

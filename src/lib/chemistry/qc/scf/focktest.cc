@@ -30,11 +30,11 @@ init_thread(const Ref<KeyVal>& keyval, int &argc, char **&argv)
   
   // if we still don't have a group, try reading the thread group
   // from the input
-  if (thread.null()) {
+  if (thread == 0) {
     thread << keyval->describedclassvalue("thread");
   }
 
-  if (thread.nonnull())
+  if (thread)
     ThreadGrp::set_default_threadgrp(thread);
   else
     thread = ThreadGrp::get_default_threadgrp();
@@ -49,9 +49,9 @@ init_message(const Ref<KeyVal>& keyval,int &argc, char **&argv)
 
   grp << keyval->describedclassvalue("message");
 
-  if (grp.null()) grp = MessageGrp::initial_messagegrp(argc, argv);
+  if (grp == 0) grp = MessageGrp::initial_messagegrp(argc, argv);
 
-  if (grp.null()) grp = MessageGrp::get_default_messagegrp();
+  if (grp == 0) grp = MessageGrp::get_default_messagegrp();
 
   MessageGrp::set_default_messagegrp(grp);
 
@@ -112,7 +112,7 @@ try_main(int argc, char **argv)
   tim.enter("input");
 
   Ref<Debugger> debugger; debugger << rpkv->describedclassvalue("debug");
-  if (debugger.nonnull()) {
+  if (debugger) {
       Debugger::set_default_debugger(debugger);
       debugger->set_exec(argv[0]);
       debugger->set_prefix(msg->me());
@@ -128,11 +128,11 @@ try_main(int argc, char **argv)
   
   // if we still don't have a integral, try reading the integral
   // from the input
-  if (integral.null()) {
+  if (integral == 0) {
     integral << rpkv->describedclassvalue("integrals");
   }
 
-  if (integral.nonnull())
+  if (integral)
     Integral::set_default_integral(integral);
   else
     integral = Integral::get_default_integral();
@@ -195,7 +195,7 @@ try_main(int argc, char **argv)
 
   ExEnv::out0() << indent << "building multi-basis Fock matrix" << std::endl;
   Ref<GaussianBasisSet> basis2; basis2 << rpkv->describedclassvalue("basis2");
-  if (basis2.nonnull()) {
+  if (basis2) {
       RefSymmSCMatrix density = clhf->ao_density();
       Ref<GaussianBasisSet> basis1 = clhf->basis();
 

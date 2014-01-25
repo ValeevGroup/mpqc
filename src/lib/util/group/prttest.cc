@@ -45,8 +45,8 @@ main(int argc, char**argv)
 #if defined(HAVE_MPI) && defined(ALWAYS_USE_MPI)
   grp = new sc::MPIMessageGrp(&argc, &argv);
 #endif
-  if (grp.null()) grp = sc::MessageGrp::initial_messagegrp(argc, argv);
-  if (grp.nonnull())
+  if (grp == 0) grp = sc::MessageGrp::initial_messagegrp(argc, argv);
+  if (grp)
       sc::MessageGrp::set_default_messagegrp(grp);
   else
       grp = sc::MessageGrp::get_default_messagegrp();

@@ -40,7 +40,7 @@ WriteElectrostaticPotential::WriteElectrostaticPotential(const Ref<KeyVal> &keyv
   WriteGrid(keyval)
 {
   wfn_ << keyval->describedclassvalue("wfn");
-  if (wfn_.null()) {
+  if (wfn_ == 0) {
       InputError ex("valid \"wfn\" missing",
                     __FILE__, __LINE__, "wfn", "(null)", class_desc());
       try {

@@ -102,17 +102,17 @@ DistSymmSCMatrix::find_element(int i, int j) const
   d->blocks()->elem_to_block(j, bj, oj);
 
   Ref<SCMatrixBlock> ablk = block_to_block(bi, bj);
-  if (ablk.nonnull()) {
+  if (ablk) {
       if (bi != bj) {
           Ref<SCMatrixRectBlock> blk
               = dynamic_cast<SCMatrixRectBlock*>(ablk.pointer());
-          if (blk.null()) return 0;
+          if (blk == 0) return 0;
           return &blk->data[oi*(blk->jend-blk->jstart)+oj];
         }
       else {
           Ref<SCMatrixLTriBlock> blk
               = dynamic_cast<SCMatrixLTriBlock*>(ablk.pointer());
-          if (blk.null()) return 0;
+          if (blk == 0) return 0;
           return &blk->data[(oi*(oi+1))/2+oj];
         }
     }
@@ -323,7 +323,7 @@ DistSymmSCMatrix::trace()
   Ref<SCMatrixSubblockIter> I = local_blocks(SCMatrixSubblockIter::Read);
   for (I->begin(); I->ready(); I->next()) {
       Ref<SCMatrixLTriBlock> b = dynamic_cast<SCMatrixLTriBlock*>(I->block());
-      if (b.nonnull() && b->blocki == b->blockj) {
+      if (b && b->blocki == b->blockj) {
           int ni = b->end-b->start;
           double *data = b->data;
           for (int i=0; i<ni; i++) {
@@ -430,7 +430,7 @@ DistSymmSCMatrix::accumulate_symmetric_sum(SCMatrix*a)
       // see if i've got this block
       Ref<SCMatrixBlock> localblock
           = la->block_to_block(block->blocki,block->blockj);
-      if (localblock.nonnull()) {
+      if (localblock) {
           // the diagonal blocks require special handling
           if (block->blocki == block->blockj) {
               int n = la->rowblocks()->size(block->blocki);
@@ -458,7 +458,7 @@ DistSymmSCMatrix::accumulate_symmetric_sum(SCMatrix*a)
       // now for the transpose
       if (block->blocki != block->blockj) {
           localblock = la->block_to_block(block->blockj,block->blocki);
-          if (localblock.nonnull()) {
+          if (localblock) {
               int nr = la->rowblocks()->size(block->blocki);
               int nc = la->rowblocks()->size(block->blockj);
               double *dat1 = block->dat();

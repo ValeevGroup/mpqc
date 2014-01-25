@@ -116,7 +116,7 @@ void
 BlockedSCMatrix::assign_val(double v)
 {
   for (int i=0; i < nblocks_; i++)
-    if (mats_[i].nonnull())
+    if (mats_[i])
       mats_[i]->assign(v);
 }
 
@@ -392,7 +392,7 @@ BlockedSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b)
   }
 
   for (int i=0; i < d1->blocks()->nblock(); i++)
-    if (mats_[i].nonnull())
+    if (mats_[i])
       mats_[i]->accumulate_outer_product(la->vecs_[i], lb->vecs_[i]);
 }
 
@@ -434,7 +434,7 @@ BlockedSCMatrix::accumulate_product_rr(SCMatrix*a,SCMatrix*b)
   int &bi = (nrbb==1 && ncbb==1) ? zero : i;
 
   for (i=0; i < mxnb; i++) {
-    if (mats_[mi].null() || la->mats_[ai].null() || lb->mats_[bi].null())
+    if (mats_[mi] == 0 || la->mats_[ai] == 0 || lb->mats_[bi] == 0)
       continue;
     mats_[mi]->accumulate_product(la->mats_[ai], lb->mats_[bi]);
   }
@@ -467,7 +467,7 @@ BlockedSCMatrix::accumulate_product_rs(SCMatrix*a,SymmSCMatrix*b)
   int &bi = (lb->d->blocks()->nblock()==1) ? zero : i;
 
   for (i=0; i < nblocks_; i++) {
-    if (mats_[i].null() || la->mats_[i].null() || lb->mats_[bi].null())
+    if (mats_[i] == 0 || la->mats_[i] == 0 || lb->mats_[bi] == 0)
       continue;
     mats_[i]->accumulate_product(la->mats_[i], lb->mats_[bi]);
   }
@@ -496,7 +496,7 @@ BlockedSCMatrix::accumulate_product_rd(SCMatrix*a,DiagSCMatrix*b)
   int &bi = (lb->d->blocks()->nblock()==1) ? zero : i;
 
   for (i=0; i < nblocks_; i++) {
-    if (mats_[i].null() || la->mats_[i].null() || lb->mats_[bi].null())
+    if (mats_[i] == 0 || la->mats_[i] == 0 || lb->mats_[bi] == 0)
       continue;
     mats_[i]->accumulate_product(la->mats_[i], lb->mats_[bi]);
   }
@@ -521,7 +521,7 @@ BlockedSCMatrix::accumulate(const SCMatrix*a)
   }
 
   for (int i=0; i < nblocks_; i++)
-    if (mats_[i].nonnull())
+    if (mats_[i])
       mats_[i]->accumulate(la->mats_[i]);
 }
 
@@ -543,7 +543,7 @@ BlockedSCMatrix::accumulate(const SymmSCMatrix*a)
   }
 
   for (int i=0; i < nblocks_; i++)
-    if (mats_[i].nonnull())
+    if (mats_[i])
       mats_[i]->accumulate(la->mats_[i]);
 }
 
@@ -562,7 +562,7 @@ BlockedSCMatrix::accumulate(const DiagSCMatrix*a)
   }
 
   for (int i=0; i < nblocks_; i++)
-    if (mats_[i].nonnull())
+    if (mats_[i])
       mats_[i]->accumulate(la->mats_[i]);
 }
 
@@ -582,7 +582,7 @@ BlockedSCMatrix::accumulate(const SCVector*a)
   }
 
   for (int i=0; i < nblocks_; i++)
-    if (mats_[i].nonnull())
+    if (mats_[i])
       mats_[i]->accumulate(la->vecs_[i]);
 }
 
@@ -590,7 +590,7 @@ void
 BlockedSCMatrix::transpose_this()
 {
   for (int i=0; i < nblocks_; i++)
-    if (mats_[i].nonnull())
+    if (mats_[i])
       mats_[i]->transpose_this();
 
   RefSCDimension tmp = d1;
@@ -608,7 +608,7 @@ BlockedSCMatrix::invert_this()
   // if this matrix is block diagonal, then give a normal inversion a shot
   if (d1->blocks()->nblock() == d2->blocks()->nblock()) {
     for (i=0; i < nblocks_; i++)
-      if (mats_[i].nonnull()) res *= mats_[i]->invert_this();
+      if (mats_[i]) res *= mats_[i]->invert_this();
     return res;
   }
 
@@ -628,7 +628,7 @@ BlockedSCMatrix::invert_this()
 
     // d1 and d2 were swapped by now
     for (i=0; i < d1->blocks()->nblock(); i++)
-      if (mats_[i].nonnull())
+      if (mats_[i])
         mats_[i]->convert(tdim.get_subblock(d1->blocks()->start(i),
                                             d1->blocks()->fence(i)-1,
                                             0, d2->n()-1));
@@ -645,7 +645,7 @@ BlockedSCMatrix::invert_this()
 
     // d1 and d2 were swapped by now
     for (i=0; i < d2->blocks()->nblock(); i++)
-      if (mats_[i].nonnull())
+      if (mats_[i])
         mats_[i]->convert(tdim.get_subblock(0, d1->n()-1,
                                             d2->blocks()->start(i),
                                             d2->blocks()->fence(i)-1));
@@ -667,7 +667,7 @@ BlockedSCMatrix::gen_invert_this(double condition_number_threshold)
   // if this matrix is block-diagonal use SVD
   if (d1->blocks()->nblock() == d2->blocks()->nblock()) {
     for (int i=0; i < nblocks_; i++)
-      if (mats_[i].nonnull())
+      if (mats_[i])
         mats_[i]->gen_invert_this(condition_number_threshold);
   }
   else {
@@ -683,7 +683,7 @@ BlockedSCMatrix::determ_this()
   double res=1;
 
   for (int i=0; i < nblocks_; i++)
-    if (mats_[i].nonnull())
+    if (mats_[i])
       res *= mats_[i]->determ_this();
 
   return res;
@@ -694,7 +694,7 @@ BlockedSCMatrix::trace()
 {
   double ret=0;
   for (int i=0; i < nblocks_; i++)
-    if (mats_[i].nonnull())
+    if (mats_[i])
       ret += mats_[i]->trace();
 
   return ret;
@@ -711,7 +711,7 @@ BlockedSCMatrix::svd_this(SCMatrix *U, DiagSCMatrix *sigma, SCMatrix *V)
     require_dynamic_cast<BlockedDiagSCMatrix*>(sigma,"BlockedSCMatrix::svd_this");
 
   for (int i=0; i < nblocks_; i++)
-    if (mats_[i].nonnull())
+    if (mats_[i])
       mats_[i]->svd_this(lU->mats_[i], lsigma->mats_[i], lV->mats_[i]);
 }
 
@@ -731,7 +731,7 @@ BlockedSCMatrix::solve_this(SCVector*v)
   }
 
   for (int i=0; i < nblocks_; i++)
-    if (mats_[i].nonnull())
+    if (mats_[i])
       res *= mats_[i]->solve_this(lv->vecs_[i]);
 
   return res;
@@ -751,7 +751,7 @@ BlockedSCMatrix::schmidt_orthog(SymmSCMatrix *S, int nc)
   }
 
   for (int i=0; i < nblocks_; i++)
-    if (mats_[i].nonnull())
+    if (mats_[i])
       mats_[i]->schmidt_orthog(lS->mats_[i].pointer(),
                                lS->dim()->blocks()->subdim(i).n());
 }
@@ -775,7 +775,7 @@ BlockedSCMatrix::element_op(const Ref<SCElementOp>& op)
   for (int i=0; i < nblocks_; i++) {
     if (bop)
       bop->working_on(i);
-    if (mats_[i].nonnull())
+    if (mats_[i])
       mats_[i]->element_op(op);
   }
   op->defer_collect(0);
@@ -800,7 +800,7 @@ BlockedSCMatrix::element_op(const Ref<SCElementOp2>& op,
   for (int i=0; i < nblocks_; i++) {
     if (bop)
       bop->working_on(i);
-    if (mats_[i].nonnull())
+    if (mats_[i])
       mats_[i]->element_op(op,lm->mats_[i].pointer());
   }
   op->defer_collect(0);
@@ -828,7 +828,7 @@ BlockedSCMatrix::element_op(const Ref<SCElementOp3>& op,
   for (int i=0; i < nblocks_; i++) {
     if (bop)
       bop->working_on(i);
-    if (mats_[i].nonnull())
+    if (mats_[i])
       mats_[i]->element_op(op,lm->mats_[i].pointer(),
                               ln->mats_[i].pointer());
   }
@@ -843,7 +843,7 @@ BlockedSCMatrix::vprint(const char *title, ostream& os, int prec) const
   char *newtitle = new char[len + 80];
 
   for (int i=0; i < nblocks_; i++) {
-    if (mats_[i].null())
+    if (mats_[i] == 0)
       continue;
 
     sprintf(newtitle,"%s:  block %d",title,i+1);
@@ -886,7 +886,7 @@ BlockedSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
   Ref<SCMatrixCompositeSubblockIter> iter
       = new SCMatrixCompositeSubblockIter(access, nblocks());
   for (int i=0; i<nblocks(); i++) {
-      if (block(i).null())
+      if (block(i) == 0)
           iter->set_iter(i, new SCMatrixNullSubblockIter(access));
       else
           iter->set_iter(i, block(i)->local_blocks(access));
@@ -901,7 +901,7 @@ BlockedSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
   Ref<SCMatrixCompositeSubblockIter> iter
       = new SCMatrixCompositeSubblockIter(access, nblocks());
   for (int i=0; i<nblocks(); i++) {
-      if (block(i).null())
+      if (block(i) == 0)
           iter->set_iter(i, new SCMatrixNullSubblockIter(access));
       else
           iter->set_iter(i, block(i)->all_blocks(access));

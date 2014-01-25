@@ -80,7 +80,7 @@ MBPT2_R12::compute_energy_()
   }
 #endif
 
-  if (r12eval_.null()) {
+  if (r12eval_ == 0) {
     // since r12intevalinfo uses this class' KeyVal to initialize, dynamic is set automatically
     r12world->world()->print_percent(print_percent_);
     r12eval_ = new R12IntEval(r12world_);
@@ -115,7 +115,7 @@ MBPT2_R12::compute_energy_()
     if (r12tech->stdapprox() == R12Technology::StdApprox_Ap ||
         r12tech->stdapprox() == R12Technology::StdApprox_B) {
       Timer tim2("mp2-r12/a' pair energies");
-      if (r12ap_energy_.null()){
+      if (r12ap_energy_ == 0){
         r12intermediates=new R12EnergyIntermediates(r12eval_,R12Technology::StdApprox_Ap);
         r12ap_energy_ = construct_MP2R12Energy(r12intermediates,
                                                compute_obs_singles_separately,
@@ -131,7 +131,7 @@ MBPT2_R12::compute_energy_()
     // MP2-R12/B
     if (r12tech->stdapprox() == R12Technology::StdApprox_B) {
       Timer tim2("mp2-r12/b pair energies");
-      if (r12b_energy_.null()){
+      if (r12b_energy_ == 0){
         r12intermediates=new R12EnergyIntermediates(r12eval_,R12Technology::StdApprox_B);
         r12b_energy_ = construct_MP2R12Energy(r12intermediates,
                                               compute_obs_singles_separately,
@@ -147,7 +147,7 @@ MBPT2_R12::compute_energy_()
     // MP2-R12/A''
     if (r12tech->stdapprox() == R12Technology::StdApprox_App) {
       Timer tim2("mp2-r12/a'' pair energies");
-      if (r12app_energy_.null()){
+      if (r12app_energy_ == 0){
         r12intermediates=new R12EnergyIntermediates(r12eval_,R12Technology::StdApprox_App);
         r12app_energy_ = construct_MP2R12Energy(r12intermediates,
                                                 compute_obs_singles_separately,
@@ -166,7 +166,7 @@ MBPT2_R12::compute_energy_()
   if (r12tech->stdapprox() == R12Technology::StdApprox_C ||
       r12tech->stdapprox() == R12Technology::StdApprox_Cp) {
     Timer tim2("mp2-r12/c pair energies");
-    if (r12c_energy_.null()){
+    if (r12c_energy_ == 0){
       r12intermediates=new R12EnergyIntermediates(r12eval_,r12tech->stdapprox());
       r12c_energy_ = construct_MP2R12Energy(r12intermediates,
                                             compute_obs_singles_separately,
@@ -189,7 +189,7 @@ MBPT2_R12::compute_energy_()
                             *ref_to_mp2r12_acc());
 
 #if MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION
-  if (twopdm_grid_.nonnull()) {
+  if (twopdm_grid_) {
     Ref<MP2R12Energy> wfn_to_plot;
     switch(r12tech->stdapprox()) {
       case R12Technology::StdApprox_Ap:   wfn_to_plot = r12ap_energy_;  break;

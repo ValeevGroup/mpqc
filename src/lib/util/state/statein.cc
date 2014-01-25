@@ -70,7 +70,7 @@ StateIn::~StateIn()
 int
 StateIn::push_key(const char *keyword)
 {
-  if (!keyword || override_.null()) return keylength_;
+  if (!keyword || override_ == 0) return keylength_;
 
   int length = strlen(keyword);
   if (keylength_ + length + 1 >= KeyVal::MaxKeywordLength) {
@@ -156,7 +156,7 @@ int
 StateIn::get(char&r, const char *keyword)
 {
   int n = get_array_char(&r,1);
-  if (keyword && override().nonnull()) {
+  if (keyword && override()) {
       int p = push_key(keyword);
       char roverride = override()->charvalue(key());
       if (override()->error() == KeyVal::OK) {
@@ -173,7 +173,7 @@ int
 StateIn::get(unsigned int&r, const char *keyword)
 {
   int n = get_array_uint(&r,1);
-  if (keyword && override().nonnull()) {
+  if (keyword && override()) {
       int p = push_key(keyword);
       int roverride = override()->intvalue(key());
       if (override()->error() == KeyVal::OK) {
@@ -190,7 +190,7 @@ int
 StateIn::get(int&r, const char *keyword)
 {
   int n = get_array_int(&r,1);
-  if (keyword && override().nonnull()) {
+  if (keyword && override()) {
       int p = push_key(keyword);
       int roverride = override()->intvalue(key());
       if (override()->error() == KeyVal::OK) {
@@ -207,7 +207,7 @@ int
 StateIn::get(unsigned long int&r, const char *keyword)
 {
   int n = get_array_ulong(&r,1);
-  if (keyword && override().nonnull()) {
+  if (keyword && override()) {
       int p = push_key(keyword);
       long roverride = override()->longvalue(key());
       if (override()->error() == KeyVal::OK) {
@@ -224,7 +224,7 @@ int
 StateIn::get(long int&r, const char *keyword)
 {
   int n = get_array_long(&r,1);
-  if (keyword && override().nonnull()) {
+  if (keyword && override()) {
       int p = push_key(keyword);
       long roverride = override()->longvalue(key());
       if (override()->error() == KeyVal::OK) {
@@ -250,7 +250,7 @@ int
 StateIn::get(float&r, const char *keyword)
 {
   int n = get_array_float(&r,1);
-  if (keyword && override().nonnull()) {
+  if (keyword && override()) {
       int p = push_key(keyword);
       float roverride = override()->floatvalue(key());
       if (override()->error() == KeyVal::OK) {
@@ -267,7 +267,7 @@ int
 StateIn::get(double&r, const char *keyword)
 {
   int n = get_array_double(&r,1);
-  if (keyword && override().nonnull()) {
+  if (keyword && override()) {
       int p = push_key(keyword);
       double roverride = override()->doublevalue(key());
       if (override()->error() == KeyVal::OK) {
@@ -638,7 +638,7 @@ StateIn::dir_getobject(Ref<SavableState> &p, const char *name)
   for (i=ps_.begin(); i!=ps_.end(); i++) {
       if (classid == -1 || i->second.type == classid) nfound++;
       if (nfound == number) {
-          if (i->second.ptr.nonnull()) {
+          if (i->second.ptr) {
               p = i->second.ptr;
             }
           else {
@@ -681,7 +681,7 @@ StateIn::getobject(Ref<SavableState> &p)
                << refnum << endl;
           abort();
         }
-      if (ind == ps_.end() || ind->second.ptr.null()) {
+      if (ind == ps_.end() || ind->second.ptr == 0) {
 #if DEBUG
           ExEnv::outn() << indent << "reading object" << endl;
 #endif

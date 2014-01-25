@@ -29,7 +29,7 @@ static ClassDesc MP2_cd(typeid(MP2), "MP2", 1, "public Wavefunction",
 
 MP2::MP2(const Ref<KeyVal> &keyval):Wavefunction(keyval) {
   ref_mp2_wfn_ << keyval->describedclassvalue("reference");
-  if(ref_mp2_wfn_.null()) {
+  if(ref_mp2_wfn_ == 0) {
       throw InputError("require a OneBodyWavefunction object",
                        __FILE__, __LINE__, "reference", 0,
                        class_desc());

@@ -304,7 +304,7 @@ OSSSCF::set_occupations(const RefDiagSCMatrix& ev)
 
   RefDiagSCMatrix evals;
 
-  if (ev.null()) {
+  if (ev == 0) {
     initial_vector();
     evals = eigenvalues_.result_noupdate();
   }
@@ -473,7 +473,7 @@ OSSSCF::init_vector()
   op_gmatb_.assign(0.0);
 
   // test to see if we need a guess vector.
-  if (cl_fock_.result_noupdate().null()) {
+  if (cl_fock_.result_noupdate() == 0) {
     cl_fock_ = hcore_.clone();
     cl_fock_.result_noupdate().assign(0.0);
     op_focka_ = hcore_.clone();
@@ -678,7 +678,7 @@ OSSSCF::effective_fock()
 
   // use eigenvectors if oso_scf_vector_ is null
   RefSCMatrix vec;
-  if (oso_scf_vector_.null()) {
+  if (oso_scf_vector_ == 0) {
     vec = eigenvectors();
   } else {
     vec = so_to_orthog_so().t() * oso_scf_vector_;

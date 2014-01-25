@@ -84,7 +84,7 @@ DistSCVector::find_element(int i) const
   d->blocks()->elem_to_block(i, bi, oi);
 
   Ref<SCVectorSimpleBlock> blk; blk << block_to_block(bi);
-  if (blk.nonnull()) {
+  if (blk) {
       return &blk->dat()[oi];
     }
   else {
@@ -258,7 +258,7 @@ DistSCVector::assign_p(const double*a)
        I!=blocklist->end();
        I++) {
       Ref<SCVectorSimpleBlock> b = dynamic_cast<SCVectorSimpleBlock*>(I.block());
-      if (b.null()) {
+      if (b == 0) {
           ExEnv::errn() << indent << "DistSCVector::assign "
                << "mismatch: internal error" << endl;
           abort();

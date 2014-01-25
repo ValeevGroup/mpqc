@@ -353,7 +353,7 @@ TCSCF::set_occupations(const RefDiagSCMatrix& ev)
 
   RefDiagSCMatrix evals;
 
-  if (ev.null()) {
+  if (ev == 0) {
     initial_vector();
     evals = eigenvalues_.result_noupdate();
   }
@@ -531,7 +531,7 @@ TCSCF::init_vector()
   ao_kb_.assign(0.0);
 
   // test to see if we need a guess vector
-  if (focka_.result_noupdate().null()) {
+  if (focka_.result_noupdate() == 0) {
     focka_ = hcore_.clone();
     focka_.result_noupdate().assign(0.0);
     fockb_ = hcore_.clone();
@@ -786,7 +786,7 @@ TCSCF::effective_fock()
 
   // use eigenvectors if oso_scf_vector_ is null
   RefSCMatrix vec;
-  if (oso_scf_vector_.null()) {
+  if (oso_scf_vector_ == 0) {
     vec = eigenvectors();
   } else {
     vec = so_to_orthog_so().t() * oso_scf_vector_;

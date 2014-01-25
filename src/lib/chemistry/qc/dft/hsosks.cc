@@ -73,10 +73,10 @@ HSOSKS::HSOSKS(const Ref<KeyVal>& keyval) :
 {
   exc_=0;
   integrator_ << keyval->describedclassvalue("integrator");
-  if (integrator_.null()) integrator_ = new RadialAngularIntegrator();
+  if (integrator_ == 0) integrator_ = new RadialAngularIntegrator();
 
   functional_ << keyval->describedclassvalue("functional");
-  if (functional_.null()) {
+  if (functional_ == 0) {
     ExEnv::outn() << "ERROR: " << class_name() << ": no \"functional\" given" << endl;
     abort();
   }
@@ -144,7 +144,7 @@ HSOSKS::effective_fock()
   mofocko.assign(0.0);
 
   // use eigenvectors if oso_scf_vector_ is null
-  if (oso_scf_vector_.null()) {
+  if (oso_scf_vector_ == 0) {
     mofock.accumulate_transform(eigenvectors(), fock(0)+cl_vxc(),
                                 SCMatrix::TransposeTransform);
     mofocko.accumulate_transform(eigenvectors(), fock(1)+op_vxc(),

@@ -59,7 +59,7 @@ do_main(const Ref<KeyVal>& rpkv, const Ref<RegionTimer>& tim)
   Ref<ETraIn> etrain;
   etrain << rpkv->describedclassvalue(keyword);
   tim->exit("input");
-  if (etrain.null())
+  if (etrain == 0)
       throw InputError("ETraIn object not found in the input",__FILE__,__LINE__);
 
   const double tmp = etrain->value();
@@ -76,18 +76,18 @@ init(int argc, char** argv, const char* input, const char* output, const Ref<Key
 
   // if we still don't have a group, try reading the thread group
   // from the input
-  if (thrgrp.null()) {
+  if (thrgrp == 0) {
     thrgrp << keyval->describedclassvalue("threadgrp");
   }
 
-  if (thrgrp.nonnull())
+  if (thrgrp)
     ThreadGrp::set_default_threadgrp(thrgrp);
   else
     thrgrp = ThreadGrp::get_default_threadgrp();
 
   Ref<MessageGrp> msggrp = MessageGrp::initial_messagegrp(argc, argv);
-  if (msggrp.null()) msggrp << keyval->describedclassvalue("messagegrp");
-  if (msggrp.nonnull())
+  if (msggrp == 0) msggrp << keyval->describedclassvalue("messagegrp");
+  if (msggrp)
     MessageGrp::set_default_messagegrp(msggrp);
   else
     msggrp = MessageGrp::get_default_messagegrp();
@@ -101,10 +101,10 @@ init(int argc, char** argv, const char* input, const char* output, const Ref<Key
   Ref<Integral> integral = Integral::initial_integral(argc, argv);
   // if we still don't have a integral, try reading the integral
   // from the input
-  if (integral.null()) {
+  if (integral == 0) {
     integral << keyval->describedclassvalue("integrals");
   }
-  if (integral.nonnull())
+  if (integral)
     Integral::set_default_integral(integral);
   else
     integral = Integral::get_default_integral();
@@ -115,7 +115,7 @@ init(int argc, char** argv, const char* input, const char* output, const Ref<Key
 
   Ref<Debugger> debugger; debugger << keyval->describedclassvalue("debug");
   // Let the debugger know the name of the executable and the node
-  if (debugger.nonnull()) {
+  if (debugger) {
     debugger->set_exec("mpqc-test");
     debugger->set_prefix(msggrp->me());
     debugger->debug("curt is a hog");

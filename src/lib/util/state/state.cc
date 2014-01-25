@@ -114,10 +114,10 @@ SavableState::dir_restore_state(StateIn&si, const char *objectname,
   Ref<SavableState> overriding_value;
   int p = si.push_key(keyword);
   const int can_override_objects = 0;
-  if (can_override_objects && keyword && si.override().nonnull()) {
+  if (can_override_objects && keyword && si.override()) {
       overriding_value << si.override()->describedclassvalue(si.key());
       old_override = si.override();
-      if (overriding_value.nonnull()) {
+      if (overriding_value) {
           si.set_override(0);
         }
     }
@@ -125,10 +125,10 @@ SavableState::dir_restore_state(StateIn&si, const char *objectname,
   Ref<SavableState> ss;
   if (objectname) si.dir_getobject(ss, objectname);
   else si.getobject(ss);
-  if (overriding_value.nonnull()) {
+  if (overriding_value) {
       ExEnv::out0() << indent
            << "overriding \"" << si.key() << "\": object of type ";
-      if (ss.null()) ExEnv::out0() << "(null)";
+      if (ss == 0) ExEnv::out0() << "(null)";
       else ExEnv::out0() << ss->class_name();
       ExEnv::out0() << " -> object of type "
            << overriding_value->class_name()
@@ -141,7 +141,7 @@ SavableState::dir_restore_state(StateIn&si, const char *objectname,
       ss = 0;
       ret->dereference();
     }
-  if (old_override.nonnull()) {
+  if (old_override) {
       si.set_override(old_override);
     }
   si.pop_key(p);

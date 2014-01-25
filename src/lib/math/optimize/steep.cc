@@ -154,7 +154,7 @@ SteepestDescentOpt::update()
   // be smaller
   accuracy_ = maxabs_gradient * maxabs_gradient_to_next_desired_accuracy;
   
-  if (!take_newton_step_ && lineopt_.nonnull()) {
+  if (!take_newton_step_ && lineopt_) {
       // see if the line min step is really needed
 //       if (line min really needed) {
 //           take_newton_step_ = (lineopt_->update() == 1);
@@ -207,7 +207,7 @@ SteepestDescentOpt::update()
   function()->set_x(xnext);
 
   // do a line min step next time
-  if (lineopt_.nonnull()) take_newton_step_ = 0;
+  if (lineopt_) take_newton_step_ = 0;
 
   return conv_->converged();
 }
@@ -226,7 +226,7 @@ SteepestDescentOpt::print(std::ostream&o) const
     << indent << "print_gradient   = " << print_gradient_
     << std::endl;
 
-  if (lineopt_.null()) {
+  if (lineopt_ == 0) {
     o << indent << "lineopt          = 0 (line optimization will not be performed)"
       << std::endl;
   }

@@ -55,9 +55,9 @@ Int2eLibint2::Int2eLibint2(Integral *integral,
   bs3_ = b3;
   bs4_ = b4;
 
-  if (bs2_.null()) bs2_ = bs1_;
-  if (bs3_.null()) bs3_ = bs2_;
-  if (bs4_.null()) bs4_ = bs3_;
+  if (bs2_ == 0) bs2_ = bs1_;
+  if (bs3_ == 0) bs3_ = bs2_;
+  if (bs4_ == 0) bs4_ = bs3_;
 
   /*--- Initialize storage ---*/
   init_storage(storage);
@@ -125,11 +125,11 @@ Int2eLibint2::storage_required_(const Ref<GaussianBasisSet>& b1,
   Ref<GaussianBasisSet> bs3 = b3;
   Ref<GaussianBasisSet> bs4 = b4;
 
-  if (bs2.null())
+  if (bs2 == 0)
     bs2 = bs1;
-  if (bs3.null())
+  if (bs3 == 0)
     bs3 = bs1;
-  if (bs4.null())
+  if (bs4 == 0)
     bs4 = bs1;
 
   if (bs1->has_pure() || bs2->has_pure() || bs3->has_pure() || bs4->has_pure() ||
@@ -172,7 +172,7 @@ Int2eLibint2::storage_required_(const Ref<GaussianBasisSet>& b1,
 int
 Int2eLibint2::log2_bound(int s1, int s2, int s3, int s4)
 {
-    if (bounds_.nonnull())
+    if (bounds_)
 	return bounds_->log2_bound(s1,s2,s3,s4);
     else
 	// 2^256 ~ 10^26

@@ -205,7 +205,7 @@ GDIISOpt::update()
   }
 
   // update the hessian
-  if (update_.nonnull()) {
+  if (update_) {
     update_->update(ihessian_,function(),xcurrent,gcurrent);
   }
 
@@ -367,7 +367,7 @@ GDIISOpt::print(std::ostream&o) const
     << indent << "ngdiis           = " << nsave
     << std::endl;
 
-  if (update_.null()) {
+  if (update_ == 0) {
     o << indent << "update           = 0 (hessian updates will not be performed)"
       << std::endl;
   }

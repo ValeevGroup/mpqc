@@ -53,7 +53,7 @@ BEMSolvent::BEMSolvent(const Ref<KeyVal>& keyval)
 
   solvent_ << keyval->describedclassvalue("solvent");
   // Use the aug-cc-pVQZ MP2 optimum geometry for H2O as default
-  if (solvent_.null()) {
+  if (solvent_ == 0) {
       solvent_ = new Molecule;
       solvent_->add_atom(8, 0.0000000000,  0.0000000000, -0.1265941233);
       solvent_->add_atom(1, 0.0000000000,  1.4304840085,  0.9856159541);
@@ -349,7 +349,7 @@ BEMSolvent::compute_charges(double* efield_dot_normals, double* charges)
 {
   Timer tim;
 
-  if (system_matrix_i_.null()) {
+  if (system_matrix_i_ == 0) {
       tim.enter("sysmat");
       init_system_matrix();
       tim.exit("sysmat");

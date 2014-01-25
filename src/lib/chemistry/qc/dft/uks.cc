@@ -70,10 +70,10 @@ UKS::UKS(const Ref<KeyVal>& keyval) :
 {
   exc_=0;
   integrator_ << keyval->describedclassvalue("integrator");
-  if (integrator_.null()) integrator_ = new RadialAngularIntegrator();
+  if (integrator_ == 0) integrator_ = new RadialAngularIntegrator();
 
   functional_ << keyval->describedclassvalue("functional");
-  if (functional_.null()) {
+  if (functional_ == 0) {
     ExEnv::outn() << "ERROR: " << class_name() << ": no \"functional\" given" << endl;
     abort();
   }

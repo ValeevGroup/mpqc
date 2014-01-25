@@ -41,9 +41,9 @@ UncontractedBasisSet::UncontractedBasisSet(const Ref<KeyVal>&keyval)
 {
   Ref<GaussianBasisSet> basis;
   basis << keyval->describedclassvalue("basis");
-  if (basis.null()) {
+  if (basis == 0) {
     basis = new GaussianBasisSet(keyval);
-    if (basis.null())
+    if (basis == 0)
       throw InputError("could not construct a GaussianBasisSet",
                        __FILE__, __LINE__,
                        "basis", 0, class_desc());

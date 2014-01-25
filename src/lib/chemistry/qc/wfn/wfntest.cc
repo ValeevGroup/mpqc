@@ -126,7 +126,7 @@ main(int argc, char *argv[])
 
   Ref<OneBodyWavefunction> wfn;
   wfn << rpkv->describedclassvalue("wavefunction");
-  if (wfn.null()) {
+  if (wfn == 0) {
     ExEnv::err0() << "wfn is null\n";
     exit(1);
   }

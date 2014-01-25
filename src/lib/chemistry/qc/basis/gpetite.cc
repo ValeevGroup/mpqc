@@ -245,7 +245,7 @@ sc::symmetrize(const Ref<GPetiteList2>& plist12,
 
   // SO basis is always blocked, so first make sure skel is blocked
   RefSymmSCMatrix bskel = dynamic_cast<BlockedSymmSCMatrix*>(skel.pointer());
-  if (bskel.null()) {
+  if (bskel == 0) {
     bskel = bs1->so_matrixkit()->symmmatrix(pl1->AO_basisdim());
     bskel->convert(skel);
   }
@@ -260,7 +260,7 @@ sc::symmetrize(const Ref<GPetiteList2>& plist12,
   RefSCMatrix aoso = pl1->aotoso();
   BlockedSCMatrix *lu = dynamic_cast<BlockedSCMatrix*>(aoso.pointer());
   for (int b=0; b < lu->nblocks(); b++) {
-    if (lu->block(b).null())
+    if (lu->block(b) == 0)
       continue;
 
     const int ir = ct.which_irrep(b);
@@ -277,7 +277,7 @@ sc::symmetrize(const Ref<GPetiteList2>& plist12,
   // loop through blocks and finish symmetrizing degenerate blocks
   BlockedSymmSCMatrix *la = dynamic_cast<BlockedSymmSCMatrix*>(sym.pointer());
   for (int b=0; b < la->nblocks(); b++) {
-    if (la->block(b).null())
+    if (la->block(b) == 0)
       continue;
 
     const int ir=ct.which_irrep(b);
@@ -339,7 +339,7 @@ sc::symmetrize(const Ref<GPetiteList2>& plist12,
 
   // SO basis is always blocked, so first make sure skel is blocked
   RefSCMatrix bskel = dynamic_cast<BlockedSCMatrix*>(skel.pointer());
-  if (bskel.null()) {
+  if (bskel == 0) {
     bskel = bs1->so_matrixkit()->matrix(pl1->AO_basisdim(),pl2->AO_basisdim());
     bskel->convert(skel);
   }
@@ -354,7 +354,7 @@ sc::symmetrize(const Ref<GPetiteList2>& plist12,
   RefSCMatrix aoso1 = pl1->aotoso();
   BlockedSCMatrix *lu1 = dynamic_cast<BlockedSCMatrix*>(aoso1.pointer());
   for (int b=0; b < lu1->nblocks(); b++) {
-    if (lu1->block(b).null())
+    if (lu1->block(b) == 0)
       continue;
 
     const int ir = ct.which_irrep(b);
@@ -366,7 +366,7 @@ sc::symmetrize(const Ref<GPetiteList2>& plist12,
   RefSCMatrix aoso2 = pl2->aotoso();
   BlockedSCMatrix *lu2 = dynamic_cast<BlockedSCMatrix*>(aoso2.pointer());
   for (int b=0; b < lu2->nblocks(); b++) {
-    if (lu2->block(b).null())
+    if (lu2->block(b) == 0)
       continue;
 
     const int ir = ct.which_irrep(b);
@@ -386,7 +386,7 @@ sc::symmetrize(const Ref<GPetiteList2>& plist12,
   // loop through blocks and finish symmetrizing degenerate blocks
   BlockedSCMatrix *la = dynamic_cast<BlockedSCMatrix*>(sym.pointer());
   for (int b=0; b < la->nblocks(); b++) {
-    if (la->block(b).null())
+    if (la->block(b) == 0)
       continue;
 
     const int ir=ct.which_irrep(b);

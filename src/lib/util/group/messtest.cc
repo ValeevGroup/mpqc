@@ -127,7 +127,7 @@ main(int argc, char**argv)
 
   Ref<Debugger> debugger;
 
-  if (grp.null()) {
+  if (grp == 0) {
       const char* input = SRCDIR "/messtest.in";
       const char* keyword = "message";
 
@@ -140,13 +140,13 @@ main(int argc, char**argv)
 
       debugger << keyval->describedclassvalue(":debug");
 
-      if (grp.null()) {
+      if (grp == 0) {
           cerr << scprintf("Couldn't initialize MessageGrp\n");
           abort();
         }
     }
 
-  if (debugger.nonnull()) {
+  if (debugger) {
       debugger->set_exec(argv[0]);
       debugger->set_prefix(grp->me());
     }
@@ -160,7 +160,7 @@ main(int argc, char**argv)
       bc.flush();
     }
   grp->sync();
-  if (debugger.nonnull()) {
+  if (debugger) {
       debugger->set_exec(argv[0]);
       debugger->set_prefix(grp->me());
       debugger->traceback();

@@ -70,7 +70,7 @@ TriangulatedSurface::TriangulatedSurface(const Ref<KeyVal>& keyval):
   _debug = keyval->booleanvalue("debug");
   Ref<TriangleIntegrator> triint;
   triint << keyval->describedclassvalue("integrator");
-  if (triint.null()) {
+  if (triint == 0) {
       triint = new GaussTriangleIntegrator(1);
     }
   set_integrator(triint);
@@ -145,14 +145,14 @@ Ref<TriangleIntegrator>
 TriangulatedSurface::fast_integrator(int)
 {
   // currently the argument, the integer index of the triangle, is ignored
-  return _fast_integrator.null()?_integrator:_fast_integrator;
+  return _fast_integrator == 0?_integrator:_fast_integrator;
 }
 
 Ref<TriangleIntegrator>
 TriangulatedSurface::accurate_integrator(int)
 {
   // currently the argument, the integer index of the triangle, is ignored
-  return _accurate_integrator.null()?_integrator:_accurate_integrator;
+  return _accurate_integrator == 0?_integrator:_accurate_integrator;
 }
 
 void
@@ -468,17 +468,17 @@ TriangulatedSurface::add_triangle(const Ref<Vertex>& v1,
         }
     }
 
-  if (e0.null()) {
+  if (e0 == 0) {
       e0 = newEdge(v1,v2);
       _tmp_edges[v1].insert(e0);
       _tmp_edges[v2].insert(e0);
     }
-  if (e1.null()) {
+  if (e1 == 0) {
       e1 = newEdge(v2,v3);
       _tmp_edges[v2].insert(e1);
       _tmp_edges[v3].insert(e1);
     }
-  if (e2.null()) {
+  if (e2 == 0) {
       e2 = newEdge(v3,v1);
       _tmp_edges[v3].insert(e2);
       _tmp_edges[v1].insert(e2);
@@ -807,7 +807,7 @@ TriangulatedSurfaceIntegrator::
   int n = (_ts.pointer()->*_integrator)(_itri)->n();
   if (_irs == n-1) {
       _irs = 0;
-      if (_grp.null()) _itri++;
+      if (_grp == 0) _itri++;
       else _itri += _grp->n();
     }
   else {

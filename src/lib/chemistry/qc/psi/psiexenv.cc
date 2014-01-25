@@ -61,7 +61,7 @@ Ref<PsiExEnv> PsiExEnv::default_instance_ = 0;
 
 const Ref<PsiExEnv>&
 PsiExEnv::get_default_instance() {
-  if (default_instance_.null())
+  if (default_instance_ == 0)
     default_instance_ = new PsiExEnv;
   return default_instance_;
 }
@@ -201,7 +201,7 @@ void PsiExEnv::add_to_path(const string& dir)
 
 Ref<PsiInput>
 PsiExEnv::get_psi_input() {
-  if (psiinput_.null()) {
+  if (psiinput_ == 0) {
     char *s = new char[cwd_.size() + inputname_.size() + 2];
     sprintf(s,"%s/%s",cwd_.c_str(),inputname_.c_str());
     psiinput_ = new PsiInput(s);
@@ -212,7 +212,7 @@ PsiExEnv::get_psi_input() {
 
 Ref<PsiFile11>
 PsiExEnv::get_psi_file11() {
-  if (psifile11_.null()) {
+  if (psifile11_ == 0) {
     char* s = new char[cwd_.size() + fileprefix_.size() + file11name_.size() + 3];
     sprintf(s,"%s/%s.%s",cwd_.c_str(),fileprefix_.c_str(),file11name_.c_str());
     psifile11_ = new PsiFile11(s);
@@ -241,7 +241,7 @@ void PsiExEnv::run_psi_module(const char *module, const std::vector<std::string>
   if (me_ != 0) return;
 
   // can't run unless input file has been created
-  if (psiinput_.null()) throw ProgrammingError("input file has not been created",
+  if (psiinput_ == 0) throw ProgrammingError("input file has not been created",
                                                __FILE__, __LINE__,
                                                class_desc());
 
@@ -333,7 +333,7 @@ void PsiExEnv::run_psiclean(bool fullclean)
   if (me_ != 0) return;
 
   // can't run unless input file has been created
-  if (psiinput_.nonnull())
+  if (psiinput_)
     psio_.purge(fullclean);
 }
 
@@ -482,7 +482,7 @@ PsiChkpt::coefs(SpinCase1 spin,
     BlockedSCMatrix* coefs_mpqc_blkd = require_dynamic_cast<BlockedSCMatrix*>(coefs_mpqc.pointer(),name);
     for (unsigned int h=0; h<nirrep; ++h) {
       RefSCMatrix coefs_mpqc_blk = coefs_mpqc_blkd->block(h);
-      if (coefs_mpqc_blk.null()) continue;
+      if (coefs_mpqc_blk == 0) continue;
       RefSCMatrix coefs_psi_blk = coefs_psi_blkd->block(h);
 
       for (unsigned int aopsi=0; aopsi<nao; ++aopsi) {
@@ -519,7 +519,7 @@ PsiChkpt::coefs(SpinCase1 spin,
         // in each block
         for (unsigned int h=0; h<nirrep; ++h) {
           RefSCMatrix coefs_blk = coefs_blkd->block(h);
-          if (coefs_blk.null()) continue;
+          if (coefs_blk == 0) continue;
           const int ncol = coefs_blk.coldim().n();
           // transform each vector
           for(int col=0; col<ncol; ++col) {

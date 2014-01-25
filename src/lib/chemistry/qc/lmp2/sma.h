@@ -1700,7 +1700,7 @@ namespace sma2 {
         }
         /** Returns the number of elements contained in blocks. */
         size_t n_element_allocated() const {
-          if (data_.null()) return 0;
+          if (data_ == 0) return 0;
           return data_->ndata();
         }
         std::string name() const { return name_; }

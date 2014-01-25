@@ -159,9 +159,9 @@ Int2eV3::compute_erep(int flags, int *psh1, int *psh2, int *psh3, int *psh4,
     ExEnv::errn() << scprintf("compute_erep has been incorrectly used\n");
     ExEnv::errn() << scprintf("shells (bounds): %d (%d), %d (%d), %d (%d), %d (%d)\n",
             sh1,bs1_->nbasis()-1,
-            sh2,(bs2_.null()?0:bs2_->nbasis())-1,
+            sh2,(bs2_ == 0?0:bs2_->nbasis())-1,
             sh3,bs3_->nbasis()-1,
-            sh4,(bs4_.null()?0:bs4_->nbasis())-1);
+            sh4,(bs4_ == 0?0:bs4_->nbasis())-1);
     fail();
     }
 

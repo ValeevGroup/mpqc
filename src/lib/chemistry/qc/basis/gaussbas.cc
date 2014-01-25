@@ -102,7 +102,7 @@ GaussianBasisSet::GaussianBasisSet()
 GaussianBasisSet::GaussianBasisSet(const Ref<KeyVal>&topkeyval)
 {
   molecule_ << topkeyval->describedclassvalue("molecule");
-  if (molecule_.null()) {
+  if (molecule_ == 0) {
       throw InputError("GaussianBasisSet: no molecule specified",
                        __FILE__, __LINE__, "molecule", 0);
     }
@@ -157,7 +157,7 @@ GaussianBasisSet::unit()
 {
   static Ref<GaussianBasisSet> unit_;
 
-  if (unit_.null()) {
+  if (unit_ == 0) {
     // make a Molecule composed of 1 classical zero charge at the origin
     Ref<Molecule> molecule = new Molecule;
     molecule->add_atom(molecule->atominfo()->string_to_Z("Q"),
@@ -553,10 +553,10 @@ GaussianBasisSet::init2(int skip_ghosts,bool include_q)
   for(int i=0; i<nshell(); i++)
     has_pure_ = has_pure_ || shells_[i].has_pure();
 
-  if (matrixkit_.null())
+  if (matrixkit_ == 0)
     matrixkit_ = SCMatrixKit::default_matrixkit();
   so_matrixkit_ = new BlockedSCMatrixKit(matrixkit_);
-  if (basisdim_.null()) {
+  if (basisdim_ == 0) {
     int nb = nshell();
     int *bs = new int[nb];
     for (int s=0; s < nb; s++)

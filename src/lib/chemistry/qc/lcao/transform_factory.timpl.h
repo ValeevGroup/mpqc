@@ -45,14 +45,14 @@ namespace sc {
           const std::string& name,
           const Ref<TwoBodyIntDescr>& descrarg) {
         Ref<TwoBodyMOIntsTransform> result;
-        const Ref<TwoBodyIntDescr> descr = (descrarg.null() ? factory->tbintdescr() : descrarg);
+        const Ref<TwoBodyIntDescr> descr = (descrarg == 0 ? factory->tbintdescr() : descrarg);
         result = new TransformType(name,factory,descr,
                                    factory->space1_,
                                    factory->space2_,
                                    factory->space3_,
                                    factory->space4_);
 
-        if (factory->top_mole_.nonnull())
+        if (factory->top_mole_)
           result->set_top_mole(factory->top_mole_);
         result->set_debug(factory->debug());
 
@@ -67,14 +67,14 @@ namespace sc {
           const std::string& name,
           const Ref<TwoBodyIntDescr>& descrarg) {
         Ref<TwoBodyMOIntsTransform> result;
-        const Ref<TwoBodyIntDescr> descr = (descrarg.null() ? factory->tbintdescr() : descrarg);
+        const Ref<TwoBodyIntDescr> descr = (descrarg == 0 ? factory->tbintdescr() : descrarg);
         result = new TransformType(name,factory->df_info(),descr,
                                    factory->space1_,
                                    factory->space2_,
                                    factory->space3_,
                                    factory->space4_);
 
-        if (factory->top_mole_.nonnull())
+        if (factory->top_mole_)
           result->set_top_mole(factory->top_mole_);
         result->set_debug(factory->debug());
 
@@ -135,7 +135,7 @@ namespace sc {
                       const Ref<TwoBodyThreeCenterIntDescr>& descrarg) {
     Ref<TwoBodyThreeCenterMOIntsTransform> result = new TransformType(name,this,descrarg,space1_,space2_,space3_);
 #if 0
-    if (top_mole_.nonnull())
+    if (top_mole_)
       result->set_top_mole(top_mole_);
 #endif
     return result;

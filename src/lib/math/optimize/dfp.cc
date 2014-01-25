@@ -102,7 +102,7 @@ DFPUpdate::update(const RefSymmSCMatrix&ihessian,const Ref<Function>&func,
     gnew = xn;
   }
   
-  if (xprev.nonnull()) {
+  if (xprev) {
     RefSCVector xdisp = xnew-xprev;
     RefSCVector gdisp = gnew-gprev;
     RefSCVector ihessian_gdisp = ihessian * gdisp;
@@ -123,7 +123,7 @@ DFPUpdate::update(const RefSymmSCMatrix&ihessian,const Ref<Function>&func,
 void
 DFPUpdate::apply_transform(const Ref<NonlinearTransform>& trans)
 {
-  if (trans.null()) return;
+  if (trans == 0) return;
   HessianUpdate::apply_transform(trans);
   trans->transform_coordinates(xprev);
   trans->transform_gradient(gprev);
@@ -187,7 +187,7 @@ BFGSUpdate::update(const RefSymmSCMatrix&ihessian,const Ref<Function>&func,
     gnew = xn;
   }
   
-  if (xprev.nonnull()) {
+  if (xprev) {
     RefSCVector xdisp = xnew-xprev;
     RefSCVector gdisp = gnew-gprev;
     RefSCVector ihessian_gdisp = ihessian * gdisp;

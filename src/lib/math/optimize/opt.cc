@@ -89,7 +89,7 @@ Optimize::Optimize(const Ref<KeyVal>&keyval)
   if (keyval->error() != KeyVal::OK) max_stepsize_ = 0.6;
 
   function_ << keyval->describedclassvalue("function");
-//  if (function_.null()) {
+//  if (function_ == 0) {
 //      ExEnv::err0() << "Optimize requires a function keyword" << endl;
 //      ExEnv::err0() << "which is an object of type Function" << endl;
 //      abort();
@@ -97,13 +97,13 @@ Optimize::Optimize(const Ref<KeyVal>&keyval)
 // can't assume lineopt's have a function keyword
 
   conv_ << keyval->describedclassvalue("convergence");
-  if (conv_.null()) {
+  if (conv_ == 0) {
       double convergence = keyval->doublevalue("convergence");
       if (keyval->error() == KeyVal::OK) {
           conv_ = new Convergence(convergence);
         }
     }
-  if (conv_.null()) conv_ = new Convergence();
+  if (conv_ == 0) conv_ = new Convergence();
 }
 
 Optimize::~Optimize()
@@ -201,7 +201,7 @@ Optimize::print(std::ostream& o) const
   o << indent << "max_iterations = " << max_iterations_ << std::endl;
   o << indent << "max_stepsize   = " << max_stepsize_ << std::endl;
 
-  if (conv_.nonnull()) {
+  if (conv_) {
       o << indent << "convergence    = " << std::endl;
       o << incindent;
       conv_->print(o);
@@ -250,7 +250,7 @@ LineOpt::save_data_state(StateOut&s)
 void
 LineOpt::init(RefSCVector& direction)
 {
-  if (function().null()) {
+  if (function() == 0) {
       ExEnv::err0() << "LineOpt requires a function object through" << endl;
       ExEnv::err0() << "constructor or init method" << endl;
       abort();
@@ -272,7 +272,7 @@ LineOpt::init(RefSCVector& direction, Ref<Function> function )
 void
 LineOpt::apply_transform(const Ref<NonlinearTransform> &t)
 {
-  if (t.null()) return;
+  if (t == 0) return;
   apply_transform(t);
   t->transform_gradient(search_direction_);
 }

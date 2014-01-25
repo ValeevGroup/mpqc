@@ -62,7 +62,7 @@ VDWShape::initialize(const Ref<Molecule>&mol,
                      double radius_scale_factor)
 {
   Ref<AtomInfo> a;
-  if (atominfo_.null()) a = mol->atominfo();
+  if (atominfo_ == 0) a = mol->atominfo();
   else a = atominfo_;
 
   _shapes.clear();
@@ -117,7 +117,7 @@ DiscreteConnollyShape::initialize(const Ref<Molecule>&mol,double probe_radius)
   std::vector<Ref<SphereShape> > spheres(0);
 
   Ref<AtomInfo> a;
-  if (atominfo_.null()) a = mol->atominfo();
+  if (atominfo_ == 0) a = mol->atominfo();
   else a = atominfo_;
 
   int i;
@@ -141,7 +141,7 @@ DiscreteConnollyShape::initialize(const Ref<Molecule>&mol,double probe_radius)
             UncappedTorusHoleShape::newUncappedTorusHoleShape(probe_radius,
                                               *(spheres[i].pointer()),
                                               *(spheres[j].pointer()));
-          if (th.null()) continue;
+          if (th == 0) continue;
           add_shape(th);
 
           ////////////////////// Leave out the three sphere shapes
@@ -155,7 +155,7 @@ DiscreteConnollyShape::initialize(const Ref<Molecule>&mol,double probe_radius)
                                                *(spheres[i].pointer()),
                                                *(spheres[j].pointer()),
                                                *(spheres[k].pointer()));
-              if (e.nonnull()) add_shape(e);
+              if (e) add_shape(e);
             }
         }
     }
@@ -226,7 +226,7 @@ ConnollyShape::initialize(const Ref<Molecule>&mol,double probe_radius)
   sphere = new CS2Sphere[n_spheres];
 
   Ref<AtomInfo> a;
-  if (atominfo_.null()) a = mol->atominfo();
+  if (atominfo_ == 0) a = mol->atominfo();
   else a = atominfo_;
 
   int i;

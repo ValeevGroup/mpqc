@@ -188,7 +188,7 @@ EFCOpt::update()
   }
 
   // update the hessian
-  if (update_.nonnull()) {
+  if (update_) {
     update_->update(hessian_,function(),xcurrent,gcurrent);
   }
 
@@ -224,7 +224,7 @@ EFCOpt::update()
     if (modef) {
       // which mode are we following.  find mode with maximum overlap with
       // last mode followed
-      if (last_mode_.nonnull()) {
+      if (last_mode_) {
         double overlap=0;
         for (i=0; i < ncoord; i++) {
           double S=0;
@@ -363,11 +363,11 @@ EFCOpt::update()
 void
 EFCOpt::apply_transform(const Ref<NonlinearTransform> &t)
 {
-  if (t.null()) return;
+  if (t == 0) return;
   Optimize::apply_transform(t);
-  if (last_mode_.nonnull()) t->transform_gradient(last_mode_);
-  if (hessian_.nonnull()) t->transform_hessian(hessian_);
-  if (update_.nonnull()) update_->apply_transform(t);
+  if (last_mode_) t->transform_gradient(last_mode_);
+  if (hessian_) t->transform_hessian(hessian_);
+  if (update_) update_->apply_transform(t);
 }
 
 void
@@ -384,7 +384,7 @@ EFCOpt::print(std::ostream&o) const
     << indent << "mode_following   = " << (modef?"yes":"no")
     << std::endl;
 
-  if (update_.null()) {
+  if (update_ == 0) {
     o << indent << "update           = 0 (hessian updates will not be performed)"
       << std::endl;
   }

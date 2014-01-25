@@ -652,8 +652,8 @@ TwoBodyMOIntsRuntimeUnion23::TwoBodyMOIntsRuntimeUnion23(const Ref<MOIntsTransfo
                                                          const Ref<TwoBodyTwoCenterMOIntsRuntime>& r2c,
                                                          const Ref<TwoBodyThreeCenterMOIntsRuntime>& r3c) :
   factory_(factory),
-  runtime_2c_(r2c.null() ? Ref<TwoBodyTwoCenterMOIntsRuntime>(new TwoBodyTwoCenterMOIntsRuntime(factory_)) : r2c),
-  runtime_3c_(r3c.null() ? Ref<TwoBodyThreeCenterMOIntsRuntime>(new TwoBodyThreeCenterMOIntsRuntime(factory_)) : r3c),
+  runtime_2c_(r2c == 0 ? Ref<TwoBodyTwoCenterMOIntsRuntime>(new TwoBodyTwoCenterMOIntsRuntime(factory_)) : r2c),
+  runtime_3c_(r3c == 0 ? Ref<TwoBodyThreeCenterMOIntsRuntime>(new TwoBodyThreeCenterMOIntsRuntime(factory_)) : r3c),
   runtime_2c_inv_(KernelInverseRegistry::instance())
 {
 }

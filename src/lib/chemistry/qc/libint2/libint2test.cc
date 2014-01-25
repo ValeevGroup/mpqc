@@ -90,28 +90,28 @@ void test_p4(const Ref<KeyVal>& keyval, const Ref<Integral>& ints);
 #define maxint 9
 
 void testint(const Ref<OneBodyInt>& in) {
-  if (in.null()) {
+  if (in == 0) {
     cout << "null integral generator" << endl;
     abort();
   }
 }
 
 void testint(const Ref<OneBodyDerivInt>& in) {
-  if (in.null()) {
+  if (in == 0) {
     cout << "null integral generator" << endl;
     abort();
   }
 }
 
 void testint(const Ref<TwoBodyInt>& in) {
-  if (in.null()) {
+  if (in == 0) {
     cout << "null integral generator" << endl;
     abort();
   }
 }
 
 void testint(const Ref<TwoBodyDerivInt>& in) {
-  if (in.null()) {
+  if (in == 0) {
     cout << "null integral generator" << endl;
     abort();
   }
@@ -121,7 +121,7 @@ int main(int argc, char **argv) {
   int ii, i, j, k, l, m, n;
 
   Ref<MessageGrp> msg = MessageGrp::initial_messagegrp(argc, argv);
-  if (msg.null())
+  if (msg == 0)
     msg = new ProcMessageGrp();
   MessageGrp::set_default_messagegrp(msg);
 

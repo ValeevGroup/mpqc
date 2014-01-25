@@ -178,14 +178,14 @@ SetIntCoor::SetIntCoor(const Ref<KeyVal>& keyval)
 
   Ref<IntCoorGen> gen; gen << keyval->describedclassvalue("generator");
 
-  if (gen.null() && !n) {
+  if (gen == 0 && !n) {
       throw InputError("not a vector and no generator given",
                        __FILE__, __LINE__,
                        0, 0,
                        class_desc());
     }
 
-  if (gen.nonnull()) {
+  if (gen) {
       // Make sure that gen doesn't delete me before my reference
       // count gets incremented.
       this->reference();
@@ -587,7 +587,7 @@ MolecularCoor::MolecularCoor(const Ref<KeyVal>&keyval)
 {
   molecule_ << keyval->describedclassvalue("molecule");
 
-  if (molecule_.null()) {
+  if (molecule_ == 0) {
       throw InputError("missing input", __FILE__, __LINE__,
                        "molecule", 0, class_desc());
     }
@@ -597,9 +597,9 @@ MolecularCoor::MolecularCoor(const Ref<KeyVal>&keyval)
   matrixkit_ << keyval->describedclassvalue("matrixkit");
   dnatom3_ << keyval->describedclassvalue("natom3");
 
-  if (matrixkit_.null()) matrixkit_ = SCMatrixKit::default_matrixkit();
+  if (matrixkit_ == 0) matrixkit_ = SCMatrixKit::default_matrixkit();
 
-  if (dnatom3_.null()) dnatom3_ = new SCDimension(3*molecule_->natom());
+  if (dnatom3_ == 0) dnatom3_ = new SCDimension(3*molecule_->natom());
   else if (dnatom3_->n() != 3 * molecule_->natom()) {
     throw InputError("natom3 given but not consistent with molecule",
                      __FILE__, __LINE__, "natom3", 0, class_desc());

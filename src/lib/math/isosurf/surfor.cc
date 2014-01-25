@@ -52,10 +52,10 @@ TriangulatedSurface::fix_orientation()
       for (j=0; j<3; j++) {
           Ref<Edge> e = tri->edge(j);
           int e_index = _edge_to_index[e];
-          if (edge_to_triangle0[e_index].null()) {
+          if (edge_to_triangle0[e_index] == 0) {
               edge_to_triangle0[e_index] = tri;
             }
-          else if (edge_to_triangle1[e_index].null()) {
+          else if (edge_to_triangle1[e_index] == 0) {
               edge_to_triangle1[e_index] = tri;
             }
           else {

@@ -84,9 +84,9 @@ matrixtest(Ref<SCMatrixKit> kit, Ref<KeyVal> keyval,
            RefSCDimension d1,RefSCDimension d2,RefSCDimension d3,
            bool have_svd)
 {
-  if (d1.null()) d1 << keyval->describedclassvalue("d1");
-  if (d2.null()) d2 << keyval->describedclassvalue("d2");
-  if (d3.null()) d3 << keyval->describedclassvalue("d3");
+  if (d1 == 0) d1 << keyval->describedclassvalue("d1");
+  if (d2 == 0) d2 << keyval->describedclassvalue("d2");
+  if (d3 == 0) d3 << keyval->describedclassvalue("d3");
 
   d1.print();
   d2.print();

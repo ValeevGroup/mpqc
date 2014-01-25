@@ -180,7 +180,7 @@ assemble(const RefSCDimension dim,
 {
   int nnmb = Nm.ncol();
   int nr1 = Nr1.ncol();
-  int nr2 = (Nr2.null()?0:Nr2.ncol());
+  int nr2 = (Nr2 == 0?0:Nr2.ncol());
   int nb = dim.n();
   if (nb != nnmb + nr1 + nr2) {
       ExEnv::errn() << "assemble: dim mismatch" << endl;

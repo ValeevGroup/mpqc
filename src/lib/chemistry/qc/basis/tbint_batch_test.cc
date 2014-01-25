@@ -211,7 +211,7 @@ static ClassDesc MP2_cd(typeid(MP2), "MP2", 1, "public Wavefunction", 0,
 MP2::MP2(const Ref<KeyVal> &keyval) :
   Wavefunction(keyval) {
   ref_mp2_wfn_ << keyval->describedclassvalue("reference");
-  if (ref_mp2_wfn_.null()) {
+  if (ref_mp2_wfn_ == 0) {
     throw InputError("require a OneBodyWavefunction object", __FILE__,
         __LINE__, "reference", 0, class_desc());
   }
@@ -495,15 +495,15 @@ static Ref<MessageGrp> init_mp(const Ref<KeyVal>& keyval, int &argc,
     char **&argv) {
   grp << keyval->describedclassvalue("message");
 
-  if (grp.null()) grp = MessageGrp::initial_messagegrp(argc, argv);
+  if (grp == 0) grp = MessageGrp::initial_messagegrp(argc, argv);
 
-  if (grp.null()) {
+  if (grp == 0) {
     grp << keyval->describedclassvalue("messagegrp");
   }
 
-  if (grp.null()) grp = MessageGrp::get_default_messagegrp();
+  if (grp == 0) grp = MessageGrp::get_default_messagegrp();
 
-  if (grp.null()) {
+  if (grp == 0) {
     std::cerr << indent << "Couldn't initialize MessageGrp\n";
     abort();
   }
@@ -513,7 +513,7 @@ static Ref<MessageGrp> init_mp(const Ref<KeyVal>& keyval, int &argc,
   Ref<Debugger> debugger;
   debugger << keyval->describedclassvalue(":debug");
   // Let the debugger know the name of the executable and the node
-  if (debugger.nonnull()) {
+  if (debugger) {
     debugger->set_exec("test");
     debugger->set_prefix(grp->me());
     debugger->debug("curt is a hog");
@@ -560,7 +560,7 @@ int main(int argc, char**argv) {
 
   tim.exit("input");
 
-  if (mole.nonnull()) {
+  if (mole) {
     // this line performs the entire computation, as well as printing the energy
     // by accessing mole->energy(), I think
     val = mole->value();

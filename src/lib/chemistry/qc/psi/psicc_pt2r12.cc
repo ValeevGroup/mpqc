@@ -60,9 +60,9 @@ PsiCC_PT2R12::PsiCC_PT2R12(const Ref<KeyVal>&keyval) :
 
   // if world not given, make this the center of a new World
   Ref<WavefunctionWorld> world; world << keyval->describedclassvalue("world", KeyValValueRefDescribedClass(0));
-  if (world.null())
+  if (world == 0)
     world = new WavefunctionWorld(keyval);
-  if (world.null())
+  if (world == 0)
     throw InputError("PsiCC_PT2R12 requires a WavefunctionWorld; input did not specify it, neither could it be constructed",
                      __FILE__, __LINE__, "world");
   if (world->wfn() == 0) world->set_wfn(this);
@@ -140,7 +140,7 @@ void PsiCC_PT2R12::compute_ept2r12() {
   PsiCorrWavefunction::compute();
 
   // to compute intermediates make sure r12eval_ is ready
-  if (r12eval_.null()) {
+  if (r12eval_ == 0) {
     r12eval_ = new R12IntEval(r12world());
     r12eval_->debug(debug_);
   }
@@ -339,9 +339,9 @@ void PsiCC_PT2R12::compute_ept2r12() {
         _print(spincase2, Vpq, prepend_spincase(spincase2,"Vpq matrix").c_str());
         _print(spincase2, Vab[s], prepend_spincase(spincase2,"Vab matrix").c_str());
         _print(spincase2, Via[s], prepend_spincase(spincase2,"Via matrix").c_str());
-        if (Vai[s].nonnull())
+        if (Vai[s])
           _print(spincase2, Vai[s], prepend_spincase(spincase2,"Vai matrix").c_str());
-        if (A[s].nonnull())
+        if (A[s])
           _print(spincase2, A[s], prepend_spincase(spincase2,"A matrix").c_str());
       }
       if (debug() >= DefaultPrintThresholds::mostO4) {

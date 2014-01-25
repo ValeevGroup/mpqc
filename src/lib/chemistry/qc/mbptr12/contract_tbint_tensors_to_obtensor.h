@@ -258,7 +258,7 @@ namespace sc {
 
         Ref<DistArray4> accumb = tformb->ints_distarray4();
         // if transforms have not been computed yet, compute
-        if (accumb.null()) {
+        if (accumb == 0) {
           tformb->compute();
           accumb = tformb->ints_distarray4();
         }
@@ -272,7 +272,7 @@ namespace sc {
           const unsigned int intsetidx_ket = intdescrk->intset(tbint_type_ket);
 
           Ref<DistArray4> accumk = tformk->ints_distarray4();
-          if (accumk.null()) {
+          if (accumk == 0) {
             tformk->compute();
             accumk = tformk->ints_distarray4();
           }

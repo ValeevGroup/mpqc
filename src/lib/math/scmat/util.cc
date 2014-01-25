@@ -122,7 +122,7 @@ sc::scmat_perform_op_on_blocks(const Ref<SCElementOp>& op,
 void
 sc::canonicalize_column_phases(RefSCMatrix& A) {
   Ref<BlockedSCMatrix> A_blkd = dynamic_cast<BlockedSCMatrix*>(A.pointer());
-  if (A_blkd.null()) { // if matrix is nonblocked, use SCElementOp
+  if (A_blkd == 0) { // if matrix is nonblocked, use SCElementOp
     RefDiagSCMatrix U = A.kit()->diagmatrix(A.coldim());
     const int ncol = A.ncol();
 

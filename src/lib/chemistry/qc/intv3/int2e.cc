@@ -48,8 +48,8 @@ Int2eV3::Int2eV3(Integral *integral,
   bs3_ = b3;
   bs4_ = b4;
 
-  int_unit2 = bs2_.null();
-  int_unit4 = bs4_.null();
+  int_unit2 = bs2_ == 0;
+  int_unit4 = bs4_ == 0;
 
   transform_init();
   int_initialize_offsets2();

@@ -142,7 +142,7 @@ sc::map(const Ref<DistArray4>& src,
         const Ref<OrbitalSpace>& xdest,
         const Ref<OrbitalSpace>& ydest) {
 
-  if (dest.null()) { // allocate dest, if needed, by cloning src
+  if (dest == 0) { // allocate dest, if needed, by cloning src
     DistArray4Dimensions dest_dims(src->num_te_types(), idest->rank(), jdest->rank(), xdest->rank(), ydest->rank());
     dest = src->clone(dest_dims);
   }

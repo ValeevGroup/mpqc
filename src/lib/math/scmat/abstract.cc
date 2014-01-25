@@ -55,7 +55,7 @@ SCMatrixKit::SCMatrixKit()
 SCMatrixKit::SCMatrixKit(const Ref<KeyVal>& keyval)
 {
   grp_ << keyval->describedclassvalue("messagegrp");
-  if (grp_.null()) grp_ = MessageGrp::get_default_messagegrp();
+  if (grp_ == 0) grp_ = MessageGrp::get_default_messagegrp();
 }
 
 SCMatrixKit::~SCMatrixKit()

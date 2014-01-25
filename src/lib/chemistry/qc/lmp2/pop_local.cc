@@ -83,10 +83,10 @@ convert_complete_to_occupied_vector(const Ref<OneBodyWavefunction> &wfn,
     int iorb_in_block = 0;
     RefSCMatrix occvecb
         = dynamic_cast<BlockedSCMatrix*>(occvec.pointer())->block(i);
-    if (occvecb.null()) throw runtime_error("vector not blocked");
+    if (occvecb == 0) throw runtime_error("vector not blocked");
     RefSCMatrix vecb
         = dynamic_cast<BlockedSCMatrix*>(vec.pointer())->block(i);
-    if (occvecb.null()) throw runtime_error("new vector not blocked");
+    if (occvecb == 0) throw runtime_error("new vector not blocked");
     for (int j=0; j<norb_in_block; j++) {
       if (wfn->occupation(i,j) > occthresh) {
           occvecb.assign_column(vecb.get_column(iorb_in_block),iocc_in_block);

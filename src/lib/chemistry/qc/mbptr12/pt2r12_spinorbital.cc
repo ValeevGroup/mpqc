@@ -70,16 +70,16 @@ SpinOrbitalPT2R12::SpinOrbitalPT2R12(const Ref<KeyVal> &keyval) : Wavefunction(k
         keyval->describedclassvalue("rdm2").pointer(),
         "SpinOrbitalPT2R12::ctor\n"
         );
-  if (rdm2_.null()) throw InputError("missing rdm2", __FILE__, __LINE__,
+  if (rdm2_ == 0) throw InputError("missing rdm2", __FILE__, __LINE__,
                                     "rdm2", 0,
                                     this->class_desc());
   rdm1_ = rdm2_->rdm_m_1();
 
   // if world not given, make this the center of a new World
   Ref<WavefunctionWorld> world; world << keyval->describedclassvalue("world", KeyValValueRefDescribedClass(0));
-  if (world.null())
+  if (world == 0)
     world = new WavefunctionWorld(keyval);
-  if (world.null())
+  if (world == 0)
     throw InputError("SpinOrbitalPT2R12 requires a WavefunctionWorld; input did not specify it, neither could it be constructed",
                      __FILE__, __LINE__, "world");
   if (world->wfn() == 0) world->set_wfn(this);
@@ -95,14 +95,14 @@ SpinOrbitalPT2R12::SpinOrbitalPT2R12(const Ref<KeyVal> &keyval) : Wavefunction(k
   {
     Ref<Wavefunction> reference;
     reference << keyval->describedclassvalue("reference");
-    if (reference.nonnull()) {
+    if (reference) {
       MPQC_ASSERT(reference == rdm2_->wfn());
       ref = RefWavefunctionFactory::make(world, reference, spin_restricted,
                                          nfzc_, 0, virspace);
     }
     else  {
       ref << keyval->describedclassvalue("refwfn").pointer();
-      if (ref.null() && reference.null()) throw InputError("missing reference", __FILE__, __LINE__,
+      if (ref == 0 && reference == 0) throw InputError("missing reference", __FILE__, __LINE__,
                                                            "reference", 0,this->class_desc());
     }
   }
@@ -999,7 +999,7 @@ void SpinOrbitalPT2R12::compute()
   #if 1
     const double recomp_ref_energy = this->energy_recomputed_from_densities();
     ExEnv::out0() <<  std::endl << std::endl << indent << scprintf("Reference energy (%9s) [au]:     %17.12lf",
-                                        (this->r12world()->world()->basis_df().null() ? "   recomp" : "recomp+DF"),
+                                        (this->r12world()->world()->basis_df() == 0 ? "   recomp" : "recomp+DF"),
                                         recomp_ref_energy) << endl;
   #endif
 

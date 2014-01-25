@@ -48,10 +48,10 @@ main(int argc, char** argv)
 
   Ref<MessageGrp> msg = MessageGrp::initial_messagegrp(argc, argv);
 
-  if (msg.null()) {
+  if (msg == 0) {
       msg << keyval->describedclassvalue("messagegrp");
 
-      if (msg.null()) {
+      if (msg == 0) {
           cerr << indent << "Couldn't initialize MessageGrp\n";
           abort();
         }
@@ -60,7 +60,7 @@ main(int argc, char** argv)
   MessageGrp::set_default_messagegrp(msg);
 
   Ref<Debugger> d; d << keyval->describedclassvalue("debugger");
-  if (d.nonnull()) {
+  if (d) {
       d->set_prefix(msg->me());
       d->set_exec(argv[0]);
     }

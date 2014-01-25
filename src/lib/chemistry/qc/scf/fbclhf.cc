@@ -35,7 +35,7 @@ FockBuildCLHF::FockBuildCLHF(const Ref<KeyVal>& keyval) :
   CLHF(keyval)
 {
   fockdist_ << keyval->describedclassvalue("fockdist");
-  if (fockdist_.null()) {
+  if (fockdist_ == 0) {
       fockdist_ = new FockDistribution;
     }
   KeyValValuestring deffbm("replicated");
@@ -186,9 +186,9 @@ DFCLHF::DFCLHF(const Ref<KeyVal>& keyval) :
 
   // if world not given, make this the center of a new World
   world_ << keyval->describedclassvalue("world", KeyValValueRefDescribedClass(0));
-  if (world_.null())
+  if (world_ == 0)
     world_ = new WavefunctionWorld(keyval);
-  if (world_.null())
+  if (world_ == 0)
     throw InputError("DFCLHF requires a WavefunctionWorld; input did not specify it, neither could it be constructed",
                      __FILE__, __LINE__, "world");
   if (world_->wfn() == 0) world_->set_wfn(this);

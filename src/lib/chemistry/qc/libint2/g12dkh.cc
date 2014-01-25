@@ -150,11 +150,11 @@ G12DKHLibint2::storage_required(const Ref<GaussianBasisSet>& b1,
   Ref<GaussianBasisSet> bs3 = b3;
   Ref<GaussianBasisSet> bs4 = b4;
 
-  if (bs2.null())
+  if (bs2 == 0)
     bs2 = bs1;
-  if (bs3.null())
+  if (bs3 == 0)
     bs3 = bs1;
-  if (bs4.null())
+  if (bs4 == 0)
     bs4 = bs1;
 
   int l1 = bs1->max_angular_momentum();

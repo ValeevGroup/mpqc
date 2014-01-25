@@ -575,7 +575,7 @@ PetiteList::aotoso()
   for (int b=0; b < aosop->nblocks(); b++) {
     RefSCMatrix aosb = aosop->block(b);
 
-    if (aosb.null())
+    if (aosb == 0)
       continue;
     
     SO_block& sob = sos[b];
@@ -649,7 +649,7 @@ PetiteList::to_SO_basis(const RefSymmSCMatrix& a)
 {
   // SO basis is always blocked, so first make sure a is blocked
   RefSymmSCMatrix aomatrix = dynamic_cast<BlockedSymmSCMatrix*>(a.pointer());
-  if (aomatrix.null()) {
+  if (aomatrix == 0) {
     aomatrix = gbs_->so_matrixkit()->symmmatrix(AO_basisdim());
     aomatrix->convert(a);
   }
@@ -695,7 +695,7 @@ PetiteList::evecs_to_SO_basis(const RefSCMatrix& aoev)
   // given aoev may be non-blocked or its dimensions may have different sub-blocking
   // in that case copy into a blocked matrix of the desired dimensions
   RefSCMatrix aoevecs = dynamic_cast<BlockedSCMatrix*>(aoev.pointer());
-  const bool need_to_copy = aoevecs.null() || (aoevecs.nonnull() && !AO_basisdim()->equiv(aoev.rowdim()));
+  const bool need_to_copy = aoevecs == 0 || (aoevecs && !AO_basisdim()->equiv(aoev.rowdim()));
   if (need_to_copy) {
     aoevecs = gbs_->so_matrixkit()->matrix(AO_basisdim(), aoev.coldim());
     aoevecs->convert(aoev);
@@ -754,7 +754,7 @@ PetiteList::symmetrize(const RefSymmSCMatrix& skel,
 
   // SO basis is always blocked, so first make sure skel is blocked
   RefSymmSCMatrix bskel = dynamic_cast<BlockedSymmSCMatrix*>(skel.pointer());
-  if (bskel.null()) {
+  if (bskel == 0) {
     bskel = gbs.so_matrixkit()->symmmatrix(AO_basisdim());
     bskel->convert(skel);
   }
@@ -773,7 +773,7 @@ PetiteList::symmetrize(const RefSymmSCMatrix& skel,
   BlockedSCMatrix *lu = dynamic_cast<BlockedSCMatrix*>(aoso.pointer());
 
   for (b=0; b < lu->nblocks(); b++) {
-    if (lu->block(b).null())
+    if (lu->block(b) == 0)
       continue;
     
     int ir = ct.which_irrep(b);
@@ -791,7 +791,7 @@ PetiteList::symmetrize(const RefSymmSCMatrix& skel,
   
   // loop through blocks and finish symmetrizing degenerate blocks
   for (b=0; b < la->nblocks(); b++) {
-    if (la->block(b).null())
+    if (la->block(b) == 0)
       continue;
 
     int ir=ct.which_irrep(b);

@@ -41,8 +41,8 @@ void
 analyze_array(typename sma2::Array<N> &array, const char *name,
               const sc::Ref<sc::MessageGrp> &grp = 0, bool distributed  = false)
 {
-  if ((distributed && grp.nonnull() && grp->n() == 1)
-      || grp.null()) {
+  if ((distributed && grp && grp->n() == 1)
+      || grp == 0) {
       distributed = false;
     }
   double n_block_max_total = 1;

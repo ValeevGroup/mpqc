@@ -463,7 +463,7 @@ contract(
 
   // Remap the blocks of A so that it is sorted by its external indices
   // and any fixed indices.
-  if (timer.nonnull()) timer->enter("remap A");
+  if (timer) timer->enter("remap A");
   IndexList cmpAlist(extA,fixA);
   IndexListLess<NA> cmpA(cmpAlist);
   typename Array<NA>::cached_blockmap_t remappedAbm_local(cmpA);
@@ -476,19 +476,19 @@ contract(
       remappedAbm_ptr = &remappedAbm_local;
     }
   typename Array<NA>::cached_blockmap_t &remappedAbm=*remappedAbm_ptr;
-  if (timer.nonnull()) timer->exit();
+  if (timer) timer->exit();
 //    std::cout << "A:" << std::endl << A;
 //    std::cout << "remappedA:" << std::endl << remappedA;
 
   // Repack the data of A, B, and C so DGEMM can be used
   // note: if need_repack is true then the matrix has not been transposed
-  if (timer.nonnull()) timer->enter("repack1");
+  if (timer) timer->enter("repack1");
   if (repack_scheme.need_repack_A()) repack(A, extA, intA, fixA, fixvalA);
   if (repack_scheme.need_repack_B()) repack(B, intB, extB, fixB, fixvalB);
   if (repack_scheme.need_repack_C() && !C_is_zero_on_entry) {
       repack(C, extCA, extCB, fixC, fixvalC);
     }
-  if (timer.nonnull()) timer->exit();
+  if (timer) timer->exit();
 
 //   std::cout << "tA:" << transpose_A
 //             << " tB:" << transpose_B
@@ -574,7 +574,7 @@ contract(
   C_begin = Cbm.lower_bound(Cbi_lb);
   C_end = Cbm.upper_bound(Cbi_ub);
 
-  if (timer.nonnull()) timer->enter("C loop");
+  if (timer) timer->enter("C loop");
   for (typename Array<NC>::blockmap_t::const_iterator
            Citer = C_begin;
        Citer != C_end;
@@ -607,7 +607,7 @@ contract(
 #else
       typename Array<NB>::blockmap_t::const_iterator Biter = Bbm.begin();
 #endif
-      if (timer.nonnull()) timer->enter("A loop");
+      if (timer) timer->enter("A loop");
       for (typename Array<NA>::cached_blockmap_t::const_iterator
                Aiter = firstA;
            Aiter != fenceA;
@@ -637,7 +637,7 @@ contract(
           blasint n_int = Abi.subset_size(A.indices(), intA);
 
           double one = 1.0;
-          if (timer.nonnull()) timer->enter("dgemm");
+          if (timer) timer->enter("dgemm");
 
           double t0 = cpu_walltime();
 
@@ -760,14 +760,14 @@ contract(
           count_dgemm(n_extA, n_int, n_extB,
                       cpu_walltime()-t0);
 #endif
-          if (timer.nonnull()) timer->exit();
+          if (timer) timer->exit();
         }
-      if (timer.nonnull()) timer->exit();
+      if (timer) timer->exit();
     }
-  if (timer.nonnull()) timer->exit();
+  if (timer) timer->exit();
   
   // Repack the data of A, B, and C to the orginal data layout
-  if (timer.nonnull()) timer->enter("repack2");
+  if (timer) timer->enter("repack2");
   if (clear_A_after_use) A.clear();
   else {
       if (repack_scheme.need_repack_A()) {
@@ -785,11 +785,11 @@ contract(
   if (repack_scheme.need_repack_C()) {
       repack(C, extCA, extCB, fixC, fixvalC, true);
     }
-  if (timer.nonnull()) timer->exit();
+  if (timer) timer->exit();
 
-  if (timer.nonnull()) timer->enter("bounds");
+  if (timer) timer->enter("bounds");
   C.compute_bounds();
-  if (timer.nonnull()) timer->exit();
+  if (timer) timer->exit();
 }
 
 /// Contract two arrays to produce a scalar.

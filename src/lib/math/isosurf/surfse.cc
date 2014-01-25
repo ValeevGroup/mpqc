@@ -208,7 +208,7 @@ TriangulatedSurface::remove_short_edges(double length_cutoff,
               Ref<Vertex> replacement_vertex = edge->vertex(0);
               // however, if we have a volume, find a new vertex on
               // the analytic surface near the center of the edge
-              if (vol.nonnull()) {
+              if (vol) {
                   SCVector3 point, norm;
                   int hn = edge->interpolate(0.5,point,norm,vol,isoval);
                   replacement_vertex = new Vertex(point);
@@ -242,13 +242,13 @@ TriangulatedSurface::remove_short_edges(double length_cutoff,
                   Ref<Vertex> v1 = e1->vertex(1);
                   Ref<Edge> e2 = new_edge_map[v0];
                   Ref<Edge> e3 = new_edge_map[v1];
-                  if (e1.null() || e2.null() || e3.null()) {
+                  if (e1 == 0 || e2 == 0 || e3 == 0) {
                       ExEnv::errn() << "TriangulatedSurface::remove_short_edges: "
                            << "building new triangle but edges are null:"
                            << endl;
-                      if (e1.null()) ExEnv::errn() << "  e1" << endl;
-                      if (e2.null()) ExEnv::errn() << "  e2" << endl;
-                      if (e3.null()) ExEnv::errn() << "  e3" << endl;
+                      if (e1 == 0) ExEnv::errn() << "  e1" << endl;
+                      if (e2 == 0) ExEnv::errn() << "  e2" << endl;
+                      if (e3 == 0) ExEnv::errn() << "  e3" << endl;
                       abort();
                     }
                   // Compute the correct orientation of e1 within the new

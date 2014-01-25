@@ -58,7 +58,7 @@ CI::CI(const Ref<KeyVal> &kv)
 
     /// only SD_RefWavefunction is tested for now
     Ref<SD_RefWavefunction> sd_refwfn; sd_refwfn << refwfn();
-    if (sd_refwfn.null())
+    if (sd_refwfn == 0)
       throw InputError("only SD_RefWavefunction has been tested with CI",
                        __FILE__, __LINE__, "reference");
 

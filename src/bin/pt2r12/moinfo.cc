@@ -899,7 +899,7 @@ ExternSpinFreeRDMTwo::~ExternSpinFreeRDMTwo()
 Ref< SpinFreeRDM<One> >
 ExternSpinFreeRDMTwo::rdm_m_1() const
 {
-  if (rdm1_.null()) {
+  if (rdm1_ == 0) {
     RefSymmSCMatrix rdm1 = orbs_->coefs().kit()->symmmatrix(
         orbs_->coefs().coldim());
     rdm1.assign(0.0);
@@ -931,7 +931,7 @@ ExternSpinFreeRDMTwo::rdm_m_1() const
 
 const Ref<DistArray4>&
 ExternSpinFreeRDMTwo::da4() const {
-  if (da4_.null()) {
+  if (da4_ == 0) {
 
     const int n = orbs()->dim().n();
     da4_ = make_distarray4(1, n, n, n, n);

@@ -48,7 +48,7 @@ static ClassDesc MolecularFrequencies_cd(
 MolecularFrequencies::MolecularFrequencies(const Ref<KeyVal>& keyval)
 {
   mol_ << keyval->describedclassvalue("molecule");
-  if (mol_.null()) {
+  if (mol_ == 0) {
       throw InputError("missing required input of type Molecule",
                        __FILE__, __LINE__, "molecule", 0,
                        class_desc());
@@ -557,7 +557,7 @@ MolFreqAnimate::object(int iobject)
         }
     }
 
-  if (dependent_mole_.nonnull()) dependent_mole_->obsolete();
+  if (dependent_mole_) dependent_mole_->obsolete();
   renmol_->init();
 
   char name[64];
@@ -566,7 +566,7 @@ MolFreqAnimate::object(int iobject)
 
   // restore the original molecule
   mol->operator = (*molcopy.pointer());
-  if (dependent_mole_.nonnull()) dependent_mole_->obsolete();
+  if (dependent_mole_) dependent_mole_->obsolete();
 
   return renmol_.pointer();
 }

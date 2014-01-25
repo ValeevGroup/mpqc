@@ -105,7 +105,7 @@ static ClassDesc WriteGrid_cd(
 WriteGrid::WriteGrid(const Ref<KeyVal> &keyval)
 {
   grid_ << keyval->describedclassvalue("grid");
-  if (grid_.null()) {
+  if (grid_ == 0) {
       InputError ex("valid \"grid\" missing",
                     __FILE__, __LINE__, "grid", "(null)", class_desc());
       try {
@@ -389,7 +389,7 @@ static ClassDesc WriteVectorGrid_cd(
 WriteVectorGrid::WriteVectorGrid(const Ref<KeyVal> &keyval)
 {
   grid_ << keyval->describedclassvalue("grid");
-  if (grid_.null()) {
+  if (grid_ == 0) {
       InputError ex("valid \"grid\" missing",
                     __FILE__, __LINE__, "grid", "(null)", class_desc());
       try {

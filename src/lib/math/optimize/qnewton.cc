@@ -48,7 +48,7 @@ static ClassDesc QNewtonOpt_cd(
 QNewtonOpt::QNewtonOpt(const Ref<KeyVal>&keyval):
   Optimize(keyval)
 {
-  if (function_.null()) {
+  if (function_ == 0) {
       ExEnv::err0() << "QNewtonOpt requires a function keyword" << endl;
       abort();
   }
@@ -61,7 +61,7 @@ QNewtonOpt::QNewtonOpt(const Ref<KeyVal>&keyval):
   else {
     update_ = new BFGSUpdate;
   }
-  if (update_.nonnull()) update_->set_inverse();
+  if (update_) update_->set_inverse();
 
   if (keyval->exists("lineopt")) {
     lineopt_ << keyval->describedclassvalue("lineopt");
@@ -226,7 +226,7 @@ QNewtonOpt::update()
   }
 
   // update the hessian
-  if(update_.nonnull())
+  if(update_)
     update_->update(ihessian_,function(),xcurrent,gcurrent);
 
   conv_->reset();
@@ -239,9 +239,9 @@ QNewtonOpt::update()
 
   // either do a lineopt or check stepsize
   double tot;
-  if(lineopt_.nonnull()) {
+  if(lineopt_) {
     Ref<Backtrack> bt = dynamic_cast<Backtrack*>(lineopt_.pointer());
-    if (bt.nonnull()) {
+    if (bt) {
       // The Backtrack line search is a special case.
       ExEnv::out0() << indent
                     << "......................................."
@@ -430,7 +430,7 @@ QNewtonOpt::update()
     << "//////////////////////////////////////////////////////////////////////"
     << endl;
 
-  if( lineopt_.null() ) {
+  if( lineopt_ == 0 ) {
     function()->set_x(xnext);
     Ref<NonlinearTransform> t = function()->change_coordinates();
     apply_transform(t);
@@ -445,11 +445,11 @@ QNewtonOpt::update()
 void
 QNewtonOpt::apply_transform(const Ref<NonlinearTransform> &t)
 {
-  if (t.null()) return;
+  if (t == 0) return;
   Optimize::apply_transform(t);
-  if (lineopt_.nonnull()) lineopt_->apply_transform(t);
-  if (ihessian_.nonnull()) t->transform_ihessian(ihessian_);
-  if (update_.nonnull()) update_->apply_transform(t);
+  if (lineopt_) lineopt_->apply_transform(t);
+  if (ihessian_) t->transform_ihessian(ihessian_);
+  if (update_) update_->apply_transform(t);
 }
 
 void
@@ -476,7 +476,7 @@ QNewtonOpt::print(std::ostream&o) const
     << indent << "restart          = " << (restart_?"yes":"no")
     << std::endl;
 
-  if (update_.null()) {
+  if (update_ == 0) {
     o << indent << "update           = 0 (hessian updates will not be performed)"
       << std::endl;
   }
@@ -487,7 +487,7 @@ QNewtonOpt::print(std::ostream&o) const
     o << decindent;
   }
 
-  if (lineopt_.null()) {
+  if (lineopt_ == 0) {
     o << indent << "lineopt          = 0 (line optimization will not be performed)"
       << std::endl;
   }

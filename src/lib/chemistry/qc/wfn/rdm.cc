@@ -87,7 +87,7 @@ RDM<One>::rdm_m_1() const {
 template<>
 RefSymmSCMatrix
 RDM<One>::scmat(SpinCase1 spin) const {
-  if (scmat_[spin].nonnull()) return scmat_[spin];
+  if (scmat_[spin]) return scmat_[spin];
   if (wfn_->spin_polarized() && spin == Beta)
     return scmat(Alpha);
 
@@ -172,7 +172,7 @@ template<>
 RefSymmSCMatrix
 RDMCumulant<Two>::scmat(SpinCase2 spin) const {
 
-  if (scmat_[spin].nonnull()) return scmat_[spin];
+  if (scmat_[spin]) return scmat_[spin];
   if (!density_->wfn()->spin_polarized() && spin == BetaBeta)
     return scmat(AlphaAlpha);
 
@@ -229,7 +229,7 @@ SpinFreeRDM<One>::rdm_m_1() const {
 template<>
 RefSymmSCMatrix
 SpinFreeRDM<One>::scmat() const {
-  if (scmat_.nonnull()) return scmat_;
+  if (scmat_) return scmat_;
 
   // need to transform density from AO basis to orbs basis
   // P' = C^t S P S C
@@ -317,7 +317,7 @@ OBWfnRDMTwo::OBWfnRDMTwo(const Ref<KeyVal>& kv) : RDM<Two>(kv) {
 
 OBWfnRDMTwo::OBWfnRDMTwo(StateIn& si) : RDM<Two>(si) {
   wfn_ << SavableState::restore_state(si);
-  if (wfn_.null())
+  if (wfn_ == 0)
     throw ProgrammingError("failed constructor",__FILE__,__LINE__);
 }
 
@@ -344,7 +344,7 @@ Ref<OBWfnRDMTwo::rdm_m_1_type> sc::OBWfnRDMTwo::rdm_m_1() const
 
 RefSymmSCMatrix sc::OBWfnRDMTwo::scmat(SpinCase2 spin) const {
 
-  if (scmat_[spin].nonnull()) return scmat_[spin];
+  if (scmat_[spin]) return scmat_[spin];
   if (!wfn_->spin_polarized() && spin == BetaBeta)
     return scmat(AlphaAlpha);
 
@@ -412,7 +412,7 @@ namespace {
 
 Ref<OrbitalSpace>
 sc::OBWfnRDMTwo::orbs(SpinCase1 spin) const {
-  if (orbs_[spin].nonnull()) return orbs_[spin];
+  if (orbs_[spin]) return orbs_[spin];
   if (wfn()->spin_polarized() && spin == Beta)
     return orbs(Alpha);
 
@@ -437,7 +437,7 @@ OBWfnRDMCumulantTwo::OBWfnRDMCumulantTwo(const Ref<OBWfnRDMTwo>& density) : dens
 
 OBWfnRDMCumulantTwo::OBWfnRDMCumulantTwo(StateIn& si) : RDMCumulant<Two>(si) {
   density_ << SavableState::restore_state(si);
-  if (density_.null())
+  if (density_ == 0)
     throw ProgrammingError("failed constructor",__FILE__,__LINE__);
 }
 
@@ -466,7 +466,7 @@ void sc::OBWfnRDMCumulantTwo::compute()
 
 RefSymmSCMatrix sc::OBWfnRDMCumulantTwo::scmat(SpinCase2 spin) const {
 
-  if (scmat_[spin].nonnull()) return scmat_[spin];
+  if (scmat_[spin]) return scmat_[spin];
   if (!density_->wfn()->spin_polarized() && spin == BetaBeta)
     return scmat(AlphaAlpha);
 
@@ -524,7 +524,7 @@ WfnRDMOne::WfnRDMOne(const Ref<KeyVal>& kv) : RDM<One>(kv) {
 
 WfnRDMOne::WfnRDMOne(StateIn& si) : RDM<One>(si) {
   wfn_ << SavableState::restore_state(si);
-  if (wfn_.null())
+  if (wfn_ == 0)
     throw ProgrammingError("failed constructor",__FILE__,__LINE__);
 }
 
@@ -588,7 +588,7 @@ WfnRDMCumulantOne::WfnRDMCumulantOne(const Ref<WfnRDMOne>& density) :
 
 WfnRDMCumulantOne::WfnRDMCumulantOne(StateIn& si) : RDMCumulant<One>(si) {
   density_ << SavableState::restore_state(si);
-  if (density_.null())
+  if (density_ == 0)
     throw ProgrammingError("failed constructor",__FILE__,__LINE__);
 }
 
@@ -638,7 +638,7 @@ OBWfnRDMOne::OBWfnRDMOne(const Ref<KeyVal>& kv) : RDM<One>(kv) {
 
 OBWfnRDMOne::OBWfnRDMOne(StateIn& si) : RDM<One>(si) {
   wfn_ << SavableState::restore_state(si);
-  if (wfn_.null())
+  if (wfn_ == 0)
     throw ProgrammingError("failed constructor",__FILE__,__LINE__);
 }
 
@@ -655,7 +655,7 @@ OBWfnRDMOne::save_data_state(StateOut& so) {
 
 Ref<OrbitalSpace>
 sc::OBWfnRDMOne::orbs(SpinCase1 spin) const {
-  if (orbs_[spin].nonnull()) return orbs_[spin];
+  if (orbs_[spin]) return orbs_[spin];
   if (wfn()->spin_polarized() && spin == Beta)
     return orbs(Alpha);
 

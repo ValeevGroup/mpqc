@@ -93,7 +93,7 @@ main(int argc, char**argv)
   const char* input = SRCDIR "/memtest.in";
   Ref<KeyVal> keyval = new ParsedKeyVal(input);
 
-  if (msg.null()) {
+  if (msg == 0) {
       const char* keyword = "message";
 
       if (argc >= 2) input = argv[1];
@@ -101,7 +101,7 @@ main(int argc, char**argv)
 
       msg << keyval->describedclassvalue(keyword);
 
-      if (msg.null()) {
+      if (msg == 0) {
           cerr << scprintf("Couldn't initialize MessageGrp\n");
           abort();
         }
@@ -111,7 +111,7 @@ main(int argc, char**argv)
 //   // now set up the debugger
 //   Ref<Debugger> debugger;
 //   debugger << keyval->describedclassvalue(":debug");
-//   if (debugger.nonnull()) {
+//   if (debugger) {
 //     debugger->set_exec(argv[0]);
 //     debugger->set_prefix(msg->me());
 //   }
@@ -123,7 +123,7 @@ main(int argc, char**argv)
   MessageGrp::set_default_messagegrp(msg);
 
   Ref<MemoryGrp> mem = MemoryGrp::initial_memorygrp(argc, argv);
-  if (mem.nonnull())
+  if (mem)
     MemoryGrp::set_default_memorygrp(mem);
   else
     mem = MemoryGrp::get_default_memorygrp();

@@ -74,10 +74,10 @@ TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(const std::string& name, const Re
   log2_epsilon_(factory_->log2_precision())
 {
   // all spaces must be given, even for partial transforms
-  MPQC_ASSERT(space1_.nonnull());
-  MPQC_ASSERT(space2_.nonnull());
-  MPQC_ASSERT(space3_.nonnull());
-  MPQC_ASSERT(space4_.nonnull());
+  MPQC_ASSERT(space1_);
+  MPQC_ASSERT(space2_);
+  MPQC_ASSERT(space3_);
+  MPQC_ASSERT(space4_);
 }
 
 TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(StateIn& si) : SavableState(si)
@@ -295,7 +295,7 @@ TwoBodyMOIntsTransform::init_vars()
 void
 TwoBodyMOIntsTransform::reinit_acc()
 {
-  if (ints_acc_.nonnull())
+  if (ints_acc_)
     ints_acc_ = 0;
   init_acc();
 }
@@ -309,7 +309,7 @@ TwoBodyMOIntsTransform::obsolete()
 void
 TwoBodyMOIntsTransform::alloc_mem(const size_t localmem)
 {
-  if (mem_.null())
+  if (mem_ == 0)
     throw std::runtime_error("TwoBodyMOIntsTransform::alloc_mem() -- memory group not initialized");
   mem_->set_localsize(localmem);
   if (debug() >= DefaultPrintThresholds::diagnostics) {
@@ -323,7 +323,7 @@ TwoBodyMOIntsTransform::alloc_mem(const size_t localmem)
 void
 TwoBodyMOIntsTransform::dealloc_mem()
 {
-  if (mem_.null())
+  if (mem_ == 0)
     throw std::runtime_error("TwoBodyMOIntsTransform::dealloc_mem() -- memory group not initialized");
   mem_->set_localsize(0);
 }
@@ -570,7 +570,7 @@ TwoBodyThreeCenterMOIntsTransform::init_vars()
 void
 TwoBodyThreeCenterMOIntsTransform::reinit_acc()
 {
-  if (ints_acc_.nonnull())
+  if (ints_acc_)
     ints_acc_ = 0;
   init_acc();
 }
@@ -584,7 +584,7 @@ TwoBodyThreeCenterMOIntsTransform::obsolete()
 void
 TwoBodyThreeCenterMOIntsTransform::alloc_mem(const size_t localmem)
 {
-  if (mem_.null())
+  if (mem_ == 0)
     throw std::runtime_error("TwoBodyThreeCenterMOIntsTransform::alloc_mem() -- memory group not initialized");
   mem_->set_localsize(localmem);
   if (debug() >= DefaultPrintThresholds::diagnostics) {
@@ -598,7 +598,7 @@ TwoBodyThreeCenterMOIntsTransform::alloc_mem(const size_t localmem)
 void
 TwoBodyThreeCenterMOIntsTransform::dealloc_mem()
 {
-  if (mem_.null())
+  if (mem_ == 0)
     throw std::runtime_error("TwoBodyThreeCenterMOIntsTransform::dealloc_mem() -- memory group not initialized");
   mem_->set_localsize(0);
 }

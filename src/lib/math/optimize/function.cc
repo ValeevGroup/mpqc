@@ -79,7 +79,7 @@ Function::Function(const Ref<KeyVal>&kv, double funcacc,
 {
   matrixkit_ << kv->describedclassvalue("matrixkit");
 
-  if (matrixkit_.null()) matrixkit_ = SCMatrixKit::default_matrixkit();
+  if (matrixkit_ == 0) matrixkit_ = SCMatrixKit::default_matrixkit();
 
   value_.set_desired_accuracy(kv->doublevalue("value_accuracy"));
   if (kv->error() != KeyVal::OK) {
@@ -444,7 +444,7 @@ Function::change_coordinates()
 void
 Function::do_change_coordinates(const Ref<NonlinearTransform> &t)
 {
-  if (t.null())
+  if (t == 0)
       return;
   
   t->transform_coordinates(x_);

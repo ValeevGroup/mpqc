@@ -215,9 +215,9 @@ void R12IntEval::compute_B_DKH_() {
       throw FeatureNotImplemented("B(DKH2) evaluator can only work with one correlation factor",__FILE__,__LINE__);
     Ref<R12Technology::G12CorrelationFactor> g12corrfact;   g12corrfact << corrfactor();
     Ref<R12Technology::G12NCCorrelationFactor> g12nccorrfact; g12nccorrfact << corrfactor();
-    if (g12nccorrfact.null() && g12corrfact.null())
+    if (g12nccorrfact == 0 && g12corrfact == 0)
       throw FeatureNotImplemented("B(DKH2) evaluator can only work with Gaussian (or Gaussian-expanded) correlation factors",__FILE__,__LINE__);
-    Ref<IntParamsG12> params = g12corrfact.nonnull() ? new IntParamsG12(g12corrfact->function(0),
+    Ref<IntParamsG12> params = g12corrfact ? new IntParamsG12(g12corrfact->function(0),
                                                                       g12corrfact->function(0)) :
                                                      new IntParamsG12(g12nccorrfact->function(0),
                                                                       g12nccorrfact->function(0));
@@ -313,10 +313,10 @@ void R12IntEval::contrib_to_B_DKH_a_() {
     t_A_P[s] = sc::detail::t_x_X(cabs, ribs);
     oreg->add(make_keyspace_pair(t_A_P[s]));
   }
-  if (t_x_P[Beta].null()) t_x_P[Beta] = t_x_P[Alpha];
-  if (t_m_P[Beta].null()) t_m_P[Beta] = t_m_P[Alpha];
-  if (t_p_P[Beta].null()) t_p_P[Beta] = t_p_P[Alpha];
-  if (t_A_P[Beta].null()) t_A_P[Beta] = t_A_P[Alpha];
+  if (t_x_P[Beta] == 0) t_x_P[Beta] = t_x_P[Alpha];
+  if (t_m_P[Beta] == 0) t_m_P[Beta] = t_m_P[Alpha];
+  if (t_p_P[Beta] == 0) t_p_P[Beta] = t_p_P[Alpha];
+  if (t_A_P[Beta] == 0) t_A_P[Beta] = t_A_P[Alpha];
 
   // Loop over every 2-e spincase
   for (int s=0; s<nspincases2(); s++) {

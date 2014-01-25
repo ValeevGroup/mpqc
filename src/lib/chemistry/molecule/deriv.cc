@@ -80,7 +80,7 @@ MolecularHessian::save_data_state(StateOut&s)
 RefSCDimension
 MolecularHessian::d3natom()
 {
-  if (d3natom_.null()) d3natom_ = new SCDimension(mol_->natom()*3);
+  if (d3natom_ == 0) d3natom_ = new SCDimension(mol_->natom()*3);
   return d3natom_;
 }
 
@@ -91,8 +91,8 @@ MolecularHessian::cartesian_to_symmetry(const Ref<Molecule> &mol,
 {
   int i;
 
-  if (pg.null()) pg = mol->point_group();
-  if (kit.null()) kit = SCMatrixKit::default_matrixkit();
+  if (pg == 0) pg = mol->point_group();
+  if (kit == 0) kit = SCMatrixKit::default_matrixkit();
 
   // create the character table for the point group
   CharacterTable ct = pg->char_table();
@@ -240,7 +240,7 @@ MolecularHessian::cartesian_to_symmetry(const Ref<Molecule> &mol,
       symmbasis[i] = kit->matrix(d3natom,dirrep);
       int offset = 0;
       for (j=0; j<irrep.degeneracy(); j++)
-        if (components[j].nonnull()) {
+        if (components[j]) {
           symmbasis[i]->assign_subblock(
               components[j],
               0, d3natom.n()-1,
@@ -442,7 +442,7 @@ GuessMolecularHessian::GuessMolecularHessian(const Ref<KeyVal>&keyval):
   MolecularHessian(keyval)
 {
   coor_ << keyval->describedclassvalue("coor");
-  if (mol_.null()) mol_ = coor_->molecule();
+  if (mol_ == 0) mol_ = coor_->molecule();
 }
 
 GuessMolecularHessian::GuessMolecularHessian(StateIn&s):
@@ -556,7 +556,7 @@ MolecularGradient::save_data_state(StateOut&s)
 RefSCDimension
 MolecularGradient::d3natom()
 {
-  if (d3natom_.null()) d3natom_ = new SCDimension(mol_->natom()*3);
+  if (d3natom_ == 0) d3natom_ = new SCDimension(mol_->natom()*3);
   return d3natom_;
 }
 

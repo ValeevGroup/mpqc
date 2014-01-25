@@ -289,7 +289,7 @@ BatchElectronDensity::set_densities(const RefSymmSCMatrix &aden,
   RefSymmSCMatrix ad = aden;
   RefSymmSCMatrix bd = bden;
 
-  if (aden == bden || bden.null()) spin_polarized_ = 0;
+  if (aden == bden || bden == 0) spin_polarized_ = 0;
   else spin_polarized_ = 1;
   
   alpha_dmat_ = new double[(nbasis_*(nbasis_+1))/2];
@@ -570,7 +570,7 @@ BatchElectronDensity::compute_density(const SCVector3 &r,
                                       double *bhess)
 {
   if (alpha_dmat_ == 0) {
-      if (wfn_.null()) {
+      if (wfn_ == 0) {
           throw ProgrammingError("BatchElectronDensity::compute_density: "
                                  "set_densities must be used to initialize "
                                  "object if wfn is not given",
@@ -723,7 +723,7 @@ WriteElectronDensity::WriteElectronDensity(const Ref<KeyVal> &keyval):
   WriteGrid(keyval)
 {
   wfn_ << keyval->describedclassvalue("wfn");
-  if (wfn_.null()) {
+  if (wfn_ == 0) {
       InputError ex("valid \"wfn\" missing",
                     __FILE__, __LINE__, "wfn", "(null)", class_desc());
       try {

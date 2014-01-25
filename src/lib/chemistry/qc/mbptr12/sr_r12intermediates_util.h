@@ -204,7 +204,7 @@ namespace sc {
 
     Ref<DistArray4> darray4;
     if (rdm2) { // rdm2
-      if (rdm2_.null())
+      if (rdm2_ == 0)
         throw ProgrammingError("SingleReference_R12Intermediates<T>::ijxy: asked for rdm2, but it had not been given");
       // if requested spaces don't match exactly, make a new DistArray4
       auto bra1_space = oreg->value(bra1);
@@ -260,7 +260,7 @@ namespace sc {
       }
     }
     else if (t2) {
-      if (t2_[AlphaBeta].null())
+      if (t2_[AlphaBeta] == 0)
         throw ProgrammingError("SingleReference_R12Intermediates<T>::ijxy: asked for T2, but it had not been given");
 
 //      auto oreg = r12world_->world()->tfactory()->orbital_registry();
@@ -474,13 +474,13 @@ namespace sc {
     }
     else if (pkey.oper() == "T1") {
       if (ket_id == "a") { // if given t1_ explicitly (CC), make sure its size matches
-        if (t1_.nonnull()) {
+        if (t1_) {
           if (t1_.ncol() != oreg->value(ket_id)->rank())
             throw ProgrammingError("SingleReference_R12Intermediates::xy() -- T1.ncol() != nvir_act",
                                    __FILE__, __LINE__);
           operator_matrix = t1_;
         }
-        else if (t1_cabs_.nonnull()) { // if t1_cabs given, this means extract the occ_act x vir_act block
+        else if (t1_cabs_) { // if t1_cabs given, this means extract the occ_act x vir_act block
           if (t1_cabs_.ncol() == oreg->value("a'")->rank()) // doesn't make sense if T1 only include CABS
             throw ProgrammingError("SingleReference_R12Intermediates::xy() -- asked for <i|T1|a> but T1_cabs does not include conv. virtuals",
                                    __FILE__, __LINE__);
@@ -503,7 +503,7 @@ namespace sc {
       }
       else {
         MPQC_ASSERT(ket_id == "a'" || ket_id == "A'");
-        MPQC_ASSERT(t1_cabs_.nonnull());
+        MPQC_ASSERT(t1_cabs_);
         MPQC_ASSERT(oreg->value(ket_id)->rank() == t1_cabs_.ncol());
         operator_matrix = t1_cabs_;
       }

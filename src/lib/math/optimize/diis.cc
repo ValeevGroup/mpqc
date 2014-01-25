@@ -252,7 +252,7 @@ void
 DIIS::reinitialize(Ref<SCExtrapData> data)
 {
   iter=0;
-  if (data.nonnull()) {
+  if (data) {
     const bool do_mixing = (mixing_fraction != 0.0);
     if (do_mixing) diism_datain[0] = data->copy();
   }
@@ -413,7 +413,7 @@ DIIS::extrapolate(const Ref<SCExtrapData>& data,
 //             }
 
           for (k=trial; k < last+1; k++) {
-              if (diism_datain[k].null()) {
+              if (diism_datain[k] == 0) {
                 data->accumulate_scaled(btemp[kk], diism_data[k]);
               }
               else {
@@ -429,7 +429,7 @@ DIIS::extrapolate(const Ref<SCExtrapData>& data,
   else {
       //first iteration
       data->zero();
-      if (diism_datain[0].null()) {
+      if (diism_datain[0] == 0) {
           data->accumulate_scaled(1.0, diism_data[0]);
       }
       else {

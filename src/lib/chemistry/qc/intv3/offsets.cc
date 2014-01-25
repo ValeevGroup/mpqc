@@ -37,7 +37,7 @@ static int
 shell_offset(Ref<GaussianBasisSet> cs, int off)
 {
   // unit shells have null cs's
-  if (cs.null()) return off + 1;
+  if (cs == 0) return off + 1;
   return off + cs->nshell();
 }
 
@@ -46,7 +46,7 @@ static int
 prim_offset(Ref<GaussianBasisSet> cs, int off)
 {
   // unit shells have null cs's
-  if (cs.null()) return off + 1;
+  if (cs == 0) return off + 1;
   return off + cs->nprimitive();
 }
 
@@ -55,7 +55,7 @@ static int
 func_offset(Ref<GaussianBasisSet> cs, int off)
 {
   // unit shells have null cs's
-  if (cs.null()) return off + 1;
+  if (cs == 0) return off + 1;
   return off + cs->nbasis();
 }
 

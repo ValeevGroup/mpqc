@@ -77,7 +77,7 @@ main(int argc, char**argv)
 
   Ref<Debugger> debugger;
 
-  if (grp.null()) {
+  if (grp == 0) {
       const char* input = SRCDIR "/thrtest.in";
       const char* keyword = "thread";
 
@@ -90,13 +90,13 @@ main(int argc, char**argv)
 
       debugger << keyval->describedclassvalue(":debug");
 
-      if (grp.null()) {
+      if (grp == 0) {
           cerr << scprintf("Couldn't initialize ThreadGrp\n");
           abort();
         }
     }
 
-  if (debugger.nonnull()) {
+  if (debugger) {
       debugger->set_exec(argv[0]);
       debugger->set_prefix(0);
     }

@@ -181,7 +181,7 @@ SCF::compute_vector(double& eelec, double nucrep)
     // calculate the electronic energy
     eelec = scf_energy();
     double eother = 0.0;
-    if (accumddh_.nonnull()) eother = accumddh_->e();
+    if (accumddh_) eother = accumddh_->e();
     ExEnv::out0() << indent
                   << scprintf("iter %5d energy = %15.10f delta = %10.5e",
                               iter+1, eelec+eother+nucrep, delta)

@@ -208,7 +208,7 @@ TriangulatedSurface::remove_short_edges(double length_cutoff,
               Ref<Vertex> replacement_vertex = edge->vertex(0);
               // however, if we have a volume, find a new vertex on
               // the analytic surface near the center of the edge
-              if (vol.nonnull()) {
+              if (vol) {
                   SCVector3 point, norm;
                   int hn = edge->interpolate(0.5,point,norm,vol,isoval);
                   replacement_vertex = new Vertex(point);

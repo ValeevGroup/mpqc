@@ -52,7 +52,7 @@ namespace sc {
                                    factory->space3_,
                                    factory->space4_);
 
-        if (factory->top_mole_.nonnull())
+        if (factory->top_mole_)
           result->set_top_mole(factory->top_mole_);
         result->set_debug(factory->debug());
 
@@ -74,7 +74,7 @@ namespace sc {
                                    factory->space3_,
                                    factory->space4_);
 
-        if (factory->top_mole_.nonnull())
+        if (factory->top_mole_)
           result->set_top_mole(factory->top_mole_);
         result->set_debug(factory->debug());
 
@@ -135,7 +135,7 @@ namespace sc {
                       const Ref<TwoBodyThreeCenterIntDescr>& descrarg) {
     Ref<TwoBodyThreeCenterMOIntsTransform> result = new TransformType(name,this,descrarg,space1_,space2_,space3_);
 #if 0
-    if (top_mole_.nonnull())
+    if (top_mole_)
       result->set_top_mole(top_mole_);
 #endif
     return result;

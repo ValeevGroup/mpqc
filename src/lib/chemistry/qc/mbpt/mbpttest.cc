@@ -116,7 +116,7 @@ init_mp(const Ref<KeyVal>& keyval, int &argc, char **&argv)
 
   Ref<Debugger> debugger; debugger << keyval->describedclassvalue(":debug");
   // Let the debugger know the name of the executable and the node
-  if (debugger.nonnull()) {
+  if (debugger) {
     debugger->set_exec("mbpttest");
     debugger->set_prefix(grp->me());
     debugger->debug("curt is a hog");
@@ -168,7 +168,7 @@ main(int argc, char**argv)
   } else {
     mole << rpkv->describedclassvalue(keyword);
     opt << rpkv->describedclassvalue(optkeyword);
-    if (opt.nonnull()) {
+    if (opt) {
       opt->set_checkpoint();
       opt->set_checkpoint_file("mbpttest.ckpt");
     }
@@ -176,10 +176,10 @@ main(int argc, char**argv)
 
   tim.exit("input");
 
-  if (mole.nonnull()) {
+  if (mole) {
     ExEnv::out0() << indent << "energy: " << mole->energy() << endl;
     if (do_gradient && mole->gradient_implemented()) {
-      if (opt.nonnull()) {
+      if (opt) {
         opt->optimize();
       } else {
         mole->gradient().print("gradient");

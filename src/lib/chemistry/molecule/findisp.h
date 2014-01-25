@@ -479,7 +479,7 @@ class FinDispMolecularHessian: public MolecularHessian {
     RefSymmSCMatrix cartesian_hessian();
 
     void set_energy(const Ref<MolecularEnergy> &energy);
-    MolecularEnergy* energy() const { return pimpl_.nonnull() ? pimpl_->mole().pointer() : 0; }
+    MolecularEnergy* energy() const { return pimpl_ ? pimpl_->mole().pointer() : 0; }
 
     const Ref<Params>& params() const { return params_; }
 

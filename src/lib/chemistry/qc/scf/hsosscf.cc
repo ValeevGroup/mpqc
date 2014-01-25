@@ -433,7 +433,7 @@ HSOSSCF::set_occupations(const RefDiagSCMatrix& ev, bool can_change_magnetic_mom
   if (!ndocc_) {
     ndocc_=newdocc;
     nsocc_=newsocc;
-  } else if (most_recent_pg_.nonnull()
+  } else if (most_recent_pg_
              && most_recent_pg_->equiv(molecule()->point_group())) {
     // test to see if newocc is different from ndocc_
     for (i=0; i < nirrep_; i++) {

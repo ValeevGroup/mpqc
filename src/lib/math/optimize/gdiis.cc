@@ -205,7 +205,7 @@ GDIISOpt::update()
   }
 
   // update the hessian
-  if (update_.nonnull()) {
+  if (update_) {
     update_->update(ihessian_,function(),xcurrent,gcurrent);
   }
 

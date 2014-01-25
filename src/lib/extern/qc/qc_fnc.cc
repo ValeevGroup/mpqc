@@ -180,7 +180,7 @@ void init_integrals_() {
   int izero = 0;
   char** dptrzero = 0;
   Ref<Integral> integral = Integral::initial_integral(izero,dptrzero);
-  if (integral.nonnull()) Integral::set_default_integral(integral);
+  if (integral) Integral::set_default_integral(integral);
   qc_integral = Integral::get_default_integral()->clone();
   qc_integral->set_basis(qc_obs);
 }

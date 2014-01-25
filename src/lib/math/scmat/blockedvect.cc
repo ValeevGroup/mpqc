@@ -85,7 +85,7 @@ void
 BlockedSCVector::assign_val(double a)
 {
   for (int i=0; i < d->blocks()->nblock(); i++)
-    if (vecs_[i].nonnull())
+    if (vecs_[i])
       vecs_[i]->assign(a);
 }
 
@@ -104,7 +104,7 @@ BlockedSCVector::assign_v(SCVector*a)
   }
 
   for (int i=0; i < d->blocks()->nblock(); i++)
-    if (vecs_[i].nonnull())
+    if (vecs_[i])
       vecs_[i]->assign(la->vecs_[i]);
 }
 
@@ -112,7 +112,7 @@ void
 BlockedSCVector::assign_p(const double*a)
 {
   for (int i=0; i < d->blocks()->nblock(); i++)
-    if (vecs_[i].nonnull())
+    if (vecs_[i])
       vecs_[i]->assign(a+d->blocks()->start(i));
 }
 
@@ -178,18 +178,18 @@ BlockedSCVector::accumulate_product_rv(SCMatrix*a,SCVector*b)
 
   if (nbrow==nbcol) {
     for (int i=0; i < nbrow; i++)
-      if (vecs_[i].nonnull() && la->mats_[i].nonnull())
+      if (vecs_[i] && la->mats_[i])
         vecs_[i]->accumulate_product(la->mats_[i], lb->vecs_[i]);
   }
   else {
     if (nbcol == 1) {
       for (int i=0; i < nbrow; i++)
-        if (vecs_[i].nonnull() && la->mats_[i].nonnull())
+        if (vecs_[i] && la->mats_[i])
           vecs_[i]->accumulate_product(la->mats_[i], lb->vecs_[0]);
     }
     else { // nbrow == 1
       for (int i=0; i < nbcol; i++)
-        if (vecs_[i].nonnull() && la->mats_[i].nonnull())
+        if (vecs_[i] && la->mats_[i])
           vecs_[0]->accumulate_product(la->mats_[i], lb->vecs_[i]);
     }
   }
@@ -212,7 +212,7 @@ BlockedSCVector::accumulate_product_sv(SymmSCMatrix*a,SCVector*b)
   }
 
   for (int i=0; i < d->blocks()->nblock(); i++)
-    if (vecs_[i].nonnull() && la->mats_[i].nonnull())
+    if (vecs_[i] && la->mats_[i])
       vecs_[i]->accumulate_product(la->mats_[i], lb->vecs_[i]);
 }
 
@@ -231,7 +231,7 @@ BlockedSCVector::accumulate(const SCVector*a)
   }
 
   for (int i=0; i < d->blocks()->nblock(); i++)
-    if (vecs_[i].nonnull())
+    if (vecs_[i])
       vecs_[i]->accumulate(la->vecs_[i]);
 }
 
@@ -251,7 +251,7 @@ BlockedSCVector::accumulate(const SCMatrix*a)
   }
 
   for (int i=0; i < d->blocks()->nblock(); i++)
-    if (vecs_[i].nonnull())
+    if (vecs_[i])
       vecs_[i]->accumulate(la->mats_[i]);
 }
 
@@ -272,7 +272,7 @@ BlockedSCVector::scalar_product(SCVector*a)
   double result=0;
 
   for (int i=0; i < d->blocks()->nblock(); i++)
-    if (vecs_[i].nonnull())
+    if (vecs_[i])
       result += vecs_[i]->scalar_product(la->vecs_[i]);
   
   return result;
@@ -289,7 +289,7 @@ BlockedSCVector::element_op(const Ref<SCElementOp>& op)
   for (int i=0; i < nb; i++) {
     if (bop)
       bop->working_on(i);
-    if (vecs_[i].nonnull())
+    if (vecs_[i])
       vecs_[i]->element_op(op);
   }
   op->defer_collect(0);
@@ -316,7 +316,7 @@ BlockedSCVector::element_op(const Ref<SCElementOp2>& op,
   for (int i=0; i < nb; i++) {
     if (bop)
       bop->working_on(i);
-    if (vecs_[i].nonnull())
+    if (vecs_[i])
       vecs_[i]->element_op(op, lm->vecs_[i]);
   }
   op->defer_collect(0);
@@ -345,7 +345,7 @@ BlockedSCVector::element_op(const Ref<SCElementOp3>& op,
   for (int i=0; i < nb; i++) {
     if (bop)
       bop->working_on(i);
-    if (vecs_[i].nonnull())
+    if (vecs_[i])
       vecs_[i]->element_op(op, lm->vecs_[i], ln->vecs_[i]);
   }
   op->defer_collect(0);

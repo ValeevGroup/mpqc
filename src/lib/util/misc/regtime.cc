@@ -771,7 +771,7 @@ Timer::Timer(const char *name):
   default_entered_(false)
 {
   timer_ = RegionTimer::default_regiontimer();
-  if (timer_.nonnull() && name != 0) {
+  if (timer_ && name != 0) {
       enter(name);
     }
 }
@@ -782,7 +782,7 @@ Timer::Timer(const Ref<RegionTimer>&t, const char *name):
   default_depth_(0),
   default_entered_(false)
 {
-  if (timer_.nonnull() && name != 0) {
+  if (timer_ && name != 0) {
       enter(name);
     }
 }
@@ -794,7 +794,7 @@ Timer::Timer(const std::string &name):
   default_entered_(false)
 {
   timer_ = RegionTimer::default_regiontimer();
-  if (timer_.nonnull()) {
+  if (timer_) {
       enter(name);
     }
 }
@@ -805,7 +805,7 @@ Timer::Timer(const Ref<RegionTimer>&t, const std::string &name):
       default_depth_(0),
       default_entered_(false)
 {
-  if (timer_.nonnull()) {
+  if (timer_) {
       enter(name);
     }
 }
@@ -830,14 +830,14 @@ Timer::Timer():
 void
 Timer::print(std::ostream &o) const
 {
-  if (timer_.nonnull()) timer_->print(o);
+  if (timer_) timer_->print(o);
 }
 
 Timer::~Timer()
 {
   // NB: This unwind code could be incorrect for complicated
   // uses of default timing regions.
-  if (timer_.nonnull()) {
+  if (timer_) {
       while (depth_ > 0) {
           this->exit();
         }
@@ -851,7 +851,7 @@ Timer::~Timer()
 void
 Timer::enter(const char *name)
 {
-  if (timer_.nonnull()) {
+  if (timer_) {
       timer_->enter(name);
       depth_++;
     }
@@ -860,7 +860,7 @@ Timer::enter(const char *name)
 void
 Timer::change(const char *name)
 {
-  if (timer_.nonnull()) {
+  if (timer_) {
       timer_->change(name);
     }
 }
@@ -868,7 +868,7 @@ Timer::change(const char *name)
 void
 Timer::exit(const char *name)
 {
-  if (timer_.nonnull()) {
+  if (timer_) {
       timer_->exit(name,true);
       depth_--;
     }
@@ -877,7 +877,7 @@ Timer::exit(const char *name)
 void
 Timer::set_default(const char *name)
 {
-  if (timer_.nonnull()) {
+  if (timer_) {
       timer_->set_default(name);
       default_depth_++;
     }
@@ -886,7 +886,7 @@ Timer::set_default(const char *name)
 void
 Timer::unset_default()
 {
-  if (timer_.nonnull()) {
+  if (timer_) {
       timer_->unset_default();
       default_depth_--;
     }
@@ -895,7 +895,7 @@ Timer::unset_default()
 void
 Timer::enter_default()
 {
-  if (timer_.nonnull()) {
+  if (timer_) {
       timer_->enter_default();
       default_entered_ = true;
     }
@@ -904,7 +904,7 @@ Timer::enter_default()
 void
 Timer::exit_default()
 {
-  if (timer_.nonnull()) {
+  if (timer_) {
       timer_->exit_default();
       default_entered_ = false;
     }
@@ -946,43 +946,43 @@ double Timer::flops(const char* region) const {
 
 void
 tim_enter(const char *name) {
-  if (default_regtimer.nonnull()) default_regtimer->enter(name);
+  if (default_regtimer) default_regtimer->enter(name);
 }
 
 void
 tim_exit(const char *name)
 {
-  if (default_regtimer.nonnull()) default_regtimer->exit(name);
+  if (default_regtimer) default_regtimer->exit(name);
 }
 
 void
 tim_set_default(const char *name)
 {
-  if (default_regtimer.nonnull()) default_regtimer->set_default(name);
+  if (default_regtimer) default_regtimer->set_default(name);
 }
 
 void
 tim_enter_default()
 {
-  if (default_regtimer.nonnull()) default_regtimer->enter_default();
+  if (default_regtimer) default_regtimer->enter_default();
 }
 
 void
 tim_exit_default()
 {
-  if (default_regtimer.nonnull()) default_regtimer->exit_default();
+  if (default_regtimer) default_regtimer->exit_default();
 }
 
 void
 tim_change(const char *name)
 {
-  if (default_regtimer.nonnull()) default_regtimer->change(name);
+  if (default_regtimer) default_regtimer->change(name);
 }
 
 void
 tim_print(int)
 {
-  if (default_regtimer.nonnull()) default_regtimer->print();
+  if (default_regtimer) default_regtimer->print();
 }
 
 }

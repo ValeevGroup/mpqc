@@ -333,7 +333,7 @@ void PsiExEnv::run_psiclean(bool fullclean)
   if (me_ != 0) return;
 
   // can't run unless input file has been created
-  if (psiinput_.nonnull())
+  if (psiinput_)
     psio_.purge(fullclean);
 }
 

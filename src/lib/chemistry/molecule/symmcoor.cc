@@ -296,7 +296,7 @@ SymmMolecularCoor::form_coordinates(int keep_variable)
   fixed_ = new SetIntCoor;
   fixed_->add(saved_fixed_);
   // if we're following coordinates, add them to the fixed list
-  if (followed_.nonnull())
+  if (followed_)
     fixed_->add(followed_);
   
   int nredundant = nbonds + nbends + ntors + nouts + nextras;
@@ -336,7 +336,7 @@ SymmMolecularCoor::form_coordinates(int keep_variable)
 
   // now remove followed coords from the fixed list, and add to the
   // variable list
-  if (followed_.nonnull()) {
+  if (followed_) {
     fixed_->pop();
     variable_->add(followed_);
   }

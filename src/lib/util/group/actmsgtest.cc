@@ -20,7 +20,7 @@ init_thread(const Ref<KeyVal>& keyval, int &argc, char **&argv)
     thread << keyval->describedclassvalue("thread");
   }
 
-  if (thread.nonnull())
+  if (thread)
     ThreadGrp::set_default_threadgrp(thread);
   else
     thread = ThreadGrp::get_default_threadgrp();

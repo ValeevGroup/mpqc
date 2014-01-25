@@ -155,7 +155,7 @@ DiscreteConnollyShape::initialize(const Ref<Molecule>&mol,double probe_radius)
                                                *(spheres[i].pointer()),
                                                *(spheres[j].pointer()),
                                                *(spheres[k].pointer()));
-              if (e.nonnull()) add_shape(e);
+              if (e) add_shape(e);
             }
         }
     }

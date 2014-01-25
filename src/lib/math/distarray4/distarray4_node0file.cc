@@ -112,7 +112,7 @@ DistArray4_Node0File::clone(const DistArray4Dimensions& dim) {
   int id = 0;
   std::string clonename;
   clone_filename(clonename, this->filename_, id);
-  if (clonelist_.nonnull()) {
+  if (clonelist_) {
     while (clonelist_->key_exists(clonename)) {
       ++id;
       clone_filename(clonename, this->filename_, id);

@@ -145,7 +145,7 @@ void CCR12::compute(){
 
 
 void CCR12::obsolete() {
-  if (reference_.nonnull()) reference_->obsolete();
+  if (reference_) reference_->obsolete();
   Wavefunction::obsolete();
 }
 

@@ -53,9 +53,9 @@ PsiSCF_RefWavefunction::PsiSCF_RefWavefunction(const Ref<WavefunctionWorld>& wor
                                                    vir_space_(vir_space) {
   // spin_restricted is a recommendation only -> make sure it is realizable
   if (scf_->spin_polarized() == false) spin_restricted_ = true;
-  Ref<PsiUHF> uhf; uhf << scf_; if (uhf.nonnull()) spin_restricted_ = false;
+  Ref<PsiUHF> uhf; uhf << scf_; if (uhf) spin_restricted_ = false;
 
-  if (nfzv > 0 && vir_space.nonnull())
+  if (nfzv > 0 && vir_space)
     throw ProgrammingError("when VBS is given nfzv must be 0",__FILE__,__LINE__);
 }
 
@@ -87,7 +87,7 @@ PsiSCF_RefWavefunction::print(std::ostream&o) const {
     o << indent << "spin_restricted = " << (spin_restricted_ ? "true" : "false") << endl;
     o << indent << "# frozen core   = " << nfzc_ << endl;
     o << indent << "# frozen virt   = " << nfzv_ << endl;
-    if (vir_space_.nonnull()) {
+    if (vir_space_) {
       o << indent << "vir_basis:" << endl;
       vir_space_->basis()->print(o);
       o << endl;
@@ -110,7 +110,7 @@ PsiSCF_RefWavefunction::ordm(SpinCase1 s) const {
 
   Ref<PsiHSOSHF> hsoshf; hsoshf << scf_;
 
-  if (hsoshf.nonnull() && spin_restricted_ == false) { // HSOSHF + spin_unrestricted => must use semicanonical orbitals
+  if (hsoshf && spin_restricted_ == false) { // HSOSHF + spin_unrestricted => must use semicanonical orbitals
     // compute semicanonical densities
     RefSCMatrix C = hsoshf->coefs_semicanonical(s);
     RefDiagSCMatrix P_mo = C.kit()->diagmatrix(C.coldim()); // density in MO basis
@@ -164,7 +164,7 @@ PsiSCF_RefWavefunction::init_spaces_restricted()
   }
 
   // omit unoccupied orbitals?
-  const bool omit_uocc = vir_space_.nonnull() && vir_space_->rank() == 0;
+  const bool omit_uocc = vir_space_ && vir_space_->rank() == 0;
   if (omit_uocc) {
     Ref<OrbitalSpace> allspace = new OrbitalSpace("", "",
                                                   evecs_ao,
@@ -235,7 +235,7 @@ void
 PsiSCF_RefWavefunction::init_spaces_unrestricted()
 {
   // omit unoccupied orbitals?
-  const bool omit_uocc = vir_space_.nonnull() && (vir_space_->rank() == 0);
+  const bool omit_uocc = vir_space_ && (vir_space_->rank() == 0);
   if (omit_uocc)
     throw FeatureNotImplemented("omit_uocc is not implemented for spin-unrestricted references",
                                 __FILE__,__LINE__);
@@ -259,7 +259,7 @@ PsiSCF_RefWavefunction::init_spaces_unrestricted()
   // alpha and beta orbitals are available for UHF
   Ref<PsiUHF> uhf = dynamic_cast<PsiUHF*>(scf().pointer());
   Ref<PsiHSOSHF> hsoshf = dynamic_cast<PsiHSOSHF*>(scf().pointer());
-  if (uhf.nonnull()) {
+  if (uhf) {
     alpha_evecs = scf()->coefs(Alpha);
     beta_evecs = scf()->coefs(Beta);
     alpha_evals = scf()->evals(Alpha);
@@ -510,22 +510,22 @@ RefWavefunctionFactory::make(const Ref<WavefunctionWorld> & world,
 {
   { // PsiSCF
     Ref<PsiSCF> cast; cast << ref;
-    if (cast.nonnull())
+    if (cast)
       return new PsiSCF_RefWavefunction(world, cast, spin_restricted, nfzc, nfzv, vir_space);
   }
   { // PsiRASCI
     Ref<PsiRASCI> cast; cast << ref;
-    if (cast.nonnull()) {
-      if (vir_space.nonnull() && vir_space->rank() != 0)
+    if (cast) {
+      if (vir_space && vir_space->rank() != 0)
         throw ProgrammingError("PsiRASCI_RefWavefunction can only be used with default virtual space",
                                __FILE__, __LINE__);
-      const bool omit_uocc = vir_space.nonnull();
+      const bool omit_uocc = vir_space;
       return new PsiRASCI_RefWavefunction(world, cast, spin_restricted, nfzc, nfzv, omit_uocc);
     }
   }
   { // OneBodyWavefunction
     Ref<OneBodyWavefunction> cast; cast << ref;
-    if (cast.nonnull())
+    if (cast)
       return new SD_RefWavefunction(world, cast, spin_restricted, nfzc, nfzv, vir_space);
   }
   throw FeatureNotImplemented("this reference wavefunction cannot be used for correlated methods",

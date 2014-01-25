@@ -418,11 +418,9 @@ class  Ref  : public RefBase {
     /** Returns a C++ reference to the reference counted object.
         The behaviour is undefined if the object is null. */
     T& operator *() const { MPQC_ASSERT(p!=0); return *p; };
-    /** Return 1 if this is a reference to a null object.  Otherwise
-        return 0. */
-    int null() const { return p == 0; }
-    /// Return !null().
-    int nonnull() const { return p != 0; }
+    /** Return true if this is a reference to a null object.  Otherwise
+        return false. */
+    bool null() const { return p == 0; }
     bool operator!() const {
       return null();
     }
@@ -638,6 +636,10 @@ class  Ref  : public RefBase {
     }
     /// Print a warning concerning the reference.
     void warn(const char*s) const { RefBase::warn(s); }
+
+  protected:
+    /// Return !null().
+    bool nonnull() const { return !null(); }
 };
 
 template <class T>

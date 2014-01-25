@@ -46,7 +46,7 @@ main(int argc, char**argv)
   grp = new sc::MPIMessageGrp(&argc, &argv);
 #endif
   if (grp.null()) grp = sc::MessageGrp::initial_messagegrp(argc, argv);
-  if (grp.nonnull())
+  if (grp)
       sc::MessageGrp::set_default_messagegrp(grp);
   else
       grp = sc::MessageGrp::get_default_messagegrp();

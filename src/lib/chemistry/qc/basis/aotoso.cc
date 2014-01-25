@@ -695,7 +695,7 @@ PetiteList::evecs_to_SO_basis(const RefSCMatrix& aoev)
   // given aoev may be non-blocked or its dimensions may have different sub-blocking
   // in that case copy into a blocked matrix of the desired dimensions
   RefSCMatrix aoevecs = dynamic_cast<BlockedSCMatrix*>(aoev.pointer());
-  const bool need_to_copy = aoevecs.null() || (aoevecs.nonnull() && !AO_basisdim()->equiv(aoev.rowdim()));
+  const bool need_to_copy = aoevecs.null() || (aoevecs && !AO_basisdim()->equiv(aoev.rowdim()));
   if (need_to_copy) {
     aoevecs = gbs_->so_matrixkit()->matrix(AO_basisdim(), aoev.coldim());
     aoevecs->convert(aoev);

@@ -163,7 +163,7 @@ MemoryGrp::initial_memorygrp(int &argc, char *argv[])
       strkv->parse_string(keyval_string);
       Ref<DescribedClass> dc = strkv->describedclassvalue();
       grp = dynamic_cast<MemoryGrp*>(dc.pointer());
-      if (dc == 0) {
+      if (dc.null()) {
           ExEnv::errn() << "initial_memorygrp: couldn't find a MemoryGrp in "
                << keyval_string << endl;
           abort();
@@ -321,7 +321,7 @@ MemoryGrp::set_default_memorygrp(const Ref<MemoryGrp>& grp)
 MemoryGrp*
 MemoryGrp::get_default_memorygrp()
 {
-  if (default_memorygrp) return default_memorygrp.pointer();
+  if (default_memorygrp.nonnull()) return default_memorygrp.pointer();
 
   Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
 
@@ -336,7 +336,7 @@ MemoryGrp::get_default_memorygrp()
   return default_memorygrp.pointer();
 #endif
 
-  if (msg == 0) {
+  if (msg.null()) {
       ExEnv::errn() << scprintf("MemoryGrp::get_default_memorygrp: requires default MessageGrp if default behavior not configured\n");
       abort();
     }
@@ -366,7 +366,7 @@ MemoryGrp::get_default_memorygrp()
       abort();
     }
 
-  if (default_memorygrp == 0) {
+  if (default_memorygrp.null()) {
       ExEnv::err0() << scprintf("WARNING: MemoryGrp::get_default_memorygrp(): failed\n");
       default_memorygrp = new ProcMemoryGrp;
     }

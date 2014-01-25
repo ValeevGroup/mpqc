@@ -50,7 +50,7 @@ Int2eV3::init_storage(int size)
 void
 Int2eV3::done_storage()
 {
-  if (storer) {
+  if (storer.nonnull()) {
       storer->done();
     }
   int_integral_storage = 0;

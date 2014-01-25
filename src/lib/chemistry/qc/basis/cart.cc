@@ -36,10 +36,10 @@ using namespace sc;
 CartesianBasisSet::CartesianBasisSet(const Ref<KeyVal> & kv)
 {
   integral_ << kv->describedclassvalue("integral").pointer();
-  if (integral_ == 0)
+  if (integral_.null())
     integral_ = Integral::get_default_integral();
   parent_ << kv->describedclassvalue("basis").pointer();
-  if (parent_ == 0)
+  if (parent_.null())
     throw InputError("keyword basis is required", __FILE__, __LINE__, "basis", "null", this->class_desc());
 
   convert(parent_, integral_);

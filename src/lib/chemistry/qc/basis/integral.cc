@@ -167,7 +167,7 @@ Integral::initial_integral(int& argc, char ** argv)
     strkv->parse_string(keyval_string);
     Ref<DescribedClass> dc = strkv->describedclassvalue();
     intf = dynamic_cast<Integral*>(dc.pointer());
-    if (dc == 0) {
+    if (dc.null()) {
       ostringstream errmsg;
       errmsg << "Integral::initial_integral: couldn't find a Integral in " << keyval_string << ends;
       throw runtime_error(errmsg.str());
@@ -226,9 +226,9 @@ Integral::set_basis(const Ref<GaussianBasisSet> &b1,
   bs2_ = b2;
   bs3_ = b3;
   bs4_ = b4;
-  if (bs2_ == 0) bs2_ = bs1_;
-  if (bs3_ == 0) bs3_ = bs2_;
-  if (bs4_ == 0) bs4_ = bs3_;
+  if (bs2_.null()) bs2_ = bs1_;
+  if (bs3_.null()) bs3_ = bs2_;
+  if (bs4_.null()) bs4_ = bs3_;
 }
 
 size_t Integral::storage_required(TwoBodyOper::type opertype,

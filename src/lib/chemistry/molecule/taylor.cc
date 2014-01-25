@@ -45,13 +45,13 @@ TaylorMolecularEnergy::TaylorMolecularEnergy(const Ref<KeyVal>&keyval):
 {
   coordinates_ << keyval->describedclassvalue("coordinates");
   // if coordinates is nonnull use cartesian coordinates
-  if (coordinates_) {
+  if (coordinates_.nonnull()) {
       dim_ = new SCDimension(coordinates_->n());
     }
   else {
       dim_ = moldim();
     }
-  if (coordinates_) {
+  if (coordinates_.nonnull()) {
       expansion_point_ = matrixkit()->vector(dim_);
       coordinates_->update_values(molecule());
       coordinates_->values_to_vector(expansion_point_);
@@ -68,7 +68,7 @@ TaylorMolecularEnergy::TaylorMolecularEnergy(const Ref<KeyVal>&keyval):
   int n_fc = keyval->count("force_constants");
 
   int use_guess_hessian = 0;
-  if (coordinates_ == 0 && n_fc == 0) {
+  if (coordinates_.null() && n_fc == 0) {
       use_guess_hessian = 1;
       n_fc = (moldim().n()*(moldim().n()+1))/2;
       maxorder_ = 2;
@@ -139,7 +139,7 @@ void
 TaylorMolecularEnergy::print(ostream&o) const
 {
   MolecularEnergy::print(o);
-  if (coordinates_) coordinates_->print_details(molecule(), o);
+  if (coordinates_.nonnull()) coordinates_->print_details(molecule(), o);
   int nfc = force_constant_index_.size();
   o << indent << "Force Constants:" << endl;
   o << incindent;
@@ -194,7 +194,7 @@ TaylorMolecularEnergy::compute()
 {
   RefSCVector geometry;
 
-  if (coordinates_) {
+  if (coordinates_.nonnull()) {
       coordinates_->update_values(molecule());
       geometry = expansion_point_.clone();
       coordinates_->values_to_vector(geometry);
@@ -250,7 +250,7 @@ TaylorMolecularEnergy::value_implemented() const
 bool
 TaylorMolecularEnergy::analytic_gradient_implemented() const
 {
-  return coordinates_ == 0 && maxorder_ >= 1;
+  return coordinates_.null() && maxorder_ >= 1;
 }
 
 bool

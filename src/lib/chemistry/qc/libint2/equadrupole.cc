@@ -44,7 +44,7 @@ void Int1eLibint2::equadrupole(int sh1, int sh2)
   int maxam2 = int_shell2_->max_am();
   int minam2 = int_shell2_->min_am();
 
-  if (multipole_origin_ == 0) {
+  if (multipole_origin_.null()) {
     double d[3] = {0.0, 0.0, 0.0};
     set_multipole_origin(new DipoleData(d));
   }

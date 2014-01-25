@@ -39,14 +39,14 @@ NonlinearTransform::~NonlinearTransform()
 void
 NonlinearTransform::transform_gradient(const RefSCVector& g)
 {
-  if (g == 0) return;
+  if (g.null()) return;
   g.assign(linear_transform_ * g);
 }
 
 void
 NonlinearTransform::transform_hessian(const RefSymmSCMatrix& h)
 {
-  if (h == 0) return;
+  if (h.null()) return;
   ExEnv::out0() << indent
        << "WARNING: NonlinearTransform::transform_hessian: "
        << "using linear transform\n";
@@ -59,7 +59,7 @@ NonlinearTransform::transform_hessian(const RefSymmSCMatrix& h)
 void
 NonlinearTransform::transform_ihessian(const RefSymmSCMatrix &ih)
 {
-  if (ih == 0) return;
+  if (ih.null()) return;
   RefSymmSCMatrix h(ih.gi());
   transform_hessian(h);
   ih.assign(h.gi());

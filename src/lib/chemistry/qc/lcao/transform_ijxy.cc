@@ -142,7 +142,7 @@ TwoBodyMOIntsTransform_ijxy::memgrp_blksize() const
 void
 TwoBodyMOIntsTransform_ijxy::init_acc()
 {
-  if (ints_acc_)
+  if (ints_acc_.nonnull())
     return;
 
   const int nij = compute_nij(batchsize_, space2_->rank(), msg_->n(), msg_->me());

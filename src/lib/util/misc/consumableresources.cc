@@ -184,7 +184,7 @@ ConsumableResources::initial_instance(int& argc, char ** argv)
     strkv->parse_string(keyval_string);
     Ref<DescribedClass> dc = strkv->describedclassvalue();
     inst = dynamic_cast<ConsumableResources*>(dc.pointer());
-    if (dc == 0) {
+    if (dc.null()) {
       std::ostringstream errmsg;
       errmsg << "ConsumableResources::initial_instance: couldn't find a ConsumableResources in " << keyval_string << std::ends;
       throw std::runtime_error(errmsg.str());
@@ -360,7 +360,7 @@ ConsumableResources::object_is_gone() {
 
 bool
 ConsumableResources::default_object_is_gone() {
-  const bool result = default_instance_ == 0;
+  const bool result = default_instance_.null();
   if (result) _warn();
   return result;
 }

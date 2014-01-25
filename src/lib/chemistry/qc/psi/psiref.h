@@ -61,7 +61,7 @@ namespace sc {
       const Ref<PsiSCF>& scf() const { return scf_; }
       const Ref<OrbitalSpace>& vir_space() const { return vir_space_; }
       const Ref<GaussianBasisSet>& uocc_basis() const {
-        if (vir_space_) return vir_space_->basis();
+        if (vir_space_.nonnull()) return vir_space_->basis();
         else return this->basis();
       }
 

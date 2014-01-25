@@ -12,7 +12,7 @@ static ClassDesc SavableStateProxy_cd(
 SavableStateProxy::SavableStateProxy(const Ref<KeyVal> &keyval)
 {
   Ref<StateIn> statein; statein << keyval->describedclassvalue("statein");
-  if (statein) {
+  if (statein.nonnull()) {
       std::string objectname = keyval->stringvalue("object");
       StateIn &si = *(statein.pointer());
       if (keyval->exists("override")) {

@@ -571,7 +571,7 @@ bool
 R12Technology::NullCorrelationFactor::equiv(const Ref<CorrelationFactor>& cf) const
 {
   Ref<NullCorrelationFactor> cf_null; cf_null << cf;
-  return cf_null;
+  return cf_null.nonnull();
 }
 
 Ref<TwoBodyIntDescr>
@@ -635,14 +635,14 @@ bool
 R12Technology::R12CorrelationFactor::equiv(const Ref<CorrelationFactor>& cf) const
 {
   Ref<R12CorrelationFactor> cf_cast; cf_cast << cf;
-  return cf_cast;
+  return cf_cast.nonnull();
 }
 
 ////
 
 R12Technology::G12CorrelationFactor::G12CorrelationFactor(const CorrelationParameters& params, const Ref<GeminalDescriptor> &geminaldescriptor){
   label_=std::string("G12");
-  if (geminaldescriptor)
+  if (geminaldescriptor.nonnull())
     geminaldescriptor_=geminaldescriptor;
   else {
     Ref<GeminalDescriptorFactory> gdesc_factory=new GeminalDescriptorFactory;
@@ -760,7 +760,7 @@ bool
 R12Technology::G12CorrelationFactor::equiv(const Ref<CorrelationFactor>& cf) const
 {
   Ref<G12CorrelationFactor> cf_cast; cf_cast << cf;
-  if (cf_cast == 0) return false;
+  if (cf_cast.null()) return false;
   return R12Technology::CorrParamCompare<IntParamsG12>::equiv(params_,(*cf_cast).params_);
 }
 
@@ -768,7 +768,7 @@ R12Technology::G12CorrelationFactor::equiv(const Ref<CorrelationFactor>& cf) con
 
 R12Technology::G12NCCorrelationFactor::G12NCCorrelationFactor(const CorrelationParameters& params, const Ref<GeminalDescriptor> &geminaldescriptor){
   label_=std::string("G12");
-  if (geminaldescriptor){
+  if (geminaldescriptor.nonnull()){
   geminaldescriptor_=geminaldescriptor;
   }
   else {
@@ -880,7 +880,7 @@ bool
 R12Technology::G12NCCorrelationFactor::equiv(const Ref<CorrelationFactor>& cf) const
 {
   Ref<G12NCCorrelationFactor> cf_cast; cf_cast << cf;
-  if (cf_cast == 0) return false;
+  if (cf_cast.null()) return false;
   return R12Technology::CorrParamCompare<IntParamsG12>::equiv(params_,(*cf_cast).params_);
 }
 
@@ -948,9 +948,9 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval)
 
   bool abs_eq_obs = true;
   bool vbs_eq_obs = true;
-  if (obs) {
-    abs_eq_obs = abs ? abs->equiv(obs) : true;
-    vbs_eq_obs = vbs ? vbs->equiv(obs) : true;
+  if (obs.nonnull()) {
+    abs_eq_obs = abs.nonnull() ? abs->equiv(obs) : true;
+    vbs_eq_obs = vbs.nonnull() ? vbs->equiv(obs) : true;
   }
   this->init_from_kv(keyval, abs_eq_obs, vbs_eq_obs);
 }
@@ -961,8 +961,8 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
                              const Ref<GaussianBasisSet>& abs)
 {
   this->init_from_kv(keyval,
-                     abs ? abs->equiv(obs) : true,
-                     vbs ? vbs->equiv(obs) : true);
+                     abs.nonnull() ? abs->equiv(obs) : true,
+                     vbs.nonnull() ? vbs->equiv(obs) : true);
 }
 
 void
@@ -1229,7 +1229,7 @@ R12Technology::init_from_kv(const Ref<KeyVal>& keyval,
     "R12Technology::R12Technology\n"
     );
   // Default constructor for R12Ansatz specifies the default
-  if (ansatz_ == 0)
+  if (ansatz_.null())
     ansatz_ = new R12Ansatz;
   if (ansatz()->projector() == Projector_1 && stdapprox() != StdApprox_C)
     throw InputError("R12Technology::R12Technology -- projector 1 has not been implemented yet for a standard approximation other than C",__FILE__,__LINE__);
@@ -1560,7 +1560,7 @@ R12Technology::check_integral_factory(const Ref<Integral>& ints)
 {
   // any factory can support pure MP2 calculations! Thus only test for nontrivial corr factors
   Ref<NullCorrelationFactor> nullcf; nullcf << corrfactor();
-  if (nullcf == 0) {
+  if (nullcf.null()) {
     // Only IntegralLibint2 can be used at the moment
     bool allowed_integral_factory = false;
 #ifdef HAVE_LIBINT2

@@ -70,17 +70,17 @@ const char* pkernel_key = kernel_key;
 int main(int argc, char **argv) {
 
   Ref<MessageGrp> msg = MessageGrp::initial_messagegrp(argc, argv);
-  if (msg == 0)
+  if (msg.null())
     msg = new ProcMessageGrp();
   MessageGrp::set_default_messagegrp(msg);
 
   Ref<Integral> integral = Integral::initial_integral(argc, argv);
-  if (integral == 0)
+  if (integral.null())
     integral = new IntegralV3();
   Integral::set_default_integral(integral);
 
   Ref<ConsumableResources> res = ConsumableResources::initial_instance(argc, argv);
-  if (res)
+  if (res.nonnull())
     ConsumableResources::set_default_instance(res);
   res->print();
 

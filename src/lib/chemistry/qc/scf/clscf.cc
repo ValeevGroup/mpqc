@@ -224,7 +224,7 @@ CLSCF::print(ostream&o) const
 void
 CLSCF::set_occupations(const RefDiagSCMatrix& ev)
 {
-  if (user_occupations_ || (initial_ndocc_ && ev == 0)) {
+  if (user_occupations_ || (initial_ndocc_ && ev.null())) {
     if (form_occupations(ndocc_, initial_ndocc_)) {
       most_recent_pg_ = new PointGroup(molecule()->point_group());
       return;
@@ -237,7 +237,7 @@ CLSCF::set_occupations(const RefDiagSCMatrix& ev)
 
   RefDiagSCMatrix evals;
 
-  if (ev == 0) {
+  if (ev.null()) {
     initial_vector();
     evals = eigenvalues_.result_noupdate();
   }
@@ -257,7 +257,7 @@ CLSCF::set_occupations(const RefDiagSCMatrix& ev)
 
   if (!ndocc_) {
     ndocc_=newocc;
-  } else if (most_recent_pg_
+  } else if (most_recent_pg_.nonnull()
              && most_recent_pg_->equiv(molecule()->point_group())) {
     // test to see if newocc is different from ndocc_
     for (i=0; i < nirrep_; i++) {
@@ -323,7 +323,7 @@ CLSCF::init_vector()
   cl_gmat_ = basis()->matrixkit()->symmmatrix(basis()->basisdim());
   cl_gmat_.assign(0.0);
 
-  if (cl_fock_.result_noupdate() == 0) {
+  if (cl_fock_.result_noupdate().null()) {
     cl_fock_ = hcore_.clone();
     cl_fock_.result_noupdate().assign(0.0);
   }
@@ -333,7 +333,7 @@ CLSCF::init_vector()
 
   oso_scf_vector_ = oso_eigenvectors_.result_noupdate();
 
-  if (accumddh_) accumddh_->init(this);
+  if (accumddh_.nonnull()) accumddh_->init(this);
 }
 
 void
@@ -341,7 +341,7 @@ CLSCF::done_vector()
 {
   done_threads();
 
-  if (accumddh_) {
+  if (accumddh_.nonnull()) {
       accumddh_->print_summary();
       accumddh_->done();
   }
@@ -423,7 +423,7 @@ CLSCF::initial_extrap_data()
 {
   Ref<SCExtrapData> data;
   // If there is an old fock matrix around, use that.
-  if (cl_fock_.result_noupdate()) {
+  if (cl_fock_.result_noupdate().nonnull()) {
     data = new SymmSCMatrixSCExtrapData(cl_fock_.result_noupdate());
   }
   return data;
@@ -450,7 +450,7 @@ CLSCF::effective_fock()
   }
 
   // use eigenvectors if scf_vector_ is null
-  if (oso_scf_vector_ == 0)
+  if (oso_scf_vector_.null())
     mofock.accumulate_transform(eigenvectors(), fock(0),
                                 SCMatrix::TransposeTransform);
   else

@@ -176,7 +176,7 @@ R12IntEval::R12IntEval(const Ref<R12WavefunctionWorld>& r12w) :
   bool mp2_only = false;
   {
     Ref<R12Technology::NullCorrelationFactor> nullptr; nullptr << corrfactor();
-    if (nullptr)
+    if (nullptr.nonnull())
       mp2_only = true;
   }
   if (r12world()->ints_method() != R12WavefunctionWorld::StoreMethod::posix && !mp2_only)
@@ -261,7 +261,7 @@ R12IntEval::save_data_state(StateOut& so)
     SavableState::save_state(dim_f12_[s].pointer(),so);
     SavableState::save_state(dim_GG_[s].pointer(),so);
     SavableState::save_state(dim_gg_[s].pointer(),so);
-    const bool have_A = A_[AlphaBeta];
+    const bool have_A = A_[AlphaBeta].nonnull();
     so.put(have_A);
     if (!(spin_polarized() && s == BetaBeta)) {
       V_[s].save(so);
@@ -376,10 +376,10 @@ R12IntEval::BB(SpinCase2 S) {
 
 const RefSCMatrix&
 R12IntEval::A(SpinCase2 S) {
-  if (A_[AlphaBeta] == 0)
+  if (A_[AlphaBeta].null())
     compute_A();
   if (!spin_polarized() && (S == AlphaAlpha || S == BetaBeta)) {
-    if (A_[AlphaAlpha] == 0) {
+    if (A_[AlphaAlpha].null()) {
       Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
       A_[AlphaAlpha] = local_matrix_kit->matrix(dim_f12_[AlphaAlpha],dim_vv_[AlphaAlpha]);
       antisymmetrize(A_[AlphaAlpha],A_[AlphaBeta],
@@ -405,7 +405,7 @@ R12IntEval::F12(SpinCase2 S) {
 Ref<R12Amplitudes>
 R12IntEval::amps()
 {
-  if (Amps_ == 0)  // using this assumes this is not called from a constructor
+  if (Amps_.null())  // using this assumes this is not called from a constructor
     Amps_ = new R12Amplitudes(this);
   return Amps_;
 }
@@ -433,13 +433,13 @@ R12IntEval::compute_emp2(SpinCase2 spincase2)
 
     std::string tform_key;
     // If VBS==OBS and this is not a pure MP2 calculation then this tform should be available
-    if (obs_eq_vbs && nocorrptr == 0) {
+    if (obs_eq_vbs && nocorrptr.null()) {
       R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(), occ1_act,
                                                this->orbs(spin1), occ2_act,
                                                this->orbs(spin2), corrfactor(),
                                                true);
       tform_key = tformkey_creator();
-    } else if (!obs_eq_vbs && nocorrptr == 0) { // MP2-R12 and VBS != OBS -- this transform will be available
+    } else if (!obs_eq_vbs && nocorrptr.null()) { // MP2-R12 and VBS != OBS -- this transform will be available
       R12TwoBodyIntKeyCreator tformkey_creator(moints_runtime4(), occ1_act,
                                                vir1_act, occ2_act, vir2_act,
                                                corrfactor(), true);
@@ -536,23 +536,23 @@ R12IntEval::init_intermeds_()
     V_[s].assign(0.0);
     X_[s].assign(0.0);
     B_[s].assign(0.0);
-    if (BB_[s]) BB_[s].assign(0.0);
+    if (BB_[s].nonnull()) BB_[s].assign(0.0);
     emp2pair_[s].assign(0.0);
-    if (A_[s]) A_[s].assign(0.0);
+    if (A_[s].nonnull()) A_[s].assign(0.0);
   }
 
   // nothing to do if no explicit correlation
   Ref<R12Technology::NullCorrelationFactor> no12ptr; no12ptr << corrfactor();
-  if (no12ptr)
+  if (no12ptr.nonnull())
     return;
 
   Ref<R12Technology::G12CorrelationFactor> g12ptr; g12ptr << corrfactor();
   Ref<R12Technology::G12NCCorrelationFactor> g12ncptr; g12ncptr << corrfactor();
   Ref<R12Technology::R12CorrelationFactor> r12ptr; r12ptr << corrfactor();
-  if (r12ptr) {
+  if (r12ptr.nonnull()) {
     init_intermeds_r12_();
   }
-  else if (g12ptr || g12ncptr) {
+  else if (g12ptr.nonnull() || g12ncptr.nonnull()) {
     init_intermeds_g12_();
   }
 
@@ -1418,7 +1418,7 @@ R12IntEval::h_P_P(SpinCase1 spin)
     return h_P_P(Alpha);
 
   const unsigned int s = static_cast<unsigned int>(spin);
-  if (h_P_P_[s]) return h_P_P_[s];
+  if (h_P_P_[s].nonnull()) return h_P_P_[s];
 
   const Ref<OrbitalSpace>& extspace = r12world()->ribs_space();
   const Ref<OrbitalSpace>& intspace = r12world()->ribs_space();
@@ -1455,7 +1455,7 @@ R12IntEval::gamma_p_p(SpinCase1 S) {
   if (!spin_polarized() && S == Beta)
     return gamma_p_p(Alpha);
 
-  if (gamma_p_p_[S] == 0) {
+  if (gamma_p_p_[S].null()) {
     const Ref<OrbitalSpace>& extspace = this->orbs(S);
     const Ref<OrbitalSpace>& intspace = this->orbs(S);
     std::string id = extspace->id();
@@ -1476,7 +1476,7 @@ R12IntEval::gamma_p_p(SpinCase1 S) {
 const Ref<OrbitalSpace>&
 R12IntEval::gamma_p_p_av() {
   MPQC_ASSERT(r12world()->spinadapted());
-  if (gamma_p_p_[Alpha] == 0) {
+  if (gamma_p_p_[Alpha].null()) {
     const Ref<OrbitalSpace>& extspace = this->orbs(Alpha);
     const Ref<OrbitalSpace>& intspace = this->orbs(Alpha);
     std::string id = extspace->id();  id += "_gamma(";  id += intspace->id();  id += ")";
@@ -1491,7 +1491,7 @@ R12IntEval::gamma_p_p_av() {
 const Ref<OrbitalSpace>&
 R12IntEval::gamma_m_m_av() {
   MPQC_ASSERT(r12world()->spinadapted());
-  if (gamma_m_m_[Alpha] == 0) {
+  if (gamma_m_m_[Alpha].null()) {
     const Ref<OrbitalSpace>& extspace = this->occ(Alpha);
     const Ref<OrbitalSpace>& intspace = this->occ(Alpha);
     std::string id = extspace->id();  id += "_gamma(";  id += intspace->id();  id += ")";
@@ -1509,7 +1509,7 @@ R12IntEval::gammaFgamma_p_p(SpinCase1 S) {
   if (!spin_polarized() && S == Beta)
     return gammaFgamma_p_p(Alpha);
 
-  if (gammaFgamma_p_p_[S] == 0) {
+  if (gammaFgamma_p_p_[S].null()) {
     const Ref<OrbitalSpace>& extspace = this->orbs(S);
     const Ref<OrbitalSpace>& intspace = this->orbs(S);
     RefSCMatrix F_i_e = fock(intspace,extspace,S,1.0,1.0);
@@ -1528,7 +1528,7 @@ R12IntEval::gammaFgamma_p_p(SpinCase1 S) {
 const Ref<OrbitalSpace>&
 R12IntEval::gammaFgamma_p_p() {
   MPQC_ASSERT(r12world()->spinadapted());
-  if (gammaFgamma_p_p_[Alpha] == 0) {
+  if (gammaFgamma_p_p_[Alpha].null()) {
     const Ref<OrbitalSpace>& extspace = this->orbs(Alpha);
     const Ref<OrbitalSpace>& intspace = this->orbs(Alpha);
     RefSCMatrix F_i_e = fock(intspace,extspace,Alpha,1.0,1.0);
@@ -1547,7 +1547,7 @@ R12IntEval::Fgamma_p_P(SpinCase1 S) {
   MPQC_ASSERT(!r12world()->spinadapted());
   if (!spin_polarized() && S == Beta)
     return(Fgamma_p_P(Alpha));
-  if(Fgamma_p_P_[S] == 0) {
+  if(Fgamma_p_P_[S].null()) {
     const Ref<OrbitalSpace>& extspace = this->orbs(S);
     const Ref<OrbitalSpace>& intspace = r12world()->ribs_space();
     RefSCMatrix F_i_e = fock(intspace,extspace,S,1.0,1.0);
@@ -1567,7 +1567,7 @@ R12IntEval::Fgamma_p_P(SpinCase1 S) {
 const Ref<OrbitalSpace>&
 R12IntEval::Fgamma_p_P() {
   MPQC_ASSERT(r12world()->spinadapted());
-  if(Fgamma_p_P_[Alpha] == 0) {
+  if(Fgamma_p_P_[Alpha].null()) {
     const Ref<OrbitalSpace>& extspace = this->orbs(Alpha);
     const Ref<OrbitalSpace>& intspace = r12world()->ribs_space();
     RefSCMatrix F_i_e = fock(intspace,extspace,Alpha,1.0,1.0);
@@ -1915,7 +1915,7 @@ R12IntEval::J_i_p(SpinCase1 spin)
     return J_i_p(Alpha);
 
   const unsigned int s = static_cast<unsigned int>(spin);
-  if (J_i_p_[s]) return J_i_p_[s];
+  if (J_i_p_[s].nonnull()) return J_i_p_[s];
 
   const Ref<OrbitalSpace>& extspace = occ_act(spin);
   const Ref<OrbitalSpace>& intspace = orbs(spin);
@@ -1953,7 +1953,7 @@ R12IntEval::J_i_P(SpinCase1 spin)
     return J_i_P(Alpha);
 
   const unsigned int s = static_cast<unsigned int>(spin);
-  if (J_i_P_[s]) return J_i_P_[s];
+  if (J_i_P_[s].nonnull()) return J_i_P_[s];
 
   const Ref<OrbitalSpace>& extspace = occ_act(spin);
   const Ref<OrbitalSpace>& intspace = r12world()->ribs_space();
@@ -1991,7 +1991,7 @@ R12IntEval::J_P_P(SpinCase1 spin)
     return J_P_P(Alpha);
 
   const unsigned int s = static_cast<unsigned int>(spin);
-  if (J_P_P_[s]) return J_P_P_[s];
+  if (J_P_P_[s].nonnull()) return J_P_P_[s];
 
   const Ref<OrbitalSpace>& extspace = r12world()->ribs_space();
   const Ref<OrbitalSpace>& intspace = r12world()->ribs_space();
@@ -2071,8 +2071,8 @@ R12IntEval::f_bra_ket(
   const Ref<OrbitalSpaceRegistry>& idxreg = this->orbital_registry();
 
   const unsigned int s = static_cast<unsigned int> (spin);
-  const bool not_yet_computed = (make_F && F == 0) || (make_hJ && hJ == 0)
-      || (make_K && K == 0);
+  const bool not_yet_computed = (make_F && F.null()) || (make_hJ && hJ.null())
+      || (make_K && K.null());
   if (not_yet_computed) {
 
     const int dk = this->dk();
@@ -2084,7 +2084,7 @@ R12IntEval::f_bra_ket(
 #endif
 
     RefSCMatrix hJ_i_e;
-    if (make_hJ && hJ == 0) {
+    if (make_hJ && hJ.null()) {
       hJ_i_e = fock(intspace, extspace, spin, 1.0, 0.0);
       if (debug_ >= DefaultPrintThresholds::allN2) {
         std::string label("(h+J) matrix in ");
@@ -2109,7 +2109,7 @@ R12IntEval::f_bra_ket(
     }
 
     RefSCMatrix K_i_e;
-    if (make_K && K == 0) {
+    if (make_K && K.null()) {
       if (!USE_FOCKBUILD)
         K_i_e = exchange_(spin, intspace, extspace);
       else {
@@ -2138,7 +2138,7 @@ R12IntEval::f_bra_ket(
       idxreg->add(make_keyspace_pair(K));
     }
 
-    if (make_F && F == 0) {
+    if (make_F && F.null()) {
       RefSCMatrix F_i_e;
       if (make_hJ) {
         if (make_K) {
@@ -2215,7 +2215,7 @@ R12IntEval::compute()
 
   Ref<R12Technology::NullCorrelationFactor> nocorrptr; nocorrptr << corrfactor();
   // if explicit correlation -- compute F12 theory intermediates
-  if (nocorrptr == 0) {
+  if (nocorrptr.null()) {
 
     if (debug_ >= DefaultPrintThresholds::O4) {
       globally_sum_intermeds_();
@@ -2419,8 +2419,8 @@ R12IntEval::globally_sum_intermeds_(bool to_all_tasks)
     globally_sum_scmatrix_(V_[s],to_all_tasks);
     globally_sum_scmatrix_(X_[s],to_all_tasks);
     globally_sum_scmatrix_(B_[s],to_all_tasks);
-    if (BB_[s]) globally_sum_scmatrix_(BB_[s],to_all_tasks);
-    if (A_[s]) globally_sum_scmatrix_(A_[s],to_all_tasks);
+    if (BB_[s].nonnull()) globally_sum_scmatrix_(BB_[s],to_all_tasks);
+    if (A_[s].nonnull()) globally_sum_scmatrix_(A_[s],to_all_tasks);
   }
 
   if (debug_ >= DefaultPrintThresholds::diagnostics) {
@@ -2490,7 +2490,7 @@ RefSymmSCMatrix
 R12IntEval::ordm(SpinCase1 S) const {
   if (r12world()->refwfn()->spin_polarized() == false && S == Beta)
     return ordm(Alpha);
-  if (ordm_[S])
+  if (ordm_[S].nonnull())
     return ordm_[S];
 
   ordm_[S] = r12world()->refwfn()->ordm_orbs_sb(S);
@@ -2500,7 +2500,7 @@ R12IntEval::ordm(SpinCase1 S) const {
 RefSymmSCMatrix
 R12IntEval::ordm() const {
   MPQC_ASSERT(r12world()->spinadapted());
-  if (ordm_[Alpha])
+  if (ordm_[Alpha].nonnull())
     return ordm_[Alpha];
 
   ordm_[Alpha] = r12world()->refwfn()->ordm_orbs_sb(Alpha);
@@ -2536,7 +2536,7 @@ R12IntEval::ordm_occ_av() const {
 bool
 R12IntEval::bc() const {
   Ref<SD_RefWavefunction> sdptr; sdptr << r12world()->refwfn();
-  if (sdptr) {
+  if (sdptr.nonnull()) {
     if (!sdptr->obwfn()->spin_unrestricted() && sdptr->spin_polarized())
       return false; // ROHF
     else {

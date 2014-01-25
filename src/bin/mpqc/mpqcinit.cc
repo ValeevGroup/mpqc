@@ -119,8 +119,8 @@ MPQCInit::init_messagegrp()
 #endif
 
   // get the message group.  first try the commandline and environment
-  if (grp == 0) grp = MessageGrp::initial_messagegrp(argc_, argv_);
-  if (grp) MessageGrp::set_default_messagegrp(grp);
+  if (grp.null()) grp = MessageGrp::initial_messagegrp(argc_, argv_);
+  if (grp.nonnull()) MessageGrp::set_default_messagegrp(grp);
   else grp = MessageGrp::get_default_messagegrp();
   return grp;
 }
@@ -166,11 +166,11 @@ MPQCInit::init_threadgrp(Ref<KeyVal> keyval)
 
   // if we still don't have a group, try reading the thread group
   // from the input
-  if (thread == 0 && keyval) {
+  if (thread.null() && keyval.nonnull()) {
     thread << keyval->describedclassvalue("thread");
   }
 
-  if (thread)
+  if (thread.nonnull())
     ThreadGrp::set_default_threadgrp(thread);
   else
     thread = ThreadGrp::get_default_threadgrp();
@@ -186,11 +186,11 @@ MPQCInit::init_memorygrp(Ref<KeyVal> keyval)
 
   // if we still don't have a group, try reading the memory group
   // from the input
-  if (memory == 0 && keyval) {
+  if (memory.null() && keyval.nonnull()) {
     memory << keyval->describedclassvalue("memory");
   }
 
-  if (memory)
+  if (memory.nonnull())
     MemoryGrp::set_default_memorygrp(memory);
   else
     memory = MemoryGrp::get_default_memorygrp();
@@ -217,11 +217,11 @@ MPQCInit::init_integrals(Ref<KeyVal> keyval)
 
   // if we still don't have a integral, try reading the integral
   // from the input
-  if (integral == 0 && keyval) {
+  if (integral.null() && keyval.nonnull()) {
     integral << keyval->describedclassvalue("integrals");
   }
 
-  if (integral) {
+  if (integral.nonnull()) {
     Integral::set_default_integral(integral);
   }
   else {
@@ -236,11 +236,11 @@ MPQCInit::init_resources(Ref<KeyVal> keyval)
   Ref<ConsumableResources> inst = ConsumableResources::initial_instance(argc_, argv_);
 
   // if we still don't have one reading from the input
-  if (inst == 0 && keyval) {
+  if (inst.null() && keyval.nonnull()) {
     inst << keyval->describedclassvalue("resources");
   }
 
-  if (inst) {
+  if (inst.nonnull()) {
     ConsumableResources::set_default_instance(inst);
   }
   else {
@@ -253,10 +253,10 @@ MPQCInit::init_timer(const Ref<MessageGrp> &grp, Ref<KeyVal> keyval)
 {
   grp->sync(); // make sure nodes are sync'ed before starting timings
   Ref<RegionTimer> tim;
-  if (keyval)
+  if (keyval.nonnull())
     if (keyval->exists("timer"))
       tim << keyval->describedclassvalue("timer");
-  if (tim == 0)
+  if (tim.null())
     tim = new ParallelRegionTimer(grp,"mpqc",1,1);
   RegionTimer::set_default_regiontimer(tim);
 }

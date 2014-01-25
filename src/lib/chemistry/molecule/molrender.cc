@@ -50,11 +50,11 @@ RenderedMolecule::RenderedMolecule(const Ref<KeyVal>& keyval):
 {
   mol_ << keyval->describedclassvalue("molecule");
   atominfo_ << keyval->describedclassvalue("atominfo");
-  if (atominfo_ == 0) {
+  if (atominfo_.null()) {
       atominfo_ = new AtomInfo();
     }
 
-  if (mol_ == 0) {
+  if (mol_.null()) {
       throw InputError("missing required input of type Molecule",
                        __FILE__, __LINE__, "molecule", 0,
                        class_desc());
@@ -238,7 +238,7 @@ RenderedMolecularSurface::RenderedMolecularSurface(const Ref<KeyVal>& keyval):
 {
   surf_ << keyval->describedclassvalue("surface");
   colorizer_ << keyval->describedclassvalue("colorizer");
-  if (colorizer_ == 0)
+  if (colorizer_.null())
       colorizer_ = new AtomProximityColorizer(mol_,atominfo_);
   init(0);
 }
@@ -342,7 +342,7 @@ AtomProximityColorizer::AtomProximityColorizer(const Ref<KeyVal>&keyval):
   MoleculeColorizer(keyval)
 {
   atominfo_ << keyval->describedclassvalue("atominfo");
-  if (atominfo_ == 0) {
+  if (atominfo_.null()) {
       atominfo_ = new AtomInfo();
     }
 }

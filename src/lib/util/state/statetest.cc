@@ -253,7 +253,7 @@ class D: public B, public C {
       B::print(s);
       C::print(s);
       s << "D::a:\n";
-      if (da()) {
+      if (da().nonnull()) {
           da()->print(s);
         }
       else {
@@ -430,7 +430,7 @@ main(int argc, char* argv[])
   //pkv->dump();
 
   show( ra.pointer() ); cout << endl;
-  if (ra) { ra->print(); cout << endl; }
+  if (ra.nonnull()) { ra->print(); cout << endl; }
 
   ////////////////////////////////////////////////////////////////////
   // state tests
@@ -466,7 +466,7 @@ main(int argc, char* argv[])
   ra = new A(sia);
   cout << "  last object" << endl;
   ra << SavableState::restore_state(sia);
-  if (ra) { ra->print(); cout << endl; }
+  if (ra.nonnull()) { ra->print(); cout << endl; }
   if (sia.use_directory()) {
       cout << " --- restoring from A's directory ---" << endl;
       ra << SavableState::dir_restore_state(sia,"B:1");
@@ -478,8 +478,8 @@ main(int argc, char* argv[])
   //ra = A::restore_state(si);
   ra << SavableState::restore_state(si);
   ra2 << SavableState::restore_state(si);
-  if (ra) { ra->print(); cout << endl; }
-  cout << "ra2 = " << ra2 << "(should be 0)\n";
+  if (ra.nonnull()) { ra->print(); cout << endl; }
+  cout << "ra2.nonnull() = " << ra2.nonnull() << "(should be 0)\n";
   si.close();
 
   if (sia.use_directory()) {
@@ -505,7 +505,7 @@ main(int argc, char* argv[])
       Ref<D> d2; d2 << pkv->describedclassvalue("test2:proxy2");
       cout << "d1 = " << (void*)d1.pointer()
            << " d2 = " << (void*)d2.pointer() << endl;
-      if (d1) d1->print();
+      if (d1.nonnull()) d1->print();
     }
 
   return 0;

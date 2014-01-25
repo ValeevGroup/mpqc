@@ -144,7 +144,7 @@ R12IntEval::compute_BApp_()
       }
 
     }
-    if (hJnr[Beta] == 0) hJnr[Beta] = hJnr[Alpha];
+    if (hJnr[Beta].null()) hJnr[Beta] = hJnr[Alpha];
   }
 
   for(int s=0; s<nspincases2(); s++) {

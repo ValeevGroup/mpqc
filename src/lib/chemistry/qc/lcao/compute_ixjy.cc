@@ -161,7 +161,7 @@ TwoBodyMOIntsTransform_ixjy::compute()
 
    -----------------------------------*/
   Timer tim_pass("mp2-r12/a passes");
-  if (me == 0 && top_mole_ && top_mole_->if_to_checkpoint()) {
+  if (me == 0 && top_mole_.nonnull() && top_mole_->if_to_checkpoint()) {
     StateOutBin stateout(top_mole_->checkpoint_file());
     SavableState::save_state(top_mole_,stateout);
     ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
@@ -200,7 +200,7 @@ TwoBodyMOIntsTransform_ixjy::compute()
     //
     // if given half-transformed integrals, read them to memory, else do 1 and 2 quarter transforms
     //
-    if (partially_tformed_ints_) {
+    if (partially_tformed_ints_.nonnull()) {
       partially_tformed_ints_->activate();
       detail::restore_memorygrp(partially_tformed_ints_, mem_, i_offset, ni,
                                 DistArray4Storage_YX,            // need integrals in YX layout!
@@ -438,7 +438,7 @@ TwoBodyMOIntsTransform_ixjy::compute()
     tim_mostore.exit();
     mem_->sync();
 
-    if (me == 0 && top_mole_ && top_mole_->if_to_checkpoint()) {
+    if (me == 0 && top_mole_.nonnull() && top_mole_->if_to_checkpoint()) {
       StateOutBin stateout(top_mole_->checkpoint_file());
       SavableState::save_state(top_mole_,stateout);
       ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
@@ -457,7 +457,7 @@ TwoBodyMOIntsTransform_ixjy::compute()
 
   tim.exit();
 
-  if (me == 0 && top_mole_ && top_mole_->if_to_checkpoint()) {
+  if (me == 0 && top_mole_.nonnull() && top_mole_->if_to_checkpoint()) {
     StateOutBin stateout(top_mole_->checkpoint_file());
     SavableState::save_state(top_mole_,stateout);
     ExEnv::out0() << indent << "Checkpointed the wave function" << endl;

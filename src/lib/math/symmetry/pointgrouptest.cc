@@ -19,7 +19,7 @@ main(int argc, char *argv[])
 
   ct.print();
 
-  if (pg2) {
+  if (pg2.nonnull()) {
       pg2->char_table().print();
       if (argc <= 3) {
           CorrelationTable corrtab(pg,pg2);

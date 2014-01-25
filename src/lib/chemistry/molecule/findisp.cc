@@ -219,11 +219,11 @@ FinDispMolecularHessian::Impl::~Impl()
 void
 FinDispMolecularHessian::Impl::init()
 {
-  if (mole_ == 0) return;
+  if (mole_.null()) return;
 
   Ref<Molecule> mol = mole_->molecule();
 
-  if (params_->disp_pg() == 0) {
+  if (params_->disp_pg().null()) {
     params_->set_disp_pg(new PointGroup(*mol->point_group().pointer()));
   }
 
@@ -291,7 +291,7 @@ FinDispMolecularHessian::Impl::displacements(int irrep) const
 {
   BlockedSCMatrix *bsymbasis = dynamic_cast<BlockedSCMatrix*>(symbasis_.pointer());
   RefSCMatrix block = bsymbasis->block(irrep);
-  if (block == 0 || (params_->only_totally_symmetric() && irrep > 0)) {
+  if (block.null() || (params_->only_totally_symmetric() && irrep > 0)) {
     RefSCDimension zero = new SCDimension(0);
     block = matrixkit()->matrix(zero,zero);
     return block;
@@ -312,7 +312,7 @@ FinDispMolecularHessian::Impl::displace(const Displacement& disp)
     }
   }
   if (disp.empty()) {
-    if (mole_) mole_->obsolete();
+    if (mole_.nonnull()) mole_->obsolete();
     return;
   }
 
@@ -370,7 +370,7 @@ FinDispMolecularHessian::Impl::displace(const Displacement& disp)
        << mol->point_group()->symbol()
        << " for displaced molecule."
        << endl;
-  if (mole_) mole_->obsolete();
+  if (mole_.nonnull()) mole_->obsolete();
   mol->print();
 }
 
@@ -390,7 +390,7 @@ FinDispMolecularHessian::Impl::original_geometry()
     mole_->symmetry_changed();
   }
 
-  if (mole_) mole_->obsolete();
+  if (mole_.nonnull()) mole_->obsolete();
 }
 
 #if 0
@@ -444,7 +444,7 @@ FinDispMolecularHessian::Impl::coor_to_irrep(unsigned int symm_coord) const {
   RefSCDimension dsym = symbasis_.rowdim();
   MPQC_ASSERT(symm_coord < dsym.n());
   Ref<SCBlockInfo> bsym = dsym->blocks();
-  MPQC_ASSERT(bsym);
+  MPQC_ASSERT(bsym.nonnull());
   int block, offset;
   bsym->elem_to_block(symm_coord, block, offset);
   return block;
@@ -482,7 +482,7 @@ FinDispMolecularHessian::GradientsImpl::save_data_state(StateOut&s)
 void
 FinDispMolecularHessian::GradientsImpl::validate_mole(const Ref<MolecularEnergy>& e)
 {
-  if (e == 0) return;
+  if (e.null()) return;
   if (e->gradient_implemented() == 0)
     throw ProgrammingError("FinDispMolecularHessian -- hessian from gradients requested but MolecularEnergy cannot compute gradients", __FILE__, __LINE__);
 }
@@ -492,7 +492,7 @@ FinDispMolecularHessian::GradientsImpl::compute_mole(const Displacement& disp) {
 
   // check if disp has been computed
   if (values_.has(disp)) {
-    if (values_.find(disp).second.gradient())
+    if (values_.find(disp).second.gradient().nonnull())
       return;
   }
 
@@ -712,7 +712,7 @@ FinDispMolecularHessian::EnergiesImpl::save_data_state(StateOut&s)
 void
 FinDispMolecularHessian::EnergiesImpl::validate_mole(const Ref<MolecularEnergy>& e)
 {
-  if (e == 0) return;
+  if (e.null()) return;
   if (e->value_implemented() == false)
     throw ProgrammingError("FinDispMolecularHessian -- hessian from energies requested but MolecularEnergy cannot compute energies", __FILE__, __LINE__);
 }
@@ -956,7 +956,7 @@ FinDispMolecularHessian::save_data_state(StateOut&s)
 void
 FinDispMolecularHessian::restart()
 {
-  if (pimpl_ == 0) { init_pimpl(mole_init_); mole_init_ = 0; }
+  if (pimpl_.null()) { init_pimpl(mole_init_); mole_init_ = 0; }
 
   // broadcast contents of restart file
   int statresult, statsize;
@@ -981,7 +981,7 @@ FinDispMolecularHessian::restart()
 RefSymmSCMatrix
 FinDispMolecularHessian::cartesian_hessian()
 {
-  if (pimpl_ == 0) { init_pimpl(mole_init_); mole_init_ = 0; }
+  if (pimpl_.null()) { init_pimpl(mole_init_); mole_init_ = 0; }
 
   if (params()->restart()) restart();
   else pimpl_->init();  // initialize original_geometry etc.
@@ -990,7 +990,7 @@ FinDispMolecularHessian::cartesian_hessian()
 
   ExEnv::out0() << indent
        << "Computing molecular hessian by finite differences of "
-       << (eimpl ? "energies" : "gradients") << " from "
+       << (eimpl.nonnull() ? "energies" : "gradients") << " from "
        << pimpl_->ndisplace() << " displacements:" << endl;
   ExEnv::out0() << indent << "Hessian options: " << endl;
   ExEnv::out0() << indent << "  displacement: " << pimpl_->params()->disp_size()
@@ -1011,8 +1011,8 @@ FinDispMolecularHessian::set_energy(const Ref<MolecularEnergy>& mole) {
 
 void
 FinDispMolecularHessian::init_pimpl(const Ref<MolecularEnergy>& mole) {
-  if (mole == 0) {
-    if (pimpl_) pimpl_->set_mole(mole);
+  if (mole.null()) {
+    if (pimpl_.nonnull()) pimpl_->set_mole(mole);
   }
   else {
     pimpl_ = 0;
@@ -1062,7 +1062,7 @@ FinDispMolecularGradient::FinDispMolecularGradient(const Ref<KeyVal>&keyval):
   MolecularGradient(keyval)
 {
   mole_ << keyval->describedclassvalue("energy");
-  if (mole_ == 0) {
+  if (mole_.null()) {
     throw InputError("FinDispMolecularGradient KeyVal ctor: did not find a valid value for keyword energy",
                      __FILE__, __LINE__);
   }
@@ -1129,11 +1129,11 @@ FinDispMolecularGradient::save_data_state(StateOut&s)
 void
 FinDispMolecularGradient::init()
 {
-  if (mole_ == 0) return;
+  if (mole_.null()) return;
 
   mol_ = mole_->molecule();
 
-  if (displacement_point_group_ == 0) {
+  if (displacement_point_group_.null()) {
     displacement_point_group_
       = new PointGroup(*mol_->point_group().pointer());
     }
@@ -1244,7 +1244,7 @@ FinDispMolecularGradient::displacements(int irrep) const
 {
   BlockedSCMatrix *bsymbasis = dynamic_cast<BlockedSCMatrix*>(symbasis_.pointer());
   RefSCMatrix block = bsymbasis->block(irrep);
-  if (block == 0 || irrep > 0) {  // only totally symmetric displacements are needed
+  if (block.null() || irrep > 0) {  // only totally symmetric displacements are needed
     RefSCDimension zero = new SCDimension(0);
     block = matrixkit()->matrix(zero,zero);
     return block;
@@ -1328,7 +1328,7 @@ FinDispMolecularGradient::displace(int disp)
        << " for displaced molecule."
        << endl;
 
-  if (mole_) mole_->obsolete();
+  if (mole_.nonnull()) mole_->obsolete();
   mol_->print();
 }
 
@@ -1340,7 +1340,7 @@ FinDispMolecularGradient::original_geometry()
       mol_->r(i,j) = original_geometry_(coor);
       }
     }
-  if (mole_) mole_->obsolete();
+  if (mole_.nonnull()) mole_->obsolete();
 }
 
 RefSCVector

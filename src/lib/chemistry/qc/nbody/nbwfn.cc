@@ -43,9 +43,9 @@ ManyBodyWavefunction::ManyBodyWavefunction(const Ref<KeyVal>& keyval) : Wavefunc
 
   // if world not given, make this the center of a new World
   world_ << keyval->describedclassvalue("world", KeyValValueRefDescribedClass(0));
-  if (world_ == 0)
+  if (world_.null())
     world_ = new WavefunctionWorld(keyval);
-  if (world_ == 0)
+  if (world_.null())
     throw InputError("CI requires a WavefunctionWorld; input did not specify it, neither could it be constructed",
                      __FILE__, __LINE__, "world");
   if (world_->wfn() == 0) world_->set_wfn(this);
@@ -53,7 +53,7 @@ ManyBodyWavefunction::ManyBodyWavefunction(const Ref<KeyVal>& keyval) : Wavefunc
   // tell reference to live in my world, unless user said otherwise (probably a bad idea)
   if (not keyval->exists("reference:world")) {
     Ref<KeyVal> ref_kv = new PrefixKeyVal(keyval, "reference");
-    if (ref_kv == 0)
+    if (ref_kv.null())
       throw InputError("ManyBodyWavefunction::ManyBodyWavefunction -- reference keyword missing",
                        __FILE__, __LINE__, "reference", "0", this->class_desc());
 
@@ -70,7 +70,7 @@ ManyBodyWavefunction::ManyBodyWavefunction(const Ref<KeyVal>& keyval) : Wavefunc
   }
   else
     refwfn_ << keyval->describedclassvalue("reference", KeyValValueRefDescribedClass(0));
-  if (refwfn_ == 0)
+  if (refwfn_.null())
     throw InputError("ManyBodyWavefunction::ManyBodyWavefunction -- invalid reference object given",
                      __FILE__, __LINE__, "reference", "0", this->class_desc());
   if (refwfn_->world() != world_)

@@ -94,7 +94,7 @@ main(int argc, char **argv)
 
   // get the message group.  first try the commandline and environment
   Ref<MessageGrp> grp = MessageGrp::initial_messagegrp(argc, argv);
-  if (grp)
+  if (grp.nonnull())
     MessageGrp::set_default_messagegrp(grp);
   else
     grp = MessageGrp::get_default_messagegrp();
@@ -108,7 +108,7 @@ main(int argc, char **argv)
     }
 
   Ref<AtomInfo> atominfo; atominfo << kv->describedclassvalue("atominfo");
-  if (atominfo) {
+  if (atominfo.nonnull()) {
       Ref<AtomInfo> refatominfo = new AtomInfo;
       cout << "-------------- testing atominfo --------------" << endl;
       if (grp->me() == 0) print_atominfo(atominfo, refatominfo);
@@ -130,7 +130,7 @@ main(int argc, char **argv)
     }
 
   Ref<Molecule> mol; mol << kv->describedclassvalue("molecule");
-  if (mol) {
+  if (mol.nonnull()) {
       cout << "-------------- testing molecule --------------" << endl;
 
       MolecularFormula formula(mol);
@@ -176,7 +176,7 @@ main(int argc, char **argv)
   ren << kv->describedclassvalue("renderer");
   Ref<RenderedObject> renmol;
   renmol << kv->describedclassvalue("renderedmolecule");
-  if (ren && renmol) {
+  if (ren.nonnull() && renmol.nonnull()) {
       cout << "-------------- testing renderer --------------" << endl;
       ren->render(renmol);
     }
@@ -184,10 +184,10 @@ main(int argc, char **argv)
   //exit(0);
 
   Ref<SetIntCoor> simp; simp << kv->describedclassvalue("simp");
-  if (simp) {
+  if (simp.nonnull()) {
       cout << "-------------- testing simp  --------------" << endl;
       Ref<IntCoorGen> gen; gen << kv->describedclassvalue("generator");
-      if (gen) {
+      if (gen.nonnull()) {
           gen->print();
         }
       cout << "simp before update:\n";
@@ -199,7 +199,7 @@ main(int argc, char **argv)
 
   // compare the analytic bmatrix to the finite displacement bmatrix
   Ref<SetIntCoor> bmat_test; bmat_test << kv->describedclassvalue("bmat_test");
-  if (bmat_test) {
+  if (bmat_test.nonnull()) {
       cout << "-------------- bmat_test  --------------" << endl;
       Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
       RefSCDimension dnc(new SCDimension(bmat_test->n()));
@@ -254,7 +254,7 @@ main(int argc, char **argv)
   cout.flush();
   cerr.flush();
 
-  if (mc) {
+  if (mc.nonnull()) {
       cout << "-------------- testing molcoor  --------------" << endl;
       mc->print();
 
@@ -275,14 +275,14 @@ main(int argc, char **argv)
     }
 
   Ref<MolecularEnergy> me; me << kv->describedclassvalue("energy");
-  if (me) {
+  if (me.nonnull()) {
       cout << "-------------- testing energy  --------------" << endl;
       me->print();
     }
 
   Ref<MolecularGradient> molgrad; molgrad << kv->describedclassvalue("grad");
   RefSCVector xgradient;
-  if (molgrad) {
+  if (molgrad.nonnull()) {
     cout << "-------------- testing grad  --------------" << endl;
     xgradient = molgrad->cartesian_gradient();
     xgradient.print("Gradient computed with grad");
@@ -291,13 +291,13 @@ main(int argc, char **argv)
 
   Ref<MolecularHessian> molhess; molhess << kv->describedclassvalue("hess");
   RefSymmSCMatrix xhessian;
-  if (molhess) {
+  if (molhess.nonnull()) {
       xhessian = molhess->cartesian_hessian();
     }
 
   Ref<MolecularFrequencies> molfreq;
   molfreq << kv->describedclassvalue("freq");
-  if (molfreq && xhessian) {
+  if (molfreq.nonnull() && xhessian.nonnull()) {
       cout << "-------------- testing freq  --------------" << endl;
       molfreq->compute_frequencies(xhessian);
     }

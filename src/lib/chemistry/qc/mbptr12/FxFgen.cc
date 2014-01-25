@@ -108,7 +108,7 @@ R12IntEval::compute_FxF_(RefSCMatrix& FxF,
   const unsigned int nbra = nf12 * braiter.nij();
   const unsigned int nket = nf12 * ketiter.nij();
 
-  if (FxF == 0) {
+  if (FxF.null()) {
     // use the same matrix kit as the intermediates
     FxF = B_[AlphaBeta].kit()->matrix(new SCDimension(nbra),
                                       new SCDimension(nket));

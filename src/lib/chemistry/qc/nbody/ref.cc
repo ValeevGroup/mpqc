@@ -291,7 +291,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
     ostringstream oss;
     oss << prefix << " unoccupied symmetry-blocked MOs";
     std::string id = ParsedOrbitalSpaceKey::key(std::string("e"),spin);
-    if (vbs == 0)
+    if (vbs.null())
       uocc_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, uocc_mask);
     else {
       if (vbs->rank() > 0) {
@@ -307,7 +307,7 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
     ostringstream oss;
     oss << prefix << " active unoccupied symmetry-blocked MOs";
     std::string id = ParsedOrbitalSpaceKey::key(std::string("a"),spin);
-    if (vbs == 0)
+    if (vbs.null())
       uocc_act_sb_ = new MaskedOrbitalSpace(id, oss.str(), orbs_sb_, uocc_act_mask);
     else {
       // make a local uocc_act_mask
@@ -413,14 +413,14 @@ RefWavefunction::RefWavefunction(const Ref<KeyVal>& kv) :
       kv->describedclassvalue("world").pointer(),
       "RefWavefunction::RefWavefunction\n"
       );
-  if (world_ == 0)
+  if (world_.null())
     throw InputError("RefWavefunction::RefWavefunction -- world is missing");
 
   basis_ << kv->describedclassvalue("basis").pointer();
-  if (basis_ == 0) basis_ = world_->wfn()->basis();
+  if (basis_.null()) basis_ = world_->wfn()->basis();
 
   integral_ << kv->describedclassvalue("integral").pointer();
-  if (integral_ == 0) integral_ = world_->integral()->clone();
+  if (integral_.null()) integral_ = world_->integral()->clone();
   integral_->set_basis(basis_, basis_, basis_, basis_);
 
   Ref<OneBodyWavefunction> valence_obwfn;
@@ -498,7 +498,7 @@ RefWavefunction::set_desired_value_accuracy(double eps) {
 void
 RefWavefunction::init() const
 {
-  if (spinspaces_[Alpha] == 0) {
+  if (spinspaces_[Alpha].null()) {
     RefWavefunction* this_nonconst = const_cast<RefWavefunction*>(this);
     // make sure it's computed first
     const double e = this_nonconst->energy();
@@ -702,7 +702,7 @@ SD_RefWavefunction::SD_RefWavefunction(const Ref<KeyVal>& keyval) :
       keyval->describedclassvalue("obwfn").pointer(),
       "SD_RefWavefunction::SD_RefWavefunction\n"
   );
-  if (obwfn_ == 0)
+  if (obwfn_.null())
     throw InputError("SD_RefWavefunction::SD_RefWavefunction -- obwfn is missing");
 
   // spin_restricted is a recommendation only -> make sure it is realizable
@@ -715,7 +715,7 @@ SD_RefWavefunction::SD_RefWavefunction(const Ref<KeyVal>& keyval) :
   nfzv_ = keyval->sizevalue("nfzv", KeyValValuesize(0));
 
   Ref<GaussianBasisSet> vbs; vbs << keyval->describedclassvalue("vir_basis").pointer();
-  if (vbs == 0)
+  if (vbs.null())
     vir_space_ = 0;
   else { // check if vbs is known already
     Ref<OrbitalSpaceRegistry> oreg = this->world()->moints_runtime4()->factory()->orbital_registry();
@@ -754,7 +754,7 @@ SD_RefWavefunction::SD_RefWavefunction(const Ref<KeyVal>& keyval) :
     throw InputError("localized occupied orbitals can only be used for closed-shell molecules",
                      __FILE__, __LINE__, "occ_orbitals", occ_orbitals_.c_str(), this->class_desc());
 
-  if (nfzv_ > 0 && vir_space_) {
+  if (nfzv_ > 0 && vir_space_.nonnull()) {
     std::ostringstream oss;
     oss << nfzv_;
     throw InputError("when VBS is given nfzv must be 0",
@@ -784,7 +784,7 @@ SD_RefWavefunction::SD_RefWavefunction(const Ref<WavefunctionWorld>& world,
   if (obwfn_->spin_polarized() == false) spin_restricted_ = true;
   if (obwfn_->spin_unrestricted() == true) spin_restricted_ = false;
 
-  if (nfzv > 0 && vir_space)
+  if (nfzv > 0 && vir_space.nonnull())
     throw ProgrammingError("when VBS is given nfzv must be 0",__FILE__,__LINE__);
 }
 
@@ -820,7 +820,7 @@ SD_RefWavefunction::print(std::ostream&o) const {
     o << indent << "# frozen core   = " << nfzc_ << endl;
     o << indent << "# frozen virt   = " << nfzv_ << endl;
     o << indent << "occ_orbitals    = " << occ_orbitals_ << endl;
-    if (vir_space_) {
+    if (vir_space_.nonnull()) {
       o << indent << "vir_basis:" << endl;
       vir_space_->basis()->print(o);
       o << endl;
@@ -915,7 +915,7 @@ SD_RefWavefunction::init_spaces_restricted()
   }
 
   // omit unoccupied orbitals?
-  const bool omit_uocc = vir_space_ && vir_space_->rank() == 0;
+  const bool omit_uocc = vir_space_.nonnull() && vir_space_->rank() == 0;
   if (omit_uocc) {
     Ref<OrbitalSpace> allspace = new OrbitalSpace("", "",
                                                   evecs_ao,
@@ -984,7 +984,7 @@ void
 SD_RefWavefunction::init_spaces_unrestricted()
 {
   // omit unoccupied orbitals?
-  const bool omit_uocc = vir_space_ && (vir_space_->rank() == 0);
+  const bool omit_uocc = vir_space_.nonnull() && (vir_space_->rank() == 0);
   if (omit_uocc)
     throw FeatureNotImplemented("omit_uocc is not implemented for spin-unrestricted references",
                                 __FILE__,__LINE__);
@@ -1015,7 +1015,7 @@ SD_RefWavefunction::init_spaces_unrestricted()
   // use semicanonical orbitals for ROHF
   else {
     Ref<HSOSSCF> hsosscf = dynamic_cast<HSOSSCF*>(obwfn().pointer());
-    if (hsosscf == 0)
+    if (hsosscf.null())
       throw ProgrammingError("spin-specific spaces not available for this reference function", __FILE__, __LINE__);
     alpha_evecs = hsosscf->alpha_semicanonical_eigenvectors();
     beta_evecs = hsosscf->beta_semicanonical_eigenvectors();
@@ -1073,7 +1073,7 @@ SD_RefWavefunction::dfinfo() const {
     result = const_cast<DensityFittingInfo*>(world()->tfactory()->df_info());
   else {
     Ref<SCF> scf_ptr; scf_ptr << this->obwfn();
-    result = (scf_ptr) ? scf_ptr->dfinfo() : Ref<DensityFittingInfo>();
+    result = (scf_ptr.nonnull()) ? scf_ptr->dfinfo() : Ref<DensityFittingInfo>();
   }
   return result;
 }
@@ -1307,7 +1307,7 @@ Extern_RefWavefunction::sdref() const {
 RefSymmSCMatrix
 Extern_RefWavefunction::core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &basis,
                                                    const Ref<GaussianBasisSet> &p_basis) {
-  MPQC_ASSERT(p_basis == 0); // can only do nonrelativistic Hamiltonians now
+  MPQC_ASSERT(p_basis.null()); // can only do nonrelativistic Hamiltonians now
   Ref<OrbitalSpaceRegistry> oreg = this->world()->tfactory()->orbital_registry();
   Ref<AOSpaceRegistry> aoreg = this->world()->tfactory()->ao_registry();
   const bool need_to_add_aospace_temporarily = !aoreg->key_exists(basis);
@@ -1345,7 +1345,7 @@ Extern_RefWavefunction::init(const RefSCMatrix& coefs,
                              std::vector<unsigned int> holepi,
                              std::vector<unsigned int> partpi)
 {
-  if (spinspaces_[Alpha] == 0) {
+  if (spinspaces_[Alpha].null()) {
     Extern_RefWavefunction* this_nonconst = const_cast<Extern_RefWavefunction*>(this);
 
     // make sure that FockBuildRuntime uses same density fitting info as this reference
@@ -1594,7 +1594,7 @@ RefWavefunctionFactory::make(const Ref<WavefunctionWorld> & world,
 {
   { // OneBodyWavefunction
     Ref<OneBodyWavefunction> cast; cast << ref;
-    if (cast)
+    if (cast.nonnull())
       return new SD_RefWavefunction(world, cast, spin_restricted, nfzc, nfzv, vir_space);
   }
   throw FeatureNotImplemented("this reference wavefunction cannot be used for R12 methods",

@@ -50,7 +50,7 @@ CCR12::CCR12(StateIn& s): SavableState(s), Wavefunction(s), ccr12_info_(0) {
 CCR12::CCR12(const Ref<KeyVal>& keyval): Wavefunction(keyval), ccr12_info_(0) {
 
   reference_ << keyval->describedclassvalue("reference");
-  if (reference_ == 0) {
+  if (reference_.null()) {
     ExEnv::err0() << "MBPT2::MBPT2: no reference wavefunction" << endl;
     abort();
   }
@@ -63,9 +63,9 @@ CCR12::CCR12(const Ref<KeyVal>& keyval): Wavefunction(keyval), ccr12_info_(0) {
 
   // if world not given, make this the center of a new World
   Ref<WavefunctionWorld> world; world << keyval->describedclassvalue("world", KeyValValueRefDescribedClass(0));
-  if (world == 0)
+  if (world.null())
     world = new WavefunctionWorld(keyval);
-  if (world == 0)
+  if (world.null())
     throw InputError("CCR12 requires a WavefunctionWorld; input did not specify it, neither could it be constructed",
                      __FILE__, __LINE__, "world");
   if (world->wfn() == 0) world->set_wfn(this);
@@ -145,7 +145,7 @@ void CCR12::compute(){
 
 
 void CCR12::obsolete() {
-  if (reference_) reference_->obsolete();
+  if (reference_.nonnull()) reference_->obsolete();
   Wavefunction::obsolete();
 }
 

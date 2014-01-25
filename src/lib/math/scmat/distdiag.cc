@@ -94,7 +94,7 @@ DistDiagSCMatrix::find_element(int i) const
                    << endl;
 
   Ref<SCMatrixDiagBlock> blk; blk << block_to_block(bi);
-  if (blk) {
+  if (blk.nonnull()) {
       if (DEBUG)
           ExEnv::outn() << messagegrp()->me() << ": ndat = " << blk->ndat() << endl;
       if (oi >= blk->ndat()) {

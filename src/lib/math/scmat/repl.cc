@@ -114,7 +114,7 @@ static Ref<SCMatrixKit> defaultmatrixkit;
 SCMatrixKit*
 SCMatrixKit::default_matrixkit()
 {
-  if (defaultmatrixkit == 0) defaultmatrixkit = new ReplSCMatrixKit;
+  if (defaultmatrixkit.null()) defaultmatrixkit = new ReplSCMatrixKit;
   return defaultmatrixkit.pointer();
 }
 

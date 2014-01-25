@@ -66,13 +66,13 @@ void
 RenderedObject::print(ostream& os) const
 {
   os << "RenderedObject:" << endl;
-  if (material_) {
+  if (material_.nonnull()) {
       os << scprintf("  material = 0x%x\n", material_.pointer());
     }
-  if (appearance_) {
+  if (appearance_.nonnull()) {
       os << scprintf("  appearance = 0x%x\n", appearance_.pointer());
     }
-  if (transform_) {
+  if (transform_.nonnull()) {
       os << scprintf("  transform = 0x%x\n", transform_.pointer());
     }
   os.flush();

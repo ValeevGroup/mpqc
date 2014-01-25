@@ -48,7 +48,7 @@ DistSCMatrixKit::DistSCMatrixKit(const Ref<MessageGrp> &grp)
 {
   // if grp is nonnull, then reset grp_ (it gets set to the default in the
   // default SCMatrixKit constructor
-  if (grp)
+  if (grp.nonnull())
     grp_ = grp;
 }
 

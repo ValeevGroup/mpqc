@@ -74,7 +74,7 @@ Int2eV3::delete_int_unit_shell()
 void
 Int2eV3::erep_2center(int &psh1, int &psh2)
 {
-  if (bs2_ || bs4_) {
+  if (bs2_.nonnull() || bs4_.nonnull()) {
       throw std::runtime_error("erep_2center: bs2 or bs4 not null");
     }
   //int shd = 0x11111111; /* a dummy shell that will cause death if used */
@@ -107,7 +107,7 @@ Int2eV3::erep_2center(int *shells, int  *sizes)
 void
 Int2eV3::erep_3center(int &psh1, int &psh2, int &psh3)
 {
-  if (bs4_) {
+  if (bs4_.nonnull()) {
       throw std::runtime_error("erep_3center: bs4 not null");
     }
   //int shd = 0x11111111; /* a dummy shell that will cause death if used */

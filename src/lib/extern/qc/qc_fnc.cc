@@ -105,7 +105,7 @@ void init_molecule_xyz_(const char* fname, int use_symmetry, int fname_nchar) {
 }
 
 void init_basis_set_(const char* basis_name, int basis_name_nchar) {
-  if (qc_mol == 0) {
+  if (qc_mol.null()) {
     die("called init_basis_set before calling init_molecule!");
   }
 
@@ -174,13 +174,13 @@ void basis_set_shell_to_center_subrt_(int* s2c) {
 }
 
 void init_integrals_() {
-  if (qc_obs == 0) {
+  if (qc_obs.null()) {
     die("called init_integrals before calling init_basis_set!");
   }
   int izero = 0;
   char** dptrzero = 0;
   Ref<Integral> integral = Integral::initial_integral(izero,dptrzero);
-  if (integral) Integral::set_default_integral(integral);
+  if (integral.nonnull()) Integral::set_default_integral(integral);
   qc_integral = Integral::get_default_integral()->clone();
   qc_integral->set_basis(qc_obs);
 }
@@ -193,7 +193,7 @@ void done_integrals_() {
 }
 
 void init_overlap_integrals_() {
-  if (qc_integral == 0) {
+  if (qc_integral.null()) {
     die("called init_overlap_integrals before calling init_integrals!");
   }
   qc_integral->set_basis(qc_obs, qc_obs);
@@ -202,7 +202,7 @@ void init_overlap_integrals_() {
 }
 
 const double* overlap_integrals_buffer_() {
-  if (qc_overlap == 0) {
+  if (qc_overlap.null()) {
     die("called overlap_integrals_buffer before calling init_overlap_integrals!");
   }
   return qc_overlap_buf;
@@ -227,7 +227,7 @@ void done_overlap_integrals_() {
 }
 
 void init_hcore_integrals_() {
-  if (qc_integral == 0) {
+  if (qc_integral.null()) {
     die("called init_hcore_integrals before calling init_integrals!");
   }
   qc_integral->set_basis(qc_obs, qc_obs);
@@ -236,7 +236,7 @@ void init_hcore_integrals_() {
 }
 
 const double* hcore_integrals_buffer_() {
-  if (qc_hcore == 0) {
+  if (qc_hcore.null()) {
     die("called hcore_integrals_buffer before calling init_hcore_integrals!");
   }
   return qc_hcore_buf;
@@ -261,7 +261,7 @@ void done_hcore_integrals_() {
 }
 
 void init_twoecoulomb_integrals_() {
-  if (qc_integral == 0) {
+  if (qc_integral.null()) {
     die("called init_twoecoulomb_integrals before calling init_integrals!");
   }
   qc_integral->set_basis(qc_obs, qc_obs, qc_obs, qc_obs);
@@ -270,7 +270,7 @@ void init_twoecoulomb_integrals_() {
 }
 
 const double* twoecoulomb_integrals_buffer_() {
-  if (qc_twoecoulomb == 0) {
+  if (qc_twoecoulomb.null()) {
     die("called twoecoulomb_integrals_buffer before calling init_twoecoulomb_integrals!");
   }
   return qc_twoecoulomb_buf;

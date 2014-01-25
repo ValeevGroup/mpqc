@@ -561,7 +561,7 @@ MBPT2::compute_cs_grad()
                    mem_integral_storage)
        << endl;
 
-  if (mem == 0) {
+  if (mem.null()) {
       ExEnv::errn() << "MBPT2: memory group not initialized" << endl;
       abort();
     }

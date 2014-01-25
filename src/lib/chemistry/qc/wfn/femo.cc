@@ -37,7 +37,7 @@ FEMO::FEMO(int nalpha, int nbeta,
 {
   // first convert evals to something we can deal with easily
   BlockedDiagSCMatrix *bevalsa = require_dynamic_cast<BlockedDiagSCMatrix*>(evalsa, "FEMO::FEMO");
-  BlockedDiagSCMatrix *bevalsb = evalsb == 0 ? bevalsa : require_dynamic_cast<BlockedDiagSCMatrix*>(evalsb, "FEMO::FEMO");
+  BlockedDiagSCMatrix *bevalsb = evalsb.null() ? bevalsa : require_dynamic_cast<BlockedDiagSCMatrix*>(evalsb, "FEMO::FEMO");
 
   const int nirrep_ = bevalsa->nblocks();
   if (nirrep_ != bevalsb->nblocks())

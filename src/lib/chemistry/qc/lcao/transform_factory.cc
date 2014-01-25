@@ -136,17 +136,17 @@ MOIntsTransformFactory::set_spaces(const Ref<OrbitalSpace>& space1, const Ref<Or
                                    const Ref<OrbitalSpace>& space3, const Ref<OrbitalSpace>& space4)
 {
   space1_ = space1;
-  if (space1_ == 0)
+  if (space1_.null())
     throw ProgrammingError("MOIntsTransformFactory::set_spaces() -- space1 cannot be null",__FILE__,__LINE__);
-  if (space2 == 0)
+  if (space2.null())
     space2_ = space1_;
   else
     space2_ = space2;
-  if (space3 == 0)
+  if (space3.null())
     space3_ = space2_;
   else
     space3_ = space3;
-  if (space4 == 0)
+  if (space4.null())
     space4_ = space3_;
   else
     space4_ = space4;
@@ -157,7 +157,7 @@ MOIntsTransformFactory::twobody_transform_13(const std::string& name,
                                              const Ref<TwoBodyIntDescr>& descrarg)
 {
   Ref<TwoBodyMOIntsTransform> result;
-  const Ref<TwoBodyIntDescr> descr = (descrarg == 0 ? tbintdescr() : descrarg);
+  const Ref<TwoBodyIntDescr> descr = (descrarg.null() ? tbintdescr() : descrarg);
 
   if (df_info_ == 0) { // no density-fitting
     if (space2_->rank() <= space2_->basis()->nbasis()) {
@@ -175,7 +175,7 @@ MOIntsTransformFactory::twobody_transform_13(const std::string& name,
     result = new TwoBodyMOIntsTransform_ixjy_df(name,df_info_,descr,space1_,space2_,space3_,space4_);
   }
 
-  if (top_mole_)
+  if (top_mole_.nonnull())
     result->set_top_mole(top_mole_);
 
   return result;
@@ -186,10 +186,10 @@ MOIntsTransformFactory::twobody_transform_12(const std::string& name,
                                              const Ref<TwoBodyIntDescr>& descrarg)
 {
   Ref<TwoBodyMOIntsTransform> result;
-  const Ref<TwoBodyIntDescr> descr = (descrarg == 0 ? tbintdescr() : descrarg);
+  const Ref<TwoBodyIntDescr> descr = (descrarg.null() ? tbintdescr() : descrarg);
   result = new TwoBodyMOIntsTransform_ijxy(name,this,descr,space1_,space2_,space3_,space4_);
 
-  if (top_mole_)
+  if (top_mole_.nonnull())
     result->set_top_mole(top_mole_);
 
   return result;
@@ -200,7 +200,7 @@ MOIntsTransformFactory::twobody_transform(StorageType storage,
                                           const std::string& name,
                                           const Ref<TwoBodyIntDescr>& descrarg)
 {
-  const Ref<TwoBodyIntDescr> descr = (descrarg == 0 ? tbintdescr() : descrarg);
+  const Ref<TwoBodyIntDescr> descr = (descrarg.null() ? tbintdescr() : descrarg);
 
   switch (storage) {
     case MOIntsTransform::StorageType_12:
@@ -222,7 +222,7 @@ MOIntsTransformFactory::twobody_transform(const std::string& name,
   Ref<TwoBodyThreeCenterMOIntsTransform> result = new TwoBodyThreeCenterMOIntsTransform_ijR(name,this,descr,space1_,space2_,space3_);
 
 #if 0
-  if (top_mole_)
+  if (top_mole_.nonnull())
     result->set_top_mole(top_mole_);
 #endif
   return result;

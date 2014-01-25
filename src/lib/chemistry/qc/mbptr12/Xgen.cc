@@ -123,7 +123,7 @@ R12IntEval::compute_X_(RefSCMatrix& X,
     const unsigned int nket = nf12 * ketiter.nij();
 
     // init the target X matrix
-    if (X == 0) {
+    if (X.null()) {
 	// use the same matrix kit as the intermediates
 	X = B_[AlphaBeta].kit()->matrix(new SCDimension(nbra),
 					new SCDimension(nket));
@@ -163,9 +163,9 @@ R12IntEval::compute_X_(RefSCMatrix& X,
     Ref<R12Technology::R12CorrelationFactor> r12corrptr; r12corrptr << corrfactor();
     Ref<R12Technology::G12CorrelationFactor> g12corrptr; g12corrptr << corrfactor();
     Ref<R12Technology::G12NCCorrelationFactor> g12nccorrptr; g12nccorrptr << corrfactor();
-    if (r12corrptr) corrfac = r12corrfactor;
-    if (g12corrptr) corrfac = g12corrfactor;
-    if (g12nccorrptr) corrfac = g12corrfactor;
+    if (r12corrptr.nonnull()) corrfac = r12corrfactor;
+    if (g12corrptr.nonnull()) corrfac = g12corrfactor;
+    if (g12nccorrptr.nonnull()) corrfac = g12corrfactor;
 
     switch (corrfac) {
     case r12corrfactor:  // R12^2 reduces to one-electron integrals

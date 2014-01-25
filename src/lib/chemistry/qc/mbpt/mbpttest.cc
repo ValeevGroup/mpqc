@@ -99,15 +99,15 @@ init_mp(const Ref<KeyVal>& keyval, int &argc, char **&argv)
 {
   grp << keyval->describedclassvalue("message");
 
-  if (grp == 0) grp = MessageGrp::initial_messagegrp(argc, argv);
+  if (grp.null()) grp = MessageGrp::initial_messagegrp(argc, argv);
 
-  if (grp == 0) {
+  if (grp.null()) {
       grp << keyval->describedclassvalue("messagegrp");
     }
 
-  if (grp == 0) grp = MessageGrp::get_default_messagegrp();
+  if (grp.null()) grp = MessageGrp::get_default_messagegrp();
 
-  if (grp == 0) {
+  if (grp.null()) {
     std::cerr << indent << "Couldn't initialize MessageGrp\n";
     abort();
     }
@@ -116,7 +116,7 @@ init_mp(const Ref<KeyVal>& keyval, int &argc, char **&argv)
 
   Ref<Debugger> debugger; debugger << keyval->describedclassvalue(":debug");
   // Let the debugger know the name of the executable and the node
-  if (debugger) {
+  if (debugger.nonnull()) {
     debugger->set_exec("mbpttest");
     debugger->set_prefix(grp->me());
     debugger->debug("curt is a hog");
@@ -168,7 +168,7 @@ main(int argc, char**argv)
   } else {
     mole << rpkv->describedclassvalue(keyword);
     opt << rpkv->describedclassvalue(optkeyword);
-    if (opt) {
+    if (opt.nonnull()) {
       opt->set_checkpoint();
       opt->set_checkpoint_file("mbpttest.ckpt");
     }
@@ -176,10 +176,10 @@ main(int argc, char**argv)
 
   tim.exit("input");
 
-  if (mole) {
+  if (mole.nonnull()) {
     ExEnv::out0() << indent << "energy: " << mole->energy() << endl;
     if (do_gradient && mole->gradient_implemented()) {
-      if (opt) {
+      if (opt.nonnull()) {
         opt->optimize();
       } else {
         mole->gradient().print("gradient");

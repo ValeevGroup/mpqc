@@ -67,10 +67,10 @@ CLKS::CLKS(const Ref<KeyVal>& keyval) :
 {
   exc_=0;
   integrator_ << keyval->describedclassvalue("integrator");
-  if (integrator_ == 0) integrator_ = new RadialAngularIntegrator();
+  if (integrator_.null()) integrator_ = new RadialAngularIntegrator();
 
   functional_ << keyval->describedclassvalue("functional");
-  if (functional_ == 0) {
+  if (functional_.null()) {
     ExEnv::outn() << "ERROR: " << class_name() << ": no \"functional\" given" << endl;
     abort();
   }
@@ -143,7 +143,7 @@ CLKS::effective_fock()
   mofock.assign(0.0);
 
   // use eigenvectors if scf_vector_ is null
-  if (oso_scf_vector_ == 0)
+  if (oso_scf_vector_.null())
     mofock.accumulate_transform(eigenvectors(), fa,
                                 SCMatrix::TransposeTransform);
   else
@@ -158,8 +158,8 @@ CLKS::initial_extrap_data()
 {
   Ref<SCExtrapData> data;
   // If there is an old fock matrix and v_xc around, use that.
-  if (cl_fock_.result_noupdate()
-      && vxc_) {
+  if (cl_fock_.result_noupdate().nonnull()
+      && vxc_.nonnull()) {
     data = new SymmSCMatrix2SCExtrapData(cl_fock_.result_noupdate(),
                                          vxc_);
   }

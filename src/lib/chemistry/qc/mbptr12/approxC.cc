@@ -226,8 +226,8 @@ R12IntEval::compute_BC_()
         }
 
       }
-      if (Kr[Beta] == 0) Kr[Beta] = Kr[Alpha];
-      if (hJnr[Beta] == 0) hJnr[Beta] = hJnr[Alpha];
+      if (Kr[Beta].null()) Kr[Beta] = Kr[Alpha];
+      if (hJnr[Beta].null()) hJnr[Beta] = hJnr[Alpha];
     }
 
 

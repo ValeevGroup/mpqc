@@ -173,7 +173,7 @@ MBPT2::MBPT2(const Ref<KeyVal>& keyval):
   Wavefunction(keyval)
 {
   reference_ << keyval->describedclassvalue("reference");
-  if (reference_ == 0) {
+  if (reference_.null()) {
       ExEnv::err0() << "MBPT2::MBPT2: no reference wavefunction" << endl;
       abort();
     }
@@ -200,7 +200,7 @@ MBPT2::MBPT2(const Ref<KeyVal>& keyval):
         }
     }
   mem << keyval->describedclassvalue("memorygrp");
-  if (mem == 0) {
+  if (mem.null()) {
       mem = MemoryGrp::get_default_memorygrp();
     }
   msg_ = MessageGrp::get_default_messagegrp();
@@ -351,7 +351,7 @@ MBPT2::obsolete()
   // Solaris 2.7 workshop 5.0 is causing this routine to
   // be incorrectly called in a base class CTOR.  Thus
   // reference_ might be null and it must be tested.
-  if (reference_) reference_->obsolete();
+  if (reference_.nonnull()) reference_->obsolete();
   Wavefunction::obsolete();
 }
 

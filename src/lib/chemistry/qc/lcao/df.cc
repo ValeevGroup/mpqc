@@ -421,7 +421,7 @@ TransformedDensityFitting::save_data_state(StateOut& so) {
 void
 TransformedDensityFitting::compute()
 {
-  if (C_) // nothing to compute then
+  if (C_.nonnull()) // nothing to compute then
     return;
   Ref<AOSpaceRegistry> aoidxreg = this->runtime()->factory()->ao_registry();
   const std::string name = ParsedDensityFittingKey::key(this->space1()->id(),
@@ -542,7 +542,7 @@ PermutedDensityFitting::save_data_state(StateOut& so) {
 void
 PermutedDensityFitting::compute()
 {
-  if (C_) // nothing to compute then
+  if (C_.nonnull()) // nothing to compute then
     return;
 
   Ref<AOSpaceRegistry> aoidxreg = this->runtime()->factory()->ao_registry();

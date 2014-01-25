@@ -48,10 +48,10 @@ main(int argc, char *argv[])
 
   Ref<MessageGrp> msg = MessageGrp::initial_messagegrp(argc, argv);
 
-  if (msg == 0) {
+  if (msg.null()) {
       msg << keyval->describedclassvalue("messagegrp");
 
-      if (msg == 0) {
+      if (msg.null()) {
           std::cerr << indent << "Couldn't initialize MessageGrp\n";
           abort();
         }

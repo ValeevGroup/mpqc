@@ -186,7 +186,7 @@ FileGrp::initial_filegrp(int &argc, char *argv[])
       strkv->parse_string(keyval_string);
       Ref<DescribedClass> dc = strkv->describedclassvalue();
       grp = dynamic_cast<FileGrp*>(dc.pointer());
-      if (dc == 0) {
+      if (dc.null()) {
           ExEnv::errn() << "initial_filegrp: couldn't find a FileGrp in "
                << keyval_string << endl;
           abort();
@@ -298,7 +298,7 @@ FileGrp::set_default_filegrp(const Ref<FileGrp>& grp)
 FileGrp*
 FileGrp::get_default_filegrp()
 {
-  if (default_filegrp) return default_filegrp.pointer();
+  if (default_filegrp.nonnull()) return default_filegrp.pointer();
 
   Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
 
@@ -309,7 +309,7 @@ FileGrp::get_default_filegrp()
 #endif
 
 
-  if (msg == 0) {
+  if (msg.null()) {
       ExEnv::errn() << scprintf("FileGrp::get_default_filegrp: requires default MessageGrp if default behavior not configured\n");
       abort();
     }
@@ -330,7 +330,7 @@ FileGrp::get_default_filegrp()
       abort();
     }
 
-  if (default_filegrp == 0) {
+  if (default_filegrp.null()) {
       ExEnv::err0() << scprintf("WARNING: FileGrp::get_default_filegrp(): failed\n");
       default_filegrp = new ProcFileGrp;
     }

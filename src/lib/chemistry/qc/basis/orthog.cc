@@ -60,7 +60,7 @@ OverlapOrthog::OverlapOrthog(StateIn& si):
   Ref<SCMatrixKit> kit;
   kit << si.override()->describedclassvalue("matrixkit");
 
-  if (kit == 0) {
+  if (kit.null()) {
     throw std::runtime_error("OverlapOrthog::OverlapOrthog(StateIn& si): requires that a matrixkit be set up in the override info");
     }
 
@@ -202,7 +202,7 @@ OverlapOrthog::compute_overlap_eig(RefSCMatrix& overlap_eigvec,
   nlindep_ = 0;
   for (i=0; i<nblocks; i++) {
       nfunc[i] = 0;
-      if (blocked && bm->block(i) == 0) continue;
+      if (blocked && bm->block(i).null()) continue;
       int n;
       if (blocked) n = bm->block(i)->dim()->n();
       else n = m->dim()->n();
@@ -273,7 +273,7 @@ OverlapOrthog::compute_overlap_eig(RefSCMatrix& overlap_eigvec,
 	      = dynamic_cast<BlockedSCMatrix*>(U.pointer());
 	  int ifunc = 0;
 	  for (i=0; i<bev->nblocks(); i++) {
-	      if (bev->block(i) == 0) continue;
+	      if (bev->block(i).null()) continue;
 	      for (j=0; j<nfunc[i]; j++) {
 		  RefSCVector col = bU->block(i)->get_column(pm_index[ifunc]);
 		  bev->block(i)->assign_column(col,j);
@@ -362,7 +362,7 @@ OverlapOrthog::compute_gs_orthog()
   int northog = 0;
   for (int i=0; i<nblock; i++) {
     RefSymmSCMatrix Sblock = S->block(i);
-    if (Sblock == 0) {
+    if (Sblock.null()) {
       blockorthogs[i] = 0;
       nblockorthogs[i] = 0;
       continue;
@@ -516,7 +516,7 @@ OverlapOrthog::compute_orthog_trans()
 RefSCMatrix
 OverlapOrthog::basis_to_orthog_basis()
 {
-  if (orthog_trans_ == 0) {
+  if (orthog_trans_.null()) {
     compute_orthog_trans();
   }
   return orthog_trans_;
@@ -525,7 +525,7 @@ OverlapOrthog::basis_to_orthog_basis()
 RefSCMatrix
 OverlapOrthog::basis_to_orthog_basis_inverse()
 {
-  if (orthog_trans_inverse_ == 0) {
+  if (orthog_trans_inverse_.null()) {
     compute_orthog_trans();
   }
   return orthog_trans_inverse_;
@@ -540,14 +540,14 @@ OverlapOrthog::dim()
 RefSCDimension
 OverlapOrthog::orthog_dim()
 {
-  if (orthog_dim_ == 0) compute_orthog_trans();
+  if (orthog_dim_.null()) compute_orthog_trans();
   return orthog_dim_;
 }
 
 int
 OverlapOrthog::nlindep()
 {
-  if (orthog_dim_ == 0) compute_orthog_trans();
+  if (orthog_dim_.null()) compute_orthog_trans();
   return nlindep_; 
 }
 

@@ -211,11 +211,11 @@ Wavefunction::Wavefunction(const Ref<KeyVal>&keyval):
     keyval->describedclassvalue("basis").pointer(),
     "Wavefunction::Wavefunction\n"
     );
-  if (gbs_ == 0)
+  if (gbs_.null())
     throw InputError("Wavefunction::Wavefunction -- basis is missing");
 
   atom_basis_ << keyval->describedclassvalue("atom_basis");
-  if (atom_basis_) {
+  if (atom_basis_.nonnull()) {
     atom_basis_coef_ = new double[atom_basis_->nbasis()];
     for (int i=0; i<atom_basis_->nbasis(); i++) {
       atom_basis_coef_[i] = keyval->doublevalue("atom_basis_coef",i);
@@ -229,12 +229,12 @@ Wavefunction::Wavefunction(const Ref<KeyVal>&keyval):
 
   momentum_basis_ << keyval->describedclassvalue("momentum_basis");
   dk_ = keyval->intvalue("dk");
-  if (dk_ > 0 && momentum_basis_ == 0) {
+  if (dk_ > 0 && momentum_basis_.null()) {
     momentum_basis_ = new UncontractedBasisSet(gbs_);
   }
 
   integral_ << keyval->describedclassvalue("integrals");
-  if (integral_ == 0) {
+  if (integral_.null()) {
     Integral* default_intf = Integral::get_default_integral();
     integral_ = default_intf->clone();
   }
@@ -250,7 +250,7 @@ Wavefunction::Wavefunction(const Ref<KeyVal>&keyval):
 
   // post-construction validation
   {
-    if (electric_field()) {
+    if (electric_field().nonnull()) {
       if (fabs(electric_field().dot(electric_field())) > 1e-13 &&
           not Wavefunction::nonzero_efield_supported())
         throw FeatureNotImplemented("External electric field is specified, \
@@ -330,7 +330,7 @@ Wavefunction::Wavefunction(StateIn&s):
 
   if (s.version(::class_desc<Wavefunction>()) >= 7) {
     atom_basis_ << SavableState::restore_state(s);
-    if (atom_basis_) {
+    if (atom_basis_.nonnull()) {
       s.get_array_double(atom_basis_coef_, atom_basis_->nbasis());
     }
   }
@@ -405,7 +405,7 @@ Wavefunction::save_data_state(StateOut&s)
   SavableState::save_state(integral_.pointer(),s);
   SavableState::save_state(orthog_.pointer(),s);
   SavableState::save_state(atom_basis_.pointer(), s);
-  if (atom_basis_) {
+  if (atom_basis_.nonnull()) {
     s.put_array_double(atom_basis_coef_,atom_basis_->nbasis());
   }
 
@@ -642,7 +642,7 @@ Wavefunction::core_hamiltonian_dk(int dk,
                 << " terms in the one body Hamiltonian."
                 << std::endl;
 
-  if (atom_basis_) {
+  if (atom_basis_.nonnull()) {
     throw FeatureNotImplemented("atom_basis given and dk > 0",
                                 __FILE__, __LINE__, class_desc());
   }
@@ -784,7 +784,7 @@ Wavefunction::core_hamiltonian_dk(int dk,
   V_skel = 0;
 
   // include contributions from external electric field, if needed
-  if (electric_field()) {
+  if (electric_field().nonnull()) {
     RefSymmSCMatrix mu_so;
     RefSymmSCMatrix mu(p_ao_dim, p_kit);
     mu.assign(0.0);
@@ -1118,7 +1118,7 @@ Wavefunction::core_hamiltonian_nr(const Ref<GaussianBasisSet> &bas)
     hao.element_op(hc);
     hc=0;
 
-    if (atom_basis_ == 0) {
+    if (atom_basis_.null()) {
       Ref<OneBodyInt> nuc = integral_->nuclear();
       nuc->reinitialize();
       hc = new OneBodyIntOp(new SymmOneBodyIntIter(nuc, pl));
@@ -1173,7 +1173,7 @@ Wavefunction::core_hamiltonian_nr(const Ref<GaussianBasisSet> &bas)
 
     // include contributions from external electric field, if needed
     RefSymmSCMatrix mu_so;
-    if (electric_field()) {
+    if (electric_field().nonnull()) {
       {
         RefSymmSCMatrix mu = hao.clone();
         mu.assign(0.0);
@@ -1230,7 +1230,7 @@ Wavefunction::core_hamiltonian_nr(const Ref<GaussianBasisSet> &bas)
     RefSymmSCMatrix h(pl->SO_basisdim(), bas->so_matrixkit());
     pl->symmetrize(hao,h);
 
-    if (electric_field()) {
+    if (electric_field().nonnull()) {
       h.accumulate(mu_so);
     }
 
@@ -1272,7 +1272,7 @@ Wavefunction::nuclear_repulsion_energy()
 {
   // include the energy of nuclei in the presence of electric field, if needed
   double ext_efield_contribution = 0.0;
-  if (electric_field()) {
+  if (electric_field().nonnull()) {
     const int natoms = molecule()->natom();
     for(int a=0; a<natoms; ++a) {
       ext_efield_contribution -= electric_field()->get_element(0) * molecule()->charge(a) * molecule()->r(a, 0);
@@ -1281,7 +1281,7 @@ Wavefunction::nuclear_repulsion_energy()
     }
   }
 
-  if (atom_basis_ == 0) return ext_efield_contribution + molecule()->nuclear_repulsion_energy();
+  if (atom_basis_.null()) return ext_efield_contribution + molecule()->nuclear_repulsion_energy();
 
   double nucrep = ext_efield_contribution;
 
@@ -1447,7 +1447,7 @@ Wavefunction::nuclear_repulsion_energy_gradient(double *g)
 void
 Wavefunction::nuclear_repulsion_energy_gradient(double **g)
 {
-  if (atom_basis_ == 0) {
+  if (atom_basis_.null()) {
     int natom = molecule()->natom();
     for (int i=0; i<natom; i++) {
       molecule()->nuclear_repulsion_1der(i,g[i]);
@@ -1545,14 +1545,14 @@ Wavefunction::nuc_rep_grad_cd_cd(double **grad,
 RefSCMatrix
 Wavefunction::so_to_orthog_so()
 {
-  if (orthog_ == 0) init_orthog();
+  if (orthog_.null()) init_orthog();
   return orthog_->basis_to_orthog_basis();
 }
 
 RefSCMatrix
 Wavefunction::so_to_orthog_so_inverse()
 {
-  if (orthog_ == 0) init_orthog();
+  if (orthog_.null()) init_orthog();
   return orthog_->basis_to_orthog_basis_inverse();
 }
 
@@ -1607,7 +1607,7 @@ Wavefunction::ao_dimension()
 RefSCDimension
 Wavefunction::oso_dimension()
 {
-  if (orthog_ == 0) init_orthog();
+  if (orthog_.null()) init_orthog();
   return orthog_->orthog_dim();
 }
 
@@ -1625,13 +1625,13 @@ Wavefunction::print(ostream&o) const
   ExEnv::out0() << incindent;
   basis()->print_brief(o);
   ExEnv::out0() << decindent;
-  if (atom_basis_) {
+  if (atom_basis_.nonnull()) {
     ExEnv::out0() << indent << "Nuclear basis:" << std::endl;
     ExEnv::out0() << incindent;
     atom_basis_->print_brief(o);
     ExEnv::out0() << decindent;
   }
-  if (momentum_basis_) {
+  if (momentum_basis_.nonnull()) {
     ExEnv::out0() << indent << "Momentum basis:" << std::endl;
     ExEnv::out0() << incindent;
     momentum_basis_->print_brief(o);
@@ -1697,11 +1697,11 @@ Wavefunction::obsolete()
 void
 Wavefunction::copy_orthog_info(const Ref<Wavefunction>&wfn)
 {
-  if (orthog_) {
+  if (orthog_.nonnull()) {
     ExEnv::errn() << "WARNING: Wavefunction: orthogonalization info changing"
                  << endl;
   }
-  if (wfn->orthog_ == 0)
+  if (wfn->orthog_.null())
     wfn->init_orthog();
   orthog_ = wfn->orthog_->copy();
 }
@@ -1727,7 +1727,7 @@ Wavefunction::min_orthog_res()
 double
 Wavefunction::max_orthog_res()
 {
-  if (orthog_ == 0) init_orthog();
+  if (orthog_.null()) init_orthog();
   return orthog_->max_orthog_res();
 }
 

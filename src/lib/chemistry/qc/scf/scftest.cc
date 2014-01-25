@@ -62,12 +62,12 @@ init_mp(const Ref<KeyVal>& keyval)
   // otherwise read the message group from the input file
   grp << keyval->describedclassvalue("message");
 
-  if (grp) MessageGrp::set_default_messagegrp(grp);
+  if (grp.nonnull()) MessageGrp::set_default_messagegrp(grp);
   else grp = MessageGrp::get_default_messagegrp();
 
   Ref<Debugger> debugger; debugger << keyval->describedclassvalue(":debug");
   // Let the debugger know the name of the executable and the node
-  if (debugger) {
+  if (debugger.nonnull()) {
     debugger->set_exec("scftest");
     debugger->set_prefix(grp->me());
     debugger->debug("curt is a hog");
@@ -116,7 +116,7 @@ main(int argc, char**argv)
   } else {
     mole << rpkv->describedclassvalue(keyword);
     opt << rpkv->describedclassvalue(optkeyword);
-    if (opt) {
+    if (opt.nonnull()) {
       opt->set_checkpoint();
       opt->set_checkpoint_file("scftest.ckpt");
     }
@@ -124,9 +124,9 @@ main(int argc, char**argv)
 
   tim.exit("input");
 
-  if (mole) {
+  if (mole.nonnull()) {
     if (mole->gradient_implemented()) {
-      if (opt) {
+      if (opt.nonnull()) {
         opt->optimize();
       } else {
         mole->gradient().print("gradient");

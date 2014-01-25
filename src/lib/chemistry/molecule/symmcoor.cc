@@ -113,7 +113,7 @@ SymmCoorTransform::to_cartesian(const RefSCVector& new_internal)
       RefSCVector displacement = new_internal - old_internal;
 
       if (maxabs_cart_diff>update_tolerance
-          || internal_to_cart_disp == 0) {
+          || internal_to_cart_disp.null()) {
 
           int i;
           RefSCMatrix bmat(dim,dnatom3_,kit);
@@ -174,7 +174,7 @@ SymmCoorTransform::to_cartesian(const RefSCVector& new_internal)
 void
 SymmCoorTransform::transform_coordinates(const RefSCVector& x)
 {
-  if (x == 0) return;
+  if (x.null()) return;
 
   Ref<SCMatrixKit> kit = x.kit();
   RefSCDimension dim = x.dim();
@@ -296,7 +296,7 @@ SymmMolecularCoor::form_coordinates(int keep_variable)
   fixed_ = new SetIntCoor;
   fixed_->add(saved_fixed_);
   // if we're following coordinates, add them to the fixed list
-  if (followed_)
+  if (followed_.nonnull())
     fixed_->add(followed_);
   
   int nredundant = nbonds + nbends + ntors + nouts + nextras;
@@ -336,7 +336,7 @@ SymmMolecularCoor::form_coordinates(int keep_variable)
 
   // now remove followed coords from the fixed list, and add to the
   // variable list
-  if (followed_) {
+  if (followed_.nonnull()) {
     fixed_->pop();
     variable_->add(followed_);
   }
@@ -481,7 +481,7 @@ SymmMolecularCoor::change_coordinates()
       if (sigma(i) > epsilon) rank++;
     }
   // the rank could get bigger if there is a fixed coordinate
-  if (rank < dim_.n() || ((fixed_ == 0
+  if (rank < dim_.n() || ((fixed_.null()
                            || fixed_->n() == 0) && rank != dim_.n())) {
       throw AlgorithmException("disallowed rank change",
                                __FILE__, __LINE__, class_desc());

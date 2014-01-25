@@ -116,7 +116,7 @@ BlockedDiagSCMatrix::accumulate(const DiagSCMatrix*a)
   }
 
   for (int i=0; i < d->blocks()->nblock(); i++)
-    if (mats_[i])
+    if (mats_[i].nonnull())
       mats_[i]->accumulate(la->mats_[i].pointer());
 }
 
@@ -126,7 +126,7 @@ BlockedDiagSCMatrix::invert_this()
   double det = 1.0;
 
   for (int i=0; i < d->blocks()->nblock(); i++)
-    if (mats_[i])
+    if (mats_[i].nonnull())
       det *= mats_[i]->invert_this();
 
   return det;
@@ -138,7 +138,7 @@ BlockedDiagSCMatrix::determ_this()
   double det = 1.0;
 
   for (int i=0; i < d->blocks()->nblock(); i++)
-    if (mats_[i])
+    if (mats_[i].nonnull())
       det *= mats_[i]->determ_this();
 
   return det;
@@ -150,7 +150,7 @@ BlockedDiagSCMatrix::trace()
   double det = 0;
 
   for (int i=0; i < d->blocks()->nblock(); i++)
-    if (mats_[i])
+    if (mats_[i].nonnull())
       det += mats_[i]->trace();
 
   return det;
@@ -160,7 +160,7 @@ void
 BlockedDiagSCMatrix::gen_invert_this(double condition_number_threshold)
 {
   for (int i=0; i < d->blocks()->nblock(); i++)
-    if (mats_[i])
+    if (mats_[i].nonnull())
       mats_[i]->gen_invert_this(condition_number_threshold);
 }
 
@@ -207,7 +207,7 @@ BlockedDiagSCMatrix::element_op(const Ref<SCElementOp>& op)
   for (int i=0; i < nb; i++) {
     if (bop)
       bop->working_on(i);
-    if (mats_[i])
+    if (mats_[i].nonnull())
       mats_[i]->element_op(op);
   }
   op->defer_collect(0);
@@ -233,7 +233,7 @@ BlockedDiagSCMatrix::element_op(const Ref<SCElementOp2>& op,
   for (int i=0; i < nb; i++) {
     if (bop)
       bop->working_on(i);
-    if (mats_[i])
+    if (mats_[i].nonnull())
       mats_[i]->element_op(op,lm->mats_[i].pointer());
   }
   op->defer_collect(0);
@@ -262,7 +262,7 @@ BlockedDiagSCMatrix::element_op(const Ref<SCElementOp3>& op,
   for (int i=0; i < nb; i++) {
     if (bop)
       bop->working_on(i);
-    if (mats_[i])
+    if (mats_[i].nonnull())
       mats_[i]->element_op(op,lm->mats_[i].pointer(),ln->mats_[i].pointer());
   }
   op->defer_collect(0);
@@ -276,7 +276,7 @@ BlockedDiagSCMatrix::vprint(const char *title, ostream& os, int prec) const
   char *newtitle = new char[len + 80];
 
   for (int i=0; i < d->blocks()->nblock(); i++) {
-    if (mats_[i] == 0)
+    if (mats_[i].null())
       continue;
 
     sprintf(newtitle,"%s:  block %d",title,i+1);
@@ -310,7 +310,7 @@ BlockedDiagSCMatrix::local_blocks(SCMatrixSubblockIter::Access access)
   Ref<SCMatrixCompositeSubblockIter> iter
       = new SCMatrixCompositeSubblockIter(access,nblocks());
   for (int i=0; i<nblocks(); i++) {
-      if (block(i) == 0)
+      if (block(i).null())
           iter->set_iter(i, new SCMatrixNullSubblockIter(access));
       else
           iter->set_iter(i, block(i)->local_blocks(access));
@@ -325,7 +325,7 @@ BlockedDiagSCMatrix::all_blocks(SCMatrixSubblockIter::Access access)
   Ref<SCMatrixCompositeSubblockIter> iter
       = new SCMatrixCompositeSubblockIter(access,nblocks());
   for (int i=0; i<nblocks(); i++) {
-      if (block(i) == 0)
+      if (block(i).null())
           iter->set_iter(i, new SCMatrixNullSubblockIter(access));
       else
           iter->set_iter(i, block(i)->all_blocks(access));

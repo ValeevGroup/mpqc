@@ -60,7 +60,7 @@ main(int argc, char **argv)
   Ref<Debugger> d;
 
   d << keyval->describedclassvalue("debug");
-  if (d == 0) {
+  if (d.null()) {
       d = new Debugger();
       d->handle_defaults();
       d->set_prefix(999);

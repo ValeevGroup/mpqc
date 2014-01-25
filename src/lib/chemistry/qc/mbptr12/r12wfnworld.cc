@@ -61,13 +61,13 @@ R12WavefunctionWorld::R12WavefunctionWorld(
     const Ref<RefWavefunction>& ref,
     Ref<OrbitalSpace> ri_space) :
     refwfn_(ref), ref_acc_for_cabs_space_(DBL_MAX),
-    ribs_space_(ri_space), ribs_space_given_(ribs_space_)
+    ribs_space_(ri_space), ribs_space_given_(ribs_space_.nonnull())
 {
   // by default use spin-orbital algorithm
   spinadapted_ = keyval->booleanvalue("spinadapted",KeyValValueboolean(false));
   //refwfn_->set_spinfree(spinadapted_);
 
-  if (ribs_space_ == 0) {
+  if (ribs_space_.null()) {
     bs_aux_ = require_dynamic_cast<GaussianBasisSet*>(
         keyval->describedclassvalue("aux_basis").pointer(),
         "R12Technology::R12Technology\n"
@@ -133,7 +133,7 @@ R12WavefunctionWorld::initialize()
   Ref<ParamsRegistry> pregistry = ParamsRegistry::instance();
   Ref<R12Technology::CorrelationFactor> corrfactor = r12tech_->corrfactor();
   Ref<R12Technology::NullCorrelationFactor> nullcorrfactor;  nullcorrfactor << corrfactor;
-  if (nullcorrfactor == 0) { // real correlation factor
+  if (nullcorrfactor.null()) { // real correlation factor
     const unsigned int ncorrfunctions = corrfactor->nfunctions();
     for (unsigned int f = 0; f < ncorrfunctions; ++f) {
       std::ostringstream oss;
@@ -171,7 +171,7 @@ R12WavefunctionWorld::initialize()
   }
 
   nlindep_ri_ = nlindep_aux_ = -1;
-  obs_eq_vbs_ = basis_vir() == 0 || basis()->equiv(basis_vir());
+  obs_eq_vbs_ = basis_vir().null() || basis()->equiv(basis_vir());
   if (ribs_space_given_ == false) {
     bs_ri_ = 0;
     ribs_space_ = 0;
@@ -198,7 +198,7 @@ R12WavefunctionWorld::obsolete() {
 const Ref<OrbitalSpace>&
 R12WavefunctionWorld::ribs_space() const
 {
-  if (ribs_space_ == 0) {
+  if (ribs_space_.null()) {
     R12WavefunctionWorld* this_nonconst_ptr = const_cast<R12WavefunctionWorld*>(this);
     this_nonconst_ptr->construct_ri_basis_(r12tech()->safety_check());
   }
@@ -207,7 +207,7 @@ R12WavefunctionWorld::ribs_space() const
 
 bool
 R12WavefunctionWorld::obs_eq_ribs() const {
-  if (bs_ri_ == 0) ribs_space();
+  if (bs_ri_.null()) ribs_space();
   return basis()->equiv(bs_ri_);
 }
 
@@ -218,7 +218,7 @@ R12WavefunctionWorld::cabs_space(const SpinCase1& S) const
     cabs_space_[Alpha] = 0;
     cabs_space_[Beta] = 0;
   }
-  if (cabs_space_[S] == 0) { // compute if needed
+  if (cabs_space_[S].null()) { // compute if needed
     R12WavefunctionWorld* this_nonconst_ptr = const_cast<R12WavefunctionWorld*>(this);
     this_nonconst_ptr->construct_cabs_();
   }

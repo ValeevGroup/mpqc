@@ -38,7 +38,7 @@ using namespace sc;
 class TwoBodyEvalThread : public Thread {
   public:
     TwoBodyEvalThread(const Ref<TwoBodyInt>& eval) : eval_(eval) {
-      MPQC_ASSERT(eval);
+      MPQC_ASSERT(eval.nonnull());
     }
     virtual ~Thread();
 
@@ -124,7 +124,7 @@ main(int argc, char** argv) {
   // it will produce integral evaluator objects
   //
   Ref<Integral> integral = Integral::initial_integral(argc, argv);
-  if (integral) Integral::set_default_integral(integral);
+  if (integral.nonnull()) Integral::set_default_integral(integral);
   integral = Integral::get_default_integral()->clone();
   integral->set_basis(obs);
 

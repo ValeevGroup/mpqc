@@ -100,7 +100,7 @@ OrbitalSpace::OrbitalSpace(const std::string& id, const std::string& name,
                            const RefDiagSCMatrix& evals, unsigned int nfzc,
                            unsigned int nfzv, const IndexOrder& moorder) :
   id_(id), name_(name), basis_(basis), integral_(integral) {
-  if (evals == 0)
+  if (evals.null())
     throw std::runtime_error(
                              "OrbitalSpace::OrbitalSpace() -- null eigenvalues matrix");
   if (nfzc > full_coefs.coldim().n())
@@ -412,7 +412,7 @@ void OrbitalSpace::full_coefs_to_coefs(const RefSCMatrix& full_coefs,
       coefs_(j, i) = full_coefs(j, ii);
     }
   }
-  if (evals)
+  if (evals.nonnull())
     for (unsigned int i = 0; i < rank; i++) {
       const unsigned int ii = blocked_subindex_to_full_index[index_map[i]];
       evals_( i) = evals(ii);
@@ -749,11 +749,11 @@ OrbitalSpaceUnion::OrbitalSpaceUnion(const std::string& id, const std::string& n
   Ref<GaussianBasisSet> bs = 0;
   try { std::vector<unsigned int> tmp = *(s1.basis()) << *(s2.basis()); bs = s1.basis(); }
   catch (...) { }
-  if (bs == 0) {
+  if (bs.null()) {
     try { std::vector<unsigned int> tmp = *(s2.basis()) << *(s1.basis()); bs = s2.basis(); }
     catch (...) { }
   }
-  if (bs == 0) {
+  if (bs.null()) {
     bs = s1.basis() + s2.basis();
   }
   const std::vector<unsigned int> map1 = (*bs) << (*s1.basis());

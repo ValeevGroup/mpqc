@@ -86,7 +86,7 @@ void Wavefunction::orbitals(const SCVector3& r,
     delete valdat;
     RefSCVector bs_values_scvec = orbs->kit()->vector(orbs.coldim());
     bs_values_scvec.assign(bs_values);
-    if (values == 0) values = orbs->kit()->vector(orbs.rowdim());
+    if (values.null()) values = orbs->kit()->vector(orbs.rowdim());
     values.assign(0.0);
     values.accumulate_product(orbs, bs_values_scvec);
 }

@@ -136,7 +136,7 @@ OOGLRender::render(const Ref<RenderedObject>& object)
   if (object->name()) {
       o << "define " << object->name() << endl;
     }
-  if (object->transform()) {
+  if (object->transform().nonnull()) {
       o << "= INST" << endl;
       o << "transform {" << endl;
       for (int i=0; i<4; i++) {
@@ -148,10 +148,10 @@ OOGLRender::render(const Ref<RenderedObject>& object)
       o << "}" << endl;
       o << "geom {" << endl;
     }
-  if (object->material()
-      ||object->appearance()) {
+  if (object->material().nonnull()
+      ||object->appearance().nonnull()) {
       o << "appearance {" << endl;
-      if (object->material()) {
+      if (object->material().nonnull()) {
           o << "material {" << endl;
           if (object->material()->ambient().is_set()) {
               if (object->material()->ambient().overrides()) o << "*";
@@ -176,7 +176,7 @@ OOGLRender::render(const Ref<RenderedObject>& object)
 
   Render::render(object);
 
-  if (object->transform()) {
+  if (object->transform().nonnull()) {
       o << "}" << endl;
     }
   o << "}" << endl;

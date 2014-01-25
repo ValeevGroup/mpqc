@@ -137,7 +137,7 @@ MolecularFragment::process_keyval(const Ref<KeyVal>& kv,
   typedef std::set<int>::const_iterator citer;
 
   protomol << kv->describedclassvalue("molecule");
-  if (protomol == 0) throw InputError("missing keyword", __FILE__, __LINE__,
+  if (protomol.null()) throw InputError("missing keyword", __FILE__, __LINE__,
                                         "MolecularFragment::molecule", "");
   const int natoms = protomol->natom();
 

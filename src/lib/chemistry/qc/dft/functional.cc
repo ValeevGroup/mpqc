@@ -2962,7 +2962,7 @@ PBECFunctional::PBECFunctional(const Ref<KeyVal>& keyval):
   DenFunctional(keyval)
 {
   local_ << keyval->describedclassvalue("local");
-  if (local_ == 0) local_ = new PW92LCFunctional;
+  if (local_.null()) local_ = new PW92LCFunctional;
   local_->set_compute_potential(1);
 
   init_constants();
@@ -3273,7 +3273,7 @@ PW91CFunctional::PW91CFunctional(const Ref<KeyVal>& keyval):
   DenFunctional(keyval)
 {
   local_ << keyval->describedclassvalue("local");
-  if (local_ == 0) local_ = new PW92LCFunctional;
+  if (local_.null()) local_ = new PW92LCFunctional;
   local_->set_compute_potential(1);
   init_constants();
 }

@@ -108,7 +108,7 @@ ActiveMessageThread::run_one()
   Ref<ActiveMessage> amsg;
   amsg << SavableState::restore_state(*in_.pointer());
 
-  if (amsg == 0) {
+  if (amsg.null()) {
       std::cout << "ActiveMessageThread::run_one(): "
                 << "got a null ActiveMessage object on "
                 << context_->me()

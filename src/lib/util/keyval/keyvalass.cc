@@ -139,7 +139,7 @@ AssignedKeyVal::classname(const char * key)
   Ref<KeyValValueRefDescribedClass> kv_dc;
   kv_dc << this->key_value(key, KeyValValueRefDescribedClass());
   const char* result = 0;
-  if (kv_dc) {
+  if (kv_dc.nonnull()) {
     Ref<DescribedClass> dc;
     kv_dc->describedclassvalue(dc);
     result = dc->class_name();

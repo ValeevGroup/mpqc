@@ -131,7 +131,7 @@ MPQCIn::ylex()
 void
 MPQCIn::begin_molecule()
 {
-  if (mol_) {
+  if (mol_.nonnull()) {
       ExEnv::outn() << ExEnv::program_name()
                    << ": error: second molecule given at line "
                    << lexer_->lineno()+1
@@ -443,7 +443,7 @@ MPQCIn::parse_string(const char *s)
   ostringstream ostrs;
   SCFormIO::init_ostream(ostrs);
   ostrs << decindent;
-  if (mol_ == 0) error("no molecule given");
+  if (mol_.null()) error("no molecule given");
   if (symmetry_.set() && strcmp(symmetry_.val(),"auto") != 0) {
       mol_->symmetrize(new PointGroup(symmetry_.val()));
     }

@@ -119,7 +119,7 @@ Molecule::Molecule(const Ref<KeyVal>&input):
   include_qq_ = input->booleanvalue("include_qq",kvfalse);
 
   atominfo_ << input->describedclassvalue("atominfo");
-  if (atominfo_ == 0) atominfo_ = new AtomInfo;
+  if (atominfo_.null()) atominfo_ = new AtomInfo;
   q_Z_ = atominfo_->string_to_Z("Q");
   if (input->exists("pdb_file")) {
       geometry_units_ = new Units("angstrom");

@@ -235,7 +235,7 @@ DistArray4_MPIIOFile_Ind::clone(const DistArray4Dimensions& dim) {
     std::string clonename;
     using detail::clone_filename;
     clone_filename(clonename, this->filename_, id);
-    if (clonelist_) {
+    if (clonelist_.nonnull()) {
       while (clonelist_->key_exists(clonename)) {
         ++id;
         clone_filename(clonename, this->filename_, id);

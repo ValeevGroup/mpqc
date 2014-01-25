@@ -118,7 +118,7 @@ namespace sc {
       static int debug() { return 0; }
 
       Ref<DensityFittingInfo> dfinfo_;
-      bool use_density_fitting() { return dfinfo_; }
+      bool use_density_fitting() { return dfinfo_.nonnull(); }
 
       Ref<OrbitalSpaceRegistry> oreg_;
       Ref<AOSpaceRegistry> aoreg_;

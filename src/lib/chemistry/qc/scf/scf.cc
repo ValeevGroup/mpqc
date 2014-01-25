@@ -137,15 +137,15 @@ SCF::SCF(const Ref<KeyVal>& keyval) :
     level_shift_ = keyval->doublevalue("level_shift");
 
   extrap_ << keyval->describedclassvalue("extrap");
-  if (extrap_ == 0)
+  if (extrap_.null())
     extrap_ = new DIIS;
 
   accumdih_ << keyval->describedclassvalue("accumdih");
-  if (accumdih_ == 0)
+  if (accumdih_.null())
     accumdih_ = new AccumHNull;
 
   accumddh_ << keyval->describedclassvalue("accumddh");
-  if (accumddh_ == 0)
+  if (accumddh_.null())
     accumddh_ = new AccumHNull;
 
   KeyValValuesize defaultmem(DEFAULT_MPQC_MEMORY);
@@ -171,7 +171,7 @@ SCF::SCF(const Ref<KeyVal>& keyval) :
     ExEnv::out0() << incindent << incindent;
     guess_wfn_ << keyval->describedclassvalue("guess_wavefunction");
     compute_guess_=1;
-    if (guess_wfn_ == 0) {
+    if (guess_wfn_.null()) {
       compute_guess_=0;
       std::string path = keyval->stringvalue("guess_wavefunction");
       struct stat sb;
@@ -241,7 +241,7 @@ void
 SCF::symmetry_changed()
 {
   OneBodyWavefunction::symmetry_changed();
-  if (guess_wfn_) {
+  if (guess_wfn_.nonnull()) {
     guess_wfn_->symmetry_changed();
   }
 }
@@ -293,7 +293,7 @@ SCF::compute()
     delta = compute_vector(eelec,nucrep);
 
     double eother = 0.0;
-    if (accumddh_) eother = accumddh_->e();
+    if (accumddh_.nonnull()) eother = accumddh_->e();
     ExEnv::out0() << endl << indent
          << scprintf("total scf energy = %15.10f", eelec+eother+nucrep)
          << endl;
@@ -411,10 +411,10 @@ SCF::get_local_data(const RefSymmSCMatrix& m, double*& p, Access access)
 void
 SCF::initial_vector()
 {
-  const bool vector_is_null = oso_eigenvectors_.result_noupdate() == 0;
+  const bool vector_is_null = oso_eigenvectors_.result_noupdate().null();
   if (vector_is_null) {
     bool soad_guess = false;
-    if (guess_wfn_ == 0) {
+    if (guess_wfn_.null()) {
       Ref<AssignedKeyVal> akv = new AssignedKeyVal;
       akv->assign("molecule", molecule().pointer());
       akv->assign("basis", basis().pointer());
@@ -430,7 +430,7 @@ SCF::initial_vector()
     // if guess_wfn_ is non-null then try to get a guess vector from it.
     // First check that the same basis is used...if not, then project the
     // guess vector into the present basis.
-    if (guess_wfn_) {
+    if (guess_wfn_.nonnull()) {
 
       // compute guess wfn with lower accuracy than this wfn
       if (guess_wfn_->desired_value_accuracy_set_to_default())
@@ -529,15 +529,15 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
 
   RefSCMatrix oso_vector;
   if (alp || !uhf) {
-    if (oso_scf_vector_)
+    if (oso_scf_vector_.nonnull())
       oso_vector = oso_scf_vector_;
   }
   else {
-    if (oso_scf_vector_beta_)
+    if (oso_scf_vector_beta_.nonnull())
       oso_vector = oso_scf_vector_beta_;
   }
 
-  if (oso_vector == 0) {
+  if (oso_vector.null()) {
     if (uhf) {
       if (alp)
         oso_vector = oso_alpha_eigenvectors();
@@ -564,7 +564,7 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
     RefSCMatrix vir = bvec->block(ir);
     RefSymmSCMatrix dir = bd->block(ir);
 
-    if (vir == 0 || vir.ncol()==0)
+    if (vir.null() || vir.ncol()==0)
       continue;
 
     int n_orthoSO = oso_dimension()->blocks()->size(ir);
@@ -757,7 +757,7 @@ void
 SCF::obsolete()
 {
   OneBodyWavefunction::obsolete();
-  if (guess_wfn_) guess_wfn_->obsolete();
+  if (guess_wfn_.nonnull()) guess_wfn_->obsolete();
   // do I need to obsolete the vector also here? Yes, if always_use_guess_wfn_ is set to true.
   // Otherwise, the user of this class knows the context of the call to be able to call purge(), e.g.
   // in geometry optimization vector may be reused, but in set_orthog_method it currently can't

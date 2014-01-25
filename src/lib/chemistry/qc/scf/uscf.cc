@@ -417,14 +417,14 @@ UnrestrictedSCF::print(ostream&o) const
 void
 UnrestrictedSCF::initial_vector()
 {
-  const bool vector_is_null = oso_eigenvectors_.result_noupdate() == 0;
+  const bool vector_is_null = oso_eigenvectors_.result_noupdate().null();
   if (vector_is_null) {
     // if guess_wfn_ is non-null then try to get a guess vector from it.
     // First check that the same basis is used...if not, then project the
     // guess vector into the present basis.
     // right now the check is crude...there should be an equiv member in
     // GaussianBasisSet
-    if (guess_wfn_) {
+    if (guess_wfn_.nonnull()) {
       if (basis()->equiv(guess_wfn_->basis())
           &&orthog_method() == guess_wfn_->orthog_method()
           &&oso_dimension()->equiv(guess_wfn_->oso_dimension().pointer())) {
@@ -495,7 +495,7 @@ UnrestrictedSCF::set_occupations(const RefDiagSCMatrix& eva,
                                  const RefDiagSCMatrix& evb,
                                  bool can_change_multiplicity)
 {
-  if (user_occupations_ || (initial_nalpha_ && eva == 0)) {
+  if (user_occupations_ || (initial_nalpha_ && eva.null())) {
     if (form_occupations(nalpha_, initial_nalpha_)) {
       form_occupations(nbeta_, initial_nbeta_);
       most_recent_pg_ = new PointGroup(molecule()->point_group());
@@ -509,7 +509,7 @@ UnrestrictedSCF::set_occupations(const RefDiagSCMatrix& eva,
 
   RefDiagSCMatrix evalsa, evalsb;
 
-  if (eva == 0) {
+  if (eva.null()) {
     initial_vector();
     evalsa = eigenvalues_.result_noupdate();
     evalsb = eigenvalues_beta_.result_noupdate();
@@ -546,7 +546,7 @@ UnrestrictedSCF::set_occupations(const RefDiagSCMatrix& eva,
   if (!nalpha_) {
     nalpha_=newalpha;
     nbeta_=newbeta;
-  } else if (most_recent_pg_
+  } else if (most_recent_pg_.nonnull()
              && most_recent_pg_->equiv(molecule()->point_group())) {
     // test to see if newocc is different from nalpha_
     for (i=0; i < nirrep_; i++) {
@@ -632,7 +632,7 @@ UnrestrictedSCF::init_vector()
   gmatb_ = gmata_.clone();
   gmatb_.assign(0.0);
 
-  if (focka_.result_noupdate() == 0) {
+  if (focka_.result_noupdate().null()) {
     focka_ = hcore_.clone();
     focka_.result_noupdate().assign(0.0);
     fockb_ = hcore_.clone();
@@ -1042,7 +1042,7 @@ UnrestrictedSCF::compute_vector(double& eelec, double nucrep)
     double s2=0;
     for (int ir=0; ir < nirrep_; ir++) {
       RefSCMatrix Sab_ir=pSab->block(0);
-      if (Sab_ir) {
+      if (Sab_ir.nonnull()) {
         for (i=0; i < nalpha_[ir]; i++)
           for (int j=0; j < nbeta_[ir]; j++)
             s2 += Sab_ir.get_element(i,j)*Sab_ir.get_element(i,j);
@@ -1111,7 +1111,7 @@ UnrestrictedSCF::lagrangian()
     RefDiagSCMatrix eair = eab->block(ir);
     RefDiagSCMatrix ebir = ebb->block(ir);
 
-    if (eair == 0)
+    if (eair.null())
       continue;
 
     int i;

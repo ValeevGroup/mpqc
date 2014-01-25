@@ -303,7 +303,7 @@ void
 DenIntegrator::set_accuracy(double a)
 {
   accuracy_ = a;
-  if (den_) den_->set_accuracy(a);
+  if (den_.nonnull()) den_->set_accuracy(a);
 }
 
 void
@@ -1620,7 +1620,7 @@ RadialAngularIntegrator::RadialAngularIntegrator(const Ref<KeyVal>& keyval):
   angular_user_ << keyval->describedclassvalue("angular");
 
   weight_ << keyval->describedclassvalue("weight");
-  if (weight_ == 0) weight_ = new BeckeIntegrationWeight;
+  if (weight_.null()) weight_ = new BeckeIntegrationWeight;
 //  ExEnv::outn() << "In Ref<KeyVal> Constructor" << endl;
   
   init_parameters(keyval);
@@ -1934,7 +1934,7 @@ RadialAngularIntegrator::angular_grid_offset(int gridtype)
 RadialIntegrator *
 RadialAngularIntegrator::get_radial_grid(int charge, int deriv_order)
 {
-  if (radial_user_ == 0) {
+  if (radial_user_.null()) {
 
       int select_grid;
       
@@ -2007,7 +2007,7 @@ RadialAngularIntegrator::get_angular_grid(double radius, double atomic_radius,
   //ExEnv::out << "RAI::get_angular_grid -> select_grid = " << select_grid;
   //ExEnv::out << " prune_grid_ = " << prune_grid_ << endl;
   atomic_row = get_atomic_row(Z);
-  if (angular_user_ == 0) {
+  if (angular_user_.null()) {
       // Seleted Alpha's
       double *Alpha = Alpha_coeffs_[atomic_row];
       // gridtype_ will need to be adjusted for dynamic grids  
@@ -2143,19 +2143,19 @@ RadialAngularIntegrator::print(ostream &o) const
 {
   o << indent << class_name() << ":" << endl;
   o << incindent;
-  if (radial_user_) {
+  if (radial_user_.nonnull()) {
       o << indent << "User defined radial grid:" << endl;
       o << incindent;
       radial_user_->print(o);
       o << decindent;
     }
-  if (angular_user_) {
+  if (angular_user_.nonnull()) {
       o << indent << "User defined angular grid:" << endl;
       o << incindent;
       angular_user_->print(o);
       o << decindent;
     }
-  if (angular_user_ == 0 || radial_user_ == 0) {
+  if (angular_user_.null() || radial_user_.null()) {
       if (prune_grid_) o << indent << "Pruned ";
       switch (gridtype_) {
       case 0: o << "xcoarse"; break;

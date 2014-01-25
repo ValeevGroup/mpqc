@@ -132,7 +132,7 @@ WriteOrbital::WriteOrbital(const Ref<KeyVal> &keyval):
     WriteGrid(WriteOrbital::process_keyval_for_base_class(keyval))
 {
   obwfn_ << keyval->describedclassvalue("obwfn");
-  if (obwfn_ == 0) {
+  if (obwfn_.null()) {
       InputError ex("valid \"obwfn\" missing",
                     __FILE__, __LINE__, "obwfn", "(null)", class_desc());
       try {
@@ -157,7 +157,7 @@ WriteOrbital::WriteOrbital(const Ref<KeyVal> &keyval):
 Ref<KeyVal>
 WriteOrbital::process_keyval_for_base_class(Ref<KeyVal> kv) {
   Ref<OneBodyWavefunction> obwfn; obwfn << kv->describedclassvalue("obwfn");
-  if (obwfn == 0) { // WriteOrbital constructor will fail anyway, do nothing
+  if (obwfn.null()) { // WriteOrbital constructor will fail anyway, do nothing
     return kv;
   }
   else {
@@ -221,7 +221,7 @@ WriteOrbitals::WriteOrbitals(const Ref<KeyVal> &keyval):
     WriteVectorGrid(WriteOrbital::process_keyval_for_base_class(keyval))
 {
   obwfn_ << keyval->describedclassvalue("obwfn");
-  if (obwfn_ == 0) {
+  if (obwfn_.null()) {
       InputError ex("valid \"obwfn\" missing",
                     __FILE__, __LINE__, "obwfn", "(null)", class_desc());
       try {
@@ -275,13 +275,13 @@ WriteOrbitals::label(char* buffer)
 Ref<Molecule>
 WriteOrbitals::get_molecule()
 {
-  return obwfn_ ? obwfn_->molecule() : orbs_->basis()->molecule();
+  return obwfn_.nonnull() ? obwfn_->molecule() : orbs_->basis()->molecule();
 }
 
 void
 WriteOrbitals::calculate_values(const std::vector<SCVector3>& Points, std::vector<double>& Values)
 {
-  if (obwfn_)
+  if (obwfn_.nonnull())
     obwfn_->orbitals(Points, Values, omap_.map.front()-1, omap_.map.back()-1, true);
   else
     Wavefunction::orbitals(orbs_, Points, Values);

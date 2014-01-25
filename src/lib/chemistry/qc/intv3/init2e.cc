@@ -322,7 +322,7 @@ void
 Int2eV3::compute_shell_1(Ref<GaussianBasisSet> cs,
                          int shell_offset, int prim_offset)
 {
-  if (cs == 0) {
+  if (cs.null()) {
     for (int i=0; i<3; i++) {
       int_shell_r(shell_offset,i) = 0.0;
       }
@@ -368,22 +368,22 @@ Int2eV3::compute_prim_2(Ref<GaussianBasisSet> cs1,
   const double sqrt2pi54 = 5.9149671727956129;
   double AmB,AmB2;
 
-  if (cs2 == 0 && !int_unit_shell) make_int_unit_shell();
+  if (cs2.null() && !int_unit_shell) make_int_unit_shell();
 
   offset1 = prim_offset1;
-  int cs1_ncenter = (cs1 == 0?1:cs1->ncenter());
+  int cs1_ncenter = (cs1.null()?1:cs1->ncenter());
   for (i1=0; i1<cs1_ncenter; i1++) {
-    int cs1_nshell_on_center = (cs1 == 0?1:cs1->nshell_on_center(i1));
+    int cs1_nshell_on_center = (cs1.null()?1:cs1->nshell_on_center(i1));
     for (j1=0; j1<cs1_nshell_on_center; j1++) {
-      if (cs1) shell1 = &cs1->shell(i1,j1);
+      if (cs1.nonnull()) shell1 = &cs1->shell(i1,j1);
       else               shell1 = int_unit_shell;
       for (k1=0; k1<shell1->nprimitive(); k1++) {
         offset2 = prim_offset2;
-        int cs2_ncenter = (cs2 == 0?1:cs2->ncenter());
+        int cs2_ncenter = (cs2.null()?1:cs2->ncenter());
         for (i2=0; i2<cs2_ncenter; i2++) {
-          int cs2_nshell_on_center = (cs2 == 0?1:cs2->nshell_on_center(i2));
+          int cs2_nshell_on_center = (cs2.null()?1:cs2->nshell_on_center(i2));
           for (j2=0; j2<cs2_nshell_on_center; j2++) {
-            if (cs2) shell2 = &cs2->shell(i2,j2);
+            if (cs2.nonnull()) shell2 = &cs2->shell(i2,j2);
             else               shell2 = int_unit_shell;
             for (k2=0; k2<shell2->nprimitive(); k2++) {
 
@@ -398,9 +398,9 @@ Int2eV3::compute_prim_2(Ref<GaussianBasisSet> cs1,
               /* The p = (alpha A + beta B) / zeta */
               for (i=0; i<3; i++) {
                 int_prim_p(offset1,offset2,i) =
-                  (  shell1->exponent(k1) * (cs1 == 0?0.0
+                  (  shell1->exponent(k1) * (cs1.null()?0.0
                                              :cs1->molecule()->r(i1,i))
-                   + shell2->exponent(k2) * (cs2 == 0?0.0
+                   + shell2->exponent(k2) * (cs2.null()?0.0
                                              :cs2->molecule()->r(i2,i)))
                   *  int_prim_oo2zeta(offset1,offset2);
                 }
@@ -408,8 +408,8 @@ Int2eV3::compute_prim_2(Ref<GaussianBasisSet> cs1,
               /* Compute AmB^2 */
               AmB2 = 0.0;
               for (i=0; i<3; i++) {
-                AmB = (cs2 == 0?0.0:cs2->molecule()->r(i2,i))
-                    - (cs1 == 0?0.0:cs1->molecule()->r(i1,i));
+                AmB = (cs2.null()?0.0:cs2->molecule()->r(i2,i))
+                    - (cs1.null()?0.0:cs1->molecule()->r(i1,i));
                 AmB2 += AmB*AmB;
                 }
 

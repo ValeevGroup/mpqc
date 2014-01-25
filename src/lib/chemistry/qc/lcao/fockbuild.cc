@@ -448,13 +448,13 @@ void
 ReplFockBuildMatrix::data_to_scmat() const
 {
   if (blockpointers_ == 0) return;
-  if (symmmat_) {
-      if (rectmat_) {
+  if (symmmat_.nonnull()) {
+      if (rectmat_.nonnull()) {
           throw std::runtime_error("data_to_scmat: both mats nonnull");
         }
       data_to_symmat();
     }
-  else if (rectmat_) {
+  else if (rectmat_.nonnull()) {
       data_to_rectmat();
     }
   else {
@@ -516,7 +516,7 @@ ReplFockBuildMatrix::block(int I, int J) const
 bool
 ReplFockBuildMatrix::symmetric() const
 {
-  return symmmat_;
+  return symmmat_.nonnull();
 }
 
 void
@@ -1177,13 +1177,13 @@ DistFockBuildMatrix::data_to_symmat() const
 void
 DistFockBuildMatrix::data_to_scmat() const
 {
-  if (symmmat_) {
-      if (rectmat_) {
+  if (symmmat_.nonnull()) {
+      if (rectmat_.nonnull()) {
           throw std::runtime_error("data_to_scmat: both mats nonnull");
         }
       data_to_symmat();
     }
-  else if (rectmat_) {
+  else if (rectmat_.nonnull()) {
       data_to_rectmat();
     }
   else {
@@ -1304,7 +1304,7 @@ DistFockBuildMatrix::accum_remote(const Ref<MessageGrp> &msg)
 bool
 DistFockBuildMatrix::symmetric() const
 {
-  return symmmat_;
+  return symmmat_.nonnull();
 }
 
 double *
@@ -1917,7 +1917,7 @@ GenericFockContribution::pmax_contrib(const Ref<FockBuildMatrix> &mat,
 void
 GenericFockContribution::activate()
 {
-  if (fbamg_) {
+  if (fbamg_.nonnull()) {
 //       std::cout << "GenericFockContribution::activate(): activating"
 //                 << std::endl;
       fbamg_->activate();
@@ -1931,13 +1931,13 @@ GenericFockContribution::activate()
 void
 GenericFockContribution::sync()
 {
-  if (fbamg_) fbamg_->sync();
+  if (fbamg_.nonnull()) fbamg_->sync();
 }
 
 void
 GenericFockContribution::deactivate()
 {
-  if (fbamg_) fbamg_->deactivate();
+  if (fbamg_.nonnull()) fbamg_->deactivate();
 }
 
 void
@@ -2502,8 +2502,8 @@ FockBuild::FockBuild(const Ref<FockDistribution> &fockdist,
   compute_K_(true),
   coef_K_(1.0)
 {
-  if (b_f2_ == 0) b_f2_ = b_f1_;
-  if (b_p_ == 0) b_p_ = b_f1_;
+  if (b_f2_.null()) b_f2_ = b_f1_;
+  if (b_p_.null()) b_p_ = b_f1_;
 
   integral_->set_basis(b_p_);
   pl_ = integral_->petite_list();
@@ -2618,7 +2618,7 @@ FockBuild::build()
     }
   for (int i=0; i<nthread; i++) {
       Ref<RegionTimer> deftimer = RegionTimer::default_regiontimer();
-      if (deftimer) deftimer->merge(thread_[i]->get_timer());
+      if (deftimer.nonnull()) deftimer->merge(thread_[i]->get_timer());
       thread_[i]->get_timer()->reset();
     }
   contrib_->accum_remote(msg_);

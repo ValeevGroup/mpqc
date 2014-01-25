@@ -16,11 +16,11 @@ init_thread(const Ref<KeyVal>& keyval, int &argc, char **&argv)
   
   // if we still don't have a group, try reading the thread group
   // from the input
-  if (thread == 0) {
+  if (thread.null()) {
     thread << keyval->describedclassvalue("thread");
   }
 
-  if (thread)
+  if (thread.nonnull())
     ThreadGrp::set_default_threadgrp(thread);
   else
     thread = ThreadGrp::get_default_threadgrp();
@@ -37,9 +37,9 @@ init_message(const Ref<KeyVal>& keyval,int &argc, char **&argv)
 
   grp << keyval->describedclassvalue("message");
 
-  if (grp == 0) grp = MessageGrp::initial_messagegrp(argc, argv);
+  if (grp.null()) grp = MessageGrp::initial_messagegrp(argc, argv);
 
-  if (grp == 0) grp = MessageGrp::get_default_messagegrp();
+  if (grp.null()) grp = MessageGrp::get_default_messagegrp();
 
   MessageGrp::set_default_messagegrp(grp);
   

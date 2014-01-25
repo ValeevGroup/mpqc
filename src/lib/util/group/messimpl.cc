@@ -88,7 +88,7 @@ MessageGrp::set_default_messagegrp(const Ref<MessageGrp>& grp)
 MessageGrp*
 MessageGrp::get_default_messagegrp()
 {
-  if (default_messagegrp == 0) {
+  if (default_messagegrp.null()) {
 #if defined(HAVE_MPI) && defined(DEFAULT_MPI)
       default_messagegrp = new MPIMessageGrp;
 #else
@@ -151,7 +151,7 @@ MessageGrp::initial_messagegrp(int &argc, char** &argv)
       strkv->parse_string(keyval_string);
       Ref<DescribedClass> dc = strkv->describedclassvalue();
       grp = dynamic_cast<MessageGrp*>(dc.pointer());
-      if (dc == 0) {
+      if (dc.null()) {
           ExEnv::errn() << "initial_messagegrp: couldn't find a MessageGrp in "
                << keyval_string << endl;
           abort();
@@ -197,7 +197,7 @@ MessageGrp::initialize(int me, int n)
   // (and dereference this down below).
   this->reference();
 
-  if (topology_ == 0) {
+  if (topology_.null()) {
       topology_ = new HypercubeTopology();
     }
 

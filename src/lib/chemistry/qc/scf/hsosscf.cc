@@ -379,7 +379,7 @@ HSOSSCF::set_occupations(const RefDiagSCMatrix& ev)
 void
 HSOSSCF::set_occupations(const RefDiagSCMatrix& ev, bool can_change_magnetic_moment)
 {
-  if (user_occupations_ || (initial_ndocc_ && initial_nsocc_ && ev == 0)) {
+  if (user_occupations_ || (initial_ndocc_ && initial_nsocc_ && ev.null())) {
     if (form_occupations(ndocc_, initial_ndocc_)
         &&form_occupations(nsocc_, initial_nsocc_)) {
       most_recent_pg_ = new PointGroup(molecule()->point_group());
@@ -396,7 +396,7 @@ HSOSSCF::set_occupations(const RefDiagSCMatrix& ev, bool can_change_magnetic_mom
 
   RefDiagSCMatrix evals;
 
-  if (ev == 0) {
+  if (ev.null()) {
     initial_vector();
     evals = eigenvalues_.result_noupdate();
   }
@@ -433,7 +433,7 @@ HSOSSCF::set_occupations(const RefDiagSCMatrix& ev, bool can_change_magnetic_mom
   if (!ndocc_) {
     ndocc_=newdocc;
     nsocc_=newsocc;
-  } else if (most_recent_pg_
+  } else if (most_recent_pg_.nonnull()
              && most_recent_pg_->equiv(molecule()->point_group())) {
     // test to see if newocc is different from ndocc_
     for (i=0; i < nirrep_; i++) {
@@ -522,7 +522,7 @@ HSOSSCF::init_vector()
   op_gmat_ = cl_gmat_.clone();
   op_gmat_.assign(0.0);
 
-  if (cl_fock_.result_noupdate() == 0) {
+  if (cl_fock_.result_noupdate().null()) {
     cl_fock_ = hcore_.clone();
     cl_fock_.result_noupdate().assign(0.0);
     op_fock_ = hcore_.clone();
@@ -682,7 +682,7 @@ HSOSSCF::effective_fock()
   mofocko.assign(0.0);
 
   // use eigenvectors if oso_scf_vector_ is null
-  if (oso_scf_vector_ == 0) {
+  if (oso_scf_vector_.null()) {
     mofock.accumulate_transform(eigenvectors(), fock(0),
                                 SCMatrix::TransposeTransform);
     mofocko.accumulate_transform(eigenvectors(), fock(1),
@@ -1013,7 +1013,7 @@ HSOSSCF::semicanonical()
   RefSCMatrix avirevecs(avirdim, avirdim, basis_matrixkit());
   avirfock.diagonalize(avirevals, avirevecs);
   // form full eigenvectors and eigenvalues
-  if (alpha_semican_evals_.result_noupdate() == 0) {
+  if (alpha_semican_evals_.result_noupdate().null()) {
     alpha_semican_evals_.result_noupdate() = eigenvalues().clone();  alpha_semican_evals_.result_noupdate().assign(0.0);
     alpha_semican_evecs_.result_noupdate() = so_eigenvector.clone(); alpha_semican_evecs_.result_noupdate().assign(0.0);
   }
@@ -1090,7 +1090,7 @@ HSOSSCF::semicanonical()
   RefSCMatrix bvirevecs(bvirdim, bvirdim, basis_matrixkit());
   bvirfock.diagonalize(bvirevals, bvirevecs);
   // form full eigenvectors and eigenvalues
-  if (beta_semican_evals_.result_noupdate() == 0) {
+  if (beta_semican_evals_.result_noupdate().null()) {
     beta_semican_evals_.result_noupdate() = eigenvalues().clone();  beta_semican_evals_.result_noupdate().assign(0.0);
     beta_semican_evecs_.result_noupdate() = so_eigenvector.clone(); beta_semican_evecs_.result_noupdate().assign(0.0);
   }

@@ -156,7 +156,7 @@ ThreadGrp::set_default_threadgrp(const Ref<ThreadGrp>& grp)
 ThreadGrp*
 ThreadGrp::get_default_threadgrp()
 {
-  if (default_threadgrp == 0) {
+  if (default_threadgrp.null()) {
 #ifdef HAVE_PTHREAD
     default_threadgrp = new PthreadThreadGrp;
 #else
@@ -218,7 +218,7 @@ ThreadGrp::initial_threadgrp(int& argc, char ** argv)
     strkv->parse_string(keyval_string);
     Ref<DescribedClass> dc = strkv->describedclassvalue();
     grp = dynamic_cast<ThreadGrp*>(dc.pointer());
-    if (dc == 0) {
+    if (dc.null()) {
       ExEnv::errn() << "initial_threadgrp: couldn't find a ThreadGrp in "
            << keyval_string << endl;
       abort();

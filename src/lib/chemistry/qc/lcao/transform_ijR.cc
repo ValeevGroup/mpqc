@@ -140,7 +140,7 @@ TwoBodyThreeCenterMOIntsTransform_ijR::extra_memory_report(std::ostream& os) con
 
 void
 TwoBodyThreeCenterMOIntsTransform_ijR::init_acc() {
-  if (ints_acc_)
+  if (ints_acc_.nonnull())
     return;
 
   const int nproc = mem_->n();
@@ -509,7 +509,7 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute_pjR() {
   int nfuncmax1 = b1->max_nfunction_in_shell();
 
   Ref<DistArray4_MemoryGrp> ints_acc_cast; ints_acc_cast << ints_acc_;
-  const bool need_memgrp = ints_acc_cast;
+  const bool need_memgrp = ints_acc_cast.nonnull();
   if (need_memgrp) {
     const distsize_t ijR_globalsize = (((static_cast<distsize_t>(n1))*n23)*num_te_types)*sizeof(double);
     const int ni_local = (n1 + nproc - 1)/ nproc;
@@ -771,7 +771,7 @@ TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR::compute() {
   const int nbasis2 = this->space2()->basis()->nbasis();
 
   Ref<DistArray4_MemoryGrp> ints_acc_cast; ints_acc_cast << ints_acc_;
-  const bool need_memgrp = ints_acc_cast;
+  const bool need_memgrp = ints_acc_cast.nonnull();
   if (need_memgrp) {
     const distsize_t ijR_globalsize = (((static_cast<distsize_t>(n1))*n23)*num_te_types)*sizeof(double);
     const int ni_local = (n1 + nproc - 1)/ nproc;

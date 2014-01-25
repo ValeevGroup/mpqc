@@ -95,13 +95,13 @@ Render::pop_transform()
 void
 Render::render(const Ref<RenderedObject>& object)
 {
-  if (object->material()) push_material(object->material());
-  if (object->transform()) push_transform(object->transform());
-  if (object->appearance()) push_appearance(object->appearance());
+  if (object->material().nonnull()) push_material(object->material());
+  if (object->transform().nonnull()) push_transform(object->transform());
+  if (object->appearance().nonnull()) push_appearance(object->appearance());
   object->render(this);
-  if (object->material()) pop_material();
-  if (object->transform()) pop_transform();
-  if (object->appearance()) pop_appearance();
+  if (object->material().nonnull()) pop_material();
+  if (object->transform().nonnull()) pop_transform();
+  if (object->appearance().nonnull()) pop_appearance();
 }
 
 void

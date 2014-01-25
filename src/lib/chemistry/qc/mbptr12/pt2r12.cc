@@ -72,16 +72,16 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
         keyval->describedclassvalue("rdm2").pointer(),
         "PT2R12::PT2R12\n"
         );
-  if (rdm2_ == 0) throw InputError("missing rdm2", __FILE__, __LINE__,
+  if (rdm2_.null()) throw InputError("missing rdm2", __FILE__, __LINE__,
                                     "rdm2", 0,
                                     this->class_desc());
   rdm1_ = rdm2_->rdm_m_1();
 
   // if world not given, make this the center of a new World
   Ref<WavefunctionWorld> world; world << keyval->describedclassvalue("world", KeyValValueRefDescribedClass(0));
-  if (world == 0)
+  if (world.null())
     world = new WavefunctionWorld(keyval);
-  if (world == 0)
+  if (world.null())
     throw InputError("PT2R12 requires a WavefunctionWorld; input did not specify it, neither could it be constructed",
                      __FILE__, __LINE__, "world");
   if (world->wfn() == 0) world->set_wfn(this);
@@ -97,14 +97,14 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
   {
     Ref<Wavefunction> reference;
     reference << keyval->describedclassvalue("reference");
-    if (reference) {
+    if (reference.nonnull()) {
       MPQC_ASSERT(reference == rdm2_->wfn());
       ref = RefWavefunctionFactory::make(world, reference, spin_restricted,
                                          nfzc_, 0, virspace);
     }
     else  {
       ref << keyval->describedclassvalue("refwfn").pointer();
-      if (ref == 0 && reference == 0) throw InputError("missing reference", __FILE__, __LINE__,
+      if (ref.null() && reference.null()) throw InputError("missing reference", __FILE__, __LINE__,
                                                            "reference", 0,this->class_desc());
     }
   }
@@ -1387,7 +1387,7 @@ void PT2R12::compute()
     }
 
     ExEnv::out0() << std::endl << std::endl << indent << scprintf("Reference energy (%9s) [au]:     %17.12lf",
-                                        (this->r12world()->world()->basis_df() == 0 ? "   recomp" : "recomp+DF"),
+                                        (this->r12world()->world()->basis_df().null() ? "   recomp" : "recomp+DF"),
                                         recomp_ref_energy) << endl;
 
   if(pt2_correction_)

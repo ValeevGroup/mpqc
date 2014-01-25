@@ -149,7 +149,7 @@ namespace sc {
   }
 
   const RefSCMatrix&PsiCC::T1(SpinCase1 spin1) {
-    if (T1_[spin1])
+    if (T1_[spin1].nonnull())
       return T1_[spin1];
     PsiSCF::RefType reftype = reference_->reftype();
 
@@ -166,7 +166,7 @@ namespace sc {
   }
 
   const RefSCMatrix& PsiCC::T2(SpinCase2 spin2) {
-    if (T2_[spin2])
+    if (T2_[spin2].nonnull())
       return T2_[spin2];
     PsiSCF::RefType reftype = reference_->reftype();
 
@@ -199,7 +199,7 @@ namespace sc {
   }
 
   Ref<DistArray4> PsiCC::T2_distarray4(SpinCase2 spin2) {
-    if (T2_da4_[spin2])
+    if (T2_da4_[spin2].nonnull())
       return T2_da4_[spin2];
     PsiSCF::RefType reftype = reference_->reftype();
 
@@ -234,7 +234,7 @@ namespace sc {
   }
 
   const RefSCMatrix&PsiCC::Tau2(SpinCase2 spin2) {
-    if (Tau2_[spin2])
+    if (Tau2_[spin2].nonnull())
       return Tau2_[spin2];
     PsiSCF::RefType reftype = reference_->reftype();
 
@@ -893,7 +893,7 @@ namespace sc {
   }
 
   const RefSCMatrix&PsiCC::Lambda1(SpinCase1 spin) {
-    if (Lambda1_[spin])
+    if (Lambda1_[spin].nonnull())
       return Lambda1_[spin];
 
     throw FeatureNotImplemented("PsiCC::Lambda1() -- cannot read Lambda1 amplitudes yet",__FILE__,__LINE__);
@@ -901,7 +901,7 @@ namespace sc {
   }
 
   const RefSCMatrix&PsiCC::Lambda2(SpinCase2 spin) {
-    if (Lambda2_[spin])
+    if (Lambda2_[spin].nonnull())
       return Lambda2_[spin];
 
     throw FeatureNotImplemented("PsiCC::Lambda2() -- cannot read Lambda2 amplitudes yet",__FILE__,__LINE__);
@@ -1544,7 +1544,7 @@ namespace sc {
 
   const Ref<OrbitalSpace>&
   PsiCC::occ_act_sb(SpinCase1 spin) {
-    if (occ_act_sb_[spin])
+    if (occ_act_sb_[spin].nonnull())
       return occ_act_sb_[spin];
     if (reference_->reftype() == PsiSCF::rhf && spin == Beta)
       return occ_act_sb(Alpha);
@@ -1581,7 +1581,7 @@ namespace sc {
 
   const Ref<OrbitalSpace>&
   PsiCC::vir_act_sb(SpinCase1 spin) {
-    if (vir_act_sb_[spin])
+    if (vir_act_sb_[spin].nonnull())
       return vir_act_sb_[spin];
     if (reference_->reftype() == PsiSCF::rhf && spin == Beta)
       return vir_act_sb(Alpha);
@@ -1619,7 +1619,7 @@ namespace sc {
 
   const Ref<OrbitalSpace>&
   PsiCC::occ_sb(SpinCase1 spin) {
-    if (occ_sb_[spin])
+    if (occ_sb_[spin].nonnull())
       return occ_sb_[spin];
     if (reference_->reftype() == PsiSCF::rhf && spin == Beta)
       return occ_sb(Alpha);

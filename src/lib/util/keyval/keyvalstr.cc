@@ -118,7 +118,7 @@ StringKeyVal::key_value(const char* key, const KeyValValue &def)
               // the original error status must be saved
               KeyValError original_error = error();
               Ref<DescribedClass> newdc(cd->create(pkv));
-              if (newdc == 0) {
+              if (newdc.null()) {
                   ExEnv::errn() << "StringKeyVal::value: create failed for:" << endl
                        << " keyword = \"" << tkw << "\" class = \"" << classn
                        << "\"" << endl
@@ -150,7 +150,7 @@ StringKeyVal::key_value(const char* key, const KeyValValue &def)
 
   if (verbose_) {
       ExEnv::out0() << indent << key << " = ";
-      if (result == 0) {
+      if (result.null()) {
           ExEnv::out0() << def << " (default)";
         }
       else ExEnv::out0() << *result.pointer();

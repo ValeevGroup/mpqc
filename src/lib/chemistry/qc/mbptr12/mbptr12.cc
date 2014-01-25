@@ -97,7 +97,7 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
       "MBPT2_R12::MBPT2_R12\n"
       );
   Ref<OrbitalSpace> vbs;
-  if (bs_vir) {
+  if (bs_vir.nonnull()) {
     int nlindep_vir = -1; // will compute the number of linear dependencies automatically
     vbs = orthogonalize("e(sym)", "VBS", bs_vir,
                         integral(),
@@ -141,9 +141,9 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
 
   // if world not given, make this the center of a new World
   Ref<WavefunctionWorld> world; world << keyval->describedclassvalue("world", KeyValValueRefDescribedClass(0));
-  if (world == 0)
+  if (world.null())
     world = new WavefunctionWorld(keyval);
-  if (world == 0)
+  if (world.null())
     throw InputError("MBPT2_R12 requires a WavefunctionWorld; input did not specify it, neither could it be constructed",
                      __FILE__, __LINE__, "world");
   if (world->wfn() == 0) world->set_wfn(this);
@@ -156,14 +156,14 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   Ref<R12Technology> r12tech = r12world_->r12tech();
 
   Ref<R12Technology::NullCorrelationFactor> null_cf; null_cf << r12tech->corrfactor();
-  const bool default_cabs_singles = null_cf ? false : true;
+  const bool default_cabs_singles = null_cf.nonnull() ? false : true;
   cabs_singles_ = keyval->booleanvalue("cabs_singles",KeyValValueboolean(default_cabs_singles));
 
   twopdm_grid_ = require_dynamic_cast<TwoBodyGrid*>(
                    keyval->describedclassvalue("twopdm_grid").pointer(),
                    "MBPT2_R12::MBPT2_R12\n"
                  );
-  if (twopdm_grid_) {
+  if (twopdm_grid_.nonnull()) {
     plot_pair_function_[0] = static_cast<unsigned int>(keyval->intvalue("plot_pair_function", 0,
 									KeyValValueint(0)
 									));
@@ -183,7 +183,7 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
 
   this->set_desired_value_accuracy(desired_value_accuracy());
 
-  if (bs_vir) { // create AO space for VBS basis, if needed
+  if (bs_vir.nonnull()) { // create AO space for VBS basis, if needed
     Ref<OrbitalSpaceRegistry> idxreg = this->r12world()->world()->tfactory()->orbital_registry();
     Ref<AOSpaceRegistry> aoidxreg = this->r12world()->world()->tfactory()->ao_registry();
     Ref<Integral> localints = this->r12world()->refwfn()->integral()->clone();
@@ -285,7 +285,7 @@ MBPT2_R12::compute()
     std::vector<double> mp2_pair_energies[NSpinCases2];
 
 //    r12world_->initialize();
-//    if (r12eval_ == 0) {
+//    if (r12eval_.null()) {
 //      // since r12intevalinfo uses this class' KeyVal to initialize, dynamic is set automatically
 //      r12world_->world()->print_percent(print_percent_);
 //      r12eval_ = new R12IntEval(r12world_);

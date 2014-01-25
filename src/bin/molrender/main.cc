@@ -123,7 +123,7 @@ main(int argc, char** argv)
       Ref<Appearance> appearance = new Appearance;
       appearance->level().set(level);
       object->appearance(appearance);
-      if (object == 0) {
+      if (object.null()) {
           fprintf(stderr,"%s: got a null object to render\n",argv[0]);
           abort();
         }

@@ -39,7 +39,7 @@ using namespace std;
 void CCR12_Info::prediagon(RefDiagSCMatrix& eigvals, RefSCMatrix& eigvecs) {
 	// CCR12_Info::B_ and CCR12_Info::X_ required.
 	// B_ and X_ are RefSymmSCMatrix objects.
-    MPQC_ASSERT(B_ && X_);
+    MPQC_ASSERT(B_.nonnull() && X_.nonnull());
 
     Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
 
@@ -73,7 +73,7 @@ void CCR12_Info::prediagon(RefDiagSCMatrix& eigvals, RefSCMatrix& eigvecs) {
 void CCR12_Info::denom_contraction(const Ref<Tensor>& in, Ref<Tensor>& out) {
 
   // requires lmatrix_.
-  MPQC_ASSERT(lmatrix_);
+  MPQC_ASSERT(lmatrix_.nonnull());
   const int pair_size = lmatrix_.ncol();
 
   Ref<Tensor> ltensor1 = new Tensor("lternsor", mem());

@@ -46,7 +46,7 @@ R12Amplitudes::~R12Amplitudes()
 const RefSCMatrix&
 R12Amplitudes::T2(SpinCase2 S)
 {
-  if (T2_[S] == 0)
+  if (T2_[S].null())
     compute_(S);
   return T2_[S];
 }
@@ -54,7 +54,7 @@ R12Amplitudes::T2(SpinCase2 S)
 const RefSCMatrix&
 R12Amplitudes::Fvv(SpinCase2 S)
 {
-  if (Fvv_[S] == 0)
+  if (Fvv_[S].null())
     compute_(S);
   return Fvv_[S];
 }
@@ -62,7 +62,7 @@ R12Amplitudes::Fvv(SpinCase2 S)
 const RefSCMatrix&
 R12Amplitudes::Foo(SpinCase2 S)
 {
-  if (Foo_[S] == 0)
+  if (Foo_[S].null())
     compute_(S);
   return Foo_[S];
 }
@@ -70,7 +70,7 @@ R12Amplitudes::Foo(SpinCase2 S)
 const RefSCMatrix&
 R12Amplitudes::Fov(SpinCase2 S)
 {
-  if (Fov_[S] == 0)
+  if (Fov_[S].null())
     compute_(S);
   return Fov_[S];
 }
@@ -78,7 +78,7 @@ R12Amplitudes::Fov(SpinCase2 S)
 const RefSCMatrix&
 R12Amplitudes::Fox(SpinCase2 S)
 {
-  if (Fox_[S] == 0)
+  if (Fox_[S].null())
     compute_(S);
   return Fox_[S];
 }
@@ -86,7 +86,7 @@ R12Amplitudes::Fox(SpinCase2 S)
 const RefSCMatrix&
 R12Amplitudes::Fvo(SpinCase2 S)
 {
-  if (Fvo_[S] == 0)
+  if (Fvo_[S].null())
     compute_(S);
   return Fvo_[S];
 }
@@ -94,7 +94,7 @@ R12Amplitudes::Fvo(SpinCase2 S)
 const RefSCMatrix&
 R12Amplitudes::Fxo(SpinCase2 S)
 {
-  if (Fxo_[S] == 0)
+  if (Fxo_[S].null())
     compute_(S);
   return Fxo_[S];
 }

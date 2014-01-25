@@ -40,7 +40,7 @@ main(int argc, char**argv)
       else
 	mole->do_gradient(0);
 
-      if (mole) {
+      if (mole.nonnull()) {
 	  mole->print(o);
 
           o << "energy = " << mole->energy() << endl;
@@ -58,7 +58,7 @@ main(int argc, char**argv)
       Ref<Optimize> opt;
       opt << rpkv->describedclassvalue("opt",i);
 
-      if (opt) {
+      if (opt.nonnull()) {
           //opt->print(o);
 
           opt->optimize();

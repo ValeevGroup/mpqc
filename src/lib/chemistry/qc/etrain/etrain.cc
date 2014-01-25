@@ -64,11 +64,11 @@ ETraIn::ETraIn(const Ref<KeyVal>& keyval): Function(keyval)
   //
   // Check wave functions. Must be for closed-shell systems and derived from OneBodyWavefunction
   //
-  if (obwfn12_ == 0)
+  if (obwfn12_.null())
     throw InputError("wfn12 keyword not specified or has wrong type (must be derived from OneBodyWavefunction)", __FILE__, __LINE__);
-  if (obwfn1_ == 0)
+  if (obwfn1_.null())
     throw InputError("wfn1 keyword not specified or has wrong type (must be derived from OneBodyWavefunction)", __FILE__, __LINE__);
-  if (obwfn2_ == 0)
+  if (obwfn2_.null())
     throw InputError("wfn2 keyword not specified or has wrong type (must be derived from OneBodyWavefunction)", __FILE__, __LINE__);
   if (obwfn12_->nelectron()%2)
     throw InputError("wfn12 wave function must be of closed-shell type");
@@ -94,7 +94,7 @@ ETraIn::ETraIn(const Ref<KeyVal>& keyval): Function(keyval)
 
   if (keyval->exists("grid")) {
     grid_ << keyval->describedclassvalue("grid");
-    if (grid_ == 0) { // check if grid = auto was used
+    if (grid_.null()) { // check if grid = auto was used
       const std::string make_grid = keyval->stringvalue("grid", KeyValValuestring(""));
       if (make_grid == "auto") { // construct the grid automatically
         const Ref<VDWShape> vdwshape = new VDWShape(obwfn12_->molecule());
@@ -439,7 +439,7 @@ ETraIn::compute_train()
   RefSCMatrix sobymo = obwfn12_->mo_to_so();
   // SCF Hamiltonian is obtained with effective_fock()
 #if 1
-  if (obwfn12_clscf) {
+  if (obwfn12_clscf.nonnull()) {
     fock12_so.accumulate_transform(obwfn12_->mo_to_so(), obwfn12_clscf->effective_fock());
   }
   // Other (incl. Huckel) Hamiltonian are assumed to be simply the eigenvalues
@@ -616,7 +616,7 @@ ETraIn::compute_train()
       }
 
       // optional: print adiabatic occupied dimer orbitals on the grid
-      if (grid_ && method == 0) {
+      if (grid_.nonnull() && method == 0) {
         // compute adiabatic orbitals
         Ref<OrbitalSpace> as12 = new OrbitalSpace("d12", "Dimer active MO space", s12->coefs() * evecs_1,
                                                   s12->basis(), s12->integral(), evals_1, 0, 0);
@@ -636,7 +636,7 @@ ETraIn::compute_train()
   }
 
   // optional: print monomer orbitals on the grid
-  if (grid_) {
+  if (grid_.nonnull()) {
     // merge the two spaces together
     Ref<OrbitalSpace> m12space = new OrbitalSpaceUnion("m1+m2", "Monomers 1+2 active MO space",
                                                        *m1space, *m2space, true);
@@ -683,7 +683,7 @@ ETraIn::read_ip(const Ref<KeyVal> & kv, const std::string & ip_key, IPs& ip,
   if (kv->exists(ip_orbs_key.c_str())) {
     Ref<OneBodyWavefunction> ip_orbs_wfn;
     ip_orbs_wfn << kv->describedclassvalue(ip_orbs_key.c_str());
-    if (ip_orbs_wfn == 0)
+    if (ip_orbs_wfn.null())
       ExEnv::out0() << indent << "WARNING: could not understand value for the optional keyword " << ip_orbs_key << ", will ignore";
     else {
       const int nocc = ip_orbs_wfn->nelectron() / 2;

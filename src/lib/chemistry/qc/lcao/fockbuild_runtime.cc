@@ -523,7 +523,7 @@ FockBuildRuntime::get(const std::string& key) {
   }
 
   // add field contribution to the result, if needed
-  if (electric_field() && (oper_key == "H" || oper_key == "F") ) {
+  if (electric_field().nonnull() && (oper_key == "H" || oper_key == "F") ) {
     RefSCMatrix result_incl_field = result.copy();
     result_incl_field.accumulate( electric_field_contribution(bra_key, ket_key) );
     return result_incl_field;
@@ -535,7 +535,7 @@ FockBuildRuntime::get(const std::string& key) {
 RefSCMatrix
 FockBuildRuntime::electric_field_contribution(std::string bra_key,
                                               std::string ket_key) {
-  MPQC_ASSERT(electric_field());
+  MPQC_ASSERT(electric_field().nonnull());
 
   // only AO matrices will be cached
 

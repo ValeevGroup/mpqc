@@ -144,7 +144,7 @@ main(int argc, char* argv[])
 
   for (int i=0; i<pkv->count(); i++) {
       Ref<Optimize> opt; opt << pkv->describedclassvalue(i);
-      if (opt) {
+      if (opt.nonnull()) {
           RefSCVector oldx = opt->function()->get_x();
           opt->optimize();
           // restore the orginal x, in case the function is used again

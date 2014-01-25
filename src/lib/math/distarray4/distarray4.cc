@@ -566,7 +566,7 @@ namespace sc {
                   const Ref<DistArray4>& ket,
                   unsigned int intsetidx_ket,
                   int debug) {
-    if(braket == 0)
+    if(braket.null())
     {
       DistArray4Dimensions  braket_dims(1, bra->ni(), bra->nj(),
                                         ket->ni(), ket->nj());
@@ -820,7 +820,7 @@ namespace sc {
                                   const RefSCMatrix& ket,
                                   const int MatBra1Dim, const int MatBra2Dim)
   {
-    if(braket == 0)
+    if(braket.null())
     {
       DistArray4Dimensions  braket_dims(1, bra->ni(), bra->nj(),
                                            MatBra1Dim, MatBra2Dim);
@@ -968,7 +968,7 @@ namespace sc {
                          const RefSCMatrix& ket,
                          const int MatBra1Dim, const int MatBra2Dim)
   {
-    if(braket == 0)
+    if(braket.null())
      {
        DistArray4Dimensions  braket_dims(1, bra->ni(), MatBra1Dim, bra->nx(), MatBra2Dim);
        braket = bra->clone(braket_dims);
@@ -987,7 +987,7 @@ namespace sc {
                          const RefSCMatrix& ket,
                          const int MatBra1Dim, const int MatBra2Dim)
   {
-    if(braket == 0)
+    if(braket.null())
      {
        DistArray4Dimensions  braket_dims(1, bra->ni(), MatBra1Dim, bra->ny(), MatBra2Dim);
        braket = bra->clone(braket_dims);
@@ -1013,7 +1013,7 @@ namespace sc {
     void
     _contract_3_or_4(const Ref<DistArray4>& src, const RefSCMatrix& tform, Ref<DistArray4>& dest)
     {
-      if (dest == 0) {
+      if (dest.null()) {
         DistArray4Dimensions dest_dims(src->num_te_types(), src->ni(), src->nj(),
                                        ((ContrIndex == Index3) ? tform.ncol() : src->nx()),
                                        ((ContrIndex == Index4) ? tform.ncol() : src->ny())

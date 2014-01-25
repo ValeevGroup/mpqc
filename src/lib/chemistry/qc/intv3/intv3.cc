@@ -48,7 +48,7 @@ extern Ref<Integral> default_integral;
 Integral*
 Integral::get_default_integral()
 {
-  if (default_integral == 0)
+  if (default_integral.null())
     default_integral = new IntegralV3;
 
   return default_integral;
@@ -264,7 +264,7 @@ IntegralV3::electron_repulsion_deriv()
 namespace {
   int maxl(const Ref<GaussianBasisSet>& bs) {
     int result = -1;
-    if (bs)
+    if (bs.nonnull())
       result = bs->max_angular_momentum();
     return result;
   }
@@ -308,13 +308,13 @@ IntegralV3::initialize_transforms()
 {
   maxl_ = -1;
   int maxam;
-  maxam = bs1_?bs1_->max_angular_momentum():-1;
+  maxam = bs1_.nonnull()?bs1_->max_angular_momentum():-1;
   if (maxl_ < maxam) maxl_ = maxam;
-  maxam = bs2_?bs2_->max_angular_momentum():-1;
+  maxam = bs2_.nonnull()?bs2_->max_angular_momentum():-1;
   if (maxl_ < maxam) maxl_ = maxam;
-  maxam = bs3_?bs3_->max_angular_momentum():-1;
+  maxam = bs3_.nonnull()?bs3_->max_angular_momentum():-1;
   if (maxl_ < maxam) maxl_ = maxam;
-  maxam = bs4_?bs4_->max_angular_momentum():-1;
+  maxam = bs4_.nonnull()?bs4_->max_angular_momentum():-1;
   if (maxl_ < maxam) maxl_ = maxam;
 
   st_ = new SphericalTransformV3**[maxl_+1];

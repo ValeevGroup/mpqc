@@ -471,7 +471,7 @@ int StateOutText::putobject(const Ref<SavableState> &p)
 {
   ostream out(buf_);
   int r=0;
-  if (p == 0) {
+  if (p.null()) {
       out << "reference to null" << endl;
       out.flush();
     }

@@ -504,7 +504,7 @@ KeyValValueRefDescribedClass::describedclassvalue(Ref<DescribedClass>&val) const
 void
 KeyValValueRefDescribedClass::print(ostream&o) const
 {
-  if (_val) {
+  if (_val.nonnull()) {
       o << "<" << _val->class_name()
         << " " << _val->identifier()
         << ">";

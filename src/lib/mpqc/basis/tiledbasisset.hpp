@@ -67,9 +67,9 @@ namespace mpqc{
         {
             Basis basis;
             basis << keyval->describedclassvalue("basis");
-            if(basis == 0){
+            if(basis.null()){
                 basis = new sc::GaussianBasisSet(keyval);
-                if(basis == 0){
+                if(basis.null()){
                     throw sc::InputError("Could not construct a GaussianBasisSet",
                                      __FILE__, __LINE__,
                                      "basis", 0, class_desc());

@@ -138,7 +138,7 @@ TwoBodyMOIntsTransform_ikjy::memgrp_blksize() const
 void
 TwoBodyMOIntsTransform_ikjy::init_acc()
 {
-  if (ints_acc_)
+  if (ints_acc_.nonnull())
     return;
 
   const int nij = compute_nij(batchsize_, space3_->rank(), msg_->n(), msg_->me());

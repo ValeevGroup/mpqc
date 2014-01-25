@@ -80,7 +80,7 @@ Ref<KeyVal>
 AggregateKeyVal::getkeyval(const char* keyword)
 {
   Ref<KeyVal> lastkeyval;
-  for (int i=0; i<MaxKeyVal && kv[i]; i++) {
+  for (int i=0; i<MaxKeyVal && kv[i].nonnull(); i++) {
       kv[i]->exists(keyword);
       seterror(kv[i]->error());
       if (error() != KeyVal::UnknownKeyword) return kv[i];
@@ -96,7 +96,7 @@ Ref<KeyValValue>
 AggregateKeyVal::key_value(const char*arg, const KeyValValue &def)
 {
   Ref<KeyVal> kval = getkeyval(arg);
-  if (kval) return kval->key_value(arg,def);
+  if (kval.nonnull()) return kval->key_value(arg,def);
   else return 0;
 }
 
@@ -104,7 +104,7 @@ int
 AggregateKeyVal::key_exists(const char* key)
 {
   Ref<KeyVal> kval = getkeyval(key);
-  if (kval) return kval->exists(key);
+  if (kval.nonnull()) return kval->exists(key);
   else return 0;
 }
 
@@ -112,7 +112,7 @@ const char*
 AggregateKeyVal::classname(const char * key)
 {
   Ref<KeyVal> kval = getkeyval(key);
-  if (kval) return kval->classname(key);
+  if (kval.nonnull()) return kval->classname(key);
   else return 0;
 }
 
@@ -121,7 +121,7 @@ AggregateKeyVal::errortrace(ostream&fp)
 {
   fp << indent << "AggregateKeyVal: error: \"" << errormsg() << "\"" << endl;
   for (int i = 0; i<4; i++) {
-      if (kv[i]) {
+      if (kv[i].nonnull()) {
           fp << indent << "  KeyVal #" << i << ":" << endl;
           fp << incindent;
           kv[i]->errortrace(fp);
@@ -135,7 +135,7 @@ AggregateKeyVal::dump(ostream&fp)
 {
   fp << indent << "AggregateKeyVal: error: \"" << errormsg() << "\"" << endl;
   for (int i = 0; i<4; i++) {
-      if (kv[i]) {
+      if (kv[i].nonnull()) {
           fp << indent << "  KeyVal #" << i << ":" << endl;
           fp << incindent;
           kv[i]->dump(fp);

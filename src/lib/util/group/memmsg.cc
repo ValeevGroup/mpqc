@@ -48,10 +48,10 @@ MsgMemoryGrp::MsgMemoryGrp(const Ref<KeyVal> &keyval):
   MemoryGrp(keyval)
 {
   Ref<MessageGrp> msg; msg << keyval->describedclassvalue("message");
-  if (msg == 0) {
+  if (msg.null()) {
       msg = MessageGrp::get_default_messagegrp();
     }
-  if (msg == 0) {
+  if (msg.null()) {
       ExEnv::errn() << "MsgMemoryGrp(const Ref<KeyVal>&): couldn't find MessageGrp"
            << endl;
       abort();

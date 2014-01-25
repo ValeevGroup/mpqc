@@ -460,7 +460,7 @@ int
 StateOut::putobject(const Ref<SavableState> &p)
 {
   int r=0;
-  if (p == 0) {
+  if (p.null()) {
       // reference to null
       r += put(0);
     }

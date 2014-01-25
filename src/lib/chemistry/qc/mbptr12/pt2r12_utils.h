@@ -233,7 +233,7 @@ namespace {
   {
     RefSCMatrix result;
     Ref<LocalSCMatrixKit> kit_cast_to_local; kit_cast_to_local << A.kit();
-    if (kit_cast_to_local == 0) {
+    if (kit_cast_to_local.null()) {
       Ref<LocalSCMatrixKit> local_kit = new LocalSCMatrixKit();
       RefSCMatrix A_local = local_kit->matrix(A.rowdim(), A.coldim());
       A_local->convert(A);
@@ -320,7 +320,7 @@ namespace {
   RefSymmSCMatrix convert_to_local_kit(const RefSymmSCMatrix& A) {   //forward declaration
      RefSymmSCMatrix result;
      Ref<LocalSCMatrixKit> kit_cast_to_local; kit_cast_to_local << A.kit();
-     if (kit_cast_to_local == 0) {
+     if (kit_cast_to_local.null()) {
        Ref<LocalSCMatrixKit> local_kit = new LocalSCMatrixKit();
        RefSymmSCMatrix A_local = local_kit->symmmatrix(A.dim());
        A_local->convert(A);

@@ -35,19 +35,19 @@ namespace {
   Ref<OrbitalSpace> orbs_from_psiwfn(const Ref<PsiWavefunction>& wfn, SpinCase1 spin) {
     Ref<PsiSCF> psiscfwfn_;
     psiscfwfn_ << wfn;
-    if (psiscfwfn_) {
+    if (psiscfwfn_.nonnull()) {
       return psiscfwfn_->orbs_sb(spin);
     }
 
     Ref<PsiRASCI> psiciwfn_;
     psiciwfn_ << wfn;
-    if (psiciwfn_) {
+    if (psiciwfn_.nonnull()) {
       return psiciwfn_->occ(spin);
     }
 
     Ref<PsiCorrWavefunction> psicorrwfn_;
     psicorrwfn_ << wfn;
-    if (psicorrwfn_) {
+    if (psicorrwfn_.nonnull()) {
       return psicorrwfn_->orbs_sb(spin);
     }
 
@@ -74,7 +74,7 @@ PsiRDMTwo::PsiRDMTwo(const Ref<KeyVal>& kv) : RDM<Two>(kv) {
 
 PsiRDMTwo::PsiRDMTwo(StateIn& si) : RDM<Two>(si) {
   wfn_ << SavableState::restore_state(si);
-  if (wfn_ == 0)
+  if (wfn_.null())
     throw ProgrammingError("failed constructor",__FILE__,__LINE__);
 }
 
@@ -109,26 +109,26 @@ sc::PsiRDMTwo::orbs(SpinCase1 spin) const {
 
 RefSymmSCMatrix sc::PsiRDMTwo::scmat(SpinCase2 spin) const {
 
-  if (scmat_[spin]) return scmat_[spin];
+  if (scmat_[spin].nonnull()) return scmat_[spin];
   if (!wfn_->spin_polarized() && spin == BetaBeta)
     return scmat(AlphaAlpha);
 
   Ref<PsiRASCI> psiciwfn_;
   psiciwfn_ << wfn_;
-  if (psiciwfn_) {
+  if (psiciwfn_.nonnull()) {
     return psiciwfn_->twopdm_occ(spin);
   }
 
   Ref<PsiCorrWavefunction> psicorrwfn_;
   psicorrwfn_ << wfn_;
-  if (psicorrwfn_) {
+  if (psicorrwfn_.nonnull()) {
     scmat_[spin] = psicorrwfn_->twopdm_dirac(spin);
     return scmat_[spin];
   }
 
   Ref<PsiSCF> psiscfwfn_;
   psiscfwfn_ << wfn_;
-  if (psiscfwfn_) {
+  if (psiscfwfn_.nonnull()) {
     Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
     const SpinCase1 spin1 = case1(spin);
     const SpinCase1 spin2 = case2(spin);
@@ -185,7 +185,7 @@ PsiRDMCumulantTwo::PsiRDMCumulantTwo(const Ref<PsiRDMTwo>& density) : density_(d
 
 PsiRDMCumulantTwo::PsiRDMCumulantTwo(StateIn& si) : RDMCumulant<Two>(si) {
   density_ << SavableState::restore_state(si);
-  if (density_ == 0)
+  if (density_.null())
     throw ProgrammingError("failed constructor",__FILE__,__LINE__);
 }
 
@@ -199,7 +199,7 @@ PsiRDMCumulantTwo::save_data_state(StateOut& so) {
 
 RefSymmSCMatrix sc::PsiRDMCumulantTwo::scmat(SpinCase2 spin) const {
 
-  if (scmat_[spin]) return scmat_[spin];
+  if (scmat_[spin].nonnull()) return scmat_[spin];
   if (!density_->wfn()->spin_polarized() && spin == BetaBeta)
     return scmat(AlphaAlpha);
 
@@ -257,7 +257,7 @@ PsiRDMOne::PsiRDMOne(const Ref<KeyVal>& kv) : RDM<One>(kv) {
 
 PsiRDMOne::PsiRDMOne(StateIn& si) : RDM<One>(si) {
   wfn_ << SavableState::restore_state(si);
-  if (wfn_ == 0)
+  if (wfn_.null())
     throw ProgrammingError("failed constructor",__FILE__,__LINE__);
 }
 
@@ -288,7 +288,7 @@ RefSymmSCMatrix
 PsiRDMOne::scmat(SpinCase1 spin) const {
   Ref<PsiRASCI> psiciwfn;
   psiciwfn << wfn_;
-  if (psiciwfn) {
+  if (psiciwfn.nonnull()) {
     return psiciwfn->onepdm_occ(spin);
   }
 
@@ -316,7 +316,7 @@ PsiSpinFreeRDMTwo::PsiSpinFreeRDMTwo(const Ref<KeyVal>& kv) : SpinFreeRDM<Two>(k
 
 PsiSpinFreeRDMTwo::PsiSpinFreeRDMTwo(StateIn& si) : SpinFreeRDM<Two>(si) {
   wfn_ << SavableState::restore_state(si);
-  if (wfn_ == 0)
+  if (wfn_.null())
     throw ProgrammingError("failed constructor",__FILE__,__LINE__);
 }
 
@@ -346,24 +346,24 @@ sc::PsiSpinFreeRDMTwo::orbs() const {
 
 RefSymmSCMatrix sc::PsiSpinFreeRDMTwo::scmat() const {
 
-  if (scmat_) return scmat_;
+  if (scmat_.nonnull()) return scmat_;
 
   Ref<PsiRASCI> psiciwfn_;
   psiciwfn_ << wfn_;
-  if (psiciwfn_) {
+  if (psiciwfn_.nonnull()) {
     return psiciwfn_->twopdm_occ();
   }
 
   Ref<PsiCorrWavefunction> psicorrwfn_;
   psicorrwfn_ << wfn_;
-  if (psicorrwfn_) {
+  if (psicorrwfn_.nonnull()) {
     scmat_ = psicorrwfn_->twopdm_dirac();
     return scmat_;
   }
 
   Ref<PsiSCF> psiscfwfn_;
   psiscfwfn_ << wfn_;
-  if (psiscfwfn_) {
+  if (psiscfwfn_.nonnull()) {
     Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
     const RefSymmSCMatrix opdm_a = psiscfwfn_->mo_density(Alpha);
     const RefSymmSCMatrix opdm_b = psiscfwfn_->mo_density(Beta);
@@ -410,11 +410,11 @@ RefSymmSCMatrix sc::PsiSpinFreeRDMTwo::scmat() const {
 
 const Ref<DistArray4>&
 PsiSpinFreeRDMTwo::da4() const {
-  if (da4_ == 0) {
+  if (da4_.null()) {
 
     Ref<PsiRASCI> psiciwfn_;
     psiciwfn_ << wfn_;
-    if (psiciwfn_) {
+    if (psiciwfn_.nonnull()) {
       RefSymmSCMatrix rdm2_scmat = psiciwfn_->twopdm_occ();
       const int n = psiciwfn_->occ(Alpha)->rank();
       MPQC_ASSERT(n == int(sqrt(rdm2_scmat.n())));
@@ -441,14 +441,14 @@ PsiSpinFreeRDMTwo::da4() const {
 
     Ref<PsiCorrWavefunction> psicorrwfn_;
     psicorrwfn_ << wfn_;
-    if (psicorrwfn_) {
+    if (psicorrwfn_.nonnull()) {
       throw ProgrammingError("PsiSpinFreeRDMTwo::da4() -- DistArray4-based storage is not implemented for PsiCorrWavefunction",
                              __FILE__, __LINE__);
     }
 
     Ref<PsiSCF> psiscfwfn_;
     psiscfwfn_ << wfn_;
-    if (psiscfwfn_) {
+    if (psiscfwfn_.nonnull()) {
       const RefSymmSCMatrix opdm_a = psiscfwfn_->mo_density(Alpha);
       const RefSymmSCMatrix opdm_b = psiscfwfn_->mo_density(Beta);
       MPQC_ASSERT(opdm_a.n() == opdm_b.n());
@@ -521,7 +521,7 @@ PsiSpinFreeRDMOne::PsiSpinFreeRDMOne(const Ref<KeyVal>& kv) : SpinFreeRDM<One>(k
 
 PsiSpinFreeRDMOne::PsiSpinFreeRDMOne(StateIn& si) : SpinFreeRDM<One>(si) {
   wfn_ << SavableState::restore_state(si);
-  if (wfn_ == 0)
+  if (wfn_.null())
     throw ProgrammingError("failed constructor",__FILE__,__LINE__);
 }
 
@@ -552,7 +552,7 @@ RefSymmSCMatrix
 PsiSpinFreeRDMOne::scmat() const {
   Ref<PsiRASCI> psiciwfn;
   psiciwfn << wfn_;
-  if (psiciwfn) {
+  if (psiciwfn.nonnull()) {
     return psiciwfn->onepdm_occ(Alpha) + psiciwfn->onepdm_occ(Beta);
   }
   else

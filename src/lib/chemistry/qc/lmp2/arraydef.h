@@ -71,12 +71,12 @@ namespace sma2 {
     template <int N>
     inline void Array<N>::print(const sc::Ref<sc::MessageGrp> &grp,
                                 bool distributed, std::ostream&o) const {
-//       if (grp == 0 || grp->me() == 0) {
+//       if (grp.null() || grp->me() == 0) {
 //           for (int i = 0; i < N; i++) {
 //               indices_[i].print(o);
 //             }
 //         }
-      if (grp && distributed) {
+      if (grp.nonnull() && distributed) {
           if (grp->me() == 0) o << "array " << name_ << ":" << std::endl;
           for (int i=0; i<grp->n(); i++) {
               if (grp->me() == i) {
@@ -88,7 +88,7 @@ namespace sma2 {
               sleep(1);
             }
         }
-      else if (grp == 0 || (grp && grp->n() == 1)) {
+      else if (grp.null() || (grp.nonnull() && grp->n() == 1)) {
           print_local(o);
         }
     }

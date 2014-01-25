@@ -345,7 +345,7 @@ AtomInfo::load_values(std::map<int,double>&values,
   std::string unit = pkeyval->stringvalue("unit");
   Ref<Units> fileunits = new Units(unit.c_str());
   double f = 1.0;
-  if (fileunits && units) {
+  if (fileunits.nonnull() && units.nonnull()) {
       f = fileunits->to(units);
     }
   double def = 0.0;
@@ -367,7 +367,7 @@ AtomInfo::load_values(std::map<int,double>&values,
               if (!have_overridden) {
                   add_overridden_value(keyword);
                   add_overridden_value(":(");
-                  if (fileunits && fileunits->string_rep()) {
+                  if (fileunits.nonnull() && fileunits->string_rep()) {
                       char ustring[256];
                       sprintf(ustring,"unit=\"%s\"",fileunits->string_rep());
                       add_overridden_value(ustring);

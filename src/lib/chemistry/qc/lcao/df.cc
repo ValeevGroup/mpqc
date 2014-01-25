@@ -110,7 +110,7 @@ DensityFitting::product_dimension() const {
 void
 DensityFitting::compute()
 {
-  if (cC_.nonnull() && kernel_ && C_.nonnull()) // nothing to compute then
+  if (cC_.nonnull() && kernel_.nonnull() && C_.nonnull()) // nothing to compute then
     return;
   const Ref<AOSpaceRegistry>& aoidxreg = this->runtime()->factory()->ao_registry();
   const std::string fbasis_space_id = aoidxreg->value(fbasis_)->id();

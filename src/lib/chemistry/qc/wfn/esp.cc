@@ -96,7 +96,7 @@ WriteElectrostaticPotential::calculate_value(SCVector3 point)
   
   if (nuclear_) {
       Ref<GaussianBasisSet> atom_basis = wfn_->atom_basis();
-    	if (atom_basis != NULL) {
+    	if (atom_basis.nonnull()) {
         	integral->set_basis(atom_basis);
           Ref<OneBodyOneCenterInt> ob_atom = integral->point_charge1(pcdata);
           

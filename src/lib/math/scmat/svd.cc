@@ -66,18 +66,18 @@ namespace sc {
     blasint n = A.ncol();
     blasint nsigma = m < n ? m : n;
     blasint lwork = m < n ? 5 * n : 5 * m;
-    char jobvt = U ? 'A' : 'N';
-    char jobu = V ? 'A' : 'N';
+    char jobvt = U.nonnull() ? 'A' : 'N';
+    char jobu = V.nonnull() ? 'A' : 'N';
 
     double* a_data = allocate<double>(m * n);
     A.convert(a_data);
 
     double* u_data = 0;
-    if (U) {
+    if (U.nonnull()) {
       u_data = allocate<double>(m * m);
     }
     double* v_data = 0;
-    if (V) {
+    if (V.nonnull()) {
       v_data = allocate<double>(n * n);
     }
     double* s_data = new double[nsigma];
@@ -99,10 +99,10 @@ namespace sc {
     }
 
     Sigma.assign(s_data);
-    if (U) {
+    if (U.nonnull()) {
       U.assign(u_data);
     }
-    if (V) {
+    if (V.nonnull()) {
       V.assign(v_data);
     }
 

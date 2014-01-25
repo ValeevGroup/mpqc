@@ -432,6 +432,9 @@ class  Ref  : public RefBase {
       return nonnull() ?
           &Ref::this_type_does_not_support_comparisons : 0;
     }
+    bool operator!() const {
+      return null();
+    }
 
 
     /** Ordering and equivalence operators are determined by the identifier if

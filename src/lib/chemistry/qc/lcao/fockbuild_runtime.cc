@@ -114,7 +114,7 @@ void FockBuildRuntime::set_densities(const RefSymmSCMatrix& aodensity_alpha,
   new_P = new_P || (P - P_)->maxabs() > DBL_EPSILON;
   //(P - P_).print("FockBuildRuntime::set_densities() -- \"new - old\" density");
   Po = aodensity_alpha - aodensity_beta;
-  RefSymmSCMatrix dPo = Po_ ? (Po - Po_) : Po;
+  RefSymmSCMatrix dPo = Po_.nonnull() ? (Po - Po_) : Po;
   new_P = new_P || dPo->maxabs() > DBL_EPSILON;
   if (new_P) {
     this->obsolete_density_dependents();
@@ -153,7 +153,7 @@ FockBuildRuntime::obsolete_density_dependents() {
   // leave H core intact? too cheap to bother
   registry_->clear();
   // purge density-dependent spaces
-  if (dfinfo()) {
+  if (dfinfo().nonnull()) {
     dfinfo()->runtime()->remove_if(std::string("dd"));
     dfinfo()->runtime()->moints_runtime()->runtime_2c()->remove_if(std::string("dd"));
     dfinfo()->runtime()->moints_runtime()->runtime_3c()->remove_if(std::string("dd"));

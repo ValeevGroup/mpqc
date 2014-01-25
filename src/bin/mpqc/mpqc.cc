@@ -654,7 +654,7 @@ try_main(int argc, char *argv[])
       // good idea to print optimized coordinates here
       {
         Ref<MolecularCoor> mc = mole->molecularcoor();
-        if (mc)
+        if (mc.nonnull())
           mc->print(ExEnv::out0());
         else {
           mole->molecule()->print(ExEnv::out0());
@@ -752,7 +752,7 @@ try_main(int argc, char *argv[])
   // Frequency calculation
   if (do_freq) {
 
-    if ((opt && ready_for_freq) || !opt) {
+    if ((opt.nonnull() && ready_for_freq) || !opt) {
       RefSymmSCMatrix xhessian;
       if (mole->hessian_implemented()) { // if mole can compute the hessian, use that hessian
         xhessian = mole->get_cartesian_hessian();

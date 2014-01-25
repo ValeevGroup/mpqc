@@ -508,7 +508,7 @@ R12IntEval::cabs_space_canonical(SpinCase1 spin)
 
   if (!spin_polarized() && spin == Beta)
     return cabs_space_canonical(Alpha);
-  if (cabs_canonical[spin] == 0)
+  if (cabs_canonical[spin].null())
     cabs_canonical[spin] = this->cabs_space_fockcanonical(spin,1.0,1.0,1.0);
 
   return cabs_canonical[spin];
@@ -522,7 +522,7 @@ R12IntEval::cabs_space_hcanonical(SpinCase1 spin)
 
   if (!spin_polarized() && spin == Beta)
     return cabs_space_hcanonical(Alpha);
-  if (cabs_hcanonical[spin] == 0)
+  if (cabs_hcanonical[spin].null())
     cabs_hcanonical[spin] = this->cabs_space_fockcanonical(spin,1.0,0.0,0.0);
 
   return cabs_hcanonical[spin];

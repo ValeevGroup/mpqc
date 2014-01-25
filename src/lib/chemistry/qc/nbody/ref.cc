@@ -425,7 +425,7 @@ RefWavefunction::RefWavefunction(const Ref<KeyVal>& kv) :
 
   Ref<OneBodyWavefunction> valence_obwfn;
   valence_obwfn << kv->describedclassvalue("valence_obwfn").pointer();
-  if (valence_obwfn) {
+  if (valence_obwfn.nonnull()) {
     RefSCMatrix Cv_so = valence_obwfn->eigenvectors(); // these are in SO basis!
     Ref<GaussianBasisSet> bs = valence_obwfn->basis();
     Ref<Integral> integral = valence_obwfn->integral();

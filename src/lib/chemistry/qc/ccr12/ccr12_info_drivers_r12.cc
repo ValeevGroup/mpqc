@@ -38,7 +38,7 @@ using namespace std;
 void CCR12_Info::jacobi_t2_and_gt2_(const Ref<Tensor>& d_r2_, Ref<Tensor>& d_t2_,
                                     const Ref<Tensor>& d_gr2_,Ref<Tensor>& d_gt2_){
 
-  assert(need_w1());
+  MPQC_ASSERT(need_w1());
   
   /// TODO most likely we can reduce the number of temporary tensors in the following.
   /// So far two T2-sized tensor has been created at the same time here, which 

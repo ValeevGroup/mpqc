@@ -63,7 +63,7 @@ namespace mpqc {
         for (size_t k = 0; k <= l; ++k, ++kl) {
           for (size_t j = 0, ij = 0; j < no; ++j) {
             for (size_t i = 0; i <= j; ++i, ++ij) {
-              assert(
+              MPQC_ASSERT(
                   fabs(
                       V(index(j, i), index(k, l)) - V(index(i, j), index(k, l))
                           < 1e-14));

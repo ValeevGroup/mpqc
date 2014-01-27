@@ -236,7 +236,7 @@ try_main(int argc, char *argv[])
   // set the working dir
   if (strcmp(options.retrieve("W"),".")) {
       int err = chdir(options.retrieve("W"));
-      assert(!err);
+      MPQC_ASSERT(!err);
   }
 
   // initialize keyval input
@@ -380,7 +380,7 @@ try_main(int argc, char *argv[])
 
   // now set up the debugger
   Ref<Debugger> debugger; debugger << keyval->describedclassvalue("debug");
-  if (debugger.nonnull()) {
+  if (debugger) {
     Debugger::set_default_debugger(debugger);
     debugger->set_exec(argv[0]);
     debugger->set_prefix(grp->me());
@@ -459,12 +459,12 @@ try_main(int argc, char *argv[])
                    << "> from " << restartfile << endl;
 
       opt << keyval->describedclassvalue("opt");
-      if (opt.nonnull())
+      if (opt)
         opt->set_function(mole.pointer());
     }
     else {
       opt << SavableState::key_restore_state(si,"opt");
-      if (opt.nonnull()) {
+      if (opt) {
         mole << opt->function();
         ExEnv::out0() << endl << indent
              << "Restored <Optimize> from " << restartfile << endl;
@@ -475,7 +475,7 @@ try_main(int argc, char *argv[])
     opt << keyval->describedclassvalue("opt");
   }
 
-  if (mole.nonnull()) {
+  if (mole) {
     MolecularFormula mf(mole->molecule());
     ExEnv::out0() << endl << indent
          << "Molecular formula " << mf.formula() << endl;
@@ -485,7 +485,7 @@ try_main(int argc, char *argv[])
   int limit = atoi(options.retrieve("l"));
   if (limit) {
     Ref<Wavefunction> wfn; wfn << mole;
-    if (wfn.nonnull() && wfn->ao_dimension()->n() > limit) {
+    if (wfn && wfn->ao_dimension()->n() > limit) {
       ExEnv::out0() << endl << indent
            << "The limit of " << limit << " basis functions has been exceeded."
            << endl;
@@ -516,8 +516,8 @@ try_main(int argc, char *argv[])
   const int print_timings = keyval->booleanvalue("print_timings",truevalue);
 
   // default value for optimize is true if opt is given, and false if it is not
-  const int do_opt = keyval->booleanvalue("optimize", (opt.null() ? falsevalue : truevalue));
-  if (do_opt && opt.null() && mole.nonnull()) { // if user requested optimization but no Optimize object given pick a default object
+  const int do_opt = keyval->booleanvalue("optimize", (!opt ? falsevalue : truevalue));
+  if (do_opt && !opt && mole) { // if user requested optimization but no Optimize object given pick a default object
     Ref<AssignedKeyVal> akv = new AssignedKeyVal;
     akv->assign("function", mole.pointer());
     Ref<KeyVal> kv = akv;
@@ -530,7 +530,7 @@ try_main(int argc, char *argv[])
   std::vector<Ref<Runnable> > run(nrun);
   for (int i=0; i<nrun; i++) {
     run[i] << keyval->describedclassvalue("run",i);
-    if (run[i].nonnull()) {
+    if (run[i]) {
       ExEnv::out0() << indent
                     << "Read run:" << i
                     << " of type " << run[i]->class_name()
@@ -563,8 +563,8 @@ try_main(int argc, char *argv[])
   // able to delete.  We cannot read in the remaining rendering
   // objects now, since some of their KeyVal CTOR's are heavyweight,
   // requiring optimized geometries, etc.
-  if (renderer.null()) {
-    if (parsedkv.nonnull()) print_unseen(parsedkv, input);
+  if (!renderer) {
+    if (parsedkv) print_unseen(parsedkv, input);
     keyval = 0;
     parsedkv = 0;
   }
@@ -589,23 +589,23 @@ try_main(int argc, char *argv[])
        << endl << decindent;
 
   // Prepare to checkpoint the computation
-  if (checkpoint && mole.nonnull()) {
+  if (checkpoint && mole) {
     mole->set_checkpoint();
     if (grp->me() == 0) mole->set_checkpoint_file(mole_ckpt_file.c_str());
     else mole->set_checkpoint_file(devnull);
     mole->set_checkpoint_freq(checkpoint_freq);
   }
-  if (checkpoint && opt.nonnull()) {
+  if (checkpoint && opt) {
     opt->set_checkpoint();
     if (grp->me() == 0) opt->set_checkpoint_file(ckptfile.c_str());
     else opt->set_checkpoint_file(devnull);
   }
 
   int ready_for_freq = 1;
-  if (mole.nonnull()) {
+  if (mole) {
 
-    const bool need_gradient = ((do_opt && opt.nonnull()) || do_grad);
-    bool have_gradient = mole->gradient_implemented() || molgrad.nonnull();
+    const bool need_gradient = ((do_opt && opt) || do_grad);
+    bool have_gradient = mole->gradient_implemented() || molgrad;
     if (need_gradient && !have_gradient) {
       ExEnv::out0() << indent
            << "WARNING: optimization or gradient requested but the given"
@@ -618,9 +618,9 @@ try_main(int argc, char *argv[])
       have_gradient = true;
     }
 
-    if (do_opt && opt.nonnull() && have_gradient) { // optimize geometry
+    if (do_opt && opt && have_gradient) { // optimize geometry
 
-      const bool use_mpqc_molgrad = !mole->gradient_implemented() && molgrad.nonnull();
+      const bool use_mpqc_molgrad = !mole->gradient_implemented() && molgrad;
       if (use_mpqc_molgrad) {
         mole->set_molgrad(molgrad);
       }
@@ -699,13 +699,13 @@ try_main(int argc, char *argv[])
         }
       }
       else { // use molgrad
-        assert(molgrad.nonnull());
+        MPQC_ASSERT(molgrad);
         mole->set_molgrad(molgrad);
         grad = mole->gradient();
         mole->set_molgrad(0);
       }
 
-      if (grad.nonnull()) {
+      if (grad) {
         grad.print("Gradient of the MolecularEnergy:");
       }
     }
@@ -723,7 +723,7 @@ try_main(int argc, char *argv[])
   // save this before doing the frequency stuff since that obsoletes the
   // function stuff
   if (savestate) {
-    if (opt.nonnull()) {
+    if (opt) {
       if (grp->me() == 0) {
         ckptfile = molname;
         ckptfile += ".ckpt";
@@ -737,7 +737,7 @@ try_main(int argc, char *argv[])
       so.close();
     }
 
-    if (mole.nonnull()) {
+    if (mole) {
       if (grp->me() != 0) {
         wfn_file = devnull;
       }
@@ -757,7 +757,7 @@ try_main(int argc, char *argv[])
       if (mole->hessian_implemented()) { // if mole can compute the hessian, use that hessian
         xhessian = mole->get_cartesian_hessian();
       }
-      else if (molhess.nonnull()) { // else use user-provided hessian
+      else if (molhess) { // else use user-provided hessian
         const bool molhess_needs_mole = (molhess->energy() == 0);
         if (molhess_needs_mole) molhess->set_energy(mole);
         xhessian = molhess->cartesian_hessian();
@@ -779,13 +779,13 @@ try_main(int argc, char *argv[])
                                     __FILE__, __LINE__);
       }
 
-      if (xhessian.nonnull()) {
+      if (xhessian) {
         char *hessfile = SCFormIO::fileext_to_filename(".hess");
         MolecularHessian::write_cartesian_hessian(hessfile,
                                                   mole->molecule(), xhessian);
         delete[] hessfile;
 
-        if (molfreq.null())
+        if (!molfreq)
           molfreq = new MolecularFrequencies(mole->molecule());
         molfreq->compute_frequencies(xhessian);
         // DEGENERACY IS NOT CORRECT FOR NON-SINGLET CASES:
@@ -794,17 +794,17 @@ try_main(int argc, char *argv[])
     }
   }
 
-  if (renderer.nonnull()) {
+  if (renderer) {
     Ref<RenderedObject> rendered;
     rendered << keyval->describedclassvalue("rendered");
     Ref<AnimatedObject> animated;
     animated << keyval->describedclassvalue("rendered");
-    if (rendered.nonnull()) {
+    if (rendered) {
       timer.enter("render");
       if (grp->me() == 0) renderer->render(rendered);
       timer.exit("render");
     }
-    else if (animated.nonnull()) {
+    else if (animated) {
       timer.enter("render");
       if (grp->me() == 0) renderer->animate(animated);
       timer.exit("render");
@@ -815,7 +815,7 @@ try_main(int argc, char *argv[])
       for (i=0; i<n; i++) {
         rendered << keyval->describedclassvalue("rendered",i);
         animated << keyval->describedclassvalue("rendered",i);
-        if (rendered.nonnull()) {
+        if (rendered) {
           // make sure the object has a name so we don't overwrite its file
           if (rendered->name() == 0) {
             char ic[64];
@@ -824,7 +824,7 @@ try_main(int argc, char *argv[])
           }
           if (grp->me() == 0) renderer->render(rendered);
         }
-        else if (animated.nonnull()) {
+        else if (animated) {
           // make sure the object has a name so we don't overwrite its file
           if (animated->name() == 0) {
             char ic[64];
@@ -838,7 +838,7 @@ try_main(int argc, char *argv[])
     }
     Ref<MolFreqAnimate> molfreqanim;
     molfreqanim << keyval->describedclassvalue("animate_modes");
-    if (molfreq.nonnull() && molfreqanim.nonnull()) {
+    if (molfreq && molfreqanim) {
       timer.enter("render");
       molfreq->animate(renderer, molfreqanim);
       timer.exit("render");
@@ -846,7 +846,7 @@ try_main(int argc, char *argv[])
   }
 
   for (int i=0; i<nrun; i++) {
-    if (run[i].nonnull()) {
+    if (run[i]) {
       ExEnv::out0() << indent << "Running object run:" << i << std::endl;
       ExEnv::out0() << incindent;
       run[i]->run();
@@ -858,7 +858,7 @@ try_main(int argc, char *argv[])
     run.resize(0);
   }
 
-  if (mole.nonnull()) {
+  if (mole) {
     if (print_mole)
       mole->print(ExEnv::out0());
 
@@ -876,7 +876,7 @@ try_main(int argc, char *argv[])
          << endl;
   }
 
-  if (parsedkv.nonnull()) print_unseen(parsedkv, input);
+  if (parsedkv) print_unseen(parsedkv, input);
 
   if (print_resources) {
     const bool print_resources_state = false;

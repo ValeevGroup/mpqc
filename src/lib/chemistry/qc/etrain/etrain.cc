@@ -202,7 +202,7 @@ ETraIn::compute(void)
 void
 ip_print(const char *title1, const char *title2, std::ostream& os, int prec, double conv, RefDiagSCMatrix m1, RefDiagSCMatrix m2)
 {
-  assert(m1.n() == m2.n()); // meant to print 2 matrices side by side
+  MPQC_ASSERT(m1.n() == m2.n()); // meant to print 2 matrices side by side
 
   double max = std::max(m1->maxabs()*conv, m2->maxabs()*conv);
   max = (max==0.0) ? 1.0 : log10(max);
@@ -243,8 +243,8 @@ ip_print(const char *title1, const char *title2, const char *title3,
        RefDiagSCMatrix m1, RefDiagSCMatrix m2, RefDiagSCMatrix m3
       )
 {
-  assert(m1.n() == m2.n()); // meant to print 3 matrices side by side
-  assert(m1.n() == m3.n());
+  MPQC_ASSERT(m1.n() == m2.n()); // meant to print 3 matrices side by side
+  MPQC_ASSERT(m1.n() == m3.n());
 
   double max = sc::max(m1->maxabs()*conv, m2->maxabs()*conv, m3->maxabs()*conv);
   max = (max==0.0) ? 1.0 : log10(max);
@@ -439,7 +439,7 @@ ETraIn::compute_train()
   RefSCMatrix sobymo = obwfn12_->mo_to_so();
   // SCF Hamiltonian is obtained with effective_fock()
 #if 1
-  if (obwfn12_clscf.nonnull()) {
+  if (obwfn12_clscf) {
     fock12_so.accumulate_transform(obwfn12_->mo_to_so(), obwfn12_clscf->effective_fock());
   }
   // Other (incl. Huckel) Hamiltonian are assumed to be simply the eigenvalues
@@ -616,7 +616,7 @@ ETraIn::compute_train()
       }
 
       // optional: print adiabatic occupied dimer orbitals on the grid
-      if (grid_.nonnull() && method == 0) {
+      if (grid_ && method == 0) {
         // compute adiabatic orbitals
         Ref<OrbitalSpace> as12 = new OrbitalSpace("d12", "Dimer active MO space", s12->coefs() * evecs_1,
                                                   s12->basis(), s12->integral(), evals_1, 0, 0);
@@ -636,7 +636,7 @@ ETraIn::compute_train()
   }
 
   // optional: print monomer orbitals on the grid
-  if (grid_.nonnull()) {
+  if (grid_) {
     // merge the two spaces together
     Ref<OrbitalSpace> m12space = new OrbitalSpaceUnion("m1+m2", "Monomers 1+2 active MO space",
                                                        *m1space, *m2space, true);
@@ -687,7 +687,7 @@ ETraIn::read_ip(const Ref<KeyVal> & kv, const std::string & ip_key, IPs& ip,
       ExEnv::out0() << indent << "WARNING: could not understand value for the optional keyword " << ip_orbs_key << ", will ignore";
     else {
       const int nocc = ip_orbs_wfn->nelectron() / 2;
-      assert(ip_orbs_wfn->nelectron() % 2 == 0);
+      MPQC_ASSERT(ip_orbs_wfn->nelectron() % 2 == 0);
       const int norbs = ip_orbs_wfn->so_dimension().n();
       const int nuocc = norbs - nocc;
 
@@ -697,7 +697,7 @@ ETraIn::read_ip(const Ref<KeyVal> & kv, const std::string & ip_key, IPs& ip,
 
       ip_orbs = new OrbitalSpace(ip_key.c_str(), ip_key.c_str(), vec, ip_orbs_wfn->basis(), ip_orbs_wfn->integral(),
                                  ip_orbs_wfn->eigenvalues(), 0, nuocc);
-      assert(false); // not implemented yet
+      MPQC_ASSERT(false); // not implemented yet
     }
   }
 }

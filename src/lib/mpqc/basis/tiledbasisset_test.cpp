@@ -53,7 +53,7 @@ int main(int argc, char** argv){
                     new TiledBasisSet(sc::Ref<sc::KeyVal>(akv));
 
     sc::Ref<sc::Integral> Int_fac = sc::Integral::initial_integral(argc, argv);
-    if(Int_fac.nonnull())
+    if(Int_fac)
         sc::Integral::set_default_integral(Int_fac);
     Int_fac = sc::Integral::get_default_integral()->clone();
     Int_fac->set_basis(tbasis);

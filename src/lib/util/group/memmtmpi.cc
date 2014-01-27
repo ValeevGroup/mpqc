@@ -114,17 +114,17 @@ MTMPIThread::run_one()
       mem_->print_lock_->unlock();
     }
   if (req.touches_data()) {
-      assert(req.size() >= 0);
+      MPQC_ASSERT(req.size() >= 0);
       if (req.offset()+req.size() > mem_->localsize()) {
           mem_->print_lock_->lock();
           req.print("BAD RECV");
           ExEnv::outn() << "mem_->localsize() = " << mem_->localsize() << endl;
           mem_->print_lock_->lock();
         }
-      assert(req.offset()+req.size() <= mem_->localsize());
+      MPQC_ASSERT(req.offset()+req.size() <= mem_->localsize());
     }
   Timer tim2(timer_);
-  if (timer_.nonnull()) tim2.enter(req.request_string());
+  if (timer_) tim2.enter(req.request_string());
   Timer tim3(timer_);
   switch (req.request()) {
   case MemoryDataRequest::Deactivate:
@@ -199,8 +199,8 @@ static ClassDesc MTMPIMemoryGrp_cd(
 MTMPIMemoryGrp::MTMPIMemoryGrp(const Ref<MessageGrp>& msg,
                                const Ref<ThreadGrp>& th,
                                MPI_Comm comm):
-  nbuffer_(0),
-  ActiveMsgMemoryGrp(msg)
+  ActiveMsgMemoryGrp(msg),
+  nbuffer_(0)
 {
   if (debug_) ExEnv::outn() << "MTMPIMemoryGrp CTOR entered" << endl;
 
@@ -280,7 +280,7 @@ MTMPIMemoryGrp::init_mtmpimg(MPI_Comm comm, int nthread)
   th_->add_thread(0,0);
   for (i=1; i<nthread; i++) {
       thread_[i-1] = new MTMPIThread(this,req_tag_,req_tag_ + i,
-                                     timer_.nonnull());
+                                     timer_);
       th_->add_thread(i,thread_[i-1]);
     }
   print_lock_ = th_->new_lock();
@@ -438,7 +438,7 @@ MTMPIMemoryGrp::activate()
   if (active_) return;
   active_ = 1;
 
-  if (timer_.nonnull()) {
+  if (timer_) {
       timer_->reset();
       for (int i=0; i<th_->nthread()-1; i++) {
           thread_[i]->timer()->reset();
@@ -481,12 +481,12 @@ MTMPIMemoryGrp::deactivate()
   // wait on the thread to shutdown
   th_->wait_threads();
 
-  if (timer_.nonnull()) {
+  if (timer_) {
       for (int i=0; i<th_->nthread()-1; i++) {
           timer_->merge(thread_[i]->timer());
         }
       Ref<RegionTimer> global_timer = RegionTimer::default_regiontimer();
-      if (global_timer.nonnull()) {
+      if (global_timer) {
           global_timer->merge(timer_);
         }
     }

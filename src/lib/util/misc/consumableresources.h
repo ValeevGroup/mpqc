@@ -320,7 +320,7 @@ namespace sc {
             value_(value),
             lowest_value_(value)
             {
-             assert(value <= max_value);
+             MPQC_ASSERT(value <= max_value);
             }
           ResourceCounter(const ResourceCounter& other) :
             max_value_(other.max_value_),
@@ -398,7 +398,7 @@ namespace sc {
               case 6: unit = "EB"; break;
               case 7: unit = "ZB"; break;
               case 8: unit = "YB"; break;
-              default: assert(false); break;
+              default: MPQC_ASSERT(false); break;
             }
 
             // compute normalized mantissa

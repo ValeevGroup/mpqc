@@ -41,7 +41,7 @@ void
 analyze_array(typename sma2::Array<N> &array, const char *name,
               const sc::Ref<sc::MessageGrp> &grp = 0, bool distributed  = false)
 {
-  if ((distributed && grp.nonnull() && grp->n() == 1)
+  if ((distributed && grp && grp->n() == 1)
       || grp.null()) {
       distributed = false;
     }

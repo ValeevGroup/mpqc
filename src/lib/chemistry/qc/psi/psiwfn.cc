@@ -134,7 +134,7 @@ namespace sc {
 
     template <typename T>
     T lowerupper_index(T p, T q) {
-      assert(p!=q);
+      MPQC_ASSERT(p!=q);
       T result = (p>q) ? p*(p-1)/2+q : q*(q-1)/2+p;
       return result;
     }
@@ -274,7 +274,7 @@ namespace sc {
 
     this->print_desired_accuracy();
 
-    const bool have_prerequisite = prerequisite_.nonnull();
+    const bool have_prerequisite = prerequisite_;
     if (have_prerequisite) {
       prerequisite_->compute();
       this->exenv()->run_psiclean(false);  // do partial cleanup
@@ -495,7 +495,7 @@ namespace sc {
 
   void
   PsiWavefunction::obsolete() {
-    if (prerequisite_.nonnull()) prerequisite_->obsolete();
+    if (prerequisite_) prerequisite_->obsolete();
     this->exenv()->run_psiclean();  // do full cleanup
     Wavefunction::obsolete();
   }
@@ -504,7 +504,7 @@ namespace sc {
   PsiWavefunction::symmetry_changed() {
     nirrep_ = molecule()->point_group()->char_table().order();
     Wavefunction::symmetry_changed();
-    if (prerequisite_.nonnull()) prerequisite_->symmetry_changed();
+    if (prerequisite_) prerequisite_->symmetry_changed();
   }
 
   //////////////////////////////////////////////////////////////////////////
@@ -522,7 +522,7 @@ namespace sc {
     diis_ = keyval->booleanvalue("diis",KeyValValueboolean((int)true));
 
     guess_wfn_ << keyval->describedclassvalue("guess_wavefunction");
-    if (guess_wfn_.nonnull()) {
+    if (guess_wfn_) {
       if (guess_wfn_->desired_value_accuracy_set_to_default())
         guess_wfn_->set_desired_value_accuracy( this->desired_value_accuracy() * this->guess_acc_ratio() );
       // get energy to make sure that it's computed.
@@ -577,7 +577,7 @@ namespace sc {
     if (ref == uhf && spin == AnySpinCase1) // doesn't make sense to ask for any-spin for UHF
       ProgrammingError("asked for any spin orbitals but the wavefunction is spin-unrestricted");
 
-    if (evals_[spin_to_seek].nonnull())
+    if (evals_[spin_to_seek])
       return evals_[spin_to_seek];
 
     PsiChkpt chkpt(exenv(), integral(), debug());
@@ -631,7 +631,7 @@ namespace sc {
     if (ref == uhf && spin == AnySpinCase1) // doesn't make sense to ask for any-spin for UHF
       ProgrammingError("asked for any spin orbitals but the wavefunction is spin-unrestricted");
 
-    if (coefs_[spin_to_seek].nonnull())
+    if (coefs_[spin_to_seek])
       return coefs_[spin_to_seek];
 
     PsiChkpt chkpt(exenv(), integral(), debug());
@@ -789,7 +789,7 @@ namespace sc {
   }
 
   const Ref<OrbitalSpace>&  PsiSCF::orbs_sb(SpinCase1 spin) {
-    if(orbs_sb_[spin].nonnull()) {
+    if(orbs_sb_[spin]) {
       return orbs_sb_[spin];
     }
     if (this->reftype() == PsiSCF::rhf && spin==Beta) {
@@ -865,7 +865,7 @@ namespace sc {
       ProgrammingError("asked for any spin density but the density is spin-polarized",
                        __FILE__, __LINE__);
 
-    if (mo_density_[spin].nonnull())
+    if (mo_density_[spin])
       return mo_density_[spin];
 
     RefSCMatrix C_ao = coefs(spin);
@@ -1048,7 +1048,7 @@ namespace sc {
     mopi_.resize(0);
     docc_.resize(0);
     socc_.resize(0);
-    if (guess_wfn_.nonnull()) guess_wfn_->symmetry_changed();
+    if (guess_wfn_) guess_wfn_->symmetry_changed();
   }
 
   //////////////////////////////////////////////////////////////////////////
@@ -1068,7 +1068,7 @@ namespace sc {
       }
 
       // try guess wavefunction
-      if (guess_wfn_.nonnull())
+      if (guess_wfn_)
         import_occupations(guess_wfn_);
     }
     else {
@@ -1155,7 +1155,7 @@ namespace sc {
       }
 
       // try guess wavefunction
-      if (guess_wfn_.nonnull())
+      if (guess_wfn_)
         import_occupations(guess_wfn_);
     }
     else {
@@ -1233,7 +1233,7 @@ namespace sc {
 
   const RefSCMatrix&
   PsiHSOSHF::coefs_semicanonical(SpinCase1 s) {
-    if (coefs_sc_[s].nonnull())
+    if (coefs_sc_[s])
       return coefs_sc_[s];
     semicanonical();
     return coefs_sc_[s];
@@ -1241,7 +1241,7 @@ namespace sc {
 
   const RefDiagSCMatrix&
   PsiHSOSHF::evals_semicanonical(SpinCase1 s) {
-    if (evals_sc_[s].nonnull())
+    if (evals_sc_[s])
       return evals_sc_[s];
     semicanonical();
     return evals_sc_[s];
@@ -1553,7 +1553,7 @@ namespace sc {
       }
 
       // try guess wavefunction
-      if (guess_wfn_.nonnull())
+      if (guess_wfn_)
         import_occupations(guess_wfn_);
     }
     else {
@@ -2054,7 +2054,7 @@ namespace sc {
                                      Ref<SCMatrixKit> kit) {
 
     if (spinfree)
-      assert(pairspin == AlphaBeta);
+      MPQC_ASSERT(pairspin == AlphaBeta);
 
     const string pairspin_str = to_string(pairspin);
     iwlbuf tpdm_buf;
@@ -2107,7 +2107,7 @@ namespace sc {
       case AlphaBeta:  TPDM_FILE = spinfree ? PSIF_MO_TPDM : PSIF_MO_AB_TPDM; break;
       case AlphaAlpha: TPDM_FILE = PSIF_MO_AA_TPDM; break;
       case BetaBeta:   TPDM_FILE = PSIF_MO_BB_TPDM; break;
-      default: assert(false);
+      default: MPQC_ASSERT(false);
     }
     iwl_buf_init(&tpdm_buf,TPDM_FILE,0.0,1,1);
     if(pairspin==AlphaBeta) {
@@ -2279,7 +2279,7 @@ namespace sc {
     if (spin == AnySpinCase1 && this->spin_polarized())
       ProgrammingError("asked for any spin density but the density is spin-polarized");
 
-    if (mo_density_[spin].nonnull())
+    if (mo_density_[spin])
       return mo_density_[spin];
 
     // ensure that this has been computed

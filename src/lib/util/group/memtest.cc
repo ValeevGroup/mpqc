@@ -111,7 +111,7 @@ main(int argc, char**argv)
 //   // now set up the debugger
 //   Ref<Debugger> debugger;
 //   debugger << keyval->describedclassvalue(":debug");
-//   if (debugger.nonnull()) {
+//   if (debugger) {
 //     debugger->set_exec(argv[0]);
 //     debugger->set_prefix(msg->me());
 //   }
@@ -123,7 +123,7 @@ main(int argc, char**argv)
   MessageGrp::set_default_messagegrp(msg);
 
   Ref<MemoryGrp> mem = MemoryGrp::initial_memorygrp(argc, argv);
-  if (mem.nonnull())
+  if (mem)
     MemoryGrp::set_default_memorygrp(mem);
   else
     mem = MemoryGrp::get_default_memorygrp();

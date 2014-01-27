@@ -81,7 +81,7 @@ KeyVal::key_doublevalue(const char* key, const KeyValValue& def)
 {
   Ref<KeyValValue> val(key_value(key,def));
   double result;
-  if (val.nonnull()) {
+  if (val) {
       seterror(val->doublevalue(result));
     }
   else {
@@ -95,7 +95,7 @@ KeyVal::key_booleanvalue(const char* key, const KeyValValue& def)
 {
   Ref<KeyValValue> val(key_value(key,def));
   int result;
-  if (val.nonnull()) {
+  if (val) {
       seterror(val->booleanvalue(result));
     }
   else {
@@ -109,7 +109,7 @@ KeyVal::key_intvalue(const char* key, const KeyValValue& def)
 {
   Ref<KeyValValue> val(key_value(key,def));
   int result;
-  if (val.nonnull()) {
+  if (val) {
       seterror(val->intvalue(result));
     }
   else {
@@ -123,7 +123,7 @@ KeyVal::key_longvalue(const char* key, const KeyValValue& def)
 {
   Ref<KeyValValue> val(key_value(key,def));
   long result;
-  if (val.nonnull()) {
+  if (val) {
       seterror(val->longvalue(result));
     }
   else {
@@ -137,7 +137,7 @@ KeyVal::key_sizevalue(const char* key, const KeyValValue& def)
 {
   Ref<KeyValValue> val(key_value(key,def));
   size_t result;
-  if (val.nonnull()) {
+  if (val) {
       seterror(val->sizevalue(result));
     }
   else {
@@ -151,7 +151,7 @@ KeyVal::key_floatvalue(const char* key, const KeyValValue& def)
 {
   Ref<KeyValValue> val(key_value(key,def));
   float result;
-  if (val.nonnull()) {
+  if (val) {
       seterror(val->floatvalue(result));
     }
   else {
@@ -165,7 +165,7 @@ KeyVal::key_charvalue(const char* key, const KeyValValue& def)
 {
   Ref<KeyValValue> val(key_value(key,def));
   char result;
-  if (val.nonnull()) {
+  if (val) {
       seterror(val->charvalue(result));
     }
   else {
@@ -179,7 +179,7 @@ KeyVal::key_pcharvalue(const char* key, const KeyValValue& def)
 {
   Ref<KeyValValue> val(key_value(key,def));
   const char* result;
-  if (val.nonnull()) {
+  if (val) {
       seterror(val->pcharvalue(result));
     }
   else {
@@ -194,7 +194,7 @@ KeyVal::key_stringvalue(const char* key, const KeyValValue& def)
 {
   Ref<KeyValValue> val(key_value(key,def));
   std::string result;
-  if (val.nonnull()) {
+  if (val) {
       seterror(val->stringvalue(result));
     }
   else {
@@ -208,7 +208,7 @@ KeyVal::key_describedclassvalue(const char* key, const KeyValValue& def)
 {
   Ref<KeyValValue> val(key_value(key,def));
   Ref<DescribedClass> result;
-  if (val.nonnull()) {
+  if (val) {
       seterror(val->describedclassvalue(result));
       val = 0; // fix for gcc 2.7.0 bug
     }
@@ -309,7 +309,7 @@ KeyVal::describedclass(const char* classname)
   // the original error status must be saved
   KeyValError original_error = error();
   Ref<DescribedClass> newdc(cd->create(this));
-  if (newdc.nonnull()) {
+  if (newdc) {
     DescribedClassProxy *proxy
     = dynamic_cast<DescribedClassProxy*>(newdc.pointer());
     if (proxy) {

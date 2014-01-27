@@ -43,7 +43,7 @@ void MTensor<4ul>::convert(const Ref<DistArray4>& src,
                          element_ranges const* mapped_element_ranges,
                          bool src_is_2301) {
 
-  assert(mapped_element_ranges != 0);
+  MPQC_ASSERT(mapped_element_ranges != 0);
 
   // split work over tasks which have access to integrals
   vector<int> proc_with_ints;
@@ -62,7 +62,7 @@ void MTensor<4ul>::convert(const Ref<DistArray4>& src,
   const bool espace0_eq_espace1 = ((*mapped_element_ranges)[0] == (*mapped_element_ranges)[1]);
   const bool espace2_eq_espace3 = ((*mapped_element_ranges)[2] == (*mapped_element_ranges)[3]);
   const bool can_always_antisymmetrize = (espace0_eq_espace1 || espace2_eq_espace3);
-  assert(can_always_antisymmetrize == true);  // this is likely to break the logic downstream
+  MPQC_ASSERT(can_always_antisymmetrize == true);  // this is likely to break the logic downstream
                                               // I clearly don't understand enough at the moment
 
   // TODO check if equivalence of MTensor spaces is matched by their relationship in src
@@ -235,7 +235,7 @@ void MTensor<4ul>::convert(const Ref<DistArray4>& src,
                     } // antisymmetrize01
 
                     else { // do not antisymmetrize
-                      assert(false); // should not happen, but only SMITH knows :-)
+                      MPQC_ASSERT(false); // should not happen, but only SMITH knows :-)
                     }
 
                   }
@@ -326,7 +326,7 @@ void MTensor<4ul>::convert(const Ref<DistArray4>& src,
                       } // antisymmetrize23
 
                       else { // do not antisymmetrize
-                        assert(false); // should not happen, but only SMITH knows :-)
+                        MPQC_ASSERT(false); // should not happen, but only SMITH knows :-)
                       }
 
                     }

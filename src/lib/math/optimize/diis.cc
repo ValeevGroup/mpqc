@@ -252,7 +252,7 @@ void
 DIIS::reinitialize(Ref<SCExtrapData> data)
 {
   iter=0;
-  if (data.nonnull()) {
+  if (data) {
     const bool do_mixing = (mixing_fraction != 0.0);
     if (do_mixing) diism_datain[0] = data->copy();
   }

@@ -45,7 +45,7 @@ MOIntsRuntime::MOIntsRuntime(const Ref<MOIntsTransformFactory>& factory,
   runtime_3c_(new TwoBodyThreeCenterMOIntsRuntime(factory_)),
   runtime_4c_(new TwoBodyFourCenterMOIntsRuntime(factory_))
 {
-  if (dfparams_.nonnull()) {
+  if (dfparams_) {
     runtime_df_ = new DensityFittingRuntime(new DensityFitting::MOIntsRuntime(factory_,runtime_2c_,runtime_3c_),
                                             dfparams_.pointer());
     typedef TwoBodyFourCenterMOIntsRuntime::Params DFInfo;
@@ -81,7 +81,7 @@ MOIntsRuntime::obsolete() {
   runtime_2c_->obsolete();
   runtime_3c_->obsolete();
   runtime_4c_->obsolete();
-  if (runtime_df_.nonnull())
+  if (runtime_df_)
     runtime_df_->obsolete();
 }
 

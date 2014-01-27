@@ -314,7 +314,7 @@ void PsiCC_PT2R12::compute_ept2r12() {
       const Ref<OrbitalSpace>& o2 = r12eval()->occ_act(spin2);
 
       std::vector< Ref<DistArray4> > Vpq_vec = r12eval()->V_distarray4(spincase2, p1, p2);
-      assert(Vpq_vec.size() == 1);
+      MPQC_ASSERT(Vpq_vec.size() == 1);
       Ref<DistArray4> Vpq = Vpq_vec[0];
 #define SKIP_R12INTEVAL_COMPUTE 0
 #if !SKIP_R12INTEVAL_COMPUTE
@@ -339,9 +339,9 @@ void PsiCC_PT2R12::compute_ept2r12() {
         _print(spincase2, Vpq, prepend_spincase(spincase2,"Vpq matrix").c_str());
         _print(spincase2, Vab[s], prepend_spincase(spincase2,"Vab matrix").c_str());
         _print(spincase2, Via[s], prepend_spincase(spincase2,"Via matrix").c_str());
-        if (Vai[s].nonnull())
+        if (Vai[s])
           _print(spincase2, Vai[s], prepend_spincase(spincase2,"Vai matrix").c_str());
-        if (A[s].nonnull())
+        if (A[s])
           _print(spincase2, A[s], prepend_spincase(spincase2,"A matrix").c_str());
       }
       if (debug() >= DefaultPrintThresholds::mostO4) {

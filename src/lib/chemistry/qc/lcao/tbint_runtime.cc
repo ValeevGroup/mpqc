@@ -97,7 +97,7 @@ ParsedTwoBodyFourCenterIntKey::ParsedTwoBodyFourCenterIntKey(const std::string& 
   std::string keycopy(key);
 
   // pop off the leading '<'
-  assert(keycopy[0] == '<');
+  MPQC_ASSERT(keycopy[0] == '<');
   keycopy.erase(keycopy.begin());
   // get bra1
   bra1_ = pop_till_token(keycopy,' ');
@@ -327,8 +327,8 @@ ParamsRegistry::add(const Ref<IntParams>& params) const
 void
 ParamsRegistry::add(const std::string& key, const Ref<IntParams>& params) const
 {
-  assert(! params_->key_exists(key));
-  assert(! params_->value_exists(params));
+  MPQC_ASSERT(! params_->key_exists(key));
+  MPQC_ASSERT(! params_->value_exists(params));
   params_->add(key,params);
 }
 
@@ -358,7 +358,7 @@ TwoBodyIntLayout::operator std::string() {
     case _b1k1_b2k2:
       return std::string("(11|22)");
     default:
-      assert(false);
+      MPQC_ASSERT(false);
       return std::string();
   }
 }
@@ -407,7 +407,7 @@ namespace sc{   namespace detail {
       case BetaBeta:  return "bb";
       default: break;
     }
-    assert(false);
+    MPQC_ASSERT(false);
     return std::string(); // dummy return statement to pacify picky compilers
   }
 

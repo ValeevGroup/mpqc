@@ -74,11 +74,11 @@ TwoBodyMOIntsTransform_ixjy_df::TwoBodyMOIntsTransform_ixjy_df(const std::string
 {
   // assuming for now that all densities will be fit in the same basis
   // TODO generalize to different fitting basis sets
-  assert(dfbasis12_->equiv(dfbasis34_));
+  MPQC_ASSERT(dfbasis12_->equiv(dfbasis34_));
 
   // make sure Registries know about the fitting bases
   Ref<AOSpaceRegistry> aoreg = this->factory()->ao_registry();
-  assert(aoreg->key_exists(dfbasis12_) &&
+  MPQC_ASSERT(aoreg->key_exists(dfbasis12_) &&
          aoreg->key_exists(dfbasis34_));
 
   init_vars();
@@ -162,7 +162,7 @@ TwoBodyMOIntsTransform_ixjy_df::memgrp_blksize() const
 void
 TwoBodyMOIntsTransform_ixjy_df::init_acc()
 {
-  if (ints_acc_.nonnull())
+  if (ints_acc_)
     return;
 
   const int nij = compute_nij(batchsize_, space3_->rank(), msg_->n(), msg_->me());
@@ -183,7 +183,7 @@ TwoBodyMOIntsTransform_ixjy_df::init_acc()
                                            memgrp_blksize());
     }
 #else
-    assert(false);
+    MPQC_ASSERT(false);
 #endif
     break;
 
@@ -198,7 +198,7 @@ TwoBodyMOIntsTransform_ixjy_df::init_acc()
                                              space1_->rank(), space3_->rank(), space2_->rank(), space4_->rank(),
                                              memgrp_blksize());
 #else
-        assert(false);
+        MPQC_ASSERT(false);
 #endif
         break;
       }
@@ -223,7 +223,7 @@ TwoBodyMOIntsTransform_ixjy_df::init_acc()
                                              space1_->rank(), space3_->rank(), space2_->rank(), space4_->rank(),
                                              memgrp_blksize());
 #else
-        assert(false);
+        MPQC_ASSERT(false);
 #endif
         break;
       }
@@ -236,7 +236,7 @@ TwoBodyMOIntsTransform_ixjy_df::init_acc()
     ints_acc_ = new DistArray4_MPIIOFile_Ind((file_prefix_+"."+name_).c_str(), num_te_types(),
                                              space1_->rank(), space3_->rank(), space2_->rank(), space4_->rank());
 #else
-    assert(false);
+    MPQC_ASSERT(false);
 #endif
     break;
 #endif
@@ -497,7 +497,7 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
     // now compute L12 = C12 * k
     DistArray4Dimensions L12_dims(this->num_te_types(),C12->ni(),C12->nj(),C12->nx(),C12->ny());
     // cloning C12 assumes that the fitting bases for 12 and 34 are same
-    assert(dfbasis12()->nbasis() == dfbasis34()->nbasis());
+    MPQC_ASSERT(dfbasis12()->nbasis() == dfbasis34()->nbasis());
     L12 = C12->clone(L12_dims);
     C12->activate();
     L12->activate();

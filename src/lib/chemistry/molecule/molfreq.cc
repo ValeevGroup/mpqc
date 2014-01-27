@@ -64,8 +64,9 @@ MolecularFrequencies::MolecularFrequencies(const Ref<KeyVal>& keyval)
 MolecularFrequencies::MolecularFrequencies(const Ref<Molecule>& mol) :
     mol_(mol),
     pg_(mol->point_group()),
+    debug_(0),
     nirrep_(mol->point_group()->char_table().nirrep()),
-    debug_(0), nfreq_(0), freq_(0)
+    nfreq_(0), freq_(0)
 {
 }
 
@@ -556,7 +557,7 @@ MolFreqAnimate::object(int iobject)
         }
     }
 
-  if (dependent_mole_.nonnull()) dependent_mole_->obsolete();
+  if (dependent_mole_) dependent_mole_->obsolete();
   renmol_->init();
 
   char name[64];
@@ -565,7 +566,7 @@ MolFreqAnimate::object(int iobject)
 
   // restore the original molecule
   mol->operator = (*molcopy.pointer());
-  if (dependent_mole_.nonnull()) dependent_mole_->obsolete();
+  if (dependent_mole_) dependent_mole_->obsolete();
 
   return renmol_.pointer();
 }

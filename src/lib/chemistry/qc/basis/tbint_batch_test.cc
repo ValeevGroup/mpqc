@@ -513,7 +513,7 @@ static Ref<MessageGrp> init_mp(const Ref<KeyVal>& keyval, int &argc,
   Ref<Debugger> debugger;
   debugger << keyval->describedclassvalue(":debug");
   // Let the debugger know the name of the executable and the node
-  if (debugger.nonnull()) {
+  if (debugger) {
     debugger->set_exec("test");
     debugger->set_prefix(grp->me());
     debugger->debug("curt is a hog");
@@ -560,7 +560,7 @@ int main(int argc, char**argv) {
 
   tim.exit("input");
 
-  if (mole.nonnull()) {
+  if (mole) {
     // this line performs the entire computation, as well as printing the energy
     // by accessing mole->energy(), I think
     val = mole->value();

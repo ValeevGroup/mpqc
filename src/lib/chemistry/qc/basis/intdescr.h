@@ -106,7 +106,7 @@ namespace sc {
                                  factory_(IF),
                                  params_(0) {
           params_ << params;
-          assert(params_.nonnull());
+          MPQC_ASSERT(params_);
         }
         ~TwoBodyNCenterIntDescr() {}
 
@@ -225,7 +225,7 @@ namespace sc {
             return new ConcreteType(integral,params);
           } break;
           default:
-            assert(false);
+            MPQC_ASSERT(false);
         }
         return Ref< typename NCentersToDescr<NumCenters,2>::value >(); // dummy return statement to pacify picky compilers
       }

@@ -301,7 +301,7 @@ namespace sc {
           // validate input
           if (n == 0) return;
           const size_t nmos = mask_.size();
-          assert(n < nmos);
+          MPQC_ASSERT(n < nmos);
 
           // copy attributes to vector of MOs
           std::vector<MO> mos;

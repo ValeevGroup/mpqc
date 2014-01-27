@@ -1921,7 +1921,7 @@ MBPT2::compute_cs_grad()
   RefSCMatrix Laj_matrix(nocc_dim,nvir_dim,kit); // elements are ordered as j*nvir+a
   Laj_matrix->assign(Laj);
   if (debug_ > 1) Laj_matrix->print("Laj (first bit)");
-  Laj_matrix = Laj_matrix - 2*Co.t()*Gmat*Cv;
+  Laj_matrix = Laj_matrix - 2.0*Co.t()*Gmat*Cv;
   if (debug_ > 1) Laj_matrix->print("Laj (all of it)");
   Laj_matrix->convert(Laj);  // Put new Laj_matrix elements into Laj
 
@@ -1973,7 +1973,7 @@ MBPT2::compute_cs_grad()
   delete[] tbints_; tbints_ = 0;
   RefSCMatrix Wkj_matrix(nocc_dim, nocc_dim, kit);
   Wkj_matrix->assign(Wkj);
-  Wkj_matrix = Wkj_matrix - 2*Co.t()*Gmat*Co;
+  Wkj_matrix = Wkj_matrix - 2.0*Co.t()*Gmat*Co;
   free(Wkj);
   // Wkj is now complete - not as Wkj but as Wkj_matrix
   tim.exit("Pkj and Wkj");

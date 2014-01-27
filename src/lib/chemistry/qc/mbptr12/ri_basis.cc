@@ -47,7 +47,7 @@ using namespace std;
 void
 R12WavefunctionWorld::construct_ri_basis_(bool safe)
 {
-  if (ribs_space_.nonnull())
+  if (ribs_space_)
     return;
 
   Ref<GaussianBasisSet> obs = basis();
@@ -95,7 +95,7 @@ R12WavefunctionWorld::construct_ri_basis_(bool safe)
 void
 R12WavefunctionWorld::construct_cabs_()
 {
-  if (cabs_space_[Alpha].nonnull())
+  if (cabs_space_[Alpha])
     return;
 
   construct_ri_basis_(r12tech()->safety_check());
@@ -111,7 +111,7 @@ R12WavefunctionWorld::construct_cabs_()
 void
 R12WavefunctionWorld::construct_orthog_aux_()
 {
-  if (abs_space_.nonnull())
+  if (abs_space_)
     return;
 
   if (! this->basis()->equiv(bs_aux_) &&
@@ -165,7 +165,7 @@ R12WavefunctionWorld::abs_spans_obs_()
   GaussianBasisSet& abs = *(bs_aux_.pointer());
   Ref<GaussianBasisSet> ri_basis = abs + refwfn()->basis();
   int nlindep_ri;
-  if (bs_ri_.nonnull() && ri_basis->equiv(bs_ri_)) {
+  if (bs_ri_ && ri_basis->equiv(bs_ri_)) {
     construct_orthog_ri_();
     nlindep_ri = nlindep_ri_;
   }
@@ -233,7 +233,7 @@ R12WavefunctionWorld::construct_ortho_comp_svd_()
 
     }
     else // old orbitalspace key no longer supported
-      assert(false);
+      MPQC_ASSERT(false);
 
   }
 }

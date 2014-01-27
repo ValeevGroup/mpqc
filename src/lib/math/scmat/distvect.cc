@@ -84,7 +84,7 @@ DistSCVector::find_element(int i) const
   d->blocks()->elem_to_block(i, bi, oi);
 
   Ref<SCVectorSimpleBlock> blk; blk << block_to_block(bi);
-  if (blk.nonnull()) {
+  if (blk) {
       return &blk->dat()[oi];
     }
   else {

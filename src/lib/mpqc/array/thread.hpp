@@ -41,7 +41,7 @@ namespace ArrayServer {
 
             for (int i = 0; i < rank-1; ++i)
                 block *= r[i].size();
-            assert(block < N);
+            MPQC_ASSERT(block < N);
             
             foreach (range rj, split(r.back(), N/block)) {
                 for (int i = 0; i < rank-1; ++i) {
@@ -171,8 +171,8 @@ namespace ArrayServer {
 	void send(const void *data,
 		  size_t count, MPI_Datatype type,
 		  int proc, int tag) const {
-	    assert(!(tag & SEND_MASK));
-	    assert(!(tag & RECV_MASK));
+	    MPQC_ASSERT(!(tag & SEND_MASK));
+	    MPQC_ASSERT(!(tag & RECV_MASK));
 	    comm_.send(data, count, type, proc, tag | RECV_MASK);
 	}
 
@@ -180,8 +180,8 @@ namespace ArrayServer {
 	void recv(void *data,
 		  size_t count, MPI_Datatype type,
 		  int proc, int tag) const {
-	    assert(!(tag & SEND_MASK));
-	    assert(!(tag & RECV_MASK));
+	    MPQC_ASSERT(!(tag & SEND_MASK));
+	    MPQC_ASSERT(!(tag & RECV_MASK));
 	    comm_.recv(data, count, type, proc, tag | SEND_MASK);
 	}
 
@@ -214,7 +214,7 @@ namespace ArrayServer {
 	    MPI_Comm_group(comm1, &group1);
 	    MPI_Comm_group(this->comm_, &group2);
 	    MPI_Group_translate_ranks(group1, 1, &rank1, group2, &rank2);
-	    assert(rank2 != MPI_UNDEFINED);
+	    MPQC_ASSERT(rank2 != MPI_UNDEFINED);
 	    return rank2;
 	}	    
 

@@ -201,7 +201,7 @@ Optimize::print(std::ostream& o) const
   o << indent << "max_iterations = " << max_iterations_ << std::endl;
   o << indent << "max_stepsize   = " << max_stepsize_ << std::endl;
 
-  if (conv_.nonnull()) {
+  if (conv_) {
       o << indent << "convergence    = " << std::endl;
       o << incindent;
       conv_->print(o);

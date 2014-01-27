@@ -238,12 +238,12 @@ class RefCount {
           void* bptr_void = reinterpret_cast<void*>(bptr);
           void* cptr_void = reinterpret_cast<void*>(cptr);
 
-          assert( c->indentifier() == aptr->identifier() ); // ok
-          assert( c->indentifier() == bptr->identifier() ); // ok
-          assert( cptr == aptr ); // ok
-          assert( cptr == bptr ); // ok! (implicit cast)
-          assert(cptr_void == aptr_void); // ok!
-          assert(cptr_void == bptr_void); // NOT ok!!!
+          MPQC_ASSERT( c->indentifier() == aptr->identifier() ); // ok
+          MPQC_ASSERT( c->indentifier() == bptr->identifier() ); // ok
+          MPQC_ASSERT( cptr == aptr ); // ok
+          MPQC_ASSERT( cptr == bptr ); // ok! (implicit cast)
+          MPQC_ASSERT(cptr_void == aptr_void); // ok!
+          MPQC_ASSERT(cptr_void == bptr_void); // NOT ok!!!
         @endcode
         Thus for objects that are derived from RefCount
         this will return pointer to the RefCount base; this allows to compare the identity of the objects pointed
@@ -414,16 +414,17 @@ class  Ref  : public RefBase {
     /// Implements the parentpointer pure virtual in the base class.
     RefCount *parentpointer() const { return p; }
 
-    operator T*() const { assert(p!=0); return p; }
+    operator T*() const { return p; }
     /** Returns a C++ reference to the reference counted object.
         The behaviour is undefined if the object is null. */
-    T& operator *() const { assert(p!=0); return *p; };
-    /** Return 1 if this is a reference to a null object.  Otherwise
-        return 0. */
-    int null() const { return p == 0; }
-    /// Return !null().
-    int nonnull() const { return p != 0; }
-    explicit operator bool() const { return nonnull(); }
+    T& operator *() const { MPQC_ASSERT(p!=0); return *p; };
+    /** Return true if this is a reference to a null object.  Otherwise
+        return false. */
+    bool null() const { return p == 0; }
+    bool operator!() const {
+      return null();
+    }
+
 
     /** Ordering and equivalence operators are determined by the identifier if
      * both pointers are not null. If one or both of the pointers is null then
@@ -635,7 +636,18 @@ class  Ref  : public RefBase {
     }
     /// Print a warning concerning the reference.
     void warn(const char*s) const { RefBase::warn(s); }
+
+  protected:
+    /// Return !null().
+    bool nonnull() const { return !null(); }
 };
+
+template <class T>
+std::ostream&
+operator<<(std::ostream& os, const Ref<T>& r) {
+  r.ref_info(os);
+  return os;
+}
 
 /** this functor can be used as a binary predicate for standard algorithms. For example,
     it can be used as an argument to std::hash_map that uses keys of sc::Ref<T> type.

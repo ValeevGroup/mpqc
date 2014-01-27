@@ -321,7 +321,7 @@ MemoryGrp::set_default_memorygrp(const Ref<MemoryGrp>& grp)
 MemoryGrp*
 MemoryGrp::get_default_memorygrp()
 {
-  if (default_memorygrp.nonnull()) return default_memorygrp.pointer();
+  if (default_memorygrp) return default_memorygrp.pointer();
 
   Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
 

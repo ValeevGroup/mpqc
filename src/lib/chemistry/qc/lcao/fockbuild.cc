@@ -81,11 +81,11 @@ class FockBuildMatrixRectElemOp: public SCElementOp {
                               const Ref<SCBlockInfo> &colbi):
       symm_(symm),
       data_to_mat_(data_to_mat),
-      rowbi_(rowbi),
-      colbi_(colbi),
       blocks_(blocks),
       ndata_(ndata),
-      defer_collect_(false) {
+      defer_collect_(false),
+      rowbi_(rowbi),
+      colbi_(colbi) {
       double *data = blocks_[0];
       if (!data_to_mat_) for (int i=0; i<ndata; i++) data[i] = 0;
 #if DEBUG
@@ -164,9 +164,9 @@ FockBuildMatrix::FockBuildMatrix(const FockBuildMatrix&fbm)
 }
 
 FockBuildMatrix::FockBuildMatrix(const Ref<MessageGrp> &msg):
+  msg_(msg),
   nI_(0),
-  nJ_(0),
-  msg_(msg)
+  nJ_(0)
 {
   me_ = msg->me();
   nproc_ = msg->n();
@@ -448,13 +448,13 @@ void
 ReplFockBuildMatrix::data_to_scmat() const
 {
   if (blockpointers_ == 0) return;
-  if (symmmat_.nonnull()) {
-      if (rectmat_.nonnull()) {
+  if (symmmat_) {
+      if (rectmat_) {
           throw std::runtime_error("data_to_scmat: both mats nonnull");
         }
       data_to_symmat();
     }
-  else if (rectmat_.nonnull()) {
+  else if (rectmat_) {
       data_to_rectmat();
     }
   else {
@@ -516,7 +516,7 @@ ReplFockBuildMatrix::block(int I, int J) const
 bool
 ReplFockBuildMatrix::symmetric() const
 {
-  return symmmat_.nonnull();
+  return symmmat_;
 }
 
 void
@@ -1177,13 +1177,13 @@ DistFockBuildMatrix::data_to_symmat() const
 void
 DistFockBuildMatrix::data_to_scmat() const
 {
-  if (symmmat_.nonnull()) {
-      if (rectmat_.nonnull()) {
+  if (symmmat_) {
+      if (rectmat_) {
           throw std::runtime_error("data_to_scmat: both mats nonnull");
         }
       data_to_symmat();
     }
-  else if (rectmat_.nonnull()) {
+  else if (rectmat_) {
       data_to_rectmat();
     }
   else {
@@ -1304,7 +1304,7 @@ DistFockBuildMatrix::accum_remote(const Ref<MessageGrp> &msg)
 bool
 DistFockBuildMatrix::symmetric() const
 {
-  return symmmat_.nonnull();
+  return symmmat_;
 }
 
 double *
@@ -1917,7 +1917,7 @@ GenericFockContribution::pmax_contrib(const Ref<FockBuildMatrix> &mat,
 void
 GenericFockContribution::activate()
 {
-  if (fbamg_.nonnull()) {
+  if (fbamg_) {
 //       std::cout << "GenericFockContribution::activate(): activating"
 //                 << std::endl;
       fbamg_->activate();
@@ -1931,13 +1931,13 @@ GenericFockContribution::activate()
 void
 GenericFockContribution::sync()
 {
-  if (fbamg_.nonnull()) fbamg_->sync();
+  if (fbamg_) fbamg_->sync();
 }
 
 void
 GenericFockContribution::deactivate()
 {
-  if (fbamg_.nonnull()) fbamg_->deactivate();
+  if (fbamg_) fbamg_->deactivate();
 }
 
 void
@@ -2618,7 +2618,7 @@ FockBuild::build()
     }
   for (int i=0; i<nthread; i++) {
       Ref<RegionTimer> deftimer = RegionTimer::default_regiontimer();
-      if (deftimer.nonnull()) deftimer->merge(thread_[i]->get_timer());
+      if (deftimer) deftimer->merge(thread_[i]->get_timer());
       thread_[i]->get_timer()->reset();
     }
   contrib_->accum_remote(msg_);

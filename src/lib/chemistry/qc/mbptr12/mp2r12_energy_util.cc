@@ -1346,7 +1346,7 @@ namespace sc {
     const unsigned int nxy = xydim.n();
     const unsigned int nf12 = f12dim.n();
     const unsigned int ngem = nf12/nxy;  // number of geminals
-    assert(ngem == 1);
+    MPQC_ASSERT(ngem == 1);
 
     RefSCDimension gdim=new SCDimension(ngem);
     RefSCDimension two_gdim=new SCDimension(2*gdim.n());

@@ -194,8 +194,8 @@ ClassDesc FinDispMolecularHessian::Impl::class_desc_(
 
 FinDispMolecularHessian::Impl::Impl(const Ref<MolecularEnergy>& e,
                                     const Ref<Params>& params) :
-  mole_(e),
-  params_(params)
+  params_(params),
+  mole_(e)
 {
   init();
 }
@@ -312,7 +312,7 @@ FinDispMolecularHessian::Impl::displace(const Displacement& disp)
     }
   }
   if (disp.empty()) {
-    if (mole_.nonnull()) mole_->obsolete();
+    if (mole_) mole_->obsolete();
     return;
   }
 
@@ -370,7 +370,7 @@ FinDispMolecularHessian::Impl::displace(const Displacement& disp)
        << mol->point_group()->symbol()
        << " for displaced molecule."
        << endl;
-  if (mole_.nonnull()) mole_->obsolete();
+  if (mole_) mole_->obsolete();
   mol->print();
 }
 
@@ -390,7 +390,7 @@ FinDispMolecularHessian::Impl::original_geometry()
     mole_->symmetry_changed();
   }
 
-  if (mole_.nonnull()) mole_->obsolete();
+  if (mole_) mole_->obsolete();
 }
 
 #if 0
@@ -442,9 +442,9 @@ unsigned int
 FinDispMolecularHessian::Impl::coor_to_irrep(unsigned int symm_coord) const {
   // row dimension of symbasis_ is blocked according to irreps -> map row to block # -> voila!
   RefSCDimension dsym = symbasis_.rowdim();
-  assert(symm_coord < dsym.n());
+  MPQC_ASSERT(symm_coord < dsym.n());
   Ref<SCBlockInfo> bsym = dsym->blocks();
-  assert(bsym.nonnull());
+  MPQC_ASSERT(bsym);
   int block, offset;
   bsym->elem_to_block(symm_coord, block, offset);
   return block;
@@ -492,7 +492,7 @@ FinDispMolecularHessian::GradientsImpl::compute_mole(const Displacement& disp) {
 
   // check if disp has been computed
   if (values_.has(disp)) {
-    if (values_.find(disp).second.gradient().nonnull())
+    if (values_.find(disp).second.gradient())
       return;
   }
 
@@ -529,7 +529,7 @@ FinDispMolecularHessian::GradientsImpl::set_gradient(const Displacement& disp, d
   // what's the irrep of the displacement? Only single-coordinate displacements are needed to compute hessian from gradients
   int irrep = 0;
   if (!disp.empty()) {
-    assert(disp.size() == 1);
+    MPQC_ASSERT(disp.size() == 1);
     const int int_coor = disp[0].first;
     irrep = coor_to_irrep(int_coor);
   }
@@ -990,7 +990,7 @@ FinDispMolecularHessian::cartesian_hessian()
 
   ExEnv::out0() << indent
        << "Computing molecular hessian by finite differences of "
-       << (eimpl.nonnull() ? "energies" : "gradients") << " from "
+       << (eimpl ? "energies" : "gradients") << " from "
        << pimpl_->ndisplace() << " displacements:" << endl;
   ExEnv::out0() << indent << "Hessian options: " << endl;
   ExEnv::out0() << indent << "  displacement: " << pimpl_->params()->disp_size()
@@ -1012,7 +1012,7 @@ FinDispMolecularHessian::set_energy(const Ref<MolecularEnergy>& mole) {
 void
 FinDispMolecularHessian::init_pimpl(const Ref<MolecularEnergy>& mole) {
   if (mole.null()) {
-    if (pimpl_.nonnull()) pimpl_->set_mole(mole);
+    if (pimpl_) pimpl_->set_mole(mole);
   }
   else {
     pimpl_ = 0;
@@ -1328,7 +1328,7 @@ FinDispMolecularGradient::displace(int disp)
        << " for displaced molecule."
        << endl;
 
-  if (mole_.nonnull()) mole_->obsolete();
+  if (mole_) mole_->obsolete();
   mol_->print();
 }
 
@@ -1340,7 +1340,7 @@ FinDispMolecularGradient::original_geometry()
       mol_->r(i,j) = original_geometry_(coor);
       }
     }
-  if (mole_.nonnull()) mole_->obsolete();
+  if (mole_) mole_->obsolete();
 }
 
 RefSCVector

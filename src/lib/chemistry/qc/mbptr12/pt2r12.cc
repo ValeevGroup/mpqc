@@ -99,8 +99,8 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
   {
     Ref<Wavefunction> reference;
     reference << keyval->describedclassvalue("reference");
-    if (reference.nonnull()) {
-      assert(reference == rdm2_->wfn());
+    if (reference) {
+      MPQC_ASSERT(reference == rdm2_->wfn());
       ref = RefWavefunctionFactory::make(world, reference, spin_restricted,
                                          nfzc_, 0, virspace);
     }
@@ -867,7 +867,7 @@ RefSCMatrix PT2R12::transform_MO() //transformation matrix between occupied orbi
   int num_occ_act = unscreen_occ_act->rank();
   int num_occ = occ->rank();
   int rdmdim = mo_density->n();
-  assert(rdmdim == num_occ);
+  MPQC_ASSERT(rdmdim == num_occ);
   std::vector<int> occ_act_inds;
   std::vector<int> occ_act_mask(num_occ, 0);
   for (int i = 0; i < num_occ_act; ++i)
@@ -950,7 +950,7 @@ RefSymmSCMatrix PT2R12::rdm1_sf_transform()
   static bool printed = false;
   RefSymmSCMatrix sf_opdm = rdm1();//converted to local
   RefSCMatrix transMO_nonlocal = this->transform_MO();
-  assert((sf_opdm->n() == transMO_nonlocal->coldim()->n()) and (sf_opdm->n()==r12eval_->occ(AnySpinCase1)->rank()));//should be the dimension of occ space
+  MPQC_ASSERT((sf_opdm->n() == transMO_nonlocal->coldim()->n()) and (sf_opdm->n()==r12eval_->occ(AnySpinCase1)->rank()));//should be the dimension of occ space
   RefSCMatrix transMO = convert_RefSC_to_local_kit(transMO_nonlocal);//sf_opdm is converted to local, so transMO needs to do so too; otherwise aborts.
 #if 0
     sf_opdm.print(prepend_spincase(AlphaBeta, "rdm1_sf: rdm before transformation").c_str());
@@ -1325,7 +1325,7 @@ void PT2R12::compute()
   double recomp_ref_energy = 0.0;
   if (pt2_correction_)
   {
-    assert(r12world()->r12tech()->ansatz()->projector() == R12Technology::Projector_2);
+    MPQC_ASSERT(r12world()->r12tech()->ansatz()->projector() == R12Technology::Projector_2);
 
 #define ENABLE_NEW_PT2R12_CODE 1
 #if ENABLE_NEW_PT2R12_CODE && defined(HAVE_MPQC3_RUNTIME)

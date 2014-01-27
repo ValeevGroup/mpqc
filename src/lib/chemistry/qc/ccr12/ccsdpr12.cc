@@ -89,7 +89,7 @@ void CCSDPR12::compute(){
   ccr12_info_->offset_gt2(gr2, false);
 
   const bool fullopt = ccr12_info_->r12world()->r12tech()->ansatz()->amplitudes() == R12Technology::GeminalAmplitudeAnsatz_fullopt;
-  assert(ccr12_info_->r12world()->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_scaledfixed);
+  MPQC_ASSERT(ccr12_info_->r12world()->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_scaledfixed);
 
   CCSD_R12_E*  ccsd_r12_e  = new CCSD_R12_E( info());
   CCSDPR12_T1* ccsdpr12_t1 = new CCSDPR12_T1(info());
@@ -141,7 +141,7 @@ void CCSDPR12::compute(){
     // compute new amplitudes from the residuals
     Ref<Tensor> t1_old = info()->t1()->copy();
     Ref<Tensor> t2_old = info()->t2()->copy();
-    Ref<Tensor> gt2_old = fullopt ? info()->gt2()->copy() : NULL;
+    Ref<Tensor> gt2_old = fullopt ? info()->gt2()->copy() : Ref<Tensor>();
 
     ccr12_info_->jacobi_t1(r1);
     if (fullopt) {
@@ -153,7 +153,7 @@ void CCSDPR12::compute(){
     // compute errors
     Ref<Tensor> t1_err = t1_old;
     Ref<Tensor> t2_err = t2_old;
-    Ref<Tensor> gt2_err = fullopt ? gt2_old : NULL;
+    Ref<Tensor> gt2_err = fullopt ? gt2_old : Ref<Tensor>();
     t1_err->daxpy(info()->t1(), -1.0);
     t2_err->daxpy(info()->t2(), -1.0);
     if (fullopt) gt2_err->daxpy(info()->gt2(), -1.0);
@@ -235,8 +235,8 @@ void CCSDPR12::compute(){
 
   if (do_lambda) {
     // so far, we asssume SP ansatz
-    assert(ccr12_info_->r12world()->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_fullopt);
-    assert(ccr12_info_->r12world()->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_scaledfixed);
+    MPQC_ASSERT(ccr12_info_->r12world()->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_fullopt);
+    MPQC_ASSERT(ccr12_info_->r12world()->r12tech()->ansatz()->amplitudes() != R12Technology::GeminalAmplitudeAnsatz_scaledfixed);
     // if optimzed, guess_glambda2 has not yet been called.
     if (false) ccr12_info_->guess_glambda2(); // glambda2 = gt2^dagger
 

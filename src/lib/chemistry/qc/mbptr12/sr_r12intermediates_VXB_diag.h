@@ -47,7 +47,7 @@ namespace sc {
 
   inline TA::Array<double, 2 > XaiAddToXam(const TA::Array<double, 2 >& Xam,
                                            const TA::Array<double, 2 >& Xai) {
-    assert(Xam.size() == 1);
+    MPQC_ASSERT(Xam.size() == 1);
 
     typedef TA::Array<double, 2> TArray2;
     typename TArray2::value_type tile_X =

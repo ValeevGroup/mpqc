@@ -571,7 +571,7 @@ bool
 R12Technology::NullCorrelationFactor::equiv(const Ref<CorrelationFactor>& cf) const
 {
   Ref<NullCorrelationFactor> cf_null; cf_null << cf;
-  return cf_null.nonnull();
+  return cf_null;
 }
 
 Ref<TwoBodyIntDescr>
@@ -635,14 +635,14 @@ bool
 R12Technology::R12CorrelationFactor::equiv(const Ref<CorrelationFactor>& cf) const
 {
   Ref<R12CorrelationFactor> cf_cast; cf_cast << cf;
-  return cf_cast.nonnull();
+  return cf_cast;
 }
 
 ////
 
 R12Technology::G12CorrelationFactor::G12CorrelationFactor(const CorrelationParameters& params, const Ref<GeminalDescriptor> &geminaldescriptor){
   label_=std::string("G12");
-  if (geminaldescriptor.nonnull())
+  if (geminaldescriptor)
     geminaldescriptor_=geminaldescriptor;
   else {
     Ref<GeminalDescriptorFactory> gdesc_factory=new GeminalDescriptorFactory;
@@ -768,7 +768,7 @@ R12Technology::G12CorrelationFactor::equiv(const Ref<CorrelationFactor>& cf) con
 
 R12Technology::G12NCCorrelationFactor::G12NCCorrelationFactor(const CorrelationParameters& params, const Ref<GeminalDescriptor> &geminaldescriptor){
   label_=std::string("G12");
-  if (geminaldescriptor.nonnull()){
+  if (geminaldescriptor){
   geminaldescriptor_=geminaldescriptor;
   }
   else {
@@ -948,9 +948,9 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval)
 
   bool abs_eq_obs = true;
   bool vbs_eq_obs = true;
-  if (obs.nonnull()) {
-    abs_eq_obs = abs.nonnull() ? abs->equiv(obs) : true;
-    vbs_eq_obs = vbs.nonnull() ? vbs->equiv(obs) : true;
+  if (obs) {
+    abs_eq_obs = abs ? abs->equiv(obs) : true;
+    vbs_eq_obs = vbs ? vbs->equiv(obs) : true;
   }
   this->init_from_kv(keyval, abs_eq_obs, vbs_eq_obs);
 }
@@ -961,8 +961,8 @@ R12Technology::R12Technology(const Ref<KeyVal>& keyval,
                              const Ref<GaussianBasisSet>& abs)
 {
   this->init_from_kv(keyval,
-                     abs.nonnull() ? abs->equiv(obs) : true,
-                     vbs.nonnull() ? vbs->equiv(obs) : true);
+                     abs ? abs->equiv(obs) : true,
+                     vbs ? vbs->equiv(obs) : true);
 }
 
 void
@@ -1159,7 +1159,7 @@ R12Technology::init_from_kv(const Ref<KeyVal>& keyval,
       GTGFit gtgfit(ng12, *w, 0.0, 10.0, 1001);
       // fit r12^k exp(-gamma*r_{12})
       const int k = 0;
-      assert(k < 2 && k >= 0);
+      MPQC_ASSERT(k < 2 && k >= 0);
       const double gamma = stg_exponents[f];
       double scale;
       if (k == 0) // fit - e^{-\gamma r12} / \gamma

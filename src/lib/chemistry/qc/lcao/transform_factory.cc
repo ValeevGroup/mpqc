@@ -175,7 +175,7 @@ MOIntsTransformFactory::twobody_transform_13(const std::string& name,
     result = new TwoBodyMOIntsTransform_ixjy_df(name,df_info_,descr,space1_,space2_,space3_,space4_);
   }
 
-  if (top_mole_.nonnull())
+  if (top_mole_)
     result->set_top_mole(top_mole_);
 
   return result;
@@ -189,7 +189,7 @@ MOIntsTransformFactory::twobody_transform_12(const std::string& name,
   const Ref<TwoBodyIntDescr> descr = (descrarg.null() ? tbintdescr() : descrarg);
   result = new TwoBodyMOIntsTransform_ijxy(name,this,descr,space1_,space2_,space3_,space4_);
 
-  if (top_mole_.nonnull())
+  if (top_mole_)
     result->set_top_mole(top_mole_);
 
   return result;
@@ -222,7 +222,7 @@ MOIntsTransformFactory::twobody_transform(const std::string& name,
   Ref<TwoBodyThreeCenterMOIntsTransform> result = new TwoBodyThreeCenterMOIntsTransform_ijR(name,this,descr,space1_,space2_,space3_);
 
 #if 0
-  if (top_mole_.nonnull())
+  if (top_mole_)
     result->set_top_mole(top_mole_);
 #endif
   return result;
@@ -247,9 +247,9 @@ MOIntsTransformFactory::twobody_transform(MOIntsTransform::TwoBodyTransformType 
     case MOIntsTransform::TwoBodyTransformType_iRjS:
       return twobody_transform<TwoBodyMOIntsTransform_iRjS>(name,descrarg);
     case MOIntsTransform::TwoBodyTransformType_ijR:
-      assert(false);
+      MPQC_ASSERT(false);
   }
-  assert(false); // should be unreachable
+  MPQC_ASSERT(false); // should be unreachable
   return Ref<TwoBodyMOIntsTransform>(); // dummy return statement to pacify picky compilers
 }
 #endif
@@ -265,7 +265,7 @@ MOIntsTransformFactory::twobody_transform(MOIntsTransform::TwoBodyTransformType 
     default:
       ;
   }
-  assert(false);  // should be unreachable
+  MPQC_ASSERT(false);  // should be unreachable
   return Ref<TwoBodyThreeCenterMOIntsTransform>(); // dummy return statement to pacify picky compilers
 }
 

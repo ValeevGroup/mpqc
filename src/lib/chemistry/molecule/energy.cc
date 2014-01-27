@@ -129,7 +129,7 @@ MolecularEnergy::MolecularEnergy(const Ref<KeyVal>&keyval):
   guesshess_ << keyval->describedclassvalue("guess_hessian");
 
   hess_ << keyval->describedclassvalue("hessian");
-  if (hess_.nonnull()) {
+  if (hess_) {
     if (hess_->energy() == 0)
       hess_->set_energy(this);
   }
@@ -403,21 +403,21 @@ MolecularEnergy::molecule() const
 void
 MolecularEnergy::guess_hessian(RefSymmSCMatrix&hessian)
 {
-  if (guesshess_.nonnull()) {
+  if (guesshess_) {
       int nullmole = (guesshess_->energy() == 0);
       this->reference();
       if (nullmole) guesshess_->set_energy(this);
       RefSymmSCMatrix xhess = guesshess_->cartesian_hessian();
       if (nullmole) guesshess_->set_energy(0);
       this->dereference();
-      if (mc_.nonnull()) {
+      if (mc_) {
           mc_->to_internal(hessian, xhess);
         }
       else {
           hessian.assign(xhess);
         }
     }
-  else if (mc_.nonnull()) {
+  else if (mc_) {
       mc_->guess_hessian(hessian);
     }
   else {
@@ -428,7 +428,7 @@ MolecularEnergy::guess_hessian(RefSymmSCMatrix&hessian)
 RefSymmSCMatrix
 MolecularEnergy::inverse_hessian(RefSymmSCMatrix&hessian)
 {
-  if (mc_.nonnull()) {
+  if (mc_) {
       return mc_->inverse_hessian(hessian);
     }
   else {
@@ -469,7 +469,7 @@ MolecularEnergy::hessian_implemented() const {
   bool result = false;
   if (analytic_hessian_implemented())
     result = true;
-  if (hess_.nonnull())
+  if (hess_)
     result = true;
   return result;
 }
@@ -512,7 +512,7 @@ MolecularEnergy::gradient_implemented() const {
   bool result = false;
   if (analytic_gradient_implemented())
     result = true;
-  if (grad_.nonnull())
+  if (grad_)
     result = true;
   return result;
 }
@@ -524,7 +524,7 @@ MolecularEnergy::analytic_gradient_implemented() const {
 
 void
 MolecularEnergy::set_desired_gradient_accuracy(double acc) {
-  if (grad_.nonnull()) {
+  if (grad_) {
     grad_->set_desired_accuracy(acc);
   }
   Function::set_desired_gradient_accuracy(acc);
@@ -532,7 +532,7 @@ MolecularEnergy::set_desired_gradient_accuracy(double acc) {
 
 void
 MolecularEnergy::set_desired_hessian_accuracy(double acc) {
-  if (hess_.nonnull()) {
+  if (hess_) {
     hess_->set_desired_accuracy(acc);
   }
   Function::set_desired_hessian_accuracy(acc);
@@ -643,14 +643,14 @@ void
 MolecularEnergy::print(ostream&o) const
 {
   Function::print(o);
-  if (efield_.nonnull()) {
+  if (efield_) {
     o << indent << "External uniform electric field: "
       << scprintf("[%20.15lf %20.15lf %20.15lf]",
                   efield_.get_element(0),
                   efield_.get_element(1),
                   efield_.get_element(2)) << std::endl;
   }
-  if (mc_.nonnull()) {
+  if (mc_) {
       o << indent << "Molecular Coordinates:\n" << incindent;
       mc_->print(o);
       o << decindent;
@@ -913,7 +913,7 @@ void
 MolEnergyConvergence::get_x(const Ref<Function> &f)
 {
   Ref<MolecularEnergy> m; m << f;
-  if (cartesian_ && m.nonnull() && m->molecularcoor().nonnull()) {
+  if (cartesian_ && m && m->molecularcoor()) {
       x_ = m->get_cartesian_x();
     }
   else {
@@ -925,7 +925,7 @@ MolEnergyConvergence::get_x(const Ref<Function> &f)
 void
 MolEnergyConvergence::set_nextx(const RefSCVector& x)
 {
-  if (cartesian_ && mole_.nonnull() && mole_->molecularcoor().nonnull()) {
+  if (cartesian_ && mole_ && mole_->molecularcoor()) {
       Ref<Molecule> mol = new Molecule(*(mole_->molecule().pointer()));
       mole_->molecularcoor()->to_cartesian(mol, x);
       nextx_ = mole_->matrixkit()->vector(mole_->moldim());
@@ -950,7 +950,7 @@ void
 MolEnergyConvergence::get_grad(const Ref<Function> &f)
 {
   Ref<MolecularEnergy> m; m << f;
-  if (cartesian_ && m.nonnull() && m->molecularcoor().nonnull()) {
+  if (cartesian_ && m && m->molecularcoor()) {
       RefSCVector cartesian_grad = m->get_cartesian_gradient()->copy();
       if (m->molecularcoor()->nconstrained()) {
           // convert the gradient to internal coordinates and back

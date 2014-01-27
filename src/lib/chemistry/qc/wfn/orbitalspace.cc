@@ -412,7 +412,7 @@ void OrbitalSpace::full_coefs_to_coefs(const RefSCMatrix& full_coefs,
       coefs_(j, i) = full_coefs(j, ii);
     }
   }
-  if (evals.nonnull())
+  if (evals)
     for (unsigned int i = 0; i < rank; i++) {
       const unsigned int ii = blocked_subindex_to_full_index[index_map[i]];
       evals_( i) = evals(ii);
@@ -739,7 +739,7 @@ OrbitalSpaceUnion::OrbitalSpaceUnion(const std::string& id, const std::string& n
 
   // if trying to add a space to itself and blocks to be merged, throw
   if (merge_blocks && &s1 == &s2)
-    assert(false);
+    MPQC_ASSERT(false);
 
   // compute the basis set
   // try 3 cases:

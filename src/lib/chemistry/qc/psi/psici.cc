@@ -387,7 +387,7 @@ namespace sc {
 
     /// construction of valence_obwfn_
     valence_obwfn_ << keyval->describedclassvalue("valence_obwfn");
-    if (valence_obwfn_.nonnull()) {
+    if (valence_obwfn_) {
       double valence_obwfn_energy = valence_obwfn_->energy();//compute CLHF guess wavefunc
       this->reference()->compute();// compute reference, e.g. PsiCLHF
       moorder_ = detail::ref_to_valence_moorder(this->reference(),
@@ -424,7 +424,7 @@ namespace sc {
 
     /// if ras2 is not specified, look for valence_obwfn ...
     if(ras2_.empty()) {
-      if (valence_obwfn_.nonnull()) { // if given, compute the valence space
+      if (valence_obwfn_) { // if given, compute the valence space
         ras2_.resize(nirrep);
         // ras2_[i] = valence_obwfn_.orbs[i] - frozen_docc[i] - ras1_[i];
         for(unsigned int h=0; h<nirrep; ++h)
@@ -621,7 +621,7 @@ namespace sc {
   }
 
   const Ref<OrbitalSpace>&  PsiRASCI::orbs_sb(SpinCase1 spin) {
-    if(orbs_sb_[spin].nonnull()) {
+    if(orbs_sb_[spin]) {
       return orbs_sb_[spin];
     }
     if (spin==Beta) {
@@ -643,7 +643,7 @@ namespace sc {
     if (ras3_max() > 0)
       return orbs;
     else { // ras3 is empty -> select frozen_docc + ras1 + ras2
-      if(occ_[spin].nonnull()) {
+      if(occ_[spin]) {
         return occ_[spin];
       }
       if (spin==Beta) {
@@ -696,7 +696,7 @@ namespace sc {
 
       return result;
     }
-    assert(false); // unreachable
+    MPQC_ASSERT(false); // unreachable
   }
 
   RefSymmSCMatrix PsiRASCI::onepdm_occ(SpinCase1 spin) {
@@ -709,7 +709,7 @@ namespace sc {
     if (spin == AnySpinCase1 && this->spin_polarized())
       ProgrammingError("asked for any spin density but the density is spin-polarized");
 
-    if (onepdm_occ_[spin].nonnull())
+    if (onepdm_occ_[spin])
       return onepdm_occ_[spin];
 
     // ensure that this has been computed
@@ -789,7 +789,7 @@ namespace sc {
     if (spin == BetaBeta && !this->spin_polarized())
       return twopdm_occ(AlphaAlpha);
 
-    if (twopdm_occ_[spin].nonnull())
+    if (twopdm_occ_[spin])
       return twopdm_occ_[spin];
 
     // 2-rdm reported by Psi is in RAS order, hence need to map it to symmetry-blocked order
@@ -818,7 +818,7 @@ namespace sc {
 
     if (ras3_max_ > 0 && this->nfzv() == 0) return this->twopdm_dirac();
 
-    if (twopdm_sf_occ_.nonnull())
+    if (twopdm_sf_occ_)
       return twopdm_sf_occ_;
 
     // 2-rdm reported by Psi is in RAS order, hence need to map it to symmetry-blocked order

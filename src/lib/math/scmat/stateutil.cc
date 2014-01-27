@@ -39,7 +39,7 @@ sc::FromStateIn<sc::RefSCVector>(sc::RefSCVector& t, StateIn& si, int& count) {
   count += si.get(nonnull);
   if (nonnull) {
     RefSCDimension dim;  dim << SavableState::restore_state(si);
-    const bool blockeddim = dim->blocks()->subdim(0).nonnull();  // has subdims? use blocked kit
+    const bool blockeddim = dim->blocks()->subdim(0);  // has subdims? use blocked kit
     Ref<SCMatrixKit> defaultkit = SCMatrixKit::default_matrixkit();
     Ref<SCMatrixKit> kit = blockeddim ? new BlockedSCMatrixKit(defaultkit) : defaultkit;
     t = kit->vector(dim);
@@ -55,8 +55,8 @@ sc::FromStateIn<sc::RefSCMatrix>(sc::RefSCMatrix& t, StateIn& si, int& count) {
   if (nonnull) {
     RefSCDimension rowdim;  rowdim << SavableState::restore_state(si);
     RefSCDimension coldim;  coldim << SavableState::restore_state(si);
-    const bool blockeddim = rowdim->blocks()->subdim(0).nonnull()
-                         && coldim->blocks()->subdim(0).nonnull();  // has subdims? use blocked kit
+    const bool blockeddim = rowdim->blocks()->subdim(0)
+                         && coldim->blocks()->subdim(0);  // has subdims? use blocked kit
     Ref<SCMatrixKit> defaultkit = SCMatrixKit::default_matrixkit();
     Ref<SCMatrixKit> kit = blockeddim ? new BlockedSCMatrixKit(defaultkit) : defaultkit;
     t = kit->matrix(rowdim,coldim);
@@ -71,7 +71,7 @@ sc::FromStateIn<sc::RefSymmSCMatrix>(sc::RefSymmSCMatrix& t, StateIn& si, int& c
   count += si.get(nonnull);
   if (nonnull) {
     RefSCDimension dim;  dim << SavableState::restore_state(si);
-    const bool blockeddim = dim->blocks()->subdim(0).nonnull();  // has subdims? use blocked kit
+    const bool blockeddim = dim->blocks()->subdim(0);  // has subdims? use blocked kit
     Ref<SCMatrixKit> defaultkit = SCMatrixKit::default_matrixkit();
     Ref<SCMatrixKit> kit = blockeddim ? new BlockedSCMatrixKit(defaultkit) : defaultkit;
     t = kit->symmmatrix(dim);
@@ -86,7 +86,7 @@ sc::FromStateIn<sc::RefDiagSCMatrix>(sc::RefDiagSCMatrix& t, StateIn& si, int& c
   count += si.get(nonnull);
   if (nonnull) {
     RefSCDimension dim;  dim << SavableState::restore_state(si);
-    const bool blockeddim = dim->blocks()->subdim(0).nonnull();  // has subdims? use blocked kit
+    const bool blockeddim = dim->blocks()->subdim(0);  // has subdims? use blocked kit
     Ref<SCMatrixKit> defaultkit = SCMatrixKit::default_matrixkit();
     Ref<SCMatrixKit> kit = blockeddim ? new BlockedSCMatrixKit(defaultkit) : defaultkit;
     t = kit->diagmatrix(dim);

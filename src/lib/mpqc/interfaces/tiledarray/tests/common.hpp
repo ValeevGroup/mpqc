@@ -136,7 +136,7 @@ namespace detail {
     R<Integral>
     get_integral_factory(int argc, char** argv){
        R<Integral> integral_fac = Integral::initial_integral(argc, argv);
-       if(integral_fac.nonnull())
+       if(integral_fac)
            Integral::set_default_integral(integral_fac);
        integral_fac = Integral::get_default_integral()->clone();
        return integral_fac;

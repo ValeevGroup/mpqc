@@ -62,7 +62,7 @@ TwoBodyThreeCenterMOIntsTransform_ijR::TwoBodyThreeCenterMOIntsTransform_ijR(con
 
 TwoBodyThreeCenterMOIntsTransform_ijR::TwoBodyThreeCenterMOIntsTransform_ijR(StateIn& si) :
   TwoBodyThreeCenterMOIntsTransform(si) {
-  assert(false);
+  MPQC_ASSERT(false);
   init_vars();
 }
 
@@ -112,7 +112,7 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute_transform_dynamic_memory(int batc
   if (batchsize == -1)
     batchsize = rank3;
   // can only do 1-pass transformation
-  assert(batchsize == rank3);
+  MPQC_ASSERT(batchsize == rank3);
 
   return num_te_types() * rank1 * static_cast<distsize_t>(rank2 * rank3 * sizeof(double));
 }
@@ -140,7 +140,7 @@ TwoBodyThreeCenterMOIntsTransform_ijR::extra_memory_report(std::ostream& os) con
 
 void
 TwoBodyThreeCenterMOIntsTransform_ijR::init_acc() {
-  if (ints_acc_.nonnull())
+  if (ints_acc_)
     return;
 
   const int nproc = mem_->n();
@@ -509,7 +509,7 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute_pjR() {
   int nfuncmax1 = b1->max_nfunction_in_shell();
 
   Ref<DistArray4_MemoryGrp> ints_acc_cast; ints_acc_cast << ints_acc_;
-  const bool need_memgrp = ints_acc_cast.nonnull();
+  const bool need_memgrp = ints_acc_cast;
   if (need_memgrp) {
     const distsize_t ijR_globalsize = (((static_cast<distsize_t>(n1))*n23)*num_te_types)*sizeof(double);
     const int ni_local = (n1 + nproc - 1)/ nproc;
@@ -706,14 +706,14 @@ TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR::TwoBodyThreeCenterMOIntsTransfo
   const bool space1_is_ao = aoidxreg->value_exists( this->space1() );
   const bool space2_is_ao = aoidxreg->value_exists( this->space2() );
   const bool space3_is_ao = aoidxreg->value_exists( this->space3() );
-  assert(!space2_is_ao);
-  assert(space3_is_ao);
-  assert( aoidxreg->value_exists(iqR_tform->space2()) );
+  MPQC_ASSERT(!space2_is_ao);
+  MPQC_ASSERT(space3_is_ao);
+  MPQC_ASSERT( aoidxreg->value_exists(iqR_tform->space2()) );
 }
 
 TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR::TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR(StateIn& si) :
   TwoBodyThreeCenterMOIntsTransform_ijR(si) {
-  assert(false);
+  MPQC_ASSERT(false);
   init_vars();
 }
 
@@ -741,7 +741,7 @@ TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR::compute_transform_dynamic_memor
   if (batchsize == -1)
     batchsize = rank3;
   // can only do 1-pass transformation
-  assert(batchsize == rank3);
+  MPQC_ASSERT(batchsize == rank3);
 
   const distsize_t result = using_memgrp ?
                               num_te_types() * rank1 * static_cast<distsize_t>(rank2 * rank3 * sizeof(double)) :
@@ -771,7 +771,7 @@ TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR::compute() {
   const int nbasis2 = this->space2()->basis()->nbasis();
 
   Ref<DistArray4_MemoryGrp> ints_acc_cast; ints_acc_cast << ints_acc_;
-  const bool need_memgrp = ints_acc_cast.nonnull();
+  const bool need_memgrp = ints_acc_cast;
   if (need_memgrp) {
     const distsize_t ijR_globalsize = (((static_cast<distsize_t>(n1))*n23)*num_te_types)*sizeof(double);
     const int ni_local = (n1 + nproc - 1)/ nproc;

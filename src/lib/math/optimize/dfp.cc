@@ -102,7 +102,7 @@ DFPUpdate::update(const RefSymmSCMatrix&ihessian,const Ref<Function>&func,
     gnew = xn;
   }
   
-  if (xprev.nonnull()) {
+  if (xprev) {
     RefSCVector xdisp = xnew-xprev;
     RefSCVector gdisp = gnew-gprev;
     RefSCVector ihessian_gdisp = ihessian * gdisp;
@@ -187,7 +187,7 @@ BFGSUpdate::update(const RefSymmSCMatrix&ihessian,const Ref<Function>&func,
     gnew = xn;
   }
   
-  if (xprev.nonnull()) {
+  if (xprev) {
     RefSCVector xdisp = xnew-xprev;
     RefSCVector gdisp = gnew-gprev;
     RefSCVector ihessian_gdisp = ihessian * gdisp;

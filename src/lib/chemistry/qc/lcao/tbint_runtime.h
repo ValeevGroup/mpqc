@@ -492,7 +492,7 @@ namespace sc {
       const TwoBodyIntEvalRef& eval = create_eval(key);
       return eval;
     }
-    assert(false); // unreachable
+    MPQC_ASSERT(false); // unreachable
   }
 
   template <int NumCenters>

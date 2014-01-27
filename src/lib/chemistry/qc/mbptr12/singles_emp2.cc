@@ -535,7 +535,7 @@ R12IntEval::cabs_space_fockcanonical(SpinCase1 spin,
                                      double scale_J,
                                      double scale_K)
 {
-  assert(r12world()->obs_eq_ribs() == false);
+  MPQC_ASSERT(r12world()->obs_eq_ribs() == false);
 
   Ref<OrbitalSpace> cabs = r12world()->cabs_space(spin);
   const int ncabs = cabs->rank();

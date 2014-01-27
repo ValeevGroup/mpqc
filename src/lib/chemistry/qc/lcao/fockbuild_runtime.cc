@@ -523,7 +523,7 @@ FockBuildRuntime::get(const std::string& key) {
   }
 
   // add field contribution to the result, if needed
-  if (electric_field().nonnull() && (oper_key == "H" || oper_key == "F") ) {
+  if (electric_field() && (oper_key == "H" || oper_key == "F") ) {
     RefSCMatrix result_incl_field = result.copy();
     result_incl_field.accumulate( electric_field_contribution(bra_key, ket_key) );
     return result_incl_field;
@@ -535,7 +535,7 @@ FockBuildRuntime::get(const std::string& key) {
 RefSCMatrix
 FockBuildRuntime::electric_field_contribution(std::string bra_key,
                                               std::string ket_key) {
-  assert(electric_field().nonnull());
+  MPQC_ASSERT(electric_field());
 
   // only AO matrices will be cached
 
@@ -617,7 +617,7 @@ ParsedOneBodyIntKey::ParsedOneBodyIntKey(const std::string& key) :
   std::string keycopy(key);
 
   // pop off the leading '<'
-  assert(keycopy[0] == '<');
+  MPQC_ASSERT(keycopy[0] == '<');
   keycopy.erase(keycopy.begin());
   // get bra
   bra_ = pop_till_token(keycopy, '|');

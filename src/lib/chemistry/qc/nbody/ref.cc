@@ -204,22 +204,22 @@ PopulatedOrbitalSpace::PopulatedOrbitalSpace(const Ref<OrbitalSpaceRegistry>& or
   // validate input
   // 0. sizes agree
   const int nmo = occs.size();
-  assert(occs.size() == coefs.ncol());
-  assert(bs->nbasis() == coefs.nrow());
-  assert(occs.size() == active.size());
-  assert(energies.n() == occs.size());
+  MPQC_ASSERT(occs.size() == coefs.ncol());
+  MPQC_ASSERT(bs->nbasis() == coefs.nrow());
+  MPQC_ASSERT(occs.size() == active.size());
+  MPQC_ASSERT(energies.n() == occs.size());
   // 1. occupancies are bounded by 2/1
-  assert(fabs(*max_element(occs.begin(), occs.end()) - 1.0) < zero_occupancy() ||
+  MPQC_ASSERT(fabs(*max_element(occs.begin(), occs.end()) - 1.0) < zero_occupancy() ||
          fabs(*max_element(occs.begin(), occs.end()) - 2.0) < zero_occupancy() );
-  assert(*min_element(occs.begin(), occs.end()) >= 0.0);
+  MPQC_ASSERT(*min_element(occs.begin(), occs.end()) >= 0.0);
   // 2. active:
   //   a. can create holes in only occupied orbitals
   //   b. can create particles in only empty or partially occupied orbitals
   for(size_t o=0; o<active.size(); ++o) {
     if (active[o] == ParticleHoleOrbitalAttributes::Hole)
-      assert(occs[o] >= zero_occupancy());
+      MPQC_ASSERT(occs[o] >= zero_occupancy());
     if (active[o] == ParticleHoleOrbitalAttributes::Particle)
-      assert(occs[o] <= zero_occupancy());
+      MPQC_ASSERT(occs[o] <= zero_occupancy());
   }
 
   //active tells which orbitals are active; the 'masks' are selectors
@@ -444,8 +444,8 @@ RefWavefunction::RefWavefunction(const Ref<WavefunctionWorld>& world,
                                  const Ref<GaussianBasisSet>& basis,
                                  const Ref<Integral>& integral,
                                  bool use_world_df) :
-  world_(world), basis_(basis),  integral_(integral->clone()),
-  use_world_dfinfo_(use_world_df), force_average_AB_rdm1_(false)
+  force_average_AB_rdm1_(false), world_(world), basis_(basis),  integral_(integral->clone()),
+  use_world_dfinfo_(use_world_df)
 {
   for(int spin=0; spin<NSpinCases1; ++spin) spinspaces_[spin] = 0;
   integral_->set_basis(basis, basis, basis, basis);
@@ -754,7 +754,7 @@ SD_RefWavefunction::SD_RefWavefunction(const Ref<KeyVal>& keyval) :
     throw InputError("localized occupied orbitals can only be used for closed-shell molecules",
                      __FILE__, __LINE__, "occ_orbitals", occ_orbitals_.c_str(), this->class_desc());
 
-  if (nfzv_ > 0 && vir_space_.nonnull()) {
+  if (nfzv_ > 0 && vir_space_) {
     std::ostringstream oss;
     oss << nfzv_;
     throw InputError("when VBS is given nfzv must be 0",
@@ -774,17 +774,17 @@ SD_RefWavefunction::SD_RefWavefunction(const Ref<WavefunctionWorld>& world,
                                                                 obwfn->basis(),
                                                                 obwfn->integral()),
                                              obwfn_(obwfn),
-                                             spin_restricted_(spin_restricted),
-                                             nfzc_(nfzc),
-                                             nfzv_(nfzv),
                                              vir_space_(vir_space),
-                                             occ_orbitals_(occ_orbitals)
+                                             spin_restricted_(spin_restricted),
+                                             occ_orbitals_(occ_orbitals),
+                                             nfzc_(nfzc),
+                                             nfzv_(nfzv)
 {
   // spin_restricted is a recommendation only -> make sure it is realizable
   if (obwfn_->spin_polarized() == false) spin_restricted_ = true;
   if (obwfn_->spin_unrestricted() == true) spin_restricted_ = false;
 
-  if (nfzv > 0 && vir_space.nonnull())
+  if (nfzv > 0 && vir_space)
     throw ProgrammingError("when VBS is given nfzv must be 0",__FILE__,__LINE__);
 }
 
@@ -820,7 +820,7 @@ SD_RefWavefunction::print(std::ostream&o) const {
     o << indent << "# frozen core   = " << nfzc_ << endl;
     o << indent << "# frozen virt   = " << nfzv_ << endl;
     o << indent << "occ_orbitals    = " << occ_orbitals_ << endl;
-    if (vir_space_.nonnull()) {
+    if (vir_space_) {
       o << indent << "vir_basis:" << endl;
       vir_space_->basis()->print(o);
       o << endl;
@@ -915,7 +915,7 @@ SD_RefWavefunction::init_spaces_restricted()
   }
 
   // omit unoccupied orbitals?
-  const bool omit_uocc = vir_space_.nonnull() && vir_space_->rank() == 0;
+  const bool omit_uocc = vir_space_ && vir_space_->rank() == 0;
   if (omit_uocc) {
     Ref<OrbitalSpace> allspace = new OrbitalSpace("", "",
                                                   evecs_ao,
@@ -984,7 +984,7 @@ void
 SD_RefWavefunction::init_spaces_unrestricted()
 {
   // omit unoccupied orbitals?
-  const bool omit_uocc = vir_space_.nonnull() && (vir_space_->rank() == 0);
+  const bool omit_uocc = vir_space_ && (vir_space_->rank() == 0);
   if (omit_uocc)
     throw FeatureNotImplemented("omit_uocc is not implemented for spin-unrestricted references",
                                 __FILE__,__LINE__);
@@ -1073,7 +1073,7 @@ SD_RefWavefunction::dfinfo() const {
     result = const_cast<DensityFittingInfo*>(world()->tfactory()->df_info());
   else {
     Ref<SCF> scf_ptr; scf_ptr << this->obwfn();
-    result = (scf_ptr.nonnull()) ? scf_ptr->dfinfo() : 0;
+    result = (scf_ptr) ? scf_ptr->dfinfo() : Ref<DensityFittingInfo>();
   }
   return result;
 }
@@ -1101,8 +1101,8 @@ Extern_RefWavefunction::Extern_RefWavefunction(const Ref<WavefunctionWorld>& wor
                          omit_uocc_(omit_uocc)
 {
   const unsigned int norbs = orbs.coldim().n();
-  assert(nocc >= nfzc);
-  assert(norbs - nocc >= nfzv);
+  MPQC_ASSERT(nocc >= nfzc);
+  MPQC_ASSERT(norbs - nocc >= nfzv);
 
   // are densities idempotent?
   ordm_idempotent_ = true;
@@ -1134,7 +1134,7 @@ Extern_RefWavefunction::Extern_RefWavefunction(const Ref<WavefunctionWorld>& wor
   const double nelectron_alpha = alpha_1rdm.trace();
   const double nelectron_beta = beta_1rdm.trace();
   const double nelectron_double = nelectron_alpha + nelectron_beta;
-  assert(nelectron_double > 0.0);
+  MPQC_ASSERT(nelectron_double > 0.0);
   nelectron_ = round(nelectron_double);
   if (fabs((double)nelectron_ - nelectron_double) > 0.01)
     throw InputError("Extern_RefWavefunction: input density trace is not integer, something is seriously wrong",
@@ -1191,8 +1191,8 @@ Extern_RefWavefunction::Extern_RefWavefunction(const Ref<WavefunctionWorld>& wor
   nfzc_ = nfzc;
   nfzv_ = nfzv;
   const unsigned int norbs = orbs.coldim().n();
-  assert(nocc >= nfzc);
-  assert(norbs - nocc >= nfzv);
+  MPQC_ASSERT(nocc >= nfzc);
+  MPQC_ASSERT(norbs - nocc >= nfzv);
 
   // are densities idempotent?
   ordm_idempotent_ = true;
@@ -1224,7 +1224,7 @@ Extern_RefWavefunction::Extern_RefWavefunction(const Ref<WavefunctionWorld>& wor
   const double nelectron_alpha = alpha_1rdm.trace();
   const double nelectron_beta = beta_1rdm.trace();
   const double nelectron_double = nelectron_alpha + nelectron_beta;
-  assert(nelectron_double > 0.0);
+  MPQC_ASSERT(nelectron_double > 0.0);
   nelectron_ = round(nelectron_double);
   if (fabs((double)nelectron_ - nelectron_double) > 0.01)
     throw InputError("Extern_RefWavefunction: input density trace is not integer, something is seriously wrong",
@@ -1307,7 +1307,7 @@ Extern_RefWavefunction::sdref() const {
 RefSymmSCMatrix
 Extern_RefWavefunction::core_hamiltonian_for_basis(const Ref<GaussianBasisSet> &basis,
                                                    const Ref<GaussianBasisSet> &p_basis) {
-  assert(p_basis.null()); // can only do nonrelativistic Hamiltonians now
+  MPQC_ASSERT(p_basis.null()); // can only do nonrelativistic Hamiltonians now
   Ref<OrbitalSpaceRegistry> oreg = this->world()->tfactory()->orbital_registry();
   Ref<AOSpaceRegistry> aoreg = this->world()->tfactory()->ao_registry();
   const bool need_to_add_aospace_temporarily = !aoreg->key_exists(basis);
@@ -1384,9 +1384,9 @@ Extern_RefWavefunction::init_spaces(const RefSCMatrix& coefs,
     orbspi[irrep] = std::count(orbsyms.begin(), orbsyms.end(), irrep);
   }
 
-  assert(occpi.size() == nirreps);
-  assert(fzcpi.size() == nirreps);
-  assert(fzvpi.size() == nirreps);
+  MPQC_ASSERT(occpi.size() == nirreps);
+  MPQC_ASSERT(fzcpi.size() == nirreps);
+  MPQC_ASSERT(fzvpi.size() == nirreps);
 
   // compute holepi and partpi, if needed
   if (holepi.empty()) {
@@ -1400,8 +1400,8 @@ Extern_RefWavefunction::init_spaces(const RefSCMatrix& coefs,
       partpi[irrep] = orbspi[irrep] - occpi[irrep] - fzvpi[irrep];
   }
 
-  assert(holepi.size() == nirreps);
-  assert(partpi.size() == nirreps);
+  MPQC_ASSERT(holepi.size() == nirreps);
+  MPQC_ASSERT(partpi.size() == nirreps);
 
   const unsigned int nmo = coefs.coldim().n();
   const bool debug = false; // control debug printing
@@ -1594,7 +1594,7 @@ RefWavefunctionFactory::make(const Ref<WavefunctionWorld> & world,
 {
   { // OneBodyWavefunction
     Ref<OneBodyWavefunction> cast; cast << ref;
-    if (cast.nonnull())
+    if (cast)
       return new SD_RefWavefunction(world, cast, spin_restricted, nfzc, nfzv, vir_space);
   }
   throw FeatureNotImplemented("this reference wavefunction cannot be used for R12 methods",

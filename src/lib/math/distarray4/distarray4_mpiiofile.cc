@@ -176,7 +176,7 @@ DistArray4_MPIIOFile::deactivate()
 void
 DistArray4_MPIIOFile::release_pair_block(int i, int j, tbint_type oper_type) const
 {
-  assert(this->active());  //make sure we are active
+  MPQC_ASSERT(this->active());  //make sure we are active
   int ij = ij_index(i,j);
   struct PairBlkInfo *pb = &pairblk_[ij];
   if (pb->refcount_[oper_type] <= 0) {
@@ -235,7 +235,7 @@ DistArray4_MPIIOFile_Ind::clone(const DistArray4Dimensions& dim) {
     std::string clonename;
     using detail::clone_filename;
     clone_filename(clonename, this->filename_, id);
-    if (clonelist_.nonnull()) {
+    if (clonelist_) {
       while (clonelist_->key_exists(clonename)) {
         ++id;
         clone_filename(clonename, this->filename_, id);
@@ -266,7 +266,7 @@ void DistArray4_MPIIOFile_Ind::store_pair_block(int i, int j,
                                                 tbint_type oper_type,
                                                 const double *ints)
 {
-  assert(this->active());  //make sure we are active
+  MPQC_ASSERT(this->active());  //make sure we are active
 
   const int nproc = ntasks();
   const int ij = ij_index(i,j);
@@ -290,7 +290,7 @@ void DistArray4_MPIIOFile_Ind::store_pair_subblock(int i, int j, tbint_type oper
                                                    int xstart, int xfence, int ystart, int yfence,
                                                    const double *buf)
 {
-  assert(this->active());  //make sure we are active
+  MPQC_ASSERT(this->active());  //make sure we are active
 
   const bool contiguous = (ystart == 0) && (yfence == ny());
   const int xsize = xfence - xstart;
@@ -332,7 +332,7 @@ const double*
 DistArray4_MPIIOFile_Ind::retrieve_pair_block(int i, int j, tbint_type oper_type,
                                               double* buf) const
 {
-  assert(this->active());  //make sure we are active
+  MPQC_ASSERT(this->active());  //make sure we are active
   int ij = ij_index(i,j);
   struct PairBlkInfo *pb = &pairblk_[ij];
   // Always first check if it's already in memory
@@ -391,7 +391,7 @@ DistArray4_MPIIOFile_Ind::retrieve_pair_subblock(int i, int j, tbint_type oper_t
                                                  int xstart, int xfence, int ystart, int yfence,
                                                  double* buf) const
 {
-  assert(this->active());  //make sure we are active
+  MPQC_ASSERT(this->active());  //make sure we are active
   static ScratchBuffer<char> scratch;
   Ref<ThreadLock> scratch_lock = ThreadGrp::get_default_threadgrp()->new_lock();
 

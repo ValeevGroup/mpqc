@@ -57,9 +57,9 @@ DensityFitting::DensityFitting(const Ref<MOIntsRuntime>& mointsruntime,
                                const Ref<OrbitalSpace>& space2,
                                const Ref<GaussianBasisSet>& fitting_basis) :
                                  runtime_(mointsruntime),
+                                 fbasis_(fitting_basis),
                                  space1_(space1),
                                  space2_(space2),
-                                 fbasis_(fitting_basis),
                                  kernel_key_(kernel_key),
                                  solver_(solver)
                                  {
@@ -110,7 +110,7 @@ DensityFitting::product_dimension() const {
 void
 DensityFitting::compute()
 {
-  if (cC_.nonnull() && kernel_ && C_.nonnull()) // nothing to compute then
+  if (cC_ && kernel_ && C_) // nothing to compute then
     return;
   const Ref<AOSpaceRegistry>& aoidxreg = this->runtime()->factory()->ao_registry();
   const std::string fbasis_space_id = aoidxreg->value(fbasis_)->id();
@@ -128,7 +128,7 @@ DensityFitting::compute()
   TwoBodyOperSet::type operset = TwoBodyOperSet::to_type(kernel_pkey.oper());
   const std::string params_key = kernel_pkey.params();
   const std::string operset_key = TwoBodyOperSetDescr::instance(operset)->key();
-  assert(TwoBodyOperSetDescr::instance(operset)->size() == 1);
+  MPQC_ASSERT(TwoBodyOperSetDescr::instance(operset)->size() == 1);
   const unsigned int ints_type_idx = 0;
   const int definiteness = definite_kernel(TwoBodyOperSetDescr::instance(operset)->opertype(ints_type_idx),
                                            params_key);
@@ -378,7 +378,7 @@ DensityFitting::definite_kernel(TwoBodyOper::type kernel_type, const std::string
     default:
       return 0;
   }
-  assert(false); // unreachable
+  MPQC_ASSERT(false); // unreachable
   return 0;
 }
 
@@ -402,7 +402,7 @@ TransformedDensityFitting::TransformedDensityFitting(const Ref<MOIntsRuntime>& r
                        mo1_ao2_df_(mo1_ao2_df)
 {
   // make sure that mo1_ao2_df is a valid input
-  assert(mo1_ao2_df->ni() == 1 &&
+  MPQC_ASSERT(mo1_ao2_df->ni() == 1 &&
          mo1_ao2_df->nj() == space1->rank() &&
          mo1_ao2_df->nx() == space2->basis()->nbasis() &&
          mo1_ao2_df->ny() == fitting_basis->nbasis());
@@ -421,7 +421,7 @@ TransformedDensityFitting::save_data_state(StateOut& so) {
 void
 TransformedDensityFitting::compute()
 {
-  if (C_.nonnull()) // nothing to compute then
+  if (C_) // nothing to compute then
     return;
   Ref<AOSpaceRegistry> aoidxreg = this->runtime()->factory()->ao_registry();
   const std::string name = ParsedDensityFittingKey::key(this->space1()->id(),
@@ -515,7 +515,7 @@ PermutedDensityFitting::PermutedDensityFitting(const Ref<MOIntsRuntime>& rtime,
                  df21_(df21)
 {
   // make sure that mo1_ao2_df is a valid input
-  assert(df21->ni() == 1 &&
+  MPQC_ASSERT(df21->ni() == 1 &&
          df21->nj() == space2->rank() &&
          df21->nx() == space1->rank() &&
          df21->ny() == fitting_basis->nbasis());
@@ -542,7 +542,7 @@ PermutedDensityFitting::save_data_state(StateOut& so) {
 void
 PermutedDensityFitting::compute()
 {
-  if (C_.nonnull()) // nothing to compute then
+  if (C_) // nothing to compute then
     return;
 
   Ref<AOSpaceRegistry> aoidxreg = this->runtime()->factory()->ao_registry();

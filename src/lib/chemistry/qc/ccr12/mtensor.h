@@ -87,7 +87,7 @@ namespace sc {
               const tile_ranges& range) :
                 tensor_(tensor), info_(info), range_(range)
       {
-        assert(range.size() == NDIM);
+        MPQC_ASSERT(range.size() == NDIM);
       }
 
       /** copies contents of src to this.
@@ -127,8 +127,8 @@ namespace sc {
                                                const element_index_map& eimap3,
                                                element_ranges const* mapped_element_ranges = 0) {
 
-        assert(NDIM == 4);
-        assert(mapped_element_ranges != 0);
+        MPQC_ASSERT(NDIM == 4);
+        MPQC_ASSERT(mapped_element_ranges != 0);
 
         // determine which tiles map to the allowed element ranges in src
         const std::vector<bool> tile0_in_erange = tiles_in_erange(range_[0], eimap0, (*mapped_element_ranges)[0]);
@@ -151,7 +151,7 @@ namespace sc {
         const bool espace0_eq_espace1 = ((*mapped_element_ranges)[0] == (*mapped_element_ranges)[1]);
         const bool espace2_eq_espace3 = ((*mapped_element_ranges)[2] == (*mapped_element_ranges)[3]);
         const bool can_always_antisymmetrize = (espace0_eq_espace1 || espace2_eq_espace3);
-        assert(can_always_antisymmetrize == true);  // this is likely to break the logic downstream
+        MPQC_ASSERT(can_always_antisymmetrize == true);  // this is likely to break the logic downstream
                                                     // I clearly don't understand enough at the moment
 
         // TODO check if equivalence of MTensor spaces is matched by their relationship in src
@@ -294,7 +294,7 @@ namespace sc {
                           } // antisymmetrize01
 
                           else { // do not antisymmetrize
-                            assert(false); // should not happen, but only SMITH knows :-)
+                            MPQC_ASSERT(false); // should not happen, but only SMITH knows :-)
                           }
 
                         }
@@ -345,8 +345,8 @@ namespace sc {
                                                element_ranges const* mapped_element_ranges = 0,
                                                bool src1_is_1023 = false) {
 
-        assert(NDIM == 4);
-        assert(mapped_element_ranges != 0);
+        MPQC_ASSERT(NDIM == 4);
+        MPQC_ASSERT(mapped_element_ranges != 0);
 
         // determine which tiles map to the allowed element ranges in src
         const std::vector<bool> tile0_in_erange = tiles_in_erange(range_[0], eimap0, (*mapped_element_ranges)[0]);
@@ -369,7 +369,7 @@ namespace sc {
         const bool espace0_eq_espace1 = ((*mapped_element_ranges)[0] == (*mapped_element_ranges)[1]);
         const bool espace2_eq_espace3 = ((*mapped_element_ranges)[2] == (*mapped_element_ranges)[3]);
         const bool can_always_antisymmetrize = (espace0_eq_espace1 || espace2_eq_espace3);
-        assert(can_always_antisymmetrize == true);  // this is likely to break the logic downstream
+        MPQC_ASSERT(can_always_antisymmetrize == true);  // this is likely to break the logic downstream
                                                     // I clearly don't understand enough at the moment
 
         // TODO check if equivalence of MTensor spaces is matched by their relationship in src
@@ -512,7 +512,7 @@ namespace sc {
                           } // antisymmetrize01
 
                           else { // do not antisymmetrize
-                            assert(false); // should not happen, but only SMITH knows :-)
+                            MPQC_ASSERT(false); // should not happen, but only SMITH knows :-)
                           }
 
                         }
@@ -553,7 +553,7 @@ namespace sc {
                                                const element_index_map& eimap1,
                                                element_ranges const* mapped_element_ranges = 0) {
 
-        assert(NDIM == 2);
+        MPQC_ASSERT(NDIM == 2);
 
         // determine which tiles map to the allowed element ranges in src
         const std::vector<bool> tile0_in_erange = tiles_in_erange(range_[0], eimap0, (*mapped_element_ranges)[0]);
@@ -571,8 +571,8 @@ namespace sc {
         element_range src_range[2];
         src_range[0] = this->map_range(range_[0], eimap0);
         src_range[1] = this->map_range(range_[1], eimap1);
-        assert(src_range[0].second <= src->ni());
-        assert(src_range[1].second <= src->nj());
+        MPQC_ASSERT(src_range[0].second <= src->ni());
+        MPQC_ASSERT(src_range[1].second <= src->nj());
       #endif
 
         // TODO check if equivalence of MTensor spaces is matched by their relationship in src

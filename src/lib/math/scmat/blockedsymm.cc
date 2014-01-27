@@ -258,7 +258,7 @@ BlockedSymmSCMatrix::invert_this()
   double res=1;
 
   for (int i=0; i < d->blocks()->nblock(); i++)
-    if (mats_[i].nonnull())
+    if (mats_[i])
       res *= mats_[i]->invert_this();
 
   return res;
@@ -270,7 +270,7 @@ BlockedSymmSCMatrix::determ_this()
   double res=1;
 
   for (int i=0; i < d->blocks()->nblock(); i++)
-    if (mats_[i].nonnull())
+    if (mats_[i])
       res *= mats_[i]->determ_this();
 
   return res;
@@ -282,7 +282,7 @@ BlockedSymmSCMatrix::trace()
   double res=0;
 
   for (int i=0; i < d->blocks()->nblock(); i++)
-    if (mats_[i].nonnull())
+    if (mats_[i])
       res += mats_[i]->trace();
 
   return res;
@@ -304,7 +304,7 @@ BlockedSymmSCMatrix::solve_this(SCVector*v)
   }
 
   for (int i=0; i < d->blocks()->nblock(); i++)
-    if (mats_[i].nonnull())
+    if (mats_[i])
       res *= mats_[i]->solve_this(lv->vecs_[i].pointer());
 
   return res;
@@ -314,7 +314,7 @@ void
 BlockedSymmSCMatrix::assign_val(double s)
 {
   for (int i=0; i < d->blocks()->nblock(); i++)
-    if (mats_[i].nonnull())
+    if (mats_[i])
       mats_[i]->assign(s);
 }
 
@@ -333,7 +333,7 @@ BlockedSymmSCMatrix::assign_s(SymmSCMatrix*a)
   }
 
   for (int i=0; i < d->blocks()->nblock(); i++)
-    if (mats_[i].nonnull())
+    if (mats_[i])
       mats_[i]->assign(la->mats_[i].pointer());
 }
 
@@ -341,7 +341,7 @@ void
 BlockedSymmSCMatrix::scale(double s)
 {
   for (int i=0; i < d->blocks()->nblock(); i++)
-    if (mats_[i].nonnull())
+    if (mats_[i])
       mats_[i]->scale(s);
 }
 
@@ -349,7 +349,7 @@ void
 BlockedSymmSCMatrix::gen_invert_this(double condition_number_threshold)
 {
   for (int i=0; i < d->blocks()->nblock(); i++)
-    if (mats_[i].nonnull())
+    if (mats_[i])
       mats_[i]->gen_invert_this(condition_number_threshold);
 }
 
@@ -369,7 +369,7 @@ BlockedSymmSCMatrix::scalar_product(SCVector*a)
 
   double result = 0.0;
   for (int i=0; i < d->blocks()->nblock(); i++)
-    if (mats_[i].nonnull())
+    if (mats_[i])
       result += mats_[i]->scalar_product(la->vecs_[i].pointer());
 
   return result;
@@ -391,7 +391,7 @@ BlockedSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b)
   }
 
   for (int i=0; i < d->blocks()->nblock(); i++)
-    if (mats_[i].nonnull())
+    if (mats_[i])
       mats_[i]->diagonalize(la->mats_[i].pointer(),lb->mats_[i].pointer());
 }
 
@@ -414,7 +414,7 @@ BlockedSymmSCMatrix::accumulate(const SymmSCMatrix*a)
   }
 
   for (int i=0; i < d->blocks()->nblock(); i++)
-    if (mats_[i].nonnull())
+    if (mats_[i])
       mats_[i]->accumulate(la->mats_[i].pointer());
 }
 
@@ -441,7 +441,7 @@ BlockedSymmSCMatrix::accumulate_symmetric_product(SCMatrix*a)
   int &mi = (d->blocks()->nblock()==1) ? zero : i;
 
   for (i=0; i < mxnb; i++)
-    if (mats_[mi].nonnull() && la->mats_[i].nonnull())
+    if (mats_[mi] && la->mats_[i])
       mats_[mi]->accumulate_symmetric_product(la->mats_[i].pointer());
 }
 
@@ -461,7 +461,7 @@ BlockedSymmSCMatrix::accumulate_symmetric_sum(SCMatrix*a)
   }
 
   for (int i=0; i < d->blocks()->nblock(); i++)
-    if (mats_[i].nonnull())
+    if (mats_[i])
       mats_[i]->accumulate_symmetric_sum(la->mats_[i].pointer());
 }
 
@@ -480,7 +480,7 @@ BlockedSymmSCMatrix::accumulate_symmetric_outer_product(SCVector*a)
   }
 
   for (int i=0; i < d->blocks()->nblock(); i++)
-    if (mats_[i].nonnull())
+    if (mats_[i])
       mats_[i]->accumulate_symmetric_outer_product(la->vecs_[i].pointer());
 }
 
@@ -589,7 +589,7 @@ BlockedSymmSCMatrix::element_op(const Ref<SCElementOp>& op)
   for (int i=0; i < nb; i++) {
     if (bop)
       bop->working_on(i);
-    if (mats_[i].nonnull())
+    if (mats_[i])
       mats_[i]->element_op(op);
   }
   op->defer_collect(0);
@@ -615,7 +615,7 @@ BlockedSymmSCMatrix::element_op(const Ref<SCElementOp2>& op,
   for (int i=0; i < nb; i++) {
     if (bop)
       bop->working_on(i);
-    if (mats_[i].nonnull())
+    if (mats_[i])
       mats_[i]->element_op(op,lm->mats_[i].pointer());
   }
   op->defer_collect(0);
@@ -644,7 +644,7 @@ BlockedSymmSCMatrix::element_op(const Ref<SCElementOp3>& op,
   for (int i=0; i < nb; i++) {
     if (bop)
       bop->working_on(i);
-    if (mats_[i].nonnull())
+    if (mats_[i])
       mats_[i]->element_op(op,lm->mats_[i].pointer(),
                             ln->mats_[i].pointer());
   }
@@ -813,7 +813,7 @@ BlockedSymmSCMatrix::eigensystem(SymmSCMatrix* s, DiagSCMatrix*a, SCMatrix*b) {
   }
 
   for (int i=0; i < d->blocks()->nblock(); i++) {
-    if (mats_[i].nonnull())
+    if (mats_[i])
       mats_[i]->eigensystem(ls->mats_[i].pointer(),
                             la->mats_[i].pointer(),
                             lb->mats_[i].pointer());

@@ -74,10 +74,10 @@ TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(const std::string& name, const Re
   log2_epsilon_(factory_->log2_precision())
 {
   // all spaces must be given, even for partial transforms
-  assert(space1_.nonnull());
-  assert(space2_.nonnull());
-  assert(space3_.nonnull());
-  assert(space4_.nonnull());
+  MPQC_ASSERT(space1_);
+  MPQC_ASSERT(space2_);
+  MPQC_ASSERT(space3_);
+  MPQC_ASSERT(space4_);
 }
 
 TwoBodyMOIntsTransform::TwoBodyMOIntsTransform(StateIn& si) : SavableState(si)
@@ -295,7 +295,7 @@ TwoBodyMOIntsTransform::init_vars()
 void
 TwoBodyMOIntsTransform::reinit_acc()
 {
-  if (ints_acc_.nonnull())
+  if (ints_acc_)
     ints_acc_ = 0;
   init_acc();
 }
@@ -570,7 +570,7 @@ TwoBodyThreeCenterMOIntsTransform::init_vars()
 void
 TwoBodyThreeCenterMOIntsTransform::reinit_acc()
 {
-  if (ints_acc_.nonnull())
+  if (ints_acc_)
     ints_acc_ = 0;
   init_acc();
 }

@@ -152,8 +152,8 @@ MemoryGrpRegion::~MemoryGrpRegion()
 void
 MemoryGrpRegion::set_localsize(size_t localsize)
 {
-  assert(localsize <= host_->localsize());
-  assert(localsize <= reserve_.size());
+  MPQC_ASSERT(localsize <= host_->localsize());
+  MPQC_ASSERT(localsize <= reserve_.size());
 
   // replicate sizes
   const int nnodes = host_->n();

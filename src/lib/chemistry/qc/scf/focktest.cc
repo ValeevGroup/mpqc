@@ -34,7 +34,7 @@ init_thread(const Ref<KeyVal>& keyval, int &argc, char **&argv)
     thread << keyval->describedclassvalue("thread");
   }
 
-  if (thread.nonnull())
+  if (thread)
     ThreadGrp::set_default_threadgrp(thread);
   else
     thread = ThreadGrp::get_default_threadgrp();
@@ -112,7 +112,7 @@ try_main(int argc, char **argv)
   tim.enter("input");
 
   Ref<Debugger> debugger; debugger << rpkv->describedclassvalue("debug");
-  if (debugger.nonnull()) {
+  if (debugger) {
       Debugger::set_default_debugger(debugger);
       debugger->set_exec(argv[0]);
       debugger->set_prefix(msg->me());
@@ -132,7 +132,7 @@ try_main(int argc, char **argv)
     integral << rpkv->describedclassvalue("integrals");
   }
 
-  if (integral.nonnull())
+  if (integral)
     Integral::set_default_integral(integral);
   else
     integral = Integral::get_default_integral();
@@ -195,7 +195,7 @@ try_main(int argc, char **argv)
 
   ExEnv::out0() << indent << "building multi-basis Fock matrix" << std::endl;
   Ref<GaussianBasisSet> basis2; basis2 << rpkv->describedclassvalue("basis2");
-  if (basis2.nonnull()) {
+  if (basis2) {
       RefSymmSCMatrix density = clhf->ao_density();
       Ref<GaussianBasisSet> basis1 = clhf->basis();
 

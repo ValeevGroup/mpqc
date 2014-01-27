@@ -100,7 +100,7 @@ OneBodyInt::basis(size_t c)
   switch (c) {
     case 0: return bs1_; break;
     case 1: return bs2_; break;
-    default: assert(false); // unreachable
+    default: MPQC_ASSERT(false); // unreachable
   }
   return 0; // unreachable
 }
@@ -204,7 +204,7 @@ OneBodyOneCenterInt::basis(size_t c)
                            __FILE__, __LINE__);
   switch (c) {
     case 0: return bs1_; break;
-    default: assert(false); // unreachable
+    default: MPQC_ASSERT(false); // unreachable
   }
   return 0; // unreachable
 }

@@ -85,7 +85,7 @@ namespace mpqc {
             v.push_back(range(r, r+b));
             r += b;
         }
-        assert(r == *R.end());
+        MPQC_ASSERT(r == *R.end());
         return v;
     }
 

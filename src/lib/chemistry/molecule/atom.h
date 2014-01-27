@@ -78,9 +78,8 @@ namespace sc {
         Atom(int Z, double x, double y, double z, const std::string &label,
              double mass = 0, int have_charge = 0, double charge = 0,
              int have_fragment = 0, int fragment = 0)
-             : Z_(Z), mass_(mass), label_(label), charge_(charge),
-               have_charge_(have_charge), have_fragment_(have_fragment),
-               fragment_(fragment)
+             : Z_(Z), have_charge_(have_charge), have_fragment_(have_fragment),
+               charge_(charge), fragment_(fragment), mass_(mass), label_(label)
         {
             r_[0] = x;
             r_[1] = y;
@@ -93,9 +92,8 @@ namespace sc {
         Atom(int Z, double x, double y, double z, const char *label = 0,
              double mass = 0, int have_charge = 0, double charge = 0,
              int have_fragment = 0, int fragment = 0)
-             : Z_(Z), mass_(mass), label_(label ? label : ""), charge_(charge),
-               have_charge_(have_charge), have_fragment_(have_fragment),
-               fragment_(fragment)
+             : Z_(Z), have_charge_(have_charge), have_fragment_(have_fragment),
+               charge_(charge), fragment_(fragment), mass_(mass), label_(label ? label : "")
         {
             r_[0] = x;
             r_[1] = y;
@@ -109,18 +107,18 @@ namespace sc {
          *
          * @Warning Do not use, meant for sc::SavableState
          */
-        Atom() : Z_(-1), mass_(-1), label_(), have_charge_(true), charge_(-1),
-                        have_fragment_(true), fragment_(-1)
+        Atom() : Z_(-1), have_charge_(true), have_fragment_(true),
+                 charge_(-1), fragment_(-1), mass_(-1), label_()
         { r_[0] = -1; r_[1] = -1; r_[2] = -1; }
 
         Atom(const Atom &other) :
             Z_(other.Z_),
-            mass_(other.mass_),
-            label_(other.label_),
             have_charge_(other.have_charge_),
-            charge_(other.charge_),
             have_fragment_(other.have_fragment_),
-            fragment_(other.fragment_)
+            charge_(other.charge_),
+            fragment_(other.fragment_),
+            mass_(other.mass_),
+            label_(other.label_)
         {
             r_[0] = other.r_[0];
             r_[1] = other.r_[1];

@@ -149,7 +149,7 @@ namespace sc {
   }
 
   const RefSCMatrix&PsiCC::T1(SpinCase1 spin1) {
-    if (T1_[spin1].nonnull())
+    if (T1_[spin1])
       return T1_[spin1];
     PsiSCF::RefType reftype = reference_->reftype();
 
@@ -166,7 +166,7 @@ namespace sc {
   }
 
   const RefSCMatrix& PsiCC::T2(SpinCase2 spin2) {
-    if (T2_[spin2].nonnull())
+    if (T2_[spin2])
       return T2_[spin2];
     PsiSCF::RefType reftype = reference_->reftype();
 
@@ -199,7 +199,7 @@ namespace sc {
   }
 
   Ref<DistArray4> PsiCC::T2_distarray4(SpinCase2 spin2) {
-    if (T2_da4_[spin2].nonnull())
+    if (T2_da4_[spin2])
       return T2_da4_[spin2];
     PsiSCF::RefType reftype = reference_->reftype();
 
@@ -234,7 +234,7 @@ namespace sc {
   }
 
   const RefSCMatrix&PsiCC::Tau2(SpinCase2 spin2) {
-    if (Tau2_[spin2].nonnull())
+    if (Tau2_[spin2])
       return Tau2_[spin2];
     PsiSCF::RefType reftype = reference_->reftype();
 
@@ -893,7 +893,7 @@ namespace sc {
   }
 
   const RefSCMatrix&PsiCC::Lambda1(SpinCase1 spin) {
-    if (Lambda1_[spin].nonnull())
+    if (Lambda1_[spin])
       return Lambda1_[spin];
 
     throw FeatureNotImplemented("PsiCC::Lambda1() -- cannot read Lambda1 amplitudes yet",__FILE__,__LINE__);
@@ -901,7 +901,7 @@ namespace sc {
   }
 
   const RefSCMatrix&PsiCC::Lambda2(SpinCase2 spin) {
-    if (Lambda2_[spin].nonnull())
+    if (Lambda2_[spin])
       return Lambda2_[spin];
 
     throw FeatureNotImplemented("PsiCC::Lambda2() -- cannot read Lambda2 amplitudes yet",__FILE__,__LINE__);
@@ -916,8 +916,8 @@ namespace sc {
 
     // psi ccsd one-particle density does not work for frozen core
     // this code does not work for ROHF
-//    assert(nfzc_ == 0 && reference()->reftype() != PsiSCF::hsoshf);
-    assert(reference()->reftype() != PsiSCF::hsoshf);
+//    MPQC_ASSERT(nfzc_ == 0 && reference()->reftype() != PsiSCF::hsoshf);
+    MPQC_ASSERT(reference()->reftype() != PsiSCF::hsoshf);
 
     // get # of occupied and unoccupied orbitals of spin S per irrep
     const std::vector<unsigned int>& occpi = reference()->occpi(spin);
@@ -1462,10 +1462,10 @@ namespace sc {
                                   const RefSCMatrix& vir2_act_tform,
                                   const RefSCMatrix& T2,
                                   const Ref<SCMatrixKit>& kit) const {
-    assert(occ1_act_tform.rowdim().n() == occ1_act_tform.coldim().n());
-    assert(occ2_act_tform.rowdim().n() == occ2_act_tform.coldim().n());
-    assert(vir1_act_tform.rowdim().n() == vir1_act_tform.coldim().n());
-    assert(vir2_act_tform.rowdim().n() == vir2_act_tform.coldim().n());
+    MPQC_ASSERT(occ1_act_tform.rowdim().n() == occ1_act_tform.coldim().n());
+    MPQC_ASSERT(occ2_act_tform.rowdim().n() == occ2_act_tform.coldim().n());
+    MPQC_ASSERT(vir1_act_tform.rowdim().n() == vir1_act_tform.coldim().n());
+    MPQC_ASSERT(vir2_act_tform.rowdim().n() == vir2_act_tform.coldim().n());
 
     // convert to raw storage
     double* t2 = new double[T2.rowdim().n() * T2.coldim().n()];
@@ -1544,7 +1544,7 @@ namespace sc {
 
   const Ref<OrbitalSpace>&
   PsiCC::occ_act_sb(SpinCase1 spin) {
-    if (occ_act_sb_[spin].nonnull())
+    if (occ_act_sb_[spin])
       return occ_act_sb_[spin];
     if (reference_->reftype() == PsiSCF::rhf && spin == Beta)
       return occ_act_sb(Alpha);
@@ -1581,7 +1581,7 @@ namespace sc {
 
   const Ref<OrbitalSpace>&
   PsiCC::vir_act_sb(SpinCase1 spin) {
-    if (vir_act_sb_[spin].nonnull())
+    if (vir_act_sb_[spin])
       return vir_act_sb_[spin];
     if (reference_->reftype() == PsiSCF::rhf && spin == Beta)
       return vir_act_sb(Alpha);
@@ -1619,7 +1619,7 @@ namespace sc {
 
   const Ref<OrbitalSpace>&
   PsiCC::occ_sb(SpinCase1 spin) {
-    if (occ_sb_[spin].nonnull())
+    if (occ_sb_[spin])
       return occ_sb_[spin];
     if (reference_->reftype() == PsiSCF::rhf && spin == Beta)
       return occ_sb(Alpha);

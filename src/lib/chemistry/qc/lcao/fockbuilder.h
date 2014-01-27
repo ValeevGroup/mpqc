@@ -333,7 +333,7 @@ namespace sc {
         Ref<Integral> localints = integral->clone();
 
         Ref<FockContribution> fc;
-        const bool openshell = openshelldensity.nonnull();
+        const bool openshell = openshelldensity;
         if (openshell) {
           fc = new HSOSHFContribution(brabasis, ketbasis, densitybasis, std::string("replicated"));
           ntypes_ = 2;
@@ -439,15 +439,15 @@ namespace sc {
       const Ref<FockBuild>& builder() const { return fb_; }
       double nints() const { return builder()->contrib()->nint(); }
       const ResultType& F(unsigned int t = 0) const {
-        assert(compute_F_ && t < ntypes_);
+        MPQC_ASSERT(compute_F_ && t < ntypes_);
         return result_[t][2];
       }
       const ResultType& J(unsigned int t = 0) const {
-        assert(compute_J_ && t < ntypes_ && t == 0);
+        MPQC_ASSERT(compute_J_ && t < ntypes_ && t == 0);
         return result_[t][0];
       }
       const ResultType& K(unsigned int t = 0) const {
-        assert(compute_K_ && t < ntypes_);
+        MPQC_ASSERT(compute_K_ && t < ntypes_);
         return result_[t][1];
       }
       ResultType F(SpinCase1 spin) const {
@@ -521,15 +521,15 @@ namespace sc {
       }
 
       const RefSCMatrix& F() const {
-        assert(compute_F_);
+        MPQC_ASSERT(compute_F_);
         return result_[2];
       }
       const RefSCMatrix& J() const {
-        assert(compute_J_);
+        MPQC_ASSERT(compute_J_);
         return result_[0];
       }
       const RefSCMatrix& K() const {
-        assert(compute_K_);
+        MPQC_ASSERT(compute_K_);
         return result_[1];
       }
 
@@ -562,7 +562,7 @@ namespace sc {
                           compute_J_(compute_J),
                           compute_K_(compute_K),
                           compute_F_(compute_F),
-                          ntypes_(openshelldensity.nonnull() ? 2 : 1)
+                          ntypes_(openshelldensity ? 2 : 1)
       {
 
         // DF-based builds are separate for J and K separately
@@ -588,7 +588,7 @@ namespace sc {
             if (c == 1) { // exchange
               RefSymmSCMatrix Pspin;
               SpinCase1 spincase;
-              if (openshelldensity.nonnull()) {
+              if (openshelldensity) {
                 Pspin = (spin == Alpha) ? density + openshelldensity : density - openshelldensity;
                 spincase = spin;
               }
@@ -610,15 +610,15 @@ namespace sc {
       }
 
       const ResultType& F(unsigned int t = 0) const {
-        assert(compute_F_ && t < ntypes_);
+        MPQC_ASSERT(compute_F_ && t < ntypes_);
         return result_[t][2];
       }
       const ResultType& J(unsigned int t = 0) const {
-        assert(compute_J_ && t < ntypes_);
+        MPQC_ASSERT(compute_J_ && t < ntypes_);
         return result_[t][0];
       }
       const ResultType& K(unsigned int t = 0) const {
-        assert(compute_K_ && t < ntypes_);
+        MPQC_ASSERT(compute_K_ && t < ntypes_);
         return result_[t][1];
       }
       ResultType F(SpinCase1 spin) const {

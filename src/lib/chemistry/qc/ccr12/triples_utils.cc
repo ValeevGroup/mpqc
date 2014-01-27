@@ -42,7 +42,7 @@ void CCR12_Triples::prediagon() {
   {
     // CCR12_Triples::B_ and CCR12_Triples::X_ required.
     // B_ and X_ are RefSymmSCMatrix objects.
-    assert(z->B().nonnull() && z->X().nonnull());
+    MPQC_ASSERT(z->B() && z->X());
 
     Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
 
@@ -74,7 +74,7 @@ void CCR12_Triples::prediagon() {
   {
     // CCR12_Triples::B_ip_ and CCR12_Triples::X_ip_ required.
     // B_ip_ and X_ip_ are RefSymmSCMatrix objects.
-    assert(z->B_ip().nonnull() && z->X_ip().nonnull());
+    MPQC_ASSERT(z->B_ip() && z->X_ip());
 
     Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
 
@@ -157,7 +157,7 @@ void CCR12_Triples::fill_in_ltensors() {
                 *val2 = src1;
               } else {
                 const double src1 = lmatrix_(h21s, pair);
-                assert(z->get_spin(h1b) < z->get_spin(h2b));
+                MPQC_ASSERT(z->get_spin(h1b) < z->get_spin(h2b));
                 *val = src1;
                 *val2 = src1;
               }
@@ -263,7 +263,7 @@ void CCR12_Triples::offset_bphhh(Ref<Tensor>& t) {
 void CCR12_Triples::denom_contraction_new() {
 
   // ltensor1 and 2 must be filled.
-  assert(ltensor1_.nonnull() && ltensor2_.nonnull());
+  MPQC_ASSERT(ltensor1_ && ltensor2_);
 
   const long noab = z->noab();
   const long nvab = z->nvab();

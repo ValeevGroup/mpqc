@@ -356,7 +356,7 @@ inline void EriLibint2::eri_quartet_data_(prim_data *Data, double scale)
     // f12_coulomb and f12 integrals
     if (otype == f12 || otype == f12_coulomb) {
 
-      assert(gbra != 0);
+      MPQC_ASSERT(gbra != 0);
       const size_t ngbra = gbra->size();
       for(size_t ig=0; ig<ngbra; ++ig) {
         const PrimitiveGeminal& gbra_i = gbra->operator[](ig);
@@ -423,8 +423,8 @@ inline void EriLibint2::eri_quartet_data_(prim_data *Data, double scale)
     // f12_2 and f12_T1_f12 integrals
     if (otype == f12_2 || otype == f12_T1_f12) {
 
-      assert(gbra != 0);
-      assert(gket != 0);
+      MPQC_ASSERT(gbra != 0);
+      MPQC_ASSERT(gket != 0);
       const size_t ngbra = gbra->size();
       const size_t ngket = gket->size();
       for(size_t igbra=0; igbra<ngbra; ++igbra) {

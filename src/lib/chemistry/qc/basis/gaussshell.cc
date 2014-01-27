@@ -251,7 +251,7 @@ GaussianShell::chomp(std::vector<double>& exp, std::vector<double>& coef_blk,
 
   // for each primitive, make sure that there is at least 1 nonzero coefficient
   for(size_t p=0; p<nprim; ++p) {
-    assert(exp[p] >= 0.0);
+    MPQC_ASSERT(exp[p] >= 0.0);
 
     bool have_nonzero_coef = false;
     for(unsigned int c=0; c<ncontr; ++c) {

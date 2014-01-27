@@ -87,7 +87,7 @@ RDM<One>::rdm_m_1() const {
 template<>
 RefSymmSCMatrix
 RDM<One>::scmat(SpinCase1 spin) const {
-  if (scmat_[spin].nonnull()) return scmat_[spin];
+  if (scmat_[spin]) return scmat_[spin];
   if (wfn_->spin_polarized() && spin == Beta)
     return scmat(Alpha);
 
@@ -136,9 +136,9 @@ RDM<Two>::ndim(SpinCase2 spincase) const {
     case AlphaBeta:
       return n1 * n2;
     default:
-      assert(false); // should not be reachable
+      MPQC_ASSERT(false); // should not be reachable
   }
-  assert(false);  // not reachable
+  MPQC_ASSERT(false);  // not reachable
   return 0;  // dummy return statement to pacify picky compilers
 }
 
@@ -172,7 +172,7 @@ template<>
 RefSymmSCMatrix
 RDMCumulant<Two>::scmat(SpinCase2 spin) const {
 
-  if (scmat_[spin].nonnull()) return scmat_[spin];
+  if (scmat_[spin]) return scmat_[spin];
   if (!density_->wfn()->spin_polarized() && spin == BetaBeta)
     return scmat(AlphaAlpha);
 
@@ -229,7 +229,7 @@ SpinFreeRDM<One>::rdm_m_1() const {
 template<>
 RefSymmSCMatrix
 SpinFreeRDM<One>::scmat() const {
-  if (scmat_.nonnull()) return scmat_;
+  if (scmat_) return scmat_;
 
   // need to transform density from AO basis to orbs basis
   // P' = C^t S P S C
@@ -344,7 +344,7 @@ Ref<OBWfnRDMTwo::rdm_m_1_type> sc::OBWfnRDMTwo::rdm_m_1() const
 
 RefSymmSCMatrix sc::OBWfnRDMTwo::scmat(SpinCase2 spin) const {
 
-  if (scmat_[spin].nonnull()) return scmat_[spin];
+  if (scmat_[spin]) return scmat_[spin];
   if (!wfn_->spin_polarized() && spin == BetaBeta)
     return scmat(AlphaAlpha);
 
@@ -412,7 +412,7 @@ namespace {
 
 Ref<OrbitalSpace>
 sc::OBWfnRDMTwo::orbs(SpinCase1 spin) const {
-  if (orbs_[spin].nonnull()) return orbs_[spin];
+  if (orbs_[spin]) return orbs_[spin];
   if (wfn()->spin_polarized() && spin == Beta)
     return orbs(Alpha);
 
@@ -466,7 +466,7 @@ void sc::OBWfnRDMCumulantTwo::compute()
 
 RefSymmSCMatrix sc::OBWfnRDMCumulantTwo::scmat(SpinCase2 spin) const {
 
-  if (scmat_[spin].nonnull()) return scmat_[spin];
+  if (scmat_[spin]) return scmat_[spin];
   if (!density_->wfn()->spin_polarized() && spin == BetaBeta)
     return scmat(AlphaAlpha);
 
@@ -655,7 +655,7 @@ OBWfnRDMOne::save_data_state(StateOut& so) {
 
 Ref<OrbitalSpace>
 sc::OBWfnRDMOne::orbs(SpinCase1 spin) const {
-  if (orbs_[spin].nonnull()) return orbs_[spin];
+  if (orbs_[spin]) return orbs_[spin];
   if (wfn()->spin_polarized() && spin == Beta)
     return orbs(Alpha);
 

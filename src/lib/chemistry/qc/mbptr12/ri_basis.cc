@@ -190,11 +190,21 @@ R12WavefunctionWorld::construct_ortho_comp_svd_()
 
   const double tol = r12tech()->abs_lindep_tol();
   if (!refwfn()->spin_polarized()) {
-    Ref<OrbitalSpace> tmp = orthog_comp(refwfn()->occ_sb(Alpha), ribs_space_, "p'-m", "CABS", tol);
-    tmp = orthog_comp(refwfn()->uocc_sb(Alpha), tmp, "a'", "CABS", tol);
-    cabs_space_[Alpha] = tmp;
+    Ref<OrbitalSpace> cabs = orthog_comp(refwfn()->occ_sb(Alpha), ribs_space_, "p'-m", "CABS", tol);
+    cabs = orthog_comp(refwfn()->uocc_sb(Alpha), cabs, "a'", "CABS", tol);
+    cabs_space_[Alpha] = cabs;
     cabs_space_[Beta] = cabs_space_[Alpha];
     idxreg->add(make_keyspace_pair(cabs_space_[Alpha]));
+
+    if (not idxreg->key_exists("A'")) { // this should be the first time this is created
+      Ref<OrbitalSpaceUnion> allvirt = new OrbitalSpaceUnion("A'",
+                                                             std::string("all virtual orbitals"),
+                                                             *(refwfn()->uocc_sb(Alpha)), *cabs, true);
+      idxreg->add(allvirt->id(), allvirt);
+    }
+    else
+      throw ProgrammingError("allvirt space should not yet exist", __FILE__, __LINE__);
+
   }
   else {
     Ref<OrbitalSpace> tmp_a = orthog_comp(refwfn()->occ_sb(Alpha), ribs_space_, "P'-M", "CABS (Alpha)", tol);
@@ -204,12 +214,27 @@ R12WavefunctionWorld::construct_ortho_comp_svd_()
       const std::string key_b = ParsedOrbitalSpaceKey::key(std::string("a'"),Beta);
       cabs_space_[Alpha] = orthog_comp(refwfn()->uocc_sb(Alpha), tmp_a, key_a, "CABS (Alpha)", tol);
       cabs_space_[Beta] = orthog_comp(refwfn()->uocc_sb(Beta), tmp_b, key_b, "CABS (Beta)", tol);
+
+      idxreg->add(make_keyspace_pair(cabs_space_[Alpha]));
+      idxreg->add(make_keyspace_pair(cabs_space_[Beta]));
+
+      for(int s=0; s<NSpinCases1; ++s) {
+        const SpinCase1 spin = static_cast<SpinCase1>(s);
+        const std::string key = ParsedOrbitalSpaceKey::key(std::string("A'"),spin);
+        if (not idxreg->key_exists(key)) { // this should be the first time this is created
+          Ref<OrbitalSpaceUnion> allvirt = new OrbitalSpaceUnion(key,
+                                                                 prepend_spincase(spin,std::string("all virtual orbitals")),
+                                                                 *(refwfn()->uocc_sb(spin)), *cabs_space_[s], true);
+          idxreg->add(allvirt->id(), allvirt);
+        }
+        else
+          throw ProgrammingError("allvirt space should not yet exist", __FILE__, __LINE__);
+      }
+
     }
     else // old orbitalspace key no longer supported
       MPQC_ASSERT(false);
 
-    idxreg->add(make_keyspace_pair(cabs_space_[Alpha]));
-    idxreg->add(make_keyspace_pair(cabs_space_[Beta]));
   }
 }
 

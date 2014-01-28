@@ -54,9 +54,9 @@ else()
   set(EXTERNAL_BUILD_DIR ${PROJECT_BINARY_DIR}/external/build)
 
   #set(BOOST_URL
-  #  http://downloads.sourceforge.net/project/boost/boost/1.53.0/boost_1_53_0.tar.gz)
-  set(BOOST_URL ${EXTERNAL_SOURCE_DIR}/boost_1_53_0.tar.gz)
-  set(BOOST_URL_HASH MD5=57a9e2047c0f511c4dfcf00eb5eb2fbb)
+  #  http://downloads.sourceforge.net/project/boost/boost/1.55.0/boost_1_55_0.tar.bz2)
+  set(BOOST_URL ${EXTERNAL_SOURCE_DIR}/boost_1_55_0.tar.bz2)
+  set(BOOST_URL_HASH MD5=d6eef4b4cacb2183f2bf265a5a03a354)
 
   message("** Will build Boost from ${BOOST_URL}")
 

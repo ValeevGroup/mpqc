@@ -304,6 +304,9 @@ class CADFCLHF: public CLHF {
 
     CoefMap coefs_;
 
+    std::vector<std::vector<ShellIndexWithValue>> Cmaxes_;
+    std::vector<std::vector<ShellIndexWithValue>> DCmaxes_;
+
     std::vector<Eigen::MatrixXd> coefs_transpose_;
 
     DecompositionCache decomps_;
@@ -355,6 +358,7 @@ class CADFCLHF: public CLHF {
     IndexListMap L_schwarz;
     IndexListMap L_coefs;
     IndexListMap L_D;
+    IndexListMap L_DC;
     IndexListMap2 L_3;
     /*
     LinKListCache2 L_4;

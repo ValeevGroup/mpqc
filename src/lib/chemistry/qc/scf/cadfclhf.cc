@@ -57,6 +57,8 @@ typedef CADFCLHF::CoefContainer CoefContainer;
 typedef CADFCLHF::Decomposition Decomposition;
 typedef std::pair<CoefContainer, CoefContainer> CoefPair;
 
+#define OLD_LINK_SCREENING 0
+
 #if LINK_TIME_LIST_INSERTIONS
 std::atomic_uint_fast64_t OrderedShellList::insertion_time_nanos = ATOMIC_VAR_INIT(0);
 std::atomic_uint_fast64_t OrderedShellList::n_insertions = ATOMIC_VAR_INIT(0);
@@ -437,10 +439,10 @@ CADFCLHF::init_significant_pairs()
   for(auto pair : sig_pairs_) {
     ShellData ish(pair.first, basis()), jsh(pair.second, basis());
     sig_partners_[ish].insert(jsh);
-    L_schwarz[ish].insert(jsh, sig_values[pair_index]);
+    L_schwarz[ish].insert(jsh, schwarz_frob_(ish, jsh));
     if(ish != jsh) {
       sig_partners_[jsh].insert(ish);
-      L_schwarz[jsh].insert(ish, sig_values[pair_index]);
+      L_schwarz[jsh].insert(ish, schwarz_frob_(ish, jsh));
     }
     for(auto Xblk : iter_shell_blocks_on_center(dfbs_, ish.center)) {
       sig_blocks_[ish].insert(Xblk);
@@ -471,10 +473,11 @@ CADFCLHF::init_significant_pairs()
   max_schwarz_.resize(basis()->nshell());
   for(auto ish : shell_range(basis())) {
     double max_val = 0.0;
-    for(auto ish : L_schwarz[ish]) {
-      if(ish.value > max_val) {
-        max_val = ish.value;
+    for(auto jsh : L_schwarz[ish]) {
+      if(jsh.value > max_val) {
+        max_val = jsh.value;
       }
+      break;
     }
     max_schwarz_[ish] = max_val;
   }
@@ -926,6 +929,7 @@ CADFCLHF::compute_K()
     timer.enter("LinK lists");
     // First clear all of the lists
     L_D.clear();
+    L_DC.clear();
     L_3.clear();
     //for(auto L4_key : L_4_keys) {
     //  L_4(L4_key.first, L4_key.second).clear();
@@ -940,7 +944,17 @@ CADFCLHF::compute_K()
       positions[i++] << atom.xyz(0), atom.xyz(1), atom.xyz(2);
     }
     Eigen::MatrixXd D_frob(obs->nshell(), obs->nshell());
+    do_threaded(nthread, [&](int ithr){
+      for(int lsh_index = ithr; lsh_index < obs->nshell(); lsh_index += nthread) {
+        ShellData lsh(lsh_index, obs, dfbs_);
+        for(auto jsh : shell_range(obs)) {
+          double dnorm = D.block(lsh.bfoff, jsh.bfoff, lsh.nbf, jsh.nbf).norm();
+          D_frob(lsh, jsh) = dnorm;
+        }
+      }
+    });
     // TODO Distribute over MPI processes as well
+    #if OLD_LINK_SCREENING
     #if LINK_TIME_LIST_INSERTIONS
     std::atomic_uint_fast64_t run_time{ 0 };
     OrderedShellList::insertion_time_nanos = 0;
@@ -955,11 +969,7 @@ CADFCLHF::compute_K()
       for(int lsh_index = ithr; lsh_index < obs->nshell(); lsh_index += nthread) {
         ShellData lsh(lsh_index, obs, dfbs_);
         for(auto jsh : shell_range(obs)) {
-          double dnorm = D.block(lsh.bfoff, jsh.bfoff, lsh.nbf, jsh.nbf).norm();
-          D_frob(lsh, jsh) = dnorm;
-          double screen_val = fabs(dnorm * max_schwarz_[lsh] * max_schwarz_[jsh]);
-          // NOTE!!! This is not an exact condition, so it may cause differences in
-          //   very small decimal places.
+          double screen_val = fabs(D_frob(lsh, jsh) * max_schwarz_[lsh] * max_schwarz_[jsh]);
           if(screen_val > density_screening_thresh_) {
             L_D[lsh].insert(jsh, screen_val);
           }
@@ -1008,17 +1018,6 @@ CADFCLHF::compute_K()
         //----------------------------------------//
       } // end loop over lsh
     });
-    #if not LINK_SORTED_INSERTION
-    do_threaded(nthread, [&](int ithr){
-      auto L_3_iter = L_3.begin();
-      const auto& L_3_end = L_3.end();
-      L_3_iter.advance(ithr);
-      while(L_3_iter != L_3_end) {
-        L_3_iter->second.sort();
-        L_3_iter.advance(nthread);
-      }
-    });
-    #endif
     #if LINK_TIME_LIST_INSERTIONS
     auto end_link = std::chrono::high_resolution_clock::now();
     static std::locale loc("");
@@ -1040,6 +1039,84 @@ CADFCLHF::compute_K()
         << " ms ideal)"
         << endl;
     std::cout.imbue(old_loc);
+    #endif
+    #else // OLD_LINK_SCREENING == 0
+    //----------------------------------------//
+    //DCmaxes_.resize(dfbs_->nshell());
+    timer.enter("build L_DC");
+    for(auto jsh : shell_range(obs)) {
+      const auto& Drho = D_frob.row(jsh);
+      for(auto Xsh : shell_range(dfbs_)) {
+        auto& Cmaxes_X = Cmaxes_[Xsh];
+        //DCmaxes_[Xsh].resize(obs->nshell());
+        // TODO Optimize this to not be N^3
+        double max_val = -1.0;
+        int max_index = -1;
+        for(auto lsh : shell_range(obs)) {
+          const double this_val = Drho(lsh) * Cmaxes_X[lsh].value;
+          if(this_val > max_val) {
+            max_val = this_val;
+            max_index = lsh;
+          }
+        } // end loop over lsh
+        //auto& shidx = DCmaxes_[Xsh][jsh];
+        L_DC[jsh].insert(Xsh,
+            max_val * schwarz_df_[Xsh]
+        );
+        //shidx.index = max_index;
+        //shidx.value = max_val;
+      } // end loop over Xsh
+      L_DC[jsh].sort();
+    } // end loop over jsh
+    //----------------------------------------//
+    // Form L_DC
+    /*
+    for(auto jsh : shell_range(obs)) {
+      for(auto Xsh : shell_range(dfbs_)) {
+        L_DC[jsh].insert(Xsh,
+            DCmaxes_[Xsh][jsh].value * schwarz_df_[Xsh]
+        );
+      }
+      #if !LINK_SORTED_INSERTION
+      L_DC[jsh].sort();
+      #endif
+    }
+    */
+    //----------------------------------------//
+    // Form L_3
+    timer.change("build L_3");
+    do_threaded(nthread, [&](int ithr){
+      for(int jsh_index = ithr; jsh_index < obs->nshell(); jsh_index += nthread) {
+        ShellData jsh(jsh_index, obs);
+        for(auto Xsh : L_DC[jsh]) {
+          const double pf = Xsh.value;
+          const double eps_prime = full_screening_thresh_ / pf;
+          bool jsh_added = false;
+          for(auto ish : L_schwarz[jsh]) {
+            if(ish.value > eps_prime) {
+              jsh_added = true;
+              L_3[{ish, Xsh}].insert(jsh, pf * ish.value);
+            }
+            else {
+              break;
+            }
+          } // end loop over ish
+          if(not jsh_added) break;
+        } // end loop over Xsh
+      } // end loop over jsh
+    });
+    timer.exit("build L_3");
+    #endif
+    #if not LINK_SORTED_INSERTION
+    do_threaded(nthread, [&](int ithr){
+      auto L_3_iter = L_3.begin();
+      const auto& L_3_end = L_3.end();
+      L_3_iter.advance(ithr);
+      while(L_3_iter != L_3_end) {
+        L_3_iter->second.sort();
+        L_3_iter.advance(nthread);
+      }
+    });
     #endif
     timer.exit("LinK lists");
     if(print_screening_stats_ and scf_grp_->me() == 0) {
@@ -1397,7 +1474,7 @@ CADFCLHF::get_shell_pair(ShellData& mu, ShellData& nu, PairSet pset)
 
 void
 CADFCLHF::compute_coefficients()
-{
+{                                                                                          // `\label{sc:compute_coefficients}`
   /*=======================================================================================*/
   /* Setup                                                		                        {{{1 */ #if 1 // begin fold
   //---------------------------------------------------------------------------------------//
@@ -1409,11 +1486,11 @@ CADFCLHF::compute_coefficients()
   const int dfnbf = dfbs_->nbasis();
   const int natom = obs->ncenter();
   /*-----------------------------------------------------*/
-  /* Initialize coefficient memory                  {{{2 */ #if 2 // begin fold
+  /* Initialize coefficient memory                  {{{2 */ #if 2 // begin fold `\label{sc:coefmem}`
   // Now initialize the coefficient memory.
   // First, compute the amount of memory needed
   // Coefficients will be stored jbf <= ibf
-  int ncoefs = 0;
+  int ncoefs = 0;                                                                          // `\label{sc:coefcountbegin}`
   for(auto ibf : function_range(obs, dfbs_)){
     for(auto jbf : function_range(obs, dfbs_, 0, ibf)){
       ncoefs += ibf.atom_dfnbf;
@@ -1421,8 +1498,8 @@ CADFCLHF::compute_coefficients()
         ncoefs += jbf.atom_dfnbf;
       }
     }
-  }
-  coefficients_data_ = allocate<double>(ncoefs);
+  }                                                                                        // `\label{sc:coefcountend}`
+  coefficients_data_ = allocate<double>(ncoefs);                                           // `\label{sc:coefalloc}`
   memset(coefficients_data_, 0, ncoefs * sizeof(double));
   double *spot = coefficients_data_;
   for(auto ibf : function_range(obs, dfbs_)){
@@ -1460,11 +1537,11 @@ CADFCLHF::compute_coefficients()
   for(auto Y : function_range(dfbs_)){
     coefs_transpose_[Y].resize(obs->nbasis_on_center(Y.center), nbf);
   }
-  /********************************************************/ #endif //2}}}
+  /********************************************************/ #endif //2}}} // `\label{sc:coefmemend}`
   /*-----------------------------------------------------*/
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
-  /* Compute the coefficients in threads                   		                        {{{1 */ #if 1 // begin fold
+  /* Compute the coefficients in threads                   		                        {{{1 */ #if 1 // begin fold `\label{sc:coefloop}`
   //---------------------------------------------------------------------------------------//
   // reset the iteration over local pairs
   local_pairs_spot_ = 0;
@@ -1478,10 +1555,10 @@ CADFCLHF::compute_coefficients()
         /*-----------------------------------------------------*/
         /* Coefficient compute thread                     {{{2 */ #if 2 // begin fold
         ShellData ish, jsh;
-        while(get_shell_pair(ish, jsh)){
+        while(get_shell_pair(ish, jsh)){                                                   // `\label{sc:coefgetpair}`
           const int dfnbfAB = ish.center == jsh.center ? ish.atom_dfnbf : ish.atom_dfnbf + jsh.atom_dfnbf;
           //----------------------------------------//
-          std::shared_ptr<Decomposition> decomp = get_decomposition(
+          std::shared_ptr<Decomposition> decomp = get_decomposition(                       // `\label{sc:coefgetdecomp}`
               ish, jsh, metric_ints_2c_[ithr]
           );
           //----------------------------------------//
@@ -1516,7 +1593,7 @@ CADFCLHF::compute_coefficients()
             } // end loop over shells on jsh.center
           } // end if ish.center != jsh.center
           //----------------------------------------//
-          for(auto mu : function_range(ish)){
+          for(auto mu : function_range(ish)){                                             // `\label{sc:coefsolveloop}`
             // Since coefficients are only stored jbf <= ibf,
             //   we need to figure out how many jbf's to do
             for(auto nu : function_range(jsh)){
@@ -1524,31 +1601,30 @@ CADFCLHF::compute_coefficients()
               const int ijbf = mu.bfoff_in_shell*jsh.nbf + nu.bfoff_in_shell;
               IntPair mu_nu(mu, nu);
               Eigen::VectorXd Ctmp(dfnbfAB);
-              Ctmp = decomp->solve(ij_M_X.row(ijbf).transpose());
+              Ctmp = decomp->solve(ij_M_X.row(ijbf).transpose());                         // `\label{sc:coefsolve}`
               assert((coefs_.find(mu_nu) != coefs_.end())
                   || ((cout << "couldn't find coefficients for " << mu << ", " << nu << endl), false));
-              //    || ((cout << "couldn't find coefficients for " << mu << ", " << nu << endl ), false);
               *(coefs_[mu_nu].first) = Ctmp.head(ish.atom_dfnbf);
               if(ish.center != jsh.center){
                 *(coefs_[mu_nu].second) = Ctmp.tail(jsh.atom_dfnbf);
               }
             } // end jbf loop
-          } // end ibf loop
-        } // end while get_shell_pair
+          } // end ibf loop                                                               // `\label{sc:coefsolveloopend}`
+        } // end while get_shell_pair                                                     // `\label{sc:coefendgetpair}`
         /********************************************************/ #endif //2}}}
         /*-----------------------------------------------------*/
       });  // End threaded compute function and compute_threads.create_thread() call
     } // end loop over number of threads
     compute_threads.join_all();
   } // thread_group compute_threads is destroyed and goes out of scope, threads are destroyed (?)
-  /*****************************************************************************************/ #endif //1}}}
+  /*****************************************************************************************/ #endif //1}}} `\label{sc:coefloopend}`
   /*=======================================================================================*/
   /* Global sum coefficient memory                        		                        {{{1 */ #if 1 // begin fold
   //---------------------------------------------------------------------------------------//
-  scf_grp_->sum(coefficients_data_, ncoefs);
+  scf_grp_->sum(coefficients_data_, ncoefs);                                               // `\label{sc:coefsum}`
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
-  /* Store the transpose coefficients                     		                        {{{1 */ #if 1 // begin fold
+  /* Store the transpose coefficients                     		                        {{{1 */ #if 1 // begin fold `\label{sc:coeftrans}`
   //---------------------------------------------------------------------------------------//
   for(auto Y : function_range(dfbs_)){
     for(auto ish : iter_shells_on_center(obs, Y.center)){
@@ -1575,7 +1651,7 @@ CADFCLHF::compute_coefficients()
       }
     }
   }
-  /*****************************************************************************************/ #endif //1}}}
+  /*****************************************************************************************/ #endif //1}}} `\label{sc:coeftransend}`
   /*=======================================================================================*/
   /* Debugging output                                     		                        {{{1 */ #if 1 // begin fold
   if(xml_debug) {
@@ -1707,12 +1783,37 @@ CADFCLHF::compute_coefficients()
         } // end loop over jsh
       } // end loop over ish
     } // end loop over Xsh
+    //----------------------------------------//
+    // Compute Cmaxes_
+    #if !OLD_LINK_SCREENING
+    Cmaxes_.resize(dfbs_->nshell());
+    for(auto Xsh : shell_range(dfbs_)){
+      Cmaxes_[Xsh].resize(obs->nshell());
+      auto& Cmaxes_X = Cmaxes_[Xsh];
+      for(auto lsh : shell_range(obs)) {
+        int max_index;
+        double max_val;
+        if(lsh.center == Xsh.center) {
+          // We might be able to get away with only nu on same center as X and sigma,
+          //  but for now approach it more rigorously
+          max_val = C_trans_frob_[Xsh].row(lsh.shoff_in_atom).maxCoeff(&max_index);
+        }
+        else { // different centers...
+          max_val = C_trans_frob_[Xsh].col(lsh).maxCoeff(&max_index);
+          max_index += lsh.atom_shoff;
+        }
+        Cmaxes_X[lsh].index = max_index;
+        Cmaxes_X[lsh].value = max_val;
+      } // end loop over Xsh
+    } // end loop over lsh
+    #endif
+    //----------------------------------------//
   } // end if do_linK
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
   /* Clean up                                              		                        {{{1 */ #if 1 // begin fold
   //---------------------------------------------------------------------------------------//
-  have_coefficients_ = true;
+  have_coefficients_ = true;                                                               // `\label{sc:coefflag}`
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
 }

@@ -1659,6 +1659,7 @@ double PT2R12::cabs_singles_Complete()
   return E;
 }
 
+#if defined(HAVE_MPQC3_RUNTIME)
 namespace{
 template<typename T>
     struct _CABS_singles_Fock {
@@ -1699,6 +1700,7 @@ namespace {
       EigenMatrixX O2_mat_;
   };
 }
+#endif
 
 double PT2R12::cabs_singles_Dyall()
 {

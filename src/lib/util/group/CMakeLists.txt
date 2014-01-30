@@ -59,13 +59,13 @@ if (MPQC_UNITTEST)
   )
   add_test(memtest memtest)
 
-  #set_property(SOURCE messtest.cc PROPERTY COMPILE_DEFINITIONS
-  #    SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-  #add_executable(messtest messtest.cc $<TARGET_OBJECTS:group>)
-  #target_link_libraries(messtest
-  #  util
-  #)
-  #add_test(messtest messtest)
+  set_property(SOURCE messtest.cc PROPERTY COMPILE_DEFINITIONS
+      SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(messtest messtest.cc $<TARGET_OBJECTS:group>)
+  target_link_libraries(messtest
+    util
+  )
+  add_test(messtest messtest)
 
   set_property(SOURCE pooltest.cc PROPERTY COMPILE_DEFINITIONS
       SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")

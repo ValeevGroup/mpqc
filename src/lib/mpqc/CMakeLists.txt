@@ -8,8 +8,9 @@
 add_subdirectory(math)
 add_subdirectory(interfaces/tiledarray/tests)
 add_subdirectory(interfaces/tiledarray/tiling)
+add_subdirectory(tawfn)
 add_subdirectory(basis)
-add_subdirectory(test)
+#add_subdirectory(test)
 
 add_subdirectory(ci)
 
@@ -30,9 +31,13 @@ install(FILES range.hpp DESTINATION include/mpqc)
 # target_link_libraries(test-mpqc ${LIBRARIES})
 # target_link_libraries(test-mpqc ${CMAKE_DL_LIBS})
 
-add_executable(file_test EXCLUDE_FROM_ALL file_test.cpp)
-target_link_libraries(file_test
-  mpqc_test
-  ${HDF5_LIBRARIES}
-)
-add_test(file file_test)
+if (MPQC_CI)
+  if (MPQC_UNITTEST)
+    add_executable(file_test file_test.cpp)
+    target_link_libraries(file_test
+      ${HDF5_LIBRARIES}
+      ${Boost_UNITTEST_LIBRARIES}
+    )
+    add_test(file file_test)
+  endif()
+endif()

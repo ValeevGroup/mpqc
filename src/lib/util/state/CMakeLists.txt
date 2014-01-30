@@ -15,8 +15,13 @@ add_mpqc_object_library(state
 
 # tests
 
-set_property(SOURCE statetest.cc
-  PROPERTY COMPILE_DEFINITIONS -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-add_executable(statetest EXCLUDE_FROM_ALL statetest.cc $<TARGET_OBJECTS:state>)
-add_test(statetest statetest)
+if (MPQC_UNITTEST)
+  set_property(SOURCE statetest.cc
+    PROPERTY COMPILE_DEFINITIONS SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(statetest statetest.cc $<TARGET_OBJECTS:state>)
+  target_link_libraries(statetest
+    util
+  )
+  add_test(statetest statetest)
+endif()
 

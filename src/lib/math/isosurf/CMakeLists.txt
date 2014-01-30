@@ -20,8 +20,13 @@ add_mpqc_object_library(isosurf
 
 # tests
 
-set_property(SOURCE isotest.cc PROPERTY COMPILE_DEFINITIONS
-    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-add_executable(isotest EXCLUDE_FROM_ALL isotest.cc $<TARGET_OBJECTS:isosurf>)
-add_test(isotest isotest)
+if (MPQC_UNITTEST)
+  set_property(SOURCE isotest.cc PROPERTY COMPILE_DEFINITIONS
+      SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(isotest isotest.cc $<TARGET_OBJECTS:isosurf>)
+  target_link_libraries(isotest
+    math
+  )
+  add_test(isotest isotest)
+endif()
 

@@ -29,13 +29,21 @@ add_mpqc_object_library(optimize
 
 # tests
 
-set_property(SOURCE opttest.cc PROPERTY COMPILE_DEFINITIONS
-    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-add_executable(opttest EXCLUDE_FROM_ALL opttest.cc $<TARGET_OBJECTS:optimize>)
-add_test(opttest opttest)
+if (MPQC_UNITTEST)
+  set_property(SOURCE opttest.cc PROPERTY COMPILE_DEFINITIONS
+      SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(opttest opttest.cc $<TARGET_OBJECTS:optimize>)
+  target_link_libraries(opttest
+    math
+  )
+  add_test(opttest opttest)
 
-set_property(SOURCE scextest.cc PROPERTY COMPILE_DEFINITIONS
-    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-add_executable(scextest EXCLUDE_FROM_ALL scextest.cc $<TARGET_OBJECTS:optimize>)
-add_test(scextest scextest)
+  set_property(SOURCE scextest.cc PROPERTY COMPILE_DEFINITIONS
+      SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(scextest scextest.cc $<TARGET_OBJECTS:optimize>)
+  target_link_libraries(scextest
+    math
+  )
+  add_test(scextest scextest)
+endif()
 

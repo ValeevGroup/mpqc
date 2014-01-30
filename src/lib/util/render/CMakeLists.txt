@@ -20,8 +20,13 @@ add_mpqc_object_library(render
 
 # tests
 
-set_property(SOURCE rentest.cc PROPERTY COMPILE_DEFINITIONS
-    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-add_executable(rentest EXCLUDE_FROM_ALL rentest.cc $<TARGET_OBJECTS:render>)
-add_test(rentest rentest)
+if (MPQC_UNITTEST)
+  set_property(SOURCE rentest.cc PROPERTY COMPILE_DEFINITIONS
+      SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(rentest rentest.cc $<TARGET_OBJECTS:render>)
+  target_link_libraries(rentest
+    util
+  )
+  add_test(rentest rentest)
+endif()
 

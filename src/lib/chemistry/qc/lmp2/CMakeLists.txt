@@ -16,13 +16,22 @@ add_mpqc_object_library(lmp2
 )
 
 # tests
+  
+if (MPQC_UNITTEST)
+  set_property(SOURCE avlmmaptest.cc PROPERTY COMPILE_DEFINITIONS
+      SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(avlmmaptest avlmmaptest.cc $<TARGET_OBJECTS:lmp2>)
+  target_link_libraries(avlmmaptest 
+    chemistry
+  )
+  add_test(avlmmaptest avlmmaptest)
 
-set_property(SOURCE avlmmaptest.cc PROPERTY COMPILE_DEFINITIONS
-    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-add_executable(avlmmaptest EXCLUDE_FROM_ALL avlmmaptest.cc $<TARGET_OBJECTS:lmp2>)
-add_test(avlmmaptest avlmmaptest)
-
-set_property(SOURCE smatest.cc PROPERTY COMPILE_DEFINITIONS
-    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-add_executable(smatest EXCLUDE_FROM_ALL smatest.cc $<TARGET_OBJECTS:lmp2>)
-add_test(smatest smatest)
+  set_property(SOURCE smatest.cc PROPERTY COMPILE_DEFINITIONS
+      SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(smatest smatest.cc $<TARGET_OBJECTS:lmp2>)
+  target_link_libraries(smatest
+    chemistry
+  )
+  add_test(smatest smatest)
+  
+endif()

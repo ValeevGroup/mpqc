@@ -38,15 +38,16 @@ add_mpqc_object_library(basis
 
 # tests
 
-set_property(SOURCE btest.cc PROPERTY COMPILE_DEFINITIONS
+if (MPQC_UNITTEST)
+  set_property(SOURCE btest.cc PROPERTY COMPILE_DEFINITIONS
     SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-add_executable(btest EXCLUDE_FROM_ALL btest.cc $<TARGET_OBJECTS:basis>)
-add_test(btest btest)
+  add_executable(btest btest.cc $<TARGET_OBJECTS:basis>)
+  add_test(btest btest)
 
-target_link_libraries(
-  btest
-  chemistry
-)
+  target_link_libraries( btest
+    chemistry
+  )
+endif()
 
 if (HAVE_LIBINT2)
   target_link_libraries(btest ${LIBINT2_LIBRARY})

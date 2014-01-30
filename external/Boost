@@ -47,6 +47,9 @@ elseif (MPQC_EXPERT)
 
   message("** BOOST was not explicitly set")
   message("** Downloading and building Boost is explicitly disabled in EXPERT mode")
+  if (MPQC_UNITTEST)
+    message(FATAL_ERROR "No unit testing in expert mode")
+  endif()
 
 else()
 
@@ -94,6 +97,9 @@ else()
   if (HAVE_PYTHON)
     set (libraries "${libraries},python")
   endif()
+  if (MPQC_UNITTEST)
+    set (libraries "${libraries},test")
+  endif()
 
   ExternalProject_Add(
     boost
@@ -118,6 +124,9 @@ else()
   if (HAVE_PYTHON)
     list(APPEND Boost_LIBRARIES ${Boost_LIBRARY_DIR}/libboost_python.a)
   endif()
+  if (MPQC_UNITTEST)
+    list(APPEND Boost_UNITTEST_LIBRARIES ${Boost_LIBRARY_DIR}/libboost_unit_test_framework.a)
+  endif()
 
   set(HAVE_BOOST ON)
   
@@ -127,5 +136,8 @@ if (HAVE_BOOST)
   include_directories(${Boost_INCLUDE_DIRS})
   message(STATUS "Boost include dir: ${Boost_INCLUDE_DIRS}")
   message(STATUS "Boost libraries: ${Boost_LIBRARIES}")
+  if (MPQC_UNITTEST)
+    message(STATUS "Boost unit testing libraries: ${Boost_UNITTEST_LIBRARIES}")
+  endif()
 endif()
 

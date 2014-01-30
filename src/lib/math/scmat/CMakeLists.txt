@@ -44,29 +44,45 @@ add_mpqc_object_library(scmat
   vector3_i.cc)
 
 # tests
+if (MPQC_UNITTEST)
+  set_property(SOURCE blockedtest.cc PROPERTY COMPILE_DEFINITIONS
+      SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(blockedtest blockedtest.cc $<TARGET_OBJECTS:scmat>)
+  target_link_libraries(blockedtest
+    math
+  )
+  add_test(blockedtest blockedtest)
 
-set_property(SOURCE blockedtest.cc PROPERTY COMPILE_DEFINITIONS
-    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-add_executable(blockedtest EXCLUDE_FROM_ALL blockedtest.cc $<TARGET_OBJECTS:scmat>)
-add_test(blockedtest blockedtest)
+  set_property(SOURCE disttest.cc PROPERTY COMPILE_DEFINITIONS
+      SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(disttest disttest.cc $<TARGET_OBJECTS:scmat>)
+  target_link_libraries(disttest
+    math
+  )
+  add_test(disttest disttest)
 
-set_property(SOURCE disttest.cc PROPERTY COMPILE_DEFINITIONS
-    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-add_executable(disttest EXCLUDE_FROM_ALL disttest.cc $<TARGET_OBJECTS:scmat>)
-add_test(disttest disttest)
+  set_property(SOURCE localtest.cc PROPERTY COMPILE_DEFINITIONS
+      SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(localtest localtest.cc $<TARGET_OBJECTS:scmat>)
+  target_link_libraries(localtest
+    math
+  )
+  add_test(localtest localtest)
 
-set_property(SOURCE localtest.cc PROPERTY COMPILE_DEFINITIONS
-    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-add_executable(localtest EXCLUDE_FROM_ALL localtest.cc $<TARGET_OBJECTS:scmat>)
-add_test(localtest localtest)
+  set_property(SOURCE matrixtest.cc PROPERTY COMPILE_DEFINITIONS
+      SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(matrixtest matrixtest.cc $<TARGET_OBJECTS:scmat>)
+  target_link_libraries(matrixtest
+    math
+  )
+  add_test(matrixtest matrixtest)
 
-set_property(SOURCE matrixtest.cc PROPERTY COMPILE_DEFINITIONS
-    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-add_executable(matrixtest EXCLUDE_FROM_ALL matrixtest.cc $<TARGET_OBJECTS:scmat>)
-add_test(matrixtest matrixtest)
+  set_property(SOURCE repltest.cc PROPERTY COMPILE_DEFINITIONS
+      SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(repltest repltest.cc $<TARGET_OBJECTS:scmat>)
+  target_link_libraries(repltest
+    math
+  )
+  add_test(repltest repltest)
 
-set_property(SOURCE repltest.cc PROPERTY COMPILE_DEFINITIONS
-    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-add_executable(repltest EXCLUDE_FROM_ALL repltest.cc $<TARGET_OBJECTS:scmat>)
-add_test(repltest repltest)
-
+endif()

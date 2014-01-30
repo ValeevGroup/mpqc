@@ -81,6 +81,18 @@ if (MPQC_NEW_FEATURES)
   endif()
 endif()
 
+# Enable Unit Test
+if (MPQC_UNITTEST)
+  if (NOT MPQC_NEW_FEATURES) 
+    message(FATAL_ERROR "Unit testing requires MPQC_NEW_FEATURES")
+  endif()
+  if (BOOST)
+    message(FATAL_ERROR "Must have MPQC build Boost for unit testing")
+  endif()
+  add_definitions(-DMPQC_UNITTEST)
+endif()
+    
+
 if (MPQC_NEW_FEATURES)
   add_definitions(-DMPQC_NEW_FEATURES)
   
@@ -298,6 +310,9 @@ list(APPEND LINK_LIBRARIES ${LIBINT2_LIBRARY})
 list(APPEND LINK_LIBRARIES ${PSI3_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${MADNESS_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${Boost_LIBRARIES})
+if (MPQC_UNITTEST)
+  list(APPEND LINK_LIBRARIES ${Boost_UNITTEST_LIBRARIES})
+endif()
 list(APPEND LINK_LIBRARIES ${LAPACK_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${BLAS_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${PYTHON_LIBRARIES})

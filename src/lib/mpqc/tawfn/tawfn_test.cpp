@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <mpqc/tawfn/mock_wfn.hpp>
 #include <iostream>
+#include <mpqc/tawfn/tawfn.hpp>
 #define BOOST_TEST_MODULE test_mock_wfn
 #include <boost/test/included/unit_test.hpp>
 

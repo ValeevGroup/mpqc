@@ -1104,6 +1104,16 @@ namespace sc {
                   << std::endl; // 2 is included in gamma!
       }
 
+      // compute the (2)_S quadrupole moment
+      {
+        const double q_zz_e = 2*dot(_2("<i|q_zz|A'>"), T1_recomp("i,A'"))
+                            - dot(_2("<i|q_zz|j>"), T1_recomp("i,A'") * T1_recomp("j,A'") )
+                            + dot(_2("<A'|q_zz|B'>"), T1_recomp("i,A'") * T1_recomp("i,B'") );
+        std::cout << "Q_zz (2)_S = " << 2*q_zz_e << std::endl; // 2 accounts for spin degeneracy
+        std::cout << "Q_zz ref = " << (dot(_2("<i|q_zz|j>"),_2("<i|gamma|j>")))
+                  << std::endl; // 2 is included in gamma!
+      }
+
       // compute orbital rotation multipliers in the (2)_S Lagrangian
       if (1) {
         TArray2 Tia = T1_recomp("j,A'") * _2("<A'|I|a>");
@@ -1406,18 +1416,24 @@ namespace sc {
     }
 #endif
 
-    // Nuclear dipole
-    double mu_z_n = 0.0;
+    // Nuclear electric dipole and (traceless) quadrupole
+    double mu_z_n = 0.0, q_zz_n = 0.0;
     Ref<Molecule> mol = r12world_->basis()->molecule();
     for(int a = 0; a < mol->natom(); ++a) {
-      mu_z_n += mol->Z(a) * mol->r(a, 2);
+      const double x = mol->r(a, 0);
+      const double y = mol->r(a, 1);
+      const double z = mol->r(a, 2);
+      const double Z = mol->Z(a);
+      mu_z_n += Z * z;
+      q_zz_n += Z * (2.0 * z * z - x * x - y * y); // traceless form of the quadrupole
     }
     std::cout << std::endl
               << "mu_z (N) = " << scprintf("%12.10f", mu_z_n)
               << std::endl;
-    // electron charge = -1
+    std::cout << "q_zz (N) = " << scprintf("%12.10f", q_zz_n) << " (traceless)"
+              << std::endl;
 
-    // Dipole integrals
+    // Electric dipole integrals
     TArray2 mu_z_mn = _2("<m|mu_z|n>");
     TArray2 mu_z_ij = _2("<i|mu_z|j>");
     TArray2 mu_z_ab = _2("<a|mu_z|b>");
@@ -1428,10 +1444,20 @@ namespace sc {
     TArray2 mu_z_am = _2("<a|mu_z|m>");
     TArray2 mu_z_apb = _2("<a'|mu_z|b>");
 
-    // SCF contribution to electronic dipole
+    // SCF contribution to electronic electric dipole
     const double mu_z_scf = dot(mu_z_mn("m,n"), _2("<m|I|n>"));
     std::cout << std::endl
-              << "mu_z (SCF) = " << scprintf("%12.10f", - mu_z_scf * 2.0)
+              << "mu_z (SCF) = " << scprintf("%12.10f", - mu_z_scf * 2.0) //electron charge = -1, hence the minus
+              << std::endl;
+
+    // SCF contribution to electronic electric quadrupole
+    TArray2 q_xx_mn = _2("<m|q_xx|n>");
+    TArray2 q_yy_mn = _2("<m|q_yy|n>");
+    TArray2 q_zz_mn = _2("<m|q_zz|n>");
+    const double q_zz_scf = dot((2.0 * q_zz_mn("m,n") - q_xx_mn("m,n") - q_yy_mn("m,n")), _2("<m|I|n>"));
+    std::cout << std::endl
+              << "q_zz (SCF) = " << scprintf("%12.10f", - mu_z_scf * 2.0) //electron charge = -1, hence the minus
+              << " (traceless)"
               << std::endl;
 
     // Compute orbital relaxation contribution to 1e density

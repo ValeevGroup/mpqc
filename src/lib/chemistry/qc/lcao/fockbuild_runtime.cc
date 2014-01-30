@@ -483,33 +483,39 @@ FockBuildRuntime::get(const std::string& key) {
 
               } // J, K, F components
             } // end of Fock matrices
-            else if (oper_key.find("Mu_") == 0) {
+            else if (oper_key.find("mu_") == 0 || oper_key.find("q_") == 0) { // electric multipole moments
 
-              std::vector<std::string> mukeys(3);
-              for (int xyz = 0; xyz < 3; ++xyz) {
-                const char xyz_char[] = { 'x', 'y', 'z' };
+              const unsigned int multipole_order = oper_key.find("mu_") == 0 ? 1 : 2;
+              const size_t nops = multipole_order == 1 ? 3 : 6;
+              std::vector<std::string> operkeys(nops);
+              for (int xyz = 0; xyz < nops; ++xyz) {
+                const char* xyz_str[] = { "x", "y", "z", "xx", "xy", "xz", "yy", "yz", "zz" };
                 std::ostringstream oss;
-                oss << "Mu_" << xyz_char[xyz];
-                mukeys[xyz] = ParsedOneBodyIntKey::key(aobra_key, aoket_key,
+                oss << "mu_" << xyz_str[xyz + (multipole_order==1 ? 0 : 3)];
+                operkeys[xyz] = ParsedOneBodyIntKey::key(aobra_key, aoket_key,
                                                        oss.str());
               }
 
-              std::vector<RefSCMatrix> Mu(3);
-              const bool compute_Mu = not registry_->key_exists(mukeys[0]);
-              if (compute_Mu) {
+              std::vector<RefSCMatrix> intmats(nops);
+              const bool compute_mu = not registry_->key_exists(operkeys[0]);
+              if (compute_mu) {
                 const Ref<GaussianBasisSet>& obs = basis_;
                 Ref<DipoleData> dipole_data = new DipoleData();
-                sc::detail::onebodyint_ao<&Integral::dipole>(bra->basis(), ket->basis(),
-                                                             integral(), dipole_data, Mu);
-                for (int xyz = 0; xyz < 3; ++xyz) {
+                if (multipole_order == 1)
+                  sc::detail::onebodyint_ao<&Integral::dipole>(bra->basis(), ket->basis(),
+                                                               integral(), dipole_data, intmats);
+                else // multipole_order == 2
+                  sc::detail::onebodyint_ao<&Integral::quadrupole>(bra->basis(), ket->basis(),
+                                                                   integral(), dipole_data, intmats);
+                for (int xyz = 0; xyz < nops; ++xyz) {
                   RefSCMatrix mu_ao_blk = bra->coefs().kit()->matrix(bra->coefs().rowdim(),ket->coefs().rowdim());
-                  mu_ao_blk->convert( Mu[xyz] );
-                  registry_->add(mukeys[xyz], mu_ao_blk);
+                  mu_ao_blk->convert( intmats[xyz] );
+                  registry_->add(operkeys[xyz], mu_ao_blk);
                 }
               }
-              else { // have_Mu == true
+              else { // have_mu == true
                 for (int xyz = 0; xyz < 3; ++xyz)
-                  Mu[xyz] = registry_->value(mukeys[xyz]);
+                  intmats[xyz] = registry_->value(operkeys[xyz]);
               }
 
             }

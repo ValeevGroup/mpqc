@@ -298,7 +298,7 @@ FileGrp::set_default_filegrp(const Ref<FileGrp>& grp)
 FileGrp*
 FileGrp::get_default_filegrp()
 {
-  if (default_filegrp.nonnull()) return default_filegrp.pointer();
+  if (default_filegrp) return default_filegrp.pointer();
 
   Ref<MessageGrp> msg = MessageGrp::get_default_messagegrp();
 

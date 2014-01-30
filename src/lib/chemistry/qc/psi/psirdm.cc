@@ -35,19 +35,19 @@ namespace {
   Ref<OrbitalSpace> orbs_from_psiwfn(const Ref<PsiWavefunction>& wfn, SpinCase1 spin) {
     Ref<PsiSCF> psiscfwfn_;
     psiscfwfn_ << wfn;
-    if (psiscfwfn_.nonnull()) {
+    if (psiscfwfn_) {
       return psiscfwfn_->orbs_sb(spin);
     }
 
     Ref<PsiRASCI> psiciwfn_;
     psiciwfn_ << wfn;
-    if (psiciwfn_.nonnull()) {
+    if (psiciwfn_) {
       return psiciwfn_->occ(spin);
     }
 
     Ref<PsiCorrWavefunction> psicorrwfn_;
     psicorrwfn_ << wfn;
-    if (psicorrwfn_.nonnull()) {
+    if (psicorrwfn_) {
       return psicorrwfn_->orbs_sb(spin);
     }
 
@@ -109,26 +109,26 @@ sc::PsiRDMTwo::orbs(SpinCase1 spin) const {
 
 RefSymmSCMatrix sc::PsiRDMTwo::scmat(SpinCase2 spin) const {
 
-  if (scmat_[spin].nonnull()) return scmat_[spin];
+  if (scmat_[spin]) return scmat_[spin];
   if (!wfn_->spin_polarized() && spin == BetaBeta)
     return scmat(AlphaAlpha);
 
   Ref<PsiRASCI> psiciwfn_;
   psiciwfn_ << wfn_;
-  if (psiciwfn_.nonnull()) {
+  if (psiciwfn_) {
     return psiciwfn_->twopdm_occ(spin);
   }
 
   Ref<PsiCorrWavefunction> psicorrwfn_;
   psicorrwfn_ << wfn_;
-  if (psicorrwfn_.nonnull()) {
+  if (psicorrwfn_) {
     scmat_[spin] = psicorrwfn_->twopdm_dirac(spin);
     return scmat_[spin];
   }
 
   Ref<PsiSCF> psiscfwfn_;
   psiscfwfn_ << wfn_;
-  if (psiscfwfn_.nonnull()) {
+  if (psiscfwfn_) {
     Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
     const SpinCase1 spin1 = case1(spin);
     const SpinCase1 spin2 = case2(spin);
@@ -199,7 +199,7 @@ PsiRDMCumulantTwo::save_data_state(StateOut& so) {
 
 RefSymmSCMatrix sc::PsiRDMCumulantTwo::scmat(SpinCase2 spin) const {
 
-  if (scmat_[spin].nonnull()) return scmat_[spin];
+  if (scmat_[spin]) return scmat_[spin];
   if (!density_->wfn()->spin_polarized() && spin == BetaBeta)
     return scmat(AlphaAlpha);
 
@@ -288,7 +288,7 @@ RefSymmSCMatrix
 PsiRDMOne::scmat(SpinCase1 spin) const {
   Ref<PsiRASCI> psiciwfn;
   psiciwfn << wfn_;
-  if (psiciwfn.nonnull()) {
+  if (psiciwfn) {
     return psiciwfn->onepdm_occ(spin);
   }
 
@@ -346,24 +346,24 @@ sc::PsiSpinFreeRDMTwo::orbs() const {
 
 RefSymmSCMatrix sc::PsiSpinFreeRDMTwo::scmat() const {
 
-  if (scmat_.nonnull()) return scmat_;
+  if (scmat_) return scmat_;
 
   Ref<PsiRASCI> psiciwfn_;
   psiciwfn_ << wfn_;
-  if (psiciwfn_.nonnull()) {
+  if (psiciwfn_) {
     return psiciwfn_->twopdm_occ();
   }
 
   Ref<PsiCorrWavefunction> psicorrwfn_;
   psicorrwfn_ << wfn_;
-  if (psicorrwfn_.nonnull()) {
+  if (psicorrwfn_) {
     scmat_ = psicorrwfn_->twopdm_dirac();
     return scmat_;
   }
 
   Ref<PsiSCF> psiscfwfn_;
   psiscfwfn_ << wfn_;
-  if (psiscfwfn_.nonnull()) {
+  if (psiscfwfn_) {
     Ref<SCMatrixKit> kit = SCMatrixKit::default_matrixkit();
     const RefSymmSCMatrix opdm_a = psiscfwfn_->mo_density(Alpha);
     const RefSymmSCMatrix opdm_b = psiscfwfn_->mo_density(Beta);
@@ -414,7 +414,7 @@ PsiSpinFreeRDMTwo::da4() const {
 
     Ref<PsiRASCI> psiciwfn_;
     psiciwfn_ << wfn_;
-    if (psiciwfn_.nonnull()) {
+    if (psiciwfn_) {
       RefSymmSCMatrix rdm2_scmat = psiciwfn_->twopdm_occ();
       const int n = psiciwfn_->occ(Alpha)->rank();
       MPQC_ASSERT(n == int(sqrt(rdm2_scmat.n())));
@@ -441,14 +441,14 @@ PsiSpinFreeRDMTwo::da4() const {
 
     Ref<PsiCorrWavefunction> psicorrwfn_;
     psicorrwfn_ << wfn_;
-    if (psicorrwfn_.nonnull()) {
+    if (psicorrwfn_) {
       throw ProgrammingError("PsiSpinFreeRDMTwo::da4() -- DistArray4-based storage is not implemented for PsiCorrWavefunction",
                              __FILE__, __LINE__);
     }
 
     Ref<PsiSCF> psiscfwfn_;
     psiscfwfn_ << wfn_;
-    if (psiscfwfn_.nonnull()) {
+    if (psiscfwfn_) {
       const RefSymmSCMatrix opdm_a = psiscfwfn_->mo_density(Alpha);
       const RefSymmSCMatrix opdm_b = psiscfwfn_->mo_density(Beta);
       MPQC_ASSERT(opdm_a.n() == opdm_b.n());
@@ -552,7 +552,7 @@ RefSymmSCMatrix
 PsiSpinFreeRDMOne::scmat() const {
   Ref<PsiRASCI> psiciwfn;
   psiciwfn << wfn_;
-  if (psiciwfn.nonnull()) {
+  if (psiciwfn) {
     return psiciwfn->onepdm_occ(Alpha) + psiciwfn->onepdm_occ(Beta);
   }
   else

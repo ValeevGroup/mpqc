@@ -349,6 +349,10 @@ namespace sc {
       /// compute CABS singles correction in the most complete way; in addition, a CI version is coded here too.
       double cabs_singles_Complete();
       /** the following 2 methods are from modification of cabs_singles_Complete_sf()**/
+
+      // compute CABS singles correction using Fock operator as H0
+      double cabs_singles_Fock();
+      // compute CABS singles correction using two-body operators in H0
       double cabs_singles_Dyall();
 
       /// Returns Hcore in MO basis

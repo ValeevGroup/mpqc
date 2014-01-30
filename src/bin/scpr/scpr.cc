@@ -193,14 +193,14 @@ main(int argc, char *argv[])
 
   // get the message group.  first try the commandline and environment
   Ref<MessageGrp> grp = MessageGrp::initial_messagegrp(argc, argv);
-  if (grp.nonnull())
+  if (grp)
     MessageGrp::set_default_messagegrp(grp);
   else
     grp = MessageGrp::get_default_messagegrp();
 
   // get the thread group.  first try the commandline and environment
   Ref<ThreadGrp> thread = ThreadGrp::initial_threadgrp(argc, argv);
-  if (thread.nonnull())
+  if (thread)
     ThreadGrp::set_default_threadgrp(thread);
   else
     thread = ThreadGrp::get_default_threadgrp();

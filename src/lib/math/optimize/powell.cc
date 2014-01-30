@@ -93,7 +93,7 @@ PowellUpdate::update(const RefSymmSCMatrix&hessian,const Ref<Function>&func,
     gnew = xn;
   }
   
-  if (xprev.nonnull()) {
+  if (xprev) {
     RefSCVector xdisp = xnew-xprev;
     RefSCVector gdisp = gnew-gprev-hessian*xdisp;
     double xdisp_xdisp = xdisp.scalar_product(xdisp);

@@ -162,7 +162,7 @@ TwoBodyMOIntsTransform_ixjy_df::memgrp_blksize() const
 void
 TwoBodyMOIntsTransform_ixjy_df::init_acc()
 {
-  if (ints_acc_.nonnull())
+  if (ints_acc_)
     return;
 
   const int nij = compute_nij(batchsize_, space3_->rank(), msg_->n(), msg_->me());

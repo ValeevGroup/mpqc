@@ -375,7 +375,7 @@ Int2eV3::compute_prim_2(Ref<GaussianBasisSet> cs1,
   for (i1=0; i1<cs1_ncenter; i1++) {
     int cs1_nshell_on_center = (cs1.null()?1:cs1->nshell_on_center(i1));
     for (j1=0; j1<cs1_nshell_on_center; j1++) {
-      if (cs1.nonnull()) shell1 = &cs1->shell(i1,j1);
+      if (cs1) shell1 = &cs1->shell(i1,j1);
       else               shell1 = int_unit_shell;
       for (k1=0; k1<shell1->nprimitive(); k1++) {
         offset2 = prim_offset2;
@@ -383,7 +383,7 @@ Int2eV3::compute_prim_2(Ref<GaussianBasisSet> cs1,
         for (i2=0; i2<cs2_ncenter; i2++) {
           int cs2_nshell_on_center = (cs2.null()?1:cs2->nshell_on_center(i2));
           for (j2=0; j2<cs2_nshell_on_center; j2++) {
-            if (cs2.nonnull()) shell2 = &cs2->shell(i2,j2);
+            if (cs2) shell2 = &cs2->shell(i2,j2);
             else               shell2 = int_unit_shell;
             for (k2=0; k2<shell2->nprimitive(); k2++) {
 

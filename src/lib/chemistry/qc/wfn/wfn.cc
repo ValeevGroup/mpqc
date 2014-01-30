@@ -215,7 +215,7 @@ Wavefunction::Wavefunction(const Ref<KeyVal>&keyval):
     throw InputError("Wavefunction::Wavefunction -- basis is missing");
 
   atom_basis_ << keyval->describedclassvalue("atom_basis");
-  if (atom_basis_.nonnull()) {
+  if (atom_basis_) {
     atom_basis_coef_ = new double[atom_basis_->nbasis()];
     for (int i=0; i<atom_basis_->nbasis(); i++) {
       atom_basis_coef_[i] = keyval->doublevalue("atom_basis_coef",i);
@@ -250,7 +250,7 @@ Wavefunction::Wavefunction(const Ref<KeyVal>&keyval):
 
   // post-construction validation
   {
-    if (electric_field().nonnull()) {
+    if (electric_field()) {
       if (fabs(electric_field().dot(electric_field())) > 1e-13 &&
           not Wavefunction::nonzero_efield_supported())
         throw FeatureNotImplemented("External electric field is specified, \
@@ -330,7 +330,7 @@ Wavefunction::Wavefunction(StateIn&s):
 
   if (s.version(::class_desc<Wavefunction>()) >= 7) {
     atom_basis_ << SavableState::restore_state(s);
-    if (atom_basis_.nonnull()) {
+    if (atom_basis_) {
       s.get_array_double(atom_basis_coef_, atom_basis_->nbasis());
     }
   }
@@ -405,7 +405,7 @@ Wavefunction::save_data_state(StateOut&s)
   SavableState::save_state(integral_.pointer(),s);
   SavableState::save_state(orthog_.pointer(),s);
   SavableState::save_state(atom_basis_.pointer(), s);
-  if (atom_basis_.nonnull()) {
+  if (atom_basis_) {
     s.put_array_double(atom_basis_coef_,atom_basis_->nbasis());
   }
 
@@ -642,7 +642,7 @@ Wavefunction::core_hamiltonian_dk(int dk,
                 << " terms in the one body Hamiltonian."
                 << std::endl;
 
-  if (atom_basis_.nonnull()) {
+  if (atom_basis_) {
     throw FeatureNotImplemented("atom_basis given and dk > 0",
                                 __FILE__, __LINE__, class_desc());
   }
@@ -784,7 +784,7 @@ Wavefunction::core_hamiltonian_dk(int dk,
   V_skel = 0;
 
   // include contributions from external electric field, if needed
-  if (electric_field().nonnull()) {
+  if (electric_field()) {
     RefSymmSCMatrix mu_so;
     RefSymmSCMatrix mu(p_ao_dim, p_kit);
     mu.assign(0.0);
@@ -1173,7 +1173,7 @@ Wavefunction::core_hamiltonian_nr(const Ref<GaussianBasisSet> &bas)
 
     // include contributions from external electric field, if needed
     RefSymmSCMatrix mu_so;
-    if (electric_field().nonnull()) {
+    if (electric_field()) {
       {
         RefSymmSCMatrix mu = hao.clone();
         mu.assign(0.0);
@@ -1230,7 +1230,7 @@ Wavefunction::core_hamiltonian_nr(const Ref<GaussianBasisSet> &bas)
     RefSymmSCMatrix h(pl->SO_basisdim(), bas->so_matrixkit());
     pl->symmetrize(hao,h);
 
-    if (electric_field().nonnull()) {
+    if (electric_field()) {
       h.accumulate(mu_so);
     }
 
@@ -1272,7 +1272,7 @@ Wavefunction::nuclear_repulsion_energy()
 {
   // include the energy of nuclei in the presence of electric field, if needed
   double ext_efield_contribution = 0.0;
-  if (electric_field().nonnull()) {
+  if (electric_field()) {
     const int natoms = molecule()->natom();
     for(int a=0; a<natoms; ++a) {
       ext_efield_contribution -= electric_field()->get_element(0) * molecule()->charge(a) * molecule()->r(a, 0);
@@ -1625,13 +1625,13 @@ Wavefunction::print(ostream&o) const
   ExEnv::out0() << incindent;
   basis()->print_brief(o);
   ExEnv::out0() << decindent;
-  if (atom_basis_.nonnull()) {
+  if (atom_basis_) {
     ExEnv::out0() << indent << "Nuclear basis:" << std::endl;
     ExEnv::out0() << incindent;
     atom_basis_->print_brief(o);
     ExEnv::out0() << decindent;
   }
-  if (momentum_basis_.nonnull()) {
+  if (momentum_basis_) {
     ExEnv::out0() << indent << "Momentum basis:" << std::endl;
     ExEnv::out0() << incindent;
     momentum_basis_->print_brief(o);
@@ -1697,7 +1697,7 @@ Wavefunction::obsolete()
 void
 Wavefunction::copy_orthog_info(const Ref<Wavefunction>&wfn)
 {
-  if (orthog_.nonnull()) {
+  if (orthog_) {
     ExEnv::errn() << "WARNING: Wavefunction: orthogonalization info changing"
                  << endl;
   }

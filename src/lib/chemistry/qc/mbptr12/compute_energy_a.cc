@@ -189,7 +189,7 @@ MBPT2_R12::compute_energy_()
                             *ref_to_mp2r12_acc());
 
 #if MP2R12ENERGY_CAN_COMPUTE_PAIRFUNCTION
-  if (twopdm_grid_.nonnull()) {
+  if (twopdm_grid_) {
     Ref<MP2R12Energy> wfn_to_plot;
     switch(r12tech->stdapprox()) {
       case R12Technology::StdApprox_Ap:   wfn_to_plot = r12ap_energy_;  break;

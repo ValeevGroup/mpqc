@@ -49,7 +49,7 @@ TwoBodyInt::TwoBodyInt(Integral *integral,
   integral_(integral),
   bs1_(b1), bs2_(b2), bs3_(b3), bs4_(b4), redundant_(1)
 {
-  MPQC_ASSERT(bs1_.nonnull() && bs2_.nonnull() && bs3_.nonnull() && bs4_.nonnull());
+  MPQC_ASSERT(bs1_ && bs2_ && bs3_ && bs4_);
   integral_->reference();
   buffer_ = 0;
   log2_to_double_ = init_log2_to_double();

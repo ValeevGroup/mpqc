@@ -97,7 +97,7 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
       "MBPT2_R12::MBPT2_R12\n"
       );
   Ref<OrbitalSpace> vbs;
-  if (bs_vir.nonnull()) {
+  if (bs_vir) {
     int nlindep_vir = -1; // will compute the number of linear dependencies automatically
     vbs = orthogonalize("e(sym)", "VBS", bs_vir,
                         integral(),
@@ -156,14 +156,14 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
   Ref<R12Technology> r12tech = r12world_->r12tech();
 
   Ref<R12Technology::NullCorrelationFactor> null_cf; null_cf << r12tech->corrfactor();
-  const bool default_cabs_singles = null_cf.nonnull() ? false : true;
+  const bool default_cabs_singles = null_cf ? false : true;
   cabs_singles_ = keyval->booleanvalue("cabs_singles",KeyValValueboolean(default_cabs_singles));
 
   twopdm_grid_ = require_dynamic_cast<TwoBodyGrid*>(
                    keyval->describedclassvalue("twopdm_grid").pointer(),
                    "MBPT2_R12::MBPT2_R12\n"
                  );
-  if (twopdm_grid_.nonnull()) {
+  if (twopdm_grid_) {
     plot_pair_function_[0] = static_cast<unsigned int>(keyval->intvalue("plot_pair_function", 0,
 									KeyValValueint(0)
 									));
@@ -183,7 +183,7 @@ MBPT2_R12::MBPT2_R12(const Ref<KeyVal>& keyval):
 
   this->set_desired_value_accuracy(desired_value_accuracy());
 
-  if (bs_vir.nonnull()) { // create AO space for VBS basis, if needed
+  if (bs_vir) { // create AO space for VBS basis, if needed
     Ref<OrbitalSpaceRegistry> idxreg = this->r12world()->world()->tfactory()->orbital_registry();
     Ref<AOSpaceRegistry> aoidxreg = this->r12world()->world()->tfactory()->ao_registry();
     Ref<Integral> localints = this->r12world()->refwfn()->integral()->clone();

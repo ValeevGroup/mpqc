@@ -106,7 +106,7 @@ namespace sc {
                                  factory_(IF),
                                  params_(0) {
           params_ << params;
-          MPQC_ASSERT(params_.nonnull());
+          MPQC_ASSERT(params_);
         }
         ~TwoBodyNCenterIntDescr() {}
 

@@ -275,13 +275,13 @@ WriteOrbitals::label(char* buffer)
 Ref<Molecule>
 WriteOrbitals::get_molecule()
 {
-  return obwfn_.nonnull() ? obwfn_->molecule() : orbs_->basis()->molecule();
+  return obwfn_ ? obwfn_->molecule() : orbs_->basis()->molecule();
 }
 
 void
 WriteOrbitals::calculate_values(const std::vector<SCVector3>& Points, std::vector<double>& Values)
 {
-  if (obwfn_.nonnull())
+  if (obwfn_)
     obwfn_->orbitals(Points, Values, omap_.map.front()-1, omap_.map.back()-1, true);
   else
     Wavefunction::orbitals(orbs_, Points, Values);

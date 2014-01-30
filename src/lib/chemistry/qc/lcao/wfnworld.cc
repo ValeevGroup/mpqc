@@ -75,7 +75,7 @@ WavefunctionWorld::WavefunctionWorld(const Ref<KeyVal>& keyval)
       keyval->describedclassvalue("df_basis").pointer(),
       "WavefunctionWorld::WavefunctionWorld\n"
       );
-  if (bs_df_.nonnull())
+  if (bs_df_)
     df_ = true;
   if (df_ == true) {
     std::string df_kernel = keyval->stringvalue("df_kernel", KeyValValuestring("coulomb"));
@@ -277,7 +277,7 @@ WavefunctionWorld::initialize()
 
     // create MO integrals runtime
     Ref<DensityFittingParams> dfparams;
-    if (bs_df_.nonnull()) {
+    if (bs_df_) {
       dfparams = new DensityFittingParams(bs_df_, df_kernel_, df_solver_);
     }
     moints_runtime_ = new MOIntsRuntime(tfactory_, dfparams);

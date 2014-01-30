@@ -101,7 +101,7 @@ DistSCMatrix::find_element(int i, int j) const
 
   Ref<SCMatrixRectBlock> blk
       = dynamic_cast<SCMatrixRectBlock*>(block_to_block(bi, bj).pointer());
-  if (blk.nonnull()) {
+  if (blk) {
       return &blk->data[oi*(blk->jend-blk->jstart)+oj];
     }
   else {
@@ -317,7 +317,7 @@ DistSCMatrix::accumulate(const SymmSCMatrix*a)
       // see if i've got this block
       Ref<SCMatrixBlock> localblock
           = block_to_block(block->blocki,block->blockj);
-      if (localblock.nonnull()) {
+      if (localblock) {
           // the diagonal blocks require special handling
           if (block->blocki == block->blockj) {
               int n = rowblocks()->size(block->blocki);
@@ -345,7 +345,7 @@ DistSCMatrix::accumulate(const SymmSCMatrix*a)
       // now for the transpose
       if (block->blocki != block->blockj) {
           localblock = block_to_block(block->blockj,block->blocki);
-          if (localblock.nonnull()) {
+          if (localblock) {
               int nr = rowblocks()->size(block->blocki);
               int nc = rowblocks()->size(block->blockj);
               double *dat1 = block->dat();
@@ -380,7 +380,7 @@ DistSCMatrix::accumulate(const DiagSCMatrix*a)
       // see if i've got this block
       Ref<SCMatrixBlock> localblock
           = block_to_block(block->blocki,block->blockj);
-      if (localblock.nonnull()) {
+      if (localblock) {
           int n = rowblocks()->size(block->blocki);
           double *dat1 = block->dat();
           double *dat2 = localblock->dat();
@@ -670,7 +670,7 @@ DistSCMatrix::accumulate_outer_product(SCVector*a,SCVector*b)
               = dynamic_cast<SCMatrixRectBlock*>(block_to_block(vi->blocki,
                                                        vj->blocki).pointer());
           // if the block is held locally sum in the outer prod contrib
-          if (rij.nonnull()) {
+          if (rij) {
               int nj = vj->iend - vj->istart;
               double *dat = rij->data;
               for (int i=0; i<ni; i++) {
@@ -705,7 +705,7 @@ DistSCMatrix::transpose_this()
       Ref<SCMatrixRectBlock> local
           = dynamic_cast<SCMatrixRectBlock*>(block_to_block(remote->blockj,
                                                     remote->blocki).pointer());
-      if (local.nonnull()) {
+      if (local) {
           int ni = local->iend - local->istart;
           int nj = local->jend - local->jstart;
           for (int i=0; i<ni; i++) {

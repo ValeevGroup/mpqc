@@ -333,7 +333,7 @@ namespace sc {
         Ref<Integral> localints = integral->clone();
 
         Ref<FockContribution> fc;
-        const bool openshell = openshelldensity.nonnull();
+        const bool openshell = openshelldensity;
         if (openshell) {
           fc = new HSOSHFContribution(brabasis, ketbasis, densitybasis, std::string("replicated"));
           ntypes_ = 2;
@@ -562,7 +562,7 @@ namespace sc {
                           compute_J_(compute_J),
                           compute_K_(compute_K),
                           compute_F_(compute_F),
-                          ntypes_(openshelldensity.nonnull() ? 2 : 1)
+                          ntypes_(openshelldensity ? 2 : 1)
       {
 
         // DF-based builds are separate for J and K separately
@@ -588,7 +588,7 @@ namespace sc {
             if (c == 1) { // exchange
               RefSymmSCMatrix Pspin;
               SpinCase1 spincase;
-              if (openshelldensity.nonnull()) {
+              if (openshelldensity) {
                 Pspin = (spin == Alpha) ? density + openshelldensity : density - openshelldensity;
                 spincase = spin;
               }

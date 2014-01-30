@@ -240,7 +240,7 @@ MolecularHessian::cartesian_to_symmetry(const Ref<Molecule> &mol,
       symmbasis[i] = kit->matrix(d3natom,dirrep);
       int offset = 0;
       for (j=0; j<irrep.degeneracy(); j++)
-        if (components[j].nonnull()) {
+        if (components[j]) {
           symmbasis[i]->assign_subblock(
               components[j],
               0, d3natom.n()-1,

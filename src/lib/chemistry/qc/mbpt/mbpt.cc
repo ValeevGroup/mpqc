@@ -351,7 +351,7 @@ MBPT2::obsolete()
   // Solaris 2.7 workshop 5.0 is causing this routine to
   // be incorrectly called in a base class CTOR.  Thus
   // reference_ might be null and it must be tested.
-  if (reference_.nonnull()) reference_->obsolete();
+  if (reference_) reference_->obsolete();
   Wavefunction::obsolete();
 }
 

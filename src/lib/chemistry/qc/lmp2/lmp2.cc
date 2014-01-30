@@ -1422,7 +1422,7 @@ LMP2::compute_lmp2_energy()
   L_.init(ao_,occ_act_,"L",bound_);
   sma2::pack_matrix_into_empty_array(scf_local,L_,bound_);
 
-  if (extrap_T_.nonnull()) extrap_T_->set_tolerance(tolerance);
+  if (extrap_T_) extrap_T_->set_tolerance(tolerance);
 
   // Create the transformation matrix P (P = I - ao_density*ao_overlap)
   // For projected atomic virtual orbitals, P is the matrix transforming from the
@@ -2059,7 +2059,7 @@ LMP2::iterate_LMP2_equations(double energy_tolerance, double rms_tolerance)
 {
   Timer tim("LMP2");
 
-  if (extrap_T_.nonnull()) extrap_T_->reinitialize();
+  if (extrap_T_) extrap_T_->reinitialize();
 
   sma2::Array<4> Res_computed(occ_act_,occ_act_,vir_,vir_);
   allocate_R(Res_computed,domainmap_,nfzc_,my_occ_pairs_);
@@ -2092,7 +2092,7 @@ LMP2::iterate_LMP2_equations(double energy_tolerance, double rms_tolerance)
 
       T_local_("i","j","r","s") += delta_T_computed("i","j","r","s");
 
-      if (extrap_T_.nonnull()) {
+      if (extrap_T_) {
           Timer extim("extrap");
           Ref<sma2::Array4SCExtrapError> err_T
               = new sma2::Array4SCExtrapError(delta_T_computed,true,msg_);

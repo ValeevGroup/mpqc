@@ -272,7 +272,7 @@ main(int argc, char* argv[])
   cout << "done" << endl;
 
   show( ra.pointer() ); cout << '\n';
-  if (ra.nonnull()) { ra->print(); cout << '\n'; }
+  if (ra) { ra->print(); cout << '\n'; }
 
   cout << "Testing string keyvals" << endl;
   Ref<ParsedKeyVal> strkv = new ParsedKeyVal();
@@ -280,7 +280,7 @@ main(int argc, char* argv[])
   strkv->parse_string("<B>:(b=123456)");
   cout << "  reading" << endl;
   Ref<B> strb; strb << strkv->describedclassvalue();
-  if (strb.nonnull()) {
+  if (strb) {
       cout << "  printing" << endl;
       strb->print(); cout << endl;
     }

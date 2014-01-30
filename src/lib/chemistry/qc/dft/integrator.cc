@@ -303,7 +303,7 @@ void
 DenIntegrator::set_accuracy(double a)
 {
   accuracy_ = a;
-  if (den_.nonnull()) den_->set_accuracy(a);
+  if (den_) den_->set_accuracy(a);
 }
 
 void
@@ -2143,13 +2143,13 @@ RadialAngularIntegrator::print(ostream &o) const
 {
   o << indent << class_name() << ":" << endl;
   o << incindent;
-  if (radial_user_.nonnull()) {
+  if (radial_user_) {
       o << indent << "User defined radial grid:" << endl;
       o << incindent;
       radial_user_->print(o);
       o << decindent;
     }
-  if (angular_user_.nonnull()) {
+  if (angular_user_) {
       o << indent << "User defined angular grid:" << endl;
       o << incindent;
       angular_user_->print(o);

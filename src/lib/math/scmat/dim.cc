@@ -190,13 +190,13 @@ SCBlockInfo::equiv(SCBlockInfo *bi)
   if (subdims_) {
       if (bi->subdims_) {
           for (i=0; i<nblocks_; i++) {
-              if (subdims_[i].nonnull()) {
-                  if (bi->subdims_[i].nonnull()) {
+              if (subdims_[i]) {
+                  if (bi->subdims_[i]) {
                       if (!subdims_[i]->equiv(bi->subdims_[i])) return 0;
                     }
                   else return 0;
                 }
-              else if (bi->subdims_[i].nonnull()) return 0;
+              else if (bi->subdims_[i]) return 0;
             }
         }
       else {
@@ -366,7 +366,7 @@ SCDimension::print(ostream&o) const
     }
   o << endl;
   incindent(o);
-  if (blocks_.nonnull()) blocks_->print(o);
+  if (blocks_) blocks_->print(o);
   decindent(o);
 }
 

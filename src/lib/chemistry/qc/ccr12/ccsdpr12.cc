@@ -141,7 +141,7 @@ void CCSDPR12::compute(){
     // compute new amplitudes from the residuals
     Ref<Tensor> t1_old = info()->t1()->copy();
     Ref<Tensor> t2_old = info()->t2()->copy();
-    Ref<Tensor> gt2_old = fullopt ? info()->gt2()->copy() : NULL;
+    Ref<Tensor> gt2_old = fullopt ? info()->gt2()->copy() : Ref<Tensor>();
 
     ccr12_info_->jacobi_t1(r1);
     if (fullopt) {
@@ -153,7 +153,7 @@ void CCSDPR12::compute(){
     // compute errors
     Ref<Tensor> t1_err = t1_old;
     Ref<Tensor> t2_err = t2_old;
-    Ref<Tensor> gt2_err = fullopt ? gt2_old : NULL;
+    Ref<Tensor> gt2_err = fullopt ? gt2_old : Ref<Tensor>();
     t1_err->daxpy(info()->t1(), -1.0);
     t2_err->daxpy(info()->t2(), -1.0);
     if (fullopt) gt2_err->daxpy(info()->gt2(), -1.0);

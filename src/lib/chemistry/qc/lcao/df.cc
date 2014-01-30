@@ -110,7 +110,7 @@ DensityFitting::product_dimension() const {
 void
 DensityFitting::compute()
 {
-  if (cC_.nonnull() && kernel_ && C_.nonnull()) // nothing to compute then
+  if (cC_ && kernel_ && C_) // nothing to compute then
     return;
   const Ref<AOSpaceRegistry>& aoidxreg = this->runtime()->factory()->ao_registry();
   const std::string fbasis_space_id = aoidxreg->value(fbasis_)->id();
@@ -421,7 +421,7 @@ TransformedDensityFitting::save_data_state(StateOut& so) {
 void
 TransformedDensityFitting::compute()
 {
-  if (C_.nonnull()) // nothing to compute then
+  if (C_) // nothing to compute then
     return;
   Ref<AOSpaceRegistry> aoidxreg = this->runtime()->factory()->ao_registry();
   const std::string name = ParsedDensityFittingKey::key(this->space1()->id(),
@@ -542,7 +542,7 @@ PermutedDensityFitting::save_data_state(StateOut& so) {
 void
 PermutedDensityFitting::compute()
 {
-  if (C_.nonnull()) // nothing to compute then
+  if (C_) // nothing to compute then
     return;
 
   Ref<AOSpaceRegistry> aoidxreg = this->runtime()->factory()->ao_registry();

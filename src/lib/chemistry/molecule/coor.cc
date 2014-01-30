@@ -185,7 +185,7 @@ SetIntCoor::SetIntCoor(const Ref<KeyVal>& keyval)
                        class_desc());
     }
 
-  if (gen.nonnull()) {
+  if (gen) {
       // Make sure that gen doesn't delete me before my reference
       // count gets incremented.
       this->reference();

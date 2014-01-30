@@ -61,7 +61,7 @@ R12WavefunctionWorld::R12WavefunctionWorld(
     const Ref<RefWavefunction>& ref,
     Ref<OrbitalSpace> ri_space) :
     refwfn_(ref), ref_acc_for_cabs_space_(DBL_MAX),
-    ribs_space_(ri_space), ribs_space_given_(ribs_space_.nonnull())
+    ribs_space_(ri_space), ribs_space_given_(ribs_space_)
 {
   // by default use spin-orbital algorithm
   spinadapted_ = keyval->booleanvalue("spinadapted",KeyValValueboolean(false));

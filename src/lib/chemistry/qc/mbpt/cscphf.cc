@@ -230,7 +230,7 @@ MBPT2::cs_cphf(double **scf_vector,
     sD.accumulate_symmetric_sum(D_matrix);
     make_cs_gmat_new(G, sD);
 #endif
-    AP_matrix = 2*Cv.t()*G*Co;
+    AP_matrix = 2.0*Cv.t()*G*Co;
 
     ptr1 = AP_matrix_tot[i-1];
     for (j=0; j<nvir; j++) {

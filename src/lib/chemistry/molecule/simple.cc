@@ -71,7 +71,7 @@ SimpleCo::SimpleCo(const Ref<KeyVal>&kv,int na) :
       if (i == 0) {
           // couldn't find any atoms so look for a molecule and atom labels
           Ref<Molecule> mol; mol << kv->describedclassvalue("molecule");
-          if (mol.nonnull()) {
+          if (mol) {
               for (i=0; i<na; i++) {
                   std::string label = kv->stringvalue("atom_labels", i);
                   if (kv->error() != KeyVal::OK) break;
@@ -208,7 +208,7 @@ SimpleCo::print_details(const Ref<Molecule> &mol, ostream& os) const
   for (i=0; i<natoms(); i++)
       os << scprintf(" %4d", atoms[i]);
 
-  if (mol.nonnull()) {
+  if (mol) {
       const char *separator = " ";
       os << "  ";
       for (i=0; i<(4-natoms()); i++) {

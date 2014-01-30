@@ -45,19 +45,19 @@ orthog_method = canonical
 
 etrain<ETraIn>: (
   value_accuracy = 1e-9
-  scf12<CLHF>: (
+  wfn12<CLHF>: (
     molecule = $:dimer
     basis = $:dbasis
     memory = 16000000
     orthog_method = $:orthog_method
   )
-  scf1<CLHF>: (
+  wfn1<CLHF>: (
     molecule = $:monomer1
     basis = $:m1basis
     memory = 16000000
     orthog_method = $:orthog_method
   )
-  scf2<CLHF>: (
+  wfn2<CLHF>: (
     molecule = $:monomer2
     basis = $:m2basis
     memory = 16000000

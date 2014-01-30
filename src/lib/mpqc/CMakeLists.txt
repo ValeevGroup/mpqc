@@ -35,8 +35,10 @@ if (MPQC_CI)
   if (MPQC_UNITTEST)
     add_executable(file_test file_test.cpp)
     target_link_libraries(file_test
+      util
       ${HDF5_LIBRARIES}
       ${Boost_UNITTEST_LIBRARIES}
+      ${Boost_LIBRARIES}
     )
     add_test(file file_test)
   endif()

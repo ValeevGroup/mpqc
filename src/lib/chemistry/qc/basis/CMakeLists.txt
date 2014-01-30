@@ -46,18 +46,15 @@ if (MPQC_UNITTEST)
 
   target_link_libraries( btest
     chemistry
+    ${LAPACK_LIBRARIES}
+    ${BLAS_LIBRARIES}
+    ${LIBRARIES}
+    ${CMAKE_DL_LIBS}
   )
+  if (HAVE_LIBINT2)
+    target_link_libraries(btest ${LIBINT2_LIBRARY})
+  endif()
 endif()
-
-if (HAVE_LIBINT2)
-  target_link_libraries(btest ${LIBINT2_LIBRARY})
-endif()
-
-target_link_libraries(btest ${LAPACK_LIBRARIES})
-target_link_libraries(btest ${BLAS_LIBRARIES})
-
-target_link_libraries(btest ${LIBRARIES})
-target_link_libraries(btest ${CMAKE_DL_LIBS})
 
 #set_property(SOURCE tbint_batch_test.cc PROPERTY COMPILE_DEFINITIONS
 #    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")

@@ -977,11 +977,13 @@ try_main(int argc, char *argv[])
   std::cout << "---- all tests ran to completion ----" << std::endl;
 }
 
+}
+
 int
 main(int argc, char *argv[])
 {
   try {
-      try_main(argc, argv);
+      sc::try_main(argc, argv);
   }
   catch (std::bad_alloc &e) {
       std::cout << argv[0] << ": ERROR: MEMORY ALLOCATION FAILED:" << std::endl
@@ -1000,6 +1002,4 @@ main(int argc, char *argv[])
       throw;
   }
   return 0;
-}
-
 }

@@ -20,11 +20,12 @@ add_mpqc_object_library(lmp2
 if (MPQC_UNITTEST)
   set_property(SOURCE avlmmaptest.cc PROPERTY COMPILE_DEFINITIONS
       SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-  add_executable(avlmmaptest avlmmaptest.cc $<TARGET_OBJECTS:lmp2>)
+  add_executable(avlmmaptest EXCLUDE_FROM_ALL avlmmaptest.cc $<TARGET_OBJECTS:lmp2>)
   target_link_libraries(avlmmaptest 
     chemistry
   )
-  add_test(avlmmaptest avlmmaptest)
+  # this test takes too long
+  #add_test(avlmmaptest avlmmaptest)
 
   set_property(SOURCE smatest.cc PROPERTY COMPILE_DEFINITIONS
       SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")

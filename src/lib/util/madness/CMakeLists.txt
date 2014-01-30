@@ -9,7 +9,7 @@ add_mpqc_object_library(madness
 # tests
 
 #set_property(SOURCE madtest.cc PROPERTY COMPILE_DEFINITIONS
-#    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+#    SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
 #add_executable(madtest EXCLUDE_FROM_ALL madtest.cc $<TARGET_OBJECTS:madness>)
 #add_test(madtest madtest)
 

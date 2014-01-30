@@ -26,12 +26,12 @@ add_mpqc_object_library(scf
 # tests
 
 #set_property(SOURCE focktest.cc PROPERTY COMPILE_DEFINITIONS
-#    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+#    SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
 #add_executable(focktest EXCLUDE_FROM_ALL focktest.cc $<TARGET_OBJECTS:scf>)
 #add_test(focktest focktest)
 
 #set_property(SOURCE scftest.cc PROPERTY COMPILE_DEFINITIONS
-#    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+#    SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
 #add_executable(scftest EXCLUDE_FROM_ALL scftest.cc $<TARGET_OBJECTS:scf>)
 #add_test(scftest scftest)
 

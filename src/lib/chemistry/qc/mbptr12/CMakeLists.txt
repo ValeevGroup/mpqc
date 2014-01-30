@@ -50,7 +50,7 @@ twoparticlecontraction.cc
 # tests
 
 #set_property(SOURCE mbptr12test.cc PROPERTY COMPILE_DEFINITIONS
-#    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+#    SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
 #add_executable(mbptr12test EXCLUDE_FROM_ALL mbptr12test.cc $<TARGET_OBJECTS:mbptr12>)
 #add_test(mbptr12test mbptr12test)
 

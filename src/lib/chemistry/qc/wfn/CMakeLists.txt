@@ -24,7 +24,7 @@ add_mpqc_object_library(wfn
 # tests
 
 #set_property(SOURCE wfntest.cc PROPERTY COMPILE_DEFINITIONS
-#    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+#    SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
 #add_executable(wfntest EXCLUDE_FROM_ALL wfntest.cc $<TARGET_OBJECTS:wfn>)
 #add_test(wfntest wfntest)
 

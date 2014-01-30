@@ -17,7 +17,7 @@ if (MPQC_UNITTEST)
   add_test(classtest classtest)
 
   # set_property(SOURCE scextest.cc PROPERTY COMPILE_DEFINITIONS
-  #     -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  #     SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
   # add_executable(scextest EXCLUDE_FROM_ALL scextest.cc $<TARGET_OBJECTS:class>)
   # add_test(scextest scextest)
 endif()

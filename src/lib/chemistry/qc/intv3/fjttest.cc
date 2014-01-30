@@ -2,7 +2,7 @@
 #include <math.h>
 #include <float.h>
 
-#include <chemistry/qc/intv3/fjt.h>
+#include <chemistry/qc/basis/fjt.h>
 #include <util/misc/formio.h>
 
 using namespace std;
@@ -95,7 +95,7 @@ mgamma_m(int m, double x)
 }
 
 static double
-Fjt(int j, double t)
+_Fjt(int j, double t)
 {
   //return gamma(j+0.5,sqrt(t))/(2.0*pow(t,j+0.5));
   return 0.5 * mgamma_m(j,t);
@@ -112,7 +112,7 @@ main(int,char**)
       double *values = fjt->values(maxj,T);
       for (int j=0; j<=maxj; j+=1) {
           double v1 = values[j];
-          double v2 = Fjt(j,T);
+          double v2 = _Fjt(j,T);
           double error = fabs((v1-v2)/v1);
           if (error > DBL_EPSILON*10.0) {
               cout << scprintf("F(%2d,%5.2f) = %15.12f %15.12f e = %18.15f",

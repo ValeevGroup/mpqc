@@ -51,13 +51,4 @@ if (MPQC_UNITTEST)
     ${LIBRARIES}
     ${CMAKE_DL_LIBS}
   )
-  if (HAVE_LIBINT2)
-    target_link_libraries(btest ${LIBINT2_LIBRARY})
-  endif()
 endif()
-
-#set_property(SOURCE tbint_batch_test.cc PROPERTY COMPILE_DEFINITIONS
-#    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-#add_executable(tbint_batch_test EXCLUDE_FROM_ALL tbint_batch_test.cc $<TARGET_OBJECTS:basis>)
-#add_test(tbint_batch_test tbint_batch_test)
-

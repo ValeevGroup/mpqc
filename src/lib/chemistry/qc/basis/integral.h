@@ -332,7 +332,8 @@ class Integral : public SavableState {
     /** Return a OneBodyInt that computes electric quadrupole moment integrals,
         i.e. integrals of the \f$e (\mathbf{r}-\mathbf{C}) \otimes (\mathbf{r}-\mathbf{C})\f$ operator.
         Multiply by -1 to obtain electronic electric quadrupole integrals.
-	    The canonical order of integrals in a set is x^2, xy, xz, y^2, yz, z^2. */
+	    The canonical order of integrals in a set is x^2, xy, xz, y^2, yz, z^2.
+	    \note These are not traceless quadrupole integrals!! */
     virtual Ref<OneBodyInt> quadrupole(const Ref<DipoleData>&) =0;
 
     /// Return a OneBodyDerivInt that computes overlap derivatives.

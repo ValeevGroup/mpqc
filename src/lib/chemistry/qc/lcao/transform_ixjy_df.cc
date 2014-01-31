@@ -326,7 +326,7 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
   }
   else {
     const std::string kernel_key = factory()->df_info()->params()->kernel_key();
-    ParsedTwoBodyOperKey kernel_pkey(kernel_key);
+    ParsedTwoBodyOperSetKey kernel_pkey(kernel_key);
     TwoBodyOperSet::type operset = TwoBodyOperSet::to_type(kernel_pkey.oper());
     df_descr = IntDescrFactory::make<4>(factory()->integral(),
                                         operset,
@@ -349,7 +349,7 @@ TwoBodyMOIntsTransform_ixjy_df::compute() {
     )
       use_simple_formula = true;
   }
-  const std::string kernel_key = ParsedTwoBodyOperKey::key<4>(df_descr);
+  const std::string kernel_key = ParsedTwoBodyOperSetKey::key<4>(df_descr);
 
   const Ref<AOSpaceRegistry>& aoidxreg = this->factory()->ao_registry();
 

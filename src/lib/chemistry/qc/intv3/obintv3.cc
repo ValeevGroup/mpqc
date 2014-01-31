@@ -97,6 +97,31 @@ PointChargeIntV3::compute_shell(int i,int j)
 }
 
 ////////////////////////////////////////////////////////////////////////////
+// EfieldIntV3
+
+EfieldIntV3::EfieldIntV3(
+    Integral *integral,
+    const Ref<GaussianBasisSet>&bs1,
+    const Ref<GaussianBasisSet>&bs2,
+    const Ref<IntParamsOrigin>&dat) :
+  OneBodyInt(integral,bs1,bs2),
+  data_(dat)
+{
+  int1ev3_ = new Int1eV3(integral,bs1,bs2,0);
+  buffer_ = int1ev3_->buffer();
+}
+
+EfieldIntV3::~EfieldIntV3()
+{
+}
+
+void
+EfieldIntV3::compute_shell(int i,int j)
+{
+  int1ev3_->efield(i,j,data_->r());
+}
+
+////////////////////////////////////////////////////////////////////////////
 // EfieldDotVectorIntV3
 
 EfieldDotVectorIntV3::EfieldDotVectorIntV3(

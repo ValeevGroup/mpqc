@@ -125,14 +125,18 @@ namespace sc {
       bool equiv(const IntParams& other) const;
   };
 
-  /** Passes params to Integral::dipole() and other factory methods which need origin information */
+  /** Passes params to Integral::dipole() and other factory methods which need r information */
   class IntParamsOrigin : public IntParams {
     public:
+      IntParamsOrigin();
       IntParamsOrigin(const double (&O)[3]);
-      IntParamsOrigin(const Ref<DipoleData>& dipole_data);
       IntParamsOrigin(StateIn&);
       ~IntParamsOrigin();
       void save_data_state(StateOut&);
+
+      const double* r() const;
+      double r(unsigned int xyz) const;
+
     private:
       std::vector<double> O_;
       bool equiv(const IntParams& other) const;

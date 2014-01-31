@@ -320,8 +320,15 @@ class Integral : public SavableState {
     /// Return a OneBodyInt that computes the core Hamiltonian integrals.
     virtual Ref<OneBodyInt> hcore() = 0;
 
-    /** Return a OneBodyInt that computes the electric field integrals
-        dotted with a given vector. */
+    /** Return a OneBodyInt that computes the electric field integrals at a given position.
+        The canonical order of integrals in a set is x, y, z.
+        \sa efield_dot_vector()
+      */
+    virtual Ref<OneBodyInt> efield(const Ref<IntParamsOrigin>& = 0) =0;
+
+    /** Return a OneBodyInt that computes the electric field integrals at a given position
+        dotted with a given vector. \sa efield()
+      */
     virtual Ref<OneBodyInt> efield_dot_vector(const Ref<EfieldDotVectorData>&) =0;
 
     /** Return a OneBodyInt that computes electric dipole moment integrals, i.e. integrals

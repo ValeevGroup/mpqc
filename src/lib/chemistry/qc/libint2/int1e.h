@@ -47,8 +47,7 @@ class Int1eLibint2: public RefCount {
     Ref<GaussianBasisSet> bs1_;
     Ref<GaussianBasisSet> bs2_;
 
-    // This was really an afterthought, should have designed better
-    Ref<DipoleData> multipole_origin_;
+    Ref<IntParams> operset_params_;
     Ref<EfieldDotVectorData> EdotV_origin_;
     Ref<PointChargeData> Q_origin_;
 
@@ -134,10 +133,11 @@ class Int1eLibint2: public RefCount {
             int order, bool need_overlap, bool need_coulomb, int ntypes);
     ~Int1eLibint2();
 
-    void set_multipole_origin(const Ref<DipoleData>&);
+    void set_params(const Ref<IntParams>& p);
     void set_EdotV_origin(const Ref<EfieldDotVectorData>&);
     void set_Q_origin(const Ref<PointChargeData>&);
-    Ref<DipoleData> multipole_origin();
+    Ref<IntParams> params();
+    Ref<IntParamsOrigin> multipole_origin();
     Ref<EfieldDotVectorData> EdotV_origin();
     Ref<PointChargeData> Q_origin();
 

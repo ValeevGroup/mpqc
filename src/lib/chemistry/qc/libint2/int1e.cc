@@ -44,7 +44,7 @@ Int1eLibint2::Int1eLibint2(Integral *integral,
 		       const Ref<GaussianBasisSet>&b2,
 		       int order, bool need_overlap, bool need_coulomb,
 		       int ntypes) :
-  integral_(integral), bs1_(b1), bs2_(b2), multipole_origin_(0),
+  integral_(integral), bs1_(b1), bs2_(b2), operset_params_(),
   EdotV_origin_(0), Q_origin_(0), need_overlap_(need_overlap),
   need_coulomb_(need_coulomb), ntypes_(ntypes)
 {
@@ -126,9 +126,9 @@ Int1eLibint2::~Int1eLibint2()
   delete[] target_ints_buffer_;
 }
 
-void Int1eLibint2::set_multipole_origin(const Ref<DipoleData>& origin)
+void Int1eLibint2::set_params(const Ref<IntParams>& params)
 {
-  multipole_origin_ = origin;
+  operset_params_ = params;
 }
 
 void Int1eLibint2::set_EdotV_origin(const Ref<EfieldDotVectorData>& origin)
@@ -141,10 +141,16 @@ void Int1eLibint2::set_Q_origin(const Ref<PointChargeData>& origin)
   Q_origin_ = origin;
 }
 
-Ref<DipoleData>
+Ref<IntParams>
+Int1eLibint2::params()
+{
+  return operset_params_;
+}
+
+Ref<IntParamsOrigin>
 Int1eLibint2::multipole_origin()
 {
-  return multipole_origin_;
+  return require_dynamic_cast<IntParamsOrigin*>(operset_params_.pointer(), "need multipole origin, but not in multipole evaluator");
 }
 
 Ref<EfieldDotVectorData>

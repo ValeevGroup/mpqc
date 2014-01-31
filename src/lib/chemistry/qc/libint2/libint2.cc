@@ -324,18 +324,18 @@ IntegralLibint2::efield_dot_vector(const Ref<EfieldDotVectorData>&dat)
 }
 
 Ref<OneBodyInt>
-IntegralLibint2::dipole(const Ref<DipoleData>& dat)
+IntegralLibint2::dipole(const Ref<IntParamsOrigin>& dat)
 {
   Ref<OneBodyIntLibint2> dipoleint = new OneBodyIntLibint2(this, bs1_, bs2_, &Int1eLibint2::edipole);
-  dipoleint->set_multipole_origin(dat);
+  dipoleint->set_params(dat);
   return dipoleint;
 }
 
 Ref<OneBodyInt>
-IntegralLibint2::quadrupole(const Ref<DipoleData>& dat)
+IntegralLibint2::quadrupole(const Ref<IntParamsOrigin>& dat)
 {
   Ref<OneBodyIntLibint2> quadint = new OneBodyIntLibint2(this, bs1_, bs2_, &Int1eLibint2::equadrupole);
-  quadint->set_multipole_origin(dat);
+  quadint->set_params(dat);
   return quadint;
 }
 

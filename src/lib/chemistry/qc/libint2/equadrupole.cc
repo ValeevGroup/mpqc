@@ -44,9 +44,8 @@ void Int1eLibint2::equadrupole(int sh1, int sh2)
   int maxam2 = int_shell2_->max_am();
   int minam2 = int_shell2_->min_am();
 
-  if (multipole_origin_.null()) {
-    double d[3] = {0.0, 0.0, 0.0};
-    set_multipole_origin(new DipoleData(d));
+  if (operset_params_.null()) {
+    operset_params_ = new IntParamsOrigin;
   }
 
   equadrupole_full_general_();
@@ -55,6 +54,7 @@ void Int1eLibint2::equadrupole(int sh1, int sh2)
 
 void Int1eLibint2::equadrupole_full_general_()
 {
+  Ref<IntParamsOrigin> origin = multipole_origin();
   int maxam1 = int_shell1_->max_am();
   int maxam2 = int_shell2_->max_am();
   const int ntypes = 6;      // integrals for xx, xy, xz, yy, yz, zz
@@ -111,7 +111,7 @@ void Int1eLibint2::equadrupole_full_general_()
 	P[xyz] = (a1*doublet_info_.A[xyz] + a2*doublet_info_.B[xyz])*oog;
 	PA[xyz] = P[xyz] - doublet_info_.A[xyz];
 	PB[xyz] = P[xyz] - doublet_info_.B[xyz];
-	BO[xyz] = doublet_info_.B[xyz] - multipole_origin_->origin[xyz];
+	BO[xyz] = doublet_info_.B[xyz] - origin->r(xyz);
       }
 
       OI_OSrecurs_(OIX_,OIY_,OIZ_,PA,PB,gamma,maxam1,maxam2+2);

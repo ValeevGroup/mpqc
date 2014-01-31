@@ -3014,7 +3014,7 @@ Int1eV3::int_accum_shell_dipole(int ish, int jsh,
  * system used to compute the dipole moment.
  */
 void
-Int1eV3::dipole(int ish, int jsh, double *com)
+Int1eV3::dipole(int ish, int jsh, const double *com)
 {
   int c1,i1,j1,k1,c2,i2,j2,k2;
   int gc1,gc2;

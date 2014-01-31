@@ -100,12 +100,12 @@ class DipoleIntV3: public OneBodyInt
 {
   protected:
     Ref<Int1eV3> int1ev3_;
-    Ref<DipoleData> data_;
+    Ref<IntParamsOrigin> data_;
   public:
     DipoleIntV3(Integral*,
                 const Ref<GaussianBasisSet>&,
                 const Ref<GaussianBasisSet>&,
-                const Ref<DipoleData>&);
+                const Ref<IntParamsOrigin>&);
     ~DipoleIntV3();
     void compute_shell(int,int);
 };

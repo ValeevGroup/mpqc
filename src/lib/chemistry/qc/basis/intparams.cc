@@ -55,20 +55,6 @@ EfieldDotVectorData::set_vector(double*v)
 
 ///////////////////////////////////////////////////////////////////////
 
-DipoleData::~DipoleData()
-{
-}
-
-void
-DipoleData::set_origin(double*o)
-{
-  origin[0] = o[0];
-  origin[1] = o[1];
-  origin[2] = o[2];
-}
-
-///////////////////////////////////////////////////////////////////////
-
 PointChargeData::PointChargeData(int ncharges,
                                  const double *const*positions,
                                  const double *charges,

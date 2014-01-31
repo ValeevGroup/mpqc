@@ -336,16 +336,24 @@ class Integral : public SavableState {
     virtual Ref<OneBodyInt> efield_dot_vector(const Ref<EfieldDotVectorData>&) =0;
 
     /** Return a OneBodyInt that computes electric dipole moment integrals, i.e. integrals
-        of the \f$e (\mathbf{r}-\mathbf{C})\f$ operator. Multiply by -1 to obtain electronic electric dipole
-        integrals. The canonical order of integrals in a set is x, y, z. */
-    virtual Ref<OneBodyInt> dipole(const Ref<DipoleData>&) =0;
+        of the \f$e (\mathbf{r}-\mathbf{O})\f$ operator. Multiply by -1 to obtain electronic electric dipole
+        integrals. The canonical order of integrals in a set is x, y, z.
+        @param O IntParamsOrigin object that specifies the origin of the multipole expansion;
+                 the default is to use the origin of the coordinate system
+      */
+    virtual Ref<OneBodyInt> dipole(const Ref<IntParamsOrigin>& O = 0) =0;
 
     /** Return a OneBodyInt that computes electric quadrupole moment integrals,
-        i.e. integrals of the \f$e (\mathbf{r}-\mathbf{C}) \otimes (\mathbf{r}-\mathbf{C})\f$ operator.
+        i.e. integrals of the \f$e (\mathbf{r}-\mathbf{O}) \otimes (\mathbf{r}-\mathbf{O})\f$ operator.
         Multiply by -1 to obtain electronic electric quadrupole integrals.
 	    The canonical order of integrals in a set is x^2, xy, xz, y^2, yz, z^2.
-	    \note These are not traceless quadrupole integrals!! */
-    virtual Ref<OneBodyInt> quadrupole(const Ref<DipoleData>&) =0;
+
+	    @param O IntParamsOrigin object that specifies the origin of the multipole expansion;
+                 the default is to use the origin of the coordinate system
+
+	    \note These are not traceless quadrupole integrals!!
+	  */
+    virtual Ref<OneBodyInt> quadrupole(const Ref<IntParamsOrigin>& O  = 0) =0;
 
     /// Return a OneBodyDerivInt that computes overlap derivatives.
     virtual Ref<OneBodyDerivInt> overlap_deriv() =0;

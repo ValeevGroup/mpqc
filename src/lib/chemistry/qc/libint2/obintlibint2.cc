@@ -61,9 +61,9 @@ OneBodyIntLibint2::~OneBodyIntLibint2()
 {
 }
 
-void OneBodyIntLibint2::set_multipole_origin(const Ref<DipoleData>& origin)
+void OneBodyIntLibint2::set_params(const Ref<IntParams>& p)
 {
-  int1elibint2_->set_multipole_origin(origin);
+  int1elibint2_->set_params(p);
 }
 
 void OneBodyIntLibint2::set_EdotV_origin(const Ref<EfieldDotVectorData>& origin)
@@ -96,7 +96,7 @@ OneBodyIntLibint2::clone()
 
   // make sure the full state of this object gets set up
   // in the clone
-  oblibint2->set_multipole_origin(int1elibint2_->multipole_origin());
+  oblibint2->set_params(int1elibint2_->params());
   oblibint2->set_EdotV_origin(int1elibint2_->EdotV_origin());
   oblibint2->set_Q_origin(int1elibint2_->Q_origin());
 

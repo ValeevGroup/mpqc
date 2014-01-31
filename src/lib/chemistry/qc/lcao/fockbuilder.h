@@ -88,7 +88,7 @@ namespace sc {
     };
 
     typedef Ref<OneBodyInt> (Integral::*OneBodyIntCreator)();
-    typedef Ref<OneBodyInt> (Integral::*MultipoleOneBodyIntCreator)(const Ref<DipoleData>&);
+    typedef Ref<OneBodyInt> (Integral::*MultipoleOneBodyIntCreator)(const Ref<IntParamsOrigin>&);
 
     template <OneBodyIntCreator OpEval>
     RefSymmSCMatrix onebodyint(const Ref<GaussianBasisSet>& bas,
@@ -174,13 +174,13 @@ namespace sc {
     template <MultipoleOneBodyIntCreator OpEval>
     void onebodyint_ao(const Ref<GaussianBasisSet>& brabas,
                        const Ref<GaussianBasisSet>& ketbas,
-                       const Ref<Integral>& integral, const Ref<DipoleData>& dipole_data,
+                       const Ref<Integral>& integral, const Ref<IntParamsOrigin>& multipole_origin,
                        std::vector<RefSCMatrix>& result) {
 
       Ref<Integral> localints = integral->clone();
       Ref<GPetiteList2> pl12 = GPetiteListFactory::plist2(brabas,ketbas);
       localints->set_basis(brabas,ketbas);
-      Ref<OneBodyInt> ob_ints = (localints->*OpEval)(dipole_data);
+      Ref<OneBodyInt> ob_ints = (localints->*OpEval)(multipole_origin);
 
       // form obints in AO basis
       const size_t nopers = result.size();

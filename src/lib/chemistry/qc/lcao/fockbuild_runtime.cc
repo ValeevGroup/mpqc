@@ -500,13 +500,13 @@ FockBuildRuntime::get(const std::string& key) {
               const bool compute_mu = not registry_->key_exists(operkeys[0]);
               if (compute_mu) {
                 const Ref<GaussianBasisSet>& obs = basis_;
-                Ref<DipoleData> dipole_data = new DipoleData();
+                Ref<IntParamsOrigin> multipole_origin = new IntParamsOrigin();
                 if (multipole_order == 1)
                   sc::detail::onebodyint_ao<&Integral::dipole>(bra->basis(), ket->basis(),
-                                                               integral(), dipole_data, intmats);
+                                                               integral(), multipole_origin, intmats);
                 else // multipole_order == 2
                   sc::detail::onebodyint_ao<&Integral::quadrupole>(bra->basis(), ket->basis(),
-                                                                   integral(), dipole_data, intmats);
+                                                                   integral(), multipole_origin, intmats);
                 for (int xyz = 0; xyz < nops; ++xyz) {
                   RefSCMatrix mu_ao_blk = bra->coefs().kit()->matrix(bra->coefs().rowdim(),ket->coefs().rowdim());
                   mu_ao_blk->convert( intmats[xyz] );
@@ -572,8 +572,8 @@ FockBuildRuntime::electric_field_contribution(std::string bra_key,
   const bool compute_Mu = not registry_->key_exists(mukeys[0]);
   if (compute_Mu) {
     const Ref<GaussianBasisSet>& obs = basis_;
-    Ref<DipoleData> dipole_data = new DipoleData();
-    sc::detail::onebodyint_ao<&Integral::dipole>(bs1, bs2, integral(), dipole_data, Mu);
+    Ref<IntParamsOrigin> dipole_origin = new IntParamsOrigin();
+    sc::detail::onebodyint_ao<&Integral::dipole>(bs1, bs2, integral(), dipole_origin, Mu);
     for (int xyz = 0; xyz < 3; ++xyz) {
       RefSCMatrix mu_ao_blk = bra->coefs().kit()->matrix(bra->coefs().rowdim(),ket->coefs().rowdim());
       mu_ao_blk->convert( Mu[xyz] );

@@ -246,7 +246,7 @@ class Int1eV3: public RefCount {
                       int ncharge, const double* charge,
                       const double*const* position);
     void dipole(int ish, int jsh,
-                double *com);
+                const double *com);
 
     void hcore_1der(int ish, int jsh,
                     int dercs, int centernum);

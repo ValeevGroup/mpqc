@@ -1084,7 +1084,7 @@ Int1eV3::accum_shell_block_efield(double *buff, int ish, int jsh)
  * x y z, etc.
  */
 void
-Int1eV3::efield(int ish, int jsh, double *position)
+Int1eV3::efield(int ish, int jsh, const double *position)
 {
   scale_shell_result = 0;
   int xyz;

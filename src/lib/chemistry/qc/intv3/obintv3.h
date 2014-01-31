@@ -67,6 +67,21 @@ class PointChargeIntV3 : public OneBodyInt
     void compute_shell(int,int);
 };
 
+class EfieldIntV3: public OneBodyInt
+{
+  protected:
+    Ref<Int1eV3> int1ev3_;
+    Ref<IntParamsOrigin> data_;
+  public:
+    EfieldIntV3(Integral*,
+                const Ref<GaussianBasisSet>&,
+                const Ref<GaussianBasisSet>&,
+                const Ref<IntParamsOrigin>&);
+    ~EfieldIntV3();
+    void compute_shell(int,int);
+};
+
+
 class EfieldDotVectorIntV3: public OneBodyInt
 {
   protected:

@@ -453,7 +453,8 @@ namespace sc {
     else if (pkey.oper() == "hJ")
       operator_matrix = freg->get(ParsedOneBodyIntKey::key(bra_id, ket_id, "H"))
                       + freg->get(ParsedOneBodyIntKey::key(bra_id, ket_id, "J"));
-    else if (pkey.oper().find("mu_") == 0 || pkey.oper().find("q_") == 0) {
+    else if (pkey.oper().find("mu_") == 0 || pkey.oper().find("q_") == 0 ||
+             pkey.oper().find("dphi_") == 0 || pkey.oper().find("ddphi_") == 0) {
       operator_matrix = freg->get(ParsedOneBodyIntKey::key(bra_id, ket_id, pkey.oper()));
     }
     else if (pkey.oper() == "gamma")

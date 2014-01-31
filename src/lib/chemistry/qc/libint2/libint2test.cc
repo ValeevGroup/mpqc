@@ -530,8 +530,7 @@ void compare_1e3_libint2_vs_v3(Ref<OneBodyInt>& oblibint2,
               for (int xyz = 0; xyz < 3; ++xyz) {
                 double valuelibint2 = bufferlibint2[(bf1libint2 * nbf2
                     + bf2libint2) * 3 + xyz];
-                // IntV3 electric dipole integrals do not include electron charge
-                double valuev3 = (-1) * bufferv3[(bf1v3 * nbf2 + bf2v3) * 3
+                double valuev3 = bufferv3[(bf1v3 * nbf2 + bf2v3) * 3
                     + xyz];
                 if (fabs(valuelibint2 - valuev3) > 1E-13) {
                   cout

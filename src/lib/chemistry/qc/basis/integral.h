@@ -321,7 +321,7 @@ class Integral : public SavableState {
     virtual Ref<OneBodyInt> hcore() = 0;
 
     /** Return a OneBodyInt that computes the electric field integrals at specified point.
-        The canonical order of integrals in a set is x, y, z.
+        The canonical order of integrals in a set is x, y, z (i.e. Ex, Ey, Ey).
 
         @param O IntParamsOrigin object that specifies the point where the electric field is computed;
                  there is no default.
@@ -336,31 +336,37 @@ class Integral : public SavableState {
     virtual Ref<OneBodyInt> efield_dot_vector(const Ref<EfieldDotVectorData>&) =0;
 
     /** Return a OneBodyInt that computes the electric field gradient integrals at specified point.
-        The canonical order of integrals in a set is d Ex / dx, d Ex / dy, etc.
+        The canonical order of integrals in the 6-element sequence
+        is d Ex / dx, d Ex / dy, d Ex / dz, d Ey / dy, d Ey / dz, d Ez / dz,
 
         @param O IntParamsOrigin object that specifies the point where the electric field gradient is computed;
                  there is no default.
+
+        \note only 6 elements are unique since d Ei / d j = d Ej / d i
 
       */
     virtual Ref<OneBodyInt> efield_gradient(const Ref<IntParamsOrigin>& O);
 
     /** Return a OneBodyInt that computes electric dipole moment integrals, i.e. integrals
-        of the \f$e (\mathbf{r}-\mathbf{O})\f$ operator. Multiply by -1 to obtain electronic electric dipole
-        integrals. The canonical order of integrals in a set is x, y, z.
+        of the \f$e (\mathbf{r}-\mathbf{O})\f$ operator. The canonical order of integrals in a set is x, y, z.
+
         @param O IntParamsOrigin object that specifies the origin of the multipole expansion;
-                 the default is to use the origin of the coordinate system
+                 the default is to use the origin of the coordinate system.
+
+        \note Multiply by -1 to obtain electronic electric quadrupole integrals.
       */
     virtual Ref<OneBodyInt> dipole(const Ref<IntParamsOrigin>& O = 0) =0;
 
     /** Return a OneBodyInt that computes electric quadrupole moment integrals,
         i.e. integrals of the \f$e (\mathbf{r}-\mathbf{O}) \otimes (\mathbf{r}-\mathbf{O})\f$ operator.
-        Multiply by -1 to obtain electronic electric quadrupole integrals.
 	    The canonical order of integrals in a set is x^2, xy, xz, y^2, yz, z^2.
 
 	    @param O IntParamsOrigin object that specifies the origin of the multipole expansion;
                  the default is to use the origin of the coordinate system
 
 	    \note These are not traceless quadrupole integrals!!
+	    \note Multiply by -1 to obtain electronic electric quadrupole integrals.
+
 	  */
     virtual Ref<OneBodyInt> quadrupole(const Ref<IntParamsOrigin>& O  = 0) =0;
 

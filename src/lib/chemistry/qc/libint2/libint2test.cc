@@ -159,15 +159,15 @@ int main(int argc, char **argv) {
   cout << "storage = " << storage << endl;
 
   tim->enter("Integral");
-  Ref<Integral> integral = new IntegralV3(basis);
+  Ref<Integral> integralv3 = new IntegralV3(basis);
   Ref<Integral> integrallibint2 = new IntegralLibint2(basis);
 
-  Ref<OneBodyInt> overlapv3 = integral->overlap();
-  Ref<OneBodyInt> kineticv3 = integral->kinetic();
-  Ref<OneBodyInt> nuclearv3 = integral->nuclear();
-  Ref<OneBodyInt> hcorev3 = integral->hcore();
-  Ref<OneBodyInt> edipolev3 = integral->dipole(0);
-  Ref<OneBodyInt> efieldv3 = integral->efield(new IntParamsOrigin(mol->r(0))); // efield at the first atom
+  Ref<OneBodyInt> overlapv3 = integralv3->overlap();
+  Ref<OneBodyInt> kineticv3 = integralv3->kinetic();
+  Ref<OneBodyInt> nuclearv3 = integralv3->nuclear();
+  Ref<OneBodyInt> hcorev3 = integralv3->hcore();
+  Ref<OneBodyInt> edipolev3 = integralv3->dipole(0);
+  Ref<OneBodyInt> efieldv3 = integralv3->efield(new IntParamsOrigin(mol->r(0))); // efield at the first atom
 
   Ref<OneBodyInt> overlaplibint2 = integrallibint2->overlap();
   testint(overlaplibint2);
@@ -186,7 +186,7 @@ int main(int argc, char **argv) {
   //Ref<OneBodyInt> efieldlibint2 = integrallibint2->efield(new IntParamsOrigin(mol->r(0)));
   //testint(efieldlibint2);
 
-  Ref<TwoBodyInt> erepv3 = integral->electron_repulsion();
+  Ref<TwoBodyInt> erepv3 = integralv3->electron_repulsion();
 
   int storage_needed = integrallibint2->storage_required_eri(basis);
   cout << scprintf("Need %d bytes to create EriLibint2\n", storage_needed);
@@ -224,7 +224,7 @@ int main(int argc, char **argv) {
   for (int l = 0; l <= 3; ++l) {
     CartesianIter* citerv[2];
     citerv[0] = integrallibint2->new_cartesian_iter(l);
-    citerv[1] = integral->new_cartesian_iter(l);
+    citerv[1] = integralv3->new_cartesian_iter(l);
     for (int i = 0; i < 2; ++i) {
       CartesianIter* citer = citerv[i];
       cout << "Cartesian L=" << l << " shell (" << (i == 0 ? "Libint2" : "V3")
@@ -235,7 +235,7 @@ int main(int argc, char **argv) {
     }
     RedundantCartesianIter* rciterv[2];
     rciterv[0] = integrallibint2->new_redundant_cartesian_iter(l);
-    rciterv[1] = integral->new_redundant_cartesian_iter(l);
+    rciterv[1] = integralv3->new_redundant_cartesian_iter(l);
     for (int i = 0; i < 2; ++i) {
       RedundantCartesianIter* rciter = rciterv[i];
       cout << "Redundant Cartesian L=" << l << " shell ("
@@ -405,8 +405,8 @@ int main(int argc, char **argv) {
 
       integrallibint2->set_basis(basis1, basis2, basis3, basis4);
       Ref<TwoBodyInt> ereplibint2 = integrallibint2->electron_repulsion();
-      integral->set_basis(basis1, basis2, basis3, basis4);
-      Ref<TwoBodyInt> erepv3 = integral->electron_repulsion();
+      integralv3->set_basis(basis1, basis2, basis3, basis4);
+      Ref<TwoBodyInt> erepv3 = integralv3->electron_repulsion();
 
       const bool print_all = false;
       if (puream)

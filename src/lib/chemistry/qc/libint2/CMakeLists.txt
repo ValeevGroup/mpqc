@@ -10,6 +10,8 @@ add_mpqc_object_library(libint2
   comp_g12nc.cc
   #comp_grt.cc
   edipole.cc
+  efield.cc
+  efield_grad.cc
   equadrupole.cc
   eri.cc
   g12.cc

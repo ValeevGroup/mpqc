@@ -108,6 +108,8 @@ class IntegralLibint2 : public Integral {
 
     Ref<OneBodyInt> efield_dot_vector(const Ref<EfieldDotVectorData>& =0);
 
+    Ref<OneBodyInt> efield_gradient(const Ref<IntParamsOrigin>&);
+
     Ref<OneBodyInt> dipole(const Ref<IntParamsOrigin>& =0);
 
     Ref<OneBodyInt> quadrupole(const Ref<IntParamsOrigin>& =0);

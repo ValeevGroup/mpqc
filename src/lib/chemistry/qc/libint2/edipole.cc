@@ -54,7 +54,7 @@ void Int1eLibint2::edipole(int sh1, int sh2)
 
 void Int1eLibint2::edipole_full_general_()
 {
-  Ref<IntParamsOrigin> origin = multipole_origin();
+  Ref<IntParamsOrigin> O = origin();
 
   int maxam1 = int_shell1_->max_am();
   int maxam2 = int_shell2_->max_am();
@@ -112,7 +112,7 @@ void Int1eLibint2::edipole_full_general_()
 	P[xyz] = (a1*doublet_info_.A[xyz] + a2*doublet_info_.B[xyz])*oog;
 	PA[xyz] = P[xyz] - doublet_info_.A[xyz];
 	PB[xyz] = P[xyz] - doublet_info_.B[xyz];
-	BO[xyz] = doublet_info_.B[xyz] - origin->r(xyz);
+	BO[xyz] = doublet_info_.B[xyz] - O->r(xyz);
       }
 
       OI_OSrecurs_(OIX_,OIY_,OIZ_,PA,PB,gamma,maxam1,maxam2+1);

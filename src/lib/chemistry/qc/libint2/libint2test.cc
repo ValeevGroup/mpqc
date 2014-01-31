@@ -183,8 +183,10 @@ int main(int argc, char **argv) {
   testint(edipolelibint2);
   Ref<OneBodyInt> equadrupolelibint2 = integrallibint2->quadrupole(0);
   testint(equadrupolelibint2);
-  //Ref<OneBodyInt> efieldlibint2 = integrallibint2->efield(new IntParamsOrigin(mol->r(0)));
-  //testint(efieldlibint2);
+  Ref<OneBodyInt> efieldlibint2 = integrallibint2->efield(new IntParamsOrigin(mol->r(0)));
+  testint(efieldlibint2);
+  Ref<OneBodyInt> efieldgradlibint2 = integrallibint2->efield_gradient(new IntParamsOrigin(mol->r(0)));
+  testint(efieldgradlibint2);
 
   Ref<TwoBodyInt> erepv3 = integralv3->electron_repulsion();
 
@@ -266,9 +268,9 @@ int main(int argc, char **argv) {
     cout << "Testing Libint2' electric dipole moment integrals against IntV3's"
         << endl;
     compare_1e3_libint2_vs_v3(edipolelibint2, edipolev3);
-//    cout << "Testing Libint2' electric field integrals against IntV3's"
-//        << endl;
-//    compare_1e3_libint2_vs_v3(efieldlibint2, efieldv3);
+    cout << "Testing Libint2' electric field integrals against IntV3's"
+        << endl;
+    compare_1e3_libint2_vs_v3(efieldlibint2, efieldv3);
   }
 
   cout << "Testing Libint2' p^4 integrals" << endl;
@@ -544,7 +546,7 @@ void compare_1e3_libint2_vs_v3(Ref<OneBodyInt>& oblibint2,
                     + bf2libint2) * 3 + xyz];
                 double valuev3 = bufferv3[(bf1v3 * nbf2 + bf2v3) * 3
                     + xyz];
-                if (fabs(valuelibint2 - valuev3) > 1E-13) {
+                if (fabs(valuelibint2 - valuev3) > 1E-11) {
                   cout
                       << scprintf("Discrepancy in OEInt(sh1 = %d, sh2 = %d)\n",
                                   sh1, sh2);

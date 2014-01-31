@@ -130,7 +130,7 @@ void Int1eLibint2::nuclear_full_general_()
 	PC[0] = P[0] - bs1_->r(atom,0);
 	PC[1] = P[1] - bs1_->r(atom,1);
 	PC[2] = P[2] - bs1_->r(atom,2);
-	AI_OSrecurs_(AI0_,PA,PB,PC,gamma,maxam1,maxam2);
+	AI_OSrecurs_<0>(PA,PB,PC,gamma,maxam1,maxam2);
 
 	/*--- contract each buffer into appropriate location ---*/
 	double *ints_buf = prim_ints_;
@@ -211,7 +211,7 @@ void Int1eLibint2::nuclear_sameam_general_()
 	PC[0] = P[0] - bs1_->r(atom,0);
 	PC[1] = P[1] - bs1_->r(atom,1);
 	PC[2] = P[2] - bs1_->r(atom,2);
-	AI_OSrecurs_(AI0_,PA,PB,PC,gamma,tam1,tam2);
+	AI_OSrecurs_<0>(PA,PB,PC,gamma,tam1,tam2);
 
 	/*--- contract each buffer into appropriate location ---*/
 	double *ints_buf = cart_ints_;

@@ -304,23 +304,25 @@ IntegralLibint2::point_charge(const Ref<PointChargeData>& dat)
 Ref<OneBodyInt>
 IntegralLibint2::efield(const Ref<IntParamsOrigin>&dat)
 {
-  ExEnv::errn() << scprintf("IntegralLibint2::efield() is not yet implemented.\n");
-  ExEnv::errn() << scprintf("Try using the IntegralV3 factory instead.\n");
-  fail();
-  return 0;
-  //Ref<OneBodyIntLibint2> obint = new OneBodyIntLibint2(this, bs1_, bs2_, &Int1eLibint2::efield);
-  //obint->set_params(dat);
-  //return obint;
+  Ref<OneBodyIntLibint2> obint = new OneBodyIntLibint2(this, bs1_, bs2_, &Int1eLibint2::efield);
+  obint->set_params(dat);
+  return obint;
 }
 
 Ref<OneBodyInt>
 IntegralLibint2::efield_dot_vector(const Ref<EfieldDotVectorData>&dat)
 {
-  ExEnv::errn() << scprintf("IntegralLibint2::efield_dot_vector() is not yet implemented.\n");
-  ExEnv::errn() << scprintf("Try using the IntegralV3 factory instead.\n");
-  fail();
+  throw FeatureNotImplemented("IntegralLibint2::efield_dot_vector() is not yet implemented, try IntegralV3",
+                              __FILE__, __LINE__);
   return 0;
-  //  return new EfieldDotVectorIntV3(this, bs1_, bs2_, dat);
+}
+
+Ref<OneBodyInt>
+IntegralLibint2::efield_gradient(const Ref<IntParamsOrigin>&dat)
+{
+  Ref<OneBodyIntLibint2> obint = new OneBodyIntLibint2(this, bs1_, bs2_, &Int1eLibint2::efield_grad);
+  obint->set_params(dat);
+  return obint;
 }
 
 Ref<OneBodyInt>

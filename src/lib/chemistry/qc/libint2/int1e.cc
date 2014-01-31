@@ -93,12 +93,28 @@ Int1eLibint2::Int1eLibint2(Integral *integral,
   }
 
   if (need_coulomb_) {
-    const int mmax = bs1_->max_angular_momentum() + bs2_->max_angular_momentum() + order;
+    int efield_order = 0;
+    if (ntypes_ > 1) efield_order = 1;
+    if (ntypes_ > 3) efield_order = 2;
+    const int mmax = bs1_->max_angular_momentum() + bs2_->max_angular_momentum() + order + efield_order;
     Fm_Eval_ = new ::libint2::FmEval_Chebyshev3(mmax);
     Fm_table_ = new double[mmax+1];
     indmax_ = (max_am+order)*(max_am+1+order)*(max_am+1+order)+1;
     // Allocate AI0
-    AI0_ = init_box_(indmax_,indmax_,2*(max_am+order)+1);
+    AI0_ = init_box_(indmax_,indmax_,2*(max_am+order)+3);
+    if (efield_order) {
+      AIX_ = init_box_(indmax_,indmax_,2*(max_am+order)+2);
+      AIY_ = init_box_(indmax_,indmax_,2*(max_am+order)+2);
+      AIZ_ = init_box_(indmax_,indmax_,2*(max_am+order)+2);
+    }
+    if (efield_order) {
+      AIXX_ = init_box_(indmax_,indmax_,2*(max_am+order)+1);
+      AIXY_ = init_box_(indmax_,indmax_,2*(max_am+order)+1);
+      AIXZ_ = init_box_(indmax_,indmax_,2*(max_am+order)+1);
+      AIYY_ = init_box_(indmax_,indmax_,2*(max_am+order)+1);
+      AIYZ_ = init_box_(indmax_,indmax_,2*(max_am+order)+1);
+      AIZZ_ = init_box_(indmax_,indmax_,2*(max_am+order)+1);
+    }
   }
 }
 
@@ -115,6 +131,19 @@ Int1eLibint2::~Int1eLibint2()
   }
   if (need_coulomb_) {
     free_box_(AI0_);
+    if (ntypes_ > 1) {
+      free_box_(AIX_);
+      free_box_(AIY_);
+      free_box_(AIZ_);
+    }
+    if (ntypes_ > 3) {
+      free_box_(AIXX_);
+      free_box_(AIXY_);
+      free_box_(AIXZ_);
+      free_box_(AIYY_);
+      free_box_(AIYZ_);
+      free_box_(AIZZ_);
+    }
     delete Fm_Eval_;
     delete[] Fm_table_;
   }
@@ -148,7 +177,7 @@ Int1eLibint2::params()
 }
 
 Ref<IntParamsOrigin>
-Int1eLibint2::multipole_origin()
+Int1eLibint2::origin()
 {
   return require_dynamic_cast<IntParamsOrigin*>(operset_params_.pointer(), "need multipole origin, but not in multipole evaluator");
 }

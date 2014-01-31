@@ -309,7 +309,7 @@ IntegralLibint2::efield(const Ref<IntParamsOrigin>&dat)
   fail();
   return 0;
   //Ref<OneBodyIntLibint2> obint = new OneBodyIntLibint2(this, bs1_, bs2_, &Int1eLibint2::efield);
-  //obint->set_multipole_origin(dat);
+  //obint->set_params(dat);
   //return obint;
 }
 

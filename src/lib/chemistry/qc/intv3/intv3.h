@@ -87,7 +87,7 @@ class IntegralV3 : public Integral {
     
     Ref<OneBodyInt> hcore();
 
-    Ref<OneBodyInt> efield(const Ref<IntParamsOrigin>& =0);
+    Ref<OneBodyInt> efield(const Ref<IntParamsOrigin>&);
 
     Ref<OneBodyInt> efield_dot_vector(const Ref<EfieldDotVectorData>& =0);
 

@@ -69,7 +69,7 @@ ParsedDensityFittingKey::ParsedDensityFittingKey(const std::string& key) :
   std::string crap = pop_till_token(keycopy,'(');
   // get kernel
   std::string kernel = pop_till_token(keycopy,')');
-  kernel_pkey_ = ParsedTwoBodyOperKey(kernel);
+  kernel_pkey_ = ParsedTwoBodyOperSetKey(kernel);
   // get rid of |
   crap = pop_till_token(keycopy,'|');
   // get fspace
@@ -420,7 +420,7 @@ DensityFittingParams::DensityFittingParams(const Ref<GaussianBasisSet>& basis,
     throw ProgrammingError("invalid solver", __FILE__, __LINE__, class_desc());
 
   if (not kernel_.empty()) { // throw if not valid kernel
-    ParsedTwoBodyOperKey kernel_pkey(kernel_);
+    ParsedTwoBodyOperSetKey kernel_pkey(kernel_);
     TwoBodyOperSet::type kernel_oper = TwoBodyOperSet::to_type(kernel_pkey.oper());
     Ref<IntParams> kernel_params = ParamsRegistry::instance()->value(kernel_pkey.params());
   }

@@ -153,14 +153,14 @@ namespace sc {
   typedef IntegralSetDescr<TwoBodyInt> TwoBodyIntDescr;
   typedef IntegralSetDescr<TwoBodyThreeCenterInt> TwoBodyThreeCenterIntDescr;
   typedef IntegralSetDescr<TwoBodyTwoCenterInt> TwoBodyTwoCenterIntDescr;
-  template <int NumCenters, int NumParticles> struct NCentersToDescr;
-  template <> struct NCentersToDescr<4,2> {
+  template <int NumCenters, int NumParticles> struct NCentersToIntDescr;
+  template <> struct NCentersToIntDescr<4,2> {
     typedef TwoBodyIntDescr value;
   };
-  template <> struct NCentersToDescr<3,2> {
+  template <> struct NCentersToIntDescr<3,2> {
     typedef TwoBodyThreeCenterIntDescr value;
   };
-  template <> struct NCentersToDescr<2,2> {
+  template <> struct NCentersToIntDescr<2,2> {
     typedef TwoBodyTwoCenterIntDescr value;
   };
 
@@ -182,11 +182,11 @@ namespace sc {
 
   struct IntDescrFactory {
     template <int NumCenters>
-      static Ref< typename NCentersToDescr<NumCenters,2>::value >
+      static Ref< typename NCentersToIntDescr<NumCenters,2>::value >
       make(const Ref<Integral>& integral,
            TwoBodyOperSet::type type,
            const Ref<IntParams>& params) {
-        typedef typename NCentersToDescr<NumCenters,2>::value ReturnType;
+        typedef typename NCentersToIntDescr<NumCenters,2>::value ReturnType;
         switch (type) {
           case TwoBodyOperSet::ERI: {
             typedef TwoBodyNCenterIntDescr<NumCenters,TwoBodyOperSet::ERI> ConcreteType;
@@ -227,9 +227,21 @@ namespace sc {
           default:
             MPQC_ASSERT(false);
         }
-        return Ref< typename NCentersToDescr<NumCenters,2>::value >(); // dummy return statement to pacify picky compilers
+        return Ref< typename NCentersToIntDescr<NumCenters,2>::value >(); // dummy return statement to pacify picky compilers
       }
   };
+
+
+
+  typedef IntegralSetDescr<OneBodyInt> OneBodyIntDescr;
+  typedef IntegralSetDescr<OneBodyOneCenterInt> OneBodyOneCenterIntDescr;
+  template <> struct NCentersToIntDescr<2,1> {
+    typedef OneBodyIntDescr value;
+  };
+  template <> struct NCentersToIntDescr<1,1> {
+    typedef OneBodyOneCenterIntDescr value;
+  };
+
 
 }
 

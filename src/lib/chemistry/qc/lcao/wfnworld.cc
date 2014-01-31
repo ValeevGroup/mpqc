@@ -84,7 +84,7 @@ WavefunctionWorld::WavefunctionWorld(const Ref<KeyVal>& keyval)
       std::pair<TwoBodyOperSet::type, Ref<IntParams> > kernel = init_df_kernel(df_kernel);
       df_kernel_opertype_ = kernel.first;
       df_kernel_params_ = kernel.second;
-      df_kernel_ = ParsedTwoBodyOperKey::key(TwoBodyOperSet::to_string(df_kernel_opertype_),
+      df_kernel_ = ParsedTwoBodyOperSetKey::key(TwoBodyOperSet::to_string(df_kernel_opertype_),
                                              ParamsRegistry::instance()->key(df_kernel_params_));
     }
 

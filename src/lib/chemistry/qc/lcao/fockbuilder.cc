@@ -925,7 +925,7 @@ namespace sc {
         params_key = std::string();
       }
       else {
-        ParsedTwoBodyOperKey kernel_pkey(kernel_key);
+        ParsedTwoBodyOperSetKey kernel_pkey(kernel_key);
         operset = TwoBodyOperSet::to_type(kernel_pkey.oper());
         params_key = kernel_pkey.params();
       }

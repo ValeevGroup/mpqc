@@ -34,7 +34,7 @@
 namespace sc {
 
   /** Parsed representation of a string key that represents fitting of a product of space1 and space2 into fspace.
-      kernel must be parsable by ParsedTwoBodyOperKey. */
+      kernel must be parsable by ParsedTwoBodyOperSetKey. */
   class ParsedDensityFittingKey {
     public:
       ParsedDensityFittingKey(const std::string& key);
@@ -56,7 +56,7 @@ namespace sc {
     private:
       std::string key_;
       std::string space1_, space2_, fspace_;
-      ParsedTwoBodyOperKey kernel_pkey_;
+      ParsedTwoBodyOperSetKey kernel_pkey_;
   };
 
   class DensityFittingParams;
@@ -137,7 +137,7 @@ namespace sc {
      * @param basis  The GaussianBasisSet object used to fit product densities. There is no default.
      *               @note DensityFittingRuntime does not use this, but other runtime objects may use it
      *               to set the global density fitting basis.
-     * @param kernel_key A string describing the kernel_key. It must be parsable by ParsedTwoBodyOperKey, or be empty (the default).
+     * @param kernel_key A string describing the kernel_key. It must be parsable by ParsedTwoBodyOperSetKey, or be empty (the default).
      *               @note DensityFittingRuntime does not use this, but other runtime objects may use it to set the global density fitting method.
      * @param solver A string describing the method of solving the density fitting equations. This is used by DensityFittingRuntime
      *               to produce density fitting objects.

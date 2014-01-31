@@ -124,7 +124,7 @@ DensityFitting::compute()
   Timer tim(tim_label);
 
   // convert kernel_key to operator and params
-  ParsedTwoBodyOperKey kernel_pkey(kernel_key_);
+  ParsedTwoBodyOperSetKey kernel_pkey(kernel_key_);
   TwoBodyOperSet::type operset = TwoBodyOperSet::to_type(kernel_pkey.oper());
   const std::string params_key = kernel_pkey.params();
   const std::string operset_key = TwoBodyOperSetDescr::instance(operset)->key();

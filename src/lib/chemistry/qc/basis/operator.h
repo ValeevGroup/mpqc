@@ -181,7 +181,7 @@ namespace sc {
     static OneBodyOper::type value[];
   };
 
-  /// runtime version of TwoBodyOperSetTypeMap
+  /// runtime version of OneBodyOperSetTypeMap
   class OneBodyOperSetDescr : public RefCount {
     public:
       static Ref<OneBodyOperSetDescr> instance(OneBodyOperSet::type oset);

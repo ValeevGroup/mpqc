@@ -335,6 +335,15 @@ class Integral : public SavableState {
       */
     virtual Ref<OneBodyInt> efield_dot_vector(const Ref<EfieldDotVectorData>&) =0;
 
+    /** Return a OneBodyInt that computes the electric field gradient integrals at specified point.
+        The canonical order of integrals in a set is d Ex / dx, d Ex / dy, etc.
+
+        @param O IntParamsOrigin object that specifies the point where the electric field gradient is computed;
+                 there is no default.
+
+      */
+    virtual Ref<OneBodyInt> efield_gradient(const Ref<IntParamsOrigin>& O);
+
     /** Return a OneBodyInt that computes electric dipole moment integrals, i.e. integrals
         of the \f$e (\mathbf{r}-\mathbf{O})\f$ operator. Multiply by -1 to obtain electronic electric dipole
         integrals. The canonical order of integrals in a set is x, y, z.

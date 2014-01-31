@@ -36,22 +36,17 @@ add_mpqc_object_library(libint2
 )
 
 # tests
+if (MPQC_UNITTEST)
+  set_property(SOURCE libint2test.cc PROPERTY COMPILE_DEFINITIONS
+     SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
-set_property(SOURCE libint2test.cc PROPERTY COMPILE_DEFINITIONS
-   SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(libint2test libint2test.cc )
+  add_test(libint2test libint2test)
+  target_link_libraries(
+    libint2test
+    chemistry
+    ${LIBINT2_LIBRARY}
+  )
+endif()
 
-add_executable(libint2test EXCLUDE_FROM_ALL
- libint2test.cc
-)
-
-target_link_libraries(
-  libint2test
-  chemistry
-)
-
-target_link_libraries(libint2test ${LIBINT2_LIBRARY})
-target_link_libraries(libint2test ${LAPACK_LIBRARIES})
-target_link_libraries(libint2test ${BLAS_LIBRARIES})
-target_link_libraries(libint2test ${LIBRARIES})
-target_link_libraries(libint2test ${CMAKE_DL_LIBS})
 

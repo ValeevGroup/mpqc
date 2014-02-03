@@ -1456,7 +1456,7 @@ namespace sc {
     TArray2 q_zz_mn = _2("<m|q_zz|n>");
     const double q_zz_scf = dot((2.0 * q_zz_mn("m,n") - q_xx_mn("m,n") - q_yy_mn("m,n")), _2("<m|I|n>"));
     std::cout << std::endl
-              << "q_zz (SCF) = " << scprintf("%12.10f", - mu_z_scf * 2.0) //electron charge = -1, hence the minus
+              << "q_zz (SCF) = " << scprintf("%12.10f", - q_zz_scf * 2.0) //electron charge = -1, hence the minus
               << " (traceless)"
               << std::endl;
 

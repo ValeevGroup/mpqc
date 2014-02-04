@@ -30,9 +30,6 @@
 #ifndef _chemistry_qc_scf_cadfclhf_h
 #define _chemistry_qc_scf_cadfclhf_h
 
-#include <boost/thread/thread.hpp>
-#include <boost/range/irange.hpp>
-#include <boost/functional/hash.hpp>
 #include <chemistry/qc/scf/clhf.h>
 #include <util/container/conc_cache.h>
 #include <atomic>
@@ -224,6 +221,26 @@ class CADFCLHF: public CLHF {
         TwoBodyOper::type ints_type
     );
 
+    /// returns ints for shell in (iblk.nbf, jsh.nbf) x kblk.nbf matrix in chemists' notation
+    template <typename ShellRange>
+    ThreeCenterIntContainerPtr ints_to_eigen(
+        const ShellBlockData<ShellRange>& ish,
+        const ShellData& jsh,
+        const ShellData& ksh,
+        Ref<TwoBodyThreeCenterInt>& ints,
+        TwoBodyOper::type ints_type
+    );
+
+    /// returns ints for shell in (iblk.nbf, jsh.nbf) x kblk.nbf matrix in chemists' notation
+    template <typename ShellRange>
+    ThreeCenterIntContainerPtr ints_to_eigen(
+        const ShellData& ish,
+        const ShellBlockData<ShellRange>& jblk,
+        const ShellData& ksh,
+        Ref<TwoBodyThreeCenterInt>& ints,
+        TwoBodyOper::type ints_type
+    );
+
     std::shared_ptr<Decomposition> get_decomposition(int ish, int jsh, Ref<TwoBodyTwoCenterInt> ints);
 
     // Non-blocked version of cl_gmat_
@@ -299,13 +316,15 @@ class CADFCLHF: public CLHF {
     std::atomic<int> ints_computed_locally_;
     int ints_computed_;
 
+    std::vector<Eigen::Vector3d> centers_;
+    std::map<std::pair<int, int>, Eigen::Vector3d> pair_centers_;
+
     // Coefficients storage.  Not accessed directly
     double* coefficients_data_ = 0;
 
     CoefMap coefs_;
 
     std::vector<std::vector<ShellIndexWithValue>> Cmaxes_;
-    std::vector<std::vector<ShellIndexWithValue>> DCmaxes_;
 
     std::vector<Eigen::MatrixXd> coefs_transpose_;
 
@@ -444,6 +463,56 @@ CADFCLHF::ints_to_eigen(
           ish.nbf*jsh.nbf, Xsh.nbf
       ) = *ints_ptr;
     }
+  }
+  return rv;
+}
+
+template <typename ShellRange>
+CADFCLHF::ThreeCenterIntContainerPtr
+CADFCLHF::ints_to_eigen(
+    const ShellBlockData<ShellRange>& iblk,
+    const ShellData& jsh,
+    const ShellData& Xsh,
+    Ref<TwoBodyThreeCenterInt>& ints,
+    TwoBodyOper::type int_type
+){
+  auto rv = std::make_shared<ThreeCenterIntContainer>(
+      iblk.nbf * jsh.nbf, Xsh.nbf
+  );
+  int block_offset = 0;
+  for(auto ish: shell_range(iblk)) {
+    const auto& ints_ptr = ints_to_eigen(ish, jsh, Xsh, ints, int_type);
+    rv->block(
+        block_offset * jsh.nbf, 0,
+        ish.nbf*jsh.nbf, Xsh.nbf
+    ) = *ints_ptr;
+    block_offset += ish.nbf;
+  }
+  return rv;
+}
+
+template <typename ShellRange>
+CADFCLHF::ThreeCenterIntContainerPtr
+CADFCLHF::ints_to_eigen(
+    const ShellData& ish,
+    const ShellBlockData<ShellRange>& jblk,
+    const ShellData& Xsh,
+    Ref<TwoBodyThreeCenterInt>& ints,
+    TwoBodyOper::type int_type
+){
+  auto rv = std::make_shared<ThreeCenterIntContainer>(
+      ish.nbf * jblk.nbf, Xsh.nbf
+  );
+  int block_offset = 0;
+  for(auto jsh : shell_range(jblk)) {
+    const auto& ints_ptr = ints_to_eigen(ish, jsh, Xsh, ints, int_type);
+    for(auto mu : function_range(ish)){
+      rv->block(
+          mu.bfoff_in_shell*jblk.nbf + block_offset, 0,
+          jsh.nbf, Xsh.nbf
+      ) = ints_ptr->block(mu.bfoff_in_shell*jsh.nbf, 0, jsh.nbf, Xsh.nbf);
+    }
+    block_offset += jsh.nbf;
   }
   return rv;
 }

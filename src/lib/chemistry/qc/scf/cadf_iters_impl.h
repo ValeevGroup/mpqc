@@ -95,27 +95,27 @@ ShellBlockData<Range>::init()
   }
 }
 
-template<typename ShellIterator>
+template<typename ShellIterator, typename ShellRange>
 inline void
-shell_block_iterator<ShellIterator>::init()
+shell_block_iterator<ShellIterator, ShellRange>::init_from_spot(
+    const decltype(all_shells.begin())& start_spot
+)
 {
-  typedef range_of<ShellData, ShellIterator> ShellRange;
   //----------------------------------------//
-  if(all_shells.begin() == all_shells.end()){
+  if(start_spot == all_shells.end()){
     const auto& begin = all_shells.begin();
     const auto& end = all_shells.end();
-    current_skeleton = ShellBlockSkeleton<ShellRange>(
-        shell_range(*(all_shells.begin()), *(all_shells.end())), 0, 0, restrictions
-    );
+    current_skeleton = ShellBlockSkeleton<ShellRange>::end_skeleton();
     return;
   }
   //----------------------------------------//
-  auto first_shell = *(all_shells.begin());
+  auto first_shell = *start_spot;
   int first_center = first_shell.center;
   auto first_am = basis->shell(first_shell).am();
   int block_nbf = 0;
   int block_nshell = 0;
-  for(auto ish : all_shells){
+  for(auto ish_iter = start_spot; ish_iter != all_shells.end(); ++ish_iter){
+    auto ish = *ish_iter;
     if(
         // Same center condition
         ((restrictions & SameCenter) and ish.center != first_center)
@@ -140,6 +140,13 @@ shell_block_iterator<ShellIterator>::init()
       block_nshell, block_nbf, restrictions
   );
   //----------------------------------------//
+}
+
+template<typename ShellIterator, typename ShellRange>
+inline void
+shell_block_iterator<ShellIterator, ShellRange>::init()
+{
+  init_from_spot(all_shells.begin());
 }
 
 
@@ -173,6 +180,7 @@ function_range(
 }
 
 //============================================================================//
+
 
 } // end namespace sc
 

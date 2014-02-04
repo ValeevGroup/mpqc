@@ -31,8 +31,12 @@
 
 #include <chemistry/qc/scf/clhf.h>
 #include <util/misc/property.h>
+#include <boost/thread/thread.hpp>
+#include <boost/functional/hash.hpp>
 #include <boost/iterator/zip_iterator.hpp>
 #include <boost/range.hpp>
+//#include <boost/format.hpp>
+#include <boost/range/irange.hpp>
 #include <boost/range/join.hpp>
 #include <boost/range/counting_range.hpp>
 #include <boost/iterator/iterator_adaptor.hpp>
@@ -44,6 +48,8 @@
 #include <atomic>
 #include <chrono>
 #include <unordered_set>
+#include <unordered_map>
+#include <limits>
 
 #define DEFAULT_TARGET_BLOCK_SIZE 100  // functions
 #define LINK_TIME_LIST_INSERTIONS 1
@@ -84,6 +90,7 @@ enum {
 class ShellData;
 class BasisFunctionData;
 class ShellIndexWithValue;
+class OrderedShellList;
 template<typename range_type> class ShellBlockIterator;
 template<typename Iterator, typename ParentContainer> class IterableBasisElementData;
 
@@ -114,6 +121,17 @@ typedef enum {
 
 //############################################################################//
 
+template<int size=1024, typename... Args>
+std::string
+stream_printf(const char* fmt, Args&&... args)
+{
+    char str[size];
+    sprintf(str, fmt, std::forward<Args>(args)...);
+    std::string strobj(str);
+    return strobj;
+}
+
+
 template<
   typename DurationType = std::chrono::nanoseconds,
   typename ClockType = std::chrono::high_resolution_clock,
@@ -142,9 +160,6 @@ class auto_time_accumulator {
     }
 
     auto_time_accumulator(self_type&& other) = default;
-    //  : start_(other.start_),
-    //    dest_(other.dest_)
-    //{ }
 
     ~auto_time_accumulator()
     {
@@ -173,6 +188,7 @@ make_auto_timer(AccumulateToType& dest) {
   >(dest);
 }
 
+// TODO doesn't work with nesting!!!
 template<
   typename DurationType = std::chrono::nanoseconds,
   typename ClockType = std::chrono::high_resolution_clock,
@@ -195,7 +211,7 @@ class time_accumulator_factory {
 
     time_accumulator_factory() = delete;
 
-    time_accumulator_factory(accumulate_to_type& dest)
+    explicit time_accumulator_factory(accumulate_to_type& dest)
       : dest_(dest)
     { }
 
@@ -210,6 +226,267 @@ class time_accumulator_factory {
   private:
 
     accumulate_to_type& dest_;
+
+};
+
+class MultiThreadTimer;
+
+class ThreadTimer {
+
+  public:
+
+    typedef std::unordered_map<std::string, ThreadTimer> section_map;
+    typedef typename time_accumulator_factory<>::clock_type clock_type;
+    typedef std::chrono::time_point<clock_type> time_type;
+    typedef std::chrono::nanoseconds duration_type;
+    typedef std::chrono::duration<double> fp_seconds;
+
+  private:
+
+    time_type begin_time_;
+    duration_type accum_time_{ 0 };
+
+    std::vector<std::string> section_names_;
+    section_map subtimers_;
+
+    ThreadTimer* active_subsection_;
+    std::string active_subname_ = "";
+    bool stopped_{ true };
+
+    int depth_;
+
+    void start() {
+      assert(stopped_);
+      stopped_ = false;
+      begin_time_ = clock_type::now();
+    }
+
+    void stop() {
+      assert(!stopped_);
+      accum_time_ += std::chrono::duration_cast<duration_type>(
+          clock_type::now() - begin_time_
+      );
+      stopped_ = true;
+    }
+
+
+
+  public:
+
+    ThreadTimer() = delete;
+
+    explicit ThreadTimer(int depth, bool start=true)
+      : section_names_(0),
+        subtimers_(0),
+        active_subsection_(0),
+        depth_(depth)
+    {
+      if(start) this->start();
+    }
+
+    void enter(const std::string& subname) {
+      if(active_subsection_) {
+        active_subsection_->enter(subname);
+      }
+      else {
+        active_subname_ = subname;
+        auto subspot = subtimers_.find(subname);
+        if(subspot != subtimers_.end()) {
+          subspot->second.start();
+          active_subsection_ = &(subspot->second);
+        }
+        else {
+          auto insertion_pair = subtimers_.emplace(
+              std::piecewise_construct,
+              std::forward_as_tuple(subname),
+              std::forward_as_tuple(depth_+1)
+          );
+          section_names_.push_back(subname);
+          assert(insertion_pair.second);
+          active_subsection_ = &(insertion_pair.first->second);
+        }
+      }
+    }
+
+    void exit() {
+      // TODO This should throw exceptions on failure rather than just asserting
+      if(active_subsection_) {
+        active_subsection_->exit();
+        if(active_subsection_->stopped_) {
+          active_subsection_ = 0;
+        }
+      }
+      else{
+        this->stop();
+      }
+    }
+
+    void change(const std::string& newsub) {
+      this->exit();
+      enter(newsub);
+    }
+
+    bool is_stopped() const { return stopped_; }
+
+    double read_seconds() const {
+      assert(stopped_);
+      return fp_seconds(accum_time_).count();
+    }
+
+    friend class MultiThreadTimer;
+    friend class TimerHolder;
+
+};
+
+class MultiThreadTimer {
+
+    std::vector<ThreadTimer> thread_timers_;
+    int nthreads_;
+    std::string name_;
+
+    typename time_accumulator_factory<>::accumulate_to_type overhead_nanos_{ 0 };
+    time_accumulator_factory<> overhead_factory_{ overhead_nanos_ };
+
+    boost::thread::id creator_id_;
+
+    void print_sub(
+        std::ostream& out,
+        int indent_size,
+        const std::vector<const ThreadTimer*>& subtimers,
+        const std::string& name,
+        int label_width
+    ) {
+      double sum = 0.0;
+      double min = std::numeric_limits<double>::infinity();
+      double max = 0.0;
+      for(auto timer : subtimers) {
+        // TODO throw exception rather than just asserting
+        assert(timer->is_stopped());
+        const double time = timer->read_seconds();
+        sum += time;
+        if(time < min) min = time;
+        if(time > max) max = time;
+      }
+      const double avg = sum / (double)subtimers.size();
+      const std::string indent(indent_size, ' ');
+      out << std::setw(label_width) << std::left << (indent + name + ":")
+          << stream_printf("%7.2f %7.2f %7.2f",
+               avg, min, max
+             )
+          << std::endl;
+      //----------------------------------------//
+      std::vector<std::vector<bool>> dones;
+      for(auto st : subtimers) { dones.emplace_back(st->section_names_.size(), false); }
+      auto all = [](const std::vector<bool> v) -> bool {
+        for(const auto& i : v){
+          if(!i) return false;
+        }
+        return true;
+      };
+      auto first_false_index = [](const std::vector<bool> v) -> int {
+        int idx = 0;
+        for(const auto& i : v){
+          if(!i) return idx;
+          else ++idx;
+        }
+        return -1;
+      };
+      while(true){
+        std::vector<const ThreadTimer*> next_subs;
+        std::string curr_name;
+        bool name_found = false;
+        for(int i = 0; i < subtimers.size(); ++i) {
+          const ThreadTimer* sub = subtimers[i];
+          if(not all(dones[i])){
+            if(not name_found){
+              const int idx = first_false_index(dones[i]);
+              curr_name = sub->section_names_[idx];
+              dones[i][idx] = true;
+              name_found = true;
+              next_subs.push_back(&(sub->subtimers_.at(curr_name)));
+            }
+            else {
+              if(sub->subtimers_.find(curr_name) != sub->subtimers_.end()) {
+                int iname = 0;
+                for(const auto& subname : sub->section_names_) {
+                  if(subname == curr_name) {
+                    dones[i][iname] = true;
+                    next_subs.push_back(&(sub->subtimers_.at(curr_name)));
+                    break;
+                  }
+                  else ++iname;
+                }
+              }
+            }
+          }
+        } // end loop over subtimers
+        if(name_found){
+          print_sub(out, indent_size+2, next_subs, curr_name, label_width);
+        }
+        else{
+          break;
+        }
+      } // end while all_done
+
+    }
+
+  public:
+
+    MultiThreadTimer(const std::string& name, int nthreads)
+      : name_(name),
+        nthreads_(nthreads),
+        creator_id_(boost::this_thread::get_id()),
+        overhead_nanos_(0),
+        overhead_factory_(overhead_nanos_)
+    {
+      for(int i = 0; i < nthreads_; ++i) {
+        thread_timers_.emplace_back(0);
+      }
+    }
+
+    void enter(const std::string& subname, int ithr) {
+      auto overtime = overhead_factory_.create();
+      thread_timers_[ithr].enter(subname);
+    }
+
+    void exit(int ithr) {
+      auto overtime = overhead_factory_.create();
+      thread_timers_[ithr].exit();
+    }
+
+    void exit() {
+      auto overtime = overhead_factory_.create();
+      const boost::thread::id& my_id = boost::this_thread::get_id();
+      assert(my_id == creator_id_);
+      for(auto& tim : thread_timers_) tim.exit();
+    }
+
+    void change(const std::string& subname, int ithr) {
+      auto overtime = overhead_factory_.create();
+      thread_timers_[ithr].change(subname);
+    }
+
+    void print(
+        std::ostream& out=ExEnv::out0(),
+        int indent_size = 0,
+        int label_width=50,
+        const std::string& title = ""
+    ) {
+
+      std::vector<const ThreadTimer*> tim_ptrs;
+      for(const auto& tim : thread_timers_) tim_ptrs.push_back(&tim);
+      const std::string indent = std::string(indent_size, ' ');
+      out << std::setw(label_width) << std::left << (indent + title)
+          << std::setw(8) << std::internal << "avg"
+          << std::setw(8) << std::internal << "min"
+          << std::setw(8) << std::internal << "max"
+          << std::endl;
+      print_sub(out, indent_size, tim_ptrs, name_, label_width);
+      out << indent << "Timer overhead: " << std::setprecision(3)
+          << (double)((unsigned long long)overhead_nanos_)/1.e9
+          << std::endl;
+      // TODO walltime/thread time ratio and efficiency
+    }
 
 };
 
@@ -315,10 +592,10 @@ struct ShellData : public BasisElementData {
       assert(basis);
 
       if(index == NotAssigned || index == basis->nshell()) return;
+      if(index >= basis->nshell() || index < 0) return;
 
-      out_assert(basis, !=, 0);
-      out_assert(index, <, basis->nshell());
-      out_assert(index, >=, 0);
+      //out_assert(index, <, basis->nshell());
+      //out_assert(index, >=, 0);
 
       nbf = basis->shell(index).nfunction(); 
       bfoff = basis->shell_to_function(index); 
@@ -420,8 +697,6 @@ struct BasisElementIteratorDereference : DataContainer {
 
     const Iterator iterator;
 
-  public:
-
     template<typename... Args>
     BasisElementIteratorDereference(
         Iterator iter,
@@ -429,12 +704,9 @@ struct BasisElementIteratorDereference : DataContainer {
     ) : DataContainer(std::forward<Args>(args)...), iterator(iter)
     { }
 
-    //operator const Iterator(){ return iterator; }
-
 };
 
 //############################################################################//
-
 
 template <typename DataContainer, typename Iterator=int_range::iterator>
 class basis_element_iterator
@@ -490,6 +762,7 @@ class basis_element_iterator
         block_offset(block_offset)
     { }
 
+
 };
 
 template <typename DataContainer, typename Iterator=int_range::iterator>
@@ -525,6 +798,12 @@ class basis_element_with_value_iterator
         block_offset(block_offset)
     { }
 
+    operator basis_element_iterator<DataContainer, Iterator>()
+    {
+      typedef basis_element_iterator<DataContainer, Iterator> result_type;
+      return result_type(basis, dfbasis, super_t::base(), block_offset);
+    }
+
   private:
 
     GaussianBasisSet* basis;
@@ -558,6 +837,12 @@ template<typename DataContainer, typename Iterator=int_range::iterator>
     using range_of = decltype(boost::make_iterator_range(
         basis_element_iterator<DataContainer, Iterator>(),
         basis_element_iterator<DataContainer, Iterator>()
+    ));
+
+template<typename DataContainer, typename Iterator=int_range::iterator>
+    using valued_range_of = decltype(boost::make_iterator_range(
+        basis_element_with_value_iterator<DataContainer, Iterator>(),
+        basis_element_with_value_iterator<DataContainer, Iterator>()
     ));
 
 template <typename DataContainer>
@@ -635,6 +920,21 @@ shell_range(
   return boost::make_iterator_range(
       basis_element_iterator<ShellData, Iterator>(begin.basis, begin.dfbasis, begin.iterator),
       basis_element_iterator<ShellData, Iterator>(begin.basis, begin.dfbasis, Iterator(end))
+  );
+}
+
+template <typename Iterator>
+inline range_of<ShellData, Iterator>
+shell_range(
+    const Iterator& begin,
+    const Iterator& end,
+    GaussianBasisSet* basis,
+    GaussianBasisSet* dfbasis
+)
+{
+  return boost::make_iterator_range(
+      basis_element_iterator<ShellData, Iterator>(basis, dfbasis, begin),
+      basis_element_iterator<ShellData, Iterator>(basis, dfbasis, end)
   );
 }
 
@@ -769,6 +1069,8 @@ class ShellBlockSkeleton {
 
     ShellBlockSkeleton() : nshell(0), nbf(0), first_index(NotAssigned) { }
 
+    static ShellBlockSkeleton<Range> end_skeleton() { return ShellBlockSkeleton(); }
+
     ShellBlockSkeleton(const ShellBlockData<Range>& shbd)
       : shell_range(shbd.shell_range), nshell(shbd.nshell), nbf(shbd.nbf),
         restrictions(shbd.restrictions),
@@ -811,10 +1113,10 @@ class ShellBlockSkeleton {
 
 };
 
-template<typename ShellIterator>
+template<typename ShellIterator, typename ShellRange=range_of<ShellData, ShellIterator>>
 class shell_block_iterator
   : public boost::iterator_facade<
-      shell_block_iterator<ShellIterator>,
+      shell_block_iterator<ShellIterator, ShellRange>,
       ShellBlockSkeleton<range_of<ShellData, ShellIterator>>,
       boost::forward_traversal_tag,
       ShellBlockData<range_of<ShellData, ShellIterator>>
@@ -822,14 +1124,11 @@ class shell_block_iterator
 {
   public:
 
-    typedef range_of<ShellData, ShellIterator> ShellRange;
     typedef shell_block_iterator<ShellIterator> self_type;
-    typedef ShellBlockData<range_of<ShellData, ShellIterator>> value_reference;
+    typedef ShellBlockData<ShellRange> value_reference;
 
   private:
 
-    GaussianBasisSet* basis;
-    GaussianBasisSet* dfbasis;
     int target_size;
     int restrictions;
 
@@ -837,6 +1136,8 @@ class shell_block_iterator
     ShellBlockSkeleton<ShellRange> current_skeleton;
 
     void init();
+    void init_from_spot(const decltype(all_shells.begin())& start_spot);
+
 
     friend class boost::iterator_core_access;
 
@@ -854,14 +1155,47 @@ class shell_block_iterator
 
     void increment()
     {
+      // Don't allow incrementing of end iterator
+      assert(current_skeleton.first_index != NotAssigned);
       all_shells = shell_range(*current_skeleton.shell_range.end(), *all_shells.end());
       init();
     }
 
   public:
 
+    GaussianBasisSet* basis;
+    GaussianBasisSet* dfbasis;
 
     shell_block_iterator() : basis(0), dfbasis(0), restrictions(0), target_size(0) { }
+
+    shell_block_iterator(
+        const ShellRange& all_shells_in,
+        int requirements = SameCenter,
+        int target_size = DEFAULT_TARGET_BLOCK_SIZE
+    ) : basis(all_shells_in.begin()->basis),
+        dfbasis(all_shells_in.begin()->dfbasis),
+        restrictions(requirements),
+        target_size(target_size),
+        all_shells(all_shells_in)
+    {
+      init();
+    }
+
+    shell_block_iterator(
+        const ShellIterator& index_begin,
+        const ShellIterator& index_end,
+        GaussianBasisSet* basis,
+        GaussianBasisSet* dfbasis = 0,
+        int requirements = SameCenter,
+        int target_size = DEFAULT_TARGET_BLOCK_SIZE
+    ) : basis(basis),
+        dfbasis(dfbasis),
+        restrictions(requirements),
+        target_size(target_size),
+        all_shells(shell_range(index_begin, index_end, basis, dfbasis))
+    {
+      init();
+    }
 
     shell_block_iterator(
         GaussianBasisSet* basis,
@@ -903,10 +1237,10 @@ class shell_block_iterator
 };
 
 // Type alias specialization for shell blocks
-template<typename Iterator=int_range::iterator>
+template<typename Iterator=int_range::iterator, typename Range=range_of<ShellData, Iterator>>
     using range_of_shell_blocks = decltype(boost::make_iterator_range(
-        shell_block_iterator<Iterator>(),
-        shell_block_iterator<Iterator>()
+        shell_block_iterator<Iterator, Range>(),
+        shell_block_iterator<Iterator, Range>()
     ));
 
 inline range_of_shell_blocks<>
@@ -1103,12 +1437,48 @@ struct ShellDataWithValue : public ShellData {
 
 };
 
+template <typename Iterator>
+inline valued_range_of<ShellDataWithValue, Iterator>
+shell_range(
+    const ShellDataWithValue::with_iterator<Iterator>& begin,
+    const ShellDataWithValue::with_iterator<Iterator>& end
+)
+{
+  return boost::make_iterator_range(
+      basis_element_with_value_iterator<ShellDataWithValue, Iterator>(begin.basis, begin.dfbasis, begin.iterator),
+      basis_element_with_value_iterator<ShellDataWithValue, Iterator>(begin.basis, begin.dfbasis, end.iterator)
+  );
+}
+
+template <typename Iterator, typename Iterator2>
+inline valued_range_of<ShellData, Iterator>
+shell_range(
+    const ShellDataWithValue::with_iterator<Iterator>& begin,
+    const Iterator2& end
+)
+{
+  return boost::make_iterator_range(
+      basis_element_with_value_iterator<ShellDataWithValue, Iterator>(begin.basis, begin.dfbasis, begin.iterator),
+      basis_element_with_value_iterator<ShellDataWithValue, Iterator>(begin.basis, begin.dfbasis, Iterator(end))
+  );
+}
+
+template <typename Iterator>
+inline valued_range_of<ShellData, Iterator>
+shell_range(
+    const basis_element_with_value_iterator<ShellData, Iterator>& begin,
+    const basis_element_with_value_iterator<ShellData, Iterator>& end
+)
+{
+  return boost::make_iterator_range(begin, end);
+}
+
 struct ShellIndexWithValue{
 
     int index;
     mutable double value;
 
-    ShellIndexWithValue() = default;
+    ShellIndexWithValue() : index(NotAssigned) { }
 
     ShellIndexWithValue(int index)
       : index(index), value(0.0)
@@ -1179,10 +1549,6 @@ class OrderedShellList {
 
     boost::mutex get_next_mtx_;
     boost::mutex insert_mtx_;
-    GaussianBasisSet* basis_ = 0;
-    GaussianBasisSet* dfbasis_ = 0;
-
-
 
     #if LINK_SORTED_INSERTION
     index_list indices_{ value_compare() };
@@ -1193,8 +1559,10 @@ class OrderedShellList {
     bool sorted_ = false;
     #endif
 
-
   public:
+
+    GaussianBasisSet* basis_ = 0;
+    GaussianBasisSet* dfbasis_ = 0;
 
     #if LINK_TIME_LIST_INSERTIONS
     static std::atomic_uint_fast64_t insertion_time_nanos;
@@ -1278,7 +1646,6 @@ class OrderedShellList {
     }
     #endif
 
-
     iterator begin() const
     {
       #if !LINK_SORTED_INSERTION
@@ -1289,6 +1656,15 @@ class OrderedShellList {
           indices_.cbegin()
       );
     }
+
+    index_iterator index_begin() const
+    {
+      #if !LINK_SORTED_INSERTION
+      assert(sorted_);
+      #endif
+      return indices_.cbegin();
+    }
+
     iterator end() const
     {
       #if !LINK_SORTED_INSERTION
@@ -1298,6 +1674,14 @@ class OrderedShellList {
           basis_, dfbasis_,
           indices_.cend()
       );
+    }
+
+    index_iterator index_end() const
+    {
+      #if !LINK_SORTED_INSERTION
+      assert(sorted_);
+      #endif
+      return indices_.cend();
     }
 
     auto size() -> decltype(indices_.size())
@@ -1320,6 +1704,26 @@ class OrderedShellList {
 
 };
 
+inline range_of_shell_blocks<OrderedShellList::index_iterator>
+shell_block_range(
+    const OrderedShellList& shlist,
+    int requirements=SameCenter,
+    int target_size=DEFAULT_TARGET_BLOCK_SIZE
+)
+{
+  return boost::make_iterator_range(
+      shell_block_iterator<OrderedShellList::index_iterator>(
+          shlist.index_begin(), shlist.index_end(),
+          shlist.basis_, shlist.dfbasis_, requirements, target_size
+      ),
+      shell_block_iterator<OrderedShellList::index_iterator>(
+          shlist.index_end(), shlist.index_end(),
+          shlist.basis_, shlist.dfbasis_, requirements, target_size
+      )
+  );
+}
+
+
 inline
 std::ostream&
 operator <<(std::ostream& out, const OrderedShellList& list) {
@@ -1330,6 +1734,8 @@ operator <<(std::ostream& out, const OrderedShellList& list) {
   out << "\n}" << std::endl;
   return out;
 }
+
+//############################################################################//
 
 } // end namespace sc
 

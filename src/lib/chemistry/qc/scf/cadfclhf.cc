@@ -482,6 +482,36 @@ CADFCLHF::init_significant_pairs()
     max_schwarz_[ish] = max_val;
   }
   //----------------------------------------//
+  centers_.resize(molecule()->natom());
+  for(int iatom = 0; iatom < molecule()->natom(); ++iatom) {
+    const double* r = molecule()->r(iatom);
+    centers_[iatom] << r[0], r[1], r[2];
+  }
+  for(auto ish : shell_range(basis())) {
+    const auto& ishell = basis()->shell((int)ish);
+    const std::vector<double>& i_exps = ishell.exponents();
+    assert(ishell.ncontraction() == 1);
+    for(auto jsh : iter_significant_partners(ish)) {
+      const auto& jshell = basis()->shell((int)jsh);
+      const std::vector<double>& j_exps = jshell.exponents();
+      //----------------------------------------//
+      Eigen::Vector3d weighted_center;
+      weighted_center << 0.0, 0.0, 0.0;
+      double coef_tot = 0.0;
+      for(int i_prim = 0; i_prim < ishell.nprimitive(); ++i_prim) {
+        for(int j_prim = 0; j_prim < jshell.nprimitive(); ++j_prim) {
+          const double coef_prod = ishell.coefficient_unnorm(0, i_prim)
+              * jshell.coefficient_unnorm(0, j_prim);
+          weighted_center += (coef_prod / (i_exps[i_prim] + j_exps[j_prim])) *
+              (i_exps[i_prim] * centers_[ish.center] + j_exps[j_prim] * centers_[jsh.center]);
+          coef_tot += coef_prod;
+        }
+      }
+      //----------------------------------------//
+      pair_centers_[{(int)ish, (int)jsh}] = (1.0 / coef_tot) * weighted_center;
+    }
+  }
+  //----------------------------------------//
   ExEnv::out0() << "  Number of significant shell pairs:  " << n_sig << endl;
   ExEnv::out0() << "  Number of total basis pairs:  " << (basis()->nshell() * (basis()->nshell() + 1) / 2) << endl;
   ExEnv::out0() << "  max_schwarz = " << max_schwarz << endl;
@@ -950,105 +980,19 @@ CADFCLHF::compute_K()
         for(auto jsh : shell_range(obs)) {
           double dnorm = D.block(lsh.bfoff, jsh.bfoff, lsh.nbf, jsh.nbf).norm();
           D_frob(lsh, jsh) = dnorm;
+          L_D[lsh].insert(jsh, dnorm);
         }
+        L_D[lsh].sort();
       }
     });
     // TODO Distribute over MPI processes as well
-    #if OLD_LINK_SCREENING
-    #if LINK_TIME_LIST_INSERTIONS
-    std::atomic_uint_fast64_t run_time{ 0 };
-    OrderedShellList::insertion_time_nanos = 0;
-    OrderedShellList::n_insertions = 0;
-    //int n_insertions = 0;
-    auto start_link = std::chrono::high_resolution_clock::now();
-    #endif
-    do_threaded(nthread, [&](int ithr){
-      #if LINK_TIME_LIST_INSERTIONS
-      auto inner_timer = make_auto_timer(run_time);
-      #endif
-      for(int lsh_index = ithr; lsh_index < obs->nshell(); lsh_index += nthread) {
-        ShellData lsh(lsh_index, obs, dfbs_);
-        for(auto jsh : shell_range(obs)) {
-          double screen_val = fabs(D_frob(lsh, jsh) * max_schwarz_[lsh] * max_schwarz_[jsh]);
-          if(screen_val > density_screening_thresh_) {
-            L_D[lsh].insert(jsh, screen_val);
-          }
-        } // end loop over jsh
-        #if !LINK_SORTED_INSERTION
-        L_D[lsh].sort();
-        #endif
-        //----------------------------------------//
-        for(auto ksh : L_coefs[lsh]) {
-          //----------------------------------------//
-          bool lists_changed_outer = false;
-          for(auto Xsh : iter_shells_on_centers(dfbs_, lsh.center, ksh.center)) {
-            const double CXnorm = lsh.center == Xsh.center ?
-                C_trans_frob_[Xsh](lsh.shoff_in_atom, ksh)
-                : C_trans_frob_[Xsh](ksh.shoff_in_atom, lsh);
-            bool lists_changed_inner = false;
-            //------------------------------------------//
-            for(auto jsh : L_D[lsh]) {
-              bool mu_added = false;
-              //----------------------------------------//
-              for(auto ish : L_schwarz[jsh]) {
-                const double screen_val = fabs(
-                    CXnorm
-                    * schwarz_df_[Xsh]
-                    * D_frob(lsh, jsh)
-                    * schwarz_frob_(ish, jsh)
-                );
-                if(screen_val > full_screening_thresh_) {
-                  mu_added = true; lists_changed_outer = true; lists_changed_inner = true;
-                  L_3[{ish, Xsh}].insert(jsh, screen_val);
-                  //L_4((int)ish, jsh).insert(lsh, screen_val);
-                }
-              } // end loop over ish_w_val (a.k.a. mu)
-              //----------------------------------------//
-              if(not mu_added) break;
-            //----------------------------------------//
-            } // end loop over jsh (a.k.a. rho)
-            //if(lists_changed_inner) {
-            //  L_K(lsh, Xsh).insert(ksh, 0);
-            //  L_K_keys.emplace(lsh, Xsh);
-            //}
-          } // end loop over Xsh
-          //----------------------------------------//
-          if(not lists_changed_outer) break;
-        } // end loop over ksh (a.k.a. nu)
-        //----------------------------------------//
-      } // end loop over lsh
-    });
-    #if LINK_TIME_LIST_INSERTIONS
-    auto end_link = std::chrono::high_resolution_clock::now();
-    static std::locale loc("");
-    auto old_loc = std::cout.getloc();
-    std::cout.imbue(loc);
-    cout << "        LinK list insertions took "
-        << double(OrderedShellList::insertion_time_nanos)/1e6
-        << " milliseconds to do " << OrderedShellList::n_insertions
-        << " insertions"
-        << endl
-        << "            ( = "
-        << double(OrderedShellList::insertion_time_nanos) / double(OrderedShellList::n_insertions)
-        << " ns per insertion)"
-        << endl;
-    cout << "        LinK list build took "
-        << double(run_time)/1e6
-        << " milliseconds ("
-        << double(std::chrono::duration_cast<std::chrono::nanoseconds>(end_link - start_link).count())/1e6 * double(nthread)
-        << " ms ideal)"
-        << endl;
-    std::cout.imbue(old_loc);
-    #endif
-    #else // OLD_LINK_SCREENING == 0
     //----------------------------------------//
-    //DCmaxes_.resize(dfbs_->nshell());
+    // Form L_DC
     timer.enter("build L_DC");
     for(auto jsh : shell_range(obs)) {
       const auto& Drho = D_frob.row(jsh);
       for(auto Xsh : shell_range(dfbs_)) {
         auto& Cmaxes_X = Cmaxes_[Xsh];
-        //DCmaxes_[Xsh].resize(obs->nshell());
         // TODO Optimize this to not be N^3
         double max_val = -1.0;
         int max_index = -1;
@@ -1059,29 +1003,12 @@ CADFCLHF::compute_K()
             max_index = lsh;
           }
         } // end loop over lsh
-        //auto& shidx = DCmaxes_[Xsh][jsh];
         L_DC[jsh].insert(Xsh,
             max_val * schwarz_df_[Xsh]
         );
-        //shidx.index = max_index;
-        //shidx.value = max_val;
       } // end loop over Xsh
       L_DC[jsh].sort();
     } // end loop over jsh
-    //----------------------------------------//
-    // Form L_DC
-    /*
-    for(auto jsh : shell_range(obs)) {
-      for(auto Xsh : shell_range(dfbs_)) {
-        L_DC[jsh].insert(Xsh,
-            DCmaxes_[Xsh][jsh].value * schwarz_df_[Xsh]
-        );
-      }
-      #if !LINK_SORTED_INSERTION
-      L_DC[jsh].sort();
-      #endif
-    }
-    */
     //----------------------------------------//
     // Form L_3
     timer.change("build L_3");
@@ -1093,9 +1020,12 @@ CADFCLHF::compute_K()
           const double eps_prime = full_screening_thresh_ / pf;
           bool jsh_added = false;
           for(auto ish : L_schwarz[jsh]) {
-            if(ish.value > eps_prime) {
+            const double R = (pair_centers_[{(int)ish, (int)jsh}] - centers_[Xsh.center]).norm();
+            const double l_X = double(dfbs_->shell(Xsh).am(0));
+            const double dist_factor = 1.0 / (pow(R, l_X + 1.0));
+            if(ish.value * dist_factor > eps_prime) {
               jsh_added = true;
-              L_3[{ish, Xsh}].insert(jsh, pf * ish.value);
+              L_3[{ish, Xsh}].insert(jsh, pf * ish.value * dist_factor);
             }
             else {
               break;
@@ -1106,7 +1036,6 @@ CADFCLHF::compute_K()
       } // end loop over jsh
     });
     timer.exit("build L_3");
-    #endif
     #if not LINK_SORTED_INSERTION
     do_threaded(nthread, [&](int ithr){
       auto L_3_iter = L_3.begin();
@@ -1142,6 +1071,7 @@ CADFCLHF::compute_K()
   /* Loop over local shell pairs for three body contributions                         {{{1 */ #if 1 // begin fold
   {
     Timer timer("three body contributions");
+    MultiThreadTimer mt_timer("three body contributions", nthread);
     boost::mutex tmp_mutex, L_3_mutex;
     auto L_3_key_iter = L_3.begin();
     for(int i = 0; i < scf_grp_->me(); ++i, ++L_3_key_iter);
@@ -1192,25 +1122,65 @@ CADFCLHF::compute_K()
         while(get_ish_Xblk_3()) {
           /*-----------------------------------------------------*/
           /* Compute B intermediate                         {{{2 */ #if 2 // begin fold
+          mt_timer.enter("compute B", ithr);
           std::vector<Eigen::MatrixXd> B_mus(ish.nbf);
           for(auto mu : function_range(ish)) {
             B_mus[mu.bfoff_in_shell].resize(nbf, Xblk.nbf);
             B_mus[mu.bfoff_in_shell] = Eigen::MatrixXd::Zero(nbf, Xblk.nbf);
           }
           if(do_linK_){
+            // TODO Blocks somehow?
+            // TODO figure out how to take advantage of L_3 sorting
             for(auto Xsh : shell_range(Xblk)) {
-              for(ShellData jsh : L_3[{ish, Xsh}]){
-                assert(Xblk.nshell == 1);
+              mt_timer.enter("rearrange D", ithr);
+              Eigen::MatrixXd D_ordered(obs->nbasis(), obs->nbasis());
+              int block_offset = 0;
+              for(auto jblk : shell_block_range(L_3[{ish, Xsh}], NoRestrictions)){
+                for(auto jsh : shell_range(jblk)) {
+                  D_ordered.middleRows(block_offset, jsh.nbf) = D.middleRows(jsh.bfoff, jsh.nbf);
+                  block_offset += jsh.nbf;
+                }
+              }
+              mt_timer.exit(ithr);
+              block_offset = 0;
+              for(auto jblk : shell_block_range(L_3[{ish, Xsh}], NoRestrictions)){
+                mt_timer.enter("compute ints", ithr);
                 auto g3_ptr = ints_to_eigen(
-                    ish, jsh, Xsh,
+                    ish, jblk, Xsh,
                     eris_3c_[ithr], coulomb_oper_type_
                 );
+                mt_timer.change("contract", ithr);
                 auto& g3 = *g3_ptr;
+                for(auto mu : function_range(ish)) {
+                  B_mus[mu.bfoff_in_shell] += 2.0 *
+                      D_ordered.middleRows(block_offset, jblk.nbf).transpose() *
+                      g3.middleRows(mu.bfoff_in_shell*jblk.nbf, jblk.nbf);
+                } // end loop over mu
+                block_offset += jblk.nbf;
+              //for(auto jsh : L_3[{ish, Xsh}]){
+                /*
                 for(auto mu : function_range(ish)) {
                   B_mus[mu.bfoff_in_shell] += 2.0 *
                       D.middleRows(jsh.bfoff, jsh.nbf).transpose() *
                       g3.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf);
                 } // end loop over mu
+                */
+                /*
+                for(auto mu : function_range(ish)) {
+                  const double g3nrm = g3.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf).norm();
+                  for(auto lsh : L_D[jsh]) {
+                    if(g3nrm * lsh.value > 0) {
+                      B_mus[mu.bfoff_in_shell].middleRows(lsh.bfoff, lsh.nbf) += 2.0
+                          * D.block(lsh.bfoff, jsh.bfoff, lsh.nbf, jsh.nbf)
+                          * g3.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf);
+                    }
+                    else{
+                      break;
+                    }
+                  }
+                } // end loop over mu
+                */
+                mt_timer.exit(ithr);
               } // end loop over jsh
             }
           }
@@ -1239,6 +1209,7 @@ CADFCLHF::compute_K()
           /*******************************************************/ #endif //2}}}
           /*-----------------------------------------------------*/
           /* Compute K contributions                        {{{2 */ #if 2 // begin fold
+          mt_timer.change("K contributions", ithr);
           const int obs_atom_bfoff = obs->shell_to_function(obs->shell_on_center(Xblk.center, 0));
           const int obs_atom_nbf = obs->nbasis_on_center(Xblk.center);
           for(auto X : function_range(Xblk)) {
@@ -1259,6 +1230,7 @@ CADFCLHF::compute_K()
               //----------------------------------------//
             }
           }
+          mt_timer.exit(ithr);
           /*******************************************************/ #endif //2}}}
           /*-----------------------------------------------------*/
         } // end while get ish Xblk pair
@@ -1270,6 +1242,8 @@ CADFCLHF::compute_K()
       }); // end create_thread
     } // end enumeration of threads
     compute_threads.join_all();
+    mt_timer.exit();
+    mt_timer.print(ExEnv::out0(), 12, 45);
   } // compute_threads is destroyed here
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
@@ -1437,15 +1411,6 @@ CADFCLHF::loop_shell_pairs_threaded(
   compute_threads.join_all();
 }
 
-/*
-void
-CADFCLHF::loop_shell_pairs_threaded(
-    const std::function<void(int, const ShellData&, const ShellData&)>& f
-)
-{
-  loop_shell_pairs_threaded(AllPairs, f);
-}
-*/
 
 bool
 CADFCLHF::get_shell_pair(ShellData& mu, ShellData& nu, PairSet pset)

@@ -1417,7 +1417,8 @@ namespace sc {
 #endif
 
     // Nuclear electric dipole and (traceless) quadrupole
-    double mu_z_n = 0.0, q_zz_n = 0.0;
+    double mu_z_n = 0.0;
+    double q_xx_n = 0.0, q_yy_n = 0.0, q_zz_n = 0.0, q_yz_n = 0.0;
     Ref<Molecule> mol = r12world_->basis()->molecule();
     for(int a = 0; a < mol->natom(); ++a) {
       const double x = mol->r(a, 0);
@@ -1425,12 +1426,22 @@ namespace sc {
       const double z = mol->r(a, 2);
       const double Z = mol->Z(a);
       mu_z_n += Z * z;
-      q_zz_n += Z * (2.0 * z * z - x * x - y * y); // traceless form of the quadrupole
+
+      q_xx_n += Z * (x * x - (z * z + y * y) * 0.5); // traceless form of the quadrupole
+      q_yy_n += Z * (y * y - (z * z + x * x) * 0.5); // traceless form of the quadrupole
+      q_zz_n += Z * (z * z - (x * x + y * y) * 0.5); // traceless form of the quadrupole
+      q_yz_n += Z * (y * z * 1.5); // traceless form of the quadrupole
     }
     std::cout << std::endl
               << "mu_z (N) = " << scprintf("%12.10f", mu_z_n)
               << std::endl;
-    std::cout << "q_zz (N) = " << scprintf("%12.10f", q_zz_n) << " (traceless)"
+    std::cout << std::endl
+              << "traceless quadrupole moment (N)" << std::endl
+              << "q_xx (N) = " << scprintf("%12.10f", q_xx_n)
+              << "  q_yy (N) = " << scprintf("%12.10f", q_yy_n)
+              << "  q_zz (N) = " << scprintf("%12.10f", q_zz_n)
+              << std::endl
+              << "q_yz (N) = " << scprintf("%12.10f", q_yz_n)
               << std::endl;
 
     // Electric dipole integrals
@@ -1454,10 +1465,66 @@ namespace sc {
     TArray2 q_xx_mn = _2("<m|q_xx|n>");
     TArray2 q_yy_mn = _2("<m|q_yy|n>");
     TArray2 q_zz_mn = _2("<m|q_zz|n>");
-    const double q_zz_scf = dot((2.0 * q_zz_mn("m,n") - q_xx_mn("m,n") - q_yy_mn("m,n")), _2("<m|I|n>"));
+
+    TArray2 q_xx_ij = _2("<i|q_xx|j>");
+    TArray2 q_yy_ij = _2("<i|q_yy|j>");
+    TArray2 q_zz_ij = _2("<i|q_zz|j>");
+
+    TArray2 q_xx_ab = _2("<a|q_xx|b>");
+    TArray2 q_yy_ab = _2("<a|q_yy|b>");
+    TArray2 q_zz_ab = _2("<a|q_zz|b>");
+
+    TArray2 q_xx_apb = _2("<a'|q_xx|b>");
+    TArray2 q_yy_apb = _2("<a'|q_yy|b>");
+    TArray2 q_zz_apb = _2("<a'|q_zz|b>");
+
+    TArray2 q_xx_apbp = _2("<a'|q_xx|b'>");
+    TArray2 q_yy_apbp = _2("<a'|q_yy|b'>");
+    TArray2 q_zz_apbp = _2("<a'|q_zz|b'>");
+
+    TArray2 q_xx_am = _2("<a|q_xx|m>");
+    TArray2 q_yy_am = _2("<a|q_yy|m>");
+    TArray2 q_zz_am = _2("<a|q_zz|m>");
+
+    TArray2 Qxx_mn = q_xx_mn("m,n") - (q_zz_mn("m,n") + q_yy_mn("m,n")) * 0.5;
+    TArray2 Qxx_ij = q_xx_ij("i,j") - (q_zz_ij("i,j") + q_yy_ij("i,j")) * 0.5;
+    TArray2 Qxx_ab = q_xx_ab("a,b") - (q_zz_ab("a,b") + q_yy_ab("a,b")) * 0.5;
+    TArray2 Qxx_apb = q_xx_apb("a',b") - (q_zz_apb("a',b") + q_yy_apb("a',b")) * 0.5;
+    TArray2 Qxx_apbp = q_xx_apbp("a',b'") - (q_zz_apbp("a',b'") + q_yy_apbp("a',b'")) * 0.5;
+    TArray2 Qxx_am = q_xx_am("a,m") - (q_zz_am("a,m")  + q_yy_am("a,m") ) * 0.5;
+
+    TArray2 Qyy_mn = q_yy_mn("m,n") - (q_zz_mn("m,n") + q_xx_mn("m,n")) * 0.5;
+    TArray2 Qyy_ij = q_yy_ij("i,j") - (q_zz_ij("i,j") + q_xx_ij("i,j")) * 0.5;
+    TArray2 Qyy_ab = q_yy_ab("a,b") - (q_zz_ab("a,b") + q_xx_ab("a,b")) * 0.5;
+    TArray2 Qyy_apb = q_yy_apb("a',b") - (q_zz_apb("a',b") + q_xx_apb("a',b")) * 0.5;
+    TArray2 Qyy_apbp = q_yy_apbp("a',b'") - (q_zz_apbp("a',b'") + q_xx_apbp("a',b'")) * 0.5;
+    TArray2 Qyy_am = q_yy_am("a,m") - (q_zz_am("a,m")  + q_xx_am("a,m") ) * 0.5;
+
+    TArray2 Qzz_mn = q_zz_mn("m,n") - (q_xx_mn("m,n") + q_yy_mn("m,n")) * 0.5;
+    TArray2 Qzz_ij = q_zz_ij("i,j") - (q_xx_ij("i,j") + q_yy_ij("i,j")) * 0.5;
+    TArray2 Qzz_ab = q_zz_ab("a,b") - (q_xx_ab("a,b") + q_yy_ab("a,b")) * 0.5;
+    TArray2 Qzz_apb = q_zz_apb("a',b") - (q_xx_apb("a',b") + q_yy_apb("a',b")) * 0.5;
+    TArray2 Qzz_apbp = q_zz_apbp("a',b'") - (q_xx_apbp("a',b'") + q_yy_apbp("a',b'")) * 0.5;
+    TArray2 Qzz_am = q_zz_am("a,m") - (q_xx_am("a,m")  + q_yy_am("a,m") ) * 0.5;
+
+    TArray2 Qyz_mn = _2("<m|q_yz|n>") * 1.5;
+    TArray2 Qyz_ij = _2("<i|q_yz|j>") * 1.5;
+    TArray2 Qyz_ab = _2("<a|q_yz|b>") * 1.5;
+    TArray2 Qyz_apb = _2("<a'|q_yz|b>") * 1.5;
+    TArray2 Qyz_apbp = _2("<a'|q_yz|b'>") * 1.5;
+    TArray2 Qyz_am = _2("<a|q_yz|m>") * 1.5;
+
+    const double q_xx_scf = dot(Qxx_mn("m,n"), _2("<m|I|n>"));
+    const double q_yy_scf = dot(Qyy_mn("m,n"), _2("<m|I|n>"));
+    const double q_zz_scf = dot(Qzz_mn("m,n"), _2("<m|I|n>"));
+    const double q_yz_scf = dot(Qyz_mn("m,n"), _2("<m|I|n>"));
     std::cout << std::endl
-              << "q_zz (SCF) = " << scprintf("%12.10f", - q_zz_scf * 2.0) //electron charge = -1, hence the minus
-              << " (traceless)"
+              << "traceless quadrupole moment (SCF)" << std::endl
+              << "q_xx (SCF) = " << scprintf("%12.10f", - q_xx_scf * 2.0)
+              << "  q_yy (SCF) = " << scprintf("%12.10f", - q_yy_scf * 2.0)
+              << "  q_zz (SCF) = " << scprintf("%12.10f", - q_zz_scf * 2.0)
+              << std::endl
+              << "q_yz (SCF) = " << scprintf("%12.10f", - q_yz_scf * 2.0)
               << std::endl;
 
     // Compute orbital relaxation contribution to 1e density
@@ -1500,8 +1567,6 @@ namespace sc {
     // CABS Singles orbital relaxation
 #if 1
     {
-    double tmp1 = madness::wall_time();
-
     TArray2 TmA = _2("<m|T1|A'>");
     TArray2 Tma = _2("<m|T1|a>");
     // density from CABS Singles contribution
@@ -1532,11 +1597,57 @@ namespace sc {
               << "mu_z (E2 orbital response) = " << scprintf("%12.10f", - mu_z_E2 * 2.0)
               << std::endl << std::endl;
 
-    double tmp2 = madness::wall_time();
-    double t_CabsSingles = tmp2 - tmp1;
+    TArray2 q_xx_AB = _2("<A'|q_xx|B'>");
+    TArray2 q_yy_AB = _2("<A'|q_yy|B'>");
+    TArray2 q_zz_AB = _2("<A'|q_zz|B'>");
+    TArray2 q_xx_mA = _2("<m|q_xx|A'>");
+    TArray2 q_yy_mA = _2("<m|q_yy|A'>");
+    TArray2 q_zz_mA = _2("<m|q_zz|A'>");
+
+    TArray2 Qxx_mA = q_xx_mA("m,A'") - (q_zz_mA("m,A'")  + q_yy_mA("m,A'") ) * 0.5;
+    TArray2 Qyy_mA = q_yy_mA("m,A'") - (q_xx_mA("m,A'")  + q_zz_mA("m,A'") ) * 0.5;
+    TArray2 Qzz_mA = q_zz_mA("m,A'") - (q_xx_mA("m,A'")  + q_yy_mA("m,A'") ) * 0.5;
+    TArray2 Qyz_mA = _2("<m|q_yz|A'>") * 1.5;
+
+    TArray2 Qxx_AB = q_xx_AB("A',B'") - (q_zz_AB("A',B'") + q_yy_AB("A',B'")) * 0.5;
+    TArray2 Qyy_AB = q_yy_AB("A',B'") - (q_xx_AB("A',B'") + q_zz_AB("A',B'")) * 0.5;
+    TArray2 Qzz_AB = q_zz_AB("A',B'") - (q_xx_AB("A',B'") + q_yy_AB("A',B'")) * 0.5;
+    TArray2 Qyz_AB = _2("<A'|q_yz|B'>") * 1.5;
+
+    const double q_xx_e2 = - dot(Qxx_mn("m,n"), D_e2_mn("m,n"))
+                           + dot(Qxx_AB("A',B'"), D_e2_AB("A',B'"))
+                           + dot(Qxx_mA("m,A'"), TmA("m,A'")) * 2.0;
+    const double q_yy_e2 = - dot(Qyy_mn("m,n"), D_e2_mn("m,n"))
+                           + dot(Qyy_AB("A',B'"), D_e2_AB("A',B'"))
+                           + dot(Qyy_mA("m,A'"), TmA("m,A'")) * 2.0;
+    const double q_zz_e2 = - dot(Qzz_mn("m,n"), D_e2_mn("m,n"))
+                           + dot(Qzz_AB("A',B'"), D_e2_AB("A',B'"))
+                           + dot(Qzz_mA("m,A'"), TmA("m,A'")) * 2.0;
+    const double q_yz_e2 = - dot(Qyz_mn("m,n"), D_e2_mn("m,n"))
+                           + dot(Qyz_AB("A',B'"), D_e2_AB("A',B'"))
+                           + dot(Qyz_mA("m,A'"), TmA("m,A'")) * 2.0;
+
+    const double q_xx_e2or = dot(Qxx_am("a,m"), Dbn_E2("a,m"));
+    const double q_yy_e2or = dot(Qyy_am("a,m"), Dbn_E2("a,m"));
+    const double q_zz_e2or = dot(Qzz_am("a,m"), Dbn_E2("a,m"));
+    const double q_yz_e2or = dot(Qyz_am("a,m"), Dbn_E2("a,m"));
+
     std::cout << std::endl
-              << "Time used for CABS Singles:" << t_CabsSingles
-              << std::endl << std::endl;
+              << "traceless quadrupole moment (E2)" << std::endl
+              << "q_xx (E2) = " << scprintf("%12.10f", - q_xx_e2 * 2.0)
+              << "  q_yy (E2) = " << scprintf("%12.10f", - q_yy_e2 * 2.0)
+              << "  q_zz (E2) = " << scprintf("%12.10f", - q_zz_e2 * 2.0)
+              << std::endl
+              << "q_yz (E2) = " << scprintf("%12.10f", - q_yz_e2 * 2.0)
+              << std::endl;
+    std::cout << std::endl
+              << "traceless quadrupole moment (E2 orbital response)" << std::endl
+              << "q_xx (E2 or) = " << scprintf("%12.10f", - q_xx_e2or * 2.0)
+              << "  q_yy (E2 or) = " << scprintf("%12.10f", - q_yy_e2or * 2.0)
+              << "  q_zz (E2 or) = " << scprintf("%12.10f", - q_zz_e2or * 2.0)
+              << std::endl
+              << "q_yz (E2 or) = " << scprintf("%12.10f", - q_yz_e2or * 2.0)
+              << std::endl;
     }
     world_.gop.fence();
 #endif
@@ -1595,6 +1706,40 @@ namespace sc {
     std::cout << std::endl
               << "mu_z (MP2 orbital response) = "<< scprintf("%12.10f", - mu_z_mp2or * 2.0)
               << std::endl;
+
+    // Quadrupole
+    const double q_xx_mp2 = - dot(Qxx_ij("i,j"), D_mp2_ij("i,j"))
+                            + dot(Qxx_ab("a,b"), D_mp2_ab("a,b"));
+    const double q_yy_mp2 = - dot(Qyy_ij("i,j"), D_mp2_ij("i,j"))
+                            + dot(Qyy_ab("a,b"), D_mp2_ab("a,b"));
+    const double q_zz_mp2 = - dot(Qzz_ij("i,j"), D_mp2_ij("i,j"))
+                            + dot(Qzz_ab("a,b"), D_mp2_ab("a,b"));
+    const double q_yz_mp2 = - dot(Qyz_ij("i,j"), D_mp2_ij("i,j"))
+                            + dot(Qyz_ab("a,b"), D_mp2_ab("a,b"));
+
+    const double q_xx_mp2or = dot(Qxx_am("a,m"), Dbn_mp2("a,m"));
+    const double q_yy_mp2or = dot(Qyy_am("a,m"), Dbn_mp2("a,m"));
+    const double q_zz_mp2or = dot(Qzz_am("a,m"), Dbn_mp2("a,m"));
+    const double q_yz_mp2or = dot(Qyz_am("a,m"), Dbn_mp2("a,m"));
+
+    std::cout << std::endl
+              << "traceless quadrupole moment (MP2)" << std::endl
+              << "q_xx (MP2) = " << scprintf("%12.10f", - q_xx_mp2 * 2.0)
+              << "  q_yy (MP2) = " << scprintf("%12.10f", - q_yy_mp2 * 2.0)
+              << "  q_zz (MP2) = " << scprintf("%12.10f", - q_zz_mp2 * 2.0)
+              << std::endl
+              << "q_yz (MP2) = " << scprintf("%12.10f", - q_yz_mp2 * 2.0)
+              << std::endl;
+    std::cout << std::endl
+              << "traceless quadrupole moment (MP2 orbital response)" << std::endl
+              << "q_xx (MP2 or) = " << scprintf("%12.10f", - q_xx_mp2or * 2.0)
+              << "  q_yy (MP2 or) = " << scprintf("%12.10f", - q_yy_mp2or * 2.0)
+              << "  q_zz (MP2 or) = " << scprintf("%12.10f", - q_zz_mp2or * 2.0)
+              << std::endl
+              << "q_yz (MP2 or) = " << scprintf("%12.10f", - q_yz_mp2or * 2.0)
+              << std::endl;
+
+
 #endif
 
     // F12 and its orbital relaxation contributions
@@ -1637,14 +1782,10 @@ namespace sc {
 
     // Dipole from density above
     const double mu_z_mp2f12 = - dot(mu_z_ij("i,j"), D_mp2f12_ij("i,j"))
-                               + dot(mu_z_ab("a,b"), D_mp2f12_ab("a,b"));
+                               + dot(mu_z_ab("a,b"), D_mp2f12_ab("a,b"))
+                               + dot(mu_z_apb("a',b"), RT_apb("a',b")) * 2.0;
     std::cout << std::endl << "mu_z (MP2F12 coupling) = "
               << scprintf("%12.10f", - mu_z_mp2f12 * 2.0) << std::endl;
-
-    const double mu_z_RT2 = dot(mu_z_apb("a',b"), RT_apb("a',b"));
-    std::cout << std::endl
-              << "mu_z (CT2) = " << scprintf("%12.10f", - mu_z_RT2 * 4.0)
-              << std::endl << std::endl;
 
     // Compute orbital response
     TArray2 Xmp2f12_contri = Xam_Cmp2f12(C_0, C_1,T2_ijab, A_ijab,
@@ -1658,6 +1799,42 @@ namespace sc {
     const double mu_z_Xam_mp2f12 = dot(mu_z_am("a,m"), Dbn_mp2f12("a,m"));
     std::cout << std::endl
               << "mu_z (MP2-F12 coupling orbital response) = " << scprintf("%12.10f", - mu_z_Xam_mp2f12 * 4.0)
+              << std::endl;
+
+    // Quadrupoles
+    const double q_xx_mp2f12C = - dot(Qxx_ij("i,j"), D_mp2f12_ij("i,j"))
+                                + dot(Qxx_ab("a,b"), D_mp2f12_ab("a,b"))
+                                + dot(Qxx_apb("a',b"), RT_apb("a',b")) * 2.0;
+    const double q_yy_mp2f12C = - dot(Qyy_ij("i,j"), D_mp2f12_ij("i,j"))
+                                + dot(Qyy_ab("a,b"), D_mp2f12_ab("a,b"))
+                                + dot(Qyy_apb("a',b"), RT_apb("a',b")) * 2.0;
+    const double q_zz_mp2f12C = - dot(Qzz_ij("i,j"), D_mp2f12_ij("i,j"))
+                                + dot(Qzz_ab("a,b"), D_mp2f12_ab("a,b"))
+                                + dot(Qzz_apb("a',b"), RT_apb("a',b")) * 2.0;
+    const double q_yz_mp2f12C = - dot(Qyz_ij("i,j"), D_mp2f12_ij("i,j"))
+                                + dot(Qyz_ab("a,b"), D_mp2f12_ab("a,b"))
+                                + dot(Qyz_apb("a',b"), RT_apb("a',b")) * 2.0;
+
+    const double q_xx_mp2f12Cor = dot(Qxx_am("a,m"), Dbn_mp2f12("a,m"));
+    const double q_yy_mp2f12Cor = dot(Qyy_am("a,m"), Dbn_mp2f12("a,m"));
+    const double q_zz_mp2f12Cor = dot(Qzz_am("a,m"), Dbn_mp2f12("a,m"));
+    const double q_yz_mp2f12Cor = dot(Qyz_am("a,m"), Dbn_mp2f12("a,m"));
+
+    std::cout << std::endl
+              << "traceless quadrupole moment (MP2F12 coupling)" << std::endl
+              << "q_xx (MP2F12 C) = " << scprintf("%12.10f", - q_xx_mp2f12C * 2.0)
+              << "  q_yy (MP2F12 C) = " << scprintf("%12.10f", - q_yy_mp2f12C * 2.0)
+              << "  q_zz (MP2F12 C) = " << scprintf("%12.10f", - q_zz_mp2f12C * 2.0)
+              << std::endl
+              << "q_yz (MP2F12 C) = " << scprintf("%12.10f", - q_yz_mp2f12C * 2.0)
+              << std::endl;
+    std::cout << std::endl
+              << "traceless quadrupole moment (MP2F12 coupling orbital response)" << std::endl
+              << "q_xx (MP2F12 C or) = " << scprintf("%12.10f", - q_xx_mp2f12Cor * 2.0)
+              << "  q_yy (MP2F12 C or) = " << scprintf("%12.10f", - q_yy_mp2f12Cor * 2.0)
+              << "  q_zz (MP2F12 C or) = " << scprintf("%12.10f", - q_zz_mp2f12Cor * 2.0)
+              << std::endl
+              << "q_yz (MP2F12 C or) = " << scprintf("%12.10f", - q_yz_mp2f12Cor * 2.0)
               << std::endl;
     }
     world_.gop.fence();
@@ -1880,6 +2057,44 @@ namespace sc {
     std::cout << std::endl
               << "mu_z (F12 orbital response) = " << scprintf("%12.10f", - mu_z_Xam_f12 * 2.0)
               << std::endl << std::endl;
+
+    // Quadrupole
+    const double q_xx_f12 = - dot(Qxx_ij("i,j"), D_f12_ij("i,j"))
+                            + dot(Qxx_ab("a,b"), D_f12_ab("a,b"))
+                            + dot(Qxx_apbp("a',b'"), D_f12_apbp("a',b'"))
+                            + dot(Qxx_apb("a',b"), D_f12_apb("a',b")) * 2.0;
+    const double q_yy_f12 = - dot(Qyy_ij("i,j"), D_f12_ij("i,j"))
+                            + dot(Qyy_ab("a,b"), D_f12_ab("a,b"))
+                            + dot(Qyy_apbp("a',b'"), D_f12_apbp("a',b'"))
+                            + dot(Qyy_apb("a',b"), D_f12_apb("a',b")) * 2.0;
+    const double q_zz_f12 = - dot(Qzz_ij("i,j"), D_f12_ij("i,j"))
+                            + dot(Qzz_ab("a,b"), D_f12_ab("a,b"))
+                            + dot(Qzz_apbp("a',b'"), D_f12_apbp("a',b'"))
+                            + dot(Qzz_apb("a',b"), D_f12_apb("a',b")) * 2.0;
+    const double q_yz_f12 = - dot(Qyz_ij("i,j"), D_f12_ij("i,j"))
+                            + dot(Qyz_ab("a,b"), D_f12_ab("a,b"))
+                            + dot(Qyz_apbp("a',b'"), D_f12_apbp("a',b'"))
+                            + dot(Qyz_apb("a',b"), D_f12_apb("a',b")) * 2.0;
+
+    const double q_xx_f12or = dot(Qxx_am("a,m"), Dbn_f12("a,m"));
+    const double q_yy_f12or = dot(Qyy_am("a,m"), Dbn_f12("a,m"));
+    const double q_zz_f12or = dot(Qzz_am("a,m"), Dbn_f12("a,m"));
+    const double q_yz_f12or = dot(Qyz_am("a,m"), Dbn_f12("a,m"));
+
+    std::cout << "traceless quadrupole moment (F12)" << std::endl
+              << "q_xx (F12) = " << scprintf("%12.10f", - q_xx_f12 * 2.0)
+              << "  q_yy (F12) = " << scprintf("%12.10f", - q_yy_f12 * 2.0)
+              << "  q_zz (F12) = " << scprintf("%12.10f", - q_zz_f12 * 2.0)
+              << std::endl
+              << "q_yz (F12) = " << scprintf("%12.10f", - q_yz_f12 * 2.0)
+              << std::endl;
+    std::cout << "traceless quadrupole moment (F12 orbital response)" << std::endl
+              << "q_xx (F12 or) = " << scprintf("%12.10f", - q_xx_f12or * 2.0)
+              << "  q_yy (F12 or) = " << scprintf("%12.10f", - q_yy_f12or * 2.0)
+              << "  q_zz (F12 or) = " << scprintf("%12.10f", - q_zz_f12or * 2.0)
+              << std::endl
+              << "q_yz (F12 or) = " << scprintf("%12.10f", - q_yz_f12or * 2.0)
+              << std::endl;
     }
 #endif
 

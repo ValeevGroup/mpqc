@@ -116,7 +116,8 @@ class OptionalRefParameter {
 typedef enum {
   NoRestrictions = 0,
   SameCenter = 1,
-  SameAngularMomentum = 2
+  SameAngularMomentum = 2,
+  Contiguous = 4
 } BlockCompositionRequirement;
 
 //############################################################################//
@@ -269,7 +270,13 @@ class ThreadTimer {
       stopped_ = true;
     }
 
-
+    struct Holdable {
+        ThreadTimer* to_hold;
+        ThreadTimer* parent;
+        Holdable(ThreadTimer* to_hold, ThreadTimer* parent)
+          : to_hold(to_hold), parent(parent)
+        { }
+    };
 
   public:
 
@@ -284,28 +291,40 @@ class ThreadTimer {
       if(start) this->start();
     }
 
-    void enter(const std::string& subname) {
+    Holdable get_subtimer(const std::string& subname, bool start=false) {
       if(active_subsection_) {
-        active_subsection_->enter(subname);
+        return active_subsection_->get_subtimer(subname, start);
       }
       else {
+        ThreadTimer* rv_ptr;
         active_subname_ = subname;
         auto subspot = subtimers_.find(subname);
         if(subspot != subtimers_.end()) {
-          subspot->second.start();
-          active_subsection_ = &(subspot->second);
+          rv_ptr = &(subspot->second);
+          if(start) {
+            active_subsection_ = rv_ptr;
+            rv_ptr->start();
+          }
         }
         else {
           auto insertion_pair = subtimers_.emplace(
               std::piecewise_construct,
               std::forward_as_tuple(subname),
-              std::forward_as_tuple(depth_+1)
+              std::forward_as_tuple(depth_+1, start)
           );
           section_names_.push_back(subname);
           assert(insertion_pair.second);
-          active_subsection_ = &(insertion_pair.first->second);
+          rv_ptr = &(insertion_pair.first->second);
+          if(start) {
+            active_subsection_ = rv_ptr;
+          }
         }
+        return ThreadTimer::Holdable(rv_ptr, this);
       }
+    }
+
+    void enter(const std::string& subname) {
+      get_subtimer(subname, true);
     }
 
     void exit() {
@@ -335,6 +354,35 @@ class ThreadTimer {
 
     friend class MultiThreadTimer;
     friend class TimerHolder;
+
+};
+
+class TimerHolder {
+
+    ThreadTimer* held;
+    ThreadTimer* parent;
+
+  public:
+
+    explicit TimerHolder(const ThreadTimer::Holdable& to_hold)
+      : held(to_hold.to_hold), parent(to_hold.parent) {
+      held->start();
+      parent->active_subsection_ = held;
+    }
+
+    ~TimerHolder()
+    {
+      held->stop();
+      parent->active_subsection_ = 0;
+    }
+
+    void change(ThreadTimer::Holdable& other) {
+      assert(other.parent == parent);
+      held->stop();
+      held = other.to_hold;
+      parent->active_subsection_ = held;
+      held->start();
+    }
 
 };
 
@@ -452,6 +500,12 @@ class MultiThreadTimer {
     void exit(int ithr) {
       auto overtime = overhead_factory_.create();
       thread_timers_[ithr].exit();
+    }
+
+    ThreadTimer::Holdable
+    get_subtimer(const std::string& subname, int ithr) {
+      auto overtime = overhead_factory_.create();
+      return thread_timers_[ithr].get_subtimer(subname);
     }
 
     void exit() {
@@ -762,6 +816,9 @@ class basis_element_iterator
         block_offset(block_offset)
     { }
 
+    operator Iterator() const {
+      return super_t::base();
+    }
 
 };
 
@@ -1532,16 +1589,14 @@ class OrderedShellList {
     };
 
   public:
-    #if LINK_SORTED_INSERTION
-    typedef std::set<ShellIndexWithValue, value_compare> index_list;
-    #else
+
     typedef std::vector<ShellIndexWithValue> index_list;
     typedef std::unordered_set<
         ShellIndexWithValue,
         hash_<ShellIndexWithValue>,
         index_equal_
     > index_set;
-    #endif
+
     typedef index_list::const_iterator index_iterator;
     typedef basis_element_with_value_iterator<ShellDataWithValue, index_iterator> iterator;
 
@@ -1550,14 +1605,10 @@ class OrderedShellList {
     boost::mutex get_next_mtx_;
     boost::mutex insert_mtx_;
 
-    #if LINK_SORTED_INSERTION
-    index_list indices_{ value_compare() };
-    std::set<ShellIndexWithValue, index_compare> index_ordered_{ index_compare() };
-    #else
     index_list indices_;
     index_set idx_set_;
     bool sorted_ = false;
-    #endif
+    bool sort_by_value_ = true;
 
   public:
 
@@ -1570,18 +1621,15 @@ class OrderedShellList {
     time_accumulator_factory<> insertion_timer{ insertion_time_nanos };
     #endif
 
-    OrderedShellList()
+    explicit OrderedShellList(bool sort_by_value = true)
+      : sort_by_value_(sort_by_value)
     { }
 
     OrderedShellList(const OrderedShellList& other)
-      : indices_(other.indices_)
-        #if LINK_SORTED_INSERTION
-        , index_ordered_(other.index_ordered_)
-        #else
-        , idx_set_(other.idx_set_)
-        , sorted_(other.sorted_)
-        #endif
-
+      : indices_(other.indices_),
+        idx_set_(other.idx_set_),
+        sorted_(other.sorted_),
+        sort_by_value_(other.sort_by_value_)
     { }
     
     void set_basis(GaussianBasisSet* basis, GaussianBasisSet* dfbasis = 0)
@@ -1597,30 +1645,11 @@ class OrderedShellList {
       #endif
       //----------------------------------------//
       assert(basis_ == 0 || ish.basis == basis_);
-      assert(ish.basis);
       if(basis_ == 0) basis_ = ish.basis;
       assert(dfbasis_ == 0 || ish.dfbasis == dfbasis_);
       if(dfbasis_ == 0) dfbasis_ = ish.dfbasis;
       //----------------------------------------//
       boost::lock_guard<boost::mutex> lg(insert_mtx_);
-      #if LINK_SORTED_INSERTION
-      ShellIndexWithValue insert_val((int)ish, value);
-      const auto& found = index_ordered_.find(insert_val);
-      if(found != index_ordered_.end()) {
-        const auto& found_old = indices_.find(*found);
-        assert(found_old != indices_.end());
-        const double old_value = found_old->value;
-        if(value > old_value) {
-          found->value = value;
-          indices_.erase(found_old);
-          indices_.insert(insert_val);
-        }
-      }
-      else{
-        index_ordered_.insert(insert_val);
-        indices_.insert(insert_val);
-      }
-      #else
       sorted_ = false;
       ShellIndexWithValue insert_val(ish, value);
       const auto& found = idx_set_.find(insert_val);
@@ -1631,26 +1660,35 @@ class OrderedShellList {
       else {
         idx_set_.insert(insert_val);
       }
-      #endif
     }
 
-    #if !LINK_SORTED_INSERTION
+    void set_sort_by_value(bool new_srt=true) {
+      sort_by_value_ = new_srt;
+      sorted_ = false;
+    }
+
     void sort() {
       std::move(idx_set_.begin(), idx_set_.end(), std::back_inserter(indices_));
-      std::sort(indices_.begin(), indices_.end(),
-          [](const ShellIndexWithValue& a, const ShellIndexWithValue& b){
-            return a.value > b.value;
-          }
-      );
+      if(sort_by_value_) {
+        std::sort(indices_.begin(), indices_.end(),
+            [](const ShellIndexWithValue& a, const ShellIndexWithValue& b){
+              return a.value > b.value;
+            }
+        );
+      }
+      else {
+        std::sort(indices_.begin(), indices_.end(),
+            [](const ShellIndexWithValue& a, const ShellIndexWithValue& b){
+              return a.index < b.index;
+            }
+        );
+      }
       sorted_ = true;
     }
-    #endif
 
     iterator begin() const
     {
-      #if !LINK_SORTED_INSERTION
       assert(sorted_);
-      #endif
       return iterator(
           basis_, dfbasis_,
           indices_.cbegin()
@@ -1659,17 +1697,13 @@ class OrderedShellList {
 
     index_iterator index_begin() const
     {
-      #if !LINK_SORTED_INSERTION
       assert(sorted_);
-      #endif
       return indices_.cbegin();
     }
 
     iterator end() const
     {
-      #if !LINK_SORTED_INSERTION
       assert(sorted_);
-      #endif
       return iterator(
           basis_, dfbasis_,
           indices_.cend()
@@ -1678,17 +1712,13 @@ class OrderedShellList {
 
     index_iterator index_end() const
     {
-      #if !LINK_SORTED_INSERTION
       assert(sorted_);
-      #endif
       return indices_.cend();
     }
 
     auto size() -> decltype(indices_.size())
     {
-      #if !LINK_SORTED_INSERTION
       assert(sorted_);
-      #endif
       return indices_.size();
     }
 

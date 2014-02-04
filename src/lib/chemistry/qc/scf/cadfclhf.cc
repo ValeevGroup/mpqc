@@ -1038,17 +1038,16 @@ CADFCLHF::compute_K()
       } // end loop over jsh
     });
     timer.exit("build L_3");
-    #if not LINK_SORTED_INSERTION
     do_threaded(nthread, [&](int ithr){
       auto L_3_iter = L_3.begin();
       const auto& L_3_end = L_3.end();
       L_3_iter.advance(ithr);
       while(L_3_iter != L_3_end) {
+        if(not linK_block_rho_) L_3_iter->second.set_sort_by_value(false);
         L_3_iter->second.sort();
         L_3_iter.advance(nthread);
       }
     });
-    #endif
     timer.exit("LinK lists");
     if(print_screening_stats_ and scf_grp_->me() == 0) {
       int n_LD = 0, n_L3 = 0, n_L4 = 0;
@@ -1125,14 +1124,13 @@ CADFCLHF::compute_K()
           /*-----------------------------------------------------*/
           /* Compute B intermediate                         {{{2 */ #if 2 // begin fold
           mt_timer.enter("compute B", ithr);
-          std::vector<Eigen::MatrixXd> B_mus(ish.nbf);
+          auto ints_timer = mt_timer.get_subtimer("compute ints", ithr);
+          auto contract_timer = mt_timer.get_subtimer("contract", ithr);
+
           typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> RowMatrix;
           RowMatrix B_ish(ish.nbf * Xblk.nbf, nbf);
           B_ish = RowMatrix::Zero(ish.nbf * Xblk.nbf, nbf);
-          for(auto mu : function_range(ish)) {
-            B_mus[mu.bfoff_in_shell].resize(nbf, Xblk.nbf);
-            B_mus[mu.bfoff_in_shell] = Eigen::MatrixXd::Zero(nbf, Xblk.nbf);
-          }
+
           if(do_linK_){
 
             // TODO figure out how to take advantage of L_3 sorting
@@ -1153,7 +1151,7 @@ CADFCLHF::compute_K()
                 mt_timer.exit(ithr);
                 block_offset = 0;
                 for(auto jblk : shell_block_range(L_3[{ish, Xsh}], NoRestrictions)){
-                  mt_timer.enter("compute ints", ithr);
+                  TimerHolder subtimer(ints_timer);
 
                   auto g3_ptr = ints_to_eigen(
                       jblk, ish, Xsh,
@@ -1162,62 +1160,32 @@ CADFCLHF::compute_K()
                   auto& g3_in = *g3_ptr;
                   Eigen::Map<ThreeCenterIntContainer> g3(g3_in.data(), jblk.nbf, ish.nbf*Xsh.nbf);
 
-                  mt_timer.change("contract", ithr);
+                  subtimer.change(contract_timer);
+
                   B_ish += 2.0 * g3.transpose() * D_ordered.middleRows(block_offset, jblk.nbf);
-                  /*
-                  for(auto mu : function_range(ish)) {
-                    B_mus[mu.bfoff_in_shell] += 2.0 *
-                        D_ordered.middleRows(block_offset, jblk.nbf).transpose() *
-                        g3.middleRows(mu.bfoff_in_shell*jblk.nbf, jblk.nbf);
-                  } // end loop over mu
-                  */
                   block_offset += jblk.nbf;
-                  /*
-                  for(auto mu : function_range(ish)) {
-                    const double g3nrm = g3.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf).norm();
-                    for(auto lsh : L_D[jsh]) {
-                      if(g3nrm * lsh.value > 0) {
-                        B_mus[mu.bfoff_in_shell].middleRows(lsh.bfoff, lsh.nbf) += 2.0
-                            * D.block(lsh.bfoff, jsh.bfoff, lsh.nbf, jsh.nbf)
-                            * g3.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf);
-                      }
-                      else{
-                        break;
-                      }
-                    }
-                  } // end loop over mu
-                  */
-                  mt_timer.exit(ithr);
+
                 } // end loop over jsh
 
               } // end if linK_block_rho_
               else { // linK_block_rho_ == false
 
-                for(auto jsh : L_3[{ish, Xsh}]){
-                  mt_timer.enter("compute ints", ithr);
+                for(auto jblk : shell_block_range(L_3[{ish, Xsh}], Contiguous)){
+                  //mt_timer.enter("compute ints", ithr);
+                  TimerHolder subtimer(ints_timer);
 
                   auto g3_ptr = ints_to_eigen(
-                      jsh, ish, Xsh,
+                      jblk, ish, Xsh,
                       eris_3c_[ithr], coulomb_oper_type_
                   );
                   auto& g3_in = *g3_ptr;
-                  Eigen::Map<ThreeCenterIntContainer> g3(g3_in.data(), jsh.nbf, ish.nbf*Xsh.nbf);
+                  Eigen::Map<ThreeCenterIntContainer> g3(g3_in.data(), jblk.nbf, ish.nbf*Xsh.nbf);
 
-                  mt_timer.change("contract", ithr);
-                  B_ish += 2.0 * g3.transpose() * D.middleRows(jsh.bfoff, jsh.nbf);
-                  /*
-                  for(auto mu : function_range(ish)) {
-                    B_ish.middleRows(mu.bfoff_in_shell*Xsh.nbf, Xsh.nbf) += 2.0 *
-                        g3.middleCols(mu.bfoff_in_shell*Xsh.nbf, Xsh.nbf).transpose()
-                        * D.middleRows(jsh.bfoff, jsh.nbf);
+                  //mt_timer.change("contract", ithr);
+                  subtimer.change(contract_timer);
+                  B_ish += 2.0 * g3.transpose() * D.middleRows(jblk.bfoff, jblk.nbf);
 
-                    //B_mus[mu.bfoff_in_shell] += 2.0 *
-                    //    D.middleRows(jsh.bfoff, jsh.nbf).transpose() *
-                    //    g3.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf);
-                  } // end loop over mu
-                  */
-
-                  mt_timer.exit(ithr);
+                  //mt_timer.exit(ithr);
                 } // end loop over jsh
 
               } // end else (linK_block_rho_ == false)
@@ -1226,18 +1194,26 @@ CADFCLHF::compute_K()
           } // end if do_linK_
           else {
             for(ShellData jsh : iter_significant_partners(ish)){
+              TimerHolder subtimer(ints_timer);
               auto g3_ptr = ints_to_eigen(
-                  ish, jsh, Xblk,
+                  jsh, ish, Xblk,
                   eris_3c_[ithr], coulomb_oper_type_
               );
-              auto& g3 = *g3_ptr;
+              auto& g3_in = *g3_ptr;
+              Eigen::Map<ThreeCenterIntContainer> g3(g3_in.data(), jsh.nbf, ish.nbf*Xblk.nbf);
+
+              subtimer.change(contract_timer);
+              B_ish += 2.0 * g3.transpose() * D.middleRows(jsh.bfoff, jsh.nbf);
+              /*
               for(auto mu : function_range(ish)) {
                 B_mus[mu.bfoff_in_shell] += 2.0 *
                     D.middleRows(jsh.bfoff, jsh.nbf).transpose() *
                     g3.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf);
               } // end loop over mu
+              */
             } // end loop over jsh
           }
+          /*
           if(xml_debug) {
             for(auto mu : function_range(ish)){
               write_as_xml("B_part", B_mus[mu.bfoff_in_shell], std::map<string, int>{
@@ -1246,6 +1222,7 @@ CADFCLHF::compute_K()
               });
             }
           }
+          */
           /*******************************************************/ #endif //2}}}
           /*-----------------------------------------------------*/
           /* Compute K contributions                        {{{2 */ #if 2 // begin fold
@@ -1258,6 +1235,7 @@ CADFCLHF::compute_K()
               // B_mus[mu.bfoff_in_shell] is (nbf x Ysh.nbf)
               // C_Y is (Y.{obs_}atom_nbf x nbf)
               // result should be (Y.{obs_}atom_nbf x 1)
+
               Kt_part.row(mu).segment(obs_atom_bfoff, obs_atom_nbf).transpose() +=
                   C_X * B_ish.row(mu.bfoff_in_shell*Xblk.nbf + X.bfoff_in_block).transpose();
               Kt_part.row(mu).transpose() += C_X.transpose()
@@ -1265,17 +1243,6 @@ CADFCLHF::compute_K()
               Kt_part.row(mu).segment(obs_atom_bfoff, obs_atom_nbf).transpose() -=
                   C_X.middleCols(obs_atom_bfoff, obs_atom_nbf).transpose()
                   * B_ish.row(mu.bfoff_in_shell*Xblk.nbf + X.bfoff_in_block).segment(obs_atom_bfoff, obs_atom_nbf).transpose();
-              /*
-              Kt_part.row(mu).segment(obs_atom_bfoff, obs_atom_nbf).transpose() +=
-                  C_X * B_mus[mu.bfoff_in_shell].col(X.bfoff_in_block);
-              // The sigma <-> nu term
-              Kt_part.row(mu).transpose() += C_X.transpose()
-                  * B_mus[mu.bfoff_in_shell].col(X.bfoff_in_block).segment(obs_atom_bfoff, obs_atom_nbf);
-              // Add back in the nu.center == Y.center part
-              Kt_part.row(mu).segment(obs_atom_bfoff, obs_atom_nbf).transpose() -=
-                  C_X.middleCols(obs_atom_bfoff, obs_atom_nbf).transpose()
-                  * B_mus[mu.bfoff_in_shell].col(X.bfoff_in_block).segment(obs_atom_bfoff, obs_atom_nbf);
-              */
               //----------------------------------------//
             }
           }

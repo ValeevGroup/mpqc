@@ -114,7 +114,9 @@ shell_block_iterator<ShellIterator, ShellRange>::init_from_spot(
   auto first_am = basis->shell(first_shell).am();
   int block_nbf = 0;
   int block_nshell = 0;
-  for(auto ish_iter = start_spot; ish_iter != all_shells.end(); ++ish_iter){
+  int prev_index = first_shell.index - 1;
+  auto ish_iter = start_spot;
+  for(; ish_iter != all_shells.end(); ++ish_iter){
     auto ish = *ish_iter;
     if(
         // Same center condition
@@ -122,9 +124,13 @@ shell_block_iterator<ShellIterator, ShellRange>::init_from_spot(
         or
         // Same angular momentum condition
         ((restrictions & SameAngularMomentum) and
-            basis->shell(ish).am() != first_am) or
+            basis->shell(ish).am() != first_am)
+        or
         // Maximum block size overflow condition
         (target_size != NoMaximumBlockSize and block_nbf >= target_size)
+        or
+        // Contiguous condition
+        ((restrictions & Contiguous) and ish.index != prev_index + 1)
     ){
       // Store the current block
       break;
@@ -132,11 +138,12 @@ shell_block_iterator<ShellIterator, ShellRange>::init_from_spot(
     else{
       ++block_nshell;
       block_nbf += ish.nbf;
+      prev_index = ish.index;
     }
   }
   //----------------------------------------//
   current_skeleton = ShellBlockSkeleton<ShellRange>(
-      shell_range(first_shell, first_shell.iterator + block_nshell),
+      shell_range(first_shell, ish_iter),
       block_nshell, block_nbf, restrictions
   );
   //----------------------------------------//

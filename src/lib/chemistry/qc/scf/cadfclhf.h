@@ -387,6 +387,25 @@ class CADFCLHF: public CLHF {
       );
     }
 
+    range_of_shell_blocks<sig_partners_iter_t>
+    iter_significant_partners_blocked(
+        const ShellData& ish,
+        int requirements = Contiguous,
+        int target_size = DEFAULT_TARGET_BLOCK_SIZE
+    ){
+      const auto& sig_parts = sig_partners_[ish];
+      return boost::make_iterator_range(
+          shell_block_iterator<sig_partners_iter_t>(
+              sig_parts.begin(), sig_parts.end(),
+              ish.basis, ish.dfbasis, requirements, target_size
+          ),
+          shell_block_iterator<sig_partners_iter_t>(
+              sig_parts.end(), sig_parts.end(),
+              ish.basis, ish.dfbasis, requirements, target_size
+          )
+      );
+    }
+
 
     // CADF-LinK lists
     template <typename T> struct hash_;

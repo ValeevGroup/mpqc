@@ -3,6 +3,9 @@
 cmake_minimum_required (VERSION 2.8.8)
 project (MPQC)
 
+# extra cmake files are shipped with MPQC
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/modules/")
+
 #####################
 # Options
 #####################
@@ -19,6 +22,8 @@ endif()
 if (NOT DEFINED MPQC_ASSERT_MODE)
   set(MPQC_ASSERT_MODE -1) # How to implement assertions (see mpqc_config.h for details)
 endif()
+
+include(cotire)
 
 include(CTest)
 enable_testing()
@@ -41,8 +46,7 @@ else()
   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DINTEGER77='INTEGER*4' ")
 endif()
 
-# extra cmake files are shipped with MPQC
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/modules/")
+
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release")

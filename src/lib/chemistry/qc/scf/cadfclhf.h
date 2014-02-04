@@ -117,6 +117,25 @@ class CADFCLHF: public CLHF {
 
     void save_data_state(StateOut&);
 
+    /*
+    class ScreeningStatistics {
+
+      public:
+
+        typedef std::atomic_uint_fast64_t accumulate_t;
+
+        struct Iteration {
+
+            const CADFCLHF& wfn;
+            accumulate_t ints_3c_needed = { 0 };
+            accumulate_t ints_3c_underestimated = { 0 };
+            accumulate_t ints_2c_needed = { 0 };
+            accumulate_t ints_2c_underestimated = { 0 };
+
+        };
+
+    };
+    */
 
   private:
 
@@ -129,6 +148,27 @@ class CADFCLHF: public CLHF {
     enum {
       NoMorePairs = -1
     };
+
+    /**
+     * Flags and other members that basically correspond directly to KeyVal options
+     */
+    //@{
+    /// The threshold for including pairs in the pair list using half of the schwarz bound
+    double pair_screening_thresh_;
+    /// currently unused
+    double density_screening_thresh_;
+    /// Threshold for including a given maximum contribution to the K matrix
+    double full_screening_thresh_;
+    /// currently unused
+    double coef_screening_thresh_;
+    /// Whether or not to do LinK style screening
+    bool do_linK_;
+    /// Advanced LinK options
+    bool linK_block_rho_;
+    /// Currently does nothing
+    bool linK_sorted_B_contraction_;
+    //@}
+
 
     bool is_master() {
       if(dynamic_){
@@ -159,7 +199,6 @@ class CADFCLHF: public CLHF {
     void loop_shell_pairs_threaded(
         const std::function<void(int, const ShellData&, const ShellData&)>& f
     );
-
 
     RefSCMatrix compute_J();
 
@@ -246,11 +285,6 @@ class CADFCLHF: public CLHF {
     // Non-blocked version of cl_gmat_
     RefSymmSCMatrix gmat_;
 
-    /// The threshold for including pairs in the pair list using half of the schwarz bound
-    double pair_screening_thresh_;
-    double density_screening_thresh_;
-    double full_screening_thresh_;
-    double coef_screening_thresh_;
 
     bool print_screening_stats_;
 
@@ -353,7 +387,6 @@ class CADFCLHF: public CLHF {
       );
     }
 
-    bool do_linK_ = false;
 
     // CADF-LinK lists
     template <typename T> struct hash_;
@@ -379,13 +412,6 @@ class CADFCLHF: public CLHF {
     IndexListMap L_D;
     IndexListMap L_DC;
     IndexListMap2 L_3;
-    /*
-    LinKListCache2 L_4;
-    std::set<std::pair<int, int>> L_4_keys;
-    LinKListCache2 L_K;
-    std::set<std::pair<int, int>> L_K_keys;
-    LinKListCache2 L_5;
-    */
 
 };
 

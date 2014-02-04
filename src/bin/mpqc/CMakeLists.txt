@@ -36,6 +36,9 @@ target_link_libraries(
   mpqcinit
 )
 
+set_target_properties(${executable} PROPERTIES COTIRE_UNITY_LINK_LIBRARIES_INIT "COPY")
+cotire(${executable})
+
 # message("** LINK_LIBRARIES=${LINK_LIBRARIES}")
 
 install(TARGETS ${executable} RUNTIME DESTINATION bin)

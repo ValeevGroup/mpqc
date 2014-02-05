@@ -167,6 +167,10 @@ class CADFCLHF: public CLHF {
     bool linK_block_rho_;
     /// Currently does nothing
     bool linK_sorted_B_contraction_;
+    /// Full screening exponent for non-reset iterations
+    double full_screening_expon_;
+    /// Use 1/r^(lX+1) factor in screening
+    bool linK_use_distance_;
     //@}
 
 
@@ -284,6 +288,8 @@ class CADFCLHF: public CLHF {
 
     // Non-blocked version of cl_gmat_
     RefSymmSCMatrix gmat_;
+
+    bool density_reset_ = true;
 
 
     bool print_screening_stats_;

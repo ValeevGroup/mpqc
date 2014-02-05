@@ -173,6 +173,7 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   density_screening_thresh_ = keyval->doublevalue("density_screening_thresh", KeyValValuedouble(1e-8));
   full_screening_thresh_ = keyval->doublevalue("full_screening_thresh", KeyValValuedouble(1e-8));
   coef_screening_thresh_ = keyval->doublevalue("coef_screening_thresh", KeyValValuedouble(1e-8));
+  full_screening_expon_ = keyval->doublevalue("full_screening_expon", KeyValValuedouble(1.5));
   //----------------------------------------------------------------------------//
   // For now, use coulomb metric.  We can easily make this a keyword later
   metric_oper_type_ = TwoBodyOper::eri;
@@ -180,6 +181,7 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   do_linK_ = keyval->booleanvalue("do_linK", KeyValValueboolean(false));
   linK_block_rho_ = keyval->booleanvalue("linK_block_rho", KeyValValueboolean(false));
   linK_sorted_B_contraction_ = keyval->booleanvalue("linK_sorted_B_contraction", KeyValValueboolean(false));
+  linK_use_distance_ = keyval->booleanvalue("linK_use_distance", KeyValValueboolean(false));
   //----------------------------------------------------------------------------//
   print_screening_stats_ = keyval->booleanvalue("print_screening_stats", KeyValValueboolean(false));
   //----------------------------------------------------------------------------//
@@ -336,6 +338,8 @@ CADFCLHF::init_significant_pairs()
   boost::mutex pair_mutex;
   std::vector<std::pair<double, IntPair>> pair_values;
   //----------------------------------------//
+  schwarz_frob_.resize(basis()->nshell(), basis()->nshell());
+  schwarz_frob_ = Eigen::MatrixXd::Zero(basis()->nshell(), basis()->nshell());
   local_pairs_spot_ = 0;
   do_threaded(nthread, [&](int ithr){
 
@@ -343,20 +347,18 @@ CADFCLHF::init_significant_pairs()
     std::vector<std::pair<double, IntPair>> my_pair_vals;
 
     while(get_shell_pair(ish, jsh, AllPairs)){
-      const double max_val = ints4maxes_.get(ish, jsh, ish, jsh, coulomb_oper_type_, [&]() -> double {
+      const double norm_val = ints4maxes_.get(ish, jsh, ish, jsh, coulomb_oper_type_, [&]() -> double {
         tbis_[ithr]->compute_shell(ish, jsh, ish, jsh);
         const double* buffer = tbis_[ithr]->buffer(coulomb_oper_type_);
-        /*
-        return *std::max_element(buffer, buffer + ish.nbf * jsh.nbf * ish.nbf * jsh.nbf,
-            [](double a, double b){ return fabs(a) < fabs(b); }
-        );*/
         double frob_val = 0.0;
         for(int i = 0; i < ish.nbf*jsh.nbf*ish.nbf*jsh.nbf; ++i) {
           frob_val += fabs(buffer[i]);
         }
         return sqrt(frob_val);
       });
-      my_pair_vals.push_back(make_pair(sqrt(fabs(max_val)), IntPair(ish, jsh)));
+      schwarz_frob_(ish, jsh) = norm_val;
+      schwarz_frob_(jsh, ish) = norm_val;
+      my_pair_vals.push_back({norm_val, IntPair(ish, jsh)});
     } // end while get shell pair
     //----------------------------------------//
     // put our values on the node-level vector
@@ -367,23 +369,21 @@ CADFCLHF::init_significant_pairs()
 
   });
   //----------------------------------------//
-  double max_schwarz = std::max_element(pair_values.begin(), pair_values.end())->first;
-  // Take the max across all nodes
-  scf_grp_->max(max_schwarz);
+  // All-to-all the shell-wise Frobenius norms of the Schwarz matrix
+  scf_grp_->sum(schwarz_frob_.data(), basis()->nshell() * basis()->nshell());
+  //const double schwarz_norm = schwarz_frob_.norm();
+  // In this case we do actually want the max norm
+  const double schwarz_norm = schwarz_frob_.maxCoeff();
   //----------------------------------------//
   // Now go through the list and figure out which ones are significant
   shell_to_sig_shells_.resize(basis()->nshell());
   std::vector<double> sig_values;
-  schwarz_frob_.resize(basis()->nshell(), basis()->nshell());
-  schwarz_frob_ = Eigen::MatrixXd::Zero(basis()->nshell(), basis()->nshell());
   do_threaded(nthread, [&](int ithr){
     std::vector<IntPair> my_sig_pairs;
     std::vector<double> my_sig_values;
     for(int i = ithr; i < pair_values.size(); i += nthread){
       auto item = pair_values[i];
-      schwarz_frob_(item.second.first, item.second.second) = item.first;
-      schwarz_frob_(item.second.second, item.second.first) = item.first;
-      if(item.first * max_schwarz > pair_screening_thresh_){
+      if(item.first * schwarz_norm > pair_screening_thresh_){
         my_sig_pairs.push_back(item.second);
         my_sig_values.push_back(item.first);
         ++n_significant_pairs;
@@ -403,7 +403,6 @@ CADFCLHF::init_significant_pairs()
   //----------------------------------------//
   // Now all-to-all the significant pairs
   // This should be done with an MPI_alltoall_v or something like that
-  scf_grp_->sum(schwarz_frob_.data(), basis()->nshell() * basis()->nshell());
   int n_sig = n_significant_pairs;
   int my_n_sig = n_significant_pairs;
   int n_sig_pairs[scf_grp_->n()];
@@ -516,7 +515,7 @@ CADFCLHF::init_significant_pairs()
   //----------------------------------------//
   ExEnv::out0() << "  Number of significant shell pairs:  " << n_sig << endl;
   ExEnv::out0() << "  Number of total basis pairs:  " << (basis()->nshell() * (basis()->nshell() + 1) / 2) << endl;
-  ExEnv::out0() << "  max_schwarz = " << max_schwarz << endl;
+  ExEnv::out0() << "  Schwarz Norm = " << schwarz_norm << endl;
 
 }
 
@@ -601,6 +600,7 @@ CADFCLHF::ao_fock(double accuracy)
     }
   }
   if(xml_debug) end_xml_context("compute_fock"), assert(false);
+  density_reset_ = false;
   //---------------------------------------------------------------------------------------//
   // Move data back to a RefSymmSCMatrix, transform back to the SO basis
   Ref<SCElementOp> accum_G_op = new SCElementAccumulateSCMatrix(G.pointer());
@@ -637,6 +637,7 @@ CADFCLHF::reset_density()
 {
   CLHF::reset_density();
   gmat_.assign(0.0);
+  density_reset_ = true;
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -963,10 +964,6 @@ CADFCLHF::compute_K()
     L_D.clear();
     L_DC.clear();
     L_3.clear();
-    //for(auto L4_key : L_4_keys) {
-    //  L_4(L4_key.first, L4_key.second).clear();
-    //}
-    //L_4_keys.clear();
     //============================================================================//
     std::vector<Eigen::Vector3d> positions;
     auto& atoms = molecule()->atoms();
@@ -1014,6 +1011,9 @@ CADFCLHF::compute_K()
     //----------------------------------------//
     // Form L_3
     timer.change("build L_3");
+    double epsilon;
+    if(density_reset_) epsilon = full_screening_thresh_;
+    else epsilon = pow(full_screening_thresh_, full_screening_expon_);
     do_threaded(nthread, [&](int ithr){
       for(int jsh_index = ithr; jsh_index < obs->nshell(); jsh_index += nthread) {
         ShellData jsh(jsh_index, obs);
@@ -1024,7 +1024,9 @@ CADFCLHF::compute_K()
           for(auto ish : L_schwarz[jsh]) {
             const double R = (pair_centers_[{(int)ish, (int)jsh}] - centers_[Xsh.center]).norm();
             const double l_X = double(dfbs_->shell(Xsh).am(0));
-            const double dist_factor = 1.0 / (pow(R, l_X + 1.0));
+            double dist_factor;
+            if(linK_use_distance_) dist_factor = 1.0 / (pow(R, l_X + 1.0));
+            else dist_factor = 1.0;
             if(ish.value * dist_factor > eps_prime) {
               jsh_added = true;
               L_3[{ish, Xsh}].insert(jsh, pf * ish.value * dist_factor);
@@ -1171,7 +1173,6 @@ CADFCLHF::compute_K()
               else { // linK_block_rho_ == false
 
                 for(auto jblk : shell_block_range(L_3[{ish, Xsh}], Contiguous)){
-                  //mt_timer.enter("compute ints", ithr);
                   TimerHolder subtimer(ints_timer);
 
                   auto g3_ptr = ints_to_eigen(
@@ -1181,11 +1182,9 @@ CADFCLHF::compute_K()
                   auto& g3_in = *g3_ptr;
                   Eigen::Map<ThreeCenterIntContainer> g3(g3_in.data(), jblk.nbf, ish.nbf*Xsh.nbf);
 
-                  //mt_timer.change("contract", ithr);
                   subtimer.change(contract_timer);
                   B_ish += 2.0 * g3.transpose() * D.middleRows(jblk.bfoff, jblk.nbf);
 
-                  //mt_timer.exit(ithr);
                 } // end loop over jsh
 
               } // end else (linK_block_rho_ == false)
@@ -1193,36 +1192,22 @@ CADFCLHF::compute_K()
 
           } // end if do_linK_
           else {
-            for(ShellData jsh : iter_significant_partners(ish)){
+
+            for(auto jblk : iter_significant_partners_blocked(ish, Contiguous)){
               TimerHolder subtimer(ints_timer);
+
               auto g3_ptr = ints_to_eigen(
-                  jsh, ish, Xblk,
+                  jblk, ish, Xblk,
                   eris_3c_[ithr], coulomb_oper_type_
               );
-              auto& g3_in = *g3_ptr;
-              Eigen::Map<ThreeCenterIntContainer> g3(g3_in.data(), jsh.nbf, ish.nbf*Xblk.nbf);
+              Eigen::Map<ThreeCenterIntContainer> g3(g3_ptr->data(), jblk.nbf, ish.nbf*Xblk.nbf);
 
               subtimer.change(contract_timer);
-              B_ish += 2.0 * g3.transpose() * D.middleRows(jsh.bfoff, jsh.nbf);
-              /*
-              for(auto mu : function_range(ish)) {
-                B_mus[mu.bfoff_in_shell] += 2.0 *
-                    D.middleRows(jsh.bfoff, jsh.nbf).transpose() *
-                    g3.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf);
-              } // end loop over mu
-              */
+              B_ish += 2.0 * g3.transpose() * D.middleRows(jblk.bfoff, jblk.nbf);
+
             } // end loop over jsh
-          }
-          /*
-          if(xml_debug) {
-            for(auto mu : function_range(ish)){
-              write_as_xml("B_part", B_mus[mu.bfoff_in_shell], std::map<string, int>{
-                {"mu", mu}, {"Xbfoff", Xblk.bfoff},
-                {"Xnbf", Xblk.nbf}, {"dfnbf", dfbs_->nbasis()}
-              });
-            }
-          }
-          */
+
+          } // end else (do_linK_ == false)
           /*******************************************************/ #endif //2}}}
           /*-----------------------------------------------------*/
           /* Compute K contributions                        {{{2 */ #if 2 // begin fold

@@ -4,7 +4,7 @@ include(AddLibrary)
 
 add_mpqc_object_library(libint2
   bounds.cc
-  comp_eri.cc
+  #comp_eri.cc
   comp_g12.cc
   comp_g12dkh.cc
   comp_g12nc.cc
@@ -13,7 +13,7 @@ add_mpqc_object_library(libint2
   efield.cc
   efield_grad.cc
   equadrupole.cc
-  eri.cc
+  #eri.cc
   g12.cc
   g12dkh.cc
   g12nc.cc

@@ -37,9 +37,8 @@
 
 #include <libint2/libint2.h>
 #if LIBINT2_SUPPORT_ERI
-#  include <chemistry/qc/libint2/eri.h>
-#  include <chemistry/qc/libint2/g12nc.h>
 #  include <chemistry/qc/libint2/tbosar.h>
+#  include <chemistry/qc/libint2/g12nc.h>
 #endif
 #if LIBINT2_SUPPORT_G12 && LIBINT2_SUPPORT_T1G12
 #  include <chemistry/qc/libint2/g12.h>
@@ -132,7 +131,7 @@ IntegralLibint2::storage_required_eri(const Ref<GaussianBasisSet> &b1,
 				    const Ref<GaussianBasisSet> &b4)
 {
 #if LIBINT2_SUPPORT_ERI
-  return EriLibint2::storage_required(b1,b2,b3,b4);
+  return TwoBodyOSARLibint2<TwoBodyOper::eri>::storage_required(b1,b2,b3,b4);
 #else
   throw FeatureNotImplemented("IntegralLibint2::storage_required_eri() -- libint2 library included in this executable does not support computation of ERI",__FILE__,__LINE__);
 #endif

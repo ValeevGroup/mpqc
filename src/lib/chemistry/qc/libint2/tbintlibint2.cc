@@ -35,9 +35,8 @@
 #include <chemistry/qc/libint2/bounds.h>
 #include <chemistry/qc/libint2/bounds.timpl.h>
 #if LIBINT2_SUPPORT_ERI
-#  include <chemistry/qc/libint2/eri.h>
-#  include <chemistry/qc/libint2/g12nc.h>
 #  include <chemistry/qc/libint2/tbosar.h>
+#  include <chemistry/qc/libint2/g12nc.h>
 #endif
 #if LIBINT2_SUPPORT_G12
 # if LIBINT2_SUPPORT_T1G12
@@ -142,7 +141,6 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
 #if LIBINT2_SUPPORT_ERI
   case TwoBodyOperSet::ERI:
   {
-    //typedef EriLibint2 Int2e;
     typedef TwoBodyOSARLibint2<TwoBodyOper::eri> Int2e;
     typedef BoundsLibint2<Int2e> Bounds;
     Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
@@ -250,7 +248,6 @@ TwoBodyIntLibint2::TwoBodyIntLibint2(Integral*integral,
 #if LIBINT2_SUPPORT_ERI
   case TwoBodyOperSet::ERI:
   {
-    //typedef EriLibint2 Int2e;
     typedef TwoBodyOSARLibint2<TwoBodyOper::eri> Int2e;
     Int2eCreator<Int2e> creator;
     int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
@@ -386,7 +383,6 @@ TwoBodyThreeCenterIntLibint2::TwoBodyThreeCenterIntLibint2(Integral*integral,
 #if LIBINT2_SUPPORT_ERI
   case TwoBodyOperSet::ERI:
   {
-    //typedef EriLibint2 Int2e;
     typedef TwoBodyOSARLibint2<TwoBodyOper::eri> Int2e;
     typedef BoundsLibint2<Int2e> Bounds;
     Ref<Bounds> bounds = new Bounds(integral,b1,b2,b3,b4,storage,params);
@@ -494,7 +490,6 @@ TwoBodyThreeCenterIntLibint2::TwoBodyThreeCenterIntLibint2(Integral*integral,
 #if LIBINT2_SUPPORT_ERI
   case TwoBodyOperSet::ERI:
   {
-    //typedef EriLibint2 Int2e;
     typedef TwoBodyOSARLibint2<TwoBodyOper::eri> Int2e;
     Int2eCreator<Int2e> creator;
     int2elibint2_ = creator(integral,b1,b2,b3,bunit,storage,params);
@@ -631,7 +626,6 @@ TwoBodyTwoCenterIntLibint2::TwoBodyTwoCenterIntLibint2(Integral*integral,
 #if LIBINT2_SUPPORT_ERI
   case TwoBodyOperSet::ERI:
   {
-    //typedef EriLibint2 Int2e;
     typedef TwoBodyOSARLibint2<TwoBodyOper::eri> Int2e;
     Int2eCreator<Int2e> creator;
     int2elibint2_ = creator(integral,b1,b2,b3,b4,storage,params);
@@ -732,7 +726,6 @@ TwoBodyTwoCenterIntLibint2::TwoBodyTwoCenterIntLibint2(Integral*integral,
 #if LIBINT2_SUPPORT_ERI
   case TwoBodyOperSet::ERI:
   {
-    //typedef EriLibint2 Int2e;
     typedef TwoBodyOSARLibint2<TwoBodyOper::eri> Int2e;
     Int2eCreator<Int2e> creator;
     int2elibint2_ = creator(integral,b1,bunit,b3,bunit,storage,params);
@@ -864,28 +857,18 @@ TwoBodyDerivIntLibint2::TwoBodyDerivIntLibint2(Integral*integral,
   // Which evaluator to use
   switch (int2etype) {
   default:
-      throw ProgrammingError("TwoBodyDerivIntLibint2: tried to construct a two-electron derivative integral evaluator of unimplemented or unknown type",__FILE__,__LINE__);
+      throw FeatureNotImplemented("IntegralLibint2 does not yet implement geometrical derivatives. Try IntegralV3.",__FILE__,__LINE__);
   }
-
-  //  int2elibint2_ = new EriLibint2(integral,b1,b2,b3,b4,1,storage);
-  //buffer_ = int2elibint2_->buffer();
-  //integral_->adjust_storage(int2elibint2_->storage_used());
 }
 
 TwoBodyDerivIntLibint2::~TwoBodyDerivIntLibint2()
 {
-  //  integral_->adjust_storage(-int2elibint2_->used_storage());
 }
 
 void
 TwoBodyDerivIntLibint2::compute_shell(int is, int js, int ks, int ls,
                                  DerivCenters&c)
 {
-  int center;
-  int sh[4], sz[4];
-
-  sh[0]=is; sh[1]=js; sh[2]=ks; sh[3]=ls;
-
 }
 
 

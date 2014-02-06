@@ -43,7 +43,7 @@ if (MPQC_UNITTEST)
     SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
   add_executable(btest btest.cc $<TARGET_OBJECTS:basis>)
   add_test(btest btest)
-
+  
   target_link_libraries( btest
     chemistry
     ${LAPACK_LIBRARIES}

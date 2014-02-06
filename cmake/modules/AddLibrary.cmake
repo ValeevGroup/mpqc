@@ -1,3 +1,17 @@
+# Macro for adding all subdirecties of a given folder.
+# result is a name you suply 
+# curdir is the current directory which often will be CMAKE_CURRENT_SOURCE_DIR
+MACRO(SUBDIRLIST result curdir)
+  FILE(GLOB children ${curdir} *)
+  SET(dirlist "")
+  FOREACH(child ${children})
+    IF(IS_DIRECTORY ${child})
+        SET(dirlist ${dirlist} ${child})
+    ENDIF()
+  ENDFOREACH()
+  SET(${result} ${dirlist})
+ENDMACRO()
+
 # Add MPQC library
 # add_mpqc_library(LIBRARY SUBDIRS)
 # LIBRARY - name of the library
@@ -9,7 +23,7 @@ macro(add_mpqc_library LIBRARY )
   #message("Library \"${LIBRARY}\": ${ARGN}")
   set(${LIBRARY}/OBJECTS)
   foreach(s ${ARGN})
-    add_subdirectory(${s})
+    #add_subdirectory(${s}) # THIS MAKES IT HARD TO ADD NEW FUNCTIONALITY TO OLD LIBS
     #message("${s}/OBJECTS: ${${s}/OBJECTS}")
     list(APPEND ${LIBRARY}/OBJECTS ${${s}/OBJECTS})
   endforeach()
@@ -38,7 +52,7 @@ macro(add_mpqc_objects_target TARGET )
   #message("Objects target \"${TARGET}\": ${ARGN}")
   add_custom_target(${TARGET})
   foreach(s ${ARGN})
-    add_subdirectory(${s})
+    #add_subdirectory(${s}) #THIS MAKES IT HARD TO USE WITH DISTANT OBJECT_DIRS
     add_dependencies(${TARGET} ${s})
     #message("${s}/OBJECTS: ${${s}/OBJECTS}")
     list(APPEND ${TARGET}/OBJECTS ${${s}/OBJECTS})

@@ -1,6 +1,12 @@
 include(AddLibrary)
+  
+SUBDIRLIST(Subdirs CMAKE_CURRENT_SOURCE_DIR)
 
-set(subdirectories
+FOREACH(subdir ${Subdirs})
+    ADD_SUBDIRECTORY(${subdir})
+ENDFOREACH()
+
+set(mathobjects
   distarray4
   isosurf
   mmisc
@@ -8,8 +14,8 @@ set(subdirectories
   scmat
   symmetry
   )
-
-add_mpqc_library(math ${subdirectories})
+  
+add_mpqc_library(math ${mathobjects})
 
 add_dependencies(math util)
 target_link_libraries(math util ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})

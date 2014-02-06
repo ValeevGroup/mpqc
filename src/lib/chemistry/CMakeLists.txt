@@ -1,15 +1,21 @@
 include(AddLibrary)
 
-set(subdirectories
+SUBDIRLIST(Subdirs CMAKE_CURRENT_SOURCE_DIR)
+
+FOREACH(subdir ${Subdirs})
+    ADD_SUBDIRECTORY(${subdir})
+ENDFOREACH()
+
+set(chemobjects
   molecule
   qc
   solvent
 )
 
-add_mpqc_library(chemistry ${subdirectories})
-install(TARGETS chemistry DESTINATION lib)
+add_mpqc_library(chemistry ${chemobjects})
 
 target_link_libraries(chemistry math util)
+
 
 if (HAVE_LIBINT2)
   target_link_libraries(chemistry ${LIBINT2_LIBRARY})

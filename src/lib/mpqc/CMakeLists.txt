@@ -6,11 +6,8 @@
 # )
 
 add_subdirectory(math)
-add_subdirectory(interfaces/tiledarray/tests)
-add_subdirectory(interfaces/tiledarray/tiling)
-add_subdirectory(tawfn)
-add_subdirectory(basis)
 #add_subdirectory(test)
+
 
 add_subdirectory(ci)
 

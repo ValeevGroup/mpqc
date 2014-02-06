@@ -2,6 +2,7 @@ include(AddLibrary)
 
 # libint2 library
 
+IF(HAVE_LIBINT2)
 add_mpqc_object_library(libint2
   bounds.cc
   #comp_eri.cc
@@ -36,6 +37,7 @@ add_mpqc_object_library(libint2
   tbintlibint2.cc
   tform.cc
 )
+ENDIF(HAVE_LIBINT2)
 
 # tests
 if (MPQC_UNITTEST)

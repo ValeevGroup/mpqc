@@ -1,19 +1,20 @@
 include(AddLibrary)
 
 # psi library
-
-add_mpqc_object_library(psi
-  psicc.cc
-  psicc_pt2r12.cc
-  psici.cc
-  psiexenv.cc
-  psifile11.cc
-  psiinput.cc
-  psiqtorder.cc
-  psirdm.cc
-  psiref.cc
-  psiwfn.cc
-)
+IF(HAVE_PSI3)
+    add_mpqc_object_library(psi
+      psicc.cc
+      psicc_pt2r12.cc
+      psici.cc
+      psiexenv.cc
+      psifile11.cc
+      psiinput.cc
+      psiqtorder.cc
+      psirdm.cc
+      psiref.cc
+      psiwfn.cc
+    )
+ENDIF()
 
 # tests
 

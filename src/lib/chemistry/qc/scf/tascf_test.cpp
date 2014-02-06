@@ -1,5 +1,5 @@
 //
-// tawfn_test.cpp
+// tascf_test.cpp
 //
 // Copyright (C) 2013 Drew Lewis
 //
@@ -25,17 +25,32 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <iostream>
-#include <mpqc/tawfn/tawfn.hpp>
-#define BOOST_TEST_MODULE test_mock_wfn
+#include <mpqc/tiledarrayscf/tascf.hpp>
+#define BOOST_TEST_MODULE test_tascf
 #include <boost/test/included/unit_test.hpp>
 
 using namespace boost::unit_test;
 using namespace mpqc;
+
 BOOST_AUTO_TEST_CASE( test_mock_wfn ){
-    BOOST_MESSAGE("Checking value in vector");
-    std::vector<double> a(10,5);
-    for(auto &elem : a){
-        BOOST_CHECK_EQUAL(5, elem);
-    }
+
+    BOOST_MESSAGE("Testing TiledArrayScf");
+    // Make a molecule H2
+    sc::Ref<sc::Molecule> mol = new sc::Molecule;
+    mol->add_atom(1,0,1,-1);
+    mol->add_atom(1,0,1,1);
+
+    // Make keyval
+    sc::Ref<sc::AssignedKeyVal> akv = new sc::AssignedKeyVal;
+    akv->assign("name", "STO-3G");
+    akv->assign("molecule", mol.pointer());
+    sc::Ref<sc::GaussianBasisSet> basis =
+                    new sc::GaussianBasisSet(sc::Ref<sc::KeyVal>(akv));
+    akv->assign("basis", basis.pointer());
+    sc::Ref<sc::KeyVal> kval = sc::Ref<sc::KeyVal>(akv);
+
+    //Construct object
+    TiledArrayScf tscf(kval);
 }
+
+

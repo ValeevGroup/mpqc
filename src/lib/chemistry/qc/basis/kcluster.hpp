@@ -25,8 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef MPQC_BASIS_KCLUSTER_HPP
-#define MPQC_BASIS_KCLUSTER_HPP
+#ifndef CHEMISTRY_QC_BASIS_KCLUSTER_HPP
+#define CHEMISTRY_QC_BASIS_KCLUSTER_HPP
 
 #include <chemistry/molecule/atom.h>
 #include <chemistry/qc/basis/gaussbas.h>
@@ -146,4 +146,4 @@ namespace basis {
 } // namespace mpqc
 
 
-#endif /* MPQC_BASIS_KCLUSTER_HPP */
+#endif /* CHEMISTRY_QC_BASIS_KCLUSTER_HPP */

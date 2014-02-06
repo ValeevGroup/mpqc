@@ -25,18 +25,18 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef MPQC_TAWFN_TAWFN_HPP
-#define MPQC_TAWFN_TAWFN_HPP
+#ifndef CHEMISTRY_WFN_TAWFN_HPP
+#define CHEMISTRY_WFN_TAWFN_HPP
 
 #include <chemistry/qc/basis/integral.h>
-#include <chemistry/qc/wfn/wfn.h>
-#include <mpqc/basis/tiledbasisset.hpp>
+#include <chemistry/qc/basis/tiledbasisset.hpp>
+#include <chemistry/molecule/energy.h>
 #include <tiled_array.h>
 
-namespace mpqc{
+namespace mpqc {
     /// @add to group TAWFN
     /// @{
-
+    
     /** The TiledArrayWavefunction class inherits from the MolecularEnergy class.
      * It will compute energies using TiledArrayBasisSet which is a specialization
      * of GaussianBasisSet
@@ -47,18 +47,21 @@ namespace mpqc{
         sc::RefSCDimension sodim_;
         sc::Ref<TiledBasisSet> tbs_;
         sc::Ref<sc::Integral> integral_;
+        sc::ResultRefSymmSCMatrix overlap_;
+        sc::ResultRefSymmSCMatrix hcore_;
 
     public:
         // Short hand for TiledArray Matrix
-        using TAMat = TiledArray::Array<double,2>;
-        TiledArrayWavefunction(sc::StateIn&);
+        // Fix made double for short term
+        using TAMat = TiledArray::Array<double, 2>; // TiledArray::Array<double,2>;
+        //TiledArrayWavefunction(sc::StateIn &s);
         /** The KeyVal constructor.
-        *
-        */
-        TiledArrayWavefunction(const sc::Ref<sc::KeyVal>&);
-        virtual ~TiledArrayWavefunction();
+         *
+         */
+        TiledArrayWavefunction(const sc::Ref<sc::KeyVal> &kval);
+        virtual ~TiledArrayWavefunction() {};
 
-        void save_data_state(sc::StateOut &);
+        //void save_data_state(sc::StateOut &s);
 
         /// total charge of system.
         double total_charge() const;
@@ -71,14 +74,11 @@ namespace mpqc{
         virtual TAMat ao_overlap();
         /// Return basis set.
         sc::Ref<TiledBasisSet> basis() const;
-
+        
     };
 
-    /// @}
+/// @}
 
-} // namespace mpqc
+}// namespace mpqc
 
-
-
-
-#endif /* MPQC_TAWFN_TAWFN_HPP */
+#endif /* CHEMISTRY_WFN_TAWFN_HPP */

@@ -35,6 +35,49 @@
 namespace sc {
 
   // auxiliary type functions
+  namespace detail {
+
+    template <> struct SEvalCreator<2u> {
+      static Ref< typename OneBodyIntEvalType<2u>::value >
+      eval(const Ref<Integral>& factory, const Ref<IntParamsVoid>& params) {
+        return factory->overlap();
+      }
+    };
+  };
+
+  /// Traits of a set of one-body integrals
+  template <int NumCenters, OneBodyOperSet::type Type> struct OneBodyIntTraits {
+    /// the type of the NBodyInt object that evaluates this set
+    typedef typename OneBodyIntEvalType<NumCenters>::value EvalType;
+    /** the type of IntParams object needed to initialize the evaluator
+        for computing this set of integrals */
+    typedef typename OneBodyIntParamsType<Type>::value ParamsType;
+    /// the type of the NBodyInt object that evaluates this set
+    typedef OneBodyOperSetProperties<Type> TypeMap;
+    /// number of integral types
+    static const int size = TypeMap::size;
+    /// creates an Eval object
+    static Ref<EvalType> eval(const Ref<Integral>& factory,
+                              const Ref<ParamsType>& params) {
+      typedef typename detail::TwoBodyEvalCreator<NumCenters,Type>::value TwoBodyEvalCreator;
+      return TwoBodyEvalCreator::eval(factory,params);
+    }
+    /// maps index of the integral type within this set to TwoBodyOper::type
+    static OneBodyOper::type intset(unsigned int t) {
+      MPQC_ASSERT(t < size);
+      return TypeMap::value[t];
+    }
+    /// inverse of the above intset
+    static unsigned int intset(OneBodyOper::type t) {
+      for(unsigned int i=0; i<size; ++i)
+        if (TypeMap::value[i] == t)
+          return i;
+      abort();   // should be unreachable if input is valid
+    }
+
+  };
+
+  // auxiliary type functions
   namespace {
 
     template <int NumCenters> struct ERIEvalCreator {
@@ -72,20 +115,20 @@ namespace sc {
       }
     };
 
-    template <int NumCenters, TwoBodyOperSet::type Type> struct EvalCreator;
-    template <int NumCenters> struct EvalCreator<NumCenters,TwoBodyOperSet::ERI> {
+    template <int NumCenters, TwoBodyOperSet::type Type> struct TwoBodyEvalCreator;
+    template <int NumCenters> struct TwoBodyEvalCreator<NumCenters,TwoBodyOperSet::ERI> {
       typedef ERIEvalCreator<NumCenters> value;
     };
-    template <int NumCenters> struct EvalCreator<NumCenters,TwoBodyOperSet::R12> {
+    template <int NumCenters> struct TwoBodyEvalCreator<NumCenters,TwoBodyOperSet::R12> {
       typedef R12EvalCreator<NumCenters> value;
     };
-    template <int NumCenters> struct EvalCreator<NumCenters,TwoBodyOperSet::G12> {
+    template <int NumCenters> struct TwoBodyEvalCreator<NumCenters,TwoBodyOperSet::G12> {
       typedef G12EvalCreator<NumCenters> value;
     };
-    template <int NumCenters> struct EvalCreator<NumCenters,TwoBodyOperSet::G12NC> {
+    template <int NumCenters> struct TwoBodyEvalCreator<NumCenters,TwoBodyOperSet::G12NC> {
       typedef G12NCEvalCreator<NumCenters> value;
     };
-    template <int NumCenters> struct EvalCreator<NumCenters,TwoBodyOperSet::G12DKH> {
+    template <int NumCenters> struct TwoBodyEvalCreator<NumCenters,TwoBodyOperSet::G12DKH> {
       typedef G12DKHEvalCreator<NumCenters> value;
     };
   };
@@ -98,14 +141,14 @@ namespace sc {
         for computing this set of integrals */
     typedef typename TwoBodyIntParamsType<Type>::value ParamsType;
     /// the type of the NBodyInt object that evaluates this set
-    typedef TwoBodyOperSetTypeMap<Type> TypeMap;
+    typedef TwoBodyOperSetProperties<Type> TypeMap;
     /// number of integral types
     static const int size = TypeMap::size;
     /// creates an Eval object
     static Ref<EvalType> eval(const Ref<Integral>& factory,
                               const Ref<ParamsType>& params) {
-      typedef typename detail::EvalCreator<NumCenters,Type>::value EvalCreator;
-      return EvalCreator::eval(factory,params);
+      typedef typename detail::TwoBodyEvalCreator<NumCenters,Type>::value TwoBodyEvalCreator;
+      return TwoBodyEvalCreator::eval(factory,params);
     }
     /// maps index of the integral type within this set to TwoBodyOper::type
     static TwoBodyOper::type intset(unsigned int t) {

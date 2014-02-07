@@ -28,7 +28,7 @@
 
 using namespace std;
 using namespace mpqc;
-using namespace TA = TiledArray;
+namespace TA = TiledArray;
 using TAMat = TiledArrayWavefunction::TAMat;
 
 // WORK ON SERIALIZATION LATER
@@ -51,7 +51,7 @@ using TAMat = TiledArrayWavefunction::TAMat;
 
 mpqc::TiledArrayWavefunction::TiledArrayWavefunction(
                 const sc::Ref<sc::KeyVal>& kval) :
-    sc::MolecularEnergy(kval), overlap_(this), hcore_(this), tbs_(kval)
+    sc::MolecularEnergy(kval), overlap_(this), hcore_(this)
 {
     overlap_.compute() = 0;
     hcore_.compute() = 0;
@@ -67,14 +67,9 @@ double mpqc::TiledArrayWavefunction::total_charge() const {
 }
 
 TAMat mpqc::TiledArrayWavefunction::ao_density() {
-
-    TAMat ao_density()
+    return 2.0;
 }
 
 TAMat mpqc::TiledArrayWavefunction::ao_overlap() {
     return 2.0;
-}
-
-sc::Ref<TiledBasisSet> mpqc::TiledArrayWavefunction::basis() const {
-    return tbs_;
 }

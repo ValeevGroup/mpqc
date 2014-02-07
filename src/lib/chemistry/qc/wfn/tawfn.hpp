@@ -53,7 +53,7 @@ namespace mpqc {
     public:
         // Short hand for TiledArray Matrix
         // Fix made double for short term
-        using TAMat = TiledArray::Array<double, 2>; // TiledArray::Array<double,2>;
+        using TAMat = double; //TiledArray::Array<double, 2>; // TiledArray::Array<double,2>;
         //TiledArrayWavefunction(sc::StateIn &s);
         /** The KeyVal constructor.
          *
@@ -73,7 +73,7 @@ namespace mpqc {
         /// Returns the AO overlap.
         virtual TAMat ao_overlap();
         /// Return basis set.
-        sc::Ref<TiledBasisSet> basis() const;
+        //sc::Ref<TiledBasisSet> basis() const;
         
     };
 

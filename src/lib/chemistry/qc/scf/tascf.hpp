@@ -25,10 +25,10 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef MPQC_TILEDARRAYSCF_TASCF_HPP
-#define MPQC_TILEDARRAYSCF_TASCF_HPP
+#ifndef CHEMISTRY_QC_SCF_TASCF_HPP
+#define CHEMISTRY_QC_SCF_TASCF_HPP
 
-#include <mpqc/tiledarraywfn/tawfn.hpp>
+#include <chemistry/qc/wfn/tawfn.hpp>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/tbint.h>
 
@@ -61,4 +61,4 @@ namespace mpqc{
 } //namespace mpqc
 
 
-#endif /* MPQC_TILEDARRAYSCF_TASCF_HPP */
+#endif /* CHEMISTRY_QC_SCF_TASCF_HPP */

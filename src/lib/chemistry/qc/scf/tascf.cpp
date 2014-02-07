@@ -25,7 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <mpqc/tiledarrayscf/tascf.hpp>
+#include "tascf.hpp"
 
 using namespace mpqc;
 using TAMat = TiledArrayScf::TAMat;

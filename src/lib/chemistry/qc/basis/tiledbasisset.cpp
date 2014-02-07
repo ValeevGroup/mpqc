@@ -25,7 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <mpqc/tiledarraybasis/tiledbasisset.hpp>
+#include "tiledbasisset.hpp"
 #include <Eigen/Dense>
 #include <vector>
 #include <string>

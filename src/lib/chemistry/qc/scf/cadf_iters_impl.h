@@ -116,6 +116,7 @@ shell_block_iterator<ShellIterator, ShellRange>::init_from_spot(
   int block_nshell = 0;
   int prev_index = first_shell.index - 1;
   auto ish_iter = start_spot;
+  contiguous_ = true;
   for(; ish_iter != all_shells.end(); ++ish_iter){
     auto ish = *ish_iter;
     if(
@@ -138,6 +139,9 @@ shell_block_iterator<ShellIterator, ShellRange>::init_from_spot(
     else{
       ++block_nshell;
       block_nbf += ish.nbf;
+      if(ish.index != prev_index + 1){
+        contiguous_ = false;
+      }
       prev_index = ish.index;
     }
   }
@@ -188,6 +192,20 @@ function_range(
 
 //============================================================================//
 
+template <typename ShellRange1, typename ShellRange2>
+auto threaded_shell_block_pair_range(
+    const ShellBlockData<ShellRange1>& iblk,
+    const ShellBlockData<ShellRange2>& jblk,
+    int ithr, int nthr
+) -> decltype(thread_over_range(product_range(iblk.shell_range, jblk.shell_range), ithr, nthr))
+{
+  return thread_over_range(
+      product_range(iblk.shell_range, jblk.shell_range),
+      ithr, nthr
+  );
+}
+
+//============================================================================//
 
 } // end namespace sc
 

@@ -26,6 +26,9 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#ifndef _util_container_conc_cache_h
+#define _util_container_conc_cache_h
+
 #include <cassert>
 #include <utility>
 #include <boost/mpl/empty.hpp>
@@ -51,9 +54,7 @@
 #include <world/worldhashmap.h>
 #include <world/worldfut.h>
 
-
-#ifndef _util_container_conc_cache_h
-#define _util_container_conc_cache_h
+#include <util/misc/iterators.h>
 
 namespace mpl = boost::mpl;
 
@@ -163,18 +164,6 @@ namespace boost {
 namespace sc {
 
 namespace mpl_ext{
-// mpl_ext::apply "splats" an mpl::vector (or any mpl back extensible sequence) into C++11 variadic
-//   template arguments.
-// credit: https://github.com/scientific-coder/Computer-Languages/blob/master/interpreting/apply.hxx
-template<template<typename...> class T, bool empty, typename C, typename... Types> struct apply_helper {
-  typedef typename boost::mpl::pop_back<C>::type rest;
-  typedef typename apply_helper<T, boost::mpl::empty<rest>::value, rest, typename boost::mpl::back<C>::type, Types...>::type type;
-};
-template<template<typename...> class T,typename C, typename... Types> struct apply_helper<T, true, C, Types...> {
-  typedef T<Types...> type;
-};
-
-template<template<typename...> class T,typename C> struct apply : apply_helper<T, boost::mpl::empty<C>::value, C> {};
 
 template <typename T, int N>
 struct repeated_vector{
@@ -252,66 +241,6 @@ class ConcurrentCache {
 
 };
 
-/* A concurrent map from a tuple of keys to a value.
- * Differs from the above in that it is default constructed
- * if it doesn't exist rather than computed by a future.
- * In the future we should probably just use madness::ConcurrentHashMap directly
- */
-template <
-    typename val_type,
-    typename... key_types
->
-class ConcurrentMap {
-
-  public:
-    //----------------------------------------//
-    // types for keys
-    template<typename... Types> using tuple_type = boost::tuple<Types...>;
-    typedef tuple_type<key_types...> key_tuple;
-    //----------------------------------------//
-    // types for map of values
-    typedef val_type value_type;
-    typedef madness::ConcurrentHashMap<key_tuple, value_type, boost::hash<key_tuple>> value_map;
-    typedef typename value_map::accessor value_map_accessor;
-    typedef typename value_map::const_accessor value_map_const_accessor;
-
-
-    value_type& get(
-        key_types... keys
-    )
-    {
-      key_tuple k(boost::forward<key_types>(keys)...);
-      return values[k];
-    }
-
-    value_type& operator()(
-        key_types... keys
-    )
-    {
-      return get(boost::forward<key_types>(keys)...);
-    }
-
-    /*
-    template<typename keyT,
-    typename boost::enable_if_c<
-      sizeof...(key_types) == 1
-      && boost::is_convertible<keyT,
-          typename mpl::front<mpl::vector<key_types...>>::type
-      >::value, int >::type = 0
-    >
-    value_type& operator[](keyT keys)
-    {
-      return get(boost::forward<key_types>(keys)...);
-    }
-    */
-
-    // The actual map from key tuples to values
-    value_map values;
-
-
-
-
-};
 
 
 } // end namespace sc

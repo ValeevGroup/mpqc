@@ -117,8 +117,8 @@ class CADFCLHF: public CLHF {
 
     void save_data_state(StateOut&);
 
-    /*
     class ScreeningStatistics {
+
 
       public:
 
@@ -126,16 +126,88 @@ class CADFCLHF: public CLHF {
 
         struct Iteration {
 
-            const CADFCLHF& wfn;
-            accumulate_t ints_3c_needed = { 0 };
-            accumulate_t ints_3c_underestimated = { 0 };
-            accumulate_t ints_2c_needed = { 0 };
-            accumulate_t ints_2c_underestimated = { 0 };
+          public:
+            // TODO count screening due to Schwarz pair screening vs. LinK screening
+
+            Iteration() = default;
+
+            Iteration(Iteration&& other)
+            {
+              K_3c_needed.store(other.K_3c_needed.load());
+              K_3c_needed_fxn.store(other.K_3c_needed_fxn.load());
+              K_3c_dist_screened.store(other.K_3c_dist_screened.load());
+              K_3c_dist_screened_fxn.store(other.K_3c_dist_screened_fxn.load());
+              K_3c_underestimated.store(other.K_3c_underestimated.load());
+              K_3c_underestimated_fxn.store(other.K_3c_underestimated_fxn.load());
+            }
+
+            accumulate_t K_3c_needed = { 0 };
+            accumulate_t K_3c_needed_fxn = { 0 };
+            accumulate_t K_3c_dist_screened = { 0 };
+            accumulate_t K_3c_dist_screened_fxn = { 0 };
+            accumulate_t K_3c_underestimated = { 0 };
+            accumulate_t K_3c_underestimated_fxn = { 0 };
+
+            //accumulate_t ints_2c_needed = { 0 };
+            //accumulate_t ints_2c_underestimated = { 0 };
 
         };
 
+        std::vector<Iteration> iterations;
+
+        ScreeningStatistics() : iterations() { }
+
+        Iteration& next_iteration() {
+          iterations.emplace_back();
+          return iterations.back();
+        }
+
+        void print_summary(std::ostream& out,
+            const Ref<GaussianBasisSet>& basis,
+            const Ref<GaussianBasisSet>& dfbs,
+            int print_level
+        ) const
+        {
+          using std::endl;
+          using std::setw;
+          const auto& old_loc = out.getloc(); out.imbue(std::locale(""));
+          out << indent << "CADFCLHF Screening Statistics" << endl;
+          out << indent << "-----------------------------" << endl;
+          const int total_3c = basis->nshell() * basis->nshell() * dfbs->nshell();
+          const int total_3c_fxn = basis->nbasis() * basis->nbasis() * dfbs->nbasis();
+          out << indent << "Total shell triplets: " << total_3c << endl
+              << indent << "Total function triplets: " << total_3c_fxn << endl;
+          int iteration = 1;
+          out << incindent;
+          out << indent << setw(32) << " "
+              << setw(22) << std::internal <<  "Shell-wise"
+              << setw(22) << std::internal <<  "Function-wise"
+              << endl;
+          out << decindent;
+
+          for(auto& iter : iterations) {
+            if(print_level > 1) {
+              out << indent << "Iteration " << iteration++ << ":" << endl;
+              auto pr_iter_stat = [&](const std::string& title, int sh_num, int fxn_num) {
+                out << indent << setw(32) << std::left << title
+                    << setw(14) << std::right << sh_num
+                    << setw(7) << scprintf(" (%3.1f", 100.0 * double(sh_num)/double(total_3c)) << "%)"
+                    << setw(14) << std::right << fxn_num
+                    << setw(7) << scprintf(" (%3.1f", 100.0 * double(fxn_num)/double(total_3c_fxn)) << "%)"
+                    << std::endl;
+              };
+              out << incindent;
+              pr_iter_stat("K: 3c ints needed", iter.K_3c_needed, iter.K_3c_needed_fxn);
+              pr_iter_stat("K: 3c ints screened by distance", iter.K_3c_dist_screened, iter.K_3c_dist_screened_fxn);
+              if(print_level > 2) {
+                pr_iter_stat("K: 3c ints underestimated", iter.K_3c_underestimated, iter.K_3c_underestimated_fxn);
+              }
+              out << decindent;
+            }
+          }
+          out.imbue(old_loc);
+        }
     };
-    */
 
   private:
 
@@ -161,6 +233,11 @@ class CADFCLHF: public CLHF {
     double full_screening_thresh_;
     /// currently unused
     double coef_screening_thresh_;
+    /** Different thresh to use for distance-including screening.  Defaults to full_screening_thresh_.
+     *  Integrals will be included only if the non-distance-including estimate is greter than
+     *  full_screening_thresh_ and the distance-including estimate is greater than distance_screening_thresh_.
+     */
+    double distance_screening_thresh_;
     /// Whether or not to do LinK style screening
     bool do_linK_;
     /// Advanced LinK options
@@ -171,8 +248,14 @@ class CADFCLHF: public CLHF {
     double full_screening_expon_;
     /// Use 1/r^(lX+1) factor in screening
     bool linK_use_distance_;
+    /// Screening statistics print level.  Higher levels may result in a slight slowdown
+    int print_screening_stats_;
+    /// Exponent to raise the the distance denominator exponent to (i.e. (lX+1)^damping_factor)
+    double distance_damping_factor_;
     //@}
 
+    ScreeningStatistics stats_;
+    ScreeningStatistics::Iteration* iter_stats_;
 
     bool is_master() {
       if(dynamic_){
@@ -216,6 +299,10 @@ class CADFCLHF: public CLHF {
 
     void init_threads();
 
+    void done_threads();
+
+    void print(std::ostream& o) const;
+
     /// returns shell ints in inbf x jnbf Eigen Matrix pointer
     TwoCenterIntContainerPtr ints_to_eigen(
         int ish, int jsh,
@@ -223,11 +310,20 @@ class CADFCLHF: public CLHF {
         TwoBodyOper::type ints_type
     );
 
+
     template <typename ShellRange>
     TwoCenterIntContainerPtr ints_to_eigen(
         const ShellBlockData<ShellRange>& ish,
         const ShellBlockData<ShellRange>& jsh,
         Ref<TwoBodyTwoCenterInt>& ints,
+        TwoBodyOper::type ints_type
+    );
+
+    template <typename ShellRange>
+    TwoCenterIntContainerPtr ints_to_eigen_threaded(
+        const ShellBlockData<ShellRange>& ish,
+        const ShellBlockData<ShellRange>& jsh,
+        std::vector<Ref<TwoBodyTwoCenterInt>>& ints_for_thread,
         TwoBodyOper::type ints_type
     );
 
@@ -290,9 +386,6 @@ class CADFCLHF: public CLHF {
     RefSymmSCMatrix gmat_;
 
     bool density_reset_ = true;
-
-
-    bool print_screening_stats_;
 
     // Whether or not the MessageGrp is an instance of MPIMessageGrp
     bool using_mpi_;
@@ -412,7 +505,6 @@ class CADFCLHF: public CLHF {
       );
     }
 
-
     // CADF-LinK lists
     template <typename T> struct hash_;
     template<typename A, typename B>
@@ -430,7 +522,6 @@ class CADFCLHF: public CLHF {
         OrderedShellList,
         hash_<std::pair<int, int>>
     > IndexListMap2;
-    //typedef ConcurrentMap<OrderedShellList, int, int, int> LinKListCache3;
 
     IndexListMap L_schwarz;
     IndexListMap L_coefs;
@@ -449,12 +540,43 @@ CADFCLHF::ints_to_eigen(
     TwoBodyOper::type int_type
 ){
   auto rv = std::make_shared<TwoCenterIntContainer>(iblk.nbf, jblk.nbf);
+  int block_offset_i = 0;
   for(auto ish : shell_range(iblk)) {
+    int block_offset_j = 0;
     for(auto jsh : shell_range(jblk)) {
       const auto& ints_ptr = ints_to_eigen(ish, jsh, ints, int_type);
-      rv->block(ish.bfoff - iblk.bfoff, jsh.bfoff - jblk.bfoff, ish.nbf, jsh.nbf) = *ints_ptr;
+      rv->block(block_offset_i, block_offset_j, ish.nbf, jsh.nbf) = *ints_ptr;
+      block_offset_j += jsh.nbf;
     }
+    block_offset_i += ish.nbf;
   }
+  return rv;
+}
+
+template <typename ShellRange>
+CADFCLHF::TwoCenterIntContainerPtr
+CADFCLHF::ints_to_eigen_threaded(
+    const ShellBlockData<ShellRange>& iblk,
+    const ShellBlockData<ShellRange>& jblk,
+    std::vector<Ref<TwoBodyTwoCenterInt>>& ints_for_thread,
+    TwoBodyOper::type int_type
+){
+  auto rv = std::make_shared<TwoCenterIntContainer>(iblk.nbf, jblk.nbf);
+  // non-contiguous form not implemented yet
+  assert(iblk.is_contiguous());
+  assert(jblk.is_contiguous());
+  const int nthread = threadgrp_->nthread();
+  do_threaded(nthread, [&](int ithr){
+    ShellData ish, jsh;
+    for(auto pair : threaded_shell_block_pair_range(iblk, jblk, ithr, nthread)){
+      boost::tie(ish, jsh) = pair;
+      const auto& ints_ptr = ints_to_eigen(ish, jsh, ints_for_thread[ithr], int_type);
+      rv->block(
+          ish.bfoff - iblk.bfoff, jsh.bfoff - jblk.bfoff,
+          ish.nbf, jsh.nbf
+      ) = *ints_ptr;
+    }
+  });
   return rv;
 }
 

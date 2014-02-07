@@ -29,46 +29,49 @@
 #ifndef _chemistry_qc_scf_cadf_iters_h
 #define _chemistry_qc_scf_cadf_iters_h
 
-#include <chemistry/qc/scf/clhf.h>
-#include <util/misc/property.h>
-#include <boost/thread/thread.hpp>
-#include <boost/functional/hash.hpp>
-#include <boost/iterator/zip_iterator.hpp>
-#include <boost/range.hpp>
-//#include <boost/format.hpp>
-#include <boost/range/irange.hpp>
-#include <boost/range/join.hpp>
-#include <boost/range/counting_range.hpp>
-#include <boost/iterator/iterator_adaptor.hpp>
-#include <boost/iterator/iterator_facade.hpp>
+// standard library includes
 #include <utility>
 #include <type_traits>
 #include <memory>
 #include <iterator>
 #include <atomic>
-#include <chrono>
 #include <unordered_set>
 #include <unordered_map>
 #include <limits>
+
+// boost includes
+#include <boost/thread/thread.hpp>
+#include <boost/functional/hash.hpp>
+#include <boost/range.hpp>
+#include <boost/range/irange.hpp>
+#include <boost/range/join.hpp>
+#include <boost/range/counting_range.hpp>
+#include <boost/iterator/iterator_adaptor.hpp>
+#include <boost/iterator/iterator_facade.hpp>
+
+// MPQC includes
+#include <util/misc/thread_timer.h>
+#include <chemistry/qc/scf/clhf.h>
 
 #define DEFAULT_TARGET_BLOCK_SIZE 100  // functions
 #define LINK_TIME_LIST_INSERTIONS 1
 #define LINK_SORTED_INSERTION 0
 
-// Relatively trivial boost extensions that promote readability without loss of performance
-namespace boost_ext {
+//// Relatively trivial boost extensions that promote readability without loss of performance
+//#include <boost/iterator/zip_iterator.hpp>
+//namespace boost_ext {
 
-// From http://stackoverflow.com/questions/8511035/sequence-zip-function-for-c11
-// Make sure the containers are the same length.  Behaviour is undefined otherwise
-template <typename... T>
-auto zip(const T&... containers) -> boost::iterator_range<boost::zip_iterator<decltype(boost::make_tuple(std::begin(containers)...))>>
-{
-    auto zip_begin = boost::make_zip_iterator(boost::make_tuple(std::begin(containers)...));
-    auto zip_end = boost::make_zip_iterator(boost::make_tuple(std::end(containers)...));
-    return boost::make_iterator_range(zip_begin, zip_end);
-}
+//// From http://stackoverflow.com/questions/8511035/sequence-zip-function-for-c11
+//// Make sure the containers are the same length.  Behaviour is undefined otherwise
+//template <typename... T>
+//auto zip(const T&... containers) -> boost::iterator_range<boost::zip_iterator<decltype(boost::make_tuple(std::begin(containers)...))>>
+//{
+//    auto zip_begin = boost::make_zip_iterator(boost::make_tuple(std::begin(containers)...));
+//    auto zip_end = boost::make_zip_iterator(boost::make_tuple(std::end(containers)...));
+//    return boost::make_iterator_range(zip_begin, zip_end);
+//}
 
-}
+//}
 
 namespace sc {
 
@@ -119,430 +122,6 @@ typedef enum {
   SameAngularMomentum = 2,
   Contiguous = 4
 } BlockCompositionRequirement;
-
-//############################################################################//
-
-template<int size=1024, typename... Args>
-std::string
-stream_printf(const char* fmt, Args&&... args)
-{
-    char str[size];
-    sprintf(str, fmt, std::forward<Args>(args)...);
-    std::string strobj(str);
-    return strobj;
-}
-
-
-template<
-  typename DurationType = std::chrono::nanoseconds,
-  typename ClockType = std::chrono::high_resolution_clock,
-  typename AccumulateToType = std::atomic_uint_fast64_t
->
-class auto_time_accumulator {
-
-  public:
-
-    typedef DurationType duration_type;
-    typedef ClockType clock_type;
-    typedef AccumulateToType accumulate_to_type;
-    typedef auto_time_accumulator<
-        duration_type, clock_type, accumulate_to_type
-    > self_type;
-
-    auto_time_accumulator() = delete;
-    auto_time_accumulator(self_type&) = delete;
-    auto_time_accumulator(const self_type&) = delete;
-    void* operator new(size_t) = delete;
-
-    auto_time_accumulator(accumulate_to_type& dest)
-      : dest_(dest)
-    {
-      start_ = clock_type::now();
-    }
-
-    auto_time_accumulator(self_type&& other) = default;
-
-    ~auto_time_accumulator()
-    {
-      auto end = clock_type::now();
-      dest_ += std::chrono::duration_cast<DurationType>(end - start_).count();
-    }
-
-  private:
-    typename clock_type::time_point start_;
-    accumulate_to_type& dest_;
-};
-
-template<
-  typename AccumulateToType = std::atomic_uint_fast64_t
->
-auto_time_accumulator<
-  std::chrono::nanoseconds,
-  std::chrono::high_resolution_clock,
-  AccumulateToType
->
-make_auto_timer(AccumulateToType& dest) {
-  return auto_time_accumulator<
-    std::chrono::nanoseconds,
-    std::chrono::high_resolution_clock,
-    AccumulateToType
-  >(dest);
-}
-
-// TODO doesn't work with nesting!!!
-template<
-  typename DurationType = std::chrono::nanoseconds,
-  typename ClockType = std::chrono::high_resolution_clock,
-  typename AccumulateToType = std::atomic_uint_fast64_t
->
-class time_accumulator_factory {
-
-  public:
-
-    typedef DurationType duration_type;
-    typedef ClockType clock_type;
-    typedef AccumulateToType accumulate_to_type;
-    typedef time_accumulator_factory<
-        duration_type, clock_type, accumulate_to_type
-    > self_type;
-    typedef auto_time_accumulator<
-        duration_type, clock_type, accumulate_to_type
-    > generated_type;
-    typedef decltype(accumulate_to_type().load()) accumulated_value_type;
-
-    time_accumulator_factory() = delete;
-
-    explicit time_accumulator_factory(accumulate_to_type& dest)
-      : dest_(dest)
-    { }
-
-    generated_type create() const {
-      return generated_type(dest_);
-    }
-
-    accumulated_value_type total_time() const {
-      return dest_.load();
-    }
-
-  private:
-
-    accumulate_to_type& dest_;
-
-};
-
-class MultiThreadTimer;
-
-class ThreadTimer {
-
-  public:
-
-    typedef std::unordered_map<std::string, ThreadTimer> section_map;
-    typedef typename time_accumulator_factory<>::clock_type clock_type;
-    typedef std::chrono::time_point<clock_type> time_type;
-    typedef std::chrono::nanoseconds duration_type;
-    typedef std::chrono::duration<double> fp_seconds;
-
-  private:
-
-    time_type begin_time_;
-    duration_type accum_time_{ 0 };
-
-    std::vector<std::string> section_names_;
-    section_map subtimers_;
-
-    ThreadTimer* active_subsection_;
-    std::string active_subname_ = "";
-    bool stopped_{ true };
-
-    int depth_;
-
-    void start() {
-      assert(stopped_);
-      stopped_ = false;
-      begin_time_ = clock_type::now();
-    }
-
-    void stop() {
-      assert(!stopped_);
-      accum_time_ += std::chrono::duration_cast<duration_type>(
-          clock_type::now() - begin_time_
-      );
-      stopped_ = true;
-    }
-
-    struct Holdable {
-        ThreadTimer* to_hold;
-        ThreadTimer* parent;
-        Holdable(ThreadTimer* to_hold, ThreadTimer* parent)
-          : to_hold(to_hold), parent(parent)
-        { }
-    };
-
-  public:
-
-    ThreadTimer() = delete;
-
-    explicit ThreadTimer(int depth, bool start=true)
-      : section_names_(0),
-        subtimers_(0),
-        active_subsection_(0),
-        depth_(depth)
-    {
-      if(start) this->start();
-    }
-
-    Holdable get_subtimer(const std::string& subname, bool start=false) {
-      if(active_subsection_) {
-        return active_subsection_->get_subtimer(subname, start);
-      }
-      else {
-        ThreadTimer* rv_ptr;
-        active_subname_ = subname;
-        auto subspot = subtimers_.find(subname);
-        if(subspot != subtimers_.end()) {
-          rv_ptr = &(subspot->second);
-          if(start) {
-            active_subsection_ = rv_ptr;
-            rv_ptr->start();
-          }
-        }
-        else {
-          auto insertion_pair = subtimers_.emplace(
-              std::piecewise_construct,
-              std::forward_as_tuple(subname),
-              std::forward_as_tuple(depth_+1, start)
-          );
-          section_names_.push_back(subname);
-          assert(insertion_pair.second);
-          rv_ptr = &(insertion_pair.first->second);
-          if(start) {
-            active_subsection_ = rv_ptr;
-          }
-        }
-        return ThreadTimer::Holdable(rv_ptr, this);
-      }
-    }
-
-    void enter(const std::string& subname) {
-      get_subtimer(subname, true);
-    }
-
-    void exit() {
-      // TODO This should throw exceptions on failure rather than just asserting
-      if(active_subsection_) {
-        active_subsection_->exit();
-        if(active_subsection_->stopped_) {
-          active_subsection_ = 0;
-        }
-      }
-      else{
-        this->stop();
-      }
-    }
-
-    void change(const std::string& newsub) {
-      this->exit();
-      enter(newsub);
-    }
-
-    bool is_stopped() const { return stopped_; }
-
-    double read_seconds() const {
-      assert(stopped_);
-      return fp_seconds(accum_time_).count();
-    }
-
-    friend class MultiThreadTimer;
-    friend class TimerHolder;
-
-};
-
-class TimerHolder {
-
-    ThreadTimer* held;
-    ThreadTimer* parent;
-
-  public:
-
-    explicit TimerHolder(const ThreadTimer::Holdable& to_hold)
-      : held(to_hold.to_hold), parent(to_hold.parent) {
-      held->start();
-      parent->active_subsection_ = held;
-    }
-
-    ~TimerHolder()
-    {
-      held->stop();
-      parent->active_subsection_ = 0;
-    }
-
-    void change(ThreadTimer::Holdable& other) {
-      assert(other.parent == parent);
-      held->stop();
-      held = other.to_hold;
-      parent->active_subsection_ = held;
-      held->start();
-    }
-
-};
-
-class MultiThreadTimer {
-
-    std::vector<ThreadTimer> thread_timers_;
-    int nthreads_;
-    std::string name_;
-
-    typename time_accumulator_factory<>::accumulate_to_type overhead_nanos_{ 0 };
-    time_accumulator_factory<> overhead_factory_{ overhead_nanos_ };
-
-    boost::thread::id creator_id_;
-
-    void print_sub(
-        std::ostream& out,
-        int indent_size,
-        const std::vector<const ThreadTimer*>& subtimers,
-        const std::string& name,
-        int label_width
-    ) {
-      double sum = 0.0;
-      double min = std::numeric_limits<double>::infinity();
-      double max = 0.0;
-      for(auto timer : subtimers) {
-        // TODO throw exception rather than just asserting
-        assert(timer->is_stopped());
-        const double time = timer->read_seconds();
-        sum += time;
-        if(time < min) min = time;
-        if(time > max) max = time;
-      }
-      const double avg = sum / (double)subtimers.size();
-      const std::string indent(indent_size, ' ');
-      out << std::setw(label_width) << std::left << (indent + name + ":")
-          << stream_printf("%7.2f %7.2f %7.2f",
-               avg, min, max
-             )
-          << std::endl;
-      //----------------------------------------//
-      std::vector<std::vector<bool>> dones;
-      for(auto st : subtimers) { dones.emplace_back(st->section_names_.size(), false); }
-      auto all = [](const std::vector<bool> v) -> bool {
-        for(const auto& i : v){
-          if(!i) return false;
-        }
-        return true;
-      };
-      auto first_false_index = [](const std::vector<bool> v) -> int {
-        int idx = 0;
-        for(const auto& i : v){
-          if(!i) return idx;
-          else ++idx;
-        }
-        return -1;
-      };
-      while(true){
-        std::vector<const ThreadTimer*> next_subs;
-        std::string curr_name;
-        bool name_found = false;
-        for(int i = 0; i < subtimers.size(); ++i) {
-          const ThreadTimer* sub = subtimers[i];
-          if(not all(dones[i])){
-            if(not name_found){
-              const int idx = first_false_index(dones[i]);
-              curr_name = sub->section_names_[idx];
-              dones[i][idx] = true;
-              name_found = true;
-              next_subs.push_back(&(sub->subtimers_.at(curr_name)));
-            }
-            else {
-              if(sub->subtimers_.find(curr_name) != sub->subtimers_.end()) {
-                int iname = 0;
-                for(const auto& subname : sub->section_names_) {
-                  if(subname == curr_name) {
-                    dones[i][iname] = true;
-                    next_subs.push_back(&(sub->subtimers_.at(curr_name)));
-                    break;
-                  }
-                  else ++iname;
-                }
-              }
-            }
-          }
-        } // end loop over subtimers
-        if(name_found){
-          print_sub(out, indent_size+2, next_subs, curr_name, label_width);
-        }
-        else{
-          break;
-        }
-      } // end while all_done
-
-    }
-
-  public:
-
-    MultiThreadTimer(const std::string& name, int nthreads)
-      : name_(name),
-        nthreads_(nthreads),
-        creator_id_(boost::this_thread::get_id()),
-        overhead_nanos_(0),
-        overhead_factory_(overhead_nanos_)
-    {
-      for(int i = 0; i < nthreads_; ++i) {
-        thread_timers_.emplace_back(0);
-      }
-    }
-
-    void enter(const std::string& subname, int ithr) {
-      auto overtime = overhead_factory_.create();
-      thread_timers_[ithr].enter(subname);
-    }
-
-    void exit(int ithr) {
-      auto overtime = overhead_factory_.create();
-      thread_timers_[ithr].exit();
-    }
-
-    ThreadTimer::Holdable
-    get_subtimer(const std::string& subname, int ithr) {
-      auto overtime = overhead_factory_.create();
-      return thread_timers_[ithr].get_subtimer(subname);
-    }
-
-    void exit() {
-      auto overtime = overhead_factory_.create();
-      const boost::thread::id& my_id = boost::this_thread::get_id();
-      assert(my_id == creator_id_);
-      for(auto& tim : thread_timers_) tim.exit();
-    }
-
-    void change(const std::string& subname, int ithr) {
-      auto overtime = overhead_factory_.create();
-      thread_timers_[ithr].change(subname);
-    }
-
-    void print(
-        std::ostream& out=ExEnv::out0(),
-        int indent_size = 0,
-        int label_width=50,
-        const std::string& title = ""
-    ) {
-
-      std::vector<const ThreadTimer*> tim_ptrs;
-      for(const auto& tim : thread_timers_) tim_ptrs.push_back(&tim);
-      const std::string indent = std::string(indent_size, ' ');
-      out << std::setw(label_width) << std::left << (indent + title)
-          << std::setw(8) << std::internal << "avg"
-          << std::setw(8) << std::internal << "min"
-          << std::setw(8) << std::internal << "max"
-          << std::endl;
-      print_sub(out, indent_size, tim_ptrs, name_, label_width);
-      out << indent << "Timer overhead: " << std::setprecision(3)
-          << (double)((unsigned long long)overhead_nanos_)/1.e9
-          << std::endl;
-      // TODO walltime/thread time ratio and efficiency
-    }
-
-};
 
 //############################################################################//
 
@@ -780,7 +359,8 @@ class basis_element_iterator
          self_t, Iterator, boost::use_default, boost::bidirectional_traversal_tag,
          BasisElementIteratorDereference<DataContainer, Iterator>
      > super_t;
-    typedef typename DataContainer::template with_iterator<Iterator> value_reference_t;
+    typedef typename DataContainer::template with_iterator<Iterator> reference;
+    typedef Iterator base_iterator;
 
 
   protected:
@@ -791,9 +371,9 @@ class basis_element_iterator
 
     friend class boost::iterator_core_access;
 
-    value_reference_t dereference() const {
+    reference dereference() const {
       auto base_spot = super_t::base();
-      return value_reference_t(
+      return reference(
         base_spot,
         int(*base_spot),
         basis, dfbasis,
@@ -840,7 +420,7 @@ class basis_element_with_value_iterator
          self_t, Iterator, boost::use_default, boost::bidirectional_traversal_tag,
          BasisElementIteratorDereference<DataContainer, Iterator>
      > super_t;
-    typedef BasisElementIteratorDereference<DataContainer, Iterator> value_reference_t;
+    typedef BasisElementIteratorDereference<DataContainer, Iterator> reference;
 
     basis_element_with_value_iterator() : basis(0), dfbasis(0) { }
 
@@ -869,9 +449,9 @@ class basis_element_with_value_iterator
 
     friend class boost::iterator_core_access;
 
-    value_reference_t dereference() const {
+    reference dereference() const {
       auto base_spot = super_t::base();
-      return value_reference_t(
+      return reference(
         base_spot,
         (*base_spot).index,
         (*base_spot).value,
@@ -1035,10 +615,17 @@ template<typename Iterator> class ShellBlockSkeleton;
 template<typename Range = range_of<ShellData>>
 class ShellBlockData {
 
+  public:
+
+    typedef Range shell_range_t;
+
+  protected:
+
     void init();
 
   public:
 
+    bool contiguous_ = false;
     Range shell_range;
     ShellData first_shell;
     ShellData last_shell;
@@ -1105,6 +692,7 @@ class ShellBlockData {
 
     static int max_index(GaussianBasisSet* basis) { return basis->nshell(); }
 
+    bool is_contiguous() { return contiguous_; }
 };
 
 template<typename Range = range_of<ShellData>>
@@ -1181,7 +769,7 @@ class shell_block_iterator
 {
   public:
 
-    typedef shell_block_iterator<ShellIterator> self_type;
+    typedef shell_block_iterator<ShellIterator, ShellRange> self_type;
     typedef ShellBlockData<ShellRange> value_reference;
 
   private:
@@ -1195,13 +783,16 @@ class shell_block_iterator
     void init();
     void init_from_spot(const decltype(all_shells.begin())& start_spot);
 
+    bool contiguous_ = false;
 
     friend class boost::iterator_core_access;
 
     value_reference dereference() const {
-      return value_reference(
+      auto rv = value_reference(
           current_skeleton
       );
+      rv.contiguous_ = contiguous_;
+      return rv;
     }
 
     template <typename OtherIterator>
@@ -1576,18 +1167,6 @@ namespace {
 
 class OrderedShellList {
 
-    struct index_compare {
-        bool operator()(const ShellIndexWithValue& a, const ShellIndexWithValue& b) const {
-          return a.index < b.index;
-        }
-    };
-
-    struct value_compare {
-        bool operator()(const ShellIndexWithValue& a, const ShellIndexWithValue& b) const {
-          return a.value > b.value or (a.value == b.value && a.index > b.index);
-        }
-    };
-
   public:
 
     typedef std::vector<ShellIndexWithValue> index_list;
@@ -1665,6 +1244,17 @@ class OrderedShellList {
     void set_sort_by_value(bool new_srt=true) {
       sort_by_value_ = new_srt;
       sorted_ = false;
+    }
+
+    double value_for_index(int index) {
+      ShellIndexWithValue find_val(index);
+      const auto& found = idx_set_.find(find_val);
+      if(found != idx_set_.end()) {
+        return found->value;
+      }
+      else {
+        throw AlgorithmException("Index not found in list", __FILE__, __LINE__);
+      }
     }
 
     void sort() {
@@ -1753,7 +1343,6 @@ shell_block_range(
   );
 }
 
-
 inline
 std::ostream&
 operator <<(std::ostream& out, const OrderedShellList& list) {
@@ -1764,6 +1353,10 @@ operator <<(std::ostream& out, const OrderedShellList& list) {
   out << "\n}" << std::endl;
   return out;
 }
+
+//############################################################################//
+
+
 
 //############################################################################//
 

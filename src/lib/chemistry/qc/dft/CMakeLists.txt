@@ -2,7 +2,8 @@ include(AddLibrary)
 
 # dft library
 
-add_mpqc_object_library(dft
+# collect the .cc and .cpp files to be compiled.
+set(ccfiles
   am05.cc
   clks.cc
   functional.cc
@@ -13,6 +14,8 @@ add_mpqc_object_library(dft
   tmplinst.cc
   uks.cc
 )
+
+add_mpqc_object_library(dft ${ccfiles})
 
 # tests
 if (MPQC_UNITTEST)

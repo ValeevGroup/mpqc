@@ -2,9 +2,11 @@ include(AddLibrary)
 
 # etrain library
 
-add_mpqc_object_library(etrain
+set(ccfiles
   etrain.cc
 )
+
+add_mpqc_object_library(etrain ${ccfiles})
 
 # tests
 if (MPQC_UNITTEST)

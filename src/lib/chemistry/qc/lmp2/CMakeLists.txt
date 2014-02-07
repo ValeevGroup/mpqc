@@ -2,7 +2,7 @@ include(AddLibrary)
 
 # lmp2 library
 
-add_mpqc_object_library(lmp2
+SET(ccfiles
   collective.cc
   dgemminfo.cc
   domain.cc
@@ -15,7 +15,7 @@ add_mpqc_object_library(lmp2
   smautil.cc
 )
 
-# tests
+add_mpqc_object_library(lmp2 ${ccfiles})
   
 if (MPQC_UNITTEST)
   set_property(SOURCE avlmmaptest.cc PROPERTY COMPILE_DEFINITIONS

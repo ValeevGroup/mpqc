@@ -2,7 +2,7 @@ include(AddLibrary)
 
 # psi library
 IF(HAVE_PSI3)
-    add_mpqc_object_library(psi
+    SET(ccfiles
       psicc.cc
       psicc_pt2r12.cc
       psici.cc
@@ -14,6 +14,7 @@ IF(HAVE_PSI3)
       psiref.cc
       psiwfn.cc
     )
+    add_mpqc_object_library(psi ${ccfiles})
 ENDIF()
 
 # tests

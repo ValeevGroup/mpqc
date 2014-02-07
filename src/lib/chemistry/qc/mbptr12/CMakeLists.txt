@@ -2,7 +2,7 @@ include(AddLibrary)
 
 # mbptr12 library
 IF(MPQC_R12)
-    add_mpqc_object_library(mbptr12
+    SET(ccfiles
         FxFgen.cc 
         Xgen.cc 
         approxApp.cc 
@@ -46,6 +46,9 @@ IF(MPQC_R12)
         twobodygrid.cc 
         twoparticlecontraction.cc
     )
+
+    add_mpqc_object_library(mbptr12 ${ccfiles})
+
 ENDIF(MPQC_R12)
 # tests
 

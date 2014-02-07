@@ -2,7 +2,8 @@ include(AddLibrary)
 
 # basis library
 
-add_mpqc_object_library(basis
+# collect the .cc and .cpp files to be compiled.
+SET(ccfiles 
   aotoso.cc
   cart.cc
   cartiter.cc
@@ -36,9 +37,14 @@ add_mpqc_object_library(basis
   union.cc
 )
 
-# tests
+IF(MPQC_NEW_FEATURES)
+    LIST(APPEND ccfiles tiledbasisset.cpp)
+ENDIF(MPQC_NEW_FEATURES)
 
-if (MPQC_UNITTEST)
+add_mpqc_object_library(basis ${ccfiles})
+
+# tests
+IF(MPQC_UNITTEST)
   set_property(SOURCE btest.cc PROPERTY COMPILE_DEFINITIONS
     SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
   add_executable(btest btest.cc $<TARGET_OBJECTS:basis>)

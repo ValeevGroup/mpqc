@@ -3,10 +3,11 @@ include(AddLibrary)
 # ci library
 
 IF(MPQC_CI)
-    add_mpqc_object_library(ci
+    set(ccfiles
       ci.cc
       compute.cc
     )
+    add_mpqc_object_library(ci ${ccfiles})
 ENDIF()
 
 # tests

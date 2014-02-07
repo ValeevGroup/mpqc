@@ -2,7 +2,7 @@ include(AddLibrary)
 
 # intv3 library
 
-add_mpqc_object_library(intv3
+set(ccfiles
   array.cc
 #  atominfo.cc
   bounds.cc
@@ -23,6 +23,8 @@ add_mpqc_object_library(intv3
   tbintv3.cc
   tformv3.cc
 )
+
+add_mpqc_object_library(intv3 ${ccfiles})
 
 # tests
 if (MPQC_UNITTEST)

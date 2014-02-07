@@ -2,7 +2,7 @@ include(AddLibrary)
 
 # mbpt library
 
-add_mpqc_object_library(mbpt
+SET(ccfiles
   bzerofast.c
   cscphf.cc
   csgmat.cc
@@ -18,6 +18,9 @@ add_mpqc_object_library(mbpt
   mp2extrap.cc
   util.cc
 )
+
+
+add_mpqc_object_library(mbpt ${ccfiles})
 
 # tests
 

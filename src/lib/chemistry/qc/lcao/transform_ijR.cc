@@ -480,6 +480,8 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute_pjR() {
   //   transform qS -> jR
   //   store jR to ints_acc
 
+  long int shellset_counter = 0;;
+
   // determine whether space1, space2, and space3 are AO spaces
   Ref<AOSpaceRegistry> aoidxreg = this->factory()->ao_registry();
   const bool space1_is_ao = true;
@@ -590,11 +592,11 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute_pjR() {
         for (int s3 = 0; s3 < b3->nshell(); ++s3) {
 
           // skip the insignificant integrals
-          const double log2_cauchy_bound = inteval->log2_shell_bound(s1, s2,
-                                                                     s3);
+          const double log2_cauchy_bound = inteval->log2_shell_bound(s1, s2, s3);
           if (log2_cauchy_bound < this->log2_epsilon()) {
             continue;
           }
+          ++shellset_counter;
 
           const int s3offset = b3->shell_to_function(s3);
           const blasint nf3 = b3->shell(s3).nfunction();
@@ -667,7 +669,14 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute_pjR() {
     } // end of loop over p shells
   } // tasks with access
 
+  GrpSumReduce<long int> sumred;
+  MessageGrp::get_default_messagegrp()->reduce(&shellset_counter, 1, sumred);
   mem_->sync();
+
+  if (debug() > 0 && mem_->me() == 0) {
+    ExEnv::out0() << indent << "total    # of shell sets = " << b1->nshell() * b2->nshell() * b3->nshell() << endl;
+    ExEnv::out0() << indent << "computed # of shell sets = " << shellset_counter << endl;
+  }
 
   if (ints_acc_->data_persistent()) ints_acc_->deactivate();
 

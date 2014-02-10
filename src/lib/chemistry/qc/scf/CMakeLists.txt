@@ -28,18 +28,23 @@ IF(MPQC_NEW_FEATURES)
     list(APPEND ccfiles tascf.cpp)
 ENDIF(MPQC_NEW_FEATURES)
 
-
 add_mpqc_object_library(scf ${ccfiles})
 
 # tests
+if (MPQC_UNITTEST)
+  set_property(SOURCE focktest.cc PROPERTY COMPILE_DEFINITIONS
+    SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(focktest focktest.cc $<TARGET_OBJECTS:basis>)
+  add_test(focktest focktest)
+  
+  target_link_libraries( focktest chemistry )
 
-#set_property(SOURCE focktest.cc PROPERTY COMPILE_DEFINITIONS
-#    SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-#add_executable(focktest EXCLUDE_FROM_ALL focktest.cc $<TARGET_OBJECTS:scf>)
-#add_test(focktest focktest)
+  set_property(SOURCE scftest.cc PROPERTY COMPILE_DEFINITIONS
+    SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(scftest scftest.cc $<TARGET_OBJECTS:basis>)
+  add_test(scftest scftest)
+  
+  target_link_libraries( scftest chemistry )
 
-#set_property(SOURCE scftest.cc PROPERTY COMPILE_DEFINITIONS
-#    SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-#add_executable(scftest EXCLUDE_FROM_ALL scftest.cc $<TARGET_OBJECTS:scf>)
-#add_test(scftest scftest)
+endif (MPQC_UNITTEST)
 

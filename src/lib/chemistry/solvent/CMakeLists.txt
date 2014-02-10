@@ -8,9 +8,11 @@ add_mpqc_object_library(solvent
 )
 
 # tests
-
-#set_property(SOURCE bemtest.cc PROPERTY COMPILE_DEFINITIONS
-#    SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-#add_executable(bemtest EXCLUDE_FROM_ALL bemtest.cc $<TARGET_OBJECTS:solvent>)
-#add_test(bemtest bemtest)
-
+if (MPQC_UNITTEST)
+  set_property(SOURCE bemtest.cc PROPERTY COMPILE_DEFINITIONS
+    SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(bemtest bemtest.cc $<TARGET_OBJECTS:basis>)
+  add_test(bemtest bemtest)
+  
+  target_link_libraries(bemtest chemistry)
+endif(MPQC_UNITTEST)

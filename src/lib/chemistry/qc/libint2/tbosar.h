@@ -258,10 +258,10 @@ class TwoBodyOSARLibint2: public Int2eLibint2 {
       int am;
     } quartet_info_;
     typedef Libint_t prim_data;
-    void quartet_data_(prim_data *Data, double scale);
+    // returns 0 if primitive quartet is negligible, 1 otherwise
+    size_t quartet_data_(prim_data *Data, double scale);
     /*--- Compute engines ---*/
     std::vector<Libint_t> Libint_;
-    double* Fm_table_;
     detail::OSAR_CoreInts<OperType> coreints_;
   
   public:
@@ -374,12 +374,6 @@ TwoBodyOSARLibint2<OperType>::TwoBodyOSARLibint2(Integral *integral,
   storage_used_ = storage_needed;
   // Check if storage_ > storage_needed
   check_storage_();
-
-  int mmax = bs1_->max_angular_momentum() +
-    bs2_->max_angular_momentum() +
-    bs3_->max_angular_momentum() +
-    bs4_->max_angular_momentum();
-  Fm_table_ = new double[mmax+1];
 }
 
 template <TwoBodyOper::type OperType>
@@ -398,7 +392,6 @@ TwoBodyOSARLibint2<OperType>::~TwoBodyOSARLibint2()
 #ifdef DMALLOC
   dmalloc_shutdown();
 #endif
-  delete[] Fm_table_;
 }
 
 template <TwoBodyOper::type OperType>
@@ -466,24 +459,9 @@ TwoBodyOSARLibint2<OperType>::storage_required(const Ref<GaussianBasisSet>& b1,
 }
 
 template <TwoBodyOper::type OperType>
-void
+size_t
 TwoBodyOSARLibint2<OperType>::quartet_data_(prim_data *Data, double scale)
 {
-
-  /*----------------
-    Local variables
-   ----------------*/
-  double P[3], Q[3], PQ[3], W[3];
-
-  int p1 = quartet_info_.p1;
-  int p2 = quartet_info_.p2;
-  int p3 = quartet_info_.p3;
-  int p4 = quartet_info_.p4;
-
-  double a1 = int_shell1_->exponent(quartet_info_.p1);
-  double a2 = int_shell2_->exponent(quartet_info_.p2);
-  double a3 = int_shell3_->exponent(quartet_info_.p3);
-  double a4 = int_shell4_->exponent(quartet_info_.p4);
 
   prim_pair_t* pair12;
   prim_pair_t* pair34;
@@ -496,23 +474,36 @@ TwoBodyOSARLibint2<OperType>::quartet_data_(prim_data *Data, double scale)
     pair34 = quartet_info_.shell_pair12->prim_pair(*quartet_info_.op1,*quartet_info_.op2);
   }
 
-  double zeta = pair12->gamma;
-  double eta = pair34->gamma;
-  double ooz = 1.0/zeta;
-  double ooe = 1.0/eta;
-  double ooze = 1.0/(zeta+eta);
-#if LIBINT2_DEFINED(eri,roz)
-  Data->roz[0] = eta*ooze;
-  double rho = zeta*Data->roz[0];
-#else
-  double rho = zeta * eta * ooze;
-#endif
+  const int p1 = quartet_info_.p1;
+  const int p2 = quartet_info_.p2;
+  const int p3 = quartet_info_.p3;
+  const int p4 = quartet_info_.p4;
 
-  double pfac_norm = int_shell1_->coefficient_unnorm(quartet_info_.gc1,p1)*
+  const double pfac_norm = int_shell1_->coefficient_unnorm(quartet_info_.gc1,p1)*
   int_shell2_->coefficient_unnorm(quartet_info_.gc2,p2)*
   int_shell3_->coefficient_unnorm(quartet_info_.gc3,p3)*
   int_shell4_->coefficient_unnorm(quartet_info_.gc4,p4);
-  double pfac = 2.0*sqrt(rho*M_1_PI)*scale*pair12->ovlp*pair34->ovlp*pfac_norm;
+
+  const double pfac_simple = pair12->ovlp*pair34->ovlp*pfac_norm;
+// How to screen out primitive combinations?
+//  if (pfac_simple < 1e-9)
+//    return 0;
+
+  double P[3], Q[3], PQ[3], W[3];
+
+  const double zeta = pair12->gamma;
+  const double eta = pair34->gamma;
+  const double ooz = 1.0/zeta;
+  const double ooe = 1.0/eta;
+  const double ooze = 1.0/(zeta+eta);
+#if LIBINT2_DEFINED(eri,roz)
+  Data->roz[0] = eta*ooze;
+  const double rho = zeta*Data->roz[0];
+#else
+  const double rho = zeta * eta * ooze;
+#endif
+
+  const double pfac = 2.0*sqrt(rho*M_1_PI)*scale*pfac_simple;
 
   P[0] = pair12->P[0];
   P[1] = pair12->P[1];
@@ -529,7 +520,7 @@ TwoBodyOSARLibint2<OperType>::quartet_data_(prim_data *Data, double scale)
   double T = rho*PQ2;
 
   if (!quartet_info_.am) {
-    const double* Fm = coreints_.eval(Fm_table_, 0, T, rho);
+    const double* Fm = coreints_.eval(Data->LIBINT_T_SS_EREP_SS(0), 0, T, rho);
     Data->LIBINT_T_SS_EREP_SS(0)[0] = Fm[0]*pfac;
   }
   else {
@@ -549,8 +540,10 @@ TwoBodyOSARLibint2<OperType>::quartet_data_(prim_data *Data, double scale)
     W[1] = (zeta*P[1] + eta*Q[1])*ooze;
     W[2] = (zeta*P[2] + eta*Q[2])*ooze;
 
-    const double* Gm = coreints_.eval(Fm_table_, quartet_info_.am, T, rho);
-    assign_FjT(Data,quartet_info_.am,Gm,pfac);
+    const double* Gm = coreints_.eval(Data->LIBINT_T_SS_EREP_SS(0), quartet_info_.am, T, rho);
+    std::transform(Gm, Gm+quartet_info_.am+1,
+                   Data->LIBINT_T_SS_EREP_SS(0),
+                   std::bind2nd(std::multiplies<double>(), pfac));
 
     /* PA */
 #if LIBINT2_DEFINED(eri,PA_x)
@@ -591,6 +584,25 @@ TwoBodyOSARLibint2<OperType>::quartet_data_(prim_data *Data, double scale)
 #endif
 #if LIBINT2_DEFINED(eri,WQ_z)
     Data->WQ_z[0] = W[2] - Q[2];
+#endif
+
+#if LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_0_0_x) || \
+    LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_0_0_y) || \
+    LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_0_0_z) || \
+    LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_1_0_x) || \
+    LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_1_0_y) || \
+    LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_1_0_z)
+    double a2 = int_shell2_->exponent(quartet_info_.p2);
+    double a4 = int_shell4_->exponent(quartet_info_.p4);
+#endif
+#if LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_0_1_x) || \
+    LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_0_1_y) || \
+    LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_0_1_z) || \
+    LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_1_1_x) || \
+    LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_1_1_y) || \
+    LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_1_1_z)
+    double a1 = int_shell1_->exponent(quartet_info_.p1);
+    double a3 = int_shell3_->exponent(quartet_info_.p3);
 #endif
 
     // using ITR?
@@ -638,7 +650,7 @@ TwoBodyOSARLibint2<OperType>::quartet_data_(prim_data *Data, double scale)
 #endif
   }
 
-  return;
+  return 1;
 }
 
 template <TwoBodyOper::type OperType>
@@ -945,9 +957,8 @@ TwoBodyOSARLibint2<OperType>::compute_quartet(int *psh1, int *psh2, int *psh3, i
                   quartet_info_.p4 = pl;
 
                   // Compute primitive data for Libint
-                  quartet_data_(&Libint_[num_prim_combinations], 1.0);
-
-                  ++num_prim_combinations;
+                  size_t ncomb = quartet_data_(&Libint_[num_prim_combinations], 1.0);
+                  num_prim_combinations += ncomb;
                 }}}}
 
           if (quartet_info_.am) {

@@ -139,6 +139,8 @@ class CADFCLHF: public CLHF {
               K_3c_dist_screened_fxn.store(other.K_3c_dist_screened_fxn.load());
               K_3c_underestimated.store(other.K_3c_underestimated.load());
               K_3c_underestimated_fxn.store(other.K_3c_underestimated_fxn.load());
+              K_3c_perfect.store(other.K_3c_perfect.load());
+              K_3c_perfect_fxn.store(other.K_3c_perfect_fxn.load());
             }
 
             accumulate_t K_3c_needed = { 0 };
@@ -147,6 +149,8 @@ class CADFCLHF: public CLHF {
             accumulate_t K_3c_dist_screened_fxn = { 0 };
             accumulate_t K_3c_underestimated = { 0 };
             accumulate_t K_3c_underestimated_fxn = { 0 };
+            accumulate_t K_3c_perfect = { 0 };
+            accumulate_t K_3c_perfect_fxn = { 0 };
 
             //accumulate_t ints_2c_needed = { 0 };
             //accumulate_t ints_2c_underestimated = { 0 };
@@ -179,7 +183,7 @@ class CADFCLHF: public CLHF {
               << indent << "Total function triplets: " << total_3c_fxn << endl;
           int iteration = 1;
           out << incindent;
-          out << indent << setw(32) << " "
+          out << indent << setw(38) << " "
               << setw(22) << std::internal <<  "Shell-wise"
               << setw(22) << std::internal <<  "Function-wise"
               << endl;
@@ -189,7 +193,7 @@ class CADFCLHF: public CLHF {
             if(print_level > 1) {
               out << indent << "Iteration " << iteration++ << ":" << endl;
               auto pr_iter_stat = [&](const std::string& title, int sh_num, int fxn_num) {
-                out << indent << setw(32) << std::left << title
+                out << indent << setw(38) << std::left << title
                     << setw(14) << std::right << sh_num
                     << setw(7) << scprintf(" (%3.1f", 100.0 * double(sh_num)/double(total_3c)) << "%)"
                     << setw(14) << std::right << fxn_num
@@ -201,6 +205,11 @@ class CADFCLHF: public CLHF {
               pr_iter_stat("K: 3c ints screened by distance", iter.K_3c_dist_screened, iter.K_3c_dist_screened_fxn);
               if(print_level > 2) {
                 pr_iter_stat("K: 3c ints underestimated", iter.K_3c_underestimated, iter.K_3c_underestimated_fxn);
+                pr_iter_stat("K: 3c ints needed, \"perfect screening\"", iter.K_3c_perfect, iter.K_3c_perfect_fxn);
+                pr_iter_stat("K: \"extra\" ints computed",
+                    iter.K_3c_needed - iter.K_3c_perfect,
+                    iter.K_3c_needed_fxn - iter.K_3c_perfect_fxn
+                );
               }
               out << decindent;
             }

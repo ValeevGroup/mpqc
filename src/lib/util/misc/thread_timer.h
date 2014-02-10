@@ -32,12 +32,21 @@
 // standard library includes
 #include <atomic>
 #include <chrono>
+#include <type_traits>
+#include <thread>
+#include <functional>
+#include <unordered_map>
+#include <vector>
 
 // boost includes
 #include <boost/thread/thread.hpp>
 
+// madness includes
+#include <world/worldhashmap.h>
+
 // MPQC includes
 #include <util/misc/formio.h>
+#include <util/misc/regtime.h>
 
 namespace sc {
 
@@ -61,14 +70,13 @@ class auto_time_accumulator {
     auto_time_accumulator(self_type&) = delete;
     auto_time_accumulator(const self_type&) = delete;
     void* operator new(size_t) = delete;
+    auto_time_accumulator(self_type&& other) = default;
 
     auto_time_accumulator(accumulate_to_type& dest)
       : dest_(dest)
     {
       start_ = clock_type::now();
     }
-
-    auto_time_accumulator(self_type&& other) = default;
 
     ~auto_time_accumulator()
     {
@@ -80,6 +88,7 @@ class auto_time_accumulator {
     typename clock_type::time_point start_;
     accumulate_to_type& dest_;
 };
+
 
 template<
   typename AccumulateToType = std::atomic_uint_fast64_t
@@ -97,7 +106,8 @@ make_auto_timer(AccumulateToType& dest) {
   >(dest);
 }
 
-// TODO doesn't work with nesting!!!
+////////////////////////////////////////////////////////////////////////////////
+
 template<
   typename DurationType = std::chrono::nanoseconds,
   typename ClockType = std::chrono::high_resolution_clock,
@@ -132,13 +142,143 @@ class time_accumulator_factory {
       return dest_.load();
     }
 
-  private:
+    template <typename ToDuration>
+    double total_time_in()
+    {
+      return std::chrono::duration<double, typename ToDuration::period>(
+          std::chrono::duration<accumulated_value_type, typename DurationType::period>(
+              dest_.load()
+          )
+      ).count();
+    }
+
+  protected:
 
     accumulate_to_type& dest_;
 
 };
 
+////////////////////////////////////////////////////////////////////////////////
+
+namespace {
+  template <bool default_val>
+  struct default_value_bool {
+      bool value = default_val;
+      inline operator bool(){ return value; }
+  };
+}
+
+template<
+  typename DurationType = std::chrono::nanoseconds,
+  typename ClockType = std::chrono::high_resolution_clock,
+  typename AccumulateToType = std::atomic_uint_fast64_t
+>
+class reentrant_auto_time_accumulator {
+  public:
+
+    typedef DurationType duration_type;
+    typedef ClockType clock_type;
+    typedef AccumulateToType accumulate_to_type;
+
+    typedef reentrant_auto_time_accumulator<
+        DurationType, ClockType, AccumulateToType
+    > self_type;
+
+    typedef madness::ConcurrentHashMap<
+      std::thread::id, default_value_bool<false>, std::hash<unsigned long>
+    > timer_active_flag_map;
+
+    reentrant_auto_time_accumulator() = delete;
+    reentrant_auto_time_accumulator(self_type&) = delete;
+    reentrant_auto_time_accumulator(const self_type&) = delete;
+    void* operator new(size_t) = delete;
+    reentrant_auto_time_accumulator(self_type&& other) = default;
+
+    reentrant_auto_time_accumulator(
+        accumulate_to_type& dest,
+        timer_active_flag_map& flag_map
+    ) : is_outer_(flag_map[std::this_thread::get_id()]),
+        thread_has_timer_map_(flag_map),
+        dest_(dest)
+    {
+        start_ = clock_type::now();
+    }
+
+    ~reentrant_auto_time_accumulator()
+    {
+      if(is_outer_) {
+        auto end = clock_type::now();
+        dest_ += std::chrono::duration_cast<DurationType>(end - start_).count();
+        thread_has_timer_map_.erase(std::this_thread::get_id());
+      }
+    }
+
+  private:
+
+    bool is_outer_;
+    timer_active_flag_map& thread_has_timer_map_;
+    typename clock_type::time_point start_;
+    accumulate_to_type& dest_;
+
+};
+
+
+template<
+  typename DurationType = std::chrono::nanoseconds,
+  typename ClockType = std::chrono::high_resolution_clock,
+  typename AccumulateToType = std::atomic_uint_fast64_t,
+  // Used to estimate the optimal number of bins for the madness hash map to use
+  int max_n_thread_estimate = 40
+>
+class reentrant_time_accumulator_factory
+  : public time_accumulator_factory<
+      DurationType,
+      ClockType,
+      AccumulateToType
+    >
+{
+
+  public:
+
+    typedef reentrant_time_accumulator_factory<
+      DurationType, ClockType, AccumulateToType
+    > self_type;
+
+    typedef time_accumulator_factory<
+      DurationType, ClockType, AccumulateToType
+    > super_t;
+
+    typedef reentrant_auto_time_accumulator<
+      DurationType, ClockType, AccumulateToType
+    > generated_type;
+
+    typedef madness::ConcurrentHashMap<
+      std::thread::id, default_value_bool<false>, std::hash<unsigned long>
+    > timer_active_flag_map;
+
+
+    using super_t::time_accumulator_factory;
+
+    generated_type create() const {
+      return generated_type(
+          super_t::dest_,
+          thread_has_timer_
+      );
+    }
+
+  private:
+
+    timer_active_flag_map thread_has_timer_{ max_n_thread_estimate };
+
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
 class MultiThreadTimer;
+class TimedRegion;
+
+namespace detail {
+}
 
 class ThreadTimer {
 
@@ -300,10 +440,24 @@ class MultiThreadTimer {
     int nthreads_;
     std::string name_;
 
-    typename time_accumulator_factory<>::accumulate_to_type overhead_nanos_{ 0 };
-    time_accumulator_factory<> overhead_factory_{ overhead_nanos_ };
+    typedef time_accumulator_factory<> accum_factory;
+    typedef typename accum_factory::clock_type clock_type;
+    typedef typename accum_factory::accumulate_to_type accumulate_to_type;
+
+    accumulate_to_type overhead_nanos_{ 0 };
+    accum_factory overhead_factory_{ overhead_nanos_ };
+
+    typename clock_type::time_point wall_start;
+    typename clock_type::duration wall_time;
+
 
     boost::thread::id creator_id_;
+
+    TimedRegion* collect_regions_recursive(
+      const std::vector<const ThreadTimer*>& subtimers,
+      const std::string& curr_name,
+      TimedRegion* parent
+    ) const;
 
     void print_sub(
         std::ostream& out,
@@ -395,6 +549,7 @@ class MultiThreadTimer {
         overhead_nanos_(0),
         overhead_factory_(overhead_nanos_)
     {
+      wall_start = clock_type::now();
       for(int i = 0; i < nthreads_; ++i) {
         thread_timers_.emplace_back(0);
       }
@@ -421,12 +576,16 @@ class MultiThreadTimer {
       const boost::thread::id& my_id = boost::this_thread::get_id();
       assert(my_id == creator_id_);
       for(auto& tim : thread_timers_) tim.exit();
+      auto wall_stop = clock_type::now();
+      wall_time = wall_stop - wall_start;
     }
 
     void change(const std::string& subname, int ithr) {
       auto overtime = overhead_factory_.create();
       thread_timers_[ithr].change(subname);
     }
+
+    TimedRegion* make_timed_region() const;
 
     void print(
         std::ostream& out=ExEnv::out0(),

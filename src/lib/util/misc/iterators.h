@@ -31,6 +31,7 @@
 #ifndef _util_misc_iterators_h
 #define _util_misc_iterators_h
 
+// Boost includes
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/iterator/iterator_adaptor.hpp>
 #include <boost/tuple/tuple.hpp>
@@ -39,6 +40,7 @@
 #include <boost/utility/enable_if.hpp>
 #include <boost/range.hpp>
 #include <boost/mpl/if.hpp>
+#include <boost/iterator/zip_iterator.hpp>
 
 
 namespace sc {
@@ -248,6 +250,7 @@ product_range(Iterables&&... iterables)
   );
 }
 
+////////////////////////////////////////////////////////////////////////////////
 
 template<typename Iterator>
 class threaded_iterator
@@ -303,6 +306,21 @@ thread_over_range(const Range& range, int ithr, int nthr)
       threaded_iterator<decltype(range.begin())>(range.end(), range.end(), ithr, nthr)
   );
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+// From http://stackoverflow.com/questions/8511035/sequence-zip-function-for-c11
+// Make sure the containers are the same length.  Behaviour is undefined otherwise
+// TODO Length checking, if possible
+template <typename... T>
+auto zip(const T&... containers)
+  -> boost::iterator_range<boost::zip_iterator<decltype(boost::make_tuple(std::begin(containers)...))>>
+{
+    auto zip_begin = boost::make_zip_iterator(boost::make_tuple(std::begin(containers)...));
+    auto zip_end = boost::make_zip_iterator(boost::make_tuple(std::end(containers)...));
+    return boost::make_iterator_range(zip_begin, zip_end);
+}
+
 
 
 } // end namespace sc

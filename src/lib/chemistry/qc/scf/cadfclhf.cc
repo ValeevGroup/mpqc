@@ -343,6 +343,7 @@ CADFCLHF::print(ostream&o) const
   }
   o << decindent;
 }
+
 void
 CADFCLHF::done_threads(){
   CLHF::done_threads();
@@ -956,11 +957,7 @@ CADFCLHF::compute_K()
   D *= 0.5;
   //----------------------------------------//
   Eigen::MatrixXd Kt(nbf, nbf);
-  Eigen::MatrixXd Kt2(nbf, nbf);
-  Eigen::MatrixXd K2(nbf, nbf);
   Kt = Eigen::MatrixXd::Zero(nbf, nbf);
-  Kt2 = Eigen::MatrixXd::Zero(nbf, nbf);
-  K2 = Eigen::MatrixXd::Zero(nbf, nbf);
   //----------------------------------------//
   // reset the iteration over local pairs
   local_pairs_spot_ = 0;
@@ -980,7 +977,7 @@ CADFCLHF::compute_K()
   //----------------------------------------//
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
-  /* Make the CADF-LinK lists                                                         {{{1 */ #if 1 // begin fold
+  /* Make the CADF-LinK lists                                                         {{{1 */ #if 1 //latex `\label{sc:link}`
   if(do_linK_){
     timer.enter("LinK lists");
     // First clear all of the lists
@@ -997,7 +994,7 @@ CADFCLHF::compute_K()
     }
     Eigen::MatrixXd D_frob(obs->nshell(), obs->nshell());
     do_threaded(nthread, [&](int ithr){
-      for(int lsh_index = ithr; lsh_index < obs->nshell(); lsh_index += nthread) {
+      for(int lsh_index = ithr; lsh_index < obs->nshell(); lsh_index += nthread) {           //latex `\label{sc:link:ld}`
         ShellData lsh(lsh_index, obs, dfbs_);
         for(auto jsh : shell_range(obs)) {
           double dnorm = D.block(lsh.bfoff, jsh.bfoff, lsh.nbf, jsh.nbf).norm();
@@ -1008,10 +1005,10 @@ CADFCLHF::compute_K()
       }
     });
     // TODO Distribute over MPI processes as well
-    //----------------------------------------//
+    //----------------------------------------//                                             //latex `\label{sc:link:setupend}`
     // Form L_DC
     timer.enter("build L_DC");
-    for(auto jsh : shell_range(obs)) {
+    for(auto jsh : shell_range(obs)) {                                                       //latex `\label{sc:link:ldc}`
       const auto& Drho = D_frob.row(jsh);
       for(auto Xsh : shell_range(dfbs_)) {
         auto& Cmaxes_X = Cmaxes_[Xsh];
@@ -1025,29 +1022,29 @@ CADFCLHF::compute_K()
             max_index = lsh;
           }
         } // end loop over lsh
-        L_DC[jsh].insert(Xsh,
+        L_DC[jsh].insert(Xsh,                                                                //latex `\label{sc:link:ldcstore}`
             max_val * schwarz_df_[Xsh]
         );
       } // end loop over Xsh
       L_DC[jsh].sort();
     } // end loop over jsh
-    //----------------------------------------//
+    //----------------------------------------//                                             //latex `\label{sc:link:ldc:end}`
     // Form L_3
     timer.change("build L_3");
-    double epsilon, epsilon_dist;
+    double epsilon, epsilon_dist;                                                            //latex `\label{sc:link:l3}`
     if(density_reset_){
       epsilon = full_screening_thresh_;
       epsilon_dist = distance_screening_thresh_;
     }
     else{
-      epsilon = pow(full_screening_thresh_, full_screening_expon_);
+      epsilon = pow(full_screening_thresh_, full_screening_expon_);                          //latex `\label{sc:link:expon}`
       epsilon_dist = pow(distance_screening_thresh_, full_screening_expon_);
     }
     do_threaded(nthread, [&](int ithr){
       for(int jsh_index = ithr; jsh_index < obs->nshell(); jsh_index += nthread) {
         ShellData jsh(jsh_index, obs);
         for(auto Xsh : L_DC[jsh]) {
-          const double pf = Xsh.value;
+          const double pf = Xsh.value;                                                       //latex `\label{sc:link:pf}`
           const double eps_prime = epsilon / pf;
           const double eps_prime_dist = epsilon_dist / pf;
           bool jsh_added = false;
@@ -1056,7 +1053,7 @@ CADFCLHF::compute_K()
             if(linK_use_distance_){
               const double R = (pair_centers_[{(int)ish, (int)jsh}] - centers_[Xsh.center]).norm();
               const double l_X = double(dfbs_->shell(Xsh).am(0));
-              dist_factor = 1.0 / (pow(R, pow(l_X + 1.0, distance_damping_factor_)));
+              dist_factor = 1.0 / (pow(R, pow(l_X + 1.0, distance_damping_factor_)));        //latex `\label{sc:link:dist_damp}`
             }
             else {
               dist_factor = 1.0;
@@ -1065,10 +1062,12 @@ CADFCLHF::compute_K()
               jsh_added = true;
               if(!linK_use_distance_ or ish.value * dist_factor > eps_prime_dist) {
                 L_3[{ish, Xsh}].insert(jsh, ish.value * dist_factor * schwarz_df_[Xsh]);
+
                 if(print_screening_stats_) {
                   ++iter_stats_->K_3c_needed;
                   iter_stats_->K_3c_needed_fxn += ish.nbf * jsh.nbf * Xsh.nbf;
                 }
+
               }
               else if(print_screening_stats_) {
                 ++iter_stats_->K_3c_dist_screened;
@@ -1093,35 +1092,35 @@ CADFCLHF::compute_K()
         L_3_iter->second.sort();
         L_3_iter.advance(nthread);
       }
-    });
+    });                                                                                      //latex `\label{sc:link:l3:end}`
     timer.exit("LinK lists");
   } // end if do_linK_
-  /*****************************************************************************************/ #endif //1}}}
+  /*****************************************************************************************/ #endif //1}}} //latex `\label{sc:link:end}`
   /*=======================================================================================*/
-  /* Loop over local shell pairs for three body contributions                         {{{1 */ #if 1 // begin fold
+  /* Loop over local shell pairs for three body contributions                         {{{1 */ #if 1 //latex `\label{sc:k3b:begin}`
   {
     Timer timer("three body contributions");
-    MultiThreadTimer mt_timer("three body contributions", nthread);
     boost::mutex tmp_mutex, L_3_mutex;
     auto L_3_key_iter = L_3.begin();
-    for(int i = 0; i < scf_grp_->me(); ++i, ++L_3_key_iter);
-    if(scf_grp_->me() >= L_3.size()) L_3_key_iter = L_3.end();
+    L_3_key_iter.advance(scf_grp_->me());                                                    //latex `\label{sc:k3b:iterset}`
     const int n_node = scf_grp_->n();
     boost::thread_group compute_threads;
     //----------------------------------------//
     // reset the iteration over local pairs
     local_pairs_spot_ = 0;
     // Loop over number of threads
+    MultiThreadTimer mt_timer("threaded part", nthread);
     for(int ithr = 0; ithr < nthread; ++ithr) {
       // ...and create each thread that computes pairs
-      compute_threads.create_thread([&,ithr](){
+      compute_threads.create_thread([&,ithr](){                                              //latex `\label{sc:k3b:thrpatend}`
+
         Eigen::MatrixXd Kt_part(nbf, nbf);
         Kt_part = Eigen::MatrixXd::Zero(nbf, nbf);
         //----------------------------------------//
         ShellData ish;
         ShellBlockData<> Xblk;
-        //----------------------------------------//
-        auto get_ish_Xblk_3 = [&]() -> bool {
+        //----------------------------------------//                                         //latex `\label{sc:k3b:thrvars}`
+        auto get_ish_Xblk_3 = [&]() -> bool {                                                //latex `\label{sc:k3b:getiX}`
           if(do_linK_) {
             boost::lock_guard<boost::mutex> lg(L_3_mutex);
             if(L_3_key_iter == L_3.end()) {
@@ -1147,11 +1146,11 @@ CADFCLHF::compute_K()
               return false;
             }
           }
-        };
+        };                                                                                   //latex `\label{sc:k3b:getiXend}`
         //----------------------------------------//
-        while(get_ish_Xblk_3()) {
+        while(get_ish_Xblk_3()) {                                                            //latex `\label{sc:k3b:while}`
           /*-----------------------------------------------------*/
-          /* Compute B intermediate                         {{{2 */ #if 2 // begin fold
+          /* Compute B intermediate                         {{{2 */ #if 2 // begin fold      //latex `\label{sc:k3b:b}`
           mt_timer.enter("compute B", ithr);
           auto ints_timer = mt_timer.get_subtimer("compute ints", ithr);
           auto contract_timer = mt_timer.get_subtimer("contract", ithr);
@@ -1164,58 +1163,65 @@ CADFCLHF::compute_K()
 
             // TODO figure out how to take advantage of L_3 sorting
             assert(Xblk.nshell == 1);
-            for(auto Xsh : shell_range(Xblk)) {
+            for(auto Xsh : shell_range(Xblk)) {                                              //latex `\label{sc:k3b:Xshloop}`
 
-              if(linK_block_rho_) {
+              if(linK_block_rho_) {                                                          //latex `\label{sc:k3b:blk_rho}`
 
                 mt_timer.enter("rearrange D", ithr);
-                Eigen::MatrixXd D_ordered(obs->nbasis(), obs->nbasis());
+                Eigen::MatrixXd D_ordered(obs->nbasis(), obs->nbasis());                     //latex `\label{sc:k3b:reD}`
                 int block_offset = 0;
                 for(auto jblk : shell_block_range(L_3[{ish, Xsh}], NoRestrictions)){
                   for(auto jsh : shell_range(jblk)) {
                     D_ordered.middleRows(block_offset, jsh.nbf) = D.middleRows(jsh.bfoff, jsh.nbf);
                     block_offset += jsh.nbf;
                   }
-                }
+                }                                                                            //latex `\label{sc:k3b:reD:end}`
                 mt_timer.exit(ithr);
+
                 block_offset = 0;
-                for(auto jblk : shell_block_range(L_3[{ish, Xsh}], NoRestrictions)){
+                for(auto jblk : shell_block_range(L_3[{ish, Xsh}], NoRestrictions)){         //latex `\label{sc:k3b:rhblk:jloop}`
                   TimerHolder subtimer(ints_timer);
 
-                  auto g3_ptr = ints_to_eigen(
+                  auto g3_ptr = ints_to_eigen(                                               //latex `\label{sc:k3b:rhblk:ints}`
                       jblk, ish, Xsh,
                       eris_3c_[ithr], coulomb_oper_type_
                   );
                   auto& g3_in = *g3_ptr;
-                  Eigen::Map<ThreeCenterIntContainer> g3(g3_in.data(), jblk.nbf, ish.nbf*Xsh.nbf);
+                  Eigen::Map<ThreeCenterIntContainer> g3(                                    //latex `\label{sc:k3b:rhblk:intsre}`
+                      g3_in.data(), jblk.nbf, ish.nbf*Xsh.nbf
+                  );
 
-                  if(print_screening_stats_ > 2) {
+                  if(print_screening_stats_ > 2) {                                           //latex `\label{sc:k3b:rhscr}`
                     mt_timer.enter("count underestimated ints", ithr);
                     int offset_in_block = 0;
                     for(auto jsh : shell_range(jblk)) {
                       const double g3_norm = g3.middleRows(offset_in_block, jsh.nbf).norm();
                       offset_in_block += jsh.nbf;
+                      const int nfxn = jsh.nbf*ish.nbf*Xsh.nbf;
                       if(L_3[{ish, Xsh}].value_for_index(jsh) < g3_norm) {
                         ++iter_stats_->K_3c_underestimated;
-                        ++iter_stats_->K_3c_underestimated;
-                        iter_stats_->K_3c_underestimated_fxn += jsh.nbf*ish.nbf*Xsh.nbf;
+                        iter_stats_->K_3c_underestimated_fxn += nfxn;
+                      }
+                      if(g3_norm * L_DC[jsh].value_for_index(Xsh) > full_screening_thresh_) {
+                        ++iter_stats_->K_3c_perfect;
+                        iter_stats_->K_3c_perfect_fxn += nfxn;
                       }
                     }
-                    mt_timer.exit();
-                  }
+                    mt_timer.exit(ithr);
+                  }                                                                          //latex `\label{sc:k3b:rhscrend}`
 
                   subtimer.change(contract_timer);
 
-                  B_ish += 2.0 * g3.transpose() * D_ordered.middleRows(block_offset, jblk.nbf);
+                  B_ish += 2.0 * g3.transpose() * D_ordered.middleRows(block_offset, jblk.nbf);  //latex `\label{sc:k3b:rhcontract}`
                   block_offset += jblk.nbf;
 
 
-                } // end loop over jblk
+                } // end loop over jblk                                                      //latex `\label{sc:k3b:rhblk:jloopend}`
 
-              } // end if linK_block_rho_
-              else { // linK_block_rho_ == false
+              } // end if linK_block_rho_                                                    //latex `\label{sc:k3b:blk_rho:end}`
+              else { // linK_block_rho_ == false                                             //latex `\label{sc:k3b:noblk}`
 
-                for(auto jblk : shell_block_range(L_3[{ish, Xsh}], Contiguous)){
+                for(auto jblk : shell_block_range(L_3[{ish, Xsh}], Contiguous)){             //latex `\label{sc:k3b:noblk:loop}`
                   TimerHolder subtimer(ints_timer);
 
                   auto g3_ptr = ints_to_eigen(
@@ -1231,12 +1237,17 @@ CADFCLHF::compute_K()
                     for(auto jsh : shell_range(jblk)) {
                       const double g3_norm = g3.middleRows(offset_in_block, jsh.nbf).norm();
                       offset_in_block += jsh.nbf;
+                      const int nfxn = jsh.nbf*ish.nbf*Xsh.nbf;
                       if(L_3[{ish, Xsh}].value_for_index(jsh) < g3_norm) {
                         ++iter_stats_->K_3c_underestimated;
                         iter_stats_->K_3c_underestimated_fxn += jsh.nbf*ish.nbf*Xsh.nbf;
                       }
+                      if(g3_norm * L_DC[jsh].value_for_index(Xsh) > full_screening_thresh_) {
+                        ++iter_stats_->K_3c_perfect;
+                        iter_stats_->K_3c_perfect_fxn += nfxn;
+                      }
                     }
-                    mt_timer.exit();
+                    mt_timer.exit(ithr);
                   }
 
                   subtimer.change(contract_timer);
@@ -1245,11 +1256,11 @@ CADFCLHF::compute_K()
 
                 } // end loop over jsh
 
-              } // end else (linK_block_rho_ == false)
+              } // end else (linK_block_rho_ == false)                                       //latex `\label{sc:k3b:noblk:end}`
             } // end loop over Xsh
 
           } // end if do_linK_
-          else {
+          else {                                                                             //latex `\label{sc:k3b:nolink}`
 
             for(auto jblk : iter_significant_partners_blocked(ish, Contiguous)){
               TimerHolder subtimer(ints_timer);
@@ -1265,10 +1276,10 @@ CADFCLHF::compute_K()
 
             } // end loop over jsh
 
-          } // end else (do_linK_ == false)
+          } // end else (do_linK_ == false)                                                  //latex `\label{sc:k3b:bend}`
           /*******************************************************/ #endif //2}}}
           /*-----------------------------------------------------*/
-          /* Compute K contributions                        {{{2 */ #if 2 // begin fold
+          /* Compute K contributions                        {{{2 */ #if 2 // begin fold      //latex `\label{sc:k3b:kcontrib}`
           mt_timer.change("K contributions", ithr);
           const int obs_atom_bfoff = obs->shell_to_function(obs->shell_on_center(Xblk.center, 0));
           const int obs_atom_nbf = obs->nbasis_on_center(Xblk.center);
@@ -1290,7 +1301,7 @@ CADFCLHF::compute_K()
             }
           }
           mt_timer.exit(ithr);
-          /*******************************************************/ #endif //2}}}
+          /*******************************************************/ #endif //2}}}            //latex `\label{sc:k3b:kcontrib:end}`
           /*-----------------------------------------------------*/
         } // end while get ish Xblk pair
         //============================================================================//
@@ -1302,9 +1313,10 @@ CADFCLHF::compute_K()
     } // end enumeration of threads
     compute_threads.join_all();
     mt_timer.exit();
-    mt_timer.print(ExEnv::out0(), 12, 45);
+    timer.insert(mt_timer);
+    //mt_timer.print(ExEnv::out0(), 12, 45);
   } // compute_threads is destroyed here
-  /*****************************************************************************************/ #endif //1}}}
+  /*****************************************************************************************/ #endif //1}}} //latex `\label{sc:k3b:end}`
   /*=======================================================================================*/
   /* Loop over local shell pairs and compute two body part 		                        {{{1 */ #if 1 // begin fold
   {
@@ -1327,6 +1339,7 @@ CADFCLHF::compute_K()
     // reset the iteration over local pairs
     local_pairs_spot_ = 0;
     // Loop over number of threads
+    MultiThreadTimer mt_timer("threaded part", nthread);
     for(int ithr = 0; ithr < nthread; ++ithr) {
       // ...and create each thread that computes pairs
       compute_threads.create_thread([&,ithr](){
@@ -1338,16 +1351,13 @@ CADFCLHF::compute_K()
 
         while(get_ish_Xblk_pair(ish, Yblk, SignificantPairs)) {
 
+          mt_timer.enter("compute Ct", ithr);
           std::vector<Eigen::MatrixXd> Ct_mus(ish.nbf);
           for(auto mu : function_range(ish)) {
             Ct_mus[mu.bfoff_in_shell].resize(nbf, Yblk.nbf);
             Ct_mus[mu.bfoff_in_shell] = Eigen::MatrixXd::Zero(nbf, Yblk.nbf);
           }
           for(auto Xblk : shell_block_range(dfbs_, 0, 0, NoLastIndex, SameCenter)){
-            //auto g2_ptr = ints_to_eigen(
-            //    Yblk, Xblk,
-            //    eris_2c_[ithr], coulomb_oper_type_
-            //);
             const auto& g2 = g2_full_ptr->block(Yblk.bfoff, Xblk.bfoff, Yblk.nbf, Xblk.nbf);
             for(auto jsh : iter_significant_partners(ish)) {
               for(auto mu : function_range(ish)) {
@@ -1372,6 +1382,7 @@ CADFCLHF::compute_K()
             } // end loop over jsh
           } // end loop over Xblk
           //----------------------------------------//
+          mt_timer.change("compute dt", ithr);
           std::vector<Eigen::MatrixXd> dt_mus(ish.nbf);
           for(auto mu : function_range(ish)) {
             dt_mus[mu.bfoff_in_shell].resize(nbf, Yblk.nbf);
@@ -1386,6 +1397,7 @@ CADFCLHF::compute_K()
             }
           }
           //----------------------------------------//
+          mt_timer.change("K contribution", ithr);
           for(auto Y : function_range(Yblk)) {
             Eigen::MatrixXd& C_Y = coefs_transpose_[Y];
             const int obs_atom_bfoff = obs->shell_to_function(obs->shell_on_center(Y.center, 0));
@@ -1408,30 +1420,29 @@ CADFCLHF::compute_K()
             }
           }
           //----------------------------------------//
+          mt_timer.exit(ithr);
         } // end while get pair
         //----------------------------------------//
         // Sum Kt parts within node
         boost::lock_guard<boost::mutex> lg(tmp_mutex);
         Kt += Kt_part;
-        Kt2 += Kt_part;
       }); // end create_thread
     } // end enumeration of threads
     compute_threads.join_all();
+    mt_timer.exit();
+    timer.insert(mt_timer);
   } // compute_threads is destroyed here
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
-  /* Global sum K                                         		                        {{{1 */ #if 1 // begin fold
+  /* Global sum K                                         		                        {{{1 */ #if 1 //latex `\label{sc:kglobalsum}`
   //----------------------------------------//
   msg.sum(Kt.data(), nbf*nbf);
-  msg.sum(Kt2.data(), nbf*nbf);
   //----------------------------------------//
   // Symmetrize K
   Eigen::MatrixXd K(nbf, nbf);
   K = Kt + Kt.transpose();
-  K2 = Kt2 + Kt2.transpose();
-  if(xml_debug) write_as_xml("K2", K2);
   //----------------------------------------//
-  /*****************************************************************************************/ #endif //1}}}
+  /*****************************************************************************************/ #endif //1}}} //latex `\label{sc:kglobalsumend}`
   /*=======================================================================================*/
   /* Transfer K to a RefSCMatrix                           		                        {{{1 */ #if 1 // begin fold
   Ref<Integral> localints = integral()->clone();

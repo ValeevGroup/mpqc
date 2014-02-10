@@ -159,24 +159,24 @@ namespace boost {
 }
 
 
-////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 
 namespace sc {
 
-namespace mpl_ext{
+//namespace mpl_ext{
 
-template <typename T, int N>
-struct repeated_vector{
-  typedef typename mpl::copy<
-      mpl::range_c<int, 0, N>,
-      mpl::inserter<
-        mpl::vector<>,
-        mpl::push_back<mpl::_1, T>
-      >
-  >::type type;
-};
+//template <typename T, int N>
+//struct repeated_vector{
+//  typedef typename mpl::copy<
+//      mpl::range_c<int, 0, N>,
+//      mpl::inserter<
+//        mpl::vector<>,
+//        mpl::push_back<mpl::_1, T>
+//      >
+//  >::type type;
+//};
 
-} // end namespace mpl_ext
+//} // end namespace mpl_ext
 
 ////////////////////////////////////////////////////////////////////////////////
 

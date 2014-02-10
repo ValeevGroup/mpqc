@@ -57,22 +57,6 @@
 #define LINK_TIME_LIST_INSERTIONS 1
 #define LINK_SORTED_INSERTION 0
 
-//// Relatively trivial boost extensions that promote readability without loss of performance
-//#include <boost/iterator/zip_iterator.hpp>
-//namespace boost_ext {
-
-//// From http://stackoverflow.com/questions/8511035/sequence-zip-function-for-c11
-//// Make sure the containers are the same length.  Behaviour is undefined otherwise
-//template <typename... T>
-//auto zip(const T&... containers) -> boost::iterator_range<boost::zip_iterator<decltype(boost::make_tuple(std::begin(containers)...))>>
-//{
-//    auto zip_begin = boost::make_zip_iterator(boost::make_tuple(std::begin(containers)...));
-//    auto zip_end = boost::make_zip_iterator(boost::make_tuple(std::end(containers)...));
-//    return boost::make_iterator_range(zip_begin, zip_end);
-//}
-
-//}
-
 namespace sc {
 
 #define DUMP(expr) std::cout << #expr << " = " << (expr) << std::endl;
@@ -645,7 +629,7 @@ class ShellBlockData {
           basis->nshell(), basis->nbasis(),
           NoRestrictions
         )
-    { }
+    { contiguous_ = true; }
 
     // Construct a one-shell shell block
     ShellBlockData(const ShellData& ish)
@@ -690,9 +674,9 @@ class ShellBlockData {
     int atom_df_last_function = NotAssigned;
     int atom_df_last_shell = NotAssigned;
 
-    static int max_index(GaussianBasisSet* basis) { return basis->nshell(); }
+    static int max_index(const GaussianBasisSet* basis) { return basis->nshell(); }
 
-    bool is_contiguous() { return contiguous_; }
+    bool is_contiguous() const { return contiguous_; }
 };
 
 template<typename Range = range_of<ShellData>>
@@ -1258,7 +1242,7 @@ class OrderedShellList {
     }
 
     void sort() {
-      std::move(idx_set_.begin(), idx_set_.end(), std::back_inserter(indices_));
+      std::copy(idx_set_.begin(), idx_set_.end(), std::back_inserter(indices_));
       if(sort_by_value_) {
         std::sort(indices_.begin(), indices_.end(),
             [](const ShellIndexWithValue& a, const ShellIndexWithValue& b){
@@ -1353,10 +1337,6 @@ operator <<(std::ostream& out, const OrderedShellList& list) {
   out << "\n}" << std::endl;
   return out;
 }
-
-//############################################################################//
-
-
 
 //############################################################################//
 

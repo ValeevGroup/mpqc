@@ -30,9 +30,12 @@ ENDIF(MPQC_NEW_FEATURES)
 add_mpqc_object_library(wfn ${ccfiles})
 
 # tests
-
-#set_property(SOURCE wfntest.cc PROPERTY COMPILE_DEFINITIONS
-#    SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-#add_executable(wfntest EXCLUDE_FROM_ALL wfntest.cc $<TARGET_OBJECTS:wfn>)
-#add_test(wfntest wfntest)
+IF(MPQC_UNITTEST)
+  set_property(SOURCE wfntest.cc PROPERTY COMPILE_DEFINITIONS
+    SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(wfntest wfntest.cc $<TARGET_OBJECTS:basis>)
+  add_test(wfntest wfntest)
+  
+  target_link_libraries( wfntest chemistry )
+endif()
 

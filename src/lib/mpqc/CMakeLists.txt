@@ -25,12 +25,6 @@ add_subdirectory(ci)
 
 install(FILES range.hpp DESTINATION include/mpqc)
 
-# target_link_libraries(test-mpqc ${Boost_LIBRARIES})
-# #target_link_libraries(test-mpqc ${LAPACK_LIBRARIES})
-# target_link_libraries(test-mpqc ${PYTHON_LIBRARIES})
-# target_link_libraries(test-mpqc ${LIBRARIES})
-# target_link_libraries(test-mpqc ${CMAKE_DL_LIBS})
-
 if (MPQC_CI)
   if (MPQC_UNITTEST)
     add_executable(file_test file_test.cpp)

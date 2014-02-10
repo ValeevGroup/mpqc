@@ -1,6 +1,12 @@
 include(AddLibrary)
 
-set(subdirectories
+SUBDIRLIST(Subdirs CMAKE_CURRENT_SOURCE_DIR)
+
+FOREACH(subdir ${Subdirs})
+    ADD_SUBDIRECTORY(${subdir})
+ENDFOREACH()
+
+set(utilobjects
   class
   container
   group
@@ -13,10 +19,10 @@ set(subdirectories
 )
 
 if (HAVE_MADNESS)
-  list(APPEND subdirectories madness)
+  list(APPEND utilobjects madness)
 endif()
 
-add_mpqc_library(util ${subdirectories})
+add_mpqc_library(util ${utilobjects})
 install(TARGETS util DESTINATION lib)
 
 if (HAVE_MADNESS)

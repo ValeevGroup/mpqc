@@ -2,7 +2,8 @@ include(AddLibrary)
 
 # scf library
 
-add_mpqc_object_library(scf
+# collect the .cc and .cpp files to be compiled.
+SET(ccfiles 
   clhf.cc
   clscf.cc
   effh.cc
@@ -22,6 +23,13 @@ add_mpqc_object_library(scf
   uhf.cc
   uscf.cc
 )
+
+IF(MPQC_NEW_FEATURES)
+    list(APPEND ccfiles tascf.cpp)
+ENDIF(MPQC_NEW_FEATURES)
+
+
+add_mpqc_object_library(scf ${ccfiles})
 
 # tests
 

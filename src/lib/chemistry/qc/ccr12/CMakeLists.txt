@@ -1,8 +1,8 @@
 include(AddLibrary)
 
 # ccr12 library
-
-add_mpqc_object_library(ccr12
+# collect the .cc and .cpp files to be compiled.
+set(ccfiles
   ccr12.cc
   ccr12_info.cc
   ccr12_info_drivers.cc
@@ -62,6 +62,8 @@ add_mpqc_object_library(ccr12
   triples_singles.cc
   triples_utils.cc
 )
+
+add_mpqc_object_library(ccr12 ${ccfiles})
 
 # tests
 

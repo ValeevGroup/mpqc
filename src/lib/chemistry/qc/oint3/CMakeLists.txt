@@ -2,7 +2,7 @@ include(AddLibrary)
 
 # oint3 library
 
-add_mpqc_object_library(oint3
+SET(ccfiles
   build.cc
   i0100.cc
   i0100AB.cc
@@ -114,5 +114,6 @@ add_mpqc_object_library(oint3
   i3333AB.cc
 )
 
+add_mpqc_object_library(oint3 ${ccfiles})
 # tests
 

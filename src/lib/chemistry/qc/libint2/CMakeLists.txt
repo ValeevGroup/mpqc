@@ -2,40 +2,44 @@ include(AddLibrary)
 
 # libint2 library
 
-add_mpqc_object_library(libint2
-  bounds.cc
-  #comp_eri.cc
-  comp_g12.cc
-  comp_g12dkh.cc
-  comp_g12nc.cc
-  #comp_grt.cc
-  edipole.cc
-  efield.cc
-  efield_grad.cc
-  equadrupole.cc
-  #eri.cc
-  g12.cc
-  g12dkh.cc
-  g12nc.cc
-  #grt.cc
-  gto.cc
-  hcore.cc
-  int1e.cc
-  int2e.cc
-  kinetic.cc
-  libint2.cc
-  nuclear.cc
-  obintlibint2.cc
-  obosrr.cc
-  overlap.cc
-  p4.cc
-  permute2e.cc
-  primpairs.cc
-  shellpairs.cc
-  storage.cc
-  tbintlibint2.cc
-  tform.cc
-)
+IF(HAVE_LIBINT2)
+    set(ccfiles
+      bounds.cc
+      #comp_eri.cc
+      comp_g12.cc
+      comp_g12dkh.cc
+      comp_g12nc.cc
+      #comp_grt.cc
+      edipole.cc
+      efield.cc
+      efield_grad.cc
+      equadrupole.cc
+      #eri.cc
+      g12.cc
+      g12dkh.cc
+      g12nc.cc
+      #grt.cc
+      gto.cc
+      hcore.cc
+      int1e.cc
+      int2e.cc
+      kinetic.cc
+      libint2.cc
+      nuclear.cc
+      obintlibint2.cc
+      obosrr.cc
+      overlap.cc
+      p4.cc
+      permute2e.cc
+      primpairs.cc
+      shellpairs.cc
+      storage.cc
+      tbintlibint2.cc
+      tform.cc
+    )
+
+    add_mpqc_object_library(libint2 ${ccfiles})
+ENDIF(HAVE_LIBINT2)
 
 # tests
 if (MPQC_UNITTEST)

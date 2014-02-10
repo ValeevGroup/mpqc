@@ -2,9 +2,12 @@ include(AddLibrary)
 
 # madness library
 
-add_mpqc_object_library(madness
-  init.cc world.cc
-)
+IF(HAVE_MADNESS)
+    add_mpqc_object_library(madness
+      init.cc
+      world.cc
+    )
+ENDIF(HAVE_MADNESS)
 
 # tests
 if (MPQC_UNITTEST)

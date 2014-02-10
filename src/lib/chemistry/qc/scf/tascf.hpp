@@ -1,5 +1,5 @@
 //
-// mock_wfn.hpp
+// tascf.hpp
 //
 // Copyright (C) 2013 Drew Lewis
 //
@@ -25,19 +25,40 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef MPQC_TAWFN_MOCK_WFN_HPP
-#define MPQC_TAWFN_MOCK_WFN_HPP
+#ifndef CHEMISTRY_QC_SCF_TASCF_HPP
+#define CHEMISTRY_QC_SCF_TASCF_HPP
 
-#include <mpqc/tawfn/tawfn.hpp>
+#include <chemistry/qc/wfn/tawfn.hpp>
+#include <chemistry/qc/basis/integral.h>
+#include <chemistry/qc/basis/tbint.h>
 
-namespace mpqc {
-    class MockWavefunction: public TiledArrayWavefunction {
+namespace mpqc{
+    class TiledArrayScf : public TiledArrayWavefunction {
     public:
-        virtual int nelectron() override { return 4; }
-        virtual void compute() override {};
+        typedef TiledArrayWavefunction::TAMat TAMat;
+
+    protected:
+        // Number of iterations to use
+        unsigned int maxiter_ = 1000;
+        unsigned int miniter_ = 0;
+
+        // Integral objects
+        sc::Ref<sc::TwoBodyInt> *tbints_;
+
+    public:
+        TiledArrayScf(const sc::Ref<sc::KeyVal> &kval);
+        virtual ~TiledArrayScf();
+        virtual void compute() override;
+        virtual int nelectron() override;
+
+        virtual TAMat ao_fock();
+        virtual TAMat ao_density() override;
+        virtual TAMat ao_overlap() override;
+        virtual double scf_energy();
+
     };
-} // namespace mpqc
+
+} //namespace mpqc
 
 
-
-#endif /* MPQC_TAWFN_MOCK_WFN_HPP */
+#endif /* CHEMISTRY_QC_SCF_TASCF_HPP */

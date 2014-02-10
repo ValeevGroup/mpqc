@@ -2,7 +2,8 @@ include(AddLibrary)
 
 # wfn library
 
-add_mpqc_object_library(wfn
+# collect the .cc and .cpp files to be compiled.
+set(ccfiles 
   accum.cc
   density.cc
   densval.cc
@@ -20,6 +21,13 @@ add_mpqc_object_library(wfn
   spin.cc
   wfn.cc
 )
+
+#add new features if present
+IF(MPQC_NEW_FEATURES)
+  LIST(APPEND ccfiles tawfn.cpp)
+ENDIF(MPQC_NEW_FEATURES)
+
+add_mpqc_object_library(wfn ${ccfiles})
 
 # tests
 

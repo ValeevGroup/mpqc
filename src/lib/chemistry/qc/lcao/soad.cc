@@ -382,7 +382,7 @@ SuperpositionOfAtomicDensities::minimal_basis_set(const Ref<Molecule>& mol) {
       oss << "basis:" << a;
       const std::string keyword = oss.str();
       if (mol->Z(a) <= 38)
-        akv->assign(keyword.c_str(), "STO-6G");
+        akv->assign(keyword.c_str(), "STO-3G");
       else
         akv->assign(keyword.c_str(), "WTBS");
     }

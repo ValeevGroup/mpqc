@@ -43,6 +43,7 @@
 
 typedef typename boost::integer_range<int> int_range;
 
+#define INTEGRAL_CACHE_PERMUTE 1
 
 namespace sc {
 
@@ -87,6 +88,21 @@ class CADFCLHF: public CLHF {
 
     typedef std::map<std::pair<int, int>, std::pair<CoefContainer, CoefContainer>> CoefMap;
     typedef Eigen::HouseholderQR<Eigen::MatrixXd> Decomposition;
+
+#if INTEGRAL_CACHE_PERMUTE
+    typedef ConcurrentCacheWithSymmetry<
+        TwoCenterIntContainerPtr,
+        // 3 total keys, allow transpose of first two (0, 1)
+        SingleTranspositionKeySymmetry<3, 0, 1>,
+        int, int, TwoBodyOper::type
+    > TwoCenterIntCache;
+    typedef ConcurrentCacheWithSymmetry<
+        ThreeCenterIntContainerPtr,
+        // 4 total keys, allow transpose of first two
+        SingleTranspositionKeySymmetry<4, 0, 1>,
+        int, int, int, TwoBodyOper::type
+    > ThreeCenterIntCache;
+#else
     typedef ConcurrentCache<
         TwoCenterIntContainerPtr,
         int, int, TwoBodyOper::type
@@ -95,6 +111,9 @@ class CADFCLHF: public CLHF {
         ThreeCenterIntContainerPtr,
         int, int, int, TwoBodyOper::type
     > ThreeCenterIntCache;
+#endif
+
+
     typedef ConcurrentCache<
         double,
         int, int, int, int, TwoBodyOper::type
@@ -118,7 +137,6 @@ class CADFCLHF: public CLHF {
     void save_data_state(StateOut&);
 
     class ScreeningStatistics {
-
 
       public:
 
@@ -157,6 +175,9 @@ class CADFCLHF: public CLHF {
 
         };
 
+        accumulate_t sig_pairs = { 0 };
+        accumulate_t sig_pairs_fxn = { 0 };
+
         std::vector<Iteration> iterations;
 
         ScreeningStatistics() : iterations() { }
@@ -180,7 +201,11 @@ class CADFCLHF: public CLHF {
           const int total_3c = basis->nshell() * basis->nshell() * dfbs->nshell();
           const int total_3c_fxn = basis->nbasis() * basis->nbasis() * dfbs->nbasis();
           out << indent << "Total shell triplets: " << total_3c << endl
-              << indent << "Total function triplets: " << total_3c_fxn << endl;
+              << indent << "Total function triplets: " << total_3c_fxn << endl
+              << indent << "Total shell triplets after Schwarz screening: "
+              << sig_pairs.load() * dfbs->nshell() << endl
+              << indent << "Total function triplets after Schwarz screening: "
+              << sig_pairs_fxn.load() * dfbs->nbasis() << endl;
           int iteration = 1;
           out << incindent;
           out << indent << setw(38) << " "

@@ -234,18 +234,17 @@ CADFCLHF::init_threads()
   Timer timer("init threads");
   assert(not threads_initialized_);
   //----------------------------------------------------------------------------//
-  // TODO fix this so that deallocating the tbis_ array doesn't cause a seg fault when this isn't called (we don't need it)
-  SCF::init_threads();
-  //----------------------------------------------------------------------------//
   const int nthread = threadgrp_->nthread();
   const int n_node = scf_grp_->n();
   //----------------------------------------------------------------------------//
   // initialize the two electron integral classes
   // ThreeCenter versions
   integral()->set_basis(basis(), basis(), dfbs_);
+  size_t storage_avail = integral()->storage_unused();
   eris_3c_.resize(nthread);
   do_threaded(nthread, [&](int ithr){
     eris_3c_[ithr] = (integral()->coulomb<3>());
+    eris_3c_[ithr]->set_integral_storage(storage_avail/nthread);
   });
   for (int i=0; i < nthread; i++) {
     // TODO different fitting metrics
@@ -272,6 +271,9 @@ CADFCLHF::init_threads()
   }
   // Reset to normal setup
   integral()->set_basis(basis(), basis(), basis(), basis());
+  //----------------------------------------------------------------------------//
+  // TODO fix this so that deallocating the tbis_ array doesn't cause a seg fault when this isn't called (we don't need it)
+  SCF::init_threads();
   //----------------------------------------------------------------------------//
   // Set up the all pairs vector, needed to prescreen Schwarz bounds
   if(not dynamic_){
@@ -349,7 +351,6 @@ CADFCLHF::done_threads(){
   CLHF::done_threads();
 }
 
-
 //////////////////////////////////////////////////////////////////////////////////
 
 void
@@ -411,6 +412,14 @@ CADFCLHF::init_significant_pairs()
         my_sig_pairs.push_back(item.second);
         my_sig_values.push_back(item.first);
         ++n_significant_pairs;
+        ++stats_.sig_pairs;
+        const int nfxn = basis()->shell(item.second.first).nfunction() * basis()->shell(item.second.second).nfunction();
+        stats_.sig_pairs_fxn += nfxn;
+        if(item.second.first != item.second.second) {
+          ++stats_.sig_pairs;
+          stats_.sig_pairs_fxn += nfxn;
+        }
+
       }
     }
     //----------------------------------------//
@@ -1053,7 +1062,13 @@ CADFCLHF::compute_K()
             if(linK_use_distance_){
               const double R = (pair_centers_[{(int)ish, (int)jsh}] - centers_[Xsh.center]).norm();
               const double l_X = double(dfbs_->shell(Xsh).am(0));
-              dist_factor = 1.0 / (pow(R, pow(l_X + 1.0, distance_damping_factor_)));        //latex `\label{sc:link:dist_damp}`
+              double r_expon = l_X + 1.0;
+              if(ish.center == jsh.center) {
+                const double l_i = double(obs->shell(ish).am(0));
+                const double l_j = double(obs->shell(jsh).am(0));
+                r_expon += abs(l_i-l_j);
+              }
+              dist_factor = 1.0 / (pow(R, pow(r_expon, distance_damping_factor_)));        //latex `\label{sc:link:dist_damp}`
             }
             else {
               dist_factor = 1.0;
@@ -1314,7 +1329,7 @@ CADFCLHF::compute_K()
     compute_threads.join_all();
     mt_timer.exit();
     timer.insert(mt_timer);
-    //mt_timer.print(ExEnv::out0(), 12, 45);
+    mt_timer.print(ExEnv::out0(), 12, 45);
   } // compute_threads is destroyed here
   /*****************************************************************************************/ #endif //1}}} //latex `\label{sc:k3b:end}`
   /*=======================================================================================*/
@@ -1357,6 +1372,7 @@ CADFCLHF::compute_K()
             Ct_mus[mu.bfoff_in_shell].resize(nbf, Yblk.nbf);
             Ct_mus[mu.bfoff_in_shell] = Eigen::MatrixXd::Zero(nbf, Yblk.nbf);
           }
+          // TODO More vectorization?
           for(auto Xblk : shell_block_range(dfbs_, 0, 0, NoLastIndex, SameCenter)){
             const auto& g2 = g2_full_ptr->block(Yblk.bfoff, Xblk.bfoff, Yblk.nbf, Xblk.nbf);
             for(auto jsh : iter_significant_partners(ish)) {
@@ -1369,6 +1385,7 @@ CADFCLHF::compute_K()
                   auto& cpair = coefs_[mu_rho];
                   auto& Cmu = (jsh <= ish || ish.center == jsh.center) ? *cpair.first : *cpair.second;
                   auto& Crho = jsh <= ish ? *cpair.second : *cpair.first;
+
                   if(Xblk.center == mu.center) {
                     Ct_mus[mu.bfoff_in_shell].row(rho) += 2.0 *
                         g2 * Cmu.segment(Xblk.bfoff_in_atom, Xblk.nbf);
@@ -1376,7 +1393,8 @@ CADFCLHF::compute_K()
                   else if(Xblk.center == rho.center){
                     Ct_mus[mu.bfoff_in_shell].row(rho) += 2.0 *
                         g2 * Crho.segment(Xblk.bfoff_in_atom, Xblk.nbf);
-                  } // end loop over Y
+                  }
+
                 } // end loop over rho in jsh
               } // end loop over mu in ish
             } // end loop over jsh
@@ -1491,6 +1509,7 @@ CADFCLHF::loop_shell_pairs_threaded(
   compute_threads.join_all();
 }
 
+//////////////////////////////////////////////////////////////////////////////////
 
 bool
 CADFCLHF::get_shell_pair(ShellData& mu, ShellData& nu, PairSet pset)
@@ -1963,7 +1982,22 @@ CADFCLHF::get_decomposition(int ish, int jsh, Ref<TwoBodyTwoCenterInt> ints)
 CADFCLHF::TwoCenterIntContainerPtr
 CADFCLHF::ints_to_eigen(int ish, int jsh, Ref<TwoBodyTwoCenterInt>& ints, TwoBodyOper::type int_type){
 #if USE_INTEGRAL_CACHE
+#if INTEGRAL_CACHE_PERMUTE
+  return ints2_.get_or_permute(ish, jsh, int_type,
+  // Compute function
+  [&ints, this](
+      const boost::tuple<int, int, TwoBodyOper::type>& keys_canonical
+  ){
+    int ish, jsh;
+    TwoBodyOper::type int_type;
+    boost::tie(ish, jsh, int_type) = keys_canonical;
+    // This won't work if the basis sets are different,
+    //   since keys_canonical may have a different ordering from the
+    //   order of indices in ints.
+    assert(ints->basis1() == ints->basis2());
+#else
   return ints2_.get(ish, jsh, int_type, [ish, jsh, int_type, &ints, this](){
+#endif
 #endif
     GaussianBasisSet& ibs = *(ints->basis1());
     GaussianBasisSet& jbs = *(ints->basis2());
@@ -1980,7 +2014,22 @@ CADFCLHF::ints_to_eigen(int ish, int jsh, Ref<TwoBodyTwoCenterInt>& ints, TwoBod
     ints_computed_locally_ += nbfi * nbfj;
     return rv;
 #if USE_INTEGRAL_CACHE
+#if INTEGRAL_CACHE_PERMUTE
+  },
+  // Permute function
+  [ish, jsh, &ints](
+      const TwoCenterIntContainerPtr& perm_val,
+      const boost::tuple<int, int, TwoBodyOper::type>& keys_canonical
+  ){
+    // ensure everything is working the way I expect it to
+    assert(ish == boost::tuples::get<1>(keys_canonical) && jsh == boost::tuples::get<0>(keys_canonical));
+    auto rv = make_shared<TwoCenterIntContainer>(perm_val->transpose());
+    return rv;
+
   });
+#else
+  });
+#endif
 #endif
 }
 
@@ -1988,9 +2037,24 @@ CADFCLHF::ints_to_eigen(int ish, int jsh, Ref<TwoBodyTwoCenterInt>& ints, TwoBod
 
 CADFCLHF::ThreeCenterIntContainerPtr
 CADFCLHF::ints_to_eigen(int ish, int jsh, int ksh, Ref<TwoBodyThreeCenterInt>& ints, TwoBodyOper::type int_type){
-  #if USE_INTEGRAL_CACHE
+#if USE_INTEGRAL_CACHE
+#if INTEGRAL_CACHE_PERMUTE
+  return ints3_.get_or_permute(ish, jsh, ksh, int_type,
+  // Compute function
+  [&ints, this](
+      const boost::tuple<int, int, int, TwoBodyOper::type>& key_canonical
+  ){
+    int ish, jsh, ksh;
+    TwoBodyOper::type int_type;
+    boost::tie(ish, jsh, ksh, int_type) = key_canonical;
+    // This won't work if these basis sets are different,
+    //   since keys_canonical may have a different ordering from the
+    //   order of indices in ints.
+    assert(ints->basis1() == ints->basis2());
+#else
   return ints3_.get(ish, jsh, ksh, int_type, [ish, jsh, ksh, int_type, &ints, this](){
-  #endif
+#endif
+#endif
     const int nbfi = ints->basis1()->shell(ish).nfunction();
     const int nbfj = ints->basis2()->shell(jsh).nfunction();
     const int nbfk = ints->basis3()->shell(ksh).nfunction();
@@ -1998,14 +2062,38 @@ CADFCLHF::ints_to_eigen(int ish, int jsh, int ksh, Ref<TwoBodyThreeCenterInt>& i
     //----------------------------------------//
     ints->compute_shell(ish, jsh, ksh);
     const double* buffer = ints->buffer(int_type);
-    //::memcpy(rv->data(), buffer, nbfi*nbfj*nbfk * sizeof(double));
     std::copy(buffer, buffer + nbfi*nbfj*nbfk, rv->data());
-    //std::move(buffer, buffer + nbfi*nbfj*nbfk, rv->data());
     //----------------------------------------//
     ints_computed_locally_ += nbfi * nbfj * nbfk;
     return rv;
 #if USE_INTEGRAL_CACHE
+#if INTEGRAL_CACHE_PERMUTE
+  },
+  // Permute function
+  [ish, jsh, ksh, &ints](
+      const ThreeCenterIntContainerPtr& perm_val,
+      const boost::tuple<int, int, int, TwoBodyOper::type>& key_canonical
+  ){
+    const int nbfi = ints->basis1()->shell(ish).nfunction();
+    const int nbfj = ints->basis2()->shell(jsh).nfunction();
+    const int nbfk = ints->basis3()->shell(ksh).nfunction();
+
+    // ensure everything is working the way I expect it to
+    assert(ish == boost::tuples::get<1>(key_canonical) && jsh == boost::tuples::get<0>(key_canonical));
+
+    auto rv = make_shared<ThreeCenterIntContainer>(nbfi * nbfj, nbfk);
+    for(int i = 0; i < nbfi; ++i) {
+      for(int j = 0; j < nbfj; ++j) {
+        rv->row(i*nbfj + j) = perm_val->row(j*nbfi + i);
+      }
+    }
+
+    return rv;
   });
+#else
+  });
+#endif
 #endif
 }
 
+//////////////////////////////////////////////////////////////////////////////////

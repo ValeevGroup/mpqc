@@ -25,32 +25,34 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <mpqc/tiledarrayscf/tascf.hpp>
+#include <chemistry/qc/scf/tascf.hpp>
 #define BOOST_TEST_MODULE test_tascf
 #include <boost/test/included/unit_test.hpp>
 
 using namespace boost::unit_test;
+using namespace sc;
 using namespace mpqc;
 
 BOOST_AUTO_TEST_CASE( test_mock_wfn ){
 
-    BOOST_MESSAGE("Testing TiledArrayScf");
+    BOOST_MESSAGE("Testing SCF");
     // Make a molecule H2
-    sc::Ref<sc::Molecule> mol = new sc::Molecule;
+    Ref<Molecule> mol = new Molecule;
     mol->add_atom(1,0,1,-1);
     mol->add_atom(1,0,1,1);
 
     // Make keyval
-    sc::Ref<sc::AssignedKeyVal> akv = new sc::AssignedKeyVal;
+    Ref<AssignedKeyVal> akv = new AssignedKeyVal;
     akv->assign("name", "STO-3G");
     akv->assign("molecule", mol.pointer());
-    sc::Ref<sc::GaussianBasisSet> basis =
-                    new sc::GaussianBasisSet(sc::Ref<sc::KeyVal>(akv));
+    Ref<GaussianBasisSet> basis =
+                    new GaussianBasisSet(Ref<KeyVal>(akv));
     akv->assign("basis", basis.pointer());
-    sc::Ref<sc::KeyVal> kval = sc::Ref<sc::KeyVal>(akv);
+    Ref<KeyVal> kval = Ref<KeyVal>(akv);
 
     //Construct object
-    TiledArrayScf tscf(kval);
+    Ref<v3::SCF> tscf = new v3::SCF(kval);
+    tscf->print();
 }
 
 

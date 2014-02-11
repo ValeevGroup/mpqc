@@ -25,40 +25,45 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef CHEMISTRY_QC_SCF_TASCF_HPP
-#define CHEMISTRY_QC_SCF_TASCF_HPP
+#ifndef _MPQC_CHEMISTRY_QC_SCF_TASCF_HPP_
+#define _MPQC_CHEMISTRY_QC_SCF_TASCF_HPP_
 
 #include <chemistry/qc/wfn/tawfn.hpp>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/tbint.h>
 
 namespace mpqc{
-    class TiledArrayScf : public TiledArrayWavefunction {
-    public:
-        typedef TiledArrayWavefunction::TAMat TAMat;
+  namespace v3 {
 
-    protected:
+    class SCF : public Wavefunction {
+    public:
+        typedef Wavefunction::Matrix Matrix;
+
+        SCF(const sc::Ref<sc::KeyVal> &kval);
+        virtual ~SCF();
+        virtual void compute() override;
+
+        virtual const Matrix& ao_fock();
+        virtual const Matrix& ao_density() override;
+        virtual const Matrix& ao_overlap() override;
+        virtual double scf_energy();
+
+        /// @return the number of electrons in the system
+        virtual size_t nelectron() const override;
+
+    private:
         // Number of iterations to use
-        unsigned int maxiter_ = 1000;
-        unsigned int miniter_ = 0;
+        unsigned int maxiter_;
+        unsigned int miniter_;
 
         // Integral objects
         sc::Ref<sc::TwoBodyInt> *tbints_;
 
-    public:
-        TiledArrayScf(const sc::Ref<sc::KeyVal> &kval);
-        virtual ~TiledArrayScf();
-        virtual void compute() override;
-        virtual int nelectron() override;
-
-        virtual TAMat ao_fock();
-        virtual TAMat ao_density() override;
-        virtual TAMat ao_overlap() override;
-        virtual double scf_energy();
+        static sc::ClassDesc class_desc_;
 
     };
-
+  } // namespace mpqc::v3
 } //namespace mpqc
 
 
-#endif /* CHEMISTRY_QC_SCF_TASCF_HPP */
+#endif /* _MPQC_CHEMISTRY_QC_SCF_TASCF_HPP_ */

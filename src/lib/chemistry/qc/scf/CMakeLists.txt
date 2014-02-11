@@ -46,5 +46,12 @@ if (MPQC_UNITTEST)
   
   target_link_libraries( scftest chemistry )
 
+  set_property(SOURCE tascf_test.cpp PROPERTY COMPILE_DEFINITIONS
+    SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(tascf_test tascf_test.cpp $<TARGET_OBJECTS:basis>)
+  add_test(tascf_test tascf_test)
+  
+  target_link_libraries( tascf_test chemistry )
+
 endif (MPQC_UNITTEST)
 

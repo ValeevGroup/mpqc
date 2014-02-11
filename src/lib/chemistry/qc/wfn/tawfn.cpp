@@ -24,20 +24,21 @@
 //
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
-#include "tawfn.hpp"
+
+#include <chemistry/qc/wfn/tawfn.hpp>
+#include <util/misc/scexception.h>
 
 using namespace std;
 using namespace mpqc;
+using namespace mpqc::v3;
 namespace TA = TiledArray;
-using TAMat = TiledArrayWavefunction::TAMat;
 
-// WORK ON SERIALIZATION LATER
-//static sc::ClassDesc TiledArrayWavefunction_cd(
-//                typeid(TiledArrayWavefunction)),
-//                "TiledArrayWavefunction", 9, "public MolecularEnergy",
-//                0, 0, 0);
+sc::ClassDesc Wavefunction::class_desc_(
+                typeid(mpqc::v3::Wavefunction),
+                "TAWavefunction", 1, "public MolecularEnergy",
+                0, 0, 0);
 
-// mpqc::TiledArrayWavefunction::TiledArrayWavefunction(sc::StateIn& s):
+// mpqc::v3::Wavefunction::Wavefunction(sc::StateIn& s):
 //     sc::SaveableState(s),
 //     sc::MolecularEnergy(s),
 //     overlap_(this),
@@ -49,27 +50,45 @@ using TAMat = TiledArrayWavefunction::TAMat;
 //     hcore_.computed() = 0;
 // }
 
-mpqc::TiledArrayWavefunction::TiledArrayWavefunction(
-                const sc::Ref<sc::KeyVal>& kval) :
-    sc::MolecularEnergy(kval), overlap_(this), hcore_(this)
+mpqc::v3::Wavefunction::Wavefunction(const sc::Ref<sc::KeyVal>& kval) :
+    sc::MolecularEnergy(kval)
 {
-    overlap_.compute() = 0;
-    hcore_.compute() = 0;
-    overlap_.computed() = 0;
-    hcore_.computed() = 0;
 }
 
-//void mpqc::TiledArrayWavefunction::save_data_state(sc::StateOut& s) {
+mpqc::v3::Wavefunction::~Wavefunction()
+{
+}
+
+//void mpqc::v3::Wavefunction::save_data_state(sc::StateOut& s) {
 //}
 
-double mpqc::TiledArrayWavefunction::total_charge() const {
-    return 2.0;
+double mpqc::v3::Wavefunction::total_charge() const {
+  return molecule()->total_charge() - nelectron();
 }
 
-TAMat mpqc::TiledArrayWavefunction::ao_density() {
-    return 2.0;
+const TA::Array<double,2>&
+mpqc::v3::Wavefunction::ao_density() {
+  throw sc::FeatureNotImplemented("mpqc::v3::Wavefunction::ao_density() not yet ready", __FILE__, __LINE__);
 }
 
-TAMat mpqc::TiledArrayWavefunction::ao_overlap() {
-    return 2.0;
+const TA::Array<double,2>&
+mpqc::v3::Wavefunction::ao_overlap() {
+  throw sc::FeatureNotImplemented("mpqc::v3::Wavefunction::ao_overlap() not yet ready", __FILE__, __LINE__);
+}
+
+double
+mpqc::v3::Wavefunction::magnetic_moment() const {
+
+//  if (magnetic_moment_ > extent(osorange_)) // magnetic moment greater than the number of states means it has not been computed yet.
+//    magnetic_moment_ = trace(alpha_density(), overlap()) -
+//                       trace(beta_density(), overlap());
+//  return magnetic_moment_;
+  throw sc::FeatureNotImplemented("mpqc::v3::Wavefunction::magnetic_moment() not yet implemented", __FILE__, __LINE__);
+}
+
+bool mpqc::v3::Wavefunction::nonzero_efield_supported() const {
+  // support efields in C1 symmetry only
+  if (molecule()->point_group()->char_table().order() == 1)
+    return true;
+  return false;
 }

@@ -33,9 +33,9 @@
 using namespace boost::unit_test;
 using namespace mpqc;
 
-class Mock_wfn : public TiledArrayWavefunction {
+class Mock_wfn : public Wavefunction {
 public:
-    Mock_wfn(sc::Ref<sc::KeyVal> &kval) : TiledArrayWavefunction(kval) {}
+    Mock_wfn(sc::Ref<sc::KeyVal> &kval) : Wavefunction(kval) {}
     virtual ~Mock_wfn() {};
     int nelectron() override { return 2.0; }
     void compute() override {}

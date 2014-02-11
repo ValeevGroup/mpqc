@@ -25,60 +25,98 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef CHEMISTRY_WFN_TAWFN_HPP
-#define CHEMISTRY_WFN_TAWFN_HPP
+#ifndef _MPQC_CHEMISTRY_WFN_TAWFN_HPP_
+#define _MPQC_CHEMISTRY_WFN_TAWFN_HPP_
 
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/tiledbasisset.hpp>
 #include <chemistry/molecule/energy.h>
 #include <tiled_array.h>
+namespace TA = TiledArray;
+
+// will happen: namespace sc -> namespace mpqc
 
 namespace mpqc {
+
+  namespace v3 {
+
     /// @add to group TAWFN
     /// @{
     
-    /** The TiledArrayWavefunction class inherits from the MolecularEnergy class.
-     * It will compute energies using TiledArrayBasisSet which is a specialization
-     * of GaussianBasisSet
+    /** Wavefunction represents an electronic wave function expressed in terms of
+     *  a basis set of atomic orbitals.
      */
-    class TiledArrayWavefunction: public sc::MolecularEnergy {
-    private:
-        sc::RefSCDimension aodim_;
-        sc::RefSCDimension sodim_;
-        sc::Ref<TiledBasisSet> tbs_;
-        sc::Ref<sc::Integral> integral_;
-        sc::ResultRefSymmSCMatrix overlap_;
-        sc::ResultRefSymmSCMatrix hcore_;
+    class Wavefunction: public sc::MolecularEnergy {
 
-    public:
-        // Short hand for TiledArray Matrix
-        // Fix made double for short term
-        using TAMat = double; //TiledArray::Array<double, 2>; // TiledArray::Array<double,2>;
-        //TiledArrayWavefunction(sc::StateIn &s);
+      public:
+
+        typedef TA::Array<double,2> Matrix;
+
         /** The KeyVal constructor.
          *
          */
-        TiledArrayWavefunction(const sc::Ref<sc::KeyVal> &kval);
-        virtual ~TiledArrayWavefunction() {};
-
+        Wavefunction(const sc::Ref<sc::KeyVal> &kval);
+        //Wavefunction(sc::StateIn &s);
+        virtual ~Wavefunction();
         //void save_data_state(sc::StateOut &s);
 
-        /// total charge of system.
+        /// @return the basis set
+        const sc::Ref<TiledBasisSet>& basis() const {
+          return tbs_;
+        }
+        /// @return the Integral factory used to make the basis set object "concrete"
+        const sc::Ref<sc::Integral>& integral() const {
+          return integral_;
+        }
+        /// @return the Molecule object
+        sc::Ref<sc::Molecule> molecule() const {
+          return tbs_->molecule();
+        }
+
+        /// @return the total charge of system
         double total_charge() const;
 
-        /// number of electrons in the system.
-        virtual int nelectron() = 0;
+        /// @return the number of electrons in the system
+        virtual size_t nelectron() const = 0;
+
+        /// Computes the S (or J) magnetic moment
+        /// of the target state(s), in units of \f$ \hbar/2 \f$.
+        /// Can be evaluated from density and overlap, as;
+        /// \code
+        ///   (this->alpha_density() * this-> overlap()).trace() -
+        ///   (this->beta_density() * this-> overlap()).trace()
+        /// \endcode
+        /// but derived Wavefunction may have this value as user input.
+        /// @return the magnetic moment
+        virtual double magnetic_moment() const;
+
         /// Returns the AO density.
-        virtual TAMat ao_density();
+        virtual const Matrix& ao_density();
         /// Returns the AO overlap.
-        virtual TAMat ao_overlap();
-        /// Return basis set.
-        //sc::Ref<TiledBasisSet> basis() const;
-        
+        virtual const Matrix& ao_overlap();
+
+        unsigned debug() const {
+          return debug_;
+        }
+
+      private:
+        sc::Ref<TiledBasisSet> tbs_;
+        sc::Ref<sc::Integral> integral_;
+
+        mutable double magnetic_moment_; //!< caches the value returned by magnetic_moment()
+        /// Wavefunction (reluctantly) supports calculations in finite electric fields in c1 symmetry
+        /// general support is coming in the future.
+        bool nonzero_efield_supported() const;
+
+        unsigned debug_;
+
+        static sc::ClassDesc class_desc_;
+
     };
 
 /// @}
 
-}// namespace mpqc
+  }// namespace mpqc::v3
+}        // namespace mpqc
 
 #endif /* CHEMISTRY_WFN_TAWFN_HPP */

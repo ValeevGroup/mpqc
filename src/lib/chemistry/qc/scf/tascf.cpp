@@ -25,44 +25,54 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include "tascf.hpp"
+#include <chemistry/qc/scf/tascf.hpp>
 
 using namespace mpqc;
-using TAMat = TiledArrayScf::TAMat;
+using namespace mpqc::v3;
 
-static sc::ClassDesc TiledArrayScf_cd(typeid(TiledArrayScf), "TiledArrayScf",
-                      7, "public TiledArrayWavefunction", 0,
-                      sc::create<TiledArrayScf>,0);
+sc::ClassDesc mpqc::v3::SCF::class_desc_(typeid(mpqc::v3::SCF), "TASCF",
+                      1, "public TAWavefunction",
+                      0,
+                      sc::create<mpqc::v3::SCF>,
+                      0);
 
-mpqc::TiledArrayScf::TiledArrayScf(const sc::Ref<sc::KeyVal>& kval) :
-    TiledArrayWavefunction(kval), tbints_()
+mpqc::v3::SCF::SCF(const sc::Ref<sc::KeyVal>& kval) :
+    Wavefunction(kval), tbints_()
 {
     if(kval->exists("maxiter"))
-        maxiter_= kval->intvalue("maxiter");
+        maxiter_= kval->intvalue("maxiter", sc::KeyValValueint(1000));
     if(kval->exists("miniter"))
-        miniter_= kval->intvalue("miniter");
+        miniter_= kval->intvalue("miniter", sc::KeyValValueint(0));
 }
 
-mpqc::TiledArrayScf::~TiledArrayScf(){};
-
-void mpqc::TiledArrayScf::compute() {}
-
-int mpqc::TiledArrayScf::nelectron() {
-    return 2.0;
+mpqc::v3::SCF::~SCF(){
 }
 
-TAMat mpqc::TiledArrayScf::ao_fock() {
-    return 2.0;
+void mpqc::v3::SCF::compute() {
+  MPQC_ASSERT(false);
 }
 
-TAMat mpqc::TiledArrayScf::ao_density() {
-    return 2.0;
+const mpqc::v3::SCF::Matrix&
+mpqc::v3::SCF::ao_fock() {
+  MPQC_ASSERT(false);
 }
 
-TAMat mpqc::TiledArrayScf::ao_overlap() {
-    return 2.0;
+const mpqc::v3::SCF::Matrix&
+mpqc::v3::SCF::ao_density() {
+  MPQC_ASSERT(false);
 }
 
-double mpqc::TiledArrayScf::scf_energy() {
-    return 2.0;
+const mpqc::v3::SCF::Matrix&
+mpqc::v3::SCF::ao_overlap() {
+  MPQC_ASSERT(false);
+}
+
+double
+mpqc::v3::SCF::scf_energy() {
+  MPQC_ASSERT(false);
+}
+
+size_t
+mpqc::v3::SCF::nelectron() const {
+
 }

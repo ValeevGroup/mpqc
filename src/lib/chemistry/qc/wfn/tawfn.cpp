@@ -35,7 +35,7 @@ namespace TA = TiledArray;
 
 sc::ClassDesc Wavefunction::class_desc_(
                 typeid(mpqc::v3::Wavefunction),
-                "TAWavefunction", 1, "public MolecularEnergy",
+                "v3.Wavefunction", 1, "public MolecularEnergy",
                 0, 0, 0);
 
 // mpqc::v3::Wavefunction::Wavefunction(sc::StateIn& s):

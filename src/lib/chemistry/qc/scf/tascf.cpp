@@ -30,8 +30,8 @@
 using namespace mpqc;
 using namespace mpqc::v3;
 
-sc::ClassDesc mpqc::v3::SCF::class_desc_(typeid(mpqc::v3::SCF), "TASCF",
-                      1, "public TAWavefunction",
+sc::ClassDesc mpqc::v3::SCF::class_desc_(typeid(mpqc::v3::SCF), "v3.SCF",
+                      1, "public v3.Wavefunction",
                       0,
                       sc::create<mpqc::v3::SCF>,
                       0);

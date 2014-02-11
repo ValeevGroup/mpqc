@@ -32,13 +32,12 @@
 #include <chemistry/qc/basis/tiledbasisset.hpp>
 #include <chemistry/molecule/energy.h>
 #include <tiled_array.h>
-namespace TA = TiledArray;
 
 // will happen: namespace sc -> namespace mpqc
 
 namespace mpqc {
 
-  namespace v3 {
+  namespace TA {
 
     /// @add to group TAWFN
     /// @{
@@ -50,7 +49,7 @@ namespace mpqc {
 
       public:
 
-        typedef TA::Array<double,2> Matrix;
+        typedef ::TiledArray::Array<double,2> Matrix;
 
         /** The KeyVal constructor.
          *
@@ -116,7 +115,7 @@ namespace mpqc {
 
 /// @}
 
-  }// namespace mpqc::v3
+  }// namespace mpqc::TA
 }        // namespace mpqc
 
 #endif /* CHEMISTRY_WFN_TAWFN_HPP */

@@ -1,0 +1,17 @@
+
+rhf<TA.SCF>:(
+  molecule = $:water_c1
+  basis<GaussianBasisSet>: (
+    molecule = $..:molecule
+    name = "STO-3G"
+  )
+)
+
+water_c1<Molecule>: (
+  symmetry=c1
+  { atoms geometry } = {
+      O    [  0.0000000000    0.0000000000    0.0000000000 ]
+      H    [  1.5000000000    0.0000000000    1.0000000000 ]
+      H    [ -1.5000000000    0.0000000000    1.0000000000 ]
+  }
+)

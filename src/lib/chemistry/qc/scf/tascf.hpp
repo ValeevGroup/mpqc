@@ -33,7 +33,7 @@
 #include <chemistry/qc/basis/tbint.h>
 
 namespace mpqc{
-  namespace v3 {
+  namespace TA {
 
     class SCF : public Wavefunction {
     public:
@@ -62,7 +62,7 @@ namespace mpqc{
         static sc::ClassDesc class_desc_;
 
     };
-  } // namespace mpqc::v3
+  } // namespace mpqc::TA
 } //namespace mpqc
 
 

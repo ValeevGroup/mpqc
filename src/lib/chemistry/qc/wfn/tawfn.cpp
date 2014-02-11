@@ -30,15 +30,14 @@
 
 using namespace std;
 using namespace mpqc;
-using namespace mpqc::v3;
-namespace TA = TiledArray;
+using namespace mpqc::TA;
 
 sc::ClassDesc Wavefunction::class_desc_(
-                typeid(mpqc::v3::Wavefunction),
-                "v3.Wavefunction", 1, "public MolecularEnergy",
+                typeid(mpqc::TA::Wavefunction),
+                "TA.Wavefunction", 1, "public MolecularEnergy",
                 0, 0, 0);
 
-// mpqc::v3::Wavefunction::Wavefunction(sc::StateIn& s):
+// mpqc::TA::Wavefunction::Wavefunction(sc::StateIn& s):
 //     sc::SaveableState(s),
 //     sc::MolecularEnergy(s),
 //     overlap_(this),
@@ -50,34 +49,36 @@ sc::ClassDesc Wavefunction::class_desc_(
 //     hcore_.computed() = 0;
 // }
 
-mpqc::v3::Wavefunction::Wavefunction(const sc::Ref<sc::KeyVal>& kval) :
+mpqc::TA::Wavefunction::Wavefunction(const sc::Ref<sc::KeyVal>& kval) :
     sc::MolecularEnergy(kval)
 {
 }
 
-mpqc::v3::Wavefunction::~Wavefunction()
+mpqc::TA::Wavefunction::~Wavefunction()
 {
 }
 
-//void mpqc::v3::Wavefunction::save_data_state(sc::StateOut& s) {
+//void mpqc::TA::Wavefunction::save_data_state(sc::StateOut& s) {
 //}
 
-double mpqc::v3::Wavefunction::total_charge() const {
+double mpqc::TA::Wavefunction::total_charge() const {
   return molecule()->total_charge() - nelectron();
 }
 
-const TA::Array<double,2>&
-mpqc::v3::Wavefunction::ao_density() {
+typedef TA::Wavefunction::Matrix Matrix;
+
+const Matrix&
+mpqc::TA::Wavefunction::ao_density() {
   throw sc::FeatureNotImplemented("mpqc::v3::Wavefunction::ao_density() not yet ready", __FILE__, __LINE__);
 }
 
-const TA::Array<double,2>&
-mpqc::v3::Wavefunction::ao_overlap() {
+const Matrix&
+mpqc::TA::Wavefunction::ao_overlap() {
   throw sc::FeatureNotImplemented("mpqc::v3::Wavefunction::ao_overlap() not yet ready", __FILE__, __LINE__);
 }
 
 double
-mpqc::v3::Wavefunction::magnetic_moment() const {
+mpqc::TA::Wavefunction::magnetic_moment() const {
 
 //  if (magnetic_moment_ > extent(osorange_)) // magnetic moment greater than the number of states means it has not been computed yet.
 //    magnetic_moment_ = trace(alpha_density(), overlap()) -
@@ -86,7 +87,7 @@ mpqc::v3::Wavefunction::magnetic_moment() const {
   throw sc::FeatureNotImplemented("mpqc::v3::Wavefunction::magnetic_moment() not yet implemented", __FILE__, __LINE__);
 }
 
-bool mpqc::v3::Wavefunction::nonzero_efield_supported() const {
+bool mpqc::TA::Wavefunction::nonzero_efield_supported() const {
   // support efields in C1 symmetry only
   if (molecule()->point_group()->char_table().order() == 1)
     return true;

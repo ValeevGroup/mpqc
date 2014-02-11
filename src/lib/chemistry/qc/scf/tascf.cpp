@@ -28,15 +28,15 @@
 #include <chemistry/qc/scf/tascf.hpp>
 
 using namespace mpqc;
-using namespace mpqc::v3;
+using namespace mpqc::TA;
 
-sc::ClassDesc mpqc::v3::SCF::class_desc_(typeid(mpqc::v3::SCF), "v3.SCF",
-                      1, "public v3.Wavefunction",
+sc::ClassDesc mpqc::TA::SCF::class_desc_(typeid(mpqc::TA::SCF), "TA.SCF",
+                      1, "public TA.Wavefunction",
                       0,
-                      sc::create<mpqc::v3::SCF>,
+                      sc::create<mpqc::TA::SCF>,
                       0);
 
-mpqc::v3::SCF::SCF(const sc::Ref<sc::KeyVal>& kval) :
+mpqc::TA::SCF::SCF(const sc::Ref<sc::KeyVal>& kval) :
     Wavefunction(kval), tbints_()
 {
     if(kval->exists("maxiter"))
@@ -45,34 +45,34 @@ mpqc::v3::SCF::SCF(const sc::Ref<sc::KeyVal>& kval) :
         miniter_= kval->intvalue("miniter", sc::KeyValValueint(0));
 }
 
-mpqc::v3::SCF::~SCF(){
+mpqc::TA::SCF::~SCF(){
 }
 
-void mpqc::v3::SCF::compute() {
+void mpqc::TA::SCF::compute() {
   MPQC_ASSERT(false);
 }
 
-const mpqc::v3::SCF::Matrix&
-mpqc::v3::SCF::ao_fock() {
+const mpqc::TA::SCF::Matrix&
+mpqc::TA::SCF::ao_fock() {
   MPQC_ASSERT(false);
 }
 
-const mpqc::v3::SCF::Matrix&
-mpqc::v3::SCF::ao_density() {
+const mpqc::TA::SCF::Matrix&
+mpqc::TA::SCF::ao_density() {
   MPQC_ASSERT(false);
 }
 
-const mpqc::v3::SCF::Matrix&
-mpqc::v3::SCF::ao_overlap() {
+const mpqc::TA::SCF::Matrix&
+mpqc::TA::SCF::ao_overlap() {
   MPQC_ASSERT(false);
 }
 
 double
-mpqc::v3::SCF::scf_energy() {
+mpqc::TA::SCF::scf_energy() {
   MPQC_ASSERT(false);
 }
 
 size_t
-mpqc::v3::SCF::nelectron() const {
+mpqc::TA::SCF::nelectron() const {
 
 }

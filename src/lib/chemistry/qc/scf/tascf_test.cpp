@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_CASE( construct_scf_programmatically ){
     akv->assign("basis", basis.pointer());
 
     //Construct object
-    Ref<v3::SCF> tscf = new v3::SCF(akv);
+    Ref<TA::SCF> tscf = new TA::SCF(akv);
     tscf->print();
 }
 
@@ -57,7 +57,7 @@ BOOST_AUTO_TEST_CASE( construct_scf_txtkeyval ){
 
   const char *input =      SRCDIR "/tascf_test.in";
   Ref<KeyVal> kv = new ParsedKeyVal(input);
-  Ref<v3::SCF> tscf; tscf << kv->describedclassvalue("rhf");
+  Ref<TA::SCF> tscf; tscf << kv->describedclassvalue("rhf");
 
   tscf->print();
 

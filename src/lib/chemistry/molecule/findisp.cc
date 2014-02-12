@@ -875,7 +875,8 @@ FinDispMolecularHessian::EnergiesImpl::compute_mole(const Displacement& disp) {
   // check if disp has been computed
   if (values_.has(disp)) {
     if (values_.find(disp).second.energy() != 0.0)
-      return;
+      ExEnv::out0() << indent << "WARNING: FinDispMolecularHessian(energy) already encountered a dislacement, but energy is 0" << std::endl;
+    return;
   }
 
   // This produces side-effects in mol and may even change

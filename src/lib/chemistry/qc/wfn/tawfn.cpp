@@ -27,6 +27,8 @@
 
 #include <chemistry/qc/wfn/tawfn.hpp>
 #include <util/misc/scexception.h>
+#include <mpqc/interfaces/tiledarray/array_ints.hpp>
+#include <mpqc/integrals/integralenginepool.hpp>
 
 using namespace std;
 using namespace mpqc;
@@ -50,8 +52,39 @@ sc::ClassDesc Wavefunction::class_desc_(
 // }
 
 mpqc::TA::Wavefunction::Wavefunction(const sc::Ref<sc::KeyVal>& kval) :
-    sc::MolecularEnergy(kval)
+    sc::MolecularEnergy(kval), overlap_(this), rdm1_(this), rdm1_alpha_(this), rdm1_beta_(this)
 {
+  overlap_.compute() = 0;
+  rdm1_.compute() = 0;
+  rdm1_alpha_.compute() = 0;
+  rdm1_beta_.compute() = 0;
+
+  overlap_.computed() = 0;
+  rdm1_.computed() = 0;
+  rdm1_alpha_.computed() = 0;
+  rdm1_beta_.computed() = 0;
+
+  world_ << kval->describedclassvalue("world");
+  if (world_.null())
+    world_ = new mpqc::World;
+
+  tbs_ << kval->describedclassvalue("basis");
+  if (tbs_.null()) { // did the user give regular GaussianBasisSet? If so, try conversion
+    sc::Ref<sc::GaussianBasisSet> bs;
+    bs << kval->describedclassvalue("basis");
+    if (bs.null())
+      throw sc::InputError("missing \"basis\" keyword", __FILE__, __LINE__, "basis", "", this->class_desc());
+    else {
+      tbs_ = new TiledBasisSet(bs);
+    }
+  }
+
+  integral_ << kval->describedclassvalue("integrals");
+  if (integral_.null())
+    integral_ = sc::Integral::get_default_integral()->clone();
+  integral_->set_basis(tbs_);
+
+  magnetic_moment_ = tbs_->nbasis() + 1;
 }
 
 mpqc::TA::Wavefunction::~Wavefunction()
@@ -65,25 +98,36 @@ double mpqc::TA::Wavefunction::total_charge() const {
   return molecule()->total_charge() - nelectron();
 }
 
-typedef TA::Wavefunction::Matrix Matrix;
-
-const Matrix&
-mpqc::TA::Wavefunction::ao_density() {
-  throw sc::FeatureNotImplemented("mpqc::v3::Wavefunction::ao_density() not yet ready", __FILE__, __LINE__);
+const mpqc::TA::Wavefunction::Matrix&
+mpqc::TA::Wavefunction::rdm1() {
+  if (not rdm1_.computed()) {
+    if (rdm1_.result_noupdate().is_initialized() == false)
+      rdm1_ = rdm1(sc::Alpha)("a,b") + rdm1(sc::Beta)("a,b");
+    rdm1_.computed() = 1;
+  }
+  return rdm1_.result_noupdate();
 }
 
-const Matrix&
-mpqc::TA::Wavefunction::ao_overlap() {
-  throw sc::FeatureNotImplemented("mpqc::v3::Wavefunction::ao_overlap() not yet ready", __FILE__, __LINE__);
+const mpqc::TA::Wavefunction::Matrix&
+mpqc::TA::Wavefunction::overlap() {
+
+  if (not overlap_.computed()) {
+
+    mpqc::IntegralEnginePool<sc::Ref<sc::OneBodyInt> > overlap_pool(integral_->overlap());
+    overlap_ = mpqc::Integrals(*world_->madworld(), overlap_pool, tbs_);
+
+    world_->madworld()->gop.fence();
+    overlap_.computed() = 1;
+  }
+
+  return overlap_.result_noupdate();
 }
 
 double
 mpqc::TA::Wavefunction::magnetic_moment() const {
-
-//  if (magnetic_moment_ > extent(osorange_)) // magnetic moment greater than the number of states means it has not been computed yet.
-//    magnetic_moment_ = trace(alpha_density(), overlap()) -
-//                       trace(beta_density(), overlap());
-//  return magnetic_moment_;
+  //if (magnetic_moment_ > extent(osorange_)) // magnetic moment greater than the number of states means it has not been computed yet.
+  //  magnetic_moment_ = trace(rdm1(Alpha), overlap()) - trace(rdm1(Beta), overlap());
+  //return magnetic_moment_;
   throw sc::FeatureNotImplemented("mpqc::v3::Wavefunction::magnetic_moment() not yet implemented", __FILE__, __LINE__);
 }
 
@@ -92,4 +136,19 @@ bool mpqc::TA::Wavefunction::nonzero_efield_supported() const {
   if (molecule()->point_group()->char_table().order() == 1)
     return true;
   return false;
+}
+
+void mpqc::TA::Wavefunction::obsolete() {
+  magnetic_moment_ = tbs_->nbasis() + 1;
+  MolecularEnergy::obsolete();
+}
+
+void mpqc::TA::Wavefunction::print(std::ostream& os) const {
+  sc::MolecularEnergy::print(os);
+  os << sc::indent << "Electronic basis:" << std::endl;
+  os << sc::incindent;
+  basis()->print_brief(os);
+  os << sc::decindent;
+  os << sc::indent << "Integral factory = " << integral()->class_name() << std::endl;
+  //os << sc::indent << "magnetic moment = " << magnetic_moment() << std::endl;
 }

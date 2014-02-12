@@ -25,6 +25,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <util/misc/compute.h>
+
 namespace sc {
 
 /** Result are members of Compute specializations that keep track of

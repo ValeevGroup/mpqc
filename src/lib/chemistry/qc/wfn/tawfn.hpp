@@ -28,10 +28,12 @@
 #ifndef _MPQC_CHEMISTRY_WFN_TAWFN_HPP_
 #define _MPQC_CHEMISTRY_WFN_TAWFN_HPP_
 
+#include <tiled_array.h>
+#include <util/madness/world.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/tiledbasisset.hpp>
 #include <chemistry/molecule/energy.h>
-#include <tiled_array.h>
+#include <chemistry/qc/wfn/spin.h>
 
 // will happen: namespace sc -> namespace mpqc
 
@@ -39,7 +41,7 @@ namespace mpqc {
 
   namespace TA {
 
-    /// @add to group TAWFN
+    /// @addtogroup TAWFN
     /// @{
     
     /** Wavefunction represents an electronic wave function expressed in terms of
@@ -49,7 +51,12 @@ namespace mpqc {
 
       public:
 
-        typedef ::TiledArray::Array<double,2> Matrix;
+        typedef ::TiledArray::Array<double,1> Vector;  //!< Vector of reals
+        typedef ::TiledArray::Array<double,2> Matrix;  //!< Matrix of reals
+        typedef sc::Result<Vector> ResultVector;
+        typedef sc::Result<Matrix> ResultMatrix;
+        typedef sc::AccResult<Vector> AccResultVector;
+        typedef sc::AccResult<Matrix> AccResultMatrix;
 
         /** The KeyVal constructor.
          *
@@ -88,19 +95,34 @@ namespace mpqc {
         /// but derived Wavefunction may have this value as user input.
         /// @return the magnetic moment
         virtual double magnetic_moment() const;
+        /// @return true if the magnetic moment != 0
+        bool spin_polarized() { return magnetic_moment() != 0.0; }
 
-        /// Returns the AO density.
-        virtual const Matrix& ao_density();
+        /// Returns electron 1-body reduced density matrix (1-RDM) in AO basis.
+        /// The default implementation adds alpha and beta 1-RDMs
+        virtual const Matrix& rdm1();
+        /// Return electron 1-body reduced density matrix of spin \c s in AO basis.
+        virtual const Matrix& rdm1(sc::SpinCase1 s) =0;
         /// Returns the AO overlap.
-        virtual const Matrix& ao_overlap();
+        virtual const Matrix& overlap();
 
         unsigned debug() const {
           return debug_;
         }
 
+        /// makes this object obsolete, next call to compute() will recompute
+        void obsolete();
+
+        void print(std::ostream& os = sc::ExEnv::out0()) const;
+
       private:
+        sc::Ref<mpqc::World> world_;
         sc::Ref<TiledBasisSet> tbs_;
         sc::Ref<sc::Integral> integral_;
+        ResultMatrix overlap_;
+        ResultMatrix rdm1_;
+        ResultMatrix rdm1_alpha_;
+        ResultMatrix rdm1_beta_;
 
         mutable double magnetic_moment_; //!< caches the value returned by magnetic_moment()
         /// Wavefunction (reluctantly) supports calculations in finite electric fields in c1 symmetry

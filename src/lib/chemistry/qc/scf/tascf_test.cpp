@@ -25,6 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <util/madness/init.h>
 #include <chemistry/qc/scf/tascf.hpp>
 #define BOOST_TEST_MODULE test_tascf
 #include <boost/test/included/unit_test.hpp>
@@ -32,6 +33,17 @@
 using namespace boost::unit_test;
 using namespace sc;
 using namespace mpqc;
+
+struct MADConfig {
+    MADConfig() {
+      mpqc::MADNESSRuntime::initialize();
+    }
+    ~MADConfig() {
+      mpqc::MADNESSRuntime::finalize();
+    }
+};
+
+BOOST_GLOBAL_FIXTURE( MADConfig );
 
 BOOST_AUTO_TEST_CASE( construct_scf_programmatically ){
 
@@ -60,6 +72,6 @@ BOOST_AUTO_TEST_CASE( construct_scf_txtkeyval ){
   Ref<TA::SCF> tscf; tscf << kv->describedclassvalue("rhf");
 
   tscf->print();
-
+  std::cout << "Overlap matrix:" << std::endl;
+  std::cout << tscf->overlap() << std::endl;
 }
-

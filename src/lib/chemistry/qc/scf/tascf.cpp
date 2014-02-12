@@ -53,17 +53,17 @@ void mpqc::TA::SCF::compute() {
 }
 
 const mpqc::TA::SCF::Matrix&
-mpqc::TA::SCF::ao_fock() {
+mpqc::TA::SCF::fock() {
   MPQC_ASSERT(false);
 }
 
 const mpqc::TA::SCF::Matrix&
-mpqc::TA::SCF::ao_density() {
+mpqc::TA::SCF::rdm1() {
   MPQC_ASSERT(false);
 }
 
 const mpqc::TA::SCF::Matrix&
-mpqc::TA::SCF::ao_overlap() {
+mpqc::TA::SCF::rdm1(sc::SpinCase1 s) {
   MPQC_ASSERT(false);
 }
 

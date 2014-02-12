@@ -43,9 +43,9 @@ namespace mpqc{
         virtual ~SCF();
         virtual void compute() override;
 
-        virtual const Matrix& ao_fock();
-        virtual const Matrix& ao_density() override;
-        virtual const Matrix& ao_overlap() override;
+        virtual const Matrix& fock();
+        virtual const Matrix& rdm1() override;
+        virtual const Matrix& rdm1(sc::SpinCase1) override;
         virtual double scf_energy();
 
         /// @return the number of electrons in the system

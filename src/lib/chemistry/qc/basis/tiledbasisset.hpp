@@ -39,44 +39,63 @@
 #include "shellorder.hpp"
 #include "kcluster.hpp"
 
-namespace mpqc{
+namespace mpqc {
 
-    /**
-     * Will create a basis using k-means clustering.
-     */
-    class TiledBasisSet : public sc::GaussianBasisSet {
+  // TODO add reference for k clustering
+  /**
+   * TiledBasisSet is a GaussianBasisSet in which basis functions/shells are grouped into tiles ("blocks").
+   * This implementation uses the k-means clustering algorithm.
+   */
+  class TiledBasisSet: public sc::GaussianBasisSet {
 
     public:
-        typedef basis::ShellOrder::Shell Shell;
-        typedef sc::Ref<sc::GaussianBasisSet> Basis;
-        typedef basis::ShellOrder::ShellRange ShellRange;
+      typedef basis::ShellOrder::Shell Shell;
+      typedef sc::Ref<sc::GaussianBasisSet> Basis;
+      typedef basis::ShellOrder::ShellRange ShellRange;
 
-        /**
-         * Constructs a TiledBasisSet from a sc::Keyval object.
-         * @param[in] keyval is a sc::Ref<sc::Keyval> object which contains
-         *     information about the molecule and basis set desired.
-         * @param[in] nclusters is the number of KClusters the molecule should
-         *     be divided into.
-         */
-        TiledBasisSet(const sc::Ref<sc::KeyVal> &keyval);
+      /**
+       * Constructs a TiledBasisSet from a sc::Keyval object.
+       * The full list of keywords
+       * that are accepted is below.
+       *  <table border="1">
+       *
+       *  <tr><td><b>%Keyword</b><td><b>Type</b><td><b>Default</b><td><b>Description</b>
+       *
+       *  <tr><td><tt>basis</tt><td>GaussianBasisSet<td>none<td>mother basis set object
+       *
+       *  <tr><td><tt>ntiles</tt><td>integer<td>1<td>number of tiles to produce. Need to define some heuristics.
+       *
+       *  </table>
+       *
+       * @param[in] keyval is a sc::Ref<sc::Keyval> object which contains
+       *     information about the molecule and basis set desired.
+       */
+      TiledBasisSet(const sc::Ref<sc::KeyVal> &keyval);
 
-        static std::string name_conv_TBS(const std::string& name);
+      /**
+       * Constructs a TiledBasisSet from a sc::GaussianBasisSet object.
+       */
+      TiledBasisSet(const sc::Ref<sc::GaussianBasisSet>& bs,
+                    size_t ntiles = 1);
 
-        /**
-         * Returns a TiledArray::TiledRange1 for tiles made by k-means clustering.
-         */
-        TiledArray::TiledRange1 trange1() const;
+      /**
+       * Returns the tiled range object describing the tiling of basis functions in this basis.
+       * @return TiledArray::TiledRange1
+       */
+      TiledArray::TiledRange1 trange1() const;
 
-        TiledBasisSet(sc::StateIn& s);
+      TiledBasisSet(sc::StateIn& s);
 
-        void save_data_state(sc::StateOut& s);
+      void save_data_state(sc::StateOut& s);
 
     private:
-        std::size_t nclusters_;
-        ShellRange SRange_;
-    };
+      std::size_t ntiles_;
+      ShellRange SRange_;
+
+      static std::string converted_name(const std::string& name);
+
+  };
 
 } // namespace mpqc
-
 
 #endif /* CHEMISTRY_QC_BASIS_TILEDBASISSET_HPP */

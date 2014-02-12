@@ -50,11 +50,13 @@ IF(MPQC_UNITTEST)
   add_executable(btest btest.cc $<TARGET_OBJECTS:basis>)
   add_test(btest btest)
   
-  target_link_libraries( btest
-    chemistry
-    ${LAPACK_LIBRARIES}
-    ${BLAS_LIBRARIES}
-    ${LIBRARIES}
-    ${CMAKE_DL_LIBS}
-  )
+  target_link_libraries( btest chemistry )
+  
+  set_property(SOURCE tiledbasisset_test.cc PROPERTY COMPILE_DEFINITIONS
+    SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(tiledbasisset_test tiledbasisset_test.cpp $<TARGET_OBJECTS:basis>)
+  add_test(tiledbasisset_test tiledbasisset_test)
+  
+  target_link_libraries( tiledbasisset_test chemistry )
+  
 endif()

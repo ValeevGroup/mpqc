@@ -47,10 +47,9 @@ int main(int argc, char** argv){
     sc::Ref<sc::AssignedKeyVal> akv = new  sc::AssignedKeyVal;
     akv->assign("name", "3-21G");
     akv->assign("molecule", mol.pointer());
-    akv->assign("cluster_size", 2);
-
+    sc::Ref<sc::GaussianBasisSet> bs = new sc::GaussianBasisSet(akv);
     sc::Ref<TiledBasisSet> tbasis =
-                    new TiledBasisSet(sc::Ref<sc::KeyVal>(akv));
+                    new TiledBasisSet(bs, 2);
 
     sc::Ref<sc::Integral> Int_fac = sc::Integral::initial_integral(argc, argv);
     if(Int_fac)

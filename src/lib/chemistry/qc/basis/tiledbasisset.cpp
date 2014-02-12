@@ -38,8 +38,8 @@ static sc::ClassDesc TiledBasisSet_cd( typeid(TiledBasisSet), "TiledBasisSet",
                 0,  sc::create<TiledBasisSet>, sc::create<TiledBasisSet>);
 
 TiledBasisSet::TiledBasisSet(const sc::Ref<sc::KeyVal> &keyval):
-    SRange_(), nclusters_(keyval->intvalue("cluster_size",
-                                           sc::KeyValValueint(2)))
+    ntiles_(keyval->intvalue("ntiles", sc::KeyValValueint(1))),
+    SRange_()
 {
     Basis basis;
     basis << keyval->describedclassvalue("basis");
@@ -53,18 +53,33 @@ TiledBasisSet::TiledBasisSet(const sc::Ref<sc::KeyVal> &keyval):
     }
 
     basis::ShellOrder ordering(basis);
-    std::vector<Shell> shells = ordering.ordered_shells(nclusters_);
+    std::vector<Shell> shells = ordering.ordered_shells(ntiles_);
     SRange_ = ordering.shell_ranges();
 
-    init(name_conv_TBS(basis->name()),
-         name_conv_TBS(basis->label()),
+    init(converted_name(basis->name()),
+         converted_name(basis->label()),
          basis->molecule(),
          shells);
 }
 
-std::string TiledBasisSet::name_conv_TBS(const std::string& name){
+TiledBasisSet::TiledBasisSet(const sc::Ref<sc::GaussianBasisSet>& bs,
+                             size_t ntiles) :
+                ntiles_(ntiles),
+                SRange_()
+{
+  basis::ShellOrder ordering(bs);
+  std::vector<Shell> shells = ordering.ordered_shells(ntiles_);
+  SRange_ = ordering.shell_ranges();
+
+  init(converted_name(bs->name()),
+       converted_name(bs->label()),
+       bs->molecule(),
+       shells);
+}
+
+std::string TiledBasisSet::converted_name(const std::string& name) {
     if(name.empty()) return name;
-    std::string new_name = "TiledArray(";
+    std::string new_name = "Tiled(";
     new_name += name;
     new_name += ")";
     return new_name;
@@ -72,10 +87,10 @@ std::string TiledBasisSet::name_conv_TBS(const std::string& name){
 
 TiledArray::TiledRange1 TiledBasisSet::trange1() const{
     std::vector<std::size_t> tilesizes;
-    tilesizes.reserve(nclusters_);
+    tilesizes.reserve(ntiles_);
 
     // Loop over clusters
-    for(auto i = 0; i < nclusters_; ++i){
+    for(auto i = 0; i < ntiles_; ++i){
        // Get the first function in the shell
        tilesizes.push_back(shell_to_function(SRange_[i]));
     }

@@ -304,15 +304,60 @@ main(int argc, char **argv)
 
   {
       cout << "-------------- testing molecule ctors --------------" << endl;
+      Ref<Molecule> mol1;
       {
-        cout << "---- reading " << TOPSRCDIR"/test/input/taxol.xyz" << " ----" << endl;
+        cout << "---- " << TOPSRCDIR"/test/input/mol/taxol.xyz" << " ----" << endl;
         Ref<AssignedKeyVal> akv = new AssignedKeyVal;
-        akv->assign("xyz_file", TOPSRCDIR "/test/input/taxol.xyz");
+        akv->assign("xyz_file", TOPSRCDIR "/test/input/mol/taxol.xyz");
+        mol1 = new Molecule(akv);
+        MPQC_ASSERT(mol1);
+        mol1->print();
+        mol1->print_xyz();
+      }
+#ifdef HAVE_OPENBABEL2
+      Ref<Molecule> mol1a;
+      {
+        cout << "---- OpenBabel2: " << TOPSRCDIR"/test/input/mol/taxol.xyz" << " ----" << endl;
+        Ref<AssignedKeyVal> akv = new AssignedKeyVal;
+        akv->assign("file", TOPSRCDIR "/test/input/mol/taxol.xyz");
+        mol1a = new Molecule(akv);
+        MPQC_ASSERT(mol1a);
+        MPQC_ASSERT(*mol1 == *mol1a);
+        cout << "success!" << endl;
+      }
+#endif
+#ifdef HAVE_OPENBABEL2
+      Ref<Molecule> mol2;
+      {
+        cout << "---- OpenBabel2: " << TOPSRCDIR"/test/input/mol/3G61.pdb" << " ----" << endl;
+        Ref<AssignedKeyVal> akv = new AssignedKeyVal;
+        akv->assign("file", TOPSRCDIR "/test/input/mol/3G61.pdb");
+        mol2 = new Molecule(akv);
+        MPQC_ASSERT(mol2);
+        cout << "Molecular formula = " << MolecularFormula(mol2).formula() << endl;
+        cout << "success!" << endl;
+      }
+#endif
+
+#ifdef HAVE_OPENBABEL2
+      {
+        cout << "---- OpenBabel2: " << TOPSRCDIR"/test/input/mol/progesterone.sdf" << " ----" << endl;
+        Ref<AssignedKeyVal> akv = new AssignedKeyVal;
+        akv->assign("file", TOPSRCDIR "/test/input/mol/progesterone.sdf");
         Ref<Molecule> mol = new Molecule(akv);
         MPQC_ASSERT(mol);
-        mol->print();
+        cout << "Molecular formula = " << MolecularFormula(mol).formula() << endl;
+        mol->print_parsedkeyval();
+      }
+      {
+        cout << "---- OpenBabel2: " << TOPSRCDIR"/test/input/mol/octane.cml" << " ----" << endl;
+        Ref<AssignedKeyVal> akv = new AssignedKeyVal;
+        akv->assign("file", TOPSRCDIR "/test/input/mol/octane.cml");
+        Ref<Molecule> mol = new Molecule(akv);
+        MPQC_ASSERT(mol);
         mol->print_xyz();
       }
+#endif
   }
 
   return 0;

@@ -120,7 +120,7 @@ namespace basis{
             // Initialize the kcluster guess at the position of the heaviest atoms.
             for(auto i = 0; i < nclusters_; ++i){
                 clusters_.push_back(
-                    Vector3(atoms_[i].xyz(0), atoms_[i].xyz(1), atoms_[i].xyz(2))
+                    Vector3(atoms_[i].r(0), atoms_[i].r(1), atoms_[i].r(2))
                 );
             }
 

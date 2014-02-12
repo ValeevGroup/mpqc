@@ -51,3 +51,26 @@ sc::FromStateIn(Atom &a, StateIn &si, int &count){
     count += si.get(a.label_);
 }
 
+bool sc::operator ==(const Atom& a, const Atom& b) {
+  if (a.Z() != b.Z())
+    return false;
+  for(int xyz=0; xyz<3; ++xyz)
+    if (a.r(xyz) != b.r(xyz) )
+      return false;
+  if (a.have_charge() != b.have_charge())
+    return false;
+  if (a.have_charge()) {
+    if (a.charge() != b.charge())
+      return false;
+  }
+  if (a.have_fragment() != b.have_fragment())
+    return false;
+  if (a.have_fragment()) {
+    if (a.fragment() != b.fragment())
+      return false;
+  }
+  if (a.mass() != b.mass())
+    return false;
+  // labels are inconsequential
+  return true;
+}

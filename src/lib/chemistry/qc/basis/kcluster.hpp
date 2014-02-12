@@ -91,7 +91,7 @@ namespace basis {
 
         /// Finds distance to any atom to the center of the cluster.
         double distance(const Atom &atom){
-            Vector3 atom_vec(atom.xyz(0), atom.xyz(1), atom.xyz(2));
+            Vector3 atom_vec(atom.r(0), atom.r(1), atom.r(2));
             // Computes the length of the vector to the atom from the center.
             return (atom_vec - center_).norm();
         }
@@ -108,9 +108,9 @@ namespace basis {
             // Loop over all of the members of the cluster and total their
             // positions in each diminsion.
             for(auto i = 0; i < natoms(); ++i){
-                centroid[0] += atoms_[i].xyz(0);
-                centroid[1] += atoms_[i].xyz(1);
-                centroid[2] += atoms_[i].xyz(2);
+                centroid[0] += atoms_[i].r(0);
+                centroid[1] += atoms_[i].r(1);
+                centroid[2] += atoms_[i].r(2);
             }
 
             // Get the average position in each dimension.

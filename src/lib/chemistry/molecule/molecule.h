@@ -30,6 +30,7 @@
 
 #include <stdio.h>
 #include <iostream>
+#include <mpqc_config.h>
 #include <util/class/class.h>
 #include <util/state/state.h>
 #include <util/keyval/keyval.h>
@@ -47,28 +48,33 @@ namespace sc {
 
 /**
 The Molecule class contains information about molecules.  It has a
-KeyVal constructor that can create a new molecule from an existing file in
-<a href="http://en.wikipedia.org/wiki/Protein_Data_Bank_(file_format)">PDB</a>
-or <a href="http://en.wikipedia.org/wiki/XYZ_file_format">XYZ</a> formats,
-or from a set of keywords that define Cartesian coordinates of the atoms.
+KeyVal constructor that can create a new molecule from atomic coordinates read from a file in one of
+supported <a href="http://en.wikipedia.org/wiki/Chemical_file_format">chemical file formats</a> (e.g.
+<a href="http://en.wikipedia.org/wiki/XYZ_file_format">XYZ</a>),
+or from a set of keywords that give explicitly the Cartesian coordinates of the atoms.
 
-The following ParsedKeyVal input reads from the PDB
-file <tt>h2o.pdb</tt>:
+If your version of MPQC was compiled with <a href="http://openbabel.org/">OpenBabel2</a> support, then input file can be
+any <a href="http://openbabel.org/wiki/Category:Formats">chemical file format
+understood by OpenBabel2</a>. The following ParsedKeyVal input reads from
+a file in <a href="http://en.wikipedia.org/wiki/Chemical_Markup_Language">Chemical Markup Language</a> (CML)
+format <tt>h2o.cml</tt>, to be interpreted by OpenBabel2:
 <pre>
 molecule<Molecule>: (
-   pdb_file = "h2o.pdb"
- )
+   file = "h2o.cml"
+)
 </pre>
 
+Without OpenBabel2, only XYZ format is supported.
 The following ParsedKeyVal input reads from the XYZ
-file <tt>xyz</tt>:
+file <tt>h2o.xyz</tt>:
 <pre>
 molecule<Molecule>: (
    xyz_file = "h2o.xyz"
  )
 </pre>
 
-The following input explicitly gives the atom coordinates, using the
+The most flexible method to specify atomic coordinates explicitly.
+The following input does that by using the
 ParsedKeyVal table notation:
 <pre>
 molecule<Molecule>: (
@@ -232,13 +238,15 @@ class Molecule: public SavableState
         generated atom will not be added to the list of atoms.  Ignored for
         <tt>symmetry = auto</tt>.
 
+        <tr><td><tt>file</tt><td>string<td>undefined<td>This gives
+        the name of a file in one of the formats understood by OpenBabel2,
+        from which the nuclear coordinates will be
+        read.  If this is given, the following options will be ignored.
+        \b Requires OpenBabel2.
+
         <tr><td><tt>xyz_file</tt><td>string<td>undefined<td>This gives
         the name of a XYZ file, from which the nuclear coordinates will be
-        read.  If this is given, the following non-<tt>*file</tt> options will be ignored.
-
-        <tr><td><tt>pdb_file</tt><td>string<td>undefined<td>This gives
-        the name of a PDB file, from which the nuclear coordinates will be
-        read.  If this is given, the following non-<tt>*file</tt> options will be ignored.
+        read.  If this is given, the following options will be ignored.
 
         <tr><td><tt>unit</tt><td>string<td>bohr<td>This gives the name
         of the units used for the geometry.  See the Units class for
@@ -276,10 +284,7 @@ class Molecule: public SavableState
         integers and they do not be consecutive (i.e. one could specify only fragments 1 and 7).
         By default, all atoms belong to fragment 0.
         This feature is relevant only for some computations.
-        This keyword is ignored any of the <tt>*file</tt> keywords is given, with the only exception
-        being <tt>pdb_file</tt>: if that is given then the fragments are
-        provided by field resSeq (residue sequence)
-        of ATOM or HETATM records.
+        This keyword is ignored any of the <tt>*file</tt> keywords is given.
 
         </table>
 
@@ -296,7 +301,7 @@ class Molecule: public SavableState
                   int have_charge = 0, double charge = 0.0,
                   int have_fragment = 0, int fragment = 0);
 
-    Atom atom(int i){ return atoms_[i]; }
+    const Atom& atom(size_t i) const { return atoms_[i]; }
     const std::vector<Atom>& atoms() const { return atoms_; }
 
     /// Print information about the molecule.
@@ -310,11 +315,11 @@ class Molecule: public SavableState
     Ref<Units> geometry_units() const { return geometry_units_; }
 
     /// Returns the number of atoms in the molecule.
-    unsigned int natom() const { return atoms_.size(); }
+    size_t natom() const { return atoms_.size(); }
 
     int Z(int atom) const { return atoms_[atom].Z(); }
-    double &r(int atom, int xyz) { return atoms_[atom].xyz(xyz); }
-    const double &r(int atom, int xyz) const { return atoms_[atom].xyz(xyz); }
+    double &r(int atom, int xyz) { return atoms_[atom].r(xyz); }
+    const double &r(int atom, int xyz) const { return atoms_[atom].r(xyz); }
     const double *r(int atom) const { return atoms_[atom].r(); }
     double mass(int atom) const;
     /** Returns the label explicitly assigned to atom.  If
@@ -417,7 +422,6 @@ class Molecule: public SavableState
     void transform_to_principal_axes(int trans_frame=1);
     void transform_to_symmetry_frame();
     void print_xyz(std::ostream& =ExEnv::out0(), const char *title =0) const;
-    void print_pdb(std::ostream& =ExEnv::out0(), const char *title =0) const;
 
     /** Compute the principal moments of inertia and, possibly, the
         principal axes. */
@@ -494,17 +498,21 @@ class Molecule: public SavableState
     void save_data_state(StateOut&);
 
   private:
-    /// reads molecule from a PDB file, used by constructor only
-    void read_pdb(const char *filename);
     /// reads molecule from a XYZ file, used by constructor only
     void read_xyz(const char *filename);
-
+#ifdef HAVE_OPENBABEL2
+    /// reads molecule from any OpenBabel2 format, used by constructor only
+    void read_openbabel2(const char *filename);
+#endif // HAVE_OPENBABEL2
 };
+
+/// @return true is mol1 and mol2 are \b exactly identical (this includes symmetry, frame, atom ordering, and fragments)
+bool operator==(const Molecule& mol1, const Molecule& mol2);
 
 /// @}
 // end of addtogroup ChemistryMolecule
 
-}
+} // namespace sc
 
 #endif
 

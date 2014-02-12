@@ -42,17 +42,15 @@
 #include <util/misc/exenv.h>
 #include <util/misc/scexception.h>
 
-using namespace sc;
+bool mpqc::MADNESSRuntime::mpqc_initialized_madness_ = false;
 
-bool MADNESSRuntime::mpqc_initialized_madness_ = false;
-
-bool sc::MADNESSRuntime::initialized() {
+bool mpqc::MADNESSRuntime::initialized() {
   return madness::initialized();
 }
 
-void sc::MADNESSRuntime::initialize() {
+void mpqc::MADNESSRuntime::initialize() {
   if (not madness::initialized()) {
-    madness::initialize(ExEnv::argc(), ExEnv::argv());
+    madness::initialize(sc::ExEnv::argc(), sc::ExEnv::argv());
     mpqc_initialized_madness_ = true;
   }
   else {
@@ -61,11 +59,11 @@ void sc::MADNESSRuntime::initialize() {
   // now make sure that MADNESS has initialized MPI with full thread safety ...
   // if MPQC were using SafeMPI instead of MPI directly this would not be an issue
   if (SafeMPI::Query_thread() != MPI_THREAD_MULTIPLE && madness::World::get_default().rank() != 1) {
-    throw FeatureNotImplemented("nproc>1, and MPQC cannot get along with MADNESS because MADNESS was not configured with --with-mpi-thread=multiple; reconfigure MADNESS", __FILE__, __LINE__);
+    throw sc::FeatureNotImplemented("nproc>1, and MPQC cannot get along with MADNESS because MADNESS was not configured with --with-mpi-thread=multiple; reconfigure MADNESS", __FILE__, __LINE__);
   }
 }
 
-void sc::MADNESSRuntime::finalize() {
+void mpqc::MADNESSRuntime::finalize() {
   if (madness::initialized()) {
     if (mpqc_initialized_madness_)
       madness::finalize();

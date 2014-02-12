@@ -32,7 +32,7 @@
 #ifndef _mpqc_src_lib_util_madness_init_h
 #define _mpqc_src_lib_util_madness_init_h
 
-namespace sc {
+namespace mpqc {
 
   class MADNESSRuntime {
     public:
@@ -44,7 +44,7 @@ namespace sc {
       static bool mpqc_initialized_madness_; // marks ownership
   };
 
-} // end of namespace sc
+} // end of namespace mpqc
 
 #endif // end of header guard
 

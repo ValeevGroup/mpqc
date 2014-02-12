@@ -34,6 +34,7 @@
 #include <util/misc/exenv.h>
 
 using namespace sc;
+using namespace mpqc;
 
 int main(int argc, char **argv) {
   ExEnv::init(argc, argv);

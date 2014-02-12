@@ -16,6 +16,9 @@ add_mpqc_library(chemistry ${chemobjects})
 
 target_link_libraries(chemistry math util)
 
+if (HAVE_OPENBABEL2)
+  target_link_libraries(chemistry ${OPENBABEL2_LIBRARIES})
+endif()
 
 if (HAVE_LIBINT2)
   target_link_libraries(chemistry ${LIBINT2_LIBRARY})

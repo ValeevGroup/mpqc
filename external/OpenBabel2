@@ -1,0 +1,12 @@
+# -*- mode: cmake -*-
+
+# find and setup openbabel
+find_package(OpenBabel2)
+
+if (OPENBABEL2_FOUND)
+  set(HAVE_OPENBABEL2 TRUE)
+  message(STATUS "Found OpenBabel2:")
+  message(STATUS "\tOPENBABEL2_LIBRARIES: ${OPENBABEL2_LIBRARIES}")
+  message(STATUS "\tOPENBABEL2_INCLUDE_DIR: ${OPENBABEL2_INCLUDE_DIR}")
+  include_directories(${OPENBABEL2_INCLUDE_DIR})
+endif()

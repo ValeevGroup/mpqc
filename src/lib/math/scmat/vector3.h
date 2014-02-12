@@ -39,6 +39,7 @@ namespace sc {
 class RefSCVector;
 class SCMatrix3;
 
+/// a 3-element version of SCVector
 class SCVector3
 {
     friend class SCMatrix3;
@@ -136,6 +137,10 @@ class SCVector3
 SCVector3 operator*(double,const SCVector3&);
 std::ostream &operator<<(std::ostream&, const SCVector3 &);
 
+/// @return true if \c a and \c b are \b exactly identical
+bool operator==(const SCVector3& a, const SCVector3& b);
+/// @return false if \c a and \c b are \b exactly identical
+inline bool operator!=(const SCVector3& a, const SCVector3& b) { return not (a==b); }
 }
 
 #ifdef INLINE_FUNCTIONS

@@ -47,14 +47,24 @@ namespace sc {
 
 /**
 The Molecule class contains information about molecules.  It has a
-KeyVal constructor that can create a new molecule from either a
-PDB file or from a list of Cartesian coordinates.
+KeyVal constructor that can create a new molecule from an existing file in
+<a href="http://en.wikipedia.org/wiki/Protein_Data_Bank_(file_format)">PDB</a>
+or <a href="http://en.wikipedia.org/wiki/XYZ_file_format">XYZ</a> formats,
+or from a set of keywords that define Cartesian coordinates of the atoms.
 
 The following ParsedKeyVal input reads from the PDB
 file <tt>h2o.pdb</tt>:
 <pre>
 molecule<Molecule>: (
    pdb_file = "h2o.pdb"
+ )
+</pre>
+
+The following ParsedKeyVal input reads from the XYZ
+file <tt>xyz</tt>:
+<pre>
+molecule<Molecule>: (
+   xyz_file = "h2o.xyz"
  )
 </pre>
 
@@ -222,48 +232,53 @@ class Molecule: public SavableState
         generated atom will not be added to the list of atoms.  Ignored for
         <tt>symmetry = auto</tt>.
 
+        <tr><td><tt>xyz_file</tt><td>string<td>undefined<td>This gives
+        the name of a XYZ file, from which the nuclear coordinates will be
+        read.  If this is given, the following non-<tt>*file</tt> options will be ignored.
+
         <tr><td><tt>pdb_file</tt><td>string<td>undefined<td>This gives
         the name of a PDB file, from which the nuclear coordinates will be
-        read.  If this is given, the following options will be ignored.
+        read.  If this is given, the following non-<tt>*file</tt> options will be ignored.
 
         <tr><td><tt>unit</tt><td>string<td>bohr<td>This gives the name
         of the units used for the geometry.  See the Units class for
         information about the known units.  This replaces deprecated
         keywords that are still recognized: <tt>angstrom</tt> and
-        <tt>angstroms</tt>.  This is ignored if <tt>pdb_file</tt> is given.
+        <tt>angstroms</tt>.  This is ignored if any of the <tt>*file</tt> keywords is given.
 
         <tr><td><tt>geometry</tt><td>double[][3]<td>none<td>This gives
         the Cartesian coordinates of the molecule.  This is ignored if
-        <tt>pdb_file</tt> is given.
+        any of the <tt>*file</tt> keywords is given.
 
         <tr><td><tt>atoms</tt><td>string[]<td>none<td>This gives the
         chemical element symbol for each atom.  This is ignored if
-        <tt>pdb_file</tt> is given.
+        any of the <tt>*file</tt> keywords is given.
 
         <tr><td><tt>ghost</tt><td>boolean[]<td>none<td>If true, the atom
         will be given zero charge.  It will still have basis functions,
         however.  This is used to estimate basis set superposition error.
-        This is ignored if <tt>pdb_file</tt> is given.
+        This is ignored if any of the <tt>*file</tt> keywords is given.
 
         <tr><td><tt>charge</tt><td>double[]<td>Z for each atom<td>Allows
         specification of the charge for each atom.  This is ignored if
-        <tt>pdb_file</tt> is given.
+        any of the <tt>*file</tt> keywords is given.
 
         <tr><td><tt>atom_labels</tt><td>string[]<td>none<td>This gives a
         user defined atom label for each atom.  This is ignored if
-        <tt>pdb_file</tt> is given.
+        any of the <tt>*file</tt> keywords is given.
 
         <tr><td><tt>mass</tt><td>double[]<td>Taken from AtomInfo given by
         the <tt>atominfo</tt> keyword. <td>This gives a user defined mass
-        for each atom.  This is ignored if <tt>pdb_file</tt> is given.
+        for each atom.  This is ignored if any of the <tt>*file</tt> keywords is given.
 
         <tr><td><tt>fragment</tt><td>integer[]<td>none<td>Allows to specify
         fragments of Molecule. Fragment indices can be arbitrary
         integers and they do not be consecutive (i.e. one could specify only fragments 1 and 7).
         By default, all atoms belong to fragment 0.
         This feature is relevant only for some computations.
-        This keyword is ignored if <tt>pdb_file</tt> is given and its
-        values are provided by field resSeq (residue sequence)
+        This keyword is ignored any of the <tt>*file</tt> keywords is given, with the only exception
+        being <tt>pdb_file</tt>: if that is given then the fragments are
+        provided by field resSeq (residue sequence)
         of ATOM or HETATM records.
 
         </table>
@@ -401,9 +416,8 @@ class Molecule: public SavableState
     void move_to_com();
     void transform_to_principal_axes(int trans_frame=1);
     void transform_to_symmetry_frame();
-    void print_pdb(std::ostream& =ExEnv::out0(), char *title =0) const;
-
-    void read_pdb(const char *filename);
+    void print_xyz(std::ostream& =ExEnv::out0(), const char *title =0) const;
+    void print_pdb(std::ostream& =ExEnv::out0(), const char *title =0) const;
 
     /** Compute the principal moments of inertia and, possibly, the
         principal axes. */
@@ -478,6 +492,13 @@ class Molecule: public SavableState
     SCVector3 ref_origin() const { return ref_origin_; }
 
     void save_data_state(StateOut&);
+
+  private:
+    /// reads molecule from a PDB file, used by constructor only
+    void read_pdb(const char *filename);
+    /// reads molecule from a XYZ file, used by constructor only
+    void read_xyz(const char *filename);
+
 };
 
 /// @}

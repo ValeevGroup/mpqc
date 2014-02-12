@@ -507,7 +507,7 @@ try_main(int argc, char *argv[])
 
   const int do_freq = keyval->booleanvalue("do_freq",falsevalue);
 
-  const int do_pdb = keyval->booleanvalue("write_pdb",falsevalue);
+  const int do_xyz = keyval->booleanvalue("write_xyz",truevalue);
 
   const int print_mole = keyval->booleanvalue("print_mole",truevalue);
 
@@ -582,7 +582,7 @@ try_main(int argc, char *argv[])
        << indent << "do_gradient     = " << (do_grad ? "yes" : "no") << endl
        << indent << "do_freq         = " << (do_freq ? "yes" : "no") << endl
        << indent << "optimize        = " << (do_opt ? "yes" : "no") << endl
-       << indent << "write_pdb       = " << (do_pdb ? "yes" : "no") << endl
+       << indent << "write_xyz       = " << (do_xyz ? "yes" : "no") << endl
        << indent << "print_mole      = " << (print_mole ? "yes" : "no") << endl
        << indent << "print_timings   = " << (print_timings ? "yes" : "no") << endl
        << indent << "print_resources = " << (print_resources ? "yes" : "no")
@@ -862,11 +862,11 @@ try_main(int argc, char *argv[])
     if (print_mole)
       mole->print(ExEnv::out0());
 
-    if (do_pdb && grp->me() == 0) {
+    if (do_xyz && grp->me() == 0) {
       ckptfile = molname;
-      ckptfile += ".pdb";
-      ofstream pdbfile(ckptfile.c_str());
-      mole->molecule()->print_pdb(pdbfile);
+      ckptfile += ".xyz";
+      ofstream file(ckptfile.c_str());
+      mole->molecule()->print_xyz(file);
     }
 
   }

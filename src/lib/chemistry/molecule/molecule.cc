@@ -121,11 +121,20 @@ Molecule::Molecule(const Ref<KeyVal>&input):
   atominfo_ << input->describedclassvalue("atominfo");
   if (atominfo_.null()) atominfo_ = new AtomInfo;
   q_Z_ = atominfo_->string_to_Z("Q");
-  if (input->exists("pdb_file")) {
-      geometry_units_ = new Units("angstrom");
-      std::string filename = input->stringvalue("pdb_file");
-      read_pdb(filename.c_str());
-    }
+  if (input->exists("file")) {
+    // use OpenBabel
+    MPQC_ASSERT(false); // not yet implemented
+  }
+  else if (input->exists("xyz_file")) {
+    geometry_units_ = new Units("angstrom");
+    std::string filename = input->stringvalue("xyz_file");
+    read_xyz(filename.c_str());
+  }
+  else if (input->exists("pdb_file")) {
+    geometry_units_ = new Units("angstrom");
+    std::string filename = input->stringvalue("pdb_file");
+    read_pdb(filename.c_str());
+  }
   else {
       // check for old style units input first
       if (input->booleanvalue("angstrom")
@@ -1139,6 +1148,73 @@ Molecule::max_z()
   return maxz;
 }
 
+namespace {
+  void check_xyz_stream(const std::ifstream& in, const char* filename, size_t lineno) {
+    if (not in.good()) {
+      std::ostringstream oss;
+      oss << "Molecule::read_xyz -- misformatted XYZ file " << filename << ", near line # " << lineno << endl;
+      throw InputError(oss.str().c_str(), __FILE__, __LINE__);
+    }
+  }
+}
+
+void
+Molecule::read_xyz(const char *filename)
+{
+  char comment[1024];
+  clear();
+  ifstream in(filename);
+  if (not in.good()) {
+    std::ostringstream oss;
+    oss << "Molecule::read_xyz -- could not open XYZ file " << filename << endl;
+    throw InputError(oss.str().c_str(), __FILE__, __LINE__);
+  }
+  Ref<Units> units = new Units("angstrom");
+  size_t natoms;  in >> natoms; // line 1: # of atoms
+  if (natoms == 0) {
+    ExEnv::out0() << indent << "WARNING: 0 atoms in XYZ file" << endl;
+    return;
+  }
+  check_xyz_stream(in, filename, 1);
+  in.getline(comment, 1024); // rest of line 1
+  check_xyz_stream(in, filename, 1);
+  in.getline(comment, 1024); // line 2: comment
+  check_xyz_stream(in, filename, 2);
+
+  // read in atoms
+  std::vector<int> Zs;
+  std::vector<double> xs, ys, zs;
+  for(size_t a=0; a<natoms; ++a) {
+    std::string element_token;
+    double x, y, z;
+    in >> element_token >> x >> y >> z;
+    int Z = 0;
+    // some XYZ formats use atomic numbers
+    if (std::isdigit(element_token[0])) {
+      istringstream iss(element_token);
+      iss >> Z;
+      MPQC_ASSERT(Z >= 0);
+    }
+    else {
+      Z = atominfo_->string_to_Z(element_token);
+    }
+    check_xyz_stream(in, filename, 2+a);
+    Zs.push_back(Z);
+    xs.push_back(x);
+    ys.push_back(y);
+    zs.push_back(z);
+  }
+
+  // now commit the atoms
+  for(size_t a=0; a<natoms; ++a) {
+    add_atom(Zs[a],
+             xs[a] * units->to_atomic_units(),
+             ys[a] * units->to_atomic_units(),
+             zs[a] * units->to_atomic_units(),
+             "", 0.0, 0, 0.0, false, 0);
+  }
+}
+
 void
 Molecule::read_pdb(const char *filename)
 {
@@ -1253,7 +1329,31 @@ Molecule::read_pdb(const char *filename)
 }
 
 void
-Molecule::print_pdb(ostream& os, char *title) const
+Molecule::print_xyz(ostream& os, const char *title) const
+{
+  Ref<Units> u = new Units("angstrom");
+  double bohr = u->from_atomic_units();
+
+  os << natom() << endl;
+  if (title) {
+    // make sure title does not have endline chars
+    if (strchr(title, '\n') == 0)
+      os << title;
+  }
+  os << endl;
+  for (int i=0; i < natom(); i++) {
+    // more precision than used by OpenBabel
+    os << atom_symbol(i) << " " << scprintf("%15.9lf %15.9lf %15.9lf",
+                                            bohr * r(i, 0),
+                                            bohr * r(i, 1),
+                                            bohr * r(i, 2)
+                                           ) << endl;
+  }
+  os.flush();
+}
+
+void
+Molecule::print_pdb(ostream& os, const char *title) const
 {
   Ref<Units> u = new Units("angstrom");
   double bohr = u->from_atomic_units();

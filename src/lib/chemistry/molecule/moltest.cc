@@ -302,6 +302,19 @@ main(int argc, char **argv)
       molfreq->compute_frequencies(xhessian);
     }
 
+  {
+      cout << "-------------- testing molecule ctors --------------" << endl;
+      {
+        cout << "---- reading " << TOPSRCDIR"/test/input/taxol.xyz" << " ----" << endl;
+        Ref<AssignedKeyVal> akv = new AssignedKeyVal;
+        akv->assign("xyz_file", TOPSRCDIR "/test/input/taxol.xyz");
+        Ref<Molecule> mol = new Molecule(akv);
+        MPQC_ASSERT(mol);
+        mol->print();
+        mol->print_xyz();
+      }
+  }
+
   return 0;
 }
 

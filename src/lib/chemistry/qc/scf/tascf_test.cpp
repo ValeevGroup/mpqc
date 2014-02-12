@@ -26,9 +26,12 @@
 //
 
 #include <util/madness/init.h>
+#include <util/misc/regtime.h>
 #include <chemistry/qc/scf/tascf.hpp>
 #define BOOST_TEST_MODULE test_tascf
 #include <boost/test/included/unit_test.hpp>
+
+#include <chemistry/qc/libint2/linkage.h>
 
 using namespace boost::unit_test;
 using namespace sc;
@@ -74,4 +77,21 @@ BOOST_AUTO_TEST_CASE( construct_scf_txtkeyval ){
   tscf->print();
   std::cout << "Overlap matrix:" << std::endl;
   std::cout << tscf->overlap() << std::endl;
+}
+
+BOOST_AUTO_TEST_CASE( compute_tawfn_overlap_txtkeyval ){
+
+  const char *input =      SRCDIR "/tascf_test.in";
+  Ref<KeyVal> kv = new ParsedKeyVal(input);
+  Ref<TA::SCF> tscf; tscf << kv->describedclassvalue("rhf_large");
+
+  tscf->print();
+
+  // compute overlap, time it
+  sc::Ref<sc::RegionTimer> rtim = new sc::RegionTimer;
+  std::cout << "Computing overlap matrix .............. ";
+  sc::Timer tim(rtim, "rhf_large overlap");
+  tscf->overlap();
+  tim.exit("rhf_large overlap");
+  std::cout << "done (" << tim.wall_time("rhf_large overlap") << " sec)" << std::endl;
 }

@@ -286,6 +286,8 @@ class CADFCLHF: public CLHF {
     int print_screening_stats_;
     /// Exponent to raise the the distance denominator exponent to (i.e. (lX+1)^damping_factor)
     double distance_damping_factor_;
+    /// Print timings after each iteration.  Useful for benchmarking large systems without doing full calculations
+    bool print_iteration_timings_;
     //@}
 
     ScreeningStatistics stats_;
@@ -557,6 +559,7 @@ class CADFCLHF: public CLHF {
         hash_<std::pair<int, int>>
     > IndexListMap2;
 
+    // TODO initialize these to a reasonable number of bins
     IndexListMap L_schwarz;
     IndexListMap L_coefs;
     IndexListMap L_D;

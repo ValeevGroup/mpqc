@@ -36,9 +36,12 @@
 #include <chemistry/qc/basis/gaussbas.h>
 #include <memory>
 #include <math.h>
+#include <math/scmat/blas.h>
 
 #define USE_INTEGRAL_CACHE 1
 #define EIGEN_NO_AUTOMATIC_RESIZING 1
+
+#define CADF_USE_BLAS 0
 
 #ifdef ECLIPSE_PARSER_ONLY
 #include <util/misc/sharedptr.h>
@@ -156,7 +159,10 @@ CADFCLHF::CADFCLHF(StateIn& s) :
 CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
     CLHF(keyval),
     // TODO Initialize the number of bins to a more reasonable size, check for enough memory, etc
-    ints3_(basis()->nshell() * basis()->nshell() * basis()->nshell() / scf_grp_->n() / std::min((unsigned int)50, basis()->nbasis())),
+    ints3_(
+        basis()->nshell() * basis()->nshell() * basis()->nshell() / scf_grp_->n()
+        / std::min((unsigned int)1, basis()->nbasis())
+    ),
     ints2_(basis()->nshell() * basis()->nshell() / scf_grp_->n() / std::min((unsigned int)50, basis()->nbasis())),
     local_pairs_spot_(0)
 {
@@ -188,6 +194,8 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   linK_use_distance_ = keyval->booleanvalue("linK_use_distance", KeyValValueboolean(false));
   //----------------------------------------------------------------------------//
   print_screening_stats_ = keyval->intvalue("print_screening_stats", KeyValValueint(0));
+  //----------------------------------------------------------------------------//
+  print_iteration_timings_ = keyval->booleanvalue("print_iteration_timings", KeyValValueboolean(false));
   //----------------------------------------------------------------------------//
   initialize();
   //----------------------------------------------------------------------------//
@@ -958,7 +966,8 @@ CADFCLHF::compute_K()
   double *D_ptr = allocate<double>(nbf*nbf);
   D_.convert(D_ptr);
   typedef Eigen::Map<Eigen::VectorXd> VectorMap;
-  typedef Eigen::Map<Eigen::MatrixXd> MatrixMap;
+  //typedef Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> MatrixMap;
+  typedef Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor>> MatrixMap;
   // Matrix and vector wrappers, for convenience
   VectorMap d(D_ptr, nbf*nbf);
   MatrixMap D(D_ptr, nbf, nbf);
@@ -1171,8 +1180,9 @@ CADFCLHF::compute_K()
           auto contract_timer = mt_timer.get_subtimer("contract", ithr);
 
           typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> RowMatrix;
-          RowMatrix B_ish(ish.nbf * Xblk.nbf, nbf);
-          B_ish = RowMatrix::Zero(ish.nbf * Xblk.nbf, nbf);
+          typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> ColMatrix;
+          ColMatrix B_ish(ish.nbf * Xblk.nbf, nbf);
+          B_ish = ColMatrix::Zero(ish.nbf * Xblk.nbf, nbf);
 
           if(do_linK_){
 
@@ -1227,7 +1237,24 @@ CADFCLHF::compute_K()
 
                   subtimer.change(contract_timer);
 
-                  B_ish += 2.0 * g3.transpose() * D_ordered.middleRows(block_offset, jblk.nbf);  //latex `\label{sc:k3b:rhcontract}`
+                                                                                             //latex `\label{sc:k3b:rhcontract}`
+                  #if !CADF_USE_BLAS
+                  // Eigen version
+                  B_ish += 2.0 * g3.transpose() * D_ordered.middleRows(block_offset, jblk.nbf);
+                  #else
+                  // BLAS version
+                  const char notrans = 'n', trans = 't';
+                  const blasint M = ish.nbf*Xblk.nbf;
+                  const blasint K = jblk.nbf;
+                  const double alpha = 2.0, one = 1.0;
+                  F77_DGEMM(&notrans, &notrans,
+                      &M, &nbf, &K,
+                      &alpha, g3.data(), &M,
+                      D_ordered.data() + block_offset, &nbf,
+                      &one, B_ish.data(), &M
+                  );
+                  #endif
+
                   block_offset += jblk.nbf;
 
 
@@ -1266,7 +1293,23 @@ CADFCLHF::compute_K()
                   }
 
                   subtimer.change(contract_timer);
+
+                  #if !CADF_USE_BLAS
+                  // Eigen version
                   B_ish += 2.0 * g3.transpose() * D.middleRows(jblk.bfoff, jblk.nbf);
+                  #else
+                  // BLAS version
+                  const char notrans = 'n', trans = 't';
+                  const blasint M = ish.nbf*Xblk.nbf;
+                  const blasint K = jblk.nbf;
+                  const double alpha = 2.0, one = 1.0;
+                  F77_DGEMM(&notrans, &notrans,
+                      &M, &nbf, &K,
+                      &alpha, g3.data(), &M,
+                      D.data() + jblk.bfoff, &nbf,
+                      &one, B_ish.data(), &M
+                  );
+                  #endif
 
 
                 } // end loop over jsh
@@ -1287,7 +1330,23 @@ CADFCLHF::compute_K()
               Eigen::Map<ThreeCenterIntContainer> g3(g3_ptr->data(), jblk.nbf, ish.nbf*Xblk.nbf);
 
               subtimer.change(contract_timer);
+
+              #if !CADF_USE_BLAS
+              // Eigen version
               B_ish += 2.0 * g3.transpose() * D.middleRows(jblk.bfoff, jblk.nbf);
+              #else
+              // BLAS version
+              const char notrans = 'n', trans = 't';
+              const blasint M = ish.nbf*Xblk.nbf;
+              const blasint K = jblk.nbf;
+              const double alpha = 2.0, one = 1.0;
+              F77_DGEMM(&notrans, &notrans,
+                  &M, &nbf, &K,
+                  &alpha, g3.data(), &M,
+                  D.data() + jblk.bfoff, &nbf,
+                  &one, B_ish.data(), &M
+              );
+              #endif
 
             } // end loop over jsh
 
@@ -1329,7 +1388,7 @@ CADFCLHF::compute_K()
     compute_threads.join_all();
     mt_timer.exit();
     timer.insert(mt_timer);
-    mt_timer.print(ExEnv::out0(), 12, 45);
+    if(print_iteration_timings_) mt_timer.print(ExEnv::out0(), 12, 45);
   } // compute_threads is destroyed here
   /*****************************************************************************************/ #endif //1}}} //latex `\label{sc:k3b:end}`
   /*=======================================================================================*/
@@ -1448,6 +1507,7 @@ CADFCLHF::compute_K()
     } // end enumeration of threads
     compute_threads.join_all();
     mt_timer.exit();
+    if(print_iteration_timings_) mt_timer.print(ExEnv::out0(), 12, 45);
     timer.insert(mt_timer);
   } // compute_threads is destroyed here
   /*****************************************************************************************/ #endif //1}}}
@@ -1994,15 +2054,13 @@ CADFCLHF::ints_to_eigen(int ish, int jsh, Ref<TwoBodyTwoCenterInt>& ints, TwoBod
     // This won't work if the basis sets are different,
     //   since keys_canonical may have a different ordering from the
     //   order of indices in ints.
-    assert(ints->basis1() == ints->basis2());
+    //assert(ints->basis1() == ints->basis2());
 #else
   return ints2_.get(ish, jsh, int_type, [ish, jsh, int_type, &ints, this](){
 #endif
 #endif
-    GaussianBasisSet& ibs = *(ints->basis1());
-    GaussianBasisSet& jbs = *(ints->basis2());
-    const int nbfi = ibs.shell(ish).nfunction();
-    const int nbfj = jbs.shell(jsh).nfunction();
+    const int nbfi = dfbs_->shell(ish).nfunction();
+    const int nbfj = dfbs_->shell(jsh).nfunction();
     auto rv = make_shared<TwoCenterIntContainer>(nbfi, nbfj);
     //----------------------------------------//
     ints->compute_shell(ish, jsh);
@@ -2022,7 +2080,7 @@ CADFCLHF::ints_to_eigen(int ish, int jsh, Ref<TwoBodyTwoCenterInt>& ints, TwoBod
       const boost::tuple<int, int, TwoBodyOper::type>& keys_canonical
   ){
     // ensure everything is working the way I expect it to
-    assert(ish == boost::tuples::get<1>(keys_canonical) && jsh == boost::tuples::get<0>(keys_canonical));
+    //assert(ish == boost::tuples::get<1>(keys_canonical) && jsh == boost::tuples::get<0>(keys_canonical));
     auto rv = make_shared<TwoCenterIntContainer>(perm_val->transpose());
     return rv;
 
@@ -2050,14 +2108,14 @@ CADFCLHF::ints_to_eigen(int ish, int jsh, int ksh, Ref<TwoBodyThreeCenterInt>& i
     // This won't work if these basis sets are different,
     //   since keys_canonical may have a different ordering from the
     //   order of indices in ints.
-    assert(ints->basis1() == ints->basis2());
+    //assert(ints->basis1() == ints->basis2());
 #else
   return ints3_.get(ish, jsh, ksh, int_type, [ish, jsh, ksh, int_type, &ints, this](){
 #endif
 #endif
-    const int nbfi = ints->basis1()->shell(ish).nfunction();
-    const int nbfj = ints->basis2()->shell(jsh).nfunction();
-    const int nbfk = ints->basis3()->shell(ksh).nfunction();
+    const int nbfi = gbs_->shell(ish).nfunction();
+    const int nbfj = gbs_->shell(jsh).nfunction();
+    const int nbfk = dfbs_->shell(ksh).nfunction();
     auto rv = make_shared<ThreeCenterIntContainer>(nbfi * nbfj, nbfk);
     //----------------------------------------//
     ints->compute_shell(ish, jsh, ksh);
@@ -2070,16 +2128,16 @@ CADFCLHF::ints_to_eigen(int ish, int jsh, int ksh, Ref<TwoBodyThreeCenterInt>& i
 #if INTEGRAL_CACHE_PERMUTE
   },
   // Permute function
-  [ish, jsh, ksh, &ints](
+  [ish, jsh, ksh, &ints, this](
       const ThreeCenterIntContainerPtr& perm_val,
       const boost::tuple<int, int, int, TwoBodyOper::type>& key_canonical
   ){
-    const int nbfi = ints->basis1()->shell(ish).nfunction();
-    const int nbfj = ints->basis2()->shell(jsh).nfunction();
-    const int nbfk = ints->basis3()->shell(ksh).nfunction();
+    const int nbfi = gbs_->shell(ish).nfunction();
+    const int nbfj = gbs_->shell(jsh).nfunction();
+    const int nbfk = dfbs_->shell(ksh).nfunction();
 
     // ensure everything is working the way I expect it to
-    assert(ish == boost::tuples::get<1>(key_canonical) && jsh == boost::tuples::get<0>(key_canonical));
+    //assert(ish == boost::tuples::get<1>(key_canonical) && jsh == boost::tuples::get<0>(key_canonical));
 
     auto rv = make_shared<ThreeCenterIntContainer>(nbfi * nbfj, nbfk);
     for(int i = 0; i < nbfi; ++i) {

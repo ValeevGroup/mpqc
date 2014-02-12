@@ -60,12 +60,12 @@ class Wavefunction: public MolecularEnergy {
   protected:
     ResultRefSCMatrix natural_orbitals_;
     ResultRefDiagSCMatrix natural_density_;
+    Ref<GaussianBasisSet> gbs_;
 
   private:
     double * bs_values;
     double * bsg_values;
 
-    Ref<GaussianBasisSet> gbs_;
     Ref<Integral> integral_;
 
     Ref<GaussianBasisSet> atom_basis_;

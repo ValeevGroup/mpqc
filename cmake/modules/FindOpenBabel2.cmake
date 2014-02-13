@@ -35,7 +35,8 @@ else (OPENBABEL2_INCLUDE_DIR AND OPENBABEL2_LIBRARIES AND OPENBABEL2_VERSION_MET
         $ENV{OPENBABEL2_INCLUDE_DIR}
       )
       if(OPENBABEL2_INCLUDE_DIR)
-        set(OPENBABEL2_INCLUDE_DIR ${OPENBABEL2_INCLUDE_DIR}/openbabel-2.0)
+        # overwrite the value in cache put there by find_path
+        set(OPENBABEL2_INCLUDE_DIR ${OPENBABEL2_INCLUDE_DIR}/openbabel-2.0 CACHE INTERNAL "The path to OpenBabel2 headers.")
         message(STATUS "Found OpenBabel2 headers: ${OPENBABEL2_INCLUDE_DIR}")
         
         # .. and use macros to check the version
@@ -68,7 +69,8 @@ else (OPENBABEL2_INCLUDE_DIR AND OPENBABEL2_LIBRARIES AND OPENBABEL2_VERSION_MET
           $ENV{OPENBABEL2_INCLUDE_DIR}
         )
         if(OPENBABEL2_INCLUDE_DIR)
-          set(OPENBABEL2_INCLUDE_DIR ${OPENBABEL2_INCLUDE_DIR}/openbabel-2.0)
+          # overwrite the value in cache put there by find_path
+          set(OPENBABEL2_INCLUDE_DIR ${OPENBABEL2_INCLUDE_DIR}/openbabel-2.0 CACHE INTERNAL "The path to OpenBabel2 headers.")
         endif(OPENBABEL2_INCLUDE_DIR)
       endif(NOT OPENBABEL2_INCLUDE_DIR)
     endif(WIN32)

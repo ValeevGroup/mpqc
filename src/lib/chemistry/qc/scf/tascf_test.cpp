@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE( construct_scf_programmatically ){
 
 BOOST_AUTO_TEST_CASE( construct_scf_txtkeyval ){
 
-  const char *input =      SRCDIR "/tascf_test.in";
+  const char *input = "./tascf_test.kv";
   Ref<KeyVal> kv = new ParsedKeyVal(input);
   Ref<TA::SCF> tscf; tscf << kv->describedclassvalue("rhf");
 
@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE( construct_scf_txtkeyval ){
 
 BOOST_AUTO_TEST_CASE( compute_tawfn_overlap_txtkeyval ){
 
-  const char *input =      SRCDIR "/tascf_test.in";
+  const char *input = "./tascf_test.kv";
   Ref<KeyVal> kv = new ParsedKeyVal(input);
   Ref<TA::SCF> tscf; tscf << kv->describedclassvalue("rhf_large");
 

@@ -37,7 +37,7 @@
 #include <chemistry/qc/scf/tchf.h>
 #include <chemistry/qc/scf/uhf.h>
 #include <chemistry/qc/scf/scf.h>
-#include <chemistry/qc/scf/cadfclhf.h>
+#include <chemistry/qc/scf/cadf/cadfclhf.h>
 
 #include <math/scmat/linkage.h>
 #include <chemistry/molecule/linkage.h>

@@ -30,20 +30,34 @@
 #ifndef _chemistry_qc_scf_cadfclhf_h
 #define _chemistry_qc_scf_cadfclhf_h
 
-#include <chemistry/qc/scf/clhf.h>
-#include <util/container/conc_cache.h>
+// Standard library includes
 #include <atomic>
 #include <future>
 #include <functional>
 #include <type_traits>
+
+// Eigen includes
 #include <Eigen/Dense>
-#include <util/misc/property.h>
-#include <chemistry/qc/scf/cadf_iters.h>
-#include <boost/static_assert.hpp>
+
+// MPQC includes
+#include <chemistry/qc/scf/clhf.h>
+#include <util/container/conc_cache_fwd.h>
+
+#include "iters.h"
+
+#ifdef ECLIPSE_PARSER_ONLY
+#include <util/misc/sharedptr.h>
+#endif
+
+// Allows easy switching between std::shared_ptr and e.g. boost::shared_ptr
+template<typename... Types>
+using shared_ptr = std::shared_ptr<Types...>;
+using std::make_shared;
 
 typedef typename boost::integer_range<int> int_range;
+typedef unsigned long long ull;
 
-#define INTEGRAL_CACHE_PERMUTE 1
+#define USE_INTEGRAL_CACHE 0
 
 namespace sc {
 
@@ -80,45 +94,37 @@ class CADFCLHF: public CLHF {
   public:
 
     // This will later be changed to simple double* to allow for direct BLAS calls
-    typedef std::shared_ptr<Eigen::Map<Eigen::VectorXd>> CoefContainer;
+    typedef shared_ptr<Eigen::Map<Eigen::VectorXd>> CoefContainer;
     typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> TwoCenterIntContainer;
     typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> ThreeCenterIntContainer;
-    typedef std::shared_ptr<TwoCenterIntContainer> TwoCenterIntContainerPtr;
-    typedef std::shared_ptr<ThreeCenterIntContainer> ThreeCenterIntContainerPtr;
+    typedef shared_ptr<TwoCenterIntContainer> TwoCenterIntContainerPtr;
+    typedef shared_ptr<ThreeCenterIntContainer> ThreeCenterIntContainerPtr;
 
     typedef std::map<std::pair<int, int>, std::pair<CoefContainer, CoefContainer>> CoefMap;
     typedef Eigen::HouseholderQR<Eigen::MatrixXd> Decomposition;
 
-#if INTEGRAL_CACHE_PERMUTE
+#if USE_INTEGRAL_CACHE
+
     typedef ConcurrentCacheWithSymmetry<
         TwoCenterIntContainerPtr,
         // 3 total keys, allow transpose of first two (0, 1)
         SingleTranspositionKeySymmetry<3, 0, 1>,
         int, int, TwoBodyOper::type
     > TwoCenterIntCache;
+
     typedef ConcurrentCacheWithSymmetry<
         ThreeCenterIntContainerPtr,
         // 4 total keys, allow transpose of first two
         SingleTranspositionKeySymmetry<4, 0, 1>,
         int, int, int, TwoBodyOper::type
     > ThreeCenterIntCache;
-#else
-    typedef ConcurrentCache<
-        TwoCenterIntContainerPtr,
-        int, int, TwoBodyOper::type
-    > TwoCenterIntCache;
-    typedef ConcurrentCache<
-        ThreeCenterIntContainerPtr,
-        int, int, int, TwoBodyOper::type
-    > ThreeCenterIntCache;
 #endif
-
 
     typedef ConcurrentCache<
         double,
         int, int, int, int, TwoBodyOper::type
     > FourCenterMaxIntCache;
-    typedef ConcurrentCache<std::shared_ptr<Decomposition>, int, int> DecompositionCache;
+    typedef ConcurrentCache<shared_ptr<Decomposition>, int, int> DecompositionCache;
 
     CADFCLHF(StateIn&);
 
@@ -130,8 +136,8 @@ class CADFCLHF: public CLHF {
           </table>
 
      */
-
     CADFCLHF(const Ref<KeyVal>&);
+
     ~CADFCLHF();
 
     void save_data_state(StateOut&);
@@ -141,6 +147,7 @@ class CADFCLHF: public CLHF {
       public:
 
         typedef std::atomic_uint_fast64_t accumulate_t;
+        typedef decltype(accumulate_t().load()) count_t;
 
         struct Iteration {
 
@@ -198,14 +205,14 @@ class CADFCLHF: public CLHF {
           const auto& old_loc = out.getloc(); out.imbue(std::locale(""));
           out << indent << "CADFCLHF Screening Statistics" << endl;
           out << indent << "-----------------------------" << endl;
-          const int total_3c = basis->nshell() * basis->nshell() * dfbs->nshell();
-          const int total_3c_fxn = basis->nbasis() * basis->nbasis() * dfbs->nbasis();
+          const count_t total_3c = basis->nshell() * basis->nshell() * dfbs->nshell();
+          const count_t total_3c_fxn = basis->nbasis() * basis->nbasis() * dfbs->nbasis();
           out << indent << "Total shell triplets: " << total_3c << endl
               << indent << "Total function triplets: " << total_3c_fxn << endl
               << indent << "Total shell triplets after Schwarz screening: "
-              << sig_pairs.load() * dfbs->nshell() << endl
+              << sig_pairs.load() * count_t(dfbs->nshell()) << endl
               << indent << "Total function triplets after Schwarz screening: "
-              << sig_pairs_fxn.load() * dfbs->nbasis() << endl;
+              << sig_pairs_fxn.load() * count_t(dfbs->nbasis()) << endl;
           int iteration = 1;
           out << incindent;
           out << indent << setw(38) << " "
@@ -217,7 +224,11 @@ class CADFCLHF: public CLHF {
           for(auto& iter : iterations) {
             if(print_level > 1) {
               out << indent << "Iteration " << iteration++ << ":" << endl;
-              auto pr_iter_stat = [&](const std::string& title, int sh_num, int fxn_num) {
+              auto pr_iter_stat = [&](
+                  const std::string& title,
+                  const count_t sh_num,
+                  const count_t fxn_num
+              ) {
                 out << indent << setw(38) << std::left << title
                     << setw(14) << std::right << sh_num
                     << setw(7) << scprintf(" (%3.1f", 100.0 * double(sh_num)/double(total_3c)) << "%)"
@@ -288,6 +299,12 @@ class CADFCLHF: public CLHF {
     double distance_damping_factor_;
     /// Print timings after each iteration.  Useful for benchmarking large systems without doing full calculations
     bool print_iteration_timings_;
+    /// Use norms for nu dimension when screening
+    bool use_norms_nu_;
+    /// Use norms for sigma dimension when screening.  It's actually a sum over this dimension rather than a norm.
+    bool use_norms_sigma_;
+    /// Print a lot of stuff in an XML debug file.  Not really for end users...
+    bool xml_debug_ = false;
     //@}
 
     ScreeningStatistics stats_;
@@ -345,7 +362,6 @@ class CADFCLHF: public CLHF {
         Ref<TwoBodyTwoCenterInt>& ints,
         TwoBodyOper::type ints_type
     );
-
 
     template <typename ShellRange>
     TwoCenterIntContainerPtr ints_to_eigen(
@@ -416,17 +432,28 @@ class CADFCLHF: public CLHF {
         TwoBodyOper::type ints_type
     );
 
-    std::shared_ptr<Decomposition> get_decomposition(int ish, int jsh, Ref<TwoBodyTwoCenterInt> ints);
+    shared_ptr<Decomposition> get_decomposition(int ish, int jsh, Ref<TwoBodyTwoCenterInt> ints);
 
     // Non-blocked version of cl_gmat_
     RefSymmSCMatrix gmat_;
 
+    /**
+     * Whether or not the density was reset this iteration.  Numerical stability
+     *  might be improved by lowering the cutoffs on iterations where the
+     *  density is differential rather than full.
+     */
     bool density_reset_ = true;
 
-    // Whether or not the MessageGrp is an instance of MPIMessageGrp
+    /**
+     * Whether or not the MessageGrp is an instance of MPIMessageGrp; might
+     *  be used for dynamic load balancing in the future.
+     */
     bool using_mpi_;
 
-    // Whether or not we've computed the fitting coefficients yet (only needs to be done on first iteration)
+    /**
+     * Whether or not we've computed the fitting coefficients yet
+     *  (since that only needs to be done on the first iteration)
+     */
     bool have_coefficients_;
 
     // The density fitting auxiliary basis
@@ -485,10 +512,17 @@ class CADFCLHF: public CLHF {
     std::atomic<int> ints_computed_locally_;
     int ints_computed_;
 
+    /// List of atom centers as Eigen::Vector3d objects, for convenience
     std::vector<Eigen::Vector3d> centers_;
+
+    /**
+     * List of orbital basis set shell pair centers, computed using
+     *  the Gaussian product theorem centers of primitive pairs weighted
+     *  by the absolute value of the products of primitive coefficients
+     */
     std::map<std::pair<int, int>, Eigen::Vector3d> pair_centers_;
 
-    // Coefficients storage.  Not accessed directly
+    /// Coefficients storage.  Not accessed directly
     double* coefficients_data_ = 0;
 
     CoefMap coefs_;
@@ -497,10 +531,13 @@ class CADFCLHF: public CLHF {
 
     std::vector<Eigen::MatrixXd> coefs_transpose_;
 
-    DecompositionCache decomps_;
-    TwoCenterIntCache ints2_;
-    ThreeCenterIntCache ints3_;
-    FourCenterMaxIntCache ints4maxes_;
+#if USE_INTEGRAL_CACHE
+    shared_ptr<TwoCenterIntCache> ints2_;
+    shared_ptr<ThreeCenterIntCache> ints3_;
+#endif
+
+    shared_ptr<DecompositionCache> decomps_;
+    shared_ptr<FourCenterMaxIntCache> ints4maxes_;
 
     bool threads_initialized_ = false;
 

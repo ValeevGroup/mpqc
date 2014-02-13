@@ -1,4 +1,5 @@
 //
+
 // conc_cache.h
 //
 // Copyright (C) 2013 David Hollman
@@ -64,6 +65,7 @@
 // MPQC imcludes
 #include <util/misc/iterators.h>
 #include <util/misc/meta.h>
+#include <util/container/conc_cache_fwd.h>
 
 namespace {
 
@@ -156,27 +158,22 @@ struct KeyTransposition
     static constexpr int second_index = idx_2;
 };
 
-template <int nkeys> using IdentityKeyPermutation = typename meta::splat_values<int,
-  KeyPermutation,
-  typename boost::mpl::copy<
-    boost::mpl::range_c<int, 0, nkeys>,
-    boost::mpl::back_inserter< boost::mpl::vector_c<int, nkeys> >
-  >::type
->::type;
+template <int nkeys>
+struct IdentityKeyPermutation
+  : public meta::splat_values<int,
+      KeyPermutation,
+      typename boost::mpl::copy<
+        boost::mpl::range_c<int, 0, nkeys>,
+        boost::mpl::back_inserter< boost::mpl::vector_c<int, nkeys> >
+      >::type
+    >::type
+{ };
 
 template<typename... Permutations>
 struct KeySymmetry {
     static constexpr int n_permutations = sizeof...(Permutations);
 };
 
-template <int nkeys> using IdentityKeySymmetry = KeySymmetry<
-    IdentityKeyPermutation<nkeys>
->;
-
-template <int nkeys, int idx1, int idx2> using SingleTranspositionKeySymmetry = KeySymmetry<
-    IdentityKeyPermutation<nkeys>,
-    KeyTransposition<nkeys, idx1, idx2>
->;
 
 template<
   typename ValueType,
@@ -251,6 +248,7 @@ class ConcurrentCacheBase {
       return a->second.get();
 
     }
+
   protected:
 
     // The actual map from key tuples to values
@@ -273,7 +271,7 @@ class ConcurrentCacheWithSymmetry
 {
   public:
     typedef ConcurrentCacheBase<val_type, key_types...> super_t;
-    using super_t::ConcurrentCacheBase;
+    using ConcurrentCacheBase<val_type, key_types...>::ConcurrentCacheBase;
 
     typename super_t::value_type get_or_permute(
         key_types... keys,
@@ -312,7 +310,7 @@ class ConcurrentCacheWithSymmetry<
         )>& permute_fxn
     )
     {
-      return super_t::get(keys..., compute_fxn);
+      return this->get(keys..., compute_fxn);
     }
 };
 
@@ -357,7 +355,8 @@ class ConcurrentCacheWithSymmetry<
         "Types must be compatible to have symmetry in ConcurrentCacheWithSymmetry"
     );
 
-    value_type get_or_permute(
+    inline value_type
+    get_or_permute(
         key_types... keys,
         const std::function<value_type(
             const key_tuple&
@@ -374,7 +373,7 @@ class ConcurrentCacheWithSymmetry<
 
         // regular case
         typename super_t::future_map_accessor a;
-        if(cached_values_.insert(a, std::make_pair(k, typename super_t::future_value()))){
+        if(this->cached_values_.insert(a, std::make_pair(k, typename super_t::future_value()))){
           boost::promise<value_type> p;
           p.set_value(
               compute_fxn(k)
@@ -388,12 +387,12 @@ class ConcurrentCacheWithSymmetry<
 
         // permuted case
         typename super_t::future_map_accessor a_perm, a_canon;
-        if(cached_values_.insert(a_perm, std::make_pair(k, typename super_t::future_value()))){
+        if(this->cached_values_.insert(a_perm, std::make_pair(k, typename super_t::future_value()))){
 
           key_tuple k_canon = make_permuted_key_tuple(k);
 
           // Now see if we need to comptue the canonical ordered value
-          if(cached_values_.insert(a_canon, std::make_pair(k_canon, typename super_t::future_value()))){
+          if(this->cached_values_.insert(a_canon, std::make_pair(k_canon, typename super_t::future_value()))){
 
             boost::promise<value_type> p;
             p.set_value(
@@ -416,8 +415,10 @@ class ConcurrentCacheWithSymmetry<
       }
     }
 
-    key_tuple
-    inline make_permuted_key_tuple(const key_tuple& orig) {
+  private:
+
+    inline key_tuple
+    make_permuted_key_tuple(const key_tuple& orig) {
       return make_permuted_key_tuple_recursive(
           static_cast<typename key_tuple::inherited>(orig),
           orig, boost::mpl::int_<0>()
@@ -491,24 +492,7 @@ class ConcurrentCacheWithSymmetry<
       return nt;
     }
 
-  protected:
-
-    using super_t::cached_values_;
-
 };
-
-
-/**
- * A cache of objects that can be safely accessed concurrently by threads that share memory.
- */
-template <
-    typename val_type,
-    typename... key_types
-> using ConcurrentCache = ConcurrentCacheWithSymmetry<
-    val_type,
-    IdentityKeySymmetry<sizeof...(key_types)>,
-    key_types...
->;
 
 
 } // end namespace sc

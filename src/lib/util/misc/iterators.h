@@ -31,6 +31,9 @@
 #ifndef _util_misc_iterators_h
 #define _util_misc_iterators_h
 
+// Standard library includes
+#include <type_traits>
+
 // Boost includes
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/iterator/iterator_adaptor.hpp>
@@ -297,8 +300,8 @@ class threaded_iterator
 };
 
 template <typename Range>
-boost::iterator_range<threaded_iterator<typename iterable_iterator<const Range>::type>>
-thread_over_range(const Range& range, int ithr, int nthr)
+boost::iterator_range<threaded_iterator<typename iterable_iterator<Range>::type>>
+thread_over_range(Range&& range, int ithr, int nthr)
 {
   return boost::make_iterator_range(
       threaded_iterator<decltype(range.begin())>(range.begin(), range.end(), ithr, nthr),

@@ -5,7 +5,12 @@ include(AddLibrary)
 add_mpqc_object_library(scf
   clhf.cc
   clscf.cc
-  cadfclhf.cc
+  cadf/cadfclhf.cc
+  cadf/get_ints.cc
+  cadf/decomp.cc
+  cadf/coefficients.cc
+  cadf/compute_j.cc
+  cadf/compute_k.cc
   effh.cc
   fbclhf.cc
   hsoshf.cc

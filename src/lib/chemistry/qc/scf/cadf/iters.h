@@ -51,11 +51,10 @@
 
 // MPQC includes
 #include <util/misc/thread_timer.h>
+#include <util/misc/iterators.h>
 #include <chemistry/qc/scf/clhf.h>
 
-#define DEFAULT_TARGET_BLOCK_SIZE 100  // functions
-#define LINK_TIME_LIST_INSERTIONS 1
-#define LINK_SORTED_INSERTION 0
+#define DEFAULT_TARGET_BLOCK_SIZE 10000  // functions
 
 namespace sc {
 
@@ -1178,12 +1177,6 @@ class OrderedShellList {
     GaussianBasisSet* basis_ = 0;
     GaussianBasisSet* dfbasis_ = 0;
 
-    #if LINK_TIME_LIST_INSERTIONS
-    static std::atomic_uint_fast64_t insertion_time_nanos;
-    static std::atomic_uint_fast64_t n_insertions;
-    time_accumulator_factory<> insertion_timer{ insertion_time_nanos };
-    #endif
-
     explicit OrderedShellList(bool sort_by_value = true)
       : sort_by_value_(sort_by_value)
     { }
@@ -1202,10 +1195,6 @@ class OrderedShellList {
     }
 
     void insert(const ShellData& ish, double value) {
-      #if LINK_TIME_LIST_INSERTIONS
-      ++n_insertions;
-      auto timer = insertion_timer.create();
-      #endif
       //----------------------------------------//
       assert(basis_ == 0 || ish.basis == basis_);
       if(basis_ == 0) basis_ = ish.basis;
@@ -1299,11 +1288,7 @@ class OrderedShellList {
     void clear()
     {
       indices_.clear();
-      #if LINK_SORTED_INSERTION
-      index_ordered_.clear();
-      #else
       idx_set_.clear();
-      #endif
     }
 
 };
@@ -1342,6 +1327,6 @@ operator <<(std::ostream& out, const OrderedShellList& list) {
 
 } // end namespace sc
 
-#include <chemistry/qc/scf/cadf_iters_impl.h>
+#include "cadf_iters_impl.h"
 
 #endif /* _chemistry_qc_scf_cadf_iters_h */

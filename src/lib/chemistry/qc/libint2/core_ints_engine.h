@@ -56,20 +56,32 @@ namespace sc {
       template <typename Int>
       static Ref<Engine> instance(Int mmax) {
         default_engine_->lock_ptr();
-        if (default_engine_->max_m() < mmax)
-          default_engine_ = new Engine(mmax);
-        default_engine_->unlock_ptr();
-        // default_engine_ may change between unlock and copy, but since params are guaranteed to only "improve", this is OK
+        if (default_engine_->max_m() < mmax) {
+          Ref<Engine> new_default_engine = new Engine(mmax);
+          default_engine_->unlock_ptr();
+          // default_engine_ may change between unlock and assignment, but since params are guaranteed to only "improve",
+          // this is safe, although may cause duplicate work
+          default_engine_ = new_default_engine;
+        }
+        else
+          default_engine_->unlock_ptr();
+        // default_engine_ may change between unlock and copy, but since params are guaranteed to only "improve", this is safe ...
         return default_engine_;
       }
 
       template <typename Int, typename Real>
       static Ref<Engine> instance(Int mmax, Real prec) {
         default_engine_->lock_ptr();
-        if (default_engine_->max_m() < mmax || default_engine_->precision() > prec)
-          default_engine_ = new Engine(mmax, prec);
-        default_engine_->unlock_ptr();
-        // default_engine_ may change between unlock and copy, but since params are guaranteed to only "improve", this is OK
+        if (default_engine_->max_m() < mmax || default_engine_->precision() > prec) {
+          Ref<Engine> new_default_engine = new Engine(mmax, prec);
+          default_engine_->unlock_ptr();
+          // default_engine_ may change between unlock and assignment, but since params are guaranteed to only "improve",
+          // this is safe, although may cause duplicate work
+          default_engine_ = new_default_engine;
+        }
+        else
+          default_engine_->unlock_ptr();
+        // default_engine_ may change between unlock and assignment, but since params are guaranteed to only "improve",
         return default_engine_;
       }
 

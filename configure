@@ -23,11 +23,12 @@ Configuration:
   --help                  print this message
   --new-features          MPQC new features (-DMPQC_NEW_FEATURES=TRUE)
   --debug                 debug build (CMAKE_BUILD_TYPE=Debug)
+  --shared                build as shared libs (BUILD_SHARED_LIBS=ON)
   --prefix=               install prefix (CMAKE_INSTALL_PREFIX=)
   --lapack=               LAPACK libraries (LAPACK_LIBRARIES=)
   --integer8              assume integer*8 in fortran
   --mpicc=                MPI C compiler to deduce MPI environment (MPI_C_COMPILER=)
-  --libint=               TRUE/FALSE or Libint path
+  --libint=               TRUE/FALSE or installed Libint prefix path
   --boost=                Boost path
   --unittest              Will build the boost unit testing library. Requires 
                           boost be built by MPQC. (MPQC_UNITTEST=FALSE)
@@ -107,13 +108,14 @@ while test $# != 0; do
                    args="$args -DLAPACK_LIBRARIES=\"$lapack\"" ;;
   --integer8)      args="$args -DINTEGER8=TRUE" ;;
   --debug)         build="Debug" ;; #args="$args -DCMAKE_BUILD_TYPE=Debug" ;;
+  --shared)        args="$args -DBUILD_SHARED_LIBS=ON" ;;
   --search=*)      search="`arg \"$1\"`"
 		   args="$args -DCMAKE_PREFIX_PATH=\"$search\"" ;;
   --libint=*)      libint="`arg \"$1\"`"
                    args="$args -DLIBINT=\"$libint\"" ;;
   --mpicc=*)       args="$args -DMPI_C_COMPILER=`arg \"$1\"`" ;;
   --boost=*)       args="$args -DBOOST=`arg \"$1\"`" ;;
-  --unittest)   args="$args -DMPQC_UNITTEST=TRUE" ;;
+  --unittest)      args="$args -DMPQC_UNITTEST=TRUE" ;;
   --expert)        args="$args -DMPQC_EXPERT=TRUE" ;;
   --openmp)        args="$args -DMPQC_OPENMP=TRUE" ;;
   --python)        args="$args -DPYTHON=TRUE" ;;

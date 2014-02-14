@@ -1,11 +1,11 @@
-# Macro for adding all subdirecties of a given folder.
+# Macro for adding all subdirectories of a given folder.
 # result is a name you suply 
 # curdir is the current directory which often will be CMAKE_CURRENT_SOURCE_DIR
 MACRO(SUBDIRLIST result curdir)
   FILE(GLOB children ${curdir} *)
   SET(dirlist "")
   FOREACH(child ${children})
-    IF(IS_DIRECTORY ${child})
+    IF(IS_DIRECTORY ${child} AND EXISTS ${child}/CMakeLists.txt)
         SET(dirlist ${dirlist} ${child})
     ENDIF()
   ENDFOREACH()

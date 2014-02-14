@@ -38,10 +38,10 @@ namespace mpqc {
 
   // Gets the blocking to construct of TiledArray::TiledRange1
   template<std::size_t N, typename IntEngPool>
-  std::array<::TiledArray::TiledRange1, N> get_blocking(
+  std::array<TiledArray::TiledRange1, N> get_blocking(
       const IntEngPool &pool, const TRange1Gen &trange1gen) {
 
-    std::array<::TiledArray::TiledRange1, N> blocking;
+    std::array<TiledArray::TiledRange1, N> blocking;
 
     // Use our function to generate a TiledArray::TiledRange1
     // with the option for different TiledRange1s depending on the basis
@@ -73,7 +73,7 @@ namespace mpqc {
 
     // Get the array to initialize the TiledArray::TiledRange using the
     // the TiledArray::TiledRange1 generator function.
-    std::array<::TiledArray::TiledRange1, rank> blocking = get_blocking<rank>(
+    std::array<TiledArray::TiledRange1, rank> blocking = get_blocking<rank>(
         pool, trange1gen);
 
     // Construct the TiledArray::TiledRange object
@@ -104,7 +104,7 @@ namespace mpqc {
 
     // Get the array to initialize the TiledArray::TiledRange using the
     // TiledBasis
-    std::array<::TiledArray::TiledRange1, rank> blocking;
+    std::array<TiledArray::TiledRange1, rank> blocking;
     for (auto i = 0; i < rank; ++i) {
       blocking[i] = tbasis->trange1();
     }

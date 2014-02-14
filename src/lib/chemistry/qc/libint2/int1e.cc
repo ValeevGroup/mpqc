@@ -97,7 +97,7 @@ Int1eLibint2::Int1eLibint2(Integral *integral,
     if (ntypes_ > 1) efield_order = 1;
     if (ntypes_ > 3) efield_order = 2;
     const int mmax = bs1_->max_angular_momentum() + bs2_->max_angular_momentum() + order + efield_order;
-    Fm_Eval_ = new ::libint2::FmEval_Chebyshev3(mmax);
+    Fm_Eval_ = CoreIntsEngine<_FmEvalType>::instance(mmax);
     Fm_table_ = new double[mmax+1];
     indmax_ = (max_am+order)*(max_am+1+order)*(max_am+1+order)+1;
     // Allocate AI0
@@ -144,7 +144,6 @@ Int1eLibint2::~Int1eLibint2()
       free_box_(AIYZ_);
       free_box_(AIZZ_);
     }
-    delete Fm_Eval_;
     delete[] Fm_table_;
   }
   if (need_overlap_) {

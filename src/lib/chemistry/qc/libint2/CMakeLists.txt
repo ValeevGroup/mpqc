@@ -9,6 +9,7 @@ IF(HAVE_LIBINT2)
       comp_g12.cc
       comp_g12dkh.cc
       comp_g12nc.cc
+      core_ints_engine.cc
       #comp_grt.cc
       edipole.cc
       efield.cc

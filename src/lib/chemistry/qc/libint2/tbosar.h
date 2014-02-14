@@ -39,6 +39,7 @@
 #include <chemistry/qc/libint2/libint2_utils.h>
 #include <libint2/libint2.h>
 #include <libint2/boys.h>
+#include <chemistry/qc/libint2/core_ints_engine.h>
 
 #if LIBINT2_SUPPORT_ERI
 
@@ -53,11 +54,15 @@ namespace sc {
 
     template <>
     struct OSAR_CoreInts<TwoBodyOper::eri> {
-	// Line below isn't legal
-        //const static double small_T = 1E-15;       /*--- Use only one term in Taylor expansion of Fj(T) if T < small_T ---*/
-        ::libint2::FmEval_Chebyshev3 Fm_Eval_;
 
-        OSAR_CoreInts(unsigned int mmax, const Ref<IntParams>& params) :   Fm_Eval_(mmax) {}
+        //typedef FJT _FmEvalType; // Curt's Taylor code
+        typedef ::libint2::FmEval_Chebyshev3 _FmEvalType; // Frank's Chebyshev code, faster but slower startup
+        typedef CoreIntsEngine<_FmEvalType>::Engine FmEvalType;
+        Ref<FmEvalType> Fm_Eval_;
+
+        OSAR_CoreInts(unsigned int mmax, const Ref<IntParams>& params) :
+          Fm_Eval_(CoreIntsEngine<_FmEvalType>::instance(mmax)) {
+        }
 
         const double* eval(double* Fm_table, unsigned int mmax, double T, double rho = 0.0) const {
           static double oo2np1[] = {1.0,  1.0/3.0,  1.0/5.0,  1.0/7.0,  1.0/9.0,
@@ -69,13 +74,16 @@ namespace sc {
             1.0/61.0, 1.0/63.0, 1.0/65.0, 1.0/67.0, 1.0/69.0,
             1.0/71.0, 1.0/73.0, 1.0/75.0, 1.0/77.0, 1.0/79.0};
 	  
-	  const static double small_T = 1E-15;
+          const static double small_T = 1E-15;        /*--- Use only one term in Taylor expansion of Fj(T) if T < small_T ---*/
           if(T < small_T){
             return oo2np1;
           }
           else {
-            Fm_Eval_.eval(Fm_table, T, mmax);
+            // Cheb3
+            Fm_Eval_->eval(Fm_table, T, mmax);
             return Fm_table;
+            // old Taylor
+            //return Fm_Eval_->values(mmax, T);
           }
         }
     };

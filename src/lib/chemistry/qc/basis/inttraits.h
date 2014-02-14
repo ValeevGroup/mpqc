@@ -59,8 +59,8 @@ namespace sc {
     /// creates an Eval object
     static Ref<EvalType> eval(const Ref<Integral>& factory,
                               const Ref<ParamsType>& params) {
-      typedef typename detail::TwoBodyEvalCreator<NumCenters,Type>::value TwoBodyEvalCreator;
-      return TwoBodyEvalCreator::eval(factory,params);
+      typedef typename detail::OneBodyEvalCreator<NumCenters,Type>::value OneBodyEvalCreator;
+      return OneBodyEvalCreator::eval(factory,params);
     }
     /// maps index of the integral type within this set to TwoBodyOper::type
     static OneBodyOper::type intset(unsigned int t) {

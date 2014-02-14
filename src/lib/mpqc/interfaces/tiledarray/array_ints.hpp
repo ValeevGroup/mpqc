@@ -38,7 +38,7 @@ namespace mpqc {
 
   // Gets the blocking to construct of TiledArray::TiledRange1
   template<std::size_t N, typename IntEngPool>
-  std::array<::TiledArray::TiledRange1, N> get_blocking(
+  std::array<TiledArray::TiledRange1, N> get_blocking(
       const IntEngPool &pool, const TRange1Gen &trange1gen) {
 
     std::array<::TiledArray::TiledRange1, N> blocking;

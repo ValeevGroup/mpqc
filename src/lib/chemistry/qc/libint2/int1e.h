@@ -101,8 +101,8 @@ class Int1eLibint2: public RefCount {
     // Order = 0 => potential
     // Order = 1 => efield
     // Order = 2 => efield gradient
-    template <int Order = 0> void AI_OSrecurs_(double PA[3], double PB[3],
-                                               double PC[3], double gamma, int iang, int jang);
+    template <int Order> void AI_OSrecurs_(double PA[3], double PB[3],
+                                           double PC[3], double gamma, int iang, int jang);
     void OI_OSrecurs_(double **OIX, double **OIY, double **OIZ, double PA[3], double PB[3],
 		      double gamma, int lmaxi, int lmaxj);
     ::libint2::FmEval_Chebyshev3* Fm_Eval_;

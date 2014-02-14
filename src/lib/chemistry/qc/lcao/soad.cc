@@ -156,7 +156,7 @@ void sc::SuperpositionOfAtomicDensities::compute() {
       {
         Ref<AssignedKeyVal> akv = new AssignedKeyVal;
         akv->assign("wfn", Ref<DescribedClass>(minbasis_wfn));
-        akv->assign("ints_precision", 1e-4);
+        akv->assign("ints_precision", 1e-5);
         world = new WavefunctionWorld(akv);
       }
 

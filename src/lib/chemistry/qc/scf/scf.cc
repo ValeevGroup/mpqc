@@ -417,7 +417,22 @@ SCF::initial_vector()
     if (guess_wfn_.null()) {
       Ref<AssignedKeyVal> akv = new AssignedKeyVal;
       akv->assign("molecule", molecule().pointer());
-      akv->assign("basis", basis().pointer());
+
+      // small polarized basis should be enough for guess
+      // try it if at least 2 times smaller than the full basis
+      // use the full basis as backup
+      try {
+        akv->assign("name", "Def2-SV(P)");
+        Ref<GaussianBasisSet> guess_bs = new GaussianBasisSet(akv);
+        if (guess_bs->nbasis() < basis()->nbasis()/2)
+          akv->assign("basis", guess_bs.pointer());
+        else
+          akv->assign("basis", basis().pointer());
+      }
+      catch(...) {
+        akv->assign("basis", basis().pointer());
+      }
+
       try {
         guess_wfn_ = new SuperpositionOfAtomicDensities(Ref<KeyVal>(akv));
         //guess_wfn_ = new HCoreWfn(Ref<KeyVal>(akv));   not done because the "diagonalize-in-SO-basis" is not implemented

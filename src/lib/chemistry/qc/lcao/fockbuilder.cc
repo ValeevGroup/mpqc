@@ -1004,7 +1004,13 @@ namespace sc {
         ///////
         // compute 2-center fitting kernel_key
         ///////
-        RefSymmSCMatrix kernel = dfspace->coefs_nb()->kit()->symmmatrix(dfspace->dim());
+        Ref<SCMatrixKit> nbkit; // the nonblocked kit
+        {
+          nbkit = dfspace->coefs()->kit();
+          BlockedSCMatrixKit* bkit = dynamic_cast<BlockedSCMatrixKit*>(nbkit.pointer());
+          if (bkit) nbkit = bkit->subkit_lowest();
+        }
+        RefSymmSCMatrix kernel = nbkit->symmmatrix(dfspace->dim());
         {
           const std::string kernel_key = ParsedTwoBodyTwoCenterIntKey::key(dfspace->id(),
                                                                            dfspace->id(),

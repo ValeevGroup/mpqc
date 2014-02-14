@@ -41,6 +41,7 @@ class BlockedSCMatrix;
 class BlockedSymmSCMatrix;
 class BlockedDiagSCMatrix;
 
+/// BlockedSCMatrixKit is a SCMatrixKit that produces blocked matrices
 class BlockedSCMatrixKit: public SCMatrixKit {
   private:
     Ref<SCMatrixKit> subkit_;
@@ -53,7 +54,20 @@ class BlockedSCMatrixKit: public SCMatrixKit {
     DiagSCMatrix* diagmatrix(const RefSCDimension&);
     SCVector* vector(const RefSCDimension&);
 
+    /// the kit used to implement blocks of the matrices
     Ref<SCMatrixKit> subkit() { return subkit_; }
+
+    /// same as subkit, but recursive
+    Ref<SCMatrixKit> subkit_lowest() {
+      SCMatrixKit* subkit = subkit_.pointer();
+      BlockedSCMatrixKit* bsubkit = dynamic_cast<BlockedSCMatrixKit*>(subkit);
+      while (bsubkit) {
+        subkit = bsubkit->subkit().pointer();
+        bsubkit = dynamic_cast<BlockedSCMatrixKit*>(subkit);
+      }
+      return subkit;
+    }
+
 };
 
 

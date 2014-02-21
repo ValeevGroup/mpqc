@@ -52,7 +52,10 @@ CADFCLHF::compute_coefficients()
   /* Initialize coefficient memory                  {{{2 */ #if 2 //latex `\label{sc:coefmem}`
   // Now initialize the coefficient memory.
   // First, compute the amount of memory needed
+
   // Coefficients will be stored jbf <= ibf
+  // Update:  Now storing
+
   int ncoefs = 0;                                                                          //latex `\label{sc:coefcountbegin}`
   for(auto ibf : function_range(obs, dfbs_)){
     for(auto jbf : function_range(obs, dfbs_, 0, ibf)){
@@ -62,6 +65,7 @@ CADFCLHF::compute_coefficients()
       }
     }
   }                                                                                        //latex `\label{sc:coefcountend}`
+
   coefficients_data_ = allocate<double>(ncoefs);                                           //latex `\label{sc:coefalloc}`
   memset(coefficients_data_, 0, ncoefs * sizeof(double));
   double *spot = coefficients_data_;
@@ -80,6 +84,7 @@ CADFCLHF::compute_coefficients()
       coefs_.emplace(ij, std::make_pair(coefs_a, coefs_b));
     }
   }
+
   //----------------------------------------//
   // We can save a lot of mess by storing references
   //   to the jbf > ibf pairs for the ish == jsh cases only
@@ -96,10 +101,28 @@ CADFCLHF::compute_coefficients()
   }
   //----------------------------------------//
   // Now make the transposes, for more efficient use later
-  coefs_transpose_.resize(dfnbf);
-  for(auto Y : function_range(dfbs_)){
-    coefs_transpose_[Y].resize(obs->nbasis_on_center(Y.center), nbf);
+  coefs_transpose_blocked_.resize(natom);
+  coefs_transpose_.reserve(dfnbf);
+
+  for(int iatom = 0; iatom < natom; ++iatom){
+
+    const int atom_nbf = gbs_->nbasis_on_center(iatom);
+    coefs_transpose_blocked_[iatom].resize(
+        dfbs_->nbasis_on_center(iatom),
+        atom_nbf * nbf
+    );
+
+    auto& cblock = coefs_transpose_blocked_[iatom];
+    for(auto&& X : iter_functions_on_center(dfbs_, iatom)) {
+      double* offset = cblock.data() + X.bfoff_in_atom * nbf * atom_nbf;
+      coefs_transpose_.emplace_back(
+          offset,
+          atom_nbf, nbf
+      );
+    }
+
   }
+
   /********************************************************/ #endif //2}}} //latex `\label{sc:coefmemend}`
   /*-----------------------------------------------------*/
   /*****************************************************************************************/ #endif //1}}}
@@ -166,7 +189,7 @@ CADFCLHF::compute_coefficients()
               Eigen::VectorXd Ctmp(dfnbfAB);
               Ctmp = decomp->solve(ij_M_X.row(ijbf).transpose());                         //latex `\label{sc:coefsolve}`
               assert((coefs_.find(mu_nu) != coefs_.end())
-                  || ((cout << "couldn't find coefficients for " << mu << ", " << nu << endl), false));
+                  || ((std::cout << "couldn't find coefficients for " << mu << ", " << nu << std::endl), false));
               *(coefs_[mu_nu].first) = Ctmp.head(ish.atom_dfnbf);
               if(ish.center != jsh.center){
                 *(coefs_[mu_nu].second) = Ctmp.tail(jsh.atom_dfnbf);
@@ -187,12 +210,12 @@ CADFCLHF::compute_coefficients()
   scf_grp_->sum(coefficients_data_, ncoefs);                                               //latex `\label{sc:coefsum}`
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
-  /* Store the transpose coefficients                     		                        {{{1 */ #if 1 //latex `\label{sc:coeftrans}`
+  /* Store the transpose and blocked coefficients          		                        {{{1 */ #if 1 //latex `\label{sc:coeftrans}`
   //---------------------------------------------------------------------------------------//
-  for(auto Y : function_range(dfbs_)){
-    for(auto ish : iter_shells_on_center(obs, Y.center)){
-      for(auto mu : function_range(ish)){
-        for(auto nu : function_range(obs)){
+  for(auto&& Y : function_range(dfbs_)){
+    for(auto&& ish : iter_shells_on_center(obs, Y.center)){
+      for(auto&& mu : function_range(ish)){
+        for(auto&& nu : function_range(obs)){
           //----------------------------------------//
           if(nu <= mu){
             auto& C = *(coefs_[IntPair(mu, nu)].first);
@@ -213,6 +236,66 @@ CADFCLHF::compute_coefficients()
         }
       }
     }
+  }
+
+  coef_block_offsets_.resize(natom);
+  for(int iatom = 0; iatom < natom; ++iatom) {
+
+    const int atom_nbf = gbs_->nbasis_on_center(iatom);
+    const int atom_dfnbf = dfbs_->nbasis_on_center(iatom);
+
+    // First, figure out the number of columns in the matrix
+    int ncol = 0;
+    coef_block_offsets_[iatom].resize(natom);
+    int current_atom = -1;
+    for(auto&& jsh : shell_range(gbs_, dfbs_)) {
+      if(current_atom != jsh.center) {
+        current_atom = jsh.center;
+        coef_block_offsets_[iatom][current_atom] = ncol;
+      }
+      ncol += jsh.nbf * jsh.atom_dfnbf;
+      if(jsh.center != iatom) {
+        ncol += jsh.nbf * atom_dfnbf;
+      }
+    }
+
+    coefs_blocked_.emplace_back(atom_nbf, ncol);
+    auto& cblock = coefs_blocked_.back();
+    cblock = RowMatrix::Constant(atom_nbf, ncol, -999);
+
+    // Now transfer the coefficients
+    for(auto&& mu : iter_functions_on_center(gbs_, iatom, dfbs_)) {
+      int offset = 0;
+      for(auto&& rho : function_range(gbs_, dfbs_)) {
+
+        if(rho <= mu) {
+          auto& cpair = coefs_[{mu, rho}];
+          cblock.row(mu.bfoff_in_atom).segment(offset, mu.atom_dfnbf) = *(cpair.first);
+          offset += mu.atom_dfnbf;
+          if(mu.center != rho.center) {
+            cblock.row(mu.bfoff_in_atom).segment(offset, rho.atom_dfnbf) = *(cpair.second);
+            offset += rho.atom_dfnbf;
+          }
+        }
+        else{
+          auto& cpair = coefs_[{rho, mu}];
+          if(mu.center == rho.center) {
+            cblock.row(mu.bfoff_in_atom).segment(offset, mu.atom_dfnbf) = *(cpair.first);
+            offset += mu.atom_dfnbf;
+          }
+          else {
+            cblock.row(mu.bfoff_in_atom).segment(offset, mu.atom_dfnbf) = *(cpair.second);
+            offset += mu.atom_dfnbf;
+            cblock.row(mu.bfoff_in_atom).segment(offset, rho.atom_dfnbf) = *(cpair.first);
+            offset += rho.atom_dfnbf;
+          }
+        }
+
+      }
+    }
+
+
+
   }
   /*****************************************************************************************/ #endif //1}}} //latex `\label{sc:coeftransend}`
   /*=======================================================================================*/

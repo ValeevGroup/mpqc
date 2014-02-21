@@ -30,6 +30,57 @@
 #ifndef _chemistry_qc_scf_cadfclhf_h
 #define _chemistry_qc_scf_cadfclhf_h
 
+#define M_DUMP(M) std::cout << #M << " is " << M.rows() << " x " << M.cols() << std::endl;
+
+#define M_ROW_ASSERT(M1, M2) \
+  if(M1.rows() != M2.rows()) { \
+    boost::lock_guard<boost::mutex> _tmp(debug_print_mutex); \
+    cout << "assertion failed.  Rows not equal:  M1 => " << M1.rows() << " x " << M1.cols() << ", M2 => " << M2.rows() << " x " << M2.cols() << endl; \
+    assert(false); \
+  }
+#define M_COL_ASSERT(M1, M2) \
+  if(M1.cols() != M2.cols()) { \
+    boost::lock_guard<boost::mutex> _tmp(debug_print_mutex); \
+    cout << "assertion failed. Cols not equal:  M1 => " << M1.rows() << " x " << M1.cols() << ", M2 => " << M2.rows() << " x " << M2.cols() << endl; \
+    assert(false); \
+  }
+
+#define M_PROD_CHECK(R, M1, M2) \
+  if(R.rows() != M1.rows() || R.cols() != M2.cols() || M1.cols() != M2.rows()) { \
+    boost::lock_guard<boost::mutex> _tmp(debug_print_mutex); \
+    cout << "can't perform multiplication: (" << R.rows() << " x " << R.cols() << ") = (" << M1.rows() << " x " << M1.cols() << ") * (" << M2.rows() << " x " << M2.cols() << ")" << endl; \
+    assert(false); \
+  }
+
+#define M_DOT_CHECK(M1, M2) \
+  if(1 != M1.rows() || 1 != M2.cols() || M1.cols() != M2.rows()) { \
+    boost::lock_guard<boost::mutex> _tmp(debug_print_mutex); \
+    cout << "can't perform multiplication: (" << 1 << " x " << 1 << ") = (" << M1.rows() << " x " << M1.cols() << ") * (" << M2.rows() << " x " << M2.cols() << ")" << endl; \
+    assert(false); \
+  }
+
+#define DECOMP_PRINT(D, M) \
+  {\
+    boost::lock_guard<boost::mutex> _tmp(debug_print_mutex); \
+    cout << "Decomposition:  " << D.matrixQR().rows() << " x " << D.matrixQR().cols() << ", M => " << M.rows() << " x " << M.cols() << endl; \
+  }
+
+#define M_EQ_ASSERT(M1, M2) M_ROW_ASSERT(M1, M2); M_COL_ASSERT(M1, M2);
+
+#define M_BLOCK_ASSERT(M, b1a, b1b, b2a, b2b) \
+  if(b1a < 0) { \
+    std::cout << "assertion 1 failed.  data: " << "(" << M.rows() << ", " << M.cols() << ", " << b1a << ", " << b1b << ", " << b2a << ", " << b2b << ")" << std::endl; \
+  } \
+  else if(b1b < 0) { \
+    std::cout << "assertion 2 failed.  data: " << "(" << M.rows() << ", " << M.cols() << ", " << b1a << ", " << b1b << ", " << b2a << ", " << b2b << ")" << std::endl; \
+  } \
+  else if(b1a > M.rows() - b2a) { \
+    std::cout << "assertion 3 failed.  data: " << "(" << M.rows() << ", " << M.cols() << ", " << b1a << ", " << b1b << ", " << b2a << ", " << b2b << ")" << std::endl; \
+  } \
+  else if(b1b > M.cols() - b2b) { \
+    std::cout << "assertion 4 failed.  data: " << "(" << M.rows() << ", " << M.cols() << ", " << b1a << ", " << b1b << ", " << b2a << ", " << b2b << ")" << std::endl; \
+  }
+
 // Standard library includes
 #include <atomic>
 #include <future>
@@ -102,6 +153,8 @@ class CADFCLHF: public CLHF {
 
     typedef std::map<std::pair<int, int>, std::pair<CoefContainer, CoefContainer>> CoefMap;
     typedef Eigen::HouseholderQR<Eigen::MatrixXd> Decomposition;
+    typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> RowMatrix;
+    typedef Eigen::Map<RowMatrix, Eigen::Unaligned, Eigen::OuterStride<>> StridedRowMap;
 
 #if USE_INTEGRAL_CACHE
 
@@ -527,9 +580,15 @@ class CADFCLHF: public CLHF {
 
     CoefMap coefs_;
 
+    // for each atom, matrix of mu_a in atom, rho_b, X(ab)
+    std::vector<RowMatrix> coefs_blocked_;
+    std::vector<std::vector<int>> coef_block_offsets_;
+
     std::vector<std::vector<ShellIndexWithValue>> Cmaxes_;
 
-    std::vector<Eigen::MatrixXd> coefs_transpose_;
+    std::vector<RowMatrix> coefs_transpose_blocked_;
+    //std::vector<std::vector<StridedRowMap>> coefs_t_shell_blocked_;
+    std::vector<Eigen::Map<RowMatrix>> coefs_transpose_;
 
 #if USE_INTEGRAL_CACHE
     shared_ptr<TwoCenterIntCache> ints2_;

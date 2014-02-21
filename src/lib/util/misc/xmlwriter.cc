@@ -231,8 +231,12 @@ XMLWriter::write_to_xml(XMLWritable& obj, ptree& parent) const
   return obj.write_xml(parent, *this);
 }
 
+template<>
 ptree&
-XMLWriter::write_to_xml(const Eigen::VectorXd& obj, ptree& parent) const
+XMLWriter::write_to_xml(
+    const Eigen::MatrixBase<Eigen::VectorXd>& obj,
+    ptree& parent
+) const
 {
   ptree& child = parent.add_child("EigenVectorXd", ptree());
   const int n = obj.innerSize();
@@ -249,8 +253,12 @@ XMLWriter::write_to_xml(const Eigen::VectorXd& obj, ptree& parent) const
   return child;
 }
 
+template<>
 ptree&
-XMLWriter::write_to_xml(const Eigen::MatrixXd& obj, ptree& parent) const
+XMLWriter::write_to_xml(
+    const Eigen::MatrixBase<Eigen::MatrixXd>& obj,
+    ptree& parent
+) const
 {
   ptree& child = parent.add_child("EigenMatrixXd", ptree());
   const int nrow = obj.rows();

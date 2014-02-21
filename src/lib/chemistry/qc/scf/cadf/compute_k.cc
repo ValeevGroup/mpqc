@@ -70,6 +70,19 @@ CADFCLHF::compute_K()
   Eigen::MatrixXd Kt(nbf, nbf);
   Kt = Eigen::MatrixXd::Zero(nbf, nbf);
   //----------------------------------------//
+  // Compute all of the integrals outside of
+  //   the thread loop.  This will need to be
+  //   rethought in HUGE cases, but for now
+  //   it is not a limiting factor
+  timer.enter("compute (X|Y)");
+  auto g2_full_ptr = ints_to_eigen_threaded(
+      ShellBlockData<>(dfbs_),
+      ShellBlockData<>(dfbs_),
+      eris_2c_, coulomb_oper_type_
+  );
+  const auto& g2 = *g2_full_ptr;
+  timer.exit();
+  //----------------------------------------//
   // reset the iteration over local pairs
   local_pairs_spot_ = 0;
   //----------------------------------------//
@@ -162,7 +175,7 @@ CADFCLHF::compute_K()
     do_threaded(nthread, [&](int ithr){
 
       for(int jsh_index = ithr; jsh_index < obs->nshell(); jsh_index += nthread) {
-        ShellData jsh(jsh_index, obs);
+        ShellData jsh(jsh_index, obs, dfbs_);
         for(auto&& Xsh : L_DC[jsh]) {
           const double pf = Xsh.value;                                                       //latex `\label{sc:link:pf}`
           const double eps_prime = epsilon / pf;
@@ -238,7 +251,6 @@ CADFCLHF::compute_K()
     L_3_key_iter.advance(scf_grp_->me());                                                    //latex `\label{sc:k3b:iterset}`
     const int n_node = scf_grp_->n();
     boost::thread_group compute_threads;
-    //----------------------------------------//
     // reset the iteration over local pairs
     local_pairs_spot_ = 0;
     // Loop over number of threads
@@ -287,6 +299,8 @@ CADFCLHF::compute_K()
           mt_timer.enter("compute B", ithr);
           auto ints_timer = mt_timer.get_subtimer("compute ints", ithr);
           auto contract_timer = mt_timer.get_subtimer("contract", ithr);
+          auto k2_part_timer = mt_timer.get_subtimer("k2_part same", ithr);
+          auto k2_part_diff_timer = mt_timer.get_subtimer("k2_part diff", ithr);
 
           ColMatrix B_ish(ish.nbf * Xblk.nbf, nbf);
           B_ish = ColMatrix::Zero(ish.nbf * Xblk.nbf, nbf);
@@ -370,7 +384,7 @@ CADFCLHF::compute_K()
               } // end if linK_block_rho_                                                    //latex `\label{sc:k3b:blk_rho:end}`
               else { // linK_block_rho_ == false                                             //latex `\label{sc:k3b:noblk}`
 
-                for(const auto&& jblk : shell_block_range(L_3[{ish, Xsh}], Contiguous)){             //latex `\label{sc:k3b:noblk:loop}`
+                for(const auto&& jblk : shell_block_range(L_3[{ish, Xsh}], Contiguous|SameCenter)){             //latex `\label{sc:k3b:noblk:loop}`
                   TimerHolder subtimer(ints_timer);
 
                   auto g3_ptr = ints_to_eigen(
@@ -378,7 +392,126 @@ CADFCLHF::compute_K()
                       eris_3c_[ithr], coulomb_oper_type_
                   );
                   auto& g3_in = *g3_ptr;
+
+                  // Two-body part
+                  // TODO This breaks integral caching (if I ever use it again)
+
+                  int subblock_offset = 0;
+
+                  // TODO we can actually remove the SameCenter requirement and iterate over SameCenter subblocks of jblk
+                  subtimer.change(k2_part_timer);
+                  //for(const auto&& jsh : shell_range(jblk)) {
+
+                    int inner_size = ish.atom_dfnbf;
+                    if(ish.center != jblk.center) {
+                      inner_size += jblk.atom_dfnbf;
+                    }
+
+                    //RowMatrix C_test(jsh.nbf*ish.nbf, inner_size);
+
+                    //assert(ish.atom_dfnbf >= 0);
+                    //assert(jsh.atom_dfnbf >= 0);
+                    //for(auto mu : function_range(ish)) {
+                    //  for(auto rho : function_range(jsh)) {
+                    //    for(auto Y : iter_functions_on_center(dfbs_, jsh.center)) {
+                    //      C_test(rho.bfoff_in_shell*ish.nbf + mu.bfoff_in_shell, Y.bfoff_in_atom) =
+                    //          coefs_transpose_[Y](rho.bfoff_in_atom, mu);
+                    //    }
+                    //    if(ish.center != jsh.center) {
+                    //      for(auto Y : iter_functions_on_center(dfbs_, ish.center)) {
+                    //        C_test(
+                    //            rho.bfoff_in_shell*ish.nbf + mu.bfoff_in_shell,
+                    //            jsh.atom_dfnbf + Y.bfoff_in_atom
+                    //        ) = coefs_transpose_[Y](mu.bfoff_in_atom, rho);
+                    //      }
+                    //    }
+                    //  }
+                    //}
+
+                    const int tot_cols = coefs_blocked_[jblk.center].cols();
+                    const int col_offset = coef_block_offsets_[jblk.center][ish.center]
+                        + ish.bfoff_in_atom*inner_size;
+                    double* data_start = coefs_blocked_[jblk.center].data() +
+                        jblk.bfoff_in_atom * tot_cols + col_offset;
+
+                    StridedRowMap Ctmp(data_start, jblk.nbf, ish.nbf*inner_size,
+                        Eigen::OuterStride<>(tot_cols)
+                    );
+
+                    RowMatrix C(Ctmp.nestByValue());
+                    //RowMatrix C(jsh.nbf * ish.nbf, inner_size);
+                    //C = Ctmp;
+                    C.resize(jblk.nbf*ish.nbf, inner_size);
+                    //for(auto&& rho : function_range(jsh)) {
+                    //  C.middleRows(rho.bfoff_in_shell*ish.nbf, ish.nbf) =
+                    //      Ctmp.row(rho.bfoff_in_shell).segment(mu.bfoff_in_shell*inner_size, inner_size);
+                    //  for(auto&& mu : function_range(ish)) {
+                    //    C.row(rho.bfoff_in_shell*ish.nbf + mu.bfoff_in_shell) =
+                    //        Ctmp.row(rho.bfoff_in_shell).segment(mu.bfoff_in_shell*inner_size, inner_size);
+                    //  }
+                    //}
+
+
+
+                    //if(xml_debug_) {
+                    //  write_as_xml("c_part",
+                    //      C, std::map<std::string, int>{
+                    //    {"ish", int(ish)}, {"jsh", int(jsh)}, {"Xsh", int(Xsh)}
+                    //  });
+                    //  write_as_xml("c_test",
+                    //      C_test, std::map<std::string, int>{
+                    //    {"ish", int(ish)}, {"jsh", int(jsh)}, {"Xsh", int(Xsh)}
+                    //  });
+                    //}
+
+                    g3_in.middleRows(subblock_offset*ish.nbf, jblk.nbf*ish.nbf) -= 0.5
+                        * C.rightCols(ish.atom_dfnbf) * g2.block(
+                            ish.atom_dfbfoff, Xsh.bfoff,
+                            ish.atom_dfnbf, Xsh.nbf
+                    );
+                    if(ish.center != jblk.center) {
+                      g3_in.middleRows(subblock_offset*ish.nbf, jblk.nbf*ish.nbf) -= 0.5
+                          * C.leftCols(jblk.atom_dfnbf) * g2.block(
+                              jblk.atom_dfbfoff, Xsh.bfoff,
+                              jblk.atom_dfnbf, Xsh.nbf
+                      );
+                    }
+
+                  //  subblock_offset += jsh.nbf;
+
+                  //}
+
+                  //subtimer.change(k2_part_diff_timer);
+                  //for(const auto&& jsh : shell_range(jblk)) {
+                  //  if(ish.center != jsh.center) {
+                  //    for(const auto&& rho : function_range(jsh)) {
+                  //      g3_in.middleRows(
+                  //          (block_offset + rho.bfoff_in_shell) * ish.nbf,
+                  //          ish.nbf
+                  //      ) -= 0.5 * coefs_transpose_blocked_[jsh.center].middleCols(
+                  //            rho.bfoff_in_atom*nbf + ish.bfoff, ish.nbf
+                  //        ).transpose() * g2.block(
+                  //            jsh.atom_dfbfoff, Xsh.bfoff,
+                  //            jsh.atom_dfnbf, Xsh.nbf
+                  //        );
+                  //    }
+                  //  }
+                  //  block_offset += jsh.nbf;
+                  //}
+
                   Eigen::Map<ThreeCenterIntContainer> g3(g3_in.data(), jblk.nbf, ish.nbf*Xsh.nbf);
+
+                  //subtimer.change(k2_part_timer);
+                  //for(const auto&& mu : function_range(ish)) {
+                  //  g3.middleCols(mu.bfoff_in_shell*Xsh.nbf, Xsh.nbf) -= 0.5
+                  //    * coefs_transpose_blocked_[ish.center].middleCols(
+                  //        mu.bfoff_in_atom*nbf + jblk.bfoff, jblk.nbf
+                  //    ).transpose() * g2.block(
+                  //        ish.atom_dfbfoff, Xsh.bfoff,
+                  //        ish.atom_dfnbf, Xsh.nbf
+                  //  );
+                  //}
+
 
                   if(print_screening_stats_ > 2) {
                     mt_timer.enter("count underestimated ints", ithr);
@@ -465,7 +598,7 @@ CADFCLHF::compute_K()
           const int obs_atom_bfoff = obs->shell_to_function(obs->shell_on_center(Xblk.center, 0));
           const int obs_atom_nbf = obs->nbasis_on_center(Xblk.center);
           for(auto&& X : function_range(Xblk)) {
-            Eigen::MatrixXd& C_X = coefs_transpose_[X];
+            const auto& C_X = coefs_transpose_[X];
             for(auto&& mu : function_range(ish)) {
 
               // B_mus[mu.bfoff_in_shell] is (nbf x Ysh.nbf)
@@ -504,6 +637,7 @@ CADFCLHF::compute_K()
   /*****************************************************************************************/ #endif //1}}} //latex `\label{sc:k3b:end}`
   /*=======================================================================================*/
   /* Loop over local shell pairs and compute two body part 		                        {{{1 */ #if 1 // begin fold
+  if((not do_linK_) or linK_block_rho_)
   {
     Timer timer("two body contributions");
     boost::mutex tmp_mutex, L_3_mutex;
@@ -511,18 +645,6 @@ CADFCLHF::compute_K()
     L_3_key_iter.advance(scf_grp_->me());
     const int n_node = scf_grp_->n();
     boost::thread_group compute_threads;
-    //----------------------------------------//
-    // Compute all of the integrals outside of
-    //   the thread loop.  This will need to be
-    //   rethought in HUGE cases, but for now
-    //   it is not a limiting factor
-    timer.enter("compute (X|Y)");
-    auto g2_full_ptr = ints_to_eigen_threaded(
-        ShellBlockData<>(dfbs_),
-        ShellBlockData<>(dfbs_),
-        eris_2c_, coulomb_oper_type_
-    );
-    timer.exit();
     //----------------------------------------//
     // reset the iteration over local pairs
     local_pairs_spot_ = 0;
@@ -538,35 +660,6 @@ CADFCLHF::compute_K()
         ShellData ish;
         ShellBlockData<> Yblk;
         //----------------------------------------//
-        //auto get_ish_Xblk_3 = [&]() -> bool {
-        //  if(do_linK_) {
-        //    boost::lock_guard<boost::mutex> lg(L_3_mutex);
-        //    if(L_3_key_iter == L_3.end()) {
-        //      return false;
-        //    }
-        //    else {
-        //      auto& pair = L_3_key_iter->first;
-        //      L_3_key_iter.advance(n_node);
-        //      ish = ShellData(pair.first, gbs_, dfbs_);
-        //      Yblk = ShellBlockData<>(ShellData(pair.second, dfbs_, gbs_));
-        //      return true;
-        //    }
-        //  }
-        //  else {
-        //    int spot = local_pairs_spot_++;
-        //    if(spot < local_pairs_k_[SignificantPairs].size()){
-        //      auto& sig_pair = local_pairs_k_[SignificantPairs][spot];
-        //      ish = ShellData(sig_pair.first, gbs_, dfbs_);
-        //      Yblk = sig_pair.second;
-        //      return true;
-        //    }
-        //    else{
-        //      return false;
-        //    }
-        //  }
-        //};
-
-        //while(get_ish_Xblk_3()) {
         while(get_ish_Xblk_pair(ish, Yblk, SignificantPairs)) {
 
           mt_timer.enter("compute Ct", ithr);
@@ -650,7 +743,7 @@ CADFCLHF::compute_K()
           //----------------------------------------//
           mt_timer.change("K contribution", ithr);
           for(auto&& Y : function_range(Yblk)) {
-            Eigen::MatrixXd& C_Y = coefs_transpose_[Y];
+            const auto& C_Y = coefs_transpose_[Y];
             const int obs_atom_bfoff = obs->shell_to_function(obs->shell_on_center(Y.center, 0));
             const int obs_atom_nbf = obs->nbasis_on_center(Y.center);
             for(auto&& mu : function_range(ish)) {

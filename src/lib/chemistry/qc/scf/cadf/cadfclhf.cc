@@ -67,60 +67,6 @@ static boost::mutex debug_print_mutex;
 ////////////////////////////////////////////////////////////////////////////////
 // Debugging asserts and outputs
 
-#define M_DUMP(M) std::cout << #M << " is " << M.rows() << " x " << M.cols() << std::endl;
-
-#define M_ROW_ASSERT(M1, M2) \
-  if(M1.rows() != M2.rows()) { \
-    boost::lock_guard<boost::mutex> _tmp(debug_print_mutex); \
-    cout << "assertion failed.  Rows not equal:  M1 => " << M1.rows() << " x " << M1.cols() << ", M2 => " << M2.rows() << " x " << M2.cols() << endl; \
-    assert(false); \
-  }
-#define M_COL_ASSERT(M1, M2) \
-  if(M1.cols() != M2.cols()) { \
-    boost::lock_guard<boost::mutex> _tmp(debug_print_mutex); \
-    cout << "assertion failed. Cols not equal:  M1 => " << M1.rows() << " x " << M1.cols() << ", M2 => " << M2.rows() << " x " << M2.cols() << endl; \
-    assert(false); \
-  }
-
-#define M_PROD_CHECK(R, M1, M2) \
-  if(R.rows() != M1.rows() || R.cols() != M2.cols() || M1.cols() != M2.rows()) { \
-    boost::lock_guard<boost::mutex> _tmp(debug_print_mutex); \
-    cout << "can't perform multiplication: (" << R.rows() << " x " << R.cols() << ") = (" << M1.rows() << " x " << M1.cols() << ") * (" << M2.rows() << " x " << M2.cols() << ")" << endl; \
-    assert(false); \
-  }
-
-#define M_DOT_CHECK(M1, M2) \
-  if(1 != M1.rows() || 1 != M2.cols() || M1.cols() != M2.rows()) { \
-    boost::lock_guard<boost::mutex> _tmp(debug_print_mutex); \
-    cout << "can't perform multiplication: (" << 1 << " x " << 1 << ") = (" << M1.rows() << " x " << M1.cols() << ") * (" << M2.rows() << " x " << M2.cols() << ")" << endl; \
-    assert(false); \
-  }
-
-#define DECOMP_PRINT(D, M) \
-  {\
-    boost::lock_guard<boost::mutex> _tmp(debug_print_mutex); \
-    cout << "Decomposition:  " << D.matrixQR().rows() << " x " << D.matrixQR().cols() << ", M => " << M.rows() << " x " << M.cols() << endl; \
-  }
-
-#define M_EQ_ASSERT(M1, M2) M_ROW_ASSERT(M1, M2); M_COL_ASSERT(M1, M2);
-
-#define M_BLOCK_ASSERT(M, b1a, b1b, b2a, b2b) \
-  if(b1a < 0) { \
-    boost::lock_guard<boost::mutex> _tmp(debug_print_mutex); \
-    cout << "assertion 1 failed.  data: " << "(" << M.rows() << ", " << M.cols() << ", " << b1a << ", " << b1b << ", " << b2a << ", " << b2b << ")" << endl; \
-  } \
-  else if(b1b < 0) { \
-    boost::lock_guard<boost::mutex> _tmp(debug_print_mutex); \
-    cout << "assertion 2 failed.  data: " << "(" << M.rows() << ", " << M.cols() << ", " << b1a << ", " << b1b << ", " << b2a << ", " << b2b << ")" << endl; \
-  } \
-  else if(b1a > M.rows() - b2a) { \
-    boost::lock_guard<boost::mutex> _tmp(debug_print_mutex); \
-    cout << "assertion 3 failed.  data: " << "(" << M.rows() << ", " << M.cols() << ", " << b1a << ", " << b1b << ", " << b2a << ", " << b2b << ")" << endl; \
-  } \
-  else if(b1b > M.cols() - b2b) { \
-    boost::lock_guard<boost::mutex> _tmp(debug_print_mutex); \
-    cout << "assertion 4 failed.  data: " << "(" << M.rows() << ", " << M.cols() << ", " << b1a << ", " << b1b << ", " << b2a << ", " << b2b << ")" << endl; \
-  }
 
 ////////////////////////////////////////////////////////////////////////////////
 

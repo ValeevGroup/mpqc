@@ -298,24 +298,43 @@ namespace sc {
       //----------------------------------------------------------------------------//
       // Non-intrusive interface for some types
 
-      ptree& write_to_xml(const Eigen::VectorXd& obj, ptree& parent) const;
-      ptree& write_to_xml(const Eigen::MatrixXd& obj, ptree& parent) const;
       ptree& write_to_xml(const SCVector3& obj, ptree& parent) const;
       ptree& write_to_xml(const SCVector& obj, ptree& parent) const;
       ptree& write_to_xml(const Grid& obj, ptree& parent) const;
       ptree& write_to_xml(const Units& obj, ptree& parent) const;
+
+      template<typename Derived>
+      ptree&
+      write_to_xml(const Eigen::MatrixBase<Derived>& obj, ptree& parent) const
+      {
+        typedef Eigen::MatrixBase<Derived> MatrixType;
+
+        ptree& child = parent.add_child("EigenDerived", ptree());
+        const int ninner = obj.innerSize();
+        const int nouter = obj.outerSize();
+        child.put("<xmlattr>.ninner", ninner);
+        child.put("<xmlattr>.nouter", nouter);
+        child.put("<xmlattr>.row_major", int(MatrixType::IsRowMajor));
+        child.put("<xmlattr>.is_vector", int(MatrixType::IsVectorAtCompileTime));
+        // Just iterate over everything so we don't have to think about strides and such
+        double* data = allocate<double>(nouter*ninner);
+        for(int i = 0; i < nouter; ++i){
+          for(int j = 0; j < ninner; ++j){
+            data[i*ninner + j] = obj(i, j);
+          }
+        }
+        // Note: the XMLDataStream created by put_binary_data now owns
+        //   the pointer 'data'
+        this->put_binary_data(child.add_child("data", ptree()), data, nouter*ninner);
+        return child;
+      }
+
 
       template<typename T>
       inline typename boost::enable_if<boost::is_base_of<RefCount, T>, ptree&>::type
       write_to_xml(const Ref<T>& obj, ptree& parent) const {
         return write_to_xml_impl(obj, parent, boost::is_base_of<XMLWritable, T>());
       }
-
-      /*template<typename T>
-      inline typename boost::enable_if<boost::mpl::not_<boost::is_base_of<RefCount, T>>, ptree&>::type
-      write_to_xml(T obj, ptree& parent) const {
-        return write_to_xml(obj, parent);
-      }*/
 
       template<typename T>
       inline ptree&
@@ -636,6 +655,18 @@ namespace sc {
 
     }
   };
+
+  template<>
+  ptree& XMLWriter::write_to_xml<Eigen::VectorXd>(
+      const Eigen::MatrixBase<Eigen::VectorXd>& obj,
+      ptree& parent
+  ) const;
+
+  template<>
+  ptree& XMLWriter::write_to_xml<Eigen::MatrixXd>(
+      const Eigen::MatrixBase<Eigen::MatrixXd>& obj,
+      ptree& parent
+  ) const;
 
 } // end namespace sc
 

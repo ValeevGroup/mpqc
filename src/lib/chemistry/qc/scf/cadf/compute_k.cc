@@ -400,118 +400,39 @@ CADFCLHF::compute_K()
 
                   // TODO we can actually remove the SameCenter requirement and iterate over SameCenter subblocks of jblk
                   subtimer.change(k2_part_timer);
-                  //for(const auto&& jsh : shell_range(jblk)) {
 
-                    int inner_size = ish.atom_dfnbf;
-                    if(ish.center != jblk.center) {
-                      inner_size += jblk.atom_dfnbf;
-                    }
+                  int inner_size = ish.atom_dfnbf;
+                  if(ish.center != jblk.center) {
+                    inner_size += jblk.atom_dfnbf;
+                  }
 
-                    //RowMatrix C_test(jsh.nbf*ish.nbf, inner_size);
+                  const int tot_cols = coefs_blocked_[jblk.center].cols();
+                  const int col_offset = coef_block_offsets_[jblk.center][ish.center]
+                      + ish.bfoff_in_atom*inner_size;
+                  double* data_start = coefs_blocked_[jblk.center].data() +
+                      jblk.bfoff_in_atom * tot_cols + col_offset;
 
-                    //assert(ish.atom_dfnbf >= 0);
-                    //assert(jsh.atom_dfnbf >= 0);
-                    //for(auto mu : function_range(ish)) {
-                    //  for(auto rho : function_range(jsh)) {
-                    //    for(auto Y : iter_functions_on_center(dfbs_, jsh.center)) {
-                    //      C_test(rho.bfoff_in_shell*ish.nbf + mu.bfoff_in_shell, Y.bfoff_in_atom) =
-                    //          coefs_transpose_[Y](rho.bfoff_in_atom, mu);
-                    //    }
-                    //    if(ish.center != jsh.center) {
-                    //      for(auto Y : iter_functions_on_center(dfbs_, ish.center)) {
-                    //        C_test(
-                    //            rho.bfoff_in_shell*ish.nbf + mu.bfoff_in_shell,
-                    //            jsh.atom_dfnbf + Y.bfoff_in_atom
-                    //        ) = coefs_transpose_[Y](mu.bfoff_in_atom, rho);
-                    //      }
-                    //    }
-                    //  }
-                    //}
+                  StridedRowMap Ctmp(data_start, jblk.nbf, ish.nbf*inner_size,
+                      Eigen::OuterStride<>(tot_cols)
+                  );
 
-                    const int tot_cols = coefs_blocked_[jblk.center].cols();
-                    const int col_offset = coef_block_offsets_[jblk.center][ish.center]
-                        + ish.bfoff_in_atom*inner_size;
-                    double* data_start = coefs_blocked_[jblk.center].data() +
-                        jblk.bfoff_in_atom * tot_cols + col_offset;
+                  RowMatrix C(Ctmp.nestByValue());
+                  C.resize(jblk.nbf*ish.nbf, inner_size);
 
-                    StridedRowMap Ctmp(data_start, jblk.nbf, ish.nbf*inner_size,
-                        Eigen::OuterStride<>(tot_cols)
-                    );
-
-                    RowMatrix C(Ctmp.nestByValue());
-                    //RowMatrix C(jsh.nbf * ish.nbf, inner_size);
-                    //C = Ctmp;
-                    C.resize(jblk.nbf*ish.nbf, inner_size);
-                    //for(auto&& rho : function_range(jsh)) {
-                    //  C.middleRows(rho.bfoff_in_shell*ish.nbf, ish.nbf) =
-                    //      Ctmp.row(rho.bfoff_in_shell).segment(mu.bfoff_in_shell*inner_size, inner_size);
-                    //  for(auto&& mu : function_range(ish)) {
-                    //    C.row(rho.bfoff_in_shell*ish.nbf + mu.bfoff_in_shell) =
-                    //        Ctmp.row(rho.bfoff_in_shell).segment(mu.bfoff_in_shell*inner_size, inner_size);
-                    //  }
-                    //}
-
-
-
-                    //if(xml_debug_) {
-                    //  write_as_xml("c_part",
-                    //      C, std::map<std::string, int>{
-                    //    {"ish", int(ish)}, {"jsh", int(jsh)}, {"Xsh", int(Xsh)}
-                    //  });
-                    //  write_as_xml("c_test",
-                    //      C_test, std::map<std::string, int>{
-                    //    {"ish", int(ish)}, {"jsh", int(jsh)}, {"Xsh", int(Xsh)}
-                    //  });
-                    //}
-
+                  g3_in.middleRows(subblock_offset*ish.nbf, jblk.nbf*ish.nbf) -= 0.5
+                      * C.rightCols(ish.atom_dfnbf) * g2.block(
+                          ish.atom_dfbfoff, Xsh.bfoff,
+                          ish.atom_dfnbf, Xsh.nbf
+                  );
+                  if(ish.center != jblk.center) {
                     g3_in.middleRows(subblock_offset*ish.nbf, jblk.nbf*ish.nbf) -= 0.5
-                        * C.rightCols(ish.atom_dfnbf) * g2.block(
-                            ish.atom_dfbfoff, Xsh.bfoff,
-                            ish.atom_dfnbf, Xsh.nbf
+                        * C.leftCols(jblk.atom_dfnbf) * g2.block(
+                            jblk.atom_dfbfoff, Xsh.bfoff,
+                            jblk.atom_dfnbf, Xsh.nbf
                     );
-                    if(ish.center != jblk.center) {
-                      g3_in.middleRows(subblock_offset*ish.nbf, jblk.nbf*ish.nbf) -= 0.5
-                          * C.leftCols(jblk.atom_dfnbf) * g2.block(
-                              jblk.atom_dfbfoff, Xsh.bfoff,
-                              jblk.atom_dfnbf, Xsh.nbf
-                      );
-                    }
-
-                  //  subblock_offset += jsh.nbf;
-
-                  //}
-
-                  //subtimer.change(k2_part_diff_timer);
-                  //for(const auto&& jsh : shell_range(jblk)) {
-                  //  if(ish.center != jsh.center) {
-                  //    for(const auto&& rho : function_range(jsh)) {
-                  //      g3_in.middleRows(
-                  //          (block_offset + rho.bfoff_in_shell) * ish.nbf,
-                  //          ish.nbf
-                  //      ) -= 0.5 * coefs_transpose_blocked_[jsh.center].middleCols(
-                  //            rho.bfoff_in_atom*nbf + ish.bfoff, ish.nbf
-                  //        ).transpose() * g2.block(
-                  //            jsh.atom_dfbfoff, Xsh.bfoff,
-                  //            jsh.atom_dfnbf, Xsh.nbf
-                  //        );
-                  //    }
-                  //  }
-                  //  block_offset += jsh.nbf;
-                  //}
+                  }
 
                   Eigen::Map<ThreeCenterIntContainer> g3(g3_in.data(), jblk.nbf, ish.nbf*Xsh.nbf);
-
-                  //subtimer.change(k2_part_timer);
-                  //for(const auto&& mu : function_range(ish)) {
-                  //  g3.middleCols(mu.bfoff_in_shell*Xsh.nbf, Xsh.nbf) -= 0.5
-                  //    * coefs_transpose_blocked_[ish.center].middleCols(
-                  //        mu.bfoff_in_atom*nbf + jblk.bfoff, jblk.nbf
-                  //    ).transpose() * g2.block(
-                  //        ish.atom_dfbfoff, Xsh.bfoff,
-                  //        ish.atom_dfnbf, Xsh.nbf
-                  //  );
-                  //}
-
 
                   if(print_screening_stats_ > 2) {
                     mt_timer.enter("count underestimated ints", ithr);

@@ -310,189 +310,149 @@ CADFCLHF::compute_K()
             assert(Xblk.nshell == 1);
             for(const auto&& Xsh : shell_range(Xblk)) {                                              //latex `\label{sc:k3b:Xshloop}`
 
-              if(linK_block_rho_) {                                                          //latex `\label{sc:k3b:blk_rho}`
+              int block_offset = 0;
 
-                // This section is deprecated and may be removed in the future
+              Eigen::MatrixXd D_ordered;                                                   //latex `\label{sc:k3b:reD}`
+
+              if(linK_block_rho_) {
 
                 mt_timer.enter("rearrange D", ithr);
-                Eigen::MatrixXd D_ordered(nbf, nbf);                                         //latex `\label{sc:k3b:reD}`
-                int block_offset = 0;
+                D_ordered.resize(nbf, nbf);
                 for(auto jblk : shell_block_range(L_3[{ish, Xsh}], NoRestrictions)){
+
                   for(auto jsh : shell_range(jblk)) {
                     D_ordered.middleRows(block_offset, jsh.nbf) = D.middleRows(jsh.bfoff, jsh.nbf);
                     block_offset += jsh.nbf;
                   }
+
                 }                                                                            //latex `\label{sc:k3b:reD:end}`
                 mt_timer.exit(ithr);
 
-                block_offset = 0;
-                for(auto&& jblk : shell_block_range(L_3[{ish, Xsh}], NoRestrictions)){         //latex `\label{sc:k3b:rhblk:jloop}`
-                  TimerHolder subtimer(ints_timer);
+              }
 
-                  auto g3_ptr = ints_to_eigen(                                               //latex `\label{sc:k3b:rhblk:ints}`
-                      jblk, ish, Xsh,
-                      eris_3c_[ithr], coulomb_oper_type_
-                  );
-                  auto& g3_in = *g3_ptr;
-                  Eigen::Map<ThreeCenterIntContainer> g3(                                    //latex `\label{sc:k3b:rhblk:intsre}`
-                      g3_in.data(), jblk.nbf, ish.nbf*Xsh.nbf
-                  );
+              int restrictions = linK_block_rho_ ? NoRestrictions : Contiguous;
+              block_offset = 0;
 
-                  if(print_screening_stats_ > 2) {                                           //latex `\label{sc:k3b:rhscr}`
-                    mt_timer.enter("count underestimated ints", ithr);
-                    int offset_in_block = 0;
-                    for(const auto&& jsh : shell_range(jblk)) {
-                      const double g3_norm = g3.middleRows(offset_in_block, jsh.nbf).norm();
-                      offset_in_block += jsh.nbf;
-                      const int nfxn = jsh.nbf*ish.nbf*Xsh.nbf;
-                      if(L_3[{ish, Xsh}].value_for_index(jsh) < g3_norm) {
-                        ++iter_stats_->K_3c_underestimated;
-                        iter_stats_->K_3c_underestimated_fxn += nfxn;
-                      }
-                      if(g3_norm * L_DC[jsh].value_for_index(Xsh) > full_screening_thresh_) {
-                        ++iter_stats_->K_3c_perfect;
-                        iter_stats_->K_3c_perfect_fxn += nfxn;
-                      }
+              for(const auto&& jblk : shell_block_range(L_3[{ish, Xsh}], restrictions)){             //latex `\label{sc:k3b:noblk:loop}`
+                TimerHolder subtimer(ints_timer);
+
+                auto g3_ptr = ints_to_eigen(
+                    jblk, ish, Xsh,
+                    eris_3c_[ithr], coulomb_oper_type_
+                );
+                auto& g3_in = *g3_ptr;
+
+                //----------------------------------------//
+                // Two-body part
+
+                if(!old_two_body_) {
+                  // TODO This breaks integral caching (if I ever use it again)
+
+                  subtimer.change(k2_part_timer);
+
+                  int subblock_offset = 0;
+                  for(const auto&& jsblk : shell_block_range(jblk, Contiguous|SameCenter)) {
+                    int inner_size = ish.atom_dfnbf;
+                    if(ish.center != jsblk.center) {
+                      inner_size += jsblk.atom_dfnbf;
                     }
-                    mt_timer.exit(ithr);
-                  }                                                                          //latex `\label{sc:k3b:rhscrend}`
 
-                  subtimer.change(contract_timer);
+                    const int tot_cols = coefs_blocked_[jsblk.center].cols();
+                    const int col_offset = coef_block_offsets_[jsblk.center][ish.center]
+                        + ish.bfoff_in_atom*inner_size;
+                    double* data_start = coefs_blocked_[jsblk.center].data() +
+                        jsblk.bfoff_in_atom * tot_cols + col_offset;
 
-                                                                                             //latex `\label{sc:k3b:rhcontract}`
-                  #if !CADF_USE_BLAS
-                  // Eigen version
-                  B_ish += 2.0 * g3.transpose() * D_ordered.middleRows(block_offset, jblk.nbf);
-                  #else
-                  // BLAS version
-                  const char notrans = 'n', trans = 't';
-                  const blasint M = ish.nbf*Xblk.nbf;
-                  const blasint K = jblk.nbf;
-                  const double alpha = 2.0, one = 1.0;
-                  F77_DGEMM(&notrans, &notrans,
-                      &M, &nbf, &K,
-                      &alpha, g3.data(), &M,
-                      D_ordered.data() + block_offset, &nbf,
-                      &one, B_ish.data(), &M
-                  );
-                  #endif
+                    StridedRowMap Ctmp(data_start, jsblk.nbf, ish.nbf*inner_size,
+                        Eigen::OuterStride<>(tot_cols)
+                    );
 
-                  block_offset += jblk.nbf;
+                    RowMatrix C(Ctmp.nestByValue());
+                    C.resize(jsblk.nbf*ish.nbf, inner_size);
 
-
-                } // end loop over jblk                                                      //latex `\label{sc:k3b:rhblk:jloopend}`
-
-              } // end if linK_block_rho_                                                    //latex `\label{sc:k3b:blk_rho:end}`
-              else { // linK_block_rho_ == false                                             //latex `\label{sc:k3b:noblk}`
-
-                for(const auto&& jblk : shell_block_range(L_3[{ish, Xsh}], Contiguous)){             //latex `\label{sc:k3b:noblk:loop}`
-                  TimerHolder subtimer(ints_timer);
-
-                  auto g3_ptr = ints_to_eigen(
-                      jblk, ish, Xsh,
-                      eris_3c_[ithr], coulomb_oper_type_
-                  );
-                  auto& g3_in = *g3_ptr;
-
-
-                  //----------------------------------------//
-                  // Two-body part
-
-                  if(!old_two_body_) {
-                    // TODO This breaks integral caching (if I ever use it again)
-
-                    subtimer.change(k2_part_timer);
-
-                    int subblock_offset = 0;
-                    for(const auto&& jsblk : shell_block_range(jblk, SameCenter)) {
-                      int inner_size = ish.atom_dfnbf;
-                      if(ish.center != jsblk.center) {
-                        inner_size += jsblk.atom_dfnbf;
-                      }
-
-                      const int tot_cols = coefs_blocked_[jsblk.center].cols();
-                      const int col_offset = coef_block_offsets_[jsblk.center][ish.center]
-                          + ish.bfoff_in_atom*inner_size;
-                      double* data_start = coefs_blocked_[jsblk.center].data() +
-                          jsblk.bfoff_in_atom * tot_cols + col_offset;
-
-                      StridedRowMap Ctmp(data_start, jsblk.nbf, ish.nbf*inner_size,
-                          Eigen::OuterStride<>(tot_cols)
-                      );
-
-                      RowMatrix C(Ctmp.nestByValue());
-                      C.resize(jsblk.nbf*ish.nbf, inner_size);
-
+                    g3_in.middleRows(subblock_offset*ish.nbf, jsblk.nbf*ish.nbf) -= 0.5
+                        * C.rightCols(ish.atom_dfnbf) * g2.block(
+                            ish.atom_dfbfoff, Xsh.bfoff,
+                            ish.atom_dfnbf, Xsh.nbf
+                    );
+                    if(ish.center != jsblk.center) {
                       g3_in.middleRows(subblock_offset*ish.nbf, jsblk.nbf*ish.nbf) -= 0.5
-                          * C.rightCols(ish.atom_dfnbf) * g2.block(
-                              ish.atom_dfbfoff, Xsh.bfoff,
-                              ish.atom_dfnbf, Xsh.nbf
+                          * C.leftCols(jsblk.atom_dfnbf) * g2.block(
+                              jsblk.atom_dfbfoff, Xsh.bfoff,
+                              jsblk.atom_dfnbf, Xsh.nbf
                       );
-                      if(ish.center != jsblk.center) {
-                        g3_in.middleRows(subblock_offset*ish.nbf, jsblk.nbf*ish.nbf) -= 0.5
-                            * C.leftCols(jsblk.atom_dfnbf) * g2.block(
-                                jsblk.atom_dfbfoff, Xsh.bfoff,
-                                jsblk.atom_dfnbf, Xsh.nbf
-                        );
-                      }
+                    }
 
-                      subblock_offset += jsblk.nbf;
+                    subblock_offset += jsblk.nbf;
 
+                  }
+                }
+
+                //----------------------------------------//
+
+                // Now view the integrals as a jblk.nbf x (ish.nbf*Xsh.nbf) matrix, which makes
+                //   the contraction more convenient.  Doesn't require any movement of data
+
+                Eigen::Map<ThreeCenterIntContainer> g3(g3_in.data(), jblk.nbf, ish.nbf*Xsh.nbf);
+
+                //----------------------------------------//
+
+                if(print_screening_stats_ > 2) {
+                  mt_timer.enter("count underestimated ints", ithr);
+                  int offset_in_block = 0;
+                  for(const auto&& jsh : shell_range(jblk)) {
+                    const double g3_norm = g3.middleRows(offset_in_block, jsh.nbf).norm();
+                    offset_in_block += jsh.nbf;
+                    const int nfxn = jsh.nbf*ish.nbf*Xsh.nbf;
+                    if(L_3[{ish, Xsh}].value_for_index(jsh) < g3_norm) {
+                      ++iter_stats_->K_3c_underestimated;
+                      iter_stats_->K_3c_underestimated_fxn += jsh.nbf*ish.nbf*Xsh.nbf;
+                    }
+                    if(g3_norm * L_DC[jsh].value_for_index(Xsh) > full_screening_thresh_) {
+                      ++iter_stats_->K_3c_perfect;
+                      iter_stats_->K_3c_perfect_fxn += nfxn;
                     }
                   }
+                  mt_timer.exit(ithr);
+                }
 
-                  //----------------------------------------//
+                //----------------------------------------//
 
-                  // Now view the integrals as a jblk.nbf x (ish.nbf*Xsh.nbf) matrix, which makes
-                  //   the contraction more convenient.  Doesn't require any movement of data
+                subtimer.change(contract_timer);
 
-                  Eigen::Map<ThreeCenterIntContainer> g3(g3_in.data(), jblk.nbf, ish.nbf*Xsh.nbf);
-
-                  //----------------------------------------//
-
-                  if(print_screening_stats_ > 2) {
-                    mt_timer.enter("count underestimated ints", ithr);
-                    int offset_in_block = 0;
-                    for(const auto&& jsh : shell_range(jblk)) {
-                      const double g3_norm = g3.middleRows(offset_in_block, jsh.nbf).norm();
-                      offset_in_block += jsh.nbf;
-                      const int nfxn = jsh.nbf*ish.nbf*Xsh.nbf;
-                      if(L_3[{ish, Xsh}].value_for_index(jsh) < g3_norm) {
-                        ++iter_stats_->K_3c_underestimated;
-                        iter_stats_->K_3c_underestimated_fxn += jsh.nbf*ish.nbf*Xsh.nbf;
-                      }
-                      if(g3_norm * L_DC[jsh].value_for_index(Xsh) > full_screening_thresh_) {
-                        ++iter_stats_->K_3c_perfect;
-                        iter_stats_->K_3c_perfect_fxn += nfxn;
-                      }
-                    }
-                    mt_timer.exit(ithr);
-                  }
-
-                  //----------------------------------------//
-
-                  subtimer.change(contract_timer);
-
-                  #if !CADF_USE_BLAS
-                  // Eigen version
+                #if !CADF_USE_BLAS
+                // Eigen version
+                if(linK_block_rho_) {
+                  B_ish += 2.0 * g3.transpose() * D_ordered.middleRows(block_offset, jblk.nbf);
+                }
+                else {
                   B_ish += 2.0 * g3.transpose() * D.middleRows(jblk.bfoff, jblk.nbf);
-                  #else
-                  // BLAS version
-                  const char notrans = 'n', trans = 't';
-                  const blasint M = ish.nbf*Xblk.nbf;
-                  const blasint K = jblk.nbf;
-                  const double alpha = 2.0, one = 1.0;
-                  F77_DGEMM(&notrans, &notrans,
-                      &M, &nbf, &K,
-                      &alpha, g3.data(), &M,
-                      D.data() + jblk.bfoff, &nbf,
-                      &one, B_ish.data(), &M
-                  );
-                  #endif
+                }
+                #else
+                // BLAS version
+                const char notrans = 'n', trans = 't';
+                const blasint M = ish.nbf*Xblk.nbf;
+                const blasint K = jblk.nbf;
+                const double alpha = 2.0, one = 1.0;
+                double* D_data;
+                if(linK_block_rho_) {
+                  D_data = D_ordered.data() + block_offset;
+                }
+                else {
+                  D_data = D.data() + jblk.bfoff;
+                }
+                F77_DGEMM(&notrans, &notrans,
+                    &M, &nbf, &K,
+                    &alpha, g3.data(), &M,
+                    D_data, &nbf,
+                    &one, B_ish.data(), &M
+                );
+                #endif
 
-                } // end loop over jsh
+                block_offset += jblk.nbf;
 
-              } // end else (linK_block_rho_ == false)                                       //latex `\label{sc:k3b:noblk:end}`
+              } // end loop over jsh
+
             } // end loop over Xsh
 
           } // end if do_linK_
@@ -630,7 +590,7 @@ CADFCLHF::compute_K()
   /*****************************************************************************************/ #endif //1}}} //latex `\label{sc:k3b:end}`
   /*=======================================================================================*/
   /* Loop over local shell pairs and compute two body part 		                        {{{1 */ #if 1 // begin fold
-  if(linK_block_rho_ || old_two_body_)
+  if(old_two_body_)
   {
     Timer timer("two body contributions");
     boost::mutex tmp_mutex, L_3_mutex;

@@ -360,6 +360,8 @@ class CADFCLHF: public CLHF {
     bool xml_debug_ = false;
     /// Do the two-body terms the old way
     bool old_two_body_ = false;
+    /// Dump screening data to XML
+    bool xml_screening_data_ = false;
     //@}
 
     ScreeningStatistics stats_;

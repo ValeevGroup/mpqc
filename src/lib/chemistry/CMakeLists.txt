@@ -13,6 +13,7 @@ set(chemobjects
 )
 
 add_mpqc_library(chemistry ${chemobjects})
+add_dependencies(math util)
 
 target_link_libraries(chemistry math util)
 
@@ -46,3 +47,5 @@ endif()
 if (HAVE_MPI)
   target_link_libraries(chemistry ${MPI_LIBRARIES})
 endif()
+
+install(TARGETS chemistry DESTINATION lib)

@@ -1,5 +1,5 @@
 # Change this to the (absolute) path to your installed mpqc-config script, if needed
-MPQCCONFIG = ../../bin/mpqc-config
+MPQCCONFIG = ../../../../../bin/mpqc-config
 CXX := $(shell $(MPQCCONFIG) --cxx)
 CXXFLAGS := $(shell $(MPQCCONFIG) --cxxflags)
 CC := $(shell $(MPQCCONFIG) --cc)

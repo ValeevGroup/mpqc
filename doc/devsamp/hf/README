@@ -2,7 +2,7 @@ This code example, written in C++, demonstrates how to implement a simple Hartre
 demonstrates how to use MPQC integrals libraries, matrix package, and KeyVal library.
 
 1) To compile this example you must have compiled MPQC and installed it using 'make install'
-   commmand. This will install the code examples under $prefix/examples directory, where $prefix is the
+   commmand. This will install the code examples under $prefix/doc/share/mpqc-${version}/examples directory, where $prefix is the
    installation prefix provided to configure script during configuration of MPQC
    (the default is /usr/local/mpqc/$mpqcversion).
 2) To compile the hf example simply type 'make', this will create an executable file called 'hf'. To run it simply type './hf'.

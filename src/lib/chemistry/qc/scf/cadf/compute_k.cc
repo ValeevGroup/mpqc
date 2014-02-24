@@ -299,8 +299,7 @@ CADFCLHF::compute_K()
           mt_timer.enter("compute B", ithr);
           auto ints_timer = mt_timer.get_subtimer("compute ints", ithr);
           auto contract_timer = mt_timer.get_subtimer("contract", ithr);
-          auto k2_part_timer = mt_timer.get_subtimer("k2_part same", ithr);
-          auto k2_part_diff_timer = mt_timer.get_subtimer("k2_part diff", ithr);
+          auto k2_part_timer = mt_timer.get_subtimer("k2 part", ithr);
 
           ColMatrix B_ish(ish.nbf * Xblk.nbf, nbf);
           B_ish = ColMatrix::Zero(ish.nbf * Xblk.nbf, nbf);
@@ -312,6 +311,8 @@ CADFCLHF::compute_K()
             for(const auto&& Xsh : shell_range(Xblk)) {                                              //latex `\label{sc:k3b:Xshloop}`
 
               if(linK_block_rho_) {                                                          //latex `\label{sc:k3b:blk_rho}`
+
+                // This section is deprecated and may be removed in the future
 
                 mt_timer.enter("rearrange D", ithr);
                 Eigen::MatrixXd D_ordered(nbf, nbf);                                         //latex `\label{sc:k3b:reD}`
@@ -384,7 +385,7 @@ CADFCLHF::compute_K()
               } // end if linK_block_rho_                                                    //latex `\label{sc:k3b:blk_rho:end}`
               else { // linK_block_rho_ == false                                             //latex `\label{sc:k3b:noblk}`
 
-                for(const auto&& jblk : shell_block_range(L_3[{ish, Xsh}], Contiguous|SameCenter)){             //latex `\label{sc:k3b:noblk:loop}`
+                for(const auto&& jblk : shell_block_range(L_3[{ish, Xsh}], Contiguous)){             //latex `\label{sc:k3b:noblk:loop}`
                   TimerHolder subtimer(ints_timer);
 
                   auto g3_ptr = ints_to_eigen(
@@ -393,46 +394,61 @@ CADFCLHF::compute_K()
                   );
                   auto& g3_in = *g3_ptr;
 
+
+                  //----------------------------------------//
                   // Two-body part
-                  // TODO This breaks integral caching (if I ever use it again)
 
-                  int subblock_offset = 0;
+                  if(!old_two_body_) {
+                    // TODO This breaks integral caching (if I ever use it again)
 
-                  // TODO we can actually remove the SameCenter requirement and iterate over SameCenter subblocks of jblk
-                  subtimer.change(k2_part_timer);
+                    subtimer.change(k2_part_timer);
 
-                  int inner_size = ish.atom_dfnbf;
-                  if(ish.center != jblk.center) {
-                    inner_size += jblk.atom_dfnbf;
+                    int subblock_offset = 0;
+                    for(const auto&& jsblk : shell_block_range(jblk, SameCenter)) {
+                      int inner_size = ish.atom_dfnbf;
+                      if(ish.center != jsblk.center) {
+                        inner_size += jsblk.atom_dfnbf;
+                      }
+
+                      const int tot_cols = coefs_blocked_[jsblk.center].cols();
+                      const int col_offset = coef_block_offsets_[jsblk.center][ish.center]
+                          + ish.bfoff_in_atom*inner_size;
+                      double* data_start = coefs_blocked_[jsblk.center].data() +
+                          jsblk.bfoff_in_atom * tot_cols + col_offset;
+
+                      StridedRowMap Ctmp(data_start, jsblk.nbf, ish.nbf*inner_size,
+                          Eigen::OuterStride<>(tot_cols)
+                      );
+
+                      RowMatrix C(Ctmp.nestByValue());
+                      C.resize(jsblk.nbf*ish.nbf, inner_size);
+
+                      g3_in.middleRows(subblock_offset*ish.nbf, jsblk.nbf*ish.nbf) -= 0.5
+                          * C.rightCols(ish.atom_dfnbf) * g2.block(
+                              ish.atom_dfbfoff, Xsh.bfoff,
+                              ish.atom_dfnbf, Xsh.nbf
+                      );
+                      if(ish.center != jsblk.center) {
+                        g3_in.middleRows(subblock_offset*ish.nbf, jsblk.nbf*ish.nbf) -= 0.5
+                            * C.leftCols(jsblk.atom_dfnbf) * g2.block(
+                                jsblk.atom_dfbfoff, Xsh.bfoff,
+                                jsblk.atom_dfnbf, Xsh.nbf
+                        );
+                      }
+
+                      subblock_offset += jsblk.nbf;
+
+                    }
                   }
 
-                  const int tot_cols = coefs_blocked_[jblk.center].cols();
-                  const int col_offset = coef_block_offsets_[jblk.center][ish.center]
-                      + ish.bfoff_in_atom*inner_size;
-                  double* data_start = coefs_blocked_[jblk.center].data() +
-                      jblk.bfoff_in_atom * tot_cols + col_offset;
+                  //----------------------------------------//
 
-                  StridedRowMap Ctmp(data_start, jblk.nbf, ish.nbf*inner_size,
-                      Eigen::OuterStride<>(tot_cols)
-                  );
-
-                  RowMatrix C(Ctmp.nestByValue());
-                  C.resize(jblk.nbf*ish.nbf, inner_size);
-
-                  g3_in.middleRows(subblock_offset*ish.nbf, jblk.nbf*ish.nbf) -= 0.5
-                      * C.rightCols(ish.atom_dfnbf) * g2.block(
-                          ish.atom_dfbfoff, Xsh.bfoff,
-                          ish.atom_dfnbf, Xsh.nbf
-                  );
-                  if(ish.center != jblk.center) {
-                    g3_in.middleRows(subblock_offset*ish.nbf, jblk.nbf*ish.nbf) -= 0.5
-                        * C.leftCols(jblk.atom_dfnbf) * g2.block(
-                            jblk.atom_dfbfoff, Xsh.bfoff,
-                            jblk.atom_dfnbf, Xsh.nbf
-                    );
-                  }
+                  // Now view the integrals as a jblk.nbf x (ish.nbf*Xsh.nbf) matrix, which makes
+                  //   the contraction more convenient.  Doesn't require any movement of data
 
                   Eigen::Map<ThreeCenterIntContainer> g3(g3_in.data(), jblk.nbf, ish.nbf*Xsh.nbf);
+
+                  //----------------------------------------//
 
                   if(print_screening_stats_ > 2) {
                     mt_timer.enter("count underestimated ints", ithr);
@@ -453,6 +469,8 @@ CADFCLHF::compute_K()
                     mt_timer.exit(ithr);
                   }
 
+                  //----------------------------------------//
+
                   subtimer.change(contract_timer);
 
                   #if !CADF_USE_BLAS
@@ -472,7 +490,6 @@ CADFCLHF::compute_K()
                   );
                   #endif
 
-
                 } // end loop over jsh
 
               } // end else (linK_block_rho_ == false)                                       //latex `\label{sc:k3b:noblk:end}`
@@ -488,7 +505,62 @@ CADFCLHF::compute_K()
                   jblk, ish, Xblk,
                   eris_3c_[ithr], coulomb_oper_type_
               );
-              Eigen::Map<ThreeCenterIntContainer> g3(g3_ptr->data(), jblk.nbf, ish.nbf*Xblk.nbf);
+              auto& g3_in = *g3_ptr;
+
+              //----------------------------------------//
+              // Two-body part
+
+              // TODO This breaks integral caching (if I ever use it again)
+
+              if(not old_two_body_) {
+                subtimer.change(k2_part_timer);
+
+                int subblock_offset = 0;
+                for(const auto&& jsblk : shell_block_range(jblk, SameCenter)) {
+                  int inner_size = ish.atom_dfnbf;
+                  if(ish.center != jsblk.center) {
+                    inner_size += jsblk.atom_dfnbf;
+                  }
+
+                  const int tot_cols = coefs_blocked_[jsblk.center].cols();
+                  const int col_offset = coef_block_offsets_[jsblk.center][ish.center]
+                      + ish.bfoff_in_atom*inner_size;
+                  double* data_start = coefs_blocked_[jsblk.center].data() +
+                      jsblk.bfoff_in_atom * tot_cols + col_offset;
+
+                  StridedRowMap Ctmp(data_start, jsblk.nbf, ish.nbf*inner_size,
+                      Eigen::OuterStride<>(tot_cols)
+                  );
+
+                  RowMatrix C(Ctmp.nestByValue());
+                  C.resize(jsblk.nbf*ish.nbf, inner_size);
+
+                  g3_in.middleRows(subblock_offset*ish.nbf, jsblk.nbf*ish.nbf) -= 0.5
+                      * C.rightCols(ish.atom_dfnbf) * g2.block(
+                          ish.atom_dfbfoff, Xblk.bfoff,
+                          ish.atom_dfnbf, Xblk.nbf
+                  );
+                  if(ish.center != jsblk.center) {
+                    g3_in.middleRows(subblock_offset*ish.nbf, jsblk.nbf*ish.nbf) -= 0.5
+                        * C.leftCols(jsblk.atom_dfnbf) * g2.block(
+                            jsblk.atom_dfbfoff, Xblk.bfoff,
+                            jsblk.atom_dfnbf, Xblk.nbf
+                    );
+                  }
+
+                  subblock_offset += jsblk.nbf;
+
+                } // end loop over jsblk
+              }
+
+              //----------------------------------------//
+
+              // Now view the integrals as a jblk.nbf x (ish.nbf*Xsh.nbf) matrix, which makes
+              //   the contraction more convenient.  Doesn't require any movement of data
+
+              Eigen::Map<ThreeCenterIntContainer> g3(g3_in.data(), jblk.nbf, ish.nbf*Xblk.nbf);
+
+              //----------------------------------------//
 
               subtimer.change(contract_timer);
 
@@ -558,7 +630,7 @@ CADFCLHF::compute_K()
   /*****************************************************************************************/ #endif //1}}} //latex `\label{sc:k3b:end}`
   /*=======================================================================================*/
   /* Loop over local shell pairs and compute two body part 		                        {{{1 */ #if 1 // begin fold
-  if((not do_linK_) or linK_block_rho_)
+  if(linK_block_rho_ || old_two_body_)
   {
     Timer timer("two body contributions");
     boost::mutex tmp_mutex, L_3_mutex;

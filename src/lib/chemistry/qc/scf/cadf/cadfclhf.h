@@ -358,6 +358,8 @@ class CADFCLHF: public CLHF {
     bool use_norms_sigma_;
     /// Print a lot of stuff in an XML debug file.  Not really for end users...
     bool xml_debug_ = false;
+    /// Do the two-body terms the old way
+    bool old_two_body_ = false;
     //@}
 
     ScreeningStatistics stats_;

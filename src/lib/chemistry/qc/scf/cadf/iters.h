@@ -859,6 +859,21 @@ class shell_block_iterator
       return shell_block_iterator(basis, 0, index + 1, index);
     }
 
+    static shell_block_iterator end_of_range(
+        const ShellRange& all_shells_in,
+        int requirements = SameCenter,
+        int target_size = DEFAULT_TARGET_BLOCK_SIZE
+    )
+    {
+      return shell_block_iterator(
+          boost::make_iterator_range(
+              all_shells_in.end(),
+              all_shells_in.end()
+          ),
+          requirements, target_size
+      );
+    }
+
     const self_type& requiring(int restr) {
       restrictions = restr;
       init();
@@ -1311,6 +1326,27 @@ shell_block_range(
       )
   );
 }
+
+
+template <typename ShellRange>
+inline range_of_shell_blocks<typename ShellRange::iterator::base_iterator, ShellRange>
+shell_block_range(
+    const ShellBlockData<ShellRange>& iblk,
+    int requirements=SameCenter,
+    int target_size=DEFAULT_TARGET_BLOCK_SIZE
+)
+{
+  return boost::make_iterator_range(
+      shell_block_iterator<typename ShellRange::iterator::base_iterator, ShellRange>(
+          iblk.shell_range, requirements|iblk.restrictions, target_size
+      ),
+      shell_block_iterator<typename ShellRange::iterator::base_iterator, ShellRange>::end_of_range(
+          iblk.shell_range, requirements|iblk.restrictions, target_size
+      )
+  );
+}
+
+
 
 inline
 std::ostream&

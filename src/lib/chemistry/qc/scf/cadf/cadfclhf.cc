@@ -150,6 +150,7 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   //----------------------------------------------------------------------------//
   use_norms_nu_ = keyval->booleanvalue("use_norms_nu", KeyValValueboolean(true));
   use_norms_sigma_ = keyval->booleanvalue("use_norms_sigma", KeyValValueboolean(true));
+  old_two_body_ = keyval->booleanvalue("old_two_body", KeyValValueboolean(old_two_body_));
   //----------------------------------------------------------------------------//
   xml_debug_ = keyval->booleanvalue("xml_debug", KeyValValueboolean(false));
   //----------------------------------------------------------------------------//

@@ -414,16 +414,17 @@ class  Ref  : public RefBase {
     /// Implements the parentpointer pure virtual in the base class.
     RefCount *parentpointer() const { return p; }
 
-    operator T*() const { MPQC_ASSERT(p!=0); return p; }
+    operator T*() const { return p; }
     /** Returns a C++ reference to the reference counted object.
         The behaviour is undefined if the object is null. */
     T& operator *() const { MPQC_ASSERT(p!=0); return *p; };
-    /** Return 1 if this is a reference to a null object.  Otherwise
-        return 0. */
-    int null() const { return p == 0; }
-    /// Return !null().
-    int nonnull() const { return p != 0; }
-    explicit operator bool() const { return nonnull(); }
+    /** Return true if this is a reference to a null object.  Otherwise
+        return false. */
+    bool null() const { return p == 0; }
+    bool operator!() const {
+      return null();
+    }
+
 
     /** Ordering and equivalence operators are determined by the identifier if
      * both pointers are not null. If one or both of the pointers is null then
@@ -635,7 +636,19 @@ class  Ref  : public RefBase {
     }
     /// Print a warning concerning the reference.
     void warn(const char*s) const { RefBase::warn(s); }
+
+    /// Return !null().
+    bool nonnull() const { return !null(); }
+
+  protected:
 };
+
+template <class T>
+std::ostream&
+operator<<(std::ostream& os, const Ref<T>& r) {
+  r.ref_info(os);
+  return os;
+}
 
 /** this functor can be used as a binary predicate for standard algorithms. For example,
     it can be used as an argument to std::hash_map that uses keys of sc::Ref<T> type.

@@ -67,8 +67,8 @@ ReplSCMatrix::ReplSCMatrix(const RefSCDimension&a,const RefSCDimension&b,
                            ReplSCMatrixKit*k):
   SCMatrix(a,b,k)
 {
-  int nr = a->n();
-  int nc = b->n();
+  size_t nr = a->n();
+  size_t nc = b->n();
 
   matrix = allocate<double>(nr*nc);
 
@@ -82,7 +82,7 @@ ReplSCMatrix::before_elemop()
 {
   // zero out the blocks not in my block list
   int i, j, index;
-  int nc = d2->n();
+  size_t nc = d2->n();
   int nproc = messagegrp()->n();
   int me = messagegrp()->me();
   for (i=0, index=0; i<d1->blocks()->nblock(); i++) {

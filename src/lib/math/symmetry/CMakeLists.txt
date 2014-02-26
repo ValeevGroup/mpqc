@@ -14,8 +14,14 @@ add_mpqc_object_library(symmetry
   tetra.cc)
 
 # tests
-set_property(SOURCE pointgrouptest.cc PROPERTY COMPILE_DEFINITIONS
-    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-add_executable(pointgrouptest EXCLUDE_FROM_ALL pointgrouptest.cc $<TARGET_OBJECTS:symmetry>)
-add_test(pointgrouptest pointgrouptest)
+
+if (MPQC_UNITTEST)
+  set_property(SOURCE pointgrouptest.cc PROPERTY COMPILE_DEFINITIONS
+      SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(pointgrouptest pointgrouptest.cc $<TARGET_OBJECTS:symmetry>)
+  target_link_libraries(pointgrouptest
+    math
+  )
+  add_test(pointgrouptest pointgrouptest)
+endif()
 

@@ -350,6 +350,13 @@ Integral::point_charge1(const Ref<PointChargeData>&)
   throw std::runtime_error("Integral::point_charge1(): not implemented in this particular integrals factory.");
 }
 
+Ref<OneBodyInt>
+Integral::efield_gradient(const Ref<IntParamsOrigin>& O)
+{
+  throw FeatureNotImplemented("electric field gradient ints not implemented in this particular factory",
+                              __FILE__,__LINE__);
+}
+
 Ref<TwoBodyThreeCenterInt>
 Integral::electron_repulsion3()
 {

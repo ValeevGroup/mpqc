@@ -1,6 +1,10 @@
 include(AddLibrary)
+SUBDIRLIST(Subdirs CMAKE_CURRENT_LIST_DIR)
+FOREACH(subdir ${Subdirs})
+    ADD_SUBDIRECTORY(${subdir})
+ENDFOREACH()
 
-set(subdirectories
+set(subobjects
   basis
   dft
   etrain
@@ -15,19 +19,19 @@ set(subdirectories
   )
 
 if (MPQC_CI)
-  list(APPEND subdirectories ci)
+  list(APPEND subobjects ci)
 endif()
 
 if (HAVE_LIBINT2)
-  list(APPEND subdirectories libint2)
+  list(APPEND subobjects libint2)
 endif()
 
 if (MPQC_R12)
-  list(APPEND subdirectories mbptr12 ccr12)
+  list(APPEND subobjects mbptr12 ccr12)
 endif()
 
 if (HAVE_PSI3)
-  list(APPEND subdirectories psi)
+  list(APPEND subobjects psi)
 endif()
 
-add_mpqc_objects_target(qc ${subdirectories})
+add_mpqc_objects_target(qc ${subobjects})

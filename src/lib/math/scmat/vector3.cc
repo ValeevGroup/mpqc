@@ -217,6 +217,13 @@ operator<<(ostream&o, const SCVector3 &v)
   return o;
 }
 
+bool operator==(const SCVector3& a, const SCVector3& b) {
+  for(int xyz=0; xyz!=3; ++xyz)
+    if (a.elem(xyz) != b.elem(xyz))
+      return false;
+  return true;
+}
+
 }
 
 /////////////////////////////////////////////////////////////////////////////

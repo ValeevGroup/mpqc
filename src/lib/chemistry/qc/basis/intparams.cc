@@ -55,20 +55,6 @@ EfieldDotVectorData::set_vector(double*v)
 
 ///////////////////////////////////////////////////////////////////////
 
-DipoleData::~DipoleData()
-{
-}
-
-void
-DipoleData::set_origin(double*o)
-{
-  origin[0] = o[0];
-  origin[1] = o[1];
-  origin[2] = o[2];
-}
-
-///////////////////////////////////////////////////////////////////////
-
 PointChargeData::PointChargeData(int ncharges,
                                  const double *const*positions,
                                  const double *charges,
@@ -161,14 +147,13 @@ IntParamsVoid::equiv(const IntParams& other) const {
 
 static ClassDesc IntParamsOrigin_cd(
   typeid(IntParamsOrigin),"IntParamsOrigin",1,"public IntParams",
-  0, 0, create<IntParamsOrigin>);
+  create<IntParamsOrigin>, 0, create<IntParamsOrigin>);
+
+IntParamsOrigin::IntParamsOrigin() : IntParams(0), O_(3, 0.0) {
+}
 
 IntParamsOrigin::IntParamsOrigin(const double (&O)[3]) : IntParams(0), O_(3) {
   std::copy(O, O+3, O_.begin());
-}
-
-IntParamsOrigin::IntParamsOrigin(const Ref<DipoleData>& mudata) : IntParams(0), O_(3) {
-  std::copy(mudata->origin, mudata->origin+3, O_.begin());
 }
 
 IntParamsOrigin::IntParamsOrigin(StateIn& si) : IntParams(si) {
@@ -182,6 +167,16 @@ IntParamsOrigin::save_data_state(StateOut& so)
 {
   IntParams::save_data_state(so);
   so.put(O_);
+}
+
+const double*
+IntParamsOrigin::r() const {
+  return &O_[0];
+}
+
+double
+IntParamsOrigin::r(unsigned int xyz) const {
+  return O_.at(xyz);
 }
 
 bool

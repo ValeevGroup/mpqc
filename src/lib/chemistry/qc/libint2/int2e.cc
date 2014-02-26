@@ -172,7 +172,7 @@ Int2eLibint2::storage_required_(const Ref<GaussianBasisSet>& b1,
 int
 Int2eLibint2::log2_bound(int s1, int s2, int s3, int s4)
 {
-    if (bounds_.nonnull())
+    if (bounds_)
 	return bounds_->log2_bound(s1,s2,s3,s4);
     else
 	// 2^256 ~ 10^26

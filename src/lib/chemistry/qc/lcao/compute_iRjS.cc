@@ -130,7 +130,7 @@ TwoBodyMOIntsTransform_iRjS::compute()
     Start the integrals transformation
    -----------------------------------*/
   Timer tim_pass("mp2-r12/a passes");
-  if (me == 0 && top_mole_.nonnull() && top_mole_->if_to_checkpoint()) {
+  if (me == 0 && top_mole_ && top_mole_->if_to_checkpoint()) {
     StateOutBin stateout(top_mole_->checkpoint_file());
     SavableState::save_state(top_mole_,stateout);
     ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
@@ -225,7 +225,7 @@ TwoBodyMOIntsTransform_iRjS::compute()
     tim_mostore.exit();
     mem_->sync();
 
-    if (me == 0 && top_mole_.nonnull() && top_mole_->if_to_checkpoint()) {
+    if (me == 0 && top_mole_ && top_mole_->if_to_checkpoint()) {
       StateOutBin stateout(top_mole_->checkpoint_file());
       SavableState::save_state(top_mole_,stateout);
       ExEnv::out0() << indent << "Checkpointed the wave function" << endl;
@@ -242,7 +242,7 @@ TwoBodyMOIntsTransform_iRjS::compute()
 
   tim.exit();
 
-  if (me == 0 && top_mole_.nonnull() && top_mole_->if_to_checkpoint()) {
+  if (me == 0 && top_mole_ && top_mole_->if_to_checkpoint()) {
     StateOutBin stateout(top_mole_->checkpoint_file());
     SavableState::save_state(top_mole_,stateout);
     ExEnv::out0() << indent << "Checkpointed the wave function" << endl;

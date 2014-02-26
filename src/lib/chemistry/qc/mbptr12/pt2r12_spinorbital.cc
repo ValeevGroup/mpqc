@@ -95,7 +95,7 @@ SpinOrbitalPT2R12::SpinOrbitalPT2R12(const Ref<KeyVal> &keyval) : Wavefunction(k
   {
     Ref<Wavefunction> reference;
     reference << keyval->describedclassvalue("reference");
-    if (reference.nonnull()) {
+    if (reference) {
       MPQC_ASSERT(reference == rdm2_->wfn());
       ref = RefWavefunctionFactory::make(world, reference, spin_restricted,
                                          nfzc_, 0, virspace);

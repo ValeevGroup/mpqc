@@ -170,21 +170,6 @@ GPetiteList4::~GPetiteList4() {
 
 /////////////////////////////////////////////////////////////////////////////
 
-template <class C4> GenericPetiteList4<C4>::GenericPetiteList4(const Ref<GaussianBasisSet> &b1,
-         const Ref<GaussianBasisSet> &b2,
-         const Ref<GaussianBasisSet> &b3,
-         const Ref<GaussianBasisSet> &b4):
-           GPetiteList4(b1,b2,b3,b4),
-           c_(b1,b2,b3,b4)
-{
-}
-
-template <class C4> GenericPetiteList4<C4>::~GenericPetiteList4()
-{
-}
-
-/////////////////////////////////////////////////////////////////////////////
-
 GPetiteList2::GPetiteList2(const Ref<GaussianBasisSet> &b1,
                            const Ref<GaussianBasisSet> &b2)
 {
@@ -213,17 +198,6 @@ GPetiteList2::~GPetiteList2() {
 }
 
 /////////////////////////////////////////////////////////////////////////////
-
-template <class C2> GenericPetiteList2<C2>::GenericPetiteList2(const Ref<GaussianBasisSet> &b1,
-                                                               const Ref<GaussianBasisSet> &b2):
-           GPetiteList2(b1,b2),
-           c_(b1,b2)
-{
-}
-
-template <class C2> GenericPetiteList2<C2>::~GenericPetiteList2()
-{
-}
 
 void
 sc::symmetrize(const Ref<GPetiteList2>& plist12,

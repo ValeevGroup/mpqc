@@ -172,7 +172,7 @@ int try_main(int argc, char **argv)
   init.init_timer(grp,0);
 
 #ifdef HAVE_MADNESS
-  MADNESSRuntime::initialize();
+  mpqc::MADNESSRuntime::initialize();
 #endif
 
   Timer timer;
@@ -424,7 +424,7 @@ int try_main(int argc, char **argv)
                 << indent << scprintf("End Time: %s", tstr) << std::endl;
 
 #ifdef HAVE_MADNESS
-  MADNESSRuntime::finalize();
+  mpqc::MADNESSRuntime::finalize();
 #endif
 
   return 0;

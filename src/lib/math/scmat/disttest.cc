@@ -60,7 +60,7 @@ main(int argc, char** argv)
   MessageGrp::set_default_messagegrp(msg);
 
   Ref<Debugger> d; d << keyval->describedclassvalue("debugger");
-  if (d.nonnull()) {
+  if (d) {
       d->set_prefix(msg->me());
       d->set_exec(argv[0]);
     }

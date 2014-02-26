@@ -2,7 +2,8 @@ include(AddLibrary)
 
 # basis library
 
-add_mpqc_object_library(basis
+# collect the .cc and .cpp files to be compiled.
+SET(ccfiles 
   aotoso.cc
   cart.cc
   cartiter.cc
@@ -36,30 +37,26 @@ add_mpqc_object_library(basis
   union.cc
 )
 
+IF(MPQC_NEW_FEATURES)
+    LIST(APPEND ccfiles tiledbasisset.cpp)
+ENDIF(MPQC_NEW_FEATURES)
+
+add_mpqc_object_library(basis ${ccfiles})
+
 # tests
-
-set_property(SOURCE btest.cc PROPERTY COMPILE_DEFINITIONS
+IF(MPQC_UNITTEST)
+  set_property(SOURCE btest.cc PROPERTY COMPILE_DEFINITIONS
     SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-add_executable(btest EXCLUDE_FROM_ALL btest.cc $<TARGET_OBJECTS:basis>)
-add_test(btest btest)
-
-target_link_libraries(
-  btest
-  chemistry
-)
-
-if (HAVE_LIBINT2)
-  target_link_libraries(btest ${LIBINT2_LIBRARY})
+  add_executable(btest btest.cc $<TARGET_OBJECTS:basis>)
+  add_test(btest btest)
+  
+  target_link_libraries( btest chemistry )
+  
+  set_property(SOURCE tiledbasisset_test.cc PROPERTY COMPILE_DEFINITIONS
+    SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(tiledbasisset_test tiledbasisset_test.cpp $<TARGET_OBJECTS:basis>)
+  add_test(tiledbasisset_test tiledbasisset_test)
+  
+  target_link_libraries( tiledbasisset_test chemistry )
+  
 endif()
-
-target_link_libraries(btest ${LAPACK_LIBRARIES})
-target_link_libraries(btest ${BLAS_LIBRARIES})
-
-target_link_libraries(btest ${LIBRARIES})
-target_link_libraries(btest ${CMAKE_DL_LIBS})
-
-#set_property(SOURCE tbint_batch_test.cc PROPERTY COMPILE_DEFINITIONS
-#    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-#add_executable(tbint_batch_test EXCLUDE_FROM_ALL tbint_batch_test.cc $<TARGET_OBJECTS:basis>)
-#add_test(tbint_batch_test tbint_batch_test)
-

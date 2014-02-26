@@ -2,10 +2,12 @@ include(AddLibrary)
 
 # scf library
 
-add_mpqc_object_library(scf
+# collect the .cc and .cpp files to be compiled.
+SET(ccfiles 
   clhf.cc
   clscf.cc
   cadf/cadfclhf.cc
+  cadf/statistics.cc
   cadf/get_ints.cc
   cadf/decomp.cc
   cadf/coefficients.cc
@@ -29,40 +31,37 @@ add_mpqc_object_library(scf
   uscf.cc
 )
 
+IF(MPQC_NEW_FEATURES)
+    list(APPEND ccfiles tascf.cpp)
+ENDIF(MPQC_NEW_FEATURES)
+
+add_mpqc_object_library(scf ${ccfiles})
+
 # tests
+if (MPQC_UNITTEST)
+  set_property(SOURCE focktest.cc PROPERTY COMPILE_DEFINITIONS
+    SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(focktest focktest.cc $<TARGET_OBJECTS:basis>)
+  add_test(focktest focktest)
+  
+  target_link_libraries( focktest chemistry )
 
-set_property(SOURCE focktest.cc PROPERTY COMPILE_DEFINITIONS
-    SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}"
-)
-add_executable(focktest EXCLUDE_FROM_ALL 
-    focktest.cc 
-    #$<TARGET_OBJECTS:scf>
-)
+  set_property(SOURCE scftest.cc PROPERTY COMPILE_DEFINITIONS
+    SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(scftest scftest.cc $<TARGET_OBJECTS:basis>)
+  add_test(scftest scftest)
+  
+  target_link_libraries( scftest chemistry )
 
-set_property(SOURCE scftest.cc PROPERTY COMPILE_DEFINITIONS
-    SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}"
-)
-add_executable(scftest EXCLUDE_FROM_ALL 
-    scftest.cc 
-    #$<TARGET_OBJECTS:scf>
-)
+  CONFIGURE_FILE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/tascf_test.kv.in
+    ${CMAKE_CURRENT_BINARY_DIR}/tascf_test.kv
+    @ONLY
+  )
+  add_executable(tascf_test tascf_test.cpp $<TARGET_OBJECTS:basis>)
+  add_test(tascf_test tascf_test)
+  
+  target_link_libraries( tascf_test chemistry )
 
-target_link_libraries( focktest chemistry math util chemistry math util )
-target_link_libraries( scftest chemistry math util chemistry math util )
+endif (MPQC_UNITTEST)
 
-if (HAVE_LIBINT2)
-  target_link_libraries(scftest ${LIBINT2_LIBRARY})
-  target_link_libraries(focktest ${LIBINT2_LIBRARY})
-else()
-  message( FATAL_ERROR "Need libint2" )
-endif()
-
-target_link_libraries(scftest ${LAPACK_LIBRARIES})
-target_link_libraries(scftest ${BLAS_LIBRARIES})
-target_link_libraries(scftest ${LIBRARIES})
-target_link_libraries(scftest ${CMAKE_DL_LIBS})
-
-target_link_libraries(focktest ${LAPACK_LIBRARIES})
-target_link_libraries(focktest ${BLAS_LIBRARIES})
-target_link_libraries(focktest ${LIBRARIES})
-target_link_libraries(focktest ${CMAKE_DL_LIBS})

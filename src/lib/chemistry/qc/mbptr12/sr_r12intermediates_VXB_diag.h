@@ -1104,6 +1104,16 @@ namespace sc {
                   << std::endl; // 2 is included in gamma!
       }
 
+      // compute the (2)_S quadrupole moment
+      {
+        const double q_zz_e = 2*dot(_2("<i|q_zz|A'>"), T1_recomp("i,A'"))
+                            - dot(_2("<i|q_zz|j>"), T1_recomp("i,A'") * T1_recomp("j,A'") )
+                            + dot(_2("<A'|q_zz|B'>"), T1_recomp("i,A'") * T1_recomp("i,B'") );
+        std::cout << "Q_zz (2)_S = " << 2*q_zz_e << std::endl; // 2 accounts for spin degeneracy
+        std::cout << "Q_zz ref = " << (dot(_2("<i|q_zz|j>"),_2("<i|gamma|j>")))
+                  << std::endl; // 2 is included in gamma!
+      }
+
       // compute orbital rotation multipliers in the (2)_S Lagrangian
       if (1) {
         TArray2 Tia = T1_recomp("j,A'") * _2("<A'|I|a>");
@@ -1406,41 +1416,170 @@ namespace sc {
     }
 #endif
 
-    // Nuclear dipole
-    double mu_z_n = 0.0;
+    bool compute_dipole = false;
+    bool compute_quadrupole = false;
+    bool compute_EFG = true;
+
+    // Obtain property integrals which is needed in multiple places
+    // dipole integrals
+    TArray2 mu_z_mn = (compute_dipole ? _2("<m|mu_z|n>"): TArray2());
+    TArray2 mu_z_am = (compute_dipole ? _2("<a|mu_z|m>") : TArray2());
+
+    // quadrupole integrals
+    TArray2 q_xx_mn = (compute_quadrupole ? _2("<m|q_xx|n>") : TArray2());
+    TArray2 q_yy_mn = (compute_quadrupole ? _2("<m|q_yy|n>") : TArray2());
+    TArray2 q_zz_mn = (compute_quadrupole ? _2("<m|q_zz|n>") : TArray2());
+    TArray2 Qxx_mn = (compute_quadrupole ?
+                      q_xx_mn("m,n") - (q_zz_mn("m,n") + q_yy_mn("m,n")) * 0.5 : TArray2());
+    TArray2 Qyy_mn = (compute_quadrupole ?
+                      q_yy_mn("m,n") - (q_zz_mn("m,n") + q_xx_mn("m,n")) * 0.5 : TArray2());
+    TArray2 Qzz_mn = (compute_quadrupole ?
+                      q_zz_mn("m,n") - (q_xx_mn("m,n") + q_yy_mn("m,n")) * 0.5 : TArray2());
+    TArray2 Qxz_mn = (compute_quadrupole ? _2("<m|q_xz|n>") * 1.5 : TArray2());
+    TArray2 Qxy_mn = (compute_quadrupole ? _2("<m|q_xy|n>") * 1.5 : TArray2());
+    TArray2 Qyz_mn = (compute_quadrupole ? _2("<m|q_yz|n>") * 1.5 : TArray2());
+
+    TArray2 q_xx_am = (compute_quadrupole ? _2("<a|q_xx|m>") : TArray2());
+    TArray2 q_yy_am = (compute_quadrupole ? _2("<a|q_yy|m>") : TArray2());
+    TArray2 q_zz_am = (compute_quadrupole ? _2("<a|q_zz|m>") : TArray2());
+    TArray2 Qxx_am = (compute_quadrupole ?
+                      q_xx_am("a,m") - (q_zz_am("a,m") + q_yy_am("a,m")) * 0.5 : TArray2());
+    TArray2 Qyy_am = (compute_quadrupole ?
+                      q_yy_am("a,m") - (q_zz_am("a,m") + q_xx_am("a,m")) * 0.5 : TArray2());
+    TArray2 Qzz_am = (compute_quadrupole ?
+                      q_zz_am("a,m") - (q_xx_am("a,m") + q_yy_am("a,m")) * 0.5 : TArray2());
+    TArray2 Qxy_am = (compute_quadrupole ? _2("<a|q_xy|m>") * 1.5 : TArray2());
+    TArray2 Qxz_am = (compute_quadrupole ? _2("<a|q_xz|m>") * 1.5 : TArray2());
+    TArray2 Qyz_am = (compute_quadrupole ? _2("<a|q_yz|m>") * 1.5 : TArray2());
+
+    // electric field gradient integrals
+    TArray2 v_xx_mn = (compute_EFG ? _2("<m|ddphi_xx|n>") : TArray2());
+    TArray2 v_yy_mn = (compute_EFG ? _2("<m|ddphi_yy|n>") : TArray2());
+    TArray2 v_zz_mn = (compute_EFG ? _2("<m|ddphi_zz|n>") : TArray2());
+    TArray2 v_xy_mn = (compute_EFG ? _2("<m|ddphi_xy|n>") : TArray2());
+    TArray2 v_xz_mn = (compute_EFG ? _2("<m|ddphi_xz|n>") : TArray2());
+    TArray2 v_yz_mn = (compute_EFG ? _2("<m|ddphi_yz|n>") : TArray2());
+
+    TArray2 v_xx_am = (compute_EFG ? _2("<a|ddphi_xx|m>") : TArray2());
+    TArray2 v_yy_am = (compute_EFG ? _2("<a|ddphi_yy|m>") : TArray2());
+    TArray2 v_zz_am = (compute_EFG ? _2("<a|ddphi_zz|m>") : TArray2());
+    TArray2 v_xy_am = (compute_EFG ? _2("<a|ddphi_xy|m>") : TArray2());
+    TArray2 v_xz_am = (compute_EFG ? _2("<a|ddphi_xz|m>") : TArray2());
+    TArray2 v_yz_am = (compute_EFG ? _2("<a|ddphi_yz|m>") : TArray2());
+
+    // compute HF contribution
     Ref<Molecule> mol = r12world_->basis()->molecule();
-    for(int a = 0; a < mol->natom(); ++a) {
-      mu_z_n += mol->Z(a) * mol->r(a, 2);
+    const int natom = mol->natom();
+
+    TArray2 Imn = _2("<m|I|n>");
+
+    // HF eletric dipole
+    if (compute_dipole) {
+      // Nuclear contribution to dipole
+      double mu_z_n = 0.0;
+      for(int a = 0; a < natom; ++a) {
+        const double x = mol->r(a, 0);
+        const double y = mol->r(a, 1);
+        const double z = mol->r(a, 2);
+        const double Z = mol->Z(a);
+        mu_z_n += Z * z;
+      }
+
+      // SCF contribution to electronic electric dipole
+      const double mu_z_scf = dot(mu_z_mn("m,n"), Imn("m,n"));
+
+      std::cout << std::endl
+                << "mu_z (HF=SCF+N) = " << scprintf("%12.10f", mu_z_n - mu_z_scf * 2.0) //electron charge = -1, hence the minus
+                << std::endl << std::endl;
     }
-    std::cout << std::endl
-              << "mu_z (N) = " << scprintf("%12.10f", mu_z_n)
-              << std::endl;
-    // electron charge = -1
 
-    // Dipole integrals
-    TArray2 mu_z_mn = _2("<m|mu_z|n>");
-    TArray2 mu_z_ij = _2("<i|mu_z|j>");
-    TArray2 mu_z_ab = _2("<a|mu_z|b>");
-    TArray2 mu_z_apbp = _2("<a'|mu_z|b'>");
-    TArray2 mu_z_AB = _2("<A'|mu_z|B'>");
+    // HF eletric quadrupole
+    if (compute_quadrupole) {
+      // Nuclear electric quadrupole (traceless)
+      double q_xx_n = 0.0, q_yy_n = 0.0, q_zz_n = 0.0;
+      double q_xy_n = 0.0, q_xz_n = 0.0, q_yz_n = 0.0;
+      for(int a = 0; a < natom; ++a) {
+        const double x = mol->r(a, 0);
+        const double y = mol->r(a, 1);
+        const double z = mol->r(a, 2);
+        const double Z = mol->Z(a);
 
-    TArray2 mu_z_mA = _2("<m|mu_z|A'>");
-    TArray2 mu_z_am = _2("<a|mu_z|m>");
-    TArray2 mu_z_apb = _2("<a'|mu_z|b>");
+        q_xx_n += Z * (x * x - (z * z + y * y) * 0.5); // traceless form of the quadrupole
+        q_yy_n += Z * (y * y - (z * z + x * x) * 0.5); // traceless form of the quadrupole
+        q_zz_n += Z * (z * z - (x * x + y * y) * 0.5); // traceless form of the quadrupole
+        q_xy_n += Z * (x * y * 1.5); // traceless form of the quadrupole
+        q_xz_n += Z * (x * z * 1.5); // traceless form of the quadrupole
+        q_yz_n += Z * (y * z * 1.5); // traceless form of the quadrupole
+      }
 
-    // SCF contribution to electronic dipole
-    const double mu_z_scf = dot(mu_z_mn("m,n"), _2("<m|I|n>"));
-    std::cout << std::endl
-              << "mu_z (SCF) = " << scprintf("%12.10f", - mu_z_scf * 2.0)
-              << std::endl;
+      // SCF contribution to electronic electric quadrupoles
+      const double q_xx_scf = dot(Qxx_mn("m,n"), Imn("m,n"));
+      const double q_yy_scf = dot(Qyy_mn("m,n"), Imn("m,n"));
+      const double q_zz_scf = dot(Qzz_mn("m,n"), Imn("m,n"));
+      const double q_xy_scf = dot(Qxy_mn("m,n"), Imn("m,n"));
+      const double q_xz_scf = dot(Qxz_mn("m,n"), Imn("m,n"));
+      const double q_yz_scf = dot(Qyz_mn("m,n"), Imn("m,n"));
 
-    // Compute orbital relaxation contribution to 1e density
+      // HF electronic electric quadrupoles
+      std::cout << std::endl
+                << "traceless quadrupole moment (HF=SCF+N)" << std::endl
+                << "q_xx (HF) = " << scprintf("%12.10f", q_xx_n - q_xx_scf * 2.0)
+                << "  q_yy (HF) = " << scprintf("%12.10f", q_yy_n - q_yy_scf * 2.0)
+                << "  q_zz (HF) = " << scprintf("%12.10f", q_zz_n - q_zz_scf * 2.0)
+                << std::endl
+                << "q_xy (HF) = " << scprintf("%12.10f", q_xy_n - q_xy_scf * 2.0)
+                << "  q_xz (HF) = " << scprintf("%12.10f", q_xz_n - q_xz_scf * 2.0)
+                << "  q_yz (HF) = " << scprintf("%12.10f", q_yz_n- q_yz_scf * 2.0)
+                << std::endl;
+    }
+
+    // HF electric field gradient near the 1st nucleus
+    if (compute_EFG) {
+      // Nuclear contribution to electric field gradient near the 1st nucleus
+      double v_xx_n = 0.0, v_yy_n = 0.0, v_zz_n = 0.0;
+      double v_xy_n = 0.0, v_xz_n = 0.0, v_yz_n = 0.0;
+      for(int i = 1; i < natom; i++) {
+        const double x = mol->r(0, 0) - mol->r(i, 0);
+        const double y = mol->r(0, 1) - mol->r(i, 1);
+        const double z = mol->r(0, 2) - mol->r(i, 2);
+        const double r2 = x * x + y * y + z * z;
+        const double r = pow(r2, 0.5);
+        const double Z = mol->Z(i);
+
+        v_xx_n += - Z * (3.0 * x * x - r2) / (r * r2 * r2);
+        v_yy_n += - Z * (3.0 * y * y - r2) / (r * r2 * r2);
+        v_zz_n += - Z * (3.0 * z * z - r2) / (r * r2 * r2);
+
+        v_xy_n += - Z * (3.0 * x * y) / (r * r2 * r2);
+        v_xz_n += - Z * (3.0 * x * z) / (r * r2 * r2);
+        v_yz_n += - Z * (3.0 * y * z) / (r * r2 * r2);
+      }
+
+      // Electric field gradient near the 1st nucleus
+      const double v_xx_scf = dot(v_xx_mn("m,n"), Imn("m,n"));
+      const double v_yy_scf = dot(v_yy_mn("m,n"), Imn("m,n"));
+      const double v_zz_scf = dot(v_zz_mn("m,n"), Imn("m,n"));
+      const double v_xy_scf = dot(v_xy_mn("m,n"), Imn("m,n"));
+      const double v_xz_scf = dot(v_xz_mn("m,n"), Imn("m,n"));
+      const double v_yz_scf = dot(v_yz_mn("m,n"), Imn("m,n"));
+
+      std::cout << std::endl
+                << "electric gradient (HF=SCF+N)" << std::endl
+                << "v_xx (HF) = " << scprintf("%12.10f", v_xx_n + v_xx_scf * 2.0)
+                << "  v_yy (HF) = " << scprintf("%12.10f", v_yy_n + v_yy_scf * 2.0)
+                << "  v_zz (HF) = " << scprintf("%12.10f", v_zz_n + v_zz_scf * 2.0)
+                << std::endl
+                << "v_xy (HF) = " << scprintf("%12.10f", v_xy_n + v_xy_scf * 2.0)
+                << "  v_xz (HF) = " << scprintf("%12.10f", v_xz_n + v_xz_scf * 2.0)
+                << "  v_yz (HF) = " << scprintf("%12.10f", v_yz_n + v_yz_scf * 2.0)
+                << std::endl;
+    }
+
+    // compute integrals needed for orbital relaxation
     // i.e. solve Abnam Dbn = Xam (close-shell formula)
-    {
     TArray4 g_mnab = _4("<m n|g|a b>");
     TArray4 A_bnam = - _4("<b n|g|a m>") - g_mnab("m,n,b,a") + 4.0 * g_mnab("n,m,b,a")
-                     + _2("<b|F|a>") * _2("<m|I|n>") - _2("<a|I|b>") * _2("<m|F|n>")
-                     ;
+                     + _2("<b|F|a>") * Imn("m,n") - _2("<a|I|b>") * _2("<m|F|n>");
 
     // Make preconditioner: Delta_am = 1 / (<a|F|a> - <m|F|m>) for
     // solving k_bn A_bnam = X_am
@@ -1450,7 +1589,8 @@ namespace sc {
     pceval_type Delta_am_gen(TA::array_to_eigen(mFab), TA::array_to_eigen(mFmn));
 
     typedef TA::Array<T, 2, LazyTensor<T, 2, pceval_type > > TArray2d;
-    TArray2d Delta_am(mu_z_am.get_world(), mu_z_am.trange());
+    TArray2 Iam = _2("<a|I|m>");
+    TArray2d Delta_am(Iam.get_world(), Iam.trange());
 
     // construct local tiles
     for(auto t = Delta_am.trange().tiles().begin();
@@ -1471,13 +1611,12 @@ namespace sc {
     TA::ConjugateGradientSolver<TiledArray::Array<T,2>,
                                 detail::Orbital_relaxation_Abjai<double> > cg_solver2;
 
-    // CABS Singles orbital relaxation
+    // compute CABS singles contribution
 #if 1
     {
-    double tmp1 = madness::wall_time();
-
     TArray2 TmA = _2("<m|T1|A'>");
     TArray2 Tma = _2("<m|T1|a>");
+
     // density from CABS Singles contribution
     // D^m_n =  t^m_A' * t^A'_n
     TArray2 D_e2_mn = TmA("m,A'") * TmA("n,A'");
@@ -1485,13 +1624,7 @@ namespace sc {
     TArray2 D_e2_AB = TmA("m,A'") * TmA("m,B'");
     // D^A'_m = t^A'_m
 
-    const double mu_z_e2 = - dot(mu_z_mn("m,n"), D_e2_mn("m,n"))
-                           + dot(mu_z_AB("A',B'"), D_e2_AB("A',B'"))
-                           + dot(mu_z_mA("m,A'"), TmA("m,A'")) * 2.0
-                           ;
-    std::cout << std::endl << "mu_z (E2) = "
-              << scprintf("%12.10f", - mu_z_e2 * 2.0) << std::endl;
-
+    // CABS singles orbital response
     TArray2 Xam_E2 = Xam_CabsSingles(TmA, Tma);
     TArray2 Dbn_E2(Xam_E2.get_world(), Xam_E2.trange());
     // solve k_bn A_bnam = X_am
@@ -1501,24 +1634,217 @@ namespace sc {
                                  preconditioner,
                                  1e-10);
 
-    const double mu_z_E2 = dot(mu_z_am("a,m"), Dbn_E2("a,m"));
-    std::cout << std::endl << std::endl
-              << "mu_z (E2 orbital response) = " << scprintf("%12.10f", - mu_z_E2 * 2.0)
-              << std::endl << std::endl;
+    // compute CABS singles contribution to dipole
+    if (compute_dipole) {
+      TArray2 mu_z_AB = _2("<A'|mu_z|B'>");
+      TArray2 mu_z_mA = _2("<m|mu_z|A'>");
 
-    double tmp2 = madness::wall_time();
-    double t_CabsSingles = tmp2 - tmp1;
-    std::cout << std::endl
-              << "Time used for CABS Singles:" << t_CabsSingles
-              << std::endl << std::endl;
+      const double mu_z_e2 = - dot(mu_z_mn("m,n"), D_e2_mn("m,n"))
+                             + dot(mu_z_AB("A',B'"), D_e2_AB("A',B'"))
+                             + dot(mu_z_mA("m,A'"), TmA("m,A'")) * 2.0;
+      std::cout << std::endl << "mu_z (E2) = "
+                << scprintf("%12.10f", - mu_z_e2 * 2.0) << std::endl;
+
+      // CABS singles orbital response contribution to dipole
+      const double mu_z_E2 = dot(mu_z_am("a,m"), Dbn_E2("a,m"));
+      std::cout << std::endl << std::endl
+                << "mu_z (E2 orbital response) = " << scprintf("%12.10f", - mu_z_E2 * 2.0)
+                << std::endl << std::endl;
+    }
+    world_.gop.fence();
+
+    // CABS singles contribution to quadrupoles
+    if (compute_quadrupole) {
+      TArray2 q_xx_AB = _2("<A'|q_xx|B'>");
+      TArray2 q_yy_AB = _2("<A'|q_yy|B'>");
+      TArray2 q_zz_AB = _2("<A'|q_zz|B'>");
+      TArray2 Qxx_AB = q_xx_AB("A',B'") - (q_zz_AB("A',B'") + q_yy_AB("A',B'")) * 0.5;
+      TArray2 Qyy_AB = q_yy_AB("A',B'") - (q_xx_AB("A',B'") + q_zz_AB("A',B'")) * 0.5;
+      TArray2 Qzz_AB = q_zz_AB("A',B'") - (q_xx_AB("A',B'") + q_yy_AB("A',B'")) * 0.5;
+      TArray2 Qxy_AB = _2("<A'|q_xy|B'>") * 1.5;
+      TArray2 Qxz_AB = _2("<A'|q_xz|B'>") * 1.5;
+      TArray2 Qyz_AB = _2("<A'|q_yz|B'>") * 1.5;
+
+      TArray2 q_xx_mA = _2("<m|q_xx|A'>");
+      TArray2 q_yy_mA = _2("<m|q_yy|A'>");
+      TArray2 q_zz_mA = _2("<m|q_zz|A'>");
+      TArray2 Qxx_mA = q_xx_mA("m,A'") - (q_zz_mA("m,A'")  + q_yy_mA("m,A'") ) * 0.5;
+      TArray2 Qyy_mA = q_yy_mA("m,A'") - (q_xx_mA("m,A'")  + q_zz_mA("m,A'") ) * 0.5;
+      TArray2 Qzz_mA = q_zz_mA("m,A'") - (q_xx_mA("m,A'")  + q_yy_mA("m,A'") ) * 0.5;
+      TArray2 Qxy_mA = _2("<m|q_xy|A'>") * 1.5;
+      TArray2 Qxz_mA = _2("<m|q_xz|A'>") * 1.5;
+      TArray2 Qyz_mA = _2("<m|q_yz|A'>") * 1.5;
+
+      const double q_xx_e2 = - dot(Qxx_mn("m,n"), D_e2_mn("m,n"))
+                             + dot(Qxx_AB("A',B'"), D_e2_AB("A',B'"))
+                             + dot(Qxx_mA("m,A'"), TmA("m,A'")) * 2.0;
+      const double q_yy_e2 = - dot(Qyy_mn("m,n"), D_e2_mn("m,n"))
+                             + dot(Qyy_AB("A',B'"), D_e2_AB("A',B'"))
+                             + dot(Qyy_mA("m,A'"), TmA("m,A'")) * 2.0;
+      const double q_zz_e2 = - dot(Qzz_mn("m,n"), D_e2_mn("m,n"))
+                             + dot(Qzz_AB("A',B'"), D_e2_AB("A',B'"))
+                             + dot(Qzz_mA("m,A'"), TmA("m,A'")) * 2.0;
+      const double q_xy_e2 = - dot(Qxy_mn("m,n"), D_e2_mn("m,n"))
+                             + dot(Qxy_AB("A',B'"), D_e2_AB("A',B'"))
+                             + dot(Qxy_mA("m,A'"), TmA("m,A'")) * 2.0;
+      const double q_xz_e2 = - dot(Qxz_mn("m,n"), D_e2_mn("m,n"))
+                             + dot(Qxz_AB("A',B'"), D_e2_AB("A',B'"))
+                             + dot(Qxz_mA("m,A'"), TmA("m,A'")) * 2.0;
+      const double q_yz_e2 = - dot(Qyz_mn("m,n"), D_e2_mn("m,n"))
+                             + dot(Qyz_AB("A',B'"), D_e2_AB("A',B'"))
+                             + dot(Qyz_mA("m,A'"), TmA("m,A'")) * 2.0;
+
+      const double q_xx_e2or = dot(Qxx_am("a,m"), Dbn_E2("a,m"));
+      const double q_yy_e2or = dot(Qyy_am("a,m"), Dbn_E2("a,m"));
+      const double q_zz_e2or = dot(Qzz_am("a,m"), Dbn_E2("a,m"));
+      const double q_xy_e2or = dot(Qxy_am("a,m"), Dbn_E2("a,m"));
+      const double q_xz_e2or = dot(Qxz_am("a,m"), Dbn_E2("a,m"));
+      const double q_yz_e2or = dot(Qyz_am("a,m"), Dbn_E2("a,m"));
+
+      std::cout << std::endl
+                << "traceless quadrupole moment (E2)" << std::endl
+                << "q_xx (E2) = " << scprintf("%12.10f", - q_xx_e2 * 2.0)
+                << "  q_yy (E2) = " << scprintf("%12.10f", - q_yy_e2 * 2.0)
+                << "  q_zz (E2) = " << scprintf("%12.10f", - q_zz_e2 * 2.0)
+                << std::endl
+                << "q_xy (E2) = " << scprintf("%12.10f", - q_xy_e2 * 2.0)
+                << "  q_xz (E2) = " << scprintf("%12.10f", - q_xz_e2 * 2.0)
+                << "  q_yz (E2) = " << scprintf("%12.10f", - q_yz_e2 * 2.0)
+                << std::endl;
+      std::cout << std::endl
+                << "traceless quadrupole moment (E2 orbital response)" << std::endl
+                << "q_xx (E2 or) = " << scprintf("%12.10f", - q_xx_e2or * 2.0)
+                << "  q_yy (E2 or) = " << scprintf("%12.10f", - q_yy_e2or * 2.0)
+                << "  q_zz (E2 or) = " << scprintf("%12.10f", - q_zz_e2or * 2.0)
+                << std::endl
+                << "q_xy (E2 or) = " << scprintf("%12.10f", - q_xy_e2or * 2.0)
+                << "  q_xz (E2 or) = " << scprintf("%12.10f", - q_xz_e2or * 2.0)
+                << "  q_yz (E2 or) = " << scprintf("%12.10f", - q_yz_e2or * 2.0)
+                << std::endl << std::endl;
+    }
+    world_.gop.fence();
+
+    // CABS singles contribution to
+    // electric field gradient near the 1st nucleus
+    if (compute_EFG) {
+      TArray2 v_xx_mA = _2("<m|ddphi_xx|A'>");
+      TArray2 v_yy_mA = _2("<m|ddphi_yy|A'>");
+      TArray2 v_zz_mA = _2("<m|ddphi_zz|A'>");
+      TArray2 v_xy_mA = _2("<m|ddphi_xy|A'>");
+      TArray2 v_xz_mA = _2("<m|ddphi_xz|A'>");
+      TArray2 v_yz_mA = _2("<m|ddphi_yz|A'>");
+
+      TArray2 v_xx_AB = _2("<A'|ddphi_xx|B'>");
+      TArray2 v_yy_AB = _2("<A'|ddphi_yy|B'>");
+      TArray2 v_zz_AB = _2("<A'|ddphi_zz|B'>");
+      TArray2 v_xy_AB = _2("<A'|ddphi_xy|B'>");
+      TArray2 v_xz_AB = _2("<A'|ddphi_xz|B'>");
+      TArray2 v_yz_AB = _2("<A'|ddphi_yz|B'>");
+
+      const double v_xx_e2 = - dot(v_xx_mn("m,n"), D_e2_mn("m,n"))
+                             + dot(v_xx_AB("A',B'"), D_e2_AB("A',B'"))
+                             + dot(v_xx_mA("m,A'"), TmA("m,A'")) * 2.0;
+      const double v_yy_e2 = - dot(v_yy_mn("m,n"), D_e2_mn("m,n"))
+                             + dot(v_yy_AB("A',B'"), D_e2_AB("A',B'"))
+                             + dot(v_yy_mA("m,A'"), TmA("m,A'")) * 2.0;
+      const double v_zz_e2 = - dot(v_zz_mn("m,n"), D_e2_mn("m,n"))
+                             + dot(v_zz_AB("A',B'"), D_e2_AB("A',B'"))
+                             + dot(v_zz_mA("m,A'"), TmA("m,A'")) * 2.0;
+      const double v_xy_e2 = - dot(v_xy_mn("m,n"), D_e2_mn("m,n"))
+                             + dot(v_xy_AB("A',B'"), D_e2_AB("A',B'"))
+                             + dot(v_xy_mA("m,A'"), TmA("m,A'")) * 2.0;
+      const double v_xz_e2 = - dot(v_xz_mn("m,n"), D_e2_mn("m,n"))
+                             + dot(v_xz_AB("A',B'"), D_e2_AB("A',B'"))
+                             + dot(v_xz_mA("m,A'"), TmA("m,A'")) * 2.0;
+      const double v_yz_e2 = - dot(v_yz_mn("m,n"), D_e2_mn("m,n"))
+                             + dot(v_yz_AB("A',B'"), D_e2_AB("A',B'"))
+                             + dot(v_yz_mA("m,A'"), TmA("m,A'")) * 2.0;
+
+      const double v_xx_e2or = dot(v_xx_am("a,m"), Dbn_E2("a,m"));
+      const double v_yy_e2or = dot(v_yy_am("a,m"), Dbn_E2("a,m"));
+      const double v_zz_e2or = dot(v_zz_am("a,m"), Dbn_E2("a,m"));
+      const double v_xy_e2or = dot(v_xy_am("a,m"), Dbn_E2("a,m"));
+      const double v_xz_e2or = dot(v_xz_am("a,m"), Dbn_E2("a,m"));
+      const double v_yz_e2or = dot(v_yz_am("a,m"), Dbn_E2("a,m"));
+
+      std::cout << std::endl
+                << "electric gradient (E2)" << std::endl
+                << "v_xx (E2) = " << scprintf("%12.10f", v_xx_e2 * 2.0)
+                << "  v_yy (E2) = " << scprintf("%12.10f", v_yy_e2 * 2.0)
+                << "  v_zz (E2) = " << scprintf("%12.10f", v_zz_e2 * 2.0)
+                << std::endl
+                << "v_xy (E2) = " << scprintf("%12.10f", v_xy_e2 * 2.0)
+                << "  v_xz (E2) = " << scprintf("%12.10f", v_xz_e2 * 2.0)
+                << "  v_yz (E2) = " << scprintf("%12.10f", v_yz_e2 * 2.0)
+                << std::endl;
+      std::cout << std::endl
+                << "electric gradient (E2 orbital response)" << std::endl
+                << "v_xx (E2 or) = " << scprintf("%12.10f", v_xx_e2or * 2.0)
+                << "  v_yy (E2 or) = " << scprintf("%12.10f", v_yy_e2or * 2.0)
+                << "  v_zz (E2 or) = " << scprintf("%12.10f", v_zz_e2or * 2.0)
+                << std::endl
+                << "v_xy (E2 or) = " << scprintf("%12.10f", v_xy_e2or * 2.0)
+                << "  v_xz (E2 or) = " << scprintf("%12.10f", v_xz_e2or * 2.0)
+                << "  v_yz (E2 or) = " << scprintf("%12.10f", v_yz_e2or * 2.0)
+                << std::endl << std::endl;
+    }
+    world_.gop.fence();
+
     }
     world_.gop.fence();
 #endif
 
-    // MP2 and its orbital response
-    double tmp1 = madness::wall_time();
+    // compute integrals needed for MP2 and following calculations of properties
+    // dipole integrals
+    TArray2 mu_z_ij = (compute_dipole ? _2("<i|mu_z|j>") : TArray2());
+    TArray2 mu_z_ab = (compute_dipole ? _2("<a|mu_z|b>") : TArray2());
 
-    // Delta_ijab = - 1 / (- <i|F|i> - <j|F|j> + <a|F|a> + <b|F|b>)
+    // quadrupole integrasl
+    TArray2 q_xx_ij = (compute_quadrupole ? _2("<i|q_xx|j>") : TArray2());
+    TArray2 q_yy_ij = (compute_quadrupole ? _2("<i|q_yy|j>") : TArray2());
+    TArray2 q_zz_ij = (compute_quadrupole ? _2("<i|q_zz|j>") : TArray2());
+    TArray2 Qxx_ij = (compute_quadrupole ?
+                      q_xx_ij("i,j") - (q_zz_ij("i,j") + q_yy_ij("i,j")) * 0.5 : TArray2());
+    TArray2 Qyy_ij = (compute_quadrupole ?
+                      q_yy_ij("i,j") - (q_zz_ij("i,j") + q_xx_ij("i,j")) * 0.5 : TArray2());
+    TArray2 Qzz_ij = (compute_quadrupole ?
+                      q_zz_ij("i,j") - (q_xx_ij("i,j") + q_yy_ij("i,j")) * 0.5 : TArray2());
+    TArray2 Qxy_ij = (compute_quadrupole ? _2("<i|q_xy|j>") * 1.5 : TArray2());
+    TArray2 Qxz_ij = (compute_quadrupole ? _2("<i|q_xz|j>") * 1.5 : TArray2());
+    TArray2 Qyz_ij = (compute_quadrupole ? _2("<i|q_yz|j>") * 1.5 : TArray2());
+
+    TArray2 q_xx_ab = (compute_quadrupole ? _2("<a|q_xx|b>") : TArray2());
+    TArray2 q_yy_ab = (compute_quadrupole ? _2("<a|q_yy|b>") : TArray2());
+    TArray2 q_zz_ab = (compute_quadrupole ? _2("<a|q_zz|b>") : TArray2());
+    TArray2 Qxx_ab = (compute_quadrupole ?
+                      q_xx_ab("a,b") - (q_zz_ab("a,b") + q_yy_ab("a,b")) * 0.5 : TArray2());
+    TArray2 Qyy_ab = (compute_quadrupole ?
+                      q_yy_ab("a,b") - (q_zz_ab("a,b") + q_xx_ab("a,b")) * 0.5 : TArray2());
+    TArray2 Qzz_ab = (compute_quadrupole ?
+                      q_zz_ab("a,b") - (q_xx_ab("a,b") + q_yy_ab("a,b")) * 0.5 : TArray2());
+    TArray2 Qxy_ab = (compute_quadrupole ? _2("<a|q_xy|b>") * 1.5 : TArray2());
+    TArray2 Qxz_ab = (compute_quadrupole ? _2("<a|q_xz|b>") * 1.5 : TArray2());
+    TArray2 Qyz_ab = (compute_quadrupole ? _2("<a|q_yz|b>") * 1.5 : TArray2());
+
+    // electric field gradient integrals
+    TArray2 v_xx_ij = (compute_EFG ? _2("<i|ddphi_xx|j>") : TArray2());
+    TArray2 v_yy_ij = (compute_EFG ? _2("<i|ddphi_yy|j>") : TArray2());
+    TArray2 v_zz_ij = (compute_EFG ? _2("<i|ddphi_zz|j>") : TArray2());
+    TArray2 v_xy_ij = (compute_EFG ? _2("<i|ddphi_xy|j>") : TArray2());
+    TArray2 v_xz_ij = (compute_EFG ? _2("<i|ddphi_xz|j>") : TArray2());
+    TArray2 v_yz_ij = (compute_EFG ? _2("<i|ddphi_yz|j>") : TArray2());
+
+    TArray2 v_xx_ab = (compute_EFG ? _2("<a|ddphi_xx|b>") : TArray2());
+    TArray2 v_yy_ab = (compute_EFG ? _2("<a|ddphi_yy|b>") : TArray2());
+    TArray2 v_zz_ab = (compute_EFG ? _2("<a|ddphi_zz|b>") : TArray2());
+    TArray2 v_xy_ab = (compute_EFG ? _2("<a|ddphi_xy|b>") : TArray2());
+    TArray2 v_xz_ab = (compute_EFG ? _2("<a|ddphi_xz|b>") : TArray2());
+    TArray2 v_yz_ab = (compute_EFG ? _2("<a|ddphi_yz|b>") : TArray2());
+
+    // compute MP2 and its orbital response contribution
+
+    // compute Delta_ijab = - 1 / (- <i|F|i> - <j|F|j> + <a|F|a> + <b|F|b>)
+    // which is needed for MP2 amplitudes
     TArray2 mFij = - _2("<i|F|j>");
     TArray4 g_ijab = _4("<i j|g|a b>");
 
@@ -1550,13 +1876,7 @@ namespace sc {
                           * T2_ijab("j,k,a,b");
     TArray2 D_mp2_ab = (2.0 * T2_ijab("i,j,a,c") - T2_ijab("i,j,c,a"))
                           * T2_ijab("i,j,b,c");
-
-    // dipole from density
-    const double mu_z_mp2 = - dot(mu_z_ij("i,j"), D_mp2_ij("i,j"))
-                            + dot(mu_z_ab("a,b"), D_mp2_ab("a,b"));
-    std::cout << std::endl << "mu_z (MP2) = "
-              << scprintf("%12.10f", - mu_z_mp2 * 2.0) << std::endl;
-
+    // MP2 orbital response
     TArray2 X_mp2 = Xam_mp2(T2_ijab, D_mp2_ij, D_mp2_ab);
     TArray2 Dbn_mp2(X_mp2.get_world(), X_mp2.trange());
     auto resnorm_mp2 = cg_solver2(Orbital_relaxation_Abnam,
@@ -1564,16 +1884,138 @@ namespace sc {
                                   Dbn_mp2,
                                   preconditioner,
                                   1e-10);
-    //std::cout << std::endl << "Converged CG to " << resnorm_mp2 << std::endl;
-    const double mu_z_mp2or = dot(mu_z_am("a,m"), Dbn_mp2("a,m"));
-    std::cout << std::endl
-              << "mu_z (MP2 orbital response) = "<< scprintf("%12.10f", - mu_z_mp2or * 2.0)
-              << std::endl;
+    // MP2 dipole
+    if (compute_dipole) {
+      // MP2 density contribution to dipole
+      const double mu_z_mp2 = - dot(mu_z_ij("i,j"), D_mp2_ij("i,j"))
+                            + dot(mu_z_ab("a,b"), D_mp2_ab("a,b"));
+      std::cout << std::endl << "mu_z (MP2) = "
+                << scprintf("%12.10f", - mu_z_mp2 * 2.0) << std::endl;
+
+      // MP2 orbital response contribution to dipole
+      const double mu_z_mp2or = dot(mu_z_am("a,m"), Dbn_mp2("a,m"));
+      std::cout << std::endl
+                << "mu_z (MP2 orbital response) = "<< scprintf("%12.10f", - mu_z_mp2or * 2.0)
+                << std::endl << std::endl;
+    }
+
+    // MP2 contribution to quadrupoles
+    if (compute_quadrupole) {
+      const double q_xx_mp2 = - dot(Qxx_ij("i,j"), D_mp2_ij("i,j"))
+                              + dot(Qxx_ab("a,b"), D_mp2_ab("a,b"));
+      const double q_yy_mp2 = - dot(Qyy_ij("i,j"), D_mp2_ij("i,j"))
+                              + dot(Qyy_ab("a,b"), D_mp2_ab("a,b"));
+      const double q_zz_mp2 = - dot(Qzz_ij("i,j"), D_mp2_ij("i,j"))
+                              + dot(Qzz_ab("a,b"), D_mp2_ab("a,b"));
+      const double q_xy_mp2 = - dot(Qxy_ij("i,j"), D_mp2_ij("i,j"))
+                              + dot(Qxy_ab("a,b"), D_mp2_ab("a,b"));
+      const double q_xz_mp2 = - dot(Qxz_ij("i,j"), D_mp2_ij("i,j"))
+                              + dot(Qxz_ab("a,b"), D_mp2_ab("a,b"));
+      const double q_yz_mp2 = - dot(Qyz_ij("i,j"), D_mp2_ij("i,j"))
+                              + dot(Qyz_ab("a,b"), D_mp2_ab("a,b"));
+
+      const double q_xx_mp2or = dot(Qxx_am("a,m"), Dbn_mp2("a,m"));
+      const double q_yy_mp2or = dot(Qyy_am("a,m"), Dbn_mp2("a,m"));
+      const double q_zz_mp2or = dot(Qzz_am("a,m"), Dbn_mp2("a,m"));
+      const double q_xy_mp2or = dot(Qxy_am("a,m"), Dbn_mp2("a,m"));
+      const double q_xz_mp2or = dot(Qxz_am("a,m"), Dbn_mp2("a,m"));
+      const double q_yz_mp2or = dot(Qyz_am("a,m"), Dbn_mp2("a,m"));
+
+      std::cout << std::endl
+                << "traceless quadrupole moment (MP2)" << std::endl
+                << "q_xx (MP2) = " << scprintf("%12.10f", - q_xx_mp2 * 2.0)
+                << "  q_yy (MP2) = " << scprintf("%12.10f", - q_yy_mp2 * 2.0)
+                << "  q_zz (MP2) = " << scprintf("%12.10f", - q_zz_mp2 * 2.0)
+                << std::endl
+                << "q_xy (MP2) = " << scprintf("%12.10f", - q_xy_mp2 * 2.0)
+                << "  q_xz (MP2) = " << scprintf("%12.10f", - q_xz_mp2 * 2.0)
+                << "  q_yz (MP2) = " << scprintf("%12.10f", - q_yz_mp2 * 2.0)
+                << std::endl;
+      std::cout << std::endl
+                << "traceless quadrupole moment (MP2 orbital response)" << std::endl
+                << "q_xx (MP2 or) = " << scprintf("%12.10f", - q_xx_mp2or * 2.0)
+                << "  q_yy (MP2 or) = " << scprintf("%12.10f", - q_yy_mp2or * 2.0)
+                << "  q_zz (MP2 or) = " << scprintf("%12.10f", - q_zz_mp2or * 2.0)
+                << std::endl
+                << "q_xy (MP2 or) = " << scprintf("%12.10f", - q_xy_mp2or * 2.0)
+                << "  q_xz (MP2 or) = " << scprintf("%12.10f", - q_xz_mp2or * 2.0)
+                << "  q_yz (MP2 or) = " << scprintf("%12.10f", - q_yz_mp2or * 2.0)
+                << std::endl << std::endl;
+    }
+
+    // Electric field gradient near the 1st nucleus
+    if (compute_EFG) {
+      const double v_xx_mp2 = - dot(v_xx_ij("i,j"), D_mp2_ij("i,j"))
+                              + dot(v_xx_ab("a,b"), D_mp2_ab("a,b"));
+      const double v_yy_mp2 = - dot(v_yy_ij("i,j"), D_mp2_ij("i,j"))
+                              + dot(v_yy_ab("a,b"), D_mp2_ab("a,b"));
+      const double v_zz_mp2 = - dot(v_zz_ij("i,j"), D_mp2_ij("i,j"))
+                              + dot(v_zz_ab("a,b"), D_mp2_ab("a,b"));
+      const double v_xy_mp2 = - dot(v_xy_ij("i,j"), D_mp2_ij("i,j"))
+                              + dot(v_xy_ab("a,b"), D_mp2_ab("a,b"));
+      const double v_xz_mp2 = - dot(v_xz_ij("i,j"), D_mp2_ij("i,j"))
+                              + dot(v_xz_ab("a,b"), D_mp2_ab("a,b"));
+      const double v_yz_mp2 = - dot(v_yz_ij("i,j"), D_mp2_ij("i,j"))
+                              + dot(v_yz_ab("a,b"), D_mp2_ab("a,b"));
+
+      const double v_xx_mp2or = dot(v_xx_am("a,m"), Dbn_mp2("a,m"));
+      const double v_yy_mp2or = dot(v_yy_am("a,m"), Dbn_mp2("a,m"));
+      const double v_zz_mp2or = dot(v_zz_am("a,m"), Dbn_mp2("a,m"));
+      const double v_xy_mp2or = dot(v_xy_am("a,m"), Dbn_mp2("a,m"));
+      const double v_xz_mp2or = dot(v_xz_am("a,m"), Dbn_mp2("a,m"));
+      const double v_yz_mp2or = dot(v_yz_am("a,m"), Dbn_mp2("a,m"));
+
+      std::cout << std::endl
+                << "electric gradient (MP2)" << std::endl
+                << "v_xx (MP2) = " << scprintf("%12.10f", - v_xx_mp2 * 2.0)
+                << "  v_yy (MP2) = " << scprintf("%12.10f", - v_yy_mp2 * 2.0)
+                << "  v_zz (MP2) = " << scprintf("%12.10f", - v_zz_mp2 * 2.0)
+                << std::endl
+                << "v_xy (MP2) = " << scprintf("%12.10f", - v_xy_mp2 * 2.0)
+                << "  v_xz (MP2) = " << scprintf("%12.10f", - v_xz_mp2 * 2.0)
+                << "  v_yz (MP2) = " << scprintf("%12.10f", - v_yz_mp2 * 2.0)
+                << std::endl;
+      std::cout << std::endl
+                << "electric gradient (MP2 orbital response)" << std::endl
+                << "v_xx (MP2 or) = " << scprintf("%12.10f", - v_xx_mp2or * 2.0)
+                << "  v_yy (MP2 or) = " << scprintf("%12.10f", - v_yy_mp2or * 2.0)
+                << "  v_zz (MP2 or) = " << scprintf("%12.10f", - v_zz_mp2or * 2.0)
+                << std::endl
+                << "v_xy (MP2 or) = " << scprintf("%12.10f", - v_xy_mp2or * 2.0)
+                << "  v_xz (MP2 or) = " << scprintf("%12.10f", - v_xz_mp2or * 2.0)
+                << "  v_yz (MP2 or) = " << scprintf("%12.10f", - v_yz_mp2or * 2.0)
+                << std::endl << std::endl;
+    }
 #endif
 
-    // F12 and its orbital relaxation contributions
+    // compute integrals needed for F12 related calculations of properties
+    TArray2 mu_z_apb = (compute_dipole ? _2("<a'|mu_z|b>") : TArray2());
+
+    TArray2 q_xx_apb = (compute_quadrupole ? _2("<a'|q_xx|b>") : TArray2());
+    TArray2 q_yy_apb = (compute_quadrupole ? _2("<a'|q_yy|b>") : TArray2());
+    TArray2 q_zz_apb = (compute_quadrupole ? _2("<a'|q_zz|b>") : TArray2());
+
+    TArray2 Qxx_apb = (compute_quadrupole ?
+                       q_xx_apb("a',b") - (q_zz_apb("a',b") + q_yy_apb("a',b")) * 0.5 : TArray2());
+    TArray2 Qyy_apb = (compute_quadrupole ?
+                       q_yy_apb("a',b") - (q_zz_apb("a',b") + q_xx_apb("a',b")) * 0.5 : TArray2());
+    TArray2 Qzz_apb = (compute_quadrupole ?
+                       q_zz_apb("a',b") - (q_xx_apb("a',b") + q_yy_apb("a',b")) * 0.5 : TArray2());
+    TArray2 Qxy_apb = (compute_quadrupole ? _2("<a'|q_xy|b>") * 1.5 : TArray2());
+    TArray2 Qxz_apb = (compute_quadrupole ? _2("<a'|q_xz|b>") * 1.5 : TArray2());
+    TArray2 Qyz_apb = (compute_quadrupole ? _2("<a'|q_yz|b>") * 1.5 : TArray2());
+
+    TArray2 v_xx_apb = (compute_EFG ? _2("<a'|ddphi_xx|b>") : TArray2());
+    TArray2 v_yy_apb = (compute_EFG ? _2("<a'|ddphi_yy|b>") : TArray2());
+    TArray2 v_zz_apb = (compute_EFG ? _2("<a'|ddphi_zz|b>") : TArray2());
+    TArray2 v_xy_apb = (compute_EFG ? _2("<a'|ddphi_xy|b>") : TArray2());
+    TArray2 v_xz_apb = (compute_EFG ? _2("<a'|ddphi_xz|b>") : TArray2());
+    TArray2 v_yz_apb = (compute_EFG ? _2("<a'|ddphi_yz|b>") : TArray2());
+
+    // singlet and triplet coefficients for F12 and coupling terms
     const double C_0 = 1.0 / 2.0;
     const double C_1 = 1.0 / 4.0;
+    // compute coefficients needed in the F12 and coupling calculations
     const double R_C1 = (0.5 * C_0 + 1.5 * C_1);
     const double R_C2 = (0.5 * C_0 - 1.5 * C_1);
     const double RR_C1 = 0.5 * C_0 * C_0 + 1.5 * C_1 * C_1;
@@ -1609,18 +2051,7 @@ namespace sc {
                        + RR_C1 * A_ijab("k,l,b,c") + RR_C2 * A_ijab("k,l,c,b")
                        );
 
-    // Dipole from density above
-    const double mu_z_mp2f12 = - dot(mu_z_ij("i,j"), D_mp2f12_ij("i,j"))
-                               + dot(mu_z_ab("a,b"), D_mp2f12_ab("a,b"));
-    std::cout << std::endl << "mu_z (MP2F12 coupling) = "
-              << scprintf("%12.10f", - mu_z_mp2f12 * 2.0) << std::endl;
-
-    const double mu_z_RT2 = dot(mu_z_apb("a',b"), RT_apb("a',b"));
-    std::cout << std::endl
-              << "mu_z (CT2) = " << scprintf("%12.10f", - mu_z_RT2 * 4.0)
-              << std::endl << std::endl;
-
-    // Compute orbital response
+    // MP2 F12 coupling contribution to orbital response
     TArray2 Xmp2f12_contri = Xam_Cmp2f12(C_0, C_1,T2_ijab, A_ijab,
                                          D_mp2f12_ij, D_mp2f12_ab, RT_apb);
     TArray2 Dbn_mp2f12(Xmp2f12_contri.get_world(), Xmp2f12_contri.trange());
@@ -1629,34 +2060,136 @@ namespace sc {
                                      Dbn_mp2f12,
                                      preconditioner,
                                      1e-10);
-    const double mu_z_Xam_mp2f12 = dot(mu_z_am("a,m"), Dbn_mp2f12("a,m"));
-    std::cout << std::endl
-              << "mu_z (MP2-F12 coupling orbital response) = " << scprintf("%12.10f", - mu_z_Xam_mp2f12 * 4.0)
-              << std::endl;
+
+    // MP2-F12 coupling contribution to dipole
+    if (compute_dipole) {
+      // MP2 F12 coupling density contribution to dipole
+      const double mu_z_mp2f12 = - dot(mu_z_ij("i,j"), D_mp2f12_ij("i,j"))
+                                 + dot(mu_z_ab("a,b"), D_mp2f12_ab("a,b"))
+                                 + dot(mu_z_apb("a',b"), RT_apb("a',b")) * 2.0;
+      std::cout << std::endl << "mu_z (MP2F12 coupling) = "
+                << scprintf("%12.10f", - mu_z_mp2f12 * 2.0) << std::endl;
+
+      // MP2-F12 coupling orbital response contribution to dipole
+      const double mu_z_Xam_mp2f12 = dot(mu_z_am("a,m"), Dbn_mp2f12("a,m"));
+      std::cout << std::endl
+                << "mu_z (MP2-F12 coupling orbital response) = " << scprintf("%12.10f", - mu_z_Xam_mp2f12 * 4.0)
+                << std::endl << std::endl;;
+    }
+
+    // MP2-F12 coupling contribution to quadrupoles
+    if (compute_quadrupole) {
+      const double q_xx_mp2f12C = - dot(Qxx_ij("i,j"), D_mp2f12_ij("i,j"))
+                                  + dot(Qxx_ab("a,b"), D_mp2f12_ab("a,b"))
+                                  + dot(Qxx_apb("a',b"), RT_apb("a',b")) * 2.0;
+      const double q_yy_mp2f12C = - dot(Qyy_ij("i,j"), D_mp2f12_ij("i,j"))
+                                  + dot(Qyy_ab("a,b"), D_mp2f12_ab("a,b"))
+                                  + dot(Qyy_apb("a',b"), RT_apb("a',b")) * 2.0;
+      const double q_zz_mp2f12C = - dot(Qzz_ij("i,j"), D_mp2f12_ij("i,j"))
+                                  + dot(Qzz_ab("a,b"), D_mp2f12_ab("a,b"))
+                                  + dot(Qzz_apb("a',b"), RT_apb("a',b")) * 2.0;
+      const double q_xy_mp2f12C = - dot(Qxy_ij("i,j"), D_mp2f12_ij("i,j"))
+                                  + dot(Qxy_ab("a,b"), D_mp2f12_ab("a,b"))
+                                  + dot(Qxy_apb("a',b"), RT_apb("a',b")) * 2.0;
+      const double q_xz_mp2f12C = - dot(Qxz_ij("i,j"), D_mp2f12_ij("i,j"))
+                                  + dot(Qxz_ab("a,b"), D_mp2f12_ab("a,b"))
+                                  + dot(Qxz_apb("a',b"), RT_apb("a',b")) * 2.0;
+      const double q_yz_mp2f12C = - dot(Qyz_ij("i,j"), D_mp2f12_ij("i,j"))
+                                  + dot(Qyz_ab("a,b"), D_mp2f12_ab("a,b"))
+                                  + dot(Qyz_apb("a',b"), RT_apb("a',b")) * 2.0;
+
+      const double q_xx_mp2f12Cor = dot(Qxx_am("a,m"), Dbn_mp2f12("a,m"));
+      const double q_yy_mp2f12Cor = dot(Qyy_am("a,m"), Dbn_mp2f12("a,m"));
+      const double q_zz_mp2f12Cor = dot(Qzz_am("a,m"), Dbn_mp2f12("a,m"));
+      const double q_xy_mp2f12Cor = dot(Qxy_am("a,m"), Dbn_mp2f12("a,m"));
+      const double q_xz_mp2f12Cor = dot(Qxz_am("a,m"), Dbn_mp2f12("a,m"));
+      const double q_yz_mp2f12Cor = dot(Qyz_am("a,m"), Dbn_mp2f12("a,m"));
+
+      std::cout << std::endl
+                << "traceless quadrupole moment (MP2F12 coupling)" << std::endl
+                << "q_xx (MP2F12 C) = " << scprintf("%12.10f", - q_xx_mp2f12C * 2.0)
+                << "  q_yy (MP2F12 C) = " << scprintf("%12.10f", - q_yy_mp2f12C * 2.0)
+                << "  q_zz (MP2F12 C) = " << scprintf("%12.10f", - q_zz_mp2f12C * 2.0)
+                << std::endl
+                << "q_xy (MP2F12 C) = " << scprintf("%12.10f", - q_xy_mp2f12C * 2.0)
+                << "  q_xz (MP2F12 C) = " << scprintf("%12.10f", - q_xz_mp2f12C * 2.0)
+                << "  q_yz (MP2F12 C) = " << scprintf("%12.10f", - q_yz_mp2f12C * 2.0)
+                << std::endl;
+      std::cout << std::endl
+                << "traceless quadrupole moment (MP2F12 coupling orbital response)" << std::endl
+                << "q_xx (MP2F12 C or) = " << scprintf("%12.10f", - q_xx_mp2f12Cor * 2.0)
+                << "  q_yy (MP2F12 C or) = " << scprintf("%12.10f", - q_yy_mp2f12Cor * 2.0)
+                << "  q_zz (MP2F12 C or) = " << scprintf("%12.10f", - q_zz_mp2f12Cor * 2.0)
+                << std::endl
+                << "q_xy (MP2F12 C or) = " << scprintf("%12.10f", - q_xy_mp2f12Cor * 2.0)
+                << "  q_xz (MP2F12 C or) = " << scprintf("%12.10f", - q_xz_mp2f12Cor * 2.0)
+                << "  q_yz (MP2F12 C or) = " << scprintf("%12.10f", - q_yz_mp2f12Cor * 2.0)
+                << std::endl << std::endl;
+    }
+
+    // MP2-F12 coupling contribution to electric field gradient on 1st nucleus
+    if (compute_EFG) {
+      const double v_xx_mp2f12C = - dot(v_xx_ij("i,j"), D_mp2f12_ij("i,j"))
+                                  + dot(v_xx_ab("a,b"), D_mp2f12_ab("a,b"))
+                                  + dot(v_xx_apb("a',b"), RT_apb("a',b")) * 2.0;
+      const double v_yy_mp2f12C = - dot(v_yy_ij("i,j"), D_mp2f12_ij("i,j"))
+                                  + dot(v_yy_ab("a,b"), D_mp2f12_ab("a,b"))
+                                  + dot(v_yy_apb("a',b"), RT_apb("a',b")) * 2.0;
+      const double v_zz_mp2f12C = - dot(v_zz_ij("i,j"), D_mp2f12_ij("i,j"))
+                                  + dot(v_zz_ab("a,b"), D_mp2f12_ab("a,b"))
+                                  + dot(v_zz_apb("a',b"), RT_apb("a',b")) * 2.0;
+      const double v_xy_mp2f12C = - dot(v_xy_ij("i,j"), D_mp2f12_ij("i,j"))
+                                  + dot(v_xy_ab("a,b"), D_mp2f12_ab("a,b"))
+                                  + dot(v_xy_apb("a',b"), RT_apb("a',b")) * 2.0;
+      const double v_xz_mp2f12C = - dot(v_xz_ij("i,j"), D_mp2f12_ij("i,j"))
+                                  + dot(v_xz_ab("a,b"), D_mp2f12_ab("a,b"))
+                                  + dot(v_xz_apb("a',b"), RT_apb("a',b")) * 2.0;
+      const double v_yz_mp2f12C = - dot(v_yz_ij("i,j"), D_mp2f12_ij("i,j"))
+                                  + dot(v_yz_ab("a,b"), D_mp2f12_ab("a,b"))
+                                  + dot(v_yz_apb("a',b"), RT_apb("a',b")) * 2.0;
+
+      const double v_xx_mp2f12Cor = dot(v_xx_am("a,m"), Dbn_mp2f12("a,m"));
+      const double v_yy_mp2f12Cor = dot(v_yy_am("a,m"), Dbn_mp2f12("a,m"));
+      const double v_zz_mp2f12Cor = dot(v_zz_am("a,m"), Dbn_mp2f12("a,m"));
+      const double v_xy_mp2f12Cor = dot(v_xy_am("a,m"), Dbn_mp2f12("a,m"));
+      const double v_xz_mp2f12Cor = dot(v_xz_am("a,m"), Dbn_mp2f12("a,m"));
+      const double v_yz_mp2f12Cor = dot(v_yz_am("a,m"), Dbn_mp2f12("a,m"));
+
+      std::cout << std::endl
+                << "electric gradient (MP2F12 coupling)" << std::endl
+                << "v_xx (MP2F12 C) = " << scprintf("%12.10f", v_xx_mp2f12C * 2.0)
+                << "  v_yy (MP2F12 C) = " << scprintf("%12.10f", v_yy_mp2f12C * 2.0)
+                << "  v_zz (MP2F12 C) = " << scprintf("%12.10f", v_zz_mp2f12C * 2.0)
+                << std::endl
+                << "v_xy (MP2F12 C) = " << scprintf("%12.10f", v_xy_mp2f12C * 2.0)
+                << "  v_xz (MP2F12 C) = " << scprintf("%12.10f", v_xz_mp2f12C * 2.0)
+                << "  v_yz (MP2F12 C) = " << scprintf("%12.10f", v_yz_mp2f12C * 2.0)
+                << std::endl;
+      std::cout << std::endl
+                << "electric gradient (MP2F12 coupling orbital response)" << std::endl
+                << "v_xx (MP2F12 C or) = " << scprintf("%12.10f", v_xx_mp2f12Cor * 2.0)
+                << "  v_yy (MP2F12 C or) = " << scprintf("%12.10f", v_yy_mp2f12Cor * 2.0)
+                << "  v_zz (MP2F12 C or) = " << scprintf("%12.10f", v_zz_mp2f12Cor * 2.0)
+                << std::endl
+                << "v_xy (MP2F12 C or) = " << scprintf("%12.10f", v_xy_mp2f12Cor * 2.0)
+                << "  v_xz (MP2F12 C or) = " << scprintf("%12.10f", v_xz_mp2f12Cor * 2.0)
+                << "  v_yz (MP2F12 C or) = " << scprintf("%12.10f", v_yz_mp2f12Cor * 2.0)
+                << std::endl << std::endl;
+    }
+
     }
     world_.gop.fence();
 #endif
 
+    // F12 contribution
 #if 1
-    {
-    // V contribution to F12 Xam
-    TArray2 Xam_Vcontri = Xam_V(C_0,C_1);
-
-    // X contribution to F12 Xam
-    TArray2 Xam_Xcontri = Xam_X(C_0,C_1);
-
-    // B contribution to F12 Xam
-    TArray2 Xam_Bcontri = Xam_B(C_0,C_1);
-
-    // contribution from f12 density
-    // which results from X and B terms
-#if 1
-    // Dij = 1/2 R^ik_A'B' R^A'B'_kl (A': all virtual)
+    // F12 density from X and B terms
     TArray4 r2_ijkl = _4("<i j|r2|k l>");
     TArray4 r_ijpq = _4("<i j|r|p q>");
     TArray4 r_ijapn = _4("<i j|r|a' n>");
     TArray4 r_ijnap = _4("<i j|r|n a'>");
 
+    // Dij = 1/2 R^ik_A'B' R^A'B'_kl (A': all virtual)
     TArray2 D_f12_ij =  (RR_C1 * r2_ijkl("i,k,j,l") + RR_C2 * r2_ijkl("k,i,j,l"))
                         * _2("<k|I|l>")
                       - (RR_C1 * r_ijpq("i,k,p,q") + RR_C2 * r_ijpq("k,i,p,q"))
@@ -1680,14 +2213,8 @@ namespace sc {
     TArray2 D_f12_apb = (RR_C1 * r_apcpkl("a',c',k,l") + RR_C2 * r_apcpkl("a',c',l,k"))
                         * r_acpkl("b,c',k,l");
 
-    const double mu_z_f12 = - dot(mu_z_ij("i,j"), D_f12_ij("i,j"))
-                            + dot(mu_z_ab("a,b"), D_f12_ab("a,b"))
-                            + dot(mu_z_apbp("a',b'"), D_f12_apbp("a',b'"))
-                            + dot(mu_z_apb("a',b"), D_f12_apb("a',b")) * 2.0;
-    std::cout << std::endl
-              << "** mu_z (F12) = " << - mu_z_f12 * 2.0
-              << std::endl << std::endl;
-
+    // F12 orbital response contribution to dipole
+    // X and B density contribution to Xam
     TArray4 g_abmc = _4("<a b|g|m c>");
     TArray2 gdf12_am =   (2.0 * _4("<a k|g|m l>") - _4("<a k|g|l m>"))
                          * D_f12_ij("k,l")
@@ -1702,7 +2229,15 @@ namespace sc {
                          * D_f12_apb("b',c")
                        - (2.0 * _4("<a b|g|m c'>") - _4("<a b|g|c' m>"))
                          * D_f12_apb("c',b");
-#endif
+
+    // V contribution to F12 Xam
+    TArray2 Xam_Vcontri = Xam_V(C_0,C_1);
+
+    // X contribution to F12 Xam
+    TArray2 Xam_Xcontri = Xam_X(C_0,C_1);
+
+    // B contribution to F12 Xam
+    TArray2 Xam_Bcontri = Xam_B(C_0,C_1);
 
     // CC F12 coupling contribution to Xai
 #if 0
@@ -1837,6 +2372,7 @@ namespace sc {
 
 #endif
 
+    // F12 contribution to orbital response
     TArray2 Xam_f12 = 2.0 * ( Xam_Vcontri("a,m")
                             - Xam_Xcontri("a,m")
                             + Xam_Bcontri("a,m")
@@ -1850,15 +2386,152 @@ namespace sc {
                                   Dbn_f12,
                                   preconditioner,
                                   1e-10);
-    const double mu_z_Xam_f12 = dot(mu_z_am("a,m"), Dbn_f12("a,m"));
-    std::cout << std::endl
-              << "mu_z (F12 orbital response) = " << scprintf("%12.10f", - mu_z_Xam_f12 * 2.0)
-              << std::endl << std::endl;
-    }
-#endif
 
+    if (compute_dipole) {
+      TArray2 mu_z_apbp = _2("<a'|mu_z|b'>");
+      // F12 density contribution to dipole
+      const double mu_z_f12 = - dot(mu_z_ij("i,j"), D_f12_ij("i,j"))
+                              + dot(mu_z_ab("a,b"), D_f12_ab("a,b"))
+                              + dot(mu_z_apbp("a',b'"), D_f12_apbp("a',b'"))
+                              + dot(mu_z_apb("a',b"), D_f12_apb("a',b")) * 2.0;
+      std::cout << std::endl
+                << "** mu_z (F12) = " << - mu_z_f12 * 2.0
+                << std::endl;
+      const double mu_z_Xam_f12 = dot(mu_z_am("a,m"), Dbn_f12("a,m"));
+      std::cout << std::endl
+                << "mu_z (F12 orbital response) = " << scprintf("%12.10f", - mu_z_Xam_f12 * 2.0)
+                << std::endl << std::endl;
     }
     world_.gop.fence();
+
+    // F12 contribution to quadrupoles
+    if (compute_quadrupole) {
+      TArray2 q_xx_apbp = _2("<a'|q_xx|b'>");
+      TArray2 q_yy_apbp = _2("<a'|q_yy|b'>");
+      TArray2 q_zz_apbp = _2("<a'|q_zz|b'>");
+
+      TArray2 Qxx_apbp = q_xx_apbp("a',b'") - (q_zz_apbp("a',b'") + q_yy_apbp("a',b'")) * 0.5;
+      TArray2 Qyy_apbp = q_yy_apbp("a',b'") - (q_zz_apbp("a',b'") + q_xx_apbp("a',b'")) * 0.5;
+      TArray2 Qzz_apbp = q_zz_apbp("a',b'") - (q_xx_apbp("a',b'") + q_yy_apbp("a',b'")) * 0.5;
+      TArray2 Qxy_apbp = _2("<a'|q_xy|b'>") * 1.5;
+      TArray2 Qxz_apbp = _2("<a'|q_xz|b'>") * 1.5;
+      TArray2 Qyz_apbp = _2("<a'|q_yz|b'>") * 1.5;
+
+      const double q_xx_f12 = - dot(Qxx_ij("i,j"), D_f12_ij("i,j"))
+                              + dot(Qxx_ab("a,b"), D_f12_ab("a,b"))
+                              + dot(Qxx_apbp("a',b'"), D_f12_apbp("a',b'"))
+                              + dot(Qxx_apb("a',b"), D_f12_apb("a',b")) * 2.0;
+      const double q_yy_f12 = - dot(Qyy_ij("i,j"), D_f12_ij("i,j"))
+                              + dot(Qyy_ab("a,b"), D_f12_ab("a,b"))
+                              + dot(Qyy_apbp("a',b'"), D_f12_apbp("a',b'"))
+                              + dot(Qyy_apb("a',b"), D_f12_apb("a',b")) * 2.0;
+      const double q_zz_f12 = - dot(Qzz_ij("i,j"), D_f12_ij("i,j"))
+                              + dot(Qzz_ab("a,b"), D_f12_ab("a,b"))
+                              + dot(Qzz_apbp("a',b'"), D_f12_apbp("a',b'"))
+                              + dot(Qzz_apb("a',b"), D_f12_apb("a',b")) * 2.0;
+      const double q_xy_f12 = - dot(Qxy_ij("i,j"), D_f12_ij("i,j"))
+                              + dot(Qxy_ab("a,b"), D_f12_ab("a,b"))
+                              + dot(Qxy_apbp("a',b'"), D_f12_apbp("a',b'"))
+                              + dot(Qxy_apb("a',b"), D_f12_apb("a',b")) * 2.0;
+      const double q_xz_f12 = - dot(Qxz_ij("i,j"), D_f12_ij("i,j"))
+                              + dot(Qxz_ab("a,b"), D_f12_ab("a,b"))
+                              + dot(Qxz_apbp("a',b'"), D_f12_apbp("a',b'"))
+                              + dot(Qxz_apb("a',b"), D_f12_apb("a',b")) * 2.0;
+      const double q_yz_f12 = - dot(Qyz_ij("i,j"), D_f12_ij("i,j"))
+                              + dot(Qyz_ab("a,b"), D_f12_ab("a,b"))
+                              + dot(Qyz_apbp("a',b'"), D_f12_apbp("a',b'"))
+                              + dot(Qyz_apb("a',b"), D_f12_apb("a',b")) * 2.0;
+
+      const double q_xx_f12or = dot(Qxx_am("a,m"), Dbn_f12("a,m"));
+      const double q_yy_f12or = dot(Qyy_am("a,m"), Dbn_f12("a,m"));
+      const double q_zz_f12or = dot(Qzz_am("a,m"), Dbn_f12("a,m"));
+      const double q_xy_f12or = dot(Qxy_am("a,m"), Dbn_f12("a,m"));
+      const double q_xz_f12or = dot(Qxz_am("a,m"), Dbn_f12("a,m"));
+      const double q_yz_f12or = dot(Qyz_am("a,m"), Dbn_f12("a,m"));
+
+      std::cout << "traceless quadrupole moment (F12)" << std::endl
+                << "q_xx (F12) = " << scprintf("%12.10f", - q_xx_f12 * 2.0)
+                << "  q_yy (F12) = " << scprintf("%12.10f", - q_yy_f12 * 2.0)
+                << "  q_zz (F12) = " << scprintf("%12.10f", - q_zz_f12 * 2.0)
+                << std::endl
+                << "q_xy (F12) = " << scprintf("%12.10f", - q_xy_f12 * 2.0)
+                << "  q_xz (F12) = " << scprintf("%12.10f", - q_xz_f12 * 2.0)
+                << "  q_yz (F12) = " << scprintf("%12.10f", - q_yz_f12 * 2.0)
+                << std::endl;
+      std::cout << "traceless quadrupole moment (F12 orbital response)" << std::endl
+                << "q_xx (F12 or) = " << scprintf("%12.10f", - q_xx_f12or * 2.0)
+                << "  q_yy (F12 or) = " << scprintf("%12.10f", - q_yy_f12or * 2.0)
+                << "  q_zz (F12 or) = " << scprintf("%12.10f", - q_zz_f12or * 2.0)
+                << std::endl
+                << "q_xy (F12 or) = " << scprintf("%12.10f", - q_xy_f12or * 2.0)
+                << "  q_xz (F12 or) = " << scprintf("%12.10f", - q_xz_f12or * 2.0)
+                << "  q_yz (F12 or) = " << scprintf("%12.10f", - q_yz_f12or * 2.0)
+                << std::endl << std::endl;
+    }
+    world_.gop.fence();
+
+    if (compute_EFG) {
+      TArray2 v_xx_apbp = _2("<a'|ddphi_xx|b'>");
+      TArray2 v_yy_apbp = _2("<a'|ddphi_yy|b'>");
+      TArray2 v_zz_apbp = _2("<a'|ddphi_zz|b'>");
+      TArray2 v_xy_apbp = _2("<a'|ddphi_xy|b'>");
+      TArray2 v_xz_apbp = _2("<a'|ddphi_xz|b'>");
+      TArray2 v_yz_apbp = _2("<a'|ddphi_yz|b'>");
+
+      // F12 contribution to electric gradient
+      const double v_xx_f12 = - dot(v_xx_ij("i,j"), D_f12_ij("i,j"))
+                              + dot(v_xx_ab("a,b"), D_f12_ab("a,b"))
+                              + dot(v_xx_apbp("a',b'"), D_f12_apbp("a',b'"))
+                              + dot(v_xx_apb("a',b"), D_f12_apb("a',b")) * 2.0;
+      const double v_yy_f12 = - dot(v_yy_ij("i,j"), D_f12_ij("i,j"))
+                              + dot(v_yy_ab("a,b"), D_f12_ab("a,b"))
+                              + dot(v_yy_apbp("a',b'"), D_f12_apbp("a',b'"))
+                              + dot(v_yy_apb("a',b"), D_f12_apb("a',b")) * 2.0;
+      const double v_zz_f12 = - dot(v_zz_ij("i,j"), D_f12_ij("i,j"))
+                              + dot(v_zz_ab("a,b"), D_f12_ab("a,b"))
+                              + dot(v_zz_apbp("a',b'"), D_f12_apbp("a',b'"))
+                              + dot(v_zz_apb("a',b"), D_f12_apb("a',b")) * 2.0;
+      const double v_xy_f12 = - dot(v_xy_ij("i,j"), D_f12_ij("i,j"))
+                              + dot(v_xy_ab("a,b"), D_f12_ab("a,b"))
+                              + dot(v_xy_apbp("a',b'"), D_f12_apbp("a',b'"))
+                              + dot(v_xy_apb("a',b"), D_f12_apb("a',b")) * 2.0;
+      const double v_xz_f12 = - dot(v_xz_ij("i,j"), D_f12_ij("i,j"))
+                              + dot(v_xz_ab("a,b"), D_f12_ab("a,b"))
+                              + dot(v_xz_apbp("a',b'"), D_f12_apbp("a',b'"))
+                              + dot(v_xz_apb("a',b"), D_f12_apb("a',b")) * 2.0;
+      const double v_yz_f12 = - dot(v_yz_ij("i,j"), D_f12_ij("i,j"))
+                              + dot(v_yz_ab("a,b"), D_f12_ab("a,b"))
+                              + dot(v_yz_apbp("a',b'"), D_f12_apbp("a',b'"))
+                              + dot(v_yz_apb("a',b"), D_f12_apb("a',b")) * 2.0;
+
+      const double v_xx_f12or = dot(v_xx_am("a,m"), Dbn_f12("a,m"));
+      const double v_yy_f12or = dot(v_yy_am("a,m"), Dbn_f12("a,m"));
+      const double v_zz_f12or = dot(v_zz_am("a,m"), Dbn_f12("a,m"));
+      const double v_xy_f12or = dot(v_xy_am("a,m"), Dbn_f12("a,m"));
+      const double v_xz_f12or = dot(v_xz_am("a,m"), Dbn_f12("a,m"));
+      const double v_yz_f12or = dot(v_yz_am("a,m"), Dbn_f12("a,m"));
+
+      std::cout << "electric gradient (F12)" << std::endl
+                << "v_xx (F12) = " << scprintf("%12.10f", v_xx_f12 * 2.0)
+                << "  v_yy (F12) = " << scprintf("%12.10f", v_yy_f12 * 2.0)
+                << "  v_zz (F12) = " << scprintf("%12.10f", v_zz_f12 * 2.0)
+                << std::endl
+                << "v_xy (F12) = " << scprintf("%12.10f", v_xy_f12 * 2.0)
+                << "  v_xz (F12) = " << scprintf("%12.10f", v_xz_f12 * 2.0)
+                << "  v_yz (F12) = " << scprintf("%12.10f", v_yz_f12 * 2.0)
+                << std::endl;
+      std::cout << "electric gradient (F12 orbital response)" << std::endl
+                << "v_xx (F12 or) = " << scprintf("%12.10f", v_xx_f12or * 2.0)
+                << "  v_yy (F12 or) = " << scprintf("%12.10f", v_yy_f12or * 2.0)
+                << "  v_zz (F12 or) = " << scprintf("%12.10f", v_zz_f12or * 2.0)
+                << std::endl
+                << "v_xy (F12 or) = " << scprintf("%12.10f", v_xy_f12or * 2.0)
+                << "  v_xz (F12 or) = " << scprintf("%12.10f", v_xz_f12or * 2.0)
+                << "  v_yz (F12 or) = " << scprintf("%12.10f", v_yz_f12or * 2.0)
+                << std::endl << std::endl;
+    }
+    world_.gop.fence();
+#endif
 
     /// this is just an example of how to compute the density
     TArray2 r2_i_j = _4("<i j|r|p q>") * _4("<k_F(p) j|r|p q>");

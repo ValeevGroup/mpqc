@@ -217,7 +217,7 @@ void R12IntEval::compute_B_DKH_() {
     Ref<R12Technology::G12NCCorrelationFactor> g12nccorrfact; g12nccorrfact << corrfactor();
     if (g12nccorrfact.null() && g12corrfact.null())
       throw FeatureNotImplemented("B(DKH2) evaluator can only work with Gaussian (or Gaussian-expanded) correlation factors",__FILE__,__LINE__);
-    Ref<IntParamsG12> params = g12corrfact.nonnull() ? new IntParamsG12(g12corrfact->function(0),
+    Ref<IntParamsG12> params = g12corrfact ? new IntParamsG12(g12corrfact->function(0),
                                                                       g12corrfact->function(0)) :
                                                      new IntParamsG12(g12nccorrfact->function(0),
                                                                       g12nccorrfact->function(0));

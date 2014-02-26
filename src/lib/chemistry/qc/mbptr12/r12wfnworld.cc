@@ -61,7 +61,7 @@ R12WavefunctionWorld::R12WavefunctionWorld(
     const Ref<RefWavefunction>& ref,
     Ref<OrbitalSpace> ri_space) :
     refwfn_(ref), ref_acc_for_cabs_space_(DBL_MAX),
-    ribs_space_(ri_space), ribs_space_given_(ribs_space_.nonnull())
+    ribs_space_(ri_space), ribs_space_given_(ribs_space_)
 {
   // by default use spin-orbital algorithm
   spinadapted_ = keyval->booleanvalue("spinadapted",KeyValValueboolean(false));
@@ -85,7 +85,7 @@ R12WavefunctionWorld::R12WavefunctionWorld(
 
   // boot up madness
 #ifdef HAVE_MADNESS
-  MADNESSRuntime::initialize();
+  mpqc::MADNESSRuntime::initialize();
 #endif
 }
 
@@ -103,7 +103,7 @@ R12WavefunctionWorld::R12WavefunctionWorld(StateIn& si) : SavableState(si)
 
   // boot up madness
 #ifdef HAVE_MADNESS
-  MADNESSRuntime::initialize();
+  mpqc::MADNESSRuntime::initialize();
 #endif
 }
 
@@ -111,7 +111,7 @@ R12WavefunctionWorld::~R12WavefunctionWorld()
 {
   // boot up madness
 #ifdef HAVE_MADNESS
-  MADNESSRuntime::finalize();
+  mpqc::MADNESSRuntime::finalize();
 #endif
 }
 

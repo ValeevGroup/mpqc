@@ -30,11 +30,10 @@
 
 #include <string>
 #include <map>
-#include <cassert>
+#include <vector>
 
 #include <util/class/class.h>
 #include <util/state/state.h>
-#include <math/mmisc/eigen.h>
 
 namespace sc {
 
@@ -154,14 +153,6 @@ class StateOut: public DescribedClass {
     virtual int put_array_double(const double*p,int size);
     //@}
 
-    /** @name StateOut::put_array()
-     *  Templated put_array() with specializations that call put_array_<type>()
-     */
-    //@{
-    //template <typename T> int put_array(const T* p, int size){ assert(false && "not implemented"); };
-    //@}
-
-
     /** @name StateOut::put(std::container)
      *  Write standard C++ library containers. All methods work with value (and/or key) type either a Ref to a SavableState or one of built-in types.
       *
@@ -178,7 +169,6 @@ class StateOut: public DescribedClass {
     }
 
     /// "Specialization" of the above put() to std::vector.
-    /*
     template <class T, class A>
     int put(const std::vector<T,A> &v) {
       const size_t l = v.size();
@@ -187,7 +177,6 @@ class StateOut: public DescribedClass {
         ToStateOut(*i,*this,r);
       return r;
     }
-    */
 
     /// Write an std::set. This also works if Key or Value is a Ref to a SavableState.
     template <typename Key, typename Compare, typename Alloc>
@@ -271,16 +260,7 @@ class StateOut: public DescribedClass {
   }
   /// @}
 
-  //template <> int StateOut::put_array<char>(const char* p, int size){ return put_array_char(p, size); }
-  //template <> int StateOut::put_array<unsigned int>(const unsigned int* p, int size){ return put_array_uint(p, size); }
-  //template <> int StateOut::put_array<int>(const int* p, int size){ return put_array_int(p, size); }
-  //template <> int StateOut::put_array<unsigned long>(const unsigned long* p, int size){ return put_array_ulong(p, size); }
-  //template <> int StateOut::put_array<long>(const long* p, int size){ return put_array_long(p, size); }
-  //template <> int StateOut::put_array<float>(const float* p, int size){ return put_array_float(p, size); }
-  //template <> int StateOut::put_array<double>(const double* p, int size){ return put_array_double(p, size); }
-
 } // namespace sc
-
 
 #endif
 

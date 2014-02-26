@@ -121,7 +121,7 @@ namespace sc {
       static int debug() { return 0; }
 
       Ref<DensityFittingInfo> dfinfo_;
-      bool use_density_fitting() { return dfinfo_.nonnull(); }
+      bool use_density_fitting() { return dfinfo_; }
 
       Ref<OrbitalSpaceRegistry> oreg_;
       Ref<AOSpaceRegistry> aoreg_;
@@ -161,6 +161,56 @@ namespace sc {
     private:
       Ref<PSqrtRegistry> psqrtregistry_;
 
+  };
+
+  /** Parsed representation of a string key that represents a one-body operator set (OneBodyOperSet + associated parameters).
+      This class is closely related to OneBodyOperSetDescr.
+    */
+  class ParsedOneBodyOperSetKey {
+    public:
+      ParsedOneBodyOperSetKey();
+      ParsedOneBodyOperSetKey(const std::string& key);
+
+      const std::string& key() const { return key_; }
+      const std::string& oper() const { return oper_; }
+      const std::string& params() const { return params_; }
+
+      /// computes key from its components
+      static std::string key(const std::string& oper,
+                             const std::string& params);
+      /// computes key from the given OneBodyOperSetDescr object
+      template <int NumCenters>
+      static std::string key(const Ref<typename NCentersToIntDescr<NumCenters,1>::value>& descr)
+      {
+        return OneBodyOperSetDescr::instance(descr->operset())->key() + ParamsRegistry::instance()->key(descr->params());
+      }
+
+      /// this factory method constructs a descriptor given operator key + IntParams object + Integrals object
+      template<int NumCenters>
+      static Ref<typename NCentersToIntDescr<NumCenters, 1>::value> create_descr(
+          const std::string& operset_key, const Ref<IntParams>& p,
+          const Ref<Integral>& integral) {
+        if (operset_key
+            == OneBodyOperSetDescr::instance(OneBodyOperSet::S)->key()) {
+          return new OneBodyNCenterIntDescr<NumCenters, OneBodyOperSet::S>(
+              integral, p);
+        }
+        if (operset_key
+            == OneBodyOperSetDescr::instance(OneBodyOperSet::T)->key()) {
+          return new OneBodyNCenterIntDescr<NumCenters, OneBodyOperSet::T>(
+              integral, p);
+        }
+        throw ProgrammingError(
+            "ParsedOneBodyOperKey::create_descr() -- unknown oper",
+            __FILE__,
+            __LINE__);
+      }
+
+
+    private:
+      std::string key_;
+      std::string oper_;
+      std::string params_;
   };
 
   /// Parsed representation of a string key that represents a set of one-body integrals

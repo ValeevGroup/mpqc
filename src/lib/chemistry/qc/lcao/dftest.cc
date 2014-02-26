@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
   Integral::set_default_integral(integral);
 
   Ref<ConsumableResources> res = ConsumableResources::initial_instance(argc, argv);
-  if (res.nonnull())
+  if (res)
     ConsumableResources::set_default_instance(res);
   res->print();
 

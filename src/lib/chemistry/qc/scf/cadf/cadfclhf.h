@@ -93,6 +93,7 @@
 // MPQC includes
 #include <chemistry/qc/scf/clhf.h>
 #include <util/container/conc_cache_fwd.h>
+#include <util/container/thread_wrap.h>
 
 #include "iters.h"
 
@@ -111,6 +112,12 @@ typedef unsigned long long ull;
 #define USE_INTEGRAL_CACHE 0
 
 namespace sc {
+
+// Forward Declarations
+
+class XMLWriter;
+
+//============================================================================//
 
 template <typename... Args>
 void
@@ -205,11 +212,14 @@ class CADFCLHF: public CLHF {
         struct Iteration {
 
           public:
-            // TODO count screening due to Schwarz pair screening vs. LinK screening
 
             Iteration() = default;
 
             Iteration(Iteration&& other)
+              : int_screening_values(other.int_screening_values),
+                int_actual_values(other.int_actual_values),
+                int_distance_factors(other.int_distance_factors),
+                int_distances(other.int_distances)
             {
               K_3c_needed.store(other.K_3c_needed.load());
               K_3c_needed_fxn.store(other.K_3c_needed_fxn.load());
@@ -219,6 +229,9 @@ class CADFCLHF: public CLHF {
               K_3c_underestimated_fxn.store(other.K_3c_underestimated_fxn.load());
               K_3c_perfect.store(other.K_3c_perfect.load());
               K_3c_perfect_fxn.store(other.K_3c_perfect_fxn.load());
+
+              parent = other.parent;
+              is_first = other.is_first;
             }
 
             accumulate_t K_3c_needed = { 0 };
@@ -230,81 +243,48 @@ class CADFCLHF: public CLHF {
             accumulate_t K_3c_perfect = { 0 };
             accumulate_t K_3c_perfect_fxn = { 0 };
 
-            //accumulate_t ints_2c_needed = { 0 };
-            //accumulate_t ints_2c_underestimated = { 0 };
+            ScreeningStatistics* parent;
+
+            ThreadReplicated<std::vector<double>> int_screening_values;
+            ThreadReplicated<std::vector<double>> int_actual_values;
+            ThreadReplicated<std::vector<double>> int_distance_factors;
+            ThreadReplicated<std::vector<double>> int_distances;
+
+            void set_nthread(int nthr) {
+              int_screening_values.set_nthread(nthr);
+              int_actual_values.set_nthread(nthr);
+              int_distance_factors.set_nthread(nthr);
+              int_distances.set_nthread(nthr);
+            }
+
+            bool is_first = false;
 
         };
 
         accumulate_t sig_pairs = { 0 };
         accumulate_t sig_pairs_fxn = { 0 };
+        int print_level = 0;
+        mutable bool xml_stats_saved = false;
 
         std::vector<Iteration> iterations;
 
-        ScreeningStatistics() : iterations() { }
+        ScreeningStatistics()
+          : iterations(),
+            print_level(0)
+        { }
 
         Iteration& next_iteration() {
           iterations.emplace_back();
+          iterations.back().is_first = iterations.size() == 1;
+          iterations.back().parent = this;
           return iterations.back();
         }
 
         void print_summary(std::ostream& out,
             const Ref<GaussianBasisSet>& basis,
             const Ref<GaussianBasisSet>& dfbs,
-            int print_level
-        ) const
-        {
-          using std::endl;
-          using std::setw;
-          const auto& old_loc = out.getloc(); out.imbue(std::locale(""));
-          out << indent << "CADFCLHF Screening Statistics" << endl;
-          out << indent << "-----------------------------" << endl;
-          const count_t total_3c = basis->nshell() * basis->nshell() * dfbs->nshell();
-          const count_t total_3c_fxn = basis->nbasis() * basis->nbasis() * dfbs->nbasis();
-          out << indent << "Total shell triplets: " << total_3c << endl
-              << indent << "Total function triplets: " << total_3c_fxn << endl
-              << indent << "Total shell triplets after Schwarz screening: "
-              << sig_pairs.load() * count_t(dfbs->nshell()) << endl
-              << indent << "Total function triplets after Schwarz screening: "
-              << sig_pairs_fxn.load() * count_t(dfbs->nbasis()) << endl;
-          int iteration = 1;
-          out << incindent;
-          out << indent << setw(38) << " "
-              << setw(22) << std::internal <<  "Shell-wise"
-              << setw(22) << std::internal <<  "Function-wise"
-              << endl;
-          out << decindent;
-
-          for(auto& iter : iterations) {
-            if(print_level > 1) {
-              out << indent << "Iteration " << iteration++ << ":" << endl;
-              auto pr_iter_stat = [&](
-                  const std::string& title,
-                  const count_t sh_num,
-                  const count_t fxn_num
-              ) {
-                out << indent << setw(38) << std::left << title
-                    << setw(14) << std::right << sh_num
-                    << setw(7) << scprintf(" (%3.1f", 100.0 * double(sh_num)/double(total_3c)) << "%)"
-                    << setw(14) << std::right << fxn_num
-                    << setw(7) << scprintf(" (%3.1f", 100.0 * double(fxn_num)/double(total_3c_fxn)) << "%)"
-                    << std::endl;
-              };
-              out << incindent;
-              pr_iter_stat("K: 3c ints needed", iter.K_3c_needed, iter.K_3c_needed_fxn);
-              pr_iter_stat("K: 3c ints screened by distance", iter.K_3c_dist_screened, iter.K_3c_dist_screened_fxn);
-              if(print_level > 2) {
-                pr_iter_stat("K: 3c ints underestimated", iter.K_3c_underestimated, iter.K_3c_underestimated_fxn);
-                pr_iter_stat("K: 3c ints needed, \"perfect screening\"", iter.K_3c_perfect, iter.K_3c_perfect_fxn);
-                pr_iter_stat("K: \"extra\" ints computed",
-                    iter.K_3c_needed - iter.K_3c_perfect,
-                    iter.K_3c_needed_fxn - iter.K_3c_perfect_fxn
-                );
-              }
-              out << decindent;
-            }
-          }
-          out.imbue(old_loc);
-        }
+            int print_level = -1
+        ) const;
     };
 
   private:
@@ -362,6 +342,12 @@ class CADFCLHF: public CLHF {
     bool old_two_body_ = false;
     /// Dump screening data to XML
     bool xml_screening_data_ = false;
+    /// Use extents to damp R distances for screening purposes
+    bool use_extents_ = false;
+    /// Use the maximum extent for contracted pairs.  Defaults to using coefficient weighted average
+    bool use_max_extents_ = true;
+    /// The CFMM well-separatedness thresh
+    double well_separated_thresh_ = 1e-8;
     //@}
 
     ScreeningStatistics stats_;
@@ -400,6 +386,18 @@ class CADFCLHF: public CLHF {
     RefSCMatrix compute_J();
 
     RefSCMatrix compute_K();
+
+    double get_distance_factor(
+        const ShellData& ish,
+        const ShellData& jsh,
+        const ShellData& Xsh
+    ) const;
+
+    double get_R(
+        const ShellData& ish,
+        const ShellData& jsh,
+        const ShellData& Xsh
+    ) const;
 
     void compute_coefficients();
 
@@ -578,6 +576,8 @@ class CADFCLHF: public CLHF {
      *  by the absolute value of the products of primitive coefficients
      */
     std::map<std::pair<int, int>, Eigen::Vector3d> pair_centers_;
+    std::map<std::pair<int, int>, double> pair_extents_;
+    std::vector<double> df_extents_;
 
     /// Coefficients storage.  Not accessed directly
     double* coefficients_data_ = 0;
@@ -667,6 +667,22 @@ class CADFCLHF: public CLHF {
     IndexListMap2 L_3;
 
 };
+
+boost::property_tree::ptree&
+write_xml(
+    const CADFCLHF::ScreeningStatistics& obj,
+    ptree& parent,
+    const XMLWriter& writer
+);
+
+boost::property_tree::ptree&
+write_xml(
+    const CADFCLHF::ScreeningStatistics::Iteration& obj,
+    ptree& parent,
+    const XMLWriter& writer
+);
+
+
 
 template <typename ShellRange>
 CADFCLHF::TwoCenterIntContainerPtr

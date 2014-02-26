@@ -63,11 +63,35 @@ Atom::write_xml(
   ptree& child = parent.add_child("Atom", ptree());
   child.put("Z", Z());
   child.put("label", label());
-  child.put("position.x", xyz(0));
-  child.put("position.y", xyz(1));
-  child.put("position.z", xyz(2));
+  child.put("position.x", r_[0]);
+  child.put("position.y", r_[1]);
+  child.put("position.z", r_[2]);
   child.put("mass", mass());
   if(have_fragment()) child.put("fragment", fragment());
   if(have_charge()) child.put("charge", charge());
   return child;
+}
+
+bool sc::operator ==(const Atom& a, const Atom& b) {
+  if (a.Z() != b.Z())
+    return false;
+  for(int xyz=0; xyz<3; ++xyz)
+    if (a.r(xyz) != b.r(xyz) )
+      return false;
+  if (a.have_charge() != b.have_charge())
+    return false;
+  if (a.have_charge()) {
+    if (a.charge() != b.charge())
+      return false;
+  }
+  if (a.have_fragment() != b.have_fragment())
+    return false;
+  if (a.have_fragment()) {
+    if (a.fragment() != b.fragment())
+      return false;
+  }
+  if (a.mass() != b.mass())
+    return false;
+  // labels are inconsequential
+  return true;
 }

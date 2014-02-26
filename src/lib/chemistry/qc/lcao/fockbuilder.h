@@ -88,7 +88,7 @@ namespace sc {
     };
 
     typedef Ref<OneBodyInt> (Integral::*OneBodyIntCreator)();
-    typedef Ref<OneBodyInt> (Integral::*MultipoleOneBodyIntCreator)(const Ref<DipoleData>&);
+    typedef Ref<OneBodyInt> (Integral::*MultipoleOneBodyIntCreator)(const Ref<IntParamsOrigin>&);
 
     template <OneBodyIntCreator OpEval>
     RefSymmSCMatrix onebodyint(const Ref<GaussianBasisSet>& bas,
@@ -174,13 +174,13 @@ namespace sc {
     template <MultipoleOneBodyIntCreator OpEval>
     void onebodyint_ao(const Ref<GaussianBasisSet>& brabas,
                        const Ref<GaussianBasisSet>& ketbas,
-                       const Ref<Integral>& integral, const Ref<DipoleData>& dipole_data,
+                       const Ref<Integral>& integral, const Ref<IntParamsOrigin>& multipole_origin,
                        std::vector<RefSCMatrix>& result) {
 
       Ref<Integral> localints = integral->clone();
       Ref<GPetiteList2> pl12 = GPetiteListFactory::plist2(brabas,ketbas);
       localints->set_basis(brabas,ketbas);
-      Ref<OneBodyInt> ob_ints = (localints->*OpEval)(dipole_data);
+      Ref<OneBodyInt> ob_ints = (localints->*OpEval)(multipole_origin);
 
       // form obints in AO basis
       const size_t nopers = result.size();
@@ -290,22 +290,7 @@ namespace sc {
                            const Ref<GaussianBasisSet>& brabs,
                            const Ref<GaussianBasisSet>& ketbs,
                            const Ref<GaussianBasisSet>& obs);
-
-    RefSCMatrix coulomb_df_local(const Ref<DensityFittingInfo>& df_info,
-                           const RefSymmSCMatrix& P,
-                           const Ref<GaussianBasisSet>& brabs,
-                           const Ref<GaussianBasisSet>& ketbs,
-                           const Ref<GaussianBasisSet>& obs);
-
     RefSCMatrix exchange_df(const Ref<DensityFittingInfo>& df_info,
-                            const RefSymmSCMatrix& P,
-                            SpinCase1 spin,
-                            const Ref<GaussianBasisSet>& brabs,
-                            const Ref<GaussianBasisSet>& ketbs,
-                            const Ref<GaussianBasisSet>& obs,
-                            const Ref<FockBuildRuntime::PSqrtRegistry>& psqrtregistry);
-
-    RefSCMatrix exchange_df_local(const Ref<DensityFittingInfo>& df_info,
                             const RefSymmSCMatrix& P,
                             SpinCase1 spin,
                             const Ref<GaussianBasisSet>& brabs,
@@ -348,7 +333,7 @@ namespace sc {
         Ref<Integral> localints = integral->clone();
 
         Ref<FockContribution> fc;
-        const bool openshell = openshelldensity.nonnull();
+        const bool openshell = openshelldensity;
         if (openshell) {
           fc = new HSOSHFContribution(brabasis, ketbasis, densitybasis, std::string("replicated"));
           ntypes_ = 2;
@@ -577,7 +562,7 @@ namespace sc {
                           compute_J_(compute_J),
                           compute_K_(compute_K),
                           compute_F_(compute_F),
-                          ntypes_(openshelldensity.nonnull() ? 2 : 1)
+                          ntypes_(openshelldensity ? 2 : 1)
       {
 
         // DF-based builds are separate for J and K separately
@@ -597,16 +582,13 @@ namespace sc {
             if (c == 0 && t == 1) continue;
 
             if (c == 0) { // coulomb
-              if(df_info->params()->local_coulomb())
-                result_[0][c] = detail::coulomb_df_local(df_info, density, brabasis, ketbasis, densitybasis);
-              else
-                result_[0][c] = detail::coulomb_df(df_info, density, brabasis, ketbasis, densitybasis);
+              result_[0][c] = detail::coulomb_df(df_info, density, brabasis, ketbasis, densitybasis);
             }
 
             if (c == 1) { // exchange
               RefSymmSCMatrix Pspin;
               SpinCase1 spincase;
-              if (openshelldensity.nonnull()) {
+              if (openshelldensity) {
                 Pspin = (spin == Alpha) ? density + openshelldensity : density - openshelldensity;
                 spincase = spin;
               }
@@ -615,13 +597,8 @@ namespace sc {
                 spincase = AnySpinCase1;
               }
               Pspin.scale(0.5);
-              if(df_info->params()->local_exchange())
-                result_[t][c] = detail::exchange_df_local(df_info, Pspin, spincase, brabasis, ketbasis, densitybasis,
-                                                    psqrtregistry);
-              else {
-                result_[t][c] = detail::exchange_df(df_info, Pspin, spincase, brabasis, ketbasis, densitybasis,
-                                                    psqrtregistry);
-              }
+              result_[t][c] = detail::exchange_df(df_info, Pspin, spincase, brabasis, ketbasis, densitybasis,
+                                                  psqrtregistry);
             }
 
             if (c == 2) { // fock

@@ -257,7 +257,7 @@ CLSCF::set_occupations(const RefDiagSCMatrix& ev)
 
   if (!ndocc_) {
     ndocc_=newocc;
-  } else if (most_recent_pg_.nonnull()
+  } else if (most_recent_pg_
              && most_recent_pg_->equiv(molecule()->point_group())) {
     // test to see if newocc is different from ndocc_
     for (i=0; i < nirrep_; i++) {
@@ -333,7 +333,7 @@ CLSCF::init_vector()
 
   oso_scf_vector_ = oso_eigenvectors_.result_noupdate();
 
-  if (accumddh_.nonnull()) accumddh_->init(this);
+  if (accumddh_) accumddh_->init(this);
 }
 
 void
@@ -341,7 +341,7 @@ CLSCF::done_vector()
 {
   done_threads();
 
-  if (accumddh_.nonnull()) {
+  if (accumddh_) {
       accumddh_->print_summary();
       accumddh_->done();
   }
@@ -386,7 +386,7 @@ CLSCF::new_density()
 
   so_density(cl_dens_, 2.0);
   cl_dens_.scale(2.0);
-  if(iter_log_.nonnull()){
+  if(!iter_log_.null()){
     iter_log_->log_density(cl_dens_);
   }
 
@@ -426,7 +426,7 @@ CLSCF::initial_extrap_data()
 {
   Ref<SCExtrapData> data;
   // If there is an old fock matrix around, use that.
-  if (cl_fock_.result_noupdate().nonnull()) {
+  if (cl_fock_.result_noupdate()) {
     data = new SymmSCMatrixSCExtrapData(cl_fock_.result_noupdate());
   }
   return data;

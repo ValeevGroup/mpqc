@@ -189,8 +189,9 @@ class GenericPetiteList4 : public GPetiteList4 {
     GenericPetiteList4(const Ref<GaussianBasisSet> &b1,
              const Ref<GaussianBasisSet> &b2,
              const Ref<GaussianBasisSet> &b3,
-             const Ref<GaussianBasisSet> &b4);
-    ~GenericPetiteList4();
+             const Ref<GaussianBasisSet> &b4) : GPetiteList4(b1,b2,b3,b4),
+             c_(b1,b2,b3,b4) {}
+    ~GenericPetiteList4() {}
     int in(int i, int j, int k, int l);
 };
 
@@ -274,8 +275,9 @@ class GenericPetiteList2 : public GPetiteList2 {
     C2 c_;
   public:
     GenericPetiteList2(const Ref<GaussianBasisSet> &b1,
-                       const Ref<GaussianBasisSet> &b2);
-    ~GenericPetiteList2();
+                       const Ref<GaussianBasisSet> &b2) : GPetiteList2(b1,b2),
+                       c_(b1,b2) {}
+    ~GenericPetiteList2() {}
     int in(int i, int j);
     void symmetrize(const RefSymmSCMatrix& skel, const RefSymmSCMatrix& sym) const;
     void symmetrize(const RefSCMatrix& skel, const RefSCMatrix& sym) const;

@@ -146,7 +146,7 @@ main(int argc, char**argv)
         }
     }
 
-  if (debugger.nonnull()) {
+  if (debugger) {
       debugger->set_exec(argv[0]);
       debugger->set_prefix(grp->me());
     }
@@ -160,7 +160,7 @@ main(int argc, char**argv)
       bc.flush();
     }
   grp->sync();
-  if (debugger.nonnull()) {
+  if (debugger) {
       debugger->set_exec(argv[0]);
       debugger->set_prefix(grp->me());
       debugger->traceback();

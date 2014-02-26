@@ -22,9 +22,13 @@ add_mpqc_object_library(keyval
   keyvalval.cc)
 
 # tests
-
-set_property(SOURCE keyvaltest.cc PROPERTY COMPILE_DEFINITIONS
-    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-add_executable(keyvaltest EXCLUDE_FROM_ALL keyvaltest.cc $<TARGET_OBJECTS:keyval>)
-add_test(keyvaltest keyvaltest)
+if (MPQC_UNITTEST)
+  set_property(SOURCE keyvaltest.cc PROPERTY COMPILE_DEFINITIONS
+      SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(keyvaltest keyvaltest.cc $<TARGET_OBJECTS:keyval>)
+  target_link_libraries(keyvaltest
+    util
+  )
+  add_test(keyvaltest keyvaltest)
+endif()
 

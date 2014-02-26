@@ -188,8 +188,6 @@ namespace sc {
 
     };
 
-  std::ostream& operator<<(std::ostream &o, const std::pair<std::string, std::pair<int, int> >& p);
-
 } // end of namespace sc
 
 #include <util/misc/registry.timpl.h>

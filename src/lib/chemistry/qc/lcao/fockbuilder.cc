@@ -1,5 +1,5 @@
 //
-                                                                                                                                // fockbuilder.cc
+// fockbuilder.cc
 //
 // Copyright (C) 2009 Edward Valeev
 //
@@ -749,9 +749,9 @@ namespace sc {
 
       int me = msg->me();
       int nproc = msg->n();
-      //ExEnv::out0() << endl << indent
-      //         << "Entered Coulomb matrix evaluator" << endl;
-      //ExEnv::out0() << incindent;
+      ExEnv::out0() << endl << indent
+               << "Entered Coulomb matrix evaluator" << endl;
+      ExEnv::out0() << incindent;
 
       // Only need 1/r12 integrals. In principle, almost any Descr will do. For now ask for ERI
       const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(occ_space->id(),bra_space->id(),
@@ -821,8 +821,8 @@ namespace sc {
       J.assign(J_xy);
       delete[] J_xy;
 
-      //ExEnv::out0() << decindent;
-      //ExEnv::out0() << indent << "Exited Coulomb matrix evaluator" << endl;
+      ExEnv::out0() << decindent;
+      ExEnv::out0() << indent << "Exited Coulomb matrix evaluator" << endl;
       tim_coulomb.exit();
 
       return J;
@@ -839,9 +839,9 @@ namespace sc {
 
       int me = msg->me();
       int nproc = msg->n();
-      //ExEnv::out0() << endl << indent
-      //         << "Entered exchange matrix evaluator" << endl;
-      //ExEnv::out0() << incindent;
+      ExEnv::out0() << endl << indent
+               << "Entered exchange matrix evaluator" << endl;
+      ExEnv::out0() << incindent;
 
       // Only need 1/r12 integrals. In principle, almost any Descr will do. For now ask for ERI
       const std::string tform_key = ParsedTwoBodyFourCenterIntKey::key(occ_space->id(),occ_space->id(),
@@ -911,8 +911,8 @@ namespace sc {
       K.assign(K_xy);
       delete[] K_xy;
 
-      //ExEnv::out0() << decindent;
-      //ExEnv::out0() << indent << "Exited exchange matrix evaluator" << endl;
+      ExEnv::out0() << decindent;
+      ExEnv::out0() << indent << "Exited exchange matrix evaluator" << endl;
       tim_exchange.exit();
 
       return K;
@@ -931,9 +931,9 @@ namespace sc {
 
       int me = msg->me();
       int nproc = msg->n();
-      //ExEnv::out0() << endl << indent
-      //         << "Entered Coulomb(DF) matrix evaluator" << endl;
-      //ExEnv::out0() << incindent;
+      ExEnv::out0() << endl << indent
+               << "Entered Coulomb(DF) matrix evaluator" << endl;
+      ExEnv::out0() << incindent;
 
       //////////////////////////////////////////////////////////////
       //
@@ -962,7 +962,7 @@ namespace sc {
         params_key = std::string();
       }
       else {
-        ParsedTwoBodyOperKey kernel_pkey(kernel_key);
+        ParsedTwoBodyOperSetKey kernel_pkey(kernel_key);
         operset = TwoBodyOperSet::to_type(kernel_pkey.oper());
         params_key = kernel_pkey.params();
       }
@@ -1041,7 +1041,13 @@ namespace sc {
         ///////
         // compute 2-center fitting kernel_key
         ///////
-        RefSymmSCMatrix kernel = dfspace->coefs_nb()->kit()->symmmatrix(dfspace->dim());
+        Ref<SCMatrixKit> nbkit; // the nonblocked kit
+        {
+          nbkit = dfspace->coefs()->kit();
+          BlockedSCMatrixKit* bkit = dynamic_cast<BlockedSCMatrixKit*>(nbkit.pointer());
+          if (bkit) nbkit = bkit->subkit_lowest();
+        }
+        RefSymmSCMatrix kernel = nbkit->symmmatrix(dfspace->dim());
         {
           const std::string kernel_key = ParsedTwoBodyTwoCenterIntKey::key(dfspace->id(),
                                                                            dfspace->id(),
@@ -1176,10 +1182,9 @@ namespace sc {
       result.assign(&(J[0]));
 
       tim.exit();
-      //ExEnv::out0() << decindent;
-      //ExEnv::out0() << indent << "Exited Coulomb(DF) matrix evaluator ("
-      //              << (tim.wall_time("coulomb(DF)") - wall_time_start) << " sec)" << endl;
-
+      ExEnv::out0() << decindent;
+      ExEnv::out0() << indent << "Exited Coulomb(DF) matrix evaluator ("
+                    << (tim.wall_time("coulomb(DF)") - wall_time_start) << " sec)" << endl;
       return result;
     }
 
@@ -1688,9 +1693,9 @@ namespace sc {
       deallocate(P_ptr);
       timer_exit(1);
       tim.exit();
-      return result;
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
+      return result;
     }
 
     RefSCMatrix exchange_df(const Ref<DensityFittingInfo>& df_info,
@@ -1708,9 +1713,9 @@ namespace sc {
 
       int me = msg->me();
       int nproc = msg->n();
-      //ExEnv::out0() << endl << indent
-      //         << "Entered exchange(DF) matrix evaluator" << endl;
-      //ExEnv::out0() << incindent;
+      ExEnv::out0() << endl << indent
+               << "Entered exchange(DF) matrix evaluator" << endl;
+      ExEnv::out0() << incindent;
 
       std::string kernel_key = df_info->params()->kernel_key();
       if (kernel_key.empty())
@@ -1764,8 +1769,8 @@ namespace sc {
                              ketdim,
                              brabs->so_matrixkit());
           result.assign(0.0);
-          //ExEnv::out0() << decindent;
-          //ExEnv::out0() << indent << "Exited exchange(DF) matrix evaluator" << endl;
+          ExEnv::out0() << decindent;
+          ExEnv::out0() << indent << "Exited exchange(DF) matrix evaluator" << endl;
           tim.exit();
           return result;
         }
@@ -1950,12 +1955,12 @@ namespace sc {
                          brabs->so_matrixkit());
 
       result.assign(K);
+      delete[] K;
 
       tim.exit();
-      //ExEnv::out0() << decindent;
-      //ExEnv::out0() << indent << "Exited exchange(DF) matrix evaluator ("
-      //    << (tim.wall_time("exchange(DF)") - wall_time_start) << " sec)" << endl;
-
+      ExEnv::out0() << decindent;
+      ExEnv::out0() << indent << "Exited exchange(DF) matrix evaluator ("
+          << (tim.wall_time("exchange(DF)") - wall_time_start) << " sec)" << endl;
       return result;
     }
 
@@ -2439,9 +2444,9 @@ namespace sc {
       deallocate(coulomb_2c_ints_ptr);
       timer_exit(1);
       tim.exit();
-      return result;
       /*****************************************************************************************/ #endif //1}}}
       /*=======================================================================================*/
+      return result;
     }
 
 }} // namespace sc::detail

@@ -139,7 +139,7 @@ SCF::compute_gradient(const RefSCVector& gradient)
 
   int n3=gradient.n();
 
-  if (atom_basis().nonnull()) {
+  if (atom_basis()) {
     throw std::runtime_error("SCF::compute_gradient: atom_basis not supported");
   }
 

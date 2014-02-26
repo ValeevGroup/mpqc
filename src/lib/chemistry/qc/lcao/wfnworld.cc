@@ -78,7 +78,7 @@ WavefunctionWorld::WavefunctionWorld(const Ref<KeyVal>& keyval)
       keyval->describedclassvalue("df_basis").pointer(),
       "WavefunctionWorld::WavefunctionWorld\n"
       );
-  if (bs_df_.nonnull())
+  if (bs_df_)
     df_ = true;
   if (df_ == true) {
     std::string df_kernel = keyval->stringvalue("df_kernel", KeyValValuestring("coulomb"));
@@ -87,7 +87,7 @@ WavefunctionWorld::WavefunctionWorld(const Ref<KeyVal>& keyval)
       std::pair<TwoBodyOperSet::type, Ref<IntParams> > kernel = init_df_kernel(df_kernel);
       df_kernel_opertype_ = kernel.first;
       df_kernel_params_ = kernel.second;
-      df_kernel_ = ParsedTwoBodyOperKey::key(TwoBodyOperSet::to_string(df_kernel_opertype_),
+      df_kernel_ = ParsedTwoBodyOperSetKey::key(TwoBodyOperSet::to_string(df_kernel_opertype_),
                                              ParamsRegistry::instance()->key(df_kernel_params_));
     }
 
@@ -95,9 +95,6 @@ WavefunctionWorld::WavefunctionWorld(const Ref<KeyVal>& keyval)
     if (df_solver_ != "bunchkaufman" &&
         df_solver_ != "bunchkaufman_inv" &&
         df_solver_ != "bunchkaufman_refine" &&
-        df_solver_ != "householder" &&
-        df_solver_ != "householder_colpiv" &&
-        df_solver_ != "householder_fullpiv" &&
         df_solver_ != "cholesky" &&
         df_solver_ != "cholesky_inv" &&
         df_solver_ != "cholesky_refine"
@@ -172,14 +169,18 @@ WavefunctionWorld::WavefunctionWorld(const Ref<KeyVal>& keyval)
   }
 
   // Get the filename prefix to store the integrals
-  const std::string default_basename_prefix = SCFormIO::fileext_to_filename(".moints");
-  const std::string default_full_prefix = ConsumableResources::get_default_instance()->disk_location() +
-                                          default_basename_prefix;
-  ints_file_ = keyval->stringvalue("ints_file",KeyValValuestring(default_full_prefix));
-  // if the last character of ints_file is '/' then append the default basename
-  if (*(ints_file_.rbegin()) == '/')
-    ints_file_ += default_basename_prefix;
-  ExEnv::out0() << indent << "ints_file = " << ints_file_ << std::endl;
+  if (ints_method_ != StoreMethod::mem_only) {
+    const std::string default_basename_prefix = SCFormIO::fileext_to_filename(
+        ".moints");
+    const std::string default_full_prefix =
+        ConsumableResources::get_default_instance()->disk_location()
+            + default_basename_prefix;
+    ints_file_ = keyval->stringvalue("ints_file",
+                                     KeyValValuestring(default_full_prefix));
+    // if the last character of ints_file is '/' then append the default basename
+    if (*(ints_file_.rbegin()) == '/')
+      ints_file_ += default_basename_prefix;
+  }
 
   // dynamic load balancing?
   dynamic_ = static_cast<bool>(keyval->booleanvalue("dynamic",KeyValValueboolean(false)));
@@ -323,16 +324,8 @@ WavefunctionWorld::initialize()
 
     // create MO integrals runtime
     Ref<DensityFittingParams> dfparams;
-    if (bs_df_.nonnull()) {
-      dfparams = new DensityFittingParams(
-          bs_df_,
-          df_kernel_,
-          df_solver_,
-          df_local_coulomb_,
-          df_local_exchange_,
-          exact_diag_J_,
-          exact_diag_K_
-      );
+    if (bs_df_) {
+      dfparams = new DensityFittingParams(bs_df_, df_kernel_, df_solver_);
     }
     moints_runtime_ = new MOIntsRuntime(tfactory_, dfparams);
     tfactory_->df_info( const_cast<DensityFittingInfo*>(moints_runtime_->runtime_4c()->params()) );

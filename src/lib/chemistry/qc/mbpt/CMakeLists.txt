@@ -2,7 +2,7 @@ include(AddLibrary)
 
 # mbpt library
 
-add_mpqc_object_library(mbpt
+SET(ccfiles
   bzerofast.c
   cscphf.cc
   csgmat.cc
@@ -19,10 +19,13 @@ add_mpqc_object_library(mbpt
   util.cc
 )
 
+
+add_mpqc_object_library(mbpt ${ccfiles})
+
 # tests
 
 #set_property(SOURCE mbpttest.cc PROPERTY COMPILE_DEFINITIONS
-#    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+#    SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
 #add_executable(mbpttest EXCLUDE_FROM_ALL mbpttest.cc $<TARGET_OBJECTS:mbpt>)
 #add_test(mbpttest mbpttest)
 

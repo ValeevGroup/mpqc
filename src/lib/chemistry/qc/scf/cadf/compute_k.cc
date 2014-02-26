@@ -33,6 +33,55 @@
 
 using namespace sc;
 
+
+
+double CADFCLHF::get_distance_factor(
+    const ShellData& ish, const ShellData& jsh, const ShellData& Xsh
+) const
+{
+  double dist_factor;
+  if(linK_use_distance_){
+    const double R = get_R(ish, jsh, Xsh);
+    const double l_X = double(dfbs_->shell(Xsh).am(0));
+    double r_expon = l_X + 1.0;
+    if(ish.center == jsh.center) {
+      if(ish.center == Xsh.center) {
+        r_expon = 0.0;
+      }
+      else {
+        const double l_i = double(gbs_->shell(ish).am(0));
+        const double l_j = double(gbs_->shell(jsh).am(0));
+        r_expon += abs(l_i-l_j);
+      }
+    }
+    dist_factor = 1.0 / (pow(R, pow(r_expon, distance_damping_factor_)));            //latex `\label{sc:link:dist_damp}`
+    // If the distance factor actually makes the bound larger, then ignore it.
+    dist_factor = std::min(1.0, dist_factor);
+  }
+  else {
+    dist_factor = 1.0;
+  }
+  return dist_factor;
+};
+
+
+double CADFCLHF::get_R(
+    const ShellData& ish,
+    const ShellData& jsh,
+    const ShellData& Xsh
+) const
+{
+  double rv = (pair_centers_.at({(int)ish, (int)jsh}) - centers_[Xsh.center]).norm();
+  if(use_extents_) {
+    rv -= pair_extents_.at({(int)ish, (int)jsh});
+    rv -= df_extents_[(int)Xsh];
+  }
+  if(rv < 1.0) {
+    rv = 1.0;
+  }
+  return rv;
+};
+
 typedef std::pair<int, int> IntPair;
 
 RefSCMatrix
@@ -102,6 +151,11 @@ CADFCLHF::compute_K()
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
   /* Make the CADF-LinK lists                                                         {{{1 */ #if 1 //latex `\label{sc:link}`
+
+  // local functions used later also
+
+
+  // Now make the linK lists if we're doing linK
   if(do_linK_){
     timer.enter("LinK lists");
     // First clear all of the lists
@@ -163,6 +217,7 @@ CADFCLHF::compute_K()
     // Form L_3
     timer.change("build L_3");
     double epsilon, epsilon_dist;                                                            //latex `\label{sc:link:l3}`
+
     if(density_reset_){
       epsilon = full_screening_thresh_;
       epsilon_dist = distance_screening_thresh_;
@@ -171,6 +226,7 @@ CADFCLHF::compute_K()
       epsilon = pow(full_screening_thresh_, full_screening_expon_);                          //latex `\label{sc:link:expon}`
       epsilon_dist = pow(distance_screening_thresh_, full_screening_expon_);
     }
+
     // TODO optimize use of node-local integrals (or just give up on storing integrals)
     do_threaded(nthread, [&](int ithr){
 
@@ -183,26 +239,14 @@ CADFCLHF::compute_K()
           bool jsh_added = false;
           for(auto&& ish : L_schwarz[jsh]) {
 
-            double dist_factor;
-            if(linK_use_distance_){
-              const double R = (pair_centers_[{(int)ish, (int)jsh}] - centers_[Xsh.center]).norm();
-              const double l_X = double(dfbs_->shell(Xsh).am(0));
-              double r_expon = l_X + 1.0;
-              if(ish.center == jsh.center) {
-                const double l_i = double(obs->shell(ish).am(0));
-                const double l_j = double(obs->shell(jsh).am(0));
-                r_expon += abs(l_i-l_j);
-              }
-              dist_factor = 1.0 / (pow(R, pow(r_expon, distance_damping_factor_)));        //latex `\label{sc:link:dist_damp}`
-            }
-            else {
-              dist_factor = 1.0;
-            }
+            double dist_factor = get_distance_factor(ish, jsh, Xsh);
 
             if(ish.value > eps_prime) {
               jsh_added = true;
               if(!linK_use_distance_ or ish.value * dist_factor > eps_prime_dist) {
-                L_3[{ish, Xsh}].insert(jsh, ish.value * dist_factor * schwarz_df_[Xsh]);
+                L_3[{ish, Xsh}].insert(jsh,
+                    ish.value * dist_factor * schwarz_df_[Xsh]
+                );
 
                 if(print_screening_stats_) {
                   ++iter_stats_->K_3c_needed;
@@ -210,7 +254,7 @@ CADFCLHF::compute_K()
                 }
 
               }
-              else if(print_screening_stats_) {
+              else if(print_screening_stats_ and linK_use_distance_) {
                 ++iter_stats_->K_3c_dist_screened;
                 iter_stats_->K_3c_dist_screened_fxn += ish.nbf * jsh.nbf * Xsh.nbf;
               }
@@ -241,6 +285,7 @@ CADFCLHF::compute_K()
     });                                                                                      //latex `\label{sc:link:l3:end}`
     timer.exit("LinK lists");
   } // end if do_linK_
+
   /*****************************************************************************************/ #endif //1}}} //latex `\label{sc:link:end}`
   /*=======================================================================================*/
   /* Loop over local shell pairs for three body contributions                         {{{1 */ #if 1 //latex `\label{sc:k3b:begin}`
@@ -399,6 +444,11 @@ CADFCLHF::compute_K()
 
                 if(print_screening_stats_ > 2) {
                   mt_timer.enter("count underestimated ints", ithr);
+
+                  double epsilon;
+                  if(density_reset_){ epsilon = full_screening_thresh_; }
+                  else{ epsilon = pow(full_screening_thresh_, full_screening_expon_); }
+
                   int offset_in_block = 0;
                   for(const auto&& jsh : shell_range(jblk)) {
                     const double g3_norm = g3.middleRows(offset_in_block, jsh.nbf).norm();
@@ -408,9 +458,21 @@ CADFCLHF::compute_K()
                       ++iter_stats_->K_3c_underestimated;
                       iter_stats_->K_3c_underestimated_fxn += jsh.nbf*ish.nbf*Xsh.nbf;
                     }
-                    if(g3_norm * L_DC[jsh].value_for_index(Xsh) > full_screening_thresh_) {
+                    if(g3_norm * L_DC[jsh].value_for_index(Xsh) > epsilon) {
                       ++iter_stats_->K_3c_perfect;
                       iter_stats_->K_3c_perfect_fxn += nfxn;
+                    }
+                    if(xml_screening_data_ and iter_stats_->is_first) {
+                      iter_stats_->int_screening_values.mine(ithr).push_back(
+                          L_3[{ish, Xsh}].value_for_index(jsh)
+                      );
+                      iter_stats_->int_actual_values.mine(ithr).push_back(g3_norm);
+                      iter_stats_->int_distance_factors.mine(ithr).push_back(
+                          get_distance_factor(ish, jsh, Xsh)
+                      );
+                      iter_stats_->int_distances.mine(ithr).push_back(
+                          get_R(ish, jsh, Xsh)
+                      );
                     }
                   }
                   mt_timer.exit(ithr);

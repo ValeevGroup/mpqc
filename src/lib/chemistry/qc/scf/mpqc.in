@@ -3,12 +3,11 @@ mpqc:(
   mole = $:mole
 )
 
-%molecule = $:ibuprofen
-%molecule = $:ethane_c1
-%molecule = $:naphtalene
-%molecule = $:he2
-molecule = $:h2o_dimer
-%coor = $:symcoor
+nproc = 2
+molecule = $:tmmc1
+coor = $:symcoor
+message = $:message1
+basis_matrixkit = $:replmatrixkit
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -18,33 +17,12 @@ molecule = $:h2o_dimer
 %
 
 mole<DFCLHF>: (
-  memory = 32000000
-  integrals<IntegralLibint2>:()
+  %matrixkit = $:localmatrixkit
+  memory=32000000
 
   df_basis<GaussianBasisSet>:(
     molecule = $..:molecule
-    %name = "cc-pVDZ/JKFIT"
-    %name = "cc-pVTZ-JKFIT"
-    %name = "aug-cc-pV6Z"
-    %name = "cc-pVTZ-RI"
-    name = "cc-pVTZ/JKFIT"
-    %name = "6-31G"
-    %puream=yes
-    %name = "6-31G"
-  )
-  
-  world<WavefunctionWorld>:(
-  	wfn = $..:mole
-  	df_basis = $..:df_basis
-  	%df_kernel = "exp(1)"  
-    df_kernel = "coulomb"
-  	df_solver = "bunchkaufman_refine"
-  	df_local_coulomb = yes
-  	df_local_exchange = yes
-    store_ints = mem
-    %store_ints = mpi
-    exact_diag_J = yes
-    exact_diag_K = yes
+    name = "cc-pVDZ-RI"
   )
 
 
@@ -56,17 +34,22 @@ mole<DFCLHF>: (
   molecule = $:molecule
   mbasis<GaussianBasisSet>: (
     molecule = $:molecule
+    name = "6-31G"
+    %name = "6-311++G**"
+    %name = "STO-3G"
+    %name = "DZP (Dunning)"
+    %name = "STO-6G"
+    %name = "3-21G"
     %name = "cc-pVDZ"
-    name = "cc-pVTZ"
+    %name = "cc-pVTZ"
+    %name = "Def2-SVP"
     %puream=yes
-    %matrixkit = $:basis_matrixkit
+    matrixkit = $:basis_matrixkit
   )
   basis<SplitBasisSet>:(
     molecule = $..:molecule
     basis = $..:mbasis
   )
-
-  maxiter=20
 
   % comment out coor if molecule is an atom
   %coor = $:coor
@@ -75,55 +58,78 @@ mole<DFCLHF>: (
   %total_charge = 1
   %docc = [3 0 1 0]
   %socc = [0 0 0 1]
-
+  %maxiter=2
   %extrap<DIIS>: (
   %  n = 4
   %)
 
   %guess_wavefunction = "scftest.wfn"
-  guess_wavefunction = $:guess
+  %guess_wavefunction = $:ehw_guess
   %debug = 4
 )
 
-
-guess<CLHF>: (
+guess<HSOSHF>: (
   integral_storage=32000000
-  integrals<IntegralLibint2>:()
-  value_accuracy = 1e-5
+  value_accuracy = 1e-9
   molecule = $:molecule
   coor = $:coor
 
-  %basis = $:mole:basis
-  mbasis<GaussianBasisSet>: (
+  basis = $:mole:basis
+  xbasis<GaussianBasisSet>: (
+    matrixkit = $:basis_matrixkit
     molecule = $:molecule
     name = "STO-3G"
-  )
-  basis<SplitBasisSet>:(
-    molecule = $..:molecule
-    basis = $..:mbasis
   )
 )
 
 ehw_guess<ExtendedHuckelWfn>: (
-  integrals<IntegralLibint2>:()
   molecule = $:molecule
   %basis = $:mole:basis
   basis<GaussianBasisSet>: (
-    molecule = $..:molecule
+    molecule = $:molecule
     name = "STO-6G"
   )
 )
 
 
-%xopt<QNewtonOpt>: (
-%  convergence = 1.0e-6
-%  max_iterations = 2
-%  function = $:mole
-%  transition_state=no
-%  update<BFGSUpdate>:()
-%)
+xopt<QNewtonOpt>: (
+  convergence = 1.0e-6
+  max_iterations = 2
+  function = $:mole
+  transition_state=no
+  update<BFGSUpdate>:()
+)
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% matrix kits
+%
+localmatrixkit<LocalSCMatrixKit>: (
+  messagegrp = $:message
+)
+
+replmatrixkit<ReplSCMatrixKit>: (
+  messagegrp = $:message
+)
+
+distmatrixkit<DistSCMatrixKit>: (
+  messagegrp = $:message
+)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% message types
+%
+
+xdebug<Debugger>: (
+)
+
+message1<ProcMessageGrp>: ()
+
+messageShm<ShmMessageGrp>: (
+  n = $:nproc
+)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -283,13 +289,6 @@ mikes<Molecule>: (
   }
 )
 
-ne<Molecule>: (
-  symmetry=c1
-  { atoms geometry } = {
-     ne [ 0 0 0 ]
-  }
-)
-
 he<Molecule>: (
   symmetry=c1
   { atoms geometry } = {
@@ -297,36 +296,14 @@ he<Molecule>: (
   }
 )
 
-r = 2.5
-he2<Molecule>: (
-  units=bohr
-  symmetry=c1
-  { atoms geometry } = {
-     he [ 0 0 0 ]
-     he [ 0 0 $:r ]
-  }
-)
-
-r = 4
+r = 5
 he4<Molecule>: (
-  units=bohr
-  symmetry=auto
+  symmetry=c1
   { atoms geometry } = {
      he [ 0 0 0 ]
      he [ 0 0 $:r ]
      he [ 0 $:r 0 ]
      he [ 0 $:r $:r ]
-  }
-)
-
-h4<Molecule>: (
-  units=bohr
-  symmetry=c1
-  { atoms geometry } = {
-     h [ 0 0 0 ]
-     h [ 0 0 $:r ]
-     h [ 0 $:r 0 ]
-     h [ 0 $:r $:r ]
   }
 )
 
@@ -449,80 +426,6 @@ C [ -0.029	3.382	-0.245 ]
         }
 )
 
-h2o<Molecule>: (
-  units = bohr
-  symmetry = c1
-  { atoms geometry } = {
-      O  [ -0.00000000  -0.11130487  -0.00000000 ]
-      H  [ -1.53256789   0.88382491   0.00000000 ]
-      H  [  1.53256789   0.88382491   0.00000000 ]
-  }
-)
-
-hf<Molecule>: (
-  units = bohr
-  symmetry = c1
-  { atoms geometry } = {
-      F  [  0.00000000   0.00000000   0.00000000 ]
-      H  [  1.70000000   0.00000000   0.00000000 ]
-  }
-)
-
-ethane_c1<Molecule>: (
-  symmetry = c1
-  units = angstrom
-  { atoms geometry } = {
-    C   [    0.76500000   0.00000000  -0.00000000 ]
-    C   [   -0.76500000  -0.00000000  -0.00000000 ]
-    H   [    1.12830000  -0.51380000   0.89000000 ]
-    H   [    1.12830000  -0.51380000  -0.89000000 ]
-    H   [    1.12830000   1.02770000   0.00000000 ]
-    H   [   -1.12830000   0.51380000   0.89000000 ]
-    H   [   -1.12830000   0.51380000  -0.89000000 ]
-    H   [   -1.12830000  -1.02770000   0.00000000 ]
-  }
-)
-
-ibuprofen<Molecule>: (
-  symmetry = c1
-  units = angstrom
-  { atoms geometry } = {
-    C   [   -0.36470000  -0.78370000  -1.35470000 ]
-    C   [   -0.52700000   0.45900000   0.68540000 ]
-    C   [    0.96180000  -1.06000000  -1.08080000 ]
-    C   [    0.79940000   0.18240000   0.95950000 ]
-    C   [    2.98980000  -0.87850000   0.37500000 ]
-    C   [   -2.75250000   1.79120000  -0.86140000 ]
-    C   [    3.58360000   1.54610000   0.47960000 ]
-    C   [    5.34570000  -0.15080000  -0.02840000 ]
-    C   [   -1.10910000  -0.02440000  -0.47140000 ]
-    C   [    1.54380000  -0.57690000   0.07620000 ]
-    O   [   -2.91640000  -0.85670000   1.26400000 ]
-    O   [   -4.75420000  -0.12620000   0.27790000 ]
-    C   [   -3.42150000  -0.27700000   0.33190000 ]
-    H   [   -5.26800000  -0.49840000   1.00770000 ]
-    C   [   -2.55530000   0.27670000  -0.76990000 ]
-    C   [    3.87360000   0.21810000  -0.22270000 ]
-    H   [   -2.83420000  -0.18390000  -1.71760000 ]
-    H   [   -0.81810000  -1.15730000  -2.26080000 ]
-    H   [   -1.10860000   1.05250000   1.37530000 ]
-    H   [   -3.79840000   2.00900000  -1.07730000 ]
-    H   [   -2.47360000   2.25180000   0.08630000 ]
-    H   [   -2.12590000   2.19170000  -1.65840000 ]
-    H   [    1.54340000  -1.65350000  -1.77070000 ]
-    H   [    1.25430000   0.56040000   1.86310000 ]
-    H   [    3.13760000  -0.91630000   1.45430000 ]
-    H   [    3.25830000  -1.84020000  -0.06230000 ]
-    H   [    3.66100000   0.31610000  -1.28730000 ]
-    H   [    3.79620000   1.44810000   1.54420000 ]
-    H   [    4.21320000   2.32740000   0.05380000 ]
-    H   [    2.53490000   1.80890000   0.34120000 ]
-    H   [    5.55220000  -1.09690000  -0.52870000 ]
-    H   [    5.97530000   0.63040000  -0.45420000 ]
-    H   [    5.55820000  -0.24880000   1.03620000 ]
-  }
-)
-
 taxol<Molecule>: (
   units = angstrom
   symmetry = c1
@@ -640,48 +543,6 @@ H  [    -1.9770019524   -.2959025420   3.4410100992 ]
 }
 )
 
-ch4_c1<Molecule>: (
-  symmetry = c1
-  units = angstrom
-  { atoms geometry } = {
-    C   [    0.00000000  -0.00000000   0.00000000 ]
-    H   [    0.00000000  -0.89000000  -0.62930000 ]
-    H   [    0.00000000   0.89000000  -0.62930000 ]
-    H   [   -0.89000000  -0.00000000   0.62930000 ]
-    H   [    0.89000000  -0.00000000   0.62930000 ]
-  }
-)
-
-acetone_c1<Molecule>: (
-  symmetry = c1
-  units = angstrom
-  { atoms geometry } = {
-    C   [    1.30510000  -0.67720000  -0.00000000 ]
-    C   [    0.00000000   0.07630000  -0.00000000 ]
-    O   [   -0.00000000   1.28390000   0.00000000 ]
-    C   [   -1.30510000  -0.67720000   0.00000000 ]
-    H   [    1.61980000  -0.85880000   1.02770000 ]
-    H   [    1.17480000  -1.62960000  -0.51380000 ]
-    H   [    2.06470000  -0.08810000  -0.51380000 ]
-    H   [   -1.10590000  -1.74880000  -0.00000000 ]
-    H   [   -1.87670000  -0.41380000   0.89000000 ]
-    H   [   -1.87670000  -0.41380000  -0.89000000 ]
-  }
-)
-
-h2o_dimer<Molecule>: (
-  symmetry = c1
-  units = bohr
-  { atoms geometry } = {
-      O  [  -0.00000000  -0.11130487  -0.00000000 ]
-      H  [  -1.53256789   0.88382491   0.00000000 ]
-      H  [   1.53256789   0.88382491   0.00000000 ]
-      O  [   5.00000000  -0.11130487   0.00000000 ]
-      H  [   3.46743211   0.88382491   0.00000000 ]
-      H  [   6.53256789   0.88382491   0.00000000 ]
-  }
-)
-
 basis:(
   oxygen: "foo": [
     (type: [am = s]
@@ -699,3 +560,4 @@ basis:(
 % Local Variables:
 % mode: keyval
 % End:
+%

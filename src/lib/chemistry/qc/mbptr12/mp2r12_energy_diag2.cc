@@ -1913,11 +1913,16 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
       double E_Bcoupling = 0.0;
       double E_X = 0.0;
       double E_B = 0.0;
+
       // X terms using non-canonical orbitals
       double E_X_noca = 0.0;
 
       if (spin1 == spin2) {
         // Alpha_alpha or beta_beta case
+        double E_Vij = 0.0;
+        double E_Vji = 0.0;
+        double E_Bij = 0.0;
+        double E_Bji = 0.0;
         for (int i1 = 0; i1 < nocc1_act; ++i1) {
           for (int i2 = i1 + 1; i2 < nocc2_act; ++i2) {
             const int ij = i1 * nocc2_act + i2;
@@ -1958,6 +1963,10 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
         }
       } else if (num_unique_spincases2 == 2) {
         // Alpha_beta case for closed shell
+        double E_Vij = 0.0;
+        double E_Vji = 0.0;
+        double E_Bij = 0.0;
+        double E_Bji = 0.0;
         for (int i1 = 0; i1 < nocc1_act; ++i1) {
           for (int i2 = 0; i2 < nocc2_act; ++i2) {
             int ij = i1 * nocc2_act + i2;
@@ -1981,6 +1990,11 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
                         - pow(0.5 * (C_0 - C_1), 2)
                                   * (Xioccj_ij[ij] + Xijocc_ij[ij]);
 
+            E_Vij += Vij_ij[ij];
+            E_Vji += Vij_ji[ij];
+            E_Bij += Bij_ij[ij] - (evals_i1(i1) + evals_i2(i2)) * Xij_ij[ij];
+            E_Bji += Bij_ji[ij] - (evals_i1(i1) + evals_i2(i2)) * Xij_ji[ij];
+
             if (this->r12eval()->coupling() == true
                 || this->r12eval()->ebc() == false) {
               E_Vcoupling += 2.0
@@ -1997,6 +2011,15 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
 
           }
         }
+
+        ExEnv::out0() << endl << "Individual contributions to the R12 energy (AlphaBeta):"
+                      << endl << "E_Vij = " << scprintf("%12.10f", E_Vij)
+                      << "     E_Vji = " << scprintf("%12.10f", E_Vji)
+                      << endl << "E_Bij = " << scprintf("%12.10f", E_Bij)
+                      << "     E_Bji = " << scprintf("%12.10f", E_Bji)
+                      << endl << "E_VBX = " << scprintf("%12.10f", (E_Vij*5/4-E_Vji/4+E_Bij*7/32+E_Bji/32))
+                      << endl << "E_VBX(new fixed T) = " << scprintf("%12.10f", (E_Vij*2-E_Vji+E_Bij/2-E_Bji/4))
+                      << endl << endl;
         E_V_tot += E_V;
         E_X_tot += E_X;
         E_B_tot += E_B;
@@ -2127,10 +2150,6 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
 
     // Compute the f12 correction pair energy
     if (spin1 == spin2) {
-      double E_V = 0.0;
-      double E_B = 0.0;
-      double E_VC = 0.0;
-      double E_BC = 0.0;
       // Alpha_alpha or beta_beta case
 
       for (int i1 = 0; i1 < nocc1_act; ++i1) {
@@ -2162,12 +2181,6 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
                       - (evals_i1(i1) + evals_i2(i2))
                           * (Xij_ij[ij] - Xij_ji[ij]));
 
-          E_V += C_1 * (Vij_ij[ij] - Vij_ji[ij]);
-          E_B += C_1 * C_1
-              * (Bij_ij[ij] - Bij_ji[ij]
-                  - (evals_i1(i1) + evals_i2(i2))
-                      * (Xij_ij[ij] - Xij_ji[ij]));
-
           if (this->r12eval()->coupling() == true
               || this->r12eval()->ebc() == false) {
 
@@ -2181,9 +2194,6 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
             Hij_pair_energy += 2.0 * C_1
                 * (Vij_ij_coupling[ij] - Vij_ji_coupling[ij]);
 
-            E_VC += C_1
-                * (Vij_ij_coupling[ij] - Vij_ji_coupling[ij]);
-
             if (do_mp2 && this->r12eval()->coupling()) {
 
               if (debug_ >= DefaultPrintThresholds::mostN2) {
@@ -2194,9 +2204,6 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
               }
 
               Hij_pair_energy += C_1 * C_1 * (Bij_ij_coupling[ij] - Bij_ji_coupling[ij]);
-
-              E_BC += C_1 * C_1 * (Bij_ij_coupling[ij] - Bij_ji_coupling[ij]);
-
             }
           }
 
@@ -2207,19 +2214,7 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
           ef12_[spin].set_element(i21, Hij_pair_energy);
         }
       }
-
-      ExEnv::out0() << endl << "Individual contributions to the R12 energy:"
-                    << endl << "E_V = " << scprintf("%12.10f", E_V)
-                    << endl << "E_Vcoupling = " << scprintf("%12.10f", E_VC)
-                    << endl << "E_B = " << scprintf("%12.10f", E_B)
-                    << endl << "E_Bcoupling = " << scprintf("%12.10f", E_BC)
-                    << endl << endl;
-
     } else if (num_unique_spincases2 == 2) {
-      double E_V = 0.0;
-      double E_B = 0.0;
-      double E_VC = 0.0;
-      double E_BC = 0.0;
       // Alpha_beta case for closed shell
       for (int i1 = 0; i1 < nocc1_act; ++i1) {
         for (int i2 = 0; i2 < nocc2_act; ++i2) {
@@ -2267,15 +2262,6 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
                   + pow(0.5 * (C_0 - C_1), 2)
                       * (Bij_ij[ij] - (evals_i1(i1) + evals_i2(i2)) * Xij_ij[ij]);
 
-          E_V += (0.5 * (C_0 + C_1) * Vij_ij[ij] + 0.5 * (C_0 - C_1) * Vij_ji[ij]);
-          E_B += pow(0.5 * (C_0 + C_1), 2)
-                          * (Bij_ij[ij] - (evals_i1(i1) + evals_i2(i2)) * Xij_ij[ij])
-                      + 0.25 * (C_0 * C_0 - C_1 * C_1)
-                          * (2.0 * Bij_ji[ij]
-                              - (evals_i1(i1) + evals_i2(i2)) * (2.0 * Xij_ji[ij]))
-                      + pow(0.5 * (C_0 - C_1), 2)
-                          * (Bij_ij[ij] - (evals_i1(i1) + evals_i2(i2)) * Xij_ij[ij]);
-
           if (this->r12eval()->coupling() == true
               || this->r12eval()->ebc() == false) {
             if (debug_ >= DefaultPrintThresholds::mostN2) {
@@ -2293,9 +2279,6 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
             Hij_pair_energy += 2.0
                 * (0.5 * (C_0 + C_1) * Vij_ij_coupling[ij]
                     + 0.5 * (C_0 - C_1) * Vij_ji_coupling[ij]);
-
-            E_VC += (0.5 * (C_0 + C_1) * Vij_ij_coupling[ij]
-                                                         + 0.5 * (C_0 - C_1) * Vij_ji_coupling[ij]);
 
             if (do_mp2 && this->r12eval()->coupling()) {
 
@@ -2320,13 +2303,6 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
                       * (2.0 * Bij_ji_coupling[ij])
                   + pow(0.5 * (C_0 - C_1), 2)
                       * (Bij_ij_coupling[ij]));
-              E_BC += (pow(0.5 * (C_0 + C_1), 2)
-                  * Bij_ij_coupling[ij]
-                  + 0.25 * (C_0 * C_0 - C_1 * C_1)
-                      * (2.0 * Bij_ji_coupling[ij])
-                  + pow(0.5 * (C_0 - C_1), 2)
-                      * (Bij_ij_coupling[ij]));
-
             }
           }
 
@@ -2334,13 +2310,6 @@ void MP2R12Energy_Diag::compute_ef12_10132011() {
           ef12_[spin].set_element(i12, Hij_pair_energy);
         }
       }
-      ExEnv::out0() << endl << "Individual contributions to the R12 energy:"
-                    << endl << "E_V = " << scprintf("%12.10f", E_V)
-                    << endl << "E_Vcoupling = " << scprintf("%12.10f", E_VC)
-                    << endl << "E_B = " << scprintf("%12.10f", E_B)
-                    << endl << "E_Bcoupling = " << scprintf("%12.10f", E_BC)
-                    << endl << endl;
-
     } else {
       // Alpha_beta case for open shell
       for (int i1 = 0; i1 < nocc1_act; ++i1) {

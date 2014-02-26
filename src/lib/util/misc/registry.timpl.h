@@ -34,12 +34,7 @@
 #include <util/state/stateout.h>
 #include <util/misc/registry.h>
 
-
 namespace sc {
-
-  inline std::ostream& operator<<(std::ostream &o, const std::pair<std::string, std::pair<int, int> >& p) {
-    return o << "{ " << p.first << ", " << " (" << p.second.first << ", " << p.second.second << ") }";
-  }
 
   template <typename Key, typename Value, template <typename> class CreationPolicy, typename KeyEqual, typename ValueEqual >
   Ref< Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual> >
@@ -198,6 +193,7 @@ namespace sc {
       return v->second;
     }
     else {
+      lh.unlock();
       this->print(ExEnv::out0());
       throw not_found("key not found");
     }
@@ -235,6 +231,12 @@ namespace sc {
       map_.erase(v);
   }
 
+  template <typename T1, typename T2>
+  std::ostream& operator<<(std::ostream& os, const std::pair<T1, T2>& val) {
+    os << "{ " << val.first << ", " << val.second << " }";
+    return os;
+  }
+
   template <typename Key, typename Value, template <typename> class CreationPolicy, typename KeyEqual, typename ValueEqual >
   void
   Registry<Key,Value,CreationPolicy,KeyEqual,ValueEqual>::print(std::ostream& os) const
@@ -248,7 +250,6 @@ namespace sc {
   }
 
 } // end of namespace sc
-
 
 #endif // end of header guard
 

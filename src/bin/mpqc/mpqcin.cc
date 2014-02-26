@@ -131,7 +131,7 @@ MPQCIn::ylex()
 void
 MPQCIn::begin_molecule()
 {
-  if (mol_.nonnull()) {
+  if (mol_) {
       ExEnv::outn() << ExEnv::program_name()
                    << ": error: second molecule given at line "
                    << lexer_->lineno()+1

@@ -130,6 +130,7 @@ class type_info_key {
     int operator==(const type_info_key&) const;
     int operator<(const type_info_key&) const;
     int cmp(const type_info_key&) const;
+    const std::type_info* type_info() const { return ti_; }
 };
 
 /** This class is used to contain information about classes.

@@ -29,7 +29,6 @@
 #include <chemistry/qc/lcao/df_runtime.h>
 #include <math/optimize/gaussianfit.h>
 #include <math/optimize/gaussianfit.timpl.h>
-#include <util/misc/consumableresources.h>
 
 using namespace sc;
 
@@ -70,7 +69,7 @@ ParsedDensityFittingKey::ParsedDensityFittingKey(const std::string& key) :
   std::string crap = pop_till_token(keycopy,'(');
   // get kernel
   std::string kernel = pop_till_token(keycopy,')');
-  kernel_pkey_ = ParsedTwoBodyOperKey(kernel);
+  kernel_pkey_ = ParsedTwoBodyOperSetKey(kernel);
   // get rid of |
   crap = pop_till_token(keycopy,'|');
   // get fspace
@@ -110,9 +109,7 @@ DensityFittingRuntime::DensityFittingRuntime(const Ref<MOIntsRuntime>& r,
                                              const DensityFittingParams* dfp) :
   moints_runtime_(r),
   dfparams_(dfp),
-  results_(ResultRegistry::instance()),
-  coef_results_(CoefRegistry::instance()),
-  decomps_()
+  results_(ResultRegistry::instance())
 {
 }
 
@@ -124,11 +121,6 @@ DensityFittingRuntime::DensityFittingRuntime(StateIn& si)
   dfparams_ = dfp.pointer();
 
   results_ = ResultRegistry::restore_instance(si);
-  coef_results_ = CoefRegistry::restore_instance(si);
-}
-
-DensityFittingRuntime::~DensityFittingRuntime(){
-
 }
 
 void
@@ -137,13 +129,11 @@ DensityFittingRuntime::save_data_state(StateOut& so)
   SavableState::save_state(moints_runtime_.pointer(),so);
   SavableState::save_state(const_cast<DensityFittingParams*>(dfparams_),so);
   ResultRegistry::save_instance(results_,so);
-  CoefRegistry::save_instance(coef_results_,so);
 }
 
 void
 DensityFittingRuntime::obsolete() {
   results_->clear();
-  coef_results_->clear();
 }
 
 bool
@@ -157,6 +147,7 @@ DensityFittingRuntime::exists(const CoefKey& key) const
 {
   return coef_results_->key_exists(key);
 }
+
 
 struct ParsedDensityFittingKeyInvolvesSpace {
     ParsedDensityFittingKeyInvolvesSpace(const std::string& skey) : space_key(skey) {}
@@ -213,34 +204,6 @@ DensityFittingRuntime::get(const CoefKey& key)
   assert(false); // unreachable
 }
 
-//bool
-//DensityFittingRuntime::is_local(const std::string& key, int mu){
-//  static std::map<const std::string, std::set<int> > local_blocks;
-//  if(local_blocks.count(key) != 0){
-//    return local_blocks[key].count(mu) != 0;
-//  }
-//  else{
-//    try { ParsedResultKey parsedkey(key); }
-//    catch (...) {
-//      std::ostringstream oss;
-//      oss << "DensityFittingRuntime::get() -- key " << key << " does not match the format";
-//      throw ProgrammingError(oss.str().c_str(),__FILE__,__LINE__);
-//    }
-//    ParsedResultKey pkey(key);
-//    const std::string& space1_str = pkey.space1();
-//    const std::string& space2_str = pkey.space2();
-//    const std::string& fspace_str = pkey.fspace();
-
-//
-//    Ref<OrbitalSpaceRegistry> idxreg = this->moints_runtime()->factory()->orbital_registry();
-//    Ref<OrbitalSpace> space1 = idxreg->value(space1_str);
-//    Ref<OrbitalSpace> space2 = idxreg->value(space2_str);
-//    Ref<OrbitalSpace> fspace = idxreg->value(fspace_str);
-//    Ref<DistArray4> D4 = make_distarray4(1, 1, space1->rank(), space2->rank(), fspace->rank());
-
-//  }
-//}
-
 DensityFittingRuntime::CoefResultRef
 DensityFittingRuntime::get_coefficients(const CoefKey& key)
 {
@@ -289,7 +252,7 @@ DensityFittingRuntime::get_coefficients(const CoefKey& key)
   const Ref<TwoBodyThreeCenterMOIntsTransform>& munu_M_X_tform = int3c_rtime->get(munu_M_X_key);
   munu_M_X_tform->compute();
   Ref<DistArray4> munu_M_X = munu_M_X_tform->ints_acc();
-  bool is_active = munu_M_X->is_active();
+  bool is_active = munu_M_X->active();
   if(not is_active){
     munu_M_X->activate();
   }
@@ -438,6 +401,7 @@ DensityFittingRuntime::get_coefficients(const CoefKey& key)
   return Cpart;
 }
 
+
 #define USE_TRANSFORMED_DF 1
 #define ALWAYS_MAKE_AO2_DF 1
 
@@ -458,7 +422,6 @@ DensityFittingRuntime::create_result(const std::string& key)
   Ref<OrbitalSpace> space1 = idxreg->value(space1_str);
   Ref<OrbitalSpace> space2 = idxreg->value(space2_str);
   Ref<OrbitalSpace> fspace = idxreg->value(fspace_str);
-
 
   //
   // create the result assuming that fits have been already created to allow getting to the target with minimal effort
@@ -651,33 +614,19 @@ DensityFittingRuntime::default_dfbs_name(const std::string& obs_name, int incX, 
 
 /////////////////////////////////////////////////////////////////////////////
 
-
-
-/////////////////////////////////////////////////////////////////////////////
-
 ClassDesc
 DensityFittingParams::class_desc_(typeid(DensityFittingParams),
                      "DensityFittingParams",
-                     2,               // version
+                     1,               // version
                      "virtual public SavableState", // must match parent
                      0, 0, create<DensityFittingParams>
                      );
 
 DensityFittingParams::DensityFittingParams(const Ref<GaussianBasisSet>& basis,
                                            const std::string& kernel,
-                                           const std::string& solver,
-                                           bool local_coulomb,
-                                           bool local_exchange,
-                                           bool exact_diag_J,
-                                           bool exact_diag_K
-                                           ) :
+                                           const std::string& solver) :
                                            basis_(basis),
-                                           kernel_(kernel),
-                                           kernel_intparams_key_("default"),
-                                           local_coulomb_(local_coulomb),
-                                           local_exchange_(local_exchange),
-                                           exact_diag_J_(exact_diag_J),
-                                           exact_diag_K_(exact_diag_K)
+                                           kernel_(kernel)
 {
   if (solver == "cholesky_inv")
     solver_ = DensityFitting::SolveMethod_InverseCholesky;
@@ -691,17 +640,11 @@ DensityFittingParams::DensityFittingParams(const Ref<GaussianBasisSet>& basis,
       solver_ = DensityFitting::SolveMethod_BunchKaufman;
   else if (solver == "bunchkaufman_refine")
       solver_ = DensityFitting::SolveMethod_RefinedBunchKaufman;
-  else if (solver == "householder")
-      solver_ = DensityFitting::SolveMethod_HouseholderQR;
-  else if (solver == "householder_colpiv")
-      solver_ = DensityFitting::SolveMethod_ColPivHouseholderQR;
-  else if (solver == "householder_fullpiv")
-      solver_ = DensityFitting::SolveMethod_FullPivHouseholderQR;
   else
     throw ProgrammingError("invalid solver", __FILE__, __LINE__, class_desc());
 
   if (not kernel_.empty()) { // throw if not valid kernel
-    ParsedTwoBodyOperKey kernel_pkey(kernel_);
+    ParsedTwoBodyOperSetKey kernel_pkey(kernel_);
     TwoBodyOperSet::type kernel_oper = TwoBodyOperSet::to_type(kernel_pkey.oper());
     Ref<IntParams> kernel_params = ParamsRegistry::instance()->value(kernel_pkey.params());
   }
@@ -711,8 +654,6 @@ DensityFittingParams::DensityFittingParams(StateIn& si) : SavableState(si) {
   basis_ << SavableState::restore_state(si);
   si.get(kernel_);
   int s; si.get(s); solver_ = static_cast<DensityFitting::SolveMethod>(s);
-  si.get(local_coulomb_);
-  si.get(local_exchange_);
 }
 
 DensityFittingParams::~DensityFittingParams() {
@@ -723,8 +664,6 @@ DensityFittingParams::save_data_state(StateOut& so) {
   SavableState::save_state(basis_.pointer(), so);
   so.put(kernel_);
   so.put((int)solver_);
-  so.put(local_coulomb_);
-  so.put(local_exchange_);
 }
 
 void
@@ -735,8 +674,6 @@ DensityFittingParams::print(std::ostream& o) const {
     o << incindent;
       basis_->print(o);
     o << decindent;
-    if(local_coulomb_) o << "strongly local fitting active in coulomb operator" << std::endl;
-    if(local_exchange_) o << "strongly local fitting active in exchange operator" << std::endl;
     o << indent << "kernel = " << kernel_ << std::endl;
     o << indent << "solver = ";
     switch(solver_) {
@@ -746,9 +683,6 @@ DensityFittingParams::print(std::ostream& o) const {
       case DensityFitting::SolveMethod_InverseCholesky:      o << "Cholesky (inverse)"; break;
       case DensityFitting::SolveMethod_Cholesky:             o << "Cholesky"; break;
       case DensityFitting::SolveMethod_RefinedCholesky:      o << "Cholesky (refine)"; break;
-      case DensityFitting::SolveMethod_HouseholderQR:        o << "HouseholderQR"; break;
-      case DensityFitting::SolveMethod_ColPivHouseholderQR:  o << "ColPivHouseholderQR"; break;
-      case DensityFitting::SolveMethod_FullPivHouseholderQR: o << "FullPivHouseholderQR"; break;
       default: MPQC_ASSERT(false); // unreachable
     }
     o << std::endl;
@@ -762,7 +696,7 @@ DensityFittingParams::intparams_key() const
     return std::string();
   }
   else {
-    ParsedTwoBodyOperKey kernel_pkey(kernel_key());
+    ParsedTwoBodyOperSetKey kernel_pkey(kernel_key());
     return kernel_pkey.params();
   }
 }

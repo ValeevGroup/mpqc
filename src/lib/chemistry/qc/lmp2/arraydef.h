@@ -76,7 +76,7 @@ namespace sma2 {
 //               indices_[i].print(o);
 //             }
 //         }
-      if (grp.nonnull() && distributed) {
+      if (grp && distributed) {
           if (grp->me() == 0) o << "array " << name_ << ":" << std::endl;
           for (int i=0; i<grp->n(); i++) {
               if (grp->me() == i) {
@@ -88,7 +88,7 @@ namespace sma2 {
               sleep(1);
             }
         }
-      else if (grp.null() || (grp.nonnull() && grp->n() == 1)) {
+      else if (grp.null() || (grp && grp->n() == 1)) {
           print_local(o);
         }
     }

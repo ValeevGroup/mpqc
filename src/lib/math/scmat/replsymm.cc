@@ -63,7 +63,7 @@ ReplSymmSCMatrix::ReplSymmSCMatrix(const RefSCDimension&a,ReplSCMatrixKit*k):
   SymmSCMatrix(a,k),
   rows(0)
 {
-  int n = d->n();
+  size_t n = d->n();
 
   matrix = allocate<double>(n*(n+1)>>1);
   rows = init_symm_rows(matrix,n);
@@ -569,7 +569,7 @@ ReplSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b)
           diagmsggrp = messagegrp();
       }
 
-      if (diagmsggrp.nonnull()) {
+      if (diagmsggrp) {
           int ndiagproc = diagmsggrp->n();
           int nvec = n/ndiagproc + (me<(n%ndiagproc)?1:0);
           int mvec = n/ndiagproc + ((n%ndiagproc) ? 1 : 0);
@@ -636,7 +636,7 @@ ReplSymmSCMatrix::diagonalize(DiagSCMatrix*a,SCMatrix*b)
           for (int i=n; i<nproc; i++) bcastset.insert(i);
           Ref<MessageGrp> bcastgrp = messagegrp()->subset(bcastset);
 //           Ref<MessageGrp> bcastgrp = messagegrp()->split((me==0||me>=n)?0:-1);
-          if (bcastgrp.nonnull()) {
+          if (bcastgrp) {
               bcastgrp->bcast(la->matrix,n);
               bcastgrp->bcast(lb->matrix,n*n);
           }

@@ -1,6 +1,7 @@
-INSTALL(DIRECTORY ./devsamp/hf DESTINATION ${CMAKE_INSTALL_PREFIX}/examples)
-INSTALL(DIRECTORY ./devsamp/mp2 DESTINATION ${CMAKE_INSTALL_PREFIX}/examples)
-INSTALL(DIRECTORY ./devsamp/aoints DESTINATION ${CMAKE_INSTALL_PREFIX}/examples)
+set (CMAKE_DOCINSTALL_PATH ${CMAKE_INSTALL_PREFIX}/share/doc/mpqc-${MPQC_VERSION})
+INSTALL(DIRECTORY ./devsamp/hf DESTINATION ${CMAKE_DOCINSTALL_PATH}/examples)
+INSTALL(DIRECTORY ./devsamp/mp2 DESTINATION ${CMAKE_DOCINSTALL_PATH}/examples)
+INSTALL(DIRECTORY ./devsamp/aoints DESTINATION ${CMAKE_DOCINSTALL_PATH}/examples)
 
 #-- Add an Option to toggle the generation of the API documentation
 
@@ -48,7 +49,7 @@ if(DOXYGEN_FOUND)
                         CXX ${CMAKE_SOURCE_DIR}/src/bin/pt2r12/pt2r12.cc
                       COMMENT "Generating MPQC API documentation with Doxygen")
   
-  INSTALL( DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html DESTINATION share/doc )
+  INSTALL( DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html DESTINATION ${CMAKE_DOCINSTALL_PATH})
 
   add_custom_target (html
     DEPENDS ${PROJECT_BINARY_DIR}/doc/html/index.html)

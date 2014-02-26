@@ -2,56 +2,58 @@ include(AddLibrary)
 
 # libint2 library
 
-add_mpqc_object_library(libint2
-  bounds.cc
-  comp_eri.cc
-  comp_g12.cc
-  comp_g12dkh.cc
-  comp_g12nc.cc
-  #comp_grt.cc
-  edipole.cc
-  equadrupole.cc
-  eri.cc
-  g12.cc
-  g12dkh.cc
-  g12nc.cc
-  #grt.cc
-  gto.cc
-  hcore.cc
-  int1e.cc
-  int2e.cc
-  kinetic.cc
-  libint2.cc
-  nuclear.cc
-  obintlibint2.cc
-  obosrr.cc
-  overlap.cc
-  p4.cc
-  permute2e.cc
-  primpairs.cc
-  shellpairs.cc
-  storage.cc
-  tbintlibint2.cc
-  tform.cc
-)
+IF(HAVE_LIBINT2)
+    set(ccfiles
+      bounds.cc
+      #comp_eri.cc
+      comp_g12.cc
+      comp_g12dkh.cc
+      comp_g12nc.cc
+      core_ints_engine.cc
+      #comp_grt.cc
+      edipole.cc
+      efield.cc
+      efield_grad.cc
+      equadrupole.cc
+      #eri.cc
+      g12.cc
+      g12dkh.cc
+      g12nc.cc
+      #grt.cc
+      gto.cc
+      hcore.cc
+      int1e.cc
+      int2e.cc
+      kinetic.cc
+      libint2.cc
+      nuclear.cc
+      obintlibint2.cc
+      obosrr.cc
+      overlap.cc
+      p4.cc
+      permute2e.cc
+      primpairs.cc
+      shellpairs.cc
+      storage.cc
+      tbintlibint2.cc
+      tform.cc
+    )
+
+    add_mpqc_object_library(libint2 ${ccfiles})
+ENDIF(HAVE_LIBINT2)
 
 # tests
+if (MPQC_UNITTEST)
+  set_property(SOURCE libint2test.cc PROPERTY COMPILE_DEFINITIONS
+     SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
-set_property(SOURCE libint2test.cc PROPERTY COMPILE_DEFINITIONS
-   SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(libint2test libint2test.cc )
+  add_test(libint2test libint2test)
+  target_link_libraries(
+    libint2test
+    chemistry
+    ${LIBINT2_LIBRARY}
+  )
+endif()
 
-add_executable(libint2test EXCLUDE_FROM_ALL
- libint2test.cc
-)
-
-target_link_libraries(
-  libint2test
-  chemistry
-)
-
-target_link_libraries(libint2test ${LIBINT2_LIBRARY})
-target_link_libraries(libint2test ${LAPACK_LIBRARIES})
-target_link_libraries(libint2test ${BLAS_LIBRARIES})
-target_link_libraries(libint2test ${LIBRARIES})
-target_link_libraries(libint2test ${CMAKE_DL_LIBS})
 

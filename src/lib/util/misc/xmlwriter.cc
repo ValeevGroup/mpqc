@@ -42,6 +42,7 @@ std::stack<Ref<XMLWriter>> XMLWriter::writer_stack = {};
 std::string XMLWriter::current_context_name = "";
 std::stack<std::string> XMLWriter::context_name_stack = {};
 
+
 XMLWriter::XMLWriter(const Ref<KeyVal>& keyval) :
     out_(0),
     current_root_(new ptree()),
@@ -220,23 +221,21 @@ XMLWriter::end_writing_context()
 // Non-intrusive interface
 
 ptree&
-XMLWriter::write_to_xml(const Ref<XMLWritable>& obj, ptree& parent) const
+sc::write_xml(
+    XMLWritable& obj,
+    ptree& parent,
+    const XMLWriter& writer
+)
 {
-  return obj->write_xml(parent, *this);
+  return obj.write_xml(parent, writer);
 }
 
 ptree&
-XMLWriter::write_to_xml(XMLWritable& obj, ptree& parent) const
-{
-  return obj.write_xml(parent, *this);
-}
-
-template<>
-ptree&
-XMLWriter::write_to_xml(
-    const Eigen::MatrixBase<Eigen::VectorXd>& obj,
-    ptree& parent
-) const
+sc::write_xml(
+    const Eigen::VectorXd& obj,
+    ptree& parent,
+    const XMLWriter& writer
+)
 {
   ptree& child = parent.add_child("EigenVectorXd", ptree());
   const int n = obj.innerSize();
@@ -249,16 +248,16 @@ XMLWriter::write_to_xml(
   }
   // Note: the XMLDataStream created by put_binary_data now owns
   //   the pointer 'data'
-  this->put_binary_data(child.add_child("data", ptree()), data, n);
+  writer.put_binary_data(child.add_child("data", ptree()), data, n);
   return child;
 }
 
-template<>
 ptree&
-XMLWriter::write_to_xml(
-    const Eigen::MatrixBase<Eigen::MatrixXd>& obj,
-    ptree& parent
-) const
+sc::write_xml(
+    const Eigen::MatrixXd& obj,
+    ptree& parent,
+    const XMLWriter& writer
+)
 {
   ptree& child = parent.add_child("EigenMatrixXd", ptree());
   const int nrow = obj.rows();
@@ -277,24 +276,32 @@ XMLWriter::write_to_xml(
   }
   // Note: the XMLDataStream created by put_binary_data now owns
   //   the pointer 'data'
-  this->put_binary_data(child.add_child("data", ptree()), data, nrow*ncol);
+  writer.put_binary_data(child.add_child("data", ptree()), data, nrow*ncol);
   return child;
 }
 
 ptree&
-XMLWriter::write_to_xml(const SCVector3& obj, ptree& parent) const
+sc::write_xml(
+    const SCVector3& obj,
+    ptree& parent,
+    const XMLWriter& writer
+)
 {
   ptree& child = parent.add_child("SCVector3", ptree());
   // For now, just iterate over everything, since the data() method doesn't
   //   seem to work like I expect it to.
   double* data = allocate<double>(3);
   ::memcpy(data, obj.data(), 3*sizeof(double));
-  this->put_binary_data(child.add_child("data", ptree()), data, 3);
+  writer.put_binary_data(child.add_child("data", ptree()), data, 3);
   return child;
 }
 
 ptree&
-XMLWriter::write_to_xml(const SCVector& obj, ptree& parent) const
+sc::write_xml(
+    const SCVector& obj,
+    ptree& parent,
+    const XMLWriter& writer
+)
 {
   ptree& my_tree = parent.add_child("SCVector", ptree());
   my_tree.put("<xmlattr>.n", obj.n());
@@ -303,12 +310,16 @@ XMLWriter::write_to_xml(const SCVector& obj, ptree& parent) const
   obj.convert(data);
   // The XMLDataStream object created by this function call
   //   owns the pointer data after this.
-  this->put_binary_data<double>(data_tree, data, obj.n());
+  writer.put_binary_data<double>(data_tree, data, obj.n());
   return my_tree;
 }
 
 ptree&
-XMLWriter::write_to_xml(const Units& obj, ptree& parent) const
+sc::write_xml(
+    const Units& obj,
+    ptree& parent,
+    const XMLWriter& writer
+)
 {
   ptree& child = parent.add_child("Units", ptree());
   child.put_value(obj.string_rep());
@@ -316,18 +327,46 @@ XMLWriter::write_to_xml(const Units& obj, ptree& parent) const
 }
 
 ptree&
-XMLWriter::write_to_xml(const Grid& obj, ptree& parent) const
+sc::write_xml(
+    const Grid& obj,
+    ptree& parent,
+    const XMLWriter& writer
+)
 {
   ptree& my_tree = parent.add_child("Grid", ptree());
-  this->insert_child(my_tree, obj.unit);
+  writer.insert_child(my_tree, obj.unit);
   my_tree.put("num_x", obj.numx);
   my_tree.put("num_y", obj.numy);
   my_tree.put("num_z", obj.numz);
-  this->insert_child(my_tree, obj.origin, "origin");
-  this->insert_child(my_tree, obj.axisx, "x_axis");
-  this->insert_child(my_tree, obj.axisy, "y_axis");
-  this->insert_child(my_tree, obj.axisz, "z_axis");
+  writer.insert_child(my_tree, obj.origin, "origin");
+  writer.insert_child(my_tree, obj.axisx, "x_axis");
+  writer.insert_child(my_tree, obj.axisy, "y_axis");
+  writer.insert_child(my_tree, obj.axisz, "z_axis");
   return my_tree;
+}
+
+ptree&
+sc::write_xml(
+    const std::vector<double>& obj,
+    ptree& parent,
+    const XMLWriter& writer
+)
+{
+  ptree* child_ptr;
+  if(writer.fold_in_class_name()) {
+    parent.put("<xmlattr>.type", "std::vector<double>");
+    child_ptr = &(parent);
+  }
+  else{
+    ptree& tmp = parent.add_child("data", ptree());
+    child_ptr = &tmp;
+  }
+  ptree& child = *child_ptr;
+
+  writer.put_binary_data(child, obj.data(), obj.size(), true);
+
+  return child;
+
 }
 
 

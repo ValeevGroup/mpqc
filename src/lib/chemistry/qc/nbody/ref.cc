@@ -754,7 +754,7 @@ SD_RefWavefunction::SD_RefWavefunction(const Ref<KeyVal>& keyval) :
     throw InputError("localized occupied orbitals can only be used for closed-shell molecules",
                      __FILE__, __LINE__, "occ_orbitals", occ_orbitals_.c_str(), this->class_desc());
 
-  if (nfzv_ > 0 && vir_space_.nonnull()) {
+  if (nfzv_ > 0 && vir_space_) {
     std::ostringstream oss;
     oss << nfzv_;
     throw InputError("when VBS is given nfzv must be 0",
@@ -784,7 +784,7 @@ SD_RefWavefunction::SD_RefWavefunction(const Ref<WavefunctionWorld>& world,
   if (obwfn_->spin_polarized() == false) spin_restricted_ = true;
   if (obwfn_->spin_unrestricted() == true) spin_restricted_ = false;
 
-  if (nfzv > 0 && vir_space.nonnull())
+  if (nfzv > 0 && vir_space)
     throw ProgrammingError("when VBS is given nfzv must be 0",__FILE__,__LINE__);
 }
 
@@ -820,7 +820,7 @@ SD_RefWavefunction::print(std::ostream&o) const {
     o << indent << "# frozen core   = " << nfzc_ << endl;
     o << indent << "# frozen virt   = " << nfzv_ << endl;
     o << indent << "occ_orbitals    = " << occ_orbitals_ << endl;
-    if (vir_space_.nonnull()) {
+    if (vir_space_) {
       o << indent << "vir_basis:" << endl;
       vir_space_->basis()->print(o);
       o << endl;
@@ -915,7 +915,7 @@ SD_RefWavefunction::init_spaces_restricted()
   }
 
   // omit unoccupied orbitals?
-  const bool omit_uocc = vir_space_.nonnull() && vir_space_->rank() == 0;
+  const bool omit_uocc = vir_space_ && vir_space_->rank() == 0;
   if (omit_uocc) {
     Ref<OrbitalSpace> allspace = new OrbitalSpace("", "",
                                                   evecs_ao,
@@ -984,7 +984,7 @@ void
 SD_RefWavefunction::init_spaces_unrestricted()
 {
   // omit unoccupied orbitals?
-  const bool omit_uocc = vir_space_.nonnull() && (vir_space_->rank() == 0);
+  const bool omit_uocc = vir_space_ && (vir_space_->rank() == 0);
   if (omit_uocc)
     throw FeatureNotImplemented("omit_uocc is not implemented for spin-unrestricted references",
                                 __FILE__,__LINE__);
@@ -1073,7 +1073,7 @@ SD_RefWavefunction::dfinfo() const {
     result = const_cast<DensityFittingInfo*>(world()->tfactory()->df_info());
   else {
     Ref<SCF> scf_ptr; scf_ptr << this->obwfn();
-    result = (scf_ptr.nonnull()) ? scf_ptr->dfinfo() : 0;
+    result = (scf_ptr) ? scf_ptr->dfinfo() : Ref<DensityFittingInfo>();
   }
   return result;
 }
@@ -1594,7 +1594,7 @@ RefWavefunctionFactory::make(const Ref<WavefunctionWorld> & world,
 {
   { // OneBodyWavefunction
     Ref<OneBodyWavefunction> cast; cast << ref;
-    if (cast.nonnull())
+    if (cast)
       return new SD_RefWavefunction(world, cast, spin_restricted, nfzc, nfzv, vir_space);
   }
   throw FeatureNotImplemented("this reference wavefunction cannot be used for R12 methods",

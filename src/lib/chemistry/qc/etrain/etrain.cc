@@ -439,7 +439,7 @@ ETraIn::compute_train()
   RefSCMatrix sobymo = obwfn12_->mo_to_so();
   // SCF Hamiltonian is obtained with effective_fock()
 #if 1
-  if (obwfn12_clscf.nonnull()) {
+  if (obwfn12_clscf) {
     fock12_so.accumulate_transform(obwfn12_->mo_to_so(), obwfn12_clscf->effective_fock());
   }
   // Other (incl. Huckel) Hamiltonian are assumed to be simply the eigenvalues
@@ -616,7 +616,7 @@ ETraIn::compute_train()
       }
 
       // optional: print adiabatic occupied dimer orbitals on the grid
-      if (grid_.nonnull() && method == 0) {
+      if (grid_ && method == 0) {
         // compute adiabatic orbitals
         Ref<OrbitalSpace> as12 = new OrbitalSpace("d12", "Dimer active MO space", s12->coefs() * evecs_1,
                                                   s12->basis(), s12->integral(), evals_1, 0, 0);
@@ -636,7 +636,7 @@ ETraIn::compute_train()
   }
 
   // optional: print monomer orbitals on the grid
-  if (grid_.nonnull()) {
+  if (grid_) {
     // merge the two spaces together
     Ref<OrbitalSpace> m12space = new OrbitalSpaceUnion("m1+m2", "Monomers 1+2 active MO space",
                                                        *m1space, *m2space, true);

@@ -109,12 +109,26 @@ namespace sc {
 
   ////////////////////////////////////////////////////////////////////////////////
 
-  template<typename T>
+  namespace {
+    template<typename T, bool do_it>
+    struct destroy_data {
+        void operator()(T* data) const { };
+    };
+
+    template<typename T>
+    struct destroy_data<T, true> {
+      void operator()(T* data) const {
+        deallocate(data);
+      }
+    };
+
+  }
+
+  template<typename T, bool deallocate_when_destroyed=not std::is_const<T>::value>
   class XMLDataStream {
   private:
     T* data_;
     unsigned long n_;
-    bool deallocate_when_destroyed_;
     bool human_readable_;
     bool pretty_print_;
 
@@ -123,22 +137,16 @@ namespace sc {
         T* data,
         unsigned long n,
         bool human_readable=false,
-        bool pretty_print=false,
-        bool deallocate_when_destroyed=true
+        bool pretty_print=false
     ) :
       data_(data),
       n_(n),
-      deallocate_when_destroyed_(deallocate_when_destroyed),
       human_readable_(human_readable),
       pretty_print_(pretty_print)
-    {
+    { }
 
-    }
-
-    ~XMLDataStream(){
-      if(deallocate_when_destroyed_){
-        deallocate(data_);
-      }
+    ~XMLDataStream() {
+      destroy_data<T, deallocate_when_destroyed>()(data_);
     }
 
     unsigned long n() const { return n_; }
@@ -146,8 +154,49 @@ namespace sc {
     bool human_readable() const { return human_readable_; }
     bool pretty_print() const { return pretty_print_; }
 
+  private:
 
   };
+
+
+  ////////////////////////////////////////////////////////////////////////////////
+
+  class XMLWriter;
+
+  template <typename T>
+  typename boost::enable_if<
+    boost::is_base_of<XMLWritable, typename boost::decay<T>::type>,
+    ptree&
+  >::type
+  write_xml(
+      const Ref<T>& obj,
+      ptree& parent,
+      const XMLWriter& writer
+  );
+
+  template <typename T>
+  ptree&
+  write_xml(
+      const Ref<T>& obj,
+      typename boost::disable_if_c<
+        boost::is_base_of<XMLWritable, typename boost::decay<T>::type>::value
+        or not boost::is_base_of<RefCount, typename boost::decay<T>::type>::value,
+        ptree&
+      >::type const& parent,
+      const XMLWriter& writer
+  );
+
+  ptree& write_xml(XMLWritable&, ptree&, const XMLWriter&);
+  ptree& write_xml(const SCVector3&, ptree&, const XMLWriter&);
+  ptree& write_xml(const SCVector&, ptree&, const XMLWriter&);
+  ptree& write_xml(const Grid&, ptree&, const XMLWriter&);
+  ptree& write_xml(const Units&, ptree&, const XMLWriter&);
+  ptree& write_xml(const Eigen::MatrixXd&, ptree&, const XMLWriter&);
+  ptree& write_xml(const Eigen::VectorXd&, ptree&, const XMLWriter&);
+  ptree& write_xml(const std::vector<double>&, ptree&, const XMLWriter&);
+
+  template<typename Derived>
+  ptree& write_xml(const Eigen::MatrixBase<Derived>&, ptree&, const XMLWriter&);
 
   ////////////////////////////////////////////////////////////////////////////////
 
@@ -217,20 +266,23 @@ namespace sc {
           pt.put("<xmlattr>.ndata", ndata);
           pt.put("<xmlattr>.datum_size", sizeof(T));
           pt.put("<xmlattr>.big_endian", IS_BIG_ENDIAN);
-          XMLDataStream<T> xds(data, ndata,
-              /* human_readable = */ false,
-              /* pretty_print = */ pretty_print_,
-              /* deallocate_when_destroyed = */ !preserve_data_pointer
-          );
-          pt.put_value(xds);
         }
         else{
           pt.put("<xmlattr>.ndata", ndata);
           pt.put("<xmlattr>.human_readable", true);
+        }
+
+        if(preserve_data_pointer) {
+          XMLDataStream<const T> xds(const_cast<const T*>(data), ndata,
+              /* human_readable = */ human_readable_,
+              /* pretty_print = */ pretty_print_
+          );
+          pt.put_value(xds);
+        }
+        else {
           XMLDataStream<T> xds(data, ndata,
-              /* human_readable = */ true,
-              /* pretty_print = */ pretty_print_,
-              /* deallocate_when_destroyed = */ !preserve_data_pointer
+              /* human_readable = */ human_readable_,
+              /* pretty_print = */ pretty_print_
           );
           pt.put_value(xds);
         }
@@ -239,7 +291,7 @@ namespace sc {
       template <typename T>
       ptree& insert_child(
           ptree& parent,
-          T obj
+          T&& obj
       ) const
       {
         return this->write_to_xml(obj, parent);
@@ -248,7 +300,7 @@ namespace sc {
       template <typename T>
       ptree& insert_child(
           ptree& parent,
-          T obj,
+          T&& obj,
           std::string wrapper_name
       ) const
       {
@@ -261,7 +313,7 @@ namespace sc {
       template <typename T, typename MapType>
       ptree& insert_child(
           ptree& parent,
-          T obj,
+          T&& obj,
           std::string wrapper_name,
           const MapType& attrs
       ) const
@@ -277,7 +329,7 @@ namespace sc {
 
       template <typename T, typename... Args>
       ptree& insert_child_default(
-          T obj,
+          T&& obj,
           Args... args
       ) const
       {
@@ -285,50 +337,18 @@ namespace sc {
         return insert_child(*current_root_, obj, args...);
       }
 
-
       void add_data(const Ref<XMLWritable>& datum) { data_.push_back(datum); }
 
       void do_write();
 
       void run();
 
-      ptree& write_to_xml(const Ref<XMLWritable>& obj, ptree& parent) const;
-      ptree& write_to_xml(XMLWritable& obj, ptree& parent) const;
-
-      //----------------------------------------------------------------------------//
-      // Non-intrusive interface for some types
-
-      ptree& write_to_xml(const SCVector3& obj, ptree& parent) const;
-      ptree& write_to_xml(const SCVector& obj, ptree& parent) const;
-      ptree& write_to_xml(const Grid& obj, ptree& parent) const;
-      ptree& write_to_xml(const Units& obj, ptree& parent) const;
-
-      template<typename Derived>
-      ptree&
-      write_to_xml(const Eigen::MatrixBase<Derived>& obj, ptree& parent) const
+      template <typename T>
+      ptree& write_to_xml(T&& obj, ptree& parent) const
       {
-        typedef Eigen::MatrixBase<Derived> MatrixType;
-
-        ptree& child = parent.add_child("EigenDerived", ptree());
-        const int ninner = obj.innerSize();
-        const int nouter = obj.outerSize();
-        child.put("<xmlattr>.ninner", ninner);
-        child.put("<xmlattr>.nouter", nouter);
-        child.put("<xmlattr>.row_major", int(MatrixType::IsRowMajor));
-        child.put("<xmlattr>.is_vector", int(MatrixType::IsVectorAtCompileTime));
-        // Just iterate over everything so we don't have to think about strides and such
-        double* data = allocate<double>(nouter*ninner);
-        for(int i = 0; i < nouter; ++i){
-          for(int j = 0; j < ninner; ++j){
-            data[i*ninner + j] = obj(i, j);
-          }
-        }
-        // Note: the XMLDataStream created by put_binary_data now owns
-        //   the pointer 'data'
-        this->put_binary_data(child.add_child("data", ptree()), data, nouter*ninner);
-        return child;
+        // Call the non-intrusive interface
+        return write_xml(std::forward<T>(obj), parent, *this);
       }
-
 
       template<typename T>
       inline typename boost::enable_if<boost::is_base_of<RefCount, T>, ptree&>::type
@@ -337,10 +357,9 @@ namespace sc {
       }
 
       template<typename T>
-      inline ptree&
-      write_to_xml(T obj) const {
+      ptree& write_to_xml(T&& obj) const {
         assert(not writing_done_);
-        return write_to_xml(obj, *current_root_);
+        return write_to_xml(std::forward<T>(obj), *current_root_);
       }
 
       //----------------------------------------------------------------------------//
@@ -350,14 +369,12 @@ namespace sc {
 
       void end_writing_context();
 
-
       static Ref<XMLWriter> current_writer;
       static std::stack<Ref<XMLWriter>> writer_stack;
       static std::string current_context_name;
       static std::stack<std::string> context_name_stack;
 
     private:
-
 
       template<typename T>
       inline ptree& write_to_xml_impl(const Ref<T>& obj, ptree& parent, const boost::true_type is_writable) const {
@@ -374,6 +391,66 @@ namespace sc {
   };
 
   ////////////////////////////////////////////////////////////////////////////////
+
+  template <typename T>
+  typename boost::enable_if<
+    boost::is_base_of<XMLWritable, typename boost::decay<T>::type>,
+    ptree&
+  >::type
+  write_xml(
+      const Ref<T>& obj,
+      ptree& parent,
+      const XMLWriter& writer
+  )
+  {
+    return obj->write_xml(parent, writer);
+  }
+
+  template <typename T>
+  ptree&
+  write_xml(
+      const Ref<T>& obj,
+      typename boost::disable_if_c<
+        boost::is_base_of<XMLWritable, typename boost::decay<T>::type>::value
+        or not boost::is_base_of<RefCount, typename boost::decay<T>::type>::value,
+        ptree&
+      >::type const& parent,
+      const XMLWriter& writer
+  )
+  {
+    return write_xml(*obj, parent, writer);
+  }
+
+  template<typename Derived>
+  ptree& write_xml(const Eigen::MatrixBase<Derived>& obj, ptree& parent, const XMLWriter& writer)
+  {
+    typedef Eigen::MatrixBase<Derived> MatrixType;
+
+    ptree& child = parent.add_child("EigenDerived", ptree());
+    const int ninner = obj.innerSize();
+    const int nouter = obj.outerSize();
+    child.put("<xmlattr>.ninner", ninner);
+    child.put("<xmlattr>.nouter", nouter);
+    child.put("<xmlattr>.row_major", int(MatrixType::IsRowMajor));
+    child.put("<xmlattr>.is_vector", int(MatrixType::IsVectorAtCompileTime));
+
+    // Just iterate over everything so we don't have to think about strides and such
+    double* data = allocate<double>(nouter*ninner);
+    for(int i = 0; i < nouter; ++i){
+      for(int j = 0; j < ninner; ++j){
+        data[i*ninner + j] = obj(i, j);
+      }
+    }
+
+    // Note: the XMLDataStream created by put_binary_data now owns
+    //   the pointer 'data'
+    writer.put_binary_data(child.add_child("data", ptree()), data, nouter*ninner);
+    return child;
+  }
+
+  ////////////////////////////////////////////////////////////////////////////////
+
+
 
   using boost::is_convertible;
   namespace mpl = boost::mpl;
@@ -446,7 +523,7 @@ namespace sc {
     std::string fname = outfile;
     std::string tag_name = name;
     bool fname_not_given = fname == XMLWRITER_FILENAME_NOT_GIVEN;
-    if(XMLWriter::current_writer.nonnull() and not XMLWriter::current_writer->writing_done()){
+    if(!XMLWriter::current_writer.null() and not XMLWriter::current_writer->writing_done()){
       if(fname_not_given || XMLWriter::current_writer->filename() == fname){
         XMLWriter::current_writer->begin_writing_context(tag_name);
       }
@@ -485,7 +562,7 @@ namespace sc {
     std::string tag_name = name;
     if(
         (tag_name == XMLWRITER_FILENAME_NOT_GIVEN or tag_name == XMLWriter::current_context_name)
-        and XMLWriter::current_writer.nonnull()
+        and !XMLWriter::current_writer.null()
         and not XMLWriter::context_name_stack.empty()
     ) {
       XMLWriter::current_writer->end_writing_context();
@@ -509,14 +586,14 @@ namespace sc {
 
   template <typename T, typename MapType>
   inline typename boost::enable_if<is_convertible<MapType, bool>, void>::type
-  _write_as_xml_impl(T object, const std::string& tag_name, const MapType& attrs)
+  _write_as_xml_impl(T&& object, const std::string& tag_name, const MapType& attrs)
   {
      XMLWriter::current_writer->insert_child_default(object, tag_name);
   }
 
   template <typename T, typename MapType>
   inline typename boost::enable_if<boost::mpl::not_<is_convertible<MapType, bool>>, void>::type
-  _write_as_xml_impl(T object, const std::string& tag_name, const MapType& attrs)
+  _write_as_xml_impl(T&& object, const std::string& tag_name, const MapType& attrs)
   {
      XMLWriter::current_writer->insert_child_default(object, tag_name, attrs);
   }
@@ -574,7 +651,8 @@ namespace sc {
         int width=15
     )
     {
-      assert(false); // not implemented
+      throw FeatureNotImplemented("get_human_readable_data", __FILE__, __LINE__);
+      return "  "; // unreachable
     }
   }
 
@@ -656,18 +734,6 @@ namespace sc {
     }
   };
 
-  template<>
-  ptree& XMLWriter::write_to_xml<Eigen::VectorXd>(
-      const Eigen::MatrixBase<Eigen::VectorXd>& obj,
-      ptree& parent
-  ) const;
-
-  template<>
-  ptree& XMLWriter::write_to_xml<Eigen::MatrixXd>(
-      const Eigen::MatrixBase<Eigen::MatrixXd>& obj,
-      ptree& parent
-  ) const;
-
 } // end namespace sc
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -675,11 +741,19 @@ namespace sc {
 namespace boost {
   namespace property_tree {
 
-    template<typename Ch, typename Traits, typename Alloc>
-    struct translator_between<std::basic_string<Ch, Traits, Alloc>, sc::XMLDataStream<double> >
+    template<typename Ch, typename Traits, typename Alloc, typename T, bool val>
+    struct translator_between<std::basic_string<Ch, Traits, Alloc>, sc::XMLDataStream<T, val> >
     {
-      typedef sc::XMLDataStreamTranslator<double> type;
+      typedef sc::XMLDataStreamTranslator<T> type;
     };
+
+    //template<typename Ch, typename Traits, typename Alloc, bool val>
+    //struct translator_between<std::basic_string<Ch, Traits, Alloc>, sc::XMLDataStream<const double, val> >
+    //{
+    //  typedef sc::XMLDataStreamTranslator<const double> type;
+    //};
+
+
 
   }
 }

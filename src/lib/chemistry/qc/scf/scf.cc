@@ -264,7 +264,7 @@ void
 SCF::symmetry_changed()
 {
   OneBodyWavefunction::symmetry_changed();
-  if (guess_wfn_.nonnull()) {
+  if (guess_wfn_) {
     guess_wfn_->symmetry_changed();
   }
 }
@@ -316,7 +316,7 @@ SCF::compute()
     delta = compute_vector(eelec,nucrep);
 
     double eother = 0.0;
-    if (accumddh_.nonnull()) eother = accumddh_->e();
+    if (accumddh_) eother = accumddh_->e();
     ExEnv::out0() << endl << indent
          << scprintf("total scf energy = %15.10f", eelec+eother+nucrep)
          << endl;
@@ -440,7 +440,22 @@ SCF::initial_vector()
     if (guess_wfn_.null()) {
       Ref<AssignedKeyVal> akv = new AssignedKeyVal;
       akv->assign("molecule", molecule().pointer());
-      akv->assign("basis", basis().pointer());
+
+      // small polarized basis should be enough for guess
+      // try it if at least 2 times smaller than the full basis
+      // use the full basis as backup
+      try {
+        akv->assign("name", "Def2-SV(P)");
+        Ref<GaussianBasisSet> guess_bs = new GaussianBasisSet(akv);
+        if (guess_bs->nbasis() < basis()->nbasis()/2)
+          akv->assign("basis", guess_bs.pointer());
+        else
+          akv->assign("basis", basis().pointer());
+      }
+      catch(...) {
+        akv->assign("basis", basis().pointer());
+      }
+
       try {
         guess_wfn_ = new SuperpositionOfAtomicDensities(Ref<KeyVal>(akv));
         //guess_wfn_ = new HCoreWfn(Ref<KeyVal>(akv));   not done because the "diagonalize-in-SO-basis" is not implemented
@@ -453,7 +468,7 @@ SCF::initial_vector()
     // if guess_wfn_ is non-null then try to get a guess vector from it.
     // First check that the same basis is used...if not, then project the
     // guess vector into the present basis.
-    if (guess_wfn_.nonnull()) {
+    if (guess_wfn_) {
 
       // compute guess wfn with lower accuracy than this wfn
       if (guess_wfn_->desired_value_accuracy_set_to_default())
@@ -552,11 +567,11 @@ SCF::so_density(const RefSymmSCMatrix& d, double occ, int alp)
 
   RefSCMatrix oso_vector;
   if (alp || !uhf) {
-    if (oso_scf_vector_.nonnull())
+    if (oso_scf_vector_)
       oso_vector = oso_scf_vector_;
   }
   else {
-    if (oso_scf_vector_beta_.nonnull())
+    if (oso_scf_vector_beta_)
       oso_vector = oso_scf_vector_beta_;
   }
 
@@ -780,7 +795,7 @@ void
 SCF::obsolete()
 {
   OneBodyWavefunction::obsolete();
-  if (guess_wfn_.nonnull()) guess_wfn_->obsolete();
+  if (guess_wfn_) guess_wfn_->obsolete();
   // do I need to obsolete the vector also here? Yes, if always_use_guess_wfn_ is set to true.
   // Otherwise, the user of this class knows the context of the call to be able to call purge(), e.g.
   // in geometry optimization vector may be reused, but in set_orthog_method it currently can't

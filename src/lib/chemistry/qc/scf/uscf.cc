@@ -424,7 +424,7 @@ UnrestrictedSCF::initial_vector()
     // guess vector into the present basis.
     // right now the check is crude...there should be an equiv member in
     // GaussianBasisSet
-    if (guess_wfn_.nonnull()) {
+    if (guess_wfn_) {
       if (basis()->equiv(guess_wfn_->basis())
           &&orthog_method() == guess_wfn_->orthog_method()
           &&oso_dimension()->equiv(guess_wfn_->oso_dimension().pointer())) {
@@ -546,7 +546,7 @@ UnrestrictedSCF::set_occupations(const RefDiagSCMatrix& eva,
   if (!nalpha_) {
     nalpha_=newalpha;
     nbeta_=newbeta;
-  } else if (most_recent_pg_.nonnull()
+  } else if (most_recent_pg_
              && most_recent_pg_->equiv(molecule()->point_group())) {
     // test to see if newocc is different from nalpha_
     for (i=0; i < nirrep_; i++) {
@@ -1042,7 +1042,7 @@ UnrestrictedSCF::compute_vector(double& eelec, double nucrep)
     double s2=0;
     for (int ir=0; ir < nirrep_; ir++) {
       RefSCMatrix Sab_ir=pSab->block(0);
-      if (Sab_ir.nonnull()) {
+      if (Sab_ir) {
         for (i=0; i < nalpha_[ir]; i++)
           for (int j=0; j < nbeta_[ir]; j++)
             s2 += Sab_ir.get_element(i,j)*Sab_ir.get_element(i,j);

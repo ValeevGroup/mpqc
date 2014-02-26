@@ -140,7 +140,7 @@ TwoBodyThreeCenterMOIntsTransform_ijR::extra_memory_report(std::ostream& os) con
 
 void
 TwoBodyThreeCenterMOIntsTransform_ijR::init_acc() {
-  if (ints_acc_.nonnull())
+  if (ints_acc_)
     return;
 
   const int nproc = mem_->n();
@@ -480,6 +480,8 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute_pjR() {
   //   transform qS -> jR
   //   store jR to ints_acc
 
+  long int shellset_counter = 0;;
+
   // determine whether space1, space2, and space3 are AO spaces
   Ref<AOSpaceRegistry> aoidxreg = this->factory()->ao_registry();
   const bool space1_is_ao = true;
@@ -509,7 +511,7 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute_pjR() {
   int nfuncmax1 = b1->max_nfunction_in_shell();
 
   Ref<DistArray4_MemoryGrp> ints_acc_cast; ints_acc_cast << ints_acc_;
-  const bool need_memgrp = ints_acc_cast.nonnull();
+  const bool need_memgrp = ints_acc_cast;
   if (need_memgrp) {
     const distsize_t ijR_globalsize = (((static_cast<distsize_t>(n1))*n23)*num_te_types)*sizeof(double);
     const int ni_local = (n1 + nproc - 1)/ nproc;
@@ -590,11 +592,11 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute_pjR() {
         for (int s3 = 0; s3 < b3->nshell(); ++s3) {
 
           // skip the insignificant integrals
-          const double log2_cauchy_bound = inteval->log2_shell_bound(s1, s2,
-                                                                     s3);
+          const double log2_cauchy_bound = inteval->log2_shell_bound(s1, s2, s3);
           if (log2_cauchy_bound < this->log2_epsilon()) {
             continue;
           }
+          ++shellset_counter;
 
           const int s3offset = b3->shell_to_function(s3);
           const blasint nf3 = b3->shell(s3).nfunction();
@@ -667,7 +669,14 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute_pjR() {
     } // end of loop over p shells
   } // tasks with access
 
+  GrpSumReduce<long int> sumred;
+  MessageGrp::get_default_messagegrp()->reduce(&shellset_counter, 1, sumred);
   mem_->sync();
+
+  if (debug() > 0 && mem_->me() == 0) {
+    ExEnv::out0() << indent << "total    # of shell sets = " << b1->nshell() * b2->nshell() * b3->nshell() << endl;
+    ExEnv::out0() << indent << "computed # of shell sets = " << shellset_counter << endl;
+  }
 
   if (ints_acc_->data_persistent()) ints_acc_->deactivate();
 
@@ -771,7 +780,7 @@ TwoBodyThreeCenterMOIntsTransform_ijR_using_iqR::compute() {
   const int nbasis2 = this->space2()->basis()->nbasis();
 
   Ref<DistArray4_MemoryGrp> ints_acc_cast; ints_acc_cast << ints_acc_;
-  const bool need_memgrp = ints_acc_cast.nonnull();
+  const bool need_memgrp = ints_acc_cast;
   if (need_memgrp) {
     const distsize_t ijR_globalsize = (((static_cast<distsize_t>(n1))*n23)*num_te_types)*sizeof(double);
     const int ni_local = (n1 + nproc - 1)/ nproc;

@@ -8,11 +8,12 @@ Running
 $ ./configure cmake 
 will FORCE to build and use CMAKE in ./cmake
 
-MPQC relies on several external package, built in ./external directory
-* Eigen is already bundled in ./external/eigen.tar.gz
-* Boost will be downloaded and built regardless of whenever one is installed,
-  since Boost depends heavily on compiler.
+MPQC relies on several external packages. Some of them we build in ./external directory:
+* Eigen is bundled in ./external/eigen.tar.gz; it will be unpacked if needed.
+* Boost is bundled in ./external/boost*.tar.bz2; it will be built regardless of whether
+  there is one is installed, since Boost depends heavily on compiler.
 * LAPACK and HDF5 will be downloaded and built only if none are found on the system.
+* Psi3 is bundled in ./external/psi3.tar.gz .
 
 First, try
 $ ./configure

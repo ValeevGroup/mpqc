@@ -32,6 +32,7 @@
 
 // Boost includes
 #include <boost/tuple/tuple_io.hpp>
+#include <boost/math/special_functions/erf.hpp>
 
 // MPQC includes
 #include <chemistry/qc/basis/petite.h>
@@ -55,7 +56,6 @@ using namespace std;
 using boost::thread;
 using boost::thread_group;
 using namespace sc::parameter;
-static constexpr bool xml_debug_ = false;
 
 typedef std::pair<int, int> IntPair;
 typedef CADFCLHF::CoefContainer CoefContainer;
@@ -143,6 +143,9 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   linK_block_rho_ = keyval->booleanvalue("linK_block_rho", KeyValValueboolean(false));
   linK_sorted_B_contraction_ = keyval->booleanvalue("linK_sorted_B_contraction", KeyValValueboolean(false));
   linK_use_distance_ = keyval->booleanvalue("linK_use_distance", KeyValValueboolean(false));
+  use_extents_ = keyval->booleanvalue("use_extents", KeyValValueboolean(use_extents_));
+  use_max_extents_ = keyval->booleanvalue("use_max_extents", KeyValValueboolean(use_max_extents_));
+  well_separated_thresh_ = keyval->doublevalue("well_separated_thresh", KeyValValuedouble(well_separated_thresh_));
   //----------------------------------------------------------------------------//
   print_screening_stats_ = keyval->intvalue("print_screening_stats", KeyValValueint(0));
   //----------------------------------------------------------------------------//
@@ -152,6 +155,9 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   use_norms_sigma_ = keyval->booleanvalue("use_norms_sigma", KeyValValueboolean(true));
   old_two_body_ = keyval->booleanvalue("old_two_body", KeyValValueboolean(old_two_body_));
   xml_screening_data_ = keyval->booleanvalue("xml_screening_data", KeyValValueboolean(xml_screening_data_));
+  //----------------------------------------------------------------------------//
+  stats_.print_level = print_screening_stats_;
+  stats_.xml_stats_saved = xml_screening_data_;
   //----------------------------------------------------------------------------//
   xml_debug_ = keyval->booleanvalue("xml_debug", KeyValValueboolean(false));
   //----------------------------------------------------------------------------//
@@ -213,8 +219,10 @@ CADFCLHF::init_threads()
   size_t storage_avail = integral()->storage_unused();
   eris_3c_.resize(nthread);
   do_threaded(nthread, [&](int ithr){
+  //for(int ithr = 0; ithr < nthread; ++ithr) {
     eris_3c_[ithr] = (integral()->coulomb<3>());
     eris_3c_[ithr]->set_integral_storage(storage_avail/nthread);
+  //}
   });
   for (int i=0; i < nthread; i++) {
     // TODO different fitting metrics
@@ -229,9 +237,11 @@ CADFCLHF::init_threads()
   // TwoCenter versions
   integral()->set_basis(dfbs_, dfbs_);
   eris_2c_.resize(nthread);
-  do_threaded(nthread, [&](int ithr){
+  //do_threaded(nthread, [&](int ithr){
+  for(int ithr = 0; ithr < nthread; ++ithr) {
     eris_2c_[ithr] = integral()->coulomb<2>();
-  });
+  }
+  //});
   for (int i=0; i < nthread; i++) {
     if(metric_oper_type_ == coulomb_oper_type_){
       metric_ints_2c_.push_back(eris_2c_[i]);
@@ -327,6 +337,23 @@ CADFCLHF::print(ostream&o) const
     stats_.print_summary(o, gbs_, dfbs_, print_screening_stats_);
   }
   o << decindent;
+
+  if(xml_screening_data_) {
+    begin_xml_context("cadfclhf_screening", "screening_stats.xml");
+
+    write_as_xml("statistics", stats_,
+      std::map<std::string, const std::string>({
+        {"basis_name", gbs_->label()},
+        {"dfbasis_name", dfbs_->label()},
+        {"well_separated_thresh", std::string(scprintf("%3.1e", well_separated_thresh_).str())},
+        {"use_extents", (use_extents_ ? "true" : "false")},
+        {"use_max_extents", (use_max_extents_ ? "true" : "false")}
+      })
+    );
+
+    end_xml_context("cadfclhf_screening");
+  }
+
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -498,36 +525,118 @@ CADFCLHF::init_significant_pairs()
     max_schwarz_[ish] = max_val;
   }
   //----------------------------------------//
+  // Compute the centers, the pair centers, and the pair extents
   centers_.resize(molecule()->natom());
   for(int iatom = 0; iatom < molecule()->natom(); ++iatom) {
     const double* r = molecule()->r(iatom);
     centers_[iatom] << r[0], r[1], r[2];
   }
+
+  const double erfcinv_thr = boost::math::erfc_inv(well_separated_thresh_);
+
   for(auto&& ish : shell_range(gbs_)) {
+
     const auto& ishell = gbs_->shell((int)ish);
     const std::vector<double>& i_exps = ishell.exponents();
-    assert(ishell.ncontraction() == 1);
+
+    if(ishell.ncontraction() != 1) {
+      throw FeatureNotImplemented("Generally contracted basis sets", __FILE__, __LINE__, class_desc());
+    }
+
     for(auto&& jsh : iter_significant_partners(ish)) {
+
       const auto& jshell = gbs_->shell((int)jsh);
       const std::vector<double>& j_exps = jshell.exponents();
       //----------------------------------------//
       Eigen::Vector3d weighted_center;
       weighted_center << 0.0, 0.0, 0.0;
       double coef_tot = 0.0;
+
       for(int i_prim = 0; i_prim < ishell.nprimitive(); ++i_prim) {
         for(int j_prim = 0; j_prim < jshell.nprimitive(); ++j_prim) {
+
           const double coef_prod = fabs(ishell.coefficient_unnorm(0, i_prim)
               * jshell.coefficient_unnorm(0, j_prim));
           weighted_center += (coef_prod / (i_exps[i_prim] + j_exps[j_prim])) *
               (i_exps[i_prim] * centers_[ish.center] + j_exps[j_prim] * centers_[jsh.center]);
           coef_tot += coef_prod;
+
         }
       }
       //----------------------------------------//
-      pair_centers_[{(int)ish, (int)jsh}] = (1.0 / coef_tot) * weighted_center;
+      auto& r_ij = (1.0 / coef_tot) * weighted_center;
+      pair_centers_[{(int)ish, (int)jsh}] = r_ij;
+
+      if(use_extents_) {
+        double extent_max = 0.0;
+        double extent_sum = 0.0;
+
+        for(int i_prim = 0; i_prim < ishell.nprimitive(); ++i_prim) {
+          for(int j_prim = 0; j_prim < jshell.nprimitive(); ++j_prim) {
+            const double zeta_p = i_exps[i_prim];
+            const double zeta_q = j_exps[j_prim];
+            auto& r_pq = (1.0 / (i_exps[i_prim] + j_exps[j_prim])) *
+                (i_exps[i_prim] * centers_[ish.center] + j_exps[j_prim] * centers_[jsh.center]);
+            const double rdiff = (r_pq - r_ij).norm();
+            const double ext_pq = sqrt(2.0 / (zeta_p + zeta_q)) + rdiff;
+            if(ext_pq > extent_max) {
+              extent_max = ext_pq;
+            }
+            const double coef_prod = fabs(ishell.coefficient_unnorm(0, i_prim)
+                * jshell.coefficient_unnorm(0, j_prim));
+            extent_sum += coef_prod * ext_pq;
+          }
+        }
+
+        if(use_max_extents_) {
+          pair_extents_[{(int)ish, (int)jsh}] = extent_max * erfcinv_thr;
+        }
+        else {
+          pair_extents_[{(int)ish, (int)jsh}] = extent_sum/coef_tot * erfcinv_thr;
+        }
+      }
+
     }
+
+    if(use_extents_) {
+      df_extents_.reserve(dfbs_->nshell());
+      for(auto&& Xsh : shell_range(dfbs_)) {
+
+        const auto& Xshell = dfbs_->shell((int)Xsh);
+        if(Xshell.ncontraction() != 1) {
+          throw FeatureNotImplemented("Generally contracted basis sets", __FILE__, __LINE__, class_desc());
+        }
+
+        const std::vector<double>& x_exps = Xshell.exponents();
+
+        double ext_max = 0.0;
+        double ext_sum = 0.0;
+        double coef_sum = 0.0;
+
+        for(int x_prim = 0; x_prim < Xshell.nprimitive(); ++x_prim) {
+          const double zeta_x = x_exps[x_prim];
+          const double coef = fabs(Xshell.coefficient_unnorm(0, x_prim));
+          double ext = sqrt(2.0 / zeta_x);
+          if(ext > ext_max) {
+            ext_max = ext;
+          }
+          coef_sum += coef;
+          ext_sum += coef * ext;
+        }
+        if(use_max_extents_) {
+          df_extents_[(int)Xsh] = ext_max * erfcinv_thr;
+        }
+        else {
+          df_extents_[(int)Xsh] = ext_sum/coef_sum * erfcinv_thr;
+        }
+      }
+    }
+
   }
+
+
   //----------------------------------------//
+
   ExEnv::out0() << "  Number of significant shell pairs:  " << n_sig << endl;
   ExEnv::out0() << "  Number of total basis pairs:  " << (gbs_->nshell() * (gbs_->nshell() + 1) / 2) << endl;
   ExEnv::out0() << "  Schwarz Norm = " << schwarz_norm << endl;
@@ -569,6 +678,9 @@ CADFCLHF::ao_fock(double accuracy)
   timer.enter("misc");
   int nthread = threadgrp_->nthread();
   iter_stats_ = &(stats_.next_iteration());
+  if(xml_screening_data_) {
+    iter_stats_->set_nthread(nthread);
+  }
   //----------------------------------------//
   // transform the density difference to the AO basis
   RefSymmSCMatrix dd = cl_dens_diff_;

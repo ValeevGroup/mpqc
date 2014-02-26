@@ -159,7 +159,7 @@ void sc::SuperpositionOfAtomicDensities::compute() {
 #ifdef HAVE_LIBINT2
         // only Libint2 can do DF, and DF Basis sets not available for all atoms
         Ref<IntegralLibint2> intf_cast; intf_cast << intf;
-        if (intf_cast.nonnull()) {
+        if (!intf_cast.null()) {
           try {
             // use dz df basis
             Ref<GaussianBasisSet> dfbs;
@@ -270,7 +270,7 @@ void sc::SuperpositionOfAtomicDensities::compute() {
               "SuperpositionOfAtomicDensities::compute: val"
               );
       for(int i=0; i<occs_blk->nblocks(); ++i) {
-        if (occs_blk->block(i).nonnull()) {
+        if (occs_blk->block(i)) {
           const int nso_blk = occs_blk->block(i).n();
           const int nalpha = femo->nalpha(i);
           const int nbeta = femo->nbeta(i);
@@ -405,7 +405,7 @@ SuperpositionOfAtomicDensities::minimal_basis_set(const Ref<Molecule>& mol) {
       oss << "basis:" << a;
       const std::string keyword = oss.str();
       if (mol->Z(a) <= 38)
-        akv->assign(keyword.c_str(), "STO-6G");
+        akv->assign(keyword.c_str(), "STO-3G");
       else
         akv->assign(keyword.c_str(), "WTBS");
     }
@@ -580,7 +580,7 @@ double sc::SuperpositionOfAtomicDensities::occupation(int irrep,
           );
   MPQC_ASSERT(irrep >= 0 && irrep < occs_blk->nblocks());
   double occ = 0.0;
-  if (occs_blk->block(irrep).nonnull()) {
+  if (occs_blk->block(irrep)) {
     if (vectornum < occs_blk->block(irrep)->n()) {
       occ = occs_blk->block(irrep)->get_element(vectornum);
       if (not relax_) occ *= -1.0; // eigenvalues = -occupancies

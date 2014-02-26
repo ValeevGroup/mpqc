@@ -538,12 +538,12 @@ main(int argc, char**argv)
   for (i=0; i<nvaltest; i++) {
     Ref<DenFunctional> valtest;
     valtest << keyval->describedclassvalue("valtest", i);
-    if (valtest.nonnull()) valtest->print();
+    if (valtest) valtest->print();
     do_valtest(valtest);
     }
 
   Ref<Wavefunction> dft; dft << keyval->describedclassvalue("dft");
-  if (dft.nonnull()) {
+  if (dft) {
     cout << "=========== FD dE/dx Tests ===========" << endl;
     fd_e_test(dft);
     }
@@ -595,7 +595,7 @@ main(int argc, char**argv)
     }
 
   Ref<Molecule> mol; mol << keyval->describedclassvalue("molecule");
-  if (mol.nonnull()) {
+  if (mol) {
     cout << "=========== FD Weight Tests ===========" << endl;
     Ref<IntegrationWeight> weights[] = {
       new BeckeIntegrationWeight,
@@ -615,7 +615,7 @@ main(int argc, char**argv)
   functional << keyval->describedclassvalue("functional");
   Ref<Wavefunction>  wfn;
   wfn << keyval->describedclassvalue("wfn");
-  if (functional.nonnull() && wfn.nonnull()) {
+  if (functional && wfn) {
     cout << "=========== FD df/dx Tests ===========" << endl;
     fd_test(functional, wfn);
     }

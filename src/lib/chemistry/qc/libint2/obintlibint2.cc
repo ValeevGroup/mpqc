@@ -37,7 +37,9 @@ OneBodyIntLibint2::OneBodyIntLibint2(Integral* integral,
 {
   bool need_overlap = true;
   bool need_coulomb = true;
-  if (ifunc == &Int1eLibint2::nuclear) {
+  if (ifunc == &Int1eLibint2::nuclear ||
+      ifunc == &Int1eLibint2::efield ||
+      ifunc == &Int1eLibint2::efield_grad) {
     need_overlap = false;
   }
   else if (ifunc == &Int1eLibint2::overlap || ifunc == &Int1eLibint2::kinetic ||
@@ -47,9 +49,9 @@ OneBodyIntLibint2::OneBodyIntLibint2(Integral* integral,
   }
 
   int ntypes = 1;
-  if (ifunc == &Int1eLibint2::edipole)
+  if (ifunc == &Int1eLibint2::edipole || ifunc == &Int1eLibint2::efield)
     ntypes = 3;
-  if (ifunc == &Int1eLibint2::equadrupole)
+  if (ifunc == &Int1eLibint2::equadrupole || ifunc == &Int1eLibint2::efield_grad)
     ntypes = 6;
     
   int1elibint2_ = new Int1eLibint2(integral,bs1,bs2,0,need_overlap, need_coulomb, ntypes);
@@ -61,9 +63,9 @@ OneBodyIntLibint2::~OneBodyIntLibint2()
 {
 }
 
-void OneBodyIntLibint2::set_multipole_origin(const Ref<DipoleData>& origin)
+void OneBodyIntLibint2::set_params(const Ref<IntParams>& p)
 {
-  int1elibint2_->set_multipole_origin(origin);
+  int1elibint2_->set_params(p);
 }
 
 void OneBodyIntLibint2::set_EdotV_origin(const Ref<EfieldDotVectorData>& origin)
@@ -96,7 +98,7 @@ OneBodyIntLibint2::clone()
 
   // make sure the full state of this object gets set up
   // in the clone
-  oblibint2->set_multipole_origin(int1elibint2_->multipole_origin());
+  oblibint2->set_params(int1elibint2_->params());
   oblibint2->set_EdotV_origin(int1elibint2_->EdotV_origin());
   oblibint2->set_Q_origin(int1elibint2_->Q_origin());
 

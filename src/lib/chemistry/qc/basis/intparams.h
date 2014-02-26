@@ -50,18 +50,6 @@ namespace sc {
   };
 
 
-  class DipoleData: public RefCount
-  {
-    public:
-      double origin[3];
-
-      DipoleData(double *d) {origin[0]=d[0]; origin[1]=d[1]; origin[2]=d[2];}
-      DipoleData() {origin[0]=origin[1]=origin[2]=0.0;}
-      ~DipoleData();
-      void set_origin(double*);
-  };
-
-
   class PointChargeData: public RefCount
   {
     private:
@@ -96,6 +84,7 @@ namespace sc {
       virtual ~IntParams();
       void save_data_state(StateOut&);
 
+      /// Some IntParams implementations can have a variable number of params; otherwise this will return 0
       unsigned int nparams() const;
 
     protected:
@@ -125,14 +114,21 @@ namespace sc {
       bool equiv(const IntParams& other) const;
   };
 
-  /** Passes params to Integral::dipole() and other factory methods which need origin information */
+  /** Passes params to Integral::dipole() and other factory methods which need r information */
   class IntParamsOrigin : public IntParams {
     public:
+      IntParamsOrigin();
       IntParamsOrigin(const double (&O)[3]);
-      IntParamsOrigin(const Ref<DipoleData>& dipole_data);
+      template <typename Real> explicit IntParamsOrigin(const Real* O) : O_(3) {
+        std::copy(O, O+3, O_.begin());
+      }
       IntParamsOrigin(StateIn&);
       ~IntParamsOrigin();
       void save_data_state(StateOut&);
+
+      const double* r() const;
+      double r(unsigned int xyz) const;
+
     private:
       std::vector<double> O_;
       bool equiv(const IntParams& other) const;

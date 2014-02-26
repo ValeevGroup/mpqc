@@ -61,7 +61,7 @@ QNewtonOpt::QNewtonOpt(const Ref<KeyVal>&keyval):
   else {
     update_ = new BFGSUpdate;
   }
-  if (update_.nonnull()) update_->set_inverse();
+  if (update_) update_->set_inverse();
 
   if (keyval->exists("lineopt")) {
     lineopt_ << keyval->describedclassvalue("lineopt");
@@ -226,7 +226,7 @@ QNewtonOpt::update()
   }
 
   // update the hessian
-  if(update_.nonnull())
+  if(update_)
     update_->update(ihessian_,function(),xcurrent,gcurrent);
 
   conv_->reset();
@@ -239,9 +239,9 @@ QNewtonOpt::update()
 
   // either do a lineopt or check stepsize
   double tot;
-  if(lineopt_.nonnull()) {
+  if(lineopt_) {
     Ref<Backtrack> bt = dynamic_cast<Backtrack*>(lineopt_.pointer());
-    if (bt.nonnull()) {
+    if (bt) {
       // The Backtrack line search is a special case.
       ExEnv::out0() << indent
                     << "......................................."
@@ -447,9 +447,9 @@ QNewtonOpt::apply_transform(const Ref<NonlinearTransform> &t)
 {
   if (t.null()) return;
   Optimize::apply_transform(t);
-  if (lineopt_.nonnull()) lineopt_->apply_transform(t);
-  if (ihessian_.nonnull()) t->transform_ihessian(ihessian_);
-  if (update_.nonnull()) update_->apply_transform(t);
+  if (lineopt_) lineopt_->apply_transform(t);
+  if (ihessian_) t->transform_ihessian(ihessian_);
+  if (update_) update_->apply_transform(t);
 }
 
 void

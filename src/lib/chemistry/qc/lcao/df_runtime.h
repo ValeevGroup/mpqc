@@ -31,21 +31,13 @@
 #include <chemistry/qc/lcao/df.h>
 #include <chemistry/qc/lcao/tbint_runtime.h>
 #include <Eigen/Dense>
-#include <math/mmisc/eigen.h>
 #include <util/misc/sharedptr.h>
+
 
 namespace sc {
 
-  class DensityFittingRuntimeBase : virtual public SavableState {
-    public:
-
-      virtual void obsolete() =0;
-
-
-  };
-
-  /** Parsed representation of a string key that represents fitting of a product of space1 and space2 into fspace
-      Coulomb fitting kernel_key is the default. */
+  /** Parsed representation of a string key that represents fitting of a product of space1 and space2 into fspace.
+      kernel must be parsable by ParsedTwoBodyOperSetKey. */
   class ParsedDensityFittingKey {
     public:
       ParsedDensityFittingKey(const std::string& key);
@@ -64,10 +56,10 @@ namespace sc {
                              const std::string& fspace,
                              const std::string& kernel);
 
-    protected:
+    private:
       std::string key_;
       std::string space1_, space2_, fspace_;
-      ParsedTwoBodyOperKey kernel_pkey_;
+      ParsedTwoBodyOperSetKey kernel_pkey_;
   };
 
   class DensityFittingParams;
@@ -75,7 +67,7 @@ namespace sc {
   /**
    *    Smart runtime support for managing DensityFitting objects
    */
-  class DensityFittingRuntime : public DensityFittingRuntimeBase {
+  class DensityFittingRuntime : virtual public SavableState {
     public:
       typedef DensityFittingRuntime this_type;
       typedef DistArray4 Result;
@@ -87,12 +79,10 @@ namespace sc {
       typedef std::pair<int, int> IntPair;
       typedef std::pair<std::string, IntPair> CoefKey;
 
-
       // uses MOIntsRuntime to evaluate integrals
       DensityFittingRuntime(const Ref<MOIntsRuntime>& moints_runtime,
                             const DensityFittingParams* dfparams);
       DensityFittingRuntime(StateIn& si);
-      ~DensityFittingRuntime();
       void save_data_state(StateOut& so);
 
       /// obsoletes this object
@@ -129,9 +119,6 @@ namespace sc {
       /// removes all entries that contain this space
       void remove_if(const std::string& space_key);
 
-      // returns true if the block mu in < mu | M | nu X > is local for the key, false otherwise
-      //bool is_local(const std::string& key, int mu) const;
-
       /**
        * tries to translate a library basis set label to the corresponding default value for the DF basis
        * @param obs_name orbital basis set name; to be useful must be a canonical library name
@@ -154,14 +141,14 @@ namespace sc {
       typedef Registry<CoefKey, CoefResultRef, detail::NonsingletonCreationPolicy > CoefRegistry;
       Ref<CoefRegistry> coef_results_;
 
+      CoefResultRef get_coefficients(const CoefKey& key);
+
       typedef Eigen::HouseholderQR<Eigen::MatrixXd> Decomposition;
       typedef std::map<IntPair, std::shared_ptr<Decomposition> > DecompositionMap;
       DecompositionMap decomps_;
 
       // creates the result for a given key
       const ResultRef& create_result(const std::string& key);
-
-      CoefResultRef get_coefficients(const CoefKey& key);
 
       static ClassDesc class_desc_;
 
@@ -176,18 +163,14 @@ namespace sc {
      * @param basis  The GaussianBasisSet object used to fit product densities. There is no default.
      *               @note DensityFittingRuntime does not use this, but other runtime objects may use it
      *               to set the global density fitting basis.
-     * @param kernel_key A string describing the kernel_key. It must be parsable by ParsedTwoBodyOperKey, or be empty (the default).
+     * @param kernel_key A string describing the kernel_key. It must be parsable by ParsedTwoBodyOperSetKey, or be empty (the default).
      *               @note DensityFittingRuntime does not use this, but other runtime objects may use it to set the global density fitting method.
      * @param solver A string describing the method of solving the density fitting equations. This is used by DensityFittingRuntime
      *               to produce density fitting objects.
      */
       DensityFittingParams(const Ref<GaussianBasisSet>& basis,
-                           const std::string& kernel = std::string("coulomb"),
-                           const std::string& solver = std::string("cholesky_inv"),
-                           bool local_coulomb = false,
-                           bool local_exchange = false,
-                           bool exact_diag_J = false,
-                           bool exact_diag_K = false);
+                           const std::string& kernel = std::string(),
+                           const std::string& solver = std::string("cholesky_inv"));
       DensityFittingParams(StateIn&);
       ~DensityFittingParams();
       void save_data_state(StateOut&);
@@ -206,27 +189,19 @@ namespace sc {
       std::string intparams_key() const;
 
       void print(std::ostream& o) const;
-
-      /// @return true if kernel_key describes a valid kernel_key
-      static bool valid_kernel(const std::string& kernel);
-
-      /// @return string describing kernel_key params (the format depends on the kernel_key type)
-      static std::string kernel_params(std::string kernel);
-
     private:
       static ClassDesc class_desc_;
 
+      bool local_coulomb_ = false;
+      bool local_exchange_ = false;
+      bool exact_diag_J_ = false;
+      bool exact_diag_K_ = false;
       Ref<GaussianBasisSet> basis_;
       std::string kernel_;
       DensityFitting::SolveMethod solver_;
-      mutable std::string kernel_intparams_key_;
-      bool local_coulomb_;
-      bool local_exchange_;
-      bool exact_diag_J_;
-      bool exact_diag_K_;
   };
 
-  inline bool operator==(const DensityFittingParams& A, const DensityFittingParams& B) {
+   inline bool operator==(const DensityFittingParams& A, const DensityFittingParams& B) {
     return A.basis()->equiv(B.basis()) && A.kernel_key() == B.kernel_key() && A.solver() == B.solver();
   }
 

@@ -42,38 +42,61 @@ add_mpqc_object_library(group ${sources})
 
 # tests
 
-set_property(SOURCE actmsgtest.cc PROPERTY COMPILE_DEFINITIONS
-    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-add_executable(actmsgtest EXCLUDE_FROM_ALL actmsgtest.cc $<TARGET_OBJECTS:group>)
-add_test(actmsgtest actmsgtest)
+if (MPQC_UNITTEST)
+  set_property(SOURCE actmsgtest.cc PROPERTY COMPILE_DEFINITIONS
+      SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(actmsgtest actmsgtest.cc $<TARGET_OBJECTS:group>)
+  target_link_libraries(actmsgtest
+    util
+  )
+  add_test(actmsgtest actmsgtest)
 
-set_property(SOURCE memtest.cc PROPERTY COMPILE_DEFINITIONS
-    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-add_executable(memtest EXCLUDE_FROM_ALL memtest.cc $<TARGET_OBJECTS:group>)
-add_test(memtest memtest)
+  set_property(SOURCE memtest.cc PROPERTY COMPILE_DEFINITIONS
+      SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(memtest memtest.cc $<TARGET_OBJECTS:group>)
+  target_link_libraries(memtest
+    util
+  )
+  add_test(memtest memtest)
 
-set_property(SOURCE messtest.cc PROPERTY COMPILE_DEFINITIONS
-    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-add_executable(messtest EXCLUDE_FROM_ALL messtest.cc $<TARGET_OBJECTS:group>)
-add_test(messtest messtest)
+  set_property(SOURCE messtest.cc PROPERTY COMPILE_DEFINITIONS
+      SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(messtest messtest.cc $<TARGET_OBJECTS:group>)
+  target_link_libraries(messtest
+    util
+  )
+  #add_test(messtest messtest)
 
-set_property(SOURCE pooltest.cc PROPERTY COMPILE_DEFINITIONS
-    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-add_executable(pooltest EXCLUDE_FROM_ALL pooltest.cc $<TARGET_OBJECTS:group>)
-add_test(pooltest pooltest)
+  set_property(SOURCE pooltest.cc PROPERTY COMPILE_DEFINITIONS
+      SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(pooltest pooltest.cc $<TARGET_OBJECTS:group>)
+  target_link_libraries(pooltest
+    util
+  )
+  add_test(pooltest pooltest)
 
-set_property(SOURCE prttest.cc PROPERTY COMPILE_DEFINITIONS
-    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-add_executable(prttest EXCLUDE_FROM_ALL prttest.cc $<TARGET_OBJECTS:group>)
-add_test(prttest prttest)
+  set_property(SOURCE prttest.cc PROPERTY COMPILE_DEFINITIONS
+      SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(prttest prttest.cc $<TARGET_OBJECTS:group>)
+  target_link_libraries(prttest
+    util
+  )
+  add_test(prttest prttest)
 
-set_property(SOURCE rnglocktest.cc PROPERTY COMPILE_DEFINITIONS
-    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-add_executable(rnglocktest EXCLUDE_FROM_ALL rnglocktest.cc $<TARGET_OBJECTS:group>)
-add_test(rnglocktest rnglocktest)
+  set_property(SOURCE rnglocktest.cc PROPERTY COMPILE_DEFINITIONS
+      SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(rnglocktest rnglocktest.cc $<TARGET_OBJECTS:group>)
+  target_link_libraries(rnglocktest
+    util
+  )
+  add_test(rnglocktest rnglocktest)
 
-set_property(SOURCE thrtest.cc PROPERTY COMPILE_DEFINITIONS
-    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-add_executable(thrtest EXCLUDE_FROM_ALL thrtest.cc $<TARGET_OBJECTS:group>)
-add_test(thrtest thrtest)
+  set_property(SOURCE thrtest.cc PROPERTY COMPILE_DEFINITIONS
+      SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(thrtest thrtest.cc $<TARGET_OBJECTS:group>)
+  target_link_libraries(thrtest
+    util
+  )
+  add_test(thrtest thrtest)
 
+endif()

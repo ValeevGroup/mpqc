@@ -148,27 +148,27 @@ Convergence::converged()
   int pass = 0;
 
   RefSCVector disp;
-  if (x_.nonnull() && nextx_.nonnull()) disp = nextx_ - x_;
+  if (x_ && nextx_) disp = nextx_ - x_;
 
   ExEnv::out0() << endl;
   
-  if (use_max_grad_ && grad_.nonnull()) {
+  if (use_max_grad_ && grad_) {
       check_conv("Max Gradient     ", grad_.maxabs(), max_grad_, pass, fail);
     }
-  if (use_rms_grad_ && grad_.nonnull()) {
+  if (use_rms_grad_ && grad_) {
       check_conv("RMS Gradient     ",
                  sqrt(grad_.scalar_product(grad_)/grad_.n()),
                  rms_grad_, pass, fail);
     }
-  if (use_max_disp_ && disp.nonnull()) {
+  if (use_max_disp_ && disp) {
       check_conv("Max Displacement ", disp.maxabs(), max_disp_, pass, fail);
     }
-  if (use_rms_disp_ && disp.nonnull()) {
+  if (use_rms_disp_ && disp) {
       check_conv("RMS Displacement ",
                  sqrt(disp.scalar_product(disp)/disp.n()),
                  rms_disp_, pass, fail);
     }
-  if (use_graddisp_ && disp.nonnull() && grad_.nonnull()) {
+  if (use_graddisp_ && disp && grad_) {
       check_conv("Gradient*Displace", fabs(disp.scalar_product(grad_)),
                  graddisp_, pass, fail);
     }

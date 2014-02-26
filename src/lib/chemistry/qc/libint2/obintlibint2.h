@@ -46,7 +46,7 @@ class OneBodyIntLibint2 : public OneBodyInt {
                  IntegralFunction);
     ~OneBodyIntLibint2();
  
-    void set_multipole_origin(const Ref<DipoleData>&);
+    void set_params(const Ref<IntParams>&);
     void set_EdotV_origin(const Ref<EfieldDotVectorData>&);
     void set_Q_origin(const Ref<PointChargeData>&);
 

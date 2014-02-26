@@ -47,6 +47,9 @@ elseif (MPQC_EXPERT)
 
   message("** BOOST was not explicitly set")
   message("** Downloading and building Boost is explicitly disabled in EXPERT mode")
+  if (MPQC_UNITTEST)
+    message(FATAL_ERROR "No unit testing in expert mode")
+  endif()
 
 else()
 
@@ -54,9 +57,9 @@ else()
   set(EXTERNAL_BUILD_DIR ${PROJECT_BINARY_DIR}/external/build)
 
   #set(BOOST_URL
-  #  http://downloads.sourceforge.net/project/boost/boost/1.53.0/boost_1_53_0.tar.gz)
-  set(BOOST_URL ${EXTERNAL_SOURCE_DIR}/boost_1_53_0.tar.gz)
-  set(BOOST_URL_HASH MD5=57a9e2047c0f511c4dfcf00eb5eb2fbb)
+  #  http://downloads.sourceforge.net/project/boost/boost/1.55.0/boost_1_55_0.tar.bz2)
+  set(BOOST_URL ${EXTERNAL_SOURCE_DIR}/boost_1_55_0.tar.bz2)
+  set(BOOST_URL_HASH MD5=d6eef4b4cacb2183f2bf265a5a03a354)
 
   message("** Will build Boost from ${BOOST_URL}")
 
@@ -94,6 +97,9 @@ else()
   if (HAVE_PYTHON)
     set (libraries "${libraries},python")
   endif()
+  if (MPQC_UNITTEST)
+    set (libraries "${libraries},test")
+  endif()
 
   ExternalProject_Add(
     boost
@@ -118,6 +124,9 @@ else()
   if (HAVE_PYTHON)
     list(APPEND Boost_LIBRARIES ${Boost_LIBRARY_DIR}/libboost_python.a)
   endif()
+  if (MPQC_UNITTEST)
+    list(APPEND Boost_UNITTEST_LIBRARIES ${Boost_LIBRARY_DIR}/libboost_unit_test_framework.a)
+  endif()
 
   set(HAVE_BOOST ON)
   
@@ -127,5 +136,8 @@ if (HAVE_BOOST)
   include_directories(${Boost_INCLUDE_DIRS})
   message(STATUS "Boost include dir: ${Boost_INCLUDE_DIRS}")
   message(STATUS "Boost libraries: ${Boost_LIBRARIES}")
+  if (MPQC_UNITTEST)
+    message(STATUS "Boost unit testing libraries: ${Boost_UNITTEST_LIBRARIES}")
+  endif()
 endif()
 

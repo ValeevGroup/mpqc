@@ -129,8 +129,8 @@ namespace sc {
         }
 
         /// Returns a reference to the x,y, or z coordinate.
-        double& xyz(int xyz){return r_[xyz];}
-        const double& xyz(int xyz) const {return r_[xyz];}
+        double& r(int xyz){return r_[xyz];}
+        const double& r(int xyz) const {return r_[xyz];}
 
         /// Returns a pointer to the coordinate array
         double* r(){return r_;}
@@ -157,6 +157,12 @@ namespace sc {
 
     /// reads Atom from sc::StateIn
     void FromStateIn(Atom &a, StateIn &si, int &count);
+
+    /// @return true if \c a and \c b are \b exactly identical
+    bool operator==(const Atom& a, const Atom& b);
+
+    /// @return false if \c a and \c b are \b exactly identical
+    inline bool operator!=(const Atom& a, const Atom& b) { return not (a == b); }
 
     /// @}
     // end of addtogroup ChemistryMolecule

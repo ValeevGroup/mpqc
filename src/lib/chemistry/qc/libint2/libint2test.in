@@ -153,9 +153,9 @@ currentbas<GaussianBasisSet>: (
   %name = "cc-pVTZ"
   %name = "cc-pVQZ"
   %name = "DZ (Dunning)"
-  %name = "DZP (Dunning)"
-  name = "aug-cc-pVDZ"
-  puream = true
+  name = "DZP (Dunning)"
+  %name = "aug-cc-pVDZ"
+  puream = false
 )
 
 smallestbas<GaussianBasisSet>: (

@@ -409,7 +409,7 @@ IntMolecularCoor::init()
     }
 #endif
 
-  if (watched_.nonnull()) {
+  if (watched_) {
       ExEnv::out0() << endl
            << indent << "Watched coordinate(s):\n" << incindent;
       watched_->update_values(molecule_);
@@ -451,7 +451,7 @@ form_partial_K(const Ref<SetIntCoor>& coor, Ref<Molecule>& molecule,
   if (debug) B.print("B");
 
   // Project out the previously discovered internal coordinates
-  if (projection.nonnull()) {
+  if (projection) {
       B = B * projection;
       if (debug) B.print("Projected B");
     }
@@ -529,7 +529,7 @@ form_partial_K(const Ref<SetIntCoor>& coor, Ref<Molecule>& molecule,
       proj_nullspace_B_perp.accumulate_symmetric_product(Vr);
     }
 
-  if (Ur.nonnull()) {
+  if (Ur) {
       // totally_symmetric will be nonzero for totally symmetric coordinates
       totally_symmetric = Ur.t() * B * geom;
 
@@ -619,7 +619,7 @@ IntMolecularCoor::form_K_matrix(RefSCDimension& dredundant,
       ExEnv::out0() << indent << "looking for bonds" << endl;
       form_partial_K(bonds_, molecule_, geom, 0.1, dnatom3_, matrixkit_,
                      projection, totally_symmetric_bond, Kbond, debug_);
-      if (Kbond.nonnull()) n_total += Kbond.ncol();
+      if (Kbond) n_total += Kbond.ncol();
     }
 
   RefSCVector totally_symmetric_bend;
@@ -628,7 +628,7 @@ IntMolecularCoor::form_K_matrix(RefSCDimension& dredundant,
       ExEnv::out0() << indent << "looking for bends" << endl;
       form_partial_K(bends_, molecule_, geom, 0.1, dnatom3_, matrixkit_,
                      projection, totally_symmetric_bend, Kbend, debug_);
-      if (Kbend.nonnull()) n_total += Kbend.ncol();
+      if (Kbend) n_total += Kbend.ncol();
     }
 
   if (decouple_bonds_ || decouple_bends_) {
@@ -639,7 +639,7 @@ IntMolecularCoor::form_K_matrix(RefSCDimension& dredundant,
   // I hope the IntCoorSet keeps the ordering
   form_partial_K(all_, molecule_, geom, 0.001, dnatom3_, matrixkit_,
                  projection, totally_symmetric_all, Kall, debug_);
-  if (Kall.nonnull()) n_total += Kall.ncol();
+  if (Kall) n_total += Kall.ncol();
 
   // This requires that all_ coordinates is made up of first bonds,
   // bends, and finally the rest of the coordinates.
@@ -647,20 +647,20 @@ IntMolecularCoor::form_K_matrix(RefSCDimension& dredundant,
   K = matrixkit_->matrix(dcoor, dtot);
   K.assign(0.0);
   int istart=0, jstart=0;
-  if (Kbond.nonnull()) {
+  if (Kbond) {
       if (debug_) Kbond.print("Kbond");
       K.assign_subblock(Kbond, 0, Kbond.nrow()-1, 0, Kbond.ncol()-1, 0, 0);
       istart += Kbond.nrow();
       jstart += Kbond.ncol();
     }
-  if (Kbend.nonnull()) {
+  if (Kbend) {
       if (debug_) Kbend.print("Kbend");
       K.assign_subblock(Kbend, istart, istart+Kbend.nrow()-1,
                         jstart, jstart+Kbend.ncol()-1, 0, 0);
       istart += Kbend.nrow();
       jstart += Kbend.ncol();
     }
-  if (Kall.nonnull()) {
+  if (Kall) {
       if (debug_) Kall.print("Kall");
       K.assign_subblock(Kall, 0, Kall.nrow()-1,
                         jstart, jstart+Kall.ncol()-1, 0, 0);
@@ -669,21 +669,21 @@ IntMolecularCoor::form_K_matrix(RefSCDimension& dredundant,
 
   is_totally_symmetric = new int[K.ncol()];
   j=0;
-  if (Kbond.nonnull()) {
+  if (Kbond) {
       for (i=0; i<Kbond.ncol(); i++,j++) {
           if (fabs(totally_symmetric_bond(i)) > ts_eps)
               is_totally_symmetric[j] = 1;
           else is_totally_symmetric[j] = 0;
         }
     }
-  if (Kbend.nonnull()) {
+  if (Kbend) {
       for (i=0; i<Kbend.ncol(); i++,j++) {
           if (fabs(totally_symmetric_bend(i)) > ts_eps)
               is_totally_symmetric[j] = 1;
           else is_totally_symmetric[j] = 0;
         }
     }
-  if (Kall.nonnull()) {
+  if (Kall) {
       for (i=0; i<Kall.ncol(); i++,j++) {
           if (fabs(totally_symmetric_all(i)) > ts_eps)
               is_totally_symmetric[j] = 1;
@@ -893,7 +893,7 @@ IntMolecularCoor::to_cartesian(const Ref<Molecule> &mol,
 
   int ret = all_to_cartesian(mol, all_internal);
 
-  if (watched_.nonnull()) {
+  if (watched_) {
       ExEnv::out0() << endl
            << indent << "Watched coordinate(s):\n" << incindent;
       watched_->update_values(mol);
@@ -1098,12 +1098,12 @@ IntMolecularCoor::print_simples(ostream& os) const
       fixed_->print_details(molecule_,os);
       os << decindent;
     }
-    if (followed_.nonnull()) {
+    if (followed_) {
       os << indent << "Followed:\n" << incindent;
       followed_->print_details(molecule_,os);
       os << decindent;
     }
-    if (watched_.nonnull()) {
+    if (watched_) {
       os << indent << "Watched:\n" << incindent;
       watched_->print_details(molecule_,os);
       os << decindent;

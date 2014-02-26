@@ -57,9 +57,9 @@ namespace {
 
 ////
 
-ParsedTwoBodyOperKey::ParsedTwoBodyOperKey() {}
+ParsedTwoBodyOperSetKey::ParsedTwoBodyOperSetKey() {}
 
-ParsedTwoBodyOperKey::ParsedTwoBodyOperKey(const std::string& key) :
+ParsedTwoBodyOperSetKey::ParsedTwoBodyOperSetKey(const std::string& key) :
   key_(key)
 {
   typedef std::string::const_iterator citer;
@@ -81,7 +81,7 @@ ParsedTwoBodyOperKey::ParsedTwoBodyOperKey(const std::string& key) :
 }
 
 std::string
-ParsedTwoBodyOperKey::key(const std::string& oper,
+ParsedTwoBodyOperSetKey::key(const std::string& oper,
                           const std::string& params)
 {
   const std::string descr_key(oper + params);
@@ -105,7 +105,7 @@ ParsedTwoBodyFourCenterIntKey::ParsedTwoBodyFourCenterIntKey(const std::string& 
   bra2_ = pop_till_token(keycopy,'|');
   // get oper (+ params)
   const std::string oper_plus_params = pop_till_token(keycopy,'|');
-  oper_pkey_ = ParsedTwoBodyOperKey(oper_plus_params);
+  oper_pkey_ = ParsedTwoBodyOperSetKey(oper_plus_params);
   // get ket1
   ket1_ = pop_till_token(keycopy,' ');
   // get ket2
@@ -136,7 +136,7 @@ ParsedTwoBodyFourCenterIntKey::key(const std::string& bra1,
                          const std::string& params,
                          const std::string& layout)
 {
-  return key(bra1,bra2,ket1,ket2,ParsedTwoBodyOperKey::key(oper,params),layout);
+  return key(bra1,bra2,ket1,ket2,ParsedTwoBodyOperSetKey::key(oper,params),layout);
 }
 
 std::string
@@ -613,7 +613,7 @@ TwoBodyMOIntsRuntime<2>::create_eval(const std::string& key)
     Ref<GaussianBasisSet> ketbas = bra2->basis();
     Ref<Integral> localints = factory()->integral()->clone();
     localints->set_basis(brabas,ketbas);
-    Ref<TwoBodyIntDescr> descr = ParsedTwoBodyOperKey::create_descr<2>(oper_str,
+    Ref<TwoBodyIntDescr> descr = ParsedTwoBodyOperSetKey::create_descr<2>(oper_str,
                                                                        ParamsRegistry::instance()->value(params_str),
                                                                        localints);
 

@@ -40,6 +40,7 @@
 #endif // HAVE_DLFCN_H
 
 #include <util/misc/formio.h>
+#include <util/misc/scexception.h>
 
 #include <util/class/class.h>
 #include <util/class/proxy.h>
@@ -225,30 +226,39 @@ ClassDesc::ClassDesc(const type_info &ti,
                      DescribedClass* (*stateinctor)(StateIn&)
                      )
 {
+  typedef std::map<type_info_key,ClassDescP> class_registry;
   if (!type_info_all_) {
-      type_info_all_ = new std::map<type_info_key,ClassDescP>;
+      type_info_all_ = new class_registry;
     }
+  // look for duplicates, first by type_info ...
   type_info_key key(&ti);
   if (type_info_all_->find(key) != type_info_all_->end()) {
-      ExEnv::err0() << indent
-                   << "ERROR: duplicate ClassDesc detected for class "
-                   << name << " type_info name = " << ti.name() << endl;
-      abort();
-    }
+      std::stringstream oss;
+      oss << "duplicate ClassDesc detected for class "
+          << name << " type_info name = " << ti.name() << endl;
+      throw sc::ProgrammingError(oss.str().c_str(), __FILE__, __LINE__);
+  }
   else {
-      if (type_info_all_->find(key) == type_info_all_->end()) {
-          (*type_info_all_)[key] = this;
-        }
-      else {
-          // this should never happen
-        }
+    // look for duplicates, second by name
+    for(class_registry::iterator i = type_info_all_->begin();
+        i != type_info_all_->end();
+        ++i){
+      if (strcmp(i->second->name(),name) == 0) {
+        std::stringstream oss;
+        oss << "duplicate ClassDesc detected for class named "
+            << name << endl;
+        oss << "ClassDesc being added            : type_info name = " << i->first.type_info()->name() << endl;
+        oss << "ClassDesc already in the registry: type_info name = " << ti.name() << endl;
+        throw sc::ProgrammingError(oss.str().c_str(), __FILE__, __LINE__);
+      }
     }
 
+    (*type_info_all_)[key] = this;
+  }
+
   // test the version number to see if it is valid
-  if (version <= 0) {
-      ExEnv::errn() << "ERROR: ClassDesc ctor: version <= 0" << endl;
-      exit(1);
-    }
+  if (version <= 0)
+      throw ProgrammingError("ERROR: ClassDesc ctor: version <= 0", __FILE__, __LINE__);
 
   init(name,version,parents,&ti,ctor,keyvalctor,stateinctor);
 }
@@ -293,12 +303,11 @@ ClassDesc::init(const char* name, int version,
   ClassDesc *me = name_to_class_desc(name);
   int temp_copy_present = 0;
   if (me && me->version() != 0) {
-      ExEnv::err0()
-          << indent
-          << "ERROR: ClassDesc ctor: ClassDesc already initialized for "
-          << name << endl;
-      abort();
-    }
+    std::stringstream oss;
+    oss << "duplicate ClassDesc detected for class named "
+        << name << endl;
+    throw sc::ProgrammingError(oss.str().c_str(), __FILE__, __LINE__);
+  }
   else if (me) {
       temp_copy_present = 1;
     }
@@ -307,12 +316,11 @@ ClassDesc::init(const char* name, int version,
 
   if (!temp_copy_present && name_to_class_desc(name)) {
       // I wasn't in the list before, but am in it now
-      ExEnv::err0()
-          << indent
-          << "ERROR: ClassDesc ctor: inheritance loop detected for "
-          << name << endl;
-      abort();
-    }
+    std::stringstream oss;
+    oss << "inheritance loop detected for class "
+        << name << endl;
+    throw sc::ProgrammingError(oss.str().c_str(), __FILE__, __LINE__);
+  }
 
   classname_ = ::strcpy(new char[strlen(name)+1],name);
 
@@ -334,13 +342,12 @@ ClassDesc::init(const char* name, int version,
       (*all_)[key]->children_ = 0;
 
       if (!children_) {
-          ExEnv::err0()
-              << indent
-              << "ERROR: ClassDesc: inconsistency in initialization for "
-              << key
-              << "--perhaps a duplicated CTOR call" << endl;
-          abort();
-        }
+        std::ostringstream oss;
+        oss << "ERROR: ClassDesc: inconsistency in initialization for "
+            << key
+            << "--perhaps a duplicated CTOR call" << endl;
+        throw ProgrammingError(oss.str().c_str(), __FILE__, __LINE__);
+      }
 
       // go thru the list of children and correct their
       // parent class descriptors
@@ -408,10 +415,7 @@ ClassDesc::class_desc(const type_info &ti)
 std::map<std::string,ClassDescP>&
 ClassDesc::all()
 {
-  if (!all_) {
-      ExEnv::errn() << "ClassDesc::all(): all not initialized" << endl;
-      abort();
-    }
+  if (!all_) throw sc::ProgrammingError("ClassDesc::all(): all not initialized", __FILE__, __LINE__);
   return *all_;
 }
 
@@ -476,12 +480,12 @@ ClassDesc::list_all_classes()
                   ExEnv::out0() << " protected";
                 }
               if (parents[i].classdesc() == 0) {
-                  ExEnv::errn() << endl
-                               << "ERROR: parent " << i
-                               << " for " << classdesc->name()
-                               << " is missing" << endl;
-                  abort();
-                }
+                std::ostringstream oss;
+                oss << "ERROR: parent " << i
+                    << " for " << classdesc->name()
+                    << " is missing" << endl;
+                throw ProgrammingError(oss.str().c_str(), __FILE__, __LINE__);
+              }
               const char *n = parents[i].classdesc()->name();
               ExEnv::out0() << " " << parents[i].classdesc()->name();
             }

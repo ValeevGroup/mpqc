@@ -110,7 +110,7 @@ TwoBodyMOIntsTransform_iRjS::memgrp_blksize() const
 void
 TwoBodyMOIntsTransform_iRjS::init_acc()
 {
-  if (ints_acc_.nonnull())
+  if (ints_acc_)
     return;
 
   const int nij = compute_nij(batchsize_, space4()->rank(), msg_->n(), msg_->me());

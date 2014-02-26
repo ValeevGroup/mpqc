@@ -130,6 +130,12 @@
 */
 
 /**
+  @defgroup TAWFN mpqc.Chemistry.ElectronicStructure.TAWFN
+  @ingroup ChemistryElectronicStructure
+  TiledArray based wavefunction object
+*/
+
+/**
   @defgroup ChemistryElectronicStructureSpin mpqc.Chemistry.ElectronicStructure.Spin
   @ingroup ChemistryElectronicStructure
   Functionality related to spin states of electrons.

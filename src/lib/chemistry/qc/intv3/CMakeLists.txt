@@ -2,7 +2,7 @@ include(AddLibrary)
 
 # intv3 library
 
-add_mpqc_object_library(intv3
+set(ccfiles
   array.cc
 #  atominfo.cc
   bounds.cc
@@ -24,15 +24,21 @@ add_mpqc_object_library(intv3
   tformv3.cc
 )
 
+add_mpqc_object_library(intv3 ${ccfiles})
+
 # tests
+if (MPQC_UNITTEST)
+  set_property(SOURCE fjttest.cc PROPERTY COMPILE_DEFINITIONS
+               SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(fjttest fjttest.cc $<TARGET_OBJECTS:intv3>)
+  add_test(fjttest fjttest)
+  target_link_libraries( fjttest chemistry )
 
-#set_property(SOURCE fjttest.cc PROPERTY COMPILE_DEFINITIONS
-#    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-#add_executable(fjttest EXCLUDE_FROM_ALL fjttest.cc $<TARGET_OBJECTS:intv3>)
-#add_test(fjttest fjttest)
+  set_property(SOURCE inttest.cc PROPERTY COMPILE_DEFINITIONS
+               SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(inttest inttest.cc $<TARGET_OBJECTS:intv3>)
+  add_test(inttest inttest)
+  target_link_libraries( inttest chemistry )
+endif()
 
-#set_property(SOURCE inttest.cc PROPERTY COMPILE_DEFINITIONS
-#    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-#add_executable(inttest EXCLUDE_FROM_ALL inttest.cc $<TARGET_OBJECTS:intv3>)
-#add_test(inttest inttest)
 

@@ -42,10 +42,9 @@ CADFCLHF::compute_J()
   //----------------------------------------//
   // Convenience variables
   Timer timer("compute J");
-  MessageGrp& msg = *scf_grp_;
   const int nthread = threadgrp_->nthread();
-  const int me = msg.me();
-  const int n_node = msg.n();
+  const int me = scf_grp_->me();
+  const int n_node = scf_grp_->n();
   const Ref<GaussianBasisSet>& obs = gbs_;
   const int nbf = obs->nbasis();
   const int dfnbf = dfbs_->nbasis();
@@ -196,7 +195,7 @@ CADFCLHF::compute_J()
   } // compute_threads is destroyed here
   //----------------------------------------//
   // Global sum d_tilde
-  msg.sum(d_tilde.data(), dfnbf);
+  scf_grp_->sum(d_tilde.data(), dfnbf);
   if(xml_debug_) {
     write_as_xml("d_tilde", d_tilde);
   }
@@ -259,7 +258,7 @@ CADFCLHF::compute_J()
   /*=======================================================================================*/
   /* Global sum J                                         		                        {{{1 */ #if 1 // begin fold
   //----------------------------------------//
-  msg.sum(J.data(), nbf*nbf);
+  scf_grp_->sum(J.data(), nbf*nbf);
   //----------------------------------------//
   // Fill in the upper triangle of J
   for(int mu = 0; mu < nbf; ++mu) {

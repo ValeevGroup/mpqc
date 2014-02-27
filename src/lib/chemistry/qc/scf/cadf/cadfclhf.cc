@@ -218,12 +218,12 @@ CADFCLHF::init_threads()
   integral()->set_basis(gbs_, gbs_, dfbs_);
   size_t storage_avail = integral()->storage_unused();
   eris_3c_.resize(nthread);
-  do_threaded(nthread, [&](int ithr){
-  //for(int ithr = 0; ithr < nthread; ++ithr) {
-    eris_3c_[ithr] = (integral()->coulomb<3>());
-    eris_3c_[ithr]->set_integral_storage(storage_avail/nthread);
-  //}
-  });
+  eris_3c_[0] = (integral()->coulomb<3>());
+  eris_3c_[0]->set_integral_storage(storage_avail/nthread);
+  for(int ithr = 1; ithr < nthread; ++ithr) {
+    MPQC_ASSERT(eris_3c_[0]->cloneable());
+    eris_3c_[ithr] = eris_3c_[0]->clone();
+  }
   for (int i=0; i < nthread; i++) {
     // TODO different fitting metrics
     if(metric_oper_type_ == coulomb_oper_type_){

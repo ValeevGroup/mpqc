@@ -1276,14 +1276,16 @@ std::string sc::new_unique_key(const Ref<OrbitalSpaceRegistry> & oreg)
 
 bool sc::operator==(const OrbitalSpace& space1, const OrbitalSpace& space2) {
   if (&space1 == &space2) return true;
-  if (!space1.integral()->equiv(space2.integral()) || space1.rank()
+  if (space1.id() == space2.id()) {
+    MPQC_ASSERT((!space1.integral()->equiv(space2.integral()) || space1.rank()
       != space2.rank() || space1.nblocks() != space2.nblocks()
       || space1.block_sizes() != space2.block_sizes()
       || !space1.basis()->equiv(space2.basis()) || (space1.coefs()
-      - space2.coefs())->maxabs() > DBL_EPSILON)
-    return false;
-  else
+      - space2.coefs())->maxabs() > DBL_EPSILON) == false);
     return true;
+  }
+  else
+    return false;
 }
 
 /////////////////////////////////////////////////////////////////////////////

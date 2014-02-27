@@ -1,5 +1,5 @@
 //
-// tascf.cpp
+// taclscf.cpp
 //
 // Copyright (C) 2013 Drew Lewis
 //
@@ -25,53 +25,17 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <chemistry/qc/scf/tascf.hpp>
+#include <chemistry/qc/scf/taclscf.hpp>
 
 using namespace mpqc;
 using namespace mpqc::TA;
 
-sc::ClassDesc mpqc::TA::SCF::class_desc_(typeid(mpqc::TA::SCF), "TA.SCF",
-                      1, "public TA.Wavefunction",
+sc::ClassDesc mpqc::TA::CLSCF::class_desc_(typeid(mpqc::TA::CLSCF), "TA.CLSCF",
+                      1, "public TA.SCF",
                       0,
-                      sc::create<mpqc::TA::SCF>,
+                      sc::create<mpqc::TA::CLSCF>,
                       0);
 
-mpqc::TA::SCF::SCF(const sc::Ref<sc::KeyVal>& kval) :
-    Wavefunction(kval), tbints_()
-{
-    if(kval->exists("maxiter"))
-        maxiter_= kval->intvalue("maxiter", sc::KeyValValueint(1000));
-    if(kval->exists("miniter"))
-        miniter_= kval->intvalue("miniter", sc::KeyValValueint(0));
-}
+CLSCF::CLSCF(const sc::Ref<sc::KeyVal> &kval) : SCF(kval)
+{}
 
-mpqc::TA::SCF::~SCF(){}
-
-void mpqc::TA::SCF::compute() {
-  MPQC_ASSERT(false);
-}
-
-const mpqc::TA::SCF::Matrix&
-mpqc::TA::SCF::fock() {
-  MPQC_ASSERT(false);
-}
-
-const mpqc::TA::SCF::Matrix&
-mpqc::TA::SCF::rdm1() {
-  MPQC_ASSERT(false);
-}
-
-const mpqc::TA::SCF::Matrix&
-mpqc::TA::SCF::rdm1(sc::SpinCase1 s) {
-  MPQC_ASSERT(false);
-}
-
-double
-mpqc::TA::SCF::scf_energy() {
-  MPQC_ASSERT(false);
-}
-
-size_t
-mpqc::TA::SCF::nelectron() const {
-   MPQC_ASSERT(false);
-}

@@ -1,5 +1,5 @@
 //
-// taclscf.hpp
+// tahf.cpp
 //
 // Copyright (C) 2013 Drew Lewis
 //
@@ -25,39 +25,26 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _MPQC_CHEMISTRY_QC_SCF_TACLSCF_HPP_
-#define _MPQC_CHEMISTRY_QC_SCF_TACLSCF_HPP_
+#ifndef _MPQC_CHEMISTRY_QC_SCF_TACLHF_HPP_
+#define _MPQC_CHEMISTRY_QC_SCF_TACLHF_HPP_
 
-#include <chemsitry/qc/scf/tascf.hpp>
-#include <TiledArray/algebra/diis.h>
+#include <chemistry/qc/scf/taclscf.hpp>
 
 namespace mpqc{
-namespace TA {
+namespace TA{
+class CLHF: public CLSCF {
+public:
+    CLHF(const Ref<KeyVal>&);
+    ~CLHF();
 
-    /** The taclscf class is the base class for implementing self-consistent
-     * proceedure for closed-shell molecules in MPQC3.
-     */
-    class CLSCF : public SCF {
-    public :
-        typedef SCF::Matrix Matrix;
+protected:
+    void ao_fock(double accuracy);
 
-        /** Key Value constructor . . . */
-        CLSCF(const sc::Ref<sc::KeyVal> &kval);
-        virtual ~CLSCF();
-        virtual void compute() override;
-
-        virtual const Matrix& fock() override;
-        virtual const Matrix& rdm1() override;
-
-        virtual double scf_energy() override;
-
-    private:
-        static sc::ClassDesc class_desc_;
-        TiledArray::DIIS<Matrix> diis;
-
-    }; // Class CLSCF
+}; //class CLHF
 
 } // namespace TA
 } // namespace mpqc
 
-#endif /* _MPQC_CHEMISTRY_QC_SCF_TACLSCF_HPP_ */
+
+
+#endif /* _MPQC_CHEMISTRY_QC_SCF_TACLHF_HPP_ */

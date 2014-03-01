@@ -37,5 +37,25 @@ sc::ClassDesc mpqc::TA::CLSCF::class_desc_(typeid(mpqc::TA::CLSCF), "TA.CLSCF",
                       0);
 
 CLSCF::CLSCF(const sc::Ref<sc::KeyVal> &kval) : SCF(kval)
-{}
+{
+}
 
+mpqc::TA::CLSCF::~CLSCF() {
+    MPQC_ASSERT(false);
+}
+
+void mpqc::TA::CLSCF::compute() {
+    MPQC_ASSERT(false);
+}
+
+const Matrix& mpqc::TA::CLSCF::fock() {
+    MPQC_ASSERT(false);
+}
+
+const Matrix& mpqc::TA::CLSCF::rdm1() {
+    MPQC_ASSERT(false);
+}
+
+double mpqc::TA::CLSCF::scf_energy() {
+    MPQC_ASSERT(false);
+}

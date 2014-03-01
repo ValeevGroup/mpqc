@@ -55,6 +55,12 @@ if (MPQC_UNITTEST)
   add_test(tascf_test tascf_test)
   
   target_link_libraries( tascf_test chemistry )
+  
+  
+  add_executable(taclscf_test taclscf_test.cpp $<TARGET_OBJECTS:basis>)
+  add_test(taclscf_test taclscf_test)
+  
+  target_link_libraries( taclscf_test chemistry )
 
 endif (MPQC_UNITTEST)
 

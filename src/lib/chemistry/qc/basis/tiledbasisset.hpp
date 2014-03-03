@@ -40,6 +40,7 @@
 #include "kcluster.hpp"
 
 namespace mpqc {
+namespace TA{
 
   // TODO add reference for k clustering
   /**
@@ -94,8 +95,9 @@ namespace mpqc {
 
       static std::string converted_name(const std::string& name);
 
-  };
+  }; // class TiledBasisSet
 
+} // namespace TA
 } // namespace mpqc
 
 #endif /* CHEMISTRY_QC_BASIS_TILEDBASISSET_HPP */

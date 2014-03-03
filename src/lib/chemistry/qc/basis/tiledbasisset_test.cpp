@@ -25,47 +25,64 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include "tiledbasisset.hpp"
+#include <util/madness/init.h>
+#include <util/misc/regtime.h>
+#include <util/madness/world.h>
+#include <iostream>
+#include <chemistry/qc/basis/tiledbasisset.hpp>
 #include <chemistry/qc/basis/integral.h>
 #include <mpqc/integrals/integralenginepool.hpp>
 #include <mpqc/interfaces/tiledarray/array_ints.hpp>
+#define BOOST_TEST_MODULE test_tabasis
+#include <boost/test/included/unit_test.hpp>
 
+
+
+using namespace boost::unit_test;
+using namespace sc;
 using namespace mpqc;
-int main(int argc, char** argv){
-    madness::World &world = madness::initialize(argc, argv);
-    sc::Ref<sc::Molecule>  mol = new sc::Molecule;
-    /*
-    mol->add_atom( 6,     0,     0,    0);
-    mol->add_atom( 9,    -1,    -1,    0);
-    mol->add_atom( 1,   0.6,  -0.1,  0.9);
-    mol->add_atom(17, -0.75,   1.5,    0);
-    mol->add_atom(35,   1.1, -0.18, -1.5);
-    */
-    mol->add_atom( 1, 0, 1, -1);
-    mol->add_atom( 1, 0, 1, 1);
 
-    sc::Ref<sc::AssignedKeyVal> akv = new  sc::AssignedKeyVal;
-    akv->assign("name", "3-21G");
+struct MADConfig {
+    MADConfig() {
+      mpqc::MADNESSRuntime::initialize();
+    }
+    ~MADConfig() {
+      mpqc::MADNESSRuntime::finalize();
+    }
+};
+
+BOOST_GLOBAL_FIXTURE( MADConfig );
+
+BOOST_AUTO_TEST_CASE( construct_tiledbasisset_from_gaussianbasisset){
+    Ref<World> world = new mpqc::World;
+
+    Ref<Molecule>  mol = new Molecule;
+    mol->add_atom(2, 0.0, 0.0, 0.0);
+    mol->add_atom(2, 0.0, 0.0, 3.7);
+    mol->add_atom(10, 2.8, 0.0, 1.8);
+    mol->add_atom(18, 0.0, 2.8, 1.8);
+    mol->add_atom(36, 0.0, -2.8, 1.8);
+    mol->add_atom(18, -2.8, 0.0, 1.8);
+
+    Ref<AssignedKeyVal> akv = new  AssignedKeyVal;
+    akv->assign("name", "STO-3G");
     akv->assign("molecule", mol.pointer());
-    sc::Ref<sc::GaussianBasisSet> bs = new sc::GaussianBasisSet(akv);
-    sc::Ref<TiledBasisSet> tbasis =
-                    new TiledBasisSet(bs, 2);
+    Ref<GaussianBasisSet> bs = new GaussianBasisSet(akv);
 
-    sc::Ref<sc::Integral> Int_fac = sc::Integral::initial_integral(argc, argv);
-    if(Int_fac)
-        sc::Integral::set_default_integral(Int_fac);
-    Int_fac = sc::Integral::get_default_integral()->clone();
-    Int_fac->set_basis(tbasis);
+    Ref<Integral> Int_fac = Integral::get_default_integral()->clone();
 
-    IntegralEnginePool<sc::Ref<sc::OneBodyInt> > overlap_pool(Int_fac->overlap());
-    TiledArray::Array<double, 2> S = Integrals(world, overlap_pool,
-                                               tbasis);
+    for(size_t i = 1; i <= 6; ++i){
+        Ref<TA::TiledBasisSet> tbasis = new TA::TiledBasisSet(bs, i);
 
-    world.gop.fence();
-    std::cout << "S = \n" << S << std::endl;
+        Int_fac->set_basis(tbasis);
 
+        IntegralEnginePool<Ref<OneBodyInt> > overlap_pool(Int_fac->overlap());
+        TiledArray::Array<double, 2> S = Integrals(*world->madworld(),
+                                                   overlap_pool, tbasis);
 
-    return 0;
+        world->madworld()->gop.fence();
+        std::cout << "S(" << i << ") = \n" << S << std::endl;
+    }
 }
 
 

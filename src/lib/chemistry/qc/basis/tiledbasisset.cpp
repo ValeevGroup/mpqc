@@ -31,7 +31,7 @@
 #include <string>
 
 using namespace mpqc;
-
+using namespace TA;
 
 static sc::ClassDesc TiledBasisSet_cd( typeid(TiledBasisSet), "TiledBasisSet",
                 1, "public GaussianBasisSet",

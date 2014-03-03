@@ -30,7 +30,6 @@
 #include "tile_ints.hpp"
 #include <chemistry/qc/basis/tiledbasisset.hpp>
 
-namespace TA = TiledArray;
 namespace mpqc {
 
   /// @addtogroup ChemistryBasisIntegralTA
@@ -93,7 +92,7 @@ namespace mpqc {
   ::TiledArray::Array<double,
       EngineTypeTraits<typename IntEngPool::engine_type>::ncenters> Integrals(
       madness::World &world, const IntEngPool &pool,
-      const sc::Ref<TiledBasisSet> &tbasis) {
+      const sc::Ref<mpqc::TA::TiledBasisSet> &tbasis) {
 
     namespace TA = ::TiledArray;
 

@@ -40,6 +40,7 @@ namespace mpqc {
     namespace details {
 
       // Initialize the vector needed for TiledArray::TiledRange1 construction
+      inline
       std::vector<std::size_t> vec_init(std::size_t size_guess) {
         std::vector<std::size_t> vec_guess;
         vec_guess.reserve(size_guess); //  Reserve space
@@ -48,6 +49,7 @@ namespace mpqc {
       }
 
       // Get the number of atoms in the system that are heavier than hydrogen.
+      inline
       std::size_t nheavy_atoms(const sc::Ref<sc::GaussianBasisSet> &basis) {
         // copy Ref to work on it.
         sc::Ref<sc::Molecule> mol = basis->molecule();
@@ -67,6 +69,7 @@ namespace mpqc {
      * Returns TiledArray::TiledRange1 that corresponds to integral shells.
      * @param[in] basis Is a sc::GaussiangBasisSet
      */
+    inline
     ::TiledArray::TiledRange1 tile_by_shell(const sc::Ref<sc::GaussianBasisSet> &basis) {
 
       // Shell and basis set information
@@ -104,6 +107,7 @@ namespace mpqc {
      * corresponds to all the shells on a single atom.
      * @param[in] basis Is a sc::GaussiangBasisSet
      */
+    inline
     ::TiledArray::TiledRange1 tile_by_atom(const sc::Ref<sc::GaussianBasisSet> &basis) {
 
       // Basis set information
@@ -139,6 +143,7 @@ namespace mpqc {
      * custum function or use mpqc::ShellOrdering and the TiledRange constructor
      * for integrals objects.
      */
+    inline
     ::TiledArray::TiledRange1 by_grouped_hydrogens(
         const sc::Ref<sc::GaussianBasisSet> &basis) {
 

@@ -43,7 +43,7 @@ if (LIBINT)
       }
       "  LIBINT_COMPILES)
     if (NOT LIBINT_COMPILES)
-      message(FATAL_ERROR "Could not compile LIBINT test program.\nSee CMakeFiles/CMakeOutput.log for details")
+      message(FATAL_ERROR "Could not compile LIBINT test program.\nSee CMakeFiles/CMakeError.log for details")
     endif()
     
     # make sure libint2 version is up to date

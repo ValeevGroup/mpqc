@@ -1,5 +1,5 @@
 //
-// taclscf_test.cpp
+// taclhf_test.cpp
 //
 // Copyright (C) 2013 Drew Lewis
 //
@@ -25,15 +25,12 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-
 #include <util/madness/init.h>
 #include <util/misc/regtime.h>
 #include <iostream>
-#include <chemistry/qc/scf/taclscf.hpp>
-#define BOOST_TEST_MODULE test_taclscf
+#include <chemistry/qc/scf/taclhf.hpp>
+#define BOOST_TEST_MODULE test_taclhf
 #include <boost/test/included/unit_test.hpp>
-
-#include <chemistry/qc/libint2/linkage.h>
 
 using namespace boost::unit_test;
 using namespace sc;
@@ -50,7 +47,7 @@ struct MADConfig {
 
 BOOST_GLOBAL_FIXTURE( MADConfig );
 
-BOOST_AUTO_TEST_CASE( construct_clscf_programmatically ){
+BOOST_AUTO_TEST_CASE( construct_clhf_programmatically ){
 
     // Make a molecule H2
     Ref<Molecule> mol = new Molecule;
@@ -66,18 +63,14 @@ BOOST_AUTO_TEST_CASE( construct_clscf_programmatically ){
     akv->assign("basis", basis.pointer());
 
     //Construct object
-    Ref<TA::CLSCF> tscf = new TA::CLSCF(akv);
-    tscf->print();
-    std::cout << "Overlap \n" << tscf->overlap() << std::endl;
-    std::cout << "Density Guess \n" << tscf->rdm1() << std::endl;
+    Ref<TA::CLHF> thf = new TA::CLHF(akv);
+    thf->print();
+    std::cout << "Fock = \n" << thf->fock() << std::endl;
+    std::cout << "Energy for initial Fock = " << thf->scf_energy() << std::endl;
+    std::cout << "Minimizing energy . . . " << std::endl;
+    thf->minimize_energy();
+    std::cout << "Final energy = " << thf->scf_energy() << std::endl;
 }
-
-
-
-
-
-
-
 
 
 

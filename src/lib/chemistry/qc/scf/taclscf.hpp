@@ -28,7 +28,7 @@
 #ifndef _MPQC_CHEMISTRY_QC_SCF_TACLSCF_HPP_
 #define _MPQC_CHEMISTRY_QC_SCF_TACLSCF_HPP_
 
-#include <chemsitry/qc/scf/tascf.hpp>
+#include <chemistry/qc/scf/tascf.hpp>
 #include <TiledArray/algebra/diis.h>
 
 namespace mpqc{
@@ -46,14 +46,24 @@ namespace TA {
         virtual ~CLSCF();
         virtual void compute() override;
 
-        virtual const Matrix& fock() override;
-        virtual const Matrix& rdm1() override;
-
         virtual double scf_energy() override;
+
+        virtual const Matrix& rdm1() override;
+        virtual Matrix& hcore();
+
+        inline virtual size_t occ() { return occupation; }
+
+    protected:
+        void tr_corr_purify(Matrix &P);
+        // Return a shifted Fock matrix such that the spectrum has been inverted
+        // and shifted to the range (0,1)
+        Matrix Dguess(const Matrix &F);
+        ::TiledArray::DIIS<Matrix> diis;
 
     private:
         static sc::ClassDesc class_desc_;
-        TiledArray::DIIS<Matrix> diis;
+        ResultMatrix hcore_;
+        size_t occupation; // Number of occupied orbitals
 
     }; // Class CLSCF
 

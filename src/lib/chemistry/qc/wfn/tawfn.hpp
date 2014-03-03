@@ -115,7 +115,7 @@ namespace mpqc {
 
         void print(std::ostream& os = sc::ExEnv::out0()) const;
 
-      private:
+      protected:
         sc::Ref<mpqc::World> world_;
         sc::Ref<TiledBasisSet> tbs_;
         sc::Ref<sc::Integral> integral_;
@@ -131,6 +131,7 @@ namespace mpqc {
 
         unsigned debug_;
 
+      private:
         static sc::ClassDesc class_desc_;
 
     };

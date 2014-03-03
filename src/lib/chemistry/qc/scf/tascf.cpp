@@ -37,8 +37,10 @@ sc::ClassDesc mpqc::TA::SCF::class_desc_(typeid(mpqc::TA::SCF), "TA.SCF",
                       0);
 
 mpqc::TA::SCF::SCF(const sc::Ref<sc::KeyVal>& kval) :
-    Wavefunction(kval), tbints_()
+    Wavefunction(kval), tbints_(), fock_(this)
 {
+    fock_.compute() = 0;
+    fock_.computed() = 0;
     if(kval->exists("maxiter"))
         maxiter_= kval->intvalue("maxiter", sc::KeyValValueint(1000));
     if(kval->exists("miniter"))
@@ -47,31 +49,37 @@ mpqc::TA::SCF::SCF(const sc::Ref<sc::KeyVal>& kval) :
 
 mpqc::TA::SCF::~SCF(){}
 
+#warning "compute is not defined"
 void mpqc::TA::SCF::compute() {
   MPQC_ASSERT(false);
 }
 
+#warning "fock is not defined"
 const mpqc::TA::SCF::Matrix&
 mpqc::TA::SCF::fock() {
   MPQC_ASSERT(false);
 }
 
+#warning "rdm1 is not defined"
 const mpqc::TA::SCF::Matrix&
 mpqc::TA::SCF::rdm1() {
   MPQC_ASSERT(false);
 }
 
+#warning "rdm1(spincase) is not defined"
 const mpqc::TA::SCF::Matrix&
 mpqc::TA::SCF::rdm1(sc::SpinCase1 s) {
   MPQC_ASSERT(false);
 }
 
+#warning "scf_energy is not defined"
 double
 mpqc::TA::SCF::scf_energy() {
   MPQC_ASSERT(false);
 }
 
+#warning "nelectron has a temporary solution and is not production ready"
 size_t
 mpqc::TA::SCF::nelectron() const {
-   MPQC_ASSERT(false);
+    return molecule()->total_Z(); // Temporary solution.
 }

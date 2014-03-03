@@ -1,5 +1,5 @@
 //
-// tascf.hpp
+// taclhf.hpp
 //
 // Copyright (C) 2013 Drew Lewis
 //
@@ -25,48 +25,31 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _MPQC_CHEMISTRY_QC_SCF_TASCF_HPP_
-#define _MPQC_CHEMISTRY_QC_SCF_TASCF_HPP_
+#ifndef _MPQC_CHEMISTRY_QC_SCF_TACLHF_HPP_
+#define _MPQC_CHEMISTRY_QC_SCF_TACLHF_HPP_
 
-#include <chemistry/qc/wfn/tawfn.hpp>
-#include <chemistry/qc/basis/integral.h>
-#include <chemistry/qc/basis/tbint.h>
+#include <chemistry/qc/scf/taclscf.hpp>
 
 namespace mpqc{
-  namespace TA {
-
-    class SCF : public Wavefunction {
+namespace TA{
+    class CLHF : public CLSCF {
     public:
-        typedef Wavefunction::Matrix Matrix;
+        typedef CLSCF::Matrix Matrix;
+        CLHF(const sc::Ref<sc::KeyVal> &kval);
 
-        SCF(const sc::Ref<sc::KeyVal> &kval);
-        virtual ~SCF();
-        virtual void compute() override;
-
-        virtual const Matrix& fock();
-        virtual const Matrix& rdm1() override;
-        virtual const Matrix& rdm1(sc::SpinCase1) override;
-        virtual double scf_energy();
-
-        /// @return the number of electrons in the system
-        virtual size_t nelectron() const override;
+        virtual const Matrix& fock() override;
+        void minimize_energy();
 
     protected:
-        // Number of iterations to use
-        unsigned int maxiter_;
-        unsigned int miniter_;
+        Matrix ao_fock();
+        Matrix Gmat();
 
-        // Fock Matrix
-        ResultMatrix fock_;
-
-        // Integral objects
-        sc::Ref<sc::TwoBodyInt> *tbints_;
-
+    private:
         static sc::ClassDesc class_desc_;
 
-    };
-  } // namespace mpqc::TA
-} //namespace mpqc
+    }; // class CLHF
 
+} // namespace TA
+} // namespace mpqc
 
-#endif /* _MPQC_CHEMISTRY_QC_SCF_TASCF_HPP_ */
+#endif /* _MPQC_CHEMISTRY_QC_SCF_TACLHF_HPP_ */

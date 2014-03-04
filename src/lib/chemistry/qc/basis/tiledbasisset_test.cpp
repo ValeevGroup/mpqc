@@ -35,6 +35,7 @@
 #include <mpqc/interfaces/tiledarray/array_ints.hpp>
 #define BOOST_TEST_MODULE test_tabasis
 #include <boost/test/included/unit_test.hpp>
+#include <utility>
 
 
 
@@ -105,54 +106,165 @@ BOOST_AUTO_TEST_CASE( tiledbasisset_trange1_values_test ) {
     BOOST_CHECK(first == 0);
     BOOST_CHECK(second == 43);
 
+     // Test 2 tile case
+    Ref<TA::TiledBasisSet> tbs2 = new TA::TiledBasisSet(bs,2);
+    double t_21_f = tbs2->trange1().tile(0).first;
+    double t_21_s = tbs2->trange1().tile(0).second;
+    double t_22_f = tbs2->trange1().tile(1).first;
+    double t_22_s = tbs2->trange1().tile(1).second;
+    BOOST_CHECK(t_21_f == 0);
+    BOOST_CHECK(t_21_s == 42);
+    BOOST_CHECK(t_22_f == 42);
+    BOOST_CHECK(t_22_s == 43);
+
      // Test 3 tile case
     Ref<TA::TiledBasisSet> tbs3 = new TA::TiledBasisSet(bs,3);
     double t1_first = tbs3->trange1().tile(0).first;
     double t1_second = tbs3->trange1().tile(0).second;
+    double t2_first = tbs3->trange1().tile(1).first;
     double t2_second = tbs3->trange1().tile(1).second;
+    double t3_first = tbs3->trange1().tile(2).first;
     double t3_second = tbs3->trange1().tile(2).second;
     BOOST_CHECK(t1_first == 0);
-    BOOST_CHECK(t1_second == 37);
-    BOOST_CHECK(t2_second == 38);
+    BOOST_CHECK(t1_second == 24);
+    BOOST_CHECK(t2_first == 24);
+    BOOST_CHECK(t2_second == 25);
+    BOOST_CHECK(t3_first == 25);
     BOOST_CHECK(t3_second == 43);
+
+     // Test 4 tile case
+    Ref<TA::TiledBasisSet> tbs4 = new TA::TiledBasisSet(bs,4);
+    double t_41_f = tbs4->trange1().tile(0).first;
+    double t_41_s = tbs4->trange1().tile(0).second;
+    double t_42_f = tbs4->trange1().tile(1).first;
+    double t_42_s = tbs4->trange1().tile(1).second;
+    double t_43_f = tbs4->trange1().tile(2).first;
+    double t_43_s = tbs4->trange1().tile(2).second;
+    double t_44_f = tbs4->trange1().tile(3).first;
+    double t_44_s = tbs4->trange1().tile(3).second;
+    BOOST_CHECK(t_41_f == 0);
+    BOOST_CHECK(t_41_s == 15);
+    BOOST_CHECK(t_42_f == 15);
+    BOOST_CHECK(t_42_s == 16);
+    BOOST_CHECK(t_43_f == 16);
+    BOOST_CHECK(t_43_s == 34);
+    BOOST_CHECK(t_44_f == 34);
+    BOOST_CHECK(t_44_s == 43);
+
+     // Test 5 tile case
+    Ref<TA::TiledBasisSet> tbs5 = new TA::TiledBasisSet(bs,5);
+    double t_51_f = tbs5->trange1().tile(0).first;
+    double t_51_s = tbs5->trange1().tile(0).second;
+    double t_52_f = tbs5->trange1().tile(1).first;
+    double t_52_s = tbs5->trange1().tile(1).second;
+    double t_53_f = tbs5->trange1().tile(2).first;
+    double t_53_s = tbs5->trange1().tile(2).second;
+    double t_54_f = tbs5->trange1().tile(3).first;
+    double t_54_s = tbs5->trange1().tile(3).second;
+    double t_55_f = tbs5->trange1().tile(4).first;
+    double t_55_s = tbs5->trange1().tile(4).second;
+    BOOST_CHECK(t_51_f == 0);
+    BOOST_CHECK(t_51_s == 10);
+    BOOST_CHECK(t_52_f == 10);
+    BOOST_CHECK(t_52_s == 11);
+    BOOST_CHECK(t_53_f == 11);
+    BOOST_CHECK(t_53_s == 29);
+    BOOST_CHECK(t_54_f == 29);
+    BOOST_CHECK(t_54_s == 38);
+    BOOST_CHECK(t_55_f == 38);
+    BOOST_CHECK(t_55_s == 43);
+
+     // Test 6 tile case
+    Ref<TA::TiledBasisSet> tbs6 = new TA::TiledBasisSet(bs,6);
+    double t_61_f = tbs6->trange1().tile(0).first;
+    double t_61_s = tbs6->trange1().tile(0).second;
+    double t_62_f = tbs6->trange1().tile(1).first;
+    double t_62_s = tbs6->trange1().tile(1).second;
+    double t_63_f = tbs6->trange1().tile(2).first;
+    double t_63_s = tbs6->trange1().tile(2).second;
+    double t_64_f = tbs6->trange1().tile(3).first;
+    double t_64_s = tbs6->trange1().tile(3).second;
+    double t_65_f = tbs6->trange1().tile(4).first;
+    double t_65_s = tbs6->trange1().tile(4).second;
+    double t_66_f = tbs6->trange1().tile(5).first;
+    double t_66_s = tbs6->trange1().tile(5).second;
+    BOOST_CHECK(t_61_f == 0);
+    BOOST_CHECK(t_61_s == 1);
+    BOOST_CHECK(t_62_f == 1);
+    BOOST_CHECK(t_62_s == 2);
+    BOOST_CHECK(t_63_f == 2);
+    BOOST_CHECK(t_63_s == 20);
+    BOOST_CHECK(t_64_f == 20);
+    BOOST_CHECK(t_64_s == 29);
+    BOOST_CHECK(t_65_f == 29);
+    BOOST_CHECK(t_65_s == 34);
+    BOOST_CHECK(t_66_f == 34);
+    BOOST_CHECK(t_66_s == 43);
+
 }
 
 BOOST_AUTO_TEST_CASE( tiledbasisset_deterministic_tiliing_test ){
-    std::array<std::array<double, 3>, 6> c{{
-                                             {{0.0,0.0,0.0}},
-                                             {{0.0,0.0,3.7}},
-                                             {{2.8,0.0,1.8}},
-                                             {{0.0,2.8,1.8}},
-                                             {{0.0,-2.8,1.8}},
-                                             {{-2.8,0.0,1.8}}
-                                          }};
-    for(size_t i = 0; i < c.size(); ++i){
-        // Scramble molecule input
-        for(size_t j = 0; j < c.size(); ++j){
-            c[i].swap(c[j]);
 
-            Ref<Molecule> mol = new Molecule;
-            mol->add_atom(2,  c[0][0], c[0][1], c[0][2]);
-            mol->add_atom(2,  c[1][0], c[1][1], c[1][2]);
-            mol->add_atom(10, c[2][0], c[2][1], c[2][2]);
-            mol->add_atom(18, c[3][0], c[3][1], c[3][2]);
-            mol->add_atom(36, c[4][0], c[4][1], c[4][2]);
-            mol->add_atom(18, c[5][0], c[5][1], c[5][2]);
+    Ref<Molecule> mol = new Molecule;
+    mol->add_atom(2, 0.0, 0.0, 0.0);
+    mol->add_atom(2, 0.0, 0.0, 3.7);
+    mol->add_atom(10, 2.8, 0.0, 1.8);
+    mol->add_atom(18, 0.0, 2.8, 1.8);
+    mol->add_atom(36, 0.0, -2.8, 1.8);
+    mol->add_atom(18, -2.8, 0.0, 1.8);
 
-            Ref<AssignedKeyVal> akv = new AssignedKeyVal;
-            akv->assign("name", "STO-3G");
-            akv->assign("molecule", mol.pointer());
-            Ref<GaussianBasisSet> bs = new GaussianBasisSet(akv);
+    std::vector<sc::Atom> atoms = mol->atoms();
 
-             // Test 3 tile case and make sure tiling is the same.
-            Ref<TA::TiledBasisSet> tbs3 = new TA::TiledBasisSet(bs,3);
-            double t1_second = tbs3->trange1().tile(0).second;
-            double t2_second = tbs3->trange1().tile(1).second;
-            BOOST_CHECK_EQUAL(t1_second, 37);
-            BOOST_CHECK_EQUAL(t2_second, 38);
 
-            c[j].swap(c[i]);
-        }
+
+    for(size_t i = 0; i < 6; ++i){
+        std::swap(atoms[0], atoms[i]);
+    for(size_t j = 1; j < 6; ++j){
+        std::swap(atoms[1], atoms[j]);
+    for(size_t k = 2; k < 6; ++k){
+        std::swap(atoms[2], atoms[k]);
+    for(size_t l = 3; l < 6; ++l){
+        std::swap(atoms[3], atoms[l]);
+    for(size_t m = 4; m < 6; ++m){
+        //std::swap(atoms[4], atoms[m]);
+
+        Ref<Molecule> mol_t = new Molecule;
+        mol_t->add_atom(atoms[0].Z(),atoms[0].r(0),atoms[0].r(1),atoms[0].r(2));
+        mol_t->add_atom(atoms[1].Z(),atoms[1].r(0),atoms[1].r(1),atoms[1].r(2));
+        mol_t->add_atom(atoms[2].Z(),atoms[2].r(0),atoms[2].r(1),atoms[2].r(2));
+        mol_t->add_atom(atoms[3].Z(),atoms[3].r(0),atoms[3].r(1),atoms[3].r(2));
+        mol_t->add_atom(atoms[4].Z(),atoms[4].r(0),atoms[4].r(1),atoms[4].r(2));
+        mol_t->add_atom(atoms[5].Z(),atoms[5].r(0),atoms[5].r(1),atoms[5].r(2));
+
+        Ref<AssignedKeyVal> akv = new AssignedKeyVal;
+        akv->assign("name", "STO-3G");
+        akv->assign("molecule", mol.pointer());
+        Ref<GaussianBasisSet> bs = new GaussianBasisSet(akv);
+
+        // Test 3 tile case and make sure tiling is the same.
+        Ref<TA::TiledBasisSet> tbs3 = new TA::TiledBasisSet(bs,3);
+        double t1_first = tbs3->trange1().tile(0).first;
+        double t1_second = tbs3->trange1().tile(0).second;
+        double t2_first = tbs3->trange1().tile(1).first;
+        double t2_second = tbs3->trange1().tile(1).second;
+        double t3_first = tbs3->trange1().tile(2).first;
+        double t3_second = tbs3->trange1().tile(2).second;
+        BOOST_CHECK(t1_first == 0);
+        BOOST_CHECK(t1_second == 24);
+        BOOST_CHECK(t2_first == 24);
+        BOOST_CHECK(t2_second == 25);
+        BOOST_CHECK(t3_first == 25);
+        BOOST_CHECK(t3_second == 43);
+
+        std::swap(atoms[m], atoms[4]);
+    }
+        std::swap(atoms[l], atoms[3]);
+    }
+        std::swap(atoms[k], atoms[2]);
+    }
+        std::swap(atoms[j], atoms[1]);
+    }
+        std::swap(atoms[i], atoms[0]);
     }
 }
 

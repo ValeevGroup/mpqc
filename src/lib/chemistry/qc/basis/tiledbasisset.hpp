@@ -50,9 +50,9 @@ namespace TA{
   class TiledBasisSet: public sc::GaussianBasisSet {
 
     public:
-      typedef basis::ShellOrder::Shell Shell;
+      typedef ShellOrder::Shell Shell;
       typedef sc::Ref<sc::GaussianBasisSet> Basis;
-      typedef basis::ShellOrder::ShellRange ShellRange;
+      typedef ShellOrder::ShellRange ShellRange;
 
       /**
        * Constructs a TiledBasisSet from a sc::Keyval object.

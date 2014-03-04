@@ -34,7 +34,7 @@
 #include <vector>
 
 namespace mpqc {
-namespace basis {
+namespace TA{
     namespace cluster {
         // A wrapper around sc::Atom which also knows the atoms index in the
         // molecule.
@@ -142,7 +142,7 @@ namespace basis {
         std::vector<Atom> atoms_;
     }; // KCluster
 
-} // namespace basis
+} // namespace TA
 } // namespace mpqc
 
 

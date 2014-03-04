@@ -40,9 +40,7 @@
 #include "kcluster.hpp"
 
 namespace mpqc{
-namespace basis{
-
-    namespace TA = TiledArray;
+namespace TA{
 
     /**
      * Determines the clustering of shells based on k-means clustering.
@@ -69,6 +67,9 @@ namespace basis{
         {
             // Get the molecule.
             sc::Ref<sc::Molecule> mol = basis->molecule();
+            com_[0] = mol->center_of_mass()[0];
+            com_[1] = mol->center_of_mass()[1];
+            com_[2] = mol->center_of_mass()[2];
 
             // Get the Atoms and their index out of the molecule for the clusters.
             for(auto i = 0; i < mol->natom(); ++i){
@@ -113,9 +114,37 @@ namespace basis{
          * Determines initial guess for clusters.
          */
         void init_clusters(){
-            // Sort atoms in molecule by mass
-            std::sort(atoms_.begin(), atoms_.end(),
-                [](const Atom &a, const Atom &b){return a.mass() > b.mass();});
+            // Sort atoms in molecule by distance from COM such that 1. Closest
+            // . . . N. Farthest.  If two atoms are equidistant then sort based
+            // on x, then y, and finally z.
+            auto ordering = [&](const Atom &a, const Atom &b){
+                // Get position vector for each atom.
+                const Vector3 va = Eigen::Map<const Vector3>(a.r(),3);
+                const Vector3 vb = Eigen::Map<const Vector3>(b.r(),3);
+
+                // Find distance from center of mass for each atom
+                double da = Vector3(va - com_).norm();
+                double db = Vector3(vb - com_).norm();
+
+                // Begin to check coordinates
+                if(da != db) { // Check not equidistant
+                    return ((da < db) ? true : false);
+                }
+                else if(va[0] != vb[0]){ // Check x isn't equidistant
+                    return ((va[0] < vb[0]) ? true : false);
+                }
+                else if(va[0] != vb[0]){ // Check y isn't equidistant
+                    return ((va[0] < vb[0]) ? true : false);
+                }
+                else if(va[0] != vb[0]){ // Check z isn't equidistant
+                    return ((va[0] < vb[0]) ? true : false);
+                }
+                else {
+                    return false;
+                }
+            };
+
+            std::sort(atoms_.begin(), atoms_.end(),ordering);
 
             // Initialize the kcluster guess at the position of the heaviest atoms.
             for(auto i = 0; i < nclusters_; ++i){
@@ -229,11 +258,12 @@ namespace basis{
     private:
         std::size_t nclusters_ = 0;
         std::vector<Atom> atoms_;
+        Vector3 com_{0,0,0};
         std::vector<KCluster> clusters_;
         sc::Ref<sc::GaussianBasisSet> basis_;
     };
 
-} // namespace basis
+} // namespace TA
 } // namespace mpqc
 
 #endif /* CHEMISTRY_QC_BASIS_SHELLORDER_HPP */

@@ -52,11 +52,17 @@ IF(MPQC_UNITTEST)
   
   target_link_libraries( btest chemistry )
   
-  set_property(SOURCE tiledbasisset_test.cc PROPERTY COMPILE_DEFINITIONS
+  set_property(SOURCE tiledbasisset_test.cpp PROPERTY COMPILE_DEFINITIONS
     SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
   add_executable(tiledbasisset_test tiledbasisset_test.cpp $<TARGET_OBJECTS:basis>)
   add_test(tiledbasisset_test tiledbasisset_test)
   
   target_link_libraries( tiledbasisset_test chemistry )
+
+  set_property(SOURCE shellorder_test.cpp PROPERTY COMPILE_DEFINITIONS
+    SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(shellorder_test shellorder_test.cpp $<TARGET_OBJECTS:basis>)
+  
+  target_link_libraries( shellorder_test chemistry )
   
 endif()

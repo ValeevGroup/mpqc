@@ -25,7 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include "tiledbasisset.hpp"
+#include <chemistry/qc/basis/tiledbasisset.hpp>
 #include <Eigen/Dense>
 #include <vector>
 #include <string>
@@ -52,7 +52,7 @@ TiledBasisSet::TiledBasisSet(const sc::Ref<sc::KeyVal> &keyval):
         }
     }
 
-    basis::ShellOrder ordering(basis);
+    ShellOrder ordering(basis);
     std::vector<Shell> shells = ordering.ordered_shells(ntiles_);
     SRange_ = ordering.shell_ranges();
 
@@ -67,7 +67,7 @@ TiledBasisSet::TiledBasisSet(const sc::Ref<sc::GaussianBasisSet>& bs,
                 ntiles_(ntiles),
                 SRange_()
 {
-  basis::ShellOrder ordering(bs);
+  ShellOrder ordering(bs);
   std::vector<Shell> shells = ordering.ordered_shells(ntiles_);
   SRange_ = ordering.shell_ranges();
 

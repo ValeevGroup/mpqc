@@ -9,6 +9,7 @@ SET(ccfiles
   cadf/cadfclhf.cc
   cadf/statistics.cc
   cadf/get_ints.cc
+  cadf/init.cc
   cadf/decomp.cc
   cadf/coefficients.cc
   cadf/compute_j.cc

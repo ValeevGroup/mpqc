@@ -131,11 +131,10 @@ CADFCLHF::compute_coefficients()
   //---------------------------------------------------------------------------------------//
   // reset the iteration over local pairs
   local_pairs_spot_ = 0;
-  const int nthread = threadgrp_->nthread();
   {
     boost::thread_group compute_threads;
     // Loop over number of threads
-    for(int ithr = 0; ithr < nthread; ++ithr) {
+    for(int ithr = 0; ithr < nthread_; ++ithr) {
       // ...and create each thread that computes pairs
       compute_threads.create_thread([&,ithr](){
         /*-----------------------------------------------------*/
@@ -301,10 +300,10 @@ CADFCLHF::compute_coefficients()
   /*=======================================================================================*/
   /* Debugging output                                     		                        {{{1 */ #if 1 // begin fold
   if(xml_debug_) {
-    begin_xml_context(
-        "df_coefficients",
-        "coefficients.xml"
-    );
+    //begin_xml_context(
+    //    "df_coefficients",
+    //    "compute_.xml"
+    //);
     for(auto mu : function_range(obs, dfbs_)){
       for(auto nu : function_range(obs, dfbs_, mu)) {
         IntPair mn(mu, nu);
@@ -329,7 +328,7 @@ CADFCLHF::compute_coefficients()
         );
       }
     }
-    end_xml_context("df_coefficients");
+    //end_xml_context("df_coefficients");
   }
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
@@ -348,7 +347,6 @@ CADFCLHF::compute_coefficients()
   }
   if(do_linK_) {
     for(auto lsh : shell_range(obs)) {
-      out_assert(L_schwarz[lsh].size(), >, 0);
       for(auto ksh : L_schwarz[lsh]) {
         double Ct = 0.0;
         //----------------------------------------//
@@ -397,13 +395,13 @@ CADFCLHF::compute_coefficients()
       } // end loop over ksh
     } // end loop over lsh
     #if !LINK_SORTED_INSERTION
-    do_threaded(nthread, [&](int ithr){
+    do_threaded(nthread_, [&](int ithr){
       auto L_coefs_iter = L_coefs.begin();
       const auto& L_coefs_end = L_coefs.end();
       L_coefs_iter.advance(ithr);
       while(L_coefs_iter != L_coefs_end) {
         L_coefs_iter->second.sort();
-        L_coefs_iter.advance(nthread);
+        L_coefs_iter.advance(nthread_);
       }
     });
     #endif

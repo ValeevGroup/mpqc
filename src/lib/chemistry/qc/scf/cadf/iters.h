@@ -53,17 +53,12 @@
 #include <util/misc/thread_timer.h>
 #include <util/misc/iterators.h>
 #include <chemistry/qc/scf/clhf.h>
+#include "macros.h"
 
-#define DEFAULT_TARGET_BLOCK_SIZE 10000  // functions
+#define DEFAULT_TARGET_BLOCK_SIZE 10000 // functions
 
 namespace sc {
 
-#define DUMP(expr) std::cout << #expr << " = " << (expr) << std::endl;
-#define DUMP2(expr1, expr2) std::cout << #expr1 << " = " << (expr1) << ", " << #expr2 << " = " << (expr2) << std::endl;
-#define DUMP3(expr1, expr2, expr3) std::cout << #expr1 << " = " << (expr1) << ", " << #expr2 << " = " << (expr2) << ", " << #expr3 << " = " << (expr3) << std::endl;
-#define DUMP4(expr1, expr2, expr3, expr4) std::cout << #expr1 << " = " << (expr1) << ", " << #expr2 << " = " << (expr2) << ", " << #expr3 << " = " << (expr3) << ", " << #expr4 << " = " << (expr4) << std::endl;
-#define DUMP5(expr1, expr2, expr3, expr4, expr5) std::cout << #expr1 << " = " << (expr1) << ", " << #expr2 << " = " << (expr2) << ", " << #expr3 << " = " << (expr3) << ", " << #expr4 << " = " << (expr4) << ", " << #expr5 << " = " << (expr5) << std::endl;
-#define out_assert(a, op, b) assert(a op b || ((std::cout << "Failed assertion output: " << #a << " ( = " << a << ") " << #op << " " << #b <<  " ( = " << b << ")" << std::endl), false))
 
 enum {
   NotAssigned = -998,
@@ -177,6 +172,8 @@ struct ShellData : public BasisElementData {
     int atom_last_function = NotAssigned;
     int atom_last_shell = NotAssigned;
     int last_function = NotAssigned;
+    int am = NotAssigned;
+    int ncontraction = NotAssigned;
 
     // Used when an auxiliary basis is set in the parent ShellIter.  Otherwise, set to -1
     int atom_dfshoff = NotAssigned;
@@ -201,6 +198,10 @@ struct ShellData : public BasisElementData {
       return basis->nshell();
     }
 
+    bool is_generally_contracted() {
+      return ncontraction > 1;
+    }
+
   protected:
 
     void init(){
@@ -210,10 +211,10 @@ struct ShellData : public BasisElementData {
       if(index == NotAssigned || index == basis->nshell()) return;
       if(index >= basis->nshell() || index < 0) return;
 
-      //out_assert(index, <, basis->nshell());
-      //out_assert(index, >=, 0);
-
-      nbf = basis->shell(index).nfunction(); 
+      const auto& shell = basis->shell(index);
+      nbf = shell.nfunction();
+      am = shell.am(0);
+      ncontraction = shell.ncontraction();
       bfoff = basis->shell_to_function(index); 
       center = basis->shell_to_center(index); 
       atom_shoff = basis->shell_on_center(center, 0);
@@ -1124,7 +1125,7 @@ struct ShellIndexWithValue{
     int index;
     mutable double value;
 
-    ShellIndexWithValue() : index(NotAssigned) { }
+    ShellIndexWithValue() = default;
 
     ShellIndexWithValue(int index)
       : index(index), value(0.0)
@@ -1179,8 +1180,8 @@ class OrderedShellList {
 
   private:
 
-    boost::mutex get_next_mtx_;
-    boost::mutex insert_mtx_;
+    // TODO Make this a shared mutex
+    mutable std::mutex insert_mtx_;
 
     index_list indices_;
     index_set idx_set_;
@@ -1216,7 +1217,7 @@ class OrderedShellList {
       assert(dfbasis_ == 0 || ish.dfbasis == dfbasis_);
       if(dfbasis_ == 0) dfbasis_ = ish.dfbasis;
       //----------------------------------------//
-      boost::lock_guard<boost::mutex> lg(insert_mtx_);
+      std::lock_guard<std::mutex> lg(insert_mtx_);
       sorted_ = false;
       ShellIndexWithValue insert_val(ish, value);
       const auto& found = idx_set_.find(insert_val);
@@ -1229,12 +1230,23 @@ class OrderedShellList {
       }
     }
 
+    void set_basis(GaussianBasisSet* basis) { basis_ = basis; }
+    void set_dfbasis(GaussianBasisSet* dfbasis) { dfbasis_ = dfbasis; }
+
+    size_t size() const {
+      if(sorted_) return indices_.size();
+      else return idx_set_.size();
+    }
+
     void set_sort_by_value(bool new_srt=true) {
-      sort_by_value_ = new_srt;
-      sorted_ = false;
+      if(new_srt != sort_by_value_) {
+        sort_by_value_ = new_srt;
+        sorted_ = false;
+      }
     }
 
     double value_for_index(int index) {
+      std::lock_guard<std::mutex> lg(insert_mtx_);
       ShellIndexWithValue find_val(index);
       const auto& found = idx_set_.find(find_val);
       if(found != idx_set_.end()) {
@@ -1245,12 +1257,15 @@ class OrderedShellList {
       }
     }
 
-    void sort() {
-      std::copy(idx_set_.begin(), idx_set_.end(), std::back_inserter(indices_));
+    void sort(bool transfer_idx_set = true) {
+      std::lock_guard<std::mutex> lg(insert_mtx_);
+      if(transfer_idx_set) {
+        std::copy(idx_set_.begin(), idx_set_.end(), std::back_inserter(indices_));
+      }
       if(sort_by_value_) {
         std::sort(indices_.begin(), indices_.end(),
             [](const ShellIndexWithValue& a, const ShellIndexWithValue& b){
-              return a.value > b.value;
+              return a.value > b.value or (a.value == b.value and a.index < b.index);
             }
         );
       }
@@ -1264,12 +1279,22 @@ class OrderedShellList {
       sorted_ = true;
     }
 
+    void acquire_and_sort(
+        ShellIndexWithValue* new_data,
+        size_t n_new_data
+    )
+    {
+      assert(size() == 0);
+      std::copy(new_data, new_data + n_new_data, std::back_inserter(indices_));
+      sort(false);
+    }
+
     iterator begin() const
     {
       assert(sorted_);
       return iterator(
           basis_, dfbasis_,
-          indices_.cbegin()
+          index_begin()
       );
     }
 
@@ -1284,7 +1309,7 @@ class OrderedShellList {
       assert(sorted_);
       return iterator(
           basis_, dfbasis_,
-          indices_.cend()
+          index_end()
       );
     }
 
@@ -1294,10 +1319,14 @@ class OrderedShellList {
       return indices_.cend();
     }
 
-    auto size() -> decltype(indices_.size())
-    {
-      assert(sorted_);
-      return indices_.size();
+    const index_list& unsorted_indices() {
+      std::lock_guard<std::mutex> lg(insert_mtx_);
+      assert(!sorted_);
+      if(indices_.size() != idx_set_.size()) {
+        indices_.clear();
+        std::copy(idx_set_.begin(), idx_set_.end(), std::back_inserter(indices_));
+      }
+      return indices_;
     }
 
     void clear()

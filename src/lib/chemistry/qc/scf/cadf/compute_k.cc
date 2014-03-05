@@ -73,8 +73,14 @@ double CADFCLHF::get_R(
 {
   double rv = (pair_centers_.at({(int)ish, (int)jsh}) - centers_[Xsh.center]).norm();
   if(use_extents_) {
-    rv -= pair_extents_.at({(int)ish, (int)jsh});
-    rv -= df_extents_[(int)Xsh];
+    const double ext_a = pair_extents_.at({(int)ish, (int)jsh});
+    const double ext_b = df_extents_[(int)Xsh];
+    if(subtract_extents_) {
+      rv -= ext_a + ext_b;
+    }
+    else if(ext_a + ext_b >= rv){
+      rv = 1.0; // Don't do distance screening
+    }
   }
   if(rv < 1.0) {
     rv = 1.0;
@@ -92,15 +98,14 @@ CADFCLHF::compute_K()
   //----------------------------------------//
   // Convenience variables
   Timer timer("compute K");
-  MessageGrp& msg = *scf_grp_;
-  const int nthread = threadgrp_->nthread();
-  const int me = msg.me();
-  const int n_node = msg.n();
+  const int me = scf_grp_->me();
+  const int n_node = scf_grp_->n();
   const Ref<GaussianBasisSet>& obs = gbs_;
   GaussianBasisSet* obsptr = gbs_;
   GaussianBasisSet* dfbsptr = dfbs_;
   const int nbf = obs->nbasis();
   const int dfnbf = dfbs_->nbasis();
+
   //----------------------------------------//
   // Get the density in an Eigen::Map form
   double *D_ptr = allocate<double>(nbf*nbf);
@@ -152,8 +157,7 @@ CADFCLHF::compute_K()
   /*=======================================================================================*/
   /* Make the CADF-LinK lists                                                         {{{1 */ #if 1 //latex `\label{sc:link}`
 
-  // local functions used later also
-
+  std::vector<std::tuple<int, int, int>> L_3_keys;
 
   // Now make the linK lists if we're doing linK
   if(do_linK_){
@@ -164,8 +168,8 @@ CADFCLHF::compute_K()
     L_3.clear();
     //============================================================================//
     Eigen::MatrixXd D_frob(obs->nshell(), obs->nshell());
-    do_threaded(nthread, [&](int ithr){
-      for(int lsh_index = ithr; lsh_index < obs->nshell(); lsh_index += nthread) {           //latex `\label{sc:link:ld}`
+    do_threaded(nthread_, [&](int ithr){
+      for(int lsh_index = ithr; lsh_index < obs->nshell(); lsh_index += nthread_) {           //latex `\label{sc:link:ld}`
         ShellData lsh(lsh_index, obs, dfbs_);
         for(auto&& jsh : shell_range(obs)) {
           double dnorm = D.block(lsh.bfoff, jsh.bfoff, lsh.nbf, jsh.nbf).norm();
@@ -227,80 +231,301 @@ CADFCLHF::compute_K()
       epsilon_dist = pow(distance_screening_thresh_, full_screening_expon_);
     }
 
-    // TODO optimize use of node-local integrals (or just give up on storing integrals)
-    do_threaded(nthread, [&](int ithr){
+    do_threaded(nthread_, [&](int ithr){
 
-      for(int jsh_index = ithr; jsh_index < obs->nshell(); jsh_index += nthread) {
-        ShellData jsh(jsh_index, obs, dfbs_);
-        for(auto&& Xsh : L_DC[jsh]) {
-          const double pf = Xsh.value;                                                       //latex `\label{sc:link:pf}`
-          const double eps_prime = epsilon / pf;
-          const double eps_prime_dist = epsilon_dist / pf;
-          bool jsh_added = false;
-          for(auto&& ish : L_schwarz[jsh]) {
+      //for(int jsh_index = ithr; jsh_index < obs->nshell(); jsh_index += nthread_) {
+      //  ShellData jsh(jsh_index, gbs_, dfbs_);
 
-            double dist_factor = get_distance_factor(ish, jsh, Xsh);
+      //  auto& L_sch_jsh = L_schwarz[jsh];
 
-            if(ish.value > eps_prime) {
-              jsh_added = true;
-              if(!linK_use_distance_ or ish.value * dist_factor > eps_prime_dist) {
-                L_3[{ish, Xsh}].insert(jsh,
-                    ish.value * dist_factor * schwarz_df_[Xsh]
-                );
+      //  for(auto Xsh : L_DC[jsh]) {
+      //for(auto&& jshXsh :
+      //    thread_node_parallel_range(
+      //    dependent_product_range(
+      //        shell_range(gbs_, dfbs_),
+      //        std::function<OrderedShellList&(int)>(
+      //          [this](int jsh) -> OrderedShellList& { return L_DC[jsh]; }
+      //        )
+      //    ),
+      //    1, 0, nthread_, ithr
+      //    //n_node, me, nthread_, ithr
+      //))
 
-                if(print_screening_stats_) {
-                  ++iter_stats_->K_3c_needed;
-                  iter_stats_->K_3c_needed_fxn += ish.nbf * jsh.nbf * Xsh.nbf;
-                }
+#define NEW_LINK 1
+#if NEW_LINK
+      int thr_offset = me*nthread_ + ithr;
+      int increment = n_node*nthread_;
 
-              }
-              else if(print_screening_stats_ and linK_use_distance_) {
-                ++iter_stats_->K_3c_dist_screened;
-                iter_stats_->K_3c_dist_screened_fxn += ish.nbf * jsh.nbf * Xsh.nbf;
+      //int thr_offset = ithr;
+      //int increment = nthread_;
+
+      auto jsh_iter = shell_range(gbs_, dfbs_).begin();
+      const auto& jsh_end = shell_range(gbs_, dfbs_).end();
+      auto Xsh_iter = L_DC[*jsh_iter].begin();
+      bool Xsh_done = false;
+      const auto& advance_iters = [this, &Xsh_done, &jsh_end](
+          int amount,
+          decltype(jsh_iter)& jsh_it,
+          decltype(Xsh_iter)& Xsh_it
+      ) -> bool {
+        int incr_remain = amount;
+        const auto& curr_end = L_DC[*jsh_it].end();
+        int nremain = std::distance(Xsh_it, curr_end);
+        // This might be inefficient if the shell iterators are not random access?
+        if(Xsh_done) {
+          if(nremain > amount) {
+            // Skip to the last one we would have done
+            nremain = nremain % amount;
+          }
+          // Otherwise, we're moving on already anyway
+          Xsh_done = false;
+        }
+        bool jsh_changed = false;
+        while(nremain <= incr_remain) {
+          ++jsh_it;
+          jsh_changed = true;
+          if(jsh_it == jsh_end) break;
+          incr_remain -= nremain;
+          nremain = L_DC[*jsh_it].size();
+        }
+        if(jsh_it != jsh_end) {
+          if(jsh_changed) Xsh_it = L_DC[*jsh_it].begin();
+          std::advance(Xsh_it, incr_remain);
+          return true;
+        }
+        else {
+          return false;
+        }
+      };
+
+      int advance_size = thr_offset;
+
+      while(advance_iters(advance_size, jsh_iter, Xsh_iter)) {
+        advance_size = increment;
+        const auto& jsh = *jsh_iter;
+        const auto& Xsh = *Xsh_iter;
+#else
+      for(int jsh_index = ithr; jsh_index < obs->nshell(); jsh_index += nthread_) {
+        ShellData jsh(jsh_index, gbs_, dfbs_);
+        for(auto Xsh : L_DC[jsh]) {
+#endif
+
+        auto& L_sch_jsh = L_schwarz[jsh];
+
+        const double pf = Xsh.value;                                                       //latex `\label{sc:link:pf}`
+        const double eps_prime = epsilon / pf;
+        const double eps_prime_dist = epsilon_dist / pf;
+        const double Xsh_schwarz = schwarz_df_[Xsh];
+        bool jsh_added = false;
+        for(auto ish : L_sch_jsh) {
+
+          double dist_factor = get_distance_factor(ish, jsh, Xsh);
+          assert(ish.value == schwarz_frob_(ish, jsh));
+
+          if(ish.value > eps_prime) {
+            jsh_added = true;
+            if(!linK_use_distance_ or ish.value * dist_factor > eps_prime_dist) {
+              L_3[{ish, Xsh}].insert(jsh,
+                  ish.value * dist_factor * Xsh_schwarz
+              );
+
+              if(print_screening_stats_) {
+                ++iter_stats_->K_3c_needed;
+                iter_stats_->K_3c_needed_fxn += ish.nbf * jsh.nbf * Xsh.nbf;
               }
 
             }
-            else {
-              break;
+            else if(print_screening_stats_ and linK_use_distance_) {
+              ++iter_stats_->K_3c_dist_screened;
+              iter_stats_->K_3c_dist_screened_fxn += ish.nbf * jsh.nbf * Xsh.nbf;
             }
 
-          } // end loop over ish
-          if(not jsh_added) break;
+          }
+          else {
+            break;
+          }
 
-        } // end loop over Xsh
+        } // end loop over ish
+        if(not jsh_added){
+#if NEW_LINK
+          Xsh_done = true;
+#else
+          break;
+#endif
+        }
 
-      } // end loop over jsh_index
+      }
+#if !NEW_LINK
+      }
+#endif
 
     });
-    timer.exit("build L_3");
-    do_threaded(nthread, [&](int ithr){
+    timer.change("distribute L_3");
+
+    if(n_node > 1) {
+      std::vector<std::tuple<int, int, int, int>> my_L_3_keys;
+      for(auto&& L_3_list : L_3) {
+        my_L_3_keys.emplace_back(
+          me,
+          L_3_list.first.first,
+          L_3_list.first.second,
+          L_3_list.second.size()
+        );
+      }
+
+      // Get the number of L3 lists per node
+      int n_l3_per_node[n_node];
+      int ones[n_node];
+      std::fill_n(ones, n_node, 1*sizeof(int));
+      int L3size = L_3.size();
+      scf_grp_->raw_collect(&L3size, (const int*)&ones, &n_l3_per_node);
+      int total_n_l3 = 0;
+      for(int i = 0; i < n_node; total_n_l3 += n_l3_per_node[i++]);
+
+      // Now get all of the (ish, Xsh, size) lists
+      int l3_idxs_sizes[total_n_l3*4];
+      for(int i = 0; i < n_node; ++i) {
+        n_l3_per_node[i] = 4*sizeof(int)*n_l3_per_node[i];
+      }
+      scf_grp_->raw_collect(my_L_3_keys.data(), (const int*)&n_l3_per_node, &l3_idxs_sizes);
+
+      // Extract the size of each list and sum
+      std::map<std::pair<int, int>, int> L3_total_sizes;
+      std::map<std::pair<int, int>, std::vector<int>> L3_node_sizes;
+      for(int i = 0; i < total_n_l3; ++i) {
+        const int node_src = l3_idxs_sizes[4*i];
+        const int ish = l3_idxs_sizes[4*i+1];
+        const int Xsh = l3_idxs_sizes[4*i+2];
+        const int njsh = l3_idxs_sizes[4*i+3];
+        L3_total_sizes[{ish, Xsh}] += njsh;
+        if(L3_node_sizes.find({ish, Xsh}) == L3_node_sizes.end()) {
+          L3_node_sizes.emplace(
+            std::piecewise_construct,
+            std::forward_as_tuple(ish, Xsh),
+            std::forward_as_tuple(n_node)
+          );
+          assert((L3_node_sizes[{ish, Xsh}].size() == n_node));
+        }
+        out_assert(node_src, <=, n_node);
+        L3_node_sizes[{ish, Xsh}][node_src] = njsh * sizeof(ShellIndexWithValue);
+      }
+
+      for(auto&& pair : L3_total_sizes) {
+        L_3_keys.emplace_back(
+            pair.first.first,
+            pair.first.second,
+            pair.second
+        );
+      }
+
+      std::sort(L_3_keys.begin(), L_3_keys.end(),
+          [](const std::tuple<int, int, int>& a, const std::tuple<int, int, int>& b) {
+            int isha, Xsha, sizea, ishb, Xshb, sizeb;
+            std::tie(isha, Xsha, sizea) = a;
+            std::tie(ishb, Xshb, sizeb) = b;
+            if(sizea > sizeb) return true;
+            else if(sizea == sizeb) {
+              if(isha < ishb) return true;
+              else if(isha == ishb) return Xsha < Xshb;
+              else return false;
+            }
+            else return false;
+          }
+      );
+
+      // TODO reduce latency penalty here
+      for(auto&& L_3_key : L_3_keys) {
+        int ish, Xsh, size;
+        std::tie(ish, Xsh, size) = L_3_key;
+        auto& my_L3_part = L_3[{ish, Xsh}];
+        ShellIndexWithValue full_list[size];
+        const auto& unsrt = my_L3_part.unsorted_indices();
+        scf_grp_->raw_collect(
+            unsrt.data(),
+            (const int*)L3_node_sizes[{ish, Xsh}].data(),
+            &(full_list[0])
+        );
+        my_L3_part.clear();
+        my_L3_part.acquire_and_sort(&(full_list[0]), size);
+        my_L3_part.set_basis(gbs_, dfbs_);
+      }
+    }
+    else {
+      for(auto&& pair : L_3) {
+        L_3_keys.emplace_back(
+            pair.first.first,
+            pair.first.second,
+            pair.second.size()
+        );
+      }
+    }
+
+    do_threaded(nthread_, [&](int ithr){
       auto L_3_iter = L_3.begin();
       const auto& L_3_end = L_3.end();
       L_3_iter.advance(ithr);
       while(L_3_iter != L_3_end) {
         if(not linK_block_rho_) L_3_iter->second.set_sort_by_value(false);
         L_3_iter->second.sort();
-        L_3_iter.advance(nthread);
+        L_3_iter.advance(nthread_);
       }
     });                                                                                      //latex `\label{sc:link:l3:end}`
+
+    timer.exit("distribute L_3");
+
     timer.exit("LinK lists");
+
   } // end if do_linK_
 
   /*****************************************************************************************/ #endif //1}}} //latex `\label{sc:link:end}`
   /*=======================================================================================*/
   /* Loop over local shell pairs for three body contributions                         {{{1 */ #if 1 //latex `\label{sc:k3b:begin}`
+
   {
+
     Timer timer("three body contributions");
-    boost::mutex tmp_mutex, L_3_mutex;
-    auto L_3_key_iter = L_3.begin();
-    L_3_key_iter.advance(scf_grp_->me());                                                    //latex `\label{sc:k3b:iterset}`
-    const int n_node = scf_grp_->n();
+    boost::mutex tmp_mutex;
+    std::mutex L_3_mutex;
+    auto L_3_key_iter = L_3_keys.begin();
+    L_3_key_iter += me;                                                                       //latex `\label{sc:k3b:iterset}`
     boost::thread_group compute_threads;
     // reset the iteration over local pairs
     local_pairs_spot_ = 0;
     // Loop over number of threads
-    MultiThreadTimer mt_timer("threaded part", nthread);
-    for(int ithr = 0; ithr < nthread; ++ithr) {
+    MultiThreadTimer mt_timer("threaded part", nthread_);
+    auto get_ish_Xblk_3 = [&](ShellData& ish, ShellBlockData<>& Xblk) -> bool {                                                //latex `\label{sc:k3b:getiX}`
+      if(do_linK_) {
+        std::lock_guard<std::mutex> lg(L_3_mutex);
+        if(L_3_key_iter == L_3_keys.end()) {
+          return false;
+        }
+        else {
+
+          int ishidx, Xshidx, list_size;
+          std::tie(ishidx, Xshidx, list_size) = *L_3_key_iter;
+          ish = ShellData(ishidx, gbs_, dfbs_);
+          Xblk = ShellBlockData<>(ShellData(Xshidx, dfbs_, gbs_));
+          L_3_key_iter += std::min(
+              L_3_keys.end() - L_3_key_iter,
+              std::iterator_traits<decltype(L_3_key_iter)>::difference_type(n_node)
+          );
+          return true;
+        }
+      }
+      else {
+        int spot = local_pairs_spot_++;
+        if(spot < local_pairs_k_[SignificantPairs].size()){
+          auto& sig_pair = local_pairs_k_[SignificantPairs][spot];
+          ish = ShellData(sig_pair.first, gbs_, dfbs_);
+          Xblk = sig_pair.second;
+          return true;
+        }
+        else{
+          return false;
+        }
+      }
+    };                                                                                   //latex `\label{sc:k3b:getiXend}`
+    for(int ithr = 0; ithr < nthread_; ++ithr) {
       // ...and create each thread that computes pairs
       compute_threads.create_thread([&,ithr](){                                              //latex `\label{sc:k3b:thrpatend}`
 
@@ -310,41 +535,14 @@ CADFCLHF::compute_K()
         ShellData ish;
         ShellBlockData<> Xblk;
         //----------------------------------------//                                         //latex `\label{sc:k3b:thrvars}`
-        auto get_ish_Xblk_3 = [&]() -> bool {                                                //latex `\label{sc:k3b:getiX}`
-          if(do_linK_) {
-            boost::lock_guard<boost::mutex> lg(L_3_mutex);
-            if(L_3_key_iter == L_3.end()) {
-              return false;
-            }
-            else {
-              auto& pair = L_3_key_iter->first;
-              L_3_key_iter.advance(n_node);
-              ish = ShellData(pair.first, gbs_, dfbs_);
-              Xblk = ShellBlockData<>(ShellData(pair.second, dfbs_, gbs_));
-              return true;
-            }
-          }
-          else {
-            int spot = local_pairs_spot_++;
-            if(spot < local_pairs_k_[SignificantPairs].size()){
-              auto& sig_pair = local_pairs_k_[SignificantPairs][spot];
-              ish = ShellData(sig_pair.first, gbs_, dfbs_);
-              Xblk = sig_pair.second;
-              return true;
-            }
-            else{
-              return false;
-            }
-          }
-        };                                                                                   //latex `\label{sc:k3b:getiXend}`
         //----------------------------------------//
-        while(get_ish_Xblk_3()) {                                                            //latex `\label{sc:k3b:while}`
+        while(get_ish_Xblk_3(ish, Xblk)) {                                                            //latex `\label{sc:k3b:while}`
           /*-----------------------------------------------------*/
           /* Compute B intermediate                         {{{2 */ #if 2 // begin fold      //latex `\label{sc:k3b:b}`
           mt_timer.enter("compute B", ithr);
           auto ints_timer = mt_timer.get_subtimer("compute ints", ithr);
-          auto contract_timer = mt_timer.get_subtimer("contract", ithr);
           auto k2_part_timer = mt_timer.get_subtimer("k2 part", ithr);
+          auto contract_timer = mt_timer.get_subtimer("contract", ithr);
 
           ColMatrix B_ish(ish.nbf * Xblk.nbf, nbf);
           B_ish = ColMatrix::Zero(ish.nbf * Xblk.nbf, nbf);
@@ -472,6 +670,12 @@ CADFCLHF::compute_K()
                       );
                       iter_stats_->int_distances.mine(ithr).push_back(
                           get_R(ish, jsh, Xsh)
+                      );
+                      iter_stats_->int_indices.mine(ithr).push_back(
+                          {ish, jsh, Xsh}
+                      );
+                      iter_stats_->int_ams.mine(ithr).push_back(
+                          {ish.am, jsh.am, Xsh.am}
                       );
                     }
                   }
@@ -664,8 +868,8 @@ CADFCLHF::compute_K()
     // reset the iteration over local pairs
     local_pairs_spot_ = 0;
     // Loop over number of threads
-    MultiThreadTimer mt_timer("threaded part", nthread);
-    for(int ithr = 0; ithr < nthread; ++ithr) {
+    MultiThreadTimer mt_timer("threaded part", nthread_);
+    for(int ithr = 0; ithr < nthread_; ++ithr) {
       // ...and create each thread that computes pairs
       compute_threads.create_thread([&,ithr](){
 
@@ -796,7 +1000,7 @@ CADFCLHF::compute_K()
   /*=======================================================================================*/
   /* Global sum K                                         		                        {{{1 */ #if 1 //latex `\label{sc:kglobalsum}`
   //----------------------------------------//
-  msg.sum(Kt.data(), nbf*nbf);
+  scf_grp_->sum(Kt.data(), nbf*nbf);
   //----------------------------------------//
   // Symmetrize K
   Eigen::MatrixXd K(nbf, nbf);

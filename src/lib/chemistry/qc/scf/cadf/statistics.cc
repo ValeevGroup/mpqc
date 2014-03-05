@@ -176,6 +176,8 @@ sc::write_xml(
         writer.insert_child(child, obj.int_actual_values, "int_values");
         writer.insert_child(child, obj.int_distance_factors, "int_distance_factors");
         writer.insert_child(child, obj.int_distances, "int_distances");
+        writer.insert_child(child, obj.int_indices.merged(), "int_indices");
+        writer.insert_child(child, obj.int_ams.merged(), "int_ams");
       }
     }
   }

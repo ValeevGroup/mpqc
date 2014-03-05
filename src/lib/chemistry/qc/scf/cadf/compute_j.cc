@@ -42,7 +42,6 @@ CADFCLHF::compute_J()
   //----------------------------------------//
   // Convenience variables
   Timer timer("compute J");
-  const int nthread = threadgrp_->nthread();
   const int me = scf_grp_->me();
   const int n_node = scf_grp_->n();
   const Ref<GaussianBasisSet>& obs = gbs_;
@@ -75,7 +74,7 @@ CADFCLHF::compute_J()
     boost::mutex C_tilde_mutex;
     boost::thread_group compute_threads;
     // Loop over number of threads
-    for(int ithr = 0; ithr < nthread; ++ithr) {
+    for(int ithr = 0; ithr < nthread_; ++ithr) {
       // ...and create each thread that computes pairs
       compute_threads.create_thread([&,ithr](){
         /*-----------------------------------------------------*/
@@ -115,10 +114,12 @@ CADFCLHF::compute_J()
   //----------------------------------------//
   // Global sum C_tilde
   scf_grp_->sum(C_tilde.data(), dfnbf);
-  if(xml_debug_) {
+  if(xml_debug_ and scf_grp_->me() == 0) {
     write_as_xml("C_tilde", C_tilde);
+    //end_xml_context("compute_J"); end_xml_context("compute_fock"); assert(scf_grp_->me() != 0);
   }
   timer.exit("compute C_tilde");
+
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
   /* Form g_tilde                                          		                        {{{1 */ #if 1 // begin fold
@@ -149,7 +150,7 @@ CADFCLHF::compute_J()
     // reset the iteration over local pairs
     local_pairs_spot_ = 0;
     // Loop over number of threads
-    for(int ithr = 0; ithr < nthread; ++ithr) {
+    for(int ithr = 0; ithr < nthread_; ++ithr) {
       // ...and create each thread that computes pairs
       compute_threads.create_thread([&,ithr](){
         /*-----------------------------------------------------*/
@@ -195,7 +196,7 @@ CADFCLHF::compute_J()
   } // compute_threads is destroyed here
   //----------------------------------------//
   // Global sum d_tilde
-  scf_grp_->sum(d_tilde.data(), dfnbf);
+  scf_grp_->sum((double*)d_tilde.data(), dfnbf);
   if(xml_debug_) {
     write_as_xml("d_tilde", d_tilde);
   }
@@ -211,7 +212,7 @@ CADFCLHF::compute_J()
     // reset the iteration over local pairs
     local_pairs_spot_ = 0;
     // Loop over number of threads
-    for(int ithr = 0; ithr < nthread; ++ithr) {
+    for(int ithr = 0; ithr < nthread_; ++ithr) {
       // ...and create each thread that computes pairs
       compute_threads.create_thread([&,ithr](){
         /*-----------------------------------------------------*/
@@ -258,7 +259,7 @@ CADFCLHF::compute_J()
   /*=======================================================================================*/
   /* Global sum J                                         		                        {{{1 */ #if 1 // begin fold
   //----------------------------------------//
-  scf_grp_->sum(J.data(), nbf*nbf);
+  scf_grp_->sum((double*)J.data(), nbf*nbf);
   //----------------------------------------//
   // Fill in the upper triangle of J
   for(int mu = 0; mu < nbf; ++mu) {

@@ -30,56 +30,6 @@
 #ifndef _chemistry_qc_scf_cadfclhf_h
 #define _chemistry_qc_scf_cadfclhf_h
 
-#define M_DUMP(M) std::cout << #M << " is " << M.rows() << " x " << M.cols() << std::endl;
-
-#define M_ROW_ASSERT(M1, M2) \
-  if(M1.rows() != M2.rows()) { \
-    boost::lock_guard<boost::mutex> _tmp(debug_print_mutex); \
-    cout << "assertion failed.  Rows not equal:  M1 => " << M1.rows() << " x " << M1.cols() << ", M2 => " << M2.rows() << " x " << M2.cols() << endl; \
-    assert(false); \
-  }
-#define M_COL_ASSERT(M1, M2) \
-  if(M1.cols() != M2.cols()) { \
-    boost::lock_guard<boost::mutex> _tmp(debug_print_mutex); \
-    cout << "assertion failed. Cols not equal:  M1 => " << M1.rows() << " x " << M1.cols() << ", M2 => " << M2.rows() << " x " << M2.cols() << endl; \
-    assert(false); \
-  }
-
-#define M_PROD_CHECK(R, M1, M2) \
-  if(R.rows() != M1.rows() || R.cols() != M2.cols() || M1.cols() != M2.rows()) { \
-    boost::lock_guard<boost::mutex> _tmp(debug_print_mutex); \
-    cout << "can't perform multiplication: (" << R.rows() << " x " << R.cols() << ") = (" << M1.rows() << " x " << M1.cols() << ") * (" << M2.rows() << " x " << M2.cols() << ")" << endl; \
-    assert(false); \
-  }
-
-#define M_DOT_CHECK(M1, M2) \
-  if(1 != M1.rows() || 1 != M2.cols() || M1.cols() != M2.rows()) { \
-    boost::lock_guard<boost::mutex> _tmp(debug_print_mutex); \
-    cout << "can't perform multiplication: (" << 1 << " x " << 1 << ") = (" << M1.rows() << " x " << M1.cols() << ") * (" << M2.rows() << " x " << M2.cols() << ")" << endl; \
-    assert(false); \
-  }
-
-#define DECOMP_PRINT(D, M) \
-  {\
-    boost::lock_guard<boost::mutex> _tmp(debug_print_mutex); \
-    cout << "Decomposition:  " << D.matrixQR().rows() << " x " << D.matrixQR().cols() << ", M => " << M.rows() << " x " << M.cols() << endl; \
-  }
-
-#define M_EQ_ASSERT(M1, M2) M_ROW_ASSERT(M1, M2); M_COL_ASSERT(M1, M2);
-
-#define M_BLOCK_ASSERT(M, b1a, b1b, b2a, b2b) \
-  if(b1a < 0) { \
-    std::cout << "assertion 1 failed.  data: " << "(" << M.rows() << ", " << M.cols() << ", " << b1a << ", " << b1b << ", " << b2a << ", " << b2b << ")" << std::endl; \
-  } \
-  else if(b1b < 0) { \
-    std::cout << "assertion 2 failed.  data: " << "(" << M.rows() << ", " << M.cols() << ", " << b1a << ", " << b1b << ", " << b2a << ", " << b2b << ")" << std::endl; \
-  } \
-  else if(b1a > M.rows() - b2a) { \
-    std::cout << "assertion 3 failed.  data: " << "(" << M.rows() << ", " << M.cols() << ", " << b1a << ", " << b1b << ", " << b2a << ", " << b2b << ")" << std::endl; \
-  } \
-  else if(b1b > M.cols() - b2b) { \
-    std::cout << "assertion 4 failed.  data: " << "(" << M.rows() << ", " << M.cols() << ", " << b1a << ", " << b1b << ", " << b2a << ", " << b2b << ")" << std::endl; \
-  }
 
 // Standard library includes
 #include <atomic>
@@ -219,7 +169,9 @@ class CADFCLHF: public CLHF {
               : int_screening_values(other.int_screening_values),
                 int_actual_values(other.int_actual_values),
                 int_distance_factors(other.int_distance_factors),
-                int_distances(other.int_distances)
+                int_distances(other.int_distances),
+                int_indices(other.int_indices),
+                int_ams(other.int_ams)
             {
               K_3c_needed.store(other.K_3c_needed.load());
               K_3c_needed_fxn.store(other.K_3c_needed_fxn.load());
@@ -249,12 +201,16 @@ class CADFCLHF: public CLHF {
             ThreadReplicated<std::vector<double>> int_actual_values;
             ThreadReplicated<std::vector<double>> int_distance_factors;
             ThreadReplicated<std::vector<double>> int_distances;
+            ThreadReplicated<std::vector<std::tuple<int, int, int>>> int_indices;
+            ThreadReplicated<std::vector<std::tuple<int, int, int>>> int_ams;
 
             void set_nthread(int nthr) {
               int_screening_values.set_nthread(nthr);
               int_actual_values.set_nthread(nthr);
               int_distance_factors.set_nthread(nthr);
               int_distances.set_nthread(nthr);
+              int_indices.set_nthread(nthr);
+              int_ams.set_nthread(nthr);
             }
 
             bool is_first = false;
@@ -303,6 +259,8 @@ class CADFCLHF: public CLHF {
      * Flags and other members that basically correspond directly to KeyVal options
      */
     //@{
+    /// Number of threads to run on (defaults to threadgrp_->nthread();
+    int nthread_;
     /// The threshold for including pairs in the pair list using half of the schwarz bound
     double pair_screening_thresh_;
     /// currently unused
@@ -346,6 +304,8 @@ class CADFCLHF: public CLHF {
     bool use_extents_ = false;
     /// Use the maximum extent for contracted pairs.  Defaults to using coefficient weighted average
     bool use_max_extents_ = true;
+    /// Should we subtract the extents from the denominator, or just use an if statement to avoid non-well-separated screening?
+    bool subtract_extents_ = true;
     /// The CFMM well-separatedness thresh
     double well_separated_thresh_ = 1e-8;
     //@}
@@ -527,7 +487,9 @@ class CADFCLHF: public CLHF {
     > pair_assignments_k_;
 
     // What pairs are being evaluated on the current node?
-    std::map<PairSet, std::vector<std::pair<int, int>>> local_pairs_;
+    std::vector<std::pair<int, int>> local_pairs_all_;
+    std::vector<std::pair<int, int>> local_pairs_sig_;
+
 
     // What pairs are being evaluated on the current node?
     std::map<
@@ -718,10 +680,9 @@ CADFCLHF::ints_to_eigen_threaded(
   // non-contiguous form not implemented yet
   assert(iblk.is_contiguous());
   assert(jblk.is_contiguous());
-  const int nthread = threadgrp_->nthread();
-  do_threaded(nthread, [&](int ithr){
+  do_threaded(nthread_, [&](int ithr){
     ShellData ish, jsh;
-    for(auto pair : threaded_shell_block_pair_range(iblk, jblk, ithr, nthread)){
+    for(auto pair : threaded_shell_block_pair_range(iblk, jblk, ithr, nthread_)){
       boost::tie(ish, jsh) = pair;
       const auto& ints_ptr = ints_to_eigen(ish, jsh, ints_for_thread[ithr], int_type);
       rv->block(

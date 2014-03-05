@@ -40,6 +40,7 @@
 #include <boost/tuple/tuple.hpp>
 #include <boost/tuple/tuple_comparison.hpp>
 #include <boost/type_traits.hpp>
+#include <boost/mpl/and.hpp>
 #include <boost/utility/enable_if.hpp>
 #include <boost/range.hpp>
 #include <boost/iterator/zip_iterator.hpp>
@@ -254,7 +255,169 @@ product_range(Iterables&&... iterables)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-template<typename Iterator>
+/*
+Messy and doesn't work!
+
+template<typename Iterable1, typename Iterable2,
+  typename function_argument = typename iterable_iterator_dereference<Iterable1>::type
+>
+class dependent_pair_product_iterator
+  : public boost::iterator_facade<
+      dependent_pair_product_iterator<Iterable1, Iterable2>,
+      typename boost::tuple<
+        typename iterable_iterator<Iterable1>::type,
+        typename iterable_iterator<Iterable2>::type
+      >, // Value type
+      boost::forward_traversal_tag, // CategoryOrTraversal
+      boost::tuple<
+        typename iterable_iterator_dereference<Iterable1>::type,
+        typename iterable_iterator_dereference<Iterable2>::type
+      >  // Reference
+    >
+{
+
+  public:
+
+    typedef typename iterable_iterator_dereference<Iterable1>::type reference1;
+    typedef typename iterable_iterator_dereference<Iterable2>::type reference2;
+    typedef boost::tuple<reference1, reference2> reference;
+    typedef typename iterable_iterator<Iterable1>::type Iterator1;
+    typedef typename iterable_iterator<Iterable2>::type Iterator2;
+    typedef dependent_pair_product_iterator<Iterable1, Iterable2> self_type;
+    typedef std::function<Iterable2(function_argument)> iterable2_getter_type;
+
+  protected:
+
+    Iterable1 iterable1_;
+    Iterable2 curr_iterable2_;
+    Iterator1 spot1_;
+    Iterator2 spot2_;
+    const iterable2_getter_type& iterable2_getter_;
+
+    friend class boost::iterator_core_access;
+
+    reference dereference() const {
+      return boost::make_tuple(*spot1_, *spot2_);
+    }
+
+    void increment() {
+      ++spot2_;
+      if(spot2_ == curr_iterable2_.end()) {
+        ++spot1_;
+        if(spot1_ != iterable1_.end()) {
+          curr_iterable2_ = iterable2_getter_(*spot1_);
+          spot2_ = curr_iterable2_.begin();
+        }
+      }
+    }
+
+    template<typename Iter1, typename Iter2>
+    bool equal(dependent_pair_product_iterator<Iter1, Iter2> const& other) const
+    {
+      return spot1_ == other.spot1_ and spot2_ == other.spot2_;
+    }
+
+  public:
+
+    dependent_pair_product_iterator(
+        Iterable1&& iterable1,
+        iterable2_getter_type&& iterable2_getter
+    ) : iterable1_(iterable1),
+        iterable2_getter_(iterable2_getter),
+        spot1_(iterable1_.begin()),
+        curr_iterable2_(iterable2_getter_(*spot1_)),
+        spot2_(curr_iterable2_.begin())
+    { }
+
+    static self_type end_iterator(
+        Iterable1&& iterable1,
+        iterable2_getter_type&& iterable2_getter
+    )
+    {
+      self_type rv(iterable1, iterable2_getter);
+      rv.spot1_ = rv.iterable1_.end();
+      rv.spot1_--;
+      rv.curr_iterable2_ = rv.iterable2_getter_(*rv.spot1_);
+      rv.spot2_ = rv.curr_iterable2_.end();
+      rv.spot1_++;
+      return rv;
+    }
+
+};
+
+template<typename Iterable1, typename Iterable2Getter>
+boost::iterator_range<
+  dependent_pair_product_iterator<
+    Iterable1,
+    typename Iterable2Getter::result_type,
+    typename Iterable2Getter::argument_type
+  >
+>
+dependent_product_range(
+    Iterable1&& i1,
+    Iterable2Getter&& i2_getter
+)
+{
+  typedef typename Iterable2Getter::result_type Iterable2;
+  typedef typename Iterable2Getter::argument_type function_argument_type;
+  return boost::make_iterator_range(
+      dependent_pair_product_iterator<
+        Iterable1, Iterable2, function_argument_type
+      >(
+          std::forward<Iterable1>(i1),
+          std::forward<Iterable2Getter>(i2_getter)
+      ),
+      dependent_pair_product_iterator<
+        Iterable1, Iterable2, function_argument_type
+      >::end_iterator(
+          std::forward<Iterable1>(i1),
+          std::forward<Iterable2Getter>(i2_getter)
+      )
+  );
+}
+
+*/
+
+////////////////////////////////////////////////////////////////////////////////
+
+namespace {
+
+  // can_advance = true case
+  template<bool can_advance, typename Iterator, typename difference_type>
+  struct advance_iterator {
+    void operator()(
+        Iterator& it,
+        const difference_type& n_adv,
+        const Iterator& end_iter
+    ) const
+    {
+      it += std::min(
+          end_iter - it,
+          (typename std::iterator_traits<Iterator>::difference_type) n_adv
+      );
+    }
+  };
+
+  template<typename Iterator, typename difference_type>
+  struct advance_iterator<false, Iterator, difference_type> {
+    void operator()(
+        Iterator& it,
+        const difference_type& n_adv,
+        const Iterator& end_iter
+    ) const
+    {
+      // assume only that Iterator is incrementable
+      for(int i = 0; i < n_adv; ++i, ++it) {
+        if(it == end_iter) {
+          break;
+        }
+      }
+    }
+  };
+
+} // end of anonymous namespace
+
+template<typename Iterator, bool base_can_be_advanced=false>
 class threaded_iterator
   : public boost::iterator_adaptor<
       threaded_iterator<Iterator>,
@@ -275,14 +438,14 @@ class threaded_iterator
     int ithr_;
     int nthr_;
 
-    void increment()
-    {
-      // For now, assume only that Iterator is incrementable
-      for(int i = 0; i < nthr_; ++i, ++super_t::base_reference()) {
-        if(super_t::base() == end_iter_) {
-          break;
-        }
-      }
+    void increment() {
+      advance_iterator<
+        base_can_be_advanced,
+        Iterator,
+        decltype(nthr_)
+      >()(
+          super_t::base_reference(), nthr_, end_iter_
+      );
     }
 
   public:
@@ -290,22 +453,55 @@ class threaded_iterator
     threaded_iterator(Iterator&& iter, Iterator&& end_iter, int ithr, int nthr)
       : super_t(iter), end_iter_(end_iter), ithr_(ithr), nthr_(nthr)
     {
-      for(int i = 0; i < ithr_; ++i, ++super_t::base_reference()) {
-        if(super_t::base() == end_iter_) {
-          break;
-        }
-      }
+      advance_iterator<
+        base_can_be_advanced,
+        Iterator,
+        decltype(ithr_)
+      >()(
+          super_t::base_reference(), ithr_, end_iter_
+      );
     }
 
 };
 
-template <typename Range>
+
+
+template<typename Iterator>
+using skip_iterator = threaded_iterator<Iterator>;
+
+template <
+  typename Range,
+  bool base_can_be_advanced=false
+>
 boost::iterator_range<threaded_iterator<typename iterable_iterator<Range>::type>>
 thread_over_range(Range&& range, int ithr, int nthr)
 {
   return boost::make_iterator_range(
-      threaded_iterator<decltype(range.begin())>(range.begin(), range.end(), ithr, nthr),
-      threaded_iterator<decltype(range.begin())>(range.end(), range.end(), ithr, nthr)
+      threaded_iterator<
+        decltype(range.begin()), base_can_be_advanced
+      >(range.begin(), range.end(), ithr, nthr),
+      threaded_iterator<
+        decltype(range.begin()), base_can_be_advanced
+      >(range.end(), range.end(), ithr, nthr)
+  );
+}
+
+template <
+  typename Range,
+  bool base_can_be_advanced=false
+>
+boost::iterator_range<threaded_iterator<typename iterable_iterator<Range>::type>>
+thread_node_parallel_range(Range&& range, int n_node, int me, int nthread, int ithr)
+{
+  const int thr_offset = me*nthread + ithr;
+  const int increment = n_node*nthread;
+  return boost::make_iterator_range(
+      threaded_iterator<
+        decltype(range.begin()), base_can_be_advanced
+      >(range.begin(), range.end(), thr_offset, increment),
+      threaded_iterator<
+        decltype(range.begin()), base_can_be_advanced
+      >(range.end(), range.end(), thr_offset, increment)
   );
 }
 

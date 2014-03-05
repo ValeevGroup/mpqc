@@ -157,6 +157,7 @@ void sc::SuperpositionOfAtomicDensities::compute() {
         Ref<AssignedKeyVal> akv = new AssignedKeyVal;
         akv->assign("wfn", Ref<DescribedClass>(minbasis_wfn));
 #ifdef HAVE_LIBINT2
+#if 0
         // only Libint2 can do DF, and DF Basis sets not available for all atoms
         Ref<IntegralLibint2> intf_cast; intf_cast << intf;
         if (!intf_cast.null()) {
@@ -174,6 +175,7 @@ void sc::SuperpositionOfAtomicDensities::compute() {
             ExEnv::out0() << "Basis Def2-SV(P)/JK not available for some atoms in molecule.  Density fitting will not be used for SuperpositionOfAtomicDensities" << std::endl;
           }
         }
+#endif
 #endif
         akv->assign("df_solver", "cholesky_inv");
         // Better default for diskless systems.  If your starting guess doesn't fit in memory, you've got bigger problems

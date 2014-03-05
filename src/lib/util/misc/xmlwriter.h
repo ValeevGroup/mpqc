@@ -27,6 +27,7 @@
 
 #include <algorithm>
 #include <stack>
+#include <tuple>
 
 // boost archive iterators for base64 conversion
 #include <boost/archive/iterators/base64_from_binary.hpp>
@@ -41,6 +42,8 @@
 // boost type traits and mpl
 #include <boost/type_traits.hpp>
 #include <boost/mpl/not.hpp>
+#include <boost/mpl/or.hpp>
+#include <boost/mpl/and.hpp>
 
 // boost parameter library
 #include <boost/parameter/name.hpp>
@@ -446,6 +449,56 @@ namespace sc {
     //   the pointer 'data'
     writer.put_binary_data(child.add_child("data", ptree()), data, nouter*ninner);
     return child;
+  }
+
+  template<template<typename...> class Container, template<typename...> class TupleType, typename... NumTypes>
+  typename boost::enable_if_c<
+    boost::is_convertible<
+      Container<TupleType<NumTypes...>>,
+      std::vector<TupleType<NumTypes...>>
+    >::value
+    and
+    boost::mpl::and_<
+      boost::mpl::or_<
+        boost::is_integral<NumTypes>,
+        boost::is_floating_point<NumTypes>
+      >...
+    >::value,
+    ptree&
+  >::type
+  write_xml(
+      const Container<TupleType<NumTypes...>>& obj,
+      ptree& parent,
+      const XMLWriter& writer
+  )
+  {
+    typedef Container<TupleType<NumTypes...>> input_type;
+    typedef std::vector<TupleType<NumTypes...>> vect_type;
+
+    // Cheesy but effective way to do automatic type conversion without
+    //   unnecessary copies
+    const auto& the_function = [](
+      const vect_type& obj,
+      ptree& parent,
+      const XMLWriter& writer
+    ) -> ptree&
+    {
+      ptree* child_ptr;
+      if(writer.fold_in_class_name()) {
+        parent.put("<xmlattr>.type", "std::vector<double>");
+        child_ptr = &(parent);
+      }
+      else{
+        ptree& tmp = parent.add_child("data", ptree());
+        child_ptr = &tmp;
+      }
+      ptree& child = *child_ptr;
+      writer.put_binary_data(child, obj.data(), obj.size(), true);
+      child.put("<xmlattr>.nperdatum", sizeof...(NumTypes));
+      return child;
+    };
+
+    return the_function(obj, parent, writer);
   }
 
   ////////////////////////////////////////////////////////////////////////////////

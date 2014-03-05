@@ -161,6 +161,7 @@ int try_main(int argc, char **argv)
   opt.enroll("singles", GetLongOpt::MandatoryValue, "compute [2]_s correction; default: false", 0);
   opt.enroll("partitionH", GetLongOpt::MandatoryValue, "How to partition Hamiltonian in [2]_s; default: dyall_1", 0);
   opt.enroll("verbose", GetLongOpt::NoValue, "enable extra printing", 0);
+  opt.enroll("mpqc3", GetLongOpt::MandatoryValue, "enable MPQC3 runtime features; default: false", 0);
 
   // initialize the environment
   MPQCInit init(opt,argc,argv);
@@ -252,6 +253,10 @@ int try_main(int argc, char **argv)
   const std::string singles_str = singles_cstr?singles_cstr:"";
   const char* partition_cstr = opt.retrieve("partitionH");
   const std::string partition_str = partition_cstr?partition_cstr:"";
+  // determine if use MPQC3 runtime
+  const char* mpqc3_cstr = opt.retrieve("mpqc3");
+  const std::string mpqc3_str = mpqc3_cstr?mpqc3_cstr:"";
+
 
   ExEnv::out0() << indent << "Given resources: " << resources->sprint() << endl
       << endl;
@@ -403,6 +408,8 @@ int try_main(int argc, char **argv)
       kva->assign("cabs_singles", singles_str);
     if(not partition_str.empty())
       kva->assign("cabs_singles_h0", partition_str);
+    if(not mpqc3_str.empty())
+      kva->assign("use_mpqc3", mpqc3_str);
     Ref<KeyVal> kv = kva;
     extern_pt2r12 = new ExternPT2R12(kv);
   }

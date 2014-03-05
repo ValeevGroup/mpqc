@@ -55,6 +55,7 @@ ExternPT2R12::ExternPT2R12(const Ref<KeyVal>& kv) :
   std::string r12_str = kv->stringvalue("pt2_correction", KeyValValuestring(std::string()));
   std::string singles_str = kv->stringvalue("cabs_singles", KeyValValuestring(std::string()));
   std::string partition_str = kv->stringvalue("cabs_singles_h0", KeyValValuestring(std::string()));
+  std::string mpqc3_str = kv->stringvalue("use_mpqc3", KeyValValuestring(std::string()));
 
   Ref<OrbitalSpace> orbs = orbs_info_->orbs();
   const std::vector<unsigned int>& fzcpi = orbs_info_->fzcpi();
@@ -131,6 +132,8 @@ ExternPT2R12::ExternPT2R12(const Ref<KeyVal>& kv) :
       kva->assign("cabs_singles", singles_str);
     if(!partition_str.empty())
       kva->assign("cabs_singles_h0", partition_str);
+    if(!mpqc3_str.empty())
+      kva->assign("use_mpqc3", mpqc3_str);
     if (cabs_name_.empty() == false) {
       Ref<AssignedKeyVal> tmpkv = new AssignedKeyVal;
       tmpkv->assign("name", cabs_name_.c_str());

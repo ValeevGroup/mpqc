@@ -276,7 +276,7 @@ namespace sc {
       unsigned int nfzc_;
       bool omit_uocc_;
       bool pt2_correction_;          // for testing purposes only, set to false to skip the [2]_R12 computation
-      bool cabs_singles_;           // if set to true, then use MPQC3 runtime
+      bool cabs_singles_;
       std::string cabs_singles_h0_; // specify zeroth order H; options: 'CI'
                                      // 'dyall_1', 'dyall_2', 'complete'; '1' and '2'
                                      // in dyall_sf options
@@ -284,7 +284,9 @@ namespace sc {
                                      // in H(1).
       bool cabs_singles_coupling_; // if set to true, we include the coupling between cabs and OBS virtual orbitals. This should be preferred choice,
                                    // as explained in the paper.
-      bool use_mpqc3_;
+#if defined(HAVE_MPQC3_RUNTIME)
+      bool use_mpqc3_;   // if set to true, then use MPQC3 runtime
+#endif
       bool rotate_core_; // if set to false, when doing rasscf cabs_singles correction, don't include excitation from core orbitals to cabs orbitals in
                          // first-order Hamiltonian. (this may be used when using frozen core orbitals which
                          // are not optimized (does not satisfy Brillouin condition)). Currently, we suggest set it to 'true'

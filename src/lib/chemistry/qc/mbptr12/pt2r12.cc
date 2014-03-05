@@ -68,14 +68,8 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
   cabs_singles_ = keyval->booleanvalue("cabs_singles", KeyValValueboolean(false));
   cabs_singles_h0_ = keyval->stringvalue("cabs_singles_h0", KeyValValuestring(string("dyall_1")));
   cabs_singles_coupling_ = keyval->booleanvalue("cabs_singles_coupling", KeyValValueboolean(true));
-  use_mpqc3_ = keyval->booleanvalue("use_mpqc3",KeyValValueboolean(false));
-
-//print warning if mpqc3 is asked when don't have HAVE_MPQC3_RUNTIME
-#if not defined (HAVE_MPQC3_RUNTIME)
-  if (use_mpqc3_){
-    ExEnv::out0() << std::endl << std::endl << indent
-      << "::::Warning::::\n" << indent << "MPQC3_RUNTIME not available, will use mpqc2 code.\n \n";
-  }
+#if defined(HAVE_MPQC3_RUNTIME)
+  use_mpqc3_ = keyval->booleanvalue("use_mpqc3",KeyValValueboolean(true));
 #endif
   rotate_core_ = keyval->booleanvalue("rotate_core", KeyValValueboolean(true));
 
@@ -1336,21 +1330,17 @@ void PT2R12::compute()
   {
     MPQC_ASSERT(r12world()->r12tech()->ansatz()->projector() == R12Technology::Projector_2);
 
-// #define ENABLE_NEW_PT2R12_CODE 1
 #if defined(HAVE_MPQC3_RUNTIME)
     if (use_mpqc3_) {
       std::pair<double,double> e = energy_PT2R12_projector2_mpqc3();
       energy_pt2r12_sf = e.first;
       recomp_ref_energy = e.second;
-    }
-    else {
+    } else
+#endif
+    {
       energy_pt2r12_sf = energy_PT2R12_projector2();
       recomp_ref_energy = this->energy_recomputed_from_densities();
     }
-#else
-    energy_pt2r12_sf = energy_PT2R12_projector2();
-    recomp_ref_energy = this->energy_recomputed_from_densities();
-#endif
     energy_correction_r12 = energy_pt2r12_sf;
   }
 

@@ -1230,9 +1230,6 @@ class OrderedShellList {
       }
     }
 
-    void set_basis(GaussianBasisSet* basis) { basis_ = basis; }
-    void set_dfbasis(GaussianBasisSet* dfbasis) { dfbasis_ = dfbasis; }
-
     size_t size() const {
       if(sorted_) return indices_.size();
       else return idx_set_.size();

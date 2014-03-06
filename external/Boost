@@ -15,7 +15,7 @@ if (DEFINED BOOST)
   set(BOOST_ROOT ${BOOST})
   set(Boost_NO_SYSTEM_PATHS TRUE)
   set(Boost_DETAILED_FAILURE_MSG TRUE)
-  find_package(Boost 1.48 COMPONENTS thread system)
+  find_package(Boost 1.48 COMPONENTS thread system )
   # COMPONENTS thread ${pythonlibs} system
 
   # reset Boost_LIBRARIES

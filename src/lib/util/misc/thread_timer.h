@@ -275,16 +275,14 @@ class reentrant_time_accumulator_factory
 ////////////////////////////////////////////////////////////////////////////////
 
 class MultiThreadTimer;
+class ThreadTimer;
 class TimedRegion;
-
-namespace detail {
-}
 
 class ThreadTimer {
 
   public:
 
-    typedef std::unordered_map<std::string, ThreadTimer> section_map;
+    typedef std::map<std::string, ThreadTimer> section_map;
     typedef typename time_accumulator_factory<>::clock_type clock_type;
     typedef std::chrono::time_point<clock_type> time_type;
     typedef std::chrono::nanoseconds duration_type;
@@ -328,48 +326,18 @@ class ThreadTimer {
 
   public:
 
-    ThreadTimer() = delete;
+    //ThreadTimer() = delete;
 
     explicit ThreadTimer(int depth, bool start=true)
       : section_names_(0),
-        subtimers_(0),
+        subtimers_(),
         active_subsection_(0),
         depth_(depth)
     {
       if(start) this->start();
     }
 
-    Holdable get_subtimer(const std::string& subname, bool start=false) {
-      if(active_subsection_) {
-        return active_subsection_->get_subtimer(subname, start);
-      }
-      else {
-        ThreadTimer* rv_ptr;
-        active_subname_ = subname;
-        auto subspot = subtimers_.find(subname);
-        if(subspot != subtimers_.end()) {
-          rv_ptr = &(subspot->second);
-          if(start) {
-            active_subsection_ = rv_ptr;
-            rv_ptr->start();
-          }
-        }
-        else {
-          auto insertion_pair = subtimers_.emplace(
-              std::piecewise_construct,
-              std::forward_as_tuple(subname),
-              std::forward_as_tuple(depth_+1, start)
-          );
-          section_names_.push_back(subname);
-          assert(insertion_pair.second);
-          rv_ptr = &(insertion_pair.first->second);
-          if(start) {
-            active_subsection_ = rv_ptr;
-          }
-        }
-        return ThreadTimer::Holdable(rv_ptr, this);
-      }
-    }
+    Holdable get_subtimer(const std::string& subname, bool start=false);
 
     void enter(const std::string& subname) {
       get_subtimer(subname, true);
@@ -404,6 +372,39 @@ class ThreadTimer {
     friend class TimerHolder;
 
 };
+
+inline
+ThreadTimer::Holdable ThreadTimer::get_subtimer(const std::string& subname, bool start) {
+  if(active_subsection_) {
+    return active_subsection_->get_subtimer(subname, start);
+  }
+  else {
+    ThreadTimer* rv_ptr;
+    active_subname_ = subname;
+    auto subspot = subtimers_.find(subname);
+    if(subspot != subtimers_.end()) {
+      rv_ptr = &(subspot->second);
+      if(start) {
+        active_subsection_ = rv_ptr;
+        rv_ptr->start();
+      }
+    }
+    else {
+      auto insertion_pair = subtimers_.emplace(
+          std::piecewise_construct,
+          std::forward_as_tuple(subname),
+          std::forward_as_tuple(depth_+1, start)
+      );
+      section_names_.push_back(subname);
+      assert(insertion_pair.second);
+      rv_ptr = &(insertion_pair.first->second);
+      if(start) {
+        active_subsection_ = rv_ptr;
+      }
+    }
+    return ThreadTimer::Holdable(rv_ptr, this);
+  }
+}
 
 class TimerHolder {
 

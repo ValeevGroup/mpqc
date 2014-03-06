@@ -69,16 +69,15 @@ class XMLWriter;
 
 //============================================================================//
 
-template <typename... Args>
-void
-do_threaded(int nthread, Args... args, const std::function<void(int, Args...)>& f){
+inline void
+do_threaded(int nthread, const std::function<void(int)>& f){
   boost::thread_group compute_threads;
   // Loop over number of threads
   for(int ithr = 0; ithr < nthread; ++ithr) {
     // create each thread that runs f
     compute_threads.create_thread([&, ithr](){
       // run the work
-      f(ithr, args...);
+      f(ithr);
     });
   }
   // join the created threads

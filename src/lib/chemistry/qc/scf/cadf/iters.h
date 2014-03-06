@@ -1169,11 +1169,12 @@ class OrderedShellList {
   public:
 
     typedef std::vector<ShellIndexWithValue> index_list;
-    typedef std::unordered_set<
-        ShellIndexWithValue,
-        hash_<ShellIndexWithValue>,
-        index_equal_
-    > index_set;
+    //typedef std::unordered_set<
+    //    ShellIndexWithValue,
+    //    hash_<ShellIndexWithValue>,
+    //    index_equal_
+    //> index_set;
+    typedef std::set<ShellIndexWithValue, index_equal_> index_set;
 
     typedef index_list::const_iterator index_iterator;
     typedef basis_element_with_value_iterator<ShellDataWithValue, index_iterator> iterator;

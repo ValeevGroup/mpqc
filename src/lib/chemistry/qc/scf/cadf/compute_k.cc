@@ -672,10 +672,10 @@ CADFCLHF::compute_K()
                           get_R(ish, jsh, Xsh)
                       );
                       iter_stats_->int_indices.mine(ithr).push_back(
-                          {ish, jsh, Xsh}
+                          std::make_tuple(ish, jsh, Xsh)
                       );
                       iter_stats_->int_ams.mine(ithr).push_back(
-                          {ish.am, jsh.am, Xsh.am}
+                          std::make_tuple(ish.am, jsh.am, Xsh.am)
                       );
                     }
                   }

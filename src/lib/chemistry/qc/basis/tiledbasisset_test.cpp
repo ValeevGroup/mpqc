@@ -52,51 +52,193 @@ struct MADConfig {
     }
 };
 
-struct MolFixture {
-    MolFixture(){
-        mol = new Molecule;
-        mol->add_atom(2, 0.0, 0.0, 0.0);
-        mol->add_atom(2, 0.0, 0.0, 3.7);
-        mol->add_atom(10, 2.8, 0.0, 1.8);
-        mol->add_atom(18, 0.0, 2.8, 1.8);
-        mol->add_atom(36, 0.0, -2.8, 1.8);
-        mol->add_atom(18, -2.8, 0.0, 1.8);
-    }
-    Ref<Molecule> mol;
-};
-
 BOOST_GLOBAL_FIXTURE( MADConfig );
 
-BOOST_AUTO_TEST_CASE( tiledbasisset_constructor_test ){
-    MolFixture MF;
+BOOST_AUTO_TEST_CASE( tiledbasisset_gbs_constructor_test ){
 
-    Ref<AssignedKeyVal> akv = new AssignedKeyVal;
-    akv->assign("name", "STO-3G");
-    akv->assign("molecule", MF.mol.pointer());
-    Ref<GaussianBasisSet> bs = new GaussianBasisSet(akv);
+    Ref<Molecule> mol = new Molecule;
+    mol->add_atom(2, 0.0, 0.0, 3.7);
+    mol->add_atom(2, 0.0, 0.0, 0.0);
+    mol->add_atom(10, 2.8, 0.0, 1.8);
+    mol->add_atom(18, 0.0, 2.8, 1.8);
+    mol->add_atom(36, 0.0, -2.8, 1.8);
+    mol->add_atom(18, -2.8, 0.0, 1.8);
 
-    // Construct via gbs
-    for(size_t i = 1; i <= 6; ++i){
-        Ref<TA::TiledBasisSet> tbs_from_gbs = new TA::TiledBasisSet(bs,i);
-        BOOST_REQUIRE(!tbs_from_gbs.null());
-        BOOST_CHECK(tbs_from_gbs->trange1().tiles().second == i);
+    std::vector<sc::Atom> atoms = mol->atoms();
+
+    for(size_t i = 0; i < 6; ++i){
+        std::swap(atoms[0], atoms[i]);
+    for(size_t j = 1; j < 6; ++j){
+        std::swap(atoms[1], atoms[j]);
+    for(size_t k = 2; k < 6; ++k){
+        std::swap(atoms[2], atoms[k]);
+    for(size_t l = 3; l < 6; ++l){
+        std::swap(atoms[3], atoms[l]);
+    for(size_t m = 4; m < 6; ++m){
+        std::swap(atoms[4], atoms[m]);
+
+        Ref<Molecule> mol_t = new Molecule;
+        mol_t->add_atom(atoms[0].Z(),atoms[0].r(0),atoms[0].r(1),atoms[0].r(2));
+        mol_t->add_atom(atoms[1].Z(),atoms[1].r(0),atoms[1].r(1),atoms[1].r(2));
+        mol_t->add_atom(atoms[2].Z(),atoms[2].r(0),atoms[2].r(1),atoms[2].r(2));
+        mol_t->add_atom(atoms[3].Z(),atoms[3].r(0),atoms[3].r(1),atoms[3].r(2));
+        mol_t->add_atom(atoms[4].Z(),atoms[4].r(0),atoms[4].r(1),atoms[4].r(2));
+        mol_t->add_atom(atoms[5].Z(),atoms[5].r(0),atoms[5].r(1),atoms[5].r(2));
+
+        Ref<AssignedKeyVal> akv = new AssignedKeyVal;
+        akv->assign("name", "STO-3G");
+        akv->assign("molecule", mol_t.pointer());
+        Ref<GaussianBasisSet> bs = new GaussianBasisSet(akv);
+
+        // Construct via gbs
+        for(size_t z = 1; z <= 6; ++z){
+            std::cout << "i = " << i << " z = " << z << std::endl;
+            Ref<TA::TiledBasisSet> tbs_from_gbs = new TA::TiledBasisSet(bs,z);
+            BOOST_REQUIRE(!tbs_from_gbs.null());
+        }
+
+
+        std::swap(atoms[m], atoms[4]);
     }
-    // Construct via kval
-    for(size_t i = 1; i <= 6; ++i){
-        akv->assign("ntiles", int(i));
-        Ref<TA::TiledBasisSet> tbs_from_kval = new TA::TiledBasisSet(
-                                                Ref<KeyVal>(akv));
-        BOOST_REQUIRE(!tbs_from_kval.null());
-        BOOST_CHECK(tbs_from_kval->trange1().tiles().second == i);
+        std::swap(atoms[l], atoms[3]);
     }
+        std::swap(atoms[k], atoms[2]);
+    }
+        std::swap(atoms[j], atoms[1]);
+    }
+        std::swap(atoms[i], atoms[0]);
+    }
+}
+
+BOOST_AUTO_TEST_CASE( tiledbasisset_kval_constructor_test ){
+
+    Ref<Molecule> mol = new Molecule;
+    mol->add_atom(2, 0.0, 0.0, 0.0);
+    mol->add_atom(2, 0.0, 0.0, 3.7);
+    mol->add_atom(10, 2.8, 0.0, 1.8);
+    mol->add_atom(18, 0.0, 2.8, 1.8);
+    mol->add_atom(36, 0.0, -2.8, 1.8);
+    mol->add_atom(18, -2.8, 0.0, 1.8);
+
+    std::vector<sc::Atom> atoms = mol->atoms();
+
+    for(size_t i = 0; i < 6; ++i){
+        std::swap(atoms[0], atoms[i]);
+    for(size_t j = 1; j < 6; ++j){
+        std::swap(atoms[1], atoms[j]);
+    for(size_t k = 2; k < 6; ++k){
+        std::swap(atoms[2], atoms[k]);
+    for(size_t l = 3; l < 6; ++l){
+        std::swap(atoms[3], atoms[l]);
+    for(size_t m = 4; m < 6; ++m){
+        std::swap(atoms[4], atoms[m]);
+
+        Ref<Molecule> mol_t = new Molecule;
+        mol_t->add_atom(atoms[0].Z(),atoms[0].r(0),atoms[0].r(1),atoms[0].r(2));
+        mol_t->add_atom(atoms[1].Z(),atoms[1].r(0),atoms[1].r(1),atoms[1].r(2));
+        mol_t->add_atom(atoms[2].Z(),atoms[2].r(0),atoms[2].r(1),atoms[2].r(2));
+        mol_t->add_atom(atoms[3].Z(),atoms[3].r(0),atoms[3].r(1),atoms[3].r(2));
+        mol_t->add_atom(atoms[4].Z(),atoms[4].r(0),atoms[4].r(1),atoms[4].r(2));
+        mol_t->add_atom(atoms[5].Z(),atoms[5].r(0),atoms[5].r(1),atoms[5].r(2));
+
+        Ref<AssignedKeyVal> akv = new AssignedKeyVal;
+        akv->assign("name", "STO-3G");
+        akv->assign("molecule", mol_t.pointer());
+        Ref<GaussianBasisSet> bs = new GaussianBasisSet(akv);
+
+        // Construct via kval
+        for(size_t i = 1; i <= 6; ++i){
+            akv->assign("ntiles", int(i));
+            Ref<TA::TiledBasisSet> tbs_from_kval = new TA::TiledBasisSet(
+                                                    Ref<KeyVal>(akv));
+            BOOST_REQUIRE(!tbs_from_kval.null());
+        }
+
+        std::swap(atoms[m], atoms[4]);
+    }
+        std::swap(atoms[l], atoms[3]);
+    }
+        std::swap(atoms[k], atoms[2]);
+    }
+        std::swap(atoms[j], atoms[1]);
+    }
+        std::swap(atoms[i], atoms[0]);
+    }
+
+
+
+}
+
+BOOST_AUTO_TEST_CASE( tiledbasisset_trange_test ){
+
+    Ref<Molecule> mol = new Molecule;
+    mol->add_atom(2, 0.0, 0.0, 0.0);
+    mol->add_atom(2, 0.0, 0.0, 3.7);
+    mol->add_atom(10, 2.8, 0.0, 1.8);
+    mol->add_atom(18, 0.0, 2.8, 1.8);
+    mol->add_atom(36, 0.0, -2.8, 1.8);
+    mol->add_atom(18, -2.8, 0.0, 1.8);
+
+    std::vector<sc::Atom> atoms = mol->atoms();
+
+    for(size_t i = 0; i < 6; ++i){
+        std::swap(atoms[0], atoms[i]);
+    for(size_t j = 1; j < 6; ++j){
+        std::swap(atoms[1], atoms[j]);
+    for(size_t k = 2; k < 6; ++k){
+        std::swap(atoms[2], atoms[k]);
+    for(size_t l = 3; l < 6; ++l){
+        std::swap(atoms[3], atoms[l]);
+    for(size_t m = 4; m < 6; ++m){
+        std::swap(atoms[4], atoms[m]);
+
+        Ref<Molecule> mol_t = new Molecule;
+        mol_t->add_atom(atoms[0].Z(),atoms[0].r(0),atoms[0].r(1),atoms[0].r(2));
+        mol_t->add_atom(atoms[1].Z(),atoms[1].r(0),atoms[1].r(1),atoms[1].r(2));
+        mol_t->add_atom(atoms[2].Z(),atoms[2].r(0),atoms[2].r(1),atoms[2].r(2));
+        mol_t->add_atom(atoms[3].Z(),atoms[3].r(0),atoms[3].r(1),atoms[3].r(2));
+        mol_t->add_atom(atoms[4].Z(),atoms[4].r(0),atoms[4].r(1),atoms[4].r(2));
+        mol_t->add_atom(atoms[5].Z(),atoms[5].r(0),atoms[5].r(1),atoms[5].r(2));
+
+        Ref<AssignedKeyVal> akv = new AssignedKeyVal;
+        akv->assign("name", "STO-3G");
+        akv->assign("molecule", mol_t.pointer());
+        Ref<GaussianBasisSet> bs = new GaussianBasisSet(akv);
+
+        // Construct via gbs
+        for(size_t i = 1; i <= 6; ++i){
+            Ref<TA::TiledBasisSet> tbs_from_gbs = new TA::TiledBasisSet(bs,i);
+            BOOST_REQUIRE(!tbs_from_gbs.null());
+            ::TiledArray::TiledRange1 trange1 = tbs_from_gbs->trange1();
+        }
+        std::swap(atoms[m], atoms[4]);
+    }
+        std::swap(atoms[l], atoms[3]);
+    }
+        std::swap(atoms[k], atoms[2]);
+    }
+        std::swap(atoms[j], atoms[1]);
+    }
+        std::swap(atoms[i], atoms[0]);
+    }
+
+
+
 }
 
 BOOST_AUTO_TEST_CASE( tiledbasisset_trange1_values_test ) {
 
-    MolFixture MF;
+    Ref<Molecule> mol = new Molecule;
+    mol->add_atom(2, 0.0, 0.0, 0.0);
+    mol->add_atom(2, 0.0, 0.0, 3.7);
+    mol->add_atom(10, 2.8, 0.0, 1.8);
+    mol->add_atom(18, 0.0, 2.8, 1.8);
+    mol->add_atom(36, 0.0, -2.8, 1.8);
+    mol->add_atom(18, -2.8, 0.0, 1.8);
+
     Ref<AssignedKeyVal> akv = new AssignedKeyVal;
     akv->assign("name", "STO-3G");
-    akv->assign("molecule", MF.mol.pointer());
+    akv->assign("molecule", mol.pointer());
     Ref<GaussianBasisSet> bs = new GaussianBasisSet(akv);
 
      // Test Single tile case
@@ -226,7 +368,7 @@ BOOST_AUTO_TEST_CASE( tiledbasisset_deterministic_tiliing_test ){
     for(size_t l = 3; l < 6; ++l){
         std::swap(atoms[3], atoms[l]);
     for(size_t m = 4; m < 6; ++m){
-        //std::swap(atoms[4], atoms[m]);
+        std::swap(atoms[4], atoms[m]);
 
         Ref<Molecule> mol_t = new Molecule;
         mol_t->add_atom(atoms[0].Z(),atoms[0].r(0),atoms[0].r(1),atoms[0].r(2));
@@ -238,7 +380,7 @@ BOOST_AUTO_TEST_CASE( tiledbasisset_deterministic_tiliing_test ){
 
         Ref<AssignedKeyVal> akv = new AssignedKeyVal;
         akv->assign("name", "STO-3G");
-        akv->assign("molecule", mol.pointer());
+        akv->assign("molecule", mol_t.pointer());
         Ref<GaussianBasisSet> bs = new GaussianBasisSet(akv);
 
         // Test 3 tile case and make sure tiling is the same.
@@ -249,12 +391,94 @@ BOOST_AUTO_TEST_CASE( tiledbasisset_deterministic_tiliing_test ){
         double t2_second = tbs3->trange1().tile(1).second;
         double t3_first = tbs3->trange1().tile(2).first;
         double t3_second = tbs3->trange1().tile(2).second;
-        BOOST_CHECK(t1_first == 0);
-        BOOST_CHECK(t1_second == 24);
-        BOOST_CHECK(t2_first == 24);
-        BOOST_CHECK(t2_second == 25);
-        BOOST_CHECK(t3_first == 25);
-        BOOST_CHECK(t3_second == 43);
+        BOOST_CHECK_EQUAL(t1_first, 0);
+        BOOST_CHECK_EQUAL(t1_second, 24);
+        BOOST_CHECK_EQUAL(t2_first, 24);
+        BOOST_CHECK_EQUAL(t2_second, 25);
+        BOOST_CHECK_EQUAL(t3_first, 25);
+        BOOST_CHECK_EQUAL(t3_second, 43);
+
+        std::swap(atoms[m], atoms[4]);
+    }
+        std::swap(atoms[l], atoms[3]);
+    }
+        std::swap(atoms[k], atoms[2]);
+    }
+        std::swap(atoms[j], atoms[1]);
+    }
+        std::swap(atoms[i], atoms[0]);
+    }
+}
+
+BOOST_AUTO_TEST_CASE( tiledbasisset_deterministic_overlap_test ){
+
+    Ref<mpqc::World> world = new mpqc::World;
+
+    Ref<Molecule> mol = new Molecule;
+    mol->add_atom(2, 0.0, 0.0, 0.0);
+    mol->add_atom(2, 0.0, 0.0, 3.7);
+    mol->add_atom(10, 2.8, 0.0, 1.8);
+    mol->add_atom(18, 0.0, 2.8, 1.8);
+    mol->add_atom(36, 0.0, -2.8, 1.8);
+    mol->add_atom(18, -2.8, 0.0, 1.8);
+
+    std::vector<sc::Atom> atoms = mol->atoms();
+
+    Ref<AssignedKeyVal> akv = new AssignedKeyVal;
+    akv->assign("name", "STO-3G");
+    akv->assign("molecule", mol.pointer());
+    Ref<GaussianBasisSet> bs = new GaussianBasisSet(akv);
+
+    Ref<TA::TiledBasisSet> tbs = new TA::TiledBasisSet(bs,3);
+
+    Ref<Integral> integral = Integral::get_default_integral()->clone();
+    integral->set_basis(tbs);
+
+    IntegralEnginePool<Ref<OneBodyInt> > overlap_pool(integral->overlap());
+
+    ::TiledArray::Array<double,2> S = Integrals(*world->madworld(),
+                                                overlap_pool, tbs);
+
+    for(size_t i = 0; i < 6; ++i){
+        std::swap(atoms[0], atoms[i]);
+    for(size_t j = 1; j < 6; ++j){
+        std::swap(atoms[1], atoms[j]);
+    for(size_t k = 2; k < 6; ++k){
+        std::swap(atoms[2], atoms[k]);
+    for(size_t l = 3; l < 6; ++l){
+        std::swap(atoms[3], atoms[l]);
+    for(size_t m = 4; m < 6; ++m){
+        std::swap(atoms[4], atoms[m]);
+
+        Ref<Molecule> mol_t = new Molecule;
+        mol_t->add_atom(atoms[0].Z(),atoms[0].r(0),atoms[0].r(1),atoms[0].r(2));
+        mol_t->add_atom(atoms[1].Z(),atoms[1].r(0),atoms[1].r(1),atoms[1].r(2));
+        mol_t->add_atom(atoms[2].Z(),atoms[2].r(0),atoms[2].r(1),atoms[2].r(2));
+        mol_t->add_atom(atoms[3].Z(),atoms[3].r(0),atoms[3].r(1),atoms[3].r(2));
+        mol_t->add_atom(atoms[4].Z(),atoms[4].r(0),atoms[4].r(1),atoms[4].r(2));
+        mol_t->add_atom(atoms[5].Z(),atoms[5].r(0),atoms[5].r(1),atoms[5].r(2));
+
+        Ref<AssignedKeyVal> akv = new AssignedKeyVal;
+        akv->assign("name", "STO-3G");
+        akv->assign("molecule", mol_t.pointer());
+        Ref<GaussianBasisSet> bs = new GaussianBasisSet(akv);
+
+        // Test 3 tile case and make sure tiling is the same.
+        Ref<TA::TiledBasisSet> tbs3 = new TA::TiledBasisSet(bs,3);
+
+        integral->set_basis(tbs3);
+        IntegralEnginePool<Ref<OneBodyInt> > overlap_pool2(integral->overlap());
+
+
+        ::TiledArray::Array<double,2> S_perm = Integrals(*world->madworld(),
+                                                    overlap_pool2, tbs3);
+        ::TiledArray::Array<double,2> diff = S("i,j") - S_perm("i,j");
+        double infnorm =  ::TiledArray::expressions::norminf(diff("i,j"));
+        world->madworld()->gop.fence();
+
+        double zero = 0.0;
+
+        BOOST_CHECK_CLOSE(infnorm, zero, 1e-15);
 
         std::swap(atoms[m], atoms[4]);
     }

@@ -63,7 +63,8 @@ namespace TA{
         ShellOrder(const sc::Ref<sc::GaussianBasisSet> &basis) :
             clusters_(),
             atoms_(),
-            basis_(basis)
+            basis_(basis),
+            com_(Vector3::Zero(3))
         {
             // Get the molecule.
             sc::Ref<sc::Molecule> mol = basis->molecule();
@@ -144,9 +145,10 @@ namespace TA{
                 }
             };
 
-            std::sort(atoms_.begin(), atoms_.end(),ordering);
+            std::sort(atoms_.begin(), atoms_.end(), ordering);
 
-            // Initialize the kcluster guess at the position of the heaviest atoms.
+            // Initialize the kcluster guess at the position of atoms closest to
+            // COM.
             for(auto i = 0; i < nclusters_; ++i){
                 clusters_.push_back(
                     Vector3(atoms_[i].r(0), atoms_[i].r(1), atoms_[i].r(2))
@@ -169,7 +171,7 @@ namespace TA{
                 // To which cluster the atom belongs.
                 std::size_t kindex = 0;
 
-                // Loop over kclusters
+                // Loop over kclusters using i = 1 because we already computed 0
                 for(auto i = 1; i < nclusters_; ++i){
                     // Compute distance from atom to next kcluster
                     double dist = clusters_[i].distance(atom);
@@ -184,6 +186,11 @@ namespace TA{
                 // Add atom to the closest kcluster
                 clusters_[kindex].add_atom(atom);
             }
+            // Put atoms in correct order inside clusters so that the
+            // Shell ordering becomes deterministic.
+            foreach(auto& cluster, clusters_){
+                cluster.sort_atoms();
+            }
         }
 
         // Computes Lloyd's algorith to find a local minimium for the clusters.
@@ -192,10 +199,11 @@ namespace TA{
             // Lloyd's algorithm iterations.
             for(auto i = 0; i < niter; ++i){
 
-               // Recompute the center of the cluster using the centroid
+               // Recompute the center of the cluster using the centroid of
                // the atoms.  Will lose information about which atoms
                // go with which center.
                foreach(auto &cluster, clusters_){ cluster.guess_center(); }
+               sort_clusters();
 
                attach_to_closest_cluster();
            }
@@ -217,7 +225,7 @@ namespace TA{
                     std::size_t nshells_on_atom =
                                     basis_->nshell_on_center(atom_index);
                     // Loop over the shells on the atom and pack them into
-                    // shells.
+                    // the shell contatiner.
                     for(auto i = 0; i < nshells_on_atom; ++i){
                         shells.push_back(basis_->operator()(atom_index, i));
                     }
@@ -255,11 +263,23 @@ namespace TA{
             return  range;
         }
 
+        /*
+         * Sort clusters on distance from com.
+         */
+        void sort_clusters(){
+            std::sort(clusters_.begin(), clusters_.end(),
+                  [&](const KCluster &a, const KCluster &b){
+                   return ((a.center()-com_).norm() < (b.center()-com_).norm());}
+            );
+        }
+
     private:
         std::size_t nclusters_ = 0;
         std::vector<Atom> atoms_;
-        Vector3 com_{0,0,0};
-        std::vector<KCluster> clusters_;
+        Vector3 com_;
+        std::vector<KCluster> clusters_; // Note that KCluster contains fixed
+                                         // Eigen objects, but these are not vectorizable
+                                         // Thus we don't have to worry about Alignment issues.
         sc::Ref<sc::GaussianBasisSet> basis_;
     };
 

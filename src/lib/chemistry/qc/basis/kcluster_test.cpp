@@ -152,10 +152,19 @@ BOOST_AUTO_TEST_CASE( kcluster_function_test ){
     // Make sure the difference between the vectors is zero.
     BOOST_CHECK((centroid - cluster.centroid()).norm() == 0);
 
-    // Finally test guess center
+    // test guess center
     cluster.guess_center();
     BOOST_CHECK((centroid - cluster.center()).norm() == 0);
     BOOST_CHECK_EQUAL(cluster.natoms(), 0);
+
+    // test sort_atoms just add atoms back because cluster is empty
+    cluster.add_atom(mol->atom(1),1);
+    cluster.add_atom(mol->atom(0),0);
+    BOOST_CHECK(sc::Atom(cluster.atoms()[0]) == mol->atom(1));
+    BOOST_CHECK(sc::Atom(cluster.atoms()[1]) == mol->atom(0));
+    cluster.sort_atoms();
+    BOOST_CHECK(sc::Atom(cluster.atoms()[0]) == mol->atom(0));
+    BOOST_CHECK(sc::Atom(cluster.atoms()[1]) == mol->atom(1));
 
 }
 

@@ -122,6 +122,13 @@ namespace TA{
 
         }
 
+        /// Sort the atoms so they are ordered by molecule index.
+        void sort_atoms(){
+            std::sort(atoms_.begin(), atoms_.end(), [](const Atom &a,
+                       const Atom &b){ return a.mol_index() < b.mol_index();}
+            );
+        }
+
         /// Move the center to the centroid of the cluster and forget members.
         void guess_center(){
             center_ = centroid();

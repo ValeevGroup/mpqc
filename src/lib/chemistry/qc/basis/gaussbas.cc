@@ -499,13 +499,14 @@ GaussianBasisSet::init2(int skip_ghosts,bool include_q)
     std::vector<bool> center_flags(ncenter(), false); // if true, has found shells on this center
 
     int current_center = shells_[0].center();
-    center_flags[0] = true;
+    center_flags[current_center] = true;
     for(size_t s=1; s<shells_.size(); ++s) {
       if (shells_[s].center() != current_center) {
         current_center = shells_[s].center();
-        if (center_flags[current_center] == true) // oops, this shell sits on a center that already has another block of shells
+        if (center_flags[current_center] == true){ // oops, this shell sits on a center that already has another block of shells
           throw ProgrammingError("GaussianBasisSet: shells must be blocked by center",
                                  __FILE__, __LINE__);
+        }
         center_flags[current_center] = true;
       }
     }

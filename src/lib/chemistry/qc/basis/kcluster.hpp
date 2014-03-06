@@ -51,12 +51,12 @@ namespace TA{
             std::size_t mol_index() const {return mol_index_;}
 
         private:
-            // Don't use these
+            // Don't use the default constructor
             ClusterAtom();
 
             std::size_t mol_index_;
-        };
-    }
+        }; // class ClusterAtom
+    } // namespace cluster
 
     /**
      * class holds the information about the differnt clusters in k-means
@@ -71,7 +71,7 @@ namespace TA{
          * Constructor takes an Eigen::Vector3d which designates the center
          * of the cluster.
          */
-        KCluster(const Vector3 &pos = Vector3(0,0,0)) : center_(pos)
+        KCluster(const Vector3 &pos = Vector3(0,0,0)) : center_(pos), atoms_()
         {}
 
         KCluster& operator=(const KCluster &rhs){
@@ -107,16 +107,16 @@ namespace TA{
 
             // Loop over all of the members of the cluster and total their
             // positions in each diminsion.
-            for(auto i = 0; i < natoms(); ++i){
+            for(auto i = 0; i < n_atoms; ++i){
                 centroid[0] += atoms_[i].r(0);
                 centroid[1] += atoms_[i].r(1);
                 centroid[2] += atoms_[i].r(2);
             }
 
             // Get the average position in each dimension.
-            centroid[0] = centroid[0]/natoms();
-            centroid[1] = centroid[1]/natoms();
-            centroid[2] = centroid[2]/natoms();
+            centroid[0] = centroid[0]/n_atoms;
+            centroid[1] = centroid[1]/n_atoms;
+            centroid[2] = centroid[2]/n_atoms;
 
             return centroid;
 

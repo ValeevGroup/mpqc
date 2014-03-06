@@ -64,5 +64,11 @@ IF(MPQC_UNITTEST)
   add_executable(shellorder_test shellorder_test.cpp $<TARGET_OBJECTS:basis>)
   
   target_link_libraries( shellorder_test chemistry )
+
+  set_property(SOURCE kcluster_test.cpp PROPERTY COMPILE_DEFINITIONS
+    SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(kcluster_test kcluster_test.cpp $<TARGET_OBJECTS:basis>)
+  
+  target_link_libraries( kcluster_test chemistry )
   
 endif()

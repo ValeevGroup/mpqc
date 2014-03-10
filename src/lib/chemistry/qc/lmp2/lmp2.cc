@@ -235,6 +235,14 @@ LMP2::LMP2(const Ref<KeyVal> &keyval):
       throw std::runtime_error("LMP2: invalid vir_orbitals input");
     }
 
+  analyze_occ_orbs_ = keyval->booleanvalue("analyze_occ_orbs", KeyValValueboolean(false));
+  if (analyze_occ_orbs_) {
+    const unsigned int nocc = nelectron() / 2;
+    const unsigned int nocc_act = nocc - nfzc_;
+    emp2_ij_.resize(nocc_act*nocc_act); std::fill(emp2_ij_.begin(), emp2_ij_.end(), 0.0);
+    dist_ij_ = emp2_ij_;
+    r_i_.resize(nocc_act);  std::fill(r_i_.begin(), r_i_.end(), SCVector3(0.0, 0.0, 0.0));
+  }
 }
 
 LMP2::LMP2(StateIn &statein):LCorr(statein)
@@ -335,6 +343,9 @@ LMP2::compute_ecorr_lmp2()
 {
   Timer tim("ecorr");
 
+  const unsigned nocc = this->nelectron() / 2;
+  const unsigned nocc_act = nocc - nfzc_;
+
   sma2::Index r("r"), s("s");
   sma2::Array<0> ecorr;
   double ecorr_lmp2 = 0.0;
@@ -350,10 +361,16 @@ LMP2::compute_ecorr_lmp2()
       ecorr.zero();
       ecorr() +=  f * 2.0 * K_2occ_(i,j,r,s) * T_local_(i,j,r,s);
       ecorr() -=  f *       K_2occ_(i,j,s,r) * T_local_(i,j,r,s);
-      ecorr_lmp2 += ecorr.value();
+      const double eij = ecorr.value();
+      ecorr_lmp2 += eij;
+
+      if (analyze_occ_orbs_)
+        emp2_ij_[i.value() * nocc_act + j.value()] = eij;
     }
 
   msg_->sum(ecorr_lmp2);
+  if (analyze_occ_orbs_)
+    msg_->sum(&emp2_ij_[0], emp2_ij_.size());
 
   return ecorr_lmp2;
 }
@@ -1538,7 +1555,7 @@ LMP2::compute_lmp2_energy()
   else {
       create_domains(ref_, nfzc_, scf_local, domains,
                      domainmap_, distance_threshold_, completeness_threshold_,
-                     !i_ge_j_, S_ao, L_, bound_, msg_);
+                     !i_ge_j_, dist_ij_, S_ao, L_, bound_, msg_);
     }
   tim.exit("Domain map");
 
@@ -1707,6 +1724,13 @@ LMP2::compute_lmp2_energy()
   set_actual_value_accuracy(tolerance);
 
   tim.exit("LMP2");
+
+  // analyze occupied orbitals
+  if (analyze_occ_orbs_) {
+    tim.enter("Analyze occ orbs");
+    analyze_occ_orbs(scf_local);
+    tim.exit("Analyze occ orbs");
+  }
 
   return ecorr;
 
@@ -2135,6 +2159,119 @@ LMP2::iterate_LMP2_equations(double energy_tolerance, double rms_tolerance)
     }
 
   return ecorr_lmp2;
+}
+
+void
+LMP2::analyze_occ_orbs(const RefSCMatrix& scf_local) {
+
+  assert(analyze_occ_orbs_);
+
+  const int nocc = nelectron() / 2;
+  const int nocc_act = nocc - nfzc_;
+  const int nao = basis()->nbasis();
+
+  // compute dipole moment integrals
+  // compute center of mass of each active occ orbital
+  {
+    Ref<GaussianBasisSet> bas = ref_->basis();
+    Ref<PetiteList> pl = ref_->integral()->petite_list();
+    Ref<OneBodyInt> m1_ints = ref_->integral()->dipole(0);
+
+    // form skeleton mu_i in AO basis
+    RefSymmSCMatrix mu_x_ao(bas->basisdim(), bas->matrixkit()); mu_x_ao.assign(0.0);
+    RefSymmSCMatrix mu_y_ao(bas->basisdim(), bas->matrixkit()); mu_y_ao.assign(0.0);
+    RefSymmSCMatrix mu_z_ao(bas->basisdim(), bas->matrixkit()); mu_z_ao.assign(0.0);
+
+    const int nshell = bas->nshell();
+    for(int sh1=0; sh1<nshell; sh1++) {
+      int bf1_offset = bas->shell_to_function(sh1);
+      int nbf1 = bas->shell(sh1).nfunction();
+
+      int sh2max = sh1;
+      for(int sh2=0; sh2<=sh2max; sh2++) {
+        int bf2_offset = bas->shell_to_function(sh2);
+        int nbf2 = bas->shell(sh2).nfunction();
+
+        m1_ints->compute_shell(sh1,sh2);
+        const double *m1intsptr = m1_ints->buffer();
+
+        int bf1_index = bf1_offset;
+        for(int bf1=0; bf1<nbf1; bf1++, bf1_index++, m1intsptr+=3*nbf2) {
+          int bf2_index = bf2_offset;
+          const double *ptr1 = m1intsptr;
+          int bf2max;
+          if (sh1 == sh2)
+            bf2max = bf1;
+          else
+            bf2max = nbf2-1;
+          for(int bf2=0; bf2<=bf2max; bf2++, bf2_index++) {
+
+            // the negative charge of the electron is not included
+            mu_x_ao.set_element(bf1_index, bf2_index, ptr1[0]);
+            mu_y_ao.set_element(bf1_index, bf2_index, ptr1[1]);
+            mu_z_ao.set_element(bf1_index, bf2_index, ptr1[2]);
+            ptr1 += 3;
+
+          }
+        }
+      }
+    }
+    m1_ints = 0;
+
+    const int nbasis = bas->nbasis();
+    for(int bf1=0; bf1<nbasis; bf1++) {
+      for(int bf2=0; bf2<=bf1; bf2++) {
+        mu_x_ao(bf2,bf1) = mu_x_ao(bf1,bf2);
+        mu_y_ao(bf2,bf1) = mu_y_ao(bf1,bf2);
+        mu_z_ao(bf2,bf1) = mu_z_ao(bf1,bf2);
+      }
+    }
+
+    ExEnv::out0() << indent << "center-of-mass of active occupied orbitals:" << std::endl;
+    ExEnv::out0() << indent << "  i              X                      Y                      Z          " << std::endl;
+    ExEnv::out0() << indent << "===== ====================== ====================== ======================" << std::endl;
+    assert(nao == mu_x_ao.n());
+    std::vector<double> mu_x_ri(nao);
+    std::vector<double> mu_y_ri(nao);
+    std::vector<double> mu_z_ri(nao);
+    for(int i=0; i<nocc_act; ++i) {
+      for(int r=0; r<nao; ++r) {
+        mu_x_ri[r] = 0.0;
+        mu_y_ri[r] = 0.0;
+        mu_z_ri[r] = 0.0;
+        for(int c=0; c<nao; ++c) {
+          mu_x_ri[r] += scf_local(c,i) * mu_x_ao(r,c);
+          mu_y_ri[r] += scf_local(c,i) * mu_y_ao(r,c);
+          mu_z_ri[r] += scf_local(c,i) * mu_z_ao(r,c);
+        }
+      }
+      SCVector3 R(0.0, 0.0, 0.0);
+      for(int r=0; r<nao; ++r) R(0) += scf_local(r,i) * mu_x_ri[r];
+      for(int r=0; r<nao; ++r) R(1) += scf_local(r,i) * mu_y_ri[r];
+      for(int r=0; r<nao; ++r) R(2) += scf_local(r,i) * mu_z_ri[r];
+      r_i_[i] = R;
+
+      ExEnv::out0() << indent << scprintf("%5d %22.15lf %22.15lf %22.15lf", i,
+                                          R(0), R(1), R(2))
+                    << std::endl;
+    }
+  }
+
+  // print out all the pair data
+  ExEnv::out0() << indent << "pair data" << std::endl;
+  ExEnv::out0() << indent << "  i     j             |r|                   e(MP2)              |r|_domain      " << std::endl;
+  ExEnv::out0() << indent << "===== ===== ====================== ====================== ======================" << std::endl;
+  for(int i=0; i<nocc_act; ++i) {
+    for(int j=0; j<=i; ++j) {
+      const int ij = i*nocc_act + j;
+      const double r_ij = (r_i_[i] - r_i_[j]).norm();
+      ExEnv::out0() << indent << scprintf("%5d %5d %22.15lf %22.15lf %22.15lf", i, j,
+                                          r_ij, emp2_ij_[ij], dist_ij_[ij]
+                                         )
+                          << std::endl;
+    }
+  }
+
 }
 
 }

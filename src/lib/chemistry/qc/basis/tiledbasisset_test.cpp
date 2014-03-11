@@ -92,7 +92,6 @@ BOOST_AUTO_TEST_CASE( tiledbasisset_gbs_constructor_test ){
 
         // Construct via gbs
         for(size_t z = 1; z <= 6; ++z){
-            std::cout << "i = " << i << " z = " << z << std::endl;
             Ref<TA::TiledBasisSet> tbs_from_gbs = new TA::TiledBasisSet(bs,z);
             BOOST_REQUIRE(!tbs_from_gbs.null());
         }
@@ -285,8 +284,8 @@ BOOST_AUTO_TEST_CASE( tiledbasisset_trange1_values_test ) {
     double t_44_f = tbs4->trange1().tile(3).first;
     double t_44_s = tbs4->trange1().tile(3).second;
     BOOST_CHECK(t_41_f == 0);
-    BOOST_CHECK(t_41_s == 15);
-    BOOST_CHECK(t_42_f == 15);
+    BOOST_CHECK(t_41_s == 1);
+    BOOST_CHECK(t_42_f == 1);
     BOOST_CHECK(t_42_s == 16);
     BOOST_CHECK(t_43_f == 16);
     BOOST_CHECK(t_43_s == 34);
@@ -306,10 +305,10 @@ BOOST_AUTO_TEST_CASE( tiledbasisset_trange1_values_test ) {
     double t_55_f = tbs5->trange1().tile(4).first;
     double t_55_s = tbs5->trange1().tile(4).second;
     BOOST_CHECK(t_51_f == 0);
-    BOOST_CHECK(t_51_s == 10);
-    BOOST_CHECK(t_52_f == 10);
-    BOOST_CHECK(t_52_s == 11);
-    BOOST_CHECK(t_53_f == 11);
+    BOOST_CHECK(t_51_s == 1);
+    BOOST_CHECK(t_52_f == 1);
+    BOOST_CHECK(t_52_s == 19);
+    BOOST_CHECK(t_53_f == 19);
     BOOST_CHECK(t_53_s == 29);
     BOOST_CHECK(t_54_f == 29);
     BOOST_CHECK(t_54_s == 38);

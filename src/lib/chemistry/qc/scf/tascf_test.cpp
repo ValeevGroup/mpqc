@@ -37,6 +37,16 @@ using namespace boost::unit_test;
 using namespace sc;
 using namespace mpqc;
 
+struct Mock_SCF : public TA::SCF {
+    Mock_SCF(const Ref<KeyVal> &kval) : TA::SCF(kval) {}
+    virtual double scf_energy() { return 2.0; }
+
+    static sc::ClassDesc class_desc_;
+};
+
+sc::ClassDesc Mock_SCF::class_desc_(typeid(Mock_SCF), "Mock_SCF",
+                      1, "public TA.SCF", 0, sc::create<Mock_SCF>, 0);
+
 struct MADConfig {
     MADConfig() {
       mpqc::MADNESSRuntime::initialize();
@@ -64,7 +74,7 @@ BOOST_AUTO_TEST_CASE( construct_scf_programmatically ){
     akv->assign("basis", basis.pointer());
 
     //Construct object
-    Ref<TA::SCF> tscf = new TA::SCF(akv);
+    Ref<Mock_SCF> tscf = new Mock_SCF(akv);
     tscf->print();
 }
 
@@ -72,18 +82,20 @@ BOOST_AUTO_TEST_CASE( construct_scf_txtkeyval ){
 
   const char *input = "./tascf_test.kv";
   Ref<KeyVal> kv = new ParsedKeyVal(input);
-  Ref<TA::SCF> tscf; tscf << kv->describedclassvalue("rhf");
+  Ref<Mock_SCF> tscf; tscf << kv->describedclassvalue("rhf");
 
   tscf->print();
   std::cout << "Overlap matrix:" << std::endl;
   std::cout << tscf->overlap() << std::endl;
+  std::cout << "Hcore matrix:" << std::endl;
+  std::cout << tscf->hcore() << std::endl;
 }
 
 BOOST_AUTO_TEST_CASE( compute_tawfn_overlap_txtkeyval ){
 
   const char *input = "./tascf_test.kv";
   Ref<KeyVal> kv = new ParsedKeyVal(input);
-  Ref<TA::SCF> tscf; tscf << kv->describedclassvalue("rhf_large");
+  Ref<Mock_SCF> tscf; tscf << kv->describedclassvalue("rhf_large");
 
   tscf->print();
 

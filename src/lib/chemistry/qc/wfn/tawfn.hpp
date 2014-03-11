@@ -74,8 +74,9 @@ namespace mpqc {
         const sc::Ref<sc::Integral>& integral() const {
           return integral_;
         }
+
         /// @return the Molecule object
-        sc::Ref<sc::Molecule> molecule() const {
+        sc::Ref<sc::Molecule> molecule() const override {
           return tbs_->molecule();
         }
 
@@ -115,7 +116,24 @@ namespace mpqc {
 
         void print(std::ostream& os = sc::ExEnv::out0()) const;
 
+        // functions for internal access
       protected:
+
+        const Matrix& density() const { return rdm1_.result_noupdate(); }
+        Matrix& density(){ return rdm1_.result_noupdate(); }
+
+        const sc::Ref<mpqc::World> world() const { return world_; }
+
+        const Matrix& density_alpha() const { return rdm1_alpha_.result_noupdate(); }
+        Matrix& density_alpha(){ return rdm1_alpha_.result_noupdate(); }
+
+        const Matrix& density_beta() const { return rdm1_beta_.result_noupdate(); }
+        Matrix& density_beta(){ return rdm1_beta_.result_noupdate(); }
+
+
+
+      private:
+
         sc::Ref<mpqc::World> world_;
         sc::Ref<TiledBasisSet> tbs_;
         sc::Ref<sc::Integral> integral_;

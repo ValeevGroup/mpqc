@@ -1,7 +1,7 @@
 
 integrals<IntegralLibint2>: ()
 
-rhf<TA.SCF>:(
+rhf<Mock_SCF>:(
   molecule = $:water_c1
   basis<GaussianBasisSet>: (
     molecule = $..:molecule
@@ -9,7 +9,7 @@ rhf<TA.SCF>:(
   )
 )
 
-rhf_large<TA.SCF>:(
+rhf_large<Mock_SCF>:(
   integrals = $:integrals
   molecule = $:taxol
   basis<TiledBasisSet>:(

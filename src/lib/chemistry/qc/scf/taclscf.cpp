@@ -40,17 +40,13 @@ sc::ClassDesc mpqc::TA::CLSCF::class_desc_(typeid(mpqc::TA::CLSCF), "TA.CLSCF",
                       sc::create<mpqc::TA::CLSCF>,
                       0);
 
-mpqc::TA::CLSCF::CLSCF(const sc::Ref<sc::KeyVal>& kval) :
-    SCF(kval), diis(), hcore_(this)
+mpqc::TA::CLSCF::CLSCF(const sc::Ref<sc::KeyVal>& kval) : SCF(kval)
 {
-    hcore_.compute() = 0;
-    hcore_.computed() = 0;
-
     if(nelectron() % 2 != 0){
         throw sc::InputError("Number of electrons is not divisable by two",
                              __FILE__, __LINE__, "", "", this->class_desc());
     }
-    occupation = nelectron()/2;
+    occupation_ = nelectron()/2;
 }
 
 mpqc::TA::CLSCF::~CLSCF() {}
@@ -61,30 +57,16 @@ void mpqc::TA::CLSCF::compute() {
 }
 
 const Matrix& mpqc::TA::CLSCF::rdm1() {
-    if(not rdm1_.computed()){
-        Matrix temp = Dguess(hcore()); // Use hcore as guess till SOAD works
-        rdm1_= temp("i,j");
-        rdm1_.computed() = 1;
-    }
-    return rdm1_.result_noupdate();
+    MPQC_ASSERT(false);
 }
 
-Matrix& mpqc::TA::CLSCF::hcore(){
-    if(not hcore_.computed()){
-        mpqc::IntegralEnginePool<sc::Ref<sc::OneBodyInt> > hcore_pool(
-                                                            integral_->hcore());
-        hcore_ = mpqc::Integrals(*world_->madworld(), hcore_pool, tbs_);
-        world_->madworld()->gop.fence();
-        hcore_.computed() = 1;
-    }
-    return hcore_.result_noupdate();
-}
-
-double mpqc::TA::CLSCF::scf_energy() {
+double
+mpqc::TA::CLSCF::scf_energy() {
     // E = \sum_{ij} \left( D_{ij} * (F_{ij} + H_{ij}) \right)
     return ::TiledArray::expressions::dot(
-                    hcore()("i,j") + fock()("i,j"), rdm1()("i,j"));
+                    hcore()("i,j") + fock()("i,j"), density()("i,j"));
 }
+
 
 #warning "tr_corr_purify uses Eigen and is not production ready"
 void mpqc::TA::CLSCF::tr_corr_purify(Matrix& P) {
@@ -97,7 +79,7 @@ void mpqc::TA::CLSCF::tr_corr_purify(Matrix& P) {
         Ep = (Ep.trace() >= occ()) ? Eigen::MatrixXd(Ep*Ep) :
                                             Eigen::MatrixXd(2*Ep - Ep * Ep);
     }
-    P = ::TiledArray::eigen_to_array<Matrix>(*world_->madworld(), P.trange(),
+    P = ::TiledArray::eigen_to_array<Matrix>(*(world())->madworld(), P.trange(),
                                              Ep);
 }
 
@@ -115,7 +97,7 @@ Matrix mpqc::TA::CLSCF::Dguess(const Matrix& F){
     for(size_t i = 0; i < Ef.rows(); ++i){
         Ef(i,i) = Fnorm - Ef(i,i);
     }
-    Matrix D = ::TiledArray::eigen_to_array<Matrix>(*world_->madworld(),
+    Matrix D = ::TiledArray::eigen_to_array<Matrix>(*(world())->madworld(),
                                                 F.trange(),
                                                 Ef);
     /* End part that needs to be replaced */

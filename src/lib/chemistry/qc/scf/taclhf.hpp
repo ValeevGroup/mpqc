@@ -37,7 +37,6 @@ namespace TA{
         typedef CLSCF::Matrix Matrix;
         CLHF(const sc::Ref<sc::KeyVal> &kval);
 
-        virtual const Matrix& fock() override;
         void minimize_energy();
 
     protected:

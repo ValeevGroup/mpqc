@@ -26,18 +26,17 @@
 //
 
 #include <chemistry/qc/scf/tascf.hpp>
+#include <mpqc/interfaces/tiledarray/array_ints.hpp>
+#include <mpqc/integrals/integralenginepool.hpp>
 
 using namespace mpqc;
 using namespace mpqc::TA;
 
 sc::ClassDesc mpqc::TA::SCF::class_desc_(typeid(mpqc::TA::SCF), "TA.SCF",
-                      1, "public TA.Wavefunction",
-                      0,
-                      sc::create<mpqc::TA::SCF>,
-                      0);
+                      1, "public TA.Wavefunction", 0, 0, 0);
 
 mpqc::TA::SCF::SCF(const sc::Ref<sc::KeyVal>& kval) :
-    Wavefunction(kval), tbints_(), fock_(this)
+    Wavefunction(kval), hcore_(), diis(), tbints_(), fock_(this)
 {
     fock_.compute() = 0;
     fock_.computed() = 0;
@@ -60,22 +59,20 @@ mpqc::TA::SCF::fock() {
   MPQC_ASSERT(false);
 }
 
-#warning "rdm1 is not defined"
-const mpqc::TA::SCF::Matrix&
-mpqc::TA::SCF::rdm1() {
-  MPQC_ASSERT(false);
-}
-
 #warning "rdm1(spincase) is not defined"
 const mpqc::TA::SCF::Matrix&
 mpqc::TA::SCF::rdm1(sc::SpinCase1 s) {
   MPQC_ASSERT(false);
 }
 
-#warning "scf_energy is not defined"
-double
-mpqc::TA::SCF::scf_energy() {
-  MPQC_ASSERT(false);
+const mpqc::TA::SCF::Matrix& mpqc::TA::SCF::hcore() {
+    if(!hcore_.is_initialized()){
+        std::shared_ptr<mpqc::IntegralEnginePool<sc::Ref<sc::OneBodyInt> > > hcore_pool(new
+        mpqc::IntegralEnginePool<sc::Ref<sc::OneBodyInt> >(integral()->hcore()));
+
+        hcore_ = mpqc::Integrals(*(world())->madworld(), hcore_pool, basis());
+    }
+    return hcore_;
 }
 
 #warning "nelectron has a temporary solution and is not production ready"
@@ -83,3 +80,4 @@ size_t
 mpqc::TA::SCF::nelectron() const {
     return molecule()->total_Z(); // Temporary solution.
 }
+

@@ -47,14 +47,6 @@ mpqc::TA::CLHF::CLHF(const sc::Ref<sc::KeyVal>& kval) :
 
 
 
-const Matrix& mpqc::TA::CLHF::fock(){
-    if(not fock_.computed()){
-        fock_ = ao_fock();
-        fock_.computed() = 1;
-    }
-    return fock_.result_noupdate();
-}
-
 Matrix mpqc::TA::CLHF::ao_fock() {
     Matrix F = hcore()("m,n") + Gmat()("m,n");
     return F;
@@ -62,39 +54,16 @@ Matrix mpqc::TA::CLHF::ao_fock() {
 
 #warning "Gmat uses all four centered ints"
 Matrix mpqc::TA::CLHF::Gmat(){
-    mpqc::IntegralEnginePool<sc::Ref<sc::TwoBodyInt> > eri_pool(
-                                            integral_->electron_repulsion());
-    ::TiledArray::Array<double, 4> eri = mpqc::Integrals(*world_->madworld(),
-                                                eri_pool, tbs_);
+    std::shared_ptr<mpqc::IntegralEnginePool<sc::Ref<sc::TwoBodyInt> > >
+        eri_pool(new mpqc::IntegralEnginePool<sc::Ref<sc::TwoBodyInt> >(
+                        integral()->electron_repulsion()));
+    ::TiledArray::Array<double, 4> eri = mpqc::Integrals(*(world())->madworld(),
+                                                eri_pool, basis());
     Matrix Gmat = 2*rdm1()("r,s") * eri("m,r,n,s") -
                     rdm1()("r,s") * eri("m,r,s,n");
     return Gmat;
 }
 
 void mpqc::TA::CLHF::minimize_energy() {
-    // Get matrices we need.
-    const Matrix& H = hcore();
-    const Matrix& S = overlap();
-    Matrix F = fock_.result_noupdate()("i,j");
-
-
-    double error_norminf = 1.0;
-
-    size_t iter = 0;
-    while(error_norminf > 1e-8){
-        // Generate new Matrices
-        Matrix D = Dguess(F);
-        tr_corr_purify(D);
-        rdm1_.result_noupdate() = D("i,j"); // Set to current density
-
-        F("m,n") = H("m,n") + Gmat()("m,n");
-        Matrix gradient = 8 * (S("i,q") * D("q,x") * F("x,j") -
-                               F("i,q") * D("q,x") * S("x,j"));
-        error_norminf = ::TiledArray::expressions::norminf(gradient("i,j"));
-        error_norminf = abs(error_norminf);
-        diis.extrapolate(F,gradient);
-
-        world_->madworld()->gop.fence();
-    }
-    fock_.result_noupdate() = F("i,j");
+    MPQC_ASSERT(false);
 }

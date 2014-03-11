@@ -113,7 +113,8 @@ mpqc::TA::Wavefunction::overlap() {
 
   if (not overlap_.computed()) {
 
-    mpqc::IntegralEnginePool<sc::Ref<sc::OneBodyInt> > overlap_pool(integral_->overlap());
+    std::shared_ptr<mpqc::IntegralEnginePool<sc::Ref<sc::OneBodyInt> > > overlap_pool(
+                    new mpqc::IntegralEnginePool<sc::Ref<sc::OneBodyInt> >(integral_->overlap()));
     overlap_ = mpqc::Integrals(*world_->madworld(), overlap_pool, tbs_);
 
     world_->madworld()->gop.fence();

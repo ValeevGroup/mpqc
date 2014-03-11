@@ -31,7 +31,6 @@
 #include <tiled_array.h>
 #include <mpqc/interfaces/tiledarray/tiling/trange1.hpp>
 #include <chemistry/qc/basis/integral.h>
-#include <boost/ref.hpp>
 #include <mpqc/utility/foreach.hpp>
 #include <mpqc/integrals/integrals.hpp>
 
@@ -148,10 +147,10 @@ namespace mpqc{
      * Splits work in into manageable chunks by creating tasks. And then fills
      * each tile with integrals.
      */
-    template<typename RefPool, typename It, class A>
+    template<typename Pool, typename It, class A>
     void
     integral_task(It first, It last, A &array,
-                  RefPool pool){
+                  Pool pool){
 
         // Divide work.   If the distance between the first and last pointer
         // is greater than some number then split the range in half and send
@@ -167,8 +166,7 @@ namespace mpqc{
 
         // Once the pointer range is small enough unwrap the engine type
         // and get a local instance
-        typedef typename boost::unwrap_reference<RefPool>::type PoolType;
-        typename PoolType::engine_type engine = pool.get().instance();
+        typename std::pointer_traits<Pool>::element_type::engine_type engine = pool->instance();
 
         // Loop over the iterator range and  create tiles to populate the
         // TiledArray. Fill the tiles with data in get_integrals
@@ -184,11 +182,11 @@ namespace mpqc{
     /*
      * Spawns tasks to fill tiles with integrals.
      */
-    template<typename RefPool, typename It, class A>
+    template<typename Pool, typename It, class A>
     void
     make_integral_task(It first, It last, const A &array,
-                       RefPool pool){
-        array.get_world().taskq.add(&integral_task<RefPool, It, A>, first,
+                       Pool pool){
+        array.get_world().taskq.add(&integral_task<Pool, It, A>, first,
                                     last, array, pool);
     }
 
@@ -209,7 +207,7 @@ namespace mpqc{
         // Create tasks to fill tiles with data. Boost const reference is used
         // because Integral Engine pool is not copyable, but when sent to the
         // Madness task queue all objects are copied.
-        make_integral_task(begin, end, array, boost::cref(pool));
+        make_integral_task(begin, end, array, pool);
     }
 
 } // namespace mpqc

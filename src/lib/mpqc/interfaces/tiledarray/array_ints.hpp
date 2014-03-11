@@ -35,69 +35,17 @@ namespace mpqc {
   /// @addtogroup ChemistryBasisIntegralTA
   /// @{
 
-  // Gets the blocking to construct of TiledArray::TiledRange1
-  template<std::size_t N, typename IntEngPool>
-  std::array<TiledArray::TiledRange1, N> get_blocking(
-      const IntEngPool &pool, const TRange1Gen &trange1gen) {
-
-    std::array<TiledArray::TiledRange1, N> blocking;
-
-    // Use our function to generate a TiledArray::TiledRange1
-    // with the option for different TiledRange1s depending on the basis
-    for (auto i = 0; i < N; ++i) {
-      blocking[i] = trange1gen(pool.instance()->basis(i));
-    }
-
-    return blocking;
-  }
-
-  /**
-   * Returns a TA::Array filled with integrals.
-   * @param[in] world madness::World object for construction of TiledArray::Array
-   * @param[in] pool IntegralEnginePool which contains the pool of engines needed for Tensor construction
-   * @param[in] trange1gen Function pointer to a function that generates TiledArray::TiledRange1 given a sc::GaussianBasisSet
-   */
-  template<typename IntEngPool>
+  template<typename ShrPtrPool>
   ::TiledArray::Array<double,
-      EngineTypeTraits<typename IntEngPool::engine_type>::ncenters> Integrals(
-      madness::World &world, const IntEngPool &pool,
-      const TRange1Gen &trange1gen = tiling::tile_by_atom) {
-
-    namespace TA = ::TiledArray;
-
-    // Get the the type of integral that we are computing.
-    typedef typename IntEngPool::engine_type engine_type;
-    // Determine the dimensions of our integrals as well as our TiledArray
-    constexpr size_t rank = EngineTypeTraits<engine_type>::ncenters;
-
-    // Get the array to initialize the TiledArray::TiledRange using the
-    // the TiledArray::TiledRange1 generator function.
-    std::array<TiledArray::TiledRange1, rank> blocking = get_blocking<rank>(
-        pool, trange1gen);
-
-    // Construct the TiledArray::TiledRange object
-    TA::TiledRange trange(blocking.begin(), blocking.end());
-
-    // Initialize the TiledArray
-    TA::Array<double, rank> array(world, trange);
-
-    // Fill the TiledArray with data by looping over tiles and sending
-    // each tile to a madness task to be filled in parallel.
-    fill_tiles(array, pool);
-
-    return array;
-  }
-
-  template<typename IntEngPool>
-  ::TiledArray::Array<double,
-      EngineTypeTraits<typename IntEngPool::engine_type>::ncenters> Integrals(
-      madness::World &world, const IntEngPool &pool,
+      EngineTypeTraits<typename std::pointer_traits<ShrPtrPool>::element_type::engine_type>::ncenters>
+  Integrals(
+      madness::World &world, const ShrPtrPool &pool,
       const sc::Ref<mpqc::TA::TiledBasisSet> &tbasis) {
 
     namespace TA = ::TiledArray;
 
     // Get the the type of integral that we are computing.
-    typedef typename IntEngPool::engine_type engine_type;
+    typedef typename std::pointer_traits<ShrPtrPool>::element_type::engine_type engine_type;
     // Determine the dimensions of our integrals as well as our TiledArray
     constexpr size_t rank = EngineTypeTraits<engine_type>::ncenters;
 

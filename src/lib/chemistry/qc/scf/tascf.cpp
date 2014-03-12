@@ -26,8 +26,8 @@
 //
 
 #include <chemistry/qc/scf/tascf.hpp>
-#include <mpqc/interfaces/tiledarray/array_ints.hpp>
-#include <mpqc/integrals/integralenginepool.hpp>
+#include <chemistry/qc/basis/taskintegrals.hpp>
+#include <chemistry/qc/basis/integralenginepool.hpp>
 
 using namespace mpqc;
 using namespace mpqc::TA;
@@ -67,10 +67,10 @@ mpqc::TA::SCF::rdm1(sc::SpinCase1 s) {
 
 const mpqc::TA::SCF::Matrix& mpqc::TA::SCF::hcore() {
     if(!hcore_.is_initialized()){
-        std::shared_ptr<mpqc::IntegralEnginePool<sc::Ref<sc::OneBodyInt> > > hcore_pool(new
-        mpqc::IntegralEnginePool<sc::Ref<sc::OneBodyInt> >(integral()->hcore()));
+        std::shared_ptr<IntegralEnginePool<sc::Ref<sc::OneBodyInt> > > hcore_pool(new
+        IntegralEnginePool<sc::Ref<sc::OneBodyInt> >(integral()->hcore()));
 
-        hcore_ = mpqc::Integrals(*(world())->madworld(), hcore_pool, basis());
+        hcore_ = Integrals(*(world())->madworld(), hcore_pool, basis());
     }
     return hcore_;
 }

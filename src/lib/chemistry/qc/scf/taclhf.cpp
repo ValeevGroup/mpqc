@@ -26,8 +26,8 @@
 //
 
 #include <chemistry/qc/scf/taclhf.hpp>
-#include <mpqc/interfaces/tiledarray/array_ints.hpp>
-#include <mpqc/integrals/integralenginepool.hpp>
+#include <chemistry/qc/basis/integralenginepool.hpp>
+#include <chemistry/qc/basis/taskintegrals.hpp>
 
 using namespace mpqc;
 using namespace mpqc::TA;
@@ -45,22 +45,15 @@ mpqc::TA::CLHF::CLHF(const sc::Ref<sc::KeyVal>& kval) :
 {
 }
 
-
-
-Matrix mpqc::TA::CLHF::ao_fock() {
-    Matrix F = hcore()("m,n") + Gmat()("m,n");
-    return F;
-}
-
 #warning "Gmat uses all four centered ints"
 Matrix mpqc::TA::CLHF::Gmat(){
-    std::shared_ptr<mpqc::IntegralEnginePool<sc::Ref<sc::TwoBodyInt> > >
-        eri_pool(new mpqc::IntegralEnginePool<sc::Ref<sc::TwoBodyInt> >(
+    std::shared_ptr<IntegralEnginePool<sc::Ref<sc::TwoBodyInt> > >
+        eri_pool(new IntegralEnginePool<sc::Ref<sc::TwoBodyInt> >(
                         integral()->electron_repulsion()));
-    ::TiledArray::Array<double, 4> eri = mpqc::Integrals(*(world())->madworld(),
+    ::TiledArray::Array<double, 4> eri = Integrals(*(world())->madworld(),
                                                 eri_pool, basis());
-    Matrix Gmat = 2*rdm1()("r,s") * eri("m,r,n,s") -
-                    rdm1()("r,s") * eri("m,r,s,n");
+    Matrix Gmat = 2*density()("r,s") * eri("m,r,n,s") -
+                    density()("r,s") * eri("m,r,s,n");
     return Gmat;
 }
 

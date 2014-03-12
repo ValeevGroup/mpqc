@@ -36,7 +36,7 @@ sc::ClassDesc mpqc::TA::SCF::class_desc_(typeid(mpqc::TA::SCF), "TA.SCF",
                       1, "public TA.Wavefunction", 0, 0, 0);
 
 mpqc::TA::SCF::SCF(const sc::Ref<sc::KeyVal>& kval) :
-    Wavefunction(kval), hcore_(), diis(), tbints_(), fock_(this)
+    Wavefunction(kval), hcore_(), diis(), fock_(this)
 {
     fock_.compute() = 0;
     fock_.computed() = 0;
@@ -71,6 +71,7 @@ const mpqc::TA::SCF::Matrix& mpqc::TA::SCF::hcore() {
         IntegralEnginePool<sc::Ref<sc::OneBodyInt> >(integral()->hcore()));
 
         hcore_ = Integrals(*(world())->madworld(), hcore_pool, basis());
+        world()->madworld()->gop.fence();
     }
     return hcore_;
 }

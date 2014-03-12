@@ -30,25 +30,25 @@
 
 #include <chemistry/qc/scf/taclscf.hpp>
 
-namespace mpqc{
-namespace TA{
-    class CLHF : public CLSCF {
+namespace mpqc {
+  namespace TA {
+    class CLHF: public CLSCF {
     public:
-        typedef CLSCF::Matrix Matrix;
-        CLHF(const sc::Ref<sc::KeyVal> &kval);
+      typedef CLSCF::Matrix Matrix;
+      CLHF(const sc::Ref<sc::KeyVal> &kval);
 
-        void minimize_energy();
+      void minimize_energy();
 
     protected:
-        Matrix ao_fock();
-        Matrix Gmat();
+      Matrix Gmat();
 
     private:
-        static sc::ClassDesc class_desc_;
+      static sc::ClassDesc class_desc_;
 
-    }; // class CLHF
+    };
+  // class CLHF
 
-} // namespace TA
+  }// namespace TA
 } // namespace mpqc
 
 #endif /* _MPQC_CHEMISTRY_QC_SCF_TACLHF_HPP_ */

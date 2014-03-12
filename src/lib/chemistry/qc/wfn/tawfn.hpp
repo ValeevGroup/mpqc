@@ -38,7 +38,6 @@
 // will happen: namespace sc -> namespace mpqc
 
 namespace mpqc {
-
   namespace TA {
 
     /// @addtogroup TAWFN
@@ -49,114 +48,123 @@ namespace mpqc {
      */
     class Wavefunction: public sc::MolecularEnergy {
 
-      public:
+    public:
 
-        typedef ::TiledArray::Array<double,1> Vector;  //!< Vector of reals
-        typedef ::TiledArray::Array<double,2> Matrix;  //!< Matrix of reals
-        typedef sc::Result<Vector> ResultVector;
-        typedef sc::Result<Matrix> ResultMatrix;
-        typedef sc::AccResult<Vector> AccResultVector;
-        typedef sc::AccResult<Matrix> AccResultMatrix;
+      typedef ::TiledArray::Array<double, 1> Vector; //!< Vector of reals
+      typedef ::TiledArray::Array<double, 2> Matrix; //!< Matrix of reals
+      typedef sc::Result<Vector> ResultVector;
+      typedef sc::Result<Matrix> ResultMatrix;
+      typedef sc::AccResult<Vector> AccResultVector;
+      typedef sc::AccResult<Matrix> AccResultMatrix;
 
-        /** The KeyVal constructor.
-         *
-         */
-        Wavefunction(const sc::Ref<sc::KeyVal> &kval);
-        //Wavefunction(sc::StateIn &s);
-        virtual ~Wavefunction();
-        //void save_data_state(sc::StateOut &s);
+      /** The KeyVal constructor.
+       *
+       */
+      Wavefunction(const sc::Ref<sc::KeyVal> &kval);
+      //Wavefunction(sc::StateIn &s);
+      virtual ~Wavefunction();
+      //void save_data_state(sc::StateOut &s);
 
-        /// @return the basis set
-        const sc::Ref<TiledBasisSet>& basis() const {
-          return tbs_;
-        }
-        /// @return the Integral factory used to make the basis set object "concrete"
-        const sc::Ref<sc::Integral>& integral() const {
-          return integral_;
-        }
+      /// @return the basis set
+      const sc::Ref<TiledBasisSet>& basis() const {
+        return tbs_;
+      }
+      /// @return the Integral factory used to make the basis set object "concrete"
+      const sc::Ref<sc::Integral>& integral() const {
+        return integral_;
+      }
 
-        /// @return the Molecule object
-        sc::Ref<sc::Molecule> molecule() const override {
-          return tbs_->molecule();
-        }
+      /// @return the Molecule object
+      sc::Ref<sc::Molecule> molecule() const override {
+        return tbs_->molecule();
+      }
 
-        /// @return the total charge of system
-        double total_charge() const;
+      /// @return the total charge of system
+      double total_charge() const;
 
-        /// @return the number of electrons in the system
-        virtual size_t nelectron() const = 0;
+      /// @return the number of electrons in the system
+      virtual size_t nelectron() const = 0;
 
-        /// Computes the S (or J) magnetic moment
-        /// of the target state(s), in units of \f$ \hbar/2 \f$.
-        /// Can be evaluated from density and overlap, as;
-        /// \code
-        ///   (this->alpha_density() * this-> overlap()).trace() -
-        ///   (this->beta_density() * this-> overlap()).trace()
-        /// \endcode
-        /// but derived Wavefunction may have this value as user input.
-        /// @return the magnetic moment
-        virtual double magnetic_moment() const;
-        /// @return true if the magnetic moment != 0
-        bool spin_polarized() { return magnetic_moment() != 0.0; }
+      /// Computes the S (or J) magnetic moment
+      /// of the target state(s), in units of \f$ \hbar/2 \f$.
+      /// Can be evaluated from density and overlap, as;
+      /// \code
+      ///   (this->alpha_density() * this-> overlap()).trace() -
+      ///   (this->beta_density() * this-> overlap()).trace()
+      /// \endcode
+      /// but derived Wavefunction may have this value as user input.
+      /// @return the magnetic moment
+      virtual double magnetic_moment() const;
+      /// @return true if the magnetic moment != 0
+      bool spin_polarized() {
+        return magnetic_moment() != 0.0;
+      }
 
-        /// Returns electron 1-body reduced density matrix (1-RDM) in AO basis.
-        /// The default implementation adds alpha and beta 1-RDMs
-        virtual const Matrix& rdm1();
-        /// Return electron 1-body reduced density matrix of spin \c s in AO basis.
-        virtual const Matrix& rdm1(sc::SpinCase1 s) =0;
-        /// Returns the AO overlap.
-        virtual const Matrix& overlap();
+      /// Returns electron 1-body reduced density matrix (1-RDM) in AO basis.
+      /// The default implementation adds alpha and beta 1-RDMs
+      virtual const Matrix& rdm1();
+      /// Return electron 1-body reduced density matrix of spin \c s in AO basis.
+      virtual const Matrix& rdm1(sc::SpinCase1 s) =0;
+      /// Returns the AO overlap.
+      virtual const Matrix& overlap();
 
-        unsigned debug() const {
-          return debug_;
-        }
+      unsigned debug() const {
+        return debug_;
+      }
 
-        /// makes this object obsolete, next call to compute() will recompute
-        void obsolete();
+      /// makes this object obsolete, next call to compute() will recompute
+      void obsolete();
 
-        void print(std::ostream& os = sc::ExEnv::out0()) const;
+      void print(std::ostream& os = sc::ExEnv::out0()) const;
 
-        // functions for internal access
-      protected:
+      // functions for internal access
+    protected:
 
-        const Matrix& density() const { return rdm1_.result_noupdate(); }
-        Matrix& density(){ return rdm1_.result_noupdate(); }
+      virtual Matrix& density(){return rdm1_.result_noupdate();}
 
-        const sc::Ref<mpqc::World> world() const { return world_; }
+      const sc::Ref<mpqc::World> world() const {
+        return world_;
+      }
 
-        const Matrix& density_alpha() const { return rdm1_alpha_.result_noupdate(); }
-        Matrix& density_alpha(){ return rdm1_alpha_.result_noupdate(); }
+      const Matrix& density_alpha() const {
+        return rdm1_alpha_.result_noupdate();
+      }
+      Matrix& density_alpha() {
+        return rdm1_alpha_.result_noupdate();
+      }
 
-        const Matrix& density_beta() const { return rdm1_beta_.result_noupdate(); }
-        Matrix& density_beta(){ return rdm1_beta_.result_noupdate(); }
+      const Matrix& density_beta() const {
+        return rdm1_beta_.result_noupdate();
+      }
+      Matrix& density_beta() {
+        return rdm1_beta_.result_noupdate();
+      }
 
+    private:
 
+      sc::Ref<mpqc::World> world_;
+      sc::Ref<TiledBasisSet> tbs_;
+      sc::Ref<sc::Integral> integral_;
+      ResultMatrix overlap_;
+      ResultMatrix rdm1_;
+      ResultMatrix rdm1_alpha_;
+      ResultMatrix rdm1_beta_;
 
-      private:
+      mutable double magnetic_moment_; //!< caches the value returned by magnetic_moment()
+      /// Wavefunction (reluctantly) supports calculations in finite electric fields in c1 symmetry
+      /// general support is coming in the future.
+      bool nonzero_efield_supported() const;
 
-        sc::Ref<mpqc::World> world_;
-        sc::Ref<TiledBasisSet> tbs_;
-        sc::Ref<sc::Integral> integral_;
-        ResultMatrix overlap_;
-        ResultMatrix rdm1_;
-        ResultMatrix rdm1_alpha_;
-        ResultMatrix rdm1_beta_;
+      unsigned debug_;
 
-        mutable double magnetic_moment_; //!< caches the value returned by magnetic_moment()
-        /// Wavefunction (reluctantly) supports calculations in finite electric fields in c1 symmetry
-        /// general support is coming in the future.
-        bool nonzero_efield_supported() const;
-
-        unsigned debug_;
-
-      private:
-        static sc::ClassDesc class_desc_;
+    private:
+      static sc::ClassDesc class_desc_;
 
     };
 
 /// @}
 
   }// namespace mpqc::TA
-}        // namespace mpqc
+} // namespace mpqc
 
 #endif /* CHEMISTRY_WFN_TAWFN_HPP */

@@ -52,22 +52,26 @@ namespace mpqc{
         /// @return the number of electrons in the system
         virtual size_t nelectron() const override;
 
+        virtual size_t occupation(){return occupation_;}
+
     protected:
         ::TiledArray::DIIS<Matrix> diis;
+        Matrix& scf_fock(){return fock_.result_noupdate();}
+        size_t & occ(){return occupation_;}
 
     private:
         // Number of iterations to use
         unsigned int maxiter_;
         unsigned int miniter_;
 
+        // Number of electrons
+        size_t occupation_;
+
         // Fock Matrix
         ResultMatrix fock_;
 
         // Hcore
         Matrix hcore_;
-
-        // Integral objects
-        sc::Ref<sc::TwoBodyInt> *tbints_;
 
         static sc::ClassDesc class_desc_;
 

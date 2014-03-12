@@ -49,18 +49,17 @@ namespace TA {
 
         virtual const Matrix& rdm1() override;
 
-        inline virtual size_t occ() { return occupation_; }
-
     protected:
+
+        virtual Matrix& density() override;
 
         void tr_corr_purify(Matrix &P);
         // Return a shifted Fock matrix such that the spectrum has been inverted
         // and shifted to the range (0,1)
-        Matrix Dguess(const Matrix &F);
+        void Dguess(const Matrix &F);
 
     private:
         static sc::ClassDesc class_desc_;
-        size_t occupation_; // Number of occupied orbitals
 
     }; // Class CLSCF
 

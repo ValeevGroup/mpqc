@@ -38,6 +38,15 @@
 using namespace boost::unit_test;
 using namespace sc;
 using namespace mpqc;
+using namespace mpqc::TA;
+
+struct Mock_CLSCF : public CLSCF {
+  Mock_CLSCF(const sc::Ref<sc::KeyVal> &kval) : CLSCF(kval) {}
+  ~Mock_CLSCF(){}
+
+  CLSCF::Matrix& density_data(){return density();}
+
+};
 
 struct MADConfig {
     MADConfig() {
@@ -59,17 +68,17 @@ BOOST_AUTO_TEST_CASE( construct_clscf_programmatically ){
 
     // Make keyval
     Ref<AssignedKeyVal> akv = new AssignedKeyVal;
-    akv->assign("name", "STO-3G");
+    akv->assign("name", "3-21G");
     akv->assign("molecule", mol.pointer());
     Ref<GaussianBasisSet> basis =
                     new GaussianBasisSet(Ref<KeyVal>(akv));
     akv->assign("basis", basis.pointer());
 
     //Construct object
-    Ref<TA::CLSCF> tscf = new TA::CLSCF(akv);
+    Ref<Mock_CLSCF> tscf = new Mock_CLSCF(akv);
     tscf->print();
     std::cout << "Overlap \n" << tscf->overlap() << std::endl;
-    std::cout << "Density Guess \n" << tscf->rdm1() << std::endl;
+    std::cout << "SOAD Density \n" << tscf->density_data() << std::endl;
 }
 
 

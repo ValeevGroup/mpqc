@@ -32,6 +32,8 @@
 #include "cadfclhf.h"
 
 using namespace sc;
+using std::cout;
+using std::endl;
 
 
 
@@ -101,8 +103,6 @@ CADFCLHF::compute_K()
   const int me = scf_grp_->me();
   const int n_node = scf_grp_->n();
   const Ref<GaussianBasisSet>& obs = gbs_;
-  GaussianBasisSet* obsptr = gbs_;
-  GaussianBasisSet* dfbsptr = dfbs_;
   const int nbf = obs->nbasis();
   const int dfnbf = dfbs_->nbasis();
 
@@ -440,6 +440,11 @@ CADFCLHF::compute_K()
         auto& my_L3_part = L_3[{ish, Xsh}];
         ShellIndexWithValue full_list[size];
         const auto& unsrt = my_L3_part.unsorted_indices();
+        //ExEnv::out0() << "L3_node_sizes[{" << ish << ", " << Xsh << "}] = ";
+        //for(auto val : L3_node_sizes[{ish, Xsh}]) {
+        //  ExEnv::out0() << val << " ";
+        //}
+        //ExEnv::out0() << endl;
         scf_grp_->raw_collect(
             unsrt.data(),
             (const int*)L3_node_sizes[{ish, Xsh}].data(),

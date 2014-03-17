@@ -768,9 +768,11 @@ MessageGrp::raw_collect(const void *part, const int *lengths, void *whole,
   int offset = 0;
   for (int i=0; i<n_; i++) {
       int nbytes = lengths[i];
-      if (i==me_) memcpy(&((char*)whole)[offset], part, nbytes);
-      raw_bcast(&((char*)whole)[offset], nbytes, i);
-      offset += nbytes;
+      if(nbytes > 0) {
+        if (i==me_) memcpy(&((char*)whole)[offset], part, nbytes);
+        raw_bcast(&((char*)whole)[offset], nbytes, i);
+        offset += nbytes;
+      }
     }
 }
 

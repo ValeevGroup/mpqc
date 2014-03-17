@@ -421,11 +421,12 @@ CADFCLHF::compute_K()
         //ShellIndexWithValue full_list[size];
         std::vector<ShellIndexWithValue> full_list(size);
         const auto& unsrt = my_L3_part.unsorted_indices();
+        const int mysize = L3_node_sizes[{ish, Xsh}][me];
+        DUMP2(mysize/sizeof(ShellIndexWithValue), unsrt.size());
         ExEnv::out0() << "L3_node_sizes[{" << ish << ", " << Xsh << "}] = ";
         for(auto val : L3_node_sizes[{ish, Xsh}]) {
           ExEnv::out0() << val << " ";
         }
-        const int mysize = L3_node_sizes[{ish, Xsh}][me];
         if(mysize > 0) {
           ExEnv::out0() << ": " << full_list[size-1] << " " << unsrt.data()[mysize/sizeof(ShellIndexWithValue)-1] << endl;
         }

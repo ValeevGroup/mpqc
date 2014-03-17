@@ -373,10 +373,9 @@ CADFCLHF::compute_K()
       std::map<std::pair<int, int>, int> L3_total_sizes;
       std::map<std::pair<int, int>, std::vector<int>> L3_node_sizes;
       for(int i = 0; i < total_n_l3; ++i) {
-        const int node_src = l3_idxs_sizes[4*i];
-        const int ish = l3_idxs_sizes[4*i+1];
-        const int Xsh = l3_idxs_sizes[4*i+2];
-        const int njsh = l3_idxs_sizes[4*i+3];
+        int node_src, ish, Xsh, njsh;
+        // This is disgusting
+        std::tie(node_src, ish, Xsh, njsh) = *reinterpret_cast<std::tuple<int, int, int, int>*>(&(l3_idxs_sizes[0]) + 4*i);
         DUMP4(node_src, ish, Xsh, njsh);
         L3_total_sizes[{ish, Xsh}] += njsh;
         if(L3_node_sizes.find({ish, Xsh}) == L3_node_sizes.end()) {

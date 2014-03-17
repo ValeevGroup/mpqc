@@ -233,31 +233,10 @@ CADFCLHF::compute_K()
 
     do_threaded(nthread_, [&](int ithr){
 
-      //for(int jsh_index = ithr; jsh_index < obs->nshell(); jsh_index += nthread_) {
-      //  ShellData jsh(jsh_index, gbs_, dfbs_);
-
-      //  auto& L_sch_jsh = L_schwarz[jsh];
-
-      //  for(auto Xsh : L_DC[jsh]) {
-      //for(auto&& jshXsh :
-      //    thread_node_parallel_range(
-      //    dependent_product_range(
-      //        shell_range(gbs_, dfbs_),
-      //        std::function<OrderedShellList&(int)>(
-      //          [this](int jsh) -> OrderedShellList& { return L_DC[jsh]; }
-      //        )
-      //    ),
-      //    1, 0, nthread_, ithr
-      //    //n_node, me, nthread_, ithr
-      //))
-
 #define NEW_LINK 1
 #if NEW_LINK
       int thr_offset = me*nthread_ + ithr;
       int increment = n_node*nthread_;
-
-      //int thr_offset = ithr;
-      //int increment = nthread_;
 
       auto jsh_iter = shell_range(gbs_, dfbs_).begin();
       const auto& jsh_end = shell_range(gbs_, dfbs_).end();
@@ -362,6 +341,7 @@ CADFCLHF::compute_K()
     });
     timer.change("distribute L_3");
 
+#if NEW_LINK
     if(n_node > 1) {
       std::vector<std::tuple<int, int, int, int>> my_L_3_keys;
       for(auto&& L_3_list : L_3) {
@@ -456,6 +436,7 @@ CADFCLHF::compute_K()
       }
     }
     else {
+#endif
       for(auto&& pair : L_3) {
         L_3_keys.emplace_back(
             pair.first.first,
@@ -463,7 +444,9 @@ CADFCLHF::compute_K()
             pair.second.size()
         );
       }
+#if NEW_LINK
     }
+#endif
 
     do_threaded(nthread_, [&](int ithr){
       auto L_3_iter = L_3.begin();

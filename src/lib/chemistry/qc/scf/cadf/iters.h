@@ -48,6 +48,7 @@
 #include <boost/range/counting_range.hpp>
 #include <boost/iterator/iterator_adaptor.hpp>
 #include <boost/iterator/iterator_facade.hpp>
+#include <boost/unordered_set.hpp>
 
 // MPQC includes
 #include <util/misc/thread_timer.h>
@@ -1144,7 +1145,7 @@ struct ShellIndexWithValue{
     }
 };
 
-namespace {
+namespace detail {
   template<typename T>
   struct hash_;
 
@@ -1158,7 +1159,7 @@ namespace {
   };
 
   struct index_equal_ {
-      bool operator()(const ShellIndexWithValue& a, const ShellIndexWithValue& b) {
+      bool operator()(const ShellIndexWithValue& a, const ShellIndexWithValue& b) const {
         return a.index == b.index;
       }
   };
@@ -1169,12 +1170,12 @@ class OrderedShellList {
   public:
 
     typedef std::vector<ShellIndexWithValue> index_list;
-    //typedef std::unordered_set<
-    //    ShellIndexWithValue,
-    //    hash_<ShellIndexWithValue>,
-    //    index_equal_
-    //> index_set;
-    typedef std::set<ShellIndexWithValue, index_equal_> index_set;
+    typedef boost::unordered_set<
+        ShellIndexWithValue,
+        detail::hash_<ShellIndexWithValue>,
+        detail::index_equal_
+    > index_set;
+    //typedef std::set<ShellIndexWithValue, index_equal_> index_set;
 
     typedef index_list::const_iterator index_iterator;
     typedef basis_element_with_value_iterator<ShellDataWithValue, index_iterator> iterator;

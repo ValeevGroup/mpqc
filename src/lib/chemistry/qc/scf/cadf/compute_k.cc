@@ -424,7 +424,7 @@ CADFCLHF::compute_K()
         const auto& unsrt = my_L3_part.unsorted_indices();
         const int mysize = L3_node_sizes[{ish, Xsh}][me];
         DUMP2(mysize/sizeof(ShellIndexWithValue), unsrt.size());
-        out_assert(mysize/sizeof(ShellIndexWithValue), =, unsrt.size());
+        out_assert(mysize/sizeof(ShellIndexWithValue), ==, unsrt.size());
         ExEnv::out0() << "L3_node_sizes[{" << ish << ", " << Xsh << "}] = ";
         for(auto val : L3_node_sizes[{ish, Xsh}]) {
           ExEnv::out0() << val << " ";

@@ -418,20 +418,27 @@ CADFCLHF::compute_K()
         int ish, Xsh, size;
         std::tie(ish, Xsh, size) = L_3_key;
         auto& my_L3_part = L_3[{ish, Xsh}];
-        ShellIndexWithValue full_list[size];
+        //ShellIndexWithValue full_list[size];
+        std::vector<ShellIndexWithValue> full_list(size);
         const auto& unsrt = my_L3_part.unsorted_indices();
-        //ExEnv::out0() << "L3_node_sizes[{" << ish << ", " << Xsh << "}] = ";
-        //for(auto val : L3_node_sizes[{ish, Xsh}]) {
-        //  ExEnv::out0() << val << " ";
-        //}
-        //ExEnv::out0() << endl;
+        ExEnv::out0() << "L3_node_sizes[{" << ish << ", " << Xsh << "}] = ";
+        for(auto val : L3_node_sizes[{ish, Xsh}]) {
+          ExEnv::out0() << val << " ";
+        }
+        const int mysize = L3_node_sizes[{ish, Xsh}][me];
+        if(mysize > 0) {
+          ExEnv::out0() << ": " << full_list[size-1] << " " << unsrt.data()[mysize/sizeof(ShellIndexWithValue)-1] << endl;
+        }
+        else{
+          ExEnv::out0() << ": " << full_list[size-1] << " (zero size)" << endl;
+        }
         scf_grp_->raw_collect(
             unsrt.data(),
             (const int*)L3_node_sizes[{ish, Xsh}].data(),
-            &(full_list[0])
+            full_list.data()
         );
         my_L3_part.clear();
-        my_L3_part.acquire_and_sort(&(full_list[0]), size);
+        my_L3_part.acquire_and_sort(full_list.data(), size);
         my_L3_part.set_basis(gbs_, dfbs_);
       }
     }

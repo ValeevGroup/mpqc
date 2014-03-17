@@ -2110,9 +2110,9 @@ namespace sc {
           }
         }
         deallocate(bdata);
-        if(xml_debug){
-          write_as_xml("B", B_mu, std::map<std::string, int>{ {"mu", mu} });
-        }
+        //if(xml_debug){
+        //  write_as_xml("B", B_mu, std::map<std::string, int>{ {"mu", mu} });
+        //}
         // This should be right?!?
         //B_mu = D * g_mu;
         //----------------------------------------//
@@ -2232,13 +2232,13 @@ namespace sc {
         /* Compute gtilde_mu, add to the A intermediate   {{{2 */ #if 2 // begin fold
         timer_change("03 - compute A", 2);
         g_mu = -0.5 * dt_mu * X_g_Y;
-        if(xml_debug){
-          new_dt_mu = -2.0 * g_mu;
-          write_as_xml(
-              "new_dt", new_dt_mu,
-              std::map<std::string, int>{ {"mu", mu} }
-          );
-        }
+        //if(xml_debug){
+        //  new_dt_mu = -2.0 * g_mu;
+        //  write_as_xml(
+        //      "new_dt", new_dt_mu,
+        //      std::map<std::string, int>{ {"mu", mu} }
+        //  );
+        //}
         A_mu = B_mu - 0.5 * dt_mu * X_g_Y;
         //----------------------------------------//
         /*******************************************************/ #endif //end fold 2}}}

@@ -1170,7 +1170,7 @@ class OrderedShellList {
   public:
 
     typedef std::vector<ShellIndexWithValue> index_list;
-    typedef boost::unordered_set<
+    typedef std::unordered_set<
         ShellIndexWithValue,
         detail::hash_<ShellIndexWithValue>,
         detail::index_equal_

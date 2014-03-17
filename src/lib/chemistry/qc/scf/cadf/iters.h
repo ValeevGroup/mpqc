@@ -1170,7 +1170,7 @@ class OrderedShellList {
   public:
 
     typedef std::vector<ShellIndexWithValue> index_list;
-    typedef boost::unordered_set<
+    typedef std::unordered_set<
         ShellIndexWithValue,
         detail::hash_<ShellIndexWithValue>,
         detail::index_equal_
@@ -1259,10 +1259,7 @@ class OrderedShellList {
     void sort(bool transfer_idx_set = true) {
       std::lock_guard<std::mutex> lg(insert_mtx_);
       if(transfer_idx_set) {
-        for(auto idx : idx_set_) {
-          indices_.push_back(idx);
-        }
-        //std::copy(idx_set_.begin(), idx_set_.end(), std::back_inserter(indices_));
+        std::copy(idx_set_.begin(), idx_set_.end(), std::back_inserter(indices_));
       }
       if(sort_by_value_) {
         std::sort(indices_.begin(), indices_.end(),

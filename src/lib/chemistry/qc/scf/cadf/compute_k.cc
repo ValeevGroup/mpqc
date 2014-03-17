@@ -343,6 +343,7 @@ CADFCLHF::compute_K()
 
 #if NEW_LINK
     if(n_node > 1) {
+      // TODO use std::array here instead of tuple
       std::vector<std::tuple<int, int, int, int>> my_L_3_keys;
       for(auto&& L_3_list : L_3) {
         my_L_3_keys.emplace_back(
@@ -376,7 +377,6 @@ CADFCLHF::compute_K()
         int node_src, ish, Xsh, njsh;
         // This is disgusting
         std::tie(node_src, ish, Xsh, njsh) = *reinterpret_cast<std::tuple<int, int, int, int>*>(&(l3_idxs_sizes[0]) + 4*i);
-        DUMP4(node_src, ish, Xsh, njsh);
         L3_total_sizes[{ish, Xsh}] += njsh;
         if(L3_node_sizes.find({ish, Xsh}) == L3_node_sizes.end()) {
           L3_node_sizes.emplace(
@@ -418,22 +418,10 @@ CADFCLHF::compute_K()
         int ish, Xsh, size;
         std::tie(ish, Xsh, size) = L_3_key;
         auto& my_L3_part = L_3[{ish, Xsh}];
-        //ShellIndexWithValue full_list[size];
         std::vector<ShellIndexWithValue> full_list(size);
         const auto& unsrt = my_L3_part.unsorted_indices();
         const int mysize = L3_node_sizes[{ish, Xsh}][me];
-        DUMP2(mysize/sizeof(ShellIndexWithValue), unsrt.size());
         out_assert(mysize/sizeof(ShellIndexWithValue), ==, unsrt.size());
-        ExEnv::out0() << "L3_node_sizes[{" << ish << ", " << Xsh << "}] = ";
-        for(auto val : L3_node_sizes[{ish, Xsh}]) {
-          ExEnv::out0() << val << " ";
-        }
-        if(mysize > 0) {
-          ExEnv::out0() << ": " << full_list[size-1] << " " << unsrt.data()[mysize/sizeof(ShellIndexWithValue)-1] << endl;
-        }
-        else{
-          ExEnv::out0() << ": " << full_list[size-1] << " (zero size)" << endl;
-        }
         scf_grp_->raw_collect(
             unsrt.data(),
             (const int*)L3_node_sizes[{ish, Xsh}].data(),

@@ -233,7 +233,7 @@ CADFCLHF::compute_K()
 
     do_threaded(nthread_, [&](int ithr){
 
-#define NEW_LINK 0
+#define NEW_LINK 1
 #if NEW_LINK
       int thr_offset = me*nthread_ + ithr;
       int increment = n_node*nthread_;

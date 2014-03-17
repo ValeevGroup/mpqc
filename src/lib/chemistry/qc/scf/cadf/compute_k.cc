@@ -362,7 +362,7 @@ CADFCLHF::compute_K()
       int total_n_l3 = 0;
       for(int i = 0; i < n_node; total_n_l3 += n_l3_per_node[i++]);
 
-      // Now get all of the (ish, Xsh, size) lists
+      // Now get all of the (node, ish, Xsh, size) lists
       int l3_idxs_sizes[total_n_l3*4];
       for(int i = 0; i < n_node; ++i) {
         n_l3_per_node[i] = 4*sizeof(int)*n_l3_per_node[i];
@@ -377,6 +377,7 @@ CADFCLHF::compute_K()
         const int ish = l3_idxs_sizes[4*i+1];
         const int Xsh = l3_idxs_sizes[4*i+2];
         const int njsh = l3_idxs_sizes[4*i+3];
+        DUMP4(node_src, ish, Xsh, njsh);
         L3_total_sizes[{ish, Xsh}] += njsh;
         if(L3_node_sizes.find({ish, Xsh}) == L3_node_sizes.end()) {
           L3_node_sizes.emplace(
@@ -423,6 +424,7 @@ CADFCLHF::compute_K()
         const auto& unsrt = my_L3_part.unsorted_indices();
         const int mysize = L3_node_sizes[{ish, Xsh}][me];
         DUMP2(mysize/sizeof(ShellIndexWithValue), unsrt.size());
+        out_assert(mysize/sizeof(ShellIndexWithValue), =, unsrt.size());
         ExEnv::out0() << "L3_node_sizes[{" << ish << ", " << Xsh << "}] = ";
         for(auto val : L3_node_sizes[{ish, Xsh}]) {
           ExEnv::out0() << val << " ";

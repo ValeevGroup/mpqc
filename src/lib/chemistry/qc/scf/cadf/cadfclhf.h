@@ -525,8 +525,8 @@ class CADFCLHF: public CLHF {
     std::vector<Ref<TwoBodyTwoCenterInt>> metric_ints_2c_;
 
     // Integrals computed locally this iteration
-    std::atomic<int> ints_computed_locally_;
-    int ints_computed_;
+    std::atomic<long> ints_computed_locally_;
+    long ints_computed_;
 
     /// List of atom centers as Eigen::Vector3d objects, for convenience
     std::vector<Eigen::Vector3d> centers_;

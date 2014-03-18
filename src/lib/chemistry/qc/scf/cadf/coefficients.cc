@@ -247,6 +247,7 @@ CADFCLHF::compute_coefficients()
     const int atom_nbf = gbs_->nbasis_on_center(iatom);
     const int atom_dfnbf = dfbs_->nbasis_on_center(iatom);
 
+    timer.enter("count columns");
     // First, figure out the number of columns in the matrix
     int ncol = 0;
     coef_block_offsets_[iatom].resize(natom);
@@ -262,6 +263,7 @@ CADFCLHF::compute_coefficients()
       }
     }
 
+    timer.change("compute coefficients");
     coefs_blocked_.emplace_back(atom_nbf, ncol);
     auto& cblock = coefs_blocked_.back();
     cblock = RowMatrix::Constant(atom_nbf, ncol, -999);
@@ -296,6 +298,8 @@ CADFCLHF::compute_coefficients()
 
       }
     }
+
+    timer.exit();
 
   }
   /*****************************************************************************************/ #endif //1}}} //latex `\label{sc:coeftransend}`

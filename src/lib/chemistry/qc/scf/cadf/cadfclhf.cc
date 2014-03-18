@@ -269,7 +269,7 @@ CADFCLHF::ao_fock(double accuracy)
     ints_computed_locally_ = 0;
     compute_coefficients();
     ints_computed_ = ints_computed_locally_;
-    scf_grp_->sum(ints_computed_);
+    scf_grp_->sum(&ints_computed_, 1);
     if(scf_grp_->me() == 0) {
       ExEnv::out0() << "  Computed " << ints_computed_ << " integrals to determine coefficients." << endl;
     }
@@ -308,7 +308,7 @@ CADFCLHF::ao_fock(double accuracy)
     if(xml_debug_) write_as_xml("J", J), end_xml_context("compute_J");
     G = J.copy();
     ints_computed_ = ints_computed_locally_;
-    scf_grp_->sum(ints_computed_);
+    scf_grp_->sum(&ints_computed_, 1);
     if(scf_grp_->me() == 0) {
       ExEnv::out0() << "        Computed " << ints_computed_ << " integrals for J part" << endl;
     }
@@ -320,7 +320,7 @@ CADFCLHF::ao_fock(double accuracy)
     if(xml_debug_) write_as_xml("K", K), end_xml_context("compute_K");
     G.accumulate( -1.0 * K);
     ints_computed_ = ints_computed_locally_;
-    scf_grp_->sum(ints_computed_);
+    scf_grp_->sum(&ints_computed_, 1);
     if(scf_grp_->me() == 0) {
       ExEnv::out0() << "        Computed " << ints_computed_ << " integrals for K part" << endl;
     }

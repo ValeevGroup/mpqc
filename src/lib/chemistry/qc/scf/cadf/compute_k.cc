@@ -26,6 +26,8 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <numeric>
+
 #include <chemistry/qc/basis/petite.h>
 #include <util/misc/xmlwriter.h>
 
@@ -233,8 +235,6 @@ CADFCLHF::compute_K()
 
     do_threaded(nthread_, [&](int ithr){
 
-#define NEW_LINK 1
-#if NEW_LINK
       int thr_offset = me*nthread_ + ithr;
       int increment = n_node*nthread_;
 
@@ -283,12 +283,6 @@ CADFCLHF::compute_K()
         advance_size = increment;
         const auto& jsh = *jsh_iter;
         const auto& Xsh = *Xsh_iter;
-#else
-      for(int jsh_index = ithr; jsh_index < obs->nshell(); jsh_index += nthread_) {
-        ShellData jsh(jsh_index, gbs_, dfbs_);
-        for(auto Xsh : L_DC[jsh]) {
-#endif
-
         auto& L_sch_jsh = L_schwarz[jsh];
 
         const double pf = Xsh.value;                                                       //latex `\label{sc:link:pf}`
@@ -326,23 +320,17 @@ CADFCLHF::compute_K()
 
         } // end loop over ish
         if(not jsh_added){
-#if NEW_LINK
           Xsh_done = true;
-#else
-          break;
-#endif
         }
 
       }
-#if !NEW_LINK
-      }
-#endif
 
     });
+
     timer.change("distribute L_3");
 
-#if NEW_LINK
     if(n_node > 1) {
+      timer.enter("01 - build my L_3");
       // TODO use std::array here instead of tuple
       std::vector<std::tuple<int, int, int, int>> my_L_3_keys;
       for(auto&& L_3_list : L_3) {
@@ -355,6 +343,7 @@ CADFCLHF::compute_K()
       }
 
       // Get the number of L3 lists per node
+      timer.change("02 - get n_l3_per_node");
       int n_l3_per_node[n_node];
       int ones[n_node];
       std::fill_n(ones, n_node, 1*sizeof(int));
@@ -364,6 +353,7 @@ CADFCLHF::compute_K()
       for(int i = 0; i < n_node; total_n_l3 += n_l3_per_node[i++]);
 
       // Now get all of the (node, ish, Xsh, size) lists
+      timer.change("03 - distribute my_L3");
       int l3_idxs_sizes[total_n_l3*4];
       for(int i = 0; i < n_node; ++i) {
         n_l3_per_node[i] = 4*sizeof(int)*n_l3_per_node[i];
@@ -371,23 +361,28 @@ CADFCLHF::compute_K()
       scf_grp_->raw_collect(my_L_3_keys.data(), (const int*)&n_l3_per_node, &l3_idxs_sizes);
 
       // Extract the size of each list and sum
+      timer.change("04 - extract L3_node_sizes");
       std::map<std::pair<int, int>, int> L3_total_sizes;
-      std::map<std::pair<int, int>, std::vector<int>> L3_node_sizes;
+      std::map<std::pair<int, int>, std::vector<int>> L3_node_counts;
+      std::vector<int> full_sizes(n_node);
+      int full_data_count = 0;
       for(int i = 0; i < total_n_l3; ++i) {
         int node_src, ish, Xsh, njsh;
         // This is disgusting
         std::tie(node_src, ish, Xsh, njsh) = *reinterpret_cast<std::tuple<int, int, int, int>*>(&(l3_idxs_sizes[0]) + 4*i);
         L3_total_sizes[{ish, Xsh}] += njsh;
-        if(L3_node_sizes.find({ish, Xsh}) == L3_node_sizes.end()) {
-          L3_node_sizes.emplace(
+        if(L3_node_counts.find({ish, Xsh}) == L3_node_counts.end()) {
+          L3_node_counts.emplace(
             std::piecewise_construct,
             std::forward_as_tuple(ish, Xsh),
             std::forward_as_tuple(n_node)
           );
-          assert((L3_node_sizes[{ish, Xsh}].size() == n_node));
+          assert((L3_node_counts[{ish, Xsh}].size() == n_node));
         }
         out_assert(node_src, <=, n_node);
-        L3_node_sizes[{ish, Xsh}][node_src] = njsh * sizeof(ShellIndexWithValue);
+        L3_node_counts[{ish, Xsh}][node_src] = njsh;
+        full_sizes[node_src] += njsh * sizeof(ShellIndexWithValue);
+        full_data_count += njsh;
       }
 
       for(auto&& pair : L3_total_sizes) {
@@ -398,6 +393,7 @@ CADFCLHF::compute_K()
         );
       }
 
+      timer.change("05 - sort L3_keys");
       std::sort(L_3_keys.begin(), L_3_keys.end(),
           [](const std::tuple<int, int, int>& a, const std::tuple<int, int, int>& b) {
             int isha, Xsha, sizea, ishb, Xshb, sizeb;
@@ -413,27 +409,82 @@ CADFCLHF::compute_K()
           }
       );
 
-      // TODO reduce latency penalty here
+      timer.change("06 - make L3 data containers");
+      std::vector<ShellIndexWithValue> my_data(full_sizes[me]/sizeof(ShellIndexWithValue));
+      int offset = 0;
+      for(auto&& L_3_key : L_3_keys) {
+        int ish, Xsh, size;
+        Xsh = 0;
+        std::tie(ish, Xsh, size) = L_3_key;
+        auto& my_L3_part = L_3[{ish, Xsh}];
+        const auto& unsrt = my_L3_part.unsorted_indices();
+        if(unsrt.size() > 0) {
+          std::copy(unsrt.begin(), unsrt.end(), my_data.begin()+offset);
+        }
+        offset += unsrt.size();
+        my_L3_part.clear();
+      }
+      std::vector<ShellIndexWithValue> full_data(full_data_count);
+
+      timer.change("07 - distribute each L_3");
+      scf_grp_->raw_collect(
+          &(my_data[0]),
+          (const int*)full_sizes.data(),
+          &(full_data[0])
+      );
+      std::vector<int> offsets;
+      int offsum = 0;
+      for(auto sz : full_sizes) {
+        offsets.push_back(offsum/sizeof(ShellIndexWithValue));
+        offsum += sz;
+      }
+
+      timer.change("08 - unpack full L_3");
+      std::vector<int> offsets_within(n_node);
       for(auto&& L_3_key : L_3_keys) {
         int ish, Xsh, size;
         std::tie(ish, Xsh, size) = L_3_key;
         auto& my_L3_part = L_3[{ish, Xsh}];
-        std::vector<ShellIndexWithValue> full_list(size);
-        const auto& unsrt = my_L3_part.unsorted_indices();
-        const int mysize = L3_node_sizes[{ish, Xsh}][me];
-        out_assert(mysize/sizeof(ShellIndexWithValue), ==, unsrt.size());
-        scf_grp_->raw_collect(
-            unsrt.data(),
-            (const int*)L3_node_sizes[{ish, Xsh}].data(),
-            full_list.data()
-        );
-        my_L3_part.clear();
-        my_L3_part.acquire_and_sort(full_list.data(), size);
+        const auto& ndcnts = L3_node_counts[{ish, Xsh}];
+        std::vector<ShellIndexWithValue> iX_list(size);
+        int full_off = 0;
+
+        for(int inode = 0; inode < n_node; ++inode) {
+          const int icount = ndcnts[inode];
+          if(icount > 0) {
+            //DUMP4(offsets[inode], offsets_within[inode], icount, full_data_count);
+            //out_assert(offsets[inode] + offsets_within[inode] + icount, <=, full_data_count);
+            std::copy(
+                &(full_data[offsets[inode] + offsets_within[inode]]),
+                &(full_data[offsets[inode] + offsets_within[inode]]) + icount,
+                &(iX_list[full_off])
+            );
+            full_off += icount;
+            offsets_within[inode] += icount;
+          }
+        }
+
+        assert(full_off == size);
+        my_L3_part.acquire_and_sort(&(iX_list[0]), size);
         my_L3_part.set_basis(gbs_, dfbs_);
+
+        //std::vector<ShellIndexWithValue> full_list(size);
+        //const auto& unsrt = my_L3_part.unsorted_indices();
+        //const int mysize = L3_node_sizes[{ish, Xsh}][me];
+        //out_assert(mysize/sizeof(ShellIndexWithValue), ==, unsrt.size());
+        //scf_grp_->raw_collect(
+        //    unsrt.data(),
+        //    (const int*)L3_node_sizes[{ish, Xsh}].data(),
+        //    full_list.data()
+        //);
+        //my_L3_part.clear();
+        //my_L3_part.acquire_and_sort(full_list.data(), size);
+        //my_L3_part.set_basis(gbs_, dfbs_);
       }
+
+      timer.exit();
     }
     else {
-#endif
       for(auto&& pair : L_3) {
         L_3_keys.emplace_back(
             pair.first.first,
@@ -441,9 +492,7 @@ CADFCLHF::compute_K()
             pair.second.size()
         );
       }
-#if NEW_LINK
     }
-#endif
 
     do_threaded(nthread_, [&](int ithr){
       auto L_3_iter = L_3.begin();

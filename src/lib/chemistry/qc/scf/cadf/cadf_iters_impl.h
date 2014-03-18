@@ -31,8 +31,6 @@
 
 #include <util/misc/scexception.h>
 
-#define out_assert(a, op, b) assert(a op b || ((std::cout << "Failed assertion output: " << #a << " ( = " << a << ") " << #op << " " << #b <<  " ( = " << b << ")" << std::endl), false))
-
 namespace sc {
 
 template<typename Range>

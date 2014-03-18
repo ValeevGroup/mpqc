@@ -440,6 +440,7 @@ CADFCLHF::compute_K()
       }
 
       timer.change("08 - unpack full L_3");
+      // TODO Thread this, if possible
       std::vector<int> offsets_within(n_node);
       for(auto&& L_3_key : L_3_keys) {
         int ish, Xsh, size;
@@ -452,8 +453,6 @@ CADFCLHF::compute_K()
         for(int inode = 0; inode < n_node; ++inode) {
           const int icount = ndcnts[inode];
           if(icount > 0) {
-            //DUMP4(offsets[inode], offsets_within[inode], icount, full_data_count);
-            //out_assert(offsets[inode] + offsets_within[inode] + icount, <=, full_data_count);
             std::copy(
                 &(full_data[offsets[inode] + offsets_within[inode]]),
                 &(full_data[offsets[inode] + offsets_within[inode]]) + icount,
@@ -467,19 +466,6 @@ CADFCLHF::compute_K()
         assert(full_off == size);
         my_L3_part.acquire_and_sort(&(iX_list[0]), size);
         my_L3_part.set_basis(gbs_, dfbs_);
-
-        //std::vector<ShellIndexWithValue> full_list(size);
-        //const auto& unsrt = my_L3_part.unsorted_indices();
-        //const int mysize = L3_node_sizes[{ish, Xsh}][me];
-        //out_assert(mysize/sizeof(ShellIndexWithValue), ==, unsrt.size());
-        //scf_grp_->raw_collect(
-        //    unsrt.data(),
-        //    (const int*)L3_node_sizes[{ish, Xsh}].data(),
-        //    full_list.data()
-        //);
-        //my_L3_part.clear();
-        //my_L3_part.acquire_and_sort(full_list.data(), size);
-        //my_L3_part.set_basis(gbs_, dfbs_);
       }
 
       timer.exit();

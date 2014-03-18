@@ -54,7 +54,7 @@ CADFCLHF::compute_coefficients()
   // First, compute the amount of memory needed
 
   // Coefficients will be stored jbf <= ibf
-  // Update:  Now storing
+  timer.enter("01 - init coef memory");
 
   int ncoefs = 0;                                                                          //latex `\label{sc:coefcountbegin}`
   for(auto ibf : function_range(obs, dfbs_)){
@@ -131,6 +131,7 @@ CADFCLHF::compute_coefficients()
   //---------------------------------------------------------------------------------------//
   // reset the iteration over local pairs
   local_pairs_spot_ = 0;
+  timer.change("02 - compute coefficients");
   {
     boost::thread_group compute_threads;
     // Loop over number of threads
@@ -206,11 +207,13 @@ CADFCLHF::compute_coefficients()
   /*=======================================================================================*/
   /* Global sum coefficient memory                        		                        {{{1 */ #if 1 // begin fold
   //---------------------------------------------------------------------------------------//
+  timer.change("03 - global sum coefficient memory");
   scf_grp_->sum(coefficients_data_, ncoefs);                                               //latex `\label{sc:coefsum}`
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
   /* Store the transpose and blocked coefficients          		                        {{{1 */ #if 1 //latex `\label{sc:coeftrans}`
   //---------------------------------------------------------------------------------------//
+  timer.change("04 - store transposed coefs");
   for(auto&& Y : function_range(dfbs_)){
     for(auto&& ish : iter_shells_on_center(obs, Y.center)){
       for(auto&& mu : function_range(ish)){
@@ -237,6 +240,7 @@ CADFCLHF::compute_coefficients()
     }
   }
 
+  timer.change("05 - store blocked coefs");
   coef_block_offsets_.resize(natom);
   for(int iatom = 0; iatom < natom; ++iatom) {
 
@@ -293,8 +297,6 @@ CADFCLHF::compute_coefficients()
       }
     }
 
-
-
   }
   /*****************************************************************************************/ #endif //1}}} //latex `\label{sc:coeftransend}`
   /*=======================================================================================*/
@@ -333,6 +335,7 @@ CADFCLHF::compute_coefficients()
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
   /* Make the CADF-LinK lists                                                         {{{1 */ #if 1 // begin fold
+  timer.change("06 - LinK coef lists");
   schwarz_df_.resize(dfbs_->nshell());
   for(auto Xsh : shell_range(dfbs_)){
     auto g_XX_ptr = ints_to_eigen(
@@ -346,55 +349,63 @@ CADFCLHF::compute_coefficients()
     schwarz_df_[Xsh] = sqrt(frob_norm);
   }
   if(do_linK_) {
-    for(auto lsh : shell_range(obs)) {
-      for(auto ksh : L_schwarz[lsh]) {
-        double Ct = 0.0;
-        //----------------------------------------//
-        for(auto sigma : function_range(lsh)) {
-          for(auto nu : function_range(ksh)) {
-            BasisFunctionData first, second;
-            if(ksh <= lsh) {
-              first = sigma;
-              second = nu;
-            }
-            else {
-              first = nu;
-              second = sigma;
-            }
-            IntPair mu_sigma(first, second);
-            assert(coefs_.find(mu_sigma) != coefs_.end());
-            auto& cpair = coefs_[mu_sigma];
-            for(auto Xsh : iter_shells_on_center(dfbs_, first.center)){
-              auto& C = *cpair.first;
-              auto g_XX_ptr = ints_to_eigen(
-                  Xsh, Xsh, eris_2c_[0], coulomb_oper_type_
-              );
-              auto& g_XX = *g_XX_ptr;
-              for(auto X : function_range(Xsh)) {
+    // TODO parallelize this list over nodes ?!?!?!
 
-                Ct += C[X.bfoff_in_atom] * C[X.bfoff_in_atom] * g_XX(X.bfoff_in_shell, X.bfoff_in_shell);
+    timer.enter("compute (X|Y)");
+    auto g2_full_ptr = ints_to_eigen_threaded(
+        ShellBlockData<>(dfbs_),
+        ShellBlockData<>(dfbs_),
+        eris_2c_, coulomb_oper_type_
+    );
+    const auto& g2 = *g2_full_ptr;
+    timer.exit();
+
+    do_threaded(nthread_, [&](int ithr) {
+      for(auto&& lsh : thread_over_range(shell_range(obs), ithr, nthread_)) {
+        for(auto&& ksh : L_schwarz[lsh]) {
+          double Ct = 0.0;
+          //----------------------------------------//
+          for(auto&& sigma : function_range(lsh)) {
+            for(auto&& nu : function_range(ksh)) {
+              BasisFunctionData first, second;
+              if(ksh <= lsh) {
+                first = sigma;
+                second = nu;
               }
-            }
-            if(first.center != second.center) {
-              for(auto Xsh : iter_shells_on_center(dfbs_, second.center)){
-                auto& C = *cpair.second;
-                auto g_XX_ptr = ints_to_eigen(
-                    Xsh, Xsh, eris_2c_[0], coulomb_oper_type_
-                );
-                auto& g_XX = *g_XX_ptr;
-                for(auto X : function_range(Xsh)) {
-                  Ct += C[X.bfoff_in_atom] * C[X.bfoff_in_atom] * g_XX(X.bfoff_in_shell, X.bfoff_in_shell);
+              else {
+                first = nu;
+                second = sigma;
+              }
+              IntPair mu_sigma(first, second);
+              assert(coefs_.find(mu_sigma) != coefs_.end());
+              auto& cpair = coefs_[mu_sigma];
+
+              for(auto&& Xsh : iter_shells_on_center(dfbs_, first.center)){
+                auto& C = *cpair.first;
+                for(auto&& X : function_range(Xsh)) {
+                  const double CX = C[X.bfoff_in_atom];
+                  Ct += CX * CX * g2(X, X);
                 }
               }
-            }
-          } // end loop over nu
-        } // end loop over sigma
-        //----------------------------------------//
-        L_coefs[lsh].insert(ksh, sqrt(Ct));
-        //----------------------------------------//
-      } // end loop over ksh
-    } // end loop over lsh
-    #if !LINK_SORTED_INSERTION
+
+              if(first.center != second.center) {
+                for(auto&& Xsh : iter_shells_on_center(dfbs_, second.center)){
+                  auto& C = *cpair.second;
+                  for(auto&& X : function_range(Xsh)) {
+                    const double CX = C[X.bfoff_in_atom];
+                    Ct += CX * CX * g2(X, X);
+                  }
+                }
+              }
+
+            } // end loop over nu
+          } // end loop over sigma
+          //----------------------------------------//
+          L_coefs[lsh].insert(ksh, sqrt(Ct));
+          //----------------------------------------//
+        } // end loop over ksh
+      } // end loop over lsh
+    });
     do_threaded(nthread_, [&](int ithr){
       auto L_coefs_iter = L_coefs.begin();
       const auto& L_coefs_end = L_coefs.end();
@@ -404,9 +415,9 @@ CADFCLHF::compute_coefficients()
         L_coefs_iter.advance(nthread_);
       }
     });
-    #endif
     //----------------------------------------//
     // Compute the Frobenius norm of C_transpose_ blocks
+    timer.change("07 - C_trans_frob");
     C_trans_frob_.resize(dfbs_->nshell());
     for(auto Xsh : shell_range(dfbs_, obs)) {
       // obs is being used as the aux basis, so atom_dfnsh is the number
@@ -430,6 +441,7 @@ CADFCLHF::compute_coefficients()
     //----------------------------------------//
     // Compute Cmaxes_
 
+    timer.change("08 - Cmaxes");
     Cmaxes_.resize(dfbs_->nshell());
     for(auto Xsh : shell_range(dfbs_)){
 
@@ -478,6 +490,7 @@ CADFCLHF::compute_coefficients()
   /* Clean up                                              		                        {{{1 */ #if 1 // begin fold
   //---------------------------------------------------------------------------------------//
   have_coefficients_ = true;                                                               //latex `\label{sc:coefflag}`
+  timer.exit();
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
 }

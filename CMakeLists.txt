@@ -92,6 +92,16 @@ if (MPQC_NEW_FEATURES)
   endif()
 endif()
 
+# Enable Elemental
+if (MPQC_NEW_FEATURES)
+  if (NOT DEFINED MPQC_ELEMENTAL)
+    set(MPQC_ELEMENTAL TRUE)
+  endif()
+  if (MPQC_ELEMENTAL)
+    add_definitions(-DMPQC_ELEMENTAL)
+  endif()
+endif()
+
 # Enable Unit Test
 if (MPQC_UNITTEST)
   if (NOT MPQC_NEW_FEATURES) 

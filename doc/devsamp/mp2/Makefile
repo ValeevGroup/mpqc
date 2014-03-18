@@ -11,11 +11,12 @@ F90FLAGS := $(FFLAGS)
 CPPFLAGS := $(shell $(MPQCCONFIG) --cppflags)
 LIBS := $(shell $(MPQCCONFIG) --libs)
 LIBDIR  := $(shell $(MPQCCONFIG) --libdir)
+LDFLAGS := $(shell $(MPQCCONFIG) --ldflags)
 
 TARGET = mp2
 
 $(TARGET): $(TARGET).o
-	$(CXX) $(CXXFLAGS) -o $@ $^ -L$(LIBDIR) -lmpqcmain $(LIBS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ -L$(LIBDIR) $(LDFLAGS) -lmpqcmain $(LIBS)
 
 clean:
 	-rm -f $(TARGET) $(TARGET).o

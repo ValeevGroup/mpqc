@@ -13,6 +13,7 @@ cxxflags="@CMAKE_CXX_FLAGS@"
 cppflags="@MPQC_CPP_FLAGS@" 
 cflags="@CMAKE_C_FLAGS@"
 f77flags="@CMAKE_Fortran_FLAGS@"
+ldflags="@CMAKE_EXE_LINKER_FLAGS@"
 cxx="@CMAKE_CXX_COMPILER@"
 cc="@CMAKE_C_COMPILER@"
 f77="@CMAKE_Fortran_COMPILER@"
@@ -24,7 +25,7 @@ datadir=@CMAKE_INSTALL_FULL_DATADIR@
 enableshared=@ENABLESHARED@
 
 usage="\
-Usage: mpqc-config [--prefix[=DIR]] [--exec-prefix[=DIR]] [--version] [--buildid] [--so-version] [--datadir] [--libs] [--libdir] [--cppflags] [--cc] [--cflags] [--cxx] [--cxxflags] [--f77] [--f77flags]"
+Usage: mpqc-config [--prefix[=DIR]] [--exec-prefix[=DIR]] [--version] [--buildid] [--so-version] [--datadir] [--libs] [--libdir] [--cppflags] [--cc] [--cflags] [--cxx] [--cxxflags] [--f77] [--f77flags] [--ldflags]"
 
 if test $# -eq 0; then
       echo "${usage}" 1>&2
@@ -92,6 +93,9 @@ while test $# -gt 0; do
       ;;
     --libs)
       echo -L${libdir} $mpqclibs $libs
+      ;;
+    --ldflags)
+      echo $ldflags
       ;;
     *)
       echo "${usage}" 1>&2

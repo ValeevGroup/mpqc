@@ -40,6 +40,7 @@ namespace mpqc {
       void minimize_energy();
 
     protected:
+      virtual Matrix& scf_fock() override;
       Matrix Gmat();
 
     private:

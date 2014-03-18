@@ -64,19 +64,20 @@ const Matrix& mpqc::TA::CLSCF::rdm1() {
 double mpqc::TA::CLSCF::scf_energy() {
   // E = \sum_{ij} \left( D_{ij} * (F_{ij} + H_{ij}) \right)
   return ::TiledArray::expressions::dot(hcore()("i,j") + fock()("i,j"),
-                                        density()("i,j"));
+                                        rdm1()("i,j"));
 }
 
 #warning "tr_corr_purify uses Eigen and is not production ready"
 void mpqc::TA::CLSCF::tr_corr_purify(Matrix &P) {
   // Avoid Eigen in the future
   Eigen::MatrixXd Ep = ::TiledArray::array_to_eigen(P);
+  Eigen::MatrixXd Es = ::TiledArray::array_to_eigen(overlap());
 
   // Purify if the matrix is not equal to it's square then purify
-  while (Eigen::MatrixXd(Ep - Ep * Ep).lpNorm<Eigen::Infinity>() >= 1e-10) {
+  while (Eigen::MatrixXd(Ep - Ep*Es*Ep).lpNorm<Eigen::Infinity>() >= 1e-10) {
     // If the trace of the matrix is too large shrink it else raise it
-    Ep = (Ep.trace() >= occupation()) ? Eigen::MatrixXd(Ep * Ep) :
-                                        Eigen::MatrixXd(2 * Ep - Ep * Ep);
+    Ep = (Ep.trace() >= occupation()) ? Eigen::MatrixXd(Ep*Es*Ep) :
+                                        Eigen::MatrixXd(2 * Ep - Ep*Es*Ep);
   }
   P = ::TiledArray::eigen_to_array < Matrix
           > (*(world())->madworld(), P.trange(), Ep);
@@ -100,8 +101,10 @@ Matrix& mpqc::TA::CLSCF::density() {
 
     // Copy the mpqc sc matrix into our tiledarray Matrix.
     D = mpqc::SymmScMat_To_TiledArray(*world()->madworld(),
-                                      guess->guess_density(basis(), integral()),
+                                      guess->guess_density(basis(),integral()),
                                       basis()->trange1());
+    world()->madworld()->gop.fence();
+    std::cout << "D = \n" << D << std::endl;
     world()->madworld()->gop.fence();
   }
   return Wavefunction::density();
@@ -113,24 +116,30 @@ void mpqc::TA::CLSCF::Dguess(const Matrix& F) {
   // Grab density so we can work with it.
   Matrix& D = density();
 
-  // Should be using Eval guesses instead of Frobenius norm, but this will work
-  double Fnorm = ::TiledArray::expressions::norm2(F("i,j"));
-
   /* Needs to be changed to TiledArray only opps, but for now this is a
    *  stand in.
    */
   Eigen::MatrixXd Ef = ::TiledArray::array_to_eigen(F);
+  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(Ef);
+  double emin = es.eigenvalues().minCoeff();
+  double emax = es.eigenvalues().maxCoeff();
 
   // Shift spectrum of F
   for (size_t i = 0; i < Ef.rows(); ++i) {
-    Ef(i, i) = Fnorm - Ef(i, i);
+    Ef(i, i) = emax - Ef(i, i);
   }
   D=::TiledArray::eigen_to_array<Matrix>(*world()->madworld(), F.trange(), Ef);
   /* End part that needs to be replaced */
 
   // Scale Evals to the range (0,1)
-  D("i,j") = D("i,j") * (1.0 / (2.0 * Fnorm));
+  D("i,j") = D("i,j") * (1.0 / (emax - emin));
 
   // Purifiy to idempotency
-  tr_corr_purify (D);
+  tr_corr_purify(D);
+}
+
+double mpqc::TA::CLSCF::iter_energy() {
+  // E = \sum_{ij} \left( D_{ij} * (F_{ij} + H_{ij}) \right)
+  return ::TiledArray::expressions::dot(hcore()("i,j") + scf_fock()("i,j"),
+                                        density()("i,j"));
 }

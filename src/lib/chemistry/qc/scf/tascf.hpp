@@ -56,8 +56,9 @@ namespace mpqc{
 
     protected:
         ::TiledArray::DIIS<Matrix> diis;
-        Matrix& scf_fock(){return fock_.result_noupdate();}
+        virtual Matrix& scf_fock(){return fock_.result_noupdate();}
         size_t & occ(){return occupation_;}
+        virtual double iter_energy() = 0;
 
     private:
         // Number of iterations to use

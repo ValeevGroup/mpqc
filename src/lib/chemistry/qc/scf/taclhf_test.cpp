@@ -35,6 +35,16 @@
 using namespace boost::unit_test;
 using namespace sc;
 using namespace mpqc;
+using namespace mpqc::TA;
+
+struct Mock_CLHF : public CLHF{
+  Mock_CLHF(const sc::Ref<sc::KeyVal> &kval) : CLHF(kval) {}
+  ~Mock_CLHF() {}
+
+  CLHF::Matrix data_fock(){return scf_fock();}
+  CLHF::Matrix data_Gmat(){return Gmat();}
+  double energy(){return iter_energy();}
+};
 
 struct MADConfig {
     MADConfig() {
@@ -51,8 +61,8 @@ BOOST_AUTO_TEST_CASE( construct_clhf_programmatically ){
 
     // Make a molecule H2
     Ref<Molecule> mol = new Molecule;
-    mol->add_atom(1,0,1,-1);
-    mol->add_atom(1,0,1,1);
+    mol->add_atom(1,0,0,0);
+    mol->add_atom(1,0,0,1.4);
 
     // Make keyval
     Ref<AssignedKeyVal> akv = new AssignedKeyVal;
@@ -63,13 +73,13 @@ BOOST_AUTO_TEST_CASE( construct_clhf_programmatically ){
     akv->assign("basis", basis.pointer());
 
     //Construct object
-    Ref<TA::CLHF> thf = new TA::CLHF(akv);
+    Ref<Mock_CLHF> thf = new Mock_CLHF(akv);
     thf->print();
-    std::cout << "Fock = \n" << thf->fock() << std::endl;
-    std::cout << "Energy for initial Fock = " << thf->scf_energy() << std::endl;
+    std::cout << "Fock = \n" << thf->data_fock() << std::endl;
+    std::cout << "Energy for initial Fock = " << thf->energy() << std::endl;
     std::cout << "Minimizing energy . . . " << std::endl;
     thf->minimize_energy();
-    std::cout << "Final energy = " << thf->scf_energy() << std::endl;
+    std::cout << "Final energy = " << thf->energy() << std::endl;
 }
 
 

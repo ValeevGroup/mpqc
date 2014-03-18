@@ -54,9 +54,41 @@ Matrix mpqc::TA::CLHF::Gmat(){
                                                 eri_pool, basis());
     Matrix Gmat = 2*density()("r,s") * eri("m,r,n,s") -
                     density()("r,s") * eri("m,r,s,n");
+    world()->madworld()->gop.fence();
     return Gmat;
 }
 
 void mpqc::TA::CLHF::minimize_energy() {
-    MPQC_ASSERT(false);
+  Matrix &F = scf_fock();
+  const Matrix &S = overlap();
+  const Matrix &H = hcore();
+  Matrix &D = density();
+
+  size_t iter = 0;
+  double error_norminf = 1.0;
+
+  std::cout << "S = \n" << S << std::endl;
+  std::cout << "H = \n" << H << std::endl;
+  while(error_norminf > 1e-6 && iter < 100){
+    Dguess(F);  // modifies D internally.
+    std::cout << "D = \n" << D << std::endl;
+    F("i,j") = H("i,j") + Gmat()("i,j");
+    std::cout << "F = \n" << F << std::endl;
+    Matrix Grad = 8 * ( S("i,q") * D("q,x") * F("x,j") -
+                        F("i,q") * D("q,x") * S("x,j") );
+    error_norminf = ::TiledArray::expressions::norminf(Grad("i,j"));
+    //diis.extrapolate(F, Grad);
+    world()->madworld()->gop.fence();
+    std::cout << "Energy for iter " << ++iter << " = " << iter_energy() << std::endl;
+    std::cout << "Error = " << error_norminf << std::endl;
+  }
+}
+
+Matrix& mpqc::TA::CLHF::scf_fock(){
+  if(!SCF::scf_fock().is_initialized()){
+    Matrix& F = SCF::scf_fock();
+    F = hcore()("i,j") + Gmat()("i,j");
+    world()->madworld()->gop.fence();
+  }
+  return SCF::scf_fock();
 }

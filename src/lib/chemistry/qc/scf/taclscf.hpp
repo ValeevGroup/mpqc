@@ -52,6 +52,7 @@ namespace TA {
     protected:
 
         virtual Matrix& density() override;
+        virtual double iter_energy() override;
 
         void tr_corr_purify(Matrix &P);
         // Return a shifted Fock matrix such that the spectrum has been inverted

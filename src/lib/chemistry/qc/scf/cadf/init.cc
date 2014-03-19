@@ -176,6 +176,7 @@ CADFCLHF::init_threads()
   } // end loop over mu sets
 
   inode = 0;
+  // TODO Non-round-robin static parallelism to make lookup faster in L_3 build
   for(int ish = 0; ish < sig_blocks_.size(); ++ish) {
     for(auto&& sig_block : sig_blocks_[ish]) {
       for(auto Xsh : shell_range(ShellBlockData<>(sig_block))) {

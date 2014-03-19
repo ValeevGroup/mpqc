@@ -111,7 +111,8 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
     ints4maxes_(make_shared<FourCenterMaxIntCache>(
         gbs_->nshell() * gbs_->nshell()
     )),
-    local_pairs_spot_(0)
+    local_pairs_spot_(0),
+    memory_used_(0)
 {
   //----------------------------------------------------------------------------//
   // Get the auxiliary basis set

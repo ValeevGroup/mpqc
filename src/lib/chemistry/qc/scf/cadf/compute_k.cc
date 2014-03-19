@@ -166,10 +166,11 @@ CADFCLHF::compute_K()
         L_D[lsh].sort();
       }
     });
-    // TODO Distribute over MPI processes as well
+
     //----------------------------------------//                                             //latex `\label{sc:link:setupend}`
     // Form L_DC
 
+    // TODO Distribute this over threads and MPI processes
     timer.enter("build L_DC");
     for(auto&& jsh : shell_range(obs)) {                                                       //latex `\label{sc:link:ldc}`
 

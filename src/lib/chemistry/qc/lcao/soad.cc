@@ -178,8 +178,8 @@ void sc::SuperpositionOfAtomicDensities::compute() {
 #endif
 #endif
         akv->assign("df_solver", "cholesky_inv");
-        // Better default for diskless systems.  If your starting guess doesn't fit in memory, you've got bigger problems
-        akv->assign("store_ints", "mem");
+        // Prevent wavefunction world from allocating 2/3 of the memory just for the starting guess
+        akv->assign("store_ints", "posix");
         //akv->assign("store_ints", "mem-posix");
         akv->assign("ints_precision", 1e-5);
         world = new WavefunctionWorld(akv);

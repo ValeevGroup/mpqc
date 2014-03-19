@@ -30,6 +30,7 @@
 #ifndef _chemistry_qc_scf_cadfclhf_h
 #define _chemistry_qc_scf_cadfclhf_h
 
+#define USE_SPARSE 0
 
 // Standard library includes
 #include <atomic>
@@ -40,6 +41,7 @@
 
 // Eigen includes
 #include <Eigen/Dense>
+#include <Eigen/Sparse>
 
 // MPQC includes
 #include <chemistry/qc/scf/clhf.h>
@@ -112,6 +114,7 @@ class CADFCLHF: public CLHF {
     typedef std::map<std::pair<int, int>, std::pair<CoefContainer, CoefContainer>> CoefMap;
     typedef Eigen::HouseholderQR<Eigen::MatrixXd> Decomposition;
     typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> RowMatrix;
+    typedef Eigen::SparseMatrix<double, Eigen::RowMajor> SparseRowMatrix;
     typedef Eigen::Map<RowMatrix, Eigen::Unaligned, Eigen::OuterStride<>> StridedRowMap;
 
 #if USE_INTEGRAL_CACHE
@@ -331,6 +334,9 @@ class CADFCLHF: public CLHF {
 
     TwoBodyOper::type metric_oper_type_;
 
+    // A (very) rough estimate of the minimum amount of memory that is in use by CADF at the present time
+    std::atomic<size_t> memory_used_;
+
     // Convenience variable for better code readibility
     static const TwoBodyOper::type coulomb_oper_type_ = TwoBodyOper::eri;
 
@@ -544,9 +550,14 @@ class CADFCLHF: public CLHF {
 
     std::vector<std::vector<ShellIndexWithValue>> Cmaxes_;
 
-    std::vector<RowMatrix> coefs_transpose_blocked_;
+    //std::vector<RowMatrix> coefs_transpose_blocked_;
     //std::vector<std::vector<StridedRowMap>> coefs_t_shell_blocked_;
-    std::vector<Eigen::Map<RowMatrix>> coefs_transpose_;
+    //std::vector<Eigen::Map<RowMatrix>> coefs_transpose_;
+#if USE_SPARSE
+    std::vector<SparseRowMatrix> coefs_transpose_;
+#else
+    std::vector<RowMatrix> coefs_transpose_;
+#endif
 
 #if USE_INTEGRAL_CACHE
     shared_ptr<TwoCenterIntCache> ints2_;
@@ -794,6 +805,43 @@ CADFCLHF::ints_to_eigen(
     block_offset += jsh.nbf;
   }
   return rv;
+}
+
+
+// Borrowed from ConsumeableResources
+inline std::string data_size_to_string(size_t t) {
+  const int prec = 3; // print this many digits
+
+  // determine m such that 1000^m <= t <= 1000^(m+1)
+  char m = 0;
+  double thousand_m = 1;
+  double thousand_mp1 = 1000;
+  while (t >= thousand_mp1) {
+    ++m;
+    thousand_m = thousand_mp1;
+    thousand_mp1 *= 1000;
+  }
+
+  // determine units
+  std::string unit;
+  switch (m) {
+    case 0: unit = "B"; break;
+    case 1: unit = "kB"; break;
+    case 2: unit = "MB"; break;
+    case 3: unit = "GB"; break;
+    case 4: unit = "TB"; break;
+    case 5: unit = "PB"; break;
+    case 6: unit = "EB"; break;
+    case 7: unit = "ZB"; break;
+    case 8: unit = "YB"; break;
+    default: MPQC_ASSERT(false); break;
+  }
+
+  // compute normalized mantissa
+  std::ostringstream oss;
+  oss.precision(prec);
+  oss << (double)t/(double)thousand_m << unit;
+  return oss.str();
 }
 
 } // end namespace sc

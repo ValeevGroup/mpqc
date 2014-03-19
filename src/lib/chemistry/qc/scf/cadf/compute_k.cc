@@ -524,16 +524,13 @@ CADFCLHF::compute_K()
                   }
 
                 }
-                else if(linK_break_early_) {
+                else {
                   break;
                 }
 
               }
 
             } // end loop over ish
-            if(linK_break_early_ and ish_found and not jsh_added){
-              break;
-            }
 
           }
 

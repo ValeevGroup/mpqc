@@ -148,12 +148,12 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   //----------------------------------------------------------------------------//
   print_screening_stats_ = keyval->intvalue("print_screening_stats", KeyValValueint(0));
   //----------------------------------------------------------------------------//
-  print_iteration_timings_ = keyval->booleanvalue("print_iteration_timings", KeyValValueboolean(false));
+  print_iteration_timings_ = keyval->booleanvalue("print_iteration_timings", KeyValValueboolean(print_iteration_timings_));
   //----------------------------------------------------------------------------//
-  use_norms_nu_ = keyval->booleanvalue("use_norms_nu", KeyValValueboolean(true));
-  use_norms_sigma_ = keyval->booleanvalue("use_norms_sigma", KeyValValueboolean(true));
-  old_two_body_ = keyval->booleanvalue("old_two_body", KeyValValueboolean(old_two_body_));
+  use_norms_nu_ = keyval->booleanvalue("use_norms_nu", KeyValValueboolean(use_norms_nu_));
+  use_norms_sigma_ = keyval->booleanvalue("use_norms_sigma", KeyValValueboolean(use_norms_sigma_));
   xml_screening_data_ = keyval->booleanvalue("xml_screening_data", KeyValValueboolean(xml_screening_data_));
+  all_to_all_L_3_ = keyval->booleanvalue("all_to_all_L_3", KeyValValueboolean(all_to_all_L_3_));
   //----------------------------------------------------------------------------//
   stats_.print_level = print_screening_stats_;
   stats_.xml_stats_saved = xml_screening_data_;
@@ -195,7 +195,6 @@ CADFCLHF::print(ostream&o) const
   o << indent << "use_max_extents = " << bool_str(use_max_extents_) << endl;
   o << indent << "subtract_extents = " << bool_str(subtract_extents_) << endl;
   o << indent << "linK_block_rho = " << bool_str(linK_block_rho_) << endl;
-  o << indent << "old_two_body = " << bool_str(old_two_body_) << endl;
   o << indent << "xml_screening_data = " << bool_str(xml_screening_data_) << endl;
   o << indent << "linK_sorted_B_contraction = " << bool_str(linK_sorted_B_contraction_) << endl;
   o << indent << "full_screening_thresh = " << double_str(full_screening_thresh_) << endl;

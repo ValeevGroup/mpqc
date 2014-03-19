@@ -139,21 +139,6 @@ CADFCLHF::compute_K()
   const auto& g2 = *g2_full_ptr;
   timer.exit();
   //----------------------------------------//
-  // reset the iteration over local pairs
-  local_pairs_spot_ = 0;
-  //----------------------------------------//
-  auto get_ish_Xblk_pair = [&](ShellData& ish, ShellBlockData<>& Xblk, PairSet ps) -> bool {
-    int spot = local_pairs_spot_++;
-    if(spot < local_pairs_k_[ps].size()){
-      auto& sig_pair = local_pairs_k_[ps][spot];
-      ish = ShellData(sig_pair.first, gbs_, dfbs_);
-      Xblk = sig_pair.second;
-      return true;
-    }
-    else{
-      return false;
-    }
-  };
   //----------------------------------------//
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
@@ -233,244 +218,326 @@ CADFCLHF::compute_K()
       epsilon_dist = pow(distance_screening_thresh_, full_screening_expon_);
     }
 
-    do_threaded(nthread_, [&](int ithr){
+    if(all_to_all_L_3_) {
 
-      int thr_offset = me*nthread_ + ithr;
-      int increment = n_node*nthread_;
+      /*-----------------------------------------------------*/
+      /* Old parallel L_3                               {{{2 */ #if 2 // begin fold
 
-      auto jsh_iter = shell_range(gbs_, dfbs_).begin();
-      const auto& jsh_end = shell_range(gbs_, dfbs_).end();
-      auto Xsh_iter = L_DC[*jsh_iter].begin();
-      bool Xsh_done = false;
-      const auto& advance_iters = [this, &Xsh_done, &jsh_end](
-          int amount,
-          decltype(jsh_iter)& jsh_it,
-          decltype(Xsh_iter)& Xsh_it
-      ) -> bool {
-        int incr_remain = amount;
-        const auto& curr_end = L_DC[*jsh_it].end();
-        int nremain = std::distance(Xsh_it, curr_end);
-        // This might be inefficient if the shell iterators are not random access?
-        if(Xsh_done) {
-          if(nremain > amount) {
-            // Skip to the last one we would have done
-            nremain = nremain % amount;
+      do_threaded(nthread_, [&](int ithr){
+
+        int thr_offset = me*nthread_ + ithr;
+        int increment = n_node*nthread_;
+
+        auto jsh_iter = shell_range(gbs_, dfbs_).begin();
+        const auto& jsh_end = shell_range(gbs_, dfbs_).end();
+        auto Xsh_iter = L_DC[*jsh_iter].begin();
+        bool Xsh_done = false;
+        const auto& advance_iters_rho_X = [this, &Xsh_done, &jsh_end](
+            int amount,
+            decltype(jsh_iter)& jsh_it,
+            decltype(Xsh_iter)& Xsh_it
+        ) -> bool {
+          int incr_remain = amount;
+          const auto& curr_end = L_DC[*jsh_it].end();
+          int nremain = std::distance(Xsh_it, curr_end);
+          // This might be inefficient if the shell iterators are not random access?
+          if(Xsh_done) {
+            if(nremain > amount) {
+              // Skip to the last one we would have done
+              nremain = nremain % amount;
+            }
+            // Otherwise, we're moving on already anyway
+            Xsh_done = false;
           }
-          // Otherwise, we're moving on already anyway
-          Xsh_done = false;
-        }
-        bool jsh_changed = false;
-        while(nremain <= incr_remain) {
-          ++jsh_it;
-          jsh_changed = true;
-          if(jsh_it == jsh_end) break;
-          incr_remain -= nremain;
-          nremain = L_DC[*jsh_it].size();
-        }
-        if(jsh_it != jsh_end) {
-          if(jsh_changed) Xsh_it = L_DC[*jsh_it].begin();
-          std::advance(Xsh_it, incr_remain);
-          return true;
-        }
-        else {
-          return false;
-        }
-      };
+          bool jsh_changed = false;
+          while(nremain <= incr_remain) {
+            ++jsh_it;
+            jsh_changed = true;
+            if(jsh_it == jsh_end) break;
+            incr_remain -= nremain;
+            nremain = L_DC[*jsh_it].size();
+          }
+          if(jsh_it != jsh_end) {
+            if(jsh_changed) Xsh_it = L_DC[*jsh_it].begin();
+            std::advance(Xsh_it, incr_remain);
+            return true;
+          }
+          else {
+            return false;
+          }
+        };
 
-      int advance_size = thr_offset;
+        int advance_size = thr_offset;
 
-      while(advance_iters(advance_size, jsh_iter, Xsh_iter)) {
-        advance_size = increment;
-        const auto& jsh = *jsh_iter;
-        const auto& Xsh = *Xsh_iter;
-        auto& L_sch_jsh = L_schwarz[jsh];
+        while(advance_iters_rho_X(advance_size, jsh_iter, Xsh_iter)) {
+          advance_size = increment;
+          const auto& jsh = *jsh_iter;
+          const auto& Xsh = *Xsh_iter;
+          auto& L_sch_jsh = L_schwarz[jsh];
 
-        const double pf = Xsh.value;                                                       //latex `\label{sc:link:pf}`
-        const double eps_prime = epsilon / pf;
-        const double eps_prime_dist = epsilon_dist / pf;
-        const double Xsh_schwarz = schwarz_df_[Xsh];
-        bool jsh_added = false;
-        for(auto ish : L_sch_jsh) {
+          const double pf = Xsh.value;                                                       //latex `\label{sc:link:pf}`
+          const double eps_prime = epsilon / pf;
+          const double eps_prime_dist = epsilon_dist / pf;
+          const double Xsh_schwarz = schwarz_df_[Xsh];
+          bool jsh_added = false;
+          for(auto ish : L_sch_jsh) {
 
-          double dist_factor = get_distance_factor(ish, jsh, Xsh);
-          assert(ish.value == schwarz_frob_(ish, jsh));
+            double dist_factor = get_distance_factor(ish, jsh, Xsh);
+            assert(ish.value == schwarz_frob_(ish, jsh));
 
-          if(ish.value > eps_prime) {
-            jsh_added = true;
-            if(!linK_use_distance_ or ish.value * dist_factor > eps_prime_dist) {
-              L_3[{ish, Xsh}].insert(jsh,
-                  ish.value * dist_factor * Xsh_schwarz
-              );
+            if(ish.value > eps_prime) {
+              jsh_added = true;
+              if(!linK_use_distance_ or ish.value * dist_factor > eps_prime_dist) {
+                L_3[{ish, Xsh}].insert(jsh,
+                    ish.value * dist_factor * Xsh_schwarz
+                );
 
-              if(print_screening_stats_) {
-                ++iter_stats_->K_3c_needed;
-                iter_stats_->K_3c_needed_fxn += ish.nbf * jsh.nbf * Xsh.nbf;
+                if(print_screening_stats_) {
+                  ++iter_stats_->K_3c_needed;
+                  iter_stats_->K_3c_needed_fxn += ish.nbf * jsh.nbf * Xsh.nbf;
+                }
+
+              }
+              else if(print_screening_stats_ and linK_use_distance_) {
+                ++iter_stats_->K_3c_dist_screened;
+                iter_stats_->K_3c_dist_screened_fxn += ish.nbf * jsh.nbf * Xsh.nbf;
               }
 
             }
-            else if(print_screening_stats_ and linK_use_distance_) {
-              ++iter_stats_->K_3c_dist_screened;
-              iter_stats_->K_3c_dist_screened_fxn += ish.nbf * jsh.nbf * Xsh.nbf;
+            else {
+              break;
             }
 
-          }
-          else {
-            break;
+          } // end loop over ish
+          if(not jsh_added){
+            Xsh_done = true;
           }
 
-        } // end loop over ish
-        if(not jsh_added){
-          Xsh_done = true;
         }
 
-      }
+      });
 
-    });
+      /*-----------------------------------------------------*/
+      /* Distribute L_3 (this is a mess)                {{{3 */ #if 3 // begin fold
+      timer.change("distribute L_3");
 
-    timer.change("distribute L_3");
-
-    if(n_node > 1) {
-      timer.enter("01 - build my L_3");
-      // TODO use std::array here instead of tuple
-      std::vector<std::tuple<int, int, int, int>> my_L_3_keys;
-      for(auto&& L_3_list : L_3) {
-        my_L_3_keys.emplace_back(
-          me,
-          L_3_list.first.first,
-          L_3_list.first.second,
-          L_3_list.second.size()
-        );
-      }
-
-      // Get the number of L3 lists per node
-      timer.change("02 - get n_l3_per_node");
-      int n_l3_per_node[n_node];
-      int ones[n_node];
-      std::fill_n(ones, n_node, 1*sizeof(int));
-      int L3size = L_3.size();
-      scf_grp_->raw_collect(&L3size, (const int*)&ones, &n_l3_per_node);
-      int total_n_l3 = 0;
-      for(int i = 0; i < n_node; total_n_l3 += n_l3_per_node[i++]);
-
-      // Now get all of the (node, ish, Xsh, size) lists
-      timer.change("03 - distribute my_L3");
-      int l3_idxs_sizes[total_n_l3*4];
-      for(int i = 0; i < n_node; ++i) {
-        n_l3_per_node[i] = 4*sizeof(int)*n_l3_per_node[i];
-      }
-      scf_grp_->raw_collect(my_L_3_keys.data(), (const int*)&n_l3_per_node, &l3_idxs_sizes);
-
-      // Extract the size of each list and sum
-      timer.change("04 - extract L3_node_sizes");
-      std::map<std::pair<int, int>, int> L3_total_sizes;
-      std::map<std::pair<int, int>, std::vector<int>> L3_node_counts;
-      std::vector<int> full_sizes(n_node);
-      int full_data_count = 0;
-      for(int i = 0; i < total_n_l3; ++i) {
-        int node_src, ish, Xsh, njsh;
-        // This is disgusting
-        std::tie(node_src, ish, Xsh, njsh) = *reinterpret_cast<std::tuple<int, int, int, int>*>(&(l3_idxs_sizes[0]) + 4*i);
-        L3_total_sizes[{ish, Xsh}] += njsh;
-        if(L3_node_counts.find({ish, Xsh}) == L3_node_counts.end()) {
-          L3_node_counts.emplace(
-            std::piecewise_construct,
-            std::forward_as_tuple(ish, Xsh),
-            std::forward_as_tuple(n_node)
+      if(n_node > 1) {
+        timer.enter("01 - build my L_3");
+        // TODO use std::array here instead of tuple
+        std::vector<std::tuple<int, int, int, int>> my_L_3_keys;
+        for(auto&& L_3_list : L_3) {
+          my_L_3_keys.emplace_back(
+            me,
+            L_3_list.first.first,
+            L_3_list.first.second,
+            L_3_list.second.size()
           );
-          assert((L3_node_counts[{ish, Xsh}].size() == n_node));
         }
-        out_assert(node_src, <=, n_node);
-        L3_node_counts[{ish, Xsh}][node_src] = njsh;
-        full_sizes[node_src] += njsh * sizeof(ShellIndexWithValue);
-        full_data_count += njsh;
-      }
 
-      for(auto&& pair : L3_total_sizes) {
-        L_3_keys.emplace_back(
-            pair.first.first,
-            pair.first.second,
-            pair.second
-        );
-      }
+        // Get the number of L3 lists per node
+        timer.change("02 - get n_l3_per_node");
+        int n_l3_per_node[n_node];
+        int ones[n_node];
+        std::fill_n(ones, n_node, 1*sizeof(int));
+        int L3size = L_3.size();
+        scf_grp_->raw_collect(&L3size, (const int*)&ones, &n_l3_per_node);
+        int total_n_l3 = 0;
+        for(int i = 0; i < n_node; total_n_l3 += n_l3_per_node[i++]);
 
-      timer.change("05 - sort L3_keys");
-      std::sort(L_3_keys.begin(), L_3_keys.end(),
-          [](const std::tuple<int, int, int>& a, const std::tuple<int, int, int>& b) {
-            int isha, Xsha, sizea, ishb, Xshb, sizeb;
-            std::tie(isha, Xsha, sizea) = a;
-            std::tie(ishb, Xshb, sizeb) = b;
-            if(sizea > sizeb) return true;
-            else if(sizea == sizeb) {
-              if(isha < ishb) return true;
-              else if(isha == ishb) return Xsha < Xshb;
+        // Now get all of the (node, ish, Xsh, size) lists
+        timer.change("03 - distribute my_L3");
+        int l3_idxs_sizes[total_n_l3*4];
+        for(int i = 0; i < n_node; ++i) {
+          n_l3_per_node[i] = 4*sizeof(int)*n_l3_per_node[i];
+        }
+        scf_grp_->raw_collect(my_L_3_keys.data(), (const int*)&n_l3_per_node, &l3_idxs_sizes);
+
+        // Extract the size of each list and sum
+        timer.change("04 - extract L3_node_sizes");
+        std::map<std::pair<int, int>, int> L3_total_sizes;
+        std::map<std::pair<int, int>, std::vector<int>> L3_node_counts;
+        std::vector<int> full_sizes(n_node);
+        int full_data_count = 0;
+        for(int i = 0; i < total_n_l3; ++i) {
+          int node_src, ish, Xsh, njsh;
+          // This is disgusting
+          std::tie(node_src, ish, Xsh, njsh) = *reinterpret_cast<std::tuple<int, int, int, int>*>(&(l3_idxs_sizes[0]) + 4*i);
+          L3_total_sizes[{ish, Xsh}] += njsh;
+          if(L3_node_counts.find({ish, Xsh}) == L3_node_counts.end()) {
+            L3_node_counts.emplace(
+              std::piecewise_construct,
+              std::forward_as_tuple(ish, Xsh),
+              std::forward_as_tuple(n_node)
+            );
+            assert((L3_node_counts[{ish, Xsh}].size() == n_node));
+          }
+          out_assert(node_src, <=, n_node);
+          L3_node_counts[{ish, Xsh}][node_src] = njsh;
+          full_sizes[node_src] += njsh * sizeof(ShellIndexWithValue);
+          full_data_count += njsh;
+        }
+
+        for(auto&& pair : L3_total_sizes) {
+          L_3_keys.emplace_back(
+              pair.first.first,
+              pair.first.second,
+              pair.second
+          );
+        }
+
+        timer.change("05 - sort L3_keys");
+        std::sort(L_3_keys.begin(), L_3_keys.end(),
+            [](const std::tuple<int, int, int>& a, const std::tuple<int, int, int>& b) {
+              int isha, Xsha, sizea, ishb, Xshb, sizeb;
+              std::tie(isha, Xsha, sizea) = a;
+              std::tie(ishb, Xshb, sizeb) = b;
+              if(sizea > sizeb) return true;
+              else if(sizea == sizeb) {
+                if(isha < ishb) return true;
+                else if(isha == ishb) return Xsha < Xshb;
+                else return false;
+              }
               else return false;
             }
-            else return false;
-          }
-      );
+        );
 
-      timer.change("06 - make L3 data containers");
-      std::vector<ShellIndexWithValue> my_data(full_sizes[me]/sizeof(ShellIndexWithValue));
-      int offset = 0;
-      for(auto&& L_3_key : L_3_keys) {
-        int ish, Xsh, size;
-        Xsh = 0;
-        std::tie(ish, Xsh, size) = L_3_key;
-        auto& my_L3_part = L_3[{ish, Xsh}];
-        const auto& unsrt = my_L3_part.unsorted_indices();
-        if(unsrt.size() > 0) {
-          std::copy(unsrt.begin(), unsrt.end(), my_data.begin()+offset);
+        timer.change("06 - make L3 data containers");
+        std::vector<ShellIndexWithValue> my_data(full_sizes[me]/sizeof(ShellIndexWithValue));
+        int offset = 0;
+        for(auto&& L_3_key : L_3_keys) {
+          int ish, Xsh, size;
+          Xsh = 0;
+          std::tie(ish, Xsh, size) = L_3_key;
+          auto& my_L3_part = L_3[{ish, Xsh}];
+          const auto& unsrt = my_L3_part.unsorted_indices();
+          if(unsrt.size() > 0) {
+            std::copy(unsrt.begin(), unsrt.end(), my_data.begin()+offset);
+          }
+          offset += unsrt.size();
+          my_L3_part.clear();
         }
-        offset += unsrt.size();
-        my_L3_part.clear();
-      }
-      std::vector<ShellIndexWithValue> full_data(full_data_count);
+        std::vector<ShellIndexWithValue> full_data(full_data_count);
 
-      timer.change("07 - distribute each L_3");
-      scf_grp_->raw_collect(
-          &(my_data[0]),
-          (const int*)full_sizes.data(),
-          &(full_data[0])
-      );
-      std::vector<int> offsets;
-      int offsum = 0;
-      for(auto sz : full_sizes) {
-        offsets.push_back(offsum/sizeof(ShellIndexWithValue));
-        offsum += sz;
-      }
-
-      timer.change("08 - unpack full L_3");
-      // TODO Thread this, if possible
-      std::vector<int> offsets_within(n_node);
-      for(auto&& L_3_key : L_3_keys) {
-        int ish, Xsh, size;
-        std::tie(ish, Xsh, size) = L_3_key;
-        auto& my_L3_part = L_3[{ish, Xsh}];
-        const auto& ndcnts = L3_node_counts[{ish, Xsh}];
-        std::vector<ShellIndexWithValue> iX_list(size);
-        int full_off = 0;
-
-        for(int inode = 0; inode < n_node; ++inode) {
-          const int icount = ndcnts[inode];
-          if(icount > 0) {
-            std::copy(
-                &(full_data[offsets[inode] + offsets_within[inode]]),
-                &(full_data[offsets[inode] + offsets_within[inode]]) + icount,
-                &(iX_list[full_off])
-            );
-            full_off += icount;
-            offsets_within[inode] += icount;
-          }
+        timer.change("07 - distribute each L_3");
+        scf_grp_->raw_collect(
+            &(my_data[0]),
+            (const int*)full_sizes.data(),
+            &(full_data[0])
+        );
+        std::vector<int> offsets;
+        int offsum = 0;
+        for(auto sz : full_sizes) {
+          offsets.push_back(offsum/sizeof(ShellIndexWithValue));
+          offsum += sz;
         }
 
-        assert(full_off == size);
-        my_L3_part.acquire_and_sort(&(iX_list[0]), size);
-        my_L3_part.set_basis(gbs_, dfbs_);
+        timer.change("08 - unpack full L_3");
+        // TODO Thread this, if possible
+        std::vector<int> offsets_within(n_node);
+        for(auto&& L_3_key : L_3_keys) {
+          int ish, Xsh, size;
+          std::tie(ish, Xsh, size) = L_3_key;
+          auto& my_L3_part = L_3[{ish, Xsh}];
+          const auto& ndcnts = L3_node_counts[{ish, Xsh}];
+          std::vector<ShellIndexWithValue> iX_list(size);
+          int full_off = 0;
+
+          for(int inode = 0; inode < n_node; ++inode) {
+            const int icount = ndcnts[inode];
+            if(icount > 0) {
+              std::copy(
+                  &(full_data[offsets[inode] + offsets_within[inode]]),
+                  &(full_data[offsets[inode] + offsets_within[inode]]) + icount,
+                  &(iX_list[full_off])
+              );
+              full_off += icount;
+              offsets_within[inode] += icount;
+            }
+          }
+
+          assert(full_off == size);
+          my_L3_part.acquire_and_sort(&(iX_list[0]), size);
+          my_L3_part.set_basis(gbs_, dfbs_);
+        }
+
+        timer.exit();
+      }
+      else {
+        for(auto&& pair : L_3) {
+          L_3_keys.emplace_back(
+              pair.first.first,
+              pair.first.second,
+              pair.second.size()
+          );
+        }
       }
 
-      timer.exit();
-    }
+      /********************************************************/ #endif //3}}}
+      /*-----------------------------------------------------*/
+
+      /********************************************************/ #endif //2}}}
+      /*-----------------------------------------------------*/
+
+    } // end if all_to_all_L_3_  (old LinK lists parallelism)
     else {
+
+      // Loop over all jsh
+      do_threaded(nthread_, [&](int ithr) {
+        for(auto&& jsh : thread_over_range(shell_range(gbs_, dfbs_), ithr, nthread_)) {
+          auto& L_sch_jsh = L_schwarz[jsh];
+          for(auto&& Xsh : L_DC[jsh]) {
+
+            const double pf = Xsh.value;
+            const double eps_prime = epsilon / pf;
+            const double eps_prime_dist = epsilon_dist / pf;
+            const double Xsh_schwarz = schwarz_df_[Xsh];
+            bool jsh_added = false;
+            bool ish_found = false;
+            for(auto&& ish : L_sch_jsh) {
+
+              // TODO this can be improved by precomputing the (jsh, Xsh) pairs with non-empty local ish by making a map from local Xsh -> local ish list at the same time local_pairs_linK_ is created
+              if(n_node == 1 or local_pairs_linK_.find({(int)ish, (int)Xsh}) != local_pairs_linK_.end()) {
+
+                ish_found = true;
+
+                double dist_factor = get_distance_factor(ish, jsh, Xsh);
+                assert(ish.value == schwarz_frob_(ish, jsh));
+
+                if(ish.value > eps_prime) {
+                  jsh_added = true;
+                  if(!linK_use_distance_ or ish.value * dist_factor > eps_prime_dist) {
+                    L_3[{ish, Xsh}].insert(jsh,
+                        ish.value * dist_factor * Xsh_schwarz
+                    );
+
+                    if(print_screening_stats_) {
+                      ++iter_stats_->K_3c_needed;
+                      iter_stats_->K_3c_needed_fxn += ish.nbf * jsh.nbf * Xsh.nbf;
+                    }
+
+                  }
+                  else if(print_screening_stats_ and linK_use_distance_) {
+                    ++iter_stats_->K_3c_dist_screened;
+                    iter_stats_->K_3c_dist_screened_fxn += ish.nbf * jsh.nbf * Xsh.nbf;
+                  }
+
+                }
+                else {
+                  break;
+                }
+
+              }
+
+            } // end loop over ish
+            if(ish_found and not jsh_added){
+              break;
+            }
+
+          }
+
+        }
+      });
+
       for(auto&& pair : L_3) {
         L_3_keys.emplace_back(
             pair.first.first,
@@ -478,6 +545,7 @@ CADFCLHF::compute_K()
             pair.second.size()
         );
       }
+
     }
 
     do_threaded(nthread_, [&](int ithr){
@@ -491,7 +559,7 @@ CADFCLHF::compute_K()
       }
     });                                                                                      //latex `\label{sc:link:l3:end}`
 
-    timer.exit("distribute L_3");
+    timer.exit();
 
     timer.exit("LinK lists");
 
@@ -507,7 +575,7 @@ CADFCLHF::compute_K()
     boost::mutex tmp_mutex;
     std::mutex L_3_mutex;
     auto L_3_key_iter = L_3_keys.begin();
-    L_3_key_iter += me;                                                                       //latex `\label{sc:k3b:iterset}`
+    if(all_to_all_L_3_) L_3_key_iter += me;                                                         //latex `\label{sc:k3b:iterset}`
     boost::thread_group compute_threads;
     // reset the iteration over local pairs
     local_pairs_spot_ = 0;
@@ -525,17 +593,22 @@ CADFCLHF::compute_K()
           std::tie(ishidx, Xshidx, list_size) = *L_3_key_iter;
           ish = ShellData(ishidx, gbs_, dfbs_);
           Xblk = ShellBlockData<>(ShellData(Xshidx, dfbs_, gbs_));
-          L_3_key_iter += std::min(
-              L_3_keys.end() - L_3_key_iter,
-              std::iterator_traits<decltype(L_3_key_iter)>::difference_type(n_node)
-          );
+          if(all_to_all_L_3_) {
+            L_3_key_iter += std::min(
+                L_3_keys.end() - L_3_key_iter,
+                std::iterator_traits<decltype(L_3_key_iter)>::difference_type(n_node)
+            );
+          }
+          else {
+            ++L_3_key_iter;
+          }
           return true;
         }
       }
       else {
         int spot = local_pairs_spot_++;
-        if(spot < local_pairs_k_[SignificantPairs].size()){
-          auto& sig_pair = local_pairs_k_[SignificantPairs][spot];
+        if(spot < local_pairs_k_.size()){
+          auto& sig_pair = local_pairs_k_[spot];
           ish = ShellData(sig_pair.first, gbs_, dfbs_);
           Xblk = sig_pair.second;
           return true;
@@ -545,6 +618,7 @@ CADFCLHF::compute_K()
         }
       }
     };                                                                                   //latex `\label{sc:k3b:getiXend}`
+
     for(int ithr = 0; ithr < nthread_; ++ithr) {
       // ...and create each thread that computes pairs
       compute_threads.create_thread([&,ithr](){                                              //latex `\label{sc:k3b:thrpatend}`
@@ -608,48 +682,47 @@ CADFCLHF::compute_K()
                 //----------------------------------------//
                 // Two-body part
 
-                if(!old_two_body_) {
-                  // TODO This breaks integral caching (if I ever use it again)
+                // TODO This breaks integral caching (if I ever use it again)
 
-                  subtimer.change(k2_part_timer);
+                subtimer.change(k2_part_timer);
 
-                  int subblock_offset = 0;
-                  for(const auto&& jsblk : shell_block_range(jblk, Contiguous|SameCenter)) {
-                    int inner_size = ish.atom_dfnbf;
-                    if(ish.center != jsblk.center) {
-                      inner_size += jsblk.atom_dfnbf;
-                    }
-
-                    const int tot_cols = coefs_blocked_[jsblk.center].cols();
-                    const int col_offset = coef_block_offsets_[jsblk.center][ish.center]
-                        + ish.bfoff_in_atom*inner_size;
-                    double* data_start = coefs_blocked_[jsblk.center].data() +
-                        jsblk.bfoff_in_atom * tot_cols + col_offset;
-
-                    StridedRowMap Ctmp(data_start, jsblk.nbf, ish.nbf*inner_size,
-                        Eigen::OuterStride<>(tot_cols)
-                    );
-
-                    RowMatrix C(Ctmp.nestByValue());
-                    C.resize(jsblk.nbf*ish.nbf, inner_size);
-
-                    g3_in.middleRows(subblock_offset*ish.nbf, jsblk.nbf*ish.nbf) -= 0.5
-                        * C.rightCols(ish.atom_dfnbf) * g2.block(
-                            ish.atom_dfbfoff, Xsh.bfoff,
-                            ish.atom_dfnbf, Xsh.nbf
-                    );
-                    if(ish.center != jsblk.center) {
-                      g3_in.middleRows(subblock_offset*ish.nbf, jsblk.nbf*ish.nbf) -= 0.5
-                          * C.leftCols(jsblk.atom_dfnbf) * g2.block(
-                              jsblk.atom_dfbfoff, Xsh.bfoff,
-                              jsblk.atom_dfnbf, Xsh.nbf
-                      );
-                    }
-
-                    subblock_offset += jsblk.nbf;
-
+                int subblock_offset = 0;
+                for(const auto&& jsblk : shell_block_range(jblk, Contiguous|SameCenter)) {
+                  int inner_size = ish.atom_dfnbf;
+                  if(ish.center != jsblk.center) {
+                    inner_size += jsblk.atom_dfnbf;
                   }
+
+                  const int tot_cols = coefs_blocked_[jsblk.center].cols();
+                  const int col_offset = coef_block_offsets_[jsblk.center][ish.center]
+                      + ish.bfoff_in_atom*inner_size;
+                  double* data_start = coefs_blocked_[jsblk.center].data() +
+                      jsblk.bfoff_in_atom * tot_cols + col_offset;
+
+                  StridedRowMap Ctmp(data_start, jsblk.nbf, ish.nbf*inner_size,
+                      Eigen::OuterStride<>(tot_cols)
+                  );
+
+                  RowMatrix C(Ctmp.nestByValue());
+                  C.resize(jsblk.nbf*ish.nbf, inner_size);
+
+                  g3_in.middleRows(subblock_offset*ish.nbf, jsblk.nbf*ish.nbf) -= 0.5
+                      * C.rightCols(ish.atom_dfnbf) * g2.block(
+                          ish.atom_dfbfoff, Xsh.bfoff,
+                          ish.atom_dfnbf, Xsh.nbf
+                  );
+                  if(ish.center != jsblk.center) {
+                    g3_in.middleRows(subblock_offset*ish.nbf, jsblk.nbf*ish.nbf) -= 0.5
+                        * C.leftCols(jsblk.atom_dfnbf) * g2.block(
+                            jsblk.atom_dfbfoff, Xsh.bfoff,
+                            jsblk.atom_dfnbf, Xsh.nbf
+                    );
+                  }
+
+                  subblock_offset += jsblk.nbf;
+
                 }
+
 
                 //----------------------------------------//
 
@@ -758,46 +831,44 @@ CADFCLHF::compute_K()
 
               // TODO This breaks integral caching (if I ever use it again)
 
-              if(not old_two_body_) {
-                subtimer.change(k2_part_timer);
+              subtimer.change(k2_part_timer);
 
-                int subblock_offset = 0;
-                for(const auto&& jsblk : shell_block_range(jblk, SameCenter)) {
-                  int inner_size = ish.atom_dfnbf;
-                  if(ish.center != jsblk.center) {
-                    inner_size += jsblk.atom_dfnbf;
-                  }
+              int subblock_offset = 0;
+              for(const auto&& jsblk : shell_block_range(jblk, SameCenter)) {
+                int inner_size = ish.atom_dfnbf;
+                if(ish.center != jsblk.center) {
+                  inner_size += jsblk.atom_dfnbf;
+                }
 
-                  const int tot_cols = coefs_blocked_[jsblk.center].cols();
-                  const int col_offset = coef_block_offsets_[jsblk.center][ish.center]
-                      + ish.bfoff_in_atom*inner_size;
-                  double* data_start = coefs_blocked_[jsblk.center].data() +
-                      jsblk.bfoff_in_atom * tot_cols + col_offset;
+                const int tot_cols = coefs_blocked_[jsblk.center].cols();
+                const int col_offset = coef_block_offsets_[jsblk.center][ish.center]
+                    + ish.bfoff_in_atom*inner_size;
+                double* data_start = coefs_blocked_[jsblk.center].data() +
+                    jsblk.bfoff_in_atom * tot_cols + col_offset;
 
-                  StridedRowMap Ctmp(data_start, jsblk.nbf, ish.nbf*inner_size,
-                      Eigen::OuterStride<>(tot_cols)
-                  );
+                StridedRowMap Ctmp(data_start, jsblk.nbf, ish.nbf*inner_size,
+                    Eigen::OuterStride<>(tot_cols)
+                );
 
-                  RowMatrix C(Ctmp.nestByValue());
-                  C.resize(jsblk.nbf*ish.nbf, inner_size);
+                RowMatrix C(Ctmp.nestByValue());
+                C.resize(jsblk.nbf*ish.nbf, inner_size);
 
+                g3_in.middleRows(subblock_offset*ish.nbf, jsblk.nbf*ish.nbf) -= 0.5
+                    * C.rightCols(ish.atom_dfnbf) * g2.block(
+                        ish.atom_dfbfoff, Xblk.bfoff,
+                        ish.atom_dfnbf, Xblk.nbf
+                );
+                if(ish.center != jsblk.center) {
                   g3_in.middleRows(subblock_offset*ish.nbf, jsblk.nbf*ish.nbf) -= 0.5
-                      * C.rightCols(ish.atom_dfnbf) * g2.block(
-                          ish.atom_dfbfoff, Xblk.bfoff,
-                          ish.atom_dfnbf, Xblk.nbf
+                      * C.leftCols(jsblk.atom_dfnbf) * g2.block(
+                          jsblk.atom_dfbfoff, Xblk.bfoff,
+                          jsblk.atom_dfnbf, Xblk.nbf
                   );
-                  if(ish.center != jsblk.center) {
-                    g3_in.middleRows(subblock_offset*ish.nbf, jsblk.nbf*ish.nbf) -= 0.5
-                        * C.leftCols(jsblk.atom_dfnbf) * g2.block(
-                            jsblk.atom_dfbfoff, Xblk.bfoff,
-                            jsblk.atom_dfnbf, Xblk.nbf
-                    );
-                  }
+                }
 
-                  subblock_offset += jsblk.nbf;
+                subblock_offset += jsblk.nbf;
 
-                } // end loop over jsblk
-              }
+              } // end loop over jsblk
 
               //----------------------------------------//
 
@@ -874,149 +945,6 @@ CADFCLHF::compute_K()
     if(print_iteration_timings_) mt_timer.print(ExEnv::out0(), 12, 45);
   } // compute_threads is destroyed here
   /*****************************************************************************************/ #endif //1}}} //latex `\label{sc:k3b:end}`
-  /*=======================================================================================*/
-  /* Loop over local shell pairs and compute two body part 		                        {{{1 */ #if 1 // begin fold
-  if(old_two_body_)
-  {
-    Timer timer("two body contributions");
-    boost::mutex tmp_mutex, L_3_mutex;
-    auto L_3_key_iter = L_3.begin();
-    L_3_key_iter.advance(scf_grp_->me());
-    const int n_node = scf_grp_->n();
-    boost::thread_group compute_threads;
-    //----------------------------------------//
-    // reset the iteration over local pairs
-    local_pairs_spot_ = 0;
-    // Loop over number of threads
-    MultiThreadTimer mt_timer("threaded part", nthread_);
-    for(int ithr = 0; ithr < nthread_; ++ithr) {
-      // ...and create each thread that computes pairs
-      compute_threads.create_thread([&,ithr](){
-
-        Eigen::MatrixXd Kt_part(nbf, nbf);
-        Kt_part = Eigen::MatrixXd::Zero(nbf, nbf);
-
-        ShellData ish;
-        ShellBlockData<> Yblk;
-        //----------------------------------------//
-        while(get_ish_Xblk_pair(ish, Yblk, SignificantPairs)) {
-
-          mt_timer.enter("compute Ct", ithr);
-          std::vector<RowMatrix> Ct_mus(ish.nbf);
-          for(auto mu : function_range(ish)) {
-            Ct_mus[mu.bfoff_in_shell].resize(nbf, Yblk.nbf);
-            Ct_mus[mu.bfoff_in_shell] = Eigen::MatrixXd::Zero(nbf, Yblk.nbf);
-          }
-          for(auto&& Xblk : shell_block_range(dfbs_, 0, 0, NoLastIndex, SameCenter)){
-            const auto& g2 = g2_full_ptr->block(Yblk.bfoff, Xblk.bfoff, Yblk.nbf, Xblk.nbf);
-
-            if(ish.center == Xblk.center) {
-              mt_timer.enter("X and ish same center", ithr);
-              for(auto&& jsh : iter_significant_partners(ish)) {
-
-                for(auto&& mu : function_range(ish)) {
-                  for(auto&& rho : function_range(jsh)) {
-
-                    BasisFunctionData first = mu, second = rho;
-                    if(jsh > ish) first = rho, second = mu;
-                    IntPair mu_rho(first, second);
-                    assert(coefs_.find(mu_rho) != coefs_.end());
-                    auto& cpair = coefs_[mu_rho];
-                    auto& Cmu = (jsh <= ish || ish.center == jsh.center) ? *cpair.first : *cpair.second;
-                    auto& Crho = jsh <= ish ? *cpair.second : *cpair.first;
-
-                    Ct_mus[mu.bfoff_in_shell].row(rho) += 2.0 *
-                        g2 * Cmu.segment(Xblk.bfoff_in_atom, Xblk.nbf);
-
-                  } // end loop over rho in jsh
-                } // end loop over mu in ish
-
-              } // end loop over jsh
-              mt_timer.exit(ithr);
-
-            }
-            else {
-              mt_timer.enter("X and ish diff center", ithr);
-              for(auto&& jsh : iter_shells_on_center(obs, Xblk.center)) {
-
-                for(auto&& mu : function_range(ish)) {
-                  for(auto&& rho : function_range(jsh)) {
-
-                    BasisFunctionData first = mu, second = rho;
-
-                    if(jsh > ish) first = rho, second = mu;
-                    IntPair mu_rho(first, second);
-                    assert(coefs_.find(mu_rho) != coefs_.end());
-
-                    auto& cpair = coefs_[mu_rho];
-                    auto& Cmu = (jsh <= ish || ish.center == jsh.center) ? *cpair.first : *cpair.second;
-                    auto& Crho = jsh <= ish ? *cpair.second : *cpair.first;
-
-                    Ct_mus[mu.bfoff_in_shell].row(rho) += 2.0 *
-                        g2 * Crho.segment(Xblk.bfoff_in_atom, Xblk.nbf);
-
-                  } // end loop over rho in jsh
-                } // end loop over mu in ish
-
-              } // end loop over jsh
-              mt_timer.exit(ithr);
-            }
-
-          } // end loop over Xblk
-          //----------------------------------------//
-          mt_timer.change("compute dt", ithr);
-          // TODO make this one matrix?
-          std::vector<RowMatrix> dt_mus(ish.nbf);
-          for(auto&& mu : function_range(ish)) {
-            dt_mus[mu.bfoff_in_shell].resize(nbf, Yblk.nbf);
-            dt_mus[mu.bfoff_in_shell] = D * Ct_mus[mu.bfoff_in_shell];
-          }
-          //if(xml_debug_) {
-          //  for(auto&& mu : function_range(ish)){
-          //    write_as_xml("new_dt_part", dt_mus[mu.bfoff_in_shell], std::map<std::string, int>{
-          //      {"mu", mu}, {"Xbfoff", Yblk.bfoff},
-          //      {"Xnbf", Yblk.nbf}, {"dfnbf", dfbs_->nbasis()}
-          //    });
-          //  }
-          //}
-          //----------------------------------------//
-          mt_timer.change("K contribution", ithr);
-          for(auto&& Y : function_range(Yblk)) {
-            const auto& C_Y = coefs_transpose_[Y];
-            const int obs_atom_bfoff = obs->shell_to_function(obs->shell_on_center(Y.center, 0));
-            const int obs_atom_nbf = obs->nbasis_on_center(Y.center);
-            for(auto&& mu : function_range(ish)) {
-              // dt_mus[mu.bfoff_in_shell] is (nbf x Ysh.nbf)
-              // C_Y is (Y.{obs_}atom_nbf x nbf)
-              // result should be (Y.{obs_}atom_nbf x 1)
-              Kt_part.row(mu).segment(obs_atom_bfoff, obs_atom_nbf).transpose() -=
-                  0.5 * C_Y * dt_mus[mu.bfoff_in_shell].col(Y.bfoff_in_block);
-              // The sigma <-> nu term
-              Kt_part.row(mu).transpose() -= 0.5
-                  * C_Y.transpose()
-                  * dt_mus[mu.bfoff_in_shell].col(Y.bfoff_in_block).segment(obs_atom_bfoff, obs_atom_nbf);
-              // Add back in the nu.center == Y.center part
-              Kt_part.row(mu).segment(obs_atom_bfoff, obs_atom_nbf).transpose() += 0.5
-                  * C_Y.middleCols(obs_atom_bfoff, obs_atom_nbf).transpose()
-                  * dt_mus[mu.bfoff_in_shell].col(Y.bfoff_in_block).segment(obs_atom_bfoff, obs_atom_nbf);
-              //----------------------------------------//
-            }
-          }
-          //----------------------------------------//
-          mt_timer.exit(ithr);
-        } // end while get pair
-        //----------------------------------------//
-        // Sum Kt parts within node
-        boost::lock_guard<boost::mutex> lg(tmp_mutex);
-        Kt += Kt_part;
-      }); // end create_thread
-    } // end enumeration of threads
-    compute_threads.join_all();
-    mt_timer.exit();
-    if(print_iteration_timings_) mt_timer.print(ExEnv::out0(), 12, 45);
-    timer.insert(mt_timer);
-  } // compute_threads is destroyed here
-  /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
   /* Global sum K                                         		                        {{{1 */ #if 1 //latex `\label{sc:kglobalsum}`
   //----------------------------------------//

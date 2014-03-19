@@ -36,6 +36,7 @@
 #include <future>
 #include <functional>
 #include <type_traits>
+#include <unordered_set>
 
 // Eigen includes
 #include <Eigen/Dense>
@@ -44,6 +45,7 @@
 #include <chemistry/qc/scf/clhf.h>
 #include <util/container/conc_cache_fwd.h>
 #include <util/container/thread_wrap.h>
+#include <util/misc/hash.h>
 
 #include "iters.h"
 
@@ -288,15 +290,13 @@ class CADFCLHF: public CLHF {
     /// Exponent to raise the the distance denominator exponent to (i.e. (lX+1)^damping_factor)
     double distance_damping_factor_;
     /// Print timings after each iteration.  Useful for benchmarking large systems without doing full calculations
-    bool print_iteration_timings_;
+    bool print_iteration_timings_ = false;
     /// Use norms for nu dimension when screening
-    bool use_norms_nu_;
+    bool use_norms_nu_ = true;
     /// Use norms for sigma dimension when screening.  It's actually a sum over this dimension rather than a norm.
-    bool use_norms_sigma_;
+    bool use_norms_sigma_ = true;
     /// Print a lot of stuff in an XML debug file.  Not really for end users...
     bool xml_debug_ = false;
-    /// Do the two-body terms the old way
-    bool old_two_body_ = false;
     /// Dump screening data to XML
     bool xml_screening_data_ = false;
     /// Use extents to damp R distances for screening purposes
@@ -307,6 +307,8 @@ class CADFCLHF: public CLHF {
     bool subtract_extents_ = true;
     /// The CFMM well-separatedness thresh
     double well_separated_thresh_ = 1e-8;
+    /// The old way of distributing LinK list work
+    bool all_to_all_L_3_ = false;
     //@}
 
     ScreeningStatistics stats_;
@@ -477,26 +479,17 @@ class CADFCLHF: public CLHF {
     std::map<PairSet, std::map<std::pair<int, int>, int>> pair_assignments_;
 
     // Pair assignments for K
-    std::map<
-      PairSet,
-      std::map<
-        std::pair<int, ShellBlockSkeleton<>>,
-        int
-      >
-    > pair_assignments_k_;
+    std::map<std::pair<int, ShellBlockSkeleton<>>, int> pair_assignments_k_;
 
     // What pairs are being evaluated on the current node?
     std::vector<std::pair<int, int>> local_pairs_all_;
     std::vector<std::pair<int, int>> local_pairs_sig_;
 
-
     // What pairs are being evaluated on the current node?
-    std::map<
-      PairSet,
-      std::vector<
-        std::pair<int, ShellBlockSkeleton<>>
-      >
-    > local_pairs_k_;
+    std::vector<std::pair<int, ShellBlockSkeleton<>>> local_pairs_k_;
+    std::unordered_set<
+      std::pair<int, int>, sc::hash<std::pair<int, int>>
+    > local_pairs_linK_;
 
     // List of the permutationally unique pairs with half-schwarz bounds larger than pair_thresh_
     std::vector<std::pair<int, int>> sig_pairs_;

@@ -161,13 +161,22 @@ shell_block_iterator<ShellIterator, ShellRange>::init()
 
 //============================================================================//
 
-template<typename Iterator>
+template<typename Range>
 inline auto
 shell_range(
-    const ShellBlockData<Iterator>& block
+    const ShellBlockData<Range>& block
 ) -> const decltype(block.shell_range)&
 {
   return block.shell_range;
+}
+
+template<typename Range>
+inline const Range&
+shell_range(
+    const ShellBlockSkeleton<Range>& skeleton
+)
+{
+  return skeleton.shell_range;
 }
 
 template<typename ShellRange>

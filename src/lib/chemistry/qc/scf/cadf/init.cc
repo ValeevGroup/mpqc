@@ -149,44 +149,45 @@ CADFCLHF::init_threads()
   init_significant_pairs();
 
   //----------------------------------------------------------------------------//
-  if(not dynamic_){
 
-    const int me = scf_grp_->me();
-    int inode = 0;
-    for(auto&& sig_pair : sig_pairs_) {
-      const int assignment = inode % n_node;
-      pair_assignments_[SignificantPairs][sig_pair] = assignment;
-      if(assignment == me){
-        local_pairs_sig_.push_back(sig_pair);
-      }
-      ++inode;
+  const int me = scf_grp_->me();
+  int inode = 0;
+  for(auto&& sig_pair : sig_pairs_) {
+    const int assignment = inode % n_node;
+    pair_assignments_[SignificantPairs][sig_pair] = assignment;
+    if(assignment == me){
+      local_pairs_sig_.push_back(sig_pair);
     }
-
-    // Make the assignments for the mu, X pairs in K
-    for(int mu_set = 0; mu_set < sig_blocks_.size(); ++mu_set) {
-      for(auto&& sig_block : sig_blocks_[mu_set]) {
-
-        const int assignment = inode % n_node; ++inode;
-        auto pair = std::make_pair(mu_set, sig_block);
-        pair_assignments_k_[SignificantPairs][pair] = assignment;
-        if(assignment == me) {
-          local_pairs_k_[SignificantPairs].push_back(pair);
-        }
-
-      } // end loop over blocks for mu
-    } // end loop over mu sets
-
-    for(auto&& ish : shell_range(gbs_)) {
-      for(auto&& Yblk : shell_block_range(dfbs_, 0, 0, NoLastIndex, NoRestrictions)) {
-        const int assignment = inode % n_node; ++inode;
-        auto pair = std::make_pair((int)ish, Yblk);
-        pair_assignments_k_[AllPairs][pair] = assignment;
-        if(assignment == me) {
-          local_pairs_k_[AllPairs].push_back(pair);
-        }
-      }
-    }
+    ++inode;
   }
+
+  // Make the assignments for the mu, X pairs in K
+  inode = 0;
+  for(int ish = 0; ish < sig_blocks_.size(); ++ish) {
+    for(auto&& sig_block : sig_blocks_[ish]) {
+      const int assignment = inode % n_node; ++inode;
+      auto pair = std::make_pair(ish, sig_block);
+      pair_assignments_k_[pair] = assignment;
+      if(assignment == me) {
+        local_pairs_k_.push_back(pair);
+      }
+
+    } // end loop over blocks for mu
+  } // end loop over mu sets
+
+  inode = 0;
+  for(int ish = 0; ish < sig_blocks_.size(); ++ish) {
+    for(auto&& sig_block : sig_blocks_[ish]) {
+      for(auto Xsh : shell_range(ShellBlockData<>(sig_block))) {
+
+        const int assignment = inode % n_node; ++inode;
+        if(assignment == me) {
+          local_pairs_linK_.emplace(ish, (int)Xsh);
+        }
+
+      } // end loop over Xsh
+    } // end loop over Xsh blocks
+  } // end loop over ish
 
   //----------------------------------------------------------------------------//
   threads_initialized_ = true;
@@ -311,9 +312,11 @@ CADFCLHF::init_significant_pairs()
   } // get rid of sig_data and sig_vals
 
   //----------------------------------------//
+
+  //============================================================================//
   // Now compute the significant pairs for the outer loop of the exchange and the sig_partners_ array
-  sig_partners_.resize(gbs_->nbasis());
-  sig_blocks_.resize(gbs_->nbasis());
+  sig_partners_.resize(gbs_->nshell());
+  sig_blocks_.resize(gbs_->nshell());
   int pair_index = 0;
   for(auto&& pair : sig_pairs_) {
     ShellData ish(pair.first, gbs_), jsh(pair.second, gbs_);
@@ -334,7 +337,6 @@ CADFCLHF::init_significant_pairs()
     //----------------------------------------//
     ++pair_index;
   }
-  out_assert(L_schwarz.size(), >, 0);
   //----------------------------------------//
   do_threaded(nthread_, [&](int ithr){
     auto L_schwarz_iter = L_schwarz.begin();
@@ -346,6 +348,7 @@ CADFCLHF::init_significant_pairs()
     }
   });
   //----------------------------------------//
+  // compute the max Schwarz frobnorm ( mu rho | mu rho ) for each ish
   max_schwarz_.resize(gbs_->nshell());
   for(auto&& ish : shell_range(gbs_)) {
     double max_val = 0.0;
@@ -357,7 +360,8 @@ CADFCLHF::init_significant_pairs()
     }
     max_schwarz_[ish] = max_val;
   }
-  //----------------------------------------//
+
+  //============================================================================//
   // Compute the centers, the pair centers, and the pair extents
   centers_.resize(molecule()->natom());
   for(int iatom = 0; iatom < molecule()->natom(); ++iatom) {

@@ -81,11 +81,22 @@
   }
 
 #define DUMP(expr) sc::ExEnv::out0() << #expr << " = " << (expr) << std::endl;
+#define DUMPme(expr) sc::ExEnv::outn() << "  Node " << scf_grp_->me() << ": " << #expr << " = " << (expr) << std::endl;
+#define DUMPn(expr) \
+    sc::ExEnv::out0() << "Dumping expression " << #expr << " from all nodes:" << std::endl; \
+    for(int __inode = 0; __inode < scf_grp_->n(); ++__inode) {\
+      if(__inode == scf_grp_->me()) { \
+        sc::ExEnv::outn() << "  Node " << scf_grp_->me() << ": " << #expr << " = " << (expr) << std::endl; \
+      } \
+      scf_grp_->sync(); \
+    }
 #define DUMP2(expr1, expr2) sc::ExEnv::out0() << #expr1 << " = " << (expr1) << ", " << #expr2 << " = " << (expr2) << std::endl;
+#define DUMP2n(expr1, expr2) sc::ExEnv::outn() << "me = " << scf_grp_->me() << ", " << #expr1 << " = " << (expr1) << ", " << #expr2 << " = " << (expr2) << std::endl;
 #define DUMP3(expr1, expr2, expr3) sc::ExEnv::out0() << #expr1 << " = " << (expr1) << ", " << #expr2 << " = " << (expr2) << ", " << #expr3 << " = " << (expr3) << std::endl;
 #define DUMP4(expr1, expr2, expr3, expr4) ExEnv::out0() << #expr1 << " = " << (expr1) << ", " << #expr2 << " = " << (expr2) << ", " << #expr3 << " = " << (expr3) << ", " << #expr4 << " = " << (expr4) << std::endl;
 #define DUMP5(expr1, expr2, expr3, expr4, expr5) std::cout << #expr1 << " = " << (expr1) << ", " << #expr2 << " = " << (expr2) << ", " << #expr3 << " = " << (expr3) << ", " << #expr4 << " = " << (expr4) << ", " << #expr5 << " = " << (expr5) << std::endl;
 #define out_assert(a, op, b) assert(a op b || ((ExEnv::out0() << "Failed assertion output: " << #a << " ( = " << a << ") " << #op << " " << #b <<  " ( = " << b << ")" << std::endl), false))
+#define DEBUG_DELETE_THIS
 
 
 #endif /* _chemistry_qc_scf_cadf_macros_h */

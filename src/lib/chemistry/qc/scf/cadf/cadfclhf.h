@@ -309,6 +309,8 @@ class CADFCLHF: public CLHF {
     double well_separated_thresh_ = 1e-8;
     /// The old way of distributing LinK list work
     bool all_to_all_L_3_ = false;
+    /// Break early if possible in LinK lists
+    bool linK_break_early_ = true;
     //@}
 
     ScreeningStatistics stats_;

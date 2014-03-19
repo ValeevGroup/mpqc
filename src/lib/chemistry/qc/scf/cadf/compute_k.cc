@@ -482,6 +482,8 @@ CADFCLHF::compute_K()
     else {
 
       // Loop over all jsh
+      const auto& const_loc_pairs = local_pairs_linK_;
+      const auto& loc_pairs_end = const_loc_pairs.end();
       do_threaded(nthread_, [&](int ithr) {
         for(auto&& jsh : thread_over_range(shell_range(gbs_, dfbs_), ithr, nthread_)) {
           auto& L_sch_jsh = L_schwarz[jsh];
@@ -496,7 +498,7 @@ CADFCLHF::compute_K()
             for(auto&& ish : L_sch_jsh) {
 
               // TODO this can be improved by precomputing the (jsh, Xsh) pairs with non-empty local ish by making a map from local Xsh -> local ish list at the same time local_pairs_linK_ is created
-              if(n_node == 1 or local_pairs_linK_.find({(int)ish, (int)Xsh}) != local_pairs_linK_.end()) {
+              if(n_node == 1 or const_loc_pairs.find({(int)ish, (int)Xsh}) != const_loc_pairs.end()) {
 
                 ish_found = true;
 
@@ -522,14 +524,14 @@ CADFCLHF::compute_K()
                   }
 
                 }
-                else {
+                else if(linK_break_early_) {
                   break;
                 }
 
               }
 
             } // end loop over ish
-            if(ish_found and not jsh_added){
+            if(linK_break_early_ and ish_found and not jsh_added){
               break;
             }
 

@@ -154,6 +154,7 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   use_norms_sigma_ = keyval->booleanvalue("use_norms_sigma", KeyValValueboolean(use_norms_sigma_));
   xml_screening_data_ = keyval->booleanvalue("xml_screening_data", KeyValValueboolean(xml_screening_data_));
   all_to_all_L_3_ = keyval->booleanvalue("all_to_all_L_3", KeyValValueboolean(all_to_all_L_3_));
+  linK_break_early_ = keyval->booleanvalue("linK_break_early", KeyValValueboolean(linK_break_early_));
   //----------------------------------------------------------------------------//
   stats_.print_level = print_screening_stats_;
   stats_.xml_stats_saved = xml_screening_data_;
@@ -197,6 +198,8 @@ CADFCLHF::print(ostream&o) const
   o << indent << "linK_block_rho = " << bool_str(linK_block_rho_) << endl;
   o << indent << "xml_screening_data = " << bool_str(xml_screening_data_) << endl;
   o << indent << "linK_sorted_B_contraction = " << bool_str(linK_sorted_B_contraction_) << endl;
+  o << indent << "all_to_all_L_3 = " << bool_str(all_to_all_L_3_) << endl;
+  o << indent << "linK_break_early = " << bool_str(linK_break_early_) << endl;
   o << indent << "full_screening_thresh = " << double_str(full_screening_thresh_) << endl;
   o << indent << "distance_screening_thresh = " << double_str(distance_screening_thresh_) << endl;
   o << indent << "pair_screening_thresh = " << double_str(pair_screening_thresh_) << endl;
@@ -205,6 +208,8 @@ CADFCLHF::print(ostream&o) const
   o << indent << "full_screening_expon = " << double_str(full_screening_expon_) << endl;
   o << indent << "distance_damping_factor = " << double_str(distance_damping_factor_) << endl;
   o << indent << "well_separated_thresh = " << double_str(well_separated_thresh_) << endl;
+
+
   CLHF::print(o);
   if(print_screening_stats_) {
     stats_.print_summary(o, gbs_, dfbs_, print_screening_stats_);

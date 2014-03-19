@@ -31,8 +31,8 @@
 #include <iostream>
 #include <chemistry/qc/basis/tiledbasisset.hpp>
 #include <chemistry/qc/basis/integral.h>
-#include <mpqc/integrals/integralenginepool.hpp>
-#include <mpqc/interfaces/tiledarray/array_ints.hpp>
+#include <chemistry/qc/basis/integralenginepool.hpp>
+#include <chemistry/qc/basis/taskintegrals.hpp>
 #define BOOST_TEST_MODULE test_tabasis
 #include <boost/test/included/unit_test.hpp>
 #include <utility>

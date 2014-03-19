@@ -4,16 +4,19 @@
 # Find Elemental
 ######################
 
+
+find_path(ELEMENTAL_INCLUDE_DIR elemental.hpp)
+
 set(ELEMENTAL_LIBRARIES "")
 foreach (_lib elemental pmrrr)
   set(_libpath _libpath-NOTFOUND)
   find_library(_libpath ${_lib})
+  #message(STATUS "Found ${_lib}: ${_libpath}")
   if (_libpath)
-    list(APPEND ELMENTAL_LIBRARIES ${_libpath})
+    list(APPEND ELEMENTAL_LIBRARIES ${_libpath})
   endif()
 endforeach()
 
-find_path(ELEMENTAL_INCULDE_DIR elemental.hpp)
 if(ELEMENTAL_INCLUDE_DIR)
   message(STATUS "Found elemental.hpp")
 endif(ELEMENTAL_INCLUDE_DIR)
@@ -27,13 +30,14 @@ if (ELEMENTAL_LIBRARIES)
   # ELemental compiles check
   list(APPEND CMAKE_REQUIRED_INCLUDES ${ELEMENTAL_INCLUDE_DIR})
   list(APPEND CMAKE_REQUIRED_LIBRARIES ${ELEMENTAL_LIBRARIES})
+  list(APPEND CMAKE_REQUIRED_LIBRARIES ${LAPACK_LIBRARIES})
   CHECK_CXX_SOURCE_COMPILES(
     "
     #include <elemental.hpp>
     using namespace elem;
     int main (int argc, char** argv){
       Initialize(argc, argv);
-      mpi::Comm = mpi::COMM_WORLD;
+      mpi::Comm comm = mpi::COMM_WORLD;
       const Grid grid(comm);
       DistMatrix<double> X(grid);
       Identity(X, 16, 16);

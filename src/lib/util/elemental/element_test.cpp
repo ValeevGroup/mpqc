@@ -36,13 +36,15 @@ using namespace sc;
 using namespace mpqc;
 
 int main(int argc, char** argv){
-
   ExEnv::init(argc, argv);
   ELEMETNALRuntime::initialize();
+
   mpqc::Grid* grid = new mpqc::Grid();
   elem::DistMatrix<double> mat(16,16, *grid->elemGrid());
   elem::Identity(mat, 16, 16);
   elem::Print(mat);
 
+  ELEMETNALRuntime::finalize();
+  return 0;
 }
 

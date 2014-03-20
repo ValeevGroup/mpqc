@@ -40,6 +40,7 @@ using namespace mpqc;
 struct Mock_SCF : public TA::SCF {
     Mock_SCF(const Ref<KeyVal> &kval) : TA::SCF(kval) {}
     virtual double scf_energy() { return 2.0; }
+    virtual double iter_energy() {return 2.1; }
 
     static sc::ClassDesc class_desc_;
 };

@@ -128,7 +128,7 @@ void mpqc::TA::CLSCF::Dguess(const Matrix& F) {
 
   // Move to elem
   mpqc::Grid* grid = new mpqc::Grid();
-  elem::DistMatrix<double> ElemF = array_to_distmat(F, grid->elemGrid());
+  elem::DistMatrix<double> ElemF = array_to_distmat(F, *grid->elemGrid());
   elem::Print(ElemF);
   std::cout << "F \n" << F << std::endl;
 

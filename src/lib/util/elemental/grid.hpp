@@ -31,6 +31,7 @@
 #include <elemental.hpp>
 #include <util/class/class.h>
 #include <util/keyval/keyval.h>
+#include <util/misc/assert.h>
 
 namespace mpqc {
   /// Grid is a wrapper around elem::Grid

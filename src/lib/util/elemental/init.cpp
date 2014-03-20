@@ -42,6 +42,7 @@
 #include <util/misc/exenv.h>
 #include <util/misc/scexception.h>
 
+
 bool mpqc::ELEMETNALRuntime::mpqc_initialized_elemental_ = false;
 
 bool mpqc::ELEMETNALRuntime::initialized(){

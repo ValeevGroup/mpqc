@@ -25,6 +25,10 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#ifdef __GNUG__
+#pragma interface
+#endif
+
 #ifndef MPQC_SRC_LIB_UTIL_ELEMENTAL_INIT_HPP
 #define MPQC_SRC_LIB_UTIL_ELEMENTAL_INIT_HPP
 

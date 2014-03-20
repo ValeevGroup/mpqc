@@ -25,27 +25,24 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef HAVE_ELEMENTAL
 #ifndef MPQC_SRC_LIB_UTIL_ELEMENTAL_TA_INTERFACE_HPP
 #define MPQC_SRC_LIB_UTIL_ELEMENTAL_TA_INTERFACE_HPP
 
 #include <tiled_array.h>
 #include <elemental.hpp>
+#include <util/misc/assert.h>
 
 namespace mpqc{
 
   template <typename T>
-  elem::DistMatrix<T> array_to_distmat(TiledArray::Array<T,2> x,
+  elem::DistMatrix<T> array_to_distmat(TiledArray::Array<T,2> &x,
                                          elem::Grid &g){
     // Get the last tile for size information
-    auto end = x.get_pmap()->end();
-    auto tile = x.find(*(end - 1)).get();
-    // compute the number of rows and cols
-    int n_row = tile.range().start()[0] + tile.range().size()[0];
-    int n_col = tile.range().start()[1] + tile.range().size()[1];
+    std::vector<unsigned int> sizes = x.trange().elements().size();
+    MPQC_ASSERT(sizes.size() == 2);
 
     // construct DistMat
-    elem::DistMatrix<T> mat(n_row,n_col,g);
+    elem::DistMatrix<T> mat(sizes[0],sizes[1],g);
     elem::Zero(mat);
 
     // Create the Axpy interface used to fill DistMat
@@ -54,10 +51,11 @@ namespace mpqc{
     interface.Attach(elem::LOCAL_TO_GLOBAL, mat);
 
     // Get TA iterator
-    auto it = x.get_pmap()->begin();
+    auto it = x.begin();
+    auto end = x.end();
     for(;it != end; ++it){
       // Get tile and offset info
-      auto tile = x.find(*it).get();
+      typename ::TiledArray::Array<T,2>::value_type tile = *it;
       int t0start = tile.range().start()[0];
       int t1start = tile.range().start()[1];
       int t0size = tile.range().size()[0];
@@ -66,7 +64,8 @@ namespace mpqc{
       // Create a local elem::Matrix
       elem::Matrix<T> ElemBlock;
       // Attach the tile to it.
-      ElemBlock.Attach(t0size, t1size, tile.begin(),0);
+      ElemBlock.Attach(t1size, t0size, tile.data(),t0size);
+
       // Add it to our Distmat
       interface.Axpy(1.0, ElemBlock, t0start, t1start);
     }
@@ -76,7 +75,33 @@ namespace mpqc{
     return mat;
   }
 
+  template <typename T>
+  void distmat_to_array(TiledArray::Array<T,2> &x, elem::DistMatrix<T> &mat){
+
+    elem::AxpyInterface<T> interface;
+    interface.Attach(elem::GLOBAL_TO_LOCAL, mat);
+
+    auto it = x.begin();
+    auto end = x.end();
+
+    for(;it != end; ++it){
+      typename TiledArray::Array<T,2>::value_type tile = *it;
+      int t0start = tile.range().start()[0];
+      int t1start = tile.range().start()[1];
+      int t0size = tile.range().size()[0];
+      int t1size = tile.range().size()[1];
+
+      elem::Matrix<double> mat;
+      mat.Attach(t1size,t0size,tile.data(),t0size);
+      std::fill(mat.Buffer(), mat.Buffer()+t0size*t1size, T(0));
+
+      interface.Axpy(T(1.0), mat, t0start, t1start);
+    }
+    interface.Detach();
+  }
+
+
+
 } // namespace mpqc
 
 #endif /* MPQC_SRC_LIB_UTIL_ELEMENTAL_TA_INTERFACE_HPP */
-#endif // Have_ELEMENTAL

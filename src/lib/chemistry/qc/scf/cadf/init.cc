@@ -88,7 +88,7 @@ CADFCLHF::init_threads()
   for(int ithr = 1; ithr < nthread_; ++ithr) {
     eris_3c_[ithr] = eris_3c_[0]->clone();
     //eris_3c_[ithr] = integral()->coulomb<3>();
-    eris_3c_[ithr]->set_integral_storage(storage_avail/nthread_);
+    //eris_3c_[ithr]->set_integral_storage(storage_avail/nthread_);
   }
 
   for (int i=0; i < nthread_; i++) {

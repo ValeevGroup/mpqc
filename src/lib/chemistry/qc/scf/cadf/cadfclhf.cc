@@ -171,7 +171,8 @@ CADFCLHF::~CADFCLHF()
 {
   if(have_coefficients_){
     // Clean up the coefficient data
-    deallocate(coefficients_data_);
+    //deallocate(coefficients_data_);
+    delete[] coefficients_data_;
   }
 }
 

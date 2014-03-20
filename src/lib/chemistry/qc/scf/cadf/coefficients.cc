@@ -56,7 +56,7 @@ CADFCLHF::compute_coefficients()
   // Coefficients will be stored jbf <= ibf
   timer.enter("01 - init coef memory");
 
-  int ncoefs = 0;                                                                          //latex `\label{sc:coefcountbegin}`
+  unsigned long ncoefs = 0;                                                                          //latex `\label{sc:coefcountbegin}`
   for(auto ibf : function_range(obs, dfbs_)){
     for(auto jbf : function_range(obs, dfbs_, 0, ibf)){
       ncoefs += ibf.atom_dfnbf;
@@ -86,7 +86,8 @@ CADFCLHF::compute_coefficients()
   memory_used_ += ncoefs*sizeof(double);
   ExEnv::out0() << indent << "Total memory usage is at least " << data_size_to_string(memory_used_) << std::endl;
 
-  coefficients_data_ = allocate<double>(ncoefs);                                           //latex `\label{sc:coefalloc}`
+  //coefficients_data_ = allocate<double>(ncoefs);                                           //latex `\label{sc:coefalloc}`
+  coefficients_data_ = new double[ncoefs];                                             //latex `\label{sc:coefalloc}`
 
   memset(coefficients_data_, 0, ncoefs * sizeof(double));
   double *spot = coefficients_data_;

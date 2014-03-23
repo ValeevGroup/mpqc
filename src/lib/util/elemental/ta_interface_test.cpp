@@ -46,9 +46,9 @@ int main(int argc, char** argv){
   World* world_ = new World();
 
   std::vector<unsigned int> blocking;
-  unsigned int block_size = 4;
-  unsigned int matrix_size = 16;
-  for(auto i = 0; i < matrix_size; i += block_size) {
+  unsigned int block_size = 2;
+  unsigned int matrix_size = 9;
+  for(auto i = 0; i < matrix_size; i += block_size++) {
     blocking.push_back(i);
   }
   std::vector<::TiledArray::TiledRange1> blocking2(
@@ -56,15 +56,18 @@ int main(int argc, char** argv){
   ::TiledArray::TiledRange trange(blocking2.begin(), blocking2.end());
 
   ::TiledArray::Array<double, 2> array(*world_->madworld(), trange);
-  array.set_all_local(2.0);
+  array.set_all_local(0.0);
+
+
+  elem::DistMatrix<double> mat = array_to_distmat(array, *grid->elemGrid());
   if(world_->madworld()->rank()==0){
     std::cout << array << std::endl;
   }
-
-  elem::DistMatrix<double> mat = array_to_distmat(array, *grid->elemGrid());
   elem::Print(mat,"TA Copy");
-  elem::Identity(mat,matrix_size,matrix_size);
-  Print(mat,"Idenitity");
+  elem::DistMatrix<double, elem::VR, elem::STAR> w(*grid->elemGrid());
+  elem::DistMatrix<double> X(*grid->elemGrid());
+  //elem::HermitianEig(elem::LOWER, mat, w, X, elem::ASCENDING);
+  Print(mat,"Evecs");
 
   distmat_to_array(array, mat);
 

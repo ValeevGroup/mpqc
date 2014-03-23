@@ -61,10 +61,19 @@ namespace mpqc{
       int t0size = tile.range().size()[0];
       int t1size = tile.range().size()[1];
 
+      int i = 0;
+      std::generate(tile.data(), tile.data() + t0size * t1size,
+                    [&](){return i++;});
+
+      // Put data in column major format for elemental
+      Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> >
+        map(tile.data(), t0size, t1size);
+      Eigen::MatrixXd colmajor = map;
+
       // Create a local elem::Matrix
       elem::Matrix<T> ElemBlock;
-      // Attach the tile to it.
-      ElemBlock.Attach(t1size, t0size, tile.data(),t0size);
+      // Attach the column_major data to it.
+      ElemBlock.Attach(t0size, t1size, colmajor.data(), t0size);
 
       // Add it to our Distmat
       interface.Axpy(1.0, ElemBlock, t0start, t1start);
@@ -91,13 +100,31 @@ namespace mpqc{
       int t0size = tile.range().size()[0];
       int t1size = tile.range().size()[1];
 
+      // this is going to put the data in the tile in the wrong order, which
+      // we will fix after interface.Detach has been called.
       elem::Matrix<double> mat;
-      mat.Attach(t1size,t0size,tile.data(),t0size);
+      mat.Attach(t0size, t1size, tile.data(), t0size);
       std::fill(mat.Buffer(), mat.Buffer()+t0size*t1size, T(0));
 
       interface.Axpy(T(1.0), mat, t0start, t1start);
     }
     interface.Detach();
+
+    // Loop over tiles and rearrange the data back to row major using eigen.
+    it = x.begin();
+    for(;it != end; ++it){
+
+      typename TiledArray::Array<T,2>::value_type tile = *it;
+
+      int t0start = tile.range().start()[0];
+      int t1start = tile.range().start()[1];
+      int t0size = tile.range().size()[0];
+      int t1size = tile.range().size()[1];
+      Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> rowmajor =
+              Eigen::Map<Eigen::MatrixXd>(tile.data(), t0size, t1size);
+      std::copy(rowmajor.data(), rowmajor.data()+rowmajor.size(), tile.data());
+
+    }
   }
 
 

@@ -28,6 +28,7 @@ IF(MPQC_NEW_FEATURES)
     list(APPEND ccfiles tascf.cpp)
     list(APPEND ccfiles taclscf.cpp)
     list(APPEND ccfiles taclhf.cpp)
+    list(APPEND ccfiles cldfgfactory.cpp)
 ENDIF(MPQC_NEW_FEATURES)
 
 add_mpqc_object_library(scf ${ccfiles})
@@ -68,5 +69,12 @@ if (MPQC_UNITTEST)
   add_test(taclhf_test taclhf_test)
   
   target_link_libraries( taclhf_test chemistry )
+  
+  
+  add_executable(gfactory_test cldfgfactory.cpp $<TARGET_OBJECTS:basis>)
+  add_test(gfactory_test gfactory_test)
+  
+  target_link_libraries( gfactory_test chemistry)
+
 endif (MPQC_UNITTEST)
 

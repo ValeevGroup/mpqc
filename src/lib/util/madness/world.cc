@@ -52,6 +52,11 @@ World::World(const Ref<KeyVal>& kv) {
   // for now only use default world
   MPQC_ASSERT(key_ == "default");
   world_ = &madness::World::get_default();
+
+#ifdef MPQC_HAS_ELEMENTAL
+  grid_ = &elem::DefaultGrid();
+#endif // MPQC_HAS_ELEMENTAL
+
 }
 
 World::~World() {

@@ -18,10 +18,10 @@ endif()
 
 if (MPQC_NEW_FEATURES)
 
+  include(external/Elemental)
   include(external/TiledArray)
   include(external/Python)
   include(external/Boost)
-  include(external/Elemental)
   
   # Right now only CI depends on HDF5, minimize deps
   if (MPQC_CI)

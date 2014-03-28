@@ -1,5 +1,5 @@
 //
-// grid.cpp
+// gfactory.hpp
 //
 // Copyright (C) 2013 Drew Lewis
 //
@@ -25,31 +25,35 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifdef __GNUG__
-#pragma implementation
-#endif
+#ifndef MPQC_CHEMISTRY_QC_SCF_GFACTORY_HPP
+#define MPQC_CHEMISTRY_QC_SCF_GFACTORY_HPP
 
-#include <util/elemental/grid.hpp>
+#include <tiled_array.h>
+#include <chemistry/qc/basis/tiledbasisset.hpp>
+#include <util/class/class.h>
+#include <util/misc/assert.h>
 
-using namespace mpqc;
-using namespace sc;
 
-ClassDesc Grid::class_desc_(typeid(Grid),
-                           "Grid",
-                           1,
-                           "virtual public DescribedClass",
-                           create<Grid>,
-                           create<Grid>,
-                           0
-);
+namespace mpqc {
+  namespace TA {
 
-mpqc::Grid::Grid() : grid_(new elem::Grid(elem::mpi::COMM_WORLD)) { }
+    class GFactory {
+    public:
+      typedef ::TiledArray::Array<double, 2> TAMatrix;
 
-mpqc::Grid::Grid(const sc::Ref<sc::KeyVal>& kv) {
-  MPQC_ASSERT(false);
-}
+      GFactory() = default;
+      virtual ~GFactory() = default;
 
-mpqc::Grid::~Grid() {
-  // Copying the madness style world.cc
-  const bool make_sure_class_desc_initialialized = (&class_desc_ != 0);
-}
+      virtual
+      TiledArray::expressions::TensorExpression<TAMatrix::eval_type>
+      operator()(const std::string &v){MPQC_ASSERT(false);}
+
+    private:
+      static sc::ClassDesc class_desc_;
+
+    }; // class GFactory
+
+  } // namespace TA
+} // namespace mpqc
+
+#endif /* MPQC_CHEMISTRY_QC_SCF_GFACTORY_HPP */

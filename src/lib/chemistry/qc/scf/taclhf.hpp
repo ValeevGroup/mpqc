@@ -29,6 +29,7 @@
 #define _MPQC_CHEMISTRY_QC_SCF_TACLHF_HPP_
 
 #include <chemistry/qc/scf/taclscf.hpp>
+#include <chemistry/qc/scf/gfactory.hpp>
 
 namespace mpqc {
   namespace TA {
@@ -41,7 +42,8 @@ namespace mpqc {
 
     protected:
       virtual Matrix& scf_fock() override;
-      Matrix Gmat();
+      GFactory G;
+
 
     private:
       static sc::ClassDesc class_desc_;

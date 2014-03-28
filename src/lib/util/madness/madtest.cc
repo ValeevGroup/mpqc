@@ -41,6 +41,10 @@ int main(int argc, char **argv) {
   MADNESSRuntime::initialize();
 
   mpqc::World world0;
+#if MPQC_HAS_ELEMENTAL
+  const elem::Grid *grid = world0.elemGrid();
+#endif // MPQC_HAS_ELEMENTAL
+
 
   Ref<AssignedKeyVal> akv1 = new AssignedKeyVal;
   mpqc::World world1(akv1);

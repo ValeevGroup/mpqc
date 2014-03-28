@@ -36,6 +36,10 @@
 #include <util/class/class.h>
 #include <util/keyval/keyval.h>
 
+#ifdef MPQC_HAS_ELEMENTAL
+#include <elemental.hpp>
+#endif // MPQC_HAS_ELEMENTAL
+
 namespace mpqc {
 
   /// World is a wrapper around madness::World
@@ -62,11 +66,20 @@ namespace mpqc {
       const madness::World* madworld() const { return world_; }
       madness::World* madworld() { return world_; }
 
+#ifdef MPQC_HAS_ELEMENTAL
+      const elem::Grid* elemGrid() const {return grid_;}
+#endif // MPQC_HAS_ELEMENTAL
+
     private:
       static sc::ClassDesc class_desc_;
 
       std::string key_;
       madness::World* world_;
+
+#ifdef MPQC_HAS_ELEMENTAL
+      const elem::Grid* grid_;
+#endif // MPQC_HAS_ELEMENTAL
+
   };
 
 } // end of namespace sc

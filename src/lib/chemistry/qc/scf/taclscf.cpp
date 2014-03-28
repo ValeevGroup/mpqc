@@ -30,9 +30,8 @@
 #include <chemistry/qc/basis/taskintegrals.hpp>
 #include <chemistry/qc/lcao/soad.h>
 #include <mpqc/interfaces/tiledarray/symmscmat.hpp>
-#include <util/elemental/ta_interface.hpp>
-#include <util/elemental/grid.hpp>
 #include <Eigen/Dense> // To be removed once tiledarray has operations on diagonal.
+
 using namespace mpqc;
 using namespace mpqc::TA;
 using Matrix = mpqc::TA::CLSCF::Matrix;
@@ -125,12 +124,6 @@ void mpqc::TA::CLSCF::Dguess(const Matrix& F) {
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(Ef);
   double emin = es.eigenvalues().minCoeff();
   double emax = es.eigenvalues().maxCoeff();
-
-  // Move to elem
-  mpqc::Grid* grid = new mpqc::Grid();
-  elem::DistMatrix<double> ElemF = array_to_distmat(F, *grid->elemGrid());
-  elem::Print(ElemF);
-  std::cout << "F \n" << F << std::endl;
 
   // Shift spectrum of F
   for (size_t i = 0; i < Ef.rows(); ++i) {

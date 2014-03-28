@@ -51,6 +51,7 @@ else()
   set(F77_INTEGER_WIDTH 4)
   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DINTEGER77='INTEGER*4' ")
 endif()
+#list(append CMAKE_Fortran_FLAGS "-m64")
 
 # extra cmake files are shipped with MPQC
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/modules/")
@@ -89,16 +90,6 @@ if (MPQC_NEW_FEATURES)
   endif()
   if (MPQC_CI)
     add_definitions(-DMPQC_CI)
-  endif()
-endif()
-
-# Enable Elemental
-if (MPQC_NEW_FEATURES)
-  if (NOT DEFINED MPQC_ELEMENTAL)
-    set(MPQC_ELEMENTAL TRUE)
-  endif()
-  if (MPQC_ELEMENTAL)
-    add_definitions(-DMPQC_ELEMENTAL)
   endif()
 endif()
 
@@ -370,6 +361,11 @@ if (HAVE_LIBINT2)
     set(MAKE_ASSUME_LIBINT2_SUPPORTS_T1G12 yes)
   endif()
 endif()
+
+if(HAVE_ELEMENTAL)
+    ADD_DEFINITIONS(-DMPQC_HAS_ELEMENTAL=1)
+    ADD_DEFINITIONS(-DTILEDARRAY_HAS_ELEMENTAL=1)
+endif(HAVE_ELEMENTAL)
 
 # sources
 add_subdirectory(src)

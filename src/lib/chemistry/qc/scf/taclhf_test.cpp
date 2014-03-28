@@ -42,7 +42,7 @@ struct Mock_CLHF : public CLHF{
   ~Mock_CLHF() {}
 
   CLHF::Matrix data_fock(){return scf_fock();}
-  CLHF::Matrix data_Gmat(){return Gmat();}
+  CLHF::Matrix data_Gmat(){return G("i,j");}
   double energy(){return iter_energy();}
 };
 

@@ -231,6 +231,41 @@ namespace mpqc {
       return array;
     }
 
+    template<typename ShrPtrPool>
+    ::TiledArray::Array<double,
+            EngineTypeTraits<typename PoolPtrType<ShrPtrPool>::engine_type>::ncenters >
+    Integrals( madness::World &world, const ShrPtrPool &pool,
+            const sc::Ref<mpqc::TA::TiledBasisSet> &tbasis,
+            const sc::Ref<mpqc::TA::TiledBasisSet> &dftbasis) {
+
+      namespace TA = ::TiledArray;
+
+      // Get the the type of integral that we are computing.
+      typedef typename PoolPtrType<ShrPtrPool>::engine_type engine_type;
+      // Determine the dimensions of our integrals as well as our TiledArray
+      constexpr size_t rank = EngineTypeTraits<engine_type>::ncenters;
+
+      // Get the array to initialize the TiledArray::TiledRange using the
+      // TiledBasis
+      std::array<TiledArray::TiledRange1, rank> blocking;
+      for (auto i = 0; i < rank - 1; ++i) {
+        blocking[i] = tbasis->trange1();
+      }
+      blocking[rank-1] = dftbasis->trange1();
+
+      // Construct the TiledArray::TiledRange object
+      TA::TiledRange trange(blocking.begin(), blocking.end());
+
+      // Initialize the TiledArray
+      TA::Array<double, rank> array(world, trange);
+
+      // Fill the TiledArray with data by looping over tiles and sending
+      // each tile to a madness task to be filled in parallel.
+      fill_tiles(array, pool);
+
+      return array;
+    }
+
 /// @} // ChemistryBasisIntegralTA
 
   }// namespace TA

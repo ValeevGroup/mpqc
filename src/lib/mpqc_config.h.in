@@ -255,9 +255,6 @@
 /* Define if MADNESS is available.  */
 #cmakedefine HAVE_MADNESS
 
-/* Define if ELEMENTAL is available.  */
-#cmakedefine HAVE_ELEMENTAL
-
 /* Define if TiledArray is available.  */
 #cmakedefine HAVE_TILEDARRAY
 

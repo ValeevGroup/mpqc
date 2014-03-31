@@ -327,11 +327,11 @@ CADFCLHF::init_significant_pairs()
       sig_partners_[jsh].insert(ish);
       L_schwarz[jsh].insert(ish, schwarz_frob_(ish, jsh));
     }
-    for(auto&& Xblk : iter_shell_blocks_on_center(dfbs_, ish.center)) {
+    for(auto&& Xblk : iter_shell_blocks_on_center(dfbs_, ish.center, gbs_)) {
       sig_blocks_[ish].insert(Xblk);
       sig_blocks_[jsh].insert(Xblk);
     }
-    for(auto&& Xblk : iter_shell_blocks_on_center(dfbs_, jsh.center)) {
+    for(auto&& Xblk : iter_shell_blocks_on_center(dfbs_, jsh.center, gbs_)) {
       sig_blocks_[ish].insert(Xblk);
       sig_blocks_[jsh].insert(Xblk);
     }

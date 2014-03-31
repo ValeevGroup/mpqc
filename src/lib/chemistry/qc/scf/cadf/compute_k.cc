@@ -1050,118 +1050,115 @@ CADFCLHF::compute_K()
                         - W_mu_X.middleCols(jsblk.bfoff, jsblk.nbf)
                         - W_mu_X_bar.middleCols(jsblk.bfoff, jsblk.nbf)
                         ) * D.middleCols(ish.atom_bfoff, ish.atom_nbf).middleRows(jsblk.bfoff, jsblk.nbf);
-                    //for(auto&& mu : function_range(ish)) {
-                    //  M_mu_X.middleRows(mu.off*Xblk.nbf, Xblk.nbf) += (
-                    //      4.0 * g3.middleCols(mu.off*Xblk.nbf, Xblk.nbf).middleRows(subblock_offset, jsblk.nbf).transpose()
-                    //      - W_mu_X.middleRows(mu.off*Xblk.nbf, Xblk.nbf).middleCols(jsblk.bfoff, jsblk.nbf)
-                    //      - W_mu_X_bar.middleRows(mu.off*Xblk.nbf, Xblk.nbf).middleCols(jsblk.bfoff, jsblk.nbf)
-                    //      ) * D.middleCols(ish.atom_bfoff, ish.atom_nbf).middleRows(jsblk.bfoff, jsblk.nbf);
-                    //  //for(auto&& sigma : iter_functions_on_center(gbs_, ish.center)) {
-                    //  //  M_mu_X.col(sigma.bfoff_in_atom).segment(mu.off*Xblk.nbf, Xblk.nbf) += (
-                    //  //      4.0 * g3.middleCols(mu.off*Xblk.nbf, Xblk.nbf).middleRows(subblock_offset, jsblk.nbf).transpose()
-                    //  //      - W_mu_X.middleRows(mu.off*Xblk.nbf, Xblk.nbf).middleCols(jsblk.bfoff, jsblk.nbf)
-                    //  //      - W_mu_X_bar.middleRows(mu.off*Xblk.nbf, Xblk.nbf).middleCols(jsblk.bfoff, jsblk.nbf)
-                    //  //      ) * D.col(sigma).segment(jsblk.bfoff, jsblk.nbf);
-                    //  //  //for(auto&& X : function_range(dfbs_, Xblk.bfoff, Xblk.last_function)) {
-                    //  //  //  M_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, sigma.bfoff_in_atom) += (
-                    //  //  //      4.0 * g3.col(mu.off*Xblk.nbf + X-Xblk.bfoff).segment(subblock_offset, jsblk.nbf).transpose()
-                    //  //  //      - W_mu_X.row(mu.off*Xblk.nbf + X-Xblk.bfoff).segment(jsblk.bfoff, jsblk.nbf)
-                    //  //  //      - W_mu_X_bar.row(mu.off*Xblk.nbf + X-Xblk.bfoff).segment(jsblk.bfoff, jsblk.nbf)
-                    //  //  //      ) * D.col(sigma).segment(jsblk.bfoff, jsblk.nbf);
-                    //  //  //  //for(auto&& rho : function_range(obs, dfbs_, jsblk.bfoff, jsblk.last_function)) {
-                    //  //  //  //  M_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, sigma.bfoff_in_atom) += 4.0 *
-                    //  //  //  //      g3_in(
-                    //  //  //  //          (subblock_offset + rho-jsblk.bfoff)*ish.nbf + mu.off,
-                    //  //  //  //          X-Xblk.bfoff
-                    //  //  //  //      ) * D(rho, sigma)
-                    //  //  //  //      - W_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, rho) * D(rho, sigma)
-                    //  //  //  //      - W_mu_X_bar(mu.off*Xblk.nbf + X-Xblk.bfoff, rho) * D(rho, sigma);
-                    //  //  //  //}
-                    //  //  //}
-                    //  //}
-                    //}
                   }
 
-                  for(auto&& X : function_range(Xblk)) {
+                  if(Xblk.center == ish.center) {
                     for(auto&& mu : function_range(ish)) {
-                      if(Xblk.center == ish.center) {
-
-                        for(auto&& nu : iter_functions_on_center(obs, jsblk.center)) {
-                          for(auto&& rho : function_range(obs, dfbs_, jsblk.bfoff, jsblk.last_function)) {
-                            Kt_part(mu, nu) -= Z[nu.center](nu.bfoff_in_atom*rho.atom_nbf + rho.bfoff_in_atom, X) * (
-                                   2.0 * g3_in(
-                                      (subblock_offset + rho-jsblk.bfoff)*ish.nbf + mu.off,
-                                      X-Xblk.bfoff
-                                   ) - 0.5 * W_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
-                            );
-                            #if DEBUG_K_INTERMEDIATES
-                            Ktex1(mu, nu) -= Z[nu.center](nu.bfoff_in_atom*rho.atom_nbf + rho.bfoff_in_atom, X) * (
-                                   2.0 * g3_in(
-                                      (subblock_offset + rho-jsblk.bfoff)*ish.nbf + mu.off,
-                                      X-Xblk.bfoff
-                                   ) - 0.5 * W_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
-                            );
-                            #endif
-                            if(ish.center != jsblk.center) {
-                              Kt_part(mu, nu) += Z[nu.center](nu.bfoff_in_atom*rho.atom_nbf + rho.bfoff_in_atom, X)
-                                  * 0.5 * W_mu_X_bar(mu.off*Xblk.nbf + X-Xblk.bfoff, rho);
-
-                              #if DEBUG_K_INTERMEDIATES
-                              Ktex1(mu, nu) += Z[nu.center](nu.bfoff_in_atom*rho.atom_nbf + rho.bfoff_in_atom, X)
-                                  * 0.5 * W_mu_X_bar(mu.off*Xblk.nbf + X-Xblk.bfoff, rho);
-                              #endif
-                            }
-                          }
-                        }
-
+                      for(auto&& nu : iter_functions_on_center(obs, jsblk.center)) {
+                        Kt_part(mu, nu) -= (Z[nu.center].middleCols(Xblk.bfoff, Xblk.nbf).middleRows(
+                            nu.bfoff_in_atom*jsblk.atom_nbf + jsblk.bfoff_in_atom, jsblk.nbf
+                          ).array() * (
+                               2.0 * g3.middleCols(mu.off*Xblk.nbf, Xblk.nbf).middleRows(subblock_offset, jsblk.nbf)
+                                - 0.5 * W_mu_X.middleRows(mu.off*Xblk.nbf, Xblk.nbf).middleCols(jsblk.bfoff, jsblk.nbf).transpose()
+                        ).array()).sum();
                         if(ish.center != jsblk.center) {
-                          for(auto&& nu : iter_functions_on_center(obs, ish.center)) {
-                            for(auto&& rho : function_range(obs, dfbs_, jsblk.bfoff, jsblk.last_function)) {
-                              Kt_part(mu, nu) -= Z_tilde[X](nu.bfoff_in_atom, rho) * (
-                                   2.0 * g3_in(
-                                      (subblock_offset + rho-jsblk.bfoff)*ish.nbf + mu.off,
-                                      X-Xblk.bfoff
-                                   ) - 0.5 * W_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
-                                   - 0.5 * W_mu_X_bar(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
-                              );
-                              #if DEBUG_K_INTERMEDIATES
-                              Ktex3(mu, nu) -= Z_tilde[X](nu.bfoff_in_atom, rho) * (
-                                   2.0 * g3_in(
-                                      (subblock_offset + rho-jsblk.bfoff)*ish.nbf + mu.off,
-                                      X-Xblk.bfoff
-                                   ) - 0.5 * W_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
-                                   - 0.5 * W_mu_X_bar(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
-                              );
-                              #endif
-                            }
-                          }
+                          Kt_part(mu, nu) += (Z[nu.center].middleCols(Xblk.bfoff, Xblk.nbf).middleRows(
+                              nu.bfoff_in_atom*jsblk.atom_nbf + jsblk.bfoff_in_atom, jsblk.nbf
+                            ).array()
+                            * 0.5 * W_mu_X_bar.middleRows(mu.off*Xblk.nbf, Xblk.nbf).middleCols(jsblk.bfoff, jsblk.nbf).transpose().array()
+                          ).sum();
+
                         }
+                        //for(auto&& X : function_range(Xblk)) {
 
+                        //  Kt_part(mu, nu) -= Z[nu.center].col(X).segment(
+                        //      nu.bfoff_in_atom*jsblk.atom_nbf + jsblk.bfoff_in_atom, jsblk.nbf
+                        //    ).transpose() * (
+                        //         2.0 * g3.col(mu.off*Xblk.nbf + X-Xblk.bfoff).segment(subblock_offset, jsblk.nbf)
+                        //          - 0.5 * W_mu_X.row(mu.off*Xblk.nbf + X-Xblk.bfoff).segment(jsblk.bfoff, jsblk.nbf).transpose()
+                        //  );
+                        //  if(ish.center != jsblk.center) {
+                        //    Kt_part(mu, nu) += Z[nu.center].col(X).segment(
+                        //        nu.bfoff_in_atom*jsblk.atom_nbf + jsblk.bfoff_in_atom, jsblk.nbf
+                        //      ).transpose()
+                        //      * 0.5 * W_mu_X_bar.row(mu.off*Xblk.nbf + X-Xblk.bfoff).segment(jsblk.bfoff, jsblk.nbf).transpose();
 
+                        //  }
+                        //}
+                        //  //for(auto&& rho : function_range(obs, dfbs_, jsblk.bfoff, jsblk.last_function)) {
+                        //  //  Kt_part(mu, nu) -= Z[nu.center](nu.bfoff_in_atom*rho.atom_nbf + rho.bfoff_in_atom, X) * (
+                        //  //         2.0 * g3_in(
+                        //  //            (subblock_offset + rho-jsblk.bfoff)*ish.nbf + mu.off,
+                        //  //            X-Xblk.bfoff
+                        //  //         ) - 0.5 * W_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
+                        //  //  );
+                        //  //  if(ish.center != jsblk.center) {
+                        //  //    Kt_part(mu, nu) += Z[nu.center](nu.bfoff_in_atom*rho.atom_nbf + rho.bfoff_in_atom, X)
+                        //  //        * 0.5 * W_mu_X_bar(mu.off*Xblk.nbf + X-Xblk.bfoff, rho);
+
+                        //  //  }
+                        //  //}
                       }
+                    }
+                  }
 
-                      else { // ish.center != Xblk.center
-                        if(Xblk.center == jsblk.center) {
-                          for(auto&& nu : iter_functions_on_center(obs, ish.center)) {
-                            for(auto&& rho : function_range(obs, dfbs_, jsblk.bfoff, jsblk.last_function)) {
-                              Kt_part(mu, nu) -= Z_tilde_bar[X](rho.bfoff_in_atom, nu) * (
-                                   2.0 * g3_in(
-                                      (subblock_offset + rho-jsblk.bfoff)*ish.nbf + mu.off,
-                                      X-Xblk.bfoff
-                                   ) - 0.5 * W_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
-                                   - 0.5 * W_mu_X_bar(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
-                              );
-                              #if DEBUG_K_INTERMEDIATES
-                              Ktex3(mu, nu) -= Z_tilde_bar[X](rho.bfoff_in_atom, nu) * (
-                                   2.0 * g3_in(
-                                      (subblock_offset + rho-jsblk.bfoff)*ish.nbf + mu.off,
-                                      X-Xblk.bfoff
-                                   ) - 0.5 * W_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
-                                   - 0.5 * W_mu_X_bar(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
-                              );
-                              #endif
-                            }
-                          }
+                  if(Xblk.center == ish.center) {
+                    if(ish.center != jsblk.center) {
+                      for(auto&& X : function_range(Xblk)) {
+                        for(auto&& mu : function_range(ish)) {
+                          Kt_part.row(mu).segment(ish.atom_bfoff, ish.atom_nbf).transpose() -=
+                              Z_tilde[X].middleCols(jsblk.bfoff, jsblk.nbf) * (
+                               2.0 * g3.middleRows(subblock_offset, jsblk.nbf).col(mu.off*Xblk.nbf + X-Xblk.bfoff)
+                               - 0.5 * W_mu_X.row(mu.off*Xblk.nbf + X-Xblk.bfoff).segment(jsblk.bfoff, jsblk.nbf).transpose()
+                               - 0.5 * W_mu_X_bar.row(mu.off*Xblk.nbf + X-Xblk.bfoff).segment(jsblk.bfoff, jsblk.nbf).transpose()
+                          );
+                          //for(auto&& nu : iter_functions_on_center(obs, ish.center)) {
+                          //  Kt_part(mu, nu) -= Z_tilde[X].row(nu.bfoff_in_atom).segment(jsblk.bfoff, jsblk.nbf) * (
+                          //       2.0 * g3.middleRows(subblock_offset, jsblk.nbf).col(mu.off*Xblk.nbf + X-Xblk.bfoff)
+                          //       - 0.5 * W_mu_X.row(mu.off*Xblk.nbf + X-Xblk.bfoff).segment(jsblk.bfoff, jsblk.nbf).transpose()
+                          //       - 0.5 * W_mu_X_bar.row(mu.off*Xblk.nbf + X-Xblk.bfoff).segment(jsblk.bfoff, jsblk.nbf).transpose()
+                          //  );
+                          //  //for(auto&& rho : function_range(obs, dfbs_, jsblk.bfoff, jsblk.last_function)) {
+                          //  //  Kt_part(mu, nu) -= Z_tilde[X](nu.bfoff_in_atom, rho) * (
+                          //  //       2.0 * g3_in(
+                          //  //          (subblock_offset + rho-jsblk.bfoff)*ish.nbf + mu.off,
+                          //  //          X-Xblk.bfoff
+                          //  //       ) - 0.5 * W_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
+                          //  //       - 0.5 * W_mu_X_bar(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
+                          //  //  );
+                          //  //}
+                          //}
+                        }
+                      }
+                    }
+                  }
+
+                  if(ish.center != Xblk.center) {
+                    if(Xblk.center == jsblk.center) {
+                      for(auto&& X : function_range(Xblk)) {
+                        for(auto&& mu : function_range(ish)) {
+                          Kt_part.row(mu).segment(ish.atom_bfoff, ish.atom_nbf).transpose() -=
+                              Z_tilde_bar[X].middleRows(jsblk.bfoff_in_atom, jsblk.nbf).middleCols(ish.atom_bfoff, ish.atom_nbf).transpose() * (
+                               2.0 * g3.middleRows(subblock_offset, jsblk.nbf).col(mu.off*Xblk.nbf + X-Xblk.bfoff)
+                               - 0.5 * W_mu_X.row(mu.off*Xblk.nbf + X-Xblk.bfoff).segment(jsblk.bfoff, jsblk.nbf).transpose()
+                               - 0.5 * W_mu_X_bar.row(mu.off*Xblk.nbf + X-Xblk.bfoff).segment(jsblk.bfoff, jsblk.nbf).transpose()
+                          );
+                          //for(auto&& nu : iter_functions_on_center(obs, ish.center)) {
+                          //  Kt_part(mu, nu) -= Z_tilde_bar[X].middleRows(jsblk.bfoff_in_atom, jsblk.nbf).col(nu).transpose() * (
+                          //       2.0 * g3.middleRows(subblock_offset, jsblk.nbf).col(mu.off*Xblk.nbf + X-Xblk.bfoff)
+                          //       - 0.5 * W_mu_X.row(mu.off*Xblk.nbf + X-Xblk.bfoff).segment(jsblk.bfoff, jsblk.nbf).transpose()
+                          //       - 0.5 * W_mu_X_bar.row(mu.off*Xblk.nbf + X-Xblk.bfoff).segment(jsblk.bfoff, jsblk.nbf).transpose()
+                          //  );
+                          //  //for(auto&& rho : function_range(obs, dfbs_, jsblk.bfoff, jsblk.last_function)) {
+                          //  //  Kt_part(mu, nu) -= Z_tilde_bar[X](rho.bfoff_in_atom, nu) * (
+                          //  //       2.0 * g3_in(
+                          //  //          (subblock_offset + rho-jsblk.bfoff)*ish.nbf + mu.off,
+                          //  //          X-Xblk.bfoff
+                          //  //       ) - 0.5 * W_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
+                          //  //       - 0.5 * W_mu_X_bar(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
+                          //  //  );
+                          //  //}
+                          //}
                         }
                       }
 
@@ -1258,19 +1255,23 @@ CADFCLHF::compute_K()
           }
           if(exact_diagonal_K_) {
             mt_timer.enter("exact diagonal subtract", ithr);
-            for(auto&& X : function_range(Xblk)) {
-              for(auto&& mu : function_range(ish)) {
-                if(Xblk.center != ish.center) {
-                  for(auto&& nu : iter_functions_on_center(obs, Xblk.center)) {
-                    for(auto&& sigma : iter_functions_on_center(obs, ish.center)) {
-                      Kt_part(mu, nu) -= coefs_transpose_[X](nu.bfoff_in_atom, sigma)
-                          * M_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, sigma.bfoff_in_atom);
-                      #if DEBUG_K_INTERMEDIATES
-                      Ktex2(mu, nu) -= coefs_transpose_[X](nu.bfoff_in_atom, sigma)
-                          * M_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, sigma.bfoff_in_atom);
-                      #endif
-                    }
-                  }
+            assert(Xblk.atom_dfbfoff != NotAssigned and Xblk.atom_dfnbf != NotAssigned);
+
+            if(Xblk.center != ish.center) {
+              for(auto&& X : function_range(Xblk)) {
+                for(auto&& mu : function_range(ish)) {
+                  Kt_part.row(mu).middleCols(Xblk.atom_dfbfoff, Xblk.atom_dfnbf) -=
+                      M_mu_X.row(mu.off*Xblk.nbf + X-Xblk.bfoff)
+                      * coefs_transpose_[X].middleCols(ish.atom_bfoff, ish.atom_nbf).transpose();
+
+                  //for(auto&& nu : iter_functions_on_center(obs, Xblk.center)) {
+                  //  Kt_part(mu, nu) -= M_mu_X.row(mu.off*Xblk.nbf + X-Xblk.bfoff)
+                  //      * coefs_transpose_[X].row(nu.bfoff_in_atom).middleCols(ish.atom_bfoff, ish.atom_nbf).transpose();
+                  //  //for(auto&& sigma : iter_functions_on_center(obs, ish.center)) {
+                  //  //  Kt_part(mu, nu) -= coefs_transpose_[X](nu.bfoff_in_atom, sigma)
+                  //  //      * M_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, sigma.bfoff_in_atom);
+                  //  //}
+                  //}
                 }
               }
             }
@@ -1322,7 +1323,7 @@ CADFCLHF::compute_K()
         //----------------------------------------//
         ShellData ish, jsh;
         while(get_shell_pair(ish, jsh, SignificantPairs)){
-          //double epf = (ish.center == jsh.center) ? 2.0 : 4.0;
+          // TODO Permutational symmetry (the 14 cases thing...)
           for(auto&& ksh : iter_shells_on_center(obs, ish.center)) {
             for(auto&& lsh : iter_shells_on_center(obs, jsh.center)) {
 
@@ -1332,49 +1333,47 @@ CADFCLHF::compute_K()
               for(auto&& mu : function_range(ish)) {
                 for(auto&& rho : function_range(jsh)) {
                   if(rho > mu) continue;
-                  // TODO Vectorize
+                  // TODO more vectorization
                   for(auto&& nu : function_range(ksh)) {
-                    for(auto&& sigma : function_range(lsh)) {
-                      Kt_part(mu, nu) +=
-                          g4(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell, nu.bfoff_in_shell*lsh.nbf + sigma.bfoff_in_shell)
-                          * D(rho, sigma);
-                      #if DEBUG_K_INTERMEDIATES
-                Ktex(mu, nu) +=
-                    g4(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell, nu.bfoff_in_shell*lsh.nbf + sigma.bfoff_in_shell)
-                    * D(rho, sigma);
-                #endif
-                      if(mu != rho) {
-                        Kt_part(rho, nu) +=
-                            g4(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell, nu.bfoff_in_shell*lsh.nbf + sigma.bfoff_in_shell)
-                            * D(mu, sigma);
-                        #if DEBUG_K_INTERMEDIATES
-                        Ktex(rho, nu) +=
-                            g4(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell, nu.bfoff_in_shell*lsh.nbf + sigma.bfoff_in_shell)
-                            * D(mu, sigma);
-                        #endif
-                      }
+                    Kt_part(mu, nu) +=
+                      g4.row(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell).segment(nu.bfoff_in_shell*lsh.nbf, lsh.nbf)
+                        * D.col(rho).segment(lsh.bfoff, lsh.nbf);
+                    if(mu != rho) {
+                      Kt_part(rho, nu) +=
+                        g4.row(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell).segment(nu.bfoff_in_shell*lsh.nbf, lsh.nbf)
+                          * D.col(mu).segment(lsh.bfoff, lsh.nbf);
                       if(ish.center != jsh.center) {
-                        Kt_part(mu, sigma) +=
-                            g4(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell, nu.bfoff_in_shell*lsh.nbf + sigma.bfoff_in_shell)
+                        Kt_part.row(mu).segment(lsh.bfoff, lsh.nbf) +=
+                            g4.row(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell).segment(nu.bfoff_in_shell*lsh.nbf, lsh.nbf)
                             * D(rho, nu);
-                        #if DEBUG_K_INTERMEDIATES
-                        Ktex(mu, sigma) +=
-                            g4(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell, nu.bfoff_in_shell*lsh.nbf + sigma.bfoff_in_shell)
-                            * D(rho, nu);
-                        #endif
-                        if(mu != rho) {
-                          Kt_part(rho, sigma) +=
-                              g4(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell, nu.bfoff_in_shell*lsh.nbf + sigma.bfoff_in_shell)
-                              * D(mu, nu);
-                          #if DEBUG_K_INTERMEDIATES
-                          Ktex(rho, sigma) +=
-                              g4(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell, nu.bfoff_in_shell*lsh.nbf + sigma.bfoff_in_shell)
-                              * D(mu, nu);
-                          #endif
-                        }
+                        Kt_part.row(rho).segment(lsh.bfoff, lsh.nbf) +=
+                            g4.row(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell).segment(nu.bfoff_in_shell*lsh.nbf, lsh.nbf)
+                            * D(mu, nu);
                       }
                     }
                   }
+                  //for(auto&& nu : function_range(ksh)) {
+                  //  for(auto&& sigma : function_range(lsh)) {
+                  //    //Kt_part(mu, nu) +=
+                  //    //    g4(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell, nu.bfoff_in_shell*lsh.nbf + sigma.bfoff_in_shell)
+                  //    //    * D(rho, sigma);
+                  //    //if(mu != rho) {
+                  //    //  Kt_part(rho, nu) +=
+                  //    //      g4(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell, nu.bfoff_in_shell*lsh.nbf + sigma.bfoff_in_shell)
+                  //    //      * D(mu, sigma);
+                  //    //}
+                  //    //if(ish.center != jsh.center) {
+                  //    //  Kt_part(mu, sigma) +=
+                  //    //      g4(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell, nu.bfoff_in_shell*lsh.nbf + sigma.bfoff_in_shell)
+                  //    //      * D(rho, nu);
+                  //    //  if(mu != rho) {
+                  //    //    Kt_part(rho, sigma) +=
+                  //    //        g4(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell, nu.bfoff_in_shell*lsh.nbf + sigma.bfoff_in_shell)
+                  //    //        * D(mu, nu);
+                  //    //  }
+                  //    //}
+                  //  }
+                  //}
                 }
               }
 

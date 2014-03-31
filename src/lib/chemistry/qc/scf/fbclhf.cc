@@ -197,6 +197,8 @@ DFCLHF::DFCLHF(const Ref<KeyVal>& keyval) :
                      __FILE__, __LINE__, "world");
   if (world_->wfn() == 0) world_->set_wfn(this);
 
+  xml_debug_ = keyval->booleanvalue("xml_debug", KeyValValueboolean(false));
+
   // need a nonblocked cl_gmat_ in this method
   Ref<PetiteList> pl = integral()->petite_list();
   gmat_ = basis()->so_matrixkit()->symmmatrix(pl->SO_basisdim());
@@ -221,8 +223,11 @@ DFCLHF::ao_fock(double accuracy)
   Timer step_tim("misc");
   int nthread = threadgrp_->nthread();
 
+  if(xml_debug_) begin_xml_context("compute_fock", "compute_fock.xml");
+
   // transform the density difference to the AO basis
   RefSymmSCMatrix dd = cl_dens_diff_;
+  if(xml_debug_) write_as_xml("cl_dens_diff_", cl_dens_diff_);
   Ref<PetiteList> pl = integral()->petite_list();
   cl_dens_diff_ = pl->to_AO_basis(dd);
 
@@ -252,22 +257,22 @@ DFCLHF::ao_fock(double accuracy)
   step_tim.change("build");
   Ref<OrbitalSpace> aospace = aoreg->value(basis());
   RefSCMatrix G;
-  if(xml_debug) begin_xml_context("compute_fock", "compute_fock.xml");
+  if(xml_debug_) write_as_xml("D", Pa);
   {
     const std::string jkey = ParsedOneBodyIntKey::key(aospace->id(),aospace->id(),std::string("J"));
-    if(xml_debug) begin_xml_context("compute_J");
+    if(xml_debug_) begin_xml_context("compute_J");
     RefSCMatrix J = fb_rtime->get(jkey);
-    if(xml_debug) write_as_xml("J", J), end_xml_context("compute_J");
+    if(xml_debug_) write_as_xml("J", J), end_xml_context("compute_J");
     G = J.copy();
   }
   {
     const std::string kkey = ParsedOneBodyIntKey::key(aospace->id(),aospace->id(),std::string("K"),AnySpinCase1);
-    if(xml_debug) begin_xml_context("compute_K");
+    if(xml_debug_) begin_xml_context("compute_K");
     RefSCMatrix K = fb_rtime->get(kkey);
-    if(xml_debug) write_as_xml("K", K), end_xml_context("compute_K");
+    if(xml_debug_) write_as_xml("K", K), end_xml_context("compute_K");
     G.accumulate( -1.0 * K);
   }
-  if(xml_debug) end_xml_context("compute_fock"), assert(false);
+  if(xml_debug_) end_xml_context("compute_fock"), assert(false);
   Ref<SCElementOp> accum_G_op = new SCElementAccumulateSCMatrix(G.pointer());
   RefSymmSCMatrix G_symm = G.kit()->symmmatrix(G.coldim()); G_symm.assign(0.0);
   G_symm.element_op(accum_G_op); G = 0;

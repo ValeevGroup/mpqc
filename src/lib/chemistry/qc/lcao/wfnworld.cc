@@ -326,6 +326,10 @@ WavefunctionWorld::initialize()
     Ref<DensityFittingParams> dfparams;
     if (bs_df_) {
       dfparams = new DensityFittingParams(bs_df_, df_kernel_, df_solver_);
+      dfparams->local_coulomb(df_local_coulomb_);
+      dfparams->local_exchange(df_local_exchange_);
+      dfparams->exact_diag_J(exact_diag_J_);
+      dfparams->exact_diag_K(exact_diag_K_);
     }
     moints_runtime_ = new MOIntsRuntime(tfactory_, dfparams);
     tfactory_->df_info( const_cast<DensityFittingInfo*>(moints_runtime_->runtime_4c()->params()) );
@@ -344,6 +348,7 @@ WavefunctionWorld::initialize()
                                               msg(),
                                               thr());
     fockbuild_runtime_->dfinfo( const_cast<DensityFittingInfo*>(moints_runtime_->runtime_4c()->params()) );
+
     const double fock_log2_precision = tfactory_ints_log2_precision;
     fockbuild_runtime_->set_log2_precision( tfactory_ints_log2_precision );
 

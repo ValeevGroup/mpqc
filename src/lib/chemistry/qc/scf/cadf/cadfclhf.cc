@@ -151,6 +151,10 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   //----------------------------------------------------------------------------//
   print_iteration_timings_ = keyval->booleanvalue("print_iteration_timings", KeyValValueboolean(print_iteration_timings_));
   //----------------------------------------------------------------------------//
+  exact_diagonal_J_ = keyval->booleanvalue("exact_diagonal_J", KeyValValueboolean(exact_diagonal_J_));
+  exact_diagonal_K_ = keyval->booleanvalue("exact_diagonal_K", KeyValValueboolean(exact_diagonal_K_));
+  //----------------------------------------------------------------------------//
+  use_sparse_ = keyval->booleanvalue("use_sparse", KeyValValueboolean(use_sparse_));
   use_norms_nu_ = keyval->booleanvalue("use_norms_nu", KeyValValueboolean(use_norms_nu_));
   use_norms_sigma_ = keyval->booleanvalue("use_norms_sigma", KeyValValueboolean(use_norms_sigma_));
   xml_screening_data_ = keyval->booleanvalue("xml_screening_data", KeyValValueboolean(xml_screening_data_));
@@ -171,8 +175,7 @@ CADFCLHF::~CADFCLHF()
 {
   if(have_coefficients_){
     // Clean up the coefficient data
-    //deallocate(coefficients_data_);
-    delete[] coefficients_data_;
+    deallocate(coefficients_data_);
   }
 }
 
@@ -190,6 +193,8 @@ CADFCLHF::print(ostream&o) const
   o << indent << "basis name = " << gbs_->label() << endl;
   o << indent << "dfbasis name = " << dfbs_->label() << endl;
   o << indent << "do_linK = " << bool_str(do_linK_) << endl;
+  o << indent << "exact_diagonal_J = " << bool_str(exact_diagonal_J_) << endl;
+  o << indent << "exact_diagonal_K = " << bool_str(exact_diagonal_K_) << endl;
   o << indent << "linK_use_distance = " << bool_str(linK_use_distance_) << endl;
   o << indent << "use_norms_nu = " << bool_str(use_norms_nu_) << endl;
   o << indent << "use_norms_sigma = " << bool_str(use_norms_sigma_) << endl;
@@ -197,6 +202,7 @@ CADFCLHF::print(ostream&o) const
   o << indent << "use_max_extents = " << bool_str(use_max_extents_) << endl;
   o << indent << "subtract_extents = " << bool_str(subtract_extents_) << endl;
   o << indent << "linK_block_rho = " << bool_str(linK_block_rho_) << endl;
+  o << indent << "use_sparse = " << bool_str(use_sparse_) << endl;
   o << indent << "xml_screening_data = " << bool_str(xml_screening_data_) << endl;
   o << indent << "linK_sorted_B_contraction = " << bool_str(linK_sorted_B_contraction_) << endl;
   o << indent << "all_to_all_L_3 = " << bool_str(all_to_all_L_3_) << endl;

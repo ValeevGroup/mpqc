@@ -99,7 +99,7 @@ namespace sc {
     BOOST_PARAMETER_NAME(fold_in_class_names)
     BOOST_PARAMETER_NAME(root_name)
     BOOST_PARAMETER_NAME(name)
-    BOOST_PARAMETER_NAME(attrs)
+    BOOST_PARAMETER_NAME(attributes)
   }
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -451,6 +451,83 @@ namespace sc {
     return child;
   }
 
+  namespace detail {
+
+    template<typename Derived, unsigned int ViewMode>
+    struct TriangleWriter { };
+
+    template<typename Derived>
+    struct TriangleWriter<Derived, Eigen::Lower> {
+      ptree& operator()(
+          const Eigen::TriangularView<Derived, Eigen::Lower>& obj,
+          ptree& pt,
+          const XMLWriter& writer
+      ) const
+      {
+        const int nrows = obj.rows();
+        const int ncols = obj.cols();
+        if(nrows == ncols) {
+          ptree& my_tree = pt.add_child("EigenDerived", ptree());
+          my_tree.put("<xmlattr>.n", nrows);
+          my_tree.put("<xmlattr>.lower_triangle", true);
+          ptree& data_tree = my_tree.add_child("data", ptree());
+          long ndata = nrows * (nrows+1) / 2;
+          double* data = allocate<double>(ndata);
+          double* data_spot = data;
+          for(int irow = 0; irow < nrows; ++irow) {
+            for(int icol = 0; icol <= irow; ++icol) {
+              (*data_spot) = obj.coeff(irow, icol);
+              ++data_spot;
+            }
+          }
+          // The XMLDataStream object created by this function call
+          //   owns the pointer data after this.
+          writer.put_binary_data<double>(data_tree, data, ndata);
+          return my_tree;
+        }
+        else {
+          typedef Derived MatrixType;
+          // Just write the unraveled version
+
+          ptree& child = pt.add_child("EigenDerived", ptree());
+          child.put("<xmlattr>.ninner", ncols);
+          child.put("<xmlattr>.nouter", nrows);
+          child.put("<xmlattr>.row_major", true);
+          child.put("<xmlattr>.is_vector", int(MatrixType::IsVectorAtCompileTime));
+          ptree& data_tree = child.add_child("data", ptree());
+          double* data = allocate<double>(nrows*ncols);
+          double* data_spot = data;
+          for(int irow = 0; irow < nrows; ++irow) {
+            for(int icol = 0; icol < ncols; ++icol) {
+              if(icol <= irow) {
+                (*data_spot) = obj.coeff(irow, icol);
+              }
+              else if(icol < nrows) {
+                (*data_spot) = obj.coeff(icol, irow);
+              }
+              else {
+                (*data_spot) = 0.0;
+              }
+              ++data_spot;
+            }
+          }
+          // The XMLDataStream object created by this function call
+          //   owns the pointer data after this.
+          writer.put_binary_data<double>(data_tree, data, nrows*ncols);
+          return child;
+        }
+      }
+
+    };
+
+  }
+
+  template<typename Derived, unsigned int ViewMode>
+  ptree& write_xml(const Eigen::TriangularView<Derived, ViewMode>& obj, ptree& parent, const XMLWriter& writer) {
+    return detail::TriangleWriter<Derived, ViewMode>()(obj, parent, writer);
+  }
+
+
   template<template<typename...> class Container, template<typename...> class TupleType, typename... NumTypes>
   typename boost::enable_if_c<
     boost::is_convertible<
@@ -660,7 +737,7 @@ namespace sc {
       (object, *)
     )
     (optional
-      (attrs, *, false)
+      (attributes, *, false)
     )
   )
   {
@@ -669,9 +746,12 @@ namespace sc {
     }
     else{
       std::string tag_name = name;
-      _write_as_xml_impl(object, tag_name, attrs);
+      _write_as_xml_impl(object, tag_name, attributes);
     }
   }
+
+  template<typename Value=std::string>
+  using attrs = std::map<std::string, Value>;
 
   ////////////////////////////////////////////////////////////////////////////////
 

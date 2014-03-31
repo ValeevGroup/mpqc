@@ -38,6 +38,7 @@
 #include <functional>
 #include <type_traits>
 #include <unordered_set>
+#include <unordered_map>
 
 // Eigen includes
 #include <Eigen/Dense>
@@ -108,10 +109,16 @@ class CADFCLHF: public CLHF {
     typedef shared_ptr<Eigen::Map<Eigen::VectorXd>> CoefContainer;
     typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> TwoCenterIntContainer;
     typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> ThreeCenterIntContainer;
+    typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> FourCenterIntContainer;
     typedef shared_ptr<TwoCenterIntContainer> TwoCenterIntContainerPtr;
     typedef shared_ptr<ThreeCenterIntContainer> ThreeCenterIntContainerPtr;
+    typedef shared_ptr<FourCenterIntContainer> FourCenterIntContainerPtr;
 
-    typedef std::map<std::pair<int, int>, std::pair<CoefContainer, CoefContainer>> CoefMap;
+    typedef std::unordered_map<
+        std::pair<int, int>,
+        std::pair<CoefContainer, CoefContainer>,
+        sc::hash<std::pair<int, int>>
+    > CoefMap;
     typedef Eigen::HouseholderQR<Eigen::MatrixXd> Decomposition;
     typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> RowMatrix;
     typedef Eigen::SparseMatrix<double, Eigen::RowMajor> SparseRowMatrix;
@@ -312,6 +319,12 @@ class CADFCLHF: public CLHF {
     double well_separated_thresh_ = 1e-8;
     /// The old way of distributing LinK list work
     bool all_to_all_L_3_ = false;
+    /// Use the exact semidiagonal integrals in J
+    bool exact_diagonal_J_ = false;
+    /// Use the exact semidiagonal integrals in K
+    bool exact_diagonal_K_ = false;
+    /// Use sparse matrix structures wherever available and reasonable
+    bool use_sparse_ = false;
     //@}
 
     ScreeningStatistics stats_;
@@ -452,6 +465,12 @@ class CADFCLHF: public CLHF {
         const ShellData& ksh,
         Ref<TwoBodyThreeCenterInt>& ints,
         TwoBodyOper::type ints_type
+    );
+
+    FourCenterIntContainerPtr ints_to_eigen(
+        const ShellData& ish, const ShellData& jsh,
+        const ShellData& ksh, const ShellData& lsh,
+        Ref<TwoBodyInt>& ints, TwoBodyOper::type ints_type
     );
 
     shared_ptr<Decomposition> get_decomposition(int ish, int jsh, Ref<TwoBodyTwoCenterInt> ints);
@@ -606,6 +625,11 @@ class CADFCLHF: public CLHF {
       );
     }
 
+    bool is_sig_pair(int ish, int jsh) const {
+      const auto& parts = sig_partners_[ish];
+      return parts.find(jsh) != parts.end();
+    }
+
     // CADF-LinK lists
     template <typename T> struct hash_;
     template<typename A, typename B>
@@ -630,6 +654,20 @@ class CADFCLHF: public CLHF {
     IndexListMap L_D;
     IndexListMap L_DC;
     IndexListMap2 L_3;
+
+
+    /**
+     * Used for Eigen::SparseMatrix alternative implementation
+     */
+    //@{
+
+    typedef Eigen::SparseMatrix<double, Eigen::RowMajor> SparseMatrix;
+    typedef Eigen::SparseMatrix<double, Eigen::ColMajor> SparseColMatrix;
+
+    SparseMatrix coefs_sp_;
+
+
+    //@}
 
 };
 
@@ -812,14 +850,14 @@ CADFCLHF::ints_to_eigen(
 inline std::string data_size_to_string(size_t t) {
   const int prec = 3; // print this many digits
 
-  // determine m such that 1000^m <= t <= 1000^(m+1)
+  // determine m such that 1024^m <= t <= 1024^(m+1)
   char m = 0;
   double thousand_m = 1;
-  double thousand_mp1 = 1000;
+  double thousand_mp1 = 1024;
   while (t >= thousand_mp1) {
     ++m;
     thousand_m = thousand_mp1;
-    thousand_mp1 *= 1000;
+    thousand_mp1 *= 1024;
   }
 
   // determine units

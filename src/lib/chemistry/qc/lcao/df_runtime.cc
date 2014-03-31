@@ -109,7 +109,9 @@ DensityFittingRuntime::DensityFittingRuntime(const Ref<MOIntsRuntime>& r,
                                              const DensityFittingParams* dfp) :
   moints_runtime_(r),
   dfparams_(dfp),
-  results_(ResultRegistry::instance())
+  results_(ResultRegistry::instance()),
+  coef_results_(CoefRegistry::instance()),
+  decomps_()
 {
 }
 
@@ -654,6 +656,8 @@ DensityFittingParams::DensityFittingParams(StateIn& si) : SavableState(si) {
   basis_ << SavableState::restore_state(si);
   si.get(kernel_);
   int s; si.get(s); solver_ = static_cast<DensityFitting::SolveMethod>(s);
+  si.get(local_coulomb_);
+  si.get(local_exchange_);
 }
 
 DensityFittingParams::~DensityFittingParams() {
@@ -664,6 +668,8 @@ DensityFittingParams::save_data_state(StateOut& so) {
   SavableState::save_state(basis_.pointer(), so);
   so.put(kernel_);
   so.put((int)solver_);
+  so.put(local_coulomb_);
+  so.put(local_exchange_);
 }
 
 void

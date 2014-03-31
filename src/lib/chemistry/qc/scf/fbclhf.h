@@ -91,6 +91,7 @@ class DFCLHF: public CLHF {
     RefSymmSCMatrix gmat_;
     Ref<WavefunctionWorld> world_;
     static ClassDesc cd_;
+    bool xml_debug_ = false;
 };
 
 }

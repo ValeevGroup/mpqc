@@ -267,9 +267,10 @@ struct BasisFunctionData : public BasisElementData {
 
     int shell_index = NotAssigned;
     int shell_bfoff = NotAssigned;
-    int bfoff_in_shell = NotAssigned;
+    union { int bfoff_in_shell = NotAssigned; int off; };
     int atom_dfshoff = NotAssigned;
     int atom_dfbfoff = NotAssigned;
+    int atom_nbf = NotAssigned;
     int atom_dfnbf = NotAssigned;
     int atom_shoff = NotAssigned;
     int atom_bfoff = NotAssigned;
@@ -299,6 +300,7 @@ struct BasisFunctionData : public BasisElementData {
       atom_shoff = basis->shell_on_center(center, 0);
       atom_bfoff =  basis->shell_to_function(atom_shoff);
       bfoff_in_atom = index - atom_bfoff;
+      atom_nbf = basis->nbasis_on_center(center);
       if(dfbasis != 0){
         atom_dfshoff = dfbasis->shell_on_center(center, 0);
         atom_dfbfoff = dfbasis->shell_to_function(atom_dfshoff);

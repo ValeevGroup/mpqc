@@ -92,7 +92,9 @@ double CADFCLHF::get_R(
   return rv;
 };
 
+
 typedef std::pair<int, int> IntPair;
+
 
 RefSCMatrix
 CADFCLHF::compute_K()
@@ -107,6 +109,7 @@ CADFCLHF::compute_K()
   const Ref<GaussianBasisSet>& obs = gbs_;
   const int nbf = obs->nbasis();
   const int dfnbf = dfbs_->nbasis();
+  const int natom = obs->ncenter();
 
   //----------------------------------------//
   // Get the density in an Eigen::Map form
@@ -122,9 +125,13 @@ CADFCLHF::compute_K()
   MatrixMap D(D_ptr, nbf, nbf);
   // Match density scaling in old code:
   D *= 0.5;
+
   //----------------------------------------//
   Eigen::MatrixXd Kt(nbf, nbf);
   Kt = Eigen::MatrixXd::Zero(nbf, nbf);
+  Eigen::MatrixXd Ktex(nbf, nbf);
+  Ktex = Eigen::MatrixXd::Zero(nbf, nbf);
+
   //----------------------------------------//
   // Compute all of the integrals outside of
   //   the thread loop.  This will need to be
@@ -138,8 +145,99 @@ CADFCLHF::compute_K()
   );
   const auto& g2 = *g2_full_ptr;
   timer.exit();
+
   //----------------------------------------//
-  //----------------------------------------//
+  // if we're doing the exact diagonal, form the Z intermediate
+  std::vector<RowMatrix> Z;
+  std::vector<RowMatrix> Z_tilde;
+  std::vector<RowMatrix> Z_tilde_bar;
+  size_t Z_size = 0;
+  if(exact_diagonal_K_) {
+
+    for(int iatom = 0; iatom < natom; ++iatom) {
+      const int atom_nbf = gbs_->nbasis_on_center(iatom);
+
+      Z.emplace_back(atom_nbf*atom_nbf, dfnbf);
+      auto& Z_iatom = Z.back();
+      Z_iatom = RowMatrix::Zero(atom_nbf*atom_nbf, dfnbf);
+      Z_size += atom_nbf*atom_nbf*dfnbf*sizeof(double) + sizeof(RowMatrix);
+      for(auto&& X : function_range(dfbs_)) {
+        for(auto&& nu : iter_functions_on_center(obs, iatom)) {
+          for(auto&& rho : iter_functions_on_center(obs, iatom)) {
+            for(auto&& sigma : iter_functions_on_center(obs, X.center)) {
+              // TODO Figure out where this factor of 2 is coming from (Density matrix?)
+              Z_iatom(nu.bfoff_in_atom*rho.atom_nbf + rho.bfoff_in_atom, X)
+                  += 2.0 * coefs_transpose_[X](sigma.bfoff_in_atom, nu) * D(rho, sigma);
+            }
+          }
+        }
+      }
+
+    } // end loop over atoms
+
+
+    for(auto&& X : function_range(dfbs_, obs)) {
+      // Use the orbital basis as the "auxiliary" for the dfbs, just for convenience
+      const int atom_nbf = X.atom_dfnbf;
+
+      Z_tilde.emplace_back(atom_nbf, nbf);
+      Z_tilde_bar.emplace_back(atom_nbf, nbf);
+      auto& Zt_iatom = Z_tilde.back();
+      auto& Ztb_iatom = Z_tilde_bar.back();
+      Zt_iatom = RowMatrix::Zero(atom_nbf, nbf);
+      Ztb_iatom = RowMatrix::Zero(atom_nbf, nbf);
+      Z_size += 2 * X.atom_dfnbf*nbf*sizeof(double) + sizeof(RowMatrix);
+
+      for(auto&& rho : function_range(obs, dfbs_)) {
+        for(auto&& nu : iter_functions_on_center(obs, X.center)) {
+          for(auto&& sigma : iter_functions_on_center(obs, rho.center)) {
+            Zt_iatom(nu.bfoff_in_atom, rho) += 2.0 * coefs_transpose_[X](nu.bfoff_in_atom, sigma) * D(rho, sigma);
+          }
+        }
+      }
+      for(auto&& rho : iter_functions_on_center(obs, X.center)) {
+        for(auto&& nu : function_range(obs, dfbs_)) {
+          for(auto&& sigma : iter_functions_on_center(obs, rho.center)) {
+            Ztb_iatom(rho.bfoff_in_atom, nu) += 2.0 * coefs_transpose_[X](sigma.bfoff_in_atom, nu) * D(rho, sigma);
+          }
+        }
+      }
+    } // end loop over X in dfbs
+
+    if(xml_debug_) {
+      for(int iatom = 0; iatom < natom; ++iatom) {
+        for(auto&& nu : iter_functions_on_center(obs, iatom)) {
+          for(auto&& rho : iter_functions_on_center(obs, iatom)) {
+            write_as_xml("Z", Z[iatom].row(nu.bfoff_in_atom*rho.atom_nbf + rho.bfoff_in_atom), attrs<int>{
+              {"ao_index1", nu},
+              {"ao_index2", rho}
+            });
+          }
+        }
+      }
+      for(auto&& X : function_range(dfbs_)) {
+        for(auto&& nu : iter_functions_on_center(obs, X.center)) {
+          write_as_xml("Z_tilde", Z_tilde[X].row(nu.bfoff_in_atom), attrs<int>{
+              {"ao_index1", X},
+              {"ao_index2", nu}
+          });
+        }
+      }
+      for(auto&& X : function_range(dfbs_)) {
+        for(auto&& rho : iter_functions_on_center(obs, X.center)) {
+          write_as_xml("Z_tilde_bar", Z_tilde_bar[X].row(rho.bfoff_in_atom), attrs<int>{
+              {"ao_index1", X},
+              {"ao_index2", rho}
+          });
+        }
+      }
+
+    }
+
+  }
+
+  memory_used_ += Z_size;
+
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
   /* Make the CADF-LinK lists                                                         {{{1 */ #if 1 //latex `\label{sc:link}`
@@ -149,11 +247,14 @@ CADFCLHF::compute_K()
   // Now make the linK lists if we're doing linK
   if(do_linK_){
     timer.enter("LinK lists");
+
     // First clear all of the lists
     L_D.clear();
     L_DC.clear();
     L_3.clear();
+
     //============================================================================//
+    // Get the Frobenius norms of the density matrix shell blocks
     Eigen::MatrixXd D_frob(obs->nshell(), obs->nshell());
     do_threaded(nthread_, [&](int ithr){
       for(int lsh_index = ithr; lsh_index < obs->nshell(); lsh_index += nthread_) {           //latex `\label{sc:link:ld}`
@@ -172,12 +273,18 @@ CADFCLHF::compute_K()
 
     // TODO Distribute this over threads and MPI processes
     timer.enter("build L_DC");
-    for(auto&& jsh : shell_range(obs)) {                                                       //latex `\label{sc:link:ldc}`
+    do_threaded(nthread_, [&](int ithr) {
+      for(auto&& shpair : thread_over_range(
+          product_range(shell_range(gbs_, dfbs_), shell_range(dfbs_)),
+          ithr, nthread_)
+      ) {                                                       //latex `\label{sc:link:ldc}`
 
-      const auto& Drho = D_frob.row(jsh);
+        ShellData jsh, Xsh;
+        boost::tie(jsh, Xsh) = shpair;
+        const auto& Drho = D_frob.row(jsh);
 
-      for(auto&& Xsh : shell_range(dfbs_)) {
-        auto& Cmaxes_X = Cmaxes_[Xsh];
+        const auto& Cmaxes_X = Cmaxes_[Xsh];
+
         // TODO Optimize this to not be N^3
 
         double max_val = 0.0;
@@ -199,11 +306,14 @@ CADFCLHF::compute_K()
         L_DC[jsh].insert(Xsh,                                                                //latex `\label{sc:link:ldcstore}`
             max_val * schwarz_df_[Xsh]
         );
-      } // end loop over Xsh
+      } // end loop over jsh, Xsh
+    });
 
-      L_DC[jsh].sort();
-
-    } // end loop over jsh
+    do_threaded(nthread_, [&](int ithr){
+      for(auto&& kvpair : thread_over_range(L_DC, ithr, nthread_)) {
+        kvpair.second.sort();
+      }
+    });
 
     //----------------------------------------//                                             //latex `\label{sc:link:ldc:end}`
     // Form L_3
@@ -581,6 +691,12 @@ CADFCLHF::compute_K()
     local_pairs_spot_ = 0;
     // Loop over number of threads
     MultiThreadTimer mt_timer("threaded part", nthread_);
+    Eigen::MatrixXd Ktex1(nbf, nbf);
+    Ktex1 = Eigen::MatrixXd::Zero(nbf, nbf);
+    Eigen::MatrixXd Ktex2(nbf, nbf);
+    Ktex2 = Eigen::MatrixXd::Zero(nbf, nbf);
+    Eigen::MatrixXd Ktex3(nbf, nbf);
+    Ktex3 = Eigen::MatrixXd::Zero(nbf, nbf);
     auto get_ish_Xblk_3 = [&](ShellData& ish, ShellBlockData<>& Xblk) -> bool {                                                //latex `\label{sc:k3b:getiX}`
       if(do_linK_) {
         std::lock_guard<std::mutex> lg(L_3_mutex);
@@ -628,20 +744,40 @@ CADFCLHF::compute_K()
         //----------------------------------------//
         ShellData ish;
         ShellBlockData<> Xblk;
-        //----------------------------------------//                                         //latex `\label{sc:k3b:thrvars}`
+
         //----------------------------------------//
         while(get_ish_Xblk_3(ish, Xblk)) {                                                            //latex `\label{sc:k3b:while}`
           /*-----------------------------------------------------*/
           /* Compute B intermediate                         {{{2 */ #if 2 // begin fold      //latex `\label{sc:k3b:b}`
+
           mt_timer.enter("compute B", ithr);
           auto ints_timer = mt_timer.get_subtimer("compute ints", ithr);
           auto k2_part_timer = mt_timer.get_subtimer("k2 part", ithr);
           auto contract_timer = mt_timer.get_subtimer("contract", ithr);
+          auto ex_timer = mt_timer.get_subtimer("exact diagonal", ithr);
 
           ColMatrix B_ish(ish.nbf * Xblk.nbf, nbf);
           B_ish = ColMatrix::Zero(ish.nbf * Xblk.nbf, nbf);
 
+          // Exact diagonal itermediate storage
+          // TODO only allocate these if using exact diagonal
+          RowMatrix M_mu_X(ish.nbf * Xblk.nbf, ish.atom_nbf);
+          M_mu_X = RowMatrix::Zero(ish.nbf*Xblk.nbf, ish.atom_nbf);
+          //RowMatrix omega_mu_X(ish.nbf * Xblk.nbf, ish.atom_nbf);
+          //omega_mu_X = RowMatrix::Zero(ish.nbf*Xblk.nbf, ish.atom_nbf);
+          //RowMatrix beta_mu_X(ish.nbf * Xblk.nbf, ish.atom_nbf);
+          //beta_mu_X = RowMatrix::Zero(ish.nbf*Xblk.nbf, ish.atom_nbf);
+          //RowMatrix N_mu_X(ish.nbf * Xblk.nbf, ish.atom_nbf);
+          //N_mu_X = RowMatrix::Zero(ish.nbf*Xblk.nbf, ish.atom_nbf);
+          RowMatrix W_mu_X(ish.nbf * Xblk.nbf, nbf);
+          W_mu_X = RowMatrix::Zero(ish.nbf*Xblk.nbf, nbf);
+          RowMatrix W_mu_X_bar(ish.nbf * Xblk.nbf, nbf);
+          W_mu_X_bar = RowMatrix::Zero(ish.nbf*Xblk.nbf, nbf);
+
           if(do_linK_){
+
+            /*-----------------------------------------------------*/
+            /* Compute B intermediate                         {{{3 */ #if 3 // begin fold
 
             // TODO figure out how to take advantage of L_3 sorting
             assert(Xblk.nshell == 1);
@@ -814,9 +950,14 @@ CADFCLHF::compute_K()
 
             } // end loop over Xsh
 
+            /********************************************************/ #endif //3}}}
+            /*-----------------------------------------------------*/
+
           } // end if do_linK_
           else {                                                                             //latex `\label{sc:k3b:nolink}`
 
+            //int reqs = Contiguous;
+            //if(exact_diagonal_K_) reqs |= SameCenter;
             for(auto&& jblk : iter_significant_partners_blocked(ish, Contiguous)){
               TimerHolder subtimer(ints_timer);
 
@@ -835,6 +976,7 @@ CADFCLHF::compute_K()
 
               int subblock_offset = 0;
               for(const auto&& jsblk : shell_block_range(jblk, SameCenter)) {
+
                 int inner_size = ish.atom_dfnbf;
                 if(ish.center != jsblk.center) {
                   inner_size += jsblk.atom_dfnbf;
@@ -866,7 +1008,144 @@ CADFCLHF::compute_K()
                   );
                 }
 
+                //----------------------------------------//
+
+                if(exact_diagonal_K_) {
+                  subtimer.change(ex_timer);
+
+                  if(jsblk.center == Xblk.center or ish.center == Xblk.center) {
+                    // Build W and Wbar
+                    for(auto&& mu : function_range(ish)) {
+                      for(auto&& rho : function_range(obs, dfbs_, jsblk.bfoff, jsblk.last_function)) {
+                        for(auto&& X : function_range(dfbs_, Xblk.bfoff, Xblk.last_function)) {
+                          for(auto&& Y : iter_functions_on_center(dfbs_, ish.center)) {
+                            W_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, rho) +=
+                                coefs_transpose_[Y](mu.bfoff_in_atom, rho) * g2(Y, X);
+                          }
+                          if(ish.center != jsblk.center){
+                            for(auto&& Y : iter_functions_on_center(dfbs_, jsblk.center)) {
+                              W_mu_X_bar(mu.off*Xblk.nbf + X-Xblk.bfoff, rho) +=
+                                  coefs_transpose_[Y](rho.bfoff_in_atom, mu) * g2(Y, X);
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+
+                  // Build M
+                  if(jsblk.center == Xblk.center) {
+                    for(auto&& sigma : iter_functions_on_center(gbs_, ish.center)) {
+                      for(auto&& mu : function_range(ish)) {
+                        for(auto&& rho : function_range(obs, dfbs_, jsblk.bfoff, jsblk.last_function)) {
+                          for(auto&& X : function_range(dfbs_, Xblk.bfoff, Xblk.last_function)) {
+                            //N_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, sigma.bfoff_in_atom) += 4.0 *
+                            //    g3_in(
+                            //        (subblock_offset + rho-jsblk.bfoff)*ish.nbf + mu.off,
+                            //        X-Xblk.bfoff
+                            //    ) * D(rho, sigma);
+                            //omega_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, sigma.bfoff_in_atom) += 2.0 *
+                            //    W_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, rho) * D(rho, sigma);
+                            //beta_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, sigma.bfoff_in_atom) += 2.0 *
+                            //    W_mu_X_bar(mu.off*Xblk.nbf + X-Xblk.bfoff, rho) * D(rho, sigma);
+                            M_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, sigma.bfoff_in_atom) += 4.0 *
+                                g3_in(
+                                    (subblock_offset + rho-jsblk.bfoff)*ish.nbf + mu.off,
+                                    X-Xblk.bfoff
+                                ) * D(rho, sigma)
+                                - W_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, rho) * D(rho, sigma)
+                                - W_mu_X_bar(mu.off*Xblk.nbf + X-Xblk.bfoff, rho) * D(rho, sigma);
+                          }
+                        }
+                      }
+                    }
+                  }
+
+                  for(auto&& X : function_range(Xblk)) {
+                    for(auto&& mu : function_range(ish)) {
+                      if(Xblk.center == ish.center) {
+
+                        for(auto&& nu : iter_functions_on_center(obs, jsblk.center)) {
+                          for(auto&& rho : function_range(obs, dfbs_, jsblk.bfoff, jsblk.last_function)) {
+                            Kt_part(mu, nu) -= Z[nu.center](nu.bfoff_in_atom*rho.atom_nbf + rho.bfoff_in_atom, X) * (
+                                   2.0 * g3_in(
+                                      (subblock_offset + rho-jsblk.bfoff)*ish.nbf + mu.off,
+                                      X-Xblk.bfoff
+                                   ) - 0.5 * W_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
+                            );
+                            Ktex1(mu, nu) -= Z[nu.center](nu.bfoff_in_atom*rho.atom_nbf + rho.bfoff_in_atom, X) * (
+                                   2.0 * g3_in(
+                                      (subblock_offset + rho-jsblk.bfoff)*ish.nbf + mu.off,
+                                      X-Xblk.bfoff
+                                   ) - 0.5 * W_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
+                            );
+                            if(ish.center != jsblk.center) {
+                              Kt_part(mu, nu) += Z[nu.center](nu.bfoff_in_atom*rho.atom_nbf + rho.bfoff_in_atom, X)
+                                  * 0.5 * W_mu_X_bar(mu.off*Xblk.nbf + X-Xblk.bfoff, rho);
+                              Ktex1(mu, nu) += Z[nu.center](nu.bfoff_in_atom*rho.atom_nbf + rho.bfoff_in_atom, X)
+                                  * 0.5 * W_mu_X_bar(mu.off*Xblk.nbf + X-Xblk.bfoff, rho);
+                            }
+                          }
+                        }
+
+                        if(ish.center != jsblk.center) {
+                          for(auto&& nu : iter_functions_on_center(obs, ish.center)) {
+                            for(auto&& rho : function_range(obs, dfbs_, jsblk.bfoff, jsblk.last_function)) {
+                              Kt_part(mu, nu) -= Z_tilde[X](nu.bfoff_in_atom, rho) * (
+                                   2.0 * g3_in(
+                                      (subblock_offset + rho-jsblk.bfoff)*ish.nbf + mu.off,
+                                      X-Xblk.bfoff
+                                   ) - 0.5 * W_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
+                                   - 0.5 * W_mu_X_bar(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
+                              );
+                              Ktex3(mu, nu) -= Z_tilde[X](nu.bfoff_in_atom, rho) * (
+                                   2.0 * g3_in(
+                                      (subblock_offset + rho-jsblk.bfoff)*ish.nbf + mu.off,
+                                      X-Xblk.bfoff
+                                   ) - 0.5 * W_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
+                                   - 0.5 * W_mu_X_bar(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
+                              );
+                            }
+                          }
+                        }
+
+
+                      }
+
+                      else { // ish.center != Xblk.center
+                        if(Xblk.center == jsblk.center) {
+                          for(auto&& nu : iter_functions_on_center(obs, ish.center)) {
+                            for(auto&& rho : function_range(obs, dfbs_, jsblk.bfoff, jsblk.last_function)) {
+                              Kt_part(mu, nu) -= Z_tilde_bar[X](rho.bfoff_in_atom, nu) * (
+                                   2.0 * g3_in(
+                                      (subblock_offset + rho-jsblk.bfoff)*ish.nbf + mu.off,
+                                      X-Xblk.bfoff
+                                   ) - 0.5 * W_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
+                                   - 0.5 * W_mu_X_bar(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
+                              );
+                              Ktex3(mu, nu) -= Z_tilde_bar[X](rho.bfoff_in_atom, nu) * (
+                                   2.0 * g3_in(
+                                      (subblock_offset + rho-jsblk.bfoff)*ish.nbf + mu.off,
+                                      X-Xblk.bfoff
+                                   ) - 0.5 * W_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
+                                   - 0.5 * W_mu_X_bar(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
+                              );
+                            }
+                          }
+                        }
+                      }
+
+                    }
+                  }
+
+                  subtimer.change(k2_part_timer);
+
+                } // end if exact_diagonal_k
+
+                //----------------------------------------//
+
                 subblock_offset += jsblk.nbf;
+
 
               } // end loop over jsblk
 
@@ -898,7 +1177,56 @@ CADFCLHF::compute_K()
               );
               #endif
 
+
             } // end loop over jsh
+
+            if(xml_debug_ and exact_diagonal_K_) {
+              //Eigen::MatrixXd Nout(ish.nbf*Xblk.nbf, nbf);
+              //Nout = Eigen::MatrixXd::Zero(ish.nbf*Xblk.nbf, nbf);
+              //Nout.middleCols(ish.atom_bfoff, ish.atom_nbf) = N_mu_X;
+              Eigen::MatrixXd Mout(ish.nbf*Xblk.nbf, nbf);
+              Mout = Eigen::MatrixXd::Zero(ish.nbf*Xblk.nbf, nbf);
+              Mout.middleCols(ish.atom_bfoff, ish.atom_nbf) = M_mu_X;
+              //Eigen::MatrixXd Omegaout(ish.nbf*Xblk.nbf, nbf);
+              //Omegaout = Eigen::MatrixXd::Zero(ish.nbf*Xblk.nbf, nbf);
+              //Omegaout.middleCols(ish.atom_bfoff, ish.atom_nbf) = omega_mu_X;
+              //Eigen::MatrixXd Betaout(ish.nbf*Xblk.nbf, nbf);
+              //Betaout = Eigen::MatrixXd::Zero(ish.nbf*Xblk.nbf, nbf);
+              //Betaout.middleCols(ish.atom_bfoff, ish.atom_nbf) = beta_mu_X;
+              for(auto&& mu : function_range(ish)) {
+                for(auto&& X : function_range(Xblk)) {
+                  write_as_xml("M", Mout.row(mu.off*Xblk.nbf + X-Xblk.bfoff), attrs<int>{
+                    {"ao_index1", mu},
+                    {"ao_index2", X},
+                    {"partial", 1}
+                  });
+                  //write_as_xml("N", Nout.row(mu.off*Xblk.nbf + X-Xblk.bfoff), attrs<int>{
+                  //  {"ao_index1", mu},
+                  //  {"ao_index2", X},
+                  //  {"partial", 1}
+                  //});
+                  //write_as_xml("Omega", Omegaout.row(mu.off*Xblk.nbf + X-Xblk.bfoff), attrs<int>{
+                  //  {"ao_index1", mu},
+                  //  {"ao_index2", X},
+                  //  {"partial", 1}
+                  //});
+                  //write_as_xml("Beta", Betaout.row(mu.off*Xblk.nbf + X-Xblk.bfoff), attrs<int>{
+                  //  {"ao_index1", mu},
+                  //  {"ao_index2", X},
+                  //  {"partial", 1}
+                  //});
+                  write_as_xml("W_k", W_mu_X.row(mu.off*Xblk.nbf + X-Xblk.bfoff), attrs<int>{
+                    {"ao_index1", mu},
+                    {"ao_index2", X}
+                  });
+                  write_as_xml("Wbar", W_mu_X_bar.row(mu.off*Xblk.nbf + X-Xblk.bfoff), attrs<int>{
+                    {"ao_index1", mu},
+                    {"ao_index2", X}
+                  });
+                }
+              }
+
+            }
 
           } // end else (do_linK_ == false)                                                  //latex `\label{sc:k3b:bend}`
           /*******************************************************/ #endif //2}}}
@@ -928,6 +1256,25 @@ CADFCLHF::compute_K()
               //----------------------------------------//
             }
           }
+          if(exact_diagonal_K_) {
+            mt_timer.enter("exact diagonal subtract", ithr);
+            for(auto&& X : function_range(Xblk)) {
+              for(auto&& mu : function_range(ish)) {
+                if(Xblk.center != ish.center) {
+                  for(auto&& nu : iter_functions_on_center(obs, Xblk.center)) {
+                    for(auto&& sigma : iter_functions_on_center(obs, ish.center)) {
+                      Kt_part(mu, nu) -= coefs_transpose_[X](nu.bfoff_in_atom, sigma)
+                          * M_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, sigma.bfoff_in_atom);
+                      Ktex2(mu, nu) -= coefs_transpose_[X](nu.bfoff_in_atom, sigma)
+                          * M_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, sigma.bfoff_in_atom);
+                    }
+                  }
+                }
+              }
+            }
+
+            mt_timer.exit(ithr);
+          }
           mt_timer.exit(ithr);
           /*******************************************************/ #endif //2}}}            //latex `\label{sc:k3b:kcontrib:end}`
           /*-----------------------------------------------------*/
@@ -943,6 +1290,97 @@ CADFCLHF::compute_K()
     mt_timer.exit();
     timer.insert(mt_timer);
     if(print_iteration_timings_) mt_timer.print(ExEnv::out0(), 12, 45);
+
+    if(xml_debug_) {
+      write_as_xml("Ktex1", Ktex1);
+      write_as_xml("Ktex2", Ktex2);
+      write_as_xml("Ktex3", Ktex3);
+    }
+
+  } // compute_threads is destroyed here
+  /*****************************************************************************************/ #endif //1}}} //latex `\label{sc:k3b:end}`
+  /*=======================================================================================*/
+  /* Add back in the exact diagonal                       		                        {{{1 */ #if 1 //latex `\label{sc:kglobalsum}`
+  if(exact_diagonal_K_) {
+    timer.enter("exact diagonal contributions");
+    boost::mutex tmp_mutex;
+    boost::thread_group compute_threads;
+    MultiThreadTimer mt_timer("threaded part", nthread_);
+    //----------------------------------------//
+    // reset the iteration over local pairs
+    local_pairs_spot_ = 0;
+    // Loop over number of threads
+    for(int ithr = 0; ithr < nthread_; ++ithr) {
+      // ...and create each thread that computes pairs
+      compute_threads.create_thread([&,ithr](){
+        Eigen::MatrixXd Kt_part(nbf, nbf);
+        Kt_part = Eigen::MatrixXd::Zero(nbf, nbf);
+        //----------------------------------------//
+        ShellData ish, jsh;
+        while(get_shell_pair(ish, jsh, SignificantPairs)){
+          //double epf = (ish.center == jsh.center) ? 2.0 : 4.0;
+          for(auto&& ksh : iter_shells_on_center(obs, ish.center)) {
+            for(auto&& lsh : iter_shells_on_center(obs, jsh.center)) {
+
+              auto g4_ptr = ints_to_eigen(ish, jsh, ksh, lsh, tbis_[ithr], coulomb_oper_type_);
+              const auto& g4 = *g4_ptr;
+
+              for(auto&& mu : function_range(ish)) {
+                for(auto&& rho : function_range(jsh)) {
+                  if(rho > mu) continue;
+                  // TODO Vectorize
+                  for(auto&& nu : function_range(ksh)) {
+                    for(auto&& sigma : function_range(lsh)) {
+                      Kt_part(mu, nu) +=
+                          g4(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell, nu.bfoff_in_shell*lsh.nbf + sigma.bfoff_in_shell)
+                          * D(rho, sigma);
+                      Ktex(mu, nu) +=
+                          g4(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell, nu.bfoff_in_shell*lsh.nbf + sigma.bfoff_in_shell)
+                          * D(rho, sigma);
+                      if(mu != rho) {
+                        Kt_part(rho, nu) +=
+                            g4(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell, nu.bfoff_in_shell*lsh.nbf + sigma.bfoff_in_shell)
+                            * D(mu, sigma);
+                        Ktex(rho, nu) +=
+                            g4(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell, nu.bfoff_in_shell*lsh.nbf + sigma.bfoff_in_shell)
+                            * D(mu, sigma);
+                      }
+                      if(ish.center != jsh.center) {
+                        Kt_part(mu, sigma) +=
+                            g4(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell, nu.bfoff_in_shell*lsh.nbf + sigma.bfoff_in_shell)
+                            * D(rho, nu);
+                        Ktex(mu, sigma) +=
+                            g4(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell, nu.bfoff_in_shell*lsh.nbf + sigma.bfoff_in_shell)
+                            * D(rho, nu);
+                        if(mu != rho) {
+                          Kt_part(rho, sigma) +=
+                              g4(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell, nu.bfoff_in_shell*lsh.nbf + sigma.bfoff_in_shell)
+                              * D(mu, nu);
+                          Ktex(rho, sigma) +=
+                              g4(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell, nu.bfoff_in_shell*lsh.nbf + sigma.bfoff_in_shell)
+                              * D(mu, nu);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+
+            }
+          }
+        }
+        // Sum the thread's contributions to the node-level J
+        boost::lock_guard<boost::mutex> tmp_lock(tmp_mutex);
+        Kt += Kt_part;
+      }); // end create_thread
+    } // end enumeration of threads
+    compute_threads.join_all();
+    mt_timer.exit();
+    timer.insert(mt_timer);
+    timer.exit();
+    if(xml_debug_) {
+      write_as_xml("Ktex", Ktex);
+    }
   } // compute_threads is destroyed here
   /*****************************************************************************************/ #endif //1}}} //latex `\label{sc:k3b:end}`
   /*=======================================================================================*/
@@ -971,6 +1409,7 @@ CADFCLHF::compute_K()
   /*=======================================================================================*/
   /* Clean up                                             		                        {{{1 */ #if 1 // begin fold
   //----------------------------------------//
+  memory_used_ -= Z_size;
   deallocate(D_ptr);
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/

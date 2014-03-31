@@ -179,9 +179,13 @@ namespace sc {
       const std::string& kernel_key() const { return kernel_; }
       DensityFitting::SolveMethod solver() const { return solver_; }
       bool local_coulomb() const { return local_coulomb_; }
+      void local_coulomb(bool val) { local_coulomb_ = val; }
       bool local_exchange() const { return local_exchange_; }
+      void local_exchange(bool val) { local_exchange_ = val; }
       bool exact_diag_J() const { return exact_diag_J_; }
+      void exact_diag_J(bool val) { exact_diag_J_ = val; }
       bool exact_diag_K() const { return exact_diag_K_; }
+      void exact_diag_K(bool val) { exact_diag_K_ = val; }
       /// returns the TwoBodyInt::oper_type object that specifies
       /// the type of the operator kernel_key used for fitting the density
       TwoBodyOper::type kernel_otype() const;

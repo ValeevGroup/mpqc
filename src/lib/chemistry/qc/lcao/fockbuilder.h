@@ -290,7 +290,19 @@ namespace sc {
                            const Ref<GaussianBasisSet>& brabs,
                            const Ref<GaussianBasisSet>& ketbs,
                            const Ref<GaussianBasisSet>& obs);
+    RefSCMatrix coulomb_df_local(const Ref<DensityFittingInfo>& df_info,
+                           const RefSymmSCMatrix& P,
+                           const Ref<GaussianBasisSet>& brabs,
+                           const Ref<GaussianBasisSet>& ketbs,
+                           const Ref<GaussianBasisSet>& obs);
     RefSCMatrix exchange_df(const Ref<DensityFittingInfo>& df_info,
+                            const RefSymmSCMatrix& P,
+                            SpinCase1 spin,
+                            const Ref<GaussianBasisSet>& brabs,
+                            const Ref<GaussianBasisSet>& ketbs,
+                            const Ref<GaussianBasisSet>& obs,
+                            const Ref<FockBuildRuntime::PSqrtRegistry>& psqrtregistry);
+    RefSCMatrix exchange_df_local(const Ref<DensityFittingInfo>& df_info,
                             const RefSymmSCMatrix& P,
                             SpinCase1 spin,
                             const Ref<GaussianBasisSet>& brabs,
@@ -582,7 +594,10 @@ namespace sc {
             if (c == 0 && t == 1) continue;
 
             if (c == 0) { // coulomb
-              result_[0][c] = detail::coulomb_df(df_info, density, brabasis, ketbasis, densitybasis);
+              if(df_info->params()->local_coulomb())
+                result_[0][c] = detail::coulomb_df_local(df_info, density, brabasis, ketbasis, densitybasis);
+              else
+                result_[0][c] = detail::coulomb_df(df_info, density, brabasis, ketbasis, densitybasis);
             }
 
             if (c == 1) { // exchange
@@ -597,8 +612,12 @@ namespace sc {
                 spincase = AnySpinCase1;
               }
               Pspin.scale(0.5);
-              result_[t][c] = detail::exchange_df(df_info, Pspin, spincase, brabasis, ketbasis, densitybasis,
-                                                  psqrtregistry);
+              if(df_info->params()->local_exchange())
+                result_[t][c] = detail::exchange_df_local(df_info, Pspin, spincase, brabasis, ketbasis, densitybasis,
+                                                    psqrtregistry);
+              else
+                result_[t][c] = detail::exchange_df(df_info, Pspin, spincase, brabasis, ketbasis, densitybasis,
+                                                    psqrtregistry);
             }
 
             if (c == 2) { // fock

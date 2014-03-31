@@ -57,15 +57,7 @@ CADFCLHF::compute_coefficients()
   timer.enter("01 - init coef memory");
 
   unsigned long ncoefs = 0;                                                                          //latex `\label{sc:coefcountbegin}`
-  for(auto ibf : function_range(obs, dfbs_)){
-    for(auto jbf : function_range(obs, dfbs_, 0, ibf)){
-      ncoefs += ibf.atom_dfnbf;
-      if(ibf.center != jbf.center){
-        ncoefs += jbf.atom_dfnbf;
-      }
-    }
-  }                                                                                        //latex `\label{sc:coefcountend}`
-  /*
+#if USE_SPARSE
   for(auto&& ish : shell_range(gbs_, dfbs_)) {
     for(auto&& jsh : iter_significant_partners(ish)) {
       for(auto&& mu : function_range(ish)){
@@ -79,44 +71,59 @@ CADFCLHF::compute_coefficients()
       }
     }
   }                                                                                        //latex `\label{sc:coefcountend}`
-  */
+#else
+  for(auto ibf : function_range(obs, dfbs_)){
+    for(auto jbf : function_range(obs, dfbs_, 0, ibf)){
+      ncoefs += ibf.atom_dfnbf;
+      if(ibf.center != jbf.center){
+        ncoefs += jbf.atom_dfnbf;
+      }
+    }
+  }                                                                                        //latex `\label{sc:coefcountend}`
+#endif
 
   ExEnv::out0() << indent << "Need " << data_size_to_string(ncoefs*sizeof(double))
                 << " for main coefficients storage." << std::endl;
   memory_used_ += ncoefs*sizeof(double);
   ExEnv::out0() << indent << "Total memory usage is at least " << data_size_to_string(memory_used_) << std::endl;
 
-  //coefficients_data_ = allocate<double>(ncoefs);                                           //latex `\label{sc:coefalloc}`
-  coefficients_data_ = new double[ncoefs];                                             //latex `\label{sc:coefalloc}`
+  coefficients_data_ = allocate<double>(ncoefs);                                           //latex `\label{sc:coefalloc}`
 
   memset(coefficients_data_, 0, ncoefs * sizeof(double));
   double *spot = coefficients_data_;
-  for(auto mu : function_range(obs, dfbs_)){
-    for(auto rho : function_range(obs, dfbs_, 0, mu)){
-  /*
+#if USE_SPARSE
   for(auto&& ish : shell_range(gbs_, dfbs_)) {
     for(auto&& jsh : iter_significant_partners(ish)) {
       for(auto&& mu : function_range(ish)){
         for(auto&& rho : function_range(jsh)) {
-  */
-      if(rho > mu) break;
-      double *data_spot_a = spot;
-      spot += mu.atom_dfnbf;
-      double *data_spot_b = spot;
-      if(mu.center != rho.center){
-        spot += rho.atom_dfnbf;
+          if(rho > mu) break;
+#else
+  for(auto mu : function_range(obs, dfbs_)){
+    for(auto rho : function_range(obs, dfbs_, 0, mu)){
+      {
+        {
+#endif
+          double *data_spot_a = spot;
+          spot += mu.atom_dfnbf;
+          double *data_spot_b = spot;
+          if(mu.center != rho.center){
+            spot += rho.atom_dfnbf;
+          }
+          IntPair ij(mu, rho);
+          CoefContainer coefs_a = make_shared<Eigen::Map<Eigen::VectorXd>>(data_spot_a, mu.atom_dfnbf);
+          CoefContainer coefs_b = make_shared<Eigen::Map<Eigen::VectorXd>>(
+              data_spot_b, mu.center == rho.center ? 0 : int(rho.atom_dfnbf));
+          coefs_.emplace(ij, std::make_pair(coefs_a, coefs_b));
+        }
       }
-      IntPair ij(mu, rho);
-      CoefContainer coefs_a = make_shared<Eigen::Map<Eigen::VectorXd>>(data_spot_a, mu.atom_dfnbf);
-      CoefContainer coefs_b = make_shared<Eigen::Map<Eigen::VectorXd>>(
-          data_spot_b, mu.center == rho.center ? 0 : int(rho.atom_dfnbf));
-      coefs_.emplace(ij, std::make_pair(coefs_a, coefs_b));
     }
   }
 
   //----------------------------------------//
   // We can save a lot of mess by storing references
   //   to the jbf > ibf pairs for the ish == jsh cases only
+  // This code will be the same for both dense and sparse since
+  //   a shell paired with itself should always be significant
   for(auto ish : shell_range(obs)){
     for(auto ibf : function_range(ish)){
       for(auto jbf : function_range(obs, ibf + 1, ish.last_function)){
@@ -273,14 +280,15 @@ CADFCLHF::compute_coefficients()
 #endif
 
             //----------------------------------------//
-            // TODO Don't use coeffRef here; be more efficient
             if(nu <= mu){
               auto& C = *(coefs_[IntPair(mu, nu)].first);
               const double value = C[Y.bfoff_in_atom];
 #if USE_SPARSE
               if(fabs(value) > coef_screening_thresh_)
+                coefs_transpose_[Y].insert(mu.bfoff_in_atom, nu) = value;
+#else
+              coefs_transpose_[Y].coeffRef(mu.bfoff_in_atom, nu) = value;
 #endif
-                coefs_transpose_[Y].coeffRef(mu.bfoff_in_atom, nu) = value;
             }
             else{
               auto cpair = coefs_[IntPair(nu, mu)];
@@ -289,16 +297,20 @@ CADFCLHF::compute_coefficients()
                 const double value = C[Y.bfoff_in_atom];
 #if USE_SPARSE
                 if(fabs(value) > coef_screening_thresh_)
+                  coefs_transpose_[Y].insert(mu.bfoff_in_atom, nu) = value;
+#else
+                coefs_transpose_[Y].coeffRef(mu.bfoff_in_atom, nu) = value;
 #endif
-                  coefs_transpose_[Y].coeffRef(mu.bfoff_in_atom, nu) = value;
               }
               else{
                 auto& C = *(cpair.first);
                 const double value = C[Y.bfoff_in_atom];
 #if USE_SPARSE
                 if(fabs(value) > coef_screening_thresh_)
+                  coefs_transpose_[Y].insert(mu.bfoff_in_atom, nu) = value;
+#else
+                coefs_transpose_[Y].coeffRef(mu.bfoff_in_atom, nu) = value;
 #endif
-                  coefs_transpose_[Y].coeffRef(mu.bfoff_in_atom, nu) = value;
                 //coefs_transpose_[Y].coeffRef(mu.bfoff_in_atom, nu) = C[Y.bfoff_in_atom];
               }
             }
@@ -335,17 +347,29 @@ CADFCLHF::compute_coefficients()
     timer.change("compute coefficients");
     coefs_blocked_.emplace_back(atom_nbf, ncol);
     auto& cblock = coefs_blocked_.back();
-    cblock = RowMatrix::Constant(atom_nbf, ncol, -999);
+    cblock = RowMatrix::Zero(atom_nbf, ncol);
 
     // Now transfer the coefficients
-    //for(auto&& ish : iter_shells_on_center(gbs_, iatom, dfbs_)) {
-    //  int offset = 0;
-    //  for(auto&& jsh : iter_significant_partners(ish)) {
-    //    for(auto&& mu : function_range(ish)){
-    //      for(auto&& rho : function_range(jsh)) {
+#if 0
+    for(auto&& ish : iter_shells_on_center(gbs_, iatom, dfbs_)) {
+      int offset = 0;
+      for(auto&& jsh : iter_significant_partners(ish)) {
+        for(auto&& mu : function_range(ish)){
+          for(auto&& rho : function_range(jsh)) {
+#endif
     for(auto&& mu : iter_functions_on_center(gbs_, iatom, dfbs_)) {
       int offset = 0;
       for(auto&& rho : function_range(gbs_, dfbs_)) {
+
+#if USE_SPARSE
+        if(not is_sig_pair(mu.shell_index, rho.shell_index)) {
+          // Still need to compute the offsets for now
+          if(mu.center == rho.center)  offset += mu.atom_dfnbf;
+          else offset += mu.atom_dfnbf + rho.atom_dfnbf;
+          // Skip the rest
+          continue;
+        }
+#endif
 
         if(rho <= mu) {
           auto& cpair = coefs_[{mu, rho}];
@@ -379,6 +403,8 @@ CADFCLHF::compute_coefficients()
   /*****************************************************************************************/ #endif //1}}} //latex `\label{sc:coeftransend}`
   /*=======================================================================================*/
   /* Debugging output                                     		                        {{{1 */ #if 1 // begin fold
+#if !USE_SPARSE
+  // debugging not implemented for sparse yet
   if(xml_debug_) {
     //begin_xml_context(
     //    "df_coefficients",
@@ -406,10 +432,19 @@ CADFCLHF::compute_coefficients()
               { "ao_index2", nu }
             }
         );
+        write_as_xml(
+            "coefficient_vector",
+            coefs,
+            std::map<std::string, int>{
+              { "ao_index1", nu },
+              { "ao_index2", mu }
+            }
+        );
       }
     }
     //end_xml_context("df_coefficients");
   }
+#endif
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
   /* Make the CADF-LinK lists                                                         {{{1 */ #if 1 // begin fold
@@ -565,6 +600,30 @@ CADFCLHF::compute_coefficients()
     //----------------------------------------//
   } // end if do_linK
   /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
+  /* Sparse coefficients                                   		                        {{{1 */ #if 1 // begin fold
+  //---------------------------------------------------------------------------------------//
+
+  if(use_sparse_) {
+    std::vector<Eigen::Triplet<double>> triplets;
+    for(auto&& ckvpair : coefs_) {
+      const BasisFunctionData mu(ckvpair.first.first, gbs_, dfbs_);
+      const BasisFunctionData nu(ckvpair.first.second, gbs_, dfbs_);
+      const auto& Ca = *ckvpair.second.first;
+      const auto& Cb = *ckvpair.second.second;
+      for(int Xoff = 0; Xoff < mu.atom_dfnbf; ++Xoff) {
+        const double val = Ca[Xoff];
+        triplets.emplace_back(mu.index, nu.index*dfnbf + mu.atom_dfnbf + Xoff, val);
+      }
+      coefs_sp_.resize(nbf, nbf*dfnbf);
+
+    }
+  }
+
+
+
+  /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
   /*=======================================================================================*/
   /* Clean up                                              		                        {{{1 */ #if 1 // begin fold
   //---------------------------------------------------------------------------------------//

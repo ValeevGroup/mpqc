@@ -176,13 +176,14 @@ struct ShellData : public BasisElementData {
     int am = NotAssigned;
     int ncontraction = NotAssigned;
 
-    // Used when an auxiliary basis is set in the parent ShellIter.  Otherwise, set to -1
-    int atom_dfshoff = NotAssigned;
-    int atom_dfbfoff = NotAssigned;
-    int atom_dfnbf = NotAssigned;
-    int atom_dfnsh = NotAssigned;
-    int atom_df_last_function = NotAssigned;
-    int atom_df_last_shell = NotAssigned;
+    // Used when an auxiliary basis is set in the parent ShellIter.  Otherwise, set to NotAssigned
+    // The atom_obs* versions make more sense in cases where the primary basis is the dfbasis
+    union { int atom_dfshoff = NotAssigned; int atom_obsshoff; };
+    union { int atom_dfbfoff = NotAssigned; int atom_obsbfoff; };
+    union { int atom_dfnbf = NotAssigned; int atom_obsnbf; };
+    union { int atom_dfnsh = NotAssigned; int atom_obsdfnsh; };
+    union { int atom_df_last_function = NotAssigned; int atom_obs_last_function; };
+    union { int atom_df_last_shell = NotAssigned; int atom_obs_last_shell = NotAssigned; };
 
 
     // Reserved for future use
@@ -268,14 +269,17 @@ struct BasisFunctionData : public BasisElementData {
     int shell_index = NotAssigned;
     int shell_bfoff = NotAssigned;
     union { int bfoff_in_shell = NotAssigned; int off; };
-    int atom_dfshoff = NotAssigned;
-    int atom_dfbfoff = NotAssigned;
     int atom_nbf = NotAssigned;
-    int atom_dfnbf = NotAssigned;
     int atom_shoff = NotAssigned;
-    int atom_bfoff = NotAssigned;
     int block_offset = NotAssigned;
+    int atom_bfoff = NotAssigned;
     int bfoff_in_block = NotAssigned;
+
+    // Used when an auxiliary basis is set.  Otherwise, set to NotAssigned.
+    // The atom_obs* versions make more sense in cases where the primary basis is the dfbasis
+    union { int atom_dfnbf = NotAssigned; int atom_obsnbf; };
+    union { int atom_dfshoff = NotAssigned; int atom_obsshoff; };
+    union { int atom_dfbfoff = NotAssigned; int atom_obsbfoff; };
 
     operator const int() const { return index; }
 
@@ -670,12 +674,15 @@ class ShellBlockData {
     int shoff_in_atom = NotAssigned;
     int atom_last_function = NotAssigned;
     int atom_last_shell = NotAssigned;
-    int atom_dfshoff = NotAssigned;
-    int atom_dfbfoff = NotAssigned;
-    int atom_dfnbf = NotAssigned;
-    int atom_dfnsh = NotAssigned;
-    int atom_df_last_function = NotAssigned;
-    int atom_df_last_shell = NotAssigned;
+
+    // Used when an auxiliary basis is set in the parent ShellIter.  Otherwise, set to NotAssigned
+    // The atom_obs* versions make more sense in cases where the primary basis is the dfbasis
+    union { int atom_dfshoff = NotAssigned; int atom_obsshoff; };
+    union { int atom_dfbfoff = NotAssigned; int atom_obsbfoff; };
+    union { int atom_dfnbf = NotAssigned; int atom_obsnbf; };
+    union { int atom_dfnsh = NotAssigned; int atom_obsdfnsh; };
+    union { int atom_df_last_function = NotAssigned; int atom_obs_last_function; };
+    union { int atom_df_last_shell = NotAssigned; int atom_obs_last_shell; };
 
     static int max_index(const GaussianBasisSet* basis) { return basis->nshell(); }
 

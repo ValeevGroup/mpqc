@@ -167,24 +167,29 @@ CADFCLHF::compute_K()
       auto& Z_iatom = Z.back();
       Z_iatom = RowMatrix::Zero(atom_nbf*atom_nbf, dfnbf);
       Z_size += atom_nbf*atom_nbf*dfnbf*sizeof(double) + sizeof(RowMatrix);
-      for(auto&& X : function_range(dfbs_)) {
+      for(auto&& X : function_range(dfbs_, gbs_)) {
         for(auto&& nu : iter_functions_on_center(obs, iatom)) {
-          for(auto&& rho : iter_functions_on_center(obs, iatom)) {
-            for(auto&& sigma : iter_functions_on_center(obs, X.center)) {
-              // TODO Figure out where this factor of 2 is coming from (Density matrix?)
-              Z_iatom(nu.bfoff_in_atom*rho.atom_nbf + rho.bfoff_in_atom, X)
-                  += 2.0 * coefs_transpose_[X](sigma.bfoff_in_atom, nu) * D(rho, sigma);
-            }
-          }
+          Z_iatom.col(X).segment(nu.bfoff_in_atom*nu.atom_nbf, nu.atom_nbf)
+              += 2.0 * D.middleRows(nu.atom_bfoff, nu.atom_nbf).middleCols(X.atom_obsbfoff, X.atom_obsnbf)
+                * coefs_transpose_[X].col(nu);
+          //for(auto&& rho : iter_functions_on_center(obs, iatom)) {
+          //  Z_iatom(nu.bfoff_in_atom*rho.atom_nbf + rho.bfoff_in_atom, X)
+          //      += 2.0 * D.row(rho).segment(X.atom_obsbfoff, X.atom_obsnbf) * coefs_transpose_[X].col(nu);
+          //  //for(auto&& sigma : iter_functions_on_center(obs, X.center)) {
+          //  //  // TODO Figure out where this factor of 2 is coming from (Density matrix?)
+          //  //  Z_iatom(nu.bfoff_in_atom*rho.atom_nbf + rho.bfoff_in_atom, X)
+          //  //      += 2.0 * coefs_transpose_[X](sigma.bfoff_in_atom, nu) * D(rho, sigma);
+          //  //}
+          //}
         }
       }
 
     } // end loop over atoms
 
 
-    for(auto&& X : function_range(dfbs_, obs)) {
+    for(auto&& X : function_range(dfbs_, gbs_)) {
       // Use the orbital basis as the "auxiliary" for the dfbs, just for convenience
-      const int atom_nbf = X.atom_dfnbf;
+      const int atom_nbf = X.atom_obsnbf;
 
       Z_tilde.emplace_back(atom_nbf, nbf);
       Z_tilde_bar.emplace_back(atom_nbf, nbf);
@@ -194,20 +199,39 @@ CADFCLHF::compute_K()
       Ztb_iatom = RowMatrix::Zero(atom_nbf, nbf);
       Z_size += 2 * X.atom_dfnbf*nbf*sizeof(double) + sizeof(RowMatrix);
 
-      for(auto&& rho : function_range(obs, dfbs_)) {
-        for(auto&& nu : iter_functions_on_center(obs, X.center)) {
-          for(auto&& sigma : iter_functions_on_center(obs, rho.center)) {
-            Zt_iatom(nu.bfoff_in_atom, rho) += 2.0 * coefs_transpose_[X](nu.bfoff_in_atom, sigma) * D(rho, sigma);
-          }
-        }
+      for(auto&& jblk : shell_block_range(obs, dfbs_, 0, NoLastIndex, SameCenter)) {
+        Zt_iatom.middleCols(jblk.bfoff, jblk.nbf) += 2.0 *
+            coefs_transpose_[X].middleCols(jblk.atom_bfoff, jblk.atom_nbf)
+            * D.middleCols(jblk.bfoff, jblk.nbf).middleRows(jblk.atom_bfoff, jblk.atom_nbf);
       }
-      for(auto&& rho : iter_functions_on_center(obs, X.center)) {
-        for(auto&& nu : function_range(obs, dfbs_)) {
-          for(auto&& sigma : iter_functions_on_center(obs, rho.center)) {
-            Ztb_iatom(rho.bfoff_in_atom, nu) += 2.0 * coefs_transpose_[X](sigma.bfoff_in_atom, nu) * D(rho, sigma);
-          }
-        }
-      }
+      //for(auto&& rho : function_range(obs, dfbs_)) {
+      //  Zt_iatom.col(rho) += 2.0 *
+      //      coefs_transpose_[X].middleCols(rho.atom_bfoff, rho.atom_nbf)
+      //      * D.col(rho).segment(rho.atom_bfoff, rho.atom_nbf);
+      //  //for(auto&& nu : iter_functions_on_center(obs, X.center)) {
+      //  //  Zt_iatom(nu.bfoff_in_atom, rho) += 2.0 *
+      //  //      coefs_transpose_[X].row(nu.bfoff_in_atom).segment(rho.atom_bfoff, rho.atom_nbf)
+      //  //      * D.col(rho).segment(rho.atom_bfoff, rho.atom_nbf);
+      //  //  //for(auto&& sigma : iter_functions_on_center(obs, rho.center)) {
+      //  //  //  Zt_iatom(nu.bfoff_in_atom, rho) += 2.0 * coefs_transpose_[X](nu.bfoff_in_atom, sigma) * D(rho, sigma);
+      //  //  //}
+      //  //}
+      //}
+      Ztb_iatom += 2.0 * D.block(X.atom_obsbfoff, X.atom_obsbfoff, X.atom_obsnbf, X.atom_obsnbf) * coefs_transpose_[X];
+          //D.middleRows(X.atom_obsbfoff, X.atom_obsnbf).middleCols(X.atom_obsbfoff, X.atom_obsnbf)
+      //for(auto&& rho : iter_functions_on_center(obs, X.center)) {
+      //  Ztb_iatom.row(rho.bfoff_in_atom) += 2.0 *
+      //      D.row(rho).segment(rho.atom_bfoff, rho.atom_nbf)
+      //      * coefs_transpose_[X];
+      //  //for(auto&& nu : function_range(obs, dfbs_)) {
+      //  //  Ztb_iatom(rho.bfoff_in_atom, nu) += 2.0 *
+      //  //      D.row(rho).segment(rho.atom_bfoff, rho.atom_nbf)
+      //  //      * coefs_transpose_[X].col(nu);
+      //  //  //for(auto&& sigma : iter_functions_on_center(obs, rho.center)) {
+      //  //  //  Ztb_iatom(rho.bfoff_in_atom, nu) += 2.0 * coefs_transpose_[X](sigma.bfoff_in_atom, nu) * D(rho, sigma);
+      //  //  //}
+      //  //}
+      //}
     } // end loop over X in dfbs
 
     if(xml_debug_) {
@@ -1069,35 +1093,6 @@ CADFCLHF::compute_K()
                           ).sum();
 
                         }
-                        //for(auto&& X : function_range(Xblk)) {
-
-                        //  Kt_part(mu, nu) -= Z[nu.center].col(X).segment(
-                        //      nu.bfoff_in_atom*jsblk.atom_nbf + jsblk.bfoff_in_atom, jsblk.nbf
-                        //    ).transpose() * (
-                        //         2.0 * g3.col(mu.off*Xblk.nbf + X-Xblk.bfoff).segment(subblock_offset, jsblk.nbf)
-                        //          - 0.5 * W_mu_X.row(mu.off*Xblk.nbf + X-Xblk.bfoff).segment(jsblk.bfoff, jsblk.nbf).transpose()
-                        //  );
-                        //  if(ish.center != jsblk.center) {
-                        //    Kt_part(mu, nu) += Z[nu.center].col(X).segment(
-                        //        nu.bfoff_in_atom*jsblk.atom_nbf + jsblk.bfoff_in_atom, jsblk.nbf
-                        //      ).transpose()
-                        //      * 0.5 * W_mu_X_bar.row(mu.off*Xblk.nbf + X-Xblk.bfoff).segment(jsblk.bfoff, jsblk.nbf).transpose();
-
-                        //  }
-                        //}
-                        //  //for(auto&& rho : function_range(obs, dfbs_, jsblk.bfoff, jsblk.last_function)) {
-                        //  //  Kt_part(mu, nu) -= Z[nu.center](nu.bfoff_in_atom*rho.atom_nbf + rho.bfoff_in_atom, X) * (
-                        //  //         2.0 * g3_in(
-                        //  //            (subblock_offset + rho-jsblk.bfoff)*ish.nbf + mu.off,
-                        //  //            X-Xblk.bfoff
-                        //  //         ) - 0.5 * W_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
-                        //  //  );
-                        //  //  if(ish.center != jsblk.center) {
-                        //  //    Kt_part(mu, nu) += Z[nu.center](nu.bfoff_in_atom*rho.atom_nbf + rho.bfoff_in_atom, X)
-                        //  //        * 0.5 * W_mu_X_bar(mu.off*Xblk.nbf + X-Xblk.bfoff, rho);
-
-                        //  //  }
-                        //  //}
                       }
                     }
                   }
@@ -1112,22 +1107,6 @@ CADFCLHF::compute_K()
                                - 0.5 * W_mu_X.row(mu.off*Xblk.nbf + X-Xblk.bfoff).segment(jsblk.bfoff, jsblk.nbf).transpose()
                                - 0.5 * W_mu_X_bar.row(mu.off*Xblk.nbf + X-Xblk.bfoff).segment(jsblk.bfoff, jsblk.nbf).transpose()
                           );
-                          //for(auto&& nu : iter_functions_on_center(obs, ish.center)) {
-                          //  Kt_part(mu, nu) -= Z_tilde[X].row(nu.bfoff_in_atom).segment(jsblk.bfoff, jsblk.nbf) * (
-                          //       2.0 * g3.middleRows(subblock_offset, jsblk.nbf).col(mu.off*Xblk.nbf + X-Xblk.bfoff)
-                          //       - 0.5 * W_mu_X.row(mu.off*Xblk.nbf + X-Xblk.bfoff).segment(jsblk.bfoff, jsblk.nbf).transpose()
-                          //       - 0.5 * W_mu_X_bar.row(mu.off*Xblk.nbf + X-Xblk.bfoff).segment(jsblk.bfoff, jsblk.nbf).transpose()
-                          //  );
-                          //  //for(auto&& rho : function_range(obs, dfbs_, jsblk.bfoff, jsblk.last_function)) {
-                          //  //  Kt_part(mu, nu) -= Z_tilde[X](nu.bfoff_in_atom, rho) * (
-                          //  //       2.0 * g3_in(
-                          //  //          (subblock_offset + rho-jsblk.bfoff)*ish.nbf + mu.off,
-                          //  //          X-Xblk.bfoff
-                          //  //       ) - 0.5 * W_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
-                          //  //       - 0.5 * W_mu_X_bar(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
-                          //  //  );
-                          //  //}
-                          //}
                         }
                       }
                     }
@@ -1143,22 +1122,6 @@ CADFCLHF::compute_K()
                                - 0.5 * W_mu_X.row(mu.off*Xblk.nbf + X-Xblk.bfoff).segment(jsblk.bfoff, jsblk.nbf).transpose()
                                - 0.5 * W_mu_X_bar.row(mu.off*Xblk.nbf + X-Xblk.bfoff).segment(jsblk.bfoff, jsblk.nbf).transpose()
                           );
-                          //for(auto&& nu : iter_functions_on_center(obs, ish.center)) {
-                          //  Kt_part(mu, nu) -= Z_tilde_bar[X].middleRows(jsblk.bfoff_in_atom, jsblk.nbf).col(nu).transpose() * (
-                          //       2.0 * g3.middleRows(subblock_offset, jsblk.nbf).col(mu.off*Xblk.nbf + X-Xblk.bfoff)
-                          //       - 0.5 * W_mu_X.row(mu.off*Xblk.nbf + X-Xblk.bfoff).segment(jsblk.bfoff, jsblk.nbf).transpose()
-                          //       - 0.5 * W_mu_X_bar.row(mu.off*Xblk.nbf + X-Xblk.bfoff).segment(jsblk.bfoff, jsblk.nbf).transpose()
-                          //  );
-                          //  //for(auto&& rho : function_range(obs, dfbs_, jsblk.bfoff, jsblk.last_function)) {
-                          //  //  Kt_part(mu, nu) -= Z_tilde_bar[X](rho.bfoff_in_atom, nu) * (
-                          //  //       2.0 * g3_in(
-                          //  //          (subblock_offset + rho-jsblk.bfoff)*ish.nbf + mu.off,
-                          //  //          X-Xblk.bfoff
-                          //  //       ) - 0.5 * W_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
-                          //  //       - 0.5 * W_mu_X_bar(mu.off*Xblk.nbf + X-Xblk.bfoff, rho)
-                          //  //  );
-                          //  //}
-                          //}
                         }
                       }
 
@@ -1263,15 +1226,6 @@ CADFCLHF::compute_K()
                   Kt_part.row(mu).middleCols(Xblk.atom_dfbfoff, Xblk.atom_dfnbf) -=
                       M_mu_X.row(mu.off*Xblk.nbf + X-Xblk.bfoff)
                       * coefs_transpose_[X].middleCols(ish.atom_bfoff, ish.atom_nbf).transpose();
-
-                  //for(auto&& nu : iter_functions_on_center(obs, Xblk.center)) {
-                  //  Kt_part(mu, nu) -= M_mu_X.row(mu.off*Xblk.nbf + X-Xblk.bfoff)
-                  //      * coefs_transpose_[X].row(nu.bfoff_in_atom).middleCols(ish.atom_bfoff, ish.atom_nbf).transpose();
-                  //  //for(auto&& sigma : iter_functions_on_center(obs, ish.center)) {
-                  //  //  Kt_part(mu, nu) -= coefs_transpose_[X](nu.bfoff_in_atom, sigma)
-                  //  //      * M_mu_X(mu.off*Xblk.nbf + X-Xblk.bfoff, sigma.bfoff_in_atom);
-                  //  //}
-                  //}
                 }
               }
             }
@@ -1352,28 +1306,6 @@ CADFCLHF::compute_K()
                       }
                     }
                   }
-                  //for(auto&& nu : function_range(ksh)) {
-                  //  for(auto&& sigma : function_range(lsh)) {
-                  //    //Kt_part(mu, nu) +=
-                  //    //    g4(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell, nu.bfoff_in_shell*lsh.nbf + sigma.bfoff_in_shell)
-                  //    //    * D(rho, sigma);
-                  //    //if(mu != rho) {
-                  //    //  Kt_part(rho, nu) +=
-                  //    //      g4(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell, nu.bfoff_in_shell*lsh.nbf + sigma.bfoff_in_shell)
-                  //    //      * D(mu, sigma);
-                  //    //}
-                  //    //if(ish.center != jsh.center) {
-                  //    //  Kt_part(mu, sigma) +=
-                  //    //      g4(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell, nu.bfoff_in_shell*lsh.nbf + sigma.bfoff_in_shell)
-                  //    //      * D(rho, nu);
-                  //    //  if(mu != rho) {
-                  //    //    Kt_part(rho, sigma) +=
-                  //    //        g4(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell, nu.bfoff_in_shell*lsh.nbf + sigma.bfoff_in_shell)
-                  //    //        * D(mu, nu);
-                  //    //  }
-                  //    //}
-                  //  }
-                  //}
                 }
               }
 

@@ -45,6 +45,8 @@ using namespace mpqc;
 
 struct MADConfig {
     MADConfig() {
+      sc::ExEnv::init(boost::unit_test::framework::master_test_suite().argc,
+                      boost::unit_test::framework::master_test_suite().argv);
       mpqc::MADNESSRuntime::initialize();
     }
     ~MADConfig() {
@@ -68,14 +70,14 @@ BOOST_AUTO_TEST_CASE( tiledbasisset_gbs_constructor_test ){
 
     for(size_t i = 0; i < 6; ++i){
         std::swap(atoms[0], atoms[i]);
-    for(size_t j = 1; j < 6; ++j){
-        std::swap(atoms[1], atoms[j]);
-    for(size_t k = 2; k < 6; ++k){
-        std::swap(atoms[2], atoms[k]);
-    for(size_t l = 3; l < 6; ++l){
-        std::swap(atoms[3], atoms[l]);
-    for(size_t m = 4; m < 6; ++m){
-        std::swap(atoms[4], atoms[m]);
+  //  for(size_t j = 1; j < 6; ++j){
+  //      std::swap(atoms[1], atoms[j]);
+  //  for(size_t k = 2; k < 6; ++k){
+  //      std::swap(atoms[2], atoms[k]);
+  //  for(size_t l = 3; l < 6; ++l){
+  //      std::swap(atoms[3], atoms[l]);
+  //  for(size_t m = 4; m < 6; ++m){
+  //      std::swap(atoms[4], atoms[m]);
 
         Ref<Molecule> mol_t = new Molecule;
         mol_t->add_atom(atoms[0].Z(),atoms[0].r(0),atoms[0].r(1),atoms[0].r(2));
@@ -97,16 +99,37 @@ BOOST_AUTO_TEST_CASE( tiledbasisset_gbs_constructor_test ){
         }
 
 
-        std::swap(atoms[m], atoms[4]);
-    }
-        std::swap(atoms[l], atoms[3]);
-    }
-        std::swap(atoms[k], atoms[2]);
-    }
-        std::swap(atoms[j], atoms[1]);
-    }
+//        std::swap(atoms[m], atoms[4]);
+//    }
+//        std::swap(atoms[l], atoms[3]);
+//    }
+//        std::swap(atoms[k], atoms[2]);
+//    }
+//        std::swap(atoms[j], atoms[1]);
+//    }
         std::swap(atoms[i], atoms[0]);
     }
+
+    // Check that basis is not equivilent to GBS this means the shells should
+    // have been rearranged leading to the tbs->equiv(bs) to fail since it checks
+    // shells based on ordering.
+    Ref<AssignedKeyVal> akv = new AssignedKeyVal;
+    akv->assign("name", "STO-3G");
+    akv->assign("molecule", mol.pointer());
+    Ref<GaussianBasisSet> bs = new GaussianBasisSet(akv);
+
+    Ref<TA::TiledBasisSet> tbs = new TA::TiledBasisSet(bs, 2);
+
+    BOOST_CHECK(!tbs->equiv(bs));
+
+    // Check that we have a memory issue if the GBS isn't around anymore
+    Ref<TA::TiledBasisSet> tbs_scope_check;
+    {
+      Ref<GaussianBasisSet> bs_lower_scope = new GaussianBasisSet(akv);
+      tbs_scope_check = new TA::TiledBasisSet(bs_lower_scope, 2);
+    }
+    BOOST_CHECK(!tbs_scope_check->equiv(bs));
+
 }
 
 BOOST_AUTO_TEST_CASE( tiledbasisset_kval_constructor_test ){
@@ -123,14 +146,14 @@ BOOST_AUTO_TEST_CASE( tiledbasisset_kval_constructor_test ){
 
     for(size_t i = 0; i < 6; ++i){
         std::swap(atoms[0], atoms[i]);
-    for(size_t j = 1; j < 6; ++j){
-        std::swap(atoms[1], atoms[j]);
-    for(size_t k = 2; k < 6; ++k){
-        std::swap(atoms[2], atoms[k]);
-    for(size_t l = 3; l < 6; ++l){
-        std::swap(atoms[3], atoms[l]);
-    for(size_t m = 4; m < 6; ++m){
-        std::swap(atoms[4], atoms[m]);
+  //  for(size_t j = 1; j < 6; ++j){
+  //      std::swap(atoms[1], atoms[j]);
+  //  for(size_t k = 2; k < 6; ++k){
+  //      std::swap(atoms[2], atoms[k]);
+  //  for(size_t l = 3; l < 6; ++l){
+  //      std::swap(atoms[3], atoms[l]);
+  //  for(size_t m = 4; m < 6; ++m){
+  //      std::swap(atoms[4], atoms[m]);
 
         Ref<Molecule> mol_t = new Molecule;
         mol_t->add_atom(atoms[0].Z(),atoms[0].r(0),atoms[0].r(1),atoms[0].r(2));
@@ -143,7 +166,6 @@ BOOST_AUTO_TEST_CASE( tiledbasisset_kval_constructor_test ){
         Ref<AssignedKeyVal> akv = new AssignedKeyVal;
         akv->assign("name", "STO-3G");
         akv->assign("molecule", mol_t.pointer());
-        Ref<GaussianBasisSet> bs = new GaussianBasisSet(akv);
 
         // Construct via kval
         for(size_t i = 1; i <= 6; ++i){
@@ -153,19 +175,26 @@ BOOST_AUTO_TEST_CASE( tiledbasisset_kval_constructor_test ){
             BOOST_REQUIRE(!tbs_from_kval.null());
         }
 
-        std::swap(atoms[m], atoms[4]);
-    }
-        std::swap(atoms[l], atoms[3]);
-    }
-        std::swap(atoms[k], atoms[2]);
-    }
-        std::swap(atoms[j], atoms[1]);
-    }
+   //     std::swap(atoms[m], atoms[4]);
+   // }
+   //     std::swap(atoms[l], atoms[3]);
+   // }
+   //     std::swap(atoms[k], atoms[2]);
+   // }
+   //     std::swap(atoms[j], atoms[1]);
+   // }
         std::swap(atoms[i], atoms[0]);
     }
 
+    // Check that basis is equivilent to the GBS
+    Ref<AssignedKeyVal> akv = new AssignedKeyVal;
+    akv->assign("name", "STO-3G");
+    akv->assign("molecule", mol.pointer());
+    Ref<GaussianBasisSet> bs = new GaussianBasisSet(akv);
 
+    Ref<TA::TiledBasisSet> tbs = new TA::TiledBasisSet(Ref<KeyVal>(akv));
 
+    BOOST_CHECK(tbs->equiv(bs));
 }
 
 BOOST_AUTO_TEST_CASE( tiledbasisset_trange_test ){

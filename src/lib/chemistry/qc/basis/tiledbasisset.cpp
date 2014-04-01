@@ -47,13 +47,13 @@ TiledBasisSet::TiledBasisSet(const sc::Ref<sc::KeyVal> &keyval):
         basis = new sc::GaussianBasisSet(keyval);
         if(basis.null()){
             throw sc::InputError("Could not construct a GaussianBasisSet",
-                             __FILE__, __LINE__,
-                             "basis", 0, class_desc());
+                                 __FILE__, __LINE__,
+                                 "basis", 0, class_desc());
         }
     }
 
     ShellOrder ordering(basis);
-    std::vector<Shell> shells = ordering.ordered_shells(ntiles_);
+    std::vector<Shell> shells = ordering.ordered_shells(ntiles_, this);
     SRange_ = ordering.shell_ranges();
 
     init(converted_name(basis->name()),
@@ -68,7 +68,7 @@ TiledBasisSet::TiledBasisSet(const sc::Ref<sc::GaussianBasisSet>& bs,
                 SRange_()
 {
   ShellOrder ordering(bs);
-  std::vector<Shell> shells = ordering.ordered_shells(ntiles_);
+  std::vector<Shell> shells = ordering.ordered_shells(ntiles_, this);
   SRange_ = ordering.shell_ranges();
 
   init(converted_name(bs->name()),

@@ -80,15 +80,18 @@ namespace TA{
 
         /**
          * Returns a list of shells ordered by which cluster they belong to.
+         * Must pass in the new basis so the shells get the correct parent.
          */
-        std::vector<Shell> ordered_shells(std::size_t nclusters){
+        std::vector<Shell>
+        ordered_shells(std::size_t nclusters,
+                       const sc::GaussianBasisSet *new_parent_basis){
             // Number of clusters desired.
             nclusters_ = nclusters;
 
             // Compute clusters using Lloyd's Algorithm
             compute_clusters(nclusters_);
 
-            std::vector<Shell> shells = cluster_shells();
+            std::vector<Shell> shells = cluster_shells(new_parent_basis);
 
             return shells;
         }
@@ -211,8 +214,10 @@ namespace TA{
 
         /*
          * Returns a vector of shells in the order they appear in the clusters.
+         * Need to pass in a basis which will become the parent of the new Shells
          */
-        std::vector<Shell> cluster_shells() const {
+        std::vector<Shell>
+        cluster_shells(const sc::GaussianBasisSet *new_parent_basis) const {
 
             std::vector<Shell> shells;
             // Loop over clusters
@@ -220,14 +225,16 @@ namespace TA{
                 // Loop over atoms in cluster
                 foreach(const auto& atom, cluster.atoms()){
                     // Figure out where in the molecule the atom is located.
-                    std::size_t atom_index = atom.mol_index();
+                    std::size_t center_ = atom.mol_index();
                     // Figure out how many shells are on the atom.
                     std::size_t nshells_on_atom =
-                                    basis_->nshell_on_center(atom_index);
+                                    basis_->nshell_on_center(center_);
                     // Loop over the shells on the atom and pack them into
                     // the shell contatiner.
                     for(auto i = 0; i < nshells_on_atom; ++i){
-                        shells.push_back(basis_->operator()(atom_index, i));
+                        shells.push_back(Shell(
+                                new_parent_basis, center_,
+                                basis_->operator()(center_, i)));
                     }
                 }
             }

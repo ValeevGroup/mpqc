@@ -71,7 +71,7 @@ if (MPQC_UNITTEST)
   target_link_libraries( taclhf_test chemistry )
   
   
-  add_executable(gfactory_test cldfgfactory.cpp $<TARGET_OBJECTS:basis>)
+  add_executable(gfactory_test cldfgfactory_test.cpp $<TARGET_OBJECTS:basis>)
   add_test(gfactory_test gfactory_test)
   
   target_link_libraries( gfactory_test chemistry)

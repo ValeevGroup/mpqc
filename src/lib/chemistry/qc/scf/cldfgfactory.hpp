@@ -30,6 +30,7 @@
 
 #include <chemistry/qc/scf/gfactory.hpp>
 #include <util/madness/world.h>
+#include <chemistry/qc/libint2/libint2.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/taskintegrals.hpp>
 #include <chemistry/qc/basis/integralenginepool.hpp>
@@ -40,7 +41,7 @@ namespace mpqc {
     class ClDfGFactory : public GFactory {
     public:
       typedef GFactory::TAMatrix TAMatrix;
-      ClDfGFactory(sc::Ref<sc::Integral> integral,
+      ClDfGFactory(sc::Ref<sc::IntegralLibint2> integral,
                    sc::Ref<TiledBasisSet> basis,
                    sc::Ref<TiledBasisSet> dfbasis,
                    const TAMatrix &density,
@@ -52,10 +53,8 @@ namespace mpqc {
 
     private:
       void compute_symetric_df_ints();
-
-      // Pools to compute integrals
-      IntegralEnginePool<sc::Ref<sc::TwoBodyThreeCenterInt> > eri3_;
-      IntegralEnginePool<sc::Ref<sc::TwoBodyTwoCenterInt> > eri2_;
+      // integral object
+      sc::Ref<sc::IntegralLibint2> integral_;
 
       // Basis sets
       sc::Ref<TiledBasisSet> basis_;

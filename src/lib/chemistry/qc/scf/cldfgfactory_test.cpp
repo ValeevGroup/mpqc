@@ -25,21 +25,26 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <chemistry/qc/scf/cldffgfactory.hpp>
+#include <chemistry/qc/scf/cldfgfactory.hpp>
+#include <chemistry/qc/libint2/libint2.h>
+#include <iostream>
+#include <util/madness/init.h>
 #define BOOST_TEST_MODULE test_gfactory
 #include <boost/test/included/unit_test.hpp>
 
 using namespace mpqc;
+using namespace sc;
 using namespace mpqc::TA;
 using namespace boost::unit_test;
 
-BOOST_AUTO_TEST_CASE(test_dfgfactory){
-  sc::ExEnv::init(argc,argv);
-  MADNESSRuntime::initialize();
+BOOST_AUTO_TEST_CASE(dfgfactory_test){
+  int argc = boost::unit_test::framework::master_test_suite().argc;
+  char** argv = boost::unit_test::framework::master_test_suite().argv;
+  sc::ExEnv::init(argc, argv);
+  mpqc::MADNESSRuntime::initialize();
 
   sc::Ref<World> world = new World();
 
-  sc::Ref<sc::Integral> ints = sc::Integral::get_default_integral();
 
   sc::Ref<sc::Molecule>  mol = new sc::Molecule();
   mol->add_atom(1,0,0,0);
@@ -51,19 +56,33 @@ BOOST_AUTO_TEST_CASE(test_dfgfactory){
   akv->assign("world", world.pointer());
   akv->assign("ntiles", 1);
 
-  sc::Ref<TiledBasisSet> tbs = new TiledBasisSet(akv);
-  akv-assign("name", "3-21G");
-  sc::Ref<TiledBasisSet> dftbs = new TiledBasisSet(akv);
+  sc::Ref<TiledBasisSet> tbs = new TiledBasisSet(sc::Ref<sc::KeyVal>(akv));
+  sc::Ref<sc::AssignedKeyVal> akv2 = new sc::AssignedKeyVal;
+  akv2->assign("name", "cc-pVDZ-RI");
+  akv2->assign("molecule", mol.pointer());
+  akv2->assign("world", world.pointer());
+  akv2->assign("ntiles", 1);
+  sc::Ref<TiledBasisSet> dftbs = new TiledBasisSet(sc::Ref<sc::KeyVal>(akv2));
+
+  sc::Ref<sc::IntegralLibint2> ints = new sc::IntegralLibint2(sc::Ref<sc::KeyVal>(akv));
+
+  std::array<TiledArray::TiledRange1, 2>
+    blocking{{tbs->trange1(), tbs->trange1()}};
 
 
-  TiledArray::TiledRange trange(tbs->trange1().begin(), tbs->trange1().end());
+  TiledArray::TiledRange trange(blocking.begin(), blocking.end());
 
-  ClDfGFactory::TAMatrix dens(world->madworld(), trange);
+  ClDfGFactory::TAMatrix dens(*world->madworld(), trange);
+  dens.set_all_local(0.603);
 
   ClDfGFactory G(ints, tbs, dftbs, dens, world);
+  world->madworld()->gop.fence();
 
-  std::cout << G("i,j") << std::endl;
+  ClDfGFactory::TAMatrix Gmat = G("i,j");
+  world->madworld()->gop.fence();
 
-  MADNESSRuntime::finalize();
+  std::cout << Gmat << std::endl;
+
+  mpqc::MADNESSRuntime::finalize();
 }
 

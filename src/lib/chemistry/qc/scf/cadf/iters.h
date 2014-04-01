@@ -183,7 +183,7 @@ struct ShellData : public BasisElementData {
     union { int atom_dfnbf = NotAssigned; int atom_obsnbf; };
     union { int atom_dfnsh = NotAssigned; int atom_obsdfnsh; };
     union { int atom_df_last_function = NotAssigned; int atom_obs_last_function; };
-    union { int atom_df_last_shell = NotAssigned; int atom_obs_last_shell = NotAssigned; };
+    union { int atom_df_last_shell = NotAssigned; int atom_obs_last_shell; };
 
 
     // Reserved for future use

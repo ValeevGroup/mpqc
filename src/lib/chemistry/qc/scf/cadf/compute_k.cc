@@ -235,6 +235,13 @@ CADFCLHF::compute_K()
   }
 
   memory_used_ += Z_size;
+  if(exact_diagonal_K_) {
+    ExEnv::out0() << indent
+        << "Z intermediate requires " << data_size_to_string(Z_size)
+        << std::endl << indent << "Total memory usage is now at least "
+        << data_size_to_string(memory_used_)
+        << std::endl;
+  }
 
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/

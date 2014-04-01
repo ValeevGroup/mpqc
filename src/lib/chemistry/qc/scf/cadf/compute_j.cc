@@ -66,47 +66,6 @@ CADFCLHF::compute_J()
   //----------------------------------------//
   // reset the iteration over local pairs
   local_pairs_spot_ = 0;
-  //----------------------------------------//
-  #if DEBUG_J_INTERMEDIATES
-  DEBUG_DELETE_THIS
-  DEBUG_DELETE_THIS if(xml_debug_) {
-  DEBUG_DELETE_THIS   for(auto&& ish : shell_range(gbs_)) {
-  DEBUG_DELETE_THIS     for(auto&& jsh : shell_range(gbs_)) {
-  DEBUG_DELETE_THIS       std::vector<RowMatrix> g4_out(ish.nbf*jsh.nbf);
-  DEBUG_DELETE_THIS       for(auto&& mu : function_range(ish))
-  DEBUG_DELETE_THIS         for(auto&& nu : function_range(jsh))
-  DEBUG_DELETE_THIS           g4_out[mu.off*jsh.nbf + nu.off].resize(nbf, nbf);
-  DEBUG_DELETE_THIS       for(auto&& ksh : shell_range(gbs_)) {
-  DEBUG_DELETE_THIS         for(auto&& lsh : shell_range(gbs_)) {
-  DEBUG_DELETE_THIS           auto g4_ptr = ints_to_eigen(ish, jsh, ksh, lsh, tbis_[0], coulomb_oper_type_);
-  DEBUG_DELETE_THIS           const auto& g4 = *g4_ptr;
-
-  DEBUG_DELETE_THIS           for(auto&& mu : function_range(ish)) {
-  DEBUG_DELETE_THIS             for(auto&& nu : function_range(jsh)) {
-  DEBUG_DELETE_THIS               for(auto&& rho : function_range(ksh)) {
-  DEBUG_DELETE_THIS                 for(auto&& sigma : function_range(lsh)) {
-  DEBUG_DELETE_THIS                   g4_out[mu.off*jsh.nbf + nu.off](rho, sigma) = g4(mu.off*jsh.nbf + nu.off, rho.off*lsh.nbf + sigma.off);
-  DEBUG_DELETE_THIS                 }
-  DEBUG_DELETE_THIS               }
-  DEBUG_DELETE_THIS             }
-  DEBUG_DELETE_THIS           }
-
-  DEBUG_DELETE_THIS         }
-  DEBUG_DELETE_THIS       }
-
-  DEBUG_DELETE_THIS       for(auto&& mu : function_range(ish)) {
-  DEBUG_DELETE_THIS         for(auto&& nu : function_range(jsh)) {
-  DEBUG_DELETE_THIS           write_as_xml("g4", g4_out[mu.off*jsh.nbf + nu.off], attrs<int>{
-  DEBUG_DELETE_THIS             {"ao_index1", mu}, {"ao_index2", nu}
-  DEBUG_DELETE_THIS           });
-  DEBUG_DELETE_THIS         }
-  DEBUG_DELETE_THIS       }
-
-  DEBUG_DELETE_THIS     }
-  DEBUG_DELETE_THIS   }
-  DEBUG_DELETE_THIS }
-  DEBUG_DELETE_THIS
-  #endif
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
   /* Form C_tilde and d_tilde                              		                        {{{1 */ #if 1 // begin fold
@@ -164,16 +123,6 @@ CADFCLHF::compute_J()
               // The exact diagonal part
               if(exact_diagonal_J_ and nu <= mu) {
                 const double epf = mu == nu ? 1.0 : 2.0;
-                //for(auto&& Xsh : iter_shells_on_centers(dfbs_, ish.center, jsh.center)) {
-                //  for(auto&& X : function_range(Xsh)) {
-                //    if(Xsh.center == ish.center) {
-                //      Ct_ex_thr(jsh.center, X) += Ca(X.bfoff_in_atom) * D(mu, nu) * epf;
-                //    }
-                //    else {
-                //      Ct_ex_thr(ish.center, X) += Cb(X.bfoff_in_atom) * D(mu, nu) * epf;
-                //    }
-                //  }
-                //}
                 Ct_ex_thr.row(jsh.center).segment(ish.atom_dfbfoff, ish.atom_dfnbf) += epf * D(mu, nu) * Ca;
                 if(ish.center != jsh.center) {
                   Ct_ex_thr.row(ish.center).segment(jsh.atom_dfbfoff, jsh.atom_dfnbf) += epf * D(mu, nu) * Cb;
@@ -309,22 +258,12 @@ CADFCLHF::compute_J()
   timer.enter("compute d_tilde");
   Eigen::VectorXd d_tilde(dfnbf);
   d_tilde = Eigen::VectorXd::Zero(dfnbf);
-  #if DEBUG_J_INTERMEDIATES
-  Eigen::MatrixXd Jex2(nbf, nbf);
-  Jex2 = Eigen::MatrixXd::Zero(nbf, nbf);
-  Eigen::MatrixXd Jex2_1(nbf, nbf);
-  Jex2_1 = Eigen::MatrixXd::Zero(nbf, nbf);
-  #endif
 
   RowMatrix d_t_ex;
   if(exact_diagonal_J_) {
     d_t_ex.resize(natom, dfnbf);
     d_t_ex = RowMatrix::Zero(natom, dfnbf);
   }
-  #if DEBUG_J_INTERMEDIATES
-  DEBUG_DELETE_THIS std::vector<Eigen::MatrixXd> g3_out(nbf);
-  DEBUG_DELETE_THIS for(auto&& mu : function_range(gbs_)) { g3_out[mu].resize(nbf, dfnbf); }
-  #endif
   //----------------------------------------//
   {
     boost::mutex tmp_mutex;
@@ -367,21 +306,6 @@ CADFCLHF::compute_J()
                 coulomb_oper_type_
             );
             const auto& g3 = *g_part;
-
-            #if DEBUG_J_INTERMEDIATES
-            DEBUG_DELETE_THIS {
-            DEBUG_DELETE_THIS  for(auto&& mu : function_range(ish)) {
-            DEBUG_DELETE_THIS    for(auto&& nu : function_range(jsh)) {
-            DEBUG_DELETE_THIS      int block_offset = 0;
-            DEBUG_DELETE_THIS      for(auto&& X : function_range(Xblk)) {
-            DEBUG_DELETE_THIS        g3_out[mu](nu, X) = g3(mu.bfoff_in_shell*jsh.nbf + nu.bfoff_in_shell, block_offset);
-            DEBUG_DELETE_THIS        g3_out[nu](mu, X) = g3(mu.bfoff_in_shell*jsh.nbf + nu.bfoff_in_shell, block_offset);
-            DEBUG_DELETE_THIS        ++block_offset;
-            DEBUG_DELETE_THIS      }
-            DEBUG_DELETE_THIS    }
-            DEBUG_DELETE_THIS  }
-            DEBUG_DELETE_THIS }
-            #endif
 
             subtimer.change(contract_timer);
             for(auto&& mu : function_range(ish)) {
@@ -442,39 +366,16 @@ CADFCLHF::compute_J()
                   }
                 }
 
-                //Eigen::MatrixXd part(ish.nbf*jsh.nbf, Xblk.nbf);
-                //part = g3 - Wij.middleCols(Xblk.bfoff_in_atom, Xblk.nbf);
-                //for(auto&& mu : function_range(ish)) {
-                //  for(auto&& rho : function_range(jsh)) {
-                //    part.row(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell) -=
-                //        Wji.row(rho.bfoff_in_shell*ish.nbf + mu.bfoff_in_shell).middleCols(Xblk.bfoff_in_atom, Xblk.nbf);
-                //  }
-                //}
-
                 for(auto&& mu : function_range(ish)) {
                   // TODO Remove loops where possible
                   jpart.row(mu).segment(jsh.bfoff, jsh.nbf).transpose() -= 2.0 *
                       g3.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf)
                       * C_t_ex.row(ish.center).segment(Xblk.bfoff, Xblk.nbf).transpose();
-                  #if DEBUG_J_INTERMEDIATES
-                  Jex2.row(mu).segment(jsh.bfoff, jsh.nbf).transpose() -= 2.0 *
-                      g3.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf)
-                      * C_t_ex.row(ish.center).segment(Xblk.bfoff, Xblk.nbf).transpose();
-                  Jex2_1.row(mu).segment(jsh.bfoff, jsh.nbf).transpose() -= 2.0 *
-                      g3.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf)
-                      * C_t_ex.row(ish.center).segment(Xblk.bfoff, Xblk.nbf).transpose();
-                  #endif
                   for(auto&& nu : function_range(jsh)) {
                     jpart(mu, nu) += 2.0 * Wij.row(mu.bfoff_in_shell*jsh.nbf + nu.bfoff_in_shell).segment(Xblk.bfoff, Xblk.nbf)
                         * C_t_ex.row(ish.center).segment(Xblk.bfoff, Xblk.nbf).transpose();
                     jpart(mu, nu) += 2.0 * Wji.row(nu.bfoff_in_shell*ish.nbf + mu.bfoff_in_shell).segment(Xblk.bfoff, Xblk.nbf)
                         * C_t_ex.row(ish.center).segment(Xblk.bfoff, Xblk.nbf).transpose();
-                    #if DEBUG_J_INTERMEDIATES
-                    Jex2(mu, nu) += 2.0 * Wij.row(mu.bfoff_in_shell*jsh.nbf + nu.bfoff_in_shell).segment(Xblk.bfoff, Xblk.nbf)
-                        * C_t_ex.row(ish.center).segment(Xblk.bfoff, Xblk.nbf).transpose();
-                    Jex2(mu, nu) += 2.0 * Wji.row(nu.bfoff_in_shell*ish.nbf + mu.bfoff_in_shell).segment(Xblk.bfoff, Xblk.nbf)
-                        * C_t_ex.row(ish.center).segment(Xblk.bfoff, Xblk.nbf).transpose();
-                    #endif
                   }
                 }
 
@@ -512,22 +413,9 @@ CADFCLHF::compute_J()
     write_as_xml("d_tilde", d_tilde);
     if(exact_diagonal_J_) {
       write_as_xml("d_t_ex", d_t_ex);
-      #if DEBUG_J_INTERMEDIATES
-      for(auto&& mu : function_range(gbs_)) {
-        write_as_xml("g3", g3_out[mu], std::map<std::string, int>{ { "ao_index1", mu.index } });
-      }
-      write_as_xml("Jex2", Jex2.triangularView<Eigen::Lower>());
-      write_as_xml("Jex2_1", Jex2_1.triangularView<Eigen::Lower>());
-      #endif
     }
   }
   timer.exit("compute d_tilde");
-  #if DEBUG_J_INTERMEDIATES
-  Eigen::MatrixXd Jex(nbf, nbf);
-  Jex = Eigen::MatrixXd::Zero(nbf, nbf);
-  Eigen::MatrixXd Jex3(nbf, nbf);
-  Jex3 = Eigen::MatrixXd::Zero(nbf, nbf);
-  #endif
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
   /* Add in first and third term contributions to J       		                        {{{1 */ #if 1 // begin fold
@@ -575,14 +463,8 @@ CADFCLHF::compute_J()
               //----------------------------------------//
               if(exact_diagonal_J_) {
                 jpart(mu, nu) -= 2.0 * d_t_ex.row(jsh.center).segment(ish.atom_dfbfoff, ish.atom_dfnbf) * Ca;
-                #if DEBUG_J_INTERMEDIATES
-                Jex3(mu, nu) -= 2.0 * d_t_ex.row(jsh.center).segment(ish.atom_dfbfoff, ish.atom_dfnbf) * Ca;
-                #endif
                 if(ish.center != jsh.center) {
                   jpart(mu, nu) -= 2.0 * d_t_ex.row(ish.center).segment(jsh.atom_dfbfoff, jsh.atom_dfnbf) * Cb;
-                  #if DEBUG_J_INTERMEDIATES
-                  Jex3(mu, nu) -= 2.0 * d_t_ex.row(ish.center).segment(jsh.atom_dfbfoff, jsh.atom_dfnbf) * Cb;
-                  #endif
                 }
               }
             } // end loop over nu
@@ -624,14 +506,6 @@ CADFCLHF::compute_J()
     timer.insert(mt_timer);
     timer.exit("J contributions");
   } // compute_threads is destroyed here
-  if(xml_debug_) {
-    #if DEBUG_J_INTERMEDIATES
-    if(exact_diagonal_J_) {
-      write_as_xml("Jex", Jex.triangularView<Eigen::Lower>());
-      write_as_xml("Jex3", Jex3.triangularView<Eigen::Lower>());
-    }
-    #endif
-  }
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
   /* Global sum J                                         		                        {{{1 */ #if 1 // begin fold

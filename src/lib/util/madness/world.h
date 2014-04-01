@@ -66,9 +66,6 @@ namespace mpqc {
       const madness::World* madworld() const { return world_; }
       madness::World* madworld() { return world_; }
 
-#ifdef MPQC_HAS_ELEMENTAL
-      const elem::Grid* elemGrid() const {return grid_;}
-#endif // MPQC_HAS_ELEMENTAL
 
     private:
       static sc::ClassDesc class_desc_;
@@ -76,9 +73,6 @@ namespace mpqc {
       std::string key_;
       madness::World* world_;
 
-#ifdef MPQC_HAS_ELEMENTAL
-      const elem::Grid* grid_;
-#endif // MPQC_HAS_ELEMENTAL
 
   };
 

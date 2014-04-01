@@ -10,7 +10,6 @@ add_mpqc_object_library(optimize
   function.cc
   gaussianfit.cc
   gdiis.cc
-  lbfgs.f
   mcsearch.cc
   newton.cc
   opt.cc

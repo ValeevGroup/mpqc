@@ -43,7 +43,6 @@ namespace mpqc {
      * and then clone it multiple times such that each thread has its own
      * integral engine.  This is necesarry because the buffers in the
      * integral engines don't have thread safe access.
-     * Note that the template type is not a sc::Ref, but just an Engine type
      */
     template<typename RefEngType>
     class IntegralEnginePool {

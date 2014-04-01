@@ -161,26 +161,19 @@ CADFCLHF::compute_K()
     timer.enter("compute Z for exact diagonal");
 
     for(int iatom = 0; iatom < natom; ++iatom) {
+
       const int atom_nbf = gbs_->nbasis_on_center(iatom);
 
       Z.emplace_back(atom_nbf*atom_nbf, dfnbf);
       auto& Z_iatom = Z.back();
       Z_iatom = RowMatrix::Zero(atom_nbf*atom_nbf, dfnbf);
       Z_size += atom_nbf*atom_nbf*dfnbf*sizeof(double) + sizeof(RowMatrix);
+
       for(auto&& X : function_range(dfbs_, gbs_)) {
         for(auto&& nu : iter_functions_on_center(obs, iatom)) {
-          Z_iatom.col(X).segment(nu.bfoff_in_atom*nu.atom_nbf, nu.atom_nbf)
-              += 2.0 * D.middleRows(nu.atom_bfoff, nu.atom_nbf).middleCols(X.atom_obsbfoff, X.atom_obsnbf)
+          Z_iatom.col(X).segment(nu.bfoff_in_atom*nu.atom_nbf, nu.atom_nbf) += 2.0 *
+              D.block(nu.atom_bfoff, X.atom_obsbfoff, nu.atom_nbf, X.atom_obsnbf)
                 * coefs_transpose_[X].col(nu);
-          //for(auto&& rho : iter_functions_on_center(obs, iatom)) {
-          //  Z_iatom(nu.bfoff_in_atom*rho.atom_nbf + rho.bfoff_in_atom, X)
-          //      += 2.0 * D.row(rho).segment(X.atom_obsbfoff, X.atom_obsnbf) * coefs_transpose_[X].col(nu);
-          //  //for(auto&& sigma : iter_functions_on_center(obs, X.center)) {
-          //  //  // TODO Figure out where this factor of 2 is coming from (Density matrix?)
-          //  //  Z_iatom(nu.bfoff_in_atom*rho.atom_nbf + rho.bfoff_in_atom, X)
-          //  //      += 2.0 * coefs_transpose_[X](sigma.bfoff_in_atom, nu) * D(rho, sigma);
-          //  //}
-          //}
         }
       }
 
@@ -188,6 +181,7 @@ CADFCLHF::compute_K()
 
 
     for(auto&& X : function_range(dfbs_, gbs_)) {
+
       // Use the orbital basis as the "auxiliary" for the dfbs, just for convenience
       const int atom_nbf = X.atom_obsnbf;
 
@@ -202,36 +196,9 @@ CADFCLHF::compute_K()
       for(auto&& jblk : shell_block_range(obs, dfbs_, 0, NoLastIndex, SameCenter)) {
         Zt_iatom.middleCols(jblk.bfoff, jblk.nbf) += 2.0 *
             coefs_transpose_[X].middleCols(jblk.atom_bfoff, jblk.atom_nbf)
-            * D.middleCols(jblk.bfoff, jblk.nbf).middleRows(jblk.atom_bfoff, jblk.atom_nbf);
+            * D.block(jblk.bfoff, jblk.atom_bfoff, jblk.nbf, jblk.atom_nbf);
       }
-      //for(auto&& rho : function_range(obs, dfbs_)) {
-      //  Zt_iatom.col(rho) += 2.0 *
-      //      coefs_transpose_[X].middleCols(rho.atom_bfoff, rho.atom_nbf)
-      //      * D.col(rho).segment(rho.atom_bfoff, rho.atom_nbf);
-      //  //for(auto&& nu : iter_functions_on_center(obs, X.center)) {
-      //  //  Zt_iatom(nu.bfoff_in_atom, rho) += 2.0 *
-      //  //      coefs_transpose_[X].row(nu.bfoff_in_atom).segment(rho.atom_bfoff, rho.atom_nbf)
-      //  //      * D.col(rho).segment(rho.atom_bfoff, rho.atom_nbf);
-      //  //  //for(auto&& sigma : iter_functions_on_center(obs, rho.center)) {
-      //  //  //  Zt_iatom(nu.bfoff_in_atom, rho) += 2.0 * coefs_transpose_[X](nu.bfoff_in_atom, sigma) * D(rho, sigma);
-      //  //  //}
-      //  //}
-      //}
       Ztb_iatom += 2.0 * D.block(X.atom_obsbfoff, X.atom_obsbfoff, X.atom_obsnbf, X.atom_obsnbf) * coefs_transpose_[X];
-          //D.middleRows(X.atom_obsbfoff, X.atom_obsnbf).middleCols(X.atom_obsbfoff, X.atom_obsnbf)
-      //for(auto&& rho : iter_functions_on_center(obs, X.center)) {
-      //  Ztb_iatom.row(rho.bfoff_in_atom) += 2.0 *
-      //      D.row(rho).segment(rho.atom_bfoff, rho.atom_nbf)
-      //      * coefs_transpose_[X];
-      //  //for(auto&& nu : function_range(obs, dfbs_)) {
-      //  //  Ztb_iatom(rho.bfoff_in_atom, nu) += 2.0 *
-      //  //      D.row(rho).segment(rho.atom_bfoff, rho.atom_nbf)
-      //  //      * coefs_transpose_[X].col(nu);
-      //  //  //for(auto&& sigma : iter_functions_on_center(obs, rho.center)) {
-      //  //  //  Ztb_iatom(rho.bfoff_in_atom, nu) += 2.0 * coefs_transpose_[X](sigma.bfoff_in_atom, nu) * D(rho, sigma);
-      //  //  //}
-      //  //}
-      //}
     } // end loop over X in dfbs
 
     if(xml_debug_) {
@@ -847,6 +814,13 @@ CADFCLHF::compute_K()
                 auto& g3_in = *g3_ptr;
 
                 //----------------------------------------//
+
+                // Now view the integrals as a jblk.nbf x (ish.nbf*Xsh.nbf) matrix, which makes
+                //   the contraction more convenient.  Doesn't require any movement of data
+
+                Eigen::Map<ThreeCenterIntContainer> g3(g3_in.data(), jblk.nbf, ish.nbf*Xsh.nbf);
+
+                //----------------------------------------//
                 // Two-body part
 
                 // TODO This breaks integral caching (if I ever use it again)
@@ -886,17 +860,97 @@ CADFCLHF::compute_K()
                     );
                   }
 
+                  if(exact_diagonal_K_) {
+                    subtimer.change(ex_timer);
+
+                    if(jsblk.center == Xblk.center or ish.center == Xblk.center) {
+                      // Build W and Wbar
+                      for(auto&& mu : function_range(ish)) {
+                        for(auto&& Y : iter_functions_on_center(dfbs_, ish.center)) {
+                          W_mu_X.middleRows(mu.off*Xblk.nbf, Xblk.nbf).middleCols(jsblk.bfoff, jsblk.nbf) +=
+                              g2.col(Y).segment(Xblk.bfoff, Xblk.nbf)
+                              * coefs_transpose_[Y].row(mu.bfoff_in_atom).segment(jsblk.bfoff, jsblk.nbf);
+                        }
+                        if(ish.center != jsblk.center){
+                          for(auto&& Y : iter_functions_on_center(dfbs_, jsblk.center)) {
+                            W_mu_X_bar.middleRows(mu.off*Xblk.nbf, Xblk.nbf).middleCols(jsblk.bfoff, jsblk.nbf) +=
+                                g2.col(Y).segment(Xblk.bfoff, Xblk.nbf)
+                                * coefs_transpose_[Y].col(mu).segment(jsblk.bfoff-jsblk.atom_bfoff, jsblk.nbf).transpose();
+                          }
+                        }
+                      }
+                    }
+
+                    // Build M
+                    if(jsblk.center == Xblk.center) {
+                      M_mu_X += (
+                          4.0 * g3.middleRows(subblock_offset, jsblk.nbf).transpose()
+                          - W_mu_X.middleCols(jsblk.bfoff, jsblk.nbf)
+                          - W_mu_X_bar.middleCols(jsblk.bfoff, jsblk.nbf)
+                          ) * D.middleCols(ish.atom_bfoff, ish.atom_nbf).middleRows(jsblk.bfoff, jsblk.nbf);
+                    }
+
+                    if(Xblk.center == ish.center) {
+                      for(auto&& mu : function_range(ish)) {
+                        for(auto&& nu : iter_functions_on_center(obs, jsblk.center)) {
+                          Kt_part(mu, nu) -= (Z[nu.center].middleCols(Xblk.bfoff, Xblk.nbf).middleRows(
+                              nu.bfoff_in_atom*jsblk.atom_nbf + jsblk.bfoff_in_atom, jsblk.nbf
+                            ).array() * (
+                                 2.0 * g3.middleCols(mu.off*Xblk.nbf, Xblk.nbf).middleRows(subblock_offset, jsblk.nbf)
+                                  - 0.5 * W_mu_X.middleRows(mu.off*Xblk.nbf, Xblk.nbf).middleCols(jsblk.bfoff, jsblk.nbf).transpose()
+                          ).array()).sum();
+                          if(ish.center != jsblk.center) {
+                            Kt_part(mu, nu) += (Z[nu.center].middleCols(Xblk.bfoff, Xblk.nbf).middleRows(
+                                nu.bfoff_in_atom*jsblk.atom_nbf + jsblk.bfoff_in_atom, jsblk.nbf
+                              ).array()
+                              * 0.5 * W_mu_X_bar.middleRows(mu.off*Xblk.nbf, Xblk.nbf).middleCols(jsblk.bfoff, jsblk.nbf).transpose().array()
+                            ).sum();
+
+                          }
+                        }
+                      }
+                    }
+
+                    if(Xblk.center == ish.center) {
+                      if(ish.center != jsblk.center) {
+                        for(auto&& X : function_range(Xblk)) {
+                          for(auto&& mu : function_range(ish)) {
+                            Kt_part.row(mu).segment(ish.atom_bfoff, ish.atom_nbf).transpose() -=
+                                Z_tilde[X].middleCols(jsblk.bfoff, jsblk.nbf) * (
+                                 2.0 * g3.middleRows(subblock_offset, jsblk.nbf).col(mu.off*Xblk.nbf + X-Xblk.bfoff)
+                                 - 0.5 * W_mu_X.row(mu.off*Xblk.nbf + X-Xblk.bfoff).segment(jsblk.bfoff, jsblk.nbf).transpose()
+                                 - 0.5 * W_mu_X_bar.row(mu.off*Xblk.nbf + X-Xblk.bfoff).segment(jsblk.bfoff, jsblk.nbf).transpose()
+                            );
+                          }
+                        }
+                      }
+                    }
+
+                    if(ish.center != Xblk.center) {
+                      if(Xblk.center == jsblk.center) {
+                        for(auto&& X : function_range(Xblk)) {
+                          for(auto&& mu : function_range(ish)) {
+                            Kt_part.row(mu).segment(ish.atom_bfoff, ish.atom_nbf).transpose() -=
+                                Z_tilde_bar[X].middleRows(jsblk.bfoff_in_atom, jsblk.nbf).middleCols(ish.atom_bfoff, ish.atom_nbf).transpose() * (
+                                 2.0 * g3.middleRows(subblock_offset, jsblk.nbf).col(mu.off*Xblk.nbf + X-Xblk.bfoff)
+                                 - 0.5 * W_mu_X.row(mu.off*Xblk.nbf + X-Xblk.bfoff).segment(jsblk.bfoff, jsblk.nbf).transpose()
+                                 - 0.5 * W_mu_X_bar.row(mu.off*Xblk.nbf + X-Xblk.bfoff).segment(jsblk.bfoff, jsblk.nbf).transpose()
+                            );
+                          }
+                        }
+
+                      }
+                    }
+
+                    subtimer.change(k2_part_timer);
+
+                  } // end if exact_diagonal_k
+
+                  //----------------------------------------//
+
                   subblock_offset += jsblk.nbf;
 
                 }
-
-
-                //----------------------------------------//
-
-                // Now view the integrals as a jblk.nbf x (ish.nbf*Xsh.nbf) matrix, which makes
-                //   the contraction more convenient.  Doesn't require any movement of data
-
-                Eigen::Map<ThreeCenterIntContainer> g3(g3_in.data(), jblk.nbf, ish.nbf*Xsh.nbf);
 
                 //----------------------------------------//
 
@@ -986,9 +1040,8 @@ CADFCLHF::compute_K()
 
           } // end if do_linK_
           else {                                                                             //latex `\label{sc:k3b:nolink}`
+            // TODO Merge these two sections to avoid code duplication
 
-            //int reqs = Contiguous;
-            //if(exact_diagonal_K_) reqs |= SameCenter;
             for(auto&& jblk : iter_significant_partners_blocked(ish, Contiguous)){
               TimerHolder subtimer(ints_timer);
 

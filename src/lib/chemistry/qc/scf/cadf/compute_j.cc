@@ -34,7 +34,7 @@
 #include "cadfclhf.h"
 
 using namespace sc;
-#define DEBUG_J_INTERMEDIATES 1
+#define DEBUG_J_INTERMEDIATES 0
 
 RefSCMatrix
 CADFCLHF::compute_J()
@@ -241,6 +241,7 @@ CADFCLHF::compute_J()
     }
 
     local_pairs_spot_ = 0;
+    // TODO This part needs to be optimized significantly!  At the very least, it needs to be threaded
     //do_threaded(nthread_, [&](int ithr){
       while(get_shell_pair(ish, jsh, SignificantPairs)){
         auto& Wij = W[{ish, jsh}];
@@ -345,8 +346,11 @@ CADFCLHF::compute_J()
         dt = Eigen::VectorXd::Zero(dfnbf);
         Eigen::MatrixXd jpart(nbf, nbf);
         jpart = Eigen::MatrixXd::Zero(nbf, nbf);
-        Eigen::MatrixXd dt_ex_thr(natom, dfnbf);
-        dt_ex_thr = Eigen::MatrixXd::Zero(natom, dfnbf);
+        RowMatrix dt_ex_thr;
+        if(exact_diagonal_J_) {
+          dt_ex_thr.resize(natom, dfnbf);
+          dt_ex_thr = RowMatrix::Zero(natom, dfnbf);
+        }
         //----------------------------------------//
         ShellData ish, jsh;
         while(get_shell_pair(ish, jsh, SignificantPairs)){
@@ -407,51 +411,24 @@ CADFCLHF::compute_J()
                   }
                 }
 
-                //Eigen::MatrixXd part(ish.nbf*jsh.nbf, Xblk.nbf);
-                //part = g3 - Wij.middleCols(Xblk.bfoff_in_atom, Xblk.nbf);
-                //if(ish.center != jsh.center) {
-                //  for(auto&& mu : function_range(ish)) {
-                //    for(auto&& rho : function_range(jsh)) {
-                //      part.row(mu.bfoff_in_shell*jsh.nbf + rho.bfoff_in_shell) -=
-                //        Wji.row(rho.bfoff_in_shell*ish.nbf + mu.bfoff_in_shell).middleCols(Xblk.bfoff_in_atom, Xblk.nbf);
-                //    }
-                //  }
-                //}
-
                 for(auto&& mu : function_range(ish)) {
                   // TODO Remove loops where possible (may have to reconsider how Wij is stored)
                   const double delta_factor = ish.center != jsh.center ? 2.0 : 1.0;
                   jpart.row(mu).segment(jsh.bfoff, jsh.nbf).transpose() -= delta_factor
                       * g3.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf)
                       * C_t_ex.row(jsh.center).segment(Xblk.bfoff, Xblk.nbf).transpose();
-                  #if DEBUG_J_INTERMEDIATES
-                  Jex2.row(mu).segment(jsh.bfoff, jsh.nbf).transpose() -= delta_factor
-                      * g3.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf)
-                      * C_t_ex.row(jsh.center).segment(Xblk.bfoff, Xblk.nbf).transpose();
-                  Jex2_1.row(mu).segment(jsh.bfoff, jsh.nbf).transpose() -= delta_factor
-                      * g3.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf)
-                      * C_t_ex.row(jsh.center).segment(Xblk.bfoff, Xblk.nbf).transpose();
-                  #endif
+
                   for(auto&& nu : function_range(jsh)) {
                     jpart(mu, nu) += delta_factor
                         * Wij.row(mu.bfoff_in_shell*jsh.nbf + nu.bfoff_in_shell).segment(Xblk.bfoff, Xblk.nbf)
                         * C_t_ex.row(jsh.center).segment(Xblk.bfoff, Xblk.nbf).transpose();
-                    #if DEBUG_J_INTERMEDIATES
-                    Jex2(mu, nu) += delta_factor
-                        * Wij.row(mu.bfoff_in_shell*jsh.nbf + nu.bfoff_in_shell).segment(Xblk.bfoff, Xblk.nbf)
-                        * C_t_ex.row(jsh.center).segment(Xblk.bfoff, Xblk.nbf).transpose();
-                    #endif
                     if(ish.center != jsh.center) {
                       jpart(mu, nu) += delta_factor
                           * Wji.row(nu.bfoff_in_shell*ish.nbf + mu.bfoff_in_shell).segment(Xblk.bfoff, Xblk.nbf)
                           * C_t_ex.row(jsh.center).segment(Xblk.bfoff, Xblk.nbf).transpose();
-                      #if DEBUG_J_INTERMEDIATES
-                      Jex2(mu, nu) += delta_factor
-                          * Wji.row(nu.bfoff_in_shell*ish.nbf + mu.bfoff_in_shell).segment(Xblk.bfoff, Xblk.nbf)
-                          * C_t_ex.row(jsh.center).segment(Xblk.bfoff, Xblk.nbf).transpose();
-                      #endif
                     }
                   }
+
                 }
 
               }
@@ -512,7 +489,9 @@ CADFCLHF::compute_J()
         // add our contribution to the node level d_tilde
         boost::lock_guard<boost::mutex> tmp_lock(tmp_mutex);
         d_tilde += dt;
-        d_t_ex += dt_ex_thr;
+        if(exact_diagonal_J_) {
+          d_t_ex += dt_ex_thr;
+        }
         J += jpart;
         /*******************************************************/ #endif //2}}}
         /*-----------------------------------------------------*/
@@ -526,6 +505,9 @@ CADFCLHF::compute_J()
   //----------------------------------------//
   // Global sum d_tilde
   scf_grp_->sum((double*)d_tilde.data(), dfnbf);
+  if(exact_diagonal_J_) {
+    scf_grp_->sum((double*)d_t_ex.data(), natom * dfnbf);
+  }
   if(xml_debug_) {
     write_as_xml("d_tilde", d_tilde);
     if(exact_diagonal_J_) {
@@ -618,28 +600,10 @@ CADFCLHF::compute_J()
                 const auto& g4 = *g4_ptr;
                 for(auto&& mu : function_range(ish)) {
                   for(auto&& rho : function_range(ksh)) {
+                    // TODO More Vectorization
                     jpart.row(mu).segment(jsh.bfoff, jsh.nbf).transpose() += epf *
                         g4.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf).middleCols(rho.bfoff_in_shell*lsh.nbf, lsh.nbf)
                         * d.segment(rho*nbf + lsh.bfoff, lsh.nbf);
-
-                    #if DEBUG_J_INTERMEDIATES
-                    Jex.row(mu).segment(jsh.bfoff, jsh.nbf).transpose() += epf *
-                        g4.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf).middleCols(rho.bfoff_in_shell*lsh.nbf, lsh.nbf)
-                        * d.segment(rho*nbf + lsh.bfoff, lsh.nbf);
-                    // TODO Vectorize
-                    //for(auto&& nu : function_range(jsh)) {
-                    //  if(nu > mu) continue;
-                    //  for(auto&& sigma : function_range(lsh)) {
-                    //    jpart(mu, nu) += epf *
-                    //        g4(mu.bfoff_in_shell*jsh.nbf + nu.bfoff_in_shell, rho.bfoff_in_shell*lsh.nbf + sigma.bfoff_in_shell)
-                    //        * D(rho, sigma);
-                    //    Jex(mu, nu) += epf *
-                    //        g4(mu.bfoff_in_shell*jsh.nbf + nu.bfoff_in_shell, rho.bfoff_in_shell*lsh.nbf + sigma.bfoff_in_shell)
-                    //        * D(rho, sigma);
-                    //  }
-                    //}
-                    #endif
-
                   }
                 }
               }

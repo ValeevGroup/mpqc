@@ -83,6 +83,65 @@ BOOST_AUTO_TEST_CASE(dfgfactory_test){
 
   std::cout << Gmat << std::endl;
 
-  mpqc::MADNESSRuntime::finalize();
+}
+
+
+BOOST_AUTO_TEST_CASE(dfgfactory_expression_test){
+
+  sc::Ref<World> world = new World();
+
+
+  sc::Ref<sc::Molecule>  mol = new sc::Molecule();
+  mol->add_atom(1,0,0,0);
+  mol->add_atom(1,0,0,1.4);
+
+  sc::Ref<sc::AssignedKeyVal> akv = new sc::AssignedKeyVal;
+  akv->assign("name", "STO-3G");
+  akv->assign("molecule", mol.pointer());
+  akv->assign("world", world.pointer());
+  akv->assign("ntiles", 1);
+
+  sc::Ref<TiledBasisSet> tbs = new TiledBasisSet(sc::Ref<sc::KeyVal>(akv));
+  sc::Ref<sc::AssignedKeyVal> akv2 = new sc::AssignedKeyVal;
+  akv2->assign("name", "cc-pVDZ-RI");
+  akv2->assign("molecule", mol.pointer());
+  akv2->assign("world", world.pointer());
+  akv2->assign("ntiles", 1);
+  sc::Ref<TiledBasisSet> dftbs = new TiledBasisSet(sc::Ref<sc::KeyVal>(akv2));
+
+  sc::Ref<sc::IntegralLibint2> ints = new sc::IntegralLibint2(sc::Ref<sc::KeyVal>(akv));
+
+  std::array<TiledArray::TiledRange1, 2>
+    blocking{{tbs->trange1(), tbs->trange1()}};
+
+  TiledArray::TiledRange trange(blocking.begin(), blocking.end());
+  ClDfGFactory::TAMatrix density(*world->madworld(), trange);
+  density.set_all_local(0.603);
+
+  ClDfGFactory G(ints, tbs, dftbs, density, world);
+  world->madworld()->gop.fence();
+
+  // Make a matrix to contract with the output of G
+  ClDfGFactory::TAMatrix mat(*world->madworld(), trange);
+  auto it = mat.begin();
+  auto end = mat.end();
+  while(it != end){
+    int i = 0;
+    decltype(mat)::value_type tile(mat.trange().make_tile_range(it.ordinal()));
+    std::generate(tile.data(), tile.data()+tile.size(),
+                  [&]{return static_cast<double>(i++);});
+    *(it++) = tile;
+  }
+  std::cout << "mat = \n" << mat << std::endl;
+  world->madworld()->gop.fence();
+
+  ClDfGFactory::TAMatrix Gmat = G("i,j");
+  std::cout << "Gmat = \n" << Gmat << std::endl;
+  ClDfGFactory::TAMatrix out = mat("i,k") * Gmat("k,j");
+  std::cout << "Output with made mat = \n" << out << std::endl;
+  ClDfGFactory::TAMatrix out2 = mat("i,k") * G("k,z");
+  std::cout << "Output with expressions mat = \n" << out2 << std::endl;
+
+  MADNESSRuntime::finalize();
 }
 

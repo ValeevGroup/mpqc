@@ -697,14 +697,6 @@ CADFCLHF::compute_K()
     // Loop over number of threads
     MultiThreadTimer mt_timer("threaded part", nthread_);
 
-    #if DEBUG_K_INTERMEDIATES
-    Eigen::MatrixXd Ktex1(nbf, nbf);
-    Ktex1 = Eigen::MatrixXd::Zero(nbf, nbf);
-    Eigen::MatrixXd Ktex2(nbf, nbf);
-    Ktex2 = Eigen::MatrixXd::Zero(nbf, nbf);
-    Eigen::MatrixXd Ktex3(nbf, nbf);
-    Ktex3 = Eigen::MatrixXd::Zero(nbf, nbf);
-    #endif
     auto get_ish_Xblk_3 = [&](ShellData& ish, ShellBlockData<>& Xblk) -> bool {                                                //latex `\label{sc:k3b:getiX}`
       if(do_linK_) {
         std::lock_guard<std::mutex> lg(L_3_mutex);
@@ -768,7 +760,6 @@ CADFCLHF::compute_K()
           B_ish = ColMatrix::Zero(ish.nbf * Xblk.nbf, nbf);
 
           // Exact diagonal itermediate storage
-          // TODO only allocate these if using exact diagonal
           RowMatrix M_mu_X, W_mu_X, W_mu_X_bar;
           if(exact_diagonal_K_) {
             M_mu_X.resize(ish.nbf * Xblk.nbf, ish.atom_nbf);
@@ -782,7 +773,7 @@ CADFCLHF::compute_K()
           if(do_linK_){
 
             /*-----------------------------------------------------*/
-            /* Compute B intermediate                         {{{3 */ #if 3 // begin fold
+            /* Compute B intermediate: LinK version           {{{3 */ #if 3 // begin fold
 
             // TODO figure out how to take advantage of L_3 sorting
             assert(Xblk.nshell == 1);
@@ -808,6 +799,9 @@ CADFCLHF::compute_K()
 
               }
 
+              //============================================================================//
+              // Loop over the largest blocks of J at once that we can
+
               int restrictions = linK_block_rho_ ? NoRestrictions : Contiguous;
               block_offset = 0;
 
@@ -828,7 +822,7 @@ CADFCLHF::compute_K()
                 Eigen::Map<ThreeCenterIntContainer> g3(g3_in.data(), jblk.nbf, ish.nbf*Xsh.nbf);
 
                 //----------------------------------------//
-                // Two-body part
+                /* Two-body part                     {{{3 */ #if 3 // begin fold
 
                 // TODO This breaks integral caching (if I ever use it again)
 
@@ -959,8 +953,11 @@ CADFCLHF::compute_K()
 
                 }
 
+                /******************************************/ #endif //3}}}
                 //----------------------------------------//
 
+                //----------------------------------------//
+                /* Screening stats                   {{{3 */ #if 3 // begin fold
                 if(print_screening_stats_ > 2) {
                   mt_timer.enter("count underestimated ints", ithr);
 
@@ -1003,6 +1000,7 @@ CADFCLHF::compute_K()
                   mt_timer.exit(ithr);
                 }
 
+                /******************************************/ #endif //3}}}
                 //----------------------------------------//
 
                 subtimer.change(contract_timer);
@@ -1308,14 +1306,6 @@ CADFCLHF::compute_K()
     timer.insert(mt_timer);
     if(print_iteration_timings_) mt_timer.print(ExEnv::out0(), 12, 45);
 
-    if(xml_debug_) {
-      #if DEBUG_K_INTERMEDIATES
-      write_as_xml("Ktex1", Ktex1);
-      write_as_xml("Ktex2", Ktex2);
-      write_as_xml("Ktex3", Ktex3);
-      #endif
-    }
-
   } // compute_threads is destroyed here
   /*****************************************************************************************/ #endif //1}}} //latex `\label{sc:k3b:end}`
   /*=======================================================================================*/
@@ -1340,6 +1330,7 @@ CADFCLHF::compute_K()
           // TODO Permutational symmetry (the 14 cases thing...)
           for(auto&& ksh : iter_shells_on_center(obs, ish.center)) {
             for(auto&& lsh : iter_shells_on_center(obs, jsh.center)) {
+              if(not is_sig_pair(ksh, lsh)) continue;
 
               auto g4_ptr = ints_to_eigen(ish, jsh, ksh, lsh, tbis_[ithr], coulomb_oper_type_);
               const auto& g4 = *g4_ptr;

@@ -478,6 +478,8 @@ CADFCLHF::compute_J()
             double epf = (ish.center == jsh.center) ? 2.0 : 4.0;
             for(auto&& ksh : iter_shells_on_center(obs, ish.center)) {
               for(auto&& lsh : iter_shells_on_center(obs, jsh.center)) {
+                if(not is_sig_pair(ksh, lsh)) continue;
+
                 auto g4_ptr = ints_to_eigen(ish, jsh, ksh, lsh, tbis_[ithr], coulomb_oper_type_);
                 const auto& g4 = *g4_ptr;
                 for(auto&& mu : function_range(ish)) {
@@ -488,6 +490,7 @@ CADFCLHF::compute_J()
                         * d.segment(rho*nbf + lsh.bfoff, lsh.nbf);
                   }
                 }
+
               }
             }
           }

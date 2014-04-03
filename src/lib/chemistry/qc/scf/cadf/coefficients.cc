@@ -138,32 +138,32 @@ CADFCLHF::compute_coefficients()
   }
   //----------------------------------------//
   // Now make the transposes, for more efficient use later
-  //coefs_transpose_blocked_.resize(natom);
+  coefs_transpose_blocked_.resize(natom);
   coefs_transpose_.reserve(dfnbf);
 
   for(int iatom = 0; iatom < natom; ++iatom){
 
     const int atom_nbf = gbs_->nbasis_on_center(iatom);
-    //coefs_transpose_blocked_[iatom].resize(
-    //    dfbs_->nbasis_on_center(iatom),
-    //    atom_nbf * nbf
-    //);
-    //coefs_transpose_blocked_[iatom] = RowMatrix::Zero(
-    //    dfbs_->nbasis_on_center(iatom),
-    //    atom_nbf * nbf
-    //);
+    coefs_transpose_blocked_[iatom].resize(
+        dfbs_->nbasis_on_center(iatom),
+        atom_nbf * nbf
+    );
+    coefs_transpose_blocked_[iatom] = RowMatrix::Zero(
+        dfbs_->nbasis_on_center(iatom),
+        atom_nbf * nbf
+    );
     memory_used_ += dfbs_->nbasis_on_center(iatom) * atom_nbf * nbf * sizeof(double) + sizeof(RowMatrix);
 
-    //auto& cblock = coefs_transpose_blocked_[iatom];
+    auto& cblock = coefs_transpose_blocked_[iatom];
     for(auto&& X : iter_functions_on_center(dfbs_, iatom)) {
-      //double* offset = cblock.data() + X.bfoff_in_atom * nbf * atom_nbf;
-      //coefs_transpose_.emplace_back(
-      //    offset,
-      //    atom_nbf, nbf
-      //);
+      double* offset = cblock.data() + X.bfoff_in_atom * nbf * atom_nbf;
       coefs_transpose_.emplace_back(
+          offset,
           atom_nbf, nbf
       );
+      //coefs_transpose_.emplace_back(
+      //    atom_nbf, nbf
+      //);
 
       memory_used_ += sizeof(Eigen::Map<RowMatrix>);
     }
@@ -183,6 +183,7 @@ CADFCLHF::compute_coefficients()
   /* Compute the coefficients in threads                   		                        {{{1 */ #if 1 //latex `\label{sc:coefloop}`
   //---------------------------------------------------------------------------------------//
   // reset the iteration over local pairs
+  ExEnv::out0() << indent << "Computing coefficients" << std::endl;
   local_pairs_spot_ = 0;
   timer.change("02 - compute coefficients");
   {
@@ -261,6 +262,7 @@ CADFCLHF::compute_coefficients()
   /*=======================================================================================*/
   /* Global sum coefficient memory                        		                        {{{1 */ #if 1 // begin fold
   //---------------------------------------------------------------------------------------//
+  ExEnv::out0() << indent << "Distributing coefficients" << std::endl;
   timer.change("03 - global sum coefficient memory");
   // TODO MessageGrp takes an int here, and if ncoefs is large, it needs to take a long
   if(ncoefs * sizeof(double) < std::numeric_limits<int>::max()) {

@@ -572,13 +572,13 @@ class CADFCLHF: public CLHF {
 
     std::vector<std::vector<ShellIndexWithValue>> Cmaxes_;
 
-    //std::vector<RowMatrix> coefs_transpose_blocked_;
+    std::vector<RowMatrix> coefs_transpose_blocked_;
     //std::vector<std::vector<StridedRowMap>> coefs_t_shell_blocked_;
-    //std::vector<Eigen::Map<RowMatrix>> coefs_transpose_;
 #if USE_SPARSE
     std::vector<SparseRowMatrix> coefs_transpose_;
 #else
-    std::vector<RowMatrix> coefs_transpose_;
+    //std::vector<RowMatrix> coefs_transpose_;
+    std::vector<Eigen::Map<RowMatrix>> coefs_transpose_;
 #endif
 
 #if USE_INTEGRAL_CACHE

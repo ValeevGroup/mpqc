@@ -1393,7 +1393,7 @@ CADFCLHF::compute_K()
   // Symmetrize K
   Eigen::MatrixXd K(nbf, nbf);
   K = Kt + Kt.transpose();
-  ExEnv::out0() << indent << "K checksum: " << scprintf("%20.15f", K.sum()) << std::endl;
+  //ExEnv::out0() << indent << "K checksum: " << scprintf("%20.15f", K.sum()) << std::endl;
   //----------------------------------------//
   /*****************************************************************************************/ #endif //1}}} //latex `\label{sc:kglobalsumend}`
   /*=======================================================================================*/

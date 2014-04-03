@@ -159,6 +159,7 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   use_norms_sigma_ = keyval->booleanvalue("use_norms_sigma", KeyValValueboolean(use_norms_sigma_));
   xml_screening_data_ = keyval->booleanvalue("xml_screening_data", KeyValValueboolean(xml_screening_data_));
   all_to_all_L_3_ = keyval->booleanvalue("all_to_all_L_3", KeyValValueboolean(all_to_all_L_3_));
+  sig_pairs_J_ = keyval->booleanvalue("sig_pairs_J", KeyValValueboolean(sig_pairs_J_));
   //----------------------------------------------------------------------------//
   stats_.print_level = print_screening_stats_;
   stats_.xml_stats_saved = xml_screening_data_;
@@ -218,6 +219,7 @@ CADFCLHF::print(ostream&o) const
 
   CLHF::print(o);
   if(print_screening_stats_) {
+    // TODO global sum stats at some point.  These numbers will be wrong otherwise
     stats_.print_summary(o, gbs_, dfbs_, print_screening_stats_);
   }
   o << decindent;

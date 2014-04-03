@@ -325,6 +325,8 @@ class CADFCLHF: public CLHF {
     bool exact_diagonal_K_ = false;
     /// Use sparse matrix structures wherever available and reasonable
     bool use_sparse_ = false;
+    /// Debugging
+    bool sig_pairs_J_ = true;
     //@}
 
     ScreeningStatistics stats_;

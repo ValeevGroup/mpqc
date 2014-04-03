@@ -100,7 +100,7 @@ CADFCLHF::compute_J()
 
         ShellData ish, jsh;
         //----------------------------------------//
-        while(get_shell_pair(ish, jsh, SignificantPairs)){
+        while(get_shell_pair(ish, jsh, sig_pairs_J_ ? SignificantPairs : AllPairs)){
           //----------------------------------------//
           // Permutation prefactor
           double pf = (ish == jsh) ? 2.0 : 4.0;
@@ -109,8 +109,6 @@ CADFCLHF::compute_J()
           //  for(int nu = jsh.bfoff; nu <= jsh.last_function; ++nu){
           for(auto&& mu : function_range(ish)) {
             for(auto&& nu : function_range(jsh)) {
-              //if(nu > mu) continue;
-            //for(int nu = jsh.bfoff; nu <= mu?; ++nu){
 
               auto& cpair = coefs_[{mu, nu}];
               VectorMap& Ca = *(cpair.first);
@@ -182,7 +180,7 @@ CADFCLHF::compute_J()
     timer.enter("exact diagonal: compute local W");
     local_pairs_spot_ = 0;
     ShellData ish, jsh;
-    while(get_shell_pair(ish, jsh, SignificantPairs)){
+    while(get_shell_pair(ish, jsh, sig_pairs_J_ ? SignificantPairs : AllPairs)){
       W[{ish, jsh}].resize(ish.nbf*jsh.nbf, dfnbf);
       W[{ish, jsh}] = RowMatrix::Zero(ish.nbf*jsh.nbf, dfnbf);
       W[{jsh, ish}].resize(ish.nbf*jsh.nbf, dfnbf);
@@ -192,7 +190,7 @@ CADFCLHF::compute_J()
     local_pairs_spot_ = 0;
     // TODO This part needs to be optimized significantly!  At the very least, it needs to be threaded
     //do_threaded(nthread_, [&](int ithr){
-      while(get_shell_pair(ish, jsh, SignificantPairs)){
+      while(get_shell_pair(ish, jsh, sig_pairs_J_ ? SignificantPairs : AllPairs)){
         auto& Wij = W[{ish, jsh}];
         auto& Wji = W[{jsh, ish}];
         for(auto&& mu : function_range(ish)) {
@@ -228,7 +226,7 @@ CADFCLHF::compute_J()
     if(exact_diagonal_J_) {
       local_pairs_spot_ = 0;
       ShellData ish, jsh;
-      while(get_shell_pair(ish, jsh, SignificantPairs)){
+      while(get_shell_pair(ish, jsh, sig_pairs_J_ ? SignificantPairs : AllPairs)){
         auto& Wij = W[{ish, jsh}];
         auto& Wji = W[{jsh, ish}];
         for(auto&& mu : function_range(ish)) {
@@ -292,7 +290,7 @@ CADFCLHF::compute_J()
         }
         //----------------------------------------//
         ShellData ish, jsh;
-        while(get_shell_pair(ish, jsh, SignificantPairs)){
+        while(get_shell_pair(ish, jsh, sig_pairs_J_ ? SignificantPairs : AllPairs)){
           //----------------------------------------//
           double perm_fact = (ish == jsh) ? 2.0 : 4.0;
           //----------------------------------------//
@@ -437,7 +435,7 @@ CADFCLHF::compute_J()
         jpart = Eigen::MatrixXd::Zero(nbf, nbf);
         //----------------------------------------//
         ShellData ish, jsh;
-        while(get_shell_pair(ish, jsh, SignificantPairs)){
+        while(get_shell_pair(ish, jsh, sig_pairs_J_ ? SignificantPairs : AllPairs)){
           /*-----------------------------------------------------*/
           /* first and third terms compute thread           {{{2 */ #if 2 // begin fold
           //----------------------------------------//
@@ -521,6 +519,7 @@ CADFCLHF::compute_J()
       J(nu, mu) = J(mu, nu);
     }
   }
+  ExEnv::out0() << indent << "J checksum: " << scprintf("%20.15f", J.sum()) << std::endl;
   //----------------------------------------//
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/

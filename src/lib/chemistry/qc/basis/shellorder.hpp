@@ -132,16 +132,16 @@ namespace TA{
 
                 // Begin to check coordinates
                 if(da != db) { // Check not equidistant
-                    return ((da < db) ? true : false);
+                    return (da < db);
                 }
                 else if(va[0] != vb[0]){ // Check x isn't equidistant
-                    return ((va[0] < vb[0]) ? true : false);
+                    return (va[0] < vb[0]);
                 }
-                else if(va[0] != vb[0]){ // Check y isn't equidistant
-                    return ((va[0] < vb[0]) ? true : false);
+                else if(va[1] != vb[1]){ // Check y isn't equidistant
+                    return (va[1] < vb[1]);
                 }
-                else if(va[0] != vb[0]){ // Check z isn't equidistant
-                    return ((va[0] < vb[0]) ? true : false);
+                else if(va[2] != vb[2]){ // Check z isn't equidistant
+                    return (va[2] < vb[2]);
                 }
                 else {
                     return false;

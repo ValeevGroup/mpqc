@@ -28,7 +28,7 @@ IF(MPQC_NEW_FEATURES)
     list(APPEND ccfiles tascf.cpp)
     list(APPEND ccfiles taclscf.cpp)
     list(APPEND ccfiles taclhf.cpp)
-    list(APPEND ccfiles cldfgfactory.cpp)
+    list(APPEND ccfiles cldfgengine.cpp)
 ENDIF(MPQC_NEW_FEATURES)
 
 add_mpqc_object_library(scf ${ccfiles})
@@ -54,6 +54,8 @@ if (MPQC_UNITTEST)
     ${CMAKE_CURRENT_BINARY_DIR}/tascf_test.kv
     @ONLY
   )
+
+
   add_executable(tascf_test tascf_test.cpp $<TARGET_OBJECTS:basis>)
   add_test(tascf_test tascf_test)
   
@@ -71,10 +73,22 @@ if (MPQC_UNITTEST)
   target_link_libraries( taclhf_test chemistry )
   
   
-  add_executable(gfactory_test cldfgfactory_test.cpp $<TARGET_OBJECTS:basis>)
-  add_test(gfactory_test gfactory_test)
+  add_executable(gengine_test cldfgengine_test.cpp $<TARGET_OBJECTS:basis>)
+  add_test(gegine_test gengine_test)
   
-  target_link_libraries( gfactory_test chemistry)
+  target_link_libraries( gengine_test chemistry)
+
+  add_executable(david_hack david_hack_file.cpp $<TARGET_OBJECTS:basis>)
+  target_link_libraries(david_hack chemistry)
 
 endif (MPQC_UNITTEST)
+
+  CONFIGURE_FILE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/benzene_trimer.kv.in
+    ${CMAKE_CURRENT_BINARY_DIR}/benzene_trimer.kv
+    @ONLY
+  )
+
+  add_executable(david_hack david_hack_file.cpp $<TARGET_OBJECTS:basis>)
+  target_link_libraries(david_hack chemistry)
 

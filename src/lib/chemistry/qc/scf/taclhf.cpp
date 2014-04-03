@@ -41,8 +41,12 @@ sc::ClassDesc mpqc::TA::CLHF::class_desc_(typeid(mpqc::TA::CLHF), "TA.CLHF",
                       0);
 
 mpqc::TA::CLHF::CLHF(const sc::Ref<sc::KeyVal>& kval) :
-    CLSCF(kval)
-{
+    CLSCF(kval), G_eng()
+{}
+
+TiledArray::expressions::TensorExpression<Matrix::eval_type>
+mpqc::TA::CLHF::G(const std::string &s){
+  return G_eng->operator()(s);
 }
 
 

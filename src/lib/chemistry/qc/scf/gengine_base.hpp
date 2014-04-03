@@ -1,7 +1,7 @@
 //
-// taclhf.hpp
+// gfactory.hpp
 //
-// Copyright (C) 2013 Drew Lewis
+// Copyright (C) 2014 Drew Lewis
 //
 // Authors: Drew Lewis
 // Maintainer: Drew Lewis and Edward Valeev
@@ -25,37 +25,35 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef _MPQC_CHEMISTRY_QC_SCF_TACLHF_HPP_
-#define _MPQC_CHEMISTRY_QC_SCF_TACLHF_HPP_
+#ifndef MPQC_CHEMISTRY_QC_SCF_GENGINE_HPP
+#define MPQC_CHEMISTRY_QC_SCF_GENGINE_HPP
 
-#include <chemistry/qc/scf/taclscf.hpp>
-#include <chemistry/qc/scf/gengine_base.hpp>
+#include <tiled_array.h>
+#include <chemistry/qc/basis/tiledbasisset.hpp>
+#include <util/class/class.h>
+#include <util/misc/assert.h>
+
 
 namespace mpqc {
   namespace TA {
-    class CLHF: public CLSCF {
+
+    class GEngineBase : virtual public sc::RefCount {
     public:
-      typedef CLSCF::Matrix Matrix;
-      CLHF(const sc::Ref<sc::KeyVal> &kval);
+      typedef ::TiledArray::Array<double, 2> TAMatrix;
 
-      void minimize_energy();
+      GEngineBase() = default;
+      virtual ~GEngineBase() = default;
 
-    protected:
-      virtual Matrix& scf_fock() override;
-      // G matrix engine
-      sc::Ref<GEngineBase> G_eng;
-
-
-      TiledArray::expressions::TensorExpression<Matrix::eval_type>
-      G(const std::string &s);
+      virtual
+      TiledArray::expressions::TensorExpression<TAMatrix::eval_type>
+      operator()(const std::string &v) = 0;
 
     private:
       static sc::ClassDesc class_desc_;
 
-    };
-  // class CLHF
+    }; // class GEngine
 
-  }// namespace TA
+  } // namespace TA
 } // namespace mpqc
 
-#endif /* _MPQC_CHEMISTRY_QC_SCF_TACLHF_HPP_ */
+#endif /* MPQC_CHEMISTRY_QC_SCF_GENGINE_HPP */

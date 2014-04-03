@@ -14,8 +14,8 @@ rhf_large<Mock_SCF>:(
   molecule = $:taxol
   basis<TiledBasisSet>:(
     molecule = $..:molecule
-    name = "Def2-TZVP"
-    ntiles = 16
+    name = "aug-cc-pVDZ"
+    ntiles = 16 
   )
 )
 

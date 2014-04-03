@@ -517,6 +517,7 @@ class CADFCLHF: public CLHF {
     std::unordered_set<
       std::pair<int, int>, sc::hash<std::pair<int, int>>
     > local_pairs_linK_;
+    std::unordered_map<int, std::vector<int>> linK_local_map_;
 
     // List of the permutationally unique pairs with half-schwarz bounds larger than pair_thresh_
     std::vector<std::pair<int, int>> sig_pairs_;

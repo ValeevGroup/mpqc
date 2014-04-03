@@ -1269,6 +1269,7 @@ class OrderedShellList {
       std::lock_guard<std::mutex> lg(insert_mtx_);
       if(transfer_idx_set) {
         std::copy(idx_set_.begin(), idx_set_.end(), std::back_inserter(indices_));
+        idx_set_.clear();
       }
       if(sort_by_value_) {
         std::sort(indices_.begin(), indices_.end(),
@@ -1296,6 +1297,46 @@ class OrderedShellList {
       std::copy(new_data, new_data + n_new_data, std::back_inserter(indices_));
       sort(false);
     }
+
+    template <typename IndexIterable>
+    OrderedShellList
+    intersection_with(const IndexIterable& other_indices) {
+      if(!sorted_) {
+        sort();
+      }
+      OrderedShellList rv(false);
+      std::copy(indices_.begin(), indices_.end(), std::back_inserter(rv.indices_));
+      if(sort_by_value_) {
+        rv.sort(false);
+      }
+      IndexIterable other_copy;
+      std::copy(other_indices.begin(), other_indices.end(), std::back_inserter(other_copy));
+      std::sort(other_copy.begin(), other_copy.end(), std::less<int>());
+
+      // do the intersection
+      std::vector<ShellIndexWithValue> intersect;
+      std::set_intersection(
+          rv.indices_.begin(), rv.indices_.end(),
+          other_copy.begin(), other_copy.end(),
+          std::back_inserter(intersect), std::less<int>()
+      );
+
+      rv.indices_.clear();
+      std::move(intersect.begin(), intersect.end(), std::back_inserter(rv.indices_));
+
+      if(sort_by_value_) {
+        rv.sort_by_value_ = true;
+        rv.sorted_ = false;
+        rv.sort(false);
+      }
+
+      rv.basis_ = basis_;
+      rv.dfbasis_ = dfbasis_;
+
+      return rv;
+
+    }
+
 
     iterator begin() const
     {

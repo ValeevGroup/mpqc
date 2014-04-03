@@ -599,6 +599,7 @@ CADFCLHF::compute_K()
 
       // Loop over all jsh
       const auto& const_loc_pairs = local_pairs_linK_;
+      const auto& const_loc_pairs_map = linK_local_map_;
       const auto& loc_pairs_end = const_loc_pairs.end();
       do_threaded(nthread_, [&](int ithr) {
         for(auto&& jsh : thread_over_range(shell_range(gbs_, dfbs_), ithr, nthread_)) {
@@ -609,20 +610,24 @@ CADFCLHF::compute_K()
             const double eps_prime = epsilon / pf;
             const double eps_prime_dist = epsilon_dist / pf;
             const double Xsh_schwarz = schwarz_df_[Xsh];
-            bool jsh_added = false;
-            bool ish_found = false;
-            for(auto&& ish : L_sch_jsh) {
+            //bool jsh_added = false;
+            //bool ish_found = false;
+            auto found = const_loc_pairs_map.find(Xsh);
+            if(found != const_loc_pairs_map.end()) {
+              auto local_schwarz_jsh = L_sch_jsh.intersection_with(found->second);
+              for(auto&& ish : local_schwarz_jsh) {
 
-              // TODO this can be improved by precomputing the (jsh, Xsh) pairs with non-empty local ish by making a map from local Xsh -> local ish list at the same time local_pairs_linK_ is created
-              if(n_node == 1 or const_loc_pairs.find({(int)ish, (int)Xsh}) != const_loc_pairs.end()) {
+                // TODO this can be improved by precomputing the (jsh, Xsh) pairs with non-empty local ish by making a map from local Xsh -> local ish list at the same time local_pairs_linK_ is created
+                //if(n_node == 1 or const_loc_pairs.find({(int)ish, (int)Xsh}) != const_loc_pairs.end()) {
+                //if(const_loc_pairs.find({(int)ish, (int)Xsh}) != const_loc_pairs.end()) {
 
-                ish_found = true;
+                //ish_found = true;
 
                 double dist_factor = get_distance_factor(ish, jsh, Xsh);
                 assert(ish.value == schwarz_frob_(ish, jsh));
 
                 if(ish.value > eps_prime) {
-                  jsh_added = true;
+                  //jsh_added = true;
                   if(!linK_use_distance_ or ish.value * dist_factor > eps_prime_dist) {
                     L_3[{ish, Xsh}].insert(jsh,
                         ish.value * dist_factor * Xsh_schwarz
@@ -644,10 +649,11 @@ CADFCLHF::compute_K()
                   break;
                 }
 
-              }
+                //}
 
-            } // end loop over ish
+              } // end loop over ish
 
+            }
           }
 
         }

@@ -177,17 +177,26 @@ CADFCLHF::init_threads()
 
   inode = 0;
   // TODO Non-round-robin static parallelism to make lookup faster in L_3 build
-  for(int ish = 0; ish < sig_blocks_.size(); ++ish) {
-    for(auto&& sig_block : sig_blocks_[ish]) {
-      for(auto Xsh : shell_range(ShellBlockData<>(sig_block))) {
+  //for(int ish = 0; ish < sig_blocks_.size(); ++ish) {
+  //  for(auto&& sig_block : sig_blocks_[ish]) {
+  //    for(auto Xsh : shell_range(ShellBlockData<>(sig_block))) {
 
-        const int assignment = inode % n_node; ++inode;
-        if(assignment == me) {
-          local_pairs_linK_.emplace(ish, (int)Xsh);
-        }
+  //      const int assignment = inode % n_node; ++inode;
+  //      if(assignment == me) {
+  //        local_pairs_linK_.emplace(ish, (int)Xsh);
+  //      }
 
-      } // end loop over Xsh
-    } // end loop over Xsh blocks
+  //    } // end loop over Xsh
+  //  } // end loop over Xsh blocks
+  //} // end loop over ish
+  for(auto&& ish : shell_range(gbs_)) {
+    for(auto&& Xsh : shell_range(dfbs_)) {
+      const int assignment = inode % n_node; ++inode;
+      if(assignment == me) {
+        local_pairs_linK_.emplace(ish, (int)Xsh);
+        linK_local_map_[Xsh].push_back(ish);
+      }
+    } // end loop over Xsh
   } // end loop over ish
 
   //----------------------------------------------------------------------------//
@@ -289,9 +298,9 @@ CADFCLHF::init_significant_pairs()
   scf_grp_->sum(n_sig);
   {
 
-    int sig_data[n_sig*2];
-    double sig_vals[n_sig];
-    for(int inode = 0; inode < n_sig*2; sig_vals[inode] = 0.0, sig_data[inode++] = 0);
+    int* sig_data = new int[n_sig*2];
+    double* sig_vals = new double[n_sig];
+    for(int inode = 0; inode < n_sig*2; sig_vals[inode/2] = 0.0, sig_data[inode++] = 0);
     int data_offset = 0;
     for(int inode = 0; inode < scf_grp_->me(); inode++){
       data_offset += 2 * n_sig_pairs[inode];
@@ -309,6 +318,8 @@ CADFCLHF::init_significant_pairs()
       sig_pairs_.push_back(IntPair(sig_data[2*ipair], sig_data[2*ipair + 1]));
       sig_values.push_back(sig_vals[ipair]);
     }
+    delete[] sig_data;
+    delete[] sig_vals;
 
   } // get rid of sig_data and sig_vals
 

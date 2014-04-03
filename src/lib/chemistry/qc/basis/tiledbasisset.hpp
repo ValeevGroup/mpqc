@@ -40,6 +40,7 @@
 #include "kcluster.hpp"
 
 namespace mpqc {
+namespace TA{
 
   // TODO add reference for k clustering
   /**
@@ -49,9 +50,9 @@ namespace mpqc {
   class TiledBasisSet: public sc::GaussianBasisSet {
 
     public:
-      typedef basis::ShellOrder::Shell Shell;
+      typedef ShellOrder::Shell Shell;
       typedef sc::Ref<sc::GaussianBasisSet> Basis;
-      typedef basis::ShellOrder::ShellRange ShellRange;
+      typedef ShellOrder::ShellRange ShellRange;
 
       /**
        * Constructs a TiledBasisSet from a sc::Keyval object.
@@ -94,8 +95,9 @@ namespace mpqc {
 
       static std::string converted_name(const std::string& name);
 
-  };
+  }; // class TiledBasisSet
 
+} // namespace TA
 } // namespace mpqc
 
 #endif /* CHEMISTRY_QC_BASIS_TILEDBASISSET_HPP */

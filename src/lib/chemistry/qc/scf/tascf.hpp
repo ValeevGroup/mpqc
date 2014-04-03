@@ -31,6 +31,7 @@
 #include <chemistry/qc/wfn/tawfn.hpp>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/tbint.h>
+#include <TiledArray/algebra/diis.h>
 
 namespace mpqc{
   namespace TA {
@@ -43,21 +44,35 @@ namespace mpqc{
         virtual ~SCF();
         virtual void compute() override;
 
-        virtual const Matrix& fock();
-        virtual const Matrix& rdm1() override;
+        virtual const Matrix& fock(); // Final Fock matrix
         virtual const Matrix& rdm1(sc::SpinCase1) override;
-        virtual double scf_energy();
+        virtual const Matrix& hcore();
+        virtual double scf_energy() = 0;
 
         /// @return the number of electrons in the system
         virtual size_t nelectron() const override;
+
+        virtual size_t occupation(){return occupation_;}
+
+    protected:
+        ::TiledArray::DIIS<Matrix> diis;
+        virtual Matrix& scf_fock(){return fock_.result_noupdate();}
+        size_t & occ(){return occupation_;}
+        virtual double iter_energy() = 0;
 
     private:
         // Number of iterations to use
         unsigned int maxiter_;
         unsigned int miniter_;
 
-        // Integral objects
-        sc::Ref<sc::TwoBodyInt> *tbints_;
+        // Number of electrons
+        size_t occupation_;
+
+        // Fock Matrix
+        ResultMatrix fock_;
+
+        // Hcore
+        Matrix hcore_;
 
         static sc::ClassDesc class_desc_;
 

@@ -25,13 +25,13 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include "tiledbasisset.hpp"
+#include <chemistry/qc/basis/tiledbasisset.hpp>
 #include <Eigen/Dense>
 #include <vector>
 #include <string>
 
 using namespace mpqc;
-
+using namespace TA;
 
 static sc::ClassDesc TiledBasisSet_cd( typeid(TiledBasisSet), "TiledBasisSet",
                 1, "public GaussianBasisSet",
@@ -47,13 +47,13 @@ TiledBasisSet::TiledBasisSet(const sc::Ref<sc::KeyVal> &keyval):
         basis = new sc::GaussianBasisSet(keyval);
         if(basis.null()){
             throw sc::InputError("Could not construct a GaussianBasisSet",
-                             __FILE__, __LINE__,
-                             "basis", 0, class_desc());
+                                 __FILE__, __LINE__,
+                                 "basis", 0, class_desc());
         }
     }
 
-    basis::ShellOrder ordering(basis);
-    std::vector<Shell> shells = ordering.ordered_shells(ntiles_);
+    ShellOrder ordering(basis);
+    std::vector<Shell> shells = ordering.ordered_shells(ntiles_, this);
     SRange_ = ordering.shell_ranges();
 
     init(converted_name(basis->name()),
@@ -67,8 +67,8 @@ TiledBasisSet::TiledBasisSet(const sc::Ref<sc::GaussianBasisSet>& bs,
                 ntiles_(ntiles),
                 SRange_()
 {
-  basis::ShellOrder ordering(bs);
-  std::vector<Shell> shells = ordering.ordered_shells(ntiles_);
+  ShellOrder ordering(bs);
+  std::vector<Shell> shells = ordering.ordered_shells(ntiles_, this);
   SRange_ = ordering.shell_ranges();
 
   init(converted_name(bs->name()),

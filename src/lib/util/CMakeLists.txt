@@ -22,11 +22,19 @@ if (HAVE_MADNESS)
   list(APPEND utilobjects madness)
 endif()
 
+if (HAVE_ELEMENTAL)
+  list(APPEND utilobjects elemental)
+endif()
+
 add_mpqc_library(util ${utilobjects})
 install(TARGETS util DESTINATION lib)
 
 if (HAVE_MADNESS)
   target_link_libraries(util ${MADNESS_LIBRARIES})
+endif()
+
+if (HAVE_ELEMENTAL)
+  target_link_libraries(util ${ELEMENTAL_LIBRARIES})
 endif()
 
 if (HAVE_MPI)

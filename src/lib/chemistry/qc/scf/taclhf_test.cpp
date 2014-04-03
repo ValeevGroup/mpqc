@@ -1,5 +1,5 @@
 //
-// tascf_test.cpp
+// taclhf_test.cpp
 //
 // Copyright (C) 2013 Drew Lewis
 //
@@ -27,26 +27,24 @@
 
 #include <util/madness/init.h>
 #include <util/misc/regtime.h>
-#include <chemistry/qc/scf/tascf.hpp>
-#define BOOST_TEST_MODULE test_tascf
+#include <iostream>
+#include <chemistry/qc/scf/taclhf.hpp>
+#define BOOST_TEST_MODULE test_taclhf
 #include <boost/test/included/unit_test.hpp>
-
-#include <chemistry/qc/libint2/linkage.h>
 
 using namespace boost::unit_test;
 using namespace sc;
 using namespace mpqc;
+using namespace mpqc::TA;
 
-struct Mock_SCF : public TA::SCF {
-    Mock_SCF(const Ref<KeyVal> &kval) : TA::SCF(kval) {}
-    virtual double scf_energy() { return 2.0; }
-    virtual double iter_energy() {return 2.1; }
+struct Mock_CLHF : public CLHF{
+  Mock_CLHF(const sc::Ref<sc::KeyVal> &kval) : CLHF(kval) {}
+  ~Mock_CLHF() {}
 
-    static sc::ClassDesc class_desc_;
+  CLHF::Matrix data_fock(){return scf_fock();}
+  CLHF::Matrix data_Gmat(){return G("i,j");}
+  double energy(){return iter_energy();}
 };
-
-sc::ClassDesc Mock_SCF::class_desc_(typeid(Mock_SCF), "Mock_SCF",
-                      1, "public TA.SCF", 0, sc::create<Mock_SCF>, 0);
 
 struct MADConfig {
     MADConfig() {
@@ -59,12 +57,12 @@ struct MADConfig {
 
 BOOST_GLOBAL_FIXTURE( MADConfig );
 
-BOOST_AUTO_TEST_CASE( construct_scf_programmatically ){
+BOOST_AUTO_TEST_CASE( construct_clhf_programmatically ){
 
     // Make a molecule H2
     Ref<Molecule> mol = new Molecule;
-    mol->add_atom(1,0,1,-1);
-    mol->add_atom(1,0,1,1);
+    mol->add_atom(1,0,0,0);
+    mol->add_atom(1,0,0,1.4);
 
     // Make keyval
     Ref<AssignedKeyVal> akv = new AssignedKeyVal;
@@ -75,36 +73,15 @@ BOOST_AUTO_TEST_CASE( construct_scf_programmatically ){
     akv->assign("basis", basis.pointer());
 
     //Construct object
-    Ref<Mock_SCF> tscf = new Mock_SCF(akv);
-    tscf->print();
+    Ref<Mock_CLHF> thf = new Mock_CLHF(akv);
+    thf->print();
+    std::cout << "Fock = \n" << thf->data_fock() << std::endl;
+    std::cout << "Energy for initial Fock = " << thf->energy() << std::endl;
+    std::cout << "Minimizing energy . . . " << std::endl;
+    thf->minimize_energy();
+    std::cout << "Final energy = " << thf->energy() << std::endl;
 }
 
-BOOST_AUTO_TEST_CASE( construct_scf_txtkeyval ){
 
-  const char *input = "./tascf_test.kv";
-  Ref<KeyVal> kv = new ParsedKeyVal(input);
-  Ref<Mock_SCF> tscf; tscf << kv->describedclassvalue("rhf");
 
-  tscf->print();
-  std::cout << "Overlap matrix:" << std::endl;
-  std::cout << tscf->overlap() << std::endl;
-  std::cout << "Hcore matrix:" << std::endl;
-  std::cout << tscf->hcore() << std::endl;
-}
 
-BOOST_AUTO_TEST_CASE( compute_tawfn_overlap_txtkeyval ){
-
-  const char *input = "./tascf_test.kv";
-  Ref<KeyVal> kv = new ParsedKeyVal(input);
-  Ref<Mock_SCF> tscf; tscf << kv->describedclassvalue("rhf_large");
-
-  tscf->print();
-
-  // compute overlap, time it
-  sc::Ref<sc::RegionTimer> rtim = new sc::RegionTimer;
-  std::cout << "Computing overlap matrix .............. ";
-  sc::Timer tim(rtim, "rhf_large overlap");
-  tscf->overlap();
-  tim.exit("rhf_large overlap");
-  std::cout << "done (" << tim.wall_time("rhf_large overlap") << " sec)" << std::endl;
-}

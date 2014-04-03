@@ -32,15 +32,25 @@
 #include <util/madness/init.h>
 #include <util/madness/world.h>
 #include <util/misc/exenv.h>
+#define BOOST_TEST_MODULE test_world
+#include <boost/test/included/unit_test.hpp>
 
 using namespace sc;
 using namespace mpqc;
+using namespace boost::unit_test;
 
-int main(int argc, char **argv) {
+BOOST_AUTO_TEST_CASE(test_world_constructor){
+  int argc = boost::unit_test::framework::master_test_suite().argc;
+  char** argv = boost::unit_test::framework::master_test_suite().argv;
   ExEnv::init(argc, argv);
   MADNESSRuntime::initialize();
 
   mpqc::World world0;
+
+#if MPQC_HAS_ELEMENTAL
+  elem::DistMatrix<double> mat(5, 5);
+#endif // MPQC_HAS_ELEMENTAL
+
 
   Ref<AssignedKeyVal> akv1 = new AssignedKeyVal;
   mpqc::World world1(akv1);
@@ -53,7 +63,6 @@ int main(int argc, char **argv) {
   // mpqc::World world3(akv3); // ERROR for now only default world is allowed
 
   MADNESSRuntime::finalize();
-  return 0;
 }
 
 

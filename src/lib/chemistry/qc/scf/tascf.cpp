@@ -26,53 +26,59 @@
 //
 
 #include <chemistry/qc/scf/tascf.hpp>
+#include <chemistry/qc/basis/taskintegrals.hpp>
+#include <chemistry/qc/basis/integralenginepool.hpp>
 
 using namespace mpqc;
 using namespace mpqc::TA;
 
 sc::ClassDesc mpqc::TA::SCF::class_desc_(typeid(mpqc::TA::SCF), "TA.SCF",
-                      1, "public TA.Wavefunction",
-                      0,
-                      sc::create<mpqc::TA::SCF>,
-                      0);
+                      1, "public TA.Wavefunction", 0, 0, 0);
 
 mpqc::TA::SCF::SCF(const sc::Ref<sc::KeyVal>& kval) :
-    Wavefunction(kval), tbints_()
+    Wavefunction(kval), hcore_(), diis(), fock_(this)
 {
+    fock_.compute() = 0;
+    fock_.computed() = 0;
     if(kval->exists("maxiter"))
         maxiter_= kval->intvalue("maxiter", sc::KeyValValueint(1000));
     if(kval->exists("miniter"))
         miniter_= kval->intvalue("miniter", sc::KeyValValueint(0));
 }
 
-mpqc::TA::SCF::~SCF(){
-}
+mpqc::TA::SCF::~SCF(){}
 
+#warning "compute is not defined"
 void mpqc::TA::SCF::compute() {
   MPQC_ASSERT(false);
 }
 
+#warning "fock is not defined"
 const mpqc::TA::SCF::Matrix&
 mpqc::TA::SCF::fock() {
   MPQC_ASSERT(false);
 }
 
-const mpqc::TA::SCF::Matrix&
-mpqc::TA::SCF::rdm1() {
-  MPQC_ASSERT(false);
-}
-
+#warning "rdm1(spincase) is not defined"
 const mpqc::TA::SCF::Matrix&
 mpqc::TA::SCF::rdm1(sc::SpinCase1 s) {
   MPQC_ASSERT(false);
 }
 
-double
-mpqc::TA::SCF::scf_energy() {
-  MPQC_ASSERT(false);
+const mpqc::TA::SCF::Matrix& mpqc::TA::SCF::hcore() {
+    if(!hcore_.is_initialized()){
+        std::shared_ptr<IntegralEnginePool<sc::Ref<sc::OneBodyInt> > > hcore_pool(new
+        IntegralEnginePool<sc::Ref<sc::OneBodyInt> >(integral()->hcore()));
+
+        hcore_ = Integrals(*(world())->madworld(), hcore_pool, basis());
+        world()->madworld()->gop.fence();
+    }
+    return hcore_;
 }
 
+#warning "nelectron has a temporary solution and is not production ready"
 size_t
 mpqc::TA::SCF::nelectron() const {
-
+    return molecule()->total_Z(); // Temporary solution.
 }
+

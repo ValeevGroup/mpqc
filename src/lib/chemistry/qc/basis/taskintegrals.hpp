@@ -248,10 +248,10 @@ namespace mpqc {
       // Get the array to initialize the TiledArray::TiledRange using the
       // TiledBasis
       std::array<TiledArray::TiledRange1, rank> blocking;
-      for (auto i = 0; i < rank - 1; ++i) {
-        blocking[i] = tbasis->trange1();
+      for (auto i = 0; i < (rank - 1); ++i) {
+        blocking[i] = tbasis->trange1(); // Asign first 2 dims to regular basis
       }
-      blocking[rank-1] = dftbasis->trange1();
+      blocking.back() = dftbasis->trange1(); // Asign last dim to df basis
 
       // Construct the TiledArray::TiledRange object
       TA::TiledRange trange(blocking.begin(), blocking.end());

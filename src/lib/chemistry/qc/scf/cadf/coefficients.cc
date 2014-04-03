@@ -34,6 +34,7 @@
 using namespace sc;
 
 typedef std::pair<int, int> IntPair;
+typedef unsigned long uli;
 
 void
 CADFCLHF::compute_coefficients()
@@ -56,7 +57,7 @@ CADFCLHF::compute_coefficients()
   // Coefficients will be stored jbf <= ibf
   timer.enter("01 - init coef memory");
 
-  unsigned long ncoefs = 0;                                                                          //latex `\label{sc:coefcountbegin}`
+  uli ncoefs = 0;                                                                          //latex `\label{sc:coefcountbegin}`
 #if USE_SPARSE
   for(auto&& ish : shell_range(gbs_, dfbs_)) {
     for(auto&& jsh : iter_significant_partners(ish)) {
@@ -74,9 +75,9 @@ CADFCLHF::compute_coefficients()
 #else
   for(auto ibf : function_range(obs, dfbs_)){
     for(auto jbf : function_range(obs, dfbs_, 0, ibf)){
-      ncoefs += ibf.atom_dfnbf;
+      ncoefs += (uli)ibf.atom_dfnbf;
       if(ibf.center != jbf.center){
-        ncoefs += jbf.atom_dfnbf;
+        ncoefs += (uli)jbf.atom_dfnbf;
       }
     }
   }                                                                                        //latex `\label{sc:coefcountend}`
@@ -261,7 +262,19 @@ CADFCLHF::compute_coefficients()
   /* Global sum coefficient memory                        		                        {{{1 */ #if 1 // begin fold
   //---------------------------------------------------------------------------------------//
   timer.change("03 - global sum coefficient memory");
-  scf_grp_->sum(coefficients_data_, ncoefs);                                               //latex `\label{sc:coefsum}`
+  // TODO MessageGrp takes an int here, and if ncoefs is large, it needs to take a long
+  if(ncoefs * sizeof(double) < std::numeric_limits<int>::max()) {
+    scf_grp_->sum(coefficients_data_, ncoefs);                                               //latex `\label{sc:coefsum}`
+  }
+  else {
+    int chunk_size = std::numeric_limits<int>::max() / sizeof(double);
+    for(int ichunk = 0; ichunk < ncoefs / chunk_size; ++ichunk) {
+      scf_grp_->sum(coefficients_data_ + ichunk*chunk_size, chunk_size);
+    }
+    if(ncoefs % chunk_size > 0) {
+      scf_grp_->sum(coefficients_data_ + (ncoefs / chunk_size) * chunk_size, ncoefs % chunk_size);
+    }
+  }
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
   /* Store the transpose and blocked coefficients          		                        {{{1 */ #if 1 //latex `\label{sc:coeftrans}`

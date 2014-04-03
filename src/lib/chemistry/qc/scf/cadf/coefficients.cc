@@ -58,21 +58,6 @@ CADFCLHF::compute_coefficients()
   timer.enter("01 - init coef memory");
 
   uli ncoefs = 0;                                                                          //latex `\label{sc:coefcountbegin}`
-#if USE_SPARSE
-  for(auto&& ish : shell_range(gbs_, dfbs_)) {
-    for(auto&& jsh : iter_significant_partners(ish)) {
-      for(auto&& mu : function_range(ish)){
-        for(auto&& rho : function_range(jsh)) {
-          if(rho > mu) break;
-          ncoefs += mu.atom_dfnbf;
-          if(mu.center != rho.center){
-            ncoefs += rho.atom_dfnbf;
-          }
-        }
-      }
-    }
-  }                                                                                        //latex `\label{sc:coefcountend}`
-#else
   for(auto ibf : function_range(obs, dfbs_)){
     for(auto jbf : function_range(obs, dfbs_, 0, ibf)){
       ncoefs += (uli)ibf.atom_dfnbf;
@@ -81,7 +66,6 @@ CADFCLHF::compute_coefficients()
       }
     }
   }                                                                                        //latex `\label{sc:coefcountend}`
-#endif
 
   ExEnv::out0() << indent << "Need " << data_size_to_string(ncoefs*sizeof(double))
                 << " for main coefficients storage." << std::endl;
@@ -92,18 +76,10 @@ CADFCLHF::compute_coefficients()
 
   memset(coefficients_data_, 0, ncoefs * sizeof(double));
   double *spot = coefficients_data_;
-#if USE_SPARSE
-  for(auto&& ish : shell_range(gbs_, dfbs_)) {
-    for(auto&& jsh : iter_significant_partners(ish)) {
-      for(auto&& mu : function_range(ish)){
-        for(auto&& rho : function_range(jsh)) {
-          if(rho > mu) break;
-#else
   for(auto mu : function_range(obs, dfbs_)){
     for(auto rho : function_range(obs, dfbs_, 0, mu)){
       {
         {
-#endif
           double *data_spot_a = spot;
           spot += mu.atom_dfnbf;
           double *data_spot_b = spot;
@@ -283,49 +259,26 @@ CADFCLHF::compute_coefficients()
   //---------------------------------------------------------------------------------------//
   timer.change("04 - store transposed coefs");
   for(auto&& Y : function_range(dfbs_)){
-#if USE_SPARSE
-    for(auto&& ish : iter_shells_on_center(obs, Y.center)){
-      for(auto&& jsh : iter_significant_partners(ish)){
-        for(auto&& mu : function_range(ish)){
-          for(auto&& nu : function_range(jsh)){
-#else
     for(auto&& mu : iter_functions_on_center(obs, Y.center)){
       for(auto&& nu : function_range(obs)){
         {{
-#endif
-
             //----------------------------------------//
             if(nu <= mu){
               auto& C = *(coefs_[IntPair(mu, nu)].first);
               const double value = C[Y.bfoff_in_atom];
-#if USE_SPARSE
-              if(fabs(value) > coef_screening_thresh_)
-                coefs_transpose_[Y].insert(mu.bfoff_in_atom, nu) = value;
-#else
               coefs_transpose_[Y].coeffRef(mu.bfoff_in_atom, nu) = value;
-#endif
             }
             else{
               auto cpair = coefs_[IntPair(nu, mu)];
               if(mu.center != nu.center){
                 auto& C = *(cpair.second);
                 const double value = C[Y.bfoff_in_atom];
-#if USE_SPARSE
-                if(fabs(value) > coef_screening_thresh_)
-                  coefs_transpose_[Y].insert(mu.bfoff_in_atom, nu) = value;
-#else
                 coefs_transpose_[Y].coeffRef(mu.bfoff_in_atom, nu) = value;
-#endif
               }
               else{
                 auto& C = *(cpair.first);
                 const double value = C[Y.bfoff_in_atom];
-#if USE_SPARSE
-                if(fabs(value) > coef_screening_thresh_)
-                  coefs_transpose_[Y].insert(mu.bfoff_in_atom, nu) = value;
-#else
                 coefs_transpose_[Y].coeffRef(mu.bfoff_in_atom, nu) = value;
-#endif
                 //coefs_transpose_[Y].coeffRef(mu.bfoff_in_atom, nu) = C[Y.bfoff_in_atom];
               }
             }
@@ -365,27 +318,9 @@ CADFCLHF::compute_coefficients()
     cblock = RowMatrix::Zero(atom_nbf, ncol);
 
     // Now transfer the coefficients
-#if 0
-    for(auto&& ish : iter_shells_on_center(gbs_, iatom, dfbs_)) {
-      int offset = 0;
-      for(auto&& jsh : iter_significant_partners(ish)) {
-        for(auto&& mu : function_range(ish)){
-          for(auto&& rho : function_range(jsh)) {
-#endif
     for(auto&& mu : iter_functions_on_center(gbs_, iatom, dfbs_)) {
       int offset = 0;
       for(auto&& rho : function_range(gbs_, dfbs_)) {
-
-#if USE_SPARSE
-        if(not is_sig_pair(mu.shell_index, rho.shell_index)) {
-          // Still need to compute the offsets for now
-          if(mu.center == rho.center)  offset += mu.atom_dfnbf;
-          else offset += mu.atom_dfnbf + rho.atom_dfnbf;
-          // Skip the rest
-          continue;
-        }
-#endif
-
         if(rho <= mu) {
           auto& cpair = coefs_[{mu, rho}];
           cblock.row(mu.bfoff_in_atom).segment(offset, mu.atom_dfnbf) = *(cpair.first);
@@ -418,7 +353,6 @@ CADFCLHF::compute_coefficients()
   /*****************************************************************************************/ #endif //1}}} //latex `\label{sc:coeftransend}`
   /*=======================================================================================*/
   /* Debugging output                                     		                        {{{1 */ #if 1 // begin fold
-#if !USE_SPARSE
   // debugging not implemented for sparse yet
   if(xml_debug_) {
     //begin_xml_context(
@@ -459,7 +393,6 @@ CADFCLHF::compute_coefficients()
     }
     //end_xml_context("df_coefficients");
   }
-#endif
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
   /* Make the CADF-LinK lists                                                         {{{1 */ #if 1 // begin fold

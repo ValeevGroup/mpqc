@@ -47,7 +47,12 @@ void CADFCLHF::ScreeningStatistics::print_summary(
   if(print_level_in != -1) {
     print_lvl = print_level_in;
   }
-  const auto& old_loc = out.getloc(); out.imbue(std::locale(""));
+  const auto& old_loc = out.getloc();
+  try{
+    out.imbue(std::locale(""));
+  }
+  catch(...) { } // oh well, we tried
+
   out << indent << "CADFCLHF Screening Statistics" << endl;
   out << indent << "-----------------------------" << endl;
   const count_t total_3c = basis->nshell() * basis->nshell() * dfbs->nshell();

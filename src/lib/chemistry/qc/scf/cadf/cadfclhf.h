@@ -106,7 +106,8 @@ class CADFCLHF: public CLHF {
   public:
 
     // This will later be changed to simple double* to allow for direct BLAS calls
-    typedef shared_ptr<Eigen::Map<Eigen::VectorXd>> CoefContainer;
+    typedef Eigen::Map<Eigen::VectorXd, Eigen::Unaligned, Eigen::Stride<1, Eigen::Dynamic>> CoefView;
+    typedef shared_ptr<CoefView> CoefContainer;
     typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> TwoCenterIntContainer;
     typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> ThreeCenterIntContainer;
     typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> FourCenterIntContainer;
@@ -572,7 +573,7 @@ class CADFCLHF: public CLHF {
 
     std::vector<std::vector<ShellIndexWithValue>> Cmaxes_;
 
-    std::vector<RowMatrix> coefs_transpose_blocked_;
+    std::vector<Eigen::Map<RowMatrix>> coefs_transpose_blocked_;
     //std::vector<std::vector<StridedRowMap>> coefs_t_shell_blocked_;
 #if USE_SPARSE
     std::vector<SparseRowMatrix> coefs_transpose_;

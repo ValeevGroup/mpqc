@@ -111,8 +111,8 @@ CADFCLHF::compute_J()
             for(auto&& nu : function_range(jsh)) {
 
               auto& cpair = coefs_[{mu, nu}];
-              VectorMap& Ca = *(cpair.first);
-              VectorMap& Cb = *(cpair.second);
+              auto& Ca = *(cpair.first);
+              auto& Cb = *(cpair.second);
               Ct.segment(ish.atom_dfbfoff, ish.atom_dfnbf) += pf * D(mu, nu) * Ca;
               if(ish.center != jsh.center) {
                 Ct.segment(jsh.atom_dfbfoff, jsh.atom_dfnbf) += pf * D(mu, nu) * Cb;
@@ -197,8 +197,8 @@ CADFCLHF::compute_J()
           for(auto&& nu : function_range(jsh)) {
 
             auto& cpair = coefs_[{mu, nu}];
-            VectorMap& Ca = *(cpair.first);
-            VectorMap& Cb = *(cpair.second);
+            auto& Ca = *(cpair.first);
+            auto& Cb = *(cpair.second);
             Wij.row(mu.bfoff_in_shell*jsh.nbf + nu.bfoff_in_shell) +=
                 Ca.transpose() * g2.middleRows(ish.atom_dfbfoff, ish.atom_dfnbf);
             if(ish != jsh) {
@@ -444,8 +444,8 @@ CADFCLHF::compute_J()
             for(auto&& nu : function_range(jsh)){
               //----------------------------------------//
               auto cpair = coefs_[{mu, nu}];
-              VectorMap& Ca = *(cpair.first);
-              VectorMap& Cb = *(cpair.second);
+              auto& Ca = *(cpair.first);
+              auto& Cb = *(cpair.second);
               //----------------------------------------//
               // First term contribution
               jpart(mu, nu) += d_tilde.segment(ish.atom_dfbfoff, ish.atom_dfnbf).transpose() * Ca;

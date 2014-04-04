@@ -121,7 +121,7 @@ CADFCLHF::compute_coefficients()
   for(int iatom = 0; iatom < natom; ++iatom) {
     const uli atom_nbf = gbs_->nbasis_on_center(iatom);
     const uli atom_dfnbf = dfbs_->nbasis_on_center(iatom);
-    const uli block_size = atom_nbf * nbf * dfnbf;
+    const uli block_size = atom_nbf * nbf * atom_dfnbf;
     offsets.push_back(ioffset);
     ioffset += block_size;
     block_sizes.push_back(block_size);

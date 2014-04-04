@@ -1254,6 +1254,12 @@ class OrderedShellList {
     }
 
     double value_for_index(int index) {
+      if(idx_set_.size() < indices_.size()) {
+        idx_set_.clear();
+        for(auto&& idx : indices_) {
+          idx_set_.insert(idx);
+        }
+      }
       std::lock_guard<std::mutex> lg(insert_mtx_);
       ShellIndexWithValue find_val(index);
       const auto& found = idx_set_.find(find_val);
@@ -1268,8 +1274,8 @@ class OrderedShellList {
     void sort(bool transfer_idx_set = true) {
       std::lock_guard<std::mutex> lg(insert_mtx_);
       if(transfer_idx_set) {
+        indices_.clear();
         std::copy(idx_set_.begin(), idx_set_.end(), std::back_inserter(indices_));
-        idx_set_.clear();
       }
       if(sort_by_value_) {
         std::sort(indices_.begin(), indices_.end(),

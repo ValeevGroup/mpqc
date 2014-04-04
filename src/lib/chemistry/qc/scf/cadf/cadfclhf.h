@@ -225,6 +225,23 @@ class CADFCLHF: public CLHF {
               int_ams.set_nthread(nthr);
             }
 
+            void global_sum(const Ref<MessageGrp>& msg) {
+              auto accum_all = [&msg](accumulate_t& val) {
+                long tmp = val.load();
+                msg->sum(&tmp, 1);
+                val.store(tmp);
+              };
+
+              accum_all(K_3c_needed);
+              accum_all(K_3c_needed_fxn);
+              accum_all(K_3c_dist_screened);
+              accum_all(K_3c_dist_screened_fxn);
+              accum_all(K_3c_underestimated);
+              accum_all(K_3c_underestimated_fxn);
+              accum_all(K_3c_perfect);
+              accum_all(K_3c_perfect_fxn);
+            }
+
             bool is_first = false;
 
         };

@@ -358,6 +358,10 @@ CADFCLHF::ao_fock(double accuracy)
   // restore the SO version of the density difference
   cl_dens_diff_ = dd;
   //----------------------------------------//
+  if(print_screening_stats_) {
+    iter_stats_->global_sum(scf_grp_);
+  }
+  //----------------------------------------//
   // F = H+G
   cl_fock_.result_noupdate().assign(hcore_);
   cl_fock_.result_noupdate().accumulate(gmat_);

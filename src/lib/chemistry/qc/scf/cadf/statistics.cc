@@ -32,6 +32,8 @@
 
 using namespace sc;
 using namespace std;
+using std::endl;
+using std::setw;
 
 
 void CADFCLHF::ScreeningStatistics::print_summary(
@@ -41,8 +43,6 @@ void CADFCLHF::ScreeningStatistics::print_summary(
     int print_level_in
 ) const
 {
-  using std::endl;
-  using std::setw;
   int print_lvl = print_level;
   if(print_level_in != -1) {
     print_lvl = print_level_in;

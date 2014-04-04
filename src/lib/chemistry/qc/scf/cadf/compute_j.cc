@@ -43,6 +43,7 @@ CADFCLHF::compute_J()
   /* Setup                                                 		                        {{{1 */ #if 1 // begin fold
   //----------------------------------------//
   // Convenience variables
+
   Timer timer("compute J");
   const int me = scf_grp_->me();
   const int n_node = scf_grp_->n();
@@ -66,10 +67,12 @@ CADFCLHF::compute_J()
   //----------------------------------------//
   // reset the iteration over local pairs
   local_pairs_spot_ = 0;
+
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
   /* Form C_tilde and d_tilde                              		                        {{{1 */ #if 1 // begin fold
   //----------------------------------------//
+
   timer.enter("compute C_tilde");
   Eigen::VectorXd C_tilde(dfnbf);
   C_tilde = Eigen::VectorXd::Zero(dfnbf);
@@ -78,8 +81,11 @@ CADFCLHF::compute_J()
     C_t_ex.resize(natom, dfnbf);
     C_t_ex = RowMatrix::Zero(natom, dfnbf);
   }
+
   //----------------------------------------//
+
   {
+
     boost::mutex C_tilde_mutex;
     boost::thread_group compute_threads;
     // Loop over number of threads
@@ -105,8 +111,6 @@ CADFCLHF::compute_J()
           // Permutation prefactor
           double pf = (ish == jsh) ? 2.0 : 4.0;
           //----------------------------------------//
-          //for(int mu = ish.bfoff; mu <= ish.last_function; ++mu){
-          //  for(int nu = jsh.bfoff; nu <= jsh.last_function; ++nu){
           for(auto&& mu : function_range(ish)) {
             for(auto&& nu : function_range(jsh)) {
 
@@ -143,7 +147,9 @@ CADFCLHF::compute_J()
       }); // end create_thread
     } // end enumeration of threads
     compute_threads.join_all();
+
   } // compute_threads is destroyed here
+
   //----------------------------------------//
   // Global sum C_tilde
   scf_grp_->sum(C_tilde.data(), dfnbf);

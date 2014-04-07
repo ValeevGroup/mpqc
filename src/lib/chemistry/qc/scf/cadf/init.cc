@@ -163,10 +163,12 @@ CADFCLHF::init_threads()
 
   // Make the assignments for the mu, X pairs in K
   inode = 0;
-  for(int ish = 0; ish < sig_blocks_.size(); ++ish) {
-    for(auto&& sig_block : sig_blocks_[ish]) {
+  //for(int ish = 0; ish < sig_blocks_.size(); ++ish) {
+  //  for(auto&& sig_block : sig_blocks_[ish]) {
+  for(auto&& ish : shell_range(gbs_)) {
+    for(auto&& Xblk : shell_block_range(dfbs_, gbs_, 0, NoLastIndex, SameCenter)) {
       const int assignment = inode % n_node; ++inode;
-      auto pair = std::make_pair(ish, sig_block);
+      auto pair = std::make_pair(ish, Xblk);
       pair_assignments_k_[pair] = assignment;
       if(assignment == me) {
         local_pairs_k_.push_back(pair);

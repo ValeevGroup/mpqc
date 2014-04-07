@@ -246,10 +246,20 @@ class CADFCLHF: public CLHF {
 
         };
 
-        accumulate_t sig_pairs = { 0 };
-        accumulate_t sig_pairs_fxn = { 0 };
+        mutable accumulate_t sig_pairs = { 0 };
+        mutable accumulate_t sig_pairs_fxn = { 0 };
         int print_level = 0;
         mutable bool xml_stats_saved = false;
+
+        void global_sum(const Ref<MessageGrp>& msg) const {
+          auto accum_all = [&msg](accumulate_t& val) {
+            long tmp = val.load();
+            msg->sum(&tmp, 1);
+            val.store(tmp);
+          };
+          accum_all(sig_pairs);
+          accum_all(sig_pairs_fxn);
+        }
 
         std::vector<Iteration> iterations;
 
@@ -345,10 +355,17 @@ class CADFCLHF: public CLHF {
     bool use_sparse_ = false;
     /// Debugging
     bool sig_pairs_J_ = true;
+    /// B use buffer
+    bool B_use_buffer_ = false;
+    /// B use buffer
+    size_t B_buffer_size_;
     //@}
 
     ScreeningStatistics stats_;
     ScreeningStatistics::Iteration* iter_stats_;
+
+    int max_fxn_obs_ = 0;
+    int max_fxn_dfbs_ = 0;
 
     bool is_master() {
       if(dynamic_){
@@ -475,6 +492,24 @@ class CADFCLHF: public CLHF {
         const ShellData& ksh,
         Ref<TwoBodyThreeCenterInt>& ints,
         TwoBodyOper::type ints_type
+    );
+
+    template <typename ShellRange>
+    Eigen::Map<ThreeCenterIntContainer> ints_to_eigen_map(
+        const ShellBlockData<ShellRange>& ish,
+        const ShellData& jsh,
+        const ShellData& ksh,
+        Ref<TwoBodyThreeCenterInt>& ints,
+        TwoBodyOper::type ints_type,
+        double* buffer
+    );
+
+    void ints_to_buffer(
+        int ish, int jsh, int ksh,
+        int nbfi, int nbfj, int nbfk,
+        Ref<TwoBodyThreeCenterInt>& ints,
+        TwoBodyOper::type ints_type,
+        double* buffer
     );
 
     /// returns ints for shell in (iblk.nbf, jsh.nbf) x kblk.nbf matrix in chemists' notation
@@ -835,6 +870,38 @@ CADFCLHF::ints_to_eigen(
         block_offset * jsh.nbf, 0,
         ish.nbf*jsh.nbf, Xsh.nbf
     ) = *ints_ptr;
+    block_offset += ish.nbf;
+  }
+  return rv;
+}
+
+template <typename ShellRange>
+Eigen::Map<CADFCLHF::ThreeCenterIntContainer>
+CADFCLHF::ints_to_eigen_map(
+    const ShellBlockData<ShellRange>& iblk,
+    const ShellData& jsh,
+    const ShellData& Xsh,
+    Ref<TwoBodyThreeCenterInt>& ints,
+    TwoBodyOper::type int_type,
+    double* buffer
+){
+  Eigen::Map<ThreeCenterIntContainer> rv(
+      buffer,
+      iblk.nbf * jsh.nbf, Xsh.nbf
+  );
+  int block_offset = 0;
+  for(auto ish : shell_range(iblk)) {
+    ints_to_buffer(
+        ish, jsh, Xsh,
+        ish.nbf, jsh.nbf, Xsh.nbf,
+        ints, int_type,
+        buffer + block_offset * jsh.nbf * Xsh.nbf
+    );
+    //const auto& ints_ptr = ints_to_eigen(ish, jsh, Xsh, ints, int_type);
+    //rv.block(
+    //    block_offset * jsh.nbf, 0,
+    //    ish.nbf*jsh.nbf, Xsh.nbf
+    //) = *ints_ptr;
     block_offset += ish.nbf;
   }
   return rv;

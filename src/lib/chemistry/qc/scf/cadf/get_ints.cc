@@ -142,6 +142,22 @@ CADFCLHF::ints_to_eigen(
 
 }
 
+void
+CADFCLHF::ints_to_buffer(
+    int ish, int jsh, int ksh,
+    int nbfi, int nbfj, int nbfk,
+    Ref<TwoBodyThreeCenterInt>& ints,
+    TwoBodyOper::type int_type,
+    double* buffer
+)
+{
+    //----------------------------------------//
+    ints->compute_shell(ish, jsh, ksh);
+    const double* buffer_in = ints->buffer(int_type);
+    std::copy(buffer_in, buffer_in + nbfi*nbfj*nbfk, buffer);
+    //----------------------------------------//
+    ints_computed_locally_ += nbfi * nbfj * nbfk;
+}
 
 CADFCLHF::FourCenterIntContainerPtr
 CADFCLHF::ints_to_eigen(

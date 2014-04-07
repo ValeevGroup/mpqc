@@ -140,6 +140,7 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   //----------------------------------------------------------------------------//
   do_linK_ = keyval->booleanvalue("do_linK", KeyValValueboolean(false));
   linK_block_rho_ = keyval->booleanvalue("linK_block_rho", KeyValValueboolean(false));
+  B_use_buffer_ = keyval->booleanvalue("B_use_buffer", KeyValValueboolean(B_use_buffer_));
   linK_sorted_B_contraction_ = keyval->booleanvalue("linK_sorted_B_contraction", KeyValValueboolean(false));
   linK_use_distance_ = keyval->booleanvalue("linK_use_distance", KeyValValueboolean(false));
   use_extents_ = keyval->booleanvalue("use_extents", KeyValValueboolean(use_extents_));
@@ -166,6 +167,17 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   //----------------------------------------------------------------------------//
   xml_debug_ = keyval->booleanvalue("xml_debug", KeyValValueboolean(false));
   //----------------------------------------------------------------------------//
+  for(auto&& ish : shell_range(gbs_)) {
+    max_fxn_obs_ = std::max(ish.nbf, max_fxn_obs_);
+  }
+  for(auto&& Xsh : shell_range(dfbs_)) {
+    max_fxn_dfbs_ = std::max(Xsh.nbf, max_fxn_dfbs_);
+  }
+  B_buffer_size_ = std::min((unsigned int)DEFAULT_TARGET_BLOCK_SIZE, gbs_->nbasis())
+    * sizeof(double) * max_fxn_obs_ * max_fxn_dfbs_;
+  B_buffer_size_ = keyval->sizevalue("B_buffer_size",
+      KeyValValuesize(B_buffer_size_)
+  );
   initialize();
   //----------------------------------------------------------------------------//
 }
@@ -203,6 +215,7 @@ CADFCLHF::print(ostream&o) const
   o << indent << "use_max_extents = " << bool_str(use_max_extents_) << endl;
   o << indent << "subtract_extents = " << bool_str(subtract_extents_) << endl;
   o << indent << "linK_block_rho = " << bool_str(linK_block_rho_) << endl;
+  o << indent << "B_use_buffer = " << bool_str(B_use_buffer_) << endl;
   o << indent << "use_sparse = " << bool_str(use_sparse_) << endl;
   o << indent << "xml_screening_data = " << bool_str(xml_screening_data_) << endl;
   o << indent << "linK_sorted_B_contraction = " << bool_str(linK_sorted_B_contraction_) << endl;
@@ -220,6 +233,7 @@ CADFCLHF::print(ostream&o) const
   CLHF::print(o);
   if(print_screening_stats_) {
     // TODO global sum stats at some point.  These numbers will be wrong otherwise
+    stats_.global_sum(scf_grp_);
     stats_.print_summary(o, gbs_, dfbs_, print_screening_stats_);
   }
   o << decindent;

@@ -57,6 +57,7 @@
 #include "macros.h"
 
 #define DEFAULT_TARGET_BLOCK_SIZE 10000 // functions
+#define DEFAULT_MAX_AM 7
 
 namespace sc {
 

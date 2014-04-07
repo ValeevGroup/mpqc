@@ -751,6 +751,16 @@ CADFCLHF::compute_K()
         ShellData ish;
         ShellBlockData<> Xblk;
 
+        double* b_buffer;
+        long b_buff_offset = 0;
+        ColMatrix D_B_buff;
+        size_t actual_size = 0;
+        actual_size = B_buffer_size_/sizeof(double);
+        b_buffer = allocate<double>(actual_size);
+        if(B_use_buffer_) {
+          D_B_buff.resize(nbf, nbf);
+        }
+
         //----------------------------------------//
         while(get_ish_Xblk_3(ish, Xblk)) {                                                            //latex `\label{sc:k3b:while}`
           /*-----------------------------------------------------*/
@@ -764,6 +774,17 @@ CADFCLHF::compute_K()
 
           ColMatrix B_ish(ish.nbf * Xblk.nbf, nbf);
           B_ish = ColMatrix::Zero(ish.nbf * Xblk.nbf, nbf);
+          int b_buff_nrows, b_buff_ncols;
+          if(B_use_buffer_) {
+            b_buff_nrows = std::min(size_t(nbf), actual_size / ish.nbf / Xblk.nbf);
+            b_buff_ncols = ish.nbf * Xblk.nbf;
+          }
+          else {
+            b_buff_ncols = b_buff_nrows = 0;
+          }
+          Eigen::Map<RowMatrix> B_buffer_mat(b_buffer, b_buff_nrows, b_buff_ncols);
+          //std::memset(b_buffer, 0, b_buff_nrows * b_buff_ncols * sizeof(double));
+          b_buff_offset = 0;
 
           // Exact diagonal itermediate storage
           RowMatrix M_mu_X, W_mu_X, W_mu_X_bar;
@@ -793,12 +814,10 @@ CADFCLHF::compute_K()
 
                 mt_timer.enter("rearrange D", ithr);
                 D_ordered.resize(nbf, nbf);
-                for(auto jblk : shell_block_range(L_3[{ish, Xsh}], NoRestrictions)){
+                for(auto jblk : shell_block_range(L_3[{ish, Xsh}], Contiguous)){
 
-                  for(auto jsh : shell_range(jblk)) {
-                    D_ordered.middleRows(block_offset, jsh.nbf) = D.middleRows(jsh.bfoff, jsh.nbf);
-                    block_offset += jsh.nbf;
-                  }
+                  D_ordered.middleCols(block_offset, jblk.nbf) = D.middleCols(jblk.bfoff, jblk.nbf);
+                  block_offset += jblk.nbf;
 
                 }                                                                            //latex `\label{sc:k3b:reD:end}`
                 mt_timer.exit(ithr);
@@ -814,11 +833,11 @@ CADFCLHF::compute_K()
               for(const auto&& jblk : shell_block_range(L_3[{ish, Xsh}], restrictions)){             //latex `\label{sc:k3b:noblk:loop}`
                 TimerHolder subtimer(ints_timer);
 
-                auto g3_ptr = ints_to_eigen(
+                auto g3_in = ints_to_eigen_map(
                     jblk, ish, Xsh,
-                    eris_3c_[ithr], coulomb_oper_type_
+                    eris_3c_[ithr], coulomb_oper_type_,
+                    b_buffer + (B_use_buffer_ ? (b_buff_offset * ish.nbf * Xblk.nbf) : 0)
                 );
-                auto& g3_in = *g3_ptr;
 
                 //----------------------------------------//
 
@@ -1011,34 +1030,50 @@ CADFCLHF::compute_K()
 
                 subtimer.change(contract_timer);
 
-                #if !CADF_USE_BLAS
                 // Eigen version
-                if(linK_block_rho_) {
-                  B_ish += 2.0 * g3.transpose() * D_ordered.middleRows(block_offset, jblk.nbf);
+                if(B_use_buffer_) {
+
+                  if(b_buff_offset + jblk.nbf > b_buff_nrows) {
+                    if(b_buff_offset == 0) {
+                      throw SCException("B_buffer_size smaller than single contiguous block.  Set B_use_buffer to no and try again.");
+                    }
+                    B_ish += 2.0 * B_buffer_mat.topRows(b_buff_offset).transpose() * D_B_buff.leftCols(b_buff_offset).transpose();
+                    b_buff_offset = 0;
+                  }
+
+                  D_B_buff.middleCols(b_buff_offset, jblk.nbf) = D.middleCols(jblk.bfoff, jblk.nbf);
+                  b_buff_offset += jblk.nbf;
+
                 }
                 else {
-                  B_ish += 2.0 * g3.transpose() * D.middleRows(jblk.bfoff, jblk.nbf);
+                  if(linK_block_rho_) {
+                    B_ish += 2.0 * g3.transpose() * D_ordered.middleCols(block_offset, jblk.nbf).transpose();
+                  }
+                  else {
+                    B_ish += 2.0 * g3.transpose() * D.middleCols(jblk.bfoff, jblk.nbf).transpose();
+                  }
                 }
-                #else
-                // BLAS version
-                const char notrans = 'n', trans = 't';
-                const blasint M = ish.nbf*Xblk.nbf;
-                const blasint K = jblk.nbf;
-                const double alpha = 2.0, one = 1.0;
-                double* D_data;
-                if(linK_block_rho_) {
-                  D_data = D_ordered.data() + block_offset;
-                }
-                else {
-                  D_data = D.data() + jblk.bfoff;
-                }
-                F77_DGEMM(&notrans, &notrans,
-                    &M, &nbf, &K,
-                    &alpha, g3.data(), &M,
-                    D_data, &nbf,
-                    &one, B_ish.data(), &M
-                );
-                #endif
+                //#if !CADF_USE_BLAS
+                //#else
+                //// BLAS version
+                //const char notrans = 'n', trans = 't';
+                //const blasint M = ish.nbf*Xblk.nbf;
+                //const blasint K = jblk.nbf;
+                //const double alpha = 2.0, one = 1.0;
+                //double* D_data;
+                //if(linK_block_rho_) {
+                //  D_data = D_ordered.data() + block_offset;
+                //}
+                //else {
+                //  D_data = D.data() + jblk.bfoff;
+                //}
+                //F77_DGEMM(&notrans, &notrans,
+                //    &M, &nbf, &K,
+                //    &alpha, g3.data(), &M,
+                //    D_data, &nbf,
+                //    &one, B_ish.data(), &M
+                //);
+                //#endif
 
                 block_offset += jblk.nbf;
 
@@ -1046,6 +1081,11 @@ CADFCLHF::compute_K()
 
             } // end loop over Xsh
 
+            if(B_use_buffer_ and b_buff_offset > 0) {
+              TimerHolder subtimer(contract_timer);
+              B_ish += 2.0 * B_buffer_mat.topRows(b_buff_offset).transpose() * D_B_buff.leftCols(b_buff_offset).transpose();
+              b_buff_offset = 0;
+            }
             /********************************************************/ #endif //3}}}
             /*-----------------------------------------------------*/
 
@@ -1300,6 +1340,7 @@ CADFCLHF::compute_K()
           /*******************************************************/ #endif //2}}}            //latex `\label{sc:k3b:kcontrib:end}`
           /*-----------------------------------------------------*/
         } // end while get ish Xblk pair
+        deallocate(b_buffer);
         //============================================================================//
         //----------------------------------------//
         // Sum Kt parts within node

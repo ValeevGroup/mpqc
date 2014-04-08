@@ -45,10 +45,12 @@ CADFCLHF::compute_coefficients()
   // References for speed
   Timer timer("compute coefficients");
   const Ref<GaussianBasisSet>& obs = gbs_;
+
   // Constants for convenience
   const int nbf = obs->nbasis();
   const int dfnbf = dfbs_->nbasis();
   const int natom = obs->ncenter();
+
   /*-----------------------------------------------------*/
   /* Initialize coefficient memory                  {{{2 */ #if 2 //latex `\label{sc:coefmem}`
   // Now initialize the coefficient memory.
@@ -58,62 +60,6 @@ CADFCLHF::compute_coefficients()
   timer.enter("01 - init coef memory");
 
   uli ncoefs = 0;                                                                          //latex `\label{sc:coefcountbegin}`
-  //for(auto ibf : function_range(obs, dfbs_)){
-  //  for(auto jbf : function_range(obs, dfbs_, 0, ibf)){
-  //    ncoefs += (uli)ibf.atom_dfnbf;
-  //    if(ibf.center != jbf.center){
-  //      ncoefs += (uli)jbf.atom_dfnbf;
-  //    }
-  //  }
-  //}                                                                                        //latex `\label{sc:coefcountend}`
-
-  //ExEnv::out0() << indent << "Need " << data_size_to_string(ncoefs*sizeof(double))
-  //              << " for main coefficients storage." << std::endl;
-  //memory_used_ += ncoefs*sizeof(double);
-  //ExEnv::out0() << indent << "Total memory usage is at least " << data_size_to_string(memory_used_) << std::endl;
-
-  ////coefficients_data_ = allocate<double>(ncoefs);                                           //latex `\label{sc:coefalloc}`
-
-  //memset(coefficients_data_, 0, ncoefs * sizeof(double));
-  //double *spot = coefficients_data_;
-  //for(auto mu : function_range(obs, dfbs_)){
-  //  for(auto rho : function_range(obs, dfbs_, 0, mu)){
-  //    {
-  //      {
-  //        double *data_spot_a = spot;
-  //        spot += mu.atom_dfnbf;
-  //        double *data_spot_b = spot;
-  //        if(mu.center != rho.center){
-  //          spot += rho.atom_dfnbf;
-  //        }
-  //        IntPair ij(mu, rho);
-  //        CoefContainer coefs_a = make_shared<Eigen::Map<Eigen::VectorXd>>(data_spot_a, mu.atom_dfnbf);
-  //        CoefContainer coefs_b = make_shared<Eigen::Map<Eigen::VectorXd>>(
-  //            data_spot_b, mu.center == rho.center ? 0 : int(rho.atom_dfnbf));
-  //        coefs_.emplace(ij, std::make_pair(coefs_a, coefs_b));
-  //      }
-  //    }
-  //  }
-  //}
-
-  ////----------------------------------------//
-  //// We can save a lot of mess by storing references
-  ////   to the jbf > ibf pairs for the ish == jsh cases only
-  //// This code will be the same for both dense and sparse since
-  ////   a shell paired with itself should always be significant
-  //for(auto ish : shell_range(obs)){
-  //  for(auto ibf : function_range(ish)){
-  //    for(auto jbf : function_range(obs, ibf + 1, ish.last_function)){
-  //      IntPair ij(ibf, jbf);
-  //      IntPair ji(jbf, ibf);
-  //      // This will do a copy, but not of the data, just of the map
-  //      //   to the data, which is okay
-  //      coefs_.emplace(ij, coefs_[ji]);
-  //    }
-  //  }
-  //}
-  //----------------------------------------//
-  // Now make the transposes, for more efficient use later
 
   std::vector<uli> offsets;
   std::vector<uli> block_sizes;
@@ -163,15 +109,6 @@ CADFCLHF::compute_coefficients()
       memory_used_ += sizeof(Eigen::Map<RowMatrix>);
     }
 
-    // The untransposed coefficients
-    //const double* atom_start = coefficients_data_ + offsets[iatom];
-    //for(auto&& mu : iter_functions_on_center(gbs_, iatom, dfbs_)) {
-    //  for(auto&& rho : function_range(gbs_, dfbs_)) {
-    //    coefs_.emplace(ij, std::make_pair(coefs_a, coefs_b));
-
-    //  }
-    //}
-
   }
 
   for(auto mu : function_range(gbs_, dfbs_)){
@@ -189,14 +126,20 @@ CADFCLHF::compute_coefficients()
     }
   }
 
-  //ExEnv::out0() << indent
-  //    << "Blocked coefficients initialized;"
-  //    << std::endl << indent << "  Total memory usage is now at least "
-  //    << data_size_to_string(memory_used_)
-  //    << std::endl;
 
   /********************************************************/ #endif //2}}} //latex `\label{sc:coefmemend}`
   /*-----------------------------------------------------*/
+
+  timer.enter("compute (X|Y)");
+  g2_full_ptr_ = ints_to_eigen_threaded(
+      ShellBlockData<>(dfbs_),
+      ShellBlockData<>(dfbs_),
+      eris_2c_, coulomb_oper_type_
+  );
+  const auto& g2 = *g2_full_ptr_;
+  timer.exit();
+
+
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
   /* Compute the coefficients in threads                   		                        {{{1 */ #if 1 //latex `\label{sc:coefloop}`
@@ -301,37 +244,6 @@ CADFCLHF::compute_coefficients()
   /*=======================================================================================*/
   /* Store the transpose and blocked coefficients          		                        {{{1 */ #if 1 //latex `\label{sc:coeftrans}`
   //---------------------------------------------------------------------------------------//
-  //timer.change("04 - store transposed coefs");
-  //for(auto&& Y : function_range(dfbs_)){
-  //  for(auto&& mu : iter_functions_on_center(obs, Y.center)){
-  //    for(auto&& nu : function_range(obs)){
-  //      {{
-  //          //----------------------------------------//
-  //          if(nu <= mu){
-  //            auto& C = *(coefs_[IntPair(mu, nu)].first);
-  //            const double value = C[Y.bfoff_in_atom];
-  //            coefs_transpose_[Y].coeffRef(mu.bfoff_in_atom, nu) = value;
-  //          }
-  //          else{
-  //            auto cpair = coefs_[IntPair(nu, mu)];
-  //            if(mu.center != nu.center){
-  //              auto& C = *(cpair.second);
-  //              const double value = C[Y.bfoff_in_atom];
-  //              coefs_transpose_[Y].coeffRef(mu.bfoff_in_atom, nu) = value;
-  //            }
-  //            else{
-  //              auto& C = *(cpair.first);
-  //              const double value = C[Y.bfoff_in_atom];
-  //              coefs_transpose_[Y].coeffRef(mu.bfoff_in_atom, nu) = value;
-  //              //coefs_transpose_[Y].coeffRef(mu.bfoff_in_atom, nu) = C[Y.bfoff_in_atom];
-  //            }
-  //          }
-  //          //----------------------------------------//
-  //        }
-  //      }
-  //    }
-  //  }
-  //}
 
   timer.change("05 - store blocked coefs");
   coef_block_offsets_.resize(natom);
@@ -456,14 +368,6 @@ CADFCLHF::compute_coefficients()
   if(do_linK_) {
     // TODO parallelize this list over nodes ?!?!?!
 
-    timer.enter("compute (X|Y)");
-    auto g2_full_ptr = ints_to_eigen_threaded(
-        ShellBlockData<>(dfbs_),
-        ShellBlockData<>(dfbs_),
-        eris_2c_, coulomb_oper_type_
-    );
-    const auto& g2 = *g2_full_ptr;
-    timer.exit();
 
     do_threaded(nthread_, [&](int ithr) {
       for(auto&& lsh : thread_over_range(shell_range(obs), ithr, nthread_)) {

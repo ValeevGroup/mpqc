@@ -132,24 +132,14 @@ CADFCLHF::compute_K()
   Eigen::MatrixXd Kt(nbf, nbf);
   Kt = Eigen::MatrixXd::Zero(nbf, nbf);
 
+
   #if DEBUG_K_INTERMEDIATES
   Eigen::MatrixXd Ktex(nbf, nbf);
   Ktex = Eigen::MatrixXd::Zero(nbf, nbf);
   #endif
 
   //----------------------------------------//
-  // Compute all of the integrals outside of
-  //   the thread loop.  This will need to be
-  //   rethought in HUGE cases, but for now
-  //   it is not a limiting factor
-  timer.enter("compute (X|Y)");
-  auto g2_full_ptr = ints_to_eigen_threaded(
-      ShellBlockData<>(dfbs_),
-      ShellBlockData<>(dfbs_),
-      eris_2c_, coulomb_oper_type_
-  );
-  const auto& g2 = *g2_full_ptr;
-  timer.exit();
+  const auto& g2 = *g2_full_ptr_;
 
   //----------------------------------------//
   // if we're doing the exact diagonal, form the Z intermediate
@@ -254,7 +244,7 @@ CADFCLHF::compute_K()
     timer.enter("LinK lists");
 
     // First clear all of the lists
-    L_D.clear();
+    //L_D.clear();
     L_DC.clear();
     L_3.clear();
 
@@ -267,9 +257,9 @@ CADFCLHF::compute_K()
         for(auto&& jsh : shell_range(obs)) {
           double dnorm = D.block(lsh.bfoff, jsh.bfoff, lsh.nbf, jsh.nbf).norm();
           D_frob(lsh, jsh) = dnorm;
-          L_D[lsh].insert(jsh, dnorm);
+          //L_D[lsh].insert(jsh, dnorm);
         }
-        L_D[lsh].sort();
+        //L_D[lsh].sort();
       }
     });
 
@@ -616,12 +606,6 @@ CADFCLHF::compute_K()
             if(found != const_loc_pairs_map.end()) {
               auto local_schwarz_jsh = L_sch_jsh.intersection_with(found->second);
               for(auto&& ish : local_schwarz_jsh) {
-
-                // TODO this can be improved by precomputing the (jsh, Xsh) pairs with non-empty local ish by making a map from local Xsh -> local ish list at the same time local_pairs_linK_ is created
-                //if(n_node == 1 or const_loc_pairs.find({(int)ish, (int)Xsh}) != const_loc_pairs.end()) {
-                //if(const_loc_pairs.find({(int)ish, (int)Xsh}) != const_loc_pairs.end()) {
-
-                //ish_found = true;
 
                 double dist_factor = get_distance_factor(ish, jsh, Xsh);
                 assert(ish.value == schwarz_frob_(ish, jsh));

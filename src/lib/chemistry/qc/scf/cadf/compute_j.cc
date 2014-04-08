@@ -171,13 +171,9 @@ CADFCLHF::compute_J()
   //----------------------------------------//
   // TODO Thread this
   timer.enter("compute g_tilde");
-  auto X_g_Y = ints_to_eigen_threaded(
-    ShellBlockData<>(dfbs_), ShellBlockData<>(dfbs_),
-    eris_2c_,
-    coulomb_oper_type_
-  );
+
   Eigen::VectorXd g_tilde(dfnbf);
-  const auto& g2 = *X_g_Y;
+  const auto& g2 = *g2_full_ptr_;
 
   g_tilde = g2 * C_tilde;
 

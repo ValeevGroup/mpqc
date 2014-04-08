@@ -364,6 +364,8 @@ class CADFCLHF: public CLHF {
     ScreeningStatistics stats_;
     ScreeningStatistics::Iteration* iter_stats_;
 
+    TwoCenterIntContainerPtr g2_full_ptr_;
+
     int max_fxn_obs_ = 0;
     int max_fxn_dfbs_ = 0;
 
@@ -435,6 +437,14 @@ class CADFCLHF: public CLHF {
         TwoBodyOper::type ints_type
     );
 
+    //void ints_to_buffer(
+    //    int ish, int jsh,
+    //    Ref<TwoBodyTwoCenterInt>& ints,
+    //    TwoBodyOper::type ints_type,
+    //    double* buffer
+    //);
+
+
     template <typename ShellRange>
     TwoCenterIntContainerPtr ints_to_eigen(
         const ShellBlockData<ShellRange>& ish,
@@ -449,6 +459,16 @@ class CADFCLHF: public CLHF {
         const ShellBlockData<ShellRange>& jsh,
         std::vector<Ref<TwoBodyTwoCenterInt>>& ints_for_thread,
         TwoBodyOper::type ints_type
+    );
+
+    template <typename ShellRange>
+    Eigen::Map<TwoCenterIntContainer>
+    ints_to_eigen_map_threaded(
+        const ShellBlockData<ShellRange>& iblk,
+        const ShellBlockData<ShellRange>& jblk,
+        std::vector<Ref<TwoBodyTwoCenterInt>>& ints_for_thread,
+        TwoBodyOper::type int_type,
+        double* buffer
     );
 
     template <typename ShellRange>
@@ -779,7 +799,7 @@ CADFCLHF::ints_to_eigen_threaded(
   assert(jblk.is_contiguous());
   do_threaded(nthread_, [&](int ithr){
     ShellData ish, jsh;
-    for(auto pair : threaded_shell_block_pair_range(iblk, jblk, ithr, nthread_)){
+    for(auto&& pair : threaded_shell_block_pair_range(iblk, jblk, ithr, nthread_)){
       boost::tie(ish, jsh) = pair;
       const auto& ints_ptr = ints_to_eigen(ish, jsh, ints_for_thread[ithr], int_type);
       rv->block(
@@ -790,6 +810,34 @@ CADFCLHF::ints_to_eigen_threaded(
   });
   return rv;
 }
+
+template <typename ShellRange>
+Eigen::Map<CADFCLHF::TwoCenterIntContainer>
+CADFCLHF::ints_to_eigen_map_threaded(
+    const ShellBlockData<ShellRange>& iblk,
+    const ShellBlockData<ShellRange>& jblk,
+    std::vector<Ref<TwoBodyTwoCenterInt>>& ints_for_thread,
+    TwoBodyOper::type int_type,
+    double* buffer
+){
+  auto rv = Eigen::Map<TwoCenterIntContainer>(buffer, iblk.nbf, jblk.nbf);
+  // non-contiguous form not implemented yet
+  assert(iblk.is_contiguous());
+  assert(jblk.is_contiguous());
+  do_threaded(nthread_, [&](int ithr){
+    ShellData ish, jsh;
+    for(auto&& pair : threaded_shell_block_pair_range(iblk, jblk, ithr, nthread_)){
+      boost::tie(ish, jsh) = pair;
+      const auto& ints_ptr = ints_to_eigen(ish, jsh, ints_for_thread[ithr], int_type);
+      rv.block(
+          ish.bfoff - iblk.bfoff, jsh.bfoff - jblk.bfoff,
+          ish.nbf, jsh.nbf
+      ) = *ints_ptr;
+    }
+  });
+  return rv;
+}
+
 
 template <typename ShellRange>
 CADFCLHF::ThreeCenterIntContainerPtr
@@ -897,11 +945,6 @@ CADFCLHF::ints_to_eigen_map(
         ints, int_type,
         buffer + block_offset * jsh.nbf * Xsh.nbf
     );
-    //const auto& ints_ptr = ints_to_eigen(ish, jsh, Xsh, ints, int_type);
-    //rv.block(
-    //    block_offset * jsh.nbf, 0,
-    //    ish.nbf*jsh.nbf, Xsh.nbf
-    //) = *ints_ptr;
     block_offset += ish.nbf;
   }
   return rv;

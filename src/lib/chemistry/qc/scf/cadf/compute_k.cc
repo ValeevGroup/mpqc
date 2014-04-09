@@ -336,7 +336,11 @@ CADFCLHF::compute_K()
         epsilon = pow(epsilon, full_screening_expon_);                                      //latex `\label{sc:link:expon}`
         epsilon_dist = pow(epsilon_dist, full_screening_expon_);
       }
+
+      epsilon = std::max(full_screening_thresh_min_, epsilon);
+      epsilon_dist = std::max(full_screening_thresh_min_, epsilon_dist);
     }
+
 
     if(scale_screening_thresh_) {
       if(linK_use_distance_ and epsilon != epsilon_dist) {

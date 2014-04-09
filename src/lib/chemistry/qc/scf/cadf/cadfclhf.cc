@@ -135,6 +135,7 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   distance_screening_thresh_ = keyval->doublevalue("distance_screening_thresh", KeyValValuedouble(full_screening_thresh_));
   coef_screening_thresh_ = keyval->doublevalue("coef_screening_thresh", KeyValValuedouble(1e-8));
   full_screening_expon_ = keyval->doublevalue("full_screening_expon", KeyValValuedouble(1.0));
+  full_screening_thresh_min_ = keyval->doublevalue("full_screening_thresh_min", KeyValValuedouble(full_screening_thresh_min_));
   distance_damping_factor_ = keyval->doublevalue("distance_damping_factor", KeyValValuedouble(1.0));
   //----------------------------------------------------------------------------//
   // For now, use coulomb metric.  We can easily make this a keyword later
@@ -219,6 +220,7 @@ CADFCLHF::print(ostream&o) const
   o << indent << "exact_diagonal_K = " << bool_str(exact_diagonal_K_) << endl;
   o << indent << "full_screening_expon = " << double_str(full_screening_expon_) << endl;
   o << indent << "full_screening_thresh = " << double_str(full_screening_thresh_) << endl;
+  o << indent << "full_screening_thresh_min = " << double_str(full_screening_thresh_min_) << endl;
   o << indent << "linK_block_rho = " << bool_str(linK_block_rho_) << endl;
   o << indent << "linK_sorted_B_contraction = " << bool_str(linK_sorted_B_contraction_) << endl;
   o << indent << "linK_use_distance = " << bool_str(linK_use_distance_) << endl;

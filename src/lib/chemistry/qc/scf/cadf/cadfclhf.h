@@ -359,6 +359,8 @@ class CADFCLHF: public CLHF {
     size_t B_buffer_size_;
     /// Scale the LinK screening threshold for differential density iterations by the ratio of the Frobenius norm of the density relative to the previous iteration
     bool scale_screening_thresh_ = true;
+    /// The minimum value to scale the screening threshold down to
+    double full_screening_thresh_min_ = 1e-16;
     /// Full screening exponent for non-reset iterations
     double full_screening_expon_ = 1.0;
     //@}

@@ -1120,13 +1120,13 @@ CADFCLHF::compute_K()
                 RowMatrix C(Ctmp.nestByValue());
                 C.resize(jsblk.nbf*ish.nbf, inner_size);
 
-                g3_in.middleRows(subblock_offset*ish.nbf, jsblk.nbf*ish.nbf).noalias() -= 0.5
+                g3_in.middleRows(subblock_offset*ish.nbf, jsblk.nbf*ish.nbf) -= 0.5
                     * C.rightCols(ish.atom_dfnbf) * g2.block(
                         ish.atom_dfbfoff, Xblk.bfoff,
                         ish.atom_dfnbf, Xblk.nbf
                 );
                 if(ish.center != jsblk.center) {
-                  g3_in.middleRows(subblock_offset*ish.nbf, jsblk.nbf*ish.nbf).noalias() -= 0.5
+                  g3_in.middleRows(subblock_offset*ish.nbf, jsblk.nbf*ish.nbf) -= 0.5
                       * C.leftCols(jsblk.atom_dfnbf) * g2.block(
                           jsblk.atom_dfbfoff, Xblk.bfoff,
                           jsblk.atom_dfnbf, Xblk.nbf
@@ -1235,7 +1235,7 @@ CADFCLHF::compute_K()
 
               #if !CADF_USE_BLAS
               // Eigen version
-              B_ish += 2.0 * g3.transpose() * D.middleRows(jblk.bfoff, jblk.nbf);
+              B_ish.noalias() += 2.0 * g3.transpose() * D.middleCols(jblk.bfoff, jblk.nbf).transpose();
               #else
               // BLAS version
               const char notrans = 'n', trans = 't';

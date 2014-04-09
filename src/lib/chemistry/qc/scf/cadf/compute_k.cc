@@ -315,6 +315,7 @@ CADFCLHF::compute_K()
     timer.change("build L_3");
     double epsilon, epsilon_dist;                                                            //latex `\label{sc:link:l3}`
 
+    // TODO instead, scale threshholds based on the ratio of density frob. norm relative to first iteration
     if(density_reset_){
       epsilon = full_screening_thresh_;
       epsilon_dist = distance_screening_thresh_;
@@ -1021,7 +1022,7 @@ CADFCLHF::compute_K()
                     if(b_buff_offset == 0) {
                       throw SCException("B_buffer_size smaller than single contiguous block.  Set B_use_buffer to no and try again.");
                     }
-                    B_ish += 2.0 * B_buffer_mat.topRows(b_buff_offset).transpose() * D_B_buff.leftCols(b_buff_offset).transpose();
+                    B_ish.noalias() += 2.0 * B_buffer_mat.topRows(b_buff_offset).transpose() * D_B_buff.leftCols(b_buff_offset).transpose();
                     b_buff_offset = 0;
                   }
 
@@ -1031,10 +1032,10 @@ CADFCLHF::compute_K()
                 }
                 else {
                   if(linK_block_rho_) {
-                    B_ish += 2.0 * g3.transpose() * D_ordered.middleCols(block_offset, jblk.nbf).transpose();
+                    B_ish.noalias() += 2.0 * g3.transpose() * D_ordered.middleCols(block_offset, jblk.nbf).transpose();
                   }
                   else {
-                    B_ish += 2.0 * g3.transpose() * D.middleCols(jblk.bfoff, jblk.nbf).transpose();
+                    B_ish.noalias() += 2.0 * g3.transpose() * D.middleCols(jblk.bfoff, jblk.nbf).transpose();
                   }
                 }
                 //#if !CADF_USE_BLAS
@@ -1119,13 +1120,13 @@ CADFCLHF::compute_K()
                 RowMatrix C(Ctmp.nestByValue());
                 C.resize(jsblk.nbf*ish.nbf, inner_size);
 
-                g3_in.middleRows(subblock_offset*ish.nbf, jsblk.nbf*ish.nbf) -= 0.5
+                g3_in.middleRows(subblock_offset*ish.nbf, jsblk.nbf*ish.nbf).noalias() -= 0.5
                     * C.rightCols(ish.atom_dfnbf) * g2.block(
                         ish.atom_dfbfoff, Xblk.bfoff,
                         ish.atom_dfnbf, Xblk.nbf
                 );
                 if(ish.center != jsblk.center) {
-                  g3_in.middleRows(subblock_offset*ish.nbf, jsblk.nbf*ish.nbf) -= 0.5
+                  g3_in.middleRows(subblock_offset*ish.nbf, jsblk.nbf*ish.nbf).noalias() -= 0.5
                       * C.leftCols(jsblk.atom_dfnbf) * g2.block(
                           jsblk.atom_dfbfoff, Xblk.bfoff,
                           jsblk.atom_dfnbf, Xblk.nbf
@@ -1291,13 +1292,13 @@ CADFCLHF::compute_K()
               // C_Y is (Y.{obs_}atom_nbf x nbf)
               // result should be (Y.{obs_}atom_nbf x 1)
 
-              Kt_part.row(mu).segment(obs_atom_bfoff, obs_atom_nbf).transpose() +=
+              Kt_part.col(mu).segment(obs_atom_bfoff, obs_atom_nbf).noalias() +=
                   C_X * B_ish.row(mu.bfoff_in_shell*Xblk.nbf + X.bfoff_in_block).transpose();
 
-              Kt_part.row(mu).transpose() += C_X.transpose()
+              Kt_part.col(mu).noalias() += C_X.transpose()
                   * B_ish.row(mu.bfoff_in_shell*Xblk.nbf + X.bfoff_in_block).segment(obs_atom_bfoff, obs_atom_nbf).transpose();
 
-              Kt_part.row(mu).segment(obs_atom_bfoff, obs_atom_nbf).transpose() -=
+              Kt_part.col(mu).segment(obs_atom_bfoff, obs_atom_nbf).noalias() -=
                   C_X.middleCols(obs_atom_bfoff, obs_atom_nbf).transpose()
                   * B_ish.row(mu.bfoff_in_shell*Xblk.nbf + X.bfoff_in_block).segment(obs_atom_bfoff, obs_atom_nbf).transpose();
 

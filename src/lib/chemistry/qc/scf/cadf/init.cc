@@ -163,8 +163,6 @@ CADFCLHF::init_threads()
 
   // Make the assignments for the mu, X pairs in K
   inode = 0;
-  //for(int ish = 0; ish < sig_blocks_.size(); ++ish) {
-  //  for(auto&& sig_block : sig_blocks_[ish]) {
   for(auto&& ish : shell_range(gbs_)) {
     for(auto&& Xblk : shell_block_range(dfbs_, gbs_, 0, NoLastIndex, SameCenter)) {
       const int assignment = inode % n_node; ++inode;
@@ -179,18 +177,6 @@ CADFCLHF::init_threads()
 
   inode = 0;
   // TODO Non-round-robin static parallelism to make lookup faster in L_3 build
-  //for(int ish = 0; ish < sig_blocks_.size(); ++ish) {
-  //  for(auto&& sig_block : sig_blocks_[ish]) {
-  //    for(auto Xsh : shell_range(ShellBlockData<>(sig_block))) {
-
-  //      const int assignment = inode % n_node; ++inode;
-  //      if(assignment == me) {
-  //        local_pairs_linK_.emplace(ish, (int)Xsh);
-  //      }
-
-  //    } // end loop over Xsh
-  //  } // end loop over Xsh blocks
-  //} // end loop over ish
   for(auto&& ish : shell_range(gbs_)) {
     for(auto&& Xsh : shell_range(dfbs_)) {
       const int assignment = inode % n_node; ++inode;
@@ -217,6 +203,7 @@ CADFCLHF::init_significant_pairs()
   std::vector<std::pair<double, IntPair>> pair_values;
   //----------------------------------------//
   schwarz_frob_.resize(gbs_->nshell(), gbs_->nshell());
+  memory_used_ += gbs_->nshell() * gbs_->nshell() * sizeof(double);
   schwarz_frob_ = Eigen::MatrixXd::Zero(gbs_->nshell(), gbs_->nshell());
   local_pairs_spot_ = 0;
   do_threaded(nthread_, [&](int ithr){
@@ -330,7 +317,6 @@ CADFCLHF::init_significant_pairs()
   //============================================================================//
   // Now compute the significant pairs for the outer loop of the exchange and the sig_partners_ array
   sig_partners_.resize(gbs_->nshell());
-  sig_blocks_.resize(gbs_->nshell());
   int pair_index = 0;
   for(auto&& pair : sig_pairs_) {
     ShellData ish(pair.first, gbs_), jsh(pair.second, gbs_);
@@ -339,14 +325,6 @@ CADFCLHF::init_significant_pairs()
     if(ish != jsh) {
       sig_partners_[jsh].insert(ish);
       L_schwarz[jsh].insert(ish, schwarz_frob_(ish, jsh));
-    }
-    for(auto&& Xblk : iter_shell_blocks_on_center(dfbs_, ish.center, gbs_)) {
-      sig_blocks_[ish].insert(Xblk);
-      sig_blocks_[jsh].insert(Xblk);
-    }
-    for(auto&& Xblk : iter_shell_blocks_on_center(dfbs_, jsh.center, gbs_)) {
-      sig_blocks_[ish].insert(Xblk);
-      sig_blocks_[jsh].insert(Xblk);
     }
     //----------------------------------------//
     ++pair_index;

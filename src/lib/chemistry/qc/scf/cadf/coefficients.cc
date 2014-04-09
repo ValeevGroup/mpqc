@@ -131,11 +131,13 @@ CADFCLHF::compute_coefficients()
   /*-----------------------------------------------------*/
 
   timer.enter("compute (X|Y)");
+  ExEnv::out0() << indent << "Computing two center integrals" << std::endl;
   g2_full_ptr_ = ints_to_eigen_threaded(
       ShellBlockData<>(dfbs_),
       ShellBlockData<>(dfbs_),
       eris_2c_, coulomb_oper_type_
   );
+  memory_used_ += sizeof(TwoCenterIntContainer) + dfnbf*dfnbf*sizeof(double);
   const auto& g2 = *g2_full_ptr_;
   timer.exit();
 
@@ -245,6 +247,7 @@ CADFCLHF::compute_coefficients()
   /* Store the transpose and blocked coefficients          		                        {{{1 */ #if 1 //latex `\label{sc:coeftrans}`
   //---------------------------------------------------------------------------------------//
 
+  // TODO Get rid of this!!!
   timer.change("05 - store blocked coefs");
   coef_block_offsets_.resize(natom);
   for(int iatom = 0; iatom < natom; ++iatom) {

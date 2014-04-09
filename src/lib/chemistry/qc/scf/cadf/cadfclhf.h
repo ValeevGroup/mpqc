@@ -596,7 +596,6 @@ class CADFCLHF: public CLHF {
     std::vector<std::pair<int, int>> sig_pairs_;
 
     std::vector<std::set<int>> sig_partners_;
-    std::vector<std::set<ShellBlockSkeleton<>>> sig_blocks_;
 
     // The same as sig_pairs_, but organized differently
     std::vector<std::vector<int>> shell_to_sig_shells_;

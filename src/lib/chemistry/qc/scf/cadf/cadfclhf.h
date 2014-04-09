@@ -367,6 +367,8 @@ class CADFCLHF: public CLHF {
     ScreeningStatistics::Iteration* iter_stats_;
 
     double prev_density_frob_;
+    double prev_epsilon_;
+    double prev_epsilon_dist_;
 
     TwoCenterIntContainerPtr g2_full_ptr_;
 

@@ -319,19 +319,25 @@ CADFCLHF::compute_K()
 
     if(density_reset_){
       prev_density_frob_ = D_frob.norm();
+      prev_epsilon_ = epsilon;
+      prev_epsilon_dist_ = epsilon_dist;
     }
     else{
       if(scale_screening_thresh_) {
         const double ratio = D_frob.norm() / prev_density_frob_;
-        epsilon *= ratio;
-        epsilon_dist *= ratio;
+        epsilon = prev_epsilon_ * ratio;
+        epsilon_dist = prev_epsilon_dist_ * ratio;
       }
+
+      prev_epsilon_ = epsilon;
+      prev_epsilon_dist_ = epsilon_dist;
 
       if(full_screening_expon_ != 1.0) {
         epsilon = pow(epsilon, full_screening_expon_);                                      //latex `\label{sc:link:expon}`
         epsilon_dist = pow(epsilon_dist, full_screening_expon_);
       }
     }
+
 
     if(all_to_all_L_3_) {
 
@@ -754,17 +760,23 @@ CADFCLHF::compute_K()
           D_B_buff.resize(nbf, nbf);
         }
 
-        //----------------------------------------//
+        //============================================================================//
+        // Main loop
+        //============================================================================//
+
         while(get_ish_Xblk_3(ish, Xblk)) {                                                            //latex `\label{sc:k3b:while}`
+
           /*-----------------------------------------------------*/
           /* Compute B intermediate                         {{{2 */ #if 2 // begin fold      //latex `\label{sc:k3b:b}`
 
+          // Timer stuff
           mt_timer.enter("compute B", ithr);
           auto ints_timer = mt_timer.get_subtimer("compute ints", ithr);
           auto k2_part_timer = mt_timer.get_subtimer("k2 part", ithr);
           auto contract_timer = mt_timer.get_subtimer("contract", ithr);
           auto ex_timer = mt_timer.get_subtimer("exact diagonal", ithr);
 
+          // Create B_ish and the B buffer
           ColMatrix B_ish(ish.nbf * Xblk.nbf, nbf);
           B_ish = ColMatrix::Zero(ish.nbf * Xblk.nbf, nbf);
           int b_buff_nrows, b_buff_ncols;
@@ -776,7 +788,6 @@ CADFCLHF::compute_K()
             b_buff_ncols = b_buff_nrows = 0;
           }
           Eigen::Map<RowMatrix> B_buffer_mat(b_buffer, b_buff_nrows, b_buff_ncols);
-          //std::memset(b_buffer, 0, b_buff_nrows * b_buff_ncols * sizeof(double));
           b_buff_offset = 0;
 
           // Exact diagonal itermediate storage
@@ -797,6 +808,7 @@ CADFCLHF::compute_K()
 
             // TODO figure out how to take advantage of L_3 sorting
             assert(Xblk.nshell == 1);
+
             for(const auto&& Xsh : shell_range(Xblk)) {                                              //latex `\label{sc:k3b:Xshloop}`
 
               int block_offset = 0;

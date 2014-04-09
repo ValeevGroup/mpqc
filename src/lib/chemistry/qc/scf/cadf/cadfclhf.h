@@ -319,8 +319,6 @@ class CADFCLHF: public CLHF {
     bool linK_block_rho_;
     /// Currently does nothing
     bool linK_sorted_B_contraction_;
-    /// Full screening exponent for non-reset iterations
-    double full_screening_expon_;
     /// Use 1/r^(lX+1) factor in screening
     bool linK_use_distance_;
     /// Screening statistics print level.  Higher levels may result in a slight slowdown
@@ -359,10 +357,16 @@ class CADFCLHF: public CLHF {
     bool B_use_buffer_ = false;
     /// B use buffer
     size_t B_buffer_size_;
+    /// Scale the LinK screening threshold for differential density iterations by the ratio of the Frobenius norm of the density relative to the previous iteration
+    bool scale_screening_thresh_ = true;
+    /// Full screening exponent for non-reset iterations
+    double full_screening_expon_ = 1.0;
     //@}
 
     ScreeningStatistics stats_;
     ScreeningStatistics::Iteration* iter_stats_;
+
+    double prev_density_frob_;
 
     TwoCenterIntContainerPtr g2_full_ptr_;
 

@@ -163,6 +163,7 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   xml_screening_data_ = keyval->booleanvalue("xml_screening_data", KeyValValueboolean(xml_screening_data_));
   all_to_all_L_3_ = keyval->booleanvalue("all_to_all_L_3", KeyValValueboolean(all_to_all_L_3_));
   sig_pairs_J_ = keyval->booleanvalue("sig_pairs_J", KeyValValueboolean(sig_pairs_J_));
+  scale_screening_thresh_ = keyval->booleanvalue("scale_screening_thresh", KeyValValueboolean(scale_screening_thresh_));
   //----------------------------------------------------------------------------//
   stats_.print_level = print_screening_stats_;
   stats_.xml_stats_saved = xml_screening_data_;
@@ -205,31 +206,32 @@ CADFCLHF::print(ostream&o) const
   auto double_str = [&fmt](double val) -> std::string {
      return std::string(scprintf(fmt.c_str(), val).str());
   };
+  o << indent << "all_to_all_L_3 = " << bool_str(all_to_all_L_3_) << endl;
+  o << indent << "B_use_buffer = " << bool_str(B_use_buffer_) << endl;
   o << indent << "basis name = " << gbs_->label() << endl;
+  o << indent << "coef_screening_thresh = " << double_str(coef_screening_thresh_) << endl;
   o << indent << "dfbasis name = " << dfbs_->label() << endl;
   o << indent << "do_linK = " << bool_str(do_linK_) << endl;
+  o << indent << "density_screening_thresh = " << double_str(density_screening_thresh_) << endl;
+  o << indent << "distance_damping_factor = " << double_str(distance_damping_factor_) << endl;
+  o << indent << "distance_screening_thresh = " << double_str(distance_screening_thresh_) << endl;
   o << indent << "exact_diagonal_J = " << bool_str(exact_diagonal_J_) << endl;
   o << indent << "exact_diagonal_K = " << bool_str(exact_diagonal_K_) << endl;
+  o << indent << "full_screening_expon = " << double_str(full_screening_expon_) << endl;
+  o << indent << "full_screening_thresh = " << double_str(full_screening_thresh_) << endl;
+  o << indent << "linK_block_rho = " << bool_str(linK_block_rho_) << endl;
+  o << indent << "linK_sorted_B_contraction = " << bool_str(linK_sorted_B_contraction_) << endl;
   o << indent << "linK_use_distance = " << bool_str(linK_use_distance_) << endl;
-  o << indent << "use_norms_nu = " << bool_str(use_norms_nu_) << endl;
-  o << indent << "use_norms_sigma = " << bool_str(use_norms_sigma_) << endl;
+  o << indent << "pair_screening_thresh = " << double_str(pair_screening_thresh_) << endl;
+  o << indent << "scale_screening_thresh = " << bool_str(scale_screening_thresh_) << endl;
+  o << indent << "subtract_extents = " << bool_str(subtract_extents_) << endl;
   o << indent << "use_extents = " << bool_str(use_extents_) << endl;
   o << indent << "use_max_extents = " << bool_str(use_max_extents_) << endl;
-  o << indent << "subtract_extents = " << bool_str(subtract_extents_) << endl;
-  o << indent << "linK_block_rho = " << bool_str(linK_block_rho_) << endl;
-  o << indent << "B_use_buffer = " << bool_str(B_use_buffer_) << endl;
+  o << indent << "use_norms_nu = " << bool_str(use_norms_nu_) << endl;
+  o << indent << "use_norms_sigma = " << bool_str(use_norms_sigma_) << endl;
   o << indent << "use_sparse = " << bool_str(use_sparse_) << endl;
-  o << indent << "xml_screening_data = " << bool_str(xml_screening_data_) << endl;
-  o << indent << "linK_sorted_B_contraction = " << bool_str(linK_sorted_B_contraction_) << endl;
-  o << indent << "all_to_all_L_3 = " << bool_str(all_to_all_L_3_) << endl;
-  o << indent << "full_screening_thresh = " << double_str(full_screening_thresh_) << endl;
-  o << indent << "distance_screening_thresh = " << double_str(distance_screening_thresh_) << endl;
-  o << indent << "pair_screening_thresh = " << double_str(pair_screening_thresh_) << endl;
-  o << indent << "coef_screening_thresh = " << double_str(coef_screening_thresh_) << endl;
-  o << indent << "density_screening_thresh = " << double_str(density_screening_thresh_) << endl;
-  o << indent << "full_screening_expon = " << double_str(full_screening_expon_) << endl;
-  o << indent << "distance_damping_factor = " << double_str(distance_damping_factor_) << endl;
   o << indent << "well_separated_thresh = " << double_str(well_separated_thresh_) << endl;
+  o << indent << "xml_screening_data = " << bool_str(xml_screening_data_) << endl;
 
 
   CLHF::print(o);

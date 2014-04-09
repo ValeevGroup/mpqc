@@ -312,17 +312,25 @@ CADFCLHF::compute_K()
 
     //----------------------------------------//                                             //latex `\label{sc:link:ldc:end}`
     // Form L_3
-    timer.change("build L_3");
-    double epsilon, epsilon_dist;                                                            //latex `\label{sc:link:l3}`
+    timer.change("build L_3");                                                               //latex `\label{sc:link:l3}`
 
-    // TODO instead, scale threshholds based on the ratio of density frob. norm relative to first iteration
+    double epsilon = full_screening_thresh_;
+    double epsilon_dist = distance_screening_thresh_;
+
     if(density_reset_){
-      epsilon = full_screening_thresh_;
-      epsilon_dist = distance_screening_thresh_;
+      prev_density_frob_ = D_frob.norm();
     }
     else{
-      epsilon = pow(full_screening_thresh_, full_screening_expon_);                          //latex `\label{sc:link:expon}`
-      epsilon_dist = pow(distance_screening_thresh_, full_screening_expon_);
+      if(scale_screening_thresh_) {
+        const double ratio = D_frob.norm() / prev_density_frob_;
+        epsilon *= ratio;
+        epsilon_dist *= ratio;
+      }
+
+      if(full_screening_expon_ != 1.0) {
+        epsilon = pow(epsilon, full_screening_expon_);                                      //latex `\label{sc:link:expon}`
+        epsilon_dist = pow(epsilon_dist, full_screening_expon_);
+      }
     }
 
     if(all_to_all_L_3_) {

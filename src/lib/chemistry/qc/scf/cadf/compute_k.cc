@@ -338,6 +338,17 @@ CADFCLHF::compute_K()
       }
     }
 
+    if(scale_screening_thresh_) {
+      if(linK_use_distance_ and epsilon != epsilon_dist) {
+        ExEnv::out0() << indent << "  Effective LinK screening and LinK distance screening thresholds are now "
+                      << scprintf("%5.2e and %5.2e", epsilon, epsilon_dist) << endl;
+      }
+      else {
+        ExEnv::out0() << indent << "  Effective LinK screening threshold is now "
+                      << scprintf("%5.2e", epsilon) << endl;
+      }
+    }
+
 
     if(all_to_all_L_3_) {
 

@@ -363,6 +363,10 @@ class CADFCLHF: public CLHF {
     double full_screening_thresh_min_ = 1e-16;
     /// Full screening exponent for non-reset iterations
     double full_screening_expon_ = 1.0;
+    /// Should we screen the B contraction?
+    double screen_B_ = true;
+    /// Screening thresh for B contraction; defaults to full_screening_thresh_
+    double B_screening_thresh_;
     //@}
 
     ScreeningStatistics stats_;
@@ -532,12 +536,22 @@ class CADFCLHF: public CLHF {
         double* buffer
     );
 
+    template <typename ShellRange1, typename ShellRange2>
+    Eigen::Map<ThreeCenterIntContainer> ints_to_eigen_map(
+        const ShellBlockData<ShellRange1>& ish,
+        const ShellData& jsh,
+        const ShellBlockData<ShellRange2>& Xblk,
+        Ref<TwoBodyThreeCenterInt>& ints,
+        TwoBodyOper::type ints_type,
+        double* buffer
+    );
+
     void ints_to_buffer(
         int ish, int jsh, int ksh,
         int nbfi, int nbfj, int nbfk,
         Ref<TwoBodyThreeCenterInt>& ints,
         TwoBodyOper::type ints_type,
-        double* buffer
+        double* buffer, int stride=-1
     );
 
     /// returns ints for shell in (iblk.nbf, jsh.nbf) x kblk.nbf matrix in chemists' notation
@@ -737,6 +751,7 @@ class CADFCLHF: public CLHF {
     IndexListMap L_D;
     IndexListMap L_DC;
     IndexListMap2 L_3;
+    IndexListMap2 L_B;
 
 
     /**
@@ -955,6 +970,55 @@ CADFCLHF::ints_to_eigen_map(
     block_offset += ish.nbf;
   }
   return rv;
+}
+
+template <typename ShellRange1, typename ShellRange2>
+Eigen::Map<CADFCLHF::ThreeCenterIntContainer>
+CADFCLHF::ints_to_eigen_map(
+    const ShellBlockData<ShellRange1>& iblk,
+    const ShellData& jsh,
+    const ShellBlockData<ShellRange2>& Xblk,
+    Ref<TwoBodyThreeCenterInt>& ints,
+    TwoBodyOper::type int_type,
+    double* buffer
+){
+  Eigen::Map<ThreeCenterIntContainer> rv(
+      buffer,
+      iblk.nbf * jsh.nbf, Xblk.nbf
+  );
+  if(Xblk.nshell == 1) {
+    const auto& Xsh = Xblk.first_shell;
+    int block_offset = 0;
+    for(auto&& ish : shell_range(iblk)) {
+      ints_to_buffer(
+          ish, jsh, Xsh,
+          ish.nbf, jsh.nbf, Xsh.nbf,
+          ints, int_type,
+          buffer + block_offset * jsh.nbf * Xsh.nbf
+      );
+      block_offset += ish.nbf;
+    }
+    return rv;
+  }
+  else {
+    int block_offset = 0;
+    for(auto&& ish : shell_range(iblk)) {
+      int Xblk_offset = 0;
+      for(auto&& Xsh : shell_range(Xblk)) {
+        ints_to_buffer(
+            ish, jsh, Xsh,
+            ish.nbf, jsh.nbf, Xsh.nbf,
+            ints, int_type,
+            buffer + block_offset * jsh.nbf * Xblk.nbf + Xblk_offset,
+            // stride (from first element of one row to first element of next)
+            Xblk.nbf
+        );
+        Xblk_offset += Xsh.nbf;
+      }
+      block_offset += ish.nbf;
+    }
+    return rv;
+  }
 }
 
 template <typename ShellRange>

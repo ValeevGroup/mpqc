@@ -148,15 +148,32 @@ CADFCLHF::ints_to_buffer(
     int nbfi, int nbfj, int nbfk,
     Ref<TwoBodyThreeCenterInt>& ints,
     TwoBodyOper::type int_type,
-    double* buffer
+    double* buffer,
+    // stride is the distance from first element
+    // of one row to first element of next, or -1 if contiguous
+    int stride
 )
 {
-    //----------------------------------------//
-    ints->compute_shell(ish, jsh, ksh);
-    const double* buffer_in = ints->buffer(int_type);
-    std::copy(buffer_in, buffer_in + nbfi*nbfj*nbfk, buffer);
-    //----------------------------------------//
-    ints_computed_locally_ += nbfi * nbfj * nbfk;
+  //----------------------------------------//
+  ints->compute_shell(ish, jsh, ksh);
+  const double* buffer_ints = ints->buffer(int_type);
+  ints_computed_locally_ += nbfi * nbfj * nbfk;
+  //----------------------------------------//
+  if(stride == -1) {
+    std::copy(buffer_ints, buffer_ints + nbfi*nbfj*nbfk, buffer);
+  }
+  else {
+    // this is ugly
+    for(int ibf = 0; ibf < nbfi; ++ibf) {
+      for(int jbf = 0; jbf < nbfj; ++jbf) {
+        std::copy(
+            buffer_ints + (ibf*nbfj+jbf)*nbfk,
+            buffer_ints + (ibf*nbfj+jbf)*nbfk + nbfk,
+            buffer + (ibf*nbfj+jbf)*stride
+        );
+      }
+    }
+  }
 }
 
 CADFCLHF::FourCenterIntContainerPtr

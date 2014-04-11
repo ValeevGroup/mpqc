@@ -1185,7 +1185,6 @@ class OrderedShellList {
         detail::hash_<ShellIndexWithValue>,
         detail::index_equal_
     > index_set;
-    //typedef std::set<ShellIndexWithValue, index_equal_> index_set;
 
     typedef index_list::const_iterator index_iterator;
     typedef basis_element_with_value_iterator<ShellDataWithValue, index_iterator> iterator;
@@ -1194,35 +1193,83 @@ class OrderedShellList {
 
     // TODO Make this a shared mutex
     mutable std::mutex insert_mtx_;
+    mutable std::mutex aux_vector_mtx_;
 
     index_list indices_;
     index_set idx_set_;
     bool sorted_ = false;
     bool sort_by_value_ = true;
 
+    Eigen::VectorXd aux_vector_;
+    bool aux_vector_initialized_ = false;
+    double aux_value_;
+
   public:
 
     GaussianBasisSet* basis_ = 0;
     GaussianBasisSet* dfbasis_ = 0;
 
+    // An auxiliary value to tag along with the list
+
     explicit OrderedShellList(bool sort_by_value = true)
       : sort_by_value_(sort_by_value)
-    { }
+    {
+      aux_value_ = 0.0;
+    }
+
+    template<typename Index>
+    OrderedShellList(
+        const std::set<Index>& indices_in,
+        GaussianBasisSet* basis,
+        GaussianBasisSet* dfbasis = 0
+    )
+      : sort_by_value_(false),
+        basis_(basis), dfbasis_(dfbasis)
+    {
+      std::copy(indices_in.begin(), indices_in.end(), std::back_inserter(indices_));
+      sort(false);
+      aux_value_ = 0.0;
+    }
 
     OrderedShellList(const OrderedShellList& other)
       : indices_(other.indices_),
         idx_set_(other.idx_set_),
         sorted_(other.sorted_),
         sort_by_value_(other.sort_by_value_)
-    { }
+    {
+      aux_value_ = other.aux_value_;
+    }
     
+    template <typename Derived>
+    void add_to_aux_value_vector(const double add_val, const Eigen::MatrixBase<Derived>& to_add) {
+      std::lock_guard<std::mutex> lg(aux_vector_mtx_);
+      if(not aux_vector_initialized_) {
+        aux_vector_.resize(to_add.rows());
+        aux_vector_ = decltype(aux_vector_)::Zero(to_add.rows());
+      }
+      aux_value_ += add_val;
+      aux_vector_.noalias() += to_add;
+    }
+
+    void set_aux_value(const double add_val) {
+      aux_value_ = add_val;
+    }
+
+    double get_aux_value() const {
+      return aux_value_;
+    }
+
+    const decltype(aux_vector_)& get_aux_vector() const {
+      return aux_vector_;
+    }
+
     void set_basis(GaussianBasisSet* basis, GaussianBasisSet* dfbasis = 0)
     {
       basis_ = basis;
       if(dfbasis) dfbasis_ = dfbasis;
     }
 
-    void insert(const ShellData& ish, double value) {
+    void insert(const ShellData& ish, double value = 0) {
       //----------------------------------------//
       assert(basis_ == 0 || ish.basis == basis_);
       if(basis_ == 0) basis_ = ish.basis;
@@ -1275,6 +1322,7 @@ class OrderedShellList {
     void sort(bool transfer_idx_set = true) {
       std::lock_guard<std::mutex> lg(insert_mtx_);
       if(transfer_idx_set) {
+        assert(idx_set_.size() >= indices_.size());
         indices_.clear();
         std::copy(idx_set_.begin(), idx_set_.end(), std::back_inserter(indices_));
       }

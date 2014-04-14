@@ -67,7 +67,9 @@ mpqc::TA::ClDFGEngine::operator ()( const std::string& v) {
     compute_symetric_df_ints();
     world_->madworld()->gop.fence();
     double int_end = madness::wall_time();
-    std::cout << "Computing the integrals took " << int_end - int_start << " seconds" << std::endl;
+    if(world_->madworld()->rank()==0){
+      std::cout << "\tComputing the rank 3 symmetric tensor took " << int_end - int_start << " seconds" << std::endl;
+    }
   }
 
  /*
@@ -77,14 +79,15 @@ mpqc::TA::ClDFGEngine::operator ()( const std::string& v) {
   const std::string &i = input[0];
   const std::string &j = "," + input[1];
  /*
-  * These strings use random sequence which are unlikely to have collisions.
+  * These strings are unlikely to have collisions.
   * This means that possibly if someone calls this function in an expression and
   * happens to use the same strings as one of the ones below something bad might
-  * happen. This is unlikely due to the length and random nature of these strings.
+  * happen. This is unlikely due to the length and nature of these strings.
   */
   const std::string m("mpqc::TA::ClDfGFactory_m");
   const std::string n(",mpqc::TA::ClDfGFactory_n");
   const std::string X(",mpqc::TA::ClDfGFactory_X");
+
 
   // just for conveience
   const TAMatrix &dens = *density_;
@@ -98,62 +101,53 @@ mpqc::TA::ClDFGEngine::operator ()( const std::string& v) {
 void mpqc::TA::ClDFGEngine::compute_symetric_df_ints() {
 
   // Get three center ints
+  double computing_ints_time0 = madness::wall_time();
   using eri3pool = IntegralEnginePool<sc::Ref<sc::TwoBodyThreeCenterInt> >;
   integral_->set_basis(basis_, basis_, dfbasis_);
-  std::shared_ptr<eri3pool>
-    eri3_ptr(new eri3pool(integral_->electron_repulsion3()->clone()));
+  auto eri3_ptr = std::make_shared<eri3pool>(
+                                integral_->electron_repulsion3()->clone());
 
   // Using the df_ints as temporary storage for the twobody three center ints
   df_ints_ =  Integrals(*world_->madworld(), eri3_ptr, basis_, dfbasis_);
+  world_->madworld()->gop.fence();
 
   // Get two center ints
   using eri2pool = IntegralEnginePool<sc::Ref<sc::TwoBodyTwoCenterInt> >;
   integral_->set_basis(dfbasis_, dfbasis_);
-  std::shared_ptr<eri2pool>
-    eri2_ptr(new eri2pool(integral_->electron_repulsion2()->clone()));
+  auto eri2_ptr = std::make_shared<eri2pool>(
+                              integral_->electron_repulsion2()->clone());
 
   TAMatrix eri2_ints = Integrals(*world_->madworld(), eri2_ptr, dfbasis_);
+  world_->madworld()->gop.fence();
+  double computing_ints_time1 = madness::wall_time();
+  if(world_->madworld()->rank()==0){
+    std::cout << "\tTook " << computing_ints_time1 - computing_ints_time0 << " s" <<
+            " to compute eri3 and eri2 intiegrals." << std::endl;
+  }
 
   // Copy two body two center ints to elemental
   EMatrix eri2_elem =
       TiledArray::array_to_elem(eri2_ints, elem::DefaultGrid());
-  world_->madworld()->gop.fence();
+  world_->madworld()->gop.fence(); // makesure we finish copy
 
-#if 0 // Inverse sqrt option disabled for now.
-  // Perform the sqrt inverse of the twobody two center integrals
-  // Eigen vectors and values
-  EMatrix vectors(elem::DefaultGrid());
-  elem::DistMatrix<double, elem::VR, elem::STAR> values(elem::DefaultGrid());
-
-  // Eigensolver uses eri2_elem as storage so that matrix can't be trusted anymore
-  elem::HermitianEig(elem::LOWER, eri2_elem, values, vectors);
-
-  // Take the sqrt of the inverse of the eigenvalues
-  auto local_size = values.LocalHeight() * values.LocalWidth();
-  std::for_each(values.Buffer(), values.Buffer() + local_size,
-                [](double& i){i = 1.0/(sqrt(i));});
-
-  /*
-   * Make a copy of the eigenvectors so that we can apply the matrix product
-   * \mathbf{U}\mathbf{D} = \mathbf{E}. Then \mathbf{E}\mathbf{U}^T = \mathbf{M}^{-1/2}
-   */
-  auto E(vectors);
-  elem::mpi::Barrier(elem::mpi::COMM_WORLD);
-  elem::DiagonalScale(elem::RIGHT, elem::NORMAL, values, E);
-
-  // Make sqrt inverse and put it in  eri2_elem
-  elem::Gemm(elem::NORMAL, elem::TRANSPOSE, 1.0, E, vectors, eri2_elem);
-#endif
 
   // Compute the cholesky inverse matrix.
+  double inverse_time0 = madness::wall_time();
   elem::Cholesky(elem::UPPER, eri2_elem);
+  elem::TriangularInverse(elem::UPPER, elem::NON_UNIT, eri2_elem);
   elem::MakeTriangular(elem::UPPER, eri2_elem);
-  elem::TriangularInverse(elem::UPPER,elem::NON_UNIT,eri2_elem);
+  double inverse_time1 = madness::wall_time();
+  if(world_->madworld()->rank()==0){
+    std::cout << "\tTook " << inverse_time1 - inverse_time0 << " s" <<
+            " to compute eri2 inverse." << std::endl;
+  }
+
 
   // Copy back to TA
   ::TiledArray::elem_to_array(eri2_ints, eri2_elem);
 
-  // Create df_ints_ tensor
+  // Create df_ints_ tensor from eri3(i,j,P) * U_{eri2}^{-1}(P,X)
   df_ints_ = df_ints_("i,j,P") * eri2_ints("P,X");
+  world_->madworld()->gop.fence(); // so eri2_ints doesn't go out of scope.
 }
 

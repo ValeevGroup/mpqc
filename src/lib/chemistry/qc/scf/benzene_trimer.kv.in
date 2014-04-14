@@ -3,14 +3,15 @@ integrals<IntegralLibint2>: ()
 basis<TiledBasisSet>: (
   molecule = $:benzene_trimer
   name = "cc-pVDZ"
-  ntiles = 9
+  ntiles = 3
 )
 
 dfbasis<TiledBasisSet>: (
   molecule = $:benzene_trimer
   name = "cc-pVDZ/JKFIT"
-  ntiles = 9
+  ntiles = 2
 )
+
 
 benzene_trimer<Molecule>: (
   units = angstrom

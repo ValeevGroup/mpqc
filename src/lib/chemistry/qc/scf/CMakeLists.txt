@@ -78,9 +78,6 @@ if (MPQC_UNITTEST)
   
   target_link_libraries( gengine_test chemistry)
 
-  add_executable(david_hack david_hack_file.cpp $<TARGET_OBJECTS:basis>)
-  target_link_libraries(david_hack chemistry)
-
 endif (MPQC_UNITTEST)
 
   CONFIGURE_FILE(

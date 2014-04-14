@@ -28,24 +28,40 @@
 #ifndef MPQC_CHEMISTRY_QC_SCF_GENGINE_HPP
 #define MPQC_CHEMISTRY_QC_SCF_GENGINE_HPP
 
-#include <tiled_array.h>
-#include <chemistry/qc/basis/tiledbasisset.hpp>
+#include <tiledarray_fwd.h>
+#include <vector>
 #include <util/class/class.h>
-#include <util/misc/assert.h>
 
+// Expression Foward Declaration
+namespace TiledArray {
+  namespace expressions {
+    template <typename>
+    class TensorExpression;
+  } // namespace expressions
+} // namespace TiledArray
 
 namespace mpqc {
   namespace TA {
 
-    class GEngineBase : virtual public sc::RefCount {
+    class GEngineBase : virtual public sc:: DescribedClass {
     public:
-      typedef ::TiledArray::Array<double, 2> TAMatrix;
+      typedef TiledArray::TArray2D TAMatrix;
+      typedef TiledArray::TensorD TATensor;
+      typedef TiledArray::expressions::TensorExpression<TATensor> return_type;
 
       GEngineBase() = default;
       virtual ~GEngineBase() = default;
 
+      virtual // Ensure that the user can set the densities
+      void
+      set_densities(std::vector<TAMatrix*>) = 0;
+
+      virtual // Return true if the density has been set
+      bool
+      densities_set() = 0;
+
       virtual
-      TiledArray::expressions::TensorExpression<TAMatrix::eval_type>
+      return_type
       operator()(const std::string &v) = 0;
 
     private:

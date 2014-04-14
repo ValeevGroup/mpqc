@@ -26,6 +26,12 @@
 //
 
 #include <chemistry/qc/scf/cldfgengine.hpp>
+#include <util/madness/world.h>
+#include <chemistry/qc/basis/integralenginepool.hpp>
+#include <chemistry/qc/basis/integral.h>
+#include <chemistry/qc/libint2/libint2.h>
+#include <chemistry/qc/basis/tiledbasisset.hpp>
+#include <chemistry/qc/basis/taskintegrals.hpp>
 #include <elemental.hpp>
 
 using namespace mpqc;
@@ -33,18 +39,69 @@ using namespace mpqc::TA;
 using namespace sc;
 
 using TAMatrix = ClDFGEngine::TAMatrix;
+using return_type = ClDFGEngine::return_type;
 using EMatrix = elem::DistMatrix<double>;
+
+sc::ClassDesc ClDFGEngine::class_desc_(
+                typeid(mpqc::TA::ClDFGEngine),
+                "TA.ClDFGEngine", 1, "public GEngineBase",
+                0, 0, 0);
 
 mpqc::TA::ClDFGEngine::ClDFGEngine(sc::Ref<sc::IntegralLibint2> integral,
                                      sc::Ref<TiledBasisSet> basis,
                                      sc::Ref<TiledBasisSet> dfbasis,
-                                     const TAMatrix * const density,
+                                     TAMatrix *density,
                                      sc::Ref<World> world) :
         integral_(integral), basis_(basis), dfbasis_(dfbasis),
         density_(density), world_(world)
 {}
 
-TiledArray::expressions::TensorExpression<TAMatrix::eval_type>
+mpqc::TA::ClDFGEngine::ClDFGEngine(const sc::Ref<sc::KeyVal> &kv) : integral_(),
+        basis_(), dfbasis_(), density_(nullptr), world_() {
+
+  // Initialize everything
+  world_ << kv->describedclassvalue("world");
+  basis_ << kv->describedclassvalue("basis");
+  dfbasis_ << kv->describedclassvalue("dfbasis");
+  integral_ << kv->describedclassvalue("integrals");
+
+  if(world_.null()){
+    world_ = new World;
+  }
+
+  if(basis_.null()){ // Check that user didn't give guassianbasis
+    sc::Ref<sc::GaussianBasisSet> bs;
+    bs << kv->describedclassvalue("basis");
+    if (bs.null())
+      throw sc::InputError("missing \"basis\" keyword",
+                           __FILE__, __LINE__, "basis", "", this->class_desc());
+    else {
+      basis_ = new TiledBasisSet(bs);
+    }
+  }
+
+  if(dfbasis_.null()){ // First check that it wasn't a GBS
+    sc::Ref<sc::GaussianBasisSet> bs;
+    bs << kv->describedclassvalue("dfbasis");
+    if(!bs.null()){ // If it was a GBS then convert it
+      dfbasis_ = new TiledBasisSet(bs);
+    }
+    else { // If there was no dfbasis then make one.
+      sc::Ref<sc::AssignedKeyVal> akv = new AssignedKeyVal;
+      akv->assign("molecule", basis_->molecule().pointer());
+      akv->assign("name", "cc-pVDZ/JKFIT");
+      akv->assign("ntile", 2);
+      dfbasis_ = new TiledBasisSet(static_cast<sc::Ref<sc::KeyVal> >(akv));
+    }
+  }
+
+  if(integral_.null()){
+    integral_ = new IntegralLibint2;
+  }
+
+}
+
+return_type
 mpqc::TA::ClDFGEngine::operator ()( const std::string& v) {
 
   // Get the user input
@@ -98,30 +155,56 @@ mpqc::TA::ClDFGEngine::operator ()( const std::string& v) {
   return expr;
 }
 
-void mpqc::TA::ClDFGEngine::compute_symetric_df_ints() {
+void
+mpqc::TA::ClDFGEngine::set_densities(std::vector<TAMatrix *> densities) {
+  MPQC_ASSERT(densities.size() == 1);
+  density_ = densities.at(0);
+}
 
-  // Get three center ints
-  double computing_ints_time0 = madness::wall_time();
+bool
+mpqc::TA::ClDFGEngine::densities_set() {
+  return density_ != nullptr;
+}
+
+void
+mpqc::TA::ClDFGEngine::compute_symetric_df_ints() {
+
+  // Set basis and grab a clone of the engine we need
+  mutex::global::lock(); // <<< Begin Critical Section
+    integral_->set_basis(basis_, basis_, dfbasis_);
+    auto eri3_clone = integral_->electron_repulsion3()->clone();
+  mutex::global::unlock(); // <<< End Critical Section
+
+  // Make an integral engine pool out of our clone
   using eri3pool = IntegralEnginePool<sc::Ref<sc::TwoBodyThreeCenterInt> >;
-  integral_->set_basis(basis_, basis_, dfbasis_);
-  auto eri3_ptr = std::make_shared<eri3pool>(
-                                integral_->electron_repulsion3()->clone());
+  auto eri3_ptr = std::make_shared<eri3pool>(eri3_clone);
 
   // Using the df_ints as temporary storage for the twobody three center ints
+  double computing_eri3_ints_time0 = madness::wall_time();
   df_ints_ =  Integrals(*world_->madworld(), eri3_ptr, basis_, dfbasis_);
   world_->madworld()->gop.fence();
+  double computing_eri3_ints_time1 = madness::wall_time();
 
   // Get two center ints
-  using eri2pool = IntegralEnginePool<sc::Ref<sc::TwoBodyTwoCenterInt> >;
-  integral_->set_basis(dfbasis_, dfbasis_);
-  auto eri2_ptr = std::make_shared<eri2pool>(
-                              integral_->electron_repulsion2()->clone());
+  // Set basis and grab a clone of the engine we need
+  mutex::global::lock(); // <<< Begin Critical Section
+    integral_->set_basis(dfbasis_, dfbasis_);
+    auto eri2_clone = integral_->electron_repulsion2()->clone();
+  mutex::global::unlock(); // <<< End Critical Section
 
+  using eri2pool = IntegralEnginePool<sc::Ref<sc::TwoBodyTwoCenterInt> >;
+  auto eri2_ptr = std::make_shared<eri2pool>(eri2_clone);
+
+  double computing_eri2_ints_time0 = madness::wall_time();
   TAMatrix eri2_ints = Integrals(*world_->madworld(), eri2_ptr, dfbasis_);
   world_->madworld()->gop.fence();
-  double computing_ints_time1 = madness::wall_time();
+  double computing_eri2_ints_time1 = madness::wall_time();
+
+  double int_time = (computing_eri2_ints_time1 - computing_eri2_ints_time0) +
+                    (computing_eri3_ints_time1 - computing_eri3_ints_time0);
+
   if(world_->madworld()->rank()==0){
-    std::cout << "\tTook " << computing_ints_time1 - computing_ints_time0 << " s" <<
+    std::cout << "\tTook " << int_time << " s" <<
             " to compute eri3 and eri2 intiegrals." << std::endl;
   }
 

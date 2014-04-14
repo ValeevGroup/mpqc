@@ -29,11 +29,25 @@
 #define MPQC_CHEMISTRY_QC_SCF_CLDFGFACTORY_HPP
 
 #include <chemistry/qc/scf/gengine_base.hpp>
-#include <util/madness/world.h>
-#include <chemistry/qc/libint2/libint2.h>
-#include <chemistry/qc/basis/integral.h>
-#include <chemistry/qc/basis/taskintegrals.hpp>
-#include <chemistry/qc/basis/integralenginepool.hpp>
+#include <vector>
+#include <tiled_array.h>
+#include <util/class/class.h>
+
+// Foward Declarations
+namespace sc {
+  class IntegralLibint2;
+} // namespace sc
+
+namespace mpqc{
+  class World;
+
+  namespace TA{
+    class TiledBasisSet;
+  } // namespace TA
+
+} // namespace mpqc
+
+
 
 namespace mpqc {
   namespace TA {
@@ -41,15 +55,27 @@ namespace mpqc {
     class ClDFGEngine: public GEngineBase {
     public:
       typedef GEngineBase::TAMatrix TAMatrix;
+      typedef GEngineBase::return_type return_type;
+
       ClDFGEngine(sc::Ref<sc::IntegralLibint2> integral,
                    sc::Ref<TiledBasisSet> basis,
                    sc::Ref<TiledBasisSet> dfbasis,
-                   const TAMatrix * const density,
+                   TAMatrix *density,
                    sc::Ref<World> world);
+
+      ClDFGEngine(const sc::Ref<sc::KeyVal> &kv);
+
       virtual ~ClDFGEngine() override = default;
 
-      virtual TiledArray::expressions::TensorExpression<TAMatrix::eval_type>
+      virtual return_type
       operator()(const std::string &v) override;
+
+      virtual
+      void
+      set_densities(std::vector<TAMatrix *>) override;
+
+      virtual bool
+      densities_set() override;
 
     private:
       void compute_symetric_df_ints();
@@ -61,7 +87,7 @@ namespace mpqc {
       sc::Ref<TiledBasisSet> dfbasis_;
 
       // Ptrs to density matrix and our world object
-      const TAMatrix * const density_;
+      TAMatrix *density_;
       sc::Ref<World> world_;
 
       // Tensor that holds the integrals which have been combined with the

@@ -27,8 +27,10 @@
 
 #include <util/madness/init.h>
 #include <util/misc/regtime.h>
+#include <chemistry/qc/libint2/libint2.h>
 #include <iostream>
 #include <chemistry/qc/scf/taclhf.hpp>
+#include <chemistry/qc/scf/cldfgengine.hpp>
 #define BOOST_TEST_MODULE test_taclhf
 #include <boost/test/included/unit_test.hpp>
 
@@ -41,13 +43,17 @@ struct Mock_CLHF : public CLHF{
   Mock_CLHF(const sc::Ref<sc::KeyVal> &kval) : CLHF(kval) {}
   ~Mock_CLHF() {}
 
-  CLHF::Matrix data_fock(){return scf_fock();}
-  CLHF::Matrix data_Gmat(){return G("i,j");}
-  double energy(){return iter_energy();}
-};
+  CLHF::TAMatrix data_fock(){return scf_fock();}
+  CLHF::TAMatrix data_Gmat(){return G("i,j");}
+  double energy(){return iter_energy() +
+                         molecule()->nuclear_repulsion_energy();}
+  };
 
 struct MADConfig {
     MADConfig() {
+      int argc = boost::unit_test::framework::master_test_suite().argc;
+      char** argv = boost::unit_test::framework::master_test_suite().argv;
+      ExEnv::init(argc, argv);
       mpqc::MADNESSRuntime::initialize();
     }
     ~MADConfig() {
@@ -64,19 +70,34 @@ BOOST_AUTO_TEST_CASE( construct_clhf_programmatically ){
     mol->add_atom(1,0,0,0);
     mol->add_atom(1,0,0,1.4);
 
+    // Make world
+    Ref<World> world = new World;
+
     // Make keyval
     Ref<AssignedKeyVal> akv = new AssignedKeyVal;
-    akv->assign("name", "STO-3G");
+    akv->assign("name", "cc-pVDZ");
+    akv->assign("ntiles", 2);
     akv->assign("molecule", mol.pointer());
-    Ref<GaussianBasisSet> basis =
-                    new GaussianBasisSet(Ref<KeyVal>(akv));
+    Ref<TiledBasisSet> basis =
+                    new TiledBasisSet(Ref<KeyVal>(akv));
     akv->assign("basis", basis.pointer());
+
+    akv->assign("name", "cc-pVDZ-JK/FIT");
+    Ref<TiledBasisSet> dfbasis =
+                    new TiledBasisSet(Ref<KeyVal>(akv));
+    akv->assign("dfbasis", dfbasis.pointer());
+    akv->assign("world", world.pointer());
+
+    Ref<Integral> int_fac = new IntegralLibint2;
+    akv->assign("integrals", int_fac.pointer());
+
+    Ref<GEngineBase> Geng = new ClDFGEngine(static_cast<Ref<KeyVal> >(akv));
+    akv->assign("GEngine", Geng.pointer());
 
     //Construct object
     Ref<Mock_CLHF> thf = new Mock_CLHF(akv);
     thf->print();
-    std::cout << "Fock = \n" << thf->data_fock() << std::endl;
-    std::cout << "Energy for initial Fock = " << thf->energy() << std::endl;
+    std::cout << "\tEnergy for initial Fock = " << thf->energy() << std::endl;
     std::cout << "Minimizing energy . . . " << std::endl;
     thf->minimize_energy();
     std::cout << "Final energy = " << thf->energy() << std::endl;

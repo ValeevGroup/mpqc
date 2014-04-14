@@ -35,18 +35,18 @@ namespace mpqc {
   namespace TA {
     class CLHF: public CLSCF {
     public:
-      typedef CLSCF::Matrix Matrix;
+      typedef CLSCF::TAMatrix TAMatrix;
       CLHF(const sc::Ref<sc::KeyVal> &kval);
 
       void minimize_energy();
 
     protected:
-      virtual Matrix& scf_fock() override;
+      virtual TAMatrix& scf_fock() override;
       // G matrix engine
       sc::Ref<GEngineBase> G_eng;
 
 
-      TiledArray::expressions::TensorExpression<Matrix::eval_type>
+      GEngineBase::return_type
       G(const std::string &s);
 
     private:

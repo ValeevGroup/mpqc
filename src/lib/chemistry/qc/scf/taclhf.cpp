@@ -26,13 +26,15 @@
 //
 
 #include <chemistry/qc/scf/taclhf.hpp>
+#include <tiled_array.h>
+#include <TiledArray/algebra/diis.h>
 #include <chemistry/qc/basis/integralenginepool.hpp>
 #include <chemistry/qc/basis/taskintegrals.hpp>
+#include <math/elemental/eigensolver.hpp>
 
 using namespace mpqc;
 using namespace mpqc::TA;
-using Matrix = mpqc::TA::CLHF::Matrix;
-
+using TAMatrix = mpqc::TA::CLHF::TAMatrix;
 
 sc::ClassDesc mpqc::TA::CLHF::class_desc_(typeid(mpqc::TA::CLHF), "TA.CLHF",
                       1, "public TA.CLSCF",
@@ -42,40 +44,60 @@ sc::ClassDesc mpqc::TA::CLHF::class_desc_(typeid(mpqc::TA::CLHF), "TA.CLHF",
 
 mpqc::TA::CLHF::CLHF(const sc::Ref<sc::KeyVal>& kval) :
     CLSCF(kval), G_eng()
-{}
+{
+  G_eng << kval->describedclassvalue("GEngine");
+  if(G_eng.null()){
+    throw sc::InputError("missing \"GEngine\" keyword",
+                         __FILE__, __LINE__, "GEngine", "",
+                         this->class_desc());
+  }
+}
 
-TiledArray::expressions::TensorExpression<Matrix::eval_type>
+
+GEngineBase::return_type
 mpqc::TA::CLHF::G(const std::string &s){
+  if(!G_eng->densities_set()){
+    G_eng->set_densities({&density()});
+  }
   return G_eng->operator()(s);
 }
 
 
 void mpqc::TA::CLHF::minimize_energy() {
-  Matrix &F = scf_fock();
-  const Matrix &S = overlap();
-  const Matrix &H = hcore();
-  Matrix &D = density();
-
+  TAMatrix &F = scf_fock();
+  const TAMatrix &S = overlap();
+  const TAMatrix &H = hcore();
+  TAMatrix &D = density();
 
   size_t iter = 0;
   double error_norminf = 1.0;
+  TiledArray::DIIS<TAMatrix> diis;
 
   while(error_norminf > 1e-6 && iter < 100){
-    Dguess(F);  // modifies D internally.
+
+    // Find new solution for the density
+    eigensolver_D(F,S,D,occupation());
+
+    // Update the Fock matrix
     F("i,j") = H("i,j") + G("i,j");
-    Matrix Grad = 8 * ( S("i,q") * D("q,x") * F("x,j") -
-                        F("i,q") * D("q,x") * S("x,j") );
+
+    // Compute the gradient and extrapolate with diis
+    TAMatrix Grad = 8 * ( S("i,q") * D("q,x") * F("x,j") -
+                          F("i,q") * D("q,x") * S("x,j") );
+    diis.extrapolate(F,Grad);
+
+    // Compute the error as the largest element of the gradient.
     error_norminf = ::TiledArray::expressions::norminf(Grad("i,j"));
-    diis.extrapolate(F, Grad);
     world()->madworld()->gop.fence();
+
   }
 }
 
 // if the base class SCF::scf_fock() matrix has not been initialized then
 // we should construct it.  We call the base class to get to the tiledarray
-Matrix& mpqc::TA::CLHF::scf_fock(){
+TAMatrix& mpqc::TA::CLHF::scf_fock(){
   if(!SCF::scf_fock().is_initialized()){
-    Matrix& F = SCF::scf_fock();
+    TAMatrix& F = SCF::scf_fock();
     F = hcore()("i,j") + G("i,j");
     world()->madworld()->gop.fence();
   }

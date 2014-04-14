@@ -38,7 +38,7 @@ namespace TA {
      */
     class CLSCF : public SCF {
     public :
-        typedef SCF::Matrix Matrix;
+        typedef SCF::TAMatrix TAMatrix;
 
         /** Key Value constructor . . . */
         CLSCF(const sc::Ref<sc::KeyVal> &kval);
@@ -47,17 +47,17 @@ namespace TA {
         virtual void compute() override;
         virtual double scf_energy() override;
 
-        virtual const Matrix& rdm1() override;
+        virtual const TAMatrix& rdm1() override;
 
     protected:
 
-        virtual Matrix& density() override;
+        virtual TAMatrix& density() override;
         virtual double iter_energy() override;
 
-        void tr_corr_purify(Matrix &P);
+        void tr_corr_purify(TAMatrix &P);
         // Return a shifted Fock matrix such that the spectrum has been inverted
         // and shifted to the range (0,1)
-        void Dguess(const Matrix &F);
+        void Dguess(const TAMatrix &F);
 
     private:
         static sc::ClassDesc class_desc_;

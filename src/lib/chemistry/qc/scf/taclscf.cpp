@@ -26,6 +26,7 @@
 //
 
 #include <chemistry/qc/scf/taclscf.hpp>
+#include <tiled_array.h>
 #include <chemistry/qc/basis/integralenginepool.hpp>
 #include <chemistry/qc/basis/taskintegrals.hpp>
 #include <chemistry/qc/lcao/soad.h>
@@ -34,7 +35,7 @@
 
 using namespace mpqc;
 using namespace mpqc::TA;
-using Matrix = mpqc::TA::CLSCF::Matrix;
+using TAMatrix = mpqc::TA::CLSCF::TAMatrix;
 
 sc::ClassDesc mpqc::TA::CLSCF::class_desc_(typeid(mpqc::TA::CLSCF), "TA.CLSCF",
                                            1, "public TA.SCF", 0,
@@ -58,7 +59,7 @@ void mpqc::TA::CLSCF::compute() {
   MPQC_ASSERT(false);
 }
 
-const Matrix& mpqc::TA::CLSCF::rdm1() {
+const TAMatrix& mpqc::TA::CLSCF::rdm1() {
   MPQC_ASSERT(false);
 }
 
@@ -69,7 +70,7 @@ double mpqc::TA::CLSCF::scf_energy() {
 }
 
 #warning "tr_corr_purify uses Eigen and is not production ready"
-void mpqc::TA::CLSCF::tr_corr_purify(Matrix &P) {
+void mpqc::TA::CLSCF::tr_corr_purify(TAMatrix &P) {
   // Avoid Eigen in the future
   Eigen::MatrixXd Ep = ::TiledArray::array_to_eigen(P);
   Eigen::MatrixXd Es = ::TiledArray::array_to_eigen(overlap());
@@ -80,21 +81,23 @@ void mpqc::TA::CLSCF::tr_corr_purify(Matrix &P) {
     Ep = (Ep.trace() >= occupation()) ? Eigen::MatrixXd(Ep*Es*Ep) :
                                         Eigen::MatrixXd(2 * Ep - Ep*Es*Ep);
   }
-  P = ::TiledArray::eigen_to_array < Matrix
+  P = ::TiledArray::eigen_to_array < TAMatrix
           > (*(world())->madworld(), P.trange(), Ep);
 }
 
 // If we have not generated an intial guess for the density yet then do so now.
-Matrix& mpqc::TA::CLSCF::density() {
+TAMatrix& mpqc::TA::CLSCF::density() {
+
   // Check to see if data has been initialized if
   if (!Wavefunction::density().is_initialized()) {
     // Get a reference to the array for ease of compuation
-    Matrix &D = Wavefunction::density();
+    TAMatrix &D = Wavefunction::density();
 
     // For constructing a SOAD object
     sc::Ref<sc::AssignedKeyVal> akv = new sc::AssignedKeyVal;
     akv->assign("molecule", molecule().pointer());
     akv->assign("basis", basis().pointer());
+    akv->assign("integrals", integral().pointer());
 
     // Construct a density guess based on a SOAD object
     using Soad = sc::SuperpositionOfAtomicDensities;
@@ -105,17 +108,16 @@ Matrix& mpqc::TA::CLSCF::density() {
                                       guess->guess_density(basis(),integral()),
                                       basis()->trange1());
     world()->madworld()->gop.fence();
-    std::cout << "D = \n" << D << std::endl;
-    world()->madworld()->gop.fence();
   }
+
   return Wavefunction::density();
 }
 
 #warning "Dguess uses Eigen and is not production ready"
-void mpqc::TA::CLSCF::Dguess(const Matrix& F) {
+void mpqc::TA::CLSCF::Dguess(const TAMatrix& F) {
 
   // Grab density so we can work with it.
-  Matrix& D = density();
+  TAMatrix& D = density();
 
   /* Needs to be changed to TiledArray only opps, but for now this is a
    *  stand in.
@@ -129,7 +131,7 @@ void mpqc::TA::CLSCF::Dguess(const Matrix& F) {
   for (size_t i = 0; i < Ef.rows(); ++i) {
     Ef(i, i) = emax - Ef(i, i);
   }
-  D=::TiledArray::eigen_to_array<Matrix>(*world()->madworld(), F.trange(), Ef);
+  D=::TiledArray::eigen_to_array<TAMatrix>(*world()->madworld(), F.trange(), Ef);
   /* End part that needs to be replaced */
 
   // Scale Evals to the range (0,1)

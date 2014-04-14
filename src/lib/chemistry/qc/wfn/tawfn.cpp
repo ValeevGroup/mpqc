@@ -26,6 +26,8 @@
 //
 
 #include <chemistry/qc/wfn/tawfn.hpp>
+#include <tiled_array.h>
+#include <mpqc/utility/mutex.hpp>
 #include <util/misc/scexception.h>
 #include <chemistry/qc/basis/taskintegrals.hpp>
 #include <chemistry/qc/basis/integralenginepool.hpp>
@@ -98,7 +100,7 @@ double mpqc::TA::Wavefunction::total_charge() const {
   return molecule()->total_charge() - nelectron();
 }
 
-const mpqc::TA::Wavefunction::Matrix&
+const mpqc::TA::Wavefunction::TAMatrix&
 mpqc::TA::Wavefunction::rdm1() {
   if (not rdm1_.computed()) {
     if (rdm1_.result_noupdate().is_initialized() == false)
@@ -108,7 +110,7 @@ mpqc::TA::Wavefunction::rdm1() {
   return rdm1_.result_noupdate();
 }
 
-const mpqc::TA::Wavefunction::Matrix&
+const mpqc::TA::Wavefunction::TAMatrix&
 mpqc::TA::Wavefunction::overlap() {
 
   if (not overlap_.computed()) {

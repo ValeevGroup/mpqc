@@ -26,6 +26,7 @@
 //
 
 #include <chemistry/qc/scf/tascf.hpp>
+#include <tiled_array.h>
 #include <chemistry/qc/basis/taskintegrals.hpp>
 #include <chemistry/qc/basis/integralenginepool.hpp>
 
@@ -36,7 +37,7 @@ sc::ClassDesc mpqc::TA::SCF::class_desc_(typeid(mpqc::TA::SCF), "TA.SCF",
                       1, "public TA.Wavefunction", 0, 0, 0);
 
 mpqc::TA::SCF::SCF(const sc::Ref<sc::KeyVal>& kval) :
-    Wavefunction(kval), hcore_(), diis(), fock_(this)
+    Wavefunction(kval), hcore_(), fock_(this)
 {
     fock_.compute() = 0;
     fock_.computed() = 0;
@@ -54,18 +55,18 @@ void mpqc::TA::SCF::compute() {
 }
 
 #warning "fock is not defined"
-const mpqc::TA::SCF::Matrix&
+const mpqc::TA::SCF::TAMatrix&
 mpqc::TA::SCF::fock() {
   MPQC_ASSERT(false);
 }
 
 #warning "rdm1(spincase) is not defined"
-const mpqc::TA::SCF::Matrix&
+const mpqc::TA::SCF::TAMatrix&
 mpqc::TA::SCF::rdm1(sc::SpinCase1 s) {
   MPQC_ASSERT(false);
 }
 
-const mpqc::TA::SCF::Matrix& mpqc::TA::SCF::hcore() {
+const mpqc::TA::SCF::TAMatrix& mpqc::TA::SCF::hcore() {
     if(!hcore_.is_initialized()){
         std::shared_ptr<IntegralEnginePool<sc::Ref<sc::OneBodyInt> > > hcore_pool(new
         IntegralEnginePool<sc::Ref<sc::OneBodyInt> >(integral()->hcore()));

@@ -31,22 +31,21 @@
 #include <chemistry/qc/wfn/tawfn.hpp>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/tbint.h>
-#include <TiledArray/algebra/diis.h>
 
 namespace mpqc{
   namespace TA {
 
     class SCF : public Wavefunction {
     public:
-        typedef Wavefunction::Matrix Matrix;
+        typedef Wavefunction::TAMatrix TAMatrix;
 
         SCF(const sc::Ref<sc::KeyVal> &kval);
         virtual ~SCF();
         virtual void compute() override;
 
-        virtual const Matrix& fock(); // Final Fock matrix
-        virtual const Matrix& rdm1(sc::SpinCase1) override;
-        virtual const Matrix& hcore();
+        virtual const TAMatrix& fock(); // Final Fock matrix
+        virtual const TAMatrix& rdm1(sc::SpinCase1) override;
+        virtual const TAMatrix& hcore();
         virtual double scf_energy() = 0;
 
         /// @return the number of electrons in the system
@@ -55,8 +54,7 @@ namespace mpqc{
         virtual size_t occupation(){return occupation_;}
 
     protected:
-        ::TiledArray::DIIS<Matrix> diis;
-        virtual Matrix& scf_fock(){return fock_.result_noupdate();}
+        virtual TAMatrix& scf_fock(){return fock_.result_noupdate();}
         size_t & occ(){return occupation_;}
         virtual double iter_energy() = 0;
 
@@ -72,7 +70,7 @@ namespace mpqc{
         ResultMatrix fock_;
 
         // Hcore
-        Matrix hcore_;
+        TAMatrix hcore_;
 
         static sc::ClassDesc class_desc_;
 

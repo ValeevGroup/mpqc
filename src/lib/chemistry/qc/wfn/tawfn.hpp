@@ -28,7 +28,7 @@
 #ifndef _MPQC_CHEMISTRY_WFN_TAWFN_HPP_
 #define _MPQC_CHEMISTRY_WFN_TAWFN_HPP_
 
-#include <tiled_array.h>
+#include <tiledarray_fwd.h>
 #include <util/madness/world.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/tiledbasisset.hpp>
@@ -50,12 +50,12 @@ namespace mpqc {
 
     public:
 
-      typedef ::TiledArray::Array<double, 1> Vector; //!< Vector of reals
-      typedef ::TiledArray::Array<double, 2> Matrix; //!< Matrix of reals
-      typedef sc::Result<Vector> ResultVector;
-      typedef sc::Result<Matrix> ResultMatrix;
-      typedef sc::AccResult<Vector> AccResultVector;
-      typedef sc::AccResult<Matrix> AccResultMatrix;
+      typedef TiledArray::TArray1D TAVector; //!< Vector of reals
+      typedef TiledArray::TArray2D TAMatrix; //!< Matrix of reals
+      typedef sc::Result<TAVector> ResultVector;
+      typedef sc::Result<TAMatrix> ResultMatrix;
+      typedef sc::AccResult<TAVector> AccResultVector;
+      typedef sc::AccResult<TAMatrix> AccResultMatrix;
 
       /** The KeyVal constructor.
        *
@@ -102,11 +102,11 @@ namespace mpqc {
 
       /// Returns electron 1-body reduced density matrix (1-RDM) in AO basis.
       /// The default implementation adds alpha and beta 1-RDMs
-      virtual const Matrix& rdm1();
+      virtual const TAMatrix& rdm1();
       /// Return electron 1-body reduced density matrix of spin \c s in AO basis.
-      virtual const Matrix& rdm1(sc::SpinCase1 s) =0;
+      virtual const TAMatrix& rdm1(sc::SpinCase1 s) =0;
       /// Returns the AO overlap.
-      virtual const Matrix& overlap();
+      virtual const TAMatrix& overlap();
 
       unsigned debug() const {
         return debug_;
@@ -120,23 +120,23 @@ namespace mpqc {
       // functions for internal access
     protected:
 
-      virtual Matrix& density(){return rdm1_.result_noupdate();}
+      virtual TAMatrix& density(){return rdm1_.result_noupdate();}
 
       const sc::Ref<mpqc::World> world() const {
         return world_;
       }
 
-      const Matrix& density_alpha() const {
+      const TAMatrix& density_alpha() const {
         return rdm1_alpha_.result_noupdate();
       }
-      Matrix& density_alpha() {
+      TAMatrix& density_alpha() {
         return rdm1_alpha_.result_noupdate();
       }
 
-      const Matrix& density_beta() const {
+      const TAMatrix& density_beta() const {
         return rdm1_beta_.result_noupdate();
       }
-      Matrix& density_beta() {
+      TAMatrix& density_beta() {
         return rdm1_beta_.result_noupdate();
       }
 

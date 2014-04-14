@@ -27,9 +27,11 @@
 
 #include <chemistry/qc/scf/cldfgengine.hpp>
 #include <chemistry/qc/scf/clhf.h>
+#include <chemistry/qc/lcao/soad.h>
 #include <chemistry/qc/libint2/libint2.h>
 #include <util/group/pregtime.h>
 #include <util/madness/init.h>
+#include <math/elemental/eigensolver.hpp>
 #include <TiledArray/algebra/diis.h>
 #include <iostream>
 
@@ -37,41 +39,8 @@ using namespace sc;
 using namespace mpqc;
 using namespace mpqc::TA;
 
-using Matrix = ClDFGEngine::TAMatrix;
+using Matrix = TiledArray::Array<double, 2, TiledArray::Tensor<double> >;
 using DistMatrix = elem::DistMatrix<double>;
-
-// Eigensolver
-void eigensolve(Matrix &F, Matrix &S, Matrix &D, int occ){
-
-  // Get mats from TA
-  DistMatrix Ef = TiledArray::array_to_elem(F, elem::DefaultGrid());
-  DistMatrix ES = TiledArray::array_to_elem(S, elem::DefaultGrid());
-
-  // Vec and value storage
-  elem::DistMatrix<double , elem::VR, elem::STAR> vals(elem::DefaultGrid());
-  DistMatrix vecs(elem::DefaultGrid());
-
-  // Compute vecs and values
-  elem::mpi::Barrier(elem::mpi::COMM_WORLD);
-  double t0 = madness::wall_time();
-  elem::HermitianGenDefiniteEig(elem::AXBX,elem::LOWER,Ef,ES,vals,vecs,
-                                int(0), occ-1, elem::ASCENDING);
-  elem::mpi::Barrier(elem::mpi::COMM_WORLD);
-  double t1 = madness::wall_time();
-
-  // Timer
-  if(F.get_world().rank()==0){
-    std::cout << "\tEigen Solve took " << t1 - t0 << " s" << std::endl;
-  }
-
-  // Make Density Matrix
-  DistMatrix Density(elem::DefaultGrid());
-  elem::Gemm(elem::NORMAL, elem::TRANSPOSE, 1.0, vecs, vecs, Density);
-
-  // Copy back to TA
-  TiledArray::elem_to_array(D,Density);
-  F.get_world().gop.fence();
-}
 
 void try_main(int argc, char** argv){
   sc::ExEnv::init(argc, argv);
@@ -123,7 +92,7 @@ void try_main(int argc, char** argv){
 
   // Guess for density
   double etimer0 = madness::wall_time();
-  eigensolve(H, S, dens, occ);
+  eigensolver_D(H, S, dens, occ);
   world->madworld()->gop.fence();
   double etimer1 = madness::wall_time();
   if(world->madworld()->rank()==0){
@@ -157,7 +126,7 @@ void try_main(int argc, char** argv){
     double scf0 = madness::wall_time();
     energyinit = energy;
 
-    eigensolve(F, S, dens, occ);
+    eigensolver_D(F, S, dens, occ);
     world->madworld()->gop.fence();
     auto f0 = madness::wall_time();
     F = H("i,j") + G("i,j");
@@ -190,7 +159,7 @@ void try_main(int argc, char** argv){
   kv_old->assign("integrals", ints_fac.pointer());
 
   Ref<SuperpositionOfAtomicDensities> soad_guess = new
-          SuperpositionOfAtomicDensities(kv_old);
+                      SuperpositionOfAtomicDensities(kv_old);
 
   kv_old->assign("guess_wavefunction", soad_guess.pointer());
 

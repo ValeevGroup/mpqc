@@ -45,6 +45,10 @@
 #  include <chemistry/qc/libint2/linkage.h>
 #endif
 
+#if MPQC_NEW_FEATURES
+#  include<chemistry/qc/scf/taclhf.hpp>
+#endif
+
 namespace sc {
 
 ForceLink<CLHF> scf_force_link_a_;
@@ -54,6 +58,10 @@ ForceLink<TCHF> scf_force_link_d_;
 ForceLink<UHF> scf_force_link_e_;
 ForceLink<FockBuildCLHF> scf_force_link_f_;
 
-}
+#if MPQC_NEW_FEATURES
+  ForceLink<mpqc::TA::CLHF> scf_force_link_g_;
+#endif
+
+} // namespace sc
 
 #endif

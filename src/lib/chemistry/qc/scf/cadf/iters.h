@@ -1215,6 +1215,7 @@ class OrderedShellList {
       : sort_by_value_(sort_by_value)
     {
       aux_value_ = 0.0;
+      aux_vector_initialized_ = false;
     }
 
     template<typename Index>
@@ -1238,6 +1239,7 @@ class OrderedShellList {
         sort_by_value_(other.sort_by_value_)
     {
       aux_value_ = other.aux_value_;
+      aux_vector_initialized_ = other.aux_vector_initialized_;
     }
     
     template <typename Derived>
@@ -1246,6 +1248,7 @@ class OrderedShellList {
       if(not aux_vector_initialized_) {
         aux_vector_.resize(to_add.rows());
         aux_vector_ = decltype(aux_vector_)::Zero(to_add.rows());
+        aux_vector_initialized_ = true;
       }
       aux_value_ += add_val;
       aux_vector_.noalias() += to_add;
@@ -1260,6 +1263,7 @@ class OrderedShellList {
     }
 
     const decltype(aux_vector_)& get_aux_vector() const {
+      assert(aux_vector_initialized_);
       return aux_vector_;
     }
 
@@ -1439,6 +1443,9 @@ class OrderedShellList {
       idx_set_.clear();
     }
 
+    friend std::ostream&
+    operator <<(std::ostream& out, const OrderedShellList& list);
+
 };
 
 inline range_of_shell_blocks<OrderedShellList::index_iterator>
@@ -1487,6 +1494,14 @@ operator <<(std::ostream& out, const OrderedShellList& list) {
   out << "\nOrderedShellList: {";
   for(auto ish : list) {
     out << "\n  " << ish << ", with value " << ish.value;
+  }
+  out << "\n  aux_value = " << list.get_aux_value();
+  if(list.aux_vector_initialized_) {
+    out << "\n  aux_vector = { ";
+    for(int ival = 0; ival < list.aux_vector_.rows(); ++ival) {
+      out << list.aux_vector_[ival] << " ";
+    }
+    out << "}" << std::endl;
   }
   out << "\n}" << std::endl;
   return out;

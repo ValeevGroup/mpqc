@@ -392,7 +392,9 @@ CADFCLHF::compute_K()
                       ish.value * dist_factor * Xsh_schwarz
                   );
                   if(screen_B_) {
-                    L_3_ish_Xsh.add_to_aux_value_vector(ish.value * ish.value, D_frob_sq.col(jsh));
+                    double B_scr_contrib = ish.value * ish.value;
+                    if(screen_B_use_distance_) B_scr_contrib *= dist_factor * dist_factor;
+                    L_3_ish_Xsh.add_to_aux_value_vector(B_scr_contrib, D_frob_sq.col(jsh));
                   }
 
                   if(print_screening_stats_) {
@@ -426,6 +428,8 @@ CADFCLHF::compute_K()
           pair.second.size()
       );
     }
+
+    std::sort(L_3_keys.begin(), L_3_keys.end());
 
     //----------------------------------------//                                             //latex `\label{sc:link:lB}`
     // Form L_B
@@ -476,6 +480,14 @@ CADFCLHF::compute_K()
     timer.exit();
   }
 
+  //for(auto&& l3key : L_3_keys) {
+  //  int ish, Xsh, Z;
+  //  std::tie(ish, Xsh, Z) = l3key;
+  //  DUMP3(ish, Xsh, (L_3[{ish, Xsh}]));
+  //}
+  //for(auto&& lbpart : L_B) {
+  //  DUMP2(lbpart.first, lbpart.second);
+  //}
 
   timer.exit("LinK lists");
 
@@ -543,6 +555,8 @@ CADFCLHF::compute_K()
         double* __restrict__ B_ish_data = new double[max_fxn_obs_*max_fxn_dfbs_*nbf];
         double* __restrict__ D_B_buff_data;
         double* __restrict__ D_sd_data;
+        double* __restrict__ C_X_diff_data;
+        //double* __restrict__ D_sd_rm_data;
         int D_B_buff_n = 0;
         if(B_use_buffer_) {
           D_B_buff_data = new double[nbf*nbf];
@@ -550,6 +564,8 @@ CADFCLHF::compute_K()
         }
         if(screen_B_) {
           D_sd_data = new double[nbf*nbf];
+          C_X_diff_data = new double[max_fxn_atom_obs_*max_fxn_dfbs_*nbf];
+          //D_sd_rm_data = new double[nbf*nbf];
         }
         Eigen::Map<ColMatrix> D_B_buff(D_B_buff_data, D_B_buff_n, D_B_buff_n);
 
@@ -573,7 +589,6 @@ CADFCLHF::compute_K()
           auto&& Xsh = Xblk.first_shell;
 
           // Form the B_same, B_diff, D_same, D_diff, and C_X matrices
-          std::vector<Eigen::MatrixXd> C_X_diff;
           //ColMatrix D_diff, D_same;
           //RowMatrix B_diff, B_same;
           //ColMatrix D_sd;
@@ -581,10 +596,11 @@ CADFCLHF::compute_K()
           int l_b_size;
           int B_sd_rows = 0, B_sd_cols = 0;
           int D_sd_rows = 0, D_sd_cols = 0;
+          int C_X_diff_rows = 0, C_X_diff_cols = 0;
 
           if(screen_B_) {
 
-            mt_timer.enter("build screened B parts", ithr);
+            mt_timer.enter("build screened B part 1", ithr);
 
             const auto& L_B_ish_Xsh = L_B[{ish, Xsh}];
             l_b_size = int(L_B_ish_Xsh.get_aux_value());
@@ -594,7 +610,6 @@ CADFCLHF::compute_K()
               continue;
             }
 
-            C_X_diff.resize(Xsh.nbf);
             //D_diff.resize(l_b_size, nbf);
             //D_same.resize(Xblk.atom_obsnbf, nbf);
             //D_same = D.middleCols(Xblk.atom_obsbfoff, Xblk.atom_obsnbf).transpose();
@@ -604,6 +619,9 @@ CADFCLHF::compute_K()
             //B_same.resize(ish.nbf*Xblk.nbf, Xblk.atom_obsnbf);
             //B_same = RowMatrix::Zero(ish.nbf*Xblk.nbf, Xblk.atom_obsnbf);
 
+            C_X_diff_rows = Xblk.nbf * Xblk.atom_obsnbf;
+            C_X_diff_cols = l_b_size;
+
             //B_sd.resize(ish.nbf*Xblk.nbf, Xblk.atom_obsnbf + l_b_size);
             //B_sd = RowMatrix::Zero(ish.nbf*Xblk.nbf, Xblk.atom_obsnbf + l_b_size);
             B_sd_rows = ish.nbf*Xblk.nbf;
@@ -612,28 +630,41 @@ CADFCLHF::compute_K()
             D_sd_cols = nbf;
           }
 
-          Eigen::Map<ColMatrix> D_sd(D_sd_data, D_sd_rows, D_sd_cols);
+          //Eigen::Map<RowMatrix> D_sd_rm(D_sd_rm_data, D_sd_rows, D_sd_cols);
           //D_sd = Eigen::::Zero
+          Eigen::Map<ColMatrix> D_sd(D_sd_data, D_sd_rows, D_sd_cols);
+          Eigen::Map<RowMatrix> C_X_diff(C_X_diff_data, C_X_diff_rows, C_X_diff_cols);
+          //::memset(C_X_diff_data, 0, C_X_diff_rows*C_X_diff_cols);
 
           if(screen_B_) {
+            mt_timer.change("build screened B part 2", ithr);
+
+            mt_timer.enter("D part", ithr);
+
             D_sd.topRows(Xblk.atom_obsnbf) = D.middleCols(Xblk.atom_obsbfoff, Xblk.atom_obsnbf).transpose();
 
+            mt_timer.change("resize", ithr);
 
             int Xblk_offset = 0;
-            for(auto&& X : function_range(Xblk)) {
-              assert(Xblk.atom_obsnbf > 0);
-              C_X_diff[Xblk_offset].resize(Xblk.atom_obsnbf, l_b_size);
-              Xblk_offset++;
-            }
+            //for(auto&& X : function_range(Xblk)) {
+            //  assert(Xblk.atom_obsnbf > 0);
+            //  C_X_diff[Xblk_offset].resize(Xblk.atom_obsnbf, l_b_size);
+            //  Xblk_offset++;
+            //}
+
+            mt_timer.change("copy_data", ithr);
 
             int block_offset = 0;
             const auto& L_B_ish_Xsh = L_B[{ish, Xsh}];
             for(auto&& lblk : shell_block_range(L_B_ish_Xsh, Contiguous)) {
-              Xblk_offset = 0;
-              for(auto&& X : function_range(Xblk)) {
-                C_X_diff[Xblk_offset].middleCols(block_offset, lblk.nbf) = coefs_transpose_[X].middleCols(lblk.bfoff, lblk.nbf);
-                Xblk_offset++;
-              }
+              //Xblk_offset = 0;
+              //for(auto&& X : function_range(Xblk)) {
+              //  C_X_diff[Xblk_offset].middleCols(block_offset, lblk.nbf) = coefs_transpose_[X].middleCols(lblk.bfoff, lblk.nbf);
+              //  Xblk_offset++;
+              //}
+              C_X_diff.middleCols(block_offset, lblk.nbf) = coefs_transpose_blocked_other_[Xblk.center].middleRows(
+                  Xblk.bfoff_in_atom*Xblk.atom_obsnbf, Xblk.nbf*Xblk.atom_obsnbf
+              ).middleCols(lblk.bfoff, lblk.nbf);
 
               // Would this be more efficient if we did it the other way and then did a transpose in place?
               //D_diff.middleRows(block_offset, lblk.nbf) = D.middleCols(lblk.bfoff, lblk.nbf).transpose();
@@ -644,8 +675,11 @@ CADFCLHF::compute_K()
 
             mt_timer.exit(ithr);
 
+            mt_timer.exit(ithr);
+
           }
 
+          //D_sd = D_sd_rm;
           Eigen::Map<RowMatrix> B_sd(B_ish_data, B_sd_rows, B_sd_cols);
 
 
@@ -921,12 +955,28 @@ CADFCLHF::compute_K()
                 if(b_buff_offset == 0) {
                   throw SCException("B_buffer_size smaller than single contiguous block.  Set B_use_buffer to no and try again.");
                 }
-                B_ish.noalias() += 2.0 * B_buffer_mat.topRows(b_buff_offset).transpose() * D_B_buff.leftCols(b_buff_offset).transpose();
+                if(screen_B_) {
+                  B_sd.noalias() += 2.0 * B_buffer_mat.topRows(b_buff_offset).transpose() * D_B_buff.leftCols(b_buff_offset).transpose();
+                }
+                else {
+                  B_ish.noalias() += 2.0 * B_buffer_mat.topRows(b_buff_offset).transpose() * D_B_buff.leftCols(b_buff_offset).transpose();
+                }
                 b_buff_offset = 0;
               }
 
 
-              std::copy(D_data + jblk.bfoff, D_data + jblk.bfoff + jblk.nbf, D_B_buff_data + b_buff_offset);
+              if(screen_B_) {
+                throw FeatureNotImplemented("screen_B with B buffer", __FILE__, __LINE__, class_desc());
+                //const int col_length = Xblk.atom_obsnbf + l_b_size;
+                //std::copy(D_sd_data + jblk.bfoff, D_data + jblk.bfoff + col_length,
+                //    D_B_buff_data + b_buff_offset
+                //);
+                //b_buff_offset += col_length;
+              }
+              else {
+                std::copy(D_data + jblk.bfoff, D_data + jblk.bfoff + jblk.nbf, D_B_buff_data + b_buff_offset);
+                b_buff_offset += jblk.nbf;
+              }
 
               //D_B_buff.middleCols(b_buff_offset, jblk.nbf) = D.middleCols(jblk.bfoff, jblk.nbf);
               b_buff_offset += jblk.nbf;
@@ -935,6 +985,9 @@ CADFCLHF::compute_K()
             else {
               if(linK_block_rho_) {
                 B_ish.noalias() += 2.0 * g3.transpose() * D_ordered.middleCols(block_offset, jblk.nbf).transpose();
+                if(screen_B_) {
+                  throw FeatureNotImplemented("screen_B linK_block_rho", __FILE__, __LINE__, class_desc());
+                }
               }
               else {
                 if(screen_B_) {
@@ -1018,7 +1071,7 @@ CADFCLHF::compute_K()
           const int obs_atom_nbf = obs->nbasis_on_center(Xblk.center);
           for(auto&& X : function_range(Xblk)) {
             const auto& C_X = coefs_transpose_[X];
-            //const auto& C_X_diff_X = C_X_diff[X.bfoff_in_block];
+            const auto& C_X_diff_X = C_X_diff.middleRows(X.bfoff_in_block*Xblk.atom_obsnbf, Xblk.atom_obsnbf);
             for(auto&& mu : function_range(ish)) {
 
               // B_mus[mu.bfoff_in_shell] is (nbf x Ysh.nbf)
@@ -1028,7 +1081,7 @@ CADFCLHF::compute_K()
               if(screen_B_) {
                 // TODO Offset C_X_diff outside of the mu loop
                 Kt_part.col(mu).segment(obs_atom_bfoff, obs_atom_nbf).noalias() +=
-                    C_X_diff[X.bfoff_in_block]
+                    C_X_diff_X
                     * B_sd.row(mu.bfoff_in_shell*Xblk.nbf + X.bfoff_in_block).tail(l_b_size).transpose();
                 //Kt_part.col(mu).segment(obs_atom_bfoff, obs_atom_nbf).noalias() +=
                 //    C_X_diff[X.bfoff_in_block]
@@ -1082,6 +1135,7 @@ CADFCLHF::compute_K()
         }
         if(screen_B_) {
           delete[] D_sd_data;
+          //delete[] D_sd_rm_data;
         }
         //============================================================================//
         //----------------------------------------//

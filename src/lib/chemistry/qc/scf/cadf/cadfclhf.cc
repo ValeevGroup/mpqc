@@ -166,6 +166,7 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   all_to_all_L_3_ = keyval->booleanvalue("all_to_all_L_3", KeyValValueboolean(all_to_all_L_3_));
   sig_pairs_J_ = keyval->booleanvalue("sig_pairs_J", KeyValValueboolean(sig_pairs_J_));
   screen_B_ = keyval->booleanvalue("screen_B", KeyValValueboolean(screen_B_));
+  screen_B_use_distance_ = keyval->booleanvalue("screen_B_use_distance", KeyValValueboolean(screen_B_use_distance_));
   scale_screening_thresh_ = keyval->booleanvalue("scale_screening_thresh", KeyValValueboolean(scale_screening_thresh_));
   //----------------------------------------------------------------------------//
   stats_.print_level = print_screening_stats_;
@@ -175,11 +176,11 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   //----------------------------------------------------------------------------//
   for(auto&& ish : shell_range(gbs_)) {
     max_fxn_obs_ = std::max(ish.nbf, max_fxn_obs_);
+    max_fxn_atom_obs_ = std::max(ish.atom_nbf, max_fxn_atom_obs_);
   }
-  unsigned long max_fxn_atom_dfbs = 0;
   for(auto&& Xsh : shell_range(dfbs_)) {
     max_fxn_dfbs_ = std::max(Xsh.nbf, max_fxn_dfbs_);
-    max_fxn_atom_dfbs = std::max((unsigned long)Xsh.atom_nbf, max_fxn_atom_dfbs);
+    max_fxn_atom_dfbs_ = std::max(Xsh.atom_nbf, max_fxn_atom_dfbs_);
   }
   if(do_linK_) {
     B_buffer_size_ = std::min((unsigned int)DEFAULT_TARGET_BLOCK_SIZE, gbs_->nbasis())
@@ -188,7 +189,7 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   else {
     B_buffer_size_ = std::min((unsigned int)DEFAULT_TARGET_BLOCK_SIZE, gbs_->nbasis())
       * sizeof(double) * max_fxn_obs_
-      * std::min((unsigned long)DEFAULT_TARGET_BLOCK_SIZE, max_fxn_atom_dfbs);
+      * std::min(DEFAULT_TARGET_BLOCK_SIZE, max_fxn_atom_dfbs_);
   }
   const decltype(B_buffer_size_) buff_tmp = B_buffer_size_;
   B_buffer_size_ = keyval->sizevalue("B_buffer_size",
@@ -244,6 +245,7 @@ CADFCLHF::print(ostream&o) const
   o << indent << "pair_screening_thresh = " << double_str(pair_screening_thresh_) << endl;
   o << indent << "scale_screening_thresh = " << bool_str(scale_screening_thresh_) << endl;
   o << indent << "screen_B = " << bool_str(screen_B_) << endl;
+  o << indent << "screen_B_use_distance = " << bool_str(screen_B_use_distance_) << endl;
   o << indent << "subtract_extents = " << bool_str(subtract_extents_) << endl;
   o << indent << "use_extents = " << bool_str(use_extents_) << endl;
   o << indent << "use_max_extents = " << bool_str(use_max_extents_) << endl;

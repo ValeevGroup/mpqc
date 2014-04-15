@@ -84,6 +84,7 @@ CADFCLHF::compute_coefficients()
   memset(coefficients_data_, 0, ncoefs * sizeof(double));
 
   coefs_transpose_blocked_.reserve(natom);
+  coefs_transpose_blocked_other_.reserve(natom);
   coefs_transpose_.reserve(dfnbf);
 
   for(int iatom = 0; iatom < natom; ++iatom){
@@ -93,6 +94,11 @@ CADFCLHF::compute_coefficients()
         coefficients_data_ + offsets[iatom],
         dfbs_->nbasis_on_center(iatom),
         atom_nbf * nbf
+    );
+    coefs_transpose_blocked_other_.emplace_back(
+        coefficients_data_ + offsets[iatom],
+        dfbs_->nbasis_on_center(iatom) * atom_nbf,
+        nbf
     );
 
     //memory_used_ += dfbs_->nbasis_on_center(iatom) * atom_nbf * nbf * sizeof(double) + sizeof(RowMatrix);

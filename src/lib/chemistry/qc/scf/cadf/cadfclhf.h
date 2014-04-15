@@ -364,7 +364,9 @@ class CADFCLHF: public CLHF {
     /// Full screening exponent for non-reset iterations
     double full_screening_expon_ = 1.0;
     /// Should we screen the B contraction?
-    double screen_B_ = true;
+    double screen_B_ = false;
+    /// Should we use distance factor when we screen the B contraction?
+    double screen_B_use_distance_ = false;
     /// Screening thresh for B contraction; defaults to full_screening_thresh_
     double B_screening_thresh_;
     //@}
@@ -380,6 +382,8 @@ class CADFCLHF: public CLHF {
 
     int max_fxn_obs_ = 0;
     int max_fxn_dfbs_ = 0;
+    int max_fxn_atom_obs_ = 0;
+    int max_fxn_atom_dfbs_ = 0;
 
     bool is_master() {
       if(dynamic_){
@@ -667,6 +671,7 @@ class CADFCLHF: public CLHF {
     std::vector<std::vector<ShellIndexWithValue>> Cmaxes_;
 
     std::vector<Eigen::Map<RowMatrix>> coefs_transpose_blocked_;
+    std::vector<Eigen::Map<RowMatrix>> coefs_transpose_blocked_other_;
     //std::vector<std::vector<StridedRowMap>> coefs_t_shell_blocked_;
 #if USE_SPARSE
     std::vector<SparseRowMatrix> coefs_transpose_;

@@ -25,12 +25,16 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <chemistry/qc/basis/tiledbasisset.hpp>
+#include <chemistry/qc/basis/integralenginepool.hpp>
+#include <chemistry/qc/basis/taskintegrals.hpp>
 #include <chemistry/qc/scf/cldfgengine.hpp>
 #include <chemistry/qc/scf/clhf.h>
 #include <chemistry/qc/lcao/soad.h>
 #include <chemistry/qc/libint2/libint2.h>
 #include <util/group/pregtime.h>
 #include <util/madness/init.h>
+#include <util/madness/world.h>
 #include <math/elemental/eigensolver.hpp>
 #include <TiledArray/algebra/diis.h>
 #include <iostream>

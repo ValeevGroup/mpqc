@@ -30,6 +30,7 @@
 #include <TiledArray/algebra/diis.h>
 #include <chemistry/qc/basis/integralenginepool.hpp>
 #include <chemistry/qc/basis/taskintegrals.hpp>
+#include <chemistry/qc/scf/cldfgengine.hpp>
 #include <math/elemental/eigensolver.hpp>
 
 using namespace mpqc;
@@ -46,10 +47,18 @@ mpqc::TA::CLHF::CLHF(const sc::Ref<sc::KeyVal>& kval) :
     CLSCF(kval), G_eng()
 {
   G_eng << kval->describedclassvalue("GEngine");
-  if(G_eng.null()){
-    throw sc::InputError("missing \"GEngine\" keyword",
-                         __FILE__, __LINE__, "GEngine", "",
-                         this->class_desc());
+  if(G_eng.null()){ // If no GEngine was given then use Density Fitting
+    if(kval->exists("dfbasis")){ // check if density fitting basis was given
+      sc::ExEnv::out0() <<
+              "Constructing a default GEngine: using density fitting\n";
+      G_eng = new ClDFGEngine(kval);
+    }
+    else{ // else if no dfbasis use default
+      sc::ExEnv::out0() << "Constructing default GEngine: " <<
+              "Using density fitting with cc-pVDZ/JKFIT " <<
+              "as fitting basis and ntiles=2\n";
+      G_eng = new ClDFGEngine(kval);
+    }
   }
 }
 

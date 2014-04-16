@@ -1,5 +1,5 @@
 //
-// eigensolver.hpp
+// global_fixtures.hpp
 //
 // Copyright (C) 2013 Drew Lewis
 //
@@ -25,37 +25,19 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#ifndef MPQC_MATH_ELEMENTAL_EIGENSOLVER_HPP
-#define MPQC_MATH_ELEMENTAL_EIGENSOLVER_HPP
+#ifndef MPQC_UTIL_UNITTEST_GLOBAL_FIXTURES_HPP
+#define MPQC_UTIL_UNITTEST_GLOBAL_FIXTURES_HPP
 
-#include <tiledarray_fwd.h>
+#include <util/madness/init.h>
+#include <util/madness/world.h>
 
-namespace mpqc {
-namespace TA {
-
-  using TiledArray::TArray2D;
-
-  /***
-   * Solve generalized Hermitian eigenproblem to form density.
-   */
-  void
-  eigensolver_D(const TArray2D &F, const TArray2D &S, TArray2D &D, int occ);
-
-  /***
-   * Solve generatlized Hermitian eigenproblem for occupied coefficients
-   */
-  TArray2D
-  eigensolver_occ_Coeff(const TArray2D &F, const TArray2D &S, int occ);
-
-  /***
-   * Solve generalized Hermitian eigenproblem for all coefficents
-   */
-  void
-  eigensolver_full_Coeff(const TArray2D &F, const TArray2D &S, TArray2D &C);
+struct GlobalFixture{
+  GlobalFixture();
+  ~GlobalFixture();
 
 
-} // namespace mpqc::TA
-} // namespace mpqc
+
+};
 
 
-#endif /* MPQC_MATH_ELEMENTAL_EIGENSOLVER_HPP */
+#endif /* MPQC_UTIL_UNITTEST_GLOBAL_FIXTURES_HPP */

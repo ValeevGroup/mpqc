@@ -25,6 +25,15 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <math/elemental/eigensolver.hpp>
+#include <elemental.hpp>
+#include <tiled_array.h>
+
+using namespace mpqc;
+using namespace mpqc::TA;
+
+BOOST_FIXTURE_TEST_SUITE
+
 
 
 

@@ -31,7 +31,12 @@
 #include <chemistry/qc/libint2/libint2.h>
 #include <util/group/pregtime.h>
 #include <util/madness/init.h>
+#include <util/madness/world.h>
+#include <chemistry/qc/basis/tiledbasisset.hpp>
+#include <chemistry/qc/basis/integral.h>
 #include <math/elemental/eigensolver.hpp>
+#include <chemistry/qc/basis/integralenginepool.hpp>
+#include <chemistry/qc/basis/taskintegrals.hpp>
 #include <TiledArray/algebra/diis.h>
 #include <iostream>
 
@@ -92,24 +97,23 @@ void try_main(int argc, char** argv){
 
   // Guess for density
   double etimer0 = madness::wall_time();
-  eigensolver_D(H, S, dens, occ);
+  Matrix C = eigensolver_occ_Coeff(H, S, occ);
   world->madworld()->gop.fence();
-  double etimer1 = madness::wall_time();
-  if(world->madworld()->rank()==0){
-    std::cout << "Total time to form density = " << etimer1 - etimer0 << " s \n" << std::endl;
-  }
 
+  Ref<AssignedKeyVal> akv = new AssignedKeyVal();
+  akv->assign("basis", tbs.pointer());
+  akv->assign("dfbasis", dftbs.pointer());
+  akv->assign("world", world.pointer());
+  akv->assign("integrals", ints_fac.pointer());
 
   // Initialize G engine
-  ClDFGEngine G(ints_fac, tbs, dftbs, &dens, world);
-
-  // Compute integrals
-  G("i,j");
+  ClDFGEngine GC(static_cast<Ref<KeyVal> >(akv));
+  GC.set_coefficients({&C});
   world->madworld()->gop.fence();
 
   // Make Fock matrix
   double t1 = madness::wall_time();
-  Matrix F = H("i,j") + G("i,j");
+  Matrix F = H("i,j") + GC("i,j");
   world->madworld()->gop.fence();
   double t2 = madness::wall_time();
   if(world->madworld()->rank()==0){
@@ -122,16 +126,21 @@ void try_main(int argc, char** argv){
   int iter = 0;
   TiledArray::DIIS<Matrix> diis;
   world->madworld()->gop.fence();
+  double ftime = 0;
   while(abs(energyinit - energy) >= 1e-9 && ++iter < 100){
     double scf0 = madness::wall_time();
     energyinit = energy;
 
-    eigensolver_D(F, S, dens, occ);
+    C = eigensolver_occ_Coeff(F, S, occ);
     world->madworld()->gop.fence();
+    dens = C("mu,i") * C("nu,i");
+    world->madworld()->gop.fence();
+
     auto f0 = madness::wall_time();
-    F = H("i,j") + G("i,j");
+    F = H("i,j") + GC("i,j");
     world->madworld()->gop.fence();
     auto f1 = madness::wall_time();
+    ftime += (f1 - f0);
 
     Matrix gradient = 8 * (S("i,q") * dens("q,x") * F("x,j") -
                            F("i,q") * dens("q,x") * S("x,j"));
@@ -145,14 +154,18 @@ void try_main(int argc, char** argv){
 
     if(world->madworld()->rank()==0){
       std::cout << "SCF iteration " << iter << "\n\tTime = " << scf1 - scf0 <<
-              " s\n\tFock build time = " << f1-f0 <<
+              " s\n\tFock build time = " << f1 - f0  <<
               " s\n\tEnergy = " << energy << std::endl;
     }
   }
 
+  std::cout << "Average Fock build time = " << ftime/(iter) << "s in " <<
+          iter << " iterations " << std::endl;
+
   std::cout << "Finished calculation energy = " <<  energy << std::endl;
   world->madworld()->gop.fence();
 
+#if 0
   Ref<AssignedKeyVal> kv_old = new AssignedKeyVal();
   kv_old->assign("basis", tbs.pointer());
   kv_old->assign("molecule", mol.pointer());
@@ -179,6 +192,7 @@ void try_main(int argc, char** argv){
   world->madworld()->gop.fence();
   tim.exit("old scf");
   tim.print(ExEnv::out0());
+#endif
 
   mpqc::MADNESSRuntime::finalize();
 }

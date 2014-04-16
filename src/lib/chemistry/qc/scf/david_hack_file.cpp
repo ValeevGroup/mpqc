@@ -122,15 +122,15 @@ void try_main(int argc, char** argv){
   }
 
   // Perform SCF iterations
-  double energyinit = 1;
   double energy = 0;
+  double error = 10;
   int iter = 0;
   TiledArray::DIIS<Matrix> diis;
-  world->madworld()->gop.fence();
   double ftime = 0;
-  while(abs(energyinit - energy) >= 1e-9 && ++iter < 100){
+  double scftime = 0;
+  world->madworld()->gop.fence();
+  while(error >= 1e-8 && ++iter < 100){
     double scf0 = madness::wall_time();
-    energyinit = energy;
 
     C = eigensolver_occ_Coeff(F, S, occ);
     world->madworld()->gop.fence();
@@ -144,12 +144,15 @@ void try_main(int argc, char** argv){
     Matrix gradient = 8 * (S("i,q") * dens("q,x") * F("x,j") -
                            F("i,q") * dens("q,x") * S("x,j"));
 
+    error = TiledArray::expressions::norminf(gradient("i,j"));
+
     diis.extrapolate(F, gradient);
 
     energy = TiledArray::expressions::dot((H("i,j") + F("i,j")), dens("i,j")) +
             mol->nuclear_repulsion_energy();
     world->madworld()->gop.fence();
     double scf1 = madness::wall_time();
+    scftime += scf1 - scf0;
 
     if(world->madworld()->rank()==0){
       std::cout << "SCF iteration " << iter << "\n\tTime = " << scf1 - scf0 <<
@@ -158,7 +161,11 @@ void try_main(int argc, char** argv){
     }
   }
 
-  std::cout << "Average Fock build time = " << ftime/(iter) << "s in " <<
+
+  std::cout << "Average scf iter time = " << scftime/(double(iter)) << "s in " <<
+          iter << " iterations " << std::endl;
+
+  std::cout << "Average Fock build time = " << ftime/(double(iter)) << "s in " <<
           iter << " iterations " << std::endl;
 
   std::cout << "Finished calculation energy = " <<  energy << std::endl;

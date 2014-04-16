@@ -145,7 +145,7 @@ namespace mpqc {
       // is greater than some number then split the range in half and send
       // half of the work to another task.  Continue to do this until
       // the distance between the pointers is small enough.
-      while (last - first > 5) {
+      while (last - first > 10) {
         It middle = first;
         std::advance(middle, std::distance(first, last) / 2);
         make_integral_task(middle, last, array, pool);

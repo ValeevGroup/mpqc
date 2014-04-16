@@ -213,7 +213,7 @@ mpqc::TA::ClDFGEngine::coefficient_contraction(
     return expr;
   }
   else {
-    auto expr = 2 * (df_ints_(i+j+X) * ( (C(m+Z) * C(n+Z)) * df_ints_(m+n+X) ) )
+    auto expr = 2 * (df_ints_(i+j+X) * ( (C(n+Z)) * df_K_(ZE+n+X) ) )
                   - (df_K_(ZE+iE+X) * df_K_(ZE+j+X) );
     return expr;
   }
@@ -294,27 +294,36 @@ mpqc::TA::ClDFGEngine::compute_symetric_df_ints() {
   }
 
   // Copy two body two center ints to elemental
+  double inverse_time0 = madness::wall_time();
   EMatrix eri2_elem =
       TiledArray::array_to_elem(eri2_ints, elem::DefaultGrid());
   world_->madworld()->gop.fence(); // makesure we finish copy
 
 
   // Compute the cholesky inverse matrix.
-  double inverse_time0 = madness::wall_time();
-  elem::Cholesky(elem::UPPER, eri2_elem);
-  elem::TriangularInverse(elem::UPPER, elem::NON_UNIT, eri2_elem);
-  elem::MakeTriangular(elem::UPPER, eri2_elem);
+  elem::Cholesky(elem::LOWER, eri2_elem);
+  elem::TriangularInverse(elem::LOWER, elem::NON_UNIT, eri2_elem);
+  elem::MakeTriangular(elem::LOWER, eri2_elem);
+  elem::mpi::Barrier(elem::mpi::COMM_WORLD);
   double inverse_time1 = madness::wall_time();
+
+  // Copy back to TA
+  ::TiledArray::elem_to_array(eri2_ints, eri2_elem);
+  world_->madworld()->gop.fence(); // makesure we finish copy
   if(world_->madworld()->rank()==0){
     std::cout << "\tTook " << inverse_time1 - inverse_time0 << " s" <<
             " to compute eri2 inverse." << std::endl;
   }
 
-  // Copy back to TA
-  ::TiledArray::elem_to_array(eri2_ints, eri2_elem);
-
+  double Final_contraction0 = madness::wall_time();
   // Create df_ints_ tensor from eri3(i,j,P) * U_{eri2}^{-1}(P,X)
-  df_ints_ = df_ints_("i,j,P") * eri2_ints("P,X");
+  df_ints_ = df_ints_("i,j,P") * eri2_ints("X,P");
   world_->madworld()->gop.fence(); // so eri2_ints doesn't go out of scope.
+  double Final_contraction1 = madness::wall_time();
+  if(world_->madworld()->rank()==0){
+    std::cout << "\tTook " << Final_contraction1 - Final_contraction0 << " s" <<
+            " to do big contraction." << std::endl;
+  }
+
 }
 

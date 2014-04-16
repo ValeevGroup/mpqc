@@ -38,6 +38,7 @@
 #include <chemistry/qc/basis/integralenginepool.hpp>
 #include <chemistry/qc/basis/taskintegrals.hpp>
 #include <TiledArray/algebra/diis.h>
+#include <mpqc/interfaces/tiledarray/symmscmat.hpp>
 #include <iostream>
 
 using namespace sc;
@@ -95,20 +96,23 @@ void try_main(int argc, char** argv){
   dens.set_all_local(0.0);
   world->madworld()->gop.fence();
 
-  // Guess for density
-  double etimer0 = madness::wall_time();
-  Matrix C = eigensolver_occ_Coeff(H, S, occ);
-  world->madworld()->gop.fence();
-
   Ref<AssignedKeyVal> akv = new AssignedKeyVal();
+  akv->assign("molecule", mol.pointer());
   akv->assign("basis", tbs.pointer());
   akv->assign("dfbasis", dftbs.pointer());
   akv->assign("world", world.pointer());
   akv->assign("integrals", ints_fac.pointer());
 
-  // Initialize G engine
+  // Construct a density guess based on a SOAD object
+  using Soad = sc::SuperpositionOfAtomicDensities;
+  sc::Ref<Soad> guess = new Soad(sc::Ref<sc::KeyVal>(akv));
+
+  // Copy the mpqc sc matrix into our tiledarray Matrix.
+  dens = mpqc::SymmScMat_To_TiledArray(*world->madworld(),
+                                    guess->guess_density(tbs,ints_fac),
+                                    tbs->trange1());
+
   ClDFGEngine GC(static_cast<Ref<KeyVal> >(akv));
-  GC.set_coefficients({&C});
   GC.set_densities({&dens});
   world->madworld()->gop.fence();
 
@@ -118,14 +122,20 @@ void try_main(int argc, char** argv){
   world->madworld()->gop.fence();
   double t2 = madness::wall_time();
   if(world->madworld()->rank()==0){
+    std::cout << std::setprecision(12) << std::endl;
     std::cout << "The formation of F took " << t2 - t1 << " seconds" << std::endl;
   }
+
+  // give coefficients to GC
+  Matrix C;
+  GC.set_coefficients({&C});
+  world->madworld()->gop.fence();
 
   // Perform SCF iterations
   double energy = 0;
   double error = 10;
   int iter = 0;
-  TiledArray::DIIS<Matrix> diis;
+  TiledArray::DIIS<Matrix> diis(1,3);
   double ftime = 0;
   double scftime = 0;
   world->madworld()->gop.fence();
@@ -157,7 +167,8 @@ void try_main(int argc, char** argv){
     if(world->madworld()->rank()==0){
       std::cout << "SCF iteration " << iter << "\n\tTime = " << scf1 - scf0 <<
               " s\n\tFock build time = " << f1 - f0  <<
-              " s\n\tEnergy = " << energy << std::endl;
+              " s\n\tEnergy = " << energy <<
+              " s\n\tGradient Norm = " << error << std::endl;
     }
   }
 

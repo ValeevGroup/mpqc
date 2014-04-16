@@ -26,6 +26,9 @@
 //
 
 #include <chemistry/qc/scf/cldfgengine.hpp>
+#include <chemistry/qc/basis/tiledbasisset.hpp>
+#include <util/madness/world.h>
+#include <util/madness/init.h>
 #include <chemistry/qc/libint2/libint2.h>
 #include <iostream>
 #include <util/madness/init.h>
@@ -45,13 +48,12 @@ BOOST_AUTO_TEST_CASE(cldfgengine_test){
 
   sc::Ref<World> world = new World();
 
-
   sc::Ref<sc::Molecule>  mol = new sc::Molecule();
   mol->add_atom(1,0,0,0);
-  mol->add_atom(1,0,0,1.4);
+  mol->add_atom(3,0,0,1.4);
 
   sc::Ref<sc::AssignedKeyVal> akv = new sc::AssignedKeyVal;
-  akv->assign("name", "STO-3G");
+  akv->assign("name", "cc-pVDZ");
   akv->assign("molecule", mol.pointer());
   akv->assign("world", world.pointer());
   akv->assign("ntiles", 2);
@@ -64,84 +66,41 @@ BOOST_AUTO_TEST_CASE(cldfgengine_test){
   akv2->assign("ntiles", 2);
   sc::Ref<TiledBasisSet> dftbs = new TiledBasisSet(sc::Ref<sc::KeyVal>(akv2));
 
-  sc::Ref<sc::IntegralLibint2> ints = new sc::IntegralLibint2(sc::Ref<sc::KeyVal>(akv));
+  // H2 only has 1 occupied orbital
+  std::array<std::size_t,2> short_tile{{0,2}};
+  TiledArray::TiledRange1 short_t1(begin(short_tile), end(short_tile));
 
-  std::array<TiledArray::TiledRange1, 2>
-    blocking{{tbs->trange1(), tbs->trange1()}};
-
+  std::array<TiledArray::TiledRange1, 2> blocking{{ tbs->trange1(), short_t1}};
 
   TiledArray::TiledRange trange(blocking.begin(), blocking.end());
 
-  ClDFGEngine::TAMatrix dens(*world->madworld(), trange);
-  dens.set_all_local(0.603);
+  ClDFGEngine::TAMatrix C(*world->madworld(), trange);
+  C.set_all_local(0.77);
+  std::cout << "C = \n" << C << std::endl;
 
-  ClDFGEngine G(ints, tbs, dftbs, &dens, world);
+  ClDFGEngine::TAMatrix D = C("i,k") * C("j,k");
+  std::cout << "D = \n" << D << std::endl;
+
+  sc::Ref<sc::IntegralLibint2> ints = new sc::IntegralLibint2(sc::Ref<sc::KeyVal>(akv));
+
+  akv->assign("basis", tbs.pointer());
+  akv->assign("dfbasis", dftbs.pointer());
+  akv->assign("integrals", ints.pointer());
+
+  ClDFGEngine G(static_cast<sc::Ref<sc::KeyVal> >(akv));
+  if(!G.coefficients_set()){ G.set_coefficients({&C}); }
+  world->madworld()->gop.fence();
+  std::cout << "Coefficients have been set." << std::endl;
+
+  ClDFGEngine GD(static_cast<sc::Ref<sc::KeyVal> >(akv));
+  if(!GD.densities_set()){ GD.set_densities({&D}); }
   world->madworld()->gop.fence();
 
   ClDFGEngine::TAMatrix Gmat = G("i,j");
   world->madworld()->gop.fence();
+  std::cout << "G = \n" << Gmat << std::endl;
 
-  std::cout << Gmat << std::endl;
-
-}
-
-
-BOOST_AUTO_TEST_CASE(dfgfactory_expression_test){
-
-  sc::Ref<World> world = new World();
-
-  sc::Ref<sc::Molecule>  mol = new sc::Molecule();
-  mol->add_atom(1,0,0,0);
-  mol->add_atom(1,0,0,1.4);
-
-  sc::Ref<sc::AssignedKeyVal> akv = new sc::AssignedKeyVal;
-  akv->assign("name", "STO-3G");
-  akv->assign("molecule", mol.pointer());
-  akv->assign("world", world.pointer());
-  akv->assign("ntiles", 1);
-
-  sc::Ref<TiledBasisSet> tbs = new TiledBasisSet(sc::Ref<sc::KeyVal>(akv));
-  sc::Ref<sc::AssignedKeyVal> akv2 = new sc::AssignedKeyVal;
-  akv2->assign("name", "cc-pVDZ-RI");
-  akv2->assign("molecule", mol.pointer());
-  akv2->assign("world", world.pointer());
-  akv2->assign("ntiles", 2);
-  sc::Ref<TiledBasisSet> dftbs = new TiledBasisSet(sc::Ref<sc::KeyVal>(akv2));
-
-  sc::Ref<sc::IntegralLibint2> ints = new sc::IntegralLibint2(sc::Ref<sc::KeyVal>(akv));
-
-  std::array<TiledArray::TiledRange1, 2>
-    blocking{{tbs->trange1(), tbs->trange1()}};
-
-  TiledArray::TiledRange trange(blocking.begin(), blocking.end());
-
-  ClDFGEngine::TAMatrix dens(*world->madworld(), trange);
-  dens.set_all_local(0.603);
-
-  ClDFGEngine G(ints, tbs, dftbs, &dens, world);
+  ClDFGEngine::TAMatrix GDmat = GD("i,j");
   world->madworld()->gop.fence();
-
-  // Make a matrix to contract with the output of G
-  ClDFGEngine::TAMatrix mat(*world->madworld(), trange);
-  auto it = mat.begin();
-  auto end = mat.end();
-  while(it != end){
-    int i = 0;
-    decltype(mat)::value_type tile(mat.trange().make_tile_range(it.ordinal()));
-    std::generate(tile.data(), tile.data()+tile.size(),
-                  [&]{return static_cast<double>(i++);});
-    *(it++) = tile;
-  }
-  std::cout << "mat = \n" << mat << std::endl;
-  world->madworld()->gop.fence();
-
-  ClDFGEngine::TAMatrix Gmat = G("i,j");
-  std::cout << "Gmat = \n" << Gmat << std::endl;
-  ClDFGEngine::TAMatrix out = mat("i,k") * Gmat("k,j");
-  std::cout << "Output with made mat = \n" << out << std::endl;
-  ClDFGEngine::TAMatrix out2 = mat("i,k") * G("k,z");
-  std::cout << "Output with expressions mat = \n" << out2 << std::endl;
-
-  MADNESSRuntime::finalize();
+  std::cout << "GD = \n" << GDmat << std::endl;
 }
-

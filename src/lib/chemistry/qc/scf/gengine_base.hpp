@@ -56,9 +56,27 @@ namespace mpqc {
       void
       set_densities(std::vector<TAMatrix*>) = 0;
 
-      virtual // Return true if the density has been set
+      virtual // Return true if the densities have been set
       bool
       densities_set() = 0;
+
+      virtual
+      void
+      set_coefficients(std::vector<TAMatrix*>) = 0;
+
+      virtual // Return true if the coefficients have been set
+      bool
+      coefficients_set() = 0;
+
+      // If using coefficients for contractions
+      virtual
+      bool
+      using_coeff() = 0;
+
+      // If using densities for contraction
+      virtual
+      bool
+      using_density() = 0;
 
       virtual
       return_type

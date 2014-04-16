@@ -65,19 +65,45 @@ namespace mpqc {
 
       ClDFGEngine(const sc::Ref<sc::KeyVal> &kv);
 
+      // No defaults copies or assignments.
+      ClDFGEngine() = delete;
+      ClDFGEngine operator=(const ClDFGEngine&) = delete;
+      ClDFGEngine(const ClDFGEngine&) = delete;
+
       virtual ~ClDFGEngine() override = default;
 
       virtual return_type
       operator()(const std::string &v) override;
 
-      virtual
-      void
+
+      virtual void
       set_densities(std::vector<TAMatrix *>) override;
 
       virtual bool
       densities_set() override;
 
+      virtual void
+      set_coefficients(std::vector<TAMatrix*>) override;
+
+      virtual bool
+      coefficients_set() override;
+
+      virtual bool
+      using_coeff() override;
+
+      virtual bool
+      using_density() override;
+
     private:
+      // Form G using coefficents
+      return_type
+      coefficient_contraction(const std::vector<std::string> &v);
+
+      // Form G using density
+      return_type
+      density_contraction(const std::vector<std::string> &v);
+
+      // Compute integrals needed for contraction
       void compute_symetric_df_ints();
       // integral object
       sc::Ref<sc::IntegralLibint2> integral_;
@@ -86,9 +112,14 @@ namespace mpqc {
       sc::Ref<TiledBasisSet> basis_;
       sc::Ref<TiledBasisSet> dfbasis_;
 
-      // Ptrs to density matrix and our world object
-      TAMatrix *density_;
+      // Ptrs to density matrix or coeff matrix and our world object
+      TAMatrix *density_ = nullptr;
+      TAMatrix *coeff_ = nullptr;
       sc::Ref<World> world_;
+
+      // Bools for which method we are using
+      bool density_set_ = false;
+      bool coeff_set_ = false;
 
       // Tensor that holds the integrals which have been combined with the
       // sqrt inverse of the two body two center integrals.

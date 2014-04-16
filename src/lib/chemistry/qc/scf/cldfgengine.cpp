@@ -53,11 +53,11 @@ mpqc::TA::ClDFGEngine::ClDFGEngine(sc::Ref<sc::IntegralLibint2> integral,
                                      TAMatrix *density,
                                      sc::Ref<World> world) :
         integral_(integral), basis_(basis), dfbasis_(dfbasis),
-        density_(density), world_(world)
+        density_(density), world_(world), density_set_(true)
 {}
 
 mpqc::TA::ClDFGEngine::ClDFGEngine(const sc::Ref<sc::KeyVal> &kv) : integral_(),
-        basis_(), dfbasis_(), density_(nullptr), world_() {
+        basis_(), dfbasis_(), world_() {
 
   // Initialize everything
   world_ << kv->describedclassvalue("world");
@@ -129,22 +129,40 @@ mpqc::TA::ClDFGEngine::operator ()( const std::string& v) {
     }
   }
 
- /*
+
+  // Use coefficients if we have them
+  if(coeff_set_){
+    auto expr = coefficient_contraction(input);
+    return expr;
+  }
+  else if(density_set_){
+    auto expr = density_contraction(input);
+    return expr;
+  }
+  else{
+    std::cout << "Got to throw contraction" << std::endl;
+    throw;
+  }
+}
+
+// Do contraction with density
+return_type
+mpqc::TA::ClDFGEngine::density_contraction(const std::vector<std::string> &input){
+   /*
   * Construct strings which will be used to generate the expressions comma for seperation
   * all sequence must start with either i or m hence they don't have commas
   */
-  const std::string &i = input[0];
-  const std::string &j = "," + input[1];
+  const std::string &i = input.at(0);
+  const std::string &j = "," + input.at(1);
  /*
   * These strings are unlikely to have collisions.
   * This means that possibly if someone calls this function in an expression and
   * happens to use the same strings as one of the ones below something bad might
   * happen. This is unlikely due to the length and nature of these strings.
   */
-  const std::string m("mpqc::TA::ClDfGFactory_m");
-  const std::string n(",mpqc::TA::ClDfGFactory_n");
-  const std::string X(",mpqc::TA::ClDfGFactory_X");
-
+  const std::string m("mpqc::TA::ClDfGFactory_m_density");
+  const std::string n(",mpqc::TA::ClDfGFactory_n_density");
+  const std::string X(",mpqc::TA::ClDfGFactory_X_density");
 
   // just for conveience
   const TAMatrix &dens = *density_;
@@ -155,17 +173,72 @@ mpqc::TA::ClDFGEngine::operator ()( const std::string& v) {
   return expr;
 }
 
+// Do contraction with coefficients
+return_type
+mpqc::TA::ClDFGEngine::coefficient_contraction(
+        const std::vector<std::string> &input){
+  /*
+  * Construct strings which will be used to generate the expressions comma for seperation
+  * all sequence must start with either i or m hence they don't have commas
+  */
+  const std::string &i = input.at(0);
+  const std::string &j = "," + input.at(1);
+ /*
+  * These strings are unlikely to have collisions.
+  * This means that possibly if someone calls this function in an expression and
+  * happens to use the same strings as one of the ones below something bad might
+  * happen. This is unlikely due to the length and nature of these strings.
+  */
+  const std::string m("mpqc::TA::ClDfGFactory_m_coeff");
+  const std::string n(",mpqc::TA::ClDfGFactory_n_coeff");
+  const std::string X(",mpqc::TA::ClDfGFactory_X_coeff");
+  const std::string Z(",mpqc::TA::ClDfGFactory_z_coeff");
+
+  // For exchange term
+  const std::string nE("mpqc::TA::ClDfGFactory_n_coeff");
+  const std::string iE = "," + input.at(0);
+
+  // just for conveience
+  const TAMatrix &C = *coeff_;
+
+  auto expr = 2 * (df_ints_(i+j+X) * (C(m+Z) * (C(nE+Z) * df_ints_(m+n+X)) ) )
+                - ( (C(nE+Z) * df_ints_(nE+iE+X)) * (C(m+Z) * df_ints_(m+j+X)) );
+
+  return expr;
+}
+
 void
 mpqc::TA::ClDFGEngine::set_densities(std::vector<TAMatrix *> densities) {
   MPQC_ASSERT(densities.size() == 1);
   density_ = densities.at(0);
+  density_set_ = true;
 }
 
 bool
 mpqc::TA::ClDFGEngine::densities_set() {
-  return density_ != nullptr;
+  return density_set_;
 }
 
+void mpqc::TA::ClDFGEngine::set_coefficients(std::vector<TAMatrix*> coeffs) {
+  MPQC_ASSERT(coeffs.size() == 1);
+  coeff_ = coeffs.at(0);
+  coeff_set_ = true;
+}
+
+bool mpqc::TA::ClDFGEngine::coefficients_set() {
+  return coeff_set_;
+}
+
+bool mpqc::TA::ClDFGEngine::using_coeff() {
+  return coeff_set_;
+}
+
+// Only use density if coefficients have not been set.
+bool mpqc::TA::ClDFGEngine::using_density() {
+  return (!coeff_set_ && density_set_);
+}
+
+// Compute the integrals
 void
 mpqc::TA::ClDFGEngine::compute_symetric_df_ints() {
 
@@ -224,7 +297,6 @@ mpqc::TA::ClDFGEngine::compute_symetric_df_ints() {
     std::cout << "\tTook " << inverse_time1 - inverse_time0 << " s" <<
             " to compute eri2 inverse." << std::endl;
   }
-
 
   // Copy back to TA
   ::TiledArray::elem_to_array(eri2_ints, eri2_elem);

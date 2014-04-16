@@ -131,13 +131,11 @@ mpqc::TA::ClDFGEngine::operator ()( const std::string& v) {
 
 
   // Use coefficients if we have them
-  if(coeff_set_){
-    auto expr = coefficient_contraction(input);
-    return expr;
+  if(coefficients_set()){
+    return coefficient_contraction(input);
   }
-  else if(density_set_){
-    auto expr = density_contraction(input);
-    return expr;
+  else if(densities_set()){
+    return density_contraction(input);
   }
   else{
     std::cout << "Got to throw contraction" << std::endl;
@@ -192,19 +190,33 @@ mpqc::TA::ClDFGEngine::coefficient_contraction(
   const std::string m("mpqc::TA::ClDfGFactory_m_coeff");
   const std::string n(",mpqc::TA::ClDfGFactory_n_coeff");
   const std::string X(",mpqc::TA::ClDfGFactory_X_coeff");
-  const std::string Z(",mpqc::TA::ClDfGFactory_z_coeff");
+  const std::string Z(",mpqc::TA::ClDfGFactory_Z_coeff");
 
-  // For exchange term
+  // Terms where comma's need to be added or removed
   const std::string nE("mpqc::TA::ClDfGFactory_n_coeff");
+  const std::string ZE("mpqc::TA::ClDfGFactory_Z_coeff");
   const std::string iE = "," + input.at(0);
 
   // just for conveience
   const TAMatrix &C = *coeff_;
 
-  auto expr = 2 * (df_ints_(i+j+X) * (C(m+Z) * (C(nE+Z) * df_ints_(m+n+X)) ) )
-                - ( (C(nE+Z) * df_ints_(nE+iE+X)) * (C(m+Z) * df_ints_(m+j+X)) );
+  // Precompute Exch Term
+  df_K_ = C(nE+Z) * df_ints_(nE+iE+X);
 
-  return expr;
+  if(densities_set()){
+    // Update D
+    TAMatrix &D = *density_;
+    D("mu, nu") = C("mu,i") * C("nu,i");
+
+    auto expr = 2 * (df_ints_(i+j+X) * (D(m+n) * df_ints_(m+n+X) ) )
+                  - (df_K_(ZE+iE+X) * df_K_(ZE+j+X) );
+    return expr;
+  }
+  else {
+    auto expr = 2 * (df_ints_(i+j+X) * ( (C(m+Z) * C(n+Z)) * df_ints_(m+n+X) ) )
+                  - (df_K_(ZE+iE+X) * df_K_(ZE+j+X) );
+    return expr;
+  }
 }
 
 void

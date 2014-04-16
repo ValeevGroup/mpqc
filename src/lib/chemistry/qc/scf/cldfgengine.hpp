@@ -124,6 +124,7 @@ namespace mpqc {
       // Tensor that holds the integrals which have been combined with the
       // sqrt inverse of the two body two center integrals.
       TiledArray::Array<double, 3> df_ints_;
+      TiledArray::Array<double, 3> df_K_; // Holds exchange intermediate
 
       static sc::ClassDesc class_desc_;
     };

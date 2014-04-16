@@ -109,6 +109,7 @@ void try_main(int argc, char** argv){
   // Initialize G engine
   ClDFGEngine GC(static_cast<Ref<KeyVal> >(akv));
   GC.set_coefficients({&C});
+  GC.set_densities({&dens});
   world->madworld()->gop.fence();
 
   // Make Fock matrix
@@ -132,8 +133,6 @@ void try_main(int argc, char** argv){
     energyinit = energy;
 
     C = eigensolver_occ_Coeff(F, S, occ);
-    world->madworld()->gop.fence();
-    dens = C("mu,i") * C("nu,i");
     world->madworld()->gop.fence();
 
     auto f0 = madness::wall_time();

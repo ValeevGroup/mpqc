@@ -13,6 +13,7 @@ SET(ccfiles
   cadf/decomp.cc
   cadf/coefficients.cc
   cadf/compute_j.cc
+  cadf/assignments.cc
   cadf/compute_k.cc
   effh.cc
   fbclhf.cc

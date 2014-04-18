@@ -68,9 +68,11 @@ typedef unsigned long long ull;
 
 namespace sc {
 
+
 // Forward Declarations
 
 class XMLWriter;
+namespace cadf { class AssignmentGrid; }
 
 //============================================================================//
 
@@ -364,11 +366,15 @@ class CADFCLHF: public CLHF {
     /// Full screening exponent for non-reset iterations
     double full_screening_expon_ = 1.0;
     /// Should we screen the B contraction?
-    double screen_B_ = false;
+    bool screen_B_ = false;
+    /// Should we distribute the coefficients among nodes?  (Note: Some replication is still necessary)
+    bool distribute_coefficients_ = true;
     /// Should we use distance factor when we screen the B contraction?
     double screen_B_use_distance_ = false;
     /// Screening thresh for B contraction; defaults to full_screening_thresh_
     double B_screening_thresh_;
+    /// Store the coefficients in both storage orders.  Takes more memory but also faster
+    bool store_coefs_transpose_ = false;
     //@}
 
     ScreeningStatistics stats_;
@@ -435,6 +441,15 @@ class CADFCLHF: public CLHF {
     ) const;
 
     void compute_coefficients();
+
+    template<template<typename...> class container, typename map_type>
+    void get_coefs_ish_jsh(
+        const ShellData& ish,
+        const ShellData& jsh,
+        int ithr,
+        container<map_type>& coefsA,
+        container<map_type>& coefsB
+    );
 
     void initialize();
 
@@ -607,6 +622,8 @@ class CADFCLHF: public CLHF {
     // Pair assignments for K
     std::map<std::pair<int, ShellBlockSkeleton<>>, int> pair_assignments_k_;
 
+    shared_ptr<cadf::AssignmentGrid> atom_pair_assignments_k_;
+
     // What pairs are being evaluated on the current node?
     std::vector<std::pair<int, int>> local_pairs_all_;
     std::vector<std::pair<int, int>> local_pairs_sig_;
@@ -627,13 +644,15 @@ class CADFCLHF: public CLHF {
     std::vector<std::vector<int>> shell_to_sig_shells_;
 
     std::vector<double> max_schwarz_;
-    std::vector<double> schwarz_df_;
+    Eigen::VectorXd schwarz_df_;
 
     // Where are we in the iteration over the local_pairs_?
     std::atomic<int> local_pairs_spot_;
 
     Eigen::MatrixXd schwarz_frob_;
     std::vector<Eigen::MatrixXd> C_trans_frob_;
+
+    Eigen::MatrixXd C_bar_;
 
     // TwoBodyThreeCenterInt integral objects for each thread
     std::vector<Ref<TwoBodyThreeCenterInt>> eris_3c_;
@@ -660,7 +679,12 @@ class CADFCLHF: public CLHF {
     std::vector<double> df_extents_;
 
     /// Coefficients storage.  Not accessed directly
-    double* coefficients_data_ = 0;
+    //double* coefficients_data_ = 0;
+    double* __restrict__ coefficients_data_ = 0;
+    double* __restrict__ dist_coefs_data_ = 0;
+
+    std::unordered_map<int, Eigen::Map<RowMatrix>> coefs_X_nu;
+    std::unordered_map<int, Eigen::Map<RowMatrix>> coefs_mu_X;
 
     CoefMap coefs_;
 
@@ -668,7 +692,7 @@ class CADFCLHF: public CLHF {
     std::vector<RowMatrix> coefs_blocked_;
     std::vector<std::vector<int>> coef_block_offsets_;
 
-    std::vector<std::vector<ShellIndexWithValue>> Cmaxes_;
+    //std::vector<std::vector<ShellIndexWithValue>> Cmaxes_;
 
     std::vector<Eigen::Map<RowMatrix>> coefs_transpose_blocked_;
     std::vector<Eigen::Map<RowMatrix>> coefs_transpose_blocked_other_;
@@ -788,271 +812,6 @@ write_xml(
     const XMLWriter& writer
 );
 
-
-
-template <typename ShellRange>
-CADFCLHF::TwoCenterIntContainerPtr
-CADFCLHF::ints_to_eigen(
-    const ShellBlockData<ShellRange>& iblk,
-    const ShellBlockData<ShellRange>& jblk,
-    Ref<TwoBodyTwoCenterInt>& ints,
-    TwoBodyOper::type int_type
-){
-  auto rv = std::make_shared<TwoCenterIntContainer>(iblk.nbf, jblk.nbf);
-  int block_offset_i = 0;
-  for(auto ish : shell_range(iblk)) {
-    int block_offset_j = 0;
-    for(auto jsh : shell_range(jblk)) {
-      const auto& ints_ptr = ints_to_eigen(ish, jsh, ints, int_type);
-      rv->block(block_offset_i, block_offset_j, ish.nbf, jsh.nbf) = *ints_ptr;
-      block_offset_j += jsh.nbf;
-    }
-    block_offset_i += ish.nbf;
-  }
-  return rv;
-}
-
-template <typename ShellRange>
-CADFCLHF::TwoCenterIntContainerPtr
-CADFCLHF::ints_to_eigen_threaded(
-    const ShellBlockData<ShellRange>& iblk,
-    const ShellBlockData<ShellRange>& jblk,
-    std::vector<Ref<TwoBodyTwoCenterInt>>& ints_for_thread,
-    TwoBodyOper::type int_type
-){
-  auto rv = std::make_shared<TwoCenterIntContainer>(iblk.nbf, jblk.nbf);
-  // non-contiguous form not implemented yet
-  assert(iblk.is_contiguous());
-  assert(jblk.is_contiguous());
-  do_threaded(nthread_, [&](int ithr){
-    ShellData ish, jsh;
-    for(auto&& pair : threaded_shell_block_pair_range(iblk, jblk, ithr, nthread_)){
-      boost::tie(ish, jsh) = pair;
-      const auto& ints_ptr = ints_to_eigen(ish, jsh, ints_for_thread[ithr], int_type);
-      rv->block(
-          ish.bfoff - iblk.bfoff, jsh.bfoff - jblk.bfoff,
-          ish.nbf, jsh.nbf
-      ) = *ints_ptr;
-    }
-  });
-  return rv;
-}
-
-template <typename ShellRange>
-Eigen::Map<CADFCLHF::TwoCenterIntContainer>
-CADFCLHF::ints_to_eigen_map_threaded(
-    const ShellBlockData<ShellRange>& iblk,
-    const ShellBlockData<ShellRange>& jblk,
-    std::vector<Ref<TwoBodyTwoCenterInt>>& ints_for_thread,
-    TwoBodyOper::type int_type,
-    double* buffer
-){
-  auto rv = Eigen::Map<TwoCenterIntContainer>(buffer, iblk.nbf, jblk.nbf);
-  // non-contiguous form not implemented yet
-  assert(iblk.is_contiguous());
-  assert(jblk.is_contiguous());
-  do_threaded(nthread_, [&](int ithr){
-    ShellData ish, jsh;
-    for(auto&& pair : threaded_shell_block_pair_range(iblk, jblk, ithr, nthread_)){
-      boost::tie(ish, jsh) = pair;
-      const auto& ints_ptr = ints_to_eigen(ish, jsh, ints_for_thread[ithr], int_type);
-      rv.block(
-          ish.bfoff - iblk.bfoff, jsh.bfoff - jblk.bfoff,
-          ish.nbf, jsh.nbf
-      ) = *ints_ptr;
-    }
-  });
-  return rv;
-}
-
-
-template <typename ShellRange>
-CADFCLHF::ThreeCenterIntContainerPtr
-CADFCLHF::ints_to_eigen(
-    const ShellBlockData<ShellRange>& iblk,
-    const ShellData& jsh,
-    Ref<TwoBodyTwoCenterInt>& ints,
-    TwoBodyOper::type int_type
-){
-  auto rv = std::make_shared<ThreeCenterIntContainer>((const int)iblk.nbf, (const int)jsh.nbf);
-  for(auto ish : shell_range(iblk)) {
-    const auto& ints_ptr = ints_to_eigen(ish, jsh, ints, int_type);
-    rv->block(ish.bfoff - iblk.bfoff, 0, ish.nbf, jsh.nbf) = *ints_ptr;
-  }
-  return rv;
-}
-
-template <typename ShellRange>
-CADFCLHF::ThreeCenterIntContainerPtr
-CADFCLHF::ints_to_eigen(
-    const ShellData& ish, const ShellData& jsh,
-    const ShellBlockData<ShellRange>& Xblk,
-    Ref<TwoBodyThreeCenterInt>& ints,
-    TwoBodyOper::type int_type
-){
-  auto rv = std::make_shared<ThreeCenterIntContainer>(
-      ish.nbf * jsh.nbf,
-      Xblk.nbf
-  );
-  for(auto Xsh : shell_range(Xblk)) {
-    const auto& ints_ptr = ints_to_eigen(ish, jsh, Xsh, ints, int_type);
-    rv->middleCols(Xsh.bfoff - Xblk.bfoff, Xsh.nbf) = *ints_ptr;
-  }
-  return rv;
-}
-
-template <typename ShellRange1, typename ShellRange2>
-CADFCLHF::ThreeCenterIntContainerPtr
-CADFCLHF::ints_to_eigen(
-    const ShellBlockData<ShellRange1>& iblk,
-    const ShellData& jsh,
-    const ShellBlockData<ShellRange2>& Xblk,
-    Ref<TwoBodyThreeCenterInt>& ints,
-    TwoBodyOper::type int_type
-){
-  auto rv = std::make_shared<ThreeCenterIntContainer>(
-      iblk.nbf * jsh.nbf,
-      Xblk.nbf
-  );
-  for(auto ish: shell_range(iblk)) {
-    for(auto Xsh : shell_range(Xblk)) {
-      const auto& ints_ptr = ints_to_eigen(ish, jsh, Xsh, ints, int_type);
-      rv->block(
-          (ish.bfoff - iblk.bfoff) * jsh.nbf, Xsh.bfoff - Xblk.bfoff,
-          ish.nbf*jsh.nbf, Xsh.nbf
-      ) = *ints_ptr;
-    }
-  }
-  return rv;
-}
-
-template <typename ShellRange>
-CADFCLHF::ThreeCenterIntContainerPtr
-CADFCLHF::ints_to_eigen(
-    const ShellBlockData<ShellRange>& iblk,
-    const ShellData& jsh,
-    const ShellData& Xsh,
-    Ref<TwoBodyThreeCenterInt>& ints,
-    TwoBodyOper::type int_type
-){
-  auto rv = std::make_shared<ThreeCenterIntContainer>(
-      iblk.nbf * jsh.nbf, Xsh.nbf
-  );
-  int block_offset = 0;
-  for(auto ish: shell_range(iblk)) {
-    const auto& ints_ptr = ints_to_eigen(ish, jsh, Xsh, ints, int_type);
-    rv->block(
-        block_offset * jsh.nbf, 0,
-        ish.nbf*jsh.nbf, Xsh.nbf
-    ) = *ints_ptr;
-    block_offset += ish.nbf;
-  }
-  return rv;
-}
-
-template <typename ShellRange>
-Eigen::Map<CADFCLHF::ThreeCenterIntContainer>
-CADFCLHF::ints_to_eigen_map(
-    const ShellBlockData<ShellRange>& iblk,
-    const ShellData& jsh,
-    const ShellData& Xsh,
-    Ref<TwoBodyThreeCenterInt>& ints,
-    TwoBodyOper::type int_type,
-    double* buffer
-){
-  Eigen::Map<ThreeCenterIntContainer> rv(
-      buffer,
-      iblk.nbf * jsh.nbf, Xsh.nbf
-  );
-  int block_offset = 0;
-  for(auto ish : shell_range(iblk)) {
-    ints_to_buffer(
-        ish, jsh, Xsh,
-        ish.nbf, jsh.nbf, Xsh.nbf,
-        ints, int_type,
-        buffer + block_offset * jsh.nbf * Xsh.nbf
-    );
-    block_offset += ish.nbf;
-  }
-  return rv;
-}
-
-template <typename ShellRange1, typename ShellRange2>
-Eigen::Map<CADFCLHF::ThreeCenterIntContainer>
-CADFCLHF::ints_to_eigen_map(
-    const ShellBlockData<ShellRange1>& iblk,
-    const ShellData& jsh,
-    const ShellBlockData<ShellRange2>& Xblk,
-    Ref<TwoBodyThreeCenterInt>& ints,
-    TwoBodyOper::type int_type,
-    double* buffer
-){
-  Eigen::Map<ThreeCenterIntContainer> rv(
-      buffer,
-      iblk.nbf * jsh.nbf, Xblk.nbf
-  );
-  if(Xblk.nshell == 1) {
-    const auto& Xsh = Xblk.first_shell;
-    int block_offset = 0;
-    for(auto&& ish : shell_range(iblk)) {
-      ints_to_buffer(
-          ish, jsh, Xsh,
-          ish.nbf, jsh.nbf, Xsh.nbf,
-          ints, int_type,
-          buffer + block_offset * jsh.nbf * Xsh.nbf
-      );
-      block_offset += ish.nbf;
-    }
-    return rv;
-  }
-  else {
-    int block_offset = 0;
-    for(auto&& ish : shell_range(iblk)) {
-      int Xblk_offset = 0;
-      for(auto&& Xsh : shell_range(Xblk)) {
-        ints_to_buffer(
-            ish, jsh, Xsh,
-            ish.nbf, jsh.nbf, Xsh.nbf,
-            ints, int_type,
-            buffer + block_offset * jsh.nbf * Xblk.nbf + Xblk_offset,
-            // stride (from first element of one row to first element of next)
-            Xblk.nbf
-        );
-        Xblk_offset += Xsh.nbf;
-      }
-      block_offset += ish.nbf;
-    }
-    return rv;
-  }
-}
-
-template <typename ShellRange>
-CADFCLHF::ThreeCenterIntContainerPtr
-CADFCLHF::ints_to_eigen(
-    const ShellData& ish,
-    const ShellBlockData<ShellRange>& jblk,
-    const ShellData& Xsh,
-    Ref<TwoBodyThreeCenterInt>& ints,
-    TwoBodyOper::type int_type
-){
-  auto rv = std::make_shared<ThreeCenterIntContainer>(
-      ish.nbf * jblk.nbf, Xsh.nbf
-  );
-  int block_offset = 0;
-  for(auto jsh : shell_range(jblk)) {
-    const auto& ints_ptr = ints_to_eigen(ish, jsh, Xsh, ints, int_type);
-    for(auto mu : function_range(ish)){
-      rv->block(
-          mu.bfoff_in_shell*jblk.nbf + block_offset, 0,
-          jsh.nbf, Xsh.nbf
-      ) = ints_ptr->block(mu.bfoff_in_shell*jsh.nbf, 0, jsh.nbf, Xsh.nbf);
-    }
-    block_offset += jsh.nbf;
-  }
-  return rv;
-}
-
-
 // Borrowed from ConsumeableResources
 inline std::string data_size_to_string(size_t t) {
   const int prec = 3; // print this many digits
@@ -1090,5 +849,8 @@ inline std::string data_size_to_string(size_t t) {
 }
 
 } // end namespace sc
+
+#include "get_ints_impl.h"
+#include "coefs_impl.h"
 
 #endif /* _chemistry_qc_scf_cadfclhf_h */

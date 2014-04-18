@@ -182,7 +182,7 @@ struct ShellData : public BasisElementData {
     union { int atom_dfshoff = NotAssigned; int atom_obsshoff; };
     union { int atom_dfbfoff = NotAssigned; int atom_obsbfoff; };
     union { int atom_dfnbf = NotAssigned; int atom_obsnbf; };
-    union { int atom_dfnsh = NotAssigned; int atom_obsdfnsh; };
+    union { int atom_dfnsh = NotAssigned; int atom_obsnsh; };
     union { int atom_df_last_function = NotAssigned; int atom_obs_last_function; };
     union { int atom_df_last_shell = NotAssigned; int atom_obs_last_shell; };
 
@@ -662,6 +662,20 @@ class ShellBlockData {
         restrictions(requirements)
     { init(); }
 
+    static ShellBlockData atom_block(int atom,
+        GaussianBasisSet* basis,
+        GaussianBasisSet* dfbasis = 0
+    )
+    {
+      const int atom_shoff = basis->shell_on_center(atom, 0);
+      const int atom_nsh = basis->nshell_on_center(atom);
+      const int atom_nbf = basis->nbasis_on_center(atom);
+      return ShellBlockData<Range>(
+          sc::shell_range(basis, dfbasis, atom_shoff, atom_shoff + atom_nsh-1),
+          atom_nsh, atom_nbf, SameCenter
+      );
+    }
+
     int nbf;
     int bfoff;
     int nshell;
@@ -993,7 +1007,7 @@ iter_functions_on_center(
 
 inline range_of<ShellData>
 iter_shells_on_center(
-    const Ref<GaussianBasisSet>& basis,
+    GaussianBasisSet* basis,
     int center,
     const OptionalRefParameter<GaussianBasisSet>& dfbasis = 0
 )
@@ -1354,6 +1368,42 @@ class OrderedShellList {
     {
       assert(size() == 0);
       std::copy(new_data, new_data + n_new_data, std::back_inserter(indices_));
+      sort(false);
+    }
+
+    template <typename ValueIterable>
+    void acquire_and_sort(
+        const ValueIterable& val_iter,
+        double cutoff = 0.0
+    )
+    {
+      // There is probably a faster way to do this, particularly for Eigen data structures
+      int index = 0;
+      indices_.clear();
+      idx_set_.clear();
+      sorted_ = false;
+      for(auto&& val : val_iter) {
+        if(val > cutoff) {
+          indices_.emplace_back(index++, val);
+        }
+      }
+      sort(false);
+    }
+
+    void acquire_and_sort(
+        const double* vals,
+        size_t n_vals,
+        double cutoff = 0.0
+    )
+    {
+      indices_.clear();
+      idx_set_.clear();
+      sorted_ = false;
+      for(size_t idx = 0; idx < n_vals; ++idx) {
+        if(vals[idx] > cutoff) {
+          indices_.emplace_back(idx, vals[idx]);
+        }
+      }
       sort(false);
     }
 

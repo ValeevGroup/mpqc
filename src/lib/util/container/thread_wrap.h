@@ -44,7 +44,7 @@ STLContainer merge(const std::vector<STLContainer>& containers) {
   return rv;
 }
 
-namespace {
+namespace detail {
 
   template <typename Container>
   struct _Merger {
@@ -56,7 +56,7 @@ namespace {
 }
 
 
-template <typename Container, typename Merger=_Merger<Container>>
+template <typename Container, typename Merger=detail::_Merger<Container>>
 class ThreadReplicated
 {
 

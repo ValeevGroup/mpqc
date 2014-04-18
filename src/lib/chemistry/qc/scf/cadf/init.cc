@@ -35,6 +35,7 @@
 #include <util/container/conc_cache.h>
 
 #include "cadfclhf.h"
+#include "assignments.h"
 
 using namespace sc;
 using std::endl;
@@ -161,31 +162,41 @@ CADFCLHF::init_threads()
     ++inode;
   }
 
-  // Make the assignments for the mu, X pairs in K
-  inode = 0;
-  for(auto&& ish : shell_range(gbs_)) {
-    for(auto&& Xblk : shell_block_range(dfbs_, gbs_, 0, NoLastIndex, SameCenter)) {
-      const int assignment = inode % n_node; ++inode;
-      auto pair = std::make_pair(ish, Xblk);
-      pair_assignments_k_[pair] = assignment;
-      if(assignment == me) {
-        local_pairs_k_.push_back(pair);
-      }
+  //if(not distribute_coefficients_) {
+    // Make the assignments for the mu, X pairs in K
+    inode = 0;
+    for(auto&& ish : shell_range(gbs_)) {
+      for(auto&& Xblk : shell_block_range(dfbs_, gbs_, 0, NoLastIndex, SameCenter)) {
+        const int assignment = inode % n_node; ++inode;
+        auto pair = std::make_pair(ish, Xblk);
+        pair_assignments_k_[pair] = assignment;
+        if(assignment == me) {
+          local_pairs_k_.push_back(pair);
+        }
 
-    } // end loop over blocks for mu
-  } // end loop over mu sets
+      } // end loop over blocks for mu
+    } // end loop over mu sets
 
-  inode = 0;
-  // TODO Non-round-robin static parallelism to make lookup faster in L_3 build
-  for(auto&& ish : shell_range(gbs_)) {
-    for(auto&& Xsh : shell_range(dfbs_)) {
-      const int assignment = inode % n_node; ++inode;
-      if(assignment == me) {
-        local_pairs_linK_.emplace(ish, (int)Xsh);
-        linK_local_map_[Xsh].push_back(ish);
-      }
-    } // end loop over Xsh
-  } // end loop over ish
+    inode = 0;
+    // TODO Non-round-robin static parallelism to make lookup faster in L_3 build
+    for(auto&& ish : shell_range(gbs_)) {
+      for(auto&& Xsh : shell_range(dfbs_)) {
+        const int assignment = inode % n_node; ++inode;
+        if(assignment == me) {
+          local_pairs_linK_.emplace(ish, (int)Xsh);
+          linK_local_map_[Xsh].push_back(ish);
+        }
+      } // end loop over Xsh
+    } // end loop over ish
+  //}
+  //else {
+    //----------------------------------------------------------------------------//
+    atom_pair_assignments_k_ = make_shared<cadf::AssignmentGrid>(
+        gbs_, dfbs_, scf_grp_->n()
+    );
+    atom_pair_assignments_k_->print_detail();
+
+  //}
 
   //----------------------------------------------------------------------------//
   threads_initialized_ = true;

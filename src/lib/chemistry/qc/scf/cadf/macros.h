@@ -98,5 +98,7 @@
 #define out_assert(a, op, b) assert(a op b || ((ExEnv::out0() << "Failed assertion output: " << #a << " ( = " << a << ") " << #op << " " << #b <<  " ( = " << b << ")" << std::endl), false))
 #define DEBUG_DELETE_THIS
 
+#define resize_and_zero_matrix(mat, nrows, ncols) mat.resize(nrows, ncols); mat = std::remove_reference<decltype(mat)>::type::Zero(nrows, ncols)
+#define declare_and_zero_matrix(type, mat, nrows, ncols) type mat(nrows, ncols); mat = type::Zero(nrows, ncols)
 
 #endif /* _chemistry_qc_scf_cadf_macros_h */

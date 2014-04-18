@@ -168,6 +168,8 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   screen_B_ = keyval->booleanvalue("screen_B", KeyValValueboolean(screen_B_));
   screen_B_use_distance_ = keyval->booleanvalue("screen_B_use_distance", KeyValValueboolean(screen_B_use_distance_));
   scale_screening_thresh_ = keyval->booleanvalue("scale_screening_thresh", KeyValValueboolean(scale_screening_thresh_));
+  distribute_coefficients_ = keyval->booleanvalue("distribute_coefficients", KeyValValueboolean(distribute_coefficients_));
+  store_coefs_transpose_ = keyval->booleanvalue("store_coefs_transpose", KeyValValueboolean(store_coefs_transpose_));
   //----------------------------------------------------------------------------//
   stats_.print_level = print_screening_stats_;
   stats_.xml_stats_saved = xml_screening_data_;
@@ -207,10 +209,9 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
 
 CADFCLHF::~CADFCLHF()
 {
-  if(have_coefficients_){
-    // Clean up the coefficient data
-    deallocate(coefficients_data_);
-  }
+  // Clean up the coefficient data
+  if(coefficients_data_) delete[] coefficients_data_;
+  if(dist_coefs_data_) delete[] dist_coefs_data_;
 }
 
 
@@ -229,11 +230,12 @@ CADFCLHF::print(ostream&o) const
   o << indent << "B_use_buffer = " << bool_str(B_use_buffer_) << endl;
   o << indent << "basis name = " << gbs_->label() << endl;
   o << indent << "coef_screening_thresh = " << double_str(coef_screening_thresh_) << endl;
-  o << indent << "dfbasis name = " << dfbs_->label() << endl;
-  o << indent << "do_linK = " << bool_str(do_linK_) << endl;
   o << indent << "density_screening_thresh = " << double_str(density_screening_thresh_) << endl;
+  o << indent << "dfbasis name = " << dfbs_->label() << endl;
   o << indent << "distance_damping_factor = " << double_str(distance_damping_factor_) << endl;
   o << indent << "distance_screening_thresh = " << double_str(distance_screening_thresh_) << endl;
+  o << indent << "distribute_coefficients = " << bool_str(distribute_coefficients_) << endl;
+  o << indent << "do_linK = " << bool_str(do_linK_) << endl;
   o << indent << "exact_diagonal_J = " << bool_str(exact_diagonal_J_) << endl;
   o << indent << "exact_diagonal_K = " << bool_str(exact_diagonal_K_) << endl;
   o << indent << "full_screening_expon = " << double_str(full_screening_expon_) << endl;
@@ -246,6 +248,7 @@ CADFCLHF::print(ostream&o) const
   o << indent << "scale_screening_thresh = " << bool_str(scale_screening_thresh_) << endl;
   o << indent << "screen_B = " << bool_str(screen_B_) << endl;
   o << indent << "screen_B_use_distance = " << bool_str(screen_B_use_distance_) << endl;
+  o << indent << "store_coefs_transpose = " << bool_str(store_coefs_transpose_) << endl;
   o << indent << "subtract_extents = " << bool_str(subtract_extents_) << endl;
   o << indent << "use_extents = " << bool_str(use_extents_) << endl;
   o << indent << "use_max_extents = " << bool_str(use_max_extents_) << endl;

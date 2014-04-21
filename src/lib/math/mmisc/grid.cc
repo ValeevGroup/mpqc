@@ -495,7 +495,7 @@ WriteVectorGrid::wf_gaussian_cube(std::ostream &out, const DimensionMap& dmap) {
   out << std::fixed << std::setprecision(6);
 
   // multiple orbitals; depending on the number of orbitals, the gaussian cube format is different
-  out << std::setw( 4) << ( (nd != 1 ? -1 : 1) * mol->natom())
+  out << std::setw( 4) << ( (nd != 1 ? -1 : 1) * (int)mol->natom())
       << std::setw(12) << grid_->origin[0]*to_atomic
       << std::setw(12) << grid_->origin[1]*to_atomic
       << std::setw(12) << grid_->origin[2]*to_atomic << std::endl;

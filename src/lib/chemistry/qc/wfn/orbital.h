@@ -61,6 +61,7 @@ class WriteOrbital: public WriteGrid {
     Ref<Molecule> get_molecule();
     double calculate_value(SCVector3 point);
     void initialize();
+
   public:
     /** The KeyVal constructor uses all keywords of WriteGrid, plus the following additional keywords:
 
@@ -81,6 +82,18 @@ class WriteOrbital: public WriteGrid {
 
     /// if needed, creates default grid for the base class using the molecule of obwfn
     static Ref<KeyVal> process_keyval_for_base_class(const Ref<KeyVal> kv);
+
+    /** constructs a default grid for the given molecule, using VDWShape for \c mol. The algorithm is very basic and does not
+     * do any axis rotation, etc., so may be suboptimal for non-spherical systems.
+     *
+     * @param mol the Molecule object
+     * @param resolution the grid voxel size
+     * @param margin how much extra space to add around the VDWShape
+     * @return Grid object that encloses \c mol
+     */
+    static Ref<Grid> make_default_grid(const Ref<Molecule>& mol,
+                                       double resolution = 0.2,
+                                       double margin = 1.0);
 };
 
 /** The WriteOrbitals class writes orbitals at
@@ -125,7 +138,16 @@ class WriteOrbitals: public WriteVectorGrid {
 
       */
     WriteOrbitals(const Ref<KeyVal> &);
-    WriteOrbitals(const Ref<OrbitalSpace> & orbs, const std::vector<int>& labels, const Ref<sc::Grid> & grid,
+    /**
+     * Evaluates orbitals \c orbs on \c grid and writes them to \c gridfile in format \c gridformat.
+     * @param orbs the OrbitalSpace object that specifies the AO coefficients of the orbitals
+     * @param labels vector of int's that maps orbitals in \c orbs to their "absolute" index; if empty,
+     *               assume that \c orbs contains all orbitals (i.e. first orbital = 1, second = 2).
+     * @param grid   Grid object
+     * @param gridformat  output format for the grid data, the only supported value is "gaussian_cube"
+     * @param gridfile    the file name to which the data will be written
+     */
+    WriteOrbitals(const Ref<OrbitalSpace> & orbs, const std::vector<int>& labels, const Ref<sc::Grid> & grig,
                   std::string gridformat, std::string gridfile);
     ~WriteOrbitals();
 };

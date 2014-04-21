@@ -138,35 +138,44 @@ namespace sc {
 
     template <>
     struct OSAR_CoreInts<TwoBodyOper::r12_0_g12> : OSAR_CoreInts_G12Base {
-        ::libint2::GaussianGmEval<double, 0> Gm_Eval_;
+        typedef ::libint2::GaussianGmEval<double, 0> _GmEvalType;
+        typedef CoreIntsEngine<_GmEvalType>::Engine GmEvalType;
+        Ref<GmEvalType> Gm_Eval_;
+
         OSAR_CoreInts(unsigned int mmax, const Ref<IntParams>& params) :
-          Gm_Eval_(mmax, 1e-14), OSAR_CoreInts_G12Base(params)
+          Gm_Eval_(CoreIntsEngine<_GmEvalType>::instance(mmax, 1e-14)), OSAR_CoreInts_G12Base(params)
           {
             g12_ = reduce(g12_);
           }
-        double* eval(double* Fm_table, unsigned int mmax, double T, double rho = 0.0) {
-          Gm_Eval_.eval(Fm_table, rho, T, mmax, g12_);
-          return Fm_table;
+        double* eval(double* Gm_table, unsigned int mmax, double T, double rho = 0.0) {
+          Gm_Eval_->eval(Gm_table, rho, T, mmax, g12_);
+          return Gm_table;
         }
     };
     template <>
     struct OSAR_CoreInts<TwoBodyOper::r12_m1_g12> : OSAR_CoreInts_G12Base {
-        ::libint2::GaussianGmEval<double, -1> Gm_Eval_;
+        typedef ::libint2::GaussianGmEval<double, -1> _GmEvalType;
+        typedef CoreIntsEngine<_GmEvalType>::Engine GmEvalType;
+        Ref<GmEvalType> Gm_Eval_;
+
         OSAR_CoreInts(unsigned int mmax, const Ref<IntParams>& params) :
-          Gm_Eval_(mmax, 1e-14), OSAR_CoreInts_G12Base(params)
+          Gm_Eval_(CoreIntsEngine<_GmEvalType>::instance(mmax, 1e-14)), OSAR_CoreInts_G12Base(params)
         {
           g12_ = reduce(g12_);
         }
-        double* eval(double* Fm_table, unsigned int mmax, double T, double rho = 0.0) {
-          Gm_Eval_.eval(Fm_table, rho, T, mmax, g12_);
-          return Fm_table;
+        double* eval(double* Gm_table, unsigned int mmax, double T, double rho = 0.0) {
+          Gm_Eval_->eval(Gm_table, rho, T, mmax, g12_);
+          return Gm_table;
         }
     };
     template <>
     struct OSAR_CoreInts<TwoBodyOper::g12t1g12> : OSAR_CoreInts_G12Base {
-        ::libint2::GaussianGmEval<double, 2> Gm_Eval_;
+        typedef ::libint2::GaussianGmEval<double, 2> _GmEvalType;
+        typedef CoreIntsEngine<_GmEvalType>::Engine GmEvalType;
+        Ref<GmEvalType> Gm_Eval_;
+
         OSAR_CoreInts(unsigned int mmax, const Ref<IntParams>& params) :
-          Gm_Eval_(mmax, 1e-14), OSAR_CoreInts_G12Base(params)
+          Gm_Eval_(CoreIntsEngine<_GmEvalType>::instance(mmax, 1e-14)), OSAR_CoreInts_G12Base(params)
         {
           // [exp(-a r_{12}^2),[T1,exp(-b r_{12}^2)]] = 4 a b (r_{12}^2 exp(- (a+b) r_{12}^2) )
           // i.e. need to scale each coefficient by 4 a b
@@ -178,9 +187,9 @@ namespace sc {
               g12_[bk].second *= 4.0 * gbra[b].first * gket[k].first;
           g12_ = reduce(g12_);
         }
-        double* eval(double* Fm_table, unsigned int mmax, double T, double rho = 0.0) {
-          Gm_Eval_.eval(Fm_table, rho, T, mmax, g12_);
-          return Fm_table;
+        double* eval(double* Gm_table, unsigned int mmax, double T, double rho = 0.0) {
+          Gm_Eval_->eval(Gm_table, rho, T, mmax, g12_);
+          return Gm_table;
         }
     };
 

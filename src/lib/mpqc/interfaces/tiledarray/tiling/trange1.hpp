@@ -28,7 +28,7 @@
 #ifndef mpqc_interface_tiledarray_trange1_hpp
 #define mpqc_interface_tiledarray_trange1_hpp
 
-#include <tiled_array.h>
+#include <tiledarray.h>
 #include <chemistry/qc/basis/basis.h>
 #include <vector>
 

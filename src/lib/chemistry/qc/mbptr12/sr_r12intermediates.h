@@ -33,7 +33,7 @@
 #define _mpqc_src_lib_chemistry_qc_mbptr12_srr12intermediates_h
 
 #if defined(HAVE_MPQC3_RUNTIME)
-# include <tiled_array.h>
+# include <tiledarray.h>
 #else
 # error "sr_r12intermediates.h requires MPQC3 runtime, but it is not available"
 #endif
@@ -374,7 +374,7 @@ namespace sc {
         *
         * \sa ijxy()
         */
-      TA::expressions::TensorExpression<TA::Tensor<T> > _4(const std::string& key);
+      TA::expressions::TsrExpr<const TArray4d> _4(const std::string& key);
 
       /** Given a descriptive \c key, creates a rank-2 Array of integrals, or other related quantities
        *  The syntax of \c key is similar to that used by ParsedOneBodyInt,
@@ -394,12 +394,12 @@ namespace sc {
         *
         * \sa _4() \sa xy()
         */
-      TA::expressions::TensorExpression<TA::Tensor<T> > _2(const std::string& key);
+      TA::expressions::TsrExpr<const TArray2> _2(const std::string& key);
 
       //TA::expressions::TensorExpression<TA::Tensor< TA::Tensor<T> > > _22(const std::string& key);
 
       /// like _4, produces geminal T tensor
-      TA::expressions::TensorExpression<TA::Tensor<T> > _Tg(const std::string& key);
+      TA::expressions::TsrExpr<const TArray4Tg> _Tg(const std::string& key);
 
     private:
       madness::World& world_;
@@ -483,7 +483,7 @@ namespace sc {
       } ij_type;
       /// takes ij|o|ij or ij|o|ji
       template <typename Array22>
-      TA::expressions::TensorExpression<TA::Tensor<T> > take(const Array22& ij_o_pq,
+      TA::expressions::TsrExpr<const Array22> take(const Array22& ij_o_pq,
                                                              ij_type IJ) {
         //typedef typename Array22::value_type value_type;
           typedef TA::Tensor<TA::Tensor<T> > value_type;
@@ -500,7 +500,7 @@ namespace sc {
 
       /// computes ij|o1|pq . ij|o2|pq
       template <typename Array22>
-      TA::expressions::TensorExpression<TA::Tensor<T> > dotket(const Array22& ij_o1_pq,
+      TA::expressions::TsrExpr<const TArray2> dotket(const Array22& ij_o1_pq,
                                                                const Array22& ij_o2_pq,
                                                                bool transpose_o2_ket = false) {
         //typedef typename Array22::value_type value_type;

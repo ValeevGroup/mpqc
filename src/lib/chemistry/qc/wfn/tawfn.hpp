@@ -28,7 +28,7 @@
 #ifndef _MPQC_CHEMISTRY_WFN_TAWFN_HPP_
 #define _MPQC_CHEMISTRY_WFN_TAWFN_HPP_
 
-#include <tiled_array.h>
+#include <tiledarray.h>
 #include <util/madness/world.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/tiledbasisset.hpp>

@@ -68,7 +68,7 @@ endif()
 # Find TiledArray
 ###################
 
-find_path(TiledArray_INCLUDE_DIR tiled_array.h)
+find_path(TiledArray_INCLUDE_DIR tiledarray.h)
 
 if (TiledArray_INCLUDE_DIR)
 
@@ -76,7 +76,7 @@ if (TiledArray_INCLUDE_DIR)
   list(APPEND CMAKE_REQUIRED_INCLUDES ${TiledArray_INCLUDE_DIR})
   CHECK_CXX_SOURCE_COMPILES(
     "
-    #include <tiled_array.h>
+    #include <tiledarray.h>
     int main(int argc, char** argv) {
       madness::World& world = madness::initialize(argc, argv);
       std::vector<TiledArray::TiledRange1> tile_ranges;

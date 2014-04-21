@@ -28,7 +28,7 @@
 #ifndef mpqc_interfaces_tiledarray_tileints_hpp
 #define mpqc_interfaces_tiledarray_tileints_hpp
 
-#include <tiled_array.h>
+#include <tiledarray.h>
 #include <mpqc/interfaces/tiledarray/tiling/trange1.hpp>
 #include <chemistry/qc/basis/integral.h>
 #include <boost/ref.hpp>

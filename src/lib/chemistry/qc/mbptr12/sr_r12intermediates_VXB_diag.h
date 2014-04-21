@@ -1868,7 +1868,7 @@ namespace sc {
       }
 
     // MP2 amplitues:
-    TArray4 T2_ijab = TA::expressions::multiply(g_ijab("i,j,a,b"), Delta_ijab("i,j,a,b"));
+    TArray4 T2_ijab = g_ijab("i,j,a,b") * Delta_ijab("i,j,a,b");
 
 #if 1
     // MP2 density
@@ -2025,7 +2025,7 @@ namespace sc {
 #if 1
     {
     TArray4 C_ijab = _4("<i j|r|a_F(a') b>") + _4("<i j|r|a b_F(a')>");
-    TArray4 A_ijab = TA::expressions::multiply(C_ijab("i,j,a,b"), Delta_ijab("i,j,a,b"));
+    TArray4 A_ijab = C_ijab("i,j,a,b") * Delta_ijab("i,j,a,b");
 
     // Coupling and F12 part of MP2F12 density
     TArray2 D_mp2f12_ij =  (R_C1 * A_ijab("i,k,a,b") + R_C2 * A_ijab("k,i,a,b"))

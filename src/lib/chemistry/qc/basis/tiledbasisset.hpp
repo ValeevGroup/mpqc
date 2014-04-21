@@ -28,7 +28,7 @@
 #ifndef CHEMISTRY_QC_BASIS_TILEDBASISSET_HPP
 #define CHEMISTRY_QC_BASIS_TILEDBASISSET_HPP
 
-#include <tiled_array.h>
+#include <tiledarray.h>
 
 #include "basis.h"
 #include "gaussbas.h"

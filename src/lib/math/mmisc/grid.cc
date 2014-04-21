@@ -402,7 +402,9 @@ WriteVectorGrid::WriteVectorGrid(const Ref<KeyVal> &keyval)
       throw ex;
     }
 
-  filename_ = keyval->stringvalue("filename", KeyValValuestring("Grid"));
+  filename_ = keyval->stringvalue("filename", KeyValValuestring(""));
+  if (filename_ == "")
+    filename_ = SCFormIO::fileext_to_filename_string(".grid");
 
   if (keyval->exists("format")) {
       format_ = keyval->stringvalue("format");
@@ -444,6 +446,8 @@ WriteVectorGrid::WriteVectorGrid(const Ref<sc::Grid> & grid,
   else {
     ProgrammingError("WriteVectorGrid: unrecognized format", __FILE__, __LINE__);
   }
+  if (filename_ == "")
+    filename_ = SCFormIO::fileext_to_filename_string(".grid");
 }
 
 void

@@ -9,8 +9,8 @@ program can read and display.
 \if html
 <h1>Compiling molrender</h1>
 
- molrender is distributed with the SC Toolkit.  molrender will automatically
-be compiled when SC is compiled.  See \ref compile
+ molrender is distributed with the MPQC Toolkit.  molrender will automatically
+be compiled when MPQC is compiled.  See \ref compile
 for more information.
 \endif
 

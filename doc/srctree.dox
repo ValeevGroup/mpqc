@@ -3,7 +3,7 @@
 <dl>
 
 <dt><tt>bin</tt><dd>This directory mainly contains commands that
-  are used to help with the compilation of SC.
+  are used to help with the compilation of MPQC.
 
 <dt><tt>lib/basis</tt><dd>The Gaussian basis set data files are in this
   directory.

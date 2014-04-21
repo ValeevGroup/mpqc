@@ -6,25 +6,25 @@ and include files can be installed on your machine.  This is described in
 the \ref compile section of this manual.
 
 The <tt>mpqc-config</tt> program can be use to obtain the compilers, compiler
-options, and libraries needed to use the SC toolkit from your program.
-This utility is discussed below, along with how the SC toolkit must be
+options, and libraries needed to use the MPQC toolkit from your program.
+This utility is discussed below, along with how the MPQC toolkit must be
 initialized in your <tt>main</tt> subroutine.
 
 <ul>
-  <li> \ref scconfig
-  <li> \ref scinit
+  <li> \ref mpqc-config
+  <li> \ref mpqcinit
   <li> \ref devsampmp2
   <li> \ref devsamphf
   <li> \ref scexcept
   <li> \ref devcheck
 </ul>
 
-\section scconfig The mpqc-config Program
+\section mpqc-config The mpqc-config Program
 
-The mpqc-config program returns information about how SC was compiled
+The mpqc-config program returns information about how MPQC was compiled
 and installed.  See \ref mpqc-config for more information.                        
 
-\section scinit Initializing MPQC
+\section mpqcinit Initializing MPQC
 
 A variety of initializations must be done when a program using the
 MPQC classes is started. This includes finding out what sc::MessageGrp
@@ -38,7 +38,7 @@ line. The programmer enrolls any desired options into the
 sc::GetLongOpt object and then passes this, along with <tt>argc</tt>
 and <tt>argv</tt>, to the constructor for sc::MPQCInit.  The
 sc::MPQCInit class will enroll the options it requires:
-<tt>--messagegrp</tt>, <tt>--threadgrp</tt>, <tt>--memory</tt>, and
+<tt>--messagegrp</tt>, <tt>--threadgrp</tt>, <tt>--memory</tt>, <tt>--resources</tt>, and
 <tt>--integral</tt>. Then the programmer can parse the options and
 retrieve the value of any flag or obtain anything that was specified
 on the command line that was not associated with a flag.
@@ -69,12 +69,12 @@ Below is a code fragment illustrating the use of sc::MPQCInit.
 
 \section devsampmp2 Using MPQC's main: MP2 Implementation Example
 
-This section illustrates how to add a new method to MPQC.
+This section illustrates how to add a new quantum chemsitry method implementation to MPQC.
 
 \subsection devsampmp2src MP2 Implementation Example: Source
 
 This example code illustrates a complete MP2 energy
-implementation using the SC Toolkit.  First an MP2 class is
+implementation using the MPQC Toolkit.  First an MP2 class is
 declared and the necesary base class member functions are
 provided.  Next a ClassDesc is defined.  Finally, the member
 functions are defined.
@@ -90,8 +90,8 @@ available for use, see the \ref devsampmp2mak section.
 
 This example Makefile demonstrates how to link in a new class to
 form a new mpqc executable, here named mp2.  The code is given in
-the \ref devsampmp2src section.  The \ref scconfig "mpqc-config command"
-is used to obtain information about how the SC toolkit
+the \ref devsampmp2src section.  The \ref mpqc-config "mpqc-config command"
+is used to obtain information about how the MPQC toolkit
 was compiled and installed.  The library specified with -lmpqc
 provides the main routine from mpqc.
 
@@ -107,7 +107,7 @@ user provided classes.
 
 \include mp2/mp2.in
 
-\section devsamphf A User-provided main: HF Implementation Example
+\section devsamphf A user-provided main: HF Implementation Example
 
 The MP2 sample program above used the MPQC main routine. This does not
 always provide sufficient flexibility, and a user-provide main routine
@@ -131,8 +131,8 @@ here in its entirety.
 \subsection devsamphfmak HF Implementation Example: Makefile
 
 This example Makefile will build an executable named hf.
-The \ref scconfig "mpqc-config command"
-is used to obtain information about how the SC toolkit
+The \ref mpqc-config "mpqc-config command"
+is used to obtain information about how the MPQC toolkit
 was compiled and installed.  The library specified with -lmpqcinit
 provides the initialization routines from mpqc.
 
@@ -148,14 +148,14 @@ and <tt>basis</tt> keywords at the beginning of the sample input.
 
 \include hf/hf.in
 
-\section scexcept Exception Handling in SC
+\section scexcept Exception Handling in MPQC
 
-The development of SC began before exception handling was available in C++.
+The development of MPQC began before exception handling was available in C++.
 A retrofit of the code to use exceptions is in progress.  It is difficult
 to retrofit a code, especially a parallel code, to do exception handling.
 There will be some limitations: exception handling will not work well for
 parallel jobs, objects whose members throw might be left in a questionable
-state, etc.  However, it is intended that SC objects will be usable in an
+state, etc.  However, it is intended that MPQC objects will be usable in an
 interactive environment.  It is also planned that exceptions be used
 internally to facilitate recover from certain problems.
 
@@ -190,7 +190,7 @@ delete[] array;
 
 If an exception is thrown in the function f(), then storage for array and
 obj will not be released.  The standard C++ library provides a class,
-auto_ptr, to deal with obj, and the SC toolkit provides a class, auto_vec,
+auto_ptr, to deal with obj, and the MPQC toolkit provides a class, auto_vec,
 to deal with array.
 
 The include files for these two classes are:
@@ -267,9 +267,9 @@ g(const sc::Ref<sc::RegionTimer> &regtim)
 }
 </pre>
 
-\subsection scexceptexample Using the SC Exception Classes
+\subsection scexceptexample Using the MPQC Exception Classes
 
-The SC exceptions provide information that can be used into two
+The MPQC exceptions provide information that can be used into two
 ways. First, text information is provided so that if the exception is not
 caught at a lower level, then the mpqc executable will catch it and write
 information about the problem to the terminal or an output file.  Second,
@@ -396,15 +396,15 @@ independent in this case.  Otherwise, <tt>testrun</tt> will fail only if
 running the command results in a nonzero return code.
 
 Additional MPQC test inputs can be added in the
-<tt>src/bin/mpqc/validate</tt> directory.  These inputs can be provided in
+<tt>test/ref</tt> directory.  These inputs can be provided in
 one of two ways.  An input which is used to automatically generate multiple
 test cases can be written (with a <tt>.qci</tt> suffix), or a subdirectory
 with each input can be made.  See <tt>Makefile</tt>, <tt>basis1.qci</tt>,
-and <tt>input</tt> in the <tt>src/bin/mpqc/validate</tt> directory for
+and <tt>input</tt> in the <tt>test/ref</tt> directory for
 examples.
 
 After you have added new inputs and modified the Makefile, change into the
-<tt>src/bin/mpqc/validate</tt> subdirectory of your object directory (where
+<tt>test/ref</tt> subdirectory of your object directory (where
 you compiled MPQC) and type <tt>make inputs</tt>.  This will create a
 <tt>input</tt> subdirectory containing MPQC input files with a
 <tt>.in</tt> suffix.  Files ending with a <tt>.qci</tt> suffix will also be

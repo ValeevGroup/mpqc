@@ -86,14 +86,22 @@ CADFCLHF::get_coefs_ish_jsh(
 
   //----------------------------------------//
 
-  auto& Ctmp = decomp->solve(ij_M_X.transpose());
-  int ijbf = 0;
-  for(auto& Ca : coefsA) {
-    Ca = Ctmp.col(ijbf++).head(ish.atom_dfnbf);
-  }
-  ijbf = 0;
-  for(auto& Cb : coefsB) {
-    Cb = Ctmp.col(ijbf++).tail(jsh.atom_dfnbf);
+  //auto& Ctmp = decomp->solve(ij_M_X.transpose());
+  //int ijbf = 0;
+  //for(auto& Ca : coefsA) {
+  //  Ca = Ctmp.col(ijbf++).head(ish.atom_dfnbf);
+  //}
+  //ijbf = 0;
+  //for(auto& Cb : coefsB) {
+  //  Cb = Ctmp.col(ijbf++).tail(jsh.atom_dfnbf);
+  //}
+
+  for(int ijbf = 0; ijbf < ij_M_X.rows(); ++ijbf) {
+    auto& Ctmp = decomp->solve(ij_M_X.row(ijbf).transpose());
+    coefsA[ijbf] = Ctmp.head(ish.atom_dfnbf);
+    if(!coefsB.empty()) {
+      coefsB[ijbf] = Ctmp.tail(jsh.atom_dfnbf);
+    }
   }
 
 }

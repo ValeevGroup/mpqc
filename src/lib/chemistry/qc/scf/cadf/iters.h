@@ -1291,6 +1291,11 @@ class OrderedShellList {
       return aux_indices_;
     }
 
+    //// Note: not thread safe, do not call if insertion may happen simultaneously
+    const std::unordered_set<int>& get_aux_set() const {
+      return aux_set_;
+    }
+
     void sort_aux_set() {
       std::lock_guard<std::mutex> lg(aux_set_mtx_);
       assert(aux_indices_.empty());

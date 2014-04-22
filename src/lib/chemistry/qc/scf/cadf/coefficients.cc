@@ -631,6 +631,9 @@ CADFCLHF::compute_coefficients()
     if(distribute_coefficients_) {
       C_trans_frob_.resize(dfbs_->nshell());
       const cadf::Node& my_part = atom_pair_assignments_k_->my_assignments(scf_grp_->me());
+      //for(auto&& Xsh : shell_range(dfbs_, gbs_)) {
+      //    resize_and_zero_matrix(C_trans_frob_[Xsh], Xsh.atom_obsnsh, obs->nshell());
+      //}
       for(auto Xatom : my_part.bin->assigned_dfbs_atoms) {
         //ShellBlockData<> Xblk = ShellBlockData<>::atom_block(Xatom->index, dfbs_, gbs_);
         for(auto&& Xsh : iter_shells_on_center(dfbs_, Xatom->index, gbs_)) {
@@ -639,20 +642,34 @@ CADFCLHF::compute_coefficients()
 
           for(auto&& ish : iter_shells_on_center(obs, Xsh.center)) {
             for(auto&& jsh : shell_range(obs)) {
-              C_trans_frob_[Xsh](ish.shoff_in_atom, jsh) += coefs_X_nu.at(Xsh.center).block(
-                  Xsh.bfoff_in_atom, ish.bfoff_in_atom*nbf + jsh.bfoff,
-                  Xsh.nbf, jsh.nbf
-              ).squaredNorm();
+              for(auto&& mu : function_range(ish)) {
+                C_trans_frob_[Xsh](ish.shoff_in_atom, jsh) += coefs_X_nu.at(Xsh.center).block(
+                    Xsh.bfoff_in_atom, mu.bfoff_in_atom*nbf + jsh.bfoff,
+                    Xsh.nbf, jsh.nbf
+                ).squaredNorm();
+              }
             }
           }
 
           C_trans_frob_[Xsh] = C_trans_frob_[Xsh].array().sqrt();
-
         }
       }
+      /*
+      double c_trans_frob_norm = 0.0;
+      for(auto&& Xsh : shell_range(dfbs_, gbs_)) {
+        // Node-row-wise sum of X parts of C_bar_
+        {
+          Ref<MessageGrp> X_grp = scf_grp_->split(my_part.bin->obs_row_id);
+          X_grp->sum(C_trans_frob_[Xsh].data(), Xsh.atom_obsnsh * gbs_->nshell());
+          c_trans_frob_norm += C_trans_frob_[Xsh].norm();
+        } // X_grp is deleted
+        sc::SCFormIO::init_mp(scf_grp_->me());
+      }
+      */
     }
     else {
       C_trans_frob_.resize(dfbs_->nshell());
+      double c_trans_frob_norm = 0.0;
       for(auto Xsh : shell_range(dfbs_, obs)) {
 
         resize_and_zero_matrix(C_trans_frob_[Xsh], Xsh.atom_obsnsh, obs->nshell());
@@ -669,6 +686,7 @@ CADFCLHF::compute_coefficients()
         } // end loop over ish
 
         C_trans_frob_[Xsh] = C_trans_frob_[Xsh].array().sqrt();
+        c_trans_frob_norm += C_trans_frob_[Xsh].norm();
 
       } // end loop over Xsh
     }
@@ -688,12 +706,12 @@ CADFCLHF::compute_coefficients()
             C_bar_.col(Xsh).segment(Xsh.atom_obsshoff, Xsh.atom_obsnsh) -=
                 C_trans_frob_[Xsh].middleCols(Xsh.atom_obsshoff, Xsh.atom_obsnsh).rowwise().squaredNorm();
           }
-          C_bar_ = C_bar_.array().sqrt();
         }
+        C_bar_ = C_bar_.array().sqrt();
 
         // Node-row-wise sum of X parts of C_bar_
         {
-          Ref<MessageGrp> X_grp = scf_grp_->split(my_part.bin->dfbs_row_id);
+          Ref<MessageGrp> X_grp = scf_grp_->split(my_part.bin->obs_row_id);
           X_grp->sum(C_bar_.data(), gbs_->nshell() * dfbs_->nshell());
         } // X_grp is deleted
         sc::SCFormIO::init_mp(scf_grp_->me());
@@ -708,6 +726,7 @@ CADFCLHF::compute_coefficients()
               C_trans_frob_[Xsh].middleCols(Xsh.atom_obsshoff, Xsh.atom_obsnsh).rowwise().squaredNorm();
         }
         C_bar_ = C_bar_.array().sqrt();
+        //DUMP(C_bar_.norm());
       }
     }
     else {

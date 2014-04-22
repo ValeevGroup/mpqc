@@ -266,6 +266,14 @@ CADFCLHF::compute_coefficients()
               Xblk.atom_nbf, Xblk.atom_obsnbf*nbf
           )
       );
+      coefs_X_nu_other.emplace(
+          std::piecewise_construct,
+          std::forward_as_tuple(Xblk.center),
+          std::forward_as_tuple(
+              dist_coefs_data_ + my_part.bin->dfbs_coef_offsets.at(Xblk.center),
+              Xblk.atom_nbf*Xblk.atom_obsnbf, nbf
+          )
+      );
     }
 
     // TODO threads

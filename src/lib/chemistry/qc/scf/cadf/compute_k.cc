@@ -609,29 +609,6 @@ CADFCLHF::compute_K()
           return false;
         }
       }
-      //}
-      //else {
-      //  if(do_linK_) {
-      //    std::lock_guard<std::mutex> lg(L_3_prime_mutex);
-      //    if(L_3_prime_key_iter == L_3_prime.end()) {
-      //      return false;
-      //    }
-      //    else {
-      //      int jshidx, Xshidx;
-      //      jshidx = L_3_prime_key_iter->first.first;
-      //      Xshidx = L_3_prime_key_iter->first.second;
-      //      ish = ShellData(jshidx, gbs_, dfbs_);
-      //      Xblk = ShellBlockData<>(ShellData(Xshidx, dfbs_, gbs_));
-      //      ++L_3_prime_key_iter;
-      //      return true;
-      //    }
-
-      //  }
-      //  else {
-      //    throw FeatureNotImplemented("non-linK", __FILE__, __LINE__, class_desc());
-      //  }
-
-      //}
     };                                                                                   //latex `\label{sc:k3b:getiXend}`
 
     // Loop over number of threads
@@ -663,9 +640,6 @@ CADFCLHF::compute_K()
            dt_ish_X_data = new double[max_fxn_obs_*max_fxn_dfbs_*nbf];
            dt_prime_data = new double[max_fxn_obs_*max_fxn_dfbs_*max_fxn_atom_obs_];
            gt_ish_X_data = new double[max_fxn_obs_*max_fxn_dfbs_*nbf];
-           //dt_ish_X_data = new double[nbf*nbf*dfnbf];
-           //dt_prime_data = new double[nbf*nbf*dfnbf];
-           //gt_ish_X_data = new double[nbf*nbf*dfnbf];
         }
         int D_B_buff_n = 0;
         if(B_use_buffer_) {
@@ -792,64 +766,67 @@ CADFCLHF::compute_K()
               if(do_linK_) {
 
                 new (&dt_ish_X) Eigen::Map<RowMatrix>(dt_ish_X_data, ish.nbf * Xsh.nbf, nbf);
+                //Eigen::Map<RowMatrix> dt_iX_other(dt_ish_X_data, ish,nbf, Xsh.nbf*nbf);
                 dt_ish_X  = RowMatrix::Zero(ish.nbf * Xsh.nbf, nbf);
                 new (&dt_prime) Eigen::Map<RowMatrix>(dt_prime_data, ish.nbf * Xsh.nbf, Xsh.atom_obsnbf);
                 dt_prime  = RowMatrix::Zero(ish.nbf * Xsh.nbf, Xsh.atom_obsnbf);
                 for(auto&& mu : function_range(ish)) {
-                  for(auto&& X : function_range(Xsh)) {
-
-                    for(auto&& nu : function_range(gbs_, dfbs_)) {
-                      for(auto sigma : iter_functions_on_center(gbs_, Xsh.center)) {
-                        dt_ish_X(mu.off*Xsh.nbf + X.off, nu) += 2.0 * D(mu, sigma)
-                            * coefs_X_nu.at(Xsh.center)(X.bfoff_in_atom, sigma.bfoff_in_atom*nbf + nu);
-                        //assert(fabs(
-                        //    coefs_X_nu.at(Xsh.center)(X.bfoff_in_atom, sigma.bfoff_in_atom*nbf + nu)
-                        //    - coefs_transpose_[X](sigma.bfoff_in_atom, nu)) < 1e-12
-                        //);
-                      }
-                    }
-                    for(auto&& nu : iter_functions_on_center(gbs_, Xsh.center)) {
-                      for(auto&& sigma : function_range(gbs_)) {
-                        //if(sigma.center == Xsh.center) continue;
-                        dt_prime(mu.off*Xsh.nbf + X.off, nu.bfoff_in_atom) += 2.0 * D(mu, sigma)
-                            * coefs_X_nu.at(Xsh.center)(X.bfoff_in_atom, nu.bfoff_in_atom*nbf + sigma);
-                        //assert(fabs(
-                        //    coefs_X_nu.at(Xsh.center)(X.bfoff_in_atom, nu.bfoff_in_atom*nbf + sigma)
-                        //    - coefs_transpose_[X](nu.bfoff_in_atom, sigma)) < 1e-12
-                        //);
-                      }
-                    }
-
+                  for(auto sigma : iter_functions_on_center(gbs_, Xsh.center)) {
+                    dt_ish_X.middleRows(mu.off*Xsh.nbf, Xsh.nbf) += 2.0 * D(mu, sigma)
+                          * coefs_X_nu.at(Xsh.center).middleRows(
+                              Xsh.bfoff_in_atom, Xsh.nbf
+                          ).middleCols(sigma.bfoff_in_atom*nbf, nbf);
+                    //for(auto&& nu : function_range(gbs_, dfbs_)) {
+                    //  dt_ish_X.middleRows(mu.off*Xsh.nbf, Xsh.nbf).col(nu) += 2.0 * D(mu, sigma)
+                    //      * coefs_X_nu.at(Xsh.center).middleRows(Xsh.bfoff_in_atom, Xsh.nbf).col(sigma.bfoff_in_atom*nbf + nu);
+                    //  //for(auto&& X : function_range(Xsh)) {
+                    //  //  dt_ish_X(mu.off*Xsh.nbf + X.off, nu) += 2.0 * D(mu, sigma)
+                    //  //      * coefs_X_nu.at(Xsh.center)(X.bfoff_in_atom, sigma.bfoff_in_atom*nbf + nu);
+                    //  //}
+                    //}
+                  }
+                }
+                for(auto&& mu : function_range(ish)) {
+                  for(auto&& nu : iter_functions_on_center(gbs_, Xsh.center)) {
+                    dt_prime.middleRows(mu.off*Xsh.nbf, Xsh.nbf).col(nu.bfoff_in_atom) += 2.0 *
+                        coefs_X_nu.at(Xsh.center).middleRows(Xsh.bfoff_in_atom, Xsh.nbf).middleCols(
+                            nu.bfoff_in_atom*nbf, nbf
+                        )
+                        * D.col(mu);
+                    //for(auto&& X : function_range(Xsh)) {
+                    //  dt_prime(mu.off*Xsh.nbf + X.off, nu.bfoff_in_atom) += 2.0 *
+                    //      coefs_X_nu.at(Xsh.center).row(X.bfoff_in_atom).segment(nu.bfoff_in_atom*nbf, nbf)
+                    //      * D.col(mu);
+                    //  //for(auto&& sigma : function_range(gbs_)) {
+                    //  //  dt_prime(mu.off*Xsh.nbf + X.off, nu.bfoff_in_atom) += 2.0 * D(mu, sigma)
+                    //  //      * coefs_X_nu.at(Xsh.center)(X.bfoff_in_atom, nu.bfoff_in_atom*nbf + sigma);
+                    //  //}
+                    //}
                   }
                 }
 
                 /// Now loop over rho in L_3 auxiliary list and compute k contributions
-                //for(auto&& i : L_3[{ish, Xsh}].get_aux_indices()) {
-                //  DUMP3(i, ish, Xsh);
-                //}
-                //DUMP((OrderedShellList(L_3[{ish, Xsh}].get_aux_indices(), gbs_, dfbs_)))
                 for(const auto&& jblk : shell_block_range(L_3[{ish, Xsh}].get_aux_indices(), gbs_.pointer(), dfbs_.pointer(), Contiguous)){
-                //for(const auto&& jblk : shell_block_range(gbs_, dfbs_)) {
-                  //if(jblk.center == ish.center) continue;
-                  //DUMP(jblk)
-                  //assert(false);
                   new (&gt_ish_X) Eigen::Map<RowMatrix>(gt_ish_X_data, ish.nbf*Xblk.nbf, jblk.nbf);
                   gt_ish_X = RowMatrix::Zero(ish.nbf*Xblk.nbf, jblk.nbf);
                   for(auto&& mu : function_range(ish)) {
-                    for(auto&& X : function_range(Xsh)) {
-                      for(auto&& rho : function_range(gbs_, dfbs_, jblk.bfoff, jblk.last_function)) {
-                        for(auto&& Y : iter_functions_on_center(dfbs_, ish.center, gbs_)) {
-                          //M_ELEM_DUMP(coefs_mu_X.at(ish), mu.off, rho*ish.atom_dfnbf + Y.bfoff_in_atom);
-                          //DUMP3(jblk.bfoff, jblk.last_function, jblk.nbf)
-                          //DUMP(rho.index)
-                          //DUMP(jblk.first_shell)
-                          //DUMP(jblk.last_shell)
-                          //M_ELEM_DUMP(gt_ish_X, mu.off*Xblk.nbf + X-Xblk.bfoff, rho - jblk.bfoff);
-                          gt_ish_X(mu.off*Xblk.nbf + X-Xblk.bfoff, rho - jblk.bfoff) -= 0.5 *
-                              coefs_mu_X.at(ish)(mu.off, rho*ish.atom_dfnbf + Y.bfoff_in_atom)
-                              * g2(Y, X);
-                        }
-                      }
+                    for(auto&& rho : function_range(gbs_, dfbs_, jblk.bfoff, jblk.last_function)) {
+                      gt_ish_X.middleRows(mu.off*Xblk.nbf, Xblk.nbf).col(rho - jblk.bfoff) -= 0.5 *
+                          g2.middleRows(Xblk.bfoff, Xblk.nbf).middleCols(ish.atom_dfbfoff, ish.atom_dfnbf)
+                          * coefs_mu_X.at(ish).row(mu.off).segment(rho*ish.atom_dfnbf, ish.atom_dfnbf).transpose();
+                      //for(auto&& X : function_range(Xsh)) {
+                      //  gt_ish_X(mu.off*Xblk.nbf + X-Xblk.bfoff, rho - jblk.bfoff) -= 0.5 *
+                      //      coefs_mu_X.at(ish).row(mu.off).segment(rho*ish.atom_dfnbf, ish.atom_dfnbf)
+                      //      * g2.col(X).segment(ish.atom_dfbfoff, ish.atom_dfnbf);
+                      //  //gt_ish_X(mu.off*Xblk.nbf + X-Xblk.bfoff, rho - jblk.bfoff) -= 0.5 *
+                      //  //    coefs_mu_X.at(ish).row(mu.off).segment(rho*ish.atom_dfnbf, ish.atom_dfnbf)
+                      //  //    * g2.col(X).segment(ish.atom_dfbfoff, ish.atom_dfnbf);
+                      //  //for(auto&& Y : iter_functions_on_center(dfbs_, ish.center, gbs_)) {
+                      //  //  gt_ish_X(mu.off*Xblk.nbf + X-Xblk.bfoff, rho - jblk.bfoff) -= 0.5 *
+                      //  //      coefs_mu_X.at(ish)(mu.off, rho*ish.atom_dfnbf + Y.bfoff_in_atom)
+                      //  //      * g2(Y, X);
+                      //  //}
+                      //}
                     }
                   }
 
@@ -1310,30 +1287,52 @@ CADFCLHF::compute_K()
                 // C_Y is (Y.{obs_}atom_nbf x nbf)
                 // result should be (Y.{obs_}atom_nbf x 1)
 
-                if(screen_B_) {
-                  // TODO Offset C_X_diff outside of the mu loop
-                  Kt_part.col(mu).segment(obs_atom_bfoff, obs_atom_nbf).noalias() +=
-                      C_X_diff_X
-                      * B_sd.row(mu.bfoff_in_shell*Xblk.nbf + X.bfoff_in_block).tail(l_b_size).transpose();
-                  //Kt_part.col(mu).segment(obs_atom_bfoff, obs_atom_nbf).noalias() +=
-                  //    C_X_diff[X.bfoff_in_block]
-                  //    * B_diff.row(mu.bfoff_in_shell*Xblk.nbf + X.bfoff_in_block).transpose();
+                if(distribute_coefficients_) {
+                  if(screen_B_) {
+                    throw FeatureNotImplemented("B screening with distributed coefficients", __FILE__, __LINE__, class_desc());
+                  }
+                  else {
+                    Eigen::Map<RowMatrix> C_X_view(
+                        coefs_X_nu.at(Xsh.center).row(X.bfoff_in_atom).data(),
+                        Xblk.atom_obsnbf, nbf
+                    );
+                    Kt_part.col(mu).segment(obs_atom_bfoff, obs_atom_nbf).noalias() +=
+                        C_X_view * B_ish.row(mu.bfoff_in_shell*Xblk.nbf + X.bfoff_in_block).transpose();
 
-                  Kt_part.col(mu).noalias() += C_X.transpose()
-                      * B_sd.row(mu.bfoff_in_shell*Xblk.nbf + X.bfoff_in_block).head(obs_atom_nbf).transpose();
-                  //Kt_part.col(mu).noalias() += C_X.transpose()
-                  //    * B_same.row(mu.bfoff_in_shell*Xblk.nbf + X.bfoff_in_block).transpose();
+                    Kt_part.col(mu).noalias() += C_X_view.transpose()
+                        * B_ish.row(mu.bfoff_in_shell*Xblk.nbf + X.bfoff_in_block).segment(obs_atom_bfoff, obs_atom_nbf).transpose();
+
+                    Kt_part.col(mu).segment(obs_atom_bfoff, obs_atom_nbf).noalias() -=
+                        C_X_view.middleCols(obs_atom_bfoff, obs_atom_nbf).transpose()
+                        * B_ish.row(mu.bfoff_in_shell*Xblk.nbf + X.bfoff_in_block).segment(obs_atom_bfoff, obs_atom_nbf).transpose();
+                  }
                 }
                 else {
-                  Kt_part.col(mu).segment(obs_atom_bfoff, obs_atom_nbf).noalias() +=
-                      C_X * B_ish.row(mu.bfoff_in_shell*Xblk.nbf + X.bfoff_in_block).transpose();
+                  if(screen_B_) {
+                    // TODO Offset C_X_diff outside of the mu loop
+                    Kt_part.col(mu).segment(obs_atom_bfoff, obs_atom_nbf).noalias() +=
+                        C_X_diff_X
+                        * B_sd.row(mu.bfoff_in_shell*Xblk.nbf + X.bfoff_in_block).tail(l_b_size).transpose();
+                    //Kt_part.col(mu).segment(obs_atom_bfoff, obs_atom_nbf).noalias() +=
+                    //    C_X_diff[X.bfoff_in_block]
+                    //    * B_diff.row(mu.bfoff_in_shell*Xblk.nbf + X.bfoff_in_block).transpose();
 
-                  Kt_part.col(mu).noalias() += C_X.transpose()
-                      * B_ish.row(mu.bfoff_in_shell*Xblk.nbf + X.bfoff_in_block).segment(obs_atom_bfoff, obs_atom_nbf).transpose();
+                    Kt_part.col(mu).noalias() += C_X.transpose()
+                        * B_sd.row(mu.bfoff_in_shell*Xblk.nbf + X.bfoff_in_block).head(obs_atom_nbf).transpose();
+                    //Kt_part.col(mu).noalias() += C_X.transpose()
+                    //    * B_same.row(mu.bfoff_in_shell*Xblk.nbf + X.bfoff_in_block).transpose();
+                  }
+                  else {
+                    Kt_part.col(mu).segment(obs_atom_bfoff, obs_atom_nbf).noalias() +=
+                        C_X * B_ish.row(mu.bfoff_in_shell*Xblk.nbf + X.bfoff_in_block).transpose();
 
-                  Kt_part.col(mu).segment(obs_atom_bfoff, obs_atom_nbf).noalias() -=
-                      C_X.middleCols(obs_atom_bfoff, obs_atom_nbf).transpose()
-                      * B_ish.row(mu.bfoff_in_shell*Xblk.nbf + X.bfoff_in_block).segment(obs_atom_bfoff, obs_atom_nbf).transpose();
+                    Kt_part.col(mu).noalias() += C_X.transpose()
+                        * B_ish.row(mu.bfoff_in_shell*Xblk.nbf + X.bfoff_in_block).segment(obs_atom_bfoff, obs_atom_nbf).transpose();
+
+                    Kt_part.col(mu).segment(obs_atom_bfoff, obs_atom_nbf).noalias() -=
+                        C_X.middleCols(obs_atom_bfoff, obs_atom_nbf).transpose()
+                        * B_ish.row(mu.bfoff_in_shell*Xblk.nbf + X.bfoff_in_block).segment(obs_atom_bfoff, obs_atom_nbf).transpose();
+                  }
                 }
 
                 //----------------------------------------//

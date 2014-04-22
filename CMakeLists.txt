@@ -85,7 +85,7 @@ include(CheckCXXSourceCompiles)
 # Enable CI
 if (MPQC_NEW_FEATURES)
   if (NOT DEFINED MPQC_CI)
-    set(MPQC_CI TRUE)
+    set(MPQC_CI FALSE)
   endif()
   if (MPQC_CI)
     add_definitions(-DMPQC_CI)

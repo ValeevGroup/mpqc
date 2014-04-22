@@ -753,17 +753,6 @@ CADFCLHF::compute_K()
               for(const auto&& jblk : shell_block_range(
                   L_3[{ish, Xsh}].get_aux_indices(), gbs_.pointer(), dfbs_.pointer(), Contiguous
               )){
-                //DEBUG_DELETE_THIS
-                //for(auto&& jsh : jblk.shell_range) {
-                //  const auto& aux_idxs = L_3[{ish, Xsh}].get_aux_set();
-                //  if(jsh.index >= gbs_->nshell()) {
-                //    throw ProgrammingError("something went wrong", __FILE__, __LINE__, class_desc());
-                //  }
-                //  else if(aux_idxs.find(jsh.index) == aux_idxs.end()) {
-                //    throw ProgrammingError("something went wrong 2", __FILE__, __LINE__, class_desc());
-                //  }
-                //}
-                //DEBUG_DELETE_THIS
 
                 TimerHolder holder(form_g_timer);
                 new (&gt_ish_X) Eigen::Map<RowMatrix>(gt_ish_X_data, ish.nbf*Xblk.nbf, jblk.nbf);
@@ -778,13 +767,13 @@ CADFCLHF::compute_K()
 
                 holder.change(k_contrib_timer);
                 for(auto&& mu : function_range(ish)) {
-                  Kt_part.middleRows(jblk.bfoff, jblk.nbf).noalias() +=
+                  Kt_part.middleCols(jblk.bfoff, jblk.nbf).transpose().noalias() +=
                       gt_ish_X.middleRows(mu.off*Xblk.nbf, Xblk.nbf).transpose()
                       * dt_ish_X.middleRows(mu.off*Xblk.nbf, Xblk.nbf);
-                  Kt_part.middleRows(jblk.bfoff, jblk.nbf).middleCols(Xblk.atom_obsbfoff, Xblk.atom_obsnbf).noalias() +=
+                  Kt_part.middleCols(jblk.bfoff, jblk.nbf).middleRows(Xblk.atom_obsbfoff, Xblk.atom_obsnbf).transpose().noalias() +=
                       gt_ish_X.middleRows(mu.off*Xblk.nbf, Xblk.nbf).transpose()
                       * dt_prime.middleRows(mu.off*Xblk.nbf, Xblk.nbf);
-                  Kt_part.middleRows(jblk.bfoff, jblk.nbf).middleCols(Xblk.atom_obsbfoff, Xblk.atom_obsnbf).noalias() -=
+                  Kt_part.middleCols(jblk.bfoff, jblk.nbf).middleRows(Xblk.atom_obsbfoff, Xblk.atom_obsnbf).transpose().noalias() -=
                       gt_ish_X.middleRows(mu.off*Xblk.nbf, Xblk.nbf).transpose()
                       * dt_ish_X.middleRows(mu.off*Xsh.nbf, Xblk.nbf).middleCols(Xblk.atom_obsbfoff, Xblk.atom_obsnbf);
                 }

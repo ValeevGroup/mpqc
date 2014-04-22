@@ -242,6 +242,7 @@ CADFCLHF::compute_coefficients()
     const cadf::Node& my_part = atom_pair_assignments_k_->my_assignments(scf_grp_->me());
     uli ncoefs_dist = my_part.bin->obs_ncoefs + my_part.bin->dfbs_ncoefs;
     dist_coefs_data_ = new double[ncoefs_dist];
+    memset(dist_coefs_data_, 0, ncoefs_dist*sizeof(double));
 
     // Initialize the Eigen::Maps of data parts
     for(auto&& obs_shell : my_part.bin->assigned_obs_shells) {
@@ -269,8 +270,11 @@ CADFCLHF::compute_coefficients()
 
     // TODO threads
     std::vector<Eigen::Map<Eigen::VectorXd>> empty;
+    //assert(scf_grp_->n() > 1 || my_part.bin->compute_coef_items[false].size() > 0);
+    //assert(scf_grp_->n() > 1 || my_part.compute_coef_items[false].size() > 0);
     for(auto&& obs_shell : my_part.compute_coef_items[false]) {
 
+      //DUMP(obs_shell->index);
       // Do the C_mu_X part first
       ShellData ish(obs_shell->index, gbs_, dfbs_);
       for(auto&& jsh : iter_significant_partners(ish)) {
@@ -279,12 +283,36 @@ CADFCLHF::compute_coefficients()
           for(auto&& rho : function_range(jsh)) {
             coefs.emplace_back(
                 coefs_mu_X.at(ish).data()
-                  + mu.bfoff_in_atom*nbf*ish.atom_dfnbf + rho.bfoff_in_atom*ish.atom_dfnbf,
+                  + mu.off*nbf*ish.atom_dfnbf + rho*ish.atom_dfnbf,
                 ish.atom_dfnbf
             );
           }
         }
-        get_coefs_ish_jsh(ish, jsh, 0, coefs, empty);
+        //DUMP2(ish.center, jsh.center)
+        //if(ish.center >= jsh.center)
+          get_coefs_ish_jsh(ish, jsh, 0, coefs, empty);
+        //else
+        //  get_coefs_ish_jsh(jsh, ish, 0, empty, coefs);
+
+        //DEBUG_DELETE_THIS
+        //bool failed = false;
+        //for(auto&& mu : function_range(ish)) {
+        //  for(auto&& rho : function_range(jsh)) {
+        //    for(auto&& X : iter_functions_on_center(dfbs_, ish.center)) {
+        //      if(fabs(coefs_mu_X.at(ish)(mu.off, rho*ish.atom_dfnbf + X.bfoff_in_atom)
+        //          - coefs_transpose_[X](mu.bfoff_in_atom, rho)) > 1e-14
+        //      ) {
+        //        ExEnv::out0() << "C_{" << mu.index << ", " << rho.index << "}^{" << X.index << "} is not correct. ("
+        //            << coefs_mu_X.at(ish)(mu.off, rho*ish.atom_dfnbf + X.bfoff_in_atom)
+        //            << " != "
+        //            << coefs_transpose_[X](mu.bfoff_in_atom, rho) << ")" << std::endl;
+        //        failed = true;
+        //      }
+        //    }
+        //  }
+        //}
+        //assert(!failed);
+        //DEBUG_DELETE_THIS
       }
     }
 
@@ -295,8 +323,13 @@ CADFCLHF::compute_coefficients()
     } // mu_grp is deleted
 
     sc::SCFormIO::init_mp(scf_grp_->me());
+    //assert(scf_grp_->n() > 1 || my_part.bin->assigned_obs_shells.size() == gbs_->nshell());
+    //assert(scf_grp_->n() > 1 || my_part.bin->assigned_dfbs_atoms.size() == gbs_->ncenter());
+    //assert(scf_grp_->n() > 1 || my_part.pairs.size() == gbs_->ncenter() * gbs_->nshell());
 
     std::vector<CoefView> empty_df;
+    //assert(scf_grp_->n() > 1 || my_part.bin->compute_coef_items[true].size() > 0);
+    //assert(scf_grp_->n() > 1 || my_part.compute_coef_items[true].size() == gbs_->ncenter());
     for(auto&& dfbs_atom : my_part.compute_coef_items[true]) {
 
       // Now do the C_X_mu part
@@ -314,16 +347,36 @@ CADFCLHF::compute_coefficients()
             }
           }
           get_coefs_ish_jsh(ish, jsh, 0, coefs, empty_df);
+          //DEBUG_DELETE_THIS
+          //bool failed = false;
+          //for(auto&& mu : function_range(ish)) {
+          //  for(auto&& rho : function_range(jsh)) {
+          //    for(auto&& X : iter_functions_on_center(dfbs_, ish.center)) {
+          //      if(fabs(coefs_X_nu.at(Xblk.center)(X.bfoff_in_atom, mu.bfoff_in_atom*nbf + rho)
+          //          - coefs_transpose_[X](mu.bfoff_in_atom, rho)) > 1e-14
+          //      ) {
+          //        ExEnv::out0() << "C_{" << mu.index << ", " << rho.index << "}^{" << X.index << "} is not correct. ("
+          //            << coefs_X_nu.at(Xblk.center)(X.bfoff_in_atom, mu.bfoff_in_atom*nbf + rho)
+          //            << " != "
+          //            << coefs_transpose_[X](mu.bfoff_in_atom, rho) << ")" << std::endl;
+          //        failed = true;
+          //      }
+          //    }
+          //  }
+          //}
+          //assert(!failed);
+          //DEBUG_DELETE_THIS
         }
       }
     }
 
     // Node-row-wise sum of X coefficients
     {
-      Ref<MessageGrp> X_grp = scf_grp_->split(my_part.bin->obs_row_id);
+      Ref<MessageGrp> X_grp = scf_grp_->split(my_part.bin->dfbs_row_id);
       X_grp->sum(dist_coefs_data_ + my_part.bin->obs_ncoefs, my_part.bin->dfbs_ncoefs);
     } // X_grp is deleted
 
+    sc::SCFormIO::init_mp(scf_grp_->me());
   }
 
   /*****************************************************************************************/ #endif //1}}}

@@ -54,26 +54,25 @@ AssignmentGrid::AssignmentGrid(
   const int nrows_obs = n_node / nrows_dfbs;
 
   for(int irow = 0; irow < nrows_obs; ++irow) {
-    auto obsrow = AssignmentBinRow(irow, false);
-    auto handle = obs_rows_.push(obsrow);
-    (*handle).pq_handle = handle;
-  }
-  for(int irow = 0; irow < nrows_dfbs; ++irow) {
-    auto dfbsrow = AssignmentBinRow(irow, true);
-    auto handle = dfbs_rows_.push(dfbsrow);
+    auto handle = obs_rows_.emplace(irow, false);
     (*handle).pq_handle = handle;
   }
 
-  for(auto&& atom : atoms_) {
+  for(int irow = 0; irow < nrows_dfbs; ++irow) {
+    auto handle = dfbs_rows_.emplace(irow, true);
+    (*handle).pq_handle = handle;
+  }
+
+  for(auto& atom : atoms_) {
     // Assign atom to row with smallest workload
-    auto& dfbs_row = dfbs_rows_.top();
+    const auto& dfbs_row = dfbs_rows_.top();
     (*dfbs_row.pq_handle).assign_item(&atom);
     dfbs_rows_.update(dfbs_row.pq_handle);
   }
 
-  for(auto&& shell : obs_shells_) {
+  for(auto& shell : obs_shells_) {
     // And the same for the obs rows
-    auto& obs_row = obs_rows_.top();
+    const auto& obs_row = obs_rows_.top();
     (*obs_row.pq_handle).assign_item(&shell);
     obs_rows_.update(obs_row.pq_handle);
   }
@@ -81,22 +80,30 @@ AssignmentGrid::AssignmentGrid(
   uint bin_id = 0;
   for(auto&& dfbsrow : dfbs_rows_) {
     for(auto&& obsrow : obs_rows_) {
-      auto in_bin = AssignmentBin(bin_id++, &(*obsrow.pq_handle), &(*dfbsrow.pq_handle), this);
-      auto handle = bins_.push(in_bin);
+      auto handle = bins_.emplace(
+          bin_id++, this
+      );
       (*handle).pq_handle = handle;
-      auto& bin = *handle;
-      bins_by_id_.push_back(&bin);
+      (*handle).register_in_row(obsrow, false);
+      (*handle).register_in_row(dfbsrow, true);
     }
   }
 
+  for(auto&& row : dfbs_rows_) {
+    (*row.pq_handle).make_assignments();
+  }
+  for(auto&& row : obs_rows_) {
+    (*row.pq_handle).make_assignments();
+  }
+
   for(int inode = 0; inode < n_node; ++inode) {
-    auto& most_work_bin = bins_.top();
-    nodes_.push_back(&((*most_work_bin.pq_handle).add_node(inode)));
+    const AssignmentBin& most_work_bin = bins_.top();
+    nodes_.push_back((*most_work_bin.pq_handle).add_node(inode));
     bins_.update(most_work_bin.pq_handle);
   }
 
-  for(auto bin : bins_by_id_) {
-    bin->make_assignments();
+  for(auto&& bin : bins_) {
+    (*bin.pq_handle).make_assignments();
   }
 
 }
@@ -147,7 +154,7 @@ void
 AssignmentBinRow::make_assignments()
 {
   for(auto item_ptr : assigned_items) {
-    auto& bin_handle =  bins.top()->row_handles[is_df_row];
+    auto bin_handle =  bins.top()->row_handles[is_df_row];
     (*bin_handle)->compute_coef_for_item(item_ptr, is_df_row);
     bins.update(bin_handle);
   }
@@ -157,24 +164,9 @@ AssignmentBinRow::make_assignments()
 
 AssignmentBin::AssignmentBin(
     uint id,
-    AssignmentBinRow* obs_row,
-    AssignmentBinRow* dfbs_row,
     AssignmentGrid* grid
-) : id(id),
-    obs_row_id(obs_row->id),
-    dfbs_row_id(dfbs_row->id),
-    grid(grid)
+) : id(id), grid(grid), obs_row_id(-1), dfbs_row_id(-1)
 {
-
-  for(auto& obs_shell : obs_row->assigned_items) {
-    assign_obs_shell(obs_shell);
-  }
-  for(auto& dfbs_atom : dfbs_row->assigned_items) {
-    assign_dfbs_atom(dfbs_atom);
-  }
-
-  obs_row->add_bin(this);
-  dfbs_row->add_bin(this);
 
 }
 
@@ -194,15 +186,31 @@ AssignmentBin::operator<(const AssignmentBin& other) const
   }
 }
 
-cadf::Node&
+void
+AssignmentBin::register_in_row(const AssignmentBinRow& row, bool is_df) {
+  (*row.pq_handle).add_bin(this);
+  if(is_df) {
+    dfbs_row_id = row.id;
+    for(auto& dfbs_atom : row.assigned_items) {
+      assign_dfbs_atom(dfbs_atom);
+    }
+  }
+  else {
+    obs_row_id = row.id;
+    for(auto& obs_shell : row.assigned_items) {
+      assign_obs_shell(obs_shell);
+    }
+  }
+}
+
+cadf::Node*
 AssignmentBin::add_node(int index)
 {
-  Node node;
-  node.node_index = index;
-  node.bin = this;
-  auto handle = nodes.push(node);
-  (*handle).pq_handle = handle;
-  nodes.update(handle);
+  nodes_list.emplace_back();
+  nodes_list.back().node_index = index;
+  nodes_list.back().bin = this;
+  auto handle = nodes.push(&nodes_list.back());
+  (*handle)->pq_handle = handle;
   return *handle;
 }
 
@@ -210,19 +218,19 @@ inline void
 AssignmentBin::make_assignments()
 {
   for(auto dfbs_atom : compute_coef_items[true]) {
-    auto handle = nodes.top().pq_handle;
-    (*handle).assign_coef_item(dfbs_atom, true);
+    auto handle = nodes.top()->pq_handle;
+    (*handle)->assign_coef_item(dfbs_atom, true);
     nodes.update(handle);
   }
   for(auto obs_shell : compute_coef_items[false]) {
-    auto handle = nodes.top().pq_handle;
-    (*handle).assign_coef_item(obs_shell, true);
+    auto handle = nodes.top()->pq_handle;
+    (*handle)->assign_coef_item(obs_shell, false);
     nodes.update(handle);
   }
 
-  for(auto&& node : nodes) {
-    (*node.pq_handle).estimated_workload = 0;
-    nodes.update(node.pq_handle);
+  for(auto node : nodes) {
+    (*node->pq_handle)->estimated_workload = 0;
+    nodes.update(node->pq_handle);
   }
 
   assert(n_node() > 0);
@@ -231,8 +239,8 @@ AssignmentBin::make_assignments()
       auto Xblk = ShellBlockData<>::atom_block(dfbs_atom->index, grid->dfbasis(), grid->basis());
       auto ish = ShellData(obs_shell->index, grid->basis(), grid->dfbasis());
       auto& top_node = nodes.top();
-      (*(top_node.pq_handle)).assign_pair(ish, Xblk);
-      nodes.update(top_node.pq_handle);
+      (*top_node->pq_handle)->assign_pair(ish, Xblk);
+      nodes.update(top_node->pq_handle);
     }
   }
 

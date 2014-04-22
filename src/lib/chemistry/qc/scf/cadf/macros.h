@@ -31,6 +31,10 @@
 
 #define M_DUMP(M) std::cout << #M << " is " << M.rows() << " x " << M.cols() << std::endl;
 
+#define M_ELEM_DUMP(M, r, c) \
+    ExEnv::out0() << #M << " is " << M.rows() << " x " << M.cols() << ", trying to access element (" \
+    << r << ", " << c << ")." << std::endl;
+
 #define M_ROW_ASSERT(M1, M2) \
   if(M1.rows() != M2.rows()) { \
     boost::lock_guard<boost::mutex> _tmp(debug_print_mutex); \

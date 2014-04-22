@@ -162,41 +162,55 @@ CADFCLHF::init_threads()
     ++inode;
   }
 
-  //if(not distribute_coefficients_) {
-    // Make the assignments for the mu, X pairs in K
-    inode = 0;
-    for(auto&& ish : shell_range(gbs_)) {
-      for(auto&& Xblk : shell_block_range(dfbs_, gbs_, 0, NoLastIndex, SameCenter)) {
-        const int assignment = inode % n_node; ++inode;
-        auto pair = std::make_pair(ish, Xblk);
-        pair_assignments_k_[pair] = assignment;
-        if(assignment == me) {
-          local_pairs_k_.push_back(pair);
-        }
+  atom_pair_assignments_k_ = make_shared<cadf::AssignmentGrid>(
+      gbs_, dfbs_, scf_grp_->n()
+  );
+  atom_pair_assignments_k_->print_detail();
+  auto& my_part = atom_pair_assignments_k_->my_assignments(me);
 
-      } // end loop over blocks for mu
-    } // end loop over mu sets
-
-    inode = 0;
-    // TODO Non-round-robin static parallelism to make lookup faster in L_3 build
-    for(auto&& ish : shell_range(gbs_)) {
-      for(auto&& Xsh : shell_range(dfbs_)) {
-        const int assignment = inode % n_node; ++inode;
-        if(assignment == me) {
+  for(auto&& ish_ptr : my_part.bin->assigned_obs_shells) {
+    ShellData ish(ish_ptr->index, gbs_, dfbs_);
+    for(auto&& Xatom_ptr : my_part.bin->assigned_dfbs_atoms) {
+      ShellBlockData<> Xblk = ShellBlockData<>::atom_block(Xatom_ptr->index, dfbs_, gbs_);
+      if(do_linK_) {
+        for(auto&& Xsh : shell_range(Xblk)) {
           local_pairs_linK_.emplace(ish, (int)Xsh);
           linK_local_map_[Xsh].push_back(ish);
         }
-      } // end loop over Xsh
-    } // end loop over ish
-  //}
-  //else {
-    //----------------------------------------------------------------------------//
-    atom_pair_assignments_k_ = make_shared<cadf::AssignmentGrid>(
-        gbs_, dfbs_, scf_grp_->n()
-    );
-    atom_pair_assignments_k_->print_detail();
+      }
+      else {
+        local_pairs_k_.emplace_back(ish, Xblk);
+      }
 
-  //}
+
+    }
+  }
+
+  // Make the assignments for the mu, X pairs in K
+  //inode = 0;
+  //for(auto&& ish : shell_range(gbs_)) {
+  //  for(auto&& Xblk : shell_block_range(dfbs_, gbs_, 0, NoLastIndex, SameCenter)) {
+  //    const int assignment = inode % n_node; ++inode;
+  //    auto pair = std::make_pair(ish, Xblk);
+  //    pair_assignments_k_[pair] = assignment;
+  //    if(assignment == me) {
+  //      local_pairs_k_.push_back(pair);
+  //    }
+
+  //  } // end loop over blocks for mu
+  //} // end loop over mu sets
+
+  //inode = 0;
+  //// TODO Non-round-robin static parallelism to make lookup faster in L_3 build
+  //for(auto&& ish : shell_range(gbs_)) {
+  //  for(auto&& Xsh : shell_range(dfbs_)) {
+  //    const int assignment = inode % n_node; ++inode;
+  //    if(assignment == me) {
+  //      local_pairs_linK_.emplace(ish, (int)Xsh);
+  //      linK_local_map_[Xsh].push_back(ish);
+  //    }
+  //  } // end loop over Xsh
+  //} // end loop over ish
 
   //----------------------------------------------------------------------------//
   threads_initialized_ = true;

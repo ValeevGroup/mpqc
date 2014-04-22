@@ -651,7 +651,7 @@ class ShellBlockData {
         Range sh_range,
         int nshell, int nbf,
         int requirements
-    ) : shell_range(sh_range),
+    ) : shell_range(sh_range.begin(), sh_range.end()),
         first_shell(*shell_range.begin()),
         last_shell(shell_range.begin() == shell_range.end() ?
             *shell_range.end() : *(--shell_range.end())
@@ -814,7 +814,9 @@ class shell_block_iterator
     {
       // Don't allow incrementing of end iterator
       assert(current_skeleton.first_index != NotAssigned);
-      all_shells = shell_range(*current_skeleton.shell_range.end(), *all_shells.end());
+      auto&& new_begin = current_skeleton.shell_range.end();
+      auto&& new_end = all_shells.end();
+      all_shells = shell_range(*new_begin, *new_end);
       init();
     }
 
@@ -1216,7 +1218,12 @@ class OrderedShellList {
 
     Eigen::VectorXd aux_vector_;
     bool aux_vector_initialized_ = false;
+    bool aux_set_sorted_ = false;
     double aux_value_;
+
+    std::mutex aux_set_mtx_;
+    std::unordered_set<int> aux_set_;
+    std::vector<int> aux_indices_;
 
   public:
 
@@ -1232,9 +1239,9 @@ class OrderedShellList {
       aux_vector_initialized_ = false;
     }
 
-    template<typename Index>
+    template<typename Iterable>
     OrderedShellList(
-        const std::set<Index>& indices_in,
+        const Iterable& indices_in,
         GaussianBasisSet* basis,
         GaussianBasisSet* dfbasis = 0
     )
@@ -1270,6 +1277,31 @@ class OrderedShellList {
 
     void set_aux_value(const double add_val) {
       aux_value_ = add_val;
+    }
+
+    void insert_in_aux_set(int item) {
+      std::lock_guard<std::mutex> lg(aux_set_mtx_);
+      aux_set_.insert(item);
+      aux_set_sorted_ = false;
+    }
+
+    //// Note: not thread safe, do not call if insertion may happen simultaneously
+    const std::vector<int>& get_aux_indices() const {
+      assert(aux_set_sorted_);
+      return aux_indices_;
+    }
+
+    void sort_aux_set() {
+      std::lock_guard<std::mutex> lg(aux_set_mtx_);
+      assert(aux_indices_.empty());
+      std::copy(aux_set_.begin(), aux_set_.end(), std::back_inserter(aux_indices_));
+      std::sort(aux_indices_.begin(), aux_indices_.end());
+      aux_set_sorted_ = true;
+    }
+
+    //// Note: not thread safe, do not call if insertion may happen simultaneously
+    bool aux_set_contains(int item) const {
+      return aux_set_.find(item) != aux_set_.end();
     }
 
     double get_aux_value() const {
@@ -1498,7 +1530,7 @@ class OrderedShellList {
 
 };
 
-inline range_of_shell_blocks<OrderedShellList::index_iterator>
+inline range_of_shell_blocks<typename OrderedShellList::index_iterator>
 shell_block_range(
     const OrderedShellList& shlist,
     int requirements=SameCenter,
@@ -1506,13 +1538,33 @@ shell_block_range(
 )
 {
   return boost::make_iterator_range(
-      shell_block_iterator<OrderedShellList::index_iterator>(
+      shell_block_iterator<typename OrderedShellList::index_iterator>(
           shlist.index_begin(), shlist.index_end(),
           shlist.basis_, shlist.dfbasis_, requirements, target_size
       ),
-      shell_block_iterator<OrderedShellList::index_iterator>(
+      shell_block_iterator<typename OrderedShellList::index_iterator>(
           shlist.index_end(), shlist.index_end(),
           shlist.basis_, shlist.dfbasis_, requirements, target_size
+      )
+  );
+}
+
+template<typename Iterable>
+range_of_shell_blocks<typename Iterable::const_iterator>
+shell_block_range(
+    const Iterable& shlist, GaussianBasisSet* basis, GaussianBasisSet* dfbasis = 0,
+    int requirements=SameCenter,
+    int target_size=DEFAULT_TARGET_BLOCK_SIZE
+)
+{
+  return boost::make_iterator_range(
+      shell_block_iterator<typename Iterable::const_iterator>(
+          shlist.begin(), shlist.end(),
+          basis, dfbasis, requirements, target_size
+      ),
+      shell_block_iterator<typename Iterable::const_iterator>(
+          shlist.end(), shlist.end(),
+          basis, dfbasis, requirements, target_size
       )
   );
 }

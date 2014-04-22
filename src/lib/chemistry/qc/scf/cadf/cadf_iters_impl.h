@@ -107,7 +107,7 @@ shell_block_iterator<ShellIterator, ShellRange>::init_from_spot(
     return;
   }
   //----------------------------------------//
-  auto first_shell = *start_spot;
+  const auto& first_shell = *start_spot;
   int first_center = first_shell.center;
   auto first_am = basis->shell(first_shell).am();
   int block_nbf = 0;
@@ -117,6 +117,8 @@ shell_block_iterator<ShellIterator, ShellRange>::init_from_spot(
   contiguous_ = true;
   for(; ish_iter != all_shells.end(); ++ish_iter){
     auto ish = *ish_iter;
+    out_assert(ish.center, !=, NotAssigned);
+    //DUMP(ish)
     if(
         // Same center condition
         ((restrictions & SameCenter) and ish.center != first_center)

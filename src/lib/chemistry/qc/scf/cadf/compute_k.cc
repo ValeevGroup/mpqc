@@ -27,6 +27,7 @@
 //
 
 #include <numeric>
+#include <cassert>
 
 #include <chemistry/qc/basis/petite.h>
 #include <util/misc/xmlwriter.h>
@@ -134,12 +135,6 @@ CADFCLHF::compute_K()
   Eigen::MatrixXd Kt(nbf, nbf);
   Kt = Eigen::MatrixXd::Zero(nbf, nbf);
 
-
-  #if DEBUG_K_INTERMEDIATES
-  Eigen::MatrixXd Ktex(nbf, nbf);
-  Ktex = Eigen::MatrixXd::Zero(nbf, nbf);
-  #endif
-
   //----------------------------------------//
   const auto& g2 = *g2_full_ptr_;
 
@@ -239,6 +234,7 @@ CADFCLHF::compute_K()
   /*=======================================================================================*/
   /* Make the CADF-LinK lists                                                         {{{1 */ #if 1 //latex `\label{sc:link}`
 
+
   std::vector<std::tuple<int, int, int>> L_3_keys;
   std::unordered_map<int, std::unordered_set<int>> L_3_keys_X_to_mu;
 
@@ -250,6 +246,7 @@ CADFCLHF::compute_K()
     L_DC.clear();
     L_3.clear();
     L_B.clear();
+    //L_3_prime.clear();
 
     //============================================================================//
     // Get the Frobenius norms of the density matrix shell blocks
@@ -345,37 +342,57 @@ CADFCLHF::compute_K()
           //bool ish_found = false;
           auto found = const_loc_pairs_map.find(Xsh);
           if(found != const_loc_pairs_map.end()) {
+            //auto& L_3_prime_jsh_Xsh = L_3_prime[{jsh, Xsh}];
             auto local_schwarz_jsh = L_sch_jsh.intersection_with(found->second);
+            bool stop_mu = false;
+            bool stop_rho = not distribute_coefficients_;
             for(auto&& ish : local_schwarz_jsh) {
 
-              double dist_factor = get_distance_factor(ish, jsh, Xsh);
+              const double dist_factor = get_distance_factor(ish, jsh, Xsh);
 
-              if(ish.value > eps_prime) {
-                //jsh_added = true;
-                if(!linK_use_distance_ or ish.value * dist_factor > eps_prime_dist) {
-                  auto& L_3_ish_Xsh = L_3[{ish, Xsh}];
-                  L_3_ish_Xsh.insert(jsh,
-                      ish.value * dist_factor * Xsh_schwarz
-                  );
-                  if(screen_B_) {
-                    double B_scr_contrib = ish.value * ish.value;
-                    if(screen_B_use_distance_) B_scr_contrib *= dist_factor * dist_factor;
-                    L_3_ish_Xsh.add_to_aux_value_vector(B_scr_contrib, D_frob_sq.col(jsh));
+              if(!stop_mu) {
+                if(ish.value > eps_prime) {
+                  if(!linK_use_distance_ or ish.value * dist_factor > eps_prime_dist) {
+                    auto& L_3_ish_Xsh = L_3[{ish, Xsh}];
+                    L_3_ish_Xsh.insert(jsh,
+                        ish.value * dist_factor
+                    );
+                    if(screen_B_) {
+                      double B_scr_contrib = ish.value * ish.value;
+                      if(screen_B_use_distance_) B_scr_contrib *= dist_factor * dist_factor;
+                      L_3_ish_Xsh.add_to_aux_value_vector(B_scr_contrib, D_frob_sq.col(jsh));
+                    }
+
+                    if(print_screening_stats_) {
+                      ++iter_stats_->K_3c_needed;
+                      iter_stats_->K_3c_needed_fxn += ish.nbf * jsh.nbf * Xsh.nbf;
+                    }
+
                   }
-
-                  if(print_screening_stats_) {
-                    ++iter_stats_->K_3c_needed;
-                    iter_stats_->K_3c_needed_fxn += ish.nbf * jsh.nbf * Xsh.nbf;
+                  else if(print_screening_stats_ and linK_use_distance_) {
+                    ++iter_stats_->K_3c_dist_screened;
+                    iter_stats_->K_3c_dist_screened_fxn += ish.nbf * jsh.nbf * Xsh.nbf;
                   }
 
                 }
-                else if(print_screening_stats_ and linK_use_distance_) {
-                  ++iter_stats_->K_3c_dist_screened;
-                  iter_stats_->K_3c_dist_screened_fxn += ish.nbf * jsh.nbf * Xsh.nbf;
+                else {
+                  stop_mu = true;
                 }
-
               }
-              else {
+
+              if(!stop_rho and ish.center != jsh.center) {
+                const double ish_value_rho = ish.value * dtilde(ish, Xsh);
+                if(ish_value_rho > epsilon) {
+                  if(!linK_use_distance_ or ish_value_rho * dist_factor > epsilon_dist) {
+                    auto& L_3_ish_Xsh = L_3[{ish, Xsh}];
+                    L_3_ish_Xsh.insert_in_aux_set(jsh);
+                  }
+                }
+                // We can't stop with rho because we aren't sorted by dtilde(ish, Xsh)
+                // TODO sort and do seperate loop so that rho can exit early
+              }
+
+              if(stop_mu and stop_rho) {
                 break;
               }
 
@@ -406,6 +423,9 @@ CADFCLHF::compute_K()
           if(not linK_block_rho_) L_3_iter->second.set_sort_by_value(false);
           L_3_iter->second.sort();
           L_3_iter->second.set_aux_value(sqrt(L_3_iter->second.get_aux_value()));
+          if(distribute_coefficients_) {
+            L_3_iter->second.sort_aux_set();
+          }
 
           // Build the B screening list
 
@@ -432,6 +452,9 @@ CADFCLHF::compute_K()
 
             L_B_ish_Xsh.set_sort_by_value(false);
             L_B_ish_Xsh.sort();
+            if(distribute_coefficients_) {
+              throw FeatureNotImplemented("distribute coefficients with B screening", __FILE__, __LINE__, class_desc());
+            }
             if(L_B_ish_Xsh.size() > 0) {
               my_L_3_keys_X_to_mu[Xsh].insert(ish);
             }
@@ -507,12 +530,14 @@ CADFCLHF::compute_K()
     Timer timer("three body contributions");
     boost::mutex tmp_mutex;
     std::mutex L_3_mutex;
+    //std::mutex L_3_prime_mutex;
 
-    auto L_3_X_iter = L_3_keys_X_to_mu.begin();
-    auto L_3_mu_iter = L_3_X_iter->second.begin();
-    auto current_L_3_mu_end = L_3_X_iter->second.end();
+    //auto L_3_X_iter = L_3_keys_X_to_mu.begin();
+    //auto L_3_mu_iter = L_3_X_iter->second.begin();
+    //auto current_L_3_mu_end = L_3_X_iter->second.end();
 
     auto L_3_key_iter = L_3_keys.begin();
+    //auto L_3_prime_key_iter = L_3_prime.begin();
     boost::thread_group compute_threads;
 
     // reset the iteration over local pairs
@@ -520,83 +545,109 @@ CADFCLHF::compute_K()
 
     MultiThreadTimer mt_timer("threaded part", nthread_);
 
-    auto get_next_Xblk = [&](ShellBlockData<>& Xblk) -> bool {
-      if(do_linK_) {
-        std::lock_guard<std::mutex> lg(L_3_mutex);
-        if(L_3_X_iter == L_3_keys_X_to_mu.end()) {
-          return false;
-        }
-        else {
-          Xblk = ShellBlockData<>(ShellData(L_3_X_iter->first, dfbs_, gbs_));
-          L_3_mu_iter = L_3_X_iter->second.begin();
-          current_L_3_mu_end =  L_3_X_iter->second.end();
-          ++L_3_X_iter;
-          return true;
-        }
-      }
-      else {
-        throw FeatureNotImplemented("non-link", __FILE__, __LINE__, class_desc());
-      }
-    };
-
-    auto get_next_ish = [&](ShellData& ish, const ShellBlockData<>& Xblk) -> bool {
-      if(do_linK_) {
-        std::lock_guard<std::mutex> lg(L_3_mutex);
-        if(L_3_mu_iter == current_L_3_mu_end) {
-          return false;
-        }
-        else {
-          ish = ShellData(*L_3_mu_iter, gbs_, dfbs_);
-          ++L_3_mu_iter;
-          return true;
-        }
-      }
-      else {
-        throw FeatureNotImplemented("non-link", __FILE__, __LINE__, class_desc());
-      }
-    };
-
-    //auto get_ish_Xblk_3 = [&](ShellData& ish, ShellBlockData<>& Xblk) -> bool {                                                //latex `\label{sc:k3b:getiX}`
+    //auto get_next_Xblk = [&](ShellBlockData<>& Xblk) -> bool {
     //  if(do_linK_) {
     //    std::lock_guard<std::mutex> lg(L_3_mutex);
-    //    if(L_3_key_iter == L_3_keys.end()) {
+    //    if(L_3_X_iter == L_3_keys_X_to_mu.end()) {
     //      return false;
     //    }
     //    else {
-
-    //      int ishidx, Xshidx, list_size;
-    //      std::tie(ishidx, Xshidx, list_size) = *L_3_key_iter;
-    //      ish = ShellData(ishidx, gbs_, dfbs_);
-    //      Xblk = ShellBlockData<>(ShellData(Xshidx, dfbs_, gbs_));
-    //      ++L_3_key_iter;
+    //      Xblk = ShellBlockData<>(ShellData(L_3_X_iter->first, dfbs_, gbs_));
+    //      L_3_mu_iter = L_3_X_iter->second.begin();
+    //      current_L_3_mu_end =  L_3_X_iter->second.end();
+    //      ++L_3_X_iter;
     //      return true;
     //    }
     //  }
     //  else {
-    //    int spot = local_pairs_spot_++;
-    //    if(spot < local_pairs_k_.size()){
-    //      auto& sig_pair = local_pairs_k_[spot];
-    //      ish = ShellData(sig_pair.first, gbs_, dfbs_);
-    //      Xblk = sig_pair.second;
-    //      return true;
-    //    }
-    //    else{
+    //    throw FeatureNotImplemented("non-link", __FILE__, __LINE__, class_desc());
+    //  }
+    //};
+
+    //auto get_next_ish = [&](ShellData& ish, const ShellBlockData<>& Xblk) -> bool {
+    //  if(do_linK_) {
+    //    std::lock_guard<std::mutex> lg(L_3_mutex);
+    //    if(L_3_mu_iter == current_L_3_mu_end) {
     //      return false;
     //    }
+    //    else {
+    //      ish = ShellData(*L_3_mu_iter, gbs_, dfbs_);
+    //      ++L_3_mu_iter;
+    //      return true;
+    //    }
     //  }
-    //};                                                                                   //latex `\label{sc:k3b:getiXend}`
+    //  else {
+    //    throw FeatureNotImplemented("non-link", __FILE__, __LINE__, class_desc());
+    //  }
+    //};
+
+    auto get_ish_Xblk_3 = [&](ShellData& ish, ShellBlockData<>& Xblk) -> bool {                                                //latex `\label{sc:k3b:getiX}`
+      if(do_linK_) {
+        std::lock_guard<std::mutex> lg(L_3_mutex);
+        if(L_3_key_iter == L_3_keys.end()) {
+          return false;
+        }
+        else {
+
+          int ishidx, Xshidx, list_size;
+          std::tie(ishidx, Xshidx, list_size) = *L_3_key_iter;
+          ish = ShellData(ishidx, gbs_, dfbs_);
+          Xblk = ShellBlockData<>(ShellData(Xshidx, dfbs_, gbs_));
+          ++L_3_key_iter;
+          return true;
+        }
+      }
+      else {
+        int spot = local_pairs_spot_++;
+        if(spot < local_pairs_k_.size()){
+          auto& sig_pair = local_pairs_k_[spot];
+          ish = ShellData(sig_pair.first, gbs_, dfbs_);
+          Xblk = sig_pair.second;
+          return true;
+        }
+        else{
+          return false;
+        }
+      }
+      //}
+      //else {
+      //  if(do_linK_) {
+      //    std::lock_guard<std::mutex> lg(L_3_prime_mutex);
+      //    if(L_3_prime_key_iter == L_3_prime.end()) {
+      //      return false;
+      //    }
+      //    else {
+      //      int jshidx, Xshidx;
+      //      jshidx = L_3_prime_key_iter->first.first;
+      //      Xshidx = L_3_prime_key_iter->first.second;
+      //      ish = ShellData(jshidx, gbs_, dfbs_);
+      //      Xblk = ShellBlockData<>(ShellData(Xshidx, dfbs_, gbs_));
+      //      ++L_3_prime_key_iter;
+      //      return true;
+      //    }
+
+      //  }
+      //  else {
+      //    throw FeatureNotImplemented("non-linK", __FILE__, __LINE__, class_desc());
+      //  }
+
+      //}
+    };                                                                                   //latex `\label{sc:k3b:getiXend}`
 
     // Loop over number of threads
     for(int ithr = 0; ithr < nthread_; ++ithr) {
       // ...and create each thread that computes pairs
       compute_threads.create_thread([&,ithr](){                                              //latex `\label{sc:k3b:thrpatend}`
 
+        // thread-local portion of K_tilde
         Eigen::MatrixXd Kt_part(nbf, nbf);
         Kt_part = Eigen::MatrixXd::Zero(nbf, nbf);
-        //----------------------------------------//
+
         ShellData ish;
+        ShellData jsh;
         ShellBlockData<> Xblk;
 
+        // Allocate buffers beforehand so that we don't have to do so inside the main loop
         long b_buff_offset = 0;
         size_t actual_size = 0;
         actual_size = B_buffer_size_/sizeof(double);
@@ -605,6 +656,17 @@ CADFCLHF::compute_K()
         double* __restrict__ D_B_buff_data;
         double* __restrict__ D_sd_data;
         double* __restrict__ C_X_diff_data;
+        double* __restrict__ dt_ish_X_data;
+        double* __restrict__ dt_prime_data;
+        double* __restrict__ gt_ish_X_data;
+        if(distribute_coefficients_) {
+           dt_ish_X_data = new double[max_fxn_obs_*max_fxn_dfbs_*nbf];
+           dt_prime_data = new double[max_fxn_obs_*max_fxn_dfbs_*max_fxn_atom_obs_];
+           gt_ish_X_data = new double[max_fxn_obs_*max_fxn_dfbs_*nbf];
+           //dt_ish_X_data = new double[nbf*nbf*dfnbf];
+           //dt_prime_data = new double[nbf*nbf*dfnbf];
+           //gt_ish_X_data = new double[nbf*nbf*dfnbf];
+        }
         int D_B_buff_n = 0;
         if(B_use_buffer_) {
           D_B_buff_data = new double[nbf*nbf];
@@ -618,13 +680,19 @@ CADFCLHF::compute_K()
         Eigen::Map<ColMatrix> D_sd(D_sd_data, 0, 0);
         Eigen::Map<RowMatrix> C_X_diff(C_X_diff_data, 0, 0);
         Eigen::Map<RowMatrix> B_sd(B_ish_data, 0, 0);
+        Eigen::Map<RowMatrix> dt_ish_X(dt_ish_X_data, 0, 0);
+        Eigen::Map<RowMatrix> dt_prime(dt_prime_data, 0, 0);
+        Eigen::Map<RowMatrix> gt_ish_X(gt_ish_X_data, 0, 0);
 
         //============================================================================//
         // Main loop
         //============================================================================//
 
-        while(get_next_Xblk(Xblk)) {                                                            //latex `\label{sc:k3b:while}`
-          while(get_next_ish(ish, Xblk)) {                                                            //latex `\label{sc:k3b:while}`
+        while(get_ish_Xblk_3(ish, Xblk)) {
+          {                                                            //latex `\label{sc:k3b:while}`
+        //while(get_next_Xblk(Xblk)) {                                                            //latex `\label{sc:k3b:while}`
+
+        //  while(get_next_ish(ish, Xblk)) {
 
             /*-----------------------------------------------------*/
             /* Compute B intermediate                         {{{2 */ #if 2 // begin fold      //latex `\label{sc:k3b:b}`
@@ -644,6 +712,8 @@ CADFCLHF::compute_K()
             int B_sd_rows = 0, B_sd_cols = 0;
             int D_sd_rows = 0, D_sd_cols = 0;
             int C_X_diff_rows = 0, C_X_diff_cols = 0;
+
+            //assert((L_3[{ish, Xsh}].size() > 0));
 
             if(screen_B_) {
 
@@ -717,6 +787,106 @@ CADFCLHF::compute_K()
               jlist = &(L_3[{ish, Xsh}]);
             }
 
+            // Build dt for the transpose, only if we're distributing coefficients
+            if(distribute_coefficients_) {
+              if(do_linK_) {
+
+                new (&dt_ish_X) Eigen::Map<RowMatrix>(dt_ish_X_data, ish.nbf * Xsh.nbf, nbf);
+                dt_ish_X  = RowMatrix::Zero(ish.nbf * Xsh.nbf, nbf);
+                new (&dt_prime) Eigen::Map<RowMatrix>(dt_prime_data, ish.nbf * Xsh.nbf, Xsh.atom_obsnbf);
+                dt_prime  = RowMatrix::Zero(ish.nbf * Xsh.nbf, Xsh.atom_obsnbf);
+                for(auto&& mu : function_range(ish)) {
+                  for(auto&& X : function_range(Xsh)) {
+
+                    for(auto&& nu : function_range(gbs_, dfbs_)) {
+                      for(auto sigma : iter_functions_on_center(gbs_, Xsh.center)) {
+                        dt_ish_X(mu.off*Xsh.nbf + X.off, nu) += 2.0 * D(mu, sigma)
+                            * coefs_X_nu.at(Xsh.center)(X.bfoff_in_atom, sigma.bfoff_in_atom*nbf + nu);
+                        //assert(fabs(
+                        //    coefs_X_nu.at(Xsh.center)(X.bfoff_in_atom, sigma.bfoff_in_atom*nbf + nu)
+                        //    - coefs_transpose_[X](sigma.bfoff_in_atom, nu)) < 1e-12
+                        //);
+                      }
+                    }
+                    for(auto&& nu : iter_functions_on_center(gbs_, Xsh.center)) {
+                      for(auto&& sigma : function_range(gbs_)) {
+                        //if(sigma.center == Xsh.center) continue;
+                        dt_prime(mu.off*Xsh.nbf + X.off, nu.bfoff_in_atom) += 2.0 * D(mu, sigma)
+                            * coefs_X_nu.at(Xsh.center)(X.bfoff_in_atom, nu.bfoff_in_atom*nbf + sigma);
+                        //assert(fabs(
+                        //    coefs_X_nu.at(Xsh.center)(X.bfoff_in_atom, nu.bfoff_in_atom*nbf + sigma)
+                        //    - coefs_transpose_[X](nu.bfoff_in_atom, sigma)) < 1e-12
+                        //);
+                      }
+                    }
+
+                  }
+                }
+
+                /// Now loop over rho in L_3 auxiliary list and compute k contributions
+                //for(auto&& i : L_3[{ish, Xsh}].get_aux_indices()) {
+                //  DUMP3(i, ish, Xsh);
+                //}
+                //DUMP((OrderedShellList(L_3[{ish, Xsh}].get_aux_indices(), gbs_, dfbs_)))
+                for(const auto&& jblk : shell_block_range(L_3[{ish, Xsh}].get_aux_indices(), gbs_.pointer(), dfbs_.pointer(), Contiguous)){
+                //for(const auto&& jblk : shell_block_range(gbs_, dfbs_)) {
+                  //if(jblk.center == ish.center) continue;
+                  //DUMP(jblk)
+                  //assert(false);
+                  new (&gt_ish_X) Eigen::Map<RowMatrix>(gt_ish_X_data, ish.nbf*Xblk.nbf, jblk.nbf);
+                  gt_ish_X = RowMatrix::Zero(ish.nbf*Xblk.nbf, jblk.nbf);
+                  for(auto&& mu : function_range(ish)) {
+                    for(auto&& X : function_range(Xsh)) {
+                      for(auto&& rho : function_range(gbs_, dfbs_, jblk.bfoff, jblk.last_function)) {
+                        for(auto&& Y : iter_functions_on_center(dfbs_, ish.center, gbs_)) {
+                          //M_ELEM_DUMP(coefs_mu_X.at(ish), mu.off, rho*ish.atom_dfnbf + Y.bfoff_in_atom);
+                          //DUMP3(jblk.bfoff, jblk.last_function, jblk.nbf)
+                          //DUMP(rho.index)
+                          //DUMP(jblk.first_shell)
+                          //DUMP(jblk.last_shell)
+                          //M_ELEM_DUMP(gt_ish_X, mu.off*Xblk.nbf + X-Xblk.bfoff, rho - jblk.bfoff);
+                          gt_ish_X(mu.off*Xblk.nbf + X-Xblk.bfoff, rho - jblk.bfoff) -= 0.5 *
+                              coefs_mu_X.at(ish)(mu.off, rho*ish.atom_dfnbf + Y.bfoff_in_atom)
+                              * g2(Y, X);
+                        }
+                      }
+                    }
+                  }
+
+                  for(auto&& rho : function_range(gbs_, dfbs_, jblk.bfoff, jblk.last_function)) {
+                    for(auto&& nu : function_range(gbs_, dfbs_)) {
+                      for(auto&& mu : function_range(ish)) {
+                        for(auto&& X : function_range(Xsh)) {
+                          Kt_part(rho, nu) += gt_ish_X(mu.off*Xblk.nbf + X.off, rho - jblk.bfoff)
+                              * dt_ish_X(mu.off*Xsh.nbf + X.off, nu);
+                        }
+                      }
+                    }
+                  }
+
+                  for(auto&& rho : function_range(gbs_, dfbs_, jblk.bfoff, jblk.last_function)) {
+                    for(auto&& nu : iter_functions_on_center(gbs_, Xblk.center, dfbs_)) {
+                      for(auto&& mu : function_range(ish)) {
+                        for(auto&& X : function_range(Xsh)) {
+                          Kt_part(rho, nu) += gt_ish_X(mu.off*Xblk.nbf + X.off, rho - jblk.bfoff)
+                              * dt_prime(mu.off*Xsh.nbf + X.off, nu.bfoff_in_atom);
+                          Kt_part(rho, nu) -= gt_ish_X(mu.off*Xblk.nbf + X.off, rho - jblk.bfoff)
+                              * dt_ish_X(mu.off*Xsh.nbf + X.off, nu);
+                        }
+                      }
+                    }
+                  }
+
+
+                }
+
+
+              }
+              else {
+                throw FeatureNotImplemented("non-linK", __FILE__, __LINE__, class_desc());
+              }
+            }
+
             // Reordering of D, only if linK_block_rho_ is true
             int block_offset = 0;
             Eigen::MatrixXd D_ordered;                                                   //latex `\label{sc:k3b:reD}`
@@ -734,6 +904,7 @@ CADFCLHF::compute_K()
 
             }
 
+
             //============================================================================//
             // Loop over the largest blocks of J at once that we can
 
@@ -742,6 +913,9 @@ CADFCLHF::compute_K()
 
             for(const auto&& jblk : shell_block_range(*jlist, restrictions)){             //latex `\label{sc:k3b:noblk:loop}`
               TimerHolder subtimer(ints_timer);
+              //for(auto&& jsh : shell_range(jblk)) {
+              //  out_assert(jsh.center, >=, 0);
+              //}
 
               auto g3_in = ints_to_eigen_map(
                   jblk, ish, Xblk,
@@ -772,108 +946,93 @@ CADFCLHF::compute_K()
                   inner_size += jsblk.atom_dfnbf;
                 }
 
-                if(store_coefs_transpose_) {
-                  const int tot_cols = coefs_blocked_[jsblk.center].cols();
-                  const int col_offset = coef_block_offsets_[jsblk.center][ish.center]
-                      + ish.bfoff_in_atom*inner_size;
-                  double* data_start = coefs_blocked_[jsblk.center].data() +
-                      jsblk.bfoff_in_atom * tot_cols + col_offset;
+                if(distribute_coefficients_) {
 
-                  StridedRowMap Ctmp(data_start, jsblk.nbf, ish.nbf*inner_size,
-                      Eigen::OuterStride<>(tot_cols)
-                  );
-
-                  RowMatrix C(Ctmp.nestByValue());
-                  C.resize(jsblk.nbf*ish.nbf, inner_size);
-
-                  g3_in.middleRows(subblock_offset*ish.nbf, jsblk.nbf*ish.nbf) -= 0.5
-                      * C.rightCols(ish.atom_dfnbf) * g2.block(
-                          ish.atom_dfbfoff, Xblk.bfoff,
-                          ish.atom_dfnbf, Xblk.nbf
-                  );
-                  if(ish.center != jsblk.center) {
-                    g3_in.middleRows(subblock_offset*ish.nbf, jsblk.nbf*ish.nbf) -= 0.5
-                        * C.leftCols(jsblk.atom_dfnbf) * g2.block(
-                            jsblk.atom_dfbfoff, Xblk.bfoff,
-                            jsblk.atom_dfnbf, Xblk.nbf
-                    );
-                  }
-                }
-                else {
-                  int rho_block_offset = 0;
-                  for(auto&& rho : function_range(gbs_, dfbs_, jsblk.bfoff, jsblk.last_function)) {
-                    for(auto&& mu : function_range(ish)) {
-
-                      //g3.row((subblock_offset + rho_block_offset)*ish.nbf + mu.off) -= 0.5 *
-                      //    coefs_transpose_blocked_[ish.center].col(mu.bfoff_in_atom*nbf + rho).transpose()
-                      //    * g2.middleRows(ish.atom_dfbfoff, ish.atom_dfnbf).middleCols(Xblk.bfoff, Xblk.nbf);
-                      //g3_in.row((subblock_offset + rho_block_offset)*ish.nbf + mu.off) -= 0.5 *
-                      //    coefs_transpose_blocked_[ish.center].col(mu.bfoff_in_atom*nbf + rho).transpose()
-                      //    * g2.middleRows(ish.atom_dfbfoff, ish.atom_dfnbf).middleCols(Xblk.bfoff, Xblk.nbf);
-                      g3.row(subblock_offset + rho_block_offset).segment(mu.off*Xblk.nbf, Xblk.nbf) -= 0.5 *
-                          coefs_transpose_blocked_[ish.center].col(mu.bfoff_in_atom*nbf + rho).transpose()
-                          * g2.middleRows(ish.atom_dfbfoff, ish.atom_dfnbf).middleCols(Xblk.bfoff, Xblk.nbf);
-                      //for(auto&& Y : iter_functions_on_center(dfbs_, ish.center, gbs_)) {
-                      //  g3_in.row((subblock_offset + rho_block_offset)*ish.nbf + mu.off) -= 0.5 *
-                      //      g2.row(Y).segment(Xblk.bfoff, Xblk.nbf)
-                      //      * coefs_transpose_blocked_[ish.center](Y.bfoff_in_atom, mu.bfoff_in_atom*nbf + rho);
-                      //  //for(auto&& X : function_range(Xblk)) {
-                      //  //  g3_in((subblock_offset + rho_block_offset)*ish.nbf + mu.off, X.bfoff_in_block) -= 0.5
-                      //  //      * coefs_transpose_blocked_other_[ish.center](
-                      //  //          Y.bfoff_in_atom*Y.atom_obsnbf + mu.bfoff_in_atom,
-                      //  //          rho
-                      //  //      ) * g2(Y, X);
-                      //  //}
-                      //}
-                    }
-                    ++rho_block_offset;
-                  }
-
-                  if(ish.center != jsblk.center) {
-                    for(auto&& mu : function_range(ish)) {
-                      //g3_in.middleRows((subblock_offset + rho_block_offset)*ish.nbf, ish.nbf) -= 0.5 *
-                      //    coefs_transpose_blocked_[jsblk.center].middleCols(rho.bfoff_in_atom*nbf, ish.nbf).transpose()
-                      //     * g2.middleRows(jsblk.atom_dfbfoff, jsblk.atom_dfnbf).middleCols(Xblk.bfoff, Xblk.nbf);
-                      //g3.row(subblock_offset + rho_block_offset) -= 0.5 *
-                      //    coefs_transpose_blocked_[jsblk.center].middleCols(rho.bfoff_in_atom*nbf, ish.nbf).transpose()
-                      //     * g2.middleRows(jsblk.atom_dfbfoff, jsblk.atom_dfnbf).middleCols(Xblk.bfoff, Xblk.nbf);
-                      int rho_block_offset = 0;
-                      for(auto&& rho : function_range(gbs_, dfbs_, jsblk.bfoff, jsblk.last_function)) {
-                        g3.row(subblock_offset + rho_block_offset).segment(mu.off*Xblk.nbf, Xblk.nbf) -= 0.5 *
-                            coefs_transpose_blocked_[jsblk.center].col(rho.bfoff_in_atom*nbf + mu).transpose()
-                             * g2.middleRows(jsblk.atom_dfbfoff, jsblk.atom_dfnbf).middleCols(Xblk.bfoff, Xblk.nbf);
-                        //g3_in.row((subblock_offset + rho_block_offset)*ish.nbf + mu.off) -= 0.5 *
-                        //    coefs_transpose_blocked_[jsblk.center].col(rho.bfoff_in_atom*nbf + mu).transpose()
-                        //     * g2.middleRows(jsblk.atom_dfbfoff, jsblk.atom_dfnbf).middleCols(Xblk.bfoff, Xblk.nbf);
-                        //g3_col.col(subblock_offset + rho_block_offset).segment(mu.off*Xblk.nbf, Xblk.nbf).transpose() -= 0.5 *
-                        //    coefs_transpose_blocked_[jsblk.center].col(rho.bfoff_in_atom*nbf + mu).transpose()
-                        //     * g2.middleRows(jsblk.atom_dfbfoff, jsblk.atom_dfnbf).middleCols(Xblk.bfoff, Xblk.nbf);
-                        //for(auto&& X : function_range(Xblk)) {
-                        //  g3(subblock_offset + rho_block_offset, mu.off*Xblk.nbf + X.bfoff_in_block) -= 0.5 *
-                        //      coefs_transpose_blocked_[jsblk.center].col(rho.bfoff_in_atom*nbf + mu).transpose()
-                        //       * g2.col(X).middleRows(jsblk.atom_dfbfoff, jsblk.atom_dfnbf);
-
-                        //}
-                        //for(auto&& Y : iter_functions_on_center(dfbs_, jsblk.center, gbs_)) {
-                        //  g3_in.row((subblock_offset + rho_block_offset)*ish.nbf + mu.off) -= 0.5 *
-                        //      g2.row(Y).segment(Xblk.bfoff, Xblk.nbf)
-                        //      * coefs_transpose_blocked_[jsblk.center](Y.bfoff_in_atom, rho.bfoff_in_atom*nbf + mu);
-                        //  //for(auto&& X : function_range(Xblk)) {
-                        //  //  g3_in((subblock_offset + rho_block_offset)*ish.nbf + mu.off, X.bfoff_in_block) -= 0.5
-                        //  //      * coefs_transpose_blocked_other_[Y.center](
-                        //  //          Y.bfoff_in_atom*Y.atom_obsnbf + rho.bfoff_in_atom,
-                        //  //          mu
-                        //  //      ) * g2(Y, X);
-                        //  //}
-                        //}
-                        ++rho_block_offset;
+                  for(auto&& mu : function_range(ish)) {
+                    for(auto&& rho : function_range(gbs_, dfbs_, jsblk.bfoff, jsblk.last_function)) {
+                      for(auto&& X : function_range(Xblk)) {
+                        for(auto&& Y : iter_functions_on_center(dfbs_, ish.center)) {
+                          //M_ELEM_DUMP(coefs_mu_X.at(ish), mu.off, rho*ish.atom_dfnbf + Y.bfoff_in_atom);
+                          //out_assert((coefs_mu_X.at(ish)(mu.off, rho*ish.atom_dfnbf + Y.bfoff_in_atom)), ==, (coefs_transpose_[Y](mu.bfoff_in_atom, rho)));
+                          g3(rho - jblk.bfoff, mu.off*Xblk.nbf + X-Xblk.bfoff) -= 0.5 *
+                              coefs_mu_X.at(ish)(mu.off, rho*ish.atom_dfnbf + Y.bfoff_in_atom) * g2(Y, X);
+                        }
                       }
                     }
                   }
 
+
+                }
+                else {
+                  if(store_coefs_transpose_) {
+                    const int tot_cols = coefs_blocked_[jsblk.center].cols();
+                    const int col_offset = coef_block_offsets_[jsblk.center][ish.center]
+                        + ish.bfoff_in_atom*inner_size;
+                    double* data_start = coefs_blocked_[jsblk.center].data() +
+                        jsblk.bfoff_in_atom * tot_cols + col_offset;
+
+                    StridedRowMap Ctmp(data_start, jsblk.nbf, ish.nbf*inner_size,
+                        Eigen::OuterStride<>(tot_cols)
+                    );
+
+                    RowMatrix C(Ctmp.nestByValue());
+                    C.resize(jsblk.nbf*ish.nbf, inner_size);
+
+                    g3_in.middleRows(subblock_offset*ish.nbf, jsblk.nbf*ish.nbf) -= 0.5
+                        * C.rightCols(ish.atom_dfnbf) * g2.block(
+                            ish.atom_dfbfoff, Xblk.bfoff,
+                            ish.atom_dfnbf, Xblk.nbf
+                    );
+                    if(ish.center != jsblk.center) {
+                      g3_in.middleRows(subblock_offset*ish.nbf, jsblk.nbf*ish.nbf) -= 0.5
+                          * C.leftCols(jsblk.atom_dfnbf) * g2.block(
+                              jsblk.atom_dfbfoff, Xblk.bfoff,
+                              jsblk.atom_dfnbf, Xblk.nbf
+                      );
+                    }
+                  }
+                  else {
+                    int rho_block_offset = 0;
+                    for(auto&& rho : function_range(gbs_, dfbs_, jsblk.bfoff, jsblk.last_function)) {
+                      for(auto&& mu : function_range(ish)) {
+                        //g3.row((subblock_offset + rho_block_offset)*ish.nbf + mu.off) -= 0.5 *
+                        //    coefs_transpose_blocked_[ish.center].col(mu.bfoff_in_atom*nbf + rho).transpose()
+                        //    * g2.middleRows(ish.atom_dfbfoff, ish.atom_dfnbf).middleCols(Xblk.bfoff, Xblk.nbf);
+                        //g3_in.row((subblock_offset + rho_block_offset)*ish.nbf + mu.off) -= 0.5 *
+                        //    coefs_transpose_blocked_[ish.center].col(mu.bfoff_in_atom*nbf + rho).transpose()
+                        //    * g2.middleRows(ish.atom_dfbfoff, ish.atom_dfnbf).middleCols(Xblk.bfoff, Xblk.nbf);
+                        g3.row(subblock_offset + rho_block_offset).segment(mu.off*Xblk.nbf, Xblk.nbf) -= 0.5 *
+                            coefs_transpose_blocked_[ish.center].col(mu.bfoff_in_atom*nbf + rho).transpose()
+                            * g2.middleRows(ish.atom_dfbfoff, ish.atom_dfnbf).middleCols(Xblk.bfoff, Xblk.nbf);
+                      }
+                      ++rho_block_offset;
+                    }
+
+                    if(ish.center != jsblk.center) {
+                      for(auto&& mu : function_range(ish)) {
+                        //g3_in.middleRows((subblock_offset + rho_block_offset)*ish.nbf, ish.nbf) -= 0.5 *
+                        //    coefs_transpose_blocked_[jsblk.center].middleCols(rho.bfoff_in_atom*nbf, ish.nbf).transpose()
+                        //     * g2.middleRows(jsblk.atom_dfbfoff, jsblk.atom_dfnbf).middleCols(Xblk.bfoff, Xblk.nbf);
+                        //g3.row(subblock_offset + rho_block_offset) -= 0.5 *
+                        //    coefs_transpose_blocked_[jsblk.center].middleCols(rho.bfoff_in_atom*nbf, ish.nbf).transpose()
+                        //     * g2.middleRows(jsblk.atom_dfbfoff, jsblk.atom_dfnbf).middleCols(Xblk.bfoff, Xblk.nbf);
+                        int rho_block_offset = 0;
+                        for(auto&& rho : function_range(gbs_, dfbs_, jsblk.bfoff, jsblk.last_function)) {
+                          g3.row(subblock_offset + rho_block_offset).segment(mu.off*Xblk.nbf, Xblk.nbf) -= 0.5 *
+                              coefs_transpose_blocked_[jsblk.center].col(rho.bfoff_in_atom*nbf + mu).transpose()
+                               * g2.middleRows(jsblk.atom_dfbfoff, jsblk.atom_dfnbf).middleCols(Xblk.bfoff, Xblk.nbf);
+                          ++rho_block_offset;
+                        }
+                      }
+                    }
+
+                  }
                 }
 
                 if(exact_diagonal_K_) {
+                  if(distribute_coefficients_) {
+                    throw FeatureNotImplemented("exact diagonal with distributed coefficients", __FILE__, __LINE__, class_desc());
+                  }
                   subtimer.change(ex_timer);
 
                   if(jsblk.center == Xblk.center or ish.center == Xblk.center) {
@@ -1209,6 +1368,11 @@ CADFCLHF::compute_K()
         }
         if(screen_B_) {
           delete[] D_sd_data;
+        }
+        if(distribute_coefficients_) {
+          delete[] dt_ish_X_data;
+          delete[] dt_prime_data;
+          delete[] gt_ish_X_data;
         }
 
         //============================================================================//

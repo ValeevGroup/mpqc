@@ -48,10 +48,10 @@ namespace detail {
   struct deref_compare<T*, compare>
   {
       bool operator()(T* const& a, T* const& b) const {
-        return cmp_(*a, *b);
+        return compare<T>()(*a, *b);
       }
     private:
-      compare<T> cmp_;
+      //compare<T> cmp_;
   };
 
   template<typename T>
@@ -165,7 +165,7 @@ class Node {
     std::vector<AssignableShellPair> pairs;
     std::array<std::vector<AssignableItem*>, 2> compute_coef_items;
     AssignmentBin* bin;
-    priority_queue<Node>::handle_type pq_handle;
+    typename ptr_priority_queue<Node*>::handle_type pq_handle;
     uli estimated_workload = 0;
     uli shell_pair_count = 0;
     uli basis_pair_count = 0;
@@ -200,7 +200,8 @@ class AssignmentBinRow;
 
 class AssignmentBin {
   public:
-    priority_queue<Node> nodes;
+    ptr_priority_queue<Node*> nodes;
+    std::vector<Node> nodes_list;
     std::vector<AssignableAtom*> assigned_dfbs_atoms;
     std::vector<AssignableShell*> assigned_obs_shells;
     std::array<std::vector<AssignableItem*>, 2> compute_coef_items;
@@ -221,13 +222,12 @@ class AssignmentBin {
     AssignmentGrid* grid;
 
     AssignmentBin(
-        uint id,
-        AssignmentBinRow* obs_row_id,
-        AssignmentBinRow* dfbs_row_id,
-        AssignmentGrid* grid
+        uint id, AssignmentGrid* grid
     );
 
-    Node& add_node(int index);
+    Node* add_node(int index);
+
+    void register_in_row(const AssignmentBinRow& row, bool is_df);
 
     void assign_dfbs_atom(AssignableItem* dfbs_atom) {
       assigned_dfbs_atoms.push_back(dynamic_cast<AssignableAtom*>(dfbs_atom));
@@ -254,8 +254,8 @@ class AssignmentBin {
 
     bool operator<(const AssignmentBin& other) const;
 
-    priority_queue<AssignmentBin>::handle_type pq_handle;
-    std::array<ptr_priority_queue<AssignmentBin*, detail::more_work>::handle_type, 2> row_handles;
+    typename priority_queue<AssignmentBin>::handle_type pq_handle;
+    std::array<typename ptr_priority_queue<AssignmentBin*, detail::more_work>::handle_type, 2> row_handles;
 };
 
 class AssignmentBinRow {
@@ -287,7 +287,7 @@ class AssignmentBinRow {
       return estimated_workload > other.estimated_workload;
     }
 
-    priority_queue<AssignmentBinRow>::handle_type pq_handle;
+    typename priority_queue<AssignmentBinRow>::handle_type pq_handle;
 };
 
 class AssignmentGrid {
@@ -299,9 +299,10 @@ class AssignmentGrid {
     std::vector<AssignableShell> obs_shells_;
     priority_queue<AssignmentBin> bins_;
     priority_queue<AssignmentBinRow> obs_rows_;
+    //std::vector<AssignmentBinRow> obs_rows_list_;
     priority_queue<AssignmentBinRow> dfbs_rows_;
+    //std::vector<AssignmentBinRow> dfbs_rows_list_;
     std::vector<Node*> nodes_;
-    std::vector<AssignmentBin*> bins_by_id_;
 
   public:
 

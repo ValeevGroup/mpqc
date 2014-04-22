@@ -58,7 +58,6 @@ CADFCLHF::compute_coefficients()
   // Now initialize the coefficient memory.
   // First, compute the amount of memory needed
 
-  // Coefficients will be stored jbf <= ibf
   timer.enter("01 - init coef memory");
 
   uli ncoefs = 0;                                                                          //latex `\label{sc:coefcountbegin}`
@@ -66,72 +65,118 @@ CADFCLHF::compute_coefficients()
   std::vector<uli> offsets;
   std::vector<uli> block_sizes;
   uli ioffset = 0;
-  for(int iatom = 0; iatom < natom; ++iatom) {
-    const uli atom_nbf = gbs_->nbasis_on_center(iatom);
-    const uli atom_dfnbf = dfbs_->nbasis_on_center(iatom);
-    const uli block_size = atom_nbf * nbf * atom_dfnbf;
-    offsets.push_back(ioffset);
-    ioffset += block_size;
-    block_sizes.push_back(block_size);
-  }
-  ncoefs = ioffset;
 
-  ExEnv::out0() << indent << "Need " << data_size_to_string(ncoefs*sizeof(double))
-                << " for main coefficients storage." << std::endl;
-  memory_used_ += ncoefs*sizeof(double);
-  ExEnv::out0() << indent << "Total memory usage is at least " << data_size_to_string(memory_used_) << std::endl;
+  if(distribute_coefficients_) {
+    local_pairs_spot_ = 0;
+    ShellData ish, jsh;
+    while(get_shell_pair(ish, jsh, SignificantPairs)) {
+      ncoefs += ish.nbf * jsh.nbf * (ish.atom_dfnbf + (ish.center == jsh.center ? 0 : jsh.atom_dfnbf));
+    }
 
-  //coefficients_data_ = allocate<double>(ncoefs);                                           //latex `\label{sc:coefalloc}`
-  coefficients_data_ = new double[ncoefs];                                           //latex `\label{sc:coefalloc}`
+    ExEnv::out0() << indent << "Need " << data_size_to_string(ncoefs*sizeof(double))
+                  << " for main coefficients storage." << std::endl;
+    memory_used_ += ncoefs*sizeof(double);
+    ExEnv::out0() << indent << "Total memory usage is at least "
+                  << data_size_to_string(memory_used_) << std::endl;
 
-  memset(coefficients_data_, 0, ncoefs * sizeof(double));
+    coefficients_data_ = new double[ncoefs];
 
-  coefs_transpose_blocked_.reserve(natom);
-  coefs_transpose_blocked_other_.reserve(natom);
-  coefs_transpose_.reserve(dfnbf);
+    memset(coefficients_data_, 0, ncoefs * sizeof(double));
 
-  for(int iatom = 0; iatom < natom; ++iatom){
+    double* spot = coefficients_data_;
+    local_pairs_spot_ = 0;
+    while(get_shell_pair(ish, jsh, SignificantPairs)) {
+      for(auto&& mu : function_range(ish)) {
+        for(auto&& nu : function_range(jsh)) {
+          if(nu > mu) continue;
+          CoefContainer coefs_a = make_shared<CoefView>(
+              spot,
+              ish.atom_dfnbf,
+              Eigen::Stride<1, Eigen::Dynamic>(1, 1)
+          );
+          CoefContainer coefs_b = make_shared<CoefView>(
+              spot + (ish.center == jsh.center ? 0 : ish.atom_dfnbf),
+              jsh.atom_dfnbf,
+              Eigen::Stride<1, Eigen::Dynamic>(1, 1)
+          );
 
-    const int atom_nbf = gbs_->nbasis_on_center(iatom);
-    coefs_transpose_blocked_.emplace_back(
-        coefficients_data_ + offsets[iatom],
-        dfbs_->nbasis_on_center(iatom),
-        atom_nbf * nbf
-    );
-    coefs_transpose_blocked_other_.emplace_back(
-        coefficients_data_ + offsets[iatom],
-        dfbs_->nbasis_on_center(iatom) * atom_nbf,
-        nbf
-    );
-
-    //memory_used_ += dfbs_->nbasis_on_center(iatom) * atom_nbf * nbf * sizeof(double) + sizeof(RowMatrix);
-
-    // The transpose coefficients
-    auto& cblock = coefs_transpose_blocked_[iatom];
-    for(auto&& X : iter_functions_on_center(dfbs_, iatom)) {
-      double* offset = cblock.data() + X.bfoff_in_atom * nbf * atom_nbf;
-      coefs_transpose_.emplace_back(
-          offset,
-          atom_nbf, nbf
-      );
-
-      memory_used_ += sizeof(Eigen::Map<RowMatrix>);
+          coefs_.emplace(std::make_pair(int(mu), int(nu)), std::make_pair(coefs_a, coefs_b));
+          if(mu != nu) {
+            coefs_.emplace(std::make_pair(int(nu), int(mu)), std::make_pair(coefs_b, coefs_a));
+          }
+          spot += ish.atom_dfnbf;
+          if(mu.center != nu.center) spot += jsh.atom_dfnbf;
+        }
+      }
     }
 
   }
+  else {
+    for(int iatom = 0; iatom < natom; ++iatom) {
+      const uli atom_nbf = gbs_->nbasis_on_center(iatom);
+      const uli atom_dfnbf = dfbs_->nbasis_on_center(iatom);
+      const uli block_size = atom_nbf * nbf * atom_dfnbf;
+      offsets.push_back(ioffset);
+      ioffset += block_size;
+      block_sizes.push_back(block_size);
+    }
+    ncoefs = ioffset;
 
-  for(auto mu : function_range(gbs_, dfbs_)){
-    for(auto rho : function_range(gbs_, dfbs_)){
-      double *data_spot_a = coefficients_data_ + offsets[mu.center] + mu.bfoff_in_atom*nbf + rho;
-      double *data_spot_b = coefficients_data_ + offsets[rho.center] + rho.bfoff_in_atom*nbf + mu;
-      IntPair ij(mu, rho);
-      CoefContainer coefs_a = make_shared<CoefView>(
-          data_spot_a, mu.atom_dfnbf, Eigen::Stride<1, Eigen::Dynamic>(1, mu.atom_nbf * nbf)
+    ExEnv::out0() << indent << "Need " << data_size_to_string(ncoefs*sizeof(double))
+                  << " for main coefficients storage." << std::endl;
+    memory_used_ += ncoefs*sizeof(double);
+    ExEnv::out0() << indent << "Total memory usage is at least "
+                  << data_size_to_string(memory_used_) << std::endl;
+
+    coefficients_data_ = new double[ncoefs];                                           //latex `\label{sc:coefalloc}`
+
+    memset(coefficients_data_, 0, ncoefs * sizeof(double));
+
+    coefs_transpose_blocked_.reserve(natom);
+    coefs_transpose_blocked_other_.reserve(natom);
+    coefs_transpose_.reserve(dfnbf);
+
+    for(int iatom = 0; iatom < natom; ++iatom){
+
+      const int atom_nbf = gbs_->nbasis_on_center(iatom);
+      coefs_transpose_blocked_.emplace_back(
+          coefficients_data_ + offsets[iatom],
+          dfbs_->nbasis_on_center(iatom),
+          atom_nbf * nbf
       );
-      CoefContainer coefs_b = make_shared<CoefView>(
-          data_spot_b, rho.atom_dfnbf, Eigen::Stride<1, Eigen::Dynamic>(1, rho.atom_nbf * nbf)
+      coefs_transpose_blocked_other_.emplace_back(
+          coefficients_data_ + offsets[iatom],
+          dfbs_->nbasis_on_center(iatom) * atom_nbf,
+          nbf
       );
-      coefs_.emplace(ij, std::make_pair(coefs_a, coefs_b));
+
+      // The transpose coefficients
+      auto& cblock = coefs_transpose_blocked_[iatom];
+      for(auto&& X : iter_functions_on_center(dfbs_, iatom)) {
+        double* offset = cblock.data() + X.bfoff_in_atom * nbf * atom_nbf;
+        coefs_transpose_.emplace_back(
+            offset,
+            atom_nbf, nbf
+        );
+
+        memory_used_ += sizeof(Eigen::Map<RowMatrix>);
+      }
+
+    }
+
+    for(auto mu : function_range(gbs_, dfbs_)){
+      for(auto rho : function_range(gbs_, dfbs_)){
+        double *data_spot_a = coefficients_data_ + offsets[mu.center] + mu.bfoff_in_atom*nbf + rho;
+        double *data_spot_b = coefficients_data_ + offsets[rho.center] + rho.bfoff_in_atom*nbf + mu;
+        IntPair ij(mu, rho);
+        CoefContainer coefs_a = make_shared<CoefView>(
+            data_spot_a, mu.atom_dfnbf, Eigen::Stride<1, Eigen::Dynamic>(1, mu.atom_nbf * nbf)
+        );
+        CoefContainer coefs_b = make_shared<CoefView>(
+            data_spot_b, rho.atom_dfnbf, Eigen::Stride<1, Eigen::Dynamic>(1, rho.atom_nbf * nbf)
+        );
+        coefs_.emplace(ij, std::make_pair(coefs_a, coefs_b));
+      }
     }
   }
 
@@ -190,7 +235,7 @@ CADFCLHF::compute_coefficients()
           }
           get_coefs_ish_jsh(ish, jsh, ithr, coefsA, coefsB);
 
-          if(ish != jsh){
+          if(ish != jsh and !distribute_coefficients_){
             coefsA.clear();
             coefsB.clear();
             for(auto&& nu : function_range(jsh)) {
@@ -220,16 +265,18 @@ CADFCLHF::compute_coefficients()
   ExEnv::out0() << indent << "Distributing coefficients" << std::endl;
   timer.change("03 - global sum coefficient memory");
   // TODO MessageGrp takes an int here, and if ncoefs is large, it needs to take a long
-  if(ncoefs * sizeof(double) < std::numeric_limits<int>::max()) {
-    scf_grp_->sum(coefficients_data_, ncoefs);                                               //latex `\label{sc:coefsum}`
-  }
-  else {
-    int chunk_size = std::numeric_limits<int>::max() / sizeof(double);
-    for(int ichunk = 0; ichunk < ncoefs / chunk_size; ++ichunk) {
-      scf_grp_->sum(coefficients_data_ + ichunk*chunk_size, chunk_size);
+  if(not distribute_coefficients_) {
+    if(ncoefs * sizeof(double) < std::numeric_limits<int>::max()) {
+      scf_grp_->sum(coefficients_data_, ncoefs);                                               //latex `\label{sc:coefsum}`
     }
-    if(ncoefs % chunk_size > 0) {
-      scf_grp_->sum(coefficients_data_ + (ncoefs / chunk_size) * chunk_size, ncoefs % chunk_size);
+    else {
+      int chunk_size = std::numeric_limits<int>::max() / sizeof(double);
+      for(int ichunk = 0; ichunk < ncoefs / chunk_size; ++ichunk) {
+        scf_grp_->sum(coefficients_data_ + ichunk*chunk_size, chunk_size);
+      }
+      if(ncoefs % chunk_size > 0) {
+        scf_grp_->sum(coefficients_data_ + (ncoefs / chunk_size) * chunk_size, ncoefs % chunk_size);
+      }
     }
   }
 
@@ -519,6 +566,7 @@ CADFCLHF::compute_coefficients()
 
   if(do_linK_) {
 
+    /*
     do_threaded(nthread_, [&](int ithr) {
       for(auto&& lsh : thread_over_range(shell_range(obs), ithr, nthread_)) {
         for(auto&& ksh : L_schwarz[lsh]) {
@@ -575,57 +623,97 @@ CADFCLHF::compute_coefficients()
         L_coefs_iter.advance(nthread_);
       }
     });
+    */
 
     //----------------------------------------//
     // Compute the Frobenius norm of C_transpose_ blocks
     timer.change("07 - C_trans_frob");
-    C_trans_frob_.resize(dfbs_->nshell());
-    for(auto Xsh : shell_range(dfbs_, obs)) {
+    if(distribute_coefficients_) {
+      C_trans_frob_.resize(dfbs_->nshell());
+      const cadf::Node& my_part = atom_pair_assignments_k_->my_assignments(scf_grp_->me());
+      for(auto Xatom : my_part.bin->assigned_dfbs_atoms) {
+        //ShellBlockData<> Xblk = ShellBlockData<>::atom_block(Xatom->index, dfbs_, gbs_);
+        for(auto&& Xsh : iter_shells_on_center(dfbs_, Xatom->index, gbs_)) {
 
-      resize_and_zero_matrix(C_trans_frob_[Xsh], Xsh.atom_obsnsh, obs->nshell());
+          resize_and_zero_matrix(C_trans_frob_[Xsh], Xsh.atom_obsnsh, obs->nshell());
 
-      for(auto&& ish : iter_shells_on_center(obs, Xsh.center)) {
-        for(auto&& jsh : shell_range(obs)) {
-          //double frob_val = 0.0;
-          //for(auto&& X : function_range(Xsh)) {
-          //  for(auto&& mu : function_range(ish)) {
-          //    for(auto&& rho : function_range(jsh)) {
-          //      // TODO Don't use coeffRef here
-          //      const double cval = coefs_transpose_[X](mu.bfoff_in_atom, rho);
-          //      frob_val += cval * cval;
-          //    }
-          //  }
-          //} // end loop over X in Xsh
-          //C_trans_frob_[Xsh](ish.shoff_in_atom, jsh) = sqrt(frob_val);
-
-          for(auto&& mu : function_range(ish)) {
-            C_trans_frob_[Xsh](ish.shoff_in_atom, jsh) += coefs_transpose_blocked_[Xsh.center].block(
-                Xsh.bfoff_in_atom, mu.bfoff_in_atom*nbf + jsh.bfoff,
-                Xsh.nbf, jsh.nbf
-            ).squaredNorm();
+          for(auto&& ish : iter_shells_on_center(obs, Xsh.center)) {
+            for(auto&& jsh : shell_range(obs)) {
+              C_trans_frob_[Xsh](ish.shoff_in_atom, jsh) += coefs_X_nu.at(Xsh.center).block(
+                  Xsh.bfoff_in_atom, ish.bfoff_in_atom*nbf + jsh.bfoff,
+                  Xsh.nbf, jsh.nbf
+              ).squaredNorm();
+            }
           }
-        } // end loop over jsh
-      } // end loop over ish
-      C_trans_frob_[Xsh] = C_trans_frob_[Xsh].array().sqrt();
-    } // end loop over Xsh
+
+          C_trans_frob_[Xsh] = C_trans_frob_[Xsh].array().sqrt();
+
+        }
+      }
+    }
+    else {
+      C_trans_frob_.resize(dfbs_->nshell());
+      for(auto Xsh : shell_range(dfbs_, obs)) {
+
+        resize_and_zero_matrix(C_trans_frob_[Xsh], Xsh.atom_obsnsh, obs->nshell());
+
+        for(auto&& ish : iter_shells_on_center(obs, Xsh.center)) {
+          for(auto&& jsh : shell_range(obs)) {
+            for(auto&& mu : function_range(ish)) {
+              C_trans_frob_[Xsh](ish.shoff_in_atom, jsh) += coefs_transpose_blocked_[Xsh.center].block(
+                  Xsh.bfoff_in_atom, mu.bfoff_in_atom*nbf + jsh.bfoff,
+                  Xsh.nbf, jsh.nbf
+              ).squaredNorm();
+            }
+          } // end loop over jsh
+        } // end loop over ish
+
+        C_trans_frob_[Xsh] = C_trans_frob_[Xsh].array().sqrt();
+
+      } // end loop over Xsh
+    }
     //----------------------------------------//
 
     // Compute Cmaxes_
     timer.change("08 - Cbar");
     resize_and_zero_matrix(C_bar_, gbs_->nshell(), dfbs_->nshell());
-    C_bar_.resize(gbs_->nshell(), dfbs_->nshell());
     if(use_norms_nu_) {
-      for(auto&& Xsh : shell_range(dfbs_, gbs_)) {
-        C_bar_.col(Xsh) = C_trans_frob_[Xsh].colwise().squaredNorm();
-        auto& same_part =
-        C_bar_.col(Xsh).segment(Xsh.atom_obsshoff, Xsh.atom_obsnsh) +=
-            C_trans_frob_[Xsh].rowwise().squaredNorm();
-        C_bar_.col(Xsh).segment(Xsh.atom_obsshoff, Xsh.atom_obsnsh) -=
-            C_trans_frob_[Xsh].middleCols(Xsh.atom_obsshoff, Xsh.atom_obsnsh).rowwise().squaredNorm();
+      if(distribute_coefficients_) {
+        const cadf::Node& my_part = atom_pair_assignments_k_->my_assignments(scf_grp_->me());
+        for(auto Xatom : my_part.bin->assigned_dfbs_atoms) {
+          for(auto&& Xsh : iter_shells_on_center(dfbs_, Xatom->index, gbs_)) {
+            C_bar_.col(Xsh) = C_trans_frob_[Xsh].colwise().squaredNorm();
+            C_bar_.col(Xsh).segment(Xsh.atom_obsshoff, Xsh.atom_obsnsh) +=
+                C_trans_frob_[Xsh].rowwise().squaredNorm();
+            C_bar_.col(Xsh).segment(Xsh.atom_obsshoff, Xsh.atom_obsnsh) -=
+                C_trans_frob_[Xsh].middleCols(Xsh.atom_obsshoff, Xsh.atom_obsnsh).rowwise().squaredNorm();
+          }
+          C_bar_ = C_bar_.array().sqrt();
+        }
+
+        // Node-row-wise sum of X parts of C_bar_
+        {
+          Ref<MessageGrp> X_grp = scf_grp_->split(my_part.bin->dfbs_row_id);
+          X_grp->sum(C_bar_.data(), gbs_->nshell() * dfbs_->nshell());
+        } // X_grp is deleted
+        sc::SCFormIO::init_mp(scf_grp_->me());
+
       }
-      C_bar_ = C_bar_.array().sqrt();
+      else {
+        for(auto&& Xsh : shell_range(dfbs_, gbs_)) {
+          C_bar_.col(Xsh) = C_trans_frob_[Xsh].colwise().squaredNorm();
+          C_bar_.col(Xsh).segment(Xsh.atom_obsshoff, Xsh.atom_obsnsh) +=
+              C_trans_frob_[Xsh].rowwise().squaredNorm();
+          C_bar_.col(Xsh).segment(Xsh.atom_obsshoff, Xsh.atom_obsnsh) -=
+              C_trans_frob_[Xsh].middleCols(Xsh.atom_obsshoff, Xsh.atom_obsnsh).rowwise().squaredNorm();
+        }
+        C_bar_ = C_bar_.array().sqrt();
+      }
     }
     else {
+      if(distribute_coefficients_) {
+        throw FeatureNotImplemented("use_norms_nu = false with distributed coefficients", __FILE__, __LINE__, class_desc());
+      }
 
       // TODO just do this in the above loop similarly
       for(auto Xsh : shell_range(dfbs_)){
@@ -656,21 +744,21 @@ CADFCLHF::compute_coefficients()
   /* Sparse coefficients                                   		                        {{{1 */ #if 1 // begin fold
   //---------------------------------------------------------------------------------------//
 
-  if(use_sparse_) {
-    std::vector<Eigen::Triplet<double>> triplets;
-    for(auto&& ckvpair : coefs_) {
-      const BasisFunctionData mu(ckvpair.first.first, gbs_, dfbs_);
-      const BasisFunctionData nu(ckvpair.first.second, gbs_, dfbs_);
-      const auto& Ca = *ckvpair.second.first;
-      const auto& Cb = *ckvpair.second.second;
-      for(int Xoff = 0; Xoff < mu.atom_dfnbf; ++Xoff) {
-        const double val = Ca[Xoff];
-        triplets.emplace_back(mu.index, nu.index*dfnbf + mu.atom_dfnbf + Xoff, val);
-      }
-      coefs_sp_.resize(nbf, nbf*dfnbf);
+  //if(use_sparse_) {
+  //  std::vector<Eigen::Triplet<double>> triplets;
+  //  for(auto&& ckvpair : coefs_) {
+  //    const BasisFunctionData mu(ckvpair.first.first, gbs_, dfbs_);
+  //    const BasisFunctionData nu(ckvpair.first.second, gbs_, dfbs_);
+  //    const auto& Ca = *ckvpair.second.first;
+  //    const auto& Cb = *ckvpair.second.second;
+  //    for(int Xoff = 0; Xoff < mu.atom_dfnbf; ++Xoff) {
+  //      const double val = Ca[Xoff];
+  //      triplets.emplace_back(mu.index, nu.index*dfnbf + mu.atom_dfnbf + Xoff, val);
+  //    }
+  //    coefs_sp_.resize(nbf, nbf*dfnbf);
 
-    }
-  }
+  //  }
+  //}
 
 
 

@@ -73,12 +73,17 @@ CADFCLHF::init_threads()
   Timer timer("init threads");
   assert(not threads_initialized_);
 
+  ExEnv::out0() << indent << "Initializing CADFCLHF" << std::endl;
+  ExEnv::out0() << incindent;
+
   //----------------------------------------------------------------------------//
 
   const int n_node = scf_grp_->n();
 
   //----------------------------------------------------------------------------//
   // initialize the two electron integral classes
+
+  ExEnv::out0() << indent << "Initializing 3 center integral evaluators" << std::endl;
 
   // ThreeCenter versions
   integral()->set_basis(gbs_, gbs_, dfbs_);
@@ -102,6 +107,8 @@ CADFCLHF::init_threads()
     }
   }
 
+  ExEnv::out0() << indent << "Initializing 2 center integral evaluators" << std::endl;
+
   // TwoCenter versions
   integral()->set_basis(dfbs_, dfbs_);
   eris_2c_.resize(nthread_);
@@ -124,11 +131,13 @@ CADFCLHF::init_threads()
 
   //----------------------------------------------------------------------------//
   // TODO fix this so that deallocating the tbis_ array doesn't cause a seg fault when this isn't called (we don't need it)
+  ExEnv::out0() << indent << "Initializing parent classes" << endl;
   SCF::init_threads();
 
   //----------------------------------------------------------------------------//
   // Set up the all pairs vector, needed to prescreen Schwarz bounds
   if(not dynamic_){
+    ExEnv::out0() << indent << "Computing static distribution of all pairs" << endl;
     const int nshell = gbs_->nshell();
     for(int ish=0, inode=0; ish < nshell; ++ish){
       for(int jsh=0; jsh <= ish; ++jsh, ++inode){
@@ -147,10 +156,12 @@ CADFCLHF::init_threads()
 
   //----------------------------------------------------------------------------//
 
+  ExEnv::out0() << indent << "Initializing significant basis function pairs" << endl;
   init_significant_pairs();
 
   //----------------------------------------------------------------------------//
 
+  ExEnv::out0() << indent << "Computing static distribution of significant pairs for Coulomb" << endl;
   const int me = scf_grp_->me();
   int inode = 0;
   for(auto&& sig_pair : sig_pairs_) {
@@ -162,6 +173,7 @@ CADFCLHF::init_threads()
     ++inode;
   }
 
+  ExEnv::out0() << indent << "Computing static distribution of (obs, dfbs) pairs for exchange" << endl;
   atom_pair_assignments_k_ = make_shared<cadf::AssignmentGrid>(
       gbs_, dfbs_, scf_grp_->n()
   );
@@ -186,34 +198,12 @@ CADFCLHF::init_threads()
     }
   }
 
-  // Make the assignments for the mu, X pairs in K
-  //inode = 0;
-  //for(auto&& ish : shell_range(gbs_)) {
-  //  for(auto&& Xblk : shell_block_range(dfbs_, gbs_, 0, NoLastIndex, SameCenter)) {
-  //    const int assignment = inode % n_node; ++inode;
-  //    auto pair = std::make_pair(ish, Xblk);
-  //    pair_assignments_k_[pair] = assignment;
-  //    if(assignment == me) {
-  //      local_pairs_k_.push_back(pair);
-  //    }
-
-  //  } // end loop over blocks for mu
-  //} // end loop over mu sets
-
-  //inode = 0;
-  //// TODO Non-round-robin static parallelism to make lookup faster in L_3 build
-  //for(auto&& ish : shell_range(gbs_)) {
-  //  for(auto&& Xsh : shell_range(dfbs_)) {
-  //    const int assignment = inode % n_node; ++inode;
-  //    if(assignment == me) {
-  //      local_pairs_linK_.emplace(ish, (int)Xsh);
-  //      linK_local_map_[Xsh].push_back(ish);
-  //    }
-  //  } // end loop over Xsh
-  //} // end loop over ish
 
   //----------------------------------------------------------------------------//
   threads_initialized_ = true;
+
+  ExEnv::out0() << decindent;
+  ExEnv::out0() << indent << "Done initializing CADFCLHF" << endl;
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -222,7 +212,10 @@ void
 CADFCLHF::init_significant_pairs()
 {
   Timer timer("init significant pairs");
-  ExEnv::out0() << "  Computing significant shell pairs" << endl;
+
+  ExEnv::out0() << incindent;
+  ExEnv::out0() << indent << "Computing Schwarz matrix" << endl;
+
   std::atomic_int n_significant_pairs(0);
   boost::mutex pair_mutex;
   std::vector<std::pair<double, IntPair>> pair_values;
@@ -260,6 +253,9 @@ CADFCLHF::init_significant_pairs()
   });
   //----------------------------------------//
   // All-to-all the shell-wise Frobenius norms of the Schwarz matrix
+
+  ExEnv::out0() << indent << "Distributing Schwarz matrix" << endl;
+
   scf_grp_->sum(schwarz_frob_.data(), gbs_->nshell() * gbs_->nshell());
   //const double schwarz_norm = schwarz_frob_.norm();
   // In this case we do actually want the max norm
@@ -302,6 +298,8 @@ CADFCLHF::init_significant_pairs()
   // Now all-to-all the significant pairs
   // This should be done with an MPI_alltoall_v or something like that
 
+  ExEnv::out0() << indent << "Distributing significant pairs list" << endl;
+
   int n_sig = n_significant_pairs;
   int my_n_sig = n_significant_pairs;
   int n_sig_pairs[scf_grp_->n()];
@@ -341,6 +339,7 @@ CADFCLHF::init_significant_pairs()
 
   //============================================================================//
   // Now compute the significant pairs for the outer loop of the exchange and the sig_partners_ array
+  ExEnv::out0() << indent << "Computing the sig partners array" << endl;
   sig_partners_.resize(gbs_->nshell());
   int pair_index = 0;
   for(auto&& pair : sig_pairs_) {
@@ -380,6 +379,7 @@ CADFCLHF::init_significant_pairs()
 
   //============================================================================//
   // Compute the centers, the pair centers, and the pair extents
+  ExEnv::out0() << indent << "Computing pair centers and extents" << endl;
   centers_.resize(molecule()->natom());
   for(int iatom = 0; iatom < molecule()->natom(); ++iatom) {
     const double* r = molecule()->r(iatom);
@@ -491,9 +491,11 @@ CADFCLHF::init_significant_pairs()
 
   //----------------------------------------//
 
-  ExEnv::out0() << "  Number of significant shell pairs:  " << n_sig << endl;
-  ExEnv::out0() << "  Number of total basis pairs:  " << (gbs_->nshell() * (gbs_->nshell() + 1) / 2) << endl;
-  ExEnv::out0() << "  Schwarz Norm = " << schwarz_norm << endl;
+  ExEnv::out0() << indent << "Number of significant shell pairs:  " << n_sig << endl;
+  ExEnv::out0() << indent << "  Number of total basis pairs:  " << (gbs_->nshell() * (gbs_->nshell() + 1) / 2) << endl;
+  ExEnv::out0() << indent << "  Schwarz Norm = " << schwarz_norm << endl;
+  ExEnv::out0() << decindent;
+  ExEnv::out0() << indent << "Done computing significant pairs" << endl;
 
 }
 

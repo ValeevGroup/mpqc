@@ -124,6 +124,7 @@ class CADFCLHF: public CLHF {
     > CoefMap;
     typedef Eigen::HouseholderQR<Eigen::MatrixXd> Decomposition;
     typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> RowMatrix;
+    typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> ColMatrix;
     typedef Eigen::SparseMatrix<double, Eigen::RowMajor> SparseRowMatrix;
     typedef Eigen::Map<RowMatrix, Eigen::Unaligned, Eigen::OuterStride<>> StridedRowMap;
 
@@ -685,6 +686,7 @@ class CADFCLHF: public CLHF {
     std::unordered_map<int, Eigen::Map<RowMatrix>> coefs_X_nu;
     std::unordered_map<int, Eigen::Map<RowMatrix>> coefs_X_nu_other;
     std::unordered_map<int, Eigen::Map<RowMatrix>> coefs_mu_X;
+    std::unordered_map<int, Eigen::Map<RowMatrix>> coefs_mu_X_other;
 
     CoefMap coefs_;
 

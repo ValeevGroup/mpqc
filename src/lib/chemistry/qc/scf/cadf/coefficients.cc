@@ -302,6 +302,14 @@ CADFCLHF::compute_coefficients()
               ish.nbf, nbf*ish.atom_dfnbf
           )
       );
+      coefs_mu_X_other.emplace(
+          std::piecewise_construct,
+          std::forward_as_tuple(ish),
+          std::forward_as_tuple(
+              dist_coefs_data_ + my_part.bin->obs_coef_offsets.at(ish),
+              ish.nbf*nbf, ish.atom_dfnbf
+          )
+      );
     }
     for(auto&& dfbs_atom : my_part.bin->assigned_dfbs_atoms) {
       ShellBlockData<> Xblk = ShellBlockData<>::atom_block(dfbs_atom->index, dfbs_, gbs_);

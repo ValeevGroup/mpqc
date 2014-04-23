@@ -727,22 +727,56 @@ CADFCLHF::compute_K()
               dt_ish_X  = RowMatrix::Zero(ish.nbf * Xsh.nbf, nbf);
               new (&dt_prime) Eigen::Map<RowMatrix>(dt_prime_data, ish.nbf * Xsh.nbf, Xsh.atom_obsnbf);
               dt_prime  = RowMatrix::Zero(ish.nbf * Xsh.nbf, Xsh.atom_obsnbf);
-              for(auto&& mu : function_range(ish)) {
-                for(auto sigma : iter_functions_on_center(gbs_, Xsh.center)) {
-                  dt_ish_X.middleRows(mu.off*Xsh.nbf, Xsh.nbf) += 2.0 * D(mu, sigma)
-                        * coefs_X_nu.at(Xsh.center).middleRows(
-                            Xsh.bfoff_in_atom, Xsh.nbf
-                        ).middleCols(sigma.bfoff_in_atom*nbf, nbf);
+              //Eigen::Map<RowMatrix, Eigen::Default, Eigen::OuterStride<Eigen::Dynamic>> dt_ish_part(
+              //    dt_ish_X.data(), ish.nbf, nbf, Eigen::OuterStride<Eigen::Dynamic>(Xsh.nbf*nbf)
+              //);
+              {
+                Eigen::Map<RowMatrix, Eigen::Default, Eigen::OuterStride<Eigen::Dynamic>> dt_ish_part(
+                    NULL, 0, 0, Eigen::OuterStride<Eigen::Dynamic>(Xsh.nbf*nbf)
+                );
+                for(auto&& X : function_range(Xsh)) {
+                  new (&dt_ish_part) Eigen::Map<RowMatrix, Eigen::Unaligned, Eigen::OuterStride<Eigen::Dynamic>>(
+                      dt_ish_X.data() + X.off*nbf, ish.nbf, nbf, Eigen::OuterStride<Eigen::Dynamic>(Xsh.nbf*nbf)
+                  );
+                  dt_ish_part += 2.0 *
+                      D.middleRows(ish.bfoff, ish.nbf).middleCols(Xsh.atom_obsbfoff, Xsh.atom_obsnbf)
+                      * coefs_X_nu_other.at(Xsh.center).middleRows(
+                          X.bfoff_in_atom*Xsh.atom_obsnbf, Xsh.atom_obsnbf
+                      );
                 }
               }
-              for(auto&& mu : function_range(ish)) {
-                for(auto&& nu : iter_functions_on_center(gbs_, Xsh.center)) {
-                  dt_prime.middleRows(mu.off*Xsh.nbf, Xsh.nbf).col(nu.bfoff_in_atom) += 2.0 *
-                      coefs_X_nu.at(Xsh.center).middleRows(Xsh.bfoff_in_atom, Xsh.nbf).middleCols(
-                          nu.bfoff_in_atom*nbf, nbf
-                      )
-                      * D.col(mu);
+              //for(auto&& mu : function_range(ish)) {
+              //  for(auto sigma : iter_functions_on_center(gbs_, Xsh.center)) {
+              //    dt_ish_X.middleRows(mu.off*Xsh.nbf, Xsh.nbf) += 2.0 * D(mu, sigma)
+              //          * coefs_X_nu.at(Xsh.center).middleRows(
+              //              Xsh.bfoff_in_atom, Xsh.nbf
+              //          ).middleCols(sigma.bfoff_in_atom*nbf, nbf);
+              //  }
+              //}
+              {
+                Eigen::Map<RowMatrix, Eigen::Default, Eigen::OuterStride<Eigen::Dynamic>> dt_p_part(
+                    NULL, 0, 0, Eigen::OuterStride<Eigen::Dynamic>(Xsh.nbf*nbf)
+                );
+                for(auto&& X : function_range(Xsh)) {
+                  new (&dt_p_part) Eigen::Map<RowMatrix, Eigen::Unaligned, Eigen::OuterStride<Eigen::Dynamic>>(
+                      dt_prime.data() + X.off*Xsh.atom_obsnbf, ish.nbf, Xsh.atom_obsnbf,
+                      Eigen::OuterStride<Eigen::Dynamic>(Xsh.nbf*Xsh.atom_obsnbf)
+                  );
+                  dt_p_part += 2.0 *
+                      D.middleRows(ish.bfoff, ish.nbf)
+                      * coefs_X_nu_other.at(Xsh.center).middleRows(
+                          X.bfoff_in_atom*Xsh.atom_obsnbf, Xsh.atom_obsnbf
+                      ).transpose();
                 }
+                //for(auto&& mu : function_range(ish)) {
+                //  for(auto&& nu : iter_functions_on_center(gbs_, Xsh.center)) {
+                //    dt_prime.middleRows(mu.off*Xsh.nbf, Xsh.nbf).col(nu.bfoff_in_atom) += 2.0 *
+                //        coefs_X_nu.at(Xsh.center).middleRows(Xsh.bfoff_in_atom, Xsh.nbf).middleCols(
+                //            nu.bfoff_in_atom*nbf, nbf
+                //        )
+                //        * D.col(mu);
+                //  }
+                //}
               }
 
               mt_timer.change("form g and K contributions", ithr);
@@ -758,12 +792,16 @@ CADFCLHF::compute_K()
                 new (&gt_ish_X) Eigen::Map<RowMatrix>(gt_ish_X_data, ish.nbf*Xblk.nbf, jblk.nbf);
                 gt_ish_X = RowMatrix::Zero(ish.nbf*Xblk.nbf, jblk.nbf);
                 for(auto&& mu : function_range(ish)) {
-                  for(auto&& rho : function_range(gbs_, dfbs_, jblk.bfoff, jblk.last_function)) {
-                    gt_ish_X.middleRows(mu.off*Xblk.nbf, Xblk.nbf).col(rho - jblk.bfoff) -= 0.5 *
-                        g2.middleRows(Xblk.bfoff, Xblk.nbf).middleCols(ish.atom_dfbfoff, ish.atom_dfnbf)
-                        * coefs_mu_X.at(ish).row(mu.off).segment(rho*ish.atom_dfnbf, ish.atom_dfnbf).transpose();
-                  }
+                  gt_ish_X.middleRows(mu.off*Xblk.nbf, Xblk.nbf) -= 0.5 *
+                      g2.middleCols(ish.atom_dfbfoff, ish.atom_dfnbf).middleRows(Xblk.bfoff, Xblk.nbf)
+                      * coefs_mu_X_other.at(ish).middleRows(mu.off*nbf + jblk.bfoff, jblk.nbf).transpose();
+                  //for(auto&& rho : function_range(gbs_, dfbs_, jblk.bfoff, jblk.last_function)) {
+                  //  gt_ish_X.middleRows(mu.off*Xblk.nbf, Xblk.nbf).col(rho - jblk.bfoff) -= 0.5 *
+                  //      g2.middleRows(Xblk.bfoff, Xblk.nbf).middleCols(ish.atom_dfbfoff, ish.atom_dfnbf)
+                  //      * coefs_mu_X.at(ish).row(mu.off).segment(rho*ish.atom_dfnbf, ish.atom_dfnbf).transpose();
+                  //}
                 }
+
 
                 holder.change(k_contrib_timer);
                 for(auto&& mu : function_range(ish)) {
@@ -850,21 +888,11 @@ CADFCLHF::compute_K()
 
               if(distribute_coefficients_) {
 
-                for(auto&& rho : function_range(gbs_, dfbs_, jsblk.bfoff, jsblk.last_function)) {
-                  for(auto&& mu : function_range(ish)) {
-                    g3.middleCols(mu.off*Xblk.nbf, Xblk.nbf).row(rho - jblk.bfoff) -= 0.5 *
-                        coefs_mu_X.at(ish).row(mu.off).segment(rho*ish.atom_dfnbf, ish.atom_dfnbf)
-                        * g2.middleRows(ish.atom_dfbfoff, ish.atom_dfnbf).middleCols(Xblk.bfoff, Xblk.nbf);
-                    //for(auto&& X : function_range(Xblk)) {
-                    //  g3(rho - jblk.bfoff, mu.off*Xblk.nbf + X-Xblk.bfoff) -= 0.5 *
-                    //      coefs_mu_X.at(ish).row(mu.off).segment(rho*ish.atom_dfnbf, ish.atom_dfnbf)
-                    //      * g2.middleRows(ish.atom_dfbfoff, ish.atom_dfnbf).col(X);
-                    //  //for(auto&& Y : iter_functions_on_center(dfbs_, ish.center)) {
-                    //  //  g3(rho - jblk.bfoff, mu.off*Xblk.nbf + X-Xblk.bfoff) -= 0.5 *
-                    //  //      coefs_mu_X.at(ish)(mu.off, rho*ish.atom_dfnbf + Y.bfoff_in_atom) * g2(Y, X);
-                    //  //}
-                    //}
-                  }
+                //for(auto&& mu : function_range(ish)) {
+                for(int mu_off = 0; mu_off < ish.nbf; ++mu_off) {
+                  g3.middleCols(mu_off*Xblk.nbf, Xblk.nbf).middleRows(subblock_offset, jsblk.nbf) -= 0.5 *
+                      coefs_mu_X_other.at(ish).middleRows(mu_off*nbf + jsblk.bfoff, jsblk.nbf)
+                      * g2.middleRows(ish.atom_dfbfoff, ish.atom_dfnbf).middleCols(Xblk.bfoff, Xblk.nbf);
                 }
 
 

@@ -30,6 +30,9 @@
 #define _chemistry_qc_scf_assignments_h
 
 #include <array>
+#include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/enable_shared_from_this.hpp>
 
 #include <boost/heap/fibonacci_heap.hpp>
 
@@ -53,6 +56,17 @@ namespace detail {
     private:
       //compare<T> cmp_;
   };
+
+  template<typename T, template <typename...> class compare>
+  struct deref_compare<boost::shared_ptr<T>, compare>
+  {
+      bool operator()(boost::shared_ptr<T> const& a, boost::shared_ptr<T> const& b) const {
+        return compare<T>()(*a, *b);
+      }
+    private:
+      //compare<T> cmp_;
+  };
+
 
   template<typename T>
   struct more_work {
@@ -139,12 +153,12 @@ class AssignableShellPair {
   public:
     int ish;
     int Xatom;
-    const Node* node;
+    const boost::shared_ptr<Node> node;
 
     AssignableShellPair(
         const ShellData& ish,
         const ShellBlockData<>& Xblk,
-        const Node* node = 0
+        const boost::shared_ptr<Node> node = 0
     ) : ish(ish), Xatom(Xblk.center), node(0)
     {
       // TODO more efficient cost estimation options
@@ -158,14 +172,14 @@ class AssignableShellPair {
 
 class AssignmentBin;
 
-class Node {
+class Node : public boost::enable_shared_from_this<Node> {
   public:
 
     union { int node_index; int id; };
     std::vector<AssignableShellPair> pairs;
-    std::array<std::vector<AssignableItem*>, 2> compute_coef_items;
-    AssignmentBin* bin;
-    typename ptr_priority_queue<Node*>::handle_type pq_handle;
+    std::array<std::vector<boost::shared_ptr<AssignableItem>>, 2> compute_coef_items;
+    boost::shared_ptr<AssignmentBin> bin;
+    typename ptr_priority_queue<boost::shared_ptr<Node>>::handle_type pq_handle;
     uli estimated_workload = 0;
     uli shell_pair_count = 0;
     uli basis_pair_count = 0;
@@ -175,7 +189,7 @@ class Node {
         const ShellBlockData<>& Xblk
     )
     {
-      pairs.emplace_back(ish, Xblk, this);
+      pairs.emplace_back(ish, Xblk, shared_from_this());
       const uli cost = pairs.back().cost_estimate();
       estimated_workload += cost;
       shell_pair_count += Xblk.nshell;
@@ -183,7 +197,7 @@ class Node {
       return cost;
     }
 
-    void assign_coef_item(AssignableItem* item, bool is_df) {
+    void assign_coef_item(boost::shared_ptr<AssignableItem> const& item, bool is_df) {
       compute_coef_items[is_df].push_back(item);
       estimated_workload += item->cost_estimate(is_df);
     }
@@ -198,13 +212,13 @@ class Node {
 class AssignmentGrid;
 class AssignmentBinRow;
 
-class AssignmentBin {
+class AssignmentBin : public boost::enable_shared_from_this<AssignmentBin> {
   public:
-    ptr_priority_queue<Node*> nodes;
-    std::vector<Node> nodes_list;
-    std::vector<AssignableAtom*> assigned_dfbs_atoms;
-    std::vector<AssignableShell*> assigned_obs_shells;
-    std::array<std::vector<AssignableItem*>, 2> compute_coef_items;
+    ptr_priority_queue<boost::shared_ptr<Node>> nodes;
+    std::vector<boost::shared_ptr<Node>> nodes_list;
+    std::vector<boost::shared_ptr<AssignableAtom>> assigned_dfbs_atoms;
+    std::vector<boost::shared_ptr<AssignableShell>> assigned_obs_shells;
+    std::array<std::vector<boost::shared_ptr<AssignableItem>>, 2> compute_coef_items;
     uli estimated_workload = 0;
     uint id;
     uint obs_row_id;
@@ -225,25 +239,25 @@ class AssignmentBin {
         uint id, AssignmentGrid* grid
     );
 
-    Node* add_node(int index);
+    boost::shared_ptr<cadf::Node> add_node(int index);
 
     void register_in_row(const AssignmentBinRow& row, bool is_df);
 
-    void assign_dfbs_atom(AssignableItem* dfbs_atom) {
-      assigned_dfbs_atoms.push_back(dynamic_cast<AssignableAtom*>(dfbs_atom));
+    void assign_dfbs_atom(const boost::shared_ptr<AssignableItem>& dfbs_atom) {
+      assigned_dfbs_atoms.push_back(boost::static_pointer_cast<AssignableAtom>(dfbs_atom));
       dfbs_coef_offsets[dfbs_atom->index] = dfbs_ncoefs;
       dfbs_ncoefs += dfbs_atom->coefs_size;
     }
 
-    void assign_obs_shell(AssignableItem* obs_shell) {
-      assigned_obs_shells.push_back(dynamic_cast<AssignableShell*>(obs_shell));
+    void assign_obs_shell(const boost::shared_ptr<AssignableItem>& obs_shell) {
+      assigned_obs_shells.push_back(boost::static_pointer_cast<AssignableShell>(obs_shell));
       obs_coef_offsets[obs_shell->index] = obs_ncoefs;
       obs_ncoefs += obs_shell->coefs_size;
     }
 
     void make_assignments();
 
-    void compute_coef_for_item(AssignableItem* item, bool is_df) {
+    void compute_coef_for_item(const boost::shared_ptr<AssignableItem>& item, bool is_df) {
       compute_coef_items[is_df].push_back(item);
       estimated_workload += item->cost_estimate(is_df);
     }
@@ -254,28 +268,28 @@ class AssignmentBin {
 
     bool operator<(const AssignmentBin& other) const;
 
-    typename priority_queue<AssignmentBin>::handle_type pq_handle;
-    std::array<typename ptr_priority_queue<AssignmentBin*, detail::more_work>::handle_type, 2> row_handles;
+    typename ptr_priority_queue<boost::shared_ptr<AssignmentBin>>::handle_type pq_handle;
+    std::array<typename ptr_priority_queue<boost::shared_ptr<AssignmentBin>, detail::more_work>::handle_type, 2> row_handles;
 };
 
 class AssignmentBinRow {
   public:
     bool is_df_row;
     uli estimated_workload = 0;
-    std::vector<AssignableItem*> assigned_items;
-    ptr_priority_queue<AssignmentBin*, detail::more_work> bins;
+    std::vector<boost::shared_ptr<AssignableItem>> assigned_items;
+    ptr_priority_queue<boost::shared_ptr<AssignmentBin>, detail::more_work> bins;
     uint id;
 
     AssignmentBinRow(uint id, bool is_df)
       : id(id), is_df_row(is_df)
     { }
 
-    void assign_item(AssignableItem* item) {
+    void assign_item(const boost::shared_ptr<AssignableItem>& item) {
       assigned_items.push_back(item);
       estimated_workload += item->cost_estimate(is_df_row);
     }
 
-    void add_bin(AssignmentBin* bin) {
+    void add_bin(boost::shared_ptr<AssignmentBin> const& bin) {
       auto handle = bins.push(bin);
       (*handle)->row_handles[is_df_row] = handle;
     }
@@ -295,14 +309,14 @@ class AssignmentGrid {
     GaussianBasisSet* basis_;
     GaussianBasisSet* dfbasis_;
 
-    std::vector<AssignableAtom> atoms_;
-    std::vector<AssignableShell> obs_shells_;
-    priority_queue<AssignmentBin> bins_;
+    // TODO Fix this.  We can't store pointers to these things in other places, since they may be moved
+    std::vector<boost::shared_ptr<AssignableAtom>> atoms_;
+    std::vector<boost::shared_ptr<AssignableShell>> obs_shells_;
+
+    ptr_priority_queue<boost::shared_ptr<AssignmentBin>> bins_;
     priority_queue<AssignmentBinRow> obs_rows_;
-    //std::vector<AssignmentBinRow> obs_rows_list_;
     priority_queue<AssignmentBinRow> dfbs_rows_;
-    //std::vector<AssignmentBinRow> dfbs_rows_list_;
-    std::vector<Node*> nodes_;
+    std::vector<boost::shared_ptr<Node>> nodes_;
 
   public:
 

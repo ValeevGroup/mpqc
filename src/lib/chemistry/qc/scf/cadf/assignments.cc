@@ -32,6 +32,8 @@
 using namespace sc;
 using namespace sc::cadf;
 
+using namespace std;
+
 
 AssignmentGrid::AssignmentGrid(
     GaussianBasisSet* basis,
@@ -42,10 +44,10 @@ AssignmentGrid::AssignmentGrid(
 {
   for(auto&& iblk : shell_block_range(basis, dfbasis, 0, NoLastIndex, SameCenter, NoMaximumBlockSize)) {
     assert(iblk.nbf == iblk.atom_nbf);
-    atoms_.emplace_back(iblk);
+    atoms_.push_back(boost::make_shared<AssignableAtom>(iblk));
   }
   for(auto&& ish : shell_range(basis, dfbasis)) {
-    obs_shells_.emplace_back(ish);
+    obs_shells_.push_back(boost::make_shared<AssignableShell>(ish));
   }
   const int natoms = atoms_.size();
 
@@ -66,26 +68,26 @@ AssignmentGrid::AssignmentGrid(
   for(auto& atom : atoms_) {
     // Assign atom to row with smallest workload
     const auto& dfbs_row = dfbs_rows_.top();
-    (*dfbs_row.pq_handle).assign_item(&atom);
+    (*dfbs_row.pq_handle).assign_item(atom);
     dfbs_rows_.update(dfbs_row.pq_handle);
   }
 
   for(auto& shell : obs_shells_) {
     // And the same for the obs rows
     const auto& obs_row = obs_rows_.top();
-    (*obs_row.pq_handle).assign_item(&shell);
+    (*obs_row.pq_handle).assign_item(shell);
     obs_rows_.update(obs_row.pq_handle);
   }
 
   uint bin_id = 0;
   for(auto&& dfbsrow : dfbs_rows_) {
     for(auto&& obsrow : obs_rows_) {
-      auto handle = bins_.emplace(
+      auto handle = bins_.push(boost::make_shared<AssignmentBin>(
           bin_id++, this
-      );
-      (*handle).pq_handle = handle;
-      (*handle).register_in_row(obsrow, false);
-      (*handle).register_in_row(dfbsrow, true);
+      ));
+      (*handle)->pq_handle = handle;
+      (*handle)->register_in_row(obsrow, false);
+      (*handle)->register_in_row(dfbsrow, true);
     }
   }
 
@@ -97,13 +99,13 @@ AssignmentGrid::AssignmentGrid(
   }
 
   for(int inode = 0; inode < n_node; ++inode) {
-    const AssignmentBin& most_work_bin = bins_.top();
-    nodes_.push_back((*most_work_bin.pq_handle).add_node(inode));
-    bins_.update(most_work_bin.pq_handle);
+    const boost::shared_ptr<AssignmentBin>& most_work_bin = bins_.top();
+    nodes_.push_back((*most_work_bin->pq_handle)->add_node(inode));
+    bins_.update(most_work_bin->pq_handle);
   }
 
   for(auto&& bin : bins_) {
-    (*bin.pq_handle).make_assignments();
+    (*bin->pq_handle)->make_assignments();
   }
 
 }
@@ -188,7 +190,7 @@ AssignmentBin::operator<(const AssignmentBin& other) const
 
 void
 AssignmentBin::register_in_row(const AssignmentBinRow& row, bool is_df) {
-  (*row.pq_handle).add_bin(this);
+  (*row.pq_handle).add_bin(shared_from_this());
   if(is_df) {
     dfbs_row_id = row.id;
     for(auto& dfbs_atom : row.assigned_items) {
@@ -203,13 +205,13 @@ AssignmentBin::register_in_row(const AssignmentBinRow& row, bool is_df) {
   }
 }
 
-cadf::Node*
+boost::shared_ptr<cadf::Node>
 AssignmentBin::add_node(int index)
 {
-  nodes_list.emplace_back();
-  nodes_list.back().node_index = index;
-  nodes_list.back().bin = this;
-  auto handle = nodes.push(&nodes_list.back());
+  nodes_list.push_back(boost::make_shared<Node>());
+  nodes_list.back()->node_index = index;
+  nodes_list.back()->bin = shared_from_this();
+  auto handle = nodes.push(nodes_list.back());
   (*handle)->pq_handle = handle;
   return *handle;
 }

@@ -1223,6 +1223,7 @@ CADFCLHF::compute_K()
           const int obs_atom_nbf = obs->nbasis_on_center(Xblk.center);
           for(auto&& X : function_range(Xblk)) {
             for(auto&& mu : function_range(ish)) {
+              // TODO get rid of one of these loops
 
               // B_mus[mu.bfoff_in_shell] is (nbf x Ysh.nbf)
               // C_Y is (Y.{obs_}atom_nbf x nbf)

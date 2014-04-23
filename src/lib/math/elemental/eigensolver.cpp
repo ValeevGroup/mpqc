@@ -99,7 +99,10 @@ namespace TA {
       std::cout << "\tEigen Solve took " << t1 - t0 << " s" << std::endl;
     }
 
-    EMatrix C = elem::View(vecs, 0, 0, vecs.Height(), occ);
+    EMatrix C = elem::View(vecs, 0, 0,  vecs.Height(), occ);
+
+    EMatrix CT;
+    elem::Transpose(C,CT);
 
     // Get range for tall side
     TiledArray::TiledRange1 height_t1 = F.trange().data()[0];
@@ -119,7 +122,7 @@ namespace TA {
 
     TiledArray::TiledRange1 trange1_c(short_side_blocksize.begin(),
                                       short_side_blocksize.end());
-    std::array<TiledArray::TiledRange1,2> trange_array{{height_t1, trange1_c}};
+    std::array<TiledArray::TiledRange1,2> trange_array{{trange1_c, height_t1}};
 
     // Make trange for C
     TiledArray::TiledRange trange_c(trange_array.begin(), trange_array.end());
@@ -130,7 +133,7 @@ namespace TA {
     F.get_world().gop.fence();
 
     // Copy back to TA
-    TiledArray::elem_to_array(TA_C, C);
+    TiledArray::elem_to_array(TA_C, CT);
     F.get_world().gop.fence();
     return TA_C;
   }

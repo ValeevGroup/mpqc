@@ -143,7 +143,9 @@ void try_main(int argc, char** argv){
     double scf0 = madness::wall_time();
 
     C = eigensolver_occ_Coeff(F, S, occ);
+    dens = C("i,mu")*C("i,nu");
     world->madworld()->gop.fence();
+
 
     auto f0 = madness::wall_time();
     F = H("i,j") + GC("i,j");

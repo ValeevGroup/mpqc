@@ -201,22 +201,11 @@ mpqc::TA::ClDFGEngine::coefficient_contraction(
   const TAMatrix &C = *coeff_;
 
   // Precompute Exch Term
-  df_K_ = C(nE+Z) * df_ints_(nE+iE+X);
+  df_K_ = C(ZE+n) * df_ints_(nE+j+X);
 
-  if(densities_set()){
-    // Update D
-    TAMatrix &D = *density_;
-    D("mu, nu") = C("mu,i") * C("nu,i");
-
-    auto expr = 2 * (df_ints_(i+j+X) * (D(m+n) * df_ints_(m+n+X) ) )
-                  - (df_K_(ZE+iE+X) * df_K_(ZE+j+X) );
-    return expr;
-  }
-  else {
-    auto expr = 2 * (df_ints_(i+j+X) * ( (C(n+Z)) * df_K_(ZE+n+X) ) )
-                  - (df_K_(ZE+iE+X) * df_K_(ZE+j+X) );
-    return expr;
-  }
+  auto expr = 2 * (df_ints_(i+j+X) * (C(ZE+n) * df_K_(ZE+n+X) ) )
+                - (df_K_(ZE+iE+X) * df_K_(ZE+j+X) );
+  return expr;
 }
 
 void

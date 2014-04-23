@@ -52,15 +52,15 @@ CADFCLHF::get_coefs_ish_jsh(
   );
 
   Eigen::MatrixXd ij_M_X(ish.nbf*jsh.nbf, dfnbfAB);
-  for(auto&& ksh : iter_shells_on_center(dfbs_, ish.center)){
+  for(const auto&& ksh : iter_shells_on_center(dfbs_, ish.center)){
     auto ij_M_k = ints_to_eigen(
         ish, jsh, ksh,
         metric_ints_3c_[ithr],
         metric_oper_type_
     );
     // Surely this transfer can be done more efficiently
-    for(auto&& ibf : function_range(ish)){
-      for(auto&& jbf : function_range(jsh)){
+    for(const auto&& ibf : function_range(ish)){
+      for(const auto&& jbf : function_range(jsh)){
         const int ijbf = ibf.bfoff_in_shell * jsh.nbf + jbf.bfoff_in_shell;
         ij_M_X.row(ijbf).segment(ksh.bfoff_in_atom, ksh.nbf) = ij_M_k->row(ijbf);
       } // end loop over functions in jsh
@@ -68,14 +68,14 @@ CADFCLHF::get_coefs_ish_jsh(
   } // end loop over shells on ish.center
 
   if(ish.center != jsh.center){
-    for(auto&& ksh : iter_shells_on_center(dfbs_, jsh.center)){
+    for(const auto&& ksh : iter_shells_on_center(dfbs_, jsh.center)){
       auto ij_M_k = ints_to_eigen(
           ish, jsh, ksh,
           metric_ints_3c_[ithr],
           metric_oper_type_
       );
-      for(auto&& ibf : function_range(ish)){
-        for(auto&& jbf : function_range(jsh)){
+      for(const auto&& ibf : function_range(ish)){
+        for(const auto&& jbf : function_range(jsh)){
           const int ijbf = ibf.bfoff_in_shell * jsh.nbf + jbf.bfoff_in_shell;
           const int dfbfoff = ish.atom_dfnbf + ksh.bfoff_in_atom;
           ij_M_X.row(ijbf).segment(dfbfoff, ksh.nbf) = ij_M_k->row(ijbf);

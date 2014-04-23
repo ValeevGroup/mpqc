@@ -31,6 +31,7 @@
 #define _mpqc_src_lib_chemistry_qc_mbptr12_srr12intermediatesutil_h
 
 #include <algorithm>
+#include <numeric>
 #include <TiledArray/bitset.h>
 
 namespace sc {

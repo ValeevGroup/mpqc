@@ -131,8 +131,13 @@ CADFCLHF::init_threads()
 
   //----------------------------------------------------------------------------//
   // TODO fix this so that deallocating the tbis_ array doesn't cause a seg fault when this isn't called (we don't need it)
-  ExEnv::out0() << indent << "Initializing parent classes" << endl;
-  SCF::init_threads();
+  ExEnv::out0() << indent << "Initializing 4 center integral evaluators" << endl;
+  //SCF::init_threads();
+  tbis_ = new Ref<TwoBodyInt>[nthread_];
+  tbis_[0] = integral()->electron_repulsion();
+  for (int i=1; i < nthread_; i++) {
+    tbis_[i] = tbis_[0]->clone();
+  }
 
   //----------------------------------------------------------------------------//
   // Set up the all pairs vector, needed to prescreen Schwarz bounds

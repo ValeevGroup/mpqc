@@ -290,7 +290,9 @@ CADFCLHF::print(ostream&o) const
 
 void
 CADFCLHF::done_threads(){
-  CLHF::done_threads();
+  for (int i=0; i < threadgrp_->nthread(); i++) tbis_[i] = 0;
+  delete[] tbis_;
+  tbis_ = 0;
 }
 
 //////////////////////////////////////////////////////////////////////////////////

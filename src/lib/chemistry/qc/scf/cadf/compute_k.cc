@@ -727,9 +727,6 @@ CADFCLHF::compute_K()
               dt_ish_X  = RowMatrix::Zero(ish.nbf * Xsh.nbf, nbf);
               new (&dt_prime) Eigen::Map<RowMatrix>(dt_prime_data, ish.nbf * Xsh.nbf, Xsh.atom_obsnbf);
               dt_prime  = RowMatrix::Zero(ish.nbf * Xsh.nbf, Xsh.atom_obsnbf);
-              //Eigen::Map<RowMatrix, Eigen::Default, Eigen::OuterStride<Eigen::Dynamic>> dt_ish_part(
-              //    dt_ish_X.data(), ish.nbf, nbf, Eigen::OuterStride<Eigen::Dynamic>(Xsh.nbf*nbf)
-              //);
               {
                 Eigen::Map<RowMatrix, Eigen::Default, Eigen::OuterStride<Eigen::Dynamic>> dt_ish_part(
                     NULL, 0, 0, Eigen::OuterStride<Eigen::Dynamic>(Xsh.nbf*nbf)
@@ -745,14 +742,6 @@ CADFCLHF::compute_K()
                       );
                 }
               }
-              //for(auto&& mu : function_range(ish)) {
-              //  for(auto sigma : iter_functions_on_center(gbs_, Xsh.center)) {
-              //    dt_ish_X.middleRows(mu.off*Xsh.nbf, Xsh.nbf) += 2.0 * D(mu, sigma)
-              //          * coefs_X_nu.at(Xsh.center).middleRows(
-              //              Xsh.bfoff_in_atom, Xsh.nbf
-              //          ).middleCols(sigma.bfoff_in_atom*nbf, nbf);
-              //  }
-              //}
               {
                 Eigen::Map<RowMatrix, Eigen::Default, Eigen::OuterStride<Eigen::Dynamic>> dt_p_part(
                     NULL, 0, 0, Eigen::OuterStride<Eigen::Dynamic>(Xsh.nbf*nbf)

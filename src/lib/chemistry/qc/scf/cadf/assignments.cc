@@ -42,10 +42,16 @@ AssignmentGrid::AssignmentGrid(
 ) : basis_(basis),
     dfbasis_(dfbasis)
 {
+
+  ExEnv::out0() << incindent;
+
+  ExEnv::out0() << indent << "Filling list of dfbs atoms to assign" << endl;
   for(auto&& iblk : shell_block_range(basis, dfbasis, 0, NoLastIndex, SameCenter, NoMaximumBlockSize)) {
     assert(iblk.nbf == iblk.atom_nbf);
     atoms_.push_back(boost::make_shared<AssignableAtom>(iblk));
   }
+
+  ExEnv::out0() << indent << "Filling list of obs shells to assign" << endl;
   for(auto&& ish : shell_range(basis, dfbasis)) {
     obs_shells_.push_back(boost::make_shared<AssignableShell>(ish));
   }
@@ -55,16 +61,19 @@ AssignmentGrid::AssignmentGrid(
   const int nrows_dfbs = floor(sqrt((double)n_node));
   const int nrows_obs = n_node / nrows_dfbs;
 
+  ExEnv::out0() << indent << "Creating " << nrows_obs << " obs AssignmentBinRow objects" << endl;
   for(int irow = 0; irow < nrows_obs; ++irow) {
     auto handle = obs_rows_.emplace(irow, false);
     (*handle).pq_handle = handle;
   }
 
+  ExEnv::out0() << indent << "Creating " << nrows_dfbs << " dfbs AssignmentBinRow objects" << endl;
   for(int irow = 0; irow < nrows_dfbs; ++irow) {
     auto handle = dfbs_rows_.emplace(irow, true);
     (*handle).pq_handle = handle;
   }
 
+  ExEnv::out0() << indent << "Assigning atoms to dfbs rows" << endl;
   for(auto& atom : atoms_) {
     // Assign atom to row with smallest workload
     const auto& dfbs_row = dfbs_rows_.top();
@@ -72,6 +81,7 @@ AssignmentGrid::AssignmentGrid(
     dfbs_rows_.update(dfbs_row.pq_handle);
   }
 
+  ExEnv::out0() << indent << "Assigning shells to obs rows" << endl;
   for(auto& shell : obs_shells_) {
     // And the same for the obs rows
     const auto& obs_row = obs_rows_.top();
@@ -79,6 +89,7 @@ AssignmentGrid::AssignmentGrid(
     obs_rows_.update(obs_row.pq_handle);
   }
 
+  ExEnv::out0() << indent << "Creating AssignmentBin objects" << endl;
   uint bin_id = 0;
   for(auto&& dfbsrow : dfbs_rows_) {
     for(auto&& obsrow : obs_rows_) {
@@ -91,22 +102,29 @@ AssignmentGrid::AssignmentGrid(
     }
   }
 
+  ExEnv::out0() << indent << "dfbs rows making assignments to bins" << endl;
   for(auto&& row : dfbs_rows_) {
     (*row.pq_handle).make_assignments();
   }
+  ExEnv::out0() << indent << "obs rows making assignments to bins" << endl;
   for(auto&& row : obs_rows_) {
     (*row.pq_handle).make_assignments();
   }
 
+  ExEnv::out0() << indent << "Assigning nodes to bins based on workload." << endl;
   for(int inode = 0; inode < n_node; ++inode) {
     const boost::shared_ptr<AssignmentBin>& most_work_bin = bins_.top();
     nodes_.push_back((*most_work_bin->pq_handle)->add_node(inode));
     bins_.update(most_work_bin->pq_handle);
   }
 
+  ExEnv::out0() << indent << "AssignmentBins making assignments to available nodes" << endl;
   for(auto&& bin : bins_) {
     (*bin->pq_handle)->make_assignments();
   }
+
+  ExEnv::out0() << decindent;
+  ExEnv::out0() << indent << "Done making static distribution for exchange" << endl;
 
 }
 

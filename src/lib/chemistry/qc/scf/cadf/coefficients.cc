@@ -351,31 +351,7 @@ CADFCLHF::compute_coefficients()
             );
           }
         }
-        //DUMP2(ish.center, jsh.center)
-        //if(ish.center >= jsh.center)
-          get_coefs_ish_jsh(ish, jsh, 0, coefs, empty);
-        //else
-        //  get_coefs_ish_jsh(jsh, ish, 0, empty, coefs);
-
-        //DEBUG_DELETE_THIS
-        //bool failed = false;
-        //for(auto&& mu : function_range(ish)) {
-        //  for(auto&& rho : function_range(jsh)) {
-        //    for(auto&& X : iter_functions_on_center(dfbs_, ish.center)) {
-        //      if(fabs(coefs_mu_X.at(ish)(mu.off, rho*ish.atom_dfnbf + X.bfoff_in_atom)
-        //          - coefs_transpose_[X](mu.bfoff_in_atom, rho)) > 1e-14
-        //      ) {
-        //        ExEnv::out0() << "C_{" << mu.index << ", " << rho.index << "}^{" << X.index << "} is not correct. ("
-        //            << coefs_mu_X.at(ish)(mu.off, rho*ish.atom_dfnbf + X.bfoff_in_atom)
-        //            << " != "
-        //            << coefs_transpose_[X](mu.bfoff_in_atom, rho) << ")" << std::endl;
-        //        failed = true;
-        //      }
-        //    }
-        //  }
-        //}
-        //assert(!failed);
-        //DEBUG_DELETE_THIS
+        get_coefs_ish_jsh(ish, jsh, 0, coefs, empty);
       }
     }
 
@@ -386,13 +362,8 @@ CADFCLHF::compute_coefficients()
     } // mu_grp is deleted
 
     sc::SCFormIO::init_mp(scf_grp_->me());
-    //assert(scf_grp_->n() > 1 || my_part.bin->assigned_obs_shells.size() == gbs_->nshell());
-    //assert(scf_grp_->n() > 1 || my_part.bin->assigned_dfbs_atoms.size() == gbs_->ncenter());
-    //assert(scf_grp_->n() > 1 || my_part.pairs.size() == gbs_->ncenter() * gbs_->nshell());
 
     std::vector<CoefView> empty_df;
-    //assert(scf_grp_->n() > 1 || my_part.bin->compute_coef_items[true].size() > 0);
-    //assert(scf_grp_->n() > 1 || my_part.compute_coef_items[true].size() == gbs_->ncenter());
     for(auto&& dfbs_atom : my_part.compute_coef_items[true]) {
 
       // Now do the C_X_mu part
@@ -410,25 +381,6 @@ CADFCLHF::compute_coefficients()
             }
           }
           get_coefs_ish_jsh(ish, jsh, 0, coefs, empty_df);
-          //DEBUG_DELETE_THIS
-          //bool failed = false;
-          //for(auto&& mu : function_range(ish)) {
-          //  for(auto&& rho : function_range(jsh)) {
-          //    for(auto&& X : iter_functions_on_center(dfbs_, ish.center)) {
-          //      if(fabs(coefs_X_nu.at(Xblk.center)(X.bfoff_in_atom, mu.bfoff_in_atom*nbf + rho)
-          //          - coefs_transpose_[X](mu.bfoff_in_atom, rho)) > 1e-14
-          //      ) {
-          //        ExEnv::out0() << "C_{" << mu.index << ", " << rho.index << "}^{" << X.index << "} is not correct. ("
-          //            << coefs_X_nu.at(Xblk.center)(X.bfoff_in_atom, mu.bfoff_in_atom*nbf + rho)
-          //            << " != "
-          //            << coefs_transpose_[X](mu.bfoff_in_atom, rho) << ")" << std::endl;
-          //        failed = true;
-          //      }
-          //    }
-          //  }
-          //}
-          //assert(!failed);
-          //DEBUG_DELETE_THIS
         }
       }
     }

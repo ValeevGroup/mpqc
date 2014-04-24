@@ -182,21 +182,26 @@ CADFCLHF::init_threads()
   atom_pair_assignments_k_ = make_shared<cadf::AssignmentGrid>(
       gbs_, dfbs_, scf_grp_->n()
   );
-  atom_pair_assignments_k_->print_detail();
+  atom_pair_assignments_k_->print_detail(ExEnv::out0(), !distribute_coefficients_);
   auto& my_part = atom_pair_assignments_k_->my_assignments(me);
 
-  for(auto&& ish_ptr : my_part.bin->assigned_obs_shells) {
-    ShellData ish(ish_ptr->index, gbs_, dfbs_);
-    for(auto&& Xatom_ptr : my_part.bin->assigned_dfbs_atoms) {
-      ShellBlockData<> Xblk = ShellBlockData<>::atom_block(Xatom_ptr->index, dfbs_, gbs_);
+  //for(auto&& ish_ptr : my_part.assigned_obs_shells) {
+  //  ShellData ish(ish_ptr->index, gbs_, dfbs_);
+  //  for(auto&& Xatom_ptr : my_part.assigned_dfbs_atoms) {
+  for(auto&& pair : my_part.pairs) {
+    {
+      ShellBlockData<> Xblk = ShellBlockData<>::atom_block(pair.Xatom, dfbs_, gbs_);
       if(do_linK_) {
         for(auto&& Xsh : shell_range(Xblk)) {
-          local_pairs_linK_.emplace(ish, (int)Xsh);
-          linK_local_map_[Xsh].push_back(ish);
+        //int Xatom_shoff = dfbs_->shell_on_center(pair.Xatom, 0);
+        //int Xatom_nsh = dfbs_->nshell_on_center(pair.Xatom);
+        //for(int Xsh = Xatom_shoff; Xsh < Xatom_shoff+Xatom_nsh; ++Xsh) {
+          local_pairs_linK_.emplace(pair.ish, (int)Xsh);
+          linK_local_map_[Xsh].push_back(pair.ish);
         }
       }
       else {
-        local_pairs_k_.emplace_back(ish, Xblk);
+        local_pairs_k_.emplace_back(pair.ish, Xblk);
       }
 
 

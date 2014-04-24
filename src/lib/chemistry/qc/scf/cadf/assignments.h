@@ -71,7 +71,7 @@ namespace detail {
   template<typename T>
   struct more_work {
       bool operator()(const T& a, const T& b) const {
-        return a.estimated_workload > b.estimated_workload;
+        return a.coef_workload > b.coef_workload;
       }
   };
 
@@ -213,6 +213,8 @@ class AssignmentGrid;
 class AssignmentBinRow;
 
 class AssignmentBin : public boost::enable_shared_from_this<AssignmentBin> {
+
+
   public:
     ptr_priority_queue<boost::shared_ptr<Node>> nodes;
     std::vector<boost::shared_ptr<Node>> nodes_list;
@@ -220,6 +222,7 @@ class AssignmentBin : public boost::enable_shared_from_this<AssignmentBin> {
     std::vector<boost::shared_ptr<AssignableShell>> assigned_obs_shells;
     std::array<std::vector<boost::shared_ptr<AssignableItem>>, 2> compute_coef_items;
     uli estimated_workload = 0;
+    uli coef_workload = 0;
     uint id;
     uint obs_row_id;
     uint dfbs_row_id;
@@ -247,19 +250,21 @@ class AssignmentBin : public boost::enable_shared_from_this<AssignmentBin> {
       assigned_dfbs_atoms.push_back(boost::static_pointer_cast<AssignableAtom>(dfbs_atom));
       dfbs_coef_offsets[dfbs_atom->index] = dfbs_ncoefs;
       dfbs_ncoefs += dfbs_atom->coefs_size;
+      estimated_workload += dfbs_ncoefs;
     }
 
     void assign_obs_shell(const boost::shared_ptr<AssignableItem>& obs_shell) {
       assigned_obs_shells.push_back(boost::static_pointer_cast<AssignableShell>(obs_shell));
       obs_coef_offsets[obs_shell->index] = obs_ncoefs;
       obs_ncoefs += obs_shell->coefs_size;
+      estimated_workload += obs_ncoefs;
     }
 
     void make_assignments();
 
     void compute_coef_for_item(const boost::shared_ptr<AssignableItem>& item, bool is_df) {
       compute_coef_items[is_df].push_back(item);
-      estimated_workload += item->cost_estimate(is_df);
+      coef_workload += item->cost_estimate(is_df);
     }
 
     size_t n_node() const {
@@ -270,6 +275,9 @@ class AssignmentBin : public boost::enable_shared_from_this<AssignmentBin> {
 
     typename ptr_priority_queue<boost::shared_ptr<AssignmentBin>>::handle_type pq_handle;
     std::array<typename ptr_priority_queue<boost::shared_ptr<AssignmentBin>, detail::more_work>::handle_type, 2> row_handles;
+
+  private:
+    bool debug_ = true;
 };
 
 class AssignmentBinRow {
@@ -320,6 +328,12 @@ class AssignmentGrid {
 
   public:
 
+    int nrows_dfbs;
+    int nrows_obs;
+    int nbin;
+    bool bins_have_multiple_nodes = false;
+
+
     AssignmentGrid(
         GaussianBasisSet* basis,
         GaussianBasisSet* dfbasis,
@@ -342,7 +356,7 @@ class AssignmentGrid {
       return dfbasis_;
     }
 
-    void print_detail(std::ostream& o=ExEnv::out0()) const;
+    void print_detail(std::ostream& o=ExEnv::out0(), bool full_memory=false) const;
 
 };
 

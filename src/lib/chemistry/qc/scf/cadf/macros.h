@@ -90,7 +90,7 @@
     sc::ExEnv::out0() << "Dumping expression " << #expr << " from all nodes:" << std::endl; \
     for(int __inode = 0; __inode < scf_grp_->n(); ++__inode) {\
       if(__inode == scf_grp_->me()) { \
-        sc::ExEnv::outn() << "  Node " << scf_grp_->me() << ": " << #expr << " = " << (expr) << std::endl; \
+        sc::ExEnv::outn() << "  Node " << scf_grp_->me() << ": " << #expr << " = " << expr << std::endl; \
       } \
       scf_grp_->sync(); \
     }

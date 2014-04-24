@@ -1,0 +1,13 @@
+Each of the following categories lists goals in an order which roughly 
+corresponds to the order in which they are hoped to be added.
+Items are marked using the following code:
+  [x] ~ planned to be finished before the next release 
+  [o] ~ hopefully started in the near future 
+  [-] ~ marked for eventual development
+  
+House Keeping
+=============
+
+Updating Basis Sets
+-------------------
+[o] Fleshout basis sets, many atoms in common basis sets are missing

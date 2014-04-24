@@ -132,7 +132,13 @@
 /**
   @defgroup TAWFN mpqc.Chemistry.ElectronicStructure.TAWFN
   @ingroup ChemistryElectronicStructure
-  TiledArray based wavefunction object
+  TiledArray-based wavefunctions
+*/
+
+/**
+  @defgroup TAWFN.OneBody mpqc.Chemistry.ElectronicStructure.TAWFN.OneBody
+  @ingroup TAWFN
+  TiledArray-based one-body wave functions
 */
 
 /**

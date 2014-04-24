@@ -163,18 +163,7 @@ WriteOrbital::process_keyval_for_base_class(Ref<KeyVal> kv) {
   else {
     // if grid is not given, create automatically
     if (kv->exists("grid") == false) {
-      const Ref<VDWShape> vdwshape = new VDWShape(obwfn->molecule());
-      SCVector3 gmin, gmax;
-      vdwshape->boundingbox(-1.0, 1.0, gmin, gmax);
-      SCVector3 gorigin = gmin;
-      SCVector3 gsize = gmax - gmin;
-      const double resolution = 0.2;
-      int n[3]; for(int i=0; i<3; ++i) n[i] = int(std::ceil(gsize[i] / 0.2));
-      SCVector3 axis0(gsize[0]/n[0], 0.0, 0.0);
-      SCVector3 axis1(0.0, gsize[1]/n[1], 0.0);
-      SCVector3 axis2(0.0, 0.0, gsize[2]/n[2]);
-      Ref<Grid> grid = new Grid(n[0], n[1], n[2], gorigin, axis0, axis1, axis2);
-
+      Ref<Grid> grid = make_default_grid(obwfn->molecule());
       Ref<AssignedKeyVal> akv = new AssignedKeyVal;
       akv->assign("grid", grid.pointer());
 
@@ -210,6 +199,25 @@ WriteOrbital::calculate_value(SCVector3 point)
 void
 WriteOrbital::initialize() {}
 
+Ref<Grid>
+WriteOrbital::make_default_grid(const Ref<Molecule>& mol, double resolution, double margin) {
+  const Ref<VDWShape> vdwshape = new VDWShape(mol);
+  SCVector3 gmin, gmax;
+  vdwshape->boundingbox(-1.0, 1.0, gmin, gmax);
+  gmin -= SCVector3(margin,margin,margin);
+  gmax += SCVector3(margin,margin,margin);
+  SCVector3 gorigin = gmin;
+  SCVector3 gsize = gmax - gmin;
+
+  int n[3]; for(int i=0; i<3; ++i) n[i] = int(std::ceil(gsize[i] / resolution));
+  SCVector3 axis0(gsize[0]/n[0], 0.0, 0.0);
+  SCVector3 axis1(0.0, gsize[1]/n[1], 0.0);
+  SCVector3 axis2(0.0, 0.0, gsize[2]/n[2]);
+  Ref<Grid> grid = new Grid(n[0], n[1], n[2], gorigin, axis0, axis1, axis2);
+
+  return grid;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // WriteOrbitals
 
@@ -228,7 +236,7 @@ WriteOrbitals::WriteOrbitals(const Ref<KeyVal> &keyval):
           ex.elaborate()
               << "WriteOrbitals KeyVal ctor requires"
               << " that \"obwfn\" specifies an object"
-              << " of type Wavefunction" << std::endl;
+              << " of type OneBodyWavefunction" << std::endl;
         }
       catch (...) {}
       throw ex;

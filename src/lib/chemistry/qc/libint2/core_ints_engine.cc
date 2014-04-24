@@ -44,6 +44,24 @@ typedef ::libint2::FmEval_Chebyshev3 _Engine1;
 template<> Ref<CoreIntsEngine<_Engine1>::Engine>
   CoreIntsEngine<_Engine1>::default_engine_(new CoreIntsEngine<_Engine1>::Engine(12));
 
+typedef ::libint2::GaussianGmEval<double,0> _Engine2;
+template<> Ref<CoreIntsEngine<_Engine2>::Engine>
+CoreIntsEngine<_Engine2>::default_engine_(
+    new CoreIntsEngine<_Engine2>::Engine(12, 1e-14)
+);
+
+typedef ::libint2::GaussianGmEval<double,-1> _Engine3;
+template<> Ref<CoreIntsEngine<_Engine3>::Engine>
+CoreIntsEngine<_Engine3>::default_engine_(
+    new CoreIntsEngine<_Engine3>::Engine(12, 1e-14)
+);
+
+typedef ::libint2::GaussianGmEval<double,2> _Engine4;
+template<> Ref<CoreIntsEngine<_Engine4>::Engine>
+CoreIntsEngine<_Engine4>::default_engine_(
+    new CoreIntsEngine<_Engine4>::Engine(12, 1e-14)
+);
+
 /////////////////////////////////////////////////////////////////////////////
 
 // Local Variables:

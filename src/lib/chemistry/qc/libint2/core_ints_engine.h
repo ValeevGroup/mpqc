@@ -51,6 +51,7 @@ namespace sc {
           public _Engine
       {
           Engine(int mmax): RefCount(), _Engine(mmax) {}
+          Engine(int mmax, double prec): RefCount(), _Engine(mmax, prec) {}
       };
 
       template <typename Int>
@@ -88,6 +89,7 @@ namespace sc {
     private:
       static Ref<Engine> default_engine_;
   };
+
 
 } // end of namespace sc
 

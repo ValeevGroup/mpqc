@@ -43,6 +43,11 @@ ENDIF(MPQC_NEW_FEATURES)
 
 add_mpqc_object_library(basis ${ccfiles})
 
+  set_property(SOURCE integral_scaling_test.cpp PROPERTY COMPILE_DEFINITIONS
+        SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(int_test integral_scaling_test.cpp $<TARGET_OBJECTS:basis>)
+  target_link_libraries(int_test chemistry)
+
 # tests
 IF(MPQC_UNITTEST)
   set_property(SOURCE btest.cc PROPERTY COMPILE_DEFINITIONS

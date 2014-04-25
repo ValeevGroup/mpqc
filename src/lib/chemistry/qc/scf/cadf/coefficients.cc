@@ -289,7 +289,15 @@ CADFCLHF::compute_coefficients()
     uli n_Xcoefs = 0;
     const cadf::Node& my_part = atom_pair_assignments_k_->my_assignments(scf_grp_->me());
     uli ncoefs_dist = my_part.bin->obs_ncoefs + my_part.bin->dfbs_ncoefs;
-    dist_coefs_data_ = new double[ncoefs_dist];
+    try {
+      dist_coefs_data_ = new double[ncoefs_dist];
+    }
+    catch(std::bad_alloc& e) {
+      ExEnv::outn() << "Failed to allocate " << data_size_to_string(ncoefs_dist)
+                    << " for distributed coefficients on node " << scf_grp_->me() << std::endl;
+      ExEnv::outn() << "Before allocation, memory in use was at least " << data_size_to_string(memory_used_.load()) << std::endl;
+      throw;
+    }
     memset(dist_coefs_data_, 0, ncoefs_dist*sizeof(double));
 
     // Initialize the Eigen::Maps of data parts

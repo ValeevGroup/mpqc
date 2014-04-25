@@ -888,6 +888,7 @@ CADFCLHF::compute_K()
               }
               else {
                 if(store_coefs_transpose_) {
+
                   const int tot_cols = coefs_blocked_[jsblk.center].cols();
                   const int col_offset = coef_block_offsets_[jsblk.center][ish.center]
                       + ish.bfoff_in_atom*inner_size;
@@ -913,8 +914,10 @@ CADFCLHF::compute_K()
                             jsblk.atom_dfnbf, Xblk.nbf
                     );
                   }
+
                 }
                 else {
+
                   int rho_block_offset = 0;
                   for(auto&& rho : function_range(gbs_, dfbs_, jsblk.bfoff, jsblk.last_function)) {
                     for(auto&& mu : function_range(ish)) {

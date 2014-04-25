@@ -265,7 +265,6 @@ CADFCLHF::compute_coefficients()
 
   ExEnv::out0() << indent << "Distributing coefficients" << std::endl;
   timer.change("03 - global sum coefficient memory");
-  // TODO MessageGrp takes an int here, and if ncoefs is large, it needs to take a long
   if(not distribute_coefficients_) {
     if(ncoefs * sizeof(double) < std::numeric_limits<int>::max()) {
       scf_grp_->sum(coefficients_data_, ncoefs);                                               //latex `\label{sc:coefsum}`
@@ -290,15 +289,23 @@ CADFCLHF::compute_coefficients()
     const cadf::Node& my_part = atom_pair_assignments_k_->my_assignments(scf_grp_->me());
     uli ncoefs_dist = my_part.bin->obs_ncoefs + my_part.bin->dfbs_ncoefs;
     try {
-      dist_coefs_data_ = new double[ncoefs_dist];
+      if(ncoefs_dist * sizeof(double) > std::numeric_limits<int>::max() || true) {
+        dist_coefs_data_ = new double[my_part.bin->obs_ncoefs];
+        dist_coefs_data_df_ = new double[my_part.bin->dfbs_ncoefs];
+      }
+      else {
+        dist_coefs_data_ = new double[ncoefs_dist];
+        dist_coefs_data_df_ = dist_coefs_data_ + my_part.bin->obs_ncoefs;
+      }
     }
     catch(std::bad_alloc& e) {
-      ExEnv::outn() << "Failed to allocate " << data_size_to_string(ncoefs_dist)
+      ExEnv::outn() << "Failed to allocate " << data_size_to_string(ncoefs_dist*sizeof(double))
                     << " for distributed coefficients on node " << scf_grp_->me() << std::endl;
       ExEnv::outn() << "Before allocation, memory in use was at least " << data_size_to_string(memory_used_.load()) << std::endl;
       throw;
     }
-    memset(dist_coefs_data_, 0, ncoefs_dist*sizeof(double));
+    memset(dist_coefs_data_, 0, my_part.bin->obs_ncoefs*sizeof(double));
+    memset(dist_coefs_data_df_, 0, my_part.bin->dfbs_ncoefs*sizeof(double));
 
     // Initialize the Eigen::Maps of data parts
     for(auto&& obs_shell : my_part.bin->assigned_obs_shells) {
@@ -326,7 +333,7 @@ CADFCLHF::compute_coefficients()
           std::piecewise_construct,
           std::forward_as_tuple(Xblk.center),
           std::forward_as_tuple(
-              dist_coefs_data_ + my_part.bin->dfbs_coef_offsets.at(Xblk.center),
+              dist_coefs_data_df_ + my_part.bin->dfbs_coef_offsets.at(Xblk.center),
               Xblk.atom_nbf, Xblk.atom_obsnbf*nbf
           )
       );
@@ -334,7 +341,7 @@ CADFCLHF::compute_coefficients()
           std::piecewise_construct,
           std::forward_as_tuple(Xblk.center),
           std::forward_as_tuple(
-              dist_coefs_data_ + my_part.bin->dfbs_coef_offsets.at(Xblk.center),
+              dist_coefs_data_df_ + my_part.bin->dfbs_coef_offsets.at(Xblk.center),
               Xblk.atom_nbf*Xblk.atom_obsnbf, nbf
           )
       );
@@ -344,7 +351,6 @@ CADFCLHF::compute_coefficients()
     std::vector<Eigen::Map<Eigen::VectorXd>> empty;
     for(auto&& obs_shell : my_part.compute_coef_items[false]) {
 
-      //DUMP(obs_shell->index);
       // Do the C_mu_X part first
       ShellData ish(obs_shell->index, gbs_, dfbs_);
       for(auto&& jsh : iter_significant_partners(ish)) {
@@ -411,15 +417,15 @@ CADFCLHF::compute_coefficients()
       Ref<MessageGrp> X_grp = scf_grp_->split(my_part.bin->dfbs_row_id);
       const uli ncfs = my_part.bin->dfbs_ncoefs;
       if(ncfs * sizeof(double) < std::numeric_limits<int>::max()) {
-        X_grp->sum(dist_coefs_data_ + my_part.bin->obs_ncoefs, ncfs);
+        X_grp->sum(dist_coefs_data_df_, ncfs);
       }
       else {
         int chunk_size = std::numeric_limits<int>::max() / sizeof(double);
         for(int ichunk = 0; ichunk < ncfs / chunk_size; ++ichunk) {
-          X_grp->sum(dist_coefs_data_ + my_part.bin->obs_ncoefs + ichunk*chunk_size, chunk_size);
+          X_grp->sum(dist_coefs_data_df_ + ichunk*chunk_size, chunk_size);
         }
         if(ncfs % chunk_size > 0) {
-          X_grp->sum(dist_coefs_data_ + my_part.bin->obs_ncoefs + (ncfs / chunk_size) * chunk_size,
+          X_grp->sum(dist_coefs_data_df_ + (ncfs / chunk_size) * chunk_size,
               ncfs % chunk_size
           );
         }

@@ -39,10 +39,10 @@ CADFCLHF::get_decomposition(int ish, int jsh, Ref<TwoBodyTwoCenterInt> ints)
   // TODO atom swap symmetry?
   const int atomA = basis()->shell_to_center(ish);
   const int atomB = basis()->shell_to_center(jsh);
+  const auto& g2 = *g2_full_ptr_;
   //----------------------------------------//
   return decomps_->get(atomA, atomB, [&](){
     // Make the decomposition
-    std::shared_ptr<Decomposition> decompAB;
     //----------------------------------------//
     const int dfnshA = dfbs_->nshell_on_center(atomA);
     const int dfnbfA = dfbs_->nbasis_on_center(atomA);
@@ -57,70 +57,23 @@ CADFCLHF::get_decomposition(int ish, int jsh, Ref<TwoBodyTwoCenterInt> ints)
     // Compute the integrals we need
     const int nrows = atomA == atomB ? dfnbfA : dfnbfA + dfnbfB;
     Eigen::MatrixXd g2AB(nrows, nrows);
-    // AA integrals
-    for(int ishA = dfshoffA; ishA < dfshoffA + dfnshA; ++ishA){
-      const int dfbfoffiA = dfbs_->shell_to_function(ishA);
-      const int dfnbfiA = dfbs_->shell(ishA).nfunction();
-      for(int jshA = dfshoffA; jshA < dfshoffA + dfnshA; ++jshA){
-        const int dfbfoffjA = dfbs_->shell_to_function(jshA);
-        const int dfnbfjA = dfbs_->shell(jshA).nfunction();
-        auto shell_ints = ints_to_eigen(
-            ishA, jshA, ints,
-            metric_oper_type_
-        );
-        g2AB.block(
-            dfbfoffiA - dfbfoffA, dfbfoffjA - dfbfoffA,
-            dfnbfiA, dfnbfjA
-        ) = *shell_ints;
-        g2AB.block(
-            dfbfoffjA - dfbfoffA, dfbfoffiA - dfbfoffA,
-            dfnbfjA, dfnbfiA
-        ) = shell_ints->transpose();
-      }
-    }
+    g2AB.block(0, 0, dfnbfA, dfnbfA) = g2.block(
+        dfbfoffA, dfbfoffA,
+        dfnbfA, dfnbfA
+    );
     if(atomA != atomB) {
-      // AB integrals
-      for(int ishA = dfshoffA; ishA < dfshoffA + dfnshA; ++ishA){
-        const int dfbfoffiA = dfbs_->shell_to_function(ishA);
-        const int dfnbfiA = dfbs_->shell(ishA).nfunction();
-        for(int jshB = dfshoffB; jshB < dfshoffB + dfnshB; ++jshB){
-          const int dfbfoffjB = dfbs_->shell_to_function(jshB);
-          const int dfnbfjB = dfbs_->shell(jshB).nfunction();
-          auto shell_ints = ints_to_eigen(
-              ishA, jshB, ints,
-              metric_oper_type_
-          );
-          g2AB.block(
-              dfbfoffiA - dfbfoffA, dfbfoffjB - dfbfoffB + dfnbfA,
-              dfnbfiA, dfnbfjB
-          ) = *shell_ints;
-          g2AB.block(
-              dfbfoffjB - dfbfoffB + dfnbfA, dfbfoffiA - dfbfoffA,
-              dfnbfjB, dfnbfiA
-          ) = shell_ints->transpose();
-        }
-      }
-      // BB integrals
-      for(int ishB = dfshoffB; ishB < dfshoffB + dfnshB; ++ishB){
-        const int dfbfoffiB = dfbs_->shell_to_function(ishB);
-        const int dfnbfiB = dfbs_->shell(ishB).nfunction();
-        for(int jshB = dfshoffB; jshB < dfshoffB + dfnshB; ++jshB){
-          const int dfbfoffjB = dfbs_->shell_to_function(jshB);
-          const int dfnbfjB = dfbs_->shell(jshB).nfunction();
-          auto shell_ints = ints_to_eigen(
-              ishB, jshB, ints,
-              metric_oper_type_
-          );
-          g2AB.block(
-              dfbfoffiB - dfbfoffB + dfnbfA, dfbfoffjB - dfbfoffB + dfnbfA,
-              dfnbfiB, dfnbfjB
-          ) = *shell_ints;
-          g2AB.block(
-              dfbfoffjB - dfbfoffB + dfnbfA, dfbfoffiB - dfbfoffB + dfnbfA,
-              dfnbfjB, dfnbfiB
-          ) = shell_ints->transpose();
-        }
-      }
+      g2AB.block(0, dfnbfA, dfnbfA, dfnbfB) = g2.block(
+          dfbfoffA, dfbfoffB,
+          dfnbfA, dfnbfB
+      );
+      g2AB.block(dfnbfA, 0, dfnbfB, dfnbfA) = g2.block(
+          dfbfoffB, dfbfoffA,
+          dfnbfB, dfnbfA
+      );
+      g2AB.block(dfnbfA, dfnbfA, dfnbfB, dfnbfB) = g2.block(
+          dfbfoffB, dfbfoffB,
+          dfnbfB, dfnbfB
+      );
     }
     return make_shared<Decomposition>(g2AB);
   });

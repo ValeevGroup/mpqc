@@ -304,12 +304,6 @@ AssignmentBin::make_assignments()
     }
   }
 
-  if(debug_) ExEnv::out0() << indent << "Setting dfbs_coef_offsets to include obs coef memory before it" << endl;
-  // Update the offsets
-  for(auto& off_pair : dfbs_coef_offsets) {
-    off_pair.second += obs_ncoefs;
-  }
-
   if(debug_) {
     ExEnv::out0() << indent << "Done making assignments for bin " << id << endl;
     ExEnv::out0() << decindent;

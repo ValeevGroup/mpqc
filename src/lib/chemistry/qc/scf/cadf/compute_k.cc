@@ -919,36 +919,45 @@ CADFCLHF::compute_K()
                 else {
 
                   int rho_block_offset = 0;
-                  for(auto&& rho : function_range(gbs_, dfbs_, jsblk.bfoff, jsblk.last_function)) {
-                    for(auto&& mu : function_range(ish)) {
-                      //g3.row((subblock_offset + rho_block_offset)*ish.nbf + mu.off) -= 0.5 *
-                      //    coefs_transpose_blocked_[ish.center].col(mu.bfoff_in_atom*nbf + rho).transpose()
-                      //    * g2.middleRows(ish.atom_dfbfoff, ish.atom_dfnbf).middleCols(Xblk.bfoff, Xblk.nbf);
-                      //g3_in.row((subblock_offset + rho_block_offset)*ish.nbf + mu.off) -= 0.5 *
-                      //    coefs_transpose_blocked_[ish.center].col(mu.bfoff_in_atom*nbf + rho).transpose()
-                      //    * g2.middleRows(ish.atom_dfbfoff, ish.atom_dfnbf).middleCols(Xblk.bfoff, Xblk.nbf);
-                      g3.row(subblock_offset + rho_block_offset).segment(mu.off*Xblk.nbf, Xblk.nbf) -= 0.5 *
-                          coefs_transpose_blocked_[ish.center].col(mu.bfoff_in_atom*nbf + rho).transpose()
+                  for(auto&& mu : function_range(ish)) {
+                    g3.middleRows(subblock_offset, jsblk.nbf).middleCols(mu.off*Xblk.nbf, Xblk.nbf) -= 0.5 *
+                        coefs_transpose_blocked_[ish.center].middleCols(mu.bfoff_in_atom*nbf + jsblk.bfoff, jsblk.nbf).transpose()
                           * g2.middleRows(ish.atom_dfbfoff, ish.atom_dfnbf).middleCols(Xblk.bfoff, Xblk.nbf);
-                    }
-                    ++rho_block_offset;
+                    //  //g3.row((subblock_offset + rho_block_offset)*ish.nbf + mu.off) -= 0.5 *
+                    //  //    coefs_transpose_blocked_[ish.center].col(mu.bfoff_in_atom*nbf + rho).transpose()
+                    //  //    * g2.middleRows(ish.atom_dfbfoff, ish.atom_dfnbf).middleCols(Xblk.bfoff, Xblk.nbf);
+                    //  //g3_in.row((subblock_offset + rho_block_offset)*ish.nbf + mu.off) -= 0.5 *
+                    //  //    coefs_transpose_blocked_[ish.center].col(mu.bfoff_in_atom*nbf + rho).transpose()
+                    //  //    * g2.middleRows(ish.atom_dfbfoff, ish.atom_dfnbf).middleCols(Xblk.bfoff, Xblk.nbf);
+                    //  g3.row(subblock_offset + rho_block_offset).segment(mu.off*Xblk.nbf, Xblk.nbf) -= 0.5 *
+                    //      coefs_transpose_blocked_[ish.center].col(mu.bfoff_in_atom*nbf + rho).transpose()
+                    //      * g2.middleRows(ish.atom_dfbfoff, ish.atom_dfnbf).middleCols(Xblk.bfoff, Xblk.nbf);
+                    //}
                   }
 
                   if(ish.center != jsblk.center) {
-                    for(auto&& mu : function_range(ish)) {
+                    int rho_block_offset = 0;
+                    for(auto&& rho : function_range(gbs_, dfbs_, jsblk.bfoff, jsblk.last_function)) {
+                      g3_in.middleRows(
+                          (subblock_offset + rho_block_offset)*ish.nbf, ish.nbf
+                      ) -= 0.5 *
+                          coefs_transpose_blocked_[jsblk.center].middleCols(
+                              rho.bfoff_in_atom*nbf + ish.bfoff, ish.nbf
+                          ).transpose() * g2.middleRows(
+                              jsblk.atom_dfbfoff, jsblk.atom_dfnbf).middleCols(Xblk.bfoff, Xblk.nbf
+                          );
                       //g3_in.middleRows((subblock_offset + rho_block_offset)*ish.nbf, ish.nbf) -= 0.5 *
                       //    coefs_transpose_blocked_[jsblk.center].middleCols(rho.bfoff_in_atom*nbf, ish.nbf).transpose()
                       //     * g2.middleRows(jsblk.atom_dfbfoff, jsblk.atom_dfnbf).middleCols(Xblk.bfoff, Xblk.nbf);
                       //g3.row(subblock_offset + rho_block_offset) -= 0.5 *
                       //    coefs_transpose_blocked_[jsblk.center].middleCols(rho.bfoff_in_atom*nbf, ish.nbf).transpose()
                       //     * g2.middleRows(jsblk.atom_dfbfoff, jsblk.atom_dfnbf).middleCols(Xblk.bfoff, Xblk.nbf);
-                      int rho_block_offset = 0;
-                      for(auto&& rho : function_range(gbs_, dfbs_, jsblk.bfoff, jsblk.last_function)) {
-                        g3.row(subblock_offset + rho_block_offset).segment(mu.off*Xblk.nbf, Xblk.nbf) -= 0.5 *
-                            coefs_transpose_blocked_[jsblk.center].col(rho.bfoff_in_atom*nbf + mu).transpose()
-                             * g2.middleRows(jsblk.atom_dfbfoff, jsblk.atom_dfnbf).middleCols(Xblk.bfoff, Xblk.nbf);
-                        ++rho_block_offset;
-                      }
+                      //for(auto&& mu : function_range(ish)) {
+                      //  g3.row(subblock_offset + rho_block_offset).segment(mu.off*Xblk.nbf, Xblk.nbf) -= 0.5 *
+                      //      coefs_transpose_blocked_[jsblk.center].col(rho.bfoff_in_atom*nbf + mu).transpose()
+                      //       * g2.middleRows(jsblk.atom_dfbfoff, jsblk.atom_dfnbf).middleCols(Xblk.bfoff, Xblk.nbf);
+                      //}
+                      ++rho_block_offset;
                     }
                   }
 

@@ -682,6 +682,7 @@ class CADFCLHF: public CLHF {
     /// Coefficients storage.  Not accessed directly
     double* __restrict__ coefficients_data_ = 0;
     double* __restrict__ dist_coefs_data_ = 0;
+    double* __restrict__ dist_coefs_data_df_ = 0;
 
     std::unordered_map<int, Eigen::Map<RowMatrix>> coefs_X_nu;
     std::unordered_map<int, Eigen::Map<RowMatrix>> coefs_X_nu_other;

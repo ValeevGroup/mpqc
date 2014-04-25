@@ -75,6 +75,8 @@ CADFCLHF::init_threads()
 
   ExEnv::out0() << indent << "Initializing CADFCLHF" << std::endl;
   ExEnv::out0() << incindent;
+  ExEnv::out0() << indent << "nbf: " << gbs_->nbasis() << std::endl;
+  ExEnv::out0() << indent << "dfnbf: " << dfbs_->nbasis() << std::endl;
 
   //----------------------------------------------------------------------------//
 
@@ -83,17 +85,38 @@ CADFCLHF::init_threads()
   //----------------------------------------------------------------------------//
   // initialize the two electron integral classes
 
+  integral()->set_storage(0);
+
   ExEnv::out0() << indent << "Initializing 3 center integral evaluators" << std::endl;
 
   // ThreeCenter versions
   integral()->set_basis(gbs_, gbs_, dfbs_);
+
+  size_t storage_required_3c = 0;
+  try {
+    storage_required_3c = integral()->storage_required(
+        coulomb_oper_type_, TwoBodyIntShape::value::_11_O_2, 0,
+        gbs_, gbs_, dfbs_
+    ) * nthread_;
+    if(coulomb_oper_type_ != metric_oper_type_) {
+      storage_required_3c += integral()->storage_required(metric_oper_type_, TwoBodyIntShape::value::_11_O_2, 0,
+          gbs_, gbs_, dfbs_
+      ) * nthread_;
+    }
+    ExEnv::out0() << incindent << indent << "Integral object reports " << data_size_to_string(storage_required_3c)
+                  << " required for 3 center integral evaluators." << decindent << endl;
+  }
+  catch(sc::Exception& e) {
+    ExEnv::out0() << incindent << indent << "Integral object is not reporting the amount of"
+                  << " storage needed for 3 center integral evaluators." << decindent << endl;
+  }
+
   size_t storage_avail = integral()->storage_unused();
   eris_3c_.resize(nthread_);
 
   eris_3c_[0] = integral()->coulomb<3>();
   for(int ithr = 1; ithr < nthread_; ++ithr) {
     eris_3c_[ithr] = eris_3c_[0]->clone();
-    //eris_3c_[ithr] = integral()->coulomb<3>();
     //eris_3c_[ithr]->set_integral_storage(storage_avail/nthread_);
   }
 
@@ -106,16 +129,37 @@ CADFCLHF::init_threads()
       throw FeatureNotImplemented("non-coulomb metrics in CADFCLHF", __FILE__, __LINE__, class_desc());
     }
   }
+  memory_used_ += storage_required_3c;
 
   ExEnv::out0() << indent << "Initializing 2 center integral evaluators" << std::endl;
-
   // TwoCenter versions
   integral()->set_basis(dfbs_, dfbs_);
+
+  size_t storage_required_2c = 0;
+  try {
+    storage_required_2c = integral()->storage_required(
+        coulomb_oper_type_, TwoBodyIntShape::value::_1_O_2, 0,
+        dfbs_, dfbs_
+    ) * nthread_;
+    if(coulomb_oper_type_ != metric_oper_type_) {
+      storage_required_2c += integral()->storage_required(
+          metric_oper_type_, TwoBodyIntShape::value::_1_O_2, 0,
+          dfbs_, dfbs_
+      ) * nthread_;
+
+    }
+    ExEnv::out0() << incindent << indent << "Integral object reports " << data_size_to_string(storage_required_2c)
+                  << " required for 2 center integral evaluators." << decindent << endl;
+   }
+  catch(sc::Exception& e) {
+    ExEnv::out0() << incindent << indent << "Integral object is not reporting the amount of"
+                  << " storage needed for 2 center integral evaluators." << decindent << endl;
+  }
+
   eris_2c_.resize(nthread_);
   eris_2c_[0] = integral()->coulomb<2>();
   for(int ithr = 1; ithr < nthread_; ++ithr) {
     eris_2c_[ithr] = eris_2c_[0]->clone();
-    //eris_2c_[ithr] = integral()->coulomb<2>();
   }
   for (int i=0; i < nthread_; i++) {
     if(metric_oper_type_ == coulomb_oper_type_){
@@ -125,6 +169,7 @@ CADFCLHF::init_threads()
       throw FeatureNotImplemented("non-coulomb metrics in CADFCLHF", __FILE__, __LINE__, class_desc());
     }
   }
+  memory_used_ += storage_required_2c;
 
   // Reset to normal setup
   integral()->set_basis(gbs_, gbs_, gbs_, gbs_);
@@ -132,12 +177,23 @@ CADFCLHF::init_threads()
   //----------------------------------------------------------------------------//
   // TODO fix this so that deallocating the tbis_ array doesn't cause a seg fault when this isn't called (we don't need it)
   ExEnv::out0() << indent << "Initializing 4 center integral evaluators" << endl;
-  //SCF::init_threads();
+  size_t storage_required_4c = 0;
+  try {
+    storage_required_4c = integral()->storage_required_eri(gbs_, gbs_, gbs_, gbs_) * nthread_;
+    ExEnv::out0() << incindent << indent << "Integral object reports "
+                  << data_size_to_string(storage_required_4c)
+                  << " required for 4 center integral evaluators." << decindent << endl;
+  }
+  catch(sc::Exception& e) {
+    ExEnv::out0() << incindent << indent << "Integral object is not reporting the amount of"
+                  << " storage needed for 4 center integral evaluators." << decindent << endl;
+  }
   tbis_ = new Ref<TwoBodyInt>[nthread_];
   tbis_[0] = integral()->electron_repulsion();
   for (int i=1; i < nthread_; i++) {
     tbis_[i] = tbis_[0]->clone();
   }
+  memory_used_ += storage_required_4c;
 
   //----------------------------------------------------------------------------//
   // Set up the all pairs vector, needed to prescreen Schwarz bounds

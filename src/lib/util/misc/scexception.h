@@ -495,7 +495,70 @@ public:
     T value() MPQC__NOEXCEPT { return value_; }
 };
 
+/** This is thrown when an assertion fails.  It is used by the
+ *    MPQC_ASSERT macro.  Don't use it without this macro.
+ */
+class AssertionFailed : public SCException {
+
+    const char* assertion_text_;
+
+  public:
+
+
+    /** Create an AssertionFailed exception.
+
+        @param the actual code in the assertion
+        @param file the file name where the problem occured.
+        @param line the line number where the exception occured.
+
+        It is suggested that the special macros __FILE__ and __LINE__ be
+        given as the \p file and \p line arguments, respectively.
+    */
+    AssertionFailed(const char *assertion_text,
+                const char *file,
+                int line) MPQC__NOEXCEPT;
+
+    const char* assertion_text() const MPQC__NOEXCEPT { return assertion_text_; }
+
+};
+
+///** This is thrown when a verbose assertion fails.  It is used by the
+// *    MPQC_ASSERT_* macros.  Don't use it without these macros.
+// */
+//template<typename T1, typename T2>
+//class VerboseAssertionFailed : public AssertionFailed {
+
+//    const char* assertion_text_;
+
+//  public:
+
+//    typedef enum comparison_operator {
+//      Not=1,
+//      LessThan=2,
+//      GreaterThan=4,
+//      EqualTo=8,
+//      And=16,
+//      Or=32
+//    };
+
+
+//    /** Create an AssertionFailed exception.
+
+//        @param the actual code in the assertion
+//        @param file the file name where the problem occured.
+//        @param line the line number where the exception occured.
+
+//        It is suggested that the special macros __FILE__ and __LINE__ be
+//        given as the \p file and \p line arguments, respectively.
+//    */
+//    VerboseAssertionFailed(const char *assertion_text,
+//                const char *file,
+//                int line) MPQC__NOEXCEPT;
+
+//};
+
 }
 
+#define __scexception_h_finished
 #endif
 

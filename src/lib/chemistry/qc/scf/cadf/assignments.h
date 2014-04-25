@@ -85,7 +85,7 @@ template<typename T, template<typename...> class compare=std::less> using ptr_pr
         detail::deref_compare<T, compare>
       >
     >;
-typedef unsigned long int uli;
+typedef uint64_t uli;
 typedef unsigned int uint;
 
 class Node;

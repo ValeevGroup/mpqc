@@ -123,7 +123,7 @@ AssignmentGrid::AssignmentGrid(
 
   ExEnv::out0() << indent << "AssignmentBins making assignments to available nodes" << endl;
   for(auto&& bin : bins_) {
-    (*bin->pq_handle)->make_assignments();
+    (*(bin->pq_handle))->make_assignments();
   }
 
   if(bins_have_multiple_nodes) {

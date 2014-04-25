@@ -249,6 +249,11 @@ class ConcurrentCacheBase {
 
     }
 
+    void clear()
+    {
+      cached_values_.clear();
+    }
+
   protected:
 
     // The actual map from key tuples to values

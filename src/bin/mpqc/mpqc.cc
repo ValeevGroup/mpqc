@@ -924,12 +924,18 @@ int
 main(int argc, char *argv[])
 {
   try {
-  try_main(argc, argv);
+    try_main(argc, argv);
+  }
+  catch (sc::Exception &e) {
+    cout << argv[0] << ": ERROR: SC EXCEPTION RAISED:" << endl;
+    cout << e.what() << endl;
+    cout.flush();
+    throw;
   }
   catch (SCException &e) {
-    cout << argv[0] << ": ERROR: SC EXCEPTION RAISED:" << endl
-         << e.what()
-         << endl;
+    cout << argv[0] << ": ERROR: SC EXCEPTION RAISED:" << endl;
+    cout << e.what() << endl;
+    cout.flush();
     throw;
   }
   catch (bad_alloc &e) {
@@ -939,9 +945,9 @@ main(int argc, char *argv[])
     throw;
   }
   catch (exception &e) {
-    cout << argv[0] << ": ERROR: EXCEPTION RAISED:" << endl
-         << e.what()
-         << endl;
+    cout << argv[0] << ": ERROR: EXCEPTION RAISED:" << endl;
+    cout << e.what() << endl;
+    cout.flush();
     throw;
   }
   catch (...) {

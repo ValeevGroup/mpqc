@@ -28,6 +28,7 @@
 
 
 #include <util/misc/xmlwriter.h>
+#include <util/container/conc_cache.h>
 
 #include "cadfclhf.h"
 #include "assignments.h"
@@ -35,7 +36,7 @@
 using namespace sc;
 
 typedef std::pair<int, int> IntPair;
-typedef unsigned long uli;
+typedef uint64_t uli;
 
 
 void
@@ -358,7 +359,21 @@ CADFCLHF::compute_coefficients()
     // Node-row-wise sum of mu coefficients
     {
       Ref<MessageGrp> mu_grp = scf_grp_->split(my_part.bin->obs_row_id);
-      mu_grp->sum(dist_coefs_data_, my_part.bin->obs_ncoefs);
+      const uli ncfs = my_part.bin->obs_ncoefs;
+      if(ncfs * sizeof(double) < std::numeric_limits<int>::max()) {
+        mu_grp->sum(dist_coefs_data_, ncfs);
+      }
+      else {
+        int chunk_size = std::numeric_limits<int>::max() / sizeof(double);
+        for(int ichunk = 0; ichunk < ncfs / chunk_size; ++ichunk) {
+          mu_grp->sum(dist_coefs_data_ + ichunk*chunk_size, chunk_size);
+        }
+        if(ncfs % chunk_size > 0) {
+          mu_grp->sum(dist_coefs_data_ + (ncfs / chunk_size) * chunk_size,
+              ncfs % chunk_size
+          );
+        }
+      }
     } // mu_grp is deleted
 
     sc::SCFormIO::init_mp(scf_grp_->me());
@@ -387,8 +402,22 @@ CADFCLHF::compute_coefficients()
 
     // Node-row-wise sum of X coefficients
     {
-      Ref<MessageGrp> X_grp = scf_grp_->split(my_part.bin->dfbs_row_id);
-      X_grp->sum(dist_coefs_data_ + my_part.bin->obs_ncoefs, my_part.bin->dfbs_ncoefs);
+      Ref<MessageGrp> X_grp = scf_grp_->split(my_part.bin->obs_row_id);
+      const uli ncfs = my_part.bin->dfbs_ncoefs;
+      if(ncfs * sizeof(double) < std::numeric_limits<int>::max()) {
+        X_grp->sum(dist_coefs_data_ + my_part.bin->obs_ncoefs, ncfs);
+      }
+      else {
+        int chunk_size = std::numeric_limits<int>::max() / sizeof(double);
+        for(int ichunk = 0; ichunk < ncfs / chunk_size; ++ichunk) {
+          X_grp->sum(dist_coefs_data_ + my_part.bin->obs_ncoefs + ichunk*chunk_size, chunk_size);
+        }
+        if(ncfs % chunk_size > 0) {
+          X_grp->sum(dist_coefs_data_ + my_part.bin->obs_ncoefs + (ncfs / chunk_size) * chunk_size,
+              ncfs % chunk_size
+          );
+        }
+      }
     } // X_grp is deleted
 
     sc::SCFormIO::init_mp(scf_grp_->me());
@@ -746,6 +775,7 @@ CADFCLHF::compute_coefficients()
   /*=======================================================================================*/
   /* Clean up                                              		                        {{{1 */ #if 1 // begin fold
   //---------------------------------------------------------------------------------------//
+  decomps_->clear();
   have_coefficients_ = true;                                                               //latex `\label{sc:coefflag}`
   timer.exit();
   /*****************************************************************************************/ #endif //1}}}

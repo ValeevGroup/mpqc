@@ -28,6 +28,7 @@
 #ifndef _util_misc_scexception_h
 #define _util_misc_scexception_h
 
+#include <stdexcept>
 #include <util/misc/exception.h>
 #include <sstream>
 #include <vector>

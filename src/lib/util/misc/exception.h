@@ -30,6 +30,7 @@
 
 #include <cstddef>
 #include <exception>
+#include <stdexcept>
 #include <sstream>
 
 #if __cplusplus > 199711L

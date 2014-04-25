@@ -334,8 +334,6 @@ CADFCLHF::compute_coefficients()
 
     // TODO threads
     std::vector<Eigen::Map<Eigen::VectorXd>> empty;
-    //assert(scf_grp_->n() > 1 || my_part.bin->compute_coef_items[false].size() > 0);
-    //assert(scf_grp_->n() > 1 || my_part.compute_coef_items[false].size() > 0);
     for(auto&& obs_shell : my_part.compute_coef_items[false]) {
 
       //DUMP(obs_shell->index);
@@ -402,7 +400,7 @@ CADFCLHF::compute_coefficients()
 
     // Node-row-wise sum of X coefficients
     {
-      Ref<MessageGrp> X_grp = scf_grp_->split(my_part.bin->obs_row_id);
+      Ref<MessageGrp> X_grp = scf_grp_->split(my_part.bin->dfbs_row_id);
       const uli ncfs = my_part.bin->dfbs_ncoefs;
       if(ncfs * sizeof(double) < std::numeric_limits<int>::max()) {
         X_grp->sum(dist_coefs_data_ + my_part.bin->obs_ncoefs, ncfs);
@@ -497,10 +495,6 @@ CADFCLHF::compute_coefficients()
   /* Debugging output                                     		                        {{{1 */ #if 1 // begin fold
   // debugging not implemented for sparse yet
   if(xml_debug_) {
-    //begin_xml_context(
-    //    "df_coefficients",
-    //    "compute_.xml"
-    //);
     for(auto mu : function_range(obs, dfbs_)){
       for(auto nu : function_range(obs, dfbs_, mu)) {
         IntPair mn(mu, nu);
@@ -540,79 +534,7 @@ CADFCLHF::compute_coefficients()
   /* Make the CADF-LinK lists                                                         {{{1 */ #if 1 // begin fold
   timer.change("06 - LinK coef lists");
 
-  //schwarz_df_.resize(dfbs_->nshell());
-  //for(auto Xsh : shell_range(dfbs_)){
-  //  auto g_XX_ptr = ints_to_eigen(
-  //      Xsh, Xsh, eris_2c_[0], coulomb_oper_type_
-  //  );
-  //  auto& g_XX = *g_XX_ptr;
-  //  double frob_norm = 0.0;
-  //  for(auto X : function_range(Xsh)) {
-  //    frob_norm += g_XX(X.bfoff_in_shell, X.bfoff_in_shell);
-  //  }
-  //  schwarz_df_[Xsh] = sqrt(frob_norm);
-  //}
-
   if(do_linK_) {
-
-    /*
-    do_threaded(nthread_, [&](int ithr) {
-      for(auto&& lsh : thread_over_range(shell_range(obs), ithr, nthread_)) {
-        for(auto&& ksh : L_schwarz[lsh]) {
-          double Ct = 0.0;
-          //----------------------------------------//
-          for(auto&& sigma : function_range(lsh)) {
-            for(auto&& nu : function_range(ksh)) {
-              BasisFunctionData first, second;
-              if(ksh <= lsh) {
-                first = sigma;
-                second = nu;
-              }
-              else {
-                first = nu;
-                second = sigma;
-              }
-              IntPair mu_sigma(first, second);
-              assert(coefs_.find(mu_sigma) != coefs_.end());
-              auto& cpair = coefs_[mu_sigma];
-
-              for(auto&& Xsh : iter_shells_on_center(dfbs_, first.center)){
-                auto& C = *cpair.first;
-                for(auto&& X : function_range(Xsh)) {
-                  const double CX = C[X.bfoff_in_atom];
-                  Ct += CX * CX * g2(X, X);
-                }
-              }
-
-              if(first.center != second.center) {
-                for(auto&& Xsh : iter_shells_on_center(dfbs_, second.center)){
-                  auto& C = *cpair.second;
-                  for(auto&& X : function_range(Xsh)) {
-                    const double CX = C[X.bfoff_in_atom];
-                    Ct += CX * CX * g2(X, X);
-                  }
-                }
-              }
-
-            } // end loop over nu
-          } // end loop over sigma
-          //----------------------------------------//
-          L_coefs[lsh].insert(ksh, sqrt(Ct));
-          //----------------------------------------//
-        } // end loop over ksh
-      } // end loop over lsh
-    });
-
-    do_threaded(nthread_, [&](int ithr){
-      auto L_coefs_iter = L_coefs.begin();
-      const auto& L_coefs_end = L_coefs.end();
-      L_coefs_iter.advance(ithr);
-      while(L_coefs_iter != L_coefs_end) {
-        L_coefs_iter->second.sort();
-        L_coefs_iter.advance(nthread_);
-      }
-    });
-    */
 
     //----------------------------------------//
     // Compute the Frobenius norm of C_transpose_ blocks
@@ -620,11 +542,8 @@ CADFCLHF::compute_coefficients()
     if(distribute_coefficients_) {
       C_trans_frob_.resize(dfbs_->nshell());
       const cadf::Node& my_part = atom_pair_assignments_k_->my_assignments(scf_grp_->me());
-      //for(auto&& Xsh : shell_range(dfbs_, gbs_)) {
-      //    resize_and_zero_matrix(C_trans_frob_[Xsh], Xsh.atom_obsnsh, obs->nshell());
-      //}
+
       for(auto Xatom : my_part.bin->assigned_dfbs_atoms) {
-        //ShellBlockData<> Xblk = ShellBlockData<>::atom_block(Xatom->index, dfbs_, gbs_);
         for(auto&& Xsh : iter_shells_on_center(dfbs_, Xatom->index, gbs_)) {
 
           resize_and_zero_matrix(C_trans_frob_[Xsh], Xsh.atom_obsnsh, obs->nshell());
@@ -643,18 +562,6 @@ CADFCLHF::compute_coefficients()
           C_trans_frob_[Xsh] = C_trans_frob_[Xsh].array().sqrt();
         }
       }
-      /*
-      double c_trans_frob_norm = 0.0;
-      for(auto&& Xsh : shell_range(dfbs_, gbs_)) {
-        // Node-row-wise sum of X parts of C_bar_
-        {
-          Ref<MessageGrp> X_grp = scf_grp_->split(my_part.bin->obs_row_id);
-          X_grp->sum(C_trans_frob_[Xsh].data(), Xsh.atom_obsnsh * gbs_->nshell());
-          c_trans_frob_norm += C_trans_frob_[Xsh].norm();
-        } // X_grp is deleted
-        sc::SCFormIO::init_mp(scf_grp_->me());
-      }
-      */
     }
     else {
       C_trans_frob_.resize(dfbs_->nshell());

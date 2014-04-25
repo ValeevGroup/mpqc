@@ -25,6 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <string>
 #include <util/misc/exception.h>
 #include <util/misc/exenv.h>
 
@@ -38,14 +39,12 @@ Exception::Exception(const char *description,
                      const char *file,
                      int line) MPQC__NOEXCEPT:
   std::runtime_error(
-      (std::ostringstream()
-        << (description ? description :
-            (file ? "exception at "
-              : "(no description or file information given for Exception)"
-            ))
-        << (description ? (file ? ", at " : "") : "")
-        << (file ? (std::ostringstream() << file << ":" << line).str().c_str() : "")
-      ).str().c_str()
+    std::string(description ? description :
+        (file ? "exception at "
+          : "(no description or file information given for Exception)"
+        ))
+    + std::string(description ? (file ? ", at " : "") : "")
+    + std::string(file ? (std::string(file) + ":" + to_string(line)) : "")
   ),
   description_(description),
   file_(file),
@@ -54,9 +53,7 @@ Exception::Exception(const char *description,
 }
 
 Exception::Exception(const Exception& ref) MPQC__NOEXCEPT:
-    std::runtime_error(
-        (std::ostringstream() << (ref.description_ ? ref.description_ : "")).str().c_str()
-    ),
+    std::runtime_error(ref.what()),
     description_(ref.description_),
     file_(ref.file_),
     line_(ref.line_)

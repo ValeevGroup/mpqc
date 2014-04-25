@@ -484,7 +484,7 @@ AssertionFailed::AssertionFailed(
 ) MPQC__NOEXCEPT:
     assertion_text_(assertion_text),
     SCException(
-        (ostringstream() << "Assertion failed: " << assertion_text).str().c_str(),
+        (std::string("Assertion failed: ") + std::string(assertion_text)).c_str(), 
         file, line, 0, "AssertionFailed"
     )
 {

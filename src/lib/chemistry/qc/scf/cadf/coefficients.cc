@@ -185,22 +185,22 @@ CADFCLHF::compute_coefficients()
   /********************************************************/ #endif //2}}} //latex `\label{sc:coefmemend}`
   /*-----------------------------------------------------*/
 
-  timer.enter("compute (X|Y)");
-  ExEnv::out0() << indent << "Computing two center integrals" << std::endl;
-  g2_full_ptr_ = ints_to_eigen_threaded(
-      ShellBlockData<>(dfbs_),
-      ShellBlockData<>(dfbs_),
-      eris_2c_, coulomb_oper_type_
-  );
-  memory_used_ += sizeof(TwoCenterIntContainer) + dfnbf*dfnbf*sizeof(double);
-  const auto& g2 = *g2_full_ptr_;
+  //timer.enter("compute (X|Y)");
+  //ExEnv::out0() << indent << "Computing two center integrals" << std::endl;
+  //g2_full_ptr_ = ints_to_eigen_threaded(
+  //    ShellBlockData<>(dfbs_),
+  //    ShellBlockData<>(dfbs_),
+  //    eris_2c_, coulomb_oper_type_
+  //);
+  //memory_used_ += sizeof(TwoCenterIntContainer) + dfnbf*dfnbf*sizeof(double);
+  //const auto& g2 = *g2_full_ptr_;
 
-  schwarz_df_.resize(dfbs_->nshell());
-  for(auto&& Xsh : shell_range(dfbs_)) {
-    schwarz_df_(Xsh) = g2.block(Xsh.bfoff, Xsh.bfoff, Xsh.nbf, Xsh.nbf).norm();
-  }
+  //schwarz_df_.resize(dfbs_->nshell());
+  //for(auto&& Xsh : shell_range(dfbs_)) {
+  //  schwarz_df_(Xsh) = g2.block(Xsh.bfoff, Xsh.bfoff, Xsh.nbf, Xsh.nbf).norm();
+  //}
 
-  timer.exit();
+  //timer.exit();
 
 
   /*****************************************************************************************/ #endif //1}}}

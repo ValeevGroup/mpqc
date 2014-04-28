@@ -87,6 +87,71 @@ CADFCLHF::init_threads()
 
   //integral()->set_storage(32000000);
 
+  ExEnv::out0() << indent << "Initializing 2 center integral evaluators" << std::endl;
+  // TwoCenter versions
+  integral()->set_basis(dfbs_, dfbs_);
+
+  size_t storage_required_2c = 0;
+  try {
+    storage_required_2c = integral()->storage_required(
+        coulomb_oper_type_, TwoBodyIntShape::value::_1_O_2, 0,
+        dfbs_, dfbs_
+    ) * nthread_;
+    if(coulomb_oper_type_ != metric_oper_type_) {
+      storage_required_2c += integral()->storage_required(
+          metric_oper_type_, TwoBodyIntShape::value::_1_O_2, 0,
+          dfbs_, dfbs_
+      ) * nthread_;
+
+    }
+    ExEnv::out0() << incindent << indent << "Integral object reports " << data_size_to_string(storage_required_2c)
+                  << " required for 2 center integral evaluators." << decindent << endl;
+   }
+  catch(sc::Exception& e) {
+    ExEnv::out0() << incindent << indent << "Integral object is not reporting the amount of"
+                  << " storage needed for 2 center integral evaluators." << decindent << endl;
+  }
+
+  eris_2c_.resize(nthread_);
+  eris_2c_[0] = integral()->coulomb<2>();
+  for(int ithr = 1; ithr < nthread_; ++ithr) {
+    eris_2c_[ithr] = eris_2c_[0]->clone();
+  }
+  for (int i=0; i < nthread_; i++) {
+    if(metric_oper_type_ == coulomb_oper_type_){
+      metric_ints_2c_.push_back(eris_2c_[i]);
+    }
+    else{
+      throw FeatureNotImplemented("non-coulomb metrics in CADFCLHF", __FILE__, __LINE__, class_desc());
+    }
+  }
+  memory_used_ += storage_required_2c;
+
+  //----------------------------------------------------------------------------//
+  // Compute the two center integrals, then dispense with the evaluators
+  // TODO this will need to be changed for different metric kernels
+
+  ExEnv::out0() << indent << "Computing two center integrals" << std::endl;
+  g2_full_ptr_ = ints_to_eigen_threaded(
+      ShellBlockData<>(dfbs_),
+      ShellBlockData<>(dfbs_),
+      eris_2c_, coulomb_oper_type_
+  );
+  memory_used_ += sizeof(TwoCenterIntContainer) + dfbs_->nbasis()*dfbs_->nbasis()*sizeof(double);
+  const auto& g2 = *g2_full_ptr_;
+
+  schwarz_df_.resize(dfbs_->nshell());
+  for(auto&& Xsh : shell_range(dfbs_)) {
+    schwarz_df_(Xsh) = g2.block(Xsh.bfoff, Xsh.bfoff, Xsh.nbf, Xsh.nbf).norm();
+  }
+
+  for(int ithr = 0; ithr < nthread_; ++ithr) {
+    eris_2c_[ithr] = 0;
+    metric_ints_2c_[ithr] = 0;
+  }
+
+  //----------------------------------------------------------------------------//
+
   ExEnv::out0() << indent << "Initializing 3 center integral evaluators" << std::endl;
 
   // ThreeCenter versions
@@ -130,46 +195,6 @@ CADFCLHF::init_threads()
     }
   }
   memory_used_ += storage_required_3c;
-
-  ExEnv::out0() << indent << "Initializing 2 center integral evaluators" << std::endl;
-  // TwoCenter versions
-  integral()->set_basis(dfbs_, dfbs_);
-
-  size_t storage_required_2c = 0;
-  try {
-    storage_required_2c = integral()->storage_required(
-        coulomb_oper_type_, TwoBodyIntShape::value::_1_O_2, 0,
-        dfbs_, dfbs_
-    ) * nthread_;
-    if(coulomb_oper_type_ != metric_oper_type_) {
-      storage_required_2c += integral()->storage_required(
-          metric_oper_type_, TwoBodyIntShape::value::_1_O_2, 0,
-          dfbs_, dfbs_
-      ) * nthread_;
-
-    }
-    ExEnv::out0() << incindent << indent << "Integral object reports " << data_size_to_string(storage_required_2c)
-                  << " required for 2 center integral evaluators." << decindent << endl;
-   }
-  catch(sc::Exception& e) {
-    ExEnv::out0() << incindent << indent << "Integral object is not reporting the amount of"
-                  << " storage needed for 2 center integral evaluators." << decindent << endl;
-  }
-
-  eris_2c_.resize(nthread_);
-  eris_2c_[0] = integral()->coulomb<2>();
-  for(int ithr = 1; ithr < nthread_; ++ithr) {
-    eris_2c_[ithr] = eris_2c_[0]->clone();
-  }
-  for (int i=0; i < nthread_; i++) {
-    if(metric_oper_type_ == coulomb_oper_type_){
-      metric_ints_2c_.push_back(eris_2c_[i]);
-    }
-    else{
-      throw FeatureNotImplemented("non-coulomb metrics in CADFCLHF", __FILE__, __LINE__, class_desc());
-    }
-  }
-  memory_used_ += storage_required_2c;
 
   // Reset to normal setup
   integral()->set_basis(gbs_, gbs_, gbs_, gbs_);
@@ -247,9 +272,6 @@ CADFCLHF::init_threads()
   atom_pair_assignments_k_->print_detail(ExEnv::out0(), !distribute_coefficients_);
   auto& my_part = atom_pair_assignments_k_->my_assignments(me);
 
-  //for(auto&& ish_ptr : my_part.assigned_obs_shells) {
-  //  ShellData ish(ish_ptr->index, gbs_, dfbs_);
-  //  for(auto&& Xatom_ptr : my_part.assigned_dfbs_atoms) {
   for(auto&& pair : my_part.pairs) {
     {
       ShellBlockData<> Xblk = ShellBlockData<>::atom_block(pair.Xatom, dfbs_, gbs_);
@@ -269,6 +291,8 @@ CADFCLHF::init_threads()
 
     }
   }
+
+  //----------------------------------------------------------------------------//
 
 
   //----------------------------------------------------------------------------//

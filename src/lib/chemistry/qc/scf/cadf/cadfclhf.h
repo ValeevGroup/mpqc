@@ -458,6 +458,8 @@ class CADFCLHF: public CLHF {
 
     void init_threads();
 
+    //void init_vector();
+
     void done_threads();
 
     void print(std::ostream& o) const;

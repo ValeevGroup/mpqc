@@ -184,13 +184,19 @@ class Node : public boost::enable_shared_from_this<Node> {
     uli shell_pair_count = 0;
     uli basis_pair_count = 0;
 
+    bool is_me = false;
+
     uli assign_pair(
         const ShellData& ish,
         const ShellBlockData<>& Xblk
     )
     {
-      pairs.emplace_back(ish, Xblk, shared_from_this());
-      const uli cost = pairs.back().cost_estimate();
+      AssignableShellPair pair(ish, Xblk, shared_from_this());
+      if(is_me) {
+        pairs.emplace_back(pair);
+      }
+      // compute the cost
+      const uli cost = pair.cost_estimate();
       estimated_workload += cost;
       shell_pair_count += Xblk.nshell;
       basis_pair_count += Xblk.nbf * ish.nbf;
@@ -337,7 +343,7 @@ class AssignmentGrid {
     AssignmentGrid(
         GaussianBasisSet* basis,
         GaussianBasisSet* dfbasis,
-        int n_node
+        int n_node, int me
     );
 
     const AssignmentBin& my_bin(int me) const {

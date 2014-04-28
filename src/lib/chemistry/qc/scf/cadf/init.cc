@@ -85,7 +85,7 @@ CADFCLHF::init_threads()
   //----------------------------------------------------------------------------//
   // initialize the two electron integral classes
 
-  integral()->set_storage(0);
+  //integral()->set_storage(32000000);
 
   ExEnv::out0() << indent << "Initializing 3 center integral evaluators" << std::endl;
 
@@ -236,7 +236,7 @@ CADFCLHF::init_threads()
 
   ExEnv::out0() << indent << "Computing static distribution of (obs, dfbs) pairs for exchange" << endl;
   atom_pair_assignments_k_ = make_shared<cadf::AssignmentGrid>(
-      gbs_, dfbs_, scf_grp_->n()
+      gbs_, dfbs_, scf_grp_->n(), scf_grp_->me()
   );
   atom_pair_assignments_k_->print_detail(ExEnv::out0(), !distribute_coefficients_);
   auto& my_part = atom_pair_assignments_k_->my_assignments(me);
@@ -317,6 +317,12 @@ CADFCLHF::init_significant_pairs()
     }
 
   });
+  //----------------------------------------//
+  // At this point, we're done with the tbis_
+  for (int i=0; i < threadgrp_->nthread(); i++) tbis_[i] = 0;
+  delete[] tbis_;
+  tbis_ = 0;
+
   //----------------------------------------//
   // All-to-all the shell-wise Frobenius norms of the Schwarz matrix
 

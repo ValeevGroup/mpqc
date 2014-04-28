@@ -289,7 +289,7 @@ CADFCLHF::compute_coefficients()
     const cadf::Node& my_part = atom_pair_assignments_k_->my_assignments(scf_grp_->me());
     uli ncoefs_dist = my_part.bin->obs_ncoefs + my_part.bin->dfbs_ncoefs;
     try {
-      if(ncoefs_dist * sizeof(double) > std::numeric_limits<int>::max() || true) {
+      if(ncoefs_dist * sizeof(double) > std::numeric_limits<int>::max()) {
         dist_coefs_data_ = new double[my_part.bin->obs_ncoefs];
         dist_coefs_data_df_ = new double[my_part.bin->dfbs_ncoefs];
       }

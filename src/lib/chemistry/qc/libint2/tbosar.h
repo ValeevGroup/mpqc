@@ -364,8 +364,10 @@ TwoBodyOSARLibint2<OperType>::TwoBodyOSARLibint2(Integral *integral,
     perm_ints_ = 0;
 
   // See if can store primitive-pair data
-  size_t primitive_pair_storage_estimate = (bs1_->nprimitive()*bs2_->nprimitive() +
-    bs3_->nprimitive()*bs4_->nprimitive())*sizeof(prim_pair_t);
+  size_t primitive_pair_storage_estimate = (
+      size_t(bs1_->nprimitive()) * size_t(bs2_->nprimitive()) +
+      size_t(bs3_->nprimitive()) * size_t(bs4_->nprimitive())
+  ) *sizeof(prim_pair_t);
   //  ExEnv::errn() << scprintf("need %d bytes to store primitive pair data\n",primitive_pair_storage_estimate);
 
   if (store_pair_data()) {
@@ -457,8 +459,12 @@ TwoBodyOSARLibint2<OperType>::storage_required(const Ref<GaussianBasisSet>& b1,
   }
 
   // See if can store primitive-pair data
-  size_t primitive_pair_storage_estimate = (bs1->nprimitive()*bs2->nprimitive() +
-    bs3->nprimitive()*bs4->nprimitive())*sizeof(prim_pair_t);
+  size_t primitive_pair_storage_estimate = (
+      size_t(bs1->nprimitive()) * size_t(bs2->nprimitive()) +
+      size_t(bs3->nprimitive()) * size_t(bs4->nprimitive())
+  ) *sizeof(prim_pair_t);
+  //size_t primitive_pair_storage_estimate = (bs1->nprimitive()*bs2->nprimitive() +
+  //  bs3->nprimitive()*bs4->nprimitive())*sizeof(prim_pair_t);
 #if STORE_PAIR_DATA
   storage_required += primitive_pair_storage_estimate;
 #endif

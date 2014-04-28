@@ -38,7 +38,7 @@ using namespace std;
 AssignmentGrid::AssignmentGrid(
     GaussianBasisSet* basis,
     GaussianBasisSet* dfbasis,
-    int n_node
+    int n_node, int me
 ) : basis_(basis),
     dfbasis_(dfbasis)
 {
@@ -117,8 +117,11 @@ AssignmentGrid::AssignmentGrid(
   ExEnv::out0() << indent << "Assigning nodes to bins based on workload." << endl;
   for(int inode = 0; inode < n_node; ++inode) {
     const boost::shared_ptr<AssignmentBin>& most_work_bin = bins_.top();
-    nodes_.push_back((*most_work_bin->pq_handle)->add_node(inode));
+    auto new_node = (*most_work_bin->pq_handle)->add_node(inode);
+    if(inode == me) new_node->is_me = true;
+    nodes_.push_back(new_node);
     bins_.update(most_work_bin->pq_handle);
+
   }
 
   ExEnv::out0() << indent << "AssignmentBins making assignments to available nodes" << endl;

@@ -123,7 +123,7 @@ TwoBodyInt::nshell4() const
 }
 
 Ref<GaussianBasisSet>
-TwoBodyInt::basis(size_t c)
+TwoBodyInt::basis(size_t c) const
 {
   if (c >= 4)
     throw ProgrammingError("TwoBodyInt::basis(c): c >= 4",
@@ -139,25 +139,25 @@ TwoBodyInt::basis(size_t c)
 }
 
 Ref<GaussianBasisSet>
-TwoBodyInt::basis1()
+TwoBodyInt::basis1() const
 {
   return bs1_;
 }
 
 Ref<GaussianBasisSet>
-TwoBodyInt::basis2()
+TwoBodyInt::basis2() const
 {
   return bs2_;
 }
 
 Ref<GaussianBasisSet>
-TwoBodyInt::basis3()
+TwoBodyInt::basis3() const
 {
   return bs3_;
 }
 
 Ref<GaussianBasisSet>
-TwoBodyInt::basis4()
+TwoBodyInt::basis4() const
 {
   return bs4_;
 }
@@ -293,7 +293,7 @@ TwoBodyThreeCenterInt::nshell3() const
 }
 
 Ref<GaussianBasisSet>
-TwoBodyThreeCenterInt::basis(size_t c)
+TwoBodyThreeCenterInt::basis(size_t c) const
 {
   if (c >= 3)
     throw ProgrammingError("TwoBodyThreeCenterInt::basis(c): c >= 4",
@@ -308,19 +308,19 @@ TwoBodyThreeCenterInt::basis(size_t c)
 }
 
 Ref<GaussianBasisSet>
-TwoBodyThreeCenterInt::basis1()
+TwoBodyThreeCenterInt::basis1() const
 {
   return bs1_;
 }
 
 Ref<GaussianBasisSet>
-TwoBodyThreeCenterInt::basis2()
+TwoBodyThreeCenterInt::basis2() const
 {
   return bs2_;
 }
 
 Ref<GaussianBasisSet>
-TwoBodyThreeCenterInt::basis3()
+TwoBodyThreeCenterInt::basis3() const
 {
   return bs3_;
 }
@@ -417,7 +417,7 @@ TwoBodyTwoCenterInt::nshell2() const
 }
 
 Ref<GaussianBasisSet>
-TwoBodyTwoCenterInt::basis(size_t c)
+TwoBodyTwoCenterInt::basis(size_t c) const
 {
   if (c >= 2)
     throw ProgrammingError("TwoBodyTwoCenterInt::basis(c): c >= 4",
@@ -431,13 +431,13 @@ TwoBodyTwoCenterInt::basis(size_t c)
 }
 
 Ref<GaussianBasisSet>
-TwoBodyTwoCenterInt::basis1()
+TwoBodyTwoCenterInt::basis1() const
 {
   return bs1_;
 }
 
 Ref<GaussianBasisSet>
-TwoBodyTwoCenterInt::basis2()
+TwoBodyTwoCenterInt::basis2() const
 {
   return bs2_;
 }
@@ -763,31 +763,31 @@ TwoBodyDerivInt::nshell4() const
 }
 
 Ref<GaussianBasisSet>
-TwoBodyDerivInt::basis()
+TwoBodyDerivInt::basis() const
 {
   return bs1_;
 }
 
 Ref<GaussianBasisSet>
-TwoBodyDerivInt::basis1()
+TwoBodyDerivInt::basis1() const
 {
   return bs1_;
 }
 
 Ref<GaussianBasisSet>
-TwoBodyDerivInt::basis2()
+TwoBodyDerivInt::basis2() const
 {
   return bs2_;
 }
 
 Ref<GaussianBasisSet>
-TwoBodyDerivInt::basis3()
+TwoBodyDerivInt::basis3() const
 {
   return bs3_;
 }
 
 Ref<GaussianBasisSet>
-TwoBodyDerivInt::basis4()
+TwoBodyDerivInt::basis4() const
 {
   return bs4_;
 }
@@ -891,25 +891,25 @@ TwoBodyThreeCenterDerivInt::nshell3() const
 }
 
 Ref<GaussianBasisSet>
-TwoBodyThreeCenterDerivInt::basis()
+TwoBodyThreeCenterDerivInt::basis() const
 {
   return bs1_;
 }
 
 Ref<GaussianBasisSet>
-TwoBodyThreeCenterDerivInt::basis1()
+TwoBodyThreeCenterDerivInt::basis1() const
 {
   return bs1_;
 }
 
 Ref<GaussianBasisSet>
-TwoBodyThreeCenterDerivInt::basis2()
+TwoBodyThreeCenterDerivInt::basis2() const
 {
   return bs2_;
 }
 
 Ref<GaussianBasisSet>
-TwoBodyThreeCenterDerivInt::basis3()
+TwoBodyThreeCenterDerivInt::basis3() const
 {
   return bs3_;
 }
@@ -988,19 +988,19 @@ TwoBodyTwoCenterDerivInt::nshell2() const
 }
 
 Ref<GaussianBasisSet>
-TwoBodyTwoCenterDerivInt::basis()
+TwoBodyTwoCenterDerivInt::basis() const
 {
   return bs1_;
 }
 
 Ref<GaussianBasisSet>
-TwoBodyTwoCenterDerivInt::basis1()
+TwoBodyTwoCenterDerivInt::basis1() const
 {
   return bs1_;
 }
 
 Ref<GaussianBasisSet>
-TwoBodyTwoCenterDerivInt::basis2()
+TwoBodyTwoCenterDerivInt::basis2() const
 {
   return bs2_;
 }

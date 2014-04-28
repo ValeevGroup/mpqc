@@ -179,7 +179,11 @@ CADFCLHF::init_threads()
   ExEnv::out0() << indent << "Initializing 4 center integral evaluators" << endl;
   size_t storage_required_4c = 0;
   try {
-    storage_required_4c = integral()->storage_required_eri(gbs_, gbs_, gbs_, gbs_) * nthread_;
+    storage_required_4c = integral()->storage_required_eri(gbs_, gbs_, gbs_, gbs_);
+    if(thread_4c_ints_) {
+      storage_required_4c *= nthread_;
+    }
+
     ExEnv::out0() << incindent << indent << "Integral object reports "
                   << data_size_to_string(storage_required_4c)
                   << " required for 4 center integral evaluators." << decindent << endl;
@@ -188,10 +192,12 @@ CADFCLHF::init_threads()
     ExEnv::out0() << incindent << indent << "Integral object is not reporting the amount of"
                   << " storage needed for 4 center integral evaluators." << decindent << endl;
   }
-  tbis_ = new Ref<TwoBodyInt>[nthread_];
+  tbis_ = new Ref<TwoBodyInt>[thread_4c_ints_ ? nthread_ : 1];
   tbis_[0] = integral()->electron_repulsion();
-  for (int i=1; i < nthread_; i++) {
-    tbis_[i] = tbis_[0]->clone();
+  if(thread_4c_ints_) {
+    for (int i=1; i < nthread_; i++) {
+      tbis_[i] = tbis_[0]->clone();
+    }
   }
   memory_used_ += storage_required_4c;
 
@@ -290,7 +296,8 @@ CADFCLHF::init_significant_pairs()
   memory_used_ += gbs_->nshell() * gbs_->nshell() * sizeof(double);
   schwarz_frob_ = Eigen::MatrixXd::Zero(gbs_->nshell(), gbs_->nshell());
   local_pairs_spot_ = 0;
-  do_threaded(nthread_, [&](int ithr){
+
+  do_threaded((thread_4c_ints_ ? nthread_ : 1), [&](int ithr){
 
     ShellData ish, jsh;
     std::vector<std::pair<double, IntPair>> my_pair_vals;
@@ -319,7 +326,7 @@ CADFCLHF::init_significant_pairs()
   });
   //----------------------------------------//
   // At this point, we're done with the tbis_
-  for (int i=0; i < threadgrp_->nthread(); i++) tbis_[i] = 0;
+  for (int i=0; i < (thread_4c_ints_ ? nthread_ : 1); i++) tbis_[i] = 0;
   delete[] tbis_;
   tbis_ = 0;
 

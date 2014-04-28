@@ -376,6 +376,8 @@ class CADFCLHF: public CLHF {
     double B_screening_thresh_;
     /// Store the coefficients in both storage orders.  Takes more memory but also faster
     bool store_coefs_transpose_ = false;
+    /// Thread the schwarz computation.  Requires more memory for 4c int evaluators and doesn't increase speed much.
+    bool thread_4c_ints_ = false;
     //@}
 
     ScreeningStatistics stats_;

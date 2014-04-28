@@ -250,6 +250,7 @@ CADFCLHF::print(ostream&o) const
   o << indent << "screen_B_use_distance = " << bool_str(screen_B_use_distance_) << endl;
   o << indent << "store_coefs_transpose = " << bool_str(store_coefs_transpose_) << endl;
   o << indent << "subtract_extents = " << bool_str(subtract_extents_) << endl;
+  o << indent << "thread_4c_ints = " << bool_str(thread_4c_ints_) << endl;
   o << indent << "use_extents = " << bool_str(use_extents_) << endl;
   o << indent << "use_max_extents = " << bool_str(use_max_extents_) << endl;
   o << indent << "use_norms_nu = " << bool_str(use_norms_nu_) << endl;

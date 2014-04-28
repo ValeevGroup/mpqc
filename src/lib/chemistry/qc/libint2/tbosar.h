@@ -465,9 +465,9 @@ TwoBodyOSARLibint2<OperType>::storage_required(const Ref<GaussianBasisSet>& b1,
   ) *sizeof(prim_pair_t);
   //size_t primitive_pair_storage_estimate = (bs1->nprimitive()*bs2->nprimitive() +
   //  bs3->nprimitive()*bs4->nprimitive())*sizeof(prim_pair_t);
-#if STORE_PAIR_DATA
+//#if STORE_PAIR_DATA
   storage_required += primitive_pair_storage_estimate;
-#endif
+//#endif
 
   return storage_required;
 }

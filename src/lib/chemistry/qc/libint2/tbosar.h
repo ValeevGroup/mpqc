@@ -394,7 +394,7 @@ TwoBodyOSARLibint2<OperType>::TwoBodyOSARLibint2(Integral *integral,
     if ( (bs1_ == bs3_ && bs2_ == bs4_) /*||
              // if this is (ab|ba) case -- should i try to save storage?
          (bs1_ == bs4_ && bs2_ == bs3_)*/ )
-      shell_pairs34_ = new ShellPairsLibint2(shell_pairs12_);
+      shell_pairs34_ = new ShellPairsLibint2(*shell_pairs12_);
     else
       shell_pairs34_ = new ShellPairsLibint2(bs3_,bs4_);
     storage_needed += primitive_pair_storage_estimate;
@@ -426,8 +426,8 @@ TwoBodyOSARLibint2<OperType>::~TwoBodyOSARLibint2()
 template <TwoBodyOper::type OperType>
 TwoBodyOSARLibint2<OperType>::TwoBodyOSARLibint2(const TwoBodyOSARLibint2& other) :
   Int2eLibint2(other),
-  shell_pairs12_(other.shell_pairs12_),
-  shell_pairs34_(other.shell_pairs34_),
+  shell_pairs12_(new ShellPairsLibint2(*other.shell_pairs12_)),
+  shell_pairs34_(new ShellPairsLibint2(*other.shell_pairs34_)),
   coreints_(other.coreints_)
 {
   // The static part of Libint's interface is automatically initialized in libint.cc

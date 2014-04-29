@@ -43,7 +43,6 @@ Int2eLibint2::Int2eLibint2(Integral *integral,
   bs2_(b2),
   bs3_(b3),
   bs4_(b4),
-  //grp_(integral->messagegrp()),
   permute_(0),
   redundant_(1),
   storage_(storage)

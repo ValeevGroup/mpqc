@@ -69,13 +69,17 @@ class ShellPairsLibint2: virtual public SavableState {
   
   public:
   /**
-   *
-   * @param bs1
-   * @param bs2
+   * Constructs shell pair data from a pair of basis sets.
+   * @param bs1 basis set 1
+   * @param bs2 basis set 2
    */
   ShellPairsLibint2(const Ref<GaussianBasisSet>& bs1,
                     const Ref<GaussianBasisSet>& bs2);
-  ShellPairsLibint2(const Ref<ShellPairsLibint2>&);
+  /**
+   * Constructs a "shallow" copy of \c other
+   * @param other ShellPairsLibint2
+   */
+  ShellPairsLibint2(const ShellPairsLibint2& other);
   ShellPairsLibint2(const Ref<KeyVal>&);
   ShellPairsLibint2(StateIn&);
 

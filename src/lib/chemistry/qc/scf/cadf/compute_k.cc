@@ -244,9 +244,9 @@ CADFCLHF::compute_K()
 
     // First clear all of the lists
     L_DC.clear();
+
     L_3.clear();
     L_B.clear();
-    //L_3_prime.clear();
 
     //============================================================================//
     // Get the Frobenius norms of the density matrix shell blocks

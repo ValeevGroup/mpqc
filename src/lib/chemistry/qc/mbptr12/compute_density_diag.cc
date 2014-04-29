@@ -6257,7 +6257,7 @@ void MP2R12Energy_Diag::compute_RT2_apa(const int nspincases1, const int nspinca
      Ref<DistArray4> Rij_apb_ints;
      activate_ints(occ_act->id(), occ_act->id(), cabs->id(), vir->id(),
                    descr_f12_key, moints4_rtime, Rij_apb_ints);
-     if (!r12eval()->dim_oo(spincase).n() == 0) {
+     if (r12eval()->dim_oo(spincase).n() != 0) {
        T2[s+1]->activate();
 
        // test code

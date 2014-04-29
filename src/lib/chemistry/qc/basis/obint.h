@@ -83,12 +83,12 @@ class OneBodyInt : public RefCount {
      * @param[in] c center index, in [0,1]; default = 0 (first center)
      * @return (pointer to) the basis set object on center @c c
      */
-    Ref<GaussianBasisSet> basis(size_t c);
+    Ref<GaussianBasisSet> basis(size_t c) const;
 
     /// Return the basis set on the center one.
-    Ref<GaussianBasisSet> basis1();
+    Ref<GaussianBasisSet> basis1() const;
     /// Return the basis set on the center two.
-    Ref<GaussianBasisSet> basis2();
+    Ref<GaussianBasisSet> basis2() const;
 
     /// Returns the buffer where the integrals are placed.
     const double * buffer() const;
@@ -152,10 +152,10 @@ class OneBodyOneCenterInt : public RefCount {
      * @param[in] c center index, in [0,0]; default = 0 (first center)
      * @return (pointer to) the basis set object on center @c c
      */
-    Ref<GaussianBasisSet> basis(size_t c);
+    Ref<GaussianBasisSet> basis(size_t c) const;
 
     /// Return the basis set on the center one.
-    Ref<GaussianBasisSet> basis1();
+    Ref<GaussianBasisSet> basis1() const;
 
     /// Returns the buffer where the integrals are placed.
     const double * buffer() const;
@@ -379,11 +379,11 @@ class OneBodyDerivInt : public RefCount {
     int nshell2() const;
 
     /// Return the basis set on center one.
-    Ref<GaussianBasisSet> basis();
+    Ref<GaussianBasisSet> basis() const;
     /// Return the basis set on center one.
-    Ref<GaussianBasisSet> basis1();
+    Ref<GaussianBasisSet> basis1() const;
     /// Return the basis set on center two.
-    Ref<GaussianBasisSet> basis2();
+    Ref<GaussianBasisSet> basis2() const;
 
     /** The computed shell integrals will be put in the buffer returned by
         this member. The integrals are are returned as an array with derivative
@@ -442,9 +442,9 @@ class OneBodyOneCenterDerivInt : public RefCount {
     int nshell1() const;
 
     /// Return the basis set on center one.
-    Ref<GaussianBasisSet> basis();
+    Ref<GaussianBasisSet> basis() const;
     /// Return the basis set on center one.
-    Ref<GaussianBasisSet> basis1();
+    Ref<GaussianBasisSet> basis1() const;
 
     /** The computed shell integrals will be put in the buffer returned by
         this member.  */

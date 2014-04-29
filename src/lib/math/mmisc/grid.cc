@@ -403,7 +403,9 @@ WriteVectorGrid::WriteVectorGrid(const Ref<KeyVal> &keyval)
       throw ex;
     }
 
-  filename_ = keyval->stringvalue("filename", KeyValValuestring("Grid"));
+  filename_ = keyval->stringvalue("filename", KeyValValuestring(""));
+  if (filename_ == "")
+    filename_ = SCFormIO::fileext_to_filename_string(".grid");
 
   if (keyval->exists("format")) {
       format_ = keyval->stringvalue("format");
@@ -445,6 +447,8 @@ WriteVectorGrid::WriteVectorGrid(const Ref<sc::Grid> & grid,
   else {
     ProgrammingError("WriteVectorGrid: unrecognized format", __FILE__, __LINE__);
   }
+  if (filename_ == "")
+    filename_ = SCFormIO::fileext_to_filename_string(".grid");
 }
 
 void
@@ -496,7 +500,7 @@ WriteVectorGrid::wf_gaussian_cube(std::ostream &out, const DimensionMap& dmap) {
   out << std::fixed << std::setprecision(6);
 
   // multiple orbitals; depending on the number of orbitals, the gaussian cube format is different
-  out << std::setw( 4) << ( (nd != 1 ? -1 : 1) * int(mol->natom()))
+  out << std::setw( 4) << ( (nd != 1 ? -1 : 1) * (int)mol->natom())
       << std::setw(12) << grid_->origin[0]*to_atomic
       << std::setw(12) << grid_->origin[1]*to_atomic
       << std::setw(12) << grid_->origin[2]*to_atomic << std::endl;

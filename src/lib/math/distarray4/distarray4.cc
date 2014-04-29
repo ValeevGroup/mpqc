@@ -1206,26 +1206,30 @@ namespace sc {
     bool bra_packed = false;
     const size_t nbra_sq = src->ni() * src->nj();
     const size_t nbra_tri = src->ni() * (src->ni() - 1) / 2;
-    if (src->ni() != src->nj()) // no
+    if (src->ni() != src->nj()) { // no
       MPQC_ASSERT(dst.nrow() == nbra_sq);
+    }
     else { // maybe
       if (dst.nrow() == nbra_tri)
         bra_packed = true;
-      else
+      else {
         MPQC_ASSERT(dst.nrow() == nbra_sq);
+      }
     }
 
     // is dst ket packed?
     bool ket_packed = false;
     const size_t nket_sq = src->nx() * src->ny();
     const size_t nket_tri = src->nx() * (src->nx() - 1) / 2;
-    if (src->nx() != src->ny()) // no
+    if (src->nx() != src->ny()) { // no
       MPQC_ASSERT(dst.ncol() == nket_sq);
+    }
     else { // maybe
       if (dst.ncol() == nket_tri)
         ket_packed = true;
-      else
+      else {
         MPQC_ASSERT(dst.ncol() == nket_sq);
+      }
     }
 
     RefSCVector row = dst.kit()->vector(dst.coldim());

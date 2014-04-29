@@ -390,9 +390,13 @@ class CADFCLHF: public CLHF {
     TwoCenterIntContainerPtr g2_full_ptr_;
 
     int max_fxn_obs_ = 0;
-    int max_fxn_dfbs_ = 0;
+    int max_fxn_obs_assigned_ = 0;
+    int max_fxn_obs_local_ = 0;
     int max_fxn_atom_obs_ = 0;
+    int max_fxn_dfbs_ = 0;
     int max_fxn_atom_dfbs_ = 0;
+    int max_fxn_atom_dfbs_assigned_ = 0;
+    int max_fxn_atom_dfbs_local_ = 0;
 
     bool is_master() {
       if(dynamic_){
@@ -787,7 +791,6 @@ class CADFCLHF: public CLHF {
     IndexListMap L_D;
     IndexListMap L_DC;
     IndexListMap2 L_3;
-    //IndexListMap2 L_3_prime;
     IndexListMap2 L_B;
 
 

@@ -101,18 +101,44 @@ else()
     set (libraries "${libraries},test")
   endif()
 
-  ExternalProject_Add(
-    boost
-    PREFIX ${EXTERNAL_BUILD_DIR}/boost
-    URL ${BOOST_URL}
-    URL_HASH ${BOOST_URL_HASH}
-    BUILD_IN_SOURCE 1
-    CONFIGURE_COMMAND ./bootstrap.sh --with-libraries=${libraries}
-    BUILD_COMMAND ./b2 --user-config=${EXTERNAL_BUILD_DIR}/boost/user-config.jam
-    --toolset=${BOOST_TOOLSET}
-    --link=static
-    INSTALL_COMMAND ""
-    )
+  # Check for apple clang 5.1
+  execute_process( COMMAND ${CMAKE_CXX_COMPILER} --version OUTPUT_VARIABLE clang_full_version_string )
+  string(REGEX MATCH "Apple LLVM version 5.1" APPLECLANG_NEEDS_BOOST_PATCH ${clang_full_version_string})
+  if(APPLECLANG_NEEDS_BOOST_PATCH)
+    message(STATUS "Detected Apple Clang 5.1, will patch boost")
+    
+    ExternalProject_Add(
+      boost
+      PREFIX ${EXTERNAL_BUILD_DIR}/boost
+      URL ${BOOST_URL}
+      URL_HASH ${BOOST_URL_HASH}
+    # -----Patch for clang 3.4 --------
+      UPDATE_COMMAND ""
+      PATCH_COMMAND cp ${PROJECT_SOURCE_DIR}/external/patch/boost_clang34_cas128strong.hpp ${EXTERNAL_BUILD_DIR}/boost/src/boost/boost/atomic/detail/cas128strong.hpp && 
+      PATCH_COMMAND cp ${PROJECT_SOURCE_DIR}/external/patch/boost_clang34_gcc-atomic.hpp ${EXTERNAL_BUILD_DIR}/boost/src/boost/boost/atomic/detail/gcc-atomic.hpp
+    # ------------
+      BUILD_IN_SOURCE 1
+      CONFIGURE_COMMAND ./bootstrap.sh --with-libraries=${libraries}
+      BUILD_COMMAND ./b2 --user-config=${EXTERNAL_BUILD_DIR}/boost/user-config.jam
+      --toolset=${BOOST_TOOLSET}
+      --link=static
+      INSTALL_COMMAND ""
+      )
+  else(APPLECLANG_NEEDS_BOOST_PATCH)
+    ExternalProject_Add(
+      boost
+      PREFIX ${EXTERNAL_BUILD_DIR}/boost
+      URL ${BOOST_URL}
+      URL_HASH ${BOOST_URL_HASH}
+      BUILD_IN_SOURCE 1
+      CONFIGURE_COMMAND ./bootstrap.sh --with-libraries=${libraries}
+      BUILD_COMMAND ./b2 --user-config=${EXTERNAL_BUILD_DIR}/boost/user-config.jam
+      --toolset=${BOOST_TOOLSET}
+      --link=static
+      INSTALL_COMMAND ""
+      )
+  endif(APPLECLANG_NEEDS_BOOST_PATCH)
+
 
   add_dependencies(External boost)
 

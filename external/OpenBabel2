@@ -4,9 +4,29 @@
 find_package(OpenBabel2)
 
 if (OPENBABEL2_FOUND)
-  set(HAVE_OPENBABEL2 TRUE)
-  message(STATUS "Found OpenBabel2:")
-  message(STATUS "\tOPENBABEL2_LIBRARIES: ${OPENBABEL2_LIBRARIES}")
-  message(STATUS "\tOPENBABEL2_INCLUDE_DIR: ${OPENBABEL2_INCLUDE_DIR}")
-  include_directories(${OPENBABEL2_INCLUDE_DIR})
+
+    list(APPEND CMAKE_REQUIRED_INCLUDES ${OPENBABEL2_INCLUDE_DIR})
+    list(APPEND CMAKE_REQUIRED_LIBRARIES ${OPENBABEL2_LIBRARIES})
+
+    # sanity check: try compiling a simple program
+    CHECK_CXX_SOURCE_COMPILES(
+      "
+      #include <openbabel/mol.h>
+      #include <openbabel/obconversion.h>
+      int main(int argc, char* argv[]) {
+        OpenBabel::OBConversion conv;
+        return 0;
+      }
+      "  OPENBABEL2_COMPILES)
+    
+    if (OPENBABEL2_COMPILES)
+      set(HAVE_OPENBABEL2 TRUE)
+      message(STATUS "Found OpenBabel2:")
+      message(STATUS "\tOPENBABEL2_LIBRARIES: ${OPENBABEL2_LIBRARIES}")
+      message(STATUS "\tOPENBABEL2_INCLUDE_DIR: ${OPENBABEL2_INCLUDE_DIR}")
+      include_directories(${OPENBABEL2_INCLUDE_DIR})
+    else(OPENBABEL2_COMPILES)
+      message("**Could not compile OpenBabel2 test program.\n**See CMakeFiles/CMakeError.log for details")
+    endif()
+
 endif()

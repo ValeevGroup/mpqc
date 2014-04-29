@@ -116,8 +116,8 @@ CADFCLHF::init_threads()
   eris_2c_.resize(nthread_);
   eris_2c_[0] = integral()->coulomb<2>();
   for(int ithr = 1; ithr < nthread_; ++ithr) {
-    //eris_2c_[ithr] = eris_2c_[0]->clone();
-    eris_2c_[ithr] = integral()->coulomb<2>();
+    eris_2c_[ithr] = eris_2c_[0]->clone();
+    //eris_2c_[ithr] = integral()->coulomb<2>();
   }
   for (int i=0; i < nthread_; i++) {
     if(metric_oper_type_ == coulomb_oper_type_){
@@ -183,8 +183,8 @@ CADFCLHF::init_threads()
 
   eris_3c_[0] = integral()->coulomb<3>();
   for(int ithr = 1; ithr < nthread_; ++ithr) {
-    //eris_3c_[ithr] = eris_3c_[0]->clone();
-    eris_3c_[ithr] = integral()->coulomb<3>();
+    eris_3c_[ithr] = eris_3c_[0]->clone();
+    //eris_3c_[ithr] = integral()->coulomb<3>();
     //eris_3c_[ithr]->set_integral_storage(storage_avail/nthread_);
   }
 

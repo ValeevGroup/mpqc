@@ -105,8 +105,10 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
         gbs_->nshell() * gbs_->nshell() / scf_grp_->n()
     )),
 #endif
-    L_3(gbs_->nshell() * gbs_->nshell() * 3),
+    L_3(gbs_->nshell() * gbs_->nshell() / scf_grp_->n()),
+    L_B(gbs_->nshell() * gbs_->nshell() / scf_grp_->n()),
     L_DC(gbs_->nshell()),
+    L_schwarz(gbs_->nshell()),
     decomps_(make_shared<DecompositionCache>(
         molecule()->natom() * molecule()->natom()
     )),

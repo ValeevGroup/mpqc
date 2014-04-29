@@ -145,6 +145,7 @@ class CADFCLHF: public CLHF {
     > ThreeCenterIntCache;
 #endif
 
+    // TODO Get rid of this
     typedef ConcurrentCache<
         double,
         int, int, int, int, TwoBodyOper::type
@@ -390,23 +391,15 @@ class CADFCLHF: public CLHF {
     TwoCenterIntContainerPtr g2_full_ptr_;
 
     int max_fxn_obs_ = 0;
-    int max_fxn_obs_assigned_ = 0;
-    int max_fxn_obs_local_ = 0;
+    int max_fxn_obs_todo_ = 0;
     int max_fxn_atom_obs_ = 0;
     int max_fxn_dfbs_ = 0;
+    int max_fxn_dfbs_todo_ = 0;
     int max_fxn_atom_dfbs_ = 0;
-    int max_fxn_atom_dfbs_assigned_ = 0;
-    int max_fxn_atom_dfbs_local_ = 0;
-
-    bool is_master() {
-      if(dynamic_){
-        // could be improved to have multiple masters
-        return scf_grp_->me() == 0;
-      }
-      else{
-        return false;
-      }
-    }
+    int max_obs_atom_fxn_on_dfbs_center_todo_ = 0;
+    int max_fxn_atom_dfbs_todo_ = 0;
+    //int max_fxn_obs_assigned_ = 0;
+    //int max_fxn_atom_dfbs_assigned_ = 0;
 
     RefSCMatrix D_;
 
@@ -785,10 +778,7 @@ class CADFCLHF: public CLHF {
         hash_<std::pair<int, int>>
     > IndexListMap2;
 
-    // TODO initialize these to a reasonable number of bins
     IndexListMap L_schwarz;
-    IndexListMap L_coefs;
-    IndexListMap L_D;
     IndexListMap L_DC;
     IndexListMap2 L_3;
     IndexListMap2 L_B;

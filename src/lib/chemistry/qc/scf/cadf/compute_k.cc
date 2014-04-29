@@ -33,6 +33,7 @@
 #include <util/misc/xmlwriter.h>
 
 #include "cadfclhf.h"
+#include "assignments.h"
 
 using namespace sc;
 using std::cout;
@@ -113,6 +114,7 @@ CADFCLHF::compute_K()
   const int nbf = obs->nbasis();
   const int dfnbf = dfbs_->nbasis();
   const int natom = obs->ncenter();
+  auto& my_part = atom_pair_assignments_k_->my_assignments(me);
 
   //----------------------------------------//
   // Get the density in an Eigen::Map form
@@ -234,19 +236,12 @@ CADFCLHF::compute_K()
   /*=======================================================================================*/
   /* Make the CADF-LinK lists                                                         {{{1 */ #if 1 //latex `\label{sc:link}`
 
-
   std::vector<std::tuple<int, int, int>> L_3_keys;
   std::unordered_map<int, std::unordered_set<int>> L_3_keys_X_to_mu;
 
   // Now make the linK lists if we're doing linK
   if(do_linK_){
     timer.enter("LinK lists");
-
-    // First clear all of the lists
-    L_DC.clear();
-
-    L_3.clear();
-    L_B.clear();
 
     //============================================================================//
     // Get the Frobenius norms of the density matrix shell blocks
@@ -331,18 +326,16 @@ CADFCLHF::compute_K()
     do_threaded(nthread_, [&](int ithr) {
       for(auto&& jsh : thread_over_range(shell_range(gbs_, dfbs_), ithr, nthread_)) {
         auto& L_sch_jsh = L_schwarz[jsh];
+        // TODO take this as the intersection with local Xsh list
         for(auto&& Xsh : L_DC[jsh]) {
 
-          const double pf = Xsh.value;
-          const double eps_prime = epsilon / pf;
-          const double eps_prime_dist = epsilon_dist / pf;
-          const double Xsh_schwarz = schwarz_df_[Xsh];
-          // TODO Figure out a CORRECT way to exit the Xsh loop early in parallel context
-          //bool jsh_added = false;
-          //bool ish_found = false;
           auto found = const_loc_pairs_map.find(Xsh);
           if(found != const_loc_pairs_map.end()) {
-            //auto& L_3_prime_jsh_Xsh = L_3_prime[{jsh, Xsh}];
+            const double pf = Xsh.value;
+            const double eps_prime = epsilon / pf;
+            const double eps_prime_dist = epsilon_dist / pf;
+            const double Xsh_schwarz = schwarz_df_[Xsh];
+            // TODO Figure out a CORRECT way to exit the Xsh loop early in parallel context
             auto local_schwarz_jsh = L_sch_jsh.intersection_with(found->second);
             bool stop_mu = false;
             bool stop_rho = not distribute_coefficients_;
@@ -404,6 +397,7 @@ CADFCLHF::compute_K()
       }
     });
 
+    L_DC.clear();
 
     //----------------------------------------//                                             //latex `\label{sc:link:lB}`
     // Form L_B
@@ -509,15 +503,6 @@ CADFCLHF::compute_K()
     timer.exit();
   }
 
-  //for(auto&& l3key : L_3_keys) {
-  //  int ish, Xsh, Z;
-  //  std::tie(ish, Xsh, Z) = l3key;
-  //  DUMP3(ish, Xsh, (L_3[{ish, Xsh}]));
-  //}
-  //for(auto&& lbpart : L_B) {
-  //  DUMP2(lbpart.first, lbpart.second);
-  //}
-
   timer.exit("LinK lists");
 
 
@@ -588,7 +573,7 @@ CADFCLHF::compute_K()
         size_t actual_size = 0;
         actual_size = B_buffer_size_/sizeof(double);
         double* __restrict__ b_buffer = new double[actual_size];
-        double* __restrict__ B_ish_data = new double[max_fxn_obs_*max_fxn_dfbs_*nbf];
+        double* __restrict__ B_ish_data = new double[max_fxn_obs_todo_*max_fxn_dfbs_todo_*nbf];
         double* __restrict__ D_B_buff_data;
         double* __restrict__ D_sd_data;
         double* __restrict__ C_X_diff_data;
@@ -596,9 +581,9 @@ CADFCLHF::compute_K()
         double* __restrict__ dt_prime_data;
         double* __restrict__ gt_ish_X_data;
         if(distribute_coefficients_) {
-           dt_ish_X_data = new double[max_fxn_obs_*max_fxn_dfbs_*nbf];
-           dt_prime_data = new double[max_fxn_obs_*max_fxn_dfbs_*max_fxn_atom_obs_];
-           gt_ish_X_data = new double[max_fxn_obs_*max_fxn_dfbs_*nbf];
+           dt_ish_X_data = new double[max_fxn_obs_todo_*max_fxn_dfbs_todo_*nbf];
+           dt_prime_data = new double[max_fxn_obs_todo_*max_fxn_dfbs_todo_*max_obs_atom_fxn_on_dfbs_center_todo_];
+           gt_ish_X_data = new double[max_fxn_obs_todo_*max_fxn_dfbs_todo_*nbf];
         }
         int D_B_buff_n = 0;
         if(B_use_buffer_) {
@@ -607,7 +592,7 @@ CADFCLHF::compute_K()
         }
         if(screen_B_) {
           D_sd_data = new double[nbf*nbf];
-          C_X_diff_data = new double[max_fxn_atom_obs_*max_fxn_dfbs_*nbf];
+          C_X_diff_data = new double[max_obs_atom_fxn_on_dfbs_center_todo_*max_fxn_dfbs_todo_*nbf];
         }
         Eigen::Map<ColMatrix> D_B_buff(D_B_buff_data, D_B_buff_n, D_B_buff_n);
         Eigen::Map<ColMatrix> D_sd(D_sd_data, 0, 0);
@@ -706,7 +691,6 @@ CADFCLHF::compute_K()
 
           // TODO figure out how to take advantage of L_3 sorting
 
-
           // What list of J are we using?
           OrderedShellList* jlist;
           if(not do_linK_) {
@@ -723,7 +707,6 @@ CADFCLHF::compute_K()
 
               mt_timer.enter("compute d_tilde", ithr);
               new (&dt_ish_X) Eigen::Map<RowMatrix>(dt_ish_X_data, ish.nbf * Xsh.nbf, nbf);
-              //Eigen::Map<RowMatrix> dt_iX_other(dt_ish_X_data, ish,nbf, Xsh.nbf*nbf);
               dt_ish_X  = RowMatrix::Zero(ish.nbf * Xsh.nbf, nbf);
               new (&dt_prime) Eigen::Map<RowMatrix>(dt_prime_data, ish.nbf * Xsh.nbf, Xsh.atom_obsnbf);
               dt_prime  = RowMatrix::Zero(ish.nbf * Xsh.nbf, Xsh.atom_obsnbf);
@@ -828,9 +811,6 @@ CADFCLHF::compute_K()
 
           for(const auto&& jblk : shell_block_range(*jlist, restrictions)){             //latex `\label{sc:k3b:noblk:loop}`
             TimerHolder subtimer(ints_timer);
-            //for(auto&& jsh : shell_range(jblk)) {
-            //  out_assert(jsh.center, >=, 0);
-            //}
 
             auto g3_in = ints_to_eigen_map(
                 jblk, ish, Xblk,
@@ -1303,6 +1283,8 @@ CADFCLHF::compute_K()
     mt_timer.exit();
     timer.insert(mt_timer);
     if(print_iteration_timings_) mt_timer.print(ExEnv::out0(), 12, 45);
+    L_3.clear();
+    L_B.clear();
 
   } // compute_threads is destroyed here
   /*****************************************************************************************/ #endif //1}}} //latex `\label{sc:k3b:end}`

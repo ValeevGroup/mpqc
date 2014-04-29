@@ -80,6 +80,7 @@ CADFCLHF::init_threads()
 
   //----------------------------------------------------------------------------//
 
+  const int me = scf_grp_->me();
   const int n_node = scf_grp_->n();
 
   //----------------------------------------------------------------------------//
@@ -182,8 +183,8 @@ CADFCLHF::init_threads()
 
   eris_3c_[0] = integral()->coulomb<3>();
   for(int ithr = 1; ithr < nthread_; ++ithr) {
-    eris_3c_[ithr] = eris_3c_[0]->clone();
-    //eris_3c_[ithr] = integral()->coulomb<3>();
+    //eris_3c_[ithr] = eris_3c_[0]->clone();
+    eris_3c_[ithr] = integral()->coulomb<3>();
     //eris_3c_[ithr]->set_integral_storage(storage_avail/nthread_);
   }
 
@@ -202,7 +203,6 @@ CADFCLHF::init_threads()
   integral()->set_basis(gbs_, gbs_, gbs_, gbs_);
 
   //----------------------------------------------------------------------------//
-  // TODO fix this so that deallocating the tbis_ array doesn't cause a seg fault when this isn't called (we don't need it)
   ExEnv::out0() << indent << "Initializing 4 center integral evaluators" << endl;
   size_t storage_required_4c = 0;
   try {
@@ -250,13 +250,21 @@ CADFCLHF::init_threads()
 
   //----------------------------------------------------------------------------//
 
+  ExEnv::out0() << indent << "Computing static distribution of (obs, dfbs) pairs for exchange" << endl;
+  atom_pair_assignments_k_ = make_shared<cadf::AssignmentGrid>(
+      gbs_, dfbs_, scf_grp_->n(), scf_grp_->me()
+  );
+  atom_pair_assignments_k_->print_detail(ExEnv::out0(), !distribute_coefficients_);
+  auto& my_part = atom_pair_assignments_k_->my_assignments(me);
+
+  //----------------------------------------------------------------------------//
+
   ExEnv::out0() << indent << "Initializing significant basis function pairs" << endl;
   init_significant_pairs();
 
   //----------------------------------------------------------------------------//
 
   ExEnv::out0() << indent << "Computing static distribution of significant pairs for Coulomb" << endl;
-  const int me = scf_grp_->me();
   int inode = 0;
   for(auto&& sig_pair : sig_pairs_) {
     const int assignment = inode % n_node;
@@ -267,21 +275,21 @@ CADFCLHF::init_threads()
     ++inode;
   }
 
-  ExEnv::out0() << indent << "Computing static distribution of (obs, dfbs) pairs for exchange" << endl;
-  atom_pair_assignments_k_ = make_shared<cadf::AssignmentGrid>(
-      gbs_, dfbs_, scf_grp_->n(), scf_grp_->me()
-  );
-  atom_pair_assignments_k_->print_detail(ExEnv::out0(), !distribute_coefficients_);
-  auto& my_part = atom_pair_assignments_k_->my_assignments(me);
 
   for(auto&& pair : my_part.pairs) {
     {
       ShellBlockData<> Xblk = ShellBlockData<>::atom_block(pair.Xatom, dfbs_, gbs_);
+      if(Xblk.nbf > max_fxn_atom_dfbs_todo_) max_fxn_atom_dfbs_todo_ = Xblk.nbf;
+      if(Xblk.atom_obsnbf > max_obs_atom_fxn_on_dfbs_center_todo_) {
+        max_obs_atom_fxn_on_dfbs_center_todo_ = Xblk.atom_obsnbf;
+      }
+      ShellData ish(pair.ish, gbs_, dfbs_);
+      if(ish.nbf > max_fxn_obs_todo_) max_fxn_obs_todo_ = ish.nbf;
       if(do_linK_) {
         for(auto&& Xsh : shell_range(Xblk)) {
-          //if(Xsh.)
-          local_pairs_linK_.emplace(pair.ish, (int)Xsh);
-          linK_local_map_[Xsh].push_back(pair.ish);
+          if(Xsh.nbf > max_fxn_dfbs_todo_) max_fxn_dfbs_todo_ = Xsh.nbf;
+          local_pairs_linK_.emplace((int)ish, (int)Xsh);
+          linK_local_map_[Xsh].push_back((int)ish);
         }
       }
       else {
@@ -291,9 +299,6 @@ CADFCLHF::init_threads()
 
     }
   }
-
-  //----------------------------------------------------------------------------//
-
 
   //----------------------------------------------------------------------------//
   threads_initialized_ = true;
@@ -308,6 +313,8 @@ void
 CADFCLHF::init_significant_pairs()
 {
   Timer timer("init significant pairs");
+
+  auto& my_part = atom_pair_assignments_k_->my_assignments(scf_grp_->me());
 
   ExEnv::out0() << incindent;
   ExEnv::out0() << indent << "Computing Schwarz matrix" << endl;
@@ -491,7 +498,8 @@ CADFCLHF::init_significant_pairs()
 
   const double erfcinv_thr = boost::math::erfc_inv(well_separated_thresh_);
 
-  for(auto&& ish : shell_range(gbs_)) {
+
+  for(auto&& ish : shell_range(my_part.obs_shells_to_do, gbs_, dfbs_)) {
 
     const auto& ishell = gbs_->shell((int)ish);
     const std::vector<double>& i_exps = ishell.exponents();

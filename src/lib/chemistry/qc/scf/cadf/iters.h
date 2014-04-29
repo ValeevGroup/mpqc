@@ -526,6 +526,40 @@ basis_element_range(
   return basis_element_range<DataContainer>(basis, 0, first_index, last_index);
 }
 
+template <typename Iterable>
+typename boost::enable_if<
+  boost::is_convertible<typename Iterable::value_type, int>,
+  range_of<ShellData, typename Iterable::iterator>
+>::type
+shell_range(
+    const Iterable& index_iterable,
+    GaussianBasisSet* basis,
+    GaussianBasisSet* dfbasis=0
+)
+{
+  return boost::make_iterator_range(
+      basis_element_iterator<ShellData, typename Iterable::iterator>(basis, dfbasis, index_iterable.begin()),
+      basis_element_iterator<ShellData, typename Iterable::iterator>(basis, dfbasis, index_iterable.end())
+  );
+}
+
+template <typename Iterable>
+typename boost::enable_if<
+  boost::is_convertible<typename Iterable::value_type, int>,
+  range_of<BasisFunctionData, typename Iterable::iterator const>
+>::type
+function_range(
+    const Iterable& index_iterable,
+    GaussianBasisSet* basis,
+    GaussianBasisSet* dfbasis=0
+)
+{
+  return boost::make_iterator_range(
+      basis_element_iterator<BasisFunctionData, typename Iterable::iterator const>(basis, dfbasis, index_iterable.begin()),
+      basis_element_iterator<BasisFunctionData, typename Iterable::iterator const>(basis, dfbasis, index_iterable.end())
+  );
+}
+
 template <typename Iterator>
 inline range_of<ShellData, Iterator>
 shell_range(

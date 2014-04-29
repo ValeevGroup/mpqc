@@ -185,24 +185,6 @@ CADFCLHF::compute_coefficients()
   /********************************************************/ #endif //2}}} //latex `\label{sc:coefmemend}`
   /*-----------------------------------------------------*/
 
-  //timer.enter("compute (X|Y)");
-  //ExEnv::out0() << indent << "Computing two center integrals" << std::endl;
-  //g2_full_ptr_ = ints_to_eigen_threaded(
-  //    ShellBlockData<>(dfbs_),
-  //    ShellBlockData<>(dfbs_),
-  //    eris_2c_, coulomb_oper_type_
-  //);
-  //memory_used_ += sizeof(TwoCenterIntContainer) + dfnbf*dfnbf*sizeof(double);
-  //const auto& g2 = *g2_full_ptr_;
-
-  //schwarz_df_.resize(dfbs_->nshell());
-  //for(auto&& Xsh : shell_range(dfbs_)) {
-  //  schwarz_df_(Xsh) = g2.block(Xsh.bfoff, Xsh.bfoff, Xsh.nbf, Xsh.nbf).norm();
-  //}
-
-  //timer.exit();
-
-
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
   /* Compute the coefficients in threads                   		                        {{{1 */ #if 1 //latex `\label{sc:coefloop}`
@@ -347,26 +329,29 @@ CADFCLHF::compute_coefficients()
       );
     }
 
-    // TODO threads
-    std::vector<Eigen::Map<Eigen::VectorXd>> empty;
-    for(auto&& obs_shell : my_part.compute_coef_items[false]) {
-
-      // Do the C_mu_X part first
-      ShellData ish(obs_shell->index, gbs_, dfbs_);
-      for(auto&& jsh : iter_significant_partners(ish)) {
-        std::vector<Eigen::Map<Eigen::VectorXd>> coefs;
-        for(auto&& mu : function_range(ish)) {
-          for(auto&& rho : function_range(jsh)) {
-            coefs.emplace_back(
-                coefs_mu_X.at(ish).data()
-                  + mu.off*nbf*ish.atom_dfnbf + rho*ish.atom_dfnbf,
-                ish.atom_dfnbf
-            );
+    do_threaded(nthread_, [&](int ithr) {
+      std::vector<Eigen::Map<Eigen::VectorXd>> empty;
+      for(auto&& obs_shell : thread_over_range(
+          my_part.compute_coef_items[false], ithr, nthread_
+      )) {
+        // Do the C_mu_X part first
+        ShellData ish(obs_shell->index, gbs_, dfbs_);
+        for(auto&& jsh : iter_significant_partners(ish)) {
+          std::vector<Eigen::Map<Eigen::VectorXd>> coefs;
+          for(auto&& mu : function_range(ish)) {
+            for(auto&& rho : function_range(jsh)) {
+              coefs.emplace_back(
+                  // NOTE: POSSIBLE DATA CONCURRENCY ISSUES!
+                  coefs_mu_X.at(ish).data()
+                    + mu.off*nbf*ish.atom_dfnbf + rho*ish.atom_dfnbf,
+                  ish.atom_dfnbf
+              );
+            }
           }
+          get_coefs_ish_jsh(ish, jsh, ithr, coefs, empty);
         }
-        get_coefs_ish_jsh(ish, jsh, 0, coefs, empty);
       }
-    }
+    });
 
     // Node-row-wise sum of mu coefficients
     {
@@ -391,26 +376,32 @@ CADFCLHF::compute_coefficients()
     sc::SCFormIO::init_mp(scf_grp_->me());
 
     std::vector<CoefView> empty_df;
-    for(auto&& dfbs_atom : my_part.compute_coef_items[true]) {
+    do_threaded(nthread_, [&](int ithr) {
+      for(auto&& dfbs_atom : thread_over_range(
+          my_part.compute_coef_items[true],
+          ithr, nthread_
+      )) {
 
-      // Now do the C_X_mu part
-      ShellBlockData<> Xblk = ShellBlockData<>::atom_block(dfbs_atom->index, gbs_, dfbs_);
-      for(auto&& ish : iter_shells_on_center(gbs_, Xblk.center, dfbs_)) {
-        for(auto&& jsh : iter_significant_partners(ish)) {
-          std::vector<CoefView> coefs;
-          for(auto&& mu : function_range(ish)) {
-            for(auto&& rho : function_range(jsh)) {
-              coefs.emplace_back(
-                  coefs_X_nu.at(Xblk.center).data() + mu.bfoff_in_atom*nbf + rho,
-                  ish.atom_dfnbf,
-                  Eigen::Stride<1, Eigen::Dynamic>(1, mu.atom_nbf * nbf)
-              );
+        // Now do the C_X_mu part
+        ShellBlockData<> Xblk = ShellBlockData<>::atom_block(dfbs_atom->index, gbs_, dfbs_);
+        for(auto&& ish : iter_shells_on_center(gbs_, Xblk.center, dfbs_)) {
+          for(auto&& jsh : iter_significant_partners(ish)) {
+            std::vector<CoefView> coefs;
+            for(auto&& mu : function_range(ish)) {
+              for(auto&& rho : function_range(jsh)) {
+                coefs.emplace_back(
+                    // NOTE: POSSIBLE DATA CONCURRENCY ISSUES!
+                    coefs_X_nu.at(Xblk.center).data() + mu.bfoff_in_atom*nbf + rho,
+                    ish.atom_dfnbf,
+                    Eigen::Stride<1, Eigen::Dynamic>(1, mu.atom_nbf * nbf)
+                );
+              }
             }
+            get_coefs_ish_jsh(ish, jsh, ithr, coefs, empty_df);
           }
-          get_coefs_ish_jsh(ish, jsh, 0, coefs, empty_df);
         }
       }
-    }
+    });
 
     // Node-row-wise sum of X coefficients
     {
@@ -442,7 +433,7 @@ CADFCLHF::compute_coefficients()
 
   // TODO Get rid of this!!!
   timer.change("05 - store blocked coefs");
-  if(store_coefs_transpose_) {
+  if(store_coefs_transpose_ and not distribute_coefficients_) {
     coef_block_offsets_.resize(natom);
     for(int iatom = 0; iatom < natom; ++iatom) {
 

@@ -177,6 +177,8 @@ class Node : public boost::enable_shared_from_this<Node> {
 
     union { int node_index; int id; };
     std::vector<AssignableShellPair> pairs;
+    std::set<uli> obs_shells_to_do;
+    std::set<uli> dfbs_atoms_to_do;
     std::array<std::vector<boost::shared_ptr<AssignableItem>>, 2> compute_coef_items;
     boost::shared_ptr<AssignmentBin> bin;
     typename ptr_priority_queue<boost::shared_ptr<Node>>::handle_type pq_handle;
@@ -191,6 +193,8 @@ class Node : public boost::enable_shared_from_this<Node> {
         const ShellBlockData<>& Xblk
     )
     {
+      obs_shells_to_do.insert(ish);
+      dfbs_atoms_to_do.insert(Xblk.center);
       AssignableShellPair pair(ish, Xblk, shared_from_this());
       if(is_me) {
         pairs.emplace_back(pair);

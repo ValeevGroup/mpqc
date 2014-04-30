@@ -387,6 +387,7 @@ class CADFCLHF: public CLHF {
     double prev_density_frob_;
     double prev_epsilon_;
     double prev_epsilon_dist_;
+    double prev_epsilon_B_;
 
     TwoCenterIntContainerPtr g2_full_ptr_;
 
@@ -457,8 +458,6 @@ class CADFCLHF: public CLHF {
 
     void init_threads();
 
-    //void init_vector();
-
     void done_threads();
 
     void print(std::ostream& o) const;
@@ -469,14 +468,6 @@ class CADFCLHF: public CLHF {
         Ref<TwoBodyTwoCenterInt>& ints,
         TwoBodyOper::type ints_type
     );
-
-    //void ints_to_buffer(
-    //    int ish, int jsh,
-    //    Ref<TwoBodyTwoCenterInt>& ints,
-    //    TwoBodyOper::type ints_type,
-    //    double* buffer
-    //);
-
 
     template <typename ShellRange>
     TwoCenterIntContainerPtr ints_to_eigen(

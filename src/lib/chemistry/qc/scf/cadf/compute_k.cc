@@ -281,17 +281,20 @@ CADFCLHF::compute_K()
 
     double epsilon = full_screening_thresh_;
     double epsilon_dist = distance_screening_thresh_;
+    double epsilon_B = B_screening_thresh_;
 
     if(density_reset_){
       prev_density_frob_ = D_frob.norm();
       prev_epsilon_ = epsilon;
       prev_epsilon_dist_ = epsilon_dist;
+      prev_epsilon_B_ = epsilon_B;
     }
     else{
       if(scale_screening_thresh_) {
         const double ratio = D_frob.norm() / prev_density_frob_;
         epsilon = prev_epsilon_ * ratio;
         epsilon_dist = prev_epsilon_dist_ * ratio;
+        epsilon_B = prev_epsilon_B_ * ratio;
       }
 
       prev_epsilon_ = epsilon;
@@ -307,14 +310,33 @@ CADFCLHF::compute_K()
     }
 
 
+    // Update the user on the effective thresholds
     if(scale_screening_thresh_) {
       if(linK_use_distance_ and epsilon != epsilon_dist) {
-        ExEnv::out0() << indent << "  Effective LinK screening and LinK distance screening thresholds are now "
-                      << scprintf("%5.2e and %5.2e", epsilon, epsilon_dist) << endl;
+        if(screen_B_) {
+          ExEnv::out0() << indent << "  Effective LinK screening, LinK distance screening, and B screening thresholds are now "
+                        << scprintf("%5.2e, %5.2e, and %5.2e", epsilon, epsilon_dist, epsilon_B) << endl;
+        }
+        else {
+          ExEnv::out0() << indent << "  Effective LinK screening and LinK distance screening thresholds are now "
+                        << scprintf("%5.2e and %5.2e", epsilon, epsilon_dist) << endl;
+        }
       }
       else {
-        ExEnv::out0() << indent << "  Effective LinK screening threshold is now "
-                      << scprintf("%5.2e", epsilon) << endl;
+        if(screen_B_) {
+          if(epsilon_B != epsilon) {
+            ExEnv::out0() << indent << "  Effective LinK screening and B screening thresholds are now "
+                          << scprintf("%5.2e and %5.2e", epsilon, epsilon_B) << endl;
+          }
+          else {
+            ExEnv::out0() << indent << "  Effective LinK screening (and B screening) threshold is now "
+                          << scprintf("%5.2e", epsilon) << endl;
+          }
+        }
+        else {
+          ExEnv::out0() << indent << "  Effective LinK screening threshold is now "
+                        << scprintf("%5.2e", epsilon) << endl;
+        }
       }
     }
 
@@ -438,7 +460,7 @@ CADFCLHF::compute_K()
             // TODO we can further restrict this loop by prescreening it
             for(auto&& lsh : shell_range(obs)) {
               if(lsh.center == Xsh_center) continue;
-              if(fabs(C_bar_(lsh, Xsh) * aux_vect(lsh)) > B_screening_thresh_) {
+              if(fabs(C_bar_(lsh, Xsh) * aux_vect(lsh)) > epsilon_B) {
                 L_B_ish_Xsh.insert(lsh);
                 L_B_ish_Xsh.set_aux_value(lsh.nbf + L_B_ish_Xsh.get_aux_value());
               }
@@ -580,6 +602,7 @@ CADFCLHF::compute_K()
         double* __restrict__ dt_ish_X_data;
         double* __restrict__ dt_prime_data;
         double* __restrict__ gt_ish_X_data;
+        double* __restrict__ C_X_block_data;
         if(distribute_coefficients_) {
            dt_ish_X_data = new double[max_fxn_obs_todo_*max_fxn_dfbs_todo_*nbf];
            dt_prime_data = new double[max_fxn_obs_todo_*max_fxn_dfbs_todo_*max_obs_atom_fxn_on_dfbs_center_todo_];
@@ -593,10 +616,13 @@ CADFCLHF::compute_K()
         if(screen_B_) {
           D_sd_data = new double[nbf*nbf];
           C_X_diff_data = new double[max_obs_atom_fxn_on_dfbs_center_todo_*max_fxn_dfbs_todo_*nbf];
+          C_X_block_data = new double[max_obs_atom_fxn_on_dfbs_center_todo_*max_fxn_dfbs_todo_*nbf];
         }
         Eigen::Map<ColMatrix> D_B_buff(D_B_buff_data, D_B_buff_n, D_B_buff_n);
         Eigen::Map<ColMatrix> D_sd(D_sd_data, 0, 0);
-        Eigen::Map<RowMatrix> C_X_diff(C_X_diff_data, 0, 0);
+        Eigen::Map<RowMatrix> C_X_diff(C_X_block_data, 0, 0);
+        //Eigen::Map<ColMatrix> C_X_block(C_X_block_data, 0, 0);
+        //Eigen::Map<ColMatrix> C_X_diff_cols(C_X_diff_data, 0, 0);
         Eigen::Map<RowMatrix> B_sd(B_ish_data, 0, 0);
         Eigen::Map<RowMatrix> dt_ish_X(dt_ish_X_data, 0, 0);
         Eigen::Map<RowMatrix> dt_prime(dt_prime_data, 0, 0);
@@ -618,55 +644,84 @@ CADFCLHF::compute_K()
           auto contract_timer = mt_timer.get_subtimer("contract", ithr);
           auto ex_timer = mt_timer.get_subtimer("exact diagonal", ithr);
 
+          // Because of the way the L_3 lists are made, we can only do one X shell
+          //   at a time if we're doing linK.  Otherwise, we want to block by atoms.
           assert(!do_linK_ or Xblk.nshell == 1);
           auto&& Xsh = Xblk.first_shell;
 
+          /*-----------------------------------------------------*/
+          /* Initialize memory for B screening if screen_B_ {{{2 */ #if 2 // begin fold
+
           // Form the B_sd, D_sd, and C_X matrices
           int l_b_size;
-          int B_sd_rows = 0, B_sd_cols = 0;
-          int D_sd_rows = 0, D_sd_cols = 0;
-          int C_X_diff_rows = 0, C_X_diff_cols = 0;
-
-          //assert((L_3[{ish, Xsh}].size() > 0));
 
           if(screen_B_) {
+
+            constexpr bool screen_B_transfer_as_transpose_ = false;
 
             mt_timer.enter("build screened B part", ithr);
 
             const auto& L_B_ish_Xsh = L_B[{ish, Xsh}];
             l_b_size = int(L_B_ish_Xsh.get_aux_value());
             if(l_b_size == 0){
-              mt_timer.exit(ithr);
+              mt_timer.exit(ithr); // build screened B part
               mt_timer.exit(ithr); // compute B
               continue;
             }
 
             new (&D_sd) Eigen::Map<ColMatrix>(D_sd_data, Xblk.atom_obsnbf + l_b_size, nbf);
             new (&B_sd) Eigen::Map<RowMatrix>(B_ish_data, ish.nbf*Xblk.nbf, Xblk.atom_obsnbf + l_b_size);
-            new (&C_X_diff) Eigen::Map<RowMatrix>(C_X_diff_data, Xblk.nbf*Xblk.atom_obsnbf, l_b_size);
 
-            D_sd.topRows(Xblk.atom_obsnbf) = D.middleCols(Xblk.atom_obsbfoff, Xblk.atom_obsnbf).transpose();
 
-            int block_offset = 0;
-            const auto& C_X_block = coefs_transpose_blocked_other_[Xblk.center].middleRows(
-                  Xblk.bfoff_in_atom*Xblk.atom_obsnbf, Xblk.nbf*Xblk.atom_obsnbf
-            );
-            for(auto&& lblk : shell_block_range(L_B_ish_Xsh, Contiguous)) {
-              C_X_diff.middleCols(block_offset, lblk.nbf) = C_X_block.middleCols(lblk.bfoff, lblk.nbf);
-              D_sd.middleRows(Xblk.atom_obsnbf + block_offset, lblk.nbf) = D.middleCols(lblk.bfoff, lblk.nbf).transpose();
-              block_offset += lblk.nbf;
+            if(screen_B_transfer_as_transpose_) {
+              Eigen::Map<ColMatrix> C_X_diff_cols(C_X_diff_data, Xblk.nbf*Xblk.atom_obsnbf, l_b_size);
+              D_sd.topRows(Xblk.atom_obsnbf) = D.middleCols(Xblk.atom_obsbfoff, Xblk.atom_obsnbf).transpose();
+
+              int block_offset = 0;
+              Eigen::Map<ColMatrix> C_X_block(C_X_block_data, Xblk.nbf*Xblk.atom_obsnbf, nbf);
+              C_X_block = coefs_transpose_blocked_other_[Xblk.center].middleRows(
+                    Xblk.bfoff_in_atom*Xblk.atom_obsnbf, Xblk.nbf*Xblk.atom_obsnbf
+              );
+              for(auto&& lblk : shell_block_range(L_B_ish_Xsh, Contiguous)) {
+                C_X_diff_cols.middleCols(block_offset, lblk.nbf) = C_X_block.middleCols(lblk.bfoff, lblk.nbf);
+                D_sd.middleRows(Xblk.atom_obsnbf + block_offset, lblk.nbf) = D.middleCols(lblk.bfoff, lblk.nbf).transpose();
+                block_offset += lblk.nbf;
+              }
+
+              new (&C_X_diff) Eigen::Map<RowMatrix>(C_X_block_data, Xblk.nbf*Xblk.atom_obsnbf, l_b_size);
+              C_X_diff = C_X_diff_cols;
+            }
+            else {
+              new (&C_X_diff) Eigen::Map<RowMatrix>(C_X_diff_data, Xblk.nbf*Xblk.atom_obsnbf, l_b_size);
+
+              D_sd.topRows(Xblk.atom_obsnbf) = D.middleCols(Xblk.atom_obsbfoff, Xblk.atom_obsnbf).transpose();
+
+              int block_offset = 0;
+              const auto& C_X_block = coefs_transpose_blocked_other_[Xblk.center].middleRows(
+                    Xblk.bfoff_in_atom*Xblk.atom_obsnbf, Xblk.nbf*Xblk.atom_obsnbf
+              );
+              for(auto&& lblk : shell_block_range(L_B_ish_Xsh, Contiguous)) {
+                C_X_diff.middleCols(block_offset, lblk.nbf) = C_X_block.middleCols(lblk.bfoff, lblk.nbf);
+                D_sd.middleRows(Xblk.atom_obsnbf + block_offset, lblk.nbf) = D.middleCols(lblk.bfoff, lblk.nbf).transpose();
+                block_offset += lblk.nbf;
+              }
             }
 
             mt_timer.exit(ithr);
           }
 
+          /*******************************************************/ #endif //2}}}
+          /*-----------------------------------------------------*/
 
           // Create B_ish and the B buffer
           Eigen::Map<RowMatrix> B_ish(B_ish_data, ish.nbf * Xblk.nbf, nbf);
 
+          // Set the portion of the B_ish_data buffer we're going to use to zero
           if(not screen_B_) std::memset(B_ish_data, 0, ish.nbf*Xblk.nbf*nbf*sizeof(double));
           else std::memset(B_ish_data, 0, ish.nbf * Xblk.nbf * (Xblk.atom_obsnbf + l_b_size) * sizeof(double));
 
+          // We can also buffer the B mat to do fewer contractions, even if
+          //   we're not screening B.  This doesn't really seem to help things...
           int b_buff_nrows, b_buff_ncols;
           if(B_use_buffer_) {
             b_buff_nrows = std::min(size_t(nbf), actual_size / ish.nbf / Xblk.nbf);
@@ -700,6 +755,8 @@ CADFCLHF::compute_K()
             jlist = &(L_3[{ish, Xsh}]);
           }
 
+          /*-----------------------------------------------------*/
+          /* Transpose part if distribute_coefficients_     {{{2 */ #if 2 // begin fold
           // Build dt for the transpose, only if we're distributing coefficients
           if(distribute_coefficients_) {
             if(do_linK_) {
@@ -783,6 +840,8 @@ CADFCLHF::compute_K()
               throw FeatureNotImplemented("non-linK", __FILE__, __LINE__, class_desc());
             }
           }
+          /*******************************************************/ #endif //2}}}
+          /*-----------------------------------------------------*/
 
           // Reordering of D, only if linK_block_rho_ is true
           int block_offset = 0;
@@ -1264,6 +1323,8 @@ CADFCLHF::compute_K()
         }
         if(screen_B_) {
           delete[] D_sd_data;
+          delete[] C_X_diff_data;
+          delete[] C_X_block_data;
         }
         if(distribute_coefficients_) {
           delete[] dt_ish_X_data;

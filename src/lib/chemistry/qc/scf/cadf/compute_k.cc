@@ -672,10 +672,10 @@ CADFCLHF::compute_K()
 
           // Reordering of D, only if linK_block_rho_ is true
           int block_offset = 0;
-          if(do_linK_ and linK_block_rho_) {
+          if(do_linK_ and linK_block_rho_ and not (screen_B_ and not screen_B_transfer_as_transpose_)) {
 
             mt_timer.enter("rearrange D", ithr);
-            new (&D_ordered) Eigen::Map<ColMatrix>(D_ordered_data, nbf, jlist_size);
+            new (&D_ordered) Eigen::Map<RowMatrix>(D_ordered_data, nbf, jlist_size);
             for(auto jblk : shell_block_range(*jlist, Contiguous)){
               D_ordered.middleCols(block_offset, jblk.nbf) = D.middleCols(jblk.bfoff, jblk.nbf);
               block_offset += jblk.nbf;
@@ -709,7 +709,18 @@ CADFCLHF::compute_K()
               TimerHolder subtimer(D_timer);
               if(linK_block_rho_) {
                 new (&D_sd) Eigen::Map<ColMatrix>(D_sd_data, Xblk.atom_obsnbf + l_b_size, jlist_size);
-                D_sd.topRows(Xblk.atom_obsnbf) = D_ordered.middleRows(Xblk.atom_obsbfoff, Xblk.atom_obsnbf);
+                int jblk_offset = 0;
+                for(auto&& jblk : shell_block_range(*jlist, Contiguous)) {
+                  D_sd.block(
+                      0, jblk_offset,
+                      Xblk.atom_obsnbf, jblk.nbf
+                  ) = D.block(
+                      Xblk.atom_obsbfoff, jblk.bfoff,
+                      Xblk.atom_obsnbf, jblk.nbf
+                  );
+                  jblk_offset += jblk.nbf;
+                }
+                //D_sd.topRows(Xblk.atom_obsnbf) = D_ordered.middleRows(Xblk.atom_obsbfoff, Xblk.atom_obsnbf);
               }
               else {
                 new (&D_sd) Eigen::Map<ColMatrix>(D_sd_data, Xblk.atom_obsnbf + l_b_size, nbf);
@@ -736,8 +747,8 @@ CADFCLHF::compute_K()
                 subtimer.change(D_timer);
                 if(linK_block_rho_) {
                   for(auto&& lblk : shell_block_range(L_B_ish_Xsh, Contiguous)) {
-                      D_sd.middleRows(Xblk.atom_obsnbf + block_offset, lblk.nbf) = D_ordered.middleRows(lblk.bfoff, lblk.nbf);
-                      block_offset += lblk.nbf;
+                    D_sd.middleRows(Xblk.atom_obsnbf + block_offset, lblk.nbf) = D_ordered.middleRows(lblk.bfoff, lblk.nbf);
+                    block_offset += lblk.nbf;
                   }
                 }
                 else {
@@ -767,8 +778,23 @@ CADFCLHF::compute_K()
                 // TODO combine this loop with the one above it when we no longer need seperate times
                 subtimer.change(D_timer);
                 if(linK_block_rho_) {
+                  //for(auto&& lblk : shell_block_range(L_B_ish_Xsh, Contiguous)) {
+                  //  D_sd.middleRows(Xblk.atom_obsnbf + block_offset, lblk.nbf) = D_ordered.middleRows(lblk.bfoff, lblk.nbf);
+                  //  block_offset += lblk.nbf;
+                  //}
+                  block_offset = 0;
+                  int jblk_offset;
                   for(auto&& lblk : shell_block_range(L_B_ish_Xsh, Contiguous)) {
-                    D_sd.middleRows(Xblk.atom_obsnbf + block_offset, lblk.nbf) = D_ordered.middleRows(lblk.bfoff, lblk.nbf);
+                    jblk_offset = 0;
+                    for(auto&& jblk : shell_block_range(*jlist, Contiguous)) {
+                      D_sd.block(Xblk.atom_obsnbf + block_offset, jblk_offset,
+                          lblk.nbf, jblk.nbf
+                      ) = D.block(
+                          lblk.bfoff, jblk.bfoff,
+                          lblk.nbf, jblk.nbf
+                      );
+                      jblk_offset += jblk.nbf;
+                    }
                     block_offset += lblk.nbf;
                   }
                 }

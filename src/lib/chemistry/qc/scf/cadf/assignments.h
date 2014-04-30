@@ -287,7 +287,7 @@ class AssignmentBin : public boost::enable_shared_from_this<AssignmentBin> {
     std::array<typename ptr_priority_queue<boost::shared_ptr<AssignmentBin>, detail::more_work>::handle_type, 2> row_handles;
 
   private:
-    bool debug_ = true;
+    static constexpr bool debug_ = false;
 };
 
 class AssignmentBinRow {

@@ -362,11 +362,6 @@ if (HAVE_LIBINT2)
   endif()
 endif()
 
-if(HAVE_ELEMENTAL)
-    ADD_DEFINITIONS(-DMPQC_HAS_ELEMENTAL=1)
-    ADD_DEFINITIONS(-DTILEDARRAY_HAS_ELEMENTAL=1)
-endif(HAVE_ELEMENTAL)
-
 # sources
 add_subdirectory(src)
 add_subdirectory(doc EXCLUDE_FROM_ALL) # will not build docs by default

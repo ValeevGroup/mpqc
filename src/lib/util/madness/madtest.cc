@@ -47,10 +47,9 @@ BOOST_AUTO_TEST_CASE(test_world_constructor){
 
   mpqc::World world0;
 
-#if MPQC_HAS_ELEMENTAL
+#if MADNESS_HAS_ELEMENTAL
   elem::DistMatrix<double> mat(5, 5);
-#endif // MPQC_HAS_ELEMENTAL
-
+#endif // MADNESS_HAS_ELEMENTAL
 
   Ref<AssignedKeyVal> akv1 = new AssignedKeyVal;
   mpqc::World world1(akv1);

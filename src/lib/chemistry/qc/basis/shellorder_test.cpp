@@ -96,7 +96,8 @@ BOOST_AUTO_TEST_CASE( shellorder_shell_test ){
 
     TA::ShellOrder sh(bs);
     // Not sure how to test this yet, but make clusters
-    std::vector<Shell> shells = sh.ordered_shells(3);
+    Ref<GaussianBasisSet> new_bs;
+    std::vector<Shell> shells = sh.ordered_shells(3,new_bs);
     for(auto j = 0; j < shells.size(); ++j){
         BOOST_CHECK_EQUAL(shell_centers[j], shells[j].center());
     }
@@ -131,7 +132,8 @@ BOOST_AUTO_TEST_CASE( shellorder_shellrange_test ){
     for(size_t i = 1; i <= 6; ++i){
         TA::ShellOrder sh(bs);
         // Not sure how to test this yet, but make clusters
-        std::vector<mpqc::TA::ShellOrder::Shell> shells = sh.ordered_shells(i);
+        Ref<GaussianBasisSet> new_bs;
+        std::vector<mpqc::TA::ShellOrder::Shell> shells = sh.ordered_shells(i,new_bs);
 
         ShellR ranges = sh.shell_ranges();
         BOOST_CHECK_EQUAL_COLLECTIONS(ranges.begin(),ranges.end(),
@@ -191,8 +193,9 @@ BOOST_AUTO_TEST_CASE( shellorder_shellrange_atom_order_test ){
        for(size_t q = 1; q <= 6; ++q){
             TA::ShellOrder sh(bs_t);
 
+            Ref<GaussianBasisSet> new_bs;
             std::vector<mpqc::TA::ShellOrder::Shell> shells =
-                                                        sh.ordered_shells(q);
+                                                        sh.ordered_shells(q,new_bs);
 
             ShellR ranges = sh.shell_ranges();
             BOOST_CHECK_EQUAL_COLLECTIONS(ranges.begin(),ranges.end(),

@@ -438,3 +438,21 @@ BOOST_AUTO_TEST_CASE( tiledbasisset_deterministic_tiliing_test ){
     }
 }
 
+BOOST_AUTO_TEST_CASE(test_tiledbasisset_print){
+
+    Ref<Molecule> mol = new Molecule;
+    mol->add_atom(2, 0.0, 0.0, 0.0);
+    mol->add_atom(2, 0.0, 0.0, 3.7);
+    mol->add_atom(10, 2.8, 0.0, 1.8);
+    mol->add_atom(18, 0.0, 2.8, 1.8);
+    mol->add_atom(36, 0.0, -2.8, 1.8);
+    mol->add_atom(18, -2.8, 0.0, 1.8);
+
+    Ref<AssignedKeyVal> akv = new AssignedKeyVal;
+    akv->assign("name", "STO-3G");
+    akv->assign("molecule", mol.pointer());
+    Ref<GaussianBasisSet> bs = new GaussianBasisSet(akv);
+
+    Ref<TA::TiledBasisSet> tbs = new TA::TiledBasisSet(bs, 3);
+    tbs->print();
+}

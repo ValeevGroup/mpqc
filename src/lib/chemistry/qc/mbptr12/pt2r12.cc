@@ -65,10 +65,11 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
 
   pt2_correction_ = keyval->booleanvalue("pt2_correction", KeyValValueboolean(true));
   omit_uocc_ = keyval->booleanvalue("omit_uocc", KeyValValueboolean(false));
-  cabs_singles_ = keyval->booleanvalue("cabs_singles", KeyValValueboolean(false));
-  cabs_singles_h0_ = keyval->stringvalue("cabs_singles_h0", KeyValValuestring(string("dyall_1")));
-  cabs_singles_coupling_ = keyval->booleanvalue("cabs_singles_coupling", KeyValValueboolean(true));
+
 #if defined(HAVE_MPQC3_RUNTIME)
+  cabs_singles_ = keyval->booleanvalue("cabs_singles", KeyValValueboolean(false));
+  cabs_singles_h0_ = keyval->stringvalue("cabs_singles_h0", KeyValValuestring(string("fock")));
+  cabs_singles_coupling_ = keyval->booleanvalue("cabs_singles_coupling", KeyValValueboolean(true));
   use_mpqc3_ = keyval->booleanvalue("use_mpqc3",KeyValValueboolean(true));
 #endif
   rotate_core_ = keyval->booleanvalue("rotate_core", KeyValValueboolean(true));
@@ -1344,34 +1345,33 @@ void PT2R12::compute()
     energy_correction_r12 = energy_pt2r12_sf;
   }
 
-  if(cabs_singles_)
+#if defined(HAVE_MPQC3_RUNTIME)
+  if(cabs_singles_ && use_mpqc3_)
   {
     double cabs_singles_corre = 0.0;
     if(cabs_singles_h0_ == string("complete"))
       cabs_singles_e = cabs_singles_Complete();
     else if(cabs_singles_h0_ == string("CI"))
       cabs_singles_e = cabs_singles_Complete();
-    else if(cabs_singles_h0_ == string("dyall_1"))
-      cabs_singles_e = cabs_singles_Dyall();
-    else if(cabs_singles_h0_ == string("dyall_2"))
+    else if(cabs_singles_h0_ == string("dyall"))
       cabs_singles_e = cabs_singles_Dyall();
     else if(cabs_singles_h0_ == string("fock"))
-    cabs_singles_e = cabs_singles_Fock();
+      cabs_singles_e = cabs_singles_Fock();
     else
       throw InputError("invalid value for keyword cabs_singles_h0",
                        __FILE__, __LINE__,
                        "cabs_singles_h0", cabs_singles_h0_.c_str(),
                        this->class_desc());
   }
+#endif
 
   const double energy = energy_ref + energy_correction_r12 + cabs_singles_e;
 
-#if not defined(HAVE_MPQC3_RUNTIME)
-#else
-#endif
+
 
     ExEnv::out0() <<endl << indent << scprintf("Reference energy [au]:                 %17.12lf",
                                        energy_ref) << std::endl << std::endl;
+#if defined(HAVE_MPQC3_RUNTIME)
     if(cabs_singles_)
     {
       std::string es = "CABS singles(" + cabs_singles_h0_ + ")";
@@ -1381,6 +1381,7 @@ void PT2R12::compute()
       ExEnv::out0() << indent << scprintf("RASSCF+CABS singles:                   %17.12lf",
                                                 energy_ref + cabs_singles_e) << endl << endl;
     }
+#endif
 
     ExEnv::out0() << std::endl << std::endl << indent << scprintf("Reference energy (%9s) [au]:     %17.12lf",
                                         (this->r12world()->world()->basis_df().null() ? "   recomp" : "recomp+DF"),
@@ -1708,7 +1709,6 @@ double PT2R12::cabs_singles_Dyall()
    * http://dx.doi.org/10.1063/1.3499600.
    * */
 # define DEBUGG false
-
 #if defined(HAVE_MPQC3_RUNTIME)
   if (use_mpqc3_) {
     ExEnv::out0() << std::endl << std::endl << indent
@@ -1826,8 +1826,23 @@ double PT2R12::cabs_singles_Dyall()
     //calculate the second order energy based on Equation (16)
     double E = -1.0*dot(x("j,A'"), b("j,A'"));
     return E;
-  } else
+  }
+  else{
+    throw ProgrammingError(
+        "PT2R12::cabs_singles_Fock() called but MPQC3 runtime is disabled",
+        __FILE__,
+        __LINE__);
+    return 0.0; // unreachable
+  }
 #endif
+  {
+  throw ProgrammingError(
+      "PT2R12::cabs_singles_Fock() called but MPQC3 runtime is not available",
+      __FILE__,
+      __LINE__);
+  return 0.0; // unreachable
+  }
+/** this is part of the old MPQC2 code
   {
     ExEnv::out0() << std::endl << std::endl << indent
         << "Enter PT2R12::cabs_singles_Dyall \n";
@@ -2048,6 +2063,7 @@ double PT2R12::cabs_singles_Dyall()
     double E = -1.0 * (X.dot(b));
     return E;
   }
+**/
 }
 
 double PT2R12::cabs_singles_Fock() {
@@ -2056,7 +2072,6 @@ double PT2R12::cabs_singles_Fock() {
    * http://dx.doi.org/10.1063/1.3499600.
    * */
 #define DEBUGG false
-
 #if defined(HAVE_MPQC3_RUNTIME)
   if (use_mpqc3_) {
     ExEnv::out0() << std::endl << indent
@@ -2145,7 +2160,14 @@ double PT2R12::cabs_singles_Fock() {
     //calculate the second order energy based on Equation (16)
     double E = -1.0* dot(x("n,A'"),b("n,A'"));
     return E;
-  } else
+  }
+  else{
+    throw ProgrammingError(
+        "PT2R12::cabs_singles_Fock() called but MPQC3 runtime is disabled",
+        __FILE__,
+        __LINE__);
+    return 0.0; // unreachable
+  }
 #endif
   {
     throw ProgrammingError(

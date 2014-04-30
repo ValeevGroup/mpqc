@@ -1265,6 +1265,8 @@ class OrderedShellList {
     GaussianBasisSet* basis_ = 0;
     GaussianBasisSet* dfbasis_ = 0;
 
+    int nbf = 0;
+
     // An auxiliary value to tag along with the list
 
     explicit OrderedShellList(bool sort_by_value = true)
@@ -1292,7 +1294,8 @@ class OrderedShellList {
       : indices_(other.indices_),
         idx_set_(other.idx_set_),
         sorted_(other.sorted_),
-        sort_by_value_(other.sort_by_value_)
+        sort_by_value_(other.sort_by_value_),
+        nbf(other.nbf)
     {
       aux_value_ = other.aux_value_;
       aux_vector_initialized_ = other.aux_vector_initialized_;
@@ -1359,7 +1362,7 @@ class OrderedShellList {
       if(dfbasis) dfbasis_ = dfbasis;
     }
 
-    void insert(const ShellData& ish, double value = 0) {
+    void insert(const ShellData& ish, double value = 0, int nbf_in = 0) {
       //----------------------------------------//
       assert(basis_ == 0 || ish.basis == basis_);
       if(basis_ == 0) basis_ = ish.basis;
@@ -1376,6 +1379,7 @@ class OrderedShellList {
       }
       else {
         idx_set_.insert(insert_val);
+        nbf += nbf_in;
       }
     }
 

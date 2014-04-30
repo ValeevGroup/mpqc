@@ -563,6 +563,7 @@ class CADFCLHF: public CLHF {
         double* buffer
     );
 
+
     void ints_to_buffer(
         int ish, int jsh, int ksh,
         int nbfi, int nbfj, int nbfk,

@@ -95,6 +95,9 @@ do_threaded(int nthread, const std::function<void(int)>& f){
 //============================================================================//
 //============================================================================//
 
+/// @addtogroup ChemistryElectronicStructureOneBodyHFCADF
+/// @{
+
 /**
  * A specialization of CLHF that uses concentric atomic
  *   density fitting to build fock matrices
@@ -790,7 +793,11 @@ class CADFCLHF: public CLHF {
 
     //@}
 
-};
+}; // CADFCLHF
+
+/// @}
+// end of addtogroup ChemistryElectronicStructureOneBodyHFCADF
+
 
 boost::property_tree::ptree&
 write_xml(

@@ -1181,6 +1181,7 @@ shell_range(
   return boost::make_iterator_range(begin, end);
 }
 
+/// binds an integer index + real annotation, e.g. Shell index + associated operator norm
 struct ShellIndexWithValue{
 
     int index;

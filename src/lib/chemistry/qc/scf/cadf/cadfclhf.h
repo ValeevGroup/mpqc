@@ -379,6 +379,8 @@ class CADFCLHF: public CLHF {
     bool store_coefs_transpose_ = false;
     /// Thread the schwarz computation.  Requires more memory for 4c int evaluators and doesn't increase speed much.
     bool thread_4c_ints_ = false;
+    /// when screening B, should we transfer the coefficients to a col-major matrix and then do a copy to transpose back to row major?  (efficiency will depend on cache size, etc.)
+    bool screen_B_transfer_as_transpose_ = false;
     //@}
 
     ScreeningStatistics stats_;

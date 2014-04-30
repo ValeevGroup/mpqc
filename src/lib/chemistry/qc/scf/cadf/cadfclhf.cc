@@ -168,6 +168,7 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   all_to_all_L_3_ = keyval->booleanvalue("all_to_all_L_3", KeyValValueboolean(all_to_all_L_3_));
   sig_pairs_J_ = keyval->booleanvalue("sig_pairs_J", KeyValValueboolean(sig_pairs_J_));
   screen_B_ = keyval->booleanvalue("screen_B", KeyValValueboolean(screen_B_));
+  screen_B_transfer_as_transpose_ = keyval->booleanvalue("screen_B_transfer_as_transpose", KeyValValueboolean(screen_B_transfer_as_transpose_));
   screen_B_use_distance_ = keyval->booleanvalue("screen_B_use_distance", KeyValValueboolean(screen_B_use_distance_));
   scale_screening_thresh_ = keyval->booleanvalue("scale_screening_thresh", KeyValValueboolean(scale_screening_thresh_));
   distribute_coefficients_ = keyval->booleanvalue("distribute_coefficients", KeyValValueboolean(distribute_coefficients_));
@@ -249,6 +250,7 @@ CADFCLHF::print(ostream&o) const
   o << indent << "pair_screening_thresh = " << double_str(pair_screening_thresh_) << endl;
   o << indent << "scale_screening_thresh = " << bool_str(scale_screening_thresh_) << endl;
   o << indent << "screen_B = " << bool_str(screen_B_) << endl;
+  o << indent << "screen_B_transfer_as_transpose = " << bool_str(screen_B_transfer_as_transpose_) << endl;
   o << indent << "screen_B_use_distance = " << bool_str(screen_B_use_distance_) << endl;
   o << indent << "store_coefs_transpose = " << bool_str(store_coefs_transpose_) << endl;
   o << indent << "subtract_extents = " << bool_str(subtract_extents_) << endl;

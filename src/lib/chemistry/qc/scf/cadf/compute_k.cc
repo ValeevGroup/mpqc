@@ -436,7 +436,9 @@ CADFCLHF::compute_K()
         const auto& L_3_end = L_3.end();
         L_3_iter.advance(ithr);
         while(L_3_iter != L_3_end) {
-          if(not linK_block_rho_) L_3_iter->second.set_sort_by_value(false);
+          //if(not linK_block_rho_) L_3_iter->second.set_sort_by_value(false);
+          // Do this even if we're blocking by rho, since it maximizes block sizes
+          L_3_iter->second.set_sort_by_value(false);
           L_3_iter->second.sort();
           L_3_iter->second.set_aux_value(sqrt(L_3_iter->second.get_aux_value()));
           if(distribute_coefficients_) {
@@ -603,6 +605,7 @@ CADFCLHF::compute_K()
         double* __restrict__ dt_prime_data;
         double* __restrict__ gt_ish_X_data;
         double* __restrict__ C_X_block_data;
+        double* __restrict__ D_ordered_data;
         if(distribute_coefficients_) {
            dt_ish_X_data = new double[max_fxn_obs_todo_*max_fxn_dfbs_todo_*nbf];
            dt_prime_data = new double[max_fxn_obs_todo_*max_fxn_dfbs_todo_*max_obs_atom_fxn_on_dfbs_center_todo_];
@@ -613,20 +616,24 @@ CADFCLHF::compute_K()
           D_B_buff_data = new double[nbf*nbf];
           D_B_buff_n = nbf;
         }
+        if(linK_block_rho_) {
+          D_ordered_data = new double[nbf*nbf];
+        }
         if(screen_B_) {
           D_sd_data = new double[nbf*nbf];
           C_X_diff_data = new double[max_obs_atom_fxn_on_dfbs_center_todo_*max_fxn_dfbs_todo_*nbf];
-          C_X_block_data = new double[max_obs_atom_fxn_on_dfbs_center_todo_*max_fxn_dfbs_todo_*nbf];
+          if(screen_B_transfer_as_transpose_) {
+            C_X_block_data = new double[max_obs_atom_fxn_on_dfbs_center_todo_*max_fxn_dfbs_todo_*nbf];
+          }
         }
         Eigen::Map<ColMatrix> D_B_buff(D_B_buff_data, D_B_buff_n, D_B_buff_n);
         Eigen::Map<ColMatrix> D_sd(D_sd_data, 0, 0);
-        Eigen::Map<RowMatrix> C_X_diff(C_X_block_data, 0, 0);
-        //Eigen::Map<ColMatrix> C_X_block(C_X_block_data, 0, 0);
-        //Eigen::Map<ColMatrix> C_X_diff_cols(C_X_diff_data, 0, 0);
+        Eigen::Map<RowMatrix> C_X_diff(C_X_diff_data, 0, 0);
         Eigen::Map<RowMatrix> B_sd(B_ish_data, 0, 0);
         Eigen::Map<RowMatrix> dt_ish_X(dt_ish_X_data, 0, 0);
         Eigen::Map<RowMatrix> dt_prime(dt_prime_data, 0, 0);
         Eigen::Map<RowMatrix> gt_ish_X(gt_ish_X_data, 0, 0);
+        Eigen::Map<ColMatrix> D_ordered(D_ordered_data, 0, 0);
 
         //============================================================================//
         // Main loop
@@ -649,6 +656,32 @@ CADFCLHF::compute_K()
           assert(!do_linK_ or Xblk.nshell == 1);
           auto&& Xsh = Xblk.first_shell;
 
+
+          // What list of J are we using?
+          OrderedShellList* jlist;
+          if(not do_linK_) {
+            jlist = new OrderedShellList(sig_partners_[ish], gbs_, dfbs_);
+          }
+          else {
+            jlist = &(L_3[{ish, Xsh}]);
+          }
+          const int jlist_size = jlist->size();
+
+
+          // Reordering of D, only if linK_block_rho_ is true
+          int block_offset = 0;
+          if(do_linK_ and linK_block_rho_) {
+
+            mt_timer.enter("rearrange D", ithr);
+            new (&D_ordered) Eigen::Map<ColMatrix>(D_ordered_data, nbf, jlist_size);
+            D_ordered.resize(nbf, nbf);
+            for(auto jblk : shell_block_range(*jlist, Contiguous)){
+              D_ordered.middleCols(block_offset, jblk.nbf) = D.middleCols(jblk.bfoff, jblk.nbf);
+              block_offset += jblk.nbf;
+            }
+            mt_timer.exit(ithr);
+          }
+
           /*-----------------------------------------------------*/
           /* Initialize memory for B screening if screen_B_ {{{2 */ #if 2 // begin fold
 
@@ -656,8 +689,6 @@ CADFCLHF::compute_K()
           int l_b_size;
 
           if(screen_B_) {
-
-            constexpr bool screen_B_transfer_as_transpose_ = false;
 
             mt_timer.enter("build screened B part", ithr);
 
@@ -669,42 +700,60 @@ CADFCLHF::compute_K()
               continue;
             }
 
-            new (&D_sd) Eigen::Map<ColMatrix>(D_sd_data, Xblk.atom_obsnbf + l_b_size, nbf);
             new (&B_sd) Eigen::Map<RowMatrix>(B_ish_data, ish.nbf*Xblk.nbf, Xblk.atom_obsnbf + l_b_size);
 
+            if(linK_block_rho_) {
+              new (&D_sd) Eigen::Map<ColMatrix>(D_sd_data, Xblk.atom_obsnbf + l_b_size, jlist_size);
+              D_sd.topRows(Xblk.atom_obsnbf) = D_ordered.middleRows(Xblk.atom_obsbfoff, Xblk.atom_obsnbf);
+            }
+            else {
+              new (&D_sd) Eigen::Map<ColMatrix>(D_sd_data, Xblk.atom_obsnbf + l_b_size, nbf);
+              D_sd.topRows(Xblk.atom_obsnbf) = D.middleCols(Xblk.atom_obsbfoff, Xblk.atom_obsnbf).transpose();
+            }
 
             if(screen_B_transfer_as_transpose_) {
-              Eigen::Map<ColMatrix> C_X_diff_cols(C_X_diff_data, Xblk.nbf*Xblk.atom_obsnbf, l_b_size);
-              D_sd.topRows(Xblk.atom_obsnbf) = D.middleCols(Xblk.atom_obsbfoff, Xblk.atom_obsnbf).transpose();
 
-              int block_offset = 0;
+              Eigen::Map<ColMatrix> C_X_diff_cols(C_X_diff_data, Xblk.nbf*Xblk.atom_obsnbf, l_b_size);
+
+              block_offset = 0;
               Eigen::Map<ColMatrix> C_X_block(C_X_block_data, Xblk.nbf*Xblk.atom_obsnbf, nbf);
               C_X_block = coefs_transpose_blocked_other_[Xblk.center].middleRows(
                     Xblk.bfoff_in_atom*Xblk.atom_obsnbf, Xblk.nbf*Xblk.atom_obsnbf
               );
               for(auto&& lblk : shell_block_range(L_B_ish_Xsh, Contiguous)) {
                 C_X_diff_cols.middleCols(block_offset, lblk.nbf) = C_X_block.middleCols(lblk.bfoff, lblk.nbf);
-                D_sd.middleRows(Xblk.atom_obsnbf + block_offset, lblk.nbf) = D.middleCols(lblk.bfoff, lblk.nbf).transpose();
+                if(linK_block_rho_) {
+                  D_sd.middleRows(Xblk.atom_obsnbf + block_offset, lblk.nbf) = D_ordered.middleRows(lblk.bfoff, lblk.nbf);
+                }
+                else {
+                  D_sd.middleRows(Xblk.atom_obsnbf + block_offset, lblk.nbf) = D.middleCols(lblk.bfoff, lblk.nbf).transpose();
+                }
                 block_offset += lblk.nbf;
               }
 
               new (&C_X_diff) Eigen::Map<RowMatrix>(C_X_block_data, Xblk.nbf*Xblk.atom_obsnbf, l_b_size);
               C_X_diff = C_X_diff_cols;
+
             }
             else {
+
               new (&C_X_diff) Eigen::Map<RowMatrix>(C_X_diff_data, Xblk.nbf*Xblk.atom_obsnbf, l_b_size);
 
-              D_sd.topRows(Xblk.atom_obsnbf) = D.middleCols(Xblk.atom_obsbfoff, Xblk.atom_obsnbf).transpose();
-
-              int block_offset = 0;
+              block_offset = 0;
               const auto& C_X_block = coefs_transpose_blocked_other_[Xblk.center].middleRows(
                     Xblk.bfoff_in_atom*Xblk.atom_obsnbf, Xblk.nbf*Xblk.atom_obsnbf
               );
               for(auto&& lblk : shell_block_range(L_B_ish_Xsh, Contiguous)) {
                 C_X_diff.middleCols(block_offset, lblk.nbf) = C_X_block.middleCols(lblk.bfoff, lblk.nbf);
-                D_sd.middleRows(Xblk.atom_obsnbf + block_offset, lblk.nbf) = D.middleCols(lblk.bfoff, lblk.nbf).transpose();
+                if(linK_block_rho_) {
+                  D_sd.middleRows(Xblk.atom_obsnbf + block_offset, lblk.nbf) = D_ordered.middleRows(lblk.bfoff, lblk.nbf);
+                }
+                else {
+                  D_sd.middleRows(Xblk.atom_obsnbf + block_offset, lblk.nbf) = D.middleCols(lblk.bfoff, lblk.nbf).transpose();
+                }
                 block_offset += lblk.nbf;
               }
+
             }
 
             mt_timer.exit(ithr);
@@ -746,14 +795,6 @@ CADFCLHF::compute_K()
 
           // TODO figure out how to take advantage of L_3 sorting
 
-          // What list of J are we using?
-          OrderedShellList* jlist;
-          if(not do_linK_) {
-            jlist = new OrderedShellList(sig_partners_[ish], gbs_, dfbs_);
-          }
-          else {
-            jlist = &(L_3[{ish, Xsh}]);
-          }
 
           /*-----------------------------------------------------*/
           /* Transpose part if distribute_coefficients_     {{{2 */ #if 2 // begin fold
@@ -843,22 +884,6 @@ CADFCLHF::compute_K()
           /*******************************************************/ #endif //2}}}
           /*-----------------------------------------------------*/
 
-          // Reordering of D, only if linK_block_rho_ is true
-          int block_offset = 0;
-          Eigen::MatrixXd D_ordered;                                                   //latex `\label{sc:k3b:reD}`
-          if(do_linK_ and linK_block_rho_) {
-
-            mt_timer.enter("rearrange D", ithr);
-            D_ordered.resize(nbf, nbf);
-            for(auto jblk : shell_block_range(L_3[{ish, Xsh}], Contiguous)){
-
-              D_ordered.middleCols(block_offset, jblk.nbf) = D.middleCols(jblk.bfoff, jblk.nbf);
-              block_offset += jblk.nbf;
-
-            }                                                                            //latex `\label{sc:k3b:reD:end}`
-            mt_timer.exit(ithr);
-
-          }
 
           mt_timer.change("compute B", ithr);
 
@@ -866,8 +891,8 @@ CADFCLHF::compute_K()
           // Loop over the largest blocks of J at once that we can
 
           int restrictions = linK_block_rho_ ? NoRestrictions : Contiguous;
+          // Reset the block offset for the jblk loop
           block_offset = 0;
-
           for(const auto&& jblk : shell_block_range(*jlist, restrictions)){             //latex `\label{sc:k3b:noblk:loop}`
             TimerHolder subtimer(ints_timer);
 
@@ -900,7 +925,6 @@ CADFCLHF::compute_K()
 
               if(distribute_coefficients_) {
 
-                //for(auto&& mu : function_range(ish)) {
                 for(int mu_off = 0; mu_off < ish.nbf; ++mu_off) {
                   g3.middleCols(mu_off*Xblk.nbf, Xblk.nbf).middleRows(subblock_offset, jsblk.nbf) -= 0.5 *
                       coefs_mu_X_other.at(ish).middleRows(mu_off*nbf + jsblk.bfoff, jsblk.nbf)
@@ -1116,7 +1140,6 @@ CADFCLHF::compute_K()
 
             subtimer.change(contract_timer);
 
-            // Eigen version
             if(B_use_buffer_) {
 
               if(b_buff_offset + jblk.nbf > b_buff_nrows) {
@@ -1132,41 +1155,39 @@ CADFCLHF::compute_K()
                 b_buff_offset = 0;
               }
 
-
               if(screen_B_) {
                 throw FeatureNotImplemented("screen_B with B buffer", __FILE__, __LINE__, class_desc());
-                //const int col_length = Xblk.atom_obsnbf + l_b_size;
-                //std::copy(D_sd_data + jblk.bfoff, D_data + jblk.bfoff + col_length,
-                //    D_B_buff_data + b_buff_offset
-                //);
-                //b_buff_offset += col_length;
+              }
+              else if (linK_block_rho_) {
+                throw FeatureNotImplemented("linK_block_rho_ with B buffer", __FILE__, __LINE__, class_desc());
               }
               else {
                 std::copy(D_data + jblk.bfoff, D_data + jblk.bfoff + jblk.nbf, D_B_buff_data + b_buff_offset);
                 b_buff_offset += jblk.nbf;
               }
 
-              //D_B_buff.middleCols(b_buff_offset, jblk.nbf) = D.middleCols(jblk.bfoff, jblk.nbf);
               b_buff_offset += jblk.nbf;
 
             }
             else {
+
               if(linK_block_rho_) {
-                B_ish.noalias() += 2.0 * g3.transpose() * D_ordered.middleCols(block_offset, jblk.nbf).transpose();
                 if(screen_B_) {
-                  throw FeatureNotImplemented("screen_B linK_block_rho", __FILE__, __LINE__, class_desc());
+                  B_sd.noalias() += 2.0 * g3.transpose() * D_sd.middleCols(block_offset, jblk.nbf).transpose();
+                }
+                else {
+                  B_ish.noalias() += 2.0 * g3.transpose() * D_ordered.middleCols(block_offset, jblk.nbf).transpose();
                 }
               }
               else {
                 if(screen_B_) {
                   B_sd.noalias() += 2.0 * g3.transpose() * D_sd.middleCols(jblk.bfoff, jblk.nbf).transpose();
-                  //B_diff.noalias() += 2.0 * g3.transpose() * D_diff.middleCols(jblk.bfoff, jblk.nbf).transpose();
-                  //B_same.noalias() += 2.0 * g3.transpose() * D_same.middleCols(jblk.bfoff, jblk.nbf).transpose();
                 }
                 else {
                   B_ish.noalias() += 2.0 * g3.transpose() * D.middleCols(jblk.bfoff, jblk.nbf).transpose();
                 }
               }
+
             }
 
             //#if !CADF_USE_BLAS
@@ -1324,7 +1345,12 @@ CADFCLHF::compute_K()
         if(screen_B_) {
           delete[] D_sd_data;
           delete[] C_X_diff_data;
-          delete[] C_X_block_data;
+          if(screen_B_transfer_as_transpose_) {
+            delete[] C_X_block_data;
+          }
+        }
+        if(linK_block_rho_) {
+          delete[] D_ordered_data;
         }
         if(distribute_coefficients_) {
           delete[] dt_ish_X_data;

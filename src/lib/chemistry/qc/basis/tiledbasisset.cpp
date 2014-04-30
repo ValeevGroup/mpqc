@@ -27,6 +27,8 @@
 
 #include <chemistry/qc/basis/tiledbasisset.hpp>
 #include <Eigen/Dense>
+#include <functional>
+#include <numeric>
 #include <vector>
 #include <string>
 
@@ -100,6 +102,45 @@ TiledArray::TiledRange1 TiledBasisSet::trange1() const{
 
     return TiledArray::TiledRange1(tilesizes.begin(), tilesizes.end());
 
+}
+
+void
+TiledBasisSet::print(std::ostream &os_in ) const {
+  // Print base information
+  sc::GaussianBasisSet::print(os_in);
+
+  // Create vector of clusters use ref_wrapper so as to not copy atoms
+  std::vector< unsigned int > clusters;
+  clusters.reserve(ntiles_);
+
+  os_in << sc::incindent;
+
+  // Loop over Tiles to get clusters
+  for(auto tile = 0; tile < ntiles_; ++tile){
+    // Temp to hold the number of functions on a given cluster
+    unsigned int funcs_on_tile = 0;
+    // Loop over the shells on the tile
+    for(auto shell_i = SRange_[tile]; shell_i < SRange_[tile+1]; ++shell_i){
+      funcs_on_tile += shell(shell_i).nfunction();
+    }
+    clusters.push_back(funcs_on_tile);
+  }
+
+  auto begin = std::begin(clusters);
+  auto end = std::end(clusters);
+  auto size = clusters.size();
+
+  double cluster_avg = static_cast<double>(std::accumulate(begin, end, 0ul))/
+                                                   static_cast<double>(size);
+  double sq_sum = std::inner_product(begin, end, begin, 0);
+  double std_dev = std::sqrt(sq_sum / size - cluster_avg * cluster_avg);
+  auto cluster_minmax = std::minmax_element(begin, end);
+
+  os_in << "Average Cluster Size = " << cluster_avg
+     << "\n\tStandard Deviation =   " << std_dev
+     << "\n\tMinimum cluster size = " << *cluster_minmax.first
+     << "\n\tMaximum cluster size = " << *cluster_minmax.second
+     << std::endl;
 }
 
 void TiledBasisSet::save_data_state(sc::StateOut& s){

@@ -89,6 +89,9 @@ namespace TA{
 
       void save_data_state(sc::StateOut& s);
 
+      /// Print a detailed description of the basis set.
+      virtual void print(std::ostream& = sc::ExEnv::out0()) const override;
+
     private:
       std::size_t ntiles_;
       ShellRange SRange_;

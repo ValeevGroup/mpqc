@@ -41,8 +41,8 @@ namespace mpqc {
     /**
      * IntegralEnginePool is a class that will take a Ref<Engine> as a prototype
      * and then clone it multiple times such that each thread has its own
-     * integral engine.  This is necesarry because the buffers in the
-     * integral engines don't have thread safe access.
+     * integral engine.  This is necessary because the buffers in the
+     * integral engines don't have thread-safe access.
      */
     template<typename RefEngType>
     class IntegralEnginePool {

@@ -58,7 +58,7 @@ namespace mpqc {
        * IntegralEnginePool constructor it takes a sc::Ref<sc::IntegralEngine>
        * and sets that as the prototype for all the thread local engines
        */
-      IntegralEnginePool(const RefEngType &engine) :
+      IntegralEnginePool(const RefEngType engine) :
               prototype_(engine) {
         if (pthread_key_create(&key_, &destroy_thread_object) != 0)
           throw sc::SystemException(
@@ -72,7 +72,13 @@ namespace mpqc {
        * Delete the key that corresponds to our thread local storage object
        */
       ~IntegralEnginePool() {
-        pthread_key_delete(key_);
+        std::cout << "Destructor Called" << std::endl;
+        reinterpret_cast<RefEngType*>(pthread_getspecific(key_))->
+            RefEngType::~RefEngType();
+        delete reinterpret_cast<RefEngType*>(pthread_getspecific(key_));
+        if(pthread_key_delete(key_) != 0){
+          std::cout << "Warning pthread_key_delete failed" << std::endl;
+        }
       }
 
       /**
@@ -83,7 +89,7 @@ namespace mpqc {
       RefEngType instance() const {
 
         // Declare a pointer to a sc::Ref<Engine>
-        RefEngType* RefEngine =
+        RefEngType *RefEngine =
                 reinterpret_cast<RefEngType*>(pthread_getspecific(key_));
 
         if (RefEngine == NULL) {
@@ -108,6 +114,7 @@ namespace mpqc {
     private:
       /// Function to destroy the thread objects
       static void destroy_thread_object(void* p) {
+        std::cout << "I deleted the RefEngType" << std::endl;
         delete reinterpret_cast<RefEngType*>(p);
       }
 

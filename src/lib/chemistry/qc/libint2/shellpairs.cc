@@ -52,14 +52,14 @@ static ClassDesc ShellPairsLibint2_cd(
   0, 0, create<ShellPairsLibint2>);
 
 ShellPairsLibint2::ShellPairsLibint2(const Ref<GaussianBasisSet>& bs1,
-				     const Ref<GaussianBasisSet>& bs2) :
+                                     const Ref<GaussianBasisSet>& bs2) :
     bs1_(bs1), bs2_(bs2), prim_pairs_(new PrimPairsLibint2(bs1_,bs2_)),
     shell_pair_(new ShellPairLibint2(*prim_pairs_))
 {
 }
 
-ShellPairsLibint2::ShellPairsLibint2(const ShellPairsLibint2& other) :
-    bs1_(other.bs1_), bs2_(other.bs2_), prim_pairs_(other.prim_pairs_),
+ShellPairsLibint2::ShellPairsLibint2(const Ref<ShellPairsLibint2>& sp) :
+    bs1_(sp->bs1_), bs2_(sp->bs2_), prim_pairs_(sp->prim_pairs_),
     shell_pair_(new ShellPairLibint2(*prim_pairs_))
 {
 }
@@ -75,6 +75,7 @@ ShellPairsLibint2::ShellPairsLibint2(StateIn& si) :
 
 ShellPairsLibint2::~ShellPairsLibint2()
 {
+  delete shell_pair_;
 }
 
 void ShellPairsLibint2::save_data_state(StateOut& so)

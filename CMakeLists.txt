@@ -44,12 +44,12 @@ enable_language (Fortran)
 if (NOT CMAKE_Fortran_COMPILER)
    message(FATAL_ERROR "Fortran compiler not found")
 endif()
-if(INTEGER8) 
-  set(F77_INTEGER_WIDTH 8)
-  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DINTEGER77='INTEGER*8' ")
-else()
+if(INTEGER4) 
   set(F77_INTEGER_WIDTH 4)
   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DINTEGER77='INTEGER*4' ")
+else()
+  set(F77_INTEGER_WIDTH 8)
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DINTEGER77='INTEGER*8' ")
 endif()
 #list(append CMAKE_Fortran_FLAGS "-m64")
 
@@ -86,7 +86,7 @@ include(CheckCXXSourceCompiles)
 # Enable CI
 if (MPQC_NEW_FEATURES)
   if (NOT DEFINED MPQC_CI)
-    set(MPQC_CI TRUE)
+    set(MPQC_CI FALSE)
   endif()
   if (MPQC_CI)
     add_definitions(-DMPQC_CI)
@@ -362,10 +362,10 @@ if (HAVE_LIBINT2)
   endif()
 endif()
 
-if(HAVE_ELEMENTAL)
+if(MPQC_HAS_ELEMENTAL)
     ADD_DEFINITIONS(-DMPQC_HAS_ELEMENTAL=1)
     ADD_DEFINITIONS(-DTILEDARRAY_HAS_ELEMENTAL=1)
-endif(HAVE_ELEMENTAL)
+endif(MPQC_HAS_ELEMENTAL)
 
 # sources
 add_subdirectory(src)
@@ -422,5 +422,25 @@ CONFIGURE_FILE(
   ${PROJECT_BINARY_DIR}/bin/mpqc-config
   @ONLY
 )
+
+# GLOB all the files so they show up in qt_creator
+if(USING_QT_CREATOR_AS_IDE)
+  file(GLOB_RECURSE QT_CREATOR_SRC 
+    "*.h" 
+    "*.hpp" 
+    "*.cpp" 
+    "*.c" 
+    "*.txt" 
+    "*.in" 
+    "*.cc"
+    "*.f"
+  )
+
+  add_library(qt_creator_get_sources EXCLUDE_FROM_ALL ${QT_CREATOR_SRC})
+
+  set_target_properties(qt_creator_get_sources PROPERTIES LINKER_LANGUAGE CXX)
+
+endif(USING_QT_CREATOR_AS_IDE)
+
 
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/bin/mpqc-config DESTINATION bin)

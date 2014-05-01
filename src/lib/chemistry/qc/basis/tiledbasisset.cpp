@@ -53,6 +53,8 @@ TiledBasisSet::TiledBasisSet(const sc::Ref<sc::KeyVal> &keyval):
                                  "basis", 0, class_desc());
         }
     }
+    // make sure that molecule_ is set so that can construct Shell objects
+    molecule_ = basis->molecule();
 
     ShellOrder ordering(basis);
     std::vector<Shell> shells = ordering.ordered_shells(ntiles_, this);

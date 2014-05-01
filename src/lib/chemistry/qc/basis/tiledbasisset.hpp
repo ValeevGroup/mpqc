@@ -62,7 +62,8 @@ namespace TA{
        *
        *  <tr><td><b>%Keyword</b><td><b>Type</b><td><b>Default</b><td><b>Description</b>
        *
-       *  <tr><td><tt>basis</tt><td>GaussianBasisSet<td>none<td>mother basis set object
+       *  <tr><td><tt>basis</tt><td>GaussianBasisSet<td>none<td>mother basis set object. If not given, will try to instantiate
+       *                        this object using keywords from the current scope.
        *
        *  <tr><td><tt>ntiles</tt><td>integer<td>1<td>number of tiles to produce. Need to define some heuristics.
        *

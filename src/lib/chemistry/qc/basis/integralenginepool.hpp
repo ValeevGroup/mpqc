@@ -72,12 +72,14 @@ namespace mpqc {
        * Delete the key that corresponds to our thread local storage object
        */
       ~IntegralEnginePool() {
-        std::cout << "Destructor Called" << std::endl;
-        reinterpret_cast<RefEngType*>(pthread_getspecific(key_))->
-            RefEngType::~RefEngType();
-        delete reinterpret_cast<RefEngType*>(pthread_getspecific(key_));
-        if(pthread_key_delete(key_) != 0){
-          std::cout << "Warning pthread_key_delete failed" << std::endl;
+        // if main thread was used, call destructor for its TLS now
+        void* tls_ptr = pthread_getspecific(key_);
+        if (tls_ptr != 0) {
+          destroy_thread_object(tls_ptr);
+        }
+
+        if (pthread_key_delete(key_) != 0) {
+          std::cout << "WARNING: pthread_key_delete failed" << std::endl;
         }
       }
 
@@ -114,8 +116,9 @@ namespace mpqc {
     private:
       /// Function to destroy the thread objects
       static void destroy_thread_object(void* p) {
-        std::cout << "I deleted the RefEngType" << std::endl;
-        delete reinterpret_cast<RefEngType*>(p);
+        RefEngType* ptr = reinterpret_cast<RefEngType*>(p);
+        *ptr = 0;
+        delete ptr;
       }
 
       /**

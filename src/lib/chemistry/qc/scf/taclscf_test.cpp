@@ -44,8 +44,6 @@ struct Mock_CLSCF : public CLSCF {
   Mock_CLSCF(const sc::Ref<sc::KeyVal> &kval) : CLSCF(kval) {}
   ~Mock_CLSCF(){}
 
-  CLSCF::Matrix& density_data(){return density();}
-
 };
 
 struct MADConfig {
@@ -78,7 +76,6 @@ BOOST_AUTO_TEST_CASE( construct_clscf_programmatically ){
     Ref<Mock_CLSCF> tscf = new Mock_CLSCF(akv);
     tscf->print();
     std::cout << "Overlap \n" << tscf->overlap() << std::endl;
-    std::cout << "SOAD Density \n" << tscf->density_data() << std::endl;
 }
 
 

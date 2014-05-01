@@ -36,9 +36,9 @@
 #include <util/class/class.h>
 #include <util/keyval/keyval.h>
 
-#ifdef MPQC_HAS_ELEMENTAL
+#ifdef MADNESS_HAS_ELEMENTAL
 #include <elemental.hpp>
-#endif // MPQC_HAS_ELEMENTAL
+#endif // MADNESS_HAS_ELEMENTAL
 
 namespace mpqc {
 

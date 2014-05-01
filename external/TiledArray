@@ -109,13 +109,17 @@ if (TILEDARRAY_FOUND)
   endif()
 
   if(ELEMENTAL_LIBRARIES)
-    # sanity check try to compile a ta elemental program
+    # sanity check try to compile a TiledArray+Elemental program
     list(APPEND CMAKE_REQUIRED_INCLUDES ${ELEMENTAL_INCLUDE_DIR})
     list(APPEND CMAKE_REQUIRED_LIBRARIES ${ELEMENTAL_LIBRARIES})
-    list(APPEND CMAKE_REQUIRED_DEFINITIONS -DTILEDARRAY_HAS_ELEMENTAL)
     CHECK_CXX_SOURCE_COMPILES(
       "
       #include <tiled_array.h>
+      
+      #ifndef TILEDARRAY_HAS_ELEMENTAL
+      # error \"TiledArray was not compiled with Elemental support\"
+      #endif
+      
       int main(int argc, char** argv){
         madness::World& world = madness::initialize(argc, argv);
         elem::DistMatrix<double> matrix(elem::DefaultGrid());

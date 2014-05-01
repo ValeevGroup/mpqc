@@ -15,7 +15,7 @@ else()
        
     mark_as_advanced(MADNESS_INCLUDE_DIR)
     set(MADNESS_INCLUDE_DIRS ${MADNESS_INCLUDE_DIR} 
-        CACHE PATH "The madness include path." )
+        CACHE PATH "The MADNESS include path." )
         
     if(MADNESS_INCLUDE_DIRS)
         set(MADNESS_FOUND TRUE)

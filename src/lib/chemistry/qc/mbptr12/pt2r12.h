@@ -230,7 +230,7 @@ namespace sc {
           <tr><td><tt>cabs_singles</tt><td>boolean<td>true<td>if set to true, compute 2nd-order
           CABS singes correction.
 
-          <tr><td><tt>cabs_singles_h0</tt><td>string<td>dyall_1<td> the other options include dyall_2/complete/CI.
+          <tr><td><tt>cabs_singles_h0</tt><td>string<td>fock<td> the other options include dyall_2/complete/CI.
           dyall_1 uses Fock operator as H(1); dyall_2 includes both 1- and 2-particle operator in H(1), thus
           more complete; 'complete' refers to the partition that all operators inducing (real and pseudo) one-partilce
           occ->CABS transition are taken as H(1) while the other operators are classified as H(0); CI refers
@@ -276,6 +276,8 @@ namespace sc {
       unsigned int nfzc_;
       bool omit_uocc_;
       bool pt2_correction_;          // for testing purposes only, set to false to skip the [2]_R12 computation
+
+#if defined(HAVE_MPQC3_RUNTIME)
       bool cabs_singles_;
       std::string cabs_singles_h0_; // specify zeroth order H; options: 'CI'
                                      // 'dyall_1', 'dyall_2', 'complete'; '1' and '2'
@@ -284,7 +286,6 @@ namespace sc {
                                      // in H(1).
       bool cabs_singles_coupling_; // if set to true, we include the coupling between cabs and OBS virtual orbitals. This should be preferred choice,
                                    // as explained in the paper.
-#if defined(HAVE_MPQC3_RUNTIME)
       bool use_mpqc3_;   // if set to true, then use MPQC3 runtime
 #endif
       bool rotate_core_; // if set to false, when doing rasscf cabs_singles correction, don't include excitation from core orbitals to cabs orbitals in

@@ -1349,11 +1349,9 @@ void PT2R12::compute()
   if(cabs_singles_ && use_mpqc3_)
   {
     double cabs_singles_corre = 0.0;
-    if(cabs_singles_h0_ == string("complete"))
-      cabs_singles_e = cabs_singles_Complete();
-    else if(cabs_singles_h0_ == string("CI"))
-      cabs_singles_e = cabs_singles_Complete();
-    else if(cabs_singles_h0_ == string("dyall"))
+    if(cabs_singles_h0_ == string("dyall_1"))
+      cabs_singles_e = cabs_singles_Dyall();
+    else if(cabs_singles_h0_ == string("dyall_2"))
       cabs_singles_e = cabs_singles_Dyall();
     else if(cabs_singles_h0_ == string("fock"))
       cabs_singles_e = cabs_singles_Fock();
@@ -1662,14 +1660,14 @@ double PT2R12::cabs_singles_Complete()
 #if defined(HAVE_MPQC3_RUNTIME)
 namespace{
 template<typename T>
-    struct _CABS_singles_Fock {
+    struct _CABS_singles {
 
         typedef TA::Array<T, 4> Array4;
         typedef TA::Array<T, 2> Array2;
 
         const Array4& Bmatrix;
 
-        _CABS_singles_Fock(const Array4& B) : Bmatrix(B){
+        _CABS_singles(const Array4& B) : Bmatrix(B){
         }
 
         /**
@@ -1718,27 +1716,38 @@ double PT2R12::cabs_singles_Dyall()
 
     SingleReference_R12Intermediates<double> srr12intrmds(
         madness::World::get_default(), this->r12world());
+
     srr12intrmds.set_rdm2(this->rdm2_);
 
-    // make all the matrixes that needed
-    TArray2 gamma2 = srr12intrmds._2("<m|gamma|n>");
-    TArray4 gamma4 = srr12intrmds._4("<m n|gamma|m1 n1>");
+    // make all the matrices
+    // density matrices
+    TArray2 gamma1 = srr12intrmds._2("<m|gamma|n>"); // rdm1 occ
+    TArray4 gamma2 = srr12intrmds._4("<m n|gamma|m1 n1>"); //rdm2 occ
 
-    TArray4 g = srr12intrmds._4("<n1 m1|g|m n>");
+    // g
+    TArray4 g_ijkl = srr12intrmds._4("<n1 m1|g|m n>"); // occ
+    TArray4 g_iajb = srr12intrmds._4("<m e|g|n f>"); // occ vir occ vir
+    TArray4 g_iabj = srr12intrmds._4("<m e|g|f n>"); // occ vir vir occ
 
-    TArray2 h = srr12intrmds._2("<m|h|n>");
+    // h_core
+    TArray2 h_ij = srr12intrmds._2("<m|h|n>");  //occ occ
+    TArray2 h_ab = srr12intrmds._2("<e|h|f>");   //vir vir
 
-    TArray2 Fmn = srr12intrmds._2("<m|F|n>");
-    TArray2 FmA = srr12intrmds._2("<m|F|A'>");
-    TArray2 Fcn = srr12intrmds._2("<c'|F|n>");
-    TArray2 FAB = srr12intrmds._2("<A'|F|B'>");
+    // fock
+    TArray2 F_ij = srr12intrmds._2("<m|F|n>");  //occ occ
+    TArray2 F_ci = srr12intrmds._2("<c'|F|n>");  //cabs occ
+    TArray2 F_AB = srr12intrmds._2("<A'|F|B'>"); //allvir allvir
+    TArray2 F_ab = srr12intrmds._2("<e|F|f>");  //vir vir
+    TArray2 F_iA = srr12intrmds._2("<m|F|A'>");  // occ allvir
 
-    TArray2 IAB = srr12intrmds._2("<B'|I|A'>");
-    TArray2 IBc = srr12intrmds._2("<B'|I|c'>");
+    // delta
+    TArray2 I_AB = srr12intrmds._2("<B'|I|A'>"); //allvir allvir
+    TArray2 I_Aa = srr12intrmds._2("<B'|I|e>"); // allvir vir
+    TArray2 I_Ac = srr12intrmds._2("<B'|I|c'>"); // allvir cabs
 
-    // make B matrix in Equation (26)
+    // make B matrix
     // term1
-    TArray4 term1 = FAB("B',A'") * gamma2("y,x");
+    TArray4 term1 = F_AB("B',A'") * gamma1("y,x");
 #if DEBUGG
     // set the cout precision to 10 decimal digits
     std::cout.setf(ios::fixed);
@@ -1746,18 +1755,23 @@ double PT2R12::cabs_singles_Dyall()
     std::cout << "term1 of B: \n" << term1 << std::endl;
 #endif
     // term2
-    TArray4 term2 = - IAB("B',A'") * g("y,k,i,j") * gamma4("i,j,x,k");
-    TArray4 term12 = term1("B',A',y,x") + term2("B',A',y,x");
+    TArray4 term2 = - I_AB("A',B'")*(h_ij("i,y") * gamma1("x,i") + 0.5 * g_ijkl("i,j,k,y") * gamma2("k,x,i,j") );
+
 #if DEBUGG
-    std::cout << "term12 of B: \n" << term12 << std::endl;
+    std::cout << "term2 of B: \n" << term2 << std::endl;
 #endif
     // term3
-    TArray4 term3 = - IAB("B',A'") * h("y,i") * gamma2("i,x");
-    // sum 3 terms
-    TArray4 B = term12("B',A',y,x") + term3("B',A',y,x");
+    TArray4 term3 = (h_ab("a,b") - F_ab("a,b"))*gamma1("x,y");
+
+    // term4
+    TArray4 term4  = g_iajb("j,a,i,b")*gamma2("i,x,j,y") + g_iabj("j,a,b,i")*gamma2("i,x,y,j");
+
+    TArray4 term34 = I_Aa("A',a")* I_Aa("B',b")*(term3("a,b,x,y") + term4("a,b,x,y"));
+
+    TArray4 B = term1("B',A',y,x") + term2("B',A',y,x") + term34("B',A',y,x");
 #if DEBUGG
-    std::cout << "term123 of B: \n" << B << std::endl;
-    ofstream foutB("new_term123");
+    std::cout << "allterm of B: \n" << B << std::endl;
+    ofstream foutB("all term of B");
     foutB.setf(ios::fixed);
     foutB.precision(10);
     foutB << setprecision(10) << B << std::endl;
@@ -1769,7 +1783,7 @@ double PT2R12::cabs_singles_Dyall()
     //
 
     //compute b matrix in a(x) = b
-    TArray2 b = gamma2("j,x") * Fcn("c',j") * IBc("B',c'");
+    TArray2 b = gamma1("j,x") * F_ci("c,j") * I_Ac("B',c");
     // x we trying to solve, C
     TArray2 x = b("x,B'");
     if (cabs_singles_h0_ == string("dyall_1")) {
@@ -1779,7 +1793,9 @@ double PT2R12::cabs_singles_Dyall()
 
     if (cabs_singles_h0_ == string("dyall_2")) {
       // - gamma(j,k) * h(k, beta) - gamma(jm,kl)*g(beta m, kl)
-      b = - gamma2("j,k") * FmA("k,B'") - gamma4("j,m,k,l") * g("B',m,k,l");
+      TArray4 g_Bmkl = srr12intrmds._4("<B' m|g|m1 n1>");  //g(allvir, occ, occ, occ)
+      TArray2 h_iA = srr12intrmds._2("<m|h|A'>");  //h(occ,allvir)
+      b = - gamma1("j,k") * h_iA("k,B'") - gamma2("j,m,k,l") * g_Bmkl("B',m,k,l");
     }
 
 #if DEBUGG
@@ -1790,12 +1806,12 @@ double PT2R12::cabs_singles_Dyall()
     foutb << setprecision(10) << b << std::endl;
 #endif
 
-    // make preconditioner: inverse of diagonal elements <A'|F|A'> - <m|F|m>
+    // make preconditioner: inverse of diagonal elements <A'|F|A'> - <m|h|m>
     typedef detail::diag_precond2<double> pceval_type;//!< evaluator of preconditioner
     typedef TA::Array<double, 2, LazyTensor<double, 2, pceval_type> > TArray2d;
     TArray2d Delta_iA(b.get_world(), b.trange());
 
-    pceval_type Delta_iA_gen(TA::array_to_eigen(Fmn), TA::array_to_eigen(FAB));
+    pceval_type Delta_iA_gen(TA::array_to_eigen(h_ij), TA::array_to_eigen(F_AB));
     // construct local tiles
     for (auto t = Delta_iA.trange().tiles().begin();
         t != Delta_iA.trange().tiles().end(); ++t) {
@@ -1812,11 +1828,11 @@ double PT2R12::cabs_singles_Dyall()
     TArray2 preconditioner = Delta_iA("i,A'");
 
     // initialize the function a(x)
-    _CABS_singles_Fock<double> cabs_singles_fock(B);
+    _CABS_singles<double> cabs_singles(B);
     // linear solver object
-    TA::ConjugateGradientSolver<TArray2, _CABS_singles_Fock<double> > cg_solver;
+    TA::ConjugateGradientSolver<TArray2, _CABS_singles<double> > cg_solver;
     // solve the linear system, a(x) = b, cabs_singles_fock is a(x); x is x. b is b in a(x) = b
-    auto resnorm = cg_solver(cabs_singles_fock, b, x, preconditioner, 1e-12);
+    auto resnorm = cg_solver(cabs_singles, b, x, preconditioner, 1e-12);
     //std::cout << "Converged CG to " << resnorm << std::endl;
 
 #if DEBUGG
@@ -1842,7 +1858,7 @@ double PT2R12::cabs_singles_Dyall()
       __LINE__);
   return 0.0; // unreachable
   }
-/** this is part of the old MPQC2 code
+
   {
     ExEnv::out0() << std::endl << std::endl << indent
         << "Enter PT2R12::cabs_singles_Dyall \n";
@@ -2063,7 +2079,6 @@ double PT2R12::cabs_singles_Dyall()
     double E = -1.0 * (X.dot(b));
     return E;
   }
-**/
 }
 
 double PT2R12::cabs_singles_Fock() {
@@ -2090,10 +2105,10 @@ double PT2R12::cabs_singles_Fock() {
     std::cout << "gamma2: \n" << gamma2 << std::endl;
 #endif
 
-    TArray2 Fmn = srr12intrmds._2("<m|F|n>");
+    TArray2 Fmn = srr12intrmds._2("<m|F|n>"); // occupied
     TArray2 FmA = srr12intrmds._2("<m|F|A'>");
     TArray2 Fcn = srr12intrmds._2("<c'|F|n>");
-    TArray2 FAB = srr12intrmds._2("<A'|F|B'>");
+    TArray2 FAB = srr12intrmds._2("<A'|F|B'>"); // all virtual
 
     TArray2 IAB = srr12intrmds._2("<B'|I|A'>");
     TArray2 IBc = srr12intrmds._2("<B'|I|c'>");
@@ -2146,11 +2161,11 @@ double PT2R12::cabs_singles_Fock() {
 #if DEBUGG
     std::cout << "preconditioner: \n" << preconditioner << std::endl;
 #endif
-    _CABS_singles_Fock<double> cabs_singles_fock(B); // initialize the function a(x)
-    TA::ConjugateGradientSolver<TArray2, _CABS_singles_Fock<double> > cg_solver;// linear solver object
+    _CABS_singles<double> cabs_singles(B); // initialize the function a(x)
+    TA::ConjugateGradientSolver<TArray2, _CABS_singles<double> > cg_solver;// linear solver object
 
-    // solve the linear system, a(x) = b, cabs_singles_fock is a(x); x is x. b is b in a(x) = b
-    auto resnorm = cg_solver(cabs_singles_fock, b, x, preconditioner, 1e-12);
+    // solve the linear system
+    auto resnorm = cg_solver(cabs_singles, b, x, preconditioner, 1e-12);
     //std::cout << "Converged CG to " << resnorm << std::endl;
 
 #if DEBUGG

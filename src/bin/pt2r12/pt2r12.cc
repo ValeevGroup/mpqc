@@ -161,7 +161,7 @@ int try_main(int argc, char **argv)
   opt.enroll("verbose", GetLongOpt::NoValue, "enable extra printing", 0);
 #if defined(HAVE_MPQC3_RUNTIME)
   opt.enroll("singles", GetLongOpt::MandatoryValue, "compute [2]_s correction; default: false", 0);
-  opt.enroll("partitionH", GetLongOpt::MandatoryValue, "How to partition Hamiltonian in [2]_s: fock or dyall; default: fock", 0);
+  opt.enroll("partitionH", GetLongOpt::MandatoryValue, "How to partition Hamiltonian in [2]_s: fock, dyall_1, dyall_2; default: fock", 0);
   opt.enroll("mpqc3", GetLongOpt::MandatoryValue, "enable MPQC3 runtime features; default: true", 0);
 #endif
 

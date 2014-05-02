@@ -31,6 +31,8 @@
 #include <pthread.h>
 #include <mpqc/utility/mutex.hpp>
 #include <chemistry/qc/basis/integral.h>
+#include <vector>
+#include <functional>
 #include <util/misc/scexception.h>
 
 namespace mpqc {
@@ -47,8 +49,10 @@ namespace mpqc {
     template<typename RefEngType>
     class IntegralEnginePool {
       /// The thread local storage key
-      pthread_key_t key_;
+      pthread_key_t engine_key_;
       RefEngType prototype_;
+      // Pointers to the TLS pointers which will allows us to delete them in the constructor.
+      std::vector<void*> tls_ptrs;
 
     public:
 
@@ -60,7 +64,7 @@ namespace mpqc {
        */
       IntegralEnginePool(const RefEngType engine) :
               prototype_(engine) {
-        if (pthread_key_create(&key_, &destroy_thread_object) != 0)
+        if (pthread_key_create(&engine_key_, nullptr) != 0) // objects will be manually destroyed by the destructor
           throw sc::SystemException(
                   "IntegralEnginePool::IntegralEnginePool() "
                   "Unable to register thread local storage key. "
@@ -72,13 +76,23 @@ namespace mpqc {
        * Delete the key that corresponds to our thread local storage object
        */
       ~IntegralEnginePool() {
-        // if main thread was used, call destructor for its TLS now
-        void* tls_ptr = pthread_getspecific(key_);
-        if (tls_ptr != 0) {
-          destroy_thread_object(tls_ptr);
+        /*
+         * The following loop manually calls delete for each TLS RefEngine pointer
+         * since they normally will not be deallocated until madness::Finalize()
+         * is called effectively leading to a memory leak
+         */
+        for(void *ptr : tls_ptrs){ // For all TLS pointers
+          std::cout << "deleting pointer " << ptr << std::endl;
+          destroy_thread_object(ptr); // destory it
         }
 
-        if (pthread_key_delete(key_) != 0) {
+        //// if main thread was used, call destructor for its TLS now
+        //void* tls_ptr = pthread_getspecific(key_);
+        //if (tls_ptr != 0) {
+        //  destroy_thread_object(tls_ptr);
+        //}
+
+        if (pthread_key_delete(engine_key_) != 0) {
           std::cout << "WARNING: pthread_key_delete failed" << std::endl;
         }
       }
@@ -88,13 +102,14 @@ namespace mpqc {
        * exist for only one thread to use and so cannot be written to or used
        * by any other thread.
        */
-      RefEngType instance() const {
+      RefEngType instance() {
 
         // Declare a pointer to a sc::Ref<Engine>
         RefEngType *RefEngine =
-                reinterpret_cast<RefEngType*>(pthread_getspecific(key_));
+                reinterpret_cast<RefEngType*>(pthread_getspecific(engine_key_));
 
-        if (RefEngine == NULL) {
+
+        if (RefEngine == nullptr) {
           RefEngine = new RefEngType;
 
           // Get clone of prototype, must lock to ensure nobody else
@@ -105,8 +120,12 @@ namespace mpqc {
           *RefEngine = prototype_->clone();
           mutex::global::unlock(); // <<< End Critical Section
 
+
           // Asign RefEngine to its thread specific partner.
-          pthread_setspecific(key_, RefEngine);
+          pthread_setspecific(engine_key_, RefEngine);
+
+          tls_ptrs.push_back(pthread_getspecific(engine_key_));
+
         }
 
         return *RefEngine;
@@ -117,8 +136,10 @@ namespace mpqc {
       /// Function to destroy the thread objects
       static void destroy_thread_object(void* p) {
         RefEngType* ptr = reinterpret_cast<RefEngType*>(p);
-        *ptr = 0;
-        delete ptr;
+        if(ptr){ // Make sure we havn't already deleted the data
+          delete ptr;
+          ptr = nullptr;
+        }
       }
 
       /**

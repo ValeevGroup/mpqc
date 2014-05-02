@@ -32,7 +32,6 @@
 #include <mpqc/utility/mutex.hpp>
 #include <chemistry/qc/basis/integral.h>
 #include <vector>
-#include <functional>
 #include <util/misc/scexception.h>
 
 namespace mpqc {
@@ -82,7 +81,6 @@ namespace mpqc {
          * is called effectively leading to a memory leak
          */
         for(void *ptr : tls_ptrs){ // For all TLS pointers
-          std::cout << "deleting pointer " << ptr << std::endl;
           destroy_thread_object(ptr); // destory it
         }
 

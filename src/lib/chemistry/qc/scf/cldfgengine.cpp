@@ -143,10 +143,12 @@ mpqc::TA::ClDFGEngine::operator ()( const std::string& v) {
   }
 }
 
-// Do contraction with density
+
+// Do contraction with coefficients
 return_type
-mpqc::TA::ClDFGEngine::density_contraction(const std::vector<std::string> &input){
-   /*
+mpqc::TA::ClDFGEngine::density_contraction(
+        const std::vector<std::string> &input){
+ /*
   * Construct strings which will be used to generate the expressions comma for seperation
   * all sequence must start with either i or m hence they don't have commas
   */
@@ -158,16 +160,21 @@ mpqc::TA::ClDFGEngine::density_contraction(const std::vector<std::string> &input
   * happens to use the same strings as one of the ones below something bad might
   * happen. This is unlikely due to the length and nature of these strings.
   */
-  const std::string m("mpqc::TA::ClDfGFactory_m_density");
-  const std::string n(",mpqc::TA::ClDfGFactory_n_density");
-  const std::string X(",mpqc::TA::ClDfGFactory_X_density");
+  const std::string m("mpqc::TA::ClDfGFactory_m_coeff");
+  const std::string n(",mpqc::TA::ClDfGFactory_n_coeff");
+  const std::string X(",mpqc::TA::ClDfGFactory_X_coeff");
+
+  // Terms where comma's need to be added or removed
+  const std::string nE("mpqc::TA::ClDfGFactory_n_coeff");
+  const std::string mE(",mpqc::TA::ClDfGFactory_m_coeff");
+  const std::string ZE("mpqc::TA::ClDfGFactory_Z_coeff");
+  const std::string jE = input.at(1);
 
   // just for conveience
-  const TAMatrix &dens = *density_;
+  const TAMatrix &D = *density_;
 
-  auto expr = 2 * (df_ints_(i+j+X) * (dens(m+n) * df_ints_(m+n+X)))
-                - (df_ints_(i+n+X) * (dens(m+n) * df_ints_(m+j+X)));
-
+  auto expr = 2 * (df_ints_(i+j+X) * (D(m+n) * df_ints_(m+n+X) ) )
+                - (df_ints_(i+n+X) * (D(nE+mE) * df_ints_(m+j+X) ));
   return expr;
 }
 
@@ -175,7 +182,7 @@ mpqc::TA::ClDFGEngine::density_contraction(const std::vector<std::string> &input
 return_type
 mpqc::TA::ClDFGEngine::coefficient_contraction(
         const std::vector<std::string> &input){
-  /*
+ /*
   * Construct strings which will be used to generate the expressions comma for seperation
   * all sequence must start with either i or m hence they don't have commas
   */
@@ -192,19 +199,22 @@ mpqc::TA::ClDFGEngine::coefficient_contraction(
   const std::string X(",mpqc::TA::ClDfGFactory_X_coeff");
   const std::string Z(",mpqc::TA::ClDfGFactory_Z_coeff");
 
-  // Terms where comma's need to be added or removed
-  const std::string nE("mpqc::TA::ClDfGFactory_n_coeff");
-  const std::string ZE("mpqc::TA::ClDfGFactory_Z_coeff");
-  const std::string iE = "," + input.at(0);
+  // Term where comma's need to removed
+  const std::string jE = input.at(1);
 
   // just for conveience
   const TAMatrix &C = *coeff_;
 
   // Precompute Exch Term
-  df_K_ = C(ZE+n) * df_ints_(nE+j+X);
+  if(df_K_.is_initialized()){
+    df_K_("j,Z,X") = C("m,Z") * df_ints_("m,j,X");
+  } else {
+    df_K_ = C("m,Z") * df_ints_("m,j,X");
+    df_K_("j,Z,X") = df_K_("Z,j,X"); // Transpose for later contraction efficieny
+  }
 
-  auto expr = 2 * (df_ints_(i+j+X) * (C(ZE+n) * df_K_(ZE+n+X) ) )
-                - (df_K_(ZE+iE+X) * df_K_(ZE+j+X) );
+  auto expr = 2 * (df_ints_(i+j+X) * (C(m+Z) * df_K_(m+Z+X) ) )
+                - (df_K_(i+Z+X) * df_K_(jE+Z+X) );
   return expr;
 }
 
@@ -290,9 +300,9 @@ mpqc::TA::ClDFGEngine::compute_symetric_df_ints() {
 
 
   // Compute the cholesky inverse matrix.
-  elem::Cholesky(elem::LOWER, eri2_elem);
-  elem::TriangularInverse(elem::LOWER, elem::NON_UNIT, eri2_elem);
-  elem::MakeTriangular(elem::LOWER, eri2_elem);
+  elem::Cholesky(elem::UPPER, eri2_elem);
+  elem::TriangularInverse(elem::UPPER, elem::NON_UNIT, eri2_elem);
+  elem::MakeTriangular(elem::UPPER, eri2_elem);
   elem::mpi::Barrier(elem::mpi::COMM_WORLD);
   double inverse_time1 = madness::wall_time();
 
@@ -306,7 +316,7 @@ mpqc::TA::ClDFGEngine::compute_symetric_df_ints() {
 
   double Final_contraction0 = madness::wall_time();
   // Create df_ints_ tensor from eri3(i,j,P) * U_{eri2}^{-1}(P,X)
-  df_ints_ = df_ints_("i,j,P") * eri2_ints("X,P");
+  df_ints_ = df_ints_("i,j,P") * eri2_ints("P,X");
   world_->madworld()->gop.fence(); // so eri2_ints doesn't go out of scope.
   double Final_contraction1 = madness::wall_time();
   if(world_->madworld()->rank()==0){

@@ -38,8 +38,8 @@ namespace TA {
   /***
    * Solve generalized Hermitian eigenproblem to form density.
    */
-  void
-  eigensolver_D(const TArray2D &F, const TArray2D &S, TArray2D &D, int occ);
+  TArray2D
+  eigensolver_D(const TArray2D &F, const TArray2D &S, int occ);
 
   /***
    * Solve generatlized Hermitian eigenproblem for occupied coefficients
@@ -50,8 +50,8 @@ namespace TA {
   /***
    * Solve generalized Hermitian eigenproblem for all coefficents
    */
-  void
-  eigensolver_full_Coeff(const TArray2D &F, const TArray2D &S, TArray2D &C);
+  TArray2D
+  eigensolver_full_Coeff(const TArray2D &F, const TArray2D &S);
 
 
 } // namespace mpqc::TA

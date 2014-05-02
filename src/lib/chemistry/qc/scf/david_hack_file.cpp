@@ -135,7 +135,7 @@ void try_main(int argc, char** argv){
   double energy = 0;
   double error = 10;
   int iter = 0;
-  TiledArray::DIIS<Matrix> diis(1,3);
+  TiledArray::DIIS<Matrix> diis(1,6);
   double ftime = 0;
   double scftime = 0;
   world->madworld()->gop.fence();
@@ -143,7 +143,7 @@ void try_main(int argc, char** argv){
     double scf0 = madness::wall_time();
 
     C = eigensolver_occ_Coeff(F, S, occ);
-    dens = C("i,mu")*C("i,nu");
+    dens = C("mu,i")*C("nu,i");
     world->madworld()->gop.fence();
 
 

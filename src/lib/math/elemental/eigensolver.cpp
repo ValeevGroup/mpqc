@@ -36,12 +36,18 @@ namespace TA {
   using TAMatrix = TiledArray::Array<double, 2, TiledArray::Tensor<double> >;
   using EMatrix = elem::DistMatrix<double>;
 
-  void
-  eigensolver_D(const TAMatrix &F,
-                const TAMatrix &S,
-                TAMatrix &D,
-                int occ){
+  // Wraps a pair where the eigenvalues are first and vectors are second.
+  // Similar to Mathematica Notation
+  using EigenSystem = std::pair<elem::DistMatrix<double, elem::VR, elem::STAR>,
+                                EMatrix>;
 
+  /*
+   * HermitianGenEigensolver and get occupied vectors are two helper functions
+   * to reduce code replication
+   */
+  // Wrapper for elem::HermitianGenDefiniteEig sorts vals ascending
+  EigenSystem
+  HermitianGenEigensolver(const TAMatrix &F, const TAMatrix &S){
     // Get mats from TA
     EMatrix EF = TiledArray::array_to_elem(F, elem::DefaultGrid()); // Fock
     EMatrix ES = TiledArray::array_to_elem(S, elem::DefaultGrid()); // Overlap
@@ -53,64 +59,36 @@ namespace TA {
     // Compute vecs and values
     elem::mpi::Barrier(elem::mpi::COMM_WORLD);
     double t0 = madness::wall_time();
-    elem::HermitianGenDefiniteEig(elem::AXBX,elem::LOWER,EF,ES,vals,vecs,
+    // Compute evals evals
+    elem::HermitianGenDefiniteEig(elem::AXBX, elem::LOWER,EF,ES,vals,vecs,
                                   elem::ASCENDING);
     elem::mpi::Barrier(elem::mpi::COMM_WORLD);
     double t1 = madness::wall_time();
 
     // Timer
     if(F.get_world().rank()==0){
-      std::cout << "\tEigen Solve took " << t1 - t0 << " s" << std::endl;
+      std::cout << "\tCall to HermitianGenEigensolver took " << t1 - t0
+                << " s" << std::endl;
     }
 
-    // Make Density Matrix and get view of vecs corresponding to occupied
-    EMatrix Density(elem::DefaultGrid());
-    EMatrix C = elem::View(vecs, 0, 0, vecs.Height(), occ);
-    elem::Gemm(elem::NORMAL, elem::TRANSPOSE, 1.0, C, C, Density);
-
-    // Copy back to TA
-    TiledArray::elem_to_array(D,Density);
-    F.get_world().gop.fence();
+    return std::make_pair(vals, vecs);
   }
 
+  // Function takes the full C matrix, a trange1 for the long dimensions, and
+  // the number of occupied vectors.
   TAMatrix
-  eigensolver_occ_Coeff(const TAMatrix &F,
-                const TAMatrix &S,
-                int occ){
+  get_occupied_vectors(EMatrix &vecs, TiledArray::TiledRange1 trange1, int occ,
+                       madness::World &world){
 
-    // Get mats from TA
-    EMatrix EF = TiledArray::array_to_elem(F, elem::DefaultGrid()); // Fock
-    EMatrix ES = TiledArray::array_to_elem(S, elem::DefaultGrid()); // Overlap
-
-    // Vec and value storage
-    elem::DistMatrix<double , elem::VR, elem::STAR> vals(elem::DefaultGrid());
-    EMatrix vecs(elem::DefaultGrid());
-
-    // Compute vecs and values
-    elem::mpi::Barrier(elem::mpi::COMM_WORLD);
-    double t0 = madness::wall_time();
-    elem::HermitianGenDefiniteEig(elem::AXBX,elem::LOWER,EF,ES,vals,vecs,
-                                  elem::ASCENDING);
-    elem::mpi::Barrier(elem::mpi::COMM_WORLD);
-    double t1 = madness::wall_time();
-
-    // Timer
-    if(F.get_world().rank()==0){
-      std::cout << "\tEigen Solve took " << t1 - t0 << " s" << std::endl;
-    }
-
+    // Grab the occupied vectors
     EMatrix C = elem::View(vecs, 0, 0,  vecs.Height(), occ);
 
-    EMatrix CT;
-    elem::Transpose(C,CT);
-
-    // Get range for tall side
-    TiledArray::TiledRange1 height_t1 = F.trange().data()[0];
-
-    // How many tiles over does the occupied vector sit.
-    std::array<unsigned long, 2>  occ_pos{{0,static_cast<unsigned long>(occ-1)}};
-    auto ntile_guess = F.trange().element_to_tile(occ_pos)[1] + 1;
-    auto size_guess = occ/ntile_guess; // How big should tiles be
+    /*
+     * Get number of tiles to pack low rank dimension into, rule of thumb will be
+     * 1/5 the number of tiles of the full dimension
+     * */
+    auto ntile_guess = std::max(static_cast<int>(trange1.tiles().second/5), 1);
+    auto size_guess = occ/ntile_guess; // How many elements per tile.
 
     // Get range for short side
     std::vector<std::size_t> short_side_blocksize;
@@ -120,55 +98,75 @@ namespace TA {
     }
     short_side_blocksize.push_back(occ);
 
-    TiledArray::TiledRange1 trange1_c(short_side_blocksize.begin(),
-                                      short_side_blocksize.end());
-    std::array<TiledArray::TiledRange1,2> trange_array{{trange1_c, height_t1}};
+    // Get the TiledRange1 for the reduced rank dimension.
+    TiledArray::TiledRange1 lowrank_t1(short_side_blocksize.begin(),
+                                       short_side_blocksize.end());
+
+    // Create array to initialized TiledRange for Coeff. matrix.
+    // Will create N rows and occ cols
+    std::array<TiledArray::TiledRange1,2> trange_array{{trange1, lowrank_t1}};
 
     // Make trange for C
     TiledArray::TiledRange trange_c(trange_array.begin(), trange_array.end());
 
     // Make C Array
-    TAMatrix TA_C(F.get_world(), trange_c);
+    TAMatrix TA_C(world, trange_c);
     TA_C.set_all_local(0.0);
-    F.get_world().gop.fence();
+    world.gop.fence();
 
     // Copy back to TA
-    TiledArray::elem_to_array(TA_C, CT);
-    F.get_world().gop.fence();
+    TiledArray::elem_to_array(TA_C, C);
+    world.gop.fence();
+
     return TA_C;
   }
 
-  void
-  eigensolver_full_Coeff(const TAMatrix &F,
+
+  TAMatrix
+  eigensolver_D(const TAMatrix &F, const TAMatrix &S, int occ){
+
+    // Get eigensystem
+    EigenSystem esys = HermitianGenEigensolver(F,S);
+
+    // Grab occupied vectors
+    TAMatrix C_occ = get_occupied_vectors(esys.second, F.trange().data()[0],
+                                          occ, F.get_world());
+    // Contract over occupied index i to form D_{AO}
+    TAMatrix D = C_occ("mu,") * C_occ("nu,i");
+    F.get_world().gop.fence(); // Fence to prevent data from going out of scope
+    std::cout << "D = \n" << D << std::endl;
+
+    return D;
+  }
+
+  TAMatrix
+  eigensolver_occ_Coeff(const TAMatrix &F,
                 const TAMatrix &S,
-                TAMatrix &C){
+                int occ){
+    // Get Eigensystem
+    EigenSystem esys = HermitianGenEigensolver(F,S);
 
-    // Get mats from TA
-    EMatrix EF = TiledArray::array_to_elem(F, elem::DefaultGrid()); // Fock
-    EMatrix ES = TiledArray::array_to_elem(S, elem::DefaultGrid()); // Overlap
+    return get_occupied_vectors(esys.second, F.trange().data()[0], occ,
+                                F.get_world());
+  }
 
-    // Vec and value storage
-    elem::DistMatrix<double , elem::VR, elem::STAR> vals(elem::DefaultGrid());
-    EMatrix vecs(elem::DefaultGrid());
+  TAMatrix
+  eigensolver_full_Coeff(const TAMatrix &F,
+                const TAMatrix &S){
 
-    // Compute vecs and values
-    elem::mpi::Barrier(elem::mpi::COMM_WORLD);
-    double t0 = madness::wall_time();
-    // Compute only evals needed to form density.
-    elem::HermitianGenDefiniteEig(elem::AXBX,elem::LOWER,EF,ES,vals,vecs,
-                                  elem::ASCENDING);
-    elem::mpi::Barrier(elem::mpi::COMM_WORLD);
-    double t1 = madness::wall_time();
+    // Create matrix to return
+    TAMatrix C(F.get_world(), F.trange());
 
-    // Timer
-    if(F.get_world().rank()==0){
-      std::cout << "\tEigen Solve took " << t1 - t0 << " s" << std::endl;
-    }
+    // Call eigenvalue solver
+    EigenSystem esys = HermitianGenEigensolver(F,S);
 
     // Copy back to TA
-    TiledArray::elem_to_array(C,vecs);
+    TiledArray::elem_to_array(C,esys.second);
     F.get_world().gop.fence();
+    return C;
   }
+
+
 
 } // namespace mpqc::TA
 } // namespace mpqc

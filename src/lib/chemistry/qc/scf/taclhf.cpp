@@ -85,7 +85,7 @@ void mpqc::TA::CLHF::minimize_energy() {
   while(error_norminf > 1e-6 && iter < 100){
 
     // Find new solution for the density
-    eigensolver_D(F,S,D,occupation());
+    D = eigensolver_D(F,S,occupation());
 
     // Update the Fock matrix
     F("i,j") = H("i,j") + G("i,j");

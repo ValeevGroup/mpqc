@@ -44,7 +44,6 @@ namespace mpqc{
   namespace TA{
     class TiledBasisSet;
   } // namespace TA
-
 } // namespace mpqc
 
 

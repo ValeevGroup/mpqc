@@ -58,8 +58,8 @@ ShellPairsLibint2::ShellPairsLibint2(const Ref<GaussianBasisSet>& bs1,
 {
 }
 
-ShellPairsLibint2::ShellPairsLibint2(const ShellPairsLibint2& sp) :
-    bs1_(sp->bs1_), bs2_(sp->bs2_), prim_pairs_(sp->prim_pairs_),
+ShellPairsLibint2::ShellPairsLibint2(const ShellPairsLibint2& other) :
+    bs1_(other.bs1_), bs2_(other.bs2_), prim_pairs_(other.prim_pairs_),
     shell_pair_(new ShellPairLibint2(*prim_pairs_))
 {
 }

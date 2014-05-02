@@ -50,7 +50,7 @@ namespace mpqc {
       /// The thread local storage key
       pthread_key_t engine_key_;
       RefEngType prototype_;
-      // Pointers to the TLS pointers which will allows us to delete them in the constructor.
+      // Pointers to the TLS data which will allows us to manually delete them in the constructor.
       std::vector<void*> tls_ptrs;
 
     public:
@@ -72,32 +72,30 @@ namespace mpqc {
       }
 
       /**
-       * Delete the key that corresponds to our thread local storage object
+       * Delete the Engines that we allocated for TLS
        */
       ~IntegralEnginePool() {
         /*
          * The following loop manually calls delete for each TLS RefEngine pointer
-         * since they normally will not be deallocated until madness::Finalize()
-         * is called effectively leading to a memory leak
+         * since they normally would not be deallocated until madness::Finalize()
+         * this is to avoid what is effectively a memory leak
          */
         for(void *ptr : tls_ptrs){ // For all TLS pointers
           destroy_thread_object(ptr); // destory it
         }
 
-        //// if main thread was used, call destructor for its TLS now
-        //void* tls_ptr = pthread_getspecific(key_);
-        //if (tls_ptr != 0) {
-        //  destroy_thread_object(tls_ptr);
-        //}
-
         if (pthread_key_delete(engine_key_) != 0) {
-          std::cout << "WARNING: pthread_key_delete failed" << std::endl;
+          throw sc::SystemException(
+                  "IntegralEnginePool::~IntegralEnginePool() "
+                  "returned an error trying to delete the thread specific key.",
+                  __FILE__, __LINE__);
         }
+
       }
 
       /**
        * Function that returns a clone of the prototype engine.  The clone
-       * exist for only one thread to use and so cannot be written to or used
+       * exist for only one thread to use and so should not be written to or used
        * by any other thread.
        */
       RefEngType instance() {
@@ -106,22 +104,20 @@ namespace mpqc {
         RefEngType *RefEngine =
                 reinterpret_cast<RefEngType*>(pthread_getspecific(engine_key_));
 
-
         if (RefEngine == nullptr) {
           RefEngine = new RefEngType;
 
           // Get clone of prototype, must lock to ensure nobody else
           // clones at the same time. As long as number of threads isn't
-          // Super high this should be ok.   Although in the future
-          // clone might be thread safe.
+          // Super high this should be ok.
           mutex::global::lock(); // <<< Begin Critical Section
           *RefEngine = prototype_->clone();
           mutex::global::unlock(); // <<< End Critical Section
 
-
           // Asign RefEngine to its thread specific partner.
           pthread_setspecific(engine_key_, RefEngine);
 
+          // copy the key so that we can manually delete it's data later
           tls_ptrs.push_back(pthread_getspecific(engine_key_));
 
         }
@@ -144,8 +140,8 @@ namespace mpqc {
        * Copy cosntruction and assignment are not allowed for
        * IntegralEnginePool.
        */
-      IntegralEnginePool(const IntegralEnginePool &);
-      IntegralEnginePool& operator=(const IntegralEnginePool &);
+      IntegralEnginePool(const IntegralEnginePool &) = delete;
+      IntegralEnginePool& operator=(const IntegralEnginePool &) = delete;
 
     };
 // IntegralEnginePool

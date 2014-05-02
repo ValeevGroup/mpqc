@@ -84,12 +84,7 @@ namespace mpqc {
           destroy_thread_object(ptr); // destory it
         }
 
-        if (pthread_key_delete(engine_key_) != 0) {
-          throw sc::SystemException(
-                  "IntegralEnginePool::~IntegralEnginePool() "
-                  "returned an error trying to delete the thread specific key.",
-                  __FILE__, __LINE__);
-        }
+        pthread_key_delete(engine_key_);
 
       }
 
@@ -130,10 +125,8 @@ namespace mpqc {
       /// Function to destroy the thread objects
       static void destroy_thread_object(void* p) {
         RefEngType* ptr = reinterpret_cast<RefEngType*>(p);
-        if(ptr){ // Make sure we havn't already deleted the data
-          delete ptr;
-          ptr = nullptr;
-        }
+        delete ptr;
+        ptr = nullptr;
       }
 
       /**

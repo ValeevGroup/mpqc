@@ -92,7 +92,7 @@ OneBodyInt::nshell2() const
 }
 
 Ref<GaussianBasisSet>
-OneBodyInt::basis(size_t c)
+OneBodyInt::basis(size_t c) const
 {
   if (c >= 2)
     throw ProgrammingError("OneBodyInt::basis(c): c >= 2",
@@ -106,13 +106,13 @@ OneBodyInt::basis(size_t c)
 }
 
 Ref<GaussianBasisSet>
-OneBodyInt::basis1()
+OneBodyInt::basis1() const
 {
   return bs1_;
 }
 
 Ref<GaussianBasisSet>
-OneBodyInt::basis2()
+OneBodyInt::basis2() const
 {
   return bs2_;
 }
@@ -197,7 +197,7 @@ OneBodyOneCenterInt::nshell1() const
 }
 
 Ref<GaussianBasisSet>
-OneBodyOneCenterInt::basis(size_t c)
+OneBodyOneCenterInt::basis(size_t c) const
 {
   if (c >= 1)
     throw ProgrammingError("OneBodyOneCenterInt::basis(c): c >= 2",
@@ -210,7 +210,7 @@ OneBodyOneCenterInt::basis(size_t c)
 }
 
 Ref<GaussianBasisSet>
-OneBodyOneCenterInt::basis1()
+OneBodyOneCenterInt::basis1() const
 {
   return bs1_;
 }
@@ -790,19 +790,19 @@ OneBodyDerivInt::nshell2() const
 }
 
 Ref<GaussianBasisSet>
-OneBodyDerivInt::basis()
+OneBodyDerivInt::basis() const
 {
   return bs1;
 }
 
 Ref<GaussianBasisSet>
-OneBodyDerivInt::basis1()
+OneBodyDerivInt::basis1() const
 {
   return bs1;
 }
 
 Ref<GaussianBasisSet>
-OneBodyDerivInt::basis2()
+OneBodyDerivInt::basis2() const
 {
   return bs2;
 }
@@ -865,13 +865,13 @@ OneBodyOneCenterDerivInt::nshell1() const
 }
 
 Ref<GaussianBasisSet>
-OneBodyOneCenterDerivInt::basis()
+OneBodyOneCenterDerivInt::basis() const
 {
   return bs1;
 }
 
 Ref<GaussianBasisSet>
-OneBodyOneCenterDerivInt::basis1()
+OneBodyOneCenterDerivInt::basis1() const
 {
   return bs1;
 }

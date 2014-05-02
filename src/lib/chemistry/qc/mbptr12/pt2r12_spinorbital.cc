@@ -1830,6 +1830,7 @@ RefSymmSCMatrix SpinOrbitalPT2R12::_rdm2_to_gg(SpinCase2 spin,
     double pfac_pq = 1.0;
     switch(spin) {
       case AlphaBeta: pq = pp * nmo + qq; break;
+
       case AlphaAlpha:
       case BetaBeta:
         if (pp > qq) {
@@ -1839,6 +1840,8 @@ RefSymmSCMatrix SpinOrbitalPT2R12::_rdm2_to_gg(SpinCase2 spin,
           pq = (qq * (qq-1)/2 + pp);
           pfac_pq = -1.0;
         }
+        break;
+
       default: MPQC_ASSERT(false);
     }
 
@@ -1853,6 +1856,7 @@ RefSymmSCMatrix SpinOrbitalPT2R12::_rdm2_to_gg(SpinCase2 spin,
       double pfac_uv = 1.0;
       switch(spin) {
         case AlphaBeta: uv = uu * nmo + vv; break;
+
         case AlphaAlpha:
         case BetaBeta:
           if (uu > vv) {
@@ -1862,6 +1866,8 @@ RefSymmSCMatrix SpinOrbitalPT2R12::_rdm2_to_gg(SpinCase2 spin,
             uv = (vv * (vv-1)/2 + uu);
             pfac_uv = -1.0;
           }
+          break;
+
         default: MPQC_ASSERT(false);
       }
 

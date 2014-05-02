@@ -11,9 +11,10 @@ F90FLAGS := $(FFLAGS)
 CPPFLAGS := $(shell $(MPQCCONFIG) --cppflags)
 LIBS := $(shell $(MPQCCONFIG) --libs)
 LIBDIR  := $(shell $(MPQCCONFIG) --libdir)
+LDFLAGS := $(shell $(MPQCCONFIG) --ldflags)
 
 aoints: aoints.o
-	$(CXX) $(CXXFLAGS) -o $@ $^ -L$(LIBDIR) $(LIBS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ -L$(LIBDIR) $(LDFLAGS) $(LIBS)
 
 clean:
 	-rm -f aoints aoints.o

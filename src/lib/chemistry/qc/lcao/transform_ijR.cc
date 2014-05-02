@@ -225,6 +225,12 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute() {
   const bool space2_is_ao = aoidxreg->value_exists( this->space2() );
   const bool space3_is_ao = aoidxreg->value_exists( this->space3() );
 
+//  if      (not space1_is_ao and not space2_is_ao)
+//    compute_ijR();
+//  else if (space1_is_ao and not space2_is_ao)
+//    compute_pjR();
+//  else if (space1_is_ao and space2_is_ao)
+//    compute_pqR();
   if (space1_is_ao)
     compute_pjR();
   else
@@ -238,7 +244,8 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute_ijR() {
 
   // determine whether space1, space2, and space3 are AO spaces
   Ref<AOSpaceRegistry> aoidxreg = this->factory()->ao_registry();
-  const bool space1_is_ao = false;
+  const bool space1_is_ao = aoidxreg->value_exists( this->space1() );
+  MPQC_ASSERT(space1_is_ao == false); // compute_pjR should be used otherwise
   const bool space2_is_ao = aoidxreg->value_exists( this->space2() );
   const bool space3_is_ao = aoidxreg->value_exists( this->space3() );
 
@@ -484,7 +491,9 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute_pjR() {
 
   // determine whether space1, space2, and space3 are AO spaces
   Ref<AOSpaceRegistry> aoidxreg = this->factory()->ao_registry();
-  const bool space1_is_ao = true;
+  MPQC_ASSERT(aoidxreg->value_exists( this->space1() ));
+  const bool space1_is_ao = aoidxreg->value_exists( this->space1() );
+  MPQC_ASSERT(space1_is_ao == true); // compute_ijR should be called otherwise
   const bool space2_is_ao = aoidxreg->value_exists( this->space2() );
   const bool space3_is_ao = aoidxreg->value_exists( this->space3() );
 
@@ -693,6 +702,11 @@ TwoBodyThreeCenterMOIntsTransform_ijR::compute_pjR() {
 
   tim.exit();
   ExEnv::out0() << indent << "Built TwoBodyMOIntsTransform_ijR: name = " << this->name() << std::endl;
+}
+
+void
+TwoBodyThreeCenterMOIntsTransform_ijR::compute_pqR() {
+  MPQC_ASSERT(false); // not yet implemented
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -176,7 +176,8 @@ create_domains(const Ref<OneBodyWavefunction> &wfn, int nfzc,
                const RefSCMatrix &scf_local, vector<vector<int> > &domains,
                domainmap_t &domainmap, double distance_threshold,
                double completeness_threshold,
-               bool all_nondist_pairs, sma2::Array<2> &S_ao,
+               bool all_nondist_pairs, std::vector<double>& interdomain_distances,
+               sma2::Array<2> &S_ao,
                sma2::Array<2> &L, double bound, const sc::Ref<sc::MessageGrp> &msg)
 {
   domainmap_t weak_pair_domainmap;
@@ -184,7 +185,8 @@ create_domains(const Ref<OneBodyWavefunction> &wfn, int nfzc,
                  domainmap, distance_threshold,
                  completeness_threshold,
                  weak_pair_domainmap, -1.0,
-                 all_nondist_pairs, S_ao, L, bound, msg);
+                 all_nondist_pairs, interdomain_distances,
+                 S_ao, L, bound, msg);
 }
 
 void
@@ -193,9 +195,11 @@ create_domains(const Ref<OneBodyWavefunction> &wfn, int nfzc,
                domainmap_t &domainmap, double distance_threshold,
                double completeness_threshold,
                domainmap_t &weak_pair_domainmap, double weak_pair_distance_threshold,
-               bool all_nondist_pairs, sma2::Array<2> &S_ao, sma2::Array<2> &L,
+               bool all_nondist_pairs, std::vector<double>& interdomain_distances,
+               sma2::Array<2> &S_ao, sma2::Array<2> &L,
                double bound, const sc::Ref<sc::MessageGrp> &msg)
 {
+  const bool store_distances = (interdomain_distances.empty() == false);
   // Creates the vector "domains" containing the orbital domain
   // associated with each occupied localized MO (the domain of an MO
   // is here defined as the set of atoms whose AO's will constitute
@@ -360,6 +364,8 @@ create_domains(const Ref<OneBodyWavefunction> &wfn, int nfzc,
       for (int j=nfzc; j<=jmax; j++) {
           double dist
               = domain_distance(domains[i-nfzc], domains[j-nfzc], wfn->molecule());
+          if(store_distances)
+            interdomain_distances[(i-nfzc)*nocc_act + (j-nfzc)] = dist;
           if (dist < distance_threshold) {
               pair<int,int> current_pair(i,j); // the current pair
               included_pairs.push_back(current_pair);

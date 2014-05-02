@@ -101,33 +101,22 @@ else()
     set (libraries "${libraries},test")
   endif()
 
-  #Check for clang 3.4 
-  set(SAFE_CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
-  set(CMAKE_REQUIRED_FLAGS "-Werror")
-  CHECK_CXX_SOURCE_COMPILES(
-    "
-    int main(){
-      register int i = 0; 
-      return 0;
-    }
-    " USING_CLANG34)
-  set(CMAKE_REQUIRE_FLAGS "${SAFE_CMAKE_REQUIRED_FLAGS}")
-  if(NOT USING_CLANG34)
-    message(STATUS "Using clang 3.4 will patch boost")
-  endif()
-
-  # we do have clang 3.4
-  if(NOT USING_CLANG34)
+  # Check for apple clang 5.1
+  execute_process( COMMAND ${CMAKE_CXX_COMPILER} --version OUTPUT_VARIABLE clang_full_version_string )
+  string(REGEX MATCH "Apple LLVM version 5.1" APPLECLANG_NEEDS_BOOST_PATCH ${clang_full_version_string})
+  if(APPLECLANG_NEEDS_BOOST_PATCH)
+    message(STATUS "Detected Apple Clang 5.1, will patch boost")
+    
     ExternalProject_Add(
       boost
       PREFIX ${EXTERNAL_BUILD_DIR}/boost
       URL ${BOOST_URL}
       URL_HASH ${BOOST_URL_HASH}
-    #-----Patch for clang 3.4--------
+    # -----Patch for clang 3.4 --------
       UPDATE_COMMAND ""
-      PATCH_COMMAND cp ${PROJECT_SOURCE_DIR}/external/cas128strong.hpp ${EXTERNAL_BUILD_DIR}/boost/src/boost/boost/atomic/detail/ && 
-      PATCH_COMMAND cp ${PROJECT_SOURCE_DIR}/external/gcc-atomic.hpp ${EXTERNAL_BUILD_DIR}/boost/src/boost/boost/atomic/detail/
-    #------------
+      PATCH_COMMAND cp ${PROJECT_SOURCE_DIR}/external/patch/boost_clang34_cas128strong.hpp ${EXTERNAL_BUILD_DIR}/boost/src/boost/boost/atomic/detail/cas128strong.hpp && 
+      PATCH_COMMAND cp ${PROJECT_SOURCE_DIR}/external/patch/boost_clang34_gcc-atomic.hpp ${EXTERNAL_BUILD_DIR}/boost/src/boost/boost/atomic/detail/gcc-atomic.hpp
+    # ------------
       BUILD_IN_SOURCE 1
       CONFIGURE_COMMAND ./bootstrap.sh --with-libraries=${libraries}
       BUILD_COMMAND ./b2 --user-config=${EXTERNAL_BUILD_DIR}/boost/user-config.jam
@@ -135,10 +124,7 @@ else()
       --link=static
       INSTALL_COMMAND ""
       )
-  endif()
-  
-  # We do not have clang 3.4
-  if(USING_CLANG34)
+  else(APPLECLANG_NEEDS_BOOST_PATCH)
     ExternalProject_Add(
       boost
       PREFIX ${EXTERNAL_BUILD_DIR}/boost
@@ -151,7 +137,7 @@ else()
       --link=static
       INSTALL_COMMAND ""
       )
-  endif()
+  endif(APPLECLANG_NEEDS_BOOST_PATCH)
 
 
   add_dependencies(External boost)

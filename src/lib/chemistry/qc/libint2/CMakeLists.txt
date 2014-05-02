@@ -34,7 +34,6 @@ IF(HAVE_LIBINT2)
       permute2e.cc
       primpairs.cc
       shellpairs.cc
-      storage.cc
       tbintlibint2.cc
       tform.cc
     )

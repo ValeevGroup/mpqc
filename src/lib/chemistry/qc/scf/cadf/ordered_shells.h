@@ -30,6 +30,7 @@
 #define _chemistry_qc_scf_cadf_ordered_shells_h
 
 #include <array>
+#include <mutex>
 
 #include <Eigen/Dense>
 

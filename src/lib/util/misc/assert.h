@@ -50,7 +50,7 @@
 // throw
 #if MPQC_ASSERT_MODE == 2
 #  include <util/misc/exception.h>
-#  define MPQC_ASSERT( a ) { if (not (a)) { throw sc::Exception("assertion failed", __FILE__, __LINE__);  } }
+#  define MPQC_ASSERT( a ) ((not (a)) ? throw sc::Exception("assertion failed", __FILE__, __LINE__) : 1)
 #endif
 
 #endif // end of header guard

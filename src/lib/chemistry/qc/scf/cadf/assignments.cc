@@ -65,14 +65,16 @@ AssignmentGrid::AssignmentGrid(
   ExEnv::out0() << indent << "Creating " << nrows_obs << " obs AssignmentBinRow objects" << endl;
   for(int irow = 0; irow < nrows_obs; ++irow) {
     // id is used for making MPI groups, so it must be unique.  Thus, offset it by number of bins
-    auto handle = obs_rows_.emplace(nbin + irow, false);
+    //auto handle = obs_rows_.emplace(nbin + irow, false);
+    auto handle = obs_rows_.push(AssignmentBinRow(nbin + irow, false));
     (*handle).pq_handle = handle;
   }
 
   ExEnv::out0() << indent << "Creating " << nrows_dfbs << " dfbs AssignmentBinRow objects" << endl;
   for(int irow = 0; irow < nrows_dfbs; ++irow) {
     // id is used for making MPI groups, so it must be unique.  Thus, offset it by number of bins + number of obs rows
-    auto handle = dfbs_rows_.emplace(nbin + nrows_obs + irow, true);
+    //auto handle = dfbs_rows_.emplace(nbin + nrows_obs + irow, true);
+    auto handle = dfbs_rows_.push(AssignmentBinRow(nbin + nrows_obs + irow, true));
     (*handle).pq_handle = handle;
   }
 

@@ -168,7 +168,7 @@ class TreeMatrix
       // These use std::deque objects since we need the iterators, but they act like stacks
       std::deque<block_ptr_t> curr_blocks;
       std::deque<block_ptr_t> new_blocks;
-      for(auto&& ish : shell_range(basis))
+      for(const auto&& ish : shell_range(basis))
       {
         auto blk = boost::make_shared<block_t>(m.row(ish), ish.bfoff, ish.bfoff+ish.nbf);
         new_blocks.push_front(blk);
@@ -183,7 +183,7 @@ class TreeMatrix
         }
 
         auto blk_iter = curr_blocks.cbegin();
-        for(auto&& iblk : shell_block_range(basis, 0, 0, NoLastIndex, req, NoMaximumBlockSize)) {
+        for(const auto&& iblk : shell_block_range(basis, 0, 0, NoLastIndex, req, NoMaximumBlockSize)) {
           auto blk_start = blk_iter;
           index_t end_index = (*blk_start)->end_index();
           while(blk_iter != curr_blocks.cend()

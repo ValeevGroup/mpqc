@@ -176,8 +176,8 @@ class AssignableShellPair {
     AssignableShellPair(
         const ShellData& ish,
         const ShellBlockData<>& Xblk,
-        const boost::shared_ptr<Node> node = 0
-    ) : ish(ish), Xatom(Xblk.center), node(0)
+        const boost::shared_ptr<Node> node
+    ) : ish(ish), Xatom(Xblk.center), node(node)
     {
       // TODO more efficient cost estimation options
       cost_estimate_ = ish.nbf * Xblk.nbf;

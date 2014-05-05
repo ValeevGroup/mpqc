@@ -490,7 +490,6 @@ CADFCLHF::compute_K()
             const double Xsh_schwarz = schwarz_df_[Xsh];
             auto& L_3_star_iX = L_3_star[{ish, Xsh}];
             bool jsh_found = false;
-            auto& L_3_ish_Xsh = L_3[{ish, Xsh}];
 
             for(auto&& jsh : L_sch_ish) {
               if(ish.center == jsh.center) continue;

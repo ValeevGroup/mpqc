@@ -169,7 +169,7 @@ class OrderedShellList {
     }
 
     const decltype(aux_vector_)& get_aux_vector() const {
-      assert(aux_vector_initialized_);
+      MPQC_ASSERT(aux_vector_initialized_);
       return aux_vector_;
     }
 

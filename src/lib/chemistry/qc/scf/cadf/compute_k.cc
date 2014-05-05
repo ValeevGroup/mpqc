@@ -391,12 +391,12 @@ CADFCLHF::compute_K()
     });
 
 
-    std::unordered_map<int, int> Xsh_offsets;
-    int off_idx = 0;
-    for(auto&& Xsh_index : my_part.bin->assigned_dfbs_shells) {
-      Xsh_offsets[Xsh_index] = off_idx;
-      ++off_idx;
-    }
+    //std::unordered_map<int, int> Xsh_offsets;
+    //int off_idx = 0;
+    //for(auto&& Xsh_index : my_part.bin->assigned_dfbs_shells) {
+    //  Xsh_offsets[Xsh_index] = off_idx;
+    //  ++off_idx;
+    //}
 
 
 
@@ -473,6 +473,7 @@ CADFCLHF::compute_K()
       }
     });
 
+    timer.change("build L_3_star");
     // Form L_3star
     if(distribute_coefficients_) {
       do_threaded(nthread_, [&](int ithr) {
@@ -597,6 +598,7 @@ CADFCLHF::compute_K()
     //----------------------------------------//
     // sort L_3_star and form other transpose lists
 
+    timer.change("sort L_3_star and build L_d's");
     if(distribute_coefficients_) {
       do_threaded(nthread_, [&](int ithr){
         for(auto&& l3_star_pair : thread_over_range(L_3_star, ithr, nthread_)) {
@@ -832,6 +834,13 @@ CADFCLHF::compute_K()
             // Build dt for the transpose, only if we're distributing coefficients
             if(do_linK_) {
 
+              auto& L_d_over_ish_Xsh = L_d_over[{ish, Xsh}];
+              const auto& L_d_over_range = shell_block_range(L_d_over_ish_Xsh, Contiguous);
+              std::vector<std::pair<int, int>> kblks_over;
+              for(auto kblk : L_d_over_range) {
+                kblks_over.emplace_back(kblk.bfoff, kblk.nbf);
+              }
+
               mt_timer.enter("compute d_overtilde", ithr);
               if(screen_B_) {
                 auto& L_d_over_ish_Xsh = L_d_over[{ish, Xsh}];
@@ -842,19 +851,20 @@ CADFCLHF::compute_K()
                       NULL, 0, 0, Eigen::OuterStride<Eigen::Dynamic>(Xsh.nbf*nbf)
                   );
                   int k_offset = 0;
-                  for(auto&& kblk : shell_block_range(L_d_over_ish_Xsh, Contiguous)) {
+                  for(auto&& kblk_pair : kblks_over) {
                     for(auto&& X : function_range(Xsh)) {
                       new (&dt_ish_part) Eigen::Map<RowMatrix, Eigen::Unaligned, Eigen::OuterStride<Eigen::Dynamic>>(
                           dt_ish_X.data() + X.off*L_d_over_ish_Xsh.nbf + k_offset,
-                          ish.nbf, kblk.nbf, Eigen::OuterStride<Eigen::Dynamic>(Xsh.nbf*L_d_over_ish_Xsh.nbf)
+                          ish.nbf, kblk_pair.second,
+                          Eigen::OuterStride<Eigen::Dynamic>(Xsh.nbf*L_d_over_ish_Xsh.nbf)
                       );
                       dt_ish_part += 2.0 *
                           D.middleRows(ish.bfoff, ish.nbf).middleCols(Xsh.atom_obsbfoff, Xsh.atom_obsnbf)
                           * coefs_X_nu_other.at(Xsh.center).middleRows(
                               X.bfoff_in_atom*Xsh.atom_obsnbf, Xsh.atom_obsnbf
-                          ).middleCols(kblk.bfoff, kblk.nbf);
+                          ).middleCols(kblk_pair.first, kblk_pair.second);
                     }
-                    k_offset += kblk.nbf;
+                    k_offset += kblk_pair.second;
                   }
                 }
               }
@@ -889,54 +899,17 @@ CADFCLHF::compute_K()
                 for(auto&& bound_pair : iXranges) {
                   auto lsh_bfoff = bound_pair.first;
                   auto lsh_end = bound_pair.second;
-                  bool split = false;
-                  decltype(lsh_end) first_end, second_begin;
-                  //if(Xsh.atom_obsbfoff <= lsh_bfoff && lsh_bfoff < Xsh.atom_obsbfoff + Xsh.atom_obsnbf) {
-                  //  if(lsh_end <= Xsh.atom_obsbfoff + Xsh.atom_obsnbf) {
-                  //    // the whole block is a same center term; skip it
-                  //    continue;
-                  //  }
-                  //  else {
-                  //    // the block includes the second part of the same atom terms.  skip some of them...
-                  //    lsh_bfoff = Xsh.atom_obsbfoff + Xsh.atom_obsnbf;
-                  //  }
-                  //}
-                  //else if(lsh_end > Xsh.atom_obsbfoff && lsh_end <= Xsh.atom_obsbfoff + Xsh.atom_obsnbf) {
-                  //  // the block includes the first part of the same atom terms.  Skip some of them...
-                  //  lsh_end = Xsh.atom_obsbfoff;
-                  //}
-                  //else if(lsh_bfoff <= Xsh.atom_obsbfoff && lsh_end >= Xsh.atom_obsbfoff + Xsh.atom_obsnbf) {
-                  //  // We need to split the block...
-                  //  split = true;
-                  //  first_end = ish.atom_bfoff;
-                  //  second_begin = ish.atom_bfoff + ish.atom_nbf;
-                  //  assert(first_end < lsh_end && second_begin > lsh_bfoff);
-                  //}
                   auto lsh_nbf = lsh_end - lsh_bfoff;
                   for(auto&& X : function_range(Xsh)) {
                     new (&dt_p_part) Eigen::Map<RowMatrix, Eigen::Unaligned, Eigen::OuterStride<Eigen::Dynamic>>(
                         dt_prime.data() + X.off*Xsh.atom_obsnbf, ish.nbf, Xsh.atom_obsnbf,
                         Eigen::OuterStride<Eigen::Dynamic>(Xsh.nbf*Xsh.atom_obsnbf)
                     );
-                    //if(not split) {
-                      dt_p_part += 2.0 *
-                          D.middleRows(ish.bfoff, ish.nbf).middleCols(lsh_bfoff, lsh_nbf)
-                          * coefs_X_nu_other.at(Xsh.center).middleRows(
-                              X.bfoff_in_atom*Xsh.atom_obsnbf, Xsh.atom_obsnbf
-                          ).middleCols(lsh_bfoff, lsh_nbf).transpose();
-                    //}
-                    //else {
-                    //  dt_p_part += 2.0 *
-                    //      D.middleRows(ish.bfoff, ish.nbf).middleCols(lsh_bfoff, first_end - lsh_bfoff)
-                    //      * coefs_X_nu_other.at(Xsh.center).middleRows(
-                    //          X.bfoff_in_atom*Xsh.atom_obsnbf, Xsh.atom_obsnbf
-                    //      ).middleCols(lsh_bfoff, first_end - lsh_bfoff).transpose();
-                    //  dt_p_part += 2.0 *
-                    //      D.middleRows(ish.bfoff, ish.nbf).middleCols(lsh_bfoff, lsh_end - second_begin)
-                    //      * coefs_X_nu_other.at(Xsh.center).middleRows(
-                    //          X.bfoff_in_atom*Xsh.atom_obsnbf, Xsh.atom_obsnbf
-                    //      ).middleCols(second_begin, lsh_end - second_begin).transpose();
-                    //}
+                    dt_p_part += 2.0 *
+                        D.middleRows(ish.bfoff, ish.nbf).middleCols(lsh_bfoff, lsh_nbf)
+                        * coefs_X_nu_other.at(Xsh.center).middleRows(
+                            X.bfoff_in_atom*Xsh.atom_obsnbf, Xsh.atom_obsnbf
+                        ).middleCols(lsh_bfoff, lsh_nbf).transpose();
                   }
                 }
               } // end if screen_B
@@ -961,62 +934,61 @@ CADFCLHF::compute_K()
 
               mt_timer.change("form g and K contributions", ithr);
               auto form_g_timer = mt_timer.get_subtimer("form g", ithr);
-              auto k_contrib_timer = mt_timer.get_subtimer("K contrib", ithr);
+              auto k_contrib_timer_o = mt_timer.get_subtimer("K contrib d_over", ithr);
+              auto k_contrib_timer_u = mt_timer.get_subtimer("K contrib d_under", ithr);
 
               /// Now loop over rho in L_3_star and compute k contributions
               for(const auto&& jblk : shell_block_range(L_3_star[{ish, Xsh}], Contiguous)){
 
-                TimerHolder holder(form_g_timer);
-                new (&gt_ish_X) Eigen::Map<RowMatrix>(gt_ish_X_data, ish.nbf*Xblk.nbf, jblk.nbf);
-                gt_ish_X = RowMatrix::Zero(ish.nbf*Xblk.nbf, jblk.nbf);
-                for(auto&& mu : function_range(ish)) {
-                  gt_ish_X.middleRows(mu.off*Xblk.nbf, Xblk.nbf) -= 0.5 *
-                      g2.middleCols(ish.atom_dfbfoff, ish.atom_dfnbf).middleRows(Xblk.bfoff, Xblk.nbf)
-                      * coefs_mu_X_other.at(ish).middleRows(mu.off*nbf + jblk.bfoff, jblk.nbf).transpose();
+                {
+                  TimerHolder holder(form_g_timer);
+                  new (&gt_ish_X) Eigen::Map<RowMatrix>(gt_ish_X_data, ish.nbf*Xblk.nbf, jblk.nbf);
+                  gt_ish_X = RowMatrix::Zero(ish.nbf*Xblk.nbf, jblk.nbf);
+                  for(auto&& mu : function_range(ish)) {
+                    gt_ish_X.middleRows(mu.off*Xblk.nbf, Xblk.nbf) -= 0.5 *
+                        g2.middleCols(ish.atom_dfbfoff, ish.atom_dfnbf).middleRows(Xblk.bfoff, Xblk.nbf)
+                        * coefs_mu_X_other.at(ish).middleRows(mu.off*nbf + jblk.bfoff, jblk.nbf).transpose();
+                  }
                 }
 
 
-                holder.change(k_contrib_timer);
                 if(screen_B_) {
-                  auto& L_d_over_ish_Xsh = L_d_over[{ish, Xsh}];
-                  int kblk_offset = 0;
-                  for(auto&& kblk : shell_block_range(L_d_over_ish_Xsh, Contiguous)) {
-                    for(auto&& mu : function_range(ish)) {
-                      Kt_part.middleCols(kblk.bfoff, kblk.nbf).middleRows(jblk.bfoff, jblk.nbf).noalias() +=
-                          gt_ish_X.middleRows(mu.off*Xblk.nbf, Xblk.nbf).transpose()
-                          * dt_ish_X.middleRows(mu.off*Xblk.nbf, Xblk.nbf).middleCols(kblk_offset, kblk.nbf);
-                    }
-                    kblk_offset += kblk.nbf;
-                  }
                   for(auto&& mu : function_range(ish)) {
+                    TimerHolder subtimer(k_contrib_timer_o);
+                    int kblk_offset = 0;
+                    for(auto&& kblk_pair : kblks_over) {
+                      Kt_part.block(
+                          kblk_pair.first, jblk.bfoff,
+                          kblk_pair.second, jblk.nbf
+                      ).transpose().noalias() +=
+                          gt_ish_X.middleRows(mu.off*Xblk.nbf, Xblk.nbf).transpose()
+                          * dt_ish_X.block(
+                              mu.off*Xblk.nbf, kblk_offset,
+                              Xblk.nbf, kblk_pair.second
+                            );
+                      kblk_offset += kblk_pair.second;
+                    }
+
+                    subtimer.change(k_contrib_timer_u);
                     Kt_part.middleCols(jblk.bfoff, jblk.nbf).middleRows(Xblk.atom_obsbfoff, Xblk.atom_obsnbf).transpose().noalias() +=
                         gt_ish_X.middleRows(mu.off*Xblk.nbf, Xblk.nbf).transpose()
                         * dt_prime.middleRows(mu.off*Xblk.nbf, Xblk.nbf);
-                    //DEBUG_DELETE_THIS
-                    //kblk_offset = 0;
-                    //for(auto&& kblk : shell_block_range(L_d_over_ish_Xsh, Contiguous|SameCenter)) {
-                    //  if(kblk.center == Xsh.center) {
-                    //    Kt_part.middleCols(jblk.bfoff, jblk.nbf).middleRows(kblk.bfoff, kblk.nbf).transpose().noalias() -=
-                    //        gt_ish_X.middleRows(mu.off*Xblk.nbf, Xblk.nbf).transpose()
-                    //        * dt_ish_X.middleRows(mu.off*Xsh.nbf, Xblk.nbf).middleCols(kblk_offset, kblk.nbf);
-                    //  }
-                    //  kblk_offset += kblk.nbf;
-                    //}
-                    //DEBUG_DELETE_THIS
                   }
 
                 }
                 else {
                   for(auto&& mu : function_range(ish)) {
+                    TimerHolder subtimer(k_contrib_timer_o);
                     Kt_part.middleCols(jblk.bfoff, jblk.nbf).transpose().noalias() +=
                         gt_ish_X.middleRows(mu.off*Xblk.nbf, Xblk.nbf).transpose()
                         * dt_ish_X.middleRows(mu.off*Xblk.nbf, Xblk.nbf);
-                    Kt_part.middleCols(jblk.bfoff, jblk.nbf).middleRows(Xblk.atom_obsbfoff, Xblk.atom_obsnbf).transpose().noalias() +=
-                        gt_ish_X.middleRows(mu.off*Xblk.nbf, Xblk.nbf).transpose()
-                        * dt_prime.middleRows(mu.off*Xblk.nbf, Xblk.nbf);
                     Kt_part.middleCols(jblk.bfoff, jblk.nbf).middleRows(Xblk.atom_obsbfoff, Xblk.atom_obsnbf).transpose().noalias() -=
                         gt_ish_X.middleRows(mu.off*Xblk.nbf, Xblk.nbf).transpose()
                         * dt_ish_X.middleRows(mu.off*Xsh.nbf, Xblk.nbf).middleCols(Xblk.atom_obsbfoff, Xblk.atom_obsnbf);
+                    subtimer.change(k_contrib_timer_u);
+                    Kt_part.middleCols(jblk.bfoff, jblk.nbf).middleRows(Xblk.atom_obsbfoff, Xblk.atom_obsnbf).transpose().noalias() +=
+                        gt_ish_X.middleRows(mu.off*Xblk.nbf, Xblk.nbf).transpose()
+                        * dt_prime.middleRows(mu.off*Xblk.nbf, Xblk.nbf);
                   }
                 }
 

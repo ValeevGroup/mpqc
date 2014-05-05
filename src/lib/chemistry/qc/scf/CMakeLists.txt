@@ -25,10 +25,22 @@ SET(ccfiles
 )
 
 IF(MPQC_NEW_FEATURES)
-    list(APPEND ccfiles tascf.cpp)
-    list(APPEND ccfiles taclscf.cpp)
-    list(APPEND ccfiles taclhf.cpp)
-    list(APPEND ccfiles cldfgengine.cpp)
+    set(newccfiles
+      tascf.cpp
+      taclscf.cpp
+      taclhf.cpp
+      cldfgengine.cpp
+    )
+
+    # Compiler Warnings for new code
+  if(Future_warning_build)
+    foreach(f ${newccfiles})
+      set_source_files_properties(f COMPILE_FLAGS "-Wall -Wextra ")
+    endforeach()
+  endif(Future_warning_build)
+
+    list(APPEND ccfiles ${newccfiles})
+
 ENDIF(MPQC_NEW_FEATURES)
 
 add_mpqc_object_library(scf ${ccfiles})

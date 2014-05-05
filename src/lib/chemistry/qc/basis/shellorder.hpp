@@ -36,7 +36,6 @@
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/basis.h>
 
-#include <mpqc/utility/foreach.hpp>
 #include "kcluster.hpp"
 
 namespace mpqc{
@@ -167,7 +166,7 @@ namespace TA{
          */
         void attach_to_closest_cluster(){
             // Loop over all the atoms.
-            foreach(const auto atom, atoms_){
+            for(const auto atom : atoms_){
                 // Guess that first cluster is closest
                 double smallest = clusters_[0].distance(atom);
 
@@ -191,7 +190,7 @@ namespace TA{
             }
             // Put atoms in correct order inside clusters so that the
             // Shell ordering becomes deterministic.
-            foreach(auto& cluster, clusters_){
+            for(auto& cluster : clusters_){
                 cluster.sort_atoms();
             }
         }
@@ -205,7 +204,7 @@ namespace TA{
                // Recompute the center of the cluster using the centroid of
                // the atoms.  Will lose information about which atoms
                // go with which center.
-               foreach(auto &cluster, clusters_){ cluster.guess_center(); }
+               for(auto &cluster : clusters_){ cluster.guess_center(); }
                sort_clusters();
 
                attach_to_closest_cluster();
@@ -221,9 +220,9 @@ namespace TA{
 
             std::vector<Shell> shells;
             // Loop over clusters
-            foreach(const auto& cluster, clusters_){
+            for(const auto& cluster : clusters_){
                 // Loop over atoms in cluster
-                foreach(const auto& atom, cluster.atoms()){
+                for(const auto& atom : cluster.atoms()){
                     // Figure out where in the molecule the atom is located.
                     std::size_t center_ = atom.mol_index();
                     // Figure out how many shells are on the atom.
@@ -257,7 +256,7 @@ namespace TA{
                 // Holds the number of shells on the cluster.
                 std::size_t shells_in_cluster = 0;
                 // Loop over atoms
-                foreach(const auto atom, clusters_[i].atoms()){
+                for(const auto atom : clusters_[i].atoms()){
                     // position of atom in molecule
                     std::size_t atom_index = atom.mol_index();
                     // Get number of shells on the atom.

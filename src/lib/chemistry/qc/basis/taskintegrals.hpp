@@ -102,7 +102,7 @@ namespace mpqc {
       std::vector<shell_range> ranges(rank);
 
       // Loop over each dimension of the tile.
-      for (auto i = 0; i < rank; ++i) {
+      for (std::size_t i = 0; i < rank; ++i) {
 
         // Get the global indices of the first and last function in a tile
         // This corresponds to basis functions.

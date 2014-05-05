@@ -30,6 +30,7 @@
 #define _chemistry_qc_scf_assignments_h
 
 #include <array>
+#include <set>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/enable_shared_from_this.hpp>
@@ -75,6 +76,13 @@ namespace detail {
       }
   };
 
+  template<typename T>
+  struct index_less {
+      bool operator()(const T& a, const T& b) const {
+        return a.index < b.index;
+      }
+  };
+
 }
 
 template<typename T, typename... Args> using priority_queue =
@@ -85,6 +93,16 @@ template<typename T, template<typename...> class compare=std::less> using ptr_pr
         detail::deref_compare<T, compare>
       >
     >;
+template<
+  template<typename...> class container,
+  typename T,
+  template<typename...> class compare=std::less
+> using ordered_ptr_container =
+    container<
+      T, detail::deref_compare<T, compare>
+    >;
+template<typename T, template<typename...> class compare=std::less> using ptr_set =
+    ordered_ptr_container<std::set, T, compare>;
 typedef uint64_t uli;
 typedef unsigned int uint;
 
@@ -207,6 +225,14 @@ class Node : public boost::enable_shared_from_this<Node> {
       return cost;
     }
 
+    bool should_do_obs_shell(uli shell_index) const {
+      return obs_shells_to_do.find(shell_index) != obs_shells_to_do.end();
+    }
+
+    bool should_do_dfbs_atom(uli atom_index) const {
+      return dfbs_atoms_to_do.find(atom_index) != dfbs_atoms_to_do.end();
+    }
+
     void assign_coef_item(boost::shared_ptr<AssignableItem> const& item, bool is_df) {
       compute_coef_items[is_df].push_back(item);
       estimated_workload += item->cost_estimate(is_df);
@@ -228,8 +254,9 @@ class AssignmentBin : public boost::enable_shared_from_this<AssignmentBin> {
   public:
     ptr_priority_queue<boost::shared_ptr<Node>> nodes;
     std::vector<boost::shared_ptr<Node>> nodes_list;
-    std::vector<boost::shared_ptr<AssignableAtom>> assigned_dfbs_atoms;
-    std::vector<boost::shared_ptr<AssignableShell>> assigned_obs_shells;
+    ptr_set<boost::shared_ptr<AssignableAtom>, detail::index_less> assigned_dfbs_atoms;
+    std::set<uint> assigned_dfbs_shells;
+    ptr_set<boost::shared_ptr<AssignableShell>, detail::index_less> assigned_obs_shells;
     std::array<std::vector<boost::shared_ptr<AssignableItem>>, 2> compute_coef_items;
     uli estimated_workload = 0;
     uli coef_workload = 0;
@@ -254,32 +281,19 @@ class AssignmentBin : public boost::enable_shared_from_this<AssignmentBin> {
 
     boost::shared_ptr<cadf::Node> add_node(int index);
 
-    void register_in_row(const AssignmentBinRow& row, bool is_df);
+    inline void register_in_row(const AssignmentBinRow& row, bool is_df);
 
-    void assign_dfbs_atom(const boost::shared_ptr<AssignableItem>& dfbs_atom) {
-      assigned_dfbs_atoms.push_back(boost::static_pointer_cast<AssignableAtom>(dfbs_atom));
-      dfbs_coef_offsets[dfbs_atom->index] = dfbs_ncoefs;
-      dfbs_ncoefs += dfbs_atom->coefs_size;
-      estimated_workload += dfbs_ncoefs;
-    }
+    inline void assign_dfbs_atom(const boost::shared_ptr<AssignableItem>& dfbs_atom);
 
-    void assign_obs_shell(const boost::shared_ptr<AssignableItem>& obs_shell) {
-      assigned_obs_shells.push_back(boost::static_pointer_cast<AssignableShell>(obs_shell));
-      obs_coef_offsets[obs_shell->index] = obs_ncoefs;
-      obs_ncoefs += obs_shell->coefs_size;
-      estimated_workload += obs_ncoefs;
-    }
+    inline void assign_obs_shell(const boost::shared_ptr<AssignableItem>& obs_shell);
 
-    void make_assignments();
+    inline void make_assignments();
 
-    void compute_coef_for_item(const boost::shared_ptr<AssignableItem>& item, bool is_df) {
-      compute_coef_items[is_df].push_back(item);
-      coef_workload += item->cost_estimate(is_df);
-    }
+    void compute_coef_for_item(const boost::shared_ptr<AssignableItem>& item, bool is_df);
 
-    size_t n_node() const {
-      return nodes.size();
-    }
+    size_t n_node() const { return nodes.size(); }
+
+    uint dfnsh() const { return assigned_dfbs_shells.size(); }
 
     bool operator<(const AssignmentBin& other) const;
 

@@ -15,6 +15,7 @@ SET(ccfiles
   cadf/compute_j.cc
   cadf/assignments.cc
   cadf/compute_k.cc
+  cadf/ordered_shells.cc
   effh.cc
   fbclhf.cc
   hsoshf.cc

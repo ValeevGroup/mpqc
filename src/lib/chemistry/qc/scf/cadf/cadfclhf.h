@@ -51,10 +51,8 @@
 #include <util/misc/hash.h>
 
 #include "iters.h"
-
-#ifdef ECLIPSE_PARSER_ONLY
-#include <util/misc/sharedptr.h>
-#endif
+#include "ordered_shells.h"
+#include "treemat_fwd.h"
 
 // Allows easy switching between std::shared_ptr and e.g. boost::shared_ptr
 template<typename... Types>
@@ -67,7 +65,6 @@ typedef unsigned long long ull;
 #define USE_INTEGRAL_CACHE 0
 
 namespace sc {
-
 
 // Forward Declarations
 
@@ -336,8 +333,10 @@ class CADFCLHF: public CLHF {
     bool print_iteration_timings_ = false;
     /// Use norms for nu dimension when screening
     bool use_norms_nu_ = true;
-    /// Use norms for sigma dimension when screening.  It's actually a sum over this dimension rather than a norm.
+    /// Use norms to get L_DC.  If false, an N_shell^3 contraction will be done, which only starts to dominate for VERY large systems
     bool use_norms_sigma_ = true;
+    /// When using norms for L_DC, we can also do a N_atom^3 contraction that is slightly cheaper but screens better than the full column norms (only relevent if use_norms_sigma_ is true)
+    bool sigma_norms_chunk_by_atoms_ = true;
     /// Print a lot of stuff in an XML debug file.  Not really for end users...
     bool xml_debug_ = false;
     /// Dump screening data to XML
@@ -384,6 +383,10 @@ class CADFCLHF: public CLHF {
     bool thread_4c_ints_ = false;
     /// when screening B, should we transfer the coefficients to a col-major matrix and then do a copy to transpose back to row major?  (efficiency will depend on cache size, etc.)
     bool screen_B_transfer_as_transpose_ = false;
+    /// Screening threshold for d overtilde
+    double d_over_screening_thresh_;
+    /// Screening threshold for d undertilde
+    double d_under_screening_thresh_;
     //@}
 
     ScreeningStatistics stats_;
@@ -393,6 +396,8 @@ class CADFCLHF: public CLHF {
     double prev_epsilon_;
     double prev_epsilon_dist_;
     double prev_epsilon_B_;
+    double prev_epsilon_d_over_;
+    double prev_epsilon_d_under_;
 
     TwoCenterIntContainerPtr g2_full_ptr_;
 
@@ -633,6 +638,7 @@ class CADFCLHF: public CLHF {
       std::pair<int, int>, sc::hash<std::pair<int, int>>
     > local_pairs_linK_;
     std::unordered_map<int, std::vector<int>> linK_local_map_;
+    std::unordered_map<int, std::vector<int>> linK_local_map_ish_Xsh_;
 
     // List of the permutationally unique pairs with half-schwarz bounds larger than pair_thresh_
     std::vector<std::pair<int, int>> sig_pairs_;
@@ -642,8 +648,9 @@ class CADFCLHF: public CLHF {
     // The same as sig_pairs_, but organized differently
     std::vector<std::vector<int>> shell_to_sig_shells_;
 
-    std::vector<double> max_schwarz_;
+    //std::vector<double> max_schwarz_;
     Eigen::VectorXd schwarz_df_;
+    Eigen::VectorXd schwarz_df_mine_;
 
     // Where are we in the iteration over the local_pairs_?
     std::atomic<int> local_pairs_spot_;
@@ -651,7 +658,11 @@ class CADFCLHF: public CLHF {
     Eigen::MatrixXd schwarz_frob_;
     std::vector<Eigen::MatrixXd> C_trans_frob_;
 
+    // TODO Get rid of full C_bar_
     Eigen::MatrixXd C_bar_;
+    Eigen::MatrixXd C_bar_mine_;
+    Eigen::MatrixXd C_underbar_;
+    shared_ptr<cadf::TreeMatrix<>> C_dfsame_;
 
     // TwoBodyThreeCenterInt integral objects for each thread
     std::vector<Ref<TwoBodyThreeCenterInt>> eris_3c_;
@@ -758,27 +769,45 @@ class CADFCLHF: public CLHF {
     }
 
     // CADF-LinK lists
-    template <typename T> struct hash_;
-    template<typename A, typename B>
-    struct hash_<std::pair<A, B>>{
-      std::size_t operator()(const std::pair<A, B>& val) const {
-        std::size_t seed = 0;
-        boost::hash_combine(seed, val.first);
-        boost::hash_combine(seed, val.second);
-        return seed;
-      }
-    };
+    //template <typename T> struct hash_;
+    //template<typename A, typename B>
+    //struct hash_<std::pair<A, B>>{
+    //  std::size_t operator()(const std::pair<A, B>& val) const {
+    //    std::size_t seed = 0;
+    //    boost::hash_combine(seed, val.first);
+    //    boost::hash_combine(seed, val.second);
+    //    return seed;
+    //  }
+    //};
     typedef madness::ConcurrentHashMap<int, OrderedShellList> IndexListMap;
     typedef madness::ConcurrentHashMap<
         std::pair<int, int>,
         OrderedShellList,
-        hash_<std::pair<int, int>>
+        sc::hash<std::pair<int, int>>
     > IndexListMap2;
+    //typedef madness::ConcurrentHashMap<
+    //    std::pair<int, int>,
+    //    LinKListGroup,
+    //    sc::hash<std::pair<int, int>>
+    //> LinKListMap;
+    typedef madness::ConcurrentHashMap<
+        std::pair<int, int>,
+        std::vector<std::pair<uint64_t, uint64_t>>,
+        sc::hash<std::pair<int, int>>
+    > LinKRangeMap2;
 
+
+    // TODO !!! initialize ALL of these to reasonable numbers of bins
     IndexListMap L_schwarz;
     IndexListMap L_DC;
+    IndexListMap L_C_under;
     IndexListMap2 L_3;
+    IndexListMap2 L_3_star;
     IndexListMap2 L_B;
+    IndexListMap2 L_d_over;
+    LinKRangeMap2 L_d_under_ranges;
+    //IndexListMap2 L_d_under;
+    //LinKListMap L_;
 
 
     /**

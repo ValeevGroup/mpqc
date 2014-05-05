@@ -29,6 +29,19 @@
 #ifndef _chemistry_qc_scf_cadf_macros_h
 #define _chemistry_qc_scf_cadf_macros_h
 
+// TODO Move this to a more global, reasonable place
+#define DECLARE_ATTRIBUTE_LESS_STRUCT_NAMED(struct_name, attr_name) \
+  template<typename T> \
+  struct struct_name \
+  { \
+    bool operator()(const T& a, const T& b) const { \
+      return a.##attr_name < b.##attr_name; \
+    } \
+  }
+#define DECLARE_ATTRIBUTE_LESS_STRUCT(attr_name) \
+    DECLARE_ATTRIBUTE_LESS_STRUCT_NAMED(attr_name##_less, attr_name)
+
+
 #define M_DUMP(M) std::cout << #M << " is " << M.rows() << " x " << M.cols() << std::endl;
 
 #define M_ELEM_DUMP(M, r, c) \

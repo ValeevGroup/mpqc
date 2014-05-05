@@ -225,7 +225,7 @@ AssignmentBin::operator<(const AssignmentBin& other) const
   }
 }
 
-void
+inline void
 AssignmentBin::register_in_row(const AssignmentBinRow& row, bool is_df) {
   (*row.pq_handle).add_bin(shared_from_this());
   if(is_df) {
@@ -313,4 +313,35 @@ AssignmentBin::make_assignments()
     ExEnv::out0() << decindent;
   }
 
+}
+
+inline void
+AssignmentBin::assign_dfbs_atom(const boost::shared_ptr<AssignableItem>& dfbs_atom)
+{
+  assigned_dfbs_atoms.insert(boost::static_pointer_cast<AssignableAtom>(dfbs_atom));
+  for(auto&& Xsh : iter_shells_on_center(grid->dfbasis(), dfbs_atom->index, grid->basis())) {
+    assigned_dfbs_shells.insert(Xsh.index);
+  }
+  dfbs_coef_offsets[dfbs_atom->index] = dfbs_ncoefs;
+  dfbs_ncoefs += dfbs_atom->coefs_size;
+  estimated_workload += dfbs_ncoefs;
+}
+
+inline void
+AssignmentBin::assign_obs_shell(const boost::shared_ptr<AssignableItem>& obs_shell)
+{
+  assigned_obs_shells.insert(boost::static_pointer_cast<AssignableShell>(obs_shell));
+  obs_coef_offsets[obs_shell->index] = obs_ncoefs;
+  obs_ncoefs += obs_shell->coefs_size;
+  estimated_workload += obs_ncoefs;
+}
+
+inline void
+AssignmentBin::compute_coef_for_item(
+    const boost::shared_ptr<AssignableItem>& item,
+    bool is_df
+)
+{
+  compute_coef_items[is_df].push_back(item);
+  coef_workload += item->cost_estimate(is_df);
 }

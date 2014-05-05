@@ -32,11 +32,14 @@
 
 #include "cadfclhf.h"
 #include "assignments.h"
+#include "treemat.h"
+#include "ordered_shells.h"
 
 using namespace sc;
 
 typedef std::pair<int, int> IntPair;
 typedef uint64_t uli;
+typedef unsigned int uint;
 
 
 void
@@ -53,6 +56,7 @@ CADFCLHF::compute_coefficients()
   const int nbf = obs->nbasis();
   const int dfnbf = dfbs_->nbasis();
   const int natom = obs->ncenter();
+  const cadf::Node& my_part = atom_pair_assignments_k_->my_assignments(scf_grp_->me());
 
   /*-----------------------------------------------------*/
   /* Initialize coefficient memory                  {{{2 */ #if 2 //latex `\label{sc:coefmem}`
@@ -268,7 +272,6 @@ CADFCLHF::compute_coefficients()
   //---------------------------------------------------------------------------------------//
   if(distribute_coefficients_) {
     uli n_Xcoefs = 0;
-    const cadf::Node& my_part = atom_pair_assignments_k_->my_assignments(scf_grp_->me());
     uli ncoefs_dist = my_part.bin->obs_ncoefs + my_part.bin->dfbs_ncoefs;
     try {
       if(ncoefs_dist * sizeof(double) > std::numeric_limits<int>::max()) {
@@ -546,8 +549,6 @@ CADFCLHF::compute_coefficients()
     timer.change("07 - C_trans_frob");
     if(distribute_coefficients_) {
       C_trans_frob_.resize(dfbs_->nshell());
-      const cadf::Node& my_part = atom_pair_assignments_k_->my_assignments(scf_grp_->me());
-
       for(auto Xatom : my_part.bin->assigned_dfbs_atoms) {
         for(auto&& Xsh : iter_shells_on_center(dfbs_, Xatom->index, gbs_)) {
 
@@ -596,30 +597,55 @@ CADFCLHF::compute_coefficients()
     // Compute Cmaxes_
     timer.change("08 - Cbar");
     resize_and_zero_matrix(C_bar_, gbs_->nshell(), dfbs_->nshell());
+    resize_and_zero_matrix(C_bar_mine_, gbs_->nshell(), my_part.bin->dfnsh());
+    //ColMatrix C_dfsame_shells;
+    if(distribute_coefficients_) {
+      resize_and_zero_matrix(C_underbar_, gbs_->nshell(), dfbs_->nshell());
+    }
+    // TODO switch C_dfsame_ to offset indices
     if(use_norms_nu_) {
-      if(distribute_coefficients_) {
-        const cadf::Node& my_part = atom_pair_assignments_k_->my_assignments(scf_grp_->me());
-        for(auto Xatom : my_part.bin->assigned_dfbs_atoms) {
-          for(auto&& Xsh : iter_shells_on_center(dfbs_, Xatom->index, gbs_)) {
-            C_bar_.col(Xsh) = C_trans_frob_[Xsh].colwise().squaredNorm();
-            C_bar_.col(Xsh).segment(Xsh.atom_obsshoff, Xsh.atom_obsnsh) +=
-                C_trans_frob_[Xsh].rowwise().squaredNorm();
-            C_bar_.col(Xsh).segment(Xsh.atom_obsshoff, Xsh.atom_obsnsh) -=
-                C_trans_frob_[Xsh].middleCols(Xsh.atom_obsshoff, Xsh.atom_obsnsh).rowwise().squaredNorm();
+      uint Xsh_off = 0;
+      for(auto&& Xsh_index : my_part.bin->assigned_dfbs_shells) {
+        ShellData Xsh(Xsh_index, dfbs_, gbs_);
+        {
+          const auto& sqnorm1 = C_trans_frob_[Xsh].colwise().squaredNorm();
+          if(distribute_coefficients_) {
+            C_bar_.col(Xsh) = sqnorm1;
+            C_underbar_.col(Xsh) = sqnorm1;
           }
+          C_bar_mine_.col(Xsh_off) = sqnorm1;
         }
+        {
+          const auto& sqnorm2 = C_trans_frob_[Xsh].rowwise().squaredNorm();
+          if(distribute_coefficients_) C_bar_.col(Xsh).segment(Xsh.atom_obsshoff, Xsh.atom_obsnsh) += sqnorm2;
+          C_bar_mine_.col(Xsh_off).segment(Xsh.atom_obsshoff, Xsh.atom_obsnsh) += sqnorm2;
+        }
+        {
+          const auto& sqnorm3 = C_trans_frob_[Xsh].middleCols(
+              Xsh.atom_obsshoff, Xsh.atom_obsnsh
+          ).rowwise().squaredNorm();
+          if(distribute_coefficients_) C_bar_.col(Xsh).segment(Xsh.atom_obsshoff, Xsh.atom_obsnsh) -= sqnorm3;
+          C_bar_mine_.col(Xsh_off).segment(Xsh.atom_obsshoff, Xsh.atom_obsnsh) -= sqnorm3;
+        }
+        ++Xsh_off;
+      }
+      if(distribute_coefficients_) {
         C_bar_ = C_bar_.array().sqrt();
+        C_underbar_ = C_underbar_.array().sqrt();
+      }
+      C_bar_mine_ = C_bar_mine_.array().sqrt();
 
+      if(distribute_coefficients_) {
         // Node-row-wise sum of X parts of C_bar_
         {
-          Ref<MessageGrp> X_grp = scf_grp_->split(my_part.bin->obs_row_id);
-          X_grp->sum(C_bar_.data(), gbs_->nshell() * dfbs_->nshell());
-        } // X_grp is deleted
+          Ref<MessageGrp> mu_grp = scf_grp_->split(my_part.bin->obs_row_id);
+          mu_grp->sum(C_bar_.data(), gbs_->nshell() * dfbs_->nshell());
+          mu_grp->sum(C_underbar_.data(), dfbs_->nshell() * gbs_->nshell());
+        } // mu_grp is deleted
         sc::SCFormIO::init_mp(scf_grp_->me());
-
       }
       else {
-        for(auto&& Xsh : shell_range(dfbs_, gbs_)) {
+        for(ShellData&& Xsh : shell_range(dfbs_, gbs_)) {
           C_bar_.col(Xsh) = C_trans_frob_[Xsh].colwise().squaredNorm();
           C_bar_.col(Xsh).segment(Xsh.atom_obsshoff, Xsh.atom_obsnsh) +=
               C_trans_frob_[Xsh].rowwise().squaredNorm();
@@ -627,12 +653,26 @@ CADFCLHF::compute_coefficients()
               C_trans_frob_[Xsh].middleCols(Xsh.atom_obsshoff, Xsh.atom_obsnsh).rowwise().squaredNorm();
         }
         C_bar_ = C_bar_.array().sqrt();
-        //DUMP(C_bar_.norm());
+      }
+      if(distribute_coefficients_) {
+        C_dfsame_ = std::make_shared<typename decltype(C_dfsame_)::element_type>(C_underbar_, gbs_);
+        for(auto&& Xsh_index : my_part.bin->assigned_dfbs_shells) {
+          auto& L_C_under_X = L_C_under[Xsh_index];
+          L_C_under_X.acquire_and_sort(
+              C_underbar_.data() + Xsh_index * gbs_->nshell(),
+              gbs_->nshell(), 0.0, true
+          );
+          L_C_under_X.set_basis(gbs_, dfbs_);
+        }
       }
     }
     else {
       if(distribute_coefficients_) {
+        if(screen_B_) {
+          throw FeatureNotImplemented("use_norms_nu = false with distributed coefficients and screen_B", __FILE__, __LINE__, class_desc());
+        }
         throw FeatureNotImplemented("use_norms_nu = false with distributed coefficients", __FILE__, __LINE__, class_desc());
+
       }
 
       // TODO just do this in the above loop similarly

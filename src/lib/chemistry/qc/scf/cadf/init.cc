@@ -36,6 +36,7 @@
 
 #include "cadfclhf.h"
 #include "assignments.h"
+#include "ordered_shells.h"
 
 using namespace sc;
 using std::endl;
@@ -275,6 +276,13 @@ CADFCLHF::init_threads()
     ++inode;
   }
 
+  schwarz_df_mine_.resize(my_part.bin->dfnsh());
+  int Xsh_off = 0;
+  for(auto&& Xsh_index : my_part.bin->assigned_dfbs_shells) {
+    ShellData Xsh(Xsh_index, dfbs_, gbs_);
+    schwarz_df_mine_(Xsh_off) = g2.block(Xsh.bfoff, Xsh.bfoff, Xsh.nbf, Xsh.nbf).norm();
+    ++Xsh_off;
+  }
 
   for(auto&& pair : my_part.pairs) {
     {
@@ -290,6 +298,7 @@ CADFCLHF::init_threads()
           if(Xsh.nbf > max_fxn_dfbs_todo_) max_fxn_dfbs_todo_ = Xsh.nbf;
           local_pairs_linK_.emplace((int)ish, (int)Xsh);
           linK_local_map_[Xsh].push_back((int)ish);
+          linK_local_map_ish_Xsh_[ish].push_back((int)Xsh);
         }
       }
       else {
@@ -475,17 +484,17 @@ CADFCLHF::init_significant_pairs()
   });
   //----------------------------------------//
   // compute the max Schwarz frobnorm ( mu rho | mu rho ) for each ish
-  max_schwarz_.resize(gbs_->nshell());
-  for(auto&& ish : shell_range(gbs_)) {
-    double max_val = 0.0;
-    for(auto&& jsh : L_schwarz[ish]) {
-      if(jsh.value > max_val) {
-        max_val = jsh.value;
-      }
-      break;
-    }
-    max_schwarz_[ish] = max_val;
-  }
+  //max_schwarz_.resize(gbs_->nshell());
+  //for(auto&& ish : shell_range(gbs_)) {
+  //  double max_val = 0.0;
+  //  for(auto&& jsh : L_schwarz[ish]) {
+  //    if(jsh.value > max_val) {
+  //      max_val = jsh.value;
+  //    }
+  //    break;
+  //  }
+  //  max_schwarz_[ish] = max_val;
+  //}
 
   //============================================================================//
   // Compute the centers, the pair centers, and the pair extents

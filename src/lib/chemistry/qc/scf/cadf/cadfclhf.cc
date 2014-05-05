@@ -136,6 +136,8 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   full_screening_thresh_ = keyval->doublevalue("full_screening_thresh", KeyValValuedouble(1e-8));
   distance_screening_thresh_ = keyval->doublevalue("distance_screening_thresh", KeyValValuedouble(full_screening_thresh_));
   B_screening_thresh_ = keyval->doublevalue("B_screening_thresh", KeyValValuedouble(full_screening_thresh_));
+  d_over_screening_thresh_ = keyval->doublevalue("d_over_screening_thresh", KeyValValuedouble(B_screening_thresh_));
+  d_under_screening_thresh_ = keyval->doublevalue("d_under_screening_thresh", KeyValValuedouble(B_screening_thresh_));
   coef_screening_thresh_ = keyval->doublevalue("coef_screening_thresh", KeyValValuedouble(1e-8));
   full_screening_expon_ = keyval->doublevalue("full_screening_expon", KeyValValuedouble(1.0));
   full_screening_thresh_min_ = keyval->doublevalue("full_screening_thresh_min", KeyValValuedouble(full_screening_thresh_min_));
@@ -164,6 +166,7 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   use_sparse_ = keyval->booleanvalue("use_sparse", KeyValValueboolean(use_sparse_));
   use_norms_nu_ = keyval->booleanvalue("use_norms_nu", KeyValValueboolean(use_norms_nu_));
   use_norms_sigma_ = keyval->booleanvalue("use_norms_sigma", KeyValValueboolean(use_norms_sigma_));
+  sigma_norms_chunk_by_atoms_ = keyval->booleanvalue("sigma_norms_chunk_by_atoms", KeyValValueboolean(sigma_norms_chunk_by_atoms_));
   xml_screening_data_ = keyval->booleanvalue("xml_screening_data", KeyValValueboolean(xml_screening_data_));
   all_to_all_L_3_ = keyval->booleanvalue("all_to_all_L_3", KeyValValueboolean(all_to_all_L_3_));
   sig_pairs_J_ = keyval->booleanvalue("sig_pairs_J", KeyValValueboolean(sig_pairs_J_));
@@ -233,6 +236,8 @@ CADFCLHF::print(ostream&o) const
   o << indent << "B_use_buffer = " << bool_str(B_use_buffer_) << endl;
   o << indent << "basis name = " << gbs_->label() << endl;
   o << indent << "coef_screening_thresh = " << double_str(coef_screening_thresh_) << endl;
+  o << indent << "d_over_screening_thresh = " << double_str(d_over_screening_thresh_) << endl;
+  o << indent << "d_under_screening_thresh = " << double_str(d_under_screening_thresh_) << endl;
   o << indent << "density_screening_thresh = " << double_str(density_screening_thresh_) << endl;
   o << indent << "dfbasis name = " << dfbs_->label() << endl;
   o << indent << "distance_damping_factor = " << double_str(distance_damping_factor_) << endl;
@@ -252,6 +257,7 @@ CADFCLHF::print(ostream&o) const
   o << indent << "screen_B = " << bool_str(screen_B_) << endl;
   o << indent << "screen_B_transfer_as_transpose = " << bool_str(screen_B_transfer_as_transpose_) << endl;
   o << indent << "screen_B_use_distance = " << bool_str(screen_B_use_distance_) << endl;
+  o << indent << "sigma_norms_chunk_by_atoms = " << bool_str(sigma_norms_chunk_by_atoms_) << endl;
   o << indent << "store_coefs_transpose = " << bool_str(store_coefs_transpose_) << endl;
   o << indent << "subtract_extents = " << bool_str(subtract_extents_) << endl;
   o << indent << "thread_4c_ints = " << bool_str(thread_4c_ints_) << endl;

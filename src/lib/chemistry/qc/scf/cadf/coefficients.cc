@@ -598,7 +598,6 @@ CADFCLHF::compute_coefficients()
     timer.change("08 - Cbar");
     resize_and_zero_matrix(C_bar_, gbs_->nshell(), dfbs_->nshell());
     resize_and_zero_matrix(C_bar_mine_, gbs_->nshell(), my_part.bin->dfnsh());
-    //ColMatrix C_dfsame_shells;
     if(distribute_coefficients_) {
       resize_and_zero_matrix(C_underbar_, gbs_->nshell(), dfbs_->nshell());
     }

@@ -769,27 +769,12 @@ class CADFCLHF: public CLHF {
     }
 
     // CADF-LinK lists
-    //template <typename T> struct hash_;
-    //template<typename A, typename B>
-    //struct hash_<std::pair<A, B>>{
-    //  std::size_t operator()(const std::pair<A, B>& val) const {
-    //    std::size_t seed = 0;
-    //    boost::hash_combine(seed, val.first);
-    //    boost::hash_combine(seed, val.second);
-    //    return seed;
-    //  }
-    //};
     typedef madness::ConcurrentHashMap<int, OrderedShellList> IndexListMap;
     typedef madness::ConcurrentHashMap<
         std::pair<int, int>,
         OrderedShellList,
         sc::hash<std::pair<int, int>>
     > IndexListMap2;
-    //typedef madness::ConcurrentHashMap<
-    //    std::pair<int, int>,
-    //    LinKListGroup,
-    //    sc::hash<std::pair<int, int>>
-    //> LinKListMap;
     typedef madness::ConcurrentHashMap<
         std::pair<int, int>,
         std::vector<std::pair<uint64_t, uint64_t>>,
@@ -797,7 +782,6 @@ class CADFCLHF: public CLHF {
     > LinKRangeMap2;
 
 
-    // TODO !!! initialize ALL of these to reasonable numbers of bins
     IndexListMap L_schwarz;
     IndexListMap L_DC;
     IndexListMap L_C_under;
@@ -806,8 +790,6 @@ class CADFCLHF: public CLHF {
     IndexListMap2 L_B;
     IndexListMap2 L_d_over;
     LinKRangeMap2 L_d_under_ranges;
-    //IndexListMap2 L_d_under;
-    //LinKListMap L_;
 
 
     /**
@@ -828,6 +810,19 @@ class CADFCLHF: public CLHF {
 /// @}
 // end of addtogroup ChemistryElectronicStructureOneBodyHFCADF
 
+void
+get_split_range_part(
+    const Ref<MessageGrp>& msg,
+    int full_begin, int full_end,
+    int& out_begin, int& out_size
+);
+
+void
+get_split_range_part(
+    int me, int n,
+    int full_begin, int full_end,
+    int& out_begin, int& out_size
+);
 
 boost::property_tree::ptree&
 write_xml(

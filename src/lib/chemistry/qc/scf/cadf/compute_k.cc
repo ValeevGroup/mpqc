@@ -249,28 +249,22 @@ CADFCLHF::compute_K()
     // Get the Frobenius norms of the density matrix shell blocks
 
     timer.enter("build L_D");
-    Eigen::MatrixXd D_frob_sq(obs->nshell(), obs->nshell());
-    Eigen::MatrixXd D_underbar;
-    if(distribute_coefficients_ and screen_B_) {
-      resize_and_zero_matrix(D_underbar, obs->nshell(), obs->ncenter());
-    }
+    RowMatrix D_frob_sq(obs->nshell(), obs->nshell());
+    RowMatrix D_underbar;
+    resize_and_zero_matrix(D_underbar, obs->nshell(), obs->ncenter());
     do_threaded(nthread_, [&](int ithr){
       for(int lsh_index = ithr; lsh_index < obs->nshell(); lsh_index += nthread_) {           //latex `\label{sc:link:ld}`
         ShellData lsh(lsh_index, obs, dfbs_);
         for(auto&& jsh : shell_range(obs)) {
           double dnorm = D.block(lsh.bfoff, jsh.bfoff, lsh.nbf, jsh.nbf).squaredNorm();
           D_frob_sq(lsh, jsh) = dnorm;
-          if(distribute_coefficients_ and screen_B_) {
-            D_underbar(lsh, jsh.center) += dnorm;
-          }
+          D_underbar(lsh, jsh.center) += dnorm;
         }
       }
     });
     Eigen::MatrixXd D_frob(obs->nshell(), obs->nshell());
     D_frob = D_frob_sq.cwiseSqrt();
-    if(distribute_coefficients_ and screen_B_) {
-      D_underbar = D_underbar.cwiseSqrt();
-    }
+    D_underbar = D_underbar.cwiseSqrt();
 
     timer.enter("build L_D tree");
     cadf::TreeMatrix<> D_tree(D_frob, gbs_);
@@ -355,50 +349,76 @@ CADFCLHF::compute_K()
 
     timer.change("build L_DC");
 
-
-    // TODO We actually only need this for Xsh that we are assigned to compute, not that we are assigned to store
-    RowMatrix d_bar(gbs_->nshell(), my_part.bin->dfnsh());
-    d_bar = RowMatrix::Zero(gbs_->nshell(), my_part.bin->dfnsh());
-    if(use_norms_sigma_) {
-      if(sigma_norms_chunk_by_atoms_) {
-        for(auto&& lblk : shell_block_range(gbs_, dfbs_, 0, NoLastIndex, SameCenter, NoMaximumBlockSize)) {
-          d_bar.noalias() +=
-              D_frob.middleCols(lblk.first_shell, lblk.nshell).rowwise().norm()
-              * C_bar_mine_.middleRows(lblk.first_shell, lblk.nshell).colwise().norm()
-              * schwarz_df_mine_.asDiagonal();
+    {
+      Ref<MessageGrp> X_grp;
+      if((use_norms_sigma_ and sigma_norms_chunk_by_atoms_) or not use_norms_sigma_) {
+        X_grp = scf_grp_->split(my_part.bin->dfbs_row_id);
+      }
+      timer.enter("compute d_bar");
+      RowMatrix d_bar(gbs_->nshell(), my_part.bin->dfnsh());
+      d_bar = RowMatrix::Zero(gbs_->nshell(), my_part.bin->dfnsh());
+      if(use_norms_sigma_) {
+        if(sigma_norms_chunk_by_atoms_) {
+          do_threaded(nthread_, [&](int ithr) {
+            int my_begin, my_size;
+            get_split_range_part(ithr, nthread_, 0, gbs_->nshell(), my_begin, my_size);
+            // Note: not actually threading over range, but distributing over nodes instead
+            for(auto&& lblk : thread_over_range(
+                shell_block_range(gbs_, dfbs_, 0, NoLastIndex, SameCenter, NoMaximumBlockSize),
+                X_grp->me(), X_grp->n()
+            )) {
+              d_bar.middleRows(my_begin, my_size).noalias() +=
+                  D_underbar.middleRows(my_begin, my_size).col(lblk.center)
+                  * C_bar_mine_.middleRows(lblk.first_shell, lblk.nshell).colwise().norm()
+                  * schwarz_df_mine_.asDiagonal();
+            }
+          });
+        }
+        else {
+          do_threaded(nthread_, [&](int ithr) {
+            int my_begin_obs, my_size_obs;
+            get_split_range_part(ithr, nthread_, 0, gbs_->nshell(), my_begin_obs, my_size_obs);
+            d_bar.middleRows(my_begin_obs, my_size_obs).noalias() =
+                D_frob.middleRows(my_begin_obs, my_size_obs).rowwise().norm()
+                * C_bar_mine_.colwise().norm()
+                * schwarz_df_mine_.asDiagonal();
+          });
         }
       }
       else {
-        d_bar.noalias() =
-            D_frob.rowwise().norm()
-            * C_bar_mine_.colwise().norm()
-            * schwarz_df_mine_.asDiagonal();
+        int my_begin, my_size;
+        get_split_range_part(X_grp, 0, gbs_->nshell(), my_begin, my_size);
+        do_threaded(nthread_, [&](int ithr) {
+          int my_begin_obs, my_size_obs;
+          get_split_range_part(ithr, nthread_, 0, gbs_->nshell(), my_begin_obs, my_size_obs);
+          d_bar.middleRows(my_begin_obs, my_size_obs).noalias() =
+              D_frob.middleRows(my_begin_obs, my_size_obs).middleCols(my_begin, my_size)
+              * C_bar_mine_.middleRows(my_begin, my_size) * schwarz_df_mine_.asDiagonal();
+        });
       }
-    }
-    else {
-      d_bar.noalias() = D_frob * C_bar_mine_ * schwarz_df_mine_.asDiagonal();
-    }
-    do_threaded(nthread_, [&](int ithr) {
-      for(auto&& jsh : thread_over_range(shell_range(gbs_), ithr, nthread_)) {
-        auto& L_DC_jsh = L_DC[jsh];
-        L_DC_jsh.acquire_and_sort(
-            my_part.bin->assigned_dfbs_shells,
-            d_bar.data() + my_part.bin->dfnsh() * jsh,
-            0.0, true // sort by value
-        );
-        L_DC_jsh.set_basis(dfbs_, gbs_);
+      if((use_norms_sigma_ and sigma_norms_chunk_by_atoms_) or not use_norms_sigma_) {
+        timer.change("semi-local sum d_bar");
+        X_grp->sum(d_bar.data(), d_bar.rows() * d_bar.cols());
       }
-    });
 
+      timer.change("form L_DC lists");
+      do_threaded(nthread_, [&](int ithr) {
+        for(auto&& jsh : thread_over_range(shell_range(gbs_), ithr, nthread_)) {
+          auto& L_DC_jsh = L_DC[jsh];
+          L_DC_jsh.acquire_and_sort(
+              my_part.bin->assigned_dfbs_shells,
+              d_bar.data() + my_part.bin->dfnsh() * jsh,
+              0.0, true // sort by value
+          );
+          L_DC_jsh.set_basis(dfbs_, gbs_);
+        }
+      });
 
-    //std::unordered_map<int, int> Xsh_offsets;
-    //int off_idx = 0;
-    //for(auto&& Xsh_index : my_part.bin->assigned_dfbs_shells) {
-    //  Xsh_offsets[Xsh_index] = off_idx;
-    //  ++off_idx;
-    //}
+    } // d_bar and X_grp deleted
+    // For whatever reason, splitting the scf_grp_ messes up the SCFormIO processor 0 label
+    sc::SCFormIO::init_mp(scf_grp_->me());
 
-
+    timer.exit();
 
     //============================================================================//
     // Form L_3

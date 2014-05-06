@@ -169,7 +169,6 @@ CADFCLHF::compute_J()
   /*=======================================================================================*/
   /* Form g_tilde                                          		                        {{{1 */ #if 1 // begin fold
   //----------------------------------------//
-  // TODO Thread this
   timer.enter("compute g_tilde");
 
   Eigen::VectorXd g_tilde(dfnbf);

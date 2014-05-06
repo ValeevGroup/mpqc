@@ -62,8 +62,6 @@ typedef CADFCLHF::CoefContainer CoefContainer;
 typedef CADFCLHF::Decomposition Decomposition;
 typedef std::pair<CoefContainer, CoefContainer> CoefPair;
 
-static boost::mutex debug_print_mutex;
-
 ////////////////////////////////////////////////////////////////////////////////
 
 ClassDesc CADFCLHF::cd_(
@@ -107,7 +105,11 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
 #endif
     L_3(gbs_->nshell() * gbs_->nshell() / scf_grp_->n()),
     L_B(gbs_->nshell() * gbs_->nshell() / scf_grp_->n()),
+    L_3_star(gbs_->nshell() * gbs_->nshell() / scf_grp_->n()),
+    L_d_over(gbs_->nshell() * gbs_->nshell() / scf_grp_->n()),
+    L_d_under_ranges(gbs_->nshell() * gbs_->nshell() / scf_grp_->n()),
     L_DC(gbs_->nshell()),
+    L_C_under(gbs_->nshell()),
     L_schwarz(gbs_->nshell()),
     decomps_(make_shared<DecompositionCache>(
         molecule()->natom() * molecule()->natom()
@@ -491,4 +493,49 @@ CADFCLHF::get_shell_pair(ShellData& mu, ShellData& nu, PairSet pset)
 
 //////////////////////////////////////////////////////////////////////////////////
 
+void
+sc::get_split_range_part(
+    const sc::Ref<sc::MessageGrp>& msg,
+    int full_begin, int full_end,
+    int& out_begin, int& out_size
+)
+{
+  sc::get_split_range_part(msg->me(), msg->n(), full_begin, full_end, out_begin, out_size);
+}
 
+void
+sc::get_split_range_part(
+    int me, int n,
+    int full_begin, int full_end,
+    int& out_begin, int& out_size
+)
+{
+  const int size = full_end - full_begin;
+  int n_per = size / n;
+  const int remain = size % n;
+  if(remain == 0) {
+    out_begin = full_begin + n_per * me;
+    out_size = n_per;
+  }
+  else if(size < n) {
+    if(me < size) {
+      out_begin = full_begin + me;
+      out_size = 1;
+    }
+    else {
+      out_begin = full_begin + size - 1;
+      if(out_begin < full_begin) out_begin = full_begin;
+      out_size = 0;
+    }
+  }
+  else {
+    if(me < remain) {
+      out_begin = full_begin + me * (n_per + 1);
+      out_size = n_per + 1;
+    }
+    else {
+      out_begin = full_begin + remain * (n_per + 1) + (me - remain) * n_per;
+      out_size = n_per;
+    }
+  }
+}

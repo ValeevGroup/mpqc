@@ -498,11 +498,15 @@ class GaussianBasisSet: virtual public SavableState, virtual public DescribedXML
     unsigned int nshell() const { return shells_.size(); }
     /// Return the number of shells on the given center.
     int nshell_on_center(int icenter) const;
-    /** Return an overall shell number, given a center and the shell number
-        on that center. \sa shell_to_center() */
+    /** Return the overall shell number, given a center and the shell number
+        on that center. Shells on the same center have consecutive indices.
+        \sa shell_to_center() */
     int shell_on_center(int icenter, int shell) const;
-    /// Return the center on which the given shell is located. This is a non-decreasing function, i.e.
-    /// if s1 > s2 then shell_to_center(s1) >= shell_to_center(s2)
+
+    /// Return the center on which the given shell is located.
+
+    /// \note There are no guarantees about shell->center map, other
+    /// than the shells on the same center are be consecutive.
     int shell_to_center(int ishell) const { return shells_[ishell].center(); }
     /// Return the number of basis functions.
     unsigned int nbasis() const { return nbasis_; }

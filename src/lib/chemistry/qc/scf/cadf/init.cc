@@ -223,7 +223,7 @@ CADFCLHF::init_threads()
   tbis_ = new Ref<TwoBodyInt>[thread_4c_ints_ ? nthread_ : 1];
   tbis_[0] = integral()->electron_repulsion();
   if(thread_4c_ints_) {
-    for (int i=1; i < nthread_; i++) {
+    for (int i=1; i < (thread_4c_ints_ ? nthread_ : 1); i++) {
       tbis_[i] = tbis_[0]->clone();
     }
   }

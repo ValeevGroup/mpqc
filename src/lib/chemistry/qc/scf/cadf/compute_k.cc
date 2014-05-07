@@ -239,7 +239,6 @@ CADFCLHF::compute_K()
 
   std::vector<std::tuple<int, int, int>> L_3_keys;
   std::vector<std::tuple<int, int, int>> L_3_star_keys;
-  std::unordered_map<int, std::unordered_set<int>> L_3_keys_X_to_mu;
 
   // Now make the linK lists if we're doing linK
   if(do_linK_){
@@ -555,7 +554,6 @@ CADFCLHF::compute_K()
     {
       std::mutex L_3_key_merge_mutex;
       do_threaded(nthread_, [&](int ithr){
-        std::unordered_map<int, std::set<int>> my_L_3_keys_X_to_mu;
 
         auto L_3_iter = L_3.begin();
         const auto& L_3_end = L_3.end();
@@ -591,26 +589,11 @@ CADFCLHF::compute_K()
 
             L_B_ish_Xsh.set_sort_by_value(false);
             L_B_ish_Xsh.sort();
-            if(L_B_ish_Xsh.size() > 0) {
-              my_L_3_keys_X_to_mu[Xsh].insert(ish);
-            }
-          }
-          else {
-            my_L_3_keys_X_to_mu[L_3_iter->first.second].insert(L_3_iter->first.first);
           }
 
           L_3_iter.advance(nthread_);
         }
 
-        //----------------------------------------//
-        // Merge in our part of the L_3 keys map
-        std::lock_guard<std::mutex> lg(L_3_key_merge_mutex);
-        for(auto&& kvpair : my_L_3_keys_X_to_mu) {
-          L_3_keys_X_to_mu[kvpair.first].insert(
-              kvpair.second.begin(), kvpair.second.end()
-          );
-        }
-        //----------------------------------------//
       });                                                                                      //latex `\label{sc:link:l3:end}`
     }
 

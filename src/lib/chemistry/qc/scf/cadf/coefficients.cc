@@ -271,6 +271,7 @@ CADFCLHF::compute_coefficients()
   /* Compute the distributed coefficients                  		                        {{{1 */ #if 1 //latex `\label{sc:coeftrans}`
   //---------------------------------------------------------------------------------------//
   if(distribute_coefficients_) {
+    timer.change("04 - distributed coefficients");
     uli n_Xcoefs = 0;
     uli ncoefs_dist = my_part.bin->obs_ncoefs + my_part.bin->dfbs_ncoefs;
     try {
@@ -282,6 +283,7 @@ CADFCLHF::compute_coefficients()
         dist_coefs_data_ = new double[ncoefs_dist];
         dist_coefs_data_df_ = dist_coefs_data_ + my_part.bin->obs_ncoefs;
       }
+      memory_used_ += ncoefs_dist * sizeof(double);
     }
     catch(std::bad_alloc& e) {
       ExEnv::outn() << "Failed to allocate " << data_size_to_string(ncoefs_dist*sizeof(double))
@@ -291,6 +293,9 @@ CADFCLHF::compute_coefficients()
     }
     memset(dist_coefs_data_, 0, my_part.bin->obs_ncoefs*sizeof(double));
     memset(dist_coefs_data_df_, 0, my_part.bin->dfbs_ncoefs*sizeof(double));
+    ExEnv::out0() << indent << "Allocated " << data_size_to_string(ncoefs_dist*sizeof(double))
+                  << " (on node 0) for distributed coefficients." << std::endl;
+    ExEnv::out0() << "Total memory usage is now at least " << data_size_to_string(memory_used_.load()) << std::endl;
 
     // Initialize the Eigen::Maps of data parts
     for(auto&& obs_shell : my_part.bin->assigned_obs_shells) {

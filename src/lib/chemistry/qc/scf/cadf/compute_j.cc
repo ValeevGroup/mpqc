@@ -106,7 +106,7 @@ CADFCLHF::compute_J()
 
         ShellData ish, jsh;
         //----------------------------------------//
-        while(get_shell_pair(ish, jsh, sig_pairs_J_ ? SignificantPairs : AllPairs)){
+        while(get_shell_pair(ish, jsh, SignificantPairs)){
           //----------------------------------------//
           // Permutation prefactor
           double pf = (ish == jsh) ? 2.0 : 4.0;
@@ -181,7 +181,7 @@ CADFCLHF::compute_J()
     timer.enter("exact diagonal: compute local W");
     local_pairs_spot_ = 0;
     ShellData ish, jsh;
-    while(get_shell_pair(ish, jsh, sig_pairs_J_ ? SignificantPairs : AllPairs)){
+    while(get_shell_pair(ish, jsh, SignificantPairs)){
       W[{ish, jsh}].resize(ish.nbf*jsh.nbf, dfnbf);
       W[{ish, jsh}] = RowMatrix::Zero(ish.nbf*jsh.nbf, dfnbf);
       W[{jsh, ish}].resize(ish.nbf*jsh.nbf, dfnbf);
@@ -191,7 +191,7 @@ CADFCLHF::compute_J()
     local_pairs_spot_ = 0;
     // TODO This part needs to be optimized significantly!  At the very least, it needs to be threaded
     //do_threaded(nthread_, [&](int ithr){
-      while(get_shell_pair(ish, jsh, sig_pairs_J_ ? SignificantPairs : AllPairs)){
+      while(get_shell_pair(ish, jsh, SignificantPairs)){
         auto& Wij = W[{ish, jsh}];
         auto& Wji = W[{jsh, ish}];
         for(auto&& mu : function_range(ish)) {
@@ -227,7 +227,7 @@ CADFCLHF::compute_J()
     if(exact_diagonal_J_) {
       local_pairs_spot_ = 0;
       ShellData ish, jsh;
-      while(get_shell_pair(ish, jsh, sig_pairs_J_ ? SignificantPairs : AllPairs)){
+      while(get_shell_pair(ish, jsh, SignificantPairs)){
         auto& Wij = W[{ish, jsh}];
         auto& Wji = W[{jsh, ish}];
         for(auto&& mu : function_range(ish)) {
@@ -291,7 +291,7 @@ CADFCLHF::compute_J()
         }
         //----------------------------------------//
         ShellData ish, jsh;
-        while(get_shell_pair(ish, jsh, sig_pairs_J_ ? SignificantPairs : AllPairs)){
+        while(get_shell_pair(ish, jsh, SignificantPairs)){
           //----------------------------------------//
           double perm_fact = (ish == jsh) ? 2.0 : 4.0;
           //----------------------------------------//
@@ -436,7 +436,7 @@ CADFCLHF::compute_J()
         jpart = Eigen::MatrixXd::Zero(nbf, nbf);
         //----------------------------------------//
         ShellData ish, jsh;
-        while(get_shell_pair(ish, jsh, sig_pairs_J_ ? SignificantPairs : AllPairs)){
+        while(get_shell_pair(ish, jsh, SignificantPairs)){
           /*-----------------------------------------------------*/
           /* first and third terms compute thread           {{{2 */ #if 2 // begin fold
           //----------------------------------------//

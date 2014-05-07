@@ -789,7 +789,6 @@ CADFCLHF::compute_K()
         double* __restrict__ dt_ish_X_data;
         double* __restrict__ dt_prime_data;
         double* __restrict__ gt_ish_X_data;
-        double* __restrict__ C_X_block_data;
         double* __restrict__ D_ordered_data;
         if(distribute_coefficients_) {
            dt_ish_X_data = new double[max_fxn_obs_todo_*max_fxn_dfbs_todo_*nbf];
@@ -807,9 +806,6 @@ CADFCLHF::compute_K()
         if(screen_B_) {
           D_sd_data = new double[nbf*nbf];
           C_X_diff_data = new double[max_obs_atom_fxn_on_dfbs_center_todo_*max_fxn_dfbs_todo_*nbf];
-          if(screen_B_transfer_as_transpose_) {
-            C_X_block_data = new double[max_obs_atom_fxn_on_dfbs_center_todo_*max_fxn_dfbs_todo_*nbf];
-          }
         }
         Eigen::Map<ColMatrix> D_B_buff(D_B_buff_data, D_B_buff_n, D_B_buff_n);
         Eigen::Map<ColMatrix> D_sd(D_sd_data, 0, 0);
@@ -1035,7 +1031,7 @@ CADFCLHF::compute_K()
 
           // Reordering of D, only if linK_block_rho_ is true
           int block_offset = 0;
-          if(do_linK_ and linK_block_rho_ and not (screen_B_ and not screen_B_transfer_as_transpose_)) {
+          if(do_linK_ and linK_block_rho_ and not screen_B_) {
 
             mt_timer.enter("rearrange D", ithr);
             new (&D_ordered) Eigen::Map<RowMatrix>(D_ordered_data, nbf, jlist_size);
@@ -1646,9 +1642,6 @@ CADFCLHF::compute_K()
         if(screen_B_) {
           delete[] D_sd_data;
           delete[] C_X_diff_data;
-          if(screen_B_transfer_as_transpose_) {
-            delete[] C_X_block_data;
-          }
         }
         if(linK_block_rho_) {
           delete[] D_ordered_data;

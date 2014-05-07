@@ -295,7 +295,7 @@ CADFCLHF::compute_coefficients()
     memset(dist_coefs_data_df_, 0, my_part.bin->dfbs_ncoefs*sizeof(double));
     ExEnv::out0() << indent << "Allocated " << data_size_to_string(ncoefs_dist*sizeof(double))
                   << " (on node 0) for distributed coefficients." << std::endl;
-    ExEnv::out0() << "Total memory usage is now at least " << data_size_to_string(memory_used_.load()) << std::endl;
+    ExEnv::out0() << indent << "Total memory usage is now at least " << data_size_to_string(memory_used_.load()) << std::endl;
 
     // Initialize the Eigen::Maps of data parts
     for(auto&& obs_shell : my_part.bin->assigned_obs_shells) {
@@ -552,17 +552,20 @@ CADFCLHF::compute_coefficients()
     //----------------------------------------//
     // Compute the Frobenius norm of C_transpose_ blocks
     timer.change("07 - C_trans_frob");
+
+    // Since C_trans_frob is only used here, we don't need it to be a class-scope member now.
+    std::vector<Eigen::MatrixXd> C_trans_frob(dfbs_->nshell());
+
     if(distribute_coefficients_) {
-      C_trans_frob_.resize(dfbs_->nshell());
       for(auto Xatom : my_part.bin->assigned_dfbs_atoms) {
         for(auto&& Xsh : iter_shells_on_center(dfbs_, Xatom->index, gbs_)) {
 
-          resize_and_zero_matrix(C_trans_frob_[Xsh], Xsh.atom_obsnsh, obs->nshell());
+          resize_and_zero_matrix(C_trans_frob[Xsh], Xsh.atom_obsnsh, obs->nshell());
 
           for(auto&& ish : iter_shells_on_center(obs, Xsh.center)) {
             for(auto&& jsh : shell_range(obs)) {
               for(auto&& mu : function_range(ish)) {
-                C_trans_frob_[Xsh](ish.shoff_in_atom, jsh) += coefs_X_nu.at(Xsh.center).block(
+                C_trans_frob[Xsh](ish.shoff_in_atom, jsh) += coefs_X_nu.at(Xsh.center).block(
                     Xsh.bfoff_in_atom, mu.bfoff_in_atom*nbf + jsh.bfoff,
                     Xsh.nbf, jsh.nbf
                 ).squaredNorm();
@@ -570,21 +573,19 @@ CADFCLHF::compute_coefficients()
             }
           }
 
-          C_trans_frob_[Xsh] = C_trans_frob_[Xsh].array().sqrt();
+          C_trans_frob[Xsh] = C_trans_frob[Xsh].array().sqrt();
         }
       }
     }
     else {
-      C_trans_frob_.resize(dfbs_->nshell());
-      double c_trans_frob_norm = 0.0;
-      for(auto Xsh : shell_range(dfbs_, obs)) {
+      for(auto&& Xsh : shell_range(dfbs_, obs)) {
 
-        resize_and_zero_matrix(C_trans_frob_[Xsh], Xsh.atom_obsnsh, obs->nshell());
+        resize_and_zero_matrix(C_trans_frob[Xsh], Xsh.atom_obsnsh, obs->nshell());
 
         for(auto&& ish : iter_shells_on_center(obs, Xsh.center)) {
           for(auto&& jsh : shell_range(obs)) {
             for(auto&& mu : function_range(ish)) {
-              C_trans_frob_[Xsh](ish.shoff_in_atom, jsh) += coefs_transpose_blocked_[Xsh.center].block(
+              C_trans_frob[Xsh](ish.shoff_in_atom, jsh) += coefs_transpose_blocked_[Xsh.center].block(
                   Xsh.bfoff_in_atom, mu.bfoff_in_atom*nbf + jsh.bfoff,
                   Xsh.nbf, jsh.nbf
               ).squaredNorm();
@@ -592,8 +593,7 @@ CADFCLHF::compute_coefficients()
           } // end loop over jsh
         } // end loop over ish
 
-        C_trans_frob_[Xsh] = C_trans_frob_[Xsh].array().sqrt();
-        c_trans_frob_norm += C_trans_frob_[Xsh].norm();
+        C_trans_frob[Xsh] = C_trans_frob[Xsh].array().sqrt();
 
       } // end loop over Xsh
     }
@@ -612,7 +612,7 @@ CADFCLHF::compute_coefficients()
       for(auto&& Xsh_index : my_part.bin->assigned_dfbs_shells) {
         ShellData Xsh(Xsh_index, dfbs_, gbs_);
         {
-          const auto& sqnorm1 = C_trans_frob_[Xsh].colwise().squaredNorm();
+          const auto& sqnorm1 = C_trans_frob[Xsh].colwise().squaredNorm();
           if(distribute_coefficients_) {
             C_bar_.col(Xsh) = sqnorm1;
             C_underbar_.col(Xsh) = sqnorm1;
@@ -620,12 +620,12 @@ CADFCLHF::compute_coefficients()
           C_bar_mine_.col(Xsh_off) = sqnorm1;
         }
         {
-          const auto& sqnorm2 = C_trans_frob_[Xsh].rowwise().squaredNorm();
+          const auto& sqnorm2 = C_trans_frob[Xsh].rowwise().squaredNorm();
           if(distribute_coefficients_) C_bar_.col(Xsh).segment(Xsh.atom_obsshoff, Xsh.atom_obsnsh) += sqnorm2;
           C_bar_mine_.col(Xsh_off).segment(Xsh.atom_obsshoff, Xsh.atom_obsnsh) += sqnorm2;
         }
         {
-          const auto& sqnorm3 = C_trans_frob_[Xsh].middleCols(
+          const auto& sqnorm3 = C_trans_frob[Xsh].middleCols(
               Xsh.atom_obsshoff, Xsh.atom_obsnsh
           ).rowwise().squaredNorm();
           if(distribute_coefficients_) C_bar_.col(Xsh).segment(Xsh.atom_obsshoff, Xsh.atom_obsnsh) -= sqnorm3;
@@ -650,11 +650,11 @@ CADFCLHF::compute_coefficients()
       }
       else {
         for(ShellData&& Xsh : shell_range(dfbs_, gbs_)) {
-          C_bar_.col(Xsh) = C_trans_frob_[Xsh].colwise().squaredNorm();
+          C_bar_.col(Xsh) = C_trans_frob[Xsh].colwise().squaredNorm();
           C_bar_.col(Xsh).segment(Xsh.atom_obsshoff, Xsh.atom_obsnsh) +=
-              C_trans_frob_[Xsh].rowwise().squaredNorm();
+              C_trans_frob[Xsh].rowwise().squaredNorm();
           C_bar_.col(Xsh).segment(Xsh.atom_obsshoff, Xsh.atom_obsnsh) -=
-              C_trans_frob_[Xsh].middleCols(Xsh.atom_obsshoff, Xsh.atom_obsnsh).rowwise().squaredNorm();
+              C_trans_frob[Xsh].middleCols(Xsh.atom_obsshoff, Xsh.atom_obsnsh).rowwise().squaredNorm();
         }
         C_bar_ = C_bar_.array().sqrt();
       }
@@ -688,10 +688,10 @@ CADFCLHF::compute_coefficients()
           if(lsh.center == Xsh.center) {
             // We might be able to get away with only nu on same center as X and sigma,
             //  but for now approach it more rigorously
-            max_val = C_trans_frob_[Xsh].row(lsh.shoff_in_atom).maxCoeff();
+            max_val = C_trans_frob[Xsh].row(lsh.shoff_in_atom).maxCoeff();
           }
           else { // different centers...
-            max_val = C_trans_frob_[Xsh].col(lsh).maxCoeff();
+            max_val = C_trans_frob[Xsh].col(lsh).maxCoeff();
           }
 
           C_bar_(lsh, Xsh) = max_val;

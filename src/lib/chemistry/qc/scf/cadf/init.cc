@@ -60,9 +60,6 @@ CADFCLHF::initialize()
   gmat_ = gbs_->so_matrixkit()->symmmatrix(pl->SO_basisdim());
   gmat_.assign(0.0);
   //----------------------------------------------------------------------------//
-  // Determine if the message group is an instance of MPIMessageGrp
-  using_mpi_ = dynamic_cast<MPIMessageGrp*>(scf_grp_.pointer()) ? true : false;
-  //----------------------------------------------------------------------------//
   have_coefficients_ = false;
 }
 
@@ -86,8 +83,6 @@ CADFCLHF::init_threads()
 
   //----------------------------------------------------------------------------//
   // initialize the two electron integral classes
-
-  //integral()->set_storage(32000000);
 
   ExEnv::out0() << indent << "Initializing 2 center integral evaluators" << std::endl;
   // TwoCenter versions
@@ -231,21 +226,18 @@ CADFCLHF::init_threads()
 
   //----------------------------------------------------------------------------//
   // Set up the all pairs vector, needed to prescreen Schwarz bounds
-  if(not dynamic_){
-    ExEnv::out0() << indent << "Computing static distribution of all pairs" << endl;
-    const int nshell = gbs_->nshell();
-    for(int ish=0, inode=0; ish < nshell; ++ish){
-      for(int jsh=0; jsh <= ish; ++jsh, ++inode){
-        IntPair ij(ish, jsh);
-        pair_assignments_[AllPairs][ij] = inode % n_node;
-      }
+  ExEnv::out0() << indent << "Computing static distribution of all pairs" << endl;
+  const int nshell = gbs_->nshell();
+  for(int ish=0, inode=0; ish < nshell; ++ish){
+    for(int jsh=0; jsh <= ish; ++jsh, ++inode){
+      IntPair ij(ish, jsh);
+      pair_assignments_[AllPairs][ij] = inode % n_node;
     }
-    // Make the backwards mapping for the current node
-    const int me = scf_grp_->me();
-    for(auto it : pair_assignments_[AllPairs]){
-      if(it.second == me){
-        local_pairs_all_.push_back(it.first);
-      }
+  }
+  // Make the backwards mapping for the current node
+  for(auto it : pair_assignments_[AllPairs]){
+    if(it.second == me){
+      local_pairs_all_.push_back(it.first);
     }
   }
 
@@ -393,12 +385,12 @@ CADFCLHF::init_significant_pairs()
         my_sig_pairs.push_back(item.second);
         my_sig_values.push_back(item.first);
         ++n_significant_pairs;
-        ++stats_.sig_pairs;
+        ++stats_->sig_pairs;
         const int nfxn = gbs_->shell(item.second.first).nfunction() * gbs_->shell(item.second.second).nfunction();
-        stats_.sig_pairs_fxn += nfxn;
+        stats_->sig_pairs_fxn += nfxn;
         if(item.second.first != item.second.second) {
-          ++stats_.sig_pairs;
-          stats_.sig_pairs_fxn += nfxn;
+          ++stats_->sig_pairs;
+          stats_->sig_pairs_fxn += nfxn;
         }
 
       }

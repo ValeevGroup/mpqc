@@ -93,16 +93,6 @@ CADFCLHF::CADFCLHF(StateIn& s) :
 
 CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
     CLHF(keyval),
-#if USE_INTEGRAL_CACHE
-    // TODO Initialize the number of bins to a more reasonable size, check for enough memory, etc
-    ints3_(make_shared<ThreeCenterIntCache>(
-        gbs_->nshell() * gbs_->nshell() * gbs_->nshell() / scf_grp_->n()
-    )),
-    // TODO Initialize the number of bins to a more reasonable size, check for enough memory, etc
-    ints2_(make_shared<TwoCenterIntCache>(
-        gbs_->nshell() * gbs_->nshell() / scf_grp_->n()
-    )),
-#endif
     L_3(gbs_->nshell() * gbs_->nshell() / scf_grp_->n()),
     L_B(gbs_->nshell() * gbs_->nshell() / scf_grp_->n()),
     L_3_star(gbs_->nshell() * gbs_->nshell() / scf_grp_->n()),
@@ -134,9 +124,8 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   //   Schwarz bound.
   // TODO Figure out a reasonable default value for this
   pair_screening_thresh_ = keyval->doublevalue("pair_screening_thresh", KeyValValuedouble(1e-8));
-  density_screening_thresh_ = keyval->doublevalue("density_screening_thresh", KeyValValuedouble(1e-8));
   full_screening_thresh_ = keyval->doublevalue("full_screening_thresh", KeyValValuedouble(1e-8));
-  distance_screening_thresh_ = keyval->doublevalue("distance_screening_thresh", KeyValValuedouble(full_screening_thresh_));
+  distance_screening_thresh_ = keyval->doublevalue("distance_screening_thresh", KeyValValuedouble(full_screening_thresh_*1e-3));
   B_screening_thresh_ = keyval->doublevalue("B_screening_thresh", KeyValValuedouble(full_screening_thresh_));
   d_over_screening_thresh_ = keyval->doublevalue("d_over_screening_thresh", KeyValValuedouble(B_screening_thresh_));
   d_under_screening_thresh_ = keyval->doublevalue("d_under_screening_thresh", KeyValValuedouble(B_screening_thresh_));
@@ -149,9 +138,9 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   metric_oper_type_ = TwoBodyOper::eri;
   //----------------------------------------------------------------------------//
   do_linK_ = keyval->booleanvalue("do_linK", KeyValValueboolean(false));
-  linK_block_rho_ = keyval->booleanvalue("linK_block_rho", KeyValValueboolean(false));
+  screen_B_ = keyval->booleanvalue("screen_B", KeyValValueboolean(screen_B_));
+  linK_block_rho_ = keyval->booleanvalue("linK_block_rho", KeyValValueboolean(screen_B_));
   B_use_buffer_ = keyval->booleanvalue("B_use_buffer", KeyValValueboolean(B_use_buffer_));
-  linK_sorted_B_contraction_ = keyval->booleanvalue("linK_sorted_B_contraction", KeyValValueboolean(false));
   linK_use_distance_ = keyval->booleanvalue("linK_use_distance", KeyValValueboolean(false));
   use_extents_ = keyval->booleanvalue("use_extents", KeyValValueboolean(use_extents_));
   use_max_extents_ = keyval->booleanvalue("use_max_extents", KeyValValueboolean(use_max_extents_));
@@ -165,22 +154,21 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   exact_diagonal_J_ = keyval->booleanvalue("exact_diagonal_J", KeyValValueboolean(exact_diagonal_J_));
   exact_diagonal_K_ = keyval->booleanvalue("exact_diagonal_K", KeyValValueboolean(exact_diagonal_K_));
   //----------------------------------------------------------------------------//
-  use_sparse_ = keyval->booleanvalue("use_sparse", KeyValValueboolean(use_sparse_));
   use_norms_nu_ = keyval->booleanvalue("use_norms_nu", KeyValValueboolean(use_norms_nu_));
   use_norms_sigma_ = keyval->booleanvalue("use_norms_sigma", KeyValValueboolean(use_norms_sigma_));
   sigma_norms_chunk_by_atoms_ = keyval->booleanvalue("sigma_norms_chunk_by_atoms", KeyValValueboolean(sigma_norms_chunk_by_atoms_));
   xml_screening_data_ = keyval->booleanvalue("xml_screening_data", KeyValValueboolean(xml_screening_data_));
-  all_to_all_L_3_ = keyval->booleanvalue("all_to_all_L_3", KeyValValueboolean(all_to_all_L_3_));
-  sig_pairs_J_ = keyval->booleanvalue("sig_pairs_J", KeyValValueboolean(sig_pairs_J_));
-  screen_B_ = keyval->booleanvalue("screen_B", KeyValValueboolean(screen_B_));
-  screen_B_transfer_as_transpose_ = keyval->booleanvalue("screen_B_transfer_as_transpose", KeyValValueboolean(screen_B_transfer_as_transpose_));
   screen_B_use_distance_ = keyval->booleanvalue("screen_B_use_distance", KeyValValueboolean(screen_B_use_distance_));
   scale_screening_thresh_ = keyval->booleanvalue("scale_screening_thresh", KeyValValueboolean(scale_screening_thresh_));
   distribute_coefficients_ = keyval->booleanvalue("distribute_coefficients", KeyValValueboolean(distribute_coefficients_));
   store_coefs_transpose_ = keyval->booleanvalue("store_coefs_transpose", KeyValValueboolean(store_coefs_transpose_));
+  if(distribute_coefficients_) store_coefs_transpose_ = false;
   //----------------------------------------------------------------------------//
-  stats_.print_level = print_screening_stats_;
-  stats_.xml_stats_saved = xml_screening_data_;
+  if(print_screening_stats_) {
+    stats_ = std::make_shared<ScreeningStatistics>();
+    stats_->print_level = print_screening_stats_;
+    stats_->xml_stats_saved = xml_screening_data_;
+  }
   //----------------------------------------------------------------------------//
   xml_debug_ = keyval->booleanvalue("xml_debug", KeyValValueboolean(false));
   //----------------------------------------------------------------------------//
@@ -233,14 +221,12 @@ CADFCLHF::print(ostream&o) const
   auto double_str = [&fmt](double val) -> std::string {
      return std::string(scprintf(fmt.c_str(), val).str());
   };
-  o << indent << "all_to_all_L_3 = " << bool_str(all_to_all_L_3_) << endl;
   o << indent << "B_screening_thresh = " << double_str(B_screening_thresh_) << endl;
   o << indent << "B_use_buffer = " << bool_str(B_use_buffer_) << endl;
   o << indent << "basis name = " << gbs_->label() << endl;
   o << indent << "coef_screening_thresh = " << double_str(coef_screening_thresh_) << endl;
   o << indent << "d_over_screening_thresh = " << double_str(d_over_screening_thresh_) << endl;
   o << indent << "d_under_screening_thresh = " << double_str(d_under_screening_thresh_) << endl;
-  o << indent << "density_screening_thresh = " << double_str(density_screening_thresh_) << endl;
   o << indent << "dfbasis name = " << dfbs_->label() << endl;
   o << indent << "distance_damping_factor = " << double_str(distance_damping_factor_) << endl;
   o << indent << "distance_screening_thresh = " << double_str(distance_screening_thresh_) << endl;
@@ -252,12 +238,10 @@ CADFCLHF::print(ostream&o) const
   o << indent << "full_screening_thresh = " << double_str(full_screening_thresh_) << endl;
   o << indent << "full_screening_thresh_min = " << double_str(full_screening_thresh_min_) << endl;
   o << indent << "linK_block_rho = " << bool_str(linK_block_rho_) << endl;
-  o << indent << "linK_sorted_B_contraction = " << bool_str(linK_sorted_B_contraction_) << endl;
   o << indent << "linK_use_distance = " << bool_str(linK_use_distance_) << endl;
   o << indent << "pair_screening_thresh = " << double_str(pair_screening_thresh_) << endl;
   o << indent << "scale_screening_thresh = " << bool_str(scale_screening_thresh_) << endl;
   o << indent << "screen_B = " << bool_str(screen_B_) << endl;
-  o << indent << "screen_B_transfer_as_transpose = " << bool_str(screen_B_transfer_as_transpose_) << endl;
   o << indent << "screen_B_use_distance = " << bool_str(screen_B_use_distance_) << endl;
   o << indent << "sigma_norms_chunk_by_atoms = " << bool_str(sigma_norms_chunk_by_atoms_) << endl;
   o << indent << "store_coefs_transpose = " << bool_str(store_coefs_transpose_) << endl;
@@ -267,7 +251,6 @@ CADFCLHF::print(ostream&o) const
   o << indent << "use_max_extents = " << bool_str(use_max_extents_) << endl;
   o << indent << "use_norms_nu = " << bool_str(use_norms_nu_) << endl;
   o << indent << "use_norms_sigma = " << bool_str(use_norms_sigma_) << endl;
-  o << indent << "use_sparse = " << bool_str(use_sparse_) << endl;
   o << indent << "well_separated_thresh = " << double_str(well_separated_thresh_) << endl;
   o << indent << "xml_screening_data = " << bool_str(xml_screening_data_) << endl;
 
@@ -275,15 +258,15 @@ CADFCLHF::print(ostream&o) const
   CLHF::print(o);
   if(print_screening_stats_) {
     // TODO global sum stats at some point.  These numbers will be wrong otherwise
-    stats_.global_sum(scf_grp_);
-    stats_.print_summary(o, gbs_, dfbs_, print_screening_stats_);
+    stats_->global_sum(scf_grp_);
+    stats_->print_summary(o, gbs_, dfbs_, print_screening_stats_);
   }
   o << decindent;
 
   if(xml_screening_data_) {
     begin_xml_context("cadfclhf_screening", "screening_stats.xml");
 
-    write_as_xml("statistics", stats_,
+    write_as_xml("statistics", *stats_,
       std::map<std::string, const std::string>({
         {"basis_name", gbs_->label()},
         {"dfbasis_name", dfbs_->label()},
@@ -338,15 +321,15 @@ CADFCLHF::ao_fock(double accuracy)
   if(not have_coefficients_) {
     ints_computed_locally_ = 0;
     compute_coefficients();
-    ints_computed_ = ints_computed_locally_;
-    scf_grp_->sum(&ints_computed_, 1);
+    decltype(ints_computed_locally_.load()) ints_computed = ints_computed_locally_;
+    scf_grp_->sum(&ints_computed, 1);
     if(scf_grp_->me() == 0) {
-      ExEnv::out0() << "  Computed " << ints_computed_ << " integrals to determine coefficients." << endl;
+      ExEnv::out0() << "  Computed " << ints_computed << " integrals to determine coefficients." << endl;
     }
   }
   //---------------------------------------------------------------------------------------//
   timer.enter("misc");
-  iter_stats_ = &(stats_.next_iteration());
+  iter_stats_ = &(stats_->next_iteration());
   if(xml_screening_data_) {
     iter_stats_->set_nthread(nthread_);
   }
@@ -377,10 +360,10 @@ CADFCLHF::ao_fock(double accuracy)
     RefSCMatrix J = compute_J();
     if(xml_debug_) write_as_xml("J", J), end_xml_context("compute_J");
     G = J.copy();
-    ints_computed_ = ints_computed_locally_;
-    scf_grp_->sum(&ints_computed_, 1);
+    decltype(ints_computed_locally_.load()) ints_computed = ints_computed_locally_;
+    scf_grp_->sum(&ints_computed, 1);
     if(scf_grp_->me() == 0) {
-      ExEnv::out0() << "        Computed " << ints_computed_ << " integrals for J part" << endl;
+      ExEnv::out0() << "        Computed " << ints_computed << " integrals for J part" << endl;
     }
   }
   {
@@ -389,10 +372,10 @@ CADFCLHF::ao_fock(double accuracy)
     RefSCMatrix K = compute_K();
     if(xml_debug_) write_as_xml("K", K), end_xml_context("compute_K");
     G.accumulate( -1.0 * K);
-    ints_computed_ = ints_computed_locally_;
-    scf_grp_->sum(&ints_computed_, 1);
+    decltype(ints_computed_locally_.load()) ints_computed = ints_computed_locally_;
+    scf_grp_->sum(&ints_computed, 1);
     if(scf_grp_->me() == 0) {
-      ExEnv::out0() << "        Computed " << ints_computed_ << " integrals for K part" << endl;
+      ExEnv::out0() << "        Computed " << ints_computed << " integrals for K part" << endl;
     }
   }
   if(xml_debug_) end_xml_context("compute_fock"), assert(false);
@@ -442,31 +425,6 @@ CADFCLHF::reset_density()
 
 //////////////////////////////////////////////////////////////////////////////////
 
-void
-CADFCLHF::loop_shell_pairs_threaded(
-    PairSet pset,
-    const std::function<void(int, const ShellData&, const ShellData&)>& f
-)
-{
-  local_pairs_spot_ = 0;
-  boost::thread_group compute_threads;
-  // Loop over number of threads
-  for(int ithr = 0; ithr < nthread_; ++ithr) {
-    // ...and create each thread that computes pairs
-    compute_threads.create_thread([&,ithr](){
-      ShellData ish, jsh;
-      //----------------------------------------//
-      while(get_shell_pair(ish, jsh, pset)){
-        f(ithr, ish, jsh);
-      }
-
-    });
-  }
-  compute_threads.join_all();
-}
-
-//////////////////////////////////////////////////////////////////////////////////
-
 bool
 CADFCLHF::get_shell_pair(ShellData& mu, ShellData& nu, PairSet pset)
 {
@@ -475,12 +433,6 @@ CADFCLHF::get_shell_pair(ShellData& mu, ShellData& nu, PairSet pset)
   const auto& plist = pset == SignificantPairs ? local_pairs_sig_ : local_pairs_all_;
   if(spot < plist.size()) {
     const auto& next_pair = plist[spot];
-    //----------------------------------------//
-    if(dynamic_) {
-      // Here's where we'd need to check if we're running low on pairs and prefetch some more
-      // When implemented, this should use a std::async or something like that
-      throw FeatureNotImplemented("dynamic load balancing", __FILE__, __LINE__, class_desc());
-    }
     //----------------------------------------//
     mu = ShellData(next_pair.first, gbs_.pointer(), dfbs_.pointer());
     nu = ShellData(next_pair.second, gbs_.pointer(), dfbs_.pointer());

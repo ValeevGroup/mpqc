@@ -102,12 +102,14 @@ do_threaded(int nthread, const std::function<void(int)>& f){
 class CADFCLHF: public CLHF {
 
   protected:
+
     void ao_fock(double accuracy);
     void reset_density();
 
   public:
 
-    // This will later be changed to simple double* to allow for direct BLAS calls
+    // typedefs
+
     typedef Eigen::Map<Eigen::VectorXd, Eigen::Unaligned, Eigen::Stride<1, Eigen::Dynamic>> CoefView;
     typedef shared_ptr<CoefView> CoefContainer;
     typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> TwoCenterIntContainer;
@@ -116,7 +118,6 @@ class CADFCLHF: public CLHF {
     typedef shared_ptr<TwoCenterIntContainer> TwoCenterIntContainerPtr;
     typedef shared_ptr<ThreeCenterIntContainer> ThreeCenterIntContainerPtr;
     typedef shared_ptr<FourCenterIntContainer> FourCenterIntContainerPtr;
-
     typedef std::unordered_map<
         std::pair<int, int>,
         std::pair<CoefContainer, CoefContainer>,
@@ -125,25 +126,9 @@ class CADFCLHF: public CLHF {
     typedef Eigen::HouseholderQR<Eigen::MatrixXd> Decomposition;
     typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> RowMatrix;
     typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> ColMatrix;
-    typedef Eigen::SparseMatrix<double, Eigen::RowMajor> SparseRowMatrix;
     typedef Eigen::Map<RowMatrix, Eigen::Unaligned, Eigen::OuterStride<>> StridedRowMap;
-
-#if USE_INTEGRAL_CACHE
-
-    typedef ConcurrentCacheWithSymmetry<
-        TwoCenterIntContainerPtr,
-        // 3 total keys, allow transpose of first two (0, 1)
-        SingleTranspositionKeySymmetry<3, 0, 1>,
-        int, int, TwoBodyOper::type
-    > TwoCenterIntCache;
-
-    typedef ConcurrentCacheWithSymmetry<
-        ThreeCenterIntContainerPtr,
-        // 4 total keys, allow transpose of first two
-        SingleTranspositionKeySymmetry<4, 0, 1>,
-        int, int, int, TwoBodyOper::type
-    > ThreeCenterIntCache;
-#endif
+    template<typename T1, typename T2>
+    using fast_map = std::unordered_map<T1, T2, sc::hash<T1>>;
 
     // TODO Get rid of this
     typedef ConcurrentCache<
@@ -154,6 +139,7 @@ class CADFCLHF: public CLHF {
 
     CADFCLHF(StateIn&);
 
+    /// TODO Document KeyVal options
     /** Accepts all keywords of CLHF class + the following keywords:
         <table border="1">
 
@@ -291,105 +277,171 @@ class CADFCLHF: public CLHF {
     typedef enum {
       AllPairs = 0,
       SignificantPairs = 1,
-      ExchangeOuterLoopPairs = 2
     } PairSet;
-
-    enum {
-      NoMorePairs = -1
-    };
 
     /**
      * Flags and other members that basically correspond directly to KeyVal options
      */
     //@{
-    /// Number of threads to run on (defaults to threadgrp_->nthread();
+    /// Number of threads to run on (defaults to threadgrp_->nthread());
     int nthread_;
     /// The threshold for including pairs in the pair list using half of the schwarz bound
     double pair_screening_thresh_;
-    /// currently unused
-    double density_screening_thresh_;
     /// Threshold for including a given maximum contribution to the K matrix
     double full_screening_thresh_;
     /// currently unused
     double coef_screening_thresh_;
     /** Different thresh to use for distance-including screening.  Defaults to full_screening_thresh_.
-     *  Integrals will be included only if the non-distance-including estimate is greter than
+     *  Integrals will be included only if the non-distance-including estimate is greater than
      *  full_screening_thresh_ and the distance-including estimate is greater than distance_screening_thresh_.
      */
     double distance_screening_thresh_;
     /// Whether or not to do LinK style screening
     bool do_linK_;
-    /// Advanced LinK options
+    /** Reorder the density matrix to block all rho in a given $L^{(3})_{\mu X}$ together
+     *  as one contraction.  Defaults to true if screen_B is true, false otherwise.
+     */
     bool linK_block_rho_;
-    /// Currently does nothing
-    bool linK_sorted_B_contraction_;
     /// Use 1/r^(lX+1) factor in screening
-    bool linK_use_distance_;
+    bool linK_use_distance_ = true;
     /// Screening statistics print level.  Higher levels may result in a slight slowdown
     int print_screening_stats_;
-    /// Exponent to raise the the distance denominator exponent to (i.e. (lX+1)^damping_factor)
-    double distance_damping_factor_;
-    /// Print timings after each iteration.  Useful for benchmarking large systems without doing full calculations
+    /** Exponent to raise the the distance denominator exponent to (i.e. (l_X+1)^damping_factor)
+     *  Use of values other than 1.0 for this option is not recommended.
+     */
+    double distance_damping_factor_ = 1.0;
+    /** Print timings after each iteration.  Useful for benchmarking large systems without doing
+     *  full calculations.  Note that the times printed currently exclude some sections of the
+     *  code, and thus it is better to use the timings printed at the end instead.
+     */
     bool print_iteration_timings_ = false;
-    /// Use norms for nu dimension when screening
+    /** Use norms for nu dimension when screening.  This should pretty much always be true
+     *  (though it doesn't usually make much difference).  use_norms_nu = false is not
+     *  implemented with distribute_coefficients = true
+     */
     bool use_norms_nu_ = true;
-    /// Use norms to get L_DC.  If false, an N_shell^3 contraction will be done, which only starts to dominate for VERY large systems
+    /** Use norms to get L_DC.  If false, an N_shell^3 contraction will
+     *  be done, which only starts to dominate for VERY large systems.
+     *  Defaults to true, but note that unless sigma_norms_chunk_by_atoms is
+     *  explicitly set to false (which gives *substantially* worse screening),
+     *  an N_shell^2*N_atom contraction will still be done.
+     */
     bool use_norms_sigma_ = true;
-    /// When using norms for L_DC, we can also do a N_atom^3 contraction that is slightly cheaper but screens better than the full column norms (only relevent if use_norms_sigma_ is true)
+    /** When using norms for L_DC, we can also do a N_shell^2*N_atom contraction
+     *  that is slightly cheaper but screens better than the full column norms
+     *  (only relevent if use_norms_sigma = true).  Defaults to true.  Mostly
+     *  useful to make the scaling of the L_DC computation look better, even though
+     *  it isn't a big part of the computation.
+     */
     bool sigma_norms_chunk_by_atoms_ = true;
-    /// Print a lot of stuff in an XML debug file.  Not really for end users...
+    /** Print a lot of stuff in an XML debug file.  Also, if compiled with assertions
+     *  enabled, exit after the first iteration (by asserting false).  Not for end users.
+     */
     bool xml_debug_ = false;
-    /// Dump screening data to XML
+    /** Dump screening data to XML.  This was mostly for making plots of screening
+     *  efficiency and accuracy.  Unless you're doing that, this should be false.
+     */
     bool xml_screening_data_ = false;
-    /// Use extents to damp R distances for screening purposes
-    bool use_extents_ = false;
-    /// Use the maximum extent for contracted pairs.  Defaults to using coefficient weighted average
+    /** Use extents to damp R distances for screening purposes.  Defaults to true.
+     *  Setting this to false can lead to slightly stronger screening, but also leads to
+     *  less rigorous screening.
+     */
+    bool use_extents_ = true;
+    /** Use the maximum extent for contracted pairs.  If false,  uses a coefficient-weighted
+     *  average.  This has very little effect on the final result (though it may be a little
+     *  more significant if the basis has lots of contracted functions, such as the ANO basis
+     *  sets).  The safer option of use_max_extents = true is prefered and is thus the default.
+     */
     bool use_max_extents_ = true;
-    /// Should we subtract the extents from the denominator, or just use an if statement to avoid non-well-separated screening?
+    /** Use subtracted the extents from the denominator.  If false, an if statement is used to
+     *  avoid non-well-separated screening.  Subtracting extents leads to less "tight" screening,
+     *  but it is much safer, particularly for higher angular momentum.  Defaults to true.
+     */
     bool subtract_extents_ = true;
-    /// The CFMM well-separatedness thresh
-    double well_separated_thresh_ = 1e-8;
-    /// The old way of distributing LinK list work
-    bool all_to_all_L_3_ = false;
-    /// Use the exact semidiagonal integrals in J
+    /** The CFMM well-separatedness thresh.  Defaults to 1e-1, which is the recommended value by
+     *  Ochsenfeld et. al.
+     */
+    double well_separated_thresh_ = 1e-1;
+    /**
+     * Use the exact semidiagonal integrals in the coulomb matrix computation.
+     * distribute_coefficients = true is not implemented for exact_diagonal_J = true.
+     * Defaults to false.
+     */
     bool exact_diagonal_J_ = false;
-    /// Use the exact semidiagonal integrals in K
+    /** Use the exact semidiagonal integrals in the exchange matrix computation.
+     *  distribute_coefficients = true and/or screen_B = true is not implemented
+     *  for exact_diagonal_K = true.  Defaults to false.  Code for this option is
+     *  not heavily optimized.
+     */
     bool exact_diagonal_K_ = false;
-    /// Use sparse matrix structures wherever available and reasonable
-    bool use_sparse_ = false;
-    /// Debugging
-    bool sig_pairs_J_ = true;
-    /// B use buffer
+    /** Use a buffer to minimize the number of small contractions when computing the B intermediate
+     *  in the exchange matrix.  Setting this to true is not compatible with screen_B = true and/or
+     *  distribute_coefficients = true and/or linK_block_rho = true, and thus this option is deprecated.
+     *  Almost always slows things down anyway.
+     */
     bool B_use_buffer_ = false;
-    /// B use buffer
+    /// The size of the B buffer.  Only relevant if B_use_buffer = true.
     size_t B_buffer_size_;
-    /// Scale the LinK screening threshold for differential density iterations by the ratio of the Frobenius norm of the density relative to the previous iteration
+    // TODO individual options to scale other screening thresholds
+    /** Scale the LinK screening threshold(s) for differential density iterations by the ratio of the
+     *  Frobenius norm of the density relative to the previous iteration.  Defaults to true.
+     *  This is much safer and should almost always be enabled, unless the screening thresholds are
+     *  quite small to begin with.  Defaults to true.
+     */
     bool scale_screening_thresh_ = true;
-    /// The minimum value to scale the screening threshold down to
-    double full_screening_thresh_min_ = 1e-16;
-    /// Full screening exponent for non-reset iterations
+    // TODO individual screening threshold minima
+    /** The minimum value to scale the screening threshold down to.
+     *  It is usually a good idea to set this to something not too small so that the cost of
+     *  later differential iterations doesn't get out of hand.  Defaults to 10^-3 * full_screening_thresh
+     */
+    double full_screening_thresh_min_;
+    /** Full screening exponent for differential density iterations, i.e. the full_screening_thresh for
+     *  differential density iterations will be full_screening_thresh^full_screening_expon.  This
+     *  was the old way to deal with differential density iterations.  The new way is to use
+     *  scale_screening_thresh = true, which is recommended.  Using values other than 1.0 here
+     *  is not recommended.
+     */
     double full_screening_expon_ = 1.0;
-    /// Should we screen the B contraction?
+    /** Screen the B intermediate formation when building the exchange matrix.  This is recommended
+     *  for large and most medium-sized molecules.  Ignored if do_linK = false.
+     */
     bool screen_B_ = false;
-    /// Should we distribute the coefficients among nodes?  (Note: Some replication is still necessary)
+    /** Distribute the coefficients among nodes if true.
+     *  (Note: Some replication is still necessary.  The decrease in coefficient memory
+     *  is currently only proportional to sqrt(p)/2).  Note that as currently implemented,
+     *  the number of mpi tasks *must* be a perfect square for this to work.
+     *  Not implemented for do_linK = false.
+     */
     bool distribute_coefficients_ = true;
     /// Should we use distance factor when we screen the B contraction?
     double screen_B_use_distance_ = false;
-    /// Screening thresh for B contraction; defaults to full_screening_thresh_
+    /** Screening thresh for B intermediate construction in the exchange
+     *  matrix build.  Defaults to full_screening_thresh.
+     */
     double B_screening_thresh_;
-    /// Store the coefficients in both storage orders.  Takes more memory but also faster
+    /** Store the coefficients in both storage orders.  Takes more memory but also a little bit faster.
+     *  Irrelevant if distribute_coefficients = true.  Setting this option is deprecated and may
+     *  be removed in the near future.
+     */
     bool store_coefs_transpose_ = false;
-    /// Thread the schwarz computation.  Requires more memory for 4c int evaluators and doesn't increase speed much.
+    /** Thread the schwarz matrix computation.  Requires more memory for 4c int evaluators
+     *  and doesn't increase speed much.  Memory increase is pretty small also.  Defaults to
+     *  false.
+     */
     bool thread_4c_ints_ = false;
-    /// when screening B, should we transfer the coefficients to a col-major matrix and then do a copy to transpose back to row major?  (efficiency will depend on cache size, etc.)
-    bool screen_B_transfer_as_transpose_ = false;
-    /// Screening threshold for d overtilde
+    /** Screening threshold for d_overtilde intermediate in the exchange matrix build.
+     *  Only relevent if screen_B = true and distribute_coefficients = true.  Defaults
+     *  to B_screening_thresh.
+     */
     double d_over_screening_thresh_;
-    /// Screening threshold for d undertilde
+    /** Screening threshold for d_undertilde intermediate in the exchange matrix build.
+     *  Only relevent if screen_B = true and distribute_coefficients = true.  Defaults
+     *  to B_screening_thresh.
+     */
     double d_under_screening_thresh_;
     //@}
 
-    ScreeningStatistics stats_;
+    std::shared_ptr<ScreeningStatistics> stats_;
     ScreeningStatistics::Iteration* iter_stats_;
 
     double prev_density_frob_;
@@ -399,7 +451,6 @@ class CADFCLHF: public CLHF {
     double prev_epsilon_d_over_;
     double prev_epsilon_d_under_;
 
-    TwoCenterIntContainerPtr g2_full_ptr_;
 
     int max_fxn_obs_ = 0;
     int max_fxn_obs_todo_ = 0;
@@ -412,40 +463,31 @@ class CADFCLHF: public CLHF {
     //int max_fxn_obs_assigned_ = 0;
     //int max_fxn_atom_dfbs_assigned_ = 0;
 
+    TwoCenterIntContainerPtr g2_full_ptr_;
+
     RefSCMatrix D_;
-
-    // For now, just do static load balancing
-    bool dynamic_ = false;
-
-    TwoBodyOper::type metric_oper_type_;
 
     // A (very) rough estimate of the minimum amount of memory that is in use by CADF at the present time
     std::atomic<size_t> memory_used_;
 
     // Convenience variable for better code readibility
     static const TwoBodyOper::type coulomb_oper_type_ = TwoBodyOper::eri;
+    // Currently only metric_oper_type_ == coulomb_oper_type_ is supported
+    TwoBodyOper::type metric_oper_type_;
 
     bool get_shell_pair(ShellData& mu, ShellData& nu, PairSet pset = AllPairs);
-
-    void loop_shell_pairs_threaded(PairSet pset,
-        const std::function<void(int, const ShellData&, const ShellData&)>& f
-    );
-
-    void loop_shell_pairs_threaded(
-        const std::function<void(int, const ShellData&, const ShellData&)>& f
-    );
 
     RefSCMatrix compute_J();
 
     RefSCMatrix compute_K();
 
-    double get_distance_factor(
+    inline double get_distance_factor(
         const ShellData& ish,
         const ShellData& jsh,
         const ShellData& Xsh
     ) const;
 
-    double get_R(
+    inline double get_R(
         const ShellData& ish,
         const ShellData& jsh,
         const ShellData& Xsh
@@ -568,7 +610,6 @@ class CADFCLHF: public CLHF {
         double* buffer
     );
 
-
     void ints_to_buffer(
         int ish, int jsh, int ksh,
         int nbfi, int nbfj, int nbfk,
@@ -598,18 +639,11 @@ class CADFCLHF: public CLHF {
     // Non-blocked version of cl_gmat_
     RefSymmSCMatrix gmat_;
 
-    /**
-     * Whether or not the density was reset this iteration.  Numerical stability
-     *  might be improved by lowering the cutoffs on iterations where the
+    /** Whether or not the density was reset this iteration.  Numerical stability
+     *  is improved by lowering the cutoffs on iterations where the
      *  density is differential rather than full.
      */
     bool density_reset_ = true;
-
-    /**
-     * Whether or not the MessageGrp is an instance of MPIMessageGrp; might
-     *  be used for dynamic load balancing in the future.
-     */
-    bool using_mpi_;
 
     /**
      * Whether or not we've computed the fitting coefficients yet
@@ -648,17 +682,18 @@ class CADFCLHF: public CLHF {
     // The same as sig_pairs_, but organized differently
     std::vector<std::vector<int>> shell_to_sig_shells_;
 
-    //std::vector<double> max_schwarz_;
+    /// (X|X)^{1/2} Schwarz integrals for the DF basis
     Eigen::VectorXd schwarz_df_;
+    /// (X|X)^{1/2} Schwarz integrals for
     Eigen::VectorXd schwarz_df_mine_;
 
     // Where are we in the iteration over the local_pairs_?
     std::atomic<int> local_pairs_spot_;
 
+    /// Shell-wise Frobenius norms of orbital basis pairs
     Eigen::MatrixXd schwarz_frob_;
-    std::vector<Eigen::MatrixXd> C_trans_frob_;
 
-    // TODO Get rid of full C_bar_
+    /// Various ways to take Frobenius norms of the coefficient tensor
     Eigen::MatrixXd C_bar_;
     Eigen::MatrixXd C_bar_mine_;
     Eigen::MatrixXd C_underbar_;
@@ -672,9 +707,8 @@ class CADFCLHF: public CLHF {
     std::vector<Ref<TwoBodyTwoCenterInt>> eris_2c_;
     std::vector<Ref<TwoBodyTwoCenterInt>> metric_ints_2c_;
 
-    // Integrals computed locally this iteration
+    // Count of integrals computed locally this iteration
     std::atomic<long> ints_computed_locally_;
-    long ints_computed_;
 
     /// List of atom centers as Eigen::Vector3d objects, for convenience
     std::vector<Eigen::Vector3d> centers_;
@@ -684,8 +718,10 @@ class CADFCLHF: public CLHF {
      *  the Gaussian product theorem centers of primitive pairs weighted
      *  by the absolute value of the products of primitive coefficients
      */
-    std::map<std::pair<int, int>, Eigen::Vector3d> pair_centers_;
-    std::map<std::pair<int, int>, double> pair_extents_;
+    fast_map<std::pair<int, int>, Eigen::Vector3d> pair_centers_;
+
+    // Extents of the various pairs
+    fast_map<std::pair<int, int>, double> pair_extents_;
     std::vector<double> df_extents_;
 
     /// Coefficients storage.  Not accessed directly
@@ -704,21 +740,14 @@ class CADFCLHF: public CLHF {
     std::vector<RowMatrix> coefs_blocked_;
     std::vector<std::vector<int>> coef_block_offsets_;
 
-    //std::vector<std::vector<ShellIndexWithValue>> Cmaxes_;
-
     std::vector<Eigen::Map<RowMatrix>> coefs_transpose_blocked_;
     std::vector<Eigen::Map<RowMatrix>> coefs_transpose_blocked_other_;
-    //std::vector<std::vector<StridedRowMap>> coefs_t_shell_blocked_;
+
 #if USE_SPARSE
     std::vector<SparseRowMatrix> coefs_transpose_;
 #else
     //std::vector<RowMatrix> coefs_transpose_;
     std::vector<Eigen::Map<RowMatrix>> coefs_transpose_;
-#endif
-
-#if USE_INTEGRAL_CACHE
-    shared_ptr<TwoCenterIntCache> ints2_;
-    shared_ptr<ThreeCenterIntCache> ints3_;
 #endif
 
     shared_ptr<DecompositionCache> decomps_;

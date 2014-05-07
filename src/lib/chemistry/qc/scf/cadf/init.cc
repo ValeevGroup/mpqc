@@ -203,9 +203,6 @@ CADFCLHF::init_threads()
   size_t storage_required_4c = 0;
   try {
     storage_required_4c = integral()->storage_required_eri(gbs_, gbs_, gbs_, gbs_);
-    if(thread_4c_ints_) {
-      storage_required_4c *= nthread_;
-    }
 
     ExEnv::out0() << incindent << indent << "Integral object reports "
                   << data_size_to_string(storage_required_4c)
@@ -254,6 +251,8 @@ CADFCLHF::init_threads()
 
   ExEnv::out0() << indent << "Initializing significant basis function pairs" << endl;
   init_significant_pairs();
+  // 4c int objects are destroyed in init_significant_pairs()
+  memory_used_ -= storage_required_4c;
 
   //----------------------------------------------------------------------------//
 
@@ -263,6 +262,10 @@ CADFCLHF::init_threads()
     const int assignment = inode % n_node;
     pair_assignments_[SignificantPairs][sig_pair] = assignment;
     if(assignment == me){
+      ShellData ish(sig_pair.first, gbs_);
+      ShellData jsh(sig_pair.second, gbs_);
+      if(ish.nbf > max_fxn_obs_j_ish_) max_fxn_obs_j_ish_ = ish.nbf;
+      if(jsh.nbf > max_fxn_obs_j_jsh_) max_fxn_obs_j_jsh_ = jsh.nbf;
       local_pairs_sig_.push_back(sig_pair);
     }
     ++inode;

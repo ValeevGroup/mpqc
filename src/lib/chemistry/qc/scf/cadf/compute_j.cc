@@ -289,6 +289,10 @@ CADFCLHF::compute_J()
           dt_ex_thr.resize(natom, dfnbf);
           dt_ex_thr = RowMatrix::Zero(natom, dfnbf);
         }
+        double* __restrict__ j_intbuff = new double[max_fxn_obs_j_ish_*max_fxn_obs_j_jsh_*
+          // The extra max_fxn_dfbs_ is just to be safe, since the block size is only a "target"
+          std::min(dfbs_->nbasis(), (unsigned int)(DEFAULT_TARGET_BLOCK_SIZE + max_fxn_dfbs_))
+        ];
         //----------------------------------------//
         ShellData ish, jsh;
         while(get_shell_pair(ish, jsh, SignificantPairs)){
@@ -296,23 +300,22 @@ CADFCLHF::compute_J()
           double perm_fact = (ish == jsh) ? 2.0 : 4.0;
           //----------------------------------------//
           // Note:  SameCenter shell_block requirement is the default
-          for(auto&& Xblk : shell_block_range(dfbs_)){
+          for(auto&& Xblk : shell_block_range(dfbs_, gbs_, 0, NoLastIndex, exact_diagonal_J_ ? SameCenter : NoRestrictions)){
 
             TimerHolder subtimer(ints_timer);
-            auto g_part = ints_to_eigen(
+            auto g3 = ints_to_eigen_map(
                 ish, jsh, Xblk,
-                eris_3c_[ithr],
-                coulomb_oper_type_
+                eris_3c_[ithr], coulomb_oper_type_,
+                j_intbuff
             );
-            const auto& g3 = *g_part;
 
             subtimer.change(contract_timer);
             for(auto&& mu : function_range(ish)) {
               dt.segment(Xblk.bfoff, Xblk.nbf).transpose() += perm_fact * D.row(mu).segment(jsh.bfoff, jsh.nbf)
-                  * g_part->middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf);
+                  * g3.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf);
               //----------------------------------------//
               jpart.row(mu).segment(jsh.bfoff, jsh.nbf).transpose() +=
-                  g_part->middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf)
+                  g3.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf)
                   * C_tilde.segment(Xblk.bfoff, Xblk.nbf);
             }
 
@@ -383,8 +386,9 @@ CADFCLHF::compute_J()
 
           } // end loop over kshbf
           // only constructing the lower triangle of the J matrix, so zero the strictly upper part
-          jpart.triangularView<Eigen::StrictlyUpper>().setZero();
         } // end while get_shell_pair
+        jpart.triangularView<Eigen::StrictlyUpper>().setZero();
+        delete[] j_intbuff;
         //----------------------------------------//
         // add our contribution to the node level d_tilde
         boost::lock_guard<boost::mutex> tmp_lock(tmp_mutex);

@@ -453,6 +453,8 @@ class CADFCLHF: public CLHF {
 
 
     int max_fxn_obs_ = 0;
+    int max_fxn_obs_j_ish_ = 0;
+    int max_fxn_obs_j_jsh_ = 0;
     int max_fxn_obs_todo_ = 0;
     int max_fxn_atom_obs_ = 0;
     int max_fxn_dfbs_ = 0;
@@ -588,6 +590,26 @@ class CADFCLHF: public CLHF {
         const ShellData& ksh,
         Ref<TwoBodyThreeCenterInt>& ints,
         TwoBodyOper::type ints_type
+    );
+
+    template <typename ShellRange>
+    Eigen::Map<ThreeCenterIntContainer> ints_to_eigen_map(
+        const ShellData& ish,
+        const ShellData& jsh,
+        const ShellBlockData<ShellRange>& Xsh,
+        Ref<TwoBodyThreeCenterInt>& ints,
+        TwoBodyOper::type ints_type,
+        double* __restrict__ buffer
+    );
+
+    template <typename MapType>
+    void ints_to_eigen_map(
+        const ShellData& ish,
+        const ShellData& jsh,
+        const ShellData& Xsh,
+        Ref<TwoBodyThreeCenterInt>& ints,
+        TwoBodyOper::type int_type,
+        MapType& out_map
     );
 
     template <typename ShellRange>

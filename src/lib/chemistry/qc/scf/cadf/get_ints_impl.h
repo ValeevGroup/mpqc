@@ -196,6 +196,54 @@ CADFCLHF::ints_to_eigen(
 template <typename ShellRange>
 Eigen::Map<CADFCLHF::ThreeCenterIntContainer>
 CADFCLHF::ints_to_eigen_map(
+    const ShellData& ish,
+    const ShellData& jsh,
+    const ShellBlockData<ShellRange>& Xblk,
+    Ref<TwoBodyThreeCenterInt>& ints,
+    TwoBodyOper::type int_type,
+    double* __restrict__ buffer
+){
+  //
+  Eigen::Map<ThreeCenterIntContainer> rv(
+      buffer, ish.nbf * jsh.nbf, Xblk.nbf
+  );
+  int block_offset = 0;
+  typedef Eigen::Map<RowMatrix, Eigen::Default, Eigen::OuterStride<>> SkipMap;
+  SkipMap tmp(buffer, 0, 0, Eigen::OuterStride<>(1));
+  for(auto Xsh : shell_range(Xblk)) {
+    new (&tmp) SkipMap(buffer + block_offset,
+        ish.nbf*jsh.nbf, Xsh.nbf, Eigen::OuterStride<>(Xblk.nbf)
+    );
+    ints_to_eigen_map(
+        ish, jsh, Xsh,
+        ints, int_type,
+        tmp
+    );
+    block_offset += Xsh.nbf;
+  }
+  return rv;
+}
+
+template <typename MapType>
+void
+CADFCLHF::ints_to_eigen_map(
+    const ShellData& ish,
+    const ShellData& jsh,
+    const ShellData& Xsh,
+    Ref<TwoBodyThreeCenterInt>& ints,
+    TwoBodyOper::type int_type,
+    MapType& out_map
+){
+  int block_offset = 0;
+  const Eigen::Map<const RowMatrix> buffmap(ints->buffer(int_type), ish.nbf*jsh.nbf, Xsh.nbf);
+  ints->compute_shell(ish, jsh, Xsh);
+  out_map = buffmap;
+}
+
+
+template <typename ShellRange>
+Eigen::Map<CADFCLHF::ThreeCenterIntContainer>
+CADFCLHF::ints_to_eigen_map(
     const ShellBlockData<ShellRange>& iblk,
     const ShellData& jsh,
     const ShellData& Xsh,

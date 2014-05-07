@@ -104,9 +104,6 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
     decomps_(make_shared<DecompositionCache>(
         molecule()->natom() * molecule()->natom()
     )),
-    ints4maxes_(make_shared<FourCenterMaxIntCache>(
-        gbs_->nshell() * gbs_->nshell()
-    )),
     local_pairs_spot_(0),
     memory_used_(0)
 {
@@ -128,7 +125,7 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   distance_screening_thresh_ = keyval->doublevalue("distance_screening_thresh", KeyValValuedouble(full_screening_thresh_*1e-3));
   B_screening_thresh_ = keyval->doublevalue("B_screening_thresh", KeyValValuedouble(full_screening_thresh_));
   d_over_screening_thresh_ = keyval->doublevalue("d_over_screening_thresh", KeyValValuedouble(B_screening_thresh_));
-  d_under_screening_thresh_ = keyval->doublevalue("d_under_screening_thresh", KeyValValuedouble(B_screening_thresh_));
+  d_under_screening_thresh_ = keyval->doublevalue("d_under_screening_thresh", KeyValValuedouble(B_screening_thresh_*1e-1));
   coef_screening_thresh_ = keyval->doublevalue("coef_screening_thresh", KeyValValuedouble(1e-8));
   full_screening_expon_ = keyval->doublevalue("full_screening_expon", KeyValValuedouble(1.0));
   full_screening_thresh_min_ = keyval->doublevalue("full_screening_thresh_min", KeyValValuedouble(full_screening_thresh_min_));

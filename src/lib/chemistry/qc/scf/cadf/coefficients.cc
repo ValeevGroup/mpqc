@@ -705,30 +705,6 @@ CADFCLHF::compute_coefficients()
   } // end if do_linK
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
-  /* Sparse coefficients                                   		                        {{{1 */ #if 1 // begin fold
-  //---------------------------------------------------------------------------------------//
-
-  //if(use_sparse_) {
-  //  std::vector<Eigen::Triplet<double>> triplets;
-  //  for(auto&& ckvpair : coefs_) {
-  //    const BasisFunctionData mu(ckvpair.first.first, gbs_, dfbs_);
-  //    const BasisFunctionData nu(ckvpair.first.second, gbs_, dfbs_);
-  //    const auto& Ca = *ckvpair.second.first;
-  //    const auto& Cb = *ckvpair.second.second;
-  //    for(int Xoff = 0; Xoff < mu.atom_dfnbf; ++Xoff) {
-  //      const double val = Ca[Xoff];
-  //      triplets.emplace_back(mu.index, nu.index*dfnbf + mu.atom_dfnbf + Xoff, val);
-  //    }
-  //    coefs_sp_.resize(nbf, nbf*dfnbf);
-
-  //  }
-  //}
-
-
-
-  /*****************************************************************************************/ #endif //1}}}
-  /*=======================================================================================*/
-  /*=======================================================================================*/
   /* Clean up                                              		                        {{{1 */ #if 1 // begin fold
   //---------------------------------------------------------------------------------------//
   decomps_->clear();

@@ -436,7 +436,7 @@ class CADFCLHF: public CLHF {
     double d_over_screening_thresh_;
     /** Screening threshold for d_undertilde intermediate in the exchange matrix build.
      *  Only relevent if screen_B = true and distribute_coefficients = true.  Defaults
-     *  to B_screening_thresh.
+     *  to B_screening_thresh * 1e-1.
      */
     double d_under_screening_thresh_;
     //@}
@@ -729,10 +729,10 @@ class CADFCLHF: public CLHF {
     double* __restrict__ dist_coefs_data_ = 0;
     double* __restrict__ dist_coefs_data_df_ = 0;
 
-    std::unordered_map<int, Eigen::Map<RowMatrix>> coefs_X_nu;
-    std::unordered_map<int, Eigen::Map<RowMatrix>> coefs_X_nu_other;
-    std::unordered_map<int, Eigen::Map<RowMatrix>> coefs_mu_X;
-    std::unordered_map<int, Eigen::Map<RowMatrix>> coefs_mu_X_other;
+    fast_map<int, Eigen::Map<RowMatrix>> coefs_X_nu;
+    fast_map<int, Eigen::Map<RowMatrix>> coefs_X_nu_other;
+    fast_map<int, Eigen::Map<RowMatrix>> coefs_mu_X;
+    fast_map<int, Eigen::Map<RowMatrix>> coefs_mu_X_other;
 
     CoefMap coefs_;
 
@@ -751,7 +751,6 @@ class CADFCLHF: public CLHF {
 #endif
 
     shared_ptr<DecompositionCache> decomps_;
-    shared_ptr<FourCenterMaxIntCache> ints4maxes_;
 
     bool threads_initialized_ = false;
 
@@ -810,7 +809,6 @@ class CADFCLHF: public CLHF {
         sc::hash<std::pair<int, int>>
     > LinKRangeMap2;
 
-
     IndexListMap L_schwarz;
     IndexListMap L_DC;
     IndexListMap L_C_under;
@@ -819,20 +817,6 @@ class CADFCLHF: public CLHF {
     IndexListMap2 L_B;
     IndexListMap2 L_d_over;
     LinKRangeMap2 L_d_under_ranges;
-
-
-    /**
-     * Used for Eigen::SparseMatrix alternative implementation
-     */
-    //@{
-
-    typedef Eigen::SparseMatrix<double, Eigen::RowMajor> SparseMatrix;
-    typedef Eigen::SparseMatrix<double, Eigen::ColMajor> SparseColMatrix;
-
-    SparseMatrix coefs_sp_;
-
-
-    //@}
 
 }; // CADFCLHF
 

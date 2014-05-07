@@ -65,13 +65,16 @@ CADFCLHF::compute_coefficients()
 
   timer.enter("01 - init coef memory");
 
-  uli ncoefs = 0;                                                                          //latex `\label{sc:coefcountbegin}`
+  uli ncoefs = 0;
 
   std::vector<uli> offsets;
   std::vector<uli> block_sizes;
   uli ioffset = 0;
 
   if(distribute_coefficients_) {
+    //----------------------------------------------------------------------------//
+    // Coefficients distributed; only make room for the ones we need
+
     local_pairs_spot_ = 0;
     ShellData ish, jsh;
     while(get_shell_pair(ish, jsh, SignificantPairs)) {
@@ -115,8 +118,13 @@ CADFCLHF::compute_coefficients()
       }
     }
 
+    //----------------------------------------------------------------------------//
+
   }
   else {
+    //----------------------------------------------------------------------------//
+    // Coefficients not distributed; we need all of them
+
     for(int iatom = 0; iatom < natom; ++iatom) {
       const uli atom_nbf = gbs_->nbasis_on_center(iatom);
       const uli atom_dfnbf = dfbs_->nbasis_on_center(iatom);
@@ -174,6 +182,7 @@ CADFCLHF::compute_coefficients()
         double *data_spot_a = coefficients_data_ + offsets[mu.center] + mu.bfoff_in_atom*nbf + rho;
         double *data_spot_b = coefficients_data_ + offsets[rho.center] + rho.bfoff_in_atom*nbf + mu;
         IntPair ij(mu, rho);
+        //throw FeatureNotImplemented("", __FILE__, __LINE__, class_desc());
         CoefContainer coefs_a = make_shared<CoefView>(
             data_spot_a, mu.atom_dfnbf, Eigen::Stride<1, Eigen::Dynamic>(1, mu.atom_nbf * nbf)
         );
@@ -183,6 +192,7 @@ CADFCLHF::compute_coefficients()
         coefs_.emplace(ij, std::make_pair(coefs_a, coefs_b));
       }
     }
+    //----------------------------------------------------------------------------//
   }
 
 

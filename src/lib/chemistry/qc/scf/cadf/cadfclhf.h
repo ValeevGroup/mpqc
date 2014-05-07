@@ -743,12 +743,7 @@ class CADFCLHF: public CLHF {
     std::vector<Eigen::Map<RowMatrix>> coefs_transpose_blocked_;
     std::vector<Eigen::Map<RowMatrix>> coefs_transpose_blocked_other_;
 
-#if USE_SPARSE
-    std::vector<SparseRowMatrix> coefs_transpose_;
-#else
-    //std::vector<RowMatrix> coefs_transpose_;
     std::vector<Eigen::Map<RowMatrix>> coefs_transpose_;
-#endif
 
     shared_ptr<DecompositionCache> decomps_;
 

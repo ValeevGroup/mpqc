@@ -320,9 +320,8 @@ CADFCLHF::init_significant_pairs()
   ExEnv::out0() << incindent;
   ExEnv::out0() << indent << "Computing Schwarz matrix" << endl;
 
-  std::atomic_int n_significant_pairs(0);
-  boost::mutex pair_mutex;
   std::vector<std::pair<double, IntPair>> pair_values;
+  boost::mutex pair_mutex;
   //----------------------------------------//
   schwarz_frob_.resize(gbs_->nshell(), gbs_->nshell());
   memory_used_ += gbs_->nshell() * gbs_->nshell() * sizeof(double);
@@ -338,17 +337,10 @@ CADFCLHF::init_significant_pairs()
     while(get_shell_pair(ish, jsh, AllPairs)){
       tbis_[ithr]->compute_shell(ish, jsh, ish, jsh);
       const double* buffer = tbis_[ithr]->buffer(coulomb_oper_type_);
-      double frob_val = 0.0;
       const ConstVectorMap buff_map(buffer, ish.nbf*jsh.nbf*ish.nbf*jsh.nbf);
       const double norm_val = sqrt(buff_map.cwiseAbs().sum());
-      //for(int i = 0; i < ish.nbf*jsh.nbf*ish.nbf*jsh.nbf; ++i) {
-      //  frob_val += fabs(buffer[i]);
-      //}
-      //const double norm_val = sqrt(frob_val);
       schwarz_frob_(ish, jsh) = norm_val;
-      if(ish != jsh) {
-        schwarz_frob_(jsh, ish) = norm_val;
-      }
+      if(ish != jsh) schwarz_frob_(jsh, ish) = norm_val;
       my_pair_vals.push_back({norm_val, IntPair(ish, jsh)});
     } // end while get shell pair
     //----------------------------------------//
@@ -359,33 +351,7 @@ CADFCLHF::init_significant_pairs()
     }
 
   });
-  //do_threaded((thread_4c_ints_ ? nthread_ : 1), [&](int ithr){
 
-  //  ShellData ish, jsh;
-  //  std::vector<std::pair<double, IntPair>> my_pair_vals;
-
-  //  while(get_shell_pair(ish, jsh, AllPairs)){
-  //    const double norm_val = ints4maxes_->get(ish, jsh, ish, jsh, coulomb_oper_type_, [&]() -> double {
-  //      tbis_[ithr]->compute_shell(ish, jsh, ish, jsh);
-  //      const double* buffer = tbis_[ithr]->buffer(coulomb_oper_type_);
-  //      double frob_val = 0.0;
-  //      for(int i = 0; i < ish.nbf*jsh.nbf*ish.nbf*jsh.nbf; ++i) {
-  //        frob_val += fabs(buffer[i]);
-  //      }
-  //      return sqrt(frob_val);
-  //    });
-  //    schwarz_frob_(ish, jsh) = norm_val;
-  //    schwarz_frob_(jsh, ish) = norm_val;
-  //    my_pair_vals.push_back({norm_val, IntPair(ish, jsh)});
-  //  } // end while get shell pair
-  //  //----------------------------------------//
-  //  // put our values on the node-level vector
-  //  boost::lock_guard<boost::mutex> lg(pair_mutex);
-  //  for(auto item : my_pair_vals){
-  //    pair_values.push_back(item);
-  //  }
-
-  //});
   //----------------------------------------//
   // At this point, we're done with the tbis_
   for (int i=0; i < (thread_4c_ints_ ? nthread_ : 1); i++) tbis_[i] = 0;
@@ -405,6 +371,7 @@ CADFCLHF::init_significant_pairs()
   // Now go through the list and figure out which ones are significant
   shell_to_sig_shells_.resize(gbs_->nshell());
   std::vector<double> sig_values;
+  std::atomic_int n_significant_pairs(0);
   do_threaded(nthread_, [&](int ithr){
 
     std::vector<IntPair> my_sig_pairs;

@@ -63,14 +63,11 @@ class OrderedShellList {
     bool sorted_ = false;
     bool sort_by_value_ = true;
 
+    // An auxiliary value to tag along with the list
     Eigen::VectorXd aux_vector_;
     bool aux_vector_initialized_ = false;
     bool aux_set_sorted_ = false;
     double aux_value_ = 0.0;
-
-    std::mutex aux_set_mtx_;
-    std::unordered_set<int> aux_set_;
-    std::vector<int> aux_indices_;
 
   public:
 
@@ -78,8 +75,6 @@ class OrderedShellList {
     GaussianBasisSet* dfbasis_ = 0;
 
     int nbf = 0;
-
-    // An auxiliary value to tag along with the list
 
     explicit OrderedShellList(bool sort_by_value = true)
       : sort_by_value_(sort_by_value)
@@ -100,6 +95,7 @@ class OrderedShellList {
       std::copy(indices_in.begin(), indices_in.end(), std::back_inserter(indices_));
       sort(false);
       aux_value_ = 0.0;
+      aux_vector_initialized_ = false;
     }
 
     OrderedShellList(const OrderedShellList& other)
@@ -132,36 +128,6 @@ class OrderedShellList {
 
     void set_aux_value(const double add_val) {
       aux_value_ = add_val;
-    }
-
-    void insert_in_aux_set(int item) {
-      std::lock_guard<std::mutex> lg(aux_set_mtx_);
-      aux_set_.insert(item);
-      aux_set_sorted_ = false;
-    }
-
-    //// Note: not thread safe, do not call if insertion may happen simultaneously
-    const std::vector<int>& get_aux_indices() const {
-      assert(aux_set_sorted_);
-      return aux_indices_;
-    }
-
-    //// Note: not thread safe, do not call if insertion may happen simultaneously
-    const std::unordered_set<int>& get_aux_set() const {
-      return aux_set_;
-    }
-
-    void sort_aux_set() {
-      std::lock_guard<std::mutex> lg(aux_set_mtx_);
-      assert(aux_indices_.empty());
-      std::copy(aux_set_.begin(), aux_set_.end(), std::back_inserter(aux_indices_));
-      std::sort(aux_indices_.begin(), aux_indices_.end());
-      aux_set_sorted_ = true;
-    }
-
-    //// Note: not thread safe, do not call if insertion may happen simultaneously
-    bool aux_set_contains(int item) const {
-      return aux_set_.find(item) != aux_set_.end();
     }
 
     double get_aux_value() const {

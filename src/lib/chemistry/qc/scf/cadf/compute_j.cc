@@ -300,7 +300,8 @@ CADFCLHF::compute_J()
           double perm_fact = (ish == jsh) ? 2.0 : 4.0;
           //----------------------------------------//
           // Note:  SameCenter shell_block requirement is the default
-          for(auto&& Xblk : shell_block_range(dfbs_, gbs_, 0, NoLastIndex, exact_diagonal_J_ ? SameCenter : NoRestrictions)){
+          //for(auto&& Xblk : shell_block_range(dfbs_, gbs_, 0, NoLastIndex, exact_diagonal_J_ ? SameCenter : NoRestrictions)){
+          for(auto&& Xblk : shell_block_range(dfbs_, gbs_, 0, NoLastIndex, SameCenter)){
 
             TimerHolder subtimer(ints_timer);
             auto g3 = ints_to_eigen_map(
@@ -308,6 +309,13 @@ CADFCLHF::compute_J()
                 eris_3c_[ithr], coulomb_oper_type_,
                 j_intbuff
             );
+            //auto g3 = *g3_part;
+            //auto g_part = ints_to_eigen(
+            //    ish, jsh, Xblk,
+            //    eris_3c_[ithr],
+            //    coulomb_oper_type_
+            //);
+            //const auto& g3 = *g_part;
 
             subtimer.change(contract_timer);
             for(auto&& mu : function_range(ish)) {
@@ -385,8 +393,8 @@ CADFCLHF::compute_J()
             }
 
           } // end loop over kshbf
-          // only constructing the lower triangle of the J matrix, so zero the strictly upper part
         } // end while get_shell_pair
+        // only constructing the lower triangle of the J matrix, so zero the strictly upper part
         jpart.triangularView<Eigen::StrictlyUpper>().setZero();
         delete[] j_intbuff;
         //----------------------------------------//

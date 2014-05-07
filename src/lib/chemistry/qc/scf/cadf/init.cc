@@ -382,14 +382,15 @@ CADFCLHF::init_significant_pairs()
         my_sig_pairs.push_back(item.second);
         my_sig_values.push_back(item.first);
         ++n_significant_pairs;
-        ++stats_->sig_pairs;
-        const int nfxn = gbs_->shell(item.second.first).nfunction() * gbs_->shell(item.second.second).nfunction();
-        stats_->sig_pairs_fxn += nfxn;
-        if(item.second.first != item.second.second) {
-          ++stats_->sig_pairs;
+        if(print_screening_stats_) {
+          ++(stats_->sig_pairs);
+          const int nfxn = gbs_->shell(item.second.first).nfunction() * gbs_->shell(item.second.second).nfunction();
           stats_->sig_pairs_fxn += nfxn;
+          if(item.second.first != item.second.second) {
+            ++(stats_->sig_pairs);
+            stats_->sig_pairs_fxn += nfxn;
+          }
         }
-
       }
     }
     //----------------------------------------//

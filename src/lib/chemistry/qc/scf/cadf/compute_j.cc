@@ -275,11 +275,9 @@ CADFCLHF::compute_J()
     for(int ithr = 0; ithr < nthread_; ++ithr) {
       // ...and create each thread that computes pairs
       compute_threads.create_thread([&,ithr](){
-        auto ints_timer = mt_timer.get_subtimer("compute_ints", ithr);
-        auto contract_timer = mt_timer.get_subtimer("contract", ithr);
-        auto ex_timer = mt_timer.get_subtimer("exact diagonal", ithr);
         /*-----------------------------------------------------*/
         /* d_tilde compute and C_tilde contract thread    {{{2 */ #if 2 // begin fold
+        mt_timer.enter("misc", ithr);
         Eigen::VectorXd dt(dfnbf);
         dt = Eigen::VectorXd::Zero(dfnbf);
         Eigen::MatrixXd jpart(nbf, nbf);
@@ -294,6 +292,10 @@ CADFCLHF::compute_J()
           std::min(dfbs_->nbasis(), (unsigned int)(DEFAULT_TARGET_BLOCK_SIZE + max_fxn_dfbs_))
         ];
         //----------------------------------------//
+        mt_timer.change("loop significant ij", ithr);
+        auto ints_timer = mt_timer.get_subtimer("compute_ints", ithr);
+        auto contract_timer = mt_timer.get_subtimer("contract", ithr);
+        auto ex_timer = mt_timer.get_subtimer("exact diagonal", ithr);
         ShellData ish, jsh;
         while(get_shell_pair(ish, jsh, SignificantPairs)){
           //----------------------------------------//
@@ -327,6 +329,8 @@ CADFCLHF::compute_J()
                   * C_tilde.segment(Xblk.bfoff, Xblk.nbf);
             }
 
+            /*-----------------------------------------------------*/
+            /* Exact diagonal part                            {{{3 */ #if 3 // begin fold
             if(exact_diagonal_J_) {
 
               subtimer.change(ex_timer);
@@ -390,21 +394,26 @@ CADFCLHF::compute_J()
                 }
 
               }
-            }
+            } // end if exact_diagonal_J_
+            /*******************************************************/ #endif //3}}}
+            /*-----------------------------------------------------*/
 
-          } // end loop over kshbf
+          } // end loop over Xblk
         } // end while get_shell_pair
+        mt_timer.change("misc", ithr);
         // only constructing the lower triangle of the J matrix, so zero the strictly upper part
         jpart.triangularView<Eigen::StrictlyUpper>().setZero();
         delete[] j_intbuff;
         //----------------------------------------//
         // add our contribution to the node level d_tilde
+        mt_timer.change("sum thread contributions", ithr);
         boost::lock_guard<boost::mutex> tmp_lock(tmp_mutex);
         d_tilde += dt;
         if(exact_diagonal_J_) {
           d_t_ex += dt_ex_thr;
         }
         J += jpart;
+        mt_timer.exit(ithr);
         /*******************************************************/ #endif //2}}}
         /*-----------------------------------------------------*/
       }); // end create_thread
@@ -416,10 +425,12 @@ CADFCLHF::compute_J()
   } // compute_threads is destroyed here
   //----------------------------------------//
   // Global sum d_tilde
+  timer.enter("global sum d_tilde");
   scf_grp_->sum((double*)d_tilde.data(), dfnbf);
   if(exact_diagonal_J_) {
     scf_grp_->sum((double*)d_t_ex.data(), natom * dfnbf);
   }
+  timer.exit();
   if(xml_debug_) {
     write_as_xml("d_tilde", d_tilde);
     if(exact_diagonal_J_) {

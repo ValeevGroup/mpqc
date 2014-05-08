@@ -238,6 +238,7 @@ CADFCLHF::ints_to_eigen_map(
   const Eigen::Map<const RowMatrix> buffmap(ints->buffer(int_type), ish.nbf*jsh.nbf, Xsh.nbf);
   ints->compute_shell(ish, jsh, Xsh);
   out_map = buffmap;
+  ints_computed_locally_ += ish.nbf * jsh.nbf * Xsh.nbf;
 }
 
 

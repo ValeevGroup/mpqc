@@ -314,6 +314,7 @@ CADFCLHF::compute_K()
 
     // Update the user on the effective thresholds
     // TODO output epsilon_d thresholds also
+    // TODO make sure the thresholds don't increase above their starting values
     if(scale_screening_thresh_) {
       if(linK_use_distance_ and epsilon != epsilon_dist) {
         if(screen_B_) {

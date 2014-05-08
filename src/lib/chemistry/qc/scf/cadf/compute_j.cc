@@ -300,8 +300,8 @@ CADFCLHF::compute_J()
           double perm_fact = (ish == jsh) ? 2.0 : 4.0;
           //----------------------------------------//
           // Note:  SameCenter shell_block requirement is the default
-          //for(auto&& Xblk : shell_block_range(dfbs_, gbs_, 0, NoLastIndex, exact_diagonal_J_ ? SameCenter : NoRestrictions)){
-          for(auto&& Xblk : shell_block_range(dfbs_, gbs_, 0, NoLastIndex, SameCenter)){
+          for(auto&& Xblk : shell_block_range(dfbs_, gbs_, 0, NoLastIndex, exact_diagonal_J_ ? SameCenter : NoRestrictions)){
+          //for(auto&& Xblk : shell_block_range(dfbs_, gbs_, 0, NoLastIndex, SameCenter)){
 
             TimerHolder subtimer(ints_timer);
             auto g3 = ints_to_eigen_map(

@@ -363,10 +363,10 @@ namespace sc {
       RefSymmSCMatrix hcore_mo();
       /// molecular integrals in chemist's notation
       RefSCMatrix moints();
-      /// This returns <space1 space2 || space1 space2>
+      /// This returns <space1 space2 | space1 space2>
       RefSCMatrix g(const Ref<OrbitalSpace>& space1,
                     const Ref<OrbitalSpace>& space2);
-      /// This returns <bra1 bra2 || ket1 ket2>
+      /// This returns <bra1 bra2 | ket1 ket2>
       RefSCMatrix g(const Ref<OrbitalSpace>& bra1,
                     const Ref<OrbitalSpace>& bra2,
                     const Ref<OrbitalSpace>& ket1,

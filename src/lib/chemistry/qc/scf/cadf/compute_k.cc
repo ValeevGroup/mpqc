@@ -426,7 +426,6 @@ CADFCLHF::compute_K()
     // TODO we could move part of the LinK lists between the loops to save on the memory overhead of the lists associated with the transpose part
 
     timer.change("build L_3");                                                               //latex `\label{sc:link:l3}`
-    const bool use_norms_B_ = false;
 
     // Loop over all jsh
     const auto& const_loc_pairs = local_pairs_linK_;

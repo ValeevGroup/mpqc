@@ -423,7 +423,10 @@ CADFCLHF::compute_K()
     //============================================================================//
     // Form L_3
 
+    // TODO we could move part of the LinK lists between the loops to save on the memory overhead of the lists associated with the transpose part
+
     timer.change("build L_3");                                                               //latex `\label{sc:link:l3}`
+    const bool use_norms_B_ = false;
 
     // Loop over all jsh
     const auto& const_loc_pairs = local_pairs_linK_;
@@ -458,9 +461,20 @@ CADFCLHF::compute_K()
                       jsh.nbf
                   );
                   if(screen_B_) {
-                    double B_scr_contrib = ish.value * ish.value;
-                    if(screen_B_use_distance_) B_scr_contrib *= dist_factor * dist_factor;
-                    L_3_ish_Xsh.add_to_aux_value_vector(B_scr_contrib, D_frob_sq.col(jsh));
+                    if(use_norms_B_) {
+                      double B_scr_contrib = ish.value * ish.value;
+                      if(screen_B_use_distance_) B_scr_contrib *= dist_factor * dist_factor;
+                      L_3_ish_Xsh.add_to_aux_value_vector(B_scr_contrib, D_frob_sq.col(jsh));
+                    }
+                    else {
+                      // Just do the contraction rather than tracking the norms
+                      if(screen_B_use_distance_) {
+                        L_3_ish_Xsh.add_to_aux_vector((dist_factor * ish.value) * D_frob.col(jsh));
+                      }
+                      else {
+                        L_3_ish_Xsh.add_to_aux_vector(ish.value * D_frob.col(jsh));
+                      }
+                    }
                   }
 
                   if(print_screening_stats_) {
@@ -578,7 +592,12 @@ CADFCLHF::compute_K()
             Eigen::VectorXd aux_vect = L_3_iter->second.get_aux_vector();
             const auto& L_3_ish_Xsh = L_3_iter->second;
             const auto& aux_val = L_3_ish_Xsh.get_aux_value();
-            aux_vect = aux_vect.array().cwiseSqrt() * aux_val * schwarz_df_[Xsh];
+            if(use_norms_B_) {
+              aux_vect = aux_vect.array().cwiseSqrt() * aux_val * schwarz_df_[Xsh];
+            }
+            else {
+              aux_vect *= schwarz_df_[Xsh];
+            }
 
             // TODO we can further restrict this loop by prescreening it
             for(auto&& lsh : shell_range(obs)) {

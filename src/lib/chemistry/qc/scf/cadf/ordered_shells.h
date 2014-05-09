@@ -63,10 +63,9 @@ class OrderedShellList {
     bool sorted_ = false;
     bool sort_by_value_ = true;
 
-    // An auxiliary value to tag along with the list
+    // An auxiliary value and vector to tag along with the list
     Eigen::VectorXd aux_vector_;
     bool aux_vector_initialized_ = false;
-    bool aux_set_sorted_ = false;
     double aux_value_ = 0.0;
 
   public:
@@ -123,6 +122,17 @@ class OrderedShellList {
         aux_vector_initialized_ = true;
       }
       aux_value_ += add_val;
+      aux_vector_.noalias() += to_add;
+    }
+
+    template <typename Derived>
+    void add_to_aux_vector(const Eigen::MatrixBase<Derived>& to_add) {
+      std::lock_guard<std::mutex> lg(aux_vector_mtx_);
+      if(not aux_vector_initialized_) {
+        aux_vector_.resize(to_add.rows());
+        aux_vector_ = decltype(aux_vector_)::Zero(to_add.rows());
+        aux_vector_initialized_ = true;
+      }
       aux_vector_.noalias() += to_add;
     }
 

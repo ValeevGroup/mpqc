@@ -439,6 +439,12 @@ class CADFCLHF: public CLHF {
      *  to B_screening_thresh * 1e-1.
      */
     double d_under_screening_thresh_;
+    /** Whether or not Frobenius norms should be used in computing the B screening
+     *  lists.  It is actually faster, more accurate, and more efficient to set this
+     *  to false, though setting it to true could have a similar effect to raising
+     *  the B screening threshold.
+     */
+    bool use_norms_B_ = false;
     //@}
 
     std::shared_ptr<ScreeningStatistics> stats_;

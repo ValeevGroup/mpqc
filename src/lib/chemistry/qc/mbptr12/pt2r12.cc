@@ -777,14 +777,14 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
     madness::World::get_default().gop.fence();
 
     {
-      TArray4 lambda_2 =       (rdm1_oo("m,n") * rdm1_aa("l,k")
+      TArray4 lambda_2;
+      lambda_2("m,n,l,k")  =       (rdm1_oo("m,n") * rdm1_aa("l,k")
                              - 0.25 * rdm1_oa("m,k") * rdm1_ao("l,n")
                              - 0.5 * srr12intrmds._4("<m l|gamma|n k>")
                             );
-      auto Trf_gamma_Tr_2 = Tr("l,i2,a',n") * (rdm1_aa("i2,i1") * Trf("k,i1,a',m"));
-      TArray4 Trf_gamma_Tr_2_ta(lambda_2.get_world(), lambda_2.trange());
-      Trf_gamma_Tr_2_ta("m,n,l,k") = Trf_gamma_Tr_2;
-      Delta += dot(Trf_gamma_Tr_2_ta("m,n,l,k"), lambda_2("m,n,l,k"));
+      TArray4 Trf_gamma_Tr_2;
+      Trf_gamma_Tr_2("m,n,l,k") = Tr("l,i2,a',n") * (rdm1_aa("i2,i1") * Trf("k,i1,a',m"));
+      Delta += dot(Trf_gamma_Tr_2("m,n,l,k"), lambda_2("m,n,l,k"));
     }
     madness::World::get_default().gop.fence();
 

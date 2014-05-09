@@ -152,6 +152,7 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   exact_diagonal_K_ = keyval->booleanvalue("exact_diagonal_K", KeyValValueboolean(exact_diagonal_K_));
   //----------------------------------------------------------------------------//
   use_norms_nu_ = keyval->booleanvalue("use_norms_nu", KeyValValueboolean(use_norms_nu_));
+  use_norms_B_ = keyval->booleanvalue("use_norms_B", KeyValValueboolean(use_norms_B_));
   use_norms_sigma_ = keyval->booleanvalue("use_norms_sigma", KeyValValueboolean(use_norms_sigma_));
   sigma_norms_chunk_by_atoms_ = keyval->booleanvalue("sigma_norms_chunk_by_atoms", KeyValValueboolean(sigma_norms_chunk_by_atoms_));
   xml_screening_data_ = keyval->booleanvalue("xml_screening_data", KeyValValueboolean(xml_screening_data_));
@@ -247,6 +248,7 @@ CADFCLHF::print(ostream&o) const
   o << indent << "use_extents = " << bool_str(use_extents_) << endl;
   o << indent << "use_max_extents = " << bool_str(use_max_extents_) << endl;
   o << indent << "use_norms_nu = " << bool_str(use_norms_nu_) << endl;
+  o << indent << "use_norms_B = " << bool_str(use_norms_B_) << endl;
   o << indent << "use_norms_sigma = " << bool_str(use_norms_sigma_) << endl;
   o << indent << "well_separated_thresh = " << double_str(well_separated_thresh_) << endl;
   o << indent << "xml_screening_data = " << bool_str(xml_screening_data_) << endl;

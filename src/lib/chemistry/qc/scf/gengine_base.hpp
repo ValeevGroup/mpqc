@@ -28,8 +28,10 @@
 #ifndef MPQC_CHEMISTRY_QC_SCF_GENGINE_HPP
 #define MPQC_CHEMISTRY_QC_SCF_GENGINE_HPP
 
-#include <tiledarray_fwd.h>
+//#include <tiledarray_fwd.h> can't use until fwd gets fixed if possible
+#include <tiled_array.h>
 #include <vector>
+#include <utility>
 #include <util/class/class.h>
 
 // Expression Foward Declaration
@@ -45,9 +47,8 @@ namespace mpqc {
 
     class GEngineBase : virtual public sc:: DescribedClass {
     public:
-      typedef TiledArray::TArray2D TAMatrix;
-      typedef TiledArray::TensorD TATensor;
-      typedef TiledArray::expressions::TensorExpression<TATensor> return_type;
+      typedef TiledArray::Array<double,2> TAMatrix;
+      using return_type = decltype(std::declval<TAMatrix>().operator()("i,j"));
 
       GEngineBase() = default;
       virtual ~GEngineBase() = default;
@@ -80,7 +81,7 @@ namespace mpqc {
 
       virtual
       return_type
-      operator()(const std::string &v) = 0;
+      operator()(const std::string v) = 0;
 
     private:
       static sc::ClassDesc class_desc_;

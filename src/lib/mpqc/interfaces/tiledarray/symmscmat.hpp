@@ -111,7 +111,7 @@ namespace mpqc {
      * Function to copy a sc::SymmSCMatrix to TiledArray::Array
      * @Warning This function is only for testing not for general use
      */
-    ::TiledArray::Array<double, 2>
+    inline ::TiledArray::Array<double, 2>
     SymmScMat_To_TiledArray(madness::World &world,
                             const sc::Ref<sc::SymmSCMatrix> &matrix,
                             const ::TiledArray::TiledRange1 trange1){

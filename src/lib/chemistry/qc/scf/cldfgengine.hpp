@@ -72,35 +72,35 @@ namespace mpqc {
       virtual ~ClDFGEngine() override = default;
 
       virtual return_type
-      operator()(const std::string &v) override;
+      operator()(const std::string v) override final;
 
 
       virtual void
-      set_densities(std::vector<TAMatrix *>) override;
+      set_densities(std::vector<TAMatrix *>) override final;
 
       virtual bool
-      densities_set() override;
+      densities_set() override final;
 
       virtual void
-      set_coefficients(std::vector<TAMatrix*>) override;
+      set_coefficients(std::vector<TAMatrix*>) override final;
 
       virtual bool
-      coefficients_set() override;
+      coefficients_set() override final;
 
       virtual bool
-      using_coeff() override;
+      using_coeff() override final;
 
       virtual bool
-      using_density() override;
+      using_density() override final;
 
     private:
       // Form G using coefficents
       return_type
-      coefficient_contraction(const std::vector<std::string> &v);
+      coefficient_contraction(const std::vector<std::string> v);
 
       // Form G using density
       return_type
-      density_contraction(const std::vector<std::string> &v);
+      density_contraction(const std::vector<std::string> v);
 
       // Compute integrals needed for contraction
       void compute_symetric_df_ints();

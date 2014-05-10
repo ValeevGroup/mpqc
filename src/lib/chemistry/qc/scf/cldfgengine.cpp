@@ -32,6 +32,7 @@
 #include <chemistry/qc/libint2/libint2.h>
 #include <chemistry/qc/basis/tiledbasisset.hpp>
 #include <chemistry/qc/basis/taskintegrals.hpp>
+#include <util/misc/regtime.h>
 #include <elemental.hpp>
 
 using namespace mpqc;
@@ -102,7 +103,7 @@ mpqc::TA::ClDFGEngine::ClDFGEngine(const sc::Ref<sc::KeyVal> &kv) : integral_(),
 }
 
 return_type
-mpqc::TA::ClDFGEngine::operator ()( const std::string& v) {
+mpqc::TA::ClDFGEngine::operator ()( const std::string v) {
 
   // Get the user input
   std::vector<std::string> input; // Vector of input strings
@@ -120,13 +121,10 @@ mpqc::TA::ClDFGEngine::operator ()( const std::string& v) {
 
   // Check to see if we computed ints yet.
   if (!df_ints_.is_initialized()) {
-    double int_start = madness::wall_time();
+    sc::Timer tim("Computing the Rank 3 symmetric tensor:");
     compute_symetric_df_ints();
     world_->madworld()->gop.fence();
-    double int_end = madness::wall_time();
-    if(world_->madworld()->rank()==0){
-      std::cout << "\tComputing the rank 3 symmetric tensor took " << int_end - int_start << " seconds" << std::endl;
-    }
+    tim.exit("Computing the Rank 3 symmetric tensor:");
   }
 
 
@@ -147,7 +145,7 @@ mpqc::TA::ClDFGEngine::operator ()( const std::string& v) {
 // Do contraction with coefficients
 return_type
 mpqc::TA::ClDFGEngine::density_contraction(
-        const std::vector<std::string> &input){
+        const std::vector<std::string> input){
  /*
   * Construct strings which will be used to generate the expressions comma for seperation
   * all sequence must start with either i or m hence they don't have commas
@@ -160,28 +158,26 @@ mpqc::TA::ClDFGEngine::density_contraction(
   * happens to use the same strings as one of the ones below something bad might
   * happen. This is unlikely due to the length and nature of these strings.
   */
-  const std::string m("mpqc::TA::ClDfGFactory_m_coeff");
-  const std::string n(",mpqc::TA::ClDfGFactory_n_coeff");
-  const std::string X(",mpqc::TA::ClDfGFactory_X_coeff");
+  const std::string m("mpqc_TA_ClDfGFactory_m_coeff");
+  const std::string n(",mpqc_TA_ClDfGFactory_n_coeff");
+  const std::string X(",mpqc_TA_ClDfGFactory_X_coeff");
 
   // Terms where comma's need to be added or removed
-  const std::string nE("mpqc::TA::ClDfGFactory_n_coeff");
-  const std::string mE(",mpqc::TA::ClDfGFactory_m_coeff");
-  const std::string ZE("mpqc::TA::ClDfGFactory_Z_coeff");
-  const std::string jE = input.at(1);
+  const std::string nC("mpqc_TA_ClDfGFactory_n_coeff");
+  const std::string mC(",mpqc_TA_ClDfGFactory_m_coeff");
 
   // just for conveience
   const TAMatrix &D = *density_;
 
-  auto expr = 2 * (df_ints_(i+j+X) * (D(m+n) * df_ints_(m+n+X) ) )
-                - (df_ints_(i+n+X) * (D(nE+mE) * df_ints_(m+j+X) ));
+  auto expr = 2 * (df_ints_(i+j+X) * ( D(m+n) * df_ints_(m+n+X) ) )
+                - (df_ints_(i+n+X) * ( D(nC+mC) * df_ints_(m+j+X) ) );
   return expr;
 }
 
 // Do contraction with coefficients
 return_type
 mpqc::TA::ClDFGEngine::coefficient_contraction(
-        const std::vector<std::string> &input){
+        const std::vector<std::string> input){
  /*
   * Construct strings which will be used to generate the expressions comma for seperation
   * all sequence must start with either i or m hence they don't have commas
@@ -194,10 +190,10 @@ mpqc::TA::ClDFGEngine::coefficient_contraction(
   * happens to use the same strings as one of the ones below something bad might
   * happen. This is unlikely due to the length and nature of these strings.
   */
-  const std::string m("mpqc::TA::ClDfGFactory_m_coeff");
-  const std::string n(",mpqc::TA::ClDfGFactory_n_coeff");
-  const std::string X(",mpqc::TA::ClDfGFactory_X_coeff");
-  const std::string Z(",mpqc::TA::ClDfGFactory_Z_coeff");
+  const std::string m("mpqc_TA_ClDfGFactory_m_coeff");
+  const std::string n(",mpqc_TA_ClDfGFactory_n_coeff");
+  const std::string X(",mpqc_TA_ClDfGFactory_X_coeff");
+  const std::string Z(",mpqc_TA_ClDfGFactory_Z_coeff");
 
   // Term where comma's need to removed
   const std::string jE = input.at(1);
@@ -259,15 +255,15 @@ mpqc::TA::ClDFGEngine::compute_symetric_df_ints() {
     auto eri3_clone = integral_->electron_repulsion3()->clone();
   mutex::global::unlock(); // <<< End Critical Section
 
+  sc::Timer tim("Computing Eri3 Integrals");
   // Make an integral engine pool out of our clone
   using eri3pool = IntegralEnginePool<sc::Ref<sc::TwoBodyThreeCenterInt> >;
   auto eri3_ptr = std::make_shared<eri3pool>(eri3_clone);
 
   // Using the df_ints as temporary storage for the twobody three center ints
-  double computing_eri3_ints_time0 = madness::wall_time();
   df_ints_ =  Integrals(*world_->madworld(), eri3_ptr, basis_, dfbasis_);
   world_->madworld()->gop.fence();
-  double computing_eri3_ints_time1 = madness::wall_time();
+  tim.exit("Computing Eri3 Integrals");
 
   // Get two center ints
   // Set basis and grab a clone of the engine we need
@@ -276,24 +272,15 @@ mpqc::TA::ClDFGEngine::compute_symetric_df_ints() {
     auto eri2_clone = integral_->electron_repulsion2()->clone();
   mutex::global::unlock(); // <<< End Critical Section
 
+  tim.enter("Computing Eri2 Integrals");
   using eri2pool = IntegralEnginePool<sc::Ref<sc::TwoBodyTwoCenterInt> >;
   auto eri2_ptr = std::make_shared<eri2pool>(eri2_clone);
 
-  double computing_eri2_ints_time0 = madness::wall_time();
-  TAMatrix eri2_ints = Integrals(*world_->madworld(), eri2_ptr, dfbasis_);
   world_->madworld()->gop.fence();
-  double computing_eri2_ints_time1 = madness::wall_time();
-
-  double int_time = (computing_eri2_ints_time1 - computing_eri2_ints_time0) +
-                    (computing_eri3_ints_time1 - computing_eri3_ints_time0);
-
-  if(world_->madworld()->rank()==0){
-    std::cout << "\tTook " << int_time << " s" <<
-            " to compute eri3 and eri2 intiegrals." << std::endl;
-  }
-
+  tim.exit("Computing Eri2 Integrals");
+  TAMatrix eri2_ints = Integrals(*world_->madworld(), eri2_ptr, dfbasis_);
+  tim.enter("Computing Cholesky Inverse of Eri2");
   // Copy two body two center ints to elemental
-  double inverse_time0 = madness::wall_time();
   EMatrix eri2_elem =
       TiledArray::array_to_elem(eri2_ints, elem::DefaultGrid());
   world_->madworld()->gop.fence(); // makesure we finish copy
@@ -304,25 +291,17 @@ mpqc::TA::ClDFGEngine::compute_symetric_df_ints() {
   elem::TriangularInverse(elem::UPPER, elem::NON_UNIT, eri2_elem);
   elem::MakeTriangular(elem::UPPER, eri2_elem);
   elem::mpi::Barrier(elem::mpi::COMM_WORLD);
-  double inverse_time1 = madness::wall_time();
 
   // Copy back to TA
   ::TiledArray::elem_to_array(eri2_ints, eri2_elem);
   world_->madworld()->gop.fence(); // makesure we finish copy
-  if(world_->madworld()->rank()==0){
-    std::cout << "\tTook " << inverse_time1 - inverse_time0 << " s" <<
-            " to compute eri2 inverse." << std::endl;
-  }
+  tim.exit("Computing Cholesky Inverse of Eri2");
 
-  double Final_contraction0 = madness::wall_time();
+  tim.enter("Eri3 * Eri2^{-1} Contraction");
   // Create df_ints_ tensor from eri3(i,j,P) * U_{eri2}^{-1}(P,X)
   df_ints_ = df_ints_("i,j,P") * eri2_ints("P,X");
   world_->madworld()->gop.fence(); // so eri2_ints doesn't go out of scope.
-  double Final_contraction1 = madness::wall_time();
-  if(world_->madworld()->rank()==0){
-    std::cout << "\tTook " << Final_contraction1 - Final_contraction0 << " s" <<
-            " to do big contraction." << std::endl;
-  }
+  tim.exit("Eri3 * Eri2^{-1} Contraction");
 
 }
 

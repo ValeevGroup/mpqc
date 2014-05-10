@@ -28,11 +28,11 @@
 #include <chemistry/qc/wfn/tawfn.hpp>
 #include <tiled_array.h>
 #include <mpqc/utility/mutex.hpp>
+#include <util/misc/regtime.h>
 #include <util/misc/scexception.h>
 #include <chemistry/qc/basis/taskintegrals.hpp>
 #include <chemistry/qc/basis/integralenginepool.hpp>
 
-using namespace std;
 using namespace mpqc;
 using namespace mpqc::TA;
 
@@ -53,15 +53,22 @@ sc::ClassDesc Wavefunction::class_desc_(
 //     hcore_.computed() = 0;
 // }
 
-mpqc::TA::Wavefunction::Wavefunction(const sc::Ref<sc::KeyVal>& kval) :
-    sc::MolecularEnergy(kval), overlap_(this), rdm1_(this), rdm1_alpha_(this), rdm1_beta_(this)
+Wavefunction::Wavefunction(const sc::Ref<sc::KeyVal>& kval) :
+    sc::MolecularEnergy(kval),
+    overlap_(this),
+    hcore_(this),
+    rdm1_(this),
+    rdm1_alpha_(this),
+    rdm1_beta_(this)
 {
   overlap_.compute() = 0;
+  hcore_.compute() = 0;
   rdm1_.compute() = 0;
   rdm1_alpha_.compute() = 0;
   rdm1_beta_.compute() = 0;
 
   overlap_.computed() = 0;
+  hcore_.computed() = 0;
   rdm1_.computed() = 0;
   rdm1_alpha_.computed() = 0;
   rdm1_beta_.computed() = 0;
@@ -89,64 +96,95 @@ mpqc::TA::Wavefunction::Wavefunction(const sc::Ref<sc::KeyVal>& kval) :
   magnetic_moment_ = tbs_->nbasis() + 1;
 }
 
-mpqc::TA::Wavefunction::~Wavefunction()
-{
-}
+Wavefunction::~Wavefunction(){}
 
 //void mpqc::TA::Wavefunction::save_data_state(sc::StateOut& s) {
 //}
 
-double mpqc::TA::Wavefunction::total_charge() const {
-  return molecule()->total_charge() - nelectron();
-}
-
-const mpqc::TA::Wavefunction::TAMatrix&
-mpqc::TA::Wavefunction::rdm1() {
-  if (not rdm1_.computed()) {
-    if (rdm1_.result_noupdate().is_initialized() == false)
-      rdm1_ = rdm1(sc::Alpha)("a,b") + rdm1(sc::Beta)("a,b");
-    rdm1_.computed() = 1;
-  }
-  return rdm1_.result_noupdate();
-}
-
-const mpqc::TA::Wavefunction::TAMatrix&
-mpqc::TA::Wavefunction::overlap() {
+const Wavefunction::TAMatrix&
+Wavefunction::ao_overlap() {
 
   if (not overlap_.computed()) {
 
-    std::shared_ptr<IntegralEnginePool<sc::Ref<sc::OneBodyInt> > > overlap_pool(
-                    new IntegralEnginePool<sc::Ref<sc::OneBodyInt> >(integral_->overlap()));
-    overlap_ = Integrals(*world_->madworld(), overlap_pool, tbs_);
+    sc::Timer tim("ao_overlap:");
+    // Get integral pool
+    integral_->set_basis(basis());
+    auto overlap_pool =
+        std::make_shared<IntegralEnginePool<sc::Ref<sc::OneBodyInt>>>
+                                            (integral_->overlap());
 
+    // Fill TAMatrix with integrals
+    overlap_ = Integrals(*world_->madworld(), overlap_pool, tbs_);
     world_->madworld()->gop.fence();
-    overlap_.computed() = 1;
+    tim.exit("ao_overlap:");
+
+
+    overlap_.computed() = 1; // Overlap_ is now computed
   }
 
   return overlap_.result_noupdate();
 }
 
-double
-mpqc::TA::Wavefunction::magnetic_moment() const {
+const Wavefunction::TAMatrix&
+Wavefunction::ao_hcore() {
+
+  if (not hcore_.computed()) {
+
+    sc::Timer tim("ao_hcore:");
+
+    // Get integral pool
+    integral_->set_basis(basis());
+    auto hcore_pool =
+      std::make_shared<IntegralEnginePool<sc::Ref<sc::OneBodyInt>>>
+                                             (integral_->hcore());
+
+    // Fill TAMatrix with integrals
+    hcore_ = Integrals(*world_->madworld(), hcore_pool, tbs_);
+    world_->madworld()->gop.fence();
+
+    tim.exit("ao_hcore:");
+
+    hcore_.computed() = 1; // hcore_ is now computed
+  }
+
+  return hcore_.result_noupdate();
+}
+
+Wavefunction::TAMatrixExpr
+Wavefunction::rdm1_expr(std::string input) {
+  return rdm1()(input);
+}
+
+Wavefunction::TAMatrixExpr
+Wavefunction::ao_overlap_expr(std::string input){
+  return ao_overlap()(input);
+}
+
+Wavefunction::TAMatrixExpr
+Wavefunction::ao_hcore_expr(std::string input){
+  return ao_hcore()(input);
+}
+
+double Wavefunction::magnetic_moment() const {
   //if (magnetic_moment_ > extent(osorange_)) // magnetic moment greater than the number of states means it has not been computed yet.
   //  magnetic_moment_ = trace(rdm1(Alpha), overlap()) - trace(rdm1(Beta), overlap());
   //return magnetic_moment_;
   throw sc::FeatureNotImplemented("mpqc::v3::Wavefunction::magnetic_moment() not yet implemented", __FILE__, __LINE__);
 }
 
-bool mpqc::TA::Wavefunction::nonzero_efield_supported() const {
+bool Wavefunction::nonzero_efield_supported() const {
   // support efields in C1 symmetry only
   if (molecule()->point_group()->char_table().order() == 1)
     return true;
   return false;
 }
 
-void mpqc::TA::Wavefunction::obsolete() {
+void Wavefunction::obsolete() {
   magnetic_moment_ = tbs_->nbasis() + 1;
   MolecularEnergy::obsolete();
 }
 
-void mpqc::TA::Wavefunction::print(std::ostream& os) const {
+void Wavefunction::print(std::ostream& os) const {
   sc::MolecularEnergy::print(os);
   os << sc::indent << "Electronic basis:" << std::endl;
   os << sc::incindent;
@@ -155,3 +193,4 @@ void mpqc::TA::Wavefunction::print(std::ostream& os) const {
   os << sc::indent << "Integral factory = " << integral()->class_name() << std::endl;
   //os << sc::indent << "magnetic moment = " << magnetic_moment() << std::endl;
 }
+

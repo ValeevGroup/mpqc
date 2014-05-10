@@ -45,23 +45,28 @@ namespace TA {
         virtual ~CLSCF();
 
         virtual void compute() override;
-        virtual double scf_energy() override;
 
-        virtual const TAMatrix& rdm1() override;
+        /// Return the computed AO density.
+        virtual const TAMatrix& rdm1() override final;
+
+        /// Return the scf enengy computed to the desired accuracy level.
+        virtual double scf_energy() override final;
+
+        virtual const TAMatrix& rdm1(sc::SpinCase1 s);
 
     protected:
 
-        virtual TAMatrix& density() override;
-        virtual double iter_energy() override;
+        // Will call Wavefunction::ao_density() and check for initialization
+        // if not initialized it will use SOAD guess to initialize
+        virtual TAMatrix& ao_density() final;
 
-        void tr_corr_purify(TAMatrix &P);
-        // Return a shifted Fock matrix such that the spectrum has been inverted
-        // and shifted to the range (0,1)
-        void Dguess(const TAMatrix &F);
+        // Computes the energy of a given scf iteration
+        double iter_energy();
+
+        TAMatrix Coeff_; // Coefficients for density matrix
 
     private:
         static sc::ClassDesc class_desc_;
-
     }; // Class CLSCF
 
 } // namespace TA

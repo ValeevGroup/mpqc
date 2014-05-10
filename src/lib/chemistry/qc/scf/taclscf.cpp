@@ -31,68 +31,66 @@
 #include <chemistry/qc/basis/taskintegrals.hpp>
 #include <chemistry/qc/lcao/soad.h>
 #include <mpqc/interfaces/tiledarray/symmscmat.hpp>
-#include <Eigen/Dense> // To be removed once tiledarray has operations on diagonal.
+#include <math/elemental/eigensolver.hpp>
 
 using namespace mpqc;
 using namespace mpqc::TA;
 using TAMatrix = mpqc::TA::CLSCF::TAMatrix;
 
 sc::ClassDesc mpqc::TA::CLSCF::class_desc_(typeid(mpqc::TA::CLSCF), "TA.CLSCF",
-                                           1, "public TA.SCF", 0,
-                                           sc::create<mpqc::TA::CLSCF>, 0);
+                                           1, "public TA.SCF", 0, 0, 0);
 
-mpqc::TA::CLSCF::CLSCF(const sc::Ref<sc::KeyVal>& kval) :
+
+CLSCF::CLSCF(const sc::Ref<sc::KeyVal>& kval) :
         SCF(kval) {
   if (nelectron() % 2 != 0) {
     throw sc::InputError("Number of electrons is not divisable by two",
-    __FILE__,
-                         __LINE__, "", "", this->class_desc());
+      __FILE__, __LINE__, "", "", this->class_desc());
   }
-  occ() = nelectron() / 2;
+  set_occupation(nelectron() / 2);
 }
 
-mpqc::TA::CLSCF::~CLSCF() {
-}
+CLSCF::~CLSCF() { }
 
 #warning "compute is not yet defined"
-void mpqc::TA::CLSCF::compute() {
+void CLSCF::compute() {
   MPQC_ASSERT(false);
 }
 
-const TAMatrix& mpqc::TA::CLSCF::rdm1() {
-  MPQC_ASSERT(false);
-}
+const TAMatrix& CLSCF::rdm1() {
+  // Check if computed, and if not then check that Evecs are at desired accuracy
+  if(!rdm1_.computed()){
 
-double mpqc::TA::CLSCF::scf_energy() {
-  // E = \sum_{ij} \left( D_{ij} * (F_{ij} + H_{ij}) \right)
-  return ::TiledArray::expressions::dot(hcore()("i,j") + fock()("i,j"),
-                                        rdm1()("i,j"));
-}
+    if(!Coeff_.is_initialized()){
+      Coeff_ = eigensolver_occ_Coeff(ao_fock(),
+                                     ao_overlap(),
+                                     occupation());
+    }
 
-#warning "tr_corr_purify uses Eigen and is not production ready"
-void mpqc::TA::CLSCF::tr_corr_purify(TAMatrix &P) {
-  // Avoid Eigen in the future
-  Eigen::MatrixXd Ep = ::TiledArray::array_to_eigen(P);
-  Eigen::MatrixXd Es = ::TiledArray::array_to_eigen(overlap());
+    rdm1_.result_noupdate() = Coeff_("mu,i") * Coeff_("nu,i");
+    rdm1_.computed() = 1;
 
-  // Purify if the matrix is not equal to it's square then purify
-  while (Eigen::MatrixXd(Ep - Ep*Es*Ep).lpNorm<Eigen::Infinity>() >= 1e-10) {
-    // If the trace of the matrix is too large shrink it else raise it
-    Ep = (Ep.trace() >= occupation()) ? Eigen::MatrixXd(Ep*Es*Ep) :
-                                        Eigen::MatrixXd(2 * Ep - Ep*Es*Ep);
   }
-  P = ::TiledArray::eigen_to_array < TAMatrix
-          > (*(world())->madworld(), P.trange(), Ep);
+
+  return rdm1_.result_noupdate();
+}
+
+const TAMatrix& CLSCF::rdm1(sc::SpinCase1){
+  // To return a reference we have to store the data, just use alpha for
+  // Closed shell systems
+  if(!rdm1_alpha_.computed()){
+    rdm1_alpha_.result_noupdate() = 0.5 * rdm1_expr("i,j");
+    rdm1_alpha_.computed() = 1;
+  }
+
+  return rdm1_alpha_.result_noupdate();
 }
 
 // If we have not generated an intial guess for the density yet then do so now.
-TAMatrix& mpqc::TA::CLSCF::density() {
+TAMatrix& CLSCF::ao_density() {
 
   // Check to see if data has been initialized if
-  if (!Wavefunction::density().is_initialized()) {
-    // Get a reference to the array for ease of compuation
-    TAMatrix &D = Wavefunction::density();
-
+  if (!Wavefunction::ao_density().is_initialized()) {
     // For constructing a SOAD object
     sc::Ref<sc::AssignedKeyVal> akv = new sc::AssignedKeyVal;
     akv->assign("molecule", molecule().pointer());
@@ -104,45 +102,27 @@ TAMatrix& mpqc::TA::CLSCF::density() {
     sc::Ref<Soad> guess = new Soad(sc::Ref<sc::KeyVal>(akv));
 
     // Copy the mpqc sc matrix into our tiledarray Matrix.
-    D = mpqc::SymmScMat_To_TiledArray(*world()->madworld(),
+    Wavefunction::ao_density() = mpqc::SymmScMat_To_TiledArray(*world()->madworld(),
                                       guess->guess_density(basis(),integral()),
                                       basis()->trange1());
+
     world()->madworld()->gop.fence();
   }
 
-  return Wavefunction::density();
+  return Wavefunction::ao_density();
 }
 
-#warning "Dguess uses Eigen and is not production ready"
-void mpqc::TA::CLSCF::Dguess(const TAMatrix& F) {
-
-  // Grab density so we can work with it.
-  TAMatrix& D = density();
-
-  /* Needs to be changed to TiledArray only opps, but for now this is a
-   *  stand in.
-   */
-  Eigen::MatrixXd Ef = ::TiledArray::array_to_eigen(F);
-  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(Ef);
-  double emin = es.eigenvalues().minCoeff();
-  double emax = es.eigenvalues().maxCoeff();
-
-  // Shift spectrum of F
-  for (size_t i = 0; i < Ef.rows(); ++i) {
-    Ef(i, i) = emax - Ef(i, i);
-  }
-  D=::TiledArray::eigen_to_array<TAMatrix>(*world()->madworld(), F.trange(), Ef);
-  /* End part that needs to be replaced */
-
-  // Scale Evals to the range (0,1)
-  D("i,j") = D("i,j") * (1.0 / (emax - emin));
-
-  // Purifiy to idempotency
-  tr_corr_purify(D);
-}
-
-double mpqc::TA::CLSCF::iter_energy() {
+double CLSCF::scf_energy(){
   // E = \sum_{ij} \left( D_{ij} * (F_{ij} + H_{ij}) \right)
-  return ::TiledArray::expressions::dot(hcore()("i,j") + scf_fock()("i,j"),
-                                        density()("i,j"));
+  return ::TiledArray::expressions::dot(
+                        ao_hcore()("i,j") + ao_fock()("i,j"), rdm1()("i,j"))
+                        + molecule()->nuclear_repulsion_energy();
 }
+
+double CLSCF::iter_energy() {
+  // E = \sum_{ij} \left( D_{ij} * (F_{ij} + H_{ij}) \right)
+  return ::TiledArray::expressions::dot(ao_hcore()("i,j") +
+                                        scf_ao_fock_()("i,j"),
+                                        ao_density()("i,j"));
+}
+

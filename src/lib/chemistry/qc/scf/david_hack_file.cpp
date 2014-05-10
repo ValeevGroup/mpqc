@@ -26,7 +26,7 @@
 //
 
 #include <chemistry/qc/scf/cldfgengine.hpp>
-#include <chemistry/qc/scf/clhf.h>
+#include <chemistry/qc/scf/taclhf.hpp>
 #include <chemistry/qc/lcao/soad.h>
 #include <chemistry/qc/libint2/libint2.h>
 #include <util/group/pregtime.h>
@@ -57,24 +57,20 @@ void try_main(int argc, char** argv){
   const char *input = "./benzene_trimer.kv";
   Ref<KeyVal> kv = new ParsedKeyVal(input);
 
-  Ref<Molecule> mol; mol << kv->describedclassvalue("benzene_trimer");
-  int occ = mol->total_Z()/2;
+  Ref<mpqc::TA::CLHF> tclhf = new TA::CLHF(kv);
+  Ref<MessageGrp> msg;
+  MessageGrp::initial_messagegrp(argc, argv);
+  msg = MessageGrp::get_default_messagegrp();
+  Ref<RegionTimer> regtim;
+  regtim = new ParallelRegionTimer(msg, "SCF compare", 1,1);
+  RegionTimer::set_default_regiontimer(regtim);
 
+  sc::Timer tim("Scf Energy time");
+  std::cout << tclhf->scf_energy() << std::endl;
+  tim.exit("Scf Energy time");
+  tim.print();
 
-  Ref<TiledBasisSet> tbs; tbs << kv->describedclassvalue("basis");
-  Ref<TiledBasisSet> dftbs; dftbs << kv->describedclassvalue("dfbasis");
-  Ref<IntegralLibint2> ints_fac; ints_fac << kv->describedclassvalue("integrals");
-  Integral::set_default_integral(ints_fac);
-  ints_fac->set_basis(tbs);
-
-
-  if(world->madworld()->rank()==0){
-    mol->print();
-    tbs->print();
-    dftbs->print();
-  }
-
-
+ #if 0
   // Get pools
   using onebpool = IntegralEnginePool<Ref<OneBodyInt> >;
   auto S_pool = std::make_shared<onebpool>(ints_fac->overlap()->clone());
@@ -183,7 +179,9 @@ void try_main(int argc, char** argv){
 
   std::cout << "Finished calculation energy = " <<  energy << std::endl;
   world->madworld()->gop.fence();
+  */
 
+#endif
 #if 0
   Ref<AssignedKeyVal> kv_old = new AssignedKeyVal();
   kv_old->assign("basis", tbs.pointer());

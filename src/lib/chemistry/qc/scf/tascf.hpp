@@ -31,48 +31,123 @@
 #include <chemistry/qc/wfn/tawfn.hpp>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/tbint.h>
+#include <elemental-lite.hpp>
 
 namespace mpqc{
   namespace TA {
 
     class SCF : public Wavefunction {
     public:
-        typedef Wavefunction::TAMatrix TAMatrix;
+      typedef Wavefunction::TAMatrix TAMatrix;
+      typedef Wavefunction::TAVector TAVector;
+      typedef Wavefunction::TAMatrixExpr TAMatrixExpr;
+      typedef elem::DistMatrix<double, elem::VR, elem::STAR> ElemVector;
+      typedef std::pair<ElemVector, TAMatrix> ElemTAEigenSystem;
 
-        SCF(const sc::Ref<sc::KeyVal> &kval);
-        virtual ~SCF();
-        virtual void compute() override;
+      /** SCF KeyValue constructor
+       *
+       * */
+      SCF(const sc::Ref<sc::KeyVal> &kval);
+      virtual ~SCF();
 
-        virtual const TAMatrix& fock(); // Final Fock matrix
-        virtual const TAMatrix& rdm1(sc::SpinCase1) override;
-        virtual const TAMatrix& hcore();
-        virtual double scf_energy() = 0;
+      /// @return the number of electrons in the system
+      virtual size_t nelectron() const override;
 
-        /// @return the number of electrons in the system
-        virtual size_t nelectron() const override;
+      /// @return the number of occupied orbitals in the system
+      virtual size_t occupation() const {return occupation_;}
 
-        virtual size_t occupation(){return occupation_;}
+      /** @return the MO eigenvectors as a TiledArray::Array<double,2>
+       * takes an accuracy, which supporst computing at a user defined
+       * accuracy, but does not alter the classes internal desired_accuracy_
+       * */
+      TAMatrix MO_eigenvectors(double);
+
+      /** @return the MO eigenvectors as a TiledArray::Array<double,2>
+       * takes an accuracy, which supporst computing at a user defined
+       * accuracy, but does not alter the classes internal desired_accuracy_
+       * */
+      TAMatrix
+      MO_eigenvectors(){
+        return MO_eigenvectors(MO_eigensystem_.desired_accuracy());
+      }
+
+      /** @return the MO eigenvalues as a TiledArray::Array<double,1>
+       * takes an accuracy, which supporst computing at a user defined
+       * accuracy, but does not alter the classes internal desired_accuracy_
+       * */
+      ElemVector
+      MO_eigenvalues(double);
+
+      /** @return the MO eigenvalues as a TiledArray::Array<double,1>
+       * takes an accuracy, which supporst computing at a user defined
+       * accuracy, but does not alter the classes internal desired_accuracy_
+       * */
+      ElemVector
+      MO_eigenvalues(){
+        return MO_eigenvalues(MO_eigensystem_.desired_accuracy());
+      }
+
+      /** @return the MO eigenvalues and eigenvectors as
+       * a std::pair<TA::Array<double,1>, TA::Array<double,2>>
+       * */
+      ElemTAEigenSystem
+      MO_eigensystem(double);
+
+      /** @return the MO eigenvalues and eigenvectors as
+       * a std::pair<TA::Array<double,1>, TA::Array<double,2>>
+       * */
+      ElemTAEigenSystem
+      MO_eigensystem(){
+        return MO_eigensystem(MO_eigensystem_.desired_accuracy());
+      }
+
+      /// @return the AO fock matrix computed to the desired accuracy
+      TAMatrix& ao_fock(double);
+
+      /// @return the AO fock matrix computed to the default accuracy
+      TAMatrix& ao_fock(){return ao_fock(ao_fock_.desired_accuracy());}
+
+      /** Returns an expression to ao_fock matrix.
+       * If it has not been initialized or computed the it will compute
+       * the matrix to the internal desired_accuracy
+       * */
+      TAMatrixExpr ao_fock_expr(std::string);
+
+      /// @return the converged scf energy
+      virtual double scf_energy() = 0;
+
+      void print(std::ostream &os = sc::ExEnv::out0()) const;
 
     protected:
-        virtual TAMatrix& scf_fock(){return fock_.result_noupdate();}
-        size_t & occ(){return occupation_;}
-        virtual double iter_energy() = 0;
+
+      typedef Wavefunction::AccResultMatrix AccResultMatrix;
+      typedef Wavefunction::AccResultVector AccResultVector;
+      typedef sc::AccResult<ElemTAEigenSystem> AccResultEigenSystem;
+
+      virtual void compute_ao_fock(double) = 0;
+
+      // returns & to the current state of ao_fock_ used for computing.
+      virtual TAMatrix& scf_ao_fock_(){return ao_fock_.result_noupdate();}
+
+      unsigned int miniter() const {return miniter_; }
+      unsigned int maxiter() const {return maxiter_; }
+
+      void set_occupation(unsigned int i){occupation_ = i;}
 
     private:
-        // Number of iterations to use
-        unsigned int maxiter_;
-        unsigned int miniter_;
+      // default number of iterations to use
+      unsigned int maxiter_ = 100;
+      unsigned int miniter_ = 0;
 
-        // Number of electrons
-        size_t occupation_;
+      // The ao_fock matrix
+      AccResultMatrix ao_fock_;
+      // Holds the eigensystem of the ao_fock matrix
+      AccResultEigenSystem MO_eigensystem_;
 
-        // Fock Matrix
-        ResultMatrix fock_;
+      // Number of electrons
+      size_t occupation_ = 0;
 
-        // Hcore
-        TAMatrix hcore_;
-
-        static sc::ClassDesc class_desc_;
+      static sc::ClassDesc class_desc_;
 
     };
   } // namespace mpqc::TA

@@ -56,6 +56,9 @@ namespace mpqc {
       typedef sc::Result<TAMatrix> ResultMatrix;
       typedef sc::AccResult<TAVector> AccResultVector;
       typedef sc::AccResult<TAMatrix> AccResultMatrix;
+      typedef TiledArray::TensorD TATensor;
+      typedef TiledArray::expressions::TensorExpression<TATensor> TAMatrixExpr ;
+
 
       /** The KeyVal constructor.
        *
@@ -80,20 +83,23 @@ namespace mpqc {
       }
 
       /// @return the total charge of system
-      double total_charge() const;
+      double total_charge() const{
+        return molecule()->total_charge() - nelectron();
+      }
 
       /// @return the number of electrons in the system
       virtual size_t nelectron() const = 0;
 
-      /// Computes the S (or J) magnetic moment
-      /// of the target state(s), in units of \f$ \hbar/2 \f$.
-      /// Can be evaluated from density and overlap, as;
-      /// \code
-      ///   (this->alpha_density() * this-> overlap()).trace() -
-      ///   (this->beta_density() * this-> overlap()).trace()
-      /// \endcode
-      /// but derived Wavefunction may have this value as user input.
-      /// @return the magnetic moment
+      /** Computes the S (or J) magnetic moment
+       * of the target state(s), in units of \f$ \hbar/2 \f$.
+       * Can be evaluated from density and overlap, as;
+       * \code
+       *  (this->alpha_density() * this-> overlap()).trace() -
+       *  (this->beta_density() * this-> overlap()).trace()
+       * \endcode
+       * but derived Wavefunction may have this value as user input.
+       * @return the magnetic moment
+       * */
       virtual double magnetic_moment() const;
       /// @return true if the magnetic moment != 0
       bool spin_polarized() {
@@ -101,16 +107,39 @@ namespace mpqc {
       }
 
       /// Returns electron 1-body reduced density matrix (1-RDM) in AO basis.
-      /// The default implementation adds alpha and beta 1-RDMs
-      virtual const TAMatrix& rdm1();
-      /// Return electron 1-body reduced density matrix of spin \c s in AO basis.
-      virtual const TAMatrix& rdm1(sc::SpinCase1 s) =0;
-      /// Returns the AO overlap.
-      virtual const TAMatrix& overlap();
+      virtual const TAMatrix& rdm1() = 0;
 
+      /** Returns expression to the AO density matrix.
+       * If the matrix has not been computed, then it will be computed by the
+       * calling class.
+       * */
+      virtual TAMatrixExpr rdm1_expr(std::string);
+
+      /// Return electron 1-body reduced density matrix of spin \c s in AO basis.
+      virtual const TAMatrix& rdm1(sc::SpinCase1 s) = 0;
+      /// Returns the AO overlap.
+      virtual const TAMatrix& ao_overlap();
+
+      /** Returns expression to the AO overlap matrix.
+       * If the matrix has not been computed, then it will be computed by the
+       * calling class.
+       * */
+      virtual TAMatrixExpr ao_overlap_expr(std::string);
+
+      /// Returns the AO overlap.
+      virtual const TAMatrix& ao_hcore();
+
+      /** Returns expression to the AO hcore matrix.
+       * If the matrix has not been computed, then it will be computed by the
+       * calling class.
+       * */
+      virtual TAMatrixExpr ao_hcore_expr(std::string);
+
+      /// Returns debugging flag
       unsigned debug() const {
         return debug_;
       }
+
 
       /// makes this object obsolete, next call to compute() will recompute
       void obsolete();
@@ -120,35 +149,27 @@ namespace mpqc {
       // functions for internal access
     protected:
 
-      virtual TAMatrix& density(){return rdm1_.result_noupdate();}
-
       const sc::Ref<mpqc::World> world() const {
         return world_;
       }
 
-      const TAMatrix& density_alpha() const {
-        return rdm1_alpha_.result_noupdate();
-      }
-      TAMatrix& density_alpha() {
-        return rdm1_alpha_.result_noupdate();
+      /// Returns reference to rdm1_.result_noupdate(),
+      /// but guarantees nothing about its computed status
+      virtual TAMatrix& ao_density(){
+        return rdm1_.result_noupdate();
       }
 
-      const TAMatrix& density_beta() const {
-        return rdm1_beta_.result_noupdate();
-      }
-      TAMatrix& density_beta() {
-        return rdm1_beta_.result_noupdate();
-      }
+      ResultMatrix rdm1_; // Result density abreviated D
+      ResultMatrix rdm1_alpha_; // Result alpha density abreviated Da
+      ResultMatrix rdm1_beta_; // Result beta density abreviated Db
 
     private:
 
       sc::Ref<mpqc::World> world_;
       sc::Ref<TiledBasisSet> tbs_;
       sc::Ref<sc::Integral> integral_;
-      ResultMatrix overlap_;
-      ResultMatrix rdm1_;
-      ResultMatrix rdm1_alpha_;
-      ResultMatrix rdm1_beta_;
+      ResultMatrix overlap_; // Overlap Matrix abreviated S
+      ResultMatrix hcore_; // Hcore Matrix abreviated H
 
       mutable double magnetic_moment_; //!< caches the value returned by magnetic_moment()
       /// Wavefunction (reluctantly) supports calculations in finite electric fields in c1 symmetry

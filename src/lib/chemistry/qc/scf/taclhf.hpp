@@ -38,20 +38,20 @@ namespace mpqc {
       typedef CLSCF::TAMatrix TAMatrix;
       CLHF(const sc::Ref<sc::KeyVal> &kval);
 
-      void minimize_energy();
 
     protected:
-      virtual TAMatrix& scf_fock() override;
+      virtual TAMatrix& scf_ao_fock_() override final;
+
+      virtual void compute_ao_fock(double) override final;
+
       // G matrix engine
       sc::Ref<GEngineBase> G_eng;
 
-
       GEngineBase::return_type
-      G(const std::string &s);
+      G(const std::string s);
 
     private:
       static sc::ClassDesc class_desc_;
-
     };
   // class CLHF
 

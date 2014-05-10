@@ -26,6 +26,7 @@
 //
 
 #include <elemental.hpp>
+#include <util/misc/regtime.h>
 #include <math/elemental/eigensolver.hpp>
 #include <tiled_array.h>
 
@@ -38,15 +39,15 @@ namespace TA {
 
   // Wraps a pair where the eigenvalues are first and vectors are second.
   // Similar to Mathematica Notation
-  using EigenSystem = std::pair<elem::DistMatrix<double, elem::VR, elem::STAR>,
-                                EMatrix>;
+  using ElemEigenSystem =
+      std::pair<elem::DistMatrix<double, elem::VR, elem::STAR>, EMatrix>;
 
   /*
    * HermitianGenEigensolver and get occupied vectors are two helper functions
    * to reduce code replication
    */
   // Wrapper for elem::HermitianGenDefiniteEig sorts vals ascending
-  EigenSystem
+  ElemEigenSystem
   HermitianGenEigensolver(const TAMatrix &F, const TAMatrix &S){
     // Get mats from TA
     EMatrix EF = TiledArray::array_to_elem(F, elem::DefaultGrid()); // Fock
@@ -58,18 +59,12 @@ namespace TA {
 
     // Compute vecs and values
     elem::mpi::Barrier(elem::mpi::COMM_WORLD);
-    double t0 = madness::wall_time();
     // Compute evals evals
+    sc::Timer tim("Solving HermitianGenEig:");
     elem::HermitianGenDefiniteEig(elem::AXBX, elem::LOWER,EF,ES,vals,vecs,
                                   elem::ASCENDING);
     elem::mpi::Barrier(elem::mpi::COMM_WORLD);
-    double t1 = madness::wall_time();
-
-    // Timer
-    if(F.get_world().rank()==0){
-      std::cout << "\tCall to HermitianGenEigensolver took " << t1 - t0
-                << " s" << std::endl;
-    }
+    tim.exit("Solving HermitianGenEig:");
 
     return std::make_pair(vals, vecs);
   }
@@ -126,16 +121,14 @@ namespace TA {
   eigensolver_D(const TAMatrix &F, const TAMatrix &S, int occ){
 
     // Get eigensystem
-    EigenSystem esys = HermitianGenEigensolver(F,S);
+    ElemEigenSystem esys = HermitianGenEigensolver(F,S);
 
     // Grab occupied vectors
     TAMatrix C_occ = get_occupied_vectors(esys.second, F.trange().data()[0],
                                           occ, F.get_world());
     // Contract over occupied index i to form D_{AO}
-    TAMatrix D = C_occ("mu,") * C_occ("nu,i");
+    TAMatrix D = C_occ("mu,i") * C_occ("nu,i");
     F.get_world().gop.fence(); // Fence to prevent data from going out of scope
-    std::cout << "D = \n" << D << std::endl;
-
     return D;
   }
 
@@ -144,13 +137,13 @@ namespace TA {
                 const TAMatrix &S,
                 int occ){
     // Get Eigensystem
-    EigenSystem esys = HermitianGenEigensolver(F,S);
+    ElemEigenSystem esys = HermitianGenEigensolver(F,S);
 
     return get_occupied_vectors(esys.second, F.trange().data()[0], occ,
                                 F.get_world());
   }
 
-  TAMatrix
+  ElemTAEigenSystem
   eigensolver_full_Coeff(const TAMatrix &F,
                 const TAMatrix &S){
 
@@ -158,15 +151,13 @@ namespace TA {
     TAMatrix C(F.get_world(), F.trange());
 
     // Call eigenvalue solver
-    EigenSystem esys = HermitianGenEigensolver(F,S);
+    ElemEigenSystem esys = HermitianGenEigensolver(F,S);
 
     // Copy back to TA
     TiledArray::elem_to_array(C,esys.second);
     F.get_world().gop.fence();
-    return C;
+    return std::make_pair(esys.first, C);
   }
-
-
 
 } // namespace mpqc::TA
 } // namespace mpqc

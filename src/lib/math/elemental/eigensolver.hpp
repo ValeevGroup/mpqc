@@ -29,11 +29,14 @@
 #define MPQC_MATH_ELEMENTAL_EIGENSOLVER_HPP
 
 #include <tiledarray_fwd.h>
+#include <elemental-lite.hpp>
 
 namespace mpqc {
 namespace TA {
 
   using TiledArray::TArray2D;
+  using ElemVector = elem::DistMatrix<double, elem::VR, elem::STAR>;
+  using ElemTAEigenSystem = std::pair<ElemVector, TArray2D>;
 
   /***
    * Solve generalized Hermitian eigenproblem to form density.
@@ -50,9 +53,8 @@ namespace TA {
   /***
    * Solve generalized Hermitian eigenproblem for all coefficents
    */
-  TArray2D
+  ElemTAEigenSystem
   eigensolver_full_Coeff(const TArray2D &F, const TArray2D &S);
-
 
 } // namespace mpqc::TA
 } // namespace mpqc

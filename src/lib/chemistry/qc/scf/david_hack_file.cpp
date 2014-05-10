@@ -66,8 +66,11 @@ void try_main(int argc, char** argv){
   RegionTimer::set_default_regiontimer(regtim);
 
   sc::Timer tim("Scf Energy time");
-  std::cout << tclhf->scf_energy() << std::endl;
+  double energy = tclhf->scf_energy();
   tim.exit("Scf Energy time");
+  if(world->madworld()->rank() == 0){
+    std::cout << "The Final Energy was " << energy << std::endl;
+  }
   tim.print();
 
  #if 0

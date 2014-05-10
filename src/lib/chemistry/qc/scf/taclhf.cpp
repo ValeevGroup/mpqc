@@ -110,6 +110,7 @@ void CLHF::compute_ao_fock(double desired_accuracy) {
 
     // Compute the error as the largest element of the gradient.
     error_norminf = ::TiledArray::expressions::norminf(Grad("i,j"));
+    world()->madworld()->gop.fence();
     if(world()->madworld()->rank() == 0){
       std::cout << "\tIteration " << iter++ << "\n";
       std::cout << "\t\tenergy = " << iter_energy() << "\n";

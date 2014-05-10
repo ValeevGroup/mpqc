@@ -432,6 +432,7 @@ if(USING_QT_CREATOR_AS_IDE)
     "*.in" 
     "*.cc"
     "*.f"
+    "TODO"
   )
 
   add_library(qt_creator_get_sources EXCLUDE_FROM_ALL ${QT_CREATOR_SRC})

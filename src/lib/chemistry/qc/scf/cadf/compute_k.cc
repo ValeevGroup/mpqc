@@ -860,7 +860,6 @@ CADFCLHF::compute_K()
 
               mt_timer.enter("compute d_overtilde", ithr);
               if(screen_B_) {
-                auto& L_d_over_ish_Xsh = L_d_over[{ish, Xsh}];
                 new (&dt_ish_X) Eigen::Map<RowMatrix>(dt_ish_X_data, ish.nbf * Xsh.nbf, L_d_over_ish_Xsh.nbf);
                 dt_ish_X  = RowMatrix::Zero(ish.nbf * Xsh.nbf, L_d_over_ish_Xsh.nbf);
                 {

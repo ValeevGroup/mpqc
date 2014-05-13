@@ -64,8 +64,8 @@ class OrderedShellList {
     bool sort_by_value_ = true;
 
     // An auxiliary value and vector to tag along with the list
-    Eigen::VectorXd aux_vector_;
-    bool aux_vector_initialized_ = false;
+    //Eigen::VectorXd aux_vector_;
+    //bool aux_vector_initialized_ = false;
     double aux_value_ = 0.0;
 
   public:
@@ -79,7 +79,7 @@ class OrderedShellList {
       : sort_by_value_(sort_by_value)
     {
       aux_value_ = 0.0;
-      aux_vector_initialized_ = false;
+      //aux_vector_initialized_ = false;
     }
 
     template<typename Iterable>
@@ -94,7 +94,7 @@ class OrderedShellList {
       std::copy(indices_in.begin(), indices_in.end(), std::back_inserter(indices_));
       sort(false);
       aux_value_ = 0.0;
-      aux_vector_initialized_ = false;
+      //aux_vector_initialized_ = false;
     }
 
     OrderedShellList(const OrderedShellList& other)
@@ -104,8 +104,8 @@ class OrderedShellList {
         sort_by_value_(other.sort_by_value_),
         nbf(other.nbf)
     {
-      aux_value_ = other.aux_value_;
-      aux_vector_initialized_ = other.aux_vector_initialized_;
+      //aux_value_ = other.aux_value_;
+      //aux_vector_initialized_ = other.aux_vector_initialized_;
     }
 
     void add_to_aux_value(const double add_val) {
@@ -113,41 +113,41 @@ class OrderedShellList {
       aux_value_ += add_val;
     }
 
-    template <typename Derived>
-    void add_to_aux_value_vector(const double add_val, const Eigen::MatrixBase<Derived>& to_add) {
-      std::lock_guard<std::mutex> lg(aux_vector_mtx_);
-      if(not aux_vector_initialized_) {
-        aux_vector_.resize(to_add.rows());
-        aux_vector_ = decltype(aux_vector_)::Zero(to_add.rows());
-        aux_vector_initialized_ = true;
-      }
-      aux_value_ += add_val;
-      aux_vector_.noalias() += to_add;
-    }
+    //template <typename Derived>
+    //void add_to_aux_value_vector(const double add_val, const Eigen::MatrixBase<Derived>& to_add) {
+    //  std::lock_guard<std::mutex> lg(aux_vector_mtx_);
+    //  if(not aux_vector_initialized_) {
+    //    aux_vector_.resize(to_add.rows());
+    //    aux_vector_ = decltype(aux_vector_)::Zero(to_add.rows());
+    //    aux_vector_initialized_ = true;
+    //  }
+    //  aux_value_ += add_val;
+    //  aux_vector_.noalias() += to_add;
+    //}
 
-    template <typename Derived>
-    void add_to_aux_vector(const Eigen::MatrixBase<Derived>& to_add) {
-      std::lock_guard<std::mutex> lg(aux_vector_mtx_);
-      if(not aux_vector_initialized_) {
-        aux_vector_.resize(to_add.rows());
-        aux_vector_ = decltype(aux_vector_)::Zero(to_add.rows());
-        aux_vector_initialized_ = true;
-      }
-      aux_vector_.noalias() += to_add;
-    }
+    //template <typename Derived>
+    //void add_to_aux_vector(const Eigen::MatrixBase<Derived>& to_add) {
+    //  std::lock_guard<std::mutex> lg(aux_vector_mtx_);
+    //  if(not aux_vector_initialized_) {
+    //    aux_vector_.resize(to_add.rows());
+    //    aux_vector_ = decltype(aux_vector_)::Zero(to_add.rows());
+    //    aux_vector_initialized_ = true;
+    //  }
+    //  aux_vector_.noalias() += to_add;
+    //}
 
-    void set_aux_value(const double add_val) {
-      aux_value_ = add_val;
-    }
+    //void set_aux_value(const double add_val) {
+    //  aux_value_ = add_val;
+    //}
 
     double get_aux_value() const {
       return aux_value_;
     }
 
-    const decltype(aux_vector_)& get_aux_vector() const {
-      MPQC_ASSERT(aux_vector_initialized_);
-      return aux_vector_;
-    }
+    //const decltype(aux_vector_)& get_aux_vector() const {
+    //  MPQC_ASSERT(aux_vector_initialized_);
+    //  return aux_vector_;
+    //}
 
     void set_basis(GaussianBasisSet* basis, GaussianBasisSet* dfbasis = 0)
     {

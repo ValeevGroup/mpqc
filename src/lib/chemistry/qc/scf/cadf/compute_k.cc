@@ -113,6 +113,7 @@ CADFCLHF::compute_K()
   const int n_node = scf_grp_->n();
   const Ref<GaussianBasisSet>& obs = gbs_;
   const int nbf = obs->nbasis();
+  const int nsh = obs->nshell();
   const int dfnbf = dfbs_->nbasis();
   const int natom = obs->ncenter();
   auto& my_part = atom_pair_assignments_k_->my_assignments(me);
@@ -459,22 +460,22 @@ CADFCLHF::compute_K()
                       ish.value * dist_factor,
                       jsh.nbf
                   );
-                  if(screen_B_) {
-                    if(use_norms_B_) {
-                      double B_scr_contrib = ish.value * ish.value;
-                      if(screen_B_use_distance_) B_scr_contrib *= dist_factor * dist_factor;
-                      L_3_ish_Xsh.add_to_aux_value_vector(B_scr_contrib, D_frob_sq.col(jsh));
-                    }
-                    else {
-                      // Just do the contraction rather than tracking the norms
-                      if(screen_B_use_distance_) {
-                        L_3_ish_Xsh.add_to_aux_vector((dist_factor * ish.value) * D_frob.col(jsh));
-                      }
-                      else {
-                        L_3_ish_Xsh.add_to_aux_vector(ish.value * D_frob.col(jsh));
-                      }
-                    }
-                  }
+                  //if(screen_B_) {
+                  //  if(use_norms_B_) {
+                  //    double B_scr_contrib = ish.value * ish.value;
+                  //    if(screen_B_use_distance_) B_scr_contrib *= dist_factor * dist_factor;
+                  //    L_3_ish_Xsh.add_to_aux_value_vector(B_scr_contrib, D_frob_sq.col(jsh));
+                  //  }
+                  //  else {
+                  //    // Just do the contraction rather than tracking the norms
+                  //    if(screen_B_use_distance_) {
+                  //      L_3_ish_Xsh.add_to_aux_vector((dist_factor * ish.value) * D_frob.col(jsh));
+                  //    }
+                  //    else {
+                  //      L_3_ish_Xsh.add_to_aux_vector(ish.value * D_frob.col(jsh));
+                  //    }
+                  //  }
+                  //}
 
                   if(print_screening_stats_) {
                     ++iter_stats_->K_3c_needed;
@@ -577,31 +578,99 @@ CADFCLHF::compute_K()
           // Do this even if we're blocking by rho, since it maximizes block sizes
           L_3_iter->second.set_sort_by_value(false);
           L_3_iter->second.sort();
-          L_3_iter->second.set_aux_value(sqrt(L_3_iter->second.get_aux_value()));
+          //L_3_iter->second.set_aux_value(sqrt(L_3_iter->second.get_aux_value()));
 
           // Build the B screening list
 
           if(screen_B_) {
-            int ish, Xsh;
-            ish = L_3_iter->first.first;
-            Xsh = L_3_iter->first.second;
+
+            ShellData ish(L_3_iter->first.first, gbs_, dfbs_);
+            ShellData Xsh(L_3_iter->first.second, dfbs_, gbs_);
             const int Xsh_center = dfbs_->shell_to_center(Xsh);
             auto& L_B_ish_Xsh = L_B[{ish, Xsh}];
-            // Note that we could probably avoid a copy here by doing a const cast
-            Eigen::VectorXd aux_vect = L_3_iter->second.get_aux_vector();
             const auto& L_3_ish_Xsh = L_3_iter->second;
-            const auto& aux_val = L_3_ish_Xsh.get_aux_value();
+
+            // Note that we could probably avoid a copy here by doing a const cast
+            //Eigen::VectorXd aux_vect = L_3_iter->second.get_aux_vector();
+            //const auto& aux_val = L_3_ish_Xsh.get_aux_value();
+
+            //if(use_norms_B_) {
+            //  aux_vect = aux_vect.array().cwiseSqrt() * aux_val * schwarz_df_[Xsh];
+            //}
+            //else {
+            //  aux_vect *= schwarz_df_[Xsh];
+            //}
+
+            int jsh_offset = 0;
+            Eigen::VectorXd dist_facts;
+            if(screen_B_use_distance_) {
+              dist_facts.resize(L_3_ish_Xsh.size());
+              for(auto&& jsh : L_3_ish_Xsh) {
+                const double dist_fact = get_distance_factor(ish, jsh, Xsh);
+                if(use_norms_B_) {
+                  dist_facts(jsh_offset)  = dist_fact * dist_fact;
+                }
+                else {
+                  dist_facts(jsh_offset)  = dist_fact;
+                }
+                ++jsh_offset;
+              }
+            }
+
+            Eigen::VectorXd b_bar(nsh);
+            b_bar = Eigen::VectorXd::Zero(nsh);
+            jsh_offset = 0;
+            for(auto&& jblk : shell_block_range(L_3_ish_Xsh, Contiguous)) {
+              if(use_norms_B_) {
+                if(screen_B_use_distance_) {
+                  b_bar += dist_facts.segment(jsh_offset, jblk.nshell).asDiagonal()
+                      * D_frob.middleCols(jblk.first_shell, jblk.nshell).rowwise().squaredNorm()
+                      * schwarz_frob_.col(ish).segment(jblk.first_shell, jblk.nshell).squaredNorm();
+                  jsh_offset += jblk.nshell;
+                }
+                else{
+                  b_bar += D_frob.middleCols(jblk.first_shell, jblk.nshell).rowwise().squaredNorm()
+                      * schwarz_frob_.col(ish).segment(jblk.first_shell, jblk.nshell).squaredNorm();
+                }
+              }
+              else {
+                if(screen_B_use_distance_) {
+                  b_bar += D_frob.middleCols(jblk.first_shell, jblk.nshell)
+                      * dist_facts.segment(jsh_offset, jblk.nshell).asDiagonal()
+                      * schwarz_frob_.col(ish).segment(jblk.first_shell, jblk.nshell);
+                  jsh_offset += jblk.nshell;
+                }
+                else {
+                  b_bar += D_frob.middleCols(jblk.first_shell, jblk.nshell)
+                      * schwarz_frob_.col(ish).segment(jblk.first_shell, jblk.nshell);
+                }
+              }
+            }
             if(use_norms_B_) {
-              aux_vect = aux_vect.array().cwiseSqrt() * aux_val * schwarz_df_[Xsh];
+              b_bar = b_bar.cwiseSqrt();
             }
-            else {
-              aux_vect *= schwarz_df_[Xsh];
-            }
+
+            b_bar *= schwarz_df_[Xsh];
+            b_bar.array() *= C_bar_.col(Xsh).array();
+            b_bar = b_bar.cwiseAbs();
+
+            //L_B_ish_Xsh.acquire_and_sort(
+            //    b_bar.data(), nsh, epsilon_B, false
+            //);
+
+            //int lb_nbf = 0;
+            //for(auto&& lblk : shell_block_range(L_B_ish_Xsh, NoRestrictions)) {
+            //  lb_nbf += lblk.nbf;
+            //}
+            //L_B_ish_Xsh.nbf = lb_nbf;
+
 
             // TODO we can further restrict this loop by prescreening it
             for(auto&& lsh : shell_range(obs)) {
               if(lsh.center == Xsh_center) continue;
-              if(fabs(C_bar_(lsh, Xsh) * aux_vect(lsh)) > epsilon_B) {
+              //if(fabs(C_bar_(lsh, Xsh) * aux_vect(lsh)) > epsilon_B) {
+              //if(fabs(C_bar_(lsh, Xsh) * b_bar(lsh)) > epsilon_B) {
+              if(b_bar(lsh) > epsilon_B) {
                 L_B_ish_Xsh.insert(lsh, 0, lsh.nbf);
               }
             }

@@ -39,13 +39,13 @@ sc::operator <<(std::ostream& out, const OrderedShellList& list) {
     out << "\n  " << ish << ", with value " << ish.value;
   }
   out << "\n  aux_value = " << list.get_aux_value();
-  if(list.aux_vector_initialized_) {
-    out << "\n  aux_vector = { ";
-    for(int ival = 0; ival < list.aux_vector_.rows(); ++ival) {
-      out << list.aux_vector_[ival] << " ";
-    }
-    out << "}" << std::endl;
-  }
+  //if(list.aux_vector_initialized_) {
+  //  out << "\n  aux_vector = { ";
+  //  for(int ival = 0; ival < list.aux_vector_.rows(); ++ival) {
+  //    out << list.aux_vector_[ival] << " ";
+  //  }
+  //  out << "}" << std::endl;
+  //}
   out << "\n}" << std::endl;
   return out;
 }

@@ -41,5 +41,7 @@ all necessary servicing, repair or correction.
 COMPILING AND RUNNING
 =====================
 
-See file INSTALL.md for compilation instructions, including generation of documentation
+See file INSTALL.md (or a fancier version here:
+https://github.com/ValeevGroup/mpqc/blob/master/INSTALL.md)
+for compilation instructions, including generation of documentation
 that describes how to use MPQC.

@@ -773,7 +773,6 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
       TArray4 Trf_gamma_Tr_1;
       Trf_gamma_Tr_1("m,k,l,n") = Tr("l,i2,a',n") * (rdm1_aa("i2,i1") * Trf("i1,k,a',m"));
       Delta += dot(Trf_gamma_Tr_1("m,k,l,n"), lambda_1("m,k,l,n"));
-      std::cout << indent << "Delta(1)=" << Delta << std::endl;
     }
     madness::World::get_default().gop.fence();
 
@@ -786,7 +785,6 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
       TArray4 Trf_gamma_Tr_2;
       Trf_gamma_Tr_2("m,n,l,k") = Tr("l,i2,a',n") * (rdm1_aa("i2,i1") * Trf("k,i1,a',m"));
       Delta += dot(Trf_gamma_Tr_2("m,n,l,k"), lambda_2("m,n,l,k"));
-      std::cout << indent << "Delta(1+2)=" << Delta << std::endl;
     }
     madness::World::get_default().gop.fence();
 
@@ -799,7 +797,6 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
         TArray4 Trf_gamma_Tr_3;
         Trf_gamma_Tr_3("m,l,k,n") = Tr("i2,l,a',n") * (rdm1_aa("i2,i1") * Trf("i1,k,a',m"));
         Delta += dot(Trf_gamma_Tr_3("m,l,k,n"), lambda_3("m,l,k,n"));
-        std::cout << indent << "Delta(1+2+3)=" << Delta << std::endl;
       }
       madness::World::get_default().gop.fence();
 
@@ -808,7 +805,6 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
         TArray4 Trf_gamma_Tr_4;
         Trf_gamma_Tr_4("m,l,k,n") = Tr("i2,l,a',n") * (rdm1_aa("i2,i1") * Trf("k,i1,a',m"));
         Delta += -0.5 * dot(Trf_gamma_Tr_4("m,l,k,n"), lambda_3("m,l,k,n"));
-        std::cout << indent << "Delta(1+2+3+4)=" << Delta << std::endl;
       }
     }
     madness::World::get_default().gop.fence();

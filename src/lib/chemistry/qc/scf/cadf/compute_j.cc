@@ -53,7 +53,8 @@ CADFCLHF::compute_J()
   const int dfnbf = dfbs_->nbasis();
   //----------------------------------------//
   // Get the density in an Eigen::Map form
-  double *D_ptr = allocate<double>(nbf*nbf);
+  //double *D_ptr = allocate<double>(nbf*nbf);
+  double* __restrict__ D_ptr = new double[nbf*nbf];
   D_.convert(D_ptr);
   typedef Eigen::Map<Eigen::VectorXd> VectorMap;
   typedef Eigen::Map<Eigen::MatrixXd> MatrixMap;
@@ -280,7 +281,9 @@ CADFCLHF::compute_J()
         mt_timer.enter("misc", ithr);
         Eigen::VectorXd dt(dfnbf);
         dt = Eigen::VectorXd::Zero(dfnbf);
-        Eigen::MatrixXd jpart(nbf, nbf);
+        // We could avoid N^2 * nthread storage by making this an offset array of local shells, but that's a lot of work
+        double* __restrict__ jpart_data = new double[nbf*nbf];
+        Eigen::Map<ColMatrix> jpart(jpart_data, nbf, nbf);
         jpart = Eigen::MatrixXd::Zero(nbf, nbf);
         RowMatrix dt_ex_thr;
         if(exact_diagonal_J_) {
@@ -337,7 +340,6 @@ CADFCLHF::compute_J()
 
               const auto& Wij = W[{ish, jsh}];
               const auto& Wji = W[{jsh, ish}];
-
 
               if(Xblk.center == ish.center) {
 
@@ -407,12 +409,15 @@ CADFCLHF::compute_J()
         //----------------------------------------//
         // add our contribution to the node level d_tilde
         mt_timer.change("sum thread contributions", ithr);
-        boost::lock_guard<boost::mutex> tmp_lock(tmp_mutex);
-        d_tilde += dt;
-        if(exact_diagonal_J_) {
-          d_t_ex += dt_ex_thr;
+        {
+          boost::lock_guard<boost::mutex> tmp_lock(tmp_mutex);
+          d_tilde += dt;
+          if(exact_diagonal_J_) {
+            d_t_ex += dt_ex_thr;
+          }
+          J += jpart;
         }
-        J += jpart;
+        delete[] jpart_data;
         mt_timer.exit(ithr);
         /*******************************************************/ #endif //2}}}
         /*-----------------------------------------------------*/
@@ -562,7 +567,8 @@ CADFCLHF::compute_J()
   /*=======================================================================================*/
   /* Clean up                                             		                        {{{1 */ #if 1 // begin fold
   //----------------------------------------//
-  deallocate(D_ptr);
+  //deallocate(D_ptr);
+  delete[] D_ptr;
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
   return result;

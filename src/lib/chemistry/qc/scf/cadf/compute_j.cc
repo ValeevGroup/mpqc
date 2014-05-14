@@ -62,9 +62,10 @@ CADFCLHF::compute_J()
   VectorMap d(D_ptr, nbf*nbf);
   MatrixMap D(D_ptr, nbf, nbf);
   //----------------------------------------//
-  RowMatrix J(nbf, nbf);
-  J = RowMatrix::Zero(nbf, nbf);
-  VectorMap j(J.data(), nbf*nbf);
+  double* __restrict__ J_data = new double[nbf*nbf];
+  Eigen::Map<RowMatrix> J(J_data, nbf, nbf);
+  J.setZero();
+  VectorMap j(J_data, nbf*nbf);
   //----------------------------------------//
   // reset the iteration over local pairs
   local_pairs_spot_ = 0;
@@ -138,9 +139,9 @@ CADFCLHF::compute_J()
         //----------------------------------------//
         // add our contribution to the node level C_tilde
         boost::lock_guard<boost::mutex> Ctlock(C_tilde_mutex);
-        C_tilde += Ct;
+        C_tilde.noalias() += Ct;
         if(exact_diagonal_J_) {
-          C_t_ex += Ct_ex_thr;
+          C_t_ex.noalias() += Ct_ex_thr;
         }
         //----------------------------------------//
         /********************************************************/ #endif //2}}}
@@ -411,11 +412,11 @@ CADFCLHF::compute_J()
         mt_timer.change("sum thread contributions", ithr);
         {
           boost::lock_guard<boost::mutex> tmp_lock(tmp_mutex);
-          d_tilde += dt;
+          d_tilde.noalias() += dt;
           if(exact_diagonal_J_) {
-            d_t_ex += dt_ex_thr;
+            d_t_ex.noalias() += dt_ex_thr;
           }
-          J += jpart;
+          J.noalias() += jpart;
         }
         delete[] jpart_data;
         mt_timer.exit(ithr);
@@ -460,7 +461,8 @@ CADFCLHF::compute_J()
       compute_threads.create_thread([&,ithr](){
         auto contract_timer = mt_timer.get_subtimer("contract", ithr);
         auto ex_timer = mt_timer.get_subtimer("exact diagonal", ithr);
-        Eigen::MatrixXd jpart(nbf, nbf);
+        double* __restrict__ jpart_data = new double[nbf*nbf];
+        Eigen::Map<ColMatrix> jpart(jpart_data, nbf, nbf);
         jpart = Eigen::MatrixXd::Zero(nbf, nbf);
         //----------------------------------------//
         ShellData ish, jsh;
@@ -527,8 +529,11 @@ CADFCLHF::compute_J()
 
         } // end while get_shell_pair
         // Sum the thread's contributions to the node-level J
-        boost::lock_guard<boost::mutex> tmp_lock(tmp_mutex);
-        J += jpart;
+        {
+          boost::lock_guard<boost::mutex> tmp_lock(tmp_mutex);
+          J.noalias() += jpart;
+        }
+        delete[] jpart_data;
       }); // end create_thread
     } // end enumeration of threads
     compute_threads.join_all();
@@ -540,7 +545,7 @@ CADFCLHF::compute_J()
   /*=======================================================================================*/
   /* Global sum J                                         		                        {{{1 */ #if 1 // begin fold
   //----------------------------------------//
-  scf_grp_->sum((double*)J.data(), nbf*nbf);
+  scf_grp_->sum(J_data, nbf*nbf);
   //----------------------------------------//
   // Fill in the upper triangle of J
   for(int mu = 0; mu < nbf; ++mu) {
@@ -562,12 +567,13 @@ CADFCLHF::compute_J()
       obsdim,
       obs->so_matrixkit()
   );
-  result.assign(J.data());
+  result.assign(J_data);
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
   /* Clean up                                             		                        {{{1 */ #if 1 // begin fold
   //----------------------------------------//
   //deallocate(D_ptr);
+  delete[] J_data;
   delete[] D_ptr;
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/

@@ -299,6 +299,9 @@ CADFCLHF::compute_K()
 
       prev_epsilon_ = epsilon;
       prev_epsilon_dist_ = epsilon_dist;
+      prev_epsilon_B_ = epsilon_B;
+      prev_epsilon_d_over_ = epsilon_d_over;
+      prev_epsilon_d_under_ = epsilon_d_under;
 
       if(full_screening_expon_ != 1.0) {
         epsilon = pow(epsilon, full_screening_expon_);                                      //latex `\label{sc:link:expon}`
@@ -308,7 +311,7 @@ CADFCLHF::compute_K()
       epsilon = std::max(full_screening_thresh_min_, epsilon);
       epsilon_dist = std::max(full_screening_thresh_min_, epsilon_dist);
       // TODO Make this an option
-      epsilon_B = std::max(full_screening_thresh_min_*B_screening_thresh_/full_screening_thresh_, epsilon_B);
+      epsilon_B = std::max(full_screening_thresh_min_*(B_screening_thresh_/full_screening_thresh_), epsilon_B);
       epsilon_d_under = std::max(full_screening_thresh_min_*d_under_screening_thresh_/full_screening_thresh_, epsilon_d_under);
       epsilon_d_over = std::max(full_screening_thresh_min_*d_over_screening_thresh_/full_screening_thresh_, epsilon_d_over);
     }
@@ -460,22 +463,6 @@ CADFCLHF::compute_K()
                       ish.value * dist_factor,
                       jsh.nbf
                   );
-                  //if(screen_B_) {
-                  //  if(use_norms_B_) {
-                  //    double B_scr_contrib = ish.value * ish.value;
-                  //    if(screen_B_use_distance_) B_scr_contrib *= dist_factor * dist_factor;
-                  //    L_3_ish_Xsh.add_to_aux_value_vector(B_scr_contrib, D_frob_sq.col(jsh));
-                  //  }
-                  //  else {
-                  //    // Just do the contraction rather than tracking the norms
-                  //    if(screen_B_use_distance_) {
-                  //      L_3_ish_Xsh.add_to_aux_vector((dist_factor * ish.value) * D_frob.col(jsh));
-                  //    }
-                  //    else {
-                  //      L_3_ish_Xsh.add_to_aux_vector(ish.value * D_frob.col(jsh));
-                  //    }
-                  //  }
-                  //}
 
                   if(print_screening_stats_) {
                     ++iter_stats_->K_3c_needed;
@@ -654,29 +641,29 @@ CADFCLHF::compute_K()
             b_bar.array() *= C_bar_.col(Xsh).array();
             b_bar = b_bar.cwiseAbs();
 
-            //L_B_ish_Xsh.acquire_and_sort(
-            //    b_bar.data(), nsh, epsilon_B, false
-            //);
+            b_bar.segment(Xsh.atom_obsshoff, Xsh.atom_obsnsh).setZero();
+            L_B_ish_Xsh.acquire_and_sort(
+                b_bar.data(), nsh, epsilon_B, false
+            );
+            L_B_ish_Xsh.set_basis(gbs_, dfbs_);
 
-            //int lb_nbf = 0;
-            //for(auto&& lblk : shell_block_range(L_B_ish_Xsh, NoRestrictions)) {
-            //  lb_nbf += lblk.nbf;
-            //}
-            //L_B_ish_Xsh.nbf = lb_nbf;
+            int lb_nbf = 0;
+            for(auto&& lblk : shell_block_range(L_B_ish_Xsh, NoRestrictions)) {
+              lb_nbf += lblk.nbf;
+            }
+            L_B_ish_Xsh.nbf = lb_nbf;
 
 
             // TODO we can further restrict this loop by prescreening it
-            for(auto&& lsh : shell_range(obs)) {
-              if(lsh.center == Xsh_center) continue;
-              //if(fabs(C_bar_(lsh, Xsh) * aux_vect(lsh)) > epsilon_B) {
-              //if(fabs(C_bar_(lsh, Xsh) * b_bar(lsh)) > epsilon_B) {
-              if(b_bar(lsh) > epsilon_B) {
-                L_B_ish_Xsh.insert(lsh, 0, lsh.nbf);
-              }
-            }
+            //for(auto&& lsh : shell_range(obs)) {
+            //  if(lsh.center == Xsh_center) continue;
+            //  if(b_bar(lsh) > epsilon_B) {
+            //    L_B_ish_Xsh.insert(lsh, 0, lsh.nbf);
+            //  }
+            //}
 
-            L_B_ish_Xsh.set_sort_by_value(false);
-            L_B_ish_Xsh.sort();
+            //L_B_ish_Xsh.set_sort_by_value(false);
+            //L_B_ish_Xsh.sort();
           }
 
           L_3_iter.advance(nthread_);

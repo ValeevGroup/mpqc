@@ -1,6 +1,6 @@
 
              The Massively Parallel Quantum Chemistry Program
-                                 MPQC 2.4
+                                 MPQC 3.0 (alpha)
 
 DESCRIPTION
 ===========
@@ -8,16 +8,14 @@ DESCRIPTION
   MPQC computes the properties of molecules, ab initio, on a wide variety of
 computer architectures.
 
-  MPQC can compute closed shell and general restricted open shell
+  MPQC can compute production-quality spin-restricted and spin-unrestricted
 Hartree-Fock energies and gradients, density functional theory energies and
-gradients, second order open shell perturbation theory (OPT2[2]) and
-Z-averaged perturbation theory (ZAPT2) energies, and second order closed
-shell Moeller-Plesset perturbation theory (MP2) energies and gradients.
-Closed shell energies using (ABS) MP2-R12 are also supported.  It also
-includes an internal coordinate geometry optimizer.
+gradients, second-order perturbation theory energies and gradients (closed-shell only).
+MPQC also includes implementation of several advanced methods, such as
+explicitly correlated coupled-cluster.
 
-  MPQC runs on Unix compatible workstations, symmetric multi-processors,
-and parallel computers.
+  MPQC runs on Linux and OS X standalone multicore platforms and distributed-memory
+parallel machines.
 
 LICENSE
 =======
@@ -43,5 +41,5 @@ all necessary servicing, repair or correction.
 COMPILING AND RUNNING
 =====================
 
- There are instructions for downloading, compiling, and running MPQC at
-http://www.mpqc.org
+See file INSTALL.md for compilation instructions, including generation of documentation
+that describes how to use MPQC.

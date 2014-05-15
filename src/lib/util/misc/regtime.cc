@@ -370,7 +370,7 @@ RegionTimer::reset()
 }
 
 double
-RegionTimer::get_cpu_time() const
+RegionTimer::get_cpu_time()
 {
 #if defined(HAVE_NX)
   return 0.0;
@@ -384,7 +384,7 @@ RegionTimer::get_cpu_time() const
 }
 
 double
-RegionTimer::get_wall_time() const
+RegionTimer::get_wall_time()
 {
 #if defined(HAVE_NX)
   return dclock();
@@ -395,7 +395,7 @@ RegionTimer::get_wall_time() const
 }
 
 double
-RegionTimer::get_flops() const
+RegionTimer::get_flops()
 {
 #if !HAVE_FLOPS
   return 0.0;

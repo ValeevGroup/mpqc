@@ -906,6 +906,9 @@ UnrestrictedSCF::compute_vector(double& eelec, double nucrep)
                 << "Beginning iterations.  Basis is "
                 << basis()->label() << '.' << std::endl;
   for (iter=0; iter < maxiter_; iter++, iter_since_reset++) {
+
+    const double wall_time_start = RegionTimer::get_wall_time();
+
     // form the density from the current vector
     tim.enter("density");
     delta = new_density();
@@ -937,15 +940,16 @@ UnrestrictedSCF::compute_vector(double& eelec, double nucrep)
 
     // calculate the electronic energy
     eelec = scf_energy();
-    ExEnv::out0() << indent
-         << scprintf("iter %5d energy = %15.10f delta = %10.5e",
-                     iter+1, eelec+nucrep, delta)
-         << endl;
 
     // check convergence
     if (delta < desired_value_accuracy()
-        && iter+1 >= miniter_)
+        && iter+1 >= miniter_) {
+      const double wall_time_end = RegionTimer::get_wall_time();
+      iter_print(iter,
+                 eelec+nucrep, delta, wall_time_end - wall_time_start,
+                 ExEnv::out0());
       break;
+    }
 
     // now extrapolate the fock matrix
     tim.enter("extrap");
@@ -1010,6 +1014,11 @@ UnrestrictedSCF::compute_vector(double& eelec, double nucrep)
       set_occupations(evalsa, evalsb, false);
 
     savestate_iter(iter);
+
+    const double wall_time_end = RegionTimer::get_wall_time();
+    iter_print(iter,
+               eelec+nucrep, delta, wall_time_end - wall_time_start,
+               ExEnv::out0());
     }
 
   eigenvalues_ = evalsa;

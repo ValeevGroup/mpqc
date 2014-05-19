@@ -28,6 +28,8 @@
 
 #include <numeric>
 #include <cassert>
+#include <random>
+#include <algorithm>
 
 #include <chemistry/qc/basis/petite.h>
 #include <util/misc/xmlwriter.h>
@@ -760,8 +762,17 @@ CADFCLHF::compute_K()
       return false;
     };
 
-    std::sort(L_3_keys.begin(), L_3_keys.end(), key_size_sort);
-    std::sort(L_3_star_keys.begin(), L_3_star_keys.end(), key_size_sort);
+    if(shuffle_L_3_keys_) {
+      //std::random_device rd;
+      //std::mt19937 g(rd());
+      //g.seed(0);
+      std::random_shuffle(L_3_keys.begin(), L_3_keys.end());
+      std::random_shuffle(L_3_star_keys.begin(), L_3_star_keys.end());
+    }
+    else {
+      std::sort(L_3_keys.begin(), L_3_keys.end(), key_size_sort);
+      std::sort(L_3_star_keys.begin(), L_3_star_keys.end(), key_size_sort);
+    }
 
 
     timer.exit();
@@ -1020,6 +1031,7 @@ CADFCLHF::compute_K()
               auto form_g_timer = mt_timer.get_subtimer("form g", ithr);
               auto k_contrib_timer_o = mt_timer.get_subtimer("K contrib d_over", ithr);
               auto k_contrib_timer_u = mt_timer.get_subtimer("K contrib d_under", ithr);
+              auto k_thr_sum = mt_timer.get_subtimer("K thread sum", ithr);
 
               /// Now loop over rho in L_3_star and compute k contributions
               for(const auto&& jblk : shell_block_range(L_3_star[{ish, Xsh}], Contiguous)){
@@ -1080,6 +1092,7 @@ CADFCLHF::compute_K()
                         * dt_prime.middleRows(mu.off*Xblk.nbf, Xblk.nbf);
                   }
 #if K_THREAD_SPARSE
+                  TimerHolder holder(k_thr_sum);
                   int jsblk_off = 0;
                   for(auto&& jsblk : shell_block_range(jblk, Contiguous|SameCenter)) {
                     boost::lock_guard<boost::mutex> lg(*Kt_atom_col_mutexes[jsblk.center]);

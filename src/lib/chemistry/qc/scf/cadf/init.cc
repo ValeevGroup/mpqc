@@ -26,6 +26,9 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <random>
+#include <algorithm>
+
 // Boost includes
 // NOTE:  THIS CAUSES VALGRIND ERRORS
 //#include <boost/math/special_functions/erf.hpp>
@@ -260,6 +263,12 @@ CADFCLHF::init_threads()
   ExEnv::out0() << indent << "Computing static distribution of significant pairs for Coulomb" << endl;
   int inode = 0;
   // TODO More efficient distribution based on load balancing and minimizing thread collisions
+  if(shuffle_J_assignments_) {
+    //std::random_device rd;
+    //std::mt19937 g(rd());
+    //g.seed(0);
+    std::random_shuffle(sig_pairs_.begin(), sig_pairs_.end());
+  }
   for(auto&& sig_pair : sig_pairs_) {
     const int assignment = inode % n_node;
     pair_assignments_[SignificantPairs][sig_pair] = assignment;

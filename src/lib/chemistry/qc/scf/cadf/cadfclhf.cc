@@ -161,6 +161,8 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   distribute_coefficients_ = keyval->booleanvalue("distribute_coefficients", KeyValValueboolean(distribute_coefficients_));
   store_coefs_transpose_ = keyval->booleanvalue("store_coefs_transpose", KeyValValueboolean(store_coefs_transpose_));
   if(distribute_coefficients_) store_coefs_transpose_ = false;
+  shuffle_L_3_keys_ = keyval->booleanvalue("shuffle_L_3_keys", KeyValValueboolean(shuffle_L_3_keys_));
+  shuffle_J_assignments_ = keyval->booleanvalue("shuffle_J_assignments", KeyValValueboolean(shuffle_J_assignments_));
   //----------------------------------------------------------------------------//
   if(print_screening_stats_) {
     stats_ = std::make_shared<ScreeningStatistics>();
@@ -241,6 +243,8 @@ CADFCLHF::print(ostream&o) const
   o << indent << "scale_screening_thresh = " << bool_str(scale_screening_thresh_) << endl;
   o << indent << "screen_B = " << bool_str(screen_B_) << endl;
   o << indent << "screen_B_use_distance = " << bool_str(screen_B_use_distance_) << endl;
+  o << indent << "shuffle_J_assignments = " << bool_str(shuffle_J_assignments_) << endl;
+  o << indent << "shuffle_L_3_keys = " << bool_str(shuffle_L_3_keys_) << endl;
   o << indent << "sigma_norms_chunk_by_atoms = " << bool_str(sigma_norms_chunk_by_atoms_) << endl;
   o << indent << "store_coefs_transpose = " << bool_str(store_coefs_transpose_) << endl;
   o << indent << "subtract_extents = " << bool_str(subtract_extents_) << endl;

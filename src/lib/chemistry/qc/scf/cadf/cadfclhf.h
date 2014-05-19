@@ -445,6 +445,14 @@ class CADFCLHF: public CLHF {
      *  the B screening threshold.
      */
     bool use_norms_B_ = false;
+    /** Whether or not to shuffle the L_3 and L_3_star key lists.  Shuffling may improve thread
+     *  load balancing.
+     */
+    bool shuffle_L_3_keys_ = true;
+    /** Whether or not to shuffle assignments list for the J computation.  Shuffling can improve thread
+     *  and node load balancing.
+     */
+    bool shuffle_J_assignments_ = true;
     //@}
 
     std::shared_ptr<ScreeningStatistics> stats_;

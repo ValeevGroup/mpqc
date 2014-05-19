@@ -30,7 +30,7 @@
 
 #include <chemistry/qc/scf/gengine_base.hpp>
 #include <vector>
-#include <tiled_array.h>
+#include <tiledarray.h>
 #include <util/class/class.h>
 
 // Foward Declarations
@@ -54,7 +54,6 @@ namespace mpqc {
     class ClDFGEngine: public GEngineBase {
     public:
       typedef GEngineBase::TAMatrix TAMatrix;
-      typedef GEngineBase::return_type return_type;
 
       ClDFGEngine(sc::Ref<sc::IntegralLibint2> integral,
                    sc::Ref<TiledBasisSet> basis,
@@ -71,7 +70,7 @@ namespace mpqc {
 
       virtual ~ClDFGEngine() override = default;
 
-      virtual return_type
+      virtual TAMatrix
       operator()(const std::string v) override final;
 
 
@@ -95,11 +94,11 @@ namespace mpqc {
 
     private:
       // Form G using coefficents
-      return_type
+      TAMatrix
       coefficient_contraction(const std::vector<std::string> v);
 
       // Form G using density
-      return_type
+      TAMatrix
       density_contraction(const std::vector<std::string> v);
 
       // Compute integrals needed for contraction

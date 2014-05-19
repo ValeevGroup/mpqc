@@ -25,7 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 #include <chemistry/qc/scf/tascf.hpp>
-#include <tiled_array.h>
+#include <tiledarray.h>
 #include <chemistry/qc/basis/taskintegrals.hpp>
 #include <chemistry/qc/basis/integralenginepool.hpp>
 #include <math/elemental/eigensolver.hpp>
@@ -80,10 +80,10 @@ SCF::ao_fock(double desired_accuracy){
   return ao_fock_.result_noupdate();
 }
 
-SCF::TAMatrixExpr
-SCF::ao_fock_expr(std::string input){
-  return ao_fock()(input);
-}
+//SCF::TAMatrixExpr
+//SCF::ao_fock_expr(std::string input){
+//  return ao_fock()(input);
+//}
 
 SCF::ElemVector
 SCF::MO_eigenvalues(double desired_accuracy){

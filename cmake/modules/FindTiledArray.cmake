@@ -7,7 +7,7 @@ if (TILEDARRAY_INCLUDE_DIRS)
     set(TILEDARRAY_FOUND TRUE)
 
 else()
-    find_path(TILEDARRAY_INCLUDE_DIR NAMES tiled_array.h 
+    find_path(TILEDARRAY_INCLUDE_DIR NAMES tiledarray.h 
         PATHS ${TILEDARRAY_DIR}/include)
     
     mark_as_advanced(TILEDARRAY_INCLUDE_DIR)

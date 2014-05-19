@@ -426,7 +426,7 @@
 #cmakedefine SC_USE_TYPE_TRAITS
 
 /* Define if "new" MPQC3 feature set is supported.  */
-#if defined(HAVE_TILEDARRAY) && defined(HAVE_LIBINT2)
+#if defined(MPQC_HAS_TILEDARRAY) && defined(HAVE_LIBINT2)
 #  define HAVE_MPQC3_RUNTIME
 #endif
 

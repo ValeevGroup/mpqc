@@ -26,7 +26,7 @@
 //
 
 #include <chemistry/qc/scf/taclscf.hpp>
-#include <tiled_array.h>
+#include <tiledarray.h>
 #include <chemistry/qc/basis/integralenginepool.hpp>
 #include <chemistry/qc/basis/taskintegrals.hpp>
 #include <chemistry/qc/lcao/soad.h>
@@ -67,7 +67,7 @@ const TAMatrix& CLSCF::rdm1() {
                                      occupation());
     }
 
-    rdm1_.result_noupdate() = Coeff_("mu,i") * Coeff_("nu,i");
+    rdm1_.result_noupdate()("mu,nu") = Coeff_("mu,i") * Coeff_("nu,i");
     rdm1_.computed() = 1;
 
   }
@@ -79,10 +79,10 @@ const TAMatrix& CLSCF::rdm1(sc::SpinCase1){
   // To return a reference we have to store the data, just use alpha for
   // Closed shell systems
   if(!rdm1_alpha_.computed()){
-    rdm1_alpha_.result_noupdate() = 0.5 * rdm1_expr("i,j");
+    rdm1_alpha_.result_noupdate()("i,j") = 
+                                0.5 * rdm1_.result_noupdate()("i,j");
     rdm1_alpha_.computed() = 1;
   }
-
   return rdm1_alpha_.result_noupdate();
 }
 
@@ -114,16 +114,14 @@ TAMatrix& CLSCF::ao_density() {
 
 double CLSCF::scf_energy(){
   // E = \sum_{ij} \left( D_{ij} * (F_{ij} + H_{ij}) \right)
-  return ::TiledArray::expressions::dot(
-                        ao_hcore()("i,j") + ao_fock()("i,j"), rdm1()("i,j"))
+  return rdm1()("i,j").dot(ao_hcore()("i,j") + ao_fock()("i,j"))
                         + molecule()->nuclear_repulsion_energy();
 }
 
 double CLSCF::iter_energy() {
   // E = \sum_{ij} \left( D_{ij} * (F_{ij} + H_{ij}) \right)
   std::cout << "\nin iter energy\n";
-  return ::TiledArray::expressions::dot(ao_hcore()("i,j") +
-                                        scf_ao_fock_()("i,j"),
-                                        ao_density()("i,j"));
+  return ao_density()("i,j").dot(ao_hcore()("i,j") +
+                                        scf_ao_fock_()("i,j"));
 }
 

@@ -57,7 +57,6 @@ namespace mpqc {
       typedef sc::AccResult<TAVector> AccResultVector;
       typedef sc::AccResult<TAMatrix> AccResultMatrix;
       typedef TiledArray::TensorD TATensor;
-      typedef TiledArray::expressions::TensorExpression<TATensor> TAMatrixExpr ;
 
 
       /** The KeyVal constructor.
@@ -113,7 +112,7 @@ namespace mpqc {
        * If the matrix has not been computed, then it will be computed by the
        * calling class.
        * */
-      virtual TAMatrixExpr rdm1_expr(std::string);
+      //virtual TAMatrixExpr rdm1_expr(std::string);
 
       /// Return electron 1-body reduced density matrix of spin \c s in AO basis.
       virtual const TAMatrix& rdm1(sc::SpinCase1 s) = 0;
@@ -124,7 +123,7 @@ namespace mpqc {
        * If the matrix has not been computed, then it will be computed by the
        * calling class.
        * */
-      virtual TAMatrixExpr ao_overlap_expr(std::string);
+      //virtual TAMatrixExpr ao_overlap_expr(std::string);
 
       /// Returns the AO overlap.
       virtual const TAMatrix& ao_hcore();
@@ -133,7 +132,7 @@ namespace mpqc {
        * If the matrix has not been computed, then it will be computed by the
        * calling class.
        * */
-      virtual TAMatrixExpr ao_hcore_expr(std::string);
+      //virtual TAMatrixExpr ao_hcore_expr(std::string);
 
       /// Returns debugging flag
       unsigned debug() const {

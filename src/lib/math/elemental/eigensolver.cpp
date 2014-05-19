@@ -28,7 +28,7 @@
 #include <elemental.hpp>
 #include <util/misc/regtime.h>
 #include <math/elemental/eigensolver.hpp>
-#include <tiled_array.h>
+#include <tiledarray.h>
 
 
 namespace mpqc {
@@ -127,8 +127,9 @@ namespace TA {
     TAMatrix C_occ = get_occupied_vectors(esys.second, F.trange().data()[0],
                                           occ, F.get_world());
     // Contract over occupied index i to form D_{AO}
-    TAMatrix D = C_occ("mu,i") * C_occ("nu,i");
+    TAMatrix D; D("mu,nu") = C_occ("mu,i") * C_occ("nu,i");
     F.get_world().gop.fence(); // Fence to prevent data from going out of scope
+
     return D;
   }
 

@@ -1730,7 +1730,7 @@ double PT2R12::cabs_singles_Dyall()
         "PT2R12::cabs_singles_Dyall() not implemented",
         __FILE__,
         __LINE__);
-    return 0.0;
+    return 0.0; // unreachable
   } else
 #endif
   {

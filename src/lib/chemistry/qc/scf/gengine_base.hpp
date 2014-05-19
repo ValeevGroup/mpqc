@@ -29,7 +29,7 @@
 #define MPQC_CHEMISTRY_QC_SCF_GENGINE_HPP
 
 //#include <tiledarray_fwd.h> can't use until fwd gets fixed if possible
-#include <tiled_array.h>
+#include <tiledarray.h>
 #include <vector>
 #include <utility>
 #include <util/class/class.h>

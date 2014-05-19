@@ -25,7 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 #include <chemistry/qc/scf/tascf.hpp>
-#include <tiled_array.h>
+#include <tiledarray.h>
 #include <chemistry/qc/basis/taskintegrals.hpp>
 #include <chemistry/qc/basis/integralenginepool.hpp>
 #include <math/elemental/eigensolver.hpp>

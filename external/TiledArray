@@ -118,7 +118,7 @@ if (TILEDARRAY_FOUND)
     list(APPEND CMAKE_REQUIRED_LIBRARIES ${ELEMENTAL_LIBRARIES})
     CHECK_CXX_SOURCE_COMPILES(
       "
-      #include <tiled_array.h>
+      #include <tiledarray.h>
       
       #ifndef TILEDARRAY_HAS_ELEMENTAL
       # error \"TiledArray was not compiled with Elemental support\"

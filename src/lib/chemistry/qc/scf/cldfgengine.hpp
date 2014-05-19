@@ -30,7 +30,7 @@
 
 #include <chemistry/qc/scf/gengine_base.hpp>
 #include <vector>
-#include <tiled_array.h>
+#include <tiledarray.h>
 #include <util/class/class.h>
 
 // Foward Declarations

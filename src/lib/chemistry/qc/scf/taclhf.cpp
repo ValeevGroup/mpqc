@@ -26,7 +26,7 @@
 //
 
 #include <chemistry/qc/scf/taclhf.hpp>
-#include <tiled_array.h>
+#include <tiledarray.h>
 #include <TiledArray/algebra/diis.h>
 #include <chemistry/qc/basis/integralenginepool.hpp>
 #include <chemistry/qc/basis/taskintegrals.hpp>

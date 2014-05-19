@@ -28,7 +28,7 @@
 #include <elemental.hpp>
 #include <util/misc/regtime.h>
 #include <math/elemental/eigensolver.hpp>
-#include <tiled_array.h>
+#include <tiledarray.h>
 
 
 namespace mpqc {

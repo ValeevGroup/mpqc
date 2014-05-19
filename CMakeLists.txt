@@ -51,14 +51,18 @@ else()
   set(F77_INTEGER_WIDTH 4)
   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DINTEGER77='INTEGER*4' ")
 endif()
+#list(append CMAKE_Fortran_FLAGS "-m64")
 
 # extra cmake files are shipped with MPQC
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/modules/")
 
+##############################
+# Build Type Information
+##############################
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release")
 endif()
-set(CMAKE_CXX_FLAGS_RELEASE "-g ${CMAKE_CXX_FLAGS_RELEASE}")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
 
 set(CMAKE_SKIP_RPATH FALSE)
 
@@ -311,6 +315,7 @@ list(APPEND LINK_LIBRARIES ${LIBRYSQ_LIBRARY})
 list(APPEND LINK_LIBRARIES ${LIBINT2_LIBRARY})
 list(APPEND LINK_LIBRARIES ${PSI3_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${MADNESS_LIBRARIES})
+list(APPEND LINK_LIBRARIES ${ELEMENTAL_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${OPENBABEL2_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${Boost_LIBRARIES})
 if (MPQC_UNITTEST)
@@ -415,5 +420,26 @@ CONFIGURE_FILE(
   ${PROJECT_BINARY_DIR}/bin/mpqc-config
   @ONLY
 )
+
+# GLOB all the files so they show up in qt_creator
+if(USING_QT_CREATOR_AS_IDE)
+  file(GLOB_RECURSE QT_CREATOR_SRC 
+    "*.h" 
+    "*.hpp" 
+    "*.cpp" 
+    "*.c" 
+    "*.txt" 
+    "*.in" 
+    "*.cc"
+    "*.f"
+    "TODO"
+  )
+
+  add_library(qt_creator_get_sources EXCLUDE_FROM_ALL ${QT_CREATOR_SRC})
+
+  set_target_properties(qt_creator_get_sources PROPERTIES LINKER_LANGUAGE CXX)
+
+endif(USING_QT_CREATOR_AS_IDE)
+
 
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/bin/mpqc-config DESTINATION bin)

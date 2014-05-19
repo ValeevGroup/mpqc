@@ -601,7 +601,7 @@ class GaussianBasisSet: virtual public SavableState
     /// Print a brief description of the basis set.
     void print_brief(std::ostream& =ExEnv::out0()) const;
     /// Print a detailed description of the basis set.
-    void print(std::ostream& =ExEnv::out0()) const;
+    virtual void print(std::ostream& =ExEnv::out0()) const;
 };
 
 /// Nonmember operator+ is more convenient to use than the member operator+

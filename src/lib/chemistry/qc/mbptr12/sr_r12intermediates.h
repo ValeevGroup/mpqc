@@ -221,6 +221,8 @@ namespace sc {
       /// standard 2-index tensor
       typedef TA::Array<T, 2> TArray2; // Tile = Tensor<T>
       /// 2-index tensor with lazy tiles
+      typedef TA::Array<T, 2, DA4_Tile<T> > TArray2d; // Tile = DA4_Tile<T>
+      /// 2-index tensor with lazy tiles
       //typedef TA::Array<T, 2, LazyTensor<T, 2, ElementGenerator> > TArray2d; // Tile = LazyTensor<T, 2, ElementGenerator>
       /// 2-index tensor of 2-index tensors
       typedef TA::Array<TA::Tensor<T>, 2> TArray22; // Tile = Tensor<Tensor<T>>

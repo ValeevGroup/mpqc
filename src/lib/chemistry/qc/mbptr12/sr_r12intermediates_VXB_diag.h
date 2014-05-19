@@ -2544,62 +2544,68 @@ namespace sc {
   typename SingleReference_R12Intermediates<T>::TArray4
   SingleReference_R12Intermediates<T>::V_spinfree(bool symmetrize_p1_p2) {
 
-    TArray4 V_ij_mn = _4("<i1 i2|gr|m1 m2>") - _4("<i1 i2|r|p1 p2>") * _4("<m1 m2|g|p1 p2>")
+    TArray4 V_ij_mn;
+    V_ij_mn("i1,i2,m1,m2") = _4("<i1 i2|gr|m1 m2>") - _4("<i1 i2|r|p1 p2>") * _4("<m1 m2|g|p1 p2>")
                     - _4("<i1 i2|r|m3_gamma(m) a'>") * _4("<m1 m2|g|m3 a'>");
 
     if (symmetrize_p1_p2)
-      return 0.5 * (V_ij_mn("i1,i2,m1,m2") + V_ij_mn("i2,i1,m2,m1"));
-    else
-      return V_ij_mn;
+      V_ij_mn("i1,i2,m1,m2") = 0.5 * (V_ij_mn("i1,i2,m1,m2") + V_ij_mn("i2,i1,m2,m1"));
+
+    return V_ij_mn;
   }
 
   template <typename T>
   typename SingleReference_R12Intermediates<T>::TArray4
   SingleReference_R12Intermediates<T>::X_spinfree(bool symmetrize_p1_p2) {
 
-    TArray4 X_ij_kl = _4("<i1 i2|r2|j1 j2>") - _4("<i1 i2|r|p1 p2>") * _4("<j1 j2|r|p1 p2>")
+    TArray4 X_ij_kl;
+    X_ij_kl("i1,i2,j1,j2") = _4("<i1 i2|r2|j1 j2>") - _4("<i1 i2|r|p1 p2>") * _4("<j1 j2|r|p1 p2>")
                     - _4("<i1 i2|r|m3_gamma(m) a'>") * _4("<j1 j2|r|m3 a'>");
 
     if (symmetrize_p1_p2)
-      return 0.5 * (X_ij_kl("i1,i2,j1,j2") + X_ij_kl("i2,i1,j2,j1"));
-    else
-      return X_ij_kl;
+      X_ij_kl("i1,i2,j1,j2") = 0.5 * (X_ij_kl("i1,i2,j1,j2") + X_ij_kl("i2,i1,j2,j1"));
+
+    return X_ij_kl;
   }
 
   template <typename T>
   typename SingleReference_R12Intermediates<T>::TArray4
   SingleReference_R12Intermediates<T>::B_spinfree(bool symmetrize_p1_p2) {
 
-    TArray4 B_ij_kl =
+    TArray4 B_ij_kl;
+    B_ij_kl("i1,i2,j1,j2") =
 
-        // everything seems scaled up by factor of 2 relative to Eq.(12) in J. Chem. Phys. 135, 214105 (2011),
-        // due to including particle 1 and particle 2 contributions?
+    // everything seems scaled up by factor of 2 relative to Eq.(12) in J. Chem. Phys. 135, 214105 (2011),
+    // due to including particle 1 and particle 2 contributions?
 
-        // diag                      Q
+    // diag                      Q
         _4("<i1 i2|rTr|j1 j2>") + 2.0 * _4("<i1 i2|r2|j1 j2_hJ(p')>")
 
         //           rKr
-        -2.0 * _4("<i1 i2|r|r' s'>") * _4("<j1 j2|r|r' s'_K(p')>")
+            - 2.0 * _4("<i1 i2|r|r' s'>") * _4("<j1 j2|r|r' s'_K(p')>")
 
-        //           rFr
-        -2.0 * _4("<i1 i2|r|r s>") * _4("<j1 j2|r|r s_F(p)>")
+            //           rFr
+            - 2.0 * _4("<i1 i2|r|r s>") * _4("<j1 j2|r|r s_F(p)>")
 
-        //           rFr_2, extra 2 due to bra-ket symmetrization
-        -4.0 * _4("<i1 i2|r|r s>") * _4("<j1 j2|r|r s_F(a')>")
+            //           rFr_2, extra 2 due to bra-ket symmetrization
+            - 4.0 * _4("<i1 i2|r|r s>") * _4("<j1 j2|r|r s_F(a')>")
 
-        //           rFGr
-        - _4("<i1 i2|r|n_gamma(m) b'>") * _4("<j1 j2|r|n b'_F(a')>")
+            //           rFGr
+            - _4("<i1 i2|r|n_gamma(m) b'>") * _4("<j1 j2|r|n b'_F(a')>")
 
-        //           rFGr_2
-        - _4("<i1 i2|r|n_gamma(m) a'>") * _4("<j1 j2|r|n_F(p') a'>");
+            //           rFGr_2
+            - _4("<i1 i2|r|n_gamma(m) a'>") * _4("<j1 j2|r|n_F(p') a'>");
 
-    B_ij_kl = 0.5 * (B_ij_kl("i1,i2,j1,j2") + B_ij_kl("i2,i1,j2,j1"));
-    B_ij_kl = 0.5 * (B_ij_kl("i1,i2,j1,j2") + B_ij_kl("j1,j2,i1,i2"));
+    B_ij_kl("i1,i2,j1,j2") = 0.5
+        * (B_ij_kl("i1,i2,j1,j2") + B_ij_kl("i2,i1,j2,j1"));
+    B_ij_kl("i1,i2,j1,j2") = 0.5
+        * (B_ij_kl("i1,i2,j1,j2") + B_ij_kl("j1,j2,i1,i2"));
 
     if (symmetrize_p1_p2)
-      return 0.5 * (B_ij_kl("i1,i2,j1,j2") + B_ij_kl("i2,i1,j2,j1"));
-    else
-      return B_ij_kl;
+      B_ij_kl("i1,i2,j1,j2") = 0.5
+          * (B_ij_kl("i1,i2,j1,j2") + B_ij_kl("i2,i1,j2,j1"));
+
+    return B_ij_kl;
   }
 
 

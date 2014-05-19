@@ -232,13 +232,13 @@ AssignmentBin::register_in_row(const AssignmentBinRow& row, bool is_df) {
   (*row.pq_handle).add_bin(shared_from_this());
   if(is_df) {
     dfbs_row_id = row.id;
-    for(auto& dfbs_atom : row.assigned_items) {
+    for(auto dfbs_atom : row.assigned_items) {
       assign_dfbs_atom(dfbs_atom);
     }
   }
   else {
     obs_row_id = row.id;
-    for(auto& obs_shell : row.assigned_items) {
+    for(auto obs_shell : row.assigned_items) {
       assign_obs_shell(obs_shell);
     }
   }
@@ -332,7 +332,10 @@ AssignmentBin::assign_dfbs_atom(const boost::shared_ptr<AssignableItem>& dfbs_at
 inline void
 AssignmentBin::assign_obs_shell(const boost::shared_ptr<AssignableItem>& obs_shell)
 {
-  assigned_obs_shells.insert(boost::static_pointer_cast<AssignableShell>(obs_shell));
+  // MEMORY LEAK?
+  //assigned_obs_shells.insert(boost::static_pointer_cast<AssignableShell>(obs_shell));
+  assert(assigned_obs_shells.find(obs_shell) == assigned_obs_shells.end());
+  assigned_obs_shells.insert(obs_shell);
   obs_coef_offsets[obs_shell->index] = obs_ncoefs;
   obs_ncoefs += obs_shell->coefs_size;
   estimated_workload += obs_ncoefs;

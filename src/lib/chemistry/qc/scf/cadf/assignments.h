@@ -36,6 +36,8 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/enable_shared_from_this.hpp>
+//#include <boost/container/set.hpp>
+
 
 #include <boost/heap/fibonacci_heap.hpp>
 
@@ -258,7 +260,7 @@ class AssignmentBin : public boost::enable_shared_from_this<AssignmentBin> {
     std::vector<boost::shared_ptr<Node>> nodes_list;
     ptr_set<boost::shared_ptr<AssignableAtom>, detail::index_less> assigned_dfbs_atoms;
     std::set<uint> assigned_dfbs_shells;
-    ptr_set<boost::shared_ptr<AssignableShell>, detail::index_less> assigned_obs_shells;
+    ptr_set<boost::shared_ptr<AssignableItem>, detail::index_less> assigned_obs_shells;
     std::array<std::vector<boost::shared_ptr<AssignableItem>>, 2> compute_coef_items;
     uli estimated_workload = 0;
     uli coef_workload = 0;

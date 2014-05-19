@@ -27,7 +27,8 @@
 //
 
 // Boost includes
-#include <boost/math/special_functions/erf.hpp>
+// NOTE:  THIS CAUSES VALGRIND ERRORS
+//#include <boost/math/special_functions/erf.hpp>
 
 // MPQC includes
 #include <chemistry/qc/basis/petite.h>
@@ -258,6 +259,7 @@ CADFCLHF::init_threads()
 
   ExEnv::out0() << indent << "Computing static distribution of significant pairs for Coulomb" << endl;
   int inode = 0;
+  // TODO More efficient distribution based on load balancing and minimizing thread collisions
   for(auto&& sig_pair : sig_pairs_) {
     const int assignment = inode % n_node;
     pair_assignments_[SignificantPairs][sig_pair] = assignment;
@@ -498,7 +500,15 @@ CADFCLHF::init_significant_pairs()
     centers_[iatom] << r[0], r[1], r[2];
   }
 
-  const double erfcinv_thr = boost::math::erfc_inv(well_separated_thresh_);
+  // Causes Valgrind to fail
+  //const double erfcinv_thr = boost::math::erfc_inv(well_separated_thresh_);
+  double erfcinv_thr;
+  if(well_separated_thresh_ == 0.1) {
+    erfcinv_thr = 1.1630871536766740867262542605629475934779325500020816;
+  }
+  else {
+    throw FeatureNotImplemented("Erfc_inv of number other than 0.1", __FILE__, __LINE__, class_desc());
+  }
 
 
   for(auto&& ish : shell_range(my_part.obs_shells_to_do, gbs_, dfbs_)) {

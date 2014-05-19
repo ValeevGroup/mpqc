@@ -47,11 +47,13 @@ void CADFCLHF::ScreeningStatistics::print_summary(
   if(print_level_in != -1) {
     print_lvl = print_level_in;
   }
-  const auto& old_loc = out.getloc();
-  try{
-    out.imbue(std::locale(""));
-  }
-  catch(...) { } // oh well, we tried
+
+  // LOCALES CAUSE MEMORY LEAKS according to valgrind
+  //const auto& old_loc = out.getloc();
+  //try{
+  //  out.imbue(std::locale(""));
+  //}
+  //catch(...) { } // oh well, we tried
 
   out << indent << "CADFCLHF Screening Statistics" << endl;
   out << indent << "-----------------------------" << endl;
@@ -100,7 +102,7 @@ void CADFCLHF::ScreeningStatistics::print_summary(
       out << decindent;
     }
   }
-  out.imbue(old_loc);
+  //out.imbue(old_loc);
 }
 
 

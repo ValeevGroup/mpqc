@@ -308,7 +308,7 @@ CADFCLHF::compute_coefficients()
     ExEnv::out0() << indent << "Total memory usage is now at least " << data_size_to_string(memory_used_.load()) << std::endl;
 
     // Initialize the Eigen::Maps of data parts
-    for(auto&& obs_shell : my_part.bin->assigned_obs_shells) {
+    for(auto obs_shell : my_part.bin->assigned_obs_shells) {
       ShellData ish(obs_shell->index, gbs_, dfbs_);
       coefs_mu_X.emplace(
           std::piecewise_construct,
@@ -327,7 +327,7 @@ CADFCLHF::compute_coefficients()
           )
       );
     }
-    for(auto&& dfbs_atom : my_part.bin->assigned_dfbs_atoms) {
+    for(auto dfbs_atom : my_part.bin->assigned_dfbs_atoms) {
       ShellBlockData<> Xblk = ShellBlockData<>::atom_block(dfbs_atom->index, dfbs_, gbs_);
       coefs_X_nu.emplace(
           std::piecewise_construct,
@@ -349,7 +349,7 @@ CADFCLHF::compute_coefficients()
 
     do_threaded(nthread_, [&](int ithr) {
       std::vector<Eigen::Map<Eigen::VectorXd>> empty;
-      for(auto&& obs_shell : thread_over_range(
+      for(auto obs_shell : thread_over_range(
           my_part.compute_coef_items[false], ithr, nthread_
       )) {
         // Do the C_mu_X part first

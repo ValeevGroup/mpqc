@@ -26,6 +26,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#define J_THREAD_SPARSE 1
 
 #include <chemistry/qc/basis/petite.h>
 #include <util/misc/xmlwriter.h>
@@ -77,11 +78,11 @@ CADFCLHF::compute_J()
 
   timer.enter("compute C_tilde");
   Eigen::VectorXd C_tilde(dfnbf);
-  C_tilde = Eigen::VectorXd::Zero(dfnbf);
+  C_tilde.setZero();
   RowMatrix C_t_ex;
   if(exact_diagonal_J_) {
     C_t_ex.resize(natom, dfnbf);
-    C_t_ex = RowMatrix::Zero(natom, dfnbf);
+    C_t_ex.setZero();
   }
 
   //----------------------------------------//
@@ -98,12 +99,12 @@ CADFCLHF::compute_J()
         /* C_tilde compute thread                         {{{2 */ #if 2 // begin fold
 
         decltype(C_tilde) Ct(dfnbf);
-        Ct = decltype(C_tilde)::Zero(dfnbf);
+        Ct.setZero(dfnbf);
 
         decltype(C_t_ex) Ct_ex_thr;
         if(exact_diagonal_J_) {
           Ct_ex_thr.resize(natom, dfnbf);
-          Ct_ex_thr = decltype(C_t_ex)::Zero(natom, dfnbf);
+          Ct_ex_thr.setZero(natom, dfnbf);
         }
 
         ShellData ish, jsh;
@@ -185,9 +186,9 @@ CADFCLHF::compute_J()
     ShellData ish, jsh;
     while(get_shell_pair(ish, jsh, SignificantPairs)){
       W[{ish, jsh}].resize(ish.nbf*jsh.nbf, dfnbf);
-      W[{ish, jsh}] = RowMatrix::Zero(ish.nbf*jsh.nbf, dfnbf);
+      W[{ish, jsh}].setZero();
       W[{jsh, ish}].resize(ish.nbf*jsh.nbf, dfnbf);
-      W[{jsh, ish}] = RowMatrix::Zero(ish.nbf*jsh.nbf, dfnbf);
+      W[{jsh, ish}].setZero();
     }
 
     local_pairs_spot_ = 0;
@@ -281,33 +282,41 @@ CADFCLHF::compute_J()
         /* d_tilde compute and C_tilde contract thread    {{{2 */ #if 2 // begin fold
         mt_timer.enter("misc", ithr);
         Eigen::VectorXd dt(dfnbf);
-        dt = Eigen::VectorXd::Zero(dfnbf);
-        // We could avoid N^2 * nthread storage by making this an offset array of local shells, but that's a lot of work
+        dt.setZero();
+
+
+#if J_THREAD_SPARSE
+        std::unordered_map<int, RowMatrix> jparts;
+#else
         double* __restrict__ jpart_data = new double[nbf*nbf];
         Eigen::Map<ColMatrix> jpart(jpart_data, nbf, nbf);
-        jpart = Eigen::MatrixXd::Zero(nbf, nbf);
+        jpart.setZero();
+#endif
+
         RowMatrix dt_ex_thr;
         if(exact_diagonal_J_) {
           dt_ex_thr.resize(natom, dfnbf);
-          dt_ex_thr = RowMatrix::Zero(natom, dfnbf);
+          dt_ex_thr.setZero();
         }
+
         double* __restrict__ j_intbuff = new double[max_fxn_obs_j_ish_*max_fxn_obs_j_jsh_*
           // The extra max_fxn_dfbs_ is just to be safe, since the block size is only a "target"
           std::min(dfbs_->nbasis(), (unsigned int)(DEFAULT_TARGET_BLOCK_SIZE + max_fxn_dfbs_))
         ];
+
         //----------------------------------------//
         mt_timer.change("loop significant ij", ithr);
         auto ints_timer = mt_timer.get_subtimer("compute_ints", ithr);
         auto contract_timer = mt_timer.get_subtimer("contract", ithr);
         auto ex_timer = mt_timer.get_subtimer("exact diagonal", ithr);
         ShellData ish, jsh;
+
         while(get_shell_pair(ish, jsh, SignificantPairs)){
           //----------------------------------------//
           double perm_fact = (ish == jsh) ? 2.0 : 4.0;
           //----------------------------------------//
           // Note:  SameCenter shell_block requirement is the default
           for(auto&& Xblk : shell_block_range(dfbs_, gbs_, 0, NoLastIndex, exact_diagonal_J_ ? SameCenter : NoRestrictions)){
-          //for(auto&& Xblk : shell_block_range(dfbs_, gbs_, 0, NoLastIndex, SameCenter)){
 
             TimerHolder subtimer(ints_timer);
             auto g3 = ints_to_eigen_map(
@@ -315,20 +324,28 @@ CADFCLHF::compute_J()
                 eris_3c_[ithr], coulomb_oper_type_,
                 j_intbuff
             );
-            //auto g3 = *g3_part;
-            //auto g_part = ints_to_eigen(
-            //    ish, jsh, Xblk,
-            //    eris_3c_[ithr],
-            //    coulomb_oper_type_
-            //);
-            //const auto& g3 = *g_part;
+
+#if J_THREAD_SPARSE
+            auto&& found = jparts.find(ish.index);
+            if(found == jparts.end()) {
+              auto& new_row = jparts[ish.index];
+              new_row.resize(ish.nbf, nbf);
+              new_row.setZero();
+            }
+            auto& jpart = jparts[ish.index];
+#endif
 
             subtimer.change(contract_timer);
             for(auto&& mu : function_range(ish)) {
               dt.segment(Xblk.bfoff, Xblk.nbf).transpose() += perm_fact * D.row(mu).segment(jsh.bfoff, jsh.nbf)
                   * g3.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf);
               //----------------------------------------//
-              jpart.row(mu).segment(jsh.bfoff, jsh.nbf).transpose() +=
+#if J_THREAD_SPARSE
+              jpart.row(mu.off)
+#else
+              jpart.row(mu)
+#endif
+              .segment(jsh.bfoff, jsh.nbf).transpose() +=
                   g3.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf)
                   * C_tilde.segment(Xblk.bfoff, Xblk.nbf);
             }
@@ -336,7 +353,10 @@ CADFCLHF::compute_J()
             /*-----------------------------------------------------*/
             /* Exact diagonal part                            {{{3 */ #if 3 // begin fold
             if(exact_diagonal_J_) {
+#if J_THREAD_SPARSE
+              throw FeatureNotImplemented("Thread-sparse J with exact diagonal", __FILE__, __LINE__, class_desc());
 
+#endif
               subtimer.change(ex_timer);
 
               const auto& Wij = W[{ish, jsh}];
@@ -405,9 +425,11 @@ CADFCLHF::compute_J()
         } // end while get_shell_pair
         mt_timer.change("misc", ithr);
         // only constructing the lower triangle of the J matrix, so zero the strictly upper part
-        jpart.triangularView<Eigen::StrictlyUpper>().setZero();
         delete[] j_intbuff;
         //----------------------------------------//
+#if !J_THREAD_SPARSE
+        jpart.triangularView<Eigen::StrictlyUpper>().setZero();
+#endif
         // add our contribution to the node level d_tilde
         mt_timer.change("sum thread contributions", ithr);
         {
@@ -416,15 +438,27 @@ CADFCLHF::compute_J()
           if(exact_diagonal_J_) {
             d_t_ex.noalias() += dt_ex_thr;
           }
+#if J_THREAD_SPARSE
+          for(const auto& pair : jparts) {
+            ShellData ish(pair.first, gbs_);
+            J.middleRows(ish.bfoff, ish.nbf).noalias() += pair.second;
+          }
+#else
           J.noalias() += jpart;
+#endif
         }
+#if !J_THREAD_SPARSE
         delete[] jpart_data;
+#endif
         mt_timer.exit(ithr);
         /*******************************************************/ #endif //2}}}
         /*-----------------------------------------------------*/
       }); // end create_thread
     } // end enumeration of threads
     compute_threads.join_all();
+#if J_THREAD_SPARSE
+    J.triangularView<Eigen::StrictlyUpper>().setZero();
+#endif
     mt_timer.exit();
     timer.insert(mt_timer);
     if(print_iteration_timings_) mt_timer.print(ExEnv::out0(), 12, 45);
@@ -461,23 +495,48 @@ CADFCLHF::compute_J()
       compute_threads.create_thread([&,ithr](){
         auto contract_timer = mt_timer.get_subtimer("contract", ithr);
         auto ex_timer = mt_timer.get_subtimer("exact diagonal", ithr);
+
+#if J_THREAD_SPARSE
+        std::unordered_map<std::pair<int,int>, RowMatrix, sc::hash<std::pair<int, int>>> jparts;
+#else
         double* __restrict__ jpart_data = new double[nbf*nbf];
         Eigen::Map<ColMatrix> jpart(jpart_data, nbf, nbf);
         jpart = Eigen::MatrixXd::Zero(nbf, nbf);
+#endif
+
         //----------------------------------------//
         ShellData ish, jsh;
         while(get_shell_pair(ish, jsh, SignificantPairs)){
+#if J_THREAD_SPARSE
+              auto&& found = jparts.find({ish.index, jsh.index});
+              if(found == jparts.end()) {
+                auto& new_part = jparts[{ish.index, jsh.index}];
+                new_part.resize(ish.nbf, jsh.nbf);
+                new_part.setZero();
+              }
+              auto& jpart = jparts[{ish.index, jsh.index}];
+#endif
           /*-----------------------------------------------------*/
           /* first and third terms compute thread           {{{2 */ #if 2 // begin fold
           //----------------------------------------//
           TimerHolder subtimer(contract_timer);
-          for(auto&& mu : function_range(ish)){
-            for(auto&& nu : function_range(jsh)){
+          for(auto&& mu_fxn : function_range(ish)){
+            for(auto&& nu_fxn : function_range(jsh)){
               //----------------------------------------//
-              auto cpair = coefs_[{mu, nu}];
+              auto cpair = coefs_[{mu_fxn, nu_fxn}];
               auto& Ca = *(cpair.first);
               auto& Cb = *(cpair.second);
               //----------------------------------------//
+
+#if J_THREAD_SPARSE
+              int mu = mu_fxn.off;
+              int nu = nu_fxn.off;
+#else
+              int mu = mu_fxn.index;
+              int nu = nu_fxn.index;
+#endif
+
+
               // First term contribution
               jpart(mu, nu) += d_tilde.segment(ish.atom_dfbfoff, ish.atom_dfnbf).transpose() * Ca;
               if(ish.center != jsh.center){
@@ -503,6 +562,9 @@ CADFCLHF::compute_J()
           /* Add back in the exact diagonal integrals       {{{2 */ #if 2 // begin fold
           //----------------------------------------//
           if(exact_diagonal_J_) {
+#if J_THREAD_SPARSE
+            throw FeatureNotImplemented("thread sparse J with exact diagonal", __FILE__, __LINE__, class_desc());
+#endif
             subtimer.change(ex_timer);
             double epf = (ish.center == jsh.center) ? 2.0 : 4.0;
             for(auto&& ksh : iter_shells_on_center(obs, ish.center)) {
@@ -531,9 +593,19 @@ CADFCLHF::compute_J()
         // Sum the thread's contributions to the node-level J
         {
           boost::lock_guard<boost::mutex> tmp_lock(tmp_mutex);
+#if J_THREAD_SPARSE
+          for(auto&& pair : jparts) {
+            ShellData ish(pair.first.first, gbs_);
+            ShellData jsh(pair.first.second, gbs_);
+            J.block(ish.bfoff, jsh.bfoff, ish.nbf, jsh.nbf).noalias() += pair.second;
+          }
+#else
           J.noalias() += jpart;
+#endif
         }
+#if !J_THREAD_SPARSE
         delete[] jpart_data;
+#endif
       }); // end create_thread
     } // end enumeration of threads
     compute_threads.join_all();

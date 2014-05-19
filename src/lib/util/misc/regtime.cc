@@ -958,7 +958,10 @@ double Timer::flops(const char* region) const {
 }
 
 void Timer::insert(const MultiThreadTimer& timer) {
-  timer_->acquire_timed_region(timer.make_timed_region());
+  TimedRegion* reg = timer.make_timed_region();
+  timer_->acquire_timed_region(reg);
+  delete reg;
+  return;
 }
 
 //////////////////////////////////////////////////////////////////////

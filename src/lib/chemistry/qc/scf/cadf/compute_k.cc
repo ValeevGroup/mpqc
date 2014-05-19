@@ -40,6 +40,7 @@ using namespace sc;
 using std::cout;
 using std::endl;
 
+#define K_THREAD_SPARSE 1
 
 #define DEBUG_K_INTERMEDIATES 0
 
@@ -839,14 +840,25 @@ CADFCLHF::compute_K()
       }
     };                                                                                   //latex `\label{sc:k3b:getiXend}`
 
+#if K_THREAD_SPARSE
+    std::vector<boost::shared_ptr<boost::mutex>> Kt_atom_col_mutexes;
+    for(int i = 0; i < natom; ++i) {
+      Kt_atom_col_mutexes.push_back(boost::make_shared<boost::mutex>());
+    }
+#endif
+
     // Loop over number of threads
     for(int ithr = 0; ithr < nthread_; ++ithr) {
       // ...and create each thread that computes pairs
       compute_threads.create_thread([&,ithr](){                                              //latex `\label{sc:k3b:thrpatend}`
 
         // thread-local portion of K_tilde
-        Eigen::MatrixXd Kt_part(nbf, nbf);
-        Kt_part = Eigen::MatrixXd::Zero(nbf, nbf);
+        Eigen::MatrixXd Kt_part;
+#if K_THREAD_SPARSE
+        if(not distribute_coefficients_ or not screen_B_)
+#endif
+          Kt_part.resize(nbf, nbf);
+        Kt_part.setZero(); //= Eigen::MatrixXd::Zero(nbf, nbf);
 
         ShellData ish;
         ShellData jsh;
@@ -1025,14 +1037,25 @@ CADFCLHF::compute_K()
 
 
                 if(screen_B_) {
+#if K_THREAD_SPARSE
+                  RowMatrix my_Kt_part(jblk.nbf, nbf);
+                  my_Kt_part.setZero();
+#endif
                   for(auto&& mu : function_range(ish)) {
                     TimerHolder subtimer(k_contrib_timer_o);
                     int kblk_offset = 0;
                     for(auto&& kblk_pair : kblks_over) {
+#if K_THREAD_SPARSE
+                      my_Kt_part.block(
+                          0, kblk_pair.first,
+                          jblk.nbf, kblk_pair.second
+                      ).noalias() +=
+#else
                       Kt_part.block(
                           kblk_pair.first, jblk.bfoff,
                           kblk_pair.second, jblk.nbf
                       ).transpose().noalias() +=
+#endif
                           gt_ish_X.middleRows(mu.off*Xblk.nbf, Xblk.nbf).transpose()
                           * dt_ish_X.block(
                               mu.off*Xblk.nbf, kblk_offset,
@@ -1042,10 +1065,28 @@ CADFCLHF::compute_K()
                     }
 
                     subtimer.change(k_contrib_timer_u);
-                    Kt_part.middleCols(jblk.bfoff, jblk.nbf).middleRows(Xblk.atom_obsbfoff, Xblk.atom_obsnbf).transpose().noalias() +=
+#if K_THREAD_SPARSE
+                      my_Kt_part.block(
+                          0, Xblk.atom_obsbfoff,
+                          jblk.nbf, Xblk.atom_obsnbf
+                      ).noalias() +=
+#else
+                    Kt_part.block(
+                        Xblk.atom_obsbfoff, jblk.bfoff,
+                        Xblk.atom_obsnbf, jblk.nbf
+                    ).transpose().noalias() +=
+#endif
                         gt_ish_X.middleRows(mu.off*Xblk.nbf, Xblk.nbf).transpose()
                         * dt_prime.middleRows(mu.off*Xblk.nbf, Xblk.nbf);
                   }
+#if K_THREAD_SPARSE
+                  int jsblk_off = 0;
+                  for(auto&& jsblk : shell_block_range(jblk, Contiguous|SameCenter)) {
+                    boost::lock_guard<boost::mutex> lg(*Kt_atom_col_mutexes[jsblk.center]);
+                    Kt.middleCols(jsblk.bfoff, jsblk.nbf).transpose().noalias() += my_Kt_part.middleRows(jsblk_off, jsblk.nbf);
+                    jsblk_off += jsblk.nbf;
+                  }
+#endif
 
                 }
                 else {
@@ -1623,6 +1664,12 @@ CADFCLHF::compute_K()
           mt_timer.change("K contributions", ithr);
           const int obs_atom_bfoff = obs->shell_to_function(obs->shell_on_center(Xblk.center, 0));
           const int obs_atom_nbf = obs->nbasis_on_center(Xblk.center);
+#if K_THREAD_SPARSE
+          RowMatrix my_Kt_part;
+          if(distribute_coefficients_ and screen_B_) {
+            my_Kt_part.setZero(ish.nbf, nbf);
+          }
+#endif
           for(auto&& X : function_range(Xblk)) {
             for(auto&& mu : function_range(ish)) {
               // TODO get rid of one of these loops
@@ -1653,17 +1700,34 @@ CADFCLHF::compute_K()
                     screen_B_ ? Xblk.atom_obsnbf : 0
                 );
                 if(screen_B_) {
-                  Kt_part.col(mu).segment(obs_atom_bfoff, obs_atom_nbf).noalias() +=
-                      C_X_diff_X
-                      * B_sd.row(mu.bfoff_in_shell*Xblk.nbf + X.bfoff_in_block).tail(l_b_size).transpose();
+#if K_THREAD_SPARSE
+                  if(distribute_coefficients_) {
+                    my_Kt_part.row(mu.off).segment(obs_atom_bfoff, obs_atom_nbf).transpose().noalias() +=
+                        C_X_diff_X
+                        * B_sd.row(mu.bfoff_in_shell*Xblk.nbf + X.bfoff_in_block).tail(l_b_size).transpose();
+                  }
+                  else {
+#endif
+                    Kt_part.col(mu).segment(obs_atom_bfoff, obs_atom_nbf).noalias() +=
+                        C_X_diff_X
+                        * B_sd.row(mu.bfoff_in_shell*Xblk.nbf + X.bfoff_in_block).tail(l_b_size).transpose();
+#if K_THREAD_SPARSE
+                  }
+#endif
+
 
                   if(distribute_coefficients_) {
                     Eigen::Map<RowMatrix> C_X_view(
                         coefs_X_nu.at(Xsh.center).row(X.bfoff_in_atom).data(),
                         Xblk.atom_obsnbf, nbf
                     );
+#if K_THREAD_SPARSE
+                    my_Kt_part.row(mu.off).transpose().noalias() += C_X_view.transpose()
+                        * B_sd.row(mu.bfoff_in_shell*Xblk.nbf + X.bfoff_in_block).head(obs_atom_nbf).transpose();
+#else
                     Kt_part.col(mu).noalias() += C_X_view.transpose()
                         * B_sd.row(mu.bfoff_in_shell*Xblk.nbf + X.bfoff_in_block).head(obs_atom_nbf).transpose();
+#endif
                   }
                   else {
                     Kt_part.col(mu).noalias() += C_X.transpose()
@@ -1686,6 +1750,12 @@ CADFCLHF::compute_K()
               //----------------------------------------//
             }
           }
+#if K_THREAD_SPARSE
+          {
+            boost::lock_guard<boost::mutex> lg(*Kt_atom_col_mutexes[ish.center]);
+            Kt.middleCols(ish.bfoff, ish.nbf) += my_Kt_part.transpose();
+          }
+#endif
           if(exact_diagonal_K_) {
             mt_timer.enter("exact diagonal subtract", ithr);
             assert(Xblk.atom_dfbfoff != NotAssigned and Xblk.atom_dfnbf != NotAssigned);
@@ -1729,8 +1799,15 @@ CADFCLHF::compute_K()
         //============================================================================//
         //----------------------------------------//
         // Sum Kt parts within node
-        boost::lock_guard<boost::mutex> lg(tmp_mutex);
-        Kt += Kt_part;
+#if K_THREAD_SPARSE
+        if(not distribute_coefficients_ or not screen_B_) {
+#endif
+          boost::lock_guard<boost::mutex> lg(tmp_mutex);
+          Kt += Kt_part;
+#if K_THREAD_SPARSE
+        }
+#endif
+
       }); // end create_thread
     } // end enumeration of threads
 

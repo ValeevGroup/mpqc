@@ -33,6 +33,7 @@
 #include <chemistry/qc/basis/obint.h>
 #include <chemistry/qc/basis/fjt.h>
 #include <libint2/boys.h>
+#include <chemistry/qc/libint2/core_ints_engine.h>
 
 namespace sc {
 
@@ -47,8 +48,7 @@ class Int1eLibint2: public RefCount {
     Ref<GaussianBasisSet> bs1_;
     Ref<GaussianBasisSet> bs2_;
 
-    // This was really an afterthought, should have designed better
-    Ref<DipoleData> multipole_origin_;
+    Ref<IntParams> operset_params_;
     Ref<EfieldDotVectorData> EdotV_origin_;
     Ref<PointChargeData> Q_origin_;
 
@@ -88,13 +88,27 @@ class Int1eLibint2: public RefCount {
     // Such buffer contains all integrals including intermediates
     // These integrals are nonseparable, hence the first and second indices are composite
     double ***AI0_;
+    double ***AIX_;
+    double ***AIY_;
+    double ***AIZ_;
+    double ***AIXX_;
+    double ***AIXY_;
+    double ***AIXZ_;
+    double ***AIYY_;
+    double ***AIYZ_;
+    double ***AIZZ_;
     int indmax_;         // that's the range of the first 2 indices of AI0
     // Compute engines
-    void AI_OSrecurs_(double ***AI0, double PA[3], double PB[3],
-		      double PC[3], double gamma, int iang, int jang);
+    // Order = 0 => potential
+    // Order = 1 => efield
+    // Order = 2 => efield gradient
+    template <int Order> void AI_OSrecurs_(double PA[3], double PB[3],
+                                           double PC[3], double gamma, int iang, int jang);
     void OI_OSrecurs_(double **OIX, double **OIY, double **OIZ, double PA[3], double PB[3],
 		      double gamma, int lmaxi, int lmaxj);
-    ::libint2::FmEval_Chebyshev3* Fm_Eval_;
+    typedef ::libint2::FmEval_Chebyshev3 _FmEvalType;
+    typedef CoreIntsEngine<_FmEvalType>::Engine FmEvalType;
+    Ref<FmEvalType> Fm_Eval_;
     double* Fm_table_;
 
     // tasks common to different types of integral evaluation
@@ -119,6 +133,8 @@ class Int1eLibint2: public RefCount {
     void hcore_sameam_general_();
     void edipole_full_general_();
     void equadrupole_full_general_();
+    void efield_full_general_();
+    void efield_grad_full_general_();
     void p4_full_general_();
 
     // Utility functions
@@ -134,10 +150,11 @@ class Int1eLibint2: public RefCount {
             int order, bool need_overlap, bool need_coulomb, int ntypes);
     ~Int1eLibint2();
 
-    void set_multipole_origin(const Ref<DipoleData>&);
+    void set_params(const Ref<IntParams>& p);
     void set_EdotV_origin(const Ref<EfieldDotVectorData>&);
     void set_Q_origin(const Ref<PointChargeData>&);
-    Ref<DipoleData> multipole_origin();
+    Ref<IntParams> params();
+    Ref<IntParamsOrigin> origin();
     Ref<EfieldDotVectorData> EdotV_origin();
     Ref<PointChargeData> Q_origin();
 
@@ -152,8 +169,12 @@ class Int1eLibint2: public RefCount {
     void hcore(int ish, int jsh);
     void edipole(int ish, int jsh);
     void equadrupole(int ish, int jsh);
+    void efield(int ish, int jsh);
+    void efield_grad(int ish, int jsh);
     void p4(int ish, int jsh);
 };
+
+#include <chemistry/qc/libint2/obosrr.timpl.h>
 
 }
 

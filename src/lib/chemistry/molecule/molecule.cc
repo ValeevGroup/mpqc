@@ -38,6 +38,10 @@
 #include <math/scmat/cmatrix.h>
 #include <algorithm>
 
+#ifdef HAVE_OPENBABEL2
+#  include <openbabel/mol.h>
+#  include <openbabel/obconversion.h>
+#endif // HAVE_OPENBABEL2
 
 using namespace std;
 using namespace sc;
@@ -121,11 +125,23 @@ Molecule::Molecule(const Ref<KeyVal>&input):
   atominfo_ << input->describedclassvalue("atominfo");
   if (atominfo_.null()) atominfo_ = new AtomInfo;
   q_Z_ = atominfo_->string_to_Z("Q");
-  if (input->exists("pdb_file")) {
-      geometry_units_ = new Units("angstrom");
-      std::string filename = input->stringvalue("pdb_file");
-      read_pdb(filename.c_str());
-    }
+
+  if (input->exists("file")) {
+#ifdef HAVE_OPENBABEL2
+    // use OpenBabel2
+    geometry_units_ = new Units("angstrom");
+    std::string filename = input->stringvalue("file");
+    read_openbabel2(filename.c_str());
+#else
+    throw InputError("Keyword \"file\" given but this copy of MPQC does not include OpenBabel2",
+                     __FILE__, __LINE__);
+#endif // HAVE_OPENBABEL2
+  }
+  else if (input->exists("xyz_file")) {
+    geometry_units_ = new Units("angstrom");
+    std::string filename = input->stringvalue("xyz_file");
+    read_xyz(filename.c_str());
+  }
   else {
       // check for old style units input first
       if (input->booleanvalue("angstrom")
@@ -826,9 +842,9 @@ void
 Molecule::translate(const double *r)
 {
   for (int i=0; i < natom(); i++) {
-    atoms_[i].xyz(0) += r[0];
-    atoms_[i].xyz(1) += r[1];
-    atoms_[i].xyz(2) += r[2];
+    atoms_[i].r(0) += r[0];
+    atoms_[i].r(1) += r[1];
+    atoms_[i].r(2) += r[2];
   }
   for(int xyz=0; xyz<3; ++xyz) ref_origin_[xyz] += r[xyz];
 }
@@ -902,7 +918,7 @@ Molecule::transform_to_principal_axes(int trans_frame)
           for (k=0; k<3; k++) {
               e += a[k] * evecs[k][j];
             }
-          atoms_[i].xyz(j) = e;
+          atoms_[i].r(j) = e;
         }
     }
 
@@ -941,7 +957,7 @@ Molecule::transform_to_symmetry_frame()
           for (k=0; k<3; k++) {
               e += a[k] * t[k][j];
             }
-          atoms_[i].xyz(j) = e;
+          atoms_[i].r(j) = e;
         }
     }
 
@@ -991,9 +1007,9 @@ Molecule::cleanup_molecule(double tol)
             }
         }
       // replace the unique coordinate with the average coordinate
-      atoms_[unique(i)].xyz(0) = ap[0] / ncoor;
-      atoms_[unique(i)].xyz(1) = ap[1] / ncoor;
-      atoms_[unique(i)].xyz(2) = ap[2] / ncoor;
+      atoms_[unique(i)].r(0) = ap[0] / ncoor;
+      atoms_[unique(i)].r(1) = ap[1] / ncoor;
+      atoms_[unique(i)].r(2) = ap[2] / ncoor;
     }
 
   // find the atoms equivalent to each unique atom and eliminate
@@ -1017,9 +1033,9 @@ Molecule::cleanup_molecule(double tol)
           for (int j=0; j < natom(); j++) {
               // see if j is generated from i
               if (np.dist(SCVector3(r(j))) < tol) {
-                  atoms_[j].xyz(0) = np[0];
-                  atoms_[j].xyz(1) = np[1];
-                  atoms_[j].xyz(2) = np[2];
+                  atoms_[j].r(0) = np[0];
+                  atoms_[j].r(1) = np[1];
+                  atoms_[j].r(2) = np[2];
                   found = 1;
                 }
             }
@@ -1139,174 +1155,123 @@ Molecule::max_z()
   return maxz;
 }
 
+#ifdef HAVE_OPENBABEL2
 void
-Molecule::read_pdb(const char *filename)
+Molecule::read_openbabel2(const char *filename)
 {
-  clear();
-  ifstream in(filename);
+  using namespace OpenBabel;
+
+  OBMol mol;
+
+  ifstream ifs(filename);
+  OBConversion conv;
+  OBFormat* inFormat = conv.FormatFromExt(filename);
+  conv.SetInFormat(inFormat);
+  if (conv.Read(&mol, &ifs) == false) {
+    ostringstream oss;
+    oss << "OpenBabel2 did not understand file " << filename << ", guessed format " << inFormat->GetMIMEType();
+    throw InputError(oss.str().c_str(), __FILE__, __LINE__);
+  }
+
   Ref<Units> units = new Units("angstrom");
-  while (in.good()) {
-      const int max_line = 80;
-      char line[max_line];
-      in.getline(line,max_line);
-      char *endofline = (char*) memchr(line, 0, max_line);
-      if (endofline) memset(endofline, ' ', &line[max_line-1] - endofline);
-      if (!in.good()) break;
-      if (strncmp(line,"ATOM  ",6) == 0
-          ||strncmp(line,"HETATM",6) == 0) {
+  FOR_ATOMS_OF_MOL(atom, mol) {
+    add_atom(atom->GetAtomicNum(),
+             atom->GetX() * units->to_atomic_units(),
+             atom->GetY() * units->to_atomic_units(),
+             atom->GetZ() * units->to_atomic_units(),
+             "", 0.0, 0, 0.0, false, 0);
+  }
+}
+#endif // HAVE_OPENBABEL2
 
-          char element[3];
-          strncpy(element,&line[76],2); element[2] = '\0';
-          char name[5];
-          strncpy(name,&line[12],4); name[4] = '\0';
-          char resSeq[5];
-          strncpy(resSeq,&line[23],4); resSeq[4] = '\0';
-
-          if (element[0]==' '&&element[1]==' ') {
-              // no element was given so get the element from the atom name
-              if (name[0]!=' '&&name[3]!=' ') {
-                  // some of the atom label may have been
-                  // pushed over into the element fields
-                  // so check the residue
-                  char resName[4];
-                  strncpy(resName,&line[17],3); resName[3] = '\0';
-                  if (strncmp(line,"ATOM  ",6)==0&&(0
-                      ||strcmp(resName,"ALA")==0||strcmp(resName,"A  ")==0
-                      ||strcmp(resName,"ARG")==0||strcmp(resName,"R  ")==0
-                      ||strcmp(resName,"ASN")==0||strcmp(resName,"N  ")==0
-                      ||strcmp(resName,"ASP")==0||strcmp(resName,"D  ")==0
-                      ||strcmp(resName,"ASX")==0||strcmp(resName,"B  ")==0
-                      ||strcmp(resName,"CYS")==0||strcmp(resName,"C  ")==0
-                      ||strcmp(resName,"GLN")==0||strcmp(resName,"Q  ")==0
-                      ||strcmp(resName,"GLU")==0||strcmp(resName,"E  ")==0
-                      ||strcmp(resName,"GLX")==0||strcmp(resName,"Z  ")==0
-                      ||strcmp(resName,"GLY")==0||strcmp(resName,"G  ")==0
-                      ||strcmp(resName,"HIS")==0||strcmp(resName,"H  ")==0
-                      ||strcmp(resName,"ILE")==0||strcmp(resName,"I  ")==0
-                      ||strcmp(resName,"LEU")==0||strcmp(resName,"L  ")==0
-                      ||strcmp(resName,"LYS")==0||strcmp(resName,"K  ")==0
-                      ||strcmp(resName,"MET")==0||strcmp(resName,"M  ")==0
-                      ||strcmp(resName,"PHE")==0||strcmp(resName,"F  ")==0
-                      ||strcmp(resName,"PRO")==0||strcmp(resName,"P  ")==0
-                      ||strcmp(resName,"SER")==0||strcmp(resName,"S  ")==0
-                      ||strcmp(resName,"THR")==0||strcmp(resName,"T  ")==0
-                      ||strcmp(resName,"TRP")==0||strcmp(resName,"W  ")==0
-                      ||strcmp(resName,"TYR")==0||strcmp(resName,"Y  ")==0
-                      ||strcmp(resName,"VAL")==0||strcmp(resName,"V  ")==0
-                      ||strcmp(resName,"A  ")==0
-                      ||strcmp(resName,"+A ")==0
-                      ||strcmp(resName,"C  ")==0
-                      ||strcmp(resName,"+C ")==0
-                      ||strcmp(resName,"G  ")==0
-                      ||strcmp(resName,"+G ")==0
-                      ||strcmp(resName,"I  ")==0
-                      ||strcmp(resName,"+I ")==0
-                      ||strcmp(resName,"T  ")==0
-                      ||strcmp(resName,"+T ")==0
-                      ||strcmp(resName,"U  ")==0
-                      ||strcmp(resName,"+U ")==0
-                      )) {
-                      // there no two letter elements for these cases
-                      element[0] = name[0];
-                      element[1] = '\0';
-                    }
-                }
-              else {
-                  strncpy(element,name,2); element[2] = '\0';
-                }
-            }
-          if (element[0] == ' ') {
-              element[0] = element[1];
-              element[1] = '\0';
-            }
-
-          int Z = atominfo_->string_to_Z(element);
-
-          int have_fragment = 0;
-          int fragment;
-          for(int c=0; c<5; ++c) {
-            if (resSeq[c] == ' ')
-              continue;
-            else {
-              have_fragment = 1;
-              fragment = atoi(resSeq+c);
-            }
-          }
-
-          char field[9];
-          strncpy(field,&line[30],8); field[8] = '\0';
-          double x = atof(field);
-          strncpy(field,&line[38],8); field[8] = '\0';
-          double y = atof(field);
-          strncpy(field,&line[46],8); field[8] = '\0';
-          double z = atof(field);
-          add_atom(Z,
-                   x*units->to_atomic_units(),
-                   y*units->to_atomic_units(),
-                   z*units->to_atomic_units(),
-                   "", 0.0, 0, 0.0, have_fragment, fragment);
-        }
-      else {
-        // skip to next record
-        }
+namespace {
+  void check_xyz_stream(const std::ifstream& in, const char* filename, size_t lineno) {
+    if (not in.good()) {
+      std::ostringstream oss;
+      oss << "Molecule::read_xyz -- misformatted XYZ file " << filename << ", near line # " << lineno << endl;
+      throw InputError(oss.str().c_str(), __FILE__, __LINE__);
     }
+  }
 }
 
 void
-Molecule::print_pdb(ostream& os, char *title) const
+Molecule::read_xyz(const char *filename)
+{
+  char comment[1024];
+  clear();
+  ifstream in(filename);
+  if (not in.good()) {
+    std::ostringstream oss;
+    oss << "Molecule::read_xyz -- could not open XYZ file " << filename << endl;
+    throw InputError(oss.str().c_str(), __FILE__, __LINE__);
+  }
+  Ref<Units> units = new Units("angstrom");
+  size_t natoms;  in >> natoms; // line 1: # of atoms
+  if (natoms == 0) {
+    ExEnv::out0() << indent << "WARNING: 0 atoms in XYZ file" << endl;
+    return;
+  }
+  check_xyz_stream(in, filename, 1);
+  in.getline(comment, 1024); // rest of line 1
+  check_xyz_stream(in, filename, 1);
+  in.getline(comment, 1024); // line 2: comment
+  check_xyz_stream(in, filename, 2);
+
+  // read in atoms
+  std::vector<int> Zs;
+  std::vector<double> xs, ys, zs;
+  for(size_t a=0; a<natoms; ++a) {
+    std::string element_token;
+    double x, y, z;
+    in >> element_token >> x >> y >> z;
+    int Z = 0;
+    // some XYZ formats use atomic numbers
+    if (std::isdigit(element_token[0])) {
+      istringstream iss(element_token);
+      iss >> Z;
+      MPQC_ASSERT(Z >= 0);
+    }
+    else {
+      Z = atominfo_->string_to_Z(element_token);
+    }
+    check_xyz_stream(in, filename, 2+a);
+    Zs.push_back(Z);
+    xs.push_back(x);
+    ys.push_back(y);
+    zs.push_back(z);
+  }
+
+  // now commit the atoms
+  for(size_t a=0; a<natoms; ++a) {
+    add_atom(Zs[a],
+             xs[a] * units->to_atomic_units(),
+             ys[a] * units->to_atomic_units(),
+             zs[a] * units->to_atomic_units(),
+             "", 0.0, 0, 0.0, false, 0);
+  }
+}
+
+void
+Molecule::print_xyz(ostream& os, const char *title) const
 {
   Ref<Units> u = new Units("angstrom");
   double bohr = u->from_atomic_units();
 
-  if (title)
-      os << scprintf("%-10s%-60s\n","COMPND",title);
-  else
-      os << scprintf("%-10s%-60s\n","COMPND","Title");
-
-  if (title)
-      os << scprintf("REMARK   %s\n", title);
-
-  int i;
-  for (i=0; i < natom(); i++) {
-    char symb[4];
-    std::string symbol(atom_symbol(i));
-    sprintf(symb,"%s1",symbol.c_str());
-
-    // if fragment representation exceeds 4 characters reserved for resSeq, set it to -1
-    int frag = fragment(i);
-    {
-      std::ostringstream oss;
-      oss << frag;
-      if (oss.str().size() > 4)
-        frag = -1;
-    }
-
-    os << scprintf(
-        "HETATM%5d  %-3s UNK  %4d    %8.3f%8.3f%8.3f  0.00  0.00   0\n",
-        i+1, symb, frag, r(i,0)*bohr, r(i,1)*bohr, r(i,2)*bohr);
+  os << natom() << endl;
+  if (title) {
+    // make sure title does not have endline chars
+    if (strchr(title, '\n') == 0)
+      os << title;
   }
-
-  for (i=0; i < natom(); i++) {
-    double at_rad_i = atominfo_->atomic_radius(atoms_[i].Z());
-    SCVector3 ai(r(i));
-
-    os << scprintf("CONECT%5d",i+1);
-
-    for (int j=0; j < natom(); j++) {
-
-      if (j==i) continue;
-
-      double at_rad_j = atominfo_->atomic_radius(atoms_[j].Z());
-      SCVector3 aj(r(j));
-
-      if (ai.dist(aj) < 1.1*(at_rad_i+at_rad_j))
-          os << scprintf("%5d",j+1);
-    }
-
-    os << endl;
+  os << endl;
+  for (int i=0; i < natom(); i++) {
+    // more precision than used by OpenBabel
+    os << atom_symbol(i) << " " << scprintf("%15.9lf %15.9lf %15.9lf",
+                                            bohr * r(i, 0),
+                                            bohr * r(i, 1),
+                                            bohr * r(i, 2)
+                                           ) << endl;
   }
-
-  os << "END" << endl;
   os.flush();
 }
 
@@ -1359,6 +1324,24 @@ Molecule::any_atom_has_label() const {
    return false;
 }
 
+bool sc::operator ==(const Molecule& mol1, const Molecule& mol2) {
+  if (mol1.natom() != mol2.natom())
+    return false;
+  const int natom = mol1.natom();
+  for(int a=0; a<natom; ++a) {
+    if (mol1.atom(a) != mol2.atom(a))
+      return false;
+  }
+  if (not mol1.point_group()->equiv(mol2.point_group()))
+    return false;
+  if (mol1.include_q() != mol2.include_q())
+    return false;
+  if (mol1.include_qq() != mol2.include_qq())
+    return false;
+  if (mol1.ref_origin() != mol2.ref_origin())
+      return false;
+  return true;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 

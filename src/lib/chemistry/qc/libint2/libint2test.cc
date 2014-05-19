@@ -59,6 +59,8 @@ using namespace sc;
 #define TEST_2E_INTEGRALS 1
 #define TEST_2E_INTEGRALS_MULTIBASES 1
 
+int success = 1;
+
 void
     compare_1e_libint2_vs_v3(Ref<OneBodyInt>& oblibint2, Ref<OneBodyInt>& obv3);
 void compare_1e3_libint2_vs_v3(Ref<OneBodyInt>& oblibint2,
@@ -157,14 +159,15 @@ int main(int argc, char **argv) {
   cout << "storage = " << storage << endl;
 
   tim->enter("Integral");
-  Ref<Integral> integral = new IntegralV3(basis);
+  Ref<Integral> integralv3 = new IntegralV3(basis);
   Ref<Integral> integrallibint2 = new IntegralLibint2(basis);
 
-  Ref<OneBodyInt> overlapv3 = integral->overlap();
-  Ref<OneBodyInt> kineticv3 = integral->kinetic();
-  Ref<OneBodyInt> nuclearv3 = integral->nuclear();
-  Ref<OneBodyInt> hcorev3 = integral->hcore();
-  Ref<OneBodyInt> edipolev3 = integral->dipole(0);
+  Ref<OneBodyInt> overlapv3 = integralv3->overlap();
+  Ref<OneBodyInt> kineticv3 = integralv3->kinetic();
+  Ref<OneBodyInt> nuclearv3 = integralv3->nuclear();
+  Ref<OneBodyInt> hcorev3 = integralv3->hcore();
+  Ref<OneBodyInt> edipolev3 = integralv3->dipole(0);
+  Ref<OneBodyInt> efieldv3 = integralv3->efield(new IntParamsOrigin(mol->r(0))); // efield at the first atom
 
   Ref<OneBodyInt> overlaplibint2 = integrallibint2->overlap();
   testint(overlaplibint2);
@@ -178,8 +181,14 @@ int main(int argc, char **argv) {
   testint(p4libint2);
   Ref<OneBodyInt> edipolelibint2 = integrallibint2->dipole(0);
   testint(edipolelibint2);
+  Ref<OneBodyInt> equadrupolelibint2 = integrallibint2->quadrupole(0);
+  testint(equadrupolelibint2);
+  Ref<OneBodyInt> efieldlibint2 = integrallibint2->efield(new IntParamsOrigin(mol->r(0)));
+  testint(efieldlibint2);
+  Ref<OneBodyInt> efieldgradlibint2 = integrallibint2->efield_gradient(new IntParamsOrigin(mol->r(0)));
+  testint(efieldgradlibint2);
 
-  Ref<TwoBodyInt> erepv3 = integral->electron_repulsion();
+  Ref<TwoBodyInt> erepv3 = integralv3->electron_repulsion();
 
   int storage_needed = integrallibint2->storage_required_eri(basis);
   cout << scprintf("Need %d bytes to create EriLibint2\n", storage_needed);
@@ -217,7 +226,7 @@ int main(int argc, char **argv) {
   for (int l = 0; l <= 3; ++l) {
     CartesianIter* citerv[2];
     citerv[0] = integrallibint2->new_cartesian_iter(l);
-    citerv[1] = integral->new_cartesian_iter(l);
+    citerv[1] = integralv3->new_cartesian_iter(l);
     for (int i = 0; i < 2; ++i) {
       CartesianIter* citer = citerv[i];
       cout << "Cartesian L=" << l << " shell (" << (i == 0 ? "Libint2" : "V3")
@@ -228,7 +237,7 @@ int main(int argc, char **argv) {
     }
     RedundantCartesianIter* rciterv[2];
     rciterv[0] = integrallibint2->new_redundant_cartesian_iter(l);
-    rciterv[1] = integral->new_redundant_cartesian_iter(l);
+    rciterv[1] = integralv3->new_redundant_cartesian_iter(l);
     for (int i = 0; i < 2; ++i) {
       RedundantCartesianIter* rciter = rciterv[i];
       cout << "Redundant Cartesian L=" << l << " shell ("
@@ -259,6 +268,9 @@ int main(int argc, char **argv) {
     cout << "Testing Libint2' electric dipole moment integrals against IntV3's"
         << endl;
     compare_1e3_libint2_vs_v3(edipolelibint2, edipolev3);
+    cout << "Testing Libint2' electric field integrals against IntV3's"
+        << endl;
+    compare_1e3_libint2_vs_v3(efieldlibint2, efieldv3);
   }
 
   cout << "Testing Libint2' p^4 integrals" << endl;
@@ -395,8 +407,8 @@ int main(int argc, char **argv) {
 
       integrallibint2->set_basis(basis1, basis2, basis3, basis4);
       Ref<TwoBodyInt> ereplibint2 = integrallibint2->electron_repulsion();
-      integral->set_basis(basis1, basis2, basis3, basis4);
-      Ref<TwoBodyInt> erepv3 = integral->electron_repulsion();
+      integralv3->set_basis(basis1, basis2, basis3, basis4);
+      Ref<TwoBodyInt> erepv3 = integralv3->electron_repulsion();
 
       const bool print_all = false;
       if (puream)
@@ -411,12 +423,12 @@ int main(int argc, char **argv) {
 #endif // TEST_2E_INTEGRALS
 
   //  tim->print();
-  return 0;
+  return success ? 0 : 1;
 }
 
 void compare_1e_libint2_vs_v3(Ref<OneBodyInt>& oblibint2, Ref<OneBodyInt>& obv3) {
   Ref<GaussianBasisSet> basis = oblibint2->basis(0);
-  for (int sh1 = 4; sh1 < basis->nshell(); sh1++)
+  for (int sh1 = 0; sh1 < basis->nshell(); sh1++)
     for (int sh2 = 0; sh2 < basis->nshell(); sh2++) {
       int nbf2 = basis->shell(sh2).nfunction();
       obv3->compute_shell(sh1, sh2);
@@ -461,9 +473,10 @@ void compare_1e_libint2_vs_v3(Ref<OneBodyInt>& oblibint2, Ref<OneBodyInt>& obv3)
               double valuelibint2 = bufferlibint2[bf1libint2 * nbf2
                   + bf2libint2];
               double valuev3 = bufferv3[bf1v3 * nbf2 + bf2v3];
-              if (fabs(valuelibint2 - valuev3) > 1E-13) {
+              if (fabs(valuelibint2 - valuev3) > 1E-11) {
                 cout << scprintf("Discrepancy in OEInt(sh1 = %d, sh2 = %d)\n",
                                  sh1, sh2);
+                success = 0;
                 cout
                     << scprintf(
                                 "bf1 = %d   bf2 = %d  OEIntegral(libint2) = %20.15lf\n",
@@ -472,6 +485,7 @@ void compare_1e_libint2_vs_v3(Ref<OneBodyInt>& oblibint2, Ref<OneBodyInt>& obv3)
                     << scprintf(
                                 "bf1 = %d   bf2 = %d  OEIntegral(V3)    = %20.15lf\n\n",
                                 bf1v3, bf2v3, valuev3);
+                success = 0;
               }
             }
             bf2_offset += basis->shell(sh2).nfunction(gc2);
@@ -485,7 +499,7 @@ void compare_1e_libint2_vs_v3(Ref<OneBodyInt>& oblibint2, Ref<OneBodyInt>& obv3)
 void compare_1e3_libint2_vs_v3(Ref<OneBodyInt>& oblibint2,
                                Ref<OneBodyInt>& obv3) {
   Ref<GaussianBasisSet> basis = oblibint2->basis(0);
-  for (int sh1 = 4; sh1 < basis->nshell(); sh1++)
+  for (int sh1 = 0; sh1 < basis->nshell(); sh1++)
     for (int sh2 = 0; sh2 < basis->nshell(); sh2++) {
       int nbf2 = basis->shell(sh2).nfunction();
       obv3->compute_shell(sh1, sh2);
@@ -530,13 +544,13 @@ void compare_1e3_libint2_vs_v3(Ref<OneBodyInt>& oblibint2,
               for (int xyz = 0; xyz < 3; ++xyz) {
                 double valuelibint2 = bufferlibint2[(bf1libint2 * nbf2
                     + bf2libint2) * 3 + xyz];
-                // IntV3 electric dipole integrals do not include electron charge
-                double valuev3 = (-1) * bufferv3[(bf1v3 * nbf2 + bf2v3) * 3
+                double valuev3 = bufferv3[(bf1v3 * nbf2 + bf2v3) * 3
                     + xyz];
-                if (fabs(valuelibint2 - valuev3) > 1E-13) {
+                if (fabs(valuelibint2 - valuev3) > 1E-11) {
                   cout
                       << scprintf("Discrepancy in OEInt(sh1 = %d, sh2 = %d)\n",
                                   sh1, sh2);
+                  success = 0;
                   cout
                       << scprintf(
                                   "bf1 = %d   bf2 = %d   xyz = %d   OEIntegral(libint2) = %20.15lf\n",
@@ -671,10 +685,12 @@ void compare_2e_libint2_vs_v3(Ref<TwoBodyInt>& tblibint2,
                           const bool significant_discrepancy =
                               (fabs(valuelibint2 - valuev3) > 1E-12);
                           if (significant_discrepancy || print_all) {
-                            if (significant_discrepancy)
+                            if (significant_discrepancy) {
                               cout << scprintf(
                                               "Discrepancy in TEInt(sh1 = %d, sh2 = %d, sh3 = %d, sh4 = %d)\n",
                                               sh1, sh2, sh3, sh4);
+                              success = 0;
+                            }
                             else
                               cout << scprintf(
                                               "Debugging TEInt(sh1 = %d, sh2 = %d, sh3 = %d, sh4 = %d)\n",
@@ -746,10 +762,12 @@ void compare_2e_puream_libint2_vs_v3(Ref<TwoBodyInt>& tblibint2,
                   double valuev3 = bufferv3[i1234];
                   const bool significant_discrepancy = (fabs(valuelibint2 - valuev3) > 1E-12);
                   if (significant_discrepancy || print_all) {
-                    if (significant_discrepancy)
+                    if (significant_discrepancy) {
                       cout << scprintf(
                                        "Discrepancy in TEInt(sh1 = %d, sh2 = %d, sh3 = %d, sh4 = %d)\n",
                                        sh1, sh2, sh3, sh4);
+                      success = 0;
+                    }
                     else
                       cout << scprintf(
                                        "Debugging TEInt(sh1 = %d, sh2 = %d, sh3 = %d, sh4 = %d)\n",
@@ -814,10 +832,12 @@ void compare_2e(Ref<TwoBodyInt>& tb1,
                   double value2 = buf2[i1234];
                   const bool significant_discrepancy = (fabs(value1 - value2) > 1E-12);
                   if (significant_discrepancy || print_all) {
-                    if (significant_discrepancy)
+                    if (significant_discrepancy) {
                       cout << scprintf(
                                        "Discrepancy in TEInt(sh1 = %d, sh2 = %d, sh3 = %d, sh4 = %d)\n",
                                        sh1, sh2, sh3, sh4);
+                      success = 0;
+                    }
                     else
                       cout << scprintf(
                                        "Debugging TEInt(sh1 = %d, sh2 = %d, sh3 = %d, sh4 = %d)\n",
@@ -878,11 +898,12 @@ void compare_2e_bufsum_libint2_vs_v3(Ref<TwoBodyInt>& tblibint2,
             }
           }
 
-          if (fabs(sum_libint2 - sum_v3) > 1E-10) {
+          if (fabs(sum_libint2 - sum_v3) > 1E-11) {
             cout
                 << scprintf(
                             "Discrepancy in TEInt(sh1 = %d, sh2 = %d, sh3 = %d, sh4 = %d)\n",
                             sh1, sh2, sh3, sh4);
+            success = 0;
             cout
                 << scprintf("TEIntegralSum(libint2) = %20.15lf\n", sum_libint2);
             cout << scprintf("TEIntegralSum(V3)    = %20.15lf\n\n", sum_v3);
@@ -939,11 +960,12 @@ void compare_2e_unique_bufsum_libint2_vs_v3(Ref<TwoBodyInt>& tblibint2, Ref<
             }
           }
 
-          if (fabs(sum_libint2 - sum_v3) > 1E-10) {
+          if (fabs(sum_libint2 - sum_v3) > 1E-11) {
             cout
                 << scprintf(
                             "Discrepancy in TEInt(sh1 = %d, sh2 = %d, sh3 = %d, sh4 = %d)\n",
                             sh1, sh2, sh3, sh4);
+            success = 0;
             cout
                 << scprintf("TEIntegralSum(libint2) = %20.15lf\n", sum_libint2);
             cout << scprintf("TEIntegralSum(V3)    = %20.15lf\n\n", sum_v3);
@@ -1139,11 +1161,12 @@ void compare_2e_permute(Ref<Integral>& libint2) {
   int nbf4 = basis->shell(sh4).nfunction();
 
   for (int index = 0; index < nbf1 * nbf2 * nbf3 * nbf4; index++)
-    if (fabs(buffer1[index] - buffer2[index]) > 1E-13) {
+    if (fabs(buffer1[index] - buffer2[index]) > 1E-11) {
       cout
           << scprintf(
                       "Discrepancy in TEInt(sh1 = %d, sh2 = %d, sh3 = %d, sh4 = %d)\n",
                       sh1, sh2, sh3, sh4);
+      success = 0;
       cout << scprintf("TEIntegral(libint21)    = %20.15lf\n", buffer1[index]);
       cout
           << scprintf("TEIntegral(libint22)    = %20.15lf\n\n", buffer2[index]);

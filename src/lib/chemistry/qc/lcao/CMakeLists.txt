@@ -2,7 +2,7 @@ include(AddLibrary)
 
 # lcao library
 
-add_mpqc_object_library(lcao
+set(ccfiles
   clhfcontrib.cc
   compute_iRjS.cc
   compute_ijxy.cc
@@ -32,6 +32,8 @@ add_mpqc_object_library(lcao
   utils.cc
   wfnworld.cc
 )
+
+add_mpqc_object_library(lcao ${ccfiles})
 
 # tests
 

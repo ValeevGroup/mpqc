@@ -85,7 +85,15 @@ namespace sc {
 
   };
 
-  /** Describes one-body operators.
+  ////////////////////////////////////////////////////////////
+  // One-Body Operators
+  ////////////////////////////////////////////////////////////
+
+  /// Describes one-body operators.
+
+  /**
+   * OneBodyOper lists one-body operators, and provides runtime support for examining their properties,
+   * such as conversion to string and back, and construction of OneBodyOperDescr.
    */
   struct OneBodyOper {
       /**
@@ -121,7 +129,18 @@ namespace sc {
       iL_x = 24,   //!< x component of negative imaginary part of angular momentum ( \f$ \equiv i \hat{L}_x \f$ )
       iL_y = 25,   //!< y component of negative imaginary part of angular momentum ( \f$ \equiv i \hat{L}_y \f$ )
       iL_z = 26,    //!< z component of negative imaginary part of angular momentum ( \f$ \equiv i \hat{L}_z \f$ )
-      invalid = 27
+      phi   = 27,   //!< electrostatic potential
+      dphi_x = 28,   //!< electric field along x
+      dphi_y = 29,   //!< electric field along y
+      dphi_z = 30,   //!< electric field along z
+      ddphi_xx = 31,   //!< electric field along x, gradient along x
+      ddphi_xy = 32,   //!< electric field along x, gradient along y
+      ddphi_xz = 33,   //!< electric field along x, gradient along z
+      ddphi_yy = 34,   //!< electric field along y, gradient along y
+      ddphi_yz = 35,   //!< electric field along y, gradient along z
+      ddphi_zz = 36,   //!< electric field along z, gradient along z
+      S = 37,          //!< identity kernel, i.e. overlap
+      invalid = 38
     };
 
     /// The max number of such types
@@ -132,69 +151,121 @@ namespace sc {
 
     /// converts type to string
     static std::string to_string(type t);
+    /// converts string representation to type
+    static type to_type(const std::string& key);
   };
 
-  /// Known one-body operator sets
+  /// Describes sets of one-body operator
+
+  /**
+   * OneBodyOperSet describes common sets of OneBodyOper 's, and provides runtime support for examining their properties,
+   * such as conversion to string and back, map from OneBodyOper to OneBodyOperSet, and construction of OneBodyOperSetDescr.
+   */
   struct OneBodyOperSet {
       /**
        * one-body operator sets (\sa OneBodyOper::type)
        */
     enum type {
-      T,  //!< {T}
-      V,  //!< {V}
-      h,  //!< {h}
-      mu, //!< {mu_x, mu_y, mu_z}
-      q,  //!< {q_xx, q_xy, q_xz, q_yy, q_yz, q_zz}
-      pVp,//!< {pVp}
-      p4  //!< {p4}
+      S=0,  //!< {S}
+      T=1,  //!< {T}
+      V=2,  //!< {V}
+      h=3,  //!< {h}
+      mu=4, //!< {mu_x, mu_y, mu_z}
+      q=5,  //!< {q_xx, q_xy, q_xz, q_yy, q_yz, q_zz}
+      phi=6,   //!< {phi}
+      dphi=7,  //!< {dphi_x, dphi_y, dphi_z}
+      ddphi=8, //!< {ddphi_xx, ddphi_xy, ddphi_xz, ddphi_yy, ddphi_yz, ddphi_zz}
+      pVp=9,//!< {pVp}
+      p4=10,  //!< {p4}
+      invalid=11
     };
+
+    /// converts type to string representation
+    static std::string to_string(type t);
+    /// converts string representation to type
+    static type to_type(const std::string& key);
+
+    /// maps TwoBodyOper::type to type
+    /// @note only succeeds if the map is unequivocal
+    static type to_type(OneBodyOper::type oper);
+
   };
 
   /// Describes sets of two-body operators (\sa OneBodyOper)
-  template <OneBodyOperSet::type Type> struct OneBodyOperSetTypeMap;
-  template <> struct OneBodyOperSetTypeMap<OneBodyOperSet::T> {
+  template <OneBodyOperSet::type Type> struct OneBodyOperSetProperties;
+  template <> struct OneBodyOperSetProperties<OneBodyOperSet::S> {
     static const int size = 1;
     static OneBodyOper::type value[];
+    static std::string key;
   };
-  template <> struct OneBodyOperSetTypeMap<OneBodyOperSet::V> {
+  template <> struct OneBodyOperSetProperties<OneBodyOperSet::T> {
     static const int size = 1;
     static OneBodyOper::type value[];
+    static std::string key;
   };
-  template <> struct OneBodyOperSetTypeMap<OneBodyOperSet::h> {
+  template <> struct OneBodyOperSetProperties<OneBodyOperSet::V> {
     static const int size = 1;
     static OneBodyOper::type value[];
+    static std::string key;
   };
-  template <> struct OneBodyOperSetTypeMap<OneBodyOperSet::mu> {
+  template <> struct OneBodyOperSetProperties<OneBodyOperSet::h> {
+    static const int size = 1;
+    static OneBodyOper::type value[];
+    static std::string key;
+  };
+  template <> struct OneBodyOperSetProperties<OneBodyOperSet::mu> {
     static const int size = 3;
     static OneBodyOper::type value[];
+    static std::string key;
   };
-  template <> struct OneBodyOperSetTypeMap<OneBodyOperSet::q> {
+  template <> struct OneBodyOperSetProperties<OneBodyOperSet::q> {
     static const int size = 6;
     static OneBodyOper::type value[];
+    static std::string key;
   };
-  template <> struct OneBodyOperSetTypeMap<OneBodyOperSet::pVp> {
+  template <> struct OneBodyOperSetProperties<OneBodyOperSet::pVp> {
     static const int size = 1;
     static OneBodyOper::type value[];
+    static std::string key;
   };
-  template <> struct OneBodyOperSetTypeMap<OneBodyOperSet::p4> {
+  template <> struct OneBodyOperSetProperties<OneBodyOperSet::p4> {
     static const int size = 1;
     static OneBodyOper::type value[];
+    static std::string key;
+  };
+  template <> struct OneBodyOperSetProperties<OneBodyOperSet::phi> {
+    static const int size = 1;
+    static OneBodyOper::type value[];
+    static std::string key;
+  };
+  template <> struct OneBodyOperSetProperties<OneBodyOperSet::dphi> {
+    static const int size = 3;
+    static OneBodyOper::type value[];
+    static std::string key;
+  };
+  template <> struct OneBodyOperSetProperties<OneBodyOperSet::ddphi> {
+    static const int size = 6;
+    static OneBodyOper::type value[];
+    static std::string key;
   };
 
-  /// runtime version of TwoBodyOperSetTypeMap
+  /// runtime version of OneBodyOperSetProperties
   class OneBodyOperSetDescr : public RefCount {
     public:
       static Ref<OneBodyOperSetDescr> instance(OneBodyOperSet::type oset);
       int size() const { return size_; }
       OneBodyOper::type opertype(unsigned int o) const;
       unsigned int opertype(OneBodyOper::type o) const;
+      std::string key() const { return key_; }
     private:
       OneBodyOperSetDescr(int size,
-                          const OneBodyOper::type* value) :
-                          size_(size), value_(value) { }
+                          const OneBodyOper::type* value,
+                          std::string key) :
+                          size_(size), value_(value), key_(key) { }
 
       int size_;
       const OneBodyOper::type* value_;
+      std::string key_;
   };
 
   /// which parameter set needed to specify the operator set?
@@ -220,13 +291,26 @@ namespace sc {
   template <> struct OneBodyIntParamsType<OneBodyOperSet::p4> {
     typedef IntParamsVoid value;
   };
+  template <> struct OneBodyIntParamsType<OneBodyOperSet::phi> {
+    typedef IntParamsOrigin value;
+  };
+  template <> struct OneBodyIntParamsType<OneBodyOperSet::dphi> {
+    typedef IntParamsOrigin value;
+  };
+  template <> struct OneBodyIntParamsType<OneBodyOperSet::ddphi> {
+    typedef IntParamsOrigin value;
+  };
 
   ////////////////////////////////////////////////////////////
-  /// Two-Body Operators
+  // Two-Body Operators
   ////////////////////////////////////////////////////////////
 
-  /** Describes types of two-body integrals
-    */
+  /// Describes two-body operators.
+
+  /**
+   * TwoBodyOper lists two-body operators, and provides runtime support for examining their properties,
+   * such as conversion to string and back, and construction of TwoBodyOperDescr.
+   */
   struct TwoBodyOper {
       /**
        * types of known two-body operators
@@ -281,54 +365,59 @@ namespace sc {
   };
 
   /// Describes sets of two-body operators (\sa TwoBodyOper)
-  template <TwoBodyOperSet::type Type> struct TwoBodyOperSetTypeMap;
-  template <> struct TwoBodyOperSetTypeMap<TwoBodyOperSet::ERI> {
+  template <TwoBodyOperSet::type Type> struct TwoBodyOperSetProperties;
+  template <> struct TwoBodyOperSetProperties<TwoBodyOperSet::ERI> {
     static const int size = 1;
     static TwoBodyOper::type value[];
     static std::string key;
   };
-  template <> struct TwoBodyOperSetTypeMap<TwoBodyOperSet::R12> {
+  template <> struct TwoBodyOperSetProperties<TwoBodyOperSet::R12> {
     static const int size = 4;
     static TwoBodyOper::type value[];
     static std::string key;
   };
-  template <> struct TwoBodyOperSetTypeMap<TwoBodyOperSet::G12> {
+  template <> struct TwoBodyOperSetProperties<TwoBodyOperSet::G12> {
     static const int size = 6;
     static TwoBodyOper::type value[];
     static std::string key;
   };
-  template <> struct TwoBodyOperSetTypeMap<TwoBodyOperSet::G12NC> {
+  template <> struct TwoBodyOperSetProperties<TwoBodyOperSet::G12NC> {
     static const int size = 5;
     static TwoBodyOper::type value[];
     static std::string key;
   };
-  template <> struct TwoBodyOperSetTypeMap<TwoBodyOperSet::G12DKH> {
+  template <> struct TwoBodyOperSetProperties<TwoBodyOperSet::G12DKH> {
     static const int size = 1;
     static TwoBodyOper::type value[];
     static std::string key;
   };
-  template <> struct TwoBodyOperSetTypeMap<TwoBodyOperSet::R12_0_G12> {
+  template <> struct TwoBodyOperSetProperties<TwoBodyOperSet::R12_0_G12> {
     static const int size = 1;
     static TwoBodyOper::type value[];
     static std::string key;
   };
-  template <> struct TwoBodyOperSetTypeMap<TwoBodyOperSet::R12_m1_G12> {
+  template <> struct TwoBodyOperSetProperties<TwoBodyOperSet::R12_m1_G12> {
     static const int size = 1;
     static TwoBodyOper::type value[];
     static std::string key;
   };
-  template <> struct TwoBodyOperSetTypeMap<TwoBodyOperSet::G12_T1_G12> {
+  template <> struct TwoBodyOperSetProperties<TwoBodyOperSet::G12_T1_G12> {
     static const int size = 1;
     static TwoBodyOper::type value[];
     static std::string key;
   };
-  template <> struct TwoBodyOperSetTypeMap<TwoBodyOperSet::DeltaFunction> {
+  template <> struct TwoBodyOperSetProperties<TwoBodyOperSet::DeltaFunction> {
     static const int size = 1;
     static TwoBodyOper::type value[];
     static std::string key;
   };
 
-  /// runtime version of TwoBodyOperSetTypeMap
+  /// Describes sets of two-body operator
+
+  /**
+   * TwoBodyOperSet describes common sets of TwoBodyOper 's, and provides runtime support for examining their properties,
+   * such as conversion to string and back, map from TwoBodyOper to TwoBodyOperSet, and construction of TwoBodyOperSetDescr.
+   */
   class TwoBodyOperSetDescr : public RefCount {
     public:
       static Ref<TwoBodyOperSetDescr> instance(TwoBodyOperSet::type oset);

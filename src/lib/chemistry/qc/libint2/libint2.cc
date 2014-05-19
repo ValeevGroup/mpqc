@@ -37,9 +37,8 @@
 
 #include <libint2/libint2.h>
 #if LIBINT2_SUPPORT_ERI
-#  include <chemistry/qc/libint2/eri.h>
-#  include <chemistry/qc/libint2/g12nc.h>
 #  include <chemistry/qc/libint2/tbosar.h>
+#  include <chemistry/qc/libint2/g12nc.h>
 #endif
 #if LIBINT2_SUPPORT_G12 && LIBINT2_SUPPORT_T1G12
 #  include <chemistry/qc/libint2/g12.h>
@@ -132,7 +131,7 @@ IntegralLibint2::storage_required_eri(const Ref<GaussianBasisSet> &b1,
 				    const Ref<GaussianBasisSet> &b4)
 {
 #if LIBINT2_SUPPORT_ERI
-  return EriLibint2::storage_required(b1,b2,b3,b4);
+  return TwoBodyOSARLibint2<TwoBodyOper::eri>::storage_required(b1,b2,b3,b4);
 #else
   throw FeatureNotImplemented("IntegralLibint2::storage_required_eri() -- libint2 library included in this executable does not support computation of ERI",__FILE__,__LINE__);
 #endif
@@ -302,28 +301,42 @@ IntegralLibint2::point_charge(const Ref<PointChargeData>& dat)
 }
 
 Ref<OneBodyInt>
-IntegralLibint2::efield_dot_vector(const Ref<EfieldDotVectorData>&dat)
+IntegralLibint2::efield(const Ref<IntParamsOrigin>&dat)
 {
-  ExEnv::errn() << scprintf("IntegralLibint2::efield_dot_vector() is not yet implemented.\n");
-  ExEnv::errn() << scprintf("Try using the IntegralV3 factory instead.\n");
-  fail();
-  return 0;
-  //  return new EfieldDotVectorIntV3(this, bs1_, bs2_, dat);
+  Ref<OneBodyIntLibint2> obint = new OneBodyIntLibint2(this, bs1_, bs2_, &Int1eLibint2::efield);
+  obint->set_params(dat);
+  return obint;
 }
 
 Ref<OneBodyInt>
-IntegralLibint2::dipole(const Ref<DipoleData>& dat)
+IntegralLibint2::efield_dot_vector(const Ref<EfieldDotVectorData>&dat)
+{
+  throw FeatureNotImplemented("IntegralLibint2::efield_dot_vector() is not yet implemented, try IntegralV3",
+                              __FILE__, __LINE__);
+  return 0;
+}
+
+Ref<OneBodyInt>
+IntegralLibint2::efield_gradient(const Ref<IntParamsOrigin>&dat)
+{
+  Ref<OneBodyIntLibint2> obint = new OneBodyIntLibint2(this, bs1_, bs2_, &Int1eLibint2::efield_grad);
+  obint->set_params(dat);
+  return obint;
+}
+
+Ref<OneBodyInt>
+IntegralLibint2::dipole(const Ref<IntParamsOrigin>& dat)
 {
   Ref<OneBodyIntLibint2> dipoleint = new OneBodyIntLibint2(this, bs1_, bs2_, &Int1eLibint2::edipole);
-  dipoleint->set_multipole_origin(dat);
+  dipoleint->set_params(dat);
   return dipoleint;
 }
 
 Ref<OneBodyInt>
-IntegralLibint2::quadrupole(const Ref<DipoleData>& dat)
+IntegralLibint2::quadrupole(const Ref<IntParamsOrigin>& dat)
 {
   Ref<OneBodyIntLibint2> quadint = new OneBodyIntLibint2(this, bs1_, bs2_, &Int1eLibint2::equadrupole);
-  quadint->set_multipole_origin(dat);
+  quadint->set_params(dat);
   return quadint;
 }
 

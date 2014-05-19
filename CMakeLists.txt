@@ -3,6 +3,17 @@
 cmake_minimum_required (VERSION 2.8.8)
 project (MPQC)
 
+set (MPQC_MAJOR_VERSION 3)
+set (MPQC_MINOR_VERSION 0)
+set (MPQC_PATCH_VERSION 0)
+set(MPQC_BUILDID alpha)
+set(MPQC_VERSION "${MPQC_MAJOR_VERSION}.${MPQC_MINOR_VERSION}.${MPQC_PATCH_VERSION}")
+if (MPQC_BUILDID)
+  set(MPQC_VERSION "${MPQC_VERSION}-${MPQC_BUILDID}")
+endif(MPQC_BUILDID)
+
+set(TARGET_ARCH "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+
 #####################
 # Options
 #####################
@@ -40,14 +51,18 @@ else()
   set(F77_INTEGER_WIDTH 4)
   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DINTEGER77='INTEGER*4' ")
 endif()
+#list(append CMAKE_Fortran_FLAGS "-m64")
 
 # extra cmake files are shipped with MPQC
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/modules/")
 
+##############################
+# Build Type Information
+##############################
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release")
 endif()
-set(CMAKE_CXX_FLAGS_RELEASE "-g ${CMAKE_CXX_FLAGS_RELEASE}")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
 
 set(CMAKE_SKIP_RPATH FALSE)
 
@@ -74,12 +89,24 @@ include(CheckCXXSourceCompiles)
 # Enable CI
 if (MPQC_NEW_FEATURES)
   if (NOT DEFINED MPQC_CI)
-    set(MPQC_CI TRUE)
+    set(MPQC_CI FALSE)
   endif()
   if (MPQC_CI)
     add_definitions(-DMPQC_CI)
   endif()
 endif()
+
+# Enable Unit Test
+if (MPQC_UNITTEST)
+  if (NOT MPQC_NEW_FEATURES) 
+    message(FATAL_ERROR "Unit testing requires MPQC_NEW_FEATURES")
+  endif()
+  if (BOOST)
+    message(FATAL_ERROR "Must have MPQC build Boost for unit testing")
+  endif()
+  add_definitions(-DMPQC_UNITTEST)
+endif()
+    
 
 if (MPQC_NEW_FEATURES)
   add_definitions(-DMPQC_NEW_FEATURES)
@@ -145,15 +172,6 @@ if (Threads_FOUND)
 endif()
 
 
-
-set(TARGET_ARCH "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
-set(MPQC_MAJOR_VERSION 3)
-set(MPQC_MINOR_VERSION 0)
-set(MPQC_MICRO_VERSION 0)
-set(MPQC_BUILDID alpha)
-
-set(MPQC_VERSION "${MPQC_MAJOR_VERSION}.${MPQC_MINOR_VERSION}.${MPQC_MICRO_VERSION}")
-set(MPQC_VERSION "${MPQC_VERSION}-${MPQC_BUILDID}")
 
 include(CheckTypeSize)
 check_type_size(int64_t C_TYPE_INT64_T)
@@ -297,7 +315,12 @@ list(APPEND LINK_LIBRARIES ${LIBRYSQ_LIBRARY})
 list(APPEND LINK_LIBRARIES ${LIBINT2_LIBRARY})
 list(APPEND LINK_LIBRARIES ${PSI3_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${MADNESS_LIBRARIES})
+list(APPEND LINK_LIBRARIES ${ELEMENTAL_LIBRARIES})
+list(APPEND LINK_LIBRARIES ${OPENBABEL2_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${Boost_LIBRARIES})
+if (MPQC_UNITTEST)
+  list(APPEND LINK_LIBRARIES ${Boost_UNITTEST_LIBRARIES})
+endif()
 list(APPEND LINK_LIBRARIES ${LAPACK_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${BLAS_LIBRARIES})
 list(APPEND LINK_LIBRARIES ${PYTHON_LIBRARIES})
@@ -397,5 +420,26 @@ CONFIGURE_FILE(
   ${PROJECT_BINARY_DIR}/bin/mpqc-config
   @ONLY
 )
+
+# GLOB all the files so they show up in qt_creator
+if(USING_QT_CREATOR_AS_IDE)
+  file(GLOB_RECURSE QT_CREATOR_SRC 
+    "*.h" 
+    "*.hpp" 
+    "*.cpp" 
+    "*.c" 
+    "*.txt" 
+    "*.in" 
+    "*.cc"
+    "*.f"
+    "TODO"
+  )
+
+  add_library(qt_creator_get_sources EXCLUDE_FROM_ALL ${QT_CREATOR_SRC})
+
+  set_target_properties(qt_creator_get_sources PROPERTIES LINKER_LANGUAGE CXX)
+
+endif(USING_QT_CREATOR_AS_IDE)
+
 
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/bin/mpqc-config DESTINATION bin)

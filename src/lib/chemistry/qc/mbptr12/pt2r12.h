@@ -34,6 +34,10 @@
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/wfn/rdm.h>
 
+#if defined(HAVE_MPQC3_RUNTIME)
+#  include <chemistry/qc/mbptr12/sr_r12intermediates.h>
+#endif
+
 namespace sc {
 
   /// SpinOrbitalPT2R12: a universal second-order R12 correction
@@ -392,6 +396,59 @@ namespace sc {
 
       /// @return the {[2]_R12,reference} pair of energies computed using the MPQC3 runtime
       std::pair<double,double> energy_PT2R12_projector2_mpqc3();
+#if defined(HAVE_MPQC3_RUNTIME)
+      // r12 intermediates are computed by this engine
+      std::shared_ptr< SingleReference_R12Intermediates<double> > srr12intrmds_;
+
+      /// boots up r12 intermediates engine
+      void bootup_mpqc3();
+      /// shuts down r12 intermediates engine
+      void shutdown_mpqc3();
+
+      /// shortcuts to engine methods
+      auto _Tg(const std::string& key) -> decltype(srr12intrmds_->_Tg(key)) {
+        return srr12intrmds_->_Tg(key);
+      }
+      auto _4(const std::string& key) -> decltype(srr12intrmds_->_4(key)) {
+        return srr12intrmds_->_4(key);
+      }
+      auto _2(const std::string& key) -> decltype(srr12intrmds_->_2(key)) {
+        return srr12intrmds_->_2(key);
+      }
+      auto V_sf(bool b) -> decltype(srr12intrmds_->V_spinfree(b)) {
+        return srr12intrmds_->V_spinfree(b);
+      }
+      auto X_sf(bool b) -> decltype(srr12intrmds_->X_spinfree(b)) {
+        return srr12intrmds_->X_spinfree(b);
+      }
+      auto B_sf(bool b) -> decltype(srr12intrmds_->B_spinfree(b)) {
+        return srr12intrmds_->B_spinfree(b);
+      }
+
+      /// variant of _4() that returns an array, not expression
+      SingleReference_R12Intermediates<double>::TArray4d __4(const std::string& key) {
+        SingleReference_R12Intermediates<double>::TArray4d result;
+
+        ParsedTwoBodyFourCenterIntKey pkey(key);
+        const std::string annotation = pkey.bra1() + "," + pkey.bra2() + "," + pkey.ket1() + "," + pkey.ket2();
+
+        result(annotation) = srr12intrmds_->_4(key);
+        return result;
+      }
+
+      /// variant of _2() that returns an array, not expression
+      SingleReference_R12Intermediates<double>::TArray2 __2(const std::string& key) {
+        SingleReference_R12Intermediates<double>::TArray2 result;
+
+        ParsedOneBodyIntKey pkey(key);
+        const std::string annotation = pkey.bra() + "," + pkey.ket();
+
+        result(annotation) = srr12intrmds_->_2(key);
+        return result;
+      }
+
+
+#endif
 
   };
 

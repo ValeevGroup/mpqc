@@ -13,6 +13,7 @@
 
 #include <boost/fusion/include/size.hpp>
 #include <boost/fusion/include/at_c.hpp>
+#include <util/misc/assert.h>
 
 namespace mpqc {
 

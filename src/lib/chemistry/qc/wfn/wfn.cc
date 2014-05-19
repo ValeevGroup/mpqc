@@ -1621,29 +1621,30 @@ void
 Wavefunction::print(ostream&o) const
 {
   MolecularEnergy::print(o);
-  ExEnv::out0() << indent << "Electronic basis:" << std::endl;
-  ExEnv::out0() << incindent;
+  o << indent << "Electronic basis:" << std::endl;
+  o << incindent;
   basis()->print_brief(o);
-  ExEnv::out0() << decindent;
+  o << decindent;
   if (atom_basis_) {
-    ExEnv::out0() << indent << "Nuclear basis:" << std::endl;
-    ExEnv::out0() << incindent;
+    o << indent << "Nuclear basis:" << std::endl;
+    o << incindent;
     atom_basis_->print_brief(o);
-    ExEnv::out0() << decindent;
+    o << decindent;
   }
   if (momentum_basis_) {
-    ExEnv::out0() << indent << "Momentum basis:" << std::endl;
-    ExEnv::out0() << incindent;
+    o << indent << "Momentum basis:" << std::endl;
+    o << incindent;
     momentum_basis_->print_brief(o);
-    ExEnv::out0() << decindent;
+    o << decindent;
   }
-  ExEnv::out0() << indent << "magnetic moment = " << magnetic_moment() << std::endl;
+  o << sc::indent << "Integral factory = " << const_cast<Wavefunction*>(this)->integral()->class_name() << std::endl;
+  o << indent << "magnetic moment = " << magnetic_moment() << std::endl;
   // the other stuff is a wee bit too big to print
   if (print_nao_ || print_npa_) {
     Timer tim("NAO");
     RefSCMatrix naos = ((Wavefunction*)this)->nao();
     tim.exit("NAO");
-    if (print_nao_) naos.print("NAO");
+    if (print_nao_) naos.print("NAO", o);
   }
 }
 

@@ -32,6 +32,7 @@
 
 #include <chemistry/qc/wfn/density.h>
 #include <chemistry/qc/wfn/obwfn.h>
+#include <chemistry/qc/lcao/soad.h>
 
 using namespace std;
 using namespace sc;

@@ -104,7 +104,7 @@ __init_lock__(sc_lock_t* inLock, int inCount)
  * since an unsigned char is used for the lock handle,
  * this cannot be greater than 255.
  */
-#define NLOCKS 128
+#define NLOCKS 251  // 251 is the largest prime smaller than 255
 
 static sc_lock_t sRefLocks[NLOCKS];
 static int sRefLocksInit = __init_lock__(sRefLocks, NLOCKS);

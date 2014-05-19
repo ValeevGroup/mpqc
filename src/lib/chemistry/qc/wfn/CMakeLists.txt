@@ -2,7 +2,8 @@ include(AddLibrary)
 
 # wfn library
 
-add_mpqc_object_library(wfn
+# collect the .cc and .cpp files to be compiled.
+set(ccfiles 
   accum.cc
   density.cc
   densval.cc
@@ -21,10 +22,20 @@ add_mpqc_object_library(wfn
   wfn.cc
 )
 
-# tests
+#add new features if present
+IF(MPQC_NEW_FEATURES)
+  LIST(APPEND ccfiles tawfn.cpp)
+ENDIF(MPQC_NEW_FEATURES)
 
-#set_property(SOURCE wfntest.cc PROPERTY COMPILE_DEFINITIONS
-#    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-#add_executable(wfntest EXCLUDE_FROM_ALL wfntest.cc $<TARGET_OBJECTS:wfn>)
-#add_test(wfntest wfntest)
+add_mpqc_object_library(wfn ${ccfiles})
+
+# tests
+IF(MPQC_UNITTEST)
+  set_property(SOURCE wfntest.cc PROPERTY COMPILE_DEFINITIONS
+    SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(wfntest wfntest.cc $<TARGET_OBJECTS:basis>)
+  add_test(wfntest wfntest)
+  
+  target_link_libraries( wfntest chemistry )
+endif()
 

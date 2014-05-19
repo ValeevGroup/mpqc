@@ -8,6 +8,7 @@
 #include <chemistry/qc/scf/clhf.h>
 #include <chemistry/qc/scf/fbclhf.h>
 #include <chemistry/qc/lcao/fockdist.h>
+#include <chemistry/qc/lcao/clhfcontrib.h>
 
 #include <chemistry/qc/scf/linkage.h>
 

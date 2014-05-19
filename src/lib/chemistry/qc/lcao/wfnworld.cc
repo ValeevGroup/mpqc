@@ -84,7 +84,7 @@ WavefunctionWorld::WavefunctionWorld(const Ref<KeyVal>& keyval)
       std::pair<TwoBodyOperSet::type, Ref<IntParams> > kernel = init_df_kernel(df_kernel);
       df_kernel_opertype_ = kernel.first;
       df_kernel_params_ = kernel.second;
-      df_kernel_ = ParsedTwoBodyOperKey::key(TwoBodyOperSet::to_string(df_kernel_opertype_),
+      df_kernel_ = ParsedTwoBodyOperSetKey::key(TwoBodyOperSet::to_string(df_kernel_opertype_),
                                              ParamsRegistry::instance()->key(df_kernel_params_));
     }
 
@@ -134,14 +134,18 @@ WavefunctionWorld::WavefunctionWorld(const Ref<KeyVal>& keyval)
   }
 
   // Get the filename prefix to store the integrals
-  const std::string default_basename_prefix = SCFormIO::fileext_to_filename(".moints");
-  const std::string default_full_prefix = ConsumableResources::get_default_instance()->disk_location() +
-                                          default_basename_prefix;
-  ints_file_ = keyval->stringvalue("ints_file",KeyValValuestring(default_full_prefix));
-  // if the last character of ints_file is '/' then append the default basename
-  if (*(ints_file_.rbegin()) == '/')
-    ints_file_ += default_basename_prefix;
-  ExEnv::out0() << indent << "ints_file = " << ints_file_ << std::endl;
+  if (ints_method_ != StoreMethod::mem_only) {
+    const std::string default_basename_prefix = SCFormIO::fileext_to_filename(
+        ".moints");
+    const std::string default_full_prefix =
+        ConsumableResources::get_default_instance()->disk_location()
+            + default_basename_prefix;
+    ints_file_ = keyval->stringvalue("ints_file",
+                                     KeyValValuestring(default_full_prefix));
+    // if the last character of ints_file is '/' then append the default basename
+    if (*(ints_file_.rbegin()) == '/')
+      ints_file_ += default_basename_prefix;
+  }
 
   // dynamic load balancing?
   dynamic_ = static_cast<bool>(keyval->booleanvalue("dynamic",KeyValValueboolean(false)));

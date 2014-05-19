@@ -65,34 +65,27 @@ ParsedDensityFittingKey::ParsedDensityFittingKey(const std::string& key) :
   space1_ = pop_till_token(keycopy,' ');
   // get space2
   space2_ = pop_till_token(keycopy,'|');
-  // get rid of the "DF" token
-  std::string crap = pop_till_token(keycopy,'(');
+  // get rid of the "DF" or "RI" token
+  std::string ridf = pop_till_token(keycopy,'(');
+  ri_ = (ridf == "RI");
   // get kernel
   std::string kernel = pop_till_token(keycopy,')');
-  kernel_pkey_ = ParsedTwoBodyOperKey(kernel);
+  kernel_pkey_ = ParsedTwoBodyOperSetKey(kernel);
   // get rid of |
-  crap = pop_till_token(keycopy,'|');
+  std::string crap = pop_till_token(keycopy,'|');
   // get fspace
   fspace_ = pop_till_token(keycopy,')');
-
-#if 0
-  ExEnv::out0() << indent << "ParsedDensityFittingKey::ParsedDensityFittingKey():" << std::endl << incindent;
-  ExEnv::out0() << indent << "key = " << key_ << std::endl;
-  ExEnv::out0() << indent << "space1 = " << space1_ << std::endl;
-  ExEnv::out0() << indent << "space2 = " << space2_ << std::endl;
-  ExEnv::out0() << indent << "fspace = " << fspace_ << std::endl;
-  ExEnv::out0() << indent << "kernel = " << kernel_pkey_.key() << std::endl;
-#endif
 }
 
 std::string
 ParsedDensityFittingKey::key(const std::string& space1,
                              const std::string& space2,
                              const std::string& fspace,
-                             const std::string& kernel)
+                             const std::string& kernel,
+                             bool ri)
 {
   std::ostringstream oss;
-  oss << "(" << space1 << " " << space2 << "|DF(" << kernel << ")|" << fspace << ")";
+  oss << "(" << space1 << " " << space2 << "|" << (ri ? "RI" : "DF") << "(" << kernel << ")|" << fspace << ")";
   return oss.str();
 }
 
@@ -192,6 +185,7 @@ DensityFittingRuntime::create_result(const std::string& key)
   std::string dfkernel_key = pkey.kernel();
   if (dfkernel_key.empty())
     dfkernel_key = TwoBodyOper::to_string(TwoBodyOper::eri);
+  const bool ri = pkey.ri();
 
   // get the spaces and construct the descriptor
   Ref<OrbitalSpaceRegistry> idxreg = this->moints_runtime()->factory()->orbital_registry();
@@ -213,7 +207,7 @@ DensityFittingRuntime::create_result(const std::string& key)
   // 1) look for (space2 space1|
   {
     const std::string bkey = ParsedResultKey::key(space2->id(), space1->id(), fspace->id(),
-                                                  dfkernel_key);
+                                                  dfkernel_key, ri);
     if (this->exists(bkey)) {
       Ref<DensityFitting> df = new PermutedDensityFitting(moints_runtime_, dfkernel_key, dfparams_->solver(),
                                                           space1, space2, fspace->basis(),
@@ -325,7 +319,8 @@ DensityFittingRuntime::create_result(const std::string& key)
       const std::string bkey = ParsedResultKey::key(aospace->id(), mospace->id(), fspace->id(),
                                                     dfkernel_key);
       Ref<DensityFitting> df = new DensityFitting(moints_runtime_, dfkernel_key, dfparams_->solver(),
-                                                  aospace, mospace, fspace->basis());
+                                                  aospace, mospace, fspace->basis(),
+                                                  ri);
       df->compute();
       results_->add(bkey, df->C());
       return this->create_result(key);
@@ -335,7 +330,8 @@ DensityFittingRuntime::create_result(const std::string& key)
       const std::string bkey = ParsedResultKey::key(space2->id(), space1_ao->id(), fspace->id(),
                                                     dfkernel_key);
       Ref<DensityFitting> df = new DensityFitting(moints_runtime_, dfkernel_key, dfparams_->solver(),
-                                                  space2, space1_ao, fspace->basis());
+                                                  space2, space1_ao, fspace->basis(),
+                                                  ri);
       df->compute();
       results_->add(bkey, df->C());
       return this->create_result(key);
@@ -420,7 +416,7 @@ DensityFittingParams::DensityFittingParams(const Ref<GaussianBasisSet>& basis,
     throw ProgrammingError("invalid solver", __FILE__, __LINE__, class_desc());
 
   if (not kernel_.empty()) { // throw if not valid kernel
-    ParsedTwoBodyOperKey kernel_pkey(kernel_);
+    ParsedTwoBodyOperSetKey kernel_pkey(kernel_);
     TwoBodyOperSet::type kernel_oper = TwoBodyOperSet::to_type(kernel_pkey.oper());
     Ref<IntParams> kernel_params = ParamsRegistry::instance()->value(kernel_pkey.params());
   }

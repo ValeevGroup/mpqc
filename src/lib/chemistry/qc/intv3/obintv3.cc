@@ -97,6 +97,31 @@ PointChargeIntV3::compute_shell(int i,int j)
 }
 
 ////////////////////////////////////////////////////////////////////////////
+// EfieldIntV3
+
+EfieldIntV3::EfieldIntV3(
+    Integral *integral,
+    const Ref<GaussianBasisSet>&bs1,
+    const Ref<GaussianBasisSet>&bs2,
+    const Ref<IntParamsOrigin>&dat) :
+  OneBodyInt(integral,bs1,bs2),
+  data_(dat)
+{
+  int1ev3_ = new Int1eV3(integral,bs1,bs2,0);
+  buffer_ = int1ev3_->buffer();
+}
+
+EfieldIntV3::~EfieldIntV3()
+{
+}
+
+void
+EfieldIntV3::compute_shell(int i,int j)
+{
+  int1ev3_->efield(i,j,data_->r());
+}
+
+////////////////////////////////////////////////////////////////////////////
 // EfieldDotVectorIntV3
 
 EfieldDotVectorIntV3::EfieldDotVectorIntV3(
@@ -142,14 +167,14 @@ EfieldDotVectorIntV3::compute_shell(int i,int j)
 DipoleIntV3::DipoleIntV3(Integral *integral,
                          const Ref<GaussianBasisSet>&bs1,
                          const Ref<GaussianBasisSet>&bs2,
-                         const Ref<DipoleData>&dat) :
+                         const Ref<IntParamsOrigin>&dat) :
   OneBodyInt(integral,bs1,bs2),
   data_(dat)
 {
   int1ev3_ = new Int1eV3(integral,bs1,bs2,0);
   buffer_ = int1ev3_->buffer();
   if (data_.null()) {
-      data_ = new DipoleData;
+      data_ = new IntParamsOrigin;
     }
 }
 
@@ -160,7 +185,7 @@ DipoleIntV3::~DipoleIntV3()
 void
 DipoleIntV3::compute_shell(int i,int j)
 {
-  int1ev3_->dipole(i,j,data_->origin);
+  int1ev3_->dipole(i,j,data_->r());
 }
 
 ////////////////////////////////////////////////////////////////////////////

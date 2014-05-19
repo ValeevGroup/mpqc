@@ -1,0 +1,63 @@
+# -*- mode: cmake -*-
+
+######################
+# Find Elemental
+######################
+
+find_package(Elemental)
+
+if(ELEMENTAL_FOUND)
+  set(ELEMENTAL_LIBRARIES "")
+  set(ELEMENTAL_LIBRARY_PATH "${ELEMENTAL_DIR}/lib")
+  foreach (_lib elemental pmrrr lapack-addons)
+    set(_libpath _libpath-NOTFOUND)
+    find_library(_libpath ${_lib} HINT ${ELEMENTAL_LIBRARY_PATH})
+    if (_libpath)
+      list(APPEND ELEMENTAL_LIBRARIES ${_libpath})
+    endif()
+  endforeach()
+  
+  if (ELEMENTAL_LIBRARIES)
+  
+    # ELemental compiles check
+    list(APPEND CMAKE_REQUIRED_INCLUDES  ${ELEMENTAL_INCLUDE_DIRS})
+    list(APPEND CMAKE_REQUIRED_INCLUDES  ${MPI_INCLUDE_DIRS})
+    list(APPEND CMAKE_REQUIRED_LIBRARIES ${ELEMENTAL_LIBRARIES})
+    list(APPEND CMAKE_REQUIRED_LIBRARIES ${MPI_LIBRARIES})
+    list(APPEND CMAKE_REQUIRED_LIBRARIES ${LAPACK_LIBRARIES})
+    CHECK_CXX_SOURCE_COMPILES(
+      "
+      #include <elemental.hpp>
+      using namespace elem;
+      int main (int argc, char** argv){
+        Initialize(argc, argv);
+        mpi::Comm comm = mpi::COMM_WORLD;
+        const Grid grid(comm);
+        DistMatrix<double> X(grid);
+        Identity(X, 16, 16);
+        
+        Finalize();
+        return 0;
+      }
+      " 
+      ELEMENTAL_COMPILES
+    )   
+    
+    if (NOT ELEMENTAL_COMPILES)
+      message(FATAL_ERROR "Could not compile Elemental test program")
+    endif(NOT ELEMENTAL_COMPILES)
+    
+    if (ELEMENTAL_COMPILES)
+      set (MPQC_HAS_ELEMENTAL TRUE)
+      message(STATUS "Found ELEMENTAL")
+      message(STATUS "\tELEMENTAL_LIBRARIES = ${ELEMENTAL_LIBRARIES}")
+      message(STATUS "\tELEMENTAL_INCLUDE_DIR = ${ELEMENTAL_INCLUDE_DIRS}")
+      include_directories(${ELEMENTAL_INCLUDE_DIRS})
+    endif(ELEMENTAL_COMPILES)
+  
+  endif(ELEMENTAL_LIBRARIES)
+else()
+  message(FATAL_ERROR " Elemental Package not found")
+endif()
+    
+    

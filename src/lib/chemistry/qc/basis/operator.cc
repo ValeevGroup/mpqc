@@ -69,6 +69,16 @@ OneBodyOper::descr(OneBodyOper::type t) {
     case pxVp_x:
     case pxVp_y:
     case pxVp_z:
+    case phi:
+    case dphi_x:
+    case dphi_y:
+    case dphi_z:
+    case ddphi_xx:
+    case ddphi_xy:
+    case ddphi_xz:
+    case ddphi_yy:
+    case ddphi_yz:
+    case ddphi_zz:
       return hermitian;
 
     default:
@@ -82,6 +92,7 @@ std::string
 OneBodyOper::to_string(OneBodyOper::type t) {
   switch (t) {
     case gamma: return "gamma"; break;
+    case S: return "S"; break;
     case T: return "T"; break;
     case V: return "V"; break;
     case h: return "h"; break;
@@ -109,11 +120,100 @@ OneBodyOper::to_string(OneBodyOper::type t) {
     case iL_x: return "iL_x"; break;
     case iL_y: return "iL_y"; break;
     case iL_z: return "iL_z"; break;
+    case phi: return "phi"; break;
+    case dphi_x: return "dphi_x"; break;
+    case dphi_y: return "dphi_y"; break;
+    case dphi_z: return "dphi_z"; break;
+    case ddphi_xx: return "ddphi_xx"; break;
+    case ddphi_xy: return "ddphi_xy"; break;
+    case ddphi_xz: return "ddphi_xz"; break;
+    case ddphi_yy: return "ddphi_yy"; break;
+    case ddphi_yz: return "ddphi_yz"; break;
+    case ddphi_zz: return "ddphi_zz"; break;
     default:
       std::ostringstream oss;
       oss << "OneBodyOper::to_string: unknown type " << t;
       throw ProgrammingError(oss.str().c_str(), __FILE__, __LINE__);
   }
+}
+
+OneBodyOper::type
+OneBodyOper::to_type(const std::string& key) {
+  for(int t=0; t<max_ntypes; ++t) {
+    type tt = static_cast<type>(t);
+    if (key == to_string(tt))
+      return tt;
+  }
+  MPQC_ASSERT(false); // should be unreachable
+  return invalid;
+}
+
+std::string
+OneBodyOperSet::to_string(type t) {
+  switch (t) {
+    case S: return "S"; break;
+    case T: return "T"; break;
+    case V: return "V"; break;
+    case h: return "h"; break;
+    case mu: return "mu"; break;
+    case q: return "q"; break;
+    case phi: return "phi"; break;
+    case dphi: return "dphi"; break;
+    case ddphi: return "ddphi"; break;
+    case p4: return "p4"; break;
+    case pVp: return "pVp"; break;
+    default: MPQC_ASSERT(false);
+  }
+  MPQC_ASSERT(false);
+  return "";
+}
+
+OneBodyOperSet::type
+OneBodyOperSet::to_type(const std::string& key) {
+  for(int t=0; t<invalid; ++t) {
+      type tt = static_cast<type>(t);
+      if (key == to_string(tt))
+        return tt;
+    }
+    MPQC_ASSERT(false); // should be unreachable
+    return invalid;
+}
+
+OneBodyOperSet::type
+OneBodyOperSet::to_type(OneBodyOper::type oper) {
+  switch (oper) {
+    case OneBodyOper::S: return S;
+    case OneBodyOper::T: return T;
+    case OneBodyOper::V: return V;
+    case OneBodyOper::h: return h;
+    case OneBodyOper::mu_x:
+    case OneBodyOper::mu_y:
+    case OneBodyOper::mu_z:
+      return mu;
+    case OneBodyOper::q_xx:
+    case OneBodyOper::q_xy:
+    case OneBodyOper::q_xz:
+    case OneBodyOper::q_yy:
+    case OneBodyOper::q_yz:
+    case OneBodyOper::q_zz:
+      return q;
+    case OneBodyOper::phi: return phi;
+    case OneBodyOper::dphi_x:
+    case OneBodyOper::dphi_y:
+    case OneBodyOper::dphi_z:
+      return dphi;
+    case OneBodyOper::ddphi_xx:
+    case OneBodyOper::ddphi_xy:
+    case OneBodyOper::ddphi_xz:
+    case OneBodyOper::ddphi_yy:
+    case OneBodyOper::ddphi_yz:
+    case OneBodyOper::ddphi_zz:
+      return ddphi;
+    case OneBodyOper::p4: return p4;
+    case OneBodyOper::pVp: return pVp;
+    default: MPQC_ASSERT(false);
+  }
+  return invalid;
 }
 
 OneBodyOperDescr::OneBodyOperDescr(int perm) : perm_(perm) {
@@ -135,52 +235,102 @@ OneBodyOperDescr::perm_symm(unsigned int i, unsigned int j) const {
   throw ProgrammingError("OneBodyOperDescr::perm_symm(i,j) -- lacks meaning", __FILE__, __LINE__);
 }
 
-OneBodyOper::type OneBodyOperSetTypeMap<OneBodyOperSet::T>::value[] = {OneBodyOper::T};
-OneBodyOper::type OneBodyOperSetTypeMap<OneBodyOperSet::V>::value[] = {OneBodyOper::V};
-OneBodyOper::type OneBodyOperSetTypeMap<OneBodyOperSet::h>::value[] = {OneBodyOper::h};
-OneBodyOper::type OneBodyOperSetTypeMap<OneBodyOperSet::mu>::value[] = {OneBodyOper::mu_x,
+OneBodyOper::type OneBodyOperSetProperties<OneBodyOperSet::S>::value[] = {OneBodyOper::S};
+OneBodyOper::type OneBodyOperSetProperties<OneBodyOperSet::T>::value[] = {OneBodyOper::T};
+OneBodyOper::type OneBodyOperSetProperties<OneBodyOperSet::V>::value[] = {OneBodyOper::V};
+OneBodyOper::type OneBodyOperSetProperties<OneBodyOperSet::h>::value[] = {OneBodyOper::h};
+OneBodyOper::type OneBodyOperSetProperties<OneBodyOperSet::mu>::value[] = {OneBodyOper::mu_x,
                                                                  OneBodyOper::mu_y,
                                                                  OneBodyOper::mu_z};
-OneBodyOper::type OneBodyOperSetTypeMap<OneBodyOperSet::q>::value[] = {OneBodyOper::q_xx,
+OneBodyOper::type OneBodyOperSetProperties<OneBodyOperSet::q>::value[] = {OneBodyOper::q_xx,
                                                                 OneBodyOper::q_xy,
                                                                 OneBodyOper::q_xz,
                                                                 OneBodyOper::q_yy,
                                                                 OneBodyOper::q_yz,
                                                                 OneBodyOper::q_zz};
-OneBodyOper::type OneBodyOperSetTypeMap<OneBodyOperSet::pVp>::value[] = {OneBodyOper::pVp};
-OneBodyOper::type OneBodyOperSetTypeMap<OneBodyOperSet::p4>::value[] = {OneBodyOper::p4};
+OneBodyOper::type OneBodyOperSetProperties<OneBodyOperSet::phi>::value[] = {OneBodyOper::phi};
+OneBodyOper::type OneBodyOperSetProperties<OneBodyOperSet::dphi>::value[] = {OneBodyOper::dphi_x,
+                                                                          OneBodyOper::dphi_y,
+                                                                          OneBodyOper::dphi_z};
+OneBodyOper::type OneBodyOperSetProperties<OneBodyOperSet::ddphi>::value[] = {OneBodyOper::ddphi_xx,
+                                                                          OneBodyOper::ddphi_xy,
+                                                                          OneBodyOper::ddphi_xz,
+                                                                          OneBodyOper::ddphi_yy,
+                                                                          OneBodyOper::ddphi_yz,
+                                                                          OneBodyOper::ddphi_zz};
+OneBodyOper::type OneBodyOperSetProperties<OneBodyOperSet::pVp>::value[] = {OneBodyOper::pVp};
+OneBodyOper::type OneBodyOperSetProperties<OneBodyOperSet::p4>::value[] = {OneBodyOper::p4};
+
+std::string OneBodyOperSetProperties<OneBodyOperSet::S>::key("S");
+std::string OneBodyOperSetProperties<OneBodyOperSet::T>::key("T");
+std::string OneBodyOperSetProperties<OneBodyOperSet::V>::key("V");
+std::string OneBodyOperSetProperties<OneBodyOperSet::h>::key("h");
+std::string OneBodyOperSetProperties<OneBodyOperSet::mu>::key("mu");
+std::string OneBodyOperSetProperties<OneBodyOperSet::q>::key("q");
+std::string OneBodyOperSetProperties<OneBodyOperSet::phi>::key("phi");
+std::string OneBodyOperSetProperties<OneBodyOperSet::dphi>::key("dphi");
+std::string OneBodyOperSetProperties<OneBodyOperSet::ddphi>::key("ddphi");
+std::string OneBodyOperSetProperties<OneBodyOperSet::pVp>::key("pVp");
+std::string OneBodyOperSetProperties<OneBodyOperSet::p4>::key("p4");
 
 Ref<OneBodyOperSetDescr>
 OneBodyOperSetDescr::instance(OneBodyOperSet::type oset)
 {
   switch (oset) {
+    case OneBodyOperSet::S:
+      return new OneBodyOperSetDescr(OneBodyOperSetProperties<OneBodyOperSet::S>::size,
+                                     OneBodyOperSetProperties<OneBodyOperSet::S>::value,
+                                     OneBodyOperSetProperties<OneBodyOperSet::S>::key);
+      break;
     case OneBodyOperSet::T:
-      return new OneBodyOperSetDescr(OneBodyOperSetTypeMap<OneBodyOperSet::T>::size,
-                                     OneBodyOperSetTypeMap<OneBodyOperSet::T>::value);
+      return new OneBodyOperSetDescr(OneBodyOperSetProperties<OneBodyOperSet::T>::size,
+                                     OneBodyOperSetProperties<OneBodyOperSet::T>::value,
+                                     OneBodyOperSetProperties<OneBodyOperSet::S>::key);
       break;
     case OneBodyOperSet::V:
-      return new OneBodyOperSetDescr(OneBodyOperSetTypeMap<OneBodyOperSet::V>::size,
-                                     OneBodyOperSetTypeMap<OneBodyOperSet::V>::value);
+      return new OneBodyOperSetDescr(OneBodyOperSetProperties<OneBodyOperSet::V>::size,
+                                     OneBodyOperSetProperties<OneBodyOperSet::V>::value,
+                                     OneBodyOperSetProperties<OneBodyOperSet::V>::key);
       break;
     case OneBodyOperSet::h:
-      return new OneBodyOperSetDescr(OneBodyOperSetTypeMap<OneBodyOperSet::h>::size,
-                                     OneBodyOperSetTypeMap<OneBodyOperSet::h>::value);
+      return new OneBodyOperSetDescr(OneBodyOperSetProperties<OneBodyOperSet::h>::size,
+                                     OneBodyOperSetProperties<OneBodyOperSet::h>::value,
+                                     OneBodyOperSetProperties<OneBodyOperSet::h>::key);
       break;
     case OneBodyOperSet::mu:
-      return new OneBodyOperSetDescr(OneBodyOperSetTypeMap<OneBodyOperSet::mu>::size,
-                                     OneBodyOperSetTypeMap<OneBodyOperSet::mu>::value);
+      return new OneBodyOperSetDescr(OneBodyOperSetProperties<OneBodyOperSet::mu>::size,
+                                     OneBodyOperSetProperties<OneBodyOperSet::mu>::value,
+                                     OneBodyOperSetProperties<OneBodyOperSet::mu>::key);
       break;
     case OneBodyOperSet::q:
-      return new OneBodyOperSetDescr(OneBodyOperSetTypeMap<OneBodyOperSet::q>::size,
-                                     OneBodyOperSetTypeMap<OneBodyOperSet::q>::value);
+      return new OneBodyOperSetDescr(OneBodyOperSetProperties<OneBodyOperSet::q>::size,
+                                     OneBodyOperSetProperties<OneBodyOperSet::q>::value,
+                                     OneBodyOperSetProperties<OneBodyOperSet::q>::key);
+      break;
+    case OneBodyOperSet::phi:
+      return new OneBodyOperSetDescr(OneBodyOperSetProperties<OneBodyOperSet::phi>::size,
+                                     OneBodyOperSetProperties<OneBodyOperSet::phi>::value,
+                                     OneBodyOperSetProperties<OneBodyOperSet::phi>::key);
+      break;
+    case OneBodyOperSet::dphi:
+      return new OneBodyOperSetDescr(OneBodyOperSetProperties<OneBodyOperSet::dphi>::size,
+                                     OneBodyOperSetProperties<OneBodyOperSet::dphi>::value,
+                                     OneBodyOperSetProperties<OneBodyOperSet::dphi>::key);
+      break;
+    case OneBodyOperSet::ddphi:
+      return new OneBodyOperSetDescr(OneBodyOperSetProperties<OneBodyOperSet::ddphi>::size,
+                                     OneBodyOperSetProperties<OneBodyOperSet::ddphi>::value,
+                                     OneBodyOperSetProperties<OneBodyOperSet::ddphi>::key);
       break;
     case OneBodyOperSet::pVp:
-      return new OneBodyOperSetDescr(OneBodyOperSetTypeMap<OneBodyOperSet::pVp>::size,
-                                     OneBodyOperSetTypeMap<OneBodyOperSet::pVp>::value);
+      return new OneBodyOperSetDescr(OneBodyOperSetProperties<OneBodyOperSet::pVp>::size,
+                                     OneBodyOperSetProperties<OneBodyOperSet::pVp>::value,
+                                     OneBodyOperSetProperties<OneBodyOperSet::pVp>::key);
       break;
     case OneBodyOperSet::p4:
-      return new OneBodyOperSetDescr(OneBodyOperSetTypeMap<OneBodyOperSet::p4>::size,
-                                     OneBodyOperSetTypeMap<OneBodyOperSet::p4>::value);
+      return new OneBodyOperSetDescr(OneBodyOperSetProperties<OneBodyOperSet::p4>::size,
+                                     OneBodyOperSetProperties<OneBodyOperSet::p4>::value,
+                                     OneBodyOperSetProperties<OneBodyOperSet::p4>::key);
       break;
     default:
       MPQC_ASSERT(false);
@@ -301,36 +451,36 @@ sc::TwoBodyOper::type sc::TwoBodyOper::to_type(const std::string& key) {
 
 //////////////////////////////////////////////////////
 
-TwoBodyOper::type TwoBodyOperSetTypeMap<TwoBodyOperSet::ERI>::value[] = {TwoBodyOper::eri};
-TwoBodyOper::type TwoBodyOperSetTypeMap<TwoBodyOperSet::R12>::value[] = {TwoBodyOper::eri,
+TwoBodyOper::type TwoBodyOperSetProperties<TwoBodyOperSet::ERI>::value[] = {TwoBodyOper::eri};
+TwoBodyOper::type TwoBodyOperSetProperties<TwoBodyOperSet::R12>::value[] = {TwoBodyOper::eri,
                                                             TwoBodyOper::r12,
                                                             TwoBodyOper::r12t1,
                                                             TwoBodyOper::r12t2};
-TwoBodyOper::type TwoBodyOperSetTypeMap<TwoBodyOperSet::G12>::value[] = {TwoBodyOper::eri,
+TwoBodyOper::type TwoBodyOperSetProperties<TwoBodyOperSet::G12>::value[] = {TwoBodyOper::eri,
                                                             TwoBodyOper::r12_0_g12,
                                                             TwoBodyOper::r12_m1_g12,
                                                             TwoBodyOper::t1g12,
                                                             TwoBodyOper::t2g12,
                                                             TwoBodyOper::g12t1g12};
-TwoBodyOper::type TwoBodyOperSetTypeMap<TwoBodyOperSet::G12NC>::value[] = {TwoBodyOper::eri,
+TwoBodyOper::type TwoBodyOperSetProperties<TwoBodyOperSet::G12NC>::value[] = {TwoBodyOper::eri,
                                                               TwoBodyOper::r12_0_g12,
                                                               TwoBodyOper::r12_m1_g12,
                                                               TwoBodyOper::g12t1g12,
                                                               TwoBodyOper::anti_g12g12};
-TwoBodyOper::type TwoBodyOperSetTypeMap<TwoBodyOperSet::G12DKH>::value[] = {TwoBodyOper::g12p4g12_m_g12t1g12t1};
-TwoBodyOper::type TwoBodyOperSetTypeMap<TwoBodyOperSet::R12_0_G12>::value[] = {TwoBodyOper::r12_0_g12};
-TwoBodyOper::type TwoBodyOperSetTypeMap<TwoBodyOperSet::R12_m1_G12>::value[] = {TwoBodyOper::r12_m1_g12};
-TwoBodyOper::type TwoBodyOperSetTypeMap<TwoBodyOperSet::G12_T1_G12>::value[] = {TwoBodyOper::g12t1g12};
-TwoBodyOper::type TwoBodyOperSetTypeMap<TwoBodyOperSet::DeltaFunction>::value[] = {TwoBodyOper::delta};
+TwoBodyOper::type TwoBodyOperSetProperties<TwoBodyOperSet::G12DKH>::value[] = {TwoBodyOper::g12p4g12_m_g12t1g12t1};
+TwoBodyOper::type TwoBodyOperSetProperties<TwoBodyOperSet::R12_0_G12>::value[] = {TwoBodyOper::r12_0_g12};
+TwoBodyOper::type TwoBodyOperSetProperties<TwoBodyOperSet::R12_m1_G12>::value[] = {TwoBodyOper::r12_m1_g12};
+TwoBodyOper::type TwoBodyOperSetProperties<TwoBodyOperSet::G12_T1_G12>::value[] = {TwoBodyOper::g12t1g12};
+TwoBodyOper::type TwoBodyOperSetProperties<TwoBodyOperSet::DeltaFunction>::value[] = {TwoBodyOper::delta};
 
-std::string TwoBodyOperSetTypeMap<TwoBodyOperSet::ERI>::key("ERI");
-std::string TwoBodyOperSetTypeMap<TwoBodyOperSet::G12>::key("G12");
-std::string TwoBodyOperSetTypeMap<TwoBodyOperSet::G12NC>::key("G12'");
-std::string TwoBodyOperSetTypeMap<TwoBodyOperSet::G12DKH>::key("G12DKH");
-std::string TwoBodyOperSetTypeMap<TwoBodyOperSet::R12_0_G12>::key("R12_0_G12");
-std::string TwoBodyOperSetTypeMap<TwoBodyOperSet::R12_m1_G12>::key("R12_m1_G12");
-std::string TwoBodyOperSetTypeMap<TwoBodyOperSet::G12_T1_G12>::key("G12_T1_G12");
-std::string TwoBodyOperSetTypeMap<TwoBodyOperSet::DeltaFunction>::key("Delta");
+std::string TwoBodyOperSetProperties<TwoBodyOperSet::ERI>::key("ERI");
+std::string TwoBodyOperSetProperties<TwoBodyOperSet::G12>::key("G12");
+std::string TwoBodyOperSetProperties<TwoBodyOperSet::G12NC>::key("G12'");
+std::string TwoBodyOperSetProperties<TwoBodyOperSet::G12DKH>::key("G12DKH");
+std::string TwoBodyOperSetProperties<TwoBodyOperSet::R12_0_G12>::key("R12_0_G12");
+std::string TwoBodyOperSetProperties<TwoBodyOperSet::R12_m1_G12>::key("R12_m1_G12");
+std::string TwoBodyOperSetProperties<TwoBodyOperSet::G12_T1_G12>::key("G12_T1_G12");
+std::string TwoBodyOperSetProperties<TwoBodyOperSet::DeltaFunction>::key("Delta");
 
 TwoBodyOperSetDescr::TwoBodyOperSetDescr(int size,
                                          const TwoBodyOper::type* value,
@@ -343,49 +493,49 @@ TwoBodyOperSetDescr::instance(TwoBodyOperSet::type oset)
 {
   switch (oset) {
     case TwoBodyOperSet::ERI:
-      return new TwoBodyOperSetDescr(TwoBodyOperSetTypeMap<TwoBodyOperSet::ERI>::size,
-                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::ERI>::value,
-                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::ERI>::key);
+      return new TwoBodyOperSetDescr(TwoBodyOperSetProperties<TwoBodyOperSet::ERI>::size,
+                                     TwoBodyOperSetProperties<TwoBodyOperSet::ERI>::value,
+                                     TwoBodyOperSetProperties<TwoBodyOperSet::ERI>::key);
       break;
     case TwoBodyOperSet::R12:
-      return new TwoBodyOperSetDescr(TwoBodyOperSetTypeMap<TwoBodyOperSet::G12>::size,
-                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::G12>::value,
-                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::G12>::key);
+      return new TwoBodyOperSetDescr(TwoBodyOperSetProperties<TwoBodyOperSet::G12>::size,
+                                     TwoBodyOperSetProperties<TwoBodyOperSet::G12>::value,
+                                     TwoBodyOperSetProperties<TwoBodyOperSet::G12>::key);
       break;
     case TwoBodyOperSet::G12:
-      return new TwoBodyOperSetDescr(TwoBodyOperSetTypeMap<TwoBodyOperSet::G12>::size,
-                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::G12>::value,
-                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::G12>::key);
+      return new TwoBodyOperSetDescr(TwoBodyOperSetProperties<TwoBodyOperSet::G12>::size,
+                                     TwoBodyOperSetProperties<TwoBodyOperSet::G12>::value,
+                                     TwoBodyOperSetProperties<TwoBodyOperSet::G12>::key);
       break;
     case TwoBodyOperSet::G12NC:
-      return new TwoBodyOperSetDescr(TwoBodyOperSetTypeMap<TwoBodyOperSet::G12NC>::size,
-                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::G12NC>::value,
-                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::G12NC>::key);
+      return new TwoBodyOperSetDescr(TwoBodyOperSetProperties<TwoBodyOperSet::G12NC>::size,
+                                     TwoBodyOperSetProperties<TwoBodyOperSet::G12NC>::value,
+                                     TwoBodyOperSetProperties<TwoBodyOperSet::G12NC>::key);
       break;
     case TwoBodyOperSet::G12DKH:
-      return new TwoBodyOperSetDescr(TwoBodyOperSetTypeMap<TwoBodyOperSet::G12DKH>::size,
-                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::G12DKH>::value,
-                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::G12DKH>::key);
+      return new TwoBodyOperSetDescr(TwoBodyOperSetProperties<TwoBodyOperSet::G12DKH>::size,
+                                     TwoBodyOperSetProperties<TwoBodyOperSet::G12DKH>::value,
+                                     TwoBodyOperSetProperties<TwoBodyOperSet::G12DKH>::key);
       break;
     case TwoBodyOperSet::R12_0_G12:
-      return new TwoBodyOperSetDescr(TwoBodyOperSetTypeMap<TwoBodyOperSet::R12_0_G12>::size,
-                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::R12_0_G12>::value,
-                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::R12_0_G12>::key);
+      return new TwoBodyOperSetDescr(TwoBodyOperSetProperties<TwoBodyOperSet::R12_0_G12>::size,
+                                     TwoBodyOperSetProperties<TwoBodyOperSet::R12_0_G12>::value,
+                                     TwoBodyOperSetProperties<TwoBodyOperSet::R12_0_G12>::key);
       break;
     case TwoBodyOperSet::R12_m1_G12:
-      return new TwoBodyOperSetDescr(TwoBodyOperSetTypeMap<TwoBodyOperSet::R12_m1_G12>::size,
-                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::R12_m1_G12>::value,
-                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::R12_m1_G12>::key);
+      return new TwoBodyOperSetDescr(TwoBodyOperSetProperties<TwoBodyOperSet::R12_m1_G12>::size,
+                                     TwoBodyOperSetProperties<TwoBodyOperSet::R12_m1_G12>::value,
+                                     TwoBodyOperSetProperties<TwoBodyOperSet::R12_m1_G12>::key);
       break;
     case TwoBodyOperSet::G12_T1_G12:
-      return new TwoBodyOperSetDescr(TwoBodyOperSetTypeMap<TwoBodyOperSet::G12_T1_G12>::size,
-                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::G12_T1_G12>::value,
-                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::G12_T1_G12>::key);
+      return new TwoBodyOperSetDescr(TwoBodyOperSetProperties<TwoBodyOperSet::G12_T1_G12>::size,
+                                     TwoBodyOperSetProperties<TwoBodyOperSet::G12_T1_G12>::value,
+                                     TwoBodyOperSetProperties<TwoBodyOperSet::G12_T1_G12>::key);
       break;
     case TwoBodyOperSet::DeltaFunction:
-      return new TwoBodyOperSetDescr(TwoBodyOperSetTypeMap<TwoBodyOperSet::DeltaFunction>::size,
-                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::DeltaFunction>::value,
-                                     TwoBodyOperSetTypeMap<TwoBodyOperSet::DeltaFunction>::key);
+      return new TwoBodyOperSetDescr(TwoBodyOperSetProperties<TwoBodyOperSet::DeltaFunction>::size,
+                                     TwoBodyOperSetProperties<TwoBodyOperSet::DeltaFunction>::value,
+                                     TwoBodyOperSetProperties<TwoBodyOperSet::DeltaFunction>::key);
       break;
 
     default:

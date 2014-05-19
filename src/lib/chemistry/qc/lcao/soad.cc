@@ -156,23 +156,6 @@ void sc::SuperpositionOfAtomicDensities::compute() {
       {
         Ref<AssignedKeyVal> akv = new AssignedKeyVal;
         akv->assign("wfn", Ref<DescribedClass>(minbasis_wfn));
-        // only Libint2 can do DF
-#ifdef HAVE_LIBINT2
-        Ref<IntegralLibint2> intf_cast; intf_cast << intf;
-        if (intf_cast) {
-          // use dz df basis
-          Ref<GaussianBasisSet> dfbs;
-          {
-            Ref<AssignedKeyVal> akv1 = new AssignedKeyVal;
-            akv1->assign("molecule", Ref<DescribedClass>(minbasis_wfn->molecule()));
-            akv1->assign("name", "Def2-SV(P)/JK");
-            dfbs = new GaussianBasisSet(akv1);
-          }
-          akv->assign("df_basis", Ref<DescribedClass>(dfbs));
-        }
-#endif
-        akv->assign("df_solver", "cholesky_inv");
-        akv->assign("store_ints", "mem-posix");
         akv->assign("ints_precision", 1e-5);
         world = new WavefunctionWorld(akv);
       }
@@ -399,7 +382,7 @@ SuperpositionOfAtomicDensities::minimal_basis_set(const Ref<Molecule>& mol) {
       oss << "basis:" << a;
       const std::string keyword = oss.str();
       if (mol->Z(a) <= 38)
-        akv->assign(keyword.c_str(), "STO-6G");
+        akv->assign(keyword.c_str(), "STO-3G");
       else
         akv->assign(keyword.c_str(), "WTBS");
     }

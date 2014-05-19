@@ -130,6 +130,18 @@
 */
 
 /**
+  @defgroup TAWFN mpqc.Chemistry.ElectronicStructure.TAWFN
+  @ingroup ChemistryElectronicStructure
+  TiledArray-based wavefunctions
+*/
+
+/**
+  @defgroup TAWFN.OneBody mpqc.Chemistry.ElectronicStructure.TAWFN.OneBody
+  @ingroup TAWFN
+  TiledArray-based one-body wave functions
+*/
+
+/**
   @defgroup ChemistryElectronicStructureSpin mpqc.Chemistry.ElectronicStructure.Spin
   @ingroup ChemistryElectronicStructure
   Functionality related to spin states of electrons.

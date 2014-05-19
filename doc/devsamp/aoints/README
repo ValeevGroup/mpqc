@@ -1,7 +1,7 @@
 These code examples, written in C++, C, and Fortran 90, demonstrate how to use MPQC to compute molecular integrals in Gaussian bases.
 
 1) To compile these examples you must have compiled MPQC and installed it using 'make install'
-   commmand. This will install the code examples under $prefix/examples directory, where $prefix is the
+   commmand. This will install the code examples under $prefix/doc/share/mpqc-${version}/examples directory, where $prefix is the
    installation prefix provided to configure script during configuration of MPQC
    (the default is /usr/local/mpqc/$mpqcversion).
 2) To compile the C++ example simply type 'make', this will create an executable file called 'aoints'. To run it simply type './aoints'.

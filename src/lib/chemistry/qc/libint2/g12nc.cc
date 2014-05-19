@@ -53,10 +53,10 @@ G12NCLibint2::G12NCLibint2(Integral *integral,
 			   const ContractedGeminal& geminal_ket) :
   Int2eLibint2(integral,b1,b2,b3,b4,storage), ExpMath_(),
   geminal_bra_(geminal_bra), geminal_ket_(geminal_ket),
-  Fm_Eval_(b1->max_angular_momentum() +
-          b2->max_angular_momentum() +
-          b3->max_angular_momentum() +
-          b4->max_angular_momentum() + 1)
+  Fm_Eval_(CoreIntsEngine<_FmEvalType>::instance(b1->max_angular_momentum() +
+      b2->max_angular_momentum() +
+      b3->max_angular_momentum() +
+      b4->max_angular_momentum() + 1))
 {
   // The static part of Libint's interface is automatically initialized in libint.cc
   int l1 = bs1_->max_angular_momentum();
@@ -125,7 +125,7 @@ G12NCLibint2::G12NCLibint2(Integral *integral,
   if ( (bs1_ == bs3_ && bs2_ == bs4_) /*||
        // if this is (ab|ba) case -- should i try to save storage?
        (bs1_ == bs4_ && bs2_ == bs3_)*/ )
-    shell_pairs34_ = new ShellPairsLibint2(shell_pairs12_);
+    shell_pairs34_ = new ShellPairsLibint2(*shell_pairs12_);
   else
     shell_pairs34_ = new ShellPairsLibint2(bs3_,bs4_);
   storage_needed += primitive_pair_storage_estimate;

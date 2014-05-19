@@ -31,6 +31,7 @@
 
 #include <util/misc/formio.h>
 #include <util/class/class.h>
+#include <util/misc/scexception.h>
 
 using namespace std;
 using namespace sc;
@@ -85,6 +86,25 @@ static ClassDesc D_cd(typeid(D),"D",1,"public B, public C",create<D>);
 int main(int argc, char* argv[])
 {
   ClassDesc::list_all_classes();
+
+  // try to construct duplicate ClassDesc for A
+  try {
+    ClassDesc A_cd(typeid(A),"A",1,"virtual public DescribedClass");
+  }
+  catch(sc::ProgrammingError& e) {
+    cout << "tried constructing duplicate ClassDesc for A, caught ProgrammingError (as expected):" << endl;
+    cout << e.what() << endl;
+  }
+
+  // try to construct duplicate ClassDesc for struct A but in different scope using same name
+  try {
+    struct A {};
+    ClassDesc cd(typeid(A),"A",1,"");
+  }
+  catch(sc::ProgrammingError& e) {
+    cout << "tried constructing ClassDesc for another class A in a different scope, caught ProgrammingError (as expected):" << endl;
+    cout << e.what() << endl;
+  }
 
   cout << indent << "using 0" << endl;
   const Ref<DescribedClass> descl2(0);

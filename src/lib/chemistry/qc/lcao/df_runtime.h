@@ -34,7 +34,18 @@
 namespace sc {
 
   /** Parsed representation of a string key that represents fitting of a product of space1 and space2 into fspace.
-      kernel must be parsable by ParsedTwoBodyOperKey. */
+      kernel must be parsable by ParsedTwoBodyOperSetKey.
+
+      The key format is (s1 s2|L(K)|f), where:
+      <ul>
+        <li> s1 = space1 label </li>
+        <li> s2 = space2 label </li>
+        <li> L = DF or RI, the latter returns coefficients scaled by inverse square root of the fitting kernel;
+        if the fitting kernel is negative definite, will use the inverse square root of the negative. </li>
+        <li> K = fitting kernel label </li>
+        <li> f = fspace label </li>
+       </ul>
+      */
   class ParsedDensityFittingKey {
     public:
       ParsedDensityFittingKey(const std::string& key);
@@ -46,17 +57,20 @@ namespace sc {
       const std::string& kernel() const { return kernel_pkey_.key(); }
       const std::string& kernel_oper() const { return kernel_pkey_.oper(); }
       const std::string& kernel_param() const { return kernel_pkey_.params(); }
+      bool ri() const { return ri_; }
 
       /// computes key from its components
       static std::string key(const std::string& space1,
                              const std::string& space2,
                              const std::string& fspace,
-                             const std::string& kernel);
+                             const std::string& kernel,
+                             bool ri = false);
 
     private:
       std::string key_;
       std::string space1_, space2_, fspace_;
-      ParsedTwoBodyOperKey kernel_pkey_;
+      ParsedTwoBodyOperSetKey kernel_pkey_;
+      bool ri_;
   };
 
   class DensityFittingParams;
@@ -137,7 +151,7 @@ namespace sc {
      * @param basis  The GaussianBasisSet object used to fit product densities. There is no default.
      *               @note DensityFittingRuntime does not use this, but other runtime objects may use it
      *               to set the global density fitting basis.
-     * @param kernel_key A string describing the kernel_key. It must be parsable by ParsedTwoBodyOperKey, or be empty (the default).
+     * @param kernel_key A string describing the kernel_key. It must be parsable by ParsedTwoBodyOperSetKey, or be empty (the default).
      *               @note DensityFittingRuntime does not use this, but other runtime objects may use it to set the global density fitting method.
      * @param solver A string describing the method of solving the density fitting equations. This is used by DensityFittingRuntime
      *               to produce density fitting objects.

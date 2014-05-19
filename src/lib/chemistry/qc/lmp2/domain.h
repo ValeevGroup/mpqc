@@ -37,13 +37,6 @@ typedef std::set<int> domainmapvirbs_t;
 typedef std::map<std::pair<int,int>, domainmapvirbs_t > domainmap_t;
 
 
-// void
-// create_domains(const sc::Ref<sc::OneBodyWavefunction> &wfn, int nfzc,
-//                double distance_threshold, double completeness_threshold,
-//                bool all_nondist_pairs,
-//                sma2::Array<2> &S_ao, sma2::Array<2> &L, double bound,
-//                const sc::Ref<sc::MessageGrp> &msg);
-
 /// \brief Create maps of occupied orbital pairs to atoms in their domain.
 void
 create_domains(const sc::Ref<sc::OneBodyWavefunction> &wfn, int nfzc,
@@ -51,6 +44,7 @@ create_domains(const sc::Ref<sc::OneBodyWavefunction> &wfn, int nfzc,
                std::vector<std::vector<int> > &domains, domainmap_t &domainmap,
                double distance_threshold, double completeness_threshold,
                bool all_nondist_pairs,
+               std::vector<double>& interdomain_distances,
                sma2::Array<2> &S_ao, sma2::Array<2> &L,
                double bound, const sc::Ref<sc::MessageGrp> &msg);
 
@@ -64,7 +58,8 @@ create_domains(const sc::Ref<sc::OneBodyWavefunction> &wfn, int nfzc,
                domainmap_t &domainmap, double distance_threshold,
                double completeness_threshold,
                domainmap_t &weak_pair_domainmap, double weak_pair_distance_threshold,
-               bool all_nondist_pairs, sma2::Array<2> &S_ao, sma2::Array<2> &L,
+               bool all_nondist_pairs, std::vector<double>& interdomain_distances,
+               sma2::Array<2> &S_ao, sma2::Array<2> &L,
                double bound, const sc::Ref<sc::MessageGrp> &msg);
 
 }

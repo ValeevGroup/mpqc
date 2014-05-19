@@ -171,6 +171,14 @@ class LMP2: public LCorr {
     /// Free storage for the above arrays.
     void clear();
 
+    /// useful statistics
+    bool analyze_occ_orbs_;
+    std::vector<SCVector3> r_i_;      //!< "the-center-of-mass" of active occupied orbitals (replicated)
+    std::vector<double> dist_ij_;     //!< spatial distance between domains of active orbitals i and j (replicated),
+                                      //!< not the same as the distance between centers of mass of i and j
+    std::vector<double> emp2_ij_;     //!< energy for (active) pair ij (replicated)
+    void analyze_occ_orbs(const RefSCMatrix& scf_local);
+
     double compute_lmp2_energy();
     double compute_ecorr_lmp2();
 

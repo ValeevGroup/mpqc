@@ -110,17 +110,17 @@ random_test_1(const std::vector<int> &v, int n)
       if (i%5 == 0) {
           if (m.find(v[i]) != m.end()) {
               number_added = 0;
-              iter = m.insert_unique(std::make_pair<int,double>(v[i],i));
+              iter = m.insert_unique(std::make_pair(v[i],i));
             }
           else if (i%2 == 0) {
-              iter = m.insert_unique(std::make_pair<int,double>(v[i],i));
+              iter = m.insert_unique(std::make_pair(v[i],i));
             }
           else {
-              iter = m.insert_new(std::make_pair<int,double>(v[i],i));
+              iter = m.insert_new(std::make_pair(v[i],i));
             }
         }
-      else if (i%2) iter = m.insert(std::make_pair<int,double>(v[i],i));
-      else iter = m.insert(iter, std::make_pair<int,double>(v[i],i));
+      else if (i%2) iter = m.insert(std::make_pair(v[i],i));
+      else iter = m.insert(iter, std::make_pair(v[i],i));
       if (v[i] == 0) n0 += number_added;
       else if (v[i] == 99) n99 += number_added;
     }
@@ -284,6 +284,10 @@ mmap_timings()
   timer->print();
 }
 
+}
+
+using namespace sc;
+
 int
 main(int argc, char* argv[])
 {
@@ -307,6 +311,4 @@ main(int argc, char* argv[])
   nonconst_tests(m);
   random_tests();
   return 0;
-}
-
 }

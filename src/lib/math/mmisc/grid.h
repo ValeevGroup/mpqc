@@ -185,8 +185,9 @@ class WriteVectorGrid: public Runnable {
         which the scalar function should be calculated.</dd>
 
         <dt><tt>filename</tt></dt><dd> Specifies the filename of the file to
-        write the output to. If it is not given, the output will be written to the
-        standard output. The default is "Grid".</dd>
+        write the output to. If <tt>filename="-"</tt>, the output will be written to the
+        standard output. The default value is <tt>"basename.grid"</tt>, where
+        <tt>basename</tt> is the value returned by sc::SCFormIO::default_basename() .</dd>
 
         <dt><tt>format</tt></dt><dd> The format in which the grid data is to be
         written. Currently only guassian_cube format has been implemented:

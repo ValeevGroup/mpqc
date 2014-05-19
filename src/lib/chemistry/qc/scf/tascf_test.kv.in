@@ -1,0 +1,37 @@
+
+integrals<IntegralLibint2>: ()
+
+rhf<Mock_SCF>:(
+  molecule = $:water_c1
+  basis<GaussianBasisSet>: (
+    molecule = $..:molecule
+    name = "STO-3G"
+  )
+)
+
+rhf_large<Mock_SCF>:(
+  integrals = $:integrals
+  molecule = $:taxol
+  basis<TiledBasisSet>:(
+    molecule = $..:molecule
+    name = "aug-cc-pVDZ"
+    ntiles = 16 
+  )
+)
+
+water_c1<Molecule>: (
+  symmetry=c1
+  { atoms geometry } = {
+      O    [  0.0000000000    0.0000000000    0.0000000000 ]
+      H    [  1.5000000000    0.0000000000    1.0000000000 ]
+      H    [ -1.5000000000    0.0000000000    1.0000000000 ]
+  }
+)
+
+taxol<Molecule>: (
+  xyz_file = "@CMAKE_SOURCE_DIR@/test/input/mol/taxol.xyz"
+)
+
+octane<Molecule>: (
+  file = "@CMAKE_SOURCE_DIR@/test/input/mol/octane.cml"
+)

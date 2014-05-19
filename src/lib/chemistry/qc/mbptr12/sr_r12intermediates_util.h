@@ -31,6 +31,8 @@
 #define _mpqc_src_lib_chemistry_qc_mbptr12_srr12intermediatesutil_h
 
 #include <algorithm>
+#include <numeric>
+#include <TiledArray/bitset.h>
 
 namespace sc {
 
@@ -453,11 +455,9 @@ namespace sc {
     else if (pkey.oper() == "hJ")
       operator_matrix = freg->get(ParsedOneBodyIntKey::key(bra_id, ket_id, "H"))
                       + freg->get(ParsedOneBodyIntKey::key(bra_id, ket_id, "J"));
-    else if (pkey.oper().find("mu_") == 0) {
-      // convert mu_ -> Mu_
-      std::string mu_oper_key = pkey.oper();
-      mu_oper_key[0] = 'M';
-      operator_matrix = freg->get(ParsedOneBodyIntKey::key(bra_id, ket_id, mu_oper_key));
+    else if (pkey.oper().find("mu_") == 0 || pkey.oper().find("q_") == 0 ||
+             pkey.oper().find("dphi_") == 0 || pkey.oper().find("ddphi_") == 0) {
+      operator_matrix = freg->get(ParsedOneBodyIntKey::key(bra_id, ket_id, pkey.oper()));
     }
     else if (pkey.oper() == "gamma")
       operator_matrix = this->rdm1(bra, ket);
@@ -559,9 +559,9 @@ namespace sc {
   }
 
   template <typename T>
-  TA::expressions::TensorExpression<TA::Tensor<T> >
+  TA::expressions::TsrExpr<const typename SingleReference_R12Intermediates<T>::TArray4d>
   SingleReference_R12Intermediates<T>::_4(const std::string& key) {
-    TArray4d& tarray4 = ijxy(key);
+    const TArray4d& tarray4 = ijxy(key);
     ParsedTwoBodyFourCenterIntKey pkey(key);
 
     std::array<std::string, 4> ind = {{pkey.bra1(), pkey.bra2(), pkey.ket1(), pkey.ket2()}};
@@ -577,9 +577,9 @@ namespace sc {
   }
 
   template <typename T>
-  TA::expressions::TensorExpression<TA::Tensor<T> >
+  TA::expressions::TsrExpr<const typename SingleReference_R12Intermediates<T>::TArray2>
   SingleReference_R12Intermediates<T>::_2(const std::string& key) {
-    TArray2& tarray2 = xy(key);
+    const TArray2& tarray2 = xy(key);
     ParsedOneBodyIntKey pkey(key);
 
     std::array<std::string, 2> ind = {{pkey.bra(), pkey.ket()}};
@@ -600,7 +600,7 @@ namespace sc {
   expressions::TGeminalGenerator<T> SingleReference_R12Intermediates<T>::tg_s1_gen(1);
 
   template <typename T>
-  TA::expressions::TensorExpression<TA::Tensor<T> >
+  TA::expressions::TsrExpr<const typename SingleReference_R12Intermediates<T>::TArray4Tg>
   SingleReference_R12Intermediates<T>::_Tg(const std::string& key) {
 
     ParsedTwoBodyFourCenterIntKey pkey(key);
@@ -656,7 +656,7 @@ namespace sc {
     tarray4tg_registry_[key] = result;
     v = tarray4tg_registry_.find(key);
     }
-    TArray4Tg& tarray4 = *(v->second);
+    const TArray4Tg& tarray4 = *(v->second);
 
     std::array<std::string, 4> ind = {{pkey.bra1(), pkey.bra2(), pkey.ket1(), pkey.ket2()}};
     for(auto v=ind.begin(); v!=ind.end(); ++v) {
@@ -724,12 +724,12 @@ namespace sc {
         return result * scale_;
       }
 
-      result_type operator()(const TiledArray::expressions::ZeroTensor<value_type>&, const ArgType&) {
+      result_type operator()(const TiledArray::ZeroTensor<value_type>&, const ArgType&) {
         TA_ASSERT(false); // Should not be used.
         return result_type();
       }
 
-      result_type operator()(const ArgType&, const TiledArray::expressions::ZeroTensor<value_type>&) {
+      result_type operator()(const ArgType&, const TiledArray::ZeroTensor<value_type>&) {
         TA_ASSERT(false); // Should not be used.
         return result_type();
       }
@@ -780,7 +780,7 @@ namespace sc {
         return result * scale_;
       }
 
-      result_type operator()(const TiledArray::expressions::ZeroTensor<value_type>&) {
+      result_type operator()(const TiledArray::ZeroTensor<value_type>&) {
         TA_ASSERT(false); // Should not be used.
         return result_type();
       }

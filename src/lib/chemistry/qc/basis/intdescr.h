@@ -153,14 +153,14 @@ namespace sc {
   typedef IntegralSetDescr<TwoBodyInt> TwoBodyIntDescr;
   typedef IntegralSetDescr<TwoBodyThreeCenterInt> TwoBodyThreeCenterIntDescr;
   typedef IntegralSetDescr<TwoBodyTwoCenterInt> TwoBodyTwoCenterIntDescr;
-  template <int NumCenters, int NumParticles> struct NCentersToDescr;
-  template <> struct NCentersToDescr<4,2> {
+  template <int NumCenters, int NumParticles> struct NCentersToIntDescr;
+  template <> struct NCentersToIntDescr<4,2> {
     typedef TwoBodyIntDescr value;
   };
-  template <> struct NCentersToDescr<3,2> {
+  template <> struct NCentersToIntDescr<3,2> {
     typedef TwoBodyThreeCenterIntDescr value;
   };
-  template <> struct NCentersToDescr<2,2> {
+  template <> struct NCentersToIntDescr<2,2> {
     typedef TwoBodyTwoCenterIntDescr value;
   };
 
@@ -182,11 +182,11 @@ namespace sc {
 
   struct IntDescrFactory {
     template <int NumCenters>
-      static Ref< typename NCentersToDescr<NumCenters,2>::value >
+      static Ref< typename NCentersToIntDescr<NumCenters,2>::value >
       make(const Ref<Integral>& integral,
            TwoBodyOperSet::type type,
            const Ref<IntParams>& params) {
-        typedef typename NCentersToDescr<NumCenters,2>::value ReturnType;
+        typedef typename NCentersToIntDescr<NumCenters,2>::value ReturnType;
         switch (type) {
           case TwoBodyOperSet::ERI: {
             typedef TwoBodyNCenterIntDescr<NumCenters,TwoBodyOperSet::ERI> ConcreteType;
@@ -227,9 +227,89 @@ namespace sc {
           default:
             MPQC_ASSERT(false);
         }
-        return Ref< typename NCentersToDescr<NumCenters,2>::value >(); // dummy return statement to pacify picky compilers
+        return Ref< typename NCentersToIntDescr<NumCenters,2>::value >(); // dummy return statement to pacify picky compilers
       }
   };
+
+
+  template <int NumCenters> struct OneBodyIntType;
+  template <> struct OneBodyIntType<2> {
+    typedef OneBodyInt value;
+  };
+  template <> struct OneBodyIntType<1> {
+    typedef OneBodyOneCenterInt value;
+  };
+
+  typedef IntegralSetDescr<OneBodyInt> OneBodyIntDescr;
+  typedef IntegralSetDescr<OneBodyOneCenterInt> OneBodyOneCenterIntDescr;
+  template <> struct NCentersToIntDescr<2,1> {
+    typedef OneBodyIntDescr value;
+  };
+  template <> struct NCentersToIntDescr<1,1> {
+    typedef OneBodyOneCenterIntDescr value;
+  };
+
+  /// Implements descriptors for various two-body evaluators
+  template <int NumCenters, OneBodyOperSet::type OneBodyIntSet>
+    class OneBodyNCenterIntDescr : public IntegralSetDescr< typename OneBodyIntType<NumCenters>::value > {
+      public:
+        typedef OneBodyIntTraits<NumCenters,OneBodyIntSet> TraitsType;
+        typedef typename TraitsType::ParamsType ParamsType;
+        typedef typename OneBodyIntType<NumCenters>::value EvalType;
+
+        static const unsigned int num_intsets = TraitsType::size;
+        OneBodyNCenterIntDescr(const Ref<Integral>& IF,
+                               const Ref<ParamsType>& params = Ref<ParamsType>(dynamic_cast<ParamsType*>(new IntParamsVoid))) :
+                                 factory_(IF),
+                                 params_(params) { }
+        OneBodyNCenterIntDescr(const Ref<Integral>& IF,
+                               const Ref<IntParams>& params) :
+                                 factory_(IF),
+                                 params_(0) {
+          params_ << params;
+          MPQC_ASSERT(params_);
+        }
+        ~OneBodyNCenterIntDescr() {}
+
+        /// which factory is used
+        const Ref<Integral>& factory() const { return factory_; }
+        // implementation of TwoBodyIntDescr::inteval()
+        Ref<EvalType> inteval() const {
+          return TraitsType::eval(factory_, params_);
+        }
+        // implementation of TwoBodyIntDescr::params()
+        Ref<IntParams> params() const {
+          return params_;
+        }
+        // implementation of OneBodyIntDescr::operset()
+        OneBodyOperSet::type operset() const { return OneBodyIntSet; }
+        // implementation of OneBodyIntDescr::num_sets()
+        unsigned int num_sets() const { return num_intsets; }
+        // Implementation of OneBodyIntDescr::intset()
+        unsigned int intset(OneBodyOper::type t) const {
+          return intSet(t);
+        }
+        // Implementation of OneBodyIntDescr::intset()
+        OneBodyOper::type intset(unsigned int t) const {
+          return intSet(t);
+        }
+        /// Static version of OneBodyIntDescr::intset()
+        static unsigned int intSet(OneBodyOper::type t) {
+          return TraitsType::intset(t);
+        }
+        /// Static version of OneBodyIntDescr::intset()
+        static OneBodyOper::type intSet(unsigned int t) {
+          return TraitsType::intset(t);
+        }
+
+      private:
+        /// which factory is used
+        Ref<Integral> factory_;
+        /// the parameters of the operator set
+        Ref<ParamsType> params_;
+
+    };
+
 
 }
 

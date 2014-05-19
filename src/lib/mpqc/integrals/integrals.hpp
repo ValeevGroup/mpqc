@@ -112,13 +112,13 @@ namespace integrals {
     }
 
 
-    inline size_t extent(const std::vector<Shell> &S) {
-        int extent = 0;
-        foreach(Shell s, S){
-            extent = std::max(extent, *s.end());
-        }
-        return extent;
-    }
+    //inline size_t extent(const std::vector<Shell> &S) {
+    //    size_t extent = 0;
+    //    foreach(Shell s, S){
+    //        extent = std::max(extent, *s.end());
+    //    }
+    //    return extent;
+    //}
 
 
 

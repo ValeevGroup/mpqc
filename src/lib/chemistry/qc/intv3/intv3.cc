@@ -196,19 +196,25 @@ IntegralV3::point_charge(const Ref<PointChargeData>& dat)
 }
 
 Ref<OneBodyInt>
+IntegralV3::efield(const Ref<IntParamsOrigin>& dat)
+{
+  return new EfieldIntV3(this, bs1_, bs2_, dat);
+}
+
+Ref<OneBodyInt>
 IntegralV3::efield_dot_vector(const Ref<EfieldDotVectorData>&dat)
 {
   return new EfieldDotVectorIntV3(this, bs1_, bs2_, dat);
 }
 
 Ref<OneBodyInt>
-IntegralV3::dipole(const Ref<DipoleData>& dat)
+IntegralV3::dipole(const Ref<IntParamsOrigin>& dat)
 {
   return new DipoleIntV3(this, bs1_, bs2_, dat);
 }
 
 Ref<OneBodyInt>
-IntegralV3::quadrupole(const Ref<DipoleData>& dat)
+IntegralV3::quadrupole(const Ref<IntParamsOrigin>& dat)
 {
   throw std::runtime_error("IntegralV3 cannot compute quadrupole moment integrals yet. Try IntegralLibint2 instead.");
 }

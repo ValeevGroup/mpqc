@@ -32,9 +32,11 @@ add_mpqc_object_library(molecule
 )
 
 # tests
-
-#set_property(SOURCE moltest.cc PROPERTY COMPILE_DEFINITIONS
-#    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-#add_executable(moltest EXCLUDE_FROM_ALL moltest.cc $<TARGET_OBJECTS:molecule>)
-#add_test(moltest moltest)
+if (MPQC_UNITTEST)
+  set_property(SOURCE moltest.cc PROPERTY COMPILE_DEFINITIONS
+               SRCDIR="${CMAKE_CURRENT_SOURCE_DIR}" TOPSRCDIR="${CMAKE_SOURCE_DIR}")
+  add_executable(moltest moltest.cc $<TARGET_OBJECTS:molecule>)
+  add_test(moltest moltest)
+  target_link_libraries( moltest chemistry )
+endif()
 

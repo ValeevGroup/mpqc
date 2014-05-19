@@ -57,6 +57,29 @@ class PetiteList;
 /// @{
 
 /// returns the type of the evaluator for evaluating this set of two-body integrals
+template <int NumCenters> struct OneBodyIntEvalType;
+template <> struct OneBodyIntEvalType<2> {
+  typedef OneBodyInt value;
+};
+template <> struct OneBodyIntEvalType<1> {
+  typedef OneBodyOneCenterInt value;
+};
+// forward declarations of auxiliary type functions
+namespace detail {
+  template <int NumCenters> struct SEvalCreator;
+  template <int NumCenters> struct TEvalCreator;
+  template <int NumCenters> struct VEvalCreator;
+  template <int NumCenters> struct HCoreEvalCreator;
+  template <int NumCenters> struct MuEvalCreator;
+  template <int NumCenters> struct QEvalCreator;
+  template <int NumCenters> struct PhiEvalCreator;
+  template <int NumCenters> struct DPhiEvalCreator;
+  template <int NumCenters> struct DDPhiEvalCreator;
+  template <int NumCenters> struct P4EvalCreator;
+  template <int NumCenters, OneBodyOperSet::type Type> struct OneBodyEvalCreator;
+};
+
+/// returns the type of the evaluator for evaluating this set of two-body integrals
 template <int NumCenters> struct TwoBodyIntEvalType;
 template <> struct TwoBodyIntEvalType<4> {
   typedef TwoBodyInt value;
@@ -78,7 +101,7 @@ namespace detail {
   template <int NumCenters> struct R12m1G12EvalCreator;
   template <int NumCenters> struct G12T1G12EvalCreator;
   template <int NumCenters> struct DeltaFunctionEvalCreator;
-  template <int NumCenters, TwoBodyOperSet::type Type> struct EvalCreator;
+  template <int NumCenters, TwoBodyOperSet::type Type> struct TwoBodyEvalCreator;
 };
 
 
@@ -320,20 +343,55 @@ class Integral : public SavableState {
     /// Return a OneBodyInt that computes the core Hamiltonian integrals.
     virtual Ref<OneBodyInt> hcore() = 0;
 
-    /** Return a OneBodyInt that computes the electric field integrals
-        dotted with a given vector. */
+    /** Return a OneBodyInt that computes the electric field integrals at specified point.
+        The canonical order of integrals in a set is x, y, z (i.e. Ex, Ey, Ey).
+
+        @param O IntParamsOrigin object that specifies the point where the electric field is computed;
+                 there is no default.
+
+        \sa efield_dot_vector()
+      */
+    virtual Ref<OneBodyInt> efield(const Ref<IntParamsOrigin>& O) =0;
+
+    /** Return a OneBodyInt that computes the electric field integrals at a given position
+        dotted with a given vector. \sa efield()
+      */
     virtual Ref<OneBodyInt> efield_dot_vector(const Ref<EfieldDotVectorData>&) =0;
 
+    /** Return a OneBodyInt that computes the electric field gradient integrals at specified point.
+        The canonical order of integrals in the 6-element sequence
+        is d Ex / dx, d Ex / dy, d Ex / dz, d Ey / dy, d Ey / dz, d Ez / dz,
+
+        @param O IntParamsOrigin object that specifies the point where the electric field gradient is computed;
+                 there is no default.
+
+        \note only 6 elements are unique since d Ei / d j = d Ej / d i
+
+      */
+    virtual Ref<OneBodyInt> efield_gradient(const Ref<IntParamsOrigin>& O);
+
     /** Return a OneBodyInt that computes electric dipole moment integrals, i.e. integrals
-        of the \f$e (\mathbf{r}-\mathbf{C})\f$ operator. Multiply by -1 to obtain electronic electric dipole
-        integrals. The canonical order of integrals in a set is x, y, z. */
-    virtual Ref<OneBodyInt> dipole(const Ref<DipoleData>&) =0;
+        of the \f$e (\mathbf{r}-\mathbf{O})\f$ operator. The canonical order of integrals in a set is x, y, z.
+
+        @param O IntParamsOrigin object that specifies the origin of the multipole expansion;
+                 the default is to use the origin of the coordinate system.
+
+        \note Multiply by -1 to obtain electronic electric quadrupole integrals.
+      */
+    virtual Ref<OneBodyInt> dipole(const Ref<IntParamsOrigin>& O = 0) =0;
 
     /** Return a OneBodyInt that computes electric quadrupole moment integrals,
-        i.e. integrals of the \f$e (\mathbf{r}-\mathbf{C}) \otimes (\mathbf{r}-\mathbf{C})\f$ operator.
-        Multiply by -1 to obtain electronic electric quadrupole integrals.
-	    The canonical order of integrals in a set is x^2, xy, xz, y^2, yz, z^2. */
-    virtual Ref<OneBodyInt> quadrupole(const Ref<DipoleData>&) =0;
+        i.e. integrals of the \f$e (\mathbf{r}-\mathbf{O}) \otimes (\mathbf{r}-\mathbf{O})\f$ operator.
+	    The canonical order of integrals in a set is x^2, xy, xz, y^2, yz, z^2.
+
+	    @param O IntParamsOrigin object that specifies the origin of the multipole expansion;
+                 the default is to use the origin of the coordinate system
+
+	    \note These are not traceless quadrupole integrals!!
+	    \note Multiply by -1 to obtain electronic electric quadrupole integrals.
+
+	  */
+    virtual Ref<OneBodyInt> quadrupole(const Ref<IntParamsOrigin>& O  = 0) =0;
 
     /// Return a OneBodyDerivInt that computes overlap derivatives.
     virtual Ref<OneBodyDerivInt> overlap_deriv() =0;
@@ -413,7 +471,7 @@ class Integral : public SavableState {
       */
     template <int NumCenters>
     Ref< typename TwoBodyIntEvalType<NumCenters>::value > coulomb() {
-      typedef typename detail::EvalCreator<NumCenters,TwoBodyOperSet::ERI>::value EvalCreator;
+      typedef typename detail::TwoBodyEvalCreator<NumCenters,TwoBodyOperSet::ERI>::value EvalCreator;
       return EvalCreator::eval(this,new IntParamsVoid);
     }
 
@@ -431,7 +489,7 @@ class Integral : public SavableState {
         */
     template <int NumCenters>
     DEPRECATED Ref< typename TwoBodyIntEvalType<NumCenters>::value > grt() {
-      typedef typename detail::EvalCreator<NumCenters,TwoBodyOperSet::R12>::value EvalCreator;
+      typedef typename detail::TwoBodyEvalCreator<NumCenters,TwoBodyOperSet::R12>::value EvalCreator;
       return EvalCreator::eval(this,new IntParamsVoid);
     }
     /** Return a TwoBodyInt that computes two-electron integrals specific
@@ -440,7 +498,7 @@ class Integral : public SavableState {
         Implementation for this kind of TwoBodyInt is optional. */
     template <int NumCenters>
     DEPRECATED Ref< typename TwoBodyIntEvalType<NumCenters>::value > g12(const Ref<IntParamsG12>& p) {
-      typedef typename detail::EvalCreator<NumCenters,TwoBodyOperSet::G12>::value EvalCreator;
+      typedef typename detail::TwoBodyEvalCreator<NumCenters,TwoBodyOperSet::G12>::value EvalCreator;
       return EvalCreator::eval(this,p);
     }
     /** Return a TwoBodyInt that computes two-electron integrals specific
@@ -450,7 +508,7 @@ class Integral : public SavableState {
         Implementation for this kind of TwoBodyInt is optional. */
     template <int NumCenters>
     DEPRECATED Ref< typename TwoBodyIntEvalType<NumCenters>::value > g12nc(const Ref<IntParamsG12>& p) {
-      typedef typename detail::EvalCreator<NumCenters,TwoBodyOperSet::G12NC>::value EvalCreator;
+      typedef typename detail::TwoBodyEvalCreator<NumCenters,TwoBodyOperSet::G12NC>::value EvalCreator;
       return EvalCreator::eval(this,p);
     }
     /** Return a TwoBodyInt that computes two-electron integrals specific
@@ -459,7 +517,7 @@ class Integral : public SavableState {
         Implementation for this kind of TwoBodyInt is optional. */
     template <int NumCenters>
     Ref< typename TwoBodyIntEvalType<NumCenters>::value > g12dkh(const Ref<IntParamsG12>& p) {
-      typedef typename detail::EvalCreator<NumCenters,TwoBodyOperSet::G12DKH>::value EvalCreator;
+      typedef typename detail::TwoBodyEvalCreator<NumCenters,TwoBodyOperSet::G12DKH>::value EvalCreator;
       return EvalCreator::eval(this,p);
     }
 
@@ -482,11 +540,11 @@ class Integral : public SavableState {
     template <int NumCenters>
     Ref< typename TwoBodyIntEvalType<NumCenters>::value > r12_k_g12(const Ref<IntParamsG12>& p, int k) {
       if (k == 0) {
-        typedef typename detail::EvalCreator<NumCenters,TwoBodyOperSet::R12_0_G12>::value EvalCreator;
+        typedef typename detail::TwoBodyEvalCreator<NumCenters,TwoBodyOperSet::R12_0_G12>::value EvalCreator;
         return EvalCreator::eval(this,p);
       }
       if (k == -1) {
-        typedef typename detail::EvalCreator<NumCenters,TwoBodyOperSet::R12_m1_G12>::value EvalCreator;
+        typedef typename detail::TwoBodyEvalCreator<NumCenters,TwoBodyOperSet::R12_m1_G12>::value EvalCreator;
         return EvalCreator::eval(this,p);
       }
       std::ostringstream oss;
@@ -512,7 +570,7 @@ class Integral : public SavableState {
       */
     template <int NumCenters>
     Ref< typename TwoBodyIntEvalType<NumCenters>::value > g12t1g12(const Ref<IntParamsG12>& p) {
-      typedef typename detail::EvalCreator<NumCenters,TwoBodyOperSet::G12_T1_G12>::value EvalCreator;
+      typedef typename detail::TwoBodyEvalCreator<NumCenters,TwoBodyOperSet::G12_T1_G12>::value EvalCreator;
       return EvalCreator::eval(this,p);
     }
 
@@ -531,7 +589,7 @@ class Integral : public SavableState {
       */
     template <int NumCenters>
     Ref< typename TwoBodyIntEvalType<NumCenters>::value > delta_function() {
-      typedef typename detail::EvalCreator<NumCenters,TwoBodyOperSet::DeltaFunction>::value EvalCreator;
+      typedef typename detail::TwoBodyEvalCreator<NumCenters,TwoBodyOperSet::DeltaFunction>::value EvalCreator;
       return EvalCreator::eval(this, new IntParamsVoid);
     }
 
@@ -783,31 +841,31 @@ namespace detail {
     }
   };
 
-  template <int NumCenters> struct EvalCreator<NumCenters,TwoBodyOperSet::ERI> {
+  template <int NumCenters> struct TwoBodyEvalCreator<NumCenters,TwoBodyOperSet::ERI> {
     typedef ERIEvalCreator<NumCenters> value;
   };
-  template <int NumCenters> struct EvalCreator<NumCenters,TwoBodyOperSet::R12> {
+  template <int NumCenters> struct TwoBodyEvalCreator<NumCenters,TwoBodyOperSet::R12> {
     typedef R12EvalCreator<NumCenters> value;
   };
-  template <int NumCenters> struct EvalCreator<NumCenters,TwoBodyOperSet::G12> {
+  template <int NumCenters> struct TwoBodyEvalCreator<NumCenters,TwoBodyOperSet::G12> {
     typedef G12EvalCreator<NumCenters> value;
   };
-  template <int NumCenters> struct EvalCreator<NumCenters,TwoBodyOperSet::G12NC> {
+  template <int NumCenters> struct TwoBodyEvalCreator<NumCenters,TwoBodyOperSet::G12NC> {
     typedef G12NCEvalCreator<NumCenters> value;
   };
-  template <int NumCenters> struct EvalCreator<NumCenters,TwoBodyOperSet::G12DKH> {
+  template <int NumCenters> struct TwoBodyEvalCreator<NumCenters,TwoBodyOperSet::G12DKH> {
     typedef G12DKHEvalCreator<NumCenters> value;
   };
-  template <int NumCenters> struct EvalCreator<NumCenters,TwoBodyOperSet::R12_0_G12> {
+  template <int NumCenters> struct TwoBodyEvalCreator<NumCenters,TwoBodyOperSet::R12_0_G12> {
     typedef R120G12EvalCreator<NumCenters> value;
   };
-  template <int NumCenters> struct EvalCreator<NumCenters,TwoBodyOperSet::R12_m1_G12> {
+  template <int NumCenters> struct TwoBodyEvalCreator<NumCenters,TwoBodyOperSet::R12_m1_G12> {
     typedef R12m1G12EvalCreator<NumCenters> value;
   };
-  template <int NumCenters> struct EvalCreator<NumCenters,TwoBodyOperSet::G12_T1_G12> {
+  template <int NumCenters> struct TwoBodyEvalCreator<NumCenters,TwoBodyOperSet::G12_T1_G12> {
     typedef G12T1G12EvalCreator<NumCenters> value;
   };
-  template <int NumCenters> struct EvalCreator<NumCenters,TwoBodyOperSet::DeltaFunction> {
+  template <int NumCenters> struct TwoBodyEvalCreator<NumCenters,TwoBodyOperSet::DeltaFunction> {
     typedef DeltaFunctionEvalCreator<NumCenters> value;
   };
 

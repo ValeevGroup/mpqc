@@ -1,8 +1,8 @@
 include(AddLibrary)
 
 # ccr12 library
-
-add_mpqc_object_library(ccr12
+# collect the .cc and .cpp files to be compiled.
+set(ccfiles
   ccr12.cc
   ccr12_info.cc
   ccr12_info_drivers.cc
@@ -63,10 +63,10 @@ add_mpqc_object_library(ccr12
   triples_utils.cc
 )
 
+add_mpqc_object_library(ccr12 ${ccfiles})
+
 # tests
 
-#set_property(SOURCE ccr12test.cc PROPERTY COMPILE_DEFINITIONS
-#    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-#add_executable(ccr12test EXCLUDE_FROM_ALL ccr12test.cc $<TARGET_OBJECTS:ccr12>)
-#add_test(ccr12test ccr12test)
-
+if (MPQC_UNITTEST)
+  # no tests yet
+endif()

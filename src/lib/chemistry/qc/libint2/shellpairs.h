@@ -60,7 +60,7 @@ class ShellPairLibint2 {
 };
 
 
-/** ShellPairsLibint2 contains primitive pair data for all shell pairs */
+/** ShellPairsLibint2 contains primitive pair data for all shell pairs formed from a pair of basis sets.  */
 class ShellPairsLibint2: virtual public SavableState {
   Ref<GaussianBasisSet> bs1_;
   Ref<GaussianBasisSet> bs2_;
@@ -68,9 +68,18 @@ class ShellPairsLibint2: virtual public SavableState {
   ShellPairLibint2* shell_pair_;
   
   public:
-  ShellPairsLibint2(const Ref<GaussianBasisSet>&,
-		    const Ref<GaussianBasisSet>&);
-  ShellPairsLibint2(const Ref<ShellPairsLibint2>&);
+  /**
+   * Constructs shell pair data from a pair of basis sets.
+   * @param bs1 basis set 1
+   * @param bs2 basis set 2
+   */
+  ShellPairsLibint2(const Ref<GaussianBasisSet>& bs1,
+                    const Ref<GaussianBasisSet>& bs2);
+  /**
+   * Constructs a "shallow" copy of \c other
+   * @param other ShellPairsLibint2
+   */
+  ShellPairsLibint2(const ShellPairsLibint2& other);
   ShellPairsLibint2(const Ref<KeyVal>&);
   ShellPairsLibint2(StateIn&);
 

@@ -2,14 +2,20 @@ include(AddLibrary)
 
 # madness library
 
-add_mpqc_object_library(madness
-  init.cc
-)
+IF(HAVE_MADNESS)
+    add_mpqc_object_library(madness
+      init.cc
+      world.cc
+    )
+ENDIF(HAVE_MADNESS)
 
 # tests
-
-#set_property(SOURCE madtest.cc PROPERTY COMPILE_DEFINITIONS
-#    -DSRCDIR="${CMAKE_CURRENT_SOURCE_DIR}")
-#add_executable(madtest EXCLUDE_FROM_ALL madtest.cc $<TARGET_OBJECTS:madness>)
-#add_test(madtest madtest)
+if (MPQC_UNITTEST)
+  add_executable(madtest madtest.cc $<TARGET_OBJECTS:class>)
+  target_link_libraries(madtest util)
+  target_link_libraries(madtest ${ELEMENTAL_LIBRARIES})
+  target_link_libraries(madtest ${LAPACK_LIBRARIES})
+  target_link_libraries(madtest ${Boost_LIBRARIES})
+  add_test(madtest madtest)
+endif()
 

@@ -85,7 +85,7 @@ R12WavefunctionWorld::R12WavefunctionWorld(
 
   // boot up madness
 #ifdef HAVE_MADNESS
-  MADNESSRuntime::initialize();
+  mpqc::MADNESSRuntime::initialize();
 #endif
 }
 
@@ -103,7 +103,7 @@ R12WavefunctionWorld::R12WavefunctionWorld(StateIn& si) : SavableState(si)
 
   // boot up madness
 #ifdef HAVE_MADNESS
-  MADNESSRuntime::initialize();
+  mpqc::MADNESSRuntime::initialize();
 #endif
 }
 
@@ -111,7 +111,7 @@ R12WavefunctionWorld::~R12WavefunctionWorld()
 {
   // boot up madness
 #ifdef HAVE_MADNESS
-  MADNESSRuntime::finalize();
+  mpqc::MADNESSRuntime::finalize();
 #endif
 }
 

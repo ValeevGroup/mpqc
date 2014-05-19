@@ -63,7 +63,7 @@ ReplSymmSCMatrix::ReplSymmSCMatrix(const RefSCDimension&a,ReplSCMatrixKit*k):
   SymmSCMatrix(a,k),
   rows(0)
 {
-  int n = d->n();
+  size_t n = d->n();
 
   matrix = allocate<double>(n*(n+1)>>1);
   rows = init_symm_rows(matrix,n);

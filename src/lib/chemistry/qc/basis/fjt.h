@@ -33,7 +33,7 @@
 namespace sc {
 
     /// Evaluates the Boys function F_j(T)
-    class Fjt: public RefCount {
+    class Fjt: virtual public RefCount {
     public:
         Fjt();
         ~Fjt();

@@ -32,35 +32,24 @@
 using namespace std;
 using namespace sc;
 
-inline int max(int a,int b) { return (a > b) ? a : b;}
-inline void fail()
-{
-  ExEnv::errn() << scprintf("failing module:\n%s",__FILE__) << endl;
-  abort();
-}
-
 Int2eLibint2::Int2eLibint2(Integral *integral,
                  const Ref<GaussianBasisSet>& b1,
                  const Ref<GaussianBasisSet>& b2,
                  const Ref<GaussianBasisSet>& b3,
-		 const Ref<GaussianBasisSet>& b4,
-		 size_t storage) :
+                 const Ref<GaussianBasisSet>& b4,
+                 size_t storage) :
   integral_(integral),
-  grp_(integral->messagegrp()),
+  bs1_(b1),
+  bs2_(b2),
+  bs3_(b3),
+  bs4_(b4),
   permute_(0),
-  redundant_(1)
+  redundant_(1),
+  storage_(storage)
 {
-  bs1_ = b1;
-  bs2_ = b2;
-  bs3_ = b3;
-  bs4_ = b4;
-
   if (bs2_.null()) bs2_ = bs1_;
   if (bs3_.null()) bs3_ = bs2_;
   if (bs4_.null()) bs4_ = bs3_;
-
-  /*--- Initialize storage ---*/
-  init_storage(storage);
 
   /*--- allocate scratch for transformation ---*/
   if (bs1_->has_pure() || bs2_->has_pure() || bs3_->has_pure() || bs4_->has_pure() ||
@@ -91,32 +80,41 @@ Int2eLibint2::Int2eLibint2(Integral *integral,
       int maxncart = bs4_->shell(sh4).max_cartesian();
       if (maxncart > maxncart4) maxncart4 = maxncart;
     }
-    tformbuf_ = new double[maxncart1*maxncart2*maxncart3*maxncart4];
-  }
-  else {
-    tformbuf_ = 0;
+    tformbuf_.resize(maxncart1*maxncart2*maxncart3*maxncart4);
   }
 }
 
+Int2eLibint2::Int2eLibint2(const Int2eLibint2& other) :
+  integral_(other.integral_),
+  bs1_(other.bs1_),
+  bs2_(other.bs2_),
+  bs3_(other.bs3_),
+  bs4_(other.bs4_),
+  bounds_(other.bounds_),
+  //grp_(other.integral_->messagegrp()),
+  permute_(0),
+  redundant_(1),
+  storage_(other.storage_),
+  tformbuf_(other.tformbuf_.size())
+{
+}
 
 Int2eLibint2::~Int2eLibint2()
 { 
-  if (tformbuf_)
-    delete[] tformbuf_;
-  done_storage();
 }
 
 void
 Int2eLibint2::bounds(const Ref<Log2Bounds>& b)
 {
-    bounds_ = b;
+  MPQC_ASSERT(bounds_.null() && not b.null());
+  bounds_ = b;
 }
 
 size_t
 Int2eLibint2::storage_required_(const Ref<GaussianBasisSet>& b1,
-				const Ref<GaussianBasisSet>& b2,
-				const Ref<GaussianBasisSet>& b3,
-				const Ref<GaussianBasisSet>& b4)
+                                const Ref<GaussianBasisSet>& b2,
+                                const Ref<GaussianBasisSet>& b3,
+                                const Ref<GaussianBasisSet>& b4)
 {
   size_t storage_required = 0;
   
@@ -172,11 +170,28 @@ Int2eLibint2::storage_required_(const Ref<GaussianBasisSet>& b1,
 int
 Int2eLibint2::log2_bound(int s1, int s2, int s3, int s4)
 {
-    if (bounds_)
-	return bounds_->log2_bound(s1,s2,s3,s4);
-    else
-	// 2^256 ~ 10^26
+  if (bounds_)
+    return bounds_->log2_bound(s1,s2,s3,s4);
+  else
+    // 2^256 ~ 10^26
 	return 256;
+}
+
+Ref<Int2eLibint2>
+Int2eLibint2::clone() {
+  throw FeatureNotImplemented("Int2eLibint2::clone() is not implemented in this class",
+                              __FILE__, __LINE__);
+}
+
+void
+Int2eLibint2::check_storage_() const
+{
+  //if (storage_used_ > storage_) {
+  //  std::ostringstream oss;
+  //  oss << "Not enough storage given to integral evaluator: storage_ = " << storage_
+  //      << " storage_used_ = " << storage_used_ << std::endl;
+  //  throw MemAllocFailed(oss.str().c_str(), __FILE__, __LINE__);
+  //}
 }
 
 /////////////////////////////////////////////////////////////////////////////

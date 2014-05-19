@@ -68,14 +68,14 @@ GaussianBasisSet::Shell::Shell(const GaussianBasisSet* basis,
 }
 
 bool sc::GaussianBasisSet::Shell::equiv(const Shell& s) const {
-  const double* r_this = this->basis()->molecule()->r(this->center());
+  const double* r_this = basis_->molecule()->r(center_);
   const double* r_s = s.basis()->molecule()->r(s.center());
   for(unsigned int xyz=0; xyz<3; ++xyz) {
-    if (fabs(r_this[xyz] - r_s[xyz]) > DBL_EPSILON)
+    if (fabs(r_this[xyz] - r_s[xyz]) > DBL_EPSILON){
       return false;
+    }
   }
-
-  return static_cast<const GaussianShell&>(*this).equiv(static_cast<const GaussianShell&>(s));
+  return GaussianShell::equiv(s);
 }
 
 //////////////////////////////////////////////////
@@ -499,13 +499,14 @@ GaussianBasisSet::init2(int skip_ghosts,bool include_q)
     std::vector<bool> center_flags(ncenter(), false); // if true, has found shells on this center
 
     int current_center = shells_[0].center();
-    center_flags[0] = true;
+    center_flags[current_center] = true;
     for(size_t s=1; s<shells_.size(); ++s) {
       if (shells_[s].center() != current_center) {
         current_center = shells_[s].center();
-        if (center_flags[current_center] == true) // oops, this shell sits on a center that already has another block of shells
+        if (center_flags[current_center] == true){ // oops, this shell sits on a center that already has another block of shells
           throw ProgrammingError("GaussianBasisSet: shells must be blocked by center",
                                  __FILE__, __LINE__);
+        }
         center_flags[current_center] = true;
       }
     }

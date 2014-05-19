@@ -44,7 +44,7 @@
 using namespace sc;
 
 ClassDesc DensityFitting::class_desc_(
-  typeid(DensityFitting),"DensityFitting",1,
+  typeid(DensityFitting),"DensityFitting",2,
   "virtual public SavableState",
   0, 0, create<DensityFitting>);
 
@@ -55,16 +55,21 @@ DensityFitting::DensityFitting(const Ref<MOIntsRuntime>& mointsruntime,
                                SolveMethod solver,
                                const Ref<OrbitalSpace>& space1,
                                const Ref<OrbitalSpace>& space2,
-                               const Ref<GaussianBasisSet>& fitting_basis) :
+                               const Ref<GaussianBasisSet>& fitting_basis,
+                               bool ri) :
                                  runtime_(mointsruntime),
                                  fbasis_(fitting_basis),
                                  space1_(space1),
                                  space2_(space2),
                                  kernel_key_(kernel_key),
-                                 solver_(solver)
+                                 solver_(solver),
+                                 ri_(ri)
                                  {
   if (kernel_key_.empty())
     throw ProgrammingError("DensityFitting: empty kernel_key", __FILE__, __LINE__);
+
+  if (ri)
+    MPQC_ASSERT(solver == SolveMethod_InverseCholesky);
 
   // fitting dimension
   RefSCDimension fdim = new SCDimension(fbasis_->nbasis(), "");
@@ -80,6 +85,12 @@ DensityFitting::DensityFitting(StateIn& si) :
   space2_ << SavableState::restore_state(si);
   si.get(kernel_key_);
   int solvemethod; si.get(solvemethod); solver_ = static_cast<SolveMethod>(solvemethod);
+
+  if (si.version(::class_desc<DensityFitting>()) >= 2)
+    si.get(ri_);
+  else
+    ri_ = false;
+
   cC_ << SavableState::restore_state(si);
   C_ << SavableState::restore_state(si);
 
@@ -95,6 +106,7 @@ DensityFitting::save_data_state(StateOut& so) {
   SavableState::save_state(space2_.pointer(),so);
   so.put(kernel_key_);
   so.put((int)solver_);
+  so.put(ri_);
   SavableState::save_state(cC_.pointer(),so);
   SavableState::save_state(C_.pointer(),so);
 
@@ -117,14 +129,15 @@ DensityFitting::compute()
   const std::string name = ParsedDensityFittingKey::key(space1_->id(),
                                                         space2_->id(),
                                                         fbasis_space_id,
-                                                        kernel_key_);
+                                                        kernel_key_,
+                                                        ri_);
 
   std::string tim_label("DensityFitting ");
   tim_label += name;
   Timer tim(tim_label);
 
   // convert kernel_key to operator and params
-  ParsedTwoBodyOperKey kernel_pkey(kernel_key_);
+  ParsedTwoBodyOperSetKey kernel_pkey(kernel_key_);
   TwoBodyOperSet::type operset = TwoBodyOperSet::to_type(kernel_pkey.oper());
   const std::string params_key = kernel_pkey.params();
   const std::string operset_key = TwoBodyOperSetDescr::instance(operset)->key();
@@ -138,7 +151,7 @@ DensityFitting::compute()
   if (definiteness == 0 && cholesky)
     throw ProgrammingError("Cholesky-based density-fitting can only be used for definite kernels, switch to Bunch-Kaufmann",
                            __FILE__, __LINE__);
-  // if kernel is negative-definite + using Cholesky => use flip the kernel sign
+  // if kernel is negative-definite + using Cholesky => flip the kernel sign
   const bool flip_kernel_sign = (definiteness == -1 && cholesky);
 
   // compute cC_ first
@@ -198,7 +211,7 @@ DensityFitting::compute()
       // scratch for holding solution vectors
       std::vector<double> C_jR(n2 * n3);
 
-      std::vector<double> kernel_i; // only needed for inverse method
+      std::vector<double> kernel_i;       // holds the inverse (or inverse square root, if RI), only needed for inverse method
       std::vector<double> kernel_packed;  // only needed for factorized methods
       std::vector<double> kernel_factorized;
       std::vector<blasint> ipiv;
@@ -207,7 +220,7 @@ DensityFitting::compute()
       switch (solver_) {
         case SolveMethod_InverseBunchKaufman:
         case SolveMethod_InverseCholesky:
-        {
+        if (not ri_) { // density fitting -> compute coefficients themselves, C_{mu nu} ^ Y = (mu nu| V |X) (X| V^-1 |Y)
           RefSymmSCMatrix kernel_i_mat;
           if (not runtime_->runtime_2c_inv()->key_exists(kernel_ints_key)) {
             RefSymmSCMatrix kernel_i_mat = kernel_.copy();
@@ -228,6 +241,9 @@ DensityFitting::compute()
             }
           }
           kernel_i_mat = 0;
+        }
+        else { // RI -> compute  themselves, C_{mu nu} ^ Y = (mu nu| V |X) (X| V^-1 |Y)
+          assert(false); // not yet implemented
         }
         break;
 

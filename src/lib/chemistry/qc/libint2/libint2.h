@@ -104,11 +104,15 @@ class IntegralLibint2 : public Integral {
 
     Ref<OneBodyInt> hcore();
 
+    Ref<OneBodyInt> efield(const Ref<IntParamsOrigin>&);
+
     Ref<OneBodyInt> efield_dot_vector(const Ref<EfieldDotVectorData>& =0);
 
-    Ref<OneBodyInt> dipole(const Ref<DipoleData>& =0);
+    Ref<OneBodyInt> efield_gradient(const Ref<IntParamsOrigin>&);
 
-    Ref<OneBodyInt> quadrupole(const Ref<DipoleData>& =0);
+    Ref<OneBodyInt> dipole(const Ref<IntParamsOrigin>& =0);
+
+    Ref<OneBodyInt> quadrupole(const Ref<IntParamsOrigin>& =0);
 
     Ref<OneBodyDerivInt> overlap_deriv();
 

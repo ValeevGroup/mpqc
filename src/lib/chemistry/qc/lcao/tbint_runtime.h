@@ -72,12 +72,12 @@ namespace sc {
   };
 
   /** Parsed representation of a string key that represents a two-body operator set (TwoBodyOperSet + associated parameters).
-      This class is closely related to TwoBodyIntDescr.
+      This class is closely related to TwoBodyOperSetDescr.
     */
-  class ParsedTwoBodyOperKey {
+  class ParsedTwoBodyOperSetKey {
     public:
-      ParsedTwoBodyOperKey();
-      ParsedTwoBodyOperKey(const std::string& key);
+      ParsedTwoBodyOperSetKey();
+      ParsedTwoBodyOperSetKey(const std::string& key);
 
       const std::string& key() const { return key_; }
       const std::string& oper() const { return oper_; }
@@ -86,16 +86,16 @@ namespace sc {
       /// computes key from its components
       static std::string key(const std::string& oper,
                              const std::string& params);
-      /// computes key from the given TwoBodyIntDescr object
+      /// computes key from the given TwoBodyOperSetDescr object
       template <int NumCenters>
-      static std::string key(const Ref<typename NCentersToDescr<NumCenters,2>::value>& descr)
+      static std::string key(const Ref<typename NCentersToIntDescr<NumCenters,2>::value>& descr)
       {
         return TwoBodyOperSetDescr::instance(descr->operset())->key() + ParamsRegistry::instance()->key(descr->params());
       }
 
       /// this factory method constructs a descriptor given operator key + IntParams object + Integrals object
       template<int NumCenters>
-      static Ref<typename NCentersToDescr<NumCenters, 2>::value> create_descr(
+      static Ref<typename NCentersToIntDescr<NumCenters, 2>::value> create_descr(
           const std::string& operset_key, const Ref<IntParams>& p,
           const Ref<Integral>& integral) {
         if (operset_key
@@ -144,7 +144,7 @@ namespace sc {
               TwoBodyOperSet::DeltaFunction>(integral, p);
         }
         throw ProgrammingError(
-            "ParsedTwoBodyOperKey::create_descr() -- unknown oper",
+            "ParsedTwoBodyOperSetKey::create_descr() -- unknown oper",
             __FILE__,
             __LINE__);
       }
@@ -189,7 +189,7 @@ namespace sc {
     private:
       std::string key_;
       std::string bra1_, bra2_, ket1_, ket2_;
-      ParsedTwoBodyOperKey oper_pkey_;
+      ParsedTwoBodyOperSetKey oper_pkey_;
       std::string layout_;
   };
 
@@ -323,7 +323,7 @@ namespace sc {
       typedef TwoBodyMOIntsRuntime this_type;
       typedef typename detail::TwoBodyIntEval<NumCenters>::value TwoBodyIntEval;
       typedef typename detail::TwoBodyIntEval<NumCenters>::refvalue TwoBodyIntEvalRef;
-      typedef typename NCentersToDescr<NumCenters,2>::value TwoBodyIntDescr;
+      typedef typename NCentersToIntDescr<NumCenters,2>::value TwoBodyIntDescr;
       typedef typename detail::ParsedTwoBodyIntKey<NumCenters>::value ParsedTwoBodyIntKey;
       typedef typename detail::TwoBodyMOIntsRuntimeParams<NumCenters>::value Params;
 
@@ -499,7 +499,7 @@ namespace sc {
   std::string
   TwoBodyMOIntsRuntime<NumCenters>::descr_key(const Ref<TwoBodyIntDescr>& descr)
   {
-    return ParsedTwoBodyOperKey::key<NumCenters>(descr);
+    return ParsedTwoBodyOperSetKey::key<NumCenters>(descr);
   }
 
   template <int NumCenters>
@@ -509,7 +509,7 @@ namespace sc {
   {
     Ref<IntParams> p = ParamsRegistry::instance()->value(params_key);
     const Ref<Integral>& integral = factory()->integral();
-    return ParsedTwoBodyOperKey::create_descr<NumCenters>(oper_key,p,integral);
+    return ParsedTwoBodyOperSetKey::create_descr<NumCenters>(oper_key,p,integral);
   }
 
   //////////////////////

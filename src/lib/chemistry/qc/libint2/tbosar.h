@@ -39,6 +39,7 @@
 #include <chemistry/qc/libint2/libint2_utils.h>
 #include <libint2/libint2.h>
 #include <libint2/boys.h>
+#include <chemistry/qc/libint2/core_ints_engine.h>
 
 #if LIBINT2_SUPPORT_ERI
 
@@ -53,11 +54,15 @@ namespace sc {
 
     template <>
     struct OSAR_CoreInts<TwoBodyOper::eri> {
-	// Line below isn't legal
-        //const static double small_T = 1E-15;       /*--- Use only one term in Taylor expansion of Fj(T) if T < small_T ---*/
-        ::libint2::FmEval_Chebyshev3 Fm_Eval_;
 
-        OSAR_CoreInts(unsigned int mmax, const Ref<IntParams>& params) :   Fm_Eval_(mmax) {}
+        //typedef FJT _FmEvalType; // Curt's Taylor code
+        typedef ::libint2::FmEval_Chebyshev3 _FmEvalType; // Frank's Chebyshev code, faster but slower startup
+        typedef CoreIntsEngine<_FmEvalType>::Engine FmEvalType;
+        Ref<FmEvalType> Fm_Eval_;
+
+        OSAR_CoreInts(unsigned int mmax, const Ref<IntParams>& params) :
+          Fm_Eval_(CoreIntsEngine<_FmEvalType>::instance(mmax)) {
+        }
 
         const double* eval(double* Fm_table, unsigned int mmax, double T, double rho = 0.0) const {
           static double oo2np1[] = {1.0,  1.0/3.0,  1.0/5.0,  1.0/7.0,  1.0/9.0,
@@ -69,13 +74,16 @@ namespace sc {
             1.0/61.0, 1.0/63.0, 1.0/65.0, 1.0/67.0, 1.0/69.0,
             1.0/71.0, 1.0/73.0, 1.0/75.0, 1.0/77.0, 1.0/79.0};
 	  
-	  const static double small_T = 1E-15;
+          const static double small_T = 1E-15;        /*--- Use only one term in Taylor expansion of Fj(T) if T < small_T ---*/
           if(T < small_T){
             return oo2np1;
           }
           else {
-            Fm_Eval_.eval(Fm_table, T, mmax);
+            // Cheb3
+            Fm_Eval_->eval(Fm_table, T, mmax);
             return Fm_table;
+            // old Taylor
+            //return Fm_Eval_->values(mmax, T);
           }
         }
     };
@@ -130,35 +138,44 @@ namespace sc {
 
     template <>
     struct OSAR_CoreInts<TwoBodyOper::r12_0_g12> : OSAR_CoreInts_G12Base {
-        ::libint2::GaussianGmEval<double, 0> Gm_Eval_;
+        typedef ::libint2::GaussianGmEval<double, 0> _GmEvalType;
+        typedef CoreIntsEngine<_GmEvalType>::Engine GmEvalType;
+        Ref<GmEvalType> Gm_Eval_;
+
         OSAR_CoreInts(unsigned int mmax, const Ref<IntParams>& params) :
-          Gm_Eval_(mmax, 1e-14), OSAR_CoreInts_G12Base(params)
+          Gm_Eval_(CoreIntsEngine<_GmEvalType>::instance(mmax, 1e-14)), OSAR_CoreInts_G12Base(params)
           {
             g12_ = reduce(g12_);
           }
-        double* eval(double* Fm_table, unsigned int mmax, double T, double rho = 0.0) {
-          Gm_Eval_.eval(Fm_table, rho, T, mmax, g12_);
-          return Fm_table;
+        double* eval(double* Gm_table, unsigned int mmax, double T, double rho = 0.0) {
+          Gm_Eval_->eval(Gm_table, rho, T, mmax, g12_);
+          return Gm_table;
         }
     };
     template <>
     struct OSAR_CoreInts<TwoBodyOper::r12_m1_g12> : OSAR_CoreInts_G12Base {
-        ::libint2::GaussianGmEval<double, -1> Gm_Eval_;
+        typedef ::libint2::GaussianGmEval<double, -1> _GmEvalType;
+        typedef CoreIntsEngine<_GmEvalType>::Engine GmEvalType;
+        Ref<GmEvalType> Gm_Eval_;
+
         OSAR_CoreInts(unsigned int mmax, const Ref<IntParams>& params) :
-          Gm_Eval_(mmax, 1e-14), OSAR_CoreInts_G12Base(params)
+          Gm_Eval_(CoreIntsEngine<_GmEvalType>::instance(mmax, 1e-14)), OSAR_CoreInts_G12Base(params)
         {
           g12_ = reduce(g12_);
         }
-        double* eval(double* Fm_table, unsigned int mmax, double T, double rho = 0.0) {
-          Gm_Eval_.eval(Fm_table, rho, T, mmax, g12_);
-          return Fm_table;
+        double* eval(double* Gm_table, unsigned int mmax, double T, double rho = 0.0) {
+          Gm_Eval_->eval(Gm_table, rho, T, mmax, g12_);
+          return Gm_table;
         }
     };
     template <>
     struct OSAR_CoreInts<TwoBodyOper::g12t1g12> : OSAR_CoreInts_G12Base {
-        ::libint2::GaussianGmEval<double, 2> Gm_Eval_;
+        typedef ::libint2::GaussianGmEval<double, 2> _GmEvalType;
+        typedef CoreIntsEngine<_GmEvalType>::Engine GmEvalType;
+        Ref<GmEvalType> Gm_Eval_;
+
         OSAR_CoreInts(unsigned int mmax, const Ref<IntParams>& params) :
-          Gm_Eval_(mmax, 1e-14), OSAR_CoreInts_G12Base(params)
+          Gm_Eval_(CoreIntsEngine<_GmEvalType>::instance(mmax, 1e-14)), OSAR_CoreInts_G12Base(params)
         {
           // [exp(-a r_{12}^2),[T1,exp(-b r_{12}^2)]] = 4 a b (r_{12}^2 exp(- (a+b) r_{12}^2) )
           // i.e. need to scale each coefficient by 4 a b
@@ -170,9 +187,9 @@ namespace sc {
               g12_[bk].second *= 4.0 * gbra[b].first * gket[k].first;
           g12_ = reduce(g12_);
         }
-        double* eval(double* Fm_table, unsigned int mmax, double T, double rho = 0.0) {
-          Gm_Eval_.eval(Fm_table, rho, T, mmax, g12_);
-          return Fm_table;
+        double* eval(double* Gm_table, unsigned int mmax, double T, double rho = 0.0) {
+          Gm_Eval_->eval(Gm_table, rho, T, mmax, g12_);
+          return Gm_table;
         }
     };
 
@@ -258,10 +275,10 @@ class TwoBodyOSARLibint2: public Int2eLibint2 {
       int am;
     } quartet_info_;
     typedef Libint_t prim_data;
-    void quartet_data_(prim_data *Data, double scale);
+    // returns 0 if primitive quartet is negligible, 1 otherwise
+    size_t quartet_data_(prim_data *Data, double scale);
     /*--- Compute engines ---*/
     std::vector<Libint_t> Libint_;
-    double* Fm_table_;
     detail::OSAR_CoreInts<OperType> coreints_;
   
   public:
@@ -273,6 +290,9 @@ class TwoBodyOSARLibint2: public Int2eLibint2 {
 	     size_t storage,
 	     const Ref<IntParams>& oper_params);
     ~TwoBodyOSARLibint2();
+
+    // reimplements Int2eLibint2::clone()
+    Ref<Int2eLibint2> clone();
 
     double *buffer(unsigned int t = 0) const {
       return target_ints_buffer_;
@@ -286,6 +306,12 @@ class TwoBodyOSARLibint2: public Int2eLibint2 {
     // evaluate integrals
     void compute_quartet(int*, int*, int*, int*);
     
+  private:
+    /// shallow-copies \c other, by reusing all precomputed data
+
+    /// \note used only by clone()
+    TwoBodyOSARLibint2(const TwoBodyOSARLibint2& other);
+
 };
 
 template <TwoBodyOper::type OperType>
@@ -304,11 +330,11 @@ TwoBodyOSARLibint2<OperType>::TwoBodyOSARLibint2(Integral *integral,
           oper_params)
 {
   // The static part of Libint's interface is automatically initialized in libint.cc
-  int l1 = bs1_->max_angular_momentum();
-  int l2 = bs2_->max_angular_momentum();
-  int l3 = bs3_->max_angular_momentum();
-  int l4 = bs4_->max_angular_momentum();
-  int lmax = std::max(std::max(l1,l2),std::max(l3,l4));
+  const int l1 = bs1_->max_angular_momentum();
+  const int l2 = bs2_->max_angular_momentum();
+  const int l3 = bs3_->max_angular_momentum();
+  const int l4 = bs4_->max_angular_momentum();
+  const int lmax = std::max(std::max(l1,l2),std::max(l3,l4));
   if (lmax > LIBINT2_MAX_AM_ERI) {
     throw LimitExceeded<int>("TwoBodyOSARLibint2::TwoBodyOSARLibint2() -- maxam of the basis is too high,\
  not supported by this libint2 library. Recompile libint2.",__FILE__,__LINE__,LIBINT2_MAX_AM_ERI,lmax);
@@ -356,16 +382,17 @@ TwoBodyOSARLibint2<OperType>::TwoBodyOSARLibint2(Integral *integral,
     perm_ints_ = 0;
 
   // See if can store primitive-pair data
-  size_t primitive_pair_storage_estimate = (bs1_->nprimitive()*bs2_->nprimitive() +
-    bs3_->nprimitive()*bs4_->nprimitive())*sizeof(prim_pair_t);
+  size_t primitive_pair_storage_estimate = (bs1_->nprimitive()*(size_t)bs2_->nprimitive() +
+    bs3_->nprimitive()*(size_t)bs4_->nprimitive())*sizeof(prim_pair_t);
   //  ExEnv::errn() << scprintf("need %d bytes to store primitive pair data\n",primitive_pair_storage_estimate);
 
-  if (store_pair_data()) {
+  MPQC_ASSERT(store_pair_data());
+  {
     shell_pairs12_ = new ShellPairsLibint2(bs1_,bs2_);
     if ( (bs1_ == bs3_ && bs2_ == bs4_) /*||
              // if this is (ab|ba) case -- should i try to save storage?
          (bs1_ == bs4_ && bs2_ == bs3_)*/ )
-      shell_pairs34_ = new ShellPairsLibint2(shell_pairs12_);
+      shell_pairs34_ = new ShellPairsLibint2(*shell_pairs12_);
     else
       shell_pairs34_ = new ShellPairsLibint2(bs3_,bs4_);
     storage_needed += primitive_pair_storage_estimate;
@@ -374,12 +401,6 @@ TwoBodyOSARLibint2<OperType>::TwoBodyOSARLibint2(Integral *integral,
   storage_used_ = storage_needed;
   // Check if storage_ > storage_needed
   check_storage_();
-
-  int mmax = bs1_->max_angular_momentum() +
-    bs2_->max_angular_momentum() +
-    bs3_->max_angular_momentum() +
-    bs4_->max_angular_momentum();
-  Fm_table_ = new double[mmax+1];
 }
 
 template <TwoBodyOper::type OperType>
@@ -398,7 +419,72 @@ TwoBodyOSARLibint2<OperType>::~TwoBodyOSARLibint2()
 #ifdef DMALLOC
   dmalloc_shutdown();
 #endif
-  delete[] Fm_table_;
+}
+
+template <TwoBodyOper::type OperType>
+TwoBodyOSARLibint2<OperType>::TwoBodyOSARLibint2(const TwoBodyOSARLibint2& other) :
+  Int2eLibint2(other),
+  shell_pairs12_(new ShellPairsLibint2(*other.shell_pairs12_)),
+  shell_pairs34_(new ShellPairsLibint2(*other.shell_pairs34_)),
+  coreints_(other.coreints_)
+{
+  // The static part of Libint's interface is automatically initialized in libint.cc
+  const int l1 = bs1_->max_angular_momentum();
+  const int l2 = bs2_->max_angular_momentum();
+  const int l3 = bs3_->max_angular_momentum();
+  const int l4 = bs4_->max_angular_momentum();
+  const int lmax = std::max(std::max(l1,l2),std::max(l3,l4));
+
+  /*--- Initialize storage ---*/
+  const int max_num_prim_comb = bs1_->max_nprimitive_in_shell()*
+    bs2_->max_nprimitive_in_shell()*
+    bs3_->max_nprimitive_in_shell()*
+    bs4_->max_nprimitive_in_shell();
+  // need one Libint_t object for each primitive combination
+  // if Libint2 does not support contractions, just allocate 1
+#if LIBINT2_CONTRACTED_INTS
+  Libint_.resize(max_num_prim_comb);
+#else
+  Libint_.resize(1);
+#endif
+  ConsumableResources::get_default_instance()->consume_memory(Libint_.size() * sizeof(Libint_[0]));
+
+  const int max_cart_target_size = bs1_->max_ncartesian_in_shell()*bs2_->max_ncartesian_in_shell()*
+    bs3_->max_ncartesian_in_shell()*bs4_->max_ncartesian_in_shell();
+  const int max_target_size = bs1_->max_nfunction_in_shell()*bs2_->max_nfunction_in_shell()*
+    bs3_->max_nfunction_in_shell()*bs4_->max_nfunction_in_shell();
+
+  size_t storage_needed = LIBINT2_PREFIXED_NAME(libint2_need_memory_eri)(lmax) * sizeof(LIBINT2_REALTYPE);
+  LIBINT2_PREFIXED_NAME(libint2_init_eri)(&Libint_[0],lmax,0);  // only need to initialize stack of the first Libint_t object
+  manage_array(Libint_[0].stack, storage_needed/sizeof(LIBINT2_REALTYPE));
+
+  target_ints_buffer_ = allocate<double>(max_target_size);
+  cart_ints_ = allocate<double>(max_cart_target_size);
+  if (bs1_->has_pure() || bs2_->has_pure() || bs3_->has_pure() || bs4_->has_pure() ||
+      bs1_->max_ncontraction() != 1 || bs2_->max_ncontraction() != 1 ||
+      bs3_->max_ncontraction() != 1 || bs4_->max_ncontraction() != 1) {
+    sphharm_ints_ = allocate<double>(max_target_size);
+    storage_needed += max_target_size*sizeof(double);
+  }
+  else {
+    sphharm_ints_ = 0;
+  }
+  if (l1 || l2 || l3 || l4) {
+    perm_ints_ = allocate<double>(max_target_size);
+    storage_needed += max_target_size*sizeof(double);
+  }
+  else
+    perm_ints_ = 0;
+
+  storage_used_ = storage_needed;
+  // Check if storage_ > storage_needed
+  check_storage_();
+}
+
+template <TwoBodyOper::type OperType>
+Ref<Int2eLibint2>
+TwoBodyOSARLibint2<OperType>::clone() {
+  return new TwoBodyOSARLibint2<OperType>(*this);
 }
 
 template <TwoBodyOper::type OperType>
@@ -466,24 +552,9 @@ TwoBodyOSARLibint2<OperType>::storage_required(const Ref<GaussianBasisSet>& b1,
 }
 
 template <TwoBodyOper::type OperType>
-void
+size_t
 TwoBodyOSARLibint2<OperType>::quartet_data_(prim_data *Data, double scale)
 {
-
-  /*----------------
-    Local variables
-   ----------------*/
-  double P[3], Q[3], PQ[3], W[3];
-
-  int p1 = quartet_info_.p1;
-  int p2 = quartet_info_.p2;
-  int p3 = quartet_info_.p3;
-  int p4 = quartet_info_.p4;
-
-  double a1 = int_shell1_->exponent(quartet_info_.p1);
-  double a2 = int_shell2_->exponent(quartet_info_.p2);
-  double a3 = int_shell3_->exponent(quartet_info_.p3);
-  double a4 = int_shell4_->exponent(quartet_info_.p4);
 
   prim_pair_t* pair12;
   prim_pair_t* pair34;
@@ -496,23 +567,36 @@ TwoBodyOSARLibint2<OperType>::quartet_data_(prim_data *Data, double scale)
     pair34 = quartet_info_.shell_pair12->prim_pair(*quartet_info_.op1,*quartet_info_.op2);
   }
 
-  double zeta = pair12->gamma;
-  double eta = pair34->gamma;
-  double ooz = 1.0/zeta;
-  double ooe = 1.0/eta;
-  double ooze = 1.0/(zeta+eta);
-#if LIBINT2_DEFINED(eri,roz)
-  Data->roz[0] = eta*ooze;
-  double rho = zeta*Data->roz[0];
-#else
-  double rho = zeta * eta * ooze;
-#endif
+  const int p1 = quartet_info_.p1;
+  const int p2 = quartet_info_.p2;
+  const int p3 = quartet_info_.p3;
+  const int p4 = quartet_info_.p4;
 
-  double pfac_norm = int_shell1_->coefficient_unnorm(quartet_info_.gc1,p1)*
+  const double pfac_norm = int_shell1_->coefficient_unnorm(quartet_info_.gc1,p1)*
   int_shell2_->coefficient_unnorm(quartet_info_.gc2,p2)*
   int_shell3_->coefficient_unnorm(quartet_info_.gc3,p3)*
   int_shell4_->coefficient_unnorm(quartet_info_.gc4,p4);
-  double pfac = 2.0*sqrt(rho*M_1_PI)*scale*pair12->ovlp*pair34->ovlp*pfac_norm;
+
+  const double pfac_simple = pair12->ovlp*pair34->ovlp*pfac_norm;
+// How to screen out primitive combinations?
+//  if (pfac_simple < 1e-9)
+//    return 0;
+
+  double P[3], Q[3], PQ[3], W[3];
+
+  const double zeta = pair12->gamma;
+  const double eta = pair34->gamma;
+  const double ooz = 1.0/zeta;
+  const double ooe = 1.0/eta;
+  const double ooze = 1.0/(zeta+eta);
+#if LIBINT2_DEFINED(eri,roz)
+  Data->roz[0] = eta*ooze;
+  const double rho = zeta*Data->roz[0];
+#else
+  const double rho = zeta * eta * ooze;
+#endif
+
+  const double pfac = 2.0*sqrt(rho*M_1_PI)*scale*pfac_simple;
 
   P[0] = pair12->P[0];
   P[1] = pair12->P[1];
@@ -529,7 +613,7 @@ TwoBodyOSARLibint2<OperType>::quartet_data_(prim_data *Data, double scale)
   double T = rho*PQ2;
 
   if (!quartet_info_.am) {
-    const double* Fm = coreints_.eval(Fm_table_, 0, T, rho);
+    const double* Fm = coreints_.eval(Data->LIBINT_T_SS_EREP_SS(0), 0, T, rho);
     Data->LIBINT_T_SS_EREP_SS(0)[0] = Fm[0]*pfac;
   }
   else {
@@ -549,8 +633,10 @@ TwoBodyOSARLibint2<OperType>::quartet_data_(prim_data *Data, double scale)
     W[1] = (zeta*P[1] + eta*Q[1])*ooze;
     W[2] = (zeta*P[2] + eta*Q[2])*ooze;
 
-    const double* Gm = coreints_.eval(Fm_table_, quartet_info_.am, T, rho);
-    assign_FjT(Data,quartet_info_.am,Gm,pfac);
+    const double* Gm = coreints_.eval(Data->LIBINT_T_SS_EREP_SS(0), quartet_info_.am, T, rho);
+    std::transform(Gm, Gm+quartet_info_.am+1,
+                   Data->LIBINT_T_SS_EREP_SS(0),
+                   std::bind2nd(std::multiplies<double>(), pfac));
 
     /* PA */
 #if LIBINT2_DEFINED(eri,PA_x)
@@ -591,6 +677,25 @@ TwoBodyOSARLibint2<OperType>::quartet_data_(prim_data *Data, double scale)
 #endif
 #if LIBINT2_DEFINED(eri,WQ_z)
     Data->WQ_z[0] = W[2] - Q[2];
+#endif
+
+#if LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_0_0_x) || \
+    LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_0_0_y) || \
+    LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_0_0_z) || \
+    LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_1_0_x) || \
+    LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_1_0_y) || \
+    LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_1_0_z)
+    double a2 = int_shell2_->exponent(quartet_info_.p2);
+    double a4 = int_shell4_->exponent(quartet_info_.p4);
+#endif
+#if LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_0_1_x) || \
+    LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_0_1_y) || \
+    LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_0_1_z) || \
+    LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_1_1_x) || \
+    LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_1_1_y) || \
+    LIBINT2_DEFINED(eri,TwoPRepITR_pfac0_1_1_z)
+    double a1 = int_shell1_->exponent(quartet_info_.p1);
+    double a3 = int_shell3_->exponent(quartet_info_.p3);
 #endif
 
     // using ITR?
@@ -638,7 +743,7 @@ TwoBodyOSARLibint2<OperType>::quartet_data_(prim_data *Data, double scale)
 #endif
   }
 
-  return;
+  return 1;
 }
 
 template <TwoBodyOper::type OperType>
@@ -945,9 +1050,8 @@ TwoBodyOSARLibint2<OperType>::compute_quartet(int *psh1, int *psh2, int *psh3, i
                   quartet_info_.p4 = pl;
 
                   // Compute primitive data for Libint
-                  quartet_data_(&Libint_[num_prim_combinations], 1.0);
-
-                  ++num_prim_combinations;
+                  size_t ncomb = quartet_data_(&Libint_[num_prim_combinations], 1.0);
+                  num_prim_combinations += ncomb;
                 }}}}
 
           if (quartet_info_.am) {

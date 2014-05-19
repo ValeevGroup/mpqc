@@ -241,12 +241,12 @@ class Int1eV3: public RefCount {
     void p_dot_nuclear_p(int ish, int jsh);
     void overlap(int ish, int jsh);
     void hcore(int ish, int jsh);
-    void efield(int ish, int jsh, double position[3]);
+    void efield(int ish, int jsh, const double position[3]);
     void point_charge(int ish, int jsh,
                       int ncharge, const double* charge,
                       const double*const* position);
     void dipole(int ish, int jsh,
-                double *com);
+                const double *com);
 
     void hcore_1der(int ish, int jsh,
                     int dercs, int centernum);

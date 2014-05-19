@@ -9,6 +9,7 @@ include(external/MPI)
 include(external/Lapack)
 include(external/Libint)
 include(external/Eigen)
+include(external/OpenBabel2)
 
 # Psi3 is not usable from MPQC without Libint2
 if (HAVE_LIBINT2)
@@ -17,6 +18,7 @@ endif()
 
 if (MPQC_NEW_FEATURES)
 
+  include(external/Elemental)
   include(external/TiledArray)
   include(external/Python)
   include(external/Boost)

@@ -43,7 +43,7 @@ if (LIBINT)
       }
       "  LIBINT_COMPILES)
     if (NOT LIBINT_COMPILES)
-      message(FATAL_ERROR "Could not compile LIBINT test program.\nSee CMakeFiles/CMakeOutput.log for details")
+      message(FATAL_ERROR "Could not compile LIBINT test program.\nSee CMakeFiles/CMakeError.log for details")
     endif()
     
     # make sure libint2 version is up to date
@@ -51,13 +51,13 @@ if (LIBINT)
       "
           #include <libint2/libint2.h>
           #include <libint2/boys.h>
-          #if !(LIBINT_MAJOR_VERSION==2 && LIBINT_MINOR_VERSION==0 && LIBINT_MICRO_VERSION>=2)
+          #if !(LIBINT_MAJOR_VERSION==2 && LIBINT_MINOR_VERSION==0 && LIBINT_MICRO_VERSION>=5)
           # error \"Libint2 library is too old\"
           #endif
           int main(int argc, char** argv) { return 0; }
       "  LIBINT_IS_UP_TO_DATE)    
     if (NOT LIBINT_IS_UP_TO_DATE)
-      message(FATAL_ERROR "Libint library is too old: version 2.0.2 or later is required")
+      message(FATAL_ERROR "Libint library is too old: version 2.0.5 or later is required")
     endif()
     
     # check that libint2 uses one of orderings supported by MPQC
@@ -107,19 +107,21 @@ if ("${LIBINT}" AND NOT LIBINT2_FOUND)
 
     include(ExternalProject)
 
-    # set(LIBINT_URL ${EXTERNAL_SOURCE_DIR}/libint.tar.gz)
-    # set(LIBINT_URL_HASH MD5=c59ac34c54dfff59aab3f3d19244071d)
-
-    set(LIBINT_URL http://downloads.sourceforge.net/project/libint/libint-for-mpqc/libint-2.0.3-stable.tgz)
-    set(LIBINT_URL_HASH MD5=6fe65ec0763a7c353dd66c7f6687edd4)
-
-    if (EXISTS ${EXTERNAL_SOURCE_DIR}/libint.tar.gz)
-      set(LIBINT_URL ${EXTERNAL_SOURCE_DIR}/libint.tar.gz)
-      set(LIBINT_URL_HASH "")
-    endif()
+    set(LIBINT_URL ${EXTERNAL_SOURCE_DIR}/libint-2.0.5-stable.tgz)
+    set(LIBINT_URL_HASH MD5=c8a93d55384ecb2eced2b698281bd7b5)
+    if (NOT EXISTS ${LIBINT_URL})
+      message(FATAL_ERROR "Did not find embedded copy of Libint2, something wrong with your source tree")
+    endif (NOT EXISTS ${LIBINT_URL})
 
     message("** Will build Libint from ${LIBINT_URL}")
 
+    if (BUILD_SHARED_LIBS)
+      set(LIBINT_BUILD_TYPE --enable-shared --disable-static)
+      set(LIBINT_LIBRARY_SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX})
+    else (BUILD_SHARED_LIBS)
+      set(LIBINT_BUILD_TYPE --disable-shared --enable-static)
+      set(LIBINT_LIBRARY_SUFFIX ${CMAKE_STATIC_LIBRARY_SUFFIX})
+    endif (BUILD_SHARED_LIBS)
     ExternalProject_Add(
       libint
       PREFIX ${EXTERNAL_BUILD_DIR}/libint
@@ -128,6 +130,7 @@ if ("${LIBINT}" AND NOT LIBINT2_FOUND)
       BUILD_IN_SOURCE 1
       CONFIGURE_COMMAND /bin/bash ./configure
       --prefix=${EXTERNAL_BUILD_DIR}/libint
+      "${LIBINT_BUILD_TYPE}"
       CC=${CMAKE_C_COMPILER}
       "CFLAGS=${CMAKE_C_FLAGS}"
       CXX=${CMAKE_CXX_COMPILER}
@@ -137,7 +140,7 @@ if ("${LIBINT}" AND NOT LIBINT2_FOUND)
       )
 
     add_dependencies(External libint)
-    set(LIBINT2_LIBRARY ${EXTERNAL_BUILD_DIR}/libint/lib/libint2.a)
+    set(LIBINT2_LIBRARY ${EXTERNAL_BUILD_DIR}/libint/lib/libint2${LIBINT_LIBRARY_SUFFIX})
     set(LIBINT2_INCLUDE_DIR ${EXTERNAL_BUILD_DIR}/libint/include)
     set(HAVE_LIBINT2 TRUE)
 

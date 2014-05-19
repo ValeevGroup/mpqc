@@ -53,7 +53,6 @@ class Int2eLibint2: public RefCount {
     Ref<GaussianBasisSet> bs4_;
 
     Ref<Log2Bounds> bounds_;
-    Ref<MessageGrp> grp_;
 
     GaussianShell *int_shell1_;
     GaussianShell *int_shell2_;
@@ -79,7 +78,7 @@ class Int2eLibint2: public RefCount {
 				    const Ref<GaussianBasisSet>& b4 = 0);
 
     /*--- Scratch ---*/
-    double *tformbuf_;    // stores one partially transformed contraction quartet
+    std::vector<double> tformbuf_;    // stores one partially transformed contraction quartet
 
     /*--- helper functions ---*/
     // cart.->sph.harm. transform functions
@@ -110,16 +109,16 @@ class Int2eLibint2: public RefCount {
 	       size_t storage);
     ~Int2eLibint2();
 
+    /// "clones" this engine, all precomputed data is shallow-copied
+
+    /// the default implementation throws
+    virtual Ref<Int2eLibint2> clone();
 
     /// provides the bounds evaluator for log2_bound
     void bounds(const Ref<Log2Bounds>&);
     /// returns the bounds evaluator for log2_bound
     const Ref<Log2Bounds>& bounds() const { return bounds_; }
 
-    /// Sets storage limit and starts storage tracking
-    void init_storage(size_t);
-    /// Finishes storage tracking
-    void done_storage();
     ///  Reports how much storage is actually used at a given time
     size_t storage_used() const { return storage_used_; }
 
@@ -152,6 +151,9 @@ class Int2eLibint2: public RefCount {
     Ref<GaussianBasisSet> basis3() { return bs3_; }
     Ref<GaussianBasisSet> basis4() { return bs4_; }
 
+  protected:
+    /// shallow-copies \c other
+    Int2eLibint2(const Int2eLibint2& other);
 };
 
 }

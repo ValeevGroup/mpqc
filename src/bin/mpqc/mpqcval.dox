@@ -15,25 +15,25 @@ an MPQC build.  MPQC must be built before one of these targets is used:
 <dl>
   <dt><tt>check</tt><dd>The same as <tt>check0</tt> below.  This
                         is only available from the top-level directory
-                        and <tt>src/bin/mpqc/validate</tt>.
+                        and <tt>test</tt> subdirectory.
   <dt><tt>check0</tt><dd>Run the smallest MPQC verification suite.
                         It tests basic functionality.  This
                         is only available from the top-level directory
-                        and <tt>src/bin/mpqc/validate</tt>.
+                        and <tt>test</tt> subdirectory.
   <dt><tt>check1</tt><dd>Run the intermediate MPQC verification suite.
                         It runs most of the tests, only leaving out
                         very expensive runs.  This
                         is only available from the top-level directory
-                        and <tt>src/bin/mpqc/validate</tt>.
+                        and <tt>test</tt> subdirectory.
   <dt><tt>check2</tt><dd>Run the complete MPQC verification suite.
                         Depending on the compilation and runtime
                         environment, tests that are not expected
                         to work will be omitted.  This
                         is only available from the top-level directory
-                        and <tt>src/bin/mpqc/validate</tt>.
+                        and <tt>test</tt> subdirectory.
   <dt><tt>check_clean</tt><dd>Remove MPQC verification suite output files.
                         This is only available from the top-level directory
-                        and <tt>src/bin/mpqc/validate</tt>.
+                        and <tt>test</tt> subdirectory.
   <dt><tt>testbuild</tt><dd>Verify that a variety of small test programs
                         compile.  If static libraries are used, this
                         will require a substantial amount of disk space.
@@ -45,10 +45,10 @@ The check targets will run mpqc with the mpqcrun (see \ref mpqcrun)
 command.  You can give arguments to mpqcrun by setting
 the <tt>MPQCRUN_ARGS</tt> variable on the make command line.
 
-The verification suite is in <tt>src/bin/mpqc/validate</tt>.  After running
-it, the output files can be found in <tt>src/bin/mpqc/validate/run</tt>.
+The verification suite is located in <tt>test</tt>.  After running
+it, the output files can be found in <tt>test/run</tt>.
 The check targets will compare outputs that your build produced to
-the reference files in <tt>src/bin/mpqc/validate/ref</tt>.  The input files
+the reference files in <tt>test/ref</tt>.  The input files
 can be found with the reference files.
 For each comparison, first the status (<tt>ok</tt>,
 <tt>missing</tt>, or <tt>failed</tt>) for each file is printed.  If both

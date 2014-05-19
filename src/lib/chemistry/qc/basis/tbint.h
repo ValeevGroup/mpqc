@@ -113,16 +113,16 @@ class TwoBodyInt : public RefCount {
      * @param[in] c center index, in [0,3]; default = 0 (first center)
      * @return (pointer to) the basis set object on the center @c c
      */
-    Ref<GaussianBasisSet> basis(size_t c = 0);
+    Ref<GaussianBasisSet> basis(size_t c = 0) const;
 
     /// Return the basis set on center one.
-    Ref<GaussianBasisSet> basis1();
+    Ref<GaussianBasisSet> basis1() const;
     /// Return the basis set on center two.
-    Ref<GaussianBasisSet> basis2();
+    Ref<GaussianBasisSet> basis2() const;
     /// Return the basis set on center three.
-    Ref<GaussianBasisSet> basis3();
+    Ref<GaussianBasisSet> basis3() const;
     /// Return the basis set on center four.
-    Ref<GaussianBasisSet> basis4();
+    Ref<GaussianBasisSet> basis4() const;
 
     /** Returns the type of the operator set that this object computes.
         this function is necessary to describe the computed integrals
@@ -237,14 +237,14 @@ class TwoBodyThreeCenterInt : public RefCount {
      * @param[in] c center index, in [0,2]; default = 0 (first center)
      * @return (pointer to) the basis set object on the center @c c
      */
-    Ref<GaussianBasisSet> basis(size_t c = 0);
+    Ref<GaussianBasisSet> basis(size_t c = 0) const;
 
     /// Return the basis set on center one.
-    Ref<GaussianBasisSet> basis1();
+    Ref<GaussianBasisSet> basis1() const;
     /// Return the basis set on center two.
-    Ref<GaussianBasisSet> basis2();
+    Ref<GaussianBasisSet> basis2() const;
     /// Return the basis set on center three.
-    Ref<GaussianBasisSet> basis3();
+    Ref<GaussianBasisSet> basis3() const;
 
     /** Returns the type of the operator set that this object computes.
         this function is necessary to describe the computed integrals
@@ -345,12 +345,12 @@ class TwoBodyTwoCenterInt : public RefCount {
      * @param[in] c center index, in [0,2]; default = 0 (first center)
      * @return (pointer to) the basis set object on the center @c c
      */
-    Ref<GaussianBasisSet> basis(size_t c = 0);
+    Ref<GaussianBasisSet> basis(size_t c = 0) const;
 
     /// Return the basis set on center one.
-    Ref<GaussianBasisSet> basis1();
+    Ref<GaussianBasisSet> basis1() const;
     /// Return the basis set on center two.
-    Ref<GaussianBasisSet> basis2();
+    Ref<GaussianBasisSet> basis2() const;
 
     /** Returns the type of the operator set that this object computes.
         this function is necessary to describe the computed integrals
@@ -600,16 +600,16 @@ class TwoBodyDerivInt : public RefCount {
     int nshell4() const;
 
     /// Return the basis set on center one.
-    Ref<GaussianBasisSet> basis();
+    Ref<GaussianBasisSet> basis() const;
 
     /// Return the basis set on center one.
-    Ref<GaussianBasisSet> basis1();
+    Ref<GaussianBasisSet> basis1() const;
     /// Return the basis set on center two.
-    Ref<GaussianBasisSet> basis2();
+    Ref<GaussianBasisSet> basis2() const;
     /// Return the basis set on center three.
-    Ref<GaussianBasisSet> basis3();
+    Ref<GaussianBasisSet> basis3() const;
     /// Return the basis set on center four.
-    Ref<GaussianBasisSet> basis4();
+    Ref<GaussianBasisSet> basis4() const;
 
     /** The computed shell-set of integrals will be put in the buffer returned by
         this member. The integrals are are returned as an array with derivative
@@ -711,14 +711,14 @@ class TwoBodyThreeCenterDerivInt : public RefCount {
     int nshell3() const;
 
     /// Return the basis set on center one.
-    Ref<GaussianBasisSet> basis();
+    Ref<GaussianBasisSet> basis() const;
 
     /// Return the basis set on center one.
-    Ref<GaussianBasisSet> basis1();
+    Ref<GaussianBasisSet> basis1() const;
     /// Return the basis set on center two.
-    Ref<GaussianBasisSet> basis2();
+    Ref<GaussianBasisSet> basis2() const;
     /// Return the basis set on center three.
-    Ref<GaussianBasisSet> basis3();
+    Ref<GaussianBasisSet> basis3() const;
 
     /** The computed shell integrals will be put in the buffer returned
         by this member.
@@ -781,12 +781,12 @@ class TwoBodyTwoCenterDerivInt : public RefCount {
     int nshell2() const;
 
     /// Return the basis set on center one.
-    Ref<GaussianBasisSet> basis();
+    Ref<GaussianBasisSet> basis() const;
 
     /// Return the basis set on center one.
-    Ref<GaussianBasisSet> basis1();
+    Ref<GaussianBasisSet> basis1() const;
     /// Return the basis set on center two.
-    Ref<GaussianBasisSet> basis2();
+    Ref<GaussianBasisSet> basis2() const;
 
     /** The computed shell integrals will be put in the buffer returned
         by this member.
@@ -857,7 +857,7 @@ class TwoBodyIntEval : public RefCount {
     virtual ~TwoBodyIntEval();
 
     /// Return the basis set on center \c C
-    Ref<GaussianBasisSet> basis(size_t C);
+    Ref<GaussianBasisSet> basis(size_t C) const;
 
     /** Returns the type of the operator set that this object computes.
         this function is necessary to describe the computed integrals

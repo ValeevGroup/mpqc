@@ -62,7 +62,6 @@ class TwoBodyIntLibint2 : public TwoBodyInt {
     void compute_shell(int,int,int,int);
 
     size_t used_storage() const { return int2elibint2_->storage_used(); }
-    void set_integral_storage(size_t storage);
 
     const double *buffer(TwoBodyOper::type te_type) const {
       return int2elibint2_->buffer( descr_->opertype(te_type) );
@@ -72,16 +71,11 @@ class TwoBodyIntLibint2 : public TwoBodyInt {
     Ref<TwoBodyInt> clone();
 
   private:
-    /// similar to the standard constructor, but saves some work (and pain)
-    /// for clone() method
-    TwoBodyIntLibint2(Integral*integral,
-                      const Ref<GaussianBasisSet>&b1,
-                      const Ref<GaussianBasisSet>&b2,
-                      const Ref<GaussianBasisSet>&b3,
-                      const Ref<GaussianBasisSet>&b4,
-                      size_t storage, TwoBodyOperSet::type int2etype,
-                      const Ref<IntParams>& params,
-                      const Ref<Log2Bounds>& bounds);
+    /// "shallow" copy constructor
+
+    /// creates a copy of \c other by reusing most parts that can be reused; used by clone()
+    /// \note not canonically shallow since must have some of its own buffers
+    TwoBodyIntLibint2(const TwoBodyIntLibint2& other);
 };
 
 /** This implements 3-center 2-body integrals in the IntLibint2 library. */
@@ -111,7 +105,6 @@ class TwoBodyThreeCenterIntLibint2 : public TwoBodyThreeCenterInt {
     void compute_shell(int,int,int);
 
     size_t used_storage() const { return int2elibint2_->storage_used(); }
-    void set_integral_storage(size_t storage);
 
     const double *buffer(TwoBodyOper::type te_type) const {
       return int2elibint2_->buffer( descr_->opertype(te_type) );
@@ -121,17 +114,11 @@ class TwoBodyThreeCenterIntLibint2 : public TwoBodyThreeCenterInt {
     Ref<TwoBodyThreeCenterInt> clone();
 
   private:
-    /// similar to the standard constructor, but saves some work (and pain)
-    /// for clone() method
-    TwoBodyThreeCenterIntLibint2(Integral*integral,
-                 const Ref<GaussianBasisSet>&b1,
-                 const Ref<GaussianBasisSet>&b2,
-                 const Ref<GaussianBasisSet>&b3,
-                 const Ref<GaussianBasisSet>&bunit,
-                 size_t storage, TwoBodyOperSet::type int2etype,
-                 const Ref<IntParams>& params,
-                 const Ref<Log2Bounds>& bounds);
+    /// "shallow" copy constructor
 
+    /// creates a copy of \c other by reusing most parts that can be reused; used by clone()
+    /// \note not canonically shallow since must have some of its own buffers
+    TwoBodyThreeCenterIntLibint2(const TwoBodyThreeCenterIntLibint2& other);
 };
 
 /** This implements 2-center 2-body integrals in the IntLibint2 library. */
@@ -163,22 +150,17 @@ class TwoBodyTwoCenterIntLibint2 : public TwoBodyTwoCenterInt {
     void compute_shell(int,int);
 
     size_t used_storage() const { return int2elibint2_->storage_used(); }
-    void set_integral_storage(size_t storage);
 
     const double *buffer(TwoBodyOper::type te_type) const {
       return int2elibint2_->buffer( descr_->opertype(te_type) );
     }
 
   private:
-    /// similar to the standard constructor, but saves some work (and pain)
-    /// for clone() method
-    TwoBodyTwoCenterIntLibint2(Integral*integral,
-                 const Ref<GaussianBasisSet>&b1,
-                 const Ref<GaussianBasisSet>&b2,
-                 const Ref<GaussianBasisSet>&bunit,
-                 size_t storage, TwoBodyOperSet::type int2etype,
-                 const Ref<IntParams>& params,
-                 const Ref<Log2Bounds>& bounds);
+    /// "shallow" copy constructor
+
+    /// creates a copy of \c other by reusing most parts that can be reused; used by clone()
+    /// \note not canonically shallow since must have some of its own buffers
+    TwoBodyTwoCenterIntLibint2(const TwoBodyTwoCenterIntLibint2& other);
 };
 
 /** This implements electron repulsion derivative integrals in the IntV3

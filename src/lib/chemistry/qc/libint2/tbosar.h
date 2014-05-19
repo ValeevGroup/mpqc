@@ -138,35 +138,44 @@ namespace sc {
 
     template <>
     struct OSAR_CoreInts<TwoBodyOper::r12_0_g12> : OSAR_CoreInts_G12Base {
-        ::libint2::GaussianGmEval<double, 0> Gm_Eval_;
+        typedef ::libint2::GaussianGmEval<double, 0> _GmEvalType;
+        typedef CoreIntsEngine<_GmEvalType>::Engine GmEvalType;
+        Ref<GmEvalType> Gm_Eval_;
+
         OSAR_CoreInts(unsigned int mmax, const Ref<IntParams>& params) :
-          Gm_Eval_(mmax, 1e-14), OSAR_CoreInts_G12Base(params)
+          Gm_Eval_(CoreIntsEngine<_GmEvalType>::instance(mmax, 1e-14)), OSAR_CoreInts_G12Base(params)
           {
             g12_ = reduce(g12_);
           }
-        double* eval(double* Fm_table, unsigned int mmax, double T, double rho = 0.0) {
-          Gm_Eval_.eval(Fm_table, rho, T, mmax, g12_);
-          return Fm_table;
+        double* eval(double* Gm_table, unsigned int mmax, double T, double rho = 0.0) {
+          Gm_Eval_->eval(Gm_table, rho, T, mmax, g12_);
+          return Gm_table;
         }
     };
     template <>
     struct OSAR_CoreInts<TwoBodyOper::r12_m1_g12> : OSAR_CoreInts_G12Base {
-        ::libint2::GaussianGmEval<double, -1> Gm_Eval_;
+        typedef ::libint2::GaussianGmEval<double, -1> _GmEvalType;
+        typedef CoreIntsEngine<_GmEvalType>::Engine GmEvalType;
+        Ref<GmEvalType> Gm_Eval_;
+
         OSAR_CoreInts(unsigned int mmax, const Ref<IntParams>& params) :
-          Gm_Eval_(mmax, 1e-14), OSAR_CoreInts_G12Base(params)
+          Gm_Eval_(CoreIntsEngine<_GmEvalType>::instance(mmax, 1e-14)), OSAR_CoreInts_G12Base(params)
         {
           g12_ = reduce(g12_);
         }
-        double* eval(double* Fm_table, unsigned int mmax, double T, double rho = 0.0) {
-          Gm_Eval_.eval(Fm_table, rho, T, mmax, g12_);
-          return Fm_table;
+        double* eval(double* Gm_table, unsigned int mmax, double T, double rho = 0.0) {
+          Gm_Eval_->eval(Gm_table, rho, T, mmax, g12_);
+          return Gm_table;
         }
     };
     template <>
     struct OSAR_CoreInts<TwoBodyOper::g12t1g12> : OSAR_CoreInts_G12Base {
-        ::libint2::GaussianGmEval<double, 2> Gm_Eval_;
+        typedef ::libint2::GaussianGmEval<double, 2> _GmEvalType;
+        typedef CoreIntsEngine<_GmEvalType>::Engine GmEvalType;
+        Ref<GmEvalType> Gm_Eval_;
+
         OSAR_CoreInts(unsigned int mmax, const Ref<IntParams>& params) :
-          Gm_Eval_(mmax, 1e-14), OSAR_CoreInts_G12Base(params)
+          Gm_Eval_(CoreIntsEngine<_GmEvalType>::instance(mmax, 1e-14)), OSAR_CoreInts_G12Base(params)
         {
           // [exp(-a r_{12}^2),[T1,exp(-b r_{12}^2)]] = 4 a b (r_{12}^2 exp(- (a+b) r_{12}^2) )
           // i.e. need to scale each coefficient by 4 a b
@@ -178,9 +187,9 @@ namespace sc {
               g12_[bk].second *= 4.0 * gbra[b].first * gket[k].first;
           g12_ = reduce(g12_);
         }
-        double* eval(double* Fm_table, unsigned int mmax, double T, double rho = 0.0) {
-          Gm_Eval_.eval(Fm_table, rho, T, mmax, g12_);
-          return Fm_table;
+        double* eval(double* Gm_table, unsigned int mmax, double T, double rho = 0.0) {
+          Gm_Eval_->eval(Gm_table, rho, T, mmax, g12_);
+          return Gm_table;
         }
     };
 
@@ -282,6 +291,9 @@ class TwoBodyOSARLibint2: public Int2eLibint2 {
 	     const Ref<IntParams>& oper_params);
     ~TwoBodyOSARLibint2();
 
+    // reimplements Int2eLibint2::clone()
+    Ref<Int2eLibint2> clone();
+
     double *buffer(unsigned int t = 0) const {
       return target_ints_buffer_;
     }
@@ -294,6 +306,12 @@ class TwoBodyOSARLibint2: public Int2eLibint2 {
     // evaluate integrals
     void compute_quartet(int*, int*, int*, int*);
     
+  private:
+    /// shallow-copies \c other, by reusing all precomputed data
+
+    /// \note used only by clone()
+    TwoBodyOSARLibint2(const TwoBodyOSARLibint2& other);
+
 };
 
 template <TwoBodyOper::type OperType>
@@ -312,11 +330,11 @@ TwoBodyOSARLibint2<OperType>::TwoBodyOSARLibint2(Integral *integral,
           oper_params)
 {
   // The static part of Libint's interface is automatically initialized in libint.cc
-  int l1 = bs1_->max_angular_momentum();
-  int l2 = bs2_->max_angular_momentum();
-  int l3 = bs3_->max_angular_momentum();
-  int l4 = bs4_->max_angular_momentum();
-  int lmax = std::max(std::max(l1,l2),std::max(l3,l4));
+  const int l1 = bs1_->max_angular_momentum();
+  const int l2 = bs2_->max_angular_momentum();
+  const int l3 = bs3_->max_angular_momentum();
+  const int l4 = bs4_->max_angular_momentum();
+  const int lmax = std::max(std::max(l1,l2),std::max(l3,l4));
   if (lmax > LIBINT2_MAX_AM_ERI) {
     throw LimitExceeded<int>("TwoBodyOSARLibint2::TwoBodyOSARLibint2() -- maxam of the basis is too high,\
  not supported by this libint2 library. Recompile libint2.",__FILE__,__LINE__,LIBINT2_MAX_AM_ERI,lmax);
@@ -364,16 +382,17 @@ TwoBodyOSARLibint2<OperType>::TwoBodyOSARLibint2(Integral *integral,
     perm_ints_ = 0;
 
   // See if can store primitive-pair data
-  size_t primitive_pair_storage_estimate = (bs1_->nprimitive()*bs2_->nprimitive() +
-    bs3_->nprimitive()*bs4_->nprimitive())*sizeof(prim_pair_t);
+  size_t primitive_pair_storage_estimate = (bs1_->nprimitive()*(size_t)bs2_->nprimitive() +
+    bs3_->nprimitive()*(size_t)bs4_->nprimitive())*sizeof(prim_pair_t);
   //  ExEnv::errn() << scprintf("need %d bytes to store primitive pair data\n",primitive_pair_storage_estimate);
 
-  if (store_pair_data()) {
+  MPQC_ASSERT(store_pair_data());
+  {
     shell_pairs12_ = new ShellPairsLibint2(bs1_,bs2_);
     if ( (bs1_ == bs3_ && bs2_ == bs4_) /*||
              // if this is (ab|ba) case -- should i try to save storage?
          (bs1_ == bs4_ && bs2_ == bs3_)*/ )
-      shell_pairs34_ = new ShellPairsLibint2(shell_pairs12_);
+      shell_pairs34_ = new ShellPairsLibint2(*shell_pairs12_);
     else
       shell_pairs34_ = new ShellPairsLibint2(bs3_,bs4_);
     storage_needed += primitive_pair_storage_estimate;
@@ -400,6 +419,72 @@ TwoBodyOSARLibint2<OperType>::~TwoBodyOSARLibint2()
 #ifdef DMALLOC
   dmalloc_shutdown();
 #endif
+}
+
+template <TwoBodyOper::type OperType>
+TwoBodyOSARLibint2<OperType>::TwoBodyOSARLibint2(const TwoBodyOSARLibint2& other) :
+  Int2eLibint2(other),
+  shell_pairs12_(new ShellPairsLibint2(*other.shell_pairs12_)),
+  shell_pairs34_(new ShellPairsLibint2(*other.shell_pairs34_)),
+  coreints_(other.coreints_)
+{
+  // The static part of Libint's interface is automatically initialized in libint.cc
+  const int l1 = bs1_->max_angular_momentum();
+  const int l2 = bs2_->max_angular_momentum();
+  const int l3 = bs3_->max_angular_momentum();
+  const int l4 = bs4_->max_angular_momentum();
+  const int lmax = std::max(std::max(l1,l2),std::max(l3,l4));
+
+  /*--- Initialize storage ---*/
+  const int max_num_prim_comb = bs1_->max_nprimitive_in_shell()*
+    bs2_->max_nprimitive_in_shell()*
+    bs3_->max_nprimitive_in_shell()*
+    bs4_->max_nprimitive_in_shell();
+  // need one Libint_t object for each primitive combination
+  // if Libint2 does not support contractions, just allocate 1
+#if LIBINT2_CONTRACTED_INTS
+  Libint_.resize(max_num_prim_comb);
+#else
+  Libint_.resize(1);
+#endif
+  ConsumableResources::get_default_instance()->consume_memory(Libint_.size() * sizeof(Libint_[0]));
+
+  const int max_cart_target_size = bs1_->max_ncartesian_in_shell()*bs2_->max_ncartesian_in_shell()*
+    bs3_->max_ncartesian_in_shell()*bs4_->max_ncartesian_in_shell();
+  const int max_target_size = bs1_->max_nfunction_in_shell()*bs2_->max_nfunction_in_shell()*
+    bs3_->max_nfunction_in_shell()*bs4_->max_nfunction_in_shell();
+
+  size_t storage_needed = LIBINT2_PREFIXED_NAME(libint2_need_memory_eri)(lmax) * sizeof(LIBINT2_REALTYPE);
+  LIBINT2_PREFIXED_NAME(libint2_init_eri)(&Libint_[0],lmax,0);  // only need to initialize stack of the first Libint_t object
+  manage_array(Libint_[0].stack, storage_needed/sizeof(LIBINT2_REALTYPE));
+
+  target_ints_buffer_ = allocate<double>(max_target_size);
+  cart_ints_ = allocate<double>(max_cart_target_size);
+  if (bs1_->has_pure() || bs2_->has_pure() || bs3_->has_pure() || bs4_->has_pure() ||
+      bs1_->max_ncontraction() != 1 || bs2_->max_ncontraction() != 1 ||
+      bs3_->max_ncontraction() != 1 || bs4_->max_ncontraction() != 1) {
+    sphharm_ints_ = allocate<double>(max_target_size);
+    storage_needed += max_target_size*sizeof(double);
+  }
+  else {
+    sphharm_ints_ = 0;
+  }
+  if (l1 || l2 || l3 || l4) {
+    perm_ints_ = allocate<double>(max_target_size);
+    storage_needed += max_target_size*sizeof(double);
+  }
+  else
+    perm_ints_ = 0;
+
+  storage_used_ = storage_needed;
+  // Check if storage_ > storage_needed
+  check_storage_();
+}
+
+template <TwoBodyOper::type OperType>
+Ref<Int2eLibint2>
+TwoBodyOSARLibint2<OperType>::clone() {
+  return new TwoBodyOSARLibint2<OperType>(*this);
 }
 
 template <TwoBodyOper::type OperType>

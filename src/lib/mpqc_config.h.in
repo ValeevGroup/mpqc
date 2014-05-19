@@ -256,7 +256,7 @@
 #cmakedefine HAVE_MADNESS
 
 /* Define if TiledArray is available.  */
-#cmakedefine HAVE_TILEDARRAY
+#cmakedefine MPQC_HAS_TILEDARRAY
 
 /* Define if OpenBabel2 is available.  */
 #cmakedefine HAVE_OPENBABEL2
@@ -426,7 +426,7 @@
 #cmakedefine SC_USE_TYPE_TRAITS
 
 /* Define if "new" MPQC3 feature set is supported.  */
-#if defined(HAVE_TILEDARRAY) && defined(HAVE_LIBINT2)
+#if defined(MPQC_HAS_TILEDARRAY) && defined(HAVE_LIBINT2)
 #  define HAVE_MPQC3_RUNTIME
 #endif
 

@@ -40,7 +40,6 @@
 
 
 #if defined(HAVE_MPQC3_RUNTIME)
-#  include <chemistry/qc/mbptr12/sr_r12intermediates.h>
 #  include <TiledArray/algebra/conjgrad.h>
 #endif
 
@@ -701,10 +700,26 @@ double PT2R12::energy_PT2R12_projector2() {
   return energy;
 }
 
+#if defined(HAVE_MPQC3_RUNTIME)
+  void PT2R12::bootup_mpqc3() {
+    MPQC_ASSERT(not srr12intrmds_);
+    srr12intrmds_ = make_shared<SingleReference_R12Intermediates<double>>(madness::World::get_default(),
+        this->r12world());
+    srr12intrmds_->set_rdm2(this->rdm2_);
+  }
+
+  void PT2R12::shutdown_mpqc3() {
+    srr12intrmds_ = 0;
+  }
+
+#endif
+
 std::pair<double,double>
 PT2R12::energy_PT2R12_projector2_mpqc3() {
 
 #if defined(HAVE_MPQC3_RUNTIME)
+
+  bootup_mpqc3();
 
   // see J. Chem. Phys. 135, 214105 (2011) for eqns.
 
@@ -715,30 +730,29 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
   if(print_all)
     ExEnv::out0() << std::endl << std::endl << indent << "Entered PT2R12::energy_PT2R12_projector2_mpqc3\n\n";
 
-  SingleReference_R12Intermediates<double> srr12intrmds(madness::World::get_default(),
-                                                        this->r12world());
-  srr12intrmds.set_rdm2(this->rdm2_);
-  TArray4 Tg_ij_kl = srr12intrmds._Tg("<i j|Tg|k l>");
+  TArray4 Tg_ij_kl; Tg_ij_kl("i,j,k,l") = _Tg("<i j|Tg|k l>");
 
   double VT2 = 0.0;
   {
-    auto V_ij_mn = srr12intrmds.V_spinfree(true);
-    TArray4 rdm2_aaoo = srr12intrmds._4("<i1 i2|gamma|m1 m2>");
+    auto V_ij_mn = V_sf(true);
 
     // extra factor of 1/2 relative to Eq. (11), but gets cancelled by a factor of 2 as in 2 . V . T
-    TArray4 Vg_ij_kl = 0.5 * rdm2_aaoo("i1,i2,m1,m2") * V_ij_mn("k1,k2,m1,m2");
+    TArray4 Vg_ij_kl;
+    Vg_ij_kl("i1,i2,k1,k2") = 0.5 * _4("<i1 i2|gamma|m1 m2>") * V_ij_mn("k1,k2,m1,m2");
 
     // cancellation of the previous 1/2 by this 2 to yield Eq. (11)
-    VT2 = 2.0 * dot(Vg_ij_kl("i,j,k,l"), srr12intrmds._Tg("<i j|Tg|k l>"));
+    VT2 = 2.0 * dot(Vg_ij_kl("i,j,k,l"), Tg_ij_kl("i,j,k,l"));
   }
   madness::World::get_default().gop.fence();
   ExEnv::out0() << indent << "VT2=" << VT2 << std::endl;
 
   double X = 0.0;
   {
-    auto X_ij_kl = srr12intrmds.X_spinfree(true);
-    TArray4 rdm2_F = srr12intrmds._4("<i1 i2|gamma|j1 m3>") * srr12intrmds._2("<m3|F|j2>");
-    TArray4 TXT = Tg_ij_kl("i1,i2,j1,j2") * X_ij_kl("j1,j2,k1,k2") * Tg_ij_kl("k1,k2,l1,l2");
+    auto X_ij_kl = X_sf(true);
+    TArray4 rdm2_F;
+    rdm2_F("i1,i2,j1,j2") = _4("<i1 i2|gamma|j1 m3>") * _2("<m3|F|j2>");
+    TArray4 TXT;
+    TXT("i1,i2,l1,l2") = Tg_ij_kl("i1,i2,j1,j2") * X_ij_kl("j1,j2,k1,k2") * Tg_ij_kl("k1,k2,l1,l2");
     X = -dot(TXT("i1,i2,j1,j2"), rdm2_F("i1,i2,j1,j2"));
   }
   madness::World::get_default().gop.fence();
@@ -746,29 +760,30 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
 
   double B0 = 0.0;
   {
-    auto B_ij_kl = srr12intrmds.B_spinfree(true);
-    TArray4 TBT = Tg_ij_kl("i1,i2,j1,j2") * B_ij_kl("j1,j2,k1,k2") * Tg_ij_kl("k1,k2,l1,l2");
+    auto B_ij_kl = B_sf(true);
+    TArray4 TBT;
+    TBT("i1,i2,l1,l2") = Tg_ij_kl("i1,i2,j1,j2") * B_ij_kl("j1,j2,k1,k2") * Tg_ij_kl("k1,k2,l1,l2");
     // extra 1/2 relative to Eq. (12), but B was scaled by factor of 2 relative to that Eq.
-    B0 = 0.5 * dot(TBT("i1,i2,j1,j2"), srr12intrmds._4("<i1 i2|gamma|j1 j2>"));
+    B0 = 0.5 * dot(TBT("i1,i2,j1,j2"), _4("<i1 i2|gamma|j1 j2>"));
   }
   madness::World::get_default().gop.fence();
   ExEnv::out0() << indent << "B0=" << B0 << std::endl;
 
   double Delta = 0.0;
   {
-    TArray4 Trf = Tg_ij_kl("i1,k,j1,j2") * srr12intrmds._4("<j1 j2|r|a' m_F(p')>");
-    TArray4 Tr = Tg_ij_kl("l,i2,j1,j2") * srr12intrmds._4("<j1 j2|r|a' n>");
+    TArray4 Trf; Trf("i1,k,a',m") = Tg_ij_kl("i1,k,j1,j2") * _4("<j1 j2|r|a' m_F(p')>");
+    TArray4 Tr ;  Tr("l,i2,a',n") = Tg_ij_kl("l,i2,j1,j2") * _4("<j1 j2|r|a' n>");
 
-    TArray2 rdm1_oo = srr12intrmds._2("<m|gamma|n>");
-    TArray2 rdm1_oa = srr12intrmds._2("<m|gamma|i>");
-    TArray2 rdm1_ao = srr12intrmds._2("<i|gamma|m>");
-    TArray2 rdm1_aa = srr12intrmds._2("<i|gamma|j>");
+    TArray2 rdm1_oo;  rdm1_oo("m,n") = _2("<m|gamma|n>");
+    TArray2 rdm1_oa;  rdm1_oa("m,i") = _2("<m|gamma|i>");
+    TArray2 rdm1_ao;  rdm1_ao("i,m") = _2("<i|gamma|m>");
+    TArray2 rdm1_aa;  rdm1_aa("i,j") = _2("<i|gamma|j>");
 
     {
       TArray4 lambda_1;
       lambda_1("m,k,l,n") = 0.5 * (rdm1_oa("m,k") * rdm1_ao("l,n")
                              - rdm1_oo("m,n") * rdm1_aa("k,l")
-                             - srr12intrmds._4("<m l|gamma|k n>")
+                             - _4("<m l|gamma|k n>")
                             );
       TArray4 Trf_gamma_Tr_1;
       Trf_gamma_Tr_1("m,k,l,n") = Tr("l,i2,a',n") * (rdm1_aa("i2,i1") * Trf("i1,k,a',m"));
@@ -780,7 +795,7 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
       TArray4 lambda_2;
       lambda_2("m,n,l,k")  = (rdm1_oo("m,n") * rdm1_aa("l,k")
                              - 0.25 * rdm1_oa("m,k") * rdm1_ao("l,n")
-                             - 0.5 * srr12intrmds._4("<m l|gamma|n k>")
+                             - 0.5 * _4("<m l|gamma|n k>")
                             );
       TArray4 Trf_gamma_Tr_2;
       Trf_gamma_Tr_2("m,n,l,k") = Tr("l,i2,a',n") * (rdm1_aa("i2,i1") * Trf("k,i1,a',m"));
@@ -790,7 +805,7 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
 
     {
       TArray4 lambda_3;
-      lambda_3("m,l,k,n") = (srr12intrmds._4("<m l|gamma|k n>")
+      lambda_3("m,l,k,n") = (_4("<m l|gamma|k n>")
                              - rdm1_oa("m,k") * rdm1_ao("l,n")
                             );
       {
@@ -814,12 +829,13 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
 
   double eref_recomp = 0.0;
   {
-    eref_recomp = dot(srr12intrmds._2("<m1|h|n1>"), srr12intrmds._2("<m1|gamma|n1>")) +
-        0.5 * dot(srr12intrmds._4("<m1 m2|g|n1 n2>"), srr12intrmds._4("<m1 m2|gamma|n1 n2>"));
+    eref_recomp = dot(_2("<m1|h|n1>"), _2("<m1|gamma|n1>")) +
+        0.5 * dot(_4("<m1 m2|g|n1 n2>"), _4("<m1 m2|gamma|n1 n2>"));
   }
   eref_recomp += r12world()->refwfn()->basis()->molecule()->nuclear_repulsion_energy();
   madness::World::get_default().gop.fence();
 
+  shutdown_mpqc3();
 
   return std::make_pair(VT2 + X + B0 + Delta, eref_recomp);
 #else
@@ -1712,32 +1728,30 @@ double PT2R12::cabs_singles_Dyall()
   if (use_mpqc3_) {
     ExEnv::out0() << std::endl << std::endl << indent
     << "Enter PT2R12::cabs_singles_Dyall MPQC3_RUNTIME\n";
-    typedef SingleReference_R12Intermediates<double>::TArray4 TArray4;
+    typedef SingleReference_R12Intermediates<double>::TArray4d TArray4;
     typedef SingleReference_R12Intermediates<double>::TArray2 TArray2;
 
-    SingleReference_R12Intermediates<double> srr12intrmds(
-        madness::World::get_default(), this->r12world());
-    srr12intrmds.set_rdm2(this->rdm2_);
+    bootup_mpqc3();
 
     // make all the matrixes that needed
-    TArray2 gamma2 = srr12intrmds._2("<m|gamma|n>");
-    TArray4 gamma4 = srr12intrmds._4("<m n|gamma|m1 n1>");
+    TArray2 gamma2 = __2("<m|gamma|n>");
+    TArray4 gamma4 = __4("<m n|gamma|m1 n1>");
 
-    TArray4 g = srr12intrmds._4("<n1 m1|g|m n>");
+    TArray4 g = __4("<n1 m1|g|m n>");
 
-    TArray2 h = srr12intrmds._2("<m|h|n>");
+    TArray2 h = __2("<m|h|n>");
 
-    TArray2 Fmn = srr12intrmds._2("<m|F|n>");
-    TArray2 FmA = srr12intrmds._2("<m|F|A'>");
-    TArray2 Fcn = srr12intrmds._2("<c'|F|n>");
-    TArray2 FAB = srr12intrmds._2("<A'|F|B'>");
+    TArray2 Fmn = __2("<m|F|n>");
+    TArray2 FmA = __2("<m|F|A'>");
+    TArray2 Fcn = __2("<c'|F|n>");
+    TArray2 FAB = __2("<A'|F|B'>");
 
-    TArray2 IAB = srr12intrmds._2("<B'|I|A'>");
-    TArray2 IBc = srr12intrmds._2("<B'|I|c'>");
+    TArray2 IAB = __2("<B'|I|A'>");
+    TArray2 IBc = __2("<B'|I|c'>");
 
     // make B matrix in Equation (26)
     // term1
-    TArray4 term1 = FAB("B',A'") * gamma2("y,x");
+    TArray4 term1; term1("B',A',y,x") = FAB("B',A'") * gamma2("y,x");
 #if DEBUGG
     // set the cout precision to 10 decimal digits
     std::cout.setf(ios::fixed);
@@ -1745,15 +1759,15 @@ double PT2R12::cabs_singles_Dyall()
     std::cout << "term1 of B: \n" << term1 << std::endl;
 #endif
     // term2
-    TArray4 term2 = - IAB("B',A'") * g("y,k,i,j") * gamma4("i,j,x,k");
-    TArray4 term12 = term1("B',A',y,x") + term2("B',A',y,x");
+    TArray4 term2; term2("B',A',y,x") = - IAB("B',A'") * (g("y,k,i,j") * gamma4("i,j,x,k"));
+    TArray4 term12; term12("B',A',y,x") = term1("B',A',y,x") + term2("B',A',y,x");
 #if DEBUGG
     std::cout << "term12 of B: \n" << term12 << std::endl;
 #endif
     // term3
-    TArray4 term3 = - IAB("B',A'") * h("y,i") * gamma2("i,x");
+    TArray4 term3; term3("B',A',y,x") = - IAB("B',A'") * (h("y,i") * gamma2("i,x"));
     // sum 3 terms
-    TArray4 B = term12("B',A',y,x") + term3("B',A',y,x");
+    TArray4 B; B("B',A',y,x") = term12("B',A',y,x") + term3("B',A',y,x");
 #if DEBUGG
     std::cout << "term123 of B: \n" << B << std::endl;
     ofstream foutB("new_term123");
@@ -1768,17 +1782,17 @@ double PT2R12::cabs_singles_Dyall()
     //
 
     //compute b matrix in a(x) = b
-    TArray2 b = gamma2("j,x") * Fcn("c',j") * IBc("B',c'");
+    TArray2 b; b("x,B'") = gamma2("j,x") * (Fcn("c',j") * IBc("B',c'"));
     // x we trying to solve, C
     TArray2 x = b("x,B'");
     if (cabs_singles_h0_ == string("dyall_1")) {
       // compute b based on Equation(15)
-      b = -b("x,B'");
+      b("x,B'") = -b("x,B'");
     }
 
     if (cabs_singles_h0_ == string("dyall_2")) {
       // - gamma(j,k) * h(k, beta) - gamma(jm,kl)*g(beta m, kl)
-      b = - gamma2("j,k") * FmA("k,B'") - gamma4("j,m,k,l") * g("B',m,k,l");
+      b("x,B'") = - gamma2("j,k") * FmA("k,B'") - gamma4("j,m,k,l") * g("B',m,k,l");
     }
 
 #if DEBUGG
@@ -1808,7 +1822,7 @@ double PT2R12::cabs_singles_Dyall()
         Delta_iA.set(*t, tile);
       }
     }
-    TArray2 preconditioner = Delta_iA("i,A'");
+    TArray2 preconditioner = Delta_iA;
 
     // initialize the function a(x)
     _CABS_singles_Fock<double> cabs_singles_fock(B);
@@ -1824,6 +1838,8 @@ double PT2R12::cabs_singles_Dyall()
 
     //calculate the second order energy based on Equation (16)
     double E = -1.0*dot(x("j,A'"), b("j,A'"));
+
+    shutdown_mpqc3();
     return E;
   } else
 #endif
@@ -2063,26 +2079,24 @@ double PT2R12::cabs_singles_Fock() {
     typedef SingleReference_R12Intermediates<double>::TArray4 TArray4;
     typedef SingleReference_R12Intermediates<double>::TArray2 TArray2;
 
-    SingleReference_R12Intermediates<double> srr12intrmds(
-        madness::World::get_default(), this->r12world());
-    srr12intrmds.set_rdm2(this->rdm2_);
+    bootup_mpqc3();
 
     // make all the matrixes that needed
     // go to file sr_r12intermediates.h for notation
-    TArray2 gamma2 = srr12intrmds._2("<m|gamma|n>");
+    TArray2 gamma2 = _2("<m|gamma|n>");
 #if DEBUGG
     std::cout << "gamma2: \n" << gamma2 << std::endl;
 #endif
 
-    TArray2 Fmn = srr12intrmds._2("<m|F|n>");
-    TArray2 FmA = srr12intrmds._2("<m|F|A'>");
-    TArray2 Fcn = srr12intrmds._2("<c'|F|n>");
-    TArray2 FAB = srr12intrmds._2("<A'|F|B'>");
+    TArray2 Fmn = _2("<m|F|n>");
+    TArray2 FmA = _2("<m|F|A'>");
+    TArray2 Fcn = _2("<c'|F|n>");
+    TArray2 FAB = _2("<A'|F|B'>");
 
-    TArray2 IAB = srr12intrmds._2("<B'|I|A'>");
-    TArray2 IBc = srr12intrmds._2("<B'|I|c'>");
+    TArray2 IAB = _2("<B'|I|A'>");
+    TArray2 IBc = _2("<B'|I|c'>");
 
-    TArray4 gamma4 = srr12intrmds._4("<n1 m|gamma|m1 n>");
+    TArray4 gamma4 = _4("<n1 m|gamma|m1 n>");
 
     // make B matrix in Equation (18)
     // term1
@@ -2143,6 +2157,9 @@ double PT2R12::cabs_singles_Fock() {
 
     //calculate the second order energy based on Equation (16)
     double E = -1.0* dot(x("n,A'"),b("n,A'"));
+
+    shutdown_mpqc3();
+
     return E;
   } else
 #endif

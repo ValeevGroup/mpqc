@@ -58,12 +58,12 @@ void try_main(int argc, char** argv){
   Ref<KeyVal> kv = new ParsedKeyVal(input);
 
   Ref<mpqc::TA::CLHF> tclhf = new TA::CLHF(kv);
-  Ref<MessageGrp> msg;
-  MessageGrp::initial_messagegrp(argc, argv);
-  msg = MessageGrp::get_default_messagegrp();
-  Ref<RegionTimer> regtim;
-  regtim = new ParallelRegionTimer(msg, "SCF compare", 1,1);
-  RegionTimer::set_default_regiontimer(regtim);
+  //Ref<MessageGrp> msg;
+  //MessageGrp::initial_messagegrp(argc, argv);
+  //msg = MessageGrp::get_default_messagegrp();
+  //Ref<RegionTimer> regtim;
+  //regtim = new ParallelRegionTimer(msg, "SCF compare", 1,1);
+  //RegionTimer::set_default_regiontimer(regtim);
 
   sc::Timer tim("Scf Energy time");
   double energy = tclhf->scf_energy();

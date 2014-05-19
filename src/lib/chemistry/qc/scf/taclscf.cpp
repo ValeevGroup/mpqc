@@ -121,6 +121,7 @@ double CLSCF::scf_energy(){
 
 double CLSCF::iter_energy() {
   // E = \sum_{ij} \left( D_{ij} * (F_{ij} + H_{ij}) \right)
+  std::cout << "\nin iter energy\n";
   return ::TiledArray::expressions::dot(ao_hcore()("i,j") +
                                         scf_ao_fock_()("i,j"),
                                         ao_density()("i,j"));

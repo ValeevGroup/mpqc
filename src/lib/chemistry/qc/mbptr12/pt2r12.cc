@@ -148,8 +148,10 @@ PT2R12::PT2R12(StateIn &s) : Wavefunction(s) {
   r12eval_ << SavableState::restore_state(s);
   s.get(nfzc_);
   s.get(omit_uocc_);
+#if defined(HAVE_MPQC3_RUNTIME)
   s.get(cabs_singles_);
   s.get(cabs_singles_coupling_);
+#endif
   s.get(debug_);
 }
 
@@ -1730,7 +1732,7 @@ double PT2R12::cabs_singles_Dyall()
 
     // g
     TArray4 g_ijkl = srr12intrmds._4("<n1 m1|g|m n>"); // occ
-    TArray4 g_iajb = srr12intrmds._4("<m e|g|n f>"); // occ vir occ vir
+    TArray4 g_iajb = srr12intrmds._4("<m f|g|n e>"); // occ vir occ vir
     TArray4 g_iabj = srr12intrmds._4("<m e|g|f n>"); // occ vir vir occ
 
     // h_core
@@ -1752,35 +1754,43 @@ double PT2R12::cabs_singles_Dyall()
 
     // make B matrix
     tim.enter("compute B matrix"); // time B matrix
+    tim.enter("term1");
     // term1
     TArray4 term1 = F_AB("A',B'") * gamma1("x,y");
+    tim.exit();
+    std::cout << "term1 of B complete \n" << std::endl;
 #if DEBUGG
     // set the cout precision to 10 decimal digits
     std::cout.setf(ios::fixed);
     std::cout.precision(10);
     // std::cout << "term1 of B: \n" << term1 << std::endl;
 #endif
+    tim.enter("term2");
     // term2
-    TArray4 term2 = - I_AB("A',B'")*(h_ij("i,y") * gamma1("x,i") + g_ijkl("i,j,k,y") * gamma2("k,x,i,j")); //+
-
+    TArray4 term2 = - I_AB("A',B'")*(h_ij("i,y") * gamma1("x,i") + g_ijkl("i,j,k,y") * gamma2("k,x,i,j"));
+    tim.exit();
+    std::cout << "term2 of B complete \n" << std::endl;
 #if DEBUGG
     // std::cout << "term2 of B: \n" << term2 << std::endl;
 #endif
+    tim.enter("term3");
     // term3
-    TArray4 term3 = (h_ab("a,b") - F_ab("a,b"))*gamma1("x,y");
-
+    TArray4 term3 = I_Aa("B',b")*I_Aa("A',a")*(h_ab("a,b") - F_ab("a,b"))*gamma1("x,y");
+    tim.exit();
+    std::cout << "term3 of B complete \n" << std::endl;
+    tim.enter("term4");
     // term4
-    TArray4 term4  = g_iajb("j,a,i,b")*gamma2("i,x,j,y") + g_iabj("j,a,b,i")*gamma2("i,x,y,j");
+    TArray4 term4 = I_Aa("B',b")* I_Aa("A',a")*(g_iabj("i,a,j,b")*gamma2("j,x,i,y") + g_iajb("j,a,b,i")*gamma2("i,x,y,j"));
 
 #if DEBUGG
     std::cout << "term4 of B: \n" << term4 << std::endl;
 #endif
-
-    TArray4 term34 = I_Aa("A',a")* I_Aa("B',b")*(term3("a,b,x,y")  + term4("a,b,x,y"));
-
-    TArray4 B = term1("B',A',y,x") + term2("B',A',y,x") + term34("B',A',y,x");
+    tim.exit();
+    std::cout << "term4 of B complete \n" << std::endl;
+    TArray4 B = term1("B',A',y,x") + term2("B',A',y,x") + term3("B',A',y,x") + term4("B',A',y,x");
 
     tim.exit();
+    std::cout << "B complete \n" << std::endl;
 
 #if DEBUGG
     std::cout << "allterm of B: \n" << B << std::endl;

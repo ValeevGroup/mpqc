@@ -374,7 +374,9 @@ int try_main(int argc, char **argv)
         Ref<AssignedKeyVal> tmpkv1 = new AssignedKeyVal;
         tmpkv1->assign("name", ccpvxzri_name);
         tmpkv1->assign("molecule", basis->molecule().pointer());
+
         Ref<GaussianBasisSet> ccpvxzri = new GaussianBasisSet(tmpkv1);
+        //Ref<GaussianBasisSet> ccpvxzri = new UncontractedBasisSet(tmpkv1);
 
         Ref<AssignedKeyVal> tmpkv2 = new AssignedKeyVal;
         tmpkv2->assign("name", std::string("augmentation-") + ccpvxzri_name);

@@ -102,7 +102,7 @@ const mpqc::TA::Wavefunction::Matrix&
 mpqc::TA::Wavefunction::rdm1() {
   if (not rdm1_.computed()) {
     if (rdm1_.result_noupdate().is_initialized() == false)
-      rdm1_ = rdm1(sc::Alpha)("a,b") + rdm1(sc::Beta)("a,b");
+      rdm1_("a,b") = rdm1(sc::Alpha)("a,b") + rdm1(sc::Beta)("a,b");
     rdm1_.computed() = 1;
   }
   return rdm1_.result_noupdate();

@@ -42,7 +42,7 @@ using namespace sc;
 using std::cout;
 using std::endl;
 
-#define K_THREAD_SPARSE 1
+#define K_THREAD_SPARSE 0
 
 #define DEBUG_K_INTERMEDIATES 0
 
@@ -888,10 +888,16 @@ CADFCLHF::compute_K()
         double* __restrict__ dt_prime_data;
         double* __restrict__ gt_ish_X_data;
         double* __restrict__ D_ordered_data;
+        //double* __restrict__ my_kt_part_tr_data;
         if(distribute_coefficients_) {
            dt_ish_X_data = new double[max_fxn_obs_todo_*max_fxn_dfbs_todo_*nbf];
            dt_prime_data = new double[max_fxn_obs_todo_*max_fxn_dfbs_todo_*max_obs_atom_fxn_on_dfbs_center_todo_];
            gt_ish_X_data = new double[max_fxn_obs_todo_*max_fxn_dfbs_todo_*nbf];
+//#if K_THREAD_SPARSE
+//           if(screen_B_) {
+//             my_kt_part_tr_data = new double[max_fxn_obs_*nbf];
+//           }
+//#endif
         }
         int D_B_buff_n = 0;
         if(B_use_buffer_) {
@@ -1037,7 +1043,7 @@ CADFCLHF::compute_K()
               for(const auto&& jblk : shell_block_range(L_3_star[{ish, Xsh}], Contiguous)){
 
                 {
-                  TimerHolder holder(form_g_timer);
+                  //TimerHolder holder(form_g_timer);
                   new (&gt_ish_X) Eigen::Map<RowMatrix>(gt_ish_X_data, ish.nbf*Xblk.nbf, jblk.nbf);
                   gt_ish_X = RowMatrix::Zero(ish.nbf*Xblk.nbf, jblk.nbf);
                   for(auto&& mu : function_range(ish)) {
@@ -1050,6 +1056,7 @@ CADFCLHF::compute_K()
 
                 if(screen_B_) {
 #if K_THREAD_SPARSE
+                  //Eigen::Map<RowMatrix> my_Kt_part(my_kt_part_tr_data, jblk.nbf, nbf);
                   RowMatrix my_Kt_part(jblk.nbf, nbf);
                   my_Kt_part.setZero();
 #endif
@@ -1078,10 +1085,10 @@ CADFCLHF::compute_K()
 
                     subtimer.change(k_contrib_timer_u);
 #if K_THREAD_SPARSE
-                      my_Kt_part.block(
-                          0, Xblk.atom_obsbfoff,
-                          jblk.nbf, Xblk.atom_obsnbf
-                      ).noalias() +=
+                    my_Kt_part.block(
+                        0, Xblk.atom_obsbfoff,
+                        jblk.nbf, Xblk.atom_obsnbf
+                    ).noalias() +=
 #else
                     Kt_part.block(
                         Xblk.atom_obsbfoff, jblk.bfoff,
@@ -1807,6 +1814,11 @@ CADFCLHF::compute_K()
           delete[] dt_ish_X_data;
           delete[] dt_prime_data;
           delete[] gt_ish_X_data;
+#if K_THREAD_SPARSE
+          //if(screen_B_) {
+          //  delete[] my_kt_part_tr_data;
+          //}
+#endif
         }
 
         //============================================================================//

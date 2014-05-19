@@ -26,7 +26,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#define J_THREAD_SPARSE 1
+#define J_THREAD_SPARSE 0
 
 #include <chemistry/qc/basis/petite.h>
 #include <util/misc/xmlwriter.h>

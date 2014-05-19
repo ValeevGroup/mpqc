@@ -28,37 +28,36 @@
 #ifndef mpqc_interfaces_tiledarray_symmscmat_hpp
 #define mpqc_interfaces_tiledarray_symmscmat_hpp
 
-#include <mpqc/interfaces/tiledarray/tiling/trange1.hpp>
-#include <tiledarray.h>
+#include <tiled_array.h>
 
-namespace TA = TiledArray;
 namespace mpqc {
 /// addtogroup TiledArrayInterface
 /// @{
 
 #ifndef DOXYGEN
     namespace detail{
+        using TRange1 = ::TiledArray::TiledRange1;
         template<unsigned int N>
-        TA::Array<double, N>
-        init_ta_array(madness::World &world, const tiling::TRange1 &trange1){
+        ::TiledArray::Array<double, N>
+        init_ta_array(madness::World &world, const TRange1 &trange1){
 
-            std::array<tiling::TRange1, N> blocking;
+            std::array<TRange1, N> blocking;
             for(std::size_t i = 0; i < N; ++i){
                 blocking[i] = trange1;
             }
 
-            TA::TiledRange trange(blocking.begin(), blocking.end());
+            ::TiledArray::TiledRange trange(blocking.begin(), blocking.end());
 
-            TA::Array<double, N> array(world, trange);
+            ::TiledArray::Array<double, N> array(world, trange);
             return array;
         }
 
         template<typename RefMat>
-        TA::Array<double, 2>::value_type
-        mat_to_array_task(const TA::Range &range, const RefMat &matrix){
+        ::TiledArray::Array<double, 2>::value_type
+        mat_to_array_task(const ::TiledArray::Range &range, const RefMat &matrix){
 
             /// This is the tile which we are going to return.
-            TA::Array<double, 2>::value_type tile(range);
+            ::TiledArray::Array<double, 2>::value_type tile(range);
 
             int t0start = tile.range().start()[0];
             int t1start = tile.range().start()[1];
@@ -83,7 +82,7 @@ namespace mpqc {
 
         template<unsigned int N, typename RefMat>
         void
-        mat_to_array(const RefMat &matrix, TA::Array<double, N> &array){
+        mat_to_array(const RefMat &matrix, ::TiledArray::Array<double, N> &array){
 
             auto it = array.get_pmap()->begin();
             auto end = array.get_pmap()->end();
@@ -94,7 +93,7 @@ namespace mpqc {
                           " arrays with rank 2");
 
             for(; it != end; ++it){
-                madness::Future<typename TA::Array<double,N>::value_type > tile =
+                madness::Future<typename ::TiledArray::Array<double,N>::value_type > tile =
                                 world.taskq.add(
                                     &mat_to_array_task<RefMat>,
                                     array.trange().make_tile_range(*it),
@@ -112,12 +111,12 @@ namespace mpqc {
      * Function to copy a sc::SymmSCMatrix to TiledArray::Array
      * @Warning This function is only for testing not for general use
      */
-    TA::Array<double, 2>
+    inline ::TiledArray::Array<double, 2>
     SymmScMat_To_TiledArray(madness::World &world,
                             const sc::Ref<sc::SymmSCMatrix> &matrix,
-                            const tiling::TRange1 &trange1){
+                            const ::TiledArray::TiledRange1 trange1){
 
-        TA::Array<double, 2> ta_array = detail::init_ta_array<2>(world, trange1);
+        ::TiledArray::Array<double, 2> ta_array = detail::init_ta_array<2>(world, trange1);
 
         detail::mat_to_array(matrix, ta_array);
 

@@ -8,8 +8,8 @@ See \ref state for more information.
 
 \if html
 <h1>Compiling scls</h1>
- scls is distributed with the SC Toolkit.  scls will automatically
-be compiled when SC is compiled.  See \ref compile
+ scls is distributed with the MPQC Toolkit.  scls will automatically
+be compiled when MPQC is compiled.  See \ref compile
 for more information.
 \endif
 

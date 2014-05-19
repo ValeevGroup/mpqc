@@ -70,9 +70,11 @@ namespace sc {
       // implements TwoBodyThreeCenterMOIntsTransform::extra_memory_report()
       void extra_memory_report(std::ostream& os = ExEnv::out0()) const;
 
-      /// specialization of compute() for the case where space1 is AO
+      /// specialization of compute() for the case where space1 and space2 is AO
+      void compute_pqR();
+      /// specialization of compute() for the case where space1, but not space2, is AO
       void compute_pjR();
-      /// specialization of compute() for the case where space1 is not AO
+      /// specialization of compute() for the case where neither space1 nor space2 is AO
       void compute_ijR();
 
   };

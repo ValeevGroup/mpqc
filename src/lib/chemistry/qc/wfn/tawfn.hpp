@@ -28,7 +28,7 @@
 #ifndef _MPQC_CHEMISTRY_WFN_TAWFN_HPP_
 #define _MPQC_CHEMISTRY_WFN_TAWFN_HPP_
 
-#include <tiledarray.h>
+#include <tiledarray_fwd.h>
 #include <util/madness/world.h>
 #include <chemistry/qc/basis/integral.h>
 #include <chemistry/qc/basis/tiledbasisset.hpp>
@@ -38,7 +38,6 @@
 // will happen: namespace sc -> namespace mpqc
 
 namespace mpqc {
-
   namespace TA {
 
     /// @addtogroup TAWFN
@@ -49,95 +48,144 @@ namespace mpqc {
      */
     class Wavefunction: public sc::MolecularEnergy {
 
-      public:
+    public:
 
-        typedef ::TiledArray::Array<double,1> Vector;  //!< Vector of reals
-        typedef ::TiledArray::Array<double,2> Matrix;  //!< Matrix of reals
-        typedef sc::Result<Vector> ResultVector;
-        typedef sc::Result<Matrix> ResultMatrix;
-        typedef sc::AccResult<Vector> AccResultVector;
-        typedef sc::AccResult<Matrix> AccResultMatrix;
+      typedef TiledArray::TArray1D TAVector; //!< Vector of reals
+      typedef TiledArray::TArray2D TAMatrix; //!< Matrix of reals
+      typedef sc::Result<TAVector> ResultVector;
+      typedef sc::Result<TAMatrix> ResultMatrix;
+      typedef sc::AccResult<TAVector> AccResultVector;
+      typedef sc::AccResult<TAMatrix> AccResultMatrix;
+      typedef TiledArray::TensorD TATensor;
+      typedef TiledArray::expressions::TensorExpression<TATensor> TAMatrixExpr ;
 
-        /** The KeyVal constructor.
-         *
-         */
-        Wavefunction(const sc::Ref<sc::KeyVal> &kval);
-        //Wavefunction(sc::StateIn &s);
-        virtual ~Wavefunction();
-        //void save_data_state(sc::StateOut &s);
 
-        /// @return the basis set
-        const sc::Ref<TiledBasisSet>& basis() const {
-          return tbs_;
-        }
-        /// @return the Integral factory used to make the basis set object "concrete"
-        const sc::Ref<sc::Integral>& integral() const {
-          return integral_;
-        }
-        /// @return the Molecule object
-        sc::Ref<sc::Molecule> molecule() const {
-          return tbs_->molecule();
-        }
+      /** The KeyVal constructor.
+       *
+       */
+      Wavefunction(const sc::Ref<sc::KeyVal> &kval);
+      //Wavefunction(sc::StateIn &s);
+      virtual ~Wavefunction();
+      //void save_data_state(sc::StateOut &s);
 
-        /// @return the total charge of system
-        double total_charge() const;
+      /// @return the basis set
+      const sc::Ref<TiledBasisSet>& basis() const {
+        return tbs_;
+      }
+      /// @return the Integral factory used to make the basis set object "concrete"
+      const sc::Ref<sc::Integral>& integral() const {
+        return integral_;
+      }
 
-        /// @return the number of electrons in the system
-        virtual size_t nelectron() const = 0;
+      /// @return the Molecule object
+      sc::Ref<sc::Molecule> molecule() const override {
+        return tbs_->molecule();
+      }
 
-        /// Computes the S (or J) magnetic moment
-        /// of the target state(s), in units of \f$ \hbar/2 \f$.
-        /// Can be evaluated from density and overlap, as;
-        /// \code
-        ///   (this->alpha_density() * this-> overlap()).trace() -
-        ///   (this->beta_density() * this-> overlap()).trace()
-        /// \endcode
-        /// but derived Wavefunction may have this value as user input.
-        /// @return the magnetic moment
-        virtual double magnetic_moment() const;
-        /// @return true if the magnetic moment != 0
-        bool spin_polarized() { return magnetic_moment() != 0.0; }
+      /// @return the total charge of system
+      double total_charge() const{
+        return molecule()->total_charge() - nelectron();
+      }
 
-        /// Returns electron 1-body reduced density matrix (1-RDM) in AO basis.
-        /// The default implementation adds alpha and beta 1-RDMs
-        virtual const Matrix& rdm1();
-        /// Return electron 1-body reduced density matrix of spin \c s in AO basis.
-        virtual const Matrix& rdm1(sc::SpinCase1 s) =0;
-        /// Returns the AO overlap.
-        virtual const Matrix& overlap();
+      /// @return the number of electrons in the system
+      virtual size_t nelectron() const = 0;
 
-        unsigned debug() const {
-          return debug_;
-        }
+      /** Computes the S (or J) magnetic moment
+       * of the target state(s), in units of \f$ \hbar/2 \f$.
+       * Can be evaluated from density and overlap, as;
+       * \code
+       *  (this->alpha_density() * this-> overlap()).trace() -
+       *  (this->beta_density() * this-> overlap()).trace()
+       * \endcode
+       * but derived Wavefunction may have this value as user input.
+       * @return the magnetic moment
+       * */
+      virtual double magnetic_moment() const;
+      /// @return true if the magnetic moment != 0
+      bool spin_polarized() {
+        return magnetic_moment() != 0.0;
+      }
 
-        /// makes this object obsolete, next call to compute() will recompute
-        void obsolete();
+      /// Returns electron 1-body reduced density matrix (1-RDM) in AO basis.
+      virtual const TAMatrix& rdm1() = 0;
 
-        void print(std::ostream& os = sc::ExEnv::out0()) const;
+      /** Returns expression to the AO density matrix.
+       * If the matrix has not been computed, then it will be computed by the
+       * calling class.
+       * */
+      virtual TAMatrixExpr rdm1_expr(std::string);
 
-      private:
-        sc::Ref<mpqc::World> world_;
-        sc::Ref<TiledBasisSet> tbs_;
-        sc::Ref<sc::Integral> integral_;
-        ResultMatrix overlap_;
-        ResultMatrix rdm1_;
-        ResultMatrix rdm1_alpha_;
-        ResultMatrix rdm1_beta_;
+      /// Return electron 1-body reduced density matrix of spin \c s in AO basis.
+      virtual const TAMatrix& rdm1(sc::SpinCase1 s) = 0;
+      /// Returns the AO overlap.
+      virtual const TAMatrix& ao_overlap();
 
-        mutable double magnetic_moment_; //!< caches the value returned by magnetic_moment()
-        /// Wavefunction (reluctantly) supports calculations in finite electric fields in c1 symmetry
-        /// general support is coming in the future.
-        bool nonzero_efield_supported() const;
+      /** Returns expression to the AO overlap matrix.
+       * If the matrix has not been computed, then it will be computed by the
+       * calling class.
+       * */
+      virtual TAMatrixExpr ao_overlap_expr(std::string);
 
-        unsigned debug_;
+      /// Returns the AO overlap.
+      virtual const TAMatrix& ao_hcore();
 
-        static sc::ClassDesc class_desc_;
+      /** Returns expression to the AO hcore matrix.
+       * If the matrix has not been computed, then it will be computed by the
+       * calling class.
+       * */
+      virtual TAMatrixExpr ao_hcore_expr(std::string);
+
+      /// Returns debugging flag
+      unsigned debug() const {
+        return debug_;
+      }
+
+
+      /// makes this object obsolete, next call to compute() will recompute
+      void obsolete();
+
+      void print(std::ostream& os = sc::ExEnv::out0()) const;
+
+      // functions for internal access
+    protected:
+
+      const sc::Ref<mpqc::World> world() const {
+        return world_;
+      }
+
+      /// Returns reference to rdm1_.result_noupdate(),
+      /// but guarantees nothing about its computed status
+      virtual TAMatrix& ao_density(){
+        return rdm1_.result_noupdate();
+      }
+
+      ResultMatrix rdm1_; // Result density abreviated D
+      ResultMatrix rdm1_alpha_; // Result alpha density abreviated Da
+      ResultMatrix rdm1_beta_; // Result beta density abreviated Db
+
+    private:
+
+      sc::Ref<mpqc::World> world_;
+      sc::Ref<TiledBasisSet> tbs_;
+      sc::Ref<sc::Integral> integral_;
+      ResultMatrix overlap_; // Overlap Matrix abreviated S
+      ResultMatrix hcore_; // Hcore Matrix abreviated H
+
+      mutable double magnetic_moment_; //!< caches the value returned by magnetic_moment()
+      /// Wavefunction (reluctantly) supports calculations in finite electric fields in c1 symmetry
+      /// general support is coming in the future.
+      bool nonzero_efield_supported() const;
+
+      unsigned debug_;
+
+    private:
+      static sc::ClassDesc class_desc_;
 
     };
 
 /// @}
 
   }// namespace mpqc::TA
-}        // namespace mpqc
+} // namespace mpqc
 
 #endif /* CHEMISTRY_WFN_TAWFN_HPP */

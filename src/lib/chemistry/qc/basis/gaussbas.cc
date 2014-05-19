@@ -68,14 +68,14 @@ GaussianBasisSet::Shell::Shell(const GaussianBasisSet* basis,
 }
 
 bool sc::GaussianBasisSet::Shell::equiv(const Shell& s) const {
-  const double* r_this = this->basis()->molecule()->r(this->center());
+  const double* r_this = basis_->molecule()->r(center_);
   const double* r_s = s.basis()->molecule()->r(s.center());
   for(unsigned int xyz=0; xyz<3; ++xyz) {
-    if (fabs(r_this[xyz] - r_s[xyz]) > DBL_EPSILON)
+    if (fabs(r_this[xyz] - r_s[xyz]) > DBL_EPSILON){
       return false;
+    }
   }
-
-  return static_cast<const GaussianShell&>(*this).equiv(static_cast<const GaussianShell&>(s));
+  return GaussianShell::equiv(s);
 }
 
 //////////////////////////////////////////////////

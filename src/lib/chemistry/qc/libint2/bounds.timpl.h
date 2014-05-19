@@ -93,10 +93,7 @@ namespace sc {
 	}
 	// propagate Q12_ among the nodes
 	{
-	    int_bound_t* q12 = new int_bound_t[n12];
-	    std::copy(Q12_.begin(),Q12_.end(),q12);
-	    msg->sum(q12,n12);
-	    std::copy(q12,q12+n12,Q12_.begin());
+	  msg->sum(&Q12_[0],Q12_.size());
 	}
 
 	if (!equiv_12_34_ && !equiv_12_43_) {
@@ -129,10 +126,7 @@ namespace sc {
         }
         // propagate Q34_ among the nodes
         {
-            int_bound_t* q34 = new int_bound_t[n34];
-            std::copy(Q34_.begin(),Q34_.end(),q34);
-            msg->sum(q34,n34);
-            std::copy(q34,q34+n34,Q34_.begin());
+          msg->sum(&Q34_[0],Q34_.size());
         }
 
 	}

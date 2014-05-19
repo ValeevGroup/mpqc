@@ -182,7 +182,7 @@ void Int2eLibint2::transform_contrquartets_(double * source_ints_buf, double *ta
   double *source4, *target4;
   double *source = source_ints_buf;
   double *target = target_ints_buf;
-  double *tmpbuf = tformbuf_;
+  double *tmpbuf = &tformbuf_[0];
 
   for (int gc1=0; gc1<int_shell1_->ncontraction(); gc1++) {
     int am1 = int_shell1_->am(gc1);

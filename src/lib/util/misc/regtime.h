@@ -135,9 +135,9 @@ class RegionTimer: public DescribedClass {
     void get_flops(double *) const;
     void get_depth(int *) const;
 
-    double get_wall_time() const;
-    double get_cpu_time() const;
-    double get_flops() const;
+    static double get_wall_time();
+    static double get_cpu_time();
+    static double get_flops();
 
     void add_wall_time(const char *, double);
     void add_cpu_time(const char *, double);

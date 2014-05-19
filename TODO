@@ -1,0 +1,41 @@
+Each of the following categories lists goals in an order which roughly 
+corresponds to the order in which they are hoped to be added.
+Items are marked using the following code:
+  [x] ~ planned to be finished before the next release 
+  [o] ~ hopefully started in the near future 
+  [-] ~ marked for eventual development
+  
+House Keeping
+=============
+
+Updating Basis Sets
+*******************
+[o] Fleshout basis sets, many atoms in common basis sets are missing
+
+Libraries
+=========
+Math
+****
+[x] Add Unit Tests for eigensolvers
+
+Chemsitry
+*********
+qc
+--
+basis
+`````
+[x] Clean up and complete documentation for IntegralEnginePool, Integrals, and TiledBasisSet
+[o] Clean up unit test for mpqc::TA::TiledBasisSet and the headers it depends on.
+[o] Write unit tests for IntegralEnginePool and Integrals objects
+
+scf
+```
+[x] Finish mpqc::TA versions of SCF CLSCF and CLHF
+[x] Clean up and complete documentation for mpqc::TA SCF CLSCF CLHF
+[o] Add complete unit tests for mpqc::TA versions of SCF CLSCF and CLHF
+
+wfn
+```
+[x] Finish mpqc::TA version of Wavefunction
+[x] Cleanup and complete documentaion of mpqc::TA::Wavefunction
+[o] Complete unit test for mpqc::TA::Wavefunction

@@ -76,10 +76,13 @@ namespace sc {
        * Determines density fitting of product (space1 space2) in terms of fitting basis.
        * @param rtime
        * @param kernel_key
-       * @param solver_key
+       * @param solver
        * @param space1
        * @param space2
        * @param fitting_basis
+       * @param ri false -> compute DF coeficients, true -> compute DF coefficients multiplied by the inverse square root
+       *           of the fitting matrix (or of the matrix scaled by -1, for negative-definite kernels); only supported
+       *           if using inverse-based Cholesky solver.
        * @return
        */
       DensityFitting(const Ref<MOIntsRuntime>& rtime,
@@ -87,7 +90,8 @@ namespace sc {
                      SolveMethod solver,
                      const Ref<OrbitalSpace>& space1,
                      const Ref<OrbitalSpace>& space2,
-                     const Ref<GaussianBasisSet>& fitting_basis);
+                     const Ref<GaussianBasisSet>& fitting_basis,
+                     bool ri = false);
       DensityFitting(StateIn&);
       void save_data_state(StateOut&);
 
@@ -127,6 +131,7 @@ namespace sc {
       Ref<OrbitalSpace> space2_;
       std::string kernel_key_;
       SolveMethod solver_;
+      bool ri_;
 
       bool evaluated_;
 

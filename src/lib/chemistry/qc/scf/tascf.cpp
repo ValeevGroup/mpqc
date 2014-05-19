@@ -24,55 +24,99 @@
 //
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
-
 #include <chemistry/qc/scf/tascf.hpp>
+#include <tiled_array.h>
+#include <chemistry/qc/basis/taskintegrals.hpp>
+#include <chemistry/qc/basis/integralenginepool.hpp>
+#include <math/elemental/eigensolver.hpp>
 
 using namespace mpqc;
 using namespace mpqc::TA;
 
 sc::ClassDesc mpqc::TA::SCF::class_desc_(typeid(mpqc::TA::SCF), "TA.SCF",
-                      1, "public TA.Wavefunction",
-                      0,
-                      sc::create<mpqc::TA::SCF>,
-                      0);
+                      1, "public TA.Wavefunction", 0, 0, 0);
 
 mpqc::TA::SCF::SCF(const sc::Ref<sc::KeyVal>& kval) :
-    Wavefunction(kval), tbints_()
+    Wavefunction(kval),
+    MO_eigensystem_(this),
+    ao_fock_(this)
 {
-    if(kval->exists("maxiter"))
+    if(kval->exists("maxiter")){
         maxiter_= kval->intvalue("maxiter", sc::KeyValValueint(1000));
-    if(kval->exists("miniter"))
+    }
+    if(kval->exists("miniter")){
         miniter_= kval->intvalue("miniter", sc::KeyValValueint(0));
+    }
+    double desired_accuracy_ = 1e-6;
+    if(kval->exists("accuracy")){
+      desired_accuracy_ = kval->intvalue("accuracy",
+                                           sc::KeyValValuedouble(1e-6));
+    }
+
+    ao_fock_.compute() = 0;
+    ao_fock_.computed() = 0;
+    ao_fock_.set_desired_accuracy(desired_accuracy_);
+
+    MO_eigensystem_.compute() = 0;
+    MO_eigensystem_.computed() = 0;
+    MO_eigensystem_.set_desired_accuracy(desired_accuracy_);
 }
 
-mpqc::TA::SCF::~SCF(){
+SCF::~SCF(){}
+
+SCF::TAMatrix&
+SCF::ao_fock(double desired_accuracy){
+
+  // Set the desired accuracy
+  ao_fock_.set_desired_accuracy(desired_accuracy);
+
+  if(!ao_fock_.computed_to_desired_accuracy()){
+    compute_ao_fock(desired_accuracy);
+    world()->madworld()->gop.fence();
+    ao_fock_.computed() = 1;
+    ao_fock_.set_actual_accuracy(desired_accuracy);
+  }
+
+  return ao_fock_.result_noupdate();
 }
 
-void mpqc::TA::SCF::compute() {
-  MPQC_ASSERT(false);
+SCF::TAMatrixExpr
+SCF::ao_fock_expr(std::string input){
+  return ao_fock()(input);
 }
 
-const mpqc::TA::SCF::Matrix&
-mpqc::TA::SCF::fock() {
-  MPQC_ASSERT(false);
+SCF::ElemVector
+SCF::MO_eigenvalues(double desired_accuracy){
+  return MO_eigensystem(desired_accuracy).first;
 }
 
-const mpqc::TA::SCF::Matrix&
-mpqc::TA::SCF::rdm1() {
-  MPQC_ASSERT(false);
+SCF::TAMatrix
+SCF::MO_eigenvectors(double desired_accuracy){
+  return MO_eigensystem(desired_accuracy).second;
 }
 
-const mpqc::TA::SCF::Matrix&
-mpqc::TA::SCF::rdm1(sc::SpinCase1 s) {
-  MPQC_ASSERT(false);
+SCF::ElemTAEigenSystem
+SCF::MO_eigensystem(double desired_accuracy){
+
+  MO_eigensystem_.set_desired_accuracy(desired_accuracy);
+
+  if(!MO_eigensystem_.computed_to_desired_accuracy()){
+    MO_eigensystem_.result_noupdate() =
+        eigensolver_full_Coeff(ao_fock(desired_accuracy),
+                               ao_overlap());
+    MO_eigensystem_.computed() = 1;
+    MO_eigensystem_.set_actual_accuracy(desired_accuracy);
+  }
+
+  return MO_eigensystem_.result_noupdate();
 }
 
-double
-mpqc::TA::SCF::scf_energy() {
-  MPQC_ASSERT(false);
+#warning "nelectron has a temporary solution that assumes the charge is neutral
+size_t mpqc::TA::SCF::nelectron() const {
+    return molecule()->total_Z(); // Temporary solution.
 }
 
-size_t
-mpqc::TA::SCF::nelectron() const {
-
+// Add things to print later
+void SCF::print(std::ostream &o) const {
+  Wavefunction::print(o);
 }

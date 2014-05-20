@@ -24,7 +24,7 @@ SET(ccfiles
   uscf.cc
 )
 
-IF(MPQC_NEW_FEATURES)
+IF(MPQC_NEW_FEATURES AND MPQC_HAS_ELEMENTAL)
     set(newccfiles
       tascf.cpp
       taclscf.cpp
@@ -41,7 +41,7 @@ IF(MPQC_NEW_FEATURES)
 
     list(APPEND ccfiles ${newccfiles})
 
-ENDIF(MPQC_NEW_FEATURES)
+ENDIF(MPQC_NEW_FEATURES AND MPQC_HAS_ELEMENTAL)
 
 add_mpqc_object_library(scf ${ccfiles})
 
@@ -98,6 +98,8 @@ endif (MPQC_UNITTEST)
     @ONLY
   )
 
+if(MPQC_NEW_FEATURES AND MPQC_HAS_ELEMENTAL)
   add_executable(david_hack david_hack_file.cpp $<TARGET_OBJECTS:basis>)
   target_link_libraries(david_hack chemistry)
+endif(MPQC_NEW_FEATURES AND MPQC_HAS_ELEMENTAL)
 

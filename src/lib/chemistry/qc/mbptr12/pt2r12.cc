@@ -1973,30 +1973,21 @@ double PT2R12::cabs_singles_Fock() {
 
     // make all the matrixes that needed
     // go to file sr_r12intermediates.h for notation
-    TArray2 gamma2 = _2("<m|gamma|n>");
+    TArray2 gamma2; gamma2("m,n") = _2("<m|gamma|n>");
 #if DEBUGG
     std::cout << "gamma2: \n" << gamma2 << std::endl;
 #endif
 
-    TArray2 Fmn = _2("<m|F|n>");
-    TArray2 FmA = _2("<m|F|A'>");
-    TArray2 Fcn = _2("<c'|F|n>");
-    TArray2 FAB = _2("<A'|F|B'>");
-
-    TArray2 IAB = _2("<B'|I|A'>");
-    TArray2 IBc = _2("<B'|I|c'>");
-
-    TArray4 gamma4 = _4("<n1 m|gamma|m1 n>");
+    TArray2 Fmn;  Fmn("m,n")  = _2("<m|F|n>");
+    TArray2 FAB;  FAB("A',B'")  = _2("<A'|F|B'>");
 
     // make B matrix in Equation (18)
     // term1
-    TArray4 term1 = FAB("B',A'") * gamma2("n1,m1");
-    // term2
-    TArray4 term2 = IAB("B',A'") * Fmn("n,m") * gamma4("n1,m,m1,n");
-    // term3
-    TArray4 term3 = - IAB("B',A'") * Fmn("n,m") * gamma2("n1,m1") * gamma2("m,n");
+    auto term1 = _2("<B'|F|A'>") * _2("<n1|gamma|m1>");
+    // term2+term3
+    auto term23 = _2("<B'|I|A'>") * (_2("<n|F|m>") * (_4("<n1 m|gamma|m1 n>") - gamma2("n1,m1") * gamma2("m,n")));
     // B
-    TArray4 B = term1("B',A',n1,m1") + term2("B',A',n1,m1") + term3("B',A',n1,m1");
+    TArray4 B; B("B',A',n1,m1") = term1 + term23;
 #if DEBUGG
     std::cout << "B matrix: \n" << B << std::endl;
 #endif
@@ -2004,9 +1995,9 @@ double PT2R12::cabs_singles_Fock() {
     //  solve the linear algebra problem a(x)=b in Equation (15)
     //
     // x we trying to solve, C
-    TArray2 x = gamma2("n,m1") * Fcn("c',n") * IBc("B',c'");
+    TArray2 x; x("m1,B'") = _2("<n|gamma|m>") * _2("<c'|F|n>") * _2("<B'|I|c'>");
     // b in a(x) = b
-    TArray2 b = -x("m1,B'");
+    TArray2 b; b("m1,B'") = -x("m1,B'");
 #if DEBUGG
     std::cout << "b matrix: \n" << b << std::endl;
 #endif
@@ -2030,7 +2021,7 @@ double PT2R12::cabs_singles_Fock() {
         Delta_iA.set(*t, tile);
       }
     }
-    TArray2 preconditioner = Delta_iA("m,A'");
+    TArray2 preconditioner; preconditioner("m,A'") = Delta_iA("m,A'");
 #if DEBUGG
     std::cout << "preconditioner: \n" << preconditioner << std::endl;
 #endif

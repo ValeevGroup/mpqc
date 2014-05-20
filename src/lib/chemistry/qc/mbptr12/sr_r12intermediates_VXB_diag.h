@@ -989,6 +989,9 @@ namespace sc {
   typename SingleReference_R12Intermediates<T>::TArray2
   SingleReference_R12Intermediates<T>::rdm1() {
 
+#define ENABLE_SRR12_RDM1 1
+
+#if ENABLE_SRR12_RDM1
 //    if (0) {
 //      {
 //      typedef TiledArray::Array<T,2> Array;
@@ -1429,22 +1432,22 @@ namespace sc {
     TArray2 q_xx_mn(compute_quadrupole ? xy("<m|q_xx|n>") : TArray2());
     TArray2 q_yy_mn(compute_quadrupole ? xy("<m|q_yy|n>") : TArray2());
     TArray2 q_zz_mn(compute_quadrupole ? xy("<m|q_zz|n>") : TArray2());
-    TArray2 Qxx_mn; if(compute_quadrupole) Qxx_mn = TArray2(q_xx_mn("m,n") - (q_zz_mn("m,n") + q_yy_mn("m,n")) * 0.5);
-    TArray2 Qyy_mn; if(compute_quadrupole) Qyy_mn = TArray2(q_yy_mn("m,n") - (q_zz_mn("m,n") + q_xx_mn("m,n")) * 0.5);
-    TArray2 Qzz_mn; if(compute_quadrupole) Qzz_mn = TArray2(q_zz_mn("m,n") - (q_xx_mn("m,n") + q_yy_mn("m,n")) * 0.5);
-    TArray2 Qxz_mn; if (compute_quadrupole) Qxz_mn= TArray2(_2("<m|q_xz|n>") * 1.5);
-    TArray2 Qxy_mn; if(compute_quadrupole) Qxy_mn = TArray2(_2("<m|q_xy|n>") * 1.5);
-    TArray2 Qyz_mn; if(compute_quadrupole) Qyz_mn = TArray2(_2("<m|q_yz|n>") * 1.5);
+    TArray2 Qxx_mn; if(compute_quadrupole) Qxx_mn("m,n") = (q_xx_mn("m,n") - (q_zz_mn("m,n") + q_yy_mn("m,n")) * 0.5);
+    TArray2 Qyy_mn; if(compute_quadrupole) Qyy_mn("m,n") = (q_yy_mn("m,n") - (q_zz_mn("m,n") + q_xx_mn("m,n")) * 0.5);
+    TArray2 Qzz_mn; if(compute_quadrupole) Qzz_mn("m,n") = (q_zz_mn("m,n") - (q_xx_mn("m,n") + q_yy_mn("m,n")) * 0.5);
+    TArray2 Qxz_mn; if(compute_quadrupole) Qxz_mn("m,n") = (_2("<m|q_xz|n>") * 1.5);
+    TArray2 Qxy_mn; if(compute_quadrupole) Qxy_mn("m,n") = (_2("<m|q_xy|n>") * 1.5);
+    TArray2 Qyz_mn; if(compute_quadrupole) Qyz_mn("m,n") = (_2("<m|q_yz|n>") * 1.5);
 
     TArray2 q_xx_am(compute_quadrupole ? xy("<a|q_xx|m>") : TArray2());
     TArray2 q_yy_am(compute_quadrupole ? xy("<a|q_yy|m>") : TArray2());
     TArray2 q_zz_am(compute_quadrupole ? xy("<a|q_zz|m>") : TArray2());
-    TArray2 Qxx_am; if (compute_quadrupole) Qxx_am = TArray2(q_xx_am("a,m") - (q_zz_am("a,m") + q_yy_am("a,m")) * 0.5);
-    TArray2 Qyy_am; if (compute_quadrupole) Qyy_am = TArray2(q_yy_am("a,m") - (q_zz_am("a,m") + q_xx_am("a,m")) * 0.5);
-    TArray2 Qzz_am; if (compute_quadrupole) Qzz_am = TArray2(q_zz_am("a,m") - (q_xx_am("a,m") + q_yy_am("a,m")) * 0.5);
-    TArray2 Qxy_am; if (compute_quadrupole) Qxy_am = TArray2(_2("<a|q_xy|m>") * 1.5);
-    TArray2 Qxz_am; if (compute_quadrupole) Qxz_am = TArray2(_2("<a|q_xz|m>") * 1.5);
-    TArray2 Qyz_am; if (compute_quadrupole) Qyz_am = TArray2(_2("<a|q_yz|m>") * 1.5);
+    TArray2 Qxx_am; if (compute_quadrupole) Qxx_am("a,m") = (q_xx_am("a,m") - (q_zz_am("a,m") + q_yy_am("a,m")) * 0.5);
+    TArray2 Qyy_am; if (compute_quadrupole) Qyy_am("a,m") = (q_yy_am("a,m") - (q_zz_am("a,m") + q_xx_am("a,m")) * 0.5);
+    TArray2 Qzz_am; if (compute_quadrupole) Qzz_am("a,m") = (q_zz_am("a,m") - (q_xx_am("a,m") + q_yy_am("a,m")) * 0.5);
+    TArray2 Qxy_am; if (compute_quadrupole) Qxy_am("a,m") = (_2("<a|q_xy|m>") * 1.5);
+    TArray2 Qxz_am; if (compute_quadrupole) Qxz_am("a,m") = (_2("<a|q_xz|m>") * 1.5);
+    TArray2 Qyz_am; if (compute_quadrupole) Qyz_am("a,m") = (_2("<a|q_yz|m>") * 1.5);
 
     // electric field gradient integrals
     TArray2 v_xx_mn(compute_EFG ? xy("<m|ddphi_xx|n>") : TArray2());
@@ -1572,13 +1575,13 @@ namespace sc {
     // compute integrals needed for orbital relaxation
     // i.e. solve Abnam Dbn = Xam (close-shell formula)
     TArray4d g_mnab = ijxy("<m n|g|a b>");
-    TArray4 A_bnam(- _4("<b n|g|a m>") - g_mnab("m,n,b,a") + 4.0 * g_mnab("n,m,b,a")
-                     + _2("<b|F|a>") * Imn("m,n") - _2("<a|I|b>") * _2("<m|F|n>"));
+    TArray4 A_bnam; A_bnam("b,n,a,m") = (- _4("<b n|g|a m>") - g_mnab("m,n,b,a") + 4.0 * g_mnab("n,m,b,a")
+                                         + _2("<b|F|a>") * Imn("m,n") - _2("<a|I|b>") * _2("<m|F|n>"));
 
     // Make preconditioner: Delta_am = 1 / (<a|F|a> - <m|F|m>) for
     // solving k_bn A_bnam = X_am
-    TArray2 mFmn(- _2("<m|F|n>"));
-    TArray2 mFab(- _2("<a|F|b>"));
+    TArray2 mFmn; mFmn("m,n") = - _2("<m|F|n>");
+    TArray2 mFab; mFab("a,b") = - _2("<a|F|b>");
     typedef detail::diag_precond2<double> pceval_type; //!< evaluator of preconditioner
     pceval_type Delta_am_gen(TA::array_to_eigen(mFab), TA::array_to_eigen(mFmn));
 
@@ -1599,7 +1602,7 @@ namespace sc {
         // Insert the tile into the array
         Delta_am.set(*t, tile);
       }
-    TArray2 preconditioner(Delta_am("a,m"));
+    TArray2 preconditioner; preconditioner("a,m") = Delta_am("a,m");
 
     detail::Orbital_relaxation_Abjai<double> Orbital_relaxation_Abnam(A_bnam);
     TA::ConjugateGradientSolver<TiledArray::Array<T,2>,
@@ -1652,22 +1655,22 @@ namespace sc {
       TArray2 q_xx_AB = xy("<A'|q_xx|B'>");
       TArray2 q_yy_AB = xy("<A'|q_yy|B'>");
       TArray2 q_zz_AB = xy("<A'|q_zz|B'>");
-      TArray2 Qxx_AB = q_xx_AB("A',B'") - (q_zz_AB("A',B'") + q_yy_AB("A',B'")) * 0.5;
-      TArray2 Qyy_AB = q_yy_AB("A',B'") - (q_xx_AB("A',B'") + q_zz_AB("A',B'")) * 0.5;
-      TArray2 Qzz_AB = q_zz_AB("A',B'") - (q_xx_AB("A',B'") + q_yy_AB("A',B'")) * 0.5;
-      TArray2 Qxy_AB = xy("<A'|q_xy|B'>") * 1.5;
-      TArray2 Qxz_AB = xy("<A'|q_xz|B'>") * 1.5;
-      TArray2 Qyz_AB = xy("<A'|q_yz|B'>") * 1.5;
+      TArray2 Qxx_AB; Qxx_AB("A',B'") = q_xx_AB("A',B'") - (q_zz_AB("A',B'") + q_yy_AB("A',B'")) * 0.5;
+      TArray2 Qyy_AB; Qyy_AB("A',B'") = q_yy_AB("A',B'") - (q_xx_AB("A',B'") + q_zz_AB("A',B'")) * 0.5;
+      TArray2 Qzz_AB; Qzz_AB("A',B'") = q_zz_AB("A',B'") - (q_xx_AB("A',B'") + q_yy_AB("A',B'")) * 0.5;
+      TArray2 Qxy_AB; Qxy_AB("A',B'") = _2("<A'|q_xy|B'>") * 1.5;
+      TArray2 Qxz_AB; Qxz_AB("A',B'") = _2("<A'|q_xz|B'>") * 1.5;
+      TArray2 Qyz_AB; Qyz_AB("A',B'") = _2("<A'|q_yz|B'>") * 1.5;
 
       TArray2 q_xx_mA = xy("<m|q_xx|A'>");
       TArray2 q_yy_mA = xy("<m|q_yy|A'>");
       TArray2 q_zz_mA = xy("<m|q_zz|A'>");
-      TArray2 Qxx_mA = q_xx_mA("m,A'") - (q_zz_mA("m,A'")  + q_yy_mA("m,A'") ) * 0.5;
-      TArray2 Qyy_mA = q_yy_mA("m,A'") - (q_xx_mA("m,A'")  + q_zz_mA("m,A'") ) * 0.5;
-      TArray2 Qzz_mA = q_zz_mA("m,A'") - (q_xx_mA("m,A'")  + q_yy_mA("m,A'") ) * 0.5;
-      TArray2 Qxy_mA = xy("<m|q_xy|A'>") * 1.5;
-      TArray2 Qxz_mA = xy("<m|q_xz|A'>") * 1.5;
-      TArray2 Qyz_mA = xy("<m|q_yz|A'>") * 1.5;
+      TArray2 Qxx_mA; Qxx_mA("m,A'") = q_xx_mA("m,A'") - (q_zz_mA("m,A'")  + q_yy_mA("m,A'") ) * 0.5;
+      TArray2 Qyy_mA; Qyy_mA("m,A'") = q_yy_mA("m,A'") - (q_xx_mA("m,A'")  + q_zz_mA("m,A'") ) * 0.5;
+      TArray2 Qzz_mA; Qzz_mA("m,A'") = q_zz_mA("m,A'") - (q_xx_mA("m,A'")  + q_yy_mA("m,A'") ) * 0.5;
+      TArray2 Qxy_mA; Qxy_mA("m,A'") = _2("<m|q_xy|A'>") * 1.5;
+      TArray2 Qxz_mA; Qxz_mA("m,A'") = _2("<m|q_xz|A'>") * 1.5;
+      TArray2 Qyz_mA; Qyz_mA("m,A'") = _2("<m|q_yz|A'>") * 1.5;
 
       const double q_xx_e2 = - dot(Qxx_mn("m,n"), D_e2_mn("m,n"))
                              + dot(Qxx_AB("A',B'"), D_e2_AB("A',B'"))
@@ -1797,28 +1800,22 @@ namespace sc {
     TArray2 q_xx_ij = (compute_quadrupole ? xy("<i|q_xx|j>") : TArray2());
     TArray2 q_yy_ij = (compute_quadrupole ? xy("<i|q_yy|j>") : TArray2());
     TArray2 q_zz_ij = (compute_quadrupole ? xy("<i|q_zz|j>") : TArray2());
-    TArray2 Qxx_ij = (compute_quadrupole ?
-                      q_xx_ij("i,j") - (q_zz_ij("i,j") + q_yy_ij("i,j")) * 0.5 : TArray2());
-    TArray2 Qyy_ij = (compute_quadrupole ?
-                      q_yy_ij("i,j") - (q_zz_ij("i,j") + q_xx_ij("i,j")) * 0.5 : TArray2());
-    TArray2 Qzz_ij = (compute_quadrupole ?
-                      q_zz_ij("i,j") - (q_xx_ij("i,j") + q_yy_ij("i,j")) * 0.5 : TArray2());
-    TArray2 Qxy_ij = (compute_quadrupole ? xy("<i|q_xy|j>") * 1.5 : TArray2());
-    TArray2 Qxz_ij = (compute_quadrupole ? xy("<i|q_xz|j>") * 1.5 : TArray2());
-    TArray2 Qyz_ij = (compute_quadrupole ? xy("<i|q_yz|j>") * 1.5 : TArray2());
+    TArray2 Qxx_ij; if (compute_quadrupole) Qxx_ij("i,j") = q_xx_ij("i,j") - (q_zz_ij("i,j") + q_yy_ij("i,j")) * 0.5;
+    TArray2 Qyy_ij; if (compute_quadrupole) Qyy_ij("i,j") = q_yy_ij("i,j") - (q_zz_ij("i,j") + q_xx_ij("i,j")) * 0.5;
+    TArray2 Qzz_ij; if (compute_quadrupole) Qyy_ij("i,j") = q_zz_ij("i,j") - (q_xx_ij("i,j") + q_yy_ij("i,j")) * 0.5;
+    TArray2 Qxy_ij; if (compute_quadrupole) Qxy_ij("i,j") = _2("<i|q_xy|j>") * 1.5;
+    TArray2 Qxz_ij; if (compute_quadrupole) Qxz_ij("i,j") = _2("<i|q_xz|j>") * 1.5;
+    TArray2 Qyz_ij; if (compute_quadrupole) Qxz_ij("i,j") = _2("<i|q_yz|j>") * 1.5;
 
     TArray2 q_xx_ab = (compute_quadrupole ? xy("<a|q_xx|b>") : TArray2());
     TArray2 q_yy_ab = (compute_quadrupole ? xy("<a|q_yy|b>") : TArray2());
     TArray2 q_zz_ab = (compute_quadrupole ? xy("<a|q_zz|b>") : TArray2());
-    TArray2 Qxx_ab = (compute_quadrupole ?
-                      q_xx_ab("a,b") - (q_zz_ab("a,b") + q_yy_ab("a,b")) * 0.5 : TArray2());
-    TArray2 Qyy_ab = (compute_quadrupole ?
-                      q_yy_ab("a,b") - (q_zz_ab("a,b") + q_xx_ab("a,b")) * 0.5 : TArray2());
-    TArray2 Qzz_ab = (compute_quadrupole ?
-                      q_zz_ab("a,b") - (q_xx_ab("a,b") + q_yy_ab("a,b")) * 0.5 : TArray2());
-    TArray2 Qxy_ab = (compute_quadrupole ? xy("<a|q_xy|b>") * 1.5 : TArray2());
-    TArray2 Qxz_ab = (compute_quadrupole ? xy("<a|q_xz|b>") * 1.5 : TArray2());
-    TArray2 Qyz_ab = (compute_quadrupole ? xy("<a|q_yz|b>") * 1.5 : TArray2());
+    TArray2 Qxx_ab; if (compute_quadrupole) Qxx_ab("a,b") = q_xx_ab("a,b") - (q_zz_ab("a,b") + q_yy_ab("a,b")) * 0.5;
+    TArray2 Qyy_ab; if (compute_quadrupole) Qyy_ab("a,b") = q_yy_ab("a,b") - (q_zz_ab("a,b") + q_xx_ab("a,b")) * 0.5;
+    TArray2 Qzz_ab; if (compute_quadrupole) Qzz_ab("a,b") = q_zz_ab("a,b") - (q_xx_ab("a,b") + q_yy_ab("a,b")) * 0.5;
+    TArray2 Qxy_ab; if (compute_quadrupole) Qxy_ab("a,b") = _2("<a|q_xy|b>") * 1.5;
+    TArray2 Qxz_ab; if (compute_quadrupole) Qxz_ab("a,b") = _2("<a|q_xz|b>") * 1.5;
+    TArray2 Qyz_ab; if (compute_quadrupole) Qyz_ab("a,b") = _2("<a|q_yz|b>") * 1.5;
 
     // electric field gradient integrals
     TArray2 v_xx_ij = (compute_EFG ? xy("<i|ddphi_xx|j>") : TArray2());
@@ -1839,12 +1836,12 @@ namespace sc {
 
     // compute Delta_ijab = - 1 / (- <i|F|i> - <j|F|j> + <a|F|a> + <b|F|b>)
     // which is needed for MP2 amplitudes
-    TArray2 mFij = - xy("<i|F|j>");
-    TArray4 g_ijab = _4("<i j|g|a b>");
+    TArray2 mFij; mFij("i,j") = - _2("<i|F|j>");
+    TArray4 g_ijab; g_ijab("i,j,a,b") = _4("<i j|g|a b>");
 
     typedef detail::diag_precond4<double> pc4eval_type;
-    typedef TA::Array<T, 4, LazyTensor<T, 4, pc4eval_type > > TArray4d;
-    TArray4d Delta_ijab(g_ijab.get_world(), g_ijab.trange());
+    typedef TA::Array<T, 4, LazyTensor<T, 4, pc4eval_type > > TArray4dLazy;
+    TArray4dLazy Delta_ijab(g_ijab.get_world(), g_ijab.trange());
     pc4eval_type Delta_ijab_gen(TA::array_to_eigen(mFij), TA::array_to_eigen(mFij),
                                 TA::array_to_eigen(mFab),TA::array_to_eigen(mFab));
     // construct local tiles
@@ -1853,7 +1850,7 @@ namespace sc {
       if (Delta_ijab.is_local(*t)) {
         std::array<std::size_t, 4> index;
         std::copy(t->begin(), t->end(), index.begin());
-        madness::Future < typename TArray4d::value_type >
+        madness::Future < typename TArray4dLazy::value_type >
           tile((LazyTensor<T, 4, pc4eval_type >(&Delta_ijab, index, &Delta_ijab_gen)
               ));
 
@@ -1862,13 +1859,13 @@ namespace sc {
       }
 
     // MP2 amplitues:
-    TArray4 T2_ijab = g_ijab("i,j,a,b") * Delta_ijab("i,j,a,b");
+    TArray4 T2_ijab; T2_ijab("i,j,a,b") = g_ijab("i,j,a,b") * Delta_ijab("i,j,a,b");
 
 #if 1
     // MP2 density
-    TArray2 D_mp2_ij = (2.0 * T2_ijab("i,k,a,b") - T2_ijab("k,i,a,b"))
+    TArray2 D_mp2_ij; D_mp2_ij("i,j") = (2.0 * T2_ijab("i,k,a,b") - T2_ijab("k,i,a,b"))
                           * T2_ijab("j,k,a,b");
-    TArray2 D_mp2_ab = (2.0 * T2_ijab("i,j,a,c") - T2_ijab("i,j,c,a"))
+    TArray2 D_mp2_ab; D_mp2_ab("a,b") = (2.0 * T2_ijab("i,j,a,c") - T2_ijab("i,j,c,a"))
                           * T2_ijab("i,j,b,c");
     // MP2 orbital response
     TArray2 X_mp2 = Xam_mp2(T2_ijab, D_mp2_ij, D_mp2_ab);
@@ -1989,15 +1986,12 @@ namespace sc {
     TArray2 q_yy_apb = (compute_quadrupole ? xy("<a'|q_yy|b>") : TArray2());
     TArray2 q_zz_apb = (compute_quadrupole ? xy("<a'|q_zz|b>") : TArray2());
 
-    TArray2 Qxx_apb = (compute_quadrupole ?
-                       q_xx_apb("a',b") - (q_zz_apb("a',b") + q_yy_apb("a',b")) * 0.5 : TArray2());
-    TArray2 Qyy_apb = (compute_quadrupole ?
-                       q_yy_apb("a',b") - (q_zz_apb("a',b") + q_xx_apb("a',b")) * 0.5 : TArray2());
-    TArray2 Qzz_apb = (compute_quadrupole ?
-                       q_zz_apb("a',b") - (q_xx_apb("a',b") + q_yy_apb("a',b")) * 0.5 : TArray2());
-    TArray2 Qxy_apb = (compute_quadrupole ? xy("<a'|q_xy|b>") * 1.5 : TArray2());
-    TArray2 Qxz_apb = (compute_quadrupole ? xy("<a'|q_xz|b>") * 1.5 : TArray2());
-    TArray2 Qyz_apb = (compute_quadrupole ? xy("<a'|q_yz|b>") * 1.5 : TArray2());
+    TArray2 Qxx_apb; if (compute_quadrupole) Qxx_apb("a',b") = q_xx_apb("a',b") - (q_zz_apb("a',b") + q_yy_apb("a',b")) * 0.5;
+    TArray2 Qyy_apb; if (compute_quadrupole) Qyy_apb("a',b") = q_yy_apb("a',b") - (q_zz_apb("a',b") + q_xx_apb("a',b")) * 0.5;
+    TArray2 Qzz_apb; if (compute_quadrupole) Qzz_apb("a',b") = q_zz_apb("a',b") - (q_xx_apb("a',b") + q_yy_apb("a',b")) * 0.5;
+    TArray2 Qxy_apb; if (compute_quadrupole) Qxy_apb("a',b") = _2("<a'|q_xy|b>") * 1.5;
+    TArray2 Qxz_apb; if (compute_quadrupole) Qxz_apb("a',b") = _2("<a'|q_xz|b>") * 1.5;
+    TArray2 Qyz_apb; if (compute_quadrupole) Qyz_apb("a',b") = _2("<a'|q_yz|b>") * 1.5;
 
     TArray2 v_xx_apb = (compute_EFG ? xy("<a'|ddphi_xx|b>") : TArray2());
     TArray2 v_yy_apb = (compute_EFG ? xy("<a'|ddphi_yy|b>") : TArray2());
@@ -2018,11 +2012,11 @@ namespace sc {
     // MP2 F12 coupling part
 #if 1
     {
-    TArray4 C_ijab = _4("<i j|r|a_F(a') b>") + _4("<i j|r|a b_F(a')>");
-    TArray4 A_ijab = C_ijab("i,j,a,b") * Delta_ijab("i,j,a,b");
+    TArray4 C_ijab; C_ijab("i,j,a,b") = _4("<i j|r|a_F(a') b>") + _4("<i j|r|a b_F(a')>");
+    TArray4 A_ijab; A_ijab("i,j,a,b") = C_ijab("i,j,a,b") * Delta_ijab("i,j,a,b");
 
     // Coupling and F12 part of MP2F12 density
-    TArray2 D_mp2f12_ij =  (R_C1 * A_ijab("i,k,a,b") + R_C2 * A_ijab("k,i,a,b"))
+    TArray2 D_mp2f12_ij; D_mp2f12_ij("i,j") =  (R_C1 * A_ijab("i,k,a,b") + R_C2 * A_ijab("k,i,a,b"))
                            * T2_ijab("j,k,a,b")
                          // A_jk^ab T_ab^ik
                          + (R_C1 * A_ijab("j,k,a,b") + R_C2 * A_ijab("k,j,a,b"))
@@ -2030,7 +2024,7 @@ namespace sc {
                          // A^ik_ab A^ab_jk
                          + (RR_C1 * A_ijab("i,k,a,b") + RR_C2 * A_ijab("k,i,a,b"))
                            * A_ijab("j,k,a,b");
-    TArray2 D_mp2f12_ab =  (R_C1 * T2_ijab("i,j,a,c") + R_C2 * T2_ijab("i,j,c,a"))
+    TArray2 D_mp2f12_ab; D_mp2f12_ab("a,b") =  (R_C1 * T2_ijab("i,j,a,c") + R_C2 * T2_ijab("i,j,c,a"))
                            * A_ijab("i,j,b,c")
                          // A^ac_ij T^ij_bc
                          + (R_C1 * T2_ijab("i,j,b,c") + R_C2 * T2_ijab("i,j,c,b"))
@@ -2040,7 +2034,7 @@ namespace sc {
                            * A_ijab("i,j,b,c");
 
     // 1/2 R^kl_a'c \tilde{T}^bc_kl
-    TArray2 RT_apb = _4("<a' c|r|k l>")
+    TArray2 RT_apb; RT_apb("a',b") = _4("<a' c|r|k l>")
                      * ( R_C1 * T2_ijab("k,l,b,c") + R_C2 * T2_ijab("k,l,c,b")
                        + RR_C1 * A_ijab("k,l,b,c") + RR_C2 * A_ijab("k,l,c,b")
                        );
@@ -2178,14 +2172,15 @@ namespace sc {
     // F12 contribution
 #if 1
     // F12 density from X and B terms
-    TArray4 r2_ijkl = _4("<i j|r2|k l>");
-    TArray4 r_ijpq = _4("<i j|r|p q>");
-    TArray4 r_ijapn = _4("<i j|r|a' n>");
-    TArray4 r_ijnap = _4("<i j|r|n a'>");
+    TArray4d r2_ijkl = ijxy("<i j|r2|k l>");
+    TArray4d r_ijpq = ijxy("<i j|r|p q>");
+    TArray4d r_ijapn = ijxy("<i j|r|a' n>");
+    TArray4d r_ijnap = ijxy("<i j|r|n a'>");
 
     // Dij = 1/2 R^ik_A'B' R^A'B'_kl (A': all virtual)
-    TArray2 D_f12_ij =  (RR_C1 * r2_ijkl("i,k,j,l") + RR_C2 * r2_ijkl("k,i,j,l"))
-                        * xy("<k|I|l>")
+    TArray2 D_f12_ij;
+    D_f12_ij("i,j") =  (RR_C1 * r2_ijkl("i,k,j,l") + RR_C2 * r2_ijkl("k,i,j,l"))
+                        * _2("<k|I|l>")
                       - (RR_C1 * r_ijpq("i,k,p,q") + RR_C2 * r_ijpq("k,i,p,q"))
                         * r_ijpq("j,k,p,q")
                       - (RR_C1 * r_ijapn("i,k,a',n") + RR_C2 * r_ijapn("k,i,a',n"))
@@ -2194,23 +2189,27 @@ namespace sc {
                         * r_ijnap("j,k,n,a'");
 
     // DA'B' = 1/2 R^A'C'_kl R^kl_B'C' (A': all virtual)
-    TArray4 r_acpkl = _4("<a c'|r|k l>");
-    TArray2 D_f12_ab = (RR_C1 * r_acpkl("a,c',k,l") + RR_C2 * r_acpkl("a,c',l,k"))
+    TArray4d r_acpkl = ijxy("<a c'|r|k l>");
+    TArray2 D_f12_ab;
+    D_f12_ab("a,b") = (RR_C1 * r_acpkl("a,c',k,l") + RR_C2 * r_acpkl("a,c',l,k"))
                        * r_acpkl("b,c',k,l");
 
-    TArray4 r_apcpkl = _4("<a' c'|r|k l>");
-    TArray2 D_f12_apbp = (RR_C1 * r_acpkl("c,a',l,k") + RR_C2 * r_acpkl("c,a',k,l"))
+    TArray4d r_apcpkl = ijxy("<a' c'|r|k l>");
+    TArray2 D_f12_apbp;
+    D_f12_apbp("a',b'") = (RR_C1 * r_acpkl("c,a',l,k") + RR_C2 * r_acpkl("c,a',k,l"))
                          * r_acpkl("c,b',l,k")
                        + (RR_C1 * r_apcpkl("a',c',k,l") + RR_C2 * r_apcpkl("a',c',l,k"))
                          * r_apcpkl("b',c',k,l");
 
-    TArray2 D_f12_apb = (RR_C1 * r_apcpkl("a',c',k,l") + RR_C2 * r_apcpkl("a',c',l,k"))
+    TArray2 D_f12_apb;
+    D_f12_apb("a',b") = (RR_C1 * r_apcpkl("a',c',k,l") + RR_C2 * r_apcpkl("a',c',l,k"))
                         * r_acpkl("b,c',k,l");
 
     // F12 orbital response contribution to dipole
     // X and B density contribution to Xam
-    TArray4 g_abmc = _4("<a b|g|m c>");
-    TArray2 gdf12_am =   (2.0 * _4("<a k|g|m l>") - _4("<a k|g|l m>"))
+    TArray4d g_abmc = ijxy("<a b|g|m c>");
+    TArray2 gdf12_am;
+    gdf12_am("a,m") =   (2.0 * _4("<a k|g|m l>") - _4("<a k|g|l m>"))
                          * D_f12_ij("k,l")
                        //
                        - (2.0 * g_abmc("a,b,m,c") - g_abmc("b,a,m,c"))
@@ -2531,6 +2530,10 @@ namespace sc {
     TArray2 r2_i_j = _4("<i j|r|p q>") * _4("<k_F(p) j|r|p q>");
 
     return r2_i_j;
+#else // ENABLE_SRR12_RDM1
+    MPQC_ASSERT(false); // not converted yet to the TiledArray expressions branch
+    return TArray2();
+#endif
   }
 
 

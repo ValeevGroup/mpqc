@@ -201,12 +201,20 @@ mpqc::TA::ClDFGEngine::coefficient_contraction(
   // just for conveience
   const TAMatrix &C = *coeff_;
 
+  C.get_world().gop.fence();
+  double df_build0 = madness::wall_time();
   // Precompute Exch Term
   df_K_("j,Z,X") = C("m,Z") * df_ints_("m,j,X");
 
   TAMatrix expr; 
   expr(i+j) = 2 * (df_ints_(i+j+X) * (C(m+Z) * df_K_(m+Z+X) ) )
                 - (df_K_(i+Z+X) * df_K_(jE+Z+X) );
+  double df_build1 = madness::wall_time();
+  C.get_world().gop.fence();
+
+  if(C.get_world().rank() == 0){
+    std::cout << "\t\tG matrix build time = " << df_build1 - df_build0 << "s " << std::endl;
+  }
   return expr;
 }
 

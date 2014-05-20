@@ -1734,44 +1734,42 @@ double PT2R12::cabs_singles_Dyall()
     typedef SingleReference_R12Intermediates<double>::TArray4 TArray4;
     typedef SingleReference_R12Intermediates<double>::TArray2 TArray2;
 
-    SingleReference_R12Intermediates<double> srr12intrmds(
-        madness::World::get_default(), this->r12world());
-
-    srr12intrmds.set_rdm2(this->rdm2_);
+    bootup_mpqc3();
 
     // make all the matrices
     tim.enter("compute integrals");
     // density matrices
-    TArray2 gamma1 = srr12intrmds._2("<m|gamma|n>"); // rdm1 occ
-    TArray4 gamma2 = srr12intrmds._4("<m n|gamma|m1 n1>"); //rdm2 occ
+    TArray2 gamma1; gamma1("m,n") = _2("<m|gamma|n>"); // rdm1 occ
+    TArray4 gamma2; gamma2("m,n,m1,n1") = _4("<m n|gamma|m1 n1>"); //rdm2 occ
 
     // g
-    TArray4 g_ijkl = srr12intrmds._4("<n1 m1|g|m n>"); // occ
-    TArray4 g_iajb = srr12intrmds._4("<m f|g|n e>"); // occ vir occ vir
-    TArray4 g_iabj = srr12intrmds._4("<m e|g|f n>"); // occ vir vir occ
+    TArray4 g_ijkl; g_ijkl("n1,m1,m,n") = _4("<n1 m1|g|m n>"); // occ
+    TArray4 g_iajb; g_iajb("m,f,n,e") = _4("<m f|g|n e>"); // occ vir occ vir
+    TArray4 g_iabj; g_iabj("m,e,f,n") = _4("<m e|g|f n>"); // occ vir vir occ
 
     // h_core
-    TArray2 h_ij = srr12intrmds._2("<m|h|n>");  //occ occ
-    TArray2 h_ab = srr12intrmds._2("<e|h|f>");   //vir vir
+    TArray2 h_ij; h_ij("m,n") = _2("<m|h|n>");  //occ occ
+    TArray2 h_ab; h_ab("e,f") = _2("<e|h|f>");   //vir vir
 
     // fock
-    TArray2 F_ij = srr12intrmds._2("<m|F|n>");  //occ occ
-    TArray2 F_ci = srr12intrmds._2("<c'|F|n>");  //cabs occ
-    TArray2 F_AB = srr12intrmds._2("<A'|F|B'>"); //allvir allvir
-    TArray2 F_ab = srr12intrmds._2("<e|F|f>");  //vir vir
-    TArray2 F_iA = srr12intrmds._2("<m|F|A'>");  // occ allvir
+    TArray2 F_ij; F_ij("m,n") = _2("<m|F|n>");  //occ occ
+    TArray2 F_ci; F_ci("c',n") = _2("<c'|F|n>");  //cabs occ
+    TArray2 F_AB; F_AB("A',B'") = _2("<A'|F|B'>"); //allvir allvir
+    TArray2 F_ab; F_ab("e,f") = _2("<e|F|f>");  //vir vir
+    TArray2 F_iA; F_iA("m,A'") = _2("<m|F|A'>");  // occ allvir
 
     // delta
-    TArray2 I_AB = srr12intrmds._2("<B'|I|A'>"); //allvir allvir
-    TArray2 I_Aa = srr12intrmds._2("<B'|I|e>"); // allvir vir
-    TArray2 I_Ac = srr12intrmds._2("<B'|I|c'>"); // allvir cabs
+    TArray2 I_AB; I_AB("B',A'") = _2("<B'|I|A'>"); //allvir allvir
+    TArray2 I_Aa; I_Aa("B',e") = _2("<B'|I|e>"); // allvir vir
+    TArray2 I_Ac; I_Ac("B',c'") = _2("<B'|I|c'>"); // allvir cabs
     tim.exit();
 
     // make B matrix
     tim.enter("compute B matrix"); // time B matrix
     tim.enter("term1");
     // term1
-    TArray4 term1 = F_AB("A',B'") * gamma1("x,y");
+    TArray4 term1;
+    term1("A',B',x,y") = F_AB("A',B'") * gamma1("x,y");
     tim.exit();
     std::cout << "term1 of B complete \n" << std::endl;
 #if DEBUGG
@@ -1782,7 +1780,8 @@ double PT2R12::cabs_singles_Dyall()
 #endif
     tim.enter("term2");
     // term2
-    TArray4 term2 = - I_AB("A',B'")*(h_ij("i,y") * gamma1("x,i") + g_ijkl("i,j,k,y") * gamma2("k,x,i,j"));
+    TArray4 term2;
+    term2("A',B',x,y") = - I_AB("A',B'")*(h_ij("i,y") * gamma1("x,i") + g_ijkl("i,j,k,y") * gamma2("k,x,i,j"));
     tim.exit();
     std::cout << "term2 of B complete \n" << std::endl;
 #if DEBUGG
@@ -1790,19 +1789,22 @@ double PT2R12::cabs_singles_Dyall()
 #endif
     tim.enter("term3");
     // term3
-    TArray4 term3 = I_Aa("B',b")*I_Aa("A',a")*(h_ab("a,b") - F_ab("a,b"))*gamma1("x,y");
+    TArray4 term3;
+    term3("A',B',x,y") = I_Aa("B',b")*I_Aa("A',a")*(h_ab("a,b") - F_ab("a,b"))*gamma1("x,y");
     tim.exit();
     std::cout << "term3 of B complete \n" << std::endl;
     tim.enter("term4");
     // term4
-    TArray4 term4 = I_Aa("B',b")* I_Aa("A',a")*(g_iabj("i,a,j,b")*gamma2("j,x,i,y") + g_iajb("j,a,b,i")*gamma2("i,x,y,j"));
+    TArray4 term4;
+    term4("A',B',x,y") = I_Aa("B',b")* I_Aa("A',a")*(g_iabj("i,a,j,b")*gamma2("j,x,i,y") + g_iajb("j,a,b,i")*gamma2("i,x,y,j"));
 
 #if DEBUGG
     std::cout << "term4 of B: \n" << term4 << std::endl;
 #endif
     tim.exit();
     std::cout << "term4 of B complete \n" << std::endl;
-    TArray4 B = term1("B',A',y,x") + term2("B',A',y,x") + term3("B',A',y,x") + term4("B',A',y,x");
+    TArray4 B;
+    B("B',A',y,x") = term1("B',A',y,x") + term2("B',A',y,x") + term3("B',A',y,x") + term4("B',A',y,x");
 
     tim.exit();
     std::cout << "B complete \n" << std::endl;
@@ -1821,19 +1823,23 @@ double PT2R12::cabs_singles_Dyall()
     //
 
     //compute b matrix in a(x) = b
-    TArray2 b = gamma1("j,x") * F_ci("c,j") * I_Ac("B',c");
+    TArray2 b;
+    b("x,B'") = gamma1("j,x") * F_ci("c,j") * I_Ac("B',c");
     // x we trying to solve, C
-    TArray2 x = b("x,B'");
+    TArray2 x;
+    x("x,B'") = b("x,B'");
     if (cabs_singles_h0_ == string("dyall_1")) {
       // compute b based on Equation(15)
-      b = -b("x,B'");
+      b("x,B'") = -b("x,B'");
     }
 
     if (cabs_singles_h0_ == string("dyall_2")) {
       // - gamma(j,k) * h(k, beta) - gamma(jm,kl)*g(beta m, kl)
-      TArray4 g_Bmkl = srr12intrmds._4("<B' m|g|m1 n1>");  //g(allvir, occ, occ, occ)
-      TArray2 h_iA = srr12intrmds._2("<m|h|A'>");  //h(occ,allvir)
-      b = - gamma1("j,k") * h_iA("k,B'") - gamma2("j,m,k,l") * g_Bmkl("B',m,k,l");
+      TArray4 g_Bmkl;
+      g_Bmkl("B',m,m1,n1") = _4("<B' m|g|m1 n1>");  //g(allvir, occ, occ, occ)
+      TArray2 h_iA;
+      h_iA("m,A'") = srr12intrmds._2("<m|h|A'>");  //h(occ,allvir)
+      b("j,B'") = - gamma1("j,k") * h_iA("k,B'") - gamma2("j,m,k,l") * g_Bmkl("B',m,k,l");
     }
 
 #if DEBUGG
@@ -1863,7 +1869,8 @@ double PT2R12::cabs_singles_Dyall()
         Delta_iA.set(*t, tile);
       }
     }
-    TArray2 preconditioner = Delta_iA("i,A'");
+    TArray2 preconditioner;
+    preconditioner("i,A'") = Delta_iA("i,A'");
 
     tim.enter("conjugate solver"); // time conjugate solver
 
@@ -1921,33 +1928,37 @@ double PT2R12::cabs_singles_Fock() {
     tim.enter("compute integrals");
     // go to file sr_r12intermediates.h for notation
     // density matrices
-    TArray2 gamma1 = srr12intrmds._2("<m|gamma|n>"); // occ
-    TArray4 gamma2 = srr12intrmds._4("<n1 m|gamma|m1 n>"); // occ
+    TArray2 gamma1; gamma1("m,n") = _2("<m|gamma|n>"); // occ
+    TArray4 gamma2; gamma2("n1,m,m1,n") = _4("<n1 m|gamma|m1 n>"); // occ
 #if DEBUGG
     std::cout << "gamma1: \n" << gamma1 << std::endl;
 #endif
     // fock matrices
-    TArray2 F_ij = srr12intrmds._2("<m|F|n>"); // occ occ
-    TArray2 F_iA = srr12intrmds._2("<m|F|A'>"); // occ allvir
-    TArray2 F_ci = srr12intrmds._2("<c'|F|n>");  //cabs occ
-    TArray2 F_AB = srr12intrmds._2("<A'|F|B'>"); // allvir allvir
+    TArray2 F_ij; F_ij("m,n") = _2("<m|F|n>"); // occ occ
+    TArray2 F_iA; F_iA("m,A'") = _2("<m|F|A'>"); // occ allvir
+    TArray2 F_ci; F_ci("c',n") = _2("<c'|F|n>");  //cabs occ
+    TArray2 F_AB; F_AB("A',B'") = _2("<A'|F|B'>"); // allvir allvir
 
     //delta
-    TArray2 I_AB = srr12intrmds._2("<B'|I|A'>"); // allvir allvir
-    TArray2 I_Ac = srr12intrmds._2("<B'|I|c'>"); // allvir cabs
+    TArray2 I_AB; I_AB("B',A'") = _2("<B'|I|A'>"); // allvir allvir
+    TArray2 I_Ac; I_Ac("B',c'") = _2("<B'|I|c'>"); // allvir cabs
 
     tim.exit();
 
     tim.enter("compute B matrix");
     // make B matrix in Equation (18)
     // term1
-    TArray4 term1 = F_AB("A',B'") * gamma1("x,y");
+    TArray4 term1;
+    term1("A',B',x,y") = F_AB("A',B'") * gamma1("x,y");
     // term2
-    TArray4 term2 = I_AB("A',B'") * F_ij("i,j") * gamma2("i,x,j,y");
+    TArray4 term2;
+    term2("A',B',x,y") = I_AB("A',B'") * F_ij("i,j") * gamma2("i,x,j,y");
     // term3
-    TArray4 term3 = - I_AB("A',B'") * F_ij("i,j") * gamma1("i,j") * gamma1("x,y");
+    TArray4 term3;
+    term3("A',B',x,y") = - I_AB("A',B'") * F_ij("i,j") * gamma1("i,j") * gamma1("x,y");
     // B
-    TArray4 B = term1("A',B',x,y") + term2("A',B',x,y") + term3("A',B',x,y");
+    TArray4 B;
+    B("A',B',x,y") = term1("A',B',x,y") + term2("A',B',x,y") + term3("A',B',x,y");
 #if DEBUGG
     std::cout << "B matrix: \n" << B << std::endl;
 #endif
@@ -1956,9 +1967,9 @@ double PT2R12::cabs_singles_Fock() {
     //  solve the linear algebra problem a(x)=b in Equation (15)
     //
     // x we trying to solve, C
-    TArray2 x = gamma1("x,j") * F_ci("c',j") * I_Ac("B',c'");
+    TArray2 x; x("x,B'") = gamma1("x,j") * F_ci("c',j") * I_Ac("B',c'");
     // b in a(x) = b
-    TArray2 b = -x("x,B'");
+    TArray2 b; b("x,B'") = -x("x,B'");
 #if DEBUGG
     std::cout << "b matrix: \n" << b << std::endl;
 #endif
@@ -1983,7 +1994,8 @@ double PT2R12::cabs_singles_Fock() {
         Delta_iA.set(*t, tile);
       }
     }
-    TArray2 preconditioner = Delta_iA("i,A'");
+    TArray2 preconditioner;
+    preconditioner("i,A") = Delta_iA("i,A'");
 #if DEBUGG
     std::cout << "preconditioner: \n" << preconditioner << std::endl;
 #endif

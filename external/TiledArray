@@ -34,10 +34,6 @@ if(MADNESS_FOUND)
       "
       #include <world/world.h>
       
-      #ifndef MADNESS_HAS_ELEMENTAL
-      # error \"MADNESS was not compiled with support for Elemental\"
-      #endif
-      
       int main(int argc, char** argv) {
         madness::World& world = madness::initialize(argc, argv);
         return 0;
@@ -112,7 +108,7 @@ if (TILEDARRAY_FOUND)
     message(FATAL_ERROR "Could not compile TiledArray test program")
   endif()
 
-  if(ELEMENTAL_LIBRARIES)
+  if(MPQC_HAS_ELEMENTAL)
     # sanity check try to compile a TiledArray+Elemental program
     list(APPEND CMAKE_REQUIRED_INCLUDES ${ELEMENTAL_INCLUDE_DIR})
     list(APPEND CMAKE_REQUIRED_LIBRARIES ${ELEMENTAL_LIBRARIES})
@@ -134,7 +130,7 @@ if (TILEDARRAY_FOUND)
       IF(NOT TILEDARRAY_ELEM_COMPILES)
         message(FATAL_ERROR  "Could not compile TiledArray with Elemental")
       ENDIF(NOT TILEDARRAY_ELEM_COMPILES)
-   ENDIF(ELEMENTAL_LIBRARIES)
+   ENDIF(MPQC_HAS_ELEMENTAL)
       
 
   set(MPQC_HAS_TILEDARRAY TRUE)

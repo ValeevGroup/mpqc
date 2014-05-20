@@ -29,19 +29,35 @@
 #include <chemistry/qc/scf/cldfgengine.hpp>
 #include <math/elemental/eigensolver.hpp>
 #include <chemistry/qc/lcao/soad.h>
+#include <utility>
 #include <iostream>
 
 using namespace sc;
 using namespace mpqc;
 using namespace mpqc::TA;
 
-using Matrix = TiledArray::Array<double, 2, TiledArray::Tensor<double> >;
-using DistMatrix = elem::DistMatrix<double>;
+using Matrix = TiledArray::Array<double, 2>;
+using Eri3 = TiledArray::Array<double, 3>;
+using Eri4 = TiledArray::Array<double, 4>;
+using onebpool = IntegralEnginePool<Ref<OneBodyInt> >;
+using e3pool = IntegralEnginePool<Ref<TwoBodyThreeCenterInt> >;
+using e2pool = IntegralEnginePool<Ref<TwoBodyTwoCenterInt> >;
+using e4pool = IntegralEnginePool<Ref<TwoBodyInt> >;
+using mat_pmap_iter = decltype(std::declval<Matrix>().get_pmap()->begin());
+using eri3_pmap_iter = decltype(std::declval<Eri3>().get_pmap()->begin());
+using eri4_pmap_iter = decltype(std::declval<Eri4>().get_pmap()->begin());
 
-void mat_task(typename Matrix::iterator it, double cut,
-               long* t_mat_elems,
-               long* t_svd_elems, double* t_mat_diff){
-  typename Matrix::value_type tile = *it;
+void mat_task(mat_pmap_iter it, Matrix array, double cut,
+              long* t_mat_elems,
+              long* t_svd_elems, double* t_mat_diff,
+              std::shared_ptr<onebpool> pool){
+
+  using PoolPtrType = typename std::pointer_traits<std::shared_ptr<onebpool>>::element_type;
+  typename PoolPtrType::engine_type engine =
+      pool->instance();
+
+  typename Matrix::value_type tile(array.trange().make_tile_range(*it));
+  get_integrals(tile, engine);
 
   std::size_t size0 = tile.range().size()[0];
   std::size_t size1 = tile.range().size()[1];
@@ -60,17 +76,23 @@ void mat_task(typename Matrix::iterator it, double cut,
   *t_mat_diff += mat_diff;
 }
 
-void eri3_task(TiledArray::Array<double,3>::iterator it, double cut,
-               long* t_mat_elems,
-               long* t_svd_elems, double* t_mat_diff){
-  typename TiledArray::Array<double,3>::value_type tile = *it;
+void eri2_task(mat_pmap_iter it, Matrix array, double cut,
+              long* t_mat_elems,
+              long* t_svd_elems, double* t_mat_diff,
+              std::shared_ptr<e2pool> pool){
+
+  using PoolPtrType = typename std::pointer_traits<std::shared_ptr<e2pool>>::element_type;
+  typename PoolPtrType::engine_type engine =
+      pool->instance();
+
+  typename Matrix::value_type tile(array.trange().make_tile_range(*it));
+  get_integrals(tile, engine);
 
   std::size_t size0 = tile.range().size()[0];
   std::size_t size1 = tile.range().size()[1];
-  std::size_t size2 = tile.range().size()[2];
 
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  Emap = TiledArray::eigen_map(tile, size0 * size1, size2);
+  Emap = TiledArray::eigen_map(tile, size0, size1);
 
   Eigen::MatrixXd Mat = Emap;
   SVDTile SVDMat(Mat,cut);
@@ -83,16 +105,104 @@ void eri3_task(TiledArray::Array<double,3>::iterator it, double cut,
   *t_mat_diff += mat_diff;
 }
 
-void percent_compression(Matrix &mat, double cut){
+void eri3_task(eri3_pmap_iter it, Eri3 array, double cut,
+              long* t_mat_elems,
+              long* t_svd_elems, double* t_mat_diff,
+              std::shared_ptr<e3pool> pool){
+
+  using PoolPtrType = typename std::pointer_traits<std::shared_ptr<e3pool>>::element_type;
+  typename PoolPtrType::engine_type engine =
+      pool->instance();
+
+  typename Matrix::value_type tile(array.trange().make_tile_range(*it));
+  get_integrals(tile, engine);
+
+  std::size_t size0 = tile.range().size()[0];
+  std::size_t size1 = tile.range().size()[1];
+  std::size_t size2 = tile.range().size()[2];
+
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  Emap = TiledArray::eigen_map(tile, size0*size1, size2);
+
+  Eigen::MatrixXd Mat = Emap;
+  SVDTile SVDMat(Mat,cut);
+
+  *t_mat_elems += Mat.rows() * Mat.cols();
+  *t_svd_elems += SVDMat.nelements();
+
+  double mat_diff = Eigen::MatrixXd(Mat -
+     SVDMat.U_contract() * SVDMat.Vt()).lpNorm<Eigen::Infinity>();
+  *t_mat_diff += mat_diff;
+}
+
+#if 1
+void eri4_task(eri4_pmap_iter it, Eri4 array, double cut,
+              long* t_mat_elems,
+              long* t_svd_elems, double* t_mat_diff,
+              std::shared_ptr<e4pool> pool){
+
+  using PoolPtrType = typename std::pointer_traits<std::shared_ptr<e4pool>>::element_type;
+  typename PoolPtrType::engine_type engine =
+      pool->instance();
+
+  typename Matrix::value_type tile(array.trange().make_tile_range(*it));
+  get_integrals(tile, engine);
+
+  std::size_t size0 = tile.range().size()[0];
+  std::size_t size1 = tile.range().size()[1];
+  std::size_t size2 = tile.range().size()[2];
+  std::size_t size3 = tile.range().size()[3];
+
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  Emap = TiledArray::eigen_map(tile, size0*size1, size2*size3);
+
+  Eigen::MatrixXd Mat = Emap;
+  SVDTile SVDMat(Mat,cut);
+
+  *t_mat_elems += Mat.rows() * Mat.cols();
+  *t_svd_elems += SVDMat.nelements();
+
+  double mat_diff = Eigen::MatrixXd(Mat -
+     SVDMat.U_contract() * SVDMat.Vt()).lpNorm<Eigen::Infinity>();
+  *t_mat_diff += mat_diff;
+}
+#endif
+
+void percent_compression(Matrix &mat, std::shared_ptr<onebpool> pool, double cut){
 
   long total_mat_elems = 0;
   long total_svd_elems = 0;
   double total_mat_diff = 0;
   long ntiles = 0;
   double svd_time0 = madness::wall_time();
-  for(typename Matrix::iterator it = mat.begin(); it != mat.end(); ++it){
-    mat.get_world().taskq.add(&mat_task, it, cut, &total_mat_elems,
-                              &total_svd_elems, &total_mat_diff);
+  for(auto it = mat.get_pmap()->begin(); it != mat.get_pmap()->end(); ++it){
+    mat.get_world().taskq.add(&mat_task, it, mat, cut, &total_mat_elems,
+                              &total_svd_elems, &total_mat_diff, pool);
+    ++ntiles;
+  }
+  mat.get_world().gop.fence();
+  double svd_time1 = madness::wall_time();
+
+  std::cout << "\t\tTotal Time = " <<
+            svd_time1 - svd_time0  << "s" << std::endl;
+  std::cout << "\t\tTotal Matrix Elements = " << total_mat_elems << std::endl;
+  std::cout << "\t\tTotal SVD Elements = " << total_svd_elems << std::endl;
+  std::cout << "\t\tAverage tile diff = " << total_mat_diff/ntiles << std::endl;
+  std::cout << "\t\tPercentage saved = " << (1 -
+               double(total_svd_elems)/double(total_mat_elems)) * 100
+            << std::endl;
+}
+
+void percent_compression(Matrix &mat, std::shared_ptr<e2pool> pool, double cut){
+
+  long total_mat_elems = 0;
+  long total_svd_elems = 0;
+  double total_mat_diff = 0;
+  long ntiles = 0;
+  double svd_time0 = madness::wall_time();
+  for(auto it = mat.get_pmap()->begin(); it != mat.get_pmap()->end(); ++it){
+    mat.get_world().taskq.add(&eri2_task, it, mat, cut, &total_mat_elems,
+                              &total_svd_elems, &total_mat_diff, pool);
     ++ntiles;
   }
   mat.get_world().gop.fence();
@@ -109,16 +219,16 @@ void percent_compression(Matrix &mat, double cut){
             << std::endl;
 }
 
-void percent_compression(TiledArray::Array<double ,3> &mat, double cut){
+void percent_compression(Eri3 &mat, std::shared_ptr<e3pool> pool, double cut){
 
   long total_mat_elems = 0;
   long total_svd_elems = 0;
   double total_mat_diff = 0;
   long ntiles = 0;
   double svd_time0 = madness::wall_time();
-  for(typename TiledArray::Array<double,3>::iterator it = mat.begin(); it != mat.end(); ++it){
-    mat.get_world().taskq.add(&eri3_task, it, cut, &total_mat_elems,
-                              &total_svd_elems, &total_mat_diff);
+  for(auto it = mat.get_pmap()->begin(); it != mat.get_pmap()->end(); ++it){
+    mat.get_world().taskq.add(&eri3_task, it, mat, cut, &total_mat_elems,
+                              &total_svd_elems, &total_mat_diff, pool);
     ++ntiles;
   }
   mat.get_world().gop.fence();
@@ -133,6 +243,33 @@ void percent_compression(TiledArray::Array<double ,3> &mat, double cut){
                double(total_svd_elems)/double(total_mat_elems)) * 100
             << std::endl;
 }
+
+#if 1
+void percent_compression(Eri4 &mat, std::shared_ptr<e4pool> pool, double cut){
+
+  long total_mat_elems = 0;
+  long total_svd_elems = 0;
+  double total_mat_diff = 0;
+  long ntiles = 0;
+  double svd_time0 = madness::wall_time();
+  for(auto it = mat.get_pmap()->begin(); it != mat.get_pmap()->end(); ++it){
+    mat.get_world().taskq.add(&eri4_task, it, mat, cut, &total_mat_elems,
+                              &total_svd_elems, &total_mat_diff, pool);
+    ++ntiles;
+  }
+  mat.get_world().gop.fence();
+  double svd_time1 = madness::wall_time();
+
+  std::cout << "\t\tNumber of tiles = " << ntiles << " in "
+            << svd_time1 - svd_time0 << "s" << std::endl;
+  std::cout << "\t\tTotal Matrix Elements = " << total_mat_elems << std::endl;
+  std::cout << "\t\tTotal SVD Elements = " << total_svd_elems << std::endl;
+  std::cout << "\t\tAverage tile diff = " << total_mat_diff/ntiles << std::endl;
+  std::cout << "\t\tPercentage saved = " << (1 -
+               double(total_svd_elems)/double(total_mat_elems)) * 100
+            << std::endl;
+}
+#endif
 
 int main(int argc, char** argv){
   sc::ExEnv::init(argc, argv);
@@ -153,137 +290,138 @@ int main(int argc, char** argv){
 
   ints_fac->set_basis(tbs);
 
+  // Local scope for one body ints
   {
-  // Get pools
-  using onebpool = IntegralEnginePool<Ref<OneBodyInt> >;
-  auto S_pool = std::make_shared<onebpool>(ints_fac->overlap()->clone());
-  auto H_pool = std::make_shared<onebpool>(ints_fac->hcore()->clone());
+    // Integral engine typedef
 
-  // Compute ints
-  Matrix S = Integrals(*world->madworld(), S_pool, tbs);
-  world->madworld()->gop.fence();
-  Matrix H = Integrals(*world->madworld(), H_pool, tbs);
-  world->madworld()->gop.fence();
+    std::array<TiledArray::TiledRange1, 2> ob_array =
+                                        {{tbs->trange1(), tbs->trange1()}};
+    TiledArray::TiledRange ob_trange(ob_array.begin(), ob_array.end());
 
-  std::cout << "\nS\n";
-  std::cout << "\t1e-4" << std::endl;
-  percent_compression(S, 1e-4);
-  std::cout << "\t1e-5" << std::endl;
-  percent_compression(S, 1e-5);
-  std::cout << "\t1e-6" << std::endl;
-  percent_compression(S, 1e-6);
-  std::cout << "\t1e-7" << std::endl;
-  percent_compression(S, 1e-7);
-  std::cout << "\n" << std::endl;
+    // S Range
+    Matrix S(*world->madworld(), ob_trange);
+    auto S_pool = std::make_shared<onebpool>(ints_fac->overlap()->clone());
 
-  std::cout << "\nH\n";
-  std::cout << "\t1e-4" << std::endl;
-  percent_compression(H, 1e-4);
-  std::cout << "\t1e-5" << std::endl;
-  percent_compression(H, 1e-5);
-  std::cout << "\t1e-6" << std::endl;
-  percent_compression(H, 1e-6);
-  std::cout << "\t1e-7" << std::endl;
-  percent_compression(H, 1e-7);
-  std::cout << "\n" << std::endl;
+    // Compute
+    std::cout << "\nS\n";
+    std::cout << "\t1e-4" << std::endl;
+    percent_compression(S, S_pool, 1e-4);
+    std::cout << "\t1e-5" << std::endl;
+    percent_compression(S, S_pool, 1e-5);
+    std::cout << "\t1e-6" << std::endl;
+    percent_compression(S, S_pool, 1e-6);
+    std::cout << "\t1e-7" << std::endl;
+    percent_compression(S, S_pool, 1e-7);
+    std::cout << "\n" << std::endl;
+
+    world->madworld()->gop.fence();
+
+    // H Range
+    Matrix H(*world->madworld(), ob_trange);
+    auto H_pool = std::make_shared<onebpool>(ints_fac->hcore()->clone());
+    world->madworld()->gop.fence();
+
+
+    std::cout << "\nH\n";
+    std::cout << "\t1e-4" << std::endl;
+    percent_compression(H, H_pool, 1e-4);
+    std::cout << "\t1e-5" << std::endl;
+    percent_compression(H, H_pool, 1e-5);
+    std::cout << "\t1e-6" << std::endl;
+    percent_compression(H, H_pool, 1e-6);
+    std::cout << "\t1e-7" << std::endl;
+    percent_compression(H, H_pool, 1e-7);
+    std::cout << "\n" << std::endl;
   }
 
-  // Set basis and grab a clone of the engine we need
-  ints_fac->set_basis(tbs, tbs, dftbs);
-  auto eri3_clone = ints_fac->electron_repulsion3()->clone();
+  // Density fitting integrals
+  {
+    // Set basis and grab a clone of the engine we need
+    ints_fac->set_basis(tbs, tbs, dftbs);
+    auto eri3_clone = ints_fac->electron_repulsion3()->clone();
 
-  // Make an integral engine pool out of our clone
-  using eri3pool = IntegralEnginePool<sc::Ref<sc::TwoBodyThreeCenterInt> >;
-  auto eri3_ptr = std::make_shared<eri3pool>(eri3_clone);
+    // Make an integral engine pool out of our clone
+    auto eri3_ptr = std::make_shared<e3pool>(eri3_clone);
 
-  // Using the df_ints as temporary storage for the twobody three center ints
-  TiledArray::Array<double,3>
-      df_ints_ =  Integrals(*world->madworld(), eri3_ptr, tbs, dftbs);
-  world->madworld()->gop.fence();
+    std::array<TiledArray::TiledRange1,3> ec_array = {tbs->trange1(), tbs->trange1(),
+                                                      dftbs->trange1()};
 
-  std::cout << "\nEri3\n";
-  std::cout << "\t1e-4" << std::endl;
-  percent_compression(df_ints_, 1e-4);
-  std::cout << "\t1e-5" << std::endl;
-  percent_compression(df_ints_, 1e-5);
-  std::cout << "\t1e-6" << std::endl;
-  percent_compression(df_ints_, 1e-6);
-  std::cout << "\t1e-7" << std::endl;
-  percent_compression(df_ints_, 1e-7);
-  std::cout << "\n" << std::endl;
+    TiledArray::TiledRange ec_range(ec_array.begin(), ec_array.end());
 
-#if 0
-  std::array<TiledArray::TiledRange1, 2>
-        blocking{{tbs->trange1(), tbs->trange1()}};
+    // Using the df_ints as temporary storage for the twobody three center ints
+    TiledArray::Array<double,3> df_ints_(*world->madworld(), ec_range);
+    world->madworld()->gop.fence();
 
-  TiledArray::TiledRange trange(blocking.begin(), blocking.end());
-
-  // Intialize Density matrix
-  Matrix dens(*world->madworld(), trange);
-  dens.set_all_local(0.0);
-  world->madworld()->gop.fence();
-
-  Ref<AssignedKeyVal> akv = new AssignedKeyVal();
-  akv->assign("molecule", tbs->molecule().pointer());
-  akv->assign("basis", tbs.pointer());
-  akv->assign("dfbasis", dftbs.pointer());
-  akv->assign("world", world.pointer());
-  akv->assign("integrals", ints_fac.pointer());
-
-  // Construct a density guess based on a SOAD object
-  using Soad = sc::SuperpositionOfAtomicDensities;
-  sc::Ref<Soad> guess = new Soad(sc::Ref<sc::KeyVal>(akv));
+    std::cout << "\nEri3\n";
+    std::cout << "\t1e-4" << std::endl;
+    percent_compression(df_ints_, eri3_ptr, 1e-4);
+    std::cout << "\t1e-5" << std::endl;
+    percent_compression(df_ints_, eri3_ptr, 1e-5);
+    std::cout << "\t1e-6" << std::endl;
+    percent_compression(df_ints_, eri3_ptr, 1e-6);
+    std::cout << "\t1e-7" << std::endl;
+    percent_compression(df_ints_, eri3_ptr, 1e-7);
+    std::cout << "\n" << std::endl;
 
 
-  ClDFGEngine GC(static_cast<Ref<KeyVal> >(akv));
-  GC.set_densities({&dens});
-  world->madworld()->gop.fence();
+    // Set basis and grab a clone of the engine we need
+    ints_fac->set_basis(dftbs, dftbs);
+    auto eri2_clone = ints_fac->electron_repulsion2()->clone();
 
-  // Make Fock matrix
-  Matrix F = H("i,j") + GC("i,j");
-  world->madworld()->gop.fence();
+    // Make an integral engine pool out of our clone
+    auto eri2_ptr = std::make_shared<e2pool>(eri2_clone);
 
-  auto occ = tbs->molecule()->total_Z();
+    std::array<TiledArray::TiledRange1,2> et_array = {dftbs->trange1(),
+                                                      dftbs->trange1()};
 
-  Matrix C = eigensolver_occ_Coeff(F,S,occ);
-  dens("mu,nu") = C("mu,i") * C("nu,i");
-  GC.set_coefficients({&C});
+    TiledArray::TiledRange et_range(et_array.begin(), et_array.end());
 
-  std::cout << "\nD\n";
-  std::cout << "\t1e-4" << std::endl;
-  percent_compression(dens, 1e-4);
-  std::cout << "\t1e-5" << std::endl;
-  percent_compression(dens, 1e-5);
-  std::cout << "\t1e-6" << std::endl;
-  percent_compression(dens, 1e-6);
-  std::cout << "\t1e-7" << std::endl;
-  percent_compression(dens, 1e-7);
-  std::cout << "\n" << std::endl;
+    // Using the df_ints as temporary storage for the twobody three center ints
+    TiledArray::Array<double,2> two_ints(*world->madworld(), et_range);
+    world->madworld()->gop.fence();
 
-  std::cout << "\nC\n";
-  std::cout << "\t1e-4" << std::endl;
-  percent_compression(C, 1e-4);
-  std::cout << "\t1e-5" << std::endl;
-  percent_compression(C, 1e-5);
-  std::cout << "\t1e-6" << std::endl;
-  percent_compression(C, 1e-6);
-  std::cout << "\t1e-7" << std::endl;
-  percent_compression(C, 1e-7);
-  std::cout << "\n" << std::endl;
+    std::cout << "\nEri2\n";
+    std::cout << "\t1e-4" << std::endl;
+    percent_compression(two_ints, eri2_ptr, 1e-4);
+    std::cout << "\t1e-5" << std::endl;
+    percent_compression(two_ints, eri2_ptr, 1e-5);
+    std::cout << "\t1e-6" << std::endl;
+    percent_compression(two_ints, eri2_ptr, 1e-6);
+    std::cout << "\t1e-7" << std::endl;
+    percent_compression(two_ints, eri2_ptr, 1e-7);
+    std::cout << "\n" << std::endl;
+  }
 
+  // Four center ints
+  {
+    // Set basis and grab a clone of the engine we need
+    ints_fac->set_basis(tbs);
+    auto eri_clone = ints_fac->electron_repulsion()->clone();
 
-  std::cout << "\nF\n";
-  std::cout << "\t1e-4" << std::endl;
-  percent_compression(F, 1e-4);
-  std::cout << "\t1e-5" << std::endl;
-  percent_compression(F, 1e-5);
-  std::cout << "\t1e-6" << std::endl;
-  percent_compression(F, 1e-6);
-  std::cout << "\t1e-7" << std::endl;
-  percent_compression(F, 1e-7);
-  std::cout << "\n" << std::endl;
-#endif
+    // Make an integral engine pool out of our clone
+    auto eri_ptr = std::make_shared<e4pool>(eri_clone);
 
+    std::array<TiledArray::TiledRange1, 4> e4_array = {tbs->trange1(), tbs->trange1(),
+                                                       tbs->trange1(), tbs->trange1()};
+
+    TiledArray::TiledRange e4_range(e4_array.begin(), e4_array.end());
+
+    // Using the df_ints as temporary storage for the twobody three center ints
+    TiledArray::Array<double,4> four_ints(*world->madworld(), e4_range);
+    world->madworld()->gop.fence();
+
+    std::cout << "\nFour Center\n";
+    std::cout << "\t1e-4" << std::endl;
+    percent_compression(four_ints, eri_ptr, 1e-4);
+    std::cout << "\t1e-5" << std::endl;
+    percent_compression(four_ints, eri_ptr, 1e-5);
+    std::cout << "\t1e-6" << std::endl;
+    percent_compression(four_ints, eri_ptr, 1e-6);
+    std::cout << "\t1e-7" << std::endl;
+    percent_compression(four_ints, eri_ptr, 1e-7);
+    std::cout << "\n" << std::endl;
+
+  }
   madness::finalize();
   return 0;
 }

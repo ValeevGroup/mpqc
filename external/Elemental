@@ -57,7 +57,7 @@ if(ELEMENTAL_FOUND)
   
   endif(ELEMENTAL_LIBRARIES)
 else()
-  message(FATAL_ERROR " Elemental Package not found")
+  message(status " Elemental Package not found, will not use elemental features.")
 endif()
     
     

@@ -432,8 +432,7 @@ namespace sc {
         ParsedTwoBodyFourCenterIntKey pkey(key);
         const std::string annotation = pkey.bra1() + "," + pkey.bra2() + "," + pkey.ket1() + "," + pkey.ket2();
 
-        result(annotation) = srr12intrmds_->_4(key);
-        return result;
+        return srr12intrmds_->ijxy(key);
       }
 
       /// variant of _2() that returns an array, not expression
@@ -443,8 +442,7 @@ namespace sc {
         ParsedOneBodyIntKey pkey(key);
         const std::string annotation = pkey.bra() + "," + pkey.ket();
 
-        result(annotation) = srr12intrmds_->_2(key);
-        return result;
+        return srr12intrmds_->xy(key);
       }
 
 

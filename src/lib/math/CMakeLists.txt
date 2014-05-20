@@ -15,18 +15,18 @@ set(mathobjects
   symmetry
   )
   
-if(MPQC_NEW_FEATURES)  
+if(MPQC_NEW_FEATURES AND MPQC_HAS_ELEMENTAL)
   LIST(APPEND mathobjects elemental)
-endif(MPQC_NEW_FEATURES)
+endif(MPQC_NEW_FEATURES AND MPQC_HAS_ELEMENTAL)
   
 add_mpqc_library(math ${mathobjects})
 
 add_dependencies(math util)
 target_link_libraries(math util ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
 
-if(MPQC_NEW_FEATURES)
+if(MPQC_NEW_FEATURES AND MPQC_HAS_ELEMENTAL)
     TARGET_LINK_LIBRARIES(math ${ELEMENTAL_LIBRARIES})
-endif(MPQC_NEW_FEATURES)
+endif(MPQC_NEW_FEATURES AND MPQC_HAS_ELEMENTAL)
 
 set(math/OBJECTS ${objects} PARENT_SCOPE)
 install(TARGETS math DESTINATION lib)

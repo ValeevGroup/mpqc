@@ -31,7 +31,7 @@
 
 // Boost includes
 // NOTE:  THIS CAUSES VALGRIND ERRORS
-//#include <boost/math/special_functions/erf.hpp>
+#include <boost/math/special_functions/erf.hpp>
 
 // MPQC includes
 #include <chemistry/qc/basis/petite.h>
@@ -49,6 +49,16 @@ typedef std::pair<int, int> IntPair;
 
 //////////////////////////////////////////////////////////////////////////////////
 
+double my_erfc_inv(double val) {
+  //if(well_separated_thresh_ == 0.1) {
+  //  erfcinv_thr = 1.1630871536766740867262542605629475934779325500020816;
+  //}
+  //else {
+  //  throw FeatureNotImplemented("Erfc_inv of number other than 0.1", __FILE__, __LINE__, class_desc());
+  //}
+  return boost::math::erfc_inv(val);
+}
+
 void
 CADFCLHF::initialize()
 {
@@ -65,6 +75,17 @@ CADFCLHF::initialize()
   gmat_.assign(0.0);
   //----------------------------------------------------------------------------//
   have_coefficients_ = false;
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+
+void
+CADFCLHF::init_vector()
+{
+  CLHF::init_vector();
+  core_evals_ = basis_matrixkit()->diagmatrix(oso_dimension());
+  core_evecs_ = basis_matrixkit()->matrix(oso_dimension(), oso_dimension());
+  core_hamiltonian().diagonalize(core_evals_, core_evecs_);
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -216,10 +237,11 @@ CADFCLHF::init_threads()
     ExEnv::out0() << incindent << indent << "Integral object is not reporting the amount of"
                   << " storage needed for 4 center integral evaluators." << decindent << endl;
   }
-  tbis_ = new Ref<TwoBodyInt>[thread_4c_ints_ ? nthread_ : 1];
+  bool need_nthr_4c_ints = thread_4c_ints_ or exact_diagonal_J_ or exact_diagonal_K_;
+  tbis_ = new Ref<TwoBodyInt>[need_nthr_4c_ints ? nthread_ : 1];
   tbis_[0] = integral()->electron_repulsion();
   if(thread_4c_ints_) {
-    for (int i=1; i < (thread_4c_ints_ ? nthread_ : 1); i++) {
+    for (int i=1; i < (need_nthr_4c_ints ? nthread_ : 1); i++) {
       tbis_[i] = tbis_[0]->clone();
     }
   }
@@ -264,9 +286,6 @@ CADFCLHF::init_threads()
   int inode = 0;
   // TODO More efficient distribution based on load balancing and minimizing thread collisions
   if(shuffle_J_assignments_) {
-    //std::random_device rd;
-    //std::mt19937 g(rd());
-    //g.seed(0);
     std::random_shuffle(sig_pairs_.begin(), sig_pairs_.end());
   }
   for(auto&& sig_pair : sig_pairs_) {
@@ -343,7 +362,8 @@ CADFCLHF::init_significant_pairs()
   local_pairs_spot_ = 0;
 
   typedef Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, 1>> ConstVectorMap;
-  do_threaded((thread_4c_ints_ ? nthread_ : 1), [&](int ithr){
+  bool need_nthr_4c_ints = thread_4c_ints_ or exact_diagonal_J_ or exact_diagonal_K_;
+  do_threaded((need_nthr_4c_ints ? nthread_ : 1), [&](int ithr){
 
     ShellData ish, jsh;
     std::vector<std::pair<double, IntPair>> my_pair_vals;
@@ -367,10 +387,12 @@ CADFCLHF::init_significant_pairs()
   });
 
   //----------------------------------------//
-  // At this point, we're done with the tbis_
-  for (int i=0; i < (thread_4c_ints_ ? nthread_ : 1); i++) tbis_[i] = 0;
-  delete[] tbis_;
-  tbis_ = 0;
+  if(not exact_diagonal_J_ and not exact_diagonal_K_) {
+    // At this point, we're done with the tbis_
+    for (int i=0; i < (thread_4c_ints_ ? nthread_ : 1); i++) tbis_[i] = 0;
+    delete[] tbis_;
+    tbis_ = 0;
+  }
 
   //----------------------------------------//
   // All-to-all the shell-wise Frobenius norms of the Schwarz matrix
@@ -509,16 +531,7 @@ CADFCLHF::init_significant_pairs()
     centers_[iatom] << r[0], r[1], r[2];
   }
 
-  // Causes Valgrind to fail
-  //const double erfcinv_thr = boost::math::erfc_inv(well_separated_thresh_);
-  double erfcinv_thr;
-  if(well_separated_thresh_ == 0.1) {
-    erfcinv_thr = 1.1630871536766740867262542605629475934779325500020816;
-  }
-  else {
-    throw FeatureNotImplemented("Erfc_inv of number other than 0.1", __FILE__, __LINE__, class_desc());
-  }
-
+  double erfcinv_thr = my_erfc_inv(well_separated_thresh_);
 
   for(auto&& ish : shell_range(my_part.obs_shells_to_do, gbs_, dfbs_)) {
 

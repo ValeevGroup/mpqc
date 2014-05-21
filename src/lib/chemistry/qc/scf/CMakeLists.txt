@@ -7,6 +7,7 @@ SET(ccfiles
   clhf.cc
   clscf.cc
   cadf/cadfclhf.cc
+  cadf/density.cc
   cadf/statistics.cc
   cadf/get_ints.cc
   cadf/init.cc

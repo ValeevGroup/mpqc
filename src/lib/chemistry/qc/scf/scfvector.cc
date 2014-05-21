@@ -314,6 +314,8 @@ SCF::compute_vector(double& eelec, double nucrep)
     evals.element_op(level_shift);
 #endif
 
+    current_evals_ = evals;
+
     if (debug_>0) {
       evals.print("scf eigenvalues");
     }

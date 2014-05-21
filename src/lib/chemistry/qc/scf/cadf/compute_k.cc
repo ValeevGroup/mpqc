@@ -317,7 +317,14 @@ CADFCLHF::compute_K()
       epsilon_B = std::max(full_screening_thresh_min_*(B_screening_thresh_/full_screening_thresh_), epsilon_B);
       epsilon_d_under = std::max(full_screening_thresh_min_*d_under_screening_thresh_/full_screening_thresh_, epsilon_d_under);
       epsilon_d_over = std::max(full_screening_thresh_min_*d_over_screening_thresh_/full_screening_thresh_, epsilon_d_over);
+
+      epsilon = std::min(epsilon, full_screening_thresh_);
+      epsilon_dist = std::min(epsilon_dist, distance_screening_thresh_);
+      epsilon_B = std::min(epsilon_B, B_screening_thresh_);
+      epsilon_d_under = std::min(epsilon_d_under, d_under_screening_thresh_);
+      epsilon_d_over = std::min(epsilon_d_over, d_over_screening_thresh_);
     }
+
 
     // Update the user on the effective thresholds
     // TODO output epsilon_d thresholds also

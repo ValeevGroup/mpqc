@@ -153,6 +153,8 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   //----------------------------------------------------------------------------//
   use_norms_nu_ = keyval->booleanvalue("use_norms_nu", KeyValValueboolean(use_norms_nu_));
   use_norms_B_ = keyval->booleanvalue("use_norms_B", KeyValValueboolean(use_norms_B_));
+  match_orbitals_ = keyval->booleanvalue("match_orbitals", KeyValValueboolean(match_orbitals_));
+  match_orbitals_max_diff_ = keyval->doublevalue("match_orbitals_max_diff", KeyValValuedouble(match_orbitals_max_diff_));
   use_norms_sigma_ = keyval->booleanvalue("use_norms_sigma", KeyValValueboolean(use_norms_sigma_));
   sigma_norms_chunk_by_atoms_ = keyval->booleanvalue("sigma_norms_chunk_by_atoms", KeyValValueboolean(sigma_norms_chunk_by_atoms_));
   xml_screening_data_ = keyval->booleanvalue("xml_screening_data", KeyValValueboolean(xml_screening_data_));
@@ -239,6 +241,8 @@ CADFCLHF::print(ostream&o) const
   o << indent << "full_screening_thresh_min = " << double_str(full_screening_thresh_min_) << endl;
   o << indent << "linK_block_rho = " << bool_str(linK_block_rho_) << endl;
   o << indent << "linK_use_distance = " << bool_str(linK_use_distance_) << endl;
+  o << indent << "match_orbitals = " << bool_str(match_orbitals_) << endl;
+  o << indent << "match_orbitals_max_diff = " << double_str(match_orbitals_max_diff_) << endl;
   o << indent << "pair_screening_thresh = " << double_str(pair_screening_thresh_) << endl;
   o << indent << "scale_screening_thresh = " << bool_str(scale_screening_thresh_) << endl;
   o << indent << "screen_B = " << bool_str(screen_B_) << endl;
@@ -494,3 +498,4 @@ sc::get_split_range_part(
     }
   }
 }
+

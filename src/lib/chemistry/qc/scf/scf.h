@@ -52,6 +52,8 @@ class SCF: public OneBodyWavefunction {
   protected:
     int compute_guess_;
 
+    RefDiagSCMatrix current_evals_;
+
     int keep_guess_wfn_;
     Ref<OneBodyWavefunction> guess_wfn_;
 

@@ -105,6 +105,8 @@ class CADFCLHF: public CLHF {
 
     void ao_fock(double accuracy);
     void reset_density();
+    double new_density();
+    void init_vector();
 
   public:
 
@@ -453,6 +455,18 @@ class CADFCLHF: public CLHF {
      *  and node load balancing.
      */
     bool shuffle_J_assignments_ = true;
+    /** Match up orbitals with previous iteration to make sure we aren't including "attractive electron"
+     *  orbitals.
+     */
+    bool match_orbitals_ = true;
+    /** Maximum norm of difference for which orbitals other than the minimum difference on can be considered
+     *  the same for the purposes of orbital matching
+     */
+    double match_orbitals_max_diff_ = 1e-4;
+    /** Maximum norm of difference for which orbitals other than the minimum difference on can be considered
+     *  the same for the purposes of orbital matching
+     */
+    double match_orbitals_max_homo_offset_ = 0.05;
     //@}
 
     std::shared_ptr<ScreeningStatistics> stats_;
@@ -465,6 +479,9 @@ class CADFCLHF: public CLHF {
     double prev_epsilon_d_over_;
     double prev_epsilon_d_under_;
 
+    RefDiagSCMatrix prev_evals_;
+    RefSCMatrix prev_evecs_;
+    std::vector<int> prev_occ_;
 
     int max_fxn_obs_ = 0;
     int max_fxn_obs_j_ish_ = 0;
@@ -480,6 +497,11 @@ class CADFCLHF: public CLHF {
     //int max_fxn_atom_dfbs_assigned_ = 0;
 
     TwoCenterIntContainerPtr g2_full_ptr_;
+
+    RefDiagSCMatrix core_evals_;
+    RefSCMatrix core_evecs_;
+
+    std::vector<int> orb_to_hcore_orb_;
 
     RefSCMatrix D_;
 

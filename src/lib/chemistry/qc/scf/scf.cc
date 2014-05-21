@@ -487,9 +487,11 @@ SCF::initial_vector()
         if (!g || compute_guess_) {
           oso_eigenvectors_ = guess_wfn_->oso_eigenvectors().copy();
           eigenvalues_ = guess_wfn_->eigenvalues().copy();
+          current_evals_ = eigenvalues_.result_noupdate();
         } else {
           oso_eigenvectors_ = g->oso_eigenvectors_.result_noupdate().copy();
           eigenvalues_ = g->eigenvalues_.result_noupdate().copy();
+          current_evals_ = eigenvalues_.result_noupdate();
         }
         ExEnv::out0() << decindent;
       } else {
@@ -503,6 +505,7 @@ SCF::initial_vector()
         ExEnv::out0() << incindent << incindent;
         oso_eigenvectors_ = projected_eigenvectors(guess_wfn_);
         eigenvalues_ = projected_eigenvalues(guess_wfn_);
+        current_evals_ = eigenvalues_.result_noupdate();
         ExEnv::out0() << decindent << decindent;
       }
       // we should only have to do this once, so free up memory used
@@ -517,6 +520,7 @@ SCF::initial_vector()
       ExEnv::out0() << indent << "Starting from core Hamiltonian guess\n"
                     << endl;
       oso_eigenvectors_ = hcore_guess(eigenvalues_.result_noupdate());
+      current_evals_ = eigenvalues_.result_noupdate();
     }
   } else {
     // if vector exists do nothing

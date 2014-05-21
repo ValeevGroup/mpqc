@@ -467,6 +467,10 @@ class CADFCLHF: public CLHF {
      *  the same for the purposes of orbital matching
      */
     double match_orbitals_max_homo_offset_ = 0.05;
+    /** Whether or not to do an SVD of the possibly occupied orbitals to determine the best means of
+     *  projecting out the bad orbitals
+     */
+    bool match_orbitals_use_svd_ = true;
     //@}
 
     std::shared_ptr<ScreeningStatistics> stats_;

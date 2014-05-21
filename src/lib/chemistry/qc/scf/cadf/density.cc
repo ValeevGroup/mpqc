@@ -203,6 +203,7 @@ CADFCLHF::new_density()
         Eigen::VectorXi idx_sorted(vir.ncol());
 
         std::vector<int> occupied;
+        int max_occupied = 0;
 
         const double hcore_homo_energy = cevals.get_element(ndocc);
         const double ecut = hcore_homo_energy + match_orbitals_max_homo_offset_;
@@ -306,6 +307,7 @@ CADFCLHF::new_density()
           if(can_be_occupied and occupied.size() < ndocc and evir.get_element(imo) > hcore_cut) { //
           //if(can_be_occupied and imo < ndocc) {
             occupied.push_back(imo);
+            max_occupied = imo;
           }
           else if(occupied.size() < ndocc) {
           //else if(imo < ndocc) {
@@ -350,8 +352,15 @@ CADFCLHF::new_density()
           throw SCException("Too few valid eigenvalues to construct a reasonable density matrix", __FILE__, __LINE__, class_desc());
         }
 
-        for(auto idx : occupied) {
-          Dtmp += Cmo.col(idx) * Cmo.col(idx).transpose();
+        if(match_orbitals_use_svd_ and not max_occupied == ndocc - 1) {
+          Eigen::JacobiSVD<decltype(Smo_core)> s_svd(Smo_core.topRows(max_occupied), Eigen::ComputeThinU);
+          auto& Umo_occ = s_svd.matrixU();
+          Dtmp = Cmo * Umo_occ * Umo_occ.transpose() * Cmo.transpose();
+        }
+        else {
+          for(auto idx : occupied) {
+            Dtmp += Cmo.col(idx) * Cmo.col(idx).transpose();
+          }
         }
 
       int ij=0;

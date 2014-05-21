@@ -38,7 +38,8 @@ using namespace sc;
 using namespace mpqc;
 using namespace mpqc::TA;
 
-using Matrix = TiledArray::Array<double, 3, TiledArray::Tensor<double> >;
+using Rank3 = TiledArray::Array<double, 3, TiledArray::Tensor<double> >;
+using Rank2 = TiledArray::Array<double, 2, TiledArray::Tensor<double> >;
 
 void try_main(int argc, char** argv){
   sc::ExEnv::init(argc, argv);
@@ -49,29 +50,41 @@ void try_main(int argc, char** argv){
   const char *input = "./benzene_trimer.kv";
   Ref<KeyVal> kv = new ParsedKeyVal(input);
 
-  Ref<Molecule> mol; mol << kv->describedclassvalue("benzene_trimer");
-  int occ = mol->total_Z()/2;
-
   Ref<TiledBasisSet> tbs; tbs << kv->describedclassvalue("basis");
   Ref<TiledBasisSet> dftbs; dftbs << kv->describedclassvalue("dfbasis");
   Ref<IntegralLibint2> ints_fac; ints_fac << kv->describedclassvalue("integrals");
   Integral::set_default_integral(ints_fac);
-  ints_fac->set_basis(tbs,tbs,dftbs);
+  ints_fac->set_basis(dftbs,dftbs);
 
   // Get pools
-  using twobpool = IntegralEnginePool<Ref<TwoBodyThreeCenterInt> >;
-  auto E_pool = std::make_shared<twobpool>(
+  using twob3Cpool = IntegralEnginePool<Ref<TwoBodyThreeCenterInt> >;
+  ints_fac->set_basis(tbs,tbs,dftbs);
+  auto E3_pool = std::make_shared<twob3Cpool>(
           ints_fac->electron_repulsion3()->clone());
   world->madworld()->gop.fence();
 
-  // Compute ints
-  const double start_time = madness::wall_time();
-  Matrix S = Integrals(*world->madworld(), E_pool, tbs, dftbs);
+  // Get pools
+  using E2_bpool = IntegralEnginePool<Ref<TwoBodyTwoCenterInt> >;
+  ints_fac->set_basis(dftbs,dftbs);
+  auto E2_pool = std::make_shared<E2_bpool>(
+          ints_fac->electron_repulsion2()->clone());
   world->madworld()->gop.fence();
-  const double stop_time = madness::wall_time();
+
+  // Compute ints
+  const double start_time_e2 = madness::wall_time();
+  Rank2 Eri2 = Integrals(*world->madworld(), E2_pool, dftbs);
+  world->madworld()->gop.fence();
+  const double stop_time_e2 = madness::wall_time();
+
+  // Compute ints
+  const double start_time_e3 = madness::wall_time();
+  Rank3 Eri3 = Integrals(*world->madworld(), E3_pool, tbs, dftbs);
+  world->madworld()->gop.fence();
+  const double stop_time_e3 = madness::wall_time();
 
   if(world->madworld()->rank() == 0){
-    std::cout << "Time was = " << stop_time - start_time << std::endl;
+    std::cout << "Time for E2 was = " << stop_time_e2 - start_time_e2 << std::endl;
+    std::cout << "Time for E3 was = " << stop_time_e3 - start_time_e3 << std::endl;
   }
 
   mpqc::MADNESSRuntime::finalize();

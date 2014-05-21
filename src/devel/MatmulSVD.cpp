@@ -71,9 +71,9 @@ void mat_task(mat_pmap_iter it, Matrix array, double cut,
   *t_mat_elems += Mat.rows() * Mat.cols();
   *t_svd_elems += SVDMat.nelements();
 
-  double mat_diff = Eigen::MatrixXd(Mat -
-     SVDMat.U_contract() * SVDMat.Vt()).lpNorm<Eigen::Infinity>();
-  *t_mat_diff += mat_diff;
+  //double mat_diff = Eigen::MatrixXd(Mat -
+  //   SVDMat.U_contract() * SVDMat.Vt()).lpNorm<Eigen::Infinity>();
+  //*t_mat_diff += mat_diff;
 }
 
 void eri2_task(mat_pmap_iter it, Matrix array, double cut,
@@ -100,9 +100,9 @@ void eri2_task(mat_pmap_iter it, Matrix array, double cut,
   *t_mat_elems += Mat.rows() * Mat.cols();
   *t_svd_elems += SVDMat.nelements();
 
-  double mat_diff = Eigen::MatrixXd(Mat -
-     SVDMat.U_contract() * SVDMat.Vt()).lpNorm<Eigen::Infinity>();
-  *t_mat_diff += mat_diff;
+  //double mat_diff = Eigen::MatrixXd(Mat -
+  //   SVDMat.U_contract() * SVDMat.Vt()).lpNorm<Eigen::Infinity>();
+  //*t_mat_diff += mat_diff;
 }
 
 void eri3_task(eri3_pmap_iter it, Eri3 array, double cut,
@@ -130,9 +130,9 @@ void eri3_task(eri3_pmap_iter it, Eri3 array, double cut,
   *t_mat_elems += Mat.rows() * Mat.cols();
   *t_svd_elems += SVDMat.nelements();
 
-  double mat_diff = Eigen::MatrixXd(Mat -
-     SVDMat.U_contract() * SVDMat.Vt()).lpNorm<Eigen::Infinity>();
-  *t_mat_diff += mat_diff;
+  //double mat_diff = Eigen::MatrixXd(Mat -
+  //   SVDMat.U_contract() * SVDMat.Vt()).lpNorm<Eigen::Infinity>();
+  //*t_mat_diff += mat_diff;
 }
 
 #if 1
@@ -162,9 +162,9 @@ void eri4_task(eri4_pmap_iter it, Eri4 array, double cut,
   *t_mat_elems += Mat.rows() * Mat.cols();
   *t_svd_elems += SVDMat.nelements();
 
-  double mat_diff = Eigen::MatrixXd(Mat -
-     SVDMat.U_contract() * SVDMat.Vt()).lpNorm<Eigen::Infinity>();
-  *t_mat_diff += mat_diff;
+  //double mat_diff = Eigen::MatrixXd(Mat -
+  //   SVDMat.U_contract() * SVDMat.Vt()).lpNorm<Eigen::Infinity>();
+  //*t_mat_diff += mat_diff;
 }
 #endif
 

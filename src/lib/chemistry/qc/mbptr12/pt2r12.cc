@@ -1723,7 +1723,6 @@ double PT2R12::cabs_singles_Dyall()
    * L. Kong and E.~F.~Valeev,  J. Chem. Phys. 133, 174126 (2010),
    * http://dx.doi.org/10.1063/1.3499600.
    * */
-# define DEBUGG false
 #if defined(HAVE_MPQC3_RUNTIME)
   if (use_mpqc3_) {
     ExEnv::out0() << std::endl << std::endl << indent
@@ -1753,26 +1752,15 @@ double PT2R12::cabs_singles_Dyall()
 
     TArray4 B;
 
-    tim.enter("term1");
     // term1
     {
-
       TArray4 term1;
       term1("x,B',y,A'") = F_AB("A',B'") * gamma1("x,y");
       B("x,B',y,A'") = term1("x,B',y,A'");
     }
     madness::World::get_default().gop.fence();
-    tim.exit();
-    std::cout << "term1 of B complete \n" << std::endl;
-#if DEBUGG
-    // set the cout precision to 10 decimal digits
-    std::cout.setf(ios::fixed);
-    std::cout.precision(10);
-    // std::cout << "term1 of B: \n" << term1 << std::endl;
-#endif
 
     // term2
-    tim.enter("term2");
     {
       TArray2 I_AB; I_AB("B',A'") = _2("<B'|I|A'>"); //allvir allvir
       TArray4 g_ijkl; g_ijkl("n1,m1,m,n") = _4("<n1 m1|g|m n>"); // occ
@@ -1781,14 +1769,8 @@ double PT2R12::cabs_singles_Dyall()
       B("x,B',y,A'") = B("x,B',y,A'") + term2("x,B',y,A'");
     }
     madness::World::get_default().gop.fence();
-    tim.exit();
-    std::cout << "term2 of B complete \n" << std::endl;
-#if DEBUGG
-    // std::cout << "term2 of B: \n" << term2 << std::endl;
-#endif
 
     // term3
-    tim.enter("term3");
     {
       TArray2 F_ab; F_ab("e,f") = _2("<e|F|f>");  //vir vir
       TArray2 h_ab; h_ab("e,f") = _2("<e|h|f>");   //vir vir
@@ -1797,11 +1779,8 @@ double PT2R12::cabs_singles_Dyall()
       B("x,B',y,A'") = B("x,B',y,A'") + term3("x,B',y,A'");
     }
     madness::World::get_default().gop.fence();
-    tim.exit();
-    std::cout << "term3 of B complete \n" << std::endl;
 
     // term4
-    tim.enter("term4");
     {
       TArray4 g_abij; g_abij("f,e,m,n") = _4("<m f|g|n e>"); // occ vir occ vir
       TArray4 g_iajb; g_iajb("f,e,m,n") = _4("<m e|g|f n>"); // occ vir vir occ
@@ -1810,23 +1789,8 @@ double PT2R12::cabs_singles_Dyall()
       B("x,B',y,A'") = B("x,B',y,A'") + term4("x,B',y,A'");
     }
     madness::World::get_default().gop.fence();
-    tim.exit();
-    std::cout << "term4 of B complete \n" << std::endl;
-#if DEBUGG
-    std::cout << "term4 of B: \n" << term4 << std::endl;
-#endif
 
-    tim.exit();
-    std::cout << "B complete \n" << std::endl;
-
-#if DEBUGG
-    std::cout << "allterm of B: \n" << B << std::endl;
-    ofstream foutB("all term of B");
-    foutB.setf(ios::fixed);
-    foutB.precision(10);
-    foutB << setprecision(10) << B << std::endl;
-    foutB.close();
-#endif
+    tim.exit(); //exit compute B matrix
 
     //
     //  solve the linear algebra problem a(x)=b in Equation (15)
@@ -1859,13 +1823,6 @@ double PT2R12::cabs_singles_Dyall()
     }
     madness::World::get_default().gop.fence();
 
-#if DEBUGG
-    std::cout << "b matrix: \n" << b << std::endl;
-    ofstream foutb("new_bmatrix");
-    foutb.setf(ios::fixed);
-    foutb.precision(10);
-    foutb << setprecision(10) << b << std::endl;
-#endif
 
     // make preconditioner: inverse of diagonal elements <A'|F|A'> - <m|h|m>
     TArray2 preconditioner;
@@ -1893,7 +1850,7 @@ double PT2R12::cabs_singles_Dyall()
     }
     madness::World::get_default().gop.fence();
 
-    tim.enter("conjugate solver"); // time conjugate solver
+    tim.enter("conjugate gradient solver"); // time conjugate solver
 
     // initialize the function a(x)
     _CABS_singles<double> cabs_singles(B);
@@ -1902,10 +1859,8 @@ double PT2R12::cabs_singles_Dyall()
     // solve the linear system, a(x) = b, cabs_singles_fock is a(x); x is x. b is b in a(x) = b
     auto resnorm = cg_solver(cabs_singles, b, x, preconditioner, 1e-12);
     //std::cout << "Converged CG to " << resnorm << std::endl;
-    tim.exit();
-#if DEBUGG
-    std::cout << "C: \n" << x << std::endl;
-#endif
+
+    tim.exit(); // exit conjugate solver
 
     //calculate the second order energy based on Equation (16)
     double E = -1.0*dot(x("j,A'"), b("j,A'"));
@@ -1934,7 +1889,6 @@ double PT2R12::cabs_singles_Fock() {
    * L. Kong and E.~F.~Valeev,  J. Chem. Phys. 133, 174126 (2010),
    * http://dx.doi.org/10.1063/1.3499600.
    * */
-#define DEBUGG false
 #if defined(HAVE_MPQC3_RUNTIME)
   if (use_mpqc3_) {
     ExEnv::out0() << std::endl << indent
@@ -1952,18 +1906,12 @@ double PT2R12::cabs_singles_Fock() {
     TArray2 gamma1; gamma1("m,n") = _2("<m|gamma|n>"); // occ
     TArray4 gamma2; gamma2("n1,m,m1,n") = _4("<n1 m|gamma|m1 n>"); // occ
 
-#if DEBUGG
-    std::cout << "gamma1: \n" << gamma1 << std::endl;
-#endif
     // fock matrices
     TArray2 F_ij; F_ij("m,n") = _2("<m|F|n>"); // occ occ
-    TArray2 F_iA; F_iA("m,A'") = _2("<m|F|A'>"); // occ allvir
-
     TArray2 F_AB; F_AB("A',B'") = _2("<A'|F|B'>"); // allvir allvir
 
     //delta
     TArray2 I_AB; I_AB("B',A'") = _2("<B'|I|A'>"); // allvir allvir
-
 
     tim.enter("compute B matrix");
     // make B matrix in Equation (18)
@@ -1991,10 +1939,7 @@ double PT2R12::cabs_singles_Fock() {
     }
     madness::World::get_default().gop.fence();
 
-#if DEBUGG
-    std::cout << "B matrix: \n" << B << std::endl;
-#endif
-    tim.exit();
+    tim.exit(); // exit compute B matrix
     //
     //  solve the linear algebra problem a(x)=b in Equation (15)
     //
@@ -2010,11 +1955,6 @@ double PT2R12::cabs_singles_Fock() {
       b("x,B'") = -x("x,B'");
     }
     madness::World::get_default().gop.fence();
-
-#if DEBUGG
-    std::cout << "b matrix: \n" << b << std::endl;
-#endif
-    std::cout << " range of b matrix" << b.trange().elements() << std::endl;
 
     // make preconditioner: inverse of diagonal elements <A'|F|A'> - <m|F|m>
     TArray2 preconditioner;
@@ -2041,20 +1981,14 @@ double PT2R12::cabs_singles_Fock() {
     }
 
 
-#if DEBUGG
-    std::cout << "preconditioner: \n" << preconditioner << std::endl;
-#endif
-    tim.enter("conjugate solver");
+    tim.enter("conjugate gradient solver");
     _CABS_singles<double> cabs_singles(B); // initialize the function a(x)
     TA::ConjugateGradientSolver<TArray2, _CABS_singles<double> > cg_solver;// linear solver object
 
     // solve the linear system
     auto resnorm = cg_solver(cabs_singles, b, x, preconditioner, 1e-12);
     //std::cout << "Converged CG to " << resnorm << std::endl;
-    tim.exit();
-#if DEBUGG
-    std::cout << "C: \n" << x << std::endl;
-#endif
+    tim.exit(); // exit gradient solver
 
     //calculate the second order energy based on Equation (16)
     double E = -1.0* dot(x("y,A'"),b("y,A'"));

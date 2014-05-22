@@ -35,6 +35,7 @@
 #include <Eigen/Dense>
 #include <chemistry/molecule/molecule.h>
 #include <chemistry/qc/basis/basis.h>
+#include <random>
 
 #include "kcluster.hpp"
 
@@ -277,6 +278,19 @@ namespace TA{
                   [&](const KCluster &a, const KCluster &b){
                    return ((a.center()-com_).norm() < (b.center()-com_).norm());}
             );
+        }
+
+        void initial_cluster_guess(){
+            // Initialize the kcluster guess by randomly guessing starting
+            // positions
+            clusters_.resize(nclusters_);
+            std::default_random_engine generator(42); // Always same seed
+            std::uniform_int_distribution<int> distribution(0,atoms_.size()-1);
+
+            for(auto &cluster : clusters_){
+              int i = distribution(generator); // Choose random atoms as initial guess
+              cluster = Vector3(atoms_[i].r(0), atoms_[i].r(1), atoms_[i].r(2));
+            }
         }
 
     private:

@@ -1756,7 +1756,6 @@ double PT2R12::cabs_singles_Dyall()
     tim.enter("term1");
     // term1
     {
-
       TArray4 term1;
       term1("x,B',y,A'") = F_AB("A',B'") * gamma1("x,y");
       B("x,B',y,A'") = term1("x,B',y,A'");

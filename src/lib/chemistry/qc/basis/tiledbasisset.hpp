@@ -93,6 +93,8 @@ namespace TA{
       /// Print a detailed description of the basis set.
       virtual void print(std::ostream& = sc::ExEnv::out0()) const override;
 
+      void print_clusters_xyz() const;
+
     private:
       std::size_t ntiles_;
       ShellRange SRange_;

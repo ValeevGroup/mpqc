@@ -44,17 +44,20 @@ namespace TA{
             // Takes the atom we want along with its molecular index.
             ClusterAtom(const sc::Atom &atom, std::size_t index) :
                 sc::Atom(atom),
-                mol_index_(index)
+                mol_index_(index),
+                center_(atom.r(0),atom.r(1),atom.r(2))
             {}
 
             // return the index of the atom in the molecule.
             std::size_t mol_index() const {return mol_index_;}
+            Eigen::Vector3d center() const {return center_;}
 
         private:
             // Don't use the default constructor
             ClusterAtom();
 
             std::size_t mol_index_;
+            Eigen::Vector3d center_;
         }; // class ClusterAtom
     } // namespace cluster
 
@@ -98,6 +101,10 @@ namespace TA{
         /// Returns the position vector of the center of the cluster.
         const Vector3& center() const { return center_; }
 
+        /// Allows the user to modify the center possibly for looking for
+        /// better clusters
+        void set_center(Vector3 pos){center_ = pos;}
+
 
         /// Returns the centorid of the cluster.
         Vector3 centroid(){
@@ -122,10 +129,13 @@ namespace TA{
 
         }
 
-        /// Sort the atoms so they are ordered by molecule index.
-        void sort_atoms(){
-            std::sort(atoms_.begin(), atoms_.end(), [](const Atom &a,
-                       const Atom &b){ return a.mol_index() < b.mol_index();}
+        /// Sort the atoms by closest to given point
+        void sort_atoms(Vector3 sort_point){
+            std::stable_sort(atoms_.begin(), atoms_.end(), [=]
+                             (const Atom &a, const Atom &b){
+                return Vector3(sort_point - a.center()).norm() <
+                       Vector3(sort_point - b.center()).norm();
+              }
             );
         }
 

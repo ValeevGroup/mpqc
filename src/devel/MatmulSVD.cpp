@@ -283,6 +283,7 @@ int main(int argc, char** argv){
   Ref<TiledBasisSet> dftbs; dftbs << kv->describedclassvalue("dfbasis");
 
   tbs->print();
+  tbs->print_clusters_xyz();
   dftbs->print();
 
   Ref<IntegralLibint2> ints_fac;

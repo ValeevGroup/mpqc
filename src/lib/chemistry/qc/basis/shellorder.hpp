@@ -189,17 +189,34 @@ namespace TA{
                 // Add atom to the closest kcluster
                 clusters_[kindex].add_atom(atom);
             }
-            // Put atoms in correct order inside clusters so that the
-            // Shell ordering becomes deterministic.
-            for(auto& cluster : clusters_){
-                cluster.sort_atoms();
-            }
         }
 
         // Computes Lloyd's algorith to find a local minimium for the clusters.
-        void k_means_search(std::size_t niter = 100){
+        void k_means_search(std::size_t niter = 200){
 
-            // Lloyd's algorithm iterations.
+            // Initial search for starting minimum
+            for(auto i = 0; i < 50; ++i){
+
+               // Recompute the center of the cluster using the centroid of
+               // the atoms.  Will lose information about which atoms
+               // go with which center.
+               for(auto &cluster : clusters_){ cluster.guess_center(); }
+               sort_clusters();
+
+               attach_to_closest_cluster();
+           }
+
+           // Set cluster centers to heaveist atom in cluster
+           for(auto &cluster : clusters_){
+              auto heaviest = 0;
+              for(auto atom : cluster.atoms()){
+                if(atom.mass() > heaviest){
+                  cluster.set_center(Vector3(atom.r(0),atom.r(1),atom.r(2)));
+                }
+              }
+           }
+
+            // Initial search for starting minimum
             for(auto i = 0; i < niter; ++i){
 
                // Recompute the center of the cluster using the centroid of
@@ -211,6 +228,7 @@ namespace TA{
                attach_to_closest_cluster();
            }
         }
+
 
         /*
          * Returns a vector of shells in the order they appear in the clusters.
@@ -247,37 +265,116 @@ namespace TA{
          */
         ShellRange compute_shell_ranges() const {
             ShellRange range;
-            range.reserve(nclusters_);
-
+            range.resize(nclusters_+1);
             // First range is easy
-            range.push_back(0);
+            range[0] = 0;
 
-            // Loop over clusters
-            for(auto i = 0; i < nclusters_; ++i){
-                // Holds the number of shells on the cluster.
-                std::size_t shells_in_cluster = 0;
-                // Loop over atoms
-                for(const auto atom : clusters_[i].atoms()){
-                    // position of atom in molecule
-                    std::size_t atom_index = atom.mol_index();
-                    // Get number of shells on the atom.
-                    shells_in_cluster += basis_->nshell_on_center(atom_index);
-                }
-                // Compute the Starting Shell of the next tile.
-                range.push_back(range.at(i) + shells_in_cluster);
+            //// Loop over clusters
+            //for(auto i = 0; i < nclusters_; ++i){
+            //    // Holds the number of shells on the cluster.
+            //    std::size_t shells_in_cluster = 0;
+            //    // Loop over atoms
+            //    for(const auto atom : clusters_[i].atoms()){
+            //        // position of atom in molecule
+            //        std::size_t atom_index = atom.mol_index();
+            //        // Get number of shells on the atom.
+            //        shells_in_cluster += basis_->nshell_on_center(atom_index);
+            //    }
+            //    // Compute the Starting Shell of the next tile.
+            //    range.push_back(range.at(i) + shells_in_cluster);
+            //}
+
+            // First loop over atoms and package them
+            std::vector<Atom> range_atoms;
+            for(const auto &cluster : clusters_){
+              for(const auto atom : cluster.atoms()){
+                range_atoms.push_back(atom);
+              }
             }
+
+            // Guess how many functions shoule be on each tile
+            double nfuncs_average = double(basis_->nbasis())/double(nclusters_);
+            double min = basis_->nbasis(); // starting min for algo
+
+            // Will store the atoms that go on each tile
+
+            for(std::size_t i = 0; i < range_atoms.size(); ++i){
+              auto first = range_atoms.begin();
+              auto last = range_atoms.end();
+
+              std::vector<std::size_t> func_in_cluster;
+              std::vector<std::vector<Atom> > atoms_in_cluster(nclusters_);
+              for(auto &cluster_atoms : atoms_in_cluster){
+
+                if(first != last){
+                  // Compute the last atom on tile based on loop
+                  auto tile_end = (i > std::distance(first, last)) ? last :
+                                                                    first + i;
+                  // Store the number of funcs
+                  std::size_t nfuncs = 0;
+                  for(auto it = first; it != tile_end; ++it){
+                    nfuncs += basis_->nbasis_on_center(it->mol_index());
+                    cluster_atoms.push_back(*it); // Count number of atoms
+                  }
+
+                  func_in_cluster.push_back(nfuncs);
+
+                  first = tile_end; // Start next tile where this one left off
+                }else{
+                  func_in_cluster.push_back(0);
+                }
+              } // End loop over clusters
+
+              // Compute sum of goal funcs minus nfuncs per cluster
+              double iteration_guess = 0;
+              for(auto nfuncs : func_in_cluster){
+                iteration_guess += std::abs(nfuncs - nfuncs_average);
+              }
+
+              // See if we have a good grouping
+              if(iteration_guess < min){
+                // Loop over clusters
+                for(auto i = 1; i <= atoms_in_cluster.size(); ++i){
+                  // Loop over atoms in each cluster
+                  std::size_t shells_in_cluster = 0;
+                  for(auto j = 0; j < atoms_in_cluster[i-1].size(); ++j){
+                    auto atom_index = atoms_in_cluster[i-1][j].mol_index();
+                    shells_in_cluster += basis_->nshell_on_center(atom_index);
+                  }
+                  range[i] = range[i-1] + shells_in_cluster;
+                }
+                min = iteration_guess;
+              } // end minimization check
+            }
+
 
             return  range;
         }
 
         /*
-         * Sort clusters on distance from com.
+         * Sort clusters on distance from the cluster in front of it.
          */
         void sort_clusters(){
-            std::sort(clusters_.begin(), clusters_.end(),
-                  [&](const KCluster &a, const KCluster &b){
-                   return ((a.center()-com_).norm() < (b.center()-com_).norm());}
-            );
+          // Loop over clusters and sort the ones that come after the current one
+          // Based on distance from the current one.
+          for(auto i = 0; i < nclusters_; ++i){
+            auto center = clusters_[i].center();
+            auto it = clusters_.begin()+i;
+            auto end = clusters_.end();
+            if(it != end){
+              std::stable_sort(it, end, [&](const KCluster &a,
+                                            const KCluster &b){
+                  return Vector3(a.center() - center).norm() <
+                         Vector3(b.center() - center).norm();
+                }
+              );
+            }
+            // If not the last cluster sort atoms to be closest to cluster in
+            // front.
+            if(i != (nclusters_ - 1) ){
+              clusters_[i+1].sort_atoms(center);
+            }
+          }
         }
 
         void initial_cluster_guess(){

@@ -29,6 +29,8 @@
 #include <Eigen/Dense>
 #include <functional>
 #include <numeric>
+#include <fstream>
+#include <iostream>
 #include <vector>
 #include <string>
 
@@ -143,6 +145,30 @@ TiledBasisSet::print(std::ostream &os_in ) const {
      << "\n\tMinimum cluster size = " << *cluster_minmax.first
      << "\n\tMaximum cluster size = " << *cluster_minmax.second
      << std::endl;
+}
+
+void TiledBasisSet::print_clusters_xyz() const {
+  // Loop over Tiles to get clusters
+  for(auto tile = 0; tile < ntiles_; ++tile){
+    // Loop over the shells on the tile
+    std::vector<std::size_t> centers_on_tile;
+    for(auto shell_i = SRange_[tile]; shell_i<SRange_[tile+1]; ++shell_i){
+      auto shell_center = shell_to_center(shell_i);
+      if(centers_on_tile.empty() || centers_on_tile.back() != shell_center){
+        centers_on_tile.push_back(shell_center);
+      }
+    }
+    std::ofstream newfile;
+    newfile.open("cluster" + std::to_string(tile + 1) + ".xyz");
+    newfile << centers_on_tile.size() << "\nCluster " + std::to_string(tile + 1)
+               << std::endl;
+    for(auto i = 0; i < centers_on_tile.size(); ++i){
+      auto atom = molecule()->atom(centers_on_tile[i]);
+      newfile << atom.Z() << " " << atom.r(0) << " " << atom.r(1) <<
+                 " " << atom.r(2) << std::endl;
+    }
+    newfile.close();
+  }
 }
 
 void TiledBasisSet::save_data_state(sc::StateOut& s){

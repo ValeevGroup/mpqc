@@ -201,7 +201,6 @@ namespace TA{
                // the atoms.  Will lose information about which atoms
                // go with which center.
                for(auto &cluster : clusters_){ cluster.guess_center(); }
-               sort_clusters();
 
                attach_to_closest_cluster();
            }
@@ -223,10 +222,10 @@ namespace TA{
                // the atoms.  Will lose information about which atoms
                // go with which center.
                for(auto &cluster : clusters_){ cluster.guess_center(); }
-               sort_clusters();
 
                attach_to_closest_cluster();
            }
+           sort_clusters(); // Sort the clusters and their atoms
         }
 
 

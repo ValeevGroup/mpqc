@@ -148,25 +148,56 @@ TiledBasisSet::print(std::ostream &os_in ) const {
 }
 
 void TiledBasisSet::print_clusters_xyz() const {
+  std::map<int, std::string> a_map;
+  a_map[1] = "H";
+  a_map[2] = "He";
+  a_map[3] = "Li";
+  a_map[4] = "Be";
+  a_map[5] = "B";
+  a_map[6] = "C";
+  a_map[7] = "N";
+  a_map[8] = "O";
+  a_map[9] = "F";
+  a_map[10] = "Ne";
+  a_map[11] = "Na";
+  a_map[12] = "Mg";
+  a_map[13] = "Al";
+  a_map[14] = "Si";
+  a_map[15] = "P";
+  a_map[16] = "S";
+  a_map[17] = "Cl";
+  a_map[18] = "Ar";
+
   // Loop over Tiles to get clusters
   for(auto tile = 0; tile < ntiles_; ++tile){
     // Loop over the shells on the tile
     std::vector<std::size_t> centers_on_tile;
     for(auto shell_i = SRange_[tile]; shell_i<SRange_[tile+1]; ++shell_i){
+      // Get current center
       auto shell_center = shell_to_center(shell_i);
+      // If the tile is empty or the current center is not the same as last iteration
       if(centers_on_tile.empty() || centers_on_tile.back() != shell_center){
         centers_on_tile.push_back(shell_center);
       }
     }
+
+    // open a file for printing
     std::ofstream newfile;
+    // Name it cluster N
     newfile.open("cluster" + std::to_string(tile + 1) + ".xyz");
+
+    // Get the number of atoms on the tile and print a comment with the cluster number
     newfile << centers_on_tile.size() << "\nCluster " + std::to_string(tile + 1)
                << std::endl;
+
+    // Loop over the centers on the tile and print the atoms to the file
     for(auto i = 0; i < centers_on_tile.size(); ++i){
       auto atom = molecule()->atom(centers_on_tile[i]);
-      newfile << atom.Z() << " " << atom.r(0) << " " << atom.r(1) <<
+      newfile << a_map[atom.Z()] << " " << atom.r(0) << " " << atom.r(1) <<
                  " " << atom.r(2) << std::endl;
     }
+
+    // Once done printing close the file
     newfile.close();
   }
 }

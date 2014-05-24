@@ -150,13 +150,8 @@ namespace TA{
 
             std::sort(atoms_.begin(), atoms_.end(), ordering);
 
-            // Initialize the kcluster guess at the position of atoms closest to
-            // COM.
-            for(auto i = 0; i < nclusters_; ++i){
-                clusters_.push_back(
-                    Vector3(atoms_[i].r(0), atoms_[i].r(1), atoms_[i].r(2))
-                );
-            }
+            // Randomly pick starting atoms for guess
+            initial_cluster_guess();
 
             // Attach atoms to the cluster which they are closest too.
             attach_to_closest_cluster();
@@ -195,27 +190,6 @@ namespace TA{
         void k_means_search(std::size_t niter = 200){
 
             // Initial search for starting minimum
-            for(auto i = 0; i < 50; ++i){
-
-               // Recompute the center of the cluster using the centroid of
-               // the atoms.  Will lose information about which atoms
-               // go with which center.
-               for(auto &cluster : clusters_){ cluster.guess_center(); }
-
-               attach_to_closest_cluster();
-           }
-
-           // Set cluster centers to heaveist atom in cluster
-           for(auto &cluster : clusters_){
-              auto heaviest = 0;
-              for(auto atom : cluster.atoms()){
-                if(atom.mass() > heaviest){
-                  cluster.set_center(Vector3(atom.r(0),atom.r(1),atom.r(2)));
-                }
-              }
-           }
-
-            // Initial search for starting minimum
             for(auto i = 0; i < niter; ++i){
 
                // Recompute the center of the cluster using the centroid of
@@ -225,6 +199,7 @@ namespace TA{
 
                attach_to_closest_cluster();
            }
+
            sort_clusters(); // Sort the clusters and their atoms
         }
 
@@ -268,21 +243,6 @@ namespace TA{
             // First range is easy
             range[0] = 0;
 
-            //// Loop over clusters
-            //for(auto i = 0; i < nclusters_; ++i){
-            //    // Holds the number of shells on the cluster.
-            //    std::size_t shells_in_cluster = 0;
-            //    // Loop over atoms
-            //    for(const auto atom : clusters_[i].atoms()){
-            //        // position of atom in molecule
-            //        std::size_t atom_index = atom.mol_index();
-            //        // Get number of shells on the atom.
-            //        shells_in_cluster += basis_->nshell_on_center(atom_index);
-            //    }
-            //    // Compute the Starting Shell of the next tile.
-            //    range.push_back(range.at(i) + shells_in_cluster);
-            //}
-
             // First loop over atoms and package them
             std::vector<Atom> range_atoms;
             for(const auto &cluster : clusters_){
@@ -296,7 +256,6 @@ namespace TA{
             double min = basis_->nbasis(); // starting min for algo
 
             // Will store the atoms that go on each tile
-
             for(std::size_t i = 0; i < range_atoms.size(); ++i){
               auto first = range_atoms.begin();
               auto last = range_atoms.end();
@@ -315,6 +274,9 @@ namespace TA{
                     nfuncs += basis_->nbasis_on_center(it->mol_index());
                     cluster_atoms.push_back(*it); // Count number of atoms
                   }
+
+                  // Imposing a large penalty for havning zero funcs on a tile.
+                  nfuncs = (nfuncs != 0) ? nfuncs : 2 * min + 1000;
 
                   func_in_cluster.push_back(nfuncs);
 
@@ -346,7 +308,6 @@ namespace TA{
               } // end minimization check
             }
 
-
             return  range;
         }
 
@@ -358,34 +319,44 @@ namespace TA{
           // Based on distance from the current one.
           for(auto i = 0; i < nclusters_; ++i){
             auto center = clusters_[i].center();
-            auto it = clusters_.begin()+i;
+            auto it = clusters_.begin() + i + 1; // Get iterator to next tile
             auto end = clusters_.end();
-            if(it != end){
-              std::stable_sort(it, end, [&](const KCluster &a,
-                                            const KCluster &b){
-                  return Vector3(a.center() - center).norm() <
-                         Vector3(b.center() - center).norm();
-                }
-              );
+
+            // For clusters after the current one sort their atoms based on
+            // closest to the current center. Do this because in the next
+            // step we are going to find the cluster with atoms closest
+            // to the current one.
+            for(auto rest_it = it; rest_it != end; ++rest_it){
+              rest_it->sort_atoms(center);
             }
-            // If not the last cluster sort atoms to be closest to cluster in
-            // front.
-            if(i != (nclusters_ - 1) ){
-              clusters_[i+1].sort_atoms(center);
-            }
+
+            // Sort clusters after current cluster based on distance
+            // of first atom to current cluster
+            std::stable_sort(it, end, [&](const KCluster &a,
+                                          const KCluster &b){
+                Vector3 a_first_atom_center = a.atoms().front().center();
+                Vector3 b_first_atom_center = b.atoms().front().center();
+                return (a_first_atom_center - center).norm() <
+                       (b_first_atom_center - center).norm();
+              }
+            );
+
           }
         }
 
-        void initial_cluster_guess(){
+        void initial_cluster_guess(const std::size_t seed = 42){
             // Initialize the kcluster guess by randomly guessing starting
             // positions
-            clusters_.resize(nclusters_);
-            std::default_random_engine generator(42); // Always same seed
+            clusters_.reserve(nclusters_);
+            std::default_random_engine generator(seed); // Always same seed
             std::uniform_int_distribution<int> distribution(0,atoms_.size()-1);
 
-            for(auto &cluster : clusters_){
+            for(auto j = 0; j < nclusters_; ++j){
               int i = distribution(generator); // Choose random atoms as initial guess
-              cluster = Vector3(atoms_[i].r(0), atoms_[i].r(1), atoms_[i].r(2));
+              clusters_.push_back(Vector3(atoms_[i].r(0),
+                                          atoms_[i].r(1),
+                                          atoms_[i].r(2) )
+                                  );
             }
         }
 

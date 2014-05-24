@@ -105,25 +105,35 @@ namespace TA{
         /// better clusters
         void set_center(Vector3 pos){center_ = pos;}
 
-
-        /// Returns the centorid of the cluster.
+        /// Returns the centorid of the cluster. Using the "center of charge".
         Vector3 centroid(){
 
-            std::size_t n_atoms = natoms();
             Vector3 centroid(0,0,0);
+            std::size_t total_charge = 0;
+
+            // Loop over each atom and sum the position times the charge.
+            for(auto atom : atoms_){
+              centroid[0] += atom.r(0) * atom.Z();
+              centroid[1] += atom.r(1) * atom.Z();
+              centroid[2] += atom.r(2) * atom.Z();
+              total_charge += atom.Z();
+            }
+
+            // Get the average
+            centroid = centroid/double(total_charge);
 
             // Loop over all of the members of the cluster and total their
             // positions in each diminsion.
-            for(auto i = 0; i < n_atoms; ++i){
-                centroid[0] += atoms_[i].r(0);
-                centroid[1] += atoms_[i].r(1);
-                centroid[2] += atoms_[i].r(2);
-            }
+            //for(auto i = 0; i < n_atoms; ++i){
+            //    centroid[0] += atoms_[i].r(0) * atoms_.[i].Z();
+            //    centroid[1] += atoms_[i].r(1);
+            //    centroid[2] += atoms_[i].r(2);
+            //}
 
-            // Get the average position in each dimension.
-            centroid[0] = centroid[0]/n_atoms;
-            centroid[1] = centroid[1]/n_atoms;
-            centroid[2] = centroid[2]/n_atoms;
+            //// Get the average position in each dimension.
+            //centroid[0] = centroid[0]/n_atoms;
+            //centroid[1] = centroid[1]/n_atoms;
+            //centroid[2] = centroid[2]/n_atoms;
 
             return centroid;
 

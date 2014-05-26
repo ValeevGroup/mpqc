@@ -931,32 +931,34 @@ Int1eV3::int_accum_shell_nuclear_nonhf_1der(int ish, int jsh,
                                             int centernum)
 {
   int i;
+  Ref<Molecule> mol1 = bs1_->molecule();
+  Ref<Molecule> mol2 = bs2_->molecule();
 
   /* Get the basis function part of the nuclear derivative. */
   three_center = 1;
   third_centers = bs1_;
-  for (i=0; i<bs1_->ncenter(); i++) {
+  for (i=0; i<mol1->natom(); i++) {
     third_centernum = i;
     for (int xyz=0; xyz<3; xyz++) {
         C[xyz] = bs1_->r(i,xyz);
       }
     scale_shell_result = 1;
-    result_scale_factor = -bs1_->molecule()->charge(i);
+    result_scale_factor = -mol1->charge(i);
     //accum_shell_1der(buff,ish,jsh,dercs,centernum,
     //                 &Int1eV3::comp_shell_nuclear);
     accum_shell_block_1der(buff,ish,jsh,dercs,centernum,
                            &Int1eV3::comp_shell_block_nuclear);
     scale_shell_result = 0;
     }
-  if (bs2_!=bs1_) {
+  if (mol2 != mol1) {
     third_centers = bs2_;
-    for (i=0; i<bs2_->ncenter(); i++) {
+    for (i=0; i<mol2->natom(); i++) {
       third_centernum = i;
       for (int xyz=0; xyz<3; xyz++) {
           C[xyz] = bs2_->r(i,xyz);
         }
       scale_shell_result = 1;
-      result_scale_factor = -bs2_->molecule()->charge(i);
+      result_scale_factor = -mol2->charge(i);
       //accum_shell_1der(buff,ish,jsh,dercs,centernum,
       //                 &Int1eV3::comp_shell_nuclear);
       accum_shell_block_1der(buff,ish,jsh,dercs,centernum,
@@ -1139,6 +1141,8 @@ Int1eV3::nuclear_slow(int ish, int jsh)
   int index;
   int gc1,gc2;
   int cart1,cart2;
+  Ref<Molecule> mol1 = bs1_->molecule();
+  Ref<Molecule> mol2 = bs2_->molecule();
 
   if (!(init_order >= 0)) {
     ExEnv::errn() << scprintf("int_shell_nuclear: one electron routines are not init'ed\n");
@@ -1159,21 +1163,21 @@ Int1eV3::nuclear_slow(int ish, int jsh)
     FOR_GCCART_GS(gc2,cart2,i2,j2,k2,gshell2)
       cartesianbuffer[index] = 0.0;
       /* Loop thru the centers on bs1_. */
-      for (i=0; i<bs1_->ncenter(); i++) {
+      for (i=0; i<mol1->natom(); i++) {
         for (int xyz=0; xyz<3; xyz++) {
           C[xyz] = bs1_->r(i,xyz);
           }
         cartesianbuffer[index] -= comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
-                       * bs1_->molecule()->charge(i);
+                       * mol1->charge(i);
         }
       /* Loop thru the centers on bs2_ if necessary. */
-      if (bs2_ != bs1_) {
-        for (i=0; i<bs2_->ncenter(); i++) {
+      if (mol2 != mol1) {
+        for (i=0; i<mol2->natom(); i++) {
           for (int xyz=0; xyz<3; xyz++) {
             C[xyz] = bs2_->r(i,xyz);
             }
           cartesianbuffer[index]-=comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
-                         * bs2_->molecule()->charge(i);
+                         * mol2->charge(i);
           }
         }
       index++;
@@ -1192,6 +1196,8 @@ Int1eV3::nuclear(int ish, int jsh)
   int i;
   int c1,c2;
   int gc1,gc2;
+  Ref<Molecule> mol1 = bs1_->molecule();
+  Ref<Molecule> mol2 = bs2_->molecule();
 
   if (!(init_order >= 0)) {
     ExEnv::errn() << scprintf("int_shell_nuclear: one electron routines are not init'ed\n");
@@ -1218,17 +1224,17 @@ Int1eV3::nuclear(int ish, int jsh)
     for (gc2=0; gc2<gshell2->ncontraction(); gc2++) {
       int b = gshell2->am(gc2);
       /* Loop thru the centers on bs1_. */
-      for (i=0; i<bs1_->ncenter(); i++) {
-        double charge = bs1_->molecule()->charge(i);
+      for (i=0; i<mol1->natom(); i++) {
+        double charge = mol1->charge(i);
         for (int xyz=0; xyz<3; xyz++) C[xyz] = bs1_->r(i,xyz);
         comp_shell_block_nuclear(gc1, a, gc2, b,
                                  nj, offi, offj,
                                  -charge, cartesianbuffer);
         }
       /* Loop thru the centers on bs2_ if necessary. */
-      if (bs2_ != bs1_) {
-        for (i=0; i<bs2_->ncenter(); i++) {
-          double charge = bs2_->molecule()->charge(i);
+      if (mol2 != mol1) {
+        for (i=0; i<mol2->natom(); i++) {
+          double charge = mol2->charge(i);
           for (int xyz=0; xyz<3; xyz++) C[xyz] = bs2_->r(i,xyz);
           comp_shell_block_nuclear(gc1, a, gc2, b,
                                    nj, offi, offj,
@@ -1276,6 +1282,8 @@ Int1eV3::p_dot_nuclear_p(int ish, int jsh)
   int i;
   int c1,c2;
   int gc1,gc2;
+  Ref<Molecule> mol1 = bs1_->molecule();
+  Ref<Molecule> mol2 = bs2_->molecule();
 
   if (!(init_order >= 0)) {
     ExEnv::errn() << scprintf("Int1eV3::p_dot_nuclear_p: one electron routines are not init'ed\n");
@@ -1302,17 +1310,17 @@ Int1eV3::p_dot_nuclear_p(int ish, int jsh)
     for (gc2=0; gc2<gshell2->ncontraction(); gc2++) {
       int b = gshell2->am(gc2);
       /* Loop thru the centers on bs1_. */
-      for (i=0; i<bs1_->ncenter(); i++) {
-        double charge = bs1_->molecule()->charge(i);
+      for (i=0; i<mol1->natom(); i++) {
+        double charge = mol1->charge(i);
         for (int xyz=0; xyz<3; xyz++) C[xyz] = bs1_->r(i,xyz);
         comp_shell_block_p_dot_nuclear_p(gc1, a, gc2, b,
                                          nj, offi, offj,
                                          -charge, cartesianbuffer);
         }
       /* Loop thru the centers on bs2_ if necessary. */
-      if (bs2_ != bs1_) {
-        for (i=0; i<bs2_->ncenter(); i++) {
-          double charge = bs2_->molecule()->charge(i);
+      if (mol2 != mol1) {
+        for (i=0; i<mol2->natom(); i++) {
+          double charge = mol2->charge(i);
           for (int xyz=0; xyz<3; xyz++) C[xyz] = bs2_->r(i,xyz);
           comp_shell_block_p_dot_nuclear_p(gc1, a, gc2, b,
                                            nj, offi, offj,
@@ -1440,6 +1448,8 @@ Int1eV3::hcore(int ish, int jsh)
   int index;
   int cart1,cart2;
   int gc1,gc2;
+  Ref<Molecule> mol1 = bs1_->molecule();
+  Ref<Molecule> mol2 = bs2_->molecule();
 
   if (!(init_order >= 0)) {
     ExEnv::errn() << scprintf("hcore: one electron routines are not init'ed\n");
@@ -1460,21 +1470,21 @@ Int1eV3::hcore(int ish, int jsh)
     FOR_GCCART_GS(gc2,cart2,i2,j2,k2,gshell2)
       cartesianbuffer[index] = comp_shell_kinetic(gc1,i1,j1,k1,gc2,i2,j2,k2);
       /* Loop thru the centers on bs1_. */
-      for (i=0; i<bs1_->ncenter(); i++) {
+      for (i=0; i<mol1->natom(); i++) {
         for (int xyz=0; xyz<3; xyz++) {
           C[xyz] = bs1_->r(i,xyz);
           }
         cartesianbuffer[index] -= comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
-                                * bs1_->molecule()->charge(i);
+                                * mol1->charge(i);
         }
       /* Loop thru the centers on bs2_ if necessary. */
-      if (bs2_ != bs1_) {
-        for (i=0; i<bs2_->ncenter(); i++) {
+      if (mol2 != mol1) {
+        for (i=0; i<mol2->natom(); i++) {
           for (int xyz=0; xyz<3; xyz++) {
             C[xyz] = bs2_->r(i,xyz);
             }
           cartesianbuffer[index]-=comp_shell_nuclear(gc1,i1,j1,k1,gc2,i2,j2,k2)
-                                * bs2_->molecule()->charge(i);
+                                * mol2->charge(i);
           }
         }
       index++;

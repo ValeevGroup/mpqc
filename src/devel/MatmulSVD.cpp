@@ -31,6 +31,7 @@
 #include <chemistry/qc/lcao/soad.h>
 #include <utility>
 #include <iostream>
+#include <algorithm>
 
 using namespace sc;
 using namespace mpqc;
@@ -43,18 +44,16 @@ using onebpool = IntegralEnginePool<Ref<OneBodyInt> >;
 using e3pool = IntegralEnginePool<Ref<TwoBodyThreeCenterInt> >;
 using e2pool = IntegralEnginePool<Ref<TwoBodyTwoCenterInt> >;
 using e4pool = IntegralEnginePool<Ref<TwoBodyInt> >;
-using mat_pmap_iter = decltype(std::declval<Matrix>().get_pmap()->begin());
-using eri3_pmap_iter = decltype(std::declval<Eri3>().get_pmap()->begin());
-using eri4_pmap_iter = decltype(std::declval<Eri4>().get_pmap()->begin());
+using bpmap_iter = decltype(std::declval<TiledArray::detail::BlockedPmap>().begin());
 
 template<typename T>
-void mat_task(std::size_t it, TiledArray::TiledRange trange, double cut,
+void mat_task(bpmap_iter first, bpmap_iter last, TiledArray::TiledRange trange, double cut,
               long* t_mat_elems,
               long* t_svd_elems, double* t_mat_diff,
               T pool);
 
 template<>
-void mat_task(std::size_t it, TiledArray::TiledRange trange, double cut,
+void mat_task(bpmap_iter first, bpmap_iter last, TiledArray::TiledRange trange, double cut,
               long* t_mat_elems,
               long* t_svd_elems, double* t_mat_diff,
               std::shared_ptr<onebpool> pool){
@@ -63,46 +62,39 @@ void mat_task(std::size_t it, TiledArray::TiledRange trange, double cut,
   typename PoolPtrType::engine_type engine =
       pool->instance();
 
-  typename Matrix::value_type  tile = trange.make_tile_range(it);
-  get_integrals(tile, engine);
+  for(auto j = first; j < last; ++j){
+    typename Matrix::value_type  tile = trange.make_tile_range(*j);
+    get_integrals(tile, engine);
 
-  std::size_t size0 = tile.range().size()[0];
-  std::size_t size1 = tile.range().size()[1];
+    std::size_t size0 = tile.range().size()[0];
+    std::size_t size1 = tile.range().size()[1];
 
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  Emap = TiledArray::eigen_map(tile, size0, size1);
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+    Emap = TiledArray::eigen_map(tile, size0, size1);
 
-  Eigen::MatrixXd Mat = Emap;
-  Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(Mat);
-  qr.setThreshold(cut);
+    Eigen::MatrixXd Mat = Emap;
+    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(Mat);
+    qr.setThreshold(cut);
 
-  auto rank = qr.rank();
-  Eigen::MatrixXd Q = Eigen::MatrixXd(qr.householderQ()).leftCols(rank);
-  Eigen::MatrixXd R = qr.matrixR().topLeftCorner(rank, Mat.cols()).template triangularView<Eigen::Upper>();
+    auto rank = qr.rank();
+    Eigen::MatrixXd Q = Eigen::MatrixXd(qr.householderQ()).leftCols(rank);
+    Eigen::MatrixXd R = qr.matrixR().topLeftCorner(rank, Mat.cols()).template triangularView<Eigen::Upper>();
 
-  Eigen::MatrixXd permuted_cols = qr.colsPermutation();
+    Eigen::MatrixXd permuted_cols = qr.colsPermutation();
 
-  Eigen::MatrixXd FinalVersion = Q * R * permuted_cols.transpose();
+    Eigen::MatrixXd FinalVersion = Q * R * permuted_cols.transpose();
 
-  *t_mat_elems += Mat.rows() * Mat.cols();
-  *t_svd_elems += Q.size() + R.size();
+    *t_mat_elems += Mat.rows() * Mat.cols();
+    *t_svd_elems += Q.size() + R.size();
 
-  double mat_diff = Eigen::MatrixXd(Mat - FinalVersion).lpNorm<Eigen::Infinity>();
-  *t_mat_diff += mat_diff;
-
-  //SVDTile SVDMat(Mat,cut);
-
-  //*t_mat_elems += Mat.rows() * Mat.cols();
-  //*t_svd_elems += SVDMat.nelements();
-
-  //double mat_diff = Eigen::MatrixXd(Mat -
-  //   SVDMat.U_contract() * SVDMat.Vt()).lpNorm<Eigen::Infinity>();
-  //*t_mat_diff += mat_diff;
+    double mat_diff = Eigen::MatrixXd(Mat - FinalVersion).lpNorm<Eigen::Infinity>();
+    *t_mat_diff += mat_diff;
+  }
 }
 
 #if 1
 template<>
-void mat_task(std::size_t it, TiledArray::TiledRange trange, double cut,
+void mat_task(bpmap_iter first, bpmap_iter last, TiledArray::TiledRange trange, double cut,
               long* t_mat_elems,
               long* t_svd_elems, double* t_mat_diff,
               std::shared_ptr<e2pool> pool){
@@ -111,45 +103,38 @@ void mat_task(std::size_t it, TiledArray::TiledRange trange, double cut,
   typename PoolPtrType::engine_type engine =
       pool->instance();
 
-  typename Matrix::value_type tile(trange.make_tile_range(it));
-  get_integrals(tile, engine);
+  for(auto j = first; j != last; ++j){
+    typename Matrix::value_type  tile = trange.make_tile_range(*j);
+    get_integrals(tile, engine);
 
-  std::size_t size0 = tile.range().size()[0];
-  std::size_t size1 = tile.range().size()[1];
+    std::size_t size0 = tile.range().size()[0];
+    std::size_t size1 = tile.range().size()[1];
 
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  Emap = TiledArray::eigen_map(tile, size0, size1);
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+    Emap = TiledArray::eigen_map(tile, size0, size1);
 
-  Eigen::MatrixXd Mat = Emap;
-  Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(Mat);
-  qr.setThreshold(cut);
+    Eigen::MatrixXd Mat = Emap;
+    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(Mat);
+    qr.setThreshold(cut);
 
-  auto rank = qr.rank();
-  Eigen::MatrixXd Q = Eigen::MatrixXd(qr.householderQ()).leftCols(rank);
-  Eigen::MatrixXd R = qr.matrixR().topLeftCorner(rank, Mat.cols()).template triangularView<Eigen::Upper>();
+    auto rank = qr.rank();
+    Eigen::MatrixXd Q = Eigen::MatrixXd(qr.householderQ()).leftCols(rank);
+    Eigen::MatrixXd R = qr.matrixR().topLeftCorner(rank, Mat.cols()).template triangularView<Eigen::Upper>();
 
-  Eigen::MatrixXd permuted_cols = qr.colsPermutation();
+    Eigen::MatrixXd permuted_cols = qr.colsPermutation();
 
-  Eigen::MatrixXd FinalVersion = Q * R * permuted_cols.transpose();
+    Eigen::MatrixXd FinalVersion = Q * R * permuted_cols.transpose();
 
-  *t_mat_elems += Mat.rows() * Mat.cols();
-  *t_svd_elems += Q.size() + R.size();
+    *t_mat_elems += Mat.rows() * Mat.cols();
+    *t_svd_elems += Q.size() + R.size();
 
-  double mat_diff = Eigen::MatrixXd(Mat - FinalVersion).lpNorm<Eigen::Infinity>();
-  *t_mat_diff += mat_diff;
-
-  //SVDTile SVDMat(Mat,cut);
-
-  //*t_mat_elems += Mat.rows() * Mat.cols();
-  //*t_svd_elems += SVDMat.nelements();
-
-  ////double mat_diff = Eigen::MatrixXd(Mat -
-  ////   SVDMat.U_contract() * SVDMat.Vt()).lpNorm<Eigen::Infinity>();
-  ////*t_mat_diff += mat_diff;
+    double mat_diff = Eigen::MatrixXd(Mat - FinalVersion).lpNorm<Eigen::Infinity>();
+    *t_mat_diff += mat_diff;
+  }
 }
 
 template <>
-void mat_task(std::size_t it, TiledArray::TiledRange trange, double cut,
+void mat_task(bpmap_iter first, bpmap_iter last, TiledArray::TiledRange trange, double cut,
               long* t_mat_elems,
               long* t_svd_elems, double* t_mat_diff,
               std::shared_ptr<e3pool> pool){
@@ -158,91 +143,80 @@ void mat_task(std::size_t it, TiledArray::TiledRange trange, double cut,
   typename PoolPtrType::engine_type engine =
       pool->instance();
 
-  typename Matrix::value_type tile(trange.make_tile_range(it));
-  get_integrals(tile, engine);
+  for(auto j = first; j != last; ++j){
+    typename Matrix::value_type  tile = trange.make_tile_range(*j);
+    get_integrals(tile, engine);
 
-  std::size_t size0 = tile.range().size()[0];
-  std::size_t size1 = tile.range().size()[1];
-  std::size_t size2 = tile.range().size()[2];
+    std::size_t size0 = tile.range().size()[0];
+    std::size_t size1 = tile.range().size()[1];
+    std::size_t size2 = tile.range().size()[2];
 
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  Emap = TiledArray::eigen_map(tile, size0*size1, size2);
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+    Emap = TiledArray::eigen_map(tile, size0*size1, size2);
 
-  Eigen::MatrixXd Mat = Emap;
-  Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(Mat);
-  qr.setThreshold(cut);
+    Eigen::MatrixXd Mat = Emap;
+    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(Mat);
+    qr.setThreshold(cut);
 
-  auto rank = qr.rank();
-  Eigen::MatrixXd Q = Eigen::MatrixXd(qr.householderQ()).leftCols(rank);
-  Eigen::MatrixXd R = qr.matrixR().topLeftCorner(rank, Mat.cols()).template triangularView<Eigen::Upper>();
+    auto rank = qr.rank();
+    Eigen::MatrixXd Q = Eigen::MatrixXd(qr.householderQ()).leftCols(rank);
+    Eigen::MatrixXd R = qr.matrixR().topLeftCorner(rank, Mat.cols()).template triangularView<Eigen::Upper>();
 
-  Eigen::MatrixXd permuted_cols = qr.colsPermutation();
+    Eigen::MatrixXd permuted_cols = qr.colsPermutation();
 
-  Eigen::MatrixXd FinalVersion = Q * R * permuted_cols.transpose();
+    Eigen::MatrixXd FinalVersion = Q * R * permuted_cols.transpose();
 
-  *t_mat_elems += Mat.rows() * Mat.cols();
-  *t_svd_elems += Q.size() + R.size();
+    *t_mat_elems += Mat.rows() * Mat.cols();
+    *t_svd_elems += Q.size() + R.size();
 
-  double mat_diff = Eigen::MatrixXd(Mat - FinalVersion).lpNorm<Eigen::Infinity>();
-  *t_mat_diff += mat_diff;
-//  SVDTile SVDMat(Mat,cut);
-
-  //*t_mat_elems += Mat.rows() * Mat.cols();
-  //*t_svd_elems += SVDMat.nelements();
-
-  //double mat_diff = Eigen::MatrixXd(Mat -
-  //   SVDMat.U_contract() * SVDMat.Vt()).lpNorm<Eigen::Infinity>();
-  //*t_mat_diff += mat_diff;
+    double mat_diff = Eigen::MatrixXd(Mat - FinalVersion).lpNorm<Eigen::Infinity>();
+    *t_mat_diff += mat_diff;
+  }
 }
 #endif
 
 #if 1
 template<>
-void mat_task(std::size_t it, TiledArray::TiledRange trange, double cut,
+void mat_task(bpmap_iter first, bpmap_iter last, TiledArray::TiledRange trange, double cut,
               long* t_mat_elems,
-              long* t_svd_elems, double* t_mat_diff,
+              long* t_svd_elems,
+              double* t_mat_diff,
               std::shared_ptr<e4pool> pool){
 
   using PoolPtrType = typename std::pointer_traits<std::shared_ptr<e4pool>>::element_type;
   typename PoolPtrType::engine_type engine =
       pool->instance();
 
-  typename Matrix::value_type tile(trange.make_tile_range(it));
-  get_integrals(tile, engine);
+  for(auto j = first; j != last; ++j){
+    typename Matrix::value_type  tile = trange.make_tile_range(*j);
+    get_integrals(tile, engine);
 
-  std::size_t size0 = tile.range().size()[0];
-  std::size_t size1 = tile.range().size()[1];
-  std::size_t size2 = tile.range().size()[2];
-  std::size_t size3 = tile.range().size()[3];
+    std::size_t size0 = tile.range().size()[0];
+    std::size_t size1 = tile.range().size()[1];
+    std::size_t size2 = tile.range().size()[2];
+    std::size_t size3 = tile.range().size()[3];
 
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  Emap = TiledArray::eigen_map(tile, size0*size1, size2*size3);
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+    Emap = TiledArray::eigen_map(tile, size0*size1, size2*size3);
 
-  Eigen::MatrixXd Mat = Emap;
-  Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(Mat);
-  qr.setThreshold(cut);
+    Eigen::MatrixXd Mat = Emap;
+    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(Mat);
+    qr.setThreshold(cut);
 
-  auto rank = qr.rank();
-  Eigen::MatrixXd Q = Eigen::MatrixXd(qr.householderQ()).leftCols(rank);
-  Eigen::MatrixXd R = qr.matrixR().topLeftCorner(rank, Mat.cols()).template triangularView<Eigen::Upper>();
+    auto rank = qr.rank();
+    Eigen::MatrixXd Q = Eigen::MatrixXd(qr.householderQ()).leftCols(rank);
+    Eigen::MatrixXd R = qr.matrixR().topLeftCorner(rank, Mat.cols()).template triangularView<Eigen::Upper>();
 
-  Eigen::MatrixXd permuted_cols = qr.colsPermutation();
+    Eigen::MatrixXd permuted_cols = qr.colsPermutation();
 
-  Eigen::MatrixXd FinalVersion = Q * R * permuted_cols.transpose();
+    Eigen::MatrixXd FinalVersion = Q * R * permuted_cols.transpose();
 
-  *t_mat_elems += Mat.rows() * Mat.cols();
-  *t_svd_elems += Q.size() + R.size();
+    *t_mat_elems += Mat.rows() * Mat.cols();
+    *t_svd_elems += Q.size() + R.size();
 
-  double mat_diff = Eigen::MatrixXd(Mat - FinalVersion).lpNorm<Eigen::Infinity>();
-  *t_mat_diff += mat_diff;
-  //SVDTile SVDMat(Mat,cut);
-
-  //*t_mat_elems += Mat.rows() * Mat.cols();
-  //*t_svd_elems += SVDMat.nelements();
-
-  //double mat_diff = Eigen::MatrixXd(Mat -
-  //   SVDMat.U_contract() * SVDMat.Vt()).lpNorm<Eigen::Infinity>();
-  //*t_mat_diff += mat_diff;
+    double mat_diff = Eigen::MatrixXd(Mat - FinalVersion).lpNorm<Eigen::Infinity>();
+    *t_mat_diff += mat_diff;
+  }
 }
 #endif
 
@@ -252,24 +226,42 @@ void percent_compression(TiledArray::TiledRange &trange, T pool, double cut, mad
   long total_mat_elems = 0;
   long total_svd_elems = 0;
   double total_mat_diff = 0;
-  long ntiles = 0;
+  long ntiles = trange.tiles().volume();
   double svd_time0 = madness::wall_time();
-  for(auto it = 0; it < trange.tiles().volume(); ++it){
-    world.taskq.add(&mat_task<T>, it, trange, cut, &total_mat_elems,
+
+  TiledArray::detail::BlockedPmap bpmap(world, ntiles);
+
+  auto first = bpmap.begin();
+  auto end = bpmap.end();
+
+  long block_size = bpmap.local_size()/(std::pow(madness::ThreadPool::size(),2));
+
+  while(first != end){
+    auto last = first;
+    std::advance(last, std::min(block_size, std::distance(first, end)));
+
+    world.taskq.add(&mat_task<T>, first, last, trange, cut, &total_mat_elems,
                               &total_svd_elems, &total_mat_diff, pool);
-    ++ntiles;
+    first = last;
   }
   world.gop.fence();
+
+  world.gop.sum(total_mat_elems);
+  world.gop.sum(total_svd_elems);
+  world.gop.sum(total_mat_diff);
+
   double svd_time1 = madness::wall_time();
 
-  std::cout << "\t\tTotal Time = " <<
-            svd_time1 - svd_time0  << "s" << std::endl;
-  std::cout << "\t\tTotal Matrix Elements = " << total_mat_elems << std::endl;
-  std::cout << "\t\tTotal SVD Elements = " << total_svd_elems << std::endl;
-  std::cout << "\t\tAverage tile diff = " << total_mat_diff/ntiles << std::endl;
-  std::cout << "\t\tPercentage saved = " << (1 -
-               double(total_svd_elems)/double(total_mat_elems)) * 100
-            << std::endl;
+  if(world.rank() == 0){
+    std::cout << "\t\tTotal Time = " <<
+              svd_time1 - svd_time0  << "s\n";
+    std::cout << "\t\tTotal Matrix Elements = " << total_mat_elems << "\n";
+    std::cout << "\t\tTotal SVD Elements = " << total_svd_elems <<  "\n";
+    std::cout << "\t\tAverage tile diff = " << total_mat_diff/ntiles << "\n";
+    std::cout << "\t\tPercentage saved = " << (1 -
+                 double(total_svd_elems)/double(total_mat_elems)) * 100
+              << "\n";
+  }
 }
 
 
@@ -284,14 +276,18 @@ int main(int argc, char** argv){
   Ref<TiledBasisSet> tbs; tbs << kv->describedclassvalue("basis");
   Ref<TiledBasisSet> dftbs; dftbs << kv->describedclassvalue("dfbasis");
 
-  tbs->print();
-  tbs->print_clusters_xyz();
-  dftbs->print();
+  if(world->madworld()->rank() == 0){
+    tbs->print();
+    tbs->print_clusters_xyz();
+    dftbs->print();
+  }
 
   Ref<IntegralLibint2> ints_fac;
   ints_fac << kv->describedclassvalue("integrals");
 
   ints_fac->set_basis(tbs);
+
+  std::array<double, 6> cuts = {1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9};
 
   // Local scope for one body ints
   {
@@ -305,18 +301,14 @@ int main(int argc, char** argv){
     //Matrix S(*world->madworld(), ob_trange);
     auto S_pool = std::make_shared<onebpool>(ints_fac->overlap()->clone());
 
-    // Compute
-    std::cout << "\nS\n";
-    std::cout << "\t1e-4" << std::endl;
-    percent_compression(ob_trange, S_pool, 1e-4, *world->madworld());
-    std::cout << "\t1e-5" << std::endl;
-    percent_compression(ob_trange, S_pool, 1e-5, *world->madworld());
-    std::cout << "\t1e-6" << std::endl;
-    percent_compression(ob_trange, S_pool, 1e-6, *world->madworld());
-    std::cout << "\t1e-7" << std::endl;
-    percent_compression(ob_trange, S_pool, 1e-7, *world->madworld());
-    std::cout << "\n" << std::endl;
-
+    if(world->madworld()->rank() == 0){
+      std::cout << "\nS\n";
+    }
+    for(auto cut : cuts){
+      if(world->madworld()->rank() == 0)
+        std::cout << "\n\t" << cut << std::endl;
+      percent_compression(ob_trange, S_pool, cut, *world->madworld());
+    }
     world->madworld()->gop.fence();
 
     // H Range
@@ -324,17 +316,14 @@ int main(int argc, char** argv){
     auto H_pool = std::make_shared<onebpool>(ints_fac->hcore()->clone());
     world->madworld()->gop.fence();
 
-
-    std::cout << "\nH\n";
-    std::cout << "\t1e-4" << std::endl;
-    percent_compression(ob_trange, H_pool, 1e-4, *world->madworld());
-    std::cout << "\t1e-5" << std::endl;
-    percent_compression(ob_trange, H_pool, 1e-5, *world->madworld());
-    std::cout << "\t1e-6" << std::endl;
-    percent_compression(ob_trange, H_pool, 1e-6, *world->madworld());
-    std::cout << "\t1e-7" << std::endl;
-    percent_compression(ob_trange, H_pool, 1e-7, *world->madworld());
-    std::cout << "\n" << std::endl;
+    if(world->madworld()->rank() == 0){
+      std::cout << "\nH\n";
+    }
+    for(auto cut : cuts){
+      if(world->madworld()->rank() == 0)
+        std::cout << "\n\t" << cut << std::endl;
+      percent_compression(ob_trange, H_pool, cut, *world->madworld());
+    }
   }
 
   // Density fitting integrals
@@ -351,23 +340,16 @@ int main(int argc, char** argv){
                                                       dftbs->trange1()};
 
     TiledArray::TiledRange ec_range(ec_array.begin(), ec_array.end());
-
-    // Using the df_ints as temporary storage for the twobody three center ints
-    //TiledArray::Array<double,3> df_ints_(*world->madworld(), ec_range);
     world->madworld()->gop.fence();
 
-    std::cout << "\nEri3\n";
-    std::cout << "\t1e-4" << std::endl;
-    percent_compression(ec_range, eri3_ptr, 1e-4, *world->madworld());
-    std::cout << "\t1e-5" << std::endl;
-    percent_compression(ec_range, eri3_ptr, 1e-5, *world->madworld());
-    std::cout << "\t1e-6" << std::endl;
-    percent_compression(ec_range, eri3_ptr, 1e-6, *world->madworld());
-    std::cout << "\t1e-7" << std::endl;
-    percent_compression(ec_range, eri3_ptr, 1e-7, *world->madworld());
-    std::cout << "\n" << std::endl;
-    world->madworld()->gop.fence();
-
+    if(world->madworld()->rank() == 0){
+      std::cout << "\nEri3\n";
+    }
+    for(auto cut : cuts){
+      if(world->madworld()->rank() == 0)
+        std::cout << "\n\t" << cut << std::endl;
+      percent_compression(ec_range, eri3_ptr, cut, *world->madworld());
+    }
 
     // Set basis and grab a clone of the engine we need
     ints_fac->set_basis(dftbs, dftbs);
@@ -375,27 +357,19 @@ int main(int argc, char** argv){
 
     // Make an integral engine pool out of our clone
     auto eri2_ptr = std::make_shared<e2pool>(eri2_clone);
-
     std::array<TiledArray::TiledRange1,2> et_array = {dftbs->trange1(),
                                                       dftbs->trange1()};
-
     TiledArray::TiledRange et_range(et_array.begin(), et_array.end());
 
-    // Using the df_ints as temporary storage for the twobody three center ints
-    //TiledArray::Array<double,2> two_ints(*world->madworld(), et_range);
     world->madworld()->gop.fence();
-
-    std::cout << "\nEri2\n";
-    std::cout << "\t1e-4" << std::endl;
-    percent_compression(et_range, eri2_ptr, 1e-4, *world->madworld());
-    std::cout << "\t1e-5" << std::endl;
-    percent_compression(et_range, eri2_ptr, 1e-5, *world->madworld());
-    std::cout << "\t1e-6" << std::endl;
-    percent_compression(et_range, eri2_ptr, 1e-6, *world->madworld());
-    std::cout << "\t1e-7" << std::endl;
-    percent_compression(et_range, eri2_ptr, 1e-7, *world->madworld());
-    std::cout << "\n" << std::endl;
-    world->madworld()->gop.fence();
+    if(world->madworld()->rank() == 0){
+      std::cout << "\nEri2\n";
+    }
+    for(auto cut : cuts){
+      if(world->madworld()->rank() == 0)
+        std::cout << "\n\t" << cut << std::endl;
+      percent_compression(et_range, eri2_ptr, cut, *world->madworld());
+    }
   }
 #endif
 
@@ -414,22 +388,16 @@ int main(int argc, char** argv){
 
     TiledArray::TiledRange e4_range(e4_array.begin(), e4_array.end());
 
-    // Using the df_ints as temporary storage for the twobody three center ints
-    //TiledArray::Array<double,4> four_ints(*world->madworld(), e4_range);
     world->madworld()->gop.fence();
 
-    std::cout << "\nFour Center\n";
-    std::cout << "\t1e-4" << std::endl;
-    percent_compression(e4_range, eri_ptr, 1e-4, *world->madworld());
-    std::cout << "\t1e-5" << std::endl;
-    percent_compression(e4_range, eri_ptr, 1e-5, *world->madworld());
-    std::cout << "\t1e-6" << std::endl;
-    percent_compression(e4_range, eri_ptr, 1e-6, *world->madworld());
-    std::cout << "\t1e-7" << std::endl;
-    percent_compression(e4_range, eri_ptr, 1e-7, *world->madworld());
-    std::cout << "\n" << std::endl;
-    world->madworld()->gop.fence();
-
+    if(world->madworld()->rank() == 0){
+      std::cout << "\nEri4\n";
+    }
+    for(auto cut : cuts){
+      if(world->madworld()->rank() == 0)
+        std::cout << "\n\t" << cut << std::endl;
+      percent_compression(e4_range, eri_ptr, cut, *world->madworld());
+    }
   }
 #endif
 

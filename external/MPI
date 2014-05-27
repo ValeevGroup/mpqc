@@ -2,8 +2,9 @@
 
 set(MPI_LIBRARIES "")
 
-if (DEFINED MPI_C_COMPILER AND NOT MPI_C_COMPILER)
+if (DEFINED C_COMPILER AND NOT MPI_C_COMPILER)
   message(STATUS "MPI disabled")
+
 else()
 
   # Eduard, had to rework this part, otherwise it breaks on Linux

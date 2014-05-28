@@ -100,7 +100,7 @@ namespace TA{
          * Returns a a ShellRange which specifies what shell each tile starts on.
          */
         ShellRange shell_ranges() const {
-            return compute_shell_ranges_by_cluster();
+            return compute_shell_ranges_for_size();
         }
 
     private:

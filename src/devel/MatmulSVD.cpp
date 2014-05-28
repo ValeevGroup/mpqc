@@ -81,7 +81,7 @@ void mat_task(bpmap_iter first, bpmap_iter last, TiledArray::TiledRange trange, 
 
     auto rank = qr.rank();
     Eigen::MatrixXd Q = Eigen::MatrixXd(qr.householderQ()).leftCols(rank);
-    Eigen::MatrixXd R = qr.matrixR().topLeftCorner(rank, Mat.cols()).template triangularView<Eigen::Upper>();
+    Eigen::MatrixXd R = qr.matrixR().topLeftCorner(rank, Mat.cols()).triangularView<Eigen::Upper>();
 
     Eigen::MatrixXd permuted_cols = qr.colsPermutation();
 
@@ -121,7 +121,7 @@ void mat_task(bpmap_iter first, bpmap_iter last, TiledArray::TiledRange trange, 
 
     auto rank = qr.rank();
     Eigen::MatrixXd Q = Eigen::MatrixXd(qr.householderQ()).leftCols(rank);
-    Eigen::MatrixXd R = qr.matrixR().topLeftCorner(rank, Mat.cols()).template triangularView<Eigen::Upper>();
+    Eigen::MatrixXd R = qr.matrixR().topLeftCorner(rank, Mat.cols()).triangularView<Eigen::Upper>();
 
     Eigen::MatrixXd permuted_cols = qr.colsPermutation();
 
@@ -162,7 +162,7 @@ void mat_task(bpmap_iter first, bpmap_iter last, TiledArray::TiledRange trange, 
 
     auto rank = qr.rank();
     Eigen::MatrixXd Q = Eigen::MatrixXd(qr.householderQ()).leftCols(rank);
-    Eigen::MatrixXd R = qr.matrixR().topLeftCorner(rank, Mat.cols()).template triangularView<Eigen::Upper>();
+    Eigen::MatrixXd R = qr.matrixR().topLeftCorner(rank, Mat.cols()).triangularView<Eigen::Upper>();
 
     Eigen::MatrixXd permuted_cols = qr.colsPermutation();
 
@@ -205,7 +205,7 @@ void mat_task(bpmap_iter first, bpmap_iter last, TiledArray::TiledRange trange, 
 
     auto rank = qr.rank();
     Eigen::MatrixXd Q = Eigen::MatrixXd(qr.householderQ()).leftCols(rank);
-    Eigen::MatrixXd R = qr.matrixR().topLeftCorner(rank, Mat.cols()).template triangularView<Eigen::Upper>();
+    Eigen::MatrixXd R = qr.matrixR().topLeftCorner(rank, Mat.cols()).triangularView<Eigen::Upper>();
 
     Eigen::MatrixXd permuted_cols = qr.colsPermutation();
 

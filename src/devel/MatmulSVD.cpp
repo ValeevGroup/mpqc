@@ -47,9 +47,12 @@ using e4pool = IntegralEnginePool<Ref<TwoBodyInt> >;
 using bpmap_iter = decltype(std::declval<TiledArray::detail::BlockedPmap>().begin());
 
 template<typename T>
-void mat_task(bpmap_iter first, bpmap_iter last, TiledArray::TiledRange trange, double cut,
+void mat_task(const bpmap_iter first, const bpmap_iter last,
+              TiledArray::TiledRange trange,
+              double cut,
               long* t_mat_elems,
-              long* t_svd_elems, double* t_mat_diff,
+              long* t_svd_elems,
+              double* t_mat_diff,
               T pool);
 
 template<>
@@ -62,7 +65,7 @@ void mat_task(bpmap_iter first, bpmap_iter last, TiledArray::TiledRange trange, 
   typename PoolPtrType::engine_type engine =
       pool->instance();
 
-  for(auto j = first; j < last; ++j){
+  for(auto j = first; j != last; ++j){
     typename Matrix::value_type  tile = trange.make_tile_range(*j);
     get_integrals(tile, engine);
 
@@ -92,7 +95,6 @@ void mat_task(bpmap_iter first, bpmap_iter last, TiledArray::TiledRange trange, 
   }
 }
 
-#if 1
 template<>
 void mat_task(bpmap_iter first, bpmap_iter last, TiledArray::TiledRange trange, double cut,
               long* t_mat_elems,
@@ -173,9 +175,7 @@ void mat_task(bpmap_iter first, bpmap_iter last, TiledArray::TiledRange trange, 
     *t_mat_diff += mat_diff;
   }
 }
-#endif
 
-#if 1
 template<>
 void mat_task(bpmap_iter first, bpmap_iter last, TiledArray::TiledRange trange, double cut,
               long* t_mat_elems,
@@ -218,7 +218,6 @@ void mat_task(bpmap_iter first, bpmap_iter last, TiledArray::TiledRange trange, 
     *t_mat_diff += mat_diff;
   }
 }
-#endif
 
 template<typename T>
 void percent_compression(TiledArray::TiledRange &trange, T pool, double cut, madness::World &world){
@@ -234,10 +233,16 @@ void percent_compression(TiledArray::TiledRange &trange, T pool, double cut, mad
   auto first = bpmap.begin();
   auto end = bpmap.end();
 
-  long block_size = bpmap.local_size()/(std::pow(madness::ThreadPool::size(),2));
+  auto nthreads = madness::ThreadPool::size();
+  // Attempt to divide the number of tasks into nthread^2 chuncks
+  auto block_size_guess = bpmap.local_size()/(std::pow(nthreads,2));
 
+  // But if block_size_guess went to 0 then set to 1
+  long block_size = std::max(std::size_t(block_size_guess), std::size_t(1));
+
+  auto last = first;
   while(first != end){
-    auto last = first;
+    last = first;
     std::advance(last, std::min(block_size, std::distance(first, end)));
 
     world.taskq.add(&mat_task<T>, first, last, trange, cut, &total_mat_elems,
@@ -269,6 +274,8 @@ int main(int argc, char** argv){
   sc::ExEnv::init(argc, argv);
   mpqc::MADNESSRuntime::initialize();
 
+  int debug = (argc >= 2) ? atol(argv[1]) : 0;
+
   Ref<World> world = new World();
 
   const char *input = "./benzene_trimer.kv";
@@ -278,8 +285,17 @@ int main(int argc, char** argv){
 
   if(world->madworld()->rank() == 0){
     tbs->print();
-    tbs->print_clusters_xyz();
     dftbs->print();
+  }
+
+  if(world->madworld()->rank() == 0 && debug != 0){
+    volatile int i = 0;
+    char hostname[256];
+    gethostname(hostname, sizeof(hostname));
+    printf("PID %d on %s ready for attach\n", getpid(), hostname);
+    fflush(stdout);
+    while (0 == i)
+      sleep(5);
   }
 
   Ref<IntegralLibint2> ints_fac;
@@ -287,7 +303,7 @@ int main(int argc, char** argv){
 
   ints_fac->set_basis(tbs);
 
-  std::array<double, 6> cuts = {1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9};
+  std::array<double, 6> cuts = {1e-4,1e-5, 1e-6, 1e-7, 1e-8, 1e-9};
 
   // Local scope for one body ints
   {
@@ -296,6 +312,7 @@ int main(int argc, char** argv){
     std::array<TiledArray::TiledRange1, 2> ob_array =
                                         {{tbs->trange1(), tbs->trange1()}};
     TiledArray::TiledRange ob_trange(ob_array.begin(), ob_array.end());
+    std::cout << "ob_trange = " << ob_trange << std::endl;
 
     // S Range
     //Matrix S(*world->madworld(), ob_trange);
@@ -311,6 +328,7 @@ int main(int argc, char** argv){
     }
     world->madworld()->gop.fence();
 
+#if 1
     // H Range
     //Matrix H(*world->madworld(), ob_trange);
     auto H_pool = std::make_shared<onebpool>(ints_fac->hcore()->clone());
@@ -324,6 +342,7 @@ int main(int argc, char** argv){
         std::cout << "\n\t" << cut << std::endl;
       percent_compression(ob_trange, H_pool, cut, *world->madworld());
     }
+#endif
   }
 
   // Density fitting integrals

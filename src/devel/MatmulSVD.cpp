@@ -235,9 +235,14 @@ void percent_compression(TiledArray::TiledRange &trange, T pool, double cut, mad
 
   auto nthreads = madness::ThreadPool::size();
   // Attempt to divide the number of tasks into nthread^2 chuncks
-  auto block_size_guess = bpmap.local_size()/(std::pow(nthreads,2));
+  auto ideal_guess = bpmap.local_size()/(std::pow(nthreads,2));
+  // Also attmpt to divide the number into nthread chuncks
+  auto ok_guess = bpmap.local_size()/nthreads;
 
-  // But if block_size_guess went to 0 then set to 1
+  // If the ideal block_size guess fails try the ok block_size guess
+  auto block_size_guess = (ideal_guess == 0) ? ok_guess : ideal_guess;
+
+  // But if block_size_guess went to 0 then set to at least 1;
   long block_size = std::max(std::size_t(block_size_guess), std::size_t(1));
 
   auto last = first;
@@ -312,7 +317,6 @@ int main(int argc, char** argv){
     std::array<TiledArray::TiledRange1, 2> ob_array =
                                         {{tbs->trange1(), tbs->trange1()}};
     TiledArray::TiledRange ob_trange(ob_array.begin(), ob_array.end());
-    std::cout << "ob_trange = " << ob_trange << std::endl;
 
     // S Range
     //Matrix S(*world->madworld(), ob_trange);

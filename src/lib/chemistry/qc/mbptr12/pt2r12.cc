@@ -64,10 +64,11 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
 
   pt2_correction_ = keyval->booleanvalue("pt2_correction", KeyValValueboolean(true));
   omit_uocc_ = keyval->booleanvalue("omit_uocc", KeyValValueboolean(false));
-  cabs_singles_ = keyval->booleanvalue("cabs_singles", KeyValValueboolean(false));
-  cabs_singles_h0_ = keyval->stringvalue("cabs_singles_h0", KeyValValuestring(string("dyall_1")));
-  cabs_singles_coupling_ = keyval->booleanvalue("cabs_singles_coupling", KeyValValueboolean(true));
+
 #if defined(HAVE_MPQC3_RUNTIME)
+  cabs_singles_ = keyval->booleanvalue("cabs_singles", KeyValValueboolean(false));
+  cabs_singles_h0_ = keyval->stringvalue("cabs_singles_h0", KeyValValuestring(string("fock")));
+  cabs_singles_coupling_ = keyval->booleanvalue("cabs_singles_coupling", KeyValValueboolean(true));
   use_mpqc3_ = keyval->booleanvalue("use_mpqc3",KeyValValueboolean(true));
 #endif
   rotate_core_ = keyval->booleanvalue("rotate_core", KeyValValueboolean(true));
@@ -146,8 +147,10 @@ PT2R12::PT2R12(StateIn &s) : Wavefunction(s) {
   r12eval_ << SavableState::restore_state(s);
   s.get(nfzc_);
   s.get(omit_uocc_);
+#if defined(HAVE_MPQC3_RUNTIME)
   s.get(cabs_singles_);
   s.get(cabs_singles_coupling_);
+#endif
   s.get(debug_);
 }
 
@@ -1359,34 +1362,31 @@ void PT2R12::compute()
     energy_correction_r12 = energy_pt2r12_sf;
   }
 
-  if(cabs_singles_)
+#if defined(HAVE_MPQC3_RUNTIME)
+  if(cabs_singles_ && use_mpqc3_)
   {
     double cabs_singles_corre = 0.0;
-    if(cabs_singles_h0_ == string("complete"))
-      cabs_singles_e = cabs_singles_Complete();
-    else if(cabs_singles_h0_ == string("CI"))
-      cabs_singles_e = cabs_singles_Complete();
-    else if(cabs_singles_h0_ == string("dyall_1"))
+    if(cabs_singles_h0_ == string("dyall_1"))
       cabs_singles_e = cabs_singles_Dyall();
     else if(cabs_singles_h0_ == string("dyall_2"))
       cabs_singles_e = cabs_singles_Dyall();
     else if(cabs_singles_h0_ == string("fock"))
-    cabs_singles_e = cabs_singles_Fock();
+      cabs_singles_e = cabs_singles_Fock();
     else
       throw InputError("invalid value for keyword cabs_singles_h0",
                        __FILE__, __LINE__,
                        "cabs_singles_h0", cabs_singles_h0_.c_str(),
                        this->class_desc());
   }
+#endif
 
   const double energy = energy_ref + energy_correction_r12 + cabs_singles_e;
 
-#if not defined(HAVE_MPQC3_RUNTIME)
-#else
-#endif
+
 
     ExEnv::out0() <<endl << indent << scprintf("Reference energy [au]:                 %17.12lf",
                                        energy_ref) << std::endl << std::endl;
+#if defined(HAVE_MPQC3_RUNTIME)
     if(cabs_singles_)
     {
       std::string es = "CABS singles(" + cabs_singles_h0_ + ")";
@@ -1396,6 +1396,7 @@ void PT2R12::compute()
       ExEnv::out0() << indent << scprintf("RASSCF+CABS singles:                   %17.12lf",
                                                 energy_ref + cabs_singles_e) << endl << endl;
     }
+#endif
 
     ExEnv::out0() << std::endl << std::endl << indent << scprintf("Reference energy (%9s) [au]:     %17.12lf",
                                         (this->r12world()->world()->basis_df().null() ? "   recomp" : "recomp+DF"),
@@ -1676,14 +1677,14 @@ double PT2R12::cabs_singles_Complete()
 #if defined(HAVE_MPQC3_RUNTIME)
 namespace{
 template<typename T>
-    struct _CABS_singles_Fock {
+    struct _CABS_singles {
 
         typedef TA::Array<T, 4> Array4;
         typedef TA::Array<T, 2> Array2;
 
         const Array4& Bmatrix;
 
-        _CABS_singles_Fock(const Array4& B) : Bmatrix(B){
+        _CABS_singles(const Array4& B) : Bmatrix(B){
         }
 
         /**
@@ -1691,7 +1692,7 @@ template<typename T>
          * @param[out] BC
          */
         void operator()(const Array2& C, Array2& BC) {
-            BC("m1,B'") = Bmatrix("B',A',n1,m1") * C("n1,A'");
+            BC("x,B'") = Bmatrix("x,B',y,A'") * C("y,A'");
         }
     };
 }
@@ -1722,236 +1723,164 @@ double PT2R12::cabs_singles_Dyall()
    * L. Kong and E.~F.~Valeev,  J. Chem. Phys. 133, 174126 (2010),
    * http://dx.doi.org/10.1063/1.3499600.
    * */
-# define DEBUGG false
-
 #if defined(HAVE_MPQC3_RUNTIME)
   if (use_mpqc3_) {
+    ExEnv::out0() << std::endl << std::endl << indent
+    << "Enter PT2R12::cabs_singles_Dyall MPQC3_RUNTIME\n";
+    // set up timer
+    Timer tim("cabs singles dyall");
+
+    typedef SingleReference_R12Intermediates<double>::TArray4 TArray4;
+    typedef SingleReference_R12Intermediates<double>::TArray2 TArray2;
+
+    bootup_mpqc3();
+
+    // density matrices
+    TArray2 gamma1; gamma1("m,n") = _2("<m|gamma|n>"); // rdm1 occ
+    TArray4 gamma2; gamma2("m,n,m1,n1") = _4("<m n|gamma|m1 n1>"); //rdm2 occ
+
+    TArray2 I_aA; I_aA("e,B'") = _2("<e|I|B'>"); // allvir vir
+
+    // h_core
+    TArray2 h_ij; h_ij("m,n") = _2("<m|h|n>");  //occ occ
+
+    // fock
+    TArray2 F_AB; F_AB("A',B'") = _2("<A'|F|B'>"); //allvir allvir
+
+    // make B matrix
+    tim.enter("compute B matrix"); // time B matrix
+
+    TArray4 B;
+
+    // term1
+    {
+      TArray4 term1;
+      term1("x,B',y,A'") = F_AB("A',B'") * gamma1("x,y");
+      B("x,B',y,A'") = term1("x,B',y,A'");
+    }
+    madness::World::get_default().gop.fence();
+
+    // term2
+    {
+      TArray2 I_AB; I_AB("B',A'") = _2("<B'|I|A'>"); //allvir allvir
+      TArray4 g_ijkl; g_ijkl("n1,m1,m,n") = _4("<n1 m1|g|m n>"); // occ
+      TArray4 term2;
+      term2("x,B',y,A'") = - ( gamma1("x,i") * h_ij("i,y") + gamma2("x,j,k,i") * g_ijkl("j,k,i,y") )*I_AB("A',B'");
+      B("x,B',y,A'") = B("x,B',y,A'") + term2("x,B',y,A'");
+    }
+    madness::World::get_default().gop.fence();
+
+    // term3
+    {
+      TArray2 F_ab; F_ab("e,f") = _2("<e|F|f>");  //vir vir
+      TArray2 h_ab; h_ab("e,f") = _2("<e|h|f>");   //vir vir
+      TArray4 term3;
+      term3("x,B',y,A'") = (h_ab("a,b") - F_ab("a,b"))*I_aA("b,B'")*I_aA("a,A'")*gamma1("x,y");
+      B("x,B',y,A'") = B("x,B',y,A'") + term3("x,B',y,A'");
+    }
+    madness::World::get_default().gop.fence();
+
+    // term4
+    {
+      TArray4 g_abij; g_abij("f,e,m,n") = _4("<m f|g|n e>"); // occ vir occ vir
+      TArray4 g_iajb; g_iajb("f,e,m,n") = _4("<m e|g|f n>"); // occ vir vir occ
+      TArray4 term4;
+      term4("x,B',y,A'") = (g_abij("a,b,j,i")*gamma2("i,x,j,y") + g_iajb("a,b,j,i")*gamma2("i,x,y,j"))*I_aA("b,B'")*I_aA("a,A'");
+      B("x,B',y,A'") = B("x,B',y,A'") + term4("x,B',y,A'");
+    }
+    madness::World::get_default().gop.fence();
+
+    tim.exit(); //exit compute B matrix
+
+    //
+    //  solve the linear algebra problem a(x)=b in Equation (15)
+    //
+
+    //compute b matrix in a(x) = b
+    TArray2 b;
+    TArray2 x;
+    {
+      TArray2 I_cA; I_cA("c',B'") = _2("<c'|I|B'>"); // allvir cabs
+      TArray2 F_ci; F_ci("n,c'") = _2("<n|F|c'>");  //cabs occ
+
+      b("x,B'") = gamma1("x,j") * F_ci("j,c") * I_cA("c,B'");
+      // x we trying to solve, C
+
+      x("x,B'") = b("x,B'");
+      if (cabs_singles_h0_ == string("dyall_1")) {
+        // compute b based on Equation(15)
+        b("x,B'") = -b("x,B'");
+      }
+
+      if (cabs_singles_h0_ == string("dyall_2")) {
+        // - gamma(j,k) * h(k, beta) - gamma(jm,kl)*g(beta m, kl)
+        TArray4 g_mklB;
+        g_mklB("m,m1,n1,B'") = _4("<B' m|g|m1 n1>");//g(allvir, occ, occ, occ)
+        TArray2 h_iA;
+        h_iA("m,A'") = _2("<m|h|A'>");//h(occ,allvir)
+        b("j,B'") = - gamma1("j,k") * h_iA("k,B'") - gamma2("j,m,k,l") * g_mklB("m,k,l,B'");
+      }
+    }
+    madness::World::get_default().gop.fence();
+
+
+    // make preconditioner: inverse of diagonal elements <A'|F|A'> - <m|h|m>
+    TArray2 preconditioner;
+    {
+
+      typedef detail::diag_precond2<double> pceval_type;//!< evaluator of preconditioner
+      typedef TA::Array<double, 2, LazyTensor<double, 2, pceval_type> > TArray2d;
+      TArray2d Delta_iA(b.get_world(), b.trange());
+
+      pceval_type Delta_iA_gen(TA::array_to_eigen(h_ij), TA::array_to_eigen(F_AB));
+      // construct local tiles
+      for (auto t = Delta_iA.trange().tiles().begin();
+          t != Delta_iA.trange().tiles().end(); ++t) {
+        if (Delta_iA.is_local(*t)) {
+          std::array<std::size_t, 2> index;
+          std::copy(t->begin(), t->end(), index.begin());
+          madness::Future<typename TArray2d::value_type> tile(
+              (LazyTensor<double, 2, pceval_type>(&Delta_iA, index, &Delta_iA_gen)));
+
+          // Insert the tile into the array
+          Delta_iA.set(*t, tile);
+        }
+      }
+      preconditioner("y,A'") = Delta_iA("y,A'");
+    }
+    madness::World::get_default().gop.fence();
+
+    tim.enter("conjugate gradient solver"); // time conjugate solver
+
+    // initialize the function a(x)
+    _CABS_singles<double> cabs_singles(B);
+    // linear solver object
+    TA::ConjugateGradientSolver<TArray2, _CABS_singles<double> > cg_solver;
+    // solve the linear system, a(x) = b, cabs_singles_fock is a(x); x is x. b is b in a(x) = b
+    auto resnorm = cg_solver(cabs_singles, b, x, preconditioner, 1e-12);
+    //std::cout << "Converged CG to " << resnorm << std::endl;
+
+    tim.exit(); // exit conjugate solver
+
+    //calculate the second order energy based on Equation (16)
+    double E = -1.0*dot(x("j,A'"), b("j,A'"));
+    shutdown_mpqc3();
+    return E;
+  }
+  else{
     throw ProgrammingError(
-        "PT2R12::cabs_singles_Dyall() not implemented",
+        "PT2R12::cabs_singles_Fock() called but MPQC3 runtime is disabled",
         __FILE__,
         __LINE__);
     return 0.0; // unreachable
-  } else
+  }
 #endif
   {
-    ExEnv::out0() << std::endl << std::endl << indent
-        << "Enter PT2R12::cabs_singles_Dyall \n";
-    std::cout << "  DEBUGG = " << DEBUGG << std::endl;
-    const SpinCase1 spin = Alpha;
-    Ref<OrbitalSpace> pspace = this->r12world()->refwfn()->occ_sb();
-    Ref<OrbitalSpace> vspace = this->r12world()->refwfn()->uocc_act_sb(spin);
-    Ref<OrbitalSpace> cabsspace = this->r12world()->cabs_space(spin);
-
-    Ref<OrbitalSpaceRegistry> oreg =
-        this->r12world()->world()->tfactory()->orbital_registry();
-    if (!oreg->value_exists(pspace))
-      oreg->add(make_keyspace_pair(pspace));
-    const string key = oreg->key(pspace);
-    pspace = oreg->value(key);
-
-    Ref<OrbitalSpace> all_virtual_space;
-    if (cabs_singles_coupling_) {
-      all_virtual_space = new OrbitalSpaceUnion("AA", "all virtuals", *vspace,
-                                                *cabsspace, true);
-      if (!oreg->value_exists(all_virtual_space))
-        oreg->add(make_keyspace_pair(all_virtual_space));
-      const string AAkey = oreg->key(all_virtual_space);
-      all_virtual_space = oreg->value(AAkey);
-
-      { // make sure that the AO space that supports all_virtual_space is known
-        Ref<AOSpaceRegistry> aoreg =
-            this->r12world()->world()->tfactory()->ao_registry();
-        if (aoreg->key_exists(all_virtual_space->basis()) == false) {
-          Ref<Integral> localints = this->integral()->clone();
-          Ref<OrbitalSpace> mu = new AtomicOrbitalSpace(
-              "mu''", "CABS(AO)+VBS(AO)", all_virtual_space->basis(),
-              localints);
-          oreg->add(make_keyspace_pair(mu));
-          aoreg->add(mu->basis(), mu);
-        }
-      }
-    }
-
-    Ref<OrbitalSpace> Aspace;
-    if (cabs_singles_coupling_)
-      Aspace = all_virtual_space;
-    else
-      Aspace = cabsspace;
-
-    // block size
-    const unsigned int num_blocks = vspace->nblocks();
-    const std::vector<unsigned int>& p_block_sizes = pspace->block_sizes();
-    const std::vector<unsigned int>& v_block_sizes = vspace->block_sizes();
-    const std::vector<unsigned int>& cabs_block_sizes =
-        cabsspace->block_sizes();
-    const std::vector<unsigned int>& A_block_sizes = Aspace->block_sizes();
-
-    Ref<LocalSCMatrixKit> local_kit = new LocalSCMatrixKit;
-
-    // dimension
-    const int nA = Aspace->rank();
-    const int ni = pspace->rank();
-    RefSCDimension dimAA = new SCDimension(nA * nA);
-    RefSCDimension dimii = new SCDimension(ni * ni);
-    RefSCDimension dimiA = new SCDimension(ni * nA);
-    RefSCDimension dimi = new SCDimension(ni);
-    RefSCDimension dimA = new SCDimension(nA);
-    RefSCVector vec_AA = local_kit->vector(dimAA);
-    RefSCVector vec_ii = local_kit->vector(dimii);
-
-    // matrices
-    RefSCMatrix hcore_ii_block = r12eval_->fock(pspace, pspace, spin, 0.0, 0.0);
-    RefSCMatrix fock_AA_block_a = r12eval_->fock(Aspace, Aspace, Alpha);
-    RefSCMatrix fock_AA_block_b = r12eval_->fock(Aspace, Aspace, Beta);
-    RefSCMatrix fock_AA_block = fock_AA_block_a + fock_AA_block_b;
-    fock_AA_block.scale(0.5);
-    RefSCMatrix fock_iA_block_a = r12eval_->fock(pspace, Aspace, Alpha);
-    RefSCMatrix fock_iA_block_b = r12eval_->fock(pspace, Aspace, Beta);
-    RefSCMatrix fock_iA_block = fock_iA_block_a + fock_iA_block_b;
-    fock_iA_block.scale(0.5);
-    RefSCMatrix hcore_iA_block = r12eval_->fock(pspace, Aspace, spin, 0.0, 0.0);
-    RefSCMatrix fock_AA = local_kit->matrix(dimA, dimA);
-    RefSCMatrix hcore_ii = local_kit->matrix(dimi, dimi);
-    RefSCMatrix fock_iA = local_kit->matrix(dimi, dimA);
-    RefSCMatrix hcore_iA = local_kit->matrix(dimi, dimA);
-    for (int aa = 0; aa < nA; ++aa) // can't use accumulate
-        {
-      for (int bb = 0; bb < nA; ++bb) {
-        fock_AA->set_element(aa, bb, fock_AA_block->get_element(aa, bb));
-      }
-    }
-    for (int ii = 0; ii < ni; ++ii) {
-      for (int jj = 0; jj < ni; ++jj) {
-        hcore_ii->set_element(ii, jj, hcore_ii_block->get_element(ii, jj));
-      }
-    }
-    for (int ii = 0; ii < ni; ++ii) {
-      for (int aa = 0; aa < nA; ++aa) {
-        fock_iA->set_element(ii, aa, fock_iA_block->get_element(ii, aa));
-      }
-    }
-    for (int ii = 0; ii < ni; ++ii) {
-      for (int aa = 0; aa < nA; ++aa) {
-        hcore_iA->set_element(ii, aa, hcore_iA_block->get_element(ii, aa));
-      }
-    }
-    RefSCMatrix delta_AA = fock_AA->clone();
-    delta_AA->assign(0.0);
-    for (int i = 0; i < nA; ++i) {
-      delta_AA->set_element(i, i, 1.0);
-    }
-
-    RefSCMatrix gamma1 = rdm1_sf_2spaces(pspace, pspace);
-    RefSCMatrix gamma2 = rdm2_sf_4spaces(pspace, pspace, pspace, pspace);
-    RefSCMatrix B_bar = local_kit->matrix(dimAA, dimii); // intermediate mat
-//  RefSCMatrix B = local_kit->matrix(dimiA, dimiA);
-    B_bar->assign(0.0);
-    RefSCMatrix b_bar = local_kit->matrix(dimi, dimA);
-    b_bar->assign(0.0);
-    RefSCVector b = local_kit->vector(dimiA); // RHS
-
-    // Compute B
-    // Term1: fock(alpha, beta)* gamma(i,j)
-    {
-      matrix_to_vector(vec_AA, fock_AA);
-      matrix_to_vector(vec_ii, gamma1);
-      B_bar->accumulate_outer_product(vec_AA, vec_ii);
-    }
-#if DEBUGG
-    B_bar.print(string("term1 B matrix").c_str());
-#endif
-    // Term2: -delta(alpha, beta)*(g(im,kl) * gamma(jm,kl) )
-    {
-      RefSCMatrix gbar_imkl = g(pspace, pspace, pspace, pspace);
-      RefSCMatrix g_i_mkl = RefSCMAT_combine234(gbar_imkl, ni, ni, ni, ni);
-      RefSCMatrix dbar_mkl_j = RefSCMAT_combine234(gamma2, ni, ni, ni, ni).t();
-      RefSCMatrix gd = g_i_mkl * dbar_mkl_j;
-      gd->scale(-1.0);
-      matrix_to_vector(vec_AA, delta_AA);
-      matrix_to_vector(vec_ii, gd);
-      B_bar->accumulate_outer_product(vec_AA, vec_ii);
-    }
-#if DEBUGG
-    B_bar.print(string("term12 B matrix").c_str());
-#endif
-    // Term3: -delta(alpha, beta)*( h(i,k) * gamma(k,j) )
-    {
-      RefSCMatrix hd = hcore_ii * gamma1;
-      hd->scale(-1.0);
-      matrix_to_vector(vec_AA, delta_AA);
-      matrix_to_vector(vec_ii, hd);
-      B_bar->accumulate_outer_product(vec_AA, vec_ii);
-    }
-#if DEBUGG
-    B_bar.print(string("term123 B matrix").c_str());
-    ofstream foutB("term123");
-    B_bar.print(foutB);
-    foutB.close();
-#endif
-    //compute b_bar
-    if (cabs_singles_h0_ == string("dyall_1")) {
-      // - \Gamma^j_k F^k_beta
-      b_bar->accumulate(gamma1 * fock_iA);
-#if DEBUGG
-      gamma1.print(string("gamma1").c_str());
-      hcore_iA.print(string("hcore iA").c_str());
-      b_bar.print(string("b_bar term1").c_str());
-#endif
-      b_bar->scale(-1.0);
-    }
-    if (cabs_singles_h0_ == string("dyall_2")) {
-      // - gamma(j,k) * h(k, beta) - gamma(jm,kl)*g(beta m, kl)
-      b_bar->accumulate(gamma1 * hcore_iA);
-      RefSCMatrix dd = RefSCMAT_combine234(gamma2, ni, ni, ni, ni);
-      RefSCMatrix gg1 = g(Aspace, pspace, pspace, pspace);
-      RefSCMatrix gg2 = RefSCMAT_combine234(gg1, nA, ni, ni, ni).t();
-      b_bar->accumulate(dd * gg2);
-      b_bar->scale(-1.0);
-    }
-#if DEBUGG
-    b_bar.print(string("b_bar before zero").c_str());
-#endif
-
-    if (cabs_singles_coupling_) // zero Fock matrix component f^i_a
-    {
-      unsigned int offset1 = 0;
-      int block_counter1, row_ind, v_ind;
-      for (block_counter1 = 0; block_counter1 < num_blocks; ++block_counter1) {
-        for (v_ind = 0; v_ind < v_block_sizes[block_counter1]; ++v_ind) {
-          const unsigned int b_v_ind = offset1 + v_ind;
-          for (row_ind = 0; row_ind < ni; ++row_ind)
-            b_bar.set_element(row_ind, b_v_ind, 0.0);
-        }
-        offset1 += A_block_sizes[block_counter1];
-      }
-    }
-
-    matrix_to_vector(b, b_bar);
-#if DEBUGG
-    b.print(string("b matrix").c_str());
-    ofstream foutb("bmatrix");
-    b.print(foutb);
-    foutb.close();
-#endif
-    RefSCMatrix B1 = RefSCMAT4_permu<Permute14>(B_bar, Aspace, Aspace, pspace,
-                                                pspace);
-    RefSCMatrix B2 = B1.copy().t();
-    RefSCMatrix B = B1 + B2;
-    B.scale(0.5);
-#if DEBUGG
-    B.print(string("B matrix").c_str());
-#endif
-    RefSCVector X = b->clone();
-    X.assign(0.0);
-    RefSymmSCMatrix Bsymm = B.kit()->symmmatrix(dimiA);
-    Bsymm.assign_subblock(B, 0, ni * nA - 1, 0, ni * nA - 1);
-    //lapack_linsolv_symmnondef(Bsymm, X, b);
-    linsolv_symmnondef_cg(Bsymm, X, b);
-#if DEBUGG
-    X.print(string("C matrix").c_str());
-#endif
-    double E = -1.0 * (X.dot(b));
-    return E;
+  throw ProgrammingError(
+      "PT2R12::cabs_singles_Fock() called but MPQC3 runtime is not available",
+      __FILE__,
+      __LINE__);
+  return 0.0; // unreachable
   }
 }
 
@@ -1960,89 +1889,119 @@ double PT2R12::cabs_singles_Fock() {
    * L. Kong and E.~F.~Valeev,  J. Chem. Phys. 133, 174126 (2010),
    * http://dx.doi.org/10.1063/1.3499600.
    * */
-#define DEBUGG false
-
 #if defined(HAVE_MPQC3_RUNTIME)
   if (use_mpqc3_) {
     ExEnv::out0() << std::endl << indent
     << "Enter PT2R12::cabs_single_Fock MPQC3_RUNTIME \n";
+
+    Timer tim("cabs single fock");
     typedef SingleReference_R12Intermediates<double>::TArray4 TArray4;
     typedef SingleReference_R12Intermediates<double>::TArray2 TArray2;
 
     bootup_mpqc3();
 
-    // make all the matrixes that needed
     // go to file sr_r12intermediates.h for notation
-    TArray2 gamma2; gamma2("m,n") = _2("<m|gamma|n>");
-#if DEBUGG
-    std::cout << "gamma2: \n" << gamma2 << std::endl;
-#endif
 
-    TArray2 Fmn;  Fmn("m,n")  = _2("<m|F|n>");
-    TArray2 FAB;  FAB("A',B'")  = _2("<A'|F|B'>");
+    // density matrices
+    TArray2 gamma1; gamma1("m,n") = _2("<m|gamma|n>"); // occ
+    TArray4 gamma2; gamma2("n1,m,m1,n") = _4("<n1 m|gamma|m1 n>"); // occ
 
+    // fock matrices
+    TArray2 F_ij; F_ij("m,n") = _2("<m|F|n>"); // occ occ
+    TArray2 F_AB; F_AB("A',B'") = _2("<A'|F|B'>"); // allvir allvir
+
+    //delta
+    TArray2 I_AB; I_AB("B',A'") = _2("<B'|I|A'>"); // allvir allvir
+
+    tim.enter("compute B matrix");
     // make B matrix in Equation (18)
+    TArray4 B;
+
     // term1
-    auto term1 = _2("<B'|F|A'>") * _2("<n1|gamma|m1>");
-    // term2+term3
-    auto term23 = _2("<B'|I|A'>") * (_2("<n|F|m>") * (_4("<n1 m|gamma|m1 n>") - gamma2("n1,m1") * gamma2("m,n")));
-    // B
-    TArray4 B; B("B',A',n1,m1") = term1 + term23;
-#if DEBUGG
-    std::cout << "B matrix: \n" << B << std::endl;
-#endif
+    {
+      TArray4 term1;
+      term1("x,B',y,A'") = F_AB("A',B'") * gamma1("x,y");
+      B("x,B',y,A'") =  term1("x,B',y,A'");
+    }
+    madness::World::get_default().gop.fence();
+    // term2
+    {
+      TArray4 term2;
+      term2("x,B',y,A'") =  F_ij("i,j") * gamma2("i,x,j,y") * I_AB("A',B'");
+      B("x,B',y,A'") = B("x,B',y,A'") + term2("x,B',y,A'");
+    }
+    madness::World::get_default().gop.fence();
+    // term3
+    {
+      TArray4 term3;
+      term3("x,B',y,A'") = - F_ij("i,j") * gamma1("x,y") * gamma1("i,j")  * I_AB("A',B'");
+      B("x,B',y,A'") = B("x,B',y,A'") + term3("x,B',y,A'");
+    }
+    madness::World::get_default().gop.fence();
+
+    tim.exit(); // exit compute B matrix
     //
     //  solve the linear algebra problem a(x)=b in Equation (15)
     //
     // x we trying to solve, C
-    TArray2 x; x("m1,B'") = _2("<n|gamma|m>") * _2("<c'|F|n>") * _2("<B'|I|c'>");
-    // b in a(x) = b
-    TArray2 b; b("m1,B'") = -x("m1,B'");
-#if DEBUGG
-    std::cout << "b matrix: \n" << b << std::endl;
-#endif
+
+    TArray2 x;
+    TArray2 b;
+    {
+      TArray2 I_Ac; I_Ac("B',c'") = _2("<B'|I|c'>"); // allvir cabs
+      TArray2 F_ci; F_ci("c',n") = _2("<c'|F|n>");  //cabs occ
+      x("x,B'") =  I_Ac("B',c'") * F_ci("c',j") * gamma1("j,x");
+      // b in a(x) = b
+      b("x,B'") = -x("x,B'");
+    }
+    madness::World::get_default().gop.fence();
 
     // make preconditioner: inverse of diagonal elements <A'|F|A'> - <m|F|m>
-    typedef detail::diag_precond2<double> pceval_type;//!< evaluator of preconditioner
-    typedef TA::Array<double, 2, LazyTensor<double, 2, pceval_type> > TArray2d;
-    TArray2d Delta_iA(b.get_world(), b.trange());
+    TArray2 preconditioner;
+    {
+      typedef diag_precond2<double> pceval_type; //!< evaluator of preconditioner
+      typedef TA::Array<double, 2, LazyTensor<double, 2, pceval_type> > TArray2d;
+      TArray2d Delta_iA(b.get_world(), b.trange());
 
-    pceval_type Delta_iA_gen(TA::array_to_eigen(Fmn), TA::array_to_eigen(FAB));
-    // construct local tiles
-    for (auto t = Delta_iA.trange().tiles().begin();
-        t != Delta_iA.trange().tiles().end(); ++t) {
-      if (Delta_iA.is_local(*t)) {
-        std::array<std::size_t, 2> index;
-        std::copy(t->begin(), t->end(), index.begin());
-        madness::Future<typename TArray2d::value_type> tile(
-            (LazyTensor<double, 2, pceval_type>(&Delta_iA, index, &Delta_iA_gen)));
+      pceval_type Delta_iA_gen(TA::array_to_eigen(F_ij), TA::array_to_eigen(F_AB));
+      // construct local tiles
+      for (auto t = Delta_iA.trange().tiles().begin();
+          t != Delta_iA.trange().tiles().end(); ++t) {
+        if (Delta_iA.is_local(*t)) {
+          std::array<std::size_t, 2> index;
+          std::copy(t->begin(), t->end(), index.begin());
+          madness::Future<typename TArray2d::value_type> tile(
+              (LazyTensor<double, 2, pceval_type>(&Delta_iA, index, &Delta_iA_gen)));
 
-        // Insert the tile into the array
-        Delta_iA.set(*t, tile);
+          // Insert the tile into the array
+          Delta_iA.set(*t, tile);
+        }
       }
+      preconditioner("y,A'") = Delta_iA("y,A'");
     }
-    TArray2 preconditioner; preconditioner("m,A'") = Delta_iA("m,A'");
-#if DEBUGG
-    std::cout << "preconditioner: \n" << preconditioner << std::endl;
-#endif
-    _CABS_singles_Fock<double> cabs_singles_fock(B); // initialize the function a(x)
-    TA::ConjugateGradientSolver<TArray2, _CABS_singles_Fock<double> > cg_solver;// linear solver object
 
-    // solve the linear system, a(x) = b, cabs_singles_fock is a(x); x is x. b is b in a(x) = b
-    auto resnorm = cg_solver(cabs_singles_fock, b, x, preconditioner, 1e-12);
+
+    tim.enter("conjugate gradient solver");
+    _CABS_singles<double> cabs_singles(B); // initialize the function a(x)
+    TA::ConjugateGradientSolver<TArray2, _CABS_singles<double> > cg_solver;// linear solver object
+
+    // solve the linear system
+    auto resnorm = cg_solver(cabs_singles, b, x, preconditioner, 1e-12);
     //std::cout << "Converged CG to " << resnorm << std::endl;
-
-#if DEBUGG
-    std::cout << "C: \n" << x << std::endl;
-#endif
+    tim.exit(); // exit gradient solver
 
     //calculate the second order energy based on Equation (16)
-    double E = -1.0* dot(x("n,A'"),b("n,A'"));
-
+    double E = -1.0* dot(x("y,A'"),b("y,A'"));
     shutdown_mpqc3();
-
     return E;
-  } else
+  }
+  else{
+    throw ProgrammingError(
+        "PT2R12::cabs_singles_Fock() called but MPQC3 runtime is disabled",
+        __FILE__,
+        __LINE__);
+    return 0.0; // unreachable
+  }
 #endif
   {
     throw ProgrammingError(
@@ -2237,13 +2196,6 @@ RefSCMatrix PT2R12::g(const Ref<OrbitalSpace>& bra1,
       RefSCMatrix G = localkit->matrix(new SCDimension(braiter12->nij()),
                                        new SCDimension(ketiter12->nij()));
       G.assign(0.0);
-
-      const int nket1 = ket1->rank();
-      const int nket2 = ket2->rank();
-
-      const bool bra1_eq_bra2 = (*bra1 == *bra2);
-      const bool ket1_eq_ket2 = (*ket1 == *ket2);
-
 
       // find equivalent spaces in the registry
       Ref<OrbitalSpaceRegistry> oreg = this->r12world()->world()->tfactory()->orbital_registry();

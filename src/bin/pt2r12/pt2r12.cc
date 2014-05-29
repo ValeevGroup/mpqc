@@ -158,10 +158,10 @@ int try_main(int argc, char **argv)
   opt.enroll("dfbs", GetLongOpt::MandatoryValue, "name for DFBS; default: no density fitting; use \"none\" to override the default for the obs", 0);
   opt.enroll("f12exp", GetLongOpt::MandatoryValue, "f12 exponent; default: 1.0", "1.0");
   opt.enroll("r12", GetLongOpt::MandatoryValue, "compute [2]_R12 correction; default: true", 0);
-  opt.enroll("singles", GetLongOpt::MandatoryValue, "compute [2]_s correction; default: false", 0);
-  opt.enroll("partitionH", GetLongOpt::MandatoryValue, "How to partition Hamiltonian in [2]_s; default: dyall_1", 0);
   opt.enroll("verbose", GetLongOpt::NoValue, "enable extra printing", 0);
 #if defined(HAVE_MPQC3_RUNTIME)
+  opt.enroll("singles", GetLongOpt::MandatoryValue, "compute [2]_s correction; default: false", 0);
+  opt.enroll("partitionH", GetLongOpt::MandatoryValue, "How to partition Hamiltonian in [2]_s: fock, dyall_1, dyall_2; default: fock", 0);
   opt.enroll("mpqc3", GetLongOpt::MandatoryValue, "enable MPQC3 runtime features; default: true", 0);
 #endif
 
@@ -251,11 +251,12 @@ int try_main(int argc, char **argv)
 
   const char* r12_cstr = opt.retrieve("r12");
   const std::string r12_str = r12_cstr?r12_cstr:"";
+
+#if defined(HAVE_MPQC3_RUNTIME)
   const char* singles_cstr = opt.retrieve("singles");
   const std::string singles_str = singles_cstr?singles_cstr:"";
   const char* partition_cstr = opt.retrieve("partitionH");
   const std::string partition_str = partition_cstr?partition_cstr:"";
-#if defined(HAVE_MPQC3_RUNTIME)
   const char* mpqc3_cstr = opt.retrieve("mpqc3");
   const std::string mpqc3_str = mpqc3_cstr?mpqc3_cstr:"";
 #endif
@@ -373,7 +374,9 @@ int try_main(int argc, char **argv)
         Ref<AssignedKeyVal> tmpkv1 = new AssignedKeyVal;
         tmpkv1->assign("name", ccpvxzri_name);
         tmpkv1->assign("molecule", basis->molecule().pointer());
+
         Ref<GaussianBasisSet> ccpvxzri = new GaussianBasisSet(tmpkv1);
+        //Ref<GaussianBasisSet> ccpvxzri = new UncontractedBasisSet(tmpkv1);
 
         Ref<AssignedKeyVal> tmpkv2 = new AssignedKeyVal;
         tmpkv2->assign("name", std::string("augmentation-") + ccpvxzri_name);
@@ -406,11 +409,12 @@ int try_main(int argc, char **argv)
     kva->assign("molecule", orbs->basis()->molecule().pointer());
     if(not r12_str.empty())
       kva->assign("pt2_correction", r12_str);
+
+#if defined(HAVE_MPQC3_RUNTIME)
     if(not singles_str.empty())
       kva->assign("cabs_singles", singles_str);
     if(not partition_str.empty())
       kva->assign("cabs_singles_h0", partition_str);
-#if defined(HAVE_MPQC3_RUNTIME)
     if(not mpqc3_str.empty())
       kva->assign("use_mpqc3", mpqc3_str);
 #endif

@@ -251,14 +251,9 @@ void percent_compression(TiledArray::TiledRange &trange, T pool, double cut, mad
     std::advance(last, std::min(block_size, std::distance(first, end)));
 
     world.taskq.add(&mat_task<T>, first, last, trange, cut, &total_mat_elems,
-                              &total_svd_elems, &total_mat_diff, pool);
+                                &total_svd_elems, &total_mat_diff, pool);
     first = last;
   }
-  world.gop.fence();
-
-  world.gop.sum(total_mat_elems);
-  world.gop.sum(total_svd_elems);
-  world.gop.sum(total_mat_diff);
 
   double svd_time1 = madness::wall_time();
 
@@ -321,7 +316,6 @@ int main(int argc, char** argv){
     // S Range
     //Matrix S(*world->madworld(), ob_trange);
     auto S_pool = std::make_shared<onebpool>(ints_fac->overlap()->clone());
-    world.gop.fence();
 
     if(world->madworld()->rank() == 0){
       std::cout << "\nS\n";
@@ -331,13 +325,11 @@ int main(int argc, char** argv){
         std::cout << "\n\t" << cut << std::endl;
       percent_compression(ob_trange, S_pool, cut, *world->madworld());
     }
-    world->madworld()->gop.fence();
 
 #if 1
     // H Range
     //Matrix H(*world->madworld(), ob_trange);
     auto H_pool = std::make_shared<onebpool>(ints_fac->hcore()->clone());
-    world->madworld()->gop.fence();
 
     if(world->madworld()->rank() == 0){
       std::cout << "\nH\n";
@@ -364,7 +356,6 @@ int main(int argc, char** argv){
                                                       dftbs->trange1()};
 
     TiledArray::TiledRange ec_range(ec_array.begin(), ec_array.end());
-    world->madworld()->gop.fence();
 
     if(world->madworld()->rank() == 0){
       std::cout << "\nEri3\n";
@@ -385,7 +376,6 @@ int main(int argc, char** argv){
                                                       dftbs->trange1()};
     TiledArray::TiledRange et_range(et_array.begin(), et_array.end());
 
-    world->madworld()->gop.fence();
     if(world->madworld()->rank() == 0){
       std::cout << "\nEri2\n";
     }
@@ -412,7 +402,6 @@ int main(int argc, char** argv){
 
     TiledArray::TiledRange e4_range(e4_array.begin(), e4_array.end());
 
-    world->madworld()->gop.fence();
 
     if(world->madworld()->rank() == 0){
       std::cout << "\nEri4\n";
@@ -424,8 +413,8 @@ int main(int argc, char** argv){
     }
   }
 #endif
+  mpqc::MADNESSRuntime::finalize();
 
-  madness::finalize();
   return 0;
 }
 

@@ -173,7 +173,6 @@ void PT2R12::save_data_state(StateOut &s) {
   SavableState::save_state(r12eval_, s);
   s.put(nfzc_);
   s.put(omit_uocc_);
-  s.put(cabs_singles_coupling_);
   s.put(debug_);
 }
 
@@ -1414,7 +1413,7 @@ double PT2R12::magnetic_moment() const
 {
   return r12world()->refwfn()->magnetic_moment();
 }
-
+/*
 double PT2R12::cabs_singles_Complete()
 {
 # define DEBUGG false
@@ -1670,6 +1669,7 @@ double PT2R12::cabs_singles_Complete()
   }
   return E;
 }
+*/
 
 RefSymmSCMatrix PT2R12::density()
 {

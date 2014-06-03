@@ -6,7 +6,7 @@
 
 #if defined(HAVE_MPQC3_RUNTIME)
 
-#include <chemistry/qc/mbptr12/cabs_single.h>
+#include <chemistry/qc/mbptr12/singles_casscf.h>
 #include <TiledArray/algebra/conjgrad.h>
 
 using namespace sc;
@@ -102,7 +102,6 @@ double CABS_Single::cabs_singles_Dyall(const std::string &h0)
 
     TArray4 B;
 
-    tim.enter("term1");
     // term1
     {
       TArray4 term1;
@@ -110,8 +109,7 @@ double CABS_Single::cabs_singles_Dyall(const std::string &h0)
       B("x,B',y,A'") = term1("x,B',y,A'");
     }
     madness::World::get_default().gop.fence();
-    tim.exit();
-    std::cout << "term1 of B complete \n" << std::endl;
+
 #if DEBUGG
     // set the cout precision to 10 decimal digits
     std::cout.setf(ios::fixed);
@@ -120,7 +118,6 @@ double CABS_Single::cabs_singles_Dyall(const std::string &h0)
 #endif
 
     // term2
-    tim.enter("term2");
     {
       TArray2 I_AB; I_AB("B',A'") = srr12intrmds_->_2("<B'|I|A'>"); //allvir allvir
       TArray4 g_ijkl; g_ijkl("n1,m1,m,n") = srr12intrmds_->_4("<n1 m1|g|m n>"); // occ
@@ -129,14 +126,11 @@ double CABS_Single::cabs_singles_Dyall(const std::string &h0)
       B("x,B',y,A'") = B("x,B',y,A'") + term2("x,B',y,A'");
     }
     madness::World::get_default().gop.fence();
-    tim.exit();
-    std::cout << "term2 of B complete \n" << std::endl;
 #if DEBUGG
     // std::cout << "term2 of B: \n" << term2 << std::endl;
 #endif
 
     // term3
-    tim.enter("term3");
     {
       TArray2 F_ab; F_ab("e,f") = srr12intrmds_->_2("<e|F|f>");  //vir vir
       TArray2 h_ab; h_ab("e,f") = srr12intrmds_->_2("<e|h|f>");   //vir vir
@@ -145,11 +139,8 @@ double CABS_Single::cabs_singles_Dyall(const std::string &h0)
       B("x,B',y,A'") = B("x,B',y,A'") + term3("x,B',y,A'");
     }
     madness::World::get_default().gop.fence();
-    tim.exit();
-    std::cout << "term3 of B complete \n" << std::endl;
 
     // term4
-    tim.enter("term4");
     {
       TArray4 g_abij; g_abij("f,e,m,n") = srr12intrmds_->_4("<m f|g|n e>"); // occ vir occ vir
       TArray4 g_iajb; g_iajb("f,e,m,n") = srr12intrmds_->_4("<m e|g|f n>"); // occ vir vir occ
@@ -158,14 +149,11 @@ double CABS_Single::cabs_singles_Dyall(const std::string &h0)
       B("x,B',y,A'") = B("x,B',y,A'") + term4("x,B',y,A'");
     }
     madness::World::get_default().gop.fence();
-    tim.exit();
-    std::cout << "term4 of B complete \n" << std::endl;
 #if DEBUGG
     std::cout << "term4 of B: \n" << term4 << std::endl;
 #endif
 
     tim.exit();
-    std::cout << "B complete \n" << std::endl;
 
 #if DEBUGG
     std::cout << "allterm of B: \n" << B << std::endl;
@@ -241,7 +229,7 @@ double CABS_Single::cabs_singles_Dyall(const std::string &h0)
     }
     madness::World::get_default().gop.fence();
 
-    tim.enter("conjugate solver"); // time conjugate solver
+    tim.enter("conjugate gradient solver"); // time conjugate solver
 
     // initialize the function a(x)
     _CABS_singles<double> cabs_singles(B);
@@ -373,7 +361,7 @@ double CABS_Single::cabs_singles_Fock() {
 #if DEBUGG
     std::cout << "preconditioner: \n" << preconditioner << std::endl;
 #endif
-    tim.enter("conjugate solver");
+    tim.enter("conjugate gradient solver");
     _CABS_singles<double> cabs_singles(B); // initialize the function a(x)
     TA::ConjugateGradientSolver<TArray2, _CABS_singles<double> > cg_solver;// linear solver object
 

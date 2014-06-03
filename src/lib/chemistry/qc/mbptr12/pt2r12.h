@@ -37,7 +37,7 @@
 
 #if defined(HAVE_MPQC3_RUNTIME)
 #include <chemistry/qc/mbptr12/sr_r12intermediates.h>
-#include <chemistry/qc/mbptr12/cabs_single.h>
+#include <chemistry/qc/mbptr12/singles_casscf.h>
 #endif
 
 namespace sc {

@@ -1,8 +1,8 @@
 //
 // cabs_single.h
 //
-#ifndef _mpqc_src_lib_chemistry_qc_mbptr12_cabs_single_h
-#define _mpqc_src_lib_chemistry_qc_mbptr12_cabs_single_h
+#ifndef _mpqc_src_lib_chemistry_qc_mbptr12_singles_casscf_h
+#define _mpqc_src_lib_chemistry_qc_mbptr12_singles_casscf_h
 
 
 #if defined(HAVE_MPQC3_RUNTIME)

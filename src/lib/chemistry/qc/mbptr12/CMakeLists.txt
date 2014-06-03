@@ -12,7 +12,6 @@ IF(MPQC_R12)
         approxC_ansatz1.cc 
         approxCp.cc 
         bc_contrib.cc 
-        cabs_single.cc
         compute_1rdm_X_F12.cc 
         compute_VXB_a.cc 
         compute_VXB_a_vbsneqobs.cc 
@@ -40,6 +39,7 @@ IF(MPQC_R12)
         r12technology.cc 
         r12wfnworld.cc 
         ri_basis.cc 
+        singles_casscf.cc
         singles_emp2.cc 
         sr_r12intermediates_util.cc
         twobody_intermediates_ta.cc 

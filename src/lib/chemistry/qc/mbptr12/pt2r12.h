@@ -34,8 +34,10 @@
 #include <chemistry/qc/mbptr12/r12int_eval.h>
 #include <chemistry/qc/wfn/rdm.h>
 
+
 #if defined(HAVE_MPQC3_RUNTIME)
-#  include <chemistry/qc/mbptr12/sr_r12intermediates.h>
+#include <chemistry/qc/mbptr12/sr_r12intermediates.h>
+#include <chemistry/qc/mbptr12/cabs_single.h>
 #endif
 
 namespace sc {
@@ -102,6 +104,7 @@ namespace sc {
       Ref< RDM<One> > rdm1_;
       Ref<R12IntEval> r12eval_;
       Ref<R12WavefunctionWorld> r12world_;
+
       unsigned int nfzc_;
       bool omit_uocc_;
       bool pt2_correction_;          // for testing purposes only, set to false to skip the [2]_R12 computation
@@ -291,6 +294,7 @@ namespace sc {
       bool cabs_singles_coupling_; // if set to true, we include the coupling between cabs and OBS virtual orbitals. This should be preferred choice,
                                    // as explained in the paper.
       bool use_mpqc3_;   // if set to true, then use MPQC3 runtime
+      std::shared_ptr<CABS_Single> CABS_Single_;
 #endif
       bool rotate_core_; // if set to false, when doing rasscf cabs_singles correction, don't include excitation from core orbitals to cabs orbitals in
                          // first-order Hamiltonian. (this may be used when using frozen core orbitals which

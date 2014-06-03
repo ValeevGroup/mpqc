@@ -155,6 +155,7 @@ int try_main(int argc, char **argv)
                         $val.pt2r12.dat\n                        $val.pt2r12.rdm2.dat\n                       ", 0);
   opt.enroll("obs", GetLongOpt::MandatoryValue, "name for the orbital basis set; optional, if given will be used to set the defaults for cabs, dfbs, and f12exp", 0);
   opt.enroll("cabs", GetLongOpt::MandatoryValue, "name for CABS; default: construct CABS automatically", 0);
+  opt.enroll("cabs_contraction", GetLongOpt::MandatoryValue, "if use contracted CABS; default: true", 0);
   opt.enroll("dfbs", GetLongOpt::MandatoryValue, "name for DFBS; default: no density fitting; use \"none\" to override the default for the obs", 0);
   opt.enroll("f12exp", GetLongOpt::MandatoryValue, "f12 exponent; default: 1.0", "1.0");
   opt.enroll("r12", GetLongOpt::MandatoryValue, "compute [2]_R12 correction; default: true", 0);
@@ -229,6 +230,9 @@ int try_main(int argc, char **argv)
   if (cabs_name.empty() && not obs_name.empty()) {
     cabs_name = R12Technology::default_cabs_name(obs_name);
   }
+  // if contract cabs
+  const char* cabs_contraction_cstr = opt.retrieve("cabs_contraction");
+  std::string cabs_contraction(cabs_contraction_cstr ? cabs_contraction_cstr : "");
   // may receive DFBS basis set name
   const char* dfbs_name_cstr = opt.retrieve("dfbs");
   std::string dfbs_name(dfbs_name_cstr ? dfbs_name_cstr : "");
@@ -376,7 +380,6 @@ int try_main(int argc, char **argv)
         tmpkv1->assign("molecule", basis->molecule().pointer());
 
         Ref<GaussianBasisSet> ccpvxzri = new GaussianBasisSet(tmpkv1);
-        //Ref<GaussianBasisSet> ccpvxzri = new UncontractedBasisSet(tmpkv1);
 
         Ref<AssignedKeyVal> tmpkv2 = new AssignedKeyVal;
         tmpkv2->assign("name", std::string("augmentation-") + ccpvxzri_name);
@@ -409,6 +412,8 @@ int try_main(int argc, char **argv)
     kva->assign("molecule", orbs->basis()->molecule().pointer());
     if(not r12_str.empty())
       kva->assign("pt2_correction", r12_str);
+    if(not cabs_contraction.empty())
+      kva->assign("cabs_contraction", cabs_contraction);
 
 #if defined(HAVE_MPQC3_RUNTIME)
     if(not singles_str.empty())

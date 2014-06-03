@@ -76,6 +76,7 @@ namespace sc {
       Ref<ExternMOInfo> orbs_info_;
       Ref<SpinFreeRDM<Two> > rdm2_;
       std::string cabs_name_;
+      bool cabs_contraction_;
       std::string f12exp_str_;
 
       // constructed

@@ -27,6 +27,7 @@
 
 #include <string>
 #include "extern_pt2r12.h"
+#include <chemistry/qc/basis/uncontract.h>
 #include <iostream>
 
 using namespace sc;
@@ -51,6 +52,7 @@ ExternPT2R12::ExternPT2R12(const Ref<KeyVal>& kv) :
   rdm2_ << kv->describedclassvalue("rdm2");
   cabs_name_ = kv->stringvalue("cabs", KeyValValuestring(std::string()));
   f12exp_str_ = kv->stringvalue("f12exp", KeyValValuestring(std::string()));
+  cabs_contraction_ = kv->booleanvalue("cabs_contraction", KeyValValueboolean(true));
 
   std::string r12_str = kv->stringvalue("pt2_correction", KeyValValuestring(std::string()));
 
@@ -146,8 +148,14 @@ ExternPT2R12::ExternPT2R12(const Ref<KeyVal>& kv) :
       tmpkv->assign("puream", "true");
       tmpkv->assign("molecule", molecule().pointer());
       Ref<KeyVal> kv = tmpkv;
-      Ref<GaussianBasisSet> aux_basis = new GaussianBasisSet(kv);
-      kva->assign("aux_basis", aux_basis.pointer());
+      if (cabs_contraction_){
+        Ref<GaussianBasisSet> aux_basis = new GaussianBasisSet(kv);
+        kva->assign("aux_basis", aux_basis.pointer());
+      }
+      else{
+        Ref<GaussianBasisSet> aux_basis = new UncontractedBasisSet(kv);
+        kva->assign("aux_basis", aux_basis.pointer());
+      }
     }
     else { // CABS name not given? construct automatically using R12Technology::make_auto_cabs()
       kva->assign("aux_basis", R12Technology::make_auto_cabs(basis()).pointer());

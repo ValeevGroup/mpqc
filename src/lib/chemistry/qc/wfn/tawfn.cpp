@@ -145,6 +145,7 @@ Wavefunction::ao_hcore() {
     tim.exit("ao_hcore:");
 
     hcore_.computed() = 1; // hcore_ is now computed
+    std::cout << "\t\tComputed ao_hcore.\n" << std::endl;
   }
 
   return hcore_.result_noupdate();

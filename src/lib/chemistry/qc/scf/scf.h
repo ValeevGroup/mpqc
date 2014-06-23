@@ -312,63 +312,6 @@ class SCF: public OneBodyWavefunction {
     void svd_product_basis();
 };
 
-/////////////////////////////////////////////////////////////////////////////
-
-class SCFIterationData;
-
-class SCFIterationLogger : public XMLWritable, public DescribedClass {
-
-  bool log_evals_;
-  bool log_density_;
-  bool log_coeffs_;
-
-  std::vector<SCFIterationData> iterations_;
-
-  public:
-
-    SCFIterationLogger(const Ref<KeyVal>& keyval);
-
-    ptree& write_xml(ptree& parent, const XMLWriter& writer);
-
-    // TODO handle alpha and beta for evals and density
-
-    void new_iteration();
-
-    void log_density(RefSymmSCMatrix density, SpinCase1 spin_case=AnySpinCase1);
-
-    void log_evals(RefDiagSCMatrix evals, SpinCase1 spin_case=AnySpinCase1);
-
-    void log_coeffs(RefSCMatrix evals, SpinCase1 spin_case=AnySpinCase1);
-
-    bool log_coeffs_enabled(){ return log_coeffs_; }
-
-};
-
-/////////////////////////////////////////////////////////////////////////////
-
-class SCFIterationData : public XMLWritable {
-
-  public:
-
-    SCFIterationLogger* parent;
-    int number;
-    RefDiagSCMatrix evals = 0;
-    RefDiagSCMatrix alpha_evals = 0;
-    RefDiagSCMatrix beta_evals = 0;
-    RefSymmSCMatrix density = 0;
-    RefSymmSCMatrix alpha_density = 0;
-    RefSymmSCMatrix beta_density = 0;
-    RefSCMatrix coeffs = 0;
-    RefSCMatrix alpha_coeffs = 0;
-    RefSCMatrix beta_coeffs = 0;
-
-
-    ptree& write_xml(ptree& parent, const XMLWriter& writer);
-
-};
-
-
-
 }
 
 #endif

@@ -26,9 +26,11 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
+#include <boost/property_tree/ptree.hpp>
 
 #include <util/misc/xmlwriter.h>
 #include <util/container/conc_cache.h>
+#include <chemistry/qc/scf/iter_logger.h>
 
 #include "cadfclhf.h"
 #include "assignments.h"
@@ -550,6 +552,25 @@ CADFCLHF::compute_coefficients()
       }
     }
     //end_xml_context("df_coefficients");
+  }
+  if(iter_log_.nonnull() and not distribute_coefficients_) {
+    using boost::property_tree::ptree;
+    iter_log_->log_global_misc([&](ptree& parent, const XMLWriter& writer) -> void
+    {
+      ptree& child = parent.add_child("df_coefficients", ptree());
+      child.put("note", "CADF coefficients are stored as a X.bfoff_in_atom x (mu.bfoff_in_atom, nu) matrix for each atom");
+      // Stored as (X.bfoff_in_atom, mu.bfoff_in_atom) x nu for each atom
+      const int natom = molecule()->natom();
+      //for(int iatom = 0; i < natom; ++i) {
+      for(auto&& iblk : shells_blocked_by_atoms(gbs_, dfbs_)) {
+        ptree& atom_child = writer.insert_child(child, coefs_transpose_blocked_[iblk.center], "coefs_for_atom");
+        atom_child.put("<xmlattr>.atom_index", iblk.center);
+        atom_child.put("<xmlattr>.atom_nbf", iblk.atom_nbf);
+        atom_child.put("<xmlattr>.atom_bfoff", iblk.atom_bfoff);
+        atom_child.put("<xmlattr>.atom_dfnbf", iblk.atom_dfnbf);
+        atom_child.put("<xmlattr>.atom_dfbfoff", iblk.atom_dfbfoff);
+      }
+    });
   }
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/

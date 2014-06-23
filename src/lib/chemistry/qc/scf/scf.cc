@@ -48,6 +48,7 @@
 #include <chemistry/qc/lcao/soad.h>
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/lcao/df_runtime.h>
+#include <chemistry/qc/scf/iter_logger.h>
 
 using namespace std;
 using namespace sc;
@@ -849,6 +850,7 @@ SCFIterationLogger::new_iteration(){
   iteration.parent = this;
   iteration.number = iterations_.size() + 1;
   iterations_.push_back(iteration);
+  other_iter_details_.emplace_back(0);
 
 }
 
@@ -940,13 +942,20 @@ SCFIterationLogger::write_xml(
   child.put("density_enabled", log_density_);
   child.put("coefficients_enabled", log_coeffs_);
   child.put("evals_enabled", log_evals_);
-  ptree& iter_tree = child.add_child("iterations", ptree());
+  for(auto&& func : other_details_) {
+    func(child, writer);
+  }
 
+  // Write the iterations
+  ptree& iter_tree = child.add_child("iterations", ptree());
   iter_tree.put("<xmlattr>.n", iterations_.size());
-  std::vector<SCFIterationData>::iterator it = iterations_.begin();
-  for(; it != iterations_.end(); ++it){
-    SCFIterationData& itdata = *it;
-    writer.insert_child(iter_tree, itdata, "iteration");
+  int itnum = 0;
+  for(auto& itdata : iterations_){
+    ptree& ichild = writer.insert_child(iter_tree, itdata, "iteration");
+    for(auto&& func : other_iter_details_[itnum]) {
+      func(ichild, writer);
+    }
+    ++itnum;
   }
   return child;
 }

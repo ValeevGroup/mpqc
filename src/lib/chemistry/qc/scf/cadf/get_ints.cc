@@ -39,7 +39,9 @@ using std::make_shared;
 CADFCLHF::TwoCenterIntContainerPtr
 CADFCLHF::ints_to_eigen(
     int ish, int jsh,
-    Ref<TwoBodyTwoCenterInt>& ints, TwoBodyOper::type int_type
+    Ref<TwoBodyTwoCenterInt>& ints, TwoBodyOper::type int_type,
+    const GaussianBasisSet* bs1,
+    const GaussianBasisSet* bs2
 ){
 
 #if USE_INTEGRAL_CACHE
@@ -55,9 +57,10 @@ CADFCLHF::ints_to_eigen(
     //   since keys_canonical may have a different ordering from the
     //   order of indices in ints.
 #endif
-
-    const int nbfi = dfbs_->shell(ish).nfunction();
-    const int nbfj = dfbs_->shell(jsh).nfunction();
+    if(bs1 == 0) bs1 = dfbs_;
+    if(bs2 == 0) bs2 = dfbs_;
+    const int nbfi = bs1->shell(ish).nfunction();
+    const int nbfj = bs2->shell(jsh).nfunction();
     auto rv = make_shared<TwoCenterIntContainer>(nbfi, nbfj);
     //----------------------------------------//
     ints->compute_shell(ish, jsh);
@@ -89,7 +92,10 @@ CADFCLHF::ThreeCenterIntContainerPtr
 CADFCLHF::ints_to_eigen(
     int ish, int jsh, int ksh,
     Ref<TwoBodyThreeCenterInt>& ints,
-    TwoBodyOper::type int_type
+    TwoBodyOper::type int_type,
+    GaussianBasisSet* bs1,
+    GaussianBasisSet* bs2,
+    GaussianBasisSet* bs3
 ){
 
 #if USE_INTEGRAL_CACHE
@@ -105,10 +111,12 @@ CADFCLHF::ints_to_eigen(
     //   since keys_canonical may have a different ordering from the
     //   order of indices in ints.
 #endif
-
-    const int nbfi = gbs_->shell(ish).nfunction();
-    const int nbfj = gbs_->shell(jsh).nfunction();
-    const int nbfk = dfbs_->shell(ksh).nfunction();
+    if(bs1 == 0) bs1 = gbs_;
+    if(bs2 == 0) bs2 = gbs_;
+    if(bs3 == 0) bs3 = dfbs_;
+    const int nbfi = bs1->shell(ish).nfunction();
+    const int nbfj = bs2->shell(jsh).nfunction();
+    const int nbfk = bs3->shell(ksh).nfunction();
     auto rv = make_shared<ThreeCenterIntContainer>(nbfi * nbfj, nbfk);
     //----------------------------------------//
     ints->compute_shell(ish, jsh, ksh);

@@ -966,6 +966,15 @@ shell_block_range(
 
 }
 
+inline range_of_shell_blocks<>
+shells_blocked_by_atoms(
+    GaussianBasisSet* basis,
+    OptionalRefParameter<GaussianBasisSet> dfbasis = 0
+)
+{
+  return shell_block_range(basis, dfbasis, 0, NoLastIndex, SameCenter, NoMaximumBlockSize);
+}
+
 inline std::ostream&
 operator << (std::ostream& out, const ShellData& ish)
 {

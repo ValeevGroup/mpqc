@@ -29,10 +29,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <boost/property_tree/ptree.hpp>
+
 #include <sstream>
 
 #include <util/misc/regtime.h>
 #include <util/misc/formio.h>
+#include <util/misc/xmlwriter.h>
 
 #include <util/state/state_bin.h>
 #include <util/group/mstate.h>
@@ -49,6 +52,7 @@
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/scf/scfops.h>
 #include <chemistry/qc/scf/scflocal.h>
+#include <chemistry/qc/scf/iter_logger.h>
 
 #include <errno.h>
 
@@ -190,6 +194,14 @@ SCF::compute_vector(double& eelec, double nucrep)
                               iter+1, eelec+eother+nucrep, delta)
                   << endl;
 
+    if(iter_log_.nonnull()) {
+      using boost::property_tree::ptree;
+      iter_log_->log_iter_misc([eelec,eother,nucrep,delta](ptree& parent, const XMLWriter& writer) {
+        parent.put("energy", eelec+eother+nucrep);
+        parent.put("delta", delta);
+      });
+    }
+
     // check convergence
     if (delta < desired_value_accuracy()
         && accuracy < desired_value_accuracy()
@@ -321,7 +333,7 @@ SCF::compute_vector(double& eelec, double nucrep)
     }
 
     if (iter_log_.nonnull()){
-      iter_log_->log_evals(evals);
+      iter_log_->log_evals(evals.copy());
 
       if (iter_log_->log_coeffs_enabled()){
         // Get the mospace_ object from the OneBodyWavefunction

@@ -69,6 +69,7 @@ namespace sc {
 // Forward Declarations
 
 class XMLWriter;
+class ApproximatePairWriter;
 namespace cadf { class AssignmentGrid; }
 
 //============================================================================//
@@ -471,6 +472,12 @@ class CADFCLHF: public CLHF {
      *  projecting out the bad orbitals
      */
     bool match_orbitals_use_svd_ = true;
+    /** Compute and print the Coulomb energy for debugging purposes
+     */
+    bool debug_coulomb_energy_ = false;
+    /** Compute and print the exchange energy for debugging purposes
+     */
+    bool debug_exchange_energy_ = false;
     //@}
 
     std::shared_ptr<ScreeningStatistics> stats_;
@@ -519,6 +526,8 @@ class CADFCLHF: public CLHF {
 
     bool get_shell_pair(ShellData& mu, ShellData& nu, PairSet pset = AllPairs);
 
+    Eigen::MatrixXd J_;
+
     RefSCMatrix compute_J();
 
     RefSCMatrix compute_K();
@@ -560,7 +569,9 @@ class CADFCLHF: public CLHF {
     TwoCenterIntContainerPtr ints_to_eigen(
         int ish, int jsh,
         Ref<TwoBodyTwoCenterInt>& ints,
-        TwoBodyOper::type ints_type
+        TwoBodyOper::type ints_type,
+        const GaussianBasisSet* bs1=0,
+        const GaussianBasisSet* bs2=0
     );
 
     template <typename ShellRange>
@@ -600,7 +611,10 @@ class CADFCLHF: public CLHF {
     ThreeCenterIntContainerPtr ints_to_eigen(
         int ish, int jsh, int ksh,
         Ref<TwoBodyThreeCenterInt>& ints,
-        TwoBodyOper::type ints_type
+        TwoBodyOper::type ints_type,
+        GaussianBasisSet* bs1 = 0,
+        GaussianBasisSet* bs2 = 0,
+        GaussianBasisSet* bs3 = 0
     );
 
     /// returns ints for shell in (inbf, jnbf) x kblk.nbf matrix in chemists' notation
@@ -697,6 +711,7 @@ class CADFCLHF: public CLHF {
     );
 
     shared_ptr<Decomposition> get_decomposition(int ish, int jsh, Ref<TwoBodyTwoCenterInt> ints);
+
 
     // Non-blocked version of cl_gmat_
     RefSymmSCMatrix gmat_;
@@ -874,6 +889,10 @@ class CADFCLHF: public CLHF {
     IndexListMap2 L_B;
     IndexListMap2 L_d_over;
     LinKRangeMap2 L_d_under_ranges;
+
+    friend class ApproximatePairWriter;
+
+    Ref<ApproximatePairWriter> pair_writer_;
 
 }; // CADFCLHF
 

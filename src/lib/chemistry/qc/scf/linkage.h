@@ -38,6 +38,8 @@
 #include <chemistry/qc/scf/uhf.h>
 #include <chemistry/qc/scf/scf.h>
 #include <chemistry/qc/scf/cadf/cadfclhf.h>
+#include <chemistry/qc/scf/cadf/approx_pairs.h>
+#include <chemistry/qc/scf/iter_logger.h>
 
 #include <math/scmat/linkage.h>
 #include <chemistry/molecule/linkage.h>
@@ -57,6 +59,7 @@ ForceLink<UHF> scf_force_link_e_;
 ForceLink<FockBuildCLHF> scf_force_link_f_;
 ForceLink<SCFIterationLogger> scf_force_link_g_;
 ForceLink<CADFCLHF> scf_force_link_h_;
+ForceLink<ApproximatePairWriter> scf_force_link_i_;
 
 }
 

@@ -625,6 +625,11 @@ CADFCLHF::compute_J()
       J(nu, mu) = J(mu, nu);
     }
   }
+  if(debug_coulomb_energy_) {
+    double jenergy = (J.array() * D.array()).sum();
+    ExEnv::out0() << indent << "Coulomb energy: " << std::setprecision(12) << jenergy << std::endl;
+  }
+  J_ = J;
   //ExEnv::out0() << indent << "J checksum: " << scprintf("%20.15f", J.sum()) << std::endl;
   //----------------------------------------//
   /*****************************************************************************************/ #endif //1}}}

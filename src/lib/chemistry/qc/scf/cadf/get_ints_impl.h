@@ -46,7 +46,7 @@ CADFCLHF::ints_to_eigen(
   for(auto ish : shell_range(iblk)) {
     int block_offset_j = 0;
     for(auto jsh : shell_range(jblk)) {
-      const auto& ints_ptr = ints_to_eigen(ish, jsh, ints, int_type);
+      const auto& ints_ptr = ints_to_eigen(ish, jsh, ints, int_type, ish.basis, jsh.basis);
       rv->block(block_offset_i, block_offset_j, ish.nbf, jsh.nbf) = *ints_ptr;
       block_offset_j += jsh.nbf;
     }
@@ -71,7 +71,7 @@ CADFCLHF::ints_to_eigen_threaded(
     ShellData ish, jsh;
     for(auto&& pair : threaded_shell_block_pair_range(iblk, jblk, ithr, nthread_)){
       boost::tie(ish, jsh) = pair;
-      const auto& ints_ptr = ints_to_eigen(ish, jsh, ints_for_thread[ithr], int_type);
+      const auto& ints_ptr = ints_to_eigen(ish, jsh, ints_for_thread[ithr], int_type, ish.basis, jsh.basis);
       rv->block(
           ish.bfoff - iblk.bfoff, jsh.bfoff - jblk.bfoff,
           ish.nbf, jsh.nbf
@@ -98,7 +98,7 @@ CADFCLHF::ints_to_eigen_map_threaded(
     ShellData ish, jsh;
     for(auto&& pair : threaded_shell_block_pair_range(iblk, jblk, ithr, nthread_)){
       boost::tie(ish, jsh) = pair;
-      const auto& ints_ptr = ints_to_eigen(ish, jsh, ints_for_thread[ithr], int_type);
+      const auto& ints_ptr = ints_to_eigen(ish, jsh, ints_for_thread[ithr], int_type, ish.basis, jsh.basis);
       rv.block(
           ish.bfoff - iblk.bfoff, jsh.bfoff - jblk.bfoff,
           ish.nbf, jsh.nbf
@@ -138,7 +138,7 @@ CADFCLHF::ints_to_eigen(
       Xblk.nbf
   );
   for(auto Xsh : shell_range(Xblk)) {
-    const auto& ints_ptr = ints_to_eigen(ish, jsh, Xsh, ints, int_type);
+    const auto& ints_ptr = ints_to_eigen(ish, jsh, Xsh, ints, int_type, ish.basis, jsh.basis, Xblk.basis);
     rv->middleCols(Xsh.bfoff - Xblk.bfoff, Xsh.nbf) = *ints_ptr;
   }
   return rv;
@@ -159,7 +159,7 @@ CADFCLHF::ints_to_eigen(
   );
   for(auto ish: shell_range(iblk)) {
     for(auto Xsh : shell_range(Xblk)) {
-      const auto& ints_ptr = ints_to_eigen(ish, jsh, Xsh, ints, int_type);
+      const auto& ints_ptr = ints_to_eigen(ish, jsh, Xsh, ints, int_type, ish.basis, jsh.basis, Xsh.basis);
       rv->block(
           (ish.bfoff - iblk.bfoff) * jsh.nbf, Xsh.bfoff - Xblk.bfoff,
           ish.nbf*jsh.nbf, Xsh.nbf
@@ -183,7 +183,7 @@ CADFCLHF::ints_to_eigen(
   );
   int block_offset = 0;
   for(auto ish: shell_range(iblk)) {
-    const auto& ints_ptr = ints_to_eigen(ish, jsh, Xsh, ints, int_type);
+    const auto& ints_ptr = ints_to_eigen(ish, jsh, Xsh, ints, int_type, ish.basis, jsh.basis, Xsh.basis);
     rv->block(
         block_offset * jsh.nbf, 0,
         ish.nbf*jsh.nbf, Xsh.nbf

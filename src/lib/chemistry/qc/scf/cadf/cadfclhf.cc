@@ -43,8 +43,10 @@
 #include <util/misc/xmlwriter.h>
 #include <math/scmat/blas.h>
 #include <util/container/conc_cache.h>
+#include <chemistry/qc/scf/iter_logger.h>
 
 #include "cadfclhf.h"
+#include "approx_pairs.h"
 
 #define EIGEN_NO_AUTOMATIC_RESIZING 1
 
@@ -115,6 +117,11 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
         __FILE__, __LINE__, "df_basis");
   }
   //----------------------------------------------------------------------------//
+  pair_writer_ << keyval->describedclassvalue("pair_writer", KeyValValueRefDescribedClass(0));
+  if(pair_writer_.nonnull()) {
+    pair_writer_->wfn_ = this;
+  }
+  //----------------------------------------------------------------------------//
   nthread_ = keyval->intvalue("nthread", KeyValValueint(threadgrp_->nthread()));
   //----------------------------------------------------------------------------//
   // get the bound for filtering pairs.  This should be smaller than the general
@@ -151,11 +158,15 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   exact_diagonal_J_ = keyval->booleanvalue("exact_diagonal_J", KeyValValueboolean(exact_diagonal_J_));
   exact_diagonal_K_ = keyval->booleanvalue("exact_diagonal_K", KeyValValueboolean(exact_diagonal_K_));
   //----------------------------------------------------------------------------//
+  debug_coulomb_energy_ = keyval->booleanvalue("debug_coulomb_energy", KeyValValueboolean(debug_coulomb_energy_));
+  debug_exchange_energy_ = keyval->booleanvalue("debug_exchange_energy", KeyValValueboolean(debug_exchange_energy_));
+  //----------------------------------------------------------------------------//
   use_norms_nu_ = keyval->booleanvalue("use_norms_nu", KeyValValueboolean(use_norms_nu_));
   use_norms_B_ = keyval->booleanvalue("use_norms_B", KeyValValueboolean(use_norms_B_));
   match_orbitals_ = keyval->booleanvalue("match_orbitals", KeyValValueboolean(match_orbitals_));
   match_orbitals_use_svd_ = keyval->booleanvalue("match_orbitals_use_svd", KeyValValueboolean(match_orbitals_use_svd_));
   match_orbitals_max_diff_ = keyval->doublevalue("match_orbitals_max_diff", KeyValValuedouble(match_orbitals_max_diff_));
+  match_orbitals_max_homo_offset_ = keyval->doublevalue("match_orbitals_max_homo_offset", KeyValValuedouble(match_orbitals_max_homo_offset_));
   use_norms_sigma_ = keyval->booleanvalue("use_norms_sigma", KeyValValueboolean(use_norms_sigma_));
   sigma_norms_chunk_by_atoms_ = keyval->booleanvalue("sigma_norms_chunk_by_atoms", KeyValValueboolean(sigma_norms_chunk_by_atoms_));
   xml_screening_data_ = keyval->booleanvalue("xml_screening_data", KeyValValueboolean(xml_screening_data_));
@@ -209,6 +220,7 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
 CADFCLHF::~CADFCLHF()
 {
   // Clean up the coefficient data
+  if(pair_writer_.nonnull()) pair_writer_->wfn_ = 0;
   if(coefficients_data_) delete[] coefficients_data_;
   if(dist_coefs_data_) delete[] dist_coefs_data_;
 }
@@ -230,6 +242,8 @@ CADFCLHF::print(ostream&o) const
   o << indent << "coef_screening_thresh = " << double_str(coef_screening_thresh_) << endl;
   o << indent << "d_over_screening_thresh = " << double_str(d_over_screening_thresh_) << endl;
   o << indent << "d_under_screening_thresh = " << double_str(d_under_screening_thresh_) << endl;
+  o << indent << "debug_coulomb_energy = " << bool_str(debug_coulomb_energy_) << endl;
+  o << indent << "debug_exchange_energy = " << bool_str(debug_exchange_energy_) << endl;
   o << indent << "dfbasis name = " << dfbs_->label() << endl;
   o << indent << "distance_damping_factor = " << double_str(distance_damping_factor_) << endl;
   o << indent << "distance_screening_thresh = " << double_str(distance_screening_thresh_) << endl;
@@ -244,6 +258,7 @@ CADFCLHF::print(ostream&o) const
   o << indent << "linK_use_distance = " << bool_str(linK_use_distance_) << endl;
   o << indent << "match_orbitals = " << bool_str(match_orbitals_) << endl;
   o << indent << "match_orbitals_max_diff = " << double_str(match_orbitals_max_diff_) << endl;
+  o << indent << "match_orbitals_max_homo_offset = " << double_str(match_orbitals_max_homo_offset_) << endl;
   o << indent << "match_orbitals_use_svd = " << bool_str(match_orbitals_use_svd_) << endl;
   o << indent << "pair_screening_thresh = " << double_str(pair_screening_thresh_) << endl;
   o << indent << "scale_screening_thresh = " << bool_str(scale_screening_thresh_) << endl;
@@ -333,7 +348,18 @@ CADFCLHF::ao_fock(double accuracy)
     decltype(ints_computed_locally_.load()) ints_computed = ints_computed_locally_;
     scf_grp_->sum(&ints_computed, 1);
     if(scf_grp_->me() == 0) {
-      ExEnv::out0() << "  Computed " << ints_computed << " integrals to determine coefficients." << endl;
+      ExEnv::out0() << indent << "Computed " << ints_computed << " integrals to determine coefficients." << endl;
+    }
+    if(pair_writer_.nonnull()) {
+      if(distribute_coefficients_) {
+        throw FeatureNotImplemented("Can't write pairs with distributed coefficients", __FILE__, __LINE__, class_desc());
+      }
+      pair_writer_->write_pairs();
+    }
+    if(iter_log_.nonnull()) {
+      iter_log_->log_global_misc([](ptree& parent, const XMLWriter& writer, RefSymmSCMatrix hcore) {
+        ptree& child = writer.insert_child(parent, hcore, "hcore");
+      }, hcore_);
     }
   }
   //---------------------------------------------------------------------------------------//
@@ -368,6 +394,12 @@ CADFCLHF::ao_fock(double accuracy)
     if(xml_debug_) begin_xml_context("compute_J");
     RefSCMatrix J = compute_J();
     if(xml_debug_) write_as_xml("J", J), end_xml_context("compute_J");
+    if(iter_log_.nonnull()) {
+      iter_log_->log_iter_misc([J](ptree& parent, const XMLWriter& writer) {
+        ptree& child = writer.insert_child(parent, J, "J");
+        child.put("<xmlattr>.name", "Coulomb matrix");
+      });
+    }
     G = J.copy();
     decltype(ints_computed_locally_.load()) ints_computed = ints_computed_locally_;
     scf_grp_->sum(&ints_computed, 1);
@@ -380,6 +412,12 @@ CADFCLHF::ao_fock(double accuracy)
     if(xml_debug_) begin_xml_context("compute_K");
     RefSCMatrix K = compute_K();
     if(xml_debug_) write_as_xml("K", K), end_xml_context("compute_K");
+    if(iter_log_.nonnull()) {
+      iter_log_->log_iter_misc([K](ptree& parent, const XMLWriter& writer) {
+        ptree& child = writer.insert_child(parent, K, "K");
+        child.put("<xmlattr>.name", "exchange matrix");
+      });
+    }
     G.accumulate( -1.0 * K);
     decltype(ints_computed_locally_.load()) ints_computed = ints_computed_locally_;
     scf_grp_->sum(&ints_computed, 1);
@@ -417,6 +455,12 @@ CADFCLHF::ao_fock(double accuracy)
   cl_fock_.result_noupdate().accumulate(gmat_);
   accumddh_->accum(cl_fock_.result_noupdate());
   cl_fock_.computed()=1;
+  if(iter_log_.nonnull()) {
+    iter_log_->log_iter_misc([](ptree& parent, const XMLWriter& writer, RefSymmSCMatrix F) {
+      ptree& child = writer.insert_child(parent, F, "F");
+      child.put("<xmlattr>.name", "ao fock matrix");
+    }, cl_fock_.result_noupdate());
+  }
   //---------------------------------------------------------------------------------------//
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/

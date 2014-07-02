@@ -26,7 +26,7 @@
 //
 
 #include <chemistry/qc/wfn/tawfn.hpp>
-#include <tiled_array.h>
+#include <tiledarray.h>
 #include <mpqc/utility/mutex.hpp>
 #include <util/misc/regtime.h>
 #include <util/misc/scexception.h>
@@ -150,20 +150,20 @@ Wavefunction::ao_hcore() {
   return hcore_.result_noupdate();
 }
 
-Wavefunction::TAMatrixExpr
-Wavefunction::rdm1_expr(std::string input) {
-  return rdm1()(input);
-}
+//Wavefunction::TAMatrixExpr
+//Wavefunction::rdm1_expr(std::string input) {
+//  return rdm1()(input);
+//}
 
-Wavefunction::TAMatrixExpr
-Wavefunction::ao_overlap_expr(std::string input){
-  return ao_overlap()(input);
-}
+//Wavefunction::TAMatrixExpr
+//Wavefunction::ao_overlap_expr(std::string input){
+//  return ao_overlap()(input);
+//}
 
-Wavefunction::TAMatrixExpr
-Wavefunction::ao_hcore_expr(std::string input){
-  return ao_hcore()(input);
-}
+//Wavefunction::TAMatrixExpr
+//Wavefunction::ao_hcore_expr(std::string input){
+//  return ao_hcore()(input);
+//}
 
 double Wavefunction::magnetic_moment() const {
   //if (magnetic_moment_ > extent(osorange_)) // magnetic moment greater than the number of states means it has not been computed yet.

@@ -29,7 +29,7 @@
 #define MPQC_CHEMISTRY_QC_SCF_GENGINE_HPP
 
 //#include <tiledarray_fwd.h> can't use until fwd gets fixed if possible
-#include <tiled_array.h>
+#include <tiledarray.h>
 #include <vector>
 #include <utility>
 #include <util/class/class.h>
@@ -48,7 +48,6 @@ namespace mpqc {
     class GEngineBase : virtual public sc:: DescribedClass {
     public:
       typedef TiledArray::Array<double,2> TAMatrix;
-      using return_type = decltype(std::declval<TAMatrix>().operator()("i,j"));
 
       GEngineBase() = default;
       virtual ~GEngineBase() = default;
@@ -80,7 +79,7 @@ namespace mpqc {
       using_density() = 0;
 
       virtual
-      return_type
+      TAMatrix
       operator()(const std::string v) = 0;
 
     private:

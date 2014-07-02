@@ -47,7 +47,7 @@ namespace mpqc {
       // G matrix engine
       sc::Ref<GEngineBase> G_eng;
 
-      GEngineBase::return_type
+      GEngineBase::TAMatrix
       G(const std::string s);
 
     private:

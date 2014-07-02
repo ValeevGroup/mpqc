@@ -28,7 +28,7 @@
 #ifndef MPQC_CHEMISTRY_QC_BASIS_TASKINTEGRALS_HPP_
 #define MPQC_CHEMISTRY_QC_BASIS_TASKINTEGRALS_HPP_
 
-#include <tiled_array.h>
+#include <tiledarray.h>
 #include <memory>
 #include <chemistry/qc/basis/tiledbasisset.hpp>
 #include <mpqc/integrals/integrals.hpp>

@@ -40,7 +40,7 @@ namespace mpqc{
     public:
       typedef Wavefunction::TAMatrix TAMatrix;
       typedef Wavefunction::TAVector TAVector;
-      typedef Wavefunction::TAMatrixExpr TAMatrixExpr;
+      //typedef Wavefunction::TAMatrixExpr TAMatrixExpr;
       typedef elem::DistMatrix<double, elem::VR, elem::STAR> ElemVector;
       typedef std::pair<ElemVector, TAMatrix> ElemTAEigenSystem;
 
@@ -111,7 +111,7 @@ namespace mpqc{
        * If it has not been initialized or computed the it will compute
        * the matrix to the internal desired_accuracy
        * */
-      TAMatrixExpr ao_fock_expr(std::string);
+      //TAMatrixExpr ao_fock_expr(std::string);
 
       /// @return the converged scf energy
       virtual double scf_energy() = 0;

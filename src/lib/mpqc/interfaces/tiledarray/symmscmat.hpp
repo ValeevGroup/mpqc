@@ -28,7 +28,7 @@
 #ifndef mpqc_interfaces_tiledarray_symmscmat_hpp
 #define mpqc_interfaces_tiledarray_symmscmat_hpp
 
-#include <tiled_array.h>
+#include <tiledarray.h>
 
 namespace mpqc {
 /// addtogroup TiledArrayInterface

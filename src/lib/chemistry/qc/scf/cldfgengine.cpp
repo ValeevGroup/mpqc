@@ -40,7 +40,6 @@ using namespace mpqc::TA;
 using namespace sc;
 
 using TAMatrix = ClDFGEngine::TAMatrix;
-using return_type = ClDFGEngine::return_type;
 using EMatrix = elem::DistMatrix<double>;
 
 sc::ClassDesc ClDFGEngine::class_desc_(
@@ -102,7 +101,7 @@ mpqc::TA::ClDFGEngine::ClDFGEngine(const sc::Ref<sc::KeyVal> &kv) : integral_(),
 
 }
 
-return_type
+TAMatrix
 mpqc::TA::ClDFGEngine::operator ()( const std::string v) {
 
   // Get the user input
@@ -143,7 +142,7 @@ mpqc::TA::ClDFGEngine::operator ()( const std::string v) {
 
 
 // Do contraction with coefficients
-return_type
+TAMatrix
 mpqc::TA::ClDFGEngine::density_contraction(
         const std::vector<std::string> input){
  /*
@@ -169,13 +168,14 @@ mpqc::TA::ClDFGEngine::density_contraction(
   // just for conveience
   const TAMatrix &D = *density_;
 
-  auto expr = 2 * (df_ints_(i+j+X) * ( D(m+n) * df_ints_(m+n+X) ) )
+  TAMatrix expr; 
+  expr(i+j) = 2 * (df_ints_(i+j+X) * ( D(m+n) * df_ints_(m+n+X) ) )
                 - (df_ints_(i+n+X) * ( D(nC+mC) * df_ints_(m+j+X) ) );
   return expr;
 }
 
 // Do contraction with coefficients
-return_type
+TAMatrix
 mpqc::TA::ClDFGEngine::coefficient_contraction(
         const std::vector<std::string> input){
  /*
@@ -202,14 +202,10 @@ mpqc::TA::ClDFGEngine::coefficient_contraction(
   const TAMatrix &C = *coeff_;
 
   // Precompute Exch Term
-  if(df_K_.is_initialized()){
-    df_K_("j,Z,X") = C("m,Z") * df_ints_("m,j,X");
-  } else {
-    df_K_ = C("m,Z") * df_ints_("m,j,X");
-    df_K_("j,Z,X") = df_K_("Z,j,X"); // Transpose for later contraction efficieny
-  }
+  df_K_("j,Z,X") = C("m,Z") * df_ints_("m,j,X");
 
-  auto expr = 2 * (df_ints_(i+j+X) * (C(m+Z) * df_K_(m+Z+X) ) )
+  TAMatrix expr; 
+  expr(i+j) = 2 * (df_ints_(i+j+X) * (C(m+Z) * df_K_(m+Z+X) ) )
                 - (df_K_(i+Z+X) * df_K_(jE+Z+X) );
   return expr;
 }
@@ -299,7 +295,7 @@ mpqc::TA::ClDFGEngine::compute_symetric_df_ints() {
 
   tim.enter("Eri3 * Eri2^{-1} Contraction");
   // Create df_ints_ tensor from eri3(i,j,P) * U_{eri2}^{-1}(P,X)
-  df_ints_ = df_ints_("i,j,P") * eri2_ints("P,X");
+  df_ints_("i,j,X") = df_ints_("i,j,P") * eri2_ints("P,X");
   world_->madworld()->gop.fence(); // so eri2_ints doesn't go out of scope.
   tim.exit("Eri3 * Eri2^{-1} Contraction");
 

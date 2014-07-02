@@ -27,7 +27,7 @@
 
 #include <math/elemental/eigensolver.hpp>
 #include <elemental.hpp>
-#include <tiled_array.h>
+#include <tiledarray.h>
 
 using namespace mpqc;
 using namespace mpqc::TA;

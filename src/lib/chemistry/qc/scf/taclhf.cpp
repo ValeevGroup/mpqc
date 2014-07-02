@@ -26,7 +26,7 @@
 //
 
 #include <chemistry/qc/scf/taclhf.hpp>
-#include <tiled_array.h>
+#include <tiledarray.h>
 #include <TiledArray/algebra/diis.h>
 #include <chemistry/qc/basis/integralenginepool.hpp>
 #include <chemistry/qc/basis/taskintegrals.hpp>
@@ -60,7 +60,7 @@ mpqc::TA::CLHF::CLHF(const sc::Ref<sc::KeyVal>& kval) :
   }
 }
 
-GEngineBase::return_type
+GEngineBase::TAMatrix
 mpqc::TA::CLHF::G(const std::string s){
   // Prefer coefficent build, but only possible if we have a fock matrix
   if(!G_eng->coefficients_set() && SCF::scf_ao_fock_().is_initialized()){
@@ -93,23 +93,24 @@ void CLHF::compute_ao_fock(double desired_accuracy) {
 
     scf_tim.enter("Coeff_ eigensolver");
     Coeff_ = eigensolver_occ_Coeff(F, S, occupation());
-    D = Coeff_("mu,i") * Coeff_("nu,i");
+    D("mu,nu") = Coeff_("mu,i") * Coeff_("nu,i");
     scf_tim.exit("Coeff_ eigensolver");
 
     scf_tim.enter("Fock matrix Contraction");
     // Update the Fock matrix
-    F("i,j") = H("i,j") + G("i,j");
+    TAMatrix GTemp = G("i,j");
+    F("i,j") = H("i,j") + GTemp("i,j");
     scf_tim.exit("Fock matrix Contraction");
 
     scf_tim.enter("Gradient and diis");
     // Compute the gradient and extrapolate with diis
-    TAMatrix Grad = 8 * ( S("i,q") * D("q,x") * F("x,j") -
+    TAMatrix Grad; Grad("i,j") = 8 * ( S("i,q") * D("q,x") * F("x,j") -
                           F("i,q") * D("q,x") * S("x,j") );
     diis.extrapolate(F,Grad);
     scf_tim.exit("Gradient and diis");
 
     // Compute the error as the largest element of the gradient.
-    error_norminf = ::TiledArray::expressions::norminf(Grad("i,j"));
+    error_norminf = Grad("i,j").max();
     world()->madworld()->gop.fence();
     if(world()->madworld()->rank() == 0){
       std::cout << "\tIteration " << iter++ << "\n";
@@ -126,7 +127,8 @@ TAMatrix& mpqc::TA::CLHF::scf_ao_fock_(){
 
   if(!SCF::scf_ao_fock_().is_initialized()){
     // Initialize fock with Gengine
-    SCF::scf_ao_fock_() = ao_hcore()("i,j") + G("i,j");
+    TAMatrix GTemp = G("i,j");
+    SCF::scf_ao_fock_()("i,j") = ao_hcore()("i,j") + GTemp("i,j");
     world()->madworld()->gop.fence();
   }
 

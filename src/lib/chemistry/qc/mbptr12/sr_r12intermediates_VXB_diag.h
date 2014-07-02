@@ -602,11 +602,10 @@ namespace sc {
   SingleReference_R12Intermediates<T>::Xam_CabsSingles(const TArray2& TmA,
                                                        const TArray2& Tma) {
     // density from CABS Singles contribution
+    TArray2 D_e2_mn, D_e2_AB;
     // D^m_n =  t^m_A' * t^A'_n
-    TArray2 D_e2_mn;
     D_e2_mn("m,n")= TmA("m,A'") * TmA("n,A'");
     // D^A'_B' = t^A'_m * t^m_B'
-    TArray2 D_e2_AB;
     D_e2_AB("A',B'") = TmA("m,A'") * TmA("m,B'");
 
     TArray4d g_aAmn = ijxy("<a A'|g|m n>");
@@ -630,14 +629,12 @@ namespace sc {
     return Xam_E2;
   }
 
-  // Xam contribution from MP2
+  // Xam contribution from MP2 correlation
   template <typename T>
   typename SingleReference_R12Intermediates<T>::TArray2
   SingleReference_R12Intermediates<T>::Xam_mp2(const TArray4& T2_ijab,
                                                const TArray2& Dij,
                                                const TArray2& Dab) {
-
-    // Xai contribution from MP2 part
     TArray2 Xai_mp2, Xam_mp2;
     Xai_mp2("a,i") = 2.0 * (
                            // derivatives of 1/4 g^kl_cd T^cd_kl
@@ -677,28 +674,26 @@ namespace sc {
     return XaiAddToXam(Xam_mp2, Xai_mp2);
   }
 
-  // Xai contribution from MP2 F12 coulping part
+  // Xai contribution from MP2 F12 coupling part
   template <typename T>
   typename SingleReference_R12Intermediates<T>::TArray2
   SingleReference_R12Intermediates<T>::Xam_Cmp2f12(const double C_0, const double C_1,
                                          const TArray4& T2_ijab, const TArray4& A_ijab,
                                          const TArray2& Dij, const TArray2& Dab,
                                          const TArray2& RT_apb) {
-
     const double R_C1 = (0.5 * C_0 + 1.5 * C_1);
     const double R_C2 = (0.5 * C_0 - 1.5 * C_1);
     const double RR_C1 = 0.5 * C_0 * C_0 + 1.5 * C_1 * C_1;
     const double RR_C2 = 0.5 * C_0 * C_0 - 1.5 * C_1 * C_1;
 
-    // Xai contribution from MP2 part & MP2 F12 coulping part
     TArray2 Xai_mp2f12, Xam_mp2f12;
     Xai_mp2f12("a,i") =
-                        // derivatives of 1/4 g^kl_cd \tilde{T}^cd_kl
-                        // g^al_cd \tilde{T}^cd_il
+                       // derivatives of 1/4 g^kl_cd \tilde{T}^cd_kl
+                       // g^al_cd \tilde{T}^cd_il
                        -  _4("<a l|g|c d>")
                           * (R_C1 * A_ijab("i,l,c,d") + R_C2 * A_ijab("l,i,c,d"))
 
-                        // F^a'_b R^al_a'c \tilde{T}^bc_il
+                       // F^a'_b R^al_a'c \tilde{T}^bc_il
                        - _4("<a l|r|b_F(a') c>")
                          * (  R_C1 * T2_ijab("i,l,b,c") + R_C2 * T2_ijab("l,i,b,c")
                             + RR_C1 * A_ijab("i,l,b,c") + RR_C2 * A_ijab("l,i,b,c"))
@@ -706,32 +701,31 @@ namespace sc {
                          * (  R_C1 * T2_ijab("i,l,c,b") + R_C2 * T2_ijab("l,i,c,b")
                             + RR_C1 * A_ijab("i,l,c,b") + RR_C2 * A_ijab("l,i,c,b"));
     Xam_mp2f12("a,m") =
-                        // derivatives of 1/4 g^kl_cd \tilde{T}^cd_kl
-                        // g_ic^kl \tilde{T}^Ac_kl
+                       // derivatives of 1/4 g^kl_cd \tilde{T}^cd_kl
+                       // g_ic^kl \tilde{T}^Ac_kl
                          (R_C1 * A_ijab("k,l,a,c") + R_C2 * A_ijab("k,l,c,a"))
                          * _4("<m c|g|k l>")
 
-                        // derivatives of 1/2 F^c_d D^d_c - 1/2 F^l_k D^k_l
-                        // g^ac_md D^d_c
+                       // derivatives of 1/2 F^c_d D^d_c - 1/2 F^l_k D^k_l
+                       // g^ac_md D^d_c
                        - (2.0 * _4("<a c|g|m d>") - _4("<a c|g|d m>"))
                          * Dab("d,c")
-                        // g^al_mk D^k_l
+                       // g^al_mk D^k_l
                        + (2.0 * _4("<a l|g|m k>") - _4("<a l|g|k m>"))
                          * Dij("k,l")
 
-                        // derivatives of 1/2 F^a'_b R^kl_a'c \tilde{T}^bc_kl
-                        //   1/2 F^a'_m R^kl_a'b \tilde{T}^ab_kl
-                        // & 1/2 F^a'_b R^kl_ma' \tilde{T}^ab_kl
+                       // derivatives of 1/2 F^a'_b R^kl_a'c \tilde{T}^bc_kl
+                       //   1/2 F^a'_m R^kl_a'b \tilde{T}^ab_kl
+                       // & 1/2 F^a'_b R^kl_ma' \tilde{T}^ab_kl
                        + (  R_C1 * T2_ijab("k,l,a,b") + R_C2 * T2_ijab("k,l,b,a")
                           + RR_C1 * A_ijab("k,l,a,b") + RR_C2 * A_ijab("k,l,b,a"))
                          * (_4("<k l|r|m_F(a') b>") + _4("<k l|r|m b_F(a')>"))
 
-                        //   g^aa'_mb 1/2 R^kl_a'c \tilde{T}^bc_kl
-                        // & g^ab_ma' 1/2 R^kl_a'c \tilde{T}^bc_kl
+                       //   g^aa'_mb 1/2 R^kl_a'c \tilde{T}^bc_kl
+                       // & g^ab_ma' 1/2 R^kl_a'c \tilde{T}^bc_kl
                        - (  2.0 * _4("<a a'|g|m b>") - _4("<a a'|g|b m>")
                           + 2.0 * _4("<a b|g|m a'>") - _4("<a b|g|a' m>"))
                          * RT_apb("a',b");
-    //std::cout << std::endl << "Xam_mp2f12:\n" << Xam_mp2f12 << std::endl;
 
     return XaiAddToXam(Xam_mp2f12, Xai_mp2f12);
   }
@@ -744,10 +738,14 @@ namespace sc {
     const double R_C1 = (0.5 * C_0 + 1.5 * C_1);
     const double R_C2 = (0.5 * C_0 - 1.5 * C_1);
 
+    std::cout << std::endl << "Tests_V* ..." << std::endl;
+
     TArray4d gr_ak_ij = ijxy("<a k|gr|i j>");
     TArray4d rpq_kl = ijxy("<p q|r|k l>");
     TArray4d rapn_kl = ijxy("<a' n|r|k l>");
     TArray4d rnap_kl = ijxy("<n a'|r|k l>");
+
+    std::cout << std::endl << "Tests_V** ..." << std::endl;
 
     TArray4d raap_kl = ijxy("<a a'|r|k l>");
     TArray4d rmap_kl = ijxy("<m a'|r|k l>");
@@ -793,6 +791,8 @@ namespace sc {
     const double RR_C1 = 0.5 * C_0 * C_0 + 1.5 * C_1 * C_1;
     const double RR_C2 = 0.5 * C_0 * C_0 - 1.5 * C_1 * C_1;
 
+    std::cout << std::endl << "Tests_X*" << std::endl;
+
     TArray4d r2_akjl = ijxy("<a k|r2|j l>");
     TArray4d r2_kajl = ijxy("<k a|r2|j l>");
     TArray2 F_ij = xy("<i|F|j>");
@@ -801,9 +801,12 @@ namespace sc {
     TArray4d r_apnjk = ijxy("<a' n|r|j k>");
     TArray4d r_napjk = ijxy("<n a'|r|j k>");
 
-    // - 1/2 (F^i_i + F^k_k) R^ak_alpha beta R_ik^alpha beta
+    std::cout << std::endl << "Tests_X**" << std::endl;
+
     TArray2 X_ai, X_am;
-    X_ai("a,i")=  - (RR_C1 * r2_akjl("a,k,j,l") + RR_C2 * r2_kajl("k,a,j,l"))
+
+    // - 1/2 (F^i_i + F^k_k) R^ak_alpha beta R_ik^alpha beta
+    X_ai("a,i") = - (RR_C1 * r2_akjl("a,k,j,l") + RR_C2 * r2_kajl("k,a,j,l"))
                     * _2("<l|I|k>") * F_ij("j,i")
 
                   - (RR_C1 * r2_akjl("a,k,i,l") + RR_C2 * r2_kajl("k,a,i,l"))
@@ -839,11 +842,15 @@ namespace sc {
     const double B_C1 = 0.5 * C_0 * C_0 + 1.5 * C_1 * C_1;
     const double B_C2 = 0.5 * C_0 * C_0 - 1.5 * C_1 * C_1;
 
-    // 1st parts of B_ai:
+    TArray2 B_ai, B_am;
+
+    // 1st parts of B_am:
     // - R^ak_A'B' F^A'_C' R^ik_C'B' (A': all virtual orbital index)
     TArray4d r_akPQ = ijxy("<a k|r|p' q'>");
     TArray4d r_kaPQ = ijxy("<k a|r|p' q'>");
     TArray4d rik_PKQ = ijxy("<i k|r|p'_K(r') q'>");
+
+    std::cout << std::endl << "Tests_B*" << std::endl;
 
     TArray4d r_akPn = ijxy("<a k|r|p' n>");
     TArray4d r_kaPn = ijxy("<k a|r|p' n>");
@@ -852,6 +859,8 @@ namespace sc {
     TArray4d r_akmA = ijxy("<a k|r|m a'>");
     TArray4d r_kamA = ijxy("<k a|r|m a'>");
     TArray4d rik_mFA = ijxy("<i k|r|m_F(n) a'>");
+
+    std::cout << std::endl << "Tests_B**" << std::endl;
 
     TArray4d r_akpq = ijxy("<a k|r|p b>");
     TArray4d r_kapq = ijxy("<k a|r|p b>");
@@ -870,7 +879,8 @@ namespace sc {
     TArray4d rak_AFb = ijxy("<a k|r|a'_F(q) b>");
     TArray4d rka_AFb = ijxy("<k a|r|a'_F(q) b>");
 
-    TArray2 B_ai;
+    std::cout << std::endl << "Tests_B***" << std::endl;
+
     B_ai("a,i") =  //          diag
                  - ( B_C1 * _4("<a k|rTr|i l>") + B_C2 * _4("<k a|rTr|i l>")
                    //           Q
@@ -936,6 +946,8 @@ namespace sc {
                           + r_ikAb("i,k,a',b") * rka_AFb("k,a,a',b"))
                   );
 
+    std::cout << std::endl << "Tests_B****" << std::endl;
+
 //    // test codes for computing B_ai for H2O molecule
 //   const char* a = "a";
 //   const char* i = "i";
@@ -962,7 +974,7 @@ namespace sc {
 //   }
 //   std::cout << "Bijkl sum: " << sum_Bijij << std::endl;
 
-    // 2nd parts of B_ai:
+    // 2nd parts of B_am:
     //    1/2 R^ab'_kl F^c'_m R^c'b'_kl
     // + (1/2 R^mb'_kl F^C'_a R^C'b'_kl + 1/2 R^mb'_kl F^c'_b' R^ab'_kl)
     TArray4d r_abpkl = ijxy("<a b'|r|k l>");
@@ -970,7 +982,6 @@ namespace sc {
     TArray4d raFbp_kl = ijxy("<a_F(c) b'|r|k l>");
     TArray4d rabpFp_kl = ijxy("<a b'_F(c')|r|k l>") ;
 
-    TArray2 B_am;
     B_am("a,m") =  (B_C1 * r_abpkl("a,b',k,l") + B_C2 * r_abpkl("a,b',l,k"))
                    * _4("<k l|r|m_F(c') b'>")
                    //
@@ -1421,7 +1432,7 @@ namespace sc {
     }
 #endif
 
-    bool compute_dipole = false;
+    bool compute_dipole = true;
     bool compute_quadrupole = true;
     bool compute_EFG = false;
 
@@ -1635,12 +1646,11 @@ namespace sc {
 
     // density from CABS Singles contribution
     // D^m_n =  t^m_A' * t^A'_n
-    TArray2 D_e2_mn;
-    D_e2_mn("m,n") = TmA("m,A'") * TmA("n,A'");
     // D^A'_B' = t^A'_m * t^m_B'
-    TArray2 D_e2_AB;
-    D_e2_AB("A',B'") = TmA("m,A'") * TmA("m,B'");
     // D^A'_m = t^A'_m
+    TArray2 D_e2_mn, D_e2_AB;
+    D_e2_mn("m,n") = TmA("m,A'") * TmA("n,A'");
+    D_e2_AB("A',B'") = TmA("m,A'") * TmA("m,B'");
 
     // CABS singles orbital response
     TArray2 Xam_E2 = Xam_CabsSingles(TmA, Tma);
@@ -1874,8 +1884,7 @@ namespace sc {
     // which is needed for MP2 amplitudes
     TArray2 mFij;
     mFij("i,j") = - _2("<i|F|j>");
-    TArray4 g_ijab;
-    g_ijab("i,j,a,b") = _4("<i j|g|a b>");
+    TArray4d g_ijab = ijxy("<i j|g|a b>");
 
     typedef detail::diag_precond4<double> pc4eval_type;
     typedef TA::Array<T, 4, LazyTensor<T, 4, pc4eval_type > > TArray4dLazy;
@@ -1907,6 +1916,7 @@ namespace sc {
                       * T2_ijab("j,k,a,b");
     D_mp2_ab("a,b") = (2.0 * T2_ijab("i,j,a,c") - T2_ijab("i,j,c,a"))
                       * T2_ijab("i,j,b,c");
+
     // MP2 orbital response
     TArray2 X_mp2 = Xam_mp2(T2_ijab, D_mp2_ij, D_mp2_ab);
     TArray2 Dbn_mp2(X_mp2.get_world(), X_mp2.trange());
@@ -1919,7 +1929,7 @@ namespace sc {
     if (compute_dipole) {
       // MP2 density contribution to dipole
       const double mu_z_mp2 = - dot(mu_z_ij("i,j"), D_mp2_ij("i,j"))
-                             + dot(mu_z_ab("a,b"), D_mp2_ab("a,b"));
+                              + dot(mu_z_ab("a,b"), D_mp2_ab("a,b"));
       std::cout << std::endl << "mu_z (MP2) = "
                 << scprintf("%12.10f", - mu_z_mp2 * 2.0) << std::endl;
 
@@ -1932,18 +1942,19 @@ namespace sc {
 
     // MP2 contribution to quadrupoles
     if (compute_quadrupole) {
-//      const double q_xx_mp2 = - dot(Qxx_ij("i,j"), D_mp2_ij("i,j"))
-//                              + dot(Qxx_ab("a,b"), D_mp2_ab("a,b"));
-//      const double q_yy_mp2 = - dot(Qyy_ij("i,j"), D_mp2_ij("i,j"))
-//                              + dot(Qyy_ab("a,b"), D_mp2_ab("a,b"));
-//      const double q_zz_mp2 = - dot(Qzz_ij("i,j"), D_mp2_ij("i,j"))
-//                              + dot(Qzz_ab("a,b"), D_mp2_ab("a,b"));
-      const double q_xx_mp2 = - dot(q_xx_ij("i,j"), D_mp2_ij("i,j"))
-                              + dot(q_xx_ab("a,b"), D_mp2_ab("a,b"));
-      const double q_yy_mp2 = - dot(q_yy_ij("i,j"), D_mp2_ij("i,j"))
-                              + dot(q_yy_ab("a,b"), D_mp2_ab("a,b"));
-      const double q_zz_mp2 = - dot(q_zz_ij("i,j"), D_mp2_ij("i,j"))
-                              + dot(q_zz_ab("a,b"), D_mp2_ab("a,b"));
+      const double q_xx_mp2 = - dot(Qxx_ij("i,j"), D_mp2_ij("i,j"))
+                              + dot(Qxx_ab("a,b"), D_mp2_ab("a,b"));
+      const double q_yy_mp2 = - dot(Qyy_ij("i,j"), D_mp2_ij("i,j"))
+                              + dot(Qyy_ab("a,b"), D_mp2_ab("a,b"));
+      const double q_zz_mp2 = - dot(Qzz_ij("i,j"), D_mp2_ij("i,j"))
+                              + dot(Qzz_ab("a,b"), D_mp2_ab("a,b"));
+//      // x2, y2, z2 components to quadrupole moment
+//      const double q_xx_mp2 = - dot(q_xx_ij("i,j"), D_mp2_ij("i,j"))
+//                              + dot(q_xx_ab("a,b"), D_mp2_ab("a,b"));
+//      const double q_yy_mp2 = - dot(q_yy_ij("i,j"), D_mp2_ij("i,j"))
+//                              + dot(q_yy_ab("a,b"), D_mp2_ab("a,b"));
+//      const double q_zz_mp2 = - dot(q_zz_ij("i,j"), D_mp2_ij("i,j"))
+//                              + dot(q_zz_ab("a,b"), D_mp2_ab("a,b"));
 
       const double q_xy_mp2 = - dot(Qxy_ij("i,j"), D_mp2_ij("i,j"))
                               + dot(Qxy_ab("a,b"), D_mp2_ab("a,b"));
@@ -1952,12 +1963,13 @@ namespace sc {
       const double q_yz_mp2 = - dot(Qyz_ij("i,j"), D_mp2_ij("i,j"))
                               + dot(Qyz_ab("a,b"), D_mp2_ab("a,b"));
 
-//      const double q_xx_mp2or = dot(Qxx_am("a,m"), Dbn_mp2("a,m"));
-//      const double q_yy_mp2or = dot(Qyy_am("a,m"), Dbn_mp2("a,m"));
-//      const double q_zz_mp2or = dot(Qzz_am("a,m"), Dbn_mp2("a,m"));
-      const double q_xx_mp2or = dot(q_xx_am("a,m"), Dbn_mp2("a,m"));
-      const double q_yy_mp2or = dot(q_yy_am("a,m"), Dbn_mp2("a,m"));
-      const double q_zz_mp2or = dot(q_zz_am("a,m"), Dbn_mp2("a,m"));
+      const double q_xx_mp2or = dot(Qxx_am("a,m"), Dbn_mp2("a,m"));
+      const double q_yy_mp2or = dot(Qyy_am("a,m"), Dbn_mp2("a,m"));
+      const double q_zz_mp2or = dot(Qzz_am("a,m"), Dbn_mp2("a,m"));
+//      // x2, y2, z2 components to quadrupole moment
+//      const double q_xx_mp2or = dot(q_xx_am("a,m"), Dbn_mp2("a,m"));
+//      const double q_yy_mp2or = dot(q_yy_am("a,m"), Dbn_mp2("a,m"));
+//      const double q_zz_mp2or = dot(q_zz_am("a,m"), Dbn_mp2("a,m"));
 
       const double q_xy_mp2or = dot(Qxy_am("a,m"), Dbn_mp2("a,m"));
       const double q_xz_mp2or = dot(Qxz_am("a,m"), Dbn_mp2("a,m"));
@@ -2077,6 +2089,8 @@ namespace sc {
     C_ijab("i,j,a,b") = _4("<i j|r|a_F(a') b>") + _4("<i j|r|a b_F(a')>");
     A_ijab("i,j,a,b") = C_ijab("i,j,a,b") * Delta_ijab("i,j,a,b");
 
+    std::cout << std::endl << "Tests_C* ..." << std::endl;
+
     // Coupling and F12 part of MP2F12 density
     TArray2 D_mp2f12_ij, D_mp2f12_ab;
     D_mp2f12_ij("i,j") =  (R_C1 * A_ijab("i,k,a,b") + R_C2 * A_ijab("k,i,a,b"))
@@ -2131,24 +2145,25 @@ namespace sc {
 
     // MP2-F12 coupling contribution to quadrupoles
     if (compute_quadrupole) {
-//      const double q_xx_mp2f12C = - dot(Qxx_ij("i,j"), D_mp2f12_ij("i,j"))
-//                                  + dot(Qxx_ab("a,b"), D_mp2f12_ab("a,b"))
-//                                  + dot(Qxx_apb("a',b"), RT_apb("a',b")) * 2.0;
-//      const double q_yy_mp2f12C = - dot(Qyy_ij("i,j"), D_mp2f12_ij("i,j"))
-//                                  + dot(Qyy_ab("a,b"), D_mp2f12_ab("a,b"))
-//                                  + dot(Qyy_apb("a',b"), RT_apb("a',b")) * 2.0;
-//      const double q_zz_mp2f12C = - dot(Qzz_ij("i,j"), D_mp2f12_ij("i,j"))
-//                                  + dot(Qzz_ab("a,b"), D_mp2f12_ab("a,b"))
-//                                  + dot(Qzz_apb("a',b"), RT_apb("a',b")) * 2.0;
-      const double q_xx_mp2f12C = - dot(q_xx_ij("i,j"), D_mp2f12_ij("i,j"))
-                                  + dot(q_xx_ab("a,b"), D_mp2f12_ab("a,b"))
-                                  + dot(q_xx_apb("a',b"), RT_apb("a',b")) * 2.0;
-      const double q_yy_mp2f12C = - dot(q_yy_ij("i,j"), D_mp2f12_ij("i,j"))
-                                  + dot(q_yy_ab("a,b"), D_mp2f12_ab("a,b"))
-                                  + dot(q_yy_apb("a',b"), RT_apb("a',b")) * 2.0;
-      const double q_zz_mp2f12C = - dot(q_zz_ij("i,j"), D_mp2f12_ij("i,j"))
-                                  + dot(q_zz_ab("a,b"), D_mp2f12_ab("a,b"))
-                                  + dot(q_zz_apb("a',b"), RT_apb("a',b")) * 2.0;
+      const double q_xx_mp2f12C = - dot(Qxx_ij("i,j"), D_mp2f12_ij("i,j"))
+                                  + dot(Qxx_ab("a,b"), D_mp2f12_ab("a,b"))
+                                  + dot(Qxx_apb("a',b"), RT_apb("a',b")) * 2.0;
+      const double q_yy_mp2f12C = - dot(Qyy_ij("i,j"), D_mp2f12_ij("i,j"))
+                                  + dot(Qyy_ab("a,b"), D_mp2f12_ab("a,b"))
+                                  + dot(Qyy_apb("a',b"), RT_apb("a',b")) * 2.0;
+      const double q_zz_mp2f12C = - dot(Qzz_ij("i,j"), D_mp2f12_ij("i,j"))
+                                  + dot(Qzz_ab("a,b"), D_mp2f12_ab("a,b"))
+                                  + dot(Qzz_apb("a',b"), RT_apb("a',b")) * 2.0;
+//      // x2, y2, z2 components to quadrupole moment
+//      const double q_xx_mp2f12C = - dot(q_xx_ij("i,j"), D_mp2f12_ij("i,j"))
+//                                  + dot(q_xx_ab("a,b"), D_mp2f12_ab("a,b"))
+//                                  + dot(q_xx_apb("a',b"), RT_apb("a',b")) * 2.0;
+//      const double q_yy_mp2f12C = - dot(q_yy_ij("i,j"), D_mp2f12_ij("i,j"))
+//                                  + dot(q_yy_ab("a,b"), D_mp2f12_ab("a,b"))
+//                                  + dot(q_yy_apb("a',b"), RT_apb("a',b")) * 2.0;
+//      const double q_zz_mp2f12C = - dot(q_zz_ij("i,j"), D_mp2f12_ij("i,j"))
+//                                  + dot(q_zz_ab("a,b"), D_mp2f12_ab("a,b"))
+//                                  + dot(q_zz_apb("a',b"), RT_apb("a',b")) * 2.0;
 
       const double q_xy_mp2f12C = - dot(Qxy_ij("i,j"), D_mp2f12_ij("i,j"))
                                   + dot(Qxy_ab("a,b"), D_mp2f12_ab("a,b"))
@@ -2160,12 +2175,13 @@ namespace sc {
                                   + dot(Qyz_ab("a,b"), D_mp2f12_ab("a,b"))
                                   + dot(Qyz_apb("a',b"), RT_apb("a',b")) * 2.0;
 
-//      const double q_xx_mp2f12Cor = dot(Qxx_am("a,m"), Dbn_mp2f12("a,m"));
-//      const double q_yy_mp2f12Cor = dot(Qyy_am("a,m"), Dbn_mp2f12("a,m"));
-//      const double q_zz_mp2f12Cor = dot(Qzz_am("a,m"), Dbn_mp2f12("a,m"));
-      const double q_xx_mp2f12Cor = dot(q_xx_am("a,m"), Dbn_mp2f12("a,m"));
-      const double q_yy_mp2f12Cor = dot(q_yy_am("a,m"), Dbn_mp2f12("a,m"));
-      const double q_zz_mp2f12Cor = dot(q_zz_am("a,m"), Dbn_mp2f12("a,m"));
+      const double q_xx_mp2f12Cor = dot(Qxx_am("a,m"), Dbn_mp2f12("a,m"));
+      const double q_yy_mp2f12Cor = dot(Qyy_am("a,m"), Dbn_mp2f12("a,m"));
+      const double q_zz_mp2f12Cor = dot(Qzz_am("a,m"), Dbn_mp2f12("a,m"));
+//      // x2, y2, z2 components to quadrupole moment
+//      const double q_xx_mp2f12Cor = dot(q_xx_am("a,m"), Dbn_mp2f12("a,m"));
+//      const double q_yy_mp2f12Cor = dot(q_yy_am("a,m"), Dbn_mp2f12("a,m"));
+//      const double q_zz_mp2f12Cor = dot(q_zz_am("a,m"), Dbn_mp2f12("a,m"));
 
       const double q_xy_mp2f12Cor = dot(Qxy_am("a,m"), Dbn_mp2f12("a,m"));
       const double q_xz_mp2f12Cor = dot(Qxz_am("a,m"), Dbn_mp2f12("a,m"));
@@ -2254,9 +2270,11 @@ namespace sc {
     TArray4d r_ijpq = ijxy("<i j|r|p q>");
     TArray4d r_ijapn = ijxy("<i j|r|a' n>");
     TArray4d r_ijnap = ijxy("<i j|r|n a'>");
+    TArray4d r_acpkl = ijxy("<a c'|r|k l>");
+    TArray4d r_apcpkl = ijxy("<a' c'|r|k l>");
 
+    TArray2 D_f12_ij, D_f12_ab, D_f12_apbp, D_f12_apb;
     // Dij = 1/2 R^ik_A'B' R^A'B'_kl (A': all virtual)
-    TArray2 D_f12_ij;
     D_f12_ij("i,j") =  (RR_C1 * r2_ijkl("i,k,j,l") + RR_C2 * r2_ijkl("k,i,j,l"))
                        * _2("<k|I|l>")
                      - (RR_C1 * r_ijpq("i,k,p,q") + RR_C2 * r_ijpq("k,i,p,q"))
@@ -2265,25 +2283,20 @@ namespace sc {
                        * r_ijapn("j,k,a',n")
                      - (RR_C1 * r_ijnap("i,k,n,a'") + RR_C2 * r_ijnap("k,i,n,a'"))
                        * r_ijnap("j,k,n,a'");
-
     // DA'B' = 1/2 R^A'C'_kl R^kl_B'C' (A': all virtual)
-    TArray4d r_acpkl = ijxy("<a c'|r|k l>");
-    TArray2 D_f12_ab;
     D_f12_ab("a,b") = (RR_C1 * r_acpkl("a,c',k,l") + RR_C2 * r_acpkl("a,c',l,k"))
                       * r_acpkl("b,c',k,l");
-
-    TArray4d r_apcpkl = ijxy("<a' c'|r|k l>");
-    TArray2 D_f12_apbp;
+    //
     D_f12_apbp("a',b'") =  (RR_C1 * r_acpkl("c,a',l,k") + RR_C2 * r_acpkl("c,a',k,l"))
                            * r_acpkl("c,b',l,k")
                          + (RR_C1 * r_apcpkl("a',c',k,l") + RR_C2 * r_apcpkl("a',c',l,k"))
                            * r_apcpkl("b',c',k,l");
-
-    TArray2 D_f12_apb;
+    //
     D_f12_apb("a',b") = (RR_C1 * r_apcpkl("a',c',k,l") + RR_C2 * r_apcpkl("a',c',l,k"))
                         * r_acpkl("b,c',k,l");
 
-    // F12 orbital response contribution to dipole
+    // F12 orbital response contribution
+    //
     // X and B density contribution to Xam
     TArray4d g_abmc = ijxy("<a b|g|m c>");
     TArray2 gdf12_am;
@@ -2491,30 +2504,31 @@ namespace sc {
       Qxz_apbp("a',b'") = _2("<a'|q_xz|b'>") * 1.5;
       Qyz_apbp("a',b'") = _2("<a'|q_yz|b'>") * 1.5;
 
-//      const double q_xx_f12 = - dot(Qxx_ij("i,j"), D_f12_ij("i,j"))
-//                              + dot(Qxx_ab("a,b"), D_f12_ab("a,b"))
-//                              + dot(Qxx_apbp("a',b'"), D_f12_apbp("a',b'"))
-//                              + dot(Qxx_apb("a',b"), D_f12_apb("a',b")) * 2.0;
-//      const double q_yy_f12 = - dot(Qyy_ij("i,j"), D_f12_ij("i,j"))
-//                              + dot(Qyy_ab("a,b"), D_f12_ab("a,b"))
-//                              + dot(Qyy_apbp("a',b'"), D_f12_apbp("a',b'"))
-//                              + dot(Qyy_apb("a',b"), D_f12_apb("a',b")) * 2.0;
-//      const double q_zz_f12 = - dot(Qzz_ij("i,j"), D_f12_ij("i,j"))
-//                              + dot(Qzz_ab("a,b"), D_f12_ab("a,b"))
-//                              + dot(Qzz_apbp("a',b'"), D_f12_apbp("a',b'"))
-//                              + dot(Qzz_apb("a',b"), D_f12_apb("a',b")) * 2.0;
-      const double q_xx_f12 = - dot(q_xx_ij("i,j"), D_f12_ij("i,j"))
-                              + dot(q_xx_ab("a,b"), D_f12_ab("a,b"))
-                              + dot(q_xx_apbp("a',b'"), D_f12_apbp("a',b'"))
-                              + dot(q_xx_apb("a',b"), D_f12_apb("a',b")) * 2.0;
-      const double q_yy_f12 = - dot(q_yy_ij("i,j"), D_f12_ij("i,j"))
-                              + dot(q_yy_ab("a,b"), D_f12_ab("a,b"))
-                              + dot(q_yy_apbp("a',b'"), D_f12_apbp("a',b'"))
-                              + dot(q_yy_apb("a',b"), D_f12_apb("a',b")) * 2.0;
-      const double q_zz_f12 = - dot(q_zz_ij("i,j"), D_f12_ij("i,j"))
-                              + dot(q_zz_ab("a,b"), D_f12_ab("a,b"))
-                              + dot(q_zz_apbp("a',b'"), D_f12_apbp("a',b'"))
-                              + dot(q_zz_apb("a',b"), D_f12_apb("a',b")) * 2.0;
+      const double q_xx_f12 = - dot(Qxx_ij("i,j"), D_f12_ij("i,j"))
+                              + dot(Qxx_ab("a,b"), D_f12_ab("a,b"))
+                              + dot(Qxx_apbp("a',b'"), D_f12_apbp("a',b'"))
+                              + dot(Qxx_apb("a',b"), D_f12_apb("a',b")) * 2.0;
+      const double q_yy_f12 = - dot(Qyy_ij("i,j"), D_f12_ij("i,j"))
+                              + dot(Qyy_ab("a,b"), D_f12_ab("a,b"))
+                              + dot(Qyy_apbp("a',b'"), D_f12_apbp("a',b'"))
+                              + dot(Qyy_apb("a',b"), D_f12_apb("a',b")) * 2.0;
+      const double q_zz_f12 = - dot(Qzz_ij("i,j"), D_f12_ij("i,j"))
+                              + dot(Qzz_ab("a,b"), D_f12_ab("a,b"))
+                              + dot(Qzz_apbp("a',b'"), D_f12_apbp("a',b'"))
+                              + dot(Qzz_apb("a',b"), D_f12_apb("a',b")) * 2.0;
+//      // x2, y2, z2 components to quadrupole moment
+//      const double q_xx_f12 = - dot(q_xx_ij("i,j"), D_f12_ij("i,j"))
+//                              + dot(q_xx_ab("a,b"), D_f12_ab("a,b"))
+//                              + dot(q_xx_apbp("a',b'"), D_f12_apbp("a',b'"))
+//                              + dot(q_xx_apb("a',b"), D_f12_apb("a',b")) * 2.0;
+//      const double q_yy_f12 = - dot(q_yy_ij("i,j"), D_f12_ij("i,j"))
+//                              + dot(q_yy_ab("a,b"), D_f12_ab("a,b"))
+//                              + dot(q_yy_apbp("a',b'"), D_f12_apbp("a',b'"))
+//                              + dot(q_yy_apb("a',b"), D_f12_apb("a',b")) * 2.0;
+//      const double q_zz_f12 = - dot(q_zz_ij("i,j"), D_f12_ij("i,j"))
+//                              + dot(q_zz_ab("a,b"), D_f12_ab("a,b"))
+//                              + dot(q_zz_apbp("a',b'"), D_f12_apbp("a',b'"))
+//                              + dot(q_zz_apb("a',b"), D_f12_apb("a',b")) * 2.0;
 
       const double q_xy_f12 = - dot(Qxy_ij("i,j"), D_f12_ij("i,j"))
                               + dot(Qxy_ab("a,b"), D_f12_ab("a,b"))
@@ -2529,12 +2543,13 @@ namespace sc {
                               + dot(Qyz_apbp("a',b'"), D_f12_apbp("a',b'"))
                               + dot(Qyz_apb("a',b"), D_f12_apb("a',b")) * 2.0;
 
-//      const double q_xx_f12or = dot(Qxx_am("a,m"), Dbn_f12("a,m"));
-//      const double q_yy_f12or = dot(Qyy_am("a,m"), Dbn_f12("a,m"));
-//      const double q_zz_f12or = dot(Qzz_am("a,m"), Dbn_f12("a,m"));
-      const double q_xx_f12or = dot(q_xx_am("a,m"), Dbn_f12("a,m"));
-      const double q_yy_f12or = dot(q_yy_am("a,m"), Dbn_f12("a,m"));
-      const double q_zz_f12or = dot(q_zz_am("a,m"), Dbn_f12("a,m"));
+      const double q_xx_f12or = dot(Qxx_am("a,m"), Dbn_f12("a,m"));
+      const double q_yy_f12or = dot(Qyy_am("a,m"), Dbn_f12("a,m"));
+      const double q_zz_f12or = dot(Qzz_am("a,m"), Dbn_f12("a,m"));
+//      // x2, y2, z2 components to quadrupole moment
+//      const double q_xx_f12or = dot(q_xx_am("a,m"), Dbn_f12("a,m"));
+//      const double q_yy_f12or = dot(q_yy_am("a,m"), Dbn_f12("a,m"));
+//      const double q_zz_f12or = dot(q_zz_am("a,m"), Dbn_f12("a,m"));
 
       const double q_xy_f12or = dot(Qxy_am("a,m"), Dbn_f12("a,m"));
       const double q_xz_f12or = dot(Qxz_am("a,m"), Dbn_f12("a,m"));
@@ -2626,7 +2641,7 @@ namespace sc {
 
     /// this is just an example of how to compute the density
     TArray2 r2_i_j;
-    r2_i_j("i,j") = _4("<i j|r|p q>") * _4("<k_F(p) j|r|p q>");
+    //r2_i_j("i,j") = _4("<i j|r|p q>") * _4("<k_F(p) j|r|p q>");
 
     return r2_i_j;
 #else // ENABLE_SRR12_RDM1

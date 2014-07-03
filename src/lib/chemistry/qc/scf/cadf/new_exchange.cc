@@ -223,6 +223,7 @@ CADFCLHF::new_compute_K()
              * C_bar_mine_.middleRows(my_begin, my_size) * schwarz_df_mine_.asDiagonal();
       });
       X_grp->sum(d_bar.data(), d_bar.rows() * d_bar.cols());
+      //DUMPn((C_bar_mine_.colwise().norm()).dot(Eigen::VectorXd::LinSpaced(schwarz_df_mine_.rows(), 1,100)));
 
       // Form the L_DC lists
       do_threaded(nthread_, [&](int ithr) {
@@ -236,6 +237,7 @@ CADFCLHF::new_compute_K()
           L_DC_jsh.set_basis(dfbs_, gbs_);
         }
       });
+      //DUMPn(d_bar.norm());
     } // d_bar and X_grp deleted
 
     // For whatever reason, splitting the scf_grp_ messes up the SCFormIO processor 0 label
@@ -315,6 +317,8 @@ CADFCLHF::new_compute_K()
       }
 
     });
+
+    L_DC.clear();
 
     /*******************************************************/ #endif //2}}}
     /*-----------------------------------------------------*/
@@ -455,6 +459,7 @@ CADFCLHF::new_compute_K()
       });
     }
 
+    timer.change("misc");
 
     // Sort L_C(mu) for each mu
     do_threaded(nthread_, [&](int ithr){
@@ -497,6 +502,9 @@ CADFCLHF::new_compute_K()
     /*-----------------------------------------------------*/
 
   }
+
+  timer.exit();
+
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
 
@@ -504,6 +512,8 @@ CADFCLHF::new_compute_K()
   /*=======================================================================================*/
   /* Main loop over mu and X to compute K tilde contributions                         {{{1 */ #if 1 // begin fold
   /*---------------------------------------------------------------------------------------*/
+
+  timer.enter("main loop");
 
   std::mutex mu_list_mutex;
   auto mu_iter = mu_to_do.begin();
@@ -519,11 +529,18 @@ CADFCLHF::new_compute_K()
     }
   };
 
+  MultiThreadTimer mt_timer("threaded part", nthread_);
+
+  //DUMPn(L_3.size());
+  //DUMPn(schwarz_df_mine_.dot(Eigen::VectorXd::LinSpaced(schwarz_df_mine_.rows(), 1,100)));
+
   do_threaded(nthread_, [&](int ithr) {
 
+    /*-----------------------------------------------------*/
+    /* Thread-local setup                             {{{2 */ #if 2 // begin fold
+
     // Allocate memory buffers outside of loop to avoid malloc overhead
-    //double* __restrict__ ints_buffer = new double[B_buffer_size_/sizeof(double)];
-    double* __restrict__ ints_buffer = new double[nbf*nbf*dfnbf];
+    double* __restrict__ ints_buffer = new double[B_buffer_size_/sizeof(double)];
     //double* __restrict__ rec_coefs_data = new double[max_fxn_obs_todo_ * nbf * max_fxn_atom_dfbs_*2];
     double* __restrict__ rec_coefs_data = new double[nbf*nbf*dfnbf];
     //double* __restrict__ B_sd_data = new double[max_fxn_obs_todo_ * max_fxn_dfbs_todo_ * (max_L_B_size + max_fxn_atom_obs_)];
@@ -532,6 +549,7 @@ CADFCLHF::new_compute_K()
     double* __restrict__ D_sd_data = new double[nbf*nbf];
     //double* __restrict__ C_X_diff_data = new double[max_obs_atom_fxn_on_dfbs_center_todo_*max_fxn_dfbs_todo_*max_L_B_size];
     double* __restrict__ C_X_diff_data = new double[nbf*nbf*dfnbf];
+
     Eigen::Map<RowMatrix> B_sd(B_sd_data, 0, 0);
     Eigen::Map<RowMatrix> B_sd_other(B_sd_data, 0, 0);
     Eigen::Map<ColMatrix> D_sd(D_sd_data, 0, 0);
@@ -539,7 +557,12 @@ CADFCLHF::new_compute_K()
 
     ShellData ish;
 
+    /*******************************************************/ #endif //2}}}
+    /*-----------------------------------------------------*/
+
     while(get_next_ish(ish)) {
+
+      mt_timer.enter("recompute coefs", ithr);
 
       /*------------------------------------------------------*/
       /* Compute the part of C that we need to recompute {{{2 */ #if 2 // begin fold
@@ -560,7 +583,7 @@ CADFCLHF::new_compute_K()
         );
         coef_spot_offset += jblk.atom_nbf * ish.nbf * df_size;
         auto& rec_C = rec_coefs.at(jblk.center);
-        DEBUG_DELETE_THIS rec_C = RowMatrix::Constant(jblk.atom_nbf * ish.nbf, df_size, -9999.99);
+        rec_C = RowMatrix::Constant(jblk.atom_nbf * ish.nbf, df_size, std::numeric_limits<double>::infinity());
 
         // Get the decomposed two center ints
         auto decomp = get_decomposition(ish, jblk.first_shell, metric_ints_2c_[ithr]);
@@ -606,14 +629,6 @@ CADFCLHF::new_compute_K()
                 eris_3c_[ithr], coulomb_oper_type_,
                 ints_buffer
             );
-            //DEBUG_DELETE_THIS
-            //// Get the decomposed two center ints
-            //auto decomp = get_decomposition(ish, jsh, eris_2c_[ithr]);
-            //RowMatrix g3_test(ish.nbf*jsh.nbf, df_size);
-            //g3_test.leftCols(ish.atom_dfnbf) = *ints_to_eigen(jsh, ish, ShellBlockData<>::atom_block(ish.center, dfbs_, gbs_), eris_3c_[ithr], coulomb_oper_type_);
-            //g3_test.rightCols(jsh.atom_dfnbf) = *ints_to_eigen(jsh, ish, ShellBlockData<>::atom_block(jsh.center, dfbs_, gbs_), eris_3c_[ithr], coulomb_oper_type_);
-            //DUMP3(int(ish), int(jsh), (g3_part - g3_test).norm());
-            //DEBUG_DELETE_THIS
 
             // Get the coefficients for each basis function pair
             for(BF mu : function_range(ish)) {
@@ -621,19 +636,6 @@ CADFCLHF::new_compute_K()
                 rec_C.row(rho.bfoff_in_atom*ish.nbf + mu.off).transpose() = decomp->solve(
                     g3_part.row(rho.off*ish.nbf + mu.off).transpose()
                 );
-
-                //DEBUG_DELETE_THIS
-                //if(coefs_.find({mu,rho}) != coefs_.end()) {
-                //  Eigen::VectorXd corCoefs(df_size);
-                //  corCoefs.head(ish.atom_dfnbf) = *coefs_[{mu,rho}].first;
-                //  corCoefs.tail(jsh.atom_dfnbf) = *coefs_[{mu,rho}].second;
-                //  DUMP2(int(ish), int(jsh))
-                //  DUMP3(mu, rho, (corCoefs - rec_C.row(rho.bfoff_in_atom*ish.nbf + mu.off).transpose()).norm())
-                //  DUMP((corCoefs.head(ish.atom_dfnbf) - rec_C.row(rho.bfoff_in_atom*ish.nbf + mu.off).head(ish.atom_dfnbf).transpose()).norm())
-                //  DUMP((corCoefs.tail(jsh.atom_dfnbf) - rec_C.row(rho.bfoff_in_atom*ish.nbf + mu.off).tail(jsh.atom_dfnbf).transpose()).norm())
-                //}
-                //DEBUG_DELETE_THIS
-
 
               } // end nu loop
             } // end mu loop
@@ -651,16 +653,14 @@ CADFCLHF::new_compute_K()
       // Now loop over the local Xsh connected to the current ish
       for(SH Xsh : L_DF[ish]) {
 
+        mt_timer.change("Compute B", ithr);
+
         /*-----------------------------------------------------*/
         /* Setup                                          {{{2 */ #if 2 // begin fold
 
         // Convenience variables
         const auto& L_B_ish_Xsh = L_B[{ish, Xsh}];
         const auto& L3iter = L_3.find({ish, Xsh});
-        if(L3iter == L_3.end()) {
-
-          assert(L3iter != L_3.end());
-        }
         const auto& L_3_ish_Xsh = L3iter->second;
         bool L_B_empty = (L_B_blocked.find({ish, Xsh}) == L_B_blocked.end());
         const auto& L_B_blocks = L_B_blocked[{ish, Xsh}];
@@ -671,7 +671,6 @@ CADFCLHF::new_compute_K()
 
         /*******************************************************/ #endif //2}}}
         /*-----------------------------------------------------*/
-
 
         /*-----------------------------------------------------*/
         /* Initialize memory for B screening              {{{2 */ #if 2 // begin fold
@@ -729,6 +728,9 @@ CADFCLHF::new_compute_K()
         /*******************************************************/ #endif //2}}}
         /*-----------------------------------------------------*/
 
+        /*-----------------------------------------------------*/
+        /* Build B                                        {{{2 */ #if 2 // begin fold
+
         block_offset = 0;
 
         for(auto&& jblk : shell_block_range(L_3_ish_Xsh, NoRestrictions)){
@@ -750,37 +752,6 @@ CADFCLHF::new_compute_K()
           jblk_offset = 0;
           for(const auto&& jsblk : shell_block_range(jblk, Contiguous|SameCenter)) {
 
-            //for(BF mu : function_range(ish)) {
-            //  int rho_offset = 0;
-            //  for(SH jsh : shell_range(jsblk)) {
-            //    for(BF rho : function_range(jsh)) {
-            //      for(BF X : function_range(Xsh)) {
-            //        for(BF Y : iter_functions_on_center(dfbs_, ish.center)) {
-            //          g3_in((jblk_offset+rho_offset)*ish.nbf + mu.off, X.off) -= 0.5
-            //              * rec_coefs.at(jsblk.center)((jsblk.bfoff_in_atom+rho_offset)*ish.nbf + mu.off, Y.bfoff_in_atom)
-            //              * g2(Y, X);
-            //        }
-            //        if(ish.center != jsblk.center) {
-            //          for(BF Y : iter_functions_on_center(dfbs_, jsblk.center)) {
-            //            g3_in((jblk_offset+rho_offset)*ish.nbf + mu.off, X.off) -= 0.5
-            //                * rec_coefs.at(jsblk.center)((jsblk.bfoff_in_atom+rho_offset)*ish.nbf + mu.off, ish.atom_dfnbf + Y.bfoff_in_atom)
-            //                * g2(Y, X);
-            //          }
-            //        }
-            //      }
-            //      ++rho_offset;
-            //    }
-            //  }
-            //}
-            //  g3_in.middows(jblk_offset*ish.nbf + , jsblk.nbf*ish.nbf) -= 0.5 *
-            //      rec_coefs.at(jsblk.center).middleRows(jsblk.bfoff_in_atom*ish.nbf, jsblk.nbf*ish.nbf).leftCols(ish.atom_dfnbf)
-            //      * g2.middleRows(ish.atom_dfbfoff, ish.atom_dfnbf).middleCols(Xsh.bfoff, Xsh.nbf);
-            //  if(ish.center != jsblk.center) {
-            //    g3_in.middleRows(jblk_offset*ish.nbf, jsblk.nbf*ish.nbf) -= 0.5 *
-            //        rec_coefs.at(jsblk.center).middleRows(jsblk.bfoff_in_atom*ish.nbf, jsblk.nbf*ish.nbf).rightCols(jsblk.atom_dfnbf)
-            //        * g2.middleRows(jsblk.atom_dfbfoff, jsblk.atom_dfnbf).middleCols(Xsh.bfoff, Xsh.nbf);
-            //  }
-            //}
             g3_in.middleRows(jblk_offset*ish.nbf, jsblk.nbf*ish.nbf) -= 0.5 *
                 rec_coefs.at(jsblk.center).middleRows(jsblk.bfoff_in_atom*ish.nbf, jsblk.nbf*ish.nbf).leftCols(ish.atom_dfnbf)
                 * g2.middleRows(ish.atom_dfbfoff, ish.atom_dfnbf).middleCols(Xsh.bfoff, Xsh.nbf);
@@ -810,10 +781,13 @@ CADFCLHF::new_compute_K()
 
         } // end loop over jblk
 
-        //DUMP3((int)ish, (int)Xsh, B_sd.norm());
+        /*******************************************************/ #endif //2}}}
+        /*-----------------------------------------------------*/
 
-        //----------------------------------------//
-        // K contributions
+        mt_timer.change("K contributions", ithr);
+
+        /*-----------------------------------------------------*/
+        /* K contributions                                {{{2 */ #if 2 // begin fold
 
         for(BF X : function_range(Xsh)) {
 
@@ -837,8 +811,13 @@ CADFCLHF::new_compute_K()
 
         } // end loop over X functions
 
+        /*******************************************************/ #endif //2}}}
+        /*-----------------------------------------------------*/
+
 
       } // end loop over Xsh
+
+      mt_timer.exit(ithr);
 
     } // end loop over ish
 
@@ -850,6 +829,11 @@ CADFCLHF::new_compute_K()
     delete[] C_X_diff_data;
 
   }); // end of do_threaded
+
+  mt_timer.exit();
+  timer.insert(mt_timer);
+
+  timer.exit();
 
   L_3.clear();
   L_B.clear();
@@ -863,7 +847,10 @@ CADFCLHF::new_compute_K()
   /*---------------------------------------------------------------------------------------*/
 
   // Perform the global sum
+  timer.enter("global sum");
   scf_grp_->sum(Kt.data(), nbf*nbf);
+  timer.exit();
+
 
   //----------------------------------------//
   // Symmetrize K

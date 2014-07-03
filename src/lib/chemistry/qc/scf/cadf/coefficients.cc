@@ -282,7 +282,7 @@ CADFCLHF::compute_coefficients()
 
   ExEnv::out0() << indent << "Distributing coefficients" << std::endl;
   timer.change("03 - global sum coefficient memory");
-  if(not distribute_coefficients_) {
+  if(not distribute_coefficients_ and not new_exchange_algorithm_) {
     if(ncoefs * sizeof(double) < std::numeric_limits<int>::max()) {
       scf_grp_->sum(coefficients_data_, ncoefs);                                               //latex `\label{sc:coefsum}`
     }
@@ -344,11 +344,11 @@ CADFCLHF::compute_coefficients()
       throw;
     }
     if(not new_exchange_algorithm_) {
-      memset(dist_coefs_data_, 0, my_part.bin->obs_ncoefs*sizeof(double));
-      memset(dist_coefs_data_df_, 0, my_part.bin->dfbs_ncoefs*sizeof(double));
+      ::memset(dist_coefs_data_, 0, my_part.bin->obs_ncoefs*sizeof(double));
+      ::memset(dist_coefs_data_df_, 0, my_part.bin->dfbs_ncoefs*sizeof(double));
     }
     else {
-      memset(dist_coefs_data_df_, 0, ncoefs_dist);
+      ::memset(dist_coefs_data_df_, 0, ncoefs_dist*sizeof(double));
     }
     ExEnv::out0() << indent << "Allocated " << data_size_to_string(ncoefs_dist*sizeof(double))
                   << " (on node 0) for distributed coefficients." << std::endl;
@@ -470,15 +470,15 @@ CADFCLHF::compute_coefficients()
           ithr, nthread_
       )) {
 
-        // Now do the C_X_mu part
-        ShellBlockData<> Xblk = ShellBlockData<>::atom_block(dfbs_atom->index, gbs_, dfbs_);
+        // Now do the C_X_nu part
+        ShellBlockData<> Xblk = ShellBlockData<>::atom_block(dfbs_atom->index, dfbs_, gbs_);
         for(auto&& ish : iter_shells_on_center(gbs_, Xblk.center, dfbs_)) {
           for(auto&& jsh : iter_significant_partners(ish)) {
             std::vector<CoefView> coefs;
             for(auto&& mu : function_range(ish)) {
               for(auto&& rho : function_range(jsh)) {
                 coefs.emplace_back(
-                    // NOTE: POSSIBLE DATA CONCURRENCY ISSUES!
+                    // NOTE: POSSIBLE (probably not) DATA CONCURRENCY ISSUES!
                     coefs_X_nu.at(Xblk.center).data() + mu.bfoff_in_atom*nbf + rho,
                     ish.atom_dfnbf,
                     Eigen::Stride<1, Eigen::Dynamic>(1, mu.atom_nbf * nbf)
@@ -513,6 +513,8 @@ CADFCLHF::compute_coefficients()
       }
     } // X_grp is deleted
 
+    //DUMPn(coefs_X_nu.at(0).norm());
+
     sc::SCFormIO::init_mp(scf_grp_->me());
     /********************************************************/ #endif //2}}}
     /*-----------------------------------------------------*/
@@ -529,7 +531,7 @@ CADFCLHF::compute_coefficients()
 
   // TODO Get rid of this!!!
   timer.change("05 - store blocked coefs");
-  if(store_coefs_transpose_ and not distribute_coefficients_) {
+  if(store_coefs_transpose_ and not distribute_coefficients_ and not new_exchange_algorithm_) {
     coef_block_offsets_.resize(natom);
     for(int iatom = 0; iatom < natom; ++iatom) {
 
@@ -672,11 +674,14 @@ CADFCLHF::compute_coefficients()
       for(auto Xatom : my_part.assigned_dfbs_atoms()) {
         for(auto&& Xsh : iter_shells_on_center(dfbs_, Xatom->index, gbs_)) {
 
+          //assert(my_part.assigned_dfbs_shells().find(int(Xsh)) != my_part.assigned_dfbs_shells().end());
+
           resize_and_zero_matrix(C_trans_frob[Xsh], Xsh.atom_obsnsh, gbs_->nshell());
 
           for(auto&& ish : iter_shells_on_center(gbs_, Xsh.center)) {
             for(auto&& jsh : shell_range(gbs_)) {
               for(auto&& mu : function_range(ish)) {
+                //DUMPn(coefs_X_nu.at(Xsh.center));
                 C_trans_frob[Xsh](ish.shoff_in_atom, jsh) += coefs_X_nu.at(Xsh.center).block(
                     Xsh.bfoff_in_atom, mu.bfoff_in_atom*nbf + jsh.bfoff,
                     Xsh.nbf, jsh.nbf
@@ -686,6 +691,8 @@ CADFCLHF::compute_coefficients()
           }
 
           C_trans_frob[Xsh] = C_trans_frob[Xsh].array().sqrt();
+          //DUMPn(Xsh)
+          //DUMPn(C_trans_frob[Xsh]);
         }
       }
     }
@@ -711,6 +718,7 @@ CADFCLHF::compute_coefficients()
     }
     //----------------------------------------//
 
+
     // Compute Cmaxes_
     timer.change("08 - Cbar");
     // The new exchange algorithm only needs C_bar_mine_
@@ -730,6 +738,19 @@ CADFCLHF::compute_coefficients()
       uint Xsh_off = 0;
       for(auto&& Xsh_index : my_part.assigned_dfbs_shells()) {
         ShellData Xsh(Xsh_index, dfbs_, gbs_);
+
+        //DEBUG_DELETE_THIS
+        //bool found = false;
+        //for(auto Xatom : my_part.assigned_dfbs_atoms()) {
+        //  if(Xsh.center == Xatom->index) {
+        //    found = true;
+        //    break;
+        //  }
+        //}
+        //assert(found);
+        //DEBUG_DELETE_THIS
+
+        //DUMPn(C_trans_frob[Xsh].norm())
         {
           const auto& sqnorm1 = C_trans_frob[Xsh].colwise().squaredNorm();
           if(distribute_coefficients_ and not new_exchange_algorithm_) {

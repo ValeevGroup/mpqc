@@ -365,6 +365,7 @@ CADFCLHF::init_threads()
   }
 
   schwarz_df_mine_.resize(my_part.dfnsh());
+  out_assert(my_part.dfnsh(), ==, my_part.assigned_dfbs_shells().size());
   int Xsh_off = 0;
   for(auto&& Xsh_index : my_part.assigned_dfbs_shells()) {
     ShellData Xsh(Xsh_index, dfbs_, gbs_);

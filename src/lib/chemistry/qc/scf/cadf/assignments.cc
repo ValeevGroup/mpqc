@@ -479,11 +479,8 @@ AtomCluster::make_assignments()
   }
 
   // Assign coefficients to compute
-  for(auto&& atom_ptr : atoms) {
+  for(auto atom_ptr : atoms) {
     ShellBlockData<> Xblk = ShellBlockData<>::atom_block(atom_ptr->index, parent->basis, parent->dfbasis);
-    for(auto&& Xsh : shell_range(Xblk)) {
-      assigned_dfbs_shells.insert(Xsh.index);
-    }
     int spot = 0;
     nodes[spot]->assign_coef_item(atom_ptr, true);
     while(spot < nodes.size() - 1 and nodes[spot]->estimated_workload > nodes[spot+1]->estimated_workload) {
@@ -491,6 +488,7 @@ AtomCluster::make_assignments()
       ++spot;
     }
   }
+
 
 }
 

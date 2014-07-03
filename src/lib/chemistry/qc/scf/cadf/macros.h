@@ -100,13 +100,15 @@
 #define DUMP(expr) sc::ExEnv::out0() << #expr << " = " << (expr) << std::endl;
 #define DUMPme(expr) sc::ExEnv::outn() << "  Node " << scf_grp_->me() << ": " << #expr << " = " << (expr) << std::endl;
 #define DUMPn(expr) \
+    { \
+    scf_grp_->sync(); \
     sc::ExEnv::out0() << "Dumping expression " << #expr << " from all nodes:" << std::endl; \
     for(int __inode = 0; __inode < scf_grp_->n(); ++__inode) {\
       if(__inode == scf_grp_->me()) { \
         sc::ExEnv::outn() << "  Node " << scf_grp_->me() << ": " << #expr << " = " << expr << std::endl; \
       } \
       scf_grp_->sync(); \
-    }
+    }}
 #define DUMP2(expr1, expr2) sc::ExEnv::out0() << #expr1 << " = " << (expr1) << ", " << #expr2 << " = " << (expr2) << std::endl;
 #define DUMP2n(expr1, expr2) sc::ExEnv::outn() << "me = " << scf_grp_->me() << ", " << #expr1 << " = " << (expr1) << ", " << #expr2 << " = " << (expr2) << std::endl;
 #define DUMP3(expr1, expr2, expr3) sc::ExEnv::out0() << #expr1 << " = " << (expr1) << ", " << #expr2 << " = " << (expr2) << ", " << #expr3 << " = " << (expr3) << std::endl;

@@ -91,6 +91,12 @@ namespace basis{
             return shells;
         }
 
+        std::vector<KCluster>& get_clusters(std::size_t nclusters) {
+          nclusters_ = nclusters;
+          compute_clusters(nclusters_);
+          return clusters_;
+        }
+
         /**
          * Returns a a ShellRange which specifies what shell each tile starts on.
          */

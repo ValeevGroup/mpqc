@@ -202,8 +202,11 @@ struct ShellData : public BasisElementData {
 
     void init(){
 
-      assert(basis);
 
+      if(not basis) {
+        index = NotAssigned;
+        return;
+      }
       if(index == NotAssigned || index == basis->nshell()) return;
       if(index >= basis->nshell() || index < 0) return;
 
@@ -678,7 +681,7 @@ class ShellBlockData {
         Range sh_range,
         int nshell, int nbf,
         int requirements
-    ) : shell_range(sh_range.begin(), sh_range.end()),
+    ) : shell_range(sh_range),
         first_shell(*shell_range.begin()),
         last_shell(shell_range.begin() == shell_range.end() ?
             *shell_range.end() : *(--shell_range.end())
@@ -701,6 +704,45 @@ class ShellBlockData {
           sc::shell_range(basis, dfbasis, atom_shoff, atom_shoff + atom_nsh-1),
           atom_nsh, atom_nbf, SameCenter
       );
+    }
+
+    template <typename OtherRange>
+    auto operator+(const ShellBlockData<OtherRange>& other)
+        -> ShellBlockData<decltype(boost::join(this->shell_range, other.shell_range))>
+    {
+      typedef ShellBlockData<decltype(boost::join(this->shell_range, other.shell_range))> result_t;
+      if(basis != other.basis) {
+        throw ProgrammingError("Can't combine blocks with different basis sets", __FILE__, __LINE__);
+      }
+      if(dfbasis != other.dfbasis) {
+        throw ProgrammingError("Can't combine blocks with different auxiliary basis sets", __FILE__, __LINE__);
+      }
+      int new_reqs = NoRestrictions;
+      if(
+          (restrictions & SameCenter) and (other.restrictions & SameCenter)
+          and this->center == other.center
+      ) {
+        new_reqs |= SameCenter;
+      }
+      if(
+          (restrictions & SameAngularMomentum) and (other.restrictions & SameAngularMomentum)
+          and basis->shell(first_shell).am() == basis->shell(first_shell).am()
+      ) {
+        new_reqs |= SameAngularMomentum;
+      }
+      if(
+          (restrictions & Contiguous) and (other.restrictions & Contiguous)
+          and (int)last_shell + 1 == (int)other.first_shell
+      ) {
+        new_reqs |= Contiguous;
+      }
+
+      return result_t(
+          boost::join(this->shell_range, other.shell_range),
+          nshell + other.nshell, nbf + other.nbf,
+          new_reqs
+      );
+
     }
 
     int nbf;
@@ -843,7 +885,7 @@ class shell_block_iterator
       assert(current_skeleton.first_index != NotAssigned);
       auto&& new_begin = current_skeleton.shell_range.end();
       auto&& new_end = all_shells.end();
-      all_shells = shell_range(*new_begin, *new_end);
+      all_shells = boost::make_iterator_range(new_begin, new_end);
       init();
     }
 
@@ -1268,6 +1310,55 @@ shell_block_range(
 }
 
 //############################################################################//
+
+class ContiguousShellBlockList {
+
+    typedef ShellBlockSkeleton<> skeleton_t;
+    std::unordered_map<int, std::vector<skeleton_t>> lists_for_restrictions_;
+
+  public:
+
+    ContiguousShellBlockList() { }
+
+    // NOTE: idxlist must be sorted!
+    template<typename Iterable>
+    ContiguousShellBlockList(
+        const Iterable& idxlist,
+        GaussianBasisSet* basis,
+        GaussianBasisSet* dfbasis,
+        std::set<int> restriction_sets
+    )
+    {
+      for(auto restrictions : restriction_sets) {
+        lists_for_restrictions_.emplace(
+            std::piecewise_construct,
+            std::forward_as_tuple(restrictions),
+            std::forward_as_tuple(0)
+        );
+        for(auto&& iblk : shell_block_range(idxlist, basis, dfbasis, Contiguous|restrictions, NoMaximumBlockSize)) {
+          lists_for_restrictions_[restrictions].emplace_back(
+              shell_range(basis, dfbasis, (int)iblk.first_shell, (int)iblk.last_shell),
+              iblk.nshell, iblk.nbf, restrictions
+          );
+        }
+      }
+
+    }
+
+    const std::vector<ShellBlockSkeleton<>>&
+    list_with_restrictions(int restrictions) const {
+      assert(lists_for_restrictions_.find(restrictions) != lists_for_restrictions_.end());
+      return lists_for_restrictions_.at(restrictions);
+    }
+
+    const std::vector<ShellBlockSkeleton<>>&
+    operator[](int restrictions) const {
+      return list_with_restrictions(restrictions);
+    }
+
+};
+
+
 
 } // end namespace sc
 

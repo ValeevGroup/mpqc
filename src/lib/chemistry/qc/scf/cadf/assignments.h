@@ -192,7 +192,9 @@ class AssignableShellPair {
     }
 };
 
+
 class AssignmentBin;
+namespace assignments { struct AtomCluster; };
 
 class Node : public boost::enable_shared_from_this<Node> {
   public:
@@ -203,6 +205,7 @@ class Node : public boost::enable_shared_from_this<Node> {
     std::set<uli> dfbs_atoms_to_do;
     std::array<std::vector<boost::shared_ptr<AssignableItem>>, 2> compute_coef_items;
     boost::shared_ptr<AssignmentBin> bin;
+    boost::shared_ptr<assignments::AtomCluster> cluster;
     typename ptr_priority_queue<boost::shared_ptr<Node>>::handle_type pq_handle;
     uli estimated_workload = 0;
     uli shell_pair_count = 0;
@@ -242,10 +245,19 @@ class Node : public boost::enable_shared_from_this<Node> {
       estimated_workload += item->cost_estimate(is_df);
     }
 
+    uli dfnsh() const;
+
+    const std::set<uint>& assigned_dfbs_shells() const;
+
+    const ptr_set<boost::shared_ptr<AssignableAtom>, detail::index_less>&
+    assigned_dfbs_atoms() const;
+
     bool operator <(const Node& other) const {
       return estimated_workload > other.estimated_workload;
     }
 
+    const std::unordered_map<uint, uli>&
+    dfbs_coef_offsets() const;
 
 };
 
@@ -376,6 +388,10 @@ class AssignmentGrid {
       return *(nodes_[me]);
     }
 
+    const boost::shared_ptr<Node> my_assignments_ptr(int me) const {
+      return nodes_[me];
+    }
+
     GaussianBasisSet* basis() {
       return basis_;
     }
@@ -388,6 +404,60 @@ class AssignmentGrid {
 
 };
 
+
+namespace assignments {
+
+struct Assignments;
+
+struct AtomCluster : boost::enable_shared_from_this<AtomCluster> {
+    ptr_set<boost::shared_ptr<AssignableAtom>, detail::index_less> atoms;
+    std::vector<boost::shared_ptr<Node>> nodes;
+    Assignments* parent;
+    uli coefs_size = 0;
+    int index;
+    uli dfnsh = 0;
+    std::set<uint> assigned_dfbs_shells;
+    std::unordered_map<uint, uint> dfbs_shell_map;
+    std::unordered_map<uint, uli> coef_offsets;
+
+    void assign_atom(const boost::shared_ptr<AssignableAtom>& atom);
+
+    boost::shared_ptr<Node> use_node(int inode, bool is_me) {
+      nodes.emplace_back(boost::make_shared<Node>());
+      auto& node = *nodes.back();
+      node.id = inode;
+      node.is_me = is_me;
+      node.cluster = shared_from_this();
+      return nodes.back();
+    }
+
+    uli workload_per_node() { return nodes.size() > 0 ? coefs_size / nodes.size() : std::numeric_limits<uli>::max(); }
+
+    void make_assignments();
+
+};
+
+
+struct Assignments {
+    std::vector<boost::shared_ptr<AtomCluster>> clusters;
+    std::vector<boost::shared_ptr<Node>> nodes;
+
+    GaussianBasisSet* basis;
+    GaussianBasisSet* dfbasis;
+
+    Assignments(
+        GaussianBasisSet* basis,
+        GaussianBasisSet* dfbasis,
+        int min_atoms_per_cluster,
+        int n_node, int me
+    );
+
+    void print_detail(std::ostream& o) const;
+
+
+};
+
+}
 
 }} // end namespaces cadf and sc
 

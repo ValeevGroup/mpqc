@@ -50,22 +50,21 @@ CADFCLHF::compute_coefficients()
   /*=======================================================================================*/
   /* Setup                                                		                        {{{1 */ #if 1 // begin fold
   //---------------------------------------------------------------------------------------//
-  // References for speed
   Timer timer("compute coefficients");
-  const Ref<GaussianBasisSet>& obs = gbs_;
 
   // Constants for convenience
-  const int nbf = obs->nbasis();
+  const int nbf = gbs_->nbasis();
   const int dfnbf = dfbs_->nbasis();
-  const int natom = obs->ncenter();
-  const cadf::Node& my_part = atom_pair_assignments_k_->my_assignments(scf_grp_->me());
+  const int natom = gbs_->ncenter();
+  boost::shared_ptr<cadf::Node> my_part_ptr;
+  if(new_exchange_algorithm_) {
+    my_part_ptr = assignments_new_k_->nodes[scf_grp_->me()];
+  }
+  else {
+    my_part_ptr = atom_pair_assignments_k_->my_assignments_ptr(scf_grp_->me());
+  }
+  auto& my_part = *my_part_ptr;
 
-  /*-----------------------------------------------------*/
-  /* Initialize coefficient memory                  {{{2 */ #if 2 //latex `\label{sc:coefmem}`
-  // Now initialize the coefficient memory.
-  // First, compute the amount of memory needed
-
-  timer.enter("01 - init coef memory");
 
   uli ncoefs = 0;
 
@@ -73,9 +72,21 @@ CADFCLHF::compute_coefficients()
   std::vector<uli> block_sizes;
   uli ioffset = 0;
 
-  if(distribute_coefficients_) {
-    //----------------------------------------------------------------------------//
+  /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
+
+
+  /*=======================================================================================*/
+  /* Initialize coefficient memory                        		                        {{{1 */ #if 1 // begin fold
+  timer.enter("01 - init coef memory");
+
+  if(distribute_coefficients_ or new_exchange_algorithm_) {
+
+    /*-----------------------------------------------------*/
+    /* Make space for only the J part coefficients    {{{2 */ #if 2 // begin fold
     // Coefficients distributed; only make room for the ones we need
+    // These are only the coefficients needed for the Coulomb part.
+    //   The ones needed for the exchange are computed elsewhere
 
     local_pairs_spot_ = 0;
     ShellData ish, jsh;
@@ -119,12 +130,14 @@ CADFCLHF::compute_coefficients()
         }
       }
     }
-
-    //----------------------------------------------------------------------------//
+    /********************************************************/ #endif //2}}}
+    /*-----------------------------------------------------*/
 
   }
   else {
-    //----------------------------------------------------------------------------//
+
+    /*-----------------------------------------------------*/
+    /* Make space for all of the coefficients         {{{2 */ #if 2 // begin fold
     // Coefficients not distributed; we need all of them
 
     for(int iatom = 0; iatom < natom; ++iatom) {
@@ -194,20 +207,24 @@ CADFCLHF::compute_coefficients()
         coefs_.emplace(ij, std::make_pair(coefs_a, coefs_b));
       }
     }
-    //----------------------------------------------------------------------------//
-  }
+    /********************************************************/ #endif //2}}}
+    /*-----------------------------------------------------*/
 
-  /********************************************************/ #endif //2}}} //latex `\label{sc:coefmemend}`
-  /*-----------------------------------------------------*/
+  }
 
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
-  /* Compute the coefficients in threads                   		                        {{{1 */ #if 1 //latex `\label{sc:coefloop}`
+
+
+  /*=======================================================================================*/
+  /* Compute our portion of the coefficients in threads   		                        {{{1 */ #if 1 //latex `\label{sc:coefloop}`
   //---------------------------------------------------------------------------------------//
 
   ExEnv::out0() << indent << "Computing coefficients" << std::endl;
+
   // reset the iteration over local pairs
   local_pairs_spot_ = 0;
+
   timer.change("02 - compute coefficients");
   {
     boost::thread_group compute_threads;
@@ -257,6 +274,9 @@ CADFCLHF::compute_coefficients()
 
   /*****************************************************************************************/ #endif //1}}} //latex `\label{sc:coefloopend}`
   /*=======================================================================================*/
+
+
+  /*=======================================================================================*/
   /* Global sum coefficient memory                        		                        {{{1 */ #if 1 // begin fold
   //---------------------------------------------------------------------------------------//
 
@@ -279,22 +299,43 @@ CADFCLHF::compute_coefficients()
 
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
-  /* Compute the distributed coefficients                  		                        {{{1 */ #if 1 //latex `\label{sc:coeftrans}`
+
+
+  /*=======================================================================================*/
+  /* Compute the distributed coefficients for the exchange part if we need to         {{{1 */ #if 1 //latex `\label{sc:coeftrans}`
   //---------------------------------------------------------------------------------------//
-  if(distribute_coefficients_) {
+
+  if(distribute_coefficients_ or new_exchange_algorithm_) {
+
     timer.change("04 - distributed coefficients");
-    uli n_Xcoefs = 0;
-    uli ncoefs_dist = my_part.bin->obs_ncoefs + my_part.bin->dfbs_ncoefs;
+
+    /*-----------------------------------------------------*/
+    /* Allocate the memory for the local coefficients {{{2 */ #if 2 // begin fold
+
+    uli ncoefs_dist;
+    if(new_exchange_algorithm_) {
+      // We only need the dfbs coefficients
+      ncoefs_dist = my_part.cluster->coefs_size;
+    }
+    else {
+      ncoefs_dist = my_part.bin->obs_ncoefs + my_part.bin->dfbs_ncoefs;
+    }
+
     try {
-      if(ncoefs_dist * sizeof(double) > std::numeric_limits<int>::max()) {
-        dist_coefs_data_ = new double[my_part.bin->obs_ncoefs];
-        dist_coefs_data_df_ = new double[my_part.bin->dfbs_ncoefs];
+      if(new_exchange_algorithm_) {
+        dist_coefs_data_df_ = new double[ncoefs_dist];
       }
       else {
-        dist_coefs_data_ = new double[ncoefs_dist];
-        dist_coefs_data_df_ = dist_coefs_data_ + my_part.bin->obs_ncoefs;
+        if(ncoefs_dist * sizeof(double) > std::numeric_limits<int>::max()) {
+          dist_coefs_data_ = new double[my_part.bin->obs_ncoefs];
+          dist_coefs_data_df_ = new double[my_part.bin->dfbs_ncoefs];
+        }
+        else {
+          dist_coefs_data_ = new double[ncoefs_dist];
+          dist_coefs_data_df_ = dist_coefs_data_ + my_part.bin->obs_ncoefs;
+        }
       }
-      memory_used_ += ncoefs_dist * sizeof(double);
+      consume_memory(ncoefs_dist * sizeof(double));
     }
     catch(std::bad_alloc& e) {
       ExEnv::outn() << "Failed to allocate " << data_size_to_string(ncoefs_dist*sizeof(double))
@@ -302,39 +343,53 @@ CADFCLHF::compute_coefficients()
       ExEnv::outn() << "Before allocation, memory in use was at least " << data_size_to_string(memory_used_.load()) << std::endl;
       throw;
     }
-    memset(dist_coefs_data_, 0, my_part.bin->obs_ncoefs*sizeof(double));
-    memset(dist_coefs_data_df_, 0, my_part.bin->dfbs_ncoefs*sizeof(double));
+    if(not new_exchange_algorithm_) {
+      memset(dist_coefs_data_, 0, my_part.bin->obs_ncoefs*sizeof(double));
+      memset(dist_coefs_data_df_, 0, my_part.bin->dfbs_ncoefs*sizeof(double));
+    }
+    else {
+      memset(dist_coefs_data_df_, 0, ncoefs_dist);
+    }
     ExEnv::out0() << indent << "Allocated " << data_size_to_string(ncoefs_dist*sizeof(double))
                   << " (on node 0) for distributed coefficients." << std::endl;
     ExEnv::out0() << indent << "Total memory usage is now at least " << data_size_to_string(memory_used_.load()) << std::endl;
 
-    // Initialize the Eigen::Maps of data parts
-    for(auto obs_shell : my_part.bin->assigned_obs_shells) {
-      ShellData ish(obs_shell->index, gbs_, dfbs_);
-      coefs_mu_X.emplace(
-          std::piecewise_construct,
-          std::forward_as_tuple(ish),
-          std::forward_as_tuple(
-              dist_coefs_data_ + my_part.bin->obs_coef_offsets.at(ish),
-              ish.nbf, nbf*ish.atom_dfnbf
-          )
-      );
-      coefs_mu_X_other.emplace(
-          std::piecewise_construct,
-          std::forward_as_tuple(ish),
-          std::forward_as_tuple(
-              dist_coefs_data_ + my_part.bin->obs_coef_offsets.at(ish),
-              ish.nbf*nbf, ish.atom_dfnbf
-          )
-      );
+    /********************************************************/ #endif //2}}}
+    /*-----------------------------------------------------*/
+
+    /*-----------------------------------------------------*/
+    /* Initialize the Maps in coefs_mu_X, coefs_X_nu  {{{2 */ #if 2 // begin fold
+
+    // Only initialize the obs map if we're not doing the new algorithm (which doesn't need it)
+    if(not new_exchange_algorithm_) {
+      for(auto obs_shell : my_part.bin->assigned_obs_shells) {
+        ShellData ish(obs_shell->index, gbs_, dfbs_);
+        coefs_mu_X.emplace(
+            std::piecewise_construct,
+            std::forward_as_tuple(ish),
+            std::forward_as_tuple(
+                dist_coefs_data_ + my_part.bin->obs_coef_offsets.at(ish),
+                ish.nbf, nbf*ish.atom_dfnbf
+            )
+        );
+        coefs_mu_X_other.emplace(
+            std::piecewise_construct,
+            std::forward_as_tuple(ish),
+            std::forward_as_tuple(
+                dist_coefs_data_ + my_part.bin->obs_coef_offsets.at(ish),
+                ish.nbf*nbf, ish.atom_dfnbf
+            )
+        );
+      }
     }
-    for(auto dfbs_atom : my_part.bin->assigned_dfbs_atoms) {
+
+    for(auto dfbs_atom : my_part.assigned_dfbs_atoms()) {
       ShellBlockData<> Xblk = ShellBlockData<>::atom_block(dfbs_atom->index, dfbs_, gbs_);
       coefs_X_nu.emplace(
           std::piecewise_construct,
           std::forward_as_tuple(Xblk.center),
           std::forward_as_tuple(
-              dist_coefs_data_df_ + my_part.bin->dfbs_coef_offsets.at(Xblk.center),
+              dist_coefs_data_df_ + my_part.dfbs_coef_offsets().at(Xblk.center),
               Xblk.atom_nbf, Xblk.atom_obsnbf*nbf
           )
       );
@@ -342,57 +397,71 @@ CADFCLHF::compute_coefficients()
           std::piecewise_construct,
           std::forward_as_tuple(Xblk.center),
           std::forward_as_tuple(
-              dist_coefs_data_df_ + my_part.bin->dfbs_coef_offsets.at(Xblk.center),
+              dist_coefs_data_df_ + my_part.dfbs_coef_offsets().at(Xblk.center),
               Xblk.atom_nbf*Xblk.atom_obsnbf, nbf
           )
       );
     }
 
-    do_threaded(nthread_, [&](int ithr) {
-      std::vector<Eigen::Map<Eigen::VectorXd>> empty;
-      for(auto obs_shell : thread_over_range(
-          my_part.compute_coef_items[false], ithr, nthread_
-      )) {
-        // Do the C_mu_X part first
-        ShellData ish(obs_shell->index, gbs_, dfbs_);
-        for(auto&& jsh : iter_significant_partners(ish)) {
-          std::vector<Eigen::Map<Eigen::VectorXd>> coefs;
-          for(auto&& mu : function_range(ish)) {
-            for(auto&& rho : function_range(jsh)) {
-              coefs.emplace_back(
-                  // NOTE: POSSIBLE DATA CONCURRENCY ISSUES!
-                  coefs_mu_X.at(ish).data()
-                    + mu.off*nbf*ish.atom_dfnbf + rho*ish.atom_dfnbf,
-                  ish.atom_dfnbf
-              );
+    /********************************************************/ #endif //2}}}
+    /*-----------------------------------------------------*/
+
+    /*-----------------------------------------------------*/
+    /* Compute the C_mu_X coefs in threads            {{{2 */ #if 2 // begin fold
+
+    // The new exchange algorithm computes these on the fly
+    if(not new_exchange_algorithm_) {
+      do_threaded(nthread_, [&](int ithr) {
+        std::vector<Eigen::Map<Eigen::VectorXd>> empty;
+        for(auto obs_shell : thread_over_range(
+            my_part.compute_coef_items[false], ithr, nthread_
+        )) {
+          // Do the C_mu_X part first
+          ShellData ish(obs_shell->index, gbs_, dfbs_);
+          for(auto&& jsh : iter_significant_partners(ish)) {
+            std::vector<Eigen::Map<Eigen::VectorXd>> coefs;
+            for(auto&& mu : function_range(ish)) {
+              for(auto&& rho : function_range(jsh)) {
+                coefs.emplace_back(
+                    // NOTE: POSSIBLE DATA CONCURRENCY ISSUES!
+                    coefs_mu_X.at(ish).data()
+                      + mu.off*nbf*ish.atom_dfnbf + rho*ish.atom_dfnbf,
+                    ish.atom_dfnbf
+                );
+              }
             }
+            get_coefs_ish_jsh(ish, jsh, ithr, coefs, empty);
           }
-          get_coefs_ish_jsh(ish, jsh, ithr, coefs, empty);
         }
-      }
-    });
+      });
 
-    // Node-row-wise sum of mu coefficients
-    {
-      Ref<MessageGrp> mu_grp = scf_grp_->split(my_part.bin->obs_row_id);
-      const uli ncfs = my_part.bin->obs_ncoefs;
-      if(ncfs * sizeof(double) < std::numeric_limits<int>::max()) {
-        mu_grp->sum(dist_coefs_data_, ncfs);
-      }
-      else {
-        int chunk_size = std::numeric_limits<int>::max() / sizeof(double);
-        for(int ichunk = 0; ichunk < ncfs / chunk_size; ++ichunk) {
-          mu_grp->sum(dist_coefs_data_ + ichunk*chunk_size, chunk_size);
+      // Node-row-wise sum of mu coefficients
+      {
+        Ref<MessageGrp> mu_grp = scf_grp_->split(my_part.bin->obs_row_id);
+        const uli ncfs = my_part.bin->obs_ncoefs;
+        if(ncfs * sizeof(double) < std::numeric_limits<int>::max()) {
+          mu_grp->sum(dist_coefs_data_, ncfs);
         }
-        if(ncfs % chunk_size > 0) {
-          mu_grp->sum(dist_coefs_data_ + (ncfs / chunk_size) * chunk_size,
-              ncfs % chunk_size
-          );
+        else {
+          int chunk_size = std::numeric_limits<int>::max() / sizeof(double);
+          for(int ichunk = 0; ichunk < ncfs / chunk_size; ++ichunk) {
+            mu_grp->sum(dist_coefs_data_ + ichunk*chunk_size, chunk_size);
+          }
+          if(ncfs % chunk_size > 0) {
+            mu_grp->sum(dist_coefs_data_ + (ncfs / chunk_size) * chunk_size,
+                ncfs % chunk_size
+            );
+          }
         }
-      }
-    } // mu_grp is deleted
+      } // mu_grp is deleted
 
-    sc::SCFormIO::init_mp(scf_grp_->me());
+      sc::SCFormIO::init_mp(scf_grp_->me());
+    }
+    /********************************************************/ #endif //2}}}
+    /*-----------------------------------------------------*/
+
+    /*-----------------------------------------------------*/
+    /* Compute the C_X_nu coefs in threads            {{{2 */ #if 2 // begin fold
 
     std::vector<CoefView> empty_df;
     do_threaded(nthread_, [&](int ithr) {
@@ -424,8 +493,10 @@ CADFCLHF::compute_coefficients()
 
     // Node-row-wise sum of X coefficients
     {
-      Ref<MessageGrp> X_grp = scf_grp_->split(my_part.bin->dfbs_row_id);
-      const uli ncfs = my_part.bin->dfbs_ncoefs;
+      int bin_id = new_exchange_algorithm_ ? my_part.cluster->index : my_part.bin->dfbs_row_id;
+
+      Ref<MessageGrp> X_grp = scf_grp_->split(bin_id);
+      const uli ncfs = new_exchange_algorithm_ ? my_part.cluster->coefs_size : my_part.bin->dfbs_ncoefs;
       if(ncfs * sizeof(double) < std::numeric_limits<int>::max()) {
         X_grp->sum(dist_coefs_data_df_, ncfs);
       }
@@ -443,11 +514,17 @@ CADFCLHF::compute_coefficients()
     } // X_grp is deleted
 
     sc::SCFormIO::init_mp(scf_grp_->me());
+    /********************************************************/ #endif //2}}}
+    /*-----------------------------------------------------*/
+
   }
 
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
-  /* Store the transpose and blocked coefficients          		                        {{{1 */ #if 1 //latex `\label{sc:coeftrans}`
+
+
+  /*=======================================================================================*/
+  /* Store the transpose and blocked coefficients (deprecated; may not work)          {{{1 */ #if 1 //latex `\label{sc:coeftrans}`
   //---------------------------------------------------------------------------------------//
 
   // TODO Get rid of this!!!
@@ -516,11 +593,13 @@ CADFCLHF::compute_coefficients()
   }
   /*****************************************************************************************/ #endif //1}}} //latex `\label{sc:coeftransend}`
   /*=======================================================================================*/
+
+
+  /*=======================================================================================*/
   /* Debugging output                                     		                        {{{1 */ #if 1 // begin fold
-  // debugging not implemented for sparse yet
-  if(xml_debug_) {
-    for(auto mu : function_range(obs, dfbs_)){
-      for(auto nu : function_range(obs, dfbs_, mu)) {
+  if(xml_debug_ and not (distribute_coefficients_ or new_exchange_algorithm_)) {
+    for(auto&& mu : function_range(gbs_, dfbs_)){
+      for(auto&& nu : function_range(gbs_, dfbs_, mu)) {
         IntPair mn(mu, nu);
         auto cpair = coefs_[mn];
         auto& Ca = *(cpair.first);
@@ -551,9 +630,9 @@ CADFCLHF::compute_coefficients()
         );
       }
     }
-    //end_xml_context("df_coefficients");
   }
-  if(iter_log_.nonnull() and not distribute_coefficients_) {
+
+  if(iter_log_.nonnull() and not (distribute_coefficients_ or new_exchange_algorithm_)) {
     using boost::property_tree::ptree;
     iter_log_->log_global_misc([&](ptree& parent, const XMLWriter& writer) -> void
     {
@@ -574,6 +653,9 @@ CADFCLHF::compute_coefficients()
   }
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
+
+
+  /*=======================================================================================*/
   /* Make the CADF-LinK lists                                                         {{{1 */ #if 1 // begin fold
   timer.change("06 - LinK coef lists");
 
@@ -586,14 +668,14 @@ CADFCLHF::compute_coefficients()
     // Since C_trans_frob is only used here, we don't need it to be a class-scope member now.
     std::vector<Eigen::MatrixXd> C_trans_frob(dfbs_->nshell());
 
-    if(distribute_coefficients_) {
-      for(auto Xatom : my_part.bin->assigned_dfbs_atoms) {
+    if(distribute_coefficients_ or new_exchange_algorithm_) {
+      for(auto Xatom : my_part.assigned_dfbs_atoms()) {
         for(auto&& Xsh : iter_shells_on_center(dfbs_, Xatom->index, gbs_)) {
 
-          resize_and_zero_matrix(C_trans_frob[Xsh], Xsh.atom_obsnsh, obs->nshell());
+          resize_and_zero_matrix(C_trans_frob[Xsh], Xsh.atom_obsnsh, gbs_->nshell());
 
-          for(auto&& ish : iter_shells_on_center(obs, Xsh.center)) {
-            for(auto&& jsh : shell_range(obs)) {
+          for(auto&& ish : iter_shells_on_center(gbs_, Xsh.center)) {
+            for(auto&& jsh : shell_range(gbs_)) {
               for(auto&& mu : function_range(ish)) {
                 C_trans_frob[Xsh](ish.shoff_in_atom, jsh) += coefs_X_nu.at(Xsh.center).block(
                     Xsh.bfoff_in_atom, mu.bfoff_in_atom*nbf + jsh.bfoff,
@@ -608,12 +690,12 @@ CADFCLHF::compute_coefficients()
       }
     }
     else {
-      for(auto&& Xsh : shell_range(dfbs_, obs)) {
+      for(auto&& Xsh : shell_range(dfbs_, gbs_)) {
 
-        resize_and_zero_matrix(C_trans_frob[Xsh], Xsh.atom_obsnsh, obs->nshell());
+        resize_and_zero_matrix(C_trans_frob[Xsh], Xsh.atom_obsnsh, gbs_->nshell());
 
-        for(auto&& ish : iter_shells_on_center(obs, Xsh.center)) {
-          for(auto&& jsh : shell_range(obs)) {
+        for(auto&& ish : iter_shells_on_center(gbs_, Xsh.center)) {
+          for(auto&& jsh : shell_range(gbs_)) {
             for(auto&& mu : function_range(ish)) {
               C_trans_frob[Xsh](ish.shoff_in_atom, jsh) += coefs_transpose_blocked_[Xsh.center].block(
                   Xsh.bfoff_in_atom, mu.bfoff_in_atom*nbf + jsh.bfoff,
@@ -631,19 +713,26 @@ CADFCLHF::compute_coefficients()
 
     // Compute Cmaxes_
     timer.change("08 - Cbar");
-    resize_and_zero_matrix(C_bar_, gbs_->nshell(), dfbs_->nshell());
-    resize_and_zero_matrix(C_bar_mine_, gbs_->nshell(), my_part.bin->dfnsh());
-    if(distribute_coefficients_) {
+    // The new exchange algorithm only needs C_bar_mine_
+    if(not new_exchange_algorithm_) {
+      resize_and_zero_matrix(C_bar_, gbs_->nshell(), dfbs_->nshell());
+      consume_memory(gbs_->nshell()*dfbs_->nshell()*sizeof(double));
+    }
+    resize_and_zero_matrix(C_bar_mine_, gbs_->nshell(), my_part.dfnsh());
+    consume_memory(gbs_->nshell()*my_part.dfnsh()*sizeof(double));
+    if(distribute_coefficients_ and not new_exchange_algorithm_) {
       resize_and_zero_matrix(C_underbar_, gbs_->nshell(), dfbs_->nshell());
+      consume_memory(gbs_->nshell()*dfbs_->nshell()*sizeof(double));
     }
     // TODO switch C_dfsame_ to offset indices
     if(use_norms_nu_) {
+
       uint Xsh_off = 0;
-      for(auto&& Xsh_index : my_part.bin->assigned_dfbs_shells) {
+      for(auto&& Xsh_index : my_part.assigned_dfbs_shells()) {
         ShellData Xsh(Xsh_index, dfbs_, gbs_);
         {
           const auto& sqnorm1 = C_trans_frob[Xsh].colwise().squaredNorm();
-          if(distribute_coefficients_) {
+          if(distribute_coefficients_ and not new_exchange_algorithm_) {
             C_bar_.col(Xsh) = sqnorm1;
             C_underbar_.col(Xsh) = sqnorm1;
           }
@@ -651,25 +740,25 @@ CADFCLHF::compute_coefficients()
         }
         {
           const auto& sqnorm2 = C_trans_frob[Xsh].rowwise().squaredNorm();
-          if(distribute_coefficients_) C_bar_.col(Xsh).segment(Xsh.atom_obsshoff, Xsh.atom_obsnsh) += sqnorm2;
+          if(distribute_coefficients_ and not new_exchange_algorithm_) C_bar_.col(Xsh).segment(Xsh.atom_obsshoff, Xsh.atom_obsnsh) += sqnorm2;
           C_bar_mine_.col(Xsh_off).segment(Xsh.atom_obsshoff, Xsh.atom_obsnsh) += sqnorm2;
         }
         {
           const auto& sqnorm3 = C_trans_frob[Xsh].middleCols(
               Xsh.atom_obsshoff, Xsh.atom_obsnsh
           ).rowwise().squaredNorm();
-          if(distribute_coefficients_) C_bar_.col(Xsh).segment(Xsh.atom_obsshoff, Xsh.atom_obsnsh) -= sqnorm3;
+          if(distribute_coefficients_ and not new_exchange_algorithm_) C_bar_.col(Xsh).segment(Xsh.atom_obsshoff, Xsh.atom_obsnsh) -= sqnorm3;
           C_bar_mine_.col(Xsh_off).segment(Xsh.atom_obsshoff, Xsh.atom_obsnsh) -= sqnorm3;
         }
         ++Xsh_off;
       }
-      if(distribute_coefficients_) {
+      if(distribute_coefficients_ and not new_exchange_algorithm_) {
         C_bar_ = C_bar_.array().sqrt();
         C_underbar_ = C_underbar_.array().sqrt();
       }
       C_bar_mine_ = C_bar_mine_.array().sqrt();
 
-      if(distribute_coefficients_) {
+      if(distribute_coefficients_ and not new_exchange_algorithm_) {
         // Node-row-wise sum of X parts of C_bar_
         {
           Ref<MessageGrp> mu_grp = scf_grp_->split(my_part.bin->obs_row_id);
@@ -678,7 +767,7 @@ CADFCLHF::compute_coefficients()
         } // mu_grp is deleted
         sc::SCFormIO::init_mp(scf_grp_->me());
       }
-      else {
+      else if(not new_exchange_algorithm_) {
         for(ShellData&& Xsh : shell_range(dfbs_, gbs_)) {
           C_bar_.col(Xsh) = C_trans_frob[Xsh].colwise().squaredNorm();
           C_bar_.col(Xsh).segment(Xsh.atom_obsshoff, Xsh.atom_obsnsh) +=
@@ -688,7 +777,8 @@ CADFCLHF::compute_coefficients()
         }
         C_bar_ = C_bar_.array().sqrt();
       }
-      if(distribute_coefficients_) {
+
+      if(distribute_coefficients_ and not new_exchange_algorithm_) {
         C_dfsame_ = std::make_shared<typename decltype(C_dfsame_)::element_type>(C_underbar_, gbs_);
         for(auto&& Xsh_index : my_part.bin->assigned_dfbs_shells) {
           auto& L_C_under_X = L_C_under[Xsh_index];
@@ -699,9 +789,10 @@ CADFCLHF::compute_coefficients()
           L_C_under_X.set_basis(gbs_, dfbs_);
         }
       }
+
     }
     else {
-      if(distribute_coefficients_) {
+      if(distribute_coefficients_ or new_exchange_algorithm_) {
         if(screen_B_) {
           throw FeatureNotImplemented("use_norms_nu = false with distributed coefficients and screen_B", __FILE__, __LINE__, class_desc());
         }
@@ -711,7 +802,7 @@ CADFCLHF::compute_coefficients()
 
       // TODO just do this in the above loop similarly
       for(auto Xsh : shell_range(dfbs_)){
-        for(auto lsh : shell_range(obs)) {
+        for(auto lsh : shell_range(gbs_)) {
 
           double max_val;
 
@@ -735,9 +826,14 @@ CADFCLHF::compute_coefficients()
   } // end if do_linK
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
+
+
+  /*=======================================================================================*/
   /* Clean up                                              		                        {{{1 */ #if 1 // begin fold
   //---------------------------------------------------------------------------------------//
-  decomps_->clear();
+  if(not new_exchange_algorithm_) {
+    decomps_->clear();
+  }
   have_coefficients_ = true;                                                               //latex `\label{sc:coefflag}`
   timer.exit();
   /*****************************************************************************************/ #endif //1}}}

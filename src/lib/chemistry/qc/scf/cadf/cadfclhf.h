@@ -70,7 +70,12 @@ namespace sc {
 
 class XMLWriter;
 class ApproximatePairWriter;
-namespace cadf { class AssignmentGrid; }
+namespace cadf {
+  class AssignmentGrid;
+  namespace assignments {
+    struct Assignments;
+  }
+}
 
 //============================================================================//
 
@@ -478,6 +483,15 @@ class CADFCLHF: public CLHF {
     /** Compute and print the exchange energy for debugging purposes
      */
     bool debug_exchange_energy_ = false;
+    /** Use new exchange algorithm that recomputes some coefficients on the
+     *  fly.  Ignores a lot of other options.  See source code for details.
+     */
+    bool new_exchange_algorithm_ = true;
+    /** Minimum number of DFBS atoms to be assigned to a given node.  Smaller
+     *  numbers will hurt load balancing, but may be necessary to make the
+     *  coefficients fit into memory.  Defaults to 3.
+     */
+    int min_atoms_per_node_ = 3;
     //@}
 
     std::shared_ptr<ScreeningStatistics> stats_;
@@ -519,6 +533,29 @@ class CADFCLHF: public CLHF {
     // A (very) rough estimate of the minimum amount of memory that is in use by CADF at the present time
     std::atomic<size_t> memory_used_;
 
+    class TrackedMemoryHolder {
+        std::atomic<size_t>& used_ref_;
+        size_t size_;
+      public:
+        TrackedMemoryHolder(
+            std::atomic<size_t>& accum,
+            size_t size
+        ) : used_ref_(accum), size_(size)
+        {
+          used_ref_ += size_;
+        }
+        ~TrackedMemoryHolder() { used_ref_ -= size_; }
+    };
+    void consume_memory(size_t size) {
+      memory_used_ += size;
+    }
+    void release_memory(size_t size) {
+      memory_used_ -= size;
+    }
+    TrackedMemoryHolder hold_memory(size_t size) {
+      return TrackedMemoryHolder(memory_used_, size);
+    }
+
     // Convenience variable for better code readibility
     static const TwoBodyOper::type coulomb_oper_type_ = TwoBodyOper::eri;
     // Currently only metric_oper_type_ == coulomb_oper_type_ is supported
@@ -532,13 +569,15 @@ class CADFCLHF: public CLHF {
 
     RefSCMatrix compute_K();
 
-    inline double get_distance_factor(
+    RefSCMatrix new_compute_K();
+
+    double get_distance_factor(
         const ShellData& ish,
         const ShellData& jsh,
         const ShellData& Xsh
     ) const;
 
-    inline double get_R(
+    double get_R(
         const ShellData& ish,
         const ShellData& jsh,
         const ShellData& Xsh
@@ -738,6 +777,7 @@ class CADFCLHF: public CLHF {
     std::map<std::pair<int, ShellBlockSkeleton<>>, int> pair_assignments_k_;
 
     shared_ptr<cadf::AssignmentGrid> atom_pair_assignments_k_;
+    shared_ptr<cadf::assignments::Assignments> assignments_new_k_;
 
     // What pairs are being evaluated on the current node?
     std::vector<std::pair<int, int>> local_pairs_all_;
@@ -754,10 +794,11 @@ class CADFCLHF: public CLHF {
     // List of the permutationally unique pairs with half-schwarz bounds larger than pair_thresh_
     std::vector<std::pair<int, int>> sig_pairs_;
 
+    // Significant partners for a given shell index
     std::vector<std::set<int>> sig_partners_;
 
-    // The same as sig_pairs_, but organized differently
-    std::vector<std::vector<int>> shell_to_sig_shells_;
+    // Significant partners in pre-blocked form
+    std::vector<ContiguousShellBlockList> sig_partner_blocks_;
 
     /// (X|X)^{1/2} Schwarz integrals for the DF basis
     Eigen::VectorXd schwarz_df_;

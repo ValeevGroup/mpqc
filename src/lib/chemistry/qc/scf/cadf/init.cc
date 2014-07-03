@@ -83,9 +83,9 @@ void
 CADFCLHF::init_vector()
 {
   CLHF::init_vector();
-  core_evals_ = basis_matrixkit()->diagmatrix(oso_dimension());
-  core_evecs_ = basis_matrixkit()->matrix(oso_dimension(), oso_dimension());
-  core_hamiltonian().diagonalize(core_evals_, core_evecs_);
+  //core_evals_ = basis_matrixkit()->diagmatrix(oso_dimension());
+  //core_evecs_ = basis_matrixkit()->matrix(oso_dimension(), oso_dimension());
+  //core_hamiltonian().diagonalize(core_evals_, core_evecs_);
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -93,6 +93,9 @@ CADFCLHF::init_vector()
 void
 CADFCLHF::init_threads()
 {
+  /*=======================================================================================*/
+  /* Setup                                                		                        {{{1 */ #if 1 // begin fold
+
   Timer timer("init threads");
   assert(not threads_initialized_);
 
@@ -102,19 +105,35 @@ CADFCLHF::init_threads()
   ExEnv::out0() << indent << "dfnbf: " << dfbs_->nbasis() << std::endl;
 
   //----------------------------------------------------------------------------//
+  // convenience variables
 
   const int me = scf_grp_->me();
   const int n_node = scf_grp_->n();
+  const int nbf = gbs_->nbasis();
+  const int nsh = gbs_->nshell();
+  const int dfnbf = dfbs_->nbasis();
+  const int dfnsh = dfbs_->nshell();
 
+  /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
+
+
+  /*=======================================================================================*/
+  /* Initialize 2-, 3-, and 4-center integral evaluators 		                          {{{1 */ #if 1 // begin fold
+  //----------------------------------------------------------------------------//
+
+  /*=======================================================================================*/
+  /* Initialize two center TEI evaluators and compute (X|Y)                           {{{1 */ #if 1 // begin fold
   //----------------------------------------------------------------------------//
   // initialize the two electron integral classes
 
   ExEnv::out0() << indent << "Initializing 2 center integral evaluators" << std::endl;
-  // TwoCenter versions
+
   integral()->set_basis(dfbs_, dfbs_);
 
   size_t storage_required_2c = 0;
   try {
+    // Note:  This overestimates, since we're using clone()
     storage_required_2c = integral()->storage_required(
         coulomb_oper_type_, TwoBodyIntShape::value::_1_O_2, 0,
         dfbs_, dfbs_
@@ -128,7 +147,7 @@ CADFCLHF::init_threads()
     }
     ExEnv::out0() << incindent << indent << "Integral object reports " << data_size_to_string(storage_required_2c)
                   << " required for 2 center integral evaluators." << decindent << endl;
-   }
+  }
   catch(sc::Exception& e) {
     ExEnv::out0() << incindent << indent << "Integral object is not reporting the amount of"
                   << " storage needed for 2 center integral evaluators." << decindent << endl;
@@ -138,7 +157,6 @@ CADFCLHF::init_threads()
   eris_2c_[0] = integral()->coulomb<2>();
   for(int ithr = 1; ithr < nthread_; ++ithr) {
     eris_2c_[ithr] = eris_2c_[0]->clone();
-    //eris_2c_[ithr] = integral()->coulomb<2>();
   }
   for (int i=0; i < nthread_; i++) {
     if(metric_oper_type_ == coulomb_oper_type_){
@@ -148,7 +166,7 @@ CADFCLHF::init_threads()
       throw FeatureNotImplemented("non-coulomb metrics in CADFCLHF", __FILE__, __LINE__, class_desc());
     }
   }
-  memory_used_ += storage_required_2c;
+  consume_memory(storage_required_2c);
 
   //----------------------------------------------------------------------------//
   // Compute the two center integrals, then dispense with the evaluators
@@ -160,20 +178,29 @@ CADFCLHF::init_threads()
       ShellBlockData<>(dfbs_),
       eris_2c_, coulomb_oper_type_
   );
-  memory_used_ += sizeof(TwoCenterIntContainer) + dfbs_->nbasis()*dfbs_->nbasis()*sizeof(double);
+  consume_memory(sizeof(TwoCenterIntContainer) + dfnbf*dfnbf*sizeof(double));
   const auto& g2 = *g2_full_ptr_;
 
-  schwarz_df_.resize(dfbs_->nshell());
+  // Compute the (X|X)^1/2 schwarz matrix
+  schwarz_df_.resize(dfnsh);
+  consume_memory(dfnsh*sizeof(double));
   for(auto&& Xsh : shell_range(dfbs_)) {
     schwarz_df_(Xsh) = g2.block(Xsh.bfoff, Xsh.bfoff, Xsh.nbf, Xsh.nbf).norm();
   }
 
+  // Release the integral evaluators
   for(int ithr = 0; ithr < nthread_; ++ithr) {
     eris_2c_[ithr] = 0;
     metric_ints_2c_[ithr] = 0;
   }
+  release_memory(storage_required_2c);
 
-  //----------------------------------------------------------------------------//
+  /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
+
+
+  /*=======================================================================================*/
+  /* Initializes three center TEI evaluators		                                      {{{1 */ #if 1 // begin fold
 
   ExEnv::out0() << indent << "Initializing 3 center integral evaluators" << std::endl;
 
@@ -223,6 +250,12 @@ CADFCLHF::init_threads()
   // Reset to normal setup
   integral()->set_basis(gbs_, gbs_, gbs_, gbs_);
 
+  /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
+
+
+  /*=======================================================================================*/
+  /* Initialize four center integral evaluators                 		                  {{{1 */ #if 1 // begin fold
   //----------------------------------------------------------------------------//
   ExEnv::out0() << indent << "Initializing 4 center integral evaluators" << endl;
   size_t storage_required_4c = 0;
@@ -245,9 +278,21 @@ CADFCLHF::init_threads()
       tbis_[i] = tbis_[0]->clone();
     }
   }
-  memory_used_ += storage_required_4c;
+  consume_memory(storage_required_4c);
+  /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
 
-  //----------------------------------------------------------------------------//
+  /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
+
+
+  /*=======================================================================================*/
+  /* Compute static distributions of work and the significant pairs list              {{{1 */ #if 1 // begin fold
+  //---------------------------------------------------------------------------------------//
+
+  /*-----------------------------------------------------*/
+  /* Set up the all pairs vector                    {{{2 */ #if 2 // begin fold
+
   // Set up the all pairs vector, needed to prescreen Schwarz bounds
   ExEnv::out0() << indent << "Computing static distribution of all pairs" << endl;
   const int nshell = gbs_->nshell();
@@ -264,21 +309,39 @@ CADFCLHF::init_threads()
     }
   }
 
+  /********************************************************/ #endif //2}}}
+  /*-----------------------------------------------------*/
+
   //----------------------------------------------------------------------------//
 
-  ExEnv::out0() << indent << "Computing static distribution of (obs, dfbs) pairs for exchange" << endl;
-  atom_pair_assignments_k_ = make_shared<cadf::AssignmentGrid>(
-      gbs_, dfbs_, scf_grp_->n(), scf_grp_->me()
-  );
-  atom_pair_assignments_k_->print_detail(ExEnv::out0(), !distribute_coefficients_);
-  auto& my_part = atom_pair_assignments_k_->my_assignments(me);
+  boost::shared_ptr<cadf::Node> my_part_ptr;
+  if(new_exchange_algorithm_) {
+    ExEnv::out0() << indent << "Computing static distribution of (obs, dfbs) pairs for new exchange" << endl;
+    assignments_new_k_ = make_shared<cadf::assignments::Assignments>(
+        gbs_, dfbs_, min_atoms_per_node_, n_node, me
+    );
+    assignments_new_k_->print_detail(ExEnv::out0());
+    my_part_ptr = assignments_new_k_->nodes[me];
+  }
+  else {
+    ExEnv::out0() << indent << "Computing static distribution of (obs, dfbs) pairs for exchange" << endl;
+    atom_pair_assignments_k_ = make_shared<cadf::AssignmentGrid>(
+        gbs_, dfbs_, scf_grp_->n(), scf_grp_->me()
+    );
+    atom_pair_assignments_k_->print_detail(ExEnv::out0(), !distribute_coefficients_);
+    my_part_ptr = atom_pair_assignments_k_->my_assignments_ptr(me);
+  }
+  auto& my_part = *my_part_ptr;
 
   //----------------------------------------------------------------------------//
 
   ExEnv::out0() << indent << "Initializing significant basis function pairs" << endl;
   init_significant_pairs();
+
   // 4c int objects are destroyed in init_significant_pairs()
-  memory_used_ -= storage_required_4c;
+  if(not exact_diagonal_J_ and not exact_diagonal_K_) {
+    release_memory(storage_required_4c);
+  }
 
   //----------------------------------------------------------------------------//
 
@@ -301,14 +364,15 @@ CADFCLHF::init_threads()
     ++inode;
   }
 
-  schwarz_df_mine_.resize(my_part.bin->dfnsh());
+  schwarz_df_mine_.resize(my_part.dfnsh());
   int Xsh_off = 0;
-  for(auto&& Xsh_index : my_part.bin->assigned_dfbs_shells) {
+  for(auto&& Xsh_index : my_part.assigned_dfbs_shells()) {
     ShellData Xsh(Xsh_index, dfbs_, gbs_);
     schwarz_df_mine_(Xsh_off) = g2.block(Xsh.bfoff, Xsh.bfoff, Xsh.nbf, Xsh.nbf).norm();
     ++Xsh_off;
   }
 
+  // Get maximum sizes for intermediate data blocks
   for(auto&& pair : my_part.pairs) {
     {
       ShellBlockData<> Xblk = ShellBlockData<>::atom_block(pair.Xatom, dfbs_, gbs_);
@@ -333,12 +397,20 @@ CADFCLHF::init_threads()
 
     }
   }
+  /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
 
-  //----------------------------------------------------------------------------//
+
+  /*=======================================================================================*/
+  /* Summary and cleanup                                  		                        {{{1 */ #if 1 // begin fold
+
   threads_initialized_ = true;
 
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Done initializing CADFCLHF" << endl;
+
+  /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -346,16 +418,41 @@ CADFCLHF::init_threads()
 void
 CADFCLHF::init_significant_pairs()
 {
+
+  /*=======================================================================================*/
+  /* Setup                                                  		                      {{{1 */ #if 1 // begin fold
   Timer timer("init significant pairs");
 
-  auto& my_part = atom_pair_assignments_k_->my_assignments(scf_grp_->me());
+  boost::shared_ptr<cadf::Node> my_part_ptr;
+  if(new_exchange_algorithm_) {
+    my_part_ptr = assignments_new_k_->nodes[scf_grp_->me()];
+  }
+  else {
+    my_part_ptr = atom_pair_assignments_k_->my_assignments_ptr(scf_grp_->me());
+  }
+  auto& my_part = *my_part_ptr;
 
   ExEnv::out0() << incindent;
   ExEnv::out0() << indent << "Computing Schwarz matrix" << endl;
 
+  //----------------------------------------------------------------------------//
+  // convenience variables
+
+  const int me = scf_grp_->me();
+  const int n_node = scf_grp_->n();
+  const int nbf = gbs_->nbasis();
+  const int nsh = gbs_->nshell();
+  const int dfnbf = dfbs_->nbasis();
+  const int dfnsh = dfbs_->nshell();
+
+  /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
+
+  /*=======================================================================================*/
+  /* Compute the Schwarz matrix in threads and in a distributed manner                {{{1 */ #if 1 // begin fold
+
   std::vector<std::pair<double, IntPair>> pair_values;
   boost::mutex pair_mutex;
-  //----------------------------------------//
   schwarz_frob_.resize(gbs_->nshell(), gbs_->nshell());
   memory_used_ += gbs_->nshell() * gbs_->nshell() * sizeof(double);
   schwarz_frob_ = Eigen::MatrixXd::Zero(gbs_->nshell(), gbs_->nshell());
@@ -387,6 +484,7 @@ CADFCLHF::init_significant_pairs()
   });
 
   //----------------------------------------//
+  // Delete the tbis_ if we can
   if(not exact_diagonal_J_ and not exact_diagonal_K_) {
     // At this point, we're done with the tbis_
     for (int i=0; i < (thread_4c_ints_ ? nthread_ : 1); i++) tbis_[i] = 0;
@@ -396,16 +494,26 @@ CADFCLHF::init_significant_pairs()
 
   //----------------------------------------//
   // All-to-all the shell-wise Frobenius norms of the Schwarz matrix
-
   ExEnv::out0() << indent << "Distributing Schwarz matrix" << endl;
+  scf_grp_->sum(schwarz_frob_.data(), nsh * nsh);
 
-  scf_grp_->sum(schwarz_frob_.data(), gbs_->nshell() * gbs_->nshell());
-  //const double schwarz_norm = schwarz_frob_.norm();
-  // In this case we do actually want the max norm
-  const double schwarz_norm = schwarz_frob_.maxCoeff();
+  /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
+
+  /*=======================================================================================*/
+  /* Form the significant pair lists                      		                        {{{1 */ #if 1 // begin fold
+
   //----------------------------------------//
-  // Now go through the list and figure out which ones are significant
-  shell_to_sig_shells_.resize(gbs_->nshell());
+  // Get the Schwarz norm
+  // In this case we do actually want the max norm, since we
+  //   want to determine which pairs have ANY significant quartets
+  //   that they could be a part of.
+  const double schwarz_norm = schwarz_frob_.maxCoeff();
+
+  /*-----------------------------------------------------*/
+  /* Figure out which ones are significant          {{{2 */ #if 2 // begin fold
+
+  // Go through the list and figure out which ones are significant
   std::vector<double> sig_values;
   std::atomic_int n_significant_pairs(0);
   do_threaded(nthread_, [&](int ithr){
@@ -439,8 +547,12 @@ CADFCLHF::init_significant_pairs()
       sig_values.push_back(item);
     }
   });
-  //----------------------------------------//
-  // Now all-to-all the significant pairs
+
+  /********************************************************/ #endif //2}}}
+  /*-----------------------------------------------------*/
+
+  /*-----------------------------------------------------*/
+  /* All-to-all the significant pairs               {{{2 */ #if 2 // begin fold
   // This should be done with an MPI_alltoall_v or something like that
 
   ExEnv::out0() << indent << "Distributing significant pairs list" << endl;
@@ -479,14 +591,15 @@ CADFCLHF::init_significant_pairs()
     delete[] sig_vals;
 
   } // get rid of sig_data and sig_vals
+  /********************************************************/ #endif //2}}}
+  /*-----------------------------------------------------*/
 
-  //----------------------------------------//
+  /*-----------------------------------------------------*/
+  /* Build the significant partners arrays          {{{2 */ #if 2 // begin fold
 
-  //============================================================================//
-  // Now compute the significant pairs for the outer loop of the exchange and the sig_partners_ array
   ExEnv::out0() << indent << "Computing the sig partners array" << endl;
   sig_partners_.resize(gbs_->nshell());
-  int pair_index = 0;
+
   for(auto&& pair : sig_pairs_) {
     ShellData ish(pair.first, gbs_), jsh(pair.second, gbs_);
     sig_partners_[ish].insert(jsh);
@@ -495,10 +608,17 @@ CADFCLHF::init_significant_pairs()
       sig_partners_[jsh].insert(ish);
       L_schwarz[jsh].insert(ish, schwarz_frob_(ish, jsh));
     }
-    //----------------------------------------//
-    ++pair_index;
   }
+
+  for(auto&& idxlist : sig_partners_) {
+    sig_partner_blocks_.emplace_back(
+        idxlist, gbs_, dfbs_,
+        std::set<int>{NoRestrictions, SameCenter}
+    );
+  }
+
   //----------------------------------------//
+  // Sort the Schwarz lists
   do_threaded(nthread_, [&](int ithr){
     auto L_schwarz_iter = L_schwarz.begin();
     const auto& L_schwarz_end = L_schwarz.end();
@@ -508,22 +628,16 @@ CADFCLHF::init_significant_pairs()
       L_schwarz_iter.advance(nthread_);
     }
   });
-  //----------------------------------------//
-  // compute the max Schwarz frobnorm ( mu rho | mu rho ) for each ish
-  //max_schwarz_.resize(gbs_->nshell());
-  //for(auto&& ish : shell_range(gbs_)) {
-  //  double max_val = 0.0;
-  //  for(auto&& jsh : L_schwarz[ish]) {
-  //    if(jsh.value > max_val) {
-  //      max_val = jsh.value;
-  //    }
-  //    break;
-  //  }
-  //  max_schwarz_[ish] = max_val;
-  //}
 
-  //============================================================================//
-  // Compute the centers, the pair centers, and the pair extents
+  /********************************************************/ #endif //2}}}
+  /*-----------------------------------------------------*/
+
+  /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
+
+  /*=======================================================================================*/
+  /* Compute the centers, the pair centers, and the pair extents                      {{{1 */ #if 1 // begin fold
+
   ExEnv::out0() << indent << "Computing pair centers and extents" << endl;
   centers_.resize(molecule()->natom());
   for(int iatom = 0; iatom < molecule()->natom(); ++iatom) {
@@ -633,14 +747,20 @@ CADFCLHF::init_significant_pairs()
 
   }
 
+  /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
 
-  //----------------------------------------//
+  /*=======================================================================================*/
+  /* Summary and cleanup                                  		                        {{{1 */ #if 1 // begin fold
 
   ExEnv::out0() << indent << "Number of significant shell pairs:  " << n_sig << endl;
   ExEnv::out0() << indent << "  Number of total basis pairs:  " << (gbs_->nshell() * (gbs_->nshell() + 1) / 2) << endl;
   ExEnv::out0() << indent << "  Schwarz Norm = " << schwarz_norm << endl;
   ExEnv::out0() << decindent;
   ExEnv::out0() << indent << "Done computing significant pairs" << endl;
+
+  /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
 
 }
 

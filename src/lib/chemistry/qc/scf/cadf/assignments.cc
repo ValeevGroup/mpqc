@@ -192,6 +192,60 @@ AssignmentGrid::print_detail(std::ostream& o, bool full_memory) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
+uli
+Node::dfnsh() const
+{
+  if(bin) {
+    assert(!cluster);
+    return bin->dfnsh();
+  }
+  else {
+    assert(cluster);
+    return cluster->dfnsh;
+  }
+}
+
+const std::set<uint>&
+Node::assigned_dfbs_shells() const
+{
+  if(bin) {
+    assert(!cluster);
+    return bin->assigned_dfbs_shells;
+  }
+  else {
+    assert(cluster);
+    return cluster->assigned_dfbs_shells;
+  }
+}
+
+const ptr_set<boost::shared_ptr<AssignableAtom>, sc::cadf::detail::index_less>&
+Node::assigned_dfbs_atoms() const
+{
+  if(bin) {
+    assert(!cluster);
+    return bin->assigned_dfbs_atoms;
+  }
+  else {
+    assert(cluster);
+    return cluster->atoms;
+  }
+}
+
+const std::unordered_map<uint, uli>&
+Node::dfbs_coef_offsets() const
+{
+  if(bin) {
+    assert(!cluster);
+    return bin->dfbs_coef_offsets;
+  }
+  else {
+    assert(cluster);
+    return cluster->coef_offsets;
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void
 AssignmentBinRow::make_assignments()
 {
@@ -350,3 +404,134 @@ AssignmentBin::compute_coef_for_item(
   compute_coef_items[is_df].push_back(item);
   coef_workload += item->cost_estimate(is_df);
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+using namespace sc::cadf::assignments;
+
+Assignments::Assignments(
+    GaussianBasisSet* basis,
+    GaussianBasisSet* dfbasis,
+    int min_atoms_per_cluster,
+    int n_node, int me
+) : basis(basis), dfbasis(dfbasis)
+{
+  const int natom = basis->ncenter();
+  int ncluster = natom / min_atoms_per_cluster;
+  ncluster = std::max(std::min(n_node, ncluster), 1);
+
+  // Initialize clusters
+  for(int i = 0; i < ncluster; ++i) {
+    clusters.emplace_back(boost::make_shared<AtomCluster>());
+    clusters.back()->index = i;
+    clusters.back()->parent = this;
+  }
+
+  // Assign atoms to clusters
+  // TODO better clustering algorithm that takes into account position as well as number of basis functions
+  for(auto&& iblk : shell_block_range(basis, dfbasis, 0, NoLastIndex, SameCenter, NoMaximumBlockSize)) {
+    assert(iblk.nbf == iblk.atom_nbf);
+    clusters[0]->assign_atom(boost::make_shared<AssignableAtom>(iblk));
+    int spot = 0;
+    // Emulate a priority queue
+    while(spot < clusters.size() - 1 and clusters[spot]->coefs_size > clusters[spot+1]->coefs_size) {
+      std::swap(clusters[spot], clusters[spot+1]);
+      ++spot;
+    }
+  }
+
+  // Assign nodes to clusters based on workload
+  for(int inode = 0; inode < n_node; ++inode) {
+    int spot = clusters.size() - 1;
+    nodes.push_back(clusters[spot]->use_node(inode, inode == me));
+    while(spot > 0 and clusters[spot]->workload_per_node() < clusters[spot-1]->workload_per_node()) {
+      std::swap(clusters[spot], clusters[spot-1]);
+      --spot;
+    }
+  }
+
+  // Let the clusters make assignements to it's nodes
+  for(auto&& cluster : clusters) {
+    cluster->make_assignments();
+  }
+
+}
+
+void
+AtomCluster::make_assignments()
+{
+  // Loop over shells
+  for(auto&& ish : shell_range(parent->basis, parent->dfbasis)) {
+    for(auto&& atom_ptr : atoms) {
+      ShellBlockData<> Xblk = ShellBlockData<>::atom_block(atom_ptr->index, parent->basis, parent->dfbasis);
+      nodes[0]->assign_pair(ish, Xblk);
+    }
+    int spot = 0;
+    while(spot < nodes.size() - 1 and nodes[spot]->estimated_workload > nodes[spot+1]->estimated_workload) {
+      std::swap(nodes[spot], nodes[spot+1]);
+      ++spot;
+    }
+  }
+
+  // Reset the workloads
+  for(auto&& node : nodes) {
+    node->estimated_workload = 0;
+  }
+
+  // Assign coefficients to compute
+  for(auto&& atom_ptr : atoms) {
+    ShellBlockData<> Xblk = ShellBlockData<>::atom_block(atom_ptr->index, parent->basis, parent->dfbasis);
+    for(auto&& Xsh : shell_range(Xblk)) {
+      assigned_dfbs_shells.insert(Xsh.index);
+    }
+    int spot = 0;
+    nodes[spot]->assign_coef_item(atom_ptr, true);
+    while(spot < nodes.size() - 1 and nodes[spot]->estimated_workload > nodes[spot+1]->estimated_workload) {
+      std::swap(nodes[spot], nodes[spot+1]);
+      ++spot;
+    }
+  }
+
+}
+
+void
+AtomCluster::assign_atom(const boost::shared_ptr<AssignableAtom>& atom) {
+  atoms.insert(atom);
+  coef_offsets[atom->index] = coefs_size;
+  coefs_size += atom->coefs_size;
+  dfnsh += atom->dfnshell;
+  for(auto&& Xsh : iter_shells_on_center(parent->dfbasis, atom->index, parent->basis)) {
+    // Note that atoms must be assigned in order for this to work
+    dfbs_shell_map[Xsh.index] = assigned_dfbs_shells.size();
+    assigned_dfbs_shells.insert(Xsh.index);
+  }
+}
+
+void
+Assignments::print_detail(std::ostream& o) const
+{
+  o << indent << "Assignments for exchange computation:" << endl;
+  o << incindent;
+
+  o << indent << "Atom clusters:" << endl << incindent;
+  for(auto&& cluster : clusters) {
+    o << indent << "Cluster " << cluster->index << ": " << endl << incindent;
+    o << indent << "Atoms assigned:" << endl << incindent << indent;
+    PRINT_AS_GRID(o, atom, cluster->atoms, atom->index, "%5d", 8);
+    o << endl << decindent;
+    o << indent << "Nodes assigned:" << endl << incindent << indent;
+    PRINT_AS_GRID(o, node, cluster->nodes, node->id, "%5d", 8);
+    o << endl << decindent;
+    o << decindent;
+  }
+  o << decindent;
+
+
+  o << indent << "Coefficient memory usage by node:" << endl << incindent << indent;
+  PRINT_STRING_AS_GRID(o, node, nodes, (data_size_to_string(node->cluster->coefs_size * sizeof(double))), 8);
+  o << endl << decindent;
+
+  o << decindent;
+
+}
+

@@ -110,6 +110,13 @@ CADFCLHF::compute_K()
   /*=======================================================================================*/
   /* Setup                                                 		                        {{{1 */ #if 1 // begin fold
   //----------------------------------------//
+
+  // If we're doing the new algorithm, call the new code and ignore everything else
+  if(new_exchange_algorithm_) {
+    return new_compute_K();
+  }
+
+
   // Convenience variables
   Timer timer("compute K");
   const int me = scf_grp_->me();
@@ -123,17 +130,11 @@ CADFCLHF::compute_K()
 
   //----------------------------------------//
   // Get the density in an Eigen::Map form
-  //double* D_data = allocate<double>(nbf*nbf);
   double* __restrict__ D_data = new double[nbf*nbf];
-  //double* D_data = new double[nbf*nbf];
   D_.convert(D_data);
   typedef Eigen::Map<Eigen::VectorXd> VectorMap;
-  typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> RowMatrix;
-  typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> ColMatrix;
-  //typedef Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> MatrixMap;
   typedef Eigen::Map<ColMatrix> MatrixMap;
   // Matrix and vector wrappers, for convenience
-  VectorMap d(D_data, nbf*nbf);
   MatrixMap D(D_data, nbf, nbf);
   // Match density scaling in old code:
   D *= 0.5;
@@ -731,7 +732,7 @@ CADFCLHF::compute_K()
     for(auto&& pair : L_3) {
       if(screen_B_) {
         const auto& L_B_part = L_B[pair.first];
-        if(L_B_part.size() == 0) continue;
+        //if(L_B_part.size() == 0) continue;
       }
       L_3_keys.emplace_back(
           pair.first.first,
@@ -1199,9 +1200,9 @@ CADFCLHF::compute_K()
             const auto& L_B_ish_Xsh = L_B[{ish, Xsh}];
             l_b_size = L_B_ish_Xsh.nbf;
             if(l_b_size == 0){
-              mt_timer.exit(ithr); // build screened B part
-              mt_timer.exit(ithr); // compute B
-              continue;
+              //mt_timer.exit(ithr); // build screened B part
+              //mt_timer.exit(ithr); // compute B
+              //continue;
             }
 
             new (&B_sd) Eigen::Map<RowMatrix>(B_ish_data, ish.nbf*Xblk.nbf, Xblk.atom_obsnbf + l_b_size);
@@ -1649,6 +1650,7 @@ CADFCLHF::compute_K()
 
           } // end loop over jsh
 
+
           if(not do_linK_) {
             delete jlist;
           }
@@ -1685,6 +1687,8 @@ CADFCLHF::compute_K()
 
           /*******************************************************/ #endif //2}}}
           /*-----------------------------------------------------*/
+
+          //DUMP3((int)ish, (int)Xsh, B_sd.norm());
 
           /*-----------------------------------------------------*/
           /* Compute K contributions                        {{{2 */ #if 2 // begin fold      //latex `\label{sc:k3b:kcontrib}`
@@ -1966,6 +1970,7 @@ CADFCLHF::compute_K()
   /*=======================================================================================*/
   return result;
 }
+
 
 //////////////////////////////////////////////////////////////////////////////////
 

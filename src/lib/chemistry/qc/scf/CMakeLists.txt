@@ -18,6 +18,7 @@ SET(ccfiles
   cadf/compute_k.cc
   cadf/ordered_shells.cc
   cadf/approx_pairs.cc
+  cadf/new_exchange.cc
   effh.cc
   fbclhf.cc
   hsoshf.cc

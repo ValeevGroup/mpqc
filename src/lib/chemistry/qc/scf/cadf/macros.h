@@ -118,4 +118,26 @@
 #define resize_and_zero_matrix(mat, nrows, ncols) mat.resize(nrows, ncols); mat = std::remove_reference<decltype(mat)>::type::Zero(nrows, ncols)
 #define declare_and_zero_matrix(type, mat, nrows, ncols) type mat(nrows, ncols); mat = type::Zero(nrows, ncols)
 
+#define MAKE_MATRIX(type, name, rows, cols) type name(rows, cols); auto __##name##_mem_holder = hold_memory(rows*cols*sizeof(Eigen::internal::traits<type>::Scalar) + sizeof(type));
+
+//#define PRINT_AS_GRID(o, itervar, iterable, expr, fmt, nperline) \
+//    { int __numdone = 0; \
+//      for(auto&& itervar : iterable) { \
+//        if(__numdone != 0 && __numdone % nperline == 0) { o << std::endl << sc::indent; } \
+//        o << std::string(sc::scprintf(fmt, (expr))); \
+//        ++__numdone; \
+//      } \
+//    }
+
+#define PRINT_STRING_AS_GRID(o, itervar, iterable, str, nperline) \
+    { int __numdone = 0; \
+      for(auto&& itervar : iterable) { \
+        if(__numdone != 0 && __numdone % nperline == 0) { o << std::endl << sc::indent; } \
+        o << str << " "; \
+        ++__numdone; \
+      } \
+    }
+
+#define PRINT_AS_GRID(o, itervar, iterable, expr, fmt, nperline) PRINT_STRING_AS_GRID(o, itervar, iterable, (std::string(sc::scprintf(fmt, (expr)).str())), nperline)
+
 #endif /* _chemistry_qc_scf_cadf_macros_h */

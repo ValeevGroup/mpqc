@@ -152,6 +152,7 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   well_separated_thresh_ = keyval->doublevalue("well_separated_thresh", KeyValValuedouble(well_separated_thresh_));
   //----------------------------------------------------------------------------//
   print_screening_stats_ = keyval->intvalue("print_screening_stats", KeyValValueint(0));
+  min_atoms_per_node_ = keyval->intvalue("min_atoms_per_node", KeyValValueint(min_atoms_per_node_));
   //----------------------------------------------------------------------------//
   print_iteration_timings_ = keyval->booleanvalue("print_iteration_timings", KeyValValueboolean(print_iteration_timings_));
   //----------------------------------------------------------------------------//
@@ -177,6 +178,7 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   if(distribute_coefficients_) store_coefs_transpose_ = false;
   shuffle_L_3_keys_ = keyval->booleanvalue("shuffle_L_3_keys", KeyValValueboolean(shuffle_L_3_keys_));
   shuffle_J_assignments_ = keyval->booleanvalue("shuffle_J_assignments", KeyValValueboolean(shuffle_J_assignments_));
+  new_exchange_algorithm_ = keyval->booleanvalue("new_exchange_algorithm", KeyValValueboolean(new_exchange_algorithm_));
   //----------------------------------------------------------------------------//
   if(print_screening_stats_) {
     stats_ = std::make_shared<ScreeningStatistics>();
@@ -194,7 +196,14 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
     max_fxn_dfbs_ = std::max(Xsh.nbf, max_fxn_dfbs_);
     max_fxn_atom_dfbs_ = std::max(Xsh.atom_nbf, max_fxn_atom_dfbs_);
   }
-  if(do_linK_) {
+  if(new_exchange_algorithm_) {
+    B_buffer_size_ =
+      std::max(
+          std::min((unsigned int)DEFAULT_TARGET_BLOCK_SIZE, gbs_->nbasis()) * max_fxn_dfbs_,
+          (unsigned int)(max_fxn_atom_dfbs_ * 2 * max_fxn_obs_)
+      ) * sizeof(double) * max_fxn_obs_;
+  }
+  else if(do_linK_) {
     B_buffer_size_ = std::min((unsigned int)DEFAULT_TARGET_BLOCK_SIZE, gbs_->nbasis())
       * sizeof(double) * max_fxn_obs_ * max_fxn_dfbs_;
   }
@@ -233,8 +242,12 @@ CADFCLHF::print(ostream&o) const
   o << incindent;
   auto bool_str = [](bool val) -> std::string { return val ? "yes" : "no"; };
   std::string fmt = "%3.1e";
+  std::string ifmt = "%5d";
   auto double_str = [&fmt](double val) -> std::string {
      return std::string(scprintf(fmt.c_str(), val).str());
+  };
+  auto int_str = [&ifmt](int val) -> std::string {
+     return std::string(scprintf(ifmt.c_str(), val).str());
   };
   o << indent << "B_screening_thresh = " << double_str(B_screening_thresh_) << endl;
   o << indent << "B_use_buffer = " << bool_str(B_use_buffer_) << endl;
@@ -260,6 +273,7 @@ CADFCLHF::print(ostream&o) const
   o << indent << "match_orbitals_max_diff = " << double_str(match_orbitals_max_diff_) << endl;
   o << indent << "match_orbitals_max_homo_offset = " << double_str(match_orbitals_max_homo_offset_) << endl;
   o << indent << "match_orbitals_use_svd = " << bool_str(match_orbitals_use_svd_) << endl;
+  o << indent << "min_atoms_per_node = " << int_str(min_atoms_per_node_) << endl;
   o << indent << "pair_screening_thresh = " << double_str(pair_screening_thresh_) << endl;
   o << indent << "scale_screening_thresh = " << bool_str(scale_screening_thresh_) << endl;
   o << indent << "screen_B = " << bool_str(screen_B_) << endl;
@@ -272,6 +286,7 @@ CADFCLHF::print(ostream&o) const
   o << indent << "thread_4c_ints = " << bool_str(thread_4c_ints_) << endl;
   o << indent << "use_extents = " << bool_str(use_extents_) << endl;
   o << indent << "use_max_extents = " << bool_str(use_max_extents_) << endl;
+  o << indent << "new_exchange_algorithm = " << bool_str(new_exchange_algorithm_) << endl;
   o << indent << "use_norms_nu = " << bool_str(use_norms_nu_) << endl;
   o << indent << "use_norms_B = " << bool_str(use_norms_B_) << endl;
   o << indent << "use_norms_sigma = " << bool_str(use_norms_sigma_) << endl;

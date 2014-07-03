@@ -51,6 +51,7 @@ class OrderedShellList {
 
     typedef index_list::const_iterator index_iterator;
     typedef basis_element_with_value_iterator<ShellDataWithValue, index_iterator> iterator;
+    typedef basis_element_with_value_iterator<const ShellDataWithValue, index_iterator> const_iterator;
 
   private:
 
@@ -338,10 +339,19 @@ class OrderedShellList {
 
     }
 
-    iterator begin() const
+    iterator begin()
     {
       assert(sorted_);
       return iterator(
+          basis_, dfbasis_,
+          index_begin()
+      );
+    }
+
+    const_iterator begin() const
+    {
+      assert(sorted_);
+      return const_iterator(
           basis_, dfbasis_,
           index_begin()
       );
@@ -353,10 +363,19 @@ class OrderedShellList {
       return indices_.cbegin();
     }
 
-    iterator end() const
+    iterator end()
     {
       assert(sorted_);
       return iterator(
+          basis_, dfbasis_,
+          index_end()
+      );
+    }
+
+    const_iterator end() const
+    {
+      assert(sorted_);
+      return const_iterator(
           basis_, dfbasis_,
           index_end()
       );

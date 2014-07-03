@@ -118,7 +118,6 @@ shell_block_iterator<ShellIterator, ShellRange>::init_from_spot(
   for(; ish_iter != all_shells.end(); ++ish_iter){
     auto ish = *ish_iter;
     out_assert(ish.center, !=, NotAssigned);
-    //DUMP(ish)
     if(
         // Same center condition
         ((restrictions & SameCenter) and ish.center != first_center)

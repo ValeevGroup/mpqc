@@ -38,9 +38,9 @@ static ClassDesc XMLWriter_cd(
   0, create<XMLWriter>, 0);
 
 Ref<XMLWriter> XMLWriter::current_writer = 0;
-std::stack<Ref<XMLWriter>> XMLWriter::writer_stack = {};
+std::stack<Ref<XMLWriter>> XMLWriter::writer_stack;
 std::string XMLWriter::current_context_name = "";
-std::stack<std::string> XMLWriter::context_name_stack = {};
+std::stack<std::string> XMLWriter::context_name_stack;
 
 
 XMLWriter::XMLWriter(const Ref<KeyVal>& keyval) :

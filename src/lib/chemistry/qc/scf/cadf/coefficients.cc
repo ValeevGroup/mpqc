@@ -513,8 +513,6 @@ CADFCLHF::compute_coefficients()
       }
     } // X_grp is deleted
 
-    //DUMPn(coefs_X_nu.at(0).norm());
-
     sc::SCFormIO::init_mp(scf_grp_->me());
     /********************************************************/ #endif //2}}}
     /*-----------------------------------------------------*/
@@ -674,14 +672,11 @@ CADFCLHF::compute_coefficients()
       for(auto Xatom : my_part.assigned_dfbs_atoms()) {
         for(auto&& Xsh : iter_shells_on_center(dfbs_, Xatom->index, gbs_)) {
 
-          //assert(my_part.assigned_dfbs_shells().find(int(Xsh)) != my_part.assigned_dfbs_shells().end());
-
           resize_and_zero_matrix(C_trans_frob[Xsh], Xsh.atom_obsnsh, gbs_->nshell());
 
           for(auto&& ish : iter_shells_on_center(gbs_, Xsh.center)) {
             for(auto&& jsh : shell_range(gbs_)) {
               for(auto&& mu : function_range(ish)) {
-                //DUMPn(coefs_X_nu.at(Xsh.center));
                 C_trans_frob[Xsh](ish.shoff_in_atom, jsh) += coefs_X_nu.at(Xsh.center).block(
                     Xsh.bfoff_in_atom, mu.bfoff_in_atom*nbf + jsh.bfoff,
                     Xsh.nbf, jsh.nbf
@@ -691,8 +686,6 @@ CADFCLHF::compute_coefficients()
           }
 
           C_trans_frob[Xsh] = C_trans_frob[Xsh].array().sqrt();
-          //DUMPn(Xsh)
-          //DUMPn(C_trans_frob[Xsh]);
         }
       }
     }
@@ -739,18 +732,6 @@ CADFCLHF::compute_coefficients()
       for(auto&& Xsh_index : my_part.assigned_dfbs_shells()) {
         ShellData Xsh(Xsh_index, dfbs_, gbs_);
 
-        //DEBUG_DELETE_THIS
-        //bool found = false;
-        //for(auto Xatom : my_part.assigned_dfbs_atoms()) {
-        //  if(Xsh.center == Xatom->index) {
-        //    found = true;
-        //    break;
-        //  }
-        //}
-        //assert(found);
-        //DEBUG_DELETE_THIS
-
-        //DUMPn(C_trans_frob[Xsh].norm())
         {
           const auto& sqnorm1 = C_trans_frob[Xsh].colwise().squaredNorm();
           if(distribute_coefficients_ and not new_exchange_algorithm_) {

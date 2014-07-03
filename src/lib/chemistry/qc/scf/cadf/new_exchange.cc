@@ -223,7 +223,6 @@ CADFCLHF::new_compute_K()
              * C_bar_mine_.middleRows(my_begin, my_size) * schwarz_df_mine_.asDiagonal();
       });
       X_grp->sum(d_bar.data(), d_bar.rows() * d_bar.cols());
-      //DUMPn((C_bar_mine_.colwise().norm()).dot(Eigen::VectorXd::LinSpaced(schwarz_df_mine_.rows(), 1,100)));
 
       // Form the L_DC lists
       do_threaded(nthread_, [&](int ithr) {
@@ -237,7 +236,6 @@ CADFCLHF::new_compute_K()
           L_DC_jsh.set_basis(dfbs_, gbs_);
         }
       });
-      //DUMPn(d_bar.norm());
     } // d_bar and X_grp deleted
 
     // For whatever reason, splitting the scf_grp_ messes up the SCFormIO processor 0 label
@@ -531,9 +529,6 @@ CADFCLHF::new_compute_K()
 
   MultiThreadTimer mt_timer("threaded part", nthread_);
 
-  //DUMPn(L_3.size());
-  //DUMPn(schwarz_df_mine_.dot(Eigen::VectorXd::LinSpaced(schwarz_df_mine_.rows(), 1,100)));
-
   do_threaded(nthread_, [&](int ithr) {
 
     /*-----------------------------------------------------*/
@@ -541,14 +536,10 @@ CADFCLHF::new_compute_K()
 
     // Allocate memory buffers outside of loop to avoid malloc overhead
     double* __restrict__ ints_buffer = new double[B_buffer_size_/sizeof(double)];
-    //double* __restrict__ rec_coefs_data = new double[max_fxn_obs_todo_ * nbf * max_fxn_atom_dfbs_*2];
-    double* __restrict__ rec_coefs_data = new double[nbf*nbf*dfnbf];
-    //double* __restrict__ B_sd_data = new double[max_fxn_obs_todo_ * max_fxn_dfbs_todo_ * (max_L_B_size + max_fxn_atom_obs_)];
-    double* __restrict__ B_sd_data = new double[nbf*nbf*dfnbf];
-    //double* __restrict__ D_sd_data = new double[max_L_3_size * (max_L_B_size + max_fxn_atom_obs_)];
-    double* __restrict__ D_sd_data = new double[nbf*nbf];
-    //double* __restrict__ C_X_diff_data = new double[max_obs_atom_fxn_on_dfbs_center_todo_*max_fxn_dfbs_todo_*max_L_B_size];
-    double* __restrict__ C_X_diff_data = new double[nbf*nbf*dfnbf];
+    double* __restrict__ rec_coefs_data = new double[max_fxn_obs_todo_ * nbf * max_fxn_atom_dfbs_*2];
+    double* __restrict__ B_sd_data = new double[max_fxn_obs_todo_ * max_fxn_dfbs_todo_ * (max_L_B_size + max_fxn_atom_obs_)];
+    double* __restrict__ D_sd_data = new double[max_L_3_size * (max_L_B_size + max_fxn_atom_obs_)];
+    double* __restrict__ C_X_diff_data = new double[max_obs_atom_fxn_on_dfbs_center_todo_*max_fxn_dfbs_todo_*max_L_B_size];
 
     Eigen::Map<RowMatrix> B_sd(B_sd_data, 0, 0);
     Eigen::Map<RowMatrix> B_sd_other(B_sd_data, 0, 0);

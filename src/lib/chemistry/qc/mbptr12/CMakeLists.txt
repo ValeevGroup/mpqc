@@ -39,6 +39,7 @@ IF(MPQC_R12)
         r12technology.cc 
         r12wfnworld.cc 
         ri_basis.cc 
+        singles_casscf.cc
         singles_emp2.cc 
         sr_r12intermediates_util.cc
         twobody_intermediates_ta.cc 

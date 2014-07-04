@@ -71,6 +71,8 @@ TiledBasisSet::TiledBasisSet(const sc::Ref<sc::GaussianBasisSet>& bs,
                 ntiles_(ntiles),
                 SRange_()
 {
+  // make sure that molecule_ is set so that can construct Shell objects
+  molecule_ = bs->molecule();
   ShellOrder ordering(bs);
   std::vector<Shell> shells = ordering.ordered_shells(ntiles_, this);
   SRange_ = ordering.shell_ranges();

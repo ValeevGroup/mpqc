@@ -738,14 +738,10 @@ namespace sc {
     const double R_C1 = (0.5 * C_0 + 1.5 * C_1);
     const double R_C2 = (0.5 * C_0 - 1.5 * C_1);
 
-    std::cout << std::endl << "Tests_V* ..." << std::endl;
-
     TArray4d gr_ak_ij = ijxy("<a k|gr|i j>");
     TArray4d rpq_kl = ijxy("<p q|r|k l>");
     TArray4d rapn_kl = ijxy("<a' n|r|k l>");
     TArray4d rnap_kl = ijxy("<n a'|r|k l>");
-
-    std::cout << std::endl << "Tests_V** ..." << std::endl;
 
     TArray4d raap_kl = ijxy("<a a'|r|k l>");
     TArray4d rmap_kl = ijxy("<m a'|r|k l>");
@@ -791,8 +787,6 @@ namespace sc {
     const double RR_C1 = 0.5 * C_0 * C_0 + 1.5 * C_1 * C_1;
     const double RR_C2 = 0.5 * C_0 * C_0 - 1.5 * C_1 * C_1;
 
-    std::cout << std::endl << "Tests_X*" << std::endl;
-
     TArray4d r2_akjl = ijxy("<a k|r2|j l>");
     TArray4d r2_kajl = ijxy("<k a|r2|j l>");
     TArray2 F_ij = xy("<i|F|j>");
@@ -800,8 +794,6 @@ namespace sc {
     TArray4d r_pqjk = ijxy("<p q|r|j k>");
     TArray4d r_apnjk = ijxy("<a' n|r|j k>");
     TArray4d r_napjk = ijxy("<n a'|r|j k>");
-
-    std::cout << std::endl << "Tests_X**" << std::endl;
 
     TArray2 X_ai, X_am;
 
@@ -850,8 +842,6 @@ namespace sc {
     TArray4d r_kaPQ = ijxy("<k a|r|p' q'>");
     TArray4d rik_PKQ = ijxy("<i k|r|p'_K(r') q'>");
 
-    std::cout << std::endl << "Tests_B*" << std::endl;
-
     TArray4d r_akPn = ijxy("<a k|r|p' n>");
     TArray4d r_kaPn = ijxy("<k a|r|p' n>");
     TArray4d rik_PFn = ijxy("<i k|r|p'_F(r') n>");
@@ -859,8 +849,6 @@ namespace sc {
     TArray4d r_akmA = ijxy("<a k|r|m a'>");
     TArray4d r_kamA = ijxy("<k a|r|m a'>");
     TArray4d rik_mFA = ijxy("<i k|r|m_F(n) a'>");
-
-    std::cout << std::endl << "Tests_B**" << std::endl;
 
     TArray4d r_akpq = ijxy("<a k|r|p b>");
     TArray4d r_kapq = ijxy("<k a|r|p b>");
@@ -878,8 +866,6 @@ namespace sc {
     TArray4d r_ikAb = ijxy("<i k|r|a' b>");
     TArray4d rak_AFb = ijxy("<a k|r|a'_F(q) b>");
     TArray4d rka_AFb = ijxy("<k a|r|a'_F(q) b>");
-
-    std::cout << std::endl << "Tests_B***" << std::endl;
 
     B_ai("a,i") =  //          diag
                  - ( B_C1 * _4("<a k|rTr|i l>") + B_C2 * _4("<k a|rTr|i l>")
@@ -945,8 +931,6 @@ namespace sc {
                   + B_C2 * (r_ikAb("k,i,a',b") * rak_AFb("a,k,a',b")
                           + r_ikAb("i,k,a',b") * rka_AFb("k,a,a',b"))
                   );
-
-    std::cout << std::endl << "Tests_B****" << std::endl;
 
 //    // test codes for computing B_ai for H2O molecule
 //   const char* a = "a";
@@ -2088,8 +2072,6 @@ namespace sc {
     TArray4 C_ijab, A_ijab;
     C_ijab("i,j,a,b") = _4("<i j|r|a_F(a') b>") + _4("<i j|r|a b_F(a')>");
     A_ijab("i,j,a,b") = C_ijab("i,j,a,b") * Delta_ijab("i,j,a,b");
-
-    std::cout << std::endl << "Tests_C* ..." << std::endl;
 
     // Coupling and F12 part of MP2F12 density
     TArray2 D_mp2f12_ij, D_mp2f12_ab;

@@ -252,6 +252,8 @@ class Node : public boost::enable_shared_from_this<Node> {
     const ptr_set<boost::shared_ptr<AssignableAtom>, detail::index_less>&
     assigned_dfbs_atoms() const;
 
+
+
     bool operator <(const Node& other) const {
       return estimated_workload > other.estimated_workload;
     }
@@ -434,6 +436,10 @@ struct AtomCluster : boost::enable_shared_from_this<AtomCluster> {
     uli workload_per_node() { return nodes.size() > 0 ? coefs_size / nodes.size() : std::numeric_limits<uli>::max(); }
 
     void make_assignments();
+
+    bool has_local_coefs_for_atom(uint atom_index) {
+      return coef_offsets.find(atom_index) != coef_offsets.end();
+    }
 
 };
 

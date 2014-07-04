@@ -563,8 +563,6 @@ class CADFCLHF: public CLHF {
 
     bool get_shell_pair(ShellData& mu, ShellData& nu, PairSet pset = AllPairs);
 
-    Eigen::MatrixXd J_;
-
     RefSCMatrix compute_J();
 
     RefSCMatrix compute_K();

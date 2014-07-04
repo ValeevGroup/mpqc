@@ -560,9 +560,11 @@ CADFCLHF::new_compute_K()
 
       std::unordered_map<int, Eigen::Map<RowMatrix>> rec_coefs;
       uli coef_spot_offset = 0;
+      bool ish_is_local = my_part.cluster->has_local_coefs_for_atom(ish.center);
 
       // Compute the coefficients that we need for the current ish
       for(BLK jblk : shell_block_range(L_C[ish], SameCenter, NoMaximumBlockSize)) {
+
         const int df_size = (ish.center == jblk.center) ? ish.atom_dfnbf : ish.atom_dfnbf + jblk.atom_dfnbf;
         rec_coefs.emplace(
             std::piecewise_construct,
@@ -574,7 +576,37 @@ CADFCLHF::new_compute_K()
         );
         coef_spot_offset += jblk.atom_nbf * ish.nbf * df_size;
         auto& rec_C = rec_coefs.at(jblk.center);
-        rec_C = RowMatrix::Constant(jblk.atom_nbf * ish.nbf, df_size, std::numeric_limits<double>::infinity());
+
+        // If ish.center and jblk.center are part of the locally assigned coefficients,
+        //   we can just grab them
+        if(ish_is_local and (jblk.center == ish.center or my_part.cluster->has_local_coefs_for_atom(jblk.center))) {
+
+          // TODO Use Eigen::Map objects with strides to vectorize this better
+          // Copy over the jsblk atom coefficients
+          for(BLK jsblk : shell_block_range(jblk, Contiguous)) {
+            for(SH jsh : shell_range(jsblk)) {
+              for(BF rho : function_range(jsh)) {
+                rec_C.middleRows(rho.bfoff_in_atom*ish.nbf, ish.nbf).rightCols(jblk.atom_dfnbf) =
+                    coefs_X_nu.at(jblk.center).middleCols(rho.bfoff_in_atom*nbf, ish.nbf).transpose();
+              }
+            }
+          }
+
+          // TODO Use Eigen::Map objects with strides to vectorize this better
+          // Copy over the ish atom coefficients
+          for(BF mu : function_range(ish)) {
+            for(BLK jsblk : shell_block_range(jblk, Contiguous)) {
+              for(SH jsh : shell_range(jsblk)) {
+                for(BF rho : function_range(jsh)) {
+                  rec_C.row(rho.bfoff_in_atom*ish.nbf + mu.off).head(ish.atom_dfnbf) =
+                      coefs_X_nu.at(ish.center).col(mu.bfoff_in_atom*nbf + rho).transpose();
+                }
+              }
+            }
+          }
+
+        }
+
 
         // Get the decomposed two center ints
         auto decomp = get_decomposition(ish, jblk.first_shell, metric_ints_2c_[ithr]);
@@ -723,6 +755,9 @@ CADFCLHF::new_compute_K()
         /* Build B                                        {{{2 */ #if 2 // begin fold
 
         block_offset = 0;
+        auto ints_timer = mt_timer.get_subtimer("Compute integrals", ithr);
+        auto tb_part_timer = mt_timer.get_subtimer("Two body contributions", ithr);
+        auto contract_timer = mt_timer.get_subtimer("Contract ints with D", ithr);
 
         for(auto&& jblk : shell_block_range(L_3_ish_Xsh, NoRestrictions)){
 
@@ -730,6 +765,7 @@ CADFCLHF::new_compute_K()
 
           // Compute the integrals
 
+          TimerHolder subtimer(ints_timer);
           auto g3_in = ints_to_eigen_map(
               jblk, ish, Xsh,
               eris_3c_[ithr], coulomb_oper_type_,
@@ -740,6 +776,7 @@ CADFCLHF::new_compute_K()
 
           // Two body part
 
+          subtimer.change(tb_part_timer);
           jblk_offset = 0;
           for(const auto&& jsblk : shell_block_range(jblk, Contiguous|SameCenter)) {
 
@@ -765,6 +802,8 @@ CADFCLHF::new_compute_K()
           //----------------------------------------//
 
           // Contract to get contribution to B
+
+          subtimer.change(contract_timer);
 
           B_sd.noalias() += 2.0 * g3.transpose() * D_sd.middleCols(block_offset, jblk.nbf).transpose();
 

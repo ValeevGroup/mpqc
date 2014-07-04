@@ -26,8 +26,6 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#define J_THREAD_SPARSE 0
-
 #include <chemistry/qc/basis/petite.h>
 #include <util/misc/xmlwriter.h>
 #include <util/misc/hash.h>
@@ -49,24 +47,20 @@ CADFCLHF::compute_J()
   const int me = scf_grp_->me();
   const int n_node = scf_grp_->n();
   const int natom = gbs_->ncenter();
-  const Ref<GaussianBasisSet>& obs = gbs_;
-  const int nbf = obs->nbasis();
+  const int nbf = gbs_->nbasis();
   const int dfnbf = dfbs_->nbasis();
   //----------------------------------------//
   // Get the density in an Eigen::Map form
   //double *D_ptr = allocate<double>(nbf*nbf);
   double* __restrict__ D_ptr = new double[nbf*nbf];
   D_.convert(D_ptr);
-  typedef Eigen::Map<Eigen::VectorXd> VectorMap;
-  typedef Eigen::Map<Eigen::MatrixXd> MatrixMap;
   // Matrix and vector wrappers, for convenience
-  VectorMap d(D_ptr, nbf*nbf);
-  MatrixMap D(D_ptr, nbf, nbf);
+  Eigen::Map<Eigen::VectorXd> d(D_ptr, nbf*nbf);
+  Eigen::Map<ColMatrix> D(D_ptr, nbf, nbf);
   //----------------------------------------//
   double* __restrict__ J_data = new double[nbf*nbf];
   Eigen::Map<RowMatrix> J(J_data, nbf, nbf);
   J.setZero();
-  VectorMap j(J_data, nbf*nbf);
   //----------------------------------------//
   // reset the iteration over local pairs
   local_pairs_spot_ = 0;
@@ -284,15 +278,6 @@ CADFCLHF::compute_J()
         Eigen::VectorXd dt(dfnbf);
         dt.setZero();
 
-
-#if J_THREAD_SPARSE
-        std::unordered_map<int, RowMatrix> jparts;
-#else
-        double* __restrict__ jpart_data = new double[nbf*nbf];
-        Eigen::Map<ColMatrix> jpart(jpart_data, nbf, nbf);
-        jpart.setZero();
-#endif
-
         RowMatrix dt_ex_thr;
         if(exact_diagonal_J_) {
           dt_ex_thr.resize(natom, dfnbf);
@@ -325,27 +310,12 @@ CADFCLHF::compute_J()
                 j_intbuff
             );
 
-#if J_THREAD_SPARSE
-            auto&& found = jparts.find(ish.index);
-            if(found == jparts.end()) {
-              auto& new_row = jparts[ish.index];
-              new_row.resize(ish.nbf, nbf);
-              new_row.setZero();
-            }
-            auto& jpart = jparts[ish.index];
-#endif
-
             subtimer.change(contract_timer);
             for(auto&& mu : function_range(ish)) {
               dt.segment(Xblk.bfoff, Xblk.nbf).transpose() += perm_fact * D.row(mu).segment(jsh.bfoff, jsh.nbf)
                   * g3.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf);
               //----------------------------------------//
-#if J_THREAD_SPARSE
-              jpart.row(mu.off)
-#else
-              jpart.row(mu)
-#endif
-              .segment(jsh.bfoff, jsh.nbf).transpose() +=
+              J.block(mu, jsh.bfoff, 1, jsh.nbf).transpose() +=
                   g3.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf)
                   * C_tilde.segment(Xblk.bfoff, Xblk.nbf);
             }
@@ -353,10 +323,6 @@ CADFCLHF::compute_J()
             /*-----------------------------------------------------*/
             /* Exact diagonal part                            {{{3 */ #if 3 // begin fold
             if(exact_diagonal_J_) {
-#if J_THREAD_SPARSE
-              throw FeatureNotImplemented("Thread-sparse J with exact diagonal", __FILE__, __LINE__, class_desc());
-
-#endif
               subtimer.change(ex_timer);
 
               const auto& Wij = W[{ish, jsh}];
@@ -375,16 +341,16 @@ CADFCLHF::compute_J()
                 for(auto&& mu : function_range(ish)) {
                   // TODO Remove loops where possible (may have to reconsider how Wij is stored)
                   const double delta_factor = ish.center != jsh.center ? 2.0 : 1.0;
-                  jpart.row(mu).segment(jsh.bfoff, jsh.nbf).transpose() -= delta_factor
+                  J.block(mu, jsh.bfoff, 1, jsh.nbf).transpose() -= delta_factor
                       * g3.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf)
                       * C_t_ex.row(jsh.center).segment(Xblk.bfoff, Xblk.nbf).transpose();
 
                   for(auto&& nu : function_range(jsh)) {
-                    jpart(mu, nu) += delta_factor
+                    J(mu, nu) += delta_factor
                         * Wij.row(mu.bfoff_in_shell*jsh.nbf + nu.bfoff_in_shell).segment(Xblk.bfoff, Xblk.nbf)
                         * C_t_ex.row(jsh.center).segment(Xblk.bfoff, Xblk.nbf).transpose();
                     if(ish.center != jsh.center) {
-                      jpart(mu, nu) += delta_factor
+                      J(mu, nu) += delta_factor
                           * Wji.row(nu.bfoff_in_shell*ish.nbf + mu.bfoff_in_shell).segment(Xblk.bfoff, Xblk.nbf)
                           * C_t_ex.row(jsh.center).segment(Xblk.bfoff, Xblk.nbf).transpose();
                     }
@@ -405,13 +371,13 @@ CADFCLHF::compute_J()
 
                 for(auto&& mu : function_range(ish)) {
                   // TODO Remove loops where possible
-                  jpart.row(mu).segment(jsh.bfoff, jsh.nbf).transpose() -= 2.0 *
+                  J.block(mu, jsh.bfoff, 1, jsh.nbf).transpose() -= 2.0 *
                       g3.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf)
                       * C_t_ex.row(ish.center).segment(Xblk.bfoff, Xblk.nbf).transpose();
                   for(auto&& nu : function_range(jsh)) {
-                    jpart(mu, nu) += 2.0 * Wij.row(mu.bfoff_in_shell*jsh.nbf + nu.bfoff_in_shell).segment(Xblk.bfoff, Xblk.nbf)
+                    J(mu, nu) += 2.0 * Wij.row(mu.bfoff_in_shell*jsh.nbf + nu.bfoff_in_shell).segment(Xblk.bfoff, Xblk.nbf)
                         * C_t_ex.row(ish.center).segment(Xblk.bfoff, Xblk.nbf).transpose();
-                    jpart(mu, nu) += 2.0 * Wji.row(nu.bfoff_in_shell*ish.nbf + mu.bfoff_in_shell).segment(Xblk.bfoff, Xblk.nbf)
+                    J(mu, nu) += 2.0 * Wji.row(nu.bfoff_in_shell*ish.nbf + mu.bfoff_in_shell).segment(Xblk.bfoff, Xblk.nbf)
                         * C_t_ex.row(ish.center).segment(Xblk.bfoff, Xblk.nbf).transpose();
                   }
                 }
@@ -427,9 +393,6 @@ CADFCLHF::compute_J()
         // only constructing the lower triangle of the J matrix, so zero the strictly upper part
         delete[] j_intbuff;
         //----------------------------------------//
-#if !J_THREAD_SPARSE
-        jpart.triangularView<Eigen::StrictlyUpper>().setZero();
-#endif
         // add our contribution to the node level d_tilde
         mt_timer.change("sum thread contributions", ithr);
         {
@@ -438,27 +401,16 @@ CADFCLHF::compute_J()
           if(exact_diagonal_J_) {
             d_t_ex.noalias() += dt_ex_thr;
           }
-#if J_THREAD_SPARSE
-          for(const auto& pair : jparts) {
-            ShellData ish(pair.first, gbs_);
-            J.middleRows(ish.bfoff, ish.nbf).noalias() += pair.second;
-          }
-#else
-          J.noalias() += jpart;
-#endif
         }
-#if !J_THREAD_SPARSE
-        delete[] jpart_data;
-#endif
         mt_timer.exit(ithr);
         /*******************************************************/ #endif //2}}}
         /*-----------------------------------------------------*/
       }); // end create_thread
     } // end enumeration of threads
     compute_threads.join_all();
-#if J_THREAD_SPARSE
+    // Some diagonal shells might have basis functions that spill over into the
+    //   upper triangle.  Zero these values to avoid double counting.
     J.triangularView<Eigen::StrictlyUpper>().setZero();
-#endif
     mt_timer.exit();
     timer.insert(mt_timer);
     if(print_iteration_timings_) mt_timer.print(ExEnv::out0(), 12, 45);
@@ -495,64 +447,36 @@ CADFCLHF::compute_J()
       compute_threads.create_thread([&,ithr](){
         auto contract_timer = mt_timer.get_subtimer("contract", ithr);
         auto ex_timer = mt_timer.get_subtimer("exact diagonal", ithr);
-
-#if J_THREAD_SPARSE
-        std::unordered_map<std::pair<int,int>, RowMatrix, sc::hash<std::pair<int, int>>> jparts;
-#else
-        double* __restrict__ jpart_data = new double[nbf*nbf];
-        Eigen::Map<ColMatrix> jpart(jpart_data, nbf, nbf);
-        jpart = Eigen::MatrixXd::Zero(nbf, nbf);
-#endif
-
         //----------------------------------------//
         ShellData ish, jsh;
         while(get_shell_pair(ish, jsh, SignificantPairs)){
-#if J_THREAD_SPARSE
-              auto&& found = jparts.find({ish.index, jsh.index});
-              if(found == jparts.end()) {
-                auto& new_part = jparts[{ish.index, jsh.index}];
-                new_part.resize(ish.nbf, jsh.nbf);
-                new_part.setZero();
-              }
-              auto& jpart = jparts[{ish.index, jsh.index}];
-#endif
           /*-----------------------------------------------------*/
           /* first and third terms compute thread           {{{2 */ #if 2 // begin fold
           //----------------------------------------//
           TimerHolder subtimer(contract_timer);
-          for(auto&& mu_fxn : function_range(ish)){
-            for(auto&& nu_fxn : function_range(jsh)){
+          for(auto&& mu : function_range(ish)){
+            for(auto&& nu : function_range(jsh)){
               //----------------------------------------//
-              auto cpair = coefs_[{mu_fxn, nu_fxn}];
+              auto cpair = coefs_[{mu, nu}];
               auto& Ca = *(cpair.first);
               auto& Cb = *(cpair.second);
               //----------------------------------------//
-
-#if J_THREAD_SPARSE
-              int mu = mu_fxn.off;
-              int nu = nu_fxn.off;
-#else
-              int mu = mu_fxn.index;
-              int nu = nu_fxn.index;
-#endif
-
-
               // First term contribution
-              jpart(mu, nu) += d_tilde.segment(ish.atom_dfbfoff, ish.atom_dfnbf).transpose() * Ca;
+              J(mu, nu) += d_tilde.segment(ish.atom_dfbfoff, ish.atom_dfnbf).transpose() * Ca;
               if(ish.center != jsh.center){
-                jpart(mu, nu) += d_tilde.segment(jsh.atom_dfbfoff, jsh.atom_dfnbf).transpose() * Cb;
+                J(mu, nu) += d_tilde.segment(jsh.atom_dfbfoff, jsh.atom_dfnbf).transpose() * Cb;
               }
               //----------------------------------------//
               // Third term contribution
-              jpart(mu, nu) -= g_tilde.segment(ish.atom_dfbfoff, ish.atom_dfnbf).transpose() * Ca;
+              J(mu, nu) -= g_tilde.segment(ish.atom_dfbfoff, ish.atom_dfnbf).transpose() * Ca;
               if(ish.center != jsh.center){
-                jpart(mu, nu) -= g_tilde.segment(jsh.atom_dfbfoff, jsh.atom_dfnbf).transpose() * Cb;
+                J(mu, nu) -= g_tilde.segment(jsh.atom_dfbfoff, jsh.atom_dfnbf).transpose() * Cb;
               }
               //----------------------------------------//
               if(exact_diagonal_J_) {
-                jpart(mu, nu) -= 2.0 * d_t_ex.row(jsh.center).segment(ish.atom_dfbfoff, ish.atom_dfnbf) * Ca;
+                J(mu, nu) -= 2.0 * d_t_ex.row(jsh.center).segment(ish.atom_dfbfoff, ish.atom_dfnbf) * Ca;
                 if(ish.center != jsh.center) {
-                  jpart(mu, nu) -= 2.0 * d_t_ex.row(ish.center).segment(jsh.atom_dfbfoff, jsh.atom_dfnbf) * Cb;
+                  J(mu, nu) -= 2.0 * d_t_ex.row(ish.center).segment(jsh.atom_dfbfoff, jsh.atom_dfnbf) * Cb;
                 }
               }
             } // end loop over nu
@@ -562,13 +486,10 @@ CADFCLHF::compute_J()
           /* Add back in the exact diagonal integrals       {{{2 */ #if 2 // begin fold
           //----------------------------------------//
           if(exact_diagonal_J_) {
-#if J_THREAD_SPARSE
-            throw FeatureNotImplemented("thread sparse J with exact diagonal", __FILE__, __LINE__, class_desc());
-#endif
             subtimer.change(ex_timer);
             double epf = (ish.center == jsh.center) ? 2.0 : 4.0;
-            for(auto&& ksh : iter_shells_on_center(obs, ish.center)) {
-              for(auto&& lsh : iter_shells_on_center(obs, jsh.center)) {
+            for(auto&& ksh : iter_shells_on_center(gbs_, ish.center)) {
+              for(auto&& lsh : iter_shells_on_center(gbs_, jsh.center)) {
                 if(not is_sig_pair(ksh, lsh)) continue;
 
                 auto g4_ptr = ints_to_eigen(ish, jsh, ksh, lsh, tbis_[ithr], coulomb_oper_type_);
@@ -576,7 +497,7 @@ CADFCLHF::compute_J()
                 for(auto&& mu : function_range(ish)) {
                   for(auto&& rho : function_range(ksh)) {
                     // TODO More Vectorization
-                    jpart.row(mu).segment(jsh.bfoff, jsh.nbf).transpose() += epf *
+                    J.block(mu, jsh.bfoff, 1, jsh.nbf).transpose() += epf *
                         g4.middleRows(mu.bfoff_in_shell*jsh.nbf, jsh.nbf).middleCols(rho.bfoff_in_shell*lsh.nbf, lsh.nbf)
                         * d.segment(rho*nbf + lsh.bfoff, lsh.nbf);
                   }
@@ -590,23 +511,7 @@ CADFCLHF::compute_J()
           /*-----------------------------------------------------*/
 
         } // end while get_shell_pair
-        // Sum the thread's contributions to the node-level J
-        {
-          boost::lock_guard<boost::mutex> tmp_lock(tmp_mutex);
-#if J_THREAD_SPARSE
-          for(auto&& pair : jparts) {
-            ShellData ish(pair.first.first, gbs_);
-            ShellData jsh(pair.first.second, gbs_);
-            J.block(ish.bfoff, jsh.bfoff, ish.nbf, jsh.nbf).noalias() += pair.second;
-          }
-#else
-          J.noalias() += jpart;
-#endif
-        }
-#if !J_THREAD_SPARSE
-        delete[] jpart_data;
-#endif
-      }); // end create_thread
+     }); // end create_thread
     } // end enumeration of threads
     compute_threads.join_all();
     mt_timer.exit();
@@ -629,20 +534,17 @@ CADFCLHF::compute_J()
     double jenergy = (J.array() * D.array()).sum();
     ExEnv::out0() << indent << "Coulomb energy: " << std::setprecision(12) << jenergy << std::endl;
   }
-  J_ = J;
-  //ExEnv::out0() << indent << "J checksum: " << scprintf("%20.15f", J.sum()) << std::endl;
-  //----------------------------------------//
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
   /* Transfer J to a RefSCMatrix                           		                        {{{1 */ #if 1 // begin fold
   Ref<Integral> localints = integral()->clone();
-  localints->set_basis(obs);
+  localints->set_basis(gbs_);
   Ref<PetiteList> pl = localints->petite_list();
   RefSCDimension obsdim = pl->AO_basisdim();
   RefSCMatrix result(
       obsdim,
       obsdim,
-      obs->so_matrixkit()
+      gbs_->so_matrixkit()
   );
   result.assign(J_data);
   /*****************************************************************************************/ #endif //1}}}

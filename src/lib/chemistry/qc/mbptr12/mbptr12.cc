@@ -276,6 +276,11 @@ MBPT2_R12::compute()
 
   compute_energy_();
 
+  if (r12eval()->compute_1rdm()) {
+    ExEnv::out0() << indent << "Compute MP2-F12 one-electron properties" << std::endl;
+    r12eval()->compute_TA_mp2f12_1rdm();
+  }
+
 #define TESTING_PSV 1
 #if TESTING_PSV
   if (uocc_orbs_ == "pno" ||

@@ -2202,6 +2202,11 @@ R12IntEval::compute()
   }
 #endif
 
+//  if (compute_1rdm()) {
+//    ExEnv::out0() << indent << "Compute MP2-F12 one-electron properties" << std::endl;
+//    compute_TA_mp2f12_1rdm();
+//  }
+
   init_intermeds_();
 
   // different expressions hence codepaths depending on relationship between OBS, VBS, and RIBS

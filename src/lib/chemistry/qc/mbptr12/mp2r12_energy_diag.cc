@@ -514,7 +514,7 @@ void MP2R12Energy_Diag::contract_VT1(const Ref<DistArray4>& V,
 
 void MP2R12Energy_Diag::compute_ef12() {
 
-  if (this->r12eval()->compute_1rdm()) {
+//  if (this->r12eval()->compute_1rdm()) {
 //    // tests for open-shell systems using MP2-F12 method
 //    if (r12intermediates_->Onerdm_relax_computed()) {
 //      const int nspincases1 = r12eval()->nspincases1();
@@ -527,9 +527,9 @@ void MP2R12Energy_Diag::compute_ef12() {
 //        X_cabs.print(prepend_spincase(spin,"CABS_Singles Z-vector X:").c_str());
 //      }
 //    }
-    ExEnv::out0() << std:: endl << "Onerdm_cc_computed() " << r12intermediates_->Onerdm_cc_computed() << std::endl;
-    //compute_density_diag();
-  }
+//    ExEnv::out0() << std:: endl << "Onerdm_cc_computed() " << r12intermediates_->Onerdm_cc_computed() << std::endl;
+//    compute_density_diag();
+//  }
 
   // switch to new implementation that should work correctly for alpha-beta contributions in open-shell molecules
   return this->compute_ef12_10132011();

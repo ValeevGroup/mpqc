@@ -988,6 +988,9 @@ public:
    */
   void V_diag_ta();
 
+  // TiledArray-based MP2-F12 one-electron properties
+  void compute_TA_mp2f12_1rdm();
+
   void compute_ccr12_1rdm(const RefSCMatrix& T1, const Ref<DistArray4> (&T2)[NSpinCases2]);
 
   /// returns the OrbitalSpaceRegistry object

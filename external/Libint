@@ -135,7 +135,7 @@ if ("${LIBINT}" AND NOT LIBINT2_FOUND)
       "CFLAGS=${CMAKE_C_FLAGS}"
       CXX=${CMAKE_CXX_COMPILER}
       "CXXFLAGS=${CMAKE_CXX_FLAGS}"
-      BUILD_COMMAND make SHELL=/bin/bash
+      BUILD_COMMAND $(MAKE) SHELL=/bin/bash
       INSTALL_COMMAND make install SHELL=/bin/bash
       )
 

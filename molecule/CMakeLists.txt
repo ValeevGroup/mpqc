@@ -6,4 +6,7 @@ set(sources
   molecule.h
   molecule_fwd.h
   clustering_functions.h
+  molecule.cpp
 )
+
+add_library(molecule ${sources})

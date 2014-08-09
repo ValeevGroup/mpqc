@@ -13,8 +13,9 @@ public:
   Atom &operator=(const Atom &atom) = default;
   Atom &operator=(Atom &&atom) = default;
   Atom(position_t center, double mass, double charge)
-      : center_(std::move(center)), mass_(std::move(mass)),
-        charge_(std::move(charge)) {}
+      : center_(std::move(center)),
+        charge_(std::move(charge)),
+        mass_(std::move(mass)) {}
 
   position_t center() const { return center_; }
   double charge() const {return charge_;}

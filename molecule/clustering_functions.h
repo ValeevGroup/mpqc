@@ -9,7 +9,7 @@ namespace clustering {
 using output_t = std::vector<Cluster>;
 using input_t = std::vector<Clusterable>;
 
-double sum_cluster_distances(const std::vector<Cluster> &clusters){
+double sum_cluster_distances(const std::vector<Cluster> &clusters) {
   return std::accumulate(clusters.begin(), clusters.end(), 0.0,
                          [](double d, const Cluster &c) {
     return d + c.sum_distances_from_center();
@@ -99,6 +99,7 @@ private:
   unsigned long seed_;
   std::vector<Cluster> clusters_;
 };
+
 } // namespace clustering
 
 #endif // CLUSTERING_FUNCTIONS_H

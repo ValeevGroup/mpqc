@@ -41,6 +41,7 @@ file(GLOB_RECURSE QT_CREATOR_SRC
   "*.in"
   "*.cc"
   "TODO"
+  "README"
   )
 
 add_library(qt_creator_get_sources EXCLUDE_FROM_ALL ${QT_CREATOR_SRC})

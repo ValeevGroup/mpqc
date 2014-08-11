@@ -60,16 +60,29 @@ endif()
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/modules/")
 FIND_PACKAGE(Eigen3)
 FIND_PACKAGE(dmhm)
+FIND_PACKAGE(MPQC)
+
 IF(${EIGEN_FOUND})
   message(STATUS "EIGEN FOUND")
   INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIRS})
 ENDIF()
+
 if(${DMHM_FOUND})
   include_directories(
     ${DMHM_INCLUDE_DIRS}
     )
   list(APPEND HeirChem_LIBRARIES ${DMHM_PATH}/lib/lib${DMHM_LIBRARIES}.a)
 endif()
+
+if(${MPQC_FOUND})
+  message(STATUS "${MPQC_FOUND}")
+  message(STATUS "${MPQC_INCLUDE_DIRS}")
+  include_directories(
+    ${MPQC_INCLUDE_DIRS}
+    )
+  list(APPEND HeirChem_LIBRARIES ${MPQC_LIBRARIES})
+endif()
+
 
 INCLUDE_DIRECTORIES(${HeirChem_SOURCE_DIR}/molecule)
 INCLUDE_DIRECTORIES(${HeirChem_SOURCE_DIR}/include)

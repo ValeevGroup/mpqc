@@ -6,12 +6,26 @@
 #include "../include/eigen.h"
 #include "cluster_concept.h"
 
+//TODO move code to cpp file
 class Cluster {
 public:
   using position_t = Clusterable::position_t;
   Cluster() = default;
+
   Cluster(const Cluster &c) = default;
-  Cluster(Cluster &&c) = default;
+  Cluster& operator=(const Cluster &c) = default;
+
+  // Eigen doesn't have move constructors so use their swap.
+  Cluster(Cluster &&c) noexcept : elements_(std::move(c.elements_)), charge_(std::move(c.charge_)), mass_(std::move(c.mass_)){
+    c.center_.swap(center_);
+  }
+  Cluster& operator=(Cluster &&c) {
+    elements_ = std::move(c.elements_);
+    charge_ = std::move(c.charge_);
+    mass_ = std::move(c.mass_);
+    c.center_.swap(center_);
+    return *this;
+  }
 
   template <typename T> void add_clusterable(T t) {
     mass_ += t.mass();

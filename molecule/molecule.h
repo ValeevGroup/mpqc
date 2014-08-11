@@ -33,7 +33,7 @@ public:
 private:
   std::vector<Clusterable> elements_;
 
-  position_t center_ = position_t::Zero();
+  position_t center_ = {0,0,0};
   double mass_ = 0.0;
   double charge_ = 0.0;
 };

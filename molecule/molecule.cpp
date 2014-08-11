@@ -27,8 +27,9 @@ calculate_center(const std::vector<Clusterable> &c, double mass) {
 
 class sort_by_distance_from_point {
 public:
-  sort_by_distance_from_point(Cluster::position_t point)
-      : point_(std::move(point)) {}
+  sort_by_distance_from_point(const Cluster::position_t &point)
+      : point_(point) {}
+
   bool operator()(const Clusterable &a, const Clusterable &b) {
     Atom::position_t a_dist = a.center() - point_;
     Atom::position_t b_dist = b.center() - point_;

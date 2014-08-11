@@ -6,6 +6,7 @@ set(sources
   molecule.h
   molecule_fwd.h
   clustering_functions.h
+  clustering_functions.cpp
   molecule.cpp
 )
 

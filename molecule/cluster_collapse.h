@@ -8,7 +8,7 @@
  * the function
  */
 inline std::vector<Atom> collapse_to_atoms(const Atom &a) {
-  return { std::move(a) };
+  return {a};
 }
 
 /**

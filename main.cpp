@@ -12,8 +12,8 @@
 #include "include/tbb.h"
 
 int main() {
-  tbb::task_scheduler_init init(4);
-  unsigned long N = 100000;
+  //tbb::task_scheduler_init init(4);
+  unsigned long N = 1000;
 
   std::vector<Clusterable> atoms;
   atoms.reserve(N);
@@ -21,17 +21,17 @@ int main() {
     atoms.emplace_back(Atom({0, 0, i}, 1.0, 1.0));
   }
 
-  Molecule mol(atoms);
+  Molecule mol(std::move(atoms));
 
-  auto clusters = mol.cluster_molecule(clustering::kmeans(10), 1000);
+  auto clusters = mol.cluster_molecule(clustering::kmeans(10), 10);
 
   using iter_t = decltype(clusters.begin());
   double sum = tbb::parallel_reduce(
       tbb::blocked_range<iter_t>(clusters.begin(), clusters.end()), 0.0,
       [](const tbb::blocked_range<iter_t> & r, double d)->double {
         return std::accumulate(r.begin(), r.end(), d,
-                               [](double d, const Cluster &b) {
-          return d + b.sum_distances_from_center();
+                               [](double d, const Clusterable &b) {
+          return d + b.center().norm();
         });
       },
       std::plus<double>());

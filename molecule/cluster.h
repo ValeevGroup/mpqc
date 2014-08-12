@@ -25,7 +25,6 @@ public:
    * cluster.
    */
   template <typename T> void add_clusterable(T t) {
-    t.center();
     mass_ += t.mass();
     charge_ += t.charge();
     elements_.emplace_back(t);

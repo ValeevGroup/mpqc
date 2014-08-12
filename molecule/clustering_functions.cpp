@@ -1,5 +1,6 @@
 #include "clustering_functions.h"
 #include "../include/tbb.h"
+#include <cassert>
 
 namespace clustering {
 
@@ -12,6 +13,7 @@ double sum_cluster_distances(const std::vector<Cluster> &clusters) {
 
 kmeans::kmeans(unsigned long seed) : seed_(std::move(seed)), clusters_() {}
 output_t kmeans::operator()(input_t clusterables, unsigned long nclusters) {
+  assert(clusterables.size() > nclusters);
   clusters_.resize(nclusters);
   initialize_clusters(clusterables);
   return cluster(clusterables);
@@ -74,10 +76,6 @@ void kmeans::attach_clusterables(const std::vector<Clusterable> &cs) {
     tbb::spin_mutex::scoped_lock lock(myMutex);
     iter->add_clusterable(c); // must lock, two could try and add at once.
   });
-
-  // for(auto &cluster : clusters_){
-  //  cluster.guess_center();
-  //}
 
   tbb::parallel_for_each(clusters_.begin(), clusters_.end(),
                          [](Cluster &c) { c.guess_center(); });

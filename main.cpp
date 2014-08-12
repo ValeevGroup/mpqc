@@ -18,7 +18,7 @@ int main() {
   std::vector<Clusterable> atoms;
   atoms.reserve(N);
   for (auto i = 0ul; i < N; ++i) {
-    atoms.emplace_back(Atom({ 0, 0, i }, 1.0, 1.0));
+    atoms.emplace_back(Atom({0, 0, i}, 1.0, 1.0));
   }
 
   Molecule mol(atoms);

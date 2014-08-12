@@ -122,6 +122,7 @@ file(GLOB_RECURSE QT_CREATOR_SRC
   "*.in"
   "*.cc"
   "TODO"
+  ".clang-format"
   "README"
   )
 

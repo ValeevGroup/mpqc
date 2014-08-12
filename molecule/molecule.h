@@ -25,15 +25,15 @@ public:
 
   unsigned long nelements() const { return elements_.size(); }
 
-  std::vector<Cluster> cluster_molecule(cluster_fn_t fn,
-                                        unsigned long nclusters) const {
+  std::vector<Cluster>
+  cluster_molecule(cluster_fn_t fn, unsigned long nclusters) const {
     return fn(elements_, nclusters);
   }
 
 private:
   std::vector<Clusterable> elements_;
 
-  position_t center_ = {0,0,0};
+  position_t center_ = {0, 0, 0};
   double mass_ = 0.0;
   double charge_ = 0.0;
 };

@@ -61,7 +61,8 @@ public:
   Clusterable(T t)
       : element_impl_(new ClusterModel<T>(std::move(t))) {}
 
-  Clusterable(const Clusterable &c) : element_impl_(std::move(c.element_impl_->copy())) {}
+  Clusterable(const Clusterable &c)
+      : element_impl_(std::move(c.element_impl_->copy())) {}
 
   // for operator make a copy and then move that copy into this.
   Clusterable &operator=(const Clusterable &c) {

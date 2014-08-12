@@ -17,10 +17,10 @@ Cluster &Cluster::operator=(Cluster &&c) noexcept {
 
 void Cluster::guess_center() {
   tbb::spin_mutex myMutex;
-  center_ = { 0, 0, 0 };
+  center_ = {0, 0, 0};
   tbb::parallel_for(tbb::blocked_range<unsigned long>(0, elements_.size()),
                     [&](const tbb::blocked_range<unsigned long> &r) {
-    position_t local_sum = { 0, 0, 0 };
+    position_t local_sum = {0, 0, 0};
     for (unsigned long z = r.begin(); z != r.end(); ++z) {
       local_sum += elements_[z].center() * elements_[z].mass();
     }

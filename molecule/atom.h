@@ -13,7 +13,7 @@ public:
 
   // Can't move eigen types yet so use eigen's swap.
   Atom(Atom &&atom) noexcept : charge_(std::move(atom.charge_)),
-       mass_(std::move(atom.mass_)) {
+                               mass_(std::move(atom.mass_)) {
     atom.center_.swap(center_);
   }
 
@@ -33,7 +33,7 @@ public:
   double mass() const { return mass_; }
 
 private:
-  position_t center_ = { 0, 0, 0 };
+  position_t center_ = {0, 0, 0};
   double charge_ = 0;
   double mass_ = 0;
 };

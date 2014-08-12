@@ -53,7 +53,8 @@ public:
   /**
    * @brief sum_distances_from_center calculates the sum of the disances of each
    * clusterable to the center of the cluster.
-   * @return reduction over the distances to the cluster center of the clusterables.
+   * @return reduction over the distances to the cluster center of the
+   * clusterables.
    */
   double sum_distances_from_center() const;
 
@@ -77,7 +78,7 @@ public:
 
 private:
   std::vector<Clusterable> elements_;
-  position_t center_ = { 0, 0, 0 };
+  position_t center_ = {0, 0, 0};
   double charge_ = 0.0;
   double mass_ = 0.0;
 };

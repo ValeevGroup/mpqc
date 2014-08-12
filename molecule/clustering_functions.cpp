@@ -1,8 +1,5 @@
 #include "clustering_functions.h"
-#include <tbb/parallel_for.h>
-#include <tbb/parallel_for_each.h>
-#include <tbb/blocked_range.h>
-#include <tbb/spin_mutex.h>
+#include "../include/tbb.h"
 
 namespace clustering {
 
@@ -32,11 +29,29 @@ void kmeans::initialize_clusters(const input_t &clusterables) {
     auto center_guess = clusterables[random_index(engine)].center();
     cluster.init_center(center_guess);
 
-    std::transform(weights.begin(), weights.end(), clusterables.begin(),
-                   weights.begin(), [&](double d, const Clusterable &c) {
-      double dist = (c.center() - center_guess).norm();
-      return (d > 1e-15) ? dist * dist : 0.0;
+    tbb::parallel_for(tbb::blocked_range<unsigned long>(0, weights.size()),
+                      [&](const tbb::blocked_range<unsigned long> &r) {
+      for (auto i = r.begin(); i != r.end(); ++i) {
+        const auto current_clusterable_center = clusterables[i].center();
+
+        auto nearest_cluster_center = std::min_element(
+            clusters_.begin(), clusters_.end(),
+            [&](const Cluster &a, const Cluster &b) {
+              return (a.center() - current_clusterable_center).norm() <
+                     (b.center() - current_clusterable_center).norm();
+            })->center();
+
+        auto dist =
+            (current_clusterable_center - nearest_cluster_center).norm();
+
+        weights[i] = dist * dist;
+      }
     });
+    // std::transform(weights.begin(), weights.end(), clusterables.begin(),
+    //               weights.begin(), [&](double d, const Clusterable &c) {
+    //  double dist = (c.center() - center_guess).norm();
+    //  return (d > 1e-15) ? dist * dist : 0.0;
+    //});
   }
 
   // Go ahead and attach the clusterable to their clusters.
@@ -88,6 +103,7 @@ kmeans::update_clusters(const std::vector<Clusterable> &clusterables) {
 
 bool
 kmeans::kmeans_converged(const std::vector<Cluster::position_t> &old_centers) {
+
   return std::equal(
       old_centers.begin(), old_centers.end(), clusters_.begin(),
       [](const Cluster::position_t &old_center, const Cluster &new_cluster) {

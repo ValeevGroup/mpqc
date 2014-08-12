@@ -9,36 +9,34 @@
 #include "matrix/dmhm.h"
 #include <chrono>
 #include "molecule/Atom.h"
+#include "include/tbb.h"
 
 int main() {
-  Atom a({0.0,0.1,0.2},1.0,1.0);
-  Atom b({1.0,0.1,0.2},1.0,1.0);
-  Atom c({9.0,0.1,0.2},1.0,1.0);
-  Atom d({10.0,0.1,0.2},1.0,1.0);
-  Cluster ca;
-  ca.add_clusterable(c);
-  ca.add_clusterable(d);
-  ca.guess_center();
-  std::cout << ca.center().transpose() << std::endl;
+  tbb::task_scheduler_init init(4);
+  unsigned long N = 100000;
 
-  Molecule mol({a,b,ca});
-
-  auto clusters = mol.cluster_molecule(clustering::kmeans(4),3);
-
-  for(const auto &cluster : clusters){
-    std::cout << cluster.center().transpose() << std::endl;
-  }
-  std::cout << std::endl;
-
-  for(const auto &cluster : clusters){
-    for(const auto &atom : collapse_to_atoms(cluster)){
-      std::cout << atom.center().transpose() << std::endl;
-    }
+  std::vector<Clusterable> atoms;
+  atoms.reserve(N);
+  for (auto i = 0ul; i < N; ++i) {
+    atoms.emplace_back(Atom({ 0, 0, i }, 1.0, 1.0));
   }
 
-  for(const auto &cluster : clusters){
-    std::cout << cluster.sum_distances_from_center() << std::endl;
-  }
+  Molecule mol(atoms);
+
+  auto clusters = mol.cluster_molecule(clustering::kmeans(10), 1000);
+
+  using iter_t = decltype(clusters.begin());
+  double sum = tbb::parallel_reduce(
+      tbb::blocked_range<iter_t>(clusters.begin(), clusters.end()), 0.0,
+      [](const tbb::blocked_range<iter_t> & r, double d)->double {
+        return std::accumulate(r.begin(), r.end(), d,
+                               [](double d, const Cluster &b) {
+          return d + b.sum_distances_from_center();
+        });
+      },
+      std::plus<double>());
+
+  std::cout << "Sum of distances = " << sum << std::endl;
 
   return 0;
 }

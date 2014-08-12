@@ -1,9 +1,6 @@
 #include <cluster.h>
 #include <functional>
-#include <tbb/parallel_for.h>
-#include <tbb/parallel_reduce.h>
-#include <tbb/blocked_range.h>
-#include <tbb/spin_mutex.h>
+#include "../include/tbb.h"
 Cluster::Cluster(Cluster &&c) noexcept : elements_(std::move(c.elements_)),
                                          charge_(std::move(c.charge_)),
                                          mass_(std::move(c.mass_)) {

@@ -8,6 +8,8 @@ set(sources
   clustering_functions.h
   clustering_functions.cpp
   cluster.cpp
+  common.h
+  common.cpp
   molecule.cpp
 )
 

@@ -3,6 +3,7 @@
 #include "cluster_concept.h"
 #include "cluster.h"
 #include "../include/tbb.h"
+#include "common.h"
 #include <functional>
 
 namespace molecule_detail {
@@ -36,21 +37,6 @@ inline double calculate_charge(const std::vector<Clusterable> &cs) {
   //    [](double x, const Clusterable &c) { return x + c.charge(); });
 }
 
-inline Clusterable::position_t
-calculate_center(const std::vector<Clusterable> &cs, double mass) {
-  Clusterable::position_t center = {0, 0, 0};
-  tbb::spin_mutex myMutex;
-  tbb::parallel_for(tbb::blocked_range<unsigned long>(0, cs.size()),
-                    [&](const tbb::blocked_range<unsigned long> &r) {
-    Clusterable::position_t local_sum = {0, 0, 0};
-    for (unsigned long z = r.begin(); z != r.end(); ++z) {
-      local_sum += cs[z].center() * cs[z].mass();
-    }
-    tbb::spin_mutex::scoped_lock lock(myMutex);
-    center += local_sum;
-  });
-  return center /= mass;
-}
 
 class sort_by_distance_from_point {
 public:
@@ -84,6 +70,6 @@ void sort_elements(std::vector<Clusterable> &elems) {
 Molecule::Molecule(std::vector<Clusterable> c) : elements_(std::move(c)) {
   mass_ = molecule_detail::calculate_mass(elements_);
   charge_ = molecule_detail::calculate_charge(elements_);
-  center_ = molecule_detail::calculate_center(elements_, mass_);
+  center_ = center_of_mass(elements_, mass_);
   molecule_detail::sort_elements(elements_);
 }

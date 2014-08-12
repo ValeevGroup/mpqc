@@ -6,6 +6,8 @@ set(HeirChem_VERSION_MINOR 0)
 
 option(RELEASE ON)
 
+set(CMAKE_CXX_COMPILER "clang++")
+
 if(RELEASE)
     set(CXX_FLAGS "-O3 -std=c++11" CACHE STRING "CXX flags")
 else()
@@ -59,6 +61,7 @@ endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/modules/")
 FIND_PACKAGE(Eigen3)
+FIND_PACKAGE(TBB)
 FIND_PACKAGE(dmhm)
 FIND_PACKAGE(MPQC)
 
@@ -72,6 +75,13 @@ if(${DMHM_FOUND})
     ${DMHM_INCLUDE_DIRS}
     )
   list(APPEND HeirChem_LIBRARIES ${DMHM_PATH}/lib/lib${DMHM_LIBRARIES}.a)
+endif()
+
+if(${TBB_FOUND})
+  include_directories(
+    ${TBB_INCLUDE_DIRS}
+    )
+  list(APPEND HeirChem_LIBRARIES ${TBB_LIBRARIES})
 endif()
 
 if(${MPQC_FOUND})
@@ -91,9 +101,8 @@ INCLUDE_DIRECTORIES(${HeirChem_SOURCE_DIR}/matrix)
 add_subdirectory(${HeirChem_SOURCE_DIR}/molecule)
 add_subdirectory(${HeirChem_SOURCE_DIR}/include)
 
-
-
 LINK_DIRECTORIES(${HeirChem_BINARY_DIR}/molecule)
+
 LIST(APPEND HeirChem_LIBRARIES molecule)
 
 set(HeirChem_Sources "main.cpp")

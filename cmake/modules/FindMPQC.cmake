@@ -4,11 +4,13 @@ if (MPQC_INCLUDE_DIRS)
 
 else ()
 
-  set(MPQC_INCLUDE_DIR "")
-  message(STATUS "MPQC_DIR = ${MPQC_PATH}")
+  SET(MPQC_INCLUDE_DIR "")
   find_path(MPQC_INCLUDE_DIR NAMES mpqc_config.h
       PATHS
-      ${MPQC_PATH}/include/mpqc/
+      ${MPQC_PATH}
+      ${MPQC_PATH}/include
+      ${MPQC_PATH}/include/mpqc
+      PATH_SUFFIXES mpqc
     )
   message(STATUS "MPQC_INCLUDE_DIR = ${MPQC_INCLUDE_DIR}")
 
@@ -28,7 +30,6 @@ else ()
       endif()
     endforeach()
 
-    set(MPQC_LIBRARIES "")
     foreach(_component ${MPQC_DEFAULT_COMPONENT_LIST})
       if(MPQC_${_component}_FOUND)
         list(APPEND MPQC_LIBRARIES ${_component})
@@ -39,7 +40,7 @@ else ()
     
   endif(MPQC_INCLUDE_DIR)
 
-  mark_as_advanced(MPQC_INCLUDE_DIRS MPQC_LIBRARIES)
+  mark_as_advanced(MPQC_INCLUDE_DIR MPQC_LIBRARIES)
   SET(MPQC_INCLUDE_DIRS ${MPQC_INCLUDE_DIR} CACHE PATH "The mpqc include path.")
   SET(MPQC_LIBRARIES ${MPQC_LIBRARIES} CACHE PATH "The mpqc library path.")
 

@@ -17,7 +17,6 @@ using input_t = std::vector<Clusterable>;
 */
 double sum_cluster_distances(const std::vector<Cluster> &clusters);
 
-// TODO move this to cpp file
 /**
  * @brief The kmeans class is a functor which kmeans clusters clusterables.
  */

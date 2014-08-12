@@ -1,4 +1,8 @@
 #include "clustering_functions.h"
+#include <tbb/parallel_for.h>
+#include <tbb/parallel_for_each.h>
+#include <tbb/blocked_range.h>
+#include <tbb/spin_mutex.h>
 
 namespace clustering {
 
@@ -40,39 +44,46 @@ void kmeans::initialize_clusters(const input_t &clusterables) {
 }
 
 void kmeans::attach_clusterables(const std::vector<Clusterable> &cs) {
-  // TODO_PAR loop over clusters should also be parallel.
   // Erase the ownership information in the cluster.
-  for (auto &cluster : clusters_) {
-    cluster.clear();
-  }
+  tbb::parallel_for_each(clusters_.begin(), clusters_.end(),
+                         [](Cluster &c) { c.clear(); });
 
-  // TODO_PAR Make loop over clusterables parallel.
   // Attach each clusterable to a cluster.
-  for (const auto &c : cs) {
-    min_element(clusters_.begin(), clusters_.end(),
-                [&](const Cluster &a, const Cluster &b) {
-                  return (a.center() - c.center()).norm() <
-                         (b.center() - c.center()).norm();
-                })->add_clusterable(c);
-  }
+  tbb::spin_mutex myMutex;
+  tbb::parallel_for_each(cs.begin(), cs.end(), [&](const Clusterable &c) {
+    auto iter = min_element(clusters_.begin(), clusters_.end(),
+                            [&](const Cluster &a, const Cluster &b) {
+      return (a.center() - c.center()).norm() <
+             (b.center() - c.center()).norm();
+    });
+    tbb::spin_mutex::scoped_lock lock(myMutex);
+    iter->add_clusterable(c); // must lock, two could try and add at once.
+  });
+
+  // for(auto &cluster : clusters_){
+  //  cluster.guess_center();
+  //}
+
+  tbb::parallel_for_each(clusters_.begin(), clusters_.end(),
+                         [](Cluster &c) { c.guess_center(); });
 }
 
 std::vector<Cluster::position_t>
 kmeans::update_clusters(const std::vector<Clusterable> &clusterables) {
-  // temp to hold the old clusters
-  std::vector<Clusterable::position_t> old_centers;
+  // temp to hold the old clusters must allocate for parallel loop.
+  std::vector<Clusterable::position_t> old_centers(clusters_.size());
 
-  //TODO_PAR make this loop parallel.
   // store the old centers and guess new ones.
-  for (auto &cluster : clusters_) {
-    old_centers.emplace_back(cluster.center());
-    cluster.guess_center();
-  }
+  tbb::parallel_for(tbb::blocked_range<unsigned long>(0, clusters_.size()),
+                    [&](const tbb::blocked_range<unsigned long> &r) {
+    for (auto i = r.begin(); i != r.end(); ++i) {
+      old_centers[i] = clusters_[i].center();
+    }
+  });
 
   attach_clusterables(clusterables);
 
-  // Hopeing for rvo
-  return old_centers;
+  return old_centers; // Let's go rvo!!;
 }
 
 bool

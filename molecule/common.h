@@ -10,5 +10,13 @@
  */
 position_t center_of_mass(const std::vector<Clusterable> cs, double mass);
 
+inline double diff_squaredNorm(const position_t a, const position_t b){
+  double out = 0.0;
+  for(unsigned int i = 0; i < 3; ++i){
+    double temp = a[i]-b[i];
+    out += temp * temp;
+  }
+  return out;
+}
 
 #endif // COMMON_H

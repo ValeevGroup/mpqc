@@ -76,6 +76,11 @@ private:
    */
   output_t cluster(const std::vector<Clusterable> &clusterables);
 
+
+  std::vector<Cluster>::iterator
+  closest_cluster(const std::vector<Cluster>::iterator begin,
+                  const std::vector<Cluster>::iterator end, const position_t center);
+
   unsigned long seed_;
   std::vector<Cluster> clusters_;
 };

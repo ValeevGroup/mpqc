@@ -6,10 +6,10 @@ set(HeirChem_VERSION_MINOR 0)
 
 option(RELEASE ON)
 
-set(CMAKE_CXX_COMPILER "clang++")
-
 if(RELEASE)
     set(CXX_FLAGS "-O3 -std=c++11" CACHE STRING "CXX flags")
+ELSEIF(DEBUG_RELEASE)
+    set(CXX_FLAGS "-O3 -g -Rpass-analysis=loop-vectorize -std=c++11" CACHE STRING "CXX flags")
 else()
     set(CXX_FLAGS "-g -Wall -Wextra -std=c++11" CACHE STRING "CXX flags")
 endif()

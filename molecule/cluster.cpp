@@ -22,7 +22,7 @@ void Cluster::guess_center() {
 
 double Cluster::sum_distances_from_center() const {
   auto reduce_r = [&](double d, const Clusterable &c) {
-    return d + (c.center() - center_).norm();
+    return d + std::sqrt(diff_squaredNorm(c.center(), center_));
   };
 
   using iter_t = decltype(elements_.begin());

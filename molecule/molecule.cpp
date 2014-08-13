@@ -17,10 +17,8 @@ inline double calculate_mass(const std::vector<Clusterable> &cs) {
             [](double x, const Clusterable &c) { return x + c.mass(); });
       },
       std::plus<double>());
-
- // return std::accumulate(c.begin(), c.end(), 0.0,
- //                 [](double x, const Clusterable &c) { return x + c.mass(); });
 }
+
 
 inline double calculate_charge(const std::vector<Clusterable> &cs) {
   using iter_t = decltype(cs.begin());
@@ -32,9 +30,6 @@ inline double calculate_charge(const std::vector<Clusterable> &cs) {
             [](double x, const Clusterable &c) { return x + c.charge(); });
       },
       std::plus<double>());
-  //return std::accumulate(
-  //    c.begin(), c.end(), 0.0,
-  //    [](double x, const Clusterable &c) { return x + c.charge(); });
 }
 
 
@@ -46,8 +41,8 @@ public:
   bool operator()(const Clusterable &a, const Clusterable &b) const {
     Atom::position_t a_dist = a.center() - point_;
     Atom::position_t b_dist = b.center() - point_;
-    if (!(a_dist.norm() == b_dist.norm())) {
-      return a_dist.norm() < b_dist.norm();
+    if (!(a_dist.squaredNorm() == b_dist.squaredNorm())) {
+      return a_dist.squaredNorm() < b_dist.squaredNorm();
     } else if (a_dist[0] == b_dist[0]) {
       return a_dist[0] < b_dist[0];
     } else if (a_dist[1] == b_dist[1]) {

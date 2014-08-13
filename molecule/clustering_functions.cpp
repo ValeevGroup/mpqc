@@ -60,13 +60,12 @@ void kmeans::attach_clusterables(const std::vector<Clusterable> &cs) {
                          [](Cluster &c) { c.clear(); });
 
   // for each clusterable
-  tbb::spin_mutex cluster_mutex;
+  tbb::speculative_spin_mutex cluster_mutex;
   tbb::parallel_for_each(cs.begin(), cs.end(), [&](const Clusterable &c) {
     // Find closest cluster
     auto iter = closest_cluster(clusters_.begin(), clusters_.end(), c.center());
 
-    // Add clusterable to nearest cluster.
-    tbb::spin_mutex::scoped_lock lock(cluster_mutex);
+    tbb::speculative_spin_mutex::scoped_lock lock(cluster_mutex);
     iter->add_clusterable(c);
   });
 

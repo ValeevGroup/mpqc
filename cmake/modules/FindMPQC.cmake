@@ -12,7 +12,6 @@ else ()
       ${MPQC_PATH}/include/mpqc
       PATH_SUFFIXES mpqc
     )
-  message(STATUS "MPQC_INCLUDE_DIR = ${MPQC_INCLUDE_DIR}")
 
   if(MPQC_INCLUDE_DIR)
     set(MPQC_LIB_DIR ${MPQC_PATH}/lib)

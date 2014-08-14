@@ -28,12 +28,9 @@ else ()
 
     set(DMHM_LIBRARIES "")
     foreach(_component ${DMHM_DEFAULT_COMPONENT_LIST})
-      message(STATUS " component = ${_component}")
       if(DMHM_${_component}_FOUND)
         list(APPEND DMHM_LIBRARIES ${_component})
-        message(STATUS " Made it here ${_component}")
       endif()
-      message(STATUS " dmhm lib ${DMHM_LIBRARIES}")
     endforeach()
 
     set(DMHM_FOUND TRUE)    
@@ -41,7 +38,6 @@ else ()
   endif(DMHM_INCLUDE_DIR)
 
   mark_as_advanced(DMHM_INCLUDE_DIRS DMHM_LIBRARIES)
-  message(STATUS " INCLUDE = ${DMHM_INCLUDE_DIR}")
   SET(DMHM_INCLUDE_DIRS ${DMHM_INCLUDE_DIR} CACHE PATH "The dmhm include path.")
   SET(DMHM_LIBRARIES ${DMHM_LIBRARIES} CACHE PATH "The dmhm library path.")
 

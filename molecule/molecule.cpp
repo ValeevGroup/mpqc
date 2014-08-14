@@ -7,6 +7,7 @@
 #include <functional>
 
 namespace molecule_detail {
+
 inline double calculate_mass(const std::vector<Clusterable> &cs) {
   using iter_t = decltype(cs.begin());
   return tbb::parallel_reduce(
@@ -18,7 +19,6 @@ inline double calculate_mass(const std::vector<Clusterable> &cs) {
       },
       std::plus<double>());
 }
-
 
 inline double calculate_charge(const std::vector<Clusterable> &cs) {
   using iter_t = decltype(cs.begin());
@@ -32,7 +32,7 @@ inline double calculate_charge(const std::vector<Clusterable> &cs) {
       std::plus<double>());
 }
 
-
+// Functor for sorting centers based on the distance from a point.
 class sort_by_distance_from_point {
 public:
   sort_by_distance_from_point(const Cluster::position_t point)
@@ -55,16 +55,15 @@ private:
   Clusterable::position_t point_;
 };
 
-void sort_elements(std::vector<Clusterable> &elems) {
+void sort_elements(std::vector<Clusterable> &elems, const position_t &point) {
   tbb::parallel_sort(elems.begin(), elems.end(),
-                     sort_by_distance_from_point({0, 0, 0}));
+                     sort_by_distance_from_point(point));
 }
-
 } // namespace moleucle detail
 
 Molecule::Molecule(std::vector<Clusterable> c) : elements_(std::move(c)) {
   mass_ = molecule_detail::calculate_mass(elements_);
   charge_ = molecule_detail::calculate_charge(elements_);
   center_ = center_of_mass(elements_, mass_);
-  molecule_detail::sort_elements(elements_);
+  molecule_detail::sort_elements(elements_, center_);
 }

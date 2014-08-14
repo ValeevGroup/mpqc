@@ -24,7 +24,6 @@ void kmeans::initialize_clusters(const input_t &clusterables) {
   std::vector<double> weights(clusterables.size(), 1.0);
   std::mt19937 engine(seed_);
 
-  // TODO_PAR tbb this loop
   auto end = clusters_.end();
   for (auto it = clusters_.begin(); it != end; ++it) {
     std::discrete_distribution<unsigned int> random_index(weights.begin(),
@@ -34,20 +33,21 @@ void kmeans::initialize_clusters(const input_t &clusterables) {
     it->init_center(center_guess);
 
     // For each clusterable
-    tbb::parallel_for(tbb::blocked_range<unsigned int>(0, clusterables.size()),
-                      [&](const tbb::blocked_range<unsigned int> &r) {
-      for (auto i = r.begin(); i != r.end(); ++i) {
-        const auto clusterable_center = clusterables[i].center();
+    tbb::affinity_partitioner ap;
+    tbb::parallel_for(
+        0ul, clusterables.size(),
+        [&](unsigned long i) {
+          const auto clusterable_center = clusterables[i].center();
 
-        // Find the closes cluster that has been initialized.
-        const auto cluster_center = closest_cluster(
-            clusters_.begin(), it, clusterable_center)->center();
+          // Find the closes cluster that has been initialized.
+          const auto cluster_center = closest_cluster(
+              clusters_.begin(), it, clusterable_center)->center();
 
-        // Calculate weight = dist^2
-        weights[i] = diff_squaredNorm(std::move(clusterable_center),
-                                      std::move(cluster_center));
-      }
-    });
+          // Calculate weight = dist^2
+          weights[i] = diff_squaredNorm(std::move(clusterable_center),
+                                        std::move(cluster_center));
+        },
+        ap);
   }
 
   // Go ahead and attach the clusterable to their clusters.
@@ -90,12 +90,11 @@ kmeans::update_clusters(const std::vector<Clusterable> &clusterables) {
   std::vector<Clusterable::position_t> old_centers(clusters_.size());
 
   // store the old centers and guess new ones.
-  tbb::parallel_for(tbb::blocked_range<unsigned long>(0, clusters_.size()),
-                    [&](const tbb::blocked_range<unsigned long> &r) {
-    for (auto i = r.begin(); i != r.end(); ++i) {
+  tbb::affinity_partitioner ap;
+  tbb::parallel_for(0ul, clusters_.size(),
+                    [&](unsigned long i) {
       old_centers[i] = clusters_[i].center();
-    }
-  });
+  }, ap);
 
   attach_clusterables(clusterables);
 

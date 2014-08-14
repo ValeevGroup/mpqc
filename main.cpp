@@ -9,6 +9,7 @@
 #include "matrix/dmhm.h"
 #include <chrono>
 #include "molecule/Atom.h"
+#include <Accelerate/Accelerate.h>
 #include "include/tbb.h"
 
 int main() {

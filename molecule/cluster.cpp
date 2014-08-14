@@ -16,9 +16,7 @@ Cluster &Cluster::operator=(Cluster &&c) noexcept {
   return *this;
 }
 
-void Cluster::guess_center() {
-  center_ = center_of_mass(elements_, mass_);
-}
+void Cluster::guess_center() { center_ = center_of_mass(elements_, mass_); }
 
 double Cluster::sum_distances_from_center() const {
   auto reduce_r = [&](double d, const Clusterable &c) {
@@ -26,11 +24,12 @@ double Cluster::sum_distances_from_center() const {
   };
 
   using iter_t = decltype(elements_.begin());
+  tbb::affinity_partitioner ap;
 
   return tbb::parallel_reduce(
       tbb::blocked_range<iter_t>(elements_.begin(), elements_.end()), 0.0,
       [&](const tbb::blocked_range<iter_t> &r, double d) {
         return std::accumulate(r.begin(), r.end(), d, reduce_r);
       },
-      std::plus<double>());
+      std::plus<double>(), ap);
 }

@@ -983,6 +983,7 @@ public:
   RefSCMatrix V_genref_spinfree(const Ref<OrbitalSpace>& p,
                      const Ref<OrbitalSpace>& q);
 
+#if defined(HAVE_MPQC3_RUNTIME)
   /**
    * TiledArray-based builder of closed-shell V intermediate
    */
@@ -990,6 +991,7 @@ public:
 
   // TiledArray-based MP2-F12 one-electron properties
   void compute_TA_mp2f12_1rdm();
+#endif
 
   void compute_ccr12_1rdm(const RefSCMatrix& T1, const Ref<DistArray4> (&T2)[NSpinCases2]);
 

@@ -67,7 +67,7 @@ if (MPQC_UNITTEST)
     @ONLY
   )
 
-
+  if (MPQC_NEW_FEATURES AND MPQC_HAS_ELEMENTAL)
   add_executable(tascf_test tascf_test.cpp $<TARGET_OBJECTS:basis>)
   add_test(tascf_test tascf_test)
   
@@ -89,7 +89,8 @@ if (MPQC_UNITTEST)
   add_test(gegine_test gengine_test)
   
   target_link_libraries( gengine_test chemistry)
-
+  endif(MPQC_NEW_FEATURES AND MPQC_HAS_ELEMENTAL)
+  
 endif (MPQC_UNITTEST)
 
   CONFIGURE_FILE(

@@ -12,11 +12,11 @@ if (LIBINT)
 
   if ("${LIBINT}" OR "${LIBINT}" STREQUAL "optional")
     find_library(LIBINT2_LIBRARY int2)
-    find_path(LIBINT2_INCLUDE_DIR libint2/libint2.h)
+    find_path(LIBINT2_INCLUDE_DIR libint2.h)
   else()
     find_library(LIBINT2_LIBRARY int2
                  PATHS ${LIBINT}/lib NO_DEFAULT_PATH)
-    find_path(LIBINT2_INCLUDE_DIR libint2/libint2.h
+    find_path(LIBINT2_INCLUDE_DIR libint2.h
               PATHS ${LIBINT}/include NO_DEFAULT_PATH)
     if (NOT LIBINT2_LIBRARY)
       message(FATAL_ERROR "Could not find libint library in ${LIBINT}")
@@ -26,7 +26,7 @@ if (LIBINT)
   if (LIBINT2_LIBRARY)
   
     if (NOT LIBINT2_INCLUDE_DIR)
-      message(FATAL_ERROR "Could not find libint2/libint2.h")
+      message(FATAL_ERROR "Could not find libint2.h")
     endif()
 
     list(APPEND CMAKE_REQUIRED_INCLUDES ${LIBINT2_INCLUDE_DIR})
@@ -36,7 +36,7 @@ if (LIBINT)
     # sanity check: try compiling a simple program
     CHECK_CXX_SOURCE_COMPILES(
       "
-      #include <libint2/libint2.h>
+      #include <libint2.h>
       int main(int argc, char** argv) {
         libint2_static_init();
         return 0;
@@ -49,9 +49,9 @@ if (LIBINT)
     # make sure libint2 version is up to date
     CHECK_CXX_SOURCE_COMPILES(
       "
-          #include <libint2/libint2.h>
+          #include <libint2.h>
           #include <libint2/boys.h>
-          #if !(LIBINT_MAJOR_VERSION==2 && LIBINT_MINOR_VERSION==0 && LIBINT_MICRO_VERSION>=5)
+          #if !(LIBINT_MAJOR_VERSION==2 && LIBINT_MINOR_VERSION==1 && LIBINT_MICRO_VERSION>=0)
           # error \"Libint2 library is too old\"
           #endif
           int main(int argc, char** argv) { return 0; }
@@ -63,7 +63,7 @@ if (LIBINT)
     # check that libint2 uses one of orderings supported by MPQC
     CHECK_CXX_SOURCE_COMPILES(
       "
-        #include <libint2/libint2.h>
+        #include <libint2.h>
         #if LIBINT2_CGSHELL_ORDERING != LIBINT2_CGSHELL_ORDERING_STANDARD && LIBINT2_CGSHELL_ORDERING != LIBINT2_CGSHELL_ORDERING_INTV3 && LIBINT2_CGSHELL_ORDERING != LIBINT2_CGSHELL_ORDERING_GAMESS
         # error \"Libint2 library is uses an Cartesian Gaussian ordering not supported by MPQC, or it is simply too old\"
         #endif
@@ -78,7 +78,7 @@ if (LIBINT)
     # check if libint2 supports [g12,T] commutator integrals
     CHECK_CXX_SOURCE_COMPILES(
       "
-        #include <libint2/libint2.h>
+        #include <libint2.h>
         #if LIBINT2_SUPPORT_G12 && LIBINT2_SUPPORT_T1G12
           void libint2_support_t1g12() {}
         #endif

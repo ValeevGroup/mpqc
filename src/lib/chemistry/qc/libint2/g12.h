@@ -36,7 +36,7 @@
 #include <chemistry/qc/libint2/shellpairs.h>
 #include <chemistry/qc/basis/fjt.h>
 #include <chemistry/qc/libint2/int2e.h>
-#include <libint2/libint2.h>
+#include <libint2.h>
 
 #if LIBINT2_SUPPORT_G12
 #ifndef _chemistry_qc_libint2_g12_h

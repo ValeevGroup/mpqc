@@ -25,7 +25,7 @@
 // The U.S. Government is granted a limited license as per AL 91-7.
 //
 
-#include <libint2/libint2.h>
+#include <libint2.h>
 
 #include <util/class/class.h>
 #include <util/misc/scexception.h>

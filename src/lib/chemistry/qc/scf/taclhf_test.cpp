@@ -43,7 +43,7 @@ struct Mock_CLHF : public CLHF{
   Mock_CLHF(const sc::Ref<sc::KeyVal> &kval) : CLHF(kval) {}
   ~Mock_CLHF() {}
 
-  CLHF::TAMatrix data_fock(){return scf_fock();}
+  CLHF::TAMatrix data_fock(){return scf_ao_fock_();}
   CLHF::TAMatrix data_Gmat(){return G("i,j");}
   double energy(){return iter_energy() +
                          molecule()->nuclear_repulsion_energy();}
@@ -98,9 +98,6 @@ BOOST_AUTO_TEST_CASE( construct_clhf_programmatically ){
     Ref<Mock_CLHF> thf = new Mock_CLHF(akv);
     thf->print();
     std::cout << "\tEnergy for initial Fock = " << thf->energy() << std::endl;
-    std::cout << "Minimizing energy . . . " << std::endl;
-    thf->minimize_energy();
-    std::cout << "Final energy = " << thf->energy() << std::endl;
 }
 
 

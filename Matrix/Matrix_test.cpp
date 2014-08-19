@@ -4,8 +4,16 @@
 int main(int argc, char** argv){
   madness::World &world = madness::initialize(argc, argv);
 
-  Eigen::MatrixXd Z = Eigen::MatrixXd::Random(10,10);
+  // Test that multiplication works
+  Eigen::MatrixXd Z = Eigen::MatrixXd::Random(1000,1000);
+  Eigen::MatrixXd Q = Eigen::MatrixXd::Random(1000,1000);
+  if(Z.isApprox(Q)){
+    std::cout << "Z and Q were the same matrix\n";
+  }
   LRTile<double> B(Z);
+  LRTile<double> C(Q);
+  LRTile<double> D = B.mult(C);
+  std::cout << "Does multiply work (1:yes,0:no)? " << D.matrixLR().isApprox(Z*Q) << "\n";
 
   std::vector<unsigned int> blocking;
   for(auto i : {0,2,4}){

@@ -1,6 +1,8 @@
 
-add FindLIBINT module.
+Write operations for LRTile
+
 use MPQC for basis sets
+
 construct libint shells given 
   basis set and molecule.
 

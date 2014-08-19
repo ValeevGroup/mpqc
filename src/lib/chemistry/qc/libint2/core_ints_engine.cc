@@ -31,7 +31,7 @@
 
 #include<chemistry/qc/libint2/core_ints_engine.h>
 #include<chemistry/qc/basis/fjt.h>
-#include <libint2/libint2.h>
+#include <libint2.h>
 #include <libint2/boys.h>
 
 using namespace sc;

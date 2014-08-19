@@ -81,29 +81,18 @@ if (MPQC_UNITTEST)
     @ONLY
   )
 
-
-  add_executable(tascf_test tascf_test.cpp $<TARGET_OBJECTS:basis>)
-  add_test(tascf_test tascf_test)
+  if (MPQC_NEW_FEATURES AND MPQC_HAS_ELEMENTAL)
   
-  target_link_libraries( tascf_test chemistry )
+    add_executable(taclhf_test taclhf_test.cpp $<TARGET_OBJECTS:basis>)
+    add_test(taclhf_test taclhf_test)
+    target_link_libraries( taclhf_test chemistry )
   
+    add_executable(gengine_test cldfgengine_test.cpp $<TARGET_OBJECTS:basis>)
+    add_test(gegine_test gengine_test)
+    target_link_libraries( gengine_test chemistry)
+    
+  endif(MPQC_NEW_FEATURES AND MPQC_HAS_ELEMENTAL)
   
-  add_executable(taclscf_test taclscf_test.cpp $<TARGET_OBJECTS:basis>)
-  add_test(taclscf_test taclscf_test)
-  
-  target_link_libraries( taclscf_test chemistry )
-
-  add_executable(taclhf_test taclhf_test.cpp $<TARGET_OBJECTS:basis>)
-  add_test(taclhf_test taclhf_test)
-  
-  target_link_libraries( taclhf_test chemistry )
-  
-  
-  add_executable(gengine_test cldfgengine_test.cpp $<TARGET_OBJECTS:basis>)
-  add_test(gegine_test gengine_test)
-  
-  target_link_libraries( gengine_test chemistry)
-
 endif (MPQC_UNITTEST)
 
   CONFIGURE_FILE(

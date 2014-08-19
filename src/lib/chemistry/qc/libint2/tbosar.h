@@ -37,7 +37,7 @@
 #include <chemistry/qc/libint2/int2e.h>
 #include <chemistry/qc/libint2/macros.h>
 #include <chemistry/qc/libint2/libint2_utils.h>
-#include <libint2/libint2.h>
+#include <libint2.h>
 #include <libint2/boys.h>
 #include <chemistry/qc/libint2/core_ints_engine.h>
 

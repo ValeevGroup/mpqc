@@ -78,7 +78,7 @@ BOOST_AUTO_TEST_CASE(cldfgengine_test){
   C.set_all_local(0.77);
   std::cout << "C = \n" << C << std::endl;
 
-  ClDFGEngine::TAMatrix D = C("i,k") * C("j,k");
+  ClDFGEngine::TAMatrix D; D("i,j") = C("i,k") * C("j,k");
   std::cout << "D = \n" << D << std::endl;
 
   sc::Ref<sc::IntegralLibint2> ints = new sc::IntegralLibint2(sc::Ref<sc::KeyVal>(akv));

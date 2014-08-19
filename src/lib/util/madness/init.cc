@@ -35,7 +35,7 @@
 # ifndef WORLD_INSTANTIATE_STATIC_TEMPLATES
 # define WORLD_INSTANTIATE_STATIC_TEMPLATES
 # endif
-# include <world/world.h>
+# include <madness/world/world.h>
 #endif
 
 #include <util/madness/init.h>

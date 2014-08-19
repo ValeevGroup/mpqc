@@ -68,6 +68,20 @@ R12IntEval::V_diag_ta() {
 }
 
 void
+R12IntEval::compute_TA_mp2f12_1rdm() {
+  SingleReference_R12Intermediates<double> srr12intrmds(madness::World::get_default(),
+                                                        this->r12world());
+
+  bool vir_cabs_coupling = true; // need CABS singles into vir+CABS? set to true
+  this->compute_emp2_cabs_singles_noncanonical(vir_cabs_coupling);
+  srr12intrmds.set_T1_cabs(this->T1_cabs_[Alpha]);
+
+  MPQC_ASSERT(this->orbital_registry()->key_exists("A'"));
+
+  srr12intrmds.compute_multipole();
+}
+
+void
 R12IntEval::compute_ccr12_1rdm(const RefSCMatrix& T1, const Ref<DistArray4> (&T2)[NSpinCases2])
 {
   SingleReference_R12Intermediates<double> srr12intrmds(madness::World::get_default(),

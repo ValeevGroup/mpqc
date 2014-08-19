@@ -268,6 +268,8 @@ namespace sc {
       */
       TArray2 rdm1();
 
+      // compute multipole
+      void compute_multipole();
       // compute B^p_q which is summed over k
       TArray2 Bpk_qk(const char* p, const char* q);
       TArray4 Bpr_qs(const char* p, const char* q);

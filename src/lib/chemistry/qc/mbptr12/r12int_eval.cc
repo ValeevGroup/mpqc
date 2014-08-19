@@ -2202,6 +2202,13 @@ R12IntEval::compute()
   }
 #endif
 
+#if defined(HAVE_MPQC3_RUNTIME)
+  if (compute_1rdm()) {
+    ExEnv::out0() << indent << "Compute MP2-F12 one-electron properties" << std::endl;
+    compute_TA_mp2f12_1rdm();
+  }
+#endif
+
   init_intermeds_();
 
   // different expressions hence codepaths depending on relationship between OBS, VBS, and RIBS

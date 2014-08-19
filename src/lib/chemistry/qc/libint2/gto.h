@@ -28,8 +28,8 @@
 #ifndef _mpqc_src_lib_chemistry_qc_libint2_gto_h
 #define _mpqc_src_lib_chemistry_qc_libint2_gto_h
 
-#include <libint2/libint2.h>
-#include <libint2_config.h>
+#include <libint2.h>
+#include <libint2/config.h>
 #include <vector>
 
 namespace sc {

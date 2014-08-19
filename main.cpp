@@ -6,15 +6,15 @@
 #include "molecule/molecule.h"
 #include "molecule/clustering_functions.h"
 #include <vector>
-#include "matrix/dmhm.h"
 #include <chrono>
 #include "molecule/Atom.h"
 #include <Accelerate/Accelerate.h>
 #include "include/tbb.h"
-#include <tiledarray.h>
+#include "include/tiledarray.h"
 
 int main(int argc, char** argv) {
   madness::World &world = madness::initialize(argc, argv);
+
   int nthreads = 1;
   std::cout << "input nthreads:";
   std::cin >> nthreads;

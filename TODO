@@ -1,4 +1,7 @@
 
-Properly find DMHM library
-Properly find TiledArray
-Properly find MPQC
+add FindLIBINT module.
+use MPQC for basis sets
+construct libint shells given 
+  basis set and molecule.
+
+

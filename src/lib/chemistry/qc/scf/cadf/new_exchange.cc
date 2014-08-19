@@ -581,6 +581,8 @@ CADFCLHF::new_compute_K()
         //   we can just grab them
         if(ish_is_local and (jblk.center == ish.center or my_part.cluster->has_local_coefs_for_atom(jblk.center))) {
 
+          mt_timer.enter("copy local coefficients", ithr);
+
           // TODO Use Eigen::Map objects with strides to vectorize this better
           // Copy over the jsblk atom coefficients
           for(BLK jsblk : shell_block_range(jblk, Contiguous)) {
@@ -604,6 +606,8 @@ CADFCLHF::new_compute_K()
               }
             }
           }
+
+          mt_timer.exit(ithr);
 
         }
 

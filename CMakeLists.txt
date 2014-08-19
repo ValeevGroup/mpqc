@@ -52,7 +52,7 @@ INCLUDE_DIRECTORIES(${HeirChem_SOURCE_DIR}/matrix)
 
 add_subdirectory(${HeirChem_SOURCE_DIR}/molecule)
 add_subdirectory(${HeirChem_SOURCE_DIR}/include)
-add_subdirectory(${HeirChem_SOURCE_DIR}/tests)
+add_subdirectory(${HeirChem_SOURCE_DIR}/matrix)
 
 LINK_DIRECTORIES(${HeirChem_BINARY_DIR}/molecule)
 LIST(APPEND HeirChem_LIBRARIES molecule)

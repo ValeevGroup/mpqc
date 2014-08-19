@@ -127,10 +127,11 @@ double CADFCLHF::get_distance_factor(
     const ShellData& ish, const ShellData& jsh, const ShellData& Xsh
 ) const
 {
-  constexpr double pi_cubed = M_PI * M_PI * M_PI;
-  //static const double dist_factor_constant = pow(pi_cubed, 1.0/4.0) * M_SQRT2;
+
   constexpr double dist_factor_constant = M_PI * M_SQRT2;
+
   double dist_factor;
+
   if(linK_use_distance_){
     const double R = get_R(ish, jsh, Xsh);
     // No distance screening if R is less than 1.0
@@ -141,11 +142,6 @@ double CADFCLHF::get_distance_factor(
       if(ish.center == Xsh.center) {
         r_expon = 0.0;
       }
-      //else {
-      //  const double l_i = double(gbs_->shell(ish).am(0));
-      //  const double l_j = double(gbs_->shell(jsh).am(0));
-      //  r_expon += abs(l_i-l_j);
-      //}
     }
     if(subtract_extents_) {
       //dist_factor = 1.0 / (
@@ -161,66 +157,19 @@ double CADFCLHF::get_distance_factor(
     }
     if(dist_factor > 1.0 or dist_factor < 0.0) return 1.0;
 
-    // Remove the (X|X)^(1/2) part and replace it with the l-dependent and zeta-dependent scaling factors
+    // Remove the (X|X)^(1/2) part and replace it with the l-dependent and
+    //  zeta-dependent scaling factors
     dist_factor /= schwarz_df_[Xsh];
     dist_factor *= dist_factor_constant;
     dist_factor *= sqrt(::cadf::detail::double_fact_2_n_minus_1((ull)l_X));
 
+    // Contribution from the DF exponent
     const double q = effective_df_exponents_[Xsh];
     dist_factor *= pow(q, -(2.0*l_X + 3.0)/4.0);
 
-
+    // Contribution from the pair exponents
     const double p = effective_pair_exponents_.at({ish, jsh});
-    //if(ish.center == jsh.center) {
-    //  dist_factor *= pow(p/4, -(2.0*(r_expon - l_X - 1) + 3.0)/4.0);
-    //  dist_factor *= sqrt(::cadf::detail::double_fact_2_n_minus_1((ull)(r_expon - l_X - 1)));
-    //}
-    //else {
     dist_factor *= pow(p, -1.0/4.0);
-    //dist_factor *= pow(M_E, -(log(p)/4));
-    //}
-
-    //dist_factor *= pow(2.0*r_expon - 3.0, 2.0);
-    //dist_factor *= pow(std::max(r_expon-1.0, 1.0), 2.0);
-    //if(r_expon > 2.0) {
-    // Equations (9.8.10) and (9.7.24) in Helgaker
-    //dist_factor *= ::cadf::detail::double_fact_2_n_minus_1((ull)r_expon - 1) / pow(2.0, (r_expon - 1));
-    //dist_factor *= ::cadf::detail::double_fact_2_n_minus_1((ull)r_expon - 1) / pow(2.0, (r_expon - 1));
-    //dist_factor *= ::cadf::detail::double_fact_2_n_minus_1((ull)r_expon - 1) / pow(2.0, 2*(r_expon - 1));
-    //dist_factor *= abs(pow((2 * l_X + 1), 2.0) / (2 * l_X - 1));
-    //dist_factor *= abs(pow((2 * l_X + 1), 2.0) / (2 * l_X - 1));
-    //dist_factor *= ::cadf::detail::double_fact_2_n_minus_1((ull)l_X) / pow(2.0, l_X + 1);
-
-    //dist_factor *= sqrt(::cadf::detail::double_fact_2_n_minus_1((ull)l_X) / pow(2.0, l_X));
-    //dist_factor *= dist_factor_constant;
-    //dist_factor *= sqrt(::cadf::detail::double_fact_2_n_minus_1((ull)l_X));
-
-    ////const double p = effective_pair_exponents_.at({ish, jsh});
-    ////const double q = effective_df_exponents_[Xsh];
-    ////if(l_X > 0) {
-    //  const double q = effective_df_exponents_[Xsh];
-    //  dist_factor *= pow(q, -(2.0*l_X + 3.0)/4.0);
-    //  dist_factor /= schwarz_df_[Xsh];
-    ////}
-    ////dist_factor *= l_factors[(int)l_X];
-
-    //dist_factor *= pi_cubed / (pow(p, 3.0/2.0) * pow(q, 3.0/2.0));
-    //const double alpha = p * q / (p + q);
-    ////////dist_factor *= pow(2.0, -r_expon + 1.0);
-    //dist_factor *= pow(alpha, -r_expon + 1.0);
-    //dist_factor *= pow(r_expon, p);
-    //const double other_expon = r_expon - 1.0 - l_X;
-    //if(other_expon > 0.9) {
-    //  dist_factor *= ::cadf::detail::double_fact_2_n_minus_1((ull)other_expon) / pow(2.0, other_expon);
-    //  dist_factor *= pow(p, -other_expon);
-    //}
-    ////}
-    ////dist_factor *= (2.0*r_expon - 1.0) / (4.0 * M_PI);
-    ////dist_factor *= (2.0*r_expon - 1.0) / (4.0 * M_PI);
-    //const double schwarz_bound = schwarz_df_[Xsh] * schwarz_frob_(ish, jsh);
-    //if(dist_factor * schwarz_bound > schwarz_bound) {
-    //  return 1.0
-    //}
 
     // If the distance factor actually makes the bound larger, then ignore it.
     dist_factor = std::min(1.0, dist_factor);
@@ -249,11 +198,6 @@ double CADFCLHF::get_R(
       rv = 1.0; // Don't do distance screening
     }
 
-    //if(subtract_extents_) {
-    //  //rv -= ext_a + ext_b;
-    //  //rv -= pow(ext_a, 1.0/double(dfbs_->shell(Xsh).am(0)+1));
-    //}
-
   }
   if(rv < 1.0 and not ignore_extents) {
     rv = 1.0;
@@ -272,6 +216,9 @@ CADFCLHF::compute_K()
   if(new_exchange_algorithm_) {
     return new_compute_K();
   }
+
+  // New exchange algorithm is the default, all of this old code is deprecated and may be
+  //   removed at any time!
 
   /*=======================================================================================*/
   /* Setup                                                 		                        {{{1 */ #if 1 // begin fold

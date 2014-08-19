@@ -340,6 +340,8 @@ class CADFCLHF: public CLHF {
     //@{
     /// Number of threads to run on (defaults to threadgrp_->nthread());
     int nthread_;
+    /// The default screening threshold to use if one is not given for any specific threshold
+    double screening_thresh_ = 1e-7;
     /// The threshold for including pairs in the pair list using half of the schwarz bound
     double pair_screening_thresh_;
     /// Threshold for including a given maximum contribution to the K matrix
@@ -352,7 +354,7 @@ class CADFCLHF: public CLHF {
      */
     double distance_screening_thresh_;
     /// Whether or not to do LinK style screening
-    bool do_linK_;
+    bool do_linK_ = true;
     /** Reorder the density matrix to block all rho in a given $L^{(3})_{\mu X}$ together
      *  as one contraction.  Defaults to true if screen_B is true, false otherwise.
      */
@@ -381,14 +383,14 @@ class CADFCLHF: public CLHF {
      *  explicitly set to false (which gives *substantially* worse screening),
      *  an N_shell^2*N_atom contraction will still be done.
      */
-    bool use_norms_sigma_ = true;
+    bool use_norms_sigma_ = false;
     /** When using norms for L_DC, we can also do a N_shell^2*N_atom contraction
      *  that is slightly cheaper but screens better than the full column norms
      *  (only relevent if use_norms_sigma = true).  Defaults to true.  Mostly
      *  useful to make the scaling of the L_DC computation look better, even though
      *  it isn't a big part of the computation.
      */
-    bool sigma_norms_chunk_by_atoms_ = true;
+    bool sigma_norms_chunk_by_atoms_ = false;
     /** Print a lot of stuff in an XML debug file.  Also, if compiled with assertions
      *  enabled, exit after the first iteration (by asserting false).  Not for end users.
      */
@@ -412,10 +414,10 @@ class CADFCLHF: public CLHF {
      *  avoid non-well-separated screening.  Subtracting extents leads to less "tight" screening,
      *  but it is much safer, particularly for higher angular momentum.  Defaults to true.
      */
-    bool subtract_extents_ = true;
+    bool subtract_extents_ = false;
     /** The CFMM well-separatedness thresh.  Defaults to 1e-1, which is the recommended value by
      *  Ochsenfeld et. al.
-     */
+     */;
     double well_separated_thresh_ = 1e-1;
     /**
      * Use the exact semidiagonal integrals in the coulomb matrix computation.
@@ -460,16 +462,16 @@ class CADFCLHF: public CLHF {
     /** Screen the B intermediate formation when building the exchange matrix.  This is recommended
      *  for large and most medium-sized molecules.  Ignored if do_linK = false.
      */
-    bool screen_B_ = false;
+    bool screen_B_ = true;
     /** Distribute the coefficients among nodes if true.
      *  (Note: Some replication is still necessary.  The decrease in coefficient memory
      *  is currently only proportional to sqrt(p)/2).  Note that as currently implemented,
      *  the number of mpi tasks *must* be a perfect square for this to work.
      *  Not implemented for do_linK = false.
      */
-    bool distribute_coefficients_ = true;
+    bool distribute_coefficients_ = false;
     /// Should we use distance factor when we screen the B contraction?
-    double screen_B_use_distance_ = false;
+    double screen_B_use_distance_ = true;
     /** Screening thresh for B intermediate construction in the exchange
      *  matrix build.  Defaults to full_screening_thresh.
      */

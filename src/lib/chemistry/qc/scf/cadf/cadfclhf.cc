@@ -124,24 +124,24 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   //----------------------------------------------------------------------------//
   nthread_ = keyval->intvalue("nthread", KeyValValueint(threadgrp_->nthread()));
   //----------------------------------------------------------------------------//
-  // get the bound for filtering pairs.  This should be smaller than the general
-  //   Schwarz bound.
-  // TODO Figure out a reasonable default value for this
-  pair_screening_thresh_ = keyval->doublevalue("pair_screening_thresh", KeyValValuedouble(1e-8));
-  full_screening_thresh_ = keyval->doublevalue("full_screening_thresh", KeyValValuedouble(1e-8));
-  distance_screening_thresh_ = keyval->doublevalue("distance_screening_thresh", KeyValValuedouble(full_screening_thresh_*1e-3));
+  screening_thresh_ = keyval->doublevalue("screening_thresh", KeyValValuedouble(screening_thresh_));
+  pair_screening_thresh_ = keyval->doublevalue("pair_screening_thresh", KeyValValuedouble(screening_thresh_));
+  full_screening_thresh_ = keyval->doublevalue("full_screening_thresh", KeyValValuedouble(screening_thresh_));
+  distance_screening_thresh_ = keyval->doublevalue("distance_screening_thresh", KeyValValuedouble(full_screening_thresh_));
   B_screening_thresh_ = keyval->doublevalue("B_screening_thresh", KeyValValuedouble(full_screening_thresh_));
   d_over_screening_thresh_ = keyval->doublevalue("d_over_screening_thresh", KeyValValuedouble(B_screening_thresh_));
-  d_under_screening_thresh_ = keyval->doublevalue("d_under_screening_thresh", KeyValValuedouble(B_screening_thresh_*1e-1));
-  coef_screening_thresh_ = keyval->doublevalue("coef_screening_thresh", KeyValValuedouble(1e-8));
+  d_under_screening_thresh_ = keyval->doublevalue("d_under_screening_thresh", KeyValValuedouble(B_screening_thresh_));
+  // Unused?
+  coef_screening_thresh_ = keyval->doublevalue("coef_screening_thresh", KeyValValuedouble(screening_thresh_));
+  full_screening_thresh_min_ = keyval->doublevalue("full_screening_thresh_min", KeyValValuedouble(full_screening_thresh_*1e-5));
+  // Obscure
   full_screening_expon_ = keyval->doublevalue("full_screening_expon", KeyValValuedouble(1.0));
-  full_screening_thresh_min_ = keyval->doublevalue("full_screening_thresh_min", KeyValValuedouble(full_screening_thresh_min_));
   distance_damping_factor_ = keyval->doublevalue("distance_damping_factor", KeyValValuedouble(1.0));
   //----------------------------------------------------------------------------//
   // For now, use coulomb metric.  We can easily make this a keyword later
   metric_oper_type_ = TwoBodyOper::eri;
   //----------------------------------------------------------------------------//
-  do_linK_ = keyval->booleanvalue("do_linK", KeyValValueboolean(false));
+  do_linK_ = keyval->booleanvalue("do_linK", KeyValValueboolean(do_linK_));
   screen_B_ = keyval->booleanvalue("screen_B", KeyValValueboolean(screen_B_));
   safe_extents_ = keyval->booleanvalue("safe_extents", KeyValValueboolean(safe_extents_));
   linK_block_rho_ = keyval->booleanvalue("linK_block_rho", KeyValValueboolean(screen_B_));
@@ -303,6 +303,7 @@ CADFCLHF::print(ostream&o) const
   o << indent << "scale_screening_thresh = " << bool_str(scale_screening_thresh_) << endl;
   o << indent << "screen_B = " << bool_str(screen_B_) << endl;
   o << indent << "screen_B_use_distance = " << bool_str(screen_B_use_distance_) << endl;
+  o << indent << "screening_thresh = " << double_str(screening_thresh_) << endl;
   o << indent << "shuffle_J_assignments = " << bool_str(shuffle_J_assignments_) << endl;
   o << indent << "shuffle_L_3_keys = " << bool_str(shuffle_L_3_keys_) << endl;
   o << indent << "sigma_norms_chunk_by_atoms = " << bool_str(sigma_norms_chunk_by_atoms_) << endl;
@@ -358,8 +359,6 @@ CADFCLHF::done_threads(){
 
 //////////////////////////////////////////////////////////////////////////////////
 
-//////////////////////////////////////////////////////////////////////////////////
-
 void
 CADFCLHF::save_data_state(StateOut& so)
 {
@@ -379,7 +378,9 @@ CADFCLHF::ao_fock(double accuracy)
   /* Setup                                                 		                        {{{1 */ #if 1 // begin fold
   //---------------------------------------------------------------------------------------//
   Timer timer("ao_fock");
-  //---------------------------------------------------------------------------------------//
+
+  /*-----------------------------------------------------*/
+  /* Count ints only mode                           {{{2 */ #if 2 // begin fold
   if(count_ints_only_) {
     iter_stats_ = &(stats_->next_iteration());
     iter_stats_->set_nthread(nthread_);
@@ -395,15 +396,6 @@ CADFCLHF::ao_fock(double accuracy)
         }
       }
     }
-    //typedef typename decltype(effective_pair_exponents_)::value_type map_val;
-    //auto&& min_max_pair_exponent = std::minmax_element(
-    //    effective_pair_exponents_.begin(), effective_pair_exponents_.end(),
-    //    [](const map_val& a, const map_val& b) {
-    //      return a.second < b.second;
-    //    }
-    //);
-
-    //auto&& min_max_pair_exponent = std::minmax_element(effective_df_exponents_.begin(), effective_df_exponents_.end());
     double min_pair_exponent = std::numeric_limits<double>::infinity();
     double max_pair_exponent = 0;
     for(auto exp : effective_df_exponents_) {
@@ -444,10 +436,18 @@ CADFCLHF::ao_fock(double accuracy)
     cl_fock_.result_noupdate().assign(hcore_);
     return;
   }
+  /*******************************************************/ #endif //2}}}
+  /*-----------------------------------------------------*/
+
   if(xml_debug_){
     begin_xml_context("compute_fock", "compute_fock.xml");
   }
+
   if(not have_coefficients_) {
+
+    /*-----------------------------------------------------*/
+    /* Precompute the coefficients                    {{{2 */ #if 2 // begin fold
+
     ints_computed_locally_ = 0;
     compute_coefficients();
     decltype(ints_computed_locally_.load()) ints_computed = ints_computed_locally_;
@@ -466,38 +466,59 @@ CADFCLHF::ao_fock(double accuracy)
         ptree& child = writer.insert_child(parent, hcore, "hcore");
       }, hcore_);
     }
+
+    /*******************************************************/ #endif //2}}}
+    /*-----------------------------------------------------*/
+
   }
+
   //---------------------------------------------------------------------------------------//
+
   timer.enter("misc");
-  iter_stats_ = &(stats_->next_iteration());
-  if(xml_screening_data_) {
-    iter_stats_->set_nthread(nthread_);
+  if(print_screening_stats_) {
+    iter_stats_ = &(stats_->next_iteration());
+    if(xml_screening_data_) {
+      iter_stats_->set_nthread(nthread_);
+    }
   }
+
   //----------------------------------------//
   // transform the density difference to the AO basis
   RefSymmSCMatrix dd = cl_dens_diff_;
   if(xml_debug_) write_as_xml("cl_dens_diff_", cl_dens_diff_);
   Ref<PetiteList> pl = integral()->petite_list();
   cl_dens_diff_ = pl->to_AO_basis(dd);
+
   //----------------------------------------//
   double gmat_accuracy = accuracy;
   if (min_orthog_res() < 1.0) { gmat_accuracy *= min_orthog_res(); }
+
   //----------------------------------------//
   // copy over the density
   D_ = cl_dens_diff_.copy().convert2RefSCMat();
   D_.scale(0.5);
+
   if(xml_debug_) write_as_xml("D", D_);
+
   /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
+
+
   /*=======================================================================================*/
   /* Form G                                                		                        {{{1 */ #if 1 // begin fold
   //---------------------------------------------------------------------------------------//
+
   // compute J and K
   timer.change("build");
   RefSCMatrix G;
   {
     ints_computed_locally_ = 0;
     if(xml_debug_) begin_xml_context("compute_J");
+
+    // Do the actual computation of J
     RefSCMatrix J = compute_J();
+
+    // Log stuff for debugging and profiling purposes
     if(xml_debug_) write_as_xml("J", J), end_xml_context("compute_J");
     if(iter_log_.nonnull()) {
       iter_log_->log_iter_misc([J](ptree& parent, const XMLWriter& writer) {
@@ -505,12 +526,14 @@ CADFCLHF::ao_fock(double accuracy)
         child.put("<xmlattr>.name", "Coulomb matrix");
       });
     }
-    G = J.copy();
     decltype(ints_computed_locally_.load()) ints_computed = ints_computed_locally_;
     scf_grp_->sum(&ints_computed, 1);
     if(scf_grp_->me() == 0) {
-      ExEnv::out0() << "        Computed " << ints_computed << " integrals for J part" << endl;
+      ExEnv::out0() << "Computed " << ints_computed << " integrals for J part" << endl;
     }
+
+    G = J.copy();
+
   }
   {
     ints_computed_locally_ = 0;

@@ -11,8 +11,10 @@
 #include "molecule/Atom.h"
 #include <Accelerate/Accelerate.h>
 #include "include/tbb.h"
+#include <tiledarray.h>
 
-int main() {
+int main(int argc, char** argv) {
+  madness::World &world = madness::initialize(argc, argv);
   int nthreads = 1;
   std::cout << "input nthreads:";
   std::cin >> nthreads;
@@ -54,5 +56,6 @@ int main() {
 
   std::cout << "Sum of distances = " << sum << std::endl;
 
+  madness::finalize();
   return 0;
 }

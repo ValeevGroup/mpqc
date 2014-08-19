@@ -2,46 +2,50 @@ if (MPQC_INCLUDE_DIRS)
 
   set(MPQC_FOUND TRUE)
 
-else ()
+else (MPQC_INCLUDE_DIRS)
 
-  SET(MPQC_INCLUDE_DIR "")
-  find_path(MPQC_INCLUDE_DIR NAMES mpqc_config.h
-      PATHS
-      ${MPQC_PATH}
-      ${MPQC_PATH}/include
-      ${MPQC_PATH}/include/mpqc
-      PATH_SUFFIXES mpqc
+  set (MPQC_FOUND "NO")
+
+  if(MPQC_INSTALL_DIR)
+    set(_MPQC_INSTALL_DIR ${MPQC_INSTALL_DIR})
+  endif(MPQC_INSTALL_DIR)
+
+  set(MPQC_INC_SEARCH_DIR ${_MPQC_INSTALL_DIR}/include)
+
+  find_path(MPQC_INCLUDE_DIR NAME mpqc/mpqc_config.h
+      HINTS
+      ${MPQC_INC_SEARCH_DIR}
     )
 
+  mark_as_advanced(MPQC_INCLUDE_DIR)
+
+  set(_MPQC_LIB_NAME "chemistry")
+  set(_MPQC_LIBRARY_DIR ${_MPQC_INSTALL_DIR}/lib)
+
+  find_library(MPQC_LIBRARY ${_MPQC_LIB_NAME} HINTS ${_MPQC_LIBRARY_DIR})
+  get_filename_component(MPQC_LIBRARY_DIR ${MPQC_LIBRARY} PATH)
+
+  mark_as_advanced(MPQC_LIBRARY)
+
   if(MPQC_INCLUDE_DIR)
-    set(MPQC_LIB_DIR ${MPQC_PATH}/lib)
-    set(MPQC_DEFAULT_COMPONENT_LIST chemistry)
-
-    foreach(_component ${MPQC_DEFAULT_COMPONENT_LIST})
-      list(FIND MPQC_DEFAULT_COMPONENT_LIST ${MPQC_LIB_DIR}/${_component} _comp_found)
-
-      #if(_comp_found EQUAL -1)
-      #  message(FATAL_ERROR "Invalid DMHM component: ${_component}")
-      #endif()
-
-      if(_comp_found)
-        set(MPQC_${_component}_FOUND TRUE)
-      endif()
-    endforeach()
-
-    foreach(_component ${MPQC_DEFAULT_COMPONENT_LIST})
-      if(MPQC_${_component}_FOUND)
-        list(APPEND MPQC_LIBRARIES ${_component})
-      endif()
-    endforeach()
-
-    set(MPQC_FOUND TRUE)    
-    
+    if(MPQC_LIBRARY)
+      set (MPQC_FOUND "YES")
+      set (MPQC_LIBRARIES ${MPQC_LIBRARY} CACHE PATH "MPQC libraries")
+      set (MPQC_INCLUDE_DIRS ${MPQC_INCLUDE_DIR} CACHE PATH "MPQC include directory" FORCE)
+      set (MPQC_LIBRARY_DIRS ${MPQC_LIBRARY_DIR} CACHE PATH "MPQC library directory" FORCE)
+      mark_as_advanced(MPQC_INCLUDE_DIRS MPQC_LIBRARY_DIRS MPQC_LIBRARIES)
+      message(STATUS "Found MPQC libraries ${MPQC_LIBRARIES}")
+    endif(MPQC_LIBRARY)
   endif(MPQC_INCLUDE_DIR)
 
-  mark_as_advanced(MPQC_INCLUDE_DIR MPQC_LIBRARIES)
-  SET(MPQC_INCLUDE_DIRS ${MPQC_INCLUDE_DIR} CACHE PATH "The mpqc include path.")
-  SET(MPQC_LIBRARIES ${MPQC_LIBRARIES} CACHE PATH "The mpqc library path.")
+  if(NOT MPQC_FOUND)
+    message("ERROR: MPQC NOT found!")
+    message(STATUS "Looked for MPQC in ${_MPQC_INSTALL_DIR}")
+      if(MPQC_FIND_REQUIRED)
+        message(FATAL_ERROR "Could not find MPQC library.")
+      endif(MPQC_FIND_REQUIRED)
+  endif(NOT MPQC_FOUND)
 
-endif()
+endif(MPQC_INCLUDE_DIRS)
+
 

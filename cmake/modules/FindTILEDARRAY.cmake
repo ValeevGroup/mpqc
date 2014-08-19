@@ -12,7 +12,6 @@ else (TILEDARRAY_INCLUDE_DIRS)
   message(STATUS "Searching for includes in ${TILEDARRAY_INC_SEARCH_DIR}")
 
   find_path(TILEDARRAY_INCLUDE_DIR NAMES tiledarray.h HINTS ${TILEDARRAY_INC_SEARCH_DIR})
-   message(STATUS "TiledArray includes ${TILEDARRAY_INCLUDE_DIR}")
 
   mark_as_advanced(TILEDARRAY_INCLUDE_DIR)
 
@@ -33,6 +32,10 @@ else (TILEDARRAY_INCLUDE_DIRS)
   foreach(_lib ${_TILEDARRAY_LIB_NAMES})
     set(current_lib NOTFOUND)
     find_library(current_lib ${_lib} HINTS ${_TILEDARRAY_LIBRARY_DIR})
+    if(NOT current_lib)
+      message(FATAL_ERROR "HeirChem could not find Madness lib ${_lib}")
+    endif(NOT current_lib)
+    message(STATUS " Found Madness lib: ${current_lib}")
     LIST(APPEND TILEDARRAY_LIBRARY ${current_lib})
   endforeach()
 
@@ -46,7 +49,6 @@ else (TILEDARRAY_INCLUDE_DIRS)
       set(TILEDARRAY_INCLUDE_DIRS ${TILEDARRAY_INCLUDE_DIR})
       set(TILEDARRAY_LIBRARY_DIRS ${TILEDARRAY_LIBRARY_DIR})
       mark_as_advanced(TILEDARRAY_INCLUDE_DIRS TILEDARRAY_LIBRARY_DIRS TILEDARRAY_LIBRARIES)
-      message(STATUS "Found TiledArray libraries: ${TILEDARRAY_LIBRARIES}")
     endif(TILEDARRAY_LIBRARY)
   endif(TILEDARRAY_INCLUDE_DIR)
 

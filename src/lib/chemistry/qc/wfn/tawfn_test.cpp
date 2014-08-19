@@ -40,7 +40,7 @@ public:
     int nelectron() override { return 2.0; }
     void compute() override {}
 };
-BOOST_AUTO_TEST_CASE( test_mock_wfn ){
+BOOST_AUTO_TEST_CASE( test_mock_wfn_constructor ){
 
     BOOST_MESSAGE("Testing TiledArrayWavefunction");
     // Make a molecule H2

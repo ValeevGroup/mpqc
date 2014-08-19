@@ -23,9 +23,9 @@ set(ccfiles
 )
 
 #add new features if present
-IF(MPQC_NEW_FEATURES)
+IF(MPQC_NEW_FEATURES AND MPQC_HAS_ELEMENTAL)
   LIST(APPEND ccfiles tawfn.cpp)
-ENDIF(MPQC_NEW_FEATURES)
+ENDIF(MPQC_NEW_FEATURES AND MPQC_HAS_ELEMENTAL)
 
 add_mpqc_object_library(wfn ${ccfiles})
 

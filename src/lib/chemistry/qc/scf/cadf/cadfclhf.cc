@@ -143,6 +143,7 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   //----------------------------------------------------------------------------//
   do_linK_ = keyval->booleanvalue("do_linK", KeyValValueboolean(false));
   screen_B_ = keyval->booleanvalue("screen_B", KeyValValueboolean(screen_B_));
+  safe_extents_ = keyval->booleanvalue("safe_extents", KeyValValueboolean(safe_extents_));
   linK_block_rho_ = keyval->booleanvalue("linK_block_rho", KeyValValueboolean(screen_B_));
   B_use_buffer_ = keyval->booleanvalue("B_use_buffer", KeyValValueboolean(B_use_buffer_));
   linK_use_distance_ = keyval->booleanvalue("linK_use_distance", KeyValValueboolean(false));
@@ -153,6 +154,18 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   //----------------------------------------------------------------------------//
   print_screening_stats_ = keyval->intvalue("print_screening_stats", KeyValValueint(0));
   min_atoms_per_node_ = keyval->intvalue("min_atoms_per_node", KeyValValueint(min_atoms_per_node_));
+  //----------------------------------------------------------------------------//
+  count_ints_only_ = keyval->booleanvalue("count_ints_only", KeyValValueboolean(count_ints_only_));
+  count_ints_hist_clip_edges_ = keyval->booleanvalue("count_ints_hist_clip_edges", KeyValValueboolean(count_ints_hist_clip_edges_));
+  count_ints_hist_min_ratio_ = keyval->doublevalue("count_ints_hist_min_ratio", KeyValValuedouble(count_ints_hist_min_ratio_));
+  count_ints_hist_max_ratio_ = keyval->doublevalue("count_ints_hist_max_ratio", KeyValValuedouble(count_ints_hist_max_ratio_));
+  count_ints_hist_max_int_ = keyval->doublevalue("count_ints_hist_max_int", KeyValValuedouble(count_ints_hist_max_int_));
+  count_ints_hist_bins_ = keyval->intvalue("count_ints_hist_bins", KeyValValueint(count_ints_hist_bins_));
+  count_ints_hist_ratio_bins_ = keyval->intvalue("count_ints_hist_ratio_bins", KeyValValueint(count_ints_hist_ratio_bins_));
+  count_ints_hist_distance_bins_ = keyval->intvalue("count_ints_hist_distance_bins", KeyValValueint(count_ints_hist_distance_bins_));
+  count_ints_histogram_ = keyval->booleanvalue("count_ints_histogram", KeyValValueboolean(count_ints_histogram_));
+  count_ints_use_norms_ = keyval->booleanvalue("count_ints_use_norms", KeyValValueboolean(count_ints_use_norms_));
+  count_ints_exclude_thresh_ = keyval->doublevalue("count_ints_exclude_thresh", KeyValValuedouble(count_ints_exclude_thresh_));
   //----------------------------------------------------------------------------//
   print_iteration_timings_ = keyval->booleanvalue("print_iteration_timings", KeyValValueboolean(print_iteration_timings_));
   //----------------------------------------------------------------------------//
@@ -253,6 +266,17 @@ CADFCLHF::print(ostream&o) const
   o << indent << "B_use_buffer = " << bool_str(B_use_buffer_) << endl;
   o << indent << "basis name = " << gbs_->label() << endl;
   o << indent << "coef_screening_thresh = " << double_str(coef_screening_thresh_) << endl;
+  o << indent << "count_ints_histogram = " << bool_str(count_ints_histogram_) << endl;
+  o << indent << "count_ints_only = " << bool_str(count_ints_only_) << endl;
+  o << indent << "count_ints_hist_clip_edges = " << bool_str(count_ints_hist_clip_edges_) << endl;
+  o << indent << "count_ints_hist_bins = " << int_str(count_ints_hist_bins_) << endl;
+  o << indent << "count_ints_hist_distance_bins = " << int_str(count_ints_hist_distance_bins_) << endl;
+  o << indent << "count_ints_hist_ratio_bins = " << int_str(count_ints_hist_ratio_bins_) << endl;
+  o << indent << "count_ints_hist_min_ratio = " << double_str(count_ints_hist_min_ratio_) << endl;
+  o << indent << "count_ints_hist_max_ratio = " << double_str(count_ints_hist_max_ratio_) << endl;
+  o << indent << "count_ints_hist_max_int = " << double_str(count_ints_hist_max_int_) << endl;
+  o << indent << "count_ints_use_norms = " << bool_str(count_ints_use_norms_) << endl;
+  o << indent << "count_ints_exclude_thresh = " << double_str(count_ints_exclude_thresh_) << endl;
   o << indent << "d_over_screening_thresh = " << double_str(d_over_screening_thresh_) << endl;
   o << indent << "d_under_screening_thresh = " << double_str(d_under_screening_thresh_) << endl;
   o << indent << "debug_coulomb_energy = " << bool_str(debug_coulomb_energy_) << endl;
@@ -275,6 +299,7 @@ CADFCLHF::print(ostream&o) const
   o << indent << "match_orbitals_use_svd = " << bool_str(match_orbitals_use_svd_) << endl;
   o << indent << "min_atoms_per_node = " << int_str(min_atoms_per_node_) << endl;
   o << indent << "pair_screening_thresh = " << double_str(pair_screening_thresh_) << endl;
+  o << indent << "safe_extents = " << bool_str(safe_extents_) << endl;
   o << indent << "scale_screening_thresh = " << bool_str(scale_screening_thresh_) << endl;
   o << indent << "screen_B = " << bool_str(screen_B_) << endl;
   o << indent << "screen_B_use_distance = " << bool_str(screen_B_use_distance_) << endl;
@@ -302,7 +327,7 @@ CADFCLHF::print(ostream&o) const
   }
   o << decindent;
 
-  if(xml_screening_data_) {
+  if(xml_screening_data_ or count_ints_only_) {
     begin_xml_context("cadfclhf_screening", "screening_stats.xml");
 
     write_as_xml("statistics", *stats_,
@@ -313,7 +338,8 @@ CADFCLHF::print(ostream&o) const
         {"distance_damping_factor", std::string(scprintf("%3.1e", distance_damping_factor_).str())},
         {"use_extents", (use_extents_ ? "true" : "false")},
         {"use_max_extents", (use_max_extents_ ? "true" : "false")},
-        {"subtract_extents", (subtract_extents_ ? "true" : "false")}
+        {"subtract_extents", (subtract_extents_ ? "true" : "false")},
+        {"histogram_mode", (stats_->histogram_mode ? "true" : "false")}
       })
     );
     end_xml_context("cadfclhf_screening");
@@ -354,6 +380,70 @@ CADFCLHF::ao_fock(double accuracy)
   //---------------------------------------------------------------------------------------//
   Timer timer("ao_fock");
   //---------------------------------------------------------------------------------------//
+  if(count_ints_only_) {
+    iter_stats_ = &(stats_->next_iteration());
+    iter_stats_->set_nthread(nthread_);
+    if(count_ints_histogram_) stats_->histogram_mode = true;
+    double max_distance = 0.0;
+    if(count_ints_histogram_) {
+      for(auto&& ish : shell_range(gbs_)) {
+        for(auto&& jsh : shell_range(gbs_)) {
+          for(auto&& Xsh : shell_range(dfbs_)) {
+            const double r = get_R(ish, jsh, Xsh, true);
+            if(r > max_distance) max_distance = r;
+          }
+        }
+      }
+    }
+    //typedef typename decltype(effective_pair_exponents_)::value_type map_val;
+    //auto&& min_max_pair_exponent = std::minmax_element(
+    //    effective_pair_exponents_.begin(), effective_pair_exponents_.end(),
+    //    [](const map_val& a, const map_val& b) {
+    //      return a.second < b.second;
+    //    }
+    //);
+
+    //auto&& min_max_pair_exponent = std::minmax_element(effective_df_exponents_.begin(), effective_df_exponents_.end());
+    double min_pair_exponent = std::numeric_limits<double>::infinity();
+    double max_pair_exponent = 0;
+    for(auto exp : effective_df_exponents_) {
+      if(exp > max_pair_exponent) max_pair_exponent = exp;
+      if(exp < min_pair_exponent) min_pair_exponent = exp;
+    }
+    const int max_am = dfbs_->max_angular_momentum();
+    for(int l = 0; l <= max_am; ++l) {
+      iter_stats_->int_am_counts.push_back(0.0);
+      iter_stats_->int_am_ratio_sums.push_back(0.0);
+      iter_stats_->int_am_ratio_log_sums.push_back(0.0);
+    }
+    for(int am = 0; am < dfbs_->max_angular_momentum()+1; ++am) {
+      iter_stats_->distance_hists.emplace_back(
+          count_ints_hist_distance_bins_, 0.0, max_distance,
+          count_ints_hist_ratio_bins_, count_ints_hist_min_ratio_, count_ints_hist_max_ratio_,
+          false, true, count_ints_hist_clip_edges_
+      );
+      iter_stats_->distance_noschwarz_hists.emplace_back(
+          count_ints_hist_distance_bins_, 0.0, max_distance,
+          count_ints_hist_ratio_bins_, count_ints_hist_min_ratio_, count_ints_hist_max_ratio_,
+          false, true, count_ints_hist_clip_edges_
+      );
+      iter_stats_->values_hists.emplace_back(
+          count_ints_hist_bins_, count_ints_exclude_thresh_, count_ints_hist_max_int_,
+          count_ints_hist_bins_, count_ints_exclude_thresh_, count_ints_hist_max_int_,
+          true, true, count_ints_hist_clip_edges_
+      );
+      iter_stats_->exponent_ratio_hists.emplace_back(
+          //count_ints_hist_bins_, min_max_pair_exponent.first->second, min_max_pair_exponent.second->second,
+          count_ints_hist_bins_, min_pair_exponent, max_pair_exponent,
+          count_ints_hist_ratio_bins_, count_ints_hist_min_ratio_, count_ints_hist_max_ratio_,
+          true, true, count_ints_hist_clip_edges_
+      );
+    }
+    count_ints();
+    // Just give it something to keep it happy
+    cl_fock_.result_noupdate().assign(hcore_);
+    return;
+  }
   if(xml_debug_){
     begin_xml_context("compute_fock", "compute_fock.xml");
   }

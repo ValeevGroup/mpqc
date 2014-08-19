@@ -121,6 +121,18 @@ SCF::savestate_iter(int iter)
   }
 }
 
+void
+SCF::iter_print(int iter,
+                double energy,
+                double delta,
+                double walltime,
+                std::ostream& os) {
+  os << sc::indent
+     << scprintf("iter %5d energy = %20.12f delta = %8.3e  (%8.2f sec)",
+                 iter+1, energy, delta, walltime)
+     << std::endl;
+}
+
 double
 SCF::compute_vector(double& eelec, double nucrep)
 {
@@ -156,6 +168,8 @@ SCF::compute_vector(double& eelec, double nucrep)
 
     if(iter_log_.nonnull()) iter_log_->new_iteration();
 
+    const double wall_time_start = RegionTimer::get_wall_time();
+
     // form the density from the current vector
     tim.enter("density");
     delta = new_density();
@@ -189,10 +203,6 @@ SCF::compute_vector(double& eelec, double nucrep)
     eelec = scf_energy();
     double eother = 0.0;
     if (accumddh_) eother = accumddh_->e();
-    ExEnv::out0() << indent
-                  << scprintf("iter %5d energy = %15.10f delta = %10.5e",
-                              iter+1, eelec+eother+nucrep, delta)
-                  << endl;
 
     if(iter_log_.nonnull()) {
       using boost::property_tree::ptree;
@@ -205,7 +215,13 @@ SCF::compute_vector(double& eelec, double nucrep)
     // check convergence
     if (delta < desired_value_accuracy()
         && accuracy < desired_value_accuracy()
-        && iter+1 >= miniter_ ) break;
+        && iter+1 >= miniter_ ) {
+      const double wall_time_end = RegionTimer::get_wall_time();
+      iter_print(iter,
+                 eelec+eother+nucrep, delta, wall_time_end - wall_time_start,
+                 ExEnv::out0());
+      break;
+    }
 
     // now extrapolate the fock matrix
     tim.enter("extrap");
@@ -361,6 +377,11 @@ SCF::compute_vector(double& eelec, double nucrep)
     }
 
     savestate_iter(iter);
+
+    const double wall_time_end = RegionTimer::get_wall_time();
+    iter_print(iter,
+               eelec+eother+nucrep, delta, wall_time_end - wall_time_start,
+               ExEnv::out0());
   }
 
   eigenvalues_ = evals;

@@ -94,6 +94,44 @@ do_threaded(int nthread, const std::function<void(int)>& f){
   compute_threads.join_all();
 }
 
+namespace cadf {
+
+class Histogram2d {
+  public:
+    typedef Eigen::Matrix<uli, Eigen::Dynamic, Eigen::Dynamic> matrix_t;
+
+  private:
+
+    matrix_t hist_mat_;
+    double interval_h_, interval_v_;
+    bool log_h_, log_v_;
+    int nbins_h_, nbins_v_;
+    bool clip_edges_;
+
+  public:
+
+    double min_h_, max_h_, min_v_, max_v_;
+
+    Histogram2d(
+        int nbins_h, double min_h, double max_h,
+        int nbins_v, double min_v, double max_v,
+        bool log_h=false, bool log_v=false,
+        bool clip_edges=false
+    );
+
+    const matrix_t& matrix() const { return hist_mat_; }
+
+    void insert_value(double value_h, double value_v);
+
+    void accumulate(const Histogram2d& other) {
+      hist_mat_ += other.hist_mat_;
+    }
+
+};
+
+
+}
+
 //============================================================================//
 //============================================================================//
 //============================================================================//
@@ -169,6 +207,8 @@ class CADFCLHF: public CLHF {
         typedef std::atomic_uint_fast64_t accumulate_t;
         typedef decltype(accumulate_t().load()) count_t;
 
+        bool histogram_mode = false;
+
         struct Iteration {
 
           public:
@@ -213,6 +253,13 @@ class CADFCLHF: public CLHF {
             ThreadReplicated<std::vector<double>> int_distances;
             ThreadReplicated<std::vector<std::tuple<int, int, int>>> int_indices;
             ThreadReplicated<std::vector<std::tuple<int, int, int>>> int_ams;
+            std::vector<cadf::Histogram2d> values_hists;
+            std::vector<cadf::Histogram2d> distance_hists;
+            std::vector<cadf::Histogram2d> distance_noschwarz_hists;
+            std::vector<cadf::Histogram2d> exponent_ratio_hists;
+            std::vector<ull> int_am_counts;
+            std::vector<double> int_am_ratio_sums;
+            std::vector<double> int_am_ratio_log_sums;
 
             void set_nthread(int nthr) {
               int_screening_values.set_nthread(nthr);
@@ -492,6 +539,22 @@ class CADFCLHF: public CLHF {
      *  coefficients fit into memory.  Defaults to 3.
      */
     int min_atoms_per_node_ = 3;
+    /** Just count and log the integrals and their screening estimates
+     */
+    bool count_ints_only_ = false;
+    bool count_ints_use_norms_ = true;
+    double count_ints_exclude_thresh_ = 1e-16;
+    bool count_ints_histogram_ = false;
+    int count_ints_hist_distance_bins_ = 25;
+    int count_ints_hist_ratio_bins_ = 300;
+    int count_ints_hist_bins_ = 200;
+    double count_ints_hist_min_ratio_ = 1e-8;
+    double count_ints_hist_max_ratio_ = 1e8;
+    double count_ints_hist_max_int_ = 1e3;
+    bool count_ints_hist_clip_edges_ = false;
+    /** Use extents that look like erfc^-1(cutoff^(1+am)) * sqrt(2/alpha)
+     */
+    bool safe_extents_ = false;
     //@}
 
     std::shared_ptr<ScreeningStatistics> stats_;
@@ -567,6 +630,8 @@ class CADFCLHF: public CLHF {
 
     RefSCMatrix compute_K();
 
+    void count_ints();
+
     RefSCMatrix new_compute_K();
 
     double get_distance_factor(
@@ -578,7 +643,8 @@ class CADFCLHF: public CLHF {
     double get_R(
         const ShellData& ish,
         const ShellData& jsh,
-        const ShellData& Xsh
+        const ShellData& Xsh,
+        bool ignore_extents = false
     ) const;
 
     void compute_coefficients();
@@ -838,7 +904,9 @@ class CADFCLHF: public CLHF {
 
     // Extents of the various pairs
     fast_map<std::pair<int, int>, double> pair_extents_;
+    fast_map<std::pair<int, int>, double> effective_pair_exponents_;
     std::vector<double> df_extents_;
+    std::vector<double> effective_df_exponents_;
 
     /// Coefficients storage.  Not accessed directly
     double* __restrict__ coefficients_data_ = 0;

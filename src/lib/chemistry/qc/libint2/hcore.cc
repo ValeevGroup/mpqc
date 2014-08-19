@@ -54,6 +54,10 @@ void Int1eLibint2::hcore(int sh1, int sh2)
 
 void Int1eLibint2::hcore_full_general_()
 {
+  Ref<Molecule> mol1 = bs1_->molecule();
+  Ref<Molecule> mol2 = bs2_->molecule();
+  const bool mol1_eq_mol2 = (mol1 == mol2);
+
   int maxam1 = int_shell1_->max_am();
   int maxam2 = int_shell2_->max_am();
   int z1weight = 1;
@@ -151,16 +155,15 @@ void Int1eLibint2::hcore_full_general_()
 	}
       }
 
-      if (bs1_->molecule() != bs2_->molecule()) {
-	//	    fail();
-      }
+      const int natom1 = mol1->natom();
+      const int natom2 = mol2->natom();
+      const int natom = (mol1_eq_mol2) ? natom1 : natom1 + natom2;
 
-      int natom = bs1_->ncenter();
       for(int atom=0; atom<natom; atom++) {
-	// if charge is 0 - skip to the next one
-        double Z = bs1_->molecule()->charge(atom);
-	if (Z == 0.0)
-	  continue;
+        // if charge is 0 - skip to the next one
+        const double Z = mol1_eq_mol2 ? mol1->charge(atom) : mol2->charge(atom - natom1);
+        if (Z == 0.0)
+          continue;
 	PC[0] = P[0] - bs1_->r(atom,0);
 	PC[1] = P[1] - bs1_->r(atom,1);
 	PC[2] = P[2] - bs1_->r(atom,2);
@@ -208,6 +211,10 @@ void Int1eLibint2::hcore_full_general_()
 
 void Int1eLibint2::hcore_sameam_general_()
 {
+  Ref<Molecule> mol1 = bs1_->molecule();
+  Ref<Molecule> mol2 = bs2_->molecule();
+  const bool mol1_eq_mol2 = (mol1 == mol2);
+
   int tam1 = int_shell1_->am(0);
   int tam2 = int_shell2_->am(0);
   int z1weight = 1;
@@ -266,16 +273,15 @@ void Int1eLibint2::hcore_sameam_general_()
 	}
       }
 
-      if (bs1_->molecule() != bs2_->molecule()) {
-	//	    fail();
-      }
+      const int natom1 = mol1->natom();
+      const int natom2 = mol2->natom();
+      const int natom = (mol1_eq_mol2) ? natom1 : natom1 + natom2;
 
-      int natom = bs1_->ncenter();
       for(int atom=0; atom<natom; atom++) {
-	// if charge is 0 - skip to the next one
-	double Z = bs1_->molecule()->charge(atom);
-	if (Z == 0.0)
-	  continue;
+        // if charge is 0 - skip to the next one
+        const double Z = mol1_eq_mol2 ? mol1->charge(atom) : mol2->charge(atom - natom1);
+        if (Z == 0.0)
+          continue;
 	PC[0] = P[0] - bs1_->r(atom,0);
 	PC[1] = P[1] - bs1_->r(atom,1);
 	PC[2] = P[2] - bs1_->r(atom,2);

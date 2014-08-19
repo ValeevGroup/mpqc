@@ -28,7 +28,7 @@
 #ifndef CHEMISTRY_QC_BASIS_TILEDBASISSET_HPP
 #define CHEMISTRY_QC_BASIS_TILEDBASISSET_HPP
 
-#include <tiled_array.h>
+#include <tiledarray.h>
 
 #include "basis.h"
 #include "gaussbas.h"
@@ -40,6 +40,7 @@
 #include "kcluster.hpp"
 
 namespace mpqc {
+namespace TA{
 
   // TODO add reference for k clustering
   /**
@@ -49,9 +50,9 @@ namespace mpqc {
   class TiledBasisSet: public sc::GaussianBasisSet {
 
     public:
-      typedef basis::ShellOrder::Shell Shell;
+      typedef ShellOrder::Shell Shell;
       typedef sc::Ref<sc::GaussianBasisSet> Basis;
-      typedef basis::ShellOrder::ShellRange ShellRange;
+      typedef ShellOrder::ShellRange ShellRange;
 
       /**
        * Constructs a TiledBasisSet from a sc::Keyval object.
@@ -61,7 +62,8 @@ namespace mpqc {
        *
        *  <tr><td><b>%Keyword</b><td><b>Type</b><td><b>Default</b><td><b>Description</b>
        *
-       *  <tr><td><tt>basis</tt><td>GaussianBasisSet<td>none<td>mother basis set object
+       *  <tr><td><tt>basis</tt><td>GaussianBasisSet<td>none<td>mother basis set object. If not given, will try to instantiate
+       *                        this object using keywords from the current scope.
        *
        *  <tr><td><tt>ntiles</tt><td>integer<td>1<td>number of tiles to produce. Need to define some heuristics.
        *
@@ -88,14 +90,18 @@ namespace mpqc {
 
       void save_data_state(sc::StateOut& s);
 
+      /// Print a detailed description of the basis set.
+      virtual void print(std::ostream& = sc::ExEnv::out0()) const override;
+
     private:
       std::size_t ntiles_;
       ShellRange SRange_;
 
       static std::string converted_name(const std::string& name);
 
-  };
+  }; // class TiledBasisSet
 
+} // namespace TA
 } // namespace mpqc
 
 #endif /* CHEMISTRY_QC_BASIS_TILEDBASISSET_HPP */

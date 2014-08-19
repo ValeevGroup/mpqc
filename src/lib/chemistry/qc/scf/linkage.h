@@ -49,6 +49,10 @@
 #  include <chemistry/qc/libint2/linkage.h>
 #endif
 
+#if MPQC_NEW_FEATURES && MPQC_HAS_ELEMENTAL
+#  include<chemistry/qc/scf/taclhf.hpp>
+#endif
+
 namespace sc {
 
 ForceLink<CLHF> scf_force_link_a_;
@@ -61,6 +65,10 @@ ForceLink<SCFIterationLogger> scf_force_link_g_;
 ForceLink<CADFCLHF> scf_force_link_h_;
 ForceLink<ApproximatePairWriter> scf_force_link_i_;
 
-}
+#if MPQC_NEW_FEATURES && MPQC_HAS_ELEMENTAL
+  ForceLink<mpqc::TA::CLHF> scf_force_link_g_;
+#endif
+
+} // namespace sc
 
 #endif

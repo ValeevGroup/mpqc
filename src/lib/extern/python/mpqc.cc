@@ -69,7 +69,10 @@ namespace sc {
       d = new double[dim];
       for (int i=0; i<dim; i++) d[i] = i + 0.9876;
     }
-    std::pair<const double*,unsigned long> result() { return std::make_pair<const double*,unsigned long>(d,n); }
+    std::pair<const double*,unsigned long> result() {
+      return std::make_pair<const double*,unsigned long>(const_cast<const double*>(d),
+                                                         static_cast<unsigned long>(n));
+    }
   };
 
   class TestArray2 {

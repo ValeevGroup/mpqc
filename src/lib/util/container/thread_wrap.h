@@ -44,12 +44,39 @@ STLContainer merge(const std::vector<STLContainer>& containers) {
   return rv;
 }
 
+template <typename STLContainer>
+STLContainer sum_merge(const std::vector<STLContainer>& containers) {
+  STLContainer rv = containers[0];
+  bool first = true;
+  for(auto&& c : containers) {
+    if(first) {
+      first = false;
+      continue;
+    }
+    size_t offset = 0;
+    for(auto&& item : c) {
+      MPQC_ASSERT(offset <= c.size());
+      rv[offset] += item;
+      ++offset;
+    }
+  }
+  return rv;
+}
+
+
 namespace detail {
 
   template <typename Container>
   struct _Merger {
       Container operator()(const std::vector<Container>& containers) const {
         return merge(containers);
+      }
+  };
+
+  template <typename Container>
+  struct SumMerger {
+      Container operator()(const std::vector<Container>& containers) const {
+        return sum_merge(containers);
       }
   };
 

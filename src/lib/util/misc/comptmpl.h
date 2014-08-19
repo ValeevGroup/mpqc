@@ -49,6 +49,18 @@ class Result: public ResultInfo {
     void operator=(const T& a) { _result = a; }
     void operator=(const Result<T> &r)
        { ResultInfo::operator=(r); _result = r._result; };
+
+    // C++11-specific features
+#if __cplusplus > 199711L
+    template <typename In>
+    auto operator()(In i) const -> decltype(_result(i)) {
+      return _result(i);
+    }
+    template <typename In>
+    auto operator()(In i) -> decltype(_result(i)) {
+      return _result(i);
+    }
+#endif // C++11
 };
 
 /** This is similar to Result, but can be used with
@@ -96,6 +108,18 @@ class AccResult: public AccResultInfo {
       AccResultInfo::save_data_state(s);
     }
     AccResult(StateIn&s,Compute*c): AccResultInfo(s,c) {}
+
+    // C++11-specific features
+#if __cplusplus > 199711L
+    template <typename In>
+    auto operator()(In i) const -> decltype(_result(i)) {
+      return _result(i);
+    }
+    template <typename In>
+    auto operator()(In i) -> decltype(_result(i)) {
+      return _result(i);
+    }
+#endif // C++11
 };
 
 /** This associates a result datum with an accuracy.  The

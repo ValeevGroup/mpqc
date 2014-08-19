@@ -35,6 +35,59 @@ using namespace std;
 using std::endl;
 using std::setw;
 
+cadf::Histogram2d::Histogram2d(
+    int nbins_h, double min_h, double max_h,
+    int nbins_v, double min_v, double max_v,
+    bool log_h, bool log_v,
+    bool clip_edges
+) : nbins_h_(nbins_h), nbins_v_(nbins_v),
+    //hist_mat_(nbins_v_, nbins_h_),
+    min_h_(min_h), max_h_(max_h), min_v_(min_v), max_v_(max_v),
+    log_h_(log_h), log_v_(log_v),
+    clip_edges_(clip_edges)
+{
+  hist_mat_.resize(nbins_v_, nbins_h_);
+  if(log_h_) {
+    min_h_ = log10(min_h_);
+    max_h_ = log10(max_h_);
+  }
+  interval_h_ = (max_h_ - min_h_) / nbins_h_;
+
+  if(log_v_) {
+    min_v_ = log10(min_v_);
+    max_v_ = log10(max_v_);
+  }
+  interval_v_ = (max_v_ - min_v_) / nbins_v_;
+
+  hist_mat_.setZero();
+}
+
+void
+cadf::Histogram2d::insert_value(
+    double value_h,
+    double value_v
+)
+{
+  double hval = value_h;
+  if(log_h_) hval = log10(hval);
+  double vval = value_v;
+  if(log_v_) vval = log10(vval);
+  if(clip_edges_ and (hval < min_h_ or hval >= max_h_ or vval < min_v_ or vval >= max_v_)) {
+    return;
+  }
+
+  int bin_h = int((hval - min_h_) / interval_h_);
+  int bin_v = int((vval - min_v_) / interval_v_);
+
+  // This should only happen if clip_edges_ is false
+  if(bin_h >= nbins_h_) bin_h = nbins_h_ - 1;
+  if(bin_v >= nbins_v_) bin_v = nbins_v_ - 1;
+  if(bin_h < 0) bin_h = 0;
+  if(bin_v < 0) bin_v = 0;
+
+  ++hist_mat_(bin_v, bin_h);
+}
+
 
 void CADFCLHF::ScreeningStatistics::print_summary(
     std::ostream& out,
@@ -171,6 +224,26 @@ sc::write_xml(
     sub.put("function_tuples", fxn_count.load());
   };
 
+  auto am_stat = [](ptree& p, const std::string& name, int am, double value) {
+    ptree& sub = p.add_child(name, ptree());
+    sub.put("<xmlattr>.am", am);
+    sub.put_value(value);
+  };
+  auto am_stat_ull = [](ptree& p, const std::string& name, int am, ull value) {
+    ptree& sub = p.add_child(name, ptree());
+    sub.put("<xmlattr>.am", am);
+    sub.put_value(value);
+  };
+
+  std::string fmt = "%16.12g";
+  std::string ifmt = "%5d";
+  auto double_str = [&fmt](double val) -> std::string {
+     return std::string(scprintf(fmt.c_str(), val).str());
+  };
+  auto int_str = [&ifmt](int val) -> std::string {
+     return std::string(scprintf(ifmt.c_str(), val).str());
+  };
+
   ptree& kstats = child.add_child("compute_k", ptree());
   if(obj.parent->print_level > 0) {
     add_stat(kstats, "needed", obj.K_3c_needed, obj.K_3c_needed_fxn);
@@ -186,8 +259,70 @@ sc::write_xml(
         writer.insert_child(child, obj.int_indices.merged(), "int_indices");
         writer.insert_child(child, obj.int_ams.merged(), "int_ams");
       }
+      for(int l = 0; l <= obj.int_am_counts.size(); ++l) {
+        const double r_sum = obj.int_am_ratio_sums[l];
+        const double r_lsum = obj.int_am_ratio_log_sums[l];
+        const ull r_count = obj.int_am_counts[l];
+        am_stat(kstats, "ratio_sum", l, r_sum);
+        am_stat(kstats, "ratio_log_sum", l, r_lsum);
+        am_stat(kstats, "average_ratio", l, r_sum / double(r_count));
+        am_stat(kstats, "average_log_ratio", l, r_lsum / double(r_count));
+        am_stat_ull(kstats, "int_count", l, r_count);
+      }
+      if(obj.parent->histogram_mode) {
+        int am = 0;
+        for(auto&& hist : obj.distance_hists) {
+          writer.insert_child(child, hist.matrix(), "ratio_vs_distance_histogram",
+              std::map<std::string, std::string>{
+                { "am", int_str(am) },
+                { "min_ratio", double_str(hist.min_v_) },
+                { "max_ratio", double_str(hist.max_v_) },
+                { "min_distance", double_str(hist.min_h_) },
+                { "max_distance", double_str(hist.max_h_) }
+          });
+          ++am;
+        }
+        am = 0;
+        for(auto&& hist : obj.distance_noschwarz_hists) {
+          writer.insert_child(child, hist.matrix(), "ratio_vs_distance_noschwarz_histogram",
+              std::map<std::string, std::string>{
+                { "am", int_str(am) },
+                { "min_ratio", double_str(hist.min_v_) },
+                { "max_ratio", double_str(hist.max_v_) },
+                { "min_distance", double_str(hist.min_h_) },
+                { "max_distance", double_str(hist.max_h_) }
+          });
+          ++am;
+        }
+        am = 0;
+        for(auto&& hist : obj.values_hists) {
+          writer.insert_child(child, hist.matrix(), "actual_vs_estimate_histogram",
+              std::map<std::string, std::string>{
+                { "am", int_str(am) },
+                { "min_value", double_str(hist.min_h_) },
+                { "max_value", double_str(hist.max_h_) },
+              }
+          );
+          ++am;
+        }
+        am = 0;
+        for(auto&& hist : obj.exponent_ratio_hists) {
+          writer.insert_child(child, hist.matrix(), "ratio_vs_exponent_histogram",
+              std::map<std::string, std::string>{
+                { "am", int_str(am) },
+                { "min_exponent", double_str(hist.min_h_) },
+                { "max_exponent", double_str(hist.max_h_) },
+                { "min_ratio", double_str(hist.min_v_) },
+                { "max_ratio", double_str(hist.max_v_) },
+              }
+          );
+          ++am;
+        }
+      }
     }
   }
+
+
 
   return parent;
 }

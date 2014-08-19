@@ -428,6 +428,7 @@ namespace sc {
   ptree& write_xml(const Eigen::MatrixBase<Derived>& obj, ptree& parent, const XMLWriter& writer)
   {
     typedef Eigen::MatrixBase<Derived> MatrixType;
+    typedef typename Eigen::internal::traits<Derived>::Scalar Scalar;
 
     ptree& child = parent.add_child("EigenDerived", ptree());
     const int ninner = obj.innerSize();
@@ -436,12 +437,20 @@ namespace sc {
     child.put("<xmlattr>.nouter", nouter);
     child.put("<xmlattr>.row_major", int(MatrixType::IsRowMajor));
     child.put("<xmlattr>.is_vector", int(MatrixType::IsVectorAtCompileTime));
+    child.put("<xmlattr>.signed",
+        int(std::is_signed<Scalar>::value)
+    );
 
     // Just iterate over everything so we don't have to think about strides and such
-    double* data = allocate<double>(nouter*ninner);
+    Scalar* data = allocate<Scalar>(nouter*ninner);
     for(int i = 0; i < nouter; ++i){
       for(int j = 0; j < ninner; ++j){
-        data[i*ninner + j] = obj(i, j);
+        if(MatrixType::IsRowMajor) {
+          data[i*ninner + j] = obj(i, j);
+        }
+        else {
+          data[i*ninner + j] = obj(j, i);
+        }
       }
     }
 

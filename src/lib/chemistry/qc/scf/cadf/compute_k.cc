@@ -37,6 +37,7 @@
 #include "cadfclhf.h"
 #include "assignments.h"
 #include "treemat.h"
+#include <libint2_config.h>
 
 using namespace sc;
 using std::cout;
@@ -46,29 +47,184 @@ using std::endl;
 
 #define DEBUG_K_INTERMEDIATES 0
 
+typedef unsigned long long ull;
+
+//constexpr double l_factors[8] = {
+//    3.43557948,  6.66806769, 7.72680585,  6.91830971,  5.34564359,  3.56451133, 2.12813905, 1.18032064
+//};
+
+namespace cadf { namespace detail {
+
+#ifdef LIBINT2_MAX_AM
+  constexpr int max_double_fact_l = LIBINT2_MAX_AM;
+#else
+#  ifdef LIBINT2_MAX_AM_ERI
+     constexpr int max_double_fact_l = LIBINT2_MAX_AM_ERI;
+#  else
+     constexpr int max_double_fact_l = 10; // Something reasonably safe
+#  endif
+#endif
+
+
+/** Compile-time double factorial value generation
+ * adapted from http://cplusadd.blogspot.com/2013/02/c11-compile-time-lookup-tablearray-with.html
+ */
+
+/** Generate a compile-time range
+ * from http://stackoverflow.com/questions/13313980/populate-an-array-using-constexpr-at-compile-time **/
+template<int... Is> struct seq{};
+
+template<int N, int... Is>
+struct gen_seq_odds : gen_seq_odds<N-2, N-2, Is...>{
+    static_assert(N % 2 == 1, "N is not odd in gen_seq_odds");
+};
+
+template<int... Is>
+struct gen_seq_odds<-1, Is...> : seq<Is...>{};
+
+/** A table of the values at compile time **/
+template<unsigned size>
+struct CompileTimeTable
+{
+    int indices[size];
+    ull values[size];
+    static constexpr unsigned length = size;
+};
+
+template<typename LambdaType, int... Is>
+constexpr CompileTimeTable< sizeof...(Is) > compile_time_table_generator_odds_only(
+    seq<Is...>, LambdaType evalFunc
+)
+{
+    return {{ Is...}, { evalFunc(Is)... }};
+}
+
+template<int max_l, typename LambdaType>
+constexpr CompileTimeTable<max_l+1> compile_time_table_generator_odds_only(
+    LambdaType evalFunc
+)
+{
+    return compile_time_table_generator_odds_only(gen_seq_odds<2*max_l + 1>(), evalFunc);
+}
+
+constexpr ull double_fact_constexpr(ull n) {
+    return n == -1ll ? 1ll : (n == 1ll ? 1ll : n * double_fact_constexpr(n-2ll));
+}
+
+/**
+ * Use the precomputed table to retrieve the double factorial values
+ */
+ull double_fact_2_n_minus_1(ull n) {
+    constexpr CompileTimeTable<max_double_fact_l+1> table =
+        compile_time_table_generator_odds_only<max_double_fact_l>(double_fact_constexpr);
+    return table.values[n];
+}
+
+}} // end namespace cadf::detail
+
 
 double CADFCLHF::get_distance_factor(
     const ShellData& ish, const ShellData& jsh, const ShellData& Xsh
 ) const
 {
+  constexpr double pi_cubed = M_PI * M_PI * M_PI;
+  //static const double dist_factor_constant = pow(pi_cubed, 1.0/4.0) * M_SQRT2;
+  constexpr double dist_factor_constant = M_PI * M_SQRT2;
   double dist_factor;
   if(linK_use_distance_){
     const double R = get_R(ish, jsh, Xsh);
+    // No distance screening if R is less than 1.0
+    if(R <= 1.0) return 1.0;
     const double l_X = double(dfbs_->shell(Xsh).am(0));
     double r_expon = l_X + 1.0;
     if(ish.center == jsh.center) {
       if(ish.center == Xsh.center) {
         r_expon = 0.0;
       }
-      else {
-        const double l_i = double(gbs_->shell(ish).am(0));
-        const double l_j = double(gbs_->shell(jsh).am(0));
-        r_expon += abs(l_i-l_j);
-      }
+      //else {
+      //  const double l_i = double(gbs_->shell(ish).am(0));
+      //  const double l_j = double(gbs_->shell(jsh).am(0));
+      //  r_expon += abs(l_i-l_j);
+      //}
     }
-    dist_factor = 1.0 / (pow(R, pow(r_expon, distance_damping_factor_)));            //latex `\label{sc:link:dist_damp}`
+    if(subtract_extents_) {
+      //dist_factor = 1.0 / (
+      //    pow(R - pai, pow(r_expon, distance_damping_factor_))
+      //      - pow(pair_extents_.at({ish, jsh}), (l_X+1.0)/2.0)
+      //);
+      dist_factor = 1.0 / pow(R - pair_extents_.at({ish, jsh}) - df_extents_[Xsh],
+          pow(r_expon, distance_damping_factor_)
+      );
+    }
+    else{
+      dist_factor = 1.0 / (pow(R, pow(r_expon, distance_damping_factor_)));
+    }
+    if(dist_factor > 1.0 or dist_factor < 0.0) return 1.0;
+
+    // Remove the (X|X)^(1/2) part and replace it with the l-dependent and zeta-dependent scaling factors
+    dist_factor /= schwarz_df_[Xsh];
+    dist_factor *= dist_factor_constant;
+    dist_factor *= sqrt(::cadf::detail::double_fact_2_n_minus_1((ull)l_X));
+
+    const double q = effective_df_exponents_[Xsh];
+    dist_factor *= pow(q, -(2.0*l_X + 3.0)/4.0);
+
+
+    const double p = effective_pair_exponents_.at({ish, jsh});
+    //if(ish.center == jsh.center) {
+    //  dist_factor *= pow(p/4, -(2.0*(r_expon - l_X - 1) + 3.0)/4.0);
+    //  dist_factor *= sqrt(::cadf::detail::double_fact_2_n_minus_1((ull)(r_expon - l_X - 1)));
+    //}
+    //else {
+    dist_factor *= pow(p, -1.0/4.0);
+    //dist_factor *= pow(M_E, -(log(p)/4));
+    //}
+
+    //dist_factor *= pow(2.0*r_expon - 3.0, 2.0);
+    //dist_factor *= pow(std::max(r_expon-1.0, 1.0), 2.0);
+    //if(r_expon > 2.0) {
+    // Equations (9.8.10) and (9.7.24) in Helgaker
+    //dist_factor *= ::cadf::detail::double_fact_2_n_minus_1((ull)r_expon - 1) / pow(2.0, (r_expon - 1));
+    //dist_factor *= ::cadf::detail::double_fact_2_n_minus_1((ull)r_expon - 1) / pow(2.0, (r_expon - 1));
+    //dist_factor *= ::cadf::detail::double_fact_2_n_minus_1((ull)r_expon - 1) / pow(2.0, 2*(r_expon - 1));
+    //dist_factor *= abs(pow((2 * l_X + 1), 2.0) / (2 * l_X - 1));
+    //dist_factor *= abs(pow((2 * l_X + 1), 2.0) / (2 * l_X - 1));
+    //dist_factor *= ::cadf::detail::double_fact_2_n_minus_1((ull)l_X) / pow(2.0, l_X + 1);
+
+    //dist_factor *= sqrt(::cadf::detail::double_fact_2_n_minus_1((ull)l_X) / pow(2.0, l_X));
+    //dist_factor *= dist_factor_constant;
+    //dist_factor *= sqrt(::cadf::detail::double_fact_2_n_minus_1((ull)l_X));
+
+    ////const double p = effective_pair_exponents_.at({ish, jsh});
+    ////const double q = effective_df_exponents_[Xsh];
+    ////if(l_X > 0) {
+    //  const double q = effective_df_exponents_[Xsh];
+    //  dist_factor *= pow(q, -(2.0*l_X + 3.0)/4.0);
+    //  dist_factor /= schwarz_df_[Xsh];
+    ////}
+    ////dist_factor *= l_factors[(int)l_X];
+
+    //dist_factor *= pi_cubed / (pow(p, 3.0/2.0) * pow(q, 3.0/2.0));
+    //const double alpha = p * q / (p + q);
+    ////////dist_factor *= pow(2.0, -r_expon + 1.0);
+    //dist_factor *= pow(alpha, -r_expon + 1.0);
+    //dist_factor *= pow(r_expon, p);
+    //const double other_expon = r_expon - 1.0 - l_X;
+    //if(other_expon > 0.9) {
+    //  dist_factor *= ::cadf::detail::double_fact_2_n_minus_1((ull)other_expon) / pow(2.0, other_expon);
+    //  dist_factor *= pow(p, -other_expon);
+    //}
+    ////}
+    ////dist_factor *= (2.0*r_expon - 1.0) / (4.0 * M_PI);
+    ////dist_factor *= (2.0*r_expon - 1.0) / (4.0 * M_PI);
+    //const double schwarz_bound = schwarz_df_[Xsh] * schwarz_frob_(ish, jsh);
+    //if(dist_factor * schwarz_bound > schwarz_bound) {
+    //  return 1.0
+    //}
+
     // If the distance factor actually makes the bound larger, then ignore it.
     dist_factor = std::min(1.0, dist_factor);
+
   }
   else {
     dist_factor = 1.0;
@@ -80,21 +236,26 @@ double CADFCLHF::get_distance_factor(
 double CADFCLHF::get_R(
     const ShellData& ish,
     const ShellData& jsh,
-    const ShellData& Xsh
+    const ShellData& Xsh,
+    bool ignore_extents
 ) const
 {
   double rv = (pair_centers_.at({(int)ish, (int)jsh}) - centers_[Xsh.center]).norm();
-  if(use_extents_) {
+  if(use_extents_ and not ignore_extents) {
     const double ext_a = pair_extents_.at({(int)ish, (int)jsh});
     const double ext_b = df_extents_[(int)Xsh];
-    if(subtract_extents_) {
-      rv -= ext_a + ext_b;
-    }
-    else if(ext_a + ext_b >= rv){
+
+    if(ext_a + ext_b >= rv){
       rv = 1.0; // Don't do distance screening
     }
+
+    //if(subtract_extents_) {
+    //  //rv -= ext_a + ext_b;
+    //  //rv -= pow(ext_a, 1.0/double(dfbs_->shell(Xsh).am(0)+1));
+    //}
+
   }
-  if(rv < 1.0) {
+  if(rv < 1.0 and not ignore_extents) {
     rv = 1.0;
   }
   return rv;
@@ -107,15 +268,14 @@ typedef std::pair<int, int> IntPair;
 RefSCMatrix
 CADFCLHF::compute_K()
 {
-  /*=======================================================================================*/
-  /* Setup                                                 		                        {{{1 */ #if 1 // begin fold
-  //----------------------------------------//
-
   // If we're doing the new algorithm, call the new code and ignore everything else
   if(new_exchange_algorithm_) {
     return new_compute_K();
   }
 
+  /*=======================================================================================*/
+  /* Setup                                                 		                        {{{1 */ #if 1 // begin fold
+  //----------------------------------------//
 
   // Convenience variables
   Timer timer("compute K");
@@ -132,10 +292,7 @@ CADFCLHF::compute_K()
   // Get the density in an Eigen::Map form
   double* __restrict__ D_data = new double[nbf*nbf];
   D_.convert(D_data);
-  typedef Eigen::Map<Eigen::VectorXd> VectorMap;
-  typedef Eigen::Map<ColMatrix> MatrixMap;
-  // Matrix and vector wrappers, for convenience
-  MatrixMap D(D_data, nbf, nbf);
+  Eigen::Map<ColMatrix> D(D_data, nbf, nbf);
   // Match density scaling in old code:
   D *= 0.5;
 
@@ -239,6 +396,9 @@ CADFCLHF::compute_K()
   }
 
   /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
+
+
   /*=======================================================================================*/
   /* Make the CADF-LinK lists                                                         {{{1 */ #if 1 //latex `\label{sc:link}`
 
@@ -790,6 +950,9 @@ CADFCLHF::compute_K()
 
 
   /*****************************************************************************************/ #endif //1}}} //latex `\label{sc:link:end}`
+  /*=======================================================================================*/
+
+
   /*=======================================================================================*/
   /* Loop over local shell pairs for three body contributions                         {{{1 */ #if 1 //latex `\label{sc:k3b:begin}`
 
@@ -1866,6 +2029,9 @@ CADFCLHF::compute_K()
   } // compute_threads is destroyed here
   /*****************************************************************************************/ #endif //1}}} //latex `\label{sc:k3b:end}`
   /*=======================================================================================*/
+
+
+  /*=======================================================================================*/
   /* Add back in the exact diagonal                       		                        {{{1 */ #if 1 //latex `\label{sc:kglobalsum}`
   if(exact_diagonal_K_) {
     timer.enter("exact diagonal contributions");
@@ -1937,6 +2103,9 @@ CADFCLHF::compute_K()
   } // compute_threads is destroyed here
   /*****************************************************************************************/ #endif //1}}} //latex `\label{sc:k3b:end}`
   /*=======================================================================================*/
+
+
+  /*=======================================================================================*/
   /* Global sum K                                         		                        {{{1 */ #if 1 //latex `\label{sc:kglobalsum}`
   //----------------------------------------//
   scf_grp_->sum(Kt.data(), nbf*nbf);
@@ -1947,6 +2116,9 @@ CADFCLHF::compute_K()
   //ExEnv::out0() << indent << "K checksum: " << scprintf("%20.15f", K.sum()) << std::endl;
   //----------------------------------------//
   /*****************************************************************************************/ #endif //1}}} //latex `\label{sc:kglobalsumend}`
+  /*=======================================================================================*/
+
+
   /*=======================================================================================*/
   /* Transfer K to a RefSCMatrix                           		                        {{{1 */ #if 1 // begin fold
   Ref<Integral> localints = integral()->clone();
@@ -1961,6 +2133,9 @@ CADFCLHF::compute_K()
   result.assign(K.data());
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
+
+
+  /*=======================================================================================*/
   /* Clean up                                             		                        {{{1 */ #if 1 // begin fold
   //----------------------------------------//
   memory_used_ -= Z_size;
@@ -1968,7 +2143,10 @@ CADFCLHF::compute_K()
   delete[] D_data;
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
+
+
   return result;
+
 }
 
 

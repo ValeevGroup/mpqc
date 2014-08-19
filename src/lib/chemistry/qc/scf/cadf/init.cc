@@ -523,7 +523,7 @@ CADFCLHF::init_significant_pairs()
     std::vector<double> my_sig_values;
     for(int i = ithr; i < pair_values.size(); i += nthread_){
       auto item = pair_values[i];
-      if(item.first * schwarz_norm > pair_screening_thresh_){
+      if(item.first * schwarz_norm > pair_screening_thresh_ or count_ints_only_){
         my_sig_pairs.push_back(item.second);
         my_sig_values.push_back(item.first);
         ++n_significant_pairs;
@@ -646,6 +646,7 @@ CADFCLHF::init_significant_pairs()
     centers_[iatom] << r[0], r[1], r[2];
   }
 
+
   double erfcinv_thr = my_erfc_inv(well_separated_thresh_);
 
   for(auto&& ish : shell_range(my_part.obs_shells_to_do, gbs_, dfbs_)) {
@@ -682,13 +683,18 @@ CADFCLHF::init_significant_pairs()
       pair_centers_[{(int)ish, (int)jsh}] = r_ij;
 
       if(use_extents_) {
+        double min_exponent = std::numeric_limits<double>::infinity();
         double extent_max = 0.0;
         double extent_sum = 0.0;
+        double avg_expon = 0.0;
 
         for(int i_prim = 0; i_prim < ishell.nprimitive(); ++i_prim) {
           for(int j_prim = 0; j_prim < jshell.nprimitive(); ++j_prim) {
             const double zeta_p = i_exps[i_prim];
             const double zeta_q = j_exps[j_prim];
+            //const double reduced_exponent = (zeta_p * zeta_q) / (zeta_p + zeta_q);
+            const double reduced_exponent = fabs(zeta_p + zeta_q);
+            if(reduced_exponent < min_exponent) min_exponent = reduced_exponent;
             auto& r_pq = (1.0 / (i_exps[i_prim] + j_exps[j_prim])) *
                 (i_exps[i_prim] * centers_[ish.center] + j_exps[j_prim] * centers_[jsh.center]);
             const double rdiff = (r_pq - r_ij).norm();
@@ -698,9 +704,13 @@ CADFCLHF::init_significant_pairs()
             }
             const double coef_prod = fabs(ishell.coefficient_unnorm(0, i_prim)
                 * jshell.coefficient_unnorm(0, j_prim));
+            avg_expon += reduced_exponent * coef_prod;
             extent_sum += coef_prod * ext_pq;
           }
         }
+
+        effective_pair_exponents_[{(int)ish, (int)jsh}] = min_exponent;
+        //effective_pair_exponents_[{(int)ish, (int)jsh}] = avg_expon / coef_tot;
 
         if(use_max_extents_) {
           pair_extents_[{(int)ish, (int)jsh}] = extent_max * erfcinv_thr;
@@ -711,42 +721,53 @@ CADFCLHF::init_significant_pairs()
       }
 
     }
-
-    if(use_extents_) {
-      df_extents_.reserve(dfbs_->nshell());
-      for(auto&& Xsh : shell_range(dfbs_)) {
-
-        const auto& Xshell = dfbs_->shell((int)Xsh);
-        if(Xshell.ncontraction() != 1) {
-          throw FeatureNotImplemented("Generally contracted basis sets", __FILE__, __LINE__, class_desc());
-        }
-
-        const std::vector<double>& x_exps = Xshell.exponents();
-
-        double ext_max = 0.0;
-        double ext_sum = 0.0;
-        double coef_sum = 0.0;
-
-        for(int x_prim = 0; x_prim < Xshell.nprimitive(); ++x_prim) {
-          const double zeta_x = x_exps[x_prim];
-          const double coef = fabs(Xshell.coefficient_unnorm(0, x_prim));
-          double ext = sqrt(2.0 / zeta_x);
-          if(ext > ext_max) {
-            ext_max = ext;
-          }
-          coef_sum += coef;
-          ext_sum += coef * ext;
-        }
-        if(use_max_extents_) {
-          df_extents_[(int)Xsh] = ext_max * erfcinv_thr;
-        }
-        else {
-          df_extents_[(int)Xsh] = ext_sum/coef_sum * erfcinv_thr;
-        }
-      }
-    }
-
   }
+
+  if(use_extents_) {
+    df_extents_.reserve(dfbs_->nshell());
+    for(auto&& Xsh : shell_range(dfbs_)) {
+
+      if(safe_extents_) {
+        erfcinv_thr = my_erfc_inv(pow(well_separated_thresh_, double(1+Xsh.am)));
+      }
+
+      const auto& Xshell = dfbs_->shell((int)Xsh);
+      if(Xshell.ncontraction() != 1) {
+        throw FeatureNotImplemented("Generally contracted basis sets", __FILE__, __LINE__, class_desc());
+      }
+
+      const std::vector<double>& x_exps = Xshell.exponents();
+
+      double ext_max = 0.0;
+      double ext_sum = 0.0;
+      double coef_sum = 0.0;
+      double min_exponent = std::numeric_limits<double>::infinity();
+
+      for(int x_prim = 0; x_prim < Xshell.nprimitive(); ++x_prim) {
+        const double zeta_x = fabs(x_exps[x_prim]);
+        if(zeta_x < min_exponent) min_exponent = zeta_x;
+        const double coef = fabs(Xshell.coefficient_unnorm(0, x_prim));
+        double ext = sqrt(2.0 / zeta_x);
+        if(ext > ext_max) {
+          ext_max = ext;
+        }
+        coef_sum += coef;
+        ext_sum += coef * ext;
+      }
+      if(use_max_extents_) {
+        df_extents_[(int)Xsh] = ext_max * erfcinv_thr;
+        //const double l_X = Xsh.am;
+        //df_extents_[(int)Xsh] = ext_max * erfcinv_thr *
+        //    (1.0 + 0.023215658687093542 * l_X - 0.00008543584437817054 * l_X * l_X +
+        //     0.24989969347856592 * log(1 + 0.5114639422780547 * l_X));
+      }
+      else {
+        df_extents_[(int)Xsh] = ext_sum/coef_sum * erfcinv_thr;
+      }
+      effective_df_exponents_.push_back(min_exponent);
+    }
+  }
+
 
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/

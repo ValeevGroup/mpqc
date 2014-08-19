@@ -322,25 +322,26 @@ class Integral : public SavableState {
     virtual Ref<OneBodyOneCenterInt> point_charge1(const Ref<PointChargeData>&);
 
     /** Return a OneBodyInt that computes the nuclear repulsion integrals.
-        Charges from the atoms on center one are used.  If center two is
-        not identical to center one, then the charges on center two are
-        included as well.  */
+
+        \note Charges from the Molecule of basis1 are used. If basis2->molecule()
+        is not not identical to basis1->molecule() (even if not same object),
+        then the charges of both molecules are used.  */
     virtual Ref<OneBodyInt> nuclear() = 0;
 
     /** Return a OneBodyInt that computes \f$\bar{p}\cdot V\bar{p}\f$, where
-        \f$V\f$ is the nuclear potential. */
+        \f$V\f$ is the nuclear potential. \sa nuclear() */
     virtual Ref<OneBodyInt> p_dot_nuclear_p();
 
     /** Return a OneBodyInt that computes \f$\bar{p}\times V\bar{p}\f$, where
         \f$V\f$ is the nuclear potential. This is different than most other
         one body integrals, in that each entry in the integral buffer
-        is a vector of three integrals. */
+        is a vector of three integrals. \sa nuclear() */
     virtual Ref<OneBodyInt> p_cross_nuclear_p();
 
     /// Return a OneBodyInt that computes \f$p^4 = (\bar{p} \cdot \bar{p})^2\f$.
     virtual Ref<OneBodyInt> p4() =0;
 
-    /// Return a OneBodyInt that computes the core Hamiltonian integrals.
+    /// Return a OneBodyInt that computes the core Hamiltonian integrals. \sa nuclear()
     virtual Ref<OneBodyInt> hcore() = 0;
 
     /** Return a OneBodyInt that computes the electric field integrals at specified point.

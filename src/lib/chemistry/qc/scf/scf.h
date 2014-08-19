@@ -142,6 +142,13 @@ class SCF: public OneBodyWavefunction {
 
     Ref<SCFIterationLogger> iter_log_;
 
+    /// prints iteration log
+    static void iter_print(int iter,
+                           double energy,
+                           double delta,
+                           double walltime,
+                           std::ostream& os = ExEnv::out0());
+
   public:
     SCF(StateIn&);
     /** The KeyVal constructor.

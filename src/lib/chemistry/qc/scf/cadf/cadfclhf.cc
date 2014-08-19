@@ -529,16 +529,21 @@ CADFCLHF::ao_fock(double accuracy)
     decltype(ints_computed_locally_.load()) ints_computed = ints_computed_locally_;
     scf_grp_->sum(&ints_computed, 1);
     if(scf_grp_->me() == 0) {
-      ExEnv::out0() << "Computed " << ints_computed << " integrals for J part" << endl;
+      ExEnv::out0() << indent << "Computed " << ints_computed << " integrals for J part" << endl;
     }
 
+    // Copy J into G
     G = J.copy();
 
   }
   {
     ints_computed_locally_ = 0;
     if(xml_debug_) begin_xml_context("compute_K");
+
+    // Do the actual computation of K
     RefSCMatrix K = compute_K();
+
+    // Log stuff for debugging and profiling
     if(xml_debug_) write_as_xml("K", K), end_xml_context("compute_K");
     if(iter_log_.nonnull()) {
       iter_log_->log_iter_misc([K](ptree& parent, const XMLWriter& writer) {
@@ -546,26 +551,39 @@ CADFCLHF::ao_fock(double accuracy)
         child.put("<xmlattr>.name", "exchange matrix");
       });
     }
-    G.accumulate( -1.0 * K);
     decltype(ints_computed_locally_.load()) ints_computed = ints_computed_locally_;
     scf_grp_->sum(&ints_computed, 1);
     if(scf_grp_->me() == 0) {
-      ExEnv::out0() << "        Computed " << ints_computed << " integrals for K part" << endl;
+      ExEnv::out0() << indent << "Computed " << ints_computed << " integrals for K part" << endl;
     }
+
+    // Accumulate K into G
+    G.accumulate( -1.0 * K);
+
   }
+
   if(xml_debug_) end_xml_context("compute_fock"), assert(false);
+
+  // Reset the density_reset_ flag; it will get set to true if the density is reset between now
+  //   and the next fock build
   density_reset_ = false;
+
   //---------------------------------------------------------------------------------------//
   // Move data back to a RefSymmSCMatrix, transform back to the SO basis
   Ref<SCElementOp> accum_G_op = new SCElementAccumulateSCMatrix(G.pointer());
   RefSymmSCMatrix G_symm = G.kit()->symmmatrix(G.coldim()); G_symm.assign(0.0);
   G_symm.element_op(accum_G_op); G = 0;
   G_symm = pl->to_SO_basis(G_symm);
+
   //---------------------------------------------------------------------------------------//
   // Accumulate difference back into gmat_
   gmat_.accumulate(G_symm); G_symm = 0;
   //---------------------------------------------------------------------------------------//
+
   /*****************************************************************************************/ #endif //1}}}
+  /*=======================================================================================*/
+
+
   /*=======================================================================================*/
   /* Clean up                                             		                        {{{1 */ #if 1 // begin fold
   //---------------------------------------------------------------------------------------//

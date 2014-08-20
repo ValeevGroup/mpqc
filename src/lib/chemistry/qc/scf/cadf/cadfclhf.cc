@@ -146,7 +146,7 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   safe_extents_ = keyval->booleanvalue("safe_extents", KeyValValueboolean(safe_extents_));
   linK_block_rho_ = keyval->booleanvalue("linK_block_rho", KeyValValueboolean(screen_B_));
   B_use_buffer_ = keyval->booleanvalue("B_use_buffer", KeyValValueboolean(B_use_buffer_));
-  linK_use_distance_ = keyval->booleanvalue("linK_use_distance", KeyValValueboolean(false));
+  linK_use_distance_ = keyval->booleanvalue("linK_use_distance", KeyValValueboolean(linK_use_distance_));
   use_extents_ = keyval->booleanvalue("use_extents", KeyValValueboolean(use_extents_));
   use_max_extents_ = keyval->booleanvalue("use_max_extents", KeyValValueboolean(use_max_extents_));
   subtract_extents_ = keyval->booleanvalue("subtract_extents", KeyValValueboolean(subtract_extents_));
@@ -324,7 +324,7 @@ CADFCLHF::print(ostream&o) const
   if(print_screening_stats_) {
     // TODO global sum stats at some point.  These numbers will be wrong otherwise
     stats_->global_sum(scf_grp_);
-    stats_->print_summary(o, gbs_, dfbs_, print_screening_stats_);
+    stats_->print_summary(o, gbs_, dfbs_, print_screening_stats_, new_exchange_algorithm_);
   }
   o << decindent;
 

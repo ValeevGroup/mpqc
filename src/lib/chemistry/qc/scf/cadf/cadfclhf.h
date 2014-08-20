@@ -231,6 +231,10 @@ class CADFCLHF: public CLHF {
               K_3c_underestimated_fxn.store(other.K_3c_underestimated_fxn.load());
               K_3c_perfect.store(other.K_3c_perfect.load());
               K_3c_perfect_fxn.store(other.K_3c_perfect_fxn.load());
+              K_3c_contract_fxn.store(other.K_3c_contract_fxn.load());
+              K_2c_contract_fxn.store(other.K_2c_contract_fxn.load());
+              Kt_contract1_fxn.store(other.Kt_contract1_fxn.load());
+              Kt_contract2_fxn.store(other.Kt_contract2_fxn.load());
 
               parent = other.parent;
               is_first = other.is_first;
@@ -244,6 +248,10 @@ class CADFCLHF: public CLHF {
             accumulate_t K_3c_underestimated_fxn = { 0 };
             accumulate_t K_3c_perfect = { 0 };
             accumulate_t K_3c_perfect_fxn = { 0 };
+            accumulate_t K_3c_contract_fxn = { 0 };
+            accumulate_t K_2c_contract_fxn = { 0 };
+            accumulate_t Kt_contract1_fxn = { 0 };
+            accumulate_t Kt_contract2_fxn = { 0 };
 
             ScreeningStatistics* parent;
 
@@ -272,7 +280,8 @@ class CADFCLHF: public CLHF {
 
             void global_sum(const Ref<MessageGrp>& msg) {
               auto accum_all = [&msg](accumulate_t& val) {
-                long tmp = val.load();
+                //decltype(val.load()) tmp = val.load();
+                long tmp = (long)val.load();
                 msg->sum(&tmp, 1);
                 val.store(tmp);
               };
@@ -285,6 +294,10 @@ class CADFCLHF: public CLHF {
               accum_all(K_3c_underestimated_fxn);
               accum_all(K_3c_perfect);
               accum_all(K_3c_perfect_fxn);
+              accum_all(K_3c_contract_fxn);
+              accum_all(K_2c_contract_fxn);
+              accum_all(Kt_contract1_fxn);
+              accum_all(Kt_contract2_fxn);
             }
 
             bool is_first = false;
@@ -323,7 +336,8 @@ class CADFCLHF: public CLHF {
         void print_summary(std::ostream& out,
             const Ref<GaussianBasisSet>& basis,
             const Ref<GaussianBasisSet>& dfbs,
-            int print_level = -1
+            int print_level = -1,
+            bool new_exchange = false
         ) const;
     };
 

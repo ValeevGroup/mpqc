@@ -37,7 +37,7 @@
 #include "cadfclhf.h"
 #include "assignments.h"
 #include "treemat.h"
-#include <libint2_config.h>
+#include <libint2/config.h>
 
 using namespace sc;
 using std::cout;

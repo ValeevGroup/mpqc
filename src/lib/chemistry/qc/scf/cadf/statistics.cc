@@ -93,7 +93,7 @@ void CADFCLHF::ScreeningStatistics::print_summary(
     std::ostream& out,
     const Ref<GaussianBasisSet>& basis,
     const Ref<GaussianBasisSet>& dfbs,
-    int print_level_in
+    int print_level_in, bool new_exchange
 ) const
 {
   int print_lvl = print_level;
@@ -101,12 +101,6 @@ void CADFCLHF::ScreeningStatistics::print_summary(
     print_lvl = print_level_in;
   }
 
-  // LOCALES CAUSE MEMORY LEAKS according to valgrind
-  //const auto& old_loc = out.getloc();
-  //try{
-  //  out.imbue(std::locale(""));
-  //}
-  //catch(...) { } // oh well, we tried
 
   out << indent << "CADFCLHF Screening Statistics" << endl;
   out << indent << "-----------------------------" << endl;
@@ -121,41 +115,72 @@ void CADFCLHF::ScreeningStatistics::print_summary(
   int iteration = 1;
   out << incindent;
   out << indent << setw(38) << " "
-      << setw(22) << std::internal <<  "Shell-wise"
-      << setw(22) << std::internal <<  "Function-wise"
+      << setw(23) << std::internal <<  "Shell-wise"
+      << setw(23) << std::internal <<  "Function-wise"
       << endl;
   out << decindent;
 
+  auto pr_iter_stat = [&](
+      const std::string& title,
+      const count_t sh_num,
+      const count_t fxn_num
+  ) {
+    out << indent << setw(38) << std::left << title
+        << setw(14) << std::right << sh_num
+        << setw(7) << std::right << scprintf("(%3.1f", 100.0 * double(sh_num)/double(total_3c)) << "%)"
+        << setw(14) << std::right << fxn_num
+        << setw(7) << std::right << scprintf("(%3.1f", 100.0 * double(fxn_num)/double(total_3c_fxn)) << "%)"
+        << endl;
+  };
+
   for(auto& iter : iterations) {
-    if(print_lvl > 1) {
-      out << indent << "Iteration " << iteration++ << ":" << endl;
-      auto pr_iter_stat = [&](
-          const std::string& title,
-          const count_t sh_num,
-          const count_t fxn_num
-      ) {
-        out << indent << setw(38) << std::left << title
-            << setw(14) << std::right << sh_num
-            << setw(7) << scprintf(" (%3.1f", 100.0 * double(sh_num)/double(total_3c)) << "%)"
-            << setw(14) << std::right << fxn_num
-            << setw(7) << scprintf(" (%3.1f", 100.0 * double(fxn_num)/double(total_3c_fxn)) << "%)"
-            << endl;
-      };
-      out << incindent;
-      pr_iter_stat("K: 3c ints needed", iter.K_3c_needed, iter.K_3c_needed_fxn);
-      pr_iter_stat("K: 3c ints screened by distance", iter.K_3c_dist_screened, iter.K_3c_dist_screened_fxn);
-      if(print_lvl > 2) {
-        pr_iter_stat("K: 3c ints underestimated", iter.K_3c_underestimated, iter.K_3c_underestimated_fxn);
-        pr_iter_stat("K: 3c ints needed, \"perfect screening\"", iter.K_3c_perfect, iter.K_3c_perfect_fxn);
-        pr_iter_stat("K: \"extra\" ints computed",
-            iter.K_3c_needed - iter.K_3c_perfect,
-            iter.K_3c_needed_fxn - iter.K_3c_perfect_fxn
-        );
-      }
-      out << decindent;
+    out << indent << "Iteration " << iteration++ << ":" << endl;
+    out << incindent;
+    if(new_exchange) {
+      pr_iter_stat("K: 3c ints computed", iter.K_3c_needed, iter.K_3c_needed_fxn);
+      out << indent << setw(38) << std::left << "B contraction multiplies"
+          << setw(14) << std::right << "-"
+          << setw(9) << std::right << "  (N/A)"
+          << setw(14) << std::right << iter.K_3c_contract_fxn
+          << setw(9) << std::right << "  (N/A)"
+          << endl;
+      out << indent << setw(38) << std::left << "g2 contraction multiplies"
+          << setw(14) << std::right << "-"
+          << setw(9) << std::right << "  (N/A)"
+          << setw(14) << std::right << iter.K_2c_contract_fxn
+          << setw(9) << std::right << "  (N/A)"
+          << endl;
+      out << indent << setw(38) << std::left << "Kt contraction 1 multiplies"
+          << setw(14) << std::right << "-"
+          << setw(9) << std::right << "  (N/A)"
+          << setw(14) << std::right << iter.Kt_contract1_fxn
+          << setw(9) << std::right << "  (N/A)"
+          << endl;
+      out << indent << setw(38) << std::left << "Kt contraction 2 multiplies"
+          << setw(14) << std::right << "-"
+          << setw(9) << std::right << "  (N/A)"
+          << setw(14) << std::right << iter.Kt_contract2_fxn
+          << setw(9) << std::right << "  (N/A)"
+          << endl;
     }
+    else {
+      if(print_lvl > 1) {
+        pr_iter_stat("K: 3c ints needed", iter.K_3c_needed, iter.K_3c_needed_fxn);
+        pr_iter_stat("K: 3c ints screened by distance", iter.K_3c_dist_screened, iter.K_3c_dist_screened_fxn);
+        if(print_lvl > 2) {
+          pr_iter_stat("K: 3c ints underestimated", iter.K_3c_underestimated, iter.K_3c_underestimated_fxn);
+          pr_iter_stat("K: 3c ints needed, \"perfect screening\"", iter.K_3c_perfect, iter.K_3c_perfect_fxn);
+          pr_iter_stat("K: \"extra\" ints computed",
+              iter.K_3c_needed - iter.K_3c_perfect,
+              iter.K_3c_needed_fxn - iter.K_3c_perfect_fxn
+          );
+        }
+      }
+    }
+
+    out << decindent;
+
   }
-  //out.imbue(old_loc);
 }
 
 

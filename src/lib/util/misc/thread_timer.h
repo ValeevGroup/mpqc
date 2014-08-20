@@ -42,7 +42,7 @@
 #include <boost/thread/thread.hpp>
 
 // madness includes
-#include <world/worldhashmap.h>
+#include <madness/world/worldhashmap.h>
 
 // MPQC includes
 #include <util/misc/formio.h>

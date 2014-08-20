@@ -59,8 +59,8 @@
 #include <boost/mpl/back_inserter.hpp>
 
 // Madness includes
-#include <world/worldhashmap.h>
-#include <world/worldfut.h>
+#include <madness/world/worldhashmap.h>
+#include <madness/world/worldfut.h>
 
 // MPQC imcludes
 #include <util/misc/iterators.h>

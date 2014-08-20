@@ -283,18 +283,7 @@ CADFCLHF::new_compute_K()
                   );
 
                   L_C[ish].insert(jsh);
-
-                  if(print_screening_stats_) {
-                    ++iter_stats_->K_3c_needed;
-                    iter_stats_->K_3c_needed_fxn += ish.nbf * jsh.nbf * Xsh.nbf;
-                  }
-
                 }
-                else if(print_screening_stats_ and linK_use_distance_) {
-                  ++iter_stats_->K_3c_dist_screened;
-                  iter_stats_->K_3c_dist_screened_fxn += ish.nbf * jsh.nbf * Xsh.nbf;
-                }
-
               }
               else {
                 break;
@@ -548,6 +537,15 @@ CADFCLHF::new_compute_K()
 
     ShellData ish;
 
+    // Thread-local counting of integrals
+    typedef decltype(iter_stats_->K_3c_contract_fxn.load()) accum_type;
+    accum_type ints_computed_3c = 0;
+    accum_type ints_computed_3c_fxn = 0;
+    accum_type B_contract_fxn_count = 0;
+    accum_type g2_contract_fxn_count = 0;
+    accum_type kt_contract_1_fxn_count = 0;
+    accum_type kt_contract_2_fxn_count = 0;
+
     /*******************************************************/ #endif //2}}}
     /*-----------------------------------------------------*/
 
@@ -794,6 +792,11 @@ CADFCLHF::new_compute_K()
             }
             jblk_offset += jsblk.nbf;
 
+            if(print_screening_stats_) {
+              int tmp_contract_number = ish.atom_dfnbf;
+              if(ish.center != jsblk.center) tmp_contract_number += jsblk.atom_dfnbf;
+              g2_contract_fxn_count += tmp_contract_number * Xsh.nbf * jsblk.nbf*ish.nbf;
+            }
           }
 
           //----------------------------------------//
@@ -812,6 +815,15 @@ CADFCLHF::new_compute_K()
           B_sd.noalias() += 2.0 * g3.transpose() * D_sd.middleCols(block_offset, jblk.nbf).transpose();
 
           block_offset += jblk.nbf;
+
+          //----------------------------------------//
+          // Add up some statistics stuff
+
+          if(print_screening_stats_) {
+            ints_computed_3c += jblk.nshell;
+            ints_computed_3c_fxn += jblk.nbf * ish.nbf * Xsh.nbf;
+            B_contract_fxn_count += D_sd.rows() * g3.cols() * g3.rows();
+          }
 
         } // end loop over jblk
 
@@ -840,10 +852,21 @@ CADFCLHF::new_compute_K()
                   C_X_view.middleRows(lsh.bfoff_in_atom, lsh.nbf).middleCols(kblk.bfoff, kblk.nbf).transpose()
                   * B_sd_other.middleCols(X.off*(l_b_size+Xsh.atom_obsnbf) + lsh.bfoff_in_atom, lsh.nbf).transpose();
               block_offset += kblk.nbf;
+
+              if(print_screening_stats_) {
+                kt_contract_2_fxn_count += ish.nbf * kblk.nbf * lsh.nbf;
+              }
+
             } // end loop over significant partners
           } // end loop over lsh
 
         } // end loop over X functions
+
+        //----------------------------------------//
+        // Add up some statistics stuff
+        if(print_screening_stats_) {
+          kt_contract_1_fxn_count += Xsh.nbf * Xsh.atom_obsnbf * B_sd_other.rows() * l_b_size;
+        }
 
         /*******************************************************/ #endif //2}}}
         /*-----------------------------------------------------*/
@@ -861,6 +884,17 @@ CADFCLHF::new_compute_K()
     delete[] B_sd_data;
     delete[] D_sd_data;
     delete[] C_X_diff_data;
+
+    // Add statistics to node value
+    if(print_screening_stats_) {
+      iter_stats_->K_3c_needed += ints_computed_3c;
+      iter_stats_->K_3c_needed_fxn += ints_computed_3c_fxn;
+      iter_stats_->K_3c_contract_fxn += B_contract_fxn_count;
+      iter_stats_->K_2c_contract_fxn += g2_contract_fxn_count;
+      iter_stats_->Kt_contract1_fxn += kt_contract_1_fxn_count;
+      iter_stats_->Kt_contract2_fxn += kt_contract_2_fxn_count;
+    }
+
 
   }); // end of do_threaded
 

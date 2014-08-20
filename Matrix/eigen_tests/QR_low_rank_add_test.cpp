@@ -7,7 +7,7 @@ using namespace Eigen;
 
 int main(int argc, char **argv) {
   int input = (argc > 1) ? std::stoi(argv[1]) : 500;
-  int num_sig = (argc > 2) ? std::stoi(argv[2]) : input / 2;
+  int num_zero_vals = (argc > 2) ? std::stoi(argv[2]) : input / 2;
 
   MatrixXd mat = MatrixXd::Random(input, input);
 
@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
   VectorXd V = es.eigenvalues();
 
   // Create Low Rank Matrix
-  std::for_each(V.data(), V.data() + num_sig, [](double &x) { x = 0.0; });
+  std::for_each(V.data(), V.data() + num_zero_vals, [](double &x) { x = 0.0; });
   mat = C * V.asDiagonal() * C.transpose();
 
   // Time Matrix Formation

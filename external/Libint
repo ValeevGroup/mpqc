@@ -57,7 +57,7 @@ if (LIBINT)
           int main(int argc, char** argv) { return 0; }
       "  LIBINT_IS_UP_TO_DATE)    
     if (NOT LIBINT_IS_UP_TO_DATE)
-      message(FATAL_ERROR "Libint library is too old: version 2.0.5 or later is required")
+      message(FATAL_ERROR "Libint library is too old: version 2.1.0 or later is required")
     endif()
     
     # check that libint2 uses one of orderings supported by MPQC
@@ -107,8 +107,8 @@ if ("${LIBINT}" AND NOT LIBINT2_FOUND)
 
     include(ExternalProject)
 
-    set(LIBINT_URL ${EXTERNAL_SOURCE_DIR}/libint-2.0.5-stable.tgz)
-    set(LIBINT_URL_HASH MD5=c8a93d55384ecb2eced2b698281bd7b5)
+    set(LIBINT_URL ${EXTERNAL_SOURCE_DIR}/libint-2.1.0-beta.tgz)
+    set(LIBINT_URL_HASH MD5=cfaacbd492c1ccc73689fccc3b831c26)
     if (NOT EXISTS ${LIBINT_URL})
       message(FATAL_ERROR "Did not find embedded copy of Libint2, something wrong with your source tree")
     endif (NOT EXISTS ${LIBINT_URL})

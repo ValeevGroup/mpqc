@@ -104,7 +104,9 @@ void CADFCLHF::ScreeningStatistics::print_summary(
 
   out << indent << "CADFCLHF Screening Statistics" << endl;
   out << indent << "-----------------------------" << endl;
-  const count_t total_3c = basis->nshell() * basis->nshell() * dfbs->nshell();
+  const count_t total_3c = ((uint64_t)basis->nshell())
+      * ((uint64_t)basis->nshell())
+      * ((uint64_t)dfbs->nshell());
   const count_t total_3c_fxn = ((uint64_t)basis->nbasis())
       * ((uint64_t)basis->nbasis()) * ((uint64_t)dfbs->nbasis());
   out << indent << "Total shell triplets: " << total_3c << endl

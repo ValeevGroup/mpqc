@@ -41,7 +41,7 @@ More advanced features of MPQC that appeared for the first time in MPQC verion 3
 that all of them are compiled with the same version of the C++ compiler as used to compile MPQC.
 
 * C++ compiler that supports the C++11 standard; the most recent versions of gcc, clang, and icc are recommended.
-* [Libint](https://github.com/evaleev/libint), version 2.0.5 or later
+* [Libint](https://github.com/evaleev/libint), version 2.1.0(beta) or later
   * Libint is bundled in ./external/libint*.tgz and will be built if requested. **NOTE** you may require custom version
   of Libint for some functionaility, such as interfacing with GAMESS.
 * [TiledArray](https://github.com/ValeevGroup/tiledarray)

@@ -62,6 +62,7 @@ CADFCLHF::new_compute_K()
   /* Setup                                                 		                        {{{1 */ #if 1 // begin fold
   //----------------------------------------//
   // Convenience variables
+  typedef decltype(iter_stats_->K_3c_contract_fxn.load()) accum_type;
   Timer timer("compute K");
   const int me = scf_grp_->me();
   const int n_node = scf_grp_->n();
@@ -252,6 +253,9 @@ CADFCLHF::new_compute_K()
     const auto& const_loc_pairs_map = linK_local_map_;
     const auto& loc_pairs_end = const_loc_pairs.end();
     do_threaded(nthread_, [&](int ithr) {
+
+      accum_type L3_build_compare_count = 0;
+
       for(SH jsh : thread_over_range(shell_range(gbs_, dfbs_), ithr, nthread_)) {
         auto& L_sch_jsh = L_schwarz[jsh];
 
@@ -271,10 +275,10 @@ CADFCLHF::new_compute_K()
 
             for(SHV ish : local_schwarz_jsh) {
 
-              const double dist_factor = get_distance_factor(ish, jsh, Xsh);
-
+              if(print_screening_stats_) ++L3_build_compare_count;
               if(ish.value > eps_prime) {
                 found_ish = true;
+                const double dist_factor = get_distance_factor(ish, jsh, Xsh);
                 if(!linK_use_distance_ or ish.value * dist_factor > eps_prime_dist) {
                   auto& L_3_ish_Xsh = L_3[{ish, Xsh}];
                   L_3_ish_Xsh.insert(jsh,
@@ -301,6 +305,10 @@ CADFCLHF::new_compute_K()
         }
 
 
+      }
+
+      if(print_screening_stats_) {
+        iter_stats_->L3_build_compares += L3_build_compare_count;
       }
 
     });
@@ -538,7 +546,6 @@ CADFCLHF::new_compute_K()
     ShellData ish;
 
     // Thread-local counting of integrals
-    typedef decltype(iter_stats_->K_3c_contract_fxn.load()) accum_type;
     accum_type ints_computed_3c = 0;
     accum_type ints_computed_3c_fxn = 0;
     accum_type B_contract_fxn_count = 0;

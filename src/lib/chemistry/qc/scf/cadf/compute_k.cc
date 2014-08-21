@@ -91,14 +91,6 @@ struct CompileTimeTable
     static constexpr unsigned length = size;
 };
 
-template<typename LambdaType, int... Is>
-constexpr CompileTimeTable< sizeof...(Is) > compile_time_table_generator_odds_only(
-    seq<Is...>, LambdaType evalFunc
-)
-{
-    return {{ Is...}, { evalFunc(Is)... }};
-}
-
 template<int max_l, typename LambdaType>
 constexpr CompileTimeTable<max_l+1> compile_time_table_generator_odds_only(
     LambdaType evalFunc
@@ -107,7 +99,15 @@ constexpr CompileTimeTable<max_l+1> compile_time_table_generator_odds_only(
     return compile_time_table_generator_odds_only(gen_seq_odds<2*max_l + 1>(), evalFunc);
 }
 
-constexpr ull double_fact_constexpr(ull n) {
+template<typename LambdaType, int... Is>
+const CompileTimeTable< sizeof...(Is) > compile_time_table_generator_odds_only(
+    seq<Is...>, LambdaType evalFunc
+)
+{
+    return {{ Is...}, { evalFunc(Is)... }};
+}
+
+const ull double_fact_constexpr(ull n) {
     return n == -1ll ? 1ll : (n == 1ll ? 1ll : n * double_fact_constexpr(n-2ll));
 }
 
@@ -115,7 +115,7 @@ constexpr ull double_fact_constexpr(ull n) {
  * Use the precomputed table to retrieve the double factorial values
  */
 ull double_fact_2_n_minus_1(ull n) {
-    constexpr CompileTimeTable<max_double_fact_l+1> table =
+    static const CompileTimeTable<max_double_fact_l+1> table =
         compile_time_table_generator_odds_only<max_double_fact_l>(double_fact_constexpr);
     return table.values[n];
 }

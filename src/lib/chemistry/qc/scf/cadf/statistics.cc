@@ -138,6 +138,12 @@ void CADFCLHF::ScreeningStatistics::print_summary(
     out << incindent;
     if(new_exchange) {
       pr_iter_stat("K: 3c ints computed", iter.K_3c_needed, iter.K_3c_needed_fxn);
+      out << indent << setw(38) << std::left << "L3 build comparisons"
+          << setw(14) << std::right << iter.L3_build_compares
+          << setw(9) << std::right << "  (N/A)"
+          << setw(14) << std::right << "-"
+          << setw(9) << std::right << "  (N/A)"
+          << endl;
       out << indent << setw(38) << std::left << "B contraction multiplies"
           << setw(14) << std::right << "-"
           << setw(9) << std::right << "  (N/A)"

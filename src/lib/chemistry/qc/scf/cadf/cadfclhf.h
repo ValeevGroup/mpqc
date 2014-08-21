@@ -235,6 +235,7 @@ class CADFCLHF: public CLHF {
               K_2c_contract_fxn.store(other.K_2c_contract_fxn.load());
               Kt_contract1_fxn.store(other.Kt_contract1_fxn.load());
               Kt_contract2_fxn.store(other.Kt_contract2_fxn.load());
+              L3_build_compares.store(other.L3_build_compares.load());
 
               parent = other.parent;
               is_first = other.is_first;
@@ -252,6 +253,7 @@ class CADFCLHF: public CLHF {
             accumulate_t K_2c_contract_fxn = { 0 };
             accumulate_t Kt_contract1_fxn = { 0 };
             accumulate_t Kt_contract2_fxn = { 0 };
+            accumulate_t L3_build_compares = { 0 };
 
             ScreeningStatistics* parent;
 
@@ -298,6 +300,7 @@ class CADFCLHF: public CLHF {
               accum_all(K_2c_contract_fxn);
               accum_all(Kt_contract1_fxn);
               accum_all(Kt_contract2_fxn);
+              accum_all(L3_build_compares);
             }
 
             bool is_first = false;

@@ -538,6 +538,10 @@ CADFCLHF::new_compute_K()
     double* __restrict__ D_sd_data = new double[max_L_3_size * (max_L_B_size + max_fxn_atom_obs_)];
     double* __restrict__ C_X_diff_data = new double[max_obs_atom_fxn_on_dfbs_center_todo_*max_fxn_dfbs_todo_*max_L_B_size];
 
+    if(max_L_3_size > gbs_->nbasis() || max_L_B_size > gbs_->nbasis()) {
+      throw ProgrammingError("Something went horribly wrong; max_L_3_size or max_L_B_size > nbasis", __FILE__, __LINE__);
+    }
+
     Eigen::Map<RowMatrix> B_sd(B_sd_data, 0, 0);
     Eigen::Map<RowMatrix> B_sd_other(B_sd_data, 0, 0);
     Eigen::Map<ColMatrix> D_sd(D_sd_data, 0, 0);

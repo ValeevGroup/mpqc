@@ -14,12 +14,13 @@ ELSEIF(DEBUG_RELEASE)
     set(CXX_FLAGS "${CXX_FLAGS} -O2 -g")
     message(STATUS "Performing debug-release build ${CXX_FLAGS}")
 ELSE()
-    set(CXX_FLAGS "${CXX_FLAGS} -g -Wall -Wextra -Werror")
+    set(CXX_FLAGS "${CXX_FLAGS} -g -Wall -Wextra")
     message(STATUS "Performing debug build ${CXX_FLAGS}")
 ENDIF()
 
 set(CMAKE_CXX_FLAGS ${CXX_FLAGS})
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/modules/")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
+                      "${PROJECT_SOURCE_DIR}/cmake/modules/")
 
 FIND_PACKAGE(MPI REQUIRED)
 SET(EXTRA_FLAGS "${MPI_CXX_COMPILE_FLAGS}")

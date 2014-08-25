@@ -14,6 +14,7 @@
 
 int main(int argc, char** argv) {
   madness::World &world = madness::initialize(argc, argv);
+  world.rank();
 
   int nthreads = 1;
   std::cout << "input nthreads:";

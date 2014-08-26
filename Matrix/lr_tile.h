@@ -3,6 +3,7 @@
 
 #include "../include/eigen.h"
 #include "../include/tiledarray.h"
+#include "../include/lapack.h"
 #include <utility>
 #include <iostream>
 
@@ -17,6 +18,7 @@ template <typename T> using LR_pair = std::pair<EigMat<T>, EigMat<T>>;
 * qr_decomp returns the low rank Q and R matrices as a pair.
 */
 template <typename T> LR_pair<T> qr_decomp(const EigMat<T> &input, double cut) {
+
   Eigen::ColPivHouseholderQR<EigMat<T>> qr(input);
   qr.setThreshold(cut);
 
@@ -110,38 +112,19 @@ public:
    * @warning the output tile will have higher rank than the input tiles.
    */
   LRTile add(const LRTile<T> right) const {
-    // output matrices
-    assert(rank() != 0 && right.rank() != 0);
-    assert(matrixL().rows() != 0 && right.matrixL().rows() != 0);
-    assert(matrixL().cols() != 0 && right.matrixL().cols() != 0);
-    assert(matrixR().rows() != 0 && right.matrixR().rows() != 0);
-    assert(matrixR().cols() != 0 && right.matrixR().cols() != 0);
+    const auto new_rank = rank_ + right.rank_;
+    EigMat<T> L(L_.rows(), new_rank);
+    EigMat<T> R(new_rank, right.R_.cols());
 
-    assert(matrixL().rows() == right.matrixL().rows());
-    assert(matrixR().cols() == right.matrixR().cols());
+    L.leftCols(rank()) = L_;
+    L.rightCols(right.rank()) = right.L_;
 
-    assert(matrixL().cols() == rank());
-    assert(matrixR().rows() == rank());
-    assert(right.matrixL().cols() == right.rank());
-    assert(right.matrixR().rows() == right.rank());
+    R.topRows(rank()) = R_;
+    R.bottomRows(right.rank()) = right.R_;
 
-    EigMat<T> L(matrixL().rows(), rank() + right.rank());
-    EigMat<T> R(rank() + right.rank(), right.matrixR().cols());
+    compress(L, R, 1e-08);
 
-    // Fill the matrices
-    assert(decltype(rank())(matrixL().cols()) == rank());
-    L.leftCols(rank()) = matrixL();
-    L.rightCols(right.rank()) = right.matrixL();
-
-    R.topRows(rank()) = matrixR();
-    R.bottomRows(right.rank()) = right.matrixR();
-
-    LRTile out(L, R);
-
-    // TODO need heuristic to decide when to compress.
-    out.compress();
-
-    return out;
+    return LRTile(L, R);
   }
 
   bool empty() const { return false; }
@@ -216,22 +199,66 @@ public:
    * @brief compress attempts to reduce the rank of the tile
    * @param cut is the threshold parameter for Eigen::ColPivHouseholder.
    */
-  void compress(double cut = 1e-8) {
-    // TODO_PAR make these tasks which can run seperately.
-    auto qrL = detail::qr_decomp(matrixL(), cut);
-    auto qrR = detail::qr_decomp(matrixR(), cut);
-    // TODO_PAR don't forget to fence since matrixR/L are refs
+  void compress(EigMat<T> &L, EigMat<T> &R, double cut = 1e-8) const {
+    const auto Lrows = L.rows();
+    const auto Lcols = L.cols();
 
-    // Decide which direction to use
-    bool use_left_rank = (std::get<0>(qrL).cols() < std::get<0>(qrR).cols());
+    double first_qr = madness::wall_time();
+    Eigen::ColPivHouseholderQR<EigMat<T>> qr(L);
+    first_qr = madness::wall_time() - first_qr;
+    std::cout << "First Qr time = " << first_qr << "s\n";
+    qr.setThreshold(cut);
+    const auto rankL = qr.rank();
 
-    if (use_left_rank) {
-      L_ = std::get<0>(qrL);
-      R_ = (std::get<1>(qrL) * std::get<0>(qrR)) * std::get<1>(qrR);
+    double Form_Ll = madness::wall_time();
+    L.resize(Lrows,rankL);
+    L.setIdentity(Lrows, rankL);
+    qr.householderQ().applyThisOnTheLeft(L);
+    Form_Ll = madness::wall_time() - Form_Ll;
+    std::cout << "Form ll time = " << Form_Ll << "s\n";
+
+    double Form_Rl = madness::wall_time();
+    EigMat<T> Rl = EigMat<T>(qr.matrixR()
+                                 .topLeftCorner(rankL, Lcols)
+                                 .template triangularView<Eigen::Upper>())
+                   * qr.colsPermutation().transpose();
+    Form_Rl = madness::wall_time() - Form_Rl;
+    std::cout << "Form Rl time = " << Form_Rl << "s\n";
+
+
+    double sec_qr = madness::wall_time();
+    qr.compute(R);
+    const auto rankR = qr.rank();
+    sec_qr = madness::wall_time() - sec_qr;
+    std::cout << "Second Qr time = " << sec_qr
+              << "s\n\tTotal Qr time = " << sec_qr + first_qr << "s\n";
+
+    double contract_middle = madness::wall_time();
+    Rl = Rl * EigMat<T>(qr.householderQ()).leftCols(rankR);
+    contract_middle = madness::wall_time() - contract_middle;
+    std::cout << "Make middle time = " << contract_middle << "s\n";
+    double finalize = 0;
+
+    if (Rl.rows() >= Rl.cols()) {
+      finalize = madness::wall_time();
+      L *= Rl;
+      R = EigMat<T>(qr.matrixR()
+                        .topLeftCorner(qr.rank(), R.cols())
+                        .template triangularView<Eigen::Upper>())
+          * qr.colsPermutation().transpose();
+      finalize = madness::wall_time() - finalize;
+      std::cout << "finalize time = " << finalize << "s\n";
     } else {
-      L_ = std::get<0>(qrL) * (std::get<1>(qrL) * std::get<0>(qrR));
-      R_ = std::get<1>(qrR);
+      finalize = madness::wall_time();
+      R = Rl * (qr.matrixR()
+                             .topLeftCorner(qr.rank(), R.cols())
+                             .template triangularView<Eigen::Upper>())
+          * qr.colsPermutation().transpose();
+      finalize = madness::wall_time() - finalize;
+      std::cout << "finalize time = " << finalize << "s\n";
     }
+    std::cout << "Total time = " << first_qr + sec_qr + contract_middle
+                                    + finalize << "s\n";
   }
 
 

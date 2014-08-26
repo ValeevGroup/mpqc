@@ -14,7 +14,7 @@ ELSEIF(DEBUG_RELEASE)
     set(CXX_FLAGS "${CXX_FLAGS} -O2 -g")
     message(STATUS "Performing debug-release build ${CXX_FLAGS}")
 ELSE()
-    set(CXX_FLAGS "${CXX_FLAGS} -g -Wall -Wextra")
+    set(CXX_FLAGS "${CXX_FLAGS} -g -Wall -Wextra -Wno-unused-parameter")
     message(STATUS "Performing debug build ${CXX_FLAGS}")
 ENDIF()
 

@@ -3,7 +3,6 @@
 
 #include "../include/eigen.h"
 #include "../include/tiledarray.h"
-#include "../include/lapack.h"
 #include <utility>
 #include <iostream>
 
@@ -51,10 +50,22 @@ public:
   LRTile() = default;
   ~LRTile() = default;
   LRTile(const LRTile &rhs) = default;
+
+  LRTile(LRTile &&rhs) : L_(), R_(), rank_(std::move(rhs.rank_)),
+    range_(std::move(rhs.range_)) {
+    L_.swap(rhs.L_);
+    R_.swap(rhs.R_);
+  }
+
   LRTile &operator=(const LRTile &rhs) {
     L_ = rhs.L_;
     R_ = rhs.R_;
     rank_ = rhs.rank_;
+    return *this;
+  }
+
+  LRTile &operator=(LRTile &&rhs) {
+    *this = std::move(rhs);
     return *this;
   }
 
@@ -88,19 +99,31 @@ public:
   }
 
   /**
-   * @brief LRTile constructor to assign the low rank matrix directly
+   * @brief LRTile constructor to assign the low rank matrices directly
    * @param left_mat the left hand matrix
    * @param right_mat the right hand matrix
    */
   explicit LRTile(const EigMat<T> &left_mat, const EigMat<T> &right_mat)
-      : L_(left_mat), R_(right_mat), rank_(right_mat.rows()) {}
+      : L_(left_mat), R_(right_mat), rank_(right_mat.rows()), range_() {
+  }
 
   /**
-   * @brief mult multiples two tiles together.
-   * @param a Low Rank tile to multiple the current tile with.
-   * @return a new Low Rank tile.
+   * @brief LRTile move constructor to assign the low rank matrices directly
+   * @param left_mat the left hand matrix
+   * @param right_mat the right hand matrix
    */
-  LRTile mult(const LRTile<T> &right) const {
+  explicit LRTile(EigMat<T> &&left_mat, EigMat<T> &&right_mat)
+      : L_(), R_(), rank_(right_mat.rows()), range_() {
+    L_.swap(left_mat);
+    R_.swap(right_mat);
+  }
+
+   /**
+    * @brief mult multiples two tiles together.
+    * @param a Low Rank tile to multiple the current tile with.
+    * @return a new Low Rank tile.
+e   */
+   LRTile mult(const LRTile<T> &right) const {
     assert(false); // TODO
     return LRTile();
   }

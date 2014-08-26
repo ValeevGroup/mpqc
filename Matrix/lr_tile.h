@@ -134,20 +134,21 @@ e   */
    * @return new low rank tile with rank this->rank() + right.rank()
    * @warning the output tile will have higher rank than the input tiles.
    */
-  LRTile add(const LRTile<T> right) const {
+  LRTile add(const LRTile<T> &right) const {
+    // If right is empty just copy this.
+    if(right.rank_ == 0){
+      return LRTile(*this);
+    }
+
     const auto new_rank = rank_ + right.rank_;
+
     EigMat<T> L(L_.rows(), new_rank);
     EigMat<T> R(new_rank, right.R_.cols());
 
-    L.leftCols(rank()) = L_;
-    L.rightCols(right.rank()) = right.L_;
+    L << L_, right.L_;
+    R << R_, right.R_;
 
-    R.topRows(rank()) = R_;
-    R.bottomRows(right.rank()) = right.R_;
-
-    compress(L, R, 1e-08);
-
-    return LRTile(L, R);
+    return compress(L, R, 1e-08);
   }
 
   bool empty() const { return false; }
@@ -156,6 +157,7 @@ e   */
     assert(false);
     return LRTile();
   }
+
   LRTile add(const LRTile &right,
              const numeric_type factor,
              const TiledArray::Permutation &perm) const {}
@@ -220,103 +222,73 @@ e   */
 
   /**
    * @brief compress attempts to reduce the rank of the tile
+   * @param L,R are the matrice used to make the tile they will be modified.
    * @param cut is the threshold parameter for Eigen::ColPivHouseholder.
+   * @note L and R should be moved into compress, but Eigen does not yet support
+   * moving.
    */
-  void compress(EigMat<T> &L, EigMat<T> &R, double cut = 1e-8) const {
+  LRTile compress(EigMat<T> &L, EigMat<T> &R, double cut = 1e-8) const {
     const auto Lrows = L.rows();
     const auto Lcols = L.cols();
+    const auto Rcols = R.cols();
 
-    double first_qr = madness::wall_time();
     Eigen::ColPivHouseholderQR<EigMat<T>> qr(L);
-    first_qr = madness::wall_time() - first_qr;
-    std::cout << "First Qr time = " << first_qr << "s\n";
     qr.setThreshold(cut);
     const auto rankL = qr.rank();
 
-    double Form_Ll = madness::wall_time();
-    L.resize(Lrows,rankL);
+    // This seems to be the most efficent way to form the Q matrix,
+    // Eigen's documentation is not very clear on the subject.
+    L.resize(Lrows, rankL);
     L.setIdentity(Lrows, rankL);
     qr.householderQ().applyThisOnTheLeft(L);
-    Form_Ll = madness::wall_time() - Form_Ll;
-    std::cout << "Form ll time = " << Form_Ll << "s\n";
 
-    double Form_Rl = madness::wall_time();
-    EigMat<T> Rl = EigMat<T>(qr.matrixR()
-                                 .topLeftCorner(rankL, Lcols)
-                                 .template triangularView<Eigen::Upper>())
-                   * qr.colsPermutation().transpose();
-    Form_Rl = madness::wall_time() - Form_Rl;
-    std::cout << "Form Rl time = " << Form_Rl << "s\n";
+    EigMat<T> Rl
+        = EigMat
+          <T>(qr.matrixR().topLeftCorner(rankL, Lcols).template triangularView
+              <Eigen::Upper>()) * qr.colsPermutation().transpose();
 
-
-    double sec_qr = madness::wall_time();
     qr.compute(R);
     const auto rankR = qr.rank();
-    sec_qr = madness::wall_time() - sec_qr;
-    std::cout << "Second Qr time = " << sec_qr
-              << "s\n\tTotal Qr time = " << sec_qr + first_qr << "s\n";
 
-    double contract_middle = madness::wall_time();
     Rl = Rl * EigMat<T>(qr.householderQ()).leftCols(rankR);
-    contract_middle = madness::wall_time() - contract_middle;
-    std::cout << "Make middle time = " << contract_middle << "s\n";
-    double finalize = 0;
 
-    if (Rl.rows() >= Rl.cols()) {
-      finalize = madness::wall_time();
-      L *= Rl;
-      R = EigMat<T>(qr.matrixR()
-                        .topLeftCorner(qr.rank(), R.cols())
-                        .template triangularView<Eigen::Upper>())
-          * qr.colsPermutation().transpose();
-      finalize = madness::wall_time() - finalize;
-      std::cout << "finalize time = " << finalize << "s\n";
-    } else {
-      finalize = madness::wall_time();
-      R = Rl * (qr.matrixR()
-                             .topLeftCorner(qr.rank(), R.cols())
-                             .template triangularView<Eigen::Upper>())
-          * qr.colsPermutation().transpose();
-      finalize = madness::wall_time() - finalize;
-      std::cout << "finalize time = " << finalize << "s\n";
-    }
-    std::cout << "Total time = " << first_qr + sec_qr + contract_middle
-                                    + finalize << "s\n";
+    R = EigMat
+        <T>(qr.matrixR().topLeftCorner(rankR, Rcols).template triangularView
+            <Eigen::Upper>()) * qr.colsPermutation().transpose();
+
+    // Contract into smaller index.
+    (rankL > rankR) ? L *= Rl : R = Rl * R;
+
+    return LRTile(std::move(L), std::move(R));
   }
 
 
   LRTile operator*(const LRTile &right) {
     // Check which rank is smaller
     bool use_left_rank = (rank() < right.rank());
-    EigMat<T> L;
-    EigMat<T> R;
-    if (use_left_rank) {
-      L = matrixL();
-      R = (matrixR() * right.matrixL()) * right.matrixR();
-    } else {
-      L = matrixL() * (matrixR() * right.matrixL());
-      R = right.matrixR();
-    }
-    return LRTile(L, R);
+
+    EigMat<T> L = matrixL();
+    EigMat<T> R = right.matrixR();
+    const auto mid = matrixR() * right.matrixL();
+
+    (use_left_rank) ? R = mid * R : L *= mid;
+
+    return LRTile(std::move(L), std::move(R));
   }
 
   LRTile gemm(const LRTile &right,
               const LRTile::numeric_type factor,
               const TiledArray::math::GemmHelper &gemm_config) const {
 
-    // Check which rank is smaller
     bool use_left_rank = (rank() < right.rank());
-    EigMat<T> L;
-    EigMat<T> R;
-    if (use_left_rank) {
-      L = matrixL();
-      R = (matrixR() * right.matrixL()) * right.matrixR();
-    } else {
-      L = matrixL() * (matrixR() * right.matrixL());
-      R = right.matrixR();
-    }
-    assert(L.cols() == R.rows());
-    return LRTile(L, R);
+
+    EigMat<T> L = matrixL();
+    EigMat<T> R = right.matrixR();
+    const auto mid = matrixR() * right.matrixL();
+
+    (use_left_rank) ? R = mid * R : L *= mid;
+
+    return LRTile(std::move(L), std::move(R));
   }
 
   // GEMM operation with fused indices as defined by gemm_config; multiply arg1
@@ -325,14 +297,8 @@ e   */
                const LRTile &right,
                const LRTile::numeric_type factor,
                const TiledArray::math::GemmHelper &gemm_config) {
-    // TODO This is wasted copying so fix it.
-    auto AB = left.gemm(right, factor, gemm_config);
-    if (rank() != 0) {
-      auto temp = AB.add(*this);
-      *this = temp;
-    } else {
-      *this = AB;
-    }
+    //BUG this somehow fails in TA contractions fix later.
+    *this = left.gemm(right,factor,gemm_config).add(*this);
     return *this;
   }
 

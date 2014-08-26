@@ -1,62 +1,181 @@
 #include <iostream>
-#include "include/eigen.h"
-#include "molecule/cluster_concept.h"
-#include "cluster_collapse.h"
-#include "molecule/cluster.h"
-#include "molecule/molecule.h"
-#include "molecule/clustering_functions.h"
 #include <vector>
 #include <chrono>
-#include "molecule/Atom.h"
-#include <Accelerate/Accelerate.h>
+#include <string>
+
+#include "include/eigen.h"
 #include "include/tbb.h"
 #include "include/tiledarray.h"
 
-int main(int argc, char** argv) {
+#include "matrix/lr_tile.h"
+
+Eigen::MatrixXd read_matrix(const std::string &filename);
+
+template <typename T>
+void purify(TiledArray::Array<double, 2, T> &D,
+            const TiledArray::Array<double, 2, T> &S) {
+  D("i,j") = D("i,k") * S("k,l") * D("l,j");
+}
+
+TiledArray::Array<double, 2, LRTile<double>>
+make_lr_array(madness::World &,
+              TiledArray::TiledRange &,
+              const Eigen::MatrixXd &);
+
+template<typename T, typename LR>
+bool check_equal(const TiledArray::Array<double, 2, T> &Full,
+                 const TiledArray::Array<double, 2, LR> &Low){
+  auto fit = Full.begin();
+  auto fend = Full.end();
+  auto LRit = Low.begin();
+
+  for(; fit != fend; ++fit, ++LRit){
+    Eigen::MatrixXd LRmat = LRit->get().matrixLR();
+    auto range = fit->get.range();
+  }
+
+  return false;
+}
+
+int main(int argc, char **argv) {
+  std::string Sfile;
+  std::string Dfile;
+  std::string Ffile;
+  unsigned long blocksize;
+  if (argc < 5) {
+    std::cout << "Please provide input files for S, D and F, and blocksize"
+              << std::endl;
+    return 0;
+  } else {
+    Sfile = argv[1];
+    Dfile = argv[2];
+    Ffile = argv[3];
+    blocksize = std::stoul(argv[4]);
+  }
   madness::World &world = madness::initialize(argc, argv);
   world.rank();
 
-  int nthreads = 1;
-  std::cout << "input nthreads:";
-  std::cin >> nthreads;
-  tbb::task_scheduler_init init(nthreads);
-  unsigned long N = 5000000;
+  Eigen::MatrixXd ES = read_matrix(Sfile);
+  Eigen::MatrixXd ED = read_matrix(Dfile);
+  Eigen::MatrixXd EF = read_matrix(Ffile);
 
-  tbb::tick_count a0 = tbb::tick_count::now();
-  std::vector<Clusterable> atoms;
-  atoms.reserve(N);
-  for (auto i = 0ul; i < N; ++i) {
-    atoms.emplace_back(Atom({0, 0, i}, 1.0, 1.0));
+  const auto nbasis = ES.rows();
+
+  std::vector<unsigned int> blocking;
+  auto i = 0;
+  for (; i < nbasis; i += blocksize) {
+    blocking.emplace_back(i);
   }
-  tbb::tick_count a1 = tbb::tick_count::now();
-  double a_alloc = (a1-a0).seconds();
-  std::cout << "Atom allocing time = " << a_alloc << std::endl;
+  blocking.emplace_back(nbasis);
+  for (auto elem : blocking) {
+    std::cout << elem << " ";
+  }
+  std::cout << "\n";
 
-  tbb::tick_count m0 = tbb::tick_count::now();
-  Molecule mol(std::move(atoms));
-  tbb::tick_count m1 = tbb::tick_count::now();
-  double m_alloc = (m1-m0).seconds();
-  std::cout << "mol allocing time = " << m_alloc << std::endl;
 
-  tbb::tick_count mc0 = tbb::tick_count::now();
-  auto clusters = mol.cluster_molecule(clustering::kmeans(10), 60);
-  tbb::tick_count mc1 = tbb::tick_count::now();
-  double mc_alloc = (mc1-mc0).seconds();
-  std::cout << "cluster allocing time = " << mc_alloc << std::endl;
+  std::vector<TiledArray::TiledRange1> blocking2(
+      2, TiledArray::TiledRange1(blocking.begin(), blocking.end()));
 
-  using iter_t = decltype(clusters.begin());
-  double sum = tbb::parallel_reduce(
-      tbb::blocked_range<iter_t>(clusters.begin(), clusters.end()), 0.0,
-      [](const tbb::blocked_range<iter_t> & r, double d)->double {
-        return std::accumulate(r.begin(), r.end(), d,
-                               [](double d, const Clusterable &b) {
-          return d + b.center().norm();
-        });
-      },
-      std::plus<double>());
+  TiledArray::TiledRange trange(blocking2.begin(), blocking2.end());
 
-  std::cout << "Sum of distances = " << sum << std::endl;
+  TiledArray::Array<double, 2> S = TiledArray::eigen_to_array
+      <TiledArray::Array<double, 2>>(world, trange, ES);
+  TiledArray::Array<double, 2> D = TiledArray::eigen_to_array
+      <TiledArray::Array<double, 2>>(world, trange, ED);
+  TiledArray::Array<double, 2> F = TiledArray::eigen_to_array
+      <TiledArray::Array<double, 2>>(world, trange, EF);
 
+
+  std::cout << "S = \n" << S << std::endl;
+  std::cout << "F = \n" << F << std::endl;
+  std::cout << "D = \n" << D << std::endl;
+
+  purify(D, S);
+
+
+  /************************************************
+   * Perform LR version
+   ************************************************/
+
+  TiledArray::Array<double, 2, LRTile<double>> LR_S
+      = make_lr_array(world, trange, ES);
+  TiledArray::Array<double, 2, LRTile<double>> LR_D
+      = make_lr_array(world, trange, ED);
+  TiledArray::Array<double, 2, LRTile<double>> LR_F
+      = make_lr_array(world, trange, EF);
+
+  std::cout << "LR_S = \n" << LR_S << std::endl;
+  std::cout << "LR_F = \n" << LR_F << std::endl;
+  std::cout << "LR_D = \n" << LR_D << std::endl;
+
+  purify(LR_D, LR_S);
+
+  std::cout << "Are the matrices approximately equal? " << check_equal(D, LR_D) << std::endl;
+
+
+  world.gop.fence();
   madness::finalize();
   return 0;
+}
+
+Eigen::MatrixXd read_matrix(const std::string &filename) {
+  int cols = 0, rows = 0;
+
+  // Read numbers from file into buffer.
+  std::ifstream infile;
+  infile.open(filename);
+  if (!infile.eof()) {
+    std::string line;
+    std::getline(infile, line);
+    std::stringstream stream(line);
+    stream >> cols;
+    stream >> rows;
+  }
+
+  Eigen::MatrixXd out_mat(rows, cols);
+
+  int current_row = 0;
+
+  while (!infile.eof()) {
+    std::string line;
+    std::getline(infile, line);
+
+    std::stringstream stream(line);
+    auto i = 0;
+    for (; i < cols && !stream.eof(); ++i) {
+      stream >> out_mat(current_row, i);
+    }
+    ++current_row;
+
+    if (i != cols) {
+      std::cout << "EIGEN MATRIX READ FAILED for cols" << std::endl;
+    }
+  }
+  if (current_row != rows) {
+    std::cout << "EIGEN MATRIX READ FAILED for rows" << std::endl;
+  }
+
+  infile.close();
+
+  return out_mat;
+}
+
+TiledArray::Array<double, 2, LRTile<double>>
+make_lr_array(madness::World &world,
+              TiledArray::TiledRange &trange,
+              const Eigen::MatrixXd &mat) {
+  TiledArray::Array<double, 2, LRTile<double>> A(world, trange);
+  auto i = A.begin();
+  auto end = A.end();
+  for (; i != end; ++i) {
+    auto range = trange.make_tile_range(i.ordinal());
+    Eigen::MatrixXd mat_block = mat.block(range.start()[0], range.start()[1],
+                                          range.size()[0], range.size()[1]);
+
+    TiledArray::Array
+        <double, 2, LRTile<double>>::value_type tile(range, mat_block);
+
+    *i = tile;
+  }
+  return A;
 }

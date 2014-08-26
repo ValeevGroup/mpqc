@@ -51,8 +51,13 @@ public:
   ~LRTile() = default;
   LRTile(const LRTile &rhs) = default;
 
-  LRTile(LRTile &&rhs) : L_(), R_(), rank_(std::move(rhs.rank_)),
-    range_(std::move(rhs.range_)) {
+  LRTile(TiledArray::Range range)
+      : L_(), R_(), rank_(), range_(std::move(range)) {}
+
+  LRTile(LRTile &&rhs) noexcept : L_(),
+                                  R_(),
+                                  rank_(std::move(rhs.rank_)),
+                                  range_(std::move(rhs.range_)) {
     L_.swap(rhs.L_);
     R_.swap(rhs.R_);
   }
@@ -64,12 +69,14 @@ public:
     return *this;
   }
 
-  LRTile &operator=(LRTile &&rhs) {
-    *this = std::move(rhs);
+  LRTile &operator=(LRTile &&rhs) noexcept {
+    L_.swap(rhs.L_);
+    R_.swap(rhs.R_);
+    rank_ = std::move(rhs.rank_);
+    range_.swap(rhs.range_);
     return *this;
   }
 
-  // LRTile(LRTile &&rhs) = default; Must write by hand :P.
   /**
    * @brief LRTile constructor builds a low rank representation of a matrix
    * given an input matrix.
@@ -104,121 +111,44 @@ public:
    * @param right_mat the right hand matrix
    */
   explicit LRTile(const EigMat<T> &left_mat, const EigMat<T> &right_mat)
-      : L_(left_mat), R_(right_mat), rank_(right_mat.rows()), range_() {
-  }
+      : L_(left_mat), R_(right_mat), rank_(right_mat.rows()), range_() {}
+
+  /**
+   * @brief LRTile constructor which takes values for each member.
+   * @param range a TiledArray::Range object.
+   * @param left_mat an Eigen::Matrix for the left matrix.
+   * @param right_mat an Eigen::Matrix for the right matrix.
+   */
+  explicit LRTile(const TiledArray::Range &range,
+                  const EigMat<T> &left_mat,
+                  const EigMat<T> &right_mat)
+      : L_(left_mat), R_(right_mat), rank_(right_mat.rows()), range_(range) {}
 
   /**
    * @brief LRTile move constructor to assign the low rank matrices directly
+   * @param range A TiledArray::Range object for the tile.
    * @param left_mat the left hand matrix
    * @param right_mat the right hand matrix
    */
-  explicit LRTile(EigMat<T> &&left_mat, EigMat<T> &&right_mat)
-      : L_(), R_(), rank_(right_mat.rows()), range_() {
+  explicit LRTile(TiledArray::Range range,
+                  EigMat<T> &&left_mat,
+                  EigMat<T> &&right_mat) noexcept : L_(),
+                                                    R_(),
+                                                    rank_(right_mat.rows()),
+                                                    range_(std::move(range)) {
     L_.swap(left_mat);
     R_.swap(right_mat);
   }
 
-   /**
-    * @brief mult multiples two tiles together.
-    * @param a Low Rank tile to multiple the current tile with.
-    * @return a new Low Rank tile.
-e   */
-   LRTile mult(const LRTile<T> &right) const {
-    assert(false); // TODO
-    return LRTile();
-  }
+  /**
+   * @brief empty is the tile empty?
+   */
+  bool empty() const { return (rank_ == 0); }
 
   /**
-   * @brief add adds two low rank tiles togather
-   * @param right the right side low rank being added to this
-   * @return new low rank tile with rank this->rank() + right.rank()
-   * @warning the output tile will have higher rank than the input tiles.
+   * @brief clone returns a copy of the current tile.
    */
-  LRTile add(const LRTile<T> &right) const {
-    // If right is empty just copy this.
-    if(right.rank_ == 0){
-      return LRTile(*this);
-    }
-
-    const auto new_rank = rank_ + right.rank_;
-
-    EigMat<T> L(L_.rows(), new_rank);
-    EigMat<T> R(new_rank, right.R_.cols());
-
-    L << L_, right.L_;
-    R << R_, right.R_;
-
-    return compress(L, R, 1e-08);
-  }
-
-  bool empty() const { return false; }
-
-  LRTile add(const LRTile &right, const TiledArray::Permutation &perm) const {
-    assert(false);
-    return LRTile();
-  }
-
-  LRTile add(const LRTile &right,
-             const numeric_type factor,
-             const TiledArray::Permutation &perm) const {}
-  LRTile
-  add(const value_type &value, const TiledArray::Permutation &perm) const {}
-
-
-  LRTile clone() const {
-    assert(false); // TODO
-    return LRTile();
-  }
-  LRTile permute(const TiledArray::Permutation &perm) const {
-    assert(false); // TODO
-    return LRTile();
-  }
-  LRTile scale(const numeric_type factor) const {
-    assert(false); // TODO
-    return LRTile();
-  }
-  LRTile
-  scale(const numeric_type factor, const TiledArray::Permutation &perm) const {
-    assert(false); // TODO
-    return LRTile();
-  }
-  LRTile &scale_to(const numeric_type factor) {
-    assert(false); // TODO
-    return LRTile();
-  }
-  LRTile &add_to(const LRTile &right) {
-    assert(false); // TODO
-    return *this;
-  }
-  LRTile &add_to(const LRTile &right, const numeric_type factor) {
-    assert(false); // TODO
-    return *this;
-  }
-  LRTile &add_to(const value_type &value) {
-    assert(false); // TODO
-    return *this;
-  }
-
-  LRTile mult(const LRTile &right, const numeric_type factor) const {}
-  LRTile mult(const LRTile &right, const TiledArray::Permutation &perm) const {
-    assert(false); // TODO
-    return LRTile();
-  }
-  LRTile mult(const LRTile &right,
-              const numeric_type factor,
-              const TiledArray::Permutation &perm) const {
-    assert(false); // TODO
-    return LRTile();
-  }
-
-  LRTile &mult_to(const LRTile &right) {
-    assert(false); // TODO
-    return *this;
-  }
-  LRTile &mult_to(const LRTile &right, const numeric_type factor) {
-    assert(false); // TODO
-    return *this;
-  }
+  LRTile clone() const { return LRTile(range(), matrixL(), matrixR()); }
 
   /**
    * @brief compress attempts to reduce the rank of the tile
@@ -262,7 +192,10 @@ e   */
     return LRTile(std::move(L), std::move(R));
   }
 
-
+  /**
+   * @brief operator * multiplies to tiles togather.
+   * @param right the tile to multiply this by.
+   */
   LRTile operator*(const LRTile &right) {
     // Check which rank is smaller
     bool use_left_rank = (rank() < right.rank());
@@ -271,35 +204,9 @@ e   */
     EigMat<T> R = right.matrixR();
     const auto mid = matrixR() * right.matrixL();
 
-    (use_left_rank) ? R = mid * R : L *= mid;
+    (use_left_rank) ? R = mid *R : L *= mid;
 
     return LRTile(std::move(L), std::move(R));
-  }
-
-  LRTile gemm(const LRTile &right,
-              const LRTile::numeric_type factor,
-              const TiledArray::math::GemmHelper &gemm_config) const {
-
-    bool use_left_rank = (rank() < right.rank());
-
-    EigMat<T> L = matrixL();
-    EigMat<T> R = right.matrixR();
-    const auto mid = matrixR() * right.matrixL();
-
-    (use_left_rank) ? R = mid * R : L *= mid;
-
-    return LRTile(std::move(L), std::move(R));
-  }
-
-  // GEMM operation with fused indices as defined by gemm_config; multiply arg1
-  // by arg2, return the result
-  LRTile &gemm(const LRTile &left,
-               const LRTile &right,
-               const LRTile::numeric_type factor,
-               const TiledArray::math::GemmHelper &gemm_config) {
-    //BUG this somehow fails in TA contractions fix later.
-    *this = left.gemm(right,factor,gemm_config).add(*this);
-    return *this;
   }
 
   /**
@@ -313,7 +220,6 @@ e   */
    * @return the right hand side low rank matrix.
    */
   inline const EigMat<T> &matrixR() const { return R_; }
-
 
   /**
    * @brief matrixLR
@@ -332,6 +238,185 @@ e   */
    * @return The combined size of the low rank matrices.
    */
   inline std::size_t size() const { return L_.size() + R_.size(); }
+
+  /**
+   * @brief range returns the TiledArray::Range object associated with the tile.
+   */
+  inline TiledArray::Range range() const { return range_; }
+
+  /********************************************************
+   * BEGIN SECTION FOR TILEDARRAY MATH FUNCTIONS
+   ********************************************************/
+
+  LRTile permute(const TiledArray::Permutation &perm) const {
+    assert(false); // TODO
+    return LRTile();
+  }
+
+  LRTile scale(const numeric_type factor) const {
+    assert(false); // TODO
+    return LRTile();
+  }
+
+  LRTile
+  scale(const numeric_type factor, const TiledArray::Permutation &perm) const {
+    assert(false); // TODO
+    return LRTile();
+  }
+
+  LRTile &scale_to(const numeric_type factor) {
+    assert(false); // TODO
+    return LRTile();
+  }
+
+
+  /**
+   * @brief add adds two low rank tiles togather
+   * @param right the right side low rank being added to this
+   * @return new low rank tile with rank this->rank() + right.rank()
+   * @warning the output tile will have higher rank than the input tiles.
+   */
+  LRTile add(const LRTile<T> &right) const {
+    // If right is empty just copy this.
+    if (right.rank_ == 0) {
+      return LRTile(*this);
+    }
+
+    const auto new_rank = rank_ + right.rank_;
+
+    EigMat<T> L(L_.rows(), new_rank);
+    EigMat<T> R(new_rank, right.R_.cols());
+
+    L << L_, right.L_;
+    R << R_, right.R_;
+
+    return compress(L, R, 1e-08);
+  }
+
+  LRTile add(const LRTile &right, const TiledArray::Permutation &perm) const {
+    assert(false);
+    return LRTile();
+  }
+
+  LRTile add(const LRTile &right,
+             const numeric_type factor,
+             const TiledArray::Permutation &perm) const {}
+
+  LRTile
+  add(const value_type &value, const TiledArray::Permutation &perm) const {}
+
+  LRTile &add_to(const LRTile &right) {
+    assert(false); // TODO
+    return *this;
+  }
+
+  LRTile &add_to(const LRTile &right, const numeric_type factor) {
+    assert(false); // TODO
+    return *this;
+  }
+
+  LRTile &add_to(const value_type &value) {
+    assert(false); // TODO
+    return *this;
+  }
+
+  /**
+   * @brief subt
+   * @param right tile to subtract from this
+   */
+  LRTile subt(const LRTile &right){
+    // If right is empty just copy this.
+    if (right.rank_ == 0) {
+      return LRTile(*this);
+    }
+
+    const auto new_rank = rank_ + right.rank_;
+
+    EigMat<T> L(L_.rows(), new_rank);
+    EigMat<T> R(new_rank, right.R_.cols());
+
+    L << L_, -right.L_; // Just added a minus here.
+    R << R_, right.R_;
+
+    return compress(L, R, 1e-08);
+  }
+
+  LRTile subt(const LRTile &right, const TiledArray::Permutation &perm){
+    assert(false); //TODO
+    return LRTile();
+  }
+
+  LRTile& subt_to(const LRTile &right){
+    *this = subt(right);
+    return *this;
+  }
+
+
+  /**
+   * @brief mult multiples two tiles together.
+   * @param a Low Rank tile to multiple the current tile with.
+   * @return a new Low Rank tile.
+e   */
+  LRTile mult(const LRTile<T> &right) const {
+    assert(false); // TODO
+    return LRTile();
+  }
+
+  LRTile mult(const LRTile &right, const numeric_type factor) const {
+    assert(false); //TODO
+    return LRTile();
+  }
+
+  LRTile mult(const LRTile &right, const TiledArray::Permutation &perm) const {
+    assert(false); // TODO
+    return LRTile();
+  }
+
+  LRTile mult(const LRTile &right,
+              const numeric_type factor,
+              const TiledArray::Permutation &perm) const {
+    assert(false); // TODO
+    return LRTile();
+  }
+
+  LRTile &mult_to(const LRTile &right) {
+    assert(false); // TODO
+    return *this;
+  }
+
+  LRTile &mult_to(const LRTile &right, const numeric_type factor) {
+    assert(false); // TODO
+    return *this;
+  }
+
+
+  LRTile gemm(const LRTile &right,
+              const LRTile::numeric_type factor,
+              const TiledArray::math::GemmHelper &gemm_config) const {
+
+    bool use_left_rank = (rank() < right.rank());
+
+    EigMat<T> L = matrixL();
+    EigMat<T> R = right.matrixR();
+    const auto mid = matrixR() * right.matrixL();
+
+    (use_left_rank) ? R = mid *R : L *= mid;
+
+    return LRTile(std::move(L), std::move(R));
+  }
+
+  // GEMM operation with fused indices as defined by gemm_config; multiply arg1
+  // by arg2, return the result
+  LRTile &gemm(const LRTile &left,
+               const LRTile &right,
+               const LRTile::numeric_type factor,
+               const TiledArray::math::GemmHelper &gemm_config) {
+    // BUG this somehow fails in TA contractions fix later.
+    *this = left.gemm(right, factor, gemm_config).add(*this);
+    return *this;
+  }
+
+
 
   template <typename Archive> void serialize(Archive &ar) {}
 

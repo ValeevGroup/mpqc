@@ -5,6 +5,7 @@
 
 int main(int argc, char **argv) {
   madness::World &world = madness::initialize(argc, argv);
+  world.rank(); // Silence warning
 
   int input = (argc > 1) ? std::stoi(argv[1]) : 50;
   int job_rank = (argc > 2) ? std::stoi(argv[2]) : input / 2;
@@ -44,6 +45,44 @@ int main(int argc, char **argv) {
   LRTile<double> F(Q);
   LRTile<double> X(Q);
 
+  /*
+   * Test Add and Subt
+   */
+
+  double LR_add_start = madness::wall_time();
+  LRTile<double> BpF = B.add(F);
+  double LR_add_end = madness::wall_time();
+  Eigen::MatrixXd ZpQ = Z+Q;
+  double Reg_add_end = madness::wall_time();
+  std::cout << "Does add work (1:yes,0:no)? " << BpF.matrixLR().isApprox(ZpQ)
+            << "\n"
+            << "LR add took " << LR_add_end - LR_add_start << " s\n"
+            << "Reg add took " << Reg_add_end - LR_add_end << " s\n\n";
+
+
+  double LR_subt_start = madness::wall_time();
+  LRTile<double> BmF = B.subt(F);
+  double LR_subt_end = madness::wall_time();
+  Eigen::MatrixXd ZmQ = Z-Q;
+  double Reg_subt_end = madness::wall_time();
+  std::cout << "Does subt work (1:yes,0:no)? " << BmF.matrixLR().isApprox(ZmQ)
+            << "\n"
+            << "LR subt took " << LR_subt_end - LR_subt_start << " s\n"
+            << "Reg subt took " << Reg_subt_end - LR_subt_end << " s\n\n";
+
+  double LR_subt_to_start = madness::wall_time();
+  B.subt_to(F);
+  double LR_subt_to_end = madness::wall_time();
+  Z -= Q;
+  double Reg_subt_to_end = madness::wall_time();
+  std::cout << "Does subt_to work (1:yes,0:no)? " << B.matrixLR().isApprox(Z)
+            << "\n"
+            << "LR subt_to took " << LR_subt_to_end - LR_subt_to_start << " s\n"
+            << "Reg subt_to took " << Reg_subt_to_end - LR_subt_to_end << " s\n\n";
+
+  /*
+   * Test Mult and Gemm
+   */
   double LR_mult_start = madness::wall_time();
   LRTile<double> BF = B * F;
   double LR_mult_end = madness::wall_time();
@@ -54,16 +93,6 @@ int main(int argc, char **argv) {
             << BF.matrixLR().isApprox(Z * Q) << "\n"
             << "LR mult took " << LR_mult_end - LR_mult_start << " s\n"
             << "Reg mult took " << Reg_mult_end - LR_mult_end << " s\n\n";
-
-  double LR_add_start = madness::wall_time();
-  LRTile<double> BpF = B.add(F);
-  double LR_add_end = madness::wall_time();
-  Eigen::MatrixXd ZpQ = Z+Q;
-  double Reg_add_end = madness::wall_time();
-  std::cout << "Does add work (1:yes,0:no)? " << BpF.matrixLR().isApprox(Z + Q)
-            << "\n"
-            << "LR add took " << LR_add_end - LR_add_start << " s\n"
-            << "Reg add took " << Reg_add_end - LR_add_end << " s\n\n";
 
   double LR_gemm_start = madness::wall_time();
   LRTile<double> temp = B * F;

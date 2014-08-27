@@ -82,7 +82,7 @@ public:
    * given an input matrix.
    * @param input is an eigen matrix which with matching data type to the class.
    */
-  explicit LRTile(const EigMat<T> &input, double cut = 1e-08)
+  explicit LRTile(const EigMat<T> &input, double cut = 1e-09)
       : L_(), R_(), range_() {
     auto QR_pair = detail::qr_decomp(input, cut);
     L_ = std::get<0>(QR_pair);
@@ -97,7 +97,7 @@ public:
    */
   explicit LRTile(TiledArray::Range range,
                   const EigMat<T> &input,
-                  double cut = 1e-08)
+                  double cut = 1e-09)
       : L_(), R_(), range_(range) {
     auto QR_pair = detail::qr_decomp(input, cut);
     L_ = std::get<0>(QR_pair);
@@ -157,7 +157,7 @@ public:
    * @note L and R should be moved into compress, but Eigen does not yet support
    * moving.
    */
-  LRTile compress(EigMat<T> &L, EigMat<T> &R, double cut = 1e-8) const {
+  LRTile compress(EigMat<T> &L, EigMat<T> &R, double cut = 1e-09) const {
     const auto Lrows = L.rows();
     const auto Lcols = L.cols();
     const auto Rcols = R.cols();

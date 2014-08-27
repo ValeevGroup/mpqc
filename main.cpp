@@ -12,9 +12,43 @@
 Eigen::MatrixXd read_matrix(const std::string &filename);
 
 template <typename T>
+double compute_trace(const TiledArray::Array<double, 2, T> &A) {
+  double trace = 0.0;
+  for (auto it = A.begin(); it != A.end(); ++it) {
+    auto pos = it.index();
+    if (pos[0] == pos[1]) {
+      const auto range = it->get().range();
+      trace += TiledArray::eigen_map(it->get(), range.size()[0],
+                                     range.size()[1]).trace();
+    }
+  }
+  return trace;
+}
+
+template <typename T>
 void purify(TiledArray::Array<double, 2, T> &D,
             const TiledArray::Array<double, 2, T> &S) {
-  D("i,j") = D("i,k") * S("k,l") * D("l,j");
+
+  TiledArray::Array<double, 2, T> DS(D.get_world(), D.trange());
+  DS("i,j") = D("i,k") * S("k,j");
+  double trace = compute_trace(DS);
+  TiledArray::Array<double, 2, T> D2(D.get_world(), D.trange());
+
+  // TODO add occ
+  while(std::abs(trace - 2.0) > 1e-05){
+    // Compute D^2
+    D2("i,j") = DS("i,k") * D("k,j");
+
+    if(trace < 2){ // Raise trace
+      D("i,j") = 2 * D("i,j") - D2("i,j");
+    } else{ // Lower trace
+      D("i,j") = D2("i,j");
+    }
+
+    DS("i,j") = D("i,k") * S("k,j");
+
+    trace = compute_trace(DS);
+  }
 }
 
 TiledArray::Array<double, 2, LRTile<double>>
@@ -22,19 +56,29 @@ make_lr_array(madness::World &,
               TiledArray::TiledRange &,
               const Eigen::MatrixXd &);
 
-template<typename T, typename LR>
+template <typename T, typename LR>
 bool check_equal(const TiledArray::Array<double, 2, T> &Full,
-                 const TiledArray::Array<double, 2, LR> &Low){
+                 const TiledArray::Array<double, 2, LR> &Low) {
   auto fit = Full.begin();
   auto fend = Full.end();
   auto LRit = Low.begin();
 
-  for(; fit != fend; ++fit, ++LRit){
+  bool same = true;
+
+  for (; fit != fend && same; ++fit, ++LRit) {
     Eigen::MatrixXd LRmat = LRit->get().matrixLR();
-    auto range = fit->get.range();
+    auto range = fit->get().range();
+    Eigen::MatrixXd Fmat
+        = TiledArray::eigen_map(fit->get(), range.size()[0], range.size()[1]);
+    same = ((Fmat - LRmat).lpNorm<2>() < 1e-06);
+    if (same == false) {
+      std::cout << "Tile = " << fit.ordinal() << "\nLRmat = \n" << LRmat
+                << "\nFmat = \n" << Fmat << "\nDiff = \n" << Fmat - LRmat
+                << "\n";
+    }
   }
 
-  return false;
+  return same;
 }
 
 int main(int argc, char **argv) {
@@ -72,7 +116,6 @@ int main(int argc, char **argv) {
   }
   std::cout << "\n";
 
-
   std::vector<TiledArray::TiledRange1> blocking2(
       2, TiledArray::TiledRange1(blocking.begin(), blocking.end()));
 
@@ -86,13 +129,6 @@ int main(int argc, char **argv) {
       <TiledArray::Array<double, 2>>(world, trange, EF);
 
 
-  std::cout << "S = \n" << S << std::endl;
-  std::cout << "F = \n" << F << std::endl;
-  std::cout << "D = \n" << D << std::endl;
-
-  purify(D, S);
-
-
   /************************************************
    * Perform LR version
    ************************************************/
@@ -104,13 +140,26 @@ int main(int argc, char **argv) {
   TiledArray::Array<double, 2, LRTile<double>> LR_F
       = make_lr_array(world, trange, EF);
 
-  std::cout << "LR_S = \n" << LR_S << std::endl;
-  std::cout << "LR_F = \n" << LR_F << std::endl;
-  std::cout << "LR_D = \n" << LR_D << std::endl;
+  bool passed_check = (check_equal(S, LR_S) == true)
+                          ? ((check_equal(D, LR_D) == true)
+                                 ? ((check_equal(F, LR_F) == true) ?: false)
+                                 : false)
+                          : false;
 
-  purify(LR_D, LR_S);
+  if (!passed_check) {
+    std::cout << "Arrays were not equal!\n";
+  }
 
-  std::cout << "Are the matrices approximately equal? " << check_equal(D, LR_D) << std::endl;
+  //purify(LR_D, LR_S);
+  purify(D, S);
+
+  //passed_check = (check_equal(D, LR_D) == true) ? true : false;
+
+  if (!passed_check) {
+    std::cout << "Arrays were not equal!\n";
+  } else {
+    std::cout << "All Arrays were equal!\n";
+  }
 
 
   world.gop.fence();

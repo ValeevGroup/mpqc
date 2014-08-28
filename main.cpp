@@ -25,6 +25,19 @@ double compute_trace(const TiledArray::Array<double, 2, T> &A) {
   return trace;
 }
 
+template <>
+double compute_trace(const TiledArray::Array<double, 2, LRTile<double>> &A) {
+  double trace = 0.0;
+  for (auto it = A.begin(); it != A.end(); ++it) {
+    auto pos = it.index();
+    if (pos[0] == pos[1]) {
+      const auto range = it->get().range();
+      trace += it->get().matrixLR().trace();
+    }
+  }
+  return trace;
+}
+
 template <typename T>
 void purify(TiledArray::Array<double, 2, T> &D,
             const TiledArray::Array<double, 2, T> &S) {
@@ -35,14 +48,14 @@ void purify(TiledArray::Array<double, 2, T> &D,
   TiledArray::Array<double, 2, T> D2(D.get_world(), D.trange());
 
   // TODO add occ
-  while(std::abs(trace - 2.0) > 1e-05){
-    // Compute D^2
-    D2("i,j") = DS("i,k") * D("k,j");
+  while (std::abs(trace - 2.0) > 1e-05) {
+    // Compute D^2 just capture expression
+    auto D2 = DS("i,k") * D("k,j");
 
-    if(trace < 2){ // Raise trace
-      D("i,j") = 2 * D("i,j") - D2("i,j");
-    } else{ // Lower trace
-      D("i,j") = D2("i,j");
+    if (trace < 2) { // Raise trace
+      D("i,j") = 2 * D("i,j") - D2;
+    } else { // Lower trace
+      D("i,j") = D2;
     }
 
     DS("i,j") = D("i,k") * S("k,j");
@@ -72,8 +85,8 @@ bool check_equal(const TiledArray::Array<double, 2, T> &Full,
         = TiledArray::eigen_map(fit->get(), range.size()[0], range.size()[1]);
     same = ((Fmat - LRmat).lpNorm<2>() < 1e-06);
     if (same == false) {
-      std::cout << "Tile = " << fit.ordinal() << "\nLRmat = \n" << LRmat
-                << "\nFmat = \n" << Fmat << "\nDiff = \n" << Fmat - LRmat
+      std::cout << "Tile = " << fit.ordinal() << "\nLR mat = \n" << LRmat
+                << "\nFull mat = \n" << Fmat << "\nDiff = \n" << Fmat - LRmat
                 << "\n";
     }
   }
@@ -140,6 +153,21 @@ int main(int argc, char **argv) {
   TiledArray::Array<double, 2, LRTile<double>> LR_F
       = make_lr_array(world, trange, EF);
 
+  //TEST FOR COMPRESSING ENTIRE ARRAY
+//  Eigen::MatrixXd QQ(0, 0);
+//    for (auto i = LR_F.begin(); i != LR_F.end(); ++i) {
+//      if (i.index()[1] == 0) {
+//        auto L = i->get().matrixL();
+//        std::cout << QQ.cols() << " " << L.cols() << " " << L.rows() << "\n";
+//        QQ.resize(14, QQ.cols() + L.cols());
+//        QQ.rightCols(L.cols()) = L;
+//      }
+//    }
+//    std::cout << "QQ = \n" << QQ << std::endl;
+//    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(QQ);
+//    std::cout << "Q(" << QQ.rows() << "x" << QQ.cols() << ") rank = " << qr.rank() << "\n";
+
+
   bool passed_check = (check_equal(S, LR_S) == true)
                           ? ((check_equal(D, LR_D) == true)
                                  ? ((check_equal(F, LR_F) == true) ?: false)
@@ -151,9 +179,16 @@ int main(int argc, char **argv) {
   }
 
   //purify(LR_D, LR_S);
-  purify(D, S);
+  //purify(D, S);
+  auto LR_D2 = LR_D("i,k") * LR_S("k,l") * LR_D("l,j");
+  //LR_D("i,j") = 2 * LR_D("i,j") - LR_D2;
+  LR_D("i,j") = LR_D2;
 
-  //passed_check = (check_equal(D, LR_D) == true) ? true : false;
+  auto D2 = D("i,k") * S("k,l") * D("l,j");
+  //D("i,j") = 2 * D("i,j") - D2;
+  D("i,j") = D2;
+
+  passed_check = (check_equal(D, LR_D) == true) ? true : false;
 
   if (!passed_check) {
     std::cout << "Arrays were not equal!\n";

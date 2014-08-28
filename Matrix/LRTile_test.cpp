@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
   double LR_add_start = madness::wall_time();
   LRTile<double> BpF = B.add(F);
   double LR_add_end = madness::wall_time();
-  Eigen::MatrixXd ZpQ = Z+Q;
+  Eigen::MatrixXd ZpQ = Z + Q;
   double Reg_add_end = madness::wall_time();
   std::cout << "Does add work (1:yes,0:no)? " << BpF.matrixLR().isApprox(ZpQ)
             << "\n"
@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
   double LR_subt_start = madness::wall_time();
   LRTile<double> BmF = B.subt(F);
   double LR_subt_end = madness::wall_time();
-  Eigen::MatrixXd ZmQ = Z-Q;
+  Eigen::MatrixXd ZmQ = Z - Q;
   double Reg_subt_end = madness::wall_time();
   std::cout << "Does subt work (1:yes,0:no)? " << BmF.matrixLR().isApprox(ZmQ)
             << "\n"
@@ -78,7 +78,8 @@ int main(int argc, char **argv) {
   std::cout << "Does subt_to work (1:yes,0:no)? " << B.matrixLR().isApprox(Z)
             << "\n"
             << "LR subt_to took " << LR_subt_to_end - LR_subt_to_start << " s\n"
-            << "Reg subt_to took " << Reg_subt_to_end - LR_subt_to_end << " s\n\n";
+            << "Reg subt_to took " << Reg_subt_to_end - LR_subt_to_end
+            << " s\n\n";
 
   /*
    * Test Mult and Gemm
@@ -104,7 +105,6 @@ int main(int argc, char **argv) {
             << "\n"
             << "LR gemm took " << LR_gemm_end - LR_gemm_start << " s\n"
             << "Reg gemm took " << Reg_gemm_end - LR_gemm_end << " s\n\n";
-
 
 
   madness::finalize();

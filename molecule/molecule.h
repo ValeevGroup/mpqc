@@ -5,37 +5,38 @@
 #include <functional>
 #include <vector>
 
+//TODO comment this file
 class Molecule {
-public:
-  using cluster_fn_t = std::function<
-      std::vector<Cluster>(std::vector<Clusterable>, unsigned long)>;
+  public:
+    using cluster_fn_t = std::function
+        <std::vector<Cluster>(std::vector<Clusterable>, unsigned long)>;
 
-  Molecule(std::vector<Clusterable> c);
+    Molecule(std::vector<Clusterable> c);
 
-  position_t center() const { return center_; }
-  double charge() const { return charge_; }
-  double mass() const { return mass_; }
+    position_t center() const { return center_; }
+    double charge() const { return charge_; }
+    double mass() const { return mass_; }
 
-  std::vector<const Clusterable>::iterator begin() const {
-    return elements_.begin();
-  }
-  std::vector<const Clusterable>::iterator end() const {
-    return elements_.end();
-  }
+    std::vector<const Clusterable>::iterator begin() const {
+        return elements_.begin();
+    }
+    std::vector<const Clusterable>::iterator end() const {
+        return elements_.end();
+    }
 
-  unsigned long nelements() const { return elements_.size(); }
+    unsigned long nelements() const { return elements_.size(); }
 
-  std::vector<Cluster>
-  cluster_molecule(cluster_fn_t fn, unsigned long nclusters) const {
-    return fn(elements_, nclusters);
-  }
+    std::vector<Cluster>
+    cluster_molecule(cluster_fn_t fn, unsigned long nclusters) const {
+        return fn(elements_, nclusters);
+    }
 
-private:
-  std::vector<Clusterable> elements_;
+  private:
+    std::vector<Clusterable> elements_;
 
-  position_t center_ = {0, 0, 0};
-  double mass_ = 0.0;
-  double charge_ = 0.0;
+    position_t center_ = {0, 0, 0};
+    double mass_ = 0.0;
+    double charge_ = 0.0;
 };
 
 #endif // CLUSTERED_MOLECULE_H

@@ -3,6 +3,7 @@
 
 #include "../include/eigen.h"
 #include "../include/tiledarray.h"
+#include "lin_algebra.h"
 #include <utility>
 #include <iostream>
 
@@ -17,7 +18,13 @@ template <typename T> using LR_pair = std::pair<EigMat<T>, EigMat<T>>;
 * qr_decomp returns the low rank Q and R matrices as a pair.
 */
 template <typename T> LR_pair<T> qr_decomp(const EigMat<T> &input, double cut) {
+  double lapack_time = madness::wall_time();
+  EigMat<T> L_la;
+  EigMat<T> R_la;
+  ColPivQR(input, L_la, R_la, cut);
+  lapack_time = madness::wall_time() - lapack_time;
 
+  double eigen_time = madness::wall_time();
   Eigen::ColPivHouseholderQR<EigMat<T>> qr(input);
   qr.setThreshold(cut);
 
@@ -26,6 +33,10 @@ template <typename T> LR_pair<T> qr_decomp(const EigMat<T> &input, double cut) {
                               .topLeftCorner(qr.rank(), input.cols())
                               .template triangularView<Eigen::Upper>())
                 * qr.colsPermutation().transpose();
+  eigen_time = madness::wall_time() - eigen_time;
+
+  //std::cout << "Eigen takes " << eigen_time << "s\n";
+  //ststd::cout << "Lapack takes " << lapack_time << "s\n\n";
 
   return std::make_pair(L, R);
 }
@@ -82,8 +93,7 @@ public:
    * given an input matrix.
    * @param input is an eigen matrix which with matching data type to the class.
    */
-  explicit LRTile(const EigMat<T> &input, double cut = 1e-09)
-      : L_(), R_(), range_() {
+  explicit LRTile(EigMat<T> &input, double cut = 1e-16) : L_(), R_(), range_() {
     auto QR_pair = detail::qr_decomp(input, cut);
     L_ = std::get<0>(QR_pair);
     R_ = std::get<1>(QR_pair);
@@ -95,9 +105,7 @@ public:
    * given an input matrix.
    * @param input is an eigen matrix which with matching data type to the class.
    */
-  explicit LRTile(TiledArray::Range range,
-                  const EigMat<T> &input,
-                  double cut = 1e-09)
+  explicit LRTile(TiledArray::Range range, EigMat<T> &input, double cut = 1e-16)
       : L_(), R_(), range_(range) {
     auto QR_pair = detail::qr_decomp(input, cut);
     L_ = std::get<0>(QR_pair);
@@ -157,7 +165,7 @@ public:
    * @note L and R should be moved into compress, but Eigen does not yet support
    * moving.
    */
-  LRTile compress(EigMat<T> &L, EigMat<T> &R, double cut = 1e-09) const {
+  LRTile compress(TiledArray::Range range, EigMat<T> &L, EigMat<T> &R, double cut = 1e-16) const {
     const auto Lrows = L.rows();
     const auto Lcols = L.cols();
     const auto Rcols = R.cols();
@@ -189,7 +197,7 @@ public:
     // Contract into smaller index.
     (rankL > rankR) ? L *= Rl : R = Rl * R;
 
-    return LRTile(std::move(L), std::move(R));
+    return LRTile(range, std::move(L), std::move(R));
   }
 
   /**
@@ -254,8 +262,8 @@ public:
   }
 
   LRTile scale(const numeric_type factor) const {
-    assert(false); // TODO
-    return LRTile();
+    //assert(false); // TODO
+    return LRTile(range(), factor*matrixL(), matrixR());
   }
 
   LRTile
@@ -266,7 +274,7 @@ public:
 
   LRTile &scale_to(const numeric_type factor) {
     assert(false); // TODO
-    return LRTile();
+    return *this;
   }
 
 
@@ -290,7 +298,7 @@ public:
     L << L_, right.L_;
     R << R_, right.R_;
 
-    return compress(L, R, 1e-08);
+    return compress(range(), L, R, 1e-08);
   }
 
   LRTile add(const LRTile &right, const TiledArray::Permutation &perm) const {
@@ -324,7 +332,7 @@ public:
    * @brief subt
    * @param right tile to subtract from this
    */
-  LRTile subt(const LRTile &right){
+  LRTile subt(const LRTile &right) const {
     // If right is empty just copy this.
     if (right.rank_ == 0) {
       return LRTile(*this);
@@ -335,20 +343,35 @@ public:
     EigMat<T> L(L_.rows(), new_rank);
     EigMat<T> R(new_rank, right.R_.cols());
 
-    L << L_, -right.L_; // Just added a minus here.
-    R << R_, right.R_;
+    L << L_, right.L_; // Just added a minus here.
+    R << R_, -right.R_;
 
-    return compress(L, R, 1e-08);
+    return compress(range(), L, R, 1e-16);
   }
 
-  LRTile subt(const LRTile &right, const TiledArray::Permutation &perm){
-    assert(false); //TODO
-    return LRTile();
+  LRTile subt(const LRTile &right, const TiledArray::Permutation &perm) const {
+    // TODO FIX
+    return subt(right);
   }
 
-  LRTile& subt_to(const LRTile &right){
+  LRTile &neg_to() {
+    L_ = -1 * L_;
+    return *this;
+  }
+
+  LRTile &subt_to(const LRTile &right) {
     *this = subt(right);
     return *this;
+  }
+
+  LRTile &subt_to(const LRTile &right, numeric_type factor) {
+    L_ = factor * L_;
+    *this = subt(right);
+    return *this;
+  }
+
+  LRTile neg(const TiledArray::Permutation &perm) const {
+    return LRTile(range(), -matrixL(), matrixR());
   }
 
 
@@ -363,7 +386,7 @@ e   */
   }
 
   LRTile mult(const LRTile &right, const numeric_type factor) const {
-    assert(false); //TODO
+    assert(false); // TODO
     return LRTile();
   }
 
@@ -396,13 +419,16 @@ e   */
 
     bool use_left_rank = (rank() < right.rank());
 
-    EigMat<T> L = matrixL();
+    EigMat<T> L = factor * matrixL();
     EigMat<T> R = right.matrixR();
+
+    //auto mid = cblas_gemm(matrixR(), right.matrixL());
     const auto mid = matrixR() * right.matrixL();
 
-    (use_left_rank) ? R = mid *R : L *= mid;
+    //(use_left_rank) ? R = cblas_gemm(mid, R) : L = cblas_gemm(L, mid);
+    (use_left_rank) ? R = mid * R : L *= mid;
 
-    return LRTile(std::move(L), std::move(R));
+    return LRTile(range(), std::move(L), std::move(R));
   }
 
   // GEMM operation with fused indices as defined by gemm_config; multiply arg1
@@ -415,7 +441,6 @@ e   */
     *this = left.gemm(right, factor, gemm_config).add(*this);
     return *this;
   }
-
 
 
   template <typename Archive> void serialize(Archive &ar) {}

@@ -1,14 +1,14 @@
 #include "lr_tile.h"
 #include <iostream>
-#include <vector>
 #include "../include/tiledarray.h"
 
 int main(int argc, char **argv) {
-    madness::World &world = madness::initialize(argc, argv);
-    world.rank(); // Silence warning
-
     int input = (argc > 1) ? std::stoi(argv[1]) : 50;
     int job_rank = (argc > 2) ? std::stoi(argv[2]) : input / 2;
+
+    std::cout << "=========================================================\n"
+              << "Performing test of functions for tiles with reduced rank.\n"
+              << "=========================================================\n";
 
     // Test that multiplication works
     Eigen::MatrixXd Z = Eigen::MatrixXd::Random(input, input);
@@ -153,6 +153,5 @@ int main(int argc, char **argv) {
               << " s\n\n";
 
 
-    madness::finalize();
     return 0;
 }

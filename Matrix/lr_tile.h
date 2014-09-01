@@ -119,7 +119,7 @@ class LRTile {
      * @param cut is the threshold used to determine the rank of the tile.
      */
     explicit LRTile(TiledArray::Range range, const EigMat<T> &input,
-                    double cut = 1e-16)
+                    double cut = 1e-09)
         : L_(), R_(), range_(range) {
 
         auto QR_pair = detail::qr_decomp(input, is_full_rank_, cut);
@@ -144,7 +144,7 @@ class LRTile {
      * @cut is the threshold passed to the decomposition for determining the
      * rank of the tile.
      */
-    explicit LRTile(const EigMat<T> &input, double cut = 1e-16)
+    explicit LRTile(const EigMat<T> &input, double cut = 1e-09)
         : LRTile(TiledArray::Range::Range(), input, cut) {}
 
 

@@ -15,14 +15,14 @@ int main(int argc, char *argv[]) {
     Eigen::MatrixXd Q = Eigen::MatrixXd::Random(input, input);
     Eigen::MatrixXd C = Eigen::MatrixXd::Random(input, input);
 
-    LRTile<double> B(Z);
-    LRTile<double> F(Q);
-    LRTile<double> X(Q);
+    LRTile<double> B(Z, false);
+    LRTile<double> F(Q, false);
+    LRTile<double> X(C, false);
 
     std::cout << "Testing that all tiles are full rank.\n";
     std::cout << "\tB is full? " << B.is_full() << "\n";
-    std::cout << "\tB F is full? " << F.is_full() << "\n";
-    std::cout << "\tB X is full? " << X.is_full() << "\n\n";
+    std::cout << "\tF is full? " << F.is_full() << "\n";
+    std::cout << "\tX is full? " << X.is_full() << "\n\n";
 
 
     /*
@@ -41,7 +41,6 @@ int main(int argc, char *argv[]) {
               << "\tReg scale took " << Reg_scale_end - LR_scale_end
               << " s\n\n";
 
-#if 0
     /*
      * Test Add and Subt
      */
@@ -66,6 +65,7 @@ int main(int argc, char *argv[]) {
               << BmF.matrixLR().isApprox(ZmQ) << "\n"
               << "\tLR subt took " << LR_subt_end - LR_subt_start << " s\n"
               << "\tReg subt took " << Reg_subt_end - LR_subt_end << " s\n\n";
+
 
     /*
      * Test Mult and Gemm
@@ -93,6 +93,7 @@ int main(int argc, char *argv[]) {
               << "\tLR gemm took " << LR_gemm_end - LR_gemm_start << " s\n"
               << "\tReg gemm took " << Reg_gemm_end - LR_gemm_end << " s\n\n";
 
+#if 0
     /*
      * Test the XXX_to methods.
      */

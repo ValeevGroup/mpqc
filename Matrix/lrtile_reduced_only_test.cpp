@@ -44,14 +44,14 @@ int main(int argc, char **argv) {
 
     LRTile<double> B(Z);
     LRTile<double> F(Q);
-    LRTile<double> X(Q);
+    LRTile<double> X(C);
     std::cout << "Test that rank of tile equals input rank.\n";
     std::cout << "\tB rank = " << job_rank << "? "
-              << (B.rank() == std::size_t(job_rank)) << " " << B.rank() << "\n";
+              << (B.rank() == std::size_t(job_rank)) << "\n";
     std::cout << "\tF rank = " << job_rank << "? "
-              << (F.rank() == std::size_t(job_rank)) << " " << F.rank() << "\n";
+              << (F.rank() == std::size_t(job_rank)) << "\n";
     std::cout << "\tX rank = " << job_rank << "? "
-              << (X.rank() == std::size_t(job_rank)) << " " << X.rank() << "\n";
+              << (X.rank() == std::size_t(job_rank)) << "\n";
 
 
     /*

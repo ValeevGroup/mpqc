@@ -56,6 +56,7 @@ bool ColPivQR(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
 
     Eigen::VectorXd const &Rvalues = input.diagonal();
     const double thresh = cut * std::abs(input(1, 1));
+    // Does extra work.  Don't care . . . unless profile is bad.
     int rank = std::count_if(Rvalues.data(), Rvalues.data() + Rvalues.size(),
                              [=](T x) { return std::abs(x) > thresh; });
 

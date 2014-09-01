@@ -53,10 +53,9 @@ bool ColPivQR(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
         }
     }
 
-    //TODO Handle case where tile should be full rank.
-    // if (rank > double(full_rank) / 2.0) {
-    //  return false;
-    //}
+     if (rank > double(full_rank) / 2.0) {
+      return false;
+    }
 
     for (auto i = 0; i < N; ++i) { --J[i]; }
     Eigen::PermutationWrapper<Eigen::VectorXi> P(J);

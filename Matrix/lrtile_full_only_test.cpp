@@ -19,6 +19,12 @@ int main(int argc, char *argv[]) {
     LRTile<double> F(Q);
     LRTile<double> X(Q);
 
+    std::cout << "Testing that all tiles are full rank.\n";
+    std::cout << "\tB is full? " << B.is_full() << "\n";
+    std::cout << "\tB F is full? " << F.is_full() << "\n";
+    std::cout << "\tB X is full? " << X.is_full() << "\n\n";
+
+
     /*
      * Test scale
      */
@@ -29,12 +35,13 @@ int main(int argc, char *argv[]) {
     Eigen::MatrixXd Zscale = 5.2 * Z;
     double Reg_scale_end = madness::wall_time();
     std::cout << "\tDoes scale work (1:yes,0:no)? "
-              << Bscale.matrixLR().isApprox(Zscale) << "\n"
+              << (Bscale.is_full() && Bscale.matrixLR().isApprox(Zscale))
+              << "\n"
               << "\tLR scale took " << LR_scale_end - LR_scale << " s\n"
               << "\tReg scale took " << Reg_scale_end - LR_scale_end
               << " s\n\n";
 
-
+#if 0
     /*
      * Test Add and Subt
      */
@@ -126,5 +133,6 @@ int main(int argc, char *argv[]) {
               << " s\n\n";
 
 
+#endif
     return 0;
 }

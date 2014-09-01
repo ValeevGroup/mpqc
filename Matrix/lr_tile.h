@@ -15,33 +15,49 @@ using EigMat = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>;
 template <typename T>
 using LR_pair = std::pair<EigMat<T>, EigMat<T>>;
 
+// Have a default Eigen fallback
+namespace eigen_version {
 /**
 * qr_decomp returns the low rank Q and R matrices as a pair.
 */
 template <typename T>
-LR_pair<T> qr_decomp(const EigMat<T> &input, double cut) {
-    double lapack_time = madness::wall_time();
-    EigMat<T> L_la;
-    EigMat<T> R_la;
-    ColPivQR(input, L_la, R_la, cut);
-    lapack_time = madness::wall_time() - lapack_time;
-
-    double eigen_time = madness::wall_time();
+LR_pair<T> qr_decomp(const EigMat<T> &input, bool &is_full_rank, double cut) {
     Eigen::ColPivHouseholderQR<EigMat<T>> qr(input);
     qr.setThreshold(cut);
+
+    if (qr.rank() > double(std::min(input.cols(), input.rows())) / 2.0) {
+        is_full_rank = false;
+    }
 
     EigMat<T> L = EigMat<T>(qr.householderQ()).leftCols(qr.rank());
     EigMat<T> R = EigMat<T>(qr.matrixR()
                                 .topLeftCorner(qr.rank(), input.cols())
                                 .template triangularView<Eigen::Upper>())
                   * qr.colsPermutation().transpose();
-    eigen_time = madness::wall_time() - eigen_time;
 
-    // std::cout << "Eigen takes " << eigen_time << "s\n";
-    // ststd::cout << "Lapack takes " << lapack_time << "s\n\n";
+    if (qr.rank() > std::min(input.cols(), input.rows())) {
+        is_full_rank = false;
+    }
 
     return std::make_pair(L, R);
 }
+} // namespace eigen_version
+
+inline namespace lapack_version {
+/**
+* qr_decomp returns the low rank Q and R matrices as a pair.
+*/
+template <typename T>
+LR_pair<T> qr_decomp(const EigMat<T> &input, bool &is_full_rank, double cut) {
+
+    EigMat<T> L;
+    EigMat<T> R;
+    is_full_rank = ColPivQR(input, L, R, cut);
+
+    // L_la and R_la will be empty if is_full_rank returns false.
+    return std::make_pair(L, R);
+}
+} // namespace lapack_version
 
 } // namespace detail
 
@@ -52,10 +68,10 @@ LR_pair<T> qr_decomp(const EigMat<T> &input, double cut) {
 template <typename T>
 class LRTile {
   public:
-    typedef LRTile eval_type; /// The data type of the tile
-    typedef T value_type;     /// The data type of the tile
+    typedef LRTile eval_type;             /// The data type of the tile
+    typedef T value_type;                 /// The data type of the tile
     typedef TiledArray::Range range_type; /// Tensor range type
-    typedef T numeric_type; /// The scalar type of tile.
+    typedef T numeric_type;               /// The scalar type of tile.
     typedef std::size_t size_type;
 
     template <typename U>
@@ -71,6 +87,7 @@ class LRTile {
     LRTile(LRTile &&rhs) noexcept : L_(),
                                     R_(),
                                     rank_(std::move(rhs.rank_)),
+                                    is_full_rank_(std::move(rhs.is_full_rank_)),
                                     range_(std::move(rhs.range_)) {
         L_.swap(rhs.L_);
         R_.swap(rhs.R_);
@@ -80,6 +97,7 @@ class LRTile {
         L_ = rhs.L_;
         R_ = rhs.R_;
         rank_ = rhs.rank_;
+        is_full_rank_ = rhs.is_full_rank_;
         return *this;
     }
 
@@ -87,6 +105,7 @@ class LRTile {
         L_.swap(rhs.L_);
         R_.swap(rhs.R_);
         rank_ = std::move(rhs.rank_);
+        is_full_rank_ = std::move(rhs.is_full_rank_);
         range_.swap(rhs.range_);
         return *this;
     }
@@ -94,39 +113,40 @@ class LRTile {
     /**
      * @brief LRTile constructor builds a low rank representation of a matrix
      * given an input matrix.
+     * @param range is a TiledArray::Range object
      * @param input is an eigen matrix which with matching data type to the
      * class.
+     * @param cut is the threshold used to determine the rank of the tile.
      */
-    explicit LRTile(const EigMat<T> &input, double cut = 1e-16)
-        : L_(), R_(), range_() {
-        auto QR_pair = detail::qr_decomp(input, cut);
-        L_ = std::get<0>(QR_pair);
-        R_ = std::get<1>(QR_pair);
+    explicit LRTile(TiledArray::Range range, const EigMat<T> &input,
+                    double cut = 1e-16)
+        : L_(), R_(), range_(range) {
+
+        auto QR_pair = detail::qr_decomp(input, is_full_rank_, cut);
+
+        // if tile is low rank then get the L and R mats
+        if (!is_full_rank_) {
+            L_ = std::get<0>(QR_pair);
+            R_ = std::get<1>(QR_pair);
+        } else { // Tile was full rank so just use original matrix.
+            L_ = input;
+        }
+
         rank_ = L_.cols();
     }
 
     /**
      * @brief LRTile constructor builds a low rank representation of a matrix
-     * given an input matrix.
+     * given an input matrix. If the matrix is not low rank then keep the
+     * original input.
      * @param input is an eigen matrix which with matching data type to the
      * class.
+     * @cut is the threshold passed to the decomposition for determining the
+     * rank of the tile.
      */
-    explicit LRTile(TiledArray::Range range, const EigMat<T> &input,
-                    double cut = 1e-16)
-        : L_(), R_(), range_(range) {
-        auto QR_pair = detail::qr_decomp(input, cut);
-        L_ = std::get<0>(QR_pair);
-        R_ = std::get<1>(QR_pair);
-        rank_ = L_.cols();
-    }
+    explicit LRTile(const EigMat<T> &input, double cut = 1e-16)
+        : LRTile(TiledArray::Range::Range(), input, cut) {}
 
-    /**
-     * @brief LRTile constructor to assign the low rank matrices directly
-     * @param left_mat the left hand matrix
-     * @param right_mat the right hand matrix
-     */
-    explicit LRTile(const EigMat<T> &left_mat, const EigMat<T> &right_mat)
-        : L_(left_mat), R_(right_mat), rank_(right_mat.rows()), range_() {}
 
     /**
      * @brief LRTile constructor which takes values for each member.
@@ -137,6 +157,14 @@ class LRTile {
     explicit LRTile(const TiledArray::Range &range, const EigMat<T> &left_mat,
                     const EigMat<T> &right_mat)
         : L_(left_mat), R_(right_mat), rank_(right_mat.rows()), range_(range) {}
+
+    /**
+     * @brief LRTile constructor to assign the low rank matrices directly
+     * @param left_mat the left hand matrix
+     * @param right_mat the right hand matrix
+     */
+    explicit LRTile(const EigMat<T> &left_mat, const EigMat<T> &right_mat)
+        : LRTile(TiledArray::Range::Range(), left_mat, right_mat) {}
 
     /**
      * @brief LRTile move constructor to assign the low rank matrices directly
@@ -160,9 +188,9 @@ class LRTile {
     bool empty() const { return (rank_ == 0); }
 
     /**
-     * @brief clone returns a copy of the current tile.
+     * @brief clone returns a copy of the current tile, user the copy ctor.
      */
-    LRTile clone() const { return LRTile(range(), matrixL(), matrixR()); }
+    LRTile clone() const { return *this; }
 
     /**
      * @brief compress attempts to reduce the rank of the tile
@@ -239,10 +267,10 @@ class LRTile {
 
     /**
      * @brief matrixLR
-     * @return the full sized product of the low rank matrices.
+     * @return the full sized matrix. If full rank just return L_, else L_*R_
      * @warning Can possibly increase memory usage by a large amount.
      */
-    inline EigMat<T> matrixLR() const { return L_ * R_; }
+    inline EigMat<T> matrixLR() const { return (is_full()) ? L_ : L_ * R_; }
 
     /**
      * @brief rank returns the rank of the tile by value.
@@ -254,6 +282,8 @@ class LRTile {
      * @return The combined size of the low rank matrices.
      */
     inline std::size_t size() const { return L_.size() + R_.size(); }
+
+    inline bool is_full() const { return is_full_rank_; }
 
     /**
      * @brief range returns the TiledArray::Range object associated with the
@@ -272,12 +302,15 @@ class LRTile {
 
     /**
      * @brief scale
-     * @param factor
-     * @return
+     * @param factor the factor which scales the array.
+     * @warning scale assumes that the rank of the tile is not changed by
+     * scaling, but this is not necessarily true.
+     * @return a new LRTile which as been scaled by factor.
      */
     LRTile scale(const numeric_type factor) const {
-        return LRTile(std::move(range()), std::move(factor * matrixL()),
-                      std::move(matrixR()));
+        auto temp = clone();
+        temp.L_ *= factor;
+        return temp;
     }
 
     LRTile scale(const numeric_type factor,
@@ -502,6 +535,7 @@ class LRTile {
     EigMat<T> L_;
     EigMat<T> R_;
     std::size_t rank_ = 0;
+    bool is_full_rank_ = false;
     TiledArray::Range range_;
 };
 

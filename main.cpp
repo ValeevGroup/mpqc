@@ -180,13 +180,10 @@ int main(int argc, char **argv) {
 
     // purify(LR_D, LR_S);
     // purify(D, S);
-    auto LR_D2 = LR_D("i,k") * LR_S("k,l") * LR_D("l,j");
-    // LR_D("i,j") = 2 * LR_D("i,j") - LR_D2;
-    LR_D("i,j") = LR_D2;
 
-    auto D2 = D("i,k") * S("k,l") * D("l,j");
-    // D("i,j") = 2 * D("i,j") - D2;
-    D("i,j") = D2;
+    LR_D("i,j") = 2 * LR_D("i,j") - LR_D("i,k") * LR_S("k,l") * LR_D("l,j");
+
+    D("i,j") = 2 * D("i,j") - D("i,k") * S("k,l") * D("l,j");
 
     passed_check = (check_equal(D, LR_D) == true) ? true : false;
 

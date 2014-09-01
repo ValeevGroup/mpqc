@@ -52,12 +52,11 @@ LR_pair<T> qr_decomp(const EigMat<T> &input, double cut) {
 template <typename T>
 class LRTile {
   public:
-    typedef LRTile eval_type; /// The data type of the tile, typically double.
-    typedef T value_type;     /// The data type of the tile, typically double.
+    typedef LRTile eval_type; /// The data type of the tile
+    typedef T value_type;     /// The data type of the tile
     typedef TiledArray::Range range_type; /// Tensor range type
-    typedef double numeric_type;
-    typedef std::size_t size_type; /// The data type of the tile, typically
-                                   /// double.
+    typedef T numeric_type; /// The scalar type of tile.
+    typedef std::size_t size_type;
 
     template <typename U>
     using EigMat = detail::EigMat<U>;
@@ -98,7 +97,7 @@ class LRTile {
      * @param input is an eigen matrix which with matching data type to the
      * class.
      */
-    explicit LRTile(EigMat<T> &input, double cut = 1e-16)
+    explicit LRTile(const EigMat<T> &input, double cut = 1e-16)
         : L_(), R_(), range_() {
         auto QR_pair = detail::qr_decomp(input, cut);
         L_ = std::get<0>(QR_pair);
@@ -112,7 +111,7 @@ class LRTile {
      * @param input is an eigen matrix which with matching data type to the
      * class.
      */
-    explicit LRTile(TiledArray::Range range, EigMat<T> &input,
+    explicit LRTile(TiledArray::Range range, const EigMat<T> &input,
                     double cut = 1e-16)
         : L_(), R_(), range_(range) {
         auto QR_pair = detail::qr_decomp(input, cut);
@@ -145,11 +144,12 @@ class LRTile {
      * @param left_mat the left hand matrix
      * @param right_mat the right hand matrix
      */
-    explicit LRTile(TiledArray::Range range, EigMat<T> &&left_mat,
+    explicit LRTile(TiledArray::Range &&range, EigMat<T> &&left_mat,
                     EigMat<T> &&right_mat) noexcept : L_(),
                                                       R_(),
                                                       rank_(right_mat.rows()),
-                                                      range_(std::move(range)) {
+                                                      range_() {
+        swap(range_, range);
         L_.swap(left_mat);
         R_.swap(right_mat);
     }
@@ -270,9 +270,14 @@ class LRTile {
         return LRTile();
     }
 
+    /**
+     * @brief scale
+     * @param factor
+     * @return
+     */
     LRTile scale(const numeric_type factor) const {
-        // assert(false); // TODO
-        return LRTile(range(), factor * matrixL(), matrixR());
+        return LRTile(std::move(range()), std::move(factor * matrixL()),
+                      std::move(matrixR()));
     }
 
     LRTile scale(const numeric_type factor,
@@ -281,8 +286,13 @@ class LRTile {
         return LRTile();
     }
 
+    /**
+     * @brief scale_to scales the current tile by a constant factor.
+     * @param factor a scalor type to scale the tile by.
+     * @return this.
+     */
     LRTile &scale_to(const numeric_type factor) {
-        assert(false); // TODO
+        L_ = factor * L_;
         return *this;
     }
 
@@ -316,10 +326,16 @@ class LRTile {
     }
 
     LRTile add(const LRTile &right, const numeric_type factor,
-               const TiledArray::Permutation &perm) const {}
+               const TiledArray::Permutation &perm) const {
+        assert(false);
+        return LRTile();
+    }
 
     LRTile
-    add(const value_type &value, const TiledArray::Permutation &perm) const {}
+    add(const value_type &value, const TiledArray::Permutation &perm) const {
+        assert(false);
+        return LRTile();
+    }
 
     LRTile &add_to(const LRTile &right) {
         assert(false); // TODO
@@ -357,6 +373,12 @@ class LRTile {
         return compress(range(), L, R, 1e-16);
     }
 
+    /**
+     * @brief subt
+     * @param right
+     * @param perm
+     * @return
+     */
     LRTile
     subt(const LRTile &right, const TiledArray::Permutation &perm) const {
         // TODO FIX
@@ -364,31 +386,43 @@ class LRTile {
     }
 
     LRTile &neg_to() {
-        L_ = -1 * L_;
+        assert(false);
         return *this;
     }
 
+    /**
+     * @brief subt_to
+     * @param right
+     * @return
+     */
     LRTile &subt_to(const LRTile &right) {
         *this = subt(right);
         return *this;
     }
 
+    /**
+     * @brief subt_to subtracts a tile from the current tile.
+     * @param right the tile to subtract from this
+     * @param factor a scalor which scales the result of the subtraction
+     * @return this.
+     */
     LRTile &subt_to(const LRTile &right, numeric_type factor) {
-        L_ = factor * L_;
-        *this = subt(right);
+        // assert(false);
+        *this = subt(right).scale_to(factor);
         return *this;
     }
 
+    LRTile neg() const {
+        assert(false);
+        return LRTile();
+    }
+
     LRTile neg(const TiledArray::Permutation &perm) const {
-        return LRTile(range(), -matrixL(), matrixR());
+        assert(false);
+        return LRTile();
     }
 
 
-    /**
-     * @brief mult multiples two tiles together.
-     * @param a Low Rank tile to multiple the current tile with.
-     * @return a new Low Rank tile.
-  e   */
     LRTile mult(const LRTile<T> &right) const {
         assert(false); // TODO
         return LRTile();
@@ -421,7 +455,13 @@ class LRTile {
         return *this;
     }
 
-
+    /**
+     * @brief gemm
+     * @param right
+     * @param factor
+     * @param gemm_config
+     * @return
+     */
     LRTile gemm(const LRTile &right, const LRTile::numeric_type factor,
                 const TiledArray::math::GemmHelper &gemm_config) const {
 
@@ -439,13 +479,17 @@ class LRTile {
         return LRTile(range(), std::move(L), std::move(R));
     }
 
-    // GEMM operation with fused indices as defined by gemm_config; multiply
-    // arg1
-    // by arg2, return the result
+    /**
+     * @brief gemm
+     * @param left
+     * @param right
+     * @param factor
+     * @param gemm_config
+     * @return
+     */
     LRTile &gemm(const LRTile &left, const LRTile &right,
                  const LRTile::numeric_type factor,
                  const TiledArray::math::GemmHelper &gemm_config) {
-        // BUG this somehow fails in TA contractions fix later.
         *this = left.gemm(right, factor, gemm_config).add(*this);
         return *this;
     }

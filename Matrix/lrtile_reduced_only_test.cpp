@@ -45,6 +45,14 @@ int main(int argc, char **argv) {
     LRTile<double> B(Z);
     LRTile<double> F(Q);
     LRTile<double> X(Q);
+    std::cout << "Test that rank of tile equals input rank.\n";
+    std::cout << "\tB rank = " << job_rank << "? "
+              << (B.rank() == std::size_t(job_rank)) << " " << B.rank() << "\n";
+    std::cout << "\tF rank = " << job_rank << "? "
+              << (F.rank() == std::size_t(job_rank)) << " " << F.rank() << "\n";
+    std::cout << "\tX rank = " << job_rank << "? "
+              << (X.rank() == std::size_t(job_rank)) << " " << X.rank() << "\n";
+
 
     /*
      * Test scale
@@ -58,8 +66,8 @@ int main(int argc, char **argv) {
     std::cout << "\tDoes scale work (1:yes,0:no)? "
               << Bscale.matrixLR().isApprox(Zscale) << "\n"
               << "\tLR scale took " << LR_scale_end - LR_scale << " s\n"
-              << "\tReg scale took " << Reg_scale_end - LR_scale_end << " s\n\n";
-
+              << "\tReg scale took " << Reg_scale_end - LR_scale_end
+              << " s\n\n";
 
 
     /*
@@ -71,8 +79,8 @@ int main(int argc, char **argv) {
     double LR_add_end = madness::wall_time();
     Eigen::MatrixXd ZpQ = Z + Q;
     double Reg_add_end = madness::wall_time();
-    std::cout << "\tDoes add work (1:yes,0:no)? " << BpF.matrixLR().isApprox(ZpQ)
-              << "\n"
+    std::cout << "\tDoes add work (1:yes,0:no)? "
+              << BpF.matrixLR().isApprox(ZpQ) << "\n"
               << "\tLR add took " << LR_add_end - LR_add_start << " s\n"
               << "\tReg add took " << Reg_add_end - LR_add_end << " s\n\n";
 
@@ -82,8 +90,8 @@ int main(int argc, char **argv) {
     double LR_subt_end = madness::wall_time();
     Eigen::MatrixXd ZmQ = Z - Q;
     double Reg_subt_end = madness::wall_time();
-    std::cout << "\tDoes subt work (1:yes,0:no)? " << BmF.matrixLR().isApprox(ZmQ)
-              << "\n"
+    std::cout << "\tDoes subt work (1:yes,0:no)? "
+              << BmF.matrixLR().isApprox(ZmQ) << "\n"
               << "\tLR subt took " << LR_subt_end - LR_subt_start << " s\n"
               << "\tReg subt took " << Reg_subt_end - LR_subt_end << " s\n\n";
 
@@ -108,8 +116,8 @@ int main(int argc, char **argv) {
     double LR_gemm_end = madness::wall_time();
     C = Z * Q + C;
     double Reg_gemm_end = madness::wall_time();
-    std::cout << "\tDoes gemm work (1:yes,0:no)? " << Gemm.matrixLR().isApprox(C)
-              << "\n"
+    std::cout << "\tDoes gemm work (1:yes,0:no)? "
+              << Gemm.matrixLR().isApprox(C) << "\n"
               << "\tLR gemm took " << LR_gemm_end - LR_gemm_start << " s\n"
               << "\tReg gemm took " << Reg_gemm_end - LR_gemm_end << " s\n\n";
 
@@ -122,8 +130,8 @@ int main(int argc, char **argv) {
     double LR_subt_to_end = madness::wall_time();
     Z -= Q;
     double Reg_subt_to_end = madness::wall_time();
-    std::cout << "\tDoes subt_to work (1:yes,0:no)? " << B.matrixLR().isApprox(Z)
-              << "\n"
+    std::cout << "\tDoes subt_to work (1:yes,0:no)? "
+              << B.matrixLR().isApprox(Z) << "\n"
               << "\tLR subt_to took " << LR_subt_to_end - LR_subt_to_start
               << " s\n"
               << "\tReg subt_to took " << Reg_subt_to_end - LR_subt_to_end
@@ -146,8 +154,8 @@ int main(int argc, char **argv) {
     double LR_scale_to_end = madness::wall_time();
     Z *= 5.2;
     double Reg_scale_to_end = madness::wall_time();
-    std::cout << "\tDoes scale_to work (1:yes,0:no)? " << B.matrixLR().isApprox(Z)
-              << "\n"
+    std::cout << "\tDoes scale_to work (1:yes,0:no)? "
+              << B.matrixLR().isApprox(Z) << "\n"
               << "\tLR scale took " << LR_scale_to_end - LR_scale_to << " s\n"
               << "\tReg scale took " << Reg_scale_to_end - LR_scale_to_end
               << " s\n\n";

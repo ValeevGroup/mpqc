@@ -21,6 +21,17 @@ Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> inline cblas_gemm(
     return C;
 }
 
+/**
+ * ColPivQr computes the column pivoted QR decomposition for a matrix.
+ * It returns a boolean which is false if the matrix rank is less than 1/2 the
+ * full rank. The function captures input by value and then uses it's space as
+ * scratch.  Matrices L and R have Q and R written to them if the input matrix
+ * was low rank.
+ *
+ * Finally the cut parameter is used to set the threshold for determining the
+ * rank of the input matrix.
+ *
+ */
 template <typename T>
 bool ColPivQR(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
               Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
@@ -31,7 +42,7 @@ bool ColPivQR(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
     Eigen::VectorXi J = Eigen::VectorXi::Zero(N);
     T Tau[full_rank];
     Eigen::VectorXd Work(1);
-    int LWORK = -1;
+    int LWORK = -1; // Ask LAPACK how much space we need.
     int INFO;
     int LDA = M;
 
@@ -43,30 +54,26 @@ bool ColPivQR(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
     dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, Work.data(), &LWORK,
             &INFO);
 
+    Eigen::VectorXd const &Rvalues = input.diagonal();
+    const double thresh = cut * std::abs(input(1, 1));
+    int rank = std::count_if(Rvalues.data(), Rvalues.data() + Rvalues.size(),
+                             [=](T x) { return std::abs(x) > thresh; });
 
-    int rank = 0;
-    double A00 = std::abs(input(1, 1));
-    for (auto k = 0; k < full_rank; ++k) {
-        if (std::abs(input(k, k)) < cut * A00) {
-            rank = k;
-            break;
-        }
+    if (rank > double(full_rank) / 2.0) {
+        return true; // Input is full rank
     }
 
-     if (rank > double(full_rank) / 2.0) {
-      return false;
-    }
-
-    for (auto i = 0; i < N; ++i) { --J[i]; }
+    // LAPACK assumes 1 based indexing, but we need zero.
+    std::for_each(J.data(), J.data() + J.size(), [](int &val) { --val; });
     Eigen::PermutationWrapper<Eigen::VectorXi> P(J);
     R = Eigen::MatrixXd(input.topLeftCorner(rank, N).template triangularView
                         <Eigen::Upper>()) * P.transpose();
 
-
+    // Form Q.
     dorgqr_(&M, &N, &rank, input.data(), &M, Tau, Work.data(), &LWORK, &INFO);
     L = input.leftCols(rank);
 
-    return true;
+    return false; // Input is not full rank
 }
 
 

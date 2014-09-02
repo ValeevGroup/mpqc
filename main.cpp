@@ -31,7 +31,6 @@ double compute_trace(const TiledArray::Array<double, 2, LRTile<double>> &A) {
     for (auto it = A.begin(); it != A.end(); ++it) {
         auto pos = it.index();
         if (pos[0] == pos[1]) {
-            const auto range = it->get().range();
             trace += it->get().matrixLR().trace();
         }
     }
@@ -84,9 +83,9 @@ bool check_equal(const TiledArray::Array<double, 2, T> &Full,
             fit->get(), range.size()[0], range.size()[1]);
         same = ((Fmat - LRmat).lpNorm<2>() < 1e-06);
         if (same == false) {
-            std::cout << "Tile = " << fit.ordinal() << "\nLR mat = \n" << LRmat
-                      << "\nFull mat = \n" << Fmat << "\nDiff = \n"
-                      << Fmat - LRmat << "\n";
+            std::cout << "Tile = " << fit.ordinal()
+                      << " 2 norm of diff = " << (Fmat - LRmat).lpNorm<2>()
+                      << std::endl;
         }
     }
 
@@ -152,22 +151,6 @@ int main(int argc, char **argv) {
     TiledArray::Array<double, 2, LRTile<double>> LR_F
         = make_lr_array(world, trange, EF);
 
-    // TEST FOR COMPRESSING ENTIRE ARRAY
-    //  Eigen::MatrixXd QQ(0, 0);
-    //    for (auto i = LR_F.begin(); i != LR_F.end(); ++i) {
-    //      if (i.index()[1] == 0) {
-    //        auto L = i->get().matrixL();
-    //        std::cout << QQ.cols() << " " << L.cols() << " " << L.rows() <<
-    // "\n";
-    //        QQ.resize(14, QQ.cols() + L.cols());
-    //        QQ.rightCols(L.cols()) = L;
-    //      }
-    //    }
-    //    std::cout << "QQ = \n" << QQ << std::endl;
-    //    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(QQ);
-    //    std::cout << "Q(" << QQ.rows() << "x" << QQ.cols() << ") rank = " <<
-    // qr.rank() << "\n";
-
     bool passed_check = (check_equal(S, LR_S) == true)
                             ? ((check_equal(D, LR_D) == true)
                                    ? ((check_equal(F, LR_F) == true) ?: false)
@@ -178,15 +161,45 @@ int main(int argc, char **argv) {
         std::cout << "Arrays were not equal!\n";
     }
 
+    int total_tiles = 0;
+    int full_tiles = 0;
+    for (const auto it : LR_D) {
+        full_tiles += int(it.get().is_full());
+        ++total_tiles;
+    }
+    std::cout << "Percentage of full tiles before = " << double(full_tiles)
+                                                  / double(total_tiles) << "\n";
+
+
+    std::cout << "\n";
+    world.gop.fence();
+    auto lr_time = madness::wall_time();
     // purify(LR_D, LR_S);
-    // purify(D, S);
-
     LR_D("i,j") = 2 * LR_D("i,j") - LR_D("i,k") * LR_S("k,l") * LR_D("l,j");
+    // LR_D("i,j") = LR_D("i,k") * LR_S("k,l") * LR_D("l,j");
+    world.gop.fence();
+    lr_time = madness::wall_time() - lr_time;
+    std::cout << "LR time was " << lr_time << " s\n";
 
-
+    world.gop.fence();
+    auto full_time = madness::wall_time();
+    // purify(D, S);
     D("i,j") = 2 * D("i,j") - D("i,k") * S("k,l") * D("l,j");
+    // D("i,j") = D("i,k") * S("k,l") * D("l,j");
+    world.gop.fence();
+    full_time = madness::wall_time() - full_time;
+    std::cout << "Full time was " << full_time << " s\n";
 
     passed_check = (check_equal(D, LR_D) == true) ? true : false;
+
+    full_tiles = 0;
+    total_tiles = 0;
+    for (const auto it : LR_D) {
+        full_tiles += int(it.get().is_full());
+        ++total_tiles;
+    }
+    std::cout << "Percentage of full tiles before = " << double(full_tiles)
+                                                  / double(total_tiles) << "\n";
 
     if (!passed_check) {
         std::cout << "Arrays were not equal!\n";
@@ -254,7 +267,7 @@ make_lr_array(madness::World &world, TiledArray::TiledRange &trange,
                         range.size()[1]);
 
         TiledArray::Array<double, 2, LRTile<double>>::value_type tile(
-            range, mat_block, false);
+            range, mat_block, true, 1e-03);
 
         *i = tile;
     }

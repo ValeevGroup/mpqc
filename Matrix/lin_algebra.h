@@ -14,10 +14,14 @@ Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> inline cblas_gemm(
     const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &B) {
 
     Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> C(A.rows(), B.cols());
+    const int K = A.cols();
+    const int M = C.rows();
+    const int N = C.cols();
+    const int LDA = M, LDB = K, LDC = M;
     madness::cblas::gemm(madness::cblas::CBLAS_TRANSPOSE::NoTrans,
-                         madness::cblas::CBLAS_TRANSPOSE::NoTrans, A.rows(),
-                         B.cols(), B.rows(), 1.0, A.data(), 1, B.data(), 1, 1.0,
-                         C.data(), 1);
+                         madness::cblas::CBLAS_TRANSPOSE::NoTrans, M, N, K, 1.0,
+                         A.data(), LDA, B.data(), LDB, 0.0, C.data(), LDC);
+    //assert(C.isApprox(A * B));
     return C;
 }
 
@@ -76,6 +80,5 @@ bool ColPivQR(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
 
     return false; // Input is not full rank
 }
-
 
 #endif // Lin_Algebra_H

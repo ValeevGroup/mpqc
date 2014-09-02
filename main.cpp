@@ -183,6 +183,7 @@ int main(int argc, char **argv) {
 
     LR_D("i,j") = 2 * LR_D("i,j") - LR_D("i,k") * LR_S("k,l") * LR_D("l,j");
 
+
     D("i,j") = 2 * D("i,j") - D("i,k") * S("k,l") * D("l,j");
 
     passed_check = (check_equal(D, LR_D) == true) ? true : false;
@@ -252,8 +253,8 @@ make_lr_array(madness::World &world, TiledArray::TiledRange &trange,
             = mat.block(range.start()[0], range.start()[1], range.size()[0],
                         range.size()[1]);
 
-        TiledArray::Array
-            <double, 2, LRTile<double>>::value_type tile(range, mat_block);
+        TiledArray::Array<double, 2, LRTile<double>>::value_type tile(
+            range, mat_block, false);
 
         *i = tile;
     }

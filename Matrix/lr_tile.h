@@ -91,7 +91,8 @@ class LRTile {
                                     R_(),
                                     rank_(std::move(rhs.rank_)),
                                     is_full_rank_(std::move(rhs.is_full_rank_)),
-                                    range_(std::move(rhs.range_)) {
+                                    range_() {
+        range_.swap(rhs.range_);
         L_.swap(rhs.L_);
         R_.swap(rhs.R_);
     }
@@ -130,7 +131,6 @@ class LRTile {
     LRTile(TiledArray::Range range, const EigMat<T> &input, bool decomp = true,
            double cut = 1e-9)
         : L_(), R_(), range_(range) {
-
 
         if (decomp) {
             auto QR_pair = detail::qr_decomp(input, is_full_rank_, cut);
@@ -390,7 +390,7 @@ class LRTile {
         L << L_, right.L_;
         R << R_, right.R_;
 
-        return compress(range(), L, R, 1e-08);
+        return compress(range(), L, R, 1e-09);
     }
 
     LRTile add(const LRTile &right, const TiledArray::Permutation &perm) const {
@@ -459,6 +459,7 @@ class LRTile {
     LRTile
     subt(const LRTile &right, const TiledArray::Permutation &perm) const {
         // TODO FIX
+        assert(false);
         return subt(right);
     }
 
@@ -541,9 +542,12 @@ class LRTile {
      */
     LRTile gemm(const LRTile &right, const LRTile::numeric_type factor,
                 const TiledArray::math::GemmHelper &gemm_config) const {
-        //TODO decide whether is full or not later.
+        auto result_range = gemm_config.make_result_range
+                            <range_type>(range(), right.range());
+        // TODO decide whether is full or not later.
         if (is_full() && right.is_full()) {
-            return LRTile(range(), EigMat<T>(factor * L_ * right.L_), false);
+            return LRTile(result_range, EigMat<T>(factor * L_ * right.L_),
+                          false);
         }
 
         bool use_left_rank = (rank() < right.rank());
@@ -551,13 +555,13 @@ class LRTile {
         EigMat<T> L = factor * matrixL();
         EigMat<T> R = right.matrixR();
 
-        // auto mid = cblas_gemm(matrixR(), right.matrixL());
-        const auto mid = matrixR() * right.matrixL();
+        const auto mid = cblas_gemm(matrixR(), right.matrixL());
+        // const auto mid = matrixR() * right.matrixL();
 
         //(use_left_rank) ? R = cblas_gemm(mid, R) : L = cblas_gemm(L, mid);
         (use_left_rank) ? R = mid *R : L *= mid;
 
-        return LRTile(range(), std::move(L), std::move(R));
+        return LRTile(std::move(result_range), std::move(L), std::move(R));
     }
 
     /**

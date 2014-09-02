@@ -93,11 +93,22 @@ int main(int argc, char *argv[]) {
               << "\tLR gemm took " << LR_gemm_end - LR_gemm_start << " s\n"
               << "\tReg gemm took " << Reg_gemm_end - LR_gemm_end << " s\n\n";
 
-#if 0
     /*
      * Test the XXX_to methods.
      */
     std::cout << "Testing xxx_to methods.\n";
+
+    double LR_scale_to = madness::wall_time();
+    B.scale_to(5.2);
+    double LR_scale_to_end = madness::wall_time();
+    Z *= 5.2;
+    double Reg_scale_to_end = madness::wall_time();
+    std::cout << "\tDoes scale_to work (1:yes,0:no)? "
+              << B.matrixLR().isApprox(Z) << "\n"
+              << "\tLR scale took " << LR_scale_to_end - LR_scale_to << " s\n"
+              << "\tReg scale took " << Reg_scale_to_end - LR_scale_to_end
+              << " s\n\n";
+
     double LR_subt_to_start = madness::wall_time();
     B.subt_to(F);
     double LR_subt_to_end = madness::wall_time();
@@ -122,18 +133,10 @@ int main(int argc, char *argv[]) {
               << "\tReg subt_to factor took "
               << Reg_subt_to_factor_end - LR_subt_to_factor_end << " s\n\n";
 
-    double LR_scale_to = madness::wall_time();
-    B.scale_to(5.2);
-    double LR_scale_to_end = madness::wall_time();
-    Z *= 5.2;
-    double Reg_scale_to_end = madness::wall_time();
-    std::cout << "\tDoes scale_to work (1:yes,0:no)? "
-              << B.matrixLR().isApprox(Z) << "\n"
-              << "\tLR scale took " << LR_scale_to_end - LR_scale_to << " s\n"
-              << "\tReg scale took " << Reg_scale_to_end - LR_scale_to_end
-              << " s\n\n";
 
 
+
+#if 0
 #endif
     return 0;
 }

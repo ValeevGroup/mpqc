@@ -37,9 +37,10 @@ Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> inline cblas_gemm(
  *
  */
 template <typename T>
-bool ColPivQR(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
-              Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
-              Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R, double cut) {
+bool inline ColPivQR(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
+                     Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
+                     Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R,
+                     double cut) {
     int M = input.rows();
     int N = input.cols();
     auto full_rank = std::min(M, N);
@@ -87,10 +88,10 @@ bool ColPivQR(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
 }
 
 template <typename T>
-bool
-CompressQR(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
-           Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
-           Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R, double cut) {
+bool inline CompressQR(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
+                       Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
+                       Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R,
+                       double cut) {
     int M = input.rows();
     int N = input.cols();
     auto Lfull_rank = std::min(M, N);
@@ -130,7 +131,7 @@ CompressQR(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
     std::for_each(J.data(), J.data() + J.size(), [](int &val) { --val; });
     Eigen::PermutationWrapper<Eigen::VectorXi> P(J);
     R = Eigen::MatrixXd(input.topLeftCorner(rank, N).template triangularView
-                    <Eigen::Upper>()) * P.transpose() * R;
+                        <Eigen::Upper>()) * P.transpose() * R;
 
     // Form Q.
     dorgqr_(&M, &N, &rank, input.data(), &M, Tau, Work.data(), &LWORK, &INFO);

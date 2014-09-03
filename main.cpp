@@ -11,6 +11,29 @@
 
 Eigen::MatrixXd read_matrix(const std::string &filename);
 
+template<typename T>
+void check_data_sparsity(const TiledArray::Array<double, 2, T> &A){
+    TiledArray::Array<double, 2, LRTile<double>> B(A.get_world(), A.trange());
+
+    auto it_A = A.begin();
+    auto it_B = B.begin();
+    auto end = B.end();
+    for(; it_B != end; ++it_B, ++it_A) {
+        TiledArray::Array<double, 2, LRTile<double>>::value_type tile(
+            it_A->get().range(), TiledArray::eigen_map(it_A->get()), true, 1e-03);
+        *it_B = tile;
+    }
+
+    int total_tiles = 0;
+    int full_tiles = 0;
+    for (const auto it : B) {
+        full_tiles += int(it.get().is_full());
+        ++total_tiles;
+    }
+    std::cout << "Percentage of full tiles in Mat = " << double(full_tiles)
+                                                  / double(total_tiles) << "\n";
+}
+
 template <typename T>
 double compute_trace(const TiledArray::Array<double, 2, T> &A) {
     double trace = 0.0;
@@ -163,11 +186,11 @@ int main(int argc, char **argv) {
 
     int total_tiles = 0;
     int full_tiles = 0;
-    for (const auto it : LR_D) {
+    for (const auto it : LR_S) {
         full_tiles += int(it.get().is_full());
         ++total_tiles;
     }
-    std::cout << "Percentage of full tiles before = " << double(full_tiles)
+    std::cout << "Percentage of full tiles in S = " << double(full_tiles)
                                                   / double(total_tiles) << "\n";
 
 
@@ -175,8 +198,8 @@ int main(int argc, char **argv) {
     world.gop.fence();
     auto lr_time = madness::wall_time();
     // purify(LR_D, LR_S);
-    LR_D("i,j") = 2 * LR_D("i,j") - LR_D("i,k") * LR_S("k,l") * LR_D("l,j");
-    // LR_D("i,j") = LR_D("i,k") * LR_S("k,l") * LR_D("l,j");
+    //LR_D("i,j") = 2 * LR_D("i,j") - LR_D("i,k") * LR_S("k,l") * LR_D("l,j");
+    LR_D("i,j") = LR_S("i,k") * LR_S("k,j");
     world.gop.fence();
     lr_time = madness::wall_time() - lr_time;
     std::cout << "LR time was " << lr_time << " s\n";
@@ -184,8 +207,8 @@ int main(int argc, char **argv) {
     world.gop.fence();
     auto full_time = madness::wall_time();
     // purify(D, S);
-    D("i,j") = 2 * D("i,j") - D("i,k") * S("k,l") * D("l,j");
-    // D("i,j") = D("i,k") * S("k,l") * D("l,j");
+    //D("i,j") = 2 * D("i,j") - D("i,k") * S("k,l") * D("l,j");
+    D("i,j") = S("i,k") * S("k,j");
     world.gop.fence();
     full_time = madness::wall_time() - full_time;
     std::cout << "Full time was " << full_time << " s\n";
@@ -198,7 +221,7 @@ int main(int argc, char **argv) {
         full_tiles += int(it.get().is_full());
         ++total_tiles;
     }
-    std::cout << "Percentage of full tiles before = " << double(full_tiles)
+    std::cout << "Percentage of full tiles after = " << double(full_tiles)
                                                   / double(total_tiles) << "\n";
 
     if (!passed_check) {
@@ -206,6 +229,8 @@ int main(int argc, char **argv) {
     } else {
         std::cout << "All Arrays were equal!\n";
     }
+
+    check_data_sparsity(D);
 
     world.gop.fence();
     madness::finalize();

@@ -22,8 +22,6 @@ else (TILEDARRAY_INCLUDE_DIRS)
     "MADtensor"
     "MADtinyxml"
     "MADworld"
-    "elemental"
-    "pmrrr"
     )
 
   set(_TILEDARRAY_LIBRARY_DIR ${_TILEDARRAY_INSTALL_DIR}/lib)

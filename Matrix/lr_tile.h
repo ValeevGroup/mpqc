@@ -91,7 +91,8 @@ class LRTile {
                                     R_(),
                                     rank_(std::move(rhs.rank_)),
                                     is_full_rank_(std::move(rhs.is_full_rank_)),
-                                    range_() {
+                                    range_(),
+                                    cut_(std::move(rhs.cut_)) {
         range_.swap(rhs.range_);
         L_.swap(rhs.L_);
         R_.swap(rhs.R_);
@@ -109,6 +110,7 @@ class LRTile {
         rank_ = std::move(rhs.rank_);
         is_full_rank_ = std::move(rhs.is_full_rank_);
         range_.swap(rhs.range_);
+        cut_ = std::move(rhs.cut_);
         return *this;
     }
 
@@ -117,8 +119,8 @@ class LRTile {
      * initializes everything else.
      * @param range a TiledArray::Range object.
      */
-    explicit LRTile(TiledArray::Range range)
-        : L_(), R_(), range_(std::move(range)) {}
+    explicit LRTile(TiledArray::Range range, double cut = 1e-07)
+        : L_(), R_(), range_(std::move(range)), cut_(cut) {}
 
     /**
      * @brief LRTile constructor builds a low rank representation of a matrix
@@ -129,11 +131,11 @@ class LRTile {
      * @param cut is the threshold used to determine the rank of the tile.
      */
     LRTile(TiledArray::Range range, const EigMat<T> &input, bool decomp = true,
-           double cut = 1e-8)
-        : L_(), R_(), range_(range) {
+           double cut = 1e-7)
+        : L_(), R_(), range_(range), cut_(cut) {
 
         if (decomp) {
-            auto QR_pair = detail::qr_decomp(input, is_full_rank_, cut);
+            auto QR_pair = detail::qr_decomp(input, is_full_rank_, cut_);
             if (!is_full_rank_) {
                 L_ = std::get<0>(QR_pair);
                 R_ = std::get<1>(QR_pair);
@@ -158,7 +160,7 @@ class LRTile {
      * @cut is the threshold passed to the decomposition for determining the
      * rank of the tile.
      */
-    LRTile(const EigMat<T> &input, bool decomp = true, double cut = 1e-08)
+    LRTile(const EigMat<T> &input, bool decomp = true, double cut = 1e-07)
         : LRTile(TiledArray::Range::Range(), input, decomp, cut) {}
 
 
@@ -169,22 +171,18 @@ class LRTile {
      * @param right_mat an Eigen::Matrix for the right matrix.
      */
     LRTile(const TiledArray::Range &range, const EigMat<T> &left_mat,
-           const EigMat<T> &right_mat)
-        : L_(left_mat), R_(right_mat), rank_(right_mat.rows()), range_(range) {
-        if (rank_ > double(std::min(L_.rows(), R_.cols())) / 2.0) {
-            L_ = L_ * R_;
-            R_.resize(0, 0);
-            is_full_rank_ = true;
-        }
-    }
+           const EigMat<T> &right_mat, double cut = 1e-07)
+        : L_(left_mat), R_(right_mat), rank_(right_mat.rows()), range_(range),
+          cut_(cut) {}
 
     /**
      * @brief LRTile constructor to assign the low rank matrices directly
      * @param left_mat the left hand matrix
      * @param right_mat the right hand matrix
      */
-    LRTile(const EigMat<T> &left_mat, const EigMat<T> &right_mat)
-        : LRTile(TiledArray::Range::Range(), left_mat, right_mat) {}
+    LRTile(const EigMat<T> &left_mat, const EigMat<T> &right_mat,
+           double cut = 1e-07)
+        : LRTile(TiledArray::Range::Range(), left_mat, right_mat, cut) {}
 
     /**
      * @brief LRTile move constructor to assign the low rank matrices
@@ -194,10 +192,12 @@ class LRTile {
      * @param right_mat the right hand matrix
      */
     LRTile(TiledArray::Range &&range, EigMat<T> &&left_mat,
-           EigMat<T> &&right_mat) noexcept : L_(),
-                                             R_(),
-                                             rank_(right_mat.rows()),
-                                             range_() {
+           EigMat<T> &&right_mat, double cut = 1e-07) noexcept
+        : L_(),
+          R_(),
+          rank_(right_mat.rows()),
+          range_(),
+          cut_(std::move(cut)) {
         swap(range_, range);
         if (rank_ > double(std::min(left_mat.rows(), right_mat.cols())) / 2.0) {
             L_ = left_mat * right_mat;
@@ -213,9 +213,10 @@ class LRTile {
      * @param left_mat the left matrix being moved in.
      * @param right_mat the right matrix being moved in.
      */
-    LRTile(EigMat<T> &&left_mat, EigMat<T> &&right_mat) noexcept
+    LRTile(EigMat<T> &&left_mat, EigMat<T> &&right_mat,
+           double cut = 1e-07) noexcept
         : LRTile(TiledArray::Range::Range(), std::move(left_mat),
-                 std::move(right_mat)) {}
+                 std::move(right_mat), cut) {}
 
     /**
      * @brief empty is the tile empty?
@@ -235,12 +236,22 @@ class LRTile {
      * modified.
      * @param cut is the threshold parameter for Eigen::ColPivHouseholder.
      * @note L and R should be moved into compress, but Eigen does not yet
-     * support
-     * moving.
+     * support moving.
+     *
+     * @Warning compress will modify L and R
      */
     LRTile compress(TiledArray::Range range, EigMat<T> &L, EigMat<T> &R,
-                    double cut = 1e-09) const {
-
+                    double cut) const {
+#if 1
+        // First L is taken by value second is modified.  Returns true if not
+        // compressiable.
+        if (!CompressQR(L, L, R, cut)) {
+            return LRTile(std::move(range), std::move(L), std::move(R), cut);
+        } else {
+            return LRTile(std::move(range), L * R, false, cut);
+        }
+#endif
+#if 0
         const auto Lrows = L.rows();
         const auto Lcols = L.cols();
         const auto Rcols = R.cols();
@@ -273,6 +284,7 @@ class LRTile {
         (rankL > rankR) ? L *= Rl : R = Rl * R;
 
         return LRTile(std::move(range), std::move(L), std::move(R));
+#endif
     }
 
     /**
@@ -286,15 +298,15 @@ class LRTile {
         EigMat<T> L;
         EigMat<T> R;
         if (is_full() && right.is_full()) {
-            return LRTile(range(), EigMat<T>(L_ * right.L_), false);
+            return LRTile(range(), EigMat<T>(L_ * right.L_), false, cut_);
         } else if (right.is_full()) {
             L = matrixL();
             R = matrixR() * right.matrixL();
-            return LRTile(std::move(L), std::move(R));
+            return LRTile(std::move(L), std::move(R), cut_);
         } else if (is_full()) {
             L = matrixL() * right.matrixL();
             R = right.matrixR();
-            return LRTile(std::move(L), std::move(R));
+            return LRTile(std::move(L), std::move(R), cut_);
         }
 
         bool use_left_rank = (rank() < right.rank());
@@ -304,7 +316,7 @@ class LRTile {
 
         (use_left_rank) ? R = mid *R : L *= mid;
 
-        return LRTile(std::move(L), std::move(R));
+        return LRTile(std::move(L), std::move(R), cut_);
     }
 
     /**
@@ -398,16 +410,17 @@ class LRTile {
         } else if (rank() == 0) { // If this is empty copy right.
             return LRTile(right);
         } else if (is_full() && right.is_full()) { // If both full
-            return LRTile(range(), EigMat<T>(L_ + right.L_), false);
+            return LRTile(range(), EigMat<T>(L_ + right.L_), false, cut_);
         } else if (is_full() || right.is_full()) {
             return LRTile(range(), EigMat<T>(matrixLR() + right.matrixLR()),
-                          false);
+                          true, cut_);
         }
 
         const auto new_rank = rank_ + right.rank_;
 
-        if (new_rank > std::max(L_.rows(), R_.cols())) {
-            return LRTile(range(), EigMat<T>(matrixLR() + right.matrixLR()));
+        if (new_rank > std::min(L_.rows(), R_.cols())) {
+            return LRTile(range(), EigMat<T>(matrixLR() + right.matrixLR()),
+                          true, cut_);
         }
 
         EigMat<T> L(L_.rows(), new_rank);
@@ -416,7 +429,11 @@ class LRTile {
         L << L_, right.L_;
         R << R_, right.R_;
 
-        return compress(range(), L, R);
+        if (new_rank < double(std::min(L.rows(), R_.cols())) / 4.0) {
+            return LRTile(range(), std::move(L), std::move(R), cut_);
+        }
+
+        return compress(range(), L, R, cut_);
     }
 
     LRTile add(const LRTile &right, const TiledArray::Permutation &perm) const {
@@ -462,21 +479,29 @@ class LRTile {
         } else if (rank() == 0) {
             return LRTile(right);
         } else if (is_full() && right.is_full()) {
-            return LRTile(range(), EigMat<T>(L_ - right.L_), false);
+            return LRTile(range(), EigMat<T>(L_ - right.L_), false, cut_);
         } else if (is_full() || right.is_full()) {
             return LRTile(range(), EigMat<T>(matrixLR() - right.matrixLR()),
-                          false);
+                          false, cut_);
         }
 
         const auto new_rank = rank_ + right.rank_;
+        if (new_rank > std::min(L_.rows(), R_.cols())) {
+            return LRTile(range(), EigMat<T>(matrixLR() - right.matrixLR()),
+                          true, cut_);
+        }
 
         EigMat<T> L(L_.rows(), new_rank);
         EigMat<T> R(new_rank, right.R_.cols());
 
-        L << L_, right.L_; // Just added a minus here.
-        R << R_, -right.R_;
+        L << L_, -right.L_; // Just added a minus here.
+        R << R_, right.R_;
 
-        return compress(range(), L, R);
+        if (new_rank < double(std::min(L.rows(), R_.cols())) / 4.0) {
+            return LRTile(range(), std::move(L), std::move(R), cut_);
+        }
+
+        return compress(range(), L, R, cut_);
     }
 
     /**
@@ -582,18 +607,20 @@ class LRTile {
             return LRTile(
                 std::move(result_range),
                 cblas_gemm(EigMat<T>(factor * matrixL()), right.matrixL()),
-                false);
+                false, cut_);
 
         } else if (is_full()) {
             // L = matrixL() * right.matrixL();
             L = cblas_gemm(EigMat<T>(factor * matrixL()), right.matrixL());
             R = right.matrixR();
-            return LRTile(std::move(result_range), std::move(L), std::move(R));
+            return LRTile(std::move(result_range), std::move(L), std::move(R),
+                          cut_);
         } else if (right.is_full()) {
             L = factor * matrixL();
             R = cblas_gemm(matrixR(), right.matrixL());
             // R = matrixR() * right.matrixL();
-            return LRTile(std::move(result_range), std::move(L), std::move(R));
+            return LRTile(std::move(result_range), std::move(L), std::move(R),
+                          cut_);
         }
 
         bool use_left_rank = (rank() < right.rank());
@@ -607,7 +634,8 @@ class LRTile {
         (use_left_rank) ? R = cblas_gemm(mid, R) : L = cblas_gemm(L, mid);
         //(use_left_rank) ? R = mid *R : L *= mid;
 
-        return LRTile(std::move(result_range), std::move(L), std::move(R));
+        return LRTile(std::move(result_range), std::move(L), std::move(R),
+                      cut_);
     }
 
     /**
@@ -635,6 +663,7 @@ class LRTile {
     std::size_t rank_ = 0;
     bool is_full_rank_ = false;
     TiledArray::Range range_;
+    double cut_;
 };
 
 template <typename T>

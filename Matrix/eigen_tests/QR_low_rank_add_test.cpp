@@ -5,118 +5,122 @@
 
 using namespace Eigen;
 
+MatrixXd formQ(ColPivHouseholderQR<MatrixXd> const &qr) {
+    MatrixXd Q = MatrixXd::Identity(qr.matrixQR().rows(), qr.rank());
+    qr.householderQ().applyThisOnTheLeft(Q);
+    return Q;
+}
+
+MatrixXd formR(ColPivHouseholderQR<MatrixXd> const &qr) {
+    MatrixXd R = MatrixXd(qr.matrixR()
+                              .topLeftCorner(qr.rank(), qr.matrixQR().cols())
+                              .template triangularView<Upper>())
+                 * qr.colsPermutation().transpose();
+    return R;
+}
+
+MatrixXd makeLR_mat(int rows, int rank) {
+    MatrixXd mat = MatrixXd::Random(rows, rows);
+    mat = mat.transpose() * mat;
+    SelfAdjointEigenSolver<MatrixXd> es(mat);
+    MatrixXd C = es.eigenvectors();
+    VectorXd V = es.eigenvalues();
+
+    // Create Low Rank Matrix
+    std::for_each(V.data(), V.data() + (rows - rank),
+                  [](double &x) { x = 0.0; });
+    mat = C * V.asDiagonal() * C.transpose();
+
+    return mat;
+}
+
 int main(int argc, char **argv) {
-  int input = (argc > 1) ? std::stoi(argv[1]) : 500;
-  int num_zero_vals = (argc > 2) ? std::stoi(argv[2]) : input / 2;
+    int input = (argc > 1) ? std::stoi(argv[1]) : 500;
+    int rank = (argc > 2) ? std::stoi(argv[2]) : input / 2;
 
-  MatrixXd mat = MatrixXd::Random(input, input);
-  MatrixXd mat2 = MatrixXd::Random(input, input);
+    MatrixXd mat = makeLR_mat(input, rank);
+    MatrixXd mat2 = makeLR_mat(input, rank);
 
-  // Make mat symetric
-  mat = mat.transpose() * mat;
-  mat2 = mat2.transpose() * mat2;
+    ColPivHouseholderQR<MatrixXd> qr(mat);
+    MatrixXd Q = formQ(qr);
+    MatrixXd R = formR(qr);
+    auto rank1 = qr.rank();
+    std::cout << "Rank of mat1 = " << rank1 << std::endl;
 
-  SelfAdjointEigenSolver<MatrixXd> es(mat);
-  MatrixXd C = es.eigenvectors();
-  VectorXd V = es.eigenvalues();
+    ColPivHouseholderQR<MatrixXd> qr2(mat2);
+    MatrixXd Q2 = formQ(qr2);
+    MatrixXd R2 = formR(qr2);
+    auto rank2 = qr2.rank();
+    std::cout << "Rank of mat2 = " << rank2 << std::endl;
 
-  // Create Low Rank Matrix
-  std::for_each(V.data(), V.data() + num_zero_vals, [](double &x) { x = 0.0; });
-  mat = C * V.asDiagonal() * C.transpose();
+    // Create 2 * rank mats for add
+    MatrixXd La(mat.rows(), rank1 + rank2);
+    MatrixXd Ra(rank1 + rank2, mat.cols());
 
-  es.compute(mat2);
-  C = es.eigenvectors();
-  V = es.eigenvalues();
+    // Fill matrices with data
+    La.leftCols(rank1) = Q;
+    La.rightCols(rank2) = Q2;
+    Ra.topRows(rank1) = R;
+    Ra.bottomRows(rank2) = R2;
 
-  // Create Low Rank Matrix
-  std::for_each(V.data(), V.data() + num_zero_vals, [](double &x) { x = 0.0; });
-  mat2 = C * V.asDiagonal() * C.transpose();
+    // Assuming C = A + B, C currently has rank(C) = rank(A) + rank(B), we
+    // should be able to reduce this at least a little.
 
-  ColPivHouseholderQR<MatrixXd> qr(mat);
-  MatrixXd Q = MatrixXd(qr.householderQ()).leftCols(qr.rank());
-  MatrixXd R = qr.matrixR()
-                   .topLeftCorner(qr.rank(), qr.matrixQR().cols())
-                   .template triangularView<Upper>();
-  R *= qr.colsPermutation().transpose();
-  auto rank1 = qr.rank();
-  std::cout << "Rank of mat1 = " << rank1 << std::endl;
+    // Time Eigen add for reference
+    auto start = std::chrono::steady_clock::now();
+    MatrixXd Correct = mat + mat2;
+    auto end = std::chrono::steady_clock::now();
+    auto time = std::chrono::duration_cast
+        <std::chrono::duration<double>>(end - start);
 
-  ColPivHouseholderQR<MatrixXd> qr2(mat2);
-  MatrixXd Q2 = MatrixXd(qr2.householderQ()).leftCols(qr2.rank());
-  MatrixXd R2 = qr2.matrixR()
-                    .topLeftCorner(qr2.rank(), qr2.matrixQR().cols())
-                    .template triangularView<Upper>();
-  R2 *= qr2.colsPermutation().transpose();
-  auto rank2 = qr2.rank();
-  std::cout << "Rank of mat2 = " << rank2 << std::endl;
+    std::cout << "Eigen add took " << time.count() << " s\n\n";
 
-  // Create 2 * rank mats for add
-  MatrixXd La(mat.rows(), rank1 + rank2);
-  MatrixXd Ra(rank1 + rank2, mat.cols());
+    // Original Method
+    {
+        // Lets try using ColPivQr to reduce the rank of L^C and R^C
+        auto start = std::chrono::steady_clock::now();
+        qr.compute(La);
+        ColPivHouseholderQR<MatrixXd> qrR(Ra);
 
-  // Fill matrices with data
-  La.leftCols(rank1) = Q;
-  La.rightCols(rank2) = Q2;
-  Ra.topRows(rank1) = R;
-  Ra.bottomRows(rank2) = R2;
+        // At this point just do the same thing we did for multiplication
+        MatrixXd LaQ = formQ(qr);
+        MatrixXd RaQ = formQ(qrR);
+        MatrixXd LaR = formR(qr);
+        MatrixXd RaR = formR(qrR);
 
-  // Assuming C = A + B, C currently has rank(C) = rank(A) + rank(B), we should
-  // be able to reduce this at least a little.
+        // New low rank L and low rank R.  Arbitrarrialy picked L to absorb
+        // the small matrix.
+        MatrixXd FinalL = LaQ * (LaR * RaQ);
+        MatrixXd FinalR = RaR;
+        auto end = std::chrono::steady_clock::now();
+        auto time = std::chrono::duration_cast
+            <std::chrono::duration<double>>(end - start);
 
-  // Lets try using ColPivQr to reduce the rank of L^C and R^C
-  qr.compute(La);
-  ColPivHouseholderQR<MatrixXd> qrR(Ra);
-  std::cout << "La rank = " << qr.rank() << std::endl;
-  std::cout << "Ra rank = " << qrR.rank() << std::endl;
+        // Calculate Full added matrix and check if correct!
+        MatrixXd approx = MatrixXd(FinalL * FinalR);
+        std::cout << "Original add method took " << time.count() << " s\n";
+        std::cout << "Is original add correct ? " << (Correct).isApprox(approx)
+                  << "\n\n";
+    }
 
-  // At this point just do the same thing we did for multiplication
-  MatrixXd LaQ = MatrixXd(qr.householderQ()).leftCols(qr.rank());
-  MatrixXd RaQ = MatrixXd(qrR.householderQ()).leftCols(qrR.rank());
-  MatrixXd LaR = qr.matrixR()
-                     .topLeftCorner(qr.rank(), qr.matrixQR().cols())
-                     .template triangularView<Upper>();
-  LaR *= qr.colsPermutation().transpose();
-  MatrixXd RaR = qrR.matrixR()
-                     .topLeftCorner(qrR.rank(), qrR.matrixQR().cols())
-                     .template triangularView<Upper>();
-  RaR *= qrR.colsPermutation().transpose();
+    // Trying something new.
+    {
+        auto start = std::chrono::steady_clock::now();
+        qr.compute(La);
+        MatrixXd LaQ = formQ(qr);
+        MatrixXd LaR = formR(qr);
+        MatrixXd FinalL = LaQ;
+        MatrixXd FinalR = LaR * Ra;
+        auto end = std::chrono::steady_clock::now();
+        auto time = std::chrono::duration_cast
+            <std::chrono::duration<double>>(end - start);
 
-  // New low rank L and low rank R.  Arbitrarrialy picked L to absorb the small
-  // matrix.
-  MatrixXd FinalL = LaQ * (LaR * RaQ);
-  MatrixXd FinalR = RaR;
+        // Calculate Full added matrix and check if correct!
+        MatrixXd approx = MatrixXd(FinalL * FinalR);
+        std::cout << "New add method took " << time.count() << " s\n";
+        std::cout << "Is new add correct ? " << (Correct).isApprox(approx)
+                  << "\n\n";
+    }
 
-  // Calculate Full added matrix and check if correct!
-  MatrixXd approx = MatrixXd(FinalL * FinalR);
-  std::cout << "Is add correct ? " << (mat + mat2).isApprox(approx) << "\n\n";
-
-  // Trying something new.
-  SelfAdjointEigenSolver<MatrixXd> esR((Ra * Ra.transpose()));
-  std::cout << "RaTRa evals = " << esR.eigenvalues().transpose()
-            << std::endl;
-  MatrixXd evecsR = esR.eigenvectors().rightCols(qr.rank());
-  std::cout << "Ra = \n" << Ra << "\n" << std::endl;
-  VectorXd evalsR = esR.eigenvalues().bottomRows(qr.rank());
-  MatrixXd LR_Ra = evalsR.asDiagonal() * evecsR.transpose() * Ra;
-  std::cout << "LR_Ra = \n" << LR_Ra << "\n" << std::endl;
-
-  SelfAdjointEigenSolver<MatrixXd> esL(La.transpose() * La);
-  std::cout << "LaTLa evals = " << esL.eigenvalues().transpose()
-            << std::endl;
-  MatrixXd evecsL = esL.eigenvectors().rightCols(qr.rank());
-  VectorXd evalsL = esL.eigenvalues().bottomRows(qr.rank());
-  MatrixXd LR_La = La * evecsL;
-  std::cout << "La = \n" << La << "\n" << std::endl;
-  std::cout << "LR_La = \n" << LR_La << "\n" << std::endl;
-
-  std::cout << "Evecs inner = \n" << evecsL.transpose() * evecsR << std::endl;
-
-  MatrixXd FR_approx = MatrixXd(La * Ra);
-  MatrixXd LR_approx = MatrixXd(LR_La * LR_Ra);
-  std::cout << "LR - FR = \n" << LR_approx - FR_approx << std::endl;
-  std::cout << "Is diff add correct ? " << (FR_approx).isApprox(LR_approx)
-            << "\n";
-
-
-  return 0;
+    return 0;
 }

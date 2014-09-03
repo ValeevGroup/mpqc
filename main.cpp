@@ -198,8 +198,8 @@ int main(int argc, char **argv) {
     world.gop.fence();
     auto lr_time = madness::wall_time();
     // purify(LR_D, LR_S);
-    //LR_D("i,j") = 2 * LR_D("i,j") - LR_D("i,k") * LR_S("k,l") * LR_D("l,j");
-    LR_D("i,j") = LR_S("i,k") * LR_S("k,j");
+    LR_D("i,j") = 2 * LR_D("i,j") - LR_D("i,k") * LR_S("k,l") * LR_D("l,j");
+    //LR_D("i,j") = LR_S("i,k") * LR_S("k,j");
     world.gop.fence();
     lr_time = madness::wall_time() - lr_time;
     std::cout << "LR time was " << lr_time << " s\n";
@@ -207,8 +207,8 @@ int main(int argc, char **argv) {
     world.gop.fence();
     auto full_time = madness::wall_time();
     // purify(D, S);
-    //D("i,j") = 2 * D("i,j") - D("i,k") * S("k,l") * D("l,j");
-    D("i,j") = S("i,k") * S("k,j");
+    D("i,j") = 2 * D("i,j") - D("i,k") * S("k,l") * D("l,j");
+    //D("i,j") = S("i,k") * S("k,j");
     world.gop.fence();
     full_time = madness::wall_time() - full_time;
     std::cout << "Full time was " << full_time << " s\n";

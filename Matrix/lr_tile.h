@@ -413,7 +413,7 @@ class LRTile {
             return LRTile(range(), EigMat<T>(L_ + right.L_), false, cut_);
         } else if (is_full() || right.is_full()) {
             return LRTile(range(), EigMat<T>(matrixLR() + right.matrixLR()),
-                          true, cut_);
+                          false, cut_);
         }
 
         const auto new_rank = rank_ + right.rank_;

@@ -174,7 +174,12 @@ CADFCLHF::new_compute_K()
       epsilon = std::max(full_screening_thresh_min_, epsilon);
       epsilon_dist = std::max(full_screening_thresh_min_, epsilon_dist);
       // TODO Make this an option
-      epsilon_B = std::max(full_screening_thresh_min_*(B_screening_thresh_/full_screening_thresh_), epsilon_B);
+      if(full_screening_thresh_min_ > 0.0) {
+        epsilon_B = std::max(full_screening_thresh_min_*(B_screening_thresh_/full_screening_thresh_), epsilon_B);
+      }
+      else {
+        epsilon_B = std::max(full_screening_thresh_min_, epsilon_B);
+      }
 
       epsilon = std::min(epsilon, full_screening_thresh_);
       epsilon_dist = std::min(epsilon_dist, distance_screening_thresh_);

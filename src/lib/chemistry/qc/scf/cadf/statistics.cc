@@ -93,6 +93,7 @@ void CADFCLHF::ScreeningStatistics::print_summary(
     std::ostream& out,
     const Ref<GaussianBasisSet>& basis,
     const Ref<GaussianBasisSet>& dfbs,
+    const CADFCLHF* parent,
     int print_level_in, bool new_exchange
 ) const
 {
@@ -101,6 +102,17 @@ void CADFCLHF::ScreeningStatistics::print_summary(
     print_lvl = print_level_in;
   }
 
+  //if(parent->count_ints_only_) {
+  //  for(int l = 0; l < parent->dfbs_->max_angular_momentum() + 1; ++l) {
+  //    const double r_sum = iterations[0].int_am_ratio_sums[l];
+  //    const double r_lsum = iterations[0].int_am_ratio_log_sums[l];
+  //    const ull r_count = iterations[0].int_am_counts[l];
+  //    out << indent << "Ratio statistics for l_X = " << l << ":" << endl;
+  //    out << indent << "  Average: " << r_sum / double(r_count) << endl;
+  //    out << indent << "  Average log: " << r_lsum / double(r_count) << endl;
+  //    out << indent << "  Count: " << double(r_count) << endl;
+  //  }
+  //}
 
   out << indent << "CADFCLHF Screening Statistics" << endl;
   out << indent << "-----------------------------" << endl;

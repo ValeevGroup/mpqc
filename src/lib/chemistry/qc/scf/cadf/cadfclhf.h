@@ -339,6 +339,7 @@ class CADFCLHF: public CLHF {
         void print_summary(std::ostream& out,
             const Ref<GaussianBasisSet>& basis,
             const Ref<GaussianBasisSet>& dfbs,
+            const CADFCLHF* parent,
             int print_level = -1,
             bool new_exchange = false
         ) const;
@@ -571,9 +572,15 @@ class CADFCLHF: public CLHF {
     double count_ints_hist_max_ratio_ = 1e8;
     double count_ints_hist_max_int_ = 1e3;
     bool count_ints_hist_clip_edges_ = false;
+    bool count_ints_exclude_two_center_ = false;
     /** Use extents that look like erfc^-1(cutoff^(1+am)) * sqrt(2/alpha)
      */
     bool safe_extents_ = false;
+    bool dist_factor_use_overlap_ = false;
+    int dist_factor_overlap_max_am_diff_ = 99;
+    bool dist_factor_overlap_exclude_contracted_ = false;
+    double dist_factor_overlap_schwarz_ratio_cutoff_ = 1e-2;
+    int count_ints_n_integral_extrema_ = 1;
     //@}
 
     std::shared_ptr<ScreeningStatistics> stats_;
@@ -611,6 +618,9 @@ class CADFCLHF: public CLHF {
     std::vector<int> orb_to_hcore_orb_;
 
     RefSCMatrix D_;
+
+    RowMatrix S_frob_;
+    RowMatrix dipole_frob_;
 
     // A (very) rough estimate of the minimum amount of memory that is in use by CADF at the present time
     std::atomic<size_t> memory_used_;

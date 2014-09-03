@@ -163,13 +163,29 @@ double CADFCLHF::get_distance_factor(
     dist_factor *= dist_factor_constant;
     dist_factor *= sqrt(::cadf::detail::double_fact_2_n_minus_1((ull)l_X));
 
+
     // Contribution from the DF exponent
     const double q = effective_df_exponents_[Xsh];
     dist_factor *= pow(q, -(2.0*l_X + 3.0)/4.0);
 
     // Contribution from the pair exponents
-    const double p = effective_pair_exponents_.at({ish, jsh});
-    dist_factor *= pow(p, -1.0/4.0);
+    if(dist_factor_use_overlap_
+        and ish.center != jsh.center
+        and (not dist_factor_overlap_exclude_contracted_
+            or (gbs_->shell(ish).nprimitive() == 1
+        and gbs_->shell(jsh).nprimitive() == 1))
+        and fabs(ish.am - jsh.am) <= dist_factor_overlap_max_am_diff_
+        and double(S_frob_(ish, jsh)) / double(schwarz_frob_(ish, jsh))  > dist_factor_overlap_schwarz_ratio_cutoff_
+        and double(S_frob_(ish, jsh)) / double(schwarz_frob_(ish, jsh))  < 1.0
+      ) {
+      dist_factor /= schwarz_frob_(ish, jsh);
+      dist_factor *= pow(2.0 / M_PI, 0.25);
+      dist_factor *= fabs((double)S_frob_(ish, jsh));
+    }
+    else {
+      const double p = effective_pair_exponents_.at({ish, jsh});
+      dist_factor *= pow(p, -1.0/4.0);
+    }
 
     // If the distance factor actually makes the bound larger, then ignore it.
     dist_factor = std::min(1.0, dist_factor);

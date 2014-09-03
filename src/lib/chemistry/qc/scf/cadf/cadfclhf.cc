@@ -162,10 +162,16 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   count_ints_hist_max_int_ = keyval->doublevalue("count_ints_hist_max_int", KeyValValuedouble(count_ints_hist_max_int_));
   count_ints_hist_bins_ = keyval->intvalue("count_ints_hist_bins", KeyValValueint(count_ints_hist_bins_));
   count_ints_hist_ratio_bins_ = keyval->intvalue("count_ints_hist_ratio_bins", KeyValValueint(count_ints_hist_ratio_bins_));
+  count_ints_n_integral_extrema_ = keyval->intvalue("count_ints_n_integral_extrema", KeyValValueint(count_ints_n_integral_extrema_));
   count_ints_hist_distance_bins_ = keyval->intvalue("count_ints_hist_distance_bins", KeyValValueint(count_ints_hist_distance_bins_));
   count_ints_histogram_ = keyval->booleanvalue("count_ints_histogram", KeyValValueboolean(count_ints_histogram_));
   count_ints_use_norms_ = keyval->booleanvalue("count_ints_use_norms", KeyValValueboolean(count_ints_use_norms_));
   count_ints_exclude_thresh_ = keyval->doublevalue("count_ints_exclude_thresh", KeyValValuedouble(count_ints_exclude_thresh_));
+  count_ints_exclude_two_center_ = keyval->booleanvalue("count_ints_exclude_two_center", KeyValValuedouble(count_ints_exclude_two_center_));
+  dist_factor_use_overlap_ = keyval->booleanvalue("dist_factor_use_overlap", KeyValValueboolean(dist_factor_use_overlap_));
+  dist_factor_overlap_exclude_contracted_ = keyval->booleanvalue("dist_factor_overlap_exclude_contracted", KeyValValueboolean(dist_factor_overlap_exclude_contracted_));
+  dist_factor_overlap_schwarz_ratio_cutoff_ = keyval->doublevalue("dist_factor_overlap_schwarz_ratio_cutoff", KeyValValuedouble(dist_factor_overlap_schwarz_ratio_cutoff_));
+  dist_factor_overlap_max_am_diff_ = keyval->intvalue("dist_factor_overlap_max_am_diff", KeyValValueint(dist_factor_overlap_max_am_diff_));
   //----------------------------------------------------------------------------//
   print_iteration_timings_ = keyval->booleanvalue("print_iteration_timings", KeyValValueboolean(print_iteration_timings_));
   //----------------------------------------------------------------------------//
@@ -275,6 +281,7 @@ CADFCLHF::print(ostream&o) const
   o << indent << "count_ints_hist_min_ratio = " << double_str(count_ints_hist_min_ratio_) << endl;
   o << indent << "count_ints_hist_max_ratio = " << double_str(count_ints_hist_max_ratio_) << endl;
   o << indent << "count_ints_hist_max_int = " << double_str(count_ints_hist_max_int_) << endl;
+  o << indent << "count_ints_n_integral_extrema = " << int_str(count_ints_n_integral_extrema_) << endl;
   o << indent << "count_ints_use_norms = " << bool_str(count_ints_use_norms_) << endl;
   o << indent << "count_ints_exclude_thresh = " << double_str(count_ints_exclude_thresh_) << endl;
   o << indent << "d_over_screening_thresh = " << double_str(d_over_screening_thresh_) << endl;
@@ -282,6 +289,10 @@ CADFCLHF::print(ostream&o) const
   o << indent << "debug_coulomb_energy = " << bool_str(debug_coulomb_energy_) << endl;
   o << indent << "debug_exchange_energy = " << bool_str(debug_exchange_energy_) << endl;
   o << indent << "dfbasis name = " << dfbs_->label() << endl;
+  o << indent << "dist_factor_overlap_exclude_contracted = " << bool_str(dist_factor_overlap_exclude_contracted_) << endl;
+  o << indent << "dist_factor_overlap_max_am_diff = " << int_str(dist_factor_overlap_max_am_diff_) << endl;
+  o << indent << "dist_factor_overlap_schwarz_ratio_cutoff = " << double_str(dist_factor_overlap_schwarz_ratio_cutoff_) << endl;
+  o << indent << "dist_factor_use_overlap = " << bool_str(dist_factor_use_overlap_) << endl;
   o << indent << "distance_damping_factor = " << double_str(distance_damping_factor_) << endl;
   o << indent << "distance_screening_thresh = " << double_str(distance_screening_thresh_) << endl;
   o << indent << "distribute_coefficients = " << bool_str(distribute_coefficients_) << endl;
@@ -324,7 +335,7 @@ CADFCLHF::print(ostream&o) const
   if(print_screening_stats_) {
     // TODO global sum stats at some point.  These numbers will be wrong otherwise
     stats_->global_sum(scf_grp_);
-    stats_->print_summary(o, gbs_, dfbs_, print_screening_stats_, new_exchange_algorithm_);
+    stats_->print_summary(o, gbs_, dfbs_, this, print_screening_stats_, new_exchange_algorithm_);
   }
   o << decindent;
 
@@ -404,7 +415,7 @@ CADFCLHF::ao_fock(double accuracy)
     }
     const int max_am = dfbs_->max_angular_momentum();
     for(int l = 0; l <= max_am; ++l) {
-      iter_stats_->int_am_counts.push_back(0.0);
+      iter_stats_->int_am_counts.push_back(0);
       iter_stats_->int_am_ratio_sums.push_back(0.0);
       iter_stats_->int_am_ratio_log_sums.push_back(0.0);
     }

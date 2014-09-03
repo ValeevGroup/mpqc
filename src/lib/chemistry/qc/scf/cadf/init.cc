@@ -637,7 +637,22 @@ CADFCLHF::init_significant_pairs()
   /*=======================================================================================*/
 
   /*=======================================================================================*/
-  /* Compute the centers, the pair centers, and the pair extents                      {{{1 */ #if 1 // begin fold
+  /* Compute the centers, the pair centers, overlap, and the pair extents             {{{1 */ #if 1 // begin fold
+
+  ExEnv::out0() << indent << "Computing overlap" << endl;
+  // Get the overlap integrals
+  if(dist_factor_use_overlap_){
+    resize_and_zero_matrix(S_frob_, nsh, nsh);
+    integral()->set_basis(gbs_, gbs_, gbs_, gbs_);
+    Ref<OneBodyInt> sint = integral()->overlap();
+    for(auto&& ish : shell_range(gbs_)) {
+      for(auto&& jsh : shell_range(gbs_)) {
+        sint->compute_shell((int)ish, (int)jsh);
+        const Eigen::Map<const Eigen::VectorXd> buffmap(sint->buffer(), ish.nbf*jsh.nbf);
+        S_frob_(ish, jsh) = buffmap.norm();
+      }
+    }
+  }
 
   ExEnv::out0() << indent << "Computing pair centers and extents" << endl;
   centers_.resize(molecule()->natom());

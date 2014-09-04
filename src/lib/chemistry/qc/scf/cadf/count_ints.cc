@@ -91,9 +91,9 @@ CADFCLHF::count_ints()
   /*****************************************************************************************/ #endif //1}}}
   /*=======================================================================================*/
 
-  if(n_node > 1) {
-    throw FeatureNotImplemented("Parallel integral counting", __FILE__, __LINE__, class_desc());
-  }
+  //if(n_node > 1) {
+  //  throw FeatureNotImplemented("Parallel integral counting", __FILE__, __LINE__, class_desc());
+  //}
 
   std::mutex histogram_mtx;
 
@@ -137,6 +137,7 @@ CADFCLHF::count_ints()
         if(count_ints_exclude_two_center_ and ish.center == jsh.center) continue;
         for(auto&& Xsh : shell_range(dfbs_, gbs_)) {
           if((ish*nsh*dfnsh+jsh*nsh+Xsh) % nthread_ != ithr) continue;
+          if(((ish*nsh*dfnsh+jsh*nsh+Xsh) / nthread_) % n_node != me) continue;
           const double distance_factor = get_distance_factor(ish, jsh, Xsh);
           const double estimate = schwarz_frob_(ish, jsh) * schwarz_df_(Xsh) * distance_factor;
           auto actual_ints = ints_to_eigen(ish, jsh, Xsh,
@@ -299,33 +300,35 @@ CADFCLHF::count_ints()
       }
   };
 
-  o << "==================================" << endl;
-  o << "= Integral estimation statistics =" << endl;
-  o << "==================================" << endl;
-  for(int iam = 0; iam < dfbs_->max_angular_momentum()+1; ++iam) {
-    o << "For l_X = " << iam << ":" << endl;
-    o << n_min_max << " most overestimated integral shell triplets:" << endl;
-    int ilist = 1;
-    std::sort(all_maxes[iam].begin(), all_maxes[iam].end(), std::greater<EstimatedIntegralValue>());
-    for(auto&& v : all_maxes[iam]) {
-      if(v.ish == -1) break;
-      if(ilist > n_min_max) break;
-      print_valdata(v, ilist);
-      ++ilist;
-    }
-    o << n_min_max << " most underestimated integral shell triplets:" << endl;
-    ilist = 1;
-    std::sort(all_mins[iam].begin(), all_mins[iam].end());
-    for(auto&& v : all_mins[iam]) {
-      if(v.ish == -1) break;
-      if(ilist > n_min_max) break;
-      print_valdata(v, ilist);
-      ++ilist;
-    }
-    o << "----------------------------------" << endl;
+  if(n_node == 1) {
+    o << "==================================" << endl;
+    o << "= Integral estimation statistics =" << endl;
+    o << "==================================" << endl;
+    for(int iam = 0; iam < dfbs_->max_angular_momentum()+1; ++iam) {
+      o << "For l_X = " << iam << ":" << endl;
+      o << n_min_max << " most overestimated integral shell triplets:" << endl;
+      int ilist = 1;
+      std::sort(all_maxes[iam].begin(), all_maxes[iam].end(), std::greater<EstimatedIntegralValue>());
+      for(auto&& v : all_maxes[iam]) {
+        if(v.ish == -1) break;
+        if(ilist > n_min_max) break;
+        print_valdata(v, ilist);
+        ++ilist;
+      }
+      o << n_min_max << " most underestimated integral shell triplets:" << endl;
+      ilist = 1;
+      std::sort(all_mins[iam].begin(), all_mins[iam].end());
+      for(auto&& v : all_mins[iam]) {
+        if(v.ish == -1) break;
+        if(ilist > n_min_max) break;
+        print_valdata(v, ilist);
+        ++ilist;
+      }
+      o << "----------------------------------" << endl;
 
+    }
+    o << "==================================" << endl;
   }
-  o << "==================================" << endl;
 
   o << "\n\n===============================" << endl;
   o << "= Integral statistics summary =" << endl;
@@ -341,13 +344,20 @@ CADFCLHF::count_ints()
   double max_ratio_tot = 0.0;
   double min_ratio_tot = std::numeric_limits<double>::infinity();
   for(int l = 0; l < dfbs_->max_angular_momentum() + 1; ++l) {
+    double r_min = all_mins[l].begin()->ratio;
+    scf_grp_->min(r_min);
+    double r_max = all_maxes[l].begin()->ratio;
+    scf_grp_->max(r_max);
+    scf_grp_->sum(iter_stats_->int_am_ratio_sums[l]);
     const double r_sum = iter_stats_->int_am_ratio_sums[l];
+    scf_grp_->sum(iter_stats_->int_am_ratio_log_sums[l]);
     const double r_lsum = iter_stats_->int_am_ratio_log_sums[l];
-    const ull r_count = iter_stats_->int_am_counts[l];
+    scf_grp_->sum(all_sqsums[l]);
     const double r_sqsum = all_sqsums[l];
+    scf_grp_->sum(all_sqlsums[l]);
     const double r_sqlsum = all_sqlsums[l];
-    const double r_min = all_mins[l].begin()->ratio;
-    const double r_max = all_maxes[l].begin()->ratio;
+    long r_count = iter_stats_->int_am_counts[l];
+    scf_grp_->sum(&r_count, 1);
     out << indent << "Ratio statistics for l_X = " << l << ":" << endl;
     out << indent << "  Average: " << r_sum / double(r_count) << endl;
     out << indent << "  Average log: " << r_lsum / double(r_count) << endl;

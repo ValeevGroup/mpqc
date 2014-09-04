@@ -46,6 +46,7 @@ using namespace sc;
 using std::endl;
 
 typedef std::pair<int, int> IntPair;
+typedef uint64_t uli;
 
 //////////////////////////////////////////////////////////////////////////////////
 
@@ -664,7 +665,17 @@ CADFCLHF::init_significant_pairs()
 
   double erfcinv_thr = my_erfc_inv(well_separated_thresh_);
 
-  for(auto&& ish : shell_range(my_part.obs_shells_to_do, gbs_, dfbs_)) {
+  std::set<uli> all_shells_for_count;
+  if(count_ints_only_) {
+    for(auto&& ish : shell_range(gbs_)) {
+      all_shells_for_count.insert((uli)ish);
+    }
+  }
+
+  for(auto&& ish : shell_range(count_ints_only_ ?
+      all_shells_for_count : my_part.obs_shells_to_do,
+      gbs_, dfbs_)
+  ) {
 
     const auto& ishell = gbs_->shell((int)ish);
     const std::vector<double>& i_exps = ishell.exponents();

@@ -329,6 +329,12 @@ CADFCLHF::count_ints()
     }
     o << "==================================" << endl;
   }
+  else {
+    for(int iam = 0; iam < dfbs_->max_angular_momentum()+1; ++iam) {
+      std::sort(all_maxes[iam].begin(), all_maxes[iam].end(), std::greater<EstimatedIntegralValue>());
+      std::sort(all_mins[iam].begin(), all_mins[iam].end());
+    }
+  }
 
   o << "\n\n===============================" << endl;
   o << "= Integral statistics summary =" << endl;

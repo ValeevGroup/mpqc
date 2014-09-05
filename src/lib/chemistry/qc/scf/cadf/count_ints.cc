@@ -260,6 +260,12 @@ CADFCLHF::count_ints()
 
   auto& o = ExEnv::out0();
   auto print_valdata = [&](const EstimatedIntegralValue& v, int ilist) {
+      double sq_ratio;
+      if(dist_factor_use_overlap_) {
+        static const double pi_over_2_to_1_4 = pow(M_PI/2.0, 0.25);
+        const double p = effective_pair_exponents_.at({v.ish, v.jsh});
+        sq_ratio = S_frob_(v.ish, v.jsh) / (pi_over_2_to_1_4 * pow(p, 0.25) * schwarz_frob_(v.ish, v.jsh));
+      }
       o << setw(2) << std::right << ilist << ". (" << v.ish << " " << v.jsh << " | " << v.Xsh << " )" << endl;
       o << "    Ratio: " << setw(10) << v.ratio
         << ",  Actual: " << v.act_value << ",  Estimate: " << v.est_value << endl;
@@ -297,6 +303,7 @@ CADFCLHF::count_ints()
       if(dist_factor_use_overlap_) {
         o << "    Overlap S_{ " << v.ish << " " << v.jsh << " } " << double(S_frob_(v.ish, v.jsh)) << endl;
         o << "    Ratio S/Schwarz: " << double(S_frob_(v.ish, v.jsh) / schwarz_frob_(v.ish, v.jsh)) << endl;
+        o << "    Fixed Ratio S/Schwarz: " << sq_ratio << endl;
       }
   };
 

@@ -129,6 +129,7 @@ double CADFCLHF::get_distance_factor(
 {
 
   constexpr double dist_factor_constant = M_PI * M_SQRT2;
+  static const double pi_over_2_to_1_4 = pow(M_PI/2.0, 0.25);
 
   double dist_factor;
 
@@ -166,8 +167,13 @@ double CADFCLHF::get_distance_factor(
 
     // Contribution from the DF exponent
     const double q = effective_df_exponents_[Xsh];
+    const double p = effective_pair_exponents_.at({ish, jsh});
     dist_factor *= pow(q, -(2.0*l_X + 3.0)/4.0);
 
+    double sq_ratio;
+    if(dist_factor_use_overlap_) {
+      sq_ratio = S_frob_(ish, jsh) / (pi_over_2_to_1_4 * pow(p, 0.25) * schwarz_frob_(ish, jsh));
+    }
     // Contribution from the pair exponents
     if(dist_factor_use_overlap_
         and ish.center != jsh.center
@@ -175,15 +181,14 @@ double CADFCLHF::get_distance_factor(
             or (gbs_->shell(ish).nprimitive() == 1
         and gbs_->shell(jsh).nprimitive() == 1))
         and fabs(ish.am - jsh.am) <= dist_factor_overlap_max_am_diff_
-        and double(S_frob_(ish, jsh)) / double(schwarz_frob_(ish, jsh))  > dist_factor_overlap_schwarz_ratio_cutoff_
-        and double(S_frob_(ish, jsh)) / double(schwarz_frob_(ish, jsh))  < 1.0
+        and sq_ratio > dist_factor_overlap_schwarz_ratio_cutoff_
+        and sq_ratio < 1.0
       ) {
       dist_factor /= schwarz_frob_(ish, jsh);
       dist_factor *= pow(2.0 / M_PI, 0.25);
       dist_factor *= fabs((double)S_frob_(ish, jsh));
     }
     else {
-      const double p = effective_pair_exponents_.at({ish, jsh});
       dist_factor *= pow(p, -1.0/4.0);
     }
 

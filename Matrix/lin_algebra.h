@@ -8,12 +8,11 @@
 #include <TiledArray/madness.h>
 #include <madness/tensor/clapack.h>
 
-template <typename T>
-Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> inline cblas_gemm(
-    const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &A,
-    const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &B) {
+Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> inline cblas_gemm(
+    const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &A,
+    const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &B) {
 
-    Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> C(A.rows(), B.cols());
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> C(A.rows(), B.cols());
     const int K = A.cols();
     const int M = C.rows();
     const int N = C.cols();
@@ -23,6 +22,21 @@ Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> inline cblas_gemm(
                          A.data(), LDA, B.data(), LDB, 0.0, C.data(), LDC);
     // assert(C.isApprox(A * B));
     return C;
+}
+
+void inline cblas_gemm_inplace(
+    const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &A,
+    const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &B,
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &C, double factor) {
+
+    const int K = A.cols();
+    const int M = C.rows();
+    const int N = C.cols();
+    const int LDA = M, LDB = K, LDC = M;
+    madness::cblas::gemm(madness::cblas::CBLAS_TRANSPOSE::NoTrans,
+                         madness::cblas::CBLAS_TRANSPOSE::NoTrans, M, N, K,
+                         factor, A.data(), LDA, B.data(), LDB, 1.0, C.data(),
+                         LDC);
 }
 
 /**
@@ -44,20 +58,18 @@ bool inline ColPivQR(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
     int M = input.rows();
     int N = input.cols();
     auto full_rank = std::min(M, N);
-    Eigen::VectorXi J = Eigen::VectorXi::Zero(N);
+    Eigen::VectorXi J(N); //= Eigen::VectorXi::Zero(N);
     T Tau[full_rank];
-    Eigen::VectorXd Work(1);
+    double work;
     int LWORK = -1; // Ask LAPACK how much space we need.
     int INFO;
     int LDA = M;
 
-
-    dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, Work.data(), &LWORK,
-            &INFO);
-    LWORK = Work[0];
-    Work.resize(LWORK);
-    dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, Work.data(), &LWORK,
-            &INFO);
+    dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, &work, &LWORK, &INFO);
+    LWORK = work;
+    double *W = new double[LWORK];
+    double qr_time = madness::wall_time();
+    dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, W, &LWORK, &INFO);
 
     Eigen::VectorXd const &Rvalues = input.diagonal();
     const double thresh = cut * std::abs(input(1, 1));
@@ -81,8 +93,10 @@ bool inline ColPivQR(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
                         <Eigen::Upper>()) * P.transpose();
 
     // Form Q.
-    dorgqr_(&M, &N, &rank, input.data(), &M, Tau, Work.data(), &LWORK, &INFO);
+    dorgqr_(&M, &N, &rank, input.data(), &M, Tau, W, &LWORK, &INFO);
     L = input.leftCols(rank);
+
+    delete[] W;
 
     return false; // Input is not full rank
 }
@@ -97,17 +111,17 @@ bool inline CompressQR(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
     auto Lfull_rank = std::min(M, N);
     Eigen::VectorXi J = Eigen::VectorXi::Zero(N);
     T Tau[Lfull_rank];
-    Eigen::VectorXd Work(1);
+    double work;
     int LWORK = -1; // Ask LAPACK how much space we need.
     int INFO;
     int LDA = M;
 
 
-    dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, Work.data(), &LWORK,
+    dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, &work, &LWORK,
             &INFO);
-    LWORK = Work[0];
-    Work.resize(LWORK);
-    dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, Work.data(), &LWORK,
+    LWORK = work;
+    double *W = new double[LWORK];
+    dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, W, &LWORK,
             &INFO);
 
     auto Cfull_rank = std::min(decltype(R.cols())(M), R.cols());
@@ -134,8 +148,10 @@ bool inline CompressQR(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
                         <Eigen::Upper>()) * P.transpose() * R;
 
     // Form Q.
-    dorgqr_(&M, &N, &rank, input.data(), &M, Tau, Work.data(), &LWORK, &INFO);
+    dorgqr_(&M, &N, &rank, input.data(), &M, Tau, W, &LWORK, &INFO);
     L = input.leftCols(rank);
+
+    delete[] W;
 
     return false; // Input is not full rank
 }

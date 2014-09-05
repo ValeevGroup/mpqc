@@ -82,14 +82,18 @@ int main(int argc, char *argv[]) {
               << "\tLR mult took " << LR_mult_end - LR_mult_start << " s\n"
               << "\tReg mult took " << Reg_mult_end - LR_mult_end << " s\n\n";
 
+    LRTile<double> XX = X;
+    TiledArray::math::GemmHelper g(madness::cblas::CBLAS_TRANSPOSE::NoTrans,
+                                   madness::cblas::CBLAS_TRANSPOSE::NoTrans, 2,
+                                   2, 2);
+    XX.gemm(B, F, 1.0, g); // Needed for timing.
     double LR_gemm_start = madness::wall_time();
-    LRTile<double> temp = B * F;
-    LRTile<double> Gemm = temp.add(X);
+    X.gemm(B,F,1.0,g);
     double LR_gemm_end = madness::wall_time();
     C = Z * Q + C;
     double Reg_gemm_end = madness::wall_time();
     std::cout << "\tDoes gemm work (1:yes,0:no)? "
-              << Gemm.matrixLR().isApprox(C) << "\n"
+              << X.matrixLR().isApprox(C) << "\n"
               << "\tLR gemm took " << LR_gemm_end - LR_gemm_start << " s\n"
               << "\tReg gemm took " << Reg_gemm_end - LR_gemm_end << " s\n\n";
 
@@ -132,8 +136,6 @@ int main(int argc, char *argv[]) {
               << LR_subt_to_factor_end - LR_subt_to_factor_start << " s\n"
               << "\tReg subt_to factor took "
               << Reg_subt_to_factor_end - LR_subt_to_factor_end << " s\n\n";
-
-
 
 
 #if 0

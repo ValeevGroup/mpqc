@@ -4,7 +4,8 @@ project(HeirChem)
 set(HeirChem_VERSION_MAJOR 0)
 set(HeirChem_VERSION_MINOR 0)
 
-option(RELEASE ON)
+option(RELEASE OFF)
+option(PERFORM_UNIT_TESTS ON)
 
 set(CXX_FLAGS "-std=c++11")
 if(RELEASE)
@@ -61,11 +62,16 @@ INCLUDE_DIRECTORIES(${HeirChem_SOURCE_DIR}/molecule)
 INCLUDE_DIRECTORIES(${HeirChem_SOURCE_DIR}/include)
 INCLUDE_DIRECTORIES(${HeirChem_SOURCE_DIR}/matrix)
 
+
 add_subdirectory(${HeirChem_SOURCE_DIR}/include)
 add_subdirectory(${HeirChem_SOURCE_DIR}/molecule)
 add_subdirectory(${HeirChem_SOURCE_DIR}/matrix)
 add_subdirectory(${HeirChem_SOURCE_DIR}/basis)
 add_subdirectory(${HeirChem_SOURCE_DIR}/integrals)
+
+IF(PERFORM_UNIT_TESTS)
+   add_subdirectory(${HeirChem_SOURCE_DIR}/tests)
+ENDIF(PERFORM_UNIT_TESTS)
 
 LINK_DIRECTORIES(${HeirChem_BINARY_DIR}/molecule)
 LIST(APPEND HeirChem_LIBRARIES molecule)

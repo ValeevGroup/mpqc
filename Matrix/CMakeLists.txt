@@ -1,3 +1,11 @@
+set(SOURCES
+    full_rank_tile.h
+    lin_algebra.h
+    low_rank_tile.h
+    lr_tile.h
+    tile_concept.h
+)
+
 add_executable(matrix_test matrix_test.cpp)
 target_link_libraries(matrix_test ${TILEDARRAY_LIBRARIES})
 target_link_libraries(matrix_test ${LAPACK_LIBRARIES})

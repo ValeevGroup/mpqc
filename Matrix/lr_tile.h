@@ -15,35 +15,6 @@ using EigMat = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>;
 template <typename T>
 using LR_pair = std::pair<EigMat<T>, EigMat<T>>;
 
-// Have a default Eigen fallback
-namespace eigen_version {
-/**
-* qr_decomp returns the low rank Q and R matrices as a pair.
-*/
-template <typename T>
-LR_pair<T> qr_decomp(const EigMat<T> &input, bool &is_full_rank, double cut) {
-    Eigen::ColPivHouseholderQR<EigMat<T>> qr(input);
-    qr.setThreshold(cut);
-
-    if (qr.rank() > double(std::min(input.cols(), input.rows())) / 2.0) {
-        is_full_rank = false;
-    }
-
-    EigMat<T> L = EigMat<T>(qr.householderQ()).leftCols(qr.rank());
-    EigMat<T> R = EigMat<T>(qr.matrixR()
-                                .topLeftCorner(qr.rank(), input.cols())
-                                .template triangularView<Eigen::Upper>())
-                  * qr.colsPermutation().transpose();
-
-    if (qr.rank() > std::min(input.cols(), input.rows())) {
-        is_full_rank = false;
-    }
-
-    return std::make_pair(L, R);
-}
-} // namespace eigen_version
-
-inline namespace lapack_version {
 /**
 * qr_decomp returns the low rank Q and R matrices as a pair.
 */
@@ -52,13 +23,11 @@ LR_pair<T> qr_decomp(const EigMat<T> &input, bool &is_full_rank, double cut) {
 
     EigMat<T> L;
     EigMat<T> R;
-    is_full_rank = ColPivQR(input, L, R, cut);
+    is_full_rank = algebra::ColPivQR(input, L, R, cut);
 
-    // L_la and R_la will be empty if is_full_rank returns false.
+    // L_la and R_la will be empty if is_full_rank returns true
     return std::make_pair(L, R);
 }
-} // namespace lapack_version
-
 } // namespace detail
 
 /**
@@ -244,14 +213,16 @@ class LRTile {
                     double cut) const {
         // First L is taken by value second is modified.  Returns true if not
         // compressiable.
-        if (!CompressQR(L, L, R, cut)) {
+        if (!algebra::CompressQR(L, L, R, cut)) {
             return LRTile(std::move(range), std::move(L), std::move(R), cut);
         } else {
             return LRTile(std::move(range), L * R, false, cut);
         }
     }
 
-    void compress(double cut) { CompressQR(L_, L_, R_, cut); }
+    void compress(EigMat<T> &L, EigMat<T> &R, double cut) {
+        algebra::CompressQR(L, L, R, cut);
+    }
 
     /**
      * @brief operator * multiplies to tiles togather.
@@ -304,7 +275,7 @@ class LRTile {
      * @warning Can possibly increase memory usage by a large amount.
      */
     inline EigMat<T> matrixLR() const {
-        return (is_full()) ? L_ : cblas_gemm(L_, R_);
+        return (is_full()) ? L_ : algebra::cblas_gemm(L_, R_);
     }
 
     /**
@@ -572,20 +543,21 @@ class LRTile {
         if (is_full() && right.is_full()) {
             // return LRTile(std::move(result_range),
             // re              EigMat<T>(factor * L_ * right.L_), false);
-            return LRTile(
-                std::move(result_range),
-                cblas_gemm(EigMat<T>(factor * matrixL()), right.matrixL()),
-                false, cut_);
+            return LRTile(std::move(result_range),
+                          algebra::cblas_gemm(EigMat<T>(factor * matrixL()),
+                                              right.matrixL()),
+                          false, cut_);
 
         } else if (is_full()) {
             // L = matrixL() * right.matrixL();
-            L = cblas_gemm(EigMat<T>(factor * matrixL()), right.matrixL());
+            L = algebra::cblas_gemm(EigMat<T>(factor * matrixL()),
+                                    right.matrixL());
             R = right.matrixR();
             return LRTile(std::move(result_range), std::move(L), std::move(R),
                           cut_);
         } else if (right.is_full()) {
             L = factor * matrixL();
-            R = cblas_gemm(matrixR(), right.matrixL());
+            R = algebra::cblas_gemm(matrixR(), right.matrixL());
             // R = matrixR() * right.matrixL();
             return LRTile(std::move(result_range), std::move(L), std::move(R),
                           cut_);
@@ -596,10 +568,11 @@ class LRTile {
         R = right.matrixR();
 
 
-        const auto mid = cblas_gemm(matrixR(), right.matrixL());
+        const auto mid = algebra::cblas_gemm(matrixR(), right.matrixL());
         // const auto mid = matrixR() * right.matrixL();
 
-        (use_left_rank) ? R = cblas_gemm(mid, R) : L = cblas_gemm(L, mid);
+        (use_left_rank) ? R = algebra::cblas_gemm(mid, R) : L
+            = algebra::cblas_gemm(L, mid);
         //(use_left_rank) ? R = mid *R : L *= mid;
 
         return LRTile(std::move(result_range), std::move(L), std::move(R),
@@ -610,23 +583,23 @@ class LRTile {
                       const LRTile::numeric_type factor) {
         if (left.is_full()) {
             if (right.is_full()) {
-                cblas_gemm_inplace(left.L_, right.L_, L_, factor);
+                algebra::cblas_gemm_inplace(left.L_, right.L_, L_, factor);
             } else {
-                EigMat<T> Lab = cblas_gemm(left.L_, right.L_);
-                cblas_gemm_inplace(Lab, right.R_, L_, factor);
+                EigMat<T> Lab = algebra::cblas_gemm(left.L_, right.L_);
+                algebra::cblas_gemm_inplace(Lab, right.R_, L_, factor);
             }
         } else if (right.is_full()) {
-            EigMat<T> Rab = cblas_gemm(left.R_, right.L_);
-            cblas_gemm_inplace(left.L_, Rab, L_, factor);
+            EigMat<T> Rab = algebra::cblas_gemm(left.R_, right.L_);
+            algebra::cblas_gemm_inplace(left.L_, Rab, L_, factor);
         } else {
-            EigMat<T> mid = cblas_gemm(left.R_, right.L_);
+            EigMat<T> mid = algebra::cblas_gemm(left.R_, right.L_);
             bool use_left_rank = (left.rank() < right.rank());
             if (use_left_rank) {
-                EigMat<T> Rab = cblas_gemm(mid, right.R_);
-                cblas_gemm_inplace(left.L_, Rab, L_, factor);
+                EigMat<T> Rab = algebra::cblas_gemm(mid, right.R_);
+                algebra::cblas_gemm_inplace(left.L_, Rab, L_, factor);
             } else {
-                EigMat<T> Lab = cblas_gemm(left.L_, mid);
-                cblas_gemm_inplace(Lab, right.R_, L_, factor);
+                EigMat<T> Lab = algebra::cblas_gemm(left.L_, mid);
+                algebra::cblas_gemm_inplace(Lab, right.R_, L_, factor);
             }
         }
     }
@@ -634,7 +607,6 @@ class LRTile {
     void is_not_full_gemm(const LRTile &left, const LRTile &right,
                           const LRTile::numeric_type factor) {
         assert(!(left.is_full() && right.is_full()));
-        std::cout << "All low rank\n";
 
         auto mult_rank = std::min(left.rank(), right.rank());
         auto C_out_rank = mult_rank + rank();
@@ -654,7 +626,7 @@ class LRTile {
                 madness::cblas::gemm(madness::cblas::CBLAS_TRANSPOSE::NoTrans,
                                      madness::cblas::CBLAS_TRANSPOSE::NoTrans,
                                      M, N, K, factor, left.L_.data(), LDA,
-                                     right.L_.data(), LDB, 1.0, L.data(), LDC);
+                                     right.L_.data(), LDB, 0, L.data(), LDC);
             }
             { // Write into the top of R
                 R.topRows(mult_rank) = right.R_;
@@ -668,14 +640,14 @@ class LRTile {
                 madness::cblas::gemm(madness::cblas::CBLAS_TRANSPOSE::NoTrans,
                                      madness::cblas::CBLAS_TRANSPOSE::NoTrans,
                                      M, N, K, factor, left.R_.data(), LDA,
-                                     right.L_.data(), LDB, 1.0, R.data(), LDC);
+                                     right.L_.data(), LDB, 0, R.data(), LDC);
             }
             { // Write into the top of R
                 L.leftCols(mult_rank) = left.L_;
             }
 
         } else {
-            EigMat<T> mid = cblas_gemm(left.R_, right.L_);
+            EigMat<T> mid = algebra::cblas_gemm(left.R_, right.L_);
             bool use_left_rank = (left.rank() <= right.rank());
             if (use_left_rank) {
                 // L.leftCols(mult_rank) = left.L_ * mid;
@@ -711,6 +683,7 @@ class LRTile {
                 }
             }
         }
+        // compress(L,R,cut_);
         L_.swap(L);
         R_.swap(R);
     }
@@ -728,8 +701,8 @@ class LRTile {
                  const LRTile::numeric_type factor,
                  const TiledArray::math::GemmHelper &gemm_config) {
 
-        // range_ = gemm_config.make_result_range
-        // ra         <range_type>(range(), right.range());
+        range_ = gemm_config.make_result_range
+                 <range_type>(range(), right.range());
 
         if (is_full()) {
             is_full_gemm(left, right, factor);
@@ -739,10 +712,10 @@ class LRTile {
 
             if ((C_rank >= 0.5 * std::min(L_.rows(), R_.cols()))
                 || (left.is_full() && right.is_full())) {
-                is_full_rank_ = true;
                 L_ = matrixLR();
-                rank_ = std::min(L_.rows(), L_.cols());
                 R_.resize(0, 0);
+                rank_ = std::min(L_.rows(), L_.cols());
+                is_full_rank_ = true;
                 is_full_gemm(left, right, factor);
             } else {
                 is_not_full_gemm(left, right, factor);
@@ -750,8 +723,6 @@ class LRTile {
         }
 
         rank_ = L_.cols();
-
-        compress(cut_);
 
         return *this;
     }

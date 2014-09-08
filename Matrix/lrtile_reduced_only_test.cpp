@@ -102,7 +102,7 @@ int main(int argc, char **argv) {
     double LR_mult_start = madness::wall_time();
     LRTile<double> BF = B * F;
     double LR_mult_end = madness::wall_time();
-    Eigen::MatrixXd ZQ = cblas_gemm(Z, Q);
+    Eigen::MatrixXd ZQ = algebra::cblas_gemm(Z, Q);
     double Reg_mult_end = madness::wall_time();
 
     std::cout << "\tDoes multiply work (1:yes,0:no)? "
@@ -112,13 +112,13 @@ int main(int argc, char **argv) {
 
     LRTile<double> XX = X;
     TiledArray::math::GemmHelper g(madness::cblas::CBLAS_TRANSPOSE::NoTrans,
-                                   madness::cblas::CBLAS_TRANSPOSE::NoTrans, 2,
-                                   2, 2);
+                                   madness::cblas::CBLAS_TRANSPOSE::NoTrans, input,
+                                   input, input);
     XX.gemm(B, F, 1.0, g); // Needed for timing.
     double LR_gemm_start = madness::wall_time();
     X.gemm(B, F, 1.0, g);
     double LR_gemm_end = madness::wall_time();
-    cblas_gemm_inplace(Z, Q, C, 1.0);
+    algebra::cblas_gemm_inplace(Z, Q, C, 1.0);
     double Reg_gemm_end = madness::wall_time();
     std::cout << "\tDoes gemm work (1:yes,0:no)? " << X.matrixLR().isApprox(C)
               << "\n"

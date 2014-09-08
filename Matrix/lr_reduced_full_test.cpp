@@ -14,23 +14,37 @@ int main(int argc, char **argv) {
     // Test that multiplication works
     Eigen::MatrixXd Z = Eigen::MatrixXd::Random(input, input);
     Eigen::MatrixXd Q = Eigen::MatrixXd::Random(input, input);
+    Eigen::MatrixXd Clr = Eigen::MatrixXd::Random(input, input);
+    Eigen::MatrixXd Cfull = Clr;
     {
         Z = Z.transpose() * Z;
+        Clr = Clr.transpose() * Clr;
 
         Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> esZ(Z);
         Eigen::MatrixXd Cz = esZ.eigenvectors();
         Eigen::VectorXd Vz = esZ.eigenvalues();
-
 
         for (auto i = 0; i < (input - job_rank); ++i) {
             Vz[i] = 0.0;
         }
 
         Z = Cz * Vz.asDiagonal() * Cz.transpose();
+
+        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> esC(Clr);
+        Eigen::MatrixXd Cc = esC.eigenvectors();
+        Eigen::VectorXd Vc = esC.eigenvalues();
+
+        for (auto i = 0; i < (input - job_rank); ++i) {
+            Vc[i] = 0.0;
+        }
+
+        Clr = Cc * Vc.asDiagonal() * Cc.transpose();
     }
 
     LRTile<double> B(Z);
     LRTile<double> F(Q);
+    LRTile<double> X(Clr);
+    LRTile<double> XX(Cfull);
 
     std::cout << "Test that rank of tile equals input rank.\n";
     std::cout << "\tB rank = " << job_rank << "? "
@@ -111,20 +125,78 @@ int main(int argc, char **argv) {
               << "\toutput is low rank? " << (!BF.is_full() && !FB.is_full())
               << " s\n\n";
 
+    TiledArray::math::GemmHelper g(madness::cblas::CBLAS_TRANSPOSE::NoTrans,
+                                   madness::cblas::CBLAS_TRANSPOSE::NoTrans, 2,
+                                   2, 2);
 
+    LRTile<double> Xcopy = X;
+    LRTile<double> Xcopy2 = X;
+    LRTile<double> XXcopy = XX;
+    LRTile<double> XXcopy2 = XX;
+    auto Clr_copy = Clr;
+    auto Clr_copy2 = Clr;
+    auto Cfull_copy = Cfull;
+    auto Cfull_copy2 = Cfull;
     double LR_gemm_start = madness::wall_time();
-    LRTile<double> temp = B.add(F);
-    LRTile<double> Gemm = (B * F).add(temp);
-    double LR_gemm_end = madness::wall_time();
-    Eigen::MatrixXd C = Z + Q;
-    C = Z * Q + C;
-    double Reg_gemm_end = madness::wall_time();
-    std::cout << "\tDoes gemm work (1:yes,0:no)? "
-              << Gemm.matrixLR().isApprox(C) << "\n"
-              << "\tLR gemm took " << LR_gemm_end - LR_gemm_start << " s\n"
-              << "\tReg gemm took " << Reg_gemm_end - LR_gemm_end << " s\n"
-              << "\tout is low rank? " << (!Gemm.is_full()) << "\n\n";
+    // Only left or right full
+    X.gemm(B, F, 1.0, g);
+    Xcopy.gemm(F, B, 1.0, g);
 
+    // C lr, but right and left both full
+    Xcopy2.gemm(F, F, 1.0, g);
+
+    // C full and one of left and right full.
+    XX.gemm(B, F, 1.0, g);
+    XXcopy.gemm(F, B, 1.0, g);
+
+    // C full and both l and r low
+    XXcopy2.gemm(B, B, 1.0, g);
+    double LR_gemm_end = madness::wall_time();
+
+    // low = full * low + low or = low * full + low
+    algebra::cblas_gemm_inplace(Z, Q, Clr, 1.0);
+    algebra::cblas_gemm_inplace(Q, Z, Clr_copy, 1.0);
+
+    // low = full * full + low
+    algebra::cblas_gemm_inplace(Q, Q, Clr_copy2, 1.0);
+
+    // full = low * full + low or = full * low + full
+    algebra::cblas_gemm_inplace(Z, Q, Cfull, 1.0);
+    algebra::cblas_gemm_inplace(Q, Z, Cfull_copy, 1.0);
+
+    // full = low * low + full
+    algebra::cblas_gemm_inplace(Z, Z, Cfull_copy2, 1.0);
+
+    double Reg_gemm_end = madness::wall_time();
+    bool was_correct = true;
+    if (!(X.matrixLR().isApprox(Clr))) {
+        was_correct = false;
+        std::cout << "Failed in low = low * full + low gemm!\n";
+    }
+    if (!(Xcopy.matrixLR().isApprox(Clr_copy))) {
+        was_correct = false;
+        std::cout << "Failed in low = full * low + low gemm!\n";
+    }
+    if (!(Xcopy2.matrixLR().isApprox(Clr_copy2))) {
+        was_correct = false;
+        std::cout << "Failed in low = full * full + low gemm!\n";
+    }
+    if (!(XX.matrixLR().isApprox(Cfull))) {
+        was_correct = false;
+        std::cout << "Failed in full = low * full + full gemm!\n";
+    }
+    if (!(XXcopy.matrixLR().isApprox(Cfull_copy))) {
+        was_correct = false;
+        std::cout << "Failed in full = full * low + full gemm!\n";
+    }
+    if (!(XXcopy2.matrixLR().isApprox(Cfull_copy2))) {
+        was_correct = false;
+        std::cout << "Failed in full = low * low + full gemm!\n";
+    }
+
+    std::cout << "\tDoes gemm work (1:yes,0:no)? " << was_correct << "\n"
+              << "\tLR gemm took  " << LR_gemm_end - LR_gemm_start << " s\n"
+              << "\tReg gemm took " << Reg_gemm_end - LR_gemm_end << " s\n\n";
 
 
     /*

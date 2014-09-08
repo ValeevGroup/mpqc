@@ -11,18 +11,21 @@
 
 Eigen::MatrixXd read_matrix(const std::string &filename);
 
-template<typename T>
-void check_data_sparsity(const TiledArray::Array<double, 2, T> &A){
+template <typename T>
+void check_data_sparsity(const TiledArray::Array<double, 2, T> &A) {
+    double recompress = madness::wall_time();
     TiledArray::Array<double, 2, LRTile<double>> B(A.get_world(), A.trange());
 
     auto it_A = A.begin();
     auto it_B = B.begin();
     auto end = B.end();
-    for(; it_B != end; ++it_B, ++it_A) {
+    for (; it_B != end; ++it_B, ++it_A) {
         TiledArray::Array<double, 2, LRTile<double>>::value_type tile(
-            it_A->get().range(), TiledArray::eigen_map(it_A->get()), true, 1e-03);
+            it_A->get().range(), TiledArray::eigen_map(it_A->get()), true,
+            1e-08);
         *it_B = tile;
     }
+    recompress = madness::wall_time() - recompress;
 
     int total_tiles = 0;
     int full_tiles = 0;
@@ -30,8 +33,6 @@ void check_data_sparsity(const TiledArray::Array<double, 2, T> &A){
         full_tiles += int(it.get().is_full());
         ++total_tiles;
     }
-    std::cout << "Percentage of full tiles in Mat = " << double(full_tiles)
-                                                  / double(total_tiles) << "\n";
 }
 
 template <typename T>
@@ -90,6 +91,9 @@ TiledArray::Array<double, 2, LRTile<double>>
 make_lr_array(madness::World &, TiledArray::TiledRange &,
               const Eigen::MatrixXd &);
 
+Eigen::MatrixXd
+create_plottable_array(const TiledArray::Array<double, 2, LRTile<double>> &A);
+
 template <typename T, typename LR>
 bool check_equal(const TiledArray::Array<double, 2, T> &Full,
                  const TiledArray::Array<double, 2, LR> &Low) {
@@ -106,8 +110,9 @@ bool check_equal(const TiledArray::Array<double, 2, T> &Full,
             fit->get(), range.size()[0], range.size()[1]);
         same = ((Fmat - LRmat).lpNorm<2>() < 1e-06);
         if (same == false) {
-            std::cout << "Tile = " << fit.ordinal()
-                      << " 2 norm of diff = " << (Fmat - LRmat).lpNorm<2>()
+            std::cout << "\n\tTile = (" << fit.index()[0] << ","
+                      << fit.index()[1] << ")"
+                      << "\n\t\t2 norm of diff = " << (Fmat - LRmat).lpNorm<2>()
                       << std::endl;
         }
     }
@@ -131,7 +136,6 @@ int main(int argc, char **argv) {
         blocksize = std::stoul(argv[4]);
     }
     madness::World &world = madness::initialize(argc, argv);
-    world.rank();
 
     Eigen::MatrixXd ES = read_matrix(Sfile);
     Eigen::MatrixXd ED = read_matrix(Dfile);
@@ -174,32 +178,38 @@ int main(int argc, char **argv) {
     TiledArray::Array<double, 2, LRTile<double>> LR_F
         = make_lr_array(world, trange, EF);
 
-    bool passed_check = (check_equal(S, LR_S) == true)
-                            ? ((check_equal(D, LR_D) == true)
-                                   ? ((check_equal(F, LR_F) == true) ?: false)
-                                   : false)
-                            : false;
 
+    std::cout << "\nChecking arrays for approximate equality.\n";
+    std::cout << "Checking Overlap . . . ";
+    bool passed_check = check_equal(S, LR_S);
     if (!passed_check) {
-        std::cout << "Arrays were not equal!\n";
+        std::cout << "Overlaps were not equal!";
+    } else {
+        std::cout << "Ok!";
     }
-
-    int total_tiles = 0;
-    int full_tiles = 0;
-    for (const auto it : LR_S) {
-        full_tiles += int(it.get().is_full());
-        ++total_tiles;
+    std::cout << "\nChecking Density . . . ";
+    passed_check = check_equal(D, LR_D);
+    if (!passed_check) {
+        std::cout << "Densities were not equal!";
+    } else {
+        std::cout << "Ok!";
     }
-    std::cout << "Percentage of full tiles in S = " << double(full_tiles)
-                                                  / double(total_tiles) << "\n";
-
-
     std::cout << "\n";
+    std::cout << "Checking Fock . . . ";
+    passed_check = check_equal(F, LR_F);
+    if (!passed_check) {
+        std::cout << "Focks were not equal!";
+    } else {
+        std::cout << "Ok!";
+    }
+    std::cout << "\n";
+
+
     world.gop.fence();
     auto lr_time = madness::wall_time();
     // purify(LR_D, LR_S);
-    LR_D("i,j") = 2 * LR_D("i,j") - LR_D("i,k") * LR_S("k,l") * LR_D("l,j");
-    //LR_D("i,j") = LR_S("i,k") * LR_S("k,j");
+    // LR_D("i,j") = 2 * LR_D("i,j") - LR_D("i,k") * LR_S("k,l") * LR_D("l,j");
+    LR_D("i,j") = LR_S("i,k") * LR_S("k,j");
     world.gop.fence();
     lr_time = madness::wall_time() - lr_time;
     std::cout << "LR time was " << lr_time << " s\n";
@@ -207,30 +217,43 @@ int main(int argc, char **argv) {
     world.gop.fence();
     auto full_time = madness::wall_time();
     // purify(D, S);
-    D("i,j") = 2 * D("i,j") - D("i,k") * S("k,l") * D("l,j");
-    //D("i,j") = S("i,k") * S("k,j");
+    // D("i,j") = 2 * D("i,j") - D("i,k") * S("k,l") * D("l,j");
+    D("i,j") = S("i,k") * S("k,j");
     world.gop.fence();
     full_time = madness::wall_time() - full_time;
     std::cout << "Full time was " << full_time << " s\n";
 
-    passed_check = (check_equal(D, LR_D) == true) ? true : false;
-
-    full_tiles = 0;
-    total_tiles = 0;
-    for (const auto it : LR_D) {
-        full_tiles += int(it.get().is_full());
-        ++total_tiles;
-    }
-    std::cout << "Percentage of full tiles after = " << double(full_tiles)
-                                                  / double(total_tiles) << "\n";
-
+    std::cout << "\nChecking arrays for approximate equality.\n";
+    std::cout << "Checking Overlap . . . ";
+    passed_check = check_equal(S, LR_S);
     if (!passed_check) {
-        std::cout << "Arrays were not equal!\n";
+        std::cout << "Overlaps were not equal!";
     } else {
-        std::cout << "All Arrays were equal!\n";
+        std::cout << "Ok!";
     }
+    std::cout << "\nChecking Density . . . ";
+    passed_check = check_equal(D, LR_D);
+    if (!passed_check) {
+        std::cout << "Densities were not equal!";
+    } else {
+        std::cout << "Ok!";
+    }
+    std::cout << "\n";
+    std::cout << "Checking Fock . . . ";
+    passed_check = check_equal(F, LR_F);
+    if (!passed_check) {
+        std::cout << "Focks were not equal!";
+    } else {
+        std::cout << "Ok!";
+    }
+    std::cout << "\n";
 
-    check_data_sparsity(D);
+
+    auto Eig_LR_F = create_plottable_array(LR_F);
+    std::ofstream matrix_out;
+    matrix_out.open("LR_out_test.dat");
+    matrix_out << Eig_LR_F << std::endl;
+    matrix_out.close();
 
     world.gop.fence();
     madness::finalize();
@@ -292,9 +315,33 @@ make_lr_array(madness::World &world, TiledArray::TiledRange &trange,
                         range.size()[1]);
 
         TiledArray::Array<double, 2, LRTile<double>>::value_type tile(
-            range, mat_block, true, 1e-03);
+            range, mat_block, true, 1e-08);
 
         *i = tile;
     }
     return A;
+}
+
+Eigen::MatrixXd
+create_plottable_array(const TiledArray::Array<double, 2, LRTile<double>> &A) {
+    // Construct the Eigen matrix
+    Eigen::MatrixXd matrix(A.trange().elements().size()[0],
+                           A.trange().elements().size()[1]);
+    for (auto it = A.begin(); it != A.end(); ++it) {
+        auto const &tile = it->get();
+        auto L = tile.matrixL();
+        auto range = tile.range();
+        if (tile.is_full()) {
+            matrix.block(range.start()[0], range.start()[1], range.size()[0],
+                         range.size()[1]) = L;
+        } else {
+            auto R = tile.matrixR();
+            Eigen::MatrixXd temp = Eigen::MatrixXd::Zero(L.rows(), R.cols());
+            temp.topRows(tile.rank()) = R;
+            temp.leftCols(tile.rank()) = L;
+            matrix.block(range.start()[0], range.start()[1], range.size()[0],
+                         range.size()[1]) = temp;
+        }
+    }
+    return matrix;
 }

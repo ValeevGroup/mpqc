@@ -724,7 +724,7 @@ CADFCLHF::init_significant_pairs()
             auto& r_pq = (1.0 / (i_exps[i_prim] + j_exps[j_prim])) *
                 (i_exps[i_prim] * centers_[ish.center] + j_exps[j_prim] * centers_[jsh.center]);
             const double rdiff = (r_pq - r_ij).norm();
-            const double ext_pq = sqrt(2.0 / (zeta_p + zeta_q)) + rdiff;
+            const double ext_pq = sqrt(2.0 / (zeta_p + zeta_q)) * erfcinv_thr + rdiff;
             if(ext_pq > extent_max) {
               extent_max = ext_pq;
             }
@@ -739,10 +739,11 @@ CADFCLHF::init_significant_pairs()
         //effective_pair_exponents_[{(int)ish, (int)jsh}] = avg_expon / coef_tot;
 
         if(use_max_extents_) {
-          pair_extents_[{(int)ish, (int)jsh}] = extent_max * erfcinv_thr;
+          //pair_extents_[{(int)ish, (int)jsh}] = extent_max * erfcinv_thr;
+          pair_extents_[{(int)ish, (int)jsh}] = extent_max;
         }
         else {
-          pair_extents_[{(int)ish, (int)jsh}] = extent_sum/coef_tot * erfcinv_thr;
+          pair_extents_[{(int)ish, (int)jsh}] = extent_sum/coef_tot;
         }
       }
 

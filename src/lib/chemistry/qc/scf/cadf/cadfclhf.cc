@@ -160,6 +160,7 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   count_ints_hist_min_ratio_ = keyval->doublevalue("count_ints_hist_min_ratio", KeyValValuedouble(count_ints_hist_min_ratio_));
   count_ints_hist_max_ratio_ = keyval->doublevalue("count_ints_hist_max_ratio", KeyValValuedouble(count_ints_hist_max_ratio_));
   count_ints_hist_max_int_ = keyval->doublevalue("count_ints_hist_max_int", KeyValValuedouble(count_ints_hist_max_int_));
+  count_ints_max_distance_ = keyval->doublevalue("count_ints_max_distance", KeyValValuedouble(count_ints_max_distance_));
   count_ints_hist_bins_ = keyval->intvalue("count_ints_hist_bins", KeyValValueint(count_ints_hist_bins_));
   count_ints_hist_ratio_bins_ = keyval->intvalue("count_ints_hist_ratio_bins", KeyValValueint(count_ints_hist_ratio_bins_));
   count_ints_n_integral_extrema_ = keyval->intvalue("count_ints_n_integral_extrema", KeyValValueint(count_ints_n_integral_extrema_));
@@ -281,6 +282,7 @@ CADFCLHF::print(ostream&o) const
   o << indent << "count_ints_hist_min_ratio = " << double_str(count_ints_hist_min_ratio_) << endl;
   o << indent << "count_ints_hist_max_ratio = " << double_str(count_ints_hist_max_ratio_) << endl;
   o << indent << "count_ints_hist_max_int = " << double_str(count_ints_hist_max_int_) << endl;
+  o << indent << "count_ints_max_distance = " << double_str(count_ints_max_distance_) << endl;
   o << indent << "count_ints_n_integral_extrema = " << int_str(count_ints_n_integral_extrema_) << endl;
   o << indent << "count_ints_use_norms = " << bool_str(count_ints_use_norms_) << endl;
   o << indent << "count_ints_exclude_thresh = " << double_str(count_ints_exclude_thresh_) << endl;
@@ -421,12 +423,12 @@ CADFCLHF::ao_fock(double accuracy)
     }
     for(int am = 0; am < dfbs_->max_angular_momentum()+1; ++am) {
       iter_stats_->distance_hists.emplace_back(
-          count_ints_hist_distance_bins_, 0.0, max_distance,
+          count_ints_hist_distance_bins_, 0.0, count_ints_max_distance_ == -1.0 ? max_distance : count_ints_max_distance_,
           count_ints_hist_ratio_bins_, count_ints_hist_min_ratio_, count_ints_hist_max_ratio_,
           false, true, count_ints_hist_clip_edges_
       );
       iter_stats_->distance_noschwarz_hists.emplace_back(
-          count_ints_hist_distance_bins_, 0.0, max_distance,
+          count_ints_hist_distance_bins_, 0.0, count_ints_max_distance_ == -1.0 ? max_distance : count_ints_max_distance_,
           count_ints_hist_ratio_bins_, count_ints_hist_min_ratio_, count_ints_hist_max_ratio_,
           false, true, count_ints_hist_clip_edges_
       );

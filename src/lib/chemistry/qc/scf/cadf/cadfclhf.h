@@ -571,6 +571,7 @@ class CADFCLHF: public CLHF {
     double count_ints_hist_min_ratio_ = 1e-8;
     double count_ints_hist_max_ratio_ = 1e8;
     double count_ints_hist_max_int_ = 1e3;
+    double count_ints_max_distance_ = -1.0;
     bool count_ints_hist_clip_edges_ = false;
     bool count_ints_exclude_two_center_ = false;
     /** Use extents that look like erfc^-1(cutoff^(1+am)) * sqrt(2/alpha)

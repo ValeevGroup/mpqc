@@ -102,7 +102,7 @@ int main(int argc, char **argv) {
     double LR_mult_start = madness::wall_time();
     LRTile<double> BF = B * F;
     double LR_mult_end = madness::wall_time();
-    Eigen::MatrixXd ZQ = algebra::cblas_gemm(Z, Q);
+    Eigen::MatrixXd ZQ = algebra::cblas_gemm(Z, Q, 1.0);
     double Reg_mult_end = madness::wall_time();
 
     std::cout << "\tDoes multiply work (1:yes,0:no)? "

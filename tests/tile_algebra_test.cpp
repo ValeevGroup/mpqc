@@ -102,6 +102,23 @@ TEST(EigenTileAlgebraTest, CreateCMatrixInnerDimIsOneGEMM) {
     EXPECT_TRUE(C.isApprox(Ccorrect));
 }
 
+TEST(EigenTileAlgebraTest, CreateCMatrixInnerDimIsZeroGEMM) {
+    const auto rows = 9;
+    const auto cols = 11;
+    const auto inner_dim = 0;
+    MatrixXd A = MatrixXd::Random(rows, inner_dim);
+    MatrixXd B = MatrixXd::Random(inner_dim, cols);
+
+    auto alpha = 2.0;
+
+    auto C = eigen_version::cblas_gemm(A, B, alpha);
+
+    auto Ccorrect = alpha * A * B;
+
+    EXPECT_TRUE(C.isApprox(Ccorrect));
+}
+
+
 TEST(EigenTileAlgebraTest, SquareInPlaceGEMM) {
     const auto rows = 11;
     const auto cols = 11;
@@ -222,6 +239,26 @@ TEST(EigenTileAlgebraTest, InnerDimIsOneInPlaceGEMM) {
     EXPECT_TRUE(C.isApprox(Ccorrect));
 }
 
+TEST(EigenTileAlgebraTest, InnerDimIsZeroInPlaceGEMM) {
+    const auto rows = 9;
+    const auto cols = 11;
+    const auto inner_dim = 0;
+    MatrixXd A = MatrixXd::Random(rows, inner_dim);
+    MatrixXd B = MatrixXd::Random(inner_dim, cols);
+    MatrixXd C = MatrixXd::Random(rows, cols);
+    MatrixXd Ccorrect = C;
+
+    auto alpha = 2.0;
+    auto beta = 3.0;
+
+    eigen_version::cblas_gemm_inplace(A, B, C, alpha, beta);
+
+    Ccorrect = alpha * A * B + beta * Ccorrect;
+
+
+    EXPECT_TRUE(C.isApprox(Ccorrect));
+}
+
 TEST(EigenTileAlgebraTest, FullRankColPivQR) {
     const auto rows = 9;
     const auto cols = 11;
@@ -252,9 +289,10 @@ TEST(EigenTileAlgebraTest, LowRankSquareColPivQR) {
                                                         << "\n";
     EXPECT_EQ(L.cols(), rank); // Shouldn't decompose if full rank
     EXPECT_EQ(R.rows(), rank);
-    EXPECT_TRUE(C.isApprox(L * R))
-        << "2 norm of diff = " << (C - (L * R)).lpNorm<2>() << "\nC = \n" << C
-        << "\nL = \n" << L << "\nR = \n" << R << "\n";
+    EXPECT_TRUE(C.isApprox(L * R)) << "2 norm of diff = "
+                                   << (C - (L * R)).lpNorm<2>() << "\nC = \n"
+                                   << C << "\nL = \n" << L << "\nR = \n" << R
+                                   << "\n";
 }
 
 TEST(EigenTileAlgebraTest, LowRankMoreRowsThanColsColPivQR) {
@@ -271,9 +309,10 @@ TEST(EigenTileAlgebraTest, LowRankMoreRowsThanColsColPivQR) {
                                                         << "\n";
     EXPECT_EQ(L.cols(), rank); // Shouldn't decompose if full rank
     EXPECT_EQ(R.rows(), rank);
-    EXPECT_TRUE(C.isApprox(L * R))
-        << "2 norm of diff = " << (C - (L * R)).lpNorm<2>() << "\nC = \n" << C
-        << "\nL = \n" << L << "\nR = \n" << R << "\n";
+    EXPECT_TRUE(C.isApprox(L * R)) << "2 norm of diff = "
+                                   << (C - (L * R)).lpNorm<2>() << "\nC = \n"
+                                   << C << "\nL = \n" << L << "\nR = \n" << R
+                                   << "\n";
 }
 
 TEST(EigenTileAlgebraTest, LowRankMoreColsThanRowsColPivQR) {
@@ -290,9 +329,10 @@ TEST(EigenTileAlgebraTest, LowRankMoreColsThanRowsColPivQR) {
                                                         << "\n";
     EXPECT_EQ(L.cols(), rank); // Shouldn't decompose if full rank
     EXPECT_EQ(R.rows(), rank);
-    EXPECT_TRUE(C.isApprox(L * R))
-        << "2 norm of diff = " << (C - (L * R)).lpNorm<2>() << "\nC = \n" << C
-        << "\nL = \n" << L << "\nR = \n" << R << "\n";
+    EXPECT_TRUE(C.isApprox(L * R)) << "2 norm of diff = "
+                                   << (C - (L * R)).lpNorm<2>() << "\nC = \n"
+                                   << C << "\nL = \n" << L << "\nR = \n" << R
+                                   << "\n";
 }
 
 TEST(EigenTileAlgebraTest, RankOneColPivQR) {
@@ -309,9 +349,10 @@ TEST(EigenTileAlgebraTest, RankOneColPivQR) {
                                                         << "\n";
     EXPECT_EQ(L.cols(), rank); // Shouldn't decompose if full rank
     EXPECT_EQ(R.rows(), rank);
-    EXPECT_TRUE(C.isApprox(L * R))
-        << "2 norm of diff = " << (C - (L * R)).lpNorm<2>() << "\nC = \n" << C
-        << "\nL = \n" << L << "\nR = \n" << R << "\n";
+    EXPECT_TRUE(C.isApprox(L * R)) << "2 norm of diff = "
+                                   << (C - (L * R)).lpNorm<2>() << "\nC = \n"
+                                   << C << "\nL = \n" << L << "\nR = \n" << R
+                                   << "\n";
 }
 
 TEST(EigenTileAlgebraTest, RankZeroColPivQR) {
@@ -328,9 +369,10 @@ TEST(EigenTileAlgebraTest, RankZeroColPivQR) {
                                                         << "\n";
     EXPECT_EQ(L.cols(), rank); // Shouldn't decompose if full rank
     EXPECT_EQ(R.rows(), rank);
-    EXPECT_TRUE(C.isApprox(L * R))
-        << "2 norm of diff = " << (C - (L * R)).lpNorm<2>() << "\nC = \n" << C
-        << "\nL = \n" << L << "\nR = \n" << R << "\n";
+    EXPECT_TRUE(C.isApprox(L * R)) << "2 norm of diff = "
+                                   << (C - (L * R)).lpNorm<2>() << "\nC = \n"
+                                   << C << "\nL = \n" << L << "\nR = \n" << R
+                                   << "\n";
 }
 
 /*****************************************************
@@ -433,6 +475,23 @@ TEST(LapackTileAlgebraTest, CreateCMatrixInnerDimIsOneGEMM) {
     EXPECT_TRUE(C.isApprox(Ccorrect));
 }
 
+TEST(LapackTileAlgebraTest, CreateCMatrixInnerDimIsZeroGEMM) {
+    const auto rows = 9;
+    const auto cols = 11;
+    const auto inner_dim = 0;
+    MatrixXd A = MatrixXd::Random(rows, inner_dim);
+    MatrixXd B = MatrixXd::Random(inner_dim, cols);
+
+    auto alpha = 2.0;
+
+    auto C = lapack::cblas_gemm(A, B, alpha);
+
+    auto Ccorrect = alpha * A * B;
+
+    EXPECT_TRUE(C.isApprox(Ccorrect)) << "C = \n" << C
+                                      << "\nCorrect Answer = \n" << Ccorrect
+                                      << "\n";
+}
 TEST(LapackTileAlgebraTest, SquareInPlaceGEMM) {
     const auto rows = 11;
     const auto cols = 11;
@@ -551,6 +610,25 @@ TEST(LapackTileAlgebraTest, InnerDimIsOneInPlaceGEMM) {
     EXPECT_TRUE(C.isApprox(Ccorrect));
 }
 
+TEST(LapackTileAlgebraTest, InnerDimIsZeroInPlaceGEMM) {
+    const auto rows = 9;
+    const auto cols = 11;
+    const auto inner_dim = 0;
+    MatrixXd A = MatrixXd::Random(rows, inner_dim);
+    MatrixXd B = MatrixXd::Random(inner_dim, cols);
+    MatrixXd C = MatrixXd::Random(rows, cols);
+    MatrixXd Ccorrect = C;
+
+    auto alpha = 2.0;
+    auto beta = 3.0;
+
+    lapack::cblas_gemm_inplace(A, B, C, alpha, beta);
+
+    Ccorrect = alpha * A * B + beta * Ccorrect;
+
+    EXPECT_TRUE(C.isApprox(Ccorrect));
+}
+
 TEST(LapackTileAlgebraTest, FullRankColPivQR) {
     const auto rows = 9;
     const auto cols = 11;
@@ -561,8 +639,7 @@ TEST(LapackTileAlgebraTest, FullRankColPivQR) {
     MatrixXd L, R;
 
     // Return true if mat is full rank
-    EXPECT_TRUE(lapack::ColPivQR(C, L, R, cut)) << "Matrix C = \n" << C
-                                                       << "\n";
+    EXPECT_TRUE(lapack::ColPivQR(C, L, R, cut)) << "Matrix C = \n" << C << "\n";
     EXPECT_EQ(L.size(), 0ul); // Shouldn't decompose if full rank
     EXPECT_EQ(R.size(), 0ul);
 }
@@ -578,12 +655,13 @@ TEST(lapackTileAlgebraTest, LowRankSquareColPivQR) {
 
     // Return true if mat is full rank
     EXPECT_FALSE(lapack::ColPivQR(C, L, R, cut)) << "Matrix C = \n" << C
-                                                        << "\n";
+                                                 << "\n";
     EXPECT_EQ(L.cols(), rank); // Shouldn't decompose if full rank
     EXPECT_EQ(R.rows(), rank);
-    EXPECT_TRUE(C.isApprox(L * R))
-        << "2 norm of diff = " << (C - (L * R)).lpNorm<2>() << "\nC = \n" << C
-        << "\nL = \n" << L << "\nR = \n" << R << "\n";
+    EXPECT_TRUE(C.isApprox(L * R)) << "2 norm of diff = "
+                                   << (C - (L * R)).lpNorm<2>() << "\nC = \n"
+                                   << C << "\nL = \n" << L << "\nR = \n" << R
+                                   << "\n";
 }
 
 TEST(LapackTileAlgebraTest, LowRankMoreRowsThanColsColPivQR) {
@@ -597,12 +675,13 @@ TEST(LapackTileAlgebraTest, LowRankMoreRowsThanColsColPivQR) {
 
     // Return true if mat is full rank
     EXPECT_FALSE(lapack::ColPivQR(C, L, R, cut)) << "Matrix C = \n" << C
-                                                        << "\n";
+                                                 << "\n";
     EXPECT_EQ(L.cols(), rank); // Shouldn't decompose if full rank
     EXPECT_EQ(R.rows(), rank);
-    EXPECT_TRUE(C.isApprox(L * R))
-        << "2 norm of diff = " << (C - (L * R)).lpNorm<2>() << "\nC = \n" << C
-        << "\nL = \n" << L << "\nR = \n" << R << "\n";
+    EXPECT_TRUE(C.isApprox(L * R)) << "2 norm of diff = "
+                                   << (C - (L * R)).lpNorm<2>() << "\nC = \n"
+                                   << C << "\nL = \n" << L << "\nR = \n" << R
+                                   << "\n";
 }
 
 TEST(LapackTileAlgebraTest, LowRankMoreColsThanRowsColPivQR) {
@@ -616,12 +695,13 @@ TEST(LapackTileAlgebraTest, LowRankMoreColsThanRowsColPivQR) {
 
     // Return true if mat is full rank
     EXPECT_FALSE(lapack::ColPivQR(C, L, R, cut)) << "Matrix C = \n" << C
-                                                        << "\n";
+                                                 << "\n";
     EXPECT_EQ(L.cols(), rank); // Shouldn't decompose if full rank
     EXPECT_EQ(R.rows(), rank);
-    EXPECT_TRUE(C.isApprox(L * R))
-        << "2 norm of diff = " << (C - (L * R)).lpNorm<2>() << "\nC = \n" << C
-        << "\nL = \n" << L << "\nR = \n" << R << "\n";
+    EXPECT_TRUE(C.isApprox(L * R)) << "2 norm of diff = "
+                                   << (C - (L * R)).lpNorm<2>() << "\nC = \n"
+                                   << C << "\nL = \n" << L << "\nR = \n" << R
+                                   << "\n";
 }
 
 TEST(LapackTileAlgebraTest, RankOneColPivQR) {
@@ -635,12 +715,13 @@ TEST(LapackTileAlgebraTest, RankOneColPivQR) {
 
     // Return true if mat is full rank
     EXPECT_FALSE(lapack::ColPivQR(C, L, R, cut)) << "Matrix C = \n" << C
-                                                        << "\n";
+                                                 << "\n";
     EXPECT_EQ(L.cols(), rank); // Shouldn't decompose if full rank
     EXPECT_EQ(R.rows(), rank);
-    EXPECT_TRUE(C.isApprox(L * R))
-        << "2 norm of diff = " << (C - (L * R)).lpNorm<2>() << "\nC = \n" << C
-        << "\nL = \n" << L << "\nR = \n" << R << "\n";
+    EXPECT_TRUE(C.isApprox(L * R)) << "2 norm of diff = "
+                                   << (C - (L * R)).lpNorm<2>() << "\nC = \n"
+                                   << C << "\nL = \n" << L << "\nR = \n" << R
+                                   << "\n";
 }
 
 TEST(LapackTileAlgebraTest, RankZeroColPivQR) {
@@ -654,11 +735,11 @@ TEST(LapackTileAlgebraTest, RankZeroColPivQR) {
 
     // Return true if mat is full rank
     EXPECT_FALSE(lapack::ColPivQR(C, L, R, cut)) << "Matrix C = \n" << C
-                                                        << "\n";
+                                                 << "\n";
     EXPECT_EQ(L.cols(), rank); // Shouldn't decompose if full rank
     EXPECT_EQ(R.rows(), rank);
-    EXPECT_TRUE(C.isApprox(L * R))
-        << "2 norm of diff = " << (C - (L * R)).lpNorm<2>() << "\nC = \n" << C
-        << "\nL = \n" << L << "\nR = \n" << R << "\n";
+    EXPECT_TRUE(C.isApprox(L * R)) << "2 norm of diff = "
+                                   << (C - (L * R)).lpNorm<2>() << "\nC = \n"
+                                   << C << "\nL = \n" << L << "\nR = \n" << R
+                                   << "\n";
 }
-

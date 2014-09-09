@@ -80,10 +80,17 @@ Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> inline cblas_gemm(
     const int K = A.cols();
     const int M = C.rows();
     const int N = C.cols();
+    if (K == 0 || M == 0 || N == 0) { // If zero leave
+        for (auto i = 0; i < C.size(); ++i) {
+            *(C.data() + i) = 0;
+        }
+        return C;
+    }
     const int LDA = M, LDB = K, LDC = M;
     madness::cblas::gemm(madness::cblas::CBLAS_TRANSPOSE::NoTrans,
-                         madness::cblas::CBLAS_TRANSPOSE::NoTrans, M, N, K, alpha,
-                         A.data(), LDA, B.data(), LDB, 0.0, C.data(), LDC);
+                         madness::cblas::CBLAS_TRANSPOSE::NoTrans, M, N, K,
+                         alpha, A.data(), LDA, B.data(), LDB, 0.0, C.data(),
+                         LDC);
     return C;
 }
 
@@ -98,6 +105,10 @@ void inline cblas_gemm_inplace(const Eigen::Matrix
     const int K = A.cols();
     const int M = C.rows();
     const int N = C.cols();
+    if (K == 0 || M == 0 || N == 0) { // If zero leave
+        C = beta * C;
+        return;
+    }
     const int LDA = M, LDB = K, LDC = M;
     madness::cblas::gemm(madness::cblas::CBLAS_TRANSPOSE::NoTrans,
                          madness::cblas::CBLAS_TRANSPOSE::NoTrans, M, N, K,
@@ -116,6 +127,10 @@ void inline cblas_gemm_inplace(const Eigen::Matrix
     const int K = A.cols();
     const int M = C.rows();
     const int N = C.cols();
+    if (K == 0 || M == 0 || N == 0) { // If zero leave
+        C = beta * C;
+        return;
+    }
     const int LDA = M, LDB = K, LDC = M;
     madness::cblas::gemm(madness::cblas::CBLAS_TRANSPOSE::NoTrans,
                          madness::cblas::CBLAS_TRANSPOSE::NoTrans, M, N, K,
@@ -146,7 +161,8 @@ void inline cblas_gemm_inplace(const Eigen::Matrix
  * rank of the input matrix.
  *
  */
-bool inline ColPivQR(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> input,
+bool inline ColPivQR(Eigen::Matrix
+                     <double, Eigen::Dynamic, Eigen::Dynamic> input,
                      Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &L,
                      Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &R,
                      double cut) {
@@ -195,7 +211,7 @@ bool inline ColPivQR(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> input
     return false; // Input is not full rank
 }
 
-template<typename T>
+template <typename T>
 bool inline ColPivQR(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
                      Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
                      Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R,

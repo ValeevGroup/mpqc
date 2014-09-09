@@ -103,7 +103,7 @@ bool check_equal(const TiledArray::Array<double, 2, T> &Full,
 
     bool same = true;
 
-    for (; fit != fend && same; ++fit, ++LRit) {
+    for (; fit != fend; ++fit, ++LRit) {
         Eigen::MatrixXd LRmat = LRit->get().matrixLR();
         auto range = fit->get().range();
         Eigen::MatrixXd Fmat = TiledArray::eigen_map(
@@ -315,7 +315,7 @@ make_lr_array(madness::World &world, TiledArray::TiledRange &trange,
                         range.size()[1]);
 
         TiledArray::Array<double, 2, LRTile<double>>::value_type tile(
-            range, mat_block, true, 1e-08);
+            range, mat_block, true, 1e-14);
 
         *i = tile;
     }

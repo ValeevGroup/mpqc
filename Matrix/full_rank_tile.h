@@ -3,6 +3,7 @@
 
 #include "../include/tiledarray.h"
 #include "../include/eigen.h"
+#include "tile_algebra.h"
 #include <type_traits>
 
 template <typename T, typename = typename std::enable_if
@@ -37,9 +38,16 @@ class FullRankTile {
     inline Matrix<T> const &data() const { return tile_; }
     inline unsigned long rank() const { return rank_; }
 
+    FullRankTile &gemm(FullRankTile const &left, FullRankTile const &right,
+                       double alpha = 1.0, double beta = 1.0) {
+        algebra::cblas_gemm_inplace(left.data(), right.data(), tile_, alpha, beta);
+        return *this;
+    }
+
   private:
     Matrix<T> tile_;
     unsigned long rank_ = 0;
 };
+
 
 #endif // FULL_RANK_TILE_H

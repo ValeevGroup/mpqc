@@ -21,13 +21,89 @@ TYPED_TEST(FullRankTileTest, DefaultConstructor) {
 TYPED_TEST(FullRankTileTest, AssignmentTest) {
     const int rows = 10;
     const int cols = 10;
-    using mat_type = typename FullRankTile<TypeParam>::template Matrix<TypeParam>;
+    using mat_type = typename FullRankTile<TypeParam>::template Matrix
+        <TypeParam>;
     mat_type mat = mat_type::Random(rows, cols);
     FullRankTile<TypeParam> from_mat(mat);
     this->tile = from_mat;
 
-    EXPECT_EQ(std::min(rows,cols), this->tile.rank());
+    EXPECT_EQ(std::min(rows, cols), this->tile.rank());
     EXPECT_EQ(rows * cols, this->tile.data().size());
     EXPECT_EQ(cols, this->tile.data().cols());
     EXPECT_EQ(rows, this->tile.data().rows());
 }
+
+TYPED_TEST(FullRankTileTest, SquareGemm) {
+    const int rows = 10;
+    const int cols = 10;
+    using mat_type = typename FullRankTile<TypeParam>::template Matrix
+        <TypeParam>;
+
+    FullRankTile<TypeParam> mine(mat_type::Random(rows, cols));
+    FullRankTile<TypeParam> left(mat_type::Random(rows, cols));
+    FullRankTile<TypeParam> right(mat_type::Random(rows, cols));
+    this->tile = mine;
+
+    double alpha = 3.0;
+    double beta = 2.0;
+
+    mat_type result = alpha * left.data() * right.data() + beta * mine.data();
+    this->tile.gemm(left, right, alpha, beta); // must go after result since modifies
+
+    EXPECT_EQ(std::min(rows, cols), this->tile.rank());
+    EXPECT_EQ(rows * cols, this->tile.data().size());
+    EXPECT_EQ(cols, this->tile.data().cols());
+    EXPECT_EQ(rows, this->tile.data().rows());
+    EXPECT_TRUE(this->tile.data().isApprox(result));
+}
+
+TYPED_TEST(FullRankTileTest, MoreColsGemm) {
+    const int rows = 3;
+    const int cols = 10;
+    const int inner_index = 7;
+    using mat_type = typename FullRankTile<TypeParam>::template Matrix
+        <TypeParam>;
+
+    FullRankTile<TypeParam> mine(mat_type::Random(rows, cols));
+    FullRankTile<TypeParam> left(mat_type::Random(rows, inner_index));
+    FullRankTile<TypeParam> right(mat_type::Random(inner_index, cols));
+    this->tile = mine;
+
+    double alpha = 3.0;
+    double beta = 2.0;
+
+    mat_type result = alpha * left.data() * right.data() + beta * mine.data();
+    this->tile.gemm(left, right, alpha, beta); // must go after result since modifies
+
+    EXPECT_EQ(std::min(rows, cols), this->tile.rank());
+    EXPECT_EQ(rows * cols, this->tile.data().size());
+    EXPECT_EQ(cols, this->tile.data().cols());
+    EXPECT_EQ(rows, this->tile.data().rows());
+    EXPECT_TRUE(this->tile.data().isApprox(result));
+}
+
+TYPED_TEST(FullRankTileTest, MoreRowsGemm) {
+    const int rows = 10;
+    const int cols = 3;
+    const int inner_index = 7;
+    using mat_type = typename FullRankTile<TypeParam>::template Matrix
+        <TypeParam>;
+
+    FullRankTile<TypeParam> mine(mat_type::Random(rows, cols));
+    FullRankTile<TypeParam> left(mat_type::Random(rows, inner_index));
+    FullRankTile<TypeParam> right(mat_type::Random(inner_index, cols));
+    this->tile = mine;
+
+    double alpha = 3.0;
+    double beta = 2.0;
+
+    mat_type result = alpha * left.data() * right.data() + beta * mine.data();
+    this->tile.gemm(left, right, alpha, beta); // must go after result since modifies
+
+    EXPECT_EQ(std::min(rows, cols), this->tile.rank());
+    EXPECT_EQ(rows * cols, this->tile.data().size());
+    EXPECT_EQ(cols, this->tile.data().cols());
+    EXPECT_EQ(rows, this->tile.data().rows());
+    EXPECT_TRUE(this->tile.data().isApprox(result));
+}
+

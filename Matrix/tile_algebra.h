@@ -15,10 +15,7 @@ template <typename T>
 Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> inline cblas_gemm(
     const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &A,
     const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &B, double alpha) {
-
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> C(A.rows(), B.cols());
-    C = alpha * A * B;
-    return C;
+    return alpha * A * B;
 }
 
 template <typename T>
@@ -92,6 +89,14 @@ Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> inline cblas_gemm(
                          alpha, A.data(), LDA, B.data(), LDB, 0.0, C.data(),
                          LDC);
     return C;
+}
+
+template<typename T>
+Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> inline cblas_gemm(
+    const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &A,
+    const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &B,
+    double alpha) {
+    return eigen_version::cblas_gemm(A,B,alpha);
 }
 
 void inline cblas_gemm_inplace(const Eigen::Matrix

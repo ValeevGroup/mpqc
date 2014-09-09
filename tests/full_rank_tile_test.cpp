@@ -39,16 +39,13 @@ TYPED_TEST(FullRankTileTest, SquareGemm) {
     using mat_type = typename FullRankTile<TypeParam>::template Matrix
         <TypeParam>;
 
-    FullRankTile<TypeParam> mine(mat_type::Random(rows, cols));
     FullRankTile<TypeParam> left(mat_type::Random(rows, cols));
     FullRankTile<TypeParam> right(mat_type::Random(rows, cols));
-    this->tile = mine;
 
     double alpha = 3.0;
-    double beta = 2.0;
 
-    mat_type result = alpha * left.data() * right.data() + beta * mine.data();
-    this->tile.gemm(left, right, alpha, beta); // must go after result since modifies
+    mat_type result = alpha * left.data() * right.data();
+    this->tile = gemm(left, right, alpha);
 
     EXPECT_EQ(std::min(rows, cols), this->tile.rank());
     EXPECT_EQ(rows * cols, this->tile.data().size());
@@ -64,16 +61,13 @@ TYPED_TEST(FullRankTileTest, MoreColsGemm) {
     using mat_type = typename FullRankTile<TypeParam>::template Matrix
         <TypeParam>;
 
-    FullRankTile<TypeParam> mine(mat_type::Random(rows, cols));
     FullRankTile<TypeParam> left(mat_type::Random(rows, inner_index));
     FullRankTile<TypeParam> right(mat_type::Random(inner_index, cols));
-    this->tile = mine;
 
     double alpha = 3.0;
-    double beta = 2.0;
 
-    mat_type result = alpha * left.data() * right.data() + beta * mine.data();
-    this->tile.gemm(left, right, alpha, beta); // must go after result since modifies
+    mat_type result = alpha * left.data() * right.data();
+    this->tile = gemm(left, right, alpha);
 
     EXPECT_EQ(std::min(rows, cols), this->tile.rank());
     EXPECT_EQ(rows * cols, this->tile.data().size());
@@ -89,16 +83,13 @@ TYPED_TEST(FullRankTileTest, MoreRowsGemm) {
     using mat_type = typename FullRankTile<TypeParam>::template Matrix
         <TypeParam>;
 
-    FullRankTile<TypeParam> mine(mat_type::Random(rows, cols));
     FullRankTile<TypeParam> left(mat_type::Random(rows, inner_index));
     FullRankTile<TypeParam> right(mat_type::Random(inner_index, cols));
-    this->tile = mine;
 
     double alpha = 3.0;
-    double beta = 2.0;
 
-    mat_type result = alpha * left.data() * right.data() + beta * mine.data();
-    this->tile.gemm(left, right, alpha, beta); // must go after result since modifies
+    mat_type result = alpha * left.data() * right.data();
+    this->tile = gemm(left, right, alpha);
 
     EXPECT_EQ(std::min(rows, cols), this->tile.rank());
     EXPECT_EQ(rows * cols, this->tile.data().size());

@@ -29,6 +29,7 @@ class FullRankTile {
     FullRankTile &operator=(FullRankTile<T> &&t) noexcept {
         rank_ = std::move(t.rank_);
         tile_.swap(t.tile_);
+        return *this;
     }
 
     FullRankTile(Matrix<T> t) : tile_(), rank_(std::min(t.rows(), t.cols())) {
@@ -38,16 +39,20 @@ class FullRankTile {
     inline Matrix<T> const &data() const { return tile_; }
     inline unsigned long rank() const { return rank_; }
 
-    FullRankTile &gemm(FullRankTile const &left, FullRankTile const &right,
-                       double alpha = 1.0, double beta = 1.0) {
-        algebra::cblas_gemm_inplace(left.data(), right.data(), tile_, alpha, beta);
-        return *this;
-    }
-
   private:
     Matrix<T> tile_;
     unsigned long rank_ = 0;
 };
+
+template <typename T>
+FullRankTile<T>
+gemm(FullRankTile<T> const &left, FullRankTile<T> const &right, double alpha) {
+    return FullRankTile
+        <T>(algebra::cblas_gemm(left.data(), right.data(), alpha));
+}
+
+
+
 
 
 #endif // FULL_RANK_TILE_H

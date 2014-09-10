@@ -108,12 +108,23 @@ bool check_equal(const TiledArray::Array<double, 2, T> &Full,
         auto range = fit->get().range();
         Eigen::MatrixXd Fmat = TiledArray::eigen_map(
             fit->get(), range.size()[0], range.size()[1]);
-        same = ((Fmat - LRmat).lpNorm<2>() < 1e-06);
-        if (same == false) {
-            std::cout << "\n\tTile = (" << fit.index()[0] << ","
-                      << fit.index()[1] << ")"
-                      << "\n\t\t2 norm of diff = " << (Fmat - LRmat).lpNorm<2>()
-                      << std::endl;
+        if (LRmat.size() == 0) {
+            double norm = Fmat.lpNorm<2>();
+            std::cout << "\n\tLRmat for tile(" << fit.index()[0] << ","
+                      << fit.index()[1]
+                      << ") was empty Fmat has norm = " << norm << " ";
+            if (norm > 1e-16) {
+                same = false;
+            }
+        } else {
+            auto inner_same = ((Fmat - LRmat).lpNorm<2>() < 1e-06);
+            if (inner_same == false) {
+                std::cout << "\n\tTile = (" << fit.index()[0] << ","
+                          << fit.index()[1] << ")"
+                          << "\n\t\t2 norm of diff = " << (Fmat - LRmat).lpNorm
+                                                          <2>() << std::endl;
+                same = inner_same;
+            }
         }
     }
 
@@ -206,6 +217,7 @@ int main(int argc, char **argv) {
 
 
     world.gop.fence();
+
     auto lr_time = madness::wall_time();
     // purify(LR_D, LR_S);
     // LR_D("i,j") = 2 * LR_D("i,j") - LR_D("i,k") * LR_S("k,l") * LR_D("l,j");
@@ -247,6 +259,7 @@ int main(int argc, char **argv) {
         std::cout << "Ok!";
     }
     std::cout << "\n";
+
 
 
     auto Eig_LR_F = create_plottable_array(LR_F);
@@ -315,7 +328,7 @@ make_lr_array(madness::World &world, TiledArray::TiledRange &trange,
                         range.size()[1]);
 
         TiledArray::Array<double, 2, LRTile<double>>::value_type tile(
-            range, mat_block, true, 1e-14);
+            range, mat_block, true, 1e-09);
 
         *i = tile;
     }
@@ -330,12 +343,14 @@ create_plottable_array(const TiledArray::Array<double, 2, LRTile<double>> &A) {
     for (auto it = A.begin(); it != A.end(); ++it) {
         auto const &tile = it->get();
         auto L = tile.matrixL();
+        std::for_each(L.data(), L.data() + L.size(), [](double &x){ x = 1;});
         auto range = tile.range();
         if (tile.is_full()) {
             matrix.block(range.start()[0], range.start()[1], range.size()[0],
                          range.size()[1]) = L;
         } else {
             auto R = tile.matrixR();
+            std::for_each(R.data(), R.data() + R.size(), [](double &x){ x = 1;});
             Eigen::MatrixXd temp = Eigen::MatrixXd::Zero(L.rows(), R.cols());
             temp.topRows(tile.rank()) = R;
             temp.leftCols(tile.rank()) = L;

@@ -357,7 +357,8 @@ class LRTile {
 
         const auto new_rank = rank_ + right.rank_;
 
-        if (new_rank > static_cast<unsigned long>(std::min(L_.rows(), R_.cols()))) {
+        if (new_rank > static_cast
+            <unsigned long>(std::min(L_.rows(), R_.cols()))) {
             return LRTile(range(), EigMat<T>(matrixLR() + right.matrixLR()),
                           true, cut_);
         }
@@ -386,8 +387,8 @@ class LRTile {
         return LRTile();
     }
 
-    LRTile add(const value_type &value,
-               const TiledArray::Permutation &perm) const {
+    LRTile
+    add(const value_type &value, const TiledArray::Permutation &perm) const {
         assert(false);
         return LRTile();
     }
@@ -450,8 +451,8 @@ class LRTile {
      * @param perm
      * @return
      */
-    LRTile subt(const LRTile &right,
-                const TiledArray::Permutation &perm) const {
+    LRTile
+    subt(const LRTile &right, const TiledArray::Permutation &perm) const {
         // TODO FIX
         assert(false);
         return subt(right);
@@ -505,8 +506,8 @@ class LRTile {
         return LRTile();
     }
 
-    LRTile mult(const LRTile &right,
-                const TiledArray::Permutation &perm) const {
+    LRTile
+    mult(const LRTile &right, const TiledArray::Permutation &perm) const {
         assert(false); // TODO
         return LRTile();
     }
@@ -614,6 +615,10 @@ class LRTile {
         EigMat<T> L(L_.rows(), C_out_rank);
         EigMat<T> R(C_out_rank, R_.cols());
 
+        if(mult_rank == 0){
+          return;
+        }
+
         L.rightCols(rank()) = L_;
         R.bottomRows(rank()) = R_;
 
@@ -623,10 +628,15 @@ class LRTile {
                 const int M = L.rows();
                 const int N = mult_rank; // TODO fix things here.
                 const int LDA = M, LDB = K, LDC = M;
-                madness::cblas::gemm(madness::cblas::CBLAS_TRANSPOSE::NoTrans,
-                                     madness::cblas::CBLAS_TRANSPOSE::NoTrans,
-                                     M, N, K, factor, left.L_.data(), LDA,
-                                     right.L_.data(), LDB, 0, L.data(), LDC);
+                if (K == 0 || M == 0 || N == 0) {
+                    L.leftCols(mult_rank) = factor * left.L_ * right.L_;
+                } else {
+                    madness::cblas::gemm(
+                        madness::cblas::CBLAS_TRANSPOSE::NoTrans,
+                        madness::cblas::CBLAS_TRANSPOSE::NoTrans, M, N, K,
+                        factor, left.L_.data(), LDA, right.L_.data(), LDB, 0,
+                        L.data(), LDC);
+                }
             }
             { // Write into the top of R
                 R.topRows(mult_rank) = right.R_;
@@ -637,10 +647,15 @@ class LRTile {
                 const int M = mult_rank;
                 const int N = R.cols();
                 const int LDA = M, LDB = K, LDC = R.rows();
-                madness::cblas::gemm(madness::cblas::CBLAS_TRANSPOSE::NoTrans,
-                                     madness::cblas::CBLAS_TRANSPOSE::NoTrans,
-                                     M, N, K, factor, left.R_.data(), LDA,
-                                     right.L_.data(), LDB, 0, R.data(), LDC);
+                if (K == 0 || M == 0 || N == 0) {
+                    R.topRows(mult_rank) = factor * left.R_ * right.L_;
+                } else {
+                    madness::cblas::gemm(
+                        madness::cblas::CBLAS_TRANSPOSE::NoTrans,
+                        madness::cblas::CBLAS_TRANSPOSE::NoTrans, M, N, K,
+                        factor, left.R_.data(), LDA, right.L_.data(), LDB, 0,
+                        R.data(), LDC);
+                }
             }
             { // Write into the top of R
                 L.leftCols(mult_rank) = left.L_;
@@ -648,7 +663,7 @@ class LRTile {
 
         } else {
             EigMat<T> mid = algebra::cblas_gemm(left.R_, right.L_, 1.0);
-            bool use_left_rank = (left.rank() <= right.rank());
+            bool use_left_rank = (left.rank() >= right.rank());
             if (use_left_rank) {
                 // L.leftCols(mult_rank) = left.L_ * mid;
                 { // Write into the left side of L
@@ -656,11 +671,15 @@ class LRTile {
                     const int M = L.rows();
                     const int N = mult_rank;
                     const int LDA = M, LDB = K, LDC = M;
-                    madness::cblas::gemm(
-                        madness::cblas::CBLAS_TRANSPOSE::NoTrans,
-                        madness::cblas::CBLAS_TRANSPOSE::NoTrans, M, N, K,
-                        factor, left.L_.data(), LDA, mid.data(), LDB, 0,
-                        L.data(), LDC);
+                    if (K == 0 || M == 0 || N == 0) {
+                        L.leftCols(mult_rank) = decltype(L)::Zero(M,N);
+                    } else {
+                        madness::cblas::gemm(
+                            madness::cblas::CBLAS_TRANSPOSE::NoTrans,
+                            madness::cblas::CBLAS_TRANSPOSE::NoTrans, M, N, K,
+                            factor, left.L_.data(), LDA, mid.data(), LDB, 0,
+                            L.data(), LDC);
+                    }
                 }
                 { // Write into the top of R
                     R.topRows(mult_rank) = right.R_;
@@ -672,11 +691,15 @@ class LRTile {
                     const int M = mult_rank;
                     const int N = R.cols();
                     const int LDA = M, LDB = K, LDC = R.rows();
-                    madness::cblas::gemm(
-                        madness::cblas::CBLAS_TRANSPOSE::NoTrans,
-                        madness::cblas::CBLAS_TRANSPOSE::NoTrans, M, N, K,
-                        factor, mid.data(), LDA, right.R_.data(), LDB, 0,
-                        R.data(), LDC);
+                    if (K == 0 || M == 0 || N == 0) {
+                        R.topRows(mult_rank) = factor * mid * right.R_;
+                    } else {
+                        madness::cblas::gemm(
+                            madness::cblas::CBLAS_TRANSPOSE::NoTrans,
+                            madness::cblas::CBLAS_TRANSPOSE::NoTrans, M, N, K,
+                            factor, mid.data(), LDA, right.R_.data(), LDB, 0,
+                            R.data(), LDC);
+                    }
                 }
                 { // Write into the top of R
                     L.leftCols(mult_rank) = left.L_;

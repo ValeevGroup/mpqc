@@ -174,7 +174,7 @@ bool inline ColPivQR(Eigen::Matrix
     int M = input.rows();
     int N = input.cols();
     auto full_rank = std::min(M, N);
-    Eigen::VectorXi J(N);
+    Eigen::VectorXi J = Eigen::VectorXi::Zero(N);
     double Tau[full_rank];
     double work;
     int LWORK = -1; // Ask LAPACK how much space we need.
@@ -187,7 +187,7 @@ bool inline ColPivQR(Eigen::Matrix
     dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, W, &LWORK, &INFO);
 
     Eigen::VectorXd const &Rvalues = input.diagonal();
-    const double thresh = cut * std::abs(Rvalues[0]);
+    const double thresh = std::max(cut * std::abs(Rvalues[0]), 1e-16);
     int rank = 0;
     for (auto i = 0; i < Rvalues.size(); ++i) {
         if (std::abs(Rvalues[i]) > thresh) {
@@ -208,7 +208,7 @@ bool inline ColPivQR(Eigen::Matrix
                         <Eigen::Upper>()) * P.transpose();
 
     // Form Q.
-    dorgqr_(&M, &full_rank, &rank, input.data(), &M, Tau, W, &LWORK, &INFO);
+    dorgqr_(&M, &rank, &rank, input.data(), &M, Tau, W, &LWORK, &INFO);
     L = input.leftCols(rank);
 
     delete[] W;

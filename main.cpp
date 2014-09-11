@@ -149,8 +149,8 @@ int main(int argc, char **argv) {
     madness::World &world = madness::initialize(argc, argv);
 
     Eigen::MatrixXd ES = read_matrix(Sfile);
-    Eigen::MatrixXd ED = read_matrix(Dfile);
-    Eigen::MatrixXd EF = read_matrix(Ffile);
+    //Eigen::MatrixXd ED = read_matrix(Dfile);
+    //EiEigen::MatrixXd EF = read_matrix(Ffile);
 
     const auto nbasis = ES.rows();
 
@@ -173,10 +173,10 @@ int main(int argc, char **argv) {
 
     TiledArray::Array<double, 2> S = TiledArray::eigen_to_array
         <TiledArray::Array<double, 2>>(world, trange, ES);
-    TiledArray::Array<double, 2> D = TiledArray::eigen_to_array
-        <TiledArray::Array<double, 2>>(world, trange, ED);
-    TiledArray::Array<double, 2> F = TiledArray::eigen_to_array
-        <TiledArray::Array<double, 2>>(world, trange, EF);
+    //TiledArray::Array<double, 2> D = TiledArray::eigen_to_array
+    //Ti    <TiledArray::Array<double, 2>>(world, trange, ED);
+    //TiTiledArray::Array<double, 2> F = TiledArray::eigen_to_array
+    //Ti    <TiledArray::Array<double, 2>>(world, trange, EF);
 
     /************************************************
      * Perform LR version
@@ -184,10 +184,10 @@ int main(int argc, char **argv) {
 
     TiledArray::Array<double, 2, LRTile<double>> LR_S
         = make_lr_array(world, trange, ES);
-    TiledArray::Array<double, 2, LRTile<double>> LR_D
-        = make_lr_array(world, trange, ED);
-    TiledArray::Array<double, 2, LRTile<double>> LR_F
-        = make_lr_array(world, trange, EF);
+    //TiledArray::Array<double, 2, LRTile<double>> LR_D
+    //Ti    = make_lr_array(world, trange, ED);
+    //TiTiledArray::Array<double, 2, LRTile<double>> LR_F
+    //Ti    = make_lr_array(world, trange, EF);
 
 
     std::cout << "\nChecking arrays for approximate equality.\n";
@@ -198,21 +198,21 @@ int main(int argc, char **argv) {
     } else {
         std::cout << "Ok!";
     }
-    std::cout << "\nChecking Density . . . ";
-    passed_check = check_equal(D, LR_D);
-    if (!passed_check) {
-        std::cout << "Densities were not equal!";
-    } else {
-        std::cout << "Ok!";
-    }
-    std::cout << "\n";
-    std::cout << "Checking Fock . . . ";
-    passed_check = check_equal(F, LR_F);
-    if (!passed_check) {
-        std::cout << "Focks were not equal!";
-    } else {
-        std::cout << "Ok!";
-    }
+  //  std::cout << "\nChecking Density . . . ";
+  //    passed_check = check_equal(D, LR_D);
+  //    if (!passed_check) {
+  //        std::cout << "Densities were not equal!";
+  //    } else {
+  //        std::cout << "Ok!";
+  //    }
+  //    std::cout << "\n";
+  //    std::cout << "Checking Fock . . . ";
+  //    passed_check = check_equal(F, LR_F);
+  //    if (!passed_check) {
+  //        std::cout << "Focks were not equal!";
+  //    } else {
+  //        std::cout << "Ok!";
+  //    }
     std::cout << "\n";
 
 
@@ -221,7 +221,7 @@ int main(int argc, char **argv) {
     auto lr_time = madness::wall_time();
     // purify(LR_D, LR_S);
     // LR_D("i,j") = 2 * LR_D("i,j") - LR_D("i,k") * LR_S("k,l") * LR_D("l,j");
-    LR_D("i,j") = LR_S("i,k") * LR_S("k,j");
+    // LR_D("i,j") = LR_S("i,k") * LR_S("k,j");
     world.gop.fence();
     lr_time = madness::wall_time() - lr_time;
     std::cout << "LR time was " << lr_time << " s\n";
@@ -230,39 +230,39 @@ int main(int argc, char **argv) {
     auto full_time = madness::wall_time();
     // purify(D, S);
     // D("i,j") = 2 * D("i,j") - D("i,k") * S("k,l") * D("l,j");
-    D("i,j") = S("i,k") * S("k,j");
+    // D("i,j") = S("i,k") * S("k,j");
     world.gop.fence();
     full_time = madness::wall_time() - full_time;
     std::cout << "Full time was " << full_time << " s\n";
 
-    std::cout << "\nChecking arrays for approximate equality.\n";
-    std::cout << "Checking Overlap . . . ";
-    passed_check = check_equal(S, LR_S);
-    if (!passed_check) {
-        std::cout << "Overlaps were not equal!";
-    } else {
-        std::cout << "Ok!";
-    }
-    std::cout << "\nChecking Density . . . ";
-    passed_check = check_equal(D, LR_D);
-    if (!passed_check) {
-        std::cout << "Densities were not equal!";
-    } else {
-        std::cout << "Ok!";
-    }
-    std::cout << "\n";
-    std::cout << "Checking Fock . . . ";
-    passed_check = check_equal(F, LR_F);
-    if (!passed_check) {
-        std::cout << "Focks were not equal!";
-    } else {
-        std::cout << "Ok!";
-    }
-    std::cout << "\n";
+  //  std::cout << "\nChecking arrays for approximate equality.\n";
+  //    std::cout << "Checking Overlap . . . ";
+  //    passed_check = check_equal(S, LR_S);
+  //    if (!passed_check) {
+  //        std::cout << "Overlaps were not equal!";
+  //    } else {
+  //        std::cout << "Ok!";
+  //    }
+  //    std::cout << "\nChecking Density . . . ";
+  //    passed_check = check_equal(D, LR_D);
+  //    if (!passed_check) {
+  //        std::cout << "Densities were not equal!";
+  //    } else {
+  //        std::cout << "Ok!";
+  //    }
+  //    std::cout << "\n";
+  //    std::cout << "Checking Fock . . . ";
+  //    passed_check = check_equal(F, LR_F);
+  //    if (!passed_check) {
+  //        std::cout << "Focks were not equal!";
+  //    } else {
+  //        std::cout << "Ok!";
+  //    }
+  //    std::cout << "\n";
 
 
 
-    auto Eig_LR_F = create_plottable_array(LR_F);
+    auto Eig_LR_F = create_plottable_array(LR_S);
     std::ofstream matrix_out;
     matrix_out.open("LR_out_test.dat");
     matrix_out << Eig_LR_F << std::endl;

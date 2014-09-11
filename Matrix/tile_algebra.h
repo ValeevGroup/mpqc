@@ -91,12 +91,11 @@ Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> inline cblas_gemm(
     return C;
 }
 
-template<typename T>
+template <typename T>
 Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> inline cblas_gemm(
     const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &A,
-    const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &B,
-    double alpha) {
-    return eigen_version::cblas_gemm(A,B,alpha);
+    const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &B, double alpha) {
+    return eigen_version::cblas_gemm(A, B, alpha);
 }
 
 void inline cblas_gemm_inplace(const Eigen::Matrix
@@ -171,6 +170,7 @@ bool inline ColPivQR(Eigen::Matrix
                      Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &L,
                      Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &R,
                      double cut) {
+    assert(input.size() >= 0);
     int M = input.rows();
     int N = input.cols();
     auto full_rank = std::min(M, N);
@@ -222,6 +222,153 @@ bool inline ColPivQR(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
                      Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R,
                      double cut) {
     return eigen_version::ColPivQR(input, L, R, cut);
+}
+
+void inline QrInit(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> input,
+                   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &L,
+                   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &R,
+                   double cut) {
+    assert(input.size() >= 0);
+    int M = input.rows();
+    int N = input.cols();
+    auto full_rank = std::min(M, N);
+    Eigen::VectorXi J = Eigen::VectorXi::Zero(N);
+    double Tau[full_rank];
+    double work;
+    int LWORK = -1; // Ask LAPACK how much space we need.
+    int INFO;
+    int LDA = M;
+
+    dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, &work, &LWORK, &INFO);
+    LWORK = work;
+    double *W = new double[LWORK];
+    dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, W, &LWORK, &INFO);
+
+    Eigen::VectorXd const &Rvalues = input.diagonal();
+    if (Rvalues.size() == 0) {
+        return;
+    }
+    const double thresh = std::max(cut * std::abs(Rvalues[0]), 1e-16);
+    int rank = 0;
+    for (auto i = 0; i < Rvalues.size(); ++i) {
+        if (std::abs(Rvalues[i]) > thresh) {
+            ++rank;
+        } else {
+            break;
+        }
+    }
+
+    // LAPACK assumes 1 based indexing, but we need zero.
+    std::for_each(J.data(), J.data() + J.size(), [](int &val) { --val; });
+    Eigen::PermutationWrapper<Eigen::VectorXi> P(J);
+    R = Eigen::MatrixXd(input.topLeftCorner(rank, N).template triangularView
+                        <Eigen::Upper>()) * P.transpose();
+
+    // Form Q.
+    dorgqr_(&M, &rank, &rank, input.data(), &M, Tau, W, &LWORK, &INFO);
+    L = input.leftCols(rank);
+
+    delete[] W;
+}
+
+void inline CompressLeft(Eigen::Matrix
+                         <double, Eigen::Dynamic, Eigen::Dynamic> &L,
+                         Eigen::Matrix
+                         <double, Eigen::Dynamic, Eigen::Dynamic> &R,
+                         double cut, bool debug = false) {
+    assert(L.size() >= 0);
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> input = L;
+    int M = input.rows();
+    int N = input.cols();
+    auto full_rank = std::min(M, N);
+    Eigen::VectorXi J = Eigen::VectorXi::Zero(N);
+    double Tau[full_rank];
+    double work;
+    int LWORK = -1; // Ask LAPACK how much space we need.
+    int INFO;
+    int LDA = M;
+
+    dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, &work, &LWORK, &INFO);
+    LWORK = work;
+    double *W = new double[LWORK];
+    dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, W, &LWORK, &INFO);
+
+    Eigen::VectorXd const &Rvalues = input.diagonal();
+    const double thresh = std::max(cut * std::abs(Rvalues[0]), 1e-16);
+    int rank = 0;
+    for (auto i = 0; i < Rvalues.size(); ++i) {
+        if (std::abs(Rvalues[i]) > thresh) {
+            ++rank;
+        } else {
+            break;
+        }
+    }
+
+    if (!debug && rank == full_rank) {
+        return;
+    }
+
+    // LAPACK assumes 1 based indexing, but we need zero.
+    std::for_each(J.data(), J.data() + J.size(), [](int &val) { --val; });
+    Eigen::PermutationWrapper<Eigen::VectorXi> P(J);
+    R = Eigen::MatrixXd(input.topLeftCorner(rank, N).template triangularView
+                        <Eigen::Upper>()) * P.transpose() * R;
+
+    // Form Q.
+    dorgqr_(&M, &rank, &rank, input.data(), &M, Tau, W, &LWORK, &INFO);
+    L = input.leftCols(rank);
+
+    delete[] W;
+}
+
+void inline CompressRight(Eigen::Matrix
+                          <double, Eigen::Dynamic, Eigen::Dynamic> &L,
+                          Eigen::Matrix
+                          <double, Eigen::Dynamic, Eigen::Dynamic> &R,
+                          double cut, bool debug = false) {
+    assert(R.size() >= 0);
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> input = R;
+    int M = input.rows();
+    int N = input.cols();
+    auto full_rank = std::min(M, N);
+    Eigen::VectorXi J = Eigen::VectorXi::Zero(N);
+    double Tau[full_rank];
+    double work;
+    int LWORK = -1; // Ask LAPACK how much space we need.
+    int INFO;
+    int LDA = M;
+
+    dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, &work, &LWORK, &INFO);
+    LWORK = work;
+    double *W = new double[LWORK];
+    dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, W, &LWORK, &INFO);
+
+    Eigen::VectorXd const &Rvalues = input.diagonal();
+    const double thresh = std::max(cut * std::abs(Rvalues[0]), 1e-16);
+    int rank = 0;
+    for (auto i = 0; i < Rvalues.size(); ++i) {
+        if (std::abs(Rvalues[i]) > thresh) {
+            ++rank;
+        } else {
+            break;
+        }
+    }
+
+    if (!debug && rank == full_rank && rank == 0) {
+        return;
+    }
+
+    // LAPACK assumes 1 based indexing, but we need zero.
+    std::for_each(J.data(), J.data() + J.size(), [](int &val) { --val; });
+    Eigen::PermutationWrapper<Eigen::VectorXi> P(J);
+    R = Eigen::MatrixXd(input.topLeftCorner(rank, N).template triangularView
+                        <Eigen::Upper>()) * P.transpose();
+
+    // Form Q.
+    dorgqr_(&M, &rank, &rank, input.data(), &M, Tau, W, &LWORK, &INFO);
+    L = cblas_gemm(L, input.leftCols(rank), 1.0);
+
+    delete[] W;
 }
 } // namespace lapack
 

@@ -355,25 +355,6 @@ TEST(EigenTileAlgebraTest, RankOneColPivQR) {
                                    << "\n";
 }
 
-TEST(EigenTileAlgebraTest, RankZeroColPivQR) {
-    const auto rows = 10;
-    const auto cols = 10;
-    const auto rank = 0;
-    const auto cut = 1e-07;
-
-    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
-    MatrixXd L, R;
-
-    // Return true if mat is full rank
-    EXPECT_FALSE(eigen_version::ColPivQR(C, L, R, cut)) << "Matrix C = \n" << C
-                                                        << "\n";
-    EXPECT_EQ(L.cols(), rank); // Shouldn't decompose if full rank
-    EXPECT_EQ(R.rows(), rank);
-    EXPECT_TRUE(C.isApprox(L * R)) << "2 norm of diff = "
-                                   << (C - (L * R)).lpNorm<2>() << "\nC = \n"
-                                   << C << "\nL = \n" << L << "\nR = \n" << R
-                                   << "\n";
-}
 
 /*****************************************************
  * BEGIN LAPACK TESTS
@@ -644,7 +625,7 @@ TEST(LapackTileAlgebraTest, FullRankColPivQR) {
     EXPECT_EQ(R.size(), 0ul);
 }
 
-TEST(lapackTileAlgebraTest, LowRankSquareColPivQR) {
+TEST(LapackTileAlgebraTest, LowRankSquareColPivQR) {
     const auto rows = 10;
     const auto cols = 10;
     const auto rank = 3;
@@ -742,4 +723,239 @@ TEST(LapackTileAlgebraTest, RankZeroColPivQR) {
                                    << (C - (L * R)).lpNorm<2>() << "\nC = \n"
                                    << C << "\nL = \n" << L << "\nR = \n" << R
                                    << "\n";
+}
+
+TEST(LapackTileAlgebraTest, FullRankQrInit) {
+    const auto rows = 9;
+    const auto cols = 11;
+    const auto rank = std::min(rows, cols);
+    const auto cut = 1e-07;
+
+    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd L, R;
+
+    // Return true if mat is full rank
+    algebra::QrInit(C, L, R, cut);
+    EXPECT_EQ(L.cols(), rank);
+    EXPECT_EQ(R.rows(), rank);
+    EXPECT_TRUE(C.isApprox(L * R));
+}
+
+TEST(LapackTileAlgebraTest, LowRankSquareQRInit) {
+    const auto rows = 10;
+    const auto cols = 10;
+    const auto rank = 3;
+    const auto cut = 1e-07;
+
+    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd L, R;
+
+    algebra::QrInit(C, L, R, cut);
+    EXPECT_EQ(L.cols(), rank);
+    EXPECT_EQ(R.rows(), rank);
+    EXPECT_TRUE(C.isApprox(L * R));
+}
+
+TEST(LapackTileAlgebraTest, LowRankMoreRowsThanColsQrInit) {
+    const auto rows = 13;
+    const auto cols = 9;
+    const auto rank = 3;
+    const auto cut = 1e-07;
+
+    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd L, R;
+
+    algebra::QrInit(C, L, R, cut);
+    EXPECT_EQ(L.cols(), rank);
+    EXPECT_EQ(R.rows(), rank);
+    EXPECT_TRUE(C.isApprox(L * R));
+}
+
+TEST(LapackTileAlgebraTest, LowRankMoreColsThanRowsQrInit) {
+    const auto rows = 9;
+    const auto cols = 13;
+    const auto rank = 3;
+    const auto cut = 1e-07;
+
+    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd L, R;
+
+    algebra::QrInit(C, L, R, cut);
+    EXPECT_EQ(L.cols(), rank);
+    EXPECT_EQ(R.rows(), rank);
+    EXPECT_TRUE(C.isApprox(L * R));
+}
+
+TEST(LapackTileAlgebraTest, RankOneQrInit) {
+    const auto rows = 10;
+    const auto cols = 10;
+    const auto rank = 1;
+    const auto cut = 1e-07;
+
+    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd L, R;
+
+    algebra::QrInit(C, L, R, cut);
+    EXPECT_EQ(L.cols(), rank);
+    EXPECT_EQ(R.rows(), rank);
+    EXPECT_TRUE(C.isApprox(L * R));
+}
+
+TEST(LapackTileAlgebraTest, RankZeroQrInit) {
+    const auto rows = 10;
+    const auto cols = 10;
+    const auto rank = 0;
+    const auto cut = 1e-07;
+
+    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd L, R;
+
+    algebra::QrInit(C, L, R, cut);
+    EXPECT_EQ(L.cols(), rank);
+    EXPECT_EQ(R.rows(), rank);
+    EXPECT_TRUE(C.isApprox(L * R));
+}
+
+TEST(LapackTileAlgebraTest, FullRankCompressLeft) {
+    const auto rows = 9;
+    const auto cols = 11;
+    const auto rank = std::min(rows, cols);
+    const auto cut = 1e-07;
+
+    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd L, R;
+
+    // Return true if mat is full rank
+    algebra::QrInit(C, L, R, cut);
+    algebra::CompressLeft(L, R, cut, true);
+    EXPECT_TRUE(C.isApprox(L * R));
+}
+
+TEST(LapackTileAlgebraTest, LowRankSquareCompressLeft) {
+    const auto rows = 10;
+    const auto cols = 10;
+    const auto rank = 3;
+    const auto cut = 1e-07;
+
+    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd L, R;
+
+    // Return true if mat is full rank
+    algebra::QrInit(C, L, R, cut);
+    algebra::CompressLeft(L, R, cut, true);
+    EXPECT_TRUE(C.isApprox(L * R));
+}
+
+TEST(LapackTileAlgebraTest, LowRankMoreRowsThanColsCompressLeft) {
+    const auto rows = 13;
+    const auto cols = 9;
+    const auto rank = 3;
+    const auto cut = 1e-07;
+
+    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd L, R;
+
+    algebra::QrInit(C, L, R, cut);
+    algebra::CompressLeft(L, R, cut, true);
+    EXPECT_TRUE(C.isApprox(L * R));
+}
+
+TEST(LapackTileAlgebraTest, LowRankMoreColsThanRowsCompressLeft) {
+    const auto rows = 9;
+    const auto cols = 13;
+    const auto rank = 3;
+    const auto cut = 1e-07;
+
+    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd L, R;
+
+    algebra::QrInit(C, L, R, cut);
+    algebra::CompressLeft(L, R, cut, true);
+    EXPECT_TRUE(C.isApprox(L * R));
+}
+
+TEST(LapackTileAlgebraTest, RankOneCompressLeft) {
+    const auto rows = 10;
+    const auto cols = 10;
+    const auto rank = 1;
+    const auto cut = 1e-07;
+
+    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd L, R;
+
+    algebra::QrInit(C, L, R, cut);
+    algebra::CompressLeft(L, R, cut, true);
+    EXPECT_TRUE(C.isApprox(L * R));
+}
+
+TEST(LapackTileAlgebraTest, FullRankCompressRight) {
+    const auto rows = 9;
+    const auto cols = 11;
+    const auto rank = std::min(rows, cols);
+    const auto cut = 1e-07;
+
+    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd L, R;
+
+    // Return true if mat is full rank
+    algebra::QrInit(C, L, R, cut);
+    algebra::CompressRight(L, R, cut, true);
+    EXPECT_TRUE(C.isApprox(L * R));
+}
+
+TEST(LapackTileAlgebraTest, LowRankSquareCompressRight) {
+    const auto rows = 10;
+    const auto cols = 10;
+    const auto rank = 3;
+    const auto cut = 1e-07;
+
+    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd L, R;
+
+    // Return true if mat is full rank
+    algebra::QrInit(C, L, R, cut);
+    algebra::CompressRight(L, R, cut, true);
+    EXPECT_TRUE(C.isApprox(L * R));
+}
+
+TEST(LapackTileAlgebraTest, LowRankMoreRowsThanColsCompressRight) {
+    const auto rows = 13;
+    const auto cols = 9;
+    const auto rank = 3;
+    const auto cut = 1e-07;
+
+    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd L, R;
+
+    algebra::QrInit(C, L, R, cut);
+    algebra::CompressRight(L, R, cut, true);
+    EXPECT_TRUE(C.isApprox(L * R));
+}
+
+TEST(LapackTileAlgebraTest, LowRankMoreColsThanRowsCompressRight) {
+    const auto rows = 9;
+    const auto cols = 13;
+    const auto rank = 3;
+    const auto cut = 1e-07;
+
+    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd L, R;
+
+    algebra::QrInit(C, L, R, cut);
+    algebra::CompressRight(L, R, cut, true);
+    EXPECT_TRUE(C.isApprox(L * R));
+}
+
+TEST(LapackTileAlgebraTest, RankOneCompressRight) {
+    const auto rows = 10;
+    const auto cols = 10;
+    const auto rank = 1;
+    const auto cut = 1e-07;
+
+    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd L, R;
+
+    algebra::QrInit(C, L, R, cut);
+    algebra::CompressRight(L, R, cut, true);
+    EXPECT_TRUE(C.isApprox(L * R));
 }

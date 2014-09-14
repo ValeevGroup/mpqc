@@ -1,5 +1,8 @@
+Finish TileVarient
+Write non intrusive interface for FullRankTile, LowRankTile, and the combination
 
-Write operations for LRTile
+Add in the TCC namespace at somepoint.
+
 Use MPQC for basis sets
 Construct libint shells given 
   basis set and molecule.

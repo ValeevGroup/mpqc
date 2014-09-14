@@ -6,7 +6,6 @@ set(test_sources
   full_rank_tile_test.cpp
   low_rank_tile_test.cpp
   tile_algebra_test.cpp
-  tileable_test.cpp
   tile_variant_test.cpp
 )
 

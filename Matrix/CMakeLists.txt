@@ -3,7 +3,6 @@ set(SOURCES
     tile_algebra.h
     low_rank_tile.h
     lr_tile.h
-    tile_concept.h
 )
 
 add_subdirectory(examples)

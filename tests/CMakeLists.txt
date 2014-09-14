@@ -7,6 +7,7 @@ set(test_sources
   low_rank_tile_test.cpp
   tile_algebra_test.cpp
   tileable_test.cpp
+  tile_variant_test.cpp
 )
 
 add_executable(unit_tests ${test_sources})

@@ -1,5 +1,5 @@
 #include "../matrix/tile_concept.h"
-#include <gtest/gtest.h>
+#include "gtest.h"
 
 TEST(TileConceptTest, DefaultConstructor){
   EXPECT_NO_THROW(TileAble(3.0));

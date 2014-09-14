@@ -1,5 +1,5 @@
 #include "../matrix/full_rank_tile.h"
-#include <gtest/gtest.h>
+#include "gtest.h"
 
 template <typename T>
 class FullRankTileTest : public ::testing::Test {

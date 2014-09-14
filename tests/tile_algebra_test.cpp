@@ -1,7 +1,7 @@
 #include "../matrix/tile_algebra.h"
 #include "../include/eigen.h"
 #include "create_low_rank_array.h"
-#include <gtest/gtest.h>
+#include "gtest.h"
 
 using namespace algebra;
 using namespace Eigen;

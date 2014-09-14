@@ -1,0 +1,21 @@
+#include "../matrix/low_rank_tile.h"
+#include "gtest.h"
+
+
+template <typename T>
+class LowRankTileTest : public ::testing::Test {
+  public:
+    LowRankTileTest() = default;
+    LowRankTile<T> tile;
+};
+
+typedef ::testing::Types<int, long, float, double> LRTileTypes;
+TYPED_TEST_CASE(LowRankTileTest, LRTileTypes);
+
+TYPED_TEST(LowRankTileTest, DefaultConstructor) {
+    EXPECT_EQ(0ul, this->tile.rank());
+    EXPECT_EQ(0ul, this->tile.Rows());
+    EXPECT_EQ(0ul, this->tile.Cols());
+    EXPECT_EQ(0ul, this->tile.size());
+}
+

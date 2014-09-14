@@ -51,6 +51,7 @@ class LowRankTile {
     inline unsigned long rank() const {return rank_;}
     inline unsigned long Rows() const {return L_.rows();}
     inline unsigned long Cols() const {return R_.cols();}
+    inline unsigned long size() const {return R_.size() + L_.size();}
 
     inline Matrix<T> const & matrixL() const {return L_;}
     inline Matrix<T> const & matrixR() const {return R_;}

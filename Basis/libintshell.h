@@ -105,7 +105,7 @@ struct Shell {
     for (auto &c : contr) {
       assert(c.l <= 15); // due to df[] a 64-bit integer type, kinda ridiculous
                          // restriction anyway
-      for (auto p = 0; p != np; ++p) {
+      for (auto p = 0ul; p != np; ++p) {
         const auto two_alpha = 2 * alpha[p];
         const auto two_alpha_to_am32 = pow(two_alpha, c.l + 1)
                                        * sqrt(two_alpha);
@@ -130,7 +130,7 @@ std::ostream &operator<<(std::ostream &os, const Shell &sh) {
   }
   os << std::endl;
 
-  for (auto i = 0; i < sh.alpha.size(); ++i) {
+  for (auto i = 0ul; i < sh.alpha.size(); ++i) {
     os << "  " << sh.alpha[i];
     for (const auto &c : sh.contr) {
       os << " " << c.coeff.at(i);

@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
                                     + std::to_string(j) + ".dat";
             std::ofstream out_file(file_name);
             for (auto k = 10; k < std::min(i, j); k += 10) {
-                C = HeirChemTest::low_rank_matrix<double>(i, j, k);
+                C = TCC::test::low_rank_matrix<double>(i, j, k);
                 out_file << i << "," << j << "," << k << ",";
                 double time = madness::wall_time();
                 algebra::QrInit(C, A, B, 1e-09);

@@ -265,7 +265,7 @@ TEST(EigenTileAlgebraTest, FullRankColPivQR) {
     const auto rank = std::min(rows, cols);
     const auto cut = 1e-07;
 
-    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
     // Return true if mat is full rank
@@ -281,7 +281,7 @@ TEST(EigenTileAlgebraTest, LowRankSquareColPivQR) {
     const auto rank = 3;
     const auto cut = 1e-07;
 
-    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
     // Return true if mat is full rank
@@ -301,7 +301,7 @@ TEST(EigenTileAlgebraTest, LowRankMoreRowsThanColsColPivQR) {
     const auto rank = 3;
     const auto cut = 1e-07;
 
-    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
     // Return true if mat is full rank
@@ -321,7 +321,7 @@ TEST(EigenTileAlgebraTest, LowRankMoreColsThanRowsColPivQR) {
     const auto rank = 3;
     const auto cut = 1e-07;
 
-    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
     // Return true if mat is full rank
@@ -341,7 +341,7 @@ TEST(EigenTileAlgebraTest, RankOneColPivQR) {
     const auto rank = 1;
     const auto cut = 1e-07;
 
-    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
     // Return true if mat is full rank
@@ -616,7 +616,7 @@ TEST(LapackTileAlgebraTest, FullRankColPivQR) {
     const auto rank = std::min(rows, cols);
     const auto cut = 1e-07;
 
-    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
     // Return true if mat is full rank
@@ -631,7 +631,7 @@ TEST(LapackTileAlgebraTest, LowRankSquareColPivQR) {
     const auto rank = 3;
     const auto cut = 1e-07;
 
-    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
     // Return true if mat is full rank
@@ -651,7 +651,7 @@ TEST(LapackTileAlgebraTest, LowRankMoreRowsThanColsColPivQR) {
     const auto rank = 3;
     const auto cut = 1e-07;
 
-    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
     // Return true if mat is full rank
@@ -671,7 +671,7 @@ TEST(LapackTileAlgebraTest, LowRankMoreColsThanRowsColPivQR) {
     const auto rank = 3;
     const auto cut = 1e-07;
 
-    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
     // Return true if mat is full rank
@@ -691,7 +691,7 @@ TEST(LapackTileAlgebraTest, RankOneColPivQR) {
     const auto rank = 1;
     const auto cut = 1e-07;
 
-    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
     // Return true if mat is full rank
@@ -711,7 +711,7 @@ TEST(LapackTileAlgebraTest, RankZeroColPivQR) {
     const auto rank = 0;
     const auto cut = 1e-07;
 
-    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
     // Return true if mat is full rank
@@ -731,7 +731,7 @@ TEST(LapackTileAlgebraTest, FullRankQrInit) {
     const auto rank = std::min(rows, cols);
     const auto cut = 1e-07;
 
-    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
     // Return true if mat is full rank
@@ -747,7 +747,7 @@ TEST(LapackTileAlgebraTest, LowRankSquareQRInit) {
     const auto rank = 3;
     const auto cut = 1e-07;
 
-    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
     algebra::QrInit(C, L, R, cut);
@@ -762,7 +762,7 @@ TEST(LapackTileAlgebraTest, LowRankMoreRowsThanColsQrInit) {
     const auto rank = 3;
     const auto cut = 1e-07;
 
-    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
     algebra::QrInit(C, L, R, cut);
@@ -777,7 +777,7 @@ TEST(LapackTileAlgebraTest, LowRankMoreColsThanRowsQrInit) {
     const auto rank = 3;
     const auto cut = 1e-07;
 
-    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
     algebra::QrInit(C, L, R, cut);
@@ -792,7 +792,7 @@ TEST(LapackTileAlgebraTest, RankOneQrInit) {
     const auto rank = 1;
     const auto cut = 1e-07;
 
-    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
     algebra::QrInit(C, L, R, cut);
@@ -807,7 +807,7 @@ TEST(LapackTileAlgebraTest, RankZeroQrInit) {
     const auto rank = 0;
     const auto cut = 1e-07;
 
-    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
     algebra::QrInit(C, L, R, cut);
@@ -822,7 +822,7 @@ TEST(LapackTileAlgebraTest, FullRankCompressLeft) {
     const auto rank = std::min(rows, cols);
     const auto cut = 1e-07;
 
-    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
     // Return true if mat is full rank
@@ -837,7 +837,7 @@ TEST(LapackTileAlgebraTest, LowRankSquareCompressLeft) {
     const auto rank = 3;
     const auto cut = 1e-07;
 
-    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
     // Return true if mat is full rank
@@ -852,7 +852,7 @@ TEST(LapackTileAlgebraTest, LowRankMoreRowsThanColsCompressLeft) {
     const auto rank = 3;
     const auto cut = 1e-07;
 
-    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
     algebra::QrInit(C, L, R, cut);
@@ -866,7 +866,7 @@ TEST(LapackTileAlgebraTest, LowRankMoreColsThanRowsCompressLeft) {
     const auto rank = 3;
     const auto cut = 1e-07;
 
-    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
     algebra::QrInit(C, L, R, cut);
@@ -880,7 +880,7 @@ TEST(LapackTileAlgebraTest, RankOneCompressLeft) {
     const auto rank = 1;
     const auto cut = 1e-07;
 
-    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
     algebra::QrInit(C, L, R, cut);
@@ -894,7 +894,7 @@ TEST(LapackTileAlgebraTest, FullRankCompressRight) {
     const auto rank = std::min(rows, cols);
     const auto cut = 1e-07;
 
-    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
     // Return true if mat is full rank
@@ -909,7 +909,7 @@ TEST(LapackTileAlgebraTest, LowRankSquareCompressRight) {
     const auto rank = 3;
     const auto cut = 1e-07;
 
-    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
     // Return true if mat is full rank
@@ -924,7 +924,7 @@ TEST(LapackTileAlgebraTest, LowRankMoreRowsThanColsCompressRight) {
     const auto rank = 3;
     const auto cut = 1e-07;
 
-    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
     algebra::QrInit(C, L, R, cut);
@@ -938,7 +938,7 @@ TEST(LapackTileAlgebraTest, LowRankMoreColsThanRowsCompressRight) {
     const auto rank = 3;
     const auto cut = 1e-07;
 
-    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
     algebra::QrInit(C, L, R, cut);
@@ -952,7 +952,7 @@ TEST(LapackTileAlgebraTest, RankOneCompressRight) {
     const auto rank = 1;
     const auto cut = 1e-07;
 
-    MatrixXd C = HeirChemTest::low_rank_matrix<double>(rows, cols, rank);
+    MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
     algebra::QrInit(C, L, R, cut);

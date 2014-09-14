@@ -13,6 +13,6 @@ add_executable(unit_tests ${test_sources})
 target_link_libraries(unit_tests
   gtest
   gtest_main
-  ${HeirChem_LIBRARIES}
+  ${TileClusterChem_LIBRARIES}
 )
 

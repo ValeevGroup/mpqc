@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 2.8.11)
-project(HeirChem)
+project(TileClusterChem)
 
-set(HeirChem_VERSION_MAJOR 0)
-set(HeirChem_VERSION_MINOR 0)
+set(TileClusterChem_VERSION_MAJOR 0)
+set(TileClusterChem_VERSION_MINOR 1)
 
 option(RELEASE OFF)
 option(PERFORM_UNIT_TESTS ON)
@@ -50,39 +50,39 @@ INCLUDE_DIRECTORIES(${MPQC_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${TILEDARRAY_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${LIBINT_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${LAPACK_INCLUDE_DIRS})
-LIST(APPEND HeirChem_LIBRARIES ${LAPACK_LIBRARIES})
-LIST(APPEND HeirChem_LIBRARIES ${MPI_CXX_LIBRARIES})
-LIST(APPEND HeirChem_LIBRARIES ${TBB_LIBRARIES})
-LIST(APPEND HeirChem_LIBRARIES ${MPQC_LIBRARIES})
-LIST(APPEND HeirChem_LIBRARIES ${LIBINT_LIBRARIES})
-LIST(APPEND HeirChem_LIBRARIES ${TILEDARRAY_LIBRARIES})
+LIST(APPEND TileClusterChem_LIBRARIES ${LAPACK_LIBRARIES})
+LIST(APPEND TileClusterChem_LIBRARIES ${MPI_CXX_LIBRARIES})
+LIST(APPEND TileClusterChem_LIBRARIES ${TBB_LIBRARIES})
+LIST(APPEND TileClusterChem_LIBRARIES ${MPQC_LIBRARIES})
+LIST(APPEND TileClusterChem_LIBRARIES ${LIBINT_LIBRARIES})
+LIST(APPEND TileClusterChem_LIBRARIES ${TILEDARRAY_LIBRARIES})
 
 
-INCLUDE_DIRECTORIES(${HeirChem_SOURCE_DIR}/molecule)
-INCLUDE_DIRECTORIES(${HeirChem_SOURCE_DIR}/include)
-INCLUDE_DIRECTORIES(${HeirChem_SOURCE_DIR}/matrix)
+INCLUDE_DIRECTORIES(${TileClusterChem_SOURCE_DIR}/molecule)
+INCLUDE_DIRECTORIES(${TileClusterChem_SOURCE_DIR}/include)
+INCLUDE_DIRECTORIES(${TileClusterChem_SOURCE_DIR}/matrix)
 
 
-add_subdirectory(${HeirChem_SOURCE_DIR}/include)
-add_subdirectory(${HeirChem_SOURCE_DIR}/molecule)
-add_subdirectory(${HeirChem_SOURCE_DIR}/matrix)
-add_subdirectory(${HeirChem_SOURCE_DIR}/basis)
-add_subdirectory(${HeirChem_SOURCE_DIR}/integrals)
+add_subdirectory(${TileClusterChem_SOURCE_DIR}/include)
+add_subdirectory(${TileClusterChem_SOURCE_DIR}/molecule)
+add_subdirectory(${TileClusterChem_SOURCE_DIR}/matrix)
+add_subdirectory(${TileClusterChem_SOURCE_DIR}/basis)
+add_subdirectory(${TileClusterChem_SOURCE_DIR}/integrals)
 
 IF(PERFORM_UNIT_TESTS)
-   add_subdirectory(${HeirChem_SOURCE_DIR}/tests)
+  add_subdirectory(${TileClusterChem_SOURCE_DIR}/tests)
 ENDIF(PERFORM_UNIT_TESTS)
 
-LINK_DIRECTORIES(${HeirChem_BINARY_DIR}/molecule)
-LIST(APPEND HeirChem_LIBRARIES molecule)
+LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/molecule)
+LIST(APPEND TileClusterChem_LIBRARIES molecule)
 
-message(STATUS "Using libraries ${HeirChem_LIBRARIES}")
+message(STATUS "Using libraries ${TileClusterChem_LIBRARIES}")
 
-set(HeirChem_Sources "main.cpp")
+set(TileClusterChem_Sources "main.cpp")
 
-add_executable(${PROJECT_NAME} ${HeirChem_Sources}) 
+add_executable(${PROJECT_NAME} ${TileClusterChem_Sources}) 
 target_link_libraries(${PROJECT_NAME}
-  ${HeirChem_LIBRARIES}
+  ${TileClusterChem_LIBRARIES}
 )
 
 # Makes QT creator show the following file types

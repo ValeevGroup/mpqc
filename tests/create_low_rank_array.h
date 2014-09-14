@@ -3,7 +3,8 @@
 
 #include "../include/eigen.h"
 
-namespace HeirChemTest {
+namespace TCC {
+  namespace test {
 template <typename T>
 using Matrix = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>;
 
@@ -24,6 +25,7 @@ Matrix<T> low_rank_matrix(int rows, int cols, int rank) {
     return svd.matrixU() * svals.asDiagonal() * svd.matrixV().transpose();
 }
 
-} // namespace HeirChemTest
+} // namespace test
+} // namespace TCC
 
 #endif // CREATE_LOW_RANK_ARRAY_H

@@ -1,6 +1,5 @@
-
-#ifndef HEIRCHEM_TILEDARRAY_H
-#define HEIRCHEM_TILEDARRAY_H
+#ifndef TILECLUSTERCHEM_INCLUDE_TILEDARRAY_H
+#define TILECLUSTERCHEM_INCLUDE_TILEDARRAY_H
 
 #pragma GCC diagnostic push
 #pragma GCC system_header
@@ -8,4 +7,4 @@
 #pragma GCC diagnostic pop
 
 
-#endif // HEIRCHEM_TILEDARRAY_H
+#endif // TILECLUSTERCHEM_INCLUDE_TILEDARRAY_H

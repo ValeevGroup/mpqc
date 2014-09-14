@@ -5,4 +5,4 @@ set(sources
   libint.h
   )
 
-  LIST(APPEND ${HeirChem_Sources} sources)
+LIST(APPEND ${TileClusterChem_Sources} sources)

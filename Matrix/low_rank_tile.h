@@ -4,6 +4,14 @@
 #include "../include/eigen.h"
 #include "tile_algebra.h"
 
+template <typename T> // Foward declare for compress
+class LowRankTile;
+
+namespace tile_ops { // Foward decleration of friend compress
+  template<typename U>
+  LowRankTile<U> &compress(LowRankTile<U> &tile, double cut);
+}
+
 template <typename T>
 class LowRankTile {
   public:
@@ -48,14 +56,19 @@ class LowRankTile {
      * Functions
      */
   public:
-    inline unsigned long rank() const {return rank_;}
-    inline unsigned long Rows() const {return L_.rows();}
-    inline unsigned long Cols() const {return R_.cols();}
-    inline unsigned long size() const {return R_.size() + L_.size();}
+    inline unsigned long rank() const { return rank_; }
+    inline unsigned long Rows() const { return L_.rows(); }
+    inline unsigned long Cols() const { return R_.cols(); }
+    inline unsigned long size() const { return R_.size() + L_.size(); }
 
-    inline Matrix<T> const & matrixL() const {return L_;}
-    inline Matrix<T> const & matrixR() const {return R_;}
-    inline Matrix<T> matrixLR() const {return algebra::cblas_gemm(L_, R_, 1.0);}
+    inline Matrix<T> const &matrixL() const { return L_; }
+    inline Matrix<T> const &matrixR() const { return R_; }
+    inline Matrix<T> matrixLR() const {
+        return algebra::cblas_gemm(L_, R_, 1.0);
+    }
+
+    template <typename U>
+    friend LowRankTile<U> &tile_ops::compress(LowRankTile<U> &tile, double cut);
 
   private:
     Matrix<T> L_;

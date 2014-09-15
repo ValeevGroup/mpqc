@@ -657,3 +657,61 @@ TYPED_TEST(TileOpsTest, LowMoreRowsGemmResultLargerRankInPlace) {
     EXPECT_EQ(rows, tile.Rows());
     EXPECT_TRUE(tile.matrixLR().isApprox(result));
 }
+
+TYPED_TEST(TileOpsTest, LowCompressSquare) {
+    const int rows = 10;
+    const int cols = 10;
+    const int rank = 3;
+
+    auto tile = TCC::test::low_rank_tile<TypeParam>(rows, cols, rank);
+
+    using mat_type = typename LowRankTile<TypeParam>::template Matrix
+        <TypeParam>;
+    mat_type result = tile.matrixLR();
+
+    tile_ops::compress(tile, 1e-07);
+
+    EXPECT_GE(rank, tile.rank());
+    EXPECT_EQ(rows * rank + rank * cols, tile.size());
+    EXPECT_EQ(cols, tile.Cols());
+    EXPECT_EQ(rows, tile.Rows());
+    EXPECT_TRUE(tile.matrixLR().isApprox(result));
+}
+
+TYPED_TEST(TileOpsTest, LowCompressRightLarger) {
+    const int rows = 5;
+    const int cols = 10;
+    const int rank = 3;
+
+    auto tile = TCC::test::low_rank_tile<TypeParam>(rows, cols, rank);
+
+    using mat_type = typename LowRankTile<TypeParam>::template Matrix
+        <TypeParam>;
+    mat_type result = tile.matrixLR();
+    tile_ops::compress(tile, 1e-07);
+
+    EXPECT_GE(rank, tile.rank());
+    EXPECT_EQ(rows * rank + rank * cols, tile.size());
+    EXPECT_EQ(cols, tile.Cols());
+    EXPECT_EQ(rows, tile.Rows());
+    EXPECT_TRUE(tile.matrixLR().isApprox(result));
+}
+
+TYPED_TEST(TileOpsTest, LowCompressLeftLarger) {
+    const int rows = 10;
+    const int cols = 5;
+    const int rank = 3;
+
+    auto tile = TCC::test::low_rank_tile<TypeParam>(rows, cols, rank);
+
+    using mat_type = typename LowRankTile<TypeParam>::template Matrix
+        <TypeParam>;
+    mat_type result = tile.matrixLR();
+    tile_ops::compress(tile, 1e-07);
+
+    EXPECT_GE(rank, tile.rank());
+    EXPECT_EQ(rows * rank + rank * cols, tile.size());
+    EXPECT_EQ(cols, tile.Cols());
+    EXPECT_EQ(rows, tile.Rows());
+    EXPECT_TRUE(tile.matrixLR().isApprox(result));
+}

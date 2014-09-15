@@ -14,7 +14,6 @@ add(const FullRankTile<T> &left, const FullRankTile<T> &right, double beta) {
 }
 
 
-
 template <typename T>
 FullRankTile<T>
 gemm(const FullRankTile<T> &left, const FullRankTile<T> &right, double alpha) {
@@ -101,6 +100,19 @@ LowRankTile<T> &gemm(LowRankTile<T> &result, const LowRankTile<T> &left,
     result = LowRankTile<T>{std::move(L), std::move(R)};
 
     return result;
+}
+
+template <typename T>
+LowRankTile<T> &compress(LowRankTile<T> &tile, double cut) {
+    assert(tile.L_.cols() == tile.R_.rows());
+    if (tile.matrixL().size() <= tile.matrixR().size()) {
+        algebra::CompressLeft(tile.L_, tile.R_, cut);
+    } else {
+        algebra::CompressRight(tile.L_, tile.R_, cut);
+    }
+    assert(tile.L_.cols() == tile.R_.rows());
+    tile.rank_ = tile.L_.cols();
+    return tile;
 }
 
 } // namespace tile_ops

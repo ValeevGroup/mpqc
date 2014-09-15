@@ -13,9 +13,9 @@ TYPED_TEST_CASE(FullRankTileTest, FRTileTypes);
 
 TYPED_TEST(FullRankTileTest, DefaultConstructor) {
     EXPECT_EQ(0ul, this->tile.rank());
-    EXPECT_EQ(0ul, this->tile.data().size());
-    EXPECT_EQ(0ul, this->tile.data().cols());
-    EXPECT_EQ(0ul, this->tile.data().rows());
+    EXPECT_EQ(0ul, this->tile.matrix().size());
+    EXPECT_EQ(0ul, this->tile.matrix().cols());
+    EXPECT_EQ(0ul, this->tile.matrix().rows());
 }
 
 TYPED_TEST(FullRankTileTest, AssignmentTest) {
@@ -28,13 +28,13 @@ TYPED_TEST(FullRankTileTest, AssignmentTest) {
     this->tile = from_mat;
 
     EXPECT_EQ(std::min(rows, cols), this->tile.rank());
-    EXPECT_EQ(rows * cols, this->tile.data().size());
-    EXPECT_EQ(cols, this->tile.data().cols());
-    EXPECT_EQ(rows, this->tile.data().rows());
-    EXPECT_EQ(this->tile.size(), this->tile.data().size());
-    EXPECT_EQ(this->tile.Cols(), this->tile.data().cols());
-    EXPECT_EQ(this->tile.Rows(), this->tile.data().rows());
-    EXPECT_TRUE(this->tile.data().isApprox(mat));
+    EXPECT_EQ(rows * cols, this->tile.matrix().size());
+    EXPECT_EQ(cols, this->tile.matrix().cols());
+    EXPECT_EQ(rows, this->tile.matrix().rows());
+    EXPECT_EQ(this->tile.size(), this->tile.matrix().size());
+    EXPECT_EQ(this->tile.Cols(), this->tile.matrix().cols());
+    EXPECT_EQ(this->tile.Rows(), this->tile.matrix().rows());
+    EXPECT_TRUE(this->tile.matrix().isApprox(mat));
 }
 
 TYPED_TEST(FullRankTileTest, CopyConstructor) {
@@ -55,5 +55,5 @@ TYPED_TEST(FullRankTileTest, CopyConstructor) {
     EXPECT_EQ(tile_copy.size(), this->tile.size());
     EXPECT_EQ(tile_copy.Cols(), this->tile.Cols());
     EXPECT_EQ(tile_copy.Rows(), this->tile.Rows());
-    EXPECT_TRUE(tile_copy.data().isApprox(this->tile.data()));
+    EXPECT_TRUE(tile_copy.matrix().isApprox(this->tile.matrix()));
 }

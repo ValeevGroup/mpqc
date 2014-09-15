@@ -148,8 +148,8 @@ Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> inline cblas_gemm(
 
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> C(A.rows(), B.cols());
     const int K = A.cols();
-    const int M = C.rows();
-    const int N = C.cols();
+    const int M = A.rows();
+    const int N = B.cols();
     if (K == 0 || M == 0 || N == 0) { // If zero leave
         for (auto i = 0; i < C.size(); ++i) {
             *(C.data() + i) = 0;
@@ -180,8 +180,8 @@ void inline cblas_gemm_inplace(const Eigen::Matrix
                                double alpha, double beta = 1.0) {
 
     const int K = A.cols();
-    const int M = C.rows();
-    const int N = C.cols();
+    const int M = A.rows();
+    const int N = B.cols();
     if (K == 0 || M == 0 || N == 0) { // If zero leave
         C = beta * C;
         return;

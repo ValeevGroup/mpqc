@@ -36,12 +36,16 @@ class FullRankTile {
         tile_.swap(t);
     }
 
-    inline Matrix<T> const &data() const { return tile_; }
+    inline Matrix<T> const &matrix() const { return tile_; }
+    inline Matrix<T> &matrix() { return tile_; }
+
+    inline T const *data() const { return tile_.data(); }
+    inline T *data() { return tile_.data(); }
 
     inline unsigned long rank() const { return rank_; }
-    inline unsigned long Rows() const { return tile_.rows();}
-    inline unsigned long Cols() const { return tile_.cols();}
-    inline unsigned long size() const { return tile_.size();}
+    inline unsigned long Rows() const { return tile_.rows(); }
+    inline unsigned long Cols() const { return tile_.cols(); }
+    inline unsigned long size() const { return tile_.size(); }
 
   private:
     Matrix<T> tile_;

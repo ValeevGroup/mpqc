@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
                 C = TCC::test::low_rank_matrix<double>(i, j, k);
                 out_file << i << "," << j << "," << k << ",";
                 double time = madness::wall_time();
-                algebra::QrInit(C, A, B, 1e-09);
+                algebra::ColPivotedQr(C, A, B, 1e-09);
                 time = madness::wall_time() - time;
                 out_file << time << std::endl;
             }

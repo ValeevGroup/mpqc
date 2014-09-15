@@ -269,7 +269,7 @@ TEST(EigenTileAlgebraTest, FullRankColPivQR) {
     MatrixXd L, R;
 
     // Return true if mat is full rank
-    EXPECT_TRUE(eigen_version::ColPivQR(C, L, R, cut)) << "Matrix C = \n" << C
+    EXPECT_TRUE(eigen_version::Decompose_Matrix(C, L, R, cut)) << "Matrix C = \n" << C
                                                        << "\n";
     EXPECT_EQ(L.size(), 0ul); // Shouldn't decompose if full rank
     EXPECT_EQ(R.size(), 0ul);
@@ -285,7 +285,7 @@ TEST(EigenTileAlgebraTest, LowRankSquareColPivQR) {
     MatrixXd L, R;
 
     // Return true if mat is full rank
-    EXPECT_FALSE(eigen_version::ColPivQR(C, L, R, cut)) << "Matrix C = \n" << C
+    EXPECT_FALSE(eigen_version::Decompose_Matrix(C, L, R, cut)) << "Matrix C = \n" << C
                                                         << "\n";
     EXPECT_EQ(L.cols(), rank); // Shouldn't decompose if full rank
     EXPECT_EQ(R.rows(), rank);
@@ -305,7 +305,7 @@ TEST(EigenTileAlgebraTest, LowRankMoreRowsThanColsColPivQR) {
     MatrixXd L, R;
 
     // Return true if mat is full rank
-    EXPECT_FALSE(eigen_version::ColPivQR(C, L, R, cut)) << "Matrix C = \n" << C
+    EXPECT_FALSE(eigen_version::Decompose_Matrix(C, L, R, cut)) << "Matrix C = \n" << C
                                                         << "\n";
     EXPECT_EQ(L.cols(), rank); // Shouldn't decompose if full rank
     EXPECT_EQ(R.rows(), rank);
@@ -325,7 +325,7 @@ TEST(EigenTileAlgebraTest, LowRankMoreColsThanRowsColPivQR) {
     MatrixXd L, R;
 
     // Return true if mat is full rank
-    EXPECT_FALSE(eigen_version::ColPivQR(C, L, R, cut)) << "Matrix C = \n" << C
+    EXPECT_FALSE(eigen_version::Decompose_Matrix(C, L, R, cut)) << "Matrix C = \n" << C
                                                         << "\n";
     EXPECT_EQ(L.cols(), rank); // Shouldn't decompose if full rank
     EXPECT_EQ(R.rows(), rank);
@@ -345,7 +345,7 @@ TEST(EigenTileAlgebraTest, RankOneColPivQR) {
     MatrixXd L, R;
 
     // Return true if mat is full rank
-    EXPECT_FALSE(eigen_version::ColPivQR(C, L, R, cut)) << "Matrix C = \n" << C
+    EXPECT_FALSE(eigen_version::Decompose_Matrix(C, L, R, cut)) << "Matrix C = \n" << C
                                                         << "\n";
     EXPECT_EQ(L.cols(), rank); // Shouldn't decompose if full rank
     EXPECT_EQ(R.rows(), rank);
@@ -620,7 +620,7 @@ TEST(LapackTileAlgebraTest, FullRankColPivQR) {
     MatrixXd L, R;
 
     // Return true if mat is full rank
-    EXPECT_TRUE(lapack::ColPivQR(C, L, R, cut)) << "Matrix C = \n" << C << "\n";
+    EXPECT_TRUE(lapack::Decompose_Matrix(C, L, R, cut)) << "Matrix C = \n" << C << "\n";
     EXPECT_EQ(L.size(), 0ul); // Shouldn't decompose if full rank
     EXPECT_EQ(R.size(), 0ul);
 }
@@ -635,7 +635,7 @@ TEST(LapackTileAlgebraTest, LowRankSquareColPivQR) {
     MatrixXd L, R;
 
     // Return true if mat is full rank
-    EXPECT_FALSE(lapack::ColPivQR(C, L, R, cut)) << "Matrix C = \n" << C
+    EXPECT_FALSE(lapack::Decompose_Matrix(C, L, R, cut)) << "Matrix C = \n" << C
                                                  << "\n";
     EXPECT_EQ(L.cols(), rank); // Shouldn't decompose if full rank
     EXPECT_EQ(R.rows(), rank);
@@ -655,7 +655,7 @@ TEST(LapackTileAlgebraTest, LowRankMoreRowsThanColsColPivQR) {
     MatrixXd L, R;
 
     // Return true if mat is full rank
-    EXPECT_FALSE(lapack::ColPivQR(C, L, R, cut)) << "Matrix C = \n" << C
+    EXPECT_FALSE(lapack::Decompose_Matrix(C, L, R, cut)) << "Matrix C = \n" << C
                                                  << "\n";
     EXPECT_EQ(L.cols(), rank); // Shouldn't decompose if full rank
     EXPECT_EQ(R.rows(), rank);
@@ -675,7 +675,7 @@ TEST(LapackTileAlgebraTest, LowRankMoreColsThanRowsColPivQR) {
     MatrixXd L, R;
 
     // Return true if mat is full rank
-    EXPECT_FALSE(lapack::ColPivQR(C, L, R, cut)) << "Matrix C = \n" << C
+    EXPECT_FALSE(lapack::Decompose_Matrix(C, L, R, cut)) << "Matrix C = \n" << C
                                                  << "\n";
     EXPECT_EQ(L.cols(), rank); // Shouldn't decompose if full rank
     EXPECT_EQ(R.rows(), rank);
@@ -695,7 +695,7 @@ TEST(LapackTileAlgebraTest, RankOneColPivQR) {
     MatrixXd L, R;
 
     // Return true if mat is full rank
-    EXPECT_FALSE(lapack::ColPivQR(C, L, R, cut)) << "Matrix C = \n" << C
+    EXPECT_FALSE(lapack::Decompose_Matrix(C, L, R, cut)) << "Matrix C = \n" << C
                                                  << "\n";
     EXPECT_EQ(L.cols(), rank); // Shouldn't decompose if full rank
     EXPECT_EQ(R.rows(), rank);
@@ -715,7 +715,7 @@ TEST(LapackTileAlgebraTest, RankZeroColPivQR) {
     MatrixXd L, R;
 
     // Return true if mat is full rank
-    EXPECT_FALSE(lapack::ColPivQR(C, L, R, cut)) << "Matrix C = \n" << C
+    EXPECT_FALSE(lapack::Decompose_Matrix(C, L, R, cut)) << "Matrix C = \n" << C
                                                  << "\n";
     EXPECT_EQ(L.cols(), rank); // Shouldn't decompose if full rank
     EXPECT_EQ(R.rows(), rank);
@@ -725,7 +725,7 @@ TEST(LapackTileAlgebraTest, RankZeroColPivQR) {
                                    << "\n";
 }
 
-TEST(LapackTileAlgebraTest, FullRankQrInit) {
+TEST(LapackTileAlgebraTest, FullRankColPivotedQr) {
     const auto rows = 9;
     const auto cols = 11;
     const auto rank = std::min(rows, cols);
@@ -735,7 +735,7 @@ TEST(LapackTileAlgebraTest, FullRankQrInit) {
     MatrixXd L, R;
 
     // Return true if mat is full rank
-    algebra::QrInit(C, L, R, cut);
+    algebra::ColPivotedQr(C, L, R, cut);
     EXPECT_EQ(L.cols(), rank);
     EXPECT_EQ(R.rows(), rank);
     EXPECT_TRUE(C.isApprox(L * R));
@@ -750,13 +750,13 @@ TEST(LapackTileAlgebraTest, LowRankSquareQRInit) {
     MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
-    algebra::QrInit(C, L, R, cut);
+    algebra::ColPivotedQr(C, L, R, cut);
     EXPECT_EQ(L.cols(), rank);
     EXPECT_EQ(R.rows(), rank);
     EXPECT_TRUE(C.isApprox(L * R));
 }
 
-TEST(LapackTileAlgebraTest, LowRankMoreRowsThanColsQrInit) {
+TEST(LapackTileAlgebraTest, LowRankMoreRowsThanColsColPivotedQr) {
     const auto rows = 13;
     const auto cols = 9;
     const auto rank = 3;
@@ -765,13 +765,13 @@ TEST(LapackTileAlgebraTest, LowRankMoreRowsThanColsQrInit) {
     MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
-    algebra::QrInit(C, L, R, cut);
+    algebra::ColPivotedQr(C, L, R, cut);
     EXPECT_EQ(L.cols(), rank);
     EXPECT_EQ(R.rows(), rank);
     EXPECT_TRUE(C.isApprox(L * R));
 }
 
-TEST(LapackTileAlgebraTest, LowRankMoreColsThanRowsQrInit) {
+TEST(LapackTileAlgebraTest, LowRankMoreColsThanRowsColPivotedQr) {
     const auto rows = 9;
     const auto cols = 13;
     const auto rank = 3;
@@ -780,13 +780,13 @@ TEST(LapackTileAlgebraTest, LowRankMoreColsThanRowsQrInit) {
     MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
-    algebra::QrInit(C, L, R, cut);
+    algebra::ColPivotedQr(C, L, R, cut);
     EXPECT_EQ(L.cols(), rank);
     EXPECT_EQ(R.rows(), rank);
     EXPECT_TRUE(C.isApprox(L * R));
 }
 
-TEST(LapackTileAlgebraTest, RankOneQrInit) {
+TEST(LapackTileAlgebraTest, RankOneColPivotedQr) {
     const auto rows = 10;
     const auto cols = 10;
     const auto rank = 1;
@@ -795,13 +795,13 @@ TEST(LapackTileAlgebraTest, RankOneQrInit) {
     MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
-    algebra::QrInit(C, L, R, cut);
+    algebra::ColPivotedQr(C, L, R, cut);
     EXPECT_EQ(L.cols(), rank);
     EXPECT_EQ(R.rows(), rank);
     EXPECT_TRUE(C.isApprox(L * R));
 }
 
-TEST(LapackTileAlgebraTest, RankZeroQrInit) {
+TEST(LapackTileAlgebraTest, RankZeroColPivotedQr) {
     const auto rows = 10;
     const auto cols = 10;
     const auto rank = 0;
@@ -810,7 +810,7 @@ TEST(LapackTileAlgebraTest, RankZeroQrInit) {
     MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
-    algebra::QrInit(C, L, R, cut);
+    algebra::ColPivotedQr(C, L, R, cut);
     EXPECT_EQ(L.cols(), rank);
     EXPECT_EQ(R.rows(), rank);
     EXPECT_TRUE(C.isApprox(L * R));
@@ -826,7 +826,7 @@ TEST(LapackTileAlgebraTest, FullRankCompressLeft) {
     MatrixXd L, R;
 
     // Return true if mat is full rank
-    algebra::QrInit(C, L, R, cut);
+    algebra::ColPivotedQr(C, L, R, cut);
     algebra::CompressLeft(L, R, cut, true);
     EXPECT_TRUE(C.isApprox(L * R));
 }
@@ -841,7 +841,7 @@ TEST(LapackTileAlgebraTest, LowRankSquareCompressLeft) {
     MatrixXd L, R;
 
     // Return true if mat is full rank
-    algebra::QrInit(C, L, R, cut);
+    algebra::ColPivotedQr(C, L, R, cut);
     algebra::CompressLeft(L, R, cut, true);
     EXPECT_TRUE(C.isApprox(L * R));
 }
@@ -855,7 +855,7 @@ TEST(LapackTileAlgebraTest, LowRankMoreRowsThanColsCompressLeft) {
     MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
-    algebra::QrInit(C, L, R, cut);
+    algebra::ColPivotedQr(C, L, R, cut);
     algebra::CompressLeft(L, R, cut, true);
     EXPECT_TRUE(C.isApprox(L * R));
 }
@@ -869,7 +869,7 @@ TEST(LapackTileAlgebraTest, LowRankMoreColsThanRowsCompressLeft) {
     MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
-    algebra::QrInit(C, L, R, cut);
+    algebra::ColPivotedQr(C, L, R, cut);
     algebra::CompressLeft(L, R, cut, true);
     EXPECT_TRUE(C.isApprox(L * R));
 }
@@ -883,7 +883,7 @@ TEST(LapackTileAlgebraTest, RankOneCompressLeft) {
     MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
-    algebra::QrInit(C, L, R, cut);
+    algebra::ColPivotedQr(C, L, R, cut);
     algebra::CompressLeft(L, R, cut, true);
     EXPECT_TRUE(C.isApprox(L * R));
 }
@@ -898,7 +898,7 @@ TEST(LapackTileAlgebraTest, FullRankCompressRight) {
     MatrixXd L, R;
 
     // Return true if mat is full rank
-    algebra::QrInit(C, L, R, cut);
+    algebra::ColPivotedQr(C, L, R, cut);
     algebra::CompressRight(L, R, cut, true);
     EXPECT_TRUE(C.isApprox(L * R));
 }
@@ -913,7 +913,7 @@ TEST(LapackTileAlgebraTest, LowRankSquareCompressRight) {
     MatrixXd L, R;
 
     // Return true if mat is full rank
-    algebra::QrInit(C, L, R, cut);
+    algebra::ColPivotedQr(C, L, R, cut);
     algebra::CompressRight(L, R, cut, true);
     EXPECT_TRUE(C.isApprox(L * R));
 }
@@ -927,7 +927,7 @@ TEST(LapackTileAlgebraTest, LowRankMoreRowsThanColsCompressRight) {
     MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
-    algebra::QrInit(C, L, R, cut);
+    algebra::ColPivotedQr(C, L, R, cut);
     algebra::CompressRight(L, R, cut, true);
     EXPECT_TRUE(C.isApprox(L * R));
 }
@@ -941,7 +941,7 @@ TEST(LapackTileAlgebraTest, LowRankMoreColsThanRowsCompressRight) {
     MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
-    algebra::QrInit(C, L, R, cut);
+    algebra::ColPivotedQr(C, L, R, cut);
     algebra::CompressRight(L, R, cut, true);
     EXPECT_TRUE(C.isApprox(L * R));
 }
@@ -955,7 +955,7 @@ TEST(LapackTileAlgebraTest, RankOneCompressRight) {
     MatrixXd C = TCC::test::low_rank_matrix<double>(rows, cols, rank);
     MatrixXd L, R;
 
-    algebra::QrInit(C, L, R, cut);
+    algebra::ColPivotedQr(C, L, R, cut);
     algebra::CompressRight(L, R, cut, true);
     EXPECT_TRUE(C.isApprox(L * R));
 }

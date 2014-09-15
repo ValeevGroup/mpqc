@@ -23,7 +23,7 @@ LR_pair<T> qr_decomp(const EigMat<T> &input, bool &is_full_rank, double cut) {
 
     EigMat<T> L;
     EigMat<T> R;
-    is_full_rank = algebra::ColPivQR(input, L, R, cut);
+    is_full_rank = algebra::Decompose_Matrix(input, L, R, cut);
 
     // L_la and R_la will be empty if is_full_rank returns true
     return std::make_pair(L, R);
@@ -213,7 +213,7 @@ class LRTile {
                     double cut) const {
         // First L is taken by value second is modified.  Returns true if not
         // compressiable.
-        if (!algebra::ColPivQR(L, L, R, cut)) {
+        if (!algebra::Decompose_Matrix(L, L, R, cut)) {
             return LRTile(std::move(range), std::move(L), std::move(R), cut);
         } else {
             return LRTile(std::move(range), L * R, false, cut);
@@ -221,7 +221,7 @@ class LRTile {
     }
 
     void compress(EigMat<T> &L, EigMat<T> &R, double cut) {
-        algebra::ColPivQR(L, L, R, cut);
+        algebra::Decompose_Matrix(L, L, R, cut);
     }
 
     /**
@@ -615,8 +615,8 @@ class LRTile {
         EigMat<T> L(L_.rows(), C_out_rank);
         EigMat<T> R(C_out_rank, R_.cols());
 
-        if(mult_rank == 0){
-          return;
+        if (mult_rank == 0) {
+            return;
         }
 
         L.rightCols(rank()) = L_;
@@ -672,7 +672,7 @@ class LRTile {
                     const int N = mult_rank;
                     const int LDA = M, LDB = K, LDC = M;
                     if (K == 0 || M == 0 || N == 0) {
-                        L.leftCols(mult_rank) = decltype(L)::Zero(M,N);
+                        L.leftCols(mult_rank) = decltype(L)::Zero(M, N);
                     } else {
                         madness::cblas::gemm(
                             madness::cblas::CBLAS_TRANSPOSE::NoTrans,

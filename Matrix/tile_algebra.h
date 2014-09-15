@@ -29,22 +29,11 @@ void inline cblas_gemm_inplace(const Eigen::Matrix
     C = alpha * A * B + beta * C;
 }
 
-/**
- * ColPivQr computes the column pivoted QR decomposition for a matrix.
- * It returns a boolean which is false if the matrix rank is less than 1/2 the
- * full rank. The function captures input by value and then uses it's space as
- * scratch.  Matrices L and R have Q and R written to them if the input matrix
- * was low rank.
- *
- * Finally the cut parameter is used to set the threshold for determining the
- * rank of the input matrix.
- *
- */
 template <typename T>
-bool inline ColPivQR(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
-                     Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
-                     Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R,
-                     double cut) {
+bool inline Decompose_Matrix(
+    Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
+    Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
+    Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R, double cut) {
     Eigen::ColPivHouseholderQR
         <Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>> qr(input);
     qr.setThreshold(cut);
@@ -67,10 +56,10 @@ bool inline ColPivQR(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
 }
 
 template <typename T>
-void inline QrInit(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
-                   Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
-                   Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R,
-                   double cut) {
+void inline ColPivotedQr(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
+                         Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
+                         Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R,
+                         double cut) {
     Eigen::ColPivHouseholderQR
         <typename std::remove_reference<decltype(input)>::type> qr(input);
 
@@ -112,11 +101,9 @@ void inline CompressLeft(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
         <T, Eigen::Dynamic, Eigen::Dynamic>(qr.householderQ()).leftCols(rank);
 }
 
-template<typename T>
-void inline CompressRight(Eigen::Matrix
-                          <T, Eigen::Dynamic, Eigen::Dynamic> &L,
-                          Eigen::Matrix
-                          <T, Eigen::Dynamic, Eigen::Dynamic> &R,
+template <typename T>
+void inline CompressRight(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
+                          Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R,
                           double cut) {
     Eigen::ColPivHouseholderQR
         <typename std::remove_reference<decltype(R)>::type> qr(R);
@@ -227,22 +214,10 @@ void inline cblas_gemm_inplace(const Eigen::Matrix
     eigen_version::cblas_gemm_inplace(A, B, C, alpha, beta);
 }
 
-/**
- * ColPivQr computes the column pivoted QR decomposition for a matrix.
- * It returns a boolean which is false if the matrix rank is less than 1/2 the
- * full rank. The function captures input by value and then uses it's space as
- * scratch.  Matrices L and R have Q and R written to them if the input matrix
- * was low rank.
- *
- * Finally the cut parameter is used to set the threshold for determining the
- * rank of the input matrix.
- *
- */
-bool inline ColPivQR(Eigen::Matrix
-                     <double, Eigen::Dynamic, Eigen::Dynamic> input,
-                     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &L,
-                     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &R,
-                     double cut) {
+bool inline Decompose_Matrix(
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> input,
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &L,
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &R, double cut) {
     assert(input.size() >= 0);
     int M = input.rows();
     int N = input.cols();
@@ -290,17 +265,17 @@ bool inline ColPivQR(Eigen::Matrix
 }
 
 template <typename T>
-bool inline ColPivQR(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
-                     Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
-                     Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R,
-                     double cut) {
-    return eigen_version::ColPivQR(input, L, R, cut);
+bool inline Decompose_Matrix(
+    Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
+    Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
+    Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R, double cut) {
+    return eigen_version::Decompose_Matrix(input, L, R, cut);
 }
 
-void inline QrInit(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> input,
-                   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &L,
-                   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &R,
-                   double cut) {
+void inline ColPivotedQr(
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> input,
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &L,
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &R, double cut) {
     assert(input.size() >= 0);
     int M = input.rows();
     int N = input.cols();
@@ -345,11 +320,11 @@ void inline QrInit(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> input,
 }
 
 template <typename T>
-void inline QrInit(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
-                   Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
-                   Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R,
-                   double cut) {
-    eigen_version::QrInit(std::move(input), L, R, cut);
+void inline ColPivotedQr(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
+                         Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
+                         Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R,
+                         double cut) {
+    eigen_version::ColPivotedQr(std::move(input), L, R, cut);
 }
 
 void inline CompressLeft(Eigen::Matrix

@@ -5,6 +5,13 @@ target_link_libraries(tile_algebra_examples
     ${MPI_CXX_LIBRARIES}
 )
 
+add_executable(tile_ops_examples tile_ops.cpp)
+target_link_libraries(tile_ops_examples
+    ${TILEDARRAY_LIBRARIES}
+    ${LAPACK_LIBRARIES}
+    ${MPI_CXX_LIBRARIES}
+)
+
 #add_executable(matrix_test matrix_test.cpp)
 #target_link_libraries(matrix_test ${TILEDARRAY_LIBRARIES})
 #target_link_libraries(matrix_test ${LAPACK_LIBRARIES})

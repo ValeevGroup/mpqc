@@ -4,58 +4,56 @@
 
 int main(int argc, char *argv[]) {
     int start = 50;
-    int end = 2001;
+    int end = 501;
 
     Eigen::MatrixXd A;
     Eigen::MatrixXd B;
     Eigen::MatrixXd C;
 
+    std::string file_name = "Square_gemm_no_add.dat";
+    std::ofstream out_file(file_name);
     for (auto i = start; i < end; i += 50) {
         for (auto j = start; j < end; j += 50) {
-            std::string file_name = "Square_gemm_no_add_" + std::to_string(i)
-                                    + "_" + std::to_string(j) + ".dat";
-            std::ofstream out_file(file_name);
+            std::cout << "Gemm no add " << i << " " << j << std::endl;
             for (auto k = start; k < end; k += 50) {
                 out_file << i << "," << j << "," << k << ",";
-                double time = madness::wall_time();
                 A = Eigen::MatrixXd::Random(i, k);
                 B = Eigen::MatrixXd::Random(k, j);
+                double time = madness::wall_time();
                 C = algebra::cblas_gemm(A, B, 1.0);
                 time = madness::wall_time() - time;
                 out_file << time << std::endl;
             }
-            out_file.close();
-            std::cout << "Done with Gemm no add " << i << " " << j << std::endl;
         }
     }
+    out_file.close();
 
-    // C square Gemm
+    file_name = "Square_gemm_with_add.dat";
+    out_file.open(file_name);
     for (auto i = start; i < end; i += 50) {
         for (auto j = start; j < end; j += 50) {
-            std::string file_name = "Square_gemm_with_add_" + std::to_string(i)
-                                    + "_" + std::to_string(j) + ".dat";
-            std::ofstream out_file(file_name);
+            std::cout << "Gemm with add " << i << " " << j << std::endl;
             C = Eigen::MatrixXd::Random(i, j);
             for (auto k = start; k < end; k += 50) {
                 out_file << i << "," << j << "," << k << ",";
-                double time = madness::wall_time();
                 A = Eigen::MatrixXd::Random(i, k);
                 B = Eigen::MatrixXd::Random(k, j);
+                double time = madness::wall_time();
                 algebra::cblas_gemm_inplace(A, B, C, 1.0, 1.0);
                 time = madness::wall_time() - time;
                 out_file << time << std::endl;
             }
-            out_file.close();
-            std::cout << "Done with Gemm " << i << " " << j << std::endl;
         }
     }
+    out_file.close();
 
+
+    file_name = "ColPivotedQr.dat";
+    out_file.open(file_name);
     for (auto i = start; i < end; i += 50) {
         for (auto j = start; j < end; j += 50) {
-            std::string file_name = "QR_Init_" + std::to_string(i) + "_"
-                                    + std::to_string(j) + ".dat";
-            std::ofstream out_file(file_name);
-            for (auto k = 10; k < std::min(i, j); k += 10) {
+          std::cout << "Qr " << i << " " << j << std::endl;
+            for (auto k = 10; k < std::min(i, j); k += 20) {
                 C = TCC::test::low_rank_matrix<double>(i, j, k);
                 out_file << i << "," << j << "," << k << ",";
                 double time = madness::wall_time();
@@ -63,10 +61,9 @@ int main(int argc, char *argv[]) {
                 time = madness::wall_time() - time;
                 out_file << time << std::endl;
             }
-            out_file.close();
-            std::cout << "Done with Qr " << i << " " << j << std::endl;
         }
     }
+    out_file.close();
 
     return 0;
 }

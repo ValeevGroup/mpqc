@@ -65,6 +65,79 @@ bool inline ColPivQR(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
 
     return false;
 }
+
+template <typename T>
+void inline QrInit(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
+                   Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
+                   Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R,
+                   double cut) {
+    Eigen::ColPivHouseholderQR
+        <typename std::remove_reference<decltype(input)>::type> qr(input);
+
+    qr.setThreshold(cut);
+    auto rank = qr.rank();
+
+    R = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>(
+            qr.matrixR()
+                .topLeftCorner(rank, input.cols())
+                .template triangularView<Eigen::Upper>())
+        * qr.colsPermutation().transpose();
+
+    L = Eigen::Matrix
+        <T, Eigen::Dynamic, Eigen::Dynamic>(qr.householderQ()).leftCols(rank);
+}
+
+template <typename T>
+void inline CompressLeft(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
+                         Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R,
+                         double cut) {
+
+    Eigen::ColPivHouseholderQR
+        <typename std::remove_reference<decltype(L)>::type> qr(L);
+
+    qr.setThreshold(cut);
+    auto rank = qr.rank();
+
+    if (rank >= L.cols()) {
+        return;
+    }
+
+    R = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>(
+            qr.matrixR()
+                .topLeftCorner(rank, qr.matrixQR().cols())
+                .template triangularView<Eigen::Upper>())
+        * qr.colsPermutation().transpose() * R;
+
+    L = Eigen::Matrix
+        <T, Eigen::Dynamic, Eigen::Dynamic>(qr.householderQ()).leftCols(rank);
+}
+
+template<typename T>
+void inline CompressRight(Eigen::Matrix
+                          <T, Eigen::Dynamic, Eigen::Dynamic> &L,
+                          Eigen::Matrix
+                          <T, Eigen::Dynamic, Eigen::Dynamic> &R,
+                          double cut) {
+    Eigen::ColPivHouseholderQR
+        <typename std::remove_reference<decltype(R)>::type> qr(R);
+
+    qr.setThreshold(cut);
+    auto rank = qr.rank();
+
+    if (rank >= R.rows()) {
+        return;
+    }
+
+    R = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>(
+            qr.matrixR()
+                .topLeftCorner(rank, qr.matrixQR().cols())
+                .template triangularView<Eigen::Upper>())
+        * qr.colsPermutation().transpose();
+
+    L = L * Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>(qr.householderQ())
+                .leftCols(rank);
+}
+
 } // namespace eigen_version
 
 inline namespace lapack {
@@ -271,6 +344,14 @@ void inline QrInit(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> input,
     delete[] W;
 }
 
+template <typename T>
+void inline QrInit(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> input,
+                   Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
+                   Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R,
+                   double cut) {
+    eigen_version::QrInit(std::move(input), L, R, cut);
+}
+
 void inline CompressLeft(Eigen::Matrix
                          <double, Eigen::Dynamic, Eigen::Dynamic> &L,
                          Eigen::Matrix
@@ -319,6 +400,13 @@ void inline CompressLeft(Eigen::Matrix
     L = input.leftCols(rank);
 
     delete[] W;
+}
+
+template <typename T>
+void inline CompressLeft(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
+                         Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R,
+                         double cut, bool debug = false) {
+    eigen_version::CompressLeft(L, R, cut);
 }
 
 void inline CompressRight(Eigen::Matrix
@@ -370,8 +458,15 @@ void inline CompressRight(Eigen::Matrix
 
     delete[] W;
 }
-} // namespace lapack
 
+template <typename T>
+void inline CompressRight(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &L,
+                          Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &R,
+                          double cut, bool debug = false) {
+
+    eigen_version::CompressRight(L, R, cut);
+}
+} // namespace lapack
 
 } // namespace algebra
 

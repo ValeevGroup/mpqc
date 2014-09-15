@@ -20,11 +20,11 @@ ExperimentalAutoDetectBinPacking: false
 IndentCaseLabels: false
 MaxEmptyLinesToKeep: 2
 NamespaceIndentation: None
-ObjCSpaceBeforeProtocolList: true
+ObjCSpaceBeforeProtocolList: false
 PenaltyBreakBeforeFirstCallParameter: 19
 PenaltyBreakComment: 20
 PenaltyBreakString: 100
-PenaltyBreakFirstLessLess: 220
+PenaltyBreakFirstLessLess: 20
 PenaltyExcessCharacter: 1000000
 PenaltyReturnTypeOnItsOwnLine: 20
 PointerBindsToType: false

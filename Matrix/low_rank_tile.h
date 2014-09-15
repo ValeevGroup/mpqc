@@ -55,7 +55,7 @@ class LowRankTile {
 
     inline Matrix<T> const & matrixL() const {return L_;}
     inline Matrix<T> const & matrixR() const {return R_;}
-    inline Matrix<T> matrixLR() const {return cblas_gemm(L_, R_, 1.0);}
+    inline Matrix<T> matrixLR() const {return algebra::cblas_gemm(L_, R_, 1.0);}
 
   private:
     Matrix<T> L_;

@@ -48,15 +48,4 @@ class FullRankTile {
     unsigned long rank_ = 0;
 };
 
-template <typename T>
-FullRankTile<T>
-gemm(FullRankTile<T> const &left, FullRankTile<T> const &right, double alpha) {
-    return FullRankTile
-        <T>(algebra::cblas_gemm(left.data(), right.data(), alpha));
-}
-
-
-
-
-
 #endif // FULL_RANK_TILE_H

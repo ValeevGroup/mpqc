@@ -40,9 +40,14 @@ class LowRankTile {
     }
 
     LowRankTile(const Matrix<T> &L, const Matrix<T> &R)
-        : L_(L), R_(R), rank_(L.cols()) {
+        : L_(L.rows(), L.cols()), R_(R.rows(),R.cols()), rank_(L.cols()) {
         assert(L_.cols() == R_.rows());
         assert(L_.size() != 0 && R_.size() != 0);
+        const auto Lsize = L.size();
+        const auto Rsize = R.size();
+        std::copy(L.data(),L.data() + Lsize, L_.data());
+        std::copy(R.data(),R.data() + Rsize, R_.data());
+
     }
     LowRankTile(Matrix<T> &&L, Matrix<T> &&R)
     noexcept : L_(), R_(), rank_(L.cols()) {

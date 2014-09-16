@@ -58,12 +58,24 @@ gemm(const LowRankTile<T> &left, const LowRankTile<T> &right, double alpha) {
     assert(left.Cols() == right.Rows()); // Check k index
 
     auto mid = algebra::cblas_gemm(left.matrixR(), right.matrixL(), 1.0);
-    if (left.rank() > right.rank()) {
-        return LowRankTile<T>{algebra::cblas_gemm(left.matrixL(), mid, alpha),
-                              right.matrixR()};
+    if (left.rank() >= right.rank()) {
+        typename LowRankTile<T>::template Matrix
+            <T> R(right.rank(), right.Cols());
+
+        // jumping through copy hoops because it's faster.
+        const auto start = right.matrixR().data();
+        const auto end = right.matrixR().data() + right.matrixR().size();
+        std::copy(start, end, R.data());
+        return LowRankTile
+            <T>{algebra::cblas_gemm(left.matrixL(), mid, alpha), std::move(R)};
     } else {
-        return LowRankTile<T>{alpha * left.matrixL(),
-                              algebra::cblas_gemm(mid, right.matrixR(), 1.0)};
+        typename LowRankTile<T>::template Matrix<T> L(left.Rows(), left.rank());
+        const auto start = left.matrixL().data();
+        const auto end = left.matrixL().data() + left.matrixL().size();
+        std::transform(start, end, L.data(),
+                       [=](const T &x) { return alpha * x; });
+        return LowRankTile
+            <T>{std::move(L), algebra::cblas_gemm(mid, right.matrixR(), 1.0)};
     }
 }
 

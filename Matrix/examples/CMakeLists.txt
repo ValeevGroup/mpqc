@@ -12,13 +12,6 @@ target_link_libraries(tile_ops_examples
     ${MPI_CXX_LIBRARIES}
 )
 
-add_executable(lr_gemm_no_add low_rank_single_gemm_no_add_performance.cpp)
-target_link_libraries(lr_gemm_no_add
-    ${TILEDARRAY_LIBRARIES}
-    ${LAPACK_LIBRARIES}
-    ${MPI_CXX_LIBRARIES}
-)
-
 #add_executable(matrix_test matrix_test.cpp)
 #target_link_libraries(matrix_test ${TILEDARRAY_LIBRARIES})
 #target_link_libraries(matrix_test ${LAPACK_LIBRARIES})

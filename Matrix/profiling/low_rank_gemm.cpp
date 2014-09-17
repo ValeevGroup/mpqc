@@ -37,8 +37,13 @@ int main(int argc, char *argv[]) {
     auto C = tile_ops::gemm(lrA, lrB, 1.0);
     time = madness::wall_time() - time;
 
+    double time2 = madness::wall_time();
+    tile_ops::gemm(C,lrA,lrB,1.0,1.0);
+    time2 = madness::wall_time() - time2;
+
     std::cout << "Time for " << dim << "x" << dim
-              << " gemm with rank = " << rank << " was " << time << " s\n";
+              << " gemm no add with rank = " << rank << " was " << time << " s\n"
+              << "Time for gemm with add = " << time2 << " s\n";
 
     return 0;
 }

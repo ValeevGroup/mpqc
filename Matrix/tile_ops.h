@@ -5,14 +5,73 @@
 #include "full_rank_tile.h"
 #include "tile_algebra.h"
 
+
+// Forward Declerations for Functors.
 namespace tile_ops {
+
+template <typename T>
+FullRankTile<T>
+gemm(const FullRankTile<T> &left, const FullRankTile<T> &right, double alpha);
+
+template <typename T>
+LowRankTile<T>
+gemm(const LowRankTile<T> &left, const LowRankTile<T> &right, double alpha);
+
+template <typename T>
+FullRankTile<T> &gemm(FullRankTile<T> &result, const FullRankTile<T> &left,
+                      const FullRankTile<T> &right, double alpha, double beta);
+
+template <typename T>
+LowRankTile<T> &gemm(LowRankTile<T> &result, const LowRankTile<T> &left,
+                     const LowRankTile<T> &right, double alpha, double beta);
+}
+
+namespace tile_ops {
+
+struct gemm_AB {
+    gemm_AB(double a) : alpha_(a) {}
+
+    template <typename T>
+    FullRankTile<T> operator()(FullRankTile<T> const &left,
+                               FullRankTile<T> const &right) const {
+        return gemm(left, right, alpha_);
+    }
+
+    template <typename T>
+    LowRankTile<T>
+    operator()(LowRankTile<T> const &left, LowRankTile<T> const &right) const {
+        return gemm(left, right, alpha_);
+    }
+
+  private:
+    double alpha_ = 1.0;
+};
+
+struct gemm_in_place {
+    gemm_in_place(double a, double b) : alpha_(a), beta_(b) {}
+
+    template <typename T>
+    void operator()(FullRankTile<T> &result, FullRankTile<T> const &left,
+                    FullRankTile<T> const &right) const {
+        return gemm(result, left, right, alpha_, beta_);
+    }
+
+    template <typename T>
+    void operator()(LowRankTile<T> &result, LowRankTile<T> const &left,
+                    LowRankTile<T> const &right) const {
+        return gemm(result, left, right, alpha_, beta_);
+    }
+
+  private:
+    double alpha_ = 1.0;
+    double beta_ = 1.0;
+};
 
 template <typename T>
 FullRankTile<T>
 add(const FullRankTile<T> &left, const FullRankTile<T> &right, double beta) {
     return FullRankTile<T>{beta * left.matrix() + right.matrix()};
 }
-
 
 template <typename T>
 FullRankTile<T>

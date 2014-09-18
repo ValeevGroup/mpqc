@@ -53,3 +53,13 @@ TYPED_TEST(TileVariantTest, FullRankTileMoveConstructor){
   EXPECT_EQ(this->f_tile.size(),0);
   EXPECT_TRUE((this->L * this->R).isApprox(tile.ftile().matrix()));
 }
+
+TYPED_TEST(TileVariantTest, LowRankFuncRank){
+  TileVariant<TypeParam> tile(std::move(this->lr_tile));
+  EXPECT_EQ(this->rank, tile.rank());
+}
+
+TYPED_TEST(TileVariantTest, FullRankFuncRank){
+  TileVariant<TypeParam> tile(std::move(this->f_tile));
+  EXPECT_EQ(this->cols, tile.rank());
+}

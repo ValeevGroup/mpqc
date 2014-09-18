@@ -1,5 +1,5 @@
-#ifndef TCC_MATRIX_TILEVARIANT_H
-#define TCC_MATRIX_TILEVARIANT_H
+#ifndef TCC_MATRIX_TILE_VARIANT_H
+#define TCC_MATRIX_TILE_VARIANT_H
 
 #include "low_rank_tile.h"
 #include "full_rank_tile.h"
@@ -9,7 +9,7 @@
 template <typename T>
 class TileVariant {
   public:
-    enum TileType : std::int8_t {
+    enum TileType : std::uint8_t {
         LowRank = 0,
         FullRank = 1
     };
@@ -28,16 +28,50 @@ class TileVariant {
 
 
     TileVariant(TileVariant const &t) : tag_(t.tag_) { copyTileVariant(t); }
-    void copyTileVariant(TileVariant const &t) {
-        switch (t.tag_) {
-        case LowRank:
-            new (&lrtile_) LowRankTile<T>(t.lrtile_);
-            break;
-        case FullRank:
-            new (&ftile_) FullRankTile<T>(t.ftile_);
-            break;
+
+    TileVariant &operator=(TileVariant const &t) {
+        if (tag_ == t.tag()) {
+            if (tag_ == LowRank) {
+                lrtile_ = t.lrtile_;
+            } else {
+                ftile_ = t.ftile_;
+            }
+        } else {
+            if (tag_ == LowRank) {
+                lrtile_.~LowRankTile<T>();
+            } else {
+                ftile_.~FullRankTile<T>();
+            }
+            tag_ = t.tag_;
+            copyTileVariant(t);
         }
+        return *this;
     }
+
+
+    TileVariant(TileVariant &&t) : tag_(std::move(t.tag)) {
+        moveTileVariant(std::move(t));
+    }
+
+    TileVariant &operator=(TileVariant &&t) {
+        if (tag_ == t.tag()) {
+            if (tag_ == LowRank) {
+                lrtile_ = std::move(t.lrtile_);
+            } else {
+                ftile_ = std::move(t.ftile_);
+            }
+        } else {
+            if (tag_ == LowRank) {
+                lrtile_.~LowRankTile<T>();
+            } else {
+                ftile_.~FullRankTile<T>();
+            }
+            tag_ = std::move(t.tag_);
+            moveTileVariant(std::move(t));
+        }
+        return *this;
+    }
+
 
     // TODO figure out what to do about move constructor.
 
@@ -58,8 +92,8 @@ class TileVariant {
     }
 
     template <typename Func>
-    void apply_binary_op_to(const TileVariant &left, const TileVariant &right,
-                            Func op) {
+    TileVariant &apply_binary_op_to(const TileVariant &left,
+                                    const TileVariant &right, Func op) {
         switch ((tag() << 2) | (left.tag() << 1) | right.tag()) {
         case 0: // Low Low Low
             op(lrtile_, left.lrtile(), right.lrtile());
@@ -86,6 +120,8 @@ class TileVariant {
             op(ftile_, left.ftile(), right.ftile());
             break;
         }
+
+        return *this;
     }
 
     template <typename Func>
@@ -104,7 +140,7 @@ class TileVariant {
 
     template <typename Func>
     auto apply_binary_transform_op(const TileVariant &right, Func op)
-        -> decltype(op(lrtile(), lrtile())) const {
+        const -> decltype(op(lrtile(), lrtile())) {
 
         static_assert(
             tcc::all_same
@@ -149,11 +185,12 @@ class TileVariant {
     // This function is for operations which don't modify the tile, but need
     // to read the tile's data, an example would be 2norm.
     template <typename Func>
-    auto apply_unary_transform_op(Func op) -> decltype(op(lrtile())) const {
+    auto apply_unary_transform_op(Func op) const -> decltype(op(lrtile())) {
         static_assert(tcc::all_same
                       <decltype(op(lrtile())), decltype(op(ftile()))>::value,
                       "Unary Transform op must return the same type for every "
                       "tile type.");
+
         switch (tag()) {
         case LowRank:
             return op(lrtile());
@@ -162,10 +199,44 @@ class TileVariant {
         }
     }
 
+    unsigned long rank() const { return apply_unary_transform_op(rank_op); }
+
 
     TileType tag() const { return tag_; }
 
   private:
+    void copyTileVariant(TileVariant const &t) {
+        switch (t.tag_) {
+        case LowRank:
+            new (&lrtile_) LowRankTile<T>(t.lrtile_);
+            break;
+        case FullRank:
+            new (&ftile_) FullRankTile<T>(t.ftile_);
+            break;
+        }
+    }
+
+    void moveTileVariant(TileVariant &&t) {
+        switch (t.tag_) {
+        case LowRank:
+            new (&lrtile_) LowRankTile<T>(std::move(t.lrtile_));
+            break;
+        case FullRank:
+            new (&ftile_) FullRankTile<T>(std::move(t.ftile_));
+            break;
+        }
+    }
+
+    struct {
+        unsigned long operator()(const LowRankTile<T> &t) const {
+            return t.rank();
+        }
+
+        unsigned long operator()(const FullRankTile<T> &t) const {
+            return t.rank();
+        }
+    } rank_op;
+
     TileType tag_;
 
     union {
@@ -174,4 +245,4 @@ class TileVariant {
     };
 };
 
-#endif // TTC_MATRIX_TILEVARIANT_H
+#endif // TTC_MATRIX_TILE_VARIANT_H

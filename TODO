@@ -1,5 +1,7 @@
-Finish TileVarient
-Write non intrusive interface for FullRankTile, LowRankTile, and the combination
+Figure out how to convert FullRank TileVariant to LowRank TileVariant
+
+Optimize my all FullRank functions, try and be at least as fast as TileArray in
+matrix expressions involving only full rank tiles.
 
 Add in the TCC namespace at somepoint.
 

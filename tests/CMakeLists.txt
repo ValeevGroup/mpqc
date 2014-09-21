@@ -8,6 +8,7 @@ set(test_sources
   tile_algebra_test.cpp
   tile_variant_test.cpp
   tile_ops_test.cpp
+  tile_pimpl.cpp
   all_same_test.cpp
 )
 

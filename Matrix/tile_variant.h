@@ -14,6 +14,8 @@ class TileVariant {
         FullRank = 1
     };
 
+    using scaler_type = T;
+
     TileVariant() : tag_(FullRank), ftile_() {}
     ~TileVariant() {
         switch (tag_) {
@@ -205,10 +207,43 @@ class TileVariant {
 
     unsigned long rank() const { return apply_unary_transform_op(rank_op); }
 
+    Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> matrix() const {
+        return apply_unary_transform_op(matrix_op);
+    }
+
 
     TileType tag() const { return tag_; }
 
   private:
+    TileType tag_;
+
+    union {
+        LowRankTile<T> lrtile_;
+        FullRankTile<T> ftile_;
+    };
+
+    /*
+     * Utililty Functions
+     */
+  private:
+    struct {
+        unsigned long operator()(const LowRankTile<T> &t) const {
+            return t.rank();
+        }
+
+        unsigned long operator()(const FullRankTile<T> &t) const {
+            return t.rank();
+        }
+    } rank_op;
+
+    struct {
+        using mat = Eigen::Matrix<scaler_type, Eigen::Dynamic, Eigen::Dynamic>;
+
+        mat operator()(const LowRankTile<T> &t) const { return t.matrixLR(); }
+
+        mat operator()(const FullRankTile<T> &t) const { return t.matrix(); }
+    } matrix_op;
+
     void copyTileVariant(TileVariant const &t) {
         switch (t.tag_) {
         case LowRank:
@@ -230,23 +265,6 @@ class TileVariant {
             break;
         }
     }
-
-    struct {
-        unsigned long operator()(const LowRankTile<T> &t) const {
-            return t.rank();
-        }
-
-        unsigned long operator()(const FullRankTile<T> &t) const {
-            return t.rank();
-        }
-    } rank_op;
-
-    TileType tag_;
-
-    union {
-        LowRankTile<T> lrtile_;
-        FullRankTile<T> ftile_;
-    };
 };
 
 #endif // TTC_MATRIX_TILE_VARIANT_H

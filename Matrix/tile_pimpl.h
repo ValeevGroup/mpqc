@@ -71,11 +71,17 @@ class TilePimpl {
 
     TileVariant<T> const &tile() const { return *tile_; }
 
+  private:
+    std::shared_ptr<TileVariant<T>> tile_;
+    TiledArray::Range range_;
+    double cut_ = 1e-7;
+
+  public:
     /*
      * Tile operations
      */
     TilePimpl gemm(TilePimpl const &right, numeric_type factor,
-                   TiledArray::math::GemmHelper const &gemm_config) {
+                   TiledArray::math::GemmHelper const &gemm_config) const {
 
         // TODO complete this section.
         // auto result_range = gemm_config.make_result_range
@@ -88,13 +94,53 @@ class TilePimpl {
                          std::max(cut(), right.cut()));
     }
 
+    TilePimpl &gemm(TilePimpl const &left, TilePimpl const &right,
+                    numeric_type factor,
+                    TiledArray::math::GemmHelper const &gemm_config) {
+
+        // TODO complete this section.
+        // auto result_range = gemm_config.make_result_range
+        //                    <range_type>(range(), right.range());
+        auto result_range = range();
+
+        tile_->apply_binary_op_to(left.tile(), right.tile(),
+                                  tile_ops::gemm_inplace(factor));
+
+        return *this;
+    }
+
+    TilePimpl &add_to(TilePimpl const &right) {
+        assert(false);
+        return *this;
+    }
+
+    TilePimpl
+    mult(TilePimpl const &right, TiledArray::Permutation const &perm) const {
+        assert(false);
+        return TilePimpl();
+    }
+
+    TilePimpl
+    mult(TilePimpl const &right) const {
+        assert(false);
+        return TilePimpl();
+    }
+
+    TilePimpl &
+    mult_to(TilePimpl const &right) {
+        assert(false);
+        return *this;
+    }
+
+
+    TilePimpl permute(TiledArray::Permutation const &perm) const {
+        assert(false);
+        return TilePimpl();
+    }
+
+
     template <typename Archive>
     void serialize(Archive &ar) {}
-
-  private:
-    std::shared_ptr<TileVariant<T>> tile_;
-    TiledArray::Range range_;
-    double cut_ = 1e-7;
 };
 
 #endif // TCC_MATRIX_TILE_PIMPLE_H

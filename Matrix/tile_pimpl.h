@@ -65,10 +65,11 @@ class TilePimpl {
         const auto temp = cut_;
         cut_ = cut;
         if (temp <= cut_) {
-            // TODO recompress may save some space.
+            // TODO_TCC recompress may save some space.
         }
     }
 
+    TileVariant<T> const &tile() const { return *tile_; }
 
     /*
      * Tile operations
@@ -76,17 +77,16 @@ class TilePimpl {
     TilePimpl gemm(TilePimpl const &right, numeric_type factor,
                    TiledArray::math::GemmHelper const &gemm_config) {
 
-        //auto result_range = gemm_config.make_result_range
+        // TODO complete this section.
+        // auto result_range = gemm_config.make_result_range
         //                    <range_type>(range(), right.range());
         auto result_range = range();
 
-        return TilePimpl(
-            std::move(result_range),
-            std::move(tile_->apply_binary_op(*(right.tile_),
-                                   tile_ops::gemm_AB(factor))),
-            std::max(cut(), right.cut()));
+        return TilePimpl(std::move(result_range),
+                         std::move(tile_->apply_binary_op(
+                             right.tile(), tile_ops::gemm_AB(factor))),
+                         std::max(cut(), right.cut()));
     }
-
 
     template <typename Archive>
     void serialize(Archive &ar) {}

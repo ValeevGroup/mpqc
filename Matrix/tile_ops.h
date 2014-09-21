@@ -5,28 +5,55 @@
 #include "full_rank_tile.h"
 #include "tile_algebra.h"
 
-
-// Forward Declerations for Functors.
+// Gemm_AB functions
 namespace tile_ops {
 
 template <typename T>
 FullRankTile<T>
-gemm(const FullRankTile<T> &left, const FullRankTile<T> &right, double alpha);
+gemm(const FullRankTile<T> &left, const FullRankTile<T> &right, double alpha) {
+    return FullRankTile
+        <T>{algebra::cblas_gemm(left.matrix(), right.matrix(), alpha)};
+}
+
+template <typename T>
+FullRankTile<T>
+gemm(const LowRankTile<T> &left, const FullRankTile<T> &right, double alpha) {
+  assert(false);
+}
+
+template <typename T>
+FullRankTile<T>
+gemm(const FullRankTile<T> &left, const LowRankTile<T> &right, double alpha) {
+  assert(false);
+}
 
 template <typename T>
 LowRankTile<T>
-gemm(const LowRankTile<T> &left, const LowRankTile<T> &right, double alpha);
+gemm(const LowRankTile<T> &left, const LowRankTile<T> &right, double alpha) {
+    assert(left.Cols() == right.Rows()); // Check k index
 
-template <typename T>
-FullRankTile<T> &gemm(FullRankTile<T> &result, const FullRankTile<T> &left,
-                      const FullRankTile<T> &right, double alpha, double beta);
+    auto mid = algebra::cblas_gemm(left.matrixR(), right.matrixL(), 1.0);
+    if (left.rank() >= right.rank()) {
+        typename LowRankTile<T>::template Matrix
+            <T> R(right.rank(), right.Cols());
 
-template <typename T>
-LowRankTile<T> &gemm(LowRankTile<T> &result, const LowRankTile<T> &left,
-                     const LowRankTile<T> &right, double alpha, double beta);
+        // jumping through copy hoops because it's faster.
+        const auto start = right.matrixR().data();
+        const auto end = right.matrixR().data() + right.matrixR().size();
+        std::copy(start, end, R.data());
+        return LowRankTile
+            <T>{algebra::cblas_gemm(left.matrixL(), mid, alpha), std::move(R)};
+    } else {
+        typename LowRankTile<T>::template Matrix<T> L(left.Rows(), left.rank());
+        const auto start = left.matrixL().data();
+        const auto end = left.matrixL().data() + left.matrixL().size();
+        std::transform(start, end, L.data(),
+                       [=](const T &x) { return alpha * x; });
+        return LowRankTile
+            <T>{std::move(L), algebra::cblas_gemm(mid, right.matrixR(), 1.0)};
+    }
 }
 
-namespace tile_ops {
 
 struct gemm_AB {
     gemm_AB(double a) : alpha_(a) {}
@@ -38,8 +65,20 @@ struct gemm_AB {
     }
 
     template <typename T>
+    FullRankTile<T>
+    operator()(FullRankTile<T> const &left, LowRankTile<T> const &right) const {
+        return gemm(left, right, alpha_);
+    }
+
+    template <typename T>
     LowRankTile<T>
     operator()(LowRankTile<T> const &left, LowRankTile<T> const &right) const {
+        return gemm(left, right, alpha_);
+    }
+
+    template <typename T>
+    FullRankTile<T>
+    operator()(LowRankTile<T> const &left, FullRankTile<T> const &right) const {
         return gemm(left, right, alpha_);
     }
 
@@ -47,37 +86,15 @@ struct gemm_AB {
     double alpha_ = 1.0;
 };
 
-struct gemm_in_place {
-    gemm_in_place(double a, double b) : alpha_(a), beta_(b) {}
+} // namespace tile_ops
 
-    template <typename T>
-    void operator()(FullRankTile<T> &result, FullRankTile<T> const &left,
-                    FullRankTile<T> const &right) const {
-        return gemm(result, left, right, alpha_, beta_);
-    }
 
-    template <typename T>
-    void operator()(LowRankTile<T> &result, LowRankTile<T> const &left,
-                    LowRankTile<T> const &right) const {
-        return gemm(result, left, right, alpha_, beta_);
-    }
-
-  private:
-    double alpha_ = 1.0;
-    double beta_ = 1.0;
-};
+namespace tile_ops {
 
 template <typename T>
 FullRankTile<T>
 add(const FullRankTile<T> &left, const FullRankTile<T> &right, double beta) {
     return FullRankTile<T>{beta * left.matrix() + right.matrix()};
-}
-
-template <typename T>
-FullRankTile<T>
-gemm(const FullRankTile<T> &left, const FullRankTile<T> &right, double alpha) {
-    return FullRankTile
-        <T>{algebra::cblas_gemm(left.matrix(), right.matrix(), alpha)};
 }
 
 template <typename T>
@@ -109,33 +126,6 @@ add(const LowRankTile<T> &left, const LowRankTile<T> &right, double beta) {
     R.bottomRows(right.rank()) = right.matrixR();
 
     return LowRankTile<T>{std::move(L), std::move(R)};
-}
-
-template <typename T>
-LowRankTile<T>
-gemm(const LowRankTile<T> &left, const LowRankTile<T> &right, double alpha) {
-    assert(left.Cols() == right.Rows()); // Check k index
-
-    auto mid = algebra::cblas_gemm(left.matrixR(), right.matrixL(), 1.0);
-    if (left.rank() >= right.rank()) {
-        typename LowRankTile<T>::template Matrix
-            <T> R(right.rank(), right.Cols());
-
-        // jumping through copy hoops because it's faster.
-        const auto start = right.matrixR().data();
-        const auto end = right.matrixR().data() + right.matrixR().size();
-        std::copy(start, end, R.data());
-        return LowRankTile
-            <T>{algebra::cblas_gemm(left.matrixL(), mid, alpha), std::move(R)};
-    } else {
-        typename LowRankTile<T>::template Matrix<T> L(left.Rows(), left.rank());
-        const auto start = left.matrixL().data();
-        const auto end = left.matrixL().data() + left.matrixL().size();
-        std::transform(start, end, L.data(),
-                       [=](const T &x) { return alpha * x; });
-        return LowRankTile
-            <T>{std::move(L), algebra::cblas_gemm(mid, right.matrixR(), 1.0)};
-    }
 }
 
 template <typename T>

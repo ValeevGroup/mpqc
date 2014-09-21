@@ -49,7 +49,7 @@ class TileVariant {
     }
 
 
-    TileVariant(TileVariant &&t) : tag_(std::move(t.tag)) {
+    TileVariant(TileVariant &&t) : tag_(std::move(t.tag_)) {
         moveTileVariant(std::move(t));
     }
 
@@ -75,11 +75,14 @@ class TileVariant {
 
     // TODO figure out what to do about move constructor.
 
-    TileVariant(const LowRankTile<T> &l) : tag_(LowRank), lrtile_(l) {}
-    TileVariant(LowRankTile<T> &&l) : tag_(LowRank), lrtile_(std::move(l)) {}
+    explicit TileVariant(const LowRankTile<T> &l) : tag_(LowRank), lrtile_(l) {}
+    explicit TileVariant(LowRankTile<T> &&l)
+        : tag_(LowRank), lrtile_(std::move(l)) {}
 
-    TileVariant(const FullRankTile<T> &f) : tag_(FullRank), ftile_(f) {}
-    TileVariant(FullRankTile<T> &&f) : tag_(FullRank), ftile_(std::move(f)) {}
+    explicit TileVariant(const FullRankTile<T> &f)
+        : tag_(FullRank), ftile_(f) {}
+    explicit TileVariant(FullRankTile<T> &&f)
+        : tag_(FullRank), ftile_(std::move(f)) {}
 
     LowRankTile<T> const &lrtile() const {
         assert(tag_ == LowRank);
@@ -134,6 +137,9 @@ class TileVariant {
         case 2: // Full Low
             return TileVariant{op(ftile(), right.lrtile())};
         case 3: // Full Full
+            return TileVariant{op(ftile(), right.ftile())};
+        default: // Should never be reached.
+            assert(false);
             return TileVariant{op(ftile(), right.ftile())};
         }
     }

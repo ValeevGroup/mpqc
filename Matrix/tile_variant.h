@@ -73,8 +73,6 @@ class TileVariant {
     }
 
 
-    // TODO figure out what to do about move constructor.
-
     explicit TileVariant(const LowRankTile<T> &l) : tag_(LowRank), lrtile_(l) {}
     explicit TileVariant(LowRankTile<T> &&l)
         : tag_(LowRank), lrtile_(std::move(l)) {}

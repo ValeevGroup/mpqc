@@ -5,7 +5,6 @@
 #include <functional>
 #include <vector>
 
-//TODO comment this file
 class Molecule {
   public:
     using cluster_fn_t = std::function

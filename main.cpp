@@ -70,7 +70,7 @@ void purify(TiledArray::Array<double, 2, T> &D,
     double trace = compute_trace(DS);
     TiledArray::Array<double, 2, T> D2(D.get_world(), D.trange());
 
-    // TODO add occ
+    // TODO_TCC add occ
     while (std::abs(trace - 2.0) > 1e-05) {
         // Compute D^2 just capture expression
         auto D2 = DS("i,k") * D("k,j");

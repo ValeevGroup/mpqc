@@ -80,7 +80,7 @@ class Clusterable {
     std::vector<Atom> atoms() const { return element_impl_->atoms(); }
 
   private:
-    // TODO make this a shared_ptr to a const and switch to shallow copies.
+    // TODO_TCC make this a shared_ptr to a const and switch to shallow copies.
     std::unique_ptr<ClusterConcept> element_impl_;
 };
 

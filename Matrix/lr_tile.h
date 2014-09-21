@@ -197,7 +197,7 @@ class LRTile {
      */
     LRTile clone() const {
         return *this;
-    } // TODO this will have to change when we switch to shallow copy
+    } //   this will have to change when we switch to shallow copy
 
     /**
      * @brief compress attempts to reduce the rank of the tile
@@ -229,7 +229,7 @@ class LRTile {
      * @param right the tile to multiply this by.
      */
     LRTile operator*(const LRTile &right) {
-        // TODO determine if it is likely that two full_rank tiles can be
+        //   determine if it is likely that two full_rank tiles can be
         // multiplied together into a low rank tile.
         // for now assume they cannot be.
         EigMat<T> L;
@@ -302,7 +302,7 @@ class LRTile {
      ********************************************************/
 
     LRTile permute(const TiledArray::Permutation &perm) const {
-        assert(false); // TODO
+        assert(false); //
         return LRTile();
     }
 
@@ -321,7 +321,7 @@ class LRTile {
 
     LRTile scale(const numeric_type factor,
                  const TiledArray::Permutation &perm) const {
-        assert(false); // TODO
+        assert(false); //
         return LRTile();
     }
 
@@ -394,17 +394,17 @@ class LRTile {
     }
 
     LRTile &add_to(const LRTile &right) {
-        assert(false); // TODO
+        assert(false); //
         return *this;
     }
 
     LRTile &add_to(const LRTile &right, const numeric_type factor) {
-        assert(false); // TODO
+        assert(false); //
         return *this;
     }
 
     LRTile &add_to(const value_type &value) {
-        assert(false); // TODO
+        assert(false); //
         return *this;
     }
 
@@ -453,7 +453,7 @@ class LRTile {
      */
     LRTile
     subt(const LRTile &right, const TiledArray::Permutation &perm) const {
-        // TODO FIX
+        //   FIX
         assert(false);
         return subt(right);
     }
@@ -497,34 +497,34 @@ class LRTile {
 
 
     LRTile mult(const LRTile<T> &right) const {
-        assert(false); // TODO
+        assert(false); //
         return LRTile();
     }
 
     LRTile mult(const LRTile &right, const numeric_type factor) const {
-        assert(false); // TODO
+        assert(false); //
         return LRTile();
     }
 
     LRTile
     mult(const LRTile &right, const TiledArray::Permutation &perm) const {
-        assert(false); // TODO
+        assert(false); //
         return LRTile();
     }
 
     LRTile mult(const LRTile &right, const numeric_type factor,
                 const TiledArray::Permutation &perm) const {
-        assert(false); // TODO
+        assert(false); //
         return LRTile();
     }
 
     LRTile &mult_to(const LRTile &right) {
-        assert(false); // TODO
+        assert(false); //
         return *this;
     }
 
     LRTile &mult_to(const LRTile &right, const numeric_type factor) {
-        assert(false); // TODO
+        assert(false); //
         return *this;
     }
 
@@ -541,7 +541,7 @@ class LRTile {
                             <range_type>(range(), right.range());
         EigMat<T> L;
         EigMat<T> R;
-        // TODO decide whether is full or not later.
+        //   decide whether is full or not later.
         if (is_full() && right.is_full()) {
             // return LRTile(std::move(result_range),
             // re              EigMat<T>(factor * L_ * right.L_), false);
@@ -626,7 +626,7 @@ class LRTile {
             { // Write into the left side of L
                 const int K = left.L_.cols();
                 const int M = L.rows();
-                const int N = mult_rank; // TODO fix things here.
+                const int N = mult_rank;
                 const int LDA = M, LDB = K, LDC = M;
                 if (K == 0 || M == 0 || N == 0) {
                     L.leftCols(mult_rank) = factor * left.L_ * right.L_;

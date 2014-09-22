@@ -18,6 +18,8 @@ class LowRankTile {
     template <typename U>
     using Matrix = Eigen::Matrix<U, Eigen::Dynamic, Eigen::Dynamic>;
 
+    using scaler_type = T;
+
     /*
      * Constructors
      */

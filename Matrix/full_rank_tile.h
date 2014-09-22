@@ -13,7 +13,7 @@ class FullRankTile {
     template <typename U>
     using Matrix = Eigen::Matrix<U, Eigen::Dynamic, Eigen::Dynamic>;
 
-    using numeric_type = T;
+    using scaler_type = T;
 
     FullRankTile() = default;
     FullRankTile(FullRankTile<T> const &t) = default;

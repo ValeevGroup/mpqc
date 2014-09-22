@@ -80,6 +80,15 @@ int main(int argc, char **argv) {
     full_time = madness::wall_time() - full_time;
     std::cout << "full time was " << full_time << " s\n";
 
+    std::cout << "\nChecking arrays for approximate equality. . . . ";
+    passed_check = check_equal(S, LR_S);
+    if (!passed_check) {
+        std::cout << "Arrays were not equal!";
+    } else {
+        std::cout << "Ok!";
+    }
+    std::cout << "\n";
+
 
     world.gop.fence();
     madness::finalize();

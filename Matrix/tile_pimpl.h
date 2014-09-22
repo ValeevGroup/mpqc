@@ -83,14 +83,14 @@ class TilePimpl {
     TilePimpl gemm(TilePimpl const &right, numeric_type factor,
                    TiledArray::math::GemmHelper const &gemm_config) const {
 
-        // TODO complete this section.
+        // TODO_TCC complete this section.
         // auto result_range = gemm_config.make_result_range
         //                    <range_type>(range(), right.range());
         auto result_range = range();
 
         return TilePimpl(std::move(result_range),
-                         std::move(tile_->apply_binary_op(
-                             right.tile(), tile_ops::gemm_AB(factor))),
+                         tile_->apply_binary_op(
+                             right.tile(), tile_ops::gemm_AB(factor)),
                          std::max(cut(), right.cut()));
     }
 
@@ -103,7 +103,7 @@ class TilePimpl {
         //                    <range_type>(range(), right.range());
         auto result_range = range();
 
-        tile_->apply_binary_op_to(left.tile(), right.tile(),
+        tile_->apply_binary_mutation(left.tile(), right.tile(),
                                   tile_ops::gemm_inplace(factor));
 
         return *this;

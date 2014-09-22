@@ -18,7 +18,7 @@ public:
   FullRankTile<T> f_tile;
 
   TileVariantTest() : L(Lmat::Random(rows,rank)), R(Lmat::Random(rank,cols)),
-    lr_tile(L,R), f_tile(lr_tile.matrixLR()) {}
+    lr_tile(L,R), f_tile(lr_tile.matrix()) {}
 };
 
 typedef ::testing::Types<float, double> TileVariantTypes;
@@ -31,18 +31,46 @@ TYPED_TEST(TileVariantTest, DefaultConstructor){
 TYPED_TEST(TileVariantTest, LowRankTileConstructor){
   TileVariant<TypeParam> tile(this->lr_tile);
   EXPECT_EQ(TileVariant<TypeParam>::TileType::LowRank, tile.tag());
-  EXPECT_TRUE(this->lr_tile.matrixLR().isApprox(tile.lrtile().matrixLR()));
+  EXPECT_TRUE(this->lr_tile.matrix().isApprox(tile.lrtile().matrix()));
 }
 
 TYPED_TEST(TileVariantTest, LowRankTileMoveConstructor){
   TileVariant<TypeParam> tile(std::move(this->lr_tile));
   EXPECT_EQ(TileVariant<TypeParam>::TileType::LowRank, tile.tag());
   EXPECT_EQ(this->lr_tile.size(),0);
-  EXPECT_TRUE((this->L * this->R).isApprox(tile.lrtile().matrixLR()));
+  EXPECT_TRUE((this->L * this->R).isApprox(tile.lrtile().matrix()));
 }
 
 TYPED_TEST(TileVariantTest, FullRankTileConstructor){
   TileVariant<TypeParam> tile(this->f_tile);
+  EXPECT_EQ(TileVariant<TypeParam>::TileType::FullRank, tile.tag());
+  EXPECT_TRUE(this->f_tile.matrix().isApprox(tile.ftile().matrix()));
+}
+
+TYPED_TEST(TileVariantTest, FullRankTileToFullRankTileAssignment){
+  TileVariant<TypeParam> tile(this->f_tile);
+  tile = TileVariant<TypeParam>{this->f_tile};
+  EXPECT_EQ(TileVariant<TypeParam>::TileType::FullRank, tile.tag());
+  EXPECT_TRUE(this->f_tile.matrix().isApprox(tile.ftile().matrix()));
+}
+
+TYPED_TEST(TileVariantTest, FullRankTileToLowRankTileAssignment){
+  TileVariant<TypeParam> tile(this->f_tile);
+  tile = TileVariant<TypeParam>{this->lr_tile};
+  EXPECT_EQ(TileVariant<TypeParam>::TileType::LowRank, tile.tag());
+  EXPECT_TRUE(this->lr_tile.matrix().isApprox(tile.lrtile().matrix()));
+}
+
+TYPED_TEST(TileVariantTest, LowRankTileToLowRankTileAssignment){
+  TileVariant<TypeParam> tile(this->lr_tile);
+  tile = TileVariant<TypeParam>{this->lr_tile};
+  EXPECT_EQ(TileVariant<TypeParam>::TileType::LowRank, tile.tag());
+  EXPECT_TRUE(this->lr_tile.matrix().isApprox(tile.lrtile().matrix()));
+}
+
+TYPED_TEST(TileVariantTest, LowRankTileToFullRankTileAssignment){
+  TileVariant<TypeParam> tile(this->lr_tile);
+  tile = TileVariant<TypeParam>{this->f_tile};
   EXPECT_EQ(TileVariant<TypeParam>::TileType::FullRank, tile.tag());
   EXPECT_TRUE(this->f_tile.matrix().isApprox(tile.ftile().matrix()));
 }

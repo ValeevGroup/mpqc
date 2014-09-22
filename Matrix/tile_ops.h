@@ -4,6 +4,7 @@
 #include "low_rank_tile.h"
 #include "full_rank_tile.h"
 #include "tile_algebra.h"
+#include "tile_variant.h"
 
 // Gemm_AB functions
 namespace tile_ops {
@@ -59,51 +60,34 @@ gemm(const LowRankTile<T> &left, const LowRankTile<T> &right, double alpha) {
 }
 
 struct gemm_AB {
-    gemm_AB(double a) : alpha_(a) {}
-
-    template <typename T>
-    FullRankTile<T> operator()(FullRankTile<T> const &left,
-                               FullRankTile<T> const &right) const {
-        return gemm(left, right, alpha_);
-    }
-
-    template <typename T>
-    LowRankTile<T>
-    operator()(FullRankTile<T> const &left, LowRankTile<T> const &right) const {
-        return gemm(left, right, alpha_);
-    }
-
-    template <typename T>
-    LowRankTile<T>
-    operator()(LowRankTile<T> const &left, LowRankTile<T> const &right) const {
-        return gemm(left, right, alpha_);
-    }
-
-    template <typename T>
-    LowRankTile<T>
-    operator()(LowRankTile<T> const &left, FullRankTile<T> const &right) const {
-        return gemm(left, right, alpha_);
-    }
-
   private:
-    double alpha_ = 1.0;
+    double alpha = 1.0;
+
+  public:
+    gemm_AB(double a) : alpha(a) {}
+
+    template <typename Left, typename Right>
+    TileVariant<typename Left::scaler_type>
+    operator()(Left const &left, Right const &right) const {
+        return TileVariant<typename Left::scaler_type>{gemm(left, right, alpha)};
+    }
 };
 
-} // namespace tile_ops
+} // namespace tile_ops ending gemm
 
 // Gemm_inplace_functions
 namespace tile_ops {
 template <typename T>
-FullRankTile<T> &gemm(FullRankTile<T> &result, const FullRankTile<T> &left,
-                      const FullRankTile<T> &right, double alpha, double beta) {
+FullRankTile<T> gemm(FullRankTile<T> result, const FullRankTile<T> &left,
+                     const FullRankTile<T> &right, double alpha, double beta) {
     algebra::cblas_gemm_inplace(left.matrix(), right.matrix(), result.matrix(),
                                 alpha, beta);
     return result;
 }
 
 template <typename T>
-FullRankTile<T> &gemm(FullRankTile<T> &result, const FullRankTile<T> &left,
-                      const LowRankTile<T> &right, double alpha, double beta) {
+FullRankTile<T> gemm(FullRankTile<T> result, const FullRankTile<T> &left,
+                     const LowRankTile<T> &right, double alpha, double beta) {
     auto temp = algebra::cblas_gemm(left.matrix(), right.matrixL(), 1.0);
     algebra::cblas_gemm_inplace(temp, right.matrixR(), result.matrix(), alpha,
                                 beta);
@@ -111,8 +95,8 @@ FullRankTile<T> &gemm(FullRankTile<T> &result, const FullRankTile<T> &left,
 }
 
 template <typename T>
-FullRankTile<T> &gemm(FullRankTile<T> &result, const LowRankTile<T> &left,
-                      const FullRankTile<T> &right, double alpha, double beta) {
+FullRankTile<T> gemm(FullRankTile<T> result, const LowRankTile<T> &left,
+                     const FullRankTile<T> &right, double alpha, double beta) {
     auto temp = algebra::cblas_gemm(left.matrixR(), right.matrix(), 1.0);
     algebra::cblas_gemm_inplace(left.matrixL(), temp, result.matrix(), alpha,
                                 beta);
@@ -120,15 +104,16 @@ FullRankTile<T> &gemm(FullRankTile<T> &result, const LowRankTile<T> &left,
 }
 
 template <typename T> // Tricky case assume this is never called.
-LowRankTile<T> &gemm(LowRankTile<T> &result, const FullRankTile<T> &left,
+FullRankTile<T> gemm(LowRankTile<T> result, const FullRankTile<T> &left,
                      const FullRankTile<T> &right, double alpha, double beta) {
-    assert(false);
-    return result;
+    auto out = algebra::cblas_gemm(result.matrixL(), result.matrixR(), beta);
+    algebra::cblas_gemm_inplace(left.matrix(), right.matrix(), out, alpha, 1.0);
+    return out;
 }
 
 template <typename T>
-FullRankTile<T> &gemm(FullRankTile<T> &result, const LowRankTile<T> &left,
-                      const LowRankTile<T> &right, double alpha, double beta) {
+FullRankTile<T> gemm(FullRankTile<T> result, const LowRankTile<T> &left,
+                     const LowRankTile<T> &right, double alpha, double beta) {
 
     auto mid = algebra::cblas_gemm(left.matrixR(), right.matrixL(), 1.0);
 
@@ -155,8 +140,8 @@ FullRankTile<T> &gemm(FullRankTile<T> &result, const LowRankTile<T> &left,
 }
 
 template <typename T>
-LowRankTile<T> &gemm(LowRankTile<T> &result, const LowRankTile<T> &left,
-                     const FullRankTile<T> &right, double alpha, double beta) {
+LowRankTile<T> gemm(LowRankTile<T> result, const LowRankTile<T> &left,
+                    const FullRankTile<T> &right, double alpha, double beta) {
     const auto rows = result.Rows();
     const auto cols = result.Cols();
 
@@ -181,8 +166,8 @@ LowRankTile<T> &gemm(LowRankTile<T> &result, const LowRankTile<T> &left,
 }
 
 template <typename T>
-LowRankTile<T> &gemm(LowRankTile<T> &result, const FullRankTile<T> &left,
-                     const LowRankTile<T> &right, double alpha, double beta) {
+LowRankTile<T> gemm(LowRankTile<T> result, const FullRankTile<T> &left,
+                    const LowRankTile<T> &right, double alpha, double beta) {
     const auto rows = result.Rows();
     const auto cols = result.Cols();
 
@@ -207,8 +192,8 @@ LowRankTile<T> &gemm(LowRankTile<T> &result, const FullRankTile<T> &left,
 }
 
 template <typename T>
-LowRankTile<T> &gemm(LowRankTile<T> &result, const LowRankTile<T> &left,
-                     const LowRankTile<T> &right, double alpha, double beta) {
+LowRankTile<T> gemm(LowRankTile<T> result, const LowRankTile<T> &left,
+                    const LowRankTile<T> &right, double alpha, double beta) {
     assert(left.Cols() == right.Rows()); // Check k index
 
     const auto rows = result.Rows();
@@ -241,6 +226,7 @@ LowRankTile<T> &gemm(LowRankTile<T> &result, const LowRankTile<T> &left,
     return result;
 }
 
+
 struct gemm_inplace {
   private:
     double alpha = 1.0, beta = 1.0;
@@ -249,65 +235,15 @@ struct gemm_inplace {
     gemm_inplace(double a) : alpha(a) {}
     gemm_inplace(double a, double b) : alpha(a), beta(b) {}
 
-    template <typename T>
-    FullRankTile<T>
-    operator()(FullRankTile<T> &result, FullRankTile<T> const &left,
-               FullRankTile<T> const &right) {
-        return gemm(result, left, right, alpha, beta);
-    }
-
-    template <typename T>
-    FullRankTile<T>
-    operator()(FullRankTile<T> &result, FullRankTile<T> const &left,
-               LowRankTile<T> const &right) {
-        return gemm(result, left, right, alpha, beta);
-    }
-
-    template <typename T>
-    FullRankTile<T>
-    operator()(FullRankTile<T> &result, LowRankTile<T> const &left,
-               FullRankTile<T> const &right) {
-        return gemm(result, left, right, alpha, beta);
-    }
-
-    template <typename T>
-    FullRankTile<T>
-    operator()(FullRankTile<T> &result, LowRankTile<T> const &left,
-               LowRankTile<T> const &right) {
-        return gemm(result, left, right, alpha, beta);
-    }
-
-    template <typename T>
-    LowRankTile<T>
-    operator()(LowRankTile<T> &result, FullRankTile<T> const &left,
-               FullRankTile<T> const &right) {
-        assert(false); // Should never get called
-        return gemm(result, left, right, alpha, beta);
-    }
-
-    template <typename T>
-    LowRankTile<T>
-    operator()(LowRankTile<T> &result, FullRankTile<T> const &left,
-               LowRankTile<T> const &right) {
-        return gemm(result, left, right, alpha, beta);
-    }
-
-    template <typename T>
-    LowRankTile<T>
-    operator()(LowRankTile<T> &result, LowRankTile<T> const &left,
-               FullRankTile<T> const &right) {
-        return gemm(result, left, right, alpha, beta);
-    }
-
-    template <typename T>
-    LowRankTile<T>
-    operator()(LowRankTile<T> &result, LowRankTile<T> const &left,
-               LowRankTile<T> const &right) {
-        return gemm(result, left, right, alpha, beta);
+    template <typename Result, typename Left, typename Right>
+    TileVariant<typename Result::scaler_type>
+    operator()(Result result, Left const &left, Right const &right) const {
+        return TileVariant<typename Result::scaler_type>{
+            gemm(result, left, right, alpha, beta)};
     }
 };
 
-} // namespace tile_ops
+} // namespace tile_ops ending gemm_inplace
 
 
 //

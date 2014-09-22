@@ -9,10 +9,7 @@
 template <typename T>
 class TileVariant {
   public:
-    enum TileType : std::uint8_t {
-        LowRank = 0,
-        FullRank = 1
-    };
+    enum TileType : std::uint8_t { LowRank = 0, FullRank = 1 };
 
     using scaler_type = T;
 
@@ -95,64 +92,49 @@ class TileVariant {
     }
 
     template <typename Func>
-    TileVariant &apply_binary_op_to(const TileVariant &left,
-                                    const TileVariant &right, Func op) {
+    TileVariant &apply_binary_mutation(const TileVariant &left,
+                                       const TileVariant &right, Func op) {
+
         switch ((tag() << 2) | (left.tag() << 1) | right.tag()) {
         case 0: // Low Low Low
-            op(lrtile_, left.lrtile(), right.lrtile());
-            break;
+            *this = op(std::move(lrtile_), left.lrtile(), right.lrtile());
+            return *this;
         case 1: // Low Low Full
-            op(lrtile_, left.lrtile(), right.ftile());
-            break;
+            *this = op(std::move(lrtile_), left.lrtile(), right.ftile());
+            return *this;
         case 2: // Low Full Low
-            op(lrtile_, left.ftile(), right.lrtile());
-            break;
+            *this = op(std::move(lrtile_), left.ftile(), right.lrtile());
+            return *this;
         case 3: // Full Low Low
-            op(ftile_, left.lrtile(), right.lrtile());
-            break;
+            *this = op(std::move(ftile_), left.lrtile(), right.lrtile());
+            return *this;
         case 4: // Low Full Full
-            op(lrtile_, left.ftile(), right.ftile());
-            break;
+            *this = op(std::move(lrtile_), left.ftile(), right.ftile());
+            return *this;
         case 5: // Full Low Full
-            op(ftile_, left.lrtile(), right.ftile());
-            break;
+            *this = op(std::move(ftile_), left.lrtile(), right.ftile());
+            return *this;
         case 6: // Full Full Low
-            op(ftile_, left.ftile(), right.lrtile());
-            break;
+            *this = op(std::move(ftile_), left.ftile(), right.lrtile());
+            return *this;
         case 7: // Full Full Full
-            op(ftile_, left.ftile(), right.ftile());
-            break;
-        }
-
-        return *this;
-    }
-
-    template <typename Func>
-    TileVariant apply_binary_op(const TileVariant &right, Func op) const {
-        switch ((tag() << 1) | right.tag()) {
-        case 0: // Low Low
-            return TileVariant{op(lrtile(), right.lrtile())};
-        case 1: // Low Full
-            return TileVariant{op(lrtile(), right.ftile())};
-        case 2: // Full Low
-            return TileVariant{op(ftile(), right.lrtile())};
-        case 3: // Full Full
-            return TileVariant{op(ftile(), right.ftile())};
-        default: // Should never be reached.
+            *this = op(std::move(ftile_), left.ftile(), right.ftile());
+            return *this;
+        default: // Should never be reached
             assert(false);
-            return TileVariant{op(ftile(), right.ftile())};
+            return *this;
         }
     }
 
     template <typename Func>
-    auto apply_binary_transform_op(const TileVariant &right, Func op)
-        const -> decltype(op(lrtile(), lrtile())) {
+    auto apply_binary_op(const TileVariant &right,
+                         Func op) const -> decltype(op(lrtile(), lrtile())) {
 
         static_assert(
-            tcc::all_same
-            <decltype(op(lrtile(), lrtile())), decltype(op(lrtile(), ftile())),
-             decltype(op(ftile(), lrtile())),
-             decltype(op(ftile(), ftile()))>::value,
+            tcc::all_same<decltype(op(lrtile(), lrtile())),
+                          decltype(op(lrtile(), ftile())),
+                          decltype(op(ftile(), lrtile())),
+                          decltype(op(ftile(), ftile()))>::value,
             "All return types of functor for binary transform op must have the "
             "same type.");
 
@@ -165,37 +147,36 @@ class TileVariant {
             return op(ftile(), right.lrtile());
         case 3: // Full Full
             return op(ftile(), right.ftile());
+        default: // Should never be reached
+            assert(false);
+            return decltype(op(ftile(), ftile())){};
         }
     }
 
     template <typename Func>
-    void apply_unary_op_to(Func op) {
+    TileVariant &apply_unary_mutation(Func op) {
+        static_assert(
+            tcc::all_same<decltype(op(lrtile())), decltype(op(ftile())),
+                          decltype(*this)>::value,
+            "Return types for a mutation must be TileVariants.");
+
+
         switch (tag()) {
         case LowRank:
-            return TileVariant{op(lrtile_)};
+            *this = op(std::move(lrtile_));
+            return *this;
         case FullRank:
-            return TileVariant{op(ftile_)};
+            *this = op(std::move(ftile_));
+            return *this;
         }
     }
 
     template <typename Func>
-    TileVariant apply_unary_op(Func op) const {
-        switch (tag()) {
-        case LowRank:
-            return TileVariant{op(lrtile())};
-        case FullRank:
-            return TileVariant{op(ftile())};
-        }
-    }
-
-    // This function is for operations which don't modify the tile, but need
-    // to read the tile's data, an example would be 2norm.
-    template <typename Func>
-    auto apply_unary_transform_op(Func op) const -> decltype(op(lrtile())) {
-        static_assert(tcc::all_same
-                      <decltype(op(lrtile())), decltype(op(ftile()))>::value,
-                      "Unary Transform op must return the same type for every "
-                      "tile type.");
+    auto apply_unary_op(Func op) const -> decltype(op(lrtile())) {
+        static_assert(
+            tcc::all_same<decltype(op(lrtile())), decltype(op(ftile()))>::value,
+            "Unary Transform op must return the same type for every "
+            "tile type.");
 
         switch (tag()) {
         case LowRank:
@@ -205,10 +186,12 @@ class TileVariant {
         }
     }
 
-    unsigned long rank() const { return apply_unary_transform_op(rank_op); }
+    unsigned long rank() const {
+        return apply_unary_op([](auto const &t) { return t.rank(); });
+    }
 
     Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> matrix() const {
-        return apply_unary_transform_op(matrix_op);
+        return apply_unary_op([](auto const &t) { return t.matrix(); });
     }
 
 
@@ -226,24 +209,6 @@ class TileVariant {
      * Utililty Functions
      */
   private:
-    struct {
-        unsigned long operator()(const LowRankTile<T> &t) const {
-            return t.rank();
-        }
-
-        unsigned long operator()(const FullRankTile<T> &t) const {
-            return t.rank();
-        }
-    } rank_op;
-
-    struct {
-        using mat = Eigen::Matrix<scaler_type, Eigen::Dynamic, Eigen::Dynamic>;
-
-        mat operator()(const LowRankTile<T> &t) const { return t.matrixLR(); }
-
-        mat operator()(const FullRankTile<T> &t) const { return t.matrix(); }
-    } matrix_op;
-
     void copyTileVariant(TileVariant const &t) {
         switch (t.tag_) {
         case LowRank:

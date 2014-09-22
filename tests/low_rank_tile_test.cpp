@@ -50,9 +50,9 @@ TYPED_TEST(LowRankTileTest, LRConstructor) {
         << "R was not equal to matrixR()\nR = \n" << R << "\nmatrixR() = \n"
         << lr_tile.matrixR() << "\n";
 
-    EXPECT_TRUE(mat.isApprox(lr_tile.matrixLR()))
-        << "L * R was not equal to matrixLR()\nL * R = \n" << mat
-        << "\nmatrixLR() = \n" << lr_tile.matrixLR() << "\n";
+    EXPECT_TRUE(mat.isApprox(lr_tile.matrix()))
+        << "L * R was not equal to matrix()\nL * R = \n" << mat
+        << "\nmatrix() = \n" << lr_tile.matrix() << "\n";
 }
 
 TYPED_TEST(LowRankTileTest, LRMoveConstructor) {
@@ -92,9 +92,9 @@ TYPED_TEST(LowRankTileTest, LRMoveConstructor) {
         << "R was not equal to matrixR()\nR = \n" << R << "\nmatrixR() = \n"
         << lr_tile.matrixR() << "\n";
 
-    EXPECT_TRUE(mat.isApprox(lr_tile.matrixLR()))
-        << "L * R was not equal to matrixLR()\nL * R = \n" << mat
-        << "\nmatrixLR() = \n" << lr_tile.matrixLR() << "\n";
+    EXPECT_TRUE(mat.isApprox(lr_tile.matrix()))
+        << "L * R was not equal to matrix()\nL * R = \n" << mat
+        << "\nmatrix() = \n" << lr_tile.matrix() << "\n";
 }
 
 
@@ -121,7 +121,7 @@ TYPED_TEST(LowRankTileTest, CopyConstructor) {
 
     EXPECT_TRUE(lr_tile_copy.matrixL().isApprox(lr_tile.matrixL()));
     EXPECT_TRUE(lr_tile_copy.matrixR().isApprox(lr_tile.matrixR()));
-    EXPECT_TRUE(lr_tile_copy.matrixLR().isApprox(lr_tile.matrixLR()));
+    EXPECT_TRUE(lr_tile_copy.matrix().isApprox(lr_tile.matrix()));
 }
 
 TYPED_TEST(LowRankTileTest, MoveConstructor) {
@@ -158,7 +158,7 @@ TYPED_TEST(LowRankTileTest, MoveConstructor) {
 
     EXPECT_TRUE(lr_tile_moved_into.matrixL().isApprox(lr_tile.matrixL()));
     EXPECT_TRUE(lr_tile_moved_into.matrixR().isApprox(lr_tile.matrixR()));
-    EXPECT_TRUE(lr_tile_moved_into.matrixLR().isApprox(lr_tile.matrixLR()));
+    EXPECT_TRUE(lr_tile_moved_into.matrix().isApprox(lr_tile.matrix()));
 }
 
 TYPED_TEST(LowRankTileTest, AssignmentOperator) {
@@ -184,7 +184,7 @@ TYPED_TEST(LowRankTileTest, AssignmentOperator) {
 
     EXPECT_TRUE(this->tile.matrixL().isApprox(lr_tile.matrixL()));
     EXPECT_TRUE(this->tile.matrixR().isApprox(lr_tile.matrixR()));
-    EXPECT_TRUE(this->tile.matrixLR().isApprox(lr_tile.matrixLR()));
+    EXPECT_TRUE(this->tile.matrix().isApprox(lr_tile.matrix()));
 }
 
 TYPED_TEST(LowRankTileTest, MoveAssignmentOperator) {
@@ -219,5 +219,5 @@ TYPED_TEST(LowRankTileTest, MoveAssignmentOperator) {
 
     EXPECT_TRUE(this->tile.matrixL().isApprox(lr_tile.matrixL()));
     EXPECT_TRUE(this->tile.matrixR().isApprox(lr_tile.matrixR()));
-    EXPECT_TRUE(this->tile.matrixLR().isApprox(lr_tile.matrixLR()));
+    EXPECT_TRUE(this->tile.matrix().isApprox(lr_tile.matrix()));
 }

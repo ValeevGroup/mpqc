@@ -146,7 +146,7 @@ TYPED_TEST(TileOpsTest, FullSquareGemmInplace) {
 
     mat_type result = alpha * left.matrix() * right.matrix() + beta
                                                                * tile.matrix();
-    tile_ops::gemm(tile, left, right, alpha, beta);
+    tile = tile_ops::gemm(std::move(tile), left, right, alpha, beta);
 
     EXPECT_EQ(std::min(rows, cols), tile.rank());
     EXPECT_EQ(rows * cols, tile.size());
@@ -171,7 +171,7 @@ TYPED_TEST(TileOpsTest, FullMoreColsGemmInplace) {
 
     mat_type result = alpha * left.matrix() * right.matrix() + beta
                                                                * tile.matrix();
-    tile_ops::gemm(tile, left, right, alpha, beta);
+    tile = tile_ops::gemm(std::move(tile), left, right, alpha, beta);
 
     EXPECT_EQ(std::min(rows, cols), tile.rank());
     EXPECT_EQ(rows * cols, tile.size());
@@ -195,7 +195,7 @@ TYPED_TEST(TileOpsTest, FullMoreRowsGemmInplace) {
     double beta = 2.0;
 
     mat_type result = alpha * left.matrix() * right.matrix() + beta * tile.matrix();
-    tile_ops::gemm(tile, left, right, alpha, beta);
+    tile = tile_ops::gemm(std::move(tile), left, right, alpha, beta);
 
     EXPECT_EQ(std::min(rows, cols), tile.rank());
     EXPECT_EQ(rows * cols, tile.size());
@@ -217,14 +217,14 @@ TYPED_TEST(TileOpsTest, LowSquareAdd) {
 
     double beta = 3.0;
 
-    mat_type result = beta * left.matrixLR() + right.matrixLR();
+    mat_type result = beta * left.matrix() + right.matrix();
     auto tile = tile_ops::add(left, right, beta);
 
     EXPECT_EQ(rankA + rankB, tile.rank());
     EXPECT_EQ(rows * (rankA + rankB) + cols * (rankA + rankB), tile.size());
     EXPECT_EQ(cols, tile.Cols());
     EXPECT_EQ(rows, tile.Rows());
-    EXPECT_TRUE(tile.matrixLR().isApprox(result));
+    EXPECT_TRUE(tile.matrix().isApprox(result));
 }
 
 TYPED_TEST(TileOpsTest, LowSkinnyAdd) {
@@ -244,8 +244,8 @@ TYPED_TEST(TileOpsTest, LowSkinnyAdd) {
 
     double beta = 3.0;
 
-    mat_type result_tall = beta * left_tall.matrixLR() + right_tall.matrixLR();
-    mat_type result_wide = beta * left_wide.matrixLR() + right_wide.matrixLR();
+    mat_type result_tall = beta * left_tall.matrix() + right_tall.matrix();
+    mat_type result_wide = beta * left_wide.matrix() + right_wide.matrix();
     auto tile_tall = tile_ops::add(left_tall, right_tall, beta);
     auto tile_wide = tile_ops::add(left_wide, right_wide, beta);
 
@@ -254,14 +254,14 @@ TYPED_TEST(TileOpsTest, LowSkinnyAdd) {
               tile_tall.size());
     EXPECT_EQ(cols, tile_tall.Cols());
     EXPECT_EQ(rows, tile_tall.Rows());
-    EXPECT_TRUE(tile_tall.matrixLR().isApprox(result_tall));
+    EXPECT_TRUE(tile_tall.matrix().isApprox(result_tall));
 
     EXPECT_EQ(rankA + rankB, tile_wide.rank());
     EXPECT_EQ(rows * (rankA + rankB) + cols * (rankA + rankB),
               tile_wide.size());
     EXPECT_EQ(cols, tile_wide.Rows()); // Reversed for wide
     EXPECT_EQ(rows, tile_wide.Cols());
-    EXPECT_TRUE(tile_wide.matrixLR().isApprox(result_wide));
+    EXPECT_TRUE(tile_wide.matrix().isApprox(result_wide));
 }
 
 TYPED_TEST(TileOpsTest, LowSquareGemmSameRank) {
@@ -276,14 +276,14 @@ TYPED_TEST(TileOpsTest, LowSquareGemmSameRank) {
 
     double alpha = 3.0;
 
-    mat_type result = alpha * left.matrixLR() * right.matrixLR();
+    mat_type result = alpha * left.matrix() * right.matrix();
     auto tile = tile_ops::gemm(left, right, alpha);
 
     EXPECT_EQ(rank, tile.rank());
     EXPECT_EQ(rows * rank + rank * cols, tile.size());
     EXPECT_EQ(cols, tile.Cols());
     EXPECT_EQ(rows, tile.Rows());
-    EXPECT_TRUE(tile.matrixLR().isApprox(result));
+    EXPECT_TRUE(tile.matrix().isApprox(result));
 }
 
 TYPED_TEST(TileOpsTest, LowMoreColsGemmSameRank) {
@@ -299,14 +299,14 @@ TYPED_TEST(TileOpsTest, LowMoreColsGemmSameRank) {
 
     double alpha = 3.0;
 
-    mat_type result = alpha * left.matrixLR() * right.matrixLR();
+    mat_type result = alpha * left.matrix() * right.matrix();
     auto tile = tile_ops::gemm(left, right, alpha);
 
     EXPECT_EQ(rank, tile.rank());
     EXPECT_EQ(rows * rank + rank * cols, tile.size());
     EXPECT_EQ(cols, tile.Cols());
     EXPECT_EQ(rows, tile.Rows());
-    EXPECT_TRUE(tile.matrixLR().isApprox(result));
+    EXPECT_TRUE(tile.matrix().isApprox(result));
 }
 
 TYPED_TEST(TileOpsTest, LowMoreRowsGemmSameRank) {
@@ -322,14 +322,14 @@ TYPED_TEST(TileOpsTest, LowMoreRowsGemmSameRank) {
 
     double alpha = 3.0;
 
-    mat_type result = alpha * left.matrixLR() * right.matrixLR();
+    mat_type result = alpha * left.matrix() * right.matrix();
     auto tile = tile_ops::gemm(left, right, alpha);
 
     EXPECT_EQ(rank, tile.rank());
     EXPECT_EQ(rows * rank + rank * cols, tile.size());
     EXPECT_EQ(cols, tile.Cols());
     EXPECT_EQ(rows, tile.Rows());
-    EXPECT_TRUE(tile.matrixLR().isApprox(result));
+    EXPECT_TRUE(tile.matrix().isApprox(result));
 }
 
 TYPED_TEST(TileOpsTest, LowSquareGemmLeftLargerRank) {
@@ -345,7 +345,7 @@ TYPED_TEST(TileOpsTest, LowSquareGemmLeftLargerRank) {
 
     double alpha = 3.0;
 
-    mat_type result = alpha * left.matrixLR() * right.matrixLR();
+    mat_type result = alpha * left.matrix() * right.matrix();
     auto tile = tile_ops::gemm(left, right, alpha);
 
     auto out_rank = std::min(rank_left, rank_right);
@@ -354,7 +354,7 @@ TYPED_TEST(TileOpsTest, LowSquareGemmLeftLargerRank) {
     EXPECT_EQ(rows * out_rank + out_rank * cols, tile.size());
     EXPECT_EQ(cols, tile.Cols());
     EXPECT_EQ(rows, tile.Rows());
-    EXPECT_TRUE(tile.matrixLR().isApprox(result));
+    EXPECT_TRUE(tile.matrix().isApprox(result));
 }
 
 TYPED_TEST(TileOpsTest, LowMoreColsGemmLeftLargerRank) {
@@ -371,7 +371,7 @@ TYPED_TEST(TileOpsTest, LowMoreColsGemmLeftLargerRank) {
 
     double alpha = 3.0;
 
-    mat_type result = alpha * left.matrixLR() * right.matrixLR();
+    mat_type result = alpha * left.matrix() * right.matrix();
     auto tile = tile_ops::gemm(left, right, alpha);
 
     auto out_rank = std::min(rank_left, rank_right);
@@ -380,7 +380,7 @@ TYPED_TEST(TileOpsTest, LowMoreColsGemmLeftLargerRank) {
     EXPECT_EQ(rows * out_rank + out_rank * cols, tile.size());
     EXPECT_EQ(cols, tile.Cols());
     EXPECT_EQ(rows, tile.Rows());
-    EXPECT_TRUE(tile.matrixLR().isApprox(result));
+    EXPECT_TRUE(tile.matrix().isApprox(result));
 }
 
 TYPED_TEST(TileOpsTest, LowMoreRowsGemmLeftLargerRank) {
@@ -397,7 +397,7 @@ TYPED_TEST(TileOpsTest, LowMoreRowsGemmLeftLargerRank) {
 
     double alpha = 3.0;
 
-    mat_type result = alpha * left.matrixLR() * right.matrixLR();
+    mat_type result = alpha * left.matrix() * right.matrix();
     auto tile = tile_ops::gemm(left, right, alpha);
 
     auto out_rank = std::min(rank_left, rank_right);
@@ -406,7 +406,7 @@ TYPED_TEST(TileOpsTest, LowMoreRowsGemmLeftLargerRank) {
     EXPECT_EQ(rows * out_rank + out_rank * cols, tile.size());
     EXPECT_EQ(cols, tile.Cols());
     EXPECT_EQ(rows, tile.Rows());
-    EXPECT_TRUE(tile.matrixLR().isApprox(result));
+    EXPECT_TRUE(tile.matrix().isApprox(result));
 }
 
 TYPED_TEST(TileOpsTest, LowSquareGemmABLargerRankInPlace) {
@@ -425,8 +425,8 @@ TYPED_TEST(TileOpsTest, LowSquareGemmABLargerRankInPlace) {
     double alpha = 3.0;
     double beta = 2.0;
 
-    mat_type result = alpha * left.matrixLR() * right.matrixLR() + beta * tile.matrixLR();
-    tile_ops::gemm(tile, left, right, alpha, beta);
+    mat_type result = alpha * left.matrix() * right.matrix() + beta * tile.matrix();
+    tile = tile_ops::gemm(std::move(tile), left, right, alpha, beta);
 
     auto out_rank = tile_rank + std::min(rank_left, rank_right);
 
@@ -434,7 +434,7 @@ TYPED_TEST(TileOpsTest, LowSquareGemmABLargerRankInPlace) {
     EXPECT_EQ(rows * out_rank + out_rank * cols, tile.size());
     EXPECT_EQ(cols, tile.Cols());
     EXPECT_EQ(rows, tile.Rows());
-    EXPECT_TRUE(tile.matrixLR().isApprox(result));
+    EXPECT_TRUE(tile.matrix().isApprox(result));
 }
 
 TYPED_TEST(TileOpsTest, LowMoreColsGemmABLargerRankInPlace) {
@@ -454,8 +454,8 @@ TYPED_TEST(TileOpsTest, LowMoreColsGemmABLargerRankInPlace) {
     double alpha = 3.0;
     double beta = 2.0;
 
-    mat_type result = alpha * left.matrixLR() * right.matrixLR() + beta * tile.matrixLR();
-    tile_ops::gemm(tile, left, right, alpha, beta);
+    mat_type result = alpha * left.matrix() * right.matrix() + beta * tile.matrix();
+    tile = tile_ops::gemm(std::move(tile), left, right, alpha, beta);
 
     auto out_rank = tile_rank + std::min(rank_left, rank_right);
 
@@ -463,7 +463,7 @@ TYPED_TEST(TileOpsTest, LowMoreColsGemmABLargerRankInPlace) {
     EXPECT_EQ(rows * out_rank + out_rank * cols, tile.size());
     EXPECT_EQ(cols, tile.Cols());
     EXPECT_EQ(rows, tile.Rows());
-    EXPECT_TRUE(tile.matrixLR().isApprox(result));
+    EXPECT_TRUE(tile.matrix().isApprox(result));
 }
 
 TYPED_TEST(TileOpsTest, LowMoreRowsGemmABLargerRankInPlace) {
@@ -483,8 +483,8 @@ TYPED_TEST(TileOpsTest, LowMoreRowsGemmABLargerRankInPlace) {
     double alpha = 3.0;
     double beta = 2.0;
 
-    mat_type result = alpha * left.matrixLR() * right.matrixLR() + beta * tile.matrixLR();
-    tile_ops::gemm(tile, left, right, alpha, beta);
+    mat_type result = alpha * left.matrix() * right.matrix() + beta * tile.matrix();
+    tile = tile_ops::gemm(std::move(tile), left, right, alpha, beta);
 
     auto out_rank = tile_rank + std::min(rank_left, rank_right);
 
@@ -492,7 +492,7 @@ TYPED_TEST(TileOpsTest, LowMoreRowsGemmABLargerRankInPlace) {
     EXPECT_EQ(rows * out_rank + out_rank * cols, tile.size());
     EXPECT_EQ(cols, tile.Cols());
     EXPECT_EQ(rows, tile.Rows());
-    EXPECT_TRUE(tile.matrixLR().isApprox(result));
+    EXPECT_TRUE(tile.matrix().isApprox(result));
 }
 
 TYPED_TEST(TileOpsTest, LowSquareGemmRightLargerRank) {
@@ -508,7 +508,7 @@ TYPED_TEST(TileOpsTest, LowSquareGemmRightLargerRank) {
 
     double alpha = 3.0;
 
-    mat_type result = alpha * left.matrixLR() * right.matrixLR();
+    mat_type result = alpha * left.matrix() * right.matrix();
     auto tile = tile_ops::gemm(left, right, alpha);
 
     auto out_rank = std::min(rank_left, rank_right);
@@ -517,7 +517,7 @@ TYPED_TEST(TileOpsTest, LowSquareGemmRightLargerRank) {
     EXPECT_EQ(rows * out_rank + out_rank * cols, tile.size());
     EXPECT_EQ(cols, tile.Cols());
     EXPECT_EQ(rows, tile.Rows());
-    EXPECT_TRUE(tile.matrixLR().isApprox(result));
+    EXPECT_TRUE(tile.matrix().isApprox(result));
 }
 
 TYPED_TEST(TileOpsTest, LowMoreColsGemmRightLargerRank) {
@@ -534,7 +534,7 @@ TYPED_TEST(TileOpsTest, LowMoreColsGemmRightLargerRank) {
 
     double alpha = 3.0;
 
-    mat_type result = alpha * left.matrixLR() * right.matrixLR();
+    mat_type result = alpha * left.matrix() * right.matrix();
     auto tile = tile_ops::gemm(left, right, alpha);
 
     auto out_rank = std::min(rank_left, rank_right);
@@ -543,7 +543,7 @@ TYPED_TEST(TileOpsTest, LowMoreColsGemmRightLargerRank) {
     EXPECT_EQ(rows * out_rank + out_rank * cols, tile.size());
     EXPECT_EQ(cols, tile.Cols());
     EXPECT_EQ(rows, tile.Rows());
-    EXPECT_TRUE(tile.matrixLR().isApprox(result));
+    EXPECT_TRUE(tile.matrix().isApprox(result));
 }
 
 TYPED_TEST(TileOpsTest, LowMoreRowsGemmRightLargerRank) {
@@ -560,7 +560,7 @@ TYPED_TEST(TileOpsTest, LowMoreRowsGemmRightLargerRank) {
 
     double alpha = 3.0;
 
-    mat_type result = alpha * left.matrixLR() * right.matrixLR();
+    mat_type result = alpha * left.matrix() * right.matrix();
     auto tile = tile_ops::gemm(left, right, alpha);
 
     auto out_rank = std::min(rank_left, rank_right);
@@ -569,7 +569,7 @@ TYPED_TEST(TileOpsTest, LowMoreRowsGemmRightLargerRank) {
     EXPECT_EQ(rows * out_rank + out_rank * cols, tile.size());
     EXPECT_EQ(cols, tile.Cols());
     EXPECT_EQ(rows, tile.Rows());
-    EXPECT_TRUE(tile.matrixLR().isApprox(result));
+    EXPECT_TRUE(tile.matrix().isApprox(result));
 }
 
 TYPED_TEST(TileOpsTest, LowSquareGemmResultLargerRankInPlace) {
@@ -588,8 +588,8 @@ TYPED_TEST(TileOpsTest, LowSquareGemmResultLargerRankInPlace) {
     double alpha = 3.0;
     double beta = 2.0;
 
-    mat_type result = alpha * left.matrixLR() * right.matrixLR() + beta * tile.matrixLR();
-    tile_ops::gemm(tile, left, right, alpha, beta);
+    mat_type result = alpha * left.matrix() * right.matrix() + beta * tile.matrix();
+    tile = tile_ops::gemm(std::move(tile), left, right, alpha, beta);
 
     auto out_rank = tile_rank + std::min(rank_left, rank_right);
 
@@ -597,7 +597,7 @@ TYPED_TEST(TileOpsTest, LowSquareGemmResultLargerRankInPlace) {
     EXPECT_EQ(rows * out_rank + out_rank * cols, tile.size());
     EXPECT_EQ(cols, tile.Cols());
     EXPECT_EQ(rows, tile.Rows());
-    EXPECT_TRUE(tile.matrixLR().isApprox(result));
+    EXPECT_TRUE(tile.matrix().isApprox(result));
 }
 
 TYPED_TEST(TileOpsTest, LowMoreColsGemmResultLargerRankInPlace) {
@@ -617,8 +617,8 @@ TYPED_TEST(TileOpsTest, LowMoreColsGemmResultLargerRankInPlace) {
     double alpha = 3.0;
     double beta = 2.0;
 
-    mat_type result = alpha * left.matrixLR() * right.matrixLR() + beta * tile.matrixLR();
-    tile_ops::gemm(tile, left, right, alpha, beta);
+    mat_type result = alpha * left.matrix() * right.matrix() + beta * tile.matrix();
+    tile = tile_ops::gemm(std::move(tile), left, right, alpha, beta);
 
     auto out_rank = tile_rank + std::min(rank_left, rank_right);
 
@@ -626,7 +626,7 @@ TYPED_TEST(TileOpsTest, LowMoreColsGemmResultLargerRankInPlace) {
     EXPECT_EQ(rows * out_rank + out_rank * cols, tile.size());
     EXPECT_EQ(cols, tile.Cols());
     EXPECT_EQ(rows, tile.Rows());
-    EXPECT_TRUE(tile.matrixLR().isApprox(result));
+    EXPECT_TRUE(tile.matrix().isApprox(result));
 }
 
 TYPED_TEST(TileOpsTest, LowMoreRowsGemmResultLargerRankInPlace) {
@@ -646,8 +646,8 @@ TYPED_TEST(TileOpsTest, LowMoreRowsGemmResultLargerRankInPlace) {
     double alpha = 3.0;
     double beta = 2.0;
 
-    mat_type result = alpha * left.matrixLR() * right.matrixLR() + beta * tile.matrixLR();
-    tile_ops::gemm(tile, left, right, alpha, beta);
+    mat_type result = alpha * left.matrix() * right.matrix() + beta * tile.matrix();
+    tile = tile_ops::gemm(std::move(tile), left, right, alpha, beta);
 
     auto out_rank = tile_rank + std::min(rank_left, rank_right);
 
@@ -655,7 +655,7 @@ TYPED_TEST(TileOpsTest, LowMoreRowsGemmResultLargerRankInPlace) {
     EXPECT_EQ(rows * out_rank + out_rank * cols, tile.size());
     EXPECT_EQ(cols, tile.Cols());
     EXPECT_EQ(rows, tile.Rows());
-    EXPECT_TRUE(tile.matrixLR().isApprox(result));
+    EXPECT_TRUE(tile.matrix().isApprox(result));
 }
 
 TYPED_TEST(TileOpsTest, LowCompressSquare) {
@@ -667,7 +667,7 @@ TYPED_TEST(TileOpsTest, LowCompressSquare) {
 
     using mat_type = typename LowRankTile<TypeParam>::template Matrix
         <TypeParam>;
-    mat_type result = tile.matrixLR();
+    mat_type result = tile.matrix();
 
     tile_ops::compress(tile, 1e-07);
 
@@ -675,7 +675,7 @@ TYPED_TEST(TileOpsTest, LowCompressSquare) {
     EXPECT_EQ(rows * rank + rank * cols, tile.size());
     EXPECT_EQ(cols, tile.Cols());
     EXPECT_EQ(rows, tile.Rows());
-    EXPECT_TRUE(tile.matrixLR().isApprox(result));
+    EXPECT_TRUE(tile.matrix().isApprox(result));
 }
 
 TYPED_TEST(TileOpsTest, LowCompressRightLarger) {
@@ -687,14 +687,14 @@ TYPED_TEST(TileOpsTest, LowCompressRightLarger) {
 
     using mat_type = typename LowRankTile<TypeParam>::template Matrix
         <TypeParam>;
-    mat_type result = tile.matrixLR();
+    mat_type result = tile.matrix();
     tile_ops::compress(tile, 1e-07);
 
     EXPECT_GE(rank, tile.rank());
     EXPECT_EQ(rows * rank + rank * cols, tile.size());
     EXPECT_EQ(cols, tile.Cols());
     EXPECT_EQ(rows, tile.Rows());
-    EXPECT_TRUE(tile.matrixLR().isApprox(result));
+    EXPECT_TRUE(tile.matrix().isApprox(result));
 }
 
 TYPED_TEST(TileOpsTest, LowCompressLeftLarger) {
@@ -706,12 +706,12 @@ TYPED_TEST(TileOpsTest, LowCompressLeftLarger) {
 
     using mat_type = typename LowRankTile<TypeParam>::template Matrix
         <TypeParam>;
-    mat_type result = tile.matrixLR();
+    mat_type result = tile.matrix();
     tile_ops::compress(tile, 1e-07);
 
     EXPECT_GE(rank, tile.rank());
     EXPECT_EQ(rows * rank + rank * cols, tile.size());
     EXPECT_EQ(cols, tile.Cols());
     EXPECT_EQ(rows, tile.Rows());
-    EXPECT_TRUE(tile.matrixLR().isApprox(result));
+    EXPECT_TRUE(tile.matrix().isApprox(result));
 }

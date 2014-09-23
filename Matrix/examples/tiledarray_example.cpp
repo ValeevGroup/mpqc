@@ -161,15 +161,8 @@ make_lr_array(madness::World &world, TiledArray::TiledRange &trange,
     for (auto i = A.begin(); i != A.end(); ++i) {
         if (!A.is_zero(i.index())) {
 
-<<<<<<< HEAD
-        auto norm = mat_block.lpNorm<2>();
-        if (norm < 1e-15) {
-            std::cout << "Tile is empty." << std::endl;
-        }
-=======
             auto range = trange.make_tile_range(*i);
             decltype(A)::value_type tile{};
->>>>>>> Attempting to get tiledarray example with sparse policy working.
 
             Eigen::MatrixXd mat_block
                 = mat.block(range.start()[0], range.start()[1], range.size()[0],

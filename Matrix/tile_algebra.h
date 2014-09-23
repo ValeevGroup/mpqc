@@ -231,8 +231,8 @@ bool inline Decompose_Matrix(
 
     dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, &work, &LWORK, &INFO);
     LWORK = work;
-    double *W = new double[LWORK];
-    dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, W, &LWORK, &INFO);
+    std::unique_ptr<double[]> W{new double[LWORK]};
+    dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, W.get(), &LWORK, &INFO);
 
     Eigen::VectorXd const &Rvalues = input.diagonal();
     const double thresh = std::max(cut * std::abs(Rvalues[0]), 1e-16);
@@ -246,7 +246,6 @@ bool inline Decompose_Matrix(
     }
 
     if (rank > double(full_rank) / 2.0) {
-        delete[] W;
         return true; // Input is full rank
     }
 
@@ -257,10 +256,8 @@ bool inline Decompose_Matrix(
                         <Eigen::Upper>()) * P.transpose();
 
     // Form Q.
-    dorgqr_(&M, &rank, &rank, input.data(), &M, Tau, W, &LWORK, &INFO);
+    dorgqr_(&M, &rank, &rank, input.data(), &M, Tau, W.get(), &LWORK, &INFO);
     L = input.leftCols(rank);
-
-    delete[] W;
 
     return false; // Input is not full rank
 }

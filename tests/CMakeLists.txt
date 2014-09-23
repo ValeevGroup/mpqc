@@ -9,6 +9,7 @@ set(test_sources
   tile_variant_test.cpp
   tile_ops_test.cpp
   tile_pimpl_test.cpp
+  tile_mutations_test.cpp
   all_same_test.cpp
 )
 

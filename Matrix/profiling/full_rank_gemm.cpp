@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
     time = madness::wall_time() - time;
 
     double time2 = madness::wall_time();
-    binary_mutations::gemm(C,fA,fB,1.0,1.0);
+    ternary_mutations::gemm(C,fA,fB,1.0,1.0);
     time2 = madness::wall_time() - time2;
 
     std::cout << "Time for " << dim << "x" << dim

@@ -68,9 +68,10 @@ int main(int argc, char **argv) {
     std::cout << "\n";
 
     world.gop.fence();
-
     auto lr_time = madness::wall_time();
+
     LR_S("i,j") = LR_S("i,k") * LR_S("k,j");
+
     world.gop.fence();
     lr_time = madness::wall_time() - lr_time;
     std::cout << "LR time was " << lr_time << " s\n";
@@ -158,8 +159,8 @@ make_lr_array(madness::World &world, TiledArray::TiledRange &trange,
             = algebra::Decompose_Matrix(mat_block, L, R, 1e-07);
 
         auto norm = mat_block.lpNorm<2>();
-        if(norm < 1e-15){
-          std::cout << "Tile is empty." << std::endl;
+        if (norm < 1e-15) {
+            std::cout << "Tile is empty." << std::endl;
         }
 
         if (!tile_is_full_rank && norm > 1e-15) {

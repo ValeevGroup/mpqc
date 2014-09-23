@@ -3,6 +3,7 @@
 
 #include "tile_variant.h"
 #include "tile_ops.h"
+#include "tile_mutations.h"
 #include "../include/tiledarray.h"
 #include <memory>
 
@@ -103,7 +104,7 @@ class TilePimpl {
 
         return TilePimpl(
             std::move(result_range),
-            tile_->apply_binary_op(right.tile(), tile_ops::gemm_AB(factor)),
+            tile_->apply_binary_op(right.tile(), binary_ops::gemm_functor(factor)),
             std::max(cut(), right.cut()));
     }
 
@@ -124,7 +125,7 @@ class TilePimpl {
         }
 
         tile_->apply_binary_mutation(left.tile(), right.tile(),
-                                     tile_ops::gemm_inplace(factor));
+                                     binary_mutations::gemm_functor(factor));
 
         return *this;
     }
@@ -156,6 +157,8 @@ class TilePimpl {
         return TilePimpl();
     }
 
+    void compress(){
+    }
 
     template <typename Archive>
     void serialize(Archive &ar) {}

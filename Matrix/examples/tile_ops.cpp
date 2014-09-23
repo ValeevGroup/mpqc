@@ -1,4 +1,5 @@
 #include "../tile_ops.h"
+#include "../tile_mutations.h"
 #include "../../tests/create_low_rank_array.h"
 #include <ostream>
 
@@ -16,7 +17,7 @@ int main(int argc, char *argv[]) {
                 FullRankTile<double> A{Eigen::MatrixXd::Random(i, k)};
                 FullRankTile<double> B{Eigen::MatrixXd::Random(k, j)};
                 double time = madness::wall_time();
-                auto C = tile_ops::gemm(A, B, 1.0);
+                auto C = binary_ops::gemm(A, B, 1.0);
                 time = madness::wall_time() - time;
                 out_file << time << std::endl;
             }
@@ -35,7 +36,7 @@ int main(int argc, char *argv[]) {
                 FullRankTile<double> A{Eigen::MatrixXd::Random(i, k)};
                 FullRankTile<double> B{Eigen::MatrixXd::Random(k, j)};
                 double time = madness::wall_time();
-                tile_ops::gemm(C, A, B, 1.0, 1.0);
+                binary_mutations::gemm(C, A, B, 1.0, 1.0);
                 time = madness::wall_time() - time;
                 out_file << time << std::endl;
             }
@@ -54,7 +55,7 @@ int main(int argc, char *argv[]) {
             LowRankTile<double> A{matrix::Random(i, r), matrix::Random(r, i)};
             LowRankTile<double> B{matrix::Random(i, r), matrix::Random(r, i)};
             double time = madness::wall_time();
-            auto C = tile_ops::gemm(A, B, 1.0);
+            auto C = binary_ops::gemm(A, B, 1.0);
             time = madness::wall_time() - time;
             out_file << time << std::endl;
         }
@@ -71,7 +72,7 @@ int main(int argc, char *argv[]) {
             LowRankTile<double> B{matrix::Random(i, r), matrix::Random(r, i)};
             LowRankTile<double> C{matrix::Random(i, r), matrix::Random(r, i)};
             double time = madness::wall_time();
-            tile_ops::gemm(C, A, B, 1.0, 1.0);
+            binary_mutations::gemm(C, A, B, 1.0, 1.0);
             time = madness::wall_time() - time;
             out_file << time << std::endl;
         }
@@ -95,8 +96,8 @@ int main(int argc, char *argv[]) {
                     LowRankTile
                         <double> C{matrix::Random(i, r), matrix::Random(r, j)};
                     double time = madness::wall_time();
-                    tile_ops::gemm(C, A, B, 1.0, 1.0);
-                    tile_ops::compress(C, 1e-07);
+                    binary_mutations::gemm(C, A, B, 1.0, 1.0);
+                    unary_mutations::compress(1e-07)(C);
                     time = madness::wall_time() - time;
                     out_file << time << std::endl;
                 }

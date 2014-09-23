@@ -1,6 +1,7 @@
 #include "../matrix/full_rank_tile.h"
 #include "../matrix/low_rank_tile.h"
 #include "../matrix/tile_ops.h"
+#include "../matrix/tile_mutations.h"
 #include "create_low_rank_array.h"
 #include "gtest.h"
 
@@ -25,7 +26,7 @@ TYPED_TEST(TileOpsTest, FullSquareAdd) {
     double beta = 3.0;
 
     mat_type result = beta * left.matrix() + right.matrix();
-    auto tile = tile_ops::add(left, right, beta);
+    auto tile = binary_ops::add(left, right, beta);
 
     EXPECT_EQ(std::min(rows, cols), tile.rank());
     EXPECT_EQ(rows * cols, tile.size());
@@ -50,8 +51,8 @@ TYPED_TEST(TileOpsTest, FullSkinnyAdd) {
 
     mat_type result_tall = beta * left_tall.matrix() + right_tall.matrix();
     mat_type result_wide = beta * left_wide.matrix() + right_wide.matrix();
-    auto tile_tall = tile_ops::add(left_tall, right_tall, beta);
-    auto tile_wide = tile_ops::add(left_wide, right_wide, beta);
+    auto tile_tall = binary_ops::add(left_tall, right_tall, beta);
+    auto tile_wide = binary_ops::add(left_wide, right_wide, beta);
 
     EXPECT_EQ(std::min(rows, cols), tile_tall.rank());
     EXPECT_EQ(rows * cols, tile_tall.size());
@@ -78,7 +79,7 @@ TYPED_TEST(TileOpsTest, FullSquareGemm) {
     double alpha = 3.0;
 
     mat_type result = alpha * left.matrix() * right.matrix();
-    auto tile = tile_ops::gemm(left, right, alpha);
+    auto tile = binary_ops::gemm(left, right, alpha);
 
     EXPECT_EQ(std::min(rows, cols), tile.rank());
     EXPECT_EQ(rows * cols, tile.size());
@@ -100,7 +101,7 @@ TYPED_TEST(TileOpsTest, FullMoreColsGemm) {
     double alpha = 3.0;
 
     mat_type result = alpha * left.matrix() * right.matrix();
-    auto tile = tile_ops::gemm(left, right, alpha);
+    auto tile = binary_ops::gemm(left, right, alpha);
 
     EXPECT_EQ(std::min(rows, cols), tile.rank());
     EXPECT_EQ(rows * cols, tile.size());
@@ -122,7 +123,7 @@ TYPED_TEST(TileOpsTest, FullMoreRowsGemm) {
     double alpha = 3.0;
 
     mat_type result = alpha * left.matrix() * right.matrix();
-    auto tile = tile_ops::gemm(left, right, alpha);
+    auto tile = binary_ops::gemm(left, right, alpha);
 
     EXPECT_EQ(std::min(rows, cols), tile.rank());
     EXPECT_EQ(rows * cols, tile.size());
@@ -146,7 +147,7 @@ TYPED_TEST(TileOpsTest, FullSquareGemmInplace) {
 
     mat_type result = alpha * left.matrix() * right.matrix() + beta
                                                                * tile.matrix();
-    tile = tile_ops::gemm(std::move(tile), left, right, alpha, beta);
+    tile = binary_mutations::gemm(std::move(tile), left, right, alpha, beta);
 
     EXPECT_EQ(std::min(rows, cols), tile.rank());
     EXPECT_EQ(rows * cols, tile.size());
@@ -171,7 +172,7 @@ TYPED_TEST(TileOpsTest, FullMoreColsGemmInplace) {
 
     mat_type result = alpha * left.matrix() * right.matrix() + beta
                                                                * tile.matrix();
-    tile = tile_ops::gemm(std::move(tile), left, right, alpha, beta);
+    tile = binary_mutations::gemm(std::move(tile), left, right, alpha, beta);
 
     EXPECT_EQ(std::min(rows, cols), tile.rank());
     EXPECT_EQ(rows * cols, tile.size());
@@ -195,7 +196,7 @@ TYPED_TEST(TileOpsTest, FullMoreRowsGemmInplace) {
     double beta = 2.0;
 
     mat_type result = alpha * left.matrix() * right.matrix() + beta * tile.matrix();
-    tile = tile_ops::gemm(std::move(tile), left, right, alpha, beta);
+    tile = binary_mutations::gemm(std::move(tile), left, right, alpha, beta);
 
     EXPECT_EQ(std::min(rows, cols), tile.rank());
     EXPECT_EQ(rows * cols, tile.size());
@@ -218,7 +219,7 @@ TYPED_TEST(TileOpsTest, LowSquareAdd) {
     double beta = 3.0;
 
     mat_type result = beta * left.matrix() + right.matrix();
-    auto tile = tile_ops::add(left, right, beta);
+    auto tile = binary_ops::add(left, right, beta);
 
     EXPECT_EQ(rankA + rankB, tile.rank());
     EXPECT_EQ(rows * (rankA + rankB) + cols * (rankA + rankB), tile.size());
@@ -246,8 +247,8 @@ TYPED_TEST(TileOpsTest, LowSkinnyAdd) {
 
     mat_type result_tall = beta * left_tall.matrix() + right_tall.matrix();
     mat_type result_wide = beta * left_wide.matrix() + right_wide.matrix();
-    auto tile_tall = tile_ops::add(left_tall, right_tall, beta);
-    auto tile_wide = tile_ops::add(left_wide, right_wide, beta);
+    auto tile_tall = binary_ops::add(left_tall, right_tall, beta);
+    auto tile_wide = binary_ops::add(left_wide, right_wide, beta);
 
     EXPECT_EQ(rankA + rankB, tile_tall.rank());
     EXPECT_EQ(rows * (rankA + rankB) + cols * (rankA + rankB),
@@ -277,7 +278,7 @@ TYPED_TEST(TileOpsTest, LowSquareGemmSameRank) {
     double alpha = 3.0;
 
     mat_type result = alpha * left.matrix() * right.matrix();
-    auto tile = tile_ops::gemm(left, right, alpha);
+    auto tile = binary_ops::gemm(left, right, alpha);
 
     EXPECT_EQ(rank, tile.rank());
     EXPECT_EQ(rows * rank + rank * cols, tile.size());
@@ -300,7 +301,7 @@ TYPED_TEST(TileOpsTest, LowMoreColsGemmSameRank) {
     double alpha = 3.0;
 
     mat_type result = alpha * left.matrix() * right.matrix();
-    auto tile = tile_ops::gemm(left, right, alpha);
+    auto tile = binary_ops::gemm(left, right, alpha);
 
     EXPECT_EQ(rank, tile.rank());
     EXPECT_EQ(rows * rank + rank * cols, tile.size());
@@ -323,7 +324,7 @@ TYPED_TEST(TileOpsTest, LowMoreRowsGemmSameRank) {
     double alpha = 3.0;
 
     mat_type result = alpha * left.matrix() * right.matrix();
-    auto tile = tile_ops::gemm(left, right, alpha);
+    auto tile = binary_ops::gemm(left, right, alpha);
 
     EXPECT_EQ(rank, tile.rank());
     EXPECT_EQ(rows * rank + rank * cols, tile.size());
@@ -346,7 +347,7 @@ TYPED_TEST(TileOpsTest, LowSquareGemmLeftLargerRank) {
     double alpha = 3.0;
 
     mat_type result = alpha * left.matrix() * right.matrix();
-    auto tile = tile_ops::gemm(left, right, alpha);
+    auto tile = binary_ops::gemm(left, right, alpha);
 
     auto out_rank = std::min(rank_left, rank_right);
 
@@ -372,7 +373,7 @@ TYPED_TEST(TileOpsTest, LowMoreColsGemmLeftLargerRank) {
     double alpha = 3.0;
 
     mat_type result = alpha * left.matrix() * right.matrix();
-    auto tile = tile_ops::gemm(left, right, alpha);
+    auto tile = binary_ops::gemm(left, right, alpha);
 
     auto out_rank = std::min(rank_left, rank_right);
 
@@ -398,7 +399,7 @@ TYPED_TEST(TileOpsTest, LowMoreRowsGemmLeftLargerRank) {
     double alpha = 3.0;
 
     mat_type result = alpha * left.matrix() * right.matrix();
-    auto tile = tile_ops::gemm(left, right, alpha);
+    auto tile = binary_ops::gemm(left, right, alpha);
 
     auto out_rank = std::min(rank_left, rank_right);
 
@@ -426,7 +427,7 @@ TYPED_TEST(TileOpsTest, LowSquareGemmABLargerRankInPlace) {
     double beta = 2.0;
 
     mat_type result = alpha * left.matrix() * right.matrix() + beta * tile.matrix();
-    tile = tile_ops::gemm(std::move(tile), left, right, alpha, beta);
+    tile = binary_mutations::gemm(std::move(tile), left, right, alpha, beta);
 
     auto out_rank = tile_rank + std::min(rank_left, rank_right);
 
@@ -455,7 +456,7 @@ TYPED_TEST(TileOpsTest, LowMoreColsGemmABLargerRankInPlace) {
     double beta = 2.0;
 
     mat_type result = alpha * left.matrix() * right.matrix() + beta * tile.matrix();
-    tile = tile_ops::gemm(std::move(tile), left, right, alpha, beta);
+    tile = binary_mutations::gemm(std::move(tile), left, right, alpha, beta);
 
     auto out_rank = tile_rank + std::min(rank_left, rank_right);
 
@@ -484,7 +485,7 @@ TYPED_TEST(TileOpsTest, LowMoreRowsGemmABLargerRankInPlace) {
     double beta = 2.0;
 
     mat_type result = alpha * left.matrix() * right.matrix() + beta * tile.matrix();
-    tile = tile_ops::gemm(std::move(tile), left, right, alpha, beta);
+    tile = binary_mutations::gemm(std::move(tile), left, right, alpha, beta);
 
     auto out_rank = tile_rank + std::min(rank_left, rank_right);
 
@@ -509,7 +510,7 @@ TYPED_TEST(TileOpsTest, LowSquareGemmRightLargerRank) {
     double alpha = 3.0;
 
     mat_type result = alpha * left.matrix() * right.matrix();
-    auto tile = tile_ops::gemm(left, right, alpha);
+    auto tile = binary_ops::gemm(left, right, alpha);
 
     auto out_rank = std::min(rank_left, rank_right);
 
@@ -535,7 +536,7 @@ TYPED_TEST(TileOpsTest, LowMoreColsGemmRightLargerRank) {
     double alpha = 3.0;
 
     mat_type result = alpha * left.matrix() * right.matrix();
-    auto tile = tile_ops::gemm(left, right, alpha);
+    auto tile = binary_ops::gemm(left, right, alpha);
 
     auto out_rank = std::min(rank_left, rank_right);
 
@@ -561,7 +562,7 @@ TYPED_TEST(TileOpsTest, LowMoreRowsGemmRightLargerRank) {
     double alpha = 3.0;
 
     mat_type result = alpha * left.matrix() * right.matrix();
-    auto tile = tile_ops::gemm(left, right, alpha);
+    auto tile = binary_ops::gemm(left, right, alpha);
 
     auto out_rank = std::min(rank_left, rank_right);
 
@@ -589,7 +590,7 @@ TYPED_TEST(TileOpsTest, LowSquareGemmResultLargerRankInPlace) {
     double beta = 2.0;
 
     mat_type result = alpha * left.matrix() * right.matrix() + beta * tile.matrix();
-    tile = tile_ops::gemm(std::move(tile), left, right, alpha, beta);
+    tile = binary_mutations::gemm(std::move(tile), left, right, alpha, beta);
 
     auto out_rank = tile_rank + std::min(rank_left, rank_right);
 
@@ -618,7 +619,7 @@ TYPED_TEST(TileOpsTest, LowMoreColsGemmResultLargerRankInPlace) {
     double beta = 2.0;
 
     mat_type result = alpha * left.matrix() * right.matrix() + beta * tile.matrix();
-    tile = tile_ops::gemm(std::move(tile), left, right, alpha, beta);
+    tile = binary_mutations::gemm(std::move(tile), left, right, alpha, beta);
 
     auto out_rank = tile_rank + std::min(rank_left, rank_right);
 
@@ -647,7 +648,7 @@ TYPED_TEST(TileOpsTest, LowMoreRowsGemmResultLargerRankInPlace) {
     double beta = 2.0;
 
     mat_type result = alpha * left.matrix() * right.matrix() + beta * tile.matrix();
-    tile = tile_ops::gemm(std::move(tile), left, right, alpha, beta);
+    tile = binary_mutations::gemm(std::move(tile), left, right, alpha, beta);
 
     auto out_rank = tile_rank + std::min(rank_left, rank_right);
 
@@ -669,7 +670,7 @@ TYPED_TEST(TileOpsTest, LowCompressSquare) {
         <TypeParam>;
     mat_type result = tile.matrix();
 
-    tile_ops::compress(tile, 1e-07);
+    unary_mutations::compress(1e-07)(tile);
 
     EXPECT_GE(rank, tile.rank());
     EXPECT_EQ(rows * rank + rank * cols, tile.size());
@@ -688,7 +689,7 @@ TYPED_TEST(TileOpsTest, LowCompressRightLarger) {
     using mat_type = typename LowRankTile<TypeParam>::template Matrix
         <TypeParam>;
     mat_type result = tile.matrix();
-    tile_ops::compress(tile, 1e-07);
+    unary_mutations::compress(1e-07)(tile);
 
     EXPECT_GE(rank, tile.rank());
     EXPECT_EQ(rows * rank + rank * cols, tile.size());
@@ -707,7 +708,7 @@ TYPED_TEST(TileOpsTest, LowCompressLeftLarger) {
     using mat_type = typename LowRankTile<TypeParam>::template Matrix
         <TypeParam>;
     mat_type result = tile.matrix();
-    tile_ops::compress(tile, 1e-07);
+    unary_mutations::compress(1e-07)(tile);
 
     EXPECT_GE(rank, tile.rank());
     EXPECT_EQ(rows * rank + rank * cols, tile.size());

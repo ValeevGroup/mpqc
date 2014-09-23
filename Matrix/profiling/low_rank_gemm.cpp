@@ -1,5 +1,6 @@
 #include "../low_rank_tile.h"
 #include "../tile_ops.h"
+#include "../tile_mutations.h"
 #include <iostream>
 #include <string>
 
@@ -34,11 +35,11 @@ int main(int argc, char *argv[]) {
     LowRankTile<double> lrB{std::move(A), std::move(B)};
 
     double time = madness::wall_time();
-    auto C = tile_ops::gemm(lrA, lrB, 1.0);
+    auto C = binary_ops::gemm(lrA, lrB, 1.0);
     time = madness::wall_time() - time;
 
     double time2 = madness::wall_time();
-    tile_ops::gemm(C,lrA,lrB,1.0,1.0);
+    binary_mutations::gemm(C,lrA,lrB,1.0,1.0);
     time2 = madness::wall_time() - time2;
 
     std::cout << "Time for " << dim << "x" << dim

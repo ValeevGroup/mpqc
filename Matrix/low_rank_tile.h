@@ -4,16 +4,14 @@
 #include "../include/eigen.h"
 #include "tile_algebra.h"
 
-template <typename T> // Foward declare for compress
-class LowRankTile;
-
-namespace tile_ops { // Foward decleration of friend compress
-  template<typename U>
-  LowRankTile<U> &compress(LowRankTile<U> &tile, double cut);
+namespace unary_mutations { // Foward decleration of friend compress
+struct compress;
 }
 
 template <typename T>
 class LowRankTile {
+    friend struct unary_mutations::compress;
+
   public:
     template <typename U>
     using Matrix = Eigen::Matrix<U, Eigen::Dynamic, Eigen::Dynamic>;
@@ -42,17 +40,17 @@ class LowRankTile {
     }
 
     LowRankTile(const Matrix<T> &L, const Matrix<T> &R)
-        : L_(L.rows(), L.cols()), R_(R.rows(),R.cols()), rank_(L.cols()) {
+        : L_(L.rows(), L.cols()), R_(R.rows(), R.cols()), rank_(L.cols()) {
         assert(L_.cols() == R_.rows());
         assert(L_.size() != 0 && R_.size() != 0);
         const auto Lsize = L.size();
         const auto Rsize = R.size();
-        std::copy(L.data(),L.data() + Lsize, L_.data());
-        std::copy(R.data(),R.data() + Rsize, R_.data());
-
+        std::copy(L.data(), L.data() + Lsize, L_.data());
+        std::copy(R.data(), R.data() + Rsize, R_.data());
     }
-    LowRankTile(Matrix<T> &&L, Matrix<T> &&R)
-    noexcept : L_(), R_(), rank_(L.cols()) {
+    LowRankTile(Matrix<T> &&L, Matrix<T> &&R) noexcept : L_(),
+                                                         R_(),
+                                                         rank_(L.cols()) {
         L_.swap(L);
         R_.swap(R);
         assert(L_.cols() == R_.rows());
@@ -70,12 +68,8 @@ class LowRankTile {
 
     inline Matrix<T> const &matrixL() const { return L_; }
     inline Matrix<T> const &matrixR() const { return R_; }
-    inline Matrix<T> matrix() const {
-        return algebra::cblas_gemm(L_, R_, 1.0);
-    }
+    inline Matrix<T> matrix() const { return algebra::cblas_gemm(L_, R_, 1.0); }
 
-    template <typename U>
-    friend LowRankTile<U> &tile_ops::compress(LowRankTile<U> &tile, double cut);
 
   private:
     Matrix<T> L_;

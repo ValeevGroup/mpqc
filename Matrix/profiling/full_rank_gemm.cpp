@@ -1,5 +1,6 @@
 #include "../full_rank_tile.h"
 #include "../tile_ops.h"
+#include "../tile_mutations.h"
 #include <iostream>
 #include <string>
 
@@ -27,11 +28,11 @@ int main(int argc, char *argv[]) {
     FullRankTile<double> fB{std::move(A)};
 
     double time = madness::wall_time();
-    auto C = tile_ops::gemm(fA, fB, 1.0);
+    auto C = binary_ops::gemm(fA, fB, 1.0);
     time = madness::wall_time() - time;
 
     double time2 = madness::wall_time();
-    tile_ops::gemm(C,fA,fB,1.0,1.0);
+    binary_mutations::gemm(C,fA,fB,1.0,1.0);
     time2 = madness::wall_time() - time2;
 
     std::cout << "Time for " << dim << "x" << dim

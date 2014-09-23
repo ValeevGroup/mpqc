@@ -159,10 +159,6 @@ make_lr_array(madness::World &world, TiledArray::TiledRange &trange,
             = algebra::Decompose_Matrix(mat_block, L, R, 1e-07);
 
         auto norm = mat_block.lpNorm<2>();
-        if (norm < 1e-15) {
-            std::cout << "Tile is empty." << std::endl;
-        }
-
         if (!tile_is_full_rank && norm > 1e-15) {
             tile = TilePimpl<double>{std::move(range),
                                      TileVariant<double>{LowRankTile<double>{

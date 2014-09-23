@@ -171,7 +171,7 @@ LowRankTile<T> gemm(LowRankTile<T> result, const FullRankTile<T> &left,
     const auto rows = result.Rows();
     const auto cols = result.Cols();
 
-    const auto rank_A = left.rank();
+    const auto rank_A = right.rank();
     const auto rank_C = result.rank();
     const auto rank_out = rank_C + rank_A;
 

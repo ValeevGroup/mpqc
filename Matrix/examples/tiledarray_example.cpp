@@ -50,8 +50,9 @@ int main(int argc, char **argv) {
 
     TiledArray::TiledRange trange(blocking2.begin(), blocking2.end());
 
-    TiledArray::Array<double, 2> S = TiledArray::eigen_to_array
-        <TiledArray::Array<double, 2>>(world, trange, ES);
+    TiledArray::Array<double, 2> S
+        = TiledArray::eigen_to_array<TiledArray::Array<double, 2>>(world,
+                                                                   trange, ES);
 
     TiledArray::Array<double, 2, TilePimpl<double>> LR_S
         = make_lr_array(world, trange, ES);
@@ -149,8 +150,28 @@ make_lr_array(madness::World &world, TiledArray::TiledRange &trange,
             = mat.block(range.start()[0], range.start()[1], range.size()[0],
                         range.size()[1]);
 
-        TiledArray::Array<double, 2, TilePimpl<double>>::value_type tile(
-            range, TileVariant<double>(FullRankTile<double>(std::move(mat_block))));
+        TiledArray::Array<double, 2, TilePimpl<double>>::value_type tile{};
+
+        Eigen::MatrixXd L, R;
+
+        auto tile_is_full_rank
+            = algebra::Decompose_Matrix(mat_block, L, R, 1e-07);
+
+        auto norm = mat_block.lpNorm<2>();
+        if(norm < 1e-15){
+          std::cout << "Tile is empty." << std::endl;
+        }
+
+        if (!tile_is_full_rank && norm > 1e-15) {
+            tile = TilePimpl<double>{std::move(range),
+                                     TileVariant<double>{LowRankTile<double>{
+                                         std::move(L), std::move(R)}},
+                                     1e-07};
+        } else {
+            tile = TilePimpl<double>{
+                std::move(range),
+                TileVariant<double>{FullRankTile<double>{mat_block}}, 1e-07};
+        }
 
         *i = tile;
     }
@@ -184,8 +205,8 @@ bool check_equal(const TiledArray::Array<double, 2, T> &Full,
             if (inner_same == false) {
                 std::cout << "\n\tTile = (" << fit.index()[0] << ","
                           << fit.index()[1] << ")"
-                          << "\n\t\t2 norm of diff = " << (Fmat - LRmat).lpNorm
-                                                          <2>() << std::endl;
+                          << "\n\t\t2 norm of diff = "
+                          << (Fmat - LRmat).lpNorm<2>() << std::endl;
                 same = inner_same;
             }
         }

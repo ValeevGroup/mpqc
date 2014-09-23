@@ -31,12 +31,8 @@ class TilePimpl {
     // Just range ctor
     TilePimpl(TiledArray::Range r) : tile_(), range_(std::move(r)) {}
 
-    TilePimpl(TiledArray::Range &&r) : tile_(), range_(std::move(r)) {}
 
     TilePimpl(TiledArray::Range r, double cut)
-        : tile_(), range_(std::move(r)), cut_(cut) {}
-
-    TilePimpl(TiledArray::Range &&r, double cut)
         : tile_(), range_(std::move(r)), cut_(cut) {}
 
     // TileVariant ctors
@@ -76,6 +72,23 @@ class TilePimpl {
     TiledArray::Range range_;
     double cut_ = 1e-7;
 
+    // May convert the tile to a full rank tile, but doesn't have to.
+    void convert_to_full(TileVariant<T> &result, TileVariant<T> const &left,
+                         TileVariant<T> const &right) {
+        const auto rows
+            = result.apply_unary_op([](auto const &t) { return t.Rows(); });
+        const auto cols
+            = result.apply_unary_op([](auto const &t) { return t.Cols(); });
+
+        const auto rank_C = result.rank();
+        const auto rank_AB = std::min(left.rank(), right.rank());
+        const auto out_rank = rank_C + rank_AB;
+
+        if (double(out_rank) > 0.5 * std::min(rows, cols)) {
+            result = TileVariant<T>{result.matrix()};
+        }
+    }
+
   public:
     /*
      * Tile operations
@@ -88,23 +101,30 @@ class TilePimpl {
         //                    <range_type>(range(), right.range());
         auto result_range = range();
 
-        return TilePimpl(std::move(result_range),
-                         tile_->apply_binary_op(
-                             right.tile(), tile_ops::gemm_AB(factor)),
-                         std::max(cut(), right.cut()));
+        return TilePimpl(
+            std::move(result_range),
+            tile_->apply_binary_op(right.tile(), tile_ops::gemm_AB(factor)),
+            std::max(cut(), right.cut()));
     }
 
     TilePimpl &gemm(TilePimpl const &left, TilePimpl const &right,
                     numeric_type factor,
                     TiledArray::math::GemmHelper const &gemm_config) {
 
-        // TODO complete this section.
+        // TODO_TCC complete this section.
         // auto result_range = gemm_config.make_result_range
         //                    <range_type>(range(), right.range());
         auto result_range = range();
 
+        // Will convert to full when gemm grows the rank to much.
+        if (tile_->tag() == TileVariant<T>::LowRank
+            && (left.tile().tag() == TileVariant<T>::LowRank
+                || right.tile().tag() == TileVariant<T>::LowRank)) {
+            convert_to_full(*tile_, left.tile(), right.tile());
+        }
+
         tile_->apply_binary_mutation(left.tile(), right.tile(),
-                                  tile_ops::gemm_inplace(factor));
+                                     tile_ops::gemm_inplace(factor));
 
         return *this;
     }
@@ -120,14 +140,12 @@ class TilePimpl {
         return TilePimpl();
     }
 
-    TilePimpl
-    mult(TilePimpl const &right) const {
+    TilePimpl mult(TilePimpl const &right) const {
         assert(false);
         return TilePimpl();
     }
 
-    TilePimpl &
-    mult_to(TilePimpl const &right) {
+    TilePimpl &mult_to(TilePimpl const &right) {
         assert(false);
         return *this;
     }

@@ -92,7 +92,7 @@ class TileVariant {
     }
 
     template <typename Func>
-    TileVariant &apply_binary_mutation(const TileVariant &left,
+    TileVariant &apply_ternary_mutation(const TileVariant &left,
                                        const TileVariant &right, Func op) {
 
         switch ((tag() << 2) | (left.tag() << 1) | right.tag()) {
@@ -143,6 +143,31 @@ class TileVariant {
     }
 
     template <typename Func>
+    TileVariant &apply_binary_mutation(TileVariant const &right, Func op) {
+        switch ((tag() << 1) | right.tag()) {
+        case 0: // Low Low
+            assert(tag() == LowRank && right.tag() == LowRank);
+            *this = op(std::move(lrtile_), right.lrtile());
+            return *this;
+        case 1: // Low Full
+            assert(tag() == LowRank && right.tag() == FullRank);
+            *this = op(std::move(lrtile_), right.ftile());
+            return *this;
+        case 2: // Full Low
+            assert(tag() == FullRank && right.tag() == LowRank);
+            *this = op(std::move(ftile_), right.lrtile());
+            return *this;
+        case 3: // Full Full
+            assert(tag() == FullRank && right.tag() == FullRank);
+            *this = op(std::move(ftile_), right.ftile());
+            return *this;
+        default: // Should never be reached
+            assert(false);
+            return *this;
+        }
+    }
+
+    template <typename Func>
     auto apply_binary_op(const TileVariant &right,
                          Func op) const -> decltype(op(lrtile(), lrtile())) {
 
@@ -183,11 +208,6 @@ class TileVariant {
 
     template <typename Func>
     auto apply_unary_op(Func op) const -> decltype(op(lrtile())) {
-        static_assert(
-            tcc::all_same<decltype(op(lrtile())), decltype(op(ftile()))>::value,
-            "Unary Transform op must return the same type for every "
-            "tile type.");
-
         switch (tag()) {
         case LowRank:
             return op(lrtile());

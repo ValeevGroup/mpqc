@@ -171,12 +171,6 @@ class TileVariant {
 
     template <typename Func>
     TileVariant &apply_unary_mutation(Func op) {
-        static_assert(
-            tcc::all_same<decltype(op(lrtile())), decltype(op(ftile())),
-                          decltype(*this)>::value,
-            "Return types for a mutation must be TileVariants.");
-
-
         switch (tag()) {
         case LowRank:
             *this = op(std::move(lrtile_));

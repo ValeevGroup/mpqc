@@ -97,27 +97,43 @@ class TileVariant {
 
         switch ((tag() << 2) | (left.tag() << 1) | right.tag()) {
         case 0: // Low Low Low
+            assert(tag() == LowRank && left.tag() == LowRank
+                   && right.tag() == LowRank);
             *this = op(std::move(lrtile_), left.lrtile(), right.lrtile());
             return *this;
         case 1: // Low Low Full
+            assert(tag() == LowRank && left.tag() == LowRank
+                   && right.tag() == FullRank);
             *this = op(std::move(lrtile_), left.lrtile(), right.ftile());
             return *this;
         case 2: // Low Full Low
+            assert(tag() == LowRank && left.tag() == FullRank
+                   && right.tag() == LowRank);
             *this = op(std::move(lrtile_), left.ftile(), right.lrtile());
             return *this;
-        case 3: // Full Low Low
-            *this = op(std::move(ftile_), left.lrtile(), right.lrtile());
-            return *this;
-        case 4: // Low Full Full
+        case 3: // Low Full Full
+            assert(tag() == LowRank && left.tag() == FullRank
+                   && right.tag() == FullRank);
             *this = op(std::move(lrtile_), left.ftile(), right.ftile());
             return *this;
+        case 4: // Full Low Low
+            assert(tag() == FullRank && left.tag() == LowRank
+                   && right.tag() == LowRank);
+            *this = op(std::move(ftile_), left.lrtile(), right.lrtile());
+            return *this;
         case 5: // Full Low Full
+            assert(tag() == FullRank && left.tag() == LowRank
+                   && right.tag() == FullRank);
             *this = op(std::move(ftile_), left.lrtile(), right.ftile());
             return *this;
         case 6: // Full Full Low
+            assert(tag() == FullRank && left.tag() == FullRank
+                   && right.tag() == LowRank);
             *this = op(std::move(ftile_), left.ftile(), right.lrtile());
             return *this;
         case 7: // Full Full Full
+            assert(tag() == FullRank && left.tag() == FullRank
+                   && right.tag() == FullRank);
             *this = op(std::move(ftile_), left.ftile(), right.ftile());
             return *this;
         default: // Should never be reached

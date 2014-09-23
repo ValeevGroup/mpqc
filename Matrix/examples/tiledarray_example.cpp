@@ -23,7 +23,7 @@ bool check_equal(const TiledArray::Array<double, 2, T> &Full,
 int main(int argc, char **argv) {
     std::string Sfile;
     unsigned long blocksize;
-    if (argc < 2) {
+    if (argc < 3) {
         std::cout << "Please provide an input files for the array and a "
                      "blocksize\n";
         return 0;

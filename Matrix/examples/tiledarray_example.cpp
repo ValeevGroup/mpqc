@@ -11,7 +11,7 @@
 
 Eigen::MatrixXd read_matrix(const std::string &filename);
 
-TiledArray::Array<double, 2, TilePimpl<double>>
+TiledArray::Array<double, 2, TilePimpl<double>, TiledArray::SparsePolicy>
 make_lr_array(madness::World &, TiledArray::TiledRange &,
               const Eigen::MatrixXd &);
 
@@ -54,18 +54,18 @@ int main(int argc, char **argv) {
         = TiledArray::eigen_to_array<TiledArray::Array<double, 2>>(world,
                                                                    trange, ES);
 
-    TiledArray::Array<double, 2, TilePimpl<double>> LR_S
-        = make_lr_array(world, trange, ES);
+    TiledArray::Array<double, 2, TilePimpl<double>, TiledArray::SparsePolicy>
+        LR_S = make_lr_array(world, trange, ES);
 
 
-    std::cout << "\nChecking arrays for approximate equality. . . . ";
-    bool passed_check = check_equal(S, LR_S);
-    if (!passed_check) {
-        std::cout << "Arrays were not equal!";
-    } else {
-        std::cout << "Ok!";
-    }
-    std::cout << "\n";
+    //   std::cout << "\nChecking arrays for approximate equality. . . . ";
+    //   //bool passed_check = check_equal(S, LR_S);
+    //   if (!passed_check) {
+    //       std::cout << "Arrays were not equal!";
+    //   } else {
+    //       std::cout << "Ok!";
+    //   }
+    //   std::cout << "\n";
 
     world.gop.fence();
 
@@ -81,14 +81,14 @@ int main(int argc, char **argv) {
     full_time = madness::wall_time() - full_time;
     std::cout << "full time was " << full_time << " s\n";
 
-    std::cout << "\nChecking arrays for approximate equality. . . . ";
-    passed_check = check_equal(S, LR_S);
-    if (!passed_check) {
-        std::cout << "Arrays were not equal!";
-    } else {
-        std::cout << "Ok!";
-    }
-    std::cout << "\n";
+    //  std::cout << "\nChecking arrays for approximate equality. . . . ";
+    // passed_check = check_equal(S, LR_S);
+    //  if (!passed_check) {
+    //      std::cout << "Arrays were not equal!";
+    //  } else {
+    //      std::cout << "Ok!";
+    //  }
+    //  std::cout << "\n";
 
 
     world.gop.fence();
@@ -138,42 +138,55 @@ Eigen::MatrixXd read_matrix(const std::string &filename) {
     return out_mat;
 }
 
-TiledArray::Array<double, 2, TilePimpl<double>>
+TiledArray::Array<double, 2, TilePimpl<double>, TiledArray::SparsePolicy>
 make_lr_array(madness::World &world, TiledArray::TiledRange &trange,
               const Eigen::MatrixXd &mat) {
-    TiledArray::Array<double, 2, TilePimpl<double>> A(world, trange);
-    auto i = A.begin();
-    auto end = A.end();
-    for (; i != end; ++i) {
-        auto range = trange.make_tile_range(i.ordinal());
-        Eigen::MatrixXd mat_block
-            = mat.block(range.start()[0], range.start()[1], range.size()[0],
-                        range.size()[1]);
-
-        TiledArray::Array<double, 2, TilePimpl<double>>::value_type tile{};
-
-        Eigen::MatrixXd L, R;
-
-        auto tile_is_full_rank
-            = algebra::Decompose_Matrix(mat_block, L, R, 1e-07);
-
-        auto norm = mat_block.lpNorm<2>();
-        if(norm < 1e-15){
-          std::cout << "Tile is empty." << std::endl;
+    // Shape tensor
+    TiledArray::Tensor<float> shape_tensor(trange.tiles(), 0);
+    for (auto i = 0ul; i != trange.tiles().volume(); ++i) {
+        auto range = trange.make_tile_range(i);
+        auto norm = mat.block(range.start()[0], range.start()[1],
+                              range.size()[0], range.size()[1]).lpNorm<2>();
+        if (norm > 1e-10) {
+            shape_tensor.data()[i] = 1.0;
         }
+    }
 
-        if (!tile_is_full_rank && norm > 1e-15) {
-            tile = TilePimpl<double>{std::move(range),
-                                     TileVariant<double>{LowRankTile<double>{
-                                         std::move(L), std::move(R)}},
-                                     1e-07};
-        } else {
-            tile = TilePimpl<double>{
-                std::move(range),
-                TileVariant<double>{FullRankTile<double>{mat_block}}, 1e-07};
+    TiledArray::SparseShape<float> shape(world, shape_tensor, trange);
+
+    TiledArray::Array<double, 2, TilePimpl<double>, TiledArray::SparsePolicy> A(
+        world, trange, shape);
+
+    for (auto i = A.begin(); i != A.end(); ++i) {
+        if (!A.is_zero(i.index())) {
+
+            auto range = trange.make_tile_range(*i);
+            decltype(A)::value_type tile{};
+
+            Eigen::MatrixXd mat_block
+                = mat.block(range.start()[0], range.start()[1], range.size()[0],
+                            range.size()[1]);
+
+            Eigen::MatrixXd L, R;
+
+            auto tile_is_full_rank
+                = algebra::Decompose_Matrix(mat_block, L, R, 1e-07);
+
+            if (!tile_is_full_rank) {
+                tile = TilePimpl<double>{
+                    std::move(range), TileVariant<double>{LowRankTile<double>{
+                                          std::move(L), std::move(R)}},
+                    1e-07};
+            } else {
+                tile = TilePimpl<double>{
+                    std::move(range),
+                    TileVariant<double>{FullRankTile<double>{mat_block}},
+                    1e-07};
+            }
+
+
+            *i = tile;
         }
-
-        *i = tile;
     }
     return A;
 }

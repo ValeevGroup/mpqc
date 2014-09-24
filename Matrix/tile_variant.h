@@ -131,13 +131,10 @@ class TileVariant {
                    && right.tag() == LowRank);
             *this = op(std::move(ftile_), left.ftile(), right.lrtile());
             return *this;
-        case 7: // Full Full Full
+        default: // Full Full Full
             assert(tag() == FullRank && left.tag() == FullRank
                    && right.tag() == FullRank);
             *this = op(std::move(ftile_), left.ftile(), right.ftile());
-            return *this;
-        default: // Should never be reached
-            assert(false);
             return *this;
         }
     }
@@ -157,12 +154,9 @@ class TileVariant {
             assert(tag() == FullRank && right.tag() == LowRank);
             *this = op(std::move(ftile_), right.lrtile());
             return *this;
-        case 3: // Full Full
+        default: // Full Full
             assert(tag() == FullRank && right.tag() == FullRank);
             *this = op(std::move(ftile_), right.ftile());
-            return *this;
-        default: // Should never be reached
-            assert(false);
             return *this;
         }
     }
@@ -186,11 +180,8 @@ class TileVariant {
             return op(lrtile(), right.ftile());
         case 2: // Full Low
             return op(ftile(), right.lrtile());
-        case 3: // Full Full
+        default: // Full Full
             return op(ftile(), right.ftile());
-        default: // Should never be reached
-            assert(false);
-            return decltype(op(ftile(), ftile())){};
         }
     }
 

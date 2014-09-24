@@ -82,9 +82,9 @@ class TilePimpl {
                    TiledArray::math::GemmHelper const &gemm_config) const {
 
         // TODO_TCC complete this section.
-        // auto result_range = gemm_config.make_result_range
-        //                    <range_type>(range(), right.range());
-        auto result_range = range();
+        auto result_range
+            = gemm_config.make_result_range<range_type>(range(), right.range());
+        //  auto result_range = range();
 
         return TilePimpl(std::move(result_range),
                          tile_->apply_binary_op(
@@ -97,9 +97,9 @@ class TilePimpl {
                     TiledArray::math::GemmHelper const &gemm_config) {
 
         // TODO_TCC complete this section.
-        // auto result_range = gemm_config.make_result_range
-        //                    <range_type>(range(), right.range());
-        auto result_range = range();
+        range_
+            = gemm_config.make_result_range<range_type>(range(), right.range());
+        // auto result_range = range();
 
         // Will convert to full when gemm grows the rank to much.
         if (tile_->tag() == TileVariant<T>::LowRank
@@ -108,8 +108,8 @@ class TilePimpl {
             convert_to_full(*tile_, left.tile(), right.tile());
         }
 
-        tile_->apply_binary_mutation(left.tile(), right.tile(),
-                                     binary_mutations::gemm_functor(factor));
+        tile_->apply_ternary_mutation(left.tile(), right.tile(),
+                                      ternary_mutations::gemm_functor(factor));
 
         return *this;
     }
@@ -142,8 +142,57 @@ class TilePimpl {
     }
 
     void compress() {
-      tile_->apply_unary_mutation(unary_mutations::compress(cut()));
+        tile_->apply_unary_mutation(unary_mutations::compress_functor(cut()));
     }
+
+    TilePimpl scale(const T factor, TiledArray::Permutation const &perm) const {
+        assert(false);
+    }
+
+    TilePimpl scale(const T factor) const {
+        return TilePimpl{
+            range(), tile_->apply_unary_op(unary_ops::scale_functor(factor)),
+            cut()};
+    }
+
+    TilePimpl &scale_to(const T factor) {
+        tile_->apply_unary_mutation(unary_mutations::scale_functor(factor));
+        return *this;
+    }
+
+    TilePimpl &subt_to(TilePimpl const &right) {
+        tile_->apply_binary_mutation(right.tile(),
+                                     binary_mutations::subt_functor(1.0));
+        return *this;
+    }
+
+    // TODO_TCC figure out what is going on with needing factor second.
+    TilePimpl &subt_to(TilePimpl const &right, T factor) {
+        convert_to_full(*tile_, right.tile());
+        tile_->apply_binary_mutation(right.tile(),
+                                     binary_mutations::subt_functor(1.0));
+        tile_->apply_unary_mutation(unary_mutations::scale_functor(factor));
+        return *this;
+    }
+
+
+    TilePimpl
+    subt(TilePimpl const &right, TiledArray::Permutation const &perm) const {
+        assert(false);
+    }
+
+    TilePimpl subt(TilePimpl const &right) const {
+        return TilePimpl{
+            range(),
+            tile_->apply_binary_op(right.tile(), binary_ops::subt_functor(1.0)),
+            std::max(cut(), right.cut())};
+    }
+
+    TilePimpl neg(TiledArray::Permutation const &perm) const { assert(false); }
+    TilePimpl neg() const { assert(false); }
+
+    TilePimpl &neg_to() { assert(false); }
+
 
     template <typename Archive>
     void serialize(Archive &ar) {}
@@ -152,23 +201,22 @@ class TilePimpl {
     /*
      *  Utility Functions
      */
+    template <typename First, typename Second, typename... Rest>
+    unsigned long
+    mutation_rank(First first, Second second, Rest... rest) const {
+        return first + std::min({second, rest...});
+    }
+
     // May convert the tile to a full rank tile, but doesn't have to.
-    void convert_to_full(TileVariant<T> &result, TileVariant<T> const &left,
-                         TileVariant<T> const &right) {
-        const auto rows
-            = result.apply_unary_op([](auto const &t) { return t.Rows(); });
-        const auto cols
-            = result.apply_unary_op([](auto const &t) { return t.Cols(); });
+    template <typename... Rest>
+    void convert_to_full(TileVariant<T> &result, Rest... rest) const {
+        auto get_rank = [&](TileVariant<T> const &t) { return t.rank(); };
+        const auto out_rank = mutation_rank(result.rank(), get_rank(rest)...);
 
-        const auto rank_C = result.rank();
-        const auto rank_AB = std::min(left.rank(), right.rank());
-        const auto out_rank = rank_C + rank_AB;
-
-        if (double(out_rank) > 0.5 * std::min(rows, cols)) {
+        if (double(out_rank) > 0.5 * result.full_rank()) {
             result = TileVariant<T>{result.matrix()};
         }
     }
-
 };
 
 #endif // TCC_MATRIX_TILE_PIMPLE_H

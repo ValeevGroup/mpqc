@@ -6,10 +6,48 @@
 
 
 namespace unary_mutations {
-struct compress {
+
+template <typename T>
+FullRankTile<T> scale(FullRankTile<T> t, T factor) {
+    t.matrix() *= factor;
+    return t;
+}
+
+template <typename T>
+LowRankTile<T> scale(LowRankTile<T> t, T factor) {
+    t.matrixL() *= factor;
+    return t;
+}
+
+struct scale_functor {
+    double factor = 1.0;
+    scale_functor(double s) : factor(s) {}
+
+    template <typename T>
+    TileVariant<T> operator()(FullRankTile<T> t) {
+        return TileVariant<T>{scale(std::move(t), factor)};
+    }
+
+    template <typename T>
+    TileVariant<T> operator()(LowRankTile<T> t) {
+        return TileVariant<T>{scale(std::move(t), factor)};
+    }
+};
+
+
+template <typename T>
+void compress(LowRankTile<T> &t, double cut) {
+    if (t.matrixL().size() < t.matrixR().size()) {
+        algebra::CompressLeft(t.matrixL(), t.matrixR(), cut);
+    } else {
+        algebra::CompressRight(t.matrixL(), t.matrixR(), cut);
+    }
+}
+
+struct compress_functor {
     double cut = 1e-7;
-    compress() = default;
-    compress(double c) : cut(c) {}
+    compress_functor() = default;
+    compress_functor(double c) : cut(c) {}
 
     template <typename T>
     TileVariant<T> operator()(FullRankTile<T> t) const {
@@ -20,22 +58,11 @@ struct compress {
         } else {
             return TileVariant<T>{std::move(t)};
         }
-
     }
 
     template <typename T>
     TileVariant<T> operator()(LowRankTile<T> t) const {
-        assert(t.L_.cols() == t.R_.rows());
-
-        if (t.matrixL().size() < t.matrixR().size()) {
-            algebra::CompressLeft(t.L_, t.R_, cut);
-        } else {
-            algebra::CompressRight(t.L_, t.R_, cut);
-        }
-
-        assert(t.L_.cols() == t.R_.rows());
-        t.rank_ = t.L_.cols();
-
+        compress(t, cut);
         return TileVariant<T>{std::move(t)};
     }
 };
@@ -43,6 +70,66 @@ struct compress {
 } // namespace unary mutations
 
 namespace binary_mutations {
+
+template <typename T>
+FullRankTile<T>
+subt(FullRankTile<T> left, FullRankTile<T> const &right, double factor) {
+    left.matrix() -= factor * right.matrix();
+    return left;
+}
+
+template <typename T>
+FullRankTile<T>
+subt(FullRankTile<T> left, LowRankTile<T> const &right, double factor) {
+    left.matrix() -= factor * right.matrix();
+    return left;
+}
+
+template <typename T>
+FullRankTile<T>
+subt(LowRankTile<T> left, FullRankTile<T> const &right, double factor) {
+    return FullRankTile<T>{left.matrix() - factor * right.matrix()};
+}
+
+template <typename T>
+LowRankTile<T>
+subt(LowRankTile<T> left, LowRankTile<T> const &right, double factor) {
+    const auto rows = left.Rows();
+    const auto cols = left.Cols();
+    const auto rank_out = left.rank() + right.rank();
+
+    using matrix = typename LowRankTile<T>::template Matrix<T>;
+
+    auto L = matrix{rows, rank_out};
+    L.leftCols(left.rank()) = left.matrixL();
+    L.rightCols(right.rank()) = -factor * right.matrixL();
+
+    auto R = matrix{rank_out, cols};
+    R.topRows(left.rank()) = left.matrixR();
+    R.bottomRows(right.rank()) = right.matrixR();
+
+    left.matrixL().swap(L);
+    left.matrixR().swap(R);
+
+    return left;
+}
+
+struct subt_functor {
+    double factor = 1.0;
+    subt_functor(double f) : factor{f} {}
+
+    template <typename Result, typename Right>
+    TileVariant<typename Result::scaler_type>
+    operator()(Result r, Right const &right) {
+        return TileVariant<typename Result::scaler_type>{
+            subt(std::move(r), right, factor)};
+    }
+};
+
+} // namespace binary_mutations
+
+namespace ternary_mutations {
+
 template <typename T>
 FullRankTile<T> gemm(FullRankTile<T> result, const FullRankTile<T> &left,
                      const FullRankTile<T> &right, double alpha, double beta) {
@@ -205,10 +292,10 @@ struct gemm_functor {
     TileVariant<typename Result::scaler_type>
     operator()(Result result, Left const &left, Right const &right) const {
         return TileVariant<typename Result::scaler_type>{
-            gemm(result, left, right, alpha, beta)};
+            gemm(std::move(result), left, right, alpha, beta)};
     }
 };
 
-} // namespace binary_muations
+} // namespace ternary_muations
 
 #endif // TCC_MATRIX_TILE_MUTATIONS_H

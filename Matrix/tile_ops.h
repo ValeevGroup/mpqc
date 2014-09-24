@@ -6,6 +6,34 @@
 #include "tile_algebra.h"
 #include "tile_variant.h"
 
+namespace unary_ops {
+template <typename T>
+FullRankTile<T> scale(FullRankTile<T> const &t, T factor) {
+    return FullRankTile<T>{factor * t.matrix()};
+}
+
+template <typename T>
+LowRankTile<T> scale(LowRankTile<T> const &t, T factor) {
+    return LowRankTile<T>{factor * t.matrixL(), t.matrixR()};
+}
+
+struct scale_functor {
+    double factor = 1.0;
+    scale_functor(double f) : factor{f} {}
+
+    template <typename T>
+    TileVariant<T> operator()(FullRankTile<T> const &t) {
+        return TileVariant<T>{scale(t, factor)};
+    }
+
+    template <typename T>
+    TileVariant<T> operator()(LowRankTile<T> const &t) {
+        return TileVariant<T>{scale(t, factor)};
+    }
+};
+
+} // namespace unary_ops
+
 namespace binary_ops {
 
 template <typename T>
@@ -68,19 +96,32 @@ struct gemm_functor {
     template <typename Left, typename Right>
     TileVariant<typename Left::scaler_type>
     operator()(Left const &left, Right const &right) const {
-        return TileVariant<typename Left::scaler_type>{gemm(left, right, alpha)};
+        return TileVariant<typename Left::scaler_type>{
+            gemm(left, right, alpha)};
     }
 };
 
 template <typename T>
 FullRankTile<T>
-add(const FullRankTile<T> &left, const FullRankTile<T> &right, double beta) {
+add(FullRankTile<T> const &left, FullRankTile<T> const &right, double beta) {
+    return FullRankTile<T>{beta * left.matrix() + right.matrix()};
+}
+
+template <typename T>
+FullRankTile<T>
+add(FullRankTile<T> const &left, LowRankTile<T> const &right, double beta) {
+    return FullRankTile<T>{beta * left.matrix() + right.matrix()};
+}
+
+template <typename T>
+FullRankTile<T>
+add(LowRankTile<T> const &left, FullRankTile<T> const &right, double beta) {
     return FullRankTile<T>{beta * left.matrix() + right.matrix()};
 }
 
 template <typename T>
 LowRankTile<T>
-add(const LowRankTile<T> &left, const LowRankTile<T> &right, double beta) {
+add(LowRankTile<T> const &left, LowRankTile<T> const &right, double beta) {
     assert(left.Rows() == right.Rows());
     assert(left.Cols() == right.Cols());
 
@@ -100,6 +141,69 @@ add(const LowRankTile<T> &left, const LowRankTile<T> &right, double beta) {
 
     return LowRankTile<T>{std::move(L), std::move(R)};
 }
+
+struct add_functor {
+    double beta = 1.0;
+    add_functor(double b) : beta(b) {}
+
+    template <typename Left, typename Right>
+    TileVariant<typename Left::scaler_type>
+    operator()(Left const &left, Right const &right) const {
+        return TileVariant<typename Left::scaler_type>{add(left, right, beta)};
+    }
+};
+
+template <typename T>
+FullRankTile<T>
+subt(FullRankTile<T> const &left, FullRankTile<T> const &right, double beta) {
+    return FullRankTile<T>{beta * left.matrix() - right.matrix()};
+}
+
+template <typename T>
+FullRankTile<T>
+subt(FullRankTile<T> const &left, LowRankTile<T> const &right, double beta) {
+    return FullRankTile<T>{beta * left.matrix() - right.matrix()};
+}
+
+template <typename T>
+FullRankTile<T>
+subt(LowRankTile<T> const &left, FullRankTile<T> const &right, double beta) {
+    return FullRankTile<T>{beta * left.matrix() - right.matrix()};
+}
+
+template <typename T>
+LowRankTile<T>
+subt(LowRankTile<T> const &left, LowRankTile<T> const &right, double beta) {
+    assert(left.Rows() == right.Rows());
+    assert(left.Cols() == right.Cols());
+
+    const auto rows = left.Rows();
+    const auto cols = left.Cols();
+    const auto rank_out = left.rank() + right.rank();
+
+    using matrix = typename LowRankTile<T>::template Matrix<T>;
+
+    auto L = matrix{rows, rank_out};
+    L.leftCols(left.rank()) = beta * left.matrixL();
+    L.rightCols(right.rank()) = -right.matrixL();
+
+    auto R = matrix{rank_out, cols};
+    R.topRows(left.rank()) = left.matrixR();
+    R.bottomRows(right.rank()) = right.matrixR();
+
+    return LowRankTile<T>{std::move(L), std::move(R)};
+}
+
+struct subt_functor {
+    double beta = 1.0;
+    subt_functor(double b) : beta(b) {}
+
+    template <typename Left, typename Right>
+    TileVariant<typename Left::scaler_type>
+    operator()(Left const &left, Right const &right) const {
+        return TileVariant<typename Left::scaler_type>{subt(left, right, beta)};
+    }
+};
 
 } // namespace binary_ops
 

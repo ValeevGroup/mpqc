@@ -3,7 +3,6 @@
 
 #include "low_rank_tile.h"
 #include "full_rank_tile.h"
-#include "../include/tcc_all_same.h"
 #include <cstdint>
 
 template <typename T>
@@ -130,7 +129,7 @@ class TileVariant {
 
     template <typename Func>
     auto apply_binary_op(const TileVariant &right,
-                         Func op) const -> decltype(op(lrtile(), lrtile())) {
+                         Func op) const -> decltype(op(lrtile(), lrtile())) const {
         switch ((tag() << 1) | right.tag()) {
         case LowLow:
             return op(lrtile(), right.lrtile());
@@ -145,7 +144,7 @@ class TileVariant {
 
 
     template <typename Func>
-    auto apply_unary_op(Func op) const -> decltype(op(lrtile())) {
+    auto apply_unary_op(Func op) const -> decltype(op(lrtile())) const {
         if (tag() == LowRank) {
             return op(lrtile());
         } else {
@@ -256,31 +255,28 @@ class TileVariant {
         FullFullLow = 6
     };
 
-    constexpr void static_check_of_switch_branching() const {
-        // Check binary switch
-        static_assert((LowRank << 1 | LowRank) == LowLow,
-                      "Low Low switch is incorrect");
-        static_assert((LowRank << 1 | FullRank) == LowFull,
-                      "Low Full switch is incorrect");
-        static_assert((FullRank << 1 | LowRank) == FullLow,
-                      "Full Low switch is incorrect");
+    static_assert((LowRank << 1 | LowRank) == LowLow,
+                  "Low Low switch is incorrect");
+    static_assert((LowRank << 1 | FullRank) == LowFull,
+                  "Low Full switch is incorrect");
+    static_assert((FullRank << 1 | LowRank) == FullLow,
+                  "Full Low switch is incorrect");
 
-        // Check ternary switch
-        static_assert((LowRank << 2 | LowRank << 1 | LowRank) == LowLowLow,
-                      "Low Low Low switch is incorrect");
-        static_assert((LowRank << 2 | LowRank << 1 | FullRank) == LowLowFull,
-                      "Low Low Full switch is incorrect");
-        static_assert((LowRank << 2 | FullRank << 1 | LowRank) == LowFullLow,
-                      "Low Full Low switch is incorrect");
-        static_assert((LowRank << 2 | FullRank << 1 | FullRank) == LowFullFull,
-                      "Low Full Full switch is incorrect");
-        static_assert((FullRank << 2 | LowRank << 1 | LowRank) == FullLowLow,
-                      "Full Low Low switch is incorrect");
-        static_assert((FullRank << 2 | LowRank << 1 | FullRank) == FullLowFull,
-                      "Full Low Full switch is incorrect");
-        static_assert((FullRank << 2 | FullRank << 1 | LowRank) == FullFullLow,
-                      "Full Full Low switch is incorrect");
-    }
+    // Check ternary switch
+    static_assert((LowRank << 2 | LowRank << 1 | LowRank) == LowLowLow,
+                  "Low Low Low switch is incorrect");
+    static_assert((LowRank << 2 | LowRank << 1 | FullRank) == LowLowFull,
+                  "Low Low Full switch is incorrect");
+    static_assert((LowRank << 2 | FullRank << 1 | LowRank) == LowFullLow,
+                  "Low Full Low switch is incorrect");
+    static_assert((LowRank << 2 | FullRank << 1 | FullRank) == LowFullFull,
+                  "Low Full Full switch is incorrect");
+    static_assert((FullRank << 2 | LowRank << 1 | LowRank) == FullLowLow,
+                  "Full Low Low switch is incorrect");
+    static_assert((FullRank << 2 | LowRank << 1 | FullRank) == FullLowFull,
+                  "Full Low Full switch is incorrect");
+    static_assert((FullRank << 2 | FullRank << 1 | LowRank) == FullFullLow,
+                  "Full Full Low switch is incorrect");
 };
 
 #endif // TTC_MATRIX_TILE_VARIANT_H

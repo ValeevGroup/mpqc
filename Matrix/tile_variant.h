@@ -19,15 +19,6 @@ class TileVariant {
     }
     ~TileVariant() { destroy_tile(); }
 
-    void destroy_tile() noexcept {
-        if (tag_ == LowRank) {
-            lrtile_.~LowRankTile<T>();
-        } else {
-            ftile_.~FullRankTile<T>();
-        }
-    }
-
-
     TileVariant &operator=(TileVariant const &t) {
         if (tag_ == t.tag()) {
             if (tag_ == LowRank) {
@@ -58,11 +49,11 @@ class TileVariant {
         return *this;
     }
 
-    explicit TileVariant(const LowRankTile<T> &l) : tag_(LowRank), lrtile_(l) {}
+    explicit TileVariant(LowRankTile<T> const &l) : tag_(LowRank), lrtile_(l) {}
     explicit TileVariant(LowRankTile<T> &&l) noexcept : tag_(LowRank),
                                                         lrtile_(std::move(l)) {}
 
-    explicit TileVariant(const FullRankTile<T> &f)
+    explicit TileVariant(FullRankTile<T> const &f)
         : tag_(FullRank), ftile_(f) {}
     explicit TileVariant(FullRankTile<T> &&f) noexcept : tag_(FullRank),
                                                          ftile_(std::move(f)) {}
@@ -240,6 +231,15 @@ class TileVariant {
             new (&lrtile_) LowRankTile<T>{std::move(t.lrtile_)};
         } else {
             new (&ftile_) FullRankTile<T>{std::move(t.ftile_)};
+        }
+    }
+
+    // Calls destructors of union members
+    void destroy_tile() noexcept {
+        if (tag_ == LowRank) {
+            lrtile_.~LowRankTile<T>();
+        } else {
+            ftile_.~FullRankTile<T>();
         }
     }
 

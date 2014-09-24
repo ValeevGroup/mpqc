@@ -148,20 +148,22 @@ make_lr_array(madness::World &world, TiledArray::TiledRange &trange,
         auto range = trange.make_tile_range(i);
         auto norm = mat.block(range.start()[0], range.start()[1],
                               range.size()[0], range.size()[1]).lpNorm<2>();
+        std::cout << "norm of tile(" << i <<") is " << norm << std::endl;
         if (norm > 1e-10) {
             shape_tensor.data()[i] = 1.0;
         }
     }
+    std::cout << shape_tensor << std::endl;
 
     TiledArray::SparseShape<float> shape(world, shape_tensor, trange);
 
     TiledArray::Array<double, 2, TilePimpl<double>, TiledArray::SparsePolicy> A(
-        world, trange, shape);
+        world, trange, shape.begin(), shape.end());
 
     for (auto i = A.begin(); i != A.end(); ++i) {
-        if (!A.is_zero(i.index())) {
-
-            auto range = trange.make_tile_range(*i);
+        if (!A.is_zero(i.ordinal())) {
+            std::cout << "Array tile " << i.ordinal() << " isn't zero " << std::endl;
+            auto range = trange.make_tile_range(i.ordinal());
             decltype(A)::value_type tile{};
 
             Eigen::MatrixXd mat_block
@@ -171,9 +173,11 @@ make_lr_array(madness::World &world, TiledArray::TiledRange &trange,
             Eigen::MatrixXd L, R;
 
             auto tile_is_full_rank
-                = algebra::Decompose_Matrix(mat_block, L, R, 1e-07);
+                = algebra::Decompose_Matrix(mat_block, L, R, 1e-12);
 
-            if (!tile_is_full_rank) {
+            auto norm = mat_block.lpNorm<2>();
+
+            if (!tile_is_full_rank && norm >= 1e-10) {
                 tile = TilePimpl<double>{
                     std::move(range), TileVariant<double>{LowRankTile<double>{
                                           std::move(L), std::move(R)}},
@@ -184,7 +188,6 @@ make_lr_array(madness::World &world, TiledArray::TiledRange &trange,
                     TileVariant<double>{FullRankTile<double>{mat_block}},
                     1e-07};
             }
-
 
             *i = tile;
         }

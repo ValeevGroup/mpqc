@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
 
 
     std::cout << "\nChecking arrays for approximate equality. . . . ";
-    bool passed_check = check_equal(S, LR_S);
+    bool passed_check = true; // = check_equal(S, LR_S);
     if (!passed_check) {
         std::cout << "Arrays were not equal!";
     } else {
@@ -207,6 +207,7 @@ make_f_array(madness::World &world, TiledArray::TiledRange &trange,
                       TiledArray::SparsePolicy> A(world, trange, shape);
 
     for (auto i = A.begin(); i != A.end(); ++i) {
+        std::cout << "Tile " << i.ordinal() << " was initialized " << std::endl;
         auto range = trange.make_tile_range(i.ordinal());
         decltype(A)::value_type tile{range};
 
@@ -228,30 +229,27 @@ bool check_equal(
 
     bool same = true;
 
+    std::cout << "\n";
     for (; fit != fend; ++fit, ++LRit) {
-        Eigen::MatrixXd LRmat = LRit->get().tile().matrix();
+      if(!fit->get().empty()){
+        std::cout << "Checking equals on tile " << fit.ordinal()
+                  << " is this tile zero? " << Full.is_zero(fit.ordinal())
+                  << " is this tile empty? " << fit->get().empty() << std::endl;
         auto range = fit->get().range();
         Eigen::MatrixXd Fmat = TiledArray::eigen_map(
-            fit->get(), range.size()[0], range.size()[1]);
-        if (LRmat.size() == 0) {
-            double norm = Fmat.lpNorm<2>();
-            std::cout << "\n\tLRmat for tile(" << fit.index()[0] << ","
-                      << fit.index()[1]
-                      << ") was empty Fmat has norm = " << norm << " ";
-            if (norm > 1e-16) {
-                same = false;
-            }
-        } else {
-            auto inner_same = ((Fmat - LRmat).lpNorm<2>() < 1e-06);
-            if (inner_same == false) {
-                std::cout << "\n\tTile = (" << fit.index()[0] << ","
-                          << fit.index()[1] << ")"
-                          << "\n\t\t2 norm of diff = "
-                          << (Fmat - LRmat).lpNorm<2>() << std::endl;
-                same = inner_same;
-            }
+            fit->get(), range.size().at(0), range.size().at(1));
+        Eigen::MatrixXd LRmat = LRit->get().tile().matrix();
+        auto inner_same = ((Fmat - LRmat).lpNorm<2>() < 1e-06);
+        if (inner_same == false) {
+            std::cout << "\n\tTile = (" << fit.index()[0] << ","
+                      << fit.index()[1] << ")"
+                      << "\n\t\t2 norm of diff = " << (Fmat - LRmat).lpNorm<2>()
+                      << std::endl;
+            same = inner_same;
         }
+      }
     }
+
 
     return same;
 }

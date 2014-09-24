@@ -158,7 +158,7 @@ make_lr_array(madness::World &world, TiledArray::TiledRange &trange,
     TiledArray::SparseShape<float> shape(world, shape_tensor, trange);
 
     TiledArray::Array<double, 2, TilePimpl<double>, TiledArray::SparsePolicy> A(
-        world, trange, shape.begin(), shape.end());
+        world, trange, shape);
 
     for (auto i = A.begin(); i != A.end(); ++i) {
         if (!A.is_zero(i.ordinal())) {

@@ -65,32 +65,55 @@ int main(int argc, char **argv) {
     } else {
         std::cout << "Ok!";
     }
-    std::cout << "\n";
+    std::cout << "\n\n";
 
     world.gop.fence();
     auto lr_time = madness::wall_time();
-
     LR_S("i,j") = LR_S("i,k") * LR_S("k,j");
 
     world.gop.fence();
     lr_time = madness::wall_time() - lr_time;
-    std::cout << "LR time was " << lr_time << " s\n";
+    std::cout << "LR time trace decrease was " << lr_time << " s\n";
 
     auto full_time = madness::wall_time();
     S("i,j") = S("i,k") * S("k,j");
     world.gop.fence();
     full_time = madness::wall_time() - full_time;
-    std::cout << "full time was " << full_time << " s\n";
+    std::cout << "full time trace decrease was " << full_time << " s\n";
 
-    std::cout << "\nChecking arrays for approximate equality. . . . ";
+    std::cout << "Checking arrays for approximate equality after trace "
+                 "decrease like operations . . . . ";
     passed_check = check_equal(S, LR_S);
     if (!passed_check) {
         std::cout << "Arrays were not equal!";
     } else {
         std::cout << "Ok!";
     }
-    std::cout << "\n";
+    std::cout << "\n\n";
 
+    world.gop.fence();
+    lr_time = madness::wall_time();
+    LR_S("i,j") = 2 * LR_S("i,j") - LR_S("i,k") * LR_S("k,j");
+
+    world.gop.fence();
+    lr_time = madness::wall_time() - lr_time;
+    std::cout << "LR time trace increase was " << lr_time << " s\n";
+
+    full_time = madness::wall_time();
+    S("i,j") = 2 * S("i,j") - S("i,k") * S("k,j");
+    world.gop.fence();
+    full_time = madness::wall_time() - full_time;
+    std::cout << "full time trace increase was " << full_time << " s\n";
+
+    std::cout << "Checking arrays for approximate equality after trace "
+                 "increase like operation . . . . ";
+    passed_check = check_equal(S, LR_S);
+    if (!passed_check) {
+        std::cout << "Arrays were not equal!";
+    } else {
+        std::cout << "Ok!";
+    }
+    std::cout << "\n\n";
 
     world.gop.fence();
     madness::finalize();

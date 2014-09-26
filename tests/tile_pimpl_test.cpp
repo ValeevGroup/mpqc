@@ -17,8 +17,8 @@ class TilePimplTest : public ::testing::Test {
     TilePimplTest()
         : matrix_(Matrix<T>::Random(rows, cols)), tile(matrix_), range(),
           gemm_helper(madness::cblas::CBLAS_TRANSPOSE::NoTrans,
-                      madness::cblas::CBLAS_TRANSPOSE::NoTrans, rows, cols,
-                      std::min(rows, cols)) {}
+                      madness::cblas::CBLAS_TRANSPOSE::NoTrans, 2,2,
+                      2) {}
 };
 
 typedef ::testing::Types<float, double> TilePimplTypes;

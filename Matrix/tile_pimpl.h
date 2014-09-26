@@ -10,12 +10,14 @@
 template <typename T>
 class TilePimpl {
   public:
-    typedef TilePimpl eval_type;
-    typedef T value_type;
-    typedef TiledArray::Range range_type;
-    typedef T numeric_type;
-    typedef std::size_t size_type;
-
+    /*
+     * TiledArray typedefs
+     */
+    using eval_type = TilePimpl;
+    using value_type = T;
+    using range_type = TiledArray::Range;
+    using numeric_type = T;
+    using size_type = std::size_t;
 
   public:
     TilePimpl() = default;
@@ -23,30 +25,26 @@ class TilePimpl {
     TilePimpl(TilePimpl const &t) = default;
     TilePimpl &operator=(TilePimpl const &t) = default;
     TilePimpl(TilePimpl &&t) = default;
-    TilePimpl &operator=(TilePimpl &t) = default;
+    TilePimpl &operator=(TilePimpl &&t) = default;
 
     /*
      * User defined constructors
      */
 
     // Just range ctor
-    TilePimpl(TiledArray::Range r) : tile_(), range_(std::move(r)) {}
-
-
-    TilePimpl(TiledArray::Range r, double cut)
-        : tile_(), range_(std::move(r)), cut_(cut) {}
+    explicit TilePimpl(TiledArray::Range r, double cut)
+        : tile_(), range_(std::move(r)), cut_{cut} {}
+    explicit TilePimpl(TiledArray::Range r) : TilePimpl{std::move(r), 1e-07} {}
 
     // TileVariant ctors
-    TilePimpl(TiledArray::Range r, TileVariant<T> t)
-        : tile_(std::make_shared<TileVariant<T>>(std::move(t))),
-          range_(std::move(r)) {}
-
     explicit TilePimpl(TiledArray::Range r, TileVariant<T> t, double cut)
         : tile_(std::make_shared<TileVariant<T>>(std::move(t))),
-          range_(std::move(r)), cut_(cut) {}
+          range_(std::move(r)), cut_{cut} {}
+    explicit TilePimpl(TiledArray::Range r, TileVariant<T> t)
+        : TilePimpl{std::move(r), std::move(t), 1e-07} {}
 
     // Clone will make a deep copy
-    TilePimpl clone() const { return TilePimpl(range_, *tile_, cut_); }
+    TilePimpl clone() const { return TilePimpl{range_, *tile_, cut_}; }
 
     /*
      * Tile information functions
@@ -56,15 +54,6 @@ class TilePimpl {
     TiledArray::Range const &range() const { return range_; }
     double cut() const { return cut_; }
     bool empty() const { return !tile_; }
-
-    // maybe expensive
-    void setCut(double cut) {
-        const auto temp = cut_;
-        cut_ = cut;
-        if (temp <= cut_) {
-            // TODO_TCC recompress may save some space.
-        }
-    }
 
     TileVariant<T> const &tile() const { return *tile_; }
 
@@ -80,11 +69,8 @@ class TilePimpl {
      */
     TilePimpl gemm(TilePimpl const &right, numeric_type factor,
                    TiledArray::math::GemmHelper const &gemm_config) const {
-
-        // TODO_TCC complete this section.
         auto result_range
             = gemm_config.make_result_range<range_type>(range(), right.range());
-        //  auto result_range = range();
 
         return TilePimpl(std::move(result_range),
                          tile_->apply_binary_op(
@@ -95,11 +81,8 @@ class TilePimpl {
     TilePimpl &gemm(TilePimpl const &left, TilePimpl const &right,
                     numeric_type factor,
                     TiledArray::math::GemmHelper const &gemm_config) {
-
-        // TODO_TCC complete this section.
         range_
             = gemm_config.make_result_range<range_type>(range(), right.range());
-        // auto result_range = range();
 
         // Will convert to full when gemm grows the rank to much.
         if (tile_->tag() == TileVariant<T>::LowRank
@@ -210,11 +193,14 @@ class TilePimpl {
     // May convert the tile to a full rank tile, but doesn't have to.
     template <typename... Rest>
     void convert_to_full(TileVariant<T> &result, Rest... rest) const {
+        if (result.tag() == TileVariant<T>::FullRank) {
+            return;
+        }
         auto get_rank = [&](TileVariant<T> const &t) { return t.rank(); };
         const auto out_rank = mutation_rank(result.rank(), get_rank(rest)...);
 
         if (double(out_rank) > 0.5 * result.full_rank()) {
-            result = TileVariant<T>{result.matrix()};
+            result = TileVariant<T>{FullRankTile<T>{result.lrtile().matrix()}};
         }
     }
 };

@@ -18,7 +18,11 @@ class LowRankTile {
   public:
     LowRankTile() = default;
     LowRankTile(LowRankTile const &) = default;
-    LowRankTile &operator=(LowRankTile const &t) = default;
+    LowRankTile &operator=(LowRankTile const &t) {
+      L_.resize(t.L_.rows(),t.L_.cols());
+      R_.resize(t.R_.rows(),t.R_.cols());
+      eigen_copy(t.L_, t.R_);
+    }
 
     LowRankTile(LowRankTile &&t) noexcept : L_(), R_() {
         L_.swap(t.L_);
@@ -32,28 +36,18 @@ class LowRankTile {
 
     LowRankTile(const Matrix<T> &L, const Matrix<T> &R)
         : L_(L.rows(), L.cols()), R_(R.rows(), R.cols()) {
-        assert(L_.cols() == R_.rows());
-        assert(L_.size() != 0 && R_.size() != 0);
-        const auto Lsize = L.size();
-        const auto Rsize = R.size();
-        std::copy(L.data(), L.data() + Lsize, L_.data());
-        std::copy(R.data(), R.data() + Rsize, R_.data());
+      eigen_copy(L,R);
     }
     LowRankTile(Matrix<T> &&L, Matrix<T> &&R) noexcept : L_(), R_() {
         L_.swap(L);
         R_.swap(R);
-        assert(L_.cols() == R_.rows());
-        assert(L_.size() != 0 && R_.size() != 0);
     }
 
     /*
      * Functions
      */
   public:
-    inline unsigned long rank() const {
-        assert(L_.cols() == R_.rows());
-        return L_.cols();
-    }
+    inline unsigned long rank() const { return L_.cols(); }
     inline unsigned long Rows() const { return L_.rows(); }
     inline unsigned long Cols() const { return R_.cols(); }
     inline unsigned long size() const { return R_.size() + L_.size(); }
@@ -64,10 +58,14 @@ class LowRankTile {
     inline Matrix<T> &matrixR() { return R_; }
     inline Matrix<T> matrix() const { return algebra::cblas_gemm(L_, R_, 1.0); }
 
-
   private:
     Matrix<T> L_;
     Matrix<T> R_;
+
+    void inline eigen_copy(Matrix<T> const &L, Matrix<T> const &R){
+      std::copy(L.data(), L.data()+L.size(), L_.data());
+      std::copy(R.data(), R.data()+R.size(), R_.data());
+    }
 };
 
 #endif // LOW_RANK_TILE_H

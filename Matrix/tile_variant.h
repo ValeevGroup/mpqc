@@ -18,6 +18,15 @@ class TileVariant {
     }
     ~TileVariant() { destroy_tile(); }
 
+    explicit TileVariant(LowRankTile<T> const &l) : tag_(LowRank), lrtile_(l) {}
+    explicit TileVariant(LowRankTile<T> &&l) noexcept : tag_(LowRank),
+                                                        lrtile_(std::move(l)) {}
+
+    explicit TileVariant(FullRankTile<T> const &f)
+        : tag_(FullRank), ftile_(f) {}
+    explicit TileVariant(FullRankTile<T> &&f) noexcept : tag_(FullRank),
+                                                         ftile_(std::move(f)) {}
+
     TileVariant &operator=(TileVariant const &t) {
         if (tag_ == t.tag()) {
             if (tag_ == LowRank) {
@@ -48,14 +57,6 @@ class TileVariant {
         return *this;
     }
 
-    explicit TileVariant(LowRankTile<T> const &l) : tag_(LowRank), lrtile_(l) {}
-    explicit TileVariant(LowRankTile<T> &&l) noexcept : tag_(LowRank),
-                                                        lrtile_(std::move(l)) {}
-
-    explicit TileVariant(FullRankTile<T> const &f)
-        : tag_(FullRank), ftile_(f) {}
-    explicit TileVariant(FullRankTile<T> &&f) noexcept : tag_(FullRank),
-                                                         ftile_(std::move(f)) {}
 
     LowRankTile<T> const &lrtile() const {
         assert(tag_ == LowRank);
@@ -129,7 +130,8 @@ class TileVariant {
 
     template <typename Func>
     auto apply_binary_op(const TileVariant &right,
-                         Func op) const -> decltype(op(lrtile(), lrtile())) const {
+                         Func op) const -> decltype(op(lrtile(),
+                                                       lrtile())) const {
         switch ((tag() << 1) | right.tag()) {
         case LowLow:
             return op(lrtile(), right.lrtile());
@@ -141,7 +143,6 @@ class TileVariant {
             return op(ftile(), right.ftile());
         }
     }
-
 
     template <typename Func>
     auto apply_unary_op(Func op) const -> decltype(op(lrtile())) const {
@@ -255,6 +256,7 @@ class TileVariant {
         FullFullLow = 6
     };
 
+    // Check binary switch
     static_assert((LowRank << 1 | LowRank) == LowLow,
                   "Low Low switch is incorrect");
     static_assert((LowRank << 1 | FullRank) == LowFull,

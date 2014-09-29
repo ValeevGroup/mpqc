@@ -84,12 +84,7 @@ class TilePimpl {
         range_
             = gemm_config.make_result_range<range_type>(range(), right.range());
 
-        // Will convert to full when gemm grows the rank to much.
-        if (tile_->tag() == TileVariant<T>::LowRank
-            && (left.tile().tag() == TileVariant<T>::LowRank
-                || right.tile().tag() == TileVariant<T>::LowRank)) {
-            convert_to_full(*tile_, left.tile(), right.tile());
-        }
+        gemm_convert_to_full(*tile_, left.tile(), right.tile());
 
         tile_->apply_ternary_mutation(left.tile(), right.tile(),
                                       ternary_mutations::gemm_functor(factor));
@@ -144,6 +139,7 @@ class TilePimpl {
     }
 
     TilePimpl &subt_to(TilePimpl const &right) {
+        binary_convert_to_full(*tile_, right.tile());
         tile_->apply_binary_mutation(right.tile(),
                                      binary_mutations::subt_functor(1.0));
         return *this;
@@ -151,10 +147,10 @@ class TilePimpl {
 
     // TODO_TCC figure out what is going on with needing factor second.
     TilePimpl &subt_to(TilePimpl const &right, T factor) {
-        convert_to_full(*tile_, right.tile());
+        binary_convert_to_full(*tile_, right.tile());
         tile_->apply_binary_mutation(right.tile(),
                                      binary_mutations::subt_functor(1.0));
-        tile_->apply_unary_mutation(unary_mutations::scale_functor(factor));
+        scale_to(factor);
         return *this;
     }
 
@@ -184,23 +180,31 @@ class TilePimpl {
     /*
      *  Utility Functions
      */
-    template <typename First, typename Second, typename... Rest>
-    unsigned long
-    mutation_rank(First first, Second second, Rest... rest) const {
-        return first + std::min({second, rest...});
+    void compare_output_rank(unsigned long out_rank, TileVariant<T> &result) {
+        if (out_rank >= 0.5 * result.full_rank()) {
+            result = TileVariant<T>{FullRankTile<T>{result.lrtile().matrix()}};
+        }
     }
 
-    // May convert the tile to a full rank tile, but doesn't have to.
-    template <typename... Rest>
-    void convert_to_full(TileVariant<T> &result, Rest... rest) const {
-        if (result.tag() == TileVariant<T>::FullRank) {
-            return;
+    void binary_convert_to_full(TileVariant<T> &result,
+                                TileVariant<T> const &right) {
+        if (result.binary_op_types(right) == TileVariant<T>::LowLow) {
+            compare_output_rank(result.rank() + right.rank(), result);
         }
-        auto get_rank = [&](TileVariant<T> const &t) { return t.rank(); };
-        const auto out_rank = mutation_rank(result.rank(), get_rank(rest)...);
+    }
 
-        if (double(out_rank) > 0.5 * result.full_rank()) {
-            result = TileVariant<T>{FullRankTile<T>{result.lrtile().matrix()}};
+    void gemm_convert_to_full(TileVariant<T> &result,
+                              TileVariant<T> const &left,
+                              TileVariant<T> const &right) {
+        auto tile_types = result.ternary_op_types(left, right);
+
+        if (tile_types == TileVariant<T>::LowLowLow) {
+            auto out_rank = result.rank() + std::min(left.rank(), right.rank());
+            compare_output_rank(result.rank() + out_rank, result);
+        } else if (tile_types == TileVariant<T>::LowLowFull) {
+            compare_output_rank(result.rank() + left.rank(), result);
+        } else if (tile_types == TileVariant<T>::LowFullLow) {
+            compare_output_rank(result.rank() + right.rank(), result);
         }
     }
 };

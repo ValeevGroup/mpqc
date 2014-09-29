@@ -129,6 +129,30 @@ class TileVariant {
     }
 
     template <typename Func>
+    auto apply_ternary_op(const TileVariant &left, const TileVariant &right,
+                          Func op) const -> decltype(op(lrtile(), lrtile(),
+                                                        lrtile())) {
+        switch ((tag() << 2) | (left.tag() << 1) | right.tag()) {
+        case LowLowLow:
+            return op(lrtile(), left.lrtile(), right.lrtile());
+        case LowLowFull:
+            return op(lrtile(), left.lrtile(), right.ftile());
+        case LowFullLow:
+            return op(lrtile(), left.ftile(), right.lrtile());
+        case LowFullFull:
+            return op(lrtile(), left.ftile(), right.ftile());
+        case FullLowLow:
+            return op(ftile(), left.lrtile(), right.lrtile());
+        case FullLowFull:
+            return op(ftile(), left.lrtile(), right.ftile());
+        case FullFullLow:
+            return op(ftile(), left.ftile(), right.lrtile());
+        default: // Full Full Full
+            return op(ftile(), left.ftile(), right.ftile());
+        }
+    }
+
+    template <typename Func>
     auto apply_binary_op(const TileVariant &right,
                          Func op) const -> decltype(op(lrtile(),
                                                        lrtile())) const {
@@ -167,6 +191,15 @@ class TileVariant {
 
     typename FullRankTile<T>::template Matrix<T> matrix() const {
         return apply_unary_op(matrix_functor);
+    }
+
+    std::uint8_t binary_op_types(TileVariant<T> const &right) const {
+        return apply_binary_op(right, op_rank_functor);
+    }
+
+    std::uint8_t ternary_op_types(TileVariant<T> const &left,
+                                     TileVariant<T> const &right) const {
+        return apply_ternary_op(left, right, op_rank_functor);
     }
 
 
@@ -214,6 +247,76 @@ class TileVariant {
         }
     } matrix_functor;
 
+    struct {
+        constexpr std::uint8_t
+        operator()(FullRankTile<T> const &t, FullRankTile<T> const &r) const {
+            return FullFull;
+        }
+
+        constexpr std::uint8_t
+        operator()(FullRankTile<T> const &t, LowRankTile<T> const &r) const {
+            return FullLow;
+        }
+
+        constexpr std::uint8_t
+        operator()(LowRankTile<T> const &t, FullRankTile<T> const &r) const {
+            return LowFull;
+        }
+
+        constexpr std::uint8_t
+        operator()(LowRankTile<T> const &t, LowRankTile<T> const &r) const {
+            return LowLow;
+        }
+
+        constexpr std::uint8_t operator()(FullRankTile<T> const &t,
+                                             FullRankTile<T> const &l,
+                                             FullRankTile<T> const &r) const {
+            return FullFullFull;
+        }
+
+        constexpr std::uint8_t operator()(FullRankTile<T> const &t,
+                                             FullRankTile<T> const &l,
+                                             LowRankTile<T> const &r) const {
+            return FullFullLow;
+        }
+
+        constexpr std::uint8_t operator()(FullRankTile<T> const &t,
+                                             LowRankTile<T> const &l,
+                                             FullRankTile<T> const &r) const {
+            return FullLowFull;
+        }
+
+        constexpr std::uint8_t operator()(FullRankTile<T> const &t,
+                                             LowRankTile<T> const &l,
+                                             LowRankTile<T> const &r) const {
+            return FullLowLow;
+        }
+
+        constexpr std::uint8_t operator()(LowRankTile<T> const &t,
+                                             FullRankTile<T> const &l,
+                                             FullRankTile<T> const &r) const {
+            return LowFullFull;
+        }
+
+        constexpr std::uint8_t operator()(LowRankTile<T> const &t,
+                                             LowRankTile<T> const &l,
+                                             FullRankTile<T> const &r) const {
+            return LowLowFull;
+        }
+
+        constexpr std::uint8_t operator()(LowRankTile<T> const &t,
+                                             FullRankTile<T> const &l,
+                                             LowRankTile<T> const &r) const {
+            return LowFullLow;
+        }
+
+        constexpr std::uint8_t operator()(LowRankTile<T> const &t,
+                                             LowRankTile<T> const &l,
+                                             LowRankTile<T> const &r) const {
+            return LowLowLow;
+        }
+    } op_rank_functor;
+
 
     /*
      * Functions to help with copying and moving tiles
@@ -243,17 +346,21 @@ class TileVariant {
         }
     }
 
+public:
+
     enum VariantSwitchId : std::uint8_t {
         LowLow = 0,
         LowFull = 1,
         FullLow = 2,
+        FullFull = 3,
         LowLowLow = 0,
         LowLowFull = 1,
         LowFullLow = 2,
         LowFullFull = 3,
         FullLowLow = 4,
         FullLowFull = 5,
-        FullFullLow = 6
+        FullFullLow = 6,
+        FullFullFull = 7
     };
 
     // Check binary switch

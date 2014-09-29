@@ -370,6 +370,8 @@ public:
                   "Low Full switch is incorrect");
     static_assert((FullRank << 1 | LowRank) == FullLow,
                   "Full Low switch is incorrect");
+    static_assert((FullRank << 1 | FullRank) == FullFull,
+                  "Full Full switch is incorrect");
 
     // Check ternary switch
     static_assert((LowRank << 2 | LowRank << 1 | LowRank) == LowLowLow,
@@ -385,6 +387,8 @@ public:
     static_assert((FullRank << 2 | LowRank << 1 | FullRank) == FullLowFull,
                   "Full Low Full switch is incorrect");
     static_assert((FullRank << 2 | FullRank << 1 | LowRank) == FullFullLow,
+                  "Full Full Low switch is incorrect");
+    static_assert((FullRank << 2 | FullRank << 1 | FullRank) == FullFullFull,
                   "Full Full Low switch is incorrect");
 };
 

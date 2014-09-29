@@ -22,6 +22,7 @@ class LowRankTile {
       L_.resize(t.L_.rows(),t.L_.cols());
       R_.resize(t.R_.rows(),t.R_.cols());
       eigen_copy(t.L_, t.R_);
+      return *this;
     }
 
     LowRankTile(LowRankTile &&t) noexcept : L_(), R_() {

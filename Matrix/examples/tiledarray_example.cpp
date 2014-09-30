@@ -19,6 +19,17 @@ template <typename T, typename LR>
 bool check_equal(const TiledArray::Array<double, 2, T> &Full,
                  const TiledArray::Array<double, 2, LR> &Low);
 
+double how_sparse(TiledArray::Array<double, 2, TilePimpl<double>> const &a) {
+    double sparse = 0;
+    double total = 0;
+    for (auto i = a.begin(); i != a.end(); ++i) {
+        ++total;
+        if (i->get().isFull()) {
+            ++sparse;
+        }
+    }
+    return sparse / total;
+}
 
 int main(int argc, char **argv) {
     std::string Sfile;
@@ -57,6 +68,7 @@ int main(int argc, char **argv) {
     TiledArray::Array<double, 2, TilePimpl<double>> LR_S
         = make_lr_array(world, trange, ES);
 
+    std::cout << "Starting sparsity = " << how_sparse(LR_S) << "\n";
 
     std::cout << "\nChecking arrays for approximate equality. . . . ";
     bool passed_check = check_equal(S, LR_S);
@@ -75,45 +87,45 @@ int main(int argc, char **argv) {
     lr_time = madness::wall_time() - lr_time;
     std::cout << "LR time trace decrease was " << lr_time << " s\n";
 
+
     auto full_time = madness::wall_time();
     S("i,j") = S("i,k") * S("k,j");
     world.gop.fence();
     full_time = madness::wall_time() - full_time;
     std::cout << "full time trace decrease was " << full_time << " s\n";
+    std::cout << "After first gemm sparsity = " << how_sparse(LR_S)
+              << "\n\n\n\n\n\n\n\n\n";
 
-    std::cout << "Checking arrays for approximate equality after trace "
-                 "decrease like operations . . . . ";
-    passed_check = check_equal(S, LR_S);
-    if (!passed_check) {
-        std::cout << "Arrays were not equal!";
-    } else {
-        std::cout << "Ok!";
-    }
-    std::cout << "\n\n";
 
     world.gop.fence();
     lr_time = madness::wall_time();
-    LR_S("i,j") = 2 * LR_S("i,j") - LR_S("i,k") * LR_S("k,j");
+    LR_S("i,j") = LR_S("i,k") * LR_S("k,j");
 
     world.gop.fence();
     lr_time = madness::wall_time() - lr_time;
     std::cout << "LR time trace increase was " << lr_time << " s\n";
 
     full_time = madness::wall_time();
-    S("i,j") = 2 * S("i,j") - S("i,k") * S("k,j");
+    S("i,j") = S("i,k") * S("k,j");
     world.gop.fence();
     full_time = madness::wall_time() - full_time;
     std::cout << "full time trace increase was " << full_time << " s\n";
+    std::cout << "After second gemm sparsity = " << how_sparse(LR_S) << "\n";
 
-    std::cout << "Checking arrays for approximate equality after trace "
-                 "increase like operation . . . . ";
-    passed_check = check_equal(S, LR_S);
-    if (!passed_check) {
-        std::cout << "Arrays were not equal!";
-    } else {
-        std::cout << "Ok!";
-    }
-    std::cout << "\n\n";
+    world.gop.fence();
+    lr_time = madness::wall_time();
+    LR_S("i,j") = LR_S("i,k") * LR_S("k,j");
+
+    world.gop.fence();
+    lr_time = madness::wall_time() - lr_time;
+    std::cout << "LR time trace increase was " << lr_time << " s\n";
+
+    full_time = madness::wall_time();
+    S("i,j") = S("i,k") * S("k,j");
+    world.gop.fence();
+    full_time = madness::wall_time() - full_time;
+    std::cout << "full time trace increase was " << full_time << " s\n";
+    std::cout << "After second gemm sparsity = " << how_sparse(LR_S) << "\n";
 
     world.gop.fence();
     madness::finalize();
@@ -161,6 +173,7 @@ Eigen::MatrixXd read_matrix(const std::string &filename) {
 
     return out_mat;
 }
+
 
 TiledArray::Array<double, 2, TilePimpl<double>>
 make_lr_array(madness::World &world, TiledArray::TiledRange &trange,

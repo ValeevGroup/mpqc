@@ -2,7 +2,6 @@
 #include "../tile_ops.h"
 #include "../tile_mutations.h"
 #include <iostream>
-#include <string>
 
 using matrix = Eigen::MatrixXd;
 

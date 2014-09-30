@@ -161,7 +161,7 @@ FullRankTile<T> gemm(LowRankTile<T> result, const FullRankTile<T> &left,
                      const FullRankTile<T> &right, double alpha, double beta) {
     auto out = algebra::cblas_gemm(result.matrixL(), result.matrixR(), beta);
     algebra::cblas_gemm_inplace(left.matrix(), right.matrix(), out, alpha, 1.0);
-    return out;
+    return FullRankTile<T>{std::move(out)};
 }
 
 template <typename T>
@@ -213,9 +213,7 @@ LowRankTile<T> gemm(LowRankTile<T> result, const LowRankTile<T> &left,
         = algebra::cblas_gemm(left.matrixR(), right.matrix(), 1.0);
     R.bottomRows(rank_C) = result.matrixR();
 
-    result = LowRankTile<T>{std::move(L), std::move(R)};
-
-    return result;
+    return LowRankTile<T>{std::move(L.eval()), std::move(R.eval())};
 }
 
 template <typename T>
@@ -239,9 +237,7 @@ LowRankTile<T> gemm(LowRankTile<T> result, const FullRankTile<T> &left,
     R.topRows(rank_A) = right.matrixR();
     R.bottomRows(rank_C) = result.matrixR();
 
-    result = LowRankTile<T>{std::move(L), std::move(R)};
-
-    return result;
+    return LowRankTile<T>{std::move(L.eval()), std::move(R.eval())};
 }
 
 template <typename T>
@@ -274,9 +270,7 @@ LowRankTile<T> gemm(LowRankTile<T> result, const LowRankTile<T> &left,
         R.topRows(rank_AB) = algebra::cblas_gemm(mid, right.matrixR(), 1.0);
     }
 
-    result = LowRankTile<T>{std::move(L), std::move(R)};
-
-    return result;
+    return LowRankTile<T>{std::move(L.eval()), std::move(R.eval())};
 }
 
 

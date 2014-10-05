@@ -137,12 +137,6 @@ Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> inline cblas_gemm(
     const int K = A.cols();
     const int M = A.rows();
     const int N = B.cols();
-    if (K == 0 || M == 0 || N == 0) { // If zero leave
-        for (auto i = 0; i < C.size(); ++i) {
-            *(C.data() + i) = 0;
-        }
-        return C;
-    }
     const int LDA = M, LDB = K, LDC = M;
     madness::cblas::gemm(madness::cblas::CBLAS_TRANSPOSE::NoTrans,
                          madness::cblas::CBLAS_TRANSPOSE::NoTrans, M, N, K,
@@ -196,7 +190,6 @@ void inline cblas_gemm_inplace(
     const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &B,
     Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> &C, double alpha,
     double beta = 1.0) {
-
     eigen_version::cblas_gemm_inplace(A, B, C, alpha, beta);
 }
 

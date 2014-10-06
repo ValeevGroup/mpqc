@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
     time = madness::wall_time() - time;
 
     double time2 = madness::wall_time();
-    ternary_mutations::gemm(C,lrA,lrB,1.0,1.0);
+    C = ternary_mutations::gemm(std::move(C),lrA,lrB,1.0,1.0);
     time2 = madness::wall_time() - time2;
 
     std::cout << "Time for " << dim << "x" << dim

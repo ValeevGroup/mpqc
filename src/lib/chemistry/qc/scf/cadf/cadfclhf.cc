@@ -200,6 +200,10 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   shuffle_J_assignments_ = keyval->booleanvalue("shuffle_J_assignments", KeyValValueboolean(shuffle_J_assignments_));
   new_exchange_algorithm_ = keyval->booleanvalue("new_exchange_algorithm", KeyValValueboolean(new_exchange_algorithm_));
   //----------------------------------------------------------------------------//
+  n_iter_only_ = keyval->intvalue("n_iter_only", KeyValValueint(n_iter_only_));
+  // set the superclass flag
+  fake_scf_convergence_after_n_iter_ = n_iter_only_;
+  //----------------------------------------------------------------------------//
   if(print_screening_stats_) {
     stats_ = std::make_shared<ScreeningStatistics>();
     stats_->print_level = print_screening_stats_;
@@ -311,6 +315,7 @@ CADFCLHF::print(ostream&o) const
   o << indent << "match_orbitals_max_homo_offset = " << double_str(match_orbitals_max_homo_offset_) << endl;
   o << indent << "match_orbitals_use_svd = " << bool_str(match_orbitals_use_svd_) << endl;
   o << indent << "min_atoms_per_node = " << int_str(min_atoms_per_node_) << endl;
+  o << indent << "n_iter_only = " << int_str(n_iter_only_) << endl;
   o << indent << "pair_screening_thresh = " << double_str(pair_screening_thresh_) << endl;
   o << indent << "safe_extents = " << bool_str(safe_extents_) << endl;
   o << indent << "scale_screening_thresh = " << bool_str(scale_screening_thresh_) << endl;

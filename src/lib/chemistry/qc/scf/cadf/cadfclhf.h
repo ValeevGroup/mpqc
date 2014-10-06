@@ -582,6 +582,10 @@ class CADFCLHF: public CLHF {
     bool dist_factor_overlap_exclude_contracted_ = false;
     double dist_factor_overlap_schwarz_ratio_cutoff_ = 1e-2;
     int count_ints_n_integral_extrema_ = 1;
+    /** Exit happily after n_iter_only_ iterations and print stats, even if there is no convergence
+     *  A value of -1 (the default) means don't do this.
+     */
+    int n_iter_only_ = -1;
     //@}
 
     std::shared_ptr<ScreeningStatistics> stats_;

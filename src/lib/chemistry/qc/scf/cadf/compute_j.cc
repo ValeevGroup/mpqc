@@ -32,8 +32,10 @@
 
 #include "cadfclhf.h"
 
+
 using namespace sc;
 #define DEBUG_J_INTERMEDIATES 0
+typedef unsigned long int uli;
 
 RefSCMatrix
 CADFCLHF::compute_J()
@@ -47,8 +49,8 @@ CADFCLHF::compute_J()
   const int me = scf_grp_->me();
   const int n_node = scf_grp_->n();
   const int natom = gbs_->ncenter();
-  const int nbf = gbs_->nbasis();
-  const int dfnbf = dfbs_->nbasis();
+  const uli nbf = gbs_->nbasis();
+  const uli dfnbf = dfbs_->nbasis();
   //----------------------------------------//
   // Get the density in an Eigen::Map form
   //double *D_ptr = allocate<double>(nbf*nbf);

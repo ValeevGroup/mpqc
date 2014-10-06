@@ -185,7 +185,7 @@ make_f_array(madness::World &world, TiledArray::TiledRange &trange,
         madness::cblas::CBLAS_TRANSPOSE::NoTrans, 2, 2, 2);
 
     auto gemmed_shape_tensor = shape_tensor.add(shape_tensor, 1.0);
-    for (auto i = 0; i < gemmed_shape_tensor.size(); ++i) {
+    for (auto i = 0ul; i < gemmed_shape_tensor.size(); ++i) {
         std::cout << " tile " << i << " estimated squared norm = "
                   << gemmed_shape_tensor[i] << std::endl;
     }
@@ -193,7 +193,7 @@ make_f_array(madness::World &world, TiledArray::TiledRange &trange,
     TiledArray::SparseShape<float> shape(world, shape_tensor, trange);
 
     auto gemmed_norm_shape_tensor = shape.data().gemm(shape.data(), 1.0, gemmh);
-    for (auto i = 0; i < gemmed_norm_shape_tensor.size(); ++i) {
+    for (auto i = 0ul; i < gemmed_norm_shape_tensor.size(); ++i) {
         // std::cout << " tile " << i << " estimated squared norm = " <<
         // gemmed_norm_shape_tensor[i] << std::endl;
     }
@@ -214,7 +214,7 @@ make_f_array(madness::World &world, TiledArray::TiledRange &trange,
     std::cout << "The norms of the tiles of the zeroed array are\n";
     for (auto i = dense.begin(); i != dense.end(); ++i) {
         if (A.is_zero(i.ordinal())) {
-            for (auto j = 0; j < i->get().range().volume(); ++j) {
+            for (auto j = 0ul; j < i->get().range().volume(); ++j) {
                 i->get()[j] = 0;
             }
         }

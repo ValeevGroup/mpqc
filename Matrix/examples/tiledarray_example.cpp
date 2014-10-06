@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
         Sfile = argv[1];
         blocksize = std::stoul(argv[2]);
     }
-    TiledArray::SparseShape<float>::threshold(1e-15);
+    TiledArray::SparseShape<float>::threshold(1e-10);
     madness::World &world = madness::initialize(argc, argv);
 
     Eigen::MatrixXd ES = read_matrix(Sfile);
@@ -59,47 +59,20 @@ int main(int argc, char **argv) {
 
     TiledArray::TiledRange trange(blocking2.begin(), blocking2.end());
 
-    auto SS = TiledArray::eigen_to_array<TiledArray::Array<double, 2>>(
-        world, trange, ES);
-    auto S = make_f_array(world, trange, ES, SS);
     auto LR_S = make_lr_array(world, trange, ES);
 
-
-    std::cout << "\nChecking arrays for approximate equality. . . . ";
-    bool passed_check = check_equal(S, SS, LR_S);
-    if (!passed_check) {
-        std::cout << "Arrays were not equal!";
-    } else {
-        std::cout << "Ok!";
+    for(auto i = LR_S.begin(); i != LR_S.end(); ++i){
+      auto const &tile = i->get();
+      if(i.ordinal() < 10 && !tile.isFull()){
+        Eigen::MatrixXd matrix = tile.tile().lrtile().matrixL();
+        for(auto j = 0; j < matrix.size(); ++j){
+          if(*(matrix.data() + j) < 1e-16){
+            *(matrix.data() + j) = 0;
+          }
+        }
+        std::cout << i.ordinal() << "\n" << matrix << std::endl;
+      }
     }
-    std::cout << "\n";
-
-    world.gop.fence();
-    auto lr_time = madness::wall_time();
-
-    LR_S("i,j") = LR_S("i,k") * LR_S("k,j");
-
-    world.gop.fence();
-    lr_time = madness::wall_time() - lr_time;
-    std::cout << "LR time was " << lr_time << " s\n";
-
-    auto full_time = madness::wall_time();
-    S("i,j") = S("i,k") * S("k,j");
-    world.gop.fence();
-    full_time = madness::wall_time() - full_time;
-    std::cout << "full time was " << full_time << " s\n";
-
-    SS("i,j") = SS("i,k") * SS("k,j");
-
-    std::cout << "\nChecking arrays for approximate equality. . . . ";
-    passed_check = check_equal(S, SS, LR_S);
-    if (!passed_check) {
-        std::cout << "Arrays were not equal!";
-    } else {
-        std::cout << "Ok!";
-    }
-    std::cout << "\n";
-
 
     world.gop.fence();
     madness::finalize();
@@ -176,7 +149,7 @@ make_lr_array(madness::World &world, TiledArray::TiledRange &trange,
         Eigen::MatrixXd L, R;
 
         auto tile_is_full_rank
-            = algebra::Decompose_Matrix(mat_block, L, R, 1e-12);
+            = algebra::Decompose_Matrix(mat_block, L, R, 1e-07);
 
         if (!tile_is_full_rank) {
             tile = TilePimpl<double>{std::move(range),

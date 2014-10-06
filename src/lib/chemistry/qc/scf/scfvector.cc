@@ -215,6 +215,22 @@ SCF::compute_vector(double& eelec, double nucrep)
     if(fake_scf_convergence_after_fock_build_ || iter+1 >= fake_scf_convergence_after_n_iter_) {
       delta = 0.0;
       accuracy = 0.0;
+      ExEnv::out0()
+          << indent << "#=================== WARNING =====================#" << endl
+          << indent << "# delta is being artificially set to 0.0 in order #" << endl
+          << indent << "# to emulate convergence for testing purposes.    #" << endl
+          << indent << "# Energy and density are not actually converged   #" << endl
+          << indent << "# and ARE NOT CORRECT!!!  If you are seeing this  #" << endl
+          << indent << "# message and did not expect to see it, please    #" << endl
+          << indent << "# contact a developer immediately, as something   #" << endl
+          << indent << "# has gone seriously wrong.  This feature is only #" << endl
+          << indent << "# for testing and benchmarking purposes.  If you  #" << endl
+          << indent << "# are doing real chemistry, or anything other     #" << endl
+          << indent << "# than benchmarking SCF code, you should NEVER    #" << endl
+          << indent << "# see this message.  DO NOT USE THE ENERGY OUTPUT #" << endl
+          << indent << "# BELOW OR ANYTHING ELSE IN THIS FILE FOR         #" << endl
+          << indent << "# ANYTHING OTHER THAN BENCHMARKING!!!!!!!         #" << endl
+          << indent << "#=================================================#" << endl;
     }
 
     // check convergence

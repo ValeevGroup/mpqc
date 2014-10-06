@@ -207,6 +207,28 @@ void inline cblas_gemm_inplace(
     eigen_version::cblas_gemm_inplace(A, B, C, alpha, beta);
 }
 
+// Only works on the output of dqeqp3
+int qr_rank(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> const & M,
+               double thresh){
+    auto rank = std::min(M.rows(), M.cols()); // Start with full rank
+    auto current_row = M.rows() - 1;
+    const auto last_col = M.cols() - 1;
+    auto current_elem = M(current_row, last_col);
+    auto sum_squares = current_elem * current_elem;
+    auto elems_in_row = 2;
+    while (std::sqrt(sum_squares) < thresh) {
+        --rank;        // Decrease the rank
+        --current_row; // Go up one row
+        // Starting in the far right col and working our way over
+        for (auto i = last_col; i > last_col - elems_in_row; --i) {
+            current_elem = M(current_row, i);
+            sum_squares += current_elem * current_elem;
+        }
+        ++elems_in_row;
+    }
+    return rank;
+}
+
 bool inline Decompose_Matrix(
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> input,
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &L,
@@ -228,22 +250,7 @@ bool inline Decompose_Matrix(
     dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, W.get(), &LWORK, &INFO);
 
     const double thresh = cut;
-    auto rank = full_rank; // Start with full rank
-    auto current_row = M - 1;
-    const auto last_col = N - 1;
-    auto current_elem = input(current_row, last_col);
-    auto sum_squares = current_elem * current_elem;
-    auto elems_in_row = 2;
-    while (std::sqrt(sum_squares) < thresh) {
-        --rank;        // Decrease the rank
-        --current_row; // Go up one row
-        // Starting in the far right col and working our way over
-        for (auto i = last_col; i > last_col - elems_in_row; --i) {
-            current_elem = input(current_row, i);
-            sum_squares += current_elem * current_elem;
-        }
-        ++elems_in_row;
-    }
+    auto rank = qr_rank(input, thresh);
 
     if (rank > 0.5 * double(full_rank)) {
         return true; // Input is full rank
@@ -291,19 +298,8 @@ void inline ColPivotedQr(
     std::unique_ptr<double[]> W{new double[LWORK]};
     dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, W.get(), &LWORK, &INFO);
 
-    Eigen::VectorXd const &Rvalues = input.diagonal();
-    if (Rvalues.size() == 0) {
-        return;
-    }
-    const double thresh = std::max(cut * std::abs(Rvalues[0]), 1e-16);
-    int rank = 0;
-    for (auto i = 0; i < Rvalues.size(); ++i) {
-        if (std::abs(Rvalues[i]) > thresh) {
-            ++rank;
-        } else {
-            break;
-        }
-    }
+    const double thresh = cut;
+    auto rank = qr_rank(input, thresh);
 
     // LAPACK assumes 1 based indexing, but we need zero.
     std::for_each(J.data(), J.data() + J.size(), [](int &val) { --val; });
@@ -346,16 +342,8 @@ void inline CompressLeft(
     std::unique_ptr<double[]> W{new double[LWORK]};
     dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, W.get(), &LWORK, &INFO);
 
-    Eigen::VectorXd const &Rvalues = input.diagonal();
-    const double thresh = std::max(cut * std::abs(Rvalues[0]), 1e-16);
-    int rank = 0;
-    for (auto i = 0; i < Rvalues.size(); ++i) {
-        if (std::abs(Rvalues[i]) > thresh) {
-            ++rank;
-        } else {
-            break;
-        }
-    }
+    const double thresh = cut;
+    auto rank = qr_rank(input,thresh);
 
     if (!debug && rank == full_rank) {
         return;
@@ -401,17 +389,8 @@ void inline CompressRight(
     std::unique_ptr<double[]> W{new double[LWORK]};
     dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, W.get(), &LWORK, &INFO);
 
-    Eigen::VectorXd const &Rvalues = input.diagonal();
-    const double thresh = std::max(cut * std::abs(Rvalues[0]), 1e-16);
-    int rank = 0;
-    for (auto i = 0; i < Rvalues.size(); ++i) {
-        if (std::abs(Rvalues[i]) > thresh) {
-            ++rank;
-        } else {
-            break;
-        }
-    }
-
+    const double thresh = cut;
+    auto rank = qr_rank(input, thresh);
     if (!debug && rank == full_rank && rank == 0) {
         return;
     }

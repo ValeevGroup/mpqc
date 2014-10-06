@@ -3,7 +3,6 @@
 
 Eigen::MatrixXd scaled_rank_mat(int rows, int cols, double scale) {
     Eigen::MatrixXd M = Eigen::MatrixXd::Random(rows, cols);
-    M *= 1000;
     Eigen::JacobiSVD<Eigen::MatrixXd> svd(M, Eigen::ComputeThinU
                                              | Eigen::ComputeThinV);
     auto vals = svd.singularValues();
@@ -78,7 +77,7 @@ int main() {
                   << " upper bound = " << C_norm_upper << std::endl;
     }
 
-    Eigen::MatrixXd correct = scaled_rank_mat(100, 100, 2);
+    Eigen::MatrixXd correct = scaled_rank_mat(200, 200, 2);
     Eigen::MatrixXd Lc, Rc;
     algebra::Decompose_Matrix(correct, Lc, Rc, 1e-07);
     Eigen::MatrixXd approx = Lc * Rc;
@@ -86,9 +85,9 @@ int main() {
     std::cout << "Initial diff = " << norm_diff << std::endl;
     auto iter = 1;
     auto cumulative_upper_bound = 0.0;
-    while (norm_diff < 1e-03) {
-        auto A = scaled_rank_mat(100, 100, 3);
-        auto B = scaled_rank_mat(100, 100, 3);
+    while (norm_diff < 1e-06) {
+        auto A = scaled_rank_mat(200, 200, 5);
+        auto B = scaled_rank_mat(200, 200, 5);
         Eigen::MatrixXd LA, RA, LB, RB;
         algebra::Decompose_Matrix(A, LA, RA, 1e-07);
         algebra::Decompose_Matrix(B, LB, RB, 1e-07);

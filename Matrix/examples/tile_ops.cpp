@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
                 FullRankTile<double> A{Eigen::MatrixXd::Random(i, k)};
                 FullRankTile<double> B{Eigen::MatrixXd::Random(k, j)};
                 double time = madness::wall_time();
-                ternary_mutations::gemm(C, A, B, 1.0, 1.0);
+                C = ternary_mutations::gemm(std::move(C), A, B, 1.0, 1.0);
                 time = madness::wall_time() - time;
                 out_file << time << std::endl;
             }
@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
             LowRankTile<double> B{matrix::Random(i, r), matrix::Random(r, i)};
             LowRankTile<double> C{matrix::Random(i, r), matrix::Random(r, i)};
             double time = madness::wall_time();
-            ternary_mutations::gemm(C, A, B, 1.0, 1.0);
+            C = ternary_mutations::gemm(std::move(C), A, B, 1.0, 1.0);
             time = madness::wall_time() - time;
             out_file << time << std::endl;
         }
@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
                     LowRankTile
                         <double> C{matrix::Random(i, r), matrix::Random(r, j)};
                     double time = madness::wall_time();
-                    ternary_mutations::gemm(C, A, B, 1.0, 1.0);
+                    C = ternary_mutations::gemm(std::move(C), A, B, 1.0, 1.0);
                     unary_mutations::compress(C, 1e-07);
                     time = madness::wall_time() - time;
                     out_file << time << std::endl;

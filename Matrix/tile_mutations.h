@@ -8,13 +8,13 @@
 namespace unary_mutations {
 
 template <typename T>
-FullRankTile<T> scale(FullRankTile<T> t, T factor) {
+FullRankTile<T> scale(FullRankTile<T> &&t, T factor) {
     t.matrix() *= factor;
     return t;
 }
 
 template <typename T>
-LowRankTile<T> scale(LowRankTile<T> t, T factor) {
+LowRankTile<T> scale(LowRankTile<T> &&t, T factor) {
     t.matrixL() *= factor;
     return t;
 }
@@ -24,12 +24,12 @@ struct scale_functor {
     scale_functor(double s) : factor(s) {}
 
     template <typename T>
-    TileVariant<T> operator()(FullRankTile<T> t) {
+    TileVariant<T> operator()(FullRankTile<T> &&t) {
         return TileVariant<T>{scale(std::move(t), factor)};
     }
 
     template <typename T>
-    TileVariant<T> operator()(LowRankTile<T> t) {
+    TileVariant<T> operator()(LowRankTile<T> &&t) {
         return TileVariant<T>{scale(std::move(t), factor)};
     }
 };
@@ -50,7 +50,7 @@ struct compress_functor {
     compress_functor(double c) : cut(c) {}
 
     template <typename T>
-    TileVariant<T> operator()(FullRankTile<T> t) const {
+    TileVariant<T> operator()(FullRankTile<T> &&t) const {
         typename FullRankTile<T>::template Matrix<T> L, R;
 
         if (!algebra::Decompose_Matrix(t.matrix(), L, R, cut)) {
@@ -61,7 +61,7 @@ struct compress_functor {
     }
 
     template <typename T>
-    TileVariant<T> operator()(LowRankTile<T> t) const {
+    TileVariant<T> operator()(LowRankTile<T> &&t) const {
         compress(t, cut);
         return TileVariant<T>{std::move(t)};
     }
@@ -73,27 +73,27 @@ namespace binary_mutations {
 
 template <typename T>
 FullRankTile<T>
-subt(FullRankTile<T> left, FullRankTile<T> const &right, double factor) {
+subt(FullRankTile<T> &&left, FullRankTile<T> const &right, double factor) {
     left.matrix() -= factor * right.matrix();
     return left;
 }
 
 template <typename T>
 FullRankTile<T>
-subt(FullRankTile<T> left, LowRankTile<T> const &right, double factor) {
+subt(FullRankTile<T> &&left, LowRankTile<T> const &right, double factor) {
     left.matrix() -= factor * right.matrix();
     return left;
 }
 
 template <typename T>
 FullRankTile<T>
-subt(LowRankTile<T> left, FullRankTile<T> const &right, double factor) {
+subt(LowRankTile<T> &&left, FullRankTile<T> const &right, double factor) {
     return FullRankTile<T>{left.matrix() - factor * right.matrix()};
 }
 
 template <typename T>
 LowRankTile<T>
-subt(LowRankTile<T> left, LowRankTile<T> const &right, double factor) {
+subt(LowRankTile<T> &&left, LowRankTile<T> const &right, double factor) {
     const auto rows = left.Rows();
     const auto cols = left.Cols();
     const auto rank_out = left.rank() + right.rank();
@@ -120,7 +120,8 @@ struct subt_functor {
 
     template <typename Result, typename Right>
     TileVariant<typename Result::scaler_type>
-    operator()(Result r, Right const &right) {
+    operator()(Result &&r, // Warning forwarding ref, make sure works
+               Right const &right) {
         return TileVariant<typename Result::scaler_type>{
             subt(std::move(r), right, factor)};
     }
@@ -131,16 +132,16 @@ struct subt_functor {
 namespace ternary_mutations {
 
 template <typename T>
-FullRankTile<T> gemm(FullRankTile<T> result, const FullRankTile<T> &left,
-                     const FullRankTile<T> &right, double alpha, double beta) {
+FullRankTile<T> gemm(FullRankTile<T> &&result, FullRankTile<T> const &left,
+                     FullRankTile<T> const &right, double alpha, double beta) {
     algebra::cblas_gemm_inplace(left.matrix(), right.matrix(), result.matrix(),
                                 alpha, beta);
     return result;
 }
 
 template <typename T>
-FullRankTile<T> gemm(FullRankTile<T> result, const FullRankTile<T> &left,
-                     const LowRankTile<T> &right, double alpha, double beta) {
+FullRankTile<T> gemm(FullRankTile<T> &&result, FullRankTile<T> const &left,
+                     LowRankTile<T> const &right, double alpha, double beta) {
     auto temp = algebra::cblas_gemm(left.matrix(), right.matrixL(), 1.0);
     algebra::cblas_gemm_inplace(temp, right.matrixR(), result.matrix(), alpha,
                                 beta);
@@ -148,8 +149,8 @@ FullRankTile<T> gemm(FullRankTile<T> result, const FullRankTile<T> &left,
 }
 
 template <typename T>
-FullRankTile<T> gemm(FullRankTile<T> result, const LowRankTile<T> &left,
-                     const FullRankTile<T> &right, double alpha, double beta) {
+FullRankTile<T> gemm(FullRankTile<T> &&result, LowRankTile<T> const &left,
+                     FullRankTile<T> const &right, double alpha, double beta) {
     auto temp = algebra::cblas_gemm(left.matrixR(), right.matrix(), 1.0);
     algebra::cblas_gemm_inplace(left.matrixL(), temp, result.matrix(), alpha,
                                 beta);
@@ -157,16 +158,16 @@ FullRankTile<T> gemm(FullRankTile<T> result, const LowRankTile<T> &left,
 }
 
 template <typename T> // Tricky case assume this is never called.
-FullRankTile<T> gemm(LowRankTile<T> result, const FullRankTile<T> &left,
-                     const FullRankTile<T> &right, double alpha, double beta) {
+FullRankTile<T> gemm(LowRankTile<T> &&result, FullRankTile<T> const &left,
+                     FullRankTile<T> const &right, double alpha, double beta) {
     auto out = algebra::cblas_gemm(result.matrixL(), result.matrixR(), beta);
     algebra::cblas_gemm_inplace(left.matrix(), right.matrix(), out, alpha, 1.0);
     return out;
 }
 
 template <typename T>
-FullRankTile<T> gemm(FullRankTile<T> result, const LowRankTile<T> &left,
-                     const LowRankTile<T> &right, double alpha, double beta) {
+FullRankTile<T> gemm(FullRankTile<T> &&result, LowRankTile<T> const &left,
+                     LowRankTile<T> const &right, double alpha, double beta) {
 
     auto mid = algebra::cblas_gemm(left.matrixR(), right.matrixL(), 1.0);
 
@@ -193,8 +194,8 @@ FullRankTile<T> gemm(FullRankTile<T> result, const LowRankTile<T> &left,
 }
 
 template <typename T>
-LowRankTile<T> gemm(LowRankTile<T> result, const LowRankTile<T> &left,
-                    const FullRankTile<T> &right, double alpha, double beta) {
+LowRankTile<T> gemm(LowRankTile<T> &&result, LowRankTile<T> const &left,
+                    FullRankTile<T> const &right, double alpha, double beta) {
     const auto rows = result.Rows();
     const auto cols = result.Cols();
 
@@ -219,8 +220,8 @@ LowRankTile<T> gemm(LowRankTile<T> result, const LowRankTile<T> &left,
 }
 
 template <typename T>
-LowRankTile<T> gemm(LowRankTile<T> result, const FullRankTile<T> &left,
-                    const LowRankTile<T> &right, double alpha, double beta) {
+LowRankTile<T> gemm(LowRankTile<T> &&result, FullRankTile<T> const &left,
+                    LowRankTile<T> const &right, double alpha, double beta) {
     const auto rows = result.Rows();
     const auto cols = result.Cols();
 
@@ -245,8 +246,8 @@ LowRankTile<T> gemm(LowRankTile<T> result, const FullRankTile<T> &left,
 }
 
 template <typename T>
-LowRankTile<T> gemm(LowRankTile<T> result, const LowRankTile<T> &left,
-                    const LowRankTile<T> &right, double alpha, double beta) {
+LowRankTile<T> gemm(LowRankTile<T> &&result, LowRankTile<T> const &left,
+                    LowRankTile<T> const &right, double alpha, double beta) {
     assert(left.Cols() == right.Rows()); // Check k index
 
     const auto rows = result.Rows();
@@ -290,7 +291,8 @@ struct gemm_functor {
 
     template <typename Result, typename Left, typename Right>
     TileVariant<typename Result::scaler_type>
-    operator()(Result result, Left const &left, Right const &right) const {
+    operator()(Result &&result, // Fowarding Ref Check that works.
+               Left const &left, Right const &right) const {
         return TileVariant<typename Result::scaler_type>{
             gemm(std::move(result), left, right, alpha, beta)};
     }

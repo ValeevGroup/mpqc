@@ -19,14 +19,33 @@ make_lr_array(madness::World &, TiledArray::TiledRange &,
 TiledArray::Array<double, 2, TiledArray::Tensor<double>,
                   TiledArray::SparsePolicy>
 make_f_array(madness::World &, TiledArray::TiledRange &,
-             const Eigen::MatrixXd &, TiledArray::Array<double, 2> &dense);
+             const Eigen::MatrixXd &);
+
+void compress(TiledArray::Array<double, 2, TilePimpl<double>,
+                                TiledArray::SparsePolicy> &A) {
+  for(auto i = A.begin(); i != A.end(); ++i){
+     i->get().compress();
+  }
+}
 
 template <typename T, typename LR>
 bool check_equal(
     const TiledArray::Array<double, 2, T, TiledArray::SparsePolicy> &Full,
-    const TiledArray::Array<double, 2, T, TiledArray::DensePolicy> &Full_dense,
     const TiledArray::Array<double, 2, LR, TiledArray::SparsePolicy> &Low);
 
+TiledArray::TiledRange create_trange(int nbasis, int blocksize) {
+    std::vector<unsigned int> blocking;
+    for (auto i = 0; i < nbasis; i += blocksize) {
+        blocking.emplace_back(i);
+    }
+
+    blocking.emplace_back(nbasis);
+
+    std::vector<TiledArray::TiledRange1> blocking2(
+        2, TiledArray::TiledRange1(blocking.begin(), blocking.end()));
+
+    return TiledArray::TiledRange{blocking2.begin(), blocking2.end()};
+}
 
 int main(int argc, char **argv) {
     std::string Sfile;
@@ -39,39 +58,24 @@ int main(int argc, char **argv) {
         Sfile = argv[1];
         blocksize = std::stoul(argv[2]);
     }
+
     TiledArray::SparseShape<float>::threshold(1e-10);
     madness::World &world = madness::initialize(argc, argv);
-
     Eigen::MatrixXd ES = read_matrix(Sfile);
 
-    const auto nbasis = ES.rows();
-
-    std::vector<unsigned int> blocking;
-    auto i = 0;
-    for (; i < nbasis; i += blocksize) {
-        blocking.emplace_back(i);
-    }
-
-    blocking.emplace_back(nbasis);
-
-    std::vector<TiledArray::TiledRange1> blocking2(
-        2, TiledArray::TiledRange1(blocking.begin(), blocking.end()));
-
-    TiledArray::TiledRange trange(blocking2.begin(), blocking2.end());
-
+    auto trange = create_trange(ES.rows(), blocksize);
     auto LR_S = make_lr_array(world, trange, ES);
-
-    for(auto i = LR_S.begin(); i != LR_S.end(); ++i){
-      auto const &tile = i->get();
-      if(i.ordinal() < 10 && !tile.isFull()){
-        Eigen::MatrixXd matrix = tile.tile().lrtile().matrixL();
-        for(auto j = 0; j < matrix.size(); ++j){
-          if(*(matrix.data() + j) < 1e-16){
-            *(matrix.data() + j) = 0;
-          }
-        }
-        std::cout << i.ordinal() << "\n" << matrix << std::endl;
-      }
+    auto S = make_f_array(world, trange, ES);
+   // if (check_equal(S, LR_S)) {
+   // i     std::cout << "Tiles started off equal" << std::endl;
+   // i }
+    //compress(LR_S);
+    for (auto i = 0; i < 10; ++i) {
+        std::cout << "Iteration " << i << std::endl;
+        S("i,j") = S("i,k") * S("k,j");
+        //LR_S("i,j") = LR_S("i,k") * LR_S("k,j");
+        //check_equal(S, LR_S);
+        //compress(LR_S);
     }
 
     world.gop.fence();
@@ -171,7 +175,7 @@ make_lr_array(madness::World &world, TiledArray::TiledRange &trange,
 TiledArray::Array<double, 2, TiledArray::Tensor<double>,
                   TiledArray::SparsePolicy>
 make_f_array(madness::World &world, TiledArray::TiledRange &trange,
-             const Eigen::MatrixXd &mat, TiledArray::Array<double, 2> &dense) {
+             Eigen::MatrixXd const &mat) {
     // Shape tensor
     TiledArray::Tensor<float> shape_tensor(trange.tiles(), 0);
     for (auto i = 0ul; i != trange.tiles().volume(); ++i) {
@@ -180,23 +184,8 @@ make_f_array(madness::World &world, TiledArray::TiledRange &trange,
             = mat.block(range.start()[0], range.start()[1], range.size()[0],
                         range.size()[1]).lpNorm<2>();
     }
-    auto gemmh = TiledArray::math::GemmHelper(
-        madness::cblas::CBLAS_TRANSPOSE::NoTrans,
-        madness::cblas::CBLAS_TRANSPOSE::NoTrans, 2, 2, 2);
-
-    auto gemmed_shape_tensor = shape_tensor.add(shape_tensor, 1.0);
-    for (auto i = 0ul; i < gemmed_shape_tensor.size(); ++i) {
-        std::cout << " tile " << i << " estimated squared norm = "
-                  << gemmed_shape_tensor[i] << std::endl;
-    }
 
     TiledArray::SparseShape<float> shape(world, shape_tensor, trange);
-
-    auto gemmed_norm_shape_tensor = shape.data().gemm(shape.data(), 1.0, gemmh);
-    for (auto i = 0ul; i < gemmed_norm_shape_tensor.size(); ++i) {
-        // std::cout << " tile " << i << " estimated squared norm = " <<
-        // gemmed_norm_shape_tensor[i] << std::endl;
-    }
 
     TiledArray::Array<double, 2, TiledArray::Tensor<double>,
                       TiledArray::SparsePolicy> A(world, trange, shape);
@@ -210,54 +199,18 @@ make_f_array(madness::World &world, TiledArray::TiledRange &trange,
                         range.size()[1]);
         *i = std::move(tile);
     }
-
-    std::cout << "The norms of the tiles of the zeroed array are\n";
-    for (auto i = dense.begin(); i != dense.end(); ++i) {
-        if (A.is_zero(i.ordinal())) {
-            for (auto j = 0ul; j < i->get().range().volume(); ++j) {
-                i->get()[j] = 0;
-            }
-        }
-        auto range = i->get().range();
-        std::cout << "\t" << i.ordinal() << " norm = "
-                  << Eigen::MatrixXd(
-                         TiledArray::eigen_map(i->get(), range.size().at(0),
-                                               range.size().at(1))).lpNorm<2>()
-                  << std::endl;
-    }
     return A;
 }
 
 template <typename T, typename LR>
 bool check_equal(
     const TiledArray::Array<double, 2, T, TiledArray::SparsePolicy> &Full,
-    const TiledArray::Array<double, 2, T, TiledArray::DensePolicy> &Full_dense,
     const TiledArray::Array<double, 2, LR, TiledArray::SparsePolicy> &Low) {
     auto fit = Full.begin();
     auto fend = Full.end();
     auto LRit = Low.begin();
 
     bool same = true;
-    bool empty_tile = false;
-
-    std::cout << "\nTile\tnorm(zeroed dense)\tnorm(sparse)\tempty\n";
-    for (auto dit = Full_dense.begin(); dit != Full_dense.end(); ++dit) {
-        auto tile = Full_dense.find(dit.ordinal()).get();
-        auto range = tile.range();
-        auto norm_dense
-            = Eigen::MatrixXd(TiledArray::eigen_map(tile, range.size().at(0),
-                                                    range.size().at(1)))
-                  .lpNorm<2>();
-        bool empty = true;
-        if (!Full.is_zero(dit.ordinal())) {
-            empty = Full.find(dit.ordinal()).get().empty();
-        }
-        auto norm_sparse = Full.get_shape().data()[dit.ordinal()];
-        std::cout << std::setprecision(16);
-        std::cout << dit.ordinal() << "\t" << double(norm_dense) << "\t"
-                  << norm_sparse * range.volume() << "\t" << empty << "\n";
-    }
-    fit = Full.begin();
     for (; fit != fend; ++fit, ++LRit) {
         if (fit->get().empty()) {
         } else {
@@ -269,16 +222,12 @@ bool check_equal(
             if (inner_same == false) {
                 std::cout << "\n\tTile = (" << fit.index()[0] << ","
                           << fit.index()[1] << ")"
-                          << "\n\t\t2 norm of diff = "
-                          << (Fmat - LRmat).lpNorm<2>() << std::endl;
+                          << " norm of diff = " << (Fmat - LRmat).lpNorm<2>()
+                          << std::endl;
                 same = inner_same;
             }
         }
     }
-    if (!empty_tile) {
-        std::cout << "We tried to access 0 empty tiles . . .  ";
-    }
-
 
     return same;
 }

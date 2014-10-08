@@ -212,7 +212,9 @@ SCF::compute_vector(double& eelec, double nucrep)
       });
     }
 
-    if(fake_scf_convergence_after_fock_build_ || iter+1 >= fake_scf_convergence_after_n_iter_) {
+    if(fake_scf_convergence_after_fock_build_ ||
+        (fake_scf_convergence_after_n_iter_ > 0 && iter+1 >= fake_scf_convergence_after_n_iter_)
+    ) {
       delta = 0.0;
       accuracy = 0.0;
       ExEnv::out0()

@@ -202,7 +202,9 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   //----------------------------------------------------------------------------//
   n_iter_only_ = keyval->intvalue("n_iter_only", KeyValValueint(n_iter_only_));
   // set the superclass flag
-  fake_scf_convergence_after_n_iter_ = n_iter_only_;
+  if(n_iter_only_ > 0) {
+    fake_scf_convergence_after_n_iter_ = n_iter_only_;
+  }
   //----------------------------------------------------------------------------//
   if(print_screening_stats_) {
     stats_ = std::make_shared<ScreeningStatistics>();

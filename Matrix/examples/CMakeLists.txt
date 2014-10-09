@@ -19,6 +19,13 @@ target_link_libraries(tile_ops_examples
     ${MPI_CXX_LIBRARIES}
 )
 
+add_executable(decomp_test decompose_matrix_test.cpp)
+target_link_libraries(decomp_test
+    ${TILEDARRAY_LIBRARIES}
+    ${LAPACK_LIBRARIES}
+    ${MPI_CXX_LIBRARIES}
+)
+
 #add_executable(matrix_test matrix_test.cpp)
 #target_link_libraries(matrix_test ${TILEDARRAY_LIBRARIES})
 #target_link_libraries(matrix_test ${LAPACK_LIBRARIES})

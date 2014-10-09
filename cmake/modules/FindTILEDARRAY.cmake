@@ -18,9 +18,7 @@ else (TILEDARRAY_INCLUDE_DIRS)
   set(_TILEDARRAY_LIB_NAMES
     "MADlinalg"
     "MADmisc"
-    "MADmuparser"
     "MADtensor"
-    "MADtinyxml"
     "MADworld"
     )
 

@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <chrono>
+#include <random>
 #include <string>
 #include <iomanip>
 
@@ -12,21 +13,83 @@
 
 Eigen::MatrixXd read_matrix(const std::string &filename);
 
-TiledArray::Array<double, 2, TilePimpl<double>, TiledArray::SparsePolicy>
-make_lr_array(madness::World &, TiledArray::TiledRange &,
-              const Eigen::MatrixXd &);
+TiledArray::Array<double, 2, TilePimpl<double>>
+make_lr_array(madness::World &, TiledArray::TiledRange const &,
+              Eigen::MatrixXd const &);
 
-TiledArray::Array<double, 2, TiledArray::Tensor<double>,
-                  TiledArray::SparsePolicy>
-make_f_array(madness::World &, TiledArray::TiledRange &,
-             const Eigen::MatrixXd &, TiledArray::Array<double, 2> &dense);
+TiledArray::Array<double, 2> make_f_array(madness::World &,
+                                          TiledArray::TiledRange const &,
+                                          Eigen::MatrixXd const &);
+
+template <typename Array>
+Array create_noise(Array const &in, double epsilon) {
+    std::default_random_engine generator;
+    std::uniform_real_distribution<double> distribution(-epsilon, epsilon);
+
+    Array out(in.get_world(), in.trange());
+
+    auto in_it = in.begin();
+    for (auto it = out.begin(); it != out.end(); ++it, ++in_it) {
+        auto ctile = in_it->get();
+        typename Array::value_type tile{ctile.range()};
+        for (auto i = 0ul; i < tile.size(); ++i) {
+            *(tile.data() + i) = *(ctile.data() + i) + distribution(generator);
+        }
+        *it = tile;
+    }
+
+    return out;
+}
+
+struct norm_diff_info {
+    double sum_squares_ = 0;
+    double sum_ = 0;
+    double min_ = 1;
+    double max_ = 0;
+    long ntiles_ = 0;
+
+    void update(double norm) {
+        max_ = (norm > max_) ? norm : max_;
+        min_ = (norm < min_) ? norm : min_;
+        ++ntiles_;
+        sum_ += norm;
+        sum_squares_ += norm * norm;
+    }
+
+    double max() { return max_; }
+    double min() { return min_; }
+    double avg() { return sum_ / double(ntiles_); }
+    double F_norm() { return std::sqrt(sum_squares_); }
+};
+
+template <typename Array>
+void create_DiagDom_mat(Array &m) {
+    auto counter = 10;
+    for (auto it = m.begin(); it != m.end(); ++it) {
+        typename Array::value_type tile{
+            m.trange().make_tile_range(it.ordinal())};
+        if (it.index()[0] == it.index()[1]) {
+            for (auto i = 0ul; i < tile.size(); ++i) {
+                *(tile.data() + i) = 100;
+            }
+        } else {
+            for (auto i = 0ul; i < tile.size(); ++i) {
+                *(tile.data() + i) = 1.0 / double(it.index()[0] * counter
+                                                  + it.index()[1] * counter);
+            }
+            counter += 1;
+        }
+        *it = tile;
+    }
+}
+
+template <typename T>
+norm_diff_info compute_norms_full(TiledArray::Array<double, 2, T> const &Full,
+                                  TiledArray::Array<double, 2, T> const &Low);
 
 template <typename T, typename LR>
-bool check_equal(
-    const TiledArray::Array<double, 2, T, TiledArray::SparsePolicy> &Full,
-    const TiledArray::Array<double, 2, T, TiledArray::DensePolicy> &Full_dense,
-    const TiledArray::Array<double, 2, LR, TiledArray::SparsePolicy> &Low);
-
+norm_diff_info compute_norms(TiledArray::Array<double, 2, T> const &Full,
+                             TiledArray::Array<double, 2, LR> const &Low);
 
 int main(int argc, char **argv) {
     std::string Sfile;
@@ -39,19 +102,17 @@ int main(int argc, char **argv) {
         Sfile = argv[1];
         blocksize = std::stoul(argv[2]);
     }
-    TiledArray::SparseShape<float>::threshold(1e-15);
+
     madness::World &world = madness::initialize(argc, argv);
 
     Eigen::MatrixXd ES = read_matrix(Sfile);
 
     const auto nbasis = ES.rows();
-
     std::vector<unsigned int> blocking;
     auto i = 0;
     for (; i < nbasis; i += blocksize) {
         blocking.emplace_back(i);
     }
-
     blocking.emplace_back(nbasis);
 
     std::vector<TiledArray::TiledRange1> blocking2(
@@ -59,47 +120,60 @@ int main(int argc, char **argv) {
 
     TiledArray::TiledRange trange(blocking2.begin(), blocking2.end());
 
-    // auto SS = TiledArray::eigen_to_array<TiledArray::Array<double, 2>>(
-    //     world, trange, ES);
-    // auto S = make_f_array(world, trange, ES, SS);
-    auto LR_S = make_lr_array(world, trange, ES);
+    // auto LR_S = make_f_array(world, trange, ES);
 
-    // S("i,j") = S("i,k") * S("k,j");
-    world.gop.fence();
-
-#if 0
-    SS("i,j") = SS("i,k") * SS("k,j");
-    std::cout << "\ttile\t\test\t\treal_norm\n";
-    for (auto i = SS.begin(); i != SS.end(); ++i) {
-        auto tile = i->get();
-        auto range = tile.range();
-        auto norm_dense
-            = Eigen::MatrixXd(TiledArray::eigen_map(tile, range.size().at(0),
-                                                    range.size().at(1))).norm();
-
-        auto shape = S.get_shape();
-        auto gemmh = TiledArray::math::GemmHelper(
-            madness::cblas::CBLAS_TRANSPOSE::NoTrans,
-            madness::cblas::CBLAS_TRANSPOSE::NoTrans, 2, 2, 2);
-        auto squared_shape = shape.gemm(shape, 1, gemmh);
-
-        std::cout << "\t" << i.ordinal() << "\t\t"
-                  << 96 * 96 * squared_shape[i.ordinal()] << "\t\t"
-                  << norm_dense << std::endl;
+    // Hmat from chain of H's not important though.
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> ev(ES);
+    auto evals = ev.eigenvalues();
+    evals(0) = 20;
+    for (auto i = 1; i < evals.size(); ++i) {
+        evals(i) = 10.0 / double(i * i);
     }
-    world.gop.fence();
-    S("i,j") = S("i,k") * S("k,j");
-    for (auto i = S.begin(); i != S.end(); ++i) {
-        auto tile = i->get();
-        auto range = tile.range();
-        auto norm_dense
-            = Eigen::MatrixXd(TiledArray::eigen_map(tile, range.size().at(0),
-                                                    range.size().at(1))).norm();
+    auto S = TiledArray::eigen_to_array<TiledArray::Array<double, 2>>(
+        world, trange, ES);
 
-        std::cout << i.ordinal() << "\t" << norm_dense << std::endl;
+    for (auto noise = 1e-16; noise < 1e-9; noise *= 10) {
+        world.gop.fence();
+        auto S_copy = create_noise(S, noise);
+        std::cout << "Noise range per element is " << -noise << " - " << noise
+                  << std::endl;
+
+        for (auto i = 1; i < 10; ++i) {
+            world.gop.fence();
+            std::cout << "\tStarting Iteration " << i << std::endl;
+
+            S("i,j") = S("i,k") * S("k,j");
+            S_copy("i,j") = S_copy("i,k") * S_copy("k,j");
+            auto diff = compute_norms_full(S, S_copy);
+            std::cout << "\tF_norm of diff is " << diff.F_norm() << "\n"
+                      << "\tavg for tiles is " << diff.avg() << "\n"
+                      << "\tmax tile diff is " << diff.max() << "\n"
+                      << "\tmin tile diff is " << diff.min() << std::endl;
+
+            ES = TiledArray::array_to_eigen(S);
+            Eigen::MatrixXd ESC = TiledArray::array_to_eigen(S_copy);
+
+            Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> ev(ES);
+            auto min_ev_S = ev.eigenvalues().minCoeff();
+            auto max_ev_S = ev.eigenvalues().maxCoeff();
+
+            ev.compute(ESC);
+            auto min_ev_SC = ev.eigenvalues().minCoeff();
+            auto max_ev_SC = ev.eigenvalues().maxCoeff();
+
+            //        LR_S("i,j") = LR_S("i,k") * LR_S("k,j");
+
+            std::cout << "\tmax eigen value of S is " << max_ev_S << "\n"
+                      << "\tmin eigen value of S is " << min_ev_S << "\n"
+                      << "\tmax eigen value of S_copy is " << max_ev_SC << "\n"
+                      << "\tmin eigen value of S_copy is " << min_ev_SC << "\n"
+                      << std::endl;
+        }
     }
-#endif
+
+    // S("i,j") = S("i,j") - S_copy("i,j");
     world.gop.fence();
+    // std::cout << S << std::endl;
 
     madness::finalize();
     return 0;
@@ -147,28 +221,11 @@ Eigen::MatrixXd read_matrix(const std::string &filename) {
     return out_mat;
 }
 
-TiledArray::Array<double, 2, TilePimpl<double>, TiledArray::SparsePolicy>
-make_lr_array(madness::World &world, TiledArray::TiledRange &trange,
-              const Eigen::MatrixXd &mat) {
-    // Shape tensor
-    TiledArray::Tensor<float> shape_tensor(trange.tiles(), 0);
-    for (auto i = 0ul; i != trange.tiles().volume(); ++i) {
-        auto range = trange.make_tile_range(i);
-        shape_tensor[i]
-            = mat.block(range.start()[0], range.start()[1], range.size()[0],
-                        range.size()[1]).lpNorm<2>();
-    }
 
-    TiledArray::SparseShape<float> shape(world, shape_tensor, trange);
-
-    TiledArray::Array<double, 2, TilePimpl<double>, TiledArray::SparsePolicy> A(
-        world, trange, shape);
-
-    Eigen::MatrixXd Lbasis;
-    Eigen::MatrixXd Rbasis;
-    Eigen::MatrixXd Tile1;
-    Eigen::MatrixXd L1, R1;
-
+TiledArray::Array<double, 2, TilePimpl<double>>
+make_lr_array(madness::World &world, TiledArray::TiledRange const &trange,
+              Eigen::MatrixXd const &mat) {
+    TiledArray::Array<double, 2, TilePimpl<double>> A(world, trange);
     for (auto i = A.begin(); i != A.end(); ++i) {
         auto range = trange.make_tile_range(i.ordinal());
         decltype(A)::value_type tile{};
@@ -177,197 +234,118 @@ make_lr_array(madness::World &world, TiledArray::TiledRange &trange,
             = mat.block(range.start()[0], range.start()[1], range.size()[0],
                         range.size()[1]);
 
-        Eigen::MatrixXd L, R;
+        auto norm = mat_block.norm();
 
-        auto tile_is_full_rank
-            = algebra::Decompose_Matrix(mat_block, L, R, 1e-7);
+
+        auto tile_is_full_rank = true; // Assume Full Rank
+        Eigen::MatrixXd L, R;
+        if (norm >= 1e-16) { // If large norm check rank
+            tile_is_full_rank
+                = algebra::Decompose_Matrix(mat_block, L, R, 1e-16);
+        } else { // If small norm not full rank
+            tile_is_full_rank = false;
+        }
 
         if (!tile_is_full_rank) {
-            if (i.index()[0] == 0 && i.index()[1] == 3) {
-                Tile1 = mat_block;
-                L1 = L;
-                R1 = R;
+            if (norm >= 1e-16) {
+                tile = TilePimpl<double>{
+                    std::move(range), TileVariant<double>{LowRankTile<double>{
+                                          std::move(L), std::move(R)}},
+                    1e-16};
+            } else {
+                tile = TilePimpl<double>{
+                    std::move(range),
+                    TileVariant<double>{LowRankTile<double>{true}}, 1e-16};
             }
-            if (i.index()[0] == 0) {
-                if (Lbasis.size() == 0) {
-                    Lbasis = mat_block * mat_block.transpose();
-                } else {
-                    Lbasis += mat_block * mat_block.transpose();
-                }
-            }
-            if (i.index()[1] == 3) {
-                if (Rbasis.size() == 0) {
-                    Rbasis = mat_block.transpose() * mat_block;
-                } else {
-                    Rbasis += mat_block.transpose() * mat_block;
-                }
-            }
-
-            tile = TilePimpl<double>{std::move(range),
-                                     TileVariant<double>{LowRankTile<double>{
-                                         std::move(L), std::move(R)}},
-                                     1e-07};
         } else {
             tile = TilePimpl<double>{
                 std::move(range),
-                TileVariant<double>{FullRankTile<double>{mat_block}}, 1e-07};
+                TileVariant<double>{FullRankTile<double>{mat_block}}, 1e-16};
         }
-
         *i = std::move(tile);
     }
-
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(Lbasis);
-    auto evals = es.eigenvalues();
-    auto rankL = 0;
-    for (auto i = 0; i < evals.size(); ++i) {
-        evals[i] = evals[i] * evals[i];
-        if (evals[i] >= 1e-14) {
-            ++rankL;
-        }
-    }
-    std::reverse(evals.data(), evals.data() + evals.size());
-    std::cout << "Rank 0 = " << rankL << std::endl;
-
-    Eigen::MatrixXd basisr0 = es.eigenvectors().rightCols(rankL);
-
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> esR(Rbasis);
-    auto evalsR = esR.eigenvalues();
-    auto evalsRc = evalsR;
-    auto rankR = 0;
-    for (auto i = 0; i < evalsR.size(); ++i) {
-        evalsR[i] = evalsR[i] * evalsR[i];
-        if (evalsR[i] >= 1e-14) {
-            ++rankR;
-        } else {
-            evalsRc[i] = 0;
-        }
-    }
-    std::reverse(evalsR.data(), evalsR.data() + evalsR.size());
-    std::cout << "Rank 1 = " << rankR << std::endl;
-
-    Eigen::MatrixXd basisc1 = esR.eigenvectors().rightCols(rankR);
-    std::cout << "Correct basis norm should be low = "
-              << (Rbasis - basisc1
-                  * Eigen::MatrixXd(evalsRc.asDiagonal())
-                        .bottomRightCorner(rankR, rankR)
-                  * basisc1.transpose()).norm() << std::endl;
-
-    std::cout << "Dim L1 = " << L1.rows() << "x" << L1.cols() << std::endl;
-    std::cout << "Dim R1 = " << R1.rows() << "x" << R1.cols() << std::endl;
-    std::cout << "Diff between tile and low rank version = "
-              << (Tile1 - L1 * R1).norm() << std::endl;
-
-    Eigen::MatrixXd hversion = basisr0.transpose() * L1 * R1 * basisc1;
-    std::cout << "Hversion dims = " << hversion.rows() << "x" << hversion.cols()
-              << std::endl;
-    std::cout << "Diff between tile and hversion = "
-              << (Tile1 - basisr0 * hversion * basisc1.transpose()).norm()
-              << std::endl;
 
     return A;
 }
 
-TiledArray::Array<double, 2, TiledArray::Tensor<double>,
-                  TiledArray::SparsePolicy>
-make_f_array(madness::World &world, TiledArray::TiledRange &trange,
-             const Eigen::MatrixXd &mat, TiledArray::Array<double, 2> &dense) {
-    // Shape tensor
-    TiledArray::Tensor<float> shape_tensor(trange.tiles(), 0);
-    for (auto i = 0ul; i != trange.tiles().volume(); ++i) {
-        auto range = trange.make_tile_range(i);
-        shape_tensor[i]
-            = mat.block(range.start()[0], range.start()[1], range.size()[0],
-                        range.size()[1]).lpNorm<2>();
-    }
-    auto gemmh = TiledArray::math::GemmHelper(
-        madness::cblas::CBLAS_TRANSPOSE::NoTrans,
-        madness::cblas::CBLAS_TRANSPOSE::NoTrans, 2, 2, 2);
+TiledArray::Array<double, 2> make_f_array(madness::World &world,
+                                          TiledArray::TiledRange const &trange,
+                                          Eigen::MatrixXd const &mat) {
+    using TiledArray::eigen_map;
 
-    auto gemmed_shape_tensor = shape_tensor.add(shape_tensor, 1.0);
-
-    TiledArray::SparseShape<float> shape(world, shape_tensor, trange);
-
-    auto gemmed_norm_shape_tensor = shape.data().gemm(shape.data(), 1.0, gemmh);
-    for (auto i = 0; i < gemmed_norm_shape_tensor.size(); ++i) {
-        // std::cout << " tile " << i << " estimated squared norm = " <<
-        // gemmed_norm_shape_tensor[i] << std::endl;
-    }
-
-    TiledArray::Array<double, 2, TiledArray::Tensor<double>,
-                      TiledArray::SparsePolicy> A(world, trange, shape);
+    TiledArray::Array<double, 2> A(world, trange);
 
     for (auto i = A.begin(); i != A.end(); ++i) {
-        auto range = trange.make_tile_range(i.ordinal());
+
+        const auto range = trange.make_tile_range(i.ordinal());
+        const auto &size = range.size();
+        const auto &start = range.start();
+
         decltype(A)::value_type tile{range};
 
-        TiledArray::eigen_map(tile, range.size()[0], range.size()[1])
-            = mat.block(range.start()[0], range.start()[1], range.size()[0],
-                        range.size()[1]);
+        auto mat_block = mat.block(start[0], start[1], size[0], size[1]);
+        auto norm = mat_block.norm();
+
+        Eigen::MatrixXd L, R;
+        if (norm <= 1e-14) {
+            auto tstart = tile.data();
+            const auto end = tile.data() + tile.size();
+            std::for_each(tstart, end, [](double &x) { x = 0; });
+        } else if (!algebra::Decompose_Matrix(mat_block, L, R, 1e-14)) {
+            eigen_map(tile, size[0], size[1]) = L * R;
+        } else {
+            eigen_map(tile, size[0], size[1]) = mat_block;
+        }
+
         *i = std::move(tile);
     }
 
-    for (auto i = dense.begin(); i != dense.end(); ++i) {
-        if (A.is_zero(i.ordinal())) {
-            for (auto j = 0; j < i->get().range().volume(); ++j) {
-                i->get()[j] = 0;
-            }
-        }
-        auto range = i->get().range();
-    }
     return A;
 }
 
 template <typename T, typename LR>
-bool check_equal(
-    const TiledArray::Array<double, 2, T, TiledArray::SparsePolicy> &Full,
-    const TiledArray::Array<double, 2, T, TiledArray::DensePolicy> &Full_dense,
-    const TiledArray::Array<double, 2, LR, TiledArray::SparsePolicy> &Low) {
-    auto fit = Full.begin();
-    auto fend = Full.end();
+norm_diff_info compute_norms(TiledArray::Array<double, 2, T> const &Full,
+                             TiledArray::Array<double, 2, LR> const &Low) {
+
+    using TiledArray::eigen_map;
+
+    norm_diff_info diff;
+
+    const auto fend = Full.end();
     auto LRit = Low.begin();
+    for (auto fit = Full.begin(); fit != fend; ++fit, ++LRit) {
+        auto size = fit->get().range().size();
 
-    bool same = true;
-    bool empty_tile = false;
+        auto Fmat = eigen_map(fit->get(), size[0], size[1]);
+        auto LRmat = LRit->get().tile().matrix();
 
-    std::cout << "\nTile\tnorm(zeroed dense)\tnorm(sparse)\tempty\n";
-    for (auto dit = Full_dense.begin(); dit != Full_dense.end(); ++dit) {
-        auto tile = Full_dense.find(dit.ordinal()).get();
-        auto range = tile.range();
-        auto norm_dense
-            = Eigen::MatrixXd(TiledArray::eigen_map(tile, range.size().at(0),
-                                                    range.size().at(1)))
-                  .lpNorm<2>();
-        bool empty = true;
-        if (!Full.is_zero(dit.ordinal())) {
-            empty = Full.find(dit.ordinal()).get().empty();
-        }
-        auto norm_sparse = Full.get_shape().data()[dit.ordinal()];
-        std::cout << std::setprecision(16);
-        std::cout << dit.ordinal() << "\t" << double(norm_dense) << "\t"
-                  << norm_sparse * range.volume() << "\t" << empty << "\n";
-    }
-    fit = Full.begin();
-    for (; fit != fend; ++fit, ++LRit) {
-        if (fit->get().empty()) {
+        if (LRit->get().tile().iszero()) {
+            diff.update(Fmat.norm());
         } else {
-            auto range = fit->get().range();
-            Eigen::MatrixXd Fmat = TiledArray::eigen_map(
-                fit->get(), range.size().at(0), range.size().at(1));
-            Eigen::MatrixXd LRmat = LRit->get().tile().matrix();
-            auto inner_same = ((Fmat - LRmat).lpNorm<2>() < 1e-06);
-            if (inner_same == false) {
-                std::cout << "\n\tTile = (" << fit.index()[0] << ","
-                          << fit.index()[1] << ")"
-                          << "\n\t\t2 norm of diff = "
-                          << (Fmat - LRmat).lpNorm<2>() << std::endl;
-                same = inner_same;
-            }
+            diff.update((Fmat - LRmat).norm());
         }
     }
-    if (!empty_tile) {
-        std::cout << "We tried to access 0 empty tiles . . .  ";
+
+    return diff;
+}
+
+template <typename T>
+norm_diff_info compute_norms_full(TiledArray::Array<double, 2, T> const &Full,
+                                  TiledArray::Array<double, 2, T> const &Low) {
+
+    using TiledArray::eigen_map;
+    norm_diff_info diff;
+
+    const auto fend = Full.end();
+    auto LRit = Low.begin();
+    for (auto fit = Full.begin(); fit != fend; ++fit, ++LRit) {
+        const auto &size = fit->get().range().size();
+
+        auto Fmat = eigen_map(fit->get(), size[0], size[1]);
+        auto LRmat = eigen_map(LRit->get(), size[0], size[1]);
+
+        diff.update((Fmat - LRmat).norm());
     }
 
-
-    return same;
+    return diff;
 }

@@ -46,6 +46,7 @@ class FullRankTile {
     inline unsigned long Rows() const { return tile_.rows(); }
     inline unsigned long Cols() const { return tile_.cols(); }
     inline unsigned long size() const { return tile_.size(); }
+    inline bool iszero() const {return false;}
 
   private:
     Matrix<T> tile_;

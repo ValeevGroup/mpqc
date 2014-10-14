@@ -275,9 +275,7 @@ LowRankTile<T> gemm(LowRankTile<T> &&result, LowRankTile<T> const &left,
         R.topRows(rank_AB) = algebra::cblas_gemm(mid, right.matrixR(), 1.0);
     }
 
-    result = LowRankTile<T>{std::move(L), std::move(R)};
-
-    return result;
+    return LowRankTile<T>{std::move(L), std::move(R)};
 }
 
 

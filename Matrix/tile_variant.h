@@ -70,7 +70,6 @@ class TileVariant {
     template <typename Func>
     TileVariant &apply_ternary_mutation(const TileVariant &left,
                                         const TileVariant &right, Func op) {
-
         switch ((tag() << 2) | (left.tag() << 1) | right.tag()) {
         case LowLowLow:
             *this = op(std::move(lrtile_), left.lrtile(), right.lrtile());
@@ -162,6 +161,10 @@ class TileVariant {
 
     unsigned long full_rank() const {
         return apply_unary_op(full_rank_functor);
+    }
+
+    bool iszero() const {
+      return apply_unary_op([](auto const &tile){return tile.iszero();});
     }
 
     typename FullRankTile<T>::template Matrix<T> matrix() const {

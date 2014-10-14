@@ -43,7 +43,8 @@ class TilePimpl {
 
     explicit TilePimpl(TiledArray::Range r, TileVariant<T> t, double cut)
         : tile_(std::make_shared<TileVariant<T>>(std::move(t))),
-          range_(std::move(r)), cut_(cut) {}
+          range_(std::move(r)), cut_(cut) {
+    }
 
     // Clone will make a deep copy
     TilePimpl clone() const { return TilePimpl(range_, *tile_, cut_); }
@@ -81,10 +82,15 @@ class TilePimpl {
     TilePimpl gemm(TilePimpl const &right, numeric_type factor,
                    TiledArray::math::GemmHelper const &gemm_config) const {
 
-        // TODO_TCC complete this section.
         auto result_range
             = gemm_config.make_result_range<range_type>(range(), right.range());
-        //  auto result_range = range();
+
+        if (tile_->iszero() || right.tile().iszero()) {
+            const bool zero = true;
+            return TilePimpl(std::move(result_range),
+                             TileVariant<T>{LowRankTile<T>{zero}},
+                             std::max(cut(), right.cut()));
+        }
 
         return TilePimpl(std::move(result_range),
                          tile_->apply_binary_op(
@@ -95,11 +101,15 @@ class TilePimpl {
     TilePimpl &gemm(TilePimpl const &left, TilePimpl const &right,
                     numeric_type factor,
                     TiledArray::math::GemmHelper const &gemm_config) {
-
-        // TODO_TCC complete this section.
         range_
             = gemm_config.make_result_range<range_type>(range(), right.range());
-        // auto result_range = range();
+
+        if (left.tile().iszero() || right.tile().iszero()) {
+            return *this;
+        } else if (tile_->iszero()) {
+            *this = left.gemm(right, 1.0, gemm_config);
+            return *this;
+        }
 
         // Will convert to full when gemm grows the rank to much.
         if (tile_->tag() == TileVariant<T>::LowRank
@@ -142,7 +152,14 @@ class TilePimpl {
     }
 
     void compress() {
-        tile_->apply_unary_mutation(unary_mutations::compress_functor(cut()));
+        if (!tile_->iszero()) {
+            tile_->apply_unary_mutation(
+                unary_mutations::compress_functor(cut()));
+        }
+    }
+
+    void set_zero() {
+      *tile_ = TileVariant<T>{LowRankTile<T>{true}};
     }
 
     TilePimpl scale(const T factor, TiledArray::Permutation const &perm) const {
@@ -150,28 +167,48 @@ class TilePimpl {
     }
 
     TilePimpl scale(const T factor) const {
-        return TilePimpl{
-            range(), tile_->apply_unary_op(unary_ops::scale_functor(factor)),
-            cut()};
+        if (!tile_->iszero()) {
+            return TilePimpl{
+                range(),
+                tile_->apply_unary_op(unary_ops::scale_functor(factor)), cut()};
+        } else {
+            return TilePimpl{range(), TileVariant<T>{LowRankTile<T>{true}}, cut()};
+        }
     }
 
     TilePimpl &scale_to(const T factor) {
-        tile_->apply_unary_mutation(unary_mutations::scale_functor(factor));
+        if (!tile_->iszero()) {
+            tile_->apply_unary_mutation(unary_mutations::scale_functor(factor));
+        }
         return *this;
     }
 
     TilePimpl &subt_to(TilePimpl const &right) {
-        tile_->apply_binary_mutation(right.tile(),
-                                     binary_mutations::subt_functor(1.0));
+        if (tile_->iszero()) { // We are zero
+            if (!right.tile().iszero()) {
+                tile_ = right.tile().apply_unary_op(
+                    unary_ops::scale_functor(-1.0));
+            }
+        } else if (!right.tile().iszero()) { // both aren't zero
+            tile_->apply_binary_mutation(right.tile(),
+                                         binary_mutations::subt_functor(1.0));
+        }
         return *this;
     }
 
     // TODO_TCC figure out what is going on with needing factor second.
     TilePimpl &subt_to(TilePimpl const &right, T factor) {
-        convert_to_full(*tile_, right.tile());
-        tile_->apply_binary_mutation(right.tile(),
-                                     binary_mutations::subt_functor(1.0));
-        tile_->apply_unary_mutation(unary_mutations::scale_functor(factor));
+        if (tile_->iszero()) {
+            if (!right.tile().iszero()) {
+                *tile_ = right.tile().apply_unary_op(
+                    unary_ops::scale_functor(-1.0));
+            }
+        } else if (!right.tile().iszero()) {
+            convert_to_full(*tile_, right.tile());
+            tile_->apply_binary_mutation(right.tile(),
+                                         binary_mutations::subt_functor(1.0));
+            tile_->apply_unary_mutation(unary_mutations::scale_functor(factor));
+        }
         return *this;
     }
 
@@ -182,10 +219,21 @@ class TilePimpl {
     }
 
     TilePimpl subt(TilePimpl const &right) const {
-        return TilePimpl{
-            range(),
-            tile_->apply_binary_op(right.tile(), binary_ops::subt_functor(1.0)),
-            std::max(cut(), right.cut())};
+        if (tile_->iszero()) {
+            if (right.tile().iszero()) {
+                return clone();
+            } else {
+                return right.tile().apply_unary_op(
+                    unary_ops::scale_functor(-1.0));
+            }
+        } else if (right.tile().iszero()) {
+            return clone();
+        } else {
+            return TilePimpl{range(),
+                             tile_->apply_binary_op(
+                                 right.tile(), binary_ops::subt_functor(1.0)),
+                             std::max(cut(), right.cut())};
+        }
     }
 
     TilePimpl neg(TiledArray::Permutation const &perm) const { assert(false); }

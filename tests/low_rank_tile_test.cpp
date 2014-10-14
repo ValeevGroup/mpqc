@@ -23,14 +23,19 @@ TYPED_TEST(LowRankTileTest, DefaultConstructor) {
               this->tile.size());
 }
 
+TYPED_TEST(LowRankTileTest, ZeroConstructor) {
+  LowRankTile<TypeParam> A{true};
+  EXPECT_TRUE(A.iszero());
+}
+
 TYPED_TEST(LowRankTileTest, LRConstructor) {
     const int rows = 11;
     const int cols = 9;
     const int rank = 3;
-    auto L = LowRankTile<TypeParam>::template Matrix
-             <TypeParam>::Random(rows, rank).eval();
-    auto R = LowRankTile<TypeParam>::template Matrix
-             <TypeParam>::Random(rank, cols).eval();
+    auto L = LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
+                 rows, rank).eval();
+    auto R = LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
+                 rank, cols).eval();
     auto mat = (L * R).eval();
 
     LowRankTile<TypeParam> lr_tile(L, R);
@@ -59,16 +64,16 @@ TYPED_TEST(LowRankTileTest, LRMoveConstructor) {
     const int rows = 11;
     const int cols = 9;
     const int rank = 3;
-    auto L = LowRankTile<TypeParam>::template Matrix
-             <TypeParam>::Random(rows, rank).eval();
-    auto R = LowRankTile<TypeParam>::template Matrix
-             <TypeParam>::Random(rank, cols).eval();
+    auto L = LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
+                 rows, rank).eval();
+    auto R = LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
+                 rank, cols).eval();
     auto L_moved_from = L;
     auto R_moved_from = R;
     auto mat = (L * R).eval();
 
-    LowRankTile
-        <TypeParam> lr_tile(std::move(L_moved_from), std::move(R_moved_from));
+    LowRankTile<TypeParam> lr_tile(std::move(L_moved_from),
+                                   std::move(R_moved_from));
 
     EXPECT_EQ(0ul, L_moved_from.rows());
     EXPECT_EQ(0ul, L_moved_from.cols());
@@ -103,10 +108,10 @@ TYPED_TEST(LowRankTileTest, CopyConstructor) {
     const int cols = 11;
     const int rank = 3;
 
-    auto L = LowRankTile<TypeParam>::template Matrix
-             <TypeParam>::Random(rows, rank).eval();
-    auto R = LowRankTile<TypeParam>::template Matrix
-             <TypeParam>::Random(rank, cols).eval();
+    auto L = LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
+                 rows, rank).eval();
+    auto R = LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
+                 rank, cols).eval();
     auto mat = (L * R).eval();
 
     LowRankTile<TypeParam> lr_tile(L, R);
@@ -129,10 +134,10 @@ TYPED_TEST(LowRankTileTest, MoveConstructor) {
     const int cols = 11;
     const int rank = 3;
 
-    auto L = LowRankTile<TypeParam>::template Matrix
-             <TypeParam>::Random(rows, rank).eval();
-    auto R = LowRankTile<TypeParam>::template Matrix
-             <TypeParam>::Random(rank, cols).eval();
+    auto L = LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
+                 rows, rank).eval();
+    auto R = LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
+                 rank, cols).eval();
     auto mat = (L * R).eval();
 
     LowRankTile<TypeParam> lr_tile(L, R);
@@ -166,10 +171,10 @@ TYPED_TEST(LowRankTileTest, AssignmentOperator) {
     const int cols = 11;
     const int rank = 3;
 
-    auto L = LowRankTile<TypeParam>::template Matrix
-             <TypeParam>::Random(rows, rank).eval();
-    auto R = LowRankTile<TypeParam>::template Matrix
-             <TypeParam>::Random(rank, cols).eval();
+    auto L = LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
+                 rows, rank).eval();
+    auto R = LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
+                 rank, cols).eval();
     auto mat = (L * R).eval();
 
     LowRankTile<TypeParam> lr_tile(L, R);
@@ -192,10 +197,10 @@ TYPED_TEST(LowRankTileTest, MoveAssignmentOperator) {
     const int cols = 11;
     const int rank = 3;
 
-    auto L = LowRankTile<TypeParam>::template Matrix
-             <TypeParam>::Random(rows, rank).eval();
-    auto R = LowRankTile<TypeParam>::template Matrix
-             <TypeParam>::Random(rank, cols).eval();
+    auto L = LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
+                 rows, rank).eval();
+    auto R = LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
+                 rank, cols).eval();
     auto mat = (L * R).eval();
 
     LowRankTile<TypeParam> lr_tile(L, R);

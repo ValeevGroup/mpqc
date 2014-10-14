@@ -20,14 +20,21 @@ class LowRankTile {
     LowRankTile(LowRankTile const &) = default;
     LowRankTile &operator=(LowRankTile const &t) = default;
 
-    LowRankTile(LowRankTile &&t) noexcept : L_(), R_() {
+    LowRankTile(LowRankTile &&t) noexcept : L_(), R_(), zero_{t.zero_} {
         L_.swap(t.L_);
         R_.swap(t.R_);
     }
     LowRankTile &operator=(LowRankTile &&t) noexcept {
         L_.swap(t.L_);
         R_.swap(t.R_);
+        zero_ = t.zero_;
         return *this;
+    }
+
+
+    explicit LowRankTile(bool zero)
+        : L_(), R_(), zero_{zero} {
+      assert(zero == true);
     }
 
     LowRankTile(const Matrix<T> &L, const Matrix<T> &R)
@@ -57,6 +64,7 @@ class LowRankTile {
     inline unsigned long Rows() const { return L_.rows(); }
     inline unsigned long Cols() const { return R_.cols(); }
     inline unsigned long size() const { return R_.size() + L_.size(); }
+    inline bool iszero() const {return zero_;}
 
     inline Matrix<T> const &matrixL() const { return L_; }
     inline Matrix<T> const &matrixR() const { return R_; }
@@ -68,6 +76,7 @@ class LowRankTile {
   private:
     Matrix<T> L_;
     Matrix<T> R_;
+    bool zero_ = false;
 };
 
 #endif // LOW_RANK_TILE_H

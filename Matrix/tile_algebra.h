@@ -208,25 +208,28 @@ void inline cblas_gemm_inplace(
 }
 
 // Only works on the output of dqeqp3
-int qr_rank(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> const & M,
-               double thresh){
-    auto rank = std::min(M.rows(), M.cols()); // Start with full rank
-    auto current_row = M.rows() - 1;
-    const auto last_col = M.cols() - 1;
-    auto current_elem = M(current_row, last_col);
-    auto sum_squares = current_elem * current_elem;
-    auto elems_in_row = 2;
-    while (std::sqrt(sum_squares) < thresh) {
-        --rank;        // Decrease the rank
-        --current_row; // Go up one row
-        // Starting in the far right col and working our way over
-        for (auto i = last_col; i > last_col - elems_in_row; --i) {
-            current_elem = M(current_row, i);
-            sum_squares += current_elem * current_elem;
+int inline qr_rank(
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> const &M,
+    double thresh) {
+
+    const auto full_rank = std::min(M.cols(), M.rows());
+    auto out_rank = full_rank;
+
+    auto squared_sum = 0.0;
+    for (auto i = (full_rank - 1); i >= 0; --i) { // rows of R
+
+        for (auto j = (M.cols() - 1); j >= i; --j) { // cols of R
+            squared_sum += M(i, j) * M(i, j);
         }
-        ++elems_in_row;
+
+        if (std::sqrt(squared_sum) >= thresh) {
+            return out_rank;
+        }
+
+        --out_rank; // Decriment rank and go to next row.
     }
-    return rank;
+
+    return out_rank;
 }
 
 bool inline Decompose_Matrix(
@@ -343,7 +346,7 @@ void inline CompressLeft(
     dgeqp3_(&M, &N, input.data(), &LDA, J.data(), Tau, W.get(), &LWORK, &INFO);
 
     const double thresh = cut;
-    auto rank = qr_rank(input,thresh);
+    auto rank = qr_rank(input, thresh);
 
     if (!debug && rank == full_rank) {
         return;

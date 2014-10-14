@@ -982,8 +982,166 @@ namespace sc {
     return XaiAddToXam(B_am, B_ai);
   }
 
+  // compute T1 & T2 amplitudes of CC2
+  template <typename T>
+  void SingleReference_R12Intermediates<T>::compute_T_cc2(TArray2& t1, TArray4& t2) {
+
+    TArray2 fij = xy("<j|F|j>");
+    TArray2 fab = xy("<a|F|b>");
+    TArray2 fai = xy("<a|F|i>");
+
+    // compute Delta_ai = 1 / (- <a|F|a> + <i|F|i>)
+    typedef detail::diag_precond2<double> pceval_type;
+    pceval_type Delta_ai_gen(TA::array_to_eigen(fab), TA::array_to_eigen(fij));
+
+    typedef TA::Array<T, 2, LazyTensor<T, 2, pceval_type > > TArray2dLazy;
+    TArray2dLazy Delta_ai(fai.get_world(), fai.trange());
+
+    typedef TA::Array<T, 2, LazyTensor<T, 2, pceval_type > > TArray2d;
+    // construct local tiles
+    for(auto t = Delta_ai.trange().tiles().begin();
+        t != Delta_ai.trange().tiles().end(); ++t)
+      if (Delta_ai.is_local(*t)) {
+        std::array<std::size_t, 2> index;
+        std::copy(t->begin(), t->end(), index.begin());
+        madness::Future < typename TArray2dLazy::value_type >
+          tile((LazyTensor<T, 2, pceval_type >(&Delta_ai, index, &Delta_ai_gen)
+              ));
+
+        // Insert the tile into the array
+        Delta_ai.set(*t, tile);
+      }
+
+    // compute Delta_ijab =  1 / (- <a|F|a> - <b|F|b> + <i|F|i> + <j|F|j>)
+    typedef detail::diag_precond4<double> pc4eval_type;
+    pc4eval_type Delta_abij_gen(TA::array_to_eigen(fab), TA::array_to_eigen(fab),
+                                TA::array_to_eigen(fij),TA::array_to_eigen(fij));
+
+    TArray4d g_abij = ijxy("<a b|g|i j>");
+    typedef TA::Array<T, 4, LazyTensor<T, 4, pc4eval_type > > TArray4dLazy;
+    TArray4dLazy Delta_abij(g_abij.get_world(), g_abij.trange());
+
+    // construct local tiles
+    for(auto t = Delta_abij.trange().tiles().begin();
+        t != Delta_abij.trange().tiles().end(); ++t)
+      if (Delta_abij.is_local(*t)) {
+        std::array<std::size_t, 4> index;
+        std::copy(t->begin(), t->end(), index.begin());
+        madness::Future < typename TArray4dLazy::value_type >
+          tile((LazyTensor<T, 4, pc4eval_type >(&Delta_abij, index, &Delta_abij_gen)
+              ));
+
+        // Insert the tile into the array
+        Delta_abij.set(*t, tile);
+      }
+
+    // compute initial T1 & T2 amplitudes and energy
+    t1("a,i") = fai("a,i") * Delta_ai("a,i");
+    t2("a,b,i,j") = g_abij("a,b,i,j") * Delta_abij("a,b,i,j");
+    TArray4 tau;
+    tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
+
+    double E_0 = 0.0;
+    double E_1 = 2.0 * dot(fai("a,i"), t1("a,i"))
+                + dot((2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j")), tau("a,b,i,j") );
+    double Delta_E = E_0 - E_1;
+
+    TArray2 Iij = xy("<i|I|j>");
+    TArray2 Iab = xy("<a|I|b>");
+
+    TArray4d g_iabj = ijxy("<i a|g|b j>");
+    TArray4d g_iajb = ijxy("<i a|g|j b>");
+    TArray4d g_iacd = ijxy("<i a|g|c d>");
+    TArray4d g_aicd = ijxy("<a i|g|c d>");
+    TArray4d g_klai = ijxy("<k l|g|a i>");
+    TArray4d g_klia = ijxy("<k l|g|i a>");
+    TArray4d g_ijkl = ijxy("<i j|g|k l>");
+    TArray4d g_abcd = ijxy("<a b|g|c d>");
+
+    TArray2 hac, hki, hck;
+    TArray4 a_klij, b_abcd;
+    double iter = 0;
+
+    std::cout << scprintf("%-5s", "Iter") << scprintf("%-12s", "Delta_E")
+              << scprintf("%-12s", "E(CC2)") << std::endl;
+
+    std::cout << scprintf("%-5.0f", iter)   << scprintf("%-20.10f", Delta_E)
+              << scprintf("%-15.10f", E_1) << std::endl;
+
+    while (Delta_E >= 1.0e-9) {
+
+      // recompute T1 and T2 amplitudes
+      hac("a,c") = //- fab("a,c") * (Iab("a,c") - 1.0)
+                  - (2.0 * g_abij("c,d,k,l") - g_abij("c,d,l,k")) * tau("a,d,k,l");
+      hki("k,i") = //fij("k,i") * (1.0 - Iab("k,i"))
+                  //+
+                   (2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l")) * tau("c,d,i,l");
+      hck("c,k") = fai("c,k")
+                  + (2.0 * g_abij("c,d,k,l") - g_abij("d,c,k,l")) * t1("d,l");
+
+      t1("a,i") = Delta_ai("a,i") * (
+                   //
+                   fai("a,i") - 2.0 * fai("c,k") * t1("a,k") * t1("c,i")
+                   //
+                 + t1("c,i") * hac("a,c") - t1("a,k") * hki("k,i")
+                   //
+                 + hck("c,k")
+                   * (2.0 * t2("c,a,k,i") - t2("c,a,i,k") + t1("c,i") * t1("a,k"))
+                   //
+                 + (2.0 * g_iabj("k,a,c,i") - g_iajb("k,a,i,c")) * t1("c,k")
+                   //
+                 + (2.0 * g_iacd("k,a,c,d") - g_iacd("k,a,d,c")) * tau("c,d,k,i")
+                   //
+                 - (2.0 * g_klai("k,l,c,i") - g_klai("l,k,c,i")) * tau("c,a,k,l")
+                  );
+
+      a_klij("k,l,i,j") =  g_ijkl("k,l,i,j")
+                         + g_klia("k,l,i,c") * t1("c,j") + g_klai("k,l,c,j") * t1("c,i")
+                         + g_abij("c,d,k,l") * t1("c,i") * t1("d,j");
+      b_abcd("a,b,c,d") =  g_abcd("a,b,c,d")
+                         - g_aicd("a,k,c,d") * t1("b,k") - g_iacd("k,b,c,d") * t1("a,k");
+
+      t2("a,b,i,j") = Delta_abij("a,b,i,j") * (
+                       //
+                       g_abij("a,b,i,j")
+                       //
+                     + a_klij("k,l,i,j") * t1("a,k") * t1("b,l")
+                       //
+                     + b_abcd("a,b,c,d") * t1("c,i") * t1("d,j")
+                       //
+                     //+ (fab("a,c") * t2("c,b,i,j") + fab("b,c") * t2("a,c,i,j"))
+                     //  * (1.0 - Iab("a,c"))
+                     //+ (fij("k,i") * t2("a,b,k,j") + fij("k,j") * t2("a,c,i,k"))
+                     //  * (1 - Iij("k,i"))
+                       //
+                     + (g_iacd("i,c,a,b") - g_iajb("k,b,i,c") * t1("a,k")) * t1("c,j")
+                     + (g_iacd("j,c,b,a") - g_iajb("k,a,j,c") * t1("b,k")) * t1("c,i")
+                       //
+                     - (g_klai("i,j,a,k") + g_iabj("i,c,a,k") * t1("c,j")) * t1("b,k")
+                     - (g_klai("j,i,b,k") + g_iabj("j,c,b,k") * t1("c,i")) * t1("a,k")
+                      );
+      tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
+
+      // recompute energy
+      E_0 = E_1;
+      E_1 = 2.0 * dot(fai("a,i"), t1("a,i"))
+           + dot((2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j")), tau("a,b,i,j") );
+      Delta_E = E_0 - E_1;
+      iter += 1;
+      std::cout << scprintf("%-5.0f", iter)   << scprintf("%-20.10f", Delta_E)
+                << scprintf("%-15.10f", E_1) << std::endl;
+    }
+    //std::cout << "t1_0: " << t1 << std::endl;
+
+  }
+
   template <typename T>
   void SingleReference_R12Intermediates<T>::compute_multipole() {
+
+    ExEnv::out0() << indent << "Start to compute CC2" << std::endl;
+    TArray2 T1;
+    TArray4 T2;
+    compute_T_cc2(T1,T2);
 
     ExEnv::out0() << indent << "Compute MP2-F12 dipole and quadrupole moments" << std::endl;
 

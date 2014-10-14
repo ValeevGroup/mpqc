@@ -300,6 +300,9 @@ namespace sc {
       // compute Xam contribution from F12 B part
       TArray2 Xam_B(const double C_0, const double C_1);
 
+      // compute T1 & T2 amplitudes of CC2
+      void compute_T_cc2(TArray2& T1, TArray4& T2);
+
       /** returns the 2-particle density matrix
       * @return \f$ \gamma^{pq}_{rs} \f$, respectively
       */

@@ -6,7 +6,6 @@
 #include <iomanip>
 
 #include "../../include/eigen.h"
-#include "../../include/tbb.h"
 #include "../../include/tiledarray.h"
 
 #include "../tile_pimpl.h"

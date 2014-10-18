@@ -1,6 +1,7 @@
 set(sources
-  basis.h
-  libintshell.h
+  basisset.h
+  atom_basisset.h
+  basisset.cpp
   clusterable_shell.h
 )
 

@@ -16,7 +16,7 @@ class FullRankTile {
     using scaler_type = T;
 
     FullRankTile() = default;
-    FullRankTile(FullRankTile<T> const &t) = default;
+    FullRankTile(FullRankTile const &t) = default;
     FullRankTile &operator=(FullRankTile<T> const &t) {
         tile_ = t.tile_;
         rank_ = t.rank_;

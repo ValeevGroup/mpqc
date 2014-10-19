@@ -128,7 +128,7 @@ class TileVariant {
 
     template <typename Func>
     auto apply_binary_op(const TileVariant &right,
-                         Func op) const -> decltype(op(lrtile(), lrtile())) const {
+                         Func op) const -> decltype(op(this->lrtile(), this->lrtile())) const {
         switch ((tag() << 1) | right.tag()) {
         case LowLow:
             return op(lrtile(), right.lrtile());
@@ -143,7 +143,7 @@ class TileVariant {
 
 
     template <typename Func>
-    auto apply_unary_op(Func op) const -> decltype(op(lrtile())) const {
+    auto apply_unary_op(Func op) const -> decltype(op(this->lrtile())) const {
         if (tag() == LowRank) {
             return op(lrtile());
         } else {
@@ -164,7 +164,7 @@ class TileVariant {
     }
 
     bool iszero() const {
-      return apply_unary_op([](auto const &tile){return tile.iszero();});
+      return apply_unary_op(is_zero_functor);
     }
 
     typename FullRankTile<T>::template Matrix<T> matrix() const {
@@ -202,6 +202,11 @@ class TileVariant {
 
         unsigned long operator()(LowRankTile<T> const &t) { return t.rank(); }
     } low_rank_functor;
+
+    struct {
+        bool operator()(FullRankTile<T> const &t){return t.iszero();}
+        bool operator()(LowRankTile<T> const &t){return t.iszero();}
+    } is_zero_functor;
 
     struct {
         typename FullRankTile<T>::template Matrix<T>

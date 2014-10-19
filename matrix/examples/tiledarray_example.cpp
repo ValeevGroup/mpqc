@@ -16,23 +16,31 @@ TiledArray::Array<double, 2, TilePimpl<double>>
 make_lr_array(madness::World &, TiledArray::TiledRange const &,
               Eigen::MatrixXd const &);
 
-TiledArray::Array<double, 2> make_f_array(madness::World &,
-                                          TiledArray::TiledRange const &,
-                                          Eigen::MatrixXd const &);
+TiledArray::Array<double, 2, TilePimpl<double>> make_f_array(madness::World &,
+                                          TiledArray::TiledRange const &);
 
 template <typename Array>
-Array create_noise(Array const &in, double epsilon) {
-    std::default_random_engine generator;
-    std::uniform_real_distribution<double> distribution(-epsilon, epsilon);
-
+Array copy_to_lr(Array const &in, int rank) {
     Array out(in.get_world(), in.trange());
+    using T = double;
 
     auto in_it = in.begin();
     for (auto it = out.begin(); it != out.end(); ++it, ++in_it) {
         auto ctile = in_it->get();
         typename Array::value_type tile{ctile.range()};
-        for (auto i = 0ul; i < tile.size(); ++i) {
-            *(tile.data() + i) = *(ctile.data() + i) + distribution(generator);
+        if (it.index()[0] != it.index()[1]) {
+            auto mat = ctile.tile().matrix();
+            Eigen::JacobiSVD<Eigen::MatrixXd> svd(mat, Eigen::ComputeThinU
+                                                       | Eigen::ComputeThinV);
+            Eigen::MatrixXd diag = svd.singularValues().asDiagonal();
+            Eigen::MatrixXd L = svd.matrixU().leftCols(rank)
+                                * diag.block(0, 0, rank, rank);
+            Eigen::MatrixXd R = svd.matrixV().transpose().topRows(rank);
+            tile = TilePimpl<T>{ctile.range(), TileVariant<T>{LowRankTile<T>{
+                                                   std::move(L), std::move(R)}},
+                                1e-07};
+        } else {
+            tile = ctile.clone();
         }
         *it = tile;
     }
@@ -61,27 +69,6 @@ struct norm_diff_info {
     double F_norm() { return std::sqrt(sum_squares_); }
 };
 
-template <typename Array>
-void create_DiagDom_mat(Array &m) {
-    auto counter = 10;
-    for (auto it = m.begin(); it != m.end(); ++it) {
-        typename Array::value_type tile{
-            m.trange().make_tile_range(it.ordinal())};
-        if (it.index()[0] == it.index()[1]) {
-            for (auto i = 0ul; i < tile.size(); ++i) {
-                *(tile.data() + i) = 100;
-            }
-        } else {
-            for (auto i = 0ul; i < tile.size(); ++i) {
-                *(tile.data() + i) = 1.0 / double(it.index()[0] * counter
-                                                  + it.index()[1] * counter);
-            }
-            counter += 1;
-        }
-        *it = tile;
-    }
-}
-
 template <typename T>
 norm_diff_info compute_norms_full(TiledArray::Array<double, 2, T> const &Full,
                                   TiledArray::Array<double, 2, T> const &Low);
@@ -91,88 +78,56 @@ norm_diff_info compute_norms(TiledArray::Array<double, 2, T> const &Full,
                              TiledArray::Array<double, 2, LR> const &Low);
 
 int main(int argc, char **argv) {
-    std::string Sfile;
+    unsigned long matsize;
     unsigned long blocksize;
     if (argc < 3) {
-        std::cout << "Please provide an input files for the array and a "
+        std::cout << "Please provide an input matrix size for the array and a "
                      "blocksize\n";
         return 0;
     } else {
-        Sfile = argv[1];
+        matsize = std::stoul(argv[1]);
         blocksize = std::stoul(argv[2]);
     }
 
     madness::World &world = madness::initialize(argc, argv);
 
-    Eigen::MatrixXd ES = read_matrix(Sfile);
 
-    const auto nbasis = ES.rows();
     std::vector<unsigned int> blocking;
     auto i = 0;
-    for (; i < nbasis; i += blocksize) {
+    for (; i < matsize; i += blocksize) {
         blocking.emplace_back(i);
     }
-    blocking.emplace_back(nbasis);
+    blocking.emplace_back(matsize);
 
     std::vector<TiledArray::TiledRange1> blocking2(
         2, TiledArray::TiledRange1(blocking.begin(), blocking.end()));
 
     TiledArray::TiledRange trange(blocking2.begin(), blocking2.end());
 
-    // auto LR_S = make_f_array(world, trange, ES);
+    auto S = make_f_array(world, trange);
+    auto Sc = copy_to_lr(S, blocksize/5);
+    TiledArray::Array<double, 2, TilePimpl<double>> C(world,trange);
+    TiledArray::Array<double, 2, TilePimpl<double>> Cc(world,trange);
 
-    // Hmat from chain of H's not important though.
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> ev(ES);
-    auto evals = ev.eigenvalues();
-    evals(0) = 20;
-    for (auto i = 1; i < evals.size(); ++i) {
-        evals(i) = 10.0 / double(i * i);
-    }
-    auto S = TiledArray::eigen_to_array<TiledArray::Array<double, 2>>(
-        world, trange, ES);
-
-    for (auto noise = 1e-16; noise < 1e-9; noise *= 10) {
-        world.gop.fence();
-        auto S_copy = create_noise(S, noise);
-        std::cout << "Noise range per element is " << -noise << " - " << noise
-                  << std::endl;
-
-        for (auto i = 1; i < 10; ++i) {
-            world.gop.fence();
-            std::cout << "\tStarting Iteration " << i << std::endl;
-
-            S("i,j") = S("i,k") * S("k,j");
-            S_copy("i,j") = S_copy("i,k") * S_copy("k,j");
-            auto diff = compute_norms_full(S, S_copy);
-            std::cout << "\tF_norm of diff is " << diff.F_norm() << "\n"
-                      << "\tavg for tiles is " << diff.avg() << "\n"
-                      << "\tmax tile diff is " << diff.max() << "\n"
-                      << "\tmin tile diff is " << diff.min() << std::endl;
-
-            ES = TiledArray::array_to_eigen(S);
-            Eigen::MatrixXd ESC = TiledArray::array_to_eigen(S_copy);
-
-            Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> ev(ES);
-            auto min_ev_S = ev.eigenvalues().minCoeff();
-            auto max_ev_S = ev.eigenvalues().maxCoeff();
-
-            ev.compute(ESC);
-            auto min_ev_SC = ev.eigenvalues().minCoeff();
-            auto max_ev_SC = ev.eigenvalues().maxCoeff();
-
-            //        LR_S("i,j") = LR_S("i,k") * LR_S("k,j");
-
-            std::cout << "\tmax eigen value of S is " << max_ev_S << "\n"
-                      << "\tmin eigen value of S is " << min_ev_S << "\n"
-                      << "\tmax eigen value of S_copy is " << max_ev_SC << "\n"
-                      << "\tmin eigen value of S_copy is " << min_ev_SC << "\n"
-                      << std::endl;
-        }
-    }
-
-    // S("i,j") = S("i,j") - S_copy("i,j");
     world.gop.fence();
-    // std::cout << S << std::endl;
+    double full_time = madness::wall_time();
+    C("i,j") = S("i,k") * S("k,j");
+    world.gop.fence();
+    full_time = madness::wall_time() - full_time;
+    
+    double lr_time = madness::wall_time();
+    Cc("i,j") = Sc("i,k") * Sc("k,j");
+    lr_time = madness::wall_time() - lr_time;
+
+    std::cout << "Full time took " << full_time << " lr time took " << lr_time << std::endl;
+    auto diff = compute_norms_full(S, Sc);
+    std::cout << "\tF_norm of diff is " << diff.F_norm() << "\n"
+              << "\tavg for tiles is " << diff.avg() << "\n"
+              << "\tmax tile diff is " << diff.max() << "\n"
+              << "\tmin tile diff is " << diff.min() << std::endl;
+
+
+    world.gop.fence();
 
     madness::finalize();
     return 0;
@@ -267,12 +222,11 @@ make_lr_array(madness::World &world, TiledArray::TiledRange const &trange,
     return A;
 }
 
-TiledArray::Array<double, 2> make_f_array(madness::World &world,
-                                          TiledArray::TiledRange const &trange,
-                                          Eigen::MatrixXd const &mat) {
+TiledArray::Array<double, 2, TilePimpl<double>> make_f_array(madness::World &world,
+                                          TiledArray::TiledRange const &trange){
     using TiledArray::eigen_map;
 
-    TiledArray::Array<double, 2> A(world, trange);
+    TiledArray::Array<double, 2, TilePimpl<double>> A(world, trange);
 
     for (auto i = A.begin(); i != A.end(); ++i) {
 
@@ -281,20 +235,9 @@ TiledArray::Array<double, 2> make_f_array(madness::World &world,
         const auto &start = range.start();
 
         decltype(A)::value_type tile{range};
-
-        auto mat_block = mat.block(start[0], start[1], size[0], size[1]);
-        auto norm = mat_block.norm();
-
-        Eigen::MatrixXd L, R;
-        if (norm <= 1e-14) {
-            auto tstart = tile.data();
-            const auto end = tile.data() + tile.size();
-            std::for_each(tstart, end, [](double &x) { x = 0; });
-        } else if (!algebra::Decompose_Matrix(mat_block, L, R, 1e-14)) {
-            eigen_map(tile, size[0], size[1]) = L * R;
-        } else {
-            eigen_map(tile, size[0], size[1]) = mat_block;
-        }
+        tile = TilePimpl<double>{
+            range, TileVariant<double>{FullRankTile<double>{
+                       Eigen::MatrixXd::Random(size[0], size[1])}}};
 
         *i = std::move(tile);
     }
@@ -340,8 +283,8 @@ norm_diff_info compute_norms_full(TiledArray::Array<double, 2, T> const &Full,
     for (auto fit = Full.begin(); fit != fend; ++fit, ++LRit) {
         const auto &size = fit->get().range().size();
 
-        auto Fmat = eigen_map(fit->get(), size[0], size[1]);
-        auto LRmat = eigen_map(LRit->get(), size[0], size[1]);
+        auto Fmat = fit->get().tile().matrix();
+        auto LRmat = LRit->get().tile().matrix();
 
         diff.update((Fmat - LRmat).norm());
     }

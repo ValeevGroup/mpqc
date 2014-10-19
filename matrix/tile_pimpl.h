@@ -125,7 +125,7 @@ class TilePimpl {
     }
 
     TilePimpl &add_to(TilePimpl const &right) {
-        assert(false);
+        tile_->apply_binary_mutation(right.tile(), binary_mutations::subt_functor(-1.0));
         return *this;
     }
 

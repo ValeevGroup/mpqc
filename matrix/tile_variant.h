@@ -171,10 +171,37 @@ class TileVariant {
         return apply_unary_op(matrix_functor);
     }
 
+    template <typename Archive>
+    typename madness::enable_if<madness::archive::is_output_archive<Archive>>::type
+    serialize(Archive &ar) {
+        int tagi = int{static_cast<int>(tag_)};
+        ar & tagi;
+        if (tagi == 0) {
+            ar &lrtile_;
+        } else {
+            ar &ftile_;
+        }
+    }
 
-  private:
+    template <typename Archive>
+    typename madness::enable_if<madness::archive::is_input_archive<Archive>>::type
+    serialize(Archive &ar) {
+        int tagi = int{static_cast<int>(tag_)};
+        ar & tagi;
+        if (tagi == 0) {
+            LowRankTile<T> l;
+            ar &l;
+            *this = TileVariant{std::move(l)};
+        } else {
+            FullRankTile<T> f;
+            ar &f;
+            *this = TileVariant{std::move(f)};
+        }
+    }
+
+private : 
+    
     TileType tag_;
-
     union {
         LowRankTile<T> lrtile_;
         FullRankTile<T> ftile_;

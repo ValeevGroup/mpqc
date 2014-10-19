@@ -3,6 +3,7 @@
 
 #include "../include/eigen.h"
 #include "tile_algebra.h"
+#include "../include/tiledarray.h"
 
 template <typename T>
 class LowRankTile {
@@ -72,7 +73,32 @@ class LowRankTile {
     inline Matrix<T> &matrixR() { return R_; }
     inline Matrix<T> matrix() const { return algebra::cblas_gemm(L_, R_, 1.0); }
 
+    template <typename Archive>
+    typename madness::enable_if
+        < madness::archive::is_output_archive<Archive> >::type
+    serialize(Archive &ar) {
+        ar & zero_ & L_.rows() & L_.cols() & R_.rows() & R_.cols() 
+           & madness::archive::wrap(L_.data(), L_.size()) 
+           & madness::archive::wrap(R_.data(), R_.size());
+    }
 
+    template <typename Archive>
+    typename madness::enable_if
+        < madness::archive::is_input_archive<Archive> >::type
+    serialize(Archive &ar) {
+        bool zero;
+        ar & zero;
+        decltype(L_.rows()) Lrows, Lcols, Rrows, Rcols;
+        ar & Lrows & Lcols & Rrows & Rcols;
+        Matrix<T> L(Lrows, Lcols), R(Rrows, Rcols);
+        ar & madness::archive::wrap(L.data(), L.size())
+           & madness::archive::wrap(R.data(), R.size());
+        
+        zero_ = zero;
+        L_.swap(L);
+        R_.swap(R);
+    }
+     
   private:
     Matrix<T> L_;
     Matrix<T> R_;

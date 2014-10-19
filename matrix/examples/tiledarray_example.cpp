@@ -80,6 +80,7 @@ norm_diff_info compute_norms(TiledArray::Array<double, 2, T> const &Full,
 int main(int argc, char **argv) {
     unsigned long matsize;
     unsigned long blocksize;
+    unsigned long debug = 1;
     if (argc < 3) {
         std::cout << "Please provide an input matrix size for the array and a "
                      "blocksize\n";
@@ -88,13 +89,24 @@ int main(int argc, char **argv) {
         matsize = std::stoul(argv[1]);
         blocksize = std::stoul(argv[2]);
     }
+    if(argc == 4){
+        debug = std::stoul(argv[3]);
+    }
 
     madness::World &world = madness::initialize(argc, argv);
 
+    if(debug == 0){
+        char hostname[256];
+        gethostname(hostname, sizeof(hostname));
+        printf("Pid %d on %s readdy for attach\n",getpid(),hostname);
+        fflush(stdout);
+        while(0 == debug)
+            sleep(5);
+    }
+
 
     std::vector<unsigned int> blocking;
-    auto i = 0;
-    for (; i < matsize; i += blocksize) {
+    for (auto i = 0ul; i < matsize; i += blocksize) {
         blocking.emplace_back(i);
     }
     blocking.emplace_back(matsize);
@@ -109,22 +121,82 @@ int main(int argc, char **argv) {
     TiledArray::Array<double, 2, TilePimpl<double>> C(world,trange);
     TiledArray::Array<double, 2, TilePimpl<double>> Cc(world,trange);
 
+    if (debug >= 10) { // serialization test
+        if (debug >= 11) {
+            char hostname[256];
+            gethostname(hostname, sizeof(hostname));
+            printf("Pid %d on %s readdy for attach\n",getpid(),hostname);
+            fflush(stdout);
+            while (11 <= debug) sleep(5);
+        }
+        TilePimpl<double> tile{};
+        world.gop.fence();
+        if (world.rank() == 0) {
+            std::cout << "Getting tile on rank 0\n" << std::flush;
+            tile = Sc.find(9).get();
+            std::cout << "rank 0 correct mat("
+                      << tile.tile().lrtile().matrixL().rows() << "x"
+                      << tile.tile().lrtile().matrixL().cols() << ")\n";
+        }
+        world.gop.fence();
+        if (world.rank() == 1) {
+            std::cout << "Getting tile on rank 1\n" << std::flush;
+            tile = Sc.find(9).get();
+            std::cout << "rank 1 correct mat("
+                      << tile.tile().lrtile().matrixL().rows() << "x"
+                      << tile.tile().lrtile().matrixL().cols() << ")\n";
+        }
+        world.gop.fence();
+
+        auto range = tile.range();
+        std::size_t buf_size = 2 * (sizeof(range) + sizeof(double)
+                                    + sizeof(std::size_t) * (4 * 3)
+                                    + 4 * tile.tile().lrtile().size());
+        unsigned char *buf = new unsigned char[buf_size];
+        madness::archive::BufferOutputArchive oar(buf, buf_size);
+        oar &tile;
+        std::size_t nbyte = oar.size();
+        oar.close();
+
+        decltype(tile) tile_s;
+        madness::archive::BufferInputArchive iar(buf, nbyte);
+        iar &tile_s;
+        iar.close();
+        std::cout << "serialized mat("
+                  << tile_s.tile().lrtile().matrixL().rows() << "x"
+                  << tile_s.tile().lrtile().matrixL().cols() << ")\n";
+        if (tile_s.tile().lrtile().matrix() != tile.tile().lrtile().matrix()) {
+            std::cout << "Serialization Error! Alarm Alarm Alarm!" << std::endl;
+            std::cout << "serialized mat = \n" << tile_s.tile().matrix()
+                      << std::endl;
+        }
+        if (debug >= 11) {
+            char hostname[256];
+            gethostname(hostname, sizeof(hostname));
+            printf("Pid %d on %s readdy for attach\n",getpid(),hostname);
+            fflush(stdout);
+            while (11 <= debug) sleep(5);
+        }
+        world.gop.fence();
+    }
+
+    std::cout << "Made it too contractions\n" << std::flush;
     world.gop.fence();
     double full_time = madness::wall_time();
     C("i,j") = S("i,k") * S("k,j");
     world.gop.fence();
     full_time = madness::wall_time() - full_time;
-    
-    double lr_time = madness::wall_time();
-    Cc("i,j") = Sc("i,k") * Sc("k,j");
-    lr_time = madness::wall_time() - lr_time;
 
-    std::cout << "Full time took " << full_time << " lr time took " << lr_time << std::endl;
-    auto diff = compute_norms_full(S, Sc);
-    std::cout << "\tF_norm of diff is " << diff.F_norm() << "\n"
-              << "\tavg for tiles is " << diff.avg() << "\n"
-              << "\tmax tile diff is " << diff.max() << "\n"
-              << "\tmin tile diff is " << diff.min() << std::endl;
+     double lr_time = madness::wall_time();
+     Cc("i,j") = Sc("i,k") * Sc("k,j");
+     lr_time = madness::wall_time() - lr_time;
+
+     std::cout << "Full time took " << full_time << " lr time took " << lr_time << std::endl;
+     auto diff = compute_norms_full(S, Sc);
+     std::cout << "\tF_norm of diff is " << diff.F_norm() << "\n"
+               << "\tavg for tiles is " << diff.avg() << "\n"
+               << "\tmax tile diff is " << diff.max() << "\n"
+               << "\tmin tile diff is " << diff.min() << std::endl;
 
 
     world.gop.fence();

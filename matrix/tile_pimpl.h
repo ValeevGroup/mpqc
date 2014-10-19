@@ -5,6 +5,8 @@
 #include "tile_ops.h"
 #include "tile_mutations.h"
 #include "../include/tiledarray.h"
+#include "archive_helper.h"
+
 #include <memory>
 
 template <typename T>
@@ -243,7 +245,65 @@ class TilePimpl {
 
 
     template <typename Archive>
-    void serialize(Archive &ar) {}
+    typename madness::enable_if<madness::archive::is_output_archive<Archive>>::
+        type
+        serialize(Archive &ar) {
+        int tag = (tile_) ? tile_->tag() : -1;
+        ar &tag &cut_ &range_;
+        if (tag != -1) {
+            if (tag == 0) {
+                auto rows = static_cast<unsigned long>(
+                    tile_->lrtile().matrixL().rows());
+                auto cols = static_cast<unsigned long>(
+                    tile_->lrtile().matrixL().cols());
+                ar &rows &cols;
+                rows = tile_->lrtile().matrixR().rows();
+                cols = tile_->lrtile().matrixR().cols();
+                ar &rows &cols;
+                ar &madness::archive::wrap(tile_->lrtile().matrixL().data(),
+                                           tile_->lrtile().matrixL().size());
+                ar &madness::archive::wrap(tile_->lrtile().matrixR().data(),
+                                           tile_->lrtile().matrixR().size());
+
+            } else {
+                auto rows = static_cast<unsigned long>(
+                    tile_->ftile().matrix().rows());
+                auto cols = static_cast<unsigned long>(
+                    tile_->ftile().matrix().cols());
+                ar &rows &cols;
+                ar &madness::archive::wrap(tile_->ftile().matrix().data(),
+                                           tile_->ftile().matrix().size());
+            }
+        }
+    }
+
+    template <typename Archive>
+    typename madness::enable_if<madness::archive::is_input_archive<Archive>>::
+        type
+        serialize(Archive &ar) {
+        int tag;
+        ar &tag &cut_ &range_;
+        if (tag != -1) {
+            if (tag == 0) {
+                auto lrows = 0ul, lcols = 0ul, rrows = 0ul, rcols = 0ul;
+                ar &lrows &lcols &rrows &rcols;
+                typename LowRankTile<T>::template Matrix<T> L(lrows, lcols);
+                typename LowRankTile<T>::template Matrix<T> R(rrows, rcols);
+                ar &madness::archive::wrap(L.data(), L.size())
+                    & madness::archive::wrap(R.data(), R.size());
+                LowRankTile<double> l{std::move(L), std::move(R)};
+                tile_ = std::make_shared<TileVariant<double>>(std::move(l));
+            } else {
+                auto rows = 0ul, cols = 0ul;
+                ar &rows &cols;
+                typename FullRankTile<T>::template Matrix<T> mat(rows, cols);
+                ar &madness::archive::wrap(mat.data(), mat.size());
+                FullRankTile<double> f{std::move(mat)};
+                tile_ = std::make_shared<TileVariant<double>>(std::move(f));
+            }
+        }
+    }
+
 
   private:
     /*

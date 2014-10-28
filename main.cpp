@@ -14,7 +14,7 @@ Eigen::MatrixXd read_matrix(const std::string &filename);
 template <typename T>
 void check_data_sparsity(const TiledArray::Array<double, 2, T> &A) {
     double recompress = madness::wall_time();
-    TiledArray::Array<double, 2, LRTile<double>> B(A.get_world(), A.trange());
+    TiledArray::Array<double, 2, LRTile<double>> B{A.get_world(), A.trange()};
 
     auto it_A = A.begin();
     auto it_B = B.begin();
@@ -42,8 +42,8 @@ double compute_trace(const TiledArray::Array<double, 2, T> &A) {
         auto pos = it.index();
         if (pos[0] == pos[1]) {
             const auto range = it->get().range();
-            trace += TiledArray::eigen_map(it->get(), range.size()[0],
-                                           range.size()[1]).trace();
+            range.trace += TiledArray::eigen_map(it->get(), range.size()[0],
+                                                 range.size()[1]).trace();
         }
     }
     return trace;

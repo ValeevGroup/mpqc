@@ -304,7 +304,6 @@ TiledArray::Array<double, 2, TilePimpl<double>> make_f_array(madness::World &wor
 
         const auto range = trange.make_tile_range(i.ordinal());
         const auto &size = range.size();
-        const auto &start = range.start();
 
         decltype(A)::value_type tile{range};
         tile = TilePimpl<double>{

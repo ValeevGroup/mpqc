@@ -5,7 +5,6 @@
 #include "tile_ops.h"
 #include "tile_mutations.h"
 #include "../include/tiledarray.h"
-#include "archive_helper.h"
 
 #include <memory>
 
@@ -281,7 +280,7 @@ class TilePimpl {
     typename madness::enable_if<madness::archive::is_input_archive<Archive>>::
         type
         serialize(Archive &ar) {
-        int tag;
+        int tag = 0;
         ar &tag &cut_ &range_;
         if (tag != -1) {
             if (tag == 0) {

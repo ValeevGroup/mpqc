@@ -4,22 +4,38 @@
 namespace tcc {
 namespace basis {
 
+std::ostream &operator<<(std::ostream &os, AtomBasisShell const &abs) {
+    bool is_spher = abs.spherical();
+    if (is_spher) {
+        os << "\tBasis is spherical ";
+    } else {
+        os << "\tBasis is not spherical ";
+    }
+
+    bool is_SP = abs.am_is_SP();
+    if (is_SP) {
+        os << "Angular Momentum is SP\n";
+    } else {
+        os << "Angular Momentum is " << abs.angular_momentum() << "\n";
+    }
+
+    for (auto i = 0ul; i < abs.contraction_length(); ++i) {
+        os << "\t\tExponent " << i << " is " << abs.exponent(i) << " ";
+        if (is_SP) {
+            os << "With s coefficent " << abs.coeff(i, 0)
+               << " and p coefficent " << abs.coeff(i, 1) << "\n";
+        } else {
+            os << "With coefficent " << abs.coeff(i) << "\n";
+        }
+    }
+    return os;
+}
+
 std::ostream &operator<<(std::ostream &os, AtomBasisSet const &abs) {
 
     os << "Atomic Number " << abs.atomic_number() << "\n";
-    auto nshells = abs.ang_mos().size();
-    
-    for(auto j = 0ul; j < nshells; ++j){
-
-        std::cout << "\tShell " << j << " with angular momentum "
-                  << abs.ang_mo(j) << "\n";
-
-        auto contraction_length = abs.exponents(j).size();
-        for (auto i = 0ul; i < contraction_length; ++i) {
-            os << "\t\twith exponent " << abs.exponent(j,i) 
-               << " having coefficent " << abs.coeff(j,i) << "\n";
-        }
-
+    for (auto const &shell : abs.shells()) {
+        os << shell;
     }
     return os;
 }

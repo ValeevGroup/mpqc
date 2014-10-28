@@ -3,23 +3,34 @@
 
 #include "atom_basisset.h"
 #include <string>
+#include <iosfwd>
+
+namespace tcc {
+namespace basis {
 
 class BasisSet {
-  BasisSet() = default;
-  BasisSet(BasisSet const &b) = default;
-  BasisSet(BasisSet &&b) = default;
-  BasisSet& operator=(BasisSet const &b) = default;
-  BasisSet& operator=(BasisSet &&b) = default;
+  public:
+    BasisSet() = default;
+    BasisSet(BasisSet const &b) = default;
+    BasisSet(BasisSet &&b) = default;
+    BasisSet &operator=(BasisSet const &b) = default;
+    BasisSet &operator=(BasisSet &&b) = default;
 
-  BasisSet(std::string const&s) : atom_bases() {
-    read_basis(s);
-  }
+    BasisSet(std::string const &s) : atom_bases_() { read_basis(s); }
 
-private:
-  void read_basis(std::string const &s) const;
+    std::vector<AtomBasisSet> const & basis() const {
+        return atom_bases_;
+    }
 
-  std::vector<AtomBasisSet> atom_bases;
+  private:
+    void read_basis(std::string const &s);
+
+    std::vector<AtomBasisSet> atom_bases_;
 };
 
-#endif // TILECLUSTERCHEM_BASIS_BASISSET_H
+std::ostream &operator<<(std::ostream &os, BasisSet const &bs);
 
+} // namespace basis
+} // namespace tcc
+
+#endif // TILECLUSTERCHEM_BASIS_BASISSET_H

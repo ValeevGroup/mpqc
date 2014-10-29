@@ -1,3 +1,4 @@
+#pragma once
 #ifndef CLUSTER_H
 #define CLUSTER_H
 
@@ -6,6 +7,8 @@
 #include "../include/eigen.h"
 #include "cluster_concept.h"
 
+namespace tcc {
+namespace molecule {
 /**
  * @brief The Cluster class contains a vector of clusterables.
  */
@@ -28,7 +31,7 @@ class Cluster {
     void add_clusterable(T t) {
         mass_ += t.mass();
         charge_ += t.charge();
-        elements_.emplace_back(t);
+        elements_.emplace_back(std::move(t));
     }
 
     unsigned long nelements() const { return elements_.size(); }
@@ -83,5 +86,8 @@ class Cluster {
     double charge_ = 0.0;
     double mass_ = 0.0;
 };
+
+} // namespace molecule
+} // namespace tcc
 
 #endif // CLUSTER_H

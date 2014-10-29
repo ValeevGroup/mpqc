@@ -1,10 +1,11 @@
-#ifndef EIGEN_H
-#define EIGEN_H
+#pragma once
+#ifndef TCC_INCLUDE_EIGEN_H
+#define TCC_INCLUDE_EIGEN_H
 
 #pragma GCC diagnostic push
 #pragma GCC system_header
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #pragma GCC diagnostic pop
 
 
-#endif // EIGEN_H
+#endif // TCC_INCLUDE_EIGEN_H

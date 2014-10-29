@@ -1,11 +1,15 @@
-#ifndef CLUSTER_CONCEPT_H
-#define CLUSTER_CONCEPT_H
+#pragma once
+#ifndef TCC_MOLECULE_CLUSTERCONCEPT_H
+#define TCC_MOLECULE_CLUSTERCONCEPT_H
+
+#include "molecule_fwd.h"
+#include "cluster_collapse.h"
 
 #include <memory>
 #include <vector>
-#include "../include/eigen.h"
-#include "molecule_fwd.h"
-#include "cluster_collapse.h"
+
+namespace tcc {
+namespace molecule {
 
 /**
  * @brief ClusterConcept is the base class which defines the operations which
@@ -15,7 +19,7 @@ class ClusterConcept {
   public:
     virtual ~ClusterConcept() = default;
 
-    virtual ClusterConcept *copy() const = 0;
+    virtual ClusterConcept *clone() const = 0;
     virtual Eigen::Vector3d center() const = 0;
     virtual double mass() const = 0;
     virtual double charge() const = 0;
@@ -30,21 +34,23 @@ class ClusterModel : public ClusterConcept {
   public:
     ClusterModel(T t) : element_(std::move(t)) {}
     ClusterModel(const ClusterModel &c) = default;
-
     ClusterModel &operator=(ClusterModel c) {
         element_ = std::move(c.element_);
         return *this;
     }
-
     ClusterModel(ClusterModel &&c) = default;
     ClusterModel &operator=(ClusterModel &&c) = default;
 
-    ClusterConcept *copy() const { return new ClusterModel(*this); }
+    ClusterConcept *clone() const override final {
+        return new ClusterModel(*this);
+    }
 
-    Eigen::Vector3d center() const { return element_.center(); }
-    double mass() const { return element_.mass(); }
-    double charge() const { return element_.charge(); }
-    std::vector<Atom> atoms() const { return collapse_to_atoms(element_); }
+    Eigen::Vector3d center() const override final { return element_.center(); }
+    double mass() const override final { return element_.mass(); }
+    double charge() const override final { return element_.charge(); }
+    std::vector<Atom> atoms() const override final {
+        return collapse_to_atoms(element_);
+    }
 
   private:
     T element_;
@@ -60,17 +66,9 @@ class Clusterable {
 
     template <typename T>
     Clusterable(T t)
-        : element_impl_(new ClusterModel<T>(std::move(t))) {}
-
-    Clusterable(const Clusterable &c)
-        : element_impl_(std::move(c.element_impl_->copy())) {}
-
-    // for operator make a copy and then move that copy into this.
-    Clusterable &operator=(const Clusterable &c) {
-        *this = std::move(Clusterable(c));
-        return *this;
-    }
-
+        : element_impl_(std::make_shared<ClusterModel<T>>(std::move(t))) {}
+    Clusterable(Clusterable const &c) = default;
+    Clusterable &operator=(Clusterable const &c) = default;
     Clusterable(Clusterable &&c) = default;
     Clusterable &operator=(Clusterable &&c) = default;
 
@@ -80,8 +78,10 @@ class Clusterable {
     std::vector<Atom> atoms() const { return element_impl_->atoms(); }
 
   private:
-    // TODO_TCC make this a shared_ptr to a const and switch to shallow copies.
-    std::unique_ptr<ClusterConcept> element_impl_;
+    std::shared_ptr<const ClusterConcept> element_impl_;
 };
 
-#endif // CLUSTER_CONCEPT_H
+} // namespace molecule
+} // namespace tcc
+
+#endif // TCC_MOLECULE_CLUSTERCONCEPT_H

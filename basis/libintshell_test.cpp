@@ -1,7 +1,12 @@
-#include <iostream>
-#include <vector>
 #include "../include/libint.h"
 #include "basisset.h"
+#include "atom_basisset.h"
+
+#include <iostream>
+#include <vector>
+
+using namespace tcc;
+using namespace tcc::basis;
 
 int main(int argc, char *argv[]) {
     std::string basis_file_name;

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef CLUSTERABLE_SHELL_H
 #define CLUSTERABLE_SHELL_H
 

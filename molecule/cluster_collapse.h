@@ -1,7 +1,13 @@
+#pragma once
 #ifndef CLUSTER_COLLAPSE_H
 #define CLUSTER_COLLAPSE_H
 
 #include "atom.h"
+
+#include <vector>
+
+namespace tcc {
+namespace molecule {
 
 /**
  * @brief collapse_to_atoms ends the recursive loop of the templated version of
@@ -24,5 +30,8 @@ std::vector<Atom> collapse_to_atoms(const T &t) {
     }
     return atoms;
 }
+
+} // namespace molecule
+} // namespace tcc
 
 #endif // CLUSTER_COLLAPSE_H

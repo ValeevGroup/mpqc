@@ -1,5 +1,6 @@
 #include "basisset.h"
 #include "basis_set_maps.h"
+#include "atom_basisset.h"
 
 #include <iostream>
 #include <fstream>
@@ -7,6 +8,50 @@
 
 namespace tcc {
 namespace basis {
+
+void read_shell_info(std::ifstream &is, std::string &line,
+                     std::vector<double> &exponents,
+                     std::vector<std::vector<double>> &coeffs,
+                     int contraction_length, std::string const &ang_mo);
+
+AtomBasisSet read_atom_basis(std::ifstream &is, std::string &line);
+
+
+BasisSet::BasisSet() = default;
+BasisSet::BasisSet(BasisSet const &b) = default;
+BasisSet::BasisSet(BasisSet &&b) = default;
+BasisSet &BasisSet::operator=(BasisSet const &b) = default;
+BasisSet &BasisSet::operator=(BasisSet &&b) = default;
+
+BasisSet::BasisSet(std::string const &s) : atom_bases_() { read_basis(s); }
+
+std::vector<AtomBasisSet> const &BasisSet::atom_basis_set() const {
+    return atom_bases_;
+}
+
+void BasisSet::read_basis(std::string const &s) {
+
+    std::ifstream basis_file(s);
+    std::string line;
+
+    // Skip header information
+    while (std::getline(basis_file, line) && line != "****") {
+        continue;
+    }
+
+    while (std::getline(basis_file, line)) {
+        if (line != "") {
+            atom_bases_.emplace_back(read_atom_basis(basis_file, line));
+        }
+    }
+}
+
+std::ostream &operator<<(std::ostream &os, BasisSet const &bs) {
+    for (auto const &atom_bs : bs.atom_basis_set()) {
+        os << atom_bs << "\n";
+    }
+    return os;
+}
 
 void read_shell_info(std::ifstream &is, std::string &line,
                      std::vector<double> &exponents,
@@ -76,31 +121,6 @@ AtomBasisSet read_atom_basis(std::ifstream &is, std::string &line) {
     }
 
     return AtomBasisSet{elements[atom_name], std::move(shells)};
-}
-
-
-void BasisSet::read_basis(std::string const &s) {
-
-    std::ifstream basis_file(s);
-    std::string line;
-
-    // Skip header information
-    while (std::getline(basis_file, line) && line != "****") {
-        continue;
-    }
-
-    while (std::getline(basis_file, line)) {
-        if (line != "") {
-            atom_bases_.emplace_back(read_atom_basis(basis_file, line));
-        }
-    }
-}
-
-std::ostream &operator<<(std::ostream &os, BasisSet const &bs) {
-    for (auto const &atom_bs : bs.basis()) {
-        os << atom_bs << "\n";
-    }
-    return os;
 }
 
 } // namespace basis

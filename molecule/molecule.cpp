@@ -6,6 +6,9 @@
 #include "common.h"
 #include <functional>
 
+namespace tcc {
+namespace molecule {
+
 namespace molecule_detail {
 
 inline double calculate_mass(const std::vector<Clusterable> &cs) {
@@ -63,9 +66,31 @@ void sort_elements(std::vector<Clusterable> &elems, const position_t &point) {
 }
 } // namespace moleucle detail
 
+
 Molecule::Molecule(std::vector<Clusterable> c) : elements_(std::move(c)) {
     mass_ = molecule_detail::calculate_mass(elements_);
     charge_ = molecule_detail::calculate_charge(elements_);
     center_ = center_of_mass(elements_, mass_);
     molecule_detail::sort_elements(elements_, center_);
 }
+
+position_t Molecule::center() const { return center_; }
+double Molecule::charge() const { return charge_; }
+double Molecule::mass() const { return mass_; }
+
+std::vector<const Clusterable>::iterator Molecule::begin() const {
+    return elements_.begin();
+}
+std::vector<const Clusterable>::iterator Molecule::end() const {
+    return elements_.end();
+}
+
+unsigned long Molecule::nelements() const { return elements_.size(); }
+
+std::vector<Cluster>
+Molecule::cluster_molecule(cluster_fn_t fn, unsigned long nclusters) const {
+    return fn(elements_, nclusters);
+}
+
+} // namespace molecule
+} // namespace tcc

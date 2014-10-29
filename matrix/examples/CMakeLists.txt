@@ -1,25 +1,25 @@
-add_executable(tile_algebra_examples tile_algebra.cpp)
+add_executable(tile_algebra_examples EXCLUDE_FROM_ALL tile_algebra.cpp)
 target_link_libraries(tile_algebra_examples
     ${TILEDARRAY_LIBRARIES}
     ${LAPACK_LIBRARIES}
     ${MPI_CXX_LIBRARIES}
 )
 
-add_executable(tiledarray_example tiledarray_example.cpp)
+add_executable(tiledarray_example EXCLUDE_FROM_ALL tiledarray_example.cpp)
 target_link_libraries(tiledarray_example
     ${TILEDARRAY_LIBRARIES}
     ${LAPACK_LIBRARIES}
     ${MPI_CXX_LIBRARIES}
 )
 
-add_executable(tile_ops_examples tile_ops.cpp)
+add_executable(tile_ops_examples EXCLUDE_FROM_ALL tile_ops.cpp)
 target_link_libraries(tile_ops_examples
     ${TILEDARRAY_LIBRARIES}
     ${LAPACK_LIBRARIES}
     ${MPI_CXX_LIBRARIES}
 )
 
-add_executable(decomp_test decompose_matrix_test.cpp)
+add_executable(decomp_test EXCLUDE_FROM_ALL decompose_matrix_test.cpp)
 target_link_libraries(decomp_test
     ${TILEDARRAY_LIBRARIES}
     ${LAPACK_LIBRARIES}

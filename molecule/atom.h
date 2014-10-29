@@ -1,7 +1,11 @@
-#ifndef ATOM_H
-#define ATOM_H
+#pragma once
+#ifndef TCC_MOLECULE_ATOM_H
+#define TCC_MOLECULE_ATOM_H
 
 #include "../include/eigen.h"
+
+namespace tcc {
+namespace molecule {
 
 class Atom {
   public:
@@ -25,8 +29,9 @@ class Atom {
     }
 
     Atom(position_t center, double mass, double charge)
-        : center_(std::move(center)), charge_(std::move(charge)),
-          mass_(std::move(mass)) {}
+        : center_(std::move(center)),
+          charge_(charge),
+          mass_(mass) {}
 
     position_t center() const { return center_; }
     double charge() const { return charge_; }
@@ -38,4 +43,7 @@ class Atom {
     double mass_ = 0;
 };
 
-#endif // ATOM_H
+} // namespace molecule
+} // namespace tcc
+
+#endif // TCC_MOLECULE_ATOM_H

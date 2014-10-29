@@ -1,3 +1,10 @@
+#pragma once
+#ifndef TCC_BASIS_BASISSETMAP_H
+#define TCC_BASIS_BASISSETMAP_H
+
+
+
+#endif /* end of include guard: TCC_BASIS_BASISSETMAP_H */
 #include <map>
 #include <string>
 

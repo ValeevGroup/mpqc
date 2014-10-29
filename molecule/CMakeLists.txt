@@ -16,5 +16,5 @@ set(sources
 add_library(molecule ${sources})
 target_link_libraries(molecule ${TBB_LIBRARIES})
 
-add_executable(molecule_test molecule_test.cpp)
+add_executable(molecule_test EXCLUDE_FROM_ALL examples/molecule_test.cpp)
 target_link_libraries(molecule_test molecule)

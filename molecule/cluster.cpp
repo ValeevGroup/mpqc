@@ -1,7 +1,11 @@
-#include <cluster.h>
-#include <functional>
 #include "../include/tbb.h"
+#include "cluster.h"
 #include "common.h"
+
+#include <functional>
+
+namespace tcc {
+namespace molecule {
 Cluster::Cluster(Cluster &&c) noexcept : elements_(std::move(c.elements_)),
                                          charge_(std::move(c.charge_)),
                                          mass_(std::move(c.mass_)) {
@@ -33,3 +37,6 @@ double Cluster::sum_distances_from_center() const {
         },
         std::plus<double>(), ap);
 }
+
+} // namespace molecule
+} // namespace tcc

@@ -1,10 +1,12 @@
+#pragma once
 #ifndef CLUSTERING_FUNCTIONS_H
 #define CLUSTERING_FUNCTIONS_H
 
-#include "cluster_concept.h"
-#include "cluster.h"
-#include <random>
+#include "molecule_fwd.h"
 
+#include <vector>
+namespace tcc {
+namespace molecule {
 namespace clustering {
 using output_t = std::vector<Cluster>;
 using input_t = std::vector<Clusterable>;
@@ -36,7 +38,7 @@ class kmeans {
      * @param nclusters the number of clusters desired.
      * @return a vector of clusters.
      */
-    output_t operator()(input_t clusterables, unsigned long nclusters);
+    output_t operator()(input_t const &clusterables, unsigned long nclusters);
 
   private:
     /**
@@ -45,21 +47,21 @@ class kmeans {
      * @param clusterables const reference to objects which need to be
      * clustered.
      */
-    void initialize_clusters(const input_t &clusterables);
+    void initialize_clusters(input_t const &clusterables);
 
     /**
      * @brief attach_clusterables loops over clusterables and attaches them to
      * the nearest cluster.
      * @param cs a ref to a const vector of clusterables
      */
-    void attach_clusterables(const std::vector<Clusterable> &cs);
+    void attach_clusterables(input_t const &cs);
 
     /**
      * @brief update_clusters calculates new center based on old clusters.
      * @param clusterables is a ref to a const vector of clustersables
      * @return the previous iteration's centers.
      */
-    std::vector<Cluster::position_t>
+    std::vector<position_t>
     update_clusters(const std::vector<Clusterable> &clusterables);
 
     /**
@@ -67,25 +69,28 @@ class kmeans {
      * has converged.
      * @param old_centers is the previous iterations centers.
      */
-    bool kmeans_converged(const std::vector<Cluster::position_t> &old_centers);
+    bool kmeans_converged(std::vector<position_t> const &old_centers);
 
     /**
      * @brief cluster performs the kmeans iterations to generate clusters.
      * @param clusterables a const reference to a vector of clusterabls.
      * @return the clusters.
      */
-    output_t cluster(const std::vector<Clusterable> &clusterables);
+    output_t cluster(std::vector<Clusterable> const &clusterables);
 
 
     std::vector<Cluster>::iterator
     closest_cluster(const std::vector<Cluster>::iterator begin,
                     const std::vector<Cluster>::iterator end,
-                    const position_t center);
+                    position_t const &center);
 
     unsigned long seed_;
     std::vector<Cluster> clusters_;
 };
 
+
 } // namespace clustering
+} // namespace molecule
+} // namespace tcc
 
 #endif // CLUSTERING_FUNCTIONS_H

@@ -1,8 +1,12 @@
+#pragma once
 #ifndef TILECLUSTERCHEM_BASIS_BASISSET_H
 #define TILECLUSTERCHEM_BASIS_BASISSET_H
 
-#include "atom_basisset.h"
+#include "../molecule/molecule_fwd.h"
+#include "basis_fwd.h"
+
 #include <string>
+#include <vector>
 #include <iosfwd>
 
 namespace tcc {
@@ -10,17 +14,16 @@ namespace basis {
 
 class BasisSet {
   public:
-    BasisSet() = default;
-    BasisSet(BasisSet const &b) = default;
-    BasisSet(BasisSet &&b) = default;
-    BasisSet &operator=(BasisSet const &b) = default;
-    BasisSet &operator=(BasisSet &&b) = default;
+    BasisSet();
+    BasisSet(BasisSet const &b);
+    BasisSet(BasisSet &&b);
+    BasisSet &operator=(BasisSet const &b);
+    BasisSet &operator=(BasisSet &&b);
 
-    BasisSet(std::string const &s) : atom_bases_() { read_basis(s); }
+    BasisSet(std::string const &s);
 
-    std::vector<AtomBasisSet> const & basis() const {
-        return atom_bases_;
-    }
+    std::vector<AtomBasisSet> const & atom_basis_set() const;
+    std::vector<ShellCluster> create_basis(molecule::Molecule const &) const;
 
   private:
     void read_basis(std::string const &s);

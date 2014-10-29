@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
 
     // Making clusters
     tbb::tick_count mc0 = tbb::tick_count::now();
-    auto clusters = mol.cluster_molecule(clustering::kmeans(10), 1500);
+    auto clusters = mol.cluster_molecule(clustering::kmeans(10), 60);
     tbb::tick_count mc1 = tbb::tick_count::now();
     double mc_alloc = (mc1 - mc0).seconds();
     std::cout << "cluster allocing time = " << mc_alloc << std::endl;

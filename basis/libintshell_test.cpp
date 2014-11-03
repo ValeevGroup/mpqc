@@ -1,6 +1,5 @@
 #include "../include/libint.h"
-#include "basisset.h"
-#include "atom_basisset.h"
+#include "basis_set.h"
 
 #include <iostream>
 #include <vector>

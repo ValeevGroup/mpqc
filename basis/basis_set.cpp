@@ -1,6 +1,7 @@
-#include "basisset.h"
+#include "basis_set.h"
 #include "basis_set_maps.h"
 #include "atom_basisset.h"
+#include "cluster_shells.h"
 
 #include <iostream>
 #include <fstream>
@@ -18,12 +19,23 @@ AtomBasisSet read_atom_basis(std::ifstream &is, std::string &line);
 
 
 BasisSet::BasisSet() = default;
-BasisSet::BasisSet(BasisSet const &b) = default;
-BasisSet::BasisSet(BasisSet &&b) = default;
-BasisSet &BasisSet::operator=(BasisSet const &b) = default;
-BasisSet &BasisSet::operator=(BasisSet &&b) = default;
+BasisSet::BasisSet(BasisSet const &) = default;
+BasisSet::BasisSet(BasisSet &&) = default;
+BasisSet &BasisSet::operator=(BasisSet const &) = default;
+BasisSet &BasisSet::operator=(BasisSet &&) = default;
 
 BasisSet::BasisSet(std::string const &s) : atom_bases_() { read_basis(s); }
+
+std::vector<ClusterShells> BasisSet::create_basis(
+    std::vector<std::shared_ptr<molecule::Cluster>> const &clusters) const {
+    std::vector<ClusterShells> cs;
+
+    for(auto const &c : clusters){
+        std::vector<molecule::Atom> atoms = molecule::collapse_to_atoms(*c);
+    }
+    
+    return cs;
+}
 
 std::vector<AtomBasisSet> const &BasisSet::atom_basis_set() const {
     return atom_bases_;
@@ -82,7 +94,7 @@ void read_shell_info(std::ifstream &is, std::string &line,
     }
 
     coeffs.emplace_back(std::move(local_coeffs));
-    if(ang_mo == "SP"){
+    if (ang_mo == "SP") {
         coeffs.emplace_back(std::move(pshell_local_coeffs));
     }
 }

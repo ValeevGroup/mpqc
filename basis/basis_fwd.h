@@ -7,7 +7,7 @@ namespace basis {
 
 class BasisSet;
 class AtomBasisSet;
-class ShellCluster;
+class ClusterShells;
 
 } // namespace basis
 } // namespace tcc

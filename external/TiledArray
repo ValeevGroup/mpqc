@@ -9,7 +9,7 @@ find_package(Madness)
 
 if(MADNESS_FOUND)
   set(MADNESS_LIBRARIES "")
-  foreach (_lib MADworld MADtensor MADlinalg MADmisc MADmra MADtinyxml MADmuparser)
+  foreach (_lib MADworld MADtensor MADlinalg MADmisc)
     set(_libpath _libpath-NOTFOUND)
     find_library(_libpath ${_lib} HINT 
       "${MADNESS_DIR}/lib" 

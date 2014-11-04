@@ -10,34 +10,36 @@ namespace tcc {
 namespace basis {
 
 class AtomBasisShell {
-public:
-  AtomBasisShell() = default;
-  AtomBasisShell(AtomBasisShell const &) = default;
-  AtomBasisShell &operator=(AtomBasisShell const &) = default;
-  AtomBasisShell(AtomBasisShell &&) = default;
-  AtomBasisShell &operator=(AtomBasisShell &&) = default;
+  public:
+    AtomBasisShell() = default;
+    AtomBasisShell(AtomBasisShell const &) = default;
+    AtomBasisShell &operator=(AtomBasisShell const &) = default;
+    AtomBasisShell(AtomBasisShell &&) = default;
+    AtomBasisShell &operator=(AtomBasisShell &&) = default;
 
-  AtomBasisShell(int am, bool spherical, std::vector<double> exps,
-                 std::vector<std::vector<double>> coeffs)
-      : angular_momentum_(am),
-        spherical_(spherical),
-        exponents_(std::move(exps)),
-        coeffs_(std::move(coeffs)) {}
+    AtomBasisShell(int am, bool spherical, std::vector<double> exps,
+                   std::vector<std::vector<double>> coeffs)
+        : angular_momentum_(am),
+          spherical_(spherical),
+          exponents_(std::move(exps)),
+          coeffs_(std::move(coeffs)) {}
 
-  bool am_is_SP() const { return coeffs_.size() == 2; }
-  int angular_momentum() const { return angular_momentum_; }
-  bool spherical() const { return spherical_; }
-  unsigned long contraction_length() const { return exponents_.size(); }
+    bool am_is_SP() const { return coeffs_.size() == 2; }
+    int angular_momentum() const { return angular_momentum_; }
+    bool spherical() const { return spherical_; }
+    unsigned long contraction_length() const { return exponents_.size(); }
 
-  double exponent(int i) const { return exponents_[i]; }
-  double coeff(int i, int j = 0) const { return coeffs_[j][i]; }
+    double exponent(int i) const { return exponents_[i]; }
+    std::vector<double> const &exponents() const { return exponents_; }
+    double coeff(int i, int j = 0) const { return coeffs_[j][i]; }
+    std::vector<std::vector<double>> const &coeffs() const { return coeffs_; }
 
 
-private:
-  int angular_momentum_;
-  bool spherical_;
-  std::vector<double> exponents_;
-  std::vector<std::vector<double>> coeffs_;
+  private:
+    int angular_momentum_;
+    bool spherical_;
+    std::vector<double> exponents_;
+    std::vector<std::vector<double>> coeffs_;
 };
 
 std::ostream &operator<<(std::ostream &os, AtomBasisShell const &abs);
@@ -65,7 +67,7 @@ class AtomBasisSet {
     }
 
     std::vector<AtomBasisShell> const &shells() const { return shells_; }
-    AtomBasisShell const& shell(int i) const {return shells_[i];}
+    AtomBasisShell const &shell(int i) const { return shells_[i]; }
     unsigned long nshells() const { return shells_.size(); }
 
   private:

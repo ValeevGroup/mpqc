@@ -2,10 +2,15 @@
 #include "basis_set_maps.h"
 #include "atom_basisset.h"
 #include "cluster_shells.h"
+#include "../molecule/cluster_collapse.h"
+#include "../molecule/cluster.h"
+#include "../molecule/atom.h"
+#include "../include/libint.h"
 
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <algorithm>
 
 namespace tcc {
 namespace basis {
@@ -26,14 +31,45 @@ BasisSet &BasisSet::operator=(BasisSet &&) = default;
 
 BasisSet::BasisSet(std::string const &s) : atom_bases_() { read_basis(s); }
 
+std::vector<libint2::Shell> 
+BasisSet::atom_basis(molecule::Atom const &a) const {
+
+    auto a_basis = std::find_if(atom_bases_.begin(), atom_bases_.end(),
+                                [&](AtomBasisSet const &abs) {
+        return abs.atomic_number() == a.charge();
+    });
+
+    std::vector<libint2::Shell> atom_shells;
+    for (auto const &s : a_basis->shells()) {
+        std::vector<libint2::Shell::Contraction> cntrs;
+        if (!s.am_is_SP()) {
+            cntrs.emplace_back(libint2::Shell::Contraction{s.angular_momentum(), s.spherical(),
+                               s.coeffs()[0]});
+        } else {
+            cntrs.emplace_back(libint2::Shell::Contraction{0, s.spherical(),
+                               s.coeffs()[0]});
+            cntrs.emplace_back(libint2::Shell::Contraction{1, s.spherical(),
+                               s.coeffs()[1]});
+        }
+
+        libint2::Shell sh{s.exponents(),
+                          std::move(cntrs),
+                          {{a.center()[0], a.center()[1], a.center()[2]}}};
+
+        atom_shells.push_back(std::move(sh));
+    }
+
+    return atom_shells;
+}
+
 std::vector<ClusterShells> BasisSet::create_basis(
     std::vector<std::shared_ptr<molecule::Cluster>> const &clusters) const {
     std::vector<ClusterShells> cs;
 
-    for(auto const &c : clusters){
+    for (auto const &c : clusters) {
         std::vector<molecule::Atom> atoms = molecule::collapse_to_atoms(*c);
     }
-    
+
     return cs;
 }
 

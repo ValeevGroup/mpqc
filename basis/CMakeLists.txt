@@ -1,6 +1,8 @@
 set(sources
   basis_set.h
   basis_set.cpp
+  basis.h
+  basis.cpp
   atom_basisset.h
   atom_basisset.cpp
   basis_set_maps.h

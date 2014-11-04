@@ -57,28 +57,26 @@ LIST(APPEND TileClusterChem_LIBRARIES ${TBB_LIBRARIES})
 LIST(APPEND TileClusterChem_LIBRARIES ${LIBINT_LIBRARIES})
 LIST(APPEND TileClusterChem_LIBRARIES ${TILEDARRAY_LIBRARIES})
 
-
-INCLUDE_DIRECTORIES(${TileClusterChem_SOURCE_DIR}/molecule)
-INCLUDE_DIRECTORIES(${TileClusterChem_SOURCE_DIR}/include)
-INCLUDE_DIRECTORIES(${TileClusterChem_SOURCE_DIR}/matrix)
-
-
 add_subdirectory(${TileClusterChem_SOURCE_DIR}/include)
 add_subdirectory(${TileClusterChem_SOURCE_DIR}/molecule)
 add_subdirectory(${TileClusterChem_SOURCE_DIR}/matrix)
 add_subdirectory(${TileClusterChem_SOURCE_DIR}/basis)
 add_subdirectory(${TileClusterChem_SOURCE_DIR}/integrals)
 
-IF(PERFORM_UNIT_TESTS)
-  add_subdirectory(${TileClusterChem_SOURCE_DIR}/tests)
-ENDIF(PERFORM_UNIT_TESTS)
 
 LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/molecule)
 LIST(APPEND TileClusterChem_LIBRARIES molecule)
 
+LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/basis)
+LIST(APPEND TileClusterChem_LIBRARIES basis)
+
 message(STATUS "Using libraries ${TileClusterChem_LIBRARIES}")
 
 set(TileClusterChem_Sources "main.cpp")
+
+IF(PERFORM_UNIT_TESTS)
+  add_subdirectory(${TileClusterChem_SOURCE_DIR}/tests)
+ENDIF(PERFORM_UNIT_TESTS)
 
 add_executable(${PROJECT_NAME} ${TileClusterChem_Sources}) 
 target_link_libraries(${PROJECT_NAME}

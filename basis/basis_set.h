@@ -9,6 +9,11 @@
 #include <vector>
 #include <iosfwd>
 
+// FWD Decl
+namespace libint2 {
+class Shell;
+}
+
 namespace tcc {
 namespace basis {
 
@@ -23,7 +28,8 @@ class BasisSet {
     BasisSet(std::string const &s);
 
     std::vector<AtomBasisSet> const & atom_basis_set() const;
-
+    std::vector<libint2::Shell> atom_basis(molecule::Atom const &a) const;
+    
     std::vector<ClusterShells> create_basis(
         std::vector<std::shared_ptr<molecule::Cluster>> const &clusters) const;
 

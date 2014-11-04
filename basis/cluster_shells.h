@@ -3,7 +3,7 @@
 #define TCC_BASIS_CLUSTERSHELLS_H
 
 #include "../include/libint.h"
-#include "molecule/cluster.h"
+#include "../molecule/cluster.h"
 
 #include <memory>
 #include <vector>

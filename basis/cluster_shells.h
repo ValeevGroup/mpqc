@@ -2,11 +2,14 @@
 #ifndef TCC_BASIS_CLUSTERSHELLS_H
 #define TCC_BASIS_CLUSTERSHELLS_H
 
-#include "../include/libint.h"
-#include "../molecule/cluster.h"
+#include "../molecule/molecule_fwd.h"
 
 #include <memory>
 #include <vector>
+
+namespace libint2 {
+class Shell;
+}
 
 namespace tcc {
 namespace basis {
@@ -24,7 +27,15 @@ class ClusterShells {
     ClusterShells(std::vector<std::vector<libint2::Shell>> shell,
                   std::shared_ptr<molecule::Cluster> c);
 
-    std::vector<libint2::Shell> const &shells(ang_mo am) const;
+    std::vector<libint2::Shell> const &shells(unsigned int) const;
+    std::vector<libint2::Shell> flattenend_shells() const;
+
+    unsigned int nfunctions(unsigned int) const;
+    unsigned int flattened_nfunctions() const;
+
+    unsigned int max_am() const;
+    bool has_am(unsigned int) const;
+
     molecule::Cluster const &cluster() const;
 
   private:

@@ -6,6 +6,9 @@
 #include "../molecule/molecule_fwd.h"
 
 #include <vector>
+#include <iosfwd>
+
+namespace TiledArray { class TiledRange1; }
 
 namespace tcc {
 namespace basis {
@@ -21,9 +24,19 @@ class Basis {
 
     Basis(std::vector<ClusterShells> cs);
 
+    std::vector<ClusterShells> const & cluster_shells() const;
+
+    TiledArray::TiledRange1 create_flattend_trange1() const;
+    TiledArray::TiledRange1 create_trange1() const;
+
   private:
     std::vector<ClusterShells> cluster_shells_;
+
+    std::vector<unsigned int> am_blocking_generator() const;
+    std::vector<unsigned int> flattenend_blocking_generator() const;
 };
+
+std::ostream & operator<<(std::ostream &, Basis const &);
 
 } // namespace basis
 } // namespace tcc

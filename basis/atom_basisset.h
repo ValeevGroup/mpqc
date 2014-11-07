@@ -2,7 +2,6 @@
 #ifndef TILECLUSTERCHEM_BASIS_ATOM_BASIS_H
 #define TILECLUSTERCHEM_BASIS_ATOM_BASIS_H
 
-#include <cassert>
 #include <vector>
 #include <iosfwd>
 
@@ -27,7 +26,7 @@ class AtomBasisShell {
     bool am_is_SP() const { return coeffs_.size() == 2; }
     int angular_momentum() const { return angular_momentum_; }
     bool spherical() const { return spherical_; }
-    unsigned long contraction_length() const { return exponents_.size(); }
+    unsigned long contraction_length() const { return coeffs_.size(); }
 
     double exponent(int i) const { return exponents_[i]; }
     std::vector<double> const &exponents() const { return exponents_; }
@@ -56,6 +55,14 @@ class AtomBasisSet {
         : atomic_number_(atomic_number), shells_(std::move(shells)) {}
 
     int atomic_number() const { return atomic_number_; }
+
+    unsigned int max_am() const {
+        return std::max_element(
+                   shells_.begin(), shells_.end(),
+                   [&](AtomBasisShell const &a, AtomBasisShell const &b) {
+                       return a.angular_momentum() < b.angular_momentum();
+                   })->angular_momentum();
+    }
 
     int ang_mo(int i) const { return shells_[i].angular_momentum(); }
     bool is_SP(int i) const { return shells_[i].am_is_SP(); }

@@ -3,6 +3,8 @@ set(sources
   basis_set.cpp
   basis.h
   basis.cpp
+  cluster_shells.h
+  cluster_shells.cpp
   atom_basisset.h
   atom_basisset.cpp
   basis_set_maps.h

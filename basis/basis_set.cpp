@@ -31,7 +31,7 @@ BasisSet &BasisSet::operator=(BasisSet &&) = default;
 
 BasisSet::BasisSet(std::string const &s) : atom_bases_() { read_basis(s); }
 
-std::vector<libint2::Shell> 
+std::vector<libint2::Shell>
 BasisSet::atom_basis(molecule::Atom const &a) const {
 
     auto a_basis = std::find_if(atom_bases_.begin(), atom_bases_.end(),
@@ -43,13 +43,13 @@ BasisSet::atom_basis(molecule::Atom const &a) const {
     for (auto const &s : a_basis->shells()) {
         std::vector<libint2::Shell::Contraction> cntrs;
         if (!s.am_is_SP()) {
-            cntrs.emplace_back(libint2::Shell::Contraction{s.angular_momentum(), s.spherical(),
-                               s.coeffs()[0]});
+            cntrs.emplace_back(libint2::Shell::Contraction{
+                s.angular_momentum(), s.spherical(), s.coeffs()[0]});
         } else {
-            cntrs.emplace_back(libint2::Shell::Contraction{0, s.spherical(),
-                               s.coeffs()[0]});
-            cntrs.emplace_back(libint2::Shell::Contraction{1, s.spherical(),
-                               s.coeffs()[1]});
+            cntrs.emplace_back(
+                libint2::Shell::Contraction{0, s.spherical(), s.coeffs()[0]});
+            cntrs.emplace_back(
+                libint2::Shell::Contraction{1, s.spherical(), s.coeffs()[1]});
         }
 
         libint2::Shell sh{s.exponents(),
@@ -66,8 +66,32 @@ std::vector<ClusterShells> BasisSet::create_basis(
     std::vector<std::shared_ptr<molecule::Cluster>> const &clusters) const {
     std::vector<ClusterShells> cs;
 
+    auto atom_bs = atom_basis_set();
+
     for (auto const &c : clusters) {
+
         std::vector<molecule::Atom> atoms = molecule::collapse_to_atoms(*c);
+
+        unsigned int max_am = 0;
+        for (auto const &atom : atoms) {
+            auto abs = std::find_if(atom_bs.begin(), atom_bs.end(),
+                                    [&](AtomBasisSet const &abs) {
+                return abs.atomic_number() == atom.charge();
+            });
+            max_am = std::max(max_am, abs->max_am());
+        }
+        const auto n_am = max_am + 1;
+
+        std::vector<std::vector<libint2::Shell>> binned_shells(n_am);
+        for (auto const &atom : atoms) {
+            auto shells = atom_basis(atom);
+
+            for (auto &&shell : shells) {
+                const auto ang_mo = shell.contr[0].l;
+                binned_shells[ang_mo].emplace_back(std::move(shell));
+            }
+        }
+        cs.emplace_back(std::move(binned_shells), c);
     }
 
     return cs;

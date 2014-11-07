@@ -6,6 +6,7 @@ set(test_sources
   full_rank_tile_test.cpp
   low_rank_tile_test.cpp
   basis_set_test.cpp
+  basis_test.cpp
   tile_algebra_test.cpp
   tile_variant_test.cpp
   tile_ops_test.cpp
@@ -15,6 +16,7 @@ set(test_sources
 )
 
 FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR} ano_basis_G94.txt DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR} 3-21G_basis_G94.txt DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(unit_tests ${test_sources})
 target_link_libraries(unit_tests
@@ -22,4 +24,6 @@ target_link_libraries(unit_tests
   gtest_main
   ${TileClusterChem_LIBRARIES}
 )
+
+add_test(unit_tests unit_tests)
 

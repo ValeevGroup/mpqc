@@ -8,7 +8,10 @@ if (ELEMENTAL_INCLUDE_DIRS)
 
 else()
     find_path(ELEMENTAL_INCLUDE_DIR NAMES elemental.hpp
-        PATHS ${ELEMENTAL_DIR}/include)
+        PATHS
+         ${ELEMENTAL_DIR}/include
+         ${MADNESS_DIR}/include
+         ${TILEDARRAY_DIR}/include)
     
     mark_as_advanced(ELEMENTAL_INCLUDE_DIR)
     set(ELEMENTAL_INCLUDE_DIRS ${ELEMENTAL_INCLUDE_DIR}

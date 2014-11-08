@@ -452,6 +452,115 @@ namespace sc {
   }
 
   namespace detail {
+
+    /** makes a pseudo-3-index (4-index, but first index is dummy) self-energy denominator:
+        (se_den)_{xyz} = 1/ ( E + <x|Y|x> - <y|X1|y> - <z|X2|z>);
+      */
+    template<typename T>
+    struct selfenergy_denom {
+        typedef Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> EigenMatrixX;
+        selfenergy_denom(const T& E,
+                         const EigenMatrixX& Y_mat,
+                         const EigenMatrixX& X1_mat,
+                         const EigenMatrixX& X2_mat) :
+            E_(E), Y_mat_(Y_mat), X1_mat_(X1_mat), X2_mat_(X2_mat) {
+        }
+        template<typename Index> T operator()(const Index& i) {
+          return 1.0 / ( E_ + Y_mat_(i[1], i[1]) - X1_mat_(i[2], i[2]) - X2_mat_(i[3], i[3]) );
+        }
+
+      private:
+        T E_;
+        EigenMatrixX Y_mat_;
+        EigenMatrixX X1_mat_;
+        EigenMatrixX X2_mat_;
+    };
+  }; // namespace sc::detail
+
+  template <typename T>
+  void
+  SingleReference_R12Intermediates<T>::gf2_r12() {
+
+    enum CalcType {
+      IP, EA
+    };
+
+    const CalcType type = IP;
+    const std::string X_label = (type == IP) ? "i1" : "a1"; // active orbital label
+    const Ref<OrbitalSpace>& X_space = (type == IP) ? this->r12world()->refwfn()->occ_act()
+                                                    : this->r12world()->refwfn()->uocc_act();
+
+    TArray2 fij = xy("<j|F|j>");
+    TArray2 fab = xy("<a|F|b>");
+
+    // use the diagonal element of the Fock matrix as the guess (only HOMO/LUMO supported);
+    const double E = (type == IP) ? X_space->evals()(X_space->rank()-1) : X_space->evals()(0);
+
+    // compute Delta_ijaE =  1 / (- E - <a|F|a> + <i|F|i> + <j|F|j>)
+    typedef detail::selfenergy_denom<double> sedenom_eval_type;
+    sedenom_eval_type Delta_jab_gen(E,
+                                    TA::array_to_eigen(fij),
+                                    TA::array_to_eigen(fab),
+                                    TA::array_to_eigen(fab) );
+    sedenom_eval_type Delta_ajk_gen(E,
+                                    TA::array_to_eigen(fab),
+                                    TA::array_to_eigen(fij),
+                                    TA::array_to_eigen(fij) );
+
+    std::ostringstream Xjab; Xjab << "<" << X_label << " j|g|a b>";
+    TArray4d g_Xjab = ijxy(Xjab.str());
+    typedef TA::Array<T, 4, LazyTensor<T, 4, sedenom_eval_type > > TArray4dLazy;
+    TArray4dLazy Delta_Xjab(g_Xjab.get_world(), g_Xjab.trange());
+
+    // construct local tiles
+    for(auto t = Delta_Xjab.trange().tiles().begin();
+        t != Delta_Xjab.trange().tiles().end(); ++t)
+      if (Delta_Xjab.is_local(*t)) {
+        std::array<std::size_t, 4> index;
+        std::copy(t->begin(), t->end(), index.begin());
+        madness::Future < typename TArray4dLazy::value_type >
+          tile((LazyTensor<T, 4, sedenom_eval_type >(&Delta_Xjab, index, &Delta_jab_gen)
+              ));
+
+        // Insert the tile into the array
+        Delta_Xjab.set(*t, tile);
+      }
+
+    std::ostringstream Xajk; Xajk << "<" << X_label << " a|g|j k>";
+    TArray4d g_Xajk = ijxy(Xajk.str());
+    typedef TA::Array<T, 4, LazyTensor<T, 4, sedenom_eval_type > > TArray4dLazy;
+    TArray4dLazy Delta_Xajk(g_Xajk.get_world(), g_Xajk.trange());
+
+    // construct local tiles
+    for(auto t = Delta_Xajk.trange().tiles().begin();
+        t != Delta_Xajk.trange().tiles().end(); ++t)
+      if (Delta_Xajk.is_local(*t)) {
+        std::array<std::size_t, 4> index;
+        std::copy(t->begin(), t->end(), index.begin());
+        madness::Future < typename TArray4dLazy::value_type >
+          tile((LazyTensor<T, 4, sedenom_eval_type >(&Delta_Xajk, index, &Delta_ajk_gen)
+              ));
+
+        // Insert the tile into the array
+        Delta_Xajk.set(*t, tile);
+      }
+
+    TArray4 dg_Xjab; dg_Xjab("Y,j,a,b") = Delta_Xjab("Y,j,a,b") * (4 * g_Xjab("Y,j,a,b") - 2 * g_Xjab("Y,j,b,a"));
+    TArray4 dg_Xajk; dg_Xajk("Y,a,j,m") = Delta_Xajk("Y,a,j,m") * (4 * g_Xajk("Y,a,j,m") - 2 * g_Xajk("Y,a,m,j"));
+
+    // second-order self-energy, Eq. 11.16 in Dickoff-VanNeck, with spin integrated out
+    // \sigma_{X}^{Y} =
+//    TArray2 sigma2; sigma2("X,Y") = (1./2) * ( g_Xjab("X,j,a,b") * dg_Xjab("Y,j,a,b") +
+//                                               g_Xajk("X,a,j,m") * dg_Xajk("Y,a,j,m") );
+    TArray2 sigma2_hpp; sigma2_hpp("X,Y") = (1./2) * g_Xjab("X,j,a,b") * dg_Xjab("Y,j,a,b");
+    TArray2 sigma2_phh; sigma2_phh("X,Y") = (1./2) * g_Xajk("X,a,j,m") * dg_Xajk("Y,a,j,m");
+
+    ExEnv::out0() << "Fock:" << std::endl << fij << std::endl;
+    ExEnv::out0() << "SE2_hpp(e=" << E << "):" << std::endl << sigma2_hpp << std::endl;
+    ExEnv::out0() << "SE2_phh(e=" << E << "):" << std::endl << sigma2_phh << std::endl;
+  }
+
+  namespace detail {
     /** this functor helps to implement conjugate gradient CABS singles solver
      */
     template<typename T>

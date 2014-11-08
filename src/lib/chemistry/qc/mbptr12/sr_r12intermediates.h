@@ -248,6 +248,10 @@ namespace sc {
         r12world_ = 0;
       }
 
+      const Ref<R12WavefunctionWorld>& r12world() const {
+        return r12world_;
+      }
+
       /** computes diagonal (spin-restricted, for now) V intermediate
       * @return \f$ V^{ij}_{ij} \f$ and \f$ V^{ij}_{ji} \f$, respectively
       */
@@ -262,6 +266,11 @@ namespace sc {
       * @return \f$ B^{ij}_{ij} \f$ and \f$ B^{ij}_{ji} \f$, respectively
       */
       std::pair<TArray2,TArray2> B_diag();
+
+      /**
+       * Computes second-order Green's function IPs and EAs
+       */
+      void gf2_r12();
 
       /** returns the 1-particle reduced density matrix
       * @return \f$ \gamma^{p}_{q} \f$, respectively

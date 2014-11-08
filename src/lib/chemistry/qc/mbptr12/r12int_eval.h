@@ -989,6 +989,8 @@ public:
    */
   void V_diag_ta();
 
+  void gf2_r12();
+
   // TiledArray-based MP2-F12 one-electron properties
   void compute_TA_mp2f12_1rdm();
 #endif

@@ -31,6 +31,7 @@
 #include <TiledArray/eigen.h>
 #include <TiledArray/algebra/conjgrad.h>
 #include <TiledArray/expressions.h>
+#include <cmath>
 
 namespace sc {
   inline double get_element(const TA::Array<double, 4 >& array, const std::vector<std::size_t>& ele_idx)
@@ -1153,7 +1154,7 @@ namespace sc {
     double E_0 = 0.0;
     double E_1 = 2.0 * dot(fai("a,i"), t1("a,i"))
                 + dot((2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j")), tau("a,b,i,j") );
-    double Delta_E = E_0 - E_1;
+    double Delta_E = std::abs(E_0 - E_1);
 
     TArray2 Iij = xy("<i|I|j>");
     TArray2 Iab = xy("<a|I|b>");
@@ -1169,11 +1170,10 @@ namespace sc {
 
     TArray2 hac, hki, hck;
     TArray4 a_klij, b_abcd;
+
     double iter = 0;
-
-    std::cout << scprintf("%-5s", "Iter") << scprintf("%-12s", "Delta_E")
-              << scprintf("%-12s", "E(CC2)") << std::endl;
-
+    std::cout << scprintf("%5s", "Iter") << scprintf("%12s", "Delta_E")
+              << scprintf("%12s", "E(CC2)") << std::endl;
     std::cout << scprintf("%-5.0f", iter)   << scprintf("%-20.10f", Delta_E)
               << scprintf("%-15.10f", E_1) << std::endl;
 
@@ -1235,22 +1235,447 @@ namespace sc {
       E_0 = E_1;
       E_1 = 2.0 * dot(fai("a,i"), t1("a,i"))
            + dot((2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j")), tau("a,b,i,j") );
-      Delta_E = E_0 - E_1;
+      Delta_E = std::abs(E_0 - E_1);
       iter += 1;
       std::cout << scprintf("%-5.0f", iter)   << scprintf("%-20.10f", Delta_E)
                 << scprintf("%-15.10f", E_1) << std::endl;
     }
-    //std::cout << "t1_0: " << t1 << std::endl;
+    std::cout << "t1: " << std::endl << t1 << std::endl;
 
+  }
+
+  // compute lambda amplitudes of CC2
+  template <typename T>
+  void SingleReference_R12Intermediates<T>::compute_lambda_cc2(const TArray2& t1, const TArray4& t2,
+                                                               TArray2& L1, TArray4& L2) {
+
+    TArray2 fij = xy("<j|F|j>");
+    TArray2 fab = xy("<a|F|b>");
+    TArray2 fai = xy("<a|F|i>");
+
+    // compute Delta_ai = 1 / (- <a|F|a> + <i|F|i>)
+    typedef detail::diag_precond2<double> pceval_type;
+    pceval_type Delta_ai_gen(TA::array_to_eigen(fab), TA::array_to_eigen(fij));
+
+    typedef TA::Array<T, 2, LazyTensor<T, 2, pceval_type > > TArray2dLazy;
+    TArray2dLazy Delta_ai(fai.get_world(), fai.trange());
+
+    typedef TA::Array<T, 2, LazyTensor<T, 2, pceval_type > > TArray2d;
+    // construct local tiles
+    for(auto t = Delta_ai.trange().tiles().begin();
+        t != Delta_ai.trange().tiles().end(); ++t)
+      if (Delta_ai.is_local(*t)) {
+        std::array<std::size_t, 2> index;
+        std::copy(t->begin(), t->end(), index.begin());
+        madness::Future < typename TArray2dLazy::value_type >
+          tile((LazyTensor<T, 2, pceval_type >(&Delta_ai, index, &Delta_ai_gen)
+              ));
+
+        // Insert the tile into the array
+        Delta_ai.set(*t, tile);
+      }
+
+    // compute Delta_ijab =  1 / (- <a|F|a> - <b|F|b> + <i|F|i> + <j|F|j>)
+    typedef detail::diag_precond4<double> pc4eval_type;
+    pc4eval_type Delta_abij_gen(TA::array_to_eigen(fab), TA::array_to_eigen(fab),
+                                TA::array_to_eigen(fij),TA::array_to_eigen(fij));
+
+    TArray4d g_abij = ijxy("<a b|g|i j>");
+    typedef TA::Array<T, 4, LazyTensor<T, 4, pc4eval_type > > TArray4dLazy;
+    TArray4dLazy Delta_abij(g_abij.get_world(), g_abij.trange());
+
+    // construct local tiles
+    for(auto t = Delta_abij.trange().tiles().begin();
+        t != Delta_abij.trange().tiles().end(); ++t)
+      if (Delta_abij.is_local(*t)) {
+        std::array<std::size_t, 4> index;
+        std::copy(t->begin(), t->end(), index.begin());
+        madness::Future < typename TArray4dLazy::value_type >
+          tile((LazyTensor<T, 4, pc4eval_type >(&Delta_abij, index, &Delta_abij_gen)
+              ));
+
+        // Insert the tile into the array
+        Delta_abij.set(*t, tile);
+      }
+
+//    L1("a,i") = Iai("a,i") * Delta_ai("a,i");
+//    L2("a,b,i,j") = I_abij("a,b,i,j") * Delta_abij("a,b,i,j");
+    L1("a,i") = t1("a,i");
+    L2("a,b,i,j") = t2("a,b,i,j");
+
+    TArray4 tau;
+    tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
+    //TArray4 tau_L; tau_L("a,b,i,j") = L2("a,b,i,j") + L1("a,i") * L1("b,j");
+
+    double E_0_L = 0.0;
+    double E_1_L = 2.0 * dot(fai("a,i"), L1("a,i"))
+                  + dot((2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j")), L2("a,b,i,j") );
+    double Delta_E_L = std::abs(E_0_L - E_1_L);
+
+
+    TArray4d g_abci = ijxy("<a b|g|c i>"); // g_aicd = ijxy("<a i|g|c d>");
+    TArray4d g_aikl = ijxy("<a i|g|k l>"); // g_klia = ijxy("<k l|g|i a>");
+    TArray4d g_aibj = ijxy("<a i|g|b j>"); // g_iajb = ijxy("<i a|g|j b>");
+    TArray4d g_aijb = ijxy("<a i|g|j b>"); // g_iabj = ijxy("<i a|g|b j>");
+    TArray4d g_ijkl = ijxy("<i j|g|k l>");
+    TArray4d g_abcd = ijxy("<a b|g|c d>");
+
+    // intermediates for L1 & L2
+    TArray2 Iai, Gac, Kki, Iai_L2;
+    TArray4 R_akic, Q_akic, A_klim, E_klic, B_aecd, F_akcd;
+    TArray4 H_abcj, J_kbij;
+
+    Iai("a,i") =  fai("a,i")
+                + (2.0 * g_abij("a,c,i,k") - g_abij("a,c,k,i")) * t1("c,k");
+    //TArray4 I_abij; I_abij("a,b,i,j") = g_abij("a,b,i,j");
+
+    double iter = 0;
+    std::cout << scprintf("%-5s", "Iter") << scprintf("%12s", "Delta_E_L")
+              << scprintf("%12s", "E_L(CC2)") << std::endl;
+    std::cout << scprintf("%-5.0f", iter)   << scprintf("%-20.10f", Delta_E_L)
+              << scprintf("%-15.10f", E_1_L) << std::endl;
+
+    while (Delta_E_L >= 1.0e-9) {
+
+#if 1  // close-shell L^a_i & alpha-beta case L^ab_ij
+      Gac("a,c") = //- fab("a,c") * (1.0 - Iab("a,c")) +
+                    fai("a,k") * t1("c,k")
+                  - (2.0 * g_abci("a,d,c,k") - g_abci("d,a,c,k")) * t1("d,k")
+                  + (2.0 * g_abij("a,d,k,l") - g_abij("a,d,l,k")) * tau("c,d,k,l");
+
+      Kki("k,i") =  //fij("k,i") * (1.0 - Iij("k,i")) +
+                    fai("c,i") * t1("c,k")
+                  + (2.0 * g_aikl("c,k,l,i") - g_aikl("c,k,i,l")) * t1("c,l")
+                  + (2.0 * g_abij("c,d,i,l") - g_abij("c,d,l,i")) * tau("c,d,k,l");
+
+      R_akic("a,k,i,c") =  g_aibj("a,k,c,i") + g_abci("a,d,c,i") * t1("d,k")
+                         - g_aikl("a,k,l,i") * t1("c,l")
+                         - g_abij("a,d,l,i") * tau("c,d,l,k");
+
+      Q_akic("a,k,i,c") =  g_aijb("a,k,i,c") + g_abci("d,a,c,i") * t1("d,k")
+                         - g_aikl("a,k,i,l") * t1("c,l")
+                         - g_abij("a,d,l,i") * t2("c,d,k,l")
+                         + g_abij("a,d,i,l") * (2.0 * t2("c,d,k,l") - tau("c,d,l,k"));
+
+      A_klim("k,l,i,m") = - (2.0 * g_ijkl("k,l,i,m") - g_ijkl("k,l,m,i"))
+                          - (2.0 * g_abij("c,d,i,m") - g_abij("c,d,m,i")) * t1("c,k") * t1("d,l")
+                          - (2.0 * g_aikl("c,l,i,m") - g_aikl("c,l,m,i")) * t1("c,k")
+                          - (2.0 * g_aikl("c,k,m,i") - g_aikl("c,k,i,m")) * t1("c,l");
+
+      E_klic("k,l,i,c") =  2.0 * g_aikl("c,i,l,k") - g_aikl("c,i,k,l")
+                           // a^kl_im tcm
+                         + A_klim("k,l,i,m")  * t1("c,m")
+                          //
+                         + (2.0 * g_abci("e,d,c,i") - g_abci("d,e,c,i")) * t1("d,k") * t1("e,l")
+                          //
+                         + (2.0 * g_aijb("d,l,i,c") - g_aibj("d,l,c,i")) * t1("d,k")
+                         + (2.0 * g_aibj("d,k,c,i") - g_aijb("d,k,i,c")) * t1("d,l")
+                         ;
+
+      B_aecd("a,e,c,d") = - (2.0 * g_abcd("a,e,c,d") - g_abcd("e,a,c,d"))
+                          - (2.0 * g_abij("a,e,k,l") - g_abij("e,a,k,l")) * t1("c,k") * t1("d,l")
+                          + (2.0 * g_abci("e,a,d,k") - g_abci("a,e,d,k")) * t1("c,k")
+                          + (2.0 * g_abci("a,e,c,k") - g_abci("e,a,c,k")) * t1("d,k");
+
+      F_akcd("a,k,c,d") = - 2.0 * g_abci("c,d,a,k") - g_abci("d,c,a,k")
+                            // b^ae_cd tek
+                          + B_aecd("a,e,c,d") * t1("e,k")
+                            //
+                          - (2.0 * g_aikl("a,k,m,l") - g_aikl("a,k,l,m")) * t1("d,l") * t1("c,m")
+                            //
+                          + (2.0 * g_aibj("a,k,c,l") - g_aijb("a,k,l,c")) * t1("d,l")
+                          + (2.0 * g_aijb("a,k,l,d") - g_aibj("a,k,d,l")) * t1("c,l");
+
+      L1("a,i") = Delta_ai("a,i") * (
+                  // Iai
+                  Iai("a,i")
+                  // Gac Lci
+                - Gac("a,c") * L1("c,i")
+                  // Kki Lak
+                - Kki("k,i") * L1("a,k")
+                  // (R - 2Q)ak_ic Lck
+                - (R_akic("a,k,i,c") - 2.0 * Q_akic("a,k,i,c")) * L1("c,k")
+                  // E^kl_ic L2^ac_kl
+                - E_klic("k,l,i,c") * L2("a,c,k,l")
+                  // F^ak_cd L2^cd_ik
+                - F_akcd("a,k,c,d") * L2("c,d,i,k")
+                  );
+
+      H_abcj("a,b,c,j") = - g_abci("a,b,c,j")
+                          + g_abij("a,b,k,j") * t1("c,k");
+
+      J_kbij("k,b,i,j") =  g_aikl("b,k,j,i")
+                         + g_abij("b,c,j,i")  * t1("c,k");
+
+
+      L2("a,b,i,j") = Delta_abij("a,b,i,j") * (
+                      // I^ab_ij
+                      g_abij("a,b,i,j")
+
+                      // Ibi Laj + Iaj Lbi
+                    //- L1("a,j") * Iai("b,i")  //   (fai("b,i")
+                                            // + (2.0 * g_abij("b,c,i,k") - g_abij("b,c,k,i")) * t1("c,k"))
+                    //- L1("b,i") * Iai("a,j")  //   (fai("a,j")
+                                            // + (2.0 * g_abij("a,c,j,k") - g_abij("a,c,k,j")) * t1("c,k"))
+
+                      // Ibj Lai + Iai Lbj
+                    + L1("a,i") * Iai("b,j") // (fai("b,j")
+                                           // + (2.0 * g_abij("b,c,j,k") - g_abij("c,b,k,j")) * t1("c,k"))
+                    + L1("b,j") * Iai("a,i") // (fai("a,i")
+                                           // + (2.0 * g_abij("a,c,i,k") - g_abij("c,a,k,i")) * t1("c,k"))
+
+                      // Gbc L^ac_ij + Gac L^bc_ji
+                      // CC2: Gbc = - fbc (1 - delta_bc)
+                    //+ fab("b,c") * (1.0 - Iab("b,c")) * L2("a,c,i,j")
+                    //+ fab("a,c") * (1.0 - Iab("a,c")) * L2("b,c,j,i")
+
+                      // Kkj L^ab_ik + Kki L^ba_jk
+                      // CC2: Kkj = fkj (1 - delta_kj)
+                    //- fij("k,j") * (1.0 - Iij("k,j")) * L2("a,b,i,k")
+                    //- fij("k,i") * (1.0 - Iij("k,i")) * L2("b,a,j,k")
+
+                      // H^ab_cj Lci + H^ba_ci Lcj
+                    - H_abcj("a,b,c,j") * L1("c,i")
+                    - H_abcj("b,a,c,i") * L1("c,j")
+
+                      // J^kb_ij Lak - j^ka_ji Lbk
+                    - J_kbij("k,b,i,j") * L1("a,k")
+                    - J_kbij("k,a,j,i") * L1("b,k")
+                    );
+#endif
+
+#if 0  // close-shell L^a_i & alpha-beta case L^ab_ij in explicit form
+
+      L1("a,i") = Delta_ai("a,i") * (
+                  // Iai
+                  fai("a,i")
+                + (2.0 * g_abij("a,b,i,j") - g_abij("a,b,j,i")) * t1("b,j")
+
+                  // Gac Lci
+                - (  fai("a,j") * t1("c,j")
+                   - (2.0 * g_abci("a,b,c,j") - g_abci("b,a,c,j")) * t1("b,j")
+                   + (2.0 * g_abij("a,d,k,l") - g_abij("a,d,l,k")) * tau("c,d,k,l"))
+                  * L1("c,i")
+
+                  // Kki Lak
+                - (  fai("c,i") * t1("c,k")
+                   + (2.0 * g_aikl("b,k,j,i") - g_aikl("b,k,i,j")) * t1("b,j")
+                   + (2.0 * g_abij("c,d,i,l") - g_abij("c,d,l,i")) * tau("c,d,k,l"))
+                  * L1("a,k")
+
+                  // (R - 2Q)ak_ic Lck
+                + (  2.0 * g_aijb("a,k,i,c") - g_aibj("a,k,c,i")
+                  + (2.0 * g_abci("b,a,c,i") - g_abci("a,b,c,i")) * t1("b,k")
+                  - (2.0 * g_aikl("a,k,i,l") - g_aikl("a,k,l,i")) * t1("c,l")
+                  - (2.0 * g_abij("a,b,i,j") - g_abij("a,b,j,i")) * t1("c,j") * t1("b,k")
+                  + (2.0 * g_abij("a,b,i,j") - g_abij("a,b,j,i"))
+                    * (2.0 *  t2("c,b,k,j") - t2("c,b,j,k"))
+                  ) * L1("c,k")
+
+                  // E^kl_ic L2^ac_kl
+                - ( 2.0 * g_aikl("b,i,l,k") - g_aikl("b,i,k,l")
+                    // a^kl_im tcm
+                  + ( - (2.0 * g_ijkl("k,l,i,j") - g_ijkl("k,l,j,i"))
+                      - (2.0 * g_abij("c,d,i,j") - g_abij("c,d,j,i")) * t1("c,k") * t1("d,l")
+
+                      - (2.0 * g_aikl("c,l,i,j") - g_aikl("c,l,j,i")) * t1("c,k")
+                      - (2.0 * g_aikl("c,k,j,i") - g_aikl("c,k,i,j")) * t1("c,l")
+                    ) * t1("b,j")
+                   //
+                  + (2.0 * g_abci("d,c,b,i") - g_abci("c,d,b,i")) * t1("d,l") * t1("c,k")
+                   //
+                  + (2.0 * g_aijb("c,l,i,b") - g_aibj("c,l,b,i")) * t1("c,k")
+                  + (2.0 * g_aibj("c,k,b,i") - g_aijb("c,k,i,b")) * t1("c,l")
+                  ) * L2("a,b,k,l")
+
+                  // F^ak_cd L2^cd_ik
+                - ( - 2.0 * g_abci("c,d,a,j") - g_abci("d,c,a,j")
+                    // b^ae_cd tek
+                  + ( - (2.0 * g_abcd("a,b,c,d") - g_abcd("b,a,c,d"))
+                      - (2.0 * g_abij("a,b,k,l") - g_abij("b,a,k,l")) * t1("c,k") * t1("d,l")
+
+                      + (2.0 * g_abci("b,a,d,k") - g_abci("a,b,d,k")) * t1("c,k")
+                      + (2.0 * g_abci("a,b,c,k") - g_abci("b,a,c,k")) * t1("d,k")
+                    ) * t1("b,j")
+                    //
+                  - (2.0 * g_aikl("a,j,k,l") - g_aikl("a,j,l,k")) * t1("d,l") * t1("c,k")
+                    //
+                  + (2.0 * g_aibj("a,j,c,k") - g_aijb("a,j,k,c")) * t1("d,k")
+                  + (2.0 * g_aijb("a,j,k,d") - g_aibj("a,j,d,k")) * t1("c,k")
+                  ) * L2("c,d,i,j")
+                  );
+
+      L2("a,b,i,j") = Delta_abij("a,b,i,j") * (
+                      // I^ab_ij
+                      g_abij("a,b,i,j")
+
+                      // Ibi Laj + Iaj Lbi
+                      // Ibj Lai + Iai Lbj
+
+                    + (  fai("a,i")
+                       + (2.0 * g_abij("a,f,i,n") - g_abij("a,f,n,i")) * t1("f,n"))
+                      * L1("b,j")
+
+                    + (  fai("b,j")
+                       + (2.0 * g_abij("b,f,j,n") - g_abij("b,f,n,j")) * t1("f,n"))
+                      * L1("a,i")
+
+                      // H^ab_cj Lci + H^ba_ci Lcj
+                    - (- g_abci("a,b,e,j")
+                       + g_abij("a,b,n,j") * t1("e,n")) * L1("e,i")
+                    - (- g_abci("b,a,e,i")
+                       + g_abij("b,a,n,i") * t1("e,n")) * L1("e,j")
+
+                      // J^kb_ij Lak - j^ka_ji Lbk
+                    - ( g_aikl("b,m,j,i")
+                      + g_abij("b,f,j,i")  * t1("f,m")) * L1("a,m")
+                    - ( g_aikl("a,m,i,j")
+                      + g_abij("a,f,i,j")  * t1("f,m")) * L1("b,m")
+                    );
+#endif
+
+#if 0 // close-shell L^a_i & alpha case L^ab_ij
+      Gac("a,c") = //- fab("a,c") * (1.0 - Iab("a,c")) +
+                    fai("a,k") * t1("c,k")
+                  - (2.0 * g_abci("a,d,c,k") - g_abci("d,a,c,k")) * t1("d,k")
+                  + (2.0 * g_abij("a,d,k,l") - g_abij("a,d,l,k")) * tau("c,d,k,l");
+
+      Kki("k,i") =  //fij("k,i") * (1.0 - Iij("k,i")) +
+                    fai("c,i") * t1("c,k")
+                  + (2.0 * g_aikl("c,k,l,i") - g_aikl("c,k,i,l")) * t1("c,l")
+                  + (2.0 * g_abij("c,d,i,l") - g_abij("c,d,l,i")) * tau("c,d,k,l");
+
+      R_akic("a,k,i,c") =  g_aibj("a,k,c,i") + g_abci("a,d,c,i") * t1("d,k")
+                         - g_aikl("a,k,l,i") * t1("c,l")
+                         - g_abij("a,d,l,i") * tau("c,d,l,k");
+
+      Q_akic("a,k,i,c") =  g_aijb("a,k,i,c") + g_abci("d,a,c,i") * t1("d,k")
+                         - g_aikl("a,k,i,l") * t1("c,l")
+                         - g_abij("a,d,l,i") * t2("c,d,k,l")
+                         + g_abij("a,d,i,l") * (2.0 * t2("c,d,k,l") - tau("c,d,l,k"));
+
+      A_klim("k,l,i,m") = - (2.0 * g_ijkl("k,l,i,m") - g_ijkl("k,l,m,i"))
+                          - (2.0 * g_abij("c,d,i,m") - g_abij("c,d,m,i")) * t1("c,k") * t1("d,l")
+                          - (2.0 * g_aikl("c,l,i,m") - g_aikl("c,l,m,i")) * t1("c,k")
+                          - (2.0 * g_aikl("c,k,m,i") - g_aikl("c,k,i,m")) * t1("c,l");
+
+      E_klic("k,l,i,c") =  2.0 * g_aikl("c,i,l,k") - g_aikl("c,i,k,l")
+                           // a^kl_im tcm
+                         + A_klim("k,l,i,m")  * t1("c,m")
+                          //
+                         + (2.0 * g_abci("e,d,c,i") - g_abci("d,e,c,i")) * t1("d,k") * t1("e,l")
+                          //
+                         + (2.0 * g_aijb("d,l,i,c") - g_aibj("d,l,c,i")) * t1("d,k")
+                         + (2.0 * g_aibj("d,k,c,i") - g_aijb("d,k,i,c")) * t1("d,l")
+                         ;
+
+      B_aecd("a,e,c,d") = - (2.0 * g_abcd("a,e,c,d") - g_abcd("e,a,c,d"))
+                          - (2.0 * g_abij("a,e,k,l") - g_abij("e,a,k,l")) * t1("c,k") * t1("d,l")
+                          + (2.0 * g_abci("e,a,d,k") - g_abci("a,e,d,k")) * t1("c,k")
+                          + (2.0 * g_abci("a,e,c,k") - g_abci("e,a,c,k")) * t1("d,k");
+
+      F_akcd("a,k,c,d") = - 2.0 * g_abci("c,d,a,k") - g_abci("d,c,a,k")
+                            // b^ae_cd tek
+                          + B_aecd("a,e,c,d") * t1("e,k")
+                            //
+                          - (2.0 * g_aikl("a,k,m,l") - g_aikl("a,k,l,m")) * t1("d,l") * t1("c,m")
+                            //
+                          + (2.0 * g_aibj("a,k,c,l") - g_aijb("a,k,l,c")) * t1("d,l")
+                          + (2.0 * g_aijb("a,k,l,d") - g_aibj("a,k,d,l")) * t1("c,l");
+
+      L1("a,i") = Delta_ai("a,i") * (
+                  // Iai
+                  Iai("a,i")
+                  // Gac Lci
+                - Gac("a,c") * L1("c,i")
+                  // Kki Lak
+                - Kki("k,i") * L1("a,k")
+                  // (R - 2Q)ak_ic Lck
+                - (R_akic("a,k,i,c") - 2.0 * Q_akic("a,k,i,c")) * L1("c,k")
+                  // E^kl_ic L2^ac_kl
+                - E_klic("k,l,i,c") * L2("a,c,k,l")
+                  // F^ak_cd L2^cd_ik
+                - F_akcd("a,k,c,d") * L2("c,d,i,k")
+                  );
+
+//      H_abcj("a,b,c,j") = - g_abci("a,b,c,j") + g_abci("b,a,c,j")
+//                          + (g_abij("a,b,k,j") - g_abij("b,a,k,j")) * t1("c,k");
+//
+//      J_kbij("k,b,i,j") =  g_aikl("b,k,j,i") - g_aikl("b,k,i,j")
+//                         + (g_abij("b,c,j,i") - g_abij("b,c,i,j")) * t1("c,k");
+//
+//      TArray4 L2_baij;
+//      L2_baij("b,a,i,j") = L2("b,a,i,j");
+//
+//      L2("a,b,i,j") = Delta_abij("a,b,i,j") * (
+//                      // I^ab_ij
+//                      g_abij("a,b,i,j") - g_abij("a,b,j,i")
+//
+//                      // Ibi Laj + Iaj Lbi
+//                    - L1("a,j") * Iai("b,i")
+//                    - L1("b,i") * Iai("a,j")
+//
+//                      // Ibj Lai + Iai Lbj
+//                    + L1("a,i") * Iai("b,j")
+//                    + L1("b,j") * Iai("a,i")
+//
+//                      // H^ab_cj Lci + H^ba_ci Lcj
+//                    - H_abcj("a,b,c,j") * L1("c,i")
+//                    - H_abcj("b,a,c,i") * L1("c,j")
+//
+//                      // J^kb_ij Lak - j^ka_ji Lbk
+//                    - J_kbij("k,b,i,j") * L1("a,k")
+//                    - J_kbij("k,a,j,i") * L1("b,k")
+//                    ) + L2_baij("b,a,i,j");
+
+      H_abcj("a,b,c,j") =  g_abci("b,a,c,j")
+                         - g_abij("b,a,k,j") * t1("c,k");
+
+      J_kbij("k,b,i,j") = - g_aikl("b,k,i,j")
+                          - g_abij("b,c,i,j") * t1("c,k");
+
+      L2("b,a,i,j") = - Delta_abij("a,b,i,j") * (
+                      // I^ab_ij
+                    - g_abij("a,b,j,i")
+
+                      // Ibi Laj + Iaj Lbi
+                    - L1("a,j") * Iai("b,i")
+                    - L1("b,i") * Iai("a,j")
+
+                      // H^ab_cj Lci + H^ba_ci Lcj
+                    - H_abcj("a,b,c,j") * L1("c,i")
+                    - H_abcj("b,a,c,i") * L1("c,j")
+
+                      // J^kb_ij Lak - j^ka_ji Lbk
+                    - J_kbij("k,b,i,j") * L1("a,k")
+                    - J_kbij("k,a,j,i") * L1("b,k")
+                    );
+
+#endif
+
+      tau("a,b,i,j") = t2("a,b,i,j") + t1("a,i") * t1("b,j");
+      //tau_L("a,b,i,j") = L2("a,b,i,j") + L1("a,i") * L1("b,j");
+
+      E_0_L = E_1_L;
+      E_1_L = 2.0 * dot(fai("a,i"), L1("a,i"))
+             + dot((2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j")), L2("a,b,i,j") );
+      Delta_E_L = std::abs(E_0_L - E_1_L);
+
+      iter += 1;
+      std::cout << scprintf("%-5.0f", iter)   << scprintf("%-20.10f", Delta_E_L)
+                << scprintf("%-15.10f", E_1_L) << std::endl;
+    }
+    std::cout << "L1: " << std::endl << L1 << std::endl;
   }
 
   template <typename T>
   void SingleReference_R12Intermediates<T>::compute_multipole() {
 
     ExEnv::out0() << indent << "Start to compute CC2" << std::endl;
-    TArray2 T1;
-    TArray4 T2;
+    TArray2 T1, L1;
+    TArray4 T2, L2;
     compute_T_cc2(T1,T2);
+    compute_lambda_cc2(T1, T2, L1, L2);
 
     ExEnv::out0() << indent << "Compute MP2-F12 dipole and quadrupole moments" << std::endl;
 

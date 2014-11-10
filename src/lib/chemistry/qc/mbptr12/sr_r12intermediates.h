@@ -311,6 +311,9 @@ namespace sc {
 
       // compute T1 & T2 amplitudes of CC2
       void compute_T_cc2(TArray2& T1, TArray4& T2);
+      // compute Lambda_1 & Lambda_2 amplitudes of CC2
+      void compute_lambda_cc2(const TArray2& t1, const TArray4& t2,
+                         TArray2& L1, TArray4& L2);
 
       /** returns the 2-particle density matrix
       * @return \f$ \gamma^{pq}_{rs} \f$, respectively

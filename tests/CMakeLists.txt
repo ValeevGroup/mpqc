@@ -13,6 +13,7 @@ set(test_sources
   tile_pimpl_test.cpp
   tile_mutations_test.cpp
   all_same_test.cpp
+  btas_test.cpp
 )
 
 FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR} ano_basis_G94.txt DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

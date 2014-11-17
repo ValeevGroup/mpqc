@@ -3,10 +3,14 @@ Figure out how to convert FullRank TileVariant to LowRank TileVariant
 Optimize my all FullRank functions, try and be at least as fast as TileArray in
 matrix expressions involving only full rank tiles.
 
-Add in the TCC namespace at somepoint.
 
-Use MPQC for basis sets
-Construct libint shells given 
-  basis set and molecule.
+========
+= Tensor
+========
+- Add wrapper for BTAS. 
 
 
+===========
+= Integrals
+===========
+- Use BTAS::view to get integrals into parts of tensors. 

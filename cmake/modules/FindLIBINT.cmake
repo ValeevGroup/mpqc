@@ -9,7 +9,6 @@ else (LIBINT_INCLUDE_DIRS)
   endif(LIBINT_INSTALL_DIR)
 
   set(LIBINT_INC_SEARCH_DIR ${_LIBINT_INSTALL_DIR}/include)
-  message(STATUS "Searching for includes in ${LIBINT_INC_SEARCH_DIR}")
 
   find_path(LIBINT_INCLUDE_DIR NAMES libint2.h
     HINTS
@@ -20,8 +19,6 @@ else (LIBINT_INCLUDE_DIRS)
     ${LIBINT_INC_SEARCH_DIR}/libint2)
 
   set(LIBINT_INCLUDE_DIR ${LIBINT_INCLUDE_DIR} ${LIBINT_INCLUDE_LIBINT2_DIR})
-
-  message(STATUS "LIBINT INCLUDE DIRS = ${LIBINT_INCLUDE_DIR}")
 
   mark_as_advanced(LIBINT_INCLUDE_DIR)
 
@@ -38,7 +35,6 @@ else (LIBINT_INCLUDE_DIRS)
     if(NOT current_lib)
       message(FATAL_ERROR "TileClusterChem could not find Libint lib: ${_lib}")
     endif(NOT current_lib)
-    message(STATUS " Found Libint lib: ${current_lib}")
     LIST(APPEND LIBINT_LIBRARY ${current_lib})
   endforeach()
 
@@ -56,6 +52,5 @@ else (LIBINT_INCLUDE_DIRS)
     endif(LIBINT_LIBRARY)
   endif(LIBINT_INCLUDE_DIR)
 
-message(STATUS "LIBINT INCLUDE DIRS FINAL = ${LIBINT_INCLUDE_DIRS}")
 
 endif(LIBINT_INCLUDE_DIRS)

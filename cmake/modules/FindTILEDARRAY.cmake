@@ -9,9 +9,9 @@ else (TILEDARRAY_INCLUDE_DIRS)
   endif(TILEDARRAY_INSTALL_DIR)
 
   set(TILEDARRAY_INC_SEARCH_DIR ${_TILEDARRAY_INSTALL_DIR}/include)
-  message(STATUS "Searching for includes in ${TILEDARRAY_INC_SEARCH_DIR}")
 
-  find_path(TILEDARRAY_INCLUDE_DIR NAMES tiledarray.h HINTS ${TILEDARRAY_INC_SEARCH_DIR})
+  find_path(TILEDARRAY_INCLUDE_DIR NAMES tiledarray.h 
+      HINTS ${TILEDARRAY_INC_SEARCH_DIR})
 
   mark_as_advanced(TILEDARRAY_INCLUDE_DIR)
 
@@ -31,9 +31,9 @@ else (TILEDARRAY_INCLUDE_DIRS)
     if(NOT current_lib)
       message(FATAL_ERROR "TileClusterChem could not find Madness lib ${_lib}")
     endif(NOT current_lib)
-    message(STATUS " Found Madness lib: ${current_lib}")
     LIST(APPEND TILEDARRAY_LIBRARY ${current_lib})
   endforeach()
+  message(STATUS "Found TiledArray Libraries.")
 
   set(TILEDARRAY_LIBRARY_DIR ${_TILEDARRAY_LIBRARY_DIR})
   mark_as_advanced(TILEDARRAY_LIBRARY)

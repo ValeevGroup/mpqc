@@ -11,7 +11,7 @@
 
 // FWD Decl
 namespace libint2 {
-class Shell;
+struct Shell;
 }
 
 namespace tcc {

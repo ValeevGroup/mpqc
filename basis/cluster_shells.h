@@ -8,7 +8,7 @@
 #include <vector>
 
 namespace libint2 {
-class Shell;
+struct Shell;
 }
 
 namespace tcc {

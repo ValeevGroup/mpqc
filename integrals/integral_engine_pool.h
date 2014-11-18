@@ -14,43 +14,49 @@ namespace tcc {
 namespace integrals {
 
 template <typename E>
-class IntegralEnginePool {
+class EnginePool {
   public:
     using EngType = E;
     /// Don't allow copies or default initialization.
-    IntegralEnginePool() = delete;
-    IntegralEnginePool(IntegralEnginePool const &) = delete;
-    IntegralEnginePool& operator=(IntegralEnginePool const&) = delete;
+    EnginePool() = delete;
+    EnginePool(EnginePool const &) = delete;
+    EnginePool &operator=(EnginePool const &) = delete;
 
-    IntegralEnginePool& operator=(IntegralEnginePool &&) = default;
-    IntegralEnginePool(IntegralEnginePool &&a) = default;
+    EnginePool &operator=(EnginePool &&) = default;
+    EnginePool(EnginePool &&a) = default;
 
-    /// Initialize class with engine, engines_ needs lambda due to way 
-    /// tbb::enumerable_thread_specific constructor works. 
-    explicit IntegralEnginePool(E e)
-        : engine_(std::move(e)),
-          engines_(engine_) {}
+    /// Initialize class with engine, engines_ needs lambda due to way
+    /// tbb::enumerable_thread_specific constructor works.
+    explicit EnginePool(E e)
+        : engine_(std::move(e)), engines_(engine_) {}
 
-    /// Get reference to thread local engine. 
-    E& local(){ return engines_.local(); }
+    /// Get reference to thread local engine.
+    E &local() { return engines_.local(); }
 
   private:
     E engine_;
     tbb::enumerable_thread_specific<E> engines_;
 };
 
-// Type traits for the engines in the pool
-template<typename Pool> struct IntegralPoolTypeTraits {
-    constexpr unsigned long order() const;
-};
-template<>
-struct IntegralPoolTypeTraits<libint2::OneBodyEngine>{
-    constexpr unsigned long order() const {return 2ul;}
-};
-template<>
-struct IntegralPoolTypeTraits<libint2::TwoBodyEngine<libint2::Coulomb>>{
-    constexpr unsigned long order() const {return 4ul;}
-};
+template <typename E>
+EnginePool<E> make_pool(E e) {
+    return EnginePool<E>(std::move(e));
+}
+
+// Constexpr function to return the order of the integral pools.
+template <typename Pool>
+constexpr unsigned long pool_order();
+
+template <>
+constexpr unsigned long pool_order<EnginePool<libint2::OneBodyEngine>>() {
+    return 2ul;
+}
+
+template <>
+constexpr unsigned long
+pool_order<EnginePool<libint2::TwoBodyEngine<libint2::Coulomb>>>() {
+    return 4ul;
+}
 
 } // namespace integrals
 } // namespac tcc

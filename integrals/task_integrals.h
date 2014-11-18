@@ -12,36 +12,75 @@
 #include "../include/tiledarray.h"
 #include "../include/libint2.h"
 
+#include "../basis/basis.h"
+
 namespace tcc {
 namespace integrals {
 
-template <typename It, typename TileFunctor>
-void tile_task(It first, It last, engine, TileFunctor tf);
+namespace detail {
+class BtasTileFunctor {
+  public:
+    // using TileType = btas::Tensor<double>;
+    using TileType = TiledArray::Tensor<double>;
 
-    template <typename It, typename TileFunctor>
-    void generate_workpile(It begin, It end, engine, TileFunctor tf);
+    template <typename Index, typename Engine>
+    TileType operator()(Index index, basis::Basis const *basis, Engine engine) {
+        TileType tile{};
+        return tile;
+    }
+}; // class BtasTileFunctor
+} // namespace detail
 
+template <unsigned long order, typename TileFunctor>
+TiledArray::Array<double, order, typename TileFunctor::TileType>
+create_array(madness::World &world, basis::Basis const &basis,
+             TileFunctor const &tf) {
 
-template <typename A, typename TileFunctor>
-void create_tiles(A array, engine, TileFunctor tf);
+    std::vector<TiledArray::TiledRange1> trange1_collector;
+    trange1_collector.reserve(order);
 
-template <typename TileType>
-TiledArray::Array<double, order, TileType> create_array(world, trange_functor) {
-    // Generate trange
-    // create array
-    // return array
+    const auto trange1 = basis.create_trange1();
+    for (auto i = 0ul; i < order; ++i) {
+        trange1_collector.push_back(trange1);
+    }
+
+    TiledArray::TiledRange trange(trange1_collector.begin(),
+                                  trange1_collector.end());
+
+    using TileType = typename TileFunctor::TileType;
+    return TiledArray::Array<double, order, TileType>(world, trange);
 }
 
-template <typename TileFunctor>
-TiledArray::Array<double, order, TileFunctor::TileType>
-integrals(madness::World &world, engine, trange_functor, TileFunctor tf) {
-    // Get integral engine
-    // determine rank
 
-    // create a TA::Array
-    // fill array with integrals
+template <typename It, typename Engine, typename TileFunctor>
+void create_tile(It it, EnginePool<Engine> *engines, basis::Basis const *basis,
+                 TileFunctor tf) {
+    auto local_engine = engines->local();
+    *it = tf(it.index(), basis, local_engine);
+}
 
-    // return array
+
+template <typename Array, typename Engine, typename TileFunctor>
+void initialize_tiles(Array &a, EnginePool<Engine> engines,
+                      basis::Basis const &basis, TileFunctor tf) {
+
+    const auto end = a.end();
+    for (auto it = a.begin(); it != end; ++it) {
+        create_tile(it, &engines, &basis, tf);
+    }
+}
+
+
+template <typename Engine,
+          typename TileFunctor = typename detail::BtasTileFunctor>
+TiledArray::Array<double, integrals::pool_order<EnginePool<Engine>>(),
+                  typename TileFunctor::TileType>
+Integrals(madness::World &world, EnginePool<Engine> engines,
+          basis::Basis const &basis, TileFunctor tf = TileFunctor{}) {
+    constexpr auto tensor_order = integrals::pool_order<EnginePool<Engine>>();
+    auto array = create_array<tensor_order>(world, basis, tf);
+    initialize_tiles(array, std::move(engines), basis, tf);
+    return array;
 }
 
 } // namespace integrals

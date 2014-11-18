@@ -10,6 +10,6 @@
 #include <tbb/spin_mutex.h>
 #include <tbb/tick_count.h>
 #include <tbb/task_scheduler_init.h>
-
+#include <tbb/enumerable_thread_specific.h>
 
 #endif // TCC_INCLUDE_TBB_H

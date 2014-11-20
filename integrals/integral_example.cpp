@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
     libint2::TwoBodyEngine<libint2::Coulomb> coulomb_ints;
     auto eri_pool = integrals::make_pool(std::move(coulomb_ints));
 
-    auto array = integrals::Integrals(world, std::move(eri_pool), basis);
-
+    auto a = integrals::Integrals(world, std::move(eri_pool), basis);
+    std::cout << a << std::endl;
     return 0;
 }

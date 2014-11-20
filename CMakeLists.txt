@@ -61,17 +61,18 @@ LIST(APPEND TileClusterChem_LIBRARIES ${LIBINT_LIBRARIES})
 LIST(APPEND TileClusterChem_LIBRARIES ${TILEDARRAY_LIBRARIES})
 
 add_subdirectory(${TileClusterChem_SOURCE_DIR}/include)
+
 add_subdirectory(${TileClusterChem_SOURCE_DIR}/molecule)
-add_subdirectory(${TileClusterChem_SOURCE_DIR}/matrix)
-add_subdirectory(${TileClusterChem_SOURCE_DIR}/basis)
-add_subdirectory(${TileClusterChem_SOURCE_DIR}/integrals)
-
-
 LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/molecule)
 LIST(APPEND TileClusterChem_LIBRARIES molecule)
 
+add_subdirectory(${TileClusterChem_SOURCE_DIR}/matrix)
+
+add_subdirectory(${TileClusterChem_SOURCE_DIR}/basis)
 LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/basis)
 LIST(APPEND TileClusterChem_LIBRARIES basis)
+
+add_subdirectory(${TileClusterChem_SOURCE_DIR}/integrals)
 
 message(STATUS "Using libraries ${TileClusterChem_LIBRARIES}")
 

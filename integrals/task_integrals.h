@@ -48,6 +48,20 @@ class BtasTileFunctor {
         }
 
         auto btas_tensor = compute_integrals(engines->local(), clusters);
+        std::cout << "Btas_tensor = \n " << btas_tensor << std::endl;
+        for (auto i = 0ul; i < 4; ++i) {
+            for (auto j = 0ul; j < 4; ++j) {
+                std::cout << "Slice " << i + 1 << " " << j + 1 << std::endl;
+                for (auto k = 0ul; k < 4; ++k) {
+                    for (auto l = 0ul; l < 4; ++l) {
+                        std::cout << btas_tensor(i, j, k, l) << " ";
+                    }
+                    std::cout << std::endl;
+                }
+                std::cout << std::endl;
+            }
+        }
+
         return tile;
     }
 
@@ -65,6 +79,67 @@ class BtasTileFunctor {
         }
 
         auto tensor = make_btas_tensor<dims>(dim_sizes);
+
+        auto sh1_func = 0;
+        for (auto const &sh1 : clusters[0].flattened_shells()) {
+            auto nprim1 = sh1.nprim();
+            auto sh2_func = 0;
+            for (auto const &sh2 : clusters[1].flattened_shells()) {
+                auto nprim2 = sh2.nprim();
+                auto sh3_func = 0;
+                for (auto const &sh3 : clusters[2].flattened_shells()) {
+                    auto nprim3 = sh3.nprim();
+                    auto sh4_func = 0;
+                    for (auto const &sh4 : clusters[3].flattened_shells()) {
+                        auto nprim4 = sh4.nprim();
+
+                        std::cout << "lower bound = " << sh1_func << " "
+                                  << sh2_func << " " << sh3_func << " "
+                                  << sh4_func << std::endl;
+
+                        std::cout << "upper bound = " << sh1_func + nprim1
+                                  << " " << sh2_func + nprim2 << " "
+                                  << sh3_func + nprim3 << " "
+                                  << sh4_func + nprim4 << std::endl;
+                        std::cout << std::endl;
+
+                        auto lower_bound
+                            = {sh1_func, sh2_func, sh3_func, sh4_func};
+                        auto upper_bound
+                            = {sh1_func + nprim1, sh2_func + nprim2,
+                               sh3_func + nprim3, sh4_func + nprim4};
+
+                        auto view = btas::make_view(
+                            tensor.range().slice(lower_bound, upper_bound),
+                            tensor.storage());
+                        
+                        std::cout << "View size = " << view.size() << std::endl;
+
+                        auto buf = engine.compute(sh1, sh2, sh3, sh4);
+                        auto ijkl = 0ul;
+                        for (auto i = 0ul; i < nprim1; ++i) {
+                            for (auto j = 0ul; j < nprim2; ++j) {
+                                std::cout << "buf Slice " << i + 1 << " " << j + 1 << std::endl;
+                                for (auto k = 0ul; k < nprim3; ++k) {
+                                    for (auto l = 0ul; l < nprim4; ++l) {
+                                        view(i, j, k, l) = buf[ijkl];
+                                        std::cout << buf[ijkl] << " ";
+                                    }
+                                    std::cout << std::endl;
+                                }
+                                std::cout << std::endl;
+                            }
+                        }
+
+                        sh4_func = nprim4;
+                    }
+                    sh3_func = nprim3;
+                }
+                sh2_func = nprim2;
+            }
+            sh1_func = nprim1;
+        }
+
         return tensor;
     }
 
@@ -100,7 +175,7 @@ class BtasTileFunctor {
 
     template <unsigned long N, typename T>
     std::array<T, N> // Should problably check vec length.
-    vector_to_array(std::vector<T> const &vec) const {
+        vector_to_array(std::vector<T> const &vec) const {
         std::array<unsigned long, N> a;
         for (auto i = 0ul; i < N; ++i) {
             a[i] = vec[i];

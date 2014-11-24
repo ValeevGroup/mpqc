@@ -33,7 +33,7 @@ class Basis {
     std::vector<ClusterShells> cluster_shells_;
 
     std::vector<unsigned int> am_blocking_generator() const;
-    std::vector<unsigned int> flattenend_blocking_generator() const;
+    std::vector<unsigned int> flattened_blocking_generator() const;
 };
 
 std::ostream & operator<<(std::ostream &, Basis const &);

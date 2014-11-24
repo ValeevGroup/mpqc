@@ -40,7 +40,7 @@ std::vector<unsigned int> Basis::am_blocking_generator() const {
     return blocking;
 };
 
-std::vector<unsigned int> Basis::flattenend_blocking_generator() const {
+std::vector<unsigned int> Basis::flattened_blocking_generator() const {
     std::vector<unsigned int> blocking = {0};
 
     for (auto const &cluster : cluster_shells_) {
@@ -57,7 +57,7 @@ TiledArray::TiledRange1 Basis::create_trange1() const {
 }
 
 TiledArray::TiledRange1 Basis::create_flattend_trange1() const {
-    auto blocking = flattenend_blocking_generator();
+    auto blocking = flattened_blocking_generator();
     return TiledArray::TiledRange1{blocking.begin(), blocking.end()};
 }
 
@@ -71,7 +71,7 @@ std::ostream &operator<<(std::ostream &os, Basis const &b) {
         os << "Cluster " << n << "\n";
         ++n;
 
-        for (auto const &shell : cluster.flattenend_shells()) {
+        for (auto const &shell : cluster.flattened_shells()) {
             os << shell << "\n";
         }
     }

@@ -28,7 +28,7 @@ class ClusterShells {
                   std::shared_ptr<molecule::Cluster> c);
 
     std::vector<libint2::Shell> const &shells(unsigned int) const;
-    std::vector<libint2::Shell> flattenend_shells() const;
+    std::vector<libint2::Shell> flattened_shells() const;
 
     unsigned int nfunctions(unsigned int) const;
     unsigned int flattened_nfunctions() const;

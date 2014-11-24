@@ -44,7 +44,7 @@ ClusterShells::shells(unsigned int am) const {
     return shells_[am];
 }
 
-std::vector<libint2::Shell> ClusterShells::flattenend_shells() const {
+std::vector<libint2::Shell> ClusterShells::flattened_shells() const {
     std::vector<libint2::Shell> shells;
 
     for (auto const &a : shells_) {

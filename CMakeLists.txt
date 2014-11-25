@@ -66,7 +66,7 @@ add_subdirectory(${TileClusterChem_SOURCE_DIR}/molecule)
 LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/molecule)
 LIST(APPEND TileClusterChem_LIBRARIES molecule)
 
-add_subdirectory(${TileClusterChem_SOURCE_DIR}/matrix)
+add_subdirectory(${TileClusterChem_SOURCE_DIR}/tensor)
 
 add_subdirectory(${TileClusterChem_SOURCE_DIR}/basis)
 LINK_DIRECTORIES(${TileClusterChem_BINARY_DIR}/basis)

@@ -2,7 +2,7 @@
 #define CREATE_LOW_RANK_ARRAY_H
 
 #include "../include/eigen.h"
-#include "../matrix/low_rank_tile.h"
+#include "../tensor/low_rank_tile.h"
 
 namespace TCC {
 namespace test {

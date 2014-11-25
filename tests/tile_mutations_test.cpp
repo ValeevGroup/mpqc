@@ -1,6 +1,6 @@
-#include "../matrix/full_rank_tile.h"
-#include "../matrix/low_rank_tile.h"
-#include "../matrix/tile_mutations.h"
+#include "../tensor/full_rank_tile.h"
+#include "../tensor/low_rank_tile.h"
+#include "../tensor/tile_mutations.h"
 #include "create_low_rank_array.h"
 #include "gtest.h"
 

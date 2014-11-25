@@ -1,4 +1,4 @@
-#include "../matrix/tile_algebra.h"
+#include "../tensor/tile_algebra.h"
 #include "../include/eigen.h"
 #include "create_low_rank_array.h"
 #include "gtest.h"

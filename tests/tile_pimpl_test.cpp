@@ -1,4 +1,4 @@
-#include "../matrix/tile_pimpl.h"
+#include "../tensor/tile_pimpl.h"
 #include "gtest.h"
 
 template <typename T>

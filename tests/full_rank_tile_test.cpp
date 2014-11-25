@@ -1,4 +1,4 @@
-#include "../matrix/full_rank_tile.h"
+#include "../tensor/full_rank_tile.h"
 #include "gtest.h"
 
 template <typename T>

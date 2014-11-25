@@ -1,4 +1,4 @@
-#include "../matrix/low_rank_tile.h"
+#include "../tensor/low_rank_tile.h"
 #include "gtest.h"
 
 

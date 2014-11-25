@@ -20,8 +20,8 @@ class Molecule {
     double charge() const;
     double mass() const;
 
-    std::vector<const Clusterable>::iterator begin() const;
-    std::vector<const Clusterable>::iterator end() const;
+    std::vector<Clusterable>::const_iterator begin() const;
+    std::vector<Clusterable>::const_iterator end() const;
 
     unsigned long nelements() const;
 

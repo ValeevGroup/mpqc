@@ -78,10 +78,10 @@ position_t Molecule::center() const { return center_; }
 double Molecule::charge() const { return charge_; }
 double Molecule::mass() const { return mass_; }
 
-std::vector<const Clusterable>::iterator Molecule::begin() const {
+std::vector<Clusterable>::const_iterator Molecule::begin() const {
     return elements_.begin();
 }
-std::vector<const Clusterable>::iterator Molecule::end() const {
+std::vector<Clusterable>::const_iterator Molecule::end() const {
     return elements_.end();
 }
 

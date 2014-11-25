@@ -69,14 +69,14 @@ class Cluster {
     /**
      * @brief begin returns the begin iterator to the vector of clusterables.
      */
-    inline std::vector<const Clusterable>::iterator begin() const {
+    inline std::vector<Clusterable>::const_iterator begin() const {
         return elements_.begin();
     }
 
     /**
      * @brief end returns the end iterator to the vector of clusterables
      */
-    inline std::vector<const Clusterable>::iterator end() const {
+    inline std::vector<Clusterable>::const_iterator end() const {
         return elements_.end();
     }
 

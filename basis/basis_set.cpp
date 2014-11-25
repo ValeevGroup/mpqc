@@ -8,6 +8,7 @@
 #include "../include/libint.h"
 
 #include <iostream>
+#include <memory>
 #include <fstream>
 #include <sstream>
 #include <algorithm>

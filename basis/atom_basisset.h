@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <iosfwd>
+#include <algorithm>
 
 namespace tcc {
 namespace basis {

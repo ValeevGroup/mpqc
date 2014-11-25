@@ -9,8 +9,8 @@
 #include "../basis/basis.h"
 #include "integral_engine_pool.h"
 
-#include <string>
-#include <sstream>
+#include "../tensor/tile_pimpl_devel.h"
+
 
 namespace tcc {
 namespace integrals {
@@ -26,8 +26,8 @@ void btas_compute_kernel(Engine &engine, btas::TensorView<T> &view,
     auto i = 0;
     auto end = view.end();
     for (auto it = view.begin(); it != end; ++it) {
-         *it = buf[i++];
-//        *it = std::max({shells.O[2]...});
+        *it = buf[i++];
+        //        *it = std::max({shells.O[2]...});
     }
 }
 
@@ -127,17 +127,11 @@ struct integral_wrapper<T, 4ul> {
 
 template <typename T>
 struct BtasTileFunctor {
-    using TileType = TiledArray::Tensor<double>;
+    using TileType = tensor::TilePimplDevel<double>;
 
     template <typename It, typename SharedEnginePool>
     TileType operator()(It it, basis::Basis const *basis,
                         SharedEnginePool engines) const {
-        auto range = it.make_range();
-
-        TileType tile{range};
-        for (auto i = 0ul; i < tile.range().volume(); ++i) {
-            *(tile.data() + i) = i;
-        }
 
         auto idx = it.index();
         std::vector<basis::ClusterShells> clusters;
@@ -151,13 +145,9 @@ struct BtasTileFunctor {
             = detail::integral_wrapper<T, pool_order<SharedEnginePool>()>{}(
                 engines->local(), clusters);
 
-        // Incorrectly copy column major btas into row major TA.
-        auto i = 0;
-        for (auto it = btas_tensor.begin(); it != btas_tensor.end(); ++it) {
-            *(tile.data() + i++) = *it;
-        }
-
-        return tile;
+        auto range = it.make_range();
+        return TileType{
+            std::move(range), tensor::TileVariantDevel<double>{std::move(btas_tensor)}};
     }
 
 }; // BtasTileFunctor

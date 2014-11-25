@@ -20,6 +20,8 @@
 
 #include "../basis/basis.h"
 
+#include "../tensor/tile_pimpl_devel.h"
+
 namespace tcc {
 namespace integrals {
 
@@ -56,12 +58,12 @@ create_array(madness::World &world, basis::Basis const &basis) {
 template <typename SharedEnginePool,
           typename TileFunctor = compute_functors::BtasTileFunctor<double>>
 TiledArray::Array<double, integrals::pool_order<SharedEnginePool>(),
-                  typename TileFunctor::TileType>
+                  typename tensor::TilePimplDevel<double>>
 Integrals(madness::World &world, SharedEnginePool engines,
           basis::Basis const &basis, TileFunctor tf = TileFunctor{}) {
 
     constexpr auto tensor_order = integrals::pool_order<decltype(engines)>();
-    using TileType = typename TileFunctor::TileType;
+    using TileType = typename tensor::TilePimplDevel<double>;
 
     auto array = create_array<tensor_order, TileType>(world, basis);
 

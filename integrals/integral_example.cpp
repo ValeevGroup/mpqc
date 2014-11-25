@@ -64,9 +64,22 @@ int main(int argc, char *argv[]) {
 
     auto overlap_pool = integrals::make_pool(std::move(overlap));
     auto S = integrals::Integrals(world, std::move(overlap_pool), basis);
-    auto eig_S = TiledArray::array_to_eigen(S);
-    std::cout << "S TA = \n" << S << "\n" << std::endl;
-    std::cout << "S = \n" << eig_S << "\n" << std::endl;
+
+    std::cout << "Printing tiles" << std::endl;
+
+    for(auto it = S.begin(); it != S.end(); ++it){
+        tcc::tensor::TilePimplDevel<double> tile = *it;
+        auto tensor = tile.tile().tensor();
+        std::cout << "Tensor = \n " << tensor;
+        for(auto it_t = tensor.begin(); it_t != tensor.end(); ++it_t){
+            std::cout << *it_t << " ";
+        }
+        std::cout << std::endl;
+    }
+    world.gop.fence();
+//    auto eig_S = TiledArray::array_to_eigen(S);
+//    std::cout << "S TA = \n" << S << "\n" << std::endl;
+//    std::cout << "S = \n" << eig_S << "\n" << std::endl;
 
 //    libint2::TwoBodyEngine<libint2::Coulomb> coulomb_ints{
 //        max_nprim, static_cast<int>(max_am)};

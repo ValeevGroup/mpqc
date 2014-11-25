@@ -30,7 +30,14 @@ int main(int argc, char *argv[]) {
     cluster->add_clusterable(std::move(h1));
     cluster->add_clusterable(std::move(h2));
 
-    basis::Basis basis{bs.create_basis({cluster})};
+    molecule::Atom h3{{0, 0, 2}, 1, 1};
+    molecule::Atom h4{{0, 0, 3}, 1, 1};
+
+    auto cluster1 = std::make_shared<molecule::Cluster>();
+    cluster1->add_clusterable(std::move(h3));
+    cluster1->add_clusterable(std::move(h4));
+
+    basis::Basis basis{bs.create_basis({cluster, cluster1})};
 
     std::cout << basis << std::endl;
 
@@ -40,10 +47,11 @@ int main(int argc, char *argv[]) {
     for (auto const &cluster : basis.cluster_shells()) {
         auto const &shell_vec = cluster.flattened_shells();
 
-        auto temp_nprim = std::max_element(
-            shell_vec.begin(), shell_vec.end(),
-            [](libint2::Shell const &s, libint2::Shell const
-               &t) { return t.nprim() > s.nprim(); })->nprim();
+        auto temp_nprim = std::max_element(shell_vec.begin(), shell_vec.end(),
+                                           [](libint2::Shell const &s,
+                                              libint2::Shell const &t) {
+                                               return t.nprim() > s.nprim();
+                                           })->nprim();
 
         auto temp_am = cluster.max_am();
 
@@ -51,11 +59,20 @@ int main(int argc, char *argv[]) {
         max_am = (temp_am > max_am) ? temp_am : max_am;
     }
 
-    libint2::TwoBodyEngine
-        <libint2::Coulomb> coulomb_ints{max_nprim, static_cast<int>(max_am)};
-    auto eri_pool = integrals::make_pool(std::move(coulomb_ints));
+    libint2::OneBodyEngine overlap{libint2::OneBodyEngine::overlap, max_nprim,
+                                   static_cast<int>(max_am)};
 
-    auto a = integrals::Integrals(world, std::move(eri_pool), basis);
-    std::cout << a << std::endl;
+    auto overlap_pool = integrals::make_pool(std::move(overlap));
+    auto S = integrals::Integrals(world, std::move(overlap_pool), basis);
+    auto eig_S = TiledArray::array_to_eigen(S);
+    std::cout << "S TA = \n" << S << "\n" << std::endl;
+    std::cout << "S = \n" << eig_S << "\n" << std::endl;
+
+//    libint2::TwoBodyEngine<libint2::Coulomb> coulomb_ints{
+//        max_nprim, static_cast<int>(max_am)};
+//    auto eri_pool = integrals::make_pool(std::move(coulomb_ints));
+//
+//    auto a = integrals::Integrals(world, std::move(eri_pool), basis);
+//    std::cout << a << std::endl;
     return 0;
 }

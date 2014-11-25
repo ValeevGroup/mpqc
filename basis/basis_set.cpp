@@ -87,7 +87,8 @@ std::vector<ClusterShells> BasisSet::create_basis(
         for (auto const &atom : atoms) {
             auto shells = atom_basis(atom);
 
-            for (auto &&shell : shells) {
+            for (auto shell : shells) {
+                shell.renorm(); // takes care of normalization
                 const auto ang_mo = shell.contr[0].l;
                 binned_shells[ang_mo].emplace_back(std::move(shell));
             }

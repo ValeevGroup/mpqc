@@ -127,7 +127,7 @@ struct integral_wrapper<T, 4ul> {
 
 template <typename T>
 struct BtasTileFunctor {
-    using TileType = tensor::TilePimplDevel<double>;
+    using TileType = tensor::TilePimplDevel<T>;
 
     template <typename It, typename SharedEnginePool>
     TileType operator()(It it, basis::Basis const *basis,

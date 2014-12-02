@@ -58,12 +58,12 @@ create_array(madness::World &world, basis::Basis const &basis) {
 template <typename SharedEnginePool,
           typename TileFunctor = compute_functors::BtasTileFunctor<double>>
 TiledArray::Array<double, integrals::pool_order<SharedEnginePool>(),
-                  typename tensor::TilePimplDevel<double>>
+                  typename TileFunctor::TileType>
 Integrals(madness::World &world, SharedEnginePool engines,
           basis::Basis const &basis, TileFunctor tf = TileFunctor{}) {
 
     constexpr auto tensor_order = integrals::pool_order<decltype(engines)>();
-    using TileType = typename tensor::TilePimplDevel<double>;
+    using TileType = typename TileFunctor::TileType;
 
     auto array = create_array<tensor_order, TileType>(world, basis);
 

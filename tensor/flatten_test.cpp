@@ -2,39 +2,125 @@
 #include "../include/eigen.h"
 
 #include <iostream>
+#include <functional>
 
-Eigen::MatrixXd matricization(btas::Tensor<double> const &input, int i) {
-    if (i == 0) {
-        for(auto y : input.extent()){
-            std::cout << y << std::endl;
+template <typename Extent>
+std::vector<std::vector<unsigned long>>
+data_order(Extent const &extent, unsigned long n) {
+    auto ext_size = extent.size();
+
+    std::vector<std::vector<unsigned long>> data_order;
+    data_order.reserve(ext_size);
+
+    // First dimension should always correspond to n
+    std::vector<unsigned long> first_dim;
+    first_dim.reserve(extent[n]);
+    for (auto i = 0ul; i < extent[n]; ++i) {
+        first_dim.push_back(i);
+    }
+    data_order.push_back(std::move(first_dim));
+
+    // Remaining dims should go in order.
+    for (auto dim = 0ul; dim < ext_size; ++dim) {
+        if (dim != n) {
+            std::vector<unsigned long> dim_vals;
+            dim_vals.reserve(extent[dim]);
+            for (auto elem = 0ul; elem < extent[dim]; ++elem) {
+                dim_vals.push_back(elem);
+            }
+            data_order.push_back(std::move(dim_vals));
         }
-        for(auto it = input.extent().begin(); it != input.extent().end(); ++it){
-            std::cout << *it << std::endl;
-        }
-
-        auto cols = 1ul;
-        for(auto x : input.extent()){
-            cols *= x;
-        }
-        cols /= input.extent().front();
-
-
-        Eigen::MatrixXd mat(input.extent().front(), cols);
-        std::cout << "Mat dims = " << mat.rows() << " x " << mat.cols()
-                  << std::endl;
-
-        std::memcpy(mat.data(), input.storage().data(), mat.size());
-
-        return mat;
     }
 
-    return Eigen::MatrixXd::Zero(i,i);
+    return data_order;
 }
 
-void tucker_decomp(btas::Tensor<double> const &input) {
-    std::vector<Eigen::MatrixXd> mats(input.rank());
+template <std::size_t N, typename Extent>
+Eigen::MatrixXd create_matrix(Extent const &extent) {
+    auto rows = extent[N];
+    auto cols = 1ul;
+    for (auto i = 0ul; i < extent.size(); ++i) {
+        if (i != N) {
+            cols *= extent[i];
+        }
+    }
+    return Eigen::MatrixXd(rows, cols);
+}
 
-    mats[0] = matricization(input, 0);
+// I would really like to use boost for this :(.
+template <unsigned long Order, unsigned long N>
+Eigen::MatrixXd matricization(btas::Tensor<double> const &input);
+
+template <>
+Eigen::MatrixXd matricization<3ul, 0ul>(btas::Tensor<double> const &input) {
+    auto extent = input.extent();
+
+    auto mat = create_matrix<0>(extent);
+
+    for (auto i = 0ul; i < extent[0]; ++i) {
+        for (auto j = 0ul; j < extent[1]; ++j) {
+            for (auto k = 0ul; k < extent[2]; ++k) {
+                mat(i, j *extent[2] + k) = input(i, j, k);
+            }
+        }
+    }
+
+    return mat;
+}
+
+template <>
+Eigen::MatrixXd matricization<3ul, 1ul>(btas::Tensor<double> const &input) {
+    auto extent = input.extent();
+
+    auto mat = create_matrix<1>(extent);
+
+    for (auto j = 0ul; j < extent[1]; ++j) {
+        for (auto i = 0ul; i < extent[0]; ++i) {
+            for (auto k = 0ul; k < extent[2]; ++k) {
+                mat(j, i *extent[2] + k) = input(i, j, k);
+            }
+        }
+    }
+
+    return mat;
+}
+
+template <>
+Eigen::MatrixXd matricization<3ul, 2ul>(btas::Tensor<double> const &input) {
+    auto extent = input.extent();
+
+    auto mat = create_matrix<2>(extent);
+
+    for (auto k = 0ul; k < extent[2]; ++k) {
+        for (auto i = 0ul; i < extent[0]; ++i) {
+            for (auto j = 0ul; j < extent[1]; ++j) {
+                mat(k, i *extent[1] + j) = input(i, j, k);
+            }
+        }
+    }
+
+    return mat;
+}
+
+template <std::size_t N>
+void tucker_decomp(btas::Tensor<double> const &input); 
+
+template <>
+void tucker_decomp<3>(btas::Tensor<double> const &input) {
+    auto rank = input.rank();
+
+    std::vector<Eigen::MatrixXd> mats;
+    mats.reserve(rank);
+
+    mats.push_back(matricization<3,0>(input));
+    mats.push_back(matricization<3,1>(input));
+    mats.push_back(matricization<3,2>(input));
+
+    for (auto const &mat : mats) {
+        std::cout << "\nMat dims = " << mat.rows() << "x" << mat.cols() << "\n";
+        std::cout << "Mat = \n" << mat << std::endl;
+    }
+    // TODO need to write KRON Mult and create low rank tensor type. 
 }
 
 int main() {
@@ -106,7 +192,7 @@ int main() {
     Eigen::MatrixXd mat1_approx = A1 * g_eig * Kron;
     std::cout << "Approximate mat1 = \n" << mat1_approx << std::endl;
 
-    tucker_decomp(tensor);
+    tucker_decomp<3>(tensor);
 
     return 0;
 }

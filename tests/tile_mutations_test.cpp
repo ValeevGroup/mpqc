@@ -16,19 +16,19 @@ TYPED_TEST_CASE(TileMutationsTest, TileTypes);
 TYPED_TEST(TileMutationsTest, FullSquareGemm) {
     const int rows = 10;
     const int cols = 10;
-    using mat_type = typename FullRankTile<TypeParam>::template Matrix
+    using mat_type = typename tcc::tensor::FullRankTile<TypeParam>::template Matrix
         <TypeParam>;
 
-    FullRankTile<TypeParam> left(mat_type::Random(rows, cols));
-    FullRankTile<TypeParam> right(mat_type::Random(rows, cols));
-    FullRankTile<TypeParam> tile(mat_type::Random(rows, cols));
+    tcc::tensor::FullRankTile<TypeParam> left(mat_type::Random(rows, cols));
+    tcc::tensor::FullRankTile<TypeParam> right(mat_type::Random(rows, cols));
+    tcc::tensor::FullRankTile<TypeParam> tile(mat_type::Random(rows, cols));
 
     double alpha = 3.0;
     double beta = 2.0;
 
     mat_type result = alpha * left.matrix() * right.matrix() + beta
                                                                * tile.matrix();
-    tile = ternary_mutations::gemm(std::move(tile), left, right, alpha, beta);
+    tile = tcc::tensor::ternary_mutations::gemm(std::move(tile), left, right, alpha, beta);
 
     EXPECT_EQ(std::min(rows, cols), tile.rank());
     EXPECT_EQ(rows * cols, tile.size());
@@ -41,19 +41,19 @@ TYPED_TEST(TileMutationsTest, FullMoreColsGemm) {
     const int rows = 3;
     const int cols = 10;
     const int inner_index = 7;
-    using mat_type = typename FullRankTile<TypeParam>::template Matrix
+    using mat_type = typename tcc::tensor::FullRankTile<TypeParam>::template Matrix
         <TypeParam>;
 
-    FullRankTile<TypeParam> left(mat_type::Random(rows, inner_index));
-    FullRankTile<TypeParam> right(mat_type::Random(inner_index, cols));
-    FullRankTile<TypeParam> tile(mat_type::Random(rows, cols));
+    tcc::tensor::FullRankTile<TypeParam> left(mat_type::Random(rows, inner_index));
+    tcc::tensor::FullRankTile<TypeParam> right(mat_type::Random(inner_index, cols));
+    tcc::tensor::FullRankTile<TypeParam> tile(mat_type::Random(rows, cols));
 
     double alpha = 3.0;
     double beta = 2.0;
 
     mat_type result = alpha * left.matrix() * right.matrix() + beta
                                                                * tile.matrix();
-    tile = ternary_mutations::gemm(std::move(tile), left, right, alpha, beta);
+    tile = tcc::tensor::ternary_mutations::gemm(std::move(tile), left, right, alpha, beta);
 
     EXPECT_EQ(std::min(rows, cols), tile.rank());
     EXPECT_EQ(rows * cols, tile.size());
@@ -66,18 +66,18 @@ TYPED_TEST(TileMutationsTest, FullMoreRowsGemm) {
     const int rows = 10;
     const int cols = 3;
     const int inner_index = 7;
-    using mat_type = typename FullRankTile<TypeParam>::template Matrix
+    using mat_type = typename tcc::tensor::FullRankTile<TypeParam>::template Matrix
         <TypeParam>;
 
-    FullRankTile<TypeParam> left(mat_type::Random(rows, inner_index));
-    FullRankTile<TypeParam> right(mat_type::Random(inner_index, cols));
-    FullRankTile<TypeParam> tile(mat_type::Random(rows, cols));
+    tcc::tensor::FullRankTile<TypeParam> left(mat_type::Random(rows, inner_index));
+    tcc::tensor::FullRankTile<TypeParam> right(mat_type::Random(inner_index, cols));
+    tcc::tensor::FullRankTile<TypeParam> tile(mat_type::Random(rows, cols));
 
     double alpha = 3.0;
     double beta = 2.0;
 
     mat_type result = alpha * left.matrix() * right.matrix() + beta * tile.matrix();
-    tile = ternary_mutations::gemm(std::move(tile), left, right, alpha, beta);
+    tile = tcc::tensor::ternary_mutations::gemm(std::move(tile), left, right, alpha, beta);
 
     EXPECT_EQ(std::min(rows, cols), tile.rank());
     EXPECT_EQ(rows * cols, tile.size());
@@ -92,7 +92,7 @@ TYPED_TEST(TileMutationsTest, LowSquareGemmRightLargerRank) {
     const int rank_left = 3;
     const int rank_right = 4;
     const int tile_rank = 2;
-    using mat_type = typename LowRankTile<TypeParam>::template Matrix
+    using mat_type = typename tcc::tensor::LowRankTile<TypeParam>::template Matrix
         <TypeParam>;
 
     auto left = TCC::test::low_rank_tile<TypeParam>(rows, cols, rank_left);
@@ -103,7 +103,7 @@ TYPED_TEST(TileMutationsTest, LowSquareGemmRightLargerRank) {
     double beta = 2.0;
 
     mat_type result = alpha * left.matrix() * right.matrix() + beta * tile.matrix();
-    tile = ternary_mutations::gemm(std::move(tile), left, right, alpha, beta);
+    tile = tcc::tensor::ternary_mutations::gemm(std::move(tile), left, right, alpha, beta);
 
     auto out_rank = tile_rank + std::min(rank_left, rank_right);
 
@@ -121,7 +121,7 @@ TYPED_TEST(TileMutationsTest, LowMoreColsGemmLeftLargerRank) {
     const int rank_left = 4;
     const int rank_right = 3;
     const int tile_rank = 2;
-    using mat_type = typename FullRankTile<TypeParam>::template Matrix
+    using mat_type = typename tcc::tensor::FullRankTile<TypeParam>::template Matrix
         <TypeParam>;
 
     auto left = TCC::test::low_rank_tile<TypeParam>(rows, k, rank_left);
@@ -132,7 +132,7 @@ TYPED_TEST(TileMutationsTest, LowMoreColsGemmLeftLargerRank) {
     double beta = 2.0;
 
     mat_type result = alpha * left.matrix() * right.matrix() + beta * tile.matrix();
-    tile = ternary_mutations::gemm(std::move(tile), left, right, alpha, beta);
+    tile = tcc::tensor::ternary_mutations::gemm(std::move(tile), left, right, alpha, beta);
 
     auto out_rank = tile_rank + std::min(rank_left, rank_right);
 
@@ -150,7 +150,7 @@ TYPED_TEST(TileMutationsTest, LowMoreRowsGemmABLargerRank) {
     const int rank_left = 3;
     const int rank_right = 4;
     const int tile_rank = 2;
-    using mat_type = typename FullRankTile<TypeParam>::template Matrix
+    using mat_type = typename tcc::tensor::FullRankTile<TypeParam>::template Matrix
         <TypeParam>;
 
     auto left = TCC::test::low_rank_tile<TypeParam>(rows, k, rank_left);
@@ -161,7 +161,7 @@ TYPED_TEST(TileMutationsTest, LowMoreRowsGemmABLargerRank) {
     double beta = 2.0;
 
     mat_type result = alpha * left.matrix() * right.matrix() + beta * tile.matrix();
-    tile = ternary_mutations::gemm(std::move(tile), left, right, alpha, beta);
+    tile = tcc::tensor::ternary_mutations::gemm(std::move(tile), left, right, alpha, beta);
 
     auto out_rank = tile_rank + std::min(rank_left, rank_right);
 
@@ -178,7 +178,7 @@ TYPED_TEST(TileMutationsTest, LowSquareGemmResultLargerRankInPlace) {
     const int rank_left = 3;
     const int rank_right = 2;
     const int tile_rank = 4;
-    using mat_type = typename LowRankTile<TypeParam>::template Matrix
+    using mat_type = typename tcc::tensor::LowRankTile<TypeParam>::template Matrix
         <TypeParam>;
 
     auto left = TCC::test::low_rank_tile<TypeParam>(rows, cols, rank_left);
@@ -189,7 +189,7 @@ TYPED_TEST(TileMutationsTest, LowSquareGemmResultLargerRankInPlace) {
     double beta = 2.0;
 
     mat_type result = alpha * left.matrix() * right.matrix() + beta * tile.matrix();
-    tile = ternary_mutations::gemm(std::move(tile), left, right, alpha, beta);
+    tile = tcc::tensor::ternary_mutations::gemm(std::move(tile), left, right, alpha, beta);
 
     auto out_rank = tile_rank + std::min(rank_left, rank_right);
 
@@ -207,7 +207,7 @@ TYPED_TEST(TileMutationsTest, LowMoreColsGemmResultLargerRankInPlace) {
     const int rank_left = 2;
     const int rank_right = 3;
     const int tile_rank = 3;
-    using mat_type = typename FullRankTile<TypeParam>::template Matrix
+    using mat_type = typename tcc::tensor::FullRankTile<TypeParam>::template Matrix
         <TypeParam>;
 
     auto left = TCC::test::low_rank_tile<TypeParam>(rows, k, rank_left);
@@ -218,7 +218,7 @@ TYPED_TEST(TileMutationsTest, LowMoreColsGemmResultLargerRankInPlace) {
     double beta = 2.0;
 
     mat_type result = alpha * left.matrix() * right.matrix() + beta * tile.matrix();
-    tile = ternary_mutations::gemm(std::move(tile), left, right, alpha, beta);
+    tile = tcc::tensor::ternary_mutations::gemm(std::move(tile), left, right, alpha, beta);
 
     auto out_rank = tile_rank + std::min(rank_left, rank_right);
 
@@ -236,7 +236,7 @@ TYPED_TEST(TileMutationsTest, LowMoreRowsGemmResultLargerRank) {
     const int rank_left = 3;
     const int rank_right = 2;
     const int tile_rank = 3;
-    using mat_type = typename FullRankTile<TypeParam>::template Matrix
+    using mat_type = typename tcc::tensor::FullRankTile<TypeParam>::template Matrix
         <TypeParam>;
 
     auto left = TCC::test::low_rank_tile<TypeParam>(rows, k, rank_left);
@@ -247,7 +247,7 @@ TYPED_TEST(TileMutationsTest, LowMoreRowsGemmResultLargerRank) {
     double beta = 2.0;
 
     mat_type result = alpha * left.matrix() * right.matrix() + beta * tile.matrix();
-    tile = ternary_mutations::gemm(std::move(tile), left, right, alpha, beta);
+    tile = tcc::tensor::ternary_mutations::gemm(std::move(tile), left, right, alpha, beta);
 
     auto out_rank = tile_rank + std::min(rank_left, rank_right);
 
@@ -264,7 +264,7 @@ TYPED_TEST(TileMutationsTest, SubtLowLow) {
 
     const int rank_right = 2;
     const int tile_rank = 3;
-    using mat_type = typename FullRankTile<TypeParam>::template Matrix
+    using mat_type = typename tcc::tensor::FullRankTile<TypeParam>::template Matrix
         <TypeParam>;
 
     auto right = TCC::test::low_rank_tile<TypeParam>(rows, cols, rank_right);
@@ -274,7 +274,7 @@ TYPED_TEST(TileMutationsTest, SubtLowLow) {
 
     mat_type result = tile.matrix() - beta * right.matrix();
 
-    tile = binary_mutations::subt(std::move(tile), right, beta);
+    tile = tcc::tensor::binary_mutations::subt(std::move(tile), right, beta);
 
     auto out_rank = tile_rank + rank_right;
 
@@ -293,11 +293,11 @@ TYPED_TEST(TileMutationsTest, LowCompressSquare) {
 
     auto tile = TCC::test::low_rank_tile<TypeParam>(rows, cols, rank);
 
-    using mat_type = typename LowRankTile<TypeParam>::template Matrix
+    using mat_type = typename tcc::tensor::LowRankTile<TypeParam>::template Matrix
         <TypeParam>;
     mat_type result = tile.matrix();
 
-    unary_mutations::compress(tile,1e-07);
+    tcc::tensor::unary_mutations::compress(tile,1e-07);
 
     EXPECT_GE(rank, tile.rank());
     EXPECT_EQ(rows * rank + rank * cols, tile.size());
@@ -313,10 +313,10 @@ TYPED_TEST(TileMutationsTest, LowCompressRightLarger) {
 
     auto tile = TCC::test::low_rank_tile<TypeParam>(rows, cols, rank);
 
-    using mat_type = typename LowRankTile<TypeParam>::template Matrix
+    using mat_type = typename tcc::tensor::LowRankTile<TypeParam>::template Matrix
         <TypeParam>;
     mat_type result = tile.matrix();
-    unary_mutations::compress(tile,1e-07);
+    tcc::tensor::unary_mutations::compress(tile,1e-07);
 
     EXPECT_GE(rank, tile.rank());
     EXPECT_EQ(rows * rank + rank * cols, tile.size());
@@ -332,10 +332,10 @@ TYPED_TEST(TileMutationsTest, LowCompressLeftLarger) {
 
     auto tile = TCC::test::low_rank_tile<TypeParam>(rows, cols, rank);
 
-    using mat_type = typename LowRankTile<TypeParam>::template Matrix
+    using mat_type = typename tcc::tensor::LowRankTile<TypeParam>::template Matrix
         <TypeParam>;
     mat_type result = tile.matrix();
-    unary_mutations::compress(tile, 1e-07);
+    tcc::tensor::unary_mutations::compress(tile, 1e-07);
 
     EXPECT_GE(rank, tile.rank());
     EXPECT_EQ(rows * rank + rank * cols, tile.size());

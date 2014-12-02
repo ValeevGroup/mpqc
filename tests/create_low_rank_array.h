@@ -27,7 +27,7 @@ Matrix<T> low_rank_matrix(int rows, int cols, int rank) {
 }
 
 template <typename T>
-LowRankTile<T> low_rank_tile(int rows, int cols, int rank) {
+tcc::tensor::LowRankTile<T> low_rank_tile(int rows, int cols, int rank) {
     auto full_rank = std::min(rows, cols);
     assert(rank <= std::min(rows, cols));
 
@@ -40,7 +40,7 @@ LowRankTile<T> low_rank_tile(int rows, int cols, int rank) {
         svals[(svals.size() - 1) - i] = 0;
     }
 
-    return LowRankTile<T>{svd.matrixU().leftCols(rank),
+    return tcc::tensor::LowRankTile<T>{svd.matrixU().leftCols(rank),
                           svals.head(rank).asDiagonal()
                           * svd.matrixV().transpose().topRows(rank)};
 }

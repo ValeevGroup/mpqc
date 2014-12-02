@@ -6,7 +6,7 @@ template <typename T>
 class LowRankTileTest : public ::testing::Test {
   public:
     LowRankTileTest() = default;
-    LowRankTile<T> tile;
+    tcc::tensor::LowRankTile<T> tile;
 };
 
 typedef ::testing::Types<int, long, float, double> LRTileTypes;
@@ -24,7 +24,7 @@ TYPED_TEST(LowRankTileTest, DefaultConstructor) {
 }
 
 TYPED_TEST(LowRankTileTest, ZeroConstructor) {
-  LowRankTile<TypeParam> A{true};
+  tcc::tensor::LowRankTile<TypeParam> A{true};
   EXPECT_TRUE(A.iszero());
 }
 
@@ -32,13 +32,13 @@ TYPED_TEST(LowRankTileTest, LRConstructor) {
     const int rows = 11;
     const int cols = 9;
     const int rank = 3;
-    auto L = LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
+    auto L = tcc::tensor::LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
                  rows, rank).eval();
-    auto R = LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
+    auto R = tcc::tensor::LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
                  rank, cols).eval();
     auto mat = (L * R).eval();
 
-    LowRankTile<TypeParam> lr_tile(L, R);
+    tcc::tensor::LowRankTile<TypeParam> lr_tile(L, R);
 
     EXPECT_EQ(mat.rows(), lr_tile.Rows()) << "Rows were not equal\n";
     EXPECT_EQ(mat.cols(), lr_tile.Cols()) << "Cols were not equal\n";
@@ -64,15 +64,15 @@ TYPED_TEST(LowRankTileTest, LRMoveConstructor) {
     const int rows = 11;
     const int cols = 9;
     const int rank = 3;
-    auto L = LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
+    auto L = tcc::tensor::LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
                  rows, rank).eval();
-    auto R = LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
+    auto R = tcc::tensor::LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
                  rank, cols).eval();
     auto L_moved_from = L;
     auto R_moved_from = R;
     auto mat = (L * R).eval();
 
-    LowRankTile<TypeParam> lr_tile(std::move(L_moved_from),
+    tcc::tensor::LowRankTile<TypeParam> lr_tile(std::move(L_moved_from),
                                    std::move(R_moved_from));
 
     EXPECT_EQ(0ul, L_moved_from.rows());
@@ -108,14 +108,14 @@ TYPED_TEST(LowRankTileTest, CopyConstructor) {
     const int cols = 11;
     const int rank = 3;
 
-    auto L = LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
+    auto L = tcc::tensor::LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
                  rows, rank).eval();
-    auto R = LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
+    auto R = tcc::tensor::LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
                  rank, cols).eval();
     auto mat = (L * R).eval();
 
-    LowRankTile<TypeParam> lr_tile(L, R);
-    LowRankTile<TypeParam> lr_tile_copy(lr_tile);
+    tcc::tensor::LowRankTile<TypeParam> lr_tile(L, R);
+    tcc::tensor::LowRankTile<TypeParam> lr_tile_copy(lr_tile);
 
     EXPECT_EQ(rows, lr_tile_copy.Rows()) << "Rows were not equal\n";
     EXPECT_EQ(cols, lr_tile_copy.Cols()) << "Cols were not equal\n";
@@ -134,15 +134,15 @@ TYPED_TEST(LowRankTileTest, MoveConstructor) {
     const int cols = 11;
     const int rank = 3;
 
-    auto L = LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
+    auto L = tcc::tensor::LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
                  rows, rank).eval();
-    auto R = LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
+    auto R = tcc::tensor::LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
                  rank, cols).eval();
     auto mat = (L * R).eval();
 
-    LowRankTile<TypeParam> lr_tile(L, R);
-    LowRankTile<TypeParam> lr_tile_moved_from(lr_tile);
-    LowRankTile<TypeParam> lr_tile_moved_into(std::move(lr_tile_moved_from));
+    tcc::tensor::LowRankTile<TypeParam> lr_tile(L, R);
+    tcc::tensor::LowRankTile<TypeParam> lr_tile_moved_from(lr_tile);
+    tcc::tensor::LowRankTile<TypeParam> lr_tile_moved_into(std::move(lr_tile_moved_from));
 
     // Inspect moved from value
     EXPECT_EQ(0ul, lr_tile_moved_from.size());
@@ -171,13 +171,13 @@ TYPED_TEST(LowRankTileTest, AssignmentOperator) {
     const int cols = 11;
     const int rank = 3;
 
-    auto L = LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
+    auto L = tcc::tensor::LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
                  rows, rank).eval();
-    auto R = LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
+    auto R = tcc::tensor::LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
                  rank, cols).eval();
     auto mat = (L * R).eval();
 
-    LowRankTile<TypeParam> lr_tile(L, R);
+    tcc::tensor::LowRankTile<TypeParam> lr_tile(L, R);
     this->tile = lr_tile;
 
     EXPECT_EQ(rows, this->tile.Rows()) << "Rows were not equal\n";
@@ -197,14 +197,14 @@ TYPED_TEST(LowRankTileTest, MoveAssignmentOperator) {
     const int cols = 11;
     const int rank = 3;
 
-    auto L = LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
+    auto L = tcc::tensor::LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
                  rows, rank).eval();
-    auto R = LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
+    auto R = tcc::tensor::LowRankTile<TypeParam>::template Matrix<TypeParam>::Random(
                  rank, cols).eval();
     auto mat = (L * R).eval();
 
-    LowRankTile<TypeParam> lr_tile(L, R);
-    LowRankTile<TypeParam> lr_tile_moved_from(lr_tile);
+    tcc::tensor::LowRankTile<TypeParam> lr_tile(L, R);
+    tcc::tensor::LowRankTile<TypeParam> lr_tile_moved_from(lr_tile);
     this->tile = std::move(lr_tile_moved_from);
 
     // Inspect moved from value

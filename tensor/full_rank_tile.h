@@ -6,6 +6,9 @@
 #include "tile_algebra.h"
 #include <type_traits>
 
+namespace tcc {
+    namespace tensor {
+
 template <typename T, typename = typename std::enable_if
                       <std::is_arithmetic<T>::value, T>::type>
 class FullRankTile {
@@ -69,5 +72,8 @@ class FullRankTile {
   private:
     Matrix<T> tile_;
 };
+
+} // namespace tensor
+} // namespace tcc 
 
 #endif // FULL_RANK_TILE_H

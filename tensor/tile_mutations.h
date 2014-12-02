@@ -4,6 +4,8 @@
 #include "tile_algebra.h"
 #include "tile_variant.h"
 
+namespace tcc {
+    namespace tensor {
 
 namespace unary_mutations {
 
@@ -297,5 +299,8 @@ struct gemm_functor {
 };
 
 } // namespace ternary_muations
+
+} // namespace tensor
+} // namespace tcc
 
 #endif // TCC_MATRIX_TILE_MUTATIONS_H

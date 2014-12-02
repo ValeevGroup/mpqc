@@ -8,6 +8,9 @@
 
 #include <memory>
 
+namespace tcc {
+namespace tensor {
+
 template <typename T>
 class TilePimpl {
   public:
@@ -44,8 +47,8 @@ class TilePimpl {
 
     explicit TilePimpl(TiledArray::Range r, TileVariant<T> t, double cut)
         : tile_(std::make_shared<TileVariant<T>>(std::move(t))),
-          range_(std::move(r)), cut_(cut) {
-    }
+          range_(std::move(r)),
+          cut_(cut) {}
 
     // Clone will make a deep copy
     TilePimpl clone() const { return TilePimpl(range_, *tile_, cut_); }
@@ -126,8 +129,21 @@ class TilePimpl {
     }
 
     TilePimpl &add_to(TilePimpl const &right) {
-        tile_->apply_binary_mutation(right.tile(), binary_mutations::subt_functor(-1.0));
+        tile_->apply_binary_mutation(right.tile(),
+                                     binary_mutations::subt_functor(-1.0));
         return *this;
+    }
+
+    TilePimpl add(TilePimpl const &right) const {
+        return TilePimpl{range_, tile_->apply_binary_op(
+                                     right.tile(), binary_ops::add_functor(1)),
+                         cut_};
+    }
+
+    TilePimpl
+    add(TilePimpl const &right, TiledArray::Permutation const &perm) const {
+        assert(false);
+        return TilePimpl();
     }
 
     TilePimpl
@@ -159,9 +175,7 @@ class TilePimpl {
         }
     }
 
-    void set_zero() {
-      *tile_ = TileVariant<T>{LowRankTile<T>{true}};
-    }
+    void set_zero() { *tile_ = TileVariant<T>{LowRankTile<T>{true}}; }
 
     TilePimpl scale(const T factor, TiledArray::Permutation const &perm) const {
         assert(false);
@@ -173,7 +187,8 @@ class TilePimpl {
                 range(),
                 tile_->apply_unary_op(unary_ops::scale_functor(factor)), cut()};
         } else {
-            return TilePimpl{range(), TileVariant<T>{LowRankTile<T>{true}}, cut()};
+            return TilePimpl{range(), TileVariant<T>{LowRankTile<T>{true}},
+                             cut()};
         }
     }
 
@@ -325,5 +340,8 @@ class TilePimpl {
         }
     }
 };
+
+} // namespace tensor
+} // namespace tcc
 
 #endif // TCC_MATRIX_TILE_PIMPLE_H

@@ -5,6 +5,9 @@
 #include "tile_algebra.h"
 #include "../include/tiledarray.h"
 
+namespace tcc {
+namespace tensor {
+
 template <typename T>
 class LowRankTile {
   public:
@@ -33,9 +36,8 @@ class LowRankTile {
     }
 
 
-    explicit LowRankTile(bool zero)
-        : L_(), R_(), zero_{zero} {
-      assert(zero == true);
+    explicit LowRankTile(bool zero) : L_(), R_(), zero_{zero} {
+        assert(zero == true);
     }
 
     LowRankTile(const Matrix<T> &L, const Matrix<T> &R)
@@ -65,7 +67,7 @@ class LowRankTile {
     inline unsigned long Rows() const { return L_.rows(); }
     inline unsigned long Cols() const { return R_.cols(); }
     inline unsigned long size() const { return R_.size() + L_.size(); }
-    inline bool iszero() const {return zero_;}
+    inline bool iszero() const { return zero_; }
 
     inline Matrix<T> const &matrixL() const { return L_; }
     inline Matrix<T> const &matrixR() const { return R_; }
@@ -74,35 +76,38 @@ class LowRankTile {
     inline Matrix<T> matrix() const { return algebra::cblas_gemm(L_, R_, 1.0); }
 
     template <typename Archive>
-    typename madness::enable_if
-        < madness::archive::is_output_archive<Archive> >::type
-    serialize(Archive &ar) {
-        ar & zero_ & L_.rows() & L_.cols() & R_.rows() & R_.cols() 
-           & madness::archive::wrap(L_.data(), L_.size()) 
-           & madness::archive::wrap(R_.data(), R_.size());
+    typename madness::enable_if<madness::archive::is_output_archive<Archive>>::
+        type
+        serialize(Archive &ar) {
+        ar &zero_ &L_.rows() & L_.cols() & R_.rows() & R_.cols()
+            & madness::archive::wrap(L_.data(), L_.size())
+            & madness::archive::wrap(R_.data(), R_.size());
     }
 
     template <typename Archive>
-    typename madness::enable_if
-        < madness::archive::is_input_archive<Archive> >::type
-    serialize(Archive &ar) {
+    typename madness::enable_if<madness::archive::is_input_archive<Archive>>::
+        type
+        serialize(Archive &ar) {
         bool zero;
-        ar & zero;
+        ar &zero;
         decltype(L_.rows()) Lrows, Lcols, Rrows, Rcols;
-        ar & Lrows & Lcols & Rrows & Rcols;
+        ar &Lrows &Lcols &Rrows &Rcols;
         Matrix<T> L(Lrows, Lcols), R(Rrows, Rcols);
-        ar & madness::archive::wrap(L.data(), L.size())
-           & madness::archive::wrap(R.data(), R.size());
-        
+        ar &madness::archive::wrap(L.data(), L.size())
+            & madness::archive::wrap(R.data(), R.size());
+
         zero_ = zero;
         L_.swap(L);
         R_.swap(R);
     }
-     
+
   private:
     Matrix<T> L_;
     Matrix<T> R_;
     bool zero_ = false;
 };
+
+} // namespace tensor
+} // namespace tcc
 
 #endif // LOW_RANK_TILE_H

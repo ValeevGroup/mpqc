@@ -16,16 +16,16 @@ TYPED_TEST_CASE(TileOpsTest, TileTypes);
 TYPED_TEST(TileOpsTest, FullSquareAdd) {
     const int rows = 10;
     const int cols = 10;
-    using mat_type = typename FullRankTile<TypeParam>::template Matrix
-        <TypeParam>;
+    using mat_type = typename tcc::tensor::FullRankTile<TypeParam>::
+        template Matrix<TypeParam>;
 
-    FullRankTile<TypeParam> left(mat_type::Random(rows, cols));
-    FullRankTile<TypeParam> right(mat_type::Random(rows, cols));
+    tcc::tensor::FullRankTile<TypeParam> left(mat_type::Random(rows, cols));
+    tcc::tensor::FullRankTile<TypeParam> right(mat_type::Random(rows, cols));
 
     double beta = 3.0;
 
     mat_type result = beta * left.matrix() + right.matrix();
-    auto tile = binary_ops::add(left, right, beta);
+    auto tile = tcc::tensor::binary_ops::add(left, right, beta);
 
     EXPECT_EQ(std::min(rows, cols), tile.rank());
     EXPECT_EQ(rows * cols, tile.size());
@@ -37,21 +37,25 @@ TYPED_TEST(TileOpsTest, FullSquareAdd) {
 TYPED_TEST(TileOpsTest, FullSkinnyAdd) {
     const int rows = 10;
     const int cols = 6;
-    using mat_type = typename FullRankTile<TypeParam>::template Matrix
-        <TypeParam>;
+    using mat_type = typename tcc::tensor::FullRankTile<TypeParam>::
+        template Matrix<TypeParam>;
 
-    FullRankTile<TypeParam> left_tall(mat_type::Random(rows, cols));
-    FullRankTile<TypeParam> right_tall(mat_type::Random(rows, cols));
+    tcc::tensor::FullRankTile<TypeParam> left_tall(
+        mat_type::Random(rows, cols));
+    tcc::tensor::FullRankTile<TypeParam> right_tall(
+        mat_type::Random(rows, cols));
 
-    FullRankTile<TypeParam> left_wide(mat_type::Random(cols, rows));
-    FullRankTile<TypeParam> right_wide(mat_type::Random(cols, rows));
+    tcc::tensor::FullRankTile<TypeParam> left_wide(
+        mat_type::Random(cols, rows));
+    tcc::tensor::FullRankTile<TypeParam> right_wide(
+        mat_type::Random(cols, rows));
 
     double beta = 3.0;
 
     mat_type result_tall = beta * left_tall.matrix() + right_tall.matrix();
     mat_type result_wide = beta * left_wide.matrix() + right_wide.matrix();
-    auto tile_tall = binary_ops::add(left_tall, right_tall, beta);
-    auto tile_wide = binary_ops::add(left_wide, right_wide, beta);
+    auto tile_tall = tcc::tensor::binary_ops::add(left_tall, right_tall, beta);
+    auto tile_wide = tcc::tensor::binary_ops::add(left_wide, right_wide, beta);
 
     EXPECT_EQ(std::min(rows, cols), tile_tall.rank());
     EXPECT_EQ(rows * cols, tile_tall.size());
@@ -69,16 +73,16 @@ TYPED_TEST(TileOpsTest, FullSkinnyAdd) {
 TYPED_TEST(TileOpsTest, FullSquareGemm) {
     const int rows = 10;
     const int cols = 10;
-    using mat_type = typename FullRankTile<TypeParam>::template Matrix
-        <TypeParam>;
+    using mat_type = typename tcc::tensor::FullRankTile<TypeParam>::
+        template Matrix<TypeParam>;
 
-    FullRankTile<TypeParam> left(mat_type::Random(rows, cols));
-    FullRankTile<TypeParam> right(mat_type::Random(rows, cols));
+    tcc::tensor::FullRankTile<TypeParam> left(mat_type::Random(rows, cols));
+    tcc::tensor::FullRankTile<TypeParam> right(mat_type::Random(rows, cols));
 
     double alpha = 3.0;
 
     mat_type result = alpha * left.matrix() * right.matrix();
-    auto tile = binary_ops::gemm(left, right, alpha);
+    auto tile = tcc::tensor::binary_ops::gemm(left, right, alpha);
 
     EXPECT_EQ(std::min(rows, cols), tile.rank());
     EXPECT_EQ(rows * cols, tile.size());
@@ -91,16 +95,18 @@ TYPED_TEST(TileOpsTest, FullMoreColsGemm) {
     const int rows = 3;
     const int cols = 10;
     const int inner_index = 7;
-    using mat_type = typename FullRankTile<TypeParam>::template Matrix
-        <TypeParam>;
+    using mat_type = typename tcc::tensor::FullRankTile<TypeParam>::
+        template Matrix<TypeParam>;
 
-    FullRankTile<TypeParam> left(mat_type::Random(rows, inner_index));
-    FullRankTile<TypeParam> right(mat_type::Random(inner_index, cols));
+    tcc::tensor::FullRankTile<TypeParam> left(
+        mat_type::Random(rows, inner_index));
+    tcc::tensor::FullRankTile<TypeParam> right(
+        mat_type::Random(inner_index, cols));
 
     double alpha = 3.0;
 
     mat_type result = alpha * left.matrix() * right.matrix();
-    auto tile = binary_ops::gemm(left, right, alpha);
+    auto tile = tcc::tensor::binary_ops::gemm(left, right, alpha);
 
     EXPECT_EQ(std::min(rows, cols), tile.rank());
     EXPECT_EQ(rows * cols, tile.size());
@@ -113,16 +119,18 @@ TYPED_TEST(TileOpsTest, FullMoreRowsGemm) {
     const int rows = 10;
     const int cols = 3;
     const int inner_index = 7;
-    using mat_type = typename FullRankTile<TypeParam>::template Matrix
-        <TypeParam>;
+    using mat_type = typename tcc::tensor::FullRankTile<TypeParam>::
+        template Matrix<TypeParam>;
 
-    FullRankTile<TypeParam> left(mat_type::Random(rows, inner_index));
-    FullRankTile<TypeParam> right(mat_type::Random(inner_index, cols));
+    tcc::tensor::FullRankTile<TypeParam> left(
+        mat_type::Random(rows, inner_index));
+    tcc::tensor::FullRankTile<TypeParam> right(
+        mat_type::Random(inner_index, cols));
 
     double alpha = 3.0;
 
     mat_type result = alpha * left.matrix() * right.matrix();
-    auto tile = binary_ops::gemm(left, right, alpha);
+    auto tile = tcc::tensor::binary_ops::gemm(left, right, alpha);
 
     EXPECT_EQ(std::min(rows, cols), tile.rank());
     EXPECT_EQ(rows * cols, tile.size());
@@ -136,8 +144,8 @@ TYPED_TEST(TileOpsTest, LowSquareAdd) {
     const int cols = 10;
     const int rankA = 2;
     const int rankB = 3;
-    using mat_type = typename LowRankTile<TypeParam>::template Matrix
-        <TypeParam>;
+    using mat_type = typename tcc::tensor::LowRankTile<TypeParam>::
+        template Matrix<TypeParam>;
 
     auto left = TCC::test::low_rank_tile<TypeParam>(rows, cols, rankA);
     auto right = TCC::test::low_rank_tile<TypeParam>(rows, cols, rankB);
@@ -145,7 +153,7 @@ TYPED_TEST(TileOpsTest, LowSquareAdd) {
     double beta = 3.0;
 
     mat_type result = beta * left.matrix() + right.matrix();
-    auto tile = binary_ops::add(left, right, beta);
+    auto tile = tcc::tensor::binary_ops::add(left, right, beta);
 
     EXPECT_EQ(rankA + rankB, tile.rank());
     EXPECT_EQ(rows * (rankA + rankB) + cols * (rankA + rankB), tile.size());
@@ -159,8 +167,8 @@ TYPED_TEST(TileOpsTest, LowSkinnyAdd) {
     const int cols = 6;
     const int rankA = 2;
     const int rankB = 1;
-    using mat_type = typename LowRankTile<TypeParam>::template Matrix
-        <TypeParam>;
+    using mat_type = typename tcc::tensor::LowRankTile<TypeParam>::
+        template Matrix<TypeParam>;
 
     auto left_tall = TCC::test::low_rank_tile<TypeParam>(rows, cols, rankA);
     auto right_tall = TCC::test::low_rank_tile<TypeParam>(rows, cols, rankB);
@@ -173,8 +181,8 @@ TYPED_TEST(TileOpsTest, LowSkinnyAdd) {
 
     mat_type result_tall = beta * left_tall.matrix() + right_tall.matrix();
     mat_type result_wide = beta * left_wide.matrix() + right_wide.matrix();
-    auto tile_tall = binary_ops::add(left_tall, right_tall, beta);
-    auto tile_wide = binary_ops::add(left_wide, right_wide, beta);
+    auto tile_tall = tcc::tensor::binary_ops::add(left_tall, right_tall, beta);
+    auto tile_wide = tcc::tensor::binary_ops::add(left_wide, right_wide, beta);
 
     EXPECT_EQ(rankA + rankB, tile_tall.rank());
     EXPECT_EQ(rows * (rankA + rankB) + cols * (rankA + rankB),
@@ -195,8 +203,8 @@ TYPED_TEST(TileOpsTest, LowSquareGemmSameRank) {
     const int rows = 10;
     const int cols = 10;
     const int rank = 3;
-    using mat_type = typename LowRankTile<TypeParam>::template Matrix
-        <TypeParam>;
+    using mat_type = typename tcc::tensor::LowRankTile<TypeParam>::
+        template Matrix<TypeParam>;
 
     auto left = TCC::test::low_rank_tile<TypeParam>(rows, cols, rank);
     auto right = TCC::test::low_rank_tile<TypeParam>(rows, cols, rank);
@@ -204,7 +212,7 @@ TYPED_TEST(TileOpsTest, LowSquareGemmSameRank) {
     double alpha = 3.0;
 
     mat_type result = alpha * left.matrix() * right.matrix();
-    auto tile = binary_ops::gemm(left, right, alpha);
+    auto tile = tcc::tensor::binary_ops::gemm(left, right, alpha);
 
     EXPECT_EQ(rank, tile.rank());
     EXPECT_EQ(rows * rank + rank * cols, tile.size());
@@ -218,8 +226,8 @@ TYPED_TEST(TileOpsTest, LowMoreColsGemmSameRank) {
     const int cols = 10;
     const int inner_index = 7;
     const int rank = 3;
-    using mat_type = typename LowRankTile<TypeParam>::template Matrix
-        <TypeParam>;
+    using mat_type = typename tcc::tensor::LowRankTile<TypeParam>::
+        template Matrix<TypeParam>;
 
     auto left = TCC::test::low_rank_tile<TypeParam>(rows, inner_index, rank);
     auto right = TCC::test::low_rank_tile<TypeParam>(inner_index, cols, rank);
@@ -227,7 +235,7 @@ TYPED_TEST(TileOpsTest, LowMoreColsGemmSameRank) {
     double alpha = 3.0;
 
     mat_type result = alpha * left.matrix() * right.matrix();
-    auto tile = binary_ops::gemm(left, right, alpha);
+    auto tile = tcc::tensor::binary_ops::gemm(left, right, alpha);
 
     EXPECT_EQ(rank, tile.rank());
     EXPECT_EQ(rows * rank + rank * cols, tile.size());
@@ -241,8 +249,8 @@ TYPED_TEST(TileOpsTest, LowMoreRowsGemmSameRank) {
     const int cols = 5;
     const int inner_index = 7;
     const int rank = 3;
-    using mat_type = typename LowRankTile<TypeParam>::template Matrix
-        <TypeParam>;
+    using mat_type = typename tcc::tensor::LowRankTile<TypeParam>::
+        template Matrix<TypeParam>;
 
     auto left = TCC::test::low_rank_tile<TypeParam>(rows, inner_index, rank);
     auto right = TCC::test::low_rank_tile<TypeParam>(inner_index, cols, rank);
@@ -250,7 +258,7 @@ TYPED_TEST(TileOpsTest, LowMoreRowsGemmSameRank) {
     double alpha = 3.0;
 
     mat_type result = alpha * left.matrix() * right.matrix();
-    auto tile = binary_ops::gemm(left, right, alpha);
+    auto tile = tcc::tensor::binary_ops::gemm(left, right, alpha);
 
     EXPECT_EQ(rank, tile.rank());
     EXPECT_EQ(rows * rank + rank * cols, tile.size());
@@ -264,8 +272,8 @@ TYPED_TEST(TileOpsTest, LowSquareGemmLeftLargerRank) {
     const int cols = 10;
     const int rank_left = 4;
     const int rank_right = 3;
-    using mat_type = typename LowRankTile<TypeParam>::template Matrix
-        <TypeParam>;
+    using mat_type = typename tcc::tensor::LowRankTile<TypeParam>::
+        template Matrix<TypeParam>;
 
     auto left = TCC::test::low_rank_tile<TypeParam>(rows, cols, rank_left);
     auto right = TCC::test::low_rank_tile<TypeParam>(rows, cols, rank_right);
@@ -273,7 +281,7 @@ TYPED_TEST(TileOpsTest, LowSquareGemmLeftLargerRank) {
     double alpha = 3.0;
 
     mat_type result = alpha * left.matrix() * right.matrix();
-    auto tile = binary_ops::gemm(left, right, alpha);
+    auto tile = tcc::tensor::binary_ops::gemm(left, right, alpha);
 
     auto out_rank = std::min(rank_left, rank_right);
 
@@ -290,8 +298,8 @@ TYPED_TEST(TileOpsTest, LowMoreColsGemmLeftLargerRank) {
     const int k = 7;
     const int rank_left = 3;
     const int rank_right = 2;
-    using mat_type = typename FullRankTile<TypeParam>::template Matrix
-        <TypeParam>;
+    using mat_type = typename tcc::tensor::FullRankTile<TypeParam>::
+        template Matrix<TypeParam>;
 
     auto left = TCC::test::low_rank_tile<TypeParam>(rows, k, rank_left);
     auto right = TCC::test::low_rank_tile<TypeParam>(k, cols, rank_right);
@@ -299,7 +307,7 @@ TYPED_TEST(TileOpsTest, LowMoreColsGemmLeftLargerRank) {
     double alpha = 3.0;
 
     mat_type result = alpha * left.matrix() * right.matrix();
-    auto tile = binary_ops::gemm(left, right, alpha);
+    auto tile = tcc::tensor::binary_ops::gemm(left, right, alpha);
 
     auto out_rank = std::min(rank_left, rank_right);
 
@@ -316,8 +324,8 @@ TYPED_TEST(TileOpsTest, LowMoreRowsGemmLeftLargerRank) {
     const int k = 7;
     const int rank_left = 3;
     const int rank_right = 2;
-    using mat_type = typename FullRankTile<TypeParam>::template Matrix
-        <TypeParam>;
+    using mat_type = typename tcc::tensor::FullRankTile<TypeParam>::
+        template Matrix<TypeParam>;
 
     auto left = TCC::test::low_rank_tile<TypeParam>(rows, k, rank_left);
     auto right = TCC::test::low_rank_tile<TypeParam>(k, cols, rank_right);
@@ -325,7 +333,7 @@ TYPED_TEST(TileOpsTest, LowMoreRowsGemmLeftLargerRank) {
     double alpha = 3.0;
 
     mat_type result = alpha * left.matrix() * right.matrix();
-    auto tile = binary_ops::gemm(left, right, alpha);
+    auto tile = tcc::tensor::binary_ops::gemm(left, right, alpha);
 
     auto out_rank = std::min(rank_left, rank_right);
 
@@ -337,15 +345,13 @@ TYPED_TEST(TileOpsTest, LowMoreRowsGemmLeftLargerRank) {
 }
 
 
-
-
 TYPED_TEST(TileOpsTest, LowSquareGemmRightLargerRank) {
     const int rows = 10;
     const int cols = 10;
     const int rank_left = 3;
     const int rank_right = 4;
-    using mat_type = typename LowRankTile<TypeParam>::template Matrix
-        <TypeParam>;
+    using mat_type = typename tcc::tensor::LowRankTile<TypeParam>::
+        template Matrix<TypeParam>;
 
     auto left = TCC::test::low_rank_tile<TypeParam>(rows, cols, rank_left);
     auto right = TCC::test::low_rank_tile<TypeParam>(rows, cols, rank_right);
@@ -353,7 +359,7 @@ TYPED_TEST(TileOpsTest, LowSquareGemmRightLargerRank) {
     double alpha = 3.0;
 
     mat_type result = alpha * left.matrix() * right.matrix();
-    auto tile = binary_ops::gemm(left, right, alpha);
+    auto tile = tcc::tensor::binary_ops::gemm(left, right, alpha);
 
     auto out_rank = std::min(rank_left, rank_right);
 
@@ -370,8 +376,8 @@ TYPED_TEST(TileOpsTest, LowMoreColsGemmRightLargerRank) {
     const int k = 7;
     const int rank_left = 2;
     const int rank_right = 3;
-    using mat_type = typename FullRankTile<TypeParam>::template Matrix
-        <TypeParam>;
+    using mat_type = typename tcc::tensor::FullRankTile<TypeParam>::
+        template Matrix<TypeParam>;
 
     auto left = TCC::test::low_rank_tile<TypeParam>(rows, k, rank_left);
     auto right = TCC::test::low_rank_tile<TypeParam>(k, cols, rank_right);
@@ -379,7 +385,7 @@ TYPED_TEST(TileOpsTest, LowMoreColsGemmRightLargerRank) {
     double alpha = 3.0;
 
     mat_type result = alpha * left.matrix() * right.matrix();
-    auto tile = binary_ops::gemm(left, right, alpha);
+    auto tile = tcc::tensor::binary_ops::gemm(left, right, alpha);
 
     auto out_rank = std::min(rank_left, rank_right);
 
@@ -396,8 +402,8 @@ TYPED_TEST(TileOpsTest, LowMoreRowsGemmRightLargerRank) {
     const int k = 7;
     const int rank_left = 2;
     const int rank_right = 3;
-    using mat_type = typename FullRankTile<TypeParam>::template Matrix
-        <TypeParam>;
+    using mat_type = typename tcc::tensor::FullRankTile<TypeParam>::
+        template Matrix<TypeParam>;
 
     auto left = TCC::test::low_rank_tile<TypeParam>(rows, k, rank_left);
     auto right = TCC::test::low_rank_tile<TypeParam>(k, cols, rank_right);
@@ -405,7 +411,7 @@ TYPED_TEST(TileOpsTest, LowMoreRowsGemmRightLargerRank) {
     double alpha = 3.0;
 
     mat_type result = alpha * left.matrix() * right.matrix();
-    auto tile = binary_ops::gemm(left, right, alpha);
+    auto tile = tcc::tensor::binary_ops::gemm(left, right, alpha);
 
     auto out_rank = std::min(rank_left, rank_right);
 
@@ -415,6 +421,3 @@ TYPED_TEST(TileOpsTest, LowMoreRowsGemmRightLargerRank) {
     EXPECT_EQ(rows, tile.Rows());
     EXPECT_TRUE(tile.matrix().isApprox(result));
 }
-
-
-

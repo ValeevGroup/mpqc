@@ -5,7 +5,7 @@ template <typename T>
 class FullRankTileTest : public ::testing::Test {
   public:
     FullRankTileTest() = default;
-    FullRankTile<T> tile;
+    tcc::tensor::FullRankTile<T> tile;
 };
 
 typedef ::testing::Types<int, long, float, double> FRTileTypes;
@@ -21,10 +21,10 @@ TYPED_TEST(FullRankTileTest, DefaultConstructor) {
 TYPED_TEST(FullRankTileTest, AssignmentTest) {
     const int rows = 10;
     const int cols = 10;
-    using mat_type = typename FullRankTile<TypeParam>::template Matrix
+    using mat_type = typename tcc::tensor::FullRankTile<TypeParam>::template Matrix
         <TypeParam>;
     mat_type mat = mat_type::Random(rows, cols);
-    FullRankTile<TypeParam> from_mat(mat);
+    tcc::tensor::FullRankTile<TypeParam> from_mat(mat);
     this->tile = from_mat;
 
     EXPECT_EQ(std::min(rows, cols), this->tile.rank());
@@ -41,15 +41,15 @@ TYPED_TEST(FullRankTileTest, CopyConstructor) {
     const int rows = 10;
     const int cols = 10;
 
-    using mat_type = typename FullRankTile<TypeParam>::template Matrix
+    using mat_type = typename tcc::tensor::FullRankTile<TypeParam>::template Matrix
         <TypeParam>;
 
     mat_type mat = mat_type::Random(rows, cols);
-    FullRankTile<TypeParam> from_mat(mat);
+    tcc::tensor::FullRankTile<TypeParam> from_mat(mat);
     this->tile = from_mat;
 
     // Actual copy
-    FullRankTile<TypeParam> tile_copy(this->tile);
+    tcc::tensor::FullRankTile<TypeParam> tile_copy(this->tile);
 
     EXPECT_EQ(tile_copy.rank(), this->tile.rank());
     EXPECT_EQ(tile_copy.size(), this->tile.size());

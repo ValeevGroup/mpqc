@@ -5,6 +5,9 @@
 #include "full_rank_tile.h"
 #include <cstdint>
 
+namespace tcc {
+namespace tensor {
+
 template <typename T>
 class TileVariant {
   public:
@@ -127,8 +130,8 @@ class TileVariant {
     }
 
     template <typename Func>
-    auto apply_binary_op(const TileVariant &right,
-                         Func op) const -> decltype(op(this->lrtile(), this->lrtile())) const {
+    auto apply_binary_op(const TileVariant &right, Func op) const
+        -> decltype(op(this->lrtile(), this->lrtile())) const {
         switch ((tag() << 1) | right.tag()) {
         case LowLow:
             return op(lrtile(), right.lrtile());
@@ -163,19 +166,18 @@ class TileVariant {
         return apply_unary_op(full_rank_functor);
     }
 
-    bool iszero() const {
-      return apply_unary_op(is_zero_functor);
-    }
+    bool iszero() const { return apply_unary_op(is_zero_functor); }
 
     typename FullRankTile<T>::template Matrix<T> matrix() const {
         return apply_unary_op(matrix_functor);
     }
 
     template <typename Archive>
-    typename madness::enable_if<madness::archive::is_output_archive<Archive>>::type
-    serialize(Archive &ar) {
+    typename madness::enable_if<madness::archive::is_output_archive<Archive>>::
+        type
+        serialize(Archive &ar) {
         int tagi = int{static_cast<int>(tag_)};
-        ar & tagi;
+        ar &tagi;
         if (tagi == 0) {
             ar &lrtile_;
         } else {
@@ -184,10 +186,11 @@ class TileVariant {
     }
 
     template <typename Archive>
-    typename madness::enable_if<madness::archive::is_input_archive<Archive>>::type
-    serialize(Archive &ar) {
+    typename madness::enable_if<madness::archive::is_input_archive<Archive>>::
+        type
+        serialize(Archive &ar) {
         int tagi = int{static_cast<int>(tag_)};
-        ar & tagi;
+        ar &tagi;
         if (tagi == 0) {
             LowRankTile<T> l;
             ar &l;
@@ -199,8 +202,7 @@ class TileVariant {
         }
     }
 
-private : 
-    
+  private:
     TileType tag_;
     union {
         LowRankTile<T> lrtile_;
@@ -231,8 +233,8 @@ private :
     } low_rank_functor;
 
     struct {
-        bool operator()(FullRankTile<T> const &t){return t.iszero();}
-        bool operator()(LowRankTile<T> const &t){return t.iszero();}
+        bool operator()(FullRankTile<T> const &t) { return t.iszero(); }
+        bool operator()(LowRankTile<T> const &t) { return t.iszero(); }
     } is_zero_functor;
 
     struct {
@@ -313,5 +315,8 @@ private :
     static_assert((FullRank << 2 | FullRank << 1 | LowRank) == FullFullLow,
                   "Full Full Low switch is incorrect");
 };
+
+} // namespace tensor
+} // namespace tcc
 
 #endif // TTC_MATRIX_TILE_VARIANT_H

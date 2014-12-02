@@ -10,7 +10,7 @@ class TilePimplTest : public ::testing::Test {
     template <typename U>
     using Matrix = Eigen::Matrix<U, Eigen::Dynamic, Eigen::Dynamic>;
     Matrix<T> matrix_;
-    TileVariant<T> tile;
+    tcc::tensor::TileVariant<T> tile;
     TiledArray::Range range;
     TiledArray::math::GemmHelper gemm_helper;
 
@@ -25,14 +25,14 @@ typedef ::testing::Types<float, double> TilePimplTypes;
 TYPED_TEST_CASE(TilePimplTest, TilePimplTypes);
 
 TYPED_TEST(TilePimplTest, DefaultConstructor) {
-    TilePimpl<TypeParam> tile;
+    tcc::tensor::TilePimpl<TypeParam> tile;
     EXPECT_EQ(1e-07, tile.cut());
     EXPECT_EQ(tile.range().volume(), 0);
     EXPECT_TRUE(tile.empty());
 }
 
 TYPED_TEST(TilePimplTest, RangeConstructor) {
-    TilePimpl<TypeParam> tile(this->range);
+    tcc::tensor::TilePimpl<TypeParam> tile(this->range);
     EXPECT_EQ(1e-07, tile.cut());
     EXPECT_EQ(tile.range(), this->range);
     EXPECT_EQ(tile.range().volume(), 0);
@@ -41,7 +41,7 @@ TYPED_TEST(TilePimplTest, RangeConstructor) {
 
 TYPED_TEST(TilePimplTest, RangeCutConstructor) {
     auto cut = 1e-04;
-    TilePimpl<TypeParam> tile(this->range, cut);
+    tcc::tensor::TilePimpl<TypeParam> tile(this->range, cut);
     EXPECT_TRUE(tile.empty());
 
     EXPECT_EQ(cut, tile.cut());
@@ -50,7 +50,7 @@ TYPED_TEST(TilePimplTest, RangeCutConstructor) {
 }
 
 TYPED_TEST(TilePimplTest, TileVariantConstructor) {
-    TilePimpl<TypeParam> tile(this->range, this->tile);
+    tcc::tensor::TilePimpl<TypeParam> tile(this->range, this->tile);
     EXPECT_FALSE(tile.empty());
 
     EXPECT_EQ(1e-07, tile.cut());
@@ -63,8 +63,8 @@ TYPED_TEST(TilePimplTest, TileVariantConstructor) {
 }
 
 TYPED_TEST(TilePimplTest, CopyConstructor) {
-    TilePimpl<TypeParam> tile(this->range, this->tile);
-    TilePimpl<TypeParam> copied = tile;
+    tcc::tensor::TilePimpl<TypeParam> tile(this->range, this->tile);
+    tcc::tensor::TilePimpl<TypeParam> copied = tile;
 
     EXPECT_FALSE(tile.empty());
     EXPECT_FALSE(copied.empty());
@@ -86,8 +86,8 @@ TYPED_TEST(TilePimplTest, CopyConstructor) {
 }
 
 TYPED_TEST(TilePimplTest, TileClone) {
-    TilePimpl<TypeParam> tile(this->range, this->tile);
-    TilePimpl<TypeParam> cloned = tile.clone();
+    tcc::tensor::TilePimpl<TypeParam> tile(this->range, this->tile);
+    tcc::tensor::TilePimpl<TypeParam> cloned = tile.clone();
     EXPECT_FALSE(tile.empty());
     EXPECT_FALSE(cloned.empty());
 
@@ -109,8 +109,8 @@ TYPED_TEST(TilePimplTest, TileClone) {
 
 TYPED_TEST(TilePimplTest, Gemm_AB) {
     double alpha = 2.0;
-    TilePimpl<TypeParam> tileA(this->range, this->tile);
-    TilePimpl<TypeParam> tileB(tileA);
+    tcc::tensor::TilePimpl<TypeParam> tileA(this->range, this->tile);
+    tcc::tensor::TilePimpl<TypeParam> tileB(tileA);
     decltype(this->matrix_) correct_matrix = alpha * this->matrix_
                                              * this->matrix_;
     auto tileC = tileA.gemm(tileB, alpha, this->gemm_helper);

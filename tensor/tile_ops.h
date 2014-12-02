@@ -6,6 +6,9 @@
 #include "tile_algebra.h"
 #include "tile_variant.h"
 
+namespace tcc {
+    namespace tensor {
+
 namespace unary_ops {
 template <typename T>
 FullRankTile<T> scale(FullRankTile<T> const &t, T factor) {
@@ -206,5 +209,8 @@ struct subt_functor {
 };
 
 } // namespace binary_ops
+
+} // namespace tensor
+} // namespace tcc
 
 #endif // TileClusterChem_TILE_OPS_H

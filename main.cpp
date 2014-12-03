@@ -18,6 +18,8 @@
 #include "integrals/task_integrals.h"
 #include "integrals/low_tile_functors.h"
 
+#include "purification/purification_devel.h"
+
 using namespace tcc;
 
 int main(int argc, char *argv[]) {
@@ -95,6 +97,8 @@ int main(int argc, char *argv[]) {
     for(auto it = H.begin(); it != H.end(); ++it){
         std::cout << "\nH Matrix = \n" << it->get().tile().matrix() << std::endl;
     }
+
+    pure::purifier()(H,2);
 
     world.gop.fence();
     return 0;

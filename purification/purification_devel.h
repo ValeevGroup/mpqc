@@ -3,41 +3,84 @@
 #define TCC_PURIFICATION_PURIFICATIONDEVEL_H
 
 #include <cstdlib>
+#include "eigen_value_estimation.h"
+#include <iostream>
+#include "../include/eigen.h"
 
 namespace tcc {
 namespace pure {
 
 template <typename Array>
-double compute_trace(Array const &array) {
-    // calculate the trace of the array
-    double trace = 0;
-    return trace;
+Array initial_guess(Array const &a) {
+    return create_eval_scaled_guess(a);
 }
 
 template <typename Array>
-Array initial_guess(Array const &array) {
-    Array guess(array.get_world(), array.trange());
-    guess.set_all_local(1.0);
-    return guess;
-}
+class trace_resetting_poly {
+  public:
+    void operator()(Array &D, Array const &S, std::size_t occ) const {
 
-template <typename Array>
-void trace_resetting_poly(Array &array, std::size_t occ, double trace) {
-    array("i,j") = array("i,j") * array("j,i");
-    array.get_world().gop.fence();
-}
+        Array DS(D.get_world(), D.trange());
+        DS("i,j") = D("i,k") * S("k,j");
+
+        auto trace = array_trace(DS);
+        occ = occ / 2;
+        auto iter = 1;
+
+        while (std::abs(trace - occ) >= 1e-8 && iter <= 5) {
+            if (trace >= occ) {
+                D("i,j") = DS("i,k") * D("k,j");
+                std::cout << "\tshrinking trace" << std::endl;
+            } else {
+                D("i,j") = 2 * D("i,j") - DS("i,k") * D("k,j");
+                std::cout << "\tincreasing trace" << std::endl;
+            }
+
+            DS("i,j") = D("i,k") * S("k,j");
+
+            auto matrix = D.begin()->get().tile().matrix();
+            std::cout << "D after " << iter << " iterations = \n" <<matrix  
+                      << std::endl;
+            Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(matrix);
+            std::cout << "D evals = " << es.eigenvalues().transpose()
+                      << std::endl;
+
+            trace = array_trace(DS);
+
+            std::cout << "DS trace = " << trace << " trace and occ diff " << std::abs(trace - occ)<< std::endl;
+            ++iter;
+            D.get_world().gop.fence();
+        }
+
+    }
+
+    double array_trace(Array const &A) const {
+
+        auto trace = 0.0;
+        for (auto it = A.begin(); it != A.end(); ++it) {
+            auto idx = it.index();
+            if (idx[0] == idx[1]) {
+                trace += it->get().tile().matrix().trace();
+            }
+        }
+
+        return trace;
+    }
+};
 
 
 class purifier {
   public:
-    explicit purifier(double cut = 1e-06) : cut_{cut} {}
+    explicit purifier(double cut = 1e-07) : cut_{cut} {}
 
-    template <typename Array, typename Polynomial> 
-    void operator()(Array const &array, std::size_t occupation,
-                    Polynomial poly = trace_resetting_poly<Array>){
-        auto P = initial_guess(array);
-        auto trace = compute_trace(P);
-        poly(P, occupation, trace);
+    template <typename Array, typename Polynomial = trace_resetting_poly<Array>>
+    Array operator()(Array const &D, Array const &S, std::size_t occupation,
+                     Polynomial poly = Polynomial{}) {
+        auto P = initial_guess(D);
+
+        poly(P, S, occupation);
+
+        return P;
     }
 
   private:

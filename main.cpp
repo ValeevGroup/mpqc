@@ -98,8 +98,16 @@ int main(int argc, char *argv[]) {
         std::cout << "\nH Matrix = \n" << it->get().tile().matrix() << std::endl;
     }
 
-    pure::purifier()(H,2);
+    auto P = pure::purifier()(H, S, 2);
 
+    for(auto it = P.begin(); it != P.end(); ++it){
+        std::cout << "\nP Matrix = \n" << it->get().tile().matrix() << std::endl;
+    }
+
+
+    std::cout << P.trange().tiles().extent()[0] << " " 
+        << P.trange().tiles().extent()[1] << std::endl;
+    
     world.gop.fence();
     return 0;
 }

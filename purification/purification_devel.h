@@ -11,8 +11,8 @@ namespace tcc {
 namespace pure {
 
 template <typename Array>
-Array initial_guess(Array const &a) {
-    return create_eval_scaled_guess(a);
+Array initial_guess(Array const &H, Array const &S) {
+    return create_eval_scaled_guess(H, S);
 }
 
 template <typename Array>
@@ -38,11 +38,9 @@ class trace_resetting_poly {
 
             DS("i,j") = D("i,k") * S("k,j");
 
-            auto matrix = D.begin()->get().tile().matrix();
-            std::cout << "D after " << iter << " iterations = \n" <<matrix  
-                      << std::endl;
+            auto matrix = DS.begin()->get().tile().matrix();
             Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(matrix);
-            std::cout << "D evals = " << es.eigenvalues().transpose()
+            std::cout << "DS evals = " << es.eigenvalues().transpose()
                       << std::endl;
 
             trace = array_trace(DS);
@@ -74,9 +72,9 @@ class purifier {
     explicit purifier(double cut = 1e-07) : cut_{cut} {}
 
     template <typename Array, typename Polynomial = trace_resetting_poly<Array>>
-    Array operator()(Array const &D, Array const &S, std::size_t occupation,
+    Array operator()(Array const &H, Array const &S, std::size_t occupation,
                      Polynomial poly = Polynomial{}) {
-        auto P = initial_guess(D);
+        auto P = initial_guess(H, S);
 
         poly(P, S, occupation);
 

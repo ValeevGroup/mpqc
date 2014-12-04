@@ -72,6 +72,7 @@ class TilePimpl {
     }
 
     TileVariant<T> const &tile() const { return *tile_; }
+    TileVariant<T> &tile() { return *tile_; }
 
   private:
     std::shared_ptr<TileVariant<T>> tile_;
@@ -202,7 +203,7 @@ class TilePimpl {
     TilePimpl &subt_to(TilePimpl const &right) {
         if (tile_->iszero()) { // We are zero
             if (!right.tile().iszero()) {
-                tile_ = right.tile().apply_unary_op(
+                *tile_ = right.tile().apply_unary_op(
                     unary_ops::scale_functor(-1.0));
             }
         } else if (!right.tile().iszero()) { // both aren't zero
@@ -239,8 +240,8 @@ class TilePimpl {
             if (right.tile().iszero()) {
                 return clone();
             } else {
-                return right.tile().apply_unary_op(
-                    unary_ops::scale_functor(-1.0));
+                return TilePimpl{range(), right.tile().apply_unary_op(
+                    unary_ops::scale_functor(-1.0)), cut()};
             }
         } else if (right.tile().iszero()) {
             return clone();

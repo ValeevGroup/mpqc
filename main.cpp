@@ -25,6 +25,7 @@ using namespace tcc;
 int main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
     basis::BasisSet bs{"3-21G_basis_G94.txt"};
+
     std::cout << "Basis set is " << bs << std::endl;
     molecule::Atom h1{{0, 0, 0}, 1, 1};
     molecule::Atom h2{{0, 0, 1}, 1, 1};
@@ -103,8 +104,7 @@ int main(int argc, char *argv[]) {
     for(auto it = P.begin(); it != P.end(); ++it){
         std::cout << "\nP Matrix = \n" << it->get().tile().matrix() << std::endl;
     }
-
-
+    
     std::cout << P.trange().tiles().extent()[0] << " " 
         << P.trange().tiles().extent()[1] << std::endl;
     

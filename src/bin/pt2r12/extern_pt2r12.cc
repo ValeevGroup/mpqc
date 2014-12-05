@@ -57,9 +57,9 @@ ExternPT2R12::ExternPT2R12(const Ref<KeyVal>& kv) :
   std::string r12_str = kv->stringvalue("pt2_correction", KeyValValuestring(std::string()));
 
 #if defined(HAVE_MPQC3_RUNTIME)
-  std::string mpqc3_str = kv->stringvalue("use_mpqc3", KeyValValuestring(std::string()));
-  std::string singles_str = kv->stringvalue("cabs_singles", KeyValValuestring(std::string()));
-  std::string partition_str = kv->stringvalue("cabs_singles_h0", KeyValValuestring(std::string()));
+  singles_str_ = kv->stringvalue("cabs_singles", KeyValValuestring(std::string()));
+  partition_str_ = kv->stringvalue("cabs_singles_h0", KeyValValuestring(std::string()));
+  cabs_singles_name_ = kv->stringvalue("cabs_singles_basis", KeyValValuestring(std::string()));
 #endif
 
   Ref<OrbitalSpace> orbs = orbs_info_->orbs();
@@ -135,12 +135,29 @@ ExternPT2R12::ExternPT2R12(const Ref<KeyVal>& kv) :
       kva->assign("pt2_correction", r12_str);
 
 #if defined(HAVE_MPQC3_RUNTIME)
-    if(!singles_str.empty())
-      kva->assign("cabs_singles", singles_str);
-    if(!partition_str.empty())
-      kva->assign("cabs_singles_h0", partition_str);
-    if(!mpqc3_str.empty())
-      kva->assign("use_mpqc3", mpqc3_str);
+    if(!singles_str_.empty())
+      kva->assign("cabs_singles", singles_str_);
+    if(!partition_str_.empty())
+      kva->assign("cabs_singles_h0", partition_str_);
+    if(cabs_singles_name_.empty() == false){
+      Ref<AssignedKeyVal> tmpkv = new AssignedKeyVal;
+      tmpkv->assign("name", cabs_singles_name_.c_str());
+      tmpkv->assign("puream", "true");
+      tmpkv->assign("molecule", molecule().pointer());
+      Ref<KeyVal> kv = tmpkv;
+      if (cabs_contraction_){
+        Ref<GaussianBasisSet> aux_basis_singles = new GaussianBasisSet(kv);
+        kva->assign("aux_basis_singles", aux_basis_singles.pointer());
+      }
+      else{
+        Ref<GaussianBasisSet> aux_basis_singles = new UncontractedBasisSet(kv);
+        kva->assign("aux_basis_singles", aux_basis_singles.pointer());
+      }
+
+    }
+    else{
+      kva->assign("aux_basis_singles", NULL);
+    }
 #endif
     if (cabs_name_.empty() == false) {
       Ref<AssignedKeyVal> tmpkv = new AssignedKeyVal;

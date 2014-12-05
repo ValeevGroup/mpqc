@@ -78,7 +78,11 @@ namespace sc {
       std::string cabs_name_;
       bool cabs_contraction_;
       std::string f12exp_str_;
-
+      #if defined(HAVE_MPQC3_RUNTIME)
+          std::string singles_str_;
+          std::string partition_str_;
+          std::string cabs_singles_name_;
+      #endif
       // constructed
       Ref<PT2R12> pt2r12_;
 

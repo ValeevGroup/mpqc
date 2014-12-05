@@ -69,7 +69,6 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
   cabs_singles_ = keyval->booleanvalue("cabs_singles", KeyValValueboolean(false));
   cabs_singles_h0_ = keyval->stringvalue("cabs_singles_h0", KeyValValuestring(string("fock")));
   cabs_singles_coupling_ = keyval->booleanvalue("cabs_singles_coupling", KeyValValueboolean(true));
-  use_mpqc3_ = keyval->booleanvalue("use_mpqc3",KeyValValueboolean(true));
 #endif
   rotate_core_ = keyval->booleanvalue("rotate_core", KeyValValueboolean(true));
 
@@ -117,31 +116,52 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
   // some defaults need to be overridden for R12WavefunctionWorld
   // spinadapted should by default be false
   {
-    Ref<KeyVal> r12world_keyval = keyval;
-    if (keyval->exists("spinadapted") == false) {
-      Ref<AssignedKeyVal> akeyval = new AssignedKeyVal;
-      akeyval->assignboolean("spinadapted", true);
-      r12world_keyval = new AggregateKeyVal(keyval, akeyval);
-    }
-    else //doubly check
+    Ref <KeyVal> r12world_keyval = keyval;
     {
-      bool adapted = keyval->booleanvalue("spinadapted");
-      if(not adapted)
-        throw InputError("spinadapted must be true for spin-free PT2R12 (the default is correct)",
-                         __FILE__, __LINE__, "PT2R12");
+      if (keyval->exists("spinadapted") == false) {
+        Ref <AssignedKeyVal> akeyval = new AssignedKeyVal;
+        akeyval->assignboolean("spinadapted", true);
+        r12world_keyval = new AggregateKeyVal(keyval, akeyval);
+      }
+      else //doubly check
+      {
+        bool adapted = keyval->booleanvalue("spinadapted");
+        if (not adapted)
+          throw InputError("spinadapted must be true for spin-free PT2R12 (the default is correct)",
+                  __FILE__, __LINE__, "PT2R12");
+      }
+      r12world_ = new R12WavefunctionWorld(r12world_keyval, ref);
     }
-    r12world_ = new R12WavefunctionWorld(r12world_keyval, ref);
-  }
-  r12eval_ = new R12IntEval(r12world_);
+    r12eval_ = new R12IntEval(r12world_);
 
-  debug_ = keyval->intvalue("debug", KeyValValueint(0));
-  r12eval_->debug(debug_);
-  // this may update the accuracy of reference_ object
-  this->set_desired_value_accuracy(desired_value_accuracy());
+    debug_ = keyval->intvalue("debug", KeyValValueint(0));
+    r12eval_->debug(debug_);
+    // this may update the accuracy of reference_ object
+    this->set_desired_value_accuracy(desired_value_accuracy());
+
 #if defined(HAVE_MPQC3_RUNTIME)
-  bootup_mpqc3();
-  CABS_Single_ = make_shared <CABS_Single> (srr12intrmds_);
+    bootup_mpqc3();
+    Ref<GaussianBasisSet> cabs_singles_basis;
+    cabs_singles_basis << keyval->describedclassvalue("aux_basis_singles");
+    if (cabs_singles_basis.pointer() == NULL ){
 
+      cabs_singles_engine_ = make_shared <CabsSingles> (srr12intrmds_);
+
+    }
+    else {
+      Ref<AssignedKeyVal> aux_basis_akeyval = new AssignedKeyVal;
+      aux_basis_akeyval->assign("aux_basis", cabs_singles_basis.pointer());
+      Ref<KeyVal> single_r12world_keyval = new AggregateKeyVal(r12world_keyval, aux_basis_akeyval);
+      Ref<R12WavefunctionWorld> single_r12world = new R12WavefunctionWorld(single_r12world_keyval, ref);
+
+      std::shared_ptr< SingleReference_R12Intermediates<double> > single_r12intrmds = make_shared<SingleReference_R12Intermediates<double>>(madness::World::get_default(),
+        single_r12world);
+
+      single_r12intrmds->set_rdm2(this->rdm2_);
+
+      cabs_singles_engine_ = make_shared <CabsSingles> (single_r12intrmds);
+    }
+  }
 #endif
 }
 
@@ -1356,23 +1376,20 @@ void PT2R12::compute()
     MPQC_ASSERT(r12world()->r12tech()->ansatz()->projector() == R12Technology::Projector_2);
 
 #if defined(HAVE_MPQC3_RUNTIME)
-    if (use_mpqc3_) {
       std::pair<double,double> e = energy_PT2R12_projector2_mpqc3();
       energy_pt2r12_sf = e.first;
       recomp_ref_energy = e.second;
-    } else
-#endif
-    {
+#else
       energy_pt2r12_sf = energy_PT2R12_projector2();
       recomp_ref_energy = this->energy_recomputed_from_densities();
-    }
+#endif
     energy_correction_r12 = energy_pt2r12_sf;
   }
 
 #if defined(HAVE_MPQC3_RUNTIME)
-  if(cabs_singles_ && use_mpqc3_)
+  if(cabs_singles_ )
   {
-    cabs_singles_e = CABS_Single_->compute(cabs_singles_h0_);
+    cabs_singles_e = cabs_singles_engine_->compute(cabs_singles_h0_);
   }
 #endif
 

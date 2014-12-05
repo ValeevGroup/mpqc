@@ -293,8 +293,7 @@ namespace sc {
                                      // in H(1).
       bool cabs_singles_coupling_; // if set to true, we include the coupling between cabs and OBS virtual orbitals. This should be preferred choice,
                                    // as explained in the paper.
-      bool use_mpqc3_;   // if set to true, then use MPQC3 runtime
-      std::shared_ptr<CABS_Single> CABS_Single_;
+      std::shared_ptr<CabsSingles> cabs_singles_engine_;
 #endif
       bool rotate_core_; // if set to false, when doing rasscf cabs_singles correction, don't include excitation from core orbitals to cabs orbitals in
                          // first-order Hamiltonian. (this may be used when using frozen core orbitals which
@@ -356,16 +355,6 @@ namespace sc {
                                             const Ref<OrbitalSpace> k1space,
                                             const Ref<OrbitalSpace> k2space);
 
-
-
-      /// compute CABS singles correction in the most complete way; in addition, a CI version is coded here too.
-      double cabs_singles_Complete();
-      /** the following 2 methods are from modification of cabs_singles_Complete_sf()**/
-
-      // compute CABS singles correction using Fock operator as H0
-      double cabs_singles_Fock();
-      // compute CABS singles correction using two-body operators in H0
-      double cabs_singles_Dyall();
 
       /// Returns Hcore in MO basis
       RefSymmSCMatrix hcore_mo();

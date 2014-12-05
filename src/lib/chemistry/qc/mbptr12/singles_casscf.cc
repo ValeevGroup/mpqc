@@ -12,64 +12,26 @@
 using namespace sc;
 using namespace std;
 
-namespace{
-template<typename T>
-    struct _CABS_singles {
 
-        typedef TA::Array<T, 4> Array4;
-        typedef TA::Array<T, 2> Array2;
-
-        const Array4& Bmatrix;
-
-        _CABS_singles(const Array4& B) : Bmatrix(B){
-        }
-
-        /**
-         * @param[in] C
-         * @param[out] BC
-         */
-        void operator()(const Array2& C, Array2& BC) {
-            BC("x,B'") = Bmatrix("x,B',y,A'") * C("y,A'");
-        }
-    };
-
-  /// makes a diagonal 2-index preconditioner: pc_x^y = -1/ ( <x|O1|x> - <y|O2|y> )
-  template <typename T>
-  struct diag_precond2 {
-    typedef Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> EigenMatrixX;
-    diag_precond2(const EigenMatrixX& O1_mat,
-                  const EigenMatrixX& O2_mat) :
-                      O1_mat_(O1_mat), O2_mat_(O2_mat) {
-    }
-    template <typename Index> T operator()(const Index& i) {
-      return 1.0 / (- O1_mat_(i[0], i[0]) + O2_mat_(i[1], i[1]));
-    }
-
-    private:
-      EigenMatrixX O1_mat_;
-      EigenMatrixX O2_mat_;
-  };
-}
-
-CABS_Single::CABS_Single(std::shared_ptr <SingleReference_R12Intermediates<double>> srr12intrmds) {
+CabsSingles::CabsSingles(std::shared_ptr <SingleReference_R12Intermediates<double>> srr12intrmds) {
   srr12intrmds_ = srr12intrmds;
 }
 
-double CABS_Single::compute(const std::string &h0) {
+double CabsSingles::compute(const std::string &h0) {
   double cabs_singles_e = 0.0;
   if(h0 == string("dyall_1"))
-    cabs_singles_e = cabs_singles_Dyall(h0);
+    cabs_singles_e = CabsSinglesDyall(h0);
   else if(h0 == string("dyall_2"))
-    cabs_singles_e = cabs_singles_Dyall(h0);
+    cabs_singles_e = CabsSinglesDyall(h0);
   else if(h0 == string("fock"))
-    cabs_singles_e = cabs_singles_Fock();
+    cabs_singles_e = CabsSinglesFock();
   else
     throw InputError("invalid value for keyword cabs_singles_h0",
                      __FILE__, __LINE__);
   return cabs_singles_e;
 }
 
-double CABS_Single::cabs_singles_Dyall(const std::string &h0)
+double CabsSingles::CabsSinglesDyall(const std::string &h0)
 {
   /*"Perturbative Correction for the Basis Set Incompleteness Error of CASSCF",
    * L. Kong and E.~F.~Valeev,  J. Chem. Phys. 133, 174126 (2010),
@@ -207,7 +169,7 @@ double CABS_Single::cabs_singles_Dyall(const std::string &h0)
     TArray2 preconditioner;
     {
 
-      typedef detail::diag_precond2<double> pceval_type;//!< evaluator of preconditioner
+      typedef DiagPrecond2<double> pceval_type;//!< evaluator of preconditioner
       typedef TA::Array<double, 2, LazyTensor<double, 2, pceval_type> > TArray2d;
       TArray2d Delta_iA(b.get_world(), b.trange());
 
@@ -232,9 +194,9 @@ double CABS_Single::cabs_singles_Dyall(const std::string &h0)
     tim.enter("conjugate gradient solver"); // time conjugate solver
 
     // initialize the function a(x)
-    _CABS_singles<double> cabs_singles(B);
+    CabsSingles_<double> cabs_singles(B);
     // linear solver object
-    TA::ConjugateGradientSolver<TArray2, _CABS_singles<double> > cg_solver;
+    TA::ConjugateGradientSolver<TArray2, CabsSingles_<double> > cg_solver;
     // solve the linear system, a(x) = b, cabs_singles_fock is a(x); x is x. b is b in a(x) = b
     auto resnorm = cg_solver(cabs_singles, b, x, preconditioner, 1e-12);
     //std::cout << "Converged CG to " << resnorm << std::endl;
@@ -249,7 +211,7 @@ double CABS_Single::cabs_singles_Dyall(const std::string &h0)
     return E;
 }
 
-double CABS_Single::cabs_singles_Fock() {
+double CabsSingles::CabsSinglesFock() {
   /*"Perturbative Correction for the Basis Set Incompleteness Error of CASSCF",
    * L. Kong and E.~F.~Valeev,  J. Chem. Phys. 133, 174126 (2010),
    * http://dx.doi.org/10.1063/1.3499600.
@@ -336,7 +298,7 @@ double CABS_Single::cabs_singles_Fock() {
     // make preconditioner: inverse of diagonal elements <A'|F|A'> - <m|F|m>
     TArray2 preconditioner;
     {
-      typedef diag_precond2<double> pceval_type; //!< evaluator of preconditioner
+      typedef DiagPrecond2<double> pceval_type; //!< evaluator of preconditioner
       typedef TA::Array<double, 2, LazyTensor<double, 2, pceval_type> > TArray2d;
       TArray2d Delta_iA(b.get_world(), b.trange());
 
@@ -362,8 +324,8 @@ double CABS_Single::cabs_singles_Fock() {
     std::cout << "preconditioner: \n" << preconditioner << std::endl;
 #endif
     tim.enter("conjugate gradient solver");
-    _CABS_singles<double> cabs_singles(B); // initialize the function a(x)
-    TA::ConjugateGradientSolver<TArray2, _CABS_singles<double> > cg_solver;// linear solver object
+    CabsSingles_<double> cabs_singles(B); // initialize the function a(x)
+    TA::ConjugateGradientSolver<TArray2, CabsSingles_<double> > cg_solver;// linear solver object
 
     // solve the linear system
     auto resnorm = cg_solver(cabs_singles, b, x, preconditioner, 1e-12);

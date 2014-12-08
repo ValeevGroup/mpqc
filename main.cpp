@@ -14,9 +14,10 @@
 #include "basis/cluster_shells.h"
 #include "basis/basis.h"
 
+#include "integrals/ta_compute_functors.h"
 #include "integrals/integral_engine_pool.h"
 #include "integrals/task_integrals.h"
-#include "integrals/low_tile_functors.h"
+#include "integrals/sparse_task_integrals.h"
 
 #include "purification/purification_devel.h"
 
@@ -29,12 +30,18 @@ int main(int argc, char *argv[]) {
     std::cout << "Basis set is " << bs << std::endl;
     molecule::Atom h1{{0, 0, 0}, 1, 1};
     molecule::Atom h2{{0, 0, 1}, 1, 1};
+    molecule::Atom h3{{0, 0, 2}, 1, 1};
+    molecule::Atom h4{{0, 0, 3}, 1, 1};
 
     auto cluster = std::make_shared<molecule::Cluster>();
     cluster->add_clusterable(std::move(h1));
     cluster->add_clusterable(std::move(h2));
 
-    basis::Basis basis{bs.create_basis({cluster})};
+    auto cluster2 = std::make_shared<molecule::Cluster>();
+    cluster2->add_clusterable(std::move(h3));
+    cluster2->add_clusterable(std::move(h4));
+
+    basis::Basis basis{bs.create_basis({cluster, cluster2})};
 
     std::cout << basis << std::endl;
 
@@ -61,8 +68,8 @@ int main(int argc, char *argv[]) {
 
     auto overlap_pool = integrals::make_pool(std::move(overlap));
     auto S = integrals::Integrals(
-        world, std::move(overlap_pool), basis,
-        integrals::compute_functors::LowRankTileFunctor<double>{1e-8});
+        world, overlap_pool, basis,
+        integrals::compute_functors::TaTileFunctor<double>{});
 
     libint2::OneBodyEngine kinetic{libint2::OneBodyEngine::kinetic, max_nprim,
                                    static_cast<int>(max_am)};
@@ -70,7 +77,7 @@ int main(int argc, char *argv[]) {
     auto kinetic_pool = integrals::make_pool(std::move(kinetic));
     auto T = integrals::Integrals(
         world, std::move(kinetic_pool), basis,
-        integrals::compute_functors::LowRankTileFunctor<double>{1e-8});
+        integrals::compute_functors::TaTileFunctor<double>{});
 
     libint2::OneBodyEngine nuclear{libint2::OneBodyEngine::nuclear, max_nprim,
                                    static_cast<int>(max_am)};
@@ -78,36 +85,28 @@ int main(int argc, char *argv[]) {
     auto nuclear_pool = integrals::make_pool(std::move(nuclear));
     auto V = integrals::Integrals(
         world, std::move(nuclear_pool), basis,
-        integrals::compute_functors::LowRankTileFunctor<double>{1e-8});
+        integrals::compute_functors::TaTileFunctor<double>{});
 
-    decltype(S) H(world, S.trange());
+    decltype(S) H;
     H("i,j") = V("i,j") + T("i,j");
 
-    for(auto it = S.begin(); it != S.end(); ++it){
-        std::cout << "\nS Matrix = \n" << it->get().tile().matrix() << std::endl;
-    }
+    std::cout << "S = \n" << S << std::endl;
+    std::cout << "H = \n" << H << std::endl;
 
-    for(auto it = T.begin(); it != T.end(); ++it){
-        std::cout << "\nT Matrix = \n" << it->get().tile().matrix() << std::endl;
-    }
+    auto sparse_S = integrals::SparseIntegrals(
+        world, overlap_pool, basis,
+        integrals::compute_functors::TaTileFunctor<double>{});
 
-    for(auto it = V.begin(); it != V.end(); ++it){
-        std::cout << "\nV Matrix = \n" << it->get().tile().matrix() << std::endl;
-    }
+    //    auto P = pure::purifier()(H, S, 2);
 
-    for(auto it = H.begin(); it != H.end(); ++it){
-        std::cout << "\nH Matrix = \n" << it->get().tile().matrix() << std::endl;
-    }
+    //   for (auto it = P.begin(); it != P.end(); ++it) {
+    //       std::cout << "\nP Matrix = \n" << it->get().tile().matrix()
+    //                 << std::endl;
+    //   }
 
-    auto P = pure::purifier()(H, S, 2);
+    //   std::cout << P.trange().tiles().extent()[0] << " "
+    //             << P.trange().tiles().extent()[1] << std::endl;
 
-    for(auto it = P.begin(); it != P.end(); ++it){
-        std::cout << "\nP Matrix = \n" << it->get().tile().matrix() << std::endl;
-    }
-    
-    std::cout << P.trange().tiles().extent()[0] << " " 
-        << P.trange().tiles().extent()[1] << std::endl;
-    
     world.gop.fence();
     return 0;
 }

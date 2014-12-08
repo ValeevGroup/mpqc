@@ -16,7 +16,7 @@
 
 #include "../basis/cluster_shells.h"
 #include "integral_engine_pool.h"
-#include "compute_functors.h"
+#include "btas_compute_functors.h"
 
 #include "../basis/basis.h"
 
@@ -67,7 +67,7 @@ Integrals(madness::World &world, SharedEnginePool engines,
 
     auto array = create_array<tensor_order, TileType>(world, basis);
 
-    initialize_tiles(array, std::move(engines), basis, tf);
+    initialize_tiles(array, engines, basis, tf);
     return array;
 }
 

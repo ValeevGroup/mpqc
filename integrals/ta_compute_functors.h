@@ -143,15 +143,15 @@ template <typename T>
 struct TaTileFunctor {
     using TileType = TiledArray::Tensor<T>;
 
-    template <typename It, typename SharedEnginePool>
-    TileType operator()(It it, basis::Basis const *basis,
-                        SharedEnginePool engines) const {
+    template <typename Index, typename SharedEnginePool>
+    TileType
+    operator()(TiledArray::Range range, Index index,
+               basis::Basis const *basis, SharedEnginePool engines) const {
 
-        auto idx = it.index();
         std::vector<basis::ClusterShells> clusters;
-        clusters.reserve(idx.size());
+        clusters.reserve(index.size());
 
-        for (auto const &i : idx) {
+        for (auto const &i : index) {
             clusters.push_back(basis->cluster_shells()[i]);
         }
 
@@ -161,7 +161,7 @@ struct TaTileFunctor {
                 engines->local(), clusters);
 
         // copy to TA
-        TileType ta_tensor{it.make_range()};
+        TileType ta_tensor{range};
         auto data = ta_tensor.data();
         auto const size = ta_tensor.size();
         for (auto i = 0ul; i < size; ++i) {

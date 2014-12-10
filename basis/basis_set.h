@@ -34,6 +34,9 @@ class BasisSet {
     std::vector<ClusterShells> create_basis(
         std::vector<std::shared_ptr<molecule::Cluster>> const &clusters) const;
 
+    std::vector<ClusterShells> create_basis(
+        std::vector<molecule::Cluster> const &clusters) const;
+
   private:
     void read_basis(std::string const &s);
 

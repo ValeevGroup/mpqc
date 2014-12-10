@@ -27,8 +27,8 @@ class trace_resetting_poly {
         occ = occ / 2;
         auto iter = 1;
 
-        while (std::abs(trace - occ) >= 1e-8 && iter <= 5) {
-            if (trace >= occ) {
+        while (std::abs(trace - occ) >= 1e-6 && iter <= 1000) {
+            if (trace > occ) {
                 D("i,j") = DS("i,k") * D("k,j");
                 std::cout << "\tshrinking trace" << std::endl;
             } else {
@@ -38,32 +38,16 @@ class trace_resetting_poly {
 
             DS("i,j") = D("i,k") * S("k,j");
 
-            auto matrix = DS.begin()->get().tile().matrix();
-            Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(matrix);
-            std::cout << "DS evals = " << es.eigenvalues().transpose()
-                      << std::endl;
-
             trace = array_trace(DS);
 
-            std::cout << "DS trace = " << trace << " trace and occ diff " << std::abs(trace - occ)<< std::endl;
+            std::cout << "DS trace = " << trace << " trace and occ diff "
+                      << std::abs(trace - occ) << std::endl;
             ++iter;
             D.get_world().gop.fence();
         }
-
     }
 
-    double array_trace(Array const &A) const {
-
-        auto trace = 0.0;
-        for (auto it = A.begin(); it != A.end(); ++it) {
-            auto idx = it.index();
-            if (idx[0] == idx[1]) {
-                trace += it->get().tile().matrix().trace();
-            }
-        }
-
-        return trace;
-    }
+    double array_trace(Array const &A) const { return A("i,j").trace(); }
 };
 
 
@@ -75,6 +59,10 @@ class purifier {
     Array operator()(Array const &H, Array const &S, std::size_t occupation,
                      Polynomial poly = Polynomial{}) {
         auto P = initial_guess(H, S);
+        Array PS; PS("i,j") = P("i,k") * S("k,j");
+        auto eig_PS = TiledArray::array_to_eigen(PS);
+        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(eig_PS);
+        std::cout << "Input evals = " << es.eigenvalues().transpose() << std::endl;
 
         poly(P, S, occupation);
 

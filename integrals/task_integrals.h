@@ -31,7 +31,7 @@ void initialize_tiles(Array &a, SharedEnginePool engines,
     const auto end = a.end();
     for (auto it = a.begin(); it != end; ++it) {
         auto call_tf = [=](basis::Basis const *basis_) {
-            *it = (tf(it, basis_, engines));
+            *it = (tf(it.make_range(), it.index(), basis_, engines));
         };
         a.get_world().taskq.add(call_tf, &basis);
     }

@@ -57,7 +57,7 @@ namespace sc {
       EigenMatrixX O2_mat_;
   };
 
-    std::shared_ptr <SingleReference_R12Intermediates<double>> srr12intrmds_;
+  std::shared_ptr <SingleReference_R12Intermediates<double>> singles_r12intrmds_;
 
     // compute CABS singles correction using Fock operator as H0
     double CabsSinglesFock();

@@ -47,6 +47,7 @@ using namespace std;
 using namespace sc;
 
 #include <chemistry/qc/mbptr12/pt2r12_utils.h>
+#include "../basis/gaussbas.h"
 
 static ClassDesc PT2R12_cd(typeid(PT2R12),"PT2R12",
                            1,"public Wavefunction",
@@ -130,6 +131,10 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
           throw InputError("spinadapted must be true for spin-free PT2R12 (the default is correct)",
                   __FILE__, __LINE__, "PT2R12");
       }
+      Ref<GaussianBasisSet> cabs;
+      cabs << r12world_keyval->describedclassvalue("aux_basis");
+      std::cout << "cabs basis address:  " << cabs.pointer() << std::endl;
+      std::cout << "cabs basis name:  " << cabs->name() << std::endl;
       r12world_ = new R12WavefunctionWorld(r12world_keyval, ref);
     }
     r12eval_ = new R12IntEval(r12world_);
@@ -151,15 +156,31 @@ PT2R12::PT2R12(const Ref<KeyVal> &keyval) : Wavefunction(keyval), B_(), X_(), V_
     else {
       Ref<AssignedKeyVal> aux_basis_akeyval = new AssignedKeyVal;
       aux_basis_akeyval->assign("aux_basis", cabs_singles_basis.pointer());
-      Ref<KeyVal> single_r12world_keyval = new AggregateKeyVal(r12world_keyval, aux_basis_akeyval);
+      std::cout << "I get here for singe aux basis" << std::endl;
+      Ref<KeyVal> single_r12world_keyval = new AggregateKeyVal(aux_basis_akeyval,  r12world_keyval);
+
+      Ref<GaussianBasisSet> cabs_sin;
+      cabs_sin << single_r12world_keyval->describedclassvalue("aux_basis");
+      std::cout << "cabs single basis address:  " << cabs_sin.pointer() << std::endl;
+      std::cout << "cabs single basis name:  " << cabs_sin->name() << std::endl;
+
+      //Ref<RefWavefunction> ref_single = new RefWavefunction(ref);
+
       Ref<R12WavefunctionWorld> single_r12world = new R12WavefunctionWorld(single_r12world_keyval, ref);
 
+
+      std::cout << "cabs r12world address:  " << r12world_.pointer() << std::endl;
+      std::cout << "cabs single r12world address:  " << single_r12world.pointer() << std::endl;
       std::shared_ptr< SingleReference_R12Intermediates<double> > single_r12intrmds = make_shared<SingleReference_R12Intermediates<double>>(madness::World::get_default(),
         single_r12world);
 
       single_r12intrmds->set_rdm2(this->rdm2_);
 
+      std::cout << "The address of cabs single r12intermidiates:  " << single_r12intrmds.get() << std::endl;
+
       cabs_singles_engine_ = make_shared <CabsSingles> (single_r12intrmds);
+      std::cout << "I get here for initialize CabsSingles" << std::endl;
+
     }
   }
 #endif
@@ -395,23 +416,23 @@ RefSCMatrix PT2R12::moints() {
 }
 
 RefSCMatrix PT2R12::C() {
-  Ref<LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
-  RefSCMatrix Cmat = local_matrix_kit->matrix(r12eval_->dim_GG(AlphaBeta),r12eval_->dim_gg(AlphaBeta));
-  SpinMOPairIter OW_iter(r12eval_->GGspace(AnySpinCase1)->rank(), r12eval_->GGspace(AnySpinCase1)->rank(), AlphaBeta );
-  SpinMOPairIter PQ_iter(r12eval_->ggspace(AnySpinCase1)->rank(), r12eval_->ggspace(AnySpinCase1)->rank(), AlphaBeta );
+  Ref <LocalSCMatrixKit> local_matrix_kit = new LocalSCMatrixKit();
+  RefSCMatrix Cmat = local_matrix_kit->matrix(r12eval_->dim_GG(AlphaBeta), r12eval_->dim_gg(AlphaBeta));
+  SpinMOPairIter OW_iter(r12eval_->GGspace(AnySpinCase1)->rank(), r12eval_->GGspace(AnySpinCase1)->rank(), AlphaBeta);
+  SpinMOPairIter PQ_iter(r12eval_->ggspace(AnySpinCase1)->rank(), r12eval_->ggspace(AnySpinCase1)->rank(), AlphaBeta);
   CuspConsistentGeminalCoefficient coeff_gen(AlphaBeta);
-  for(OW_iter.start(); int(OW_iter); OW_iter.next()) {
-    for(PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {
+  for (OW_iter.start(); int(OW_iter); OW_iter.next()) {
+    for (PQ_iter.start(); int(PQ_iter); PQ_iter.next()) {
       unsigned int O = OW_iter.i();
       unsigned int W = OW_iter.j();
       unsigned int P = PQ_iter.i();
       unsigned int Q = PQ_iter.j();
       int OW = OW_iter.ij();
       int PQ = PQ_iter.ij();
-      Cmat.set_element(OW,PQ,coeff_gen.C(O,W,P,Q));
+      Cmat.set_element(OW, PQ, coeff_gen.C(O, W, P, Q));
     }
   }
-  return(Cmat);
+  return (Cmat);
 }
 
 RefSCMatrix PT2R12::V_genref_projector2() {
@@ -736,6 +757,8 @@ double PT2R12::energy_PT2R12_projector2() {
     srr12intrmds_ = make_shared<SingleReference_R12Intermediates<double>>(madness::World::get_default(),
         this->r12world());
     srr12intrmds_->set_rdm2(this->rdm2_);
+
+    std::cout << "The address of cabs r12intermidiates:  " << srr12intrmds_.get() << std::endl;
   }
 
   void PT2R12::shutdown_mpqc3() {
@@ -755,6 +778,9 @@ PT2R12::energy_PT2R12_projector2_mpqc3() {
 
   typedef SingleReference_R12Intermediates<double>::TArray4 TArray4;
   typedef SingleReference_R12Intermediates<double>::TArray2 TArray2;
+
+
+  std::cout << "The address of cabs r12 r12intermidiates:  " << srr12intrmds_.get() << std::endl;
 
   const bool print_all = true;
   if(print_all)

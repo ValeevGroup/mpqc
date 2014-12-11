@@ -525,6 +525,7 @@ RefWavefunction::init() const
 
 void
 RefWavefunction::obsolete() {
+
   reset();
 }
 
@@ -1271,6 +1272,13 @@ Extern_RefWavefunction::Extern_RefWavefunction(StateIn& si) : RefWavefunction(si
 }
 
 Extern_RefWavefunction::~Extern_RefWavefunction() {
+}
+
+void Extern_RefWavefunction::obsolete() {
+//        throw FeatureNotImplemented("cannot obsolete Extern_R12RefWavefunction",
+//                                                    __FILE__, __LINE__);
+  world()->tfactory()->orbital_registry()->clear();
+  reset();
 }
 
 void

@@ -489,10 +489,7 @@ namespace sc {
 
       void print(std::ostream& os = ExEnv::out0()) const;
 
-      void obsolete() {
-//        throw FeatureNotImplemented("cannot obsolete Extern_R12RefWavefunction",
-//                                                    __FILE__, __LINE__);
-      }
+      void obsolete();
 
       bool sdref() const;
       double energy() { return 0.0; }

@@ -5,12 +5,27 @@
 #include "../include/tiledarray.h"
 #include "../include/eigen.h"
 
+#include <iomanip>
+
 namespace tcc {
 namespace pure {
 
 template <typename Array>
 Array create_diagonal_matrix(Array const &model, double val) {
-    Array diag(model.get_world(), model.trange());
+    TiledArray::Tensor<float> tile_shape(model.trange().tiles(), 0.0);
+    auto const &ntiles = model.trange().tiles().volume();
+
+    for (auto i = 0ul; i < ntiles; ++i) {
+        auto idx = model.trange().tiles().idx(i);
+        if (idx[0] == idx[1]) {
+            tile_shape[i] = 1.0;
+        }
+    }
+
+    TiledArray::SparseShape<float> shape(model.get_world(), tile_shape,
+                                         model.trange());
+
+    Array diag(model.get_world(), model.trange(), shape);
     diag.set_all_local(0.0);
     auto end = diag.end();
     for (auto it = diag.begin(); it != end; ++it) {
@@ -20,6 +35,40 @@ Array create_diagonal_matrix(Array const &model, double val) {
             idx.begin(), idx.end(), [&](typename Array::size_type const &x) {
                 return x == idx.front();
             });
+
+        if (diagonal_tile) {
+            auto &tile = it->get();
+            auto const &extent = tile.range().size();
+            auto map = TiledArray::eigen_map(tile, extent[0], extent[1]);
+            for (auto i = 0ul; i < extent[0]; ++i) {
+                map(i, i) = val;
+            }
+        }
+    }
+
+    return diag;
+}
+
+template <>
+TiledArray::Array<double, 2, TiledArray::Tensor<double>,
+                  TiledArray::DensePolicy>
+create_diagonal_matrix<TiledArray::Array<double, 2, TiledArray::Tensor<double>,
+                                         TiledArray::DensePolicy>>(
+    TiledArray::Array<double, 2, TiledArray::Tensor<double>,
+                      TiledArray::DensePolicy> const &model,
+    double val) {
+
+    TiledArray::Array<double, 2, TiledArray::Tensor<double>,
+                      TiledArray::DensePolicy> diag(model.get_world(),
+                                                    model.trange());
+    diag.set_all_local(0.0);
+    auto end = diag.end();
+    for (auto it = diag.begin(); it != end; ++it) {
+
+        auto idx = it.index();
+        auto diagonal_tile
+            = std::all_of(idx.begin(), idx.end(),
+                          [&](std::size_t &x) { return x == idx.front(); });
 
         if (diagonal_tile) {
             auto &tile = it->get();
@@ -96,14 +145,16 @@ void third_order_update(Array const &S, Array &Z) {
 
     auto emax = max_eval_est(S);
     auto S_scale = 1 / emax;
-    auto Ss_sqrt = std::sqrt(S_scale);
-    Array Y = S;
+    Array Y;
+    Y("i,j") = S("i,j");
     Array T;
     Array X;
     Array Sdiff;
     auto Tscale = 1.0 / 8.0;
 
     auto iter = 0;
+    // std::cout << std::setprecision(9) << std::endl;
+    // std::cout << std::fixed;
     while (100 > iter++) {
         // Xn = \lambda*Yn*Zn
         X("i,j") = S_scale * Y("i,k") * Z("k,j");
@@ -115,9 +166,12 @@ void third_order_update(Array const &S, Array &Z) {
 
         // Zn+1 = Zn*Tn
         Z("i,j") = Z("i,k") * T("k,j");
+        std::cout << "Z shape = " << Z.get_shape().data() << std::endl;
         // Yn+1 = Tn*Yn
         Y("i,j") = T("i,k") * Y("k,j");
         std::cout << "Iteration " << iter << std::endl;
+        // Z.truncate();
+        // Y.truncate();
     }
 
     Z("i,j") = std::sqrt(S_scale) * Z("i,j");

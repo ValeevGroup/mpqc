@@ -8,7 +8,7 @@
 #include "../basis/cluster_shells.h"
 #include "../tensor/tile_variant_devel.h"
 #include "../include/btas.h"
-#include "compute_functors.h"
+#include "btas_compute_functors.h"
 
 #include <memory>
 

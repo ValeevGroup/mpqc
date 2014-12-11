@@ -59,10 +59,12 @@ class purifier {
     Array operator()(Array const &H, Array const &S, std::size_t occupation,
                      Polynomial poly = Polynomial{}) {
         auto P = initial_guess(H, S);
-        Array PS; PS("i,j") = P("i,k") * S("k,j");
+        Array PS;
+        PS("i,j") = P("i,k") * S("k,j");
         auto eig_PS = TiledArray::array_to_eigen(PS);
         Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(eig_PS);
-        std::cout << "Input evals = " << es.eigenvalues().transpose() << std::endl;
+        std::cout << "Input evals = " << cut_ << " "
+                  << es.eigenvalues().transpose() << std::endl;
 
         poly(P, S, occupation);
 

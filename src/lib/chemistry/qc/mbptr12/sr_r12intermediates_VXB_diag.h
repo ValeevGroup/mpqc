@@ -1172,9 +1172,9 @@ namespace sc {
     TArray4 a_klij, b_abcd;
 
     double iter = 0;
-    std::cout << scprintf("%5s", "Iter") << scprintf("%12s", "Delta_E")
-              << scprintf("%12s", "E(CC2)") << std::endl;
-    std::cout << scprintf("%-5.0f", iter)   << scprintf("%-20.10f", Delta_E)
+    std::cout << indent << scprintf("%-5s", "Iter") << scprintf("%-20s", "Delta_E")
+              << scprintf("%-20s", "E(CC2)") << std::endl;
+    std::cout << indent << scprintf("%-5.0f", iter)   << scprintf("%-20.10f", Delta_E)
               << scprintf("%-15.10f", E_1) << std::endl;
 
     while (Delta_E >= 1.0e-9) {
@@ -1237,7 +1237,7 @@ namespace sc {
            + dot((2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j")), tau("a,b,i,j") );
       Delta_E = std::abs(E_0 - E_1);
       iter += 1;
-      std::cout << scprintf("%-5.0f", iter)   << scprintf("%-20.10f", Delta_E)
+      std::cout << indent << scprintf("%-5.0f", iter) << scprintf("%-20.10f", Delta_E)
                 << scprintf("%-15.10f", E_1) << std::endl;
     }
     std::cout << "CC2 T1 amplitudes: " << std::endl << t1 << std::endl;
@@ -1307,8 +1307,7 @@ namespace sc {
 
     // pseudo energy
     double E_0_L = 0.0;
-    double E_1_L = 2.0 * dot(fai("a,i"), L1("a,i"))
-                  + dot((2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j")), L2("a,b,i,j") );
+    double E_1_L = dot((2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j")), L2("a,b,i,j") );
     double Delta_E_L = std::abs(E_0_L - E_1_L);
 
 
@@ -1320,9 +1319,9 @@ namespace sc {
     TArray4d g_abcd = ijxy("<a b|g|c d>");
 
     double iter = 0;
-    std::cout << scprintf("%-5s", "Iter") << scprintf("%12s", "Delta_E_L")
-              << scprintf("%12s", "E_L(CC2)") << std::endl;
-    std::cout << scprintf("%-5.0f", iter)   << scprintf("%-20.10f", Delta_E_L)
+    std::cout << indent << scprintf("%-5s", "Iter") << scprintf("%-20s", "Delta_E_L")
+              << scprintf("%-20s", "E_L(CC2)") << std::endl;
+    std::cout << indent << scprintf("%-5.0f", iter) << scprintf("%-20.10f", Delta_E_L)
               << scprintf("%-15.10f", E_1_L) << std::endl;
 
     // intermediates for L1 & L2
@@ -1531,12 +1530,11 @@ namespace sc {
 #endif
 
       E_0_L = E_1_L;
-      E_1_L = 2.0 * dot(fai("a,i"), L1("a,i"))
-             + dot((2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j")), L2("a,b,i,j") );
+      E_1_L = dot((2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j")), L2("a,b,i,j") );
       Delta_E_L = std::abs(E_0_L - E_1_L);
 
       iter += 1;
-      std::cout << scprintf("%-5.0f", iter)   << scprintf("%-20.10f", Delta_E_L)
+      std::cout << indent << scprintf("%-5.0f", iter) << scprintf("%-20.10f", Delta_E_L)
                 << scprintf("%-15.10f", E_1_L) << std::endl;
     }
     std::cout << "CC2 L1 amplitudes: " << std::endl << L1 << std::endl;
@@ -1552,7 +1550,6 @@ namespace sc {
     TArray2 fab = xy("<a|F|b>");
     TArray2 fai = xy("<a|F|i>");
 
-#if 1
     // compute Delta_ai = 1 / (- <a|F|a> + <i|F|i>)
     typedef detail::diag_precond2<double> pceval_type;
     pceval_type Delta_ai_gen(TA::array_to_eigen(fab), TA::array_to_eigen(fij));
@@ -1598,42 +1595,27 @@ namespace sc {
         Delta_abij.set(*t, tile);
       }
 
+    // pseudo energy
     L1("a,i") = t1("a,i");
     L2("a,b,i,j") = t2("a,b,i,j");
 
     double E_0_L = 0.0;
-    double E_1_L = 2.0 * dot(fai("a,i"), L1("a,i"))
-                  + dot((2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j")), L2("a,b,i,j") );
-
-    double E_1_L_aa = 0.5 *  dot((g_abij("a,b,i,j") - g_abij("b,a,i,j")), L2("a,b,i,j") );
-    double E_1_L_ab = dot(g_abij("a,b,i,j"), L2("a,b,i,j"));
+    double E_1_L = dot((2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j")), L2("a,b,i,j") );
     double Delta_E_L = std::abs(E_0_L - E_1_L);
 
+    double iter = 0;
+    std::cout << indent << scprintf("%-5s", "Iter") << scprintf("%-20s", "Delta_E_L")
+              << scprintf("%-20s", "E_L(CC2)") << std::endl;
+    std::cout << indent << scprintf("%-5.0f", iter) << scprintf("%-20.10f", Delta_E_L)
+              << scprintf("%-15.10f", E_1_L) << std::endl;
 
-    TArray4d g_abci = ijxy("<a b|g|c i>"); // g_aicd = ijxy("<a i|g|c d>");
-    TArray4d g_aikl = ijxy("<a i|g|k l>"); // g_klia = ijxy("<k l|g|i a>");
-    TArray4d g_aibj = ijxy("<a i|g|b j>"); // g_iajb = ijxy("<i a|g|j b>");
-    TArray4d g_aijb = ijxy("<a i|g|j b>"); // g_iabj = ijxy("<i a|g|b j>");
+    // intermediates for computing L1 & L2
+    TArray4d g_abci = ijxy("<a b|g|c i>");
+    TArray4d g_aikl = ijxy("<a i|g|k l>");
+    TArray4d g_aibj = ijxy("<a i|g|b j>");
+    TArray4d g_aijb = ijxy("<a i|g|j b>");
     TArray4d g_ijkl = ijxy("<i j|g|k l>");
     TArray4d g_abcd = ijxy("<a b|g|c d>");
-
-    // intermediates for L1 & L2
-    TArray2 Iai, Gac, Kki, Iai_L2;
-    TArray4 R_akic, Q_akic, A_klim, E_klic, B_aecd, F_akcd;
-    TArray4 H_abcj, J_kbij;
-
-    Iai("a,i") =  fai("a,i")
-                + (2.0 * g_abij("a,c,i,k") - g_abij("a,c,k,i")) * t1("c,k");
-    //TArray4 I_abij; I_abij("a,b,i,j") = g_abij("a,b,i,j");
-
-    double iter = 0;
-    std::cout << scprintf("%-5s", "Iter") << scprintf("%12s", "Delta_E_L")
-              << scprintf("%12s", "E_L(CC2)") << std::endl;
-    std::cout << scprintf("%-5.0f", iter)   << scprintf("%-20.10f", Delta_E_L)
-              << scprintf("%-15.10f", E_1_L)
-              << scprintf("%-15.10f", E_1_L_aa)
-              << scprintf("%-15.10f", E_1_L_ab)
-              << std::endl;
 
     TArray4 tau2_aa, tau2_ab, Ttau_aa, Ttau_ab;
     tau2_aa("a,b,i,j") =  t2("a,b,i,j") - t2("b,a,i,j")
@@ -1653,8 +1635,6 @@ namespace sc {
     Ttaut1_ab("a,b,i,j") =  0.5 * t1("a,i") * t1("b,j");
 
     TArray2 TFme, TFae, TFmi;
-    TArray2 CFme, CFae, CFmi;
-
     TFme("m,e") =  //   fme
                    // + t^f_n g^mn_ef
                   (2.0 * g_abij("e,f,m,n") - g_abij("e,f,n,m")) * t1("f,n");
@@ -1673,21 +1653,14 @@ namespace sc {
                  + Ttau_ab("e,f,i,n") * g_abij("e,f,m,n")
                  ;
 
+    TArray2 CFme, CFae, CFmi;
     CFme("m,e") = TFme("m,e");
     CFae("a,e") = TFae("a,e") - 0.5 * t1("a,m") * TFme("m,e");
     CFmi("m,i") = TFmi("m,i") + 0.5 * t1("e,i") * TFme("m,e");
 
-    //std::cout << std::endl << "... FINISH CF ..." << std::endl;
-#endif
+    // compute \cal{W}mbej
+    TArray4 TW_MBEJ_aa, TW_MbEj_ab,CW_MBEJ_aa, CW_MbEj_ab;
 
-    TArray4 TW_MBEJ_aa, TW_MbEj_ab, TW_ABEF_aa, TW_AbEf_ab,
-            TW_MNIJ_aa, TW_MnIj_ab;
-    TArray4 CW_MBEJ_aa, CW_MbEj_ab, CW_ABEF_aa, CW_AbEf_ab,
-            CW_MNIJ_aa, CW_MnIj_ab;
-    TArray4 CW_ABEI_aa, CW_AbEi_ab, CW_MBIJ_aa, CW_MbIj_ab;
-    TArray4 CW_MnIe_ab, CW_MniE_ab, CW_aMEf_ab, CW_AmEf_ab;
-
-#if 1
     // \tilde{W}mbej:
     // alpha-alpha case
     TW_MBEJ_aa("m,b,e,j") =  //   g^mb_ej
@@ -1701,10 +1674,10 @@ namespace sc {
 
                              // - 1/2 (t^fb_jn + 2 t^f_j t^b_n) g^mn_ef:
                              // + 1/2 t^bf_jn g^mn_ef
-                           + 0.5 * (  2.0 * t2("b,f,j,n") * g_abij("e,f,m,n")
-                                    - t2("f,b,j,n") * g_abij("e,f,m,n")
-                                    - t2("b,f,j,n") * g_abij("f,e,m,n")
-                                    + t2("f,b,j,n") * g_abij("f,e,m,n")
+                           + 0.5 * (  (2.0 * t2("b,f,j,n") - t2("f,b,j,n"))
+                                      * g_abij("e,f,m,n")
+                                    - (t2("b,f,j,n") - t2("f,b,j,n"))
+                                      * g_abij("f,e,m,n")
                                    )
                              // - t^f_j t^b_n g^mn_ef
                            - t1("f,j") * t1("b,n")
@@ -1720,9 +1693,8 @@ namespace sc {
 
                             // - 1/2 (t^fb_jn + 2 t^f_j t^b_n) g^mn_ef:
                             // + 1/2 t^bf_jn g^mn_ef
-                          + 0.5 * (
-                                     2.0 * t2("b,f,j,n") * g_abij("e,f,m,n")
-                                   - t2("f,b,j,n") * g_abij("e,f,m,n")
+                          + 0.5 * (  (2.0 * t2("b,f,j,n") - t2("f,b,j,n"))
+                                     * g_abij("e,f,m,n")
                                    - t2("b,f,j,n") * g_abij("f,e,m,n")
                                    )
                             // - t^f_j t^b_n g^mn_ef
@@ -1747,8 +1719,10 @@ namespace sc {
                            + 0.5 * t2("f,b,n,j")
                                  * (g_abij("e,f,m,n") - g_abij("f,e,m,n"))
                            ;
-    //std::cout << std::endl << "... FINISH CWmbej ..." << std::endl;
-#endif
+
+
+    // compute \cal{W}abei
+    TArray4 TW_ABEF_aa, TW_AbEf_ab, CW_ABEF_aa, CW_AbEf_ab, CW_ABEI_aa, CW_AbEi_ab;
 
     // \tilde{W}abef
     TW_ABEF_aa("a,b,e,f") =  //  g^ab_ef
@@ -1788,82 +1762,79 @@ namespace sc {
                              // + 1/4 tau^ab_mn g^mn_ef
                            + 0.5 * tau2t1_ab("a,b,m,n") * g_abij("e,f,m,n");
 
-    //std::cout << std::endl << "... FINISH CWabef ..." << std::endl;
-
     // \cal{W}abei
     CW_ABEI_aa("a,b,e,i") =  //   g^ab_ei
                              g_abci("a,b,e,i") - g_abci("b,a,e,i")
 
-//                             // - \cal{F}me t^ab_mi
-//                           //- CFme("m,e") * (t2("a,b,m,i") - t2("b,a,m,i"))
-//
-//                             // + t^f_i \cal{W}abef
-//                           + t1("f,i") * CW_ABEF_aa("a,b,e,f")
-//
-//                             // + 1/2 g^mn_ei tau^ab_mn
-//                           + 0.5 * (g_aikl("e,i,m,n") - g_aikl("e,i,n,m")) * tau2t1_aa("a,b,m,n")
-//
-//                             // - P(ab) g^mb_ef t^af_mi:
-//                             // - g^mb_ef t^af_mi = - g^bm_ef t^fa_mi
-//                           //- (g_abci("f,e,b,m") - g_abci("e,f,b,m")) * (t2("a,f,m,i") - t2("f,a,m,i")) // m,f in alpha space
-//                           //- g_abci("e,f,b,m") * t2("f,a,m,i") // m,f in beta space
-//                             // + g^ma_ef t^bf_mi = + g^am_ef t^fb_mi
-//                           //+ g_abci("f,e,a,m") * t2("b,f,m,i") - g_abci("e,f,a,m") * t2("b,f,m,i")
-//                           //- g_abci("f,e,a,m") * t2("f,b,m,i") + 2.0 * g_abci("e,f,a,m") * t2("f,b,m,i")
-//
-//                             // - P(ab) t^a_m (g^mb_ei - t^bf_ni g^mn_ef):
-//                             // - t^a_m (g^mb_ei - t^bf_ni g^mn_ef) = - t^a_m (g^mb_ei + t^fb_ni g^mn_ef)
-//                           - t1("a,m")
-//                             * (  g_aijb("b,m,i,e") - g_aibj("b,m,e,i")
-//                                //- (  t2("b,f,n,i") * g_abij("e,f,m,n") - 2.0 * t2("f,b,n,i") * g_abij("e,f,m,n")
-//                                //   - t2("b,f,n,i") * g_abij("f,e,m,n") + t2("f,b,n,i") * g_abij("f,e,m,n"))
-//                               )
-//                             // + t^b_m (g^ma_ei - t^af_ni g^mn_ef) = + t^b_m (- g^am_ei + t^af_in g^mn_ef)
-//                           + t1("b,m")
-//                             * (- g_aibj("a,m,e,i") + g_aijb("a,m,i,e")
-//                                //+ (  2.0 * t2("f,a,n,i") * g_abij("e,f,m,n") - t2("a,f,n,i") * g_abij("e,f,m,n")
-//                                //   - t2("f,a,n,i") * g_abij("f,e,m,n") + t2("a,f,n,i") * g_abij("f,e,m,n")
-//                                //   )
-//                                )
+                             // - \cal{F}me t^ab_mi
+                           //- CFme("m,e") * (t2("a,b,m,i") - t2("b,a,m,i"))
+
+                             // + t^f_i \cal{W}abef
+                           + t1("f,i") * CW_ABEF_aa("a,b,e,f")
+
+                             // + 1/2 g^mn_ei tau^ab_mn
+                           + 0.5 * (g_aikl("e,i,m,n") - g_aikl("e,i,n,m")) * tau2t1_aa("a,b,m,n")
+
+                             // - P(ab) g^mb_ef t^af_mi (=> 0 for cc2):
+                             // - g^mb_ef t^af_mi = - g^bm_ef t^fa_mi
+                           //- (g_abci("f,e,b,m") - g_abci("e,f,b,m")) * (t2("a,f,m,i") - t2("f,a,m,i")) // m,f in alpha space
+                           //- g_abci("e,f,b,m") * t2("f,a,m,i") // m,f in beta space
+                             // + g^ma_ef t^bf_mi = + g^am_ef t^fb_mi
+                           //+ g_abci("f,e,a,m") * t2("b,f,m,i") - g_abci("e,f,a,m") * t2("b,f,m,i")
+                           //- g_abci("f,e,a,m") * t2("f,b,m,i") + 2.0 * g_abci("e,f,a,m") * t2("f,b,m,i")
+
+                             // - P(ab) t^a_m (g^mb_ei - t^bf_ni g^mn_ef):
+                             // - t^a_m (g^mb_ei - t^bf_ni g^mn_ef) = - t^a_m (g^mb_ei + t^fb_ni g^mn_ef)
+                           - t1("a,m")
+                             * (  g_aijb("b,m,i,e") - g_aibj("b,m,e,i")
+                                //- (  t2("b,f,n,i") * g_abij("e,f,m,n") - 2.0 * t2("f,b,n,i") * g_abij("e,f,m,n")
+                                //   - t2("b,f,n,i") * g_abij("f,e,m,n") + t2("f,b,n,i") * g_abij("f,e,m,n"))
+                               )
+                             // + t^b_m (g^ma_ei - t^af_ni g^mn_ef) = + t^b_m (- g^am_ei + t^af_in g^mn_ef)
+                           + t1("b,m")
+                             * (- g_aibj("a,m,e,i") + g_aijb("a,m,i,e")
+                                //+ (  2.0 * t2("f,a,n,i") * g_abij("e,f,m,n") - t2("a,f,n,i") * g_abij("e,f,m,n")
+                                //   - t2("f,a,n,i") * g_abij("f,e,m,n") + t2("a,f,n,i") * g_abij("f,e,m,n")
+                                //   )
+                                )
                            ;
-    //std::cout << std::endl << "... FINISH CWabei AA ..." << std::endl;
 
     CW_AbEi_ab("a,b,e,i") =  //   g^ab_ei
                              g_abci("a,b,e,i")
 
-//                             // - \cal{F}me t^ab_mi
-//                           //- CFme("m,e") * t2("a,b,m,i")
-//
-//                             // + t^f_i \cal{W}abef
-//                           + t1("f,i") * CW_AbEf_ab("a,b,e,f")
-//
-//                             // + 1/2 g^mn_ei tau^ab_mn
-//                           + g_aikl("e,i,m,n") * tau2t1_ab("a,b,m,n")
-//
-//                             // - P(ab) g^mb_ef t^af_mi:
-//                             // - g^mb_ef t^af_mi
-//                           //- g_abci("f,e,b,m") * t2("a,f,m,i")
-//                             // + g^ma_ef t^bf_mi = + g^am_ef t^fb_mi
-//                           //+ (g_abci("e,f,a,m") - g_abci("f,e,a,m")) * t2("f,b,m,i")
-//                           //+ g_abci("e,f,a,m") * (t2("f,b,m,i") - t2("b,f,m,i"))
-//
-//                             // - P(ab) t^a_m (g^mb_ei - t^bf_ni g^mn_ef):
-//                             // - t^a_m (g^mb_ei - t^bf_ni g^mn_ef) = - t^a_m (g^mb_ei + t^fb_ni g^mn_ef)
-//                           - t1("a,m")
-//                             * (  g_aijb("b,m,i,e")
-//                                //+ t2("f,b,n,i") * (g_abij("e,f,m,n") - g_abij("f,e,m,n"))
-//                                //+ (t2("f,b,n,i") - t2("b,f,n,i")) * g_abij("e,f,m,n")
-//                                )
-//                              // + t^b_m (g^ma_ei - t^af_ni g^mn_ef) = + t^b_m (- g^am_ei + t^af_ni g^nm_ef)
-//                           + t1("b,m")
-//                             * (- g_aibj("a,m,e,i")
-//                                //+ t2("a,f,n,i") * g_abij("e,f,n,m")
-//                               )
+                             // - \cal{F}me t^ab_mi
+                           //- CFme("m,e") * t2("a,b,m,i")
+
+                             // + t^f_i \cal{W}abef
+                           + t1("f,i") * CW_AbEf_ab("a,b,e,f")
+
+                             // + 1/2 g^mn_ei tau^ab_mn
+                           + g_aikl("e,i,m,n") * tau2t1_ab("a,b,m,n")
+
+                             // - P(ab) g^mb_ef t^af_mi (=> 0 for cc2):
+                             // - g^mb_ef t^af_mi
+                           //- g_abci("f,e,b,m") * t2("a,f,m,i")
+                             // + g^ma_ef t^bf_mi = + g^am_ef t^fb_mi
+                           //+ (g_abci("e,f,a,m") - g_abci("f,e,a,m")) * t2("f,b,m,i")
+                           //+ g_abci("e,f,a,m") * (t2("f,b,m,i") - t2("b,f,m,i"))
+
+                             // - P(ab) t^a_m (g^mb_ei - t^bf_ni g^mn_ef):
+                             // - t^a_m (g^mb_ei - t^bf_ni g^mn_ef) = - t^a_m (g^mb_ei + t^fb_ni g^mn_ef)
+                           - t1("a,m")
+                             * (  g_aijb("b,m,i,e")
+                                //+ t2("f,b,n,i") * (g_abij("e,f,m,n") - g_abij("f,e,m,n"))
+                                //+ (t2("f,b,n,i") - t2("b,f,n,i")) * g_abij("e,f,m,n")
+                                )
+                              // + t^b_m (g^ma_ei - t^af_ni g^mn_ef) = + t^b_m (- g^am_ei + t^af_ni g^nm_ef)
+                           + t1("b,m")
+                             * (- g_aibj("a,m,e,i")
+                                //+ t2("a,f,n,i") * g_abij("e,f,n,m")
+                               )
                            ;
-    //std::cout << std::endl << "... FINISH CWabei ..." << std::endl;
 
+    // compute \cal{W}mbij
+    TArray4 TW_MNIJ_aa, TW_MnIj_ab, CW_MNIJ_aa, CW_MnIj_ab, CW_MBIJ_aa, CW_MbIj_ab;
 
-#if 1
     // \tilde{W}mnij
     TW_MNIJ_aa("m,n,i,j") =  // g^mn_ij
                              g_ijkl("m,n,i,j") - g_ijkl("n,m,i,j")
@@ -1875,7 +1846,7 @@ namespace sc {
                            + t1("e,i") * (g_aikl("e,j,m,n") - g_aikl("e,j,n,m"))
 
                              // + 0.25 * tau^ef_ij * g^mn_ef
-                           + 0.25 * tau2_aa("e,f,i,j") * (g_abij("e,f,m,n") - g_abij("e,f,n,m"))
+                           + 0.25 * tau2t1_aa("e,f,i,j") * (g_abij("e,f,m,n") - g_abij("e,f,n,m"))
                             ;
     TW_MnIj_ab("m,n,i,j") =  // g^mn_ij
                              g_ijkl("m,n,i,j")
@@ -1887,7 +1858,7 @@ namespace sc {
                            + t1("e,i") * g_aikl("e,j,m,n")
 
                              // + 0.25 * tau^ef_ij * g^mn_ef
-                           + 0.5 * tau2_ab("e,f,i,j") * g_abij("e,f,m,n")
+                           + 0.5 * tau2t1_ab("e,f,i,j") * g_abij("e,f,m,n")
                            ;
 
     // \cal{W}mnij
@@ -1901,7 +1872,6 @@ namespace sc {
                              // + 1/4 tau^ef_ij g^mn_ef
                            + 0.5 * tau2t1_ab("e,f,i,j") * g_abij("e,f,m,n")
                            ;
-    //std::cout << std::endl << "... FINISH CWmnij ..." << std::endl;
 
     // \cal{W}mbij
     CW_MBIJ_aa("m,b,i,j") =  //   g^mb_ij
@@ -1916,7 +1886,7 @@ namespace sc {
                              // + 0.5 g^mb_ef tau^ef_ij
                            + 0.5 * (g_abci("f,e,b,m") - g_abci("e,f,b,m")) * tau2t1_aa("e,f,i,j")
 
-                             // + P(ij) g^mn_ie t^be_jn：
+                             // + P(ij) g^mn_ie t^be_jn (=> 0 for cc2)：
                              // + g^mn_ie t^be_jn
                            //+ 2.0 * g_aikl("e,i,n,m") * t2("b,e,j,n") - g_aikl("e,i,m,n") * t2("b,e,j,n")
                            //- g_aikl("e,i,n,m") * t2("b,e,n,j") + g_aikl("e,i,m,n") * t2("b,e,n,j")
@@ -1940,7 +1910,6 @@ namespace sc {
                                 //- t2("b,f,i,n") * g_abij("f,e,m,n") + t2("f,b,i,n") * g_abij("f,e,m,n")
                                 )
                            ;
-    //std::cout << std::endl << "... FINISH CWmbij AA ..." << std::endl;
 
     CW_MbIj_ab("m,b,i,j") =  //   g^mb_ij
                              g_aikl("b,m,j,i")
@@ -1952,9 +1921,9 @@ namespace sc {
                            - t1("b,n") * CW_MnIj_ab("m,n,i,j")
 
                              // + 0.5 g^mb_ef tau^ef_ij
-                           + g_abci("f,e,b,m") * tau2_ab("e,f,i,j")
+                           + g_abci("f,e,b,m") * tau2t1_ab("e,f,i,j")
 
-                             // + P(ij) g^mn_ie t^be_jn
+                             // + P(ij) g^mn_ie t^be_jn (=> 0 for cc2):
                              // + g^mn_ie t^be_jn
                            //+ 2.0 * g_aikl("e,i,n,m") * t2("b,e,j,n") - g_aikl("e,i,n,m") * t2("b,e,n,j")
                            //- g_aikl("e,i,m,n") * t2("b,e,j,n")
@@ -1975,7 +1944,9 @@ namespace sc {
                                 //+ t2("b,f,n,i") * g_abij("f,e,m,n")
                                )
                            ;
-    //std::cout << std::endl << "... FINISH CWmbij ..." << std::endl;
+
+    // intermediates for L2
+    TArray4 CW_MnIe_ab, CW_MniE_ab, CW_AmEf_ab, CW_aMEf_ab;
 
     CW_MnIe_ab("m,n,i,e") =  //   g^mn_ie
                              g_aikl("e,i,n,m")
@@ -1999,10 +1970,6 @@ namespace sc {
                            + t1("a,n") * g_abij("f,e,n,m")
                            ;
 
-    //std::cout << std::endl << "... FINISH CW for L2 ..." << std::endl;
-
-#endif
-
     while (Delta_E_L >= 1.0e-9) {
 
       L1("a,i") =  Delta_ai("a,i") * (
@@ -2017,12 +1984,10 @@ namespace sc {
                    // + 1/2 \lambda^im_ef \cal{W}efam
                  + 0.5 * (L2("e,f,i,m") - L2("e,f,m,i") ) * CW_ABEI_aa("e,f,a,m")
                  + L2("e,f,i,m") * CW_AbEi_ab("e,f,a,m")
-//                   // - 1/2 \lambda^mn_ae \cal{W}iemn
-//                 - 0.5 * (L2("a,e,m,n") - L2("e,a,m,n") ) * CW_MBIJ_aa("i,e,m,n")
-//                 - L2("a,e,m,n") * CW_MbIj_ab("i,e,m,n")
+                   // - 1/2 \lambda^mn_ae \cal{W}iemn
+                 - 0.5 * (L2("a,e,m,n") - L2("e,a,m,n") ) * CW_MBIJ_aa("i,e,m,n")
+                 - L2("a,e,m,n") * CW_MbIj_ab("i,e,m,n")
                   );
-
-      //std::cout << std::endl << "... FINISH L1 ..." << std::endl;
 
       L2("a,b,i,j") =  Delta_abij("a,b,i,j") * (
                        //   g^ij_ab
@@ -2050,18 +2015,16 @@ namespace sc {
                      //- L1("a,j") * CFme("i,b")
                      + L1("b,j") * CFme("i,a")
                      );
-      //std::cout << std::endl << "... FINISH L2 ..." << std::endl;
 
       E_0_L = E_1_L;
-      E_1_L = 2.0 * dot(fai("a,i"), L1("a,i"))
-             + dot((2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j")), L2("a,b,i,j") );
+      E_1_L = dot((2.0 * g_abij("a,b,i,j") - g_abij("b,a,i,j")), L2("a,b,i,j") );
       Delta_E_L = std::abs(E_0_L - E_1_L);
 
       iter += 1;
-      std::cout << scprintf("%-5.0f", iter)   << scprintf("%-20.10f", Delta_E_L)
+      std::cout << indent << scprintf("%-5.0f", iter) << scprintf("%-20.10f", Delta_E_L)
                 << scprintf("%-15.10f", E_1_L) << std::endl;
     }
-    //std::cout << "L1: " << std::endl << L1 << std::endl;
+    std::cout << "CC2 L1 amplitudes: " << std::endl << L1 << std::endl;
   }
 
   // compute CC2 one-electron density from amplitudes
@@ -2482,19 +2445,24 @@ namespace sc {
   template <typename T>
   void SingleReference_R12Intermediates<T>::compute_multipole() {
 
-    ExEnv::out0() << indent << "Start to compute CC2" << std::endl;
+    ExEnv::out0() << std::endl << indent << "Start CC2 computation" << std::endl;
     // compute CC2 amplitudes using Schaefer's formula
     TArray2 T1_cc2, L1_cc2;
     TArray4 T2_cc2, L2_cc2;
+
+    ExEnv::out0() << std::endl << indent << "Compute CC2 T amplitudes " << std::endl;
     compute_T_cc2(T1_cc2,T2_cc2);
+
+    ExEnv::out0() << std::endl << indent << "Compute CC2 lambda amplitudes " << std::endl;
     compute_lambda_cc2(T1_cc2, T2_cc2, L1_cc2, L2_cc2);
 
-//    // debug code (still has bug(s) in it)
-//    // compute CC2 lambda amplitudes using Gauss's formula
-//    TArray2 L1_cc2_2;
-//    TArray4 L2_cc2_2;
-//    ExEnv::out0() << indent << "compute CC2 lambda amplitudes using Gauss's formula" << std::endl;
-//    compute_lambda_cc2_2(T1_cc2, T2_cc2, L1_cc2_2, L2_cc2_2);
+#if 0
+    // compute CC2 lambda amplitudes using Gauss's formula
+    TArray2 L1_cc2_2;
+    TArray4 L2_cc2_2;
+    ExEnv::out0() << indent << "Using Gauss's formula" << std::endl;
+    compute_lambda_cc2_2(T1_cc2, T2_cc2, L1_cc2_2, L2_cc2_2);
+#endif
 
     // compute CC2 density and Xam (right-side of Z-vector equation)
     // still working on it ... (code is incomplete)

@@ -1177,7 +1177,7 @@ namespace sc {
     std::cout << indent << scprintf("%-5.0f", iter)   << scprintf("%-20.10f", Delta_E)
               << scprintf("%-15.10f", E_1) << std::endl;
 
-    while (Delta_E >= 1.0e-9) {
+    while (Delta_E >= 1.0e-12) {
 
       // recompute T1 and T2 amplitudes
       hac("a,c") = //- fab("a,c") * (Iab("a,c") - 1.0)
@@ -1390,7 +1390,7 @@ namespace sc {
     J_kbij("k,b,i,j") =  g_aikl("b,k,j,i")
                        + g_abij("b,c,j,i")  * t1("c,k");
 
-    while (Delta_E_L >= 1.0e-9) {
+    while (Delta_E_L >= 1.0e-12) {
 
       // close-shell L^a_i & alpha-beta case L^ab_ij
       L1("a,i") = Delta_ai("a,i") * (
@@ -2035,53 +2035,46 @@ namespace sc {
                            TArray2& Dij_cc2, TArray2& Dab_cc2,
                            TArray2& Dia_cc2, TArray2& Dai_cc2) {
 
-    Dij_cc2("i,j") = - 2.0 * (T2_cc2("c,d,i,k") - T2_cc2("c,d,k,i"))
-                           * L2_cc2("c,d,j,k")
-                     - T1_cc2("c,i") * L1_cc2("c,j");
+    Dij_cc2("i,j") =  // - 1/4 P+(ij) t^ef_im lambda^jm_ef
+                    - 0.5 * (  (2.0 *  T2_cc2("c,d,i,k") - T2_cc2("c,d,k,i"))
+                               * L2_cc2("c,d,j,k")
+                             + (2.0 *  T2_cc2("c,d,j,k") - T2_cc2("c,d,k,j"))
+                               * L2_cc2("c,d,i,k")
+                            )
+                      // - 1/2 P+(ij) t^e_i lambda^j_e
+                    - 0.5 * (  T1_cc2("c,i") * L1_cc2("c,j")
+                             + T1_cc2("c,j") * L1_cc2("c,i")
+                            )
+                    ;
+    //std::cout << "Dij_cc2: " << std::endl << Dij_cc2 << std::endl;
 
-    std::cout << "Dij_cc2: " << std::endl << Dij_cc2 << std::endl;
+    Dab_cc2("a,b") =  //   1/4 P+(ab) t^mn_ae lambda^be_mn
+                      0.5 * (  (2.0 *  T2_cc2("a,c,k,l") - T2_cc2("c,a,k,l"))
+                               * L2_cc2("b,c,k,l")
+                             + (2.0 *  T2_cc2("b,c,k,l") - T2_cc2("c,b,k,l"))
+                               * L2_cc2("a,c,k,l")
+                            )
+                      // + 1/2 P+(ab) lambda^m_a t^b_m
+                    + 0.5 * (  L1_cc2("a,k") * T1_cc2("b,k")
+                             + L1_cc2("b,k") * T1_cc2("a,k")
+                            )
+                    ;
 
-    double sum_Dij = 0;
-    for (std::size_t i = 0; i < 4; ++i) {
-      for (std::size_t j = 0; j < 4; ++j) {
-        std::vector<std::size_t> indices(2);
-        indices[0] = i;
-        indices[1] = j;
-        sum_Dij += get_element(Dij_cc2, indices);
-      }
-    }
-    std::cout << "sum_Dij: " << sum_Dij << std::endl;
-
-    Dab_cc2("a,b") =  2.0 * (T2_cc2("a,c,k,l") - T2_cc2("c,a,k,l")) * L2_cc2("b,c,k,l")
-                    + T1_cc2("a,k") * L1_cc2("b,k");
-    //std::cout << "Dab_cc2: " << std::endl << Dab_cc2 << std::endl;
-    double sum_Dab = 0;
-    for (std::size_t a = 0; a < 30; ++a) {
-      for (std::size_t b = 0; b < 30; ++b) {
-        std::vector<std::size_t> indices(2);
-        indices[0] = a;
-        indices[1] = b;
-        sum_Dab += get_element(Dab_cc2, indices);
-      }
-    }
-    std::cout << "sum_Dab: " << sum_Dab << std::endl;
-
-    Dia_cc2("i,a") = T1_cc2("a,i")
-
+    Dia_cc2("i,a") = //   t^a_i
+                     T1_cc2("a,i")
+                     // + (t^ae_im - t^e_i t^a_m) \lambda^m_e
                    + (2.0 * T2_cc2("a,c,i,k") - T2_cc2("a,c,k,i")
                       - T1_cc2("c,i") * T1_cc2("a,k"))
                      * L1_cc2("c,k")
+                     // - 1/2 lambda^mn_ef (t^ef_in t^a_m + t^e_i t^af_mn)
+                   - (2.0 * L2_cc2("c,d,k,l") - L2_cc2("d,c,k,l"))
+                     * (  T2_cc2("c,d,i,l") * T1_cc2("a,k")
+                        + T2_cc2("a,d,k,l") * T1_cc2("c,i")
+                       )
+                   ;
 
-                   // not present in CC2
-                   //- 0.5 * L2_cc2("c,d,k,l")
-                   //      * ( T2_cc2("c,d,i,l") * T1_cc2("a,k")
-                   //        + T2_cc2("a,d,k,l") * T1_cc2("c,i")
-                   //        )
-                     ;
-    std::cout << "Dia_cc2: " << std::endl << Dia_cc2 << std::endl;
-
-    Dai_cc2("a,i") = L1_cc2("a,i");
-    std::cout << "Dai_cc2: " << std::endl << Dai_cc2 << std::endl;
+    Dai_cc2("a,i") = // lambda^i_a
+                     L1_cc2("a,i");
   }
 
   // compute CC Gamma(pq,rs) intermediate
@@ -2466,9 +2459,9 @@ namespace sc {
 
     // compute CC2 density and Xam (right-side of Z-vector equation)
     // still working on it ... (code is incomplete)
-//    TArray2 Dij_cc2, Dab_cc2, Dia_cc2, Dai_cc2;
-//    compute_cc2_1rdm_amp(T1_cc2, T2_cc2, L1_cc2, L2_cc2,
-//                        Dij_cc2, Dab_cc2, Dia_cc2, Dai_cc2);
+    TArray2 Dij_cc2, Dab_cc2, Dia_cc2, Dai_cc2;
+    compute_cc2_1rdm_amp(T1_cc2, T2_cc2, L1_cc2, L2_cc2,
+                        Dij_cc2, Dab_cc2, Dia_cc2, Dai_cc2);
 
 //    // comupte Gamma(pq,rs)
 //    compute_Gamma(T1_cc2, T2_cc2, L1_cc2, L2_cc2);
@@ -2476,10 +2469,10 @@ namespace sc {
 //    TArray2 Xam, Xai;
 //    compute_Xam_cc2(T1_cc2, T2_cc2, L1_cc2, L2_cc2, Xam, Xai);
 
-    ExEnv::out0() << indent << "Compute MP2-F12 dipole and quadrupole moments" << std::endl;
+    ExEnv::out0() << indent << "Compute dipole and quadrupole moments" << std::endl;
 
     bool compute_dipole = true;
-    bool compute_quadrupole = true;
+    bool compute_quadrupole = false;
     bool compute_EFG = false;
 
     #define INCLUDE_CABS_Singles_CONTRIBUTIONS 1
@@ -3611,6 +3604,29 @@ namespace sc {
                 << std::endl << indent
                 << "mu_z (F12 orbital response) = " << scprintf("%12.10f", - mu_z_f12or * 2.0)
                 << std::endl;
+
+      TArray2 mu_z_ai = xy("<a|mu_z|i>");
+      TArray2 mu_z_ia = xy("<i|mu_z|a>");
+      double mu_z_cc2 =  dot(mu_z_ij("i,j"), Dij_cc2("i,j"))
+                       + dot(mu_z_ab("a,b"), Dab_cc2("a,b"))
+                       + dot(mu_z_ai("a,i"), Dai_cc2("a,i"))
+                       + dot(mu_z_ia("i,a"), Dia_cc2("i,a"))
+                       ;
+      std::cout << std::endl << indent
+                << "mu_z (CC2) = " << scprintf("%12.10f", - mu_z_cc2 * 2.0)
+                << std::endl << std::endl;
+
+//      double mu_z_cc2_ij = dot(mu_z_ij("i,j"), Dij_cc2("i,j"));
+//      double mu_z_cc2_ab = dot(mu_z_ab("a,b"), Dab_cc2("a,b"));
+//      double mu_z_cc2_ai = dot(mu_z_ai("a,i"), Dai_cc2("a,i"));
+//      double mu_z_cc2_ia = dot(mu_z_ia("i,a"), Dia_cc2("i,a")) ;
+//      std::cout << std::endl << indent
+//                << "mu_z (CC2) ij:  " << scprintf("%12.10f", mu_z_cc2_ij)
+//                << "  ab:  " << scprintf("%12.10f", mu_z_cc2_ab)
+//                << "  ai:  " << scprintf("%12.10f", mu_z_cc2_ai)
+//                << "  ia:  " << scprintf("%12.10f", mu_z_cc2_ia)
+//                << std::endl;
+
     }
 
     if (compute_quadrupole) {
@@ -4144,7 +4160,6 @@ namespace sc {
     return TArray2();
 #endif
   }
-
 
   template <typename T>
   typename SingleReference_R12Intermediates<T>::TArray4

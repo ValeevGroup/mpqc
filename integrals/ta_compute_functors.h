@@ -57,6 +57,7 @@ struct ta_integral_wrapper<T, 2ul> {
             engine.set_q(q);
         }
 
+        auto sh1_start = 0;
         for (auto const &sh1 : clusters[0].flattened_shells()) {
             auto sh1_size = sh1.size();
             auto sh2_start = 0;
@@ -102,7 +103,7 @@ struct ta_integral_wrapper<T, 4ul> {
             for (auto const &sh2 : clusters[1].flattened_shells()) {
                 auto sh2_size = sh2.size();
                 auto sh3_start = 0;
-                for (auto const &sh3 : clusters[1].flattened_shells()) {
+                for (auto const &sh3 : clusters[2].flattened_shells()) {
                     auto sh3_size = sh3.size();
                     auto sh4_start = 0;
 

@@ -22,7 +22,7 @@ kmeans::kmeans(unsigned long seed) : seed_{seed}, clusters_() {}
 
 output_t kmeans::
 operator()(input_t const &clusterables, unsigned long nclusters) {
-    assert(clusterables.size() > nclusters);
+    assert(clusterables.size() >= nclusters);
     clusters_.resize(nclusters);
     initialize_clusters(clusterables);
     return cluster(clusterables);

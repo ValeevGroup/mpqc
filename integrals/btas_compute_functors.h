@@ -27,7 +27,6 @@ void btas_compute_kernel(Engine &engine, btas::TensorView<T> &view,
     auto end = view.end();
     for (auto it = view.begin(); it != end; ++it) {
         *it = buf[i++];
-        //        *it = std::max({shells.O[2]...});
     }
 }
 
@@ -87,14 +86,14 @@ struct integral_wrapper<T, 4ul> {
             auto sh1_size = sh1.size();
             auto sh2_start = 0;
 
-            for (auto const &sh2 : clusters[0].flattened_shells()) {
+            for (auto const &sh2 : clusters[1].flattened_shells()) {
                 auto sh2_size = sh2.size();
                 auto sh3_start = 0;
-                for (auto const &sh3 : clusters[0].flattened_shells()) {
+                for (auto const &sh3 : clusters[2].flattened_shells()) {
                     auto sh3_size = sh3.size();
                     auto sh4_start = 0;
 
-                    for (auto const &sh4 : clusters[1].flattened_shells()) {
+                    for (auto const &sh4 : clusters[3].flattened_shells()) {
                         auto sh4_size = sh4.size();
 
                         auto lower_bound
@@ -129,11 +128,11 @@ template <typename T>
 struct BtasTileFunctor {
     using TileType = tensor::TilePimplDevel<T>;
 
-    template <typename It, typename SharedEnginePool>
-    TileType operator()(It it, basis::Basis const *basis,
-                        SharedEnginePool engines) const {
+    template <typename Index, typename SharedEnginePool>
+    TileType
+    operator()(TiledArray::Range range, Index idx, basis::Basis const *basis,
+               SharedEnginePool engines) const {
 
-        auto idx = it.index();
         std::vector<basis::ClusterShells> clusters;
         clusters.reserve(idx.size());
 
@@ -145,9 +144,8 @@ struct BtasTileFunctor {
             = detail::integral_wrapper<T, pool_order<SharedEnginePool>()>{}(
                 engines->local(), clusters);
 
-        auto range = it.make_range();
-        return TileType{
-            std::move(range), tensor::TileVariantDevel<double>{std::move(btas_tensor)}};
+        return TileType{std::move(range), tensor::TileVariantDevel<double>{
+                                              std::move(btas_tensor)}};
     }
 
 }; // BtasTileFunctor

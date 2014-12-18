@@ -1,4 +1,5 @@
 #include <memory>
+#include <fstream>
 #include <algorithm>
 
 #include "include/tbb.h"
@@ -26,30 +27,57 @@
 
 using namespace tcc;
 
+molecule::Molecule read_xyz(std::ifstream &f) {
+    // Get number of atoms.
+    unsigned long natoms = 0;
+    f >> natoms;
+
+    std::string line;
+    std::vector<molecule::Clusterable> clusterables;
+    while (std::getline(f, line)) {
+        if (!line.empty()) {
+            std::stringstream ss(line);
+            std::string atom = "";
+            double x = 0.0;
+            double y = 0.0;
+            double z = 0.0;
+            ss >> atom;
+            ss >> x;
+            ss >> y;
+            ss >> z;
+            if (atom == "H") {
+                clusterables.emplace_back(molecule::Atom({x, y, z}, 1, 1));
+            } else if (atom == "O") {
+                clusterables.emplace_back(molecule::Atom({x, y, z}, 16, 8));
+            }
+        }
+    }
+    return molecule::Molecule{std::move(clusterables)};
+}
+
 int main(int argc, char *argv[]) {
     auto &world = madness::initialize(argc, argv);
+    tbb::task_scheduler_init(1);
     basis::BasisSet bs{"3-21G_basis_G94.txt"};
-    std::cout << "thresh " << TiledArray::SparseShape<float>::threshold()
-              << std::endl;
+
     std::vector<molecule::Clusterable> clusterables;
-    for (auto i = 0; i < 50; ++i) {
-        clusterables.emplace_back(molecule::Atom{{0, 0, 4 * i}, 1, 1});
-    }
+    clusterables.emplace_back(molecule::Atom{{0, -1, 1}, 1, 1});
+    clusterables.emplace_back(molecule::Atom{{0, 1, 1}, 1, 1});
+    clusterables.emplace_back(molecule::Atom{{0, 0, 0}, 16, 8});
 
-    molecule::Molecule mol{std::move(clusterables)};
+    std::ifstream molecule_file("mol.xyz");
+    auto mol = read_xyz(molecule_file);
+    molecule::Molecule mol_test{std::move(clusterables)};
 
-    auto cluster_func = molecule::clustering::kmeans{4};
+    int nclusters = std::max(1, static_cast<int>(mol.nelements() / 9));
+    std::cout << mol.nelements() << " atoms  with " << nclusters << " clusters"
+              << std::endl;
+
+    auto cluster_func = molecule::clustering::kmeans{127};
     std::vector<std::shared_ptr<molecule::Cluster>> clusters;
-    clusters.reserve(10);
+    clusters.reserve(nclusters);
 
-    auto cluster_num = 0;
-    for (auto &&cluster : mol.cluster_molecule(cluster_func, 10)) {
-        std::cout << "cluster " << cluster_num << " has " << cluster.nelements()
-                  << " atoms\n";
-        ++cluster_num;
-        for (auto i = cluster.begin(); i != cluster.end(); ++i) {
-            std::cout << "\t" << i->center().transpose() << std::endl;
-        }
+    for (auto &&cluster : mol.cluster_molecule(cluster_func, nclusters)) {
         clusters.push_back(
             std::make_shared<molecule::Cluster>(std::move(cluster)));
     }
@@ -74,94 +102,40 @@ int main(int argc, char *argv[]) {
         max_am = (temp_am > max_am) ? temp_am : max_am;
     }
 
+    libint2::init();
     libint2::OneBodyEngine overlap{libint2::OneBodyEngine::overlap, max_nprim,
                                    static_cast<int>(max_am)};
 
     auto overlap_pool = integrals::make_pool(std::move(overlap));
-    auto S = integrals::Integrals(
-        world, overlap_pool, basis,
-        integrals::compute_functors::TaTileFunctor<double>{});
-
-    libint2::OneBodyEngine kinetic{libint2::OneBodyEngine::kinetic, max_nprim,
-                                   static_cast<int>(max_am)};
-
-    auto kinetic_pool = integrals::make_pool(std::move(kinetic));
-    auto T = integrals::Integrals(
-        world, std::move(kinetic_pool), basis,
-        integrals::compute_functors::TaTileFunctor<double>{});
-
-    libint2::OneBodyEngine nuclear{libint2::OneBodyEngine::nuclear, max_nprim,
-                                   static_cast<int>(max_am)};
-
-    auto nuclear_pool = integrals::make_pool(std::move(nuclear));
-    auto V = integrals::Integrals(
-        world, std::move(nuclear_pool), basis,
-        integrals::compute_functors::TaTileFunctor<double>{});
-
-
-    decltype(S) H;
-    // H("i,j") = V("i,j") + T("i,j");
-
-    // std::cout << "S = \n" << S << std::endl;
-    // std::cout << "H = \n" << H << std::endl;
 
     auto sparse_S = integrals::SparseIntegrals(
         world, overlap_pool, basis,
         integrals::compute_functors::TaTileFunctor<double>{});
-    std::cout << "sparse_S = \n" << sparse_S << std::endl;
-    //
-    //    auto num = 0;
-    //    for (auto it = sparse_S.begin(); it != sparse_S.end(); ++it) {
-    //        auto elements = it->get().range().volume();
-    //        std::cout << "Tile is not sparse " << it.ordinal() << " has "
-    //                  << elements << " elements " << std::endl;
-    //        ++num;
-    //    }
-    //    std::cout << "Given should have " << 100 << " tiles, but only had " <<
-    //    num
-    //              << std::endl;
-    //
-    //    auto elements = sparse_S.elements().volume();
-    //    auto dim = std::sqrt(elements);
-    //    std::cout << "Matrix has " << elements << " elements give a dimension
-    //    of "
-    //              << dim << std::endl;
-    //
-    //    TiledArray::Array<double, 2, TiledArray::Tensor<double>,
-    //                      TiledArray::SparsePolicy> S2;
-    //    world.gop.fence();
-    //    S2("i,j") = sparse_S("i,k") * sparse_S("k,j");
-    //    world.gop.fence();
-    //
-    //    std::cout << "Going to print S2" << std::endl;
-    //    num = 0;
-    //    for (auto it = S2.begin(); it != S2.end(); ++it) {
-    //        auto elements = it->get().range().volume();
-    //        std::cout << "Tile is not sparse " << it.ordinal() << " has "
-    //                  << elements << " elements " << std::endl;
-    //
-    //        ++num;
-    //    }
-    //    std::cout << "Given should have " << 100 << " tiles, but only had " <<
-    //    num
-    //              << std::endl;
+    world.gop.fence();
 
-    auto SsqrtInv = pure::inverse_sqrt(sparse_S);
-    for(auto it = SsqrtInv.begin(); it != SsqrtInv.end(); ++it){
-        auto tile = it->get();
-        std::cout << "Norm of tile " << it.ordinal() << " is " << tile.norm() / tile.range().volume() << std::endl;
+    if (world.rank() == 0) {
+        std::cout << "Computing 4 center integrals now" << std::endl;
     }
-    decltype(sparse_S) Ident;
-    Ident("i,j") = SsqrtInv("i,k") * sparse_S("k,l") * SsqrtInv("l,j");
-    std::cout << "Ident = \n" << Ident << std::endl;
 
-    //  auto P = pure::purifier()(H, S, 10);
-    //  std::cout << "First density = \n" << P << std::endl;
-    //  decltype(S) PS; PS("i,j") = P("i,k") * S("k,j");
-    //  std::cout << "PS trace = " << PS("i,j").trace().get() << std::endl;
-    //    auto X = create_eval_scaled_guess(H,S);
-    //    std::cout << "X = \n" << X << std::endl;
+    libint2::TwoBodyEngine<libint2::Coulomb> eri{max_nprim,
+                                                 static_cast<int>(max_am)};
+
+    auto eri_pool = integrals::make_pool(std::move(eri));
+    auto eri4 = integrals::Integrals(world, eri_pool, basis);
 
     world.gop.fence();
+    if (world.rank() == 0) {
+        std::cout << "Finished 4 center integrals now" << std::endl;
+    }
+
+
+#if 0
+    auto a = pure::inverse_sqrt(sparse_S);
+    //    decltype(sparse_S) ident;
+    //    ident("i,j") = a("i,k") * sparse_S("k,l") * a("l,j");
+
+    world.gop.fence();
+#endif
+    madness::finalize();
     return 0;
 }

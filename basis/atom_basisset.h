@@ -31,7 +31,7 @@ class AtomBasisShell {
 
     double exponent(int i) const { return exponents_[i]; }
     std::vector<double> const &exponents() const { return exponents_; }
-    double coeff(int i, int j = 0) const { return coeffs_[j][i]; }
+    double coeff(int i, int j = 0) const { return coeffs_[i][j]; }
     std::vector<std::vector<double>> const &coeffs() const { return coeffs_; }
 
 

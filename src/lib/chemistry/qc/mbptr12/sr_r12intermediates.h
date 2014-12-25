@@ -312,6 +312,30 @@ namespace sc {
       // compute T1 & T2 amplitudes of CC2
       void compute_T_cc2(TArray2& T1, TArray4& T2);
 
+      // compute Lambda_1 & Lambda_2 amplitudes of CC2
+      // using formula from Schaefer III, JCP 87, 5361 (1987)
+      void compute_lambda_cc2(const TArray2& t1, const TArray4& t2,
+                         TArray2& L1, TArray4& L2);
+      // use formula from Gauss and Stanton, JCP, 103 (1995)
+      void compute_lambda_cc2_2(const TArray2& t1, const TArray4& t2,
+                                TArray2& L1, TArray4& L2);
+
+      // compute CC2 one-electron density from amplitudes
+      void compute_cc2_1rdm_amp(const TArray2& T1_cc2, const TArray4& T2_cc2,
+                               const TArray2& L1_cc2, const TArray4& L2_cc2,
+                               TArray2& Dij_cc2, TArray2& Dab_cc2,
+                               TArray2& Dia_cc2, TArray2& Dai_cc2);
+
+      // compute CC Gamma(pq,rs) intermediate
+      // which is needed for Xai
+      void compute_Gamma(const TArray2& T1_cc2, const TArray4& T2_cc2,
+                         const TArray2& L1_cc2, const TArray4& L2_cc2);
+
+      // compute CC Xam (the right-hand side of Z-vector equations)
+      void compute_Xam_cc2(const TArray2& T1, const TArray4& T2,
+                           const TArray2& L1, const TArray4& L2,
+                           TArray2& Xam, TArray2& Xai);
+
       /** returns the 2-particle density matrix
       * @return \f$ \gamma^{pq}_{rs} \f$, respectively
       */

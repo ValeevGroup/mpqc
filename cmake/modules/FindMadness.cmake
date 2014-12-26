@@ -7,9 +7,9 @@ if (MADNESS_INCLUDE_DIRS)
     set(MADNESS_FOUND TRUE)
 
 else()
-    find_path(MADNESS_INCLUDE_DIR NAMES madness_config.h
+    find_path(MADNESS_INCLUDE_DIR NAMES madness/madness_config.h
          PATHS 
-         ${MADNESS_DIR}/include 
+         ${MADNESS_DIR}/include
          ${TILEDARRAY_DIR}/include
      )
        

@@ -248,6 +248,10 @@ namespace sc {
         r12world_ = 0;
       }
 
+      const Ref<R12WavefunctionWorld>& r12world() const {
+        return r12world_;
+      }
+
       /** computes diagonal (spin-restricted, for now) V intermediate
       * @return \f$ V^{ij}_{ij} \f$ and \f$ V^{ij}_{ji} \f$, respectively
       */
@@ -262,6 +266,11 @@ namespace sc {
       * @return \f$ B^{ij}_{ij} \f$ and \f$ B^{ij}_{ji} \f$, respectively
       */
       std::pair<TArray2,TArray2> B_diag();
+
+      /**
+       * Computes second-order Green's function IPs and EAs
+       */
+      void gf2_r12();
 
       /** returns the 1-particle reduced density matrix
       * @return \f$ \gamma^{p}_{q} \f$, respectively
@@ -299,6 +308,33 @@ namespace sc {
       TArray2 Xam_X(const double C_0, const double C_1);
       // compute Xam contribution from F12 B part
       TArray2 Xam_B(const double C_0, const double C_1);
+
+      // compute T1 & T2 amplitudes of CC2
+      void compute_T_cc2(TArray2& T1, TArray4& T2);
+
+      // compute Lambda_1 & Lambda_2 amplitudes of CC2
+      // using formula from Schaefer III, JCP 87, 5361 (1987)
+      void compute_lambda_cc2(const TArray2& t1, const TArray4& t2,
+                         TArray2& L1, TArray4& L2);
+      // use formula from Gauss and Stanton, JCP, 103 (1995)
+      void compute_lambda_cc2_2(const TArray2& t1, const TArray4& t2,
+                                TArray2& L1, TArray4& L2);
+
+      // compute CC2 one-electron density from amplitudes
+      void compute_cc2_1rdm_amp(const TArray2& T1_cc2, const TArray4& T2_cc2,
+                               const TArray2& L1_cc2, const TArray4& L2_cc2,
+                               TArray2& Dij_cc2, TArray2& Dab_cc2,
+                               TArray2& Dia_cc2, TArray2& Dai_cc2);
+
+      // compute CC Gamma(pq,rs) intermediate
+      // which is needed for Xai
+      void compute_Gamma(const TArray2& T1_cc2, const TArray4& T2_cc2,
+                         const TArray2& L1_cc2, const TArray4& L2_cc2);
+
+      // compute CC Xam (the right-hand side of Z-vector equations)
+      void compute_Xam_cc2(const TArray2& T1, const TArray4& T2,
+                           const TArray2& L1, const TArray4& L2,
+                           TArray2& Xam, TArray2& Xai);
 
       /** returns the 2-particle density matrix
       * @return \f$ \gamma^{pq}_{rs} \f$, respectively

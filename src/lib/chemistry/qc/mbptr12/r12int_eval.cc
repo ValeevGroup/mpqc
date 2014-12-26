@@ -2198,14 +2198,8 @@ R12IntEval::compute()
 #if 0
   {
     ExEnv::out0() << indent << "Trying out MPQC3-based R12 code" << std::endl;
-    V_diag_ta();
-  }
-#endif
-
-#if defined(HAVE_MPQC3_RUNTIME)
-  if (compute_1rdm()) {
-    ExEnv::out0() << indent << "Compute MP2-F12 one-electron properties" << std::endl;
-    compute_TA_mp2f12_1rdm();
+    //V_diag_ta();
+    gf2_r12();
   }
 #endif
 

@@ -158,6 +158,8 @@ double CADFCLHF::get_distance_factor(
     }
     if(dist_factor > 1.0 or dist_factor < 0.0) return 1.0;
 
+    if(qqr_only_) return std::min(1.0, dist_factor);
+
     // Remove the (X|X)^(1/2) part and replace it with the l-dependent and
     //  zeta-dependent scaling factors
     dist_factor /= schwarz_df_[Xsh];

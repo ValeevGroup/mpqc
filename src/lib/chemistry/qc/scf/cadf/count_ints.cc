@@ -139,6 +139,7 @@ CADFCLHF::count_ints()
           if((ish*nsh*dfnsh+jsh*nsh+Xsh) % nthread_ != ithr) continue;
           if(((ish*nsh*dfnsh+jsh*nsh+Xsh) / nthread_) % n_node != me) continue;
           const double distance_factor = get_distance_factor(ish, jsh, Xsh);
+          if(distance_factor != 1.0 and !linK_use_distance_) throw FeatureNotImplemented("fail", __FILE__, __LINE__, class_desc());
           const double estimate = schwarz_frob_(ish, jsh) * schwarz_df_(Xsh) * distance_factor;
           auto actual_ints = ints_to_eigen(ish, jsh, Xsh,
               eris_3c_[ithr], coulomb_oper_type_,

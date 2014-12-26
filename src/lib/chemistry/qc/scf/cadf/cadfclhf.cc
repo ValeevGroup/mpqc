@@ -150,6 +150,7 @@ CADFCLHF::CADFCLHF(const Ref<KeyVal>& keyval) :
   use_extents_ = keyval->booleanvalue("use_extents", KeyValValueboolean(use_extents_));
   use_max_extents_ = keyval->booleanvalue("use_max_extents", KeyValValueboolean(use_max_extents_));
   subtract_extents_ = keyval->booleanvalue("subtract_extents", KeyValValueboolean(subtract_extents_));
+  qqr_only_ = keyval->booleanvalue("qqr_only", KeyValValueboolean(qqr_only_));
   well_separated_thresh_ = keyval->doublevalue("well_separated_thresh", KeyValValuedouble(well_separated_thresh_));
   //----------------------------------------------------------------------------//
   print_screening_stats_ = keyval->intvalue("print_screening_stats", KeyValValueint(0));
@@ -319,6 +320,7 @@ CADFCLHF::print(ostream&o) const
   o << indent << "min_atoms_per_node = " << int_str(min_atoms_per_node_) << endl;
   o << indent << "n_iter_only = " << int_str(n_iter_only_) << endl;
   o << indent << "pair_screening_thresh = " << double_str(pair_screening_thresh_) << endl;
+  o << indent << "qqr_only = " << bool_str(qqr_only_) << endl;
   o << indent << "safe_extents = " << bool_str(safe_extents_) << endl;
   o << indent << "scale_screening_thresh = " << bool_str(scale_screening_thresh_) << endl;
   o << indent << "screen_B = " << bool_str(screen_B_) << endl;

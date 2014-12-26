@@ -57,7 +57,12 @@ double my_erfc_inv(double val) {
   //else {
   //  throw FeatureNotImplemented("Erfc_inv of number other than 0.1", __FILE__, __LINE__, class_desc());
   //}
-  return boost::math::erfc_inv(val);
+  if(val <= 0.0) {
+    return std::numeric_limits<double>::infinity();
+  }
+  else {
+    return boost::math::erfc_inv(val);
+  }
 }
 
 void
@@ -186,7 +191,9 @@ CADFCLHF::init_threads()
   schwarz_df_.resize(dfnsh);
   consume_memory(dfnsh*sizeof(double));
   for(auto&& Xsh : shell_range(dfbs_)) {
-    schwarz_df_(Xsh) = g2.block(Xsh.bfoff, Xsh.bfoff, Xsh.nbf, Xsh.nbf).norm();
+    //schwarz_df_(Xsh) = g2.block(Xsh.bfoff, Xsh.bfoff, Xsh.nbf, Xsh.nbf).norm();
+    // Absolute value for sqrt squared (incorporates both schwarz sqrt and frob norm square)
+    schwarz_df_(Xsh) = sqrt(g2.block(Xsh.bfoff, Xsh.bfoff, Xsh.nbf, Xsh.nbf).cwiseAbs().sum());
   }
 
   // Release the integral evaluators
@@ -471,7 +478,9 @@ CADFCLHF::init_significant_pairs()
       tbis_[ithr]->compute_shell(ish, jsh, ish, jsh);
       const double* buffer = tbis_[ithr]->buffer(coulomb_oper_type_);
       const ConstVectorMap buff_map(buffer, ish.nbf*jsh.nbf*ish.nbf*jsh.nbf);
+      // Absolute value for sqrt squared (incorporates both schwarz sqrt and frob norm square)
       const double norm_val = sqrt(buff_map.cwiseAbs().sum());
+      //const double norm_val = buff_map.cwiseSqrt().norm();
       schwarz_frob_(ish, jsh) = norm_val;
       if(ish != jsh) schwarz_frob_(jsh, ish) = norm_val;
       my_pair_vals.push_back({norm_val, IntPair(ish, jsh)});

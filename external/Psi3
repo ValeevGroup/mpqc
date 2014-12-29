@@ -11,7 +11,7 @@ endif()
 if (PSI3)
 
   set(PSI3_LIBRARIES "")
-  foreach (_lib PSI_psio PSI_chkpt PSI_iwl PSI_ciomr PSI_dpd PSI_qt)
+  foreach (_lib PSI_dpd PSI_chkpt PSI_iwl PSI_qt PSI_ciomr PSI_psio)
     set(_libpath _libpath-NOTFOUND)
     if ("${PSI3}" OR "${PSI3}" STREQUAL "optional")
       find_library(_libpath ${_lib})
